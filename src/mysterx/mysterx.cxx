@@ -74,8 +74,8 @@ static MX_PRIM mxPrims[] = {
   { mx_version,"mx-version",0,0},
 
   // COM reflection
-  
-  { mx_com_invoke,"com-invoke",2,-1}, 
+
+  { mx_com_invoke,"com-invoke",2,-1},
   { mx_com_set_property,"com-set-property!",2,-1 },
   { mx_com_get_property,"com-get-property",2, -1 },
   { mx_com_methods,"com-methods",1,1 },
@@ -103,21 +103,21 @@ static MX_PRIM mxPrims[] = {
   { scheme_number_to_mx_currency,"number->com-currency",1,1 },
   { mx_comobj_pred_ex,"com-object?",1,1 },
   { mx_iunknown_pred_ex,"com-iunknown?",1,1 },
-  
+
   // COM events
-  
+
   { mx_com_register_event_handler,"com-register-event-handler",3,3 },
   { mx_com_unregister_event_handler,"com-unregister-event-handler",2,2 },
-  
+
   // coclasses
-  
+
   { mx_all_coclasses,"com-all-coclasses",0,0 },
   { mx_all_controls,"com-all-controls",0,0 },
   { mx_coclass_to_html,"coclass->html",3,4 },
   { mx_progid_to_html,"progid->html",3,4 },
-  
+
   // COM objects
-  
+
   { mx_cocreate_instance_from_coclass,"cocreate-instance-from-coclass",1,2 },
   { mx_cocreate_instance_from_progid,"cocreate-instance-from-progid",1,2 },
   { mx_coclass,"coclass",1,1 },
@@ -125,15 +125,15 @@ static MX_PRIM mxPrims[] = {
   { mx_set_coclass,"set-coclass!",2,2 },
   { mx_set_coclass_from_progid,"set-coclass-from-progid!",2,2 },
   { mx_com_object_eq,"com-object-eq?",2,2 },
-  { mx_com_register_object,"com-register-object",1,1 },  
-  { mx_com_release_object,"com-release-object",1,1 },  
-  { mx_com_add_ref,"com-add-ref",1,1 },  
-  { mx_com_ref_count,"com-ref-count",1,1 },  
+  { mx_com_register_object,"com-register-object",1,1 },
+  { mx_com_release_object,"com-release-object",1,1 },
+  { mx_com_add_ref,"com-add-ref",1,1 },
+  { mx_com_ref_count,"com-ref-count",1,1 },
 
   // browsers
 
   { mx_make_browser,"make-browser",6,6},
-  { mx_block_while_browsers,"block-while-browsers",0,0}, 
+  { mx_block_while_browsers,"block-while-browsers",0,0},
   { mx_browser_show,"browser-show",2,2},
   { mx_navigate,"navigate",2,2 },
   { mx_go_back,"go-back",1,1 },
@@ -146,8 +146,8 @@ static MX_PRIM mxPrims[] = {
   { mx_current_document,"current-document",1,1 },
   { mx_print,"print-document",1,1 },
 
-  // documents 
-  
+  // documents
+
   { mx_document_pred,"document?",1,1 },
   { mx_document_title,"document-title",1,1 },
   { mx_insert_html,"document-insert-html",2,2 },
@@ -157,9 +157,9 @@ static MX_PRIM mxPrims[] = {
   { mx_find_element_by_id_or_name,"document-find-element-by-id-or-name",2,3 },
   { mx_elements_with_tag,"document-elements-with-tag",2,2 },
   { mx_document_objects,"document-objects",1,1 },
-  
+
   // elements
-  
+
   { mx_element_insert_html,"element-insert-html",2,2 },
   { mx_element_append_html,"element-append-html",2,2 },
   { mx_element_insert_text,"element-insert-text",2,2 },
@@ -183,9 +183,9 @@ static MX_PRIM mxPrims[] = {
   { mx_element_font_weight,"element-font-weight",1,1 },
   { mx_element_set_font_weight,"element-set-font-weight!",2,2 },
   { mx_element_font,"element-font",1,1 },
-  { mx_element_set_font,"element-set-font!",2,2 }, 
+  { mx_element_set_font,"element-set-font!",2,2 },
   { mx_element_background,"element-background",1,1 },
-  { mx_element_set_background,"element-set-background!",2,2 }, 
+  { mx_element_set_background,"element-set-background!",2,2 },
   { mx_element_background_attachment,"element-background-attachment",1,1 },
   { mx_element_set_background_attachment,"element-set-background-attachment!",2,2 },
   { mx_element_background_image,"element-background-image",1,1 },
@@ -193,162 +193,162 @@ static MX_PRIM mxPrims[] = {
   { mx_element_background_repeat,"element-background-repeat",1,1 },
   { mx_element_set_background_repeat,"element-set-background-repeat!",2,2 },
   { mx_element_background_position,"element-background-position",1,1 },
-  { mx_element_set_background_position,"element-set-background-position!",2,2 }, 
+  { mx_element_set_background_position,"element-set-background-position!",2,2 },
   { mx_element_text_decoration,"element-text-decoration",1,1 },
-  { mx_element_set_text_decoration,"element-set-text-decoration!",2,2 }, 
+  { mx_element_set_text_decoration,"element-set-text-decoration!",2,2 },
   { mx_element_text_transform,"element-text-transform",1,1 },
-  { mx_element_set_text_transform,"element-set-text-transform!",2,2 }, 
+  { mx_element_set_text_transform,"element-set-text-transform!",2,2 },
   { mx_element_text_align,"element-text-align",1,1 },
-  { mx_element_set_text_align,"element-set-text-align!",2,2 }, 
+  { mx_element_set_text_align,"element-set-text-align!",2,2 },
   { mx_element_margin,"element-margin",1,1 },
-  { mx_element_set_margin,"element-set-margin!",2,2 }, 
+  { mx_element_set_margin,"element-set-margin!",2,2 },
   { mx_element_padding,"element-padding",1,1 },
-  { mx_element_set_padding,"element-set-padding!",2,2 }, 
+  { mx_element_set_padding,"element-set-padding!",2,2 },
   { mx_element_border,"element-border",1,1 },
-  { mx_element_set_border,"element-set-border!",2,2 }, 
+  { mx_element_set_border,"element-set-border!",2,2 },
   { mx_element_border_top,"element-border-top",1,1 },
-  { mx_element_set_border_top,"element-set-border-top!",2,2 }, 
+  { mx_element_set_border_top,"element-set-border-top!",2,2 },
   { mx_element_border_bottom,"element-border-bottom",1,1 },
-  { mx_element_set_border_bottom,"element-set-border-bottom!",2,2 }, 
+  { mx_element_set_border_bottom,"element-set-border-bottom!",2,2 },
   { mx_element_border_left,"element-border-left",1,1 },
-  { mx_element_set_border_left,"element-set-border-left!",2,2 }, 
+  { mx_element_set_border_left,"element-set-border-left!",2,2 },
   { mx_element_border_right,"element-border-right",1,1 },
-  { mx_element_set_border_right,"element-set-border-right!",2,2 }, 
+  { mx_element_set_border_right,"element-set-border-right!",2,2 },
   { mx_element_border_color,"element-border-color",1,1 },
-  { mx_element_set_border_color,"element-set-border-color!",2,2 }, 
+  { mx_element_set_border_color,"element-set-border-color!",2,2 },
   { mx_element_border_width,"element-border-width",1,1 },
-  { mx_element_set_border_width,"element-set-border-width!",2,2 }, 
+  { mx_element_set_border_width,"element-set-border-width!",2,2 },
   { mx_element_border_style,"element-border-style",1,1 },
-  { mx_element_set_border_style,"element-set-border-style!",2,2 }, 
+  { mx_element_set_border_style,"element-set-border-style!",2,2 },
   { mx_element_border_top_style,"element-border-top-style",1,1 },
-  { mx_element_set_border_top_style,"element-set-border-top-style!",2,2 }, 
+  { mx_element_set_border_top_style,"element-set-border-top-style!",2,2 },
   { mx_element_border_bottom_style,"element-border-bottom-style",1,1 },
-  { mx_element_set_border_bottom_style,"element-set-border-bottom-style!",2,2 }, 
+  { mx_element_set_border_bottom_style,"element-set-border-bottom-style!",2,2 },
   { mx_element_border_left_style,"element-border-left-style",1,1 },
-  { mx_element_set_border_left_style,"element-set-border-left-style!",2,2 }, 
+  { mx_element_set_border_left_style,"element-set-border-left-style!",2,2 },
   { mx_element_border_right_style,"element-border-right-style",1,1 },
-  { mx_element_set_border_right_style,"element-set-border-right-style!",2,2 }, 
+  { mx_element_set_border_right_style,"element-set-border-right-style!",2,2 },
   { mx_element_style_float,"element-style-float",1,1 },
-  { mx_element_set_style_float,"element-set-style-float!",2,2 }, 
+  { mx_element_set_style_float,"element-set-style-float!",2,2 },
   { mx_element_clear,"element-clear",1,1 },
-  { mx_element_set_clear,"element-set-clear!",2,2 }, 
+  { mx_element_set_clear,"element-set-clear!",2,2 },
   { mx_element_display,"element-display",1,1 },
-  { mx_element_set_display,"element-set-display!",2,2 }, 
+  { mx_element_set_display,"element-set-display!",2,2 },
   { mx_element_visibility,"element-visibility",1,1 },
-  { mx_element_set_visibility,"element-set-visibility!",2,2 }, 
+  { mx_element_set_visibility,"element-set-visibility!",2,2 },
   { mx_element_list_style_type,"element-list-style-type",1,1 },
-  { mx_element_set_list_style_type,"element-set-list-style-type!",2,2 }, 
+  { mx_element_set_list_style_type,"element-set-list-style-type!",2,2 },
   { mx_element_list_style_position,"element-list-style-position",1,1 },
-  { mx_element_set_list_style_position,"element-set-list-style-position!",2,2 }, 
+  { mx_element_set_list_style_position,"element-set-list-style-position!",2,2 },
   { mx_element_list_style_image,"element-list-style-image",1,1 },
-  { mx_element_set_list_style_image,"element-set-list-style-image!",2,2 }, 
+  { mx_element_set_list_style_image,"element-set-list-style-image!",2,2 },
   { mx_element_list_style,"element-list-style",1,1 },
-  { mx_element_set_list_style,"element-set-list-style!",2,2 }, 
+  { mx_element_set_list_style,"element-set-list-style!",2,2 },
   { mx_element_position,"element-position",1,1 },
   { mx_element_overflow,"element-overflow",1,1 },
-  { mx_element_set_overflow,"element-set-overflow!",2,2 }, 
+  { mx_element_set_overflow,"element-set-overflow!",2,2 },
   { mx_element_pagebreak_before,"element-pagebreak-before",1,1 },
-  { mx_element_set_pagebreak_before,"element-set-pagebreak-before!",2,2 }, 
+  { mx_element_set_pagebreak_before,"element-set-pagebreak-before!",2,2 },
   { mx_element_pagebreak_after,"element-pagebreak-after",1,1 },
-  { mx_element_set_pagebreak_after,"element-set-pagebreak-after!",2,2 }, 
+  { mx_element_set_pagebreak_after,"element-set-pagebreak-after!",2,2 },
   { mx_element_css_text,"element-css-text",1,1 },
-  { mx_element_set_css_text,"element-set-css-text!",2,2 }, 
+  { mx_element_set_css_text,"element-set-css-text!",2,2 },
   { mx_element_cursor,"element-cursor",1,1 },
-  { mx_element_set_cursor,"element-set-cursor!",2,2 }, 
+  { mx_element_set_cursor,"element-set-cursor!",2,2 },
   { mx_element_clip,"element-clip",1,1 },
-  { mx_element_set_clip,"element-set-clip!",2,2 }, 
+  { mx_element_set_clip,"element-set-clip!",2,2 },
   { mx_element_filter,"element-filter",1,1 },
-  { mx_element_set_filter,"element-set-filter!",2,2 }, 
+  { mx_element_set_filter,"element-set-filter!",2,2 },
   { mx_element_style_string,"element-style-string",1,1 },
   { mx_element_text_decoration_none,"element-text-decoration-none",1,1 },
-  { mx_element_set_text_decoration_none,"element-set-text-decoration-none!",2,2 }, 
+  { mx_element_set_text_decoration_none,"element-set-text-decoration-none!",2,2 },
   { mx_element_text_decoration_underline,"element-text-decoration-underline",1,1 },
-  { mx_element_set_text_decoration_underline,"element-set-text-decoration-underline!",2,2 }, 
+  { mx_element_set_text_decoration_underline,"element-set-text-decoration-underline!",2,2 },
   { mx_element_text_decoration_overline,"element-text-decoration-overline",1,1 },
-  { mx_element_set_text_decoration_overline,"element-set-text-decoration-overline!",2,2 }, 
+  { mx_element_set_text_decoration_overline,"element-set-text-decoration-overline!",2,2 },
   { mx_element_text_decoration_linethrough,"element-text-decoration-linethrough",1,1 },
-  { mx_element_set_text_decoration_linethrough,"element-set-text-decoration-linethrough!",2,2 }, 
+  { mx_element_set_text_decoration_linethrough,"element-set-text-decoration-linethrough!",2,2 },
   { mx_element_text_decoration_blink,"element-text-decoration-blink",1,1 },
-  { mx_element_set_text_decoration_blink,"element-set-text-decoration-blink!",2,2 }, 
+  { mx_element_set_text_decoration_blink,"element-set-text-decoration-blink!",2,2 },
   { mx_element_pixel_top,"element-pixel-top",1,1 },
-  { mx_element_set_pixel_top,"element-set-pixel-top!",2,2 }, 
+  { mx_element_set_pixel_top,"element-set-pixel-top!",2,2 },
   { mx_element_pixel_left,"element-pixel-left",1,1 },
-  { mx_element_set_pixel_left,"element-set-pixel-left!",2,2 }, 
+  { mx_element_set_pixel_left,"element-set-pixel-left!",2,2 },
   { mx_element_pixel_width,"element-pixel-width",1,1 },
-  { mx_element_set_pixel_width,"element-set-pixel-width!",2,2 }, 
+  { mx_element_set_pixel_width,"element-set-pixel-width!",2,2 },
   { mx_element_pixel_height,"element-pixel-height",1,1 },
-  { mx_element_set_pixel_height,"element-set-pixel-height!",2,2 }, 
+  { mx_element_set_pixel_height,"element-set-pixel-height!",2,2 },
   { mx_element_pos_top,"element-pos-top",1,1 },
-  { mx_element_set_pos_top,"element-set-pos-top!",2,2 }, 
+  { mx_element_set_pos_top,"element-set-pos-top!",2,2 },
   { mx_element_pos_left,"element-pos-left",1,1 },
-  { mx_element_set_pos_left,"element-set-pos-left!",2,2 }, 
+  { mx_element_set_pos_left,"element-set-pos-left!",2,2 },
   { mx_element_pos_width,"element-pos-width",1,1 },
-  { mx_element_set_pos_width,"element-set-pos-width!",2,2 }, 
+  { mx_element_set_pos_width,"element-set-pos-width!",2,2 },
   { mx_element_pos_height,"element-pos-height",1,1 },
-  { mx_element_set_pos_height,"element-set-pos-height!",2,2 }, 
+  { mx_element_set_pos_height,"element-set-pos-height!",2,2 },
   { mx_element_font_size,"element-font-size",1,1 },
-  { mx_element_set_font_size,"element-set-font-size!",2,2 }, 
+  { mx_element_set_font_size,"element-set-font-size!",2,2 },
   { mx_element_color,"element-color",1,1 },
-  { mx_element_set_color,"element-set-color!",2,2 }, 
+  { mx_element_set_color,"element-set-color!",2,2 },
   { mx_element_background_color,"element-background-color",1,1 },
-  { mx_element_set_background_color,"element-set-background-color!",2,2 }, 
+  { mx_element_set_background_color,"element-set-background-color!",2,2 },
   { mx_element_background_position_x,"element-background-position-x",1,1 },
-  { mx_element_set_background_position_x,"element-set-background-position-x!",2,2 }, 
+  { mx_element_set_background_position_x,"element-set-background-position-x!",2,2 },
   { mx_element_background_position_y,"element-background-position-y",1,1 },
-  { mx_element_set_background_position_y,"element-set-background-position-y!",2,2 }, 
+  { mx_element_set_background_position_y,"element-set-background-position-y!",2,2 },
   { mx_element_letter_spacing,"element-letter-spacing",1,1 },
-  { mx_element_set_letter_spacing,"element-set-letter-spacing!",2,2 }, 
+  { mx_element_set_letter_spacing,"element-set-letter-spacing!",2,2 },
   { mx_element_vertical_align,"element-vertical-align",1,1 },
-  { mx_element_set_vertical_align,"element-set-vertical-align!",2,2 }, 
+  { mx_element_set_vertical_align,"element-set-vertical-align!",2,2 },
   { mx_element_text_indent,"element-text-indent",1,1 },
-  { mx_element_set_text_indent,"element-set-text-indent!",2,2 }, 
+  { mx_element_set_text_indent,"element-set-text-indent!",2,2 },
   { mx_element_line_height,"element-line-height",1,1 },
-  { mx_element_set_line_height,"element-set-line-height!",2,2 }, 
+  { mx_element_set_line_height,"element-set-line-height!",2,2 },
   { mx_element_margin_top,"element-margin-top",1,1 },
-  { mx_element_set_margin_top,"element-set-margin-top!",2,2 }, 
+  { mx_element_set_margin_top,"element-set-margin-top!",2,2 },
   { mx_element_margin_bottom,"element-margin-bottom",1,1 },
-  { mx_element_set_margin_bottom,"element-set-margin-bottom!",2,2 }, 
+  { mx_element_set_margin_bottom,"element-set-margin-bottom!",2,2 },
   { mx_element_margin_left,"element-margin-left",1,1 },
-  { mx_element_set_margin_left,"element-set-margin-left!",2,2 }, 
+  { mx_element_set_margin_left,"element-set-margin-left!",2,2 },
   { mx_element_margin_right,"element-margin-right",1,1 },
-  { mx_element_set_margin_right,"element-set-margin-right!",2,2 }, 
+  { mx_element_set_margin_right,"element-set-margin-right!",2,2 },
   { mx_element_padding_top,"element-padding-top",1,1 },
-  { mx_element_set_padding_top,"element-set-padding-top!",2,2 }, 
+  { mx_element_set_padding_top,"element-set-padding-top!",2,2 },
   { mx_element_padding_bottom,"element-padding-bottom",1,1 },
-  { mx_element_set_padding_bottom,"element-set-padding-bottom!",2,2 }, 
+  { mx_element_set_padding_bottom,"element-set-padding-bottom!",2,2 },
   { mx_element_padding_left,"element-padding-left",1,1 },
-  { mx_element_set_padding_left,"element-set-padding-left!",2,2 }, 
+  { mx_element_set_padding_left,"element-set-padding-left!",2,2 },
   { mx_element_padding_right,"element-padding-right",1,1 },
-  { mx_element_set_padding_right,"element-set-padding-right!",2,2 }, 
+  { mx_element_set_padding_right,"element-set-padding-right!",2,2 },
   { mx_element_border_top_color,"element-border-top-color",1,1 },
-  { mx_element_set_border_top_color,"element-set-border-top-color!",2,2 }, 
+  { mx_element_set_border_top_color,"element-set-border-top-color!",2,2 },
   { mx_element_border_bottom_color,"element-border-bottom-color",1,1 },
-  { mx_element_set_border_bottom_color,"element-set-border-bottom-color!",2,2 }, 
+  { mx_element_set_border_bottom_color,"element-set-border-bottom-color!",2,2 },
   { mx_element_border_left_color,"element-border-left-color",1,1 },
-  { mx_element_set_border_left_color,"element-set-border-left-color!",2,2 }, 
+  { mx_element_set_border_left_color,"element-set-border-left-color!",2,2 },
   { mx_element_border_right_color,"element-border-right-color",1,1 },
-  { mx_element_set_border_right_color,"element-set-border-right-color!",2,2 }, 
+  { mx_element_set_border_right_color,"element-set-border-right-color!",2,2 },
   { mx_element_border_top_width,"element-border-top-width",1,1 },
-  { mx_element_set_border_top_width,"element-set-border-top-width!",2,2 }, 
+  { mx_element_set_border_top_width,"element-set-border-top-width!",2,2 },
   { mx_element_border_bottom_width,"element-border-bottom-width",1,1 },
-  { mx_element_set_border_bottom_width,"element-set-border-bottom-width!",2,2 }, 
+  { mx_element_set_border_bottom_width,"element-set-border-bottom-width!",2,2 },
   { mx_element_border_left_width,"element-border-left-width",1,1 },
-  { mx_element_set_border_left_width,"element-set-border-left-width!",2,2 }, 
+  { mx_element_set_border_left_width,"element-set-border-left-width!",2,2 },
   { mx_element_border_right_width,"element-border-right-width",1,1 },
-  { mx_element_set_border_right_width,"element-set-border-right-width!",2,2 }, 
+  { mx_element_set_border_right_width,"element-set-border-right-width!",2,2 },
   { mx_element_width,"element-width",1,1 },
-  { mx_element_set_width,"element-set-width!",2,2 }, 
+  { mx_element_set_width,"element-set-width!",2,2 },
   { mx_element_height,"element-height",1,1 },
-  { mx_element_set_height,"element-set-height!",2,2 }, 
+  { mx_element_set_height,"element-set-height!",2,2 },
   { mx_element_top,"element-top",1,1 },
-  { mx_element_set_top,"element-set-top!",2,2 }, 
+  { mx_element_set_top,"element-set-top!",2,2 },
   { mx_element_left,"element-left",1,1 },
-  { mx_element_set_left,"element-set-left!",2,2 }, 
+  { mx_element_set_left,"element-set-left!",2,2 },
   { mx_element_z_index,"element-z-index",1,1 },
-  { mx_element_set_z_index,"element-set-z-index!",2,2 }, 
-  
+  { mx_element_set_z_index,"element-set-z-index!",2,2 },
+
   // events
-  
+
   { mx_event_pred,"event?",1,1 },
   { mx_get_event,"get-event",1,1 },
   { mx_event_tag,"event-tag",1,1},
@@ -376,6 +376,7 @@ static MX_PRIM mxPrims[] = {
   { mx_event_error_pred,"event-error?",1,1},
   { mx_block_until_event,"block-until-event",1,1},
   { mx_process_win_events,"process-win-events",0,0},
+
 };
 
 BOOL isEmptyClsId(CLSID clsId) {
@@ -478,7 +479,7 @@ Scheme_Object *mx_com_add_ref(int argc,Scheme_Object **argv) {
   pIDispatch = MX_COM_OBJ_VAL(argv[0]);
 
   pIDispatch->AddRef();
-  
+
   return scheme_void;
 }
 
@@ -550,7 +551,7 @@ void scheme_release_browser(void *wb,void *hwndDestroy) {
 
   if (b->pIEventQueue) {
     b->pIEventQueue->Release();
-  } 
+  }
 
   if (hwndDestroy) {
     b->destroy = TRUE;
@@ -596,7 +597,7 @@ char *inv_kind_string(INVOKEKIND invKind) {
   case INVOKE_EVENT :
     return "event";
   }
-  
+
   return NULL;
 }
 
@@ -609,7 +610,7 @@ char *mx_fun_string(INVOKEKIND invKind) {
   case INVOKE_PROPERTYPUT :
     return "com-set-property!";
   }
-  
+
   return NULL;
 }
 
@@ -617,17 +618,17 @@ unsigned short getHashValue(IDispatch *pIDispatch,INVOKEKIND invKind,
 			    char *name) {
   char *p;
   unsigned short hashVal;
-  
+
   hashVal = (unsigned short)pIDispatch + invKind;
-  
+
   p = name;
   while (*p) {
     hashVal += (unsigned short)(*p);
     p++;
   }
-  
+
   return hashVal % TYPE_TBL_SIZE;
-  
+
 }
 
 void addTypeToTable(IDispatch *pIDispatch,char *name,
@@ -653,7 +654,7 @@ void addTypeToTable(IDispatch *pIDispatch,char *name,
   hashVal = getHashValue(pIDispatch,invKind,name);
 
   p = typeTable[hashVal];
-  
+
   if (p == NULL) {
     typeTable[hashVal] = pEntry;
   }
@@ -661,7 +662,7 @@ void addTypeToTable(IDispatch *pIDispatch,char *name,
     while (p->next != NULL) {
       p = p->next;
     }
-    p->next = pEntry; 
+    p->next = pEntry;
   }
 }
 
@@ -669,20 +670,20 @@ MX_TYPEDESC *lookupTypeDesc(IDispatch *pIDispatch,char *name,
 			    INVOKEKIND invKind) {
   unsigned short hashVal;
   MX_TYPE_TBL_ENTRY *p;
-  
+
   hashVal = getHashValue(pIDispatch,invKind,name);
-  
+
   p = typeTable[hashVal];
-  
+
   while (p) {
-    if (p->pIDispatch == pIDispatch && 
+    if (p->pIDispatch == pIDispatch &&
 	p->invKind == invKind &&
 	strcmp(p->name,name) == 0) {
       return p->pTypeDesc;
     }
     p = p->next;
   }
-  
+
   return NULL;
 }
 
@@ -695,7 +696,7 @@ void codedComError(char *s,HRESULT hr) {
     sprintf(finalBuff,"%s, code = %X: %s",s,hr,buff);
   }
   else {
-    sprintf(finalBuff,"%s, code = %X",s,hr);    
+    sprintf(finalBuff,"%s, code = %X",s,hr);
   }
 
   scheme_signal_error(finalBuff);
@@ -710,7 +711,7 @@ Scheme_Object *do_cocreate_instance(CLSID clsId,char *name,char *location,
   HRESULT hr;
   IDispatch *pIDispatch;
   MX_COM_Object *com_object;
-  
+
   if (stricmp(location,"local") == 0) {
     hr = CoCreateInstance(clsId,NULL,
 			  CLSCTX_LOCAL_SERVER | CLSCTX_INPROC_SERVER,
@@ -734,7 +735,7 @@ Scheme_Object *do_cocreate_instance(CLSID clsId,char *name,char *location,
 				  machine,len,
 				  machineBuff,
 				  sizeray(machineBuff) - 1);
-      machineBuff[len] = '\0';  
+      machineBuff[len] = '\0';
 
       if (count < len) {
 	scheme_signal_error("cocreate-instance-from-{coclass,progid}: "
@@ -742,20 +743,20 @@ Scheme_Object *do_cocreate_instance(CLSID clsId,char *name,char *location,
       }
 
       csi.pwszName = machineBuff;
-      
+
     }
 
     mqi.pIID = &IID_IDispatch;
     mqi.pItf = NULL;
-    mqi.hr = 0; 
+    mqi.hr = 0;
 
     hr = CoCreateInstanceEx(clsId,NULL,
 			    CLSCTX_REMOTE_SERVER,
 			    machine ? &csi : NULL,
 			    1,&mqi);
-			    
+
     pIDispatch = (IDispatch *)(mqi.pItf);
-  
+
     if (mqi.hr != S_OK || pIDispatch == NULL) {
       codedComError("cocreate-instance-from-{coclass,progid}: "
 		    "Unable to obtain IDispatch interface for remote server",
@@ -766,7 +767,7 @@ Scheme_Object *do_cocreate_instance(CLSID clsId,char *name,char *location,
   else {
     scheme_signal_error("cocreate-instance-from-{coclass,progid}: "
 			"Expected 'local, 'remote, or machine name for 2nd argument, "
-			"got '%s",location); 
+			"got '%s",location);
   }
 
   if (hr != ERROR_SUCCESS) {
@@ -777,8 +778,8 @@ Scheme_Object *do_cocreate_instance(CLSID clsId,char *name,char *location,
   }
 
   com_object = (MX_COM_Object *)scheme_malloc(sizeof(MX_COM_Object));
-  
-  com_object->type = mx_com_object_type; 
+
+  com_object->type = mx_com_object_type;
   com_object->pIDispatch = pIDispatch;
   com_object->pITypeInfo = NULL;
   com_object->clsId = clsId;
@@ -787,9 +788,9 @@ Scheme_Object *do_cocreate_instance(CLSID clsId,char *name,char *location,
   com_object->pISink = NULL;
   com_object->connectionCookie = (DWORD)0;
   com_object->released = FALSE;
-  
+
   mx_register_com_object((Scheme_Object *)com_object,pIDispatch);
-  
+
   return (Scheme_Object *)com_object;
 }
 
@@ -832,7 +833,7 @@ Scheme_Object *mx_cocreate_instance_from_coclass(int argc,Scheme_Object **argv) 
   clsId = getCLSIDFromCoClass(coclass);
 
   return do_cocreate_instance(clsId,coclass,location,machine);
-}  
+}
 
 CLSID schemeProgIdToCLSID(Scheme_Object *obj,char *fname) {
   HRESULT hr;
@@ -841,14 +842,14 @@ CLSID schemeProgIdToCLSID(Scheme_Object *obj,char *fname) {
   BSTR wideProgId;
 
   progId = SCHEME_STR_VAL(obj);
-  
+
   wideProgId = schemeStringToBSTR(obj);
 
   hr = CLSIDFromProgID(wideProgId,&clsId);
 
   SysFreeString(wideProgId);
 
-  if (hr != S_OK) {
+  if (FAILED (hr)) {
     char errBuff[2048];
     sprintf(errBuff,"%s: Error retrieving CLSID from ProgID %s",
 	    fname,progId);
@@ -875,7 +876,7 @@ Scheme_Object *mx_cocreate_instance_from_progid(int argc,
 
   return do_cocreate_instance(clsId,SCHEME_STR_VAL(argv[0]),
 			      location,machine);
-}  
+}
 
 Scheme_Object *mx_set_coclass(int argc,Scheme_Object **argv) {
   CLSID clsId;
@@ -910,7 +911,7 @@ Scheme_Object *mx_coclass(int argc,Scheme_Object **argv) {
   CLSID clsId,registryClsId;
   int count;
   Scheme_Object *retval;
-  
+
   if (MX_COM_OBJP(argv[0]) == FALSE) {
     scheme_wrong_type("coclass","com-object",0,argc,argv);
   }
@@ -922,46 +923,46 @@ Scheme_Object *mx_coclass(int argc,Scheme_Object **argv) {
   }
 
   // use CLSID to rummage through Registry to find coclass
-  
+
   result = RegOpenKeyEx(HKEY_CLASSES_ROOT,
 			"CLSID",
 			(DWORD)0,
 			KEY_READ,
 			&hkey);
-  
-  
+
+
   if (result != ERROR_SUCCESS) {
     scheme_signal_error("Error while searching Windows registry");
-  }	    
-  
+  }
+
   // enumerate subkeys until we find the one we want
-  
+
   // really, should call RegQueryInfoKey to find size needed for buffers
-  
+
   keyIndex = 0;
-  
+
   retval = NULL;
 
   while (1) {
-    
+
     // get next subkey
-    
+
     clsIdBufferSize = sizeof(clsIdBuffer);
-    
+
     result = RegEnumKeyEx(hkey,keyIndex++,
 			  clsIdBuffer,
 			  &clsIdBufferSize,
 			  0,NULL,NULL,
 			  &fileTime);
-    
+
     if (result == ERROR_NO_MORE_ITEMS) {
       break;
-    }		
-    
+    }
+
     if (result != ERROR_SUCCESS) {
       scheme_signal_error("Error enumerating subkeys in Windows registry");
     }
-    
+
     if (strlen(clsIdBuffer) != CLSIDLEN) { // not a CLSID -- bogus entry
       continue;
     }
@@ -969,13 +970,13 @@ Scheme_Object *mx_coclass(int argc,Scheme_Object **argv) {
     count = MultiByteToWideChar(CP_ACP,(DWORD)0,
 				clsIdBuffer,strlen(clsIdBuffer),
 				oleClsIdBuffer,sizeray(oleClsIdBuffer));
-	    
+
     if (count == 0) {
       scheme_signal_error("Error translating CLSID to Unicode");
     }
 
     oleClsIdBuffer[CLSIDLEN] = '\0';
-	    
+
     hr = CLSIDFromString(oleClsIdBuffer,&registryClsId);
 
     if (hr != NOERROR) {
@@ -985,21 +986,21 @@ Scheme_Object *mx_coclass(int argc,Scheme_Object **argv) {
     if (registryClsId != clsId) {
       continue;
     }
-      
+
     // open subkey
-    
+
     result = RegOpenKeyEx(hkey,clsIdBuffer,
 			  (DWORD)0,
 			  KEY_READ,&hsubkey);
-    
+
     if (result != ERROR_SUCCESS) {
       scheme_signal_error("coclass: Error obtaining coclass value");
-    }	    
-    
+    }
+
     dataBufferSize = sizeof(dataBuffer);
-    
+
     RegQueryValueEx(hsubkey,"",0,&dataType,dataBuffer,&dataBufferSize);
-    
+
     RegCloseKey(hsubkey);
 
     if (dataType == REG_SZ) {
@@ -1008,7 +1009,7 @@ Scheme_Object *mx_coclass(int argc,Scheme_Object **argv) {
     }
   }
 
-  RegCloseKey(hkey);  
+  RegCloseKey(hkey);
 
   if (retval == NULL) {
     scheme_signal_error("coclass: object's coclass not found in Registry");
@@ -1035,8 +1036,8 @@ Scheme_Object *mx_progid(int argc,Scheme_Object **argv) {
   }
 
   hr = ProgIDFromCLSID(clsId,&wideProgId);
-  
-  if (hr != S_OK) {
+
+  if (FAILED (hr)) {
     scheme_signal_error("progid: Error finding coclass");
   }
 
@@ -1087,14 +1088,14 @@ ITypeInfo *typeInfoFromComObject(MX_COM_Object *obj) {
   pIDispatch = obj->pIDispatch;
 
   pIDispatch->GetTypeInfoCount(&count);
-  
+
   if (count == 0) {
     scheme_signal_error("COM object does not expose type information");
   }
-  
+
   hr = pIDispatch->GetTypeInfo(0,LOCALE_SYSTEM_DEFAULT,&pITypeInfo);
-  
-  if (hr != S_OK || pITypeInfo == NULL) {
+
+  if (FAILED (hr) || pITypeInfo == NULL) {
     codedComError("Error getting COM type information",hr);
   }
 
@@ -1123,7 +1124,7 @@ Scheme_Object *mx_com_get_object_type(int argc,Scheme_Object **argv) {
   retval->clsId = obj->clsId;
 
   mx_register_simple_com_object((Scheme_Object *)retval,pITypeInfo);
-  
+
   return (Scheme_Object *)retval;
 }
 
@@ -1140,13 +1141,13 @@ BOOL typeInfoEq(ITypeInfo *pITypeInfo1,ITypeInfo *pITypeInfo2) {
 
   hr = pITypeInfo1->GetTypeAttr(&pTypeAttr1);
 
-  if (hr != S_OK || pTypeAttr1 == NULL) {
+  if (FAILED (hr) || pTypeAttr1 == NULL) {
     codedComError("Error getting type attributes",hr);
   }
 
   hr = pITypeInfo2->GetTypeAttr(&pTypeAttr2);
 
-  if (hr != S_OK || pTypeAttr2 == NULL) {
+  if (FAILED (hr) || pTypeAttr2 == NULL) {
     codedComError("Error getting type attributes",hr);
   }
 
@@ -1181,11 +1182,11 @@ Scheme_Object *mx_com_help(int argc,Scheme_Object **argv) {
   BSTR helpFileName;
   char buff[MAX_PATH];
   int len;
-  
+
   if (MX_COM_OBJP(argv[0]) == FALSE && MX_COM_TYPEP(argv[0]) == FALSE) {
     scheme_wrong_type("com-help","com-object or com-type",0,argc,argv);
   }
-  
+
   if (argc == 2 && SCHEME_STRINGP(argv[1]) == FALSE) {
     scheme_wrong_type("com-help","string",1,argc,argv);
   }
@@ -1199,27 +1200,27 @@ Scheme_Object *mx_com_help(int argc,Scheme_Object **argv) {
 
   hr = pITypeInfo->GetDocumentation(MEMBERID_NIL,NULL,NULL,NULL,
 				    &helpFileName);
-  
-  if (hr != S_OK) {
-    codedComError("Can't get help",hr); 
+
+  if (FAILED (hr)) {
+    codedComError("Can't get help",hr);
   }
   else if (helpFileName == NULL || wcscmp(helpFileName,L"") == 0) {
-    scheme_signal_error("No help available"); 
+    scheme_signal_error("No help available");
   }
-  
+
   WideCharToMultiByte(CP_ACP,(DWORD)0,helpFileName,SysStringLen(helpFileName),
 		      buff,sizeof(buff) - 1,
 		      NULL,NULL);
-  
+
   SysFreeString(helpFileName);
 
   buff[sizeof(buff)-1] = '\0';
-  
+
   len = strlen(buff);
-  
+
   if (stricmp(buff + len - 4,".CHM") == 0) {
     HWND hwnd;
-    
+
     if (argc >= 2) {
       hwnd = HtmlHelp(NULL,buff,
 		      HH_DISPLAY_INDEX,(DWORD)SCHEME_STR_VAL(argv[1]));
@@ -1227,7 +1228,7 @@ Scheme_Object *mx_com_help(int argc,Scheme_Object **argv) {
     else {
       hwnd = HtmlHelp(NULL,buff,HH_DISPLAY_TOPIC,0);
     }
-    
+
     if (hwnd) {
       SetForegroundWindow(hwnd);
     }
@@ -1243,7 +1244,7 @@ Scheme_Object *mx_com_help(int argc,Scheme_Object **argv) {
   else {
     scheme_signal_error("Unknown help file type: %s",buff);
   }
-  
+
   return scheme_void;
 }
 
@@ -1262,85 +1263,85 @@ void connectComObjectToEventSink(MX_COM_Object *obj) {
   ISink *pISink;
   DWORD cookie;
   TYPEATTR *pTypeAttr;
-  
+
   if (obj->pIConnectionPoint) {
     return;
   }
-  
+
   WaitForSingleObject(eventSinkMutex,INFINITE);
-  
+
   pIDispatch = obj->pIDispatch;
-  
-  hr = pIDispatch->QueryInterface(IID_IConnectionPointContainer,(void **)&pIConnectionPointContainer); 
-  
-  if (hr != S_OK || pIConnectionPointContainer == NULL) {
+
+  hr = pIDispatch->QueryInterface(IID_IConnectionPointContainer,(void **)&pIConnectionPointContainer);
+
+  if (FAILED (hr) || pIConnectionPointContainer == NULL) {
     signalCodedEventSinkError("cocreate-instance-from-{coclass,progid}: "
 			      "Unable to get COM object connection point "
 			      "container",hr);
   }
-  
+
   pITypeInfo = eventTypeInfoFromComObject(obj);
-  
+
   if (pITypeInfo == NULL) {
     ReleaseSemaphore(eventSinkMutex,1,NULL);
     scheme_signal_error("cocreate-instance-from-{coclass,progid}: "
 			"Unable to get type information for events");
   }
-  
+
   hr = pITypeInfo->GetTypeAttr(&pTypeAttr);
-  
-  if (hr != S_OK || pTypeAttr == NULL) {
+
+  if (FAILED (hr) || pTypeAttr == NULL) {
     signalCodedEventSinkError("cocreate-instance-from-{coclass,progid}: "
 			      "Unable to get type attributes for events",hr);
   }
-  
+
   hr = pIConnectionPointContainer->FindConnectionPoint(pTypeAttr->guid,&pIConnectionPoint);
-  
+
   pITypeInfo->ReleaseTypeAttr(pTypeAttr);
   pIConnectionPointContainer->Release();
-  
-  if (hr != S_OK || pIConnectionPoint == NULL) {
+
+  if (FAILED (hr) || pIConnectionPoint == NULL) {
     signalCodedEventSinkError("cocreate-instance-from-{coclass,progid}: "
 			      "Unable to find COM object connection point",hr);
   }
-  
+
   hr = CoCreateInstance(CLSID_Sink,NULL,CLSCTX_LOCAL_SERVER | CLSCTX_INPROC_SERVER,
 			IID_IUnknown,(void **)&pIUnknown);
-  
-  if (hr != S_OK || pIUnknown == NULL) {
+
+  if (FAILED (hr) || pIUnknown == NULL) {
     signalCodedEventSinkError("cocreate-instance-from-{coclass,progid}: "
 			      "Unable to create sink object",hr);
   }
-  
+
   hr = pIUnknown->QueryInterface(IID_ISink,(void **)&pISink);
-  
-  if (hr != S_OK || pISink == NULL) {
+
+  if (FAILED (hr) || pISink == NULL) {
     signalCodedEventSinkError("cocreate-instance-from-{coclass,progid}: "
 			      "Unable to find sink interface",hr);
   }
-  
+
   pISink->set_extension_table((int)scheme_extension_table); // COM won't take a function ptr
-  
+
   pISink->set_myssink_table((int)&myssink_table);
-  
+
   hr = pIConnectionPoint->Advise(pIUnknown,&cookie);
 
   pIUnknown->Release();
-  
-  if (hr != S_OK) {
+
+  if (FAILED (hr)) {
     signalCodedEventSinkError("cocreate-instance-from-{coclass,progid}: "
 			      "Unable to connect sink to connection point",hr);
   }
-  
+
   obj->pEventTypeInfo = pITypeInfo;
   obj->pIConnectionPoint = pIConnectionPoint;
   obj->connectionCookie = cookie;
   obj->pISink = pISink;
-  
+
   ReleaseSemaphore(eventSinkMutex,1,NULL);
 }
 
-FUNCDESC *getFuncDescForEvent(LPOLESTR name,ITypeInfo *pITypeInfo) {        
+FUNCDESC *getFuncDescForEvent(LPOLESTR name,ITypeInfo *pITypeInfo) {
   HRESULT hr;
   TYPEATTR *pTypeAttr;
   FUNCDESC *pFuncDesc;
@@ -1350,38 +1351,38 @@ FUNCDESC *getFuncDescForEvent(LPOLESTR name,ITypeInfo *pITypeInfo) {
   int i;
 
   hr = pITypeInfo->GetTypeAttr(&pTypeAttr);
-  
-  if (hr != S_OK || pTypeAttr == NULL) {
+
+  if (FAILED (hr) || pTypeAttr == NULL) {
     codedComError("Unable to get type attributes for events",hr);
   }
 
   numFuncDescs = pTypeAttr->cFuncs;
-  
+
   pITypeInfo->ReleaseTypeAttr(pTypeAttr);
-  
+
   for (i = 0; i < numFuncDescs; i++) {
-    
-    hr = pITypeInfo->GetFuncDesc(i,&pFuncDesc);		
-    
-    if (hr != S_OK) {
+
+    hr = pITypeInfo->GetFuncDesc(i,&pFuncDesc);
+
+    if (FAILED (hr)) {
       codedComError("Error getting event method type description",hr);
     }
-    
+
     // rely on name of event
-    
+
     hr = pITypeInfo->GetNames(pFuncDesc->memid,&bstr,1,&bstrCount);
-    
-    if (hr != S_OK) {
+
+    if (FAILED (hr)) {
       codedComError("Error getting event method name",hr);
     }
-    
+
     if (wcscmp(name,bstr) == 0) {
       SysFreeString(bstr);
       return pFuncDesc;
     }
-    
+
     SysFreeString(bstr);
-    
+
     pITypeInfo->ReleaseFuncDesc(pFuncDesc);
   }
 
@@ -1394,23 +1395,23 @@ Scheme_Object *mx_com_register_event_handler(int argc,Scheme_Object **argv) {
   ISink *pISink;
   FUNCDESC *pFuncDesc;
   BSTR unicodeName;
-  
+
   if (MX_COM_OBJP(argv[0]) == FALSE) {
     scheme_wrong_type("com-register-event-handler","com-object",0,argc,argv);
   }
-  
+
   if (SCHEME_STRINGP(argv[1]) == FALSE) {
     scheme_wrong_type("com-register-event-handler","string",1,argc,argv);
   }
-  
+
   if (SCHEME_PROCP(argv[2]) == FALSE) {
     scheme_wrong_type("com-register-event-handler","procedure",2,argc,argv);
   }
-  
+
   eventName = SCHEME_STR_VAL(argv[1]);
-  
+
   connectComObjectToEventSink((MX_COM_Object *)argv[0]);
-  
+
   pITypeInfo = MX_COM_OBJ_EVENTTYPEINFO(argv[0]);
   pISink = MX_COM_OBJ_EVENTSINK(argv[0]);
 
@@ -1419,8 +1420,8 @@ Scheme_Object *mx_com_register_event_handler(int argc,Scheme_Object **argv) {
   pFuncDesc = getFuncDescForEvent(unicodeName,pITypeInfo);
 
   SysFreeString(unicodeName);
-  
-  if (pFuncDesc == NULL) {				   
+
+  if (pFuncDesc == NULL) {
     scheme_signal_error("Can't find event %s in type description",eventName);
   }
 
@@ -1437,17 +1438,17 @@ Scheme_Object *mx_com_unregister_event_handler(int argc,Scheme_Object **argv) {
   ISink *pISink;
   FUNCDESC *pFuncDesc;
   BSTR unicodeName;
-  
+
   if (MX_COM_OBJP(argv[0]) == FALSE) {
     scheme_wrong_type("com-unregister-event-handler","com-object",0,argc,argv);
   }
-  
+
   if (SCHEME_STRINGP(argv[1]) == FALSE) {
     scheme_wrong_type("com-unregister-event-handler","string",1,argc,argv);
   }
-  
+
   eventName = SCHEME_STR_VAL(argv[1]);
-  
+
   pITypeInfo = MX_COM_OBJ_EVENTTYPEINFO(argv[0]);
 
   if (pITypeInfo == NULL) {
@@ -1459,26 +1460,28 @@ Scheme_Object *mx_com_unregister_event_handler(int argc,Scheme_Object **argv) {
   if (pISink == NULL) { // no events registered
     return scheme_void;
   }
-  
+
   unicodeName = schemeStringToBSTR(argv[1]);
 
   pFuncDesc = getFuncDescForEvent(unicodeName,pITypeInfo);
 
   SysFreeString(unicodeName);
 
-  if (pFuncDesc == NULL) {				   
+  if (pFuncDesc == NULL) {
     scheme_signal_error("Can't find event %s in type description",eventName);
   }
 
   pISink->unregister_handler(pFuncDesc->memid);
-  
+
   pITypeInfo->ReleaseFuncDesc(pFuncDesc);
-  
+
   return scheme_void;
 }
 
-MX_TYPEDESC *typeDescFromTypeInfo(char *name,INVOKEKIND invKind,
-				  ITypeInfo *pITypeInfo) {
+MX_TYPEDESC *typeDescFromTypeInfo (char *name,
+                                   INVOKEKIND invKind,
+                                   ITypeInfo *pITypeInfo)
+{
   HRESULT hr;
   TYPEATTR *pTypeAttr;
   FUNCDESC *pFuncDesc;
@@ -1493,84 +1496,82 @@ MX_TYPEDESC *typeDescFromTypeInfo(char *name,INVOKEKIND invKind,
   int i;
 
   unicodeName = stringToBSTR(name,strlen(name));
-  
+
   hr = pITypeInfo->GetTypeAttr(&pTypeAttr);
-  
-  if (hr != S_OK) {
+
+  if (FAILED (hr)) {
     codedComError("Error getting type attributes for function",hr);
   }
-  
+
   foundDesc = FALSE;
-  
+
   for (i = 0; i < pTypeAttr->cFuncs; i++) {
-    
-    hr = pITypeInfo->GetFuncDesc(i,&pFuncDesc);		
-    
-    if (hr != S_OK) {
+
+    hr = pITypeInfo->GetFuncDesc(i,&pFuncDesc);
+
+    if (FAILED (hr)) {
       codedComError("Error getting type description",hr);
     }
-    
+
     pITypeInfo->GetNames(pFuncDesc->memid,&bstr,1,&nameCount);
-    
+
     // see if this FUNCDESC is the one we want
-    
+
     if (wcscmp(bstr,unicodeName) == 0 &&
 	(invKind == INVOKE_EVENT || pFuncDesc->invkind == invKind)) {
-      
+
       foundDesc = TRUE;
-      descKind = funcDesc;			
+      descKind = funcDesc;
       SysFreeString(bstr);
       memID = pFuncDesc->memid;
-      
+
       break;
     }
-    
+
     // if not, throw it back
-    
+
     SysFreeString(bstr);
     pITypeInfo->ReleaseFuncDesc(pFuncDesc);
-    
+
   }
-  
+
   if (invKind == INVOKE_PROPERTYGET ||
       invKind == INVOKE_PROPERTYPUT ||
       invKind == INVOKE_PROPERTYPUTREF) {
-    
+
     for (i = 0; i < pTypeAttr->cVars; i++) {
-      hr = pITypeInfo->GetVarDesc(i,&pVarDesc);		
-      if (hr != S_OK) {
+      hr = pITypeInfo->GetVarDesc(i,&pVarDesc);
+      if (FAILED (hr)) {
 	codedComError("Error getting type description",hr);
       }
-      
+
       // see if this VARDESC is the one we want
-      
+
       pITypeInfo->GetNames(pVarDesc->memid,&bstr,1,&nameCount);
-      
+
       if (wcscmp(bstr,unicodeName)) {
 	foundDesc = TRUE;
 	descKind = varDesc;
 	memID = pVarDesc->memid;
-	
+
 	break;
       }
-      
+
       // if not, throw it back
-      
+
       pITypeInfo->ReleaseVarDesc(pVarDesc);
-      
+
     }
   }
-  
+
   SysFreeString(unicodeName);
-  
+
   pITypeInfo->ReleaseTypeAttr(pTypeAttr);
 
-  if (foundDesc == FALSE) {
-    scheme_signal_error("Error finding type description for \"%s\"",name);
-  }
-  
+  if (foundDesc == FALSE) return NULL;
+
   pTypeDesc = (MX_TYPEDESC *)scheme_malloc(sizeof(MX_TYPEDESC));
-  
+
   pTypeDesc->type = mx_com_typedesc_type;
   pTypeDesc->released = FALSE;
 
@@ -1596,28 +1597,28 @@ MX_TYPEDESC *typeDescFromTypeInfo(char *name,INVOKEKIND invKind,
 
   return pTypeDesc;
 }
-  
+
 MX_TYPEDESC *getMethodType(MX_COM_Object *obj,char *name,INVOKEKIND invKind) {
   IDispatch *pIDispatch;
   MX_TYPEDESC *pTypeDesc;
   ITypeInfo *pITypeInfo;
-  
+
   // need Unicode version of name to please ITypeInfo::GetIDsOfNames
   // note that we need string length + 1
-  
+
   pIDispatch = obj->pIDispatch;
-  
+
   // check in hash table to see if we already have the type information
-  
+
   pTypeDesc = lookupTypeDesc(pIDispatch,name,invKind);
-  
+
   if (pTypeDesc) {
     return pTypeDesc;
   }
-  
+
   if (invKind == INVOKE_EVENT) {
     pITypeInfo = eventTypeInfoFromComObject(obj);
-    
+
     if (pITypeInfo == NULL) {
       scheme_signal_error("Can't find event type information");
     }
@@ -1626,10 +1627,11 @@ MX_TYPEDESC *getMethodType(MX_COM_Object *obj,char *name,INVOKEKIND invKind) {
     pITypeInfo = typeInfoFromComObject(obj);
   }
 
-  pTypeDesc = typeDescFromTypeInfo(name,invKind,pITypeInfo);
-  
-  addTypeToTable(pIDispatch,name,invKind,pTypeDesc);
-  
+  pTypeDesc = typeDescFromTypeInfo (name, invKind, pITypeInfo);
+  // pTypeDesc may be NULL
+  if (pTypeDesc != NULL)
+      addTypeToTable(pIDispatch,name,invKind,pTypeDesc);
+
   return pTypeDesc;
 }
 
@@ -1667,34 +1669,34 @@ Scheme_Object *mx_do_get_methods(int argc,Scheme_Object **argv,INVOKEKIND invKin
   unsigned int len;
   unsigned int count;
   int i;
-  
+
   if (MX_COM_OBJP(argv[0]) == FALSE && MX_COM_TYPEP(argv[0]) == FALSE) {
     scheme_wrong_type("com-{methods,{get,set}-properties}","com-object or com-type",0,argc,argv);
   }
-  
+
   if (MX_COM_OBJP(argv[0])) {
     if (MX_COM_OBJ_VAL(argv[0]) == NULL) {
       scheme_signal_error("com-{methods,{get,set}-properties}: NULL COM object");
     }
     pITypeInfo = typeInfoFromComObject((MX_COM_Object *)argv[0]);
-  }  
+  }
   else {
     pITypeInfo = MX_COM_TYPE_VAL(argv[0]);
   }
 
   hr = pITypeInfo->GetTypeAttr(&pTypeAttr);
-  
-  if (hr != S_OK || pTypeAttr == NULL) {
+
+  if (FAILED (hr) || pTypeAttr == NULL) {
     codedComError("Error getting type attributes",hr);
   }
 
   retval = scheme_null;
-  
+
   // properties can appear in list of functions
   // or in list of variables
-  
+
   for (i = 0; i < pTypeAttr->cFuncs; i++) {
-    pITypeInfo->GetFuncDesc(i,&pFuncDesc);		
+    pITypeInfo->GetFuncDesc(i,&pFuncDesc);
     if (pFuncDesc->invkind == invKind) {
       pITypeInfo->GetNames(pFuncDesc->memid,&bstr,1,&count);
       len = SysStringLen(bstr);
@@ -1710,13 +1712,13 @@ Scheme_Object *mx_do_get_methods(int argc,Scheme_Object **argv,INVOKEKIND invKin
     }
     pITypeInfo->ReleaseFuncDesc(pFuncDesc);
   }
-  
+
   if (invKind == INVOKE_FUNC) { // done, if not a property
     return retval;
   }
-  
+
   for (i = 0; i < pTypeAttr->cVars; i++) {
-    pITypeInfo->GetVarDesc(i,&pVarDesc);		
+    pITypeInfo->GetVarDesc(i,&pVarDesc);
     pITypeInfo->GetNames(pVarDesc->memid,&bstr,1,&count);
     len = SysStringLen(bstr);
     WideCharToMultiByte(CP_ACP,(DWORD)0,bstr,len,
@@ -1726,7 +1728,7 @@ Scheme_Object *mx_do_get_methods(int argc,Scheme_Object **argv,INVOKEKIND invKin
     retval = scheme_make_pair(scheme_make_string(buff),retval);
     SysFreeString(bstr);
     pITypeInfo->ReleaseVarDesc(pVarDesc);
-  } 
+  }
 
   return retval;
 }
@@ -1760,7 +1762,7 @@ ITypeInfo *coclassTypeInfoFromTypeInfo(ITypeInfo *pITypeInfo,CLSID clsId) {
 
   hr = pITypeInfo->GetContainingTypeLib(&pITypeLib,&ndx);
 
-  if (hr != S_OK) {
+  if (FAILED (hr)) {
     scheme_signal_error("Can't get dispatch type library");
   }
 
@@ -1771,15 +1773,15 @@ ITypeInfo *coclassTypeInfoFromTypeInfo(ITypeInfo *pITypeInfo,CLSID clsId) {
 
     pITypeLib->Release();
 
-    if (hr != S_OK || pCoclassTypeInfo == NULL) {
+    if (FAILED (hr) || pCoclassTypeInfo == NULL) {
       codedComError("Error getting type info for coclass",hr);
       return NULL;
     }
-  
-    return pCoclassTypeInfo;
-  } 
 
-  // if no CLSID, search for coclass implementing supplied 
+    return pCoclassTypeInfo;
+  }
+
+  // if no CLSID, search for coclass implementing supplied
   // interface
 
   typeInfoCount = pITypeLib->GetTypeInfoCount();
@@ -1789,42 +1791,42 @@ ITypeInfo *coclassTypeInfoFromTypeInfo(ITypeInfo *pITypeInfo,CLSID clsId) {
   // check for ambiguity
 
   for (i = 0; i < typeInfoCount; i++) {
-    
+
     pITypeLib->GetTypeInfoType(i,&typeKind);
 
     if (typeKind == TKIND_COCLASS) {
 
       hr = pITypeLib->GetTypeInfo(i,&pCoclassTypeInfo);
 
-      if (hr != S_OK || pCoclassTypeInfo == NULL) {
+      if (FAILED (hr) || pCoclassTypeInfo == NULL) {
 	pITypeLib->Release();
 	codedComError("Error getting type info for coclass",hr);
       }
 
       hr = pCoclassTypeInfo->GetTypeAttr(&pTypeAttr);
-	
-      if (hr != S_OK || pTypeAttr == NULL) {
+
+      if (FAILED (hr) || pTypeAttr == NULL) {
 	pCoclassTypeInfo->Release();
 	pITypeLib->Release();
 	codedComError("Error getting coclass type attributes",hr);
       }
-  
-      typeCount = pTypeAttr->cImplTypes; 
-  
+
+      typeCount = pTypeAttr->cImplTypes;
+
       pCoclassTypeInfo->ReleaseTypeAttr(pTypeAttr);
-  
+
       for (j = 0; j < typeCount; j++) {
 	hr = pCoclassTypeInfo->GetRefTypeOfImplType(j,&hRefType);
-	  
-	if (hr != S_OK) {
+
+	if (FAILED (hr)) {
 	  pCoclassTypeInfo->Release();
 	  pITypeLib->Release();
 	  codedComError("Error retrieving type info handle",hr);
 	}
-  
+
 	hr = pCoclassTypeInfo->GetRefTypeInfo(hRefType,&pCandidateTypeInfo);
 
-	if (hr != S_OK || pCandidateTypeInfo == NULL) {
+	if (FAILED (hr) || pCandidateTypeInfo == NULL) {
 	  pCoclassTypeInfo->Release();
 	  pITypeLib->Release();
 	  codedComError("Error retrieving candidate type info",hr);
@@ -1858,7 +1860,7 @@ ITypeInfo *coclassTypeInfoFromTypeInfo(ITypeInfo *pITypeInfo,CLSID clsId) {
 
   pITypeLib->Release();
 
-  if (hr != S_OK || pCoclassTypeInfo == NULL) {
+  if (FAILED (hr) || pCoclassTypeInfo == NULL) {
     codedComError("Error getting type info for coclass",hr);
   }
 
@@ -1874,49 +1876,49 @@ ITypeInfo *eventTypeInfoFromCoclassTypeInfo(ITypeInfo *pCoclassTypeInfo) {
   UINT eventTypeInfoNdx;
   int typeFlags;
   UINT i;
- 
+
   hr = pCoclassTypeInfo->GetTypeAttr(&pTypeAttr);
-  
-  if (hr != S_OK || pTypeAttr == NULL) {
+
+  if (FAILED (hr) || pTypeAttr == NULL) {
     codedComError("Error getting type attributes",hr);
   }
-  
-  typeCount = pTypeAttr->cImplTypes; 
-  
+
+  typeCount = pTypeAttr->cImplTypes;
+
   pCoclassTypeInfo->ReleaseTypeAttr(pTypeAttr);
-  
+
   eventTypeInfoNdx = -1;
-  
+
   for (i = 0; i < typeCount; i++) {
-    
+
     hr = pCoclassTypeInfo->GetImplTypeFlags(i,&typeFlags);
-    
-    if (hr != S_OK) {
+
+    if (FAILED (hr)) {
       codedComError("Error retrieving type flags",hr);
     }
-    
+
     // look for [source, default]
-    
+
     if ((typeFlags & IMPLTYPEFLAG_FSOURCE) &&
 	(typeFlags & IMPLTYPEFLAG_FDEFAULT)) {
       eventTypeInfoNdx = i;
       break;
     }
   }
-  
+
   if (eventTypeInfoNdx == -1) {
     return NULL;
   }
-  
+
   hr = pCoclassTypeInfo->GetRefTypeOfImplType(eventTypeInfoNdx,&hRefType);
-  
-  if (hr != S_OK) {
+
+  if (FAILED (hr)) {
     codedComError("Error retrieving type info handle",hr);
   }
-  
+
   hr = pCoclassTypeInfo->GetRefTypeInfo(hRefType,&pEventTypeInfo);
 
-  if (hr != S_OK) {
+  if (FAILED (hr)) {
     codedComError("Error retrieving event type info",hr);
   }
 
@@ -1930,23 +1932,23 @@ ITypeInfo *eventTypeInfoFromComObject(MX_COM_Object *obj) {
   IProvideClassInfo *pIProvideClassInfo;
 
   pEventTypeInfo = obj->pEventTypeInfo;
-  
+
   if (pEventTypeInfo) {
     return pEventTypeInfo;
   }
-  
+
   pIDispatch = obj->pIDispatch;
 
   /* preferred mechanism for finding coclass ITypeInfo */
 
   hr = pIDispatch->QueryInterface(IID_IProvideClassInfo,
 				  (void **)&pIProvideClassInfo);
-  
-  if (hr == S_OK && pIProvideClassInfo != NULL) {
+
+  if (SUCCEEDED (hr) && pIProvideClassInfo != NULL) {
 
     hr = pIProvideClassInfo->GetClassInfo(&pCoclassTypeInfo);
 
-    if (hr != S_OK || pCoclassTypeInfo == NULL) {
+    if (FAILED (hr) || pCoclassTypeInfo == NULL) {
       scheme_signal_error("Error getting coclass type information");
     }
   }
@@ -1957,7 +1959,7 @@ ITypeInfo *eventTypeInfoFromComObject(MX_COM_Object *obj) {
 
     hr = pIDispatch->GetTypeInfo(0,LOCALE_SYSTEM_DEFAULT,&pDispatchTypeInfo);
 
-    if (hr != S_OK) {
+    if (FAILED (hr)) {
       codedComError("Can't get dispatch type information",hr);
     }
 
@@ -1978,15 +1980,15 @@ ITypeInfo *eventTypeInfoFromComObject(MX_COM_Object *obj) {
   // event type info is one of the "implemented" interfaces
 
   pEventTypeInfo = eventTypeInfoFromCoclassTypeInfo(pCoclassTypeInfo);
- 
+
   pCoclassTypeInfo->Release();
-  
+
   if (pEventTypeInfo == NULL) {
     scheme_signal_error("Error retrieving event type info");
   }
-  
+
   obj->pEventTypeInfo = pEventTypeInfo;
-  
+
   return pEventTypeInfo;
 }
 
@@ -2004,13 +2006,13 @@ ITypeInfo *eventTypeInfoFromComType(MX_COM_Type *obj) {
   // event type info is one of the "implemented" interfaces
 
   pEventTypeInfo = eventTypeInfoFromCoclassTypeInfo(pCoclassTypeInfo);
- 
+
   pCoclassTypeInfo->Release();
-  
+
   if (pEventTypeInfo == NULL) {
     scheme_signal_error("Error retrieving event type info");
   }
-  
+
   return pEventTypeInfo;
 }
 
@@ -2025,7 +2027,7 @@ Scheme_Object *mx_com_events(int argc,Scheme_Object **argv) {
   BSTR bstr;
   unsigned int len;
   UINT i;
-  
+
   if (MX_COM_OBJP(argv[0]) == FALSE && MX_COM_TYPEP(argv[0]) == FALSE) {
     scheme_wrong_type("com-events","com-object or com-type",0,argc,argv);
   }
@@ -2035,7 +2037,7 @@ Scheme_Object *mx_com_events(int argc,Scheme_Object **argv) {
   }
 
   // query for outbound interface info
-  
+
   if (MX_COM_OBJP(argv[0])) {
     pEventTypeInfo = eventTypeInfoFromComObject((MX_COM_Object *)argv[0]);
   }
@@ -2046,17 +2048,17 @@ Scheme_Object *mx_com_events(int argc,Scheme_Object **argv) {
   if (pEventTypeInfo == NULL) {
     scheme_signal_error("Can't find event type information");
   }
-  
+
   hr = pEventTypeInfo->GetTypeAttr(&pEventTypeAttr);
-  
-  if (hr != S_OK || pEventTypeAttr == NULL) {
+
+  if (FAILED (hr) || pEventTypeAttr == NULL) {
     codedComError("Error retrieving event type attributes",hr);
   }
-  
+
   retval = scheme_null;
-  
+
   for (i = 0; i < pEventTypeAttr->cFuncs; i++) {
-    pEventTypeInfo->GetFuncDesc(i,&pFuncDesc);		
+    pEventTypeInfo->GetFuncDesc(i,&pFuncDesc);
     pEventTypeInfo->GetNames(pFuncDesc->memid,&bstr,1,&nameCount);
     len = SysStringLen(bstr);
     WideCharToMultiByte(CP_ACP,(DWORD)0,bstr,len,
@@ -2066,32 +2068,32 @@ Scheme_Object *mx_com_events(int argc,Scheme_Object **argv) {
     retval = scheme_make_pair(scheme_make_string(buff),retval);
     SysFreeString(bstr);
   }
-  
+
   pEventTypeInfo->ReleaseFuncDesc(pFuncDesc);
   pEventTypeInfo->ReleaseTypeAttr(pEventTypeAttr);
-  
+
   return retval;
 }
 
 
 VARTYPE getVarTypeFromElemDesc(ELEMDESC *pElemDesc) {
   unsigned short flags;
-  
+
   flags = pElemDesc->paramdesc.wParamFlags;
-  
+
   if ((flags & PARAMFLAG_FOPT) && (flags & PARAMFLAG_FHASDEFAULT))  {
-    
+
     // use type of default value
-    
+
     return pElemDesc->paramdesc.pparamdescex->varDefaultValue.vt;
   }
-  
+
   if (pElemDesc->tdesc.vt == VT_PTR) {
     return pElemDesc->tdesc.lptdesc->vt | VT_BYREF;
   }
-  
+
   return pElemDesc->tdesc.vt;
-  
+
 }
 
 Scheme_Object *elemDescToSchemeType(ELEMDESC *pElemDesc,BOOL ignoreByRef,BOOL isOpt) {
@@ -2099,186 +2101,200 @@ Scheme_Object *elemDescToSchemeType(ELEMDESC *pElemDesc,BOOL ignoreByRef,BOOL is
   char *s;
   BOOL isBox;
   VARTYPE vt;
-  
+
   vt = getVarTypeFromElemDesc(pElemDesc);
-  
+
   if (ignoreByRef) {
     vt &= ~VT_BYREF;
   }
-  
+
   isBox = FALSE;
-  
+
   switch(vt) {
-    
+
   case VT_HRESULT :
   case VT_NULL :
-    
+
     s = "void";
     break;
-    
+
   case VT_UI1 :
-    
+
     s = "char";
     break;
-    
+
   case VT_UI1 | VT_BYREF :
-    
+
     s = "char";
     isBox = TRUE;
     break;
-    
+
   case VT_I2 :
-    
+
     s = "short-int";
     break;
-    
+
   case VT_I2 + VT_BYREF :
-    
+
     s = "short-int";
     isBox = TRUE;
     break;
-    
+
   case VT_I4 :
   case VT_INT :
-    
+
     s = "int";
     break;
-    
+
   case VT_I4 | VT_BYREF:
   case VT_INT | VT_BYREF:
-    
+
     s = "int";
     isBox = TRUE;
     break;
-    
+
   case VT_R4 :
-    
+
     s = "float";
     break;
-    
+
   case VT_R4 | VT_BYREF :
-    
+
     s = "float";
     isBox = TRUE;
     break;
-    
+
   case VT_R8 :
-    
+
     s = "double";
     break;
-    
+
   case VT_R8 | VT_BYREF :
-    
+
     s = "double";
     isBox = TRUE;
     break;
-    
+
   case VT_BSTR :
-    
+
     s = "string";
     break;
-    
+
   case VT_BSTR | VT_BYREF :
-    
+
     s = "string";
     isBox = TRUE;
     break;
-    
+
   case VT_CY :
-    
+
     s = "mx-currency";
     break;
-    
+
   case VT_CY | VT_BYREF :
-    
+
     s = "mx-currency";
     isBox = TRUE;
     break;
-    
+
   case VT_DATE :
-    
+
     s = "mx-date";
     break;
-    
+
   case VT_DATE | VT_BYREF :
-    
+
     s = "mx-date";
     isBox = TRUE;
     break;
-    
+
   case VT_BOOL :
-    
+
     s = "boolean";
     break;
-    
+
   case VT_BOOL | VT_BYREF :
-    
+
     s = "boolean";
     isBox = FALSE;
     break;
-    
+
   case VT_ERROR :
-    
+
     s = "mx-scode";
     break;
-    
+
   case VT_ERROR | VT_BYREF:
-    
+
     s = "mx-scode";
     isBox = TRUE;
     break;
-    
+
   case VT_UNKNOWN :
-    
+
     s = "mx-unknown-com-object";
     break;
-    
+
   case VT_UNKNOWN | VT_BYREF :
-    
+
     s = "mx-unknown-com-object";
     isBox = TRUE;
     break;
-    
+
   case VT_DISPATCH :
-    
+
     s = "com-object";
     break;
-    
+
   case VT_DISPATCH | VT_BYREF :
-    
+
     s = "com-object";
     isBox = TRUE;
     break;
-    
-  case VT_VARIANT : 
-    
+
+  case VT_VARIANT :
+
     s = "mx-any";
     break;
-    
-  case VT_VARIANT | VT_BYREF : 
-    
+
+  case VT_VARIANT | VT_BYREF :
+
     s = "mx-any";
     isBox = TRUE;
     break;
-    
+
   case VT_USERDEFINED :
-    
-    s = "user-defined";
+    // Reporting this as `user-defined' is sure to confuse somebody.
+    // The convention is that these are ENUMs that the caller and the 
+    // callee have agreed upon.  For our purposes, they will be INTs,
+    // but we'll report them as an enumeration.
+    // s = "user-defined";
+    s = "com-enumeration";
+    break;
+
+  case VT_USERDEFINED | VT_BYREF:
+    // Reporting this as `user-defined-box' is sure to confuse somebody.
+    // The convention is that these represent specific COM interfaces
+    // that the caller and callee have agreed upon.  For our purposes,
+    // it is an IUnknown pointer.
+    // s = "user-defined";
+    // isBox = TRUE;
+    s = "mx-unknown-com-object";
     break;
 
   case VT_VOID :
     s = "void";
     break;
-    
+
   default :
-    
-    { 
+
+    {
       char defaultBuff[32];
       sprintf(defaultBuff,"COM-0x%X",vt);
       return scheme_intern_symbol(defaultBuff);
     }
   }
-  
+
   if (isBox) {
     if (isOpt) {
       sprintf(buff,"%s-box-opt",s);
@@ -2295,7 +2311,7 @@ Scheme_Object *elemDescToSchemeType(ELEMDESC *pElemDesc,BOOL ignoreByRef,BOOL is
       strcpy(buff,s);
     }
   }
-  
+
   return scheme_intern_exact_symbol(buff,strlen(buff));
 }
 
@@ -2303,9 +2319,9 @@ Scheme_Object *elemDescToSchemeType(ELEMDESC *pElemDesc,BOOL ignoreByRef,BOOL is
 Scheme_Object *mx_make_function_type(Scheme_Object *paramTypes,
 				     Scheme_Object *returnType) {
   Scheme_Object *arrow;
-  
+
   arrow = scheme_intern_symbol("->");
-  
+
   return scheme_append(paramTypes,
 		       scheme_make_pair(arrow,
 					scheme_make_pair(returnType,
@@ -2314,22 +2330,22 @@ Scheme_Object *mx_make_function_type(Scheme_Object *paramTypes,
 
 BOOL isDefaultParam(FUNCDESC *pFuncDesc,short int i) {
   unsigned short flags;
-  
+
   if (pFuncDesc->lprgelemdescParam == NULL) {
     return FALSE;
   }
-  
+
   flags = pFuncDesc->lprgelemdescParam[i].paramdesc.wParamFlags;
   return ((flags & PARAMFLAG_FOPT) && (flags & PARAMFLAG_FHASDEFAULT));
 }
 
 BOOL isOptionalParam(FUNCDESC *pFuncDesc,short int i) {
   unsigned short flags;
-  
+
   if (pFuncDesc->lprgelemdescParam == NULL) {
     return FALSE;
   }
-  
+
   flags = pFuncDesc->lprgelemdescParam[i].paramdesc.wParamFlags;
   return (flags & PARAMFLAG_FOPT);
 }
@@ -2337,16 +2353,16 @@ BOOL isOptionalParam(FUNCDESC *pFuncDesc,short int i) {
 short getOptParamCount(FUNCDESC *pFuncDesc,short hi) {
   short i;
   short numOptParams;
-  
+
   numOptParams = 0;
-  
-  for (i = hi; i >= 0; i--) { 
+
+  for (i = hi; i >= 0; i--) {
     if (isOptionalParam(pFuncDesc,i)) {
       numOptParams++;
     }
   }
   return numOptParams;
-}	
+}
 
 Scheme_Object *mx_do_get_method_type(int argc,Scheme_Object **argv,
 				     INVOKEKIND invKind) {
@@ -2370,17 +2386,17 @@ Scheme_Object *mx_do_get_method_type(int argc,Scheme_Object **argv,
   if (SCHEME_STRINGP(argv[1]) == FALSE) {
     scheme_wrong_type("com-method-type","string",1,argc,argv);
   }
-  
+
   if (MX_COM_OBJ_VAL(argv[0]) == NULL) {
     scheme_signal_error("NULL COM object");
   }
-  
+
   name = SCHEME_STR_VAL(argv[1]);
 
   if (invKind == INVOKE_FUNC && isDispatchName(name)) {
     scheme_signal_error("com-method-type: IDispatch methods not available");
   }
-  
+
   if (MX_COM_OBJP(argv[0])) {
     pTypeDesc = getMethodType((MX_COM_Object *)argv[0],name,invKind);
   }
@@ -2393,60 +2409,62 @@ Scheme_Object *mx_do_get_method_type(int argc,Scheme_Object **argv,
     }
     pTypeDesc = typeDescFromTypeInfo(name,invKind,pITypeInfo);
   }
-  
+  // pTypeDesc may be null if there is no type info.
+  if (pTypeDesc == NULL) return scheme_false;
+
   if (pTypeDesc->descKind == funcDesc) {
     pFuncDesc = pTypeDesc->pFuncDesc;
-    
+
     paramTypes = scheme_null;
-    
+
     numActualParams = pFuncDesc->cParams;
-    
+
     if (pFuncDesc->cParamsOpt == -1) { // all args > pFuncDesc->cParams - 1 get packaged into SAFEARRAY
-      
+
       // this branch is untested
-      
+
       lastParamIsRetval = FALSE;
       paramTypes = scheme_make_pair(scheme_intern_symbol("..."),paramTypes);
-      for (i = numActualParams - 1; i >= 0; i--) { 
+      for (i = numActualParams - 1; i >= 0; i--) {
 	s = elemDescToSchemeType(&pFuncDesc->lprgelemdescParam[i],FALSE,FALSE);
 	paramTypes = scheme_make_pair(s,paramTypes);
       }
     }
     else {
-      
-      if (numActualParams > 0 && 
+
+      if (numActualParams > 0 &&
 	  (invKind == INVOKE_FUNC || invKind == INVOKE_PROPERTYGET)) {
-	lastParamIsRetval = 
+	lastParamIsRetval =
 	  (pFuncDesc->lprgelemdescParam[numActualParams-1].paramdesc.wParamFlags & PARAMFLAG_FRETVAL);
       }
       else {
 	lastParamIsRetval = FALSE;
       }
-      
+
       if (lastParamIsRetval) {
 	hiBound = numActualParams - 2;
       }
       else {
 	hiBound = numActualParams - 1;
       }
-      
+
       // parameters that are optional with a default value in IDL are not
       // counted in pFuncDesc->cParamsOpt, so look for default bit flag
-      
+
       numOptParams = getOptParamCount(pFuncDesc,hiBound);
-      
+
       firstOptArg = hiBound - numOptParams + 1;
-      
-      for (i = hiBound; i >= 0; i--) { 
+
+      for (i = hiBound; i >= 0; i--) {
 	s = elemDescToSchemeType(&pFuncDesc->lprgelemdescParam[i],FALSE,i >= firstOptArg);
 	paramTypes = scheme_make_pair(s,paramTypes);
       }
     }
   }
-  
-  // if not a function type, distinguish varDesc's 
+
+  // if not a function type, distinguish varDesc's
   // by invKind
-  
+
   else if (invKind == INVOKE_PROPERTYGET) {
     pVarDesc = pTypeDesc->pVarDesc;
     paramTypes = scheme_null;
@@ -2454,40 +2472,40 @@ Scheme_Object *mx_do_get_method_type(int argc,Scheme_Object **argv,
   }
   else if (invKind == INVOKE_PROPERTYPUT) {
     pVarDesc = pTypeDesc->pVarDesc;
-    paramTypes = 
+    paramTypes =
       scheme_make_pair(elemDescToSchemeType(&pVarDesc->elemdescVar,FALSE,FALSE),
 		       scheme_null);
     numActualParams = 1;
   }
-  
+
   switch(invKind) {
-    
+
   case INVOKE_FUNC :
-    
+
     // if final parameter is marked as retval, use its type
-    
+
     if (lastParamIsRetval) {
       returnType = elemDescToSchemeType(&pFuncDesc->lprgelemdescParam[numActualParams-1],TRUE,FALSE);
     }
     else {
       returnType = elemDescToSchemeType(&pFuncDesc->elemdescFunc,TRUE,FALSE);
     }
-    
+
     break;
-    
+
   case INVOKE_EVENT :
   case INVOKE_PROPERTYPUT :
-    
+
     returnType = scheme_intern_symbol("void");
-    
+
     break;
-    
+
   case INVOKE_PROPERTYGET :
-    
+
     // pTypeDesc->descKind may be either funcDesc or varDesc
-    
+
     if (pTypeDesc->descKind == funcDesc) {
-      
+
       if (lastParamIsRetval == FALSE || pFuncDesc->cParams == 0) {
 	returnType = elemDescToSchemeType(&pFuncDesc->elemdescFunc,TRUE,FALSE);
       }
@@ -2498,12 +2516,12 @@ Scheme_Object *mx_do_get_method_type(int argc,Scheme_Object **argv,
     else { // pTypeDesc->descKind == varDesc
       returnType = elemDescToSchemeType(&pVarDesc->elemdescVar,TRUE,FALSE);
     }
-    
+
     break;
   }
 
   return mx_make_function_type(paramTypes,returnType);
-  
+
 }
 
 
@@ -2527,78 +2545,77 @@ BOOL schemeValueFitsVarType(Scheme_Object *val,VARTYPE vt) {
   long int longInt;
 
   switch (vt) {
-    
+
   case VT_NULL :
-    
+
     return SCHEME_VOIDP(val);
-    
+
   case VT_UI1 :
-    
+
     return SCHEME_CHARP(val);
-    
+
   case VT_I2 :
-    
-    return SCHEME_INTP(val) && 
-      scheme_get_int_val(val,&longInt) && 
+
+    return SCHEME_INTP(val) &&
+      scheme_get_int_val(val,&longInt) &&
       longInt <= SHRT_MAX && longInt >= SHRT_MIN;
-    
+
   case VT_I4 :
   case VT_INT :
-    
-    return SCHEME_EXACT_INTEGERP(val) && 
+
+    return SCHEME_EXACT_INTEGERP(val) &&
       scheme_get_int_val(val,&longInt);
-    
+
   case VT_R4 :
-    
-    return SCHEME_FLTP(val) || 
+
+    return SCHEME_FLTP(val) ||
       (SCHEME_DBLP(val) &&
        SCHEME_DBL_VAL(val) >= FLT_MIN &&
        SCHEME_DBL_VAL(val) <= FLT_MAX);
-    
+
   case VT_R8 :
-    
+
     return SCHEME_DBLP(val);
-    
+
   case VT_BSTR :
-    
+
     return SCHEME_STRINGP(val);
-    
+
   case VT_CY :
-    
+
     return MX_CYP(val);
-    
+
   case VT_DATE :
-    
+
     return MX_DATEP(val);
-    
+
   case VT_BOOL :
-    
+
     return TRUE; // ain't Scheme great
-    
+
   case VT_ERROR :
-    
+
     return MX_SCODEP(val);
-    
+
   case VT_UNKNOWN :
-    
+
     return MX_IUNKNOWNP(val);
-    
+
   case VT_DISPATCH :
-    
+
     return MX_COM_OBJP(val);
-    
+
   case VT_VARIANT : // we can package anything into a VARIANTARG
-    
+
     return TRUE;
-    
-  case VT_USERDEFINED : 
-    
+
+  case VT_USERDEFINED :
     return TRUE;
-    
+
   default :
-    
+
     return FALSE;
-    
+
   }
 }
 
@@ -2608,19 +2625,19 @@ BOOL subArrayFitsVarType(Scheme_Object *val,
 			 VARTYPE vt) {
   Scheme_Object **els;
   unsigned long len;
-  
+
   if (SCHEME_VECTORP(val) == FALSE) {
     return FALSE;
   }
-  
+
   len = SCHEME_VEC_SIZE(val);
-  
+
   if (len != bounds->cElements) {
     return FALSE;
   }
-  
+
   els = SCHEME_VEC_ELS(val);
-  
+
   if (numDims == 1) { // innermost vector
     for (unsigned long i = 0; i < len; i++) {
       if (schemeValueFitsVarType(els[i],vt) == FALSE) {
@@ -2630,23 +2647,23 @@ BOOL subArrayFitsVarType(Scheme_Object *val,
   }
   else {
     for (unsigned long i = 0; i < len; i++) {
-      
+
       // recursion, the programmer's best friend
-      
+
       if (subArrayFitsVarType(els[i],numDims - 1,bounds + 1,vt) == FALSE) {
 	return FALSE;
       }
-    } 
+    }
   }
-  
+
   return TRUE;
 }
 
 BOOL schemeValueFitsElemDesc(Scheme_Object *val,ELEMDESC *pElemDesc) {
   unsigned short flags;
-  
+
   // if default available, check value has appropriate type
-  
+
   flags = pElemDesc->paramdesc.wParamFlags;
   if (flags & PARAMFLAG_FOPT) {
     if (val == mx_omit_obj) {
@@ -2656,30 +2673,30 @@ BOOL schemeValueFitsElemDesc(Scheme_Object *val,ELEMDESC *pElemDesc) {
       return schemeValueFitsVarType(val,pElemDesc->paramdesc.pparamdescex->varDefaultValue.vt);
     }
   }
-  
-  // if array, check we have a vector of proper dimension and contained types 
-  
+
+  // if array, check we have a vector of proper dimension and contained types
+
   if (pElemDesc->tdesc.vt & VT_ARRAY) {
     return subArrayFitsVarType(val,
 			       pElemDesc->tdesc.lpadesc->cDims,
 			       pElemDesc->tdesc.lpadesc->rgbounds,
 			       pElemDesc->tdesc.lpadesc->tdescElem.vt);
-    
+
   }
-  
-  
+
+
   // if box, check the contained value
-  
+
   if (pElemDesc->tdesc.vt == VT_PTR) {
-    if (SCHEME_BOXP(val) == FALSE) {
-      return FALSE;
-    }
-    
-    return schemeValueFitsVarType(SCHEME_BOX_VAL(val),pElemDesc->tdesc.lptdesc->vt);
-  }
-  
+      // A VT_PTR to a VT_USERDEFINED isn't a box, it's
+      // an IUnknown.
+      return (pElemDesc->tdesc.lptdesc->vt == VT_USERDEFINED)
+          ? (MX_COM_OBJP (val) || MX_IUNKNOWNP (val))
+          : (SCHEME_BOXP (val)
+             && schemeValueFitsVarType(SCHEME_BOX_VAL(val),pElemDesc->tdesc.lptdesc->vt));
+      }
+
   // not array or box or default value
-  
   return schemeValueFitsVarType(val,pElemDesc->tdesc.vt);
 }
 
@@ -2688,25 +2705,25 @@ VARIANT_BOOL schemeValToBool(Scheme_Object *val) {
 }
 
 VARTYPE schemeValueToVarType(Scheme_Object *obj) {
-  
+
   // test for global constants
-  
+
   if (SCHEME_FALSEP(obj)) {
     return VT_BOOL;
   }
-  
+
   if (SCHEME_VOIDP(obj)) {
     return VT_NULL;
   }
-  
+
   // handle fixnums
 
   if (SCHEME_INTP(obj)) {
     return VT_I4;
   }
-  
+
   // otherwise, dispatch on value type
-  
+
   switch(obj->type) {
   case scheme_char_type :
     return VT_UI1;
@@ -2721,291 +2738,324 @@ VARTYPE schemeValueToVarType(Scheme_Object *obj) {
   case scheme_vector_type : // may need to specify elt type
     return VT_ARRAY;
   }
-  
+
   scheme_signal_error("Unable to coerce value to VARIANT");
-  
+
   return 0; // keep compiler happy
 }
 
 void *allocParamMemory(size_t n) {
   void *retval;
-  
+
   // do we need a semaphore here?
-  
+
   retval = scheme_malloc(n);
   scheme_dont_gc_ptr(retval);
   return retval;
 }
 
-void marshallSchemeValueToVariant(Scheme_Object *val,VARIANTARG *pVariantArg) {
-  
+void marshalSchemeValueToVariant(Scheme_Object *val,VARIANTARG *pVariantArg) {
+
   // called when COM type spec allows any VARIANT
-  
+  // or when COM type spec is unknown
+
   if (SCHEME_CHARP(val)) {
     pVariantArg->vt = VT_UI1;
     pVariantArg->bVal = SCHEME_CHAR_VAL(val);
     return;
   }
-  
+
   if (SCHEME_EXACT_INTEGERP(val)) {
     pVariantArg->vt = VT_I4;
     scheme_get_int_val(val,&pVariantArg->lVal);
     return;
   }
-  
-#ifdef MZ_USE_SINGLE_FLOATS    
+
+#ifdef MZ_USE_SINGLE_FLOATS
   if (SCHEME_FLTP(val)) {
     pVariantArg->vt = VT_R4;
     pVariantArg->fltVal = SCHEME_FLT_VAL(val);
     return;
   }
 #endif
-  
+
   if (SCHEME_DBLP(val)) {
     pVariantArg->vt = VT_R8;
     pVariantArg->dblVal = SCHEME_DBL_VAL(val);
     return;
   }
-  
+
   if (SCHEME_STRINGP(val)) {
     pVariantArg->vt = VT_BSTR;
     pVariantArg->bstrVal = schemeStringToBSTR(val);
     return;
   }
-  
+
   if (SCHEME_SYMBOLP(val)) {
     char *s = SCHEME_SYM_VAL(val);
     pVariantArg->vt = VT_BSTR;
     pVariantArg->bstrVal = stringToBSTR(s,strlen(s));
     return;
   }
-  
+
   if (MX_CYP(val)) {
     pVariantArg->vt = VT_CY;
     pVariantArg->cyVal = MX_CY_VAL(val);
     return;
   }
-  
+
   if (MX_DATEP(val)) {
     pVariantArg->vt = VT_DATE;
     pVariantArg->date = MX_DATE_VAL(val);
     return;
   }
-  
+
   if (val == scheme_false) {
     pVariantArg->vt = VT_BOOL;
     pVariantArg->boolVal = 0;
     return;
   }
-  
+
   if (val == scheme_true) {
     pVariantArg->vt = VT_BOOL;
     pVariantArg->boolVal = -1;
     return;
   }
-  
+
   if (MX_SCODEP(val)) {
     pVariantArg->vt = VT_ERROR;
     pVariantArg->scode = MX_SCODE_VAL(val);
     return;
   }
-  
+
   if (MX_COM_OBJP(val)) {
     pVariantArg->pdispVal = MX_COM_OBJ_VAL(val);
     pVariantArg->vt = VT_DISPATCH;
     return;
   }
-  
+
   if (MX_IUNKNOWNP(val)) {
     pVariantArg->vt = VT_UNKNOWN;
     pVariantArg->punkVal = MX_IUNKNOWN_VAL(val);
     return;
   }
-  
+
   if (SCHEME_VECTORP (val)) {
     pVariantArg->vt = VT_ARRAY | VT_VARIANT;
     pVariantArg->parray = schemeVectorToSafeArray(val);
     return;
   }
-  
+
   scheme_signal_error("Unable to inject Scheme value %V into VARIANT",val);
-  
+
 }
 
-void marshallSchemeValue(Scheme_Object *val,VARIANTARG *pVariantArg) {
+void marshalSchemeValue(Scheme_Object *val,VARIANTARG *pVariantArg) {
   char errBuff[128];
 
   if (pVariantArg->vt & VT_ARRAY) {
     pVariantArg->parray = schemeVectorToSafeArray(val);
   }
-  
+
   switch (pVariantArg->vt) {
-    
+
   case VT_NULL :
-    
+
     break;
-    
+
   case VT_UI1 :
-    
+
     pVariantArg->bVal = SCHEME_CHAR_VAL(val);
     break;
-    
+
   case VT_UI1 | VT_BYREF :
-    
+
     pVariantArg->pbVal = (unsigned char *)allocParamMemory(sizeof(unsigned char));
     *pVariantArg->pbVal = (unsigned char)SCHEME_CHAR_VAL(SCHEME_BOX_VAL(val));
     break;
-    
+
   case VT_I2 :
-    
+
     pVariantArg->iVal = (short)SCHEME_INT_VAL(val);
     break;
-    
+
   case VT_I2 | VT_BYREF :
-    
+
     pVariantArg->piVal = (short *)allocParamMemory(sizeof(short));
     *pVariantArg->piVal = (short)SCHEME_INT_VAL(SCHEME_BOX_VAL(val));
-    
+
     break;
-    
+
   case VT_I4 :
-    
+
     pVariantArg->lVal = SCHEME_INT_VAL(val);
     break;
-    
+
   case VT_I4 | VT_BYREF :
-    
+
     pVariantArg->plVal = (long *)allocParamMemory(sizeof(long));
     *pVariantArg->plVal = (long)SCHEME_INT_VAL(SCHEME_BOX_VAL(val));
     break;
-    
+
   case VT_INT :
-    
+
     pVariantArg->intVal = SCHEME_INT_VAL(val);
     break;
-    
+
   case VT_INT | VT_BYREF :
-    
     pVariantArg->pintVal = (int *)allocParamMemory(sizeof(long));
     *pVariantArg->pintVal = (int)SCHEME_INT_VAL(SCHEME_BOX_VAL(val));
     break;
-    
+
+    // VT_USERDEFINED in the typeDesc indicates an ENUM,
+    // but VT_USERDEFINED is illegal to use in the DISPPARAMS.
+    // The right thing to do is pass it as an INT.  Note that
+    // we have to bash out the variant tag.
+    //  ** NOTE THAT VT_USERDEFINED | VT_BYREF IS NOT
+    //  ** A REFERENCE TO AN INT
+  case VT_USERDEFINED:
+    pVariantArg->vt = VT_INT;
+    pVariantArg->intVal = SCHEME_INT_VAL (val);
+    break;
+
   case VT_R4 :
-    
+
     pVariantArg->fltVal = (float)SCHEME_DBL_VAL(val);
     break;
-    
+
   case VT_R4 | VT_BYREF :
-    
+
     pVariantArg->pfltVal = (float *)allocParamMemory(sizeof(float));
     *pVariantArg->pfltVal = (float)SCHEME_DBL_VAL(SCHEME_BOX_VAL(val));
     break;
-    
+
   case VT_R8 :
-    
+
     pVariantArg->dblVal = SCHEME_DBL_VAL(val);
     break;
-    
+
   case VT_R8 | VT_BYREF :
-    
+
     pVariantArg->pdblVal = (double *)allocParamMemory(sizeof(double));
     *pVariantArg->pdblVal = (double)SCHEME_DBL_VAL(SCHEME_BOX_VAL(val));
     break;
-    
+
   case VT_BSTR :
     pVariantArg->bstrVal = schemeStringToBSTR(val);
     break;
-    
+
   case VT_BSTR | VT_BYREF :
-    
+
     pVariantArg->pbstrVal = (BSTR *)allocParamMemory(sizeof(BSTR));
     *pVariantArg->pbstrVal = schemeStringToBSTR(val);
     break;
-    
+
   case VT_CY :
-    
+
     pVariantArg->cyVal = MX_CY_VAL(val);
     break;
-    
+
   case VT_CY | VT_BYREF :
-    
+
     pVariantArg->pcyVal = (CY *)allocParamMemory(sizeof(CY));
     *pVariantArg->pcyVal = (CY)MX_CY_VAL(val);
     break;
-    
+
   case VT_DATE :
-    
+
     pVariantArg->date = MX_DATE_VAL(val);
     break;
-    
+
   case VT_DATE | VT_BYREF :
-    
+
     pVariantArg->pdate = (DATE *)allocParamMemory(sizeof(DATE));
     *pVariantArg->pdate = (DATE)MX_DATE_VAL(val);
     break;
-    
+
   case VT_BOOL :
-    
+
     pVariantArg->boolVal = schemeValToBool(val);
     break;
-    
+
   case VT_BOOL | VT_BYREF :
-    
+
     pVariantArg->pboolVal = (VARIANT_BOOL *)allocParamMemory(sizeof(VARIANT_BOOL));
     *pVariantArg->pboolVal = schemeValToBool(val);
     break;
-    
+
   case VT_ERROR :
-    
+
     pVariantArg->scode = MX_SCODE_VAL(val);
     break;
-    
+
   case VT_ERROR | VT_BYREF :
-    
+
     pVariantArg->pscode = (SCODE *)allocParamMemory(sizeof(SCODE));
     *pVariantArg->pscode = MX_SCODE_VAL(SCHEME_BOX_VAL(val));
     break;
-    
+
   case VT_DISPATCH :
-    
+
     pVariantArg->pdispVal = MX_COM_OBJ_VAL(val);
     break;
-    
+
   case VT_DISPATCH | VT_BYREF :
-    
+
     pVariantArg->ppdispVal = (IDispatch **)allocParamMemory(sizeof(IDispatch *));
     *pVariantArg->ppdispVal = MX_COM_OBJ_VAL(SCHEME_BOX_VAL(val));
     break;
-    
+
+    // VT_USERDEFINED | VT_BYREF indicates that we should pass
+    // the IUnknown pointer of a COM object.
+    // VT_USERDEFINED | VT_BYREF is illegal in the DISPPARAMS, so
+    // we bash it out to VT_UNKNOWN.
+ 
+  case VT_USERDEFINED | VT_BYREF :
+      pVariantArg->vt = VT_UNKNOWN;
+
+      if (MX_COM_OBJP (val))
+          // shouldn't fail
+          MX_COM_OBJ_VAL (val)->QueryInterface (IID_IUnknown, (void **)&pVariantArg->punkVal);
+
+      else if (MX_IUNKNOWNP(val))
+          pVariantArg->punkVal = MX_COM_OBJ_VAL (val);
+      // should never happen
+      else
+          scheme_signal_error ("Attempt to marshal non-com object into VT_USERDEFINED");
+      break;
+
   case VT_VARIANT | VT_BYREF :
-    
+
     // pass boxed value of almost-arbitrary type
 
     Scheme_Object *boxedVal;
 
     boxedVal = SCHEME_BOX_VAL(val);
-    
+
     pVariantArg->pvarVal = (VARIANTARG *)allocParamMemory(sizeof(VARIANTARG));
     pVariantArg->pvarVal->vt = schemeValueToVarType(boxedVal);
-    marshallSchemeValue(boxedVal,pVariantArg->pvarVal);
+    marshalSchemeValue(boxedVal,pVariantArg->pvarVal);
     break;
-    
+
   case VT_UNKNOWN :
     pVariantArg->punkVal = MX_IUNKNOWN_VAL(val);
     break;
-    
+
   case VT_UNKNOWN | VT_BYREF :
     pVariantArg->ppunkVal = (IUnknown **)allocParamMemory(sizeof(IUnknown *));
     *pVariantArg->ppunkVal = MX_IUNKNOWN_VAL(SCHEME_BOX_VAL(val));
     break;
-    
-  case VT_USERDEFINED :
+
   case VT_VARIANT :
-    marshallSchemeValueToVariant(val,pVariantArg);
+    marshalSchemeValueToVariant(val,pVariantArg);
     break;
-    
+
+    case VT_PTR:
+        scheme_signal_error ("unable to marshal VT_PTR");
+        break;
+
   default :
-    sprintf(errBuff,"Unable to marshall Scheme value into VARIANT: 0x%X",
+    sprintf(errBuff,"Unable to marshal Scheme value into VARIANT: 0x%X",
 	    pVariantArg->vt);
     scheme_signal_error(errBuff);
 
@@ -3020,109 +3070,109 @@ Scheme_Object *variantToSchemeObject(VARIANTARG *pVariantArg) {
   }
 
   switch(pVariantArg->vt) {
-    
+
   case VT_EMPTY :
   case VT_NULL :
-    
+
     return scheme_void;
-    
+
   case VT_UI1 :
-    
+
     return scheme_make_character((char)(pVariantArg->bVal));
-    
+
   case VT_I2 :
-    
+
     return scheme_make_integer(pVariantArg->iVal);
-    
+
   case VT_I4 :
-    
+
     return scheme_make_integer(pVariantArg->lVal);
-    
+
   case VT_INT :
-    
+
     return scheme_make_integer(pVariantArg->intVal);
-    
+
   case VT_R4 :
-    
+
 #ifdef MZ_USE_SINGLE_FLOATS
     return scheme_make_float(pVariantArg->fltVal);
 #else
     return scheme_make_double((double)(pVariantArg->fltVal));
 #endif
-    
+
   case VT_R8 :
-    
+
     return scheme_make_double(pVariantArg->dblVal);
-    
+
   case VT_BSTR :
-    
+
     return BSTRToSchemeString(pVariantArg->bstrVal);
-    
+
   case VT_CY :
-    
+
     return mx_make_cy(&pVariantArg->cyVal);
-    
+
   case VT_DATE :
-    
+
     return mx_make_date(&pVariantArg->date);
-    
+
   case VT_BOOL :
-    
+
     return mx_make_bool(pVariantArg->boolVal);
-    
+
   case VT_ERROR :
-    
+
     return mx_make_scode(pVariantArg->scode);
-    
+
   case VT_DISPATCH :
 
     return mx_make_idispatch(pVariantArg->pdispVal);
-    
+
   case VT_UNKNOWN :
-    
-    return mx_make_iunknown(pVariantArg->punkVal);
-    
+      
+    return mx_make_iunknown (pVariantArg->punkVal);
+
   default :
-    
+
     sprintf(errBuff,"Can't make Scheme value from VARIANT 0x%X",
 	    pVariantArg->vt);
     scheme_signal_error(errBuff);
-    
+
   }
-  
+
   return NULL;
 }
 
-void unmarshallVariant(Scheme_Object *val,VARIANTARG *pVariantArg) {
-  
+void unmarshalVariant(Scheme_Object *val,VARIANTARG *pVariantArg) {
+
   switch(pVariantArg->vt) {
-    
+
   case VT_UI1 | VT_BYREF :
-    
+
     SCHEME_BOX_VAL(val) = scheme_make_character((char)(*pVariantArg->pbVal));
     scheme_gc_ptr_ok(pVariantArg->pbVal);
     break;
-    
+
   case VT_I2 | VT_BYREF :
-    
+
     SCHEME_BOX_VAL(val) = scheme_make_integer(*pVariantArg->piVal);
     scheme_gc_ptr_ok(pVariantArg->piVal);
     break;
-    
+
   case VT_I4 | VT_BYREF :
-    
+
     SCHEME_BOX_VAL(val) = scheme_make_integer(*pVariantArg->plVal);
     scheme_gc_ptr_ok(pVariantArg->plVal);
     break;
-    
+
   case VT_INT | VT_BYREF :
-    
+
     SCHEME_BOX_VAL(val) = scheme_make_integer(*pVariantArg->pintVal);
     scheme_gc_ptr_ok(pVariantArg->pintVal);
     break;
-    
+
   case VT_R4 | VT_BYREF :
-    
+
 #ifdef MZ_USE_SINGLE_FLOATS
     SCHEME_BOX_VAL(val) = scheme_make_float(*pVariantArg->pfltVal);
 #else
@@ -3130,75 +3180,145 @@ void unmarshallVariant(Scheme_Object *val,VARIANTARG *pVariantArg) {
 #endif
     scheme_gc_ptr_ok(pVariantArg->pfltVal);
     break;
-    
+
   case VT_R8 | VT_BYREF :
-    
+
     SCHEME_BOX_VAL(val) = scheme_make_double(*pVariantArg->pdblVal);
     scheme_gc_ptr_ok(pVariantArg->pdblVal);
     break;
-    
+
   case VT_CY | VT_BYREF :
-    
+
     SCHEME_BOX_VAL(val) = mx_make_cy(pVariantArg->pcyVal);
     scheme_gc_ptr_ok(pVariantArg->pcyVal);
     break;
-    
+
   case VT_DATE | VT_BYREF :
-    
+
     SCHEME_BOX_VAL(val) = mx_make_date(pVariantArg->pdate);
     scheme_gc_ptr_ok(pVariantArg->pdate);
     break;
-    
+
   case VT_BOOL | VT_BYREF :
-    
+
     SCHEME_BOX_VAL(val) = mx_make_bool(*pVariantArg->pboolVal);
     scheme_gc_ptr_ok(pVariantArg->pboolVal);
     break;
-    
+
   case VT_ERROR | VT_BYREF :
-    
+
     SCHEME_BOX_VAL(val) = mx_make_scode(*pVariantArg->pscode);
     scheme_gc_ptr_ok(pVariantArg->pscode);
     break;
-    
+
   case VT_DISPATCH | VT_BYREF :
-    
+
     SCHEME_BOX_VAL(val) = mx_make_idispatch(*pVariantArg->ppdispVal);
     scheme_gc_ptr_ok(pVariantArg->ppdispVal);
     break;
-    
+
   case VT_UNKNOWN | VT_BYREF :
-    
-    SCHEME_BOX_VAL(val) = mx_make_iunknown(*pVariantArg->ppunkVal);
+
+    SCHEME_BOX_VAL (val) = mx_make_iunknown (*pVariantArg->ppunkVal);
     scheme_gc_ptr_ok(pVariantArg->ppunkVal);
     break;
-    
+
   case VT_VARIANT | VT_BYREF :
-    
+
     SCHEME_BOX_VAL(val) = variantToSchemeObject(pVariantArg->pvarVal);
     scheme_gc_ptr_ok(pVariantArg->pvarVal);
     break;
-    
+
   case VT_BSTR :
-    
+
     updateSchemeStringFromBSTR(val,pVariantArg->bstrVal);
     SysFreeString(pVariantArg->bstrVal);
     break;
-    
+
   case VT_BSTR | VT_BYREF :
-    
+
     SCHEME_BOX_VAL(val) = BSTRToSchemeString(*pVariantArg->pbstrVal);
     SysFreeString(*pVariantArg->pbstrVal);
     scheme_gc_ptr_ok(pVariantArg->pbstrVal);
     break;
-    
+
   default :
-    
-    ;   
-    
-    // no unmarshalling or cleanup needed
-    
+
+    ;
+
+    // no unmarshaling or cleanup needed
+
   }
+}
+
+// Build the DISPPARAMS by filling out the fields
+// according to the Scheme type of object.
+// No optional or named args, no type checking.
+short int buildMethodArgumentsUsingDefaults (INVOKEKIND invKind,
+                                             int argc, Scheme_Object **argv,
+                                             DISPPARAMS *methodArguments) {
+  short int numParamsPassed;
+  BOOL lastParamIsRetval;
+  int i,j,k;
+  static DISPID dispidPropPut = DISPID_PROPERTYPUT;
+
+  // First argument is object, second is name of method.
+  numParamsPassed = argc - 2;
+  
+  // Need a return value if property get or invoking a function.
+  lastParamIsRetval = (invKind == INVOKE_PROPERTYGET || invKind == INVOKE_FUNC);
+
+  switch(invKind) {
+
+  case INVOKE_PROPERTYPUT :
+
+    // Named argument represents the assigned value
+
+    methodArguments->rgdispidNamedArgs = &dispidPropPut;
+    methodArguments->cNamedArgs = methodArguments->cArgs = 1;
+    methodArguments->cArgs = numParamsPassed;
+    break;
+
+  case INVOKE_PROPERTYGET :
+
+    methodArguments->rgdispidNamedArgs = NULL;
+    methodArguments->cNamedArgs = 0;
+    methodArguments->cArgs = numParamsPassed;
+    break;
+
+  default :
+
+    methodArguments->rgdispidNamedArgs = NULL;
+    methodArguments->cNamedArgs = 0;
+    methodArguments->cArgs = numParamsPassed;
+    break;
+  }
+
+  if (numParamsPassed > 0) {
+    methodArguments->rgvarg =
+      (VARIANTARG *)scheme_malloc(numParamsPassed * sizeof(VARIANTARG));
+    scheme_dont_gc_ptr(methodArguments->rgvarg);
+  }
+
+  // marshal Scheme argument list into COM argument list
+  // arguments are in reverse order in rgvarg
+
+  for (i = 0,j = numParamsPassed - 1,k = 2; i < argc - 2; i++,j--,k++) {
+
+    // i = index of ELEMDESC's
+    // j = index of VARIANTARG's
+
+    VariantInit(&methodArguments->rgvarg[j]);
+
+    if (argv[k] == mx_omit_obj) { // omitted argument
+      methodArguments->rgvarg[j].vt = VT_ERROR;
+      methodArguments->rgvarg[j].lVal = DISP_E_PARAMNOTFOUND;
+    }
+    else
+      marshalSchemeValueToVariant(argv[k],&methodArguments->rgvarg[j]);
+  }
+
+  return numParamsPassed;
 }
 
 short int buildMethodArgumentsUsingFuncDesc(FUNCDESC *pFuncDesc,
@@ -3213,10 +3333,10 @@ short int buildMethodArgumentsUsingFuncDesc(FUNCDESC *pFuncDesc,
   static DISPID dispidPropPut = DISPID_PROPERTYPUT;
 
   numParamsPassed = pFuncDesc->cParams;
-  
-  if (pFuncDesc->cParams > 0 && 
-      ((invKind == INVOKE_PROPERTYGET || invKind == INVOKE_FUNC) && 
-       (pFuncDesc->lprgelemdescParam[numParamsPassed-1].paramdesc.wParamFlags 
+
+  if (pFuncDesc->cParams > 0 &&
+      ((invKind == INVOKE_PROPERTYGET || invKind == INVOKE_FUNC) &&
+       (pFuncDesc->lprgelemdescParam[numParamsPassed-1].paramdesc.wParamFlags
 	& PARAMFLAG_FRETVAL))) {
     // last parameter is retval
     numParamsPassed--;
@@ -3227,11 +3347,11 @@ short int buildMethodArgumentsUsingFuncDesc(FUNCDESC *pFuncDesc,
   }
 
   if (pFuncDesc->cParamsOpt == -1) {  // last args get packaged into SAFEARRAY
-    
+
     // this branch is untested
-    
+
     // optional parameters with default values not counted in pFuncDesc->cParamsOpt
-    
+
     numOptParams = getOptParamCount(pFuncDesc,numParamsPassed - 1);
 
     if (argc < numParamsPassed + 2 - 1) {
@@ -3243,11 +3363,11 @@ short int buildMethodArgumentsUsingFuncDesc(FUNCDESC *pFuncDesc,
     }
   }
   else {
-    
+
     // optional parameters with default values not counted in pFuncDesc->cParamsOpt
-    
+
     numOptParams = getOptParamCount(pFuncDesc,numParamsPassed - 1);
-    
+
     if (argc < numParamsPassed - numOptParams + 2 ||  // too few
 	argc > numParamsPassed + 2) {  // too many
       sprintf(errBuff,"%s (%s \"%s\")",
@@ -3257,14 +3377,14 @@ short int buildMethodArgumentsUsingFuncDesc(FUNCDESC *pFuncDesc,
       scheme_wrong_count(errBuff,numParamsPassed-numOptParams,numParamsPassed,argc-2,argv+2);
     }
   }
-  
+
   // compare types of actual arguments to prescribed types
-  
+
   for (i = 0,k = 2; i < argc - 2; i++,k++) {
-    
+
     // i = index of ELEMDESC's
     // k = index of actual args in argv
-    
+
     if (schemeValueFitsElemDesc(argv[k],&pFuncDesc->lprgelemdescParam[i]) == FALSE) {
       sprintf(errBuff,"%s (%s \"%s\")",mx_fun_string(invKind),
 	      inv_kind_string(invKind),SCHEME_STR_VAL(argv[1]));
@@ -3275,61 +3395,61 @@ short int buildMethodArgumentsUsingFuncDesc(FUNCDESC *pFuncDesc,
   }
 
   switch(invKind) {
-    
+
   case INVOKE_PROPERTYPUT :
-    
+
     // Named argument represents the assigned value
-    
+
     methodArguments->rgdispidNamedArgs = &dispidPropPut;
     methodArguments->cNamedArgs = methodArguments->cArgs = 1;
-    methodArguments->cArgs = numParamsPassed; 
+    methodArguments->cArgs = numParamsPassed;
     break;
-    
+
   case INVOKE_PROPERTYGET :
-    
+
     methodArguments->rgdispidNamedArgs = NULL;
     methodArguments->cNamedArgs = 0;
     methodArguments->cArgs = numParamsPassed;
     break;
-    
+
   default :
-    
+
     methodArguments->rgdispidNamedArgs = NULL;
     methodArguments->cNamedArgs = 0;
     methodArguments->cArgs = numParamsPassed;
     break;
   }
-  
+
   if (numParamsPassed > 0) {
-    methodArguments->rgvarg = 
+    methodArguments->rgvarg =
       (VARIANTARG *)scheme_malloc(numParamsPassed * sizeof(VARIANTARG));
     scheme_dont_gc_ptr(methodArguments->rgvarg);
   }
-  
-  // marshall Scheme argument list into COM argument list
+
+  // marshal Scheme argument list into COM argument list
   // arguments are in reverse order in rgvarg
-  
+
   for (i = 0,j = numParamsPassed - 1,k = 2; i < argc - 2; i++,j--,k++) {
-    
+
     // i = index of ELEMDESC's
     // j = index of VARIANTARG's
-    
+
     VariantInit(&methodArguments->rgvarg[j]);
-    
+
     if (argv[k] == mx_omit_obj) { // omitted argument
       methodArguments->rgvarg[j].vt = VT_ERROR;
       methodArguments->rgvarg[j].lVal = DISP_E_PARAMNOTFOUND;
     }
     else {
-      methodArguments->rgvarg[j].vt = 
+      methodArguments->rgvarg[j].vt =
 	getVarTypeFromElemDesc(&pFuncDesc->lprgelemdescParam[i]);
-      marshallSchemeValue(argv[k],&methodArguments->rgvarg[j]);
+      marshalSchemeValue(argv[k],&methodArguments->rgvarg[j]);
     }
   }
-  
+
   // omitted optional arguments
   // supply default if available
-  
+
   if (numOptParams > 0) {
     for (i = argc - 2,j = numParamsPassed - 1 - (argc - 2); j >= 0; i++,j--) {
       if (isDefaultParam(pFuncDesc,i)) {
@@ -3343,7 +3463,7 @@ short int buildMethodArgumentsUsingFuncDesc(FUNCDESC *pFuncDesc,
       }
     }
   }
-  
+
   return numParamsPassed;
 }
 
@@ -3362,7 +3482,7 @@ short int buildMethodArgumentsUsingVarDesc(VARDESC *pVarDesc,
   else if (invKind == INVOKE_PROPERTYPUT) {
     numParamsPassed = 1;
   }
-  
+
   if (argc != numParamsPassed + 2) {
     sprintf(errBuff,"%s (%s \"%s\")",
 	    mx_fun_string(invKind),
@@ -3374,9 +3494,9 @@ short int buildMethodArgumentsUsingVarDesc(VARDESC *pVarDesc,
   }
 
   switch(invKind) {
-    
+
   case INVOKE_PROPERTYPUT :
-    
+
     // check that value is of expected type
 
     if (schemeValueFitsElemDesc(argv[2],
@@ -3392,34 +3512,34 @@ short int buildMethodArgumentsUsingVarDesc(VARDESC *pVarDesc,
 
     break;
 
-    
+
   case INVOKE_PROPERTYGET :
-    
+
     methodArguments->rgdispidNamedArgs = NULL;
     methodArguments->cNamedArgs = 0;
     methodArguments->cArgs = numParamsPassed;
     break;
-    
+
   }
 
   if (numParamsPassed > 0) {
-    methodArguments->rgvarg = 
+    methodArguments->rgvarg =
       (VARIANTARG *)scheme_malloc(numParamsPassed * sizeof(VARIANTARG));
     scheme_dont_gc_ptr(methodArguments->rgvarg);
   }
-  
-  // marshall Scheme argument list into COM argument list
-  
+
+  // marshal Scheme argument list into COM argument list
+
   for (i = 0,j = numParamsPassed - 1,k = 2; i < numParamsPassed; i++,j--,k++) {
-    
+
     // i = index of ELEMDESC's
     // j = index of VARIANTARG's
-    
+
     VariantInit(&methodArguments->rgvarg[j]);
 
-    methodArguments->rgvarg[j].vt = 
+    methodArguments->rgvarg[j].vt =
       getVarTypeFromElemDesc(&pVarDesc->elemdescVar);
-    marshallSchemeValue(argv[k],&methodArguments->rgvarg[j]);
+    marshalSchemeValue(argv[k],&methodArguments->rgvarg[j]);
   }
 
   return numParamsPassed;
@@ -3427,24 +3547,26 @@ short int buildMethodArgumentsUsingVarDesc(VARDESC *pVarDesc,
 
 short int buildMethodArguments(MX_TYPEDESC *pTypeDesc,
 			       INVOKEKIND invKind,
-			       int argc,Scheme_Object **argv,
-			       DISPPARAMS *methodArguments) {
-  if (pTypeDesc->descKind == funcDesc) {
-    return buildMethodArgumentsUsingFuncDesc(pTypeDesc->pFuncDesc,
-					     invKind,argc,argv,
-					     methodArguments);
-  }
-  
-  return buildMethodArgumentsUsingVarDesc(pTypeDesc->pVarDesc,
-					  invKind,argc,argv,
-					  methodArguments);
-  
+			       int argc, Scheme_Object **argv,
+			       DISPPARAMS *methodArguments) 
+{
+    return (pTypeDesc == NULL)
+        ? buildMethodArgumentsUsingDefaults (invKind, argc, argv, 
+                                             methodArguments)
+        : (pTypeDesc->descKind == funcDesc)
+        ? buildMethodArgumentsUsingFuncDesc (pTypeDesc->pFuncDesc,
+                                             invKind,argc,argv,
+                                             methodArguments)
+        : buildMethodArgumentsUsingVarDesc (pTypeDesc->pVarDesc,
+                                            invKind,argc,argv,
+                                            methodArguments);
 }
 
 static Scheme_Object *mx_make_call(int argc,Scheme_Object **argv,
 				   INVOKEKIND invKind) {
   MX_TYPEDESC *pTypeDesc;
-  DISPPARAMS methodArguments; 
+  DISPID dispid = 0;
+  DISPPARAMS methodArguments;
   VARIANT methodResult;
   EXCEPINFO exnInfo;
   unsigned int errorIndex;
@@ -3453,17 +3575,17 @@ static Scheme_Object *mx_make_call(int argc,Scheme_Object **argv,
   short numParamsPassed;
   int i,j;
   HRESULT hr;
-  
+
   if (MX_COM_OBJP(argv[0]) == FALSE) {
     scheme_wrong_type(mx_fun_string(invKind),"com-object",0,argc,argv);
   }
-  
+
   if (SCHEME_STRINGP(argv[1]) == FALSE) {
     scheme_wrong_type(mx_fun_string(invKind),"string",1,argc,argv);
   }
-  
+
   pIDispatch = MX_COM_OBJ_VAL(argv[0]);
-  
+
   if (pIDispatch == NULL) {
     scheme_signal_error("NULL COM object");
   }
@@ -3478,18 +3600,48 @@ static Scheme_Object *mx_make_call(int argc,Scheme_Object **argv,
 
   pTypeDesc = getMethodType((MX_COM_Object *)argv[0],name,invKind);
 
+  // If there is no pTypeDesc, then we have to wing it.
+  // Look for a dispid for the method name.  If we find it, just push
+  // the arguments and let it figure it out.
+
+  if (pTypeDesc == NULL) {
+      // Translate the name to unicode.
+      OLECHAR namebuf[1024];
+      int len = strlen (name);
+      int count = MultiByteToWideChar (CP_ACP, (DWORD) 0, name, len, namebuf, sizeray (namebuf) -1);
+      namebuf[len] = '\0';
+      if (count < len)
+          scheme_signal_error ("com-invoke:  Unable to translate name to Unicode.");
+      
+      LPOLESTR namearray = (LPOLESTR)&namebuf;
+
+      hr = pIDispatch->GetIDsOfNames (IID_NULL, &namearray, 1, LOCALE_SYSTEM_DEFAULT, &dispid);
+      if (FAILED (hr)) {
+          if (hr == E_OUTOFMEMORY)
+              scheme_signal_error ("com-invoke:  out of memory");
+          else if (hr == DISP_E_UNKNOWNNAME)
+              scheme_signal_error ("com-invoke:  unknown name");
+          else if (hr == DISP_E_UNKNOWNLCID)
+              scheme_signal_error ("com-invoke:  unknown LCID");
+          else
+              scheme_signal_error ("com-invoke:  unknown error");
+          }
+      }
+  else 
+      dispid = pTypeDesc->memID;
+
+  // This will build the method arguments even if pTypeDesc is NULL.
   numParamsPassed = buildMethodArguments(pTypeDesc,
 					 invKind,
 					 argc,argv,
 					 &methodArguments);
-  
-  if (invKind != INVOKE_PROPERTYPUT) {
-    VariantInit(&methodResult);
-  }
+
+  if (invKind != INVOKE_PROPERTYPUT)
+    VariantInit (&methodResult);
 
   // invoke requested method
 
-  hr = pIDispatch->Invoke(pTypeDesc->memID,IID_NULL,LOCALE_SYSTEM_DEFAULT,
+  hr = pIDispatch->Invoke(dispid,IID_NULL,LOCALE_SYSTEM_DEFAULT,
 			  invKind,
 			  &methodArguments,
 			  (invKind == INVOKE_PROPERTYPUT) ? NULL : &methodResult,
@@ -3501,10 +3653,10 @@ static Scheme_Object *mx_make_call(int argc,Scheme_Object **argv,
     char description[1024];
     BOOL hasErrorCode;
     BOOL hasDescription;
-    
-    hasErrorCode = (exnInfo.wCode > 0); 
+
+    hasErrorCode = (exnInfo.wCode > 0);
     hasDescription = (exnInfo.bstrDescription != NULL);
-    
+
     if (hasDescription) {
       unsigned int len;
 
@@ -3515,7 +3667,7 @@ static Scheme_Object *mx_make_call(int argc,Scheme_Object **argv,
 			  NULL,NULL);
       description[len] = '\0';
     }
-    
+
     if (hasErrorCode) {
       sprintf(errBuff,
 	      "COM object exception, error code 0x%X%s%s",
@@ -3533,31 +3685,31 @@ static Scheme_Object *mx_make_call(int argc,Scheme_Object **argv,
     }
   }
 
-  if (hr != S_OK) {
+  if (FAILED (hr)) {
     char buff[2048];
     sprintf(buff,"\"%s\" (%s) failed",
 	    SCHEME_STR_VAL(argv[1]),inv_kind_string(invKind));
     codedComError(buff,hr);
   }
 
-  // unmarshall data passed by reference, cleanup
+  // unmarshal data passed by reference, cleanup
 
   for (i = 2,j = numParamsPassed - 1; i < argc; i++,j--) {
-    unmarshallVariant(argv[i],&methodArguments.rgvarg[j]);
+    unmarshalVariant(argv[i],&methodArguments.rgvarg[j]);
   }
-  
+
   if (numParamsPassed > 0) {
     scheme_gc_ptr_ok(methodArguments.rgvarg);
-  }  
-  
+  }
+
   if (invKind == INVOKE_PROPERTYPUT) {
     return scheme_void;
   }
-  
-  // unmarshall return value
+
+  // unmarshal return value
 
   return variantToSchemeObject(&methodResult);
-  
+
 }
 
 BOOL _stdcall drawContinue(DWORD data) {
@@ -3569,11 +3721,11 @@ Scheme_Object *mx_com_invoke(int argc,Scheme_Object **argv) {
 }
 
 Scheme_Object *mx_com_get_property(int argc,Scheme_Object **argv) {
-  return mx_make_call(argc,argv,INVOKE_PROPERTYGET); 
+  return mx_make_call(argc,argv,INVOKE_PROPERTYGET);
 }
 
 Scheme_Object *mx_com_set_property(int argc,Scheme_Object **argv) {
-  return mx_make_call(argc,argv,INVOKE_PROPERTYPUT); 
+  return mx_make_call(argc,argv,INVOKE_PROPERTYPUT);
 }
 
 Scheme_Object *mx_all_clsid(int argc,Scheme_Object **argv,char **attributes) {
@@ -3589,82 +3741,82 @@ Scheme_Object *mx_all_clsid(int argc,Scheme_Object **argv,char **attributes) {
   DWORD dataBufferSize;
   BOOL loopFlag;
   char **p;
-  
+
   retval = scheme_null;
-  
+
   result = RegOpenKeyEx(HKEY_CLASSES_ROOT,
 			"CLSID",
 			(DWORD)0,
 			KEY_READ,
 			&hkey);
-  
+
   if (result != ERROR_SUCCESS) {
     return retval;
-  }	    
-  
+  }
+
   // enumerate subkeys until we find the one we want
-  
+
   keyIndex = 0;
-  
+
   while (1) {
-    
+
     // get next subkey
-    
+
     clsidBufferSize = sizeray(clsidBuffer);
-    
+
     result = RegEnumKeyEx(hkey,keyIndex++,
 			  clsidBuffer,
 			  &clsidBufferSize,
 			  0,NULL,NULL,
 			  &fileTime);
-    
+
     if (result == ERROR_NO_MORE_ITEMS) {
       break;
-    }		
-    
+    }
+
     if (strlen(clsidBuffer) != CLSIDLEN) { // not a CLSID -- bogus entry
       continue;
     }
-    
+
     // open subkey
-    
+
     result = RegOpenKeyEx(hkey,clsidBuffer,
 			  (DWORD)0,
 			  KEY_READ,&hsubkey);
-    
+
     if (result != ERROR_SUCCESS) {
       scheme_signal_error("Error while searching Windows registry");
-    }	    
-    
+    }
+
     dataBufferSize = sizeof(dataBuffer);
-    
+
     RegQueryValueEx(hsubkey,"",0,&dataType,dataBuffer,&dataBufferSize);
-    
+
     if (dataType == REG_SZ) {
       int subkeyIndex;
       TCHAR subkeyBuffer[256];
       DWORD subkeyBufferSize;
-      
+
       subkeyIndex = 0;
-      
+
       loopFlag = TRUE;
-      
+
       while (loopFlag) {
-	
+
 	subkeyBufferSize = sizeray(subkeyBuffer);
-	
+
 	result = RegEnumKeyEx(hsubkey,subkeyIndex++,
 			      subkeyBuffer,
 			      &subkeyBufferSize,
 			      0,NULL,NULL,
 			      &fileTime);
-	
+
 	if (result == ERROR_NO_MORE_ITEMS) {
 	  break;
 	}
-	
+
 	p = attributes;
-	
+
 	while (*p) {
 	  if (stricmp(subkeyBuffer,*p) == 0) {
 	    retval = scheme_make_pair(scheme_make_string((char *)dataBuffer),
@@ -3676,12 +3828,12 @@ Scheme_Object *mx_all_clsid(int argc,Scheme_Object **argv,char **attributes) {
 	}
       }
     }
-    
-    RegCloseKey(hsubkey);  
-  } 
-  
-  RegCloseKey(hkey);  
-  
+
+    RegCloseKey(hsubkey);
+  }
+
+  RegCloseKey(hkey);
+
   return retval;
 }
 
@@ -3697,26 +3849,26 @@ Scheme_Object *mx_com_object_eq(int argc,Scheme_Object **argv) {
   IUnknown *pIUnknown1,*pIUnknown2;
   IDispatch *pIDispatch1,*pIDispatch2;
   Scheme_Object *retval;
-  
+
   for (int i = 0; i < 2; i++) {
     if (MX_COM_OBJP(argv[i]) == FALSE) {
       scheme_wrong_type("com-object-eq?","com-object",i,argc,argv);
     }
   }
-  
+
   pIDispatch1 = MX_COM_OBJ_VAL(argv[0]);
   pIDispatch2 = MX_COM_OBJ_VAL(argv[1]);
-  
+
   // these should never fail
-  
+
   pIDispatch1->QueryInterface(IID_IUnknown,(void **)&pIUnknown1);
   pIDispatch2->QueryInterface(IID_IUnknown,(void **)&pIUnknown2);
-  
+
   retval = (pIUnknown1 == pIUnknown2) ? scheme_true : scheme_false;
-  
+
   pIUnknown1->Release();
   pIUnknown2->Release();
-  
+
   return retval;
 }
 
@@ -3730,11 +3882,11 @@ Scheme_Object *mx_document_title(int argc,Scheme_Object **argv) {
     scheme_wrong_type("document-title","mx-document",0,argc,argv);
   }
 
-  pDocument = MX_DOCUMENT_VAL(argv[0]); 
+  pDocument = MX_DOCUMENT_VAL(argv[0]);
 
   hr = pDocument->get_title(&bstr);
-  
-  if (hr != S_OK) {
+
+  if (FAILED (hr)) {
     scheme_signal_error("document-title: Can't get title");
   }
 
@@ -3746,7 +3898,7 @@ Scheme_Object *mx_document_title(int argc,Scheme_Object **argv) {
 }
 
 Scheme_Object *mx_document_objects(int argc,Scheme_Object **argv) {
-  HRESULT hr;  
+  HRESULT hr;
   IHTMLDocument2 *pDocument;
   IHTMLElement *pBody;
   IHTMLElementCollection *pObjectsCollection;
@@ -3755,34 +3907,34 @@ Scheme_Object *mx_document_objects(int argc,Scheme_Object **argv) {
   int i;
   IDispatch *pObjectDispatch;
   MX_COM_Object *com_object;
-  
+
   if (MX_DOCUMENTP(argv[0]) == FALSE) {
     scheme_wrong_type("document-objects","mx-document",0,argc,argv);
   }
-  
-  pDocument = MX_DOCUMENT_VAL(argv[0]); 
-  
+
+  pDocument = MX_DOCUMENT_VAL(argv[0]);
+
   hr = pDocument->get_body(&pBody);
-  
-  if (hr != S_OK || pBody == NULL) {
+
+  if (FAILED (hr) || pBody == NULL) {
     codedComError("document-objects: Can't find document BODY",hr);
   }
-  
+
   pObjectsCollection = getBodyElementsWithTag(pBody,"OBJECT");
-  
+
   pBody->Release();
-  
+
   pObjectsCollection->get_length(&numObjects);
-  
+
   retval = scheme_null;
-  
+
   for (i = numObjects - 1; i >= 0; i--) {
-    
+
     pObjectDispatch = getObjectInCollection(pObjectsCollection,i);
-    
+
     com_object = (MX_COM_Object *)scheme_malloc(sizeof(MX_COM_Object));
-    
-    com_object->type = mx_com_object_type; 
+
+    com_object->type = mx_com_object_type;
     com_object->pIDispatch = pObjectDispatch;
     com_object->clsId = emptyClsId;
     com_object->pITypeInfo = NULL;
@@ -3796,9 +3948,9 @@ Scheme_Object *mx_document_objects(int argc,Scheme_Object **argv) {
 
     retval = scheme_make_pair((Scheme_Object *)com_object,retval);
   }
-  
+
   pObjectsCollection->Release();
-  
+
   return retval;
 }
 
@@ -3806,7 +3958,7 @@ MX_Element *make_mx_element(IHTMLElement *pIHTMLElement) {
   MX_Element *elt;
 
   elt = (MX_Element *)scheme_malloc(sizeof(MX_Element));
-  
+
   elt->type = mx_element_type;
   elt->released = FALSE;
   elt->valid = TRUE;
@@ -3834,43 +3986,43 @@ Scheme_Object *mx_elements_with_tag(int argc,Scheme_Object **argv) {
   MX_Element *elt;
   IDispatch *pDispatch;
   int i;
-  
+
   if (MX_DOCUMENTP(argv[0]) == FALSE) {
     scheme_wrong_type("elements-with-tag","mx-document",0,argc,argv);
   }
-  
+
   if (SCHEME_STRINGP(argv[1]) == FALSE) {
     scheme_wrong_type("elements-with-tag","string",1,argc,argv);
   }
-  
-  pDocument = MX_DOCUMENT_VAL(argv[0]); 
-  
+
+  pDocument = MX_DOCUMENT_VAL(argv[0]);
+
   pDocument->get_body(&pBody);
-  
+
   if (pBody == NULL) {
     scheme_signal_error("elements-with-tag: Can't find document BODY");
   }
-  
+
   if (stricmp(SCHEME_STR_VAL(argv[1]),"BODY") == 0) {
     return scheme_make_pair((Scheme_Object *)(make_mx_element(pBody)),
 			    scheme_null);
   }
 
   pCollection = getBodyElementsWithTag(pBody,SCHEME_STR_VAL(argv[1]));
-  
+
   pBody->Release();
-  
+
   pCollection->get_length(&numObjects);
-  
+
   retval = scheme_null;
-  
+
   for (i = numObjects - 1; i >= 0; i--) {
-    
+
     pDispatch = getElementInCollection(pCollection,i);
 
     hr = pDispatch->QueryInterface(IID_IHTMLElement,(void **)&pIHTMLElement);
 
-    if (hr != S_OK || pIHTMLElement == NULL) {
+    if (FAILED (hr) || pIHTMLElement == NULL) {
       codedComError("elements-with-tag: Can't get IHTMLElement interface",hr);
     }
 
@@ -3880,13 +4032,13 @@ Scheme_Object *mx_elements_with_tag(int argc,Scheme_Object **argv) {
 
     retval = scheme_make_pair((Scheme_Object *)elt,retval);
   }
-  
+
   pCollection->Release();
-  
+
   return retval;
 }
 
-CLSID getCLSIDFromCoClass(const char *name) { 
+CLSID getCLSIDFromCoClass(const char *name) {
   HKEY hkey,hsubkey;
   LONG result;
   FILETIME fileTime;
@@ -3902,99 +4054,99 @@ CLSID getCLSIDFromCoClass(const char *name) {
   int count;
   unsigned int len;
   char **p;
-  
+
   // dummy entry
-  
+
   clsId = emptyClsId;
-  
+
   // get HKEY to Interfaces listing in Registry
-  
+
   result = RegOpenKeyEx(HKEY_CLASSES_ROOT,
 			"CLSID",
 			(DWORD)0,
 			KEY_READ,
 			&hkey);
-  
-  
+
+
   if (result != ERROR_SUCCESS) {
     scheme_signal_error("Error while searching Windows registry");
-  }	    
-  
+  }
+
   // enumerate subkeys until we find the one we want
-  
+
   // really, should call RegQueryInfoKey to find size needed for buffers
-  
+
   keyIndex = 0;
-  
+
   while (1) {
-    
+
     // get next subkey
-    
+
     clsIdBufferSize = sizeof(clsIdBuffer);
-    
+
     result = RegEnumKeyEx(hkey,keyIndex++,
 			  clsIdBuffer,
 			  &clsIdBufferSize,
 			  0,NULL,NULL,
 			  &fileTime);
-    
+
     if (result == ERROR_NO_MORE_ITEMS) {
       break;
-    }		
-    
+    }
+
     if (result != ERROR_SUCCESS) {
       scheme_signal_error("Error enumerating subkeys in Windows registry");
     }
-    
+
     if (strlen(clsIdBuffer) != CLSIDLEN) { // not a CLSID -- bogus entry
       continue;
     }
-    
+
     // open subkey
-    
+
     result = RegOpenKeyEx(hkey,clsIdBuffer,
 			  (DWORD)0,
 			  KEY_READ,&hsubkey);
-    
+
     if (result != ERROR_SUCCESS) {
       return clsId;
-    }	    
-    
+    }
+
     dataBufferSize = sizeof(dataBuffer);
-    
+
     RegQueryValueEx(hsubkey,"",0,&dataType,dataBuffer,&dataBufferSize);
-    
+
     if (dataType == REG_SZ && strcmp(name,(char *)dataBuffer) == 0) {
       int subkeyIndex;
       TCHAR subkeyBuffer[256];
       DWORD subkeyBufferSize;
-      
+
       // confirm this is a COM object
-      
+
       subkeyIndex = 0;
-      
+
       loopFlag = TRUE;
-      
+
       while (loopFlag) {
-	
+
 	subkeyBufferSize = sizeray(subkeyBuffer);
-	
+
 	result = RegEnumKeyEx(hsubkey,subkeyIndex++,
 			      subkeyBuffer,
 			      &subkeyBufferSize,
 			      0,NULL,NULL,
 			      &fileTime);
-	
+
 	if (result == ERROR_NO_MORE_ITEMS) {
 	  break;
 	}
-	
+
 	if (result != ERROR_SUCCESS) {
 	  scheme_signal_error("Error enumerating subkeys in Windows registry");
 	}
-	
+
 	p = objectAttributes;
-	
+
 	while (*p) {
 	  if (stricmp(subkeyBuffer,*p) == 0) {
 	    len = strlen(clsIdBuffer);
@@ -4002,12 +4154,12 @@ CLSID getCLSIDFromCoClass(const char *name) {
 					clsIdBuffer,len,
 					oleClsIdBuffer,
 					sizeray(oleClsIdBuffer) - 1);
-	    oleClsIdBuffer[len] = '\0';  
-	    
+	    oleClsIdBuffer[len] = '\0';
+
 	    if (count == 0) {
 	      scheme_signal_error("Error translating CLSID to Unicode",name);
 	    }
-	    
+
 	    CLSIDFromString(oleClsIdBuffer,&clsId);
 	    loopFlag = FALSE;
 	    break; // *p loop
@@ -4016,17 +4168,17 @@ CLSID getCLSIDFromCoClass(const char *name) {
 	}
       }
     }
-    
+
     RegCloseKey(hsubkey);
-    
+
   }
-  
-  RegCloseKey(hkey);  
+
+  RegCloseKey(hkey);
 
   if (isEmptyClsId(clsId)) {
     scheme_signal_error("Coclass %s not found",name);
   }
-  
+
   return clsId;
 }
 
@@ -4034,15 +4186,15 @@ Scheme_Object *mx_find_element(int argc,Scheme_Object **argv) {
   IHTMLElement *pIHTMLElement;
   MX_Element *retval;
   int index;
-  
-  if (MX_DOCUMENTP(argv[0]) == FALSE) { 
+
+  if (MX_DOCUMENTP(argv[0]) == FALSE) {
     scheme_wrong_type("find-element","mx-document",0,argc,argv);
   }
-  
-  if (SCHEME_STRINGP(argv[1]) == FALSE) { 
+
+  if (SCHEME_STRINGP(argv[1]) == FALSE) {
     scheme_wrong_type("find-element","string",1,argc,argv);
   }
-  
+
   if (SCHEME_STRINGP(argv[2]) == FALSE) {
     scheme_wrong_type("find-element","string",2,argc,argv);
   }
@@ -4057,17 +4209,17 @@ Scheme_Object *mx_find_element(int argc,Scheme_Object **argv) {
   else {
     index = 0;
   }
-  
+
   pIHTMLElement = findBodyElement(MX_DOCUMENT_VAL(argv[0]),
 				  SCHEME_STR_VAL(argv[1]),
 				  SCHEME_STR_VAL(argv[2]),
 				  index);
-  
+
   if (pIHTMLElement == NULL) {
     scheme_signal_error("find-element: HTML element with tag = %s, id = %s not found",
 			SCHEME_STR_VAL(argv[1]),SCHEME_STR_VAL(argv[2]));
   }
-  
+
   retval = make_mx_element(pIHTMLElement);
 
   return (Scheme_Object *)retval;
@@ -4081,25 +4233,25 @@ Scheme_Object *mx_find_element_by_id_or_name(int argc,Scheme_Object **argv) {
   VARIANT name,index;
   BSTR bstr;
   IDispatch *pEltDispatch;
-  
-  if (MX_DOCUMENTP(argv[0]) == FALSE) { 
+
+  if (MX_DOCUMENTP(argv[0]) == FALSE) {
     scheme_wrong_type("find-element-by-id-or-name","mx-document",0,argc,argv);
   }
-  
+
   if (SCHEME_STRINGP(argv[1]) == FALSE) {
     scheme_wrong_type("find-element-by-id-or-name","string",1,argc,argv);
   }
-  
+
   if (argc > 2 && (SCHEME_INTP(argv[2]) == FALSE ||
 		   SCHEME_INT_VAL(argv[2]) < 0)) {
     scheme_wrong_type("find-element-by-id-or-name","nonnegative integer",2,argc,argv);
   }
-  
+
   pIHTMLDocument2 = MX_DOCUMENT_VAL(argv[0]);
 
   hr = pIHTMLDocument2->get_all(&pIHTMLElementCollection);
-  
-  if (hr != S_OK || pIHTMLElementCollection == NULL) {
+
+  if (FAILED (hr) || pIHTMLElementCollection == NULL) {
     scheme_signal_error("find-element-by-id-or-name: "
 			"Couldn't retrieve element collection "
 			"from HTML document");
@@ -4121,18 +4273,18 @@ Scheme_Object *mx_find_element_by_id_or_name(int argc,Scheme_Object **argv) {
   pIHTMLElementCollection->item(name,index,&pEltDispatch);
 
   SysFreeString(bstr);
-  
+
   pIHTMLElementCollection->Release();
 
   if (pEltDispatch == NULL) {
     scheme_signal_error("find-element-by-id-or-name: "
-			"Couldn't find element with id = %s", 
+			"Couldn't find element with id = %s",
 			SCHEME_STR_VAL(argv[1]));
   }
 
   hr = pEltDispatch->QueryInterface(IID_IHTMLElement,(void **)&pIHTMLElement);
 
-  if (hr != S_OK || pIHTMLElement == NULL) {
+  if (FAILED (hr) || pIHTMLElement == NULL) {
     scheme_signal_error("find-element-by-id-or-name: "
 			"Couldn't retrieve element interface "
 			"for element with id = %s",SCHEME_STR_VAL(argv[1]));
@@ -4149,10 +4301,10 @@ Scheme_Object *mx_clsid_to_html(CLSID clsId,char *controlName,
   char widthBuff[25];
   char heightBuff[25];
   char buff[512];
-  char *format; 
+  char *format;
   int i;
 
-  for (i = 1; i <= 2; i++) { 
+  for (i = 1; i <= 2; i++) {
     if (SCHEME_INTP(argv[i]) == FALSE) {
       scheme_wrong_type(fname,"int",i,argc,argv);
     }
@@ -4177,26 +4329,26 @@ Scheme_Object *mx_clsid_to_html(CLSID clsId,char *controlName,
 			  "must be either 'pixels or 'percent",
 			  fname,symString);
     }
-  } 
+  }
 
   sprintf(widthBuff,format,SCHEME_INT_VAL(argv[1]));
   sprintf(heightBuff,format,SCHEME_INT_VAL(argv[2]));
 
   StringFromCLSID(clsId,&clsIdString);
-  
-  *(clsIdString + wcslen(clsIdString) - 1) = L'\0'; 
-  
+
+  *(clsIdString + wcslen(clsIdString) - 1) = L'\0';
+
   if (clsIdString == NULL) {
     scheme_signal_error("%s: Can't convert control CLSID to string",fname);
   }
-  
+
   sprintf(buff,
 	  "<OBJECT ID=\"%s\" WIDTH=\"%s\" HEIGHT=\"%s\" CLASSID=\"clsid:%S\">\n"
 	  "</OBJECT>",
-	  controlName,		    
+	  controlName,
 	  widthBuff,heightBuff,
 	  clsIdString + 1);
-  
+
   return (Scheme_Object *)scheme_make_string(buff);
 }
 
@@ -4207,18 +4359,18 @@ Scheme_Object *mx_coclass_to_html(int argc,Scheme_Object **argv) {
   if (SCHEME_STRINGP(argv[0]) == FALSE) {
     scheme_wrong_type("coclass->html","string",0,argc,argv);
   }
-  
+
   controlName = SCHEME_STR_VAL(argv[0]);
-  
+
   clsId = getCLSIDFromCoClass(controlName);
 
   if (isEmptyClsId(clsId)) {
     scheme_signal_error("coclass->html: Coclass \"%s\" not found",
 			controlName);
   }
-  
-  return mx_clsid_to_html(clsId,controlName,"coclass->html",argc,argv); 
-  
+
+  return mx_clsid_to_html(clsId,controlName,"coclass->html",argc,argv);
+
 }
 
 Scheme_Object *mx_progid_to_html(int argc,Scheme_Object **argv) {
@@ -4229,54 +4381,54 @@ Scheme_Object *mx_progid_to_html(int argc,Scheme_Object **argv) {
   if (SCHEME_STRINGP(argv[0]) == FALSE) {
     scheme_wrong_type("progid->html","string",0,argc,argv);
   }
-  
+
   wideProgId = schemeStringToBSTR(argv[0]);
-  
+
   hr = CLSIDFromProgID(wideProgId,&clsId);
 
-  if (hr != S_OK) {
+  if (FAILED (hr)) {
     scheme_signal_error("progid->html: ProgID \"%s\" not found",
 			SCHEME_STR_VAL(argv[0]));
   }
 
   SysFreeString(wideProgId);
-  
+
   return mx_clsid_to_html(clsId,SCHEME_STR_VAL(argv[0]),"progid->html",
-			  argc,argv); 
+			  argc,argv);
 }
 
 Scheme_Object *mx_stuff_html(int argc,Scheme_Object **argv,
 			     WCHAR *oleWhere,char *scheme_name) {
-  IHTMLDocument2 *pDocument; 
+  IHTMLDocument2 *pDocument;
   IHTMLElement *pBody;
   BSTR where,html;
 
   if (MX_DOCUMENTP(argv[0]) == FALSE) {
     scheme_wrong_type(scheme_name,"mx-document",0,argc,argv);
   }
-  
+
   if (SCHEME_STRINGP(argv[1]) == FALSE) {
     scheme_wrong_type(scheme_name,"string",1,argc,argv);
   }
-  
+
   pDocument = MX_DOCUMENT_VAL(argv[0]);
-  
+
   html = schemeStringToBSTR(argv[1]);
   pDocument->get_body(&pBody);
-  
+
   if (pBody == NULL) {
     scheme_signal_error("Can't find document BODY");
   }
-  
+
   where = SysAllocString(oleWhere);
-  
+
   pBody->insertAdjacentHTML(where,html);
-  
-  SysFreeString(where);			    
-  SysFreeString(html);			    
-  
+
+  SysFreeString(where);
+  SysFreeString(html);
+
   return scheme_void;
-  
+
 }
 
 Scheme_Object *mx_insert_html(int argc,Scheme_Object **argv) {
@@ -4288,37 +4440,37 @@ Scheme_Object *mx_append_html(int argc,Scheme_Object **argv) {
 }
 
 Scheme_Object *mx_replace_html(int argc,Scheme_Object **argv) {
-  IHTMLDocument2 *pDocument; 
+  IHTMLDocument2 *pDocument;
   IHTMLElement *pBody;
   BSTR html;
-  
+
   if (MX_DOCUMENTP(argv[0]) == FALSE) {
     scheme_wrong_type("replace-html","mx-document",0,argc,argv);
   }
-  
+
   if (SCHEME_STRINGP(argv[1]) == FALSE) {
     scheme_wrong_type("replace-html","string",1,argc,argv);
   }
-  
+
   pDocument = MX_DOCUMENT_VAL(argv[0]);
   html = schemeStringToBSTR(argv[1]);
-  
+
   pDocument->get_body(&pBody);
-  
+
   if (pBody == NULL) {
     scheme_signal_error("Can't find document body");
   }
-  
+
   pBody->put_innerHTML(html);
-  
-  SysFreeString(html);			    
-  
+
+  SysFreeString(html);
+
   return scheme_void;
 }
 
 /*
 
-blocking on Win events doesn't seem to work 
+blocking on Win events doesn't seem to work
 any longer
 
 static BOOL win_event_available(void *) {
@@ -4332,21 +4484,21 @@ static void win_event_sem_fun(MX_Document_Object *doc,void *fds) {
   static HANDLE dummySem;
 
   if (!dummySem) {
-    dummySem = CreateSemaphore(NULL,0,1,NULL); 
+    dummySem = CreateSemaphore(NULL,0,1,NULL);
     if (!dummySem) {
       scheme_signal_error("Error creating Windows event semaphore");
     }
   }
 
   scheme_add_fd_eventmask(fds,QS_ALLINPUT);
-  scheme_add_fd_handle(dummySem,fds,TRUE); 
+  scheme_add_fd_handle(dummySem,fds,TRUE);
 }
 */
 
 Scheme_Object *mx_process_win_events(int argc,Scheme_Object **argv) {
   MSG msg;
 
-  /* this used to work, sort of 
+  /* this used to work, sort of
 
     scheme_block_until((int (*)(Scheme_Object *))win_event_available,
 		     (void (*)(Scheme_Object *,void *))win_event_sem_fun,
@@ -4369,13 +4521,13 @@ void initMysSinkTable(void) {
   myssink_table.pmake_scode = mx_make_scode;
   myssink_table.pmake_idispatch = mx_make_idispatch;
   myssink_table.pmake_iunknown = mx_make_iunknown;
-  
+
   myssink_table.pcy_pred = mx_cy_pred;
   myssink_table.pdate_pred = mx_date_pred;
   myssink_table.pscode_pred = mx_scode_pred;
   myssink_table.pcomobj_pred = mx_comobj_pred;
   myssink_table.piunknown_pred = mx_iunknown_pred;
-  
+
   myssink_table.pcy_val = mx_cy_val;
   myssink_table.pdate_val = mx_date_val;
   myssink_table.pscode_val = mx_scode_val;
@@ -4396,7 +4548,7 @@ Scheme_Object *mx_release_type_table(void) {
       scheme_gc_ptr_ok(psave);
     }
   }
-  
+
   return scheme_void;
 }
 
@@ -4432,8 +4584,8 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
 		      0,0,
 	       0,0,
 		      NULL,NULL,hInstance,NULL);
-  
-  
+
+
   ShowWindow(hwnd,SW_SHOW);
 
   char buff[256];
@@ -4443,7 +4595,7 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
   // should not be necessary, but sometimes
   // this variable is not 0'd out - bug in VC++ or MzScheme?
 
-  memset(typeTable,0,sizeof(typeTable)); 
+  memset(typeTable,0,sizeof(typeTable));
 
   // globals in mysterx.cxx
 
@@ -4469,13 +4621,13 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
   hr = CoInitialize(NULL);
 
   // S_OK means success, S_FALSE means COM already loaded
-  
-  if (hr != S_OK && hr != S_FALSE) {
+
+  if (FAILED (hr) && hr != S_FALSE) {
     return scheme_false;
-  }		
-  
+  }
+
   // export prims + omit value
-  
+
   env = scheme_primitive_module(mx_name,env);
 
   for (i = 0; i < sizeray(mxPrims); i++) {
@@ -4493,7 +4645,7 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
   scheme_finish_primitive_module(env);
 
   initEventNames();
-  
+
   initMysSinkTable();
 
   if (isatty(fileno(stdin))) {
@@ -4523,11 +4675,11 @@ void browserHwndMsgLoop(LPVOID p) {
   BROWSER_WINDOW_INIT *pBrowserWindowInit;
   LONG hasScrollBars;
   BOOL *destroy;
-  
+
   pBrowserWindowInit = (BROWSER_WINDOW_INIT *)p;
 
   // set apparently-unused low bit in style to inform
-  // DHTMLPage object that we want scrollbars 
+  // DHTMLPage object that we want scrollbars
   if (pBrowserWindowInit->browserWindow.style & (WS_HSCROLL|WS_VSCROLL)) {
     hasScrollBars = 1L;
   }
@@ -4536,12 +4688,12 @@ void browserHwndMsgLoop(LPVOID p) {
   }
 
   hwnd = CreateWindow("AtlAxWin7","myspage.DHTMLPage.1",
-		      WS_VISIBLE | hasScrollBars | 
+		      WS_VISIBLE | hasScrollBars |
 		      (pBrowserWindowInit->browserWindow.style & ~(WS_HSCROLL|WS_VSCROLL)),
 		      pBrowserWindowInit->browserWindow.x,pBrowserWindowInit->browserWindow.y,
 		      pBrowserWindowInit->browserWindow.width,pBrowserWindowInit->browserWindow.height,
 		      NULL,NULL,hInstance,NULL);
-  
+
   if (hwnd == NULL) {
     scheme_signal_error("make-browser: Can't create browser window");
   }
@@ -4550,15 +4702,15 @@ void browserHwndMsgLoop(LPVOID p) {
   SetForegroundWindow(hwnd);
 
   browserHwnd = hwnd;
-  
+
   if (hasScrollBars) {
     // clear spurious low bit to avoid trouble
     SetWindowLong(hwnd,GWL_STYLE,
 		  GetWindowLong(hwnd,GWL_STYLE) & ~1L);
-  } 
+  }
 
   SetClassLong(hwnd,GCL_HICON,(LONG)hIcon);
-  
+
   SetWindowText(hwnd,pBrowserWindowInit->browserWindow.label);
 
   pIUnknown = NULL;
@@ -4566,16 +4718,16 @@ void browserHwndMsgLoop(LPVOID p) {
   destroy = &(pBrowserWindowInit->browserObject->destroy);
 
   while (IsWindow(hwnd)) {
-    
+
     if (pIUnknown == NULL) {
       AtlAxGetControl(hwnd,&pIUnknown);
 
       if (pIUnknown) {
-	
+
 	hr = CoMarshalInterThreadInterfaceInStream(IID_IUnknown,pIUnknown,
 						   pBrowserWindowInit->ppIStream);
-	
-	if (hr != S_OK) {
+
+	if (FAILED (hr)) {
 	  DestroyWindow(hwnd);
 	  ReleaseSemaphore(createHwndSem,1,NULL);
 	  codedComError("Can't marshal document interface",hr);
@@ -4599,26 +4751,26 @@ void browserHwndMsgLoop(LPVOID p) {
 }
 
 BOOL APIENTRY DllMain(HANDLE hModule,DWORD reason,LPVOID lpReserved) {
-  
+
   if (reason == DLL_PROCESS_ATTACH) {
-    
+
     hInstance = (HINSTANCE)hModule;
-    
+
     browserHwndMutex = CreateSemaphore(NULL,1,1,NULL);
     createHwndSem = CreateSemaphore(NULL,0,1,NULL);
     eventSinkMutex = CreateSemaphore(NULL,1,1,NULL);
-    
+
     hIcon = (HICON)LoadImage(hInstance,
 			     MAKEINTRESOURCE(MYSTERX_ICON),
 			     IMAGE_ICON,0,0,0);
-    
+
     _Module.Init(NULL,hInstance);
     AtlAxWinInit();
-    
+
   }
   else if (reason == DLL_PROCESS_DETACH) {
     _Module.Term();
   }
-  
+
   return TRUE;
 }

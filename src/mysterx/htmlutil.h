@@ -14,11 +14,11 @@ Scheme_Object *fun_name(int argc,Scheme_Object **argv) { \
   retval = BSTRToSchemeString(bstr); \
   SysFreeString(bstr); \
   pIHTMLStyle->Release(); \
-  if (hr != S_OK) { \
+  if (FAILED(hr)) { \
     scheme_signal_error(#dhtml_name " failed with code %X",hr); \
   } \
   return retval; \
-}  
+}
 
 #define elt_style_string_setter(fun_name,scm_name,dhtml_name) \
 Scheme_Object *fun_name(int argc,Scheme_Object **argv) { \
@@ -36,11 +36,11 @@ Scheme_Object *fun_name(int argc,Scheme_Object **argv) { \
   hr = pIHTMLStyle->dhtml_name(bstr); \
   SysFreeString(bstr); \
   pIHTMLStyle->Release(); \
-  if (hr != S_OK) { \
+  if (FAILED(hr)) { \
     scheme_signal_error(#dhtml_name " failed with code %X",hr); \
   } \
   return scheme_void; \
-}    
+}
 
 #define elt_style_bool_getter(fun_name,scm_name,dhtml_name) \
 Scheme_Object *fun_name(int argc,Scheme_Object **argv) { \
@@ -53,11 +53,11 @@ Scheme_Object *fun_name(int argc,Scheme_Object **argv) { \
   pIHTMLStyle = styleInterfaceFromElement(argv[0]); \
   hr = pIHTMLStyle->dhtml_name(&boolVal); \
   pIHTMLStyle->Release(); \
-  if (hr != S_OK) { \
+  if (FAILED(hr)) { \
     scheme_signal_error(#dhtml_name " failed with code %X",hr); \
   } \
   return (boolVal == 0) ? scheme_false : scheme_true; \
-}  
+}
 
 #define elt_style_bool_setter(fun_name,scm_name,dhtml_name) \
 Scheme_Object *fun_name(int argc,Scheme_Object **argv) { \
@@ -71,7 +71,7 @@ Scheme_Object *fun_name(int argc,Scheme_Object **argv) { \
   boolVal = (argv[1] == scheme_false) ? 0 : -1; \
   hr = pIHTMLStyle->dhtml_name(boolVal); \
   pIHTMLStyle->Release(); \
-  if (hr != S_OK) { \
+  if (FAILED(hr)) { \
     scheme_signal_error(#dhtml_name " failed with code %X",hr); \
   } \
   return scheme_void; \
@@ -88,11 +88,11 @@ Scheme_Object *fun_name(int argc,Scheme_Object **argv) { \
   pIHTMLStyle = styleInterfaceFromElement(argv[0]); \
   hr = pIHTMLStyle->dhtml_name(&val); \
   pIHTMLStyle->Release(); \
-  if (hr != S_OK) { \
+  if (FAILED(hr)) { \
     scheme_signal_error(#dhtml_name " failed with code %X",hr); \
   } \
   return scheme_make_integer(val); \
-}  
+}
 
 #define elt_style_long_setter(fun_name,scm_name,dhtml_name) \
 Scheme_Object *fun_name(int argc,Scheme_Object **argv) { \
@@ -111,7 +111,7 @@ Scheme_Object *fun_name(int argc,Scheme_Object **argv) { \
   } \
   hr = pIHTMLStyle->dhtml_name(val); \
   pIHTMLStyle->Release(); \
-  if (hr != S_OK) { \
+  if (FAILED(hr)) { \
     scheme_signal_error(#dhtml_name " failed with code %X",hr); \
   } \
   return scheme_void; \
@@ -129,11 +129,11 @@ Scheme_Object *fun_name(int argc,Scheme_Object **argv) { \
   pIHTMLStyle = styleInterfaceFromElement(argv[0]); \
   hr = pIHTMLStyle->dhtml_name(&val); \
   pIHTMLStyle->Release(); \
-  if (hr != S_OK) { \
+  if (FAILED(hr)) { \
     scheme_signal_error(#dhtml_name " failed with code %X",hr); \
   } \
   return scheme_make_float(val); \
-}  
+}
 
 #define elt_style_float_setter(fun_name,scm_name,dhtml_name) \
 Scheme_Object *fun_name(int argc,Scheme_Object **argv) { \
@@ -148,12 +148,12 @@ Scheme_Object *fun_name(int argc,Scheme_Object **argv) { \
   pIHTMLStyle = styleInterfaceFromElement(argv[0]); \
   hr = pIHTMLStyle->dhtml_name(SCHEME_FLT_VAL(argv[1]); \
   pIHTMLStyle->Release(); \
-  if (hr != S_OK) { \
+  if (FAILED(hr)) { \
     scheme_signal_error(#dhtml_name " failed with code %X",hr); \
   } \
   return scheme_void; \
 }
-#else 
+#else
 #define elt_style_float_getter(fun_name,scm_name,dhtml_name) \
 Scheme_Object *fun_name(int argc,Scheme_Object **argv) { \
   HRESULT hr; \
@@ -165,11 +165,11 @@ Scheme_Object *fun_name(int argc,Scheme_Object **argv) { \
   pIHTMLStyle = styleInterfaceFromElement(argv[0]); \
   hr = pIHTMLStyle->dhtml_name(&val); \
   pIHTMLStyle->Release(); \
-  if (hr != S_OK) { \
+  if (FAILED(hr)) { \
     scheme_signal_error(#dhtml_name " failed with code %X",hr); \
   } \
   return scheme_make_double((double)val); \
-}  
+}
 
 #define elt_style_float_setter(fun_name,scm_name,dhtml_name) \
 Scheme_Object *fun_name(int argc,Scheme_Object **argv) { \
@@ -184,7 +184,7 @@ Scheme_Object *fun_name(int argc,Scheme_Object **argv) { \
   pIHTMLStyle = styleInterfaceFromElement(argv[0]); \
   hr = pIHTMLStyle->dhtml_name((float)SCHEME_DBL_VAL(argv[1])); \
   pIHTMLStyle->Release(); \
-  if (hr != S_OK) { \
+  if (FAILED(hr)) { \
     scheme_signal_error(#dhtml_name " failed with code %X",hr); \
   } \
   return scheme_void; \
@@ -202,11 +202,11 @@ Scheme_Object *fun_name(int argc,Scheme_Object **argv) { \
   pIHTMLStyle = styleInterfaceFromElement(argv[0]); \
   hr = pIHTMLStyle->dhtml_name(&variant); \
   pIHTMLStyle->Release(); \
-  if (hr != S_OK) { \
+  if (FAILED(hr)) { \
     scheme_signal_error(#dhtml_name " failed with code %X",hr); \
   } \
   return variantToSchemeObject(&variant); \
-}  
+}
 
 #define elt_style_variant_setter(fun_name,scm_name,dhtml_name) \
 Scheme_Object *fun_name(int argc,Scheme_Object **argv) { \
@@ -217,12 +217,11 @@ Scheme_Object *fun_name(int argc,Scheme_Object **argv) { \
     scheme_wrong_type(scm_name,"mx-element",0,argc,argv); \
   } \
   pIHTMLStyle = styleInterfaceFromElement(argv[0]); \
-  marshallSchemeValueToVariant(argv[1],&variant); \
+  marshalSchemeValueToVariant(argv[1],&variant); \
   hr = pIHTMLStyle->dhtml_name(variant); \
   pIHTMLStyle->Release(); \
-  if (hr != S_OK) { \
+  if (FAILED(hr)) { \
     scheme_signal_error(#dhtml_name " failed with code %X",hr); \
   } \
   return scheme_void; \
 }
-

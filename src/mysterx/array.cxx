@@ -20,7 +20,7 @@ Scheme_Object *safeArrayElementToSchemeObject(SAFEARRAY *theArray,
   HRESULT hr;
   VARTYPE vt;
   char errBuff[128];
-	
+
   hr = SafeArrayGetVartype(theArray,&vt);
 
   if (hr != S_OK) {
@@ -28,27 +28,27 @@ Scheme_Object *safeArrayElementToSchemeObject(SAFEARRAY *theArray,
   }
 
   switch(vt) {
-    
+
   case VT_EMPTY :
   case VT_NULL :
-    
+
     return scheme_void;
-    
+
   case VT_UI1 :
     char cArg;
     SafeArrayGetElement(theArray,allIndices,&cArg);
     return scheme_make_character(cArg);
-    
+
   case VT_I2  :
     int iArg;
     SafeArrayGetElement(theArray,allIndices, &iArg);
     return scheme_make_integer(iArg);
-    
+
   case VT_I4 :
     long lArg;
     SafeArrayGetElement(theArray,allIndices, &lArg);
     return scheme_make_integer_value(lArg);
-    
+
   case VT_R4 :
     double dArg;
 #ifdef MZ_USE_SINGLE_FLOATS
@@ -59,36 +59,36 @@ Scheme_Object *safeArrayElementToSchemeObject(SAFEARRAY *theArray,
     SafeArrayGetElement(theArray,allIndices, &dArg);
     return scheme_make_double((double)(dArg));
 #endif
-    
+
   case VT_R8 :
     SafeArrayGetElement(theArray,allIndices,&dArg);
     return scheme_make_double((double)(dArg));
-    
+
   case VT_BSTR :
     BSTR bArg;
     SafeArrayGetElement(theArray,allIndices,&bArg);
     return BSTRToSchemeString((unsigned short *)bArg);
-    
+
   case VT_ERROR :
     SCODE scodeArg;
     SafeArrayGetElement(theArray,allIndices,&scodeArg);
     return mx_make_scode(scodeArg);
-    
+
   case VT_CY :
     CY cyArg;
     SafeArrayGetElement(theArray,allIndices,&cyArg);
     return mx_make_cy(&cyArg);
-    
+
   case VT_DATE :
     DATE dateArg;
     SafeArrayGetElement(theArray,allIndices,&dateArg);
     return mx_make_date(&dateArg);
-    
+
   case VT_DISPATCH :
     IDispatch * pIDispatch;
     SafeArrayGetElement(theArray,allIndices,&pIDispatch);
     return mx_make_idispatch(pIDispatch);
-    
+
   case VT_UNKNOWN :
     IUnknown *pIUnknown;
     SafeArrayGetElement(theArray,allIndices,&pIUnknown);
@@ -98,20 +98,20 @@ Scheme_Object *safeArrayElementToSchemeObject(SAFEARRAY *theArray,
     VARIANT_BOOL boolArg;
     SafeArrayGetElement(theArray,allIndices,&boolArg);
     return boolArg ? scheme_true : scheme_false;
-    
+
   case VT_VARIANT :
     VARIANT variant;
     SafeArrayGetElement(theArray,allIndices,&variant);
     return variantToSchemeObject(&variant);
-    
+
   default :
-    
+
     sprintf(errBuff,
 	    "Can't make Scheme value from array element with type 0x%X",vt);
     scheme_signal_error(errBuff);
-    
+
   }
-  
+
   return NULL;
 }
 
@@ -130,7 +130,7 @@ Scheme_Object *buildVectorFromArray(SAFEARRAY *theArray,long currDim,
   if (currDim > 1) {
     for (i = 0,j = low; i < vecSize; i++,j++) {
       currNdx[0] = j;
-      SCHEME_VEC_ELS(vec)[i] = 
+      SCHEME_VEC_ELS(vec)[i] =
 	buildVectorFromArray(theArray,currDim - 1,
 			     allIndices,currNdx - 1);
     }
@@ -138,7 +138,7 @@ Scheme_Object *buildVectorFromArray(SAFEARRAY *theArray,long currDim,
   else {
     for (i = 0,j = low; i < vecSize; i++,j++) {
       currNdx[0] = j;
-      SCHEME_VEC_ELS(vec)[i] = 
+      SCHEME_VEC_ELS(vec)[i] =
 	safeArrayElementToSchemeObject(theArray,allIndices);
     }
   }
@@ -150,7 +150,7 @@ Scheme_Object *safeArrayToSchemeVector(SAFEARRAY *theArray) {
   long numDims;
   long *indices;
   Scheme_Object *retval;
-  
+
   numDims = SafeArrayGetDim(theArray);
 
   indices = (long *)scheme_malloc(numDims * sizeof(long));
@@ -171,7 +171,7 @@ int getSchemeVectorDims(Scheme_Object *vec) {
   do {
     numDims++;
     currObj = SCHEME_VEC_ELS(currObj)[0];
-  } while (SCHEME_VECTORP(currObj)); 
+  } while (SCHEME_VECTORP(currObj));
 
   return numDims;
 }
@@ -187,7 +187,7 @@ void setArrayEltCounts(Scheme_Object *vec,
   do {
     rayBounds[i--].cElements = SCHEME_VEC_SIZE(currObj);
     currObj = SCHEME_VEC_ELS(currObj)[0];
-  } while (SCHEME_VECTORP(currObj)); 
+  } while (SCHEME_VECTORP(currObj));
 }
 
 BOOL isRegularVector(Scheme_Object *vec) {
@@ -247,7 +247,7 @@ void doSetArrayElts(Scheme_Object *vec,SAFEARRAY *theArray,
   Scheme_Object *elt;
   int len;
   int i;
-  
+
   len = SCHEME_VEC_SIZE(vec);
 
   if (currNdx > allIndices) {
@@ -261,7 +261,7 @@ void doSetArrayElts(Scheme_Object *vec,SAFEARRAY *theArray,
     for (i = 0; i < len; i++) {
       elt = SCHEME_VEC_ELS(vec)[i];
       currNdx[0] = i;
-      marshallSchemeValueToVariant(elt,&variant);
+      marshalSchemeValueToVariant(elt,&variant);
       SafeArrayPutElement(theArray,allIndices,&variant);
     }
   }
@@ -308,6 +308,5 @@ SAFEARRAY *schemeVectorToSafeArray(Scheme_Object *vec) {
   setArrayElts(vec,theArray,numDims);
 
   return theArray;
-  
-}
 
+}

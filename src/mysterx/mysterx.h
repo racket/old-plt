@@ -37,7 +37,7 @@ typedef struct _MX_prim_ {
   short maxargs;
 } MX_PRIM;
 
-typedef struct _scheme_com_obj_ { 
+typedef struct _scheme_com_obj_ {
   Scheme_Type type;
   BOOL released;
   IDispatch *pIDispatch;
@@ -49,14 +49,14 @@ typedef struct _scheme_com_obj_ {
   ISink *pISink;
 } MX_COM_Object;
 
-typedef struct _scheme_com_type_ { 
+typedef struct _scheme_com_type_ {
   Scheme_Type type;
   BOOL released;
   ITypeInfo *pITypeInfo;
   CLSID clsId; // of coclass
 } MX_COM_Type;
 
-typedef struct _scheme_mx_event_ { 
+typedef struct _scheme_mx_event_ {
   Scheme_Type type;
   BOOL released;
   IEvent *pEvent;
@@ -82,11 +82,11 @@ typedef struct _mx_com_data_ {
   Scheme_Type type;
   BOOL released;
   union { // MS representations
-    DATE date; 
-    CY cy;    
+    DATE date;
+    CY cy;
     SCODE scode;
     IUnknown *pIUnknown;
-  }; 
+  };
 } MX_COM_Data_Object;
 
 typedef struct _com_browser_ {
@@ -132,7 +132,7 @@ typedef struct _mx_type_tbl_entry_ {
 typedef enum _mx_html_where_ {
   insert,append
 } MX_HTML_WHERE;
-  
+
 typedef struct _browser_window_ { // parameters a la MrEd frame% class
   char *label;
   int width;
@@ -209,8 +209,8 @@ extern const CLSID emptyClsId;
 
 extern Scheme_Object *scheme_date_type;
 
-extern Scheme_Type mx_com_object_type; 
-extern Scheme_Type mx_com_type_type; 
+extern Scheme_Type mx_com_object_type;
+extern Scheme_Type mx_com_type_type;
 extern Scheme_Type mx_browser_type;
 extern Scheme_Type mx_document_type;
 extern Scheme_Type mx_element_type;
@@ -557,7 +557,7 @@ MX_PRIM_DECL(mx_event_error_pred);
 MX_PRIM_DECL(mx_block_until_event);
 MX_PRIM_DECL(mx_process_win_events);
 MX_PRIM_DECL(mx_release_type_table);
-  
+
 void browserHwndMsgLoop(LPVOID);
 void mx_register_com_object(Scheme_Object *,IDispatch *);
 void mx_register_simple_com_object(Scheme_Object *,IUnknown *);
@@ -571,7 +571,7 @@ BSTR schemeStringToBSTR(Scheme_Object *);
 BSTR stringToBSTR(char *,size_t);
 Scheme_Object *BSTRToSchemeString(BSTR);
 Scheme_Object *variantToSchemeObject(VARIANTARG *);
-void marshallSchemeValueToVariant(Scheme_Object *,VARIANTARG *);
+void marshalSchemeValueToVariant(Scheme_Object *,VARIANTARG *);
 void initEventNames(void);
 IHTMLElement *findBodyElement(IHTMLDocument2 *,char *,char *,int);
 CLSID getCLSIDFromCoClass(const char *);

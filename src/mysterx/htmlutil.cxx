@@ -46,7 +46,7 @@ IHTMLElement *findBodyElement(IHTMLDocument2 *pDocument,
     idBSTR = stringToBSTR(id,strlen(id));
 
     pBody->getAttribute(idAttribute,FALSE,&variant);
-    
+
     if (variant.vt == VT_BSTR && variant.bstrVal &&
         _wcsicmp(idBSTR,variant.bstrVal) == 0) {
       retval = pBody;
@@ -61,7 +61,7 @@ IHTMLElement *findBodyElement(IHTMLDocument2 *pDocument,
   pTagCollection = getBodyElementsWithTag(pBody,tag);
 
   pBody->Release();
-  
+
   // enumerate until we find id or return NULL
 
   pTagCollection->get_length(&numElts);
@@ -77,7 +77,7 @@ IHTMLElement *findBodyElement(IHTMLDocument2 *pDocument,
 
     pIDispatch->QueryInterface(IID_IHTMLElement,(void **)&pIHTMLElement);
 
-    pIDispatch->Release();      
+    pIDispatch->Release();
 
     if (pIHTMLElement == NULL) {
       continue;
@@ -129,7 +129,7 @@ IHTMLElementCollection *getBodyElementsWithTag(IHTMLElement *pBody,char *tag) {
   pBodyEltCollection->get_length(&numBodyItems);
 
   bstr = stringToBSTR(tag,strlen(tag));
-  
+
   VariantInit(&variant);
   VariantInit(&emptyVariant);
 
@@ -153,7 +153,7 @@ IHTMLElementCollection *getBodyElementsWithTag(IHTMLElement *pBody,char *tag) {
     scheme_signal_error("Can't get body elements");
   }
 
-  return pObjectsCollection;  
+  return pObjectsCollection;
 }
 
 IDispatch *getElementInCollection(IHTMLElementCollection *pEltCollection,int ndx) {
@@ -186,11 +186,11 @@ IDispatch *getObjectInCollection(IHTMLElementCollection *pObjectCollection,int n
   // apparent bug in DHTML
 
   pIDispatch->QueryInterface(IID_IHTMLObjectElement,(void **)&pIHTMLObjectElement);
- 
+
   if (pIHTMLObjectElement != NULL) {
 
     pIDispatch->Release();
-      
+
     pIHTMLObjectElement->get_object(&pIDispatch);
 
     pIHTMLObjectElement->Release();
@@ -212,8 +212,8 @@ Scheme_Object *mx_element_focus(int argc,Scheme_Object **argv) {
     scheme_wrong_type("element-focus","mx-element",0,argc,argv);
   }
 
-  pIHTMLElement = MX_ELEMENT_VAL(argv[0]);   
-  
+  pIHTMLElement = MX_ELEMENT_VAL(argv[0]);
+
   hr = pIHTMLElement->QueryInterface(IID_IHTMLElement2,
 				     (void **)&pIHTMLElement2);
 
@@ -228,7 +228,7 @@ Scheme_Object *mx_element_focus(int argc,Scheme_Object **argv) {
   return scheme_void;
 }
 
-// selections 
+// selections
 
 Scheme_Object *mx_element_selection(int argc,Scheme_Object **argv) {
   HRESULT hr;
@@ -240,7 +240,7 @@ Scheme_Object *mx_element_selection(int argc,Scheme_Object **argv) {
     scheme_wrong_type("element-selection","mx-element",0,argc,argv);
   }
 
-  pIHTMLElement = MX_ELEMENT_VAL(argv[0]);   
+  pIHTMLElement = MX_ELEMENT_VAL(argv[0]);
 
   hr = pIHTMLElement->QueryInterface(IID_IHTMLSelectElement,
 				     (void **)&pIHTMLSelectElement);
@@ -274,7 +274,7 @@ Scheme_Object *mx_element_set_selection(int argc,Scheme_Object **argv) {
     scheme_wrong_type("element-set-selection!","string",1,argc,argv);
   }
 
-  pIHTMLElement = MX_ELEMENT_VAL(argv[0]);   
+  pIHTMLElement = MX_ELEMENT_VAL(argv[0]);
 
   hr = pIHTMLElement->QueryInterface(IID_IHTMLSelectElement,
 				     (void **)&pIHTMLSelectElement);
@@ -312,7 +312,7 @@ Scheme_Object *mx_element_stuff_html(int argc,Scheme_Object **argv,WCHAR *where,
     scheme_wrong_type(name,"string",0,argc,argv);
   }
 
-  pIHTMLElement = MX_ELEMENT_VAL(argv[0]);   
+  pIHTMLElement = MX_ELEMENT_VAL(argv[0]);
 
   whereBSTR = SysAllocString(where);
   htmlBSTR = schemeStringToBSTR(argv[1]);
@@ -326,11 +326,11 @@ Scheme_Object *mx_element_stuff_html(int argc,Scheme_Object **argv,WCHAR *where,
 }
 
 Scheme_Object *mx_element_insert_html(int argc,Scheme_Object **argv) {
-  return mx_element_stuff_html(argc,argv,L"BeforeBegin","element-insert-html"); 
+  return mx_element_stuff_html(argc,argv,L"BeforeBegin","element-insert-html");
 }
 
 Scheme_Object *mx_element_append_html(int argc,Scheme_Object **argv) {
-  return mx_element_stuff_html(argc,argv,L"AfterEnd","element-append-html"); 
+  return mx_element_stuff_html(argc,argv,L"AfterEnd","element-append-html");
 }
 
 Scheme_Object *mx_element_stuff_text(int argc,Scheme_Object **argv,WCHAR *where,char *name) {
@@ -345,7 +345,7 @@ Scheme_Object *mx_element_stuff_text(int argc,Scheme_Object **argv,WCHAR *where,
     scheme_wrong_type(name,"string",0,argc,argv);
   }
 
-  pIHTMLElement = MX_ELEMENT_VAL(argv[0]);   
+  pIHTMLElement = MX_ELEMENT_VAL(argv[0]);
 
   whereBSTR = SysAllocString(where);
   textBSTR = schemeStringToBSTR(argv[1]);
@@ -359,11 +359,11 @@ Scheme_Object *mx_element_stuff_text(int argc,Scheme_Object **argv,WCHAR *where,
 }
 
 Scheme_Object *mx_element_insert_text(int argc,Scheme_Object **argv) {
-  return mx_element_stuff_html(argc,argv,L"BeforeBegin","element-insert-text"); 
+  return mx_element_stuff_html(argc,argv,L"BeforeBegin","element-insert-text");
 }
 
 Scheme_Object *mx_element_append_text(int argc,Scheme_Object **argv) {
-  return mx_element_stuff_html(argc,argv,L"AfterEnd","element-append-text"); 
+  return mx_element_stuff_html(argc,argv,L"AfterEnd","element-append-text");
 }
 
 Scheme_Object *mx_element_replace_html(int argc,Scheme_Object **argv) {
@@ -382,9 +382,9 @@ Scheme_Object *mx_element_replace_html(int argc,Scheme_Object **argv) {
     scheme_signal_error("element-replace-html: Element no longer valid");
   }
 
-  MX_ELEMENT_VALIDITY(argv[0]) = FALSE;   
+  MX_ELEMENT_VALIDITY(argv[0]) = FALSE;
 
-  pIHTMLElement = MX_ELEMENT_VAL(argv[0]);   
+  pIHTMLElement = MX_ELEMENT_VAL(argv[0]);
 
   htmlBSTR = schemeStringToBSTR(argv[1]);
 
@@ -469,7 +469,7 @@ Scheme_Object *mx_element_attribute(int argc,Scheme_Object **argv) {
   pIHTMLElement->getAttribute(attributeBSTR,FALSE,&variant);
 
   SysFreeString(attributeBSTR);
-  
+
   return variantToSchemeObject(&variant);
 
 }
@@ -487,11 +487,11 @@ Scheme_Object *mx_element_set_attribute(int argc,Scheme_Object **argv) {
     scheme_wrong_type("element-set-attribute!","string",1,argc,argv);
   }
 
-  if (SCHEME_STRINGP(argv[2]) == FALSE && SCHEME_INTP(argv[2]) == FALSE && 
+  if (SCHEME_STRINGP(argv[2]) == FALSE && SCHEME_INTP(argv[2]) == FALSE &&
 #ifdef MZ_USE_SINGLE_FLOATS
-      SCHEME_FLTP(argv[2]) == FALSE && 
+      SCHEME_FLTP(argv[2]) == FALSE &&
 #endif
-      SCHEME_DBLP(argv[2]) == FALSE && 
+      SCHEME_DBLP(argv[2]) == FALSE &&
       argv[2] != scheme_true && argv[2] != scheme_false) {
     scheme_signal_error("Attribute must have a type in {string,integer,float,double,{#t,#f}}");
   }
@@ -504,12 +504,12 @@ Scheme_Object *mx_element_set_attribute(int argc,Scheme_Object **argv) {
 
   attributeBSTR = schemeStringToBSTR(argv[1]);
 
-  marshallSchemeValueToVariant(argv[2],&variant);
+  marshalSchemeValueToVariant(argv[2],&variant);
 
   pIHTMLElement->setAttribute(attributeBSTR,variant,FALSE);
 
   SysFreeString(attributeBSTR);
-  
+
   return scheme_void;
 
 }
@@ -538,7 +538,7 @@ Scheme_Object *mx_element_remove_attribute(int argc,Scheme_Object **argv) {
   pIHTMLElement->removeAttribute(attributeBSTR,FALSE,&success);
 
   SysFreeString(attributeBSTR);
-  
+
   if (success == 0) {
     scheme_signal_error("Failure in removing attribute");
   }
@@ -551,7 +551,7 @@ Scheme_Object *mx_element_tag(int argc,Scheme_Object **argv) {
   IHTMLElement *pIHTMLElement;
   BSTR tagBSTR;
   Scheme_Object *retval;
-  
+
   if (MX_ELEMENTP(argv[0]) == FALSE) {
     scheme_wrong_type("element-tag","mx-element",0,argc,argv);
   }
@@ -573,7 +573,7 @@ Scheme_Object *mx_element_tag(int argc,Scheme_Object **argv) {
 
 Scheme_Object *mx_element_click(int argc,Scheme_Object **argv) {
   IHTMLElement *pIHTMLElement;
-  
+
   if (MX_ELEMENTP(argv[0]) == FALSE) {
     scheme_wrong_type("element-click","mx-element",0,argc,argv);
   }
@@ -851,7 +851,7 @@ elt_style_string_setter(mx_element_set_list_style,
 			put_listStyle)
 
 // note: no setter here
-elt_style_string_getter(mx_element_position,  
+elt_style_string_getter(mx_element_position,
 			"element-position",
 			get_position)
 
@@ -1217,4 +1217,3 @@ elt_style_variant_getter(mx_element_z_index,
 elt_style_variant_setter(mx_element_set_z_index,
 			 "element-set-z-index",
 			 put_zIndex)
-

@@ -21,8 +21,8 @@
 
 #include "mysterx.h"
 
-Scheme_Type mx_com_object_type;     
-Scheme_Type mx_com_type_type;     
+Scheme_Type mx_com_object_type;
+Scheme_Type mx_com_type_type;
 Scheme_Type mx_browser_type;
 Scheme_Type mx_document_type;
 Scheme_Type mx_element_type;
@@ -37,7 +37,7 @@ Scheme_Type mx_com_typedesc_type;
 
 Scheme_Object *mx_document_pred(int argc,Scheme_Object **argv) {
   return MX_DOCUMENTP(argv[0]) ? scheme_true : scheme_false;
-} 
+}
 
 Scheme_Object *mx_make_cy(CY *pCy) {
   MX_COM_Data_Object *retval;
@@ -99,6 +99,15 @@ Scheme_Object *mx_make_idispatch(IDispatch *pIDispatch) {
 
 
 Scheme_Object *mx_make_iunknown(IUnknown *pIUnknown) {
+  IDispatch * pIDispatch;
+  HRESULT hr;
+
+  // Try to get Dispatch pointer
+  hr = pIUnknown->QueryInterface (IID_IDispatch, (void **)&pIDispatch);
+
+  if (SUCCEEDED (hr))
+    return mx_make_idispatch (pIDispatch);
+
   MX_COM_Data_Object *retval;
 
   retval = (MX_COM_Data_Object *)scheme_malloc(sizeof(MX_COM_Data_Object));
@@ -143,7 +152,7 @@ BOOL mx_comobj_pred(Scheme_Object *obj) {
 Scheme_Object *mx_comobj_pred_ex(int argc,Scheme_Object **argv) {
   return mx_comobj_pred(argv[0]) ? scheme_true : scheme_false;
 }
-  
+
 BOOL mx_iunknown_pred(Scheme_Object *obj) {
   return MX_IUNKNOWNP(obj);
 }
@@ -161,7 +170,7 @@ Scheme_Object *mx_currency_to_scheme_number(int argc,Scheme_Object **argv) {
   char buff[40];
   int len;
   Scheme_Object *port;
-  
+
   if (MX_CYP(argv[0]) == FALSE) {
     scheme_wrong_type("com-currency->number","com-currency",0,argc,argv);
   }
@@ -175,18 +184,18 @@ Scheme_Object *mx_currency_to_scheme_number(int argc,Scheme_Object **argv) {
   // divide by 10,000 by shifting digits
 
    if (len > 4) {
-    memmove(buff + len - 3,buff + len - 4,4); 
+    memmove(buff + len - 3,buff + len - 4,4);
     buff[len - 4] = '.';
     buff[len + 1] = '\0';
   }
   else if (len > 0) {
     int i;
 
-    memmove(buff + 5 - len,buff,len); 
+    memmove(buff + 5 - len,buff,len);
     buff[0] = '.';
     for (i = 1; i < 5 - len; i++) {
       buff[i] = '0';
-    } 
+    }
     buff[6-len] = '\0';
   }
   else {
@@ -194,7 +203,7 @@ Scheme_Object *mx_currency_to_scheme_number(int argc,Scheme_Object **argv) {
     buff[1] = '\0';
   }
 
-  port = scheme_make_string_input_port(buff);    
+  port = scheme_make_string_input_port(buff);
 
   return scheme_read(port);
 }
@@ -242,7 +251,7 @@ Scheme_Object *scheme_number_to_mx_currency(int argc,Scheme_Object **argv) {
   int len;
   int i;
 
-  if (SCHEME_EXACT_INTEGERP(argv[0]) == FALSE && 
+  if (SCHEME_EXACT_INTEGERP(argv[0]) == FALSE &&
       SCHEME_FLOATP(argv[0]) == FALSE) {
     scheme_wrong_type("number->com-currency","exact or inexact number",0,argc,argv);
   }
@@ -250,7 +259,7 @@ Scheme_Object *scheme_number_to_mx_currency(int argc,Scheme_Object **argv) {
   s = scheme_display_to_string(argv[0],NULL);
   strncpy(buff,s,sizeof(buff)-1);
   buff[min(strlen(s),sizeof(buff))] = '\0';
-  
+
   // multiply by 10,000
 
   len = strlen(buff);
@@ -262,9 +271,9 @@ Scheme_Object *scheme_number_to_mx_currency(int argc,Scheme_Object **argv) {
     numDecimals = buff + (len - 1) - p;
     neededZeroes = max(4 - numDecimals,0);
 
-    memmove(p,p+1,min(numDecimals,4));   
+    memmove(p,p+1,min(numDecimals,4));
     q = p + numDecimals;
-  } 
+  }
   else {
     q = buff + len;
     neededZeroes = 4;
@@ -314,18 +323,18 @@ Scheme_Object *mx_date_to_scheme_date(int argc,Scheme_Object **argv) {
   SYSTEMTIME sysTime;
   Scheme_Object *p[10];
   int yearDay;
-  static int offsets[12] = 
+  static int offsets[12] =
   { 0,   // Jan
-    31,  // Feb  
-    59,  // Mar 
+    31,  // Feb
+    59,  // Mar
     90,  // Apr
     120, // May
-    151, // Jun 
-    181, // Jul 
-    212, // Aug 
+    151, // Jun
+    181, // Jul
+    212, // Aug
     243, // Sept
-    273, // Oct 
-    304, // Nov 
+    273, // Oct
+    304, // Nov
     334, // Dec
   };
 
@@ -355,7 +364,7 @@ Scheme_Object *mx_date_to_scheme_date(int argc,Scheme_Object **argv) {
   p[7] = scheme_make_integer(yearDay);
   p[8] = scheme_false;
   p[9] = scheme_make_integer(0); // time zone offset
-  
+
   return scheme_make_struct_instance(scheme_date_type,sizeray(p),p);
 }
 
@@ -376,7 +385,7 @@ Scheme_Object *scheme_date_to_mx_date(int argc,Scheme_Object **argv) {
   date = argv[0];
 
   for (i = 0; i < 10; i++) {
-    // ignore DST boolean field 
+    // ignore DST boolean field
     if (i != 8 && SCHEME_INTP(scheme_struct_ref(date,i)) == FALSE) {
       scheme_signal_error("date->com-date: date structure contains "
 			  "non-fixnum in %s field",fieldNames[i]);

@@ -594,8 +594,7 @@ please adhere to these guidelines:
  ;;; more information is required from the user before completing
  ;;; the command.
 
- (file-menu-label-windows "&File")
- (file-menu-label-other "F&ile")
+ (file-menu-label "&File")
 
  (new-info  "Open a new file")
  (new-menu-item "&New")

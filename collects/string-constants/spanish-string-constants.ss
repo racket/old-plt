@@ -490,8 +490,7 @@
  ;;; more information is required from the user before completing
  ;;; the command.
 
- (file-menu-label-windows "&Archivo")
- (file-menu-label-other "A&rchivo")
+ (file-menu-label "&Archivo")
 
  (new-info  "Abre un nuevo archivo")
  (new-menu-item "&Nuevo")

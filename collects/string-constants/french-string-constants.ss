@@ -592,9 +592,8 @@
   ;;; more information is required from the user before completing
   ;;; the command.
   
-  (file-menu-label-windows "Fichier")
-  (file-menu-label-other "F&ichier")
-  
+  (file-menu-label "Fichier")
+
   (new-info  "Ouvrir un nouveau fichier.")
   (new-menu-item "&Nouvelle fenêtre")
   (new-...-menu-item "&Nouvelle...")

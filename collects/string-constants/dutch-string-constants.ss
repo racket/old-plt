@@ -375,8 +375,7 @@
  ;;; more information is required from the user before completing
  ;;; the command.
 
- (file-menu-label-windows "&Bestand")
- (file-menu-label-other "B&estand")
+ (file-menu-label "&Bestand")
 
  (new-info  "Open nieuw bestand")
  (new-menu-item "&Nieuw")

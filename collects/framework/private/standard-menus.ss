@@ -524,10 +524,7 @@
    (super-instantiate ())
    (define file-menu
      (make-object (get-menu%)
-       (if
-        (eq? (system-type) 'windows)
-        (string-constant file-menu-label-windows)
-        (string-constant file-menu-label-other))
+       (string-constant file-menu-label)
        (get-menu-bar)))
    (define edit-menu
      (make-object (get-menu%)

@@ -492,8 +492,7 @@
  ;;; more information is required from the user before completing
  ;;; the command.
 
- (file-menu-label-windows "&Filer")
- (file-menu-label-other "F&iler")
+ (file-menu-label "&Filer")
 
  (new-info  "Opret en ny fil")
  (new-menu-item "&Ny")

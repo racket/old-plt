@@ -1,4 +1,4 @@
-; $Id: scm-core.ss,v 1.35 1997/08/13 18:33:31 shriram Exp $
+; $Id: scm-core.ss,v 1.36 1997/08/14 14:09:11 shriram Exp $
 
 (unit/sig zodiac:scheme-core^
   (import zodiac:structures^ zodiac:misc^ zodiac:sexp^
@@ -245,7 +245,7 @@
   (define valid-syntactic-id?
     (lambda (id)
       (or (z:symbol? id) 
-	(static-error id "Invalid identifier"))))
+	(static-error id "~e is not an identifier" (sexp->raw id)))))
 
   (define valid-syntactic-id/s?
     (lambda (ids)
@@ -253,23 +253,25 @@
 	((null? ids) '())
 	((pair? ids)
 	  (let ((first (car ids)) (rest (cdr ids)))
-	    (if valid-syntactic-id?
+	    (if (valid-syntactic-id? first)
 	      (cons (z:read-object first) (valid-syntactic-id/s? rest))
-	      (static-error first "Invalid identifier"))))
+	      (static-error first "~e is not an identifier"
+		(sexp->raw first)))))
 	(else (internal-error ids "Illegal to check validity of id/s")))))
 
   (define distinct-valid-syntactic-id/s?
-    (lambda (ids)
-      (let ((input-ids (syntactic-id/s->ids ids)))
+    (lambda (given-ids)
+      (let ((input-ids (syntactic-id/s->ids given-ids)))
 	(let loop ((ids (valid-syntactic-id/s? input-ids)) (index 0))
 	  (or (null? ids)
 	    (if (symbol? (car ids))
 	      (if (memq (car ids) (cdr ids))
 		(static-error (list-ref input-ids index)
-		  "Repeated identifier")
+		  "Identifier ~s repeated" (car ids))
 		(loop (cdr ids) (add1 index)))
-	      (static-error (list-ref input-ids index)
-		"Not an identifier")))))))
+	      (let ((erroneous (list-ref input-ids index)))
+		(static-error erroneous "~e is not an identifier"
+		  (sexp->raw erroneous)))))))))
 
   (define syntactic-id/s->ids
     (lambda (ids)
@@ -279,7 +281,8 @@
 	((z:symbol? ids) (list ids))
 	((pair? ids) ids)
 	((null? ids) ids)
-	(else (static-error ids "Invalid identifier")))))
+	(else (static-error ids "~e is not an identifier"
+		(sexp->raw ids))))))
 
   ; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 

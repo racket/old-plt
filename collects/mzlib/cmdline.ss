@@ -20,9 +20,9 @@
 	      "program name is not a string"
 	      (syntax program-name)))
 	   (let ([extract (lambda (what args . detail)
-			(if (null? args)
-			    (apply serror (format "missing ~a" what) detail)
-			    (values (car args) (cdr args))))]
+			    (if (null? args)
+				(apply serror (format "missing ~a" what) detail)
+				(values (car args) (cdr args))))]
 		 [formal-names
 		  (lambda (l)
 		    (map
@@ -37,7 +37,7 @@
 		    (let loop ([csrcs (syntax->list (syntax (clause ...)))][clauses null])
 		      (with-syntax ([(clause ...) clauses])
 			(if (null? csrcs)
-			    (syntax (clause ... (lambda (accum) (void)) null))
+			    (syntax ((list clause ...) (lambda (accum) (void)) null))
 			    (let ([line (car csrcs)]
 				  [arest (cdr csrcs)])
 			      (syntax-case line (help-labels => args)
@@ -53,59 +53,91 @@
 				[(tag . rest)
 				 (ormap (lambda (x) (module-identifier=? (syntax tag) x))
 					(syntax->list (syntax (once-each once-any multi))))
-				 (let slloop ([sublines (syntax->list (syntax rest))])
-				   (if (null? sublines)
-				       (syntax ())
-				       (with-syntax ([looped (slloop (cdr sublines))]
-						     [subline
-						      (with-syntax ([flags (syntax-case (car sublines) ()
-									     [((flag ...) . rest)
-									      (begin
-										(unless (andmap (lambda (x) (string? (syntax-e x)))
-												(syntax->list (syntax (flag ...))))
-										  (serror "flag specification is not a string or sequence of strings" 
-											  (syntax (flag ...))))
-										(syntax (flag ...)))]
-									     [(flag . rest)
-									      (string? (syntax-e (syntax flag)))
-									      (syntax (flag))]
-									     [else
-									      (serror "clause does not start with flags")])])
-							(syntax-case (car sublines) ()
-							  [(_ => a b)
-							   (syntax (list 'flags a b))]
-							  [(_ rest ...)
-							   (let*-values ([(formals rest) (let loop ([a null][rest (syntax->list (syntax (rest ...)))])
-											   (cond
-											    [(null? rest) (values a null)]
-											    [(identifier? (car rest)) 
-											     (values (append a (list (car rest))) 
-												     (cdr rest))]
-											    [else (values a rest)]))]
-									 [(help rest) (extract "help string" rest line)]
-									 [(_) (unless (string? (syntax-e help))
-										(serror "help info is not a string" help))]
-									 [(expr1 rest) (extract "handler body expressions" rest line)])
-							     (with-syntax ([formals formals]
-									   [formal-names (formal-names formals)]
-									   [help help]
-									   [expr1 expr1]
-									   [rest rest])
-							       (syntax (list 'flags
-									     (lambda (flag . formals)
-									       expr1 . rest)
-									     '(help . formal-names)))))]))])
-					 (loop arest
-					       (syntax (clause
-							...
-							(list 'tag . (subline . looped))))))))]
+				 (with-syntax 
+				     ([sublines
+				       (let slloop ([sublines (syntax->list (syntax rest))])
+					 (if (null? sublines)
+					     (syntax ())
+					     (with-syntax 
+						 ([looped (slloop (cdr sublines))]
+						  [subline
+						   (with-syntax 
+						       ([flags 
+							 (syntax-case (car sublines) ()
+							   [((flag ...) . rest)
+							    (begin
+							      (unless (andmap 
+								       (lambda (x) (string? (syntax-e x)))
+								       (syntax->list (syntax (flag ...))))
+								(serror 
+								 "flag specification is not a string or sequence of strings" 
+								 (syntax (flag ...))))
+							      (syntax (flag ...)))]
+							   [(flag . rest)
+							    (string? (syntax-e (syntax flag)))
+							    (syntax (flag))]
+							   [else
+							    (serror "clause does not start with flags")])])
+						     (syntax-case (car sublines) (=>)
+						       [(_ => a b)
+							(syntax (list 'flags a b))]
+						       [(_ rest ...)
+							(let*-values ([(formals rest) 
+								       (let loop ([a null]
+										  [rest (syntax->list 
+											 (syntax
+											  (rest ...)))])
+									 (cond
+									  [(null? rest) (values a null)]
+									  [(identifier? (car rest)) 
+									   (values 
+									    (append a (list (car rest))) 
+									    (cdr rest))]
+									  [else (values a rest)]))]
+								      [(help rest) 
+								       (extract "help string" rest line)]
+								      [(_) 
+								       (unless (string? (syntax-e help))
+									 (serror 
+									  "help info is not a string" help))]
+								      [(expr1 rest) 
+								       (extract 
+									"handler body expressions" rest line)])
+							  (with-syntax ([formals formals]
+									[formal-names (formal-names formals)]
+									[help help]
+									[expr1 expr1]
+									[rest rest])
+							    (syntax (list 'flags
+									  (lambda (flag . formals)
+									    expr1 . rest)
+									  '(help . formal-names)))))]))])
+					       (syntax (subline . looped)))))])
+				   (loop arest
+					 (syntax (clause
+						  ...
+						  (list 'tag . sublines)))))]
 				[(=> finish-proc arg-help help-proc unknown-proc)
 				 (begin
 				   (unless (null? arest)
 				     (serror "=> must be the last clause line"))
-				   (syntax (clause
-					    ...
+				   (syntax ((list clause
+						  ...)
 					    finish-proc arg-help help-proc unknown-proc)))]
+				[(=> finish-proc arg-help help-proc)
+				 (begin
+				   (unless (null? arest)
+				     (serror "=> must be the last clause line"))
+				   (syntax ((list clause
+						  ...)
+					    finish-proc arg-help help-proc)))]
+				[(=> finish-proc arg-help)
+				 (begin
+				   (unless (null? arest)
+				     (serror "=> must be the last clause line"))
+				   (syntax ((list clause
+						  ...)
+					    finish-proc arg-help)))]
 				[(=> . _)
 				 (serror "bad => line" line)]
 				[(args arg-formals body1 body ...)
@@ -124,8 +156,8 @@
 					      [else
 					       (serror "bad argument list" line)]))])
 				     (with-syntax ([formal-names (formal-names formals)])
-				       (syntax (clause
-						...
+				       (syntax ((list clause
+						      ...)
 						(lambda (accume . arg-formals)
 						  body1 body ...)
 						'formal-names)))))]

@@ -31,9 +31,10 @@
 	   (with-output-to-file*
 	    dest
 	    (lambda ()
-	      (let loop ([r (read-syntax src)])
-		(unless (eof-object? r)
-		  (write (compile r) dest))
-		(loop)))
+	      (let loop ()
+		(let ([r (read-syntax src)])
+		  (unless (eof-object? r)
+		    (write (compile r))
+		    (loop)))))
 	    'truncate/replace))))])))
 

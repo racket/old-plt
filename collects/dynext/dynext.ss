@@ -1,6 +1,8 @@
 
-(require-library "refer.ss")
+(module dynext mzscheme
 
-(require-relative-library "compile.ss")
-(require-relative-library "link.ss")
-(require-relative-library "file.ss")
+  (import "compile.ss" "link.ss" "file.ss")
+
+  (export (all-from "compile.ss")
+	  (all-from "link.ss")
+	  (all-from "file.ss")))

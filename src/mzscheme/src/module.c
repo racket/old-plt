@@ -429,8 +429,8 @@ static Scheme_Object *dynamic_import(int argc, Scheme_Object *argv[])
   modname = argv[0];
   name = argv[1];
 
-  if (!SCHEME_SYMBOLP(name)) {
-    scheme_wrong_type("dynamic-import", "symbol", 1, argc, argv);
+  if (SCHEME_TRUEP(name) && !SCHEME_SYMBOLP(name)) {
+    scheme_wrong_type("dynamic-import", "symbol or #f", 1, argc, argv);
     return NULL;
   }
 
@@ -440,30 +440,35 @@ static Scheme_Object *dynamic_import(int argc, Scheme_Object *argv[])
   env = scheme_get_env(scheme_config);
 
   m = scheme_module_load(modname, env);
-
-  /* Before starting, check whether the name is exported */
-  count = m->num_exports;
-  for (i = 0; i < count; i++) {
-    if (SAME_OBJ(name, m->exports[i])) {
-      if (i < m->num_var_exports)
-	break;
-      else {
-	scheme_arg_mismatch("dynamic-import", "name is exported as syntax: ", name);
-	return NULL;
+  
+  if (SCHEME_SYMBOLP(name)) {
+    /* Before starting, check whether the name is exported */
+    count = m->num_exports;
+    for (i = 0; i < count; i++) {
+      if (SAME_OBJ(name, m->exports[i])) {
+	if (i < m->num_var_exports)
+	  break;
+	else {
+	  scheme_arg_mismatch("dynamic-import", "name is exported as syntax: ", name);
+	  return NULL;
+	}
       }
     }
-  }
-
-  if (i == count) {
-    scheme_arg_mismatch("dynamic-import", "name is not exported from the module: ", name);
-    return NULL;
+    
+    if (i == count) {
+      scheme_arg_mismatch("dynamic-import", "name is not exported from the module: ", name);
+      return NULL;
+    }
   }
 
   start_module(m, env, 0, NULL, modidx);
 
-  menv = scheme_module_access(modname, env);
-  
-  return (Scheme_Object *)scheme_lookup_in_table(menv->toplevel, (const char *)name);
+  if (SCHEME_SYMBOLP(name)) {
+    menv = scheme_module_access(modname, env);
+    
+    return (Scheme_Object *)scheme_lookup_in_table(menv->toplevel, (const char *)name);
+  } else
+    return scheme_void;
 }
 
 /**********************************************************************/

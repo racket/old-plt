@@ -151,8 +151,8 @@
 	     source-files file-bases))))
 
       (define (compile-collection cp zos?)
-	(let ([coll (dynamic-import '("collection-unit.ss" "make") 'collection:unit)]
-	      [make (dynamic-import '("make-unit.ss" "make") 'make:unit)]
+	(let ([make (dynamic-import '(lib "make-unit.ss" "make") 'make:unit)]
+	      [coll (dynamic-import '(lib "collection-unit.ss" "make") 'make:collection:unit)]
 	      [init (unit/sig ()
 		      (import make:collection^)
 		      make-collection)])
@@ -189,6 +189,17 @@
 			(make-collection
 			 (info 'name (lambda () (error 'compile-collection "info did not provide a name")))
 			 '(void)
+			 (remove*
+			  (map normal-case-path
+			       (info 
+				(if zos? 
+				    'compile-zo-omit-files 
+				    'compile-extension-omit-files)
+				(lambda () null)))
+			  (remove*
+			   (map normal-case-path 
+				(info 'compile-omit-files (lambda () null)))
+			   sses))
 			 (if zos? #("zo") #())))))
 		  (lambda () (current-directory orig)))
 	      (when (compile-subcollections)

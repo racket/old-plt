@@ -1,8 +1,12 @@
 
-(require-relative-library "base64s.ss")
 
-(begin-elaboration-time
- (require-library "invoke.ss"))
+(module base64 mzscheme
+  (import (lib "unitsig.ss"))
 
-(define-values/invoke-unit/sig mzlib:base64^
-  (require-relative-library "base64r.ss"))
+  (import "base64-sig.ss")
+  (import "base64-unit.ss")
+
+  (define-values/invoke-unit/sig net:base64^
+    net:base64:unit)
+
+  (export-signature-elements net:base64^))

@@ -29,15 +29,14 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#if defined(__digital__) && defined(__unix__)
-extern "C" {
-extern int gethostname(char *, int);
-};
+#if !defined(SVR4) || defined(__sgi)
+# define WX_USE_GETHOSTBYNAME
+# include <netdb.h>
 #endif
 
 Bool wxGetHostName(char *buf, int sz)
 {
-#if defined(SVR4) && !defined(__sgi)
+#ifndef WX_USE_GETHOSTBYNAME
   return (sysinfo(SI_HOSTNAME, buf, maxSize) != -1);
 #else /* BSD Sockets */
   char name[255];

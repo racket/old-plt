@@ -1543,7 +1543,7 @@ print_string(Scheme_Object *string, int notdisplay, Scheme_Thread *p)
       case '\t': esc = "\\t";  break;
       case '\v': esc = "\\v";  break;
       default:
-	if (isprint(str[i])) {
+	if (isprint((unsigned char)str[i])) {
 	  esc = NULL;
 	} else {
 	  sprintf(minibuf,

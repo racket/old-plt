@@ -17,19 +17,23 @@
      (#o340 #o240 #o200))
     (#(#x00010000) complete
      (#o360 #o220 #o200 #o200))
-    (#(#x00200000) complete
+    (#(#x0010FFFF) complete
+     (#o364 #o217 #o277 #o277))
+    (#(#f #f #f #f) error ; would be #x00110000 without UTF-8 limit
+     (#o364 #o220 #o200 #o200))
+    (#(#f #f  #f #f #f) error
      (#o370 #o210 #o200 #o200 #o200))
-    (#(#x04000000) complete
+    (#(#f #f #f #f #f #f) error
      (#o374 #o204 #o200 #o200 #o200 #o200))
     (#(#x0000007F) complete
      (127))
     (#(#x000007FF) complete
      (#o337 #o277))
-    (#(#x001FFFFF) complete
+    (#(#f #f #f #f) error ; #x001FFFFF
      (#o367 #o277 #o277 #o277))
-    (#(#x03FFFFFF) complete
+    (#(#f #f #f #f #f) error ; #x03FFFFFF
      (#o373 #o277 #o277 #o277 #o277))
-    (#(#x7FFFFFFF) complete
+    (#(#f #f #f #f #f #f) error ; #x7FFFFFFF
      (#o375 #o277 #o277 #o277 #o277 #o277))
     (#(#x0000D7FF) complete
      (#o355 #o237 #o277))
@@ -39,8 +43,6 @@
      (#o357 #o277 #o275))
     (#(#x0010FFFF) complete
      (#o364 #o217 #o277 #o277))
-    (#(#x00110000) complete
-     (#o364 #o220 #o200 #o200))
     ;; Missing start byte
     (#(#f) error
      (#o200))
@@ -456,54 +458,60 @@
      (#o361))
     (#(#f #f #f #f) error ; aborts
      (#o370 #o200 #o200 #o200))
-    (#(#f #f #f #f) aborts
+    (#(#f #f #f #f) error ;; aborts
      (#o371 #o200 #o200 #o200))
-    (#(#f) aborts
+    (#(#f) error ;; aborts
      (#o370))
-    (#(#f) aborts
+    (#(#f) error ;; aborts
      (#o371))
     (#(#f #f) error ; aborts
      (#o370 #o200))
-    (#(#f #f) aborts
+    (#(#f #f) error ;; aborts
      (#o371 #o200))
-    (#(#f #f #F) error ; aborts
+    (#(#f #f #f) error ; aborts
      (#o370 #o200 #o200))
-    (#(#f #f #F) aborts
+    (#(#f #f #f) error ;; aborts
      (#o371 #o200 #o200))
     (#(#f #f #f #f #f) error ; aborts
      (#o374 #o200 #o200 #o200 #o200))
-    (#(#f #f #f #f #f) aborts
+    (#(#f #f #f #f #f) error ;; aborts
      (#o375 #o200 #o200 #o200 #o200))
-    (#(#f) aborts
+    (#(#f) error ;; aborts
      (#o374))
-    (#(#f) aborts
+    (#(#f) error ;; aborts
      (#o375))
     (#(#f #f) error ; aborts
      (#o374 #o200))
-    (#(#f #f) aborts
+    (#(#f #f) error ;; aborts
      (#o375 #o200))
     (#(#f #f #f) error ; aborts
      (#o374 #o200 #o200))
-    (#(#f #f #f) aborts
+    (#(#f #f #f) error ;; aborts
      (#o375 #o200 #o200))
     (#(#f #f #f #f) error ; aborts
      (#o374 #o200 #o200 #o200))
-    (#(#f #f #f #f) aborts
+    (#(#f #f #f #f) error ; aborts
      (#o375 #o200 #o200 #o200))
     (#(#f) aborts
      (#o337))
     (#(#f #f) aborts
      (#o357 #o277))
     (#(#f #f #f) aborts
+     (#o364 #o277 #o277))
+    (#(#f #f #f) error ;; aborts
+     (#o365 #o277 #o277))
+    (#(#f #f #f) error ;; aborts
+     (#o366 #o277 #o277))
+    (#(#f #f #f) error ;; aborts
      (#o367 #o277 #o277))
-    (#(#f #f #f #f) aborts
+    (#(#f #f #f #f) error ;; aborts
      (#o373 #o277 #o277 #o277))
-    (#(#f #f #f #f #f) aborts
+    (#(#f #f #f #f #f) error ; aborts
      (#o375 #o277 #o277 #o277 #o277))
     ;; Concatenation of incomplete sequences
-    (#(#f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #F #f #f #f #f #f #f #f #f #f #f) error/aborts
-     (#o300 #o340 #o200 #o360 #o200 #o200 #o370 #o200 #o200 #o200 #o374 #o200 #o200 #o200 #o200 #o337 #o357 #o277 #o367 #o277 #o277 #o373 #o277 #o277 #o277 #o375 #o277 #o277 #o277 #o277)
-     5)
+    (#(#f #f #f #f #f #f #f #f #f) error/aborts
+     (#o300 #o340 #o200 #o360 #o200 #o200 #o361 #o200 #o200)
+     3)
     ;; Impossible bytes
     (#(#f) error
      (#o376))
@@ -879,7 +887,7 @@
   (check-one "\u104")
   (check-one "\u7238")
   (check-one "\Ua7238")
-  (check-one "\Uba7238"))
+  (check-one "\U107238"))
 
 (test '(#o302 #o251) bytes->list (unicode-vector->bytes (vector 169)))
 (test '(#o304 #o250) bytes->list (unicode-vector->bytes (vector 296)))

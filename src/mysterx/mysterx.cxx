@@ -552,7 +552,8 @@ void scheme_release_browser(void *wb,void *hwndDestroy) {
 
   if (hwndDestroy) {
     b->destroy = TRUE;
-    PostMessage(b->hwnd,WM_TIMER,0,0);
+    // dummy msg to force GetMessage() to return
+    PostMessage(b->hwnd,WM_NULL,0,0);
   }
 
   MX_MANAGED_OBJ_RELEASED(wb) = TRUE;

@@ -122,9 +122,17 @@
   
   ;; repl-format : Value -> String
   (define (repl-format val)
-    (if (void? val)
-	""
-	(format "~n~a" val)))
+    (cond
+      [(void? val) ""]
+      [(or (number? val) (boolean? val)) (format "~n~a" val)]
+      [else (toString val)]))
+  
+  ;; toString : jobject -> Void
+  (define toString
+    (let* ([oc (jfind-class "java/lang/Object")]
+           [toString-method (jfind-method oc "toString" "()Ljava/lang/String;")])
+      (lambda (obj)
+        (format "~n~a"(jstring->string (jcall obj toString-method))))))
   
   (define (repl-text-mixin super-class)
     (class super-class ()

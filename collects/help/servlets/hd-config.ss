@@ -46,7 +46,14 @@
 	 "}"
 	 "function updateSysLinkColor(new_color) {"
 	 " updateColor(\"sample_syslink\",new_color)"
-	 "}")
+	 "}"
+	 "function resetValues() {"
+	 (string-append " updateBgColor(\"" search-bg-color "\")")
+	 (string-append " updateTextColor(\"" search-text-color "\")")
+	 (string-append " updateLinkColor(\"" search-link-color "\")")
+	 (string-append " updateSysLinkColor(\"" sys-link-color "\")")
+	 (string-append " updateTextColor(\"" search-text-color "\")")
+         "}")
 	,hd-css)
       (BODY 
        (H1  "Help Desk configuration")
@@ -127,7 +134,8 @@
 				 (VALUE "Save changes"))))
 		     (TD 'nbsp 'nbsp 'nbsp 'nbsp)
 		     (TD (INPUT ((TYPE "reset")
-				 (VALUE "Reset"))))))
+				 (VALUE "Reset")
+				 (onClick "resetValues()"))))))
 	     (P)
 	     (CENTER 
 	      ,home-page)))))

@@ -1089,7 +1089,7 @@ wchar_t *convert_to_drawable_format(const char *text, int d, int ucs4, long *_ul
 static wchar_t gl_buf[QUICK_UBUF_SIZE];
 static int dxes_buf[QUICK_UBUF_SIZE];
 
-static DWORD draw_meas(whcar_t *s, long len, HDC hdc, int combine,
+static DWORD draw_meas(wchar_t *s, long len, HDC hdc, int combine,
 		       int draw, int x, int y, Bool bg)
 {
   GCP_RESULTSW gcp;
@@ -1177,7 +1177,7 @@ void wxDC::DrawText(const char *text, float x, float y, Bool combine, Bool ucs4,
   
   SetRop(dc, wxSOLID);
 
-  ustring = convert_to_drawable_format(text, d, ucs4, &len, combine, this, dc);
+  ustring = convert_to_drawable_format(text, d, ucs4, &len);
 
   sz = draw_meas(ustring, len, dc, combine,
 		 1, (int)XLOG2DEV(xx1), (int)YLOG2DEV(yy1),
@@ -1441,7 +1441,7 @@ void wxDC::GetTextExtent(const char *string, float *x, float *y,
     return;
   }
 
-  ustring = convert_to_drawable_format(string, d, ucs4, &len, combine, this, dc);
+  ustring = convert_to_drawable_format(string, d, ucs4, &len);
 
   GetTextExtentPointW(dc, ustring, len, &sizeRect);
   if (descent || topSpace)

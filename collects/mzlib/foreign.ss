@@ -593,8 +593,8 @@
 ;; utf-16 type (note: these do not use #f as NULL).
 (provide _string/ucs-4 _string/utf-16)
 
-;; 8-bit string encodings (#f is NULL)
-(define (false-or-op op) (lambda (x) (and x (op x))))
+;; 8-bit string encodings, #f is NULL
+(define ((false-or-op op) x) (and x (op x)))
 (define* _string/utf-8
   (make-ctype _bytes
     (false-or-op string->bytes/utf-8) (false-or-op bytes->string/utf-8)))
@@ -605,9 +605,25 @@
   (make-ctype _bytes
     (false-or-op string->bytes/latin-1) (false-or-op bytes->string/latin-1)))
 
+;; 8-bit string encodings, #f is NULL, can also use bytes and paths
+(define ((any-string-op op) x)
+  (cond [(not    x) x]
+        [(bytes? x) x]
+        [(path?  x) (path->bytes x)]
+        [else (op x)]))
+(define* _string*/utf-8
+  (make-ctype _bytes
+    (any-string-op string->bytes/utf-8) (false-or-op bytes->string/utf-8)))
+(define* _string*/locale
+  (make-ctype _bytes
+    (any-string-op string->bytes/locale) (false-or-op bytes->string/locale)))
+(define* _string*/latin-1
+  (make-ctype _bytes
+    (any-string-op string->bytes/latin-1) (false-or-op bytes->string/latin-1)))
+
 ;; A generic _string type that usually does the right thing via a parameter
 (define* default-_string-type
-  (make-parameter _string/utf-8
+  (make-parameter _string*/utf-8
     (lambda (x)
       (if (ctype? x)
         x (error 'default-_string-type "expecting a C type, got ~e" x)))))
@@ -630,11 +646,12 @@
   (let ([table (make-hash-table)])
     (lambda (string-type)
       (hash-table-get table string-type
-        (let ([new-type (make-ctype string-type
-                          (lambda (x) (and (not (eof-object? x)) x))
-                          (lambda (x) (or x eof)))])
-          (hash-table-put! table string-type new-type)
-          new-type)))))
+        (lambda ()
+          (let ([new-type (make-ctype string-type
+                            (lambda (x) (and (not (eof-object? x)) x))
+                            (lambda (x) (or x eof)))])
+            (hash-table-put! table string-type new-type)
+            new-type))))))
 (provide _string/eof)
 (define-syntax _string/eof
   (syntax-id-rules ()

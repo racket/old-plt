@@ -196,6 +196,7 @@
 		     [printed? #f]
 		     [on? #f]
 		     [dir-table (make-hash-table 'equal)]
+		     [line-accum ""]
 		     [op (make-custom-output-port 
 			  #f
 			  (lambda (s start end flush?)
@@ -212,21 +213,27 @@
 					(when (verbose)
 					  (display s oop)
 					  (flush-output oop))))
-				  (let ([m (or (regexp-match-positions re:making s)
-					       (regexp-match-positions re:compiling s))])
-				    (when m
-				      (unless printed?
-					(set! printed? #t)
-					(print-doing oop))
-				      (set! on? #t)
-				      (unless (verbose)
-					(let ([path (path-only (substring s (caadr m) (cdadr m)))])
-					  (unless (hash-table-get dir-table path (lambda () #f))
-					    (hash-table-put! dir-table path #t)
-					    (print-doing oop path))))
-				      (when (verbose)
-					(display "  " oop)) ; indentation 
-				      (loop (substring s (caar m) (string-length s)))))))
+				  (let ([s (string-append line-accum s)])
+				    (let ([m (or (regexp-match-positions re:making s)
+						 (regexp-match-positions re:compiling s))])
+				      (unless m
+					(set! line-accum s)
+					(let ([m (regexp-match-positions #rx".*[\r\n]" line-accum)])
+					  (when m
+					    (set! line-accum (substring line-accum (cdar m))))))
+				      (when m
+					(unless printed?
+					  (set! printed? #t)
+					  (print-doing oop))
+					(set! on? #t)
+					(unless (verbose)
+					  (let ([path (path-only (substring s (caadr m) (cdadr m)))])
+					    (unless (hash-table-get dir-table path (lambda () #f))
+					      (hash-table-put! dir-table path #t)
+					      (print-doing oop path))))
+					(when (verbose)
+					  (display "  " oop)) ; indentation 
+					(loop (substring s (caar m) (string-length s))))))))
 			    (- end start))
 			  void
 			  void)])
@@ -448,7 +455,10 @@
 						 desc (cc-name cc))]
 				 [(p where)
 				  ;; Doing something specifically in "where"
-				  (setup-fprintf p "  in ~a" where)])
+				  (setup-fprintf p "  in ~a" 
+						 (path->complete-path
+						  where
+						  (cc-path cc)))])
 				compile-collection
 				(cc-collection cc))
 			 (setup-printf "No more ~a to compile for ~a" 
@@ -457,7 +467,7 @@
 		  collections-to-compile))
 
       (when (make-zo) (make-it ".zos" compile-collection-zos))
-      (when (make-so) (make-it "extension" compile-collection-extension))
+      (when (make-so) (make-it "extensions" compile-collection-extension))
 
       (when (make-launchers)
 	(let ([name-list 

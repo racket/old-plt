@@ -377,11 +377,10 @@
 				    (cons (car introducer)
 					  ((cdr introducer) provide))))
 				specific-exports)]))]
-		       [all-renames (remove-dups
-				     (map (lambda (id)
-					    (cons (car id)
-						  ((cdr id) (car id))))
-					  defined-ids))])
+		       [all-renames (map (lambda (id)
+					   (cons (car id)
+						 ((cdr id) (car id))))
+					 defined-ids)])
 		   ;; --- Shuffle the package body to put syntax definitions first
 		   (let ([pre-decls
 			  (if (eq? 'top-level (syntax-local-context))

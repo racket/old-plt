@@ -156,7 +156,6 @@
   (define (build-constructor-name class-name args)
     (mangle-method-name (format "~a-constructor" class-name) args))
   
-  
   ;-------------------------------------------------------------------------------------------------------------------------
   ;Translation
   
@@ -605,12 +604,16 @@
                                       ((if (constructor? (id-string (method-name m))) build-constructor-name mangle-method-name)
                                        (id-string (method-name m))
                                        (method-record-atypes (method-rec m))))))
-               (provideable-generics 
+               (providable-generics 
                 (map make-gen-name 
                      (append (accesses-public methods)
                              (accesses-package methods)
                              (accesses-protected methods))))
                (private-generics (map make-gen-name (accesses-private methods)))
+               (names-for-dynamic (generate-dynamic-names (append (accesses-public methods)
+                                                                  (accesses-package methods)
+                                                                  (accesses-protected methods))
+                                                          overridden-methods))
                (static-method-names (make-static-method-names (accesses-static methods) type-recs))
                (static-field-names (make-static-field-names (accesses-static fields)))
                (static-field-setters (make-static-field-setters-names 
@@ -625,7 +628,7 @@
                                    ,@(map build-identifier static-method-names)
                                    ,@(map build-identifier static-field-names)
                                    ,@static-field-setters
-                                   ,@(map build-identifier provideable-generics)
+                                   ,@(map build-identifier providable-generics)
                                    ,@field-getters/setters)))
 
           (let ((class-syntax
@@ -776,6 +779,28 @@
                 (parent-name old-parent-name)
                 (class-override-table old-override-table))))))))
 
+  ;generate-dynamic-names: (list method) (list method)-> (list (list string method))
+  (define (generate-dynamic-names methods methods-to-remove)
+    (map (lambda (method)
+           (list (java-name->scheme (id-string (method-name method)))
+                 method))
+         (disjoin-lists (remove-overloaded-methods methods)
+                        methods-to-remove)))
+  
+  (define disjoin-lists (lambda (x y) x))
+  (define remove-all-methods (lambda (x y) x))
+  
+  ;remove-overloaded-methods: (list method) -> (list method)
+  (define (remove-overloaded-methods methods)
+    methods
+    #;(cond
+      ((null? methods) methods)
+      ((member (id-string (method-name (car methods)))
+               (map (lambda (m) (id-string (method-name m))) (cdr methods)))
+       (remove-overloaded-methods
+        (remove-all-methods (id-string (method-name (car methods))) (cdr methods))))
+      (else (cons (car methods) (remove-overloaded-methods (cdr methods))))))
+  
   ;build-method-table: (list method) (list symbol) -> sexp
   (define (build-method-table methods generics)
     `(let ((table (make-hash-table)))
@@ -1083,12 +1108,15 @@
   
   (define static-method (make-parameter #f))
   
-  ;translate-method-body (list field) statement (list symbol) type-spec bool bool bool int type-record -> syntax
+  ;translate-method-body: string (list field) statement (list symbol) type-spec bool bool bool int type-record -> syntax
   (define (translate-method-body method-name parms block modifiers rtype all-tail? ctor? inner? depth type-recs)
     (let ((parms (translate-parms parms))
           (void? (eq? (type-spec-name rtype) 'void))
           (native? (memq 'native modifiers))
-          (static? (memq 'static modifiers)))
+          (static? (memq 'static modifiers))
+          (native-method-name (build-identifier 
+                               (string-append method-name #;(substring method-name 0 (- (string-length method-name) 2))
+                                              "-native"))))
             
       (static-method static?)
       (make-syntax #f
@@ -1109,20 +1137,20 @@
                       `(lambda ,parms (void)))
                      ((and (not block) native? void? (not static?))
                       `(lambda ,parms
-                         (,(build-identifier (string-append method-name "-native"))
+                         (,native-method-name
                            this field-accessors field-setters private-methods ,@parms)
                          (void)))
                      ((and (not block) native? (not static?))
                       `(lambda ,parms
-                         (,(build-identifier (string-append method-name "-native")) 
+                         (,native-method-name
                            this field-accessors field-setters private-methods ,@parms)))
                      ((and (not block) native? void? static?)
                       `(lambda ,parms
-                         (,(build-identifier (string-append method-name "-native")) ,@parms)
+                         (,native-method-name ,@parms)
                          (void)))
                      ((and (not block) native? static?)
                       `(lambda ,parms
-                         (,(build-identifier (string-append method-name "-native")) ,@parms))))
+                         (,native-method-name ,@parms))))
                    #f)))
   
   ;translate-parms: (list field) -> (list syntax)

@@ -7,4 +7,4 @@
       "MzCOM is a COM class that makes Scheme available to any COM client."))
   (define release-version "208")
   (define release-iteration "0")
-  (define install-post-collection "installer.ss"))
+  (define post-install-collection "installer.ss"))

@@ -131,6 +131,15 @@
                   [(eq? val #f) "false"]
                   [else (toString val)]))))
   
+  ;; Hist = (make-hist/text Hist Hist String)
+  ;;      | (make-hist/creation Hist 'fell-off-begining-of-time)
+  ;;      | (make-hist/apocalypse 'fell-off-end-of-time Hist)
+  ;; Symbols would not appear if we had multiple inheritance on struct fields
+  (define-struct hist (prev next))
+  (define-struct (hist/text struct:hist) (text))
+  (define-struct (hist/creation struct:hist) ())
+  (define-struct (hist/apocalypse struct:hist) ())
+
   ;; toString : jobject -> Void
   ;; Actually this uses String.valueOf(Object) since it works for null.
   (define toString
@@ -141,7 +150,7 @@
   
   (define (repl-text-mixin super-class)
     (class super-class ()
-      (inherit insert get-text last-position erase find-snip set-position insert-box set-caret-owner get-end-position)
+      (inherit insert get-text last-position erase find-snip set-position insert-box set-caret-owner get-end-position get-keymap set-keymap)
       (private
         (make-printer
          (lambda (style)
@@ -156,7 +165,36 @@
            (send (make-object style-delta% 'change-normal-color) set-delta-foreground color-name)))
         (not-evaluating #t)
         (eval-semaphore (make-semaphore))
-        (goobers #f))
+        (goobers #f)
+        (hist-apocalypse (make-hist/apocalypse 5 'fell-off-end-of-time))
+        (hist-creation (make-hist/creation 'fell-off-begining-of-time hist-apocalypse)))
+      (sequence (set-hist-prev! hist-apocalypse hist-creation))
+      (private
+        ;; history : Hist
+        (history hist-apocalypse)
+        (set-current
+         (lambda ()
+           (insert (if (hist/text? history)
+		       (hist/text-text history)
+		       "")
+		   prompt-pos (last-position))))
+        (hist-back
+         (lambda (_ event)
+           (unless (hist/creation? history)
+             (set! history (hist-prev history))
+             (set-current))))
+        (hist-forward
+         (lambda (_ event)
+           (unless (hist/apocalypse? history)
+             (set! history (hist-next history))
+             (set-current))))
+        (hist-add!
+         (lambda (text)
+           (set! history hist-apocalypse)
+           (let* ([apoc-prev (hist-prev hist-apocalypse)]
+                  [new (make-hist/text apoc-prev hist-apocalypse text)])
+             (set-hist-next! apoc-prev new)
+             (set-hist-prev! hist-apocalypse new)))))
       (public
         (eval
          (lambda ()
@@ -170,6 +208,7 @@
                                                (lambda _ (insert #\newline))]
                                               [void (lambda _ (print-red-char (format "Oh, no!~n")) (new-prompt))])
                                 (insert (repl-format (eval-str repl text)))
+                                (hist-add! text)
                                 (new-prompt))))
                            (semaphore-post eval-semaphore)))
                  (yield eval-semaphore))))))
@@ -230,12 +269,23 @@
         (on-default-char
          (lambda (event)
            (when not-evaluating
-             (if (and (eq? #\return (send event get-key-code))
-                      (= (last-position) (get-end-position)))
-                 (eval)
-                 (super-on-default-char event))))))
+             (let ([key (send event get-key-code)])
+               (cond
+                 [(and (eq? #\return key)
+                       (= (last-position) (get-end-position)))
+                  (eval)]
+                 [else (super-on-default-char event)]))))))
       (sequence
         (super-init)
+        (let ([keymap (make-object keymap%)]
+              [prev-name "hist-prev"]
+              [next-name "hist-next"])
+          (send keymap chain-to-keymap (get-keymap) #f)
+          (send keymap add-function prev-name hist-back)
+          (send keymap map-function ":esc;p" prev-name)
+          (send keymap add-function next-name hist-forward)
+          (send keymap map-function ":esc;n" next-name)
+          (set-keymap keymap))
         (init))))
   
   

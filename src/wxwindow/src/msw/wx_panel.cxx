@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_panel.cc,v 1.1 1994/08/14 21:59:17 edz Exp $
+ * RCS_ID:      $Id: wx_panel.cxx,v 1.1.1.1 1997/12/22 16:11:59 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -130,15 +130,20 @@ Bool wxPanel::Create(wxWindow *parent, int x, int y, int width, int height, long
 
   is_retained = ((style & wxRETAINED) == wxRETAINED);
 
-  if (wxSubType(parent->__type, wxTYPE_PANEL))
-  {
+  if (wxSubType(parent->__type, wxTYPE_PANEL)) {
     wxPanel *parentPanel = (wxPanel *)parent;
-    parentPanel->GetValidPosition(&x,&y) ;
-    labelFont = parentPanel->labelFont ;
-    buttonFont = parentPanel->buttonFont ;
-    backColour = parentPanel->backColour ;
-    labelColour = parentPanel->labelColour ;
-    buttonColour = parentPanel->buttonColour ;
+    parentPanel->GetValidPosition(&x,&y);
+    labelFont = parentPanel->labelFont;
+    buttonFont = parentPanel->buttonFont;
+    backColour = parentPanel->backColour;
+    labelColour = parentPanel->labelColour;
+    buttonColour = parentPanel->buttonColour;
+  } else {
+    labelFont = wxTheFontList->FindOrCreateFont(8, wxSYSTEM, wxDEFAULT, wxDEFAULT, FALSE);
+    buttonFont = wxTheFontList->FindOrCreateFont(8, wxSYSTEM, wxDEFAULT, wxDEFAULT, FALSE);
+    backColour = NULL;
+    labelColour = NULL;
+    buttonColour = NULL;
   }
 
   cursor_x = PANEL_LEFT_MARGIN;
@@ -159,12 +164,6 @@ Bool wxPanel::Create(wxWindow *parent, int x, int y, int width, int height, long
   has_child = FALSE ;
   last_created = 0 ;
   tempPS = 0;
-
-  labelFont = wxTheFontList->FindOrCreateFont(8, wxSYSTEM, wxDEFAULT, wxDEFAULT, FALSE);
-  buttonFont = wxTheFontList->FindOrCreateFont(8, wxSYSTEM, wxDEFAULT, wxDEFAULT, FALSE);
-  backColour = NULL ;
-  labelColour = NULL ;
-  buttonColour = NULL ;
 
   window_parent = parent;
 
@@ -426,8 +425,8 @@ void wxPanel::Centre(int direction)
 }
 
 void wxPanel::ChangeToGray(Bool gray)
-{
-  wxWindow::ChangeToGray(gray);
+{
+  wxWindow::ChangeToGray(gray);
   InternalGrayChildren(gray);
 }
 

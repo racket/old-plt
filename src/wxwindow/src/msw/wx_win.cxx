@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994     
- * RCS_ID:      $Id: wx_win.cxx,v 1.6 1998/04/11 21:59:26 mflatt Exp $
+ * RCS_ID:      $Id: wx_win.cxx,v 1.7 1998/04/23 20:40:07 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -97,33 +97,22 @@ wxWindow *wxWindow::FindItem(int id)
   while (current)
   {
     wxObject *obj = (wxObject *)current->Data() ;
-    if (wxSubType(obj->__type, wxTYPE_PANEL))
-    {
+    if (wxSubType(obj->__type, wxTYPE_PANEL)) {
       // Do a recursive search.
       wxPanel *panel = (wxPanel*)obj ;
       wxWindow *wnd = panel->FindItem(id) ;
       if (wnd)
         return wnd ;
-    }
-    else if (wxSubType(obj->__type, wxTYPE_CANVAS)
-
-		     || wxSubType(obj->__type, wxTYPE_TEXT_WINDOW))
-
-	{
-
-		// Do nothing
-
-	}
-
-	else
-    {
+    } else if (wxSubType(obj->__type, wxTYPE_CANVAS)
+	     || wxSubType(obj->__type, wxTYPE_TEXT_WINDOW)) {
+      // Do nothing
+    } else {
       wxItem *item = (wxItem *)current->Data();
       if (item->windows_id == id)
         return item;
-      else
-      {
-        // In case it's a 'virtual' control (e.g. radiobox)
-        if (item->subControls.Member((wxObject *)id))
+      else {
+	// In case it's a 'virtual' control (e.g. radiobox)
+	if (item->subControls.Member((wxObject *)id))
           return item;
       }
     }
@@ -2620,7 +2609,6 @@ void wxSubWnd::OnMButtonUp(int x, int y, UINT flags)
   if (wx_window && wxSubType(wx_window->__type, wxTYPE_CANVAS))
     wx_window->ReleaseMouse();
 
-
   last_x_pos = event.x; last_y_pos = event.y; last_event = wxEVENT_TYPE_LEFT_UP;
   if (wx_window)
     if (!wx_window->CallPreOnEvent(wx_window, &event))
@@ -2672,16 +2660,14 @@ void wxSubWnd::OnRButtonDown(int x, int y, UINT flags)
     MSG dummy ;
     if (PeekMessage(&dummy,handle,
                     WM_RBUTTONDBLCLK,WM_RBUTTONDBLCLK,
-                    PM_NOREMOVE)
-       )
-    {
+                    PM_NOREMOVE)) {
       PeekMessage(&dummy,handle,WM_RBUTTONUP,WM_RBUTTONUP,PM_REMOVE);
       return; 
     }
   }
 #endif
 
-//wxDebugMsg("RButtonDown\n") ;
+  //wxDebugMsg("RButtonDown\n") ;
   wxMouseEvent *_event = new wxMouseEvent(wxEVENT_TYPE_RIGHT_DOWN);
   wxMouseEvent &event = *_event;
   float px = (float)x;
@@ -3050,53 +3036,51 @@ void wxSubWnd::OnVScroll(WORD wParam, WORD pos, HWND control)
     return;
   }
 
-        wxCommandEvent *_event = new wxCommandEvent;
-        wxCommandEvent &event = *_event;
-
-        event.commandInt = pos;
-        event.extraLong = wxVERTICAL;
-	switch ( wParam )
-	{
-		case SB_TOP:
-			event.eventType = wxEVENT_TYPE_SCROLL_TOP;
-			break;
-
-		case SB_BOTTOM:
-			event.eventType = wxEVENT_TYPE_SCROLL_BOTTOM;
-			break;
-
-		case SB_LINEUP:
-			event.eventType = wxEVENT_TYPE_SCROLL_LINEUP;
-			break;
-
-		case SB_LINEDOWN:
-		        event.eventType = wxEVENT_TYPE_SCROLL_LINEDOWN;
-			break;
-
-		case SB_PAGEUP:
-                        event.eventType = wxEVENT_TYPE_SCROLL_PAGEUP;
-			break;
-
-		case SB_PAGEDOWN:
-                        event.eventType = wxEVENT_TYPE_SCROLL_PAGEDOWN;
-			break;
-
-                case SB_THUMBTRACK:
-                        event.eventType = wxEVENT_TYPE_SCROLL_THUMBTRACK;
-			break;
-
-		default:
-                        return;
-                        break;
-	}
-	if (wx_window)
-          wx_window->DoScroll(event);
+  wxCommandEvent *_event = new wxCommandEvent;
+  wxCommandEvent &event = *_event;
+  
+  event.commandInt = pos;
+  event.extraLong = wxVERTICAL;
+  switch (wParam) {
+  case SB_TOP:
+    event.eventType = wxEVENT_TYPE_SCROLL_TOP;
+    break;
+    
+  case SB_BOTTOM:
+    event.eventType = wxEVENT_TYPE_SCROLL_BOTTOM;
+    break;
+    
+  case SB_LINEUP:
+    event.eventType = wxEVENT_TYPE_SCROLL_LINEUP;
+    break;
+    
+  case SB_LINEDOWN:
+    event.eventType = wxEVENT_TYPE_SCROLL_LINEDOWN;
+    break;
+    
+  case SB_PAGEUP:
+    event.eventType = wxEVENT_TYPE_SCROLL_PAGEUP;
+    break;
+    
+  case SB_PAGEDOWN:
+    event.eventType = wxEVENT_TYPE_SCROLL_PAGEDOWN;
+    break;
+    
+  case SB_THUMBTRACK:
+    event.eventType = wxEVENT_TYPE_SCROLL_THUMBTRACK;
+    break;
+    
+  default:
+    return;
+    break;
+  }
+  if (wx_window)
+    wx_window->DoScroll(event);
 }
 
 void wxSubWnd::OnHScroll( WORD wParam, WORD pos, HWND control)
 {
-  if (control)
-  {
+  if (control) {
     wxNode *node = (wxNode *)wxScrollBarList.Find((long)control);
     if (!node)
       return;
@@ -3114,50 +3098,48 @@ void wxSubWnd::OnHScroll( WORD wParam, WORD pos, HWND control)
     }
 #endif
     return;
-  }
-  else
-  {
-        wxCommandEvent *_event = new wxCommandEvent;
-        wxCommandEvent &event = *_event;
+  } else {
+    wxCommandEvent *_event = new wxCommandEvent;
+    wxCommandEvent &event = *_event;
 
-        event.commandInt = pos;
-        event.extraLong = wxHORIZONTAL;
-	switch ( wParam )
-	{
-		case SB_TOP:
-			event.eventType = wxEVENT_TYPE_SCROLL_TOP;
-			break;
-
-		case SB_BOTTOM:
-			event.eventType = wxEVENT_TYPE_SCROLL_BOTTOM;
-			break;
-
-		case SB_LINEUP:
-			event.eventType = wxEVENT_TYPE_SCROLL_LINEUP;
-			break;
-
-		case SB_LINEDOWN:
-		        event.eventType = wxEVENT_TYPE_SCROLL_LINEDOWN;
-			break;
-
-		case SB_PAGEUP:
-                        event.eventType = wxEVENT_TYPE_SCROLL_PAGEUP;
-			break;
-
-		case SB_PAGEDOWN:
-                        event.eventType = wxEVENT_TYPE_SCROLL_PAGEDOWN;
-			break;
-
-                case SB_THUMBTRACK:
-                        event.eventType = wxEVENT_TYPE_SCROLL_THUMBTRACK;
-			break;
-
-		default:
-                        return;
-                        break;
-	}
-	if (wx_window)
-          wx_window->DoScroll(event);
+    
+    event.commandInt = pos;
+    event.extraLong = wxHORIZONTAL;
+    switch (wParam) {
+    case SB_TOP:
+      event.eventType = wxEVENT_TYPE_SCROLL_TOP;
+      break;
+      
+    case SB_BOTTOM:
+      event.eventType = wxEVENT_TYPE_SCROLL_BOTTOM;
+      break;
+      
+    case SB_LINEUP:
+      event.eventType = wxEVENT_TYPE_SCROLL_LINEUP;
+      break;
+      
+    case SB_LINEDOWN:
+      event.eventType = wxEVENT_TYPE_SCROLL_LINEDOWN;
+      break;
+      
+    case SB_PAGEUP:
+      event.eventType = wxEVENT_TYPE_SCROLL_PAGEUP;
+      break;
+      
+    case SB_PAGEDOWN:
+      event.eventType = wxEVENT_TYPE_SCROLL_PAGEDOWN;
+      break;
+      
+    case SB_THUMBTRACK:
+      event.eventType = wxEVENT_TYPE_SCROLL_THUMBTRACK;
+      break;
+      
+    default:
+      return;
+      break;
+    }
+    if (wx_window)
+      wx_window->DoScroll(event);
   }
 }
 
@@ -3360,22 +3342,16 @@ void wxWindow::DoScroll(wxCommandEvent& event)
   {
     int newPos = wnd->xscroll_position + nScrollInc;
     ::SetScrollPos(hWnd, SB_HORZ, newPos, TRUE );
-  }
-  else
-  {
+  } else {
     int newPos = wnd->yscroll_position + nScrollInc;
     ::SetScrollPos(hWnd, SB_VERT, newPos, TRUE );
   }
 
-  if (orient == wxHORIZONTAL)
-  {
+  if (orient == wxHORIZONTAL) {
     wnd->xscroll_position = GetScrollPos(orient);
-  }
-  else
-  {
+  } else {
     wnd->yscroll_position = GetScrollPos(orient);
   }
-
 
   OnScroll(event);
 
@@ -3772,81 +3748,45 @@ void wxWindow::OnSize(int w, int h)
   wxWnd *wnd = (wxWnd *)handle;
     
   if (wxSubType(__type, wxTYPE_DIALOG_BOX)) {
-
     wxChildNode* node = GetChildren()->First(); 
 
-
-
-   if (node && !node->Next()) {
-
-    wxWindow *win = (wxWindow *)node->Data();
-
-    Bool hasSubPanel = (wxSubType(win->__type, wxTYPE_PANEL && !wxSubType(win->__type, wxTYPE_DIALOG_BOX)) ||
-
-			wxSubType(win->__type, wxTYPE_CANVAS) ||
-
-			wxSubType(win->__type, wxTYPE_TEXT_WINDOW));
-
-    
-
-    if (hasSubPanel) {
-
-      int w, h;
-
-      GetClientSize(&w, &h);
-
-      win->SetSize(0, 0, w, h);
-
+    if (node && !node->Next()) {
+      wxWindow *win = (wxWindow *)node->Data();
+      Bool hasSubPanel = (wxSubType(win->__type, wxTYPE_PANEL && !wxSubType(win->__type, wxTYPE_DIALOG_BOX)) ||
+			  wxSubType(win->__type, wxTYPE_CANVAS) ||
+			  wxSubType(win->__type, wxTYPE_TEXT_WINDOW));
+      
+      if (hasSubPanel) {
+	int w, h;
+	GetClientSize(&w, &h);
+	win->SetSize(0, 0, w, h);
+      }
     }
-
-   }
-
   }
 }
 
 
 Bool wxWindow::CallPreOnEvent(wxWindow *win, wxMouseEvent *evt)
-
 {
-
 	wxWindow *p = win->GetParent();
-
 	return ((p && CallPreOnEvent(p, evt)) || win->PreOnEvent(this, evt));
-
 }
-
-
 
 Bool wxWindow::CallPreOnChar(wxWindow *win, wxKeyEvent *evt)
-
 {
-
 	wxWindow *p = win->GetParent();
-
 	return ((p && CallPreOnChar(p, evt)) || win->PreOnChar(this, evt));
-
 }
-
-
 
 Bool wxWindow::PreOnEvent(wxWindow *, wxMouseEvent *)
-
 {
-
 	return FALSE;
-
 }
-
-
 
 Bool wxWindow::PreOnChar(wxWindow *, wxKeyEvent *)
-
 {
-
 	return FALSE;
-
 }
-
 
 // Caret manipulation
 void wxWindow::CreateCaret(int w, int h)

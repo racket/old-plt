@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_gdi.cxx,v 1.2 1998/02/03 18:49:56 mflatt Exp $
+ * RCS_ID:      $Id: wx_gdi.cxx,v 1.3 1998/06/23 17:36:43 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -112,7 +112,6 @@ void wxFont::BuildInternalFont(HDC WXUNUSED(dc))
     int ff_weight = 0;
     int ff_family = 0;
     char *ff_face = NULL;
-    char *screen;
     
     ff_face = wxTheFontNameDirectory.GetScreenName(fontid, weight, style);
     if (!*ff_face)
@@ -308,12 +307,6 @@ wxPen::wxPen(wxColour& col, int Width, int Style)
   old_color  = 0;
   old_stipple = NULL;
 
-  // In Windows, only a pen of width = 1 can be dotted or dashed!
-  if ((Style == wxDOT) || (Style == wxLONG_DASH) ||
-      (Style == wxSHORT_DASH) || (Style == wxDOT_DASH) ||
-      (Style == wxUSER_DASH))
-    width = 1;
-  
   ChangePen();
 }
 
@@ -338,10 +331,6 @@ wxPen::wxPen(const char *col, int Width, int Style)
   old_dash  = NULL;
   old_color  = 0;
   old_stipple = NULL;
-
-  // In Windows, only a pen of width = 1 can be dotted or dashed!
-  if ((Style == wxDOT) || (Style == wxLONG_DASH) || (Style == wxSHORT_DASH) || (Style == wxDOT_DASH))
-    width = 1;
     
   ChangePen();
 }
@@ -384,19 +373,26 @@ void wxPen::ChangePen(void)
 
   /* Note: the pen can't be selected anywhere if we're changing it. */
   if (cpen) {
-	DeleteObject(cpen);
+    DeleteObject(cpen);
     cpen = NULL;
   }
 
   if (join==wxJOIN_ROUND        &&
-      cap==wxCAP_BUTT          &&
+      cap==wxCAP_BUTT           &&
       style!=wxUSER_DASH        &&
       style!=wxSTIPPLE          &&
-      style!=wxOPAQUE_STIPPLE
-     )
+      style!=wxOPAQUE_STIPPLE   &&
+      (width || style == wxSOLID))
     cpen = CreatePen(wx2msPenStyle(style), width, ms_colour);
   else {
-    DWORD ms_style = PS_GEOMETRIC|wx2msPenStyle(style);
+    DWORD ms_style = wx2msPenStyle(style);
+    int xwidth = width;
+
+    if (!width) {
+      xwidth = 1;
+      ms_style |= PS_COSMETIC;
+    } else
+      ms_style |= PS_GEOMETRIC;
     
     LOGBRUSH logb;
 
@@ -422,50 +418,51 @@ void wxPen::ChangePen(void)
         logb.lbHatch = (LONG)stipple->ms_bitmap;
       else
         logb.lbHatch = (LONG)0;
-    break;
+      break;
     case wxBDIAGONAL_HATCH:
       logb.lbStyle = BS_HATCHED;
       logb.lbHatch = HS_BDIAGONAL;
-    break;
+      break;
     case wxCROSSDIAG_HATCH:
       logb.lbStyle = BS_HATCHED;
       logb.lbHatch = HS_DIAGCROSS;
-    break;
+      break;
     case wxFDIAGONAL_HATCH:
       logb.lbStyle = BS_HATCHED;
       logb.lbHatch = HS_FDIAGONAL;
-    break;
+      break;
     case wxCROSS_HATCH:
       logb.lbStyle = BS_HATCHED;
       logb.lbHatch = HS_CROSS;
-    break;
+      break;
     case wxHORIZONTAL_HATCH:
       logb.lbStyle = BS_HATCHED;
       logb.lbHatch = HS_HORIZONTAL;
-    break;
+      break;
     case wxVERTICAL_HATCH:
       logb.lbStyle = BS_HATCHED;
       logb.lbHatch = HS_VERTICAL;
-    break;
+      break;
     default:
       logb.lbStyle = BS_SOLID;
-    break;
+      break;
     }
     logb.lbColor = ms_colour;
     wxDash *real_dash;
-    if (style==wxUSER_DASH&&nb_dash&&dash) {
+    if (style==wxUSER_DASH && nb_dash && dash) {
       real_dash = new wxDash[nb_dash];
       int i;
       for (i=0;i<nb_dash;i++)
-        real_dash[i] = dash[i] * width;
+        real_dash[i] = dash[i] * xwidth;
     } else
       real_dash = NULL;
     
-    cpen = ExtCreatePen(ms_style,width,&logb,
-			style==wxUSER_DASH?nb_dash:0,real_dash);
+    cpen = ExtCreatePen(ms_style, xwidth, &logb,
+			style == wxUSER_DASH ? nb_dash : 0,
+			real_dash);
     
     if (real_dash)
-      delete [] real_dash;
+      delete[] real_dash;
   }
 
 #ifdef DEBUG_CREATE
@@ -496,10 +493,13 @@ int wx2msPenStyle(int wx_style)
   switch (wx_style) {
   case wxDOT:
     cstyle = PS_DOT;
-      break;
+    break;
   case wxSHORT_DASH:
   case wxLONG_DASH:
     cstyle = PS_DASH;
+    break;
+  case wxDOT_DASH:
+    cstyle = PS_DASHDOT;
     break;
   case wxTRANSPARENT:
     cstyle = PS_NULL;
@@ -551,7 +551,7 @@ wxBrush::wxBrush(wxColour& col, int Style)
 
   colour = col;
   style = Style;
-  stipple = NULL 
+  stipple = NULL;
   cbrush = NULL;
   old_color = 0;
   old_style = -1;

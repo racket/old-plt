@@ -290,7 +290,7 @@ void wxCheckBox::SetSize(int x, int y, int width, int height, int WXUNUSED(sizeF
     wxGetCharSize(button, &cx, &cy, labelFont);
 
     GetWindowText(button, buf, 300);
-    GetTextExtent(buf, &current_width, &cyf,NULL,NULL,labelFont);
+    GetTextExtent(wxStripMenuCodes(buf), &current_width, &cyf,NULL,NULL,labelFont);
     if (width < 0)
       width = (int)(current_width + RADIO_SIZE) ;
     if (height<0)

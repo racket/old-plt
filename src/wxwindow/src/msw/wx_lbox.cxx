@@ -448,9 +448,7 @@ void wxListBox::SetSize(int x, int y, int width, int height, int sizeFlags)
 
   // If we're prepared to use the existing size, then...
   if (width == -1 && height == -1 && ((sizeFlags & wxSIZE_AUTO) != wxSIZE_AUTO))
-  {
     GetSize(&width, &height);
-  }
 
   char buf[300];
 
@@ -459,29 +457,27 @@ void wxListBox::SetSize(int x, int y, int width, int height, int sizeFlags)
   int clx; // label font dimensions
   int cly;
 
-  wxGetCharSize((HWND)ms_handle, &cx, &cy,buttonFont);
+  wxGetCharSize((HWND)ms_handle, &cx, &cy, buttonFont);
 
   float label_width, label_height, label_x, label_y;
   float control_width, control_height, control_x, control_y;
 
   // Deal with default size (using -1 values)
-  if (width<=0)
+  if (width <= 0)
     width = DEFAULT_ITEM_WIDTH;
 
-  if (height<=0)
+  if (height <= 0)
     height = DEFAULT_ITEM_HEIGHT;
 
-  if (static_label)
-  {
+  if (static_label) {
     // Find size of label
     wxGetCharSize((HWND)ms_handle, &clx, &cly,labelFont);
     GetWindowText(static_label, buf, 300);
-    GetTextExtent(buf, &label_width, &label_height, NULL, NULL,labelFont);
+    GetTextExtent(wxStripMenuCodes(buf), &label_width, &label_height, NULL, NULL,labelFont);
 
     // Given size is total label + edit size, find individual
     // control sizes on that basis.
-    if (labelPosition == wxHORIZONTAL)
-    {
+    if (labelPosition == wxHORIZONTAL) {
       label_x = (float)x;
       label_y = (float)y;
       label_width += (float)clx;
@@ -490,9 +486,7 @@ void wxListBox::SetSize(int x, int y, int width, int height, int sizeFlags)
       control_y = (float)y;
       control_width = width - (control_x - label_x);
       control_height = (float)height;
-    }
-    else // wxVERTICAL
-    {
+    } else { // wxVERTICAL
       label_x = (float)x;
       label_y = (float)y;
 
@@ -504,9 +498,7 @@ void wxListBox::SetSize(int x, int y, int width, int height, int sizeFlags)
 
     MoveWindow(static_label, (int)label_x, (int)label_y,
                (int)label_width, (int)label_height, TRUE);
-  }
-  else
-  {
+  } else {
     control_x = (float)x;
     control_y = (float)y;
     control_width = (float)width;
@@ -520,10 +512,10 @@ void wxListBox::SetSize(int x, int y, int width, int height, int sizeFlags)
   if (control_width <= 0)
     control_width = DEFAULT_ITEM_WIDTH;
 
-//  wxDebugMsg("About to set the listbox height to %d", (int)control_height);
+  //  wxDebugMsg("About to set the listbox height to %d", (int)control_height);
   MoveWindow((HWND)ms_handle, (int)control_x, (int)control_y,
-                              (int)control_width, (int)control_height, TRUE);
-
+	     (int)control_width, (int)control_height, TRUE);
+  
   GetEventHandler()->OnSize(width, height);
 }
 
@@ -534,8 +526,7 @@ void wxListBox::GetSize(int *width, int *height)
 
   wxFindMaxSize((HWND)ms_handle, &rect);
 
-  if (static_label)
-  {
+  if (static_label) {
     wxFindMaxSize(static_label, &rect);
   }
 

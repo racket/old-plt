@@ -99,11 +99,13 @@ Bool wxButton::Create(wxPanel *panel, wxFunction Function, char *label,
   // Subclass again for purposes of dialog editing mode
   SubclassControl(wx_button);
 
-  HDC the_dc = GetWindowDC((HWND)ms_handle) ;
-  if (buttonFont && buttonFont->GetInternalFont(the_dc))
-    SendMessage((HWND)ms_handle,WM_SETFONT,
-		(WPARAM)buttonFont->GetInternalFont(the_dc),0L);
-  ReleaseDC((HWND)ms_handle,the_dc) ;
+  if (buttonFont) {
+    HDC the_dc = GetWindowDC((HWND)ms_handle);
+    if (buttonFont->GetInternalFont(the_dc))
+      SendMessage((HWND)ms_handle,WM_SETFONT,
+		  (WPARAM)buttonFont->GetInternalFont(the_dc),0L);
+    ReleaseDC((HWND)ms_handle,the_dc);
+  }
 
   SetSize(x, y, width, height);
   ShowWindow(wx_button, SW_SHOW);

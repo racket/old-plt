@@ -70,11 +70,13 @@ Bool wxMessage::Create(wxPanel *panel, char *label, int x, int y, long style, ch
 
   SubclassControl(static_item);
 
-  HDC the_dc = GetWindowDC((HWND)ms_handle);
-  if (labelFont && labelFont->GetInternalFont(the_dc))
-    SendMessage((HWND)ms_handle,WM_SETFONT,
-                (WPARAM)labelFont->GetInternalFont(the_dc),0L);
-  ReleaseDC((HWND)ms_handle,the_dc);
+  if (labelFont) {
+    HDC the_dc = GetWindowDC((HWND)ms_handle);
+    if (labelFont->GetInternalFont(the_dc))
+      SendMessage((HWND)ms_handle,WM_SETFONT,
+		  (WPARAM)labelFont->GetInternalFont(the_dc),0L);
+    ReleaseDC((HWND)ms_handle,the_dc);
+  }
 
   panel->GetValidPosition(&x, &y);
 

@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_dc.cxx,v 1.2 1998/05/21 19:03:37 mflatt Exp $
+ * RCS_ID:      $Id: wx_dc.cxx,v 1.3 1998/06/26 20:31:34 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -61,10 +61,10 @@ wxDC::wxDC(void)
   filename = NULL;
   selected_bitmap = NULL;
   canvas = NULL;
-  cur_dc = NULL ;
-  cur_bk = 0 ;
-  cur_cpen = NULL ;
-  cur_cbrush = NULL ;
+  cur_dc = NULL;
+  cur_bk = 0;
+  cur_cpen = NULL;
+  cur_cbrush = NULL;
   old_bitmap = 0;
   old_pen = 0;
   old_brush = 0;
@@ -141,7 +141,7 @@ void wxDC::SelectOldObjects(HDC dc)
         selected_bitmap = NULL;
       }
     }
-    old_bitmap = NULL ;
+    old_bitmap = NULL;
     if (old_pen)
     {
 #if DEBUG > 1
@@ -149,7 +149,7 @@ void wxDC::SelectOldObjects(HDC dc)
 #endif
       ::SelectObject(dc, old_pen);
     }
-    old_pen = NULL ;
+    old_pen = NULL;
     if (old_brush)
     {
 #if DEBUG > 1
@@ -157,7 +157,7 @@ void wxDC::SelectOldObjects(HDC dc)
 #endif
       ::SelectObject(dc, old_brush);
     }
-    old_brush = NULL ;
+    old_brush = NULL;
     if (old_font)
     {
 #if DEBUG > 1
@@ -165,7 +165,7 @@ void wxDC::SelectOldObjects(HDC dc)
 #endif
       ::SelectObject(dc, old_font);
     }
-    old_font = NULL ;
+    old_font = NULL;
     if (old_palette)
     {
 #if DEBUG > 1
@@ -176,7 +176,7 @@ void wxDC::SelectOldObjects(HDC dc)
 #if DEBUG > 1
     wxDebugMsg("wxDC::SelectOldObjects: Done.\n");
 #endif
-    old_palette = NULL ;
+    old_palette = NULL;
   }
 }
 
@@ -438,7 +438,7 @@ void wxDC::FloodFill(float x, float y, wxColour *col, int style)
                           FLOODFILLSURFACE:FLOODFILLBORDER
                         );
 
-      DoneDC(dc) ;
+      DoneDC(dc);
 
       CalcBoundingBox((float)x, (float)y);
 }
@@ -465,7 +465,7 @@ Bool wxDC::GetPixel(float x, float y, wxColour *col)
   // get the color of the pen
   COLORREF pencolor = 0x00ffffff;
   if (current_pen)
-    pencolor = current_pen->GetColour().pixel ;
+    pencolor = current_pen->GetColour().pixel;
   
   DoneDC(dc);
 
@@ -480,27 +480,22 @@ Bool wxDC::GetPixel(float x, float y, wxColour *col)
 
 void wxDC::IntDrawLine(int x1, int y1, int x2, int y2)
 {
-  HDC dc = ThisDC() ;
+  HDC dc = ThisDC();
 
   if (!dc) return;
-
- 
 
   int xx1, yy1, xx2, yy2;
   
   if (current_pen && autoSetting)
     SetPen(current_pen);
- 
 
   ShiftXY(x1, y1, xx1, yy1);
-
   ShiftXY(x2, y2, xx2, yy2);
-
   
   (void)MoveToEx(dc, XLOG2DEV(xx1), YLOG2DEV(yy1), NULL);
   (void)LineTo(dc, XLOG2DEV(xx2), YLOG2DEV(yy2));
 
-  DoneDC(dc) ;
+  DoneDC(dc);
  
   CalcBoundingBox((float)x1, (float)y1);
   CalcBoundingBox((float)x2, (float)y2);
@@ -508,44 +503,34 @@ void wxDC::IntDrawLine(int x1, int y1, int x2, int y2)
 
 void wxDC::CrossHair(float x, float y)
 {
-      HDC dc = ThisDC(); 
+  HDC dc = ThisDC(); 
 
-	  if (!dc) return;
+  if (!dc) return;
 
+  int xx, yy;
 
+  ShiftXY(x, y, xx, yy);
 
-	  int xx, yy;
+  // We suppose that our screen is 2000x2000 max.
+  
+  int xx1 = xx-2000;
+  int yy1 = yy-2000;
+  int xx2 = xx+2000;
+  int yy2 = yy+2000;
 
+  if (current_pen && autoSetting)
+    SetPen(current_pen);
 
-
-	  ShiftXY(x, y, xx, yy);
-
-
-      // We suppose that our screen is 2000x2000 max.
-
-      int xx1 = xx-2000;
-
-      int yy1 = yy-2000;
-
-      int xx2 = xx+2000;
-
-      int yy2 = yy+2000;
-
-
-
-      if (current_pen && autoSetting)
-        SetPen(current_pen);
-
-      (void)MoveToEx(dc, XLOG2DEV(xx1), YLOG2DEV(yy), NULL);
-      (void)LineTo(dc, XLOG2DEV(xx2), YLOG2DEV(yy));
-
-      (void)MoveToEx(dc, XLOG2DEV(xx), YLOG2DEV(yy1), NULL);
-      (void)LineTo(dc, XLOG2DEV(xx), YLOG2DEV(yy2));
-
-      DoneDC(dc) ;
-
-      CalcBoundingBox((float)x - 2000, (float)y - 2000);
-      CalcBoundingBox((float)x + 2000, (float)y + 2000);
+  (void)MoveToEx(dc, XLOG2DEV(xx1), YLOG2DEV(yy), NULL);
+  (void)LineTo(dc, XLOG2DEV(xx2), YLOG2DEV(yy));
+  
+  (void)MoveToEx(dc, XLOG2DEV(xx), YLOG2DEV(yy1), NULL);
+  (void)LineTo(dc, XLOG2DEV(xx), YLOG2DEV(yy2));
+  
+  DoneDC(dc);
+  
+  CalcBoundingBox((float)x - 2000, (float)y - 2000);
+  CalcBoundingBox((float)x + 2000, (float)y + 2000);
 }
 
 void wxDC::DrawLine(float x1, float y1, float x2, float y2)
@@ -554,15 +539,11 @@ void wxDC::DrawLine(float x1, float y1, float x2, float y2)
 
   if (!dc) return;
 
-
-
   int xx1, yy1, xx2, yy2;
   
   ShiftXY(x1, y1, xx1, yy1);
   ShiftXY(x2, y2, xx2, yy2);
 
-
-// BUGBUG - is this necessary? YES YES YES YEs Yes yes ye....
   if (current_pen && autoSetting)
     SetPen(current_pen);
 
@@ -581,39 +562,31 @@ void wxDC::DrawArc(float x1,float y1,float x2,float y2,float xc,float yc)
 
   if (!dc) return;
 
-
-
   int xx1, yy1, xx2, yy2, xxc, yyc;
 
-  
-
   ShiftXY(x1, y1, xx1, yy1);
-
   ShiftXY(x2, y2, xx2, yy2);
-
   ShiftXY(xc, yc, xxc, yyc);
 
-
-  double dx = xc-x1 ;
-  double dy = yc-y1 ;
-  double radius = (double)sqrt(dx*dx+dy*dy) ;;
+  double dx = xc-x1;
+  double dy = yc-y1;
+  double radius = (double)sqrt(dx*dx+dy*dy);;
   if (xx1==xx2 && xx2==yy2)
   {
-    DrawEllipse(xc,yc,(float)(radius*2.0),(float)(radius*2)) ;
-    return ;
+    DrawEllipse(xc,yc,(float)(radius*2.0),(float)(radius*2));
+    return;
   }
 
-// BUGBUG - is this necessary?
   if (current_pen && autoSetting)
-    SetPen(current_pen) ;
+    SetPen(current_pen);
   
-  xx1 = XLOG2DEV(xx1) ;
-  yy1 = YLOG2DEV(yy1) ;
-  xx2 = XLOG2DEV(xx2) ;
-  yy2 = YLOG2DEV(yy2) ;
-  xxc = XLOG2DEV(xxc) ;
-  yyc = YLOG2DEV(yyc) ;
-  double ray = sqrt((xxc-xx1)*(xxc-xx1)+(yyc-yy1)*(yyc-yy1)) ;
+  xx1 = XLOG2DEV(xx1);
+  yy1 = YLOG2DEV(yy1);
+  xx2 = XLOG2DEV(xx2);
+  yy2 = YLOG2DEV(yy2);
+  xxc = XLOG2DEV(xxc);
+  yyc = YLOG2DEV(yyc);
+  double ray = sqrt((xxc-xx1)*(xxc-xx1)+(yyc-yy1)*(yyc-yy1));
  
   (void)MoveToEx(dc, xx1, yy1, NULL);
   int xxx1 = (int)(xxc-ray);
@@ -622,22 +595,18 @@ void wxDC::DrawArc(float x1,float y1,float x2,float y2,float xc,float yc)
   int yyy2 = (int)(yyc+ray);
   if (current_brush && current_brush->GetStyle() !=wxTRANSPARENT)
   {
-// BUGBUG - is this necessary?
     if (current_brush&&current_brush->GetStyle()!=wxTRANSPARENT&&autoSetting)
-      SetBrush(current_brush) ;
-
-	if (autoSetting)
-
-		SetRop(dc);
+      SetBrush(current_brush);
+    if (autoSetting)
+      SetRop(dc);
     Pie(dc,xxx1,yyy1,xxx2,yyy2,
-        xx1,yy1,xx2,yy2) ;
-  }
-  else
+        xx1,yy1,xx2,yy2);
+  } else 
     Arc(dc,xxx1,yyy1,xxx2,yyy2,
-        xx1,yy1,xx2,yy2) ;
-
+        xx1,yy1,xx2,yy2);
+  
   DoneDC(dc);
-
+  
   CalcBoundingBox((float)(xc-radius), (float)(yc-radius));
   CalcBoundingBox((float)(xc+radius), (float)(yc+radius));
 }
@@ -654,10 +623,7 @@ void wxDC::SetPixel(float x, float y, wxColour *c)
 
   if (!dc) return;
 
-
-
   wxWnd *wnd = NULL;
-
 
   int xx1, yy1;
 
@@ -677,47 +643,33 @@ void wxDC::DrawPolygon(int n, wxPoint points[], float xoffset, float yoffset,int
 
   if (!dc) return;
 
-
-
- // BUGBUG - is this necessary?
   if (autoSetting) {
     if (current_pen)
       SetPen(current_pen);
     if (current_brush)
       SetBrush(current_brush);
   }
-  
 
   if (autoSetting)
-
-		SetRop(dc);
-
+    SetRop(dc);
 
   int xoffset1;
-
   int yoffset1;
 
-  
-
   ShiftXY(xoffset, yoffset, xoffset1, yoffset1);
-
-  
 
   POINT *cpoints = new POINT[n];
   int i;
   for (i = 0; i < n; i++)
   {
-
-	cpoints[i].x = (int)(XLOG2DEV(points[i].x + xoffset1));
-
-	cpoints[i].y = (int)(YLOG2DEV(points[i].y + yoffset1));
-
+    cpoints[i].x = (int)(XLOG2DEV(points[i].x + xoffset1));
+    cpoints[i].y = (int)(YLOG2DEV(points[i].y + yoffset1));
     CalcBoundingBox(points[i].x + xoffset, points[i].y + yoffset);
   }
 
-  int prev = SetPolyFillMode(dc,fillStyle==wxODDEVEN_RULE?ALTERNATE:WINDING) ;
+  int prev = SetPolyFillMode(dc,fillStyle==wxODDEVEN_RULE?ALTERNATE:WINDING);
   (void)Polygon(dc, cpoints, n);
-  SetPolyFillMode(dc,prev) ;
+  SetPolyFillMode(dc,prev);
 
   DoneDC(dc);
 
@@ -726,37 +678,30 @@ void wxDC::DrawPolygon(int n, wxPoint points[], float xoffset, float yoffset,int
 
 void wxDC::DrawLines(int n, wxIntPoint points[], int xoffset, int yoffset)
 {
-  HDC dc = ThisDC() ;
+  HDC dc = ThisDC();
 
   if (!dc) return;
-
-
 
   if (current_pen && autoSetting)
     SetPen(current_pen);
  
-
   int xoffset1;
-
   int yoffset1;
-
-  
 
   ShiftXY(xoffset, yoffset, xoffset1, yoffset1);
   
   POINT *cpoints = new POINT[n];
   int i;
-  for (i = 0; i < n; i++)
-  {
-	 cpoints[i].x = (int)(XLOG2DEV(points[i].x + xoffset1));
-	 cpoints[i].y = (int)(YLOG2DEV(points[i].y + yoffset1));
-
-	 CalcBoundingBox((float)points[i].x + xoffset, (float)points[i].y + yoffset);
+  for (i = 0; i < n; i++) {
+    cpoints[i].x = (int)(XLOG2DEV(points[i].x + xoffset1));
+    cpoints[i].y = (int)(YLOG2DEV(points[i].y + yoffset1));
+    
+    CalcBoundingBox((float)points[i].x + xoffset, (float)points[i].y + yoffset);
   }
-
+  
   (void)Polyline(dc, cpoints, n);
 
-  DoneDC(dc) ;
+  DoneDC(dc);
 
   delete[] cpoints;
 }
@@ -767,36 +712,28 @@ void wxDC::DrawLines(int n, wxPoint points[], float xoffset, float yoffset)
 
   if (!dc) return;
 
-
-
   // BUGBUG - is this necessary?
   if (current_pen && autoSetting)
     SetPen(current_pen);
 
   int xoffset1;
-
   int yoffset1;
-
-  
 
   ShiftXY(xoffset, yoffset, xoffset1, yoffset1);
 
-  
-
   POINT *cpoints = new POINT[n];
   int i;
-  for (i = 0; i < n; i++)
-  {
-	 cpoints[i].x = (int)(XLOG2DEV(points[i].x + xoffset1));
-	 cpoints[i].y = (int)(YLOG2DEV(points[i].y + yoffset1));
-
-	 CalcBoundingBox(points[i].x + xoffset, points[i].y + yoffset);
+  for (i = 0; i < n; i++) {
+    cpoints[i].x = (int)(XLOG2DEV(points[i].x + xoffset1));
+    cpoints[i].y = (int)(YLOG2DEV(points[i].y + yoffset1));
+    
+    CalcBoundingBox(points[i].x + xoffset, points[i].y + yoffset);
   }
 
- (void)Polyline(dc, cpoints, n);
+  (void)Polyline(dc, cpoints, n);
 
   DoneDC(dc);
-
+  
   delete[] cpoints;
 }
 
@@ -806,18 +743,11 @@ void wxDC::DrawRectangle(float x, float y, float width, float height)
 
   if (!dc) return;
 
-
-
   int x1, y1, x2, y2;
-
-
 
   ShiftXY(x, y, x1, y1);
   ShiftXY(x + width, y + height, x2, y2);
 
-
-
-// BUGBUG - is this necessary?
   if (autoSetting) {
     if (current_pen) 
       SetPen(current_pen);
@@ -826,49 +756,38 @@ void wxDC::DrawRectangle(float x, float y, float width, float height)
 
   }
 
-  
-
   if (autoSetting)
+    SetRop(dc);
 
-	  SetRop(dc);
-
-
-
- /* MATTHEW: [6] new normalization */
-#if WX_STANDARD_GRAPHICS
   Bool do_brush, do_pen;
 
   do_brush = current_brush && current_brush->GetStyle() != wxTRANSPARENT;
   do_pen = current_pen && current_pen->GetStyle() != wxTRANSPARENT;
 
   if (do_brush) {
-	 HPEN orig_pen = NULL;
-
-	 if (do_pen || !current_pen)
-		orig_pen = ::SelectObject(dc, ::GetStockObject(NULL_PEN));
-
-	 (void)Rectangle(dc, XLOG2DEV(x1), YLOG2DEV(y1),
-		  XLOG2DEV(x2) + 1, YLOG2DEV(y2) + 1);
-
-	 if (do_pen || !current_pen)
-		::SelectObject(dc , orig_pen);
+    HPEN orig_pen = NULL;
+    
+    if (do_pen || !current_pen)
+      orig_pen = ::SelectObject(dc, ::GetStockObject(NULL_PEN));
+    
+    (void)Rectangle(dc, XLOG2DEV(x1), YLOG2DEV(y1),
+		    XLOG2DEV(x2) + 1, YLOG2DEV(y2) + 1);
+    
+    if (do_pen || !current_pen)
+      ::SelectObject(dc , orig_pen);
   }
   if (do_pen) {
-	 HBRUSH orig_brush = NULL;
-
-	 if (do_brush || !current_brush)
-		orig_brush = ::SelectObject(dc, ::GetStockObject(NULL_BRUSH));
-
-	 (void)Rectangle(dc, XLOG2DEV(x1), YLOG2DEV(y1),
-		  XLOG2DEV(x2), YLOG2DEV(y2));
-
-	 if (do_brush || !current_brush)
-		::SelectObject(dc, orig_brush);
+    HBRUSH orig_brush = NULL;
+    
+    if (do_brush || !current_brush)
+      orig_brush = ::SelectObject(dc, ::GetStockObject(NULL_BRUSH));
+    
+    (void)Rectangle(dc, XLOG2DEV(x1), YLOG2DEV(y1),
+		    XLOG2DEV(x2), YLOG2DEV(y2));
+    
+    if (do_brush || !current_brush)
+      ::SelectObject(dc, orig_brush);
   }
-#else
-  (void)Rectangle(dc, XLOG2DEV(x1), YLOG2DEV(y1),
-		  XLOG2DEV(x2), YLOG2DEV(y2));
-#endif
 
   CalcBoundingBox((float)x, (float)y);
   CalcBoundingBox((float)x + width, (float)y + height);
@@ -1012,10 +931,10 @@ void wxDC::SetFont(wxFont *the_font)
   {
     if (old_font)
       ::SelectObject(dc, old_font);
-    old_font = NULL ;
+    old_font = NULL;
   }
   if (font)
-    font->BuildInternalFont(dc) ;
+    font->BuildInternalFont(dc);
 
   if (font && font->cfont)
   {
@@ -1034,23 +953,20 @@ void wxDC::SetPen(wxPen *pen)
   HDC dc = ThisDC();
   if (!dc) return;
 
-
   if (current_pen) current_pen->Lock(-1);
   current_pen = pen;
   if (current_pen) current_pen->Lock(1);
 
-  if (!pen)
-  {
+  if (!pen) {
     if (old_pen)
       ::SelectObject(dc, old_pen);
-    old_pen = NULL ;
+    old_pen = NULL;
   }
 
-  if (pen)
-  {
+  if (pen) {
     pen->ChangePen();
 
-    HPEN p = pen->SelectPen(dc) ;
+    HPEN p = pen->SelectPen(dc);
     if (!old_pen)
       old_pen = p;
   }
@@ -1072,7 +988,7 @@ void wxDC::SetBrush(wxBrush *brush)
   {
     if (old_brush)
       ::SelectObject(dc, old_brush);
-    old_brush = NULL ;
+    old_brush = NULL;
   }
 
   if (brush)
@@ -1082,7 +998,7 @@ void wxDC::SetBrush(wxBrush *brush)
     HBRUSH b = 0;
 //    if (brush->cbrush) // JACS change 21/6/94 to make it select a NULL brush
                          // for wxTRANSPARENT
-      b = brush->SelectBrush(dc) ;
+      b = brush->SelectBrush(dc);
     if (!old_brush)
       old_brush = b;
   }
@@ -1117,12 +1033,12 @@ void wxDC::DrawText(const char *text, float x, float y, Bool use16bit)
   }
 
   if (current_text_foreground.Ok())
-    SetTextColor(dc, current_text_foreground.pixel) ;
+    SetTextColor(dc, current_text_foreground.pixel);
 
   DWORD old_background;
   if (current_text_background.Ok())
   {
-    old_background = SetBkColor(dc, current_text_background.pixel) ;
+    old_background = SetBkColor(dc, current_text_background.pixel);
   }
 
   if (current_bk_mode == wxTRANSPARENT)
@@ -1153,7 +1069,7 @@ void wxDC::SetBackground(wxBrush *brush)
   if (!brush)
     return;
 
-  brush->ChangeBrush() ;
+  brush->ChangeBrush();
   if (canvas)
   {
     wxCanvasWnd *wnd = (wxCanvasWnd *)canvas->handle;
@@ -1174,20 +1090,20 @@ void wxDC::SetBackground(wxBrush *brush)
     }
   }
   
-  HDC dc = ThisDC() ;
+  HDC dc = ThisDC();
 
   if (current_background_brush && dc)
   {
-  COLORREF new_color = current_background_brush->colour.pixel ;
+  COLORREF new_color = current_background_brush->colour.pixel;
     if (new_color!=cur_bk || dc!=cur_dc)
     {
       (void)SetBkColor(dc, new_color);
-      cur_bk = new_color ;
-      cur_dc = dc ;
+      cur_bk = new_color;
+      cur_dc = dc;
     }
   }
 
-  DoneDC(dc) ;
+  DoneDC(dc);
 }
 
 void wxDC::SetBackgroundMode(int mode)
@@ -1373,7 +1289,7 @@ void wxDC::SetMapMode(int mode)
   int mm_width = 0;
   int mm_height = 0;
 
-  HDC dc = ThisDC() ;
+  HDC dc = ThisDC();
 
 
   if (!dc) return;
@@ -1386,7 +1302,7 @@ void wxDC::SetMapMode(int mode)
 
   if ((pixel_width == 0) || (pixel_height == 0) || (mm_width == 0) || (mm_height == 0))
   {
-    DoneDC(dc) ;
+    DoneDC(dc);
     return;
   }
 
@@ -1438,7 +1354,7 @@ void wxDC::SetMapMode(int mode)
   ::SetViewportOrgEx(dc, (int)device_origin_x, (int)device_origin_y, NULL);
   ::SetWindowOrgEx(dc, (int)logical_origin_x, (int)logical_origin_y, NULL);
 
-  DoneDC(dc) ;
+  DoneDC(dc);
 }
 
 void wxDC::SetUserScale(float x, float y)
@@ -1462,18 +1378,18 @@ void wxDC::SetLogicalOrigin(float x, float y)
   logical_origin_x = x;
   logical_origin_y = y;
 
-  HDC dc = ThisDC() ;
+  HDC dc = ThisDC();
 
   if (dc) ::SetWindowOrgEx(dc, (int)logical_origin_x, (int)logical_origin_y, NULL);
 
-  DoneDC(dc) ;
+  DoneDC(dc);
 }
 
 void wxDC::SetDeviceOrigin(float x, float y)
 {
   device_origin_x = x;
   device_origin_y = y;
-  HDC dc = ThisDC() ;
+  HDC dc = ThisDC();
 
   if (dc) ::SetViewportOrgEx(dc, (int)device_origin_x, (int)device_origin_y, NULL);
 
@@ -1721,13 +1637,13 @@ void wxCanvasDC::GetClippingBox(float *x,float *y,float *w,float *h)
 {
   if (clipping)
   {
-    *x = (float)clip_x1 ;
-    *y = (float)clip_y1 ;
-    *w = (float)(clip_x2 - clip_x1) ;
-    *h = (float)(clip_y2 - clip_y1) ;
+    *x = (float)clip_x1;
+    *y = (float)clip_y1;
+    *w = (float)(clip_x2 - clip_x1);
+    *h = (float)(clip_y2 - clip_y1);
   }
   else
-   *x = *y = *w = *h = 0 ;
+   *x = *y = *w = *h = 0;
 }
 
 /* MATTHEW: [8] */
@@ -1929,19 +1845,19 @@ wxMemoryDC::wxMemoryDC(wxCanvasDC *old_dc):wxbMemoryDC(old_dc)
 
   wxWnd *wnd = NULL;
   if (old_dc->canvas)
-	 wnd = (wxWnd *)old_dc->canvas->handle;
+    wnd = (wxWnd *)old_dc->canvas->handle;
 
   HDC dc = NULL;
   if (old_dc->cdc)
-	 dc = old_dc->cdc;
+    dc = old_dc->cdc;
   else if (wnd)
-	 dc = wnd->GetHDC() ;
+    dc = wnd->GetHDC();
 
   cdc = wxwmCreateCompatibleDC(dc);
   ok = (cdc != NULL);
 
   if (!old_dc->cdc && wnd)
-	 wnd->ReleaseHDC() ;
+    wnd->ReleaseHDC();
 
   SetBrush(wxWHITE_BRUSH);
   SetPen(wxBLACK_PEN);
@@ -1949,8 +1865,8 @@ wxMemoryDC::wxMemoryDC(wxCanvasDC *old_dc):wxbMemoryDC(old_dc)
 
 wxMemoryDC::~wxMemoryDC(void)
 {
-	if (selected_bitmap)
-		SelectObject(NULL);
+  if (selected_bitmap)
+    SelectObject(NULL);
 }
 
 void wxMemoryDC::SelectObject(wxBitmap *bitmap)

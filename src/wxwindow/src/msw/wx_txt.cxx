@@ -438,7 +438,7 @@ void wxText::SetSize(int x, int y, int width, int height, int sizeFlags)
     // Find size of label
     wxGetCharSize((HWND)ms_handle, &clx, &cly,labelFont);
     GetWindowText(static_label, buf, 300);
-    GetTextExtent(buf, &label_width, &label_height, NULL, NULL,labelFont);
+    GetTextExtent(wxStripMenuCodes(buf), &label_width, &label_height, NULL, NULL,labelFont);
 
     // Given size is total label + edit size, so find individual
     // control sizes on that basis.

@@ -895,24 +895,33 @@
                 (let* ([process-arg
                         (lambda (element)
                           (if (pair? element)
-                              (and (utils:check-for-keyword (car element))
-                                   (list (get-binding-name (car element))
-                                         (cheap-wrap-recur (cdr element))))
-                              (and (utils:check-for-keyword element)
-                                   (get-binding-name element))))]
+                              (let-values ([(annotated free-vars) 
+                                            (no-enclosing-recur (cdr element))])
+                                (values
+                                 (and (utils:check-for-keyword (car element))
+                                      (list (get-binding-name (car element))
+                                            annotated))
+                                 free-vars))
+                              (values
+                               (and (utils:check-for-keyword element)
+                                    (get-binding-name element))
+                               null)))]
                        [paroptarglist->ilist
                         (lambda (paroptarglist)
                           (cond
                             ((z:sym-paroptarglist? paroptarglist)
                              (process-arg (car (z:paroptarglist-vars paroptarglist))))
                             ((z:list-paroptarglist? paroptarglist)
-                             (map process-arg (z:paroptarglist-vars paroptarglist)))
+                             (dual-map process-arg (z:paroptarglist-vars paroptarglist)))
                             ((z:ilist-paroptarglist? paroptarglist)
-                             (let loop ((vars (map process-arg
-                                                   (z:paroptarglist-vars paroptarglist))))
-                               (if (null? (cddr vars))
-                                   (cons (car vars) (cadr vars))
-                                   (cons (car vars) (loop (cdr vars))))))
+                             (let-values ([(vars free-var-sets)
+                                           (dual-map process-arg (z:paroptarglist-vars paroptarglist))])
+                               (values
+                                (let loop ((vars vars))
+                                  (if (null? (cddr vars))
+                                      (cons (car vars) (cadr vars))
+                                      (cons (car vars) (loop (cdr vars)))))
+                                free-var-sets)))
                             (else
                              (e:internal-error paroptarglist
                                                "Given to paroptarglist->ilist"))))]
@@ -988,27 +997,36 @@
                                 null
                                 (apply binding-set-union free-var-sets)))]))])
                    (let*-values
-                       ([(ann-super-expr free-bindings-super-expr)
+                       ([(b-s-remove) (lambda (a b) (binding-set-remove a b expr))]
+                        [(ann-super-expr free-bindings-super-expr)
                          (non-tail-recur (z:class*/names-form-super-expr expr))]
                         [(ann-interfaces free-binding-sets-interfaces)
                          (dual-map non-tail-recur (z:class*/names-form-interfaces expr))]
                         [(ann-clauses class-binding-sets free-binding-sets-clauses)
                          (triple-map process-clause (z:class*/names-form-inst-clauses expr))]
+                        [(ann-args free-binding-sets-init-vars)
+                         (paroptarglist->ilist (z:class*/names-form-init-vars expr))]
+                        [(init-vars-bindings)
+                         (map (lambda (b)
+                                (if (pair? b) (car b) b))
+                              (z:paroptarglist-vars (z:class*/names-form-init-vars expr)))]
                         [(free-bindings)
-                         (binding-set-remove
-                          (apply binding-set-union
-                                 (list (z:class*/names-form-this expr)
-                                       (z:class*/names-form-super-init expr)) 
-                                 class-binding-sets)
-                          (apply binding-set-union free-binding-sets-clauses)
-                          expr)]
+                         (apply binding-set-union
+                                (b-s-remove (apply binding-set-union init-vars-bindings
+                                                   (list (z:class*/names-form-this expr)
+                                                         (z:class*/names-form-super-init expr))       
+                                                   class-binding-sets)
+                                            (apply binding-set-union 
+                                                   (append free-binding-sets-init-vars
+                                                           free-binding-sets-clauses)))
+                                free-bindings-super-expr free-binding-sets-interfaces)]
                         [(annotated)
                          `(#%class*/names
                            (,(get-binding-name (z:class*/names-form-this expr))
                             ,(get-binding-name (z:class*/names-form-super-init expr)))
                            ,ann-super-expr
                            ,ann-interfaces
-                           ,(paroptarglist->ilist (z:class*/names-form-init-vars expr))
+                           ,ann-args
                            ,@ann-clauses)])
                      (values (appropriate-wrap annotated free-bindings) free-bindings)))]          
 	       

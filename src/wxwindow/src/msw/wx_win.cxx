@@ -256,6 +256,15 @@ void wxWindow::SetFocus(void)
   }
 }
 
+/* Enable state flags:
+     winEnabled = whether the specific window has been enabled or disabled;
+                  implies graying
+     internal_disable = whether window disable due to disabling of the
+                        parent, or some other influence; counts up, but
+                        rarely exceeds 1; doesn't necessary imply graying
+     internal_gray_disable = like internal_disable, but implies graying
+*/
+
 void wxWindow::ChangeToGray(Bool gray)
 {
   /* Nothing extra to do over enabling */
@@ -283,6 +292,8 @@ void wxWindow::InternalEnable(Bool enable, Bool gray)
   Bool do_something;
   short start_igd = internal_gray_disabled;
 
+  /* See state-flag docs above! */
+
   if (!enable) {
     do_something = !internal_disabled;
     internal_disabled++;
@@ -305,6 +316,8 @@ void wxWindow::InternalEnable(Bool enable, Bool gray)
 
 void wxWindow::Enable(Bool enable)
 {
+  /* See state-flag docs above! */
+
   if (winEnabled == !!enable)
     return;
 
@@ -321,6 +334,8 @@ void wxWindow::Enable(Bool enable)
 
 void wxWindow::InternalGrayChildren(Bool gray)
 {
+  /* Called by ChangeToGray */
+
   wxChildNode *cn;
   for (cn = GetChildren()->First(); cn; cn = cn->Next()) {
     wxWindow *w = (wxWindow *)cn->Data();
@@ -330,6 +345,9 @@ void wxWindow::InternalGrayChildren(Bool gray)
 
 void wxWindow::InitEnable()
 {
+  /* Called when an child is created */
+  /* See state-flag docs above! */
+
   wxWindow *p;
   p = GetParent();
   if (!p->winEnabled || p->internal_gray_disabled)

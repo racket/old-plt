@@ -6,7 +6,8 @@
   (lambda (name args . body)
     `(define-macro ,name (lambda ,args ,@body))))
 
-(define (struct-expander-fn def-str struct:)
+(begin-elaboration-time
+ (define (struct-expander-fn def-str struct:)
   (#%let ([make-exn make-exn:syntax]
 	 [debug debug-info-handler])
   (#%lambda body
@@ -60,7 +61,7 @@
                             [x (syntax-error (format "field name not a identifier at ~s" x))]))
                         fields)])
 	      `(#%define-values ,(build-struct-names name fields)
-                                (,struct: ,(car body) ,fields)))))))
+                                (,struct: ,(car body) ,fields))))))))
 
 (#%define-macro define-const-typed-structure
   (struct-expander-fn ' define-const-typed-structure '#%struct))
@@ -69,29 +70,28 @@
 
 ;; ----------------------------------------------------------------------
 
-(define cout 0)
-(define wh-cout (box '()))
-
 (define-macro let*-vals 
-  (lambda args
-  (match args
-    [(([varss exps] ...) . body)
-      (set! cout (add1 cout))
-      (printf "let*-vals ~s~n" cout)
-      (let* ([varss (map (lambda (vars) 
-                           (map 
+  (let ([cout 0]
+	[wh-cout (box '())])
+   (lambda args
+    (match args
+      [(([varss exps] ...) . body)
+       (set! cout (add1 cout))
+       (printf "let*-vals ~s~n" cout)
+       (let* ([varss (map (lambda (vars) 
+			    (map 
                              (lambda (x) (if (eq? x '_) (gensym) x))
                              (if (symbol? vars) (list vars) vars)))
-                      varss)]
+			  varss)]
               [binds (map list varss exps)])
-        `(begin 
-           (set-box! (global-defined-value 'wh-cout)
-             (cons ,cout (unbox (global-defined-value 'wh-cout))))
-           (let*-values ,binds 
+	 `(begin 
+	    (set-box! (global-defined-value 'wh-cout)
+	    (cons ,cout (unbox (global-defined-value 'wh-cout))))
+	    (let*-values ,binds 
              (begin            
                (set-box! (global-defined-value 'wh-cout)
                  (cdr (unbox (global-defined-value 'wh-cout))))
-               . ,body))))])))
+               . ,body))))]))))
 
 (define-macro let*-vals 
   (lambda args
@@ -116,7 +116,8 @@
                    ,@body
                    (,loop (add1 ,var))))))])))
 
-(define assert-on (make-parameter #f (lambda (x) x)))
+(begin-elaboration-time
+ (define assert-on (make-parameter #f (lambda (x) x))))
 
 (define-macro assert 
  (lambda args

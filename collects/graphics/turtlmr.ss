@@ -53,7 +53,7 @@
 				   [y (turtle-y turtle)]
 				   [theta (turtle-angle turtle)]
 				   [long-size 20]
-				   [short-size 10]
+				   [short-size 7]
 				   [l-theta (+ theta pi/2)]
 				   [r-theta (- theta pi/2)])
 			      (send ph set-x (+ x (* long-size (cos theta))))
@@ -435,11 +435,23 @@
 
 
   (define (print)
-    (let ([dc (make-object mred:post-script-dc%)])
-      (send dc start-doc "Turtles")
-      (send dc start-page)
-      (draw-lines-into-dc dc)
-      (send dc end-page)
-      (send dc end-doc)))
+    (case (system-type)
+      [(macos windows)
+       (let ([dc (make-object mred:printer-dc%)])
+	 (send dc start-doc "Turtles")
+	 (send dc start-page)
+	 (draw-lines-into-dc dc)
+	 (send dc end-page)
+	 (send dc end-doc))]
+      [(unix)
+       (let ([dc (make-object mred:post-script-dc%)])
+	 (send dc start-doc "Turtles")
+	 (send dc start-page)
+	 (draw-lines-into-dc dc)
+	 (send dc end-page)
+	 (send dc end-doc))]
+      [else
+       (mred:message-box "Turtles"
+			 "Printing is not supported on this platform")]))
 
 )

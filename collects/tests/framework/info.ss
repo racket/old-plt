@@ -5,10 +5,10 @@
      (lambda (_)
        (require-library "launcher.ss" "launcher")
        (make-mred-launcher
-	(list "-aqge-"
+	(list "-qe-"
 	      "(require-library \"framework-test-engine.ss\" \"tests\" \"framework\")")
 	(mred-program-launcher-path "Framework Test Engine"))
        (make-mzscheme-launcher
-	(list "-mqvage-" "(require-library \"main.ss\" \"tests\" \"framework\")")
+	(list "-mqve-" "(require-library \"main.ss\" \"tests\" \"framework\")")
 	(mred-program-launcher-path
 	 "Framework Test")))]))

@@ -1,5 +1,5 @@
 ;;
-;; $Id: frameworkc.ss,v 1.10 1999/03/23 04:33:33 robby Exp $
+;; $Id: frameworkc.ss,v 1.11 1999/06/28 05:30:36 robby Exp $
 ;;
 
 (compound-unit/sig (import [core:string : mzlib:string^]
@@ -74,11 +74,11 @@
 		((require-relative-library "scheme.ss")
 		 mred preferences match-cache paren
 		 scheme-paren icon keymap text frame
-		 core:thread)]
+		 core:thread
+		 core:function)]
 	[main : framework:main^ ((require-relative-library "main.ss")
 				 mred
-				 preferences exit group
-				 core:function)])
+				 preferences exit group)])
   (export
    (unit application)
    (unit version)

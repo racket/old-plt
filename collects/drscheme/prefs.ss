@@ -8,6 +8,10 @@
 				  (or (eq? x #t)
 				      (not x))))
 
+  (framework:preferences:add-font-panel)
+  (framework:scheme:add-preferences-panel)
+  (framework:preferences:add-general-panel)
+
   (framework:preferences:add-panel
    "General II"
    (lambda (panel)
@@ -28,13 +32,9 @@
 			     (lambda (checkbox evt)
 			       (framework:preferences:set 
 				pref-sym 
-				(send evt checked?))))])
+				(send checkbox get-value))))])
 		    (send q set-value (framework:preferences:get pref-sym))))))])
        (make-check-box 'drscheme:execute-warning-once
 		       "Only warn once when executions and interactions are not synchronized")
-       (make-check-box 'drscheme:open-all-files-in-scheme-mode
-		       "Open all files as Scheme programs")
-       (make-check-box 'drscheme:repl-always-active
-		       "Interactions window always active")
        (make-object mred:vertical-panel% main)
        main))))

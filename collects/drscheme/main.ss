@@ -37,7 +37,6 @@
 					(apply basis:make-setting x)
 					(basis:get-default-setting))))
 
-
   ;; no more extension after this point
   (drscheme:get/extend:get-interactions-canvas%)
   (drscheme:get/extend:get-definitions-canvas%)
@@ -50,15 +49,14 @@
   (define (make-basic)
     (let* ([frame (drscheme:unit:open-drscheme-window)])
 
-      (unless (fw:preferences:get 'drscheme:repl-always-active)
-	(let* ([interactions-edit (ivar frame interactions-text)]
-	       [definitions-edit (ivar frame interactions-text)]
-	       [filename (send definitions-edit get-filename)])
-	  (unless filename
-	    (send interactions-edit reset-console)
-	    (send interactions-edit insert-prompt)
-	    (send frame update-shown)
-	    (send (ivar frame interactions-canvas) focus))))
+      (let* ([interactions-edit (ivar frame interactions-text)]
+	     [definitions-edit (ivar frame interactions-text)]
+	     [filename (send definitions-edit get-filename)])
+	(unless filename
+	  (send interactions-edit reset-console)
+	  (send interactions-edit insert-prompt)
+	  (send frame update-shown)
+	  (send (ivar frame interactions-canvas) focus)))
       (send frame show #t)))
 
   (let ([files-to-open (reverse (vector->list i:argv))])

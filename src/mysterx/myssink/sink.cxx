@@ -153,6 +153,7 @@ STDMETHODIMP CSink::unregister_handler(DISPID dispId) {
 // *here* we're coercing VARIANTARG's to be arguments to
 // Scheme procedures; *there*, we're coercing a VARIANT
 // return value to be the value of a method call, and 
+
 // VARIANT's, unlike VARIANTARG's, cannot have VT_BYREF bit
 
 Scheme_Object *CSink::variantToSchemeObject(VARIANTARG *pVariantArg) {
@@ -186,7 +187,15 @@ Scheme_Object *CSink::variantToSchemeObject(VARIANTARG *pVariantArg) {
 
   case VT_I4 | VT_BYREF :
   
-    return scheme_box(scheme_make_integer(pVariantArg->lVal));
+    return scheme_box(scheme_make_integer(*pVariantArg->plVal));
+
+  case VT_INT :
+
+    return scheme_make_integer(pVariantArg->intVal);
+
+  case VT_INT | VT_BYREF :
+
+    return scheme_box(scheme_make_integer(*pVariantArg->pintVal));
 
   case VT_R4 :
 
@@ -199,9 +208,9 @@ Scheme_Object *CSink::variantToSchemeObject(VARIANTARG *pVariantArg) {
   case VT_R4 | VT_BYREF :
 
 #ifdef MZ_USE_SINGLE_FLOATS
-    return scheme_box(scheme_make_float(pVariantArg->fltVal));
+    return scheme_box(scheme_make_float(*pVariantArg->pfltVal));
 #else
-    return scheme_box(scheme_make_double((double)(pVariantArg->fltVal)));
+    return scheme_box(scheme_make_double((double)(*pVariantArg->pfltVal)));
 #endif
 
   case VT_R8 :
@@ -210,7 +219,7 @@ Scheme_Object *CSink::variantToSchemeObject(VARIANTARG *pVariantArg) {
 
   case VT_R8 | VT_BYREF :
 
-    return scheme_box(scheme_make_double(pVariantArg->dblVal));
+    return scheme_box(scheme_make_double(*pVariantArg->pdblVal));
 
   case VT_BSTR :
 
@@ -226,7 +235,7 @@ Scheme_Object *CSink::variantToSchemeObject(VARIANTARG *pVariantArg) {
 
   case VT_CY | VT_BYREF :
 
-    return scheme_box(make_cy(&pVariantArg->cyVal));
+    return scheme_box(make_cy(pVariantArg->pcyVal));
 
   case VT_DATE :
 
@@ -234,7 +243,7 @@ Scheme_Object *CSink::variantToSchemeObject(VARIANTARG *pVariantArg) {
 
   case VT_DATE | VT_BYREF :
 
-    return scheme_box(make_date(&pVariantArg->date));
+    return scheme_box(make_date(pVariantArg->pdate));
 
   case VT_BOOL :
 
@@ -242,7 +251,7 @@ Scheme_Object *CSink::variantToSchemeObject(VARIANTARG *pVariantArg) {
 
   case VT_BOOL | VT_BYREF :
 
-    return scheme_box(make_bool(pVariantArg->boolVal));
+    return scheme_box(make_bool(*pVariantArg->pboolVal));
 
   case VT_ERROR :
     
@@ -250,7 +259,7 @@ Scheme_Object *CSink::variantToSchemeObject(VARIANTARG *pVariantArg) {
 
   case VT_ERROR | VT_BYREF :
     
-    return scheme_box(make_scode(pVariantArg->scode));
+    return scheme_box(make_scode(*pVariantArg->pscode));
 
   case VT_DISPATCH :
 
@@ -262,7 +271,7 @@ Scheme_Object *CSink::variantToSchemeObject(VARIANTARG *pVariantArg) {
   case VT_DISPATCH | VT_BYREF :
 
     pVariantArg->pdispVal->AddRef();
-    return scheme_box(make_idispatch(pVariantArg->pdispVal));
+    return scheme_box(make_idispatch(*pVariantArg->ppdispVal));
     
   case VT_UNKNOWN :
 
@@ -272,7 +281,7 @@ Scheme_Object *CSink::variantToSchemeObject(VARIANTARG *pVariantArg) {
   case VT_UNKNOWN | VT_BYREF:
 
     pVariantArg->punkVal->AddRef();
-    return scheme_box(make_iunknown(pVariantArg->punkVal));
+    return scheme_box(make_iunknown(*pVariantArg->ppunkVal));
 
   case VT_VARIANT | VT_BYREF:
 

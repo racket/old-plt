@@ -80,42 +80,43 @@
 
   (define (xform src dest)
     (make-directory* 3mdir)
-    (restart-mzscheme #() 
-		      (lambda (x) x)
-		      (list->vector 
-		       (list
-			"-qr"
-			(path->string
-			 (build-path 'up 'up "src" "mzscheme" "gc2" "xform.ss"))
-			(let* ([fix-path (lambda (s)
-					   (regexp-replace* " " (path->string s) "\" \""))]
-			       [inc (build-path 'up 'up "include")]
-			       [extras (apply string-append
-					      (format " ~a~a" 
-						      (if (eq? 'windows (system-type))
-							  " /I"
-							  " -I")
-						      (fix-path inc))
-					      (map (lambda (p)
-						     (format 
-						      " ~a~s"
-						      (if (eq? 'windows (system-type))
-							  " /I"
-							  " -I")
-						      (fix-path
-						       (build-path p "include"))))
-						   X11-include))])
-			  (if (eq? 'windows (system-type))
-			      (format "cl.exe /MT /E ~a" 
-				      extras)
-			      (format "gcc -E ~a~a" 
-				      (if (eq? 'macosx (system-type))
-					  "-DOS_X "
-					  "")
-				      extras)))
-			(if (path? src) (path->string src) src)
-			(if (path? dest) (path->string dest) dest)))
-		      void))
+    (parameterize ([current-directory (collection-path "sgl")])
+      (restart-mzscheme #() 
+			(lambda (x) x)
+			(list->vector 
+			 (list
+			  "-qr"
+			  (path->string
+			   (build-path 'up 'up "src" "mzscheme" "gc2" "xform.ss"))
+			  (let* ([fix-path (lambda (s)
+					     (regexp-replace* " " (path->string s) "\" \""))]
+				 [inc (build-path 'up 'up "include")]
+				 [extras (apply string-append
+						(format " ~a~a" 
+							(if (eq? 'windows (system-type))
+							    " /I"
+							    " -I")
+							(fix-path inc))
+						(map (lambda (p)
+						       (format 
+							" ~a~s"
+							(if (eq? 'windows (system-type))
+							    " /I"
+							    " -I")
+							(fix-path
+							 (build-path p "include"))))
+						     X11-include))])
+			    (if (eq? 'windows (system-type))
+				(format "cl.exe /MT /E ~a" 
+					extras)
+				(format "gcc -E ~a~a" 
+					(if (eq? 'macosx (system-type))
+					    "-DOS_X "
+					    "")
+					extras)))
+			  (if (path? src) (path->string src) src)
+			  (if (path? dest) (path->string dest) dest)))
+			void)))
 
   (define (build-names str)
     (list str

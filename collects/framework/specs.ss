@@ -649,6 +649,7 @@
 
   (provide and/f or/f 
            >=/c <=/c </c >/c 
+	   natural-number?
            false? any? 
 	   printable?
            union symbols
@@ -682,18 +683,6 @@
 	(and (box? x)
 	     (printable? (unbox x)))))
 
-  (define (>=/c x) (name >=/c (lambda (y) (and (number? y) (>= y x)))))
-  (define (<=/c x) (name <=/c (lambda (y) (and (number? y) (<= y x)))))
-  (define (</c x) (name </c (lambda (y) (and (number? y) (< y x)))))
-  (define (>/c x) (name >/c (lambda (y) (and (number? y) (> y x)))))
-
-  (define (is-a?/c <%>) (name is-a?/c (lambda (x) (is-a? x <%>))))
-  (define (subclass?/c <%>) (name subclass?/c (lambda (x) (subclass? x <%>))))
-  (define (implementation?/c <%>) (name implementation?/c (lambda (x) (implementation? x <%>))))
-
-  (define (false? x) (not x))
-  (define (any? x) #t)
-
   (define (and/f . fs)
     (for-each
      (lambda (x) 
@@ -716,6 +705,20 @@
           (lambda (x)
             (ormap (lambda (f) (f x)) fs))))
   
+  (define (>=/c x) (name >=/c (lambda (y) (and (number? y) (>= y x)))))
+  (define (<=/c x) (name <=/c (lambda (y) (and (number? y) (<= y x)))))
+  (define (</c x) (name </c (lambda (y) (and (number? y) (< y x)))))
+  (define (>/c x) (name >/c (lambda (y) (and (number? y) (> y x)))))
+
+  (define natural-number? (and/f number? integer? (>=/c 0)))
+
+  (define (is-a?/c <%>) (name is-a?/c (lambda (x) (is-a? x <%>))))
+  (define (subclass?/c <%>) (name subclass?/c (lambda (x) (subclass? x <%>))))
+  (define (implementation?/c <%>) (name implementation?/c (lambda (x) (implementation? x <%>))))
+
+  (define (false? x) (not x))
+  (define (any? x) #t)
+
   (define (listof p)
     (name listof
           (lambda (v)

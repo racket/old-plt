@@ -10,7 +10,8 @@
 			 (require-library "mzlibs.ss")
 			 (require-library "sparams.ss" "backward"))]
     [(compile-omit-files)
-     (list "namedarg.ss" "sigs.ss" "zsigs.ss" "scm-hanc.ss")]
+     (list "namedarg.ss" "sigs.ss" "zsigs.ss" "scm-hanc.ss"
+	   "quasi.ss" "qq.ss")]
     [(compile-elaboration-zos)
      (list "zsigs.ss" "sigs.ss")]
     [else (failure)]))

@@ -38,10 +38,10 @@
 
   (define collecting-thread #f)
 
-  (define results-editor% (class hyper-text% (progress)
+  (define results-editor% (class hyper-text% ()
 			    (inherit set-title)
 			    (sequence 
-			      (super-init progress #f #f)
+			      (super-init #f #f)
 			      (set-title "Search Results"))))
 
   (define-values (screen-w screen-h) (get-display-size))
@@ -328,11 +328,10 @@
     '(add-choice #f name #f '(change-style . slant) " " ckey))
 
   (define (start-search)
-    (let* ([progress (send html-panel get-progress)]
-	   [editor (let ([e (send results get-editor)])
+    (let* ([editor (let ([e (send results get-editor)])
 		     (if (is-a? e results-editor%)
 			 e
-			 (let ([e (make-object results-editor% progress)])
+			 (let ([e (make-object results-editor%)])
 			   (send e lock #t)
 			   (send results set-page (editor->page e) #t)
 			   e)))]
@@ -361,7 +360,6 @@
 	(dynamic-wind
 	 (lambda ()
 	   (begin-busy-cursor)
-	   (send progress start)
 	   (send search enable #f)
 	   (send where enable #f)
 	   (send exact enable #f)
@@ -385,7 +383,6 @@
 	   (send search enable #t)
 	   (send where enable #t)
 	   (send exact enable #t)
-	   (send progress stop)
 	   (end-busy-cursor)))
 	
 	(queue-callback

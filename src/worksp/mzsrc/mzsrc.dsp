@@ -21,6 +21,7 @@ CFG=mzsrc - Win32 Release
 !MESSAGE "mzsrc - Win32 Debug" (based on "Win32 (x86) Static Library")
 !MESSAGE "mzsrc - Win32 SGC" (based on "Win32 (x86) Static Library")
 !MESSAGE "mzsrc - Win32 Threads" (based on "Win32 (x86) Static Library")
+!MESSAGE "mzsrc - Win32 MT DLL" (based on "Win32 (x86) Static Library")
 !MESSAGE 
 
 # Begin Project
@@ -43,7 +44,7 @@ RSC=rc.exe
 # PROP Intermediate_Dir ".\Release"
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /c
-# ADD CPP /nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /YX /FD /c
+# ADD CPP /nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /YX /FD /Zm1000 /c
 # ADD BASE RSC /l 0x409
 # ADD RSC /l 0x409
 BSC32=bscmake.exe
@@ -122,6 +123,29 @@ LIB32=link.exe -lib
 # ADD BASE LIB32 /nologo
 # ADD LIB32 /nologo
 
+!ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
+
+# PROP BASE Use_MFC 0
+# PROP BASE Use_Debug_Libraries 0
+# PROP BASE Output_Dir "mzsrc___Win32_MT_DLL"
+# PROP BASE Intermediate_Dir "mzsrc___Win32_MT_DLL"
+# PROP BASE Target_Dir ""
+# PROP Use_MFC 0
+# PROP Use_Debug_Libraries 0
+# PROP Output_Dir "MTDLL"
+# PROP Intermediate_Dir "MTDLL"
+# PROP Target_Dir ""
+# ADD BASE CPP /nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /YX /FD /Zm1000 /c
+# ADD CPP /nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /YX /FD /Zm1000 /c
+# ADD BASE RSC /l 0x409
+# ADD RSC /l 0x409
+BSC32=bscmake.exe
+# ADD BASE BSC32 /nologo /o".\DebugOpt\mzsrc.bsc"
+# ADD BSC32 /nologo /o".\DebugOpt\mzsrc.bsc"
+LIB32=link.exe -lib
+# ADD BASE LIB32 /nologo
+# ADD LIB32 /nologo
+
 !ENDIF 
 
 # Begin Target
@@ -130,6 +154,7 @@ LIB32=link.exe -lib
 # Name "mzsrc - Win32 Debug"
 # Name "mzsrc - Win32 SGC"
 # Name "mzsrc - Win32 Threads"
+# Name "mzsrc - Win32 MT DLL"
 # Begin Group "Source Files"
 
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat;for;f90"
@@ -146,6 +171,11 @@ SOURCE=..\..\Mzscheme\Src\Bignum.c
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 SGC"
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
+
+!ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
+
+# ADD BASE CPP /O2
+# ADD CPP /O2
 
 !ENDIF 
 
@@ -164,6 +194,11 @@ SOURCE=..\..\Mzscheme\Src\Bool.c
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
 
+!ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
+
+# ADD BASE CPP /O2
+# ADD CPP /O2
+
 !ENDIF 
 
 # End Source File
@@ -180,6 +215,11 @@ SOURCE=..\..\Mzscheme\Src\Char.c
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 SGC"
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
+
+!ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
+
+# ADD BASE CPP /O2
+# ADD CPP /O2
 
 !ENDIF 
 
@@ -198,6 +238,11 @@ SOURCE=..\..\Mzscheme\Src\Complex.c
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
 
+!ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
+
+# ADD BASE CPP /O2
+# ADD CPP /O2
+
 !ENDIF 
 
 # End Source File
@@ -214,6 +259,11 @@ SOURCE=..\..\Mzscheme\Src\Dynext.c
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 SGC"
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
+
+!ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
+
+# ADD BASE CPP /O2
+# ADD CPP /O2
 
 !ENDIF 
 
@@ -232,6 +282,11 @@ SOURCE=..\..\Mzscheme\Src\Env.c
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
 
+!ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
+
+# ADD BASE CPP /O2
+# ADD CPP /O2
+
 !ENDIF 
 
 # End Source File
@@ -248,6 +303,11 @@ SOURCE=..\..\Mzscheme\Src\Error.c
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 SGC"
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
+
+!ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
+
+# ADD BASE CPP /O2
+# ADD CPP /O2
 
 !ENDIF 
 
@@ -266,6 +326,11 @@ SOURCE=..\..\Mzscheme\Src\Eval.c
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
 
+!ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
+
+# ADD BASE CPP /O2
+# ADD CPP /O2
+
 !ENDIF 
 
 # End Source File
@@ -282,6 +347,11 @@ SOURCE=..\..\Mzscheme\Src\File.c
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 SGC"
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
+
+!ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
+
+# ADD BASE CPP /O2
+# ADD CPP /O2
 
 !ENDIF 
 
@@ -300,6 +370,11 @@ SOURCE=..\..\Mzscheme\Src\Fun.c
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
 
+!ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
+
+# ADD BASE CPP /O2
+# ADD CPP /O2
+
 !ENDIF 
 
 # End Source File
@@ -316,6 +391,11 @@ SOURCE=..\..\Mzscheme\Src\Hash.c
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 SGC"
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
+
+!ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
+
+# ADD BASE CPP /O2
+# ADD CPP /O2
 
 !ENDIF 
 
@@ -334,6 +414,11 @@ SOURCE=..\..\MZSCHEME\SRC\image.c
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
 
+!ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
+
+# ADD BASE CPP /O2
+# ADD CPP /O2
+
 !ENDIF 
 
 # End Source File
@@ -350,6 +435,11 @@ SOURCE=..\..\Mzscheme\Src\List.c
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 SGC"
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
+
+!ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
+
+# ADD BASE CPP /O2
+# ADD CPP /O2
 
 !ENDIF 
 
@@ -368,6 +458,11 @@ SOURCE=..\..\Mzscheme\Src\mzsj86.c
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
 
+!ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
+
+# ADD BASE CPP /O2
+# ADD CPP /O2
+
 !ENDIF 
 
 # End Source File
@@ -384,6 +479,11 @@ SOURCE=..\..\Mzscheme\Src\Number.c
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 SGC"
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
+
+!ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
+
+# ADD BASE CPP /O2
+# ADD CPP /O2
 
 !ENDIF 
 
@@ -402,6 +502,11 @@ SOURCE=..\..\Mzscheme\Src\Object.c
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
 
+!ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
+
+# ADD BASE CPP /O2
+# ADD CPP /O2
+
 !ENDIF 
 
 # End Source File
@@ -418,6 +523,11 @@ SOURCE=..\..\Mzscheme\Src\Port.c
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 SGC"
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
+
+!ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
+
+# ADD BASE CPP /O2
+# ADD CPP /O2
 
 !ENDIF 
 
@@ -436,6 +546,11 @@ SOURCE=..\..\Mzscheme\Src\Print.c
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
 
+!ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
+
+# ADD BASE CPP /O2
+# ADD CPP /O2
+
 !ENDIF 
 
 # End Source File
@@ -452,6 +567,11 @@ SOURCE=..\..\Mzscheme\Src\Process.c
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 SGC"
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
+
+!ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
+
+# ADD BASE CPP /O2
+# ADD CPP /O2
 
 !ENDIF 
 
@@ -470,6 +590,11 @@ SOURCE=..\..\Mzscheme\Src\Promise.c
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
 
+!ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
+
+# ADD BASE CPP /O2
+# ADD CPP /O2
+
 !ENDIF 
 
 # End Source File
@@ -486,6 +611,11 @@ SOURCE=..\..\Mzscheme\Src\Rational.c
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 SGC"
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
+
+!ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
+
+# ADD BASE CPP /O2
+# ADD CPP /O2
 
 !ENDIF 
 
@@ -504,6 +634,11 @@ SOURCE=..\..\Mzscheme\Src\Read.c
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
 
+!ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
+
+# ADD BASE CPP /O2
+# ADD CPP /O2
+
 !ENDIF 
 
 # End Source File
@@ -520,6 +655,11 @@ SOURCE=..\..\Mzscheme\Src\Regexp.c
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 SGC"
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
+
+!ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
+
+# ADD BASE CPP /O2
+# ADD CPP /O2
 
 !ENDIF 
 
@@ -538,6 +678,11 @@ SOURCE=..\..\Mzscheme\Src\Salloc.c
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
 
+!ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
+
+# ADD BASE CPP /O2
+# ADD CPP /O2
+
 !ENDIF 
 
 # End Source File
@@ -554,6 +699,11 @@ SOURCE=..\..\Mzscheme\Src\Sema.c
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 SGC"
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
+
+!ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
+
+# ADD BASE CPP /O2
+# ADD CPP /O2
 
 !ENDIF 
 
@@ -572,6 +722,11 @@ SOURCE=..\..\Mzscheme\Src\Setjmpup.c
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
 
+!ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
+
+# ADD BASE CPP /O2
+# ADD CPP /O2
+
 !ENDIF 
 
 # End Source File
@@ -588,6 +743,11 @@ SOURCE=..\..\Mzscheme\Src\String.c
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 SGC"
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
+
+!ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
+
+# ADD BASE CPP /O2
+# ADD CPP /O2
 
 !ENDIF 
 
@@ -606,6 +766,11 @@ SOURCE=..\..\Mzscheme\Src\Struct.c
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
 
+!ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
+
+# ADD BASE CPP /O2
+# ADD CPP /O2
+
 !ENDIF 
 
 # End Source File
@@ -622,6 +787,11 @@ SOURCE=..\..\Mzscheme\Src\Symbol.c
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 SGC"
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
+
+!ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
+
+# ADD BASE CPP /O2
+# ADD CPP /O2
 
 !ENDIF 
 
@@ -640,6 +810,11 @@ SOURCE=..\..\Mzscheme\Src\Syntax.c
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
 
+!ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
+
+# ADD BASE CPP /O2
+# ADD CPP /O2
+
 !ENDIF 
 
 # End Source File
@@ -656,6 +831,11 @@ SOURCE=..\..\Mzscheme\Src\Tsymbol.c
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 SGC"
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
+
+!ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
+
+# ADD BASE CPP /O2
+# ADD CPP /O2
 
 !ENDIF 
 
@@ -674,6 +854,11 @@ SOURCE=..\..\Mzscheme\Src\Type.c
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
 
+!ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
+
+# ADD BASE CPP /O2
+# ADD CPP /O2
+
 !ENDIF 
 
 # End Source File
@@ -691,6 +876,11 @@ SOURCE=..\..\Mzscheme\Src\Unit.c
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
 
+!ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
+
+# ADD BASE CPP /O2
+# ADD CPP /O2
+
 !ENDIF 
 
 # End Source File
@@ -707,6 +897,11 @@ SOURCE=..\..\Mzscheme\Src\Vector.c
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 SGC"
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
+
+!ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
+
+# ADD BASE CPP /O2
+# ADD CPP /O2
 
 !ENDIF 
 

@@ -20,6 +20,7 @@ CFG=gc - Win32 Release
 !MESSAGE "gc - Win32 Release" (based on "Win32 (x86) Static Library")
 !MESSAGE "gc - Win32 Debug" (based on "Win32 (x86) Static Library")
 !MESSAGE "gc - Win32 Threads" (based on "Win32 (x86) Static Library")
+!MESSAGE "gc - Win32 MT DLL" (based on "Win32 (x86) Static Library")
 !MESSAGE 
 
 # Begin Project
@@ -101,6 +102,31 @@ LIB32=link.exe -lib
 # ADD BASE LIB32 /nologo
 # ADD LIB32 /nologo
 
+!ELSEIF  "$(CFG)" == "gc - Win32 MT DLL"
+
+# PROP BASE Use_MFC 0
+# PROP BASE Use_Debug_Libraries 0
+# PROP BASE Output_Dir "gc___Win32_MT_DLL"
+# PROP BASE Intermediate_Dir "gc___Win32_MT_DLL"
+# PROP BASE Target_Dir ""
+# PROP Use_MFC 0
+# PROP Use_Debug_Libraries 0
+# PROP Output_Dir "MTDLL"
+# PROP Intermediate_Dir "MTDLL"
+# PROP Target_Dir ""
+# ADD BASE CPP /nologo /MT /W3 /GX /Zi /O2 /D "NDEBUG" /D "__STDC__" /D "XXX_NO_AUTO_STACK_PUSH" /D "SILENT" /YX /FD /c
+# SUBTRACT BASE CPP /X
+# ADD CPP /nologo /MD /W3 /GX /Zi /O2 /D "__STDC__" /D "XXX_NO_AUTO_STACK_PUSH" /D "SILENT" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /YX /FD /c
+# SUBTRACT CPP /X
+# ADD BASE RSC /l 0x409
+# ADD RSC /l 0x409
+BSC32=bscmake.exe
+# ADD BASE BSC32 /nologo
+# ADD BSC32 /nologo
+LIB32=link.exe -lib
+# ADD BASE LIB32 /nologo
+# ADD LIB32 /nologo
+
 !ENDIF 
 
 # Begin Target
@@ -108,6 +134,7 @@ LIB32=link.exe -lib
 # Name "gc - Win32 Release"
 # Name "gc - Win32 Debug"
 # Name "gc - Win32 Threads"
+# Name "gc - Win32 MT DLL"
 # Begin Group "Source Files"
 
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat;for;f90"

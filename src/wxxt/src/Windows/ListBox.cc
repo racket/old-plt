@@ -340,7 +340,7 @@ void wxListBox::OnSize(int width, int height)
 
 void wxListBox::OnListSize(int, int)
 {
-  int v, s;
+  int v, s, n;
   v = NumberOfVisibleItems();
   s = num_choices - v;
   if (s < 0)
@@ -349,6 +349,9 @@ void wxListBox::OnListSize(int, int)
   if (!v)
     v = 1;
   SetScrollPage(wxVERTICAL, v);
+
+  n = GetScrollPos(wxVERTICAL);
+  XtVaSetValues(X->handle, XtNoffset, n, NULL);
 }
 
 void wxListBox::SetFirstItem(int n)

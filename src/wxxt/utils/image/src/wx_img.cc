@@ -43,6 +43,10 @@
 #include "wx_utils.h"
 #include "../../../src/XWidgets/wxAllocColor.h"
 
+#ifdef MZ_PRECISE_GC
+END_XFORM_ARITH;
+#endif
+
 /***********************************/
 void wxImage::Resize(int w, int h)
 {

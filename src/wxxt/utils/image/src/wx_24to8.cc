@@ -59,6 +59,10 @@ extern "C" {
 #endif
 // #endif
 
+#ifdef MZ_PRECISE_GC
+END_XFORM_ARITH;
+#endif
+
 static int   num_colors, WIDE, HIGH;
 static int   histogram[B_LEN][B_LEN][B_LEN];
 

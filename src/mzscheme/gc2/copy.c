@@ -48,6 +48,9 @@ void (*GC_collect_end_callback)(void);
 void (*GC_out_of_memory)(void);
 unsigned long (*GC_get_thread_stack_base)(void);
 
+void (*GC_mark_xtagged)(void *obj);
+void (*GC_fixup_xtagged)(void *obj);
+
 void **GC_variable_stack;
 
 Type_Tag weak_box_tag;
@@ -740,7 +743,7 @@ static void *mark(void *p)
       long size;
 	
       p -= 4;
-      size = ((*(long *)p) & 0x1FFFFFFF);
+      size = ((*(long *)p) & 0x0FFFFFFF);
 	
       if (!size)
 	return ((void **)p)[1];
@@ -1131,9 +1134,9 @@ void gcollect(int needsize)
 	  mp++;
 #endif
 	  v = *(long *)mp;
-	  size = (v & 0x1FFFFFFF);
+	  size = (v & 0x0FFFFFFF);
 	  
-	  if (v & 0xC0000000) {
+	  if (v & 0xF0000000) {
 #if KEEP_FROM_PTR
 	    mark_source = mp;
 #endif
@@ -1145,6 +1148,9 @@ void gcollect(int needsize)
 	      for (i = size; i--; mp++) {
 		gcFIXUP(*mp);
 	      }
+	    } else if (v & 0x10000000) {
+	      /* xtagged */
+	      GC_fixup_xtagged(mp);
 	    } else {
 	      /* Array of tagged */
 	      int i, elem_size;
@@ -1443,7 +1449,13 @@ void gcollect(int needsize)
     p++;
 #endif
 
-    size = (*p & 0x1FFFFFFF) + 1;
+    size = (*p & 0x0FFFFFFF) + 1;
+
+    if (*p & 0x10000000) {
+      diff++;
+      p++;
+      size--;
+    }
 
     bitmap[diff >> 3] |= (1 << (diff & 0x7));
 
@@ -1539,12 +1551,12 @@ void *GC_resolve(void *p)
       long size;
       
       p -= 4;
-      size = ((*(long *)p) & 0x1FFFFFFF);
+      size = ((*(long *)p) & 0x0FFFFFFF);
       
       if (!size)
-	return ((void **)p)[1];
+	return ((void **)p)[1] + 4;
       else
-	return p;
+	return p + 4;
     }
   } else
     return p;
@@ -1735,6 +1747,11 @@ void *GC_malloc(size_t size_in_bytes)
 void *GC_malloc_one_tagged(size_t size_in_bytes)
 {
   return malloc_tagged(size_in_bytes);
+}
+
+void *GC_malloc_one_xtagged(size_t size_in_bytes)
+{
+  return malloc_untagged(size_in_bytes, 0x10000000);
 }
 
 void *GC_malloc_array_tagged(size_t size_in_bytes)

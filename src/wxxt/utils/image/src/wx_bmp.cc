@@ -61,6 +61,10 @@
 #include <stdlib.h>
 #include "wx_image.h"
 
+#ifdef MZ_PRECISE_GC
+END_XFORM_ARITH;
+#endif
+
 /* comments on error handling:
    a truncated file is not considered a Major Error.  The file is loaded, the
    rest of the pic is filled with 0's.

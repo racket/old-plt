@@ -23,6 +23,9 @@
 #include <stdlib.h>
 #include "wx_image.h"
 
+#ifdef MZ_PRECISE_GC
+END_XFORM_ARITH;
+#endif
 
 /*
  * File Format:

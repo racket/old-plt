@@ -208,37 +208,20 @@ void gc_cleanup::gcFixup()
 
 #include "scheme.h"
 
-static int size_cpp_object(void *p)
+static void mark_cpp_object(void *p)
 {
-  short size = ((short *)p)[1];
-  return size + 1 + gcALIGN_DOUBLE;
+  gc *obj = (gc *)p;
+
+  if (*(long *)obj)
+    obj->gcMark();
 }
 
-static int mark_cpp_object(void *p)
+static void fixup_cpp_object(void *p)
 {
-  short size = ((short *)p)[1];
-  gc *obj = (gc *)gcPTR_TO_OBJ(p);
+  gc *obj = (gc *)p;
 
-  obj->gcMark();
-
-  return size + 1 + gcALIGN_DOUBLE;
-}
-
-static int fixup_cpp_object(void *p)
-{
-  short size = ((short *)p)[1];
-  gc *obj = (gc *)gcPTR_TO_OBJ(p);
-
-  obj->gcFixup();
-
-  return size + 1 + gcALIGN_DOUBLE;
-}
-
-static int size_preallocated_object(void *p)
-{
-  short size = ((short *)p)[1];
-  
-  return size + 1 + gcALIGN_DOUBLE;
+  if (*(long *)obj)
+    obj->gcFixup();
 }
 
 static int is_initialized;
@@ -246,14 +229,8 @@ static int is_initialized;
 static void initize(void)
 {
   /* Initialize: */
-  GC_register_traversers(scheme_rt_cpp_object, 
-			 size_cpp_object,
-			 mark_cpp_object,
-			 fixup_cpp_object);
-  GC_register_traversers(scheme_rt_preallocated_object,
-			 size_preallocated_object,
-			 size_preallocated_object,
-			 size_preallocated_object);
+  GC_mark_xtagged = mark_cpp_object;
+  GC_fixup_xtagged = fixup_cpp_object;
   
   is_initialized = 1;
 }
@@ -262,26 +239,19 @@ void *GC_cpp_malloc(size_t size)
 {
   void *p;
 
-  if (!is_initialized) {
+  if (!is_initialized)
     initize();
-  }
 
-  p = GC_malloc_one_tagged(size + sizeof(AlignedType));
+  p = GC_malloc_one_xtagged(size);
 
-  ((short *)p)[0] = scheme_rt_cpp_object;
-  ((short *)p)[1] = (short)gcBYTES_TO_WORDS(size);
-
-  return gcPTR_TO_OBJ(p);
+  return p;
 }
 
 void GC_cpp_delete(gc *v)
 {
-  void *p;
-
   v->~gc();
-  
-  p = gcOBJ_TO_PTR(v);
-  ((short *)p)[0] = scheme_rt_preallocated_object;
+
+  ((long *)v)[0] = 0;
 }
 
 #endif

@@ -3770,7 +3770,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
       && (has_decimal || has_expt)
       && (len <= MAX_FAST_FLOATREAD_LEN)) {
     double d;
-    const char *strcpy;
+    const char *cpy;
     char *ptr;
 
     if (has_expt && (str[has_expt] != 'e' && str[has_expt] != 'E')) {
@@ -3778,11 +3778,11 @@ Scheme_Object *scheme_read_number(const char *str, long len,
       str2 = (char *)scheme_malloc_atomic(len + 1);
       memcpy(str2, str, len + 1);
       str2[has_expt] = 'e';
-      strcpy = str2;
+      cpy = str2;
     } else
-      strcpy = str;
-    d = STRTOD(strcpy + delta, &ptr);
-    if ((ptr - strcpy) < len) {
+      cpy = str;
+    d = STRTOD(cpy + delta, &ptr);
+    if ((ptr - cpy) < len) {
       ptr = NULL; /* because not precise-gc aligned */
       if (report)
 	scheme_raise_exn(MZEXN_READ, complain, 

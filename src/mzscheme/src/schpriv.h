@@ -262,6 +262,9 @@ struct Scheme_Manager {
   Scheme_Manager_Reference *children;
 };
 
+typedef void (*Closer_Func)(Scheme_Object *);
+Scheme_Process *scheme_do_close_managed(Scheme_Manager *m, Closer_Func f);
+
 /*========================================================================*/
 /*                       hash tables and globals                          */
 /*========================================================================*/

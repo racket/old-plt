@@ -39,6 +39,10 @@
 #include <stdlib.h>
 #include "wx_image.h"
 
+#ifdef MZ_PRECISE_GC
+END_XFORM_ARITH;
+#endif
+
 #define NEXTBYTE (*ptr++)
 #define IMAGESEP 0x2c
 #define EXTENSION 0x21

@@ -390,8 +390,8 @@ Bool wxBitmap::LoadFile(char *fname, long flags)
 static int write_pixmap_as_bitmap(Display *display, Pixmap pm, char *fname, 
 				   int width, int height)
 {
-  char *data, *pos;
-  int rw, ok, i, j;
+  char *data;
+  int rw, ok, i, j, pos;
   XImage *img;
   Pixmap bm;
 
@@ -401,10 +401,10 @@ static int write_pixmap_as_bitmap(Display *display, Pixmap pm, char *fname,
 
   data = new char[rw * height];
 
-  pos = data;
+  pos = 0;
   for (j = 0; j < height; j++, pos += rw) {
     int bit = 0x01, v = 0, count = 0;
-    char *row = pos;
+    int row = pos;
 
     for (i = 0; i < width; i++) {
       XColor xcol;
@@ -427,14 +427,14 @@ static int write_pixmap_as_bitmap(Display *display, Pixmap pm, char *fname,
       bit = bit << 1;
       count++;
       if (count == 8) {
-	*(row++) = v;
+	data[row++] = v;
 	v = 0;
 	bit = 0x01;
 	count = 0;
       }
     }
     if (bit != 0x01)
-      *row = v;
+      data[row] = v;
   }
 
   bm = XCreateBitmapFromData(display, pm, data, width, height);

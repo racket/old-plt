@@ -17,7 +17,7 @@ extern "C" {
    memory must be either atomic or an array of pointers. Heterogenous
    memory is always tagged. After alocating a tagged object, MzScheme
    is responsible for setting the tag before a collection occurs. The
-   tag is always a `short' value at the beginning of the
+   tag is always a `short' value at the beginning of the object.
 
    MzScheme supplies three traversal procedures for every tag value:
    one for obtaining the value's size in words (not bytes!), one for
@@ -128,6 +128,16 @@ void *GC_malloc_one_tagged(size_t);
 /* 
    Alloc a tagged item, initially zeroed.  MzScheme sets the tag
    before a collection. */
+
+void *GC_malloc_one_xtagged(size_t);
+/* 
+   Alloc an item, initially zeroed. Rather than having a specific
+   tag, all objects allocated this way are marked/fixedup via the
+   function in GC_mark_xtagged and GC_fixup_xtagged. MzScheme
+   (MrEd, actually) sets GC_{mark,fixup}_xtagged. */
+
+extern void (*GC_mark_xtagged)(void *obj);
+extern void (*GC_fixup_xtagged)(void *obj);
 
 void *GC_malloc_array_tagged(size_t);
 /* 

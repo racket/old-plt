@@ -75,21 +75,8 @@ extern void GC_cpp_delete(class gc *);
 #endif
 
 
-#ifdef MZ_PRECISE_GC
-# if defined(sparc) || defined(__sparc) || defined(__sparc__)
-#  define gcALIGN_DOUBLE 1
-typedef double AlignedType;
-# else
-#  define gcALIGN_DOUBLE 0
-typedef long AlignedType;
-# endif
-
-# define gcOBJ_TO_PTR(x) ((char *)x - sizeof(AlignedType))
-# define gcPTR_TO_OBJ(x) ((char *)x + sizeof(AlignedType))
-#else
-# define gcOBJ_TO_PTR(x) x
-# define gcPTR_TO_OBJ(x) x
-#endif
+#define gcOBJ_TO_PTR(x) x
+#define gcPTR_TO_OBJ(x) x
 
 /**** The `gc' and `gc_cleanup' class ************/
 

@@ -2309,7 +2309,18 @@ char *wxMediaEdit::GetText(long start, long end, Bool flatt, Bool forceCR, long 
   while (snip && (count > total)) {
     num = ((total + snip->count <= count) ? snip->count : count - total);
     if (!flatt) {
-      snip->GetText(s + p, 0, num);
+      /* Precise GC: can't write directly to s + p. (And we don't
+	 want to chage the interface to take a string offset.) */
+      if (num < 256) {
+	char buffer[256];
+	snip->GetText(buffer, 0, num);
+	memcpy(s + p, buffer, num);
+      } else {
+	char *ss;
+	ss = new char[num];
+	snip->GetText(ss, 0, num);
+	memcpy(s + p, ss, num);
+      }
       p += num;
     } else {
       int add_newline;

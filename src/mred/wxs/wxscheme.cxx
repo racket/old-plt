@@ -344,7 +344,7 @@ static Scheme_Object *wxSchemeRegisterCollectingBitmap(int n, Scheme_Object **a)
 #ifdef MZ_PRECISE_GC
   {
     void *cp;
-    cp = GC_malloc_weak_box(gcOBJ_TO_PTR(cvs), NULL);
+    cp = GC_malloc_weak_box(gcOBJ_TO_PTR(cvs), NULL, 0);
     gcbm->canvasptr = (Scheme_Object *)cp;
   }
 #else

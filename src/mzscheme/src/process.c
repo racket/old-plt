@@ -1046,15 +1046,18 @@ void scheme_remove_managed(Scheme_Manager_Reference *mr, Scheme_Object *o)
   remove_managed(mr, o, NULL, NULL);
 }
 
-static Scheme_Process *do_close_managed(Scheme_Manager *m)
+Scheme_Process *scheme_do_close_managed(Scheme_Manager *m, Closer_Func cf)
 {
   Scheme_Process *kill_self = NULL, *ks;
   Scheme_Manager *c, *next;
 
+  if (!m)
+    m = main_manager;
+
   /* Kill children first: */
   for (c = MANAGER_FAM(m->children); c; c = next) {
     next = MANAGER_FAM(c->sibling);
-    ks = do_close_managed(c);
+    ks = scheme_do_close_managed(c, cf);
     if (ks)
       kill_self = ks;
   }
@@ -1077,17 +1080,21 @@ static Scheme_Process *do_close_managed(Scheme_Manager *m)
       m->data[i] = NULL;
       --m->count;
 
-      if (SAME_TYPE(SCHEME_TYPE(o), scheme_process_hop_type)) {
-#ifndef NO_SCHEME_THREADS
-	/* We've added an indirection and made it weak. See mr_hop note above. */
-	Scheme_Process *p = (Scheme_Process *)WEAKIFIED(((Scheme_Process_Manager_Hop *)o)->p);
-
-	if (p)
-	  if (do_kill_thread(p))
-	    kill_self = p;
-#endif
+      if (cf) {
+	cf(o);
       } else {
-	f(o, data);
+	if (SAME_TYPE(SCHEME_TYPE(o), scheme_process_hop_type)) {
+#ifndef NO_SCHEME_THREADS
+	  /* We've added an indirection and made it weak. See mr_hop note above. */
+	  Scheme_Process *p = (Scheme_Process *)WEAKIFIED(((Scheme_Process_Manager_Hop *)o)->p);
+	  
+	  if (p)
+	    if (do_kill_thread(p))
+	      kill_self = p;
+#endif
+	} else {
+	  f(o, data);
+	}
       }
     } else {
       --m->count;
@@ -1105,7 +1112,7 @@ void scheme_close_managed(Scheme_Manager *m)
   Scheme_Process *p;
 
 #ifndef NO_SCHEME_THREADS
-  if ((p = do_close_managed(m))) {
+  if ((p = scheme_do_close_managed(m, NULL))) {
     /* Kill self */
     scheme_process_block(0.0);
   }

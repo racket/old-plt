@@ -203,7 +203,7 @@ typedef struct Context_Manager_Hop {
 } Context_Manager_Hop;
 
 #ifdef MZ_PRECISE_GC
-# define WEAKIFY(x) ((MrEdContext *)GC_malloc_weak_box(x, NULL))
+# define WEAKIFY(x) ((MrEdContext *)GC_malloc_weak_box(x, NULL, 0))
 # define WEAKIFIED(x) ((MrEdContext *)GC_weak_box_val(x))
 #else
 # define WEAKIFY(x) x

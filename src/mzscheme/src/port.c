@@ -394,7 +394,7 @@ static Scheme_Object *global_port_print_handler(int, Scheme_Object **args);
 
 static void flush_orig_outputs(void);
 #ifdef USE_FD_PORTS
-void flush_original_output_fds(void);
+void flush_all_output_fds(void);
 #endif
 
 static Scheme_Object *sch_process(int c, Scheme_Object *args[]);
@@ -645,7 +645,7 @@ scheme_init_port (Scheme_Env *env)
     scheme_set_param(config, MZCONFIG_ERROR_PORT,
 		     scheme_orig_stdout_port);
 #ifdef USE_FD_PORTS
-    atexit(flush_original_output_fds);
+    atexit(flush_all_output_fds);
 #endif
 
     {
@@ -2077,7 +2077,7 @@ scheme_output_tell(Scheme_Object *port)
 }
 
 void
-scheme_close_output_port (Scheme_Object *port)
+scheme_close_output_port(Scheme_Object *port)
 {
   Scheme_Output_Port *op;
 
@@ -4009,10 +4009,20 @@ make_fd_output_port(int fd, int regfile)
 
 extern void scheme_start_atomic(void);
 
-void flush_original_output_fds(void)
+static void flush_if_output_fds(Scheme_Object *o)
+{
+  if (SCHEME_OUTPORTP(o)) {
+    Scheme_Output_Port *op = (Scheme_Output_Port *)o;
+    if (SAME_OBJ(op->sub_type, fd_output_port_type)) {
+      scheme_close_output_port(o);
+    }
+  }
+}
+
+void flush_all_output_fds(void)
 {
   scheme_start_atomic();
-  flush_orig_outputs();
+  scheme_do_close_managed(NULL, flush_if_output_fds);
 }
 
 #endif

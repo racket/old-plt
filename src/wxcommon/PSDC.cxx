@@ -1679,7 +1679,8 @@ Bool wxPostScriptDC::Blit (float xdest, float ydest, float fwidth, float fheight
     v = Blit(xdest, ydest, fwidth, fheight,
 	     temp_mdc, xsrc, ysrc, rop, c);
     temp_mdc->SelectObject(NULL);
-  }
+  } else
+    v = FALSE;
 
   return v;
 }
@@ -1719,7 +1720,7 @@ void wxPostScriptDC::GetTextExtent (const char *string, float *x, float *y,
 
   float widthSum = 0.0;
   float height;
-  unsigned char *p;
+  int dp;
 
   if (!fontToUse)
     fontToUse = current_font;
@@ -1881,13 +1882,15 @@ void wxPostScriptDC::GetTextExtent (const char *string, float *x, float *y,
   // string. they are given in 1/1000 of the size!
 
   height = (float)Size;
-  for (p = (unsigned char *)string + dt; *p; p++) {
-    if (lastWidths[*p] == INT_MIN) {
+  for (dp = dt; string[dp]; dp++) {
+    int ch;
+    ch = ((unsigned char *)string)[dp];
+    if (lastWidths[ch] == INT_MIN) {
       wxDebugMsg("GetTextExtent: undefined width for character '%c' (%d)\n",
-                 *p, *p);
+                 ch, ch);
       widthSum += lastWidths[' ']; // assume space
     } else {
-      widthSum += (lastWidths[*p] / 1000.0F) * Size;
+      widthSum += (lastWidths[ch] / 1000.0F) * Size;
     }
   }
 

@@ -656,7 +656,7 @@ void wxChildList::Show(wxObject *object, int show)
 	/* If show < 0, box should be weaker: it should go to NULL when
 	   object is finalized. But the GC doesn't do that, so instead we
 	   check for finalization in node->Data(). */
-	weak = GC_malloc_weak_box(gcOBJ_TO_PTR(object), NULL);
+	weak = GC_malloc_weak_box(gcOBJ_TO_PTR(object), NULL, 0);
 #else
 	weak = new WXGC_ATOMIC wxObject*;
 	*weak = object;

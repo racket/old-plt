@@ -101,7 +101,7 @@ wxsMenuItem::wxsMenuItem(void)
 {
 #ifdef MZ_PRECISE_GC
   void *mid;
-  mid = GC_malloc_immobile_box(GC_malloc_weak_box(gcOBJ_TO_PTR(this), NULL));
+  mid = GC_malloc_immobile_box(GC_malloc_weak_box(gcOBJ_TO_PTR(this), NULL, 0));
   my_id = mid;
 #endif
 }

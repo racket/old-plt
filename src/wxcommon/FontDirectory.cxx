@@ -317,8 +317,8 @@ void wxSuffixMap::Initialize(const char *resname, const char *devresname,
 			     int wt, int st, int fam)
 {
   const char *weight, *style;
-  char *v = NULL, *rname;
-  int i;
+  char *v = NULL;
+  int i, drn;
 
   {
     switch (wt) {
@@ -388,14 +388,14 @@ void wxSuffixMap::Initialize(const char *resname, const char *devresname,
 	    names = new char*[count];
 	    {
 	      char *cs;
-	      cs = COPYSTRING_TO_ALIGNED(name + noff);
+	      cs = COPYSTRING_TO_ALIGNED(name, noff);
 	      names[0] = cs;
 	    }
 	    for (i = 0, count = 1; i < len; i++) {
 	      if (name[i + noff] == ',') {
 		{
 		  char *cs;
-		  cs = COPYSTRING_TO_ALIGNED(name + i + 1 + noff);
+		  cs = COPYSTRING_TO_ALIGNED(name, i + 1 + noff);
 		  names[count++] = cs;
 		}
 		name[i + noff] = 0;
@@ -464,18 +464,18 @@ void wxSuffixMap::Initialize(const char *resname, const char *devresname,
 	}
       }
 
-      rname = (char *)((resname[0] == '@') ? resname + 1 : resname);
+      drn = ((resname[0] == '@') ? 1 : 0);
 
 #if defined(wx_msw) || defined(wx_mac)
       if (!v)
-	v = copystring(rname);
+	v = copystring(resname + drn);
 #endif
 #ifdef wx_x
       if (!strcmp(devresname, "Screen")) {
 	if (v && (v[0] == '+')) {
 	  memmove(v, v + 1, strlen(v));
 	} else {
-	  int len;
+	  int len, ds;
 	  char *src;
 	  char *normalcy;
 	  /* Build name using special heuristics:
@@ -483,13 +483,21 @@ void wxSuffixMap::Initialize(const char *resname, const char *devresname,
 	     -([^-]*)-(.*) => -\1-\2-<weight>-<style>-normal-*-*-%d-*-*-*-*-*-*
 	     ([^-].*[^-]) => \1
 	     */
-	  src = (v ? v : (char *)rname);
-	  len = strlen(src);
-	  if (src[0] == '-') {
+
+	  if (v) {
+	    src = (char *)v;
+	    ds = 0;
+	  } else {
+	    src = (char *)resname;
+	    ds = drn;
+	  }
+
+	  len = strlen(src + ds);
+	  if (src[ds] == '-') {
 	    char *prefix;
 	    int c = 0;
 	    for (i = 0; i < len; i++) {
-	      if (src[i] == '-')
+	      if (src[ds + i] == '-')
 		c++;
 	    }
 	    
@@ -535,7 +543,7 @@ void wxSuffixMap::Initialize(const char *resname, const char *devresname,
 	      normalcy = "";
 	    
 	    sprintf(v, "%s%s%s%s%s-*-*-%%d-*-*-*-*-*-*",
-		    prefix, src, weight, style, normalcy);
+		    prefix, src + ds, weight, style, normalcy);
 	  } else
 	    v = copystring(src);
 	}

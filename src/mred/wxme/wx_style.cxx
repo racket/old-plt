@@ -1158,7 +1158,7 @@ void *wxStyleList::NotifyOnChange(wxStyleNotifyFunc f, void *data, int weak)
 #ifdef MZ_PRECISE_GC
   rec = new NotificationRec;
   if (weak) {
-    rec->data = GC_malloc_weak_box(data, NULL);
+    rec->data = GC_malloc_weak_box(data, NULL, 0);
   } else {
     void *weak_data;
     weak_data = GC_malloc_atomic(sizeof(short) + sizeof(short) + sizeof(void *));

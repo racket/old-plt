@@ -55,6 +55,14 @@ static void *wxbDCToBuffer(wxMediaBuffer *b, float x, float y)
 @SYM "postscript" : 1
 @ENDSYMBOLS
 
+static void NoLoadFile(wxMediaBuffer *)
+{
+}
+
+static void NoInsertFile(wxMediaBuffer *)
+{
+}
+
 @INCLUDE wxs_bmt.xci
 
 @CLASSBASE wxMediaBuffer "editor" : "object" / nofnl
@@ -75,6 +83,10 @@ static void *wxbDCToBuffer(wxMediaBuffer *b, float x, float y)
 @ X "save-file" : bool SaveFile(nstring=NULL,SYM[fileType]=wxMEDIA_FF_SAME,bool=TRUE);
 // @ X "insert-file" : bool InsertFile(string,SYM[fileType]=wxMEDIA_FF_GUESS,bool=TRUE); <> filename
 @ X "insert-port" : SYM[fileType] InsertPort(Scheme_Object[]//ubPort/cPort///push,SYM[fileType]=wxMEDIA_FF_GUESS,bool=TRUE); <> port
+
+// No longer actually in C, but we want them in the editor<%> interface:
+@ m "load-file" : void NoLoadFile()
+@ m "insert-file" : void NoInsertFile()
 
 @ X "get-extent" : void GetExtent(nnfloat?,nnfloat?);
 @ X "get-descent" : float GetDescent(); : : : : XrZERO

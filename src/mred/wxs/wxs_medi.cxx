@@ -368,6 +368,14 @@ static int unbundle_symset_printMethod(Scheme_Object *v, const char *where) {
 }
 
 
+static void NoLoadFile(wxMediaBuffer *)
+{
+}
+
+static void NoInsertFile(wxMediaBuffer *)
+{
+}
+
 
 #ifndef wx_mac
 # define wxBITMAP_TYPE_PICT 101
@@ -485,6 +493,8 @@ static Scheme_Object *bundle_symset_bitmapType(int v) {
 // These don't use `pathname' because they expand internally
 // @ X "load-file" : bool LoadFile(nstring=NULL,SYM[fileType]=wxMEDIA_FF_GUESS,bool=TRUE);
 // @ X "insert-file" : bool InsertFile(string,SYM[fileType]=wxMEDIA_FF_GUESS,bool=TRUE); <> filename
+
+// No longer actually in C, but we want them in the editor<%> interface:
 
 
 
@@ -3506,6 +3516,44 @@ static Scheme_Object *os_wxMediaBufferGetExtent(int n,  Scheme_Object *p[])
   return scheme_void;
 }
 
+static Scheme_Object *os_wxMediaBufferNoInsertFile(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  objscheme_check_valid(os_wxMediaBuffer_class, "insert-file in editor<%>", n, p);
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+
+  
+  WITH_VAR_STACK(NoInsertFile(((wxMediaBuffer *)((Scheme_Class_Object *)p[0])->primdata)));
+
+  
+  
+  return scheme_void;
+}
+
+static Scheme_Object *os_wxMediaBufferNoLoadFile(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  objscheme_check_valid(os_wxMediaBuffer_class, "load-file in editor<%>", n, p);
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+
+  
+  WITH_VAR_STACK(NoLoadFile(((wxMediaBuffer *)((Scheme_Class_Object *)p[0])->primdata)));
+
+  
+  
+  return scheme_void;
+}
+
 static Scheme_Object *os_wxMediaBufferInsertPort(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -4944,7 +4992,7 @@ void objscheme_setup_wxMediaBuffer(Scheme_Env *env)
   wxREGGLOB(os_wxMediaBuffer_class);
   wxREGGLOB(os_wxMediaBuffer_interface);
 
-  os_wxMediaBuffer_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor%", "object%", NULL, 114));
+  os_wxMediaBuffer_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor%", "object%", NULL, 116));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "dc-location-to-editor-location" " method", (Scheme_Method_Prim *)os_wxMediaBufferwxbDCToBuffer, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "editor-location-to-dc-location" " method", (Scheme_Method_Prim *)os_wxMediaBufferwxbBufferToDC, 2, 2));
@@ -5007,6 +5055,8 @@ void objscheme_setup_wxMediaBuffer(Scheme_Env *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "get-space" " method", (Scheme_Method_Prim *)os_wxMediaBufferGetSpace, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "get-descent" " method", (Scheme_Method_Prim *)os_wxMediaBufferGetDescent, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "get-extent" " method", (Scheme_Method_Prim *)os_wxMediaBufferGetExtent, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "insert-file" " method", (Scheme_Method_Prim *)os_wxMediaBufferNoInsertFile, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "load-file" " method", (Scheme_Method_Prim *)os_wxMediaBufferNoLoadFile, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "insert-port" " method", (Scheme_Method_Prim *)os_wxMediaBufferInsertPort, 1, 3));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "save-file" " method", (Scheme_Method_Prim *)os_wxMediaBufferSaveFile, 0, 3));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "get-flattened-text" " method", (Scheme_Method_Prim *)os_wxMediaBufferGetFlattenedText, 0, 0));

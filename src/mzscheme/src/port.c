@@ -4380,7 +4380,7 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
   if (ports) {
     if (SCHEME_TRUEP(args[0])) {
       outport = args[0];
-      if (SCHEME_OUTPORTP(outport) && scheme_file_stream_port_p(1, &outport)) {
+      if (SCHEME_OUTPORTP(outport) && SCHEME_TRUEP(scheme_file_stream_port_p(1, &outport))) {
 #ifdef PROCESS_FUNCTION
 	Scheme_Output_Port *op = (Scheme_Output_Port *)outport;
 
@@ -4398,7 +4398,7 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
 
     if (SCHEME_TRUEP(args[1])) {
       inport = args[1];
-      if (SCHEME_INPORTP(inport) && scheme_file_stream_port_p(1, &inport)) {
+      if (SCHEME_INPORTP(inport) && SCHEME_TRUEP(scheme_file_stream_port_p(1, &inport))) {
 #ifdef PROCESS_FUNCTION
 	Scheme_Input_Port *ip = (Scheme_Input_Port *)inport;
 
@@ -4416,7 +4416,7 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
 
     if (SCHEME_TRUEP(args[2])) {
       errport = args[2];
-      if (SCHEME_OUTPORTP(errport) && scheme_file_stream_port_p(1, &errport)) {
+      if (SCHEME_OUTPORTP(errport) && SCHEME_TRUEP(scheme_file_stream_port_p(1, &errport))) {
 #ifdef PROCESS_FUNCTION
 	Scheme_Output_Port *op = (Scheme_Output_Port *)errport;
 
@@ -4829,7 +4829,7 @@ static Scheme_Object *sch_process_star(int c, Scheme_Object *args[])
 
 static Scheme_Object *sch_process_star_ports(int c, Scheme_Object *args[])
 {
-  return process(c, args, "process*", 0, 0, 1, 1);
+  return process(c, args, "process*/ports", 0, 0, 1, 1);
 }
 
 static Scheme_Object *sch_system_star(int c, Scheme_Object *args[])
@@ -4876,7 +4876,7 @@ static Scheme_Object *sch_process(int c, Scheme_Object *args[])
 
 static Scheme_Object *sch_process_ports(int c, Scheme_Object *args[])
 {
-  return process(c, args, "process", 1, 0, 1, 1);
+  return process(c, args, "process/ports", 1, 0, 1, 1);
 }
 
 static Scheme_Object *sch_system(int c, Scheme_Object *args[])
@@ -4923,7 +4923,7 @@ static Scheme_Object *sch_send_event(int c, Scheme_Object *args[])
 /*                             sleeping                                   */
 /*========================================================================*/
 
-/* This code is used to implement sleeping when MzScheme is cimpletely
+/* This code is used to implement sleeping when MzScheme is completely
    blocked on external objects, such as ports. For Unix, sleeping is
    essentially just a select(). For Windows and BeOS, we essentially
    have to implement select() ourselves, so that it works with both TCP

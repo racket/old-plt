@@ -97,7 +97,6 @@
 
 # ifndef OSKIT_TEST
 #  define INCLUDE_OSKIT_SOCKET
-#  define htons(x) x
 #  define MZ_PF_INET OSKIT_PF_INET
 #  define PROTOENT_IS_INT IPPROTO_TCP
 # endif

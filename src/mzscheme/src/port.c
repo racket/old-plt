@@ -6295,8 +6295,8 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
     dest_addr.sin_family = AF_INET;
     dest_addr.sin_port = id;
     memset(&dest_addr.sin_addr, 0, sizeof(dest_addr.sin_addr));
-    memcpy(&dest_addr.sin_addr, host->h_addr_list[0], host->h_length); 
     memset(&dest_addr.sin_zero, 0, sizeof(dest_addr.sin_zero));
+    memcpy(&dest_addr.sin_addr, host->h_addr_list[0], host->h_length); 
 
 #ifndef PROTOENT_IS_INT
     proto = getprotobyname("tcp");

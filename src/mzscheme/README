@@ -138,9 +138,8 @@ see "plt:src:cw:ABOUT MZSCHEME".
  Compiling the OSKit-based kernel
 ========================================================================
 
-Run `./oskmake' to build the OSKit-based MzScheme kernel. The
-"oskmake" script assumes that OSKit is installed in /usr/local; change
-the OSKHOME variable in "oskmake" if this is not true.
+Run `./oskmake' to build the OSKit-based MzScheme kernel. See `oskmake'
+for information about build options.
 
 For simplicity, the MzScheme kernel uses SGC rather than Boehm's
 conservative garbage collector. The "oskmake" script sets the

@@ -1,15 +1,77 @@
 #!/bin/sh
-# This script builds the OSKit-based MzScheme kernel, assuming
-#   that OSKit is installed in /usr/local, but that can be changed
-#   via a shell variable below. The OSKit build goes
-#   to a separate set of object directories, such as
-#   src/objects/sys_oskit_x86/. The output is mzscheme.multiboot.
-# If a `-t' command-line flag is provided, a
-#   Linux binary is built for testing using as much
-#   of the OSKit configuration for MzScheme as possible.
+
+# Overview
+# ========
+
+# This script builds the OSKit-based MzScheme kernel by invoking
+#  `make' with an appropriate command line. The output is
+#  mzscheme.multiboot, a kernel in multiboot format.
+
+# Before invoking this script, you must first install OSKit, which is
+#  available from the Flux group at Utah:
+#      http://www.cs.utah.edu/projects/flux/oskit/
+
+# By default, this script assumes that OSKit is installed in
+#  /usr/local. To specify a different location for OSKit, define the
+#  OSKHOME environment variable.
+
+# To avoid interfering with a normal MzScheme build, the intermediate
+#  object files for the OSKit-based MzScheme go to a separate set of
+#  object directories, such as src/objects/sys_oskit_x86/.
+
+# Filesystems and Networking
+# ==========================
+
+# The standard multiboot MzScheme kernel accepts filesystem and
+#  networking configuration information on its command line via the
+#  --fs and --net flags:
+
+# --fs <drive> <partition> : mounts the given partition as the root
+#  directory. For example, to mount the seventh parition on main disk,
+#  supply: --fs hda f. Many filesystem formats are supported,
+#  including EXT2, MSDOS, and VFAT (see OSKit for details).
+
+# --net <address> <netmask> <gateway> : initializes ethernet support
+#  for MzScheme's TCP primitives. Example: --net 128.42.6.101
+#  255.255.255.0 128.42.6.254. Many types of ethernet cards are
+#  supported (see OSKit for details).
+
+# Each of --fs and --net should be used once at most. The --fs and
+#  --net flags must appear before any other command-line arguments,
+#  which are handled by MzScheme in the usual way.
+
+# To access a filesystem or the network from non-multiboot kernels
+#  (e.g., a LILO-compatible kernel), you must hardwire filesystem and
+#  networking parameters in main.c when compiling the kernel; see
+#  main.c for details (grep for `hardwire').
+
+# Build Options
+# =============
+
+# Provide the -n flag to this script to build a kernel without
+#  filesystem or ethernet support. The advantage of using -n is that
+#  the kernel is much smaller.
+
+# The -t flag is used for testing, and is probably not useful outside
+#  of PLT. The -t flag (which must follow -n if specified) creates a
+#  Linux binary using as much of the OSKit configuration for MzScheme
+#  as possible.
+
+# =====================================================================
 
 OSKHOME=${OSKHOME:-/usr/local}
 STDINC=/usr/include
+
+if [ "$1" == '-n' ] ; then
+  # No filesystem or ethernet support
+  FS=""
+else
+  # Include filesystem and ethernet support
+  FS="-DOSK_FILESYSTEMS_AND_ETHERNET"
+  EXTRA_OSK_LIBS="-loskit_linux_fs -loskit_linux_dev -loskit_diskpart -loskit_freebsd_net"
+  export EXTRA_OSK_LIBS
+  shift
+fi
 
 if [ "$1" = '-t' ] ; then
  echo "Build test app similar to OSKit app"
@@ -22,21 +84,10 @@ elif [ "$*" = '' ] ; then
  TARGET=oskit
  BUILDDIR=_oskit_x86
 else
- echo oskmake: unknown command-line: $*
+ echo oskmake: unrecognized command-line arguments: $*
  exit -1
-fi
-
-LANG=""
-
-# Use Linux FS drivers?
-if [ "yes" ] ; then
-  FS="-DOSK_LINUX_FILESYSTEMS"
-  EXTRA_OSK_LIBS="-loskit_linux_fs -loskit_linux_dev -loskit_diskpart -loskit_freebsd_net"
-  export EXTRA_OSK_LIBS
-else
-  FS=""
 fi
 
 DEST="MZOSKDEST=${MZOSKDEST:-mzscheme.multiboot}"
 
-MZPLATFORMSUFFIX=$BUILDDIR make GCDIR=sgc OPTIONS="-DOSKIT -DUSE_SENORA_GC -DSGC_AUTO_ROOTS=0 $INCLUDES $LANG $FS" OSKHOME="$OSKHOME" $DEST $TARGET
+MZPLATFORMSUFFIX=$BUILDDIR make GCDIR=sgc OPTIONS="-DOSKIT -DUSE_SENORA_GC -DSGC_AUTO_ROOTS=0 $INCLUDES $FS" OSKHOME="$OSKHOME" $DEST $TARGET

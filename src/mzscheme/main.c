@@ -399,17 +399,18 @@ int gethostname(char *s, int len)
   return 0;
 }
 
-/*    *********** OSKIT filesystem START *****************    */
-# ifdef OSK_LINUX_FILESYSTEMS
+/*    *********** OSKIT filesystem/ethernet START *****************    */
+# ifdef OSK_FILESYSTEMS_AND_ETHERNET
 
+#  include <oskit/c/fs.h>
 #  include <oskit/dev/dev.h>
-#  include <oskit/fs/filesystem.h> 
-#  include <oskit/fs/dir.h> 
-#  include <oskit/diskpart/diskpart.h> 
-#  include <oskit/fs/linux.h> 
-#  include <oskit/dev/linux.h> 
+#  include <oskit/fs/filesystem.h>
+#  include <oskit/fs/dir.h>
+#  include <oskit/diskpart/diskpart.h>
+#  include <oskit/fs/linux.h>
+#  include <oskit/dev/linux.h>
 #  include <oskit/principal.h>
-#  include <oskit/net/freebsd.h> 
+#  include <oskit/net/freebsd.h>
 
 static oskit_principal_t *cur_principal;
 static oskit_filesystem_t *main_fs;
@@ -419,6 +420,7 @@ static void unmount(void)
 {
   if (main_fs_root) {
     fflush(NULL);
+    fs_release();
     oskit_dir_release(main_fs_root);
     oskit_filesystem_sync(main_fs, 1);
     oskit_filesystem_release(main_fs);
@@ -470,6 +472,8 @@ int start_linux_fs(char *diskname, char *partname, int net)
     return 0;
   }
 
+  oskit_blkio_release(disk); /* (Partition has a ref.) */
+
   printf(">> Mounting filesystem\n");
   CHECK("mount", fs_linux_mount(part, 0, &fs));
   printf(">> Getting root\n");
@@ -485,13 +489,22 @@ int start_linux_fs(char *diskname, char *partname, int net)
 # undef CHECK
 }
 
-static int start_freebsd_enet(char *addr, char *mask, char *gate)
+static int start_freebsd_enet(char *addr, char *mask, char *gate, int fs)
 {
   oskit_socket_factory_t *factory;
   struct oskit_freebsd_net_ether_if *eif;
   oskit_error_t err;
 # define CHECK(what, f) \
   if ((err = f)) { printf("ethernet init error at " what ": %x\n", err); return 0; }
+
+  if (!fs) {
+    /* Otherwise, fs initialization does this: */
+    printf(">> Initializing devices\n");
+    oskit_dev_init();
+    oskit_linux_init_net();
+    printf(">> Probing devices\n");
+    oskit_dev_probe();
+  }
 
   printf(">> Initializing ethernet\n");
   CHECK("socket creator", oskit_freebsd_net_init(&factory));
@@ -522,7 +535,7 @@ oskit_error_t oskit_get_call_context(const struct oskit_guid *iid, void **out_if
 }
 
 # endif
-/*    *********** OSKIT filesystem END *****************    */
+/*    *********** OSKIT filesystem/ethernet END *****************    */
 
 #endif /* OSKIT */
 /**************** OSKIT stuff END **********************/
@@ -555,27 +568,61 @@ int main(int argc, char **argv)
   start_clock();
   oskit_init_libc();
 
-# ifdef OSK_LINUX_FILESYSTEMS
+# ifdef OSK_FILESYSTEMS_AND_ETHERNET
   {
-    int net = 1;
+    /* To hardwire a disk or network configuration, set
+       `fs' or `net' to 1 and set the initial values of the
+       corresponding configuration variables: */
+    int fs = 0;
+    char *disk = "hda";
+    char *partition = "f";
+    int net = 0;
     char *addr = "155.99.212.55";
     char *mask = "255.255.255.0";
     char *gate = "155.99.212.126";
 
-    if (main) { start_linux_fs("hda", "f", net); } else
-      
+    while (1) {
       if (argc > 1) {
-	start_linux_fs(argv[1], argv[2], net);
-	argv[2] = argv[0];
-	argv += 2;
-	argc -= 2;
-      } else {
-	printf("No disk or partition specified; using in-memory filesystem.\n");
-	fs_init(oskit_bmod_init());
-      }
+	if (!strcmp(argv[1], "--fs")) {
+	  if (argc >= 4) {
+	    fs = 1;
+	    disk = argv[2];
+	    partition = argv[3];
+	    memmove(argv + 1, argv + 4, (argc - 4) * sizeof(char **));
+	    argc -= 3;
+	  } else {
+	    argc = 1;
+	    printf("--fs requires two arguments: <disk> <partition>\n");
+	    break;
+	  }
+	} else if (!strcmp(argv[1], "--net")) {
+	  if (argc >= 5) {
+	    net = 1;
+	    addr = argv[2];
+	    mask = argv[3];
+	    gate = argv[4];
+	    memmove(argv + 1, argv + 5, (argc - 5) * sizeof(char **));
+	    argc -= 4;
+	  } else {
+	    argc = 1;
+	    printf("--net requires three arguments: <address> <netmask> <gateway>\n");
+	    break;
+	  }
+	} else
+	  break;
+      } else
+	break;
+    }
+
+    if (fs) {
+      start_linux_fs(disk, partition, net);
+    } else {
+      printf("No disk or partition specified; using in-memory filesystem.\n");
+      fs_init(oskit_bmod_init());
+    }
   
-    if (net)
-      start_freebsd_enet(addr, mask, gate);
+    if (!net || !start_freebsd_enet(addr, mask, gate, fs))
+      printf("No ethernet; TCP connections will fail.\n"); 
   }
 # else
   fs_init(oskit_bmod_init());
@@ -586,7 +633,7 @@ int main(int argc, char **argv)
   direct_cons_set_flags(DC_NONBLOCK);
 # else
   /* C library handles console; needs liboskit_freebsd_dev.a. */
-  /* (Initialization here conflicts with OSK_LINUX_FILESYSTEMS). */
+  /* (Initialization here conflicts with OSK_FILESYSTEMS_AND_ETHERNET). */
   oskit_dev_init();
   oskit_freebsd_init_sc();
   oskit_dev_probe();

@@ -4,15 +4,17 @@ _MysterX_
 
 MysterX is a toolkit for building Windows applications from
 ActiveX and COM components.  Dynamic HTML is used for
-component presentation and event-handling.
+component presentation and event-handling.  Currently, MysterX
+requires Internet Explorer 4 to be installed.
 
  Installation
  ------------
 
  Three Windows .DLL's support low-level operations in MysterX.  
  Two of them, myspage.dll and myssink.dll, may need to be installed in the 
- Registry, by entering `regsvr32 <name-of-DLL>'.  Ordinarily,
- the PLT installation program registers these .DLL's, but 
+ Registry, by entering `REGSVR32 <name-of-DLL>'.  REGSVR32
+ is a Windows utility usually found in the Windows System directory.
+ Ordinarily, the PLT installation program registers these .DLL's, but 
  if the files are copied, manual registration becomes necessary.  
  The third .DLL,  mysterx.dll, is loaded as a MzScheme 
  extension by the file `mysterx.ss' in the mysterx collection. 
@@ -23,12 +25,12 @@ component presentation and event-handling.
  There are two ways to load MysterX.  The first is to treat
  MysterX as a library:  
 
-  `(require-library "mysterx.ss" "mysterx")'
+  (require-library "mysterx.ss" "mysterx")
 
  makes available the procedures listed here.  The other way
  to load MysterX uses a signed unit: 
 
-  `(require-library "mysterxu.ss" "mysterx")'
+  (require-library "mysterxu.ss" "mysterx")
 
  binds `mysterx@' to the unit, with signature `mysterx^',
  which is defined in the file `sigs.ss' in the MysterX collection.
@@ -209,60 +211,60 @@ the ITypeInfo interface.
   without a visual representation, or when a visual representation 
   is not needed.    
 
-> (methods a-com-object)
-> (methods a-com-type)
+> (com-methods a-com-object)
+> (com-methods a-com-type)
 
   `a-com-object' is a <com-object>.  `a-com-type' is a <com-type>.  Returns 
    a list of strings indicating the names of methods.
 
-> (method-type a-com-object method-name)
-> (method-type a-com-type method-name)
+> (com-method-type a-com-object method-name)
+> (com-method-type a-com-type method-name)
 
   `a-com-object' is a <com-object>.  `a-com-type' is a <com-type>. 
   `method-name' is a string.  Returns a list 
   of symbols indicating the type of the specified method.
 
-> (invoke-method a-com-object method-name ...)
+> (com-invoke a-com-object method-name ...)
 
   `a-com-object' is a <com-object>, and `method-name' is a string.  Invokes 
   the requested method using the arguments given.  The special value 
   `com-omit' may be used for optional arguments, useful when values 
   are supplied for arguments to the right of the omitted argument(s).
 
-> (get-properties a-com-object)
-> (get-properties a-com-type)
+> (com-get-properties a-com-object)
+> (com-get-properties a-com-type)
 
   `a-com-object' has type <com-object>.  `a-com-type' is a <com-type>.  
   Returns a list of strings indicating the names of readable properties 
   in the object.
 
-> (get-property-type a-com-object property-name)
-> (get-property-type a-com-type property-name)
+> (com-get-property-type a-com-object property-name)
+> (com-get-property-type a-com-type property-name)
 
   `a-com-object' is a <com-object>, `a-com-type' is a <com-type>, 
   and `property-name' is a string.  Returns a list of symbols indicating
   the type of the specified property.
 
-> (get-property a-com-object property-name)
+> (com-get-property a-com-object property-name)
 
   `a-com-object' is a <com-object>, and `property-name' is a string.  
   Returns the value of the requested property.
 
-> (set-properties a-com-object)
-> (set-properties a-com-type)
+> (com-set-properties a-com-object)
+> (com-set-properties a-com-type)
 
   `a-com-object' has type <com-object>.  `a-com-type' is a <com-type>. 
   Returns a list of strings indicating the names of writable properties 
   in the object.
 
-> (set-property-type a-com-object property-name)
-> (set-property-type a-com-type property-name)
+> (com-set-property-type a-com-object property-name)
+> (com-set-property-type a-com-type property-name)
 
   `a-com-object' is a <com-object>, `a-com-type' is a <com-type>, and 
   `property-name' is a string.  Returns a list of symbols indicating 
   the type of the specified property.
 
-> (set-property! a-com-object property-name val)
+> (com-set-property! a-com-object property-name val)
 
   `a-com-object' is a <com-object>, `property-name' is a string, and 
   `val' is a value of suitable type.  Sets the value of the specified 
@@ -515,7 +517,7 @@ the ITypeInfo interface.
 > set-background-image! :: (send an-mx-element set-background-image! bi)   
 
   Set the element's CSS background-image using the string `bi',
-  which is either "none", or of the form "url{url-string}".
+  which is either "none", or of the form "url(url-string)".
 
 > background-repeat :: (send an-mx-element background-repeat)   
 
@@ -796,7 +798,7 @@ the ITypeInfo interface.
 > set-list-style-image! :: (send an-mx-element set-list-style-image! image)
 
   Set the element's CSS list-style-image using the string `image', which
-  is either "none" or of the form "url{url-string}".
+  is either "none" or of the form "url(url-string)".
 
 > list-style :: (send an-mx-element list-style)
 

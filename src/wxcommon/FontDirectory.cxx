@@ -48,7 +48,6 @@ char *font_defaults[] = {
   "PostScriptSystem__", "${PostScriptTimes,$[weight],$[style]}",
   "PostScriptDefault__", "${PostScriptTimes,$[weight],$[style]}",
   "PostScriptRoman__", "${PostScriptTimes,$[weight],$[style]}",
-  "PostScriptDecorative__", "${PostScriptTimes,$[weight],$[style]}",
   "PostScriptScript__", "ZapfChancery-MediumItalic",
 
   "PostScriptTimesMedium", "",
@@ -62,6 +61,7 @@ char *font_defaults[] = {
   "PostScriptTimes_Italic", "Times-${PostScriptTimes$[weight]}Italic",
 
   "PostScriptSwiss__", "Helvetica${PostScript$[weight]$[style]}",
+  "PostScriptDecorative__", "Helvetica${PostScript$[weight]$[style]}",
   "PostScriptModern__", "Courier${PostScript$[weight]$[style]}",
   "PostScriptSymbol__", "Symbol",
 

@@ -188,11 +188,18 @@ THINGS TO DO FOR PLANET IN GENERAL
         (cond
           [(= chars-to-read 0) (void)]
           [else
-           (let ((chars-read (read-string-avail! buf ip 0 (min chars-to-read bufsize))))
+           (let ((chars-read (read-string-avail!* buf ip 0 (min chars-to-read bufsize))))
              (cond
-               [(eof-object? chars-read) (raise (make-exn:i/o:port:read "Not enough chars on input" (current-continuation-marks) ip))]
+               [(eof-object? chars-read) 
+                (raise 
+                 (make-exn:i/o:port:read 
+                  (format "Not enough chars on input (expected ~a, got ~a)" n (- n chars-to-read))
+                  (current-continuation-marks)
+                  ip))]
                [else 
-                (write-string-avail buf op 0 chars-read)
+                (let loop ((chars-written 0))
+                  (unless (= chars-written chars-read)
+                    (loop (+ chars-written (write-string-avail buf op 0 chars-read)))))
                 (loop (- chars-to-read chars-read))]))]))))
   
   ; repeat-forever : (-> void) -> [diverges]

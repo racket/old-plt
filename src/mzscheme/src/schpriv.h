@@ -180,6 +180,9 @@ typedef struct {
   Scheme_Object *body;
 } Scheme_With_Continuation_Mark;
 
+#define MZ_CONT_MARK_SPACE 4
+#define MZ_CONT_MARK_INDICATOR ((Scheme_Object *)0x2)
+
 /* ininitializarion */
 void scheme_init_stack_check(void);
 Scheme_Process *scheme_make_process();

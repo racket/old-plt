@@ -1818,6 +1818,7 @@ cc_marks(int argc, Scheme_Object *argv[])
   Scheme_Process *p = scheme_current_process;
   Scheme_Object *first = scheme_null, *last = NULL, **s, **limit, *key;
   Scheme_Saved_Stack *csaved = NULL;
+  Scheme_Object *frame_key = NULL;
 
   key = argv[0];
 
@@ -1831,19 +1832,20 @@ cc_marks(int argc, Scheme_Object *argv[])
     }
 
     while (s < limit) {
-      if (*s == (Scheme_Object *)0x2) {
-	s++;
-	if (SAME_OBJ(key, *s)) {
-	  Scheme_Object *pr = scheme_make_pair(s[1], scheme_null);
+      if (*s == MZ_CONT_MARK_INDICATOR) {
+	if (SAME_OBJ(key, s[1]) && !SAME_OBJ(frame_key, s[3])) {
+	  Scheme_Object *pr = scheme_make_pair(s[2], scheme_null);
 	  if (last)
 	    SCHEME_CDR(last) = pr;
 	  else
 	    first = pr;
 	  last = pr;
+	  /* No more for this frame */
+	  frame_key = s[3];
 	}
+	s += MZ_CONT_MARK_SPACE;
+      } else
 	s++;
-      }
-      s++;
     }
 
     if (!csaved)

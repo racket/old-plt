@@ -621,7 +621,7 @@ Scheme_Object *scheme_link_expr(Scheme_Object *expr, Link_Info *info)
       Scheme_With_Continuation_Mark *wcm = (Scheme_With_Continuation_Mark *)expr;
       wcm->key = scheme_link_expr(wcm->key, info);
       wcm->val = scheme_link_expr(wcm->val, info);
-      info = scheme_link_info_extend(info, 3, 3, 0);
+      info = scheme_link_info_extend(info, MZ_CONT_MARK_SPACE, MZ_CONT_MARK_SPACE, 0);
       wcm->body = scheme_link_expr(wcm->body, info);
       return (Scheme_Object *)wcm;
     }
@@ -2599,12 +2599,14 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	  if (SCHEME_TYPE(val) < _scheme_values_types_)
 	    val = _scheme_eval_compiled_expr_wp(wcm->val, p);
 
-	  PUSH_RUNSTACK(p, RUNSTACK, 3);
+	  PUSH_RUNSTACK(p, RUNSTACK, MZ_CONT_MARK_SPACE);
 
 	  /* 0x2 embedded in the runstack indicates a continuation mark */
-	  RUNSTACK[0] = (Scheme_Object *)0x2;
+	  RUNSTACK[0] = MZ_CONT_MARK_INDICATOR;
 	  RUNSTACK[1] = key;
 	  RUNSTACK[2] = val;
+	  RUNSTACK[3] = (Scheme_Object *)old_runstack;
+	  /* old_runstack is effectively a key for this `frame' */
 
 	  obj = wcm->body;
 

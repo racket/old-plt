@@ -93,17 +93,27 @@
 	   
 	   [(logo-canvas) (make-object canvas% panel)]
 	   [(_) (ready-cursor)]
+	   [(turn-on-messages) '(wx:set-resource "mred" "splashMessages" 1 (wx:find-path 'setup-file))]
+	   [(show-messages?) (let ([b (box 0)])
+			       (if (wx:get-resource "mred" "splashMessages" b)
+				   (not (zero? (unbox b)))
+				   #f))]
 	   [(splash-messages)
-	    (cons (make-object wx:message% panel (format "Welcome to ~a" title))
-		  (let loop ([n (- splash-max-depth 1)])
-		    (cond
-		     [(zero? n) null]
-		     [else (cons (make-object wx:message% panel "")
-				 (loop (sub1 n)))])))]
+	    (and show-messages?
+		 (cons (make-object wx:message% panel (format "Welcome to ~a" title))
+		       (let loop ([n (- splash-max-depth 1)])
+			 (cond
+			   [(zero? n) null]
+			   [else (cons (make-object wx:message% panel "")
+				       (loop (sub1 n)))]))))]
 	   [(_) (ready-cursor)]
 	   [(gauge) (make-object wx:gauge% panel null splash-max-width)]
-	   [(text-msg-height) (send (car splash-messages) get-height)]
-	   [(text-msg-width) (send (car splash-messages) get-width)]
+	   [(text-msg-height) (if splash-messages
+				  (send (car splash-messages) get-height)
+				  0)]
+	   [(text-msg-width) (if splash-messages
+				 (send (car splash-messages) get-width)
+				 0)]
 	   [(logo-width logo-height)
 	    (let ([bw (send bitmap get-width)]
 		  [bh (send bitmap get-height)])
@@ -127,25 +137,26 @@
 			(+ margin logo-height)
 			logo-width
 			gauge-height)
-		  (let loop ([splash-messages splash-messages]
-			     [count 0]
-			     [last-bottom (+ (* 2 margin) logo-height gauge-height)])
-		    (cond
-		     [(null? splash-messages) (void)]
-		     [else
-		      (let ([text-message (car splash-messages)])
-			(send text-message set-size
-			      (* count indent) 
-			      last-bottom
-			      (- logo-width (* count indent))
-			      text-msg-height)
-			(loop (cdr splash-messages)
-			      (+ 1 count)
-			      (+ last-bottom text-msg-height)))]))
+		  (when splash-messages
+		    (let loop ([splash-messages splash-messages]
+			       [count 0]
+			       [last-bottom (+ (* 2 margin) logo-height gauge-height)])
+		      (cond
+			[(null? splash-messages) (void)]
+			[else
+			 (let ([text-message (car splash-messages)])
+			   (send text-message set-size
+				 (* count indent) 
+				 last-bottom
+				 (- logo-width (* count indent))
+				 text-msg-height)
+			   (loop (cdr splash-messages)
+				 (+ 1 count)
+				 (+ last-bottom text-msg-height)))])))
 		  (send panel set-size 0 0
 			logo-width
 			(+ (* 2 margin) logo-height 
-			   (* text-msg-height (length splash-messages))
+			   (if splash-messages (* text-msg-height (length splash-messages)) 0)
 			   gauge-height)))]
 	   
 	   [(_) (when (getenv "MREDDEBUG")
@@ -218,19 +229,21 @@
 		      (case-lambda 
 		       [(s) (change-splash-message s 0 #f)]
 		       [(s depth clear-after)
-			(unless (null? splash-messages)
-			  (if (< depth splash-max-depth)
-			      (begin '(printf "setting depth ~a (of ~a) to ~s~n" depth splash-max-depth s)
-				     (send (list-ref splash-messages depth) set-label s)
-				     (when (and clear-after
-						(< (+ depth 1) splash-max-depth))
-				       (let ([next-message (list-ref splash-messages (+ depth 1))])
-					 (unless (string=? "" (send next-message get-label))
-					   '(printf "clearing depth ~a (of ~a)~n"
-						    (+ depth 1) current-splash-max-depth)
-					   (send next-message set-label ""))))
-				     #t)
-			      #f))])])
+			(if splash-messages
+			    (unless (null? splash-messages)
+			      (if (< depth splash-max-depth)
+				  (begin '(printf "setting depth ~a (of ~a) to ~s~n" depth splash-max-depth s)
+					 (send (list-ref splash-messages depth) set-label s)
+					 (when (and clear-after
+						    (< (+ depth 1) splash-max-depth))
+					   (let ([next-message (list-ref splash-messages (+ depth 1))])
+					     (unless (string=? "" (send next-message get-label))
+					       '(printf "clearing depth ~a (of ~a)~n"
+							(+ depth 1) current-splash-max-depth)
+					       (send next-message set-label ""))))
+					 #t)
+				  #f))
+			    #t)])])
 	      change-splash-message)]
 	   [(splash-load-handler)
 	    (let ([depth 0])

@@ -102,4 +102,13 @@
 (test 'x3 inferred-name (invoke-unit
 			 (unit (import) (export (x x3)) (define x (lambda () 0)) x)))
 
+; Test case sensitivity
+(parameterize ([read-case-sensitive #t])
+  (test (string->symbol "Capital")
+	inferred-name
+	(eval (read (open-input-string "(let ([Capital (lambda () 10)]) Capital)"))))
+  (test (string->symbol "make-CP")
+	inferred-name
+	(eval (read (open-input-string "(let-struct CP (a) make-CP)")))))
+
 (report-errs)

@@ -28,7 +28,7 @@
 (preferences:set-default 'drscheme:multi-file-search:recur? #f boolean?)
 (preferences:set-default 'drscheme:multi-file-search:filter? #f boolean?)
 (preferences:set-default 'drscheme:multi-file-search:filter-string "" string?)
-
+(preferences:set-default 'drscheme:multi-file-search:directory "" string?)
 (preferences:set-default 'drscheme:multi-file-search:search-string "" string?)
 (preferences:set-default 'drscheme:multi-file-search:search-type
                          0 
@@ -71,7 +71,12 @@
   (define filter-text-field (make-object text-field% #f filter-panel 
                               (lambda (x y) (filter-text-field-callback))))
   
-  (define (dir-button-callback) (void))
+  (define (dir-button-callback) 
+    (let ([d (get-directory)])
+      (when (and d
+                 (directory-exists? d))
+        (send dir-field set-value d))))
+  
   (define (filter-check-box-callback) 
     (preferences:set 'drscheme:multi-file-search:filter? (send filter-check-box get-value))
     (send filter-text-field enable (send filter-check-box get-value)))
@@ -94,9 +99,9 @@
      search-types))
   
   (define (methods-choice-callback)
-    (send active-method-panel active-child (list-ref (send active-method-panel get-children)
-                                                     (send methods-choice get-selection))))
-
+    (send active-method-panel active-child
+          (list-ref (send active-method-panel get-children)
+                    (send methods-choice get-selection))))
 
   (send dir-panel stretchable-height #f)
   (send outer-files-panel stretchable-height #f)

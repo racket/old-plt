@@ -184,7 +184,9 @@
 			 #f))))])
 
 	  (sequence
-	    (super-init title (or func dispatch))))))
+	    (super-init title (or func
+				  (lambda (menu evt)
+				    (dispatch (send evt get-command-int)))))))))
 
     (define menu% (make-menu% wx:menu%))
 

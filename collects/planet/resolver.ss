@@ -372,10 +372,9 @@ attempted to load version ~a.~a while version ~a.~a was already loaded"
   (define (do-require file path module-path stx pkg)
     (parameterize ((current-load-relative-directory (pkg-path pkg)))
       ((current-module-name-resolver) 
-       `(file ,(apply build-path (pkg-path pkg) (append path (list file))))
+       `(file ,(path->string (apply build-path (pkg-path pkg) (append path (list file)))))
        module-path
        stx)))
-
 
 ; ============================================================
 ; UTILITY

@@ -3,44 +3,6 @@
 Various common pieces of code that both the client and server need to access
 
 ==========================================================================================
-THINGS TO DO FOR PLANET IN GENERAL
-----------------------------------------
-
-- the syntax may be too verbose
-- there's no way to upload files
-- maybe the archive should verify that the .plt file works
-- test non-Scheme-only modules
-- different versions of the same file being loaded at once are not detected
-- downloading is suboptimal -- test to see if this is really a problem
-- need a utility (tool for drscheme?) to bundle .plt files and upload them automatically
-- need an automatic index of the files in the PLaneT server archives for the web
-- Much more testing is needed
-- give better error messages
-- different modes, install vs no-install
-- threaded server -- warning -- need i/o lock to write or we'll get garbage. Is it
-  really worth threading at all? If not, why not just use a sequential protocol?
-- utility to download directory tree skeleton?
-
-- LANGUAGE VERSION! 299 vs 206 makes this an emminent threat
-
-- To help out people behind firewalls we may want to consider HTTP as transport
-    protocol, though this is skanky
---------------------------------------------------
-
-- TODO:
-
-- test suite
-- a command-line tool to update the require->module list
-- a GUI/drscheme tool to do the same thing
-- a module exploration/debugging tool (is this the same as the current module browser?)
-- a non-executing installation tool
-- more efficient recursive-dependency handling. this is necessary if we want the previous
-  item. I think a minor addition to the protocol would do the trick, though packaging
-  becomes harder (you can't just use mzc --plt <file.plt> archive). We probably need to
-  make improvements to the .plt system anyway. Something to talk to Robby and Matthew
-  about.
-- thread-safety, kill-safety.
-==========================================================================================
 
 |#
 
@@ -123,7 +85,7 @@ THINGS TO DO FOR PLANET IN GENERAL
     (define (valid-dir? d) 
       (and 
        (directory-exists? (build-path path d)) 
-       (let ((n (string->number d)))
+       (let ((n (string->number (path->string d))))
          (and n
               (or (not lo) (>= n lo))
               (or (not hi) (<= n hi))))))
@@ -132,7 +94,7 @@ THINGS TO DO FOR PLANET IN GENERAL
       (raise (make-exn:fail:filesystem 
               "Internal PLaneT error: inconsistent cache, directory does not exist" 
               (current-continuation-marks))))
-    (max-string (filter valid-dir? (directory-list path))))
+    (max-string (map path->string (filter valid-dir? (directory-list path)))))
   
   ; FULL-PKG-SPEC : (make-pkg-spec string (Nat | #f) (Nat | #f) (Nat | #f) (listof string) (syntax | #f))
   (define-struct pkg-spec (name maj minor-lo minor-hi path stx) (make-inspector))
@@ -275,22 +237,28 @@ THINGS TO DO FOR PLANET IN GENERAL
   ;; ============================================================
   
   ;; tree[X] ::= (make-branch X (listof tree[X])
-  (define-struct branch (node children))
+  (define-struct branch (node children) (make-inspector))
   
   ;; directory->tree : directory (string -> bool) -> tree[string]
-  (define (directory->tree directory valid-dir?)
-    (let-values ([(path name _) (split-path directory)])
-      (let* ((files (directory-list directory))
-             (files (map (lambda (d) (build-path directory d)) files))
-             (files (filter (lambda (d) (and (directory-exists? d) (valid-dir? d))) files)))
-        (make-branch name (map (lambda (d) (directory->tree d valid-dir?)) files)))))
+  (define directory->tree
+    (opt-lambda (directory valid-dir? [max-depth #f])
+      (let-values ([(path name _) (split-path directory)])
+        (let* ((files (directory-list directory))
+               (files (map (lambda (d) (build-path directory d)) files))
+               (files (filter (lambda (d) (and (directory-exists? d) (valid-dir? d))) files)))
+          (make-branch 
+           (path->string name) 
+           (if (equal? max-depth 0) 
+               '()
+               (let ((next-depth (if max-depth (sub1 max-depth) #f)))
+                 (map (lambda (d) (directory->tree d valid-dir? next-depth)) files))))))))
   
   ;; filter-tree-by-pattern : tree[x] (listof (x -> y)) -> tree[y]
   ;; constraint: depth of the tree <= length of the list
   ;; converts the tree by applying to each depth the function at that position in the list
   (define (filter-tree-by-pattern tree pattern)
     (cond
-      [(null? pattern) (error 'filter-tree-by-pattern "Tree too deep")]
+      [(null? pattern) (error 'filter-tree-by-pattern "Tree too deep: ~e" tree)]
       [else
        (make-branch ((car pattern) (branch-node tree))
                     (map 

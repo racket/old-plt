@@ -17,7 +17,7 @@
     (cdr
      (tree->list
       (filter-tree-by-pattern
-       (directory->tree (CACHE-DIR) (lambda (x) (not (regexp-match ".*/CVS$" x))))
+       (directory->tree (CACHE-DIR) (lambda (x) (not (regexp-match ".*/CVS$" (path->string x)))) 4)
        (list id id id string->number string->number)))))
   
   
@@ -41,7 +41,7 @@
     (case-lambda
       [(dir) 
        (let-values ([(path name must-be-dir?) (split-path dir)])
-         (make-planet-archive dir (string-append name ".plt")))]
+         (make-planet-archive dir (string-append (path->string name) ".plt")))]
       [(dir archive-name)
        (begin
          (parameterize ((current-directory dir))

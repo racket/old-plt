@@ -190,7 +190,8 @@ The finalization interface is
 This function installs a finalizer to be queued for invocation when
 `p' would otherwise be collected. All ready finalizers should be
 called at the end of a collection. (A finalization can trigger calls
-back to the collector.)
+back to the collector, but such a collection will not run more
+finalizers.)
 
 The `p' object isn't actually collected when a finalizer is queued,
 since the finalizer will receive `p' as an argument. (Hence, weak

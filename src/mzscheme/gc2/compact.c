@@ -318,6 +318,7 @@ static long mark_stackoflw;
 static int fnl_weak_link_count;
 
 static int ran_final;
+static int running_finals;
 
 static int page_size; /* OS page size */
 
@@ -4003,20 +4004,26 @@ static void gcollect(int full)
 
   ran_final = 0;
 
-  while (run_queue) {
-    Fnl *f;
-    void **gcs;
+  if (!running_finals) {
+    running_finals = 0;
 
-    ran_final = 1;
+    while (run_queue) {
+      Fnl *f;
+      void **gcs;
+      
+      ran_final = 1;
+      
+      f = run_queue;
+      run_queue = run_queue->next;
+      if (!run_queue)
+	last_in_queue = NULL;
+      
+      gcs = GC_variable_stack;
+      f->f(f->p, f->data);
+      GC_variable_stack = gcs;
+    }
 
-    f = run_queue;
-    run_queue = run_queue->next;
-    if (!run_queue)
-      last_in_queue = NULL;
-
-    gcs = GC_variable_stack;
-    f->f(f->p, f->data);
-    GC_variable_stack = gcs;
+    running_finals = 0;
   }
 }
 

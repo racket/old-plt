@@ -1,6 +1,6 @@
-(unless (equal? (version) "100/38")
+(unless (equal? (version) "100/39")
   (error 'mred-interfaces
-         "mred-interfaces.ss and mred-interfacess.ss compiled for version 100/38, not version ~a"
+         "mred-interfaces.ss and mred-interfacess.ss compiled for version 100/39, not version ~a"
          (version)))
 (require-library "mred-interfacess.ss" "framework")
 

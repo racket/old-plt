@@ -7,3 +7,5 @@
 - in the lowest language level (define (f . x) x) is incorrectly a
   syntax error.
 
+- breaking an infinite loop with printing can break but gives
+  a stray error message.

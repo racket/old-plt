@@ -1,3 +1,9 @@
+
+- replace can't replace with an empty string (ie, deleting
+  a word by finding it and replacing it with empty doesn't work)
+
+- bad url's are not handled smoothly
+
 - mred:console%'s initialization argument: `close-item?' is being ignored
 
 - mred:edit% and mred:media-canvas% do not interact well. 

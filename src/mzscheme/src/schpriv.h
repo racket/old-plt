@@ -1440,6 +1440,8 @@ int scheme_is_module_env(Scheme_Comp_Env *env);
 
 Scheme_Env *scheme_module_load(Scheme_Object *modname, Scheme_Env *env);
 Scheme_Env *scheme_module_access(Scheme_Object *modname, Scheme_Env *env);
+void scheme_check_accessible_in_module(Scheme_Env *env, Scheme_Object *symbol, 
+				       Scheme_Object *stx, int nosyntax);
 Scheme_Object *scheme_module_syntax(Scheme_Object *modname, Scheme_Env *env, Scheme_Object *name);
 
 /*========================================================================*/

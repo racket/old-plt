@@ -1225,7 +1225,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 
     exis = MALLOC_N(Scheme_Object *, count);
 
-    for (count = 0, i = exported->size; i--; ) {
+    for (count = 0, i = exported_indirect->size; i--; ) {
       b = bs[i];
       if (b && b->val) {
 	Scheme_Object *name;

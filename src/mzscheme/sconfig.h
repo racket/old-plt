@@ -509,7 +509,6 @@
 # endif
 
 # define WINDOWS_DYNAMIC_LOAD
-# define LINK_EXTENSIONS_BY_TABLE
 
 #ifdef _MSC_VER
 # if _MSC_VER < 1300

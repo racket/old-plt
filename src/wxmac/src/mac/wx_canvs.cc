@@ -166,7 +166,7 @@ void wxCanvas::InitDefaults(void)
   InitInternalGray();
 
   if (cStyle & wxGL_CONTEXT) {
-    GLint attrib[] = { AGL_RGBA, AGL_DOUBLEBUFFER, AGL_NONE };
+    GC_CAN_IGNORE GLint attrib[] = { AGL_RGBA, AGL_DOUBLEBUFFER, AGL_DEPTH_SIZE, 16, AGL_NONE };
     AGLPixelFormat fmt;
     AGLContext ctx; 
     

@@ -1717,7 +1717,7 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
   }
 
   /* Compile/expand as application, datum, or top: */
-  if (!quick_stx_in_use) {
+  if (!quick_stx_in_use && rec) {
     quick_stx_in_use = 1;
     ((Scheme_Stx *)quick_stx)->val = stx;
     ((Scheme_Stx *)quick_stx)->wraps = ((Scheme_Stx *)form)->wraps;
@@ -1730,8 +1730,13 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
 			       + SCHEME_APP_POS + SCHEME_ENV_CONSTANTS_OK
 			       + SCHEME_DONT_MARK_USE);
 
-  if (SAME_OBJ(stx, quick_stx))
+  if (SAME_OBJ(stx, quick_stx)) {
     quick_stx_in_use = 0;
+    if (!SAME_OBJ(var, normal)) {
+      /* Need a new stx after all: */
+      stx = scheme_datum_to_syntax(SCHEME_STX_VAL(stx), scheme_false, form, 0, 0);
+    }
+  }
 
   if (var && (SAME_TYPE(SCHEME_TYPE(var), scheme_macro_type)
 	      || SAME_TYPE(SCHEME_TYPE(var), scheme_syntax_compiler_type))) {

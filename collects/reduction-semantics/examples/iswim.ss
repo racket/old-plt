@@ -28,11 +28,26 @@
 		 (o2 E M)
 		 (o2 V E))
 
-	      ;; Continuations
+	      ;; Continuations (CK machine):
 	      (k "mt"
 		 ("fun" V k)
 		 ("arg" M k)
-		 ("narg" (V ... on) (M ...) k))))
+		 ("narg" (V ... on) (M ...) k))
+
+	      ;; Environments and closures (CEK):
+	      (env ((X = vcl) ...))
+	      (cl (M : env))
+	      (vcl (V- : env))
+	      
+	      ;; Values that are not variables:
+	      (V- ("lam" variable M)
+		  b)
+
+	      ;; Continuations with closures (CEK);
+	      (k- "mt"
+		  ("fun" vcl k-)
+		  ("arg" cl k-)
+		  ("narg" (vcl ... on) (cl ...) k-))))
 
   (define M? (language->predicate iswim-grammar 'M))
   (define V? (language->predicate iswim-grammar 'V))
@@ -40,6 +55,11 @@
   (define o2? (language->predicate iswim-grammar 'o2))
   (define on? (language->predicate iswim-grammar 'on))
   (define k? (language->predicate iswim-grammar 'k))
+
+  (define env? (language->predicate iswim-grammar 'env))
+  (define cl? (language->predicate iswim-grammar 'cl))
+  (define vcl? (language->predicate iswim-grammar 'vcl))
+  (define k-? (language->predicate iswim-grammar 'k-))
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;; Substitution:
@@ -75,6 +95,17 @@
   ;; doesn't match the order in the notes:
   (define (iswim-subst M Xr Mr)
     (iswim-subst/backwards Xr Mr M))
+
+  (define empty-env '())
+
+  ;; Environment lookup
+  (define (env-lookup env X)
+    (let ([m (assq X env)])
+      (and m (caddr m))))
+
+  ;; Environment extension
+  (define (env-extend env X vcl)
+    (cons (list X '= vcl) env))
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;; Reductions:
@@ -170,11 +201,17 @@
   
   (provide/contract (iswim-grammar compiled-lang?)
 		    (M? (any? . -> . boolean?))
-		    (V? (M? . -> . boolean?))
+		    (V? (any? . -> . boolean?))
 		    (o1? (any? . -> . boolean?))
 		    (o2? (any? . -> . boolean?))
 		    (k? (any? . -> . boolean?))
+		    (env? (any? . -> . boolean?))
+		    (cl? (any? . -> . boolean?))
+		    (vcl? (any? . -> . boolean?))
 		    (iswim-subst (M? symbol? M? . -> . M?))
+		    (env-lookup (env? symbol? . -> . (union false? vcl?)))
+		    (env-extend (env? symbol? vcl? . -> . env?))
+		    (empty-env env?)
 		    (beta_v red?)
 		    (delta (listof red?))
 		    (delta*1 (o1? V?  . -> . (union false? V?)))

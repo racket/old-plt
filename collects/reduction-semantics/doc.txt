@@ -451,17 +451,80 @@ by Felleisen and Flatt.
          (+ '1` '2`)              ("+" 1 2)
          ((lambda y y) '7`)       (("lam" y y) 7)
 
-       See "iswim.ss" for the reduction-semantics grammar.
+       CK machine:
+         Book                     S-expr
+         ----                     ------
+         <(lambda x . x), mt>     (("lam" x x) : "mt")
 
+       CEK machine:
+         Book                     S-expr
+         ----                     ------
+         <<(lambda x . x),        ((("lam" x x)
+           {<X,<5,{}>>}>,           : ((X (5 : ()))))
+          mt>                      : "mt")
+         
+       The full grammar:
+
+         (language (M (M M)
+                      (o1 M)
+                      (o2 M M)
+                      V)
+                   (V X
+                      ("lam" variable M)
+                      b)
+                   (X variable)
+                   (b number)
+                   (o1 "add1" "sub1" "iszero")
+                   (o2 "+" "-" "*" "^")
+                   (on o1 o2)
+                   
+                   ;; Evaluation contexts:
+                   (E hole
+                      (E M)
+                      (V E)
+                      (o1 E)
+                      (o2 E M)
+                      (o2 V E))
+     
+                   ;; Continuations (CK machine):
+                   (k "mt"
+                      ("fun" V k)
+                      ("arg" M k)
+                      ("narg" (V ... on) (M ...) k))
+     
+                   ;; Environments and closures (CEK):
+                   (env ((X = vcl) ...))
+                   (cl (M : env))
+                   (vcl (V- : env))
+                   
+                   ;; Values that are not variables:
+                   (V- ("lam" variable M)
+                       b)
+     
+                   ;; Continuations with closures (CEK);
+                   (k- "mt"
+                       ("fun" vcl k-)
+                       ("arg" cl k-)
+                       ("narg" (vcl ... on) (cl ...) k-)))
+     
        The following are provided by "iswim.ss" (case-insensitively):
+
                Grammar and substitution:
 >                 iswim-grammar : compiled-lang?
 >                 M? : (any? . -> . boolean?)
->                 V? : (M? . -> . boolean?)
->                 o1? : (M? . -> . boolean?)
->                 o2? : (M? . -> . boolean?)
->                 on? : (M? . -> . boolean?)
+>                 V? : (any? . -> . boolean?)
+>                 o1? : (any? . -> . boolean?)
+>                 o2? : (any? . -> . boolean?)
+>                 on? : (any? . -> . boolean?)
+>                 k? : (any? . -> . boolean?)
+>                 env? : (any? . -> . boolean?)
+>                 cl? : (any? . -> . boolean?)
+>                 vcl? : (any? . -> . boolean?)
+>                 k-? : (any? . -> . boolean?)
 >                 iswim-subst : (M? symbol? M? . -> . M?)
+>                 empty-env : env?
+>                 env-extend : (env? symbol? vcl? . -> . env?)
+>                 env-lookup : (env? symbol? . -> . (union false? vcl?))
                Reductions:
 >                 beta_v : red?
 >                 delta : (listof red?)

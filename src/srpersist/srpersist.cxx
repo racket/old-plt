@@ -281,9 +281,9 @@ int sizeofCDataType(SQLSMALLINT type) {
 #ifdef WIN32
 #if (ODBCVER >= 0x0300)
   case SQL_C_SBIGINT :
-    return sizeof(_int64);
+    return sizeof(__int64);
   case SQL_C_UBIGINT :
-    return sizeof(unsigned _int64);
+    return sizeof(unsigned __int64);
 #endif
 #endif
 
@@ -1244,9 +1244,9 @@ Scheme_Object *srp_read_buffer(int argc,Scheme_Object **argv) {
 #ifdef WIN32
 #if (ODBCVER >= 0x0300)
   case SQL_C_SBIGINT :
-    return readBigIntBuffer((_int64 *)buffer,arrayLength,ndx);
+    return readBigIntBuffer((__int64 *)buffer,arrayLength,ndx);
   case SQL_C_UBIGINT :
-    return readUBigIntBuffer((unsigned _int64 *)buffer,arrayLength,ndx);
+    return readUBigIntBuffer((unsigned __int64 *)buffer,arrayLength,ndx);
 #endif
 #endif
 
@@ -1480,7 +1480,7 @@ Scheme_Object *srp_write_buffer(int argc,Scheme_Object **argv) {
       scheme_wrong_type("write-buffer","integer",1,argc,argv);
     }
 
-    writeBigIntBuffer((_int64 *)buffer,argv[1],ndx); 
+    writeBigIntBuffer((__int64 *)buffer,argv[1],ndx); 
 
   case SQL_C_UBIGINT :
 
@@ -1488,7 +1488,7 @@ Scheme_Object *srp_write_buffer(int argc,Scheme_Object **argv) {
       scheme_wrong_type("write-buffer","integer",1,argc,argv);
     }
 
-    writeUBigIntBuffer((unsigned _int64 *)buffer,argv[1],ndx); 
+    writeUBigIntBuffer((unsigned __int64 *)buffer,argv[1],ndx); 
 #endif
 #endif
 

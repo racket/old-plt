@@ -1053,7 +1053,7 @@ void writeBitBuffer(char *buffer,Scheme_Object *obj,long ndx) {
 }
 
 #ifdef WIN32 
-Scheme_Object *readBigIntVal(_int64 *buffer,long offset) {
+Scheme_Object *readBigIntVal(__int64 *buffer,long offset) {
   int lo,hi;
   char bigBuff[25];
   Scheme_Object *bigLo,*bigHi;
@@ -1068,7 +1068,7 @@ Scheme_Object *readBigIntVal(_int64 *buffer,long offset) {
   return scheme_read_bignum(bigBuff,0,16);
 }
 
-Scheme_Object *readBigIntBuffer(_int64 *buffer,long arrayLength,long ndx) {
+Scheme_Object *readBigIntBuffer(__int64 *buffer,long arrayLength,long ndx) {
   Scheme_Object *retval;
   long i;
 
@@ -1088,7 +1088,7 @@ Scheme_Object *readBigIntBuffer(_int64 *buffer,long arrayLength,long ndx) {
 #endif
 
 #ifdef WIN32
-void writeBigIntBuffer(_int64 *buffer,Scheme_Object *obj,long ndx) {
+void writeBigIntBuffer(__int64 *buffer,Scheme_Object *obj,long ndx) {
   Scheme_Object *currVal;
   static Scheme_Object *argv[2];
   static Scheme_Object *reallyBigNum;
@@ -1133,7 +1133,7 @@ void writeBigIntBuffer(_int64 *buffer,Scheme_Object *obj,long ndx) {
 #endif
 
 #ifdef WIN32
-Scheme_Object *readUBigIntVal(unsigned _int64 *buffer,long offset) {
+Scheme_Object *readUBigIntVal(unsigned __int64 *buffer,long offset) {
   unsigned lo,hi;
   char bigBuff[25];
   Scheme_Object *bigLo,*bigHi;
@@ -1148,7 +1148,7 @@ Scheme_Object *readUBigIntVal(unsigned _int64 *buffer,long offset) {
   return scheme_read_bignum(bigBuff,0,16);
 }
 
-Scheme_Object *readUBigIntBuffer(unsigned _int64 *buffer,long arrayLength,long ndx) {
+Scheme_Object *readUBigIntBuffer(unsigned __int64 *buffer,long arrayLength,long ndx) {
   Scheme_Object *retval;
   long i;
 
@@ -1168,8 +1168,8 @@ Scheme_Object *readUBigIntBuffer(unsigned _int64 *buffer,long arrayLength,long n
 #endif
 
 #ifdef WIN32
-unsigned _int64 _atoui64(char *s) {
-  unsigned _int64 retval;
+unsigned __int64 _atoui64(char *s) {
+  unsigned __int64 retval;
 
   retval = 0ui64;
 
@@ -1184,7 +1184,7 @@ unsigned _int64 _atoui64(char *s) {
 #endif
 
 #ifdef WIN32
-void writeUBigIntBuffer(unsigned _int64 *buffer,Scheme_Object *obj,long ndx) {
+void writeUBigIntBuffer(unsigned __int64 *buffer,Scheme_Object *obj,long ndx) {
   Scheme_Object *currVal;
   static Scheme_Object *argv[2];
   static Scheme_Object *reallyBigNum;

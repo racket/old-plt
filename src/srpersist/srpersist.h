@@ -220,10 +220,10 @@ Scheme_Object *readUTinyBuffer(unsigned char *buffer,long,long);
 void writeUTinyBuffer(unsigned char *buffer,Scheme_Object *,long);
 
 #ifdef WIN32
-Scheme_Object *readBigIntBuffer(_int64 *buffer,long,long);
-void writeBigIntBuffer(_int64 *buffer,Scheme_Object *,long);
-Scheme_Object *readUBigIntBuffer(unsigned _int64 *buffer,long,long);
-void writeUBigIntBuffer(unsigned _int64 *buffer,Scheme_Object *,long);
+Scheme_Object *readBigIntBuffer(__int64 *buffer,long,long);
+void writeBigIntBuffer(__int64 *buffer,Scheme_Object *,long);
+Scheme_Object *readUBigIntBuffer(unsigned __int64 *buffer,long,long);
+void writeUBigIntBuffer(unsigned __int64 *buffer,Scheme_Object *,long);
 #endif
 
 /* version info */

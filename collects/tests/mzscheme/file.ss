@@ -424,9 +424,18 @@
 	 (current-input-port c))))
 (test eof read s2)
 
-(arity-test open-output-string 0 0)
-(arity-test open-input-string 1 1)
+(arity-test open-output-string 0 1)
+(arity-test open-input-string 1 2)
 (arity-test get-output-string 1 1)
+
+(arity-test open-output-bytes 0 1)
+(arity-test open-input-bytes 1 2)
+(arity-test get-output-bytes 1 1)
+
+(test 75 object-name (open-input-string "x" 75))
+(test 76 object-name (open-input-bytes #"x" 76))
+(test 175 object-name (open-output-string 175))
+(test 176 object-name (open-output-bytes 176))
 
 (err/rt-test (get-output-string 9))
 (err/rt-test (get-output-string (current-output-port)))
@@ -520,11 +529,18 @@
 (arity-test write-bytes-avail* 1 4)
 (arity-test write-bytes-avail/enable-break 1 4)
 
-(arity-test make-pipe 0 1)
+(arity-test make-pipe 0 3)
 (err/rt-test (make-pipe 0))
 (err/rt-test (make-pipe -1))
 (err/rt-test (make-pipe (- (expt 2 40))))
 (err/rt-test (make-pipe "hello"))
+
+(let-values ([(r w) (make-pipe #f 'in)])
+  (test 'in object-name r)
+  (test 'pipe object-name w))
+(let-values ([(r w) (make-pipe #f 'in 'out)])
+  (test 'in object-name r)
+  (test 'out object-name w))
 
 (test #t input-port? (make-input-port void void void void))
 (test #t input-port? (make-input-port void void #f void))

@@ -2181,28 +2181,23 @@
 		    (with-syntax ([name (localize (syntax name))])
 		      (if flatten?
 			  (if (stx-list? (syntax args))
-			      (syntax (let ([this obj])
-                                        (let-values ([(mth unwrapped-this)
-						      (find-method/who 'send this `name)])
-                                          (apply mth unwrapped-this . args))))
+			      (syntax (let-values ([(mth unwrapped-this)
+						    (find-method/who 'send obj `name)])
+					(apply mth unwrapped-this . args)))
 			      (raise-syntax-error
 			       #f
 			       "bad syntax (illegal use of `.')"
 			       stx))
 			  (if (stx-list? (syntax args))
-			      (with-syntax ([call (syntax/loc stx
-                                                    (let-values ([(mth unwrapped-this)
-								  (find-method/who 'send this `name)])
-                                                      (mth unwrapped-this . args)))])
-				(syntax/loc stx (let ([this obj])
-						  call)))
+			      (syntax/loc stx
+				(let-values ([(mth unwrapped-this)
+					      (find-method/who 'send obj `name)])
+				    (mth unwrapped-this . args)))
 			      (with-syntax ([args (flatten-args (syntax args))])
-				(with-syntax ([call (syntax/loc stx
-                                                      (let-values ([(mth unwrapped-this)
-								    (find-method/who 'send this `name)])
-                                                        (apply mth unwrapped-this . args)))])
-				  (syntax/loc stx (let ([this obj])
-						    call))))))))])))])
+				(syntax/loc stx
+				  (let-values ([(mth unwrapped-this)
+						(find-method/who 'send obj `name)])
+				    (apply mth unwrapped-this . args))))))))])))])
       (values (mk #f) (mk #t))))
   
   (define-syntax send*

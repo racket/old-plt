@@ -495,7 +495,6 @@
   
   (let loop ([stx stx])
     (or (and (has-p? stx)
-	     (printf "yes!~n")
 	     (or (eq? #t where)
 		 (eq? (syntax-e stx) where)
 		 (and (pair? (syntax-e stx))
@@ -571,8 +570,8 @@
 ;; Disappearing syntax decls:
 (test #t has-stx-property? (expand #'(let () (define-syntax x 1) (define y 12) 10)) 'letrec-values 'x 'disappeared-binding)
 (test #t has-stx-property? (expand #'(let () (define-struct s (x)) 10)) 'letrec-values 's 'disappeared-binding)
-(test #t has-stx-property? (expand #'(let () (define-syntax x 1) 10)) '#%datum 'x 'disappeared-binding)
-(test #f has-stx-property? (expand #'(fluid-let-syntax ([x 1]) 10)) '#%datum 'x 'disappeared-binding)
+(test #t has-stx-property? (expand #'(let () (define-syntax x 1) 10)) 'begin 'x 'disappeared-binding)
+(test #f has-stx-property? (expand #'(fluid-let-syntax ([x 1]) 10)) 'begin 'x 'disappeared-binding)
 
 ;; Disappearing use:
 (test #t has-stx-property? (expand #'(let () (define-struct a (x)) (define-struct (b a) (z)) 10))

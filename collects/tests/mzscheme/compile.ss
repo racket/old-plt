@@ -13,23 +13,32 @@
 (define file
   (if #f
       (open-output-file "x" 'replace)
-      (make-custom-output-port #f (lambda (s start end flush?) (- end start)) void void)))
+      (make-output-port 'nowhere
+			always-evt
+			(lambda (s start end non-block? breakable?) (- end start))
+			void
+			(lambda (special non-block? breakable?) #t)
+			(lambda (s start end) (wrap-evt
+					       always-evt
+					       (lambda (x)
+						 (- end start))))
+			(lambda (special) (wrap-evt always-evt (lambda (x) #t))))))
 
 (define try-one
   (lambda (e)
     (let ([c (compile-syntax e)]
 	  [ec (compile-syntax (expand e))]
-	  [p (open-output-string)]
-	  [ep (open-output-string)])
+	  [p (open-output-bytes)]
+	  [ep (open-output-bytes)])
       (write c p)
       (write ec ep)
-      (let ([s (get-output-string p)]
-	    [es (get-output-string ep)])
+      (let ([s (get-output-bytes p)]
+	    [es (get-output-bytes ep)])
 	(unless (equal? s es)
 	  (error 'try "bad expand ~e~n" e))
 	; (write (string->list s)) (newline)
 	(let ([e (parameterize ([read-accept-compiled #t])
-		     (read (open-input-string s)))])
+		     (read (open-input-bytes s)))])
 	  (eval e))))))
 
 (letrec ([orig (current-eval)]
@@ -60,20 +69,20 @@
 		(begin
 		  ;; (fprintf file ": ~a~n" +)
 		  ;; (write x file) (newline file)
-		  (let ([p (open-output-string)]
-			[ep (open-output-string)]
+		  (let ([p (open-output-bytes)]
+			[ep (open-output-bytes)]
 			[c ((if (syntax? x) compile-syntax compile) x)]
 			[ec (compile-syntax ((if (syntax? x) expand-syntax expand) x))])
 		    (write c p)
 		    (write ec ep)
-		    (let ([s (get-output-string p)]
-			  [es (get-output-string ep)])
+		    (let ([s (get-output-bytes p)]
+			  [es (get-output-bytes ep)])
 		      (unless (equal? s es)
 			'(fprintf (current-error-port) "bad expand (~a,~a) ~e~n" 
-				  (string-length s) (string-length es) x))
+				  (bytes-length s) (bytes-length es) x))
 					; (display s file) (newline file)
 		      (let ([e (parameterize ([read-accept-compiled #t])
-				 (read (open-input-string s)))])
+				 (read (open-input-bytes s)))])
 					; (write e file) (newline file)
 			(parameterize ([current-eval next-eval])
 			  (orig e)))))))]
@@ -98,9 +107,9 @@
 	   (if (= n 513)
 	       l
 	       (loop (add1 n) (cons n l))))]
-      [p (open-output-string)])
+      [p (open-output-bytes)])
   (write (compile `(quote ,l)) p)
-  (let ([s (open-input-string (get-output-string p))])
+  (let ([s (open-input-bytes (get-output-bytes p))])
     (let ([l2 (parameterize ([read-accept-compiled #t])
 		    (eval (read s)))])
       (test #t equal? l l2))))

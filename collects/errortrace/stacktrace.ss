@@ -244,7 +244,12 @@
                               (annotate b trans?))
                             (syntax->list bodyl))])
           (syntax/loc expr (who . bodyl))))
-      
+
+      (define orig-inspector (current-inspector))
+
+      (define (certify orig new)
+	(syntax-recertify new orig orig-inspector))
+
       (define (make-annotate top? name)
         (lambda (expr trans?)
           (test-coverage-point 
@@ -281,13 +286,17 @@
                                                   [_else #f])
                                                 (syntax rhs)
                                                 trans?))])
-                (syntax/loc expr (define-values names marked)))]
+		(certify
+		 expr
+		 (syntax/loc expr (define-values names marked))))]
              [(begin . exprs)
               top?
-              (annotate-seq
-               trans? expr (quote-syntax begin)
-               (syntax exprs)
-               annotate-top)]
+	      (certify
+	       expr
+	       (annotate-seq
+		trans? expr (quote-syntax begin)
+		(syntax exprs)
+		annotate-top))]
              [(define-syntaxes (name ...) rhs)
               top?
               (with-syntax ([marked (with-mark expr
@@ -298,7 +307,9 @@
                                                        (car l)))
                                                 (syntax rhs)
                                                 #t))])
-                (syntax/loc expr (define-syntaxes (name ...) marked)))]
+		(certify
+		 expr
+		 (syntax/loc expr (define-syntaxes (name ...) marked))))]
              
              ;; Just wrap body expressions
              [(module name init-import (#%plain-module-begin body ...))
@@ -307,12 +318,14 @@
                              (map (lambda (b)
                                     (annotate-top b trans?))
                                   (syntax->list (syntax (body ...))))])
-                (datum->syntax-object
-                 expr
-                 ;; Preserve original #%module-begin:
-                 (list (syntax module) (syntax name) (syntax init-import) 
-                       (cons (syntax #%plain-module-begin) (syntax bodyl)))
-                 expr))]
+		(certify
+		 expr
+		 (datum->syntax-object
+		  expr
+		  ;; Preserve original #%module-begin:
+		  (list (syntax module) (syntax name) (syntax init-import) 
+			(cons (syntax #%plain-module-begin) (syntax bodyl)))
+		  expr)))]
              
              ;; No way to wrap
              [(require i ...) expr]
@@ -334,7 +347,9 @@
                               name expr 
                               (syntax args) (syntax body) 
                               trans?)])
-                (keep-lambda-properties expr (syntax/loc expr (lambda . cl))))]
+		(certify
+		 expr
+		 (keep-lambda-properties expr (syntax/loc expr (lambda . cl)))))]
              [(case-lambda clauses ...)
               (with-syntax ([([args . body] ...)
                              (syntax (clauses ...))])
@@ -344,25 +359,31 @@
                                 (syntax->list (syntax (args ...))) 
                                 (syntax->list (syntax (body ...)))
                                 (syntax->list (syntax (clauses ...))))])
-                  (keep-lambda-properties 
-                   expr 
-                   (syntax/loc expr 
-                     (case-lambda . new-clauses)))))]
+		  (certify
+		   expr
+		   (keep-lambda-properties 
+		    expr 
+		    (syntax/loc expr 
+		      (case-lambda . new-clauses))))))]
              
              ;; Wrap RHSs and body
              [(let-values ([vars rhs] ...) . body)
-              (with-mark expr 
-                         (annotate-let #f trans?
-                                       (syntax (vars ...))
-                                       (syntax (rhs ...))
-                                       (syntax body)))]
+	      (certify
+	       expr
+	       (with-mark expr 
+			  (annotate-let #f trans?
+					(syntax (vars ...))
+					(syntax (rhs ...))
+					(syntax body))))]
              [(letrec-values ([vars rhs] ...) . body)
-              (with-mark expr 
-                         (annotate-let #t trans?
-                                       (syntax (vars ...))
-                                       (syntax (rhs ...))
-                                       (syntax body)))]
-             
+	      (certify
+	       expr
+	       (with-mark expr 
+			  (annotate-let #t trans?
+					(syntax (vars ...))
+					(syntax (rhs ...))
+					(syntax body))))]
+	      
              ;; Wrap RHS
              [(set! var rhs)
               (with-syntax ([rhs (annotate-named 
@@ -370,45 +391,58 @@
                                   (syntax rhs)
                                   trans?)])
                 ;; set! might fail on undefined variable, or too many values:
-                (with-mark expr (syntax/loc expr (set! var rhs))))]
+		(certify
+		 expr
+		 (with-mark expr (syntax/loc expr (set! var rhs)))))]
              
              ;; Wrap subexpressions only
              [(begin . body)
-              (with-mark expr
-                         (annotate-seq trans? expr (syntax begin) (syntax body) annotate))]
+	      (certify
+	       expr
+	       (with-mark expr
+			  (annotate-seq trans? expr (syntax begin) (syntax body) annotate)))]
              [(begin0 . body)
-              (with-mark expr
-                         (annotate-seq trans? expr (syntax begin0) (syntax body) annotate))]
+	      (certify
+	       expr
+	       (with-mark expr
+			  (annotate-seq trans? expr (syntax begin0) (syntax body) annotate)))]
              [(if tst thn els)
               (with-syntax ([w-tst (annotate (syntax tst) trans?)]
                             [w-thn (annotate (syntax thn) trans?)]
                             [w-els (annotate (syntax els) trans?)])
-                
-                (with-mark
-                 expr
-                 (syntax/loc expr
-                   (if w-tst w-thn w-els))))]
+                (certify
+		 expr
+		 (with-mark
+		  expr
+		  (syntax/loc expr
+		    (if w-tst w-thn w-els)))))]
              [(if tst thn)
               (with-syntax ([w-tst (annotate (syntax tst) trans?)]
                             [w-thn (annotate (syntax thn) trans?)])
-                (with-mark 
-                 expr  
-                 (syntax/loc expr
-                   (if w-tst w-thn))))]
+		(certify
+		 expr
+		 (with-mark 
+		  expr  
+		  (syntax/loc expr
+		    (if w-tst w-thn)))))]
              [(with-continuation-mark . body)
-              (with-mark expr
-                         (annotate-seq 
-                          trans? expr (syntax with-continuation-mark) (syntax body) annotate))]
+	      (certify
+	       expr
+	       (with-mark expr
+			  (annotate-seq 
+			   trans? expr (syntax with-continuation-mark) (syntax body) annotate)))]
              
              ;; Wrap whole application, plus subexpressions
              [(#%app . body)
               (if (stx-null? (syntax body))
                   ;; It's a null:
                   expr
-                  (with-mark expr
-                             (annotate-seq trans? expr 
-                                           (syntax #%app) (syntax body) 
-                                           annotate)))]
+		  (certify
+		   expr
+		   (with-mark expr
+			      (annotate-seq trans? expr 
+					    (syntax #%app) (syntax body) 
+					    annotate))))]
              
              [_else
               (error 'errortrace

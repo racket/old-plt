@@ -52,8 +52,8 @@ Version 199.20:
  * Fixed reader error messages to use `error-print-source-location'
    and GNU-style source locations.
 
- * Unix, Windows: fixed bug in `sleep' when asked to sleep for more
-   than 2,147,483,647 seconds.
+ * Unix, Windows: fixed bug in `sleep' when asked to sleep for a large
+   number of seconds.
 
  * Inside MzScheme: changed type of third argument for
    scheme_block_until() from void* to Scheme_Object*.

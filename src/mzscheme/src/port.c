@@ -5704,10 +5704,19 @@ static void default_sleep(float v, void *fds)
 	if (((win_extended_fd_set *)fds)->wait_event_mask
 	    && GetQueueStatus(((win_extended_fd_set *)fds)->wait_event_mask))
 	  result = WAIT_TIMEOUT; /* doesn't matter... */
-	else
-	  result = MsgWaitForMultipleObjects(count, array, FALSE, 
-					     v ? (DWORD)(v * 1000) : INFINITE,
+	else {
+	  DWORD msec;
+	  if (v) {
+	    if (v > 100000)
+	      msec = 100000000;
+	    else
+	      msec = (DWORD)(v * 1000);
+	  } else {
+	    msec = INFINITE;
+	  }
+	  result = MsgWaitForMultipleObjects(count, array, FALSE, msec,
 					     ((win_extended_fd_set *)fds)->wait_event_mask);
+	}
 #endif
 #if defined(USE_BEOS_PORT_THREADS)
 	result = wait_multiple_sema(count, array, v);
@@ -5764,10 +5773,20 @@ static void default_sleep(float v, void *fds)
 	if (((win_extended_fd_set *)fds)->wait_event_mask
 	    && GetQueueStatus(((win_extended_fd_set *)fds)->wait_event_mask))
 	  result = WAIT_TIMEOUT; /* doesn't matter... */
-	else
+	else {
+	  DWORD msec;
+	  if (v) {
+	    if (v > 100000)
+	      msec = 100000000;
+	    else
+	      msec = (DWORD)(v * 1000);
+	  } else {
+	    msec = INFINITE;
+	  }
 	  result = MsgWaitForMultipleObjects(count, array, FALSE, 
 					     v ? (DWORD)(v * 1000) : INFINITE,
 					     ((win_extended_fd_set *)fds)->wait_event_mask);
+	}
 #endif	
 #if defined(USE_BEOS_PORT_THREADS)
 	result = wait_multiple_sema(count, array, v);

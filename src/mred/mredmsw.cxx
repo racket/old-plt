@@ -278,9 +278,10 @@ void MrEdMSWSleep(float secs, void *fds)
   StopSleepThreadTimer();
 
   if (secs > 0) {
-    msecs = (DWORD)(secs * 1000);
-    if (msecs < 0)
-      msecs = 100000;
+    if (secs > 100000)
+      msecs = 100000000;
+    else
+      msecs = (DWORD)(secs * 1000);
   } else
     msecs = 0;
 

@@ -72,7 +72,7 @@
 
   ; --------------------------------------------------------------------
 
-  (add-primitivized-micro-form 'poly mrspidey-vocabulary
+  (add-primitivized-micro-form 'polymorphic mrspidey-vocabulary
     (let* ((kwd '())
 	    (in-pattern '(_ p-expr))
 	    (m&e (pat:make-match&env in-pattern kwd)))
@@ -124,7 +124,7 @@
 	  (else
 	    (static-error expr "Malformed type:"))))))
 
-  (add-primitivized-micro-form 'st:control mrspidey-vocabulary
+  (add-primitivized-micro-form 'mrspidey:control mrspidey-vocabulary
     (let* ((kwd '())
 	    (in-pattern '(_ para val))
 	    (m&e (pat:make-match&env in-pattern kwd)))

@@ -359,7 +359,7 @@ int wxbMenu::FindItem (char *itemString)
   char buf2[200];
   wxStripMenuCodes (itemString, buf1);
 
-  for (wxNode * node = menuItems.First (); node; node = node->Next ())
+  for (wxNode * node = menuItems->First (); node; node = node->Next ())
     {
       wxMenuItem *item = (wxMenuItem *) node->Data ();
       if (item->subMenu)
@@ -383,7 +383,7 @@ wxMenuItem *wxbMenu::FindItemForId (int itemId, wxMenu ** itemMenu)
 {
   if (itemMenu)
     *itemMenu = NULL;
-  for (wxNode * node = menuItems.First (); node; node = node->Next ())
+  for (wxNode * node = menuItems->First (); node; node = node->Next ())
     {
       wxMenuItem *item = (wxMenuItem *) node->Data ();
 

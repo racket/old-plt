@@ -1,4 +1,4 @@
-; $Id: sexp.ss,v 1.20 1997/12/04 17:27:39 mflatt Exp $
+; $Id: sexp.ss,v 1.21 1998/07/14 20:25:03 shriram Exp $
 
 (unit/sig zodiac:sexp^
   (import zodiac:misc^
@@ -56,8 +56,6 @@
 		     (z:make-number origin start finish expr))
 		   ((boolean? expr)
 		     (z:make-boolean origin start finish expr))
-		   ((type-symbol? expr)
-		     (z:make-type-symbol origin start finish expr))
 		   ((char? expr)
 		     (z:make-char origin start finish expr))
 		   (else

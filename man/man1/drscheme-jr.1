@@ -1,5 +1,5 @@
 .\" dummy line
-.TH DRSCHEME JR 1 "28 October 1999"
+.TH DRSCHEME JR 1 "26 June 2000"
 .UC 4
 .SH NAME
 drscheme-jr \- The Rice PLT Scheme programming shell
@@ -27,16 +27,19 @@ Startup file and expression switches:
 .TP
 .BI \-l \ language ,\ \-\-language \ language
 Set the language to one of the following:
-Beginner Intermediate Advanced R4RS+ MzScheme.
+"Beginning Student"
+"Intermediate Student"
+"Advanced Student"
+"Textual Full Scheme (MzScheme)"
+.TP
+.BI \-t \ file ,\ \-\-teachpack \ file
+Sets the teachpack to file.
 .TP
 .BR  \-\-case\-sens \ { on , off }
 Enable/disable case-sensitive symbols and variables
 .TP
-.BR \-\-set\-undef \ { on , off }
-Enable/disable set! on undefined variables
-.TP
-.BR \-\-auto\-else \ { on , off }
-Enable/disable non-matching cond/case produces (void)
+.BR \-\-auto\-else\-error \ { on , off }
+Enable/disable non-matching cond/case produces an error
 .TP 
 .BR \-\-improper\-lists \ { on , off }
 Enable/disable improper lists

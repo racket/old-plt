@@ -2,6 +2,15 @@
 >> See MzScheme_300.txt for information on major changes in
    MzScheme 299.X. Minor changes are listed below.
 
+Version 299.3
+Simplified the built-in exn hierarchy; the built-in exn structures
+ are immutable, and fields guards enforce "type" contraints; the
+ new exn:srclocs property identifies exns with source-location
+ information
+Added construct-time field guards to structure types
+Changes raise-syntax-error so that it no longer accepts a list
+ as its first argument
+
 Version 299.2
 Changed continuations to allow a thread to invoke a continuation
  captured in a different thread, and changed parameters; see 

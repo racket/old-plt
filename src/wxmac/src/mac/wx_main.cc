@@ -73,6 +73,11 @@ int wxEntry(int argc, char* argv[])
         SInt16 vRefNum;
         SInt32 dirID;
         const Str255 fileName = "\p";
+#ifdef OS_X
+        static char path_divider = '/';
+#else
+        static char path_divider = ':';
+#endif
         
 	if (FindFolder(kOnSystemDisk, 'pref', kCreateFolder, &vRefNum, &dirID) == noErr) {
           FSMakeFSSpec(vRefNum,dirID,fileName,&spec);
@@ -84,8 +89,8 @@ int wxEntry(int argc, char* argv[])
 	  int l = strlen(home);
 	  char *s = new char[l + 15];
 	  memcpy(s, home, l);
-	  if (s[l - 1] != ':') {
-	    s[l++] = ':';
+	  if (s[l - 1] != path_divider) {
+	    s[l++] = path_divider;
 	  }
 	  strcpy(s + l, "mred.fnt");
       wxInitResources(s);

@@ -61,21 +61,21 @@
                         (send text insert test-box)
                         (send test-box take-caret)
                         (send text end-edit-sequence)))))
-                 (demand-callback has-editor-on-demand))]
-           [enable-menu-item
-            (new menu-item%
-                 (parent (find-scheme-menu (get-special-menu)))
-                 (label "Disable All Test Cases")
-                 (callback
-                  (lambda (menu event)
-                    (set! test-cases-enabled? (not test-cases-enabled?))
-                    (if test-cases-enabled?
-                        (send enable-menu-item set-label "Disable all Test Cases")
-                        (send enable-menu-item set-label "Enable all Test Cases"))
-                    (send (get-definitions-text) for-each-test-case
-                          (lambda (tc) (send tc enable test-cases-enabled?))))))])
-          ))
-      
+                 (demand-callback has-editor-on-demand))])
+          (let ([parent (find-scheme-menu (get-special-menu))])
+            (and parent
+                 (new menu-item%
+                      (parent parent)
+                      (label "Disable All Test Cases")
+                      (callback
+                       (lambda (menu event)
+                         (set! test-cases-enabled? (not test-cases-enabled?))
+                         (if test-cases-enabled?
+                             (send menu set-label "Disable all Test Cases")
+                             (send menu set-label "Enable all Test Cases"))
+                         (send (get-definitions-text) for-each-test-case
+                               (lambda (tc) (send tc enable test-cases-enabled?))))))))))
+
       (drscheme:get/extend:extend-unit-frame test-case-mixin)
       
       ;; Adds a hook in the reset-highlighting to clear all of the test-case results when the appropriate

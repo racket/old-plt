@@ -30,13 +30,16 @@
 
 |#
 
-    ;; American, Indian, German, Irish, Chinese
+    (define legal-formats
+      '(american chinese german indian irish))
+
     (define date-display-format 
-      (make-parameter 'Irish
+      (make-parameter 'irish
 		      (lambda (s)
-			(unless (symbol? s)
-				(error 'date-display-format
-				       "format specification must be a symbol"))
+			(unless (memq s legal-formats)
+				(raise-type-error 'date-display-format
+						  (format "symbol in ~a" legal-formats)
+						  s))
 			s)))
 
     (define month/number->string
@@ -91,10 +94,10 @@
 	  (let-values
 	      ([(day time)
 		(case (date-display-format)
-		  [(american American) 
+		  [(american) 
 		   (values (list week-day ", " month " " day day-th ", " year)
 			   (list " " hour12 ":" minute ":" second am-pm))]
-		  [(chinese Chinese)
+		  [(chinese)
 		   (values
 		    (list year "/" num-month "/" day
 			  " xingqi" (case (date-week-day date)
@@ -107,13 +110,13 @@
 				      [(6) "liu"]
 				      [else ""]))
 		    (list " " hour24 ":" minute ":" second))]
-		  [(indian Indian) 
+		  [(indian) 
 		   (values (list day "-" num-month "-" year)
 			   (list " " hour12 ":" minute ":" second am-pm))]
-		  [(german German) 
+		  [(german) 
 		   (values (list day ". " month " " year)
 			   (list ", " hour24 "." minute))]
-		  [(irish Irish) 
+		  [(irish) 
 		   (values (list week-day ", " day day-th " " month " " year)
 			   (list ", " hour12 ":" minute am-pm))]
 		  [else (error 'date->string "unknown date-display-format: ~s"

@@ -21,11 +21,9 @@
 #include <errno.h>
 #endif
 
-typedef short Scheme_Type;
-#define MZTAG_REQUIRED
+typedef short Type_Tag;
 
 #include "gc2.h"
-#include "../src/stypes.h"
 
 #define TIME 0
 #define SEARCH 0
@@ -42,7 +40,14 @@ unsigned long (*GC_get_thread_stack_base)(void);
 void **GC_variable_stack;
 int GC_variable_count;
 
-Traverse_Proc tag_table[_scheme_last_type_];
+Type_Tag weak_box_tag;
+
+#define gc_finalization_tag 256
+#define gc_weak_array_tag 257
+
+#define _num_tags_ 258
+
+Traverse_Proc tag_table[_num_tags_];
 
 #define STARTING_PLACE ((void *)0x400000)
 
@@ -57,8 +62,6 @@ static long old_size;
 static char *alloc_bitmap;
 
 static char zero_sized[4];
-
-static GC_Weak_Box *weak_boxes;
 
 static void *park[2];
 
@@ -189,7 +192,7 @@ void GC_add_roots(void *start, void *end)
 /******************************************************************************/
 
 typedef struct GC_Weak_Array {
-  Scheme_Type type;
+  Type_Tag type;
   short keyex;
   long count;
   void *replace_val;
@@ -226,6 +229,7 @@ void *GC_malloc_weak_array(size_t size_in_bytes, void *replace_val)
 					    - sizeof(void *));
 
   replace_val = park[0];
+  park[0] = NULL;
 
   w->type = scheme_rt_gc_weak_array;
   w->replace_val = replace_val;
@@ -233,6 +237,18 @@ void *GC_malloc_weak_array(size_t size_in_bytes, void *replace_val)
   
   return &(w->data[0]);
 }
+
+typedef struct GC_Weak_Box {
+  /* The first three fields are mandated by the GC spec: */
+  Type_Tag type;
+  short keyex;
+  struct Scheme_Object *val;
+  /* The rest is up to us: */
+  void **secondary_erase;
+  struct GC_Weak_Box *next;
+} GC_Weak_Box;
+
+static GC_Weak_Box *weak_boxes;
 
 static int mark_weak_box(void *p, Mark_Proc mark)
 {
@@ -249,10 +265,32 @@ static int mark_weak_box(void *p, Mark_Proc mark)
   return gcBYTES_TO_WORDS(sizeof(GC_Weak_Box));
 }
 
+void *GC_malloc_weak_box(void *p, void **secondary)
+{
+  GC_Weak_Box *w;
+
+  /* Allcation might trigger GC, so we use park: */
+  park[0] = p;
+  park[1] = secondary;
+
+  w = (GC_Weak_Box *)GC_malloc_one_tagged(sizeof(GC_Weak_Box));
+
+  p = park[0];
+  park[0] = NULL;
+  secondary = (void **)park[1];
+  park[1] = NULL;
+  
+  w->type = weak_box_tag;
+  w->val = p;
+  w->secondary_erase = secondary;
+
+  return w;
+}
+
 /******************************************************************************/
 
 typedef struct Fnl {
-  Scheme_Type type;
+  Type_Tag type;
   short eager_level;
   void *p;
   void (*f)(void *p, void *data);
@@ -382,8 +420,8 @@ void GC_end_stubborn_change(void *s)
 {
 }
 
-#define SKIP ((Scheme_Type)0x7000)
-#define MOVED ((Scheme_Type)0x3000)
+#define SKIP ((Type_Tag)0x7000)
+#define MOVED ((Type_Tag)0x3000)
 
 #if SEARCH
 void *search_for;
@@ -409,7 +447,7 @@ static void *mark(void *p)
     return (void *)((char *)mark(diff + (char *)GC_alloc_space) + (diff1 - diff));
   } else {
     if (p < (void *)tagged_high) {
-      Scheme_Type tag = *(Scheme_Type *)p;
+      Type_Tag tag = *(Type_Tag *)p;
       long size;
       void *naya;
 	
@@ -417,7 +455,7 @@ static void *mark(void *p)
 	return ((void **)p)[1];
 
 #if SAFETY	
-      if ((tag < 0) || (tag >= _scheme_last_type_) || !tag_table[tag]) {
+      if ((tag < 0) || (tag >= _num_tags_) || !tag_table[tag]) {
 	*(int *)0x0 = 1;
       }
 #endif
@@ -425,7 +463,7 @@ static void *mark(void *p)
       size = tag_table[tag](p, NULL);
       if (!(size & 0x1)) {
 	if ((long)new_tagged_high & 0x4) {
-	  ((Scheme_Type *)new_tagged_high)[0] = SKIP;
+	  ((Type_Tag *)new_tagged_high)[0] = SKIP;
 	  new_tagged_high += 1;
 	}
       }
@@ -440,7 +478,7 @@ static void *mark(void *p)
       }
 	
       naya = new_tagged_high;
-      ((Scheme_Type *)p)[0] = MOVED;
+      ((Type_Tag *)p)[0] = MOVED;
       ((void **)p)[1] = naya;
 	
       new_tagged_high += size;
@@ -591,9 +629,9 @@ void gcollect(int needsize)
   PRINTTIME((STDERR, "gc: start: %ld\n", GETTIMEREL()));
 
   if (!initialized) {
-    tag_table[scheme_weak_box_type] = mark_weak_box;
-    tag_table[scheme_rt_gc_weak_array] = mark_weak_array;
-    tag_table[scheme_rt_gc_finalization] = mark_finalizer;
+    tag_table[weak_box_tag] = mark_weak_box;
+    tag_table[weak_array_tag] = mark_weak_array;
+    tag_table[gc_finalization_tag] = mark_finalizer;
     GC_add_roots(&fnls, (char *)&fnls + sizeof(fnls) + 1);
     GC_add_roots(&run_queue, (char *)&run_queue + sizeof(run_queue) + 1);
     GC_add_roots(&last_in_queue, (char *)&last_in_queue + sizeof(last_in_queue) + 1);
@@ -653,7 +691,7 @@ void gcollect(int needsize)
   p = ((long *)GC_alloc_space);
   diff = ((char *)p - (char *)GC_alloc_space) >> 2;
   while (p < (long *)tagged_high) {
-    Scheme_Type tag = *(Scheme_Type *)p;
+    Type_Tag tag = *(Type_Tag *)p;
     if (tag == SKIP) {
       p++;
       diff++;
@@ -665,7 +703,7 @@ void gcollect(int needsize)
       /* printf("tag %d\n", tag); */
 
 #if SAFETY
-      if ((tag < 0) || (tag >= _scheme_last_type_) || !tag_table[tag]) {
+      if ((tag < 0) || (tag >= _num_tags_) || !tag_table[tag]) {
 	*(int *)0x0 = 1;
       }
 #endif
@@ -713,7 +751,7 @@ void gcollect(int needsize)
       iterations++;
       
       while (tagged_mark < new_tagged_high) {
-	Scheme_Type tag = *(Scheme_Type *)tagged_mark;
+	Type_Tag tag = *(Type_Tag *)tagged_mark;
 	
 	if (tag == SKIP)
 	  tagged_mark++;
@@ -721,7 +759,7 @@ void gcollect(int needsize)
 	  long size;
 	  
 #if SAFETY
-	  if ((tag < 0) || (tag >= _scheme_last_type_) || !tag_table[tag]) {
+	  if ((tag < 0) || (tag >= _num_tags_) || !tag_table[tag]) {
 	    *(int *)0x0 = 1;
 	  }
 #endif
@@ -764,7 +802,7 @@ void gcollect(int needsize)
 	    } else {
 	      /* Array of tagged */
 	      int i, elem_size;
-	      Scheme_Type tag = *(Scheme_Type *)mp;
+	      Type_Tag tag = *(Type_Tag *)mp;
 	      
 	      elem_size = tag_table[tag](mp, mark);
 	      mp += elem_size;
@@ -850,7 +888,8 @@ void gcollect(int needsize)
       if (v == wb->val) {
 	wb->val = NULL;
 	if (wb->secondary_erase) {
-	  ((GC_Weak_Box *)wb->secondary_erase)->val = NULL;
+	  *(wb->secondary_erase) = NULL;
+	  wb->secondary_erase = NULL;
 	}
       } else
 	wb->val = v;
@@ -934,7 +973,7 @@ void *GC_resolve(void *p)
 {
   if (!((long)p & 0x1) && (p >= GC_alloc_space) && (p <= GC_alloc_top)) {  
     if (p < (void *)tagged_high) {
-      Scheme_Type tag = *(Scheme_Type *)p;
+      Type_Tag tag = *(Type_Tag *)p;
 
       if (tag == MOVED)
 	return ((void **)p)[1];
@@ -967,7 +1006,7 @@ static void *malloc_tagged(size_t size_in_bytes)
 	gcollect(size_in_bytes);
 	return malloc_tagged(size_in_bytes);
       }
-      ((Scheme_Type *)tagged_high)[0] = SKIP;
+      ((Type_Tag *)tagged_high)[0] = SKIP;
       tagged_high += 1;
     }
   }
@@ -1060,7 +1099,7 @@ void GC_free(void *s) /* noop */
 {
 }
 
-void GC_register_traverser(Scheme_Type tag, Traverse_Proc proc)
+void GC_register_traverser(Type_Tag tag, Traverse_Proc proc)
 {
   tag_table[tag] = proc;
 }

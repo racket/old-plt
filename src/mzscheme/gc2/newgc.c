@@ -721,7 +721,7 @@ char *flags_to_strtype(MPage *page) {
 void dump_mpage_information(FILE *file) {
   MPage *work;
   int i = 0, j;
-  char *format = "%10p                  %i      %5i    %3s (%i)\n";
+  char *format = "%10p                  %2i      %5i    %3s (%i)\n";
   UWORD pages = 0, possible = 0;
 
   fprintf(file, "Memory page information:\n");
@@ -774,10 +774,14 @@ typedef struct OwnerTableEntry {
   UWORD mem_use[GENERATIONS];
 } OwnerTableEntry;
 
-OwnerTableEntry *owner_table[(1 << OWNER_BITS)];
-int owner_table_top = 1;
+OwnerTableEntry **owner_table = NULL;
+int owner_table_top = 0;
+
+#define OWNER_TABLE_ADD_SIZE		10
+#define INIT_OWNER_TABLE_SIZE		5
 
 void dump_ownerset_information(FILE *file) {
+  UWORD size = 0;
   int i;
 
   fprintf(file, "\nOwner Set Information:\n");
@@ -795,9 +799,29 @@ void dump_ownerset_information(FILE *file) {
 	      memsize);
     }
   }
+
+  /* compute the amount of space we're using to cope with all this */
+  size += owner_table_top * sizeof(OwnerTableEntry*);
+  for(i = 0; i < owner_table_top; i++) {
+    if(owner_table[i]) {
+      CustodianList *clist;
+      UnionList *ulist;
+
+      size += sizeof(OwnerTableEntry);
+      for(clist = owner_table[i]->custs; clist; clist = clist->next) 
+	size += sizeof(CustodianList);
+      for(ulist = owner_table[i]->unions; ulist; ulist = ulist->next)
+	size += sizeof(UnionList);
+    }
+  }
+
+  fprintf(file, "\nOwner table contains %i entries\n", owner_table_top);
+  fprintf(file, "Memory accounting information uses %li bytes\n", size);
 }
 
 UWORD custodian_to_ownerset(Scheme_Custodian *cust) {
+  CustodianList *custs = NULL;
+  Scheme_Custodian *cur = cust;
   UWORD i, j;
 
   for(i = 0; i < owner_table_top; i++) {
@@ -806,37 +830,44 @@ UWORD custodian_to_ownerset(Scheme_Custodian *cust) {
     }
   }
 
-  for(i = 0; i < (1 << OWNER_BITS); i++) {
-    if(!owner_table[i]) {
-      CustodianList *custs = NULL;
-      Scheme_Custodian *cur = cust;
+  for(i = 0; i < owner_table_top; i++) 
+    if(!owner_table[i]) break;
 
-      while(cur) {
-	CustodianList *temp = (CustodianList*)malloc(sizeof(CustodianList));
-	Scheme_Object *box;
-	temp->cust = cur;
-	temp->next = custs;
-	custs = temp;
-	box = (Scheme_Object*)cur->parent;
-	cur = box ? (Scheme_Custodian*)box->u.two_ptr_val.ptr1 : NULL;
-      }
+  if(i >= owner_table_top) {
+    /* there wasn't currently enough room for this entry, so we need
+       to allocate more room. First we need to check that we don't
+       already have too many entries */
+    i = owner_table_top;
 
-      owner_table[i] = (OwnerTableEntry*)malloc(sizeof(OwnerTableEntry));
-      owner_table[i]->creator = cust;
-      owner_table[i]->custs = custs;
-      owner_table[i]->unions = NULL;
-      for(j = 0; j < GENERATIONS; j++) {
-	owner_table[i]->mem_use[j] = 0;
-      }
-      if(i >= owner_table_top) {
-	owner_table_top = i + 1;
-      }
-      return i;
+    owner_table_top += OWNER_TABLE_ADD_SIZE;
+    if(owner_table_top >= (1 << OWNER_BITS)) {
+      fprintf(stderr, "No more room for custodians. Accounting is dying.\n");
+      return 0;
     }
+    owner_table = realloc(owner_table, owner_table_top
+			  * sizeof(OwnerTableEntry*));
+    bzero(&(owner_table[i]), OWNER_TABLE_ADD_SIZE * sizeof(OwnerTableEntry*));
   }
 
-  fprintf(stderr, "No more room for custodians. Accounting is dying.\n");
-  return 0;
+  while(cur) {
+    CustodianList *temp = (CustodianList*)malloc(sizeof(CustodianList));
+    Scheme_Object *box;
+    temp->cust = cur;
+    temp->next = custs;
+    custs = temp;
+    box = (Scheme_Object*)cur->parent;
+    cur = box ? (Scheme_Custodian*)box->u.two_ptr_val.ptr1 : NULL;
+  }
+  
+  owner_table[i] = (OwnerTableEntry*)malloc(sizeof(OwnerTableEntry));
+  owner_table[i]->creator = cust;
+  owner_table[i]->custs = custs;
+  owner_table[i]->unions = NULL;
+  for(j = 0; j < GENERATIONS; j++) {
+    owner_table[i]->mem_use[j] = 0;
+  }
+
+  return i;
 }
 
 #define ownerset_account_memory(o, g, s) owner_table[o]->mem_use[g] += s
@@ -904,25 +935,32 @@ int ownerset_union(UWORD set1, UWORD set2) {
       }
     }
 
-    res = 0;
-    while(res < (1 << OWNER_BITS)) {
-      if(!owner_table[res]) {
-	break;
-      }
-      if(++res == (1 << OWNER_BITS)) {
-	fprintf(stderr, "Out of owner slots. Accounting going bad.\n");
+    for(res = 0; res < owner_table_top; res++)
+      if(!owner_table[res]) break;
+    
+    if(res >= owner_table_top) {
+      /* there wasn't currently enough room for this entry, so we need
+	 to allocate more room. First we need to check that we don't
+	 already have too many entries */
+      res = owner_table_top;
+
+      owner_table_top += OWNER_TABLE_ADD_SIZE;
+      if(owner_table_top >= (1 << OWNER_BITS)) {
+	fprintf(stderr, "No more room for custodians. Accounting is dying.\n");
 	return 0;
       }
+      owner_table = realloc(owner_table, owner_table_top
+			    * sizeof(OwnerTableEntry*));
+      bzero(&(owner_table[res]), OWNER_TABLE_ADD_SIZE 
+	                       * sizeof(OwnerTableEntry*));
     }
+
     owner_table[res] = (OwnerTableEntry*)malloc(sizeof(OwnerTableEntry));
     owner_table[res]->creator = NULL;
     owner_table[res]->custs = combo;
     owner_table[res]->unions = NULL;
     for(i = 0; i < GENERATIONS; i++) {
       owner_table[res]->mem_use[i] = 0;
-    }
-    if(res >= owner_table_top) {
-      owner_table_top = res + 1;
     }
   }
 
@@ -965,8 +1003,12 @@ UWORD current_owner() {
     init();
     return res;
   } else {
-    if(!owner_table[0]) {
+    if(!owner_table) {
       UWORD i;
+
+      owner_table = (OwnerTableEntry**)malloc(INIT_OWNER_TABLE_SIZE
+					      * sizeof(OwnerTableEntry*));
+      bzero(owner_table, INIT_OWNER_TABLE_SIZE * sizeof(OwnerTableEntry*));
       owner_table[0] = (OwnerTableEntry*)malloc(sizeof(OwnerTableEntry));
       owner_table[0]->creator = NULL;
       owner_table[0]->custs = NULL;
@@ -974,6 +1016,7 @@ UWORD current_owner() {
       for(i = 0; i < GENERATIONS; i++) {
 	owner_table[0]->mem_use[i] = 0;
       }
+      owner_table_top = INIT_OWNER_TABLE_SIZE;
     }
     return 0;
   }
@@ -1029,14 +1072,20 @@ void fixup_ownersets() {
      in their list and/or fixup the good custodians */
   for(i = 0; i < owner_table_top; i++) {
     if(owner_table[i]) {
-      CustodianList *temp;
-      for(temp = owner_table[i]->custs; temp; temp = temp->next) {
+      CustodianList *temp = owner_table[i]->custs;
+      owner_table[i]->custs = NULL;
+
+      while(temp) {
+	CustodianList *next = temp->next;
 	if(is_marked(temp->cust)) {
 	  gcFIXUP(temp->cust);
-	} else {
-	  ownerset_delete(i);
-	  temp = NULL;
-	}
+	  temp->next = owner_table[i]->custs;
+	  owner_table[i]->custs = NULL;
+	} 
+	temp = next;
+      }
+      if(!owner_table[i]->creator && !owner_table[i]->custs) {
+	ownerset_delete(i);
       }
     }
   }
@@ -2456,6 +2505,8 @@ void garbage_collect(int force_full) {
 #endif    
     collection++;
 
+    /* printf("Collection number %li (mark_gen = %i)\n", collection, mark_gen);*/
+    fflush(stdout);
     /* notify MzScheme that we're about to collect*/
     if(GC_collect_start_callback)
       GC_collect_start_callback();

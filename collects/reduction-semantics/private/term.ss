@@ -27,11 +27,12 @@
   
   (define-syntax (term-let stx)
     (syntax-case stx ()
-      [(_ ([x rhs] ...) body)
+      [(_ ([x rhs] ...) body1 body2 ...)
        (syntax
         (with-syntax ([x rhs] ...)
-          body))]
-      [_ (raise-syntax-error 'term-let "malformed term" stx)]))
+          (begin body1 body2 ...)))]
+      [(_ x)
+       (raise-syntax-error 'term-let "expected at least one body" stx)]))
 #|  
   (define (test stx exp)
     (unless (equal? (eval stx) exp)

@@ -119,14 +119,21 @@
       
       (define array null)
       (define rt #f)
+      (define/public (get-rt) rt)
       
-      (define/private (check-runtime-type val) 
-        (if (symbol? (runtime-type-type rt))
-            (case (runtime-type-type rt)
-              ((byte short int long) (not (inexact? val)))
-              ((char) (char? val))
-              ((float double) (inexact? val)))
-            (is-a? val (runtime-type-type rt))))
+      (define/private (check-runtime-type val)
+        (if (<= (runtime-type-dim rt) 1)
+            (if (symbol? (runtime-type-type rt))
+                (case (runtime-type-type rt)
+                  ((byte short int long) (not (inexact? val)))
+                  ((char) (char? val))
+                  ((float double) (inexact? val)))
+                (is-a? val (runtime-type-type rt)))
+            (and
+             (is-a? val java-array)
+             (= (sub1 (runtime-type-dim rt))
+                (runtime-type-dim (send val get-rt)))
+             (eq? (runtime-type-type rt) (runtime-type-type (send val get-rt))))))
       
       (define/public (check-prim-type type dim)
         (and (eq? (runtime-type-type rt) type)
@@ -136,7 +143,7 @@
              #;(= dim (runtime-type-dim rt))))
       
       (define/private (default-val) 
-        (if (symbol? (runtime-type-type rt))
+        (if (and (= 1(runtime-type-dim rt)) (symbol? (runtime-type-type rt)))
             (case (runtime-type-type rt)
               ((byte short int long float double) 0)
               ((char) #\null))
@@ -194,7 +201,9 @@
                   (let ((vec (make-vector (car sizes))))
                     (let loop ((idx 0))
                       (unless (>= idx (car sizes))
-                        (vector-set! vec idx (make-java-array type (cdr sizes) null))
+                        (vector-set! vec idx (make-java-array (make-runtime-type (runtime-type-type type)
+                                                                                 (sub1 (runtime-type-dim type)))
+                                                              (cdr sizes) null))
                         (loop (add1 idx))))
                     vec))))
       
@@ -211,7 +220,7 @@
   
   (define (is-java-array? obj) (is-a? obj java-array))
   
-  (define-struct runtime-type (type dim))
+  (define-struct runtime-type (type dim) (make-inspector))
   
   (define (array->list array start stop)
     (if (= start stop)

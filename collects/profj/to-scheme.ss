@@ -1675,8 +1675,8 @@
   ;create-array: (list syntax) type src -> syntax
   (define (create-array sizes type src)
     (cond
-      ((null? sizes) 
-       (error 'create-array "Internal Error: create array given a null list")) 
+      ((null? sizes)
+       (error 'create-array "Internal Error: create array given a null list"))
       ((null? (cdr sizes))
        (make-syntax #f `(make-java-array ,type ,(car sizes) null) (build-src src)))
       (else
@@ -1686,21 +1686,18 @@
   (define (translate-array-alloc-init type dim init src)
     (initialize-array type (array-init-vals init)))
     
-  ;converted
   ;translate-type-spec: type-spec -> syntax
-  (define translate-type-spec
-    (lambda (type)
-      (make-syntax #f
-                   `(make-runtime-type ,(if (symbol? (type-spec-name type))
-                                            `(quote ,(type-spec-name type))
-                                            ;Come Back : losses src locations
-                                            (build-identifier 
-                                             (if (null? (name-path (type-spec-name type)))
-                                                 (id-string (name-id (type-spec-name type)))
-                                                 (append (map id-string (name-path (type-spec-name type)))
-                                                         (list (id-string (name-id (type-spec-name type))))))))
-                                       ,(type-spec-dim type))
-                   (build-src (type-spec-src type)))))
+  (define (translate-type-spec type)
+    (make-syntax #f
+                 `(make-runtime-type ,(if (symbol? (type-spec-name type))
+                                          `(quote ,(type-spec-name type))
+                                          (build-identifier 
+                                           (if (null? (name-path (type-spec-name type)))
+                                               (id-string (name-id (type-spec-name type)))
+                                               (append (map id-string (name-path (type-spec-name type)))
+                                                       (list (id-string (name-id (type-spec-name type))))))))
+                                     ,(type-spec-dim type))
+                 (build-src (type-spec-src type))))
   
   ;converted
   ;translate-array-access: syntax syntax src -> syntax
@@ -1768,63 +1765,63 @@
                      (build-src src))
         (make-syntax #f `(is-a? ,expr ,(get-class-name type)) (build-src src))))
   
-  ;converted
   ;translate-assignment: (U access array-access) symbol syntax expression ?? src src -> syntax
-  (define translate-assignment
-    (lambda (name op expr assign-to type key src)
-      (let ((expression (lambda (name) (case op
-                                         ((=) expr)
-                                         ((*=) `(* ,name ,expr))
-                                         ((/=) `(/ ,name ,expr))
-                                         ((+=) `(+ ,name ,expr))
-                                         ((-=) `(- ,name ,expr))
-                                         ((%= <<= >>= >>>= &= ^= or=) 
-                                          (error 'translate-assignment "Only supports =, +=, -=, *=, & /= at this time"))))))
-        (cond 
-          ((array-access? name)
-           (translate-array-mutation name expression assign-to src))
-          ((access? name)
-           (let* ((access (access-name name))
-                  (src-h (build-src src))
-                  (set-h 
-                   (lambda (id)
-                     (make-syntax #f `(begin (,(create-syntax #f 'set! (build-src key))
-                                              ,id ,(expression id)) ,id) src-h))))
-             (cond
-               ((local-access? access)
-                (set-h (translate-id (build-var-name (id-string (local-access-name access)))
-                                     (id-src (local-access-name access)))))
-               ((field-access? access)
-                ;Come Back : loses source information
-                (let* ((field (id-string (field-access-field access)))
-                       (field-src (id-src (field-access-field access)))
-                       (vaccess (field-access-access access))
-                       (obj (field-access-object access))
-                       (expr (if obj (translate-expression obj))))
-                  (cond
-                    ((var-access-static? vaccess)
-                     (set-h (build-identifier (build-static-name (build-var-name field)
-                                                                 (build-identifier (var-access-class vaccess))))))
-                    ((not obj) (set-h (translate-id (build-var-name field) field-src)))
-                    (else
-                     (let ((setter (create-set-name field (var-access-class vaccess)))
-                           (getter (create-get-name field (var-access-class vaccess))))
-                       (make-syntax #f `(begin 
-                                          (,setter ,expr ,(expression `(,getter ,expr)))
-                                          (,getter ,expr))
-                                    src-h)))))))))))))
+  (define (translate-assignment name op expr assign-to type key src)
+    (let ((expression (lambda (name) (case op
+                                       ((=) expr)
+                                       ((*=) `(* ,name ,expr))
+                                       ((/=) `(/ ,name ,expr))
+                                       ((+=) `(+ ,name ,expr))
+                                       ((-=) `(- ,name ,expr))
+                                       ((%= <<= >>= >>>= &= ^= or=) 
+                                        (error 'translate-assignment "Only supports =, +=, -=, *=, & /= at this time"))))))
+      (cond 
+        ((array-access? name)
+         (translate-array-mutation name expression assign-to src))
+        ((access? name)
+         (let* ((access (access-name name))
+                (src-h (build-src src))
+                (set-h 
+                 (lambda (id)
+                   (make-syntax #f `(begin (,(create-syntax #f 'set! (build-src key))
+                                            ,id ,(expression id)) ,id) src-h))))
+           (cond
+             ((local-access? access)
+              (set-h (translate-id (build-var-name (id-string (local-access-name access)))
+                                   (id-src (local-access-name access)))))
+             ((field-access? access)
+              (let* ((field (id-string (field-access-field access)))
+                     (field-src (id-src (field-access-field access)))
+                     (vaccess (field-access-access access))
+                     (obj (field-access-object access))
+                     (expr (if obj (translate-expression obj))))
+                (cond
+                  ((var-access-static? vaccess)
+                   (set-h (build-identifier (build-static-name (build-var-name field)
+                                                               (build-identifier (var-access-class vaccess))))))
+                  ((not obj) (set-h (translate-id (build-var-name field) field-src)))
+                  (else
+                   (let ((setter (create-set-name field (var-access-class vaccess)))
+                         (getter (create-get-name field (var-access-class vaccess)))
+                         (name (gensym 'my-expr)))
+                     (make-syntax #f
+                                  `(let ((,name ,expr))
+                                     (,setter ,name ,(expression `(,getter ,name)))
+                                     (,getter ,name))
+                                  src-h))))))))))))
   
-  ;converted
   ;translate-array-mutation: array-access (syntax -> (list symbol syntax syntax)) expression src -> syntax
-  (define translate-array-mutation
-    (lambda (array expression expr src)
-      (let ((array-name (translate-expression (array-access-name array)))
-            (array-index (translate-expression (array-access-index array))))
-        (make-syntax #f
-                     `(begin 
-                        (send ,array-name set ,array-index ,(expression `(send ,array-name access ,array-index)))
-                        (send ,array-name access ,array-index))
-                     (build-src src)))))
+  (define (translate-array-mutation array expression expr src)
+    (let ((array-name (translate-expression (array-access-name array)))
+          (array-index (translate-expression (array-access-index array)))
+          (name (gensym 'my-expr))
+          (index (gensym 'my-index)))
+      (make-syntax #f
+                   `(let ((,name ,array-name)
+                          (,index ,array-index))
+                      (send ,name set ,index ,(expression `(send ,name access ,index)))
+                      (send ,name access ,index))
+                   (build-src src))))
   
   ;translate-id: string src -> syntax
   (define translate-id

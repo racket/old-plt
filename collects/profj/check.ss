@@ -1817,6 +1817,7 @@
     (let ((type (type-spec-to-type elt-type c-class level type-recs)))
       (when (ref-type? type)
         (add-required c-class (ref-type-class/iface type) (ref-type-path type) type-recs))
+      (set-type-spec-dim! elt-type (+ (length exps) dim))
       (for-each (lambda (e)
                   (let ((t (check-sub-exp e)))
                     (unless (prim-integral-type? t)

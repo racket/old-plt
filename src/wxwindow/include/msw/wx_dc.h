@@ -21,6 +21,7 @@
 
 class wxRegion;
 class wxGL;
+class wxGLConfig;
 class wxPath;
 
 // Since Windows handles DCs quite uniformly, we can have
@@ -59,6 +60,7 @@ class wxDC: public wxbDC
   HPALETTE old_palette;
 
   wxGL *wx_gl;
+  wxGLConfig *wx_gl_cfg;
 
   wxDC(void);
   ~wxDC(void);
@@ -239,7 +241,7 @@ public:
 
   virtual int Ok() = 0;
 
-  virtual void Reset(HDC dc, int offscreen) = 0;
+  virtual void Reset(wxGLConfig *cfg, HDC dc, int offscreen) = 0;
 
   virtual void SwapBuffers(void) = 0;
   virtual void ThisContextCurrent(void) = 0;

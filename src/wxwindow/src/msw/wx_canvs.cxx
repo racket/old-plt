@@ -30,15 +30,15 @@ wxCanvas::wxCanvas (void)
 }
 
 wxCanvas::wxCanvas (wxWindow *parent, int x, int y, int width, int height, long style,
-	  char *name):
+	  char *name, wxGLConfig *cfg):
 wxbCanvas (parent, x, y, width, height, style, name)
 {
-  Create(parent, x, y, width, height, style, name);
+  Create(parent, x, y, width, height, style, name, cfg);
 }
 
 Bool wxCanvas::
 Create (wxWindow * parent, int x, int y, int width, int height, long style,
-	char *name)
+	char *name, cfg)
 {
   wxWnd *cparent;
   DWORD msflags = 0, exflags = 0;
@@ -93,7 +93,8 @@ Create (wxWindow * parent, int x, int y, int width, int height, long style,
     SetScrollbars(style & wxHSCROLL, style & wxVSCROLL,
 		  0, 0, 1, 1, 0, 0, FALSE);
 
-  wx_dc = new wxCanvasDC (this);
+  wx_dc = new wxCanvasDC(this);
+  wx_dc->gl_cfg = cfg;
 
   if (wxSubType(parent->__type, wxTYPE_PANEL))
     ((wxPanel *)parent)->AdvanceCursor(this);

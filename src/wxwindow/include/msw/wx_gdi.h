@@ -25,6 +25,9 @@ class wxFont: public wxbFont
   wxList *rotated_font;
   wxList *substitute_font;
 
+  Font *c_f;
+  HFONT c_f_cfont;
+
   wxFont(void);
   wxFont(int PointSize, int Family, int Style, int Weight, Bool underlined = FALSE, 
 	 int smoothing = wxSMOOTHING_DEFAULT, Bool sip = FALSE, double Rotation = 0.0);
@@ -35,6 +38,8 @@ class wxFont: public wxbFont
 	      int smoothing, Bool sip, double Rotation);
   HFONT BuildInternalFont(HDC dc, Bool screen_font = TRUE, double angle = 0.0);
   inline HFONT GetInternalFont(HDC dc, double angle = 0.0) { return BuildInternalFont(dc, TRUE, angle); }
+
+  Font *GraphicsFont(HFONT cf);
 
   Bool ScreenGlyphAvailable(int c);
   Bool GlyphAvailable(int c, HDC hdc, int screen_font);
@@ -110,6 +115,7 @@ class wxBrush: public wxbBrush
 // Bitmap
 class wxDC;
 class wxItem;
+class wxGLConfig;
 
 class wxBitmap: public wxObject
 {
@@ -130,6 +136,7 @@ class wxBitmap: public wxObject
   wxDC *selectedInto; // So bitmap knows whether it's been selected into
                       // a device context (for error checking)
   Bool selectedIntoDC;
+  wxGLConfig *gl_cfg;
 
   wxBitmap(void); // Platform-specific
 
@@ -170,6 +177,9 @@ class wxBitmap: public wxObject
 
   HBITMAP GetLabelBitmap(Bool panel_bg);
   void ReleaseLabel();
+
+  void SetGLConfig(wxGLConfig *gl_cfg);
+  wxGLConfig *GetGLConfig(void);
 };
 
 // Cursor

@@ -146,7 +146,7 @@ wxDC::~wxDC(void)
     delete[] filename;
 
   if (wx_gl) {
-    wx_gl->Reset(0, 0);
+    wx_gl->Reset(NULL, 0, 0);
     wx_gl = NULL;
   }
 
@@ -236,7 +236,7 @@ wxGL *wxDC::GetGL()
   if (!wx_gl) {
     if (__type == wxTYPE_DC_CANVAS) {
       wx_gl = new wxWinGL();
-      wx_gl->Reset(cdc, 0);
+      wx_gl->Reset(wx_gl_cfg, cdc, 0);
     }
   }
 
@@ -1607,7 +1607,6 @@ wchar_t *convert_to_drawable_format(const char *text, int d, int ucs4, long *_ul
     ulen = scheme_utf8_decode((unsigned char *)text, d, theStrlen, 
 			      (unsigned int *)unicode, 0, -1, 
 			      NULL, 1 /*UTF-16*/, '?');
-
     if (is_sym) {
       int i, v;
       for (i = 0; i < ulen; i++) {
@@ -2622,7 +2621,7 @@ wxCanvasDC::wxCanvasDC(wxCanvas *the_canvas) : wxbCanvasDC()
 wxCanvasDC::~wxCanvasDC(void)
 {
   if (wx_gl) {
-    wx_gl->Reset(0, 0);
+    wx_gl->Reset(NULL, 0, 0);
     wx_gl = NULL;
   }
 
@@ -2898,7 +2897,7 @@ void wxMemoryDC::SelectObject(wxBitmap *bitmap)
   ReleaseGraphics();
 
   if (wx_gl)
-    wx_gl->Reset(0, 1);
+    wx_gl->Reset(NULL, 0, 1);
 
   if (!bitmap)
   {
@@ -2989,7 +2988,7 @@ void wxMemoryDC::SelectObject(wxBitmap *bitmap)
   }
 
   if (wx_gl && selected_bitmap)
-    wx_gl->Reset(cdc, 1);
+    wx_gl->Reset(selected_bitmap->gl_cfg, cdc, 1);
 }
 
 wxBitmap* wxMemoryDC::GetObject(void)
@@ -3023,7 +3022,7 @@ wxGL *wxMemoryDC::GetGL()
       }
 
       wx_gl = new wxWinGL();
-      wx_gl->Reset(cdc, 1);
+      wx_gl->Reset(selected_bitmap ? selected_bitmap->gl_cfg : gl_cfg, cdc, 1);
     }
   }
 
@@ -3055,7 +3054,7 @@ wxWinGL::wxWinGL()
 {
 }
 
-void wxWinGL::Reset(HDC dc, int offscreen)
+void wxWinGL::Reset(wxGLConfig *cfg, HDC dc, int offscreen)
 {
   if (current_gl_context == this) {
     wglMakeCurrent(NULL, NULL);
@@ -3072,7 +3071,7 @@ void wxWinGL::Reset(HDC dc, int offscreen)
   }
 
   if (dc) {
-    int pixelFormat;
+    int pixelFormat = 0;
 #ifdef MZ_PRECISE_GC
     START_XFORM_SKIP;
 #endif
@@ -3081,13 +3080,13 @@ void wxWinGL::Reset(HDC dc, int offscreen)
       1,				/* version */
       (PFD_SUPPORT_OPENGL | PFD_DRAW_TO_WINDOW | PFD_DOUBLEBUFFER),
       PFD_TYPE_RGBA,			/* color type */
-      16,				/* prefered color depth */
-      0, 0, 0, 0, 0, 0,		/* color bits (ignored) */
+      24,				/* prefered color depth */
+      0, 0, 0, 0, 0, 0,		        /* color bits (ignored) */
       0,				/* no alpha buffer */
       0,				/* alpha bits (ignored) */
       0,				/* no accumulation buffer */
       0, 0, 0, 0,			/* accum bits (ignored) */
-      16,				/* depth buffer */
+      0,				/* depth buffer */
       0,				/* no stencil buffer */
       0,				/* no auxiliary buffers */
       PFD_MAIN_PLANE,			/* main layer */
@@ -3105,8 +3104,78 @@ void wxWinGL::Reset(HDC dc, int offscreen)
       pfd.cColorBits = 32;
       pfd.cDepthBits = 32;
     }
-    
-    pixelFormat = ChoosePixelFormat(dc, &pfd);
+
+    if (cfg) {
+      pdf.cDepthBits = cfg->depth;
+      pdf.cStencilBits = cfg->stencil;
+      if (cfg->stereo)
+	pfd.dwFlags |= PFD_STEREO;
+      if (cfg->doubleBuffered && !offscreen)
+	pfd.dwFlags |= PFD_DOUBLEBUFFER;
+      else
+	pfd.dwFlags -= (pfd.dwFlags & PFD_DOUBLEBUFFER);
+      pdf.cAccumBits = 4 * cfg->accum;
+      pdf.cAccumRedBits = cfg->accum;
+      pdf.cAccumBlueBits = cfg->accum;
+      pdf.cAccumGreenBits = cfg->accum;
+      pdf.cAccumAlphaBits = cfg->accum;
+    }
+
+    if (afg->multisample) {
+      /* Based on code from http://nehe.gamedev.net/data/lessons/lesson.asp?lesson=46 */
+      PFNWGLCHOOSEPIXELFORMATARBPROC wglChoosePixelFormatARB;
+
+      wglChoosePixelFormatARB = (PFNWGLCHOOSEPIXELFORMATARBPROC)wglGetProcAddress("wglChoosePixelFormatARB");
+      if (wglChoosePixelFormatARB) {
+	int a[30];
+	bool valid;
+	UINT numFormats;
+	float fAttributes[] = {0,0};
+	
+	a[0] = (offscreen ? WGL_DRAW_TO_BITMAP_ARB : WGL_DRAW_TO_WINDOW_ARB);
+	a[1] = GL_TRUE;
+	a[2] = WGL_SUPPORT_OPENGL_ARB;
+	a[3] = GL_TRUE;
+	a[4] = WGL_ACCELERATION_ARB;
+	a[5] = WGL_FULL_ACCELERATION_ARB;
+	a[6] = WGL_COLOR_BITS_ARB;
+	a[7] = 24;
+	a[8] = WGL_ALPHA_BITS_ARB;
+	a[9] = 8;
+	a[10] = WGL_DEPTH_BITS_ARB;
+	a[11] = cfg->depth;
+	a[12] = WGL_STENCIL_BITS_ARB;
+	a[13] = cfg->stencil;
+	a[14] = WGL_DOUBLE_BUFFER_ARB;
+	a[15] = ((cfg->doubleBuffered && !offscreen) ? GL_TRUE : GL_FALSE);
+	a[16] = WGL_SAMPLE_BUFFERS_ARB;
+	a[17] = GL_TRUE;
+	a[18] = WGL_SAMPLES_ARB;
+	a[19] = cfg->multisample;
+	a[20] = 0;
+	a[21] = 0;
+
+	// First we check to see if we can get a pixel format for given samples:
+	valid = wglChoosePixelFormatARB(hDC,a,fAttributes,1,&pixelFormat,&numFormats);
+ 
+	// If returned true, and our format count is greater than 1
+	if (valid && numFormats >= 1) {
+	  /* Done */
+	} else {
+	  // Our pixel format with the given number of samples failed; test for 2 samples:
+	  a[19] = 2;
+	  valid = wglChoosePixelFormatARB(hDC,a,fAttributes,1,&pixelFormat,&numFormats);
+	  if (valid && numFormats >= 1) {
+	    /* Done */
+	  } else
+	    pixelFormat = 0;
+	}
+      }
+    }
+
+    if (!pixelFormat)
+      pixelFormat = ChoosePixelFormat(dc, &pfd);
+
     if (pixelFormat != 0) {
       if (SetPixelFormat(dc, pixelFormat, &pfd)) {
 	DescribePixelFormat(dc, pixelFormat, sizeof(PIXELFORMATDESCRIPTOR), &pfd);

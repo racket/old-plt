@@ -15,6 +15,8 @@
 
 #include "wb_canvs.h"
 
+class wxGLConfig;
+
 // Canvas subwindow for drawing on
 class wxCanvas: public wxbCanvas
 {
@@ -23,11 +25,11 @@ class wxCanvas: public wxbCanvas
 
   wxCanvas(void);
   wxCanvas(wxWindow *parent, int x=-1, int y=-1, int width=-1, int height=-1,
-           long style = 0, char *name = "canvas");
+           long style = 0, char *name = "canvas", wxGLConfig *cfg = NULL);
   ~wxCanvas(void);
 
   Bool Create(wxWindow *parent, int x=-1, int y=-1, int width=-1, int height=-1,
-           long style = 0, char *name = "canvas");
+           long style = 0, char *name = "canvas", wxGLConfig *cfg = NULL);
   void SetSize(int x, int y, int width, int height, int sizeFlags = wxSIZE_AUTO);
 
   // Number of pixels per user unit (0 or -1 for no scrollbar)

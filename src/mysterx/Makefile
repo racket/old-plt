@@ -9,7 +9,7 @@ REGSVR32="C:\Windows\System\REGSVR32"
 NEWMSHTML=0
 
 all : 
-	@ -255 mkdir ..\..\collects\mysterx\dlls
+	@ -255 mkdir ..\..\collects\mysterx\private\compiled\native\win32\i386
 	cd myspage
 	nmake MZC=$(MZC) HTMLHELP=$(HTMLHELP) SHELL32=$(SHELL32) \
 	 REGSVR32=$(REGSVR32) /f myspage.mak 

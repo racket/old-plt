@@ -602,6 +602,8 @@ static Scheme_Process *make_process(Scheme_Process *after, Scheme_Config *config
   process->error_invoked = 0;
   process->err_val_str_invoked = 0;
 
+  process->ran_some = 1;
+
   process->list_stack = NULL;
 
   SCHEME_GET_LOCK();
@@ -1391,7 +1393,7 @@ void scheme_break_thread(Scheme_Process *p)
   }
 
   /* Propagate breaks: */
-  while (p->nestee)
+  while (p->nestee && scheme_can_break(p, p->config))
     p = p->nestee;
 
   p->external_break = 1;
@@ -1520,7 +1522,7 @@ static int check_sleep(int need_activity, int sleep_now)
   if (!do_atomic) {
     p = scheme_first_process;
     while (p) {
-      if (p->ran_some || p->block_descriptor == NOT_BLOCKED)
+      if (!p->nestee && (p->ran_some || p->block_descriptor == NOT_BLOCKED))
 	break;
       p = p->next;
     }
@@ -1843,7 +1845,6 @@ void scheme_process_block_w_process(float sleep_time, Scheme_Process *p)
   if (p->external_break && !p->suspend_break && scheme_can_break(p, config)) {
     p->external_break = 0;
     make_unblocked(p);
-    p->ran_some = 1;
     scheme_raise_exn(MZEXN_MISC_USER_BREAK, "user break");
   }
   
@@ -1981,7 +1982,6 @@ void scheme_process_block_w_process(float sleep_time, Scheme_Process *p)
   if (p->external_break && !p->suspend_break && scheme_can_break(p, config)) {
     p->external_break = 0;
     make_unblocked(p);
-    p->ran_some = 1;
     scheme_raise_exn(MZEXN_MISC_USER_BREAK, "user break");
   }
   
@@ -2380,12 +2380,22 @@ static Scheme_Object *call_as_nested_process(int argc, Scheme_Object *argv[])
   } else
     mgr = (Scheme_Manager *)scheme_get_param(p->config, MZCONFIG_MANAGER);
 
+  SCHEME_USE_FUEL(25);
+
   /* In case nested thread starts a child thread: */
   scheme_ensure_stack_start(scheme_current_process, &failure);
   
   np = MALLOC_ONE(Scheme_Process);
   np->type = scheme_process_type;
   np->running = MZTHREAD_RUNNING;
+  np->ran_some = 1;
+
+#ifdef RUNSTACK_IS_GLOBAL
+  p->runstack = MZ_RUNSTACK;
+  p->runstack_start = MZ_RUNSTACK_START;
+  p->cont_mark_stack = MZ_CONT_MARK_STACK;
+  p->cont_mark_pos = MZ_CONT_MARK_POS;
+#endif
 
   np->runstack = p->runstack;
   np->runstack_start = p->runstack_start;
@@ -2436,8 +2446,10 @@ static Scheme_Object *call_as_nested_process(int argc, Scheme_Object *argv[])
   np->mref = scheme_add_managed(mgr, (Scheme_Object *)np->mr_hop, NULL, NULL, 0);
   scheme_weak_reference((void **)&np->mr_hop->p);
 
+#ifdef RUNSTACK_IS_GLOBAL
   MZ_CONT_MARK_STACK = np->cont_mark_stack;
   MZ_CONT_MARK_POS = np->cont_mark_pos;
+#endif
 
   scheme_current_process = np;
 
@@ -2455,6 +2467,7 @@ static Scheme_Object *call_as_nested_process(int argc, Scheme_Object *argv[])
 
   scheme_remove_managed(np->mref, (Scheme_Object *)np->mr_hop);
   scheme_unweak_reference((void **)&np->mr_hop->p);
+  scheme_remove_all_finalization(np->mr_hop);
 
   if (np->prev)
     np->prev->next = np->next;
@@ -2474,8 +2487,10 @@ static Scheme_Object *call_as_nested_process(int argc, Scheme_Object *argv[])
 
   scheme_current_process = p;
 
+#ifdef RUNSTACK_IS_GLOBAL
   MZ_CONT_MARK_STACK = p->cont_mark_stack;
   MZ_CONT_MARK_POS = p->cont_mark_pos;
+#endif
 
   if (p->running & MZTHREAD_KILLED)
     scheme_process_block(0.0);

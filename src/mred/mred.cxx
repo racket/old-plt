@@ -663,6 +663,11 @@ static void DoTheEvent(MrEdContext *c)
     if (!scheme_setjmp(scheme_error_buf))
       scheme_apply_multi(p, 1, a);
     memcpy(&scheme_error_buf, &savebuf, sizeof(mz_jmp_buf));
+
+#if 0
+    if (c->ready_to_go)
+      printf("Bad dispatcher\n");
+#endif
   }
   
   if (c->ready_to_go)

@@ -84,7 +84,6 @@ static Scheme_Object *read_compiled(Scheme_Object *port,
 				    Scheme_Hash_Table **ht CURRENTPROCPRM);
 
 static int skip_whitespace_comments(Scheme_Object *port);
-static int peek_char(Scheme_Object *port);
 
 #ifndef MZ_REAL_THREADS
 #define local_can_read_compiled (scheme_current_process->quick_can_read_compiled)
@@ -375,7 +374,7 @@ read_inner(Scheme_Object *port, Scheme_Hash_Table **ht CURRENTPROCPRM)
     case '\'': return read_quote(port, ht CURRENTPROCARG);
     case '`': return read_quasiquote(port, ht CURRENTPROCARG);
     case ',':
-      if (peek_char(port) == '@') {
+      if (scheme_peekc(port) == '@') {
 	ch = scheme_getc(port);
 	return read_unquote_splicing(port, ht CURRENTPROCARG);
       } else
@@ -389,7 +388,7 @@ read_inner(Scheme_Object *port, Scheme_Hash_Table **ht CURRENTPROCPRM)
     case '+':
     case '-':
     case '.':
-      ch2 = peek_char(port);
+      ch2 = scheme_peekc(port);
       if (isdigit(ch2) || (ch2 == '.') 
 	  || (ch2 == 'i') || (ch2 == 'I') /* Maybe inf */
 	  || (ch2 == 'n') || (ch2 == 'N') /* Maybe nan*/ ) {
@@ -775,7 +774,7 @@ read_list(Scheme_Object *port, char closer, int vec, int use_stack,
 	SCHEME_CDR(last) = cdr;
       return list;
     } else if ((ch == '.')
-	       && (next = peek_char(port),
+	       && (next = scheme_peekc(port),
 		   (isspace(next)
 		    || (next == '(')
 		    || (next == ')')
@@ -1255,16 +1254,6 @@ skip_whitespace_comments(Scheme_Object *port)
     goto start_over;
   }
 
-  return ch;
-}
-
-static int
-peek_char (Scheme_Object *port)
-{
-  int ch;
-
-  ch = scheme_getc(port);
-  scheme_ungetc(ch, port);
   return ch;
 }
 

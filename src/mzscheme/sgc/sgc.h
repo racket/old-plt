@@ -37,6 +37,7 @@ void *GC_malloc_specific(size_t size, struct GC_Set *set);
 
 void GC_general_register_disappearing_link(void **p, void *a);
 void GC_register_late_disappearing_link(void **p, void *a);
+void GC_general_unregister_disappearing_link(void **p, void *a);
 
 void GC_register_finalizer(void *p, void (*f)(void *p, void *data), 
 			   void *data, void (**oldf)(void *p, void *data), 

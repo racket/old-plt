@@ -191,6 +191,15 @@ static void pre_breakable_wait(void *data)
 static Scheme_Object *do_breakable_wait(void *data)
 {
   BreakableWait *bw = (BreakableWait *)data;
+
+  /* Need to check for a break, in case one was queued and we just enabled it: */
+  {
+    Scheme_Process *p = scheme_current_process;
+    if (p->external_break)
+      if (scheme_can_break(p, p->config))
+	scheme_process_block_w_process(0.0, p);
+  }
+
   scheme_wait_sema(bw->sema, 0);
   return scheme_void;
 }

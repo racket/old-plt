@@ -2636,6 +2636,11 @@ void GC_register_late_disappearing_link(void **p, void *a)
   register_disappearing_link(p, a, 1);
 }
 
+void GC_unregister_disappearing_link(void **p)
+{
+  /* We'll do it later */
+}
+
 DisappearingLink *GC_find_dl(void *p)
 {
   DisappearingLink *dl;

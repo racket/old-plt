@@ -1055,9 +1055,12 @@ void scheme_do_format(const char *procname, Scheme_Object *port,
 	}
 	break;
       }
+      SCHEME_USE_FUEL(1);
       start = i + 1;
     }
   }
+
+  SCHEME_USE_FUEL(flen);
 
   if (start < i)
     scheme_write_string((char *)format + start, i - start, port);

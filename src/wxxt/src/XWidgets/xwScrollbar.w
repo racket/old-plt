@@ -225,15 +225,16 @@ widgets and redirects the callbacks.
 	 XtNwidth, max(1, wa),
 	 XtNheight, max(1, ha),
 	 XtNframeWidth, 0,
-	 XtNforeground, $scrollbarForeground,
+	 XtNforeground, BlackPixelOfScreen(XtScreen($)),
 	 XtNinitialDelay, $initialDelay,
 	 XtNrepeatDelay, $repeatDelay,
 	 XtNtraversalOn, False,
 	 XtNhighlightThickness, 0,
 	 XtNdirection, $vertical?XfwfTop:XfwfLeft,
 	 XtNouterOffset, 0,
-	 XtNborderWidth, 0,
-	 XtNbackground, thumb_bg,
+	 XtNbackground, bg,
+	 XtNarrowShadow, 2,
+         XtNhighlightColor, $highlightColor,
 	 NULL);
     XtAddCallback($arrow1, XtNcallback, up, $);
     $arrow2 = XtVaCreateManagedWidget
@@ -243,16 +244,16 @@ widgets and redirects the callbacks.
 	 XtNwidth, max(1, wa),
 	 XtNheight, max(1, ha),
 	 XtNframeWidth, 0,
-	 XtNforeground, $scrollbarForeground,
+	 XtNforeground, BlackPixelOfScreen(XtScreen($)),
 	 XtNinitialDelay, $initialDelay,
 	 XtNrepeatDelay, $repeatDelay,
 	 XtNtraversalOn, False,
 	 XtNhighlightThickness, 0,
 	 XtNdirection, $vertical?XfwfBottom:XfwfRight,
 	 XtNouterOffset, 0,
-	 XtNborderWidth, 0,
-	 XtNbackground, thumb_bg,
-         XtNthumbFrameWidth, 1,
+	 XtNbackground, bg,
+	 XtNarrowShadow, 2,
+         XtNhighlightColor, $highlightColor,
 	 NULL);
     XtAddCallback($arrow2, XtNcallback, down, $);
     $slider = XtVaCreateManagedWidget

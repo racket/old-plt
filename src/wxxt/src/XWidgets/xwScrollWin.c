@@ -404,10 +404,12 @@ static void initialize(request,self,args,num_args)Widget  request;Widget self;Ar
     ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.vscroll = XtVaCreateWidget
 	("_vscroll", xfwfVScrollbarWidgetClass, self, XtNframeWidth,
 	 1, XtNframeType, XfwfSunken, XtNborderWidth, 0, 
+         XtNhighlightColor, ((XfwfScrolledWindowWidget)self)->xfwfCommon.highlightColor,
 	 XtNhighlightThickness, 0, XtNbackground, bg, NULL);
     ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.hscroll = XtVaCreateWidget
 	("_hscroll", xfwfHScrollbarWidgetClass, self, XtNframeWidth,
 	 1, XtNframeType, XfwfSunken, XtNborderWidth, 0, 
+         XtNhighlightColor, ((XfwfScrolledWindowWidget)self)->xfwfCommon.highlightColor,
 	 XtNhighlightThickness, 0, XtNbackground, bg, NULL);
     if (! ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.hideVScrollbar) XtManageChild(((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.vscroll);
     if (! ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.hideHScrollbar) XtManageChild(((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.hscroll);

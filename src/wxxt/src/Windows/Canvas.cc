@@ -95,6 +95,7 @@ Bool wxCanvas::Create(wxPanel *panel, int x, int y, int width, int height,
 	 XtNhighlightThickness, 0,
 	 XtNspacing, 0,
 	 XtNbackground,  wxGREY_PIXEL,
+	 XtNhighlightColor, wxCTL_HIGHLIGHT_PIXEL,
 	 NULL);
     X->scroll = wgt;
     // create canvas

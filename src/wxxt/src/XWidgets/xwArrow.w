@@ -156,151 +156,21 @@ GC's need to be created.
 
 @proc _expose
 {
-    Position x, y;
-    int  width, height;
-    Dimension a, a2, a3;
-
     assert($direction == XfwfTop || $direction == XfwfLeft
 	   || $direction == XfwfRight || $direction == XfwfBottom);
 
     if (! XtIsRealized($)) return;
+
+    #_expose($, event, region);
+
     if (region != NULL) {
 	XSetRegion(XtDisplay($), $arrowgc, region);
 	XSetRegion(XtDisplay($), $arrowlightgc, region);
 	XSetRegion(XtDisplay($), $arrowdarkgc, region);
     }
-    $compute_inside($, &x, &y, &width, &height);
-    width = max(1, width);
-    height = max(1, height);
-    a = $arrowShadow;
-    switch ($direction) {
-    case XfwfTop:
-	$a2 = a2 = (1.0 + 0.71*(float)width/(float)height) * a;
-	$a3 = a3 = (1.0 + 0.83*(float)height/(float)width) * a;
+	
+    draw_arrow($, 0);
 
-	$p1[0].x = x + width/2;           $p1[0].y = y + a3;
-	$p1[1].x = x + $a2;	          $p1[1].y = y + height - a;
-	$p1[2].x = x + width - a2;	  $p1[2].y = y + height - a;
-	XFillPolygon(XtDisplay($), XtWindow($), $arrowgc, $p1, 3, Convex,
-		     CoordModeOrigin);
-	if (a == 0) {
-	  XDrawLines(XtDisplay($), XtWindow($), $arrowgc, $p1, 3, CoordModeOrigin);
-	  break;
-	}
-	$p2[0].x = x + width/2;	          $p2[0].y = y;
-	$p2[1].x = x + width/2;	          $p2[1].y = y + a3;
-	$p2[2].x = x + width - a2;	  $p2[2].y = y + height - a;
-	$p2[3].x = x + width;		  $p2[3].y = y + height;
-
-	$p3[0].x = x + a2;		  $p3[0].y = y + height - a;
-	$p3[1].x = x;			  $p3[1].y = y + height;
-	$p3[2].x = x + width;		  $p3[2].y = y + height;
-	$p3[3].x = x + width - a2;	  $p3[3].y = y + height - a;
-
-	$p4[0].x = x + width/2;	          $p4[0].y = y;
-	$p4[1].x = x;			  $p4[1].y = y + height;
-	$p4[2].x = x + a2;		  $p4[2].y = y + height - a;
-	$p4[3].x = x + width/2;	          $p4[3].y = y + a3;
-	XFillPolygon(XtDisplay($), XtWindow($), $arrowdarkgc, $p2, 4, Convex,
-		     CoordModeOrigin);
-	XFillPolygon(XtDisplay($), XtWindow($), $arrowdarkgc, $p3, 4, Convex,
-		     CoordModeOrigin);
-	XFillPolygon(XtDisplay($), XtWindow($), $arrowlightgc, $p4, 4, Convex,
-		     CoordModeOrigin);
-	break;
-    case XfwfLeft:
-	a2 = (1.0 + 0.83*width/height) * a;
-	a3 = (1.0 + 0.71*height/width) * a;
-	$p1[0].x = x + a2;		  $p1[0].y = y + height/2;
-	$p1[1].x = x + width - a;	  $p1[1].y = y + a3;
-	$p1[2].x = x + width - a;	  $p1[2].y = y + height - a3;
-	XFillPolygon(XtDisplay($), XtWindow($), $arrowgc, $p1, 3, Convex,
-		     CoordModeOrigin);
-	if ($arrowShadow == 0) break;
-	$p2[0].x = x + width;		  $p2[0].y = y;
-	$p2[1].x = x;			  $p2[1].y = y + height/2;
-	$p2[2].x = x + a2;		  $p2[2].y = y + height/2;
-	$p2[3].x = x + width - a;	  $p2[3].y = y + a3;
-
-	$p3[0].x = x;			  $p3[0].y = y + height/2;
-	$p3[1].x = x + width;		  $p3[1].y = y + height;
-	$p3[2].x = x + width - a;	  $p3[2].y = y + height - a3;
-	$p3[3].x = x + a2;		  $p3[3].y = y + height/2;
-
-	$p4[0].x = x + width;		  $p4[0].y = y;
-	$p4[1].x = x + width - a;	  $p4[1].y = y + a3;
-	$p4[2].x = x + width - a;	  $p4[2].y = y + height - a3;
-	$p4[3].x = x + width;		  $p4[3].y = y + height;
-	XFillPolygon(XtDisplay($), XtWindow($), $arrowlightgc, $p2, 4, Convex,
-		     CoordModeOrigin);
-	XFillPolygon(XtDisplay($), XtWindow($), $arrowdarkgc, $p3, 4, Convex,
-		     CoordModeOrigin);
-	XFillPolygon(XtDisplay($), XtWindow($), $arrowdarkgc, $p4, 4, Convex,
-		     CoordModeOrigin);
-	break;
-    case XfwfBottom:
-	a2 = (1.0 + 0.71*(float)width/(float)height) * a;
-	a3 = (1.0 + 0.83*(float)height/(float)width) * a;
-	$p1[0].x = x + width/2;	          $p1[0].y = y + height - a3;
-	$p1[1].x = x + a2;		  $p1[1].y = y + a;
-	$p1[2].x = x + width - a2;	  $p1[2].y = y + a;
-	XFillPolygon(XtDisplay($), XtWindow($), $arrowgc, $p1, 3, Convex,
-		     CoordModeOrigin);
-	if ($arrowShadow == 0) {
-	  break;
-	}
-	$p2[0].x = x;			  $p2[0].y = y;
-	$p2[1].x = x + width/2;	          $p2[1].y = y + height;
-	$p2[2].x = x + width/2;	          $p2[2].y = y + height - a3;
-	$p2[3].x = x + a2;		  $p2[3].y = y + a;
-
-	$p3[0].x = x + width;		  $p3[0].y = y;
-	$p3[1].x = x + width - a2;	  $p3[1].y = y + a;
-	$p3[2].x = x + width/2;	          $p3[2].y = y + height - a3;
-	$p3[3].x = x + width/2;	          $p3[3].y = y + height;
-
-	$p4[0].x = x;			  $p4[0].y = y;
-	$p4[1].x = x + a2;		  $p4[1].y = y + a;
-	$p4[2].x = x + width - a2;	  $p4[2].y = y + a;
-	$p4[3].x = x + width;		  $p4[3].y = y;
-	XFillPolygon(XtDisplay($), XtWindow($), $arrowlightgc, $p2, 4, Convex,
-		     CoordModeOrigin);
-	XFillPolygon(XtDisplay($), XtWindow($), $arrowdarkgc, $p3, 4, Convex,
-		     CoordModeOrigin);
-	XFillPolygon(XtDisplay($), XtWindow($), $arrowlightgc, $p4, 4, Convex,
-		     CoordModeOrigin);
-	break;
-    case XfwfRight:
-	a2 = (1.0 + 0.83*width/height) * a;
-	a3 = (1.0 + 0.71*height/width) * a;
-	$p1[0].x = x + width - a;	  $p1[0].y = y + height/2;
-	$p1[1].x = x + a;		  $p1[1].y = y + a;
-	$p1[2].x = x + a;		  $p1[2].y = y + height - a;
-	XFillPolygon(XtDisplay($), XtWindow($), $arrowgc, $p1, 3, Convex,
-		     CoordModeOrigin);
-	if ($arrowShadow == 0) break;
-	$p2[0].x = x;			  $p2[0].y = y + height;
-	$p2[1].x = x + width;		  $p2[1].y = y + height/2;
-	$p2[2].x = x + width - a2;	  $p2[2].y = y + height/2;
-	$p2[3].x = x + a;		  $p2[3].y = y + height - a3;
-
-	$p3[0].x = x;			  $p3[0].y = y;
-	$p3[1].x = x + a;		  $p3[1].y = y + a3;
-	$p3[2].x = x + width - a2;	  $p3[2].y = y + height/2;
-	$p3[3].x = x + width;		  $p3[3].y = y + height/2;
-
-	$p4[0].x = x;			  $p4[0].y = y;
-	$p4[1].x = x;			  $p4[1].y = y + height;
-	$p4[2].x = x + a;		  $p4[2].y = y + height - a3;
-	$p4[3].x = x + a;		  $p4[3].y = y + a3;
-	XFillPolygon(XtDisplay($), XtWindow($), $arrowdarkgc, $p2, 4, Convex,
-		     CoordModeOrigin);
-	XFillPolygon(XtDisplay($), XtWindow($), $arrowlightgc, $p3, 4, Convex,
-		     CoordModeOrigin);
-	XFillPolygon(XtDisplay($), XtWindow($), $arrowlightgc, $p4, 4, Convex,
-		     CoordModeOrigin);
-	break;
-    }
     if (region != NULL) {
 	XSetClipMask(XtDisplay($), $arrowgc, None);
 	XSetClipMask(XtDisplay($), $arrowlightgc, None);
@@ -347,126 +217,70 @@ a timeout routine.
 
 @proc push_up
 {
-
-  switch ($direction) {
-    case XfwfTop:
-	XFillPolygon(XtDisplay($), XtWindow($), $arrowgc, $p1, 3, Convex,
-		     CoordModeOrigin);
-
-	if ($arrowShadow == 0) break;
-
-	XFillPolygon(XtDisplay($), XtWindow($), $arrowdarkgc, $p2, 4, Convex,
-		     CoordModeOrigin);
-	XFillPolygon(XtDisplay($), XtWindow($), $arrowdarkgc, $p3, 4, Convex,
-		     CoordModeOrigin);
-	XFillPolygon(XtDisplay($), XtWindow($), $arrowlightgc, $p4, 4, Convex,
-		     CoordModeOrigin);
-	break;
-    case XfwfLeft:
-
-	XFillPolygon(XtDisplay($), XtWindow($), $arrowgc, $p1, 3, Convex,
-		     CoordModeOrigin);
-
-	if ($arrowShadow == 0) break;
-
-	XFillPolygon(XtDisplay($), XtWindow($), $arrowlightgc, $p2, 4, Convex,
-		     CoordModeOrigin);
-	XFillPolygon(XtDisplay($), XtWindow($), $arrowdarkgc, $p3, 4, Convex,
-		     CoordModeOrigin);
-	XFillPolygon(XtDisplay($), XtWindow($), $arrowdarkgc, $p4, 4, Convex,
-		     CoordModeOrigin);
-	break;
-    case XfwfBottom:
-
-	XFillPolygon(XtDisplay($), XtWindow($), $arrowgc, $p1, 3, Convex,
-		     CoordModeOrigin);
-
-	if ($arrowShadow == 0) break;
-
-	XFillPolygon(XtDisplay($), XtWindow($), $arrowlightgc, $p2, 4, Convex,
-		     CoordModeOrigin);
-	XFillPolygon(XtDisplay($), XtWindow($), $arrowdarkgc, $p3, 4, Convex,
-		     CoordModeOrigin);
-	XFillPolygon(XtDisplay($), XtWindow($), $arrowlightgc, $p4, 4, Convex,
-		     CoordModeOrigin);
-	break;
-    case XfwfRight:
-
-	XFillPolygon(XtDisplay($), XtWindow($), $arrowgc, $p1, 3, Convex,
-		     CoordModeOrigin);
-
-	if ($arrowShadow == 0) break;
-
-	XFillPolygon(XtDisplay($), XtWindow($), $arrowdarkgc, $p2, 4, Convex,
-		     CoordModeOrigin);
-	XFillPolygon(XtDisplay($), XtWindow($), $arrowlightgc, $p3, 4, Convex,
-		     CoordModeOrigin);
-	XFillPolygon(XtDisplay($), XtWindow($), $arrowlightgc, $p4, 4, Convex,
-		     CoordModeOrigin);
-	break;
-      }
+  draw_arrow($, 0);
 }
 
 @proc push_down
 {
+  draw_arrow($, 1);
+}
 
-  switch ($direction) {
+@METHODS
+
+@proc void draw_arrow($, int on)
+{
+    Position x, y;
+    int  width, height, dir;
+
+    $compute_inside($, &x, &y, &width, &height);
+
+    if ($arrowShadow) {
+      XDrawLine(XtDisplay($), XtWindow($),
+		(on ? $arrowdarkgc : $arrowlightgc),
+		x, y, x + width, y);
+      XDrawLine(XtDisplay($), XtWindow($),
+		(on ? $arrowdarkgc : $arrowlightgc),
+		x, y, x, y + height);
+      XDrawLine(XtDisplay($), XtWindow($),
+		(on ? $arrowlightgc : $arrowdarkgc),
+		x + width - 1, y, x + width - 1, y + height);
+      XDrawLine(XtDisplay($), XtWindow($),
+		(on ? $arrowlightgc : $arrowdarkgc),
+		x, y + height - 1, x + width, y + height - 1);
+    }
+
+    switch ($direction) {
     case XfwfTop:
-	XFillPolygon(XtDisplay($), XtWindow($), $arrowgc, $p1, 3, Convex,
-		     CoordModeOrigin);
-
-	if ($arrowShadow == 0) break;
-
-	XFillPolygon(XtDisplay($), XtWindow($), $arrowlightgc, $p2, 4, Convex,
-		     CoordModeOrigin);
-	XFillPolygon(XtDisplay($), XtWindow($), $arrowlightgc, $p3, 4, Convex,
-		     CoordModeOrigin);
-	XFillPolygon(XtDisplay($), XtWindow($), $arrowdarkgc, $p4, 4, Convex,
-		     CoordModeOrigin);
-	break;
-    case XfwfLeft:
-
-	XFillPolygon(XtDisplay($), XtWindow($), $arrowgc, $p1, 3, Convex,
-		     CoordModeOrigin);
-
-	if ($arrowShadow == 0) break;
-
-	XFillPolygon(XtDisplay($), XtWindow($), $arrowdarkgc, $p2, 4, Convex,
-		     CoordModeOrigin);
-	XFillPolygon(XtDisplay($), XtWindow($), $arrowlightgc, $p3, 4, Convex,
-		     CoordModeOrigin);
-	XFillPolygon(XtDisplay($), XtWindow($), $arrowlightgc, $p4, 4, Convex,
-		     CoordModeOrigin);
-	break;
+      dir = UP;
+      --y;
+      break;
     case XfwfBottom:
-
-	XFillPolygon(XtDisplay($), XtWindow($), $arrowgc, $p1, 3, Convex,
-		     CoordModeOrigin);
-
-	if ($arrowShadow == 0) break;
-
-	XFillPolygon(XtDisplay($), XtWindow($), $arrowdarkgc, $p2, 4, Convex,
-		     CoordModeOrigin);
-	XFillPolygon(XtDisplay($), XtWindow($), $arrowlightgc, $p3, 4, Convex,
-		     CoordModeOrigin);
-	XFillPolygon(XtDisplay($), XtWindow($), $arrowdarkgc, $p4, 4, Convex,
-		     CoordModeOrigin);
-	break;
+      dir = DOWN;
+      y++;
+      break;
+    case XfwfLeft:
+      x++;
+      dir = LEFT;
+      break;
+    default:
     case XfwfRight:
+      --x;
+      dir = RIGHT;
+      break;
+    }
 
-	XFillPolygon(XtDisplay($), XtWindow($), $arrowgc, $p1, 3, Convex,
-		     CoordModeOrigin);
+    x += $arrowShadow;
+    y += $arrowShadow;
+    width -= 2 * $arrowShadow;
+    height -= 2 * $arrowShadow;
+    width = max(1, width);
+    height = max(1, height);
 
-	if ($arrowShadow == 0) break;
-
-	XFillPolygon(XtDisplay($), XtWindow($), $arrowlightgc, $p2, 4, Convex,
-		     CoordModeOrigin);
-	XFillPolygon(XtDisplay($), XtWindow($), $arrowdarkgc, $p3, 4, Convex,
-		     CoordModeOrigin);
-	XFillPolygon(XtDisplay($), XtWindow($), $arrowdarkgc, $p4, 4, Convex,
-		     CoordModeOrigin);
-	break;
-      }
+    Xaw3dDrawArrow(XtDisplay($), XtWindow($),
+		   $arrowlightgc, $arrowdarkgc,
+		   $arrowgc, $arrowgc,
+		   x, y, width, height,
+		   0, dir, on);
 }
 
 @UTILITIES
@@ -527,7 +341,7 @@ resource. It is the same routine as for the shadows in the XfwfFrame widget.
     case XfwfBlack:
     case XfwfAuto:
 	if (DefaultDepthOfScreen(XtScreen($)) > 4
-	    && $lighter_color($, $foreground, &values.foreground)) {
+	    && $lighter_color($, $background_pixel, &values.foreground)) {
 	    mask = GCForeground;
 	} else {
 	    mask = GCFillStyle | GCBackground | GCForeground | GCStipple;
@@ -568,7 +382,7 @@ resource. It is the same routine as for the shadows in the XfwfFrame widget.
     case XfwfBlack:
     case XfwfAuto:
 	if (DefaultDepthOfScreen(XtScreen($)) > 4
-	    && $darker_color($, $foreground, &values.foreground)) {
+	    && $darker_color($, $background_pixel, &values.foreground)) {
 	    mask = GCForeground;
 	} else {
 	    mask = GCFillStyle | GCBackground | GCForeground | GCStipple;
@@ -594,3 +408,4 @@ resource. It is the same routine as for the shadows in the XfwfFrame widget.
 @incl <stdio.h>
 @incl <assert.h>
 @incl <wxtimeout.h>
+@incl "xwTools3d.h"

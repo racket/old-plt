@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include <wxtimeout.h>
+#include "xwTools3d.h"
 #include <./xwArrowP.h>
 static void activate_and_start_timer(
 #if NeedFunctionPrototypes
@@ -63,6 +64,11 @@ Widget ,Widget ,Widget,ArgList ,Cardinal *
 static void _expose(
 #if NeedFunctionPrototypes
 Widget,XEvent *,Region 
+#endif
+);
+static void  draw_arrow(
+#if NeedFunctionPrototypes
+Widget,int 
 #endif
 );
 static void timer_callback(
@@ -143,7 +149,7 @@ static void create_arrowlightgc(self)Widget self;
     case XfwfBlack:
     case XfwfAuto:
 	if (DefaultDepthOfScreen(XtScreen(self)) > 4
-	    && ((XfwfArrowWidgetClass)self->core.widget_class)->xfwfCommon_class.lighter_color(self, ((XfwfArrowWidget)self)->xfwfArrow.foreground, &values.foreground)) {
+	    && ((XfwfArrowWidgetClass)self->core.widget_class)->xfwfCommon_class.lighter_color(self, ((XfwfArrowWidget)self)->core.background_pixel, &values.foreground)) {
 	    mask = GCForeground;
 	} else {
 	    mask = GCFillStyle | GCBackground | GCForeground | GCStipple;
@@ -186,7 +192,7 @@ static void create_arrowdarkgc(self)Widget self;
     case XfwfBlack:
     case XfwfAuto:
 	if (DefaultDepthOfScreen(XtScreen(self)) > 4
-	    && ((XfwfArrowWidgetClass)self->core.widget_class)->xfwfCommon_class.darker_color(self, ((XfwfArrowWidget)self)->xfwfArrow.foreground, &values.foreground)) {
+	    && ((XfwfArrowWidgetClass)self->core.widget_class)->xfwfCommon_class.darker_color(self, ((XfwfArrowWidget)self)->core.background_pixel, &values.foreground)) {
 	    mask = GCForeground;
 	} else {
 	    mask = GCFillStyle | GCBackground | GCForeground | GCStipple;
@@ -279,7 +285,7 @@ XtInherit_set_color,
 XtInherit_set_abs_location,
 },
 { /* XfwfArrow_class part */
- /* dummy */  0
+draw_arrow,
 },
 };
 WidgetClass xfwfArrowWidgetClass = (WidgetClass) &xfwfArrowClassRec;
@@ -314,127 +320,13 @@ static void stop_timer(self,event,params,num_params)Widget self;XEvent*event;Str
 /*ARGSUSED*/
 static void push_up(self,event,params,num_params)Widget self;XEvent*event;String*params;Cardinal*num_params;
 {
-
-  switch (((XfwfArrowWidget)self)->xfwfArrow.direction) {
-    case XfwfTop:
-	XFillPolygon(XtDisplay(self), XtWindow(self), ((XfwfArrowWidget)self)->xfwfArrow.arrowgc, ((XfwfArrowWidget)self)->xfwfArrow.p1, 3, Convex,
-		     CoordModeOrigin);
-
-	if (((XfwfArrowWidget)self)->xfwfArrow.arrowShadow == 0) break;
-
-	XFillPolygon(XtDisplay(self), XtWindow(self), ((XfwfArrowWidget)self)->xfwfArrow.arrowdarkgc, ((XfwfArrowWidget)self)->xfwfArrow.p2, 4, Convex,
-		     CoordModeOrigin);
-	XFillPolygon(XtDisplay(self), XtWindow(self), ((XfwfArrowWidget)self)->xfwfArrow.arrowdarkgc, ((XfwfArrowWidget)self)->xfwfArrow.p3, 4, Convex,
-		     CoordModeOrigin);
-	XFillPolygon(XtDisplay(self), XtWindow(self), ((XfwfArrowWidget)self)->xfwfArrow.arrowlightgc, ((XfwfArrowWidget)self)->xfwfArrow.p4, 4, Convex,
-		     CoordModeOrigin);
-	break;
-    case XfwfLeft:
-
-	XFillPolygon(XtDisplay(self), XtWindow(self), ((XfwfArrowWidget)self)->xfwfArrow.arrowgc, ((XfwfArrowWidget)self)->xfwfArrow.p1, 3, Convex,
-		     CoordModeOrigin);
-
-	if (((XfwfArrowWidget)self)->xfwfArrow.arrowShadow == 0) break;
-
-	XFillPolygon(XtDisplay(self), XtWindow(self), ((XfwfArrowWidget)self)->xfwfArrow.arrowlightgc, ((XfwfArrowWidget)self)->xfwfArrow.p2, 4, Convex,
-		     CoordModeOrigin);
-	XFillPolygon(XtDisplay(self), XtWindow(self), ((XfwfArrowWidget)self)->xfwfArrow.arrowdarkgc, ((XfwfArrowWidget)self)->xfwfArrow.p3, 4, Convex,
-		     CoordModeOrigin);
-	XFillPolygon(XtDisplay(self), XtWindow(self), ((XfwfArrowWidget)self)->xfwfArrow.arrowdarkgc, ((XfwfArrowWidget)self)->xfwfArrow.p4, 4, Convex,
-		     CoordModeOrigin);
-	break;
-    case XfwfBottom:
-
-	XFillPolygon(XtDisplay(self), XtWindow(self), ((XfwfArrowWidget)self)->xfwfArrow.arrowgc, ((XfwfArrowWidget)self)->xfwfArrow.p1, 3, Convex,
-		     CoordModeOrigin);
-
-	if (((XfwfArrowWidget)self)->xfwfArrow.arrowShadow == 0) break;
-
-	XFillPolygon(XtDisplay(self), XtWindow(self), ((XfwfArrowWidget)self)->xfwfArrow.arrowlightgc, ((XfwfArrowWidget)self)->xfwfArrow.p2, 4, Convex,
-		     CoordModeOrigin);
-	XFillPolygon(XtDisplay(self), XtWindow(self), ((XfwfArrowWidget)self)->xfwfArrow.arrowdarkgc, ((XfwfArrowWidget)self)->xfwfArrow.p3, 4, Convex,
-		     CoordModeOrigin);
-	XFillPolygon(XtDisplay(self), XtWindow(self), ((XfwfArrowWidget)self)->xfwfArrow.arrowlightgc, ((XfwfArrowWidget)self)->xfwfArrow.p4, 4, Convex,
-		     CoordModeOrigin);
-	break;
-    case XfwfRight:
-
-	XFillPolygon(XtDisplay(self), XtWindow(self), ((XfwfArrowWidget)self)->xfwfArrow.arrowgc, ((XfwfArrowWidget)self)->xfwfArrow.p1, 3, Convex,
-		     CoordModeOrigin);
-
-	if (((XfwfArrowWidget)self)->xfwfArrow.arrowShadow == 0) break;
-
-	XFillPolygon(XtDisplay(self), XtWindow(self), ((XfwfArrowWidget)self)->xfwfArrow.arrowdarkgc, ((XfwfArrowWidget)self)->xfwfArrow.p2, 4, Convex,
-		     CoordModeOrigin);
-	XFillPolygon(XtDisplay(self), XtWindow(self), ((XfwfArrowWidget)self)->xfwfArrow.arrowlightgc, ((XfwfArrowWidget)self)->xfwfArrow.p3, 4, Convex,
-		     CoordModeOrigin);
-	XFillPolygon(XtDisplay(self), XtWindow(self), ((XfwfArrowWidget)self)->xfwfArrow.arrowlightgc, ((XfwfArrowWidget)self)->xfwfArrow.p4, 4, Convex,
-		     CoordModeOrigin);
-	break;
-      }
+  draw_arrow(self, 0);
 }
 
 /*ARGSUSED*/
 static void push_down(self,event,params,num_params)Widget self;XEvent*event;String*params;Cardinal*num_params;
 {
-
-  switch (((XfwfArrowWidget)self)->xfwfArrow.direction) {
-    case XfwfTop:
-	XFillPolygon(XtDisplay(self), XtWindow(self), ((XfwfArrowWidget)self)->xfwfArrow.arrowgc, ((XfwfArrowWidget)self)->xfwfArrow.p1, 3, Convex,
-		     CoordModeOrigin);
-
-	if (((XfwfArrowWidget)self)->xfwfArrow.arrowShadow == 0) break;
-
-	XFillPolygon(XtDisplay(self), XtWindow(self), ((XfwfArrowWidget)self)->xfwfArrow.arrowlightgc, ((XfwfArrowWidget)self)->xfwfArrow.p2, 4, Convex,
-		     CoordModeOrigin);
-	XFillPolygon(XtDisplay(self), XtWindow(self), ((XfwfArrowWidget)self)->xfwfArrow.arrowlightgc, ((XfwfArrowWidget)self)->xfwfArrow.p3, 4, Convex,
-		     CoordModeOrigin);
-	XFillPolygon(XtDisplay(self), XtWindow(self), ((XfwfArrowWidget)self)->xfwfArrow.arrowdarkgc, ((XfwfArrowWidget)self)->xfwfArrow.p4, 4, Convex,
-		     CoordModeOrigin);
-	break;
-    case XfwfLeft:
-
-	XFillPolygon(XtDisplay(self), XtWindow(self), ((XfwfArrowWidget)self)->xfwfArrow.arrowgc, ((XfwfArrowWidget)self)->xfwfArrow.p1, 3, Convex,
-		     CoordModeOrigin);
-
-	if (((XfwfArrowWidget)self)->xfwfArrow.arrowShadow == 0) break;
-
-	XFillPolygon(XtDisplay(self), XtWindow(self), ((XfwfArrowWidget)self)->xfwfArrow.arrowdarkgc, ((XfwfArrowWidget)self)->xfwfArrow.p2, 4, Convex,
-		     CoordModeOrigin);
-	XFillPolygon(XtDisplay(self), XtWindow(self), ((XfwfArrowWidget)self)->xfwfArrow.arrowlightgc, ((XfwfArrowWidget)self)->xfwfArrow.p3, 4, Convex,
-		     CoordModeOrigin);
-	XFillPolygon(XtDisplay(self), XtWindow(self), ((XfwfArrowWidget)self)->xfwfArrow.arrowlightgc, ((XfwfArrowWidget)self)->xfwfArrow.p4, 4, Convex,
-		     CoordModeOrigin);
-	break;
-    case XfwfBottom:
-
-	XFillPolygon(XtDisplay(self), XtWindow(self), ((XfwfArrowWidget)self)->xfwfArrow.arrowgc, ((XfwfArrowWidget)self)->xfwfArrow.p1, 3, Convex,
-		     CoordModeOrigin);
-
-	if (((XfwfArrowWidget)self)->xfwfArrow.arrowShadow == 0) break;
-
-	XFillPolygon(XtDisplay(self), XtWindow(self), ((XfwfArrowWidget)self)->xfwfArrow.arrowdarkgc, ((XfwfArrowWidget)self)->xfwfArrow.p2, 4, Convex,
-		     CoordModeOrigin);
-	XFillPolygon(XtDisplay(self), XtWindow(self), ((XfwfArrowWidget)self)->xfwfArrow.arrowlightgc, ((XfwfArrowWidget)self)->xfwfArrow.p3, 4, Convex,
-		     CoordModeOrigin);
-	XFillPolygon(XtDisplay(self), XtWindow(self), ((XfwfArrowWidget)self)->xfwfArrow.arrowdarkgc, ((XfwfArrowWidget)self)->xfwfArrow.p4, 4, Convex,
-		     CoordModeOrigin);
-	break;
-    case XfwfRight:
-
-	XFillPolygon(XtDisplay(self), XtWindow(self), ((XfwfArrowWidget)self)->xfwfArrow.arrowgc, ((XfwfArrowWidget)self)->xfwfArrow.p1, 3, Convex,
-		     CoordModeOrigin);
-
-	if (((XfwfArrowWidget)self)->xfwfArrow.arrowShadow == 0) break;
-
-	XFillPolygon(XtDisplay(self), XtWindow(self), ((XfwfArrowWidget)self)->xfwfArrow.arrowlightgc, ((XfwfArrowWidget)self)->xfwfArrow.p2, 4, Convex,
-		     CoordModeOrigin);
-	XFillPolygon(XtDisplay(self), XtWindow(self), ((XfwfArrowWidget)self)->xfwfArrow.arrowdarkgc, ((XfwfArrowWidget)self)->xfwfArrow.p3, 4, Convex,
-		     CoordModeOrigin);
-	XFillPolygon(XtDisplay(self), XtWindow(self), ((XfwfArrowWidget)self)->xfwfArrow.arrowdarkgc, ((XfwfArrowWidget)self)->xfwfArrow.p4, 4, Convex,
-		     CoordModeOrigin);
-	break;
-      }
+  draw_arrow(self, 1);
 }
 
 static void _resolve_inheritance(class)
@@ -452,6 +344,8 @@ WidgetClass class;
   c->composite_class.extension = ext;
   if (class == xfwfArrowWidgetClass) return;
   super = (XfwfArrowWidgetClass)class->core_class.superclass;
+  if (c->xfwfArrow_class.draw_arrow == XtInherit_draw_arrow)
+    c->xfwfArrow_class.draw_arrow = super->xfwfArrow_class.draw_arrow;
 }
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
@@ -540,154 +434,84 @@ static void _expose(Widget self,XEvent * event,Region  region)
 static void _expose(self,event,region)Widget self;XEvent * event;Region  region;
 #endif
 {
-    Position x, y;
-    int  width, height;
-    Dimension a, a2, a3;
-
     assert(((XfwfArrowWidget)self)->xfwfArrow.direction == XfwfTop || ((XfwfArrowWidget)self)->xfwfArrow.direction == XfwfLeft
 	   || ((XfwfArrowWidget)self)->xfwfArrow.direction == XfwfRight || ((XfwfArrowWidget)self)->xfwfArrow.direction == XfwfBottom);
 
     if (! XtIsRealized(self)) return;
+
+    xfwfBoardClassRec.xfwfCommon_class._expose(self, event, region);
+
     if (region != NULL) {
 	XSetRegion(XtDisplay(self), ((XfwfArrowWidget)self)->xfwfArrow.arrowgc, region);
 	XSetRegion(XtDisplay(self), ((XfwfArrowWidget)self)->xfwfArrow.arrowlightgc, region);
 	XSetRegion(XtDisplay(self), ((XfwfArrowWidget)self)->xfwfArrow.arrowdarkgc, region);
     }
-    ((XfwfArrowWidgetClass)self->core.widget_class)->xfwfCommon_class.compute_inside(self, &x, &y, &width, &height);
-    width = max(1, width);
-    height = max(1, height);
-    a = ((XfwfArrowWidget)self)->xfwfArrow.arrowShadow;
-    switch (((XfwfArrowWidget)self)->xfwfArrow.direction) {
-    case XfwfTop:
-	((XfwfArrowWidget)self)->xfwfArrow.a2 = a2 = (1.0 + 0.71*(float)width/(float)height) * a;
-	((XfwfArrowWidget)self)->xfwfArrow.a3 = a3 = (1.0 + 0.83*(float)height/(float)width) * a;
+	
+    draw_arrow(self, 0);
 
-	((XfwfArrowWidget)self)->xfwfArrow.p1[0].x = x + width/2;           ((XfwfArrowWidget)self)->xfwfArrow.p1[0].y = y + a3;
-	((XfwfArrowWidget)self)->xfwfArrow.p1[1].x = x + ((XfwfArrowWidget)self)->xfwfArrow.a2;	          ((XfwfArrowWidget)self)->xfwfArrow.p1[1].y = y + height - a;
-	((XfwfArrowWidget)self)->xfwfArrow.p1[2].x = x + width - a2;	  ((XfwfArrowWidget)self)->xfwfArrow.p1[2].y = y + height - a;
-	XFillPolygon(XtDisplay(self), XtWindow(self), ((XfwfArrowWidget)self)->xfwfArrow.arrowgc, ((XfwfArrowWidget)self)->xfwfArrow.p1, 3, Convex,
-		     CoordModeOrigin);
-	if (a == 0) {
-	  XDrawLines(XtDisplay(self), XtWindow(self), ((XfwfArrowWidget)self)->xfwfArrow.arrowgc, ((XfwfArrowWidget)self)->xfwfArrow.p1, 3, CoordModeOrigin);
-	  break;
-	}
-	((XfwfArrowWidget)self)->xfwfArrow.p2[0].x = x + width/2;	          ((XfwfArrowWidget)self)->xfwfArrow.p2[0].y = y;
-	((XfwfArrowWidget)self)->xfwfArrow.p2[1].x = x + width/2;	          ((XfwfArrowWidget)self)->xfwfArrow.p2[1].y = y + a3;
-	((XfwfArrowWidget)self)->xfwfArrow.p2[2].x = x + width - a2;	  ((XfwfArrowWidget)self)->xfwfArrow.p2[2].y = y + height - a;
-	((XfwfArrowWidget)self)->xfwfArrow.p2[3].x = x + width;		  ((XfwfArrowWidget)self)->xfwfArrow.p2[3].y = y + height;
-
-	((XfwfArrowWidget)self)->xfwfArrow.p3[0].x = x + a2;		  ((XfwfArrowWidget)self)->xfwfArrow.p3[0].y = y + height - a;
-	((XfwfArrowWidget)self)->xfwfArrow.p3[1].x = x;			  ((XfwfArrowWidget)self)->xfwfArrow.p3[1].y = y + height;
-	((XfwfArrowWidget)self)->xfwfArrow.p3[2].x = x + width;		  ((XfwfArrowWidget)self)->xfwfArrow.p3[2].y = y + height;
-	((XfwfArrowWidget)self)->xfwfArrow.p3[3].x = x + width - a2;	  ((XfwfArrowWidget)self)->xfwfArrow.p3[3].y = y + height - a;
-
-	((XfwfArrowWidget)self)->xfwfArrow.p4[0].x = x + width/2;	          ((XfwfArrowWidget)self)->xfwfArrow.p4[0].y = y;
-	((XfwfArrowWidget)self)->xfwfArrow.p4[1].x = x;			  ((XfwfArrowWidget)self)->xfwfArrow.p4[1].y = y + height;
-	((XfwfArrowWidget)self)->xfwfArrow.p4[2].x = x + a2;		  ((XfwfArrowWidget)self)->xfwfArrow.p4[2].y = y + height - a;
-	((XfwfArrowWidget)self)->xfwfArrow.p4[3].x = x + width/2;	          ((XfwfArrowWidget)self)->xfwfArrow.p4[3].y = y + a3;
-	XFillPolygon(XtDisplay(self), XtWindow(self), ((XfwfArrowWidget)self)->xfwfArrow.arrowdarkgc, ((XfwfArrowWidget)self)->xfwfArrow.p2, 4, Convex,
-		     CoordModeOrigin);
-	XFillPolygon(XtDisplay(self), XtWindow(self), ((XfwfArrowWidget)self)->xfwfArrow.arrowdarkgc, ((XfwfArrowWidget)self)->xfwfArrow.p3, 4, Convex,
-		     CoordModeOrigin);
-	XFillPolygon(XtDisplay(self), XtWindow(self), ((XfwfArrowWidget)self)->xfwfArrow.arrowlightgc, ((XfwfArrowWidget)self)->xfwfArrow.p4, 4, Convex,
-		     CoordModeOrigin);
-	break;
-    case XfwfLeft:
-	a2 = (1.0 + 0.83*width/height) * a;
-	a3 = (1.0 + 0.71*height/width) * a;
-	((XfwfArrowWidget)self)->xfwfArrow.p1[0].x = x + a2;		  ((XfwfArrowWidget)self)->xfwfArrow.p1[0].y = y + height/2;
-	((XfwfArrowWidget)self)->xfwfArrow.p1[1].x = x + width - a;	  ((XfwfArrowWidget)self)->xfwfArrow.p1[1].y = y + a3;
-	((XfwfArrowWidget)self)->xfwfArrow.p1[2].x = x + width - a;	  ((XfwfArrowWidget)self)->xfwfArrow.p1[2].y = y + height - a3;
-	XFillPolygon(XtDisplay(self), XtWindow(self), ((XfwfArrowWidget)self)->xfwfArrow.arrowgc, ((XfwfArrowWidget)self)->xfwfArrow.p1, 3, Convex,
-		     CoordModeOrigin);
-	if (((XfwfArrowWidget)self)->xfwfArrow.arrowShadow == 0) break;
-	((XfwfArrowWidget)self)->xfwfArrow.p2[0].x = x + width;		  ((XfwfArrowWidget)self)->xfwfArrow.p2[0].y = y;
-	((XfwfArrowWidget)self)->xfwfArrow.p2[1].x = x;			  ((XfwfArrowWidget)self)->xfwfArrow.p2[1].y = y + height/2;
-	((XfwfArrowWidget)self)->xfwfArrow.p2[2].x = x + a2;		  ((XfwfArrowWidget)self)->xfwfArrow.p2[2].y = y + height/2;
-	((XfwfArrowWidget)self)->xfwfArrow.p2[3].x = x + width - a;	  ((XfwfArrowWidget)self)->xfwfArrow.p2[3].y = y + a3;
-
-	((XfwfArrowWidget)self)->xfwfArrow.p3[0].x = x;			  ((XfwfArrowWidget)self)->xfwfArrow.p3[0].y = y + height/2;
-	((XfwfArrowWidget)self)->xfwfArrow.p3[1].x = x + width;		  ((XfwfArrowWidget)self)->xfwfArrow.p3[1].y = y + height;
-	((XfwfArrowWidget)self)->xfwfArrow.p3[2].x = x + width - a;	  ((XfwfArrowWidget)self)->xfwfArrow.p3[2].y = y + height - a3;
-	((XfwfArrowWidget)self)->xfwfArrow.p3[3].x = x + a2;		  ((XfwfArrowWidget)self)->xfwfArrow.p3[3].y = y + height/2;
-
-	((XfwfArrowWidget)self)->xfwfArrow.p4[0].x = x + width;		  ((XfwfArrowWidget)self)->xfwfArrow.p4[0].y = y;
-	((XfwfArrowWidget)self)->xfwfArrow.p4[1].x = x + width - a;	  ((XfwfArrowWidget)self)->xfwfArrow.p4[1].y = y + a3;
-	((XfwfArrowWidget)self)->xfwfArrow.p4[2].x = x + width - a;	  ((XfwfArrowWidget)self)->xfwfArrow.p4[2].y = y + height - a3;
-	((XfwfArrowWidget)self)->xfwfArrow.p4[3].x = x + width;		  ((XfwfArrowWidget)self)->xfwfArrow.p4[3].y = y + height;
-	XFillPolygon(XtDisplay(self), XtWindow(self), ((XfwfArrowWidget)self)->xfwfArrow.arrowlightgc, ((XfwfArrowWidget)self)->xfwfArrow.p2, 4, Convex,
-		     CoordModeOrigin);
-	XFillPolygon(XtDisplay(self), XtWindow(self), ((XfwfArrowWidget)self)->xfwfArrow.arrowdarkgc, ((XfwfArrowWidget)self)->xfwfArrow.p3, 4, Convex,
-		     CoordModeOrigin);
-	XFillPolygon(XtDisplay(self), XtWindow(self), ((XfwfArrowWidget)self)->xfwfArrow.arrowdarkgc, ((XfwfArrowWidget)self)->xfwfArrow.p4, 4, Convex,
-		     CoordModeOrigin);
-	break;
-    case XfwfBottom:
-	a2 = (1.0 + 0.71*(float)width/(float)height) * a;
-	a3 = (1.0 + 0.83*(float)height/(float)width) * a;
-	((XfwfArrowWidget)self)->xfwfArrow.p1[0].x = x + width/2;	          ((XfwfArrowWidget)self)->xfwfArrow.p1[0].y = y + height - a3;
-	((XfwfArrowWidget)self)->xfwfArrow.p1[1].x = x + a2;		  ((XfwfArrowWidget)self)->xfwfArrow.p1[1].y = y + a;
-	((XfwfArrowWidget)self)->xfwfArrow.p1[2].x = x + width - a2;	  ((XfwfArrowWidget)self)->xfwfArrow.p1[2].y = y + a;
-	XFillPolygon(XtDisplay(self), XtWindow(self), ((XfwfArrowWidget)self)->xfwfArrow.arrowgc, ((XfwfArrowWidget)self)->xfwfArrow.p1, 3, Convex,
-		     CoordModeOrigin);
-	if (((XfwfArrowWidget)self)->xfwfArrow.arrowShadow == 0) {
-	  break;
-	}
-	((XfwfArrowWidget)self)->xfwfArrow.p2[0].x = x;			  ((XfwfArrowWidget)self)->xfwfArrow.p2[0].y = y;
-	((XfwfArrowWidget)self)->xfwfArrow.p2[1].x = x + width/2;	          ((XfwfArrowWidget)self)->xfwfArrow.p2[1].y = y + height;
-	((XfwfArrowWidget)self)->xfwfArrow.p2[2].x = x + width/2;	          ((XfwfArrowWidget)self)->xfwfArrow.p2[2].y = y + height - a3;
-	((XfwfArrowWidget)self)->xfwfArrow.p2[3].x = x + a2;		  ((XfwfArrowWidget)self)->xfwfArrow.p2[3].y = y + a;
-
-	((XfwfArrowWidget)self)->xfwfArrow.p3[0].x = x + width;		  ((XfwfArrowWidget)self)->xfwfArrow.p3[0].y = y;
-	((XfwfArrowWidget)self)->xfwfArrow.p3[1].x = x + width - a2;	  ((XfwfArrowWidget)self)->xfwfArrow.p3[1].y = y + a;
-	((XfwfArrowWidget)self)->xfwfArrow.p3[2].x = x + width/2;	          ((XfwfArrowWidget)self)->xfwfArrow.p3[2].y = y + height - a3;
-	((XfwfArrowWidget)self)->xfwfArrow.p3[3].x = x + width/2;	          ((XfwfArrowWidget)self)->xfwfArrow.p3[3].y = y + height;
-
-	((XfwfArrowWidget)self)->xfwfArrow.p4[0].x = x;			  ((XfwfArrowWidget)self)->xfwfArrow.p4[0].y = y;
-	((XfwfArrowWidget)self)->xfwfArrow.p4[1].x = x + a2;		  ((XfwfArrowWidget)self)->xfwfArrow.p4[1].y = y + a;
-	((XfwfArrowWidget)self)->xfwfArrow.p4[2].x = x + width - a2;	  ((XfwfArrowWidget)self)->xfwfArrow.p4[2].y = y + a;
-	((XfwfArrowWidget)self)->xfwfArrow.p4[3].x = x + width;		  ((XfwfArrowWidget)self)->xfwfArrow.p4[3].y = y;
-	XFillPolygon(XtDisplay(self), XtWindow(self), ((XfwfArrowWidget)self)->xfwfArrow.arrowlightgc, ((XfwfArrowWidget)self)->xfwfArrow.p2, 4, Convex,
-		     CoordModeOrigin);
-	XFillPolygon(XtDisplay(self), XtWindow(self), ((XfwfArrowWidget)self)->xfwfArrow.arrowdarkgc, ((XfwfArrowWidget)self)->xfwfArrow.p3, 4, Convex,
-		     CoordModeOrigin);
-	XFillPolygon(XtDisplay(self), XtWindow(self), ((XfwfArrowWidget)self)->xfwfArrow.arrowlightgc, ((XfwfArrowWidget)self)->xfwfArrow.p4, 4, Convex,
-		     CoordModeOrigin);
-	break;
-    case XfwfRight:
-	a2 = (1.0 + 0.83*width/height) * a;
-	a3 = (1.0 + 0.71*height/width) * a;
-	((XfwfArrowWidget)self)->xfwfArrow.p1[0].x = x + width - a;	  ((XfwfArrowWidget)self)->xfwfArrow.p1[0].y = y + height/2;
-	((XfwfArrowWidget)self)->xfwfArrow.p1[1].x = x + a;		  ((XfwfArrowWidget)self)->xfwfArrow.p1[1].y = y + a;
-	((XfwfArrowWidget)self)->xfwfArrow.p1[2].x = x + a;		  ((XfwfArrowWidget)self)->xfwfArrow.p1[2].y = y + height - a;
-	XFillPolygon(XtDisplay(self), XtWindow(self), ((XfwfArrowWidget)self)->xfwfArrow.arrowgc, ((XfwfArrowWidget)self)->xfwfArrow.p1, 3, Convex,
-		     CoordModeOrigin);
-	if (((XfwfArrowWidget)self)->xfwfArrow.arrowShadow == 0) break;
-	((XfwfArrowWidget)self)->xfwfArrow.p2[0].x = x;			  ((XfwfArrowWidget)self)->xfwfArrow.p2[0].y = y + height;
-	((XfwfArrowWidget)self)->xfwfArrow.p2[1].x = x + width;		  ((XfwfArrowWidget)self)->xfwfArrow.p2[1].y = y + height/2;
-	((XfwfArrowWidget)self)->xfwfArrow.p2[2].x = x + width - a2;	  ((XfwfArrowWidget)self)->xfwfArrow.p2[2].y = y + height/2;
-	((XfwfArrowWidget)self)->xfwfArrow.p2[3].x = x + a;		  ((XfwfArrowWidget)self)->xfwfArrow.p2[3].y = y + height - a3;
-
-	((XfwfArrowWidget)self)->xfwfArrow.p3[0].x = x;			  ((XfwfArrowWidget)self)->xfwfArrow.p3[0].y = y;
-	((XfwfArrowWidget)self)->xfwfArrow.p3[1].x = x + a;		  ((XfwfArrowWidget)self)->xfwfArrow.p3[1].y = y + a3;
-	((XfwfArrowWidget)self)->xfwfArrow.p3[2].x = x + width - a2;	  ((XfwfArrowWidget)self)->xfwfArrow.p3[2].y = y + height/2;
-	((XfwfArrowWidget)self)->xfwfArrow.p3[3].x = x + width;		  ((XfwfArrowWidget)self)->xfwfArrow.p3[3].y = y + height/2;
-
-	((XfwfArrowWidget)self)->xfwfArrow.p4[0].x = x;			  ((XfwfArrowWidget)self)->xfwfArrow.p4[0].y = y;
-	((XfwfArrowWidget)self)->xfwfArrow.p4[1].x = x;			  ((XfwfArrowWidget)self)->xfwfArrow.p4[1].y = y + height;
-	((XfwfArrowWidget)self)->xfwfArrow.p4[2].x = x + a;		  ((XfwfArrowWidget)self)->xfwfArrow.p4[2].y = y + height - a3;
-	((XfwfArrowWidget)self)->xfwfArrow.p4[3].x = x + a;		  ((XfwfArrowWidget)self)->xfwfArrow.p4[3].y = y + a3;
-	XFillPolygon(XtDisplay(self), XtWindow(self), ((XfwfArrowWidget)self)->xfwfArrow.arrowdarkgc, ((XfwfArrowWidget)self)->xfwfArrow.p2, 4, Convex,
-		     CoordModeOrigin);
-	XFillPolygon(XtDisplay(self), XtWindow(self), ((XfwfArrowWidget)self)->xfwfArrow.arrowlightgc, ((XfwfArrowWidget)self)->xfwfArrow.p3, 4, Convex,
-		     CoordModeOrigin);
-	XFillPolygon(XtDisplay(self), XtWindow(self), ((XfwfArrowWidget)self)->xfwfArrow.arrowlightgc, ((XfwfArrowWidget)self)->xfwfArrow.p4, 4, Convex,
-		     CoordModeOrigin);
-	break;
-    }
     if (region != NULL) {
 	XSetClipMask(XtDisplay(self), ((XfwfArrowWidget)self)->xfwfArrow.arrowgc, None);
 	XSetClipMask(XtDisplay(self), ((XfwfArrowWidget)self)->xfwfArrow.arrowlightgc, None);
 	XSetClipMask(XtDisplay(self), ((XfwfArrowWidget)self)->xfwfArrow.arrowdarkgc, None);
     }
+}
+/*ARGSUSED*/
+#if NeedFunctionPrototypes
+static void  draw_arrow(Widget self,int  on)
+#else
+static void  draw_arrow(self,on)Widget self;int  on;
+#endif
+{
+    Position x, y;
+    int  width, height, dir;
+
+    ((XfwfArrowWidgetClass)self->core.widget_class)->xfwfCommon_class.compute_inside(self, &x, &y, &width, &height);
+
+    if (((XfwfArrowWidget)self)->xfwfArrow.arrowShadow) {
+      XDrawLine(XtDisplay(self), XtWindow(self),
+		(on ? ((XfwfArrowWidget)self)->xfwfArrow.arrowdarkgc : ((XfwfArrowWidget)self)->xfwfArrow.arrowlightgc),
+		x, y, x + width, y);
+      XDrawLine(XtDisplay(self), XtWindow(self),
+		(on ? ((XfwfArrowWidget)self)->xfwfArrow.arrowdarkgc : ((XfwfArrowWidget)self)->xfwfArrow.arrowlightgc),
+		x, y, x, y + height);
+      XDrawLine(XtDisplay(self), XtWindow(self),
+		(on ? ((XfwfArrowWidget)self)->xfwfArrow.arrowlightgc : ((XfwfArrowWidget)self)->xfwfArrow.arrowdarkgc),
+		x + width - 1, y, x + width - 1, y + height);
+      XDrawLine(XtDisplay(self), XtWindow(self),
+		(on ? ((XfwfArrowWidget)self)->xfwfArrow.arrowlightgc : ((XfwfArrowWidget)self)->xfwfArrow.arrowdarkgc),
+		x, y + height - 1, x + width, y + height - 1);
+    }
+
+    switch (((XfwfArrowWidget)self)->xfwfArrow.direction) {
+    case XfwfTop:
+      dir = UP;
+      --y;
+      break;
+    case XfwfBottom:
+      dir = DOWN;
+      y++;
+      break;
+    case XfwfLeft:
+      x++;
+      dir = LEFT;
+      break;
+    default:
+    case XfwfRight:
+      --x;
+      dir = RIGHT;
+      break;
+    }
+
+    x += ((XfwfArrowWidget)self)->xfwfArrow.arrowShadow;
+    y += ((XfwfArrowWidget)self)->xfwfArrow.arrowShadow;
+    width -= 2 * ((XfwfArrowWidget)self)->xfwfArrow.arrowShadow;
+    height -= 2 * ((XfwfArrowWidget)self)->xfwfArrow.arrowShadow;
+    width = max(1, width);
+    height = max(1, height);
+
+    Xaw3dDrawArrow(XtDisplay(self), XtWindow(self),
+		   ((XfwfArrowWidget)self)->xfwfArrow.arrowlightgc, ((XfwfArrowWidget)self)->xfwfArrow.arrowdarkgc,
+		   ((XfwfArrowWidget)self)->xfwfArrow.arrowgc, ((XfwfArrowWidget)self)->xfwfArrow.arrowgc,
+		   x, y, width, height,
+		   0, dir, on);
 }

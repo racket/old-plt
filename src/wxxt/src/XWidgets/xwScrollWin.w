@@ -189,10 +189,12 @@ by the frame widget.
     $vscroll = XtVaCreateWidget
 	("_vscroll", xfwfVScrollbarWidgetClass, $, XtNframeWidth,
 	 1, XtNframeType, XfwfSunken, XtNborderWidth, 0, 
+         XtNhighlightColor, $highlightColor,
 	 XtNhighlightThickness, 0, XtNbackground, bg, NULL);
     $hscroll = XtVaCreateWidget
 	("_hscroll", xfwfHScrollbarWidgetClass, $, XtNframeWidth,
 	 1, XtNframeType, XfwfSunken, XtNborderWidth, 0, 
+         XtNhighlightColor, $highlightColor,
 	 XtNhighlightThickness, 0, XtNbackground, bg, NULL);
     if (! $hideVScrollbar) XtManageChild($vscroll);
     if (! $hideHScrollbar) XtManageChild($hscroll);

@@ -336,15 +336,16 @@ static void initialize(request,self,args,num_args)Widget  request;Widget self;Ar
 	 XtNwidth, max(1, wa),
 	 XtNheight, max(1, ha),
 	 XtNframeWidth, 0,
-	 XtNforeground, ((XfwfScrollbarWidget)self)->xfwfScrollbar.scrollbarForeground,
+	 XtNforeground, BlackPixelOfScreen(XtScreen(self)),
 	 XtNinitialDelay, ((XfwfScrollbarWidget)self)->xfwfScrollbar.initialDelay,
 	 XtNrepeatDelay, ((XfwfScrollbarWidget)self)->xfwfScrollbar.repeatDelay,
 	 XtNtraversalOn, False,
 	 XtNhighlightThickness, 0,
 	 XtNdirection, ((XfwfScrollbarWidget)self)->xfwfScrollbar.vertical?XfwfTop:XfwfLeft,
 	 XtNouterOffset, 0,
-	 XtNborderWidth, 0,
-	 XtNbackground, thumb_bg,
+	 XtNbackground, bg,
+	 XtNarrowShadow, 2,
+         XtNhighlightColor, ((XfwfScrollbarWidget)self)->xfwfCommon.highlightColor,
 	 NULL);
     XtAddCallback(((XfwfScrollbarWidget)self)->xfwfScrollbar.arrow1, XtNcallback, up, self);
     ((XfwfScrollbarWidget)self)->xfwfScrollbar.arrow2 = XtVaCreateManagedWidget
@@ -354,16 +355,16 @@ static void initialize(request,self,args,num_args)Widget  request;Widget self;Ar
 	 XtNwidth, max(1, wa),
 	 XtNheight, max(1, ha),
 	 XtNframeWidth, 0,
-	 XtNforeground, ((XfwfScrollbarWidget)self)->xfwfScrollbar.scrollbarForeground,
+	 XtNforeground, BlackPixelOfScreen(XtScreen(self)),
 	 XtNinitialDelay, ((XfwfScrollbarWidget)self)->xfwfScrollbar.initialDelay,
 	 XtNrepeatDelay, ((XfwfScrollbarWidget)self)->xfwfScrollbar.repeatDelay,
 	 XtNtraversalOn, False,
 	 XtNhighlightThickness, 0,
 	 XtNdirection, ((XfwfScrollbarWidget)self)->xfwfScrollbar.vertical?XfwfBottom:XfwfRight,
 	 XtNouterOffset, 0,
-	 XtNborderWidth, 0,
-	 XtNbackground, thumb_bg,
-         XtNthumbFrameWidth, 1,
+	 XtNbackground, bg,
+	 XtNarrowShadow, 2,
+         XtNhighlightColor, ((XfwfScrollbarWidget)self)->xfwfCommon.highlightColor,
 	 NULL);
     XtAddCallback(((XfwfScrollbarWidget)self)->xfwfScrollbar.arrow2, XtNcallback, down, self);
     ((XfwfScrollbarWidget)self)->xfwfScrollbar.slider = XtVaCreateManagedWidget

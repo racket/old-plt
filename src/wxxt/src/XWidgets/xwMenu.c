@@ -1116,7 +1116,7 @@ static void DrawCascadeItem(MenuWidget mw, menu_state *ms, menu_item *item,
     if (!mw->menu.horizontal || ms->prev) {
       int on, size;
       on = item->enabled && ms->selected==item;
-      size = mw->menu.indicator_size - 2 * mw->menu.shadow_width;
+      size = mw->menu.indicator_size;
       if (size & 0x1) size--;
       Xaw3dDrawArrow(XtDisplay((Widget)mw), ms->win,
 		     mw->menu.top_shadow_GC,
@@ -1133,7 +1133,7 @@ static void DrawCascadeItem(MenuWidget mw, menu_state *ms, menu_item *item,
 		       + wx_DESCENT(mw->menu.font,
 				    mw->menu.xft_font)
 		       - size)/2,
-		     size, 0,
+		     size, size, 0,
 		     RIGHT, 0);
     }
 }
@@ -1188,7 +1188,7 @@ static void DisplayMenu(MenuWidget mw, menu_state *ms)
 		       mw->menu.normal_GC,
 		       x + ((ms->w - TOO_TALL_SCROLL_HEIGHT) / 2),
 		       y + 2,
-		       TOO_TALL_SCROLL_HEIGHT - 4,
+		       TOO_TALL_SCROLL_HEIGHT - 4, TOO_TALL_SCROLL_HEIGHT - 4,
 		       0,
 		       UP,
 		       0);
@@ -1228,7 +1228,7 @@ static void DisplayMenu(MenuWidget mw, menu_state *ms)
 		     mw->menu.normal_GC,
 		     x + ((ms->w - TOO_TALL_SCROLL_HEIGHT) / 2),
 		     y + 2,
-		     TOO_TALL_SCROLL_HEIGHT - 4,
+		     TOO_TALL_SCROLL_HEIGHT - 4, TOO_TALL_SCROLL_HEIGHT - 4,
 		     0,
 		     DOWN,
 		     0);

@@ -6,11 +6,17 @@
 #include <./xwBoardP.h>
 #include <./xwArrow.h>
 _XFUNCPROTOBEGIN
+typedef void  (*draw_arrow_Proc)(
+#if NeedFunctionPrototypes
+Widget,int 
+#endif
+);
+#define XtInherit_draw_arrow ((draw_arrow_Proc) _XtInherit)
 
 typedef struct {
 /* methods */
+draw_arrow_Proc draw_arrow;
 /* class variables */
-int dummy;
 } XfwfArrowClassPart;
 
 typedef struct _XfwfArrowClassRec {

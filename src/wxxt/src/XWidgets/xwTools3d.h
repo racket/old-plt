@@ -217,6 +217,7 @@ void Xaw3dDrawArrow(
     int        x,
     int        y,		/* upper left corner */
     unsigned   width,		/* width of arrow */
+    unsigned   height,		/* height of arrow */
     int        thickness,	/* thickness of shadow */
     ArrowType  arrow_type,	/* LEFT, RIGHT, UP or DOWN arrow */
     Boolean    pushed		/* is radio pushed(in) or released(out) */

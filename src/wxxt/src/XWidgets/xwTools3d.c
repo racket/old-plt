@@ -435,97 +435,79 @@ GC         inGC,		/* GC for pushed arrow */
 GC         outGC,		/* GC for released arrow */
 int        x, int y,		/* upper left corner */
 unsigned   width,		/* width of arrow */
+unsigned   height,		/* width of arrow */
 int        thickness,		/* thickness of shadow */
 ArrowType  arrow_type,		/* LEFT, RIGHT, UP or DOWN arrow */
 Boolean    pushed		/* is radio pushed(in) or released(out) */
 )
 {
-    XPoint   ptplain[3], pt[8];
-    XPoint   *topPt,  *botPt;
-    int      topNpts, botNpts;
-    GC       topGC,   botGC,   plainGC;
+  int x1, y1, x2, y2, dx1, dx2, dy1, dy2, i;
 
-    unsigned half        = width/2+(width&0x1);
-    unsigned thickness30 = (unsigned)(1.732*thickness);	/* cotangent 30° */
+  switch (arrow_type) {
+  case UP:
+    y += (height - (width >> 1) + 1) >> 1;
+    height = (width >> 1);
+    break;
+  case DOWN:
+    y += (height - (width >> 1)) >> 1;
+    height = (width >> 1);
+    break;
+  case LEFT:
+    x += (width - (height >> 1) + 1) >> 1;
+    width = (height >> 1);
+    break;
+  case RIGHT:
+    x += (width - (height >> 1)) >> 1;
+    width = (height >> 1);
+    break;
+  }
 
-    if (pushed) {
-	topGC = shadowGC;
-	botGC = lightGC;
-	plainGC = inGC;
-    } else {
-	topGC = lightGC;
-	botGC = shadowGC;
-	plainGC = outGC;
-    }
-	
-#   define DEC(num) ((num) > 0 ? ((num)-1) : (num))
-    switch (arrow_type) {
-    default: /* should never happen but sure is sure */
-    case RIGHT:
-	pt[0].x = pt[5].x = x+width;
-	pt[1].x = pt[6].x = x+width-thickness30;
-	pt[2].x = pt[7].x = x+thickness;
-	pt[3].x = pt[4].x = x;
-	pt[0].y = pt[1].y = pt[5].y = pt[6].y = y+half;
-	pt[2].y = y+width-thickness30;
-	pt[3].y = y+width;
-	pt[4].y = DEC(y);
-	pt[7].y = y+thickness30-1;
-	topPt = pt+2; topNpts=6;
-	botPt = pt;   botNpts=4;
-	break;
-    case LEFT:
-	pt[0].x = pt[5].x = x;
-	pt[1].x = pt[6].x = x+thickness30;
-	pt[2].x = pt[7].x = x+width-thickness;
-	pt[3].x = pt[4].x = x+width;
-	pt[0].y = pt[1].y = pt[5].y = pt[6].y = y+half;
-	pt[2].y = y+thickness30;
-	pt[3].y = DEC(y);
-	pt[4].y = y+width;
-	pt[7].y = y+width-thickness30;
-	topPt = pt;   topNpts=4;
-	botPt = pt+2; botNpts=6;
-	break;
-    case UP:
-	pt[0].x = pt[1].x = pt[5].x = pt[6].x = x+half;
-	pt[2].x = x+thickness30;
-	pt[3].x = DEC(x);
-	pt[4].x = x+width;
-	pt[7].x = x+width-thickness30;
-	pt[0].y = pt[5].y = DEC(y);
-	pt[1].y = pt[6].y = y+thickness30;
-	pt[2].y = pt[7].y = y+width-thickness;
-	pt[3].y = pt[4].y = y+width;
-	topPt = pt;   topNpts=4;
-	botPt = pt+2; botNpts=6;
-	break;
-    case DOWN:
-	pt[0].x = pt[1].x = pt[5].x = pt[6].x = x+half;
-	pt[2].x = x+width-thickness30;
-	pt[3].x = x+width;
-	pt[4].x = x;
-	pt[7].x = x+thickness30;
-	pt[0].y = pt[5].y = y+width;
-	pt[1].y = pt[6].y = y+width-thickness30;
-	pt[2].y = pt[7].y = y+thickness;
-	pt[3].y = pt[4].y = y;
-	topPt = pt+2; topNpts=6;
-	botPt = pt;   botNpts=4;
-    }
-#   undef DEC
+  switch (arrow_type) {
+  case UP:
+    i = height;
+    x1 = x;
+    x2 = x + width - 1;
+    y1 = y2 = y + height;
+    dx1 = 1;
+    dx2 = -1;
+    dy1 = dy2 = -1;
+    break;
+  case DOWN:
+    i = height;
+    x1 = x;
+    x2 = x + width - 1;
+    y1 = y2 = y;
+    dx1 = 1;
+    dx2 = -1;
+    dy1 = dy2 = 1;
+    break;
+  case LEFT:
+    i = width;
+    y1 = y;
+    y2 = y + height - 1;
+    x1 = x2 = x + width;
+    dy1 = 1;
+    dy2 = -1;
+    dx1 = dx2 = -1;
+    break;
+  default:
+  case RIGHT:
+    i = width;
+    y1 = y;
+    y2 = y + height - 1;
+    x1 = x2 = x;
+    dy1 = 1;
+    dy2 = -1;
+    dx1 = dx2 = 1;
+    break;
+  }
 
-    /* area inside of the shadow triangle */
-    ptplain[0] = pt[1];
-    ptplain[1] = pt[2];
-    ptplain[2] = pt[7];
-    /* first draw inner area so that the borders have a nice edge */
-    XFillPolygon(dpy, win, plainGC, ptplain, 3, Convex, CoordModeOrigin);
-    if (thickness) {
-      /* draw bottom before top so that top casts the longer shadow */
-      XFillPolygon(dpy, win, botGC, botPt, botNpts, Complex, CoordModeOrigin);
-      XFillPolygon(dpy, win, topGC, topPt, topNpts, Complex, CoordModeOrigin);
-    } else {
-      XDrawLines(dpy, win, plainGC, ptplain, 3, CoordModeOrigin);
-    }
+  while (i) {
+    XDrawLine(dpy, win, pushed ? inGC : outGC, x1, y1, x2, y2);
+    x1 += dx1;
+    x2 += dx2;
+    y1 += dy1;
+    y2 += dy2;
+    i--;
+  }
 }

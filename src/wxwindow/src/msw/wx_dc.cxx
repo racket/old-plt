@@ -105,8 +105,6 @@ wxDC::wxDC(void)
   font = wxNORMAL_FONT;
   device_origin_x = 0;
   device_origin_y = 0;
-  logical_scale_x = 1.0;
-  logical_scale_y = 1.0;
   user_scale_x = 1.0;
   user_scale_y = 1.0;
   mapping_mode = wxPIXELS_MAP;
@@ -903,7 +901,7 @@ Bool wxDC::BeginSetPixelFast(int x, int y, int w, int h)
   double ww, hh;
 
   ReleaseGraphics();
-  SetScaleMode(wxWINDOWS_SCALE, dc);
+  SetScaleMode(wxWINDOWS_SCALE);
   
   GetSize(&ww, &hh);
 
@@ -1732,7 +1730,7 @@ int wxDC::StartPen(HDC dc)
       int size;
       size = current_pen->GetWidth();
       if (scaling_mode == wxWX_SCALE)
-	size = MS_LOG2DEV(size);
+	size = MS_XLOG2DEV(size);
       if (!hilite_pens[size]) {
 	HPEN p;
 	p = CreatePen(PS_SOLID, size, GetSysColor(COLOR_HIGHLIGHT));
@@ -2579,7 +2577,7 @@ wxPrinterDC::wxPrinterDC(wxWindow *parent, char *driver_name, char *device_name,
   }
   
   if (cdc) {
-    SetMappingMode(wxPOINTS_MAP);
+    SetMapMode(wxPOINTS_MAP);
   }
 
   SetBrush(wxBLACK_BRUSH);
@@ -2600,7 +2598,7 @@ wxPrinterDC::wxPrinterDC(HDC theDC)
   ok = TRUE;
 
   if (cdc) {
-    SetMappingMode(wxPOINTS_MAP);
+    SetMapMode(wxPOINTS_MAP);
   }
 
   SetBrush(wxBLACK_BRUSH);

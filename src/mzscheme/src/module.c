@@ -2530,6 +2530,8 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	midx = exss[i];
 	if (SCHEME_FALSEP(midx))
 	  midx = nmidx;
+	else
+	  midx = scheme_modidx_shift(midx, iim->src_modidx, nmidx);
       } else
 	midx = nmidx;
       vec = scheme_make_vector(4, NULL);

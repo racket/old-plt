@@ -53,9 +53,7 @@
 				print-exact-as-decimal?
 				read-decimal-as-exact?
 				define-argv?
-				use-pretty-printer?
-				teaching-primitives?
-				teaching-syntax?))
+				use-pretty-printer?))
   
   ;; settings : (list-of setting)
   (define settings
@@ -85,9 +83,7 @@
 	     (print-exact-as-decimal? #t)
 	     (read-decimal-as-exact? #t)
 	     (define-argv? #f)
-	     (use-pretty-printer? #t)
-	     (teaching-primitives? #t)
-	     (teaching-syntax? #t)))
+	     (use-pretty-printer? #t)))
 	  (make-setting/parse
 	   `((key intermediate)
 	     (name "Intermediate Student")
@@ -114,9 +110,7 @@
 	     (print-exact-as-decimal? #t)
 	     (read-decimal-as-exact? #t)
 	     (define-argv? #f)
-	     (use-pretty-printer? #t)
-	     (teaching-primitives? #t)
-	     (teaching-syntax? #t)))
+	     (use-pretty-printer? #t)))
 	  (make-setting/parse
 	   `((key advanced)
 	     (name "Advanced Student")
@@ -143,9 +137,7 @@
 	     (print-exact-as-decimal? #t)
 	     (read-decimal-as-exact? #t)
 	     (define-argv? #f)
-	     (use-pretty-printer? #t)
-	     (teaching-primitives? #t)
-	     (teaching-syntax? #t)))
+	     (use-pretty-printer? #t)))
 	  (make-setting/parse
 	   `((key full)
 	     (name "Textual Full Scheme (MzScheme)")
@@ -172,9 +164,7 @@
 	     (print-exact-as-decimal? #f)
 	     (read-decimal-as-exact? #f)
 	     (define-argv? #t)
-	     (use-pretty-printer? #t)
-	     (teaching-primitives? #f)
-	     (teaching-syntax? #f)))
+	     (use-pretty-printer? #t)))
 	  (make-setting/parse
 	   `((key full)
 	     (name "Textual Full Scheme without Debugging (MzScheme)")
@@ -201,9 +191,7 @@
 	     (print-exact-as-decimal? #f)
 	     (read-decimal-as-exact? #f)
 	     (define-argv? #t)
-	     (use-pretty-printer? #t)
-	     (teaching-primitives? #f)
-	     (teaching-syntax? #f)))))
+	     (use-pretty-printer? #t)))))
   
   (define (snoc x y) (append y (list x)))
   
@@ -545,8 +533,6 @@
                  [debugs (if (continuation-mark-set? marks)
 			     (aries:extract-zodiac-locations marks)
 			     null)])
-            (printf "about to invoke dh with list: ~a~n" debugs)
-            (printf "oh, and by the way, the message is: ~a~n" (exn-message exn))
 	    (dh (format "~a" (exn-message exn)) debugs exn))
 	  (dh (format "uncaught exception: ~e" exn) null #f)))
     ((error-escape-handler))

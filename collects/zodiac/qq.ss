@@ -79,7 +79,9 @@
 	    (let ((out (expand-expr (car items) env attributes vocab)))
 	      (let ((this-changed? (get-attribute attributes 'qq-changed?))
 		     (this-uq-type
-		       (get-attribute attributes 'qq-unquote-type)))
+		       (begin0
+			 (get-attribute attributes 'qq-unquote-type)
+			 (put-attribute attributes 'qq-unquote-type 'unquote))))
 		(loop (cdr items)
 		  (cons (make-qq-seq-entry (car items) out this-changed?
 			  this-uq-type)

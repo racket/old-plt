@@ -683,15 +683,13 @@
     ; (let ((var val) ...) body ...)                           [macro]
     ; (let fun ((var val) ...) body ...)                       [macro]
 
-    (add-macro-form
-      'let
-      scheme-vocabulary
+    (add-macro-form 'let scheme-vocabulary
       (let* ((kwd '(let))
 	      (in-pattern-1 (if (language<=? 'structured)
 			      '(let ((v e) ...) b)
 			      '(let fun ((v e) ...) b ...)))
 	      (out-pattern-1 (if (language<=? 'structured)
-			       '((lambda (v ...) b) e ...)
+			       '(let-values (((v) e) ...) b)
 			       '((letrec ((fun (lambda (v ...) b ...)))
 				   fun)
 				  e ...)))
@@ -700,7 +698,7 @@
 			      '(let ((v e) ...) b ...)))
 	      (out-pattern-2 (if (language<=? 'structured)
 			       out-pattern-1
-			       '((lambda (v ...) b ...) e ...)))
+			       '(let-values (((v) e) ...) b ...)))
 	      (m&e-1 (pat:make-match&env in-pattern-1 kwd))
 	      (m&e-2 (pat:make-match&env in-pattern-2 kwd)))
 	(lambda (expr env)

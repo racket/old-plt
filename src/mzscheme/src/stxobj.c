@@ -411,7 +411,7 @@ void scheme_init_stx(Scheme_Env *env)
 			     env);
   scheme_add_global_constant("syntax-extend-certificate-env", 
 			     scheme_make_prim_w_arity(syntax_extend_certificate_env,
-						      "syntax-extend-certificate-evn",
+						      "syntax-extend-certificate-env",
 						      2, 2),
 			     env);
   scheme_add_global_constant("syntax-make-certificate-env", 

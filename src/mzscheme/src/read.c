@@ -309,6 +309,7 @@ void scheme_init_read(Scheme_Env *env)
     delim['\''] -= SCHEME_OK;
     delim[','] -= SCHEME_OK;
     delim[';'] -= SCHEME_OK;
+    delim['`'] -= SCHEME_OK;
     delim['_'] |= CROC_OK;
     {
       GC_CAN_IGNORE const char *syms = "+-_=?:<>.!%^&*/~|";
@@ -2209,7 +2210,7 @@ read_number_or_symbol(int init_ch, Scheme_Object *port,
 	 && (running_quote
 	     || (!scheme_isspace(ch)
 		 && (((ch < 128) && (delim[ch] & delim_ok))
-		     || ((ch > 128) && far_char_ok))))) {
+		     || ((ch >= 128) && far_char_ok))))) {
     if (!ungetc_ok) {
       if (init_ch < 0)
 	scheme_getc(port); /* must be a character */

@@ -5,6 +5,7 @@
 
   (require "framework-sig.ss"
 	   "private/sig.ss"
+           "private/number-snip.ss"
            "private/comment-box.ss"
            "private/application.ss"
 	   "private/version.ss"
@@ -45,6 +46,7 @@
             [exit : framework:exit^ (exit@ mred preferences)]
 	    [menu : framework:menu^ (menu@ mred preferences)]
 	    [preferences : framework:preferences^ (preferences@ mred exn exit panel frame)]
+            [number-snip : framework:number-snip^ (number-snip@ mred preferences)]
 	    [autosave : framework:autosave^ (autosave@ mred exit preferences frame
                                                      scheme editor text finder group)]
 	    [path-utils : framework:path-utils^ (path-utils@)]
@@ -57,7 +59,8 @@
 			     preferences text pasteboard frame handler)]
 	    [pasteboard : framework:pasteboard^ (pasteboard@ mred editor)]
 	    [text : framework:text^
-		  (text@ mred icon editor preferences keymap color-model frame scheme)]
+		  (text@ mred icon editor preferences keymap 
+                         color-model frame scheme number-snip)]
             [color : framework:color^ (color@ preferences icon mode text color-prefs scheme)]
             [color-prefs : framework:color-prefs^ (color-prefs@ preferences editor panel)]
             [comment-box : framework:comment-box^
@@ -78,30 +81,30 @@
 		    (scheme@ mred preferences 
                            icon keymap text editor frame comment-box mode color color-prefs)]
 	    [main : framework:main^ (main@ mred preferences exit group handler editor color-prefs scheme)])
-      (export
-       (unit menu)
-       (unit application)
-       (unit version)
-       (unit color-model)
-       (unit exn)
-       (unit exit)
-       (unit preferences)
-       (unit autosave)
-       (unit handler) 
-       (unit keymap)
-       (unit path-utils)
-       (unit icon)
-       (unit editor)
-       (unit pasteboard)
-       (unit text)
-       (unit color)
-       (unit color-prefs)
-       (unit comment-box)
-       (unit finder)
-       (unit group)
-       (unit canvas)
-       (unit panel)
-       (unit frame)
-       (unit scheme)
-       (unit mode)
-       (unit main)))))
+      (export (unit number-snip)
+              (unit menu)
+              (unit application)
+              (unit version)
+              (unit color-model)
+              (unit exn)
+              (unit exit)
+              (unit preferences)
+              (unit autosave)
+              (unit handler) 
+              (unit keymap)
+              (unit path-utils)
+              (unit icon)
+              (unit editor)
+              (unit pasteboard)
+              (unit text)
+              (unit color)
+              (unit color-prefs)
+              (unit comment-box)
+              (unit finder)
+              (unit group)
+              (unit canvas)
+              (unit panel)
+              (unit frame)
+              (unit scheme)
+              (unit mode)
+              (unit main)))))

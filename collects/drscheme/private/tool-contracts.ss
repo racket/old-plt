@@ -372,52 +372,6 @@
    "the input to"
    "@flink drscheme:debug:open-and-highlight-in-file %"
    ".")
-  
-
-;                             
-;                             
-;                             
-;                  ;          
-;                             
-;                             
-;    ;;;   ; ;;    ;   ; ;;   
-;   ;      ;;  ;   ;   ;;  ;  
-;   ;;     ;   ;   ;   ;    ; 
-;    ;;    ;   ;   ;   ;    ; 
-;      ;   ;   ;   ;   ;    ; 
-;      ;   ;   ;   ;   ;;  ;  
-;   ;;;    ;   ;   ;   ; ;;   
-;                      ;      
-;                      ;      
-;                      ;      
- 
-  (drscheme:number-snip:make-repeating-decimal-snip
-   (number? boolean? . -> . (is-a?/c snip%))
-   (num show-prefix?)
-   
-   "Makes a number snip for DrScheme's REPL that is in the"
-   "decimal view state."
-   "The boolean indicates if a {\\tt \\#e} prefix appears"
-   "on the number."
-   ""
-   "See also"
-   "@flink drscheme:number-snip:make-fraction-snip %"
-   ".")
-  
-  (drscheme:number-snip:make-fraction-snip
-   (number? boolean? . -> . (is-a?/c snip%))
-   (num show-prefix-in-decimal-view?)
-   
-   "Makes a number snip for DrScheme's REPL that is in the"
-   "fraction view state."
-   "The boolean indicates if a {\\tt \\#e} prefix appears"
-   "on the number in the decimal state"
-   ""
-   "See also"
-   "@flink drscheme:number-snip:make-repeating-decimal-snip %"
-   ".")
-  
-  
 
 ;                           
 ;                           

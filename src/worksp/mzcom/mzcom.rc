@@ -55,7 +55,7 @@ END
 
 VS_VERSION_INFO VERSIONINFO
  FILEVERSION 1,0,0,1
- PRODUCTVERSION 102,0,0,1
+ PRODUCTVERSION 103,0,0,1
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -81,7 +81,7 @@ BEGIN
             VALUE "OriginalFilename", "MzCOM.EXE\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "MzCOM Module\0"
-            VALUE "ProductVersion", "102, 0, 0, 1\0"
+            VALUE "ProductVersion", "103, 0, 0, 1\0"
             VALUE "SpecialBuild", "\0"
         END
     END

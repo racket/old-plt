@@ -30,22 +30,15 @@
 
   (framework:preferences:set-default
    'drscheme:font-name
-   (or (send the-font-name-directory get-face-name
-	     (send the-font-name-directory
-		   find-family-default-font-id
-		   'modern))
-       (let ([fixed-faces (get-fixed-faces)])
-	 (if (null? fixed-faces)
-	     #f
-	     (car fixed-faces))))
-   (lambda (x) (or (string? x) (not x))))
+   (get-family-builtin-face 'modern)
+   string?)
 
   (framework:preferences:set-default
    'drscheme:font-size
-   (let ([b (box 0)])
-     (if (get-resource "mred" "defaultFontSize" b)
-	 (unbox b)
-	 12))
+   (send (send (send (make-object text%) 
+		     get-style-list)
+	       basic-style)
+	 get-size)
    (lambda (x) (and (number? x) (exact? x) (= x (floor x)))))
 
   (define (set-font-size size)
@@ -83,12 +76,16 @@
 	    [font-name-control
 	     (case (system-type)
 	       [(windows macos)
-		(make-object choice% "Font Name"
-			     (get-fixed-faces)
-			     options-panel
-			     (lambda (font-name evt)
-			       (set-font-name
-				(send font-name get-string-selection))))]
+		(let ([choice
+		       (make-object choice% "Font Name"
+				    (get-fixed-faces)
+				    options-panel
+				    (lambda (font-name evt)
+				      (set-font-name
+				       (send font-name get-string-selection))))])
+		  (send choice set-string-selection
+			(framework:preferences:get 'drscheme:font-name))
+		  choice)]
 	       [else
 		(make-object button%
 		  "Set Font"
@@ -126,6 +123,8 @@
 		 (send text lock #t)
 		 (send text end-edit-sequence)))])
 		 
+       (send font-name-control focus)
+
        (framework:preferences:add-callback
 	'drscheme:settings
 	(lambda (p v)

@@ -1,5 +1,6 @@
 (module ga mzscheme
   (require (lib "list.ss" "mzlib")
+	   (lib "process.ss" "mzlib")
 	   "heuristics.ss"
 	   "client.ss")
 	  
@@ -110,36 +111,40 @@
                                    (map (lambda (x) (cons (car ls) x)) 
 					(cdr ls)))
                               acc))]))))
+
+  ;; startup-player : gene-seq -> number
+  (define (startup-player gene-seq)
+    (set-parameter-values! gene-seq)
+    (start-client #f #f "localhost" 4000))
   
   ;; play-board : vector(num) string string vector(gene-seq) num -> void
   (define (play-board scoreboard board packages player-vec players)
     (let ([board-file (string-append "boards/" board)]
           [packages-file (string-append "boards/" packages)])
-      (let-values ([(subproc stdout stdin stderr) 
-                    (subprocess #f #f #f "./Simulator"
-				(format "-p 4000 -m ~a -k ~a -n ~a"
-					board packages (length players)))])
-	(printf
-	 "Starting game with players ~a on board ~a with package file ~a~n"
-	 players board packages)
-	(flush-output (current-output-port))
-	(let ([threads (map (lambda (player-num)
-                              (let ([genes (vector-ref player-vec player-num)])
-                                (thread (lambda ()
-                                          (set-parameter-values! genes)
-                                          (let ([score (start-client #f #f 
-                                                         "localhost" 4000)])
-                                            (vector-set! scoreboard player-num 
-                                              (+ (vector-ref scoreboard
-							     player-num)
-						 score)))))))
-			    players)])
-          (for-each thread-wait threads)
-          (close-input-port stdout)
-          (close-input-port stderr)
-          (close-output-port stdin)
-          (subprocess-kill subproc #t)))))
-  
+      (apply (lambda (stdout stdin procid stderr utility)
+	       (printf (string-append "Starting game with players ~a on"
+				      "board ~a with package file ~a~n")
+		       players board packages)
+	       (flush-output (current-output-port))
+	       (let loop ((ls players) (threads '()))
+		 (cond
+		  [(null? ls) (for-each thread-wait threads)
+			      (close-input-port stderr)
+		              (close-input-port stdout)
+			      (close-output-port stdin)
+			      (utility 'kill)]
+		  [else (let ([genes (vector-ref player-vec (car ls))])
+			  (loop (cdr ls)
+				(cons (thread
+				       (lambda ()
+					 (let ([score (startup-player genes)])
+					   (vector-set! scoreboard (car ls)
+					     (+ (vector-ref scoreboard (car ls))
+						score)))))
+				      threads)))])))
+	     (process (format "./Simulator -p 4000 -n ~a -m ~a -k ~a~n"
+			      (length players) board-file packages-file)))))
+
   ;; generate-results : list-of-gene-seqs -> list-of-gene-seqs
   (define (generate-results ls)
     (let ([scoreboard (make-vector (length ls) 0)]

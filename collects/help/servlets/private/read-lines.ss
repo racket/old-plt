@@ -35,7 +35,7 @@
 	,@(semi-flatten (map (lambda (ln) 
 			       (if (eq? ln temp-anchor)
 				   `(,ln "")
-				   `(,ln (BR)))) lines))))))
+				   `(,(spacify ln) (BR)))) lines))))))
 
   (define eoregexp
     "($|\\s|(\\.(\\s|$))|>)")
@@ -158,15 +158,14 @@
 			  (begin
 			    (close-input-port port)
 			    (reverse lines))
-			  (loop (cons 
-			        (spacify line) 
-				lines)))))])
+			  (loop (cons line lines)))))])
       (if offset
 	  (let loop ([lines lines]
 		     [count 0])
 	    (if (null? lines)
 		'()
-		(let ([len (add1 (string-length (car lines)))]) ; add1 because newline in source omitted
+		(let ([len (add1 (string-length (car lines)))])
+	          ; add1 because newline in source omitted
 		  (if (>= count offset)
 		      (cons temp-anchor
 			    (if doc-txt?

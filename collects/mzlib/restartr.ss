@@ -108,7 +108,9 @@
      argv
      (adjust-flag-table table)
      (lambda (exprs . rest)
-       (when args (set! rest args))
+       (unless (null? rest)
+	 (set! args rest))
+       ;(when args (set! rest args))
        (let ([n (make-namespace
 		 (if no-enforce-keywords? 'no-keywords 'keywords)
 		 (if esc-cont-only? 'call/cc=call/ec 'call/cc!=call/ec)
@@ -124,7 +126,8 @@
 	      (compile-allow-cond-fallthrough (not no-auto-else?))
 
 	      (unless mute-banner? (display (banner)))
-	      (eval `(#%define-values (argv) (#%quote ,args)))
+
+	      (eval `(#%define-values (argv) (#%quote ,(if args (list->vector args) (vector)))))
 	      (eval `(#%define-values (program) (#%quote ,program)))
 
 	      (current-library-collection-paths
@@ -156,13 +159,21 @@
 			      (with-handlers ([void print-error])
 				    (load f)))))
 
-	      (let/ec escape
-		(for-each
-		 (lambda (e)
-		   (with-handlers ([void (lambda (e) (print-error e) (escape #f))])
-		      (eval (read (open-input-string e)))))
-		 exprs))
-
-	      (unless no-rep? (read-eval-print-loop))))))
+	      (let ([result
+		     (let/ec escape
+		       (for-each
+			(lambda (e)
+			  (with-handlers ([void (lambda (e) (print-error e) (escape #f))])
+			    (eval (read (open-input-string e)))))
+			exprs)
+		       #t)])
+		(let/ec k
+		  (exit-handler
+		   (lambda (status)
+		     (when result
+		       (set! result (= status 0)))
+		     (k #f)))
+		  (unless no-rep? (read-eval-print-loop)))
+		result)))))
      `("arg"))))
 )

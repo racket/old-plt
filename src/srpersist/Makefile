@@ -7,7 +7,7 @@ ODBCVER=0x0351
 DRIVER_MGR_LIB=odbc
 
 # installation directory
-LIBDIR=/usr/site/unixODBC/lib
+LIBDIR=/home/steck/unixODBC/unixODBC-2.0.11/DriverManager/.libs
 
 MZC=../../bin/mzc 
 
@@ -18,7 +18,7 @@ OBJS=srpersist.o srpbuffer.o srptypes.o
 
 ARCH=`archsys`
  
-NATIVE_DIR=../../collects/srpersist/private/native/$(ARCH)
+NATIVE_DIR=../../collects/srpersist/private/compiled/native/$(ARCH)
 
 .cxx.o ::
 	$(CPP) $(CPP_FLAGS) $<  

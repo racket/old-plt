@@ -225,7 +225,9 @@
  (error-saving-preferences "Erreur durant la sauvegarde des préférences: ~a.")
  (error-reading-preferences "Erreur durant la lecture des préférences.")
  (expected-list-of-length2 "espérait une liste de longueur 2.")
- (general-prefs-panel-label "Général")
+ (scheme-prefs-panel-label "Scheme")
+ (warnings-prefs-panel-label "Avertissement")
+ (editor-prefs-panel-label "Edition")
  (highlight-parens "Griser les paires de parenthèses.")
  (fixup-parens "Corriger les parenthèses.")
  (flash-paren-match "Montrer le pairage de parenthèses.")
@@ -242,6 +244,7 @@
  (automatically-to-ps "Imprimer automatiquement dans un fichier postscript.")
  (use-mdi "Utiliser les fenêtres MDI.") ;;; ms windows only -- use that window in a window thingy
  (separate-dialog-for-searching "Utiliser un dialogue séparé pour les recherches.")
+ (reuse-existing-frames "Réutiliser les fenêtre existantes lors de l'ouverture de nouveaux fichiers")
  (default-fonts "Polices par défaut")
  
  ; should have entire alphabet
@@ -262,7 +265,6 @@
  (set-font "Appliquer la police...")
  (select-font-name "Sélectionnez une police")
  (example-text "Example de texte:")
- (general-ii "Général II")
  (only-warn-once "Prévenir une fois seulement quand exécutions et interactions n'ont pas été synchronisées.")
  
  ; warning message when lockfile is around
@@ -378,7 +380,8 @@
  
  (open-info "Ouvrir un fichier à partir du disque dur.")
  (open-menu-item "&Ouvrir")
- 
+ (open-here-menu-item "&Ouvrir ici...")
+
  (open-recent-info "Une liste des fichiers ouverts récemment.")
  (open-recent-menu-item "Ouvrir récent")
  
@@ -504,6 +507,9 @@
  (sort-by-name "Trier par nom")
  (sort-by-position "Trier par position dans le fichier")
  (no-definitions-found "<< aucune définition trouvée >>")
+ 
+ (recent-items-sort-by-age "Trier par age")
+ (recent-items-sort-by-name "Trier par nom")
  
  ;;; show menu
  (hide-definitions-menu-item-label "Cacher les &définitions")
@@ -638,7 +644,8 @@
  (advanced-student "Etudiant niveau avancé")
  (advanced-one-line-summary "Intermédiaire plus lambda et mutation")
  (full-language "Complet") ;; also in the HtDP languages section
- (htdp-full-one-line-summary "Avancé, plus extensions PLT et bibliothèques graphiques")
+ (pretty-big-scheme "Assez gros Scheme")
+ (pretty-big-scheme-one-line-summary "Graphique, plus de nombreuses bibliothèques standards")
  (how-to-design-programs "How to Design Programs") ;; should agree with MIT Press on this one...
  (r5rs-like-languages "R5RS et languages semblabes")
  (mred-lang-name "Graphique sans débogage (MrEd)")
@@ -648,8 +655,6 @@
  (unknown-debug-frame "[inconnu]")
  
  (module-language-one-line-summary "Language avec module comme seule forme")
- (bad-module-language-specs
-  "Les spécifications de drscheme-language-position et drscheme-language-modules sont incorrectes. Espérait (listof (cons string (listof string))) et (listof (listof string)) respectivement, avec les listes drscheme-language-position et drscheme-language-module ayant la même longueur. Trouvé ~e et ~e.")
 
  ;;; debug language
  (backtrace-window-title "Trace - DrScheme")
@@ -733,6 +738,9 @@
  (vc-need-update-string "Un ou plusieurs des logiciels PLT installés doivent être mis à jour")
  (vc-no-update-string "Tous les logiciels PLT installés sont à jour")
  
+ ;; special menu
+ (special-menu "Spécial")
+ 
  ;; large semi colon letters
  (insert-large-letters... "Inserer de grandes lettres...")
  (large-semicolon-letters "Grandes lettres en points-virgules")
@@ -769,4 +777,21 @@
  (mrflow-language-primitives-error-title "Erreur pour les primitives du language")
  (mrflow-language-primitives-error "Mauvais nom de fichier pour la table des types des primitives du language: ~a")
 
+ (xml-tool-menu "XML")
+ (xml-tool-insert-xml-box "Insérer une boîte XML")
+ (xml-tool-insert-scheme-box "Insérer une boîte Scheme")
+ (xml-tool-insert-scheme-splice-box "Insérer une boîte Scheme à raccord")
+ (xml-tool-xml-box "Boîte XML")
+ (xml-tool-scheme-box "Boîte Scheme")
+ (xml-tool-scheme-splice-box "Boîte Scheme à raccord")
+ (xml-tool-switch-to-scheme "Changer pour une boîte Scheme")
+ (xml-tool-switch-to-scheme-splice "Changer pour une boîte Scheme à raccord")
+ (xml-tool-eliminate-whitespace-in-empty-tags
+  "Eliminer les espaces dans les délimiteurs vides")
+ (xml-tool-leave-whitespace-alone
+  "Laisser les espaces tel quel")
+ 
+ (show-recent-items-window-menu-item "Montrer les fichiers récemment ouverts dans une fenêtre séparée")
+ (show-recent-items-window-label "Fichiers récemment ouverts")
+ (switch-anyway "Changer de fichier quand même")
  )

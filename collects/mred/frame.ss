@@ -359,6 +359,7 @@
 	     
 	     (private
 	       [title ""]
+	       
 	       [do-title
 		(lambda ()
 		  (super-set-title (get-entire-title))

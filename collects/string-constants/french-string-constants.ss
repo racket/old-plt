@@ -434,6 +434,10 @@
   (font-name "Nom de la police")
   (font-size "Taille de la police")
   (set-font "Appliquer la police...")
+  (font-smoothing-label  "Lissage de polices")
+  (font-smoothing-none "Aucune")
+  (font-smoothing-some "Certaines")
+  (font-smoothing-all "Toutes")
   (select-font-name "Sélectionnez une police")
   (example-text "Example de texte :")
   (only-warn-once "Prévenir une fois seulement quand exécutions et interactions n'ont pas été synchronisées.")
@@ -874,6 +878,7 @@
   (no-debugging-or-profiling "Pas de débogage ou profilage") ; Profilage. Eurk...
   (debugging "Débogage")
   (debugging-and-profiling "Débogage et profilage")
+  (test-coverage "Couverture syntaxique de vos tests")
   (whole/fractional-exact-numbers-label "Imprimer les nombres sous forme de fractions.")
   (booleans-as-true/false-label "Imprimer les booléens sous forme true et false.")
   (show-details-button-label "Montrer les détails")
@@ -952,6 +957,9 @@
   (profiling-unknown-src "<< inconnu >>")
   (profiling-no-information-available "Pas d'information de profilage disponible. Assurez vous que l'option de profilage ait été spécifiée pour ce language et que vous ayez exécuté le programme.")
   (profiling-clear? "Modifier le contenu de la fenêtre de définition invalide le profil. Voulez-vous continuer ?")
+  
+  ;; test coverage
+  (test-coverage-clear? "Modifier le contenu de la fenêtre de définition invalide l'information de couverture de vos tests. Voulez-vous continuer ?")
   
   ;;; repl stuff
   (evaluation-terminated "Evaluation terminée.")

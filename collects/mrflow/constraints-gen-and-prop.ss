@@ -1907,6 +1907,7 @@
                             ; two args, so when we finally see the second one flowing in, we
                             ; have to fish out for the first one...
                             [mutated-label #f]
+                            [value-label #f]
                             [mutator-body-label (create-simple-prim-label term)]
                             [mutator-body-edge (create-simple-edge mutator-body-label)]
                             [mutator-first-arg-label (create-simple-prim-label term)]
@@ -1920,10 +1921,24 @@
                                   ;(set-label-tunnel?! inflowing-label #f)
                                   (if (is-subtype? inflowing-label struct-type-label)
                                     (begin
-                                      (set! mutated-label
-                                            (list-ref (label-struct-value-fields
-                                                       inflowing-label)
-                                                      field-index))
+                                      (if value-label
+                                        (begin
+                                          ; very conservative approximation of set! => should
+                                          ; use indirection.
+                                          (add-edge-and-propagate-set-through-edge
+                                           value-label
+                                           (create-simple-edge (list-ref (label-struct-value-fields
+                                                                          inflowing-label)
+                                                                         field-index)))
+                                          ; should reset mutated label to be ready for the next
+                                          ; call of the mutator. If we don't do this, and an error
+                                          ; occurs with the first arg, the second arg might still flow.
+                                          (set! mutated-label #f)
+                                          (set! value-label #f))
+                                        (set! mutated-label
+                                              (list-ref (label-struct-value-fields
+                                                         inflowing-label)
+                                                        field-index)))
                                       #t)
                                     (begin
                                       (set! *errors*
@@ -1958,8 +1973,9 @@
                                       ; call of the mutator. If we don't do this, and an error
                                       ; occurs with the first arg, the second arg might still flow.
                                       (set! mutated-label #f)
-                                      #t)
-                                    #f)]
+                                      (set! value-label #f))
+                                    (set! value-label inflowing-label))
+                                  #t]
                                  [() edge-fake-destination]))]
                             [mutator-case-lambda-label (make-label-case-lambda
                                                         #f #f #f #t term (make-hash-table) '() #f
@@ -3401,6 +3417,7 @@
                                             exp-type delta-flow delta-type term #f #f))
                                          (type-case-lambda-exps type))]
                 [case-lambda-label (create-simple-prim-label term)]
+                ; create-case-lambda-edge resets the tunnel (tunnel?!)
                 [case-lambda-edge (create-case-lambda-edge
                                    rest-arg?s-around
                                    req-args-around
@@ -3622,6 +3639,8 @@
         [(type-flow-var? type)
          (let* ([label&type^C (lookup-flow-var-in-env delta-flow type)]
                 [label (car label&type^C)])
+           ; no need to reset the tunnel for what flows into a flow var, because the
+           ; point of a flow var is that it's not a sink.
            (unless contra-union?
              (associate-label-with-type label (cdr label&type^C) delta-flow))
            label)]
@@ -3658,8 +3677,8 @@
            ; the fact (which might be ok, since a label flowing into a cst doesn't go
            ; anywhere else) XXX ?
            (unless contra-union?
-             (associate-label-with-type cst-label type delta-flow)
-             (add-edge-and-propagate-set-through-edge cst-label cst-edge))
+             (associate-label-with-type cst-label type delta-flow))
+           (add-edge-and-propagate-set-through-edge cst-label cst-edge)
            cst-label)]
         [(type-values? type)
          (let* ([values-content-label (reconstruct-graph-from-type
@@ -3754,8 +3773,10 @@
                 [error-checking-edge
                  (case-lambda
                    [(out-label inflowing-label)
+                    (set-label-tunnel?! inflowing-label #f)
                     (if (simple-non-error-checking-edge out-label inflowing-label)
-                      #t
+                      (begin
+                        #t)
                       (begin
                         (set! *errors*
                               (cons (list (list term)
@@ -3813,9 +3834,29 @@
             (extend-edge-for-values (create-simple-edge rec-body-label)))
            rec-label)]
         [(type-empty? type)
-         (let ([label (create-simple-prim-label)])
-           (associate-label-with-type label type delta-flow)
-           label)]
+         (let ([empty-label (create-simple-prim-label)]
+               ; must add a dummy out edge to reset tunelling
+               ; note: we could do some type-checking here, but we really ought to
+               ; do it before the inflowing-label flows into the set, not after. For
+               ; now, we just do the type checking after the end of the analysis.
+               [empty-edge
+                (let ([edge-fake-destination (gensym)])
+                  (case-lambda
+                    [(out-label inflowing-label)
+                     ; sink for anything => no use for out-label here
+                     ; must reset tunneling for inflowing-label
+                     ; contra-union? is tested below.
+                     (set-label-tunnel?! inflowing-label #f)
+                     #t]
+                    ; promise sink
+                    [() edge-fake-destination]))])
+           ; propagation to such a label always works, so post checking is necessary
+           ; note that propagation always works because we don't do any type-based
+           ; filtering.
+           (unless contra-union?
+             (associate-label-with-type empty-label type delta-flow)
+             (add-edge-and-propagate-set-through-edge empty-label empty-edge))
+           empty-label)]
         [else (error 'reconstruct-graph-from-type "unknown contravariant type for primitive ~a: ~a"
                      (syntax-e term) type)]
         )))

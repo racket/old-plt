@@ -1940,6 +1940,7 @@ Scheme_Object *srp_SQLColAttribute(int argc,Scheme_Object **argv) {
   SQLINTEGER numBuffer;
   SQLSMALLINT actualLen;
   SRP_NAMED_TYPED_CONSTANT *p;
+  Scheme_Object *retval;
   BOOL hasInfo;
 
   if (SQL_HSTMTP(argv[0]) == FALSE) {
@@ -1974,8 +1975,8 @@ Scheme_Object *srp_SQLColAttribute(int argc,Scheme_Object **argv) {
     sr = SQLColAttribute(stmtHandle,colNumber,fieldId,
 			 buff,bufflen,&actualLen,&numBuffer);
     hasInfo = checkSQLReturn(sr,"col-attribute");		       
-    sql_return((numBuffer == SQL_FALSE) ? scheme_false : scheme_true,
-	       hasInfo,"col-attribute");
+    retval = (numBuffer == SQL_FALSE) ? scheme_false : scheme_true;
+    sql_return(retval,hasInfo,"col-attribute");
 
   case sqlinteger :
 
@@ -1983,8 +1984,8 @@ Scheme_Object *srp_SQLColAttribute(int argc,Scheme_Object **argv) {
     sr = SQLColAttribute(stmtHandle,colNumber,fieldId,
 			 buff,bufflen,&actualLen,&numBuffer);
     hasInfo = checkSQLReturn(sr,"col-attribute");		       
-    sql_return(scheme_make_integer_value((long)numBuffer),hasInfo,
-	       "col-attribute");
+    retval = scheme_make_integer_value((long)numBuffer);
+    sql_return(retval,hasInfo,"col-attribute");
 
   case namedinteger :
 
@@ -1992,11 +1993,10 @@ Scheme_Object *srp_SQLColAttribute(int argc,Scheme_Object **argv) {
     sr = SQLColAttribute(stmtHandle,colNumber,fieldId,
 			 buff,bufflen,&actualLen,&numBuffer);
     hasInfo = checkSQLReturn(sr,"col-attribute");		       
-
-    sql_return(scheme_intern_symbol(findIntegerName(fieldIdString,numBuffer,
+    retval = scheme_intern_symbol(findIntegerName(fieldIdString,numBuffer,
 						namedColAttrIntegers,
-						sizeray(namedColAttrIntegers))),
-	       hasInfo,"col-attribute");
+						sizeray(namedColAttrIntegers)));
+    sql_return(retval,hasInfo,"col-attribute");
 
   case string :
 
@@ -2004,8 +2004,8 @@ Scheme_Object *srp_SQLColAttribute(int argc,Scheme_Object **argv) {
     sr = SQLColAttribute(stmtHandle,colNumber,fieldId,
 			 buff,bufflen,&actualLen,&numBuffer);
     hasInfo = checkSQLReturn(sr,"col-attribute");		       
-    sql_return(scheme_make_sized_string(buff,actualLen,TRUE),
-	       hasInfo,"col-attribute");
+    retval = scheme_make_sized_string(buff,actualLen,TRUE);
+    sql_return(retval,hasInfo,"col-attribute");
   }
 
   scheme_signal_error("sql-col-attribute: invalid attribute type");
@@ -2550,6 +2550,7 @@ Scheme_Object *srp_SQLGetConnectAttr(int argc,Scheme_Object **argv) {
   char buff[2048];
   SQLINTEGER actualLen;
   SRP_NAMED_TYPED_CONSTANT *p;
+  Scheme_Object *retval;
   BOOL hasInfo;
 
   if (SQL_HDBCP(argv[0]) == FALSE) {
@@ -2587,35 +2588,32 @@ Scheme_Object *srp_SQLGetConnectAttr(int argc,Scheme_Object **argv) {
 
     sr = SQLGetConnectAttr(connectionHandle,attribute,&number,0,&actualLen);
     hasInfo = checkSQLReturn(sr,"get-connect-attr");  			 
-
-    sql_return((number == SQL_FALSE) ? scheme_false : scheme_true,
-	       hasInfo,"get-connect-attr");
+    retval = (number == SQL_FALSE) ? scheme_false : scheme_true;
+    sql_return(retval,hasInfo,"get-connect-attr");
 
   case string :
 
     sr = SQLGetConnectAttr(connectionHandle,attribute,buff,sizeray(buff),&actualLen);
     hasInfo = checkSQLReturn(sr,"get-connect-attr");  			 
-
-    sql_return(scheme_make_sized_string(buff,actualLen,TRUE),
-	       hasInfo,"get-connect-attr");
+    retval = scheme_make_sized_string(buff,actualLen,TRUE);
+    sql_return(retval,hasInfo,"get-connect-attr");
 
   case sqluinteger :
 
     sr = SQLGetConnectAttr(connectionHandle,attribute,&number,0,&actualLen);
     hasInfo = checkSQLReturn(sr,"get-connect-attr");  			 
-
-    sql_return(scheme_make_integer_value_from_unsigned(number),
-	       hasInfo,"get-connect-attr");
+    retval = scheme_make_integer_value_from_unsigned(number);
+    sql_return(retval,hasInfo,"get-connect-attr");
 
   case nameduinteger :
 
     sr = SQLGetConnectAttr(connectionHandle,attribute,&number,0,&actualLen);
     hasInfo = checkSQLReturn(sr,"get-connect-attr");  			 
 
-    sql_return(scheme_intern_symbol(findIntegerName(attributeString,number,
+    retval = scheme_intern_symbol(findIntegerName(attributeString,number,
 						    namedConnectAttrIntegers,
-						    sizeray(namedConnectAttrIntegers))),
-	       hasInfo,"get-connect-attr");
+						    sizeray(namedConnectAttrIntegers)));
+    sql_return(retval,hasInfo,"get-connect-attr");
 
   }
   
@@ -2631,6 +2629,7 @@ Scheme_Object *srp_SQLGetConnectOption(int argc,Scheme_Object **argv) {
   SQLUINTEGER number;
   char buff[2048];
   SRP_NAMED_TYPED_CONSTANT *p;
+  Scheme_Object *retval;
   BOOL hasInfo;
 
   if (SQL_HDBCP(argv[0]) == FALSE) {
@@ -2668,40 +2667,38 @@ Scheme_Object *srp_SQLGetConnectOption(int argc,Scheme_Object **argv) {
 
     sr = SQLGetConnectOption(connectionHandle,option,&number);
     hasInfo = checkSQLReturn(sr,"get-connect-option");  			 
-
-    sql_return((number == SQL_FALSE) ? scheme_false : scheme_true,
-	       hasInfo,"get-connect-option");
+    retval = (number == SQL_FALSE) ? scheme_false : scheme_true;
+    sql_return(retval,hasInfo,"get-connect-option");
 
   case string :
 
     sr = SQLGetConnectOption(connectionHandle,option,buff);
     hasInfo = checkSQLReturn(sr,"get-connect-option");  			 
-
-    sql_return(scheme_make_string(buff),hasInfo,"get-connect-option");
+    retval = scheme_make_string(buff);
+    sql_return(retval,hasInfo,"get-connect-option");
 
   case sqluinteger :
 
     sr = SQLGetConnectOption(connectionHandle,option,&number);
     hasInfo = checkSQLReturn(sr,"get-connect-option");  			 
-
-    sql_return(scheme_make_integer_value_from_unsigned(number),
-	       hasInfo,"get-connect-option");
+    retval = scheme_make_integer_value_from_unsigned(number);
+    sql_return(retval,hasInfo,"get-connect-option");
 
   case nameduinteger :
 
     sr = SQLGetConnectOption(connectionHandle,option,&number);
     hasInfo = checkSQLReturn(sr,"get-connect-option");  			 
-
-    sql_return(scheme_intern_symbol(findIntegerName(optionString,number,
+    retval = scheme_intern_symbol(findIntegerName(optionString,number,
 						namedConnectAttrIntegers,
-						sizeray(namedConnectAttrIntegers))),
-	       hasInfo,"get-connect-option");
+						sizeray(namedConnectAttrIntegers)));
+    sql_return(retval,hasInfo,"get-connect-option");
 
   case bitmask :
 
     sr = SQLGetConnectOption(connectionHandle,option,&number);
     hasInfo = checkSQLReturn(sr,"get-connect-option");  			 
-    sql_return(bitsListFromBitMask(optionString,number),hasInfo,"get-connect-option");
+    retval = bitsListFromBitMask(optionString,number);
+    sql_return(retval,hasInfo,"get-connect-option");
   }
   
   return scheme_void; // for compiler
@@ -2712,6 +2709,7 @@ Scheme_Object *srp_SQLGetCursorName(int argc,Scheme_Object **argv) {
   SQLHSTMT stmtHandle;
   SQLCHAR name[1024];
   SQLSMALLINT actualLen;
+  Scheme_Object *retval;
   BOOL hasInfo;
 
   if (SQL_HSTMTP(argv[0]) == FALSE) {
@@ -2724,8 +2722,8 @@ Scheme_Object *srp_SQLGetCursorName(int argc,Scheme_Object **argv) {
 
   hasInfo = checkSQLReturn(sr,"get-cursor-name");
 
-  sql_return(scheme_make_sized_string((char *)name,actualLen,TRUE),
-	     hasInfo,"get-cursor-name");
+  retval = scheme_make_sized_string((char *)name,actualLen,TRUE);
+  sql_return(retval,hasInfo,"get-cursor-name");
 }
 
 Scheme_Object *srp_SQLGetData(int argc,Scheme_Object **argv) {
@@ -2778,6 +2776,7 @@ Scheme_Object *srp_SQLGetDescField(int argc,Scheme_Object **argv) {
   char *fieldIdString;
   SQLINTEGER actualLen;
   SRP_NAMED_TYPED_CONSTANT *p;
+  Scheme_Object *retval;
   BOOL hasInfo;
 
   if (SQL_HDESCP(argv[0]) == FALSE) {
@@ -2818,7 +2817,8 @@ Scheme_Object *srp_SQLGetDescField(int argc,Scheme_Object **argv) {
 
     hasInfo = checkSQLReturn(sr,"get-desc-field");
  
-    sql_return(scheme_make_integer(smallIntVal),hasInfo,"get-desc-field");
+    retval = scheme_make_integer(smallIntVal);
+    sql_return(retval,hasInfo,"get-desc-field");
 
   case sqlinteger :
 
@@ -2829,7 +2829,8 @@ Scheme_Object *srp_SQLGetDescField(int argc,Scheme_Object **argv) {
 
     hasInfo = checkSQLReturn(sr,"get-desc-field");
 
-    sql_return(scheme_make_integer_value(intVal),hasInfo,"get-desc-field");
+    retval = scheme_make_integer_value(intVal);
+    sql_return(retval,hasInfo,"get-desc-field");
     
   case sqluinteger :
 
@@ -2840,8 +2841,8 @@ Scheme_Object *srp_SQLGetDescField(int argc,Scheme_Object **argv) {
 
     hasInfo = checkSQLReturn(sr,"get-desc-field");
 
-    sql_return(scheme_make_integer_value_from_unsigned(uintVal),
-	       hasInfo,"get-desc-field");
+    retval = scheme_make_integer_value_from_unsigned(uintVal);
+    sql_return(retval,hasInfo,"get-desc-field");
     
   case string :
 
@@ -2852,7 +2853,8 @@ Scheme_Object *srp_SQLGetDescField(int argc,Scheme_Object **argv) {
 
     hasInfo = checkSQLReturn(sr,"get-desc-field");
 
-    sql_return(scheme_make_string(buff),hasInfo,"get-desc-field");
+    retval = scheme_make_string(buff);
+    sql_return(retval,hasInfo,"get-desc-field");
     
   case sqlbool :
 
@@ -2863,8 +2865,8 @@ Scheme_Object *srp_SQLGetDescField(int argc,Scheme_Object **argv) {
 
     hasInfo = checkSQLReturn(sr,"get-desc-field");
 
-    sql_return((boolVal == SQL_FALSE) ? scheme_false : scheme_true,
-	       hasInfo,"get-desc-field");
+    retval = (boolVal == SQL_FALSE) ? scheme_false : scheme_true;
+    sql_return(retval,hasInfo,"get-desc-field");
 
   case namedinteger :
     SQLINTEGER namedIntVal;
@@ -2874,10 +2876,10 @@ Scheme_Object *srp_SQLGetDescField(int argc,Scheme_Object **argv) {
 
     hasInfo = checkSQLReturn(sr,"get-desc-field");
 
-    sql_return(scheme_intern_symbol(findIntegerName(fieldIdString,namedIntVal,
+    retval = scheme_intern_symbol(findIntegerName(fieldIdString,namedIntVal,
 						namedFieldDescriptors,
-						sizeray(namedFieldDescriptors))),
-	       hasInfo,"get-desc-field");
+						sizeray(namedFieldDescriptors)));
+    sql_return(retval,hasInfo,"get-desc-field");
 
   case sqlbuffer :
     SQLPOINTER p;
@@ -3220,6 +3222,7 @@ Scheme_Object *srp_SQLGetEnvAttr(int argc,Scheme_Object **argv) {
   char *attributeString;
   SRP_NAMED_TYPED_CONSTANT *p;
   SQLINTEGER actualLen;
+  Scheme_Object *retval;
   BOOL hasInfo;
 
   if (SQL_HENVP(argv[0]) == FALSE) { 
@@ -3255,10 +3258,10 @@ Scheme_Object *srp_SQLGetEnvAttr(int argc,Scheme_Object **argv) {
     sr = SQLGetEnvAttr(envHandle,attribute,&number,0,&actualLen);
     hasInfo = checkSQLReturn(sr,"get-env-attr");		       
 
-    sql_return(scheme_intern_symbol(findIntegerName(attributeString,number,
+    retval = scheme_intern_symbol(findIntegerName(attributeString,number,
 						namedEnvAttrIntegers,
-						sizeray(namedEnvAttrIntegers))),
-	       hasInfo,"get-env-attr");
+						sizeray(namedEnvAttrIntegers)));
+    sql_return(retval,hasInfo,"get-env-attr");
 
   case sqlbool :
 
@@ -3267,8 +3270,8 @@ Scheme_Object *srp_SQLGetEnvAttr(int argc,Scheme_Object **argv) {
     sr = SQLGetEnvAttr(envHandle,attribute,&boolval,0,&actualLen);
     hasInfo = checkSQLReturn(sr,"get-env-attr");		       
 
-    sql_return((boolval == SQL_FALSE) ? scheme_false : scheme_true,
-	       hasInfo,"get-env-attr");
+    retval = (boolval == SQL_FALSE) ? scheme_false : scheme_true;
+    sql_return(retval,hasInfo,"get-env-attr");
   }
 
   scheme_signal_error("Unknown environment attribute type: %X",
@@ -3379,6 +3382,7 @@ Scheme_Object *srp_SQLGetInfo(int argc,Scheme_Object **argv) {
   SQLHENV retEnvHandle;
   SQLHDESC retDescHandle;
   SQLHSTMT retStmtHandle;
+  Scheme_Object *retval;
   BOOL hasInfo;
 
   if (SQL_HDBCP(argv[0]) == FALSE) {
@@ -3449,24 +3453,22 @@ Scheme_Object *srp_SQLGetInfo(int argc,Scheme_Object **argv) {
     sr = SQLGetInfo(connectionHandle,infoName,&usmallint_value,0,&actualLen);
     hasInfo = checkSQLReturn(sr,"get-info");    
 
-    sql_return(scheme_intern_symbol
-	       (findSmallIntName
-		(infoNameString,
-		 usmallint_value,
-		 namedInfoSmallInts,
-		 sizeray(namedInfoSmallInts))),
-	       hasInfo,"get-info");
+    retval = 
+      scheme_intern_symbol(findSmallIntName(infoNameString,usmallint_value,
+					    namedInfoSmallInts,
+					    sizeray(namedInfoSmallInts)));
+    sql_return(retval,hasInfo,"get-info");
 
   case nameduinteger :
 
     sr = SQLGetInfo(connectionHandle,infoName,&uinteger_value,0,&actualLen);
     hasInfo = checkSQLReturn(sr,"get-info");    
 
-    sql_return(scheme_intern_symbol
-	       (findIntegerName(infoNameString,uinteger_value,
-				namedInfoIntegers,
-				sizeray(namedInfoIntegers))),
-	       hasInfo,"get-info");
+    retval = scheme_intern_symbol(findIntegerName(infoNameString,
+						  uinteger_value,
+						  namedInfoIntegers,
+						  sizeray(namedInfoIntegers)));
+    sql_return(retval,hasInfo,"get-info");
 
   case boolstring :
 
@@ -3587,6 +3589,7 @@ Scheme_Object *srp_SQLGetStmtAttr(int argc,Scheme_Object **argv) {
   SQLUINTEGER *numpointer;
   SQLUSMALLINT *smallnumpointer;
   SRP_NAMED_TYPED_CONSTANT *p;    
+  Scheme_Object *retval;
   BOOL hasInfo;
 
   if (SQL_HSTMTP(argv[0]) == FALSE) {
@@ -3635,12 +3638,11 @@ Scheme_Object *srp_SQLGetStmtAttr(int argc,Scheme_Object **argv) {
     sr = SQLGetStmtAttr(stmtHandle,attribute,&number,0,&actualLen);
     hasInfo = checkSQLReturn(sr,"get-stmt-attr");
 
-    sql_return(scheme_intern_symbol
-	       (findIntegerName
-		(attributeString,number,
-		 namedStmtAttributes,
-		 sizeray(namedStmtAttributes))),
-	       hasInfo,"get-stmt-attr");
+    retval = scheme_intern_symbol(findIntegerName(attributeString,number,
+						  namedStmtAttributes,
+						  sizeray(namedStmtAttributes)));
+
+    sql_return(retval,hasInfo,"get-stmt-attr");
     
   case possiblynameduinteger :
 
@@ -3760,6 +3762,7 @@ Scheme_Object *srp_SQLGetStmtOption(int argc,Scheme_Object **argv) {
   SQLUINTEGER *numpointer;
   SQLUSMALLINT *smallnumpointer;
   SRP_NAMED_TYPED_CONSTANT *p;    
+  Scheme_Object *retval;
   BOOL hasInfo;
 
   if (SQL_HSTMTP(argv[0]) == FALSE) {
@@ -3809,10 +3812,11 @@ Scheme_Object *srp_SQLGetStmtOption(int argc,Scheme_Object **argv) {
     sr = SQLGetStmtOption(stmtHandle,option,&number);
     hasInfo = checkSQLReturn(sr,"get-stmt-option");
 
-    sql_return(scheme_intern_symbol(findIntegerName(optionString,number,
-						namedStmtAttributes,
-						sizeray(namedStmtAttributes))),
-	       hasInfo,"get-stmt-option");
+    retval = 
+      scheme_intern_symbol(findIntegerName(optionString,number,
+					   namedStmtAttributes,
+					   sizeray(namedStmtAttributes)));
+    sql_return(retval,hasInfo,"get-stmt-option");
     
   case possiblynameduinteger :
 
@@ -5495,6 +5499,7 @@ Scheme_Object *srp_SQLDriverConnect(int argc,Scheme_Object **argv) {
   SQLSMALLINT actualLen;
   char *completionString;
   SQLUSMALLINT completion; 
+  Scheme_Object *retval;
   BOOL hasInfo;
 
   if (SQL_HDBCP(argv[0]) == FALSE) {
@@ -5540,8 +5545,8 @@ Scheme_Object *srp_SQLDriverConnect(int argc,Scheme_Object **argv) {
 
   hasInfo = checkSQLReturn(sr,"driver-connect");
 
-  sql_return(scheme_make_sized_string((char *)outConnectString,actualLen,TRUE),
-	     hasInfo,"driver-connect"); 
+  retval = scheme_make_sized_string((char *)outConnectString,actualLen,TRUE);
+  sql_return(retval,hasInfo,"driver-connect"); 
 }
 
 Scheme_Object *srp_SQLBrowseConnect(int argc,Scheme_Object **argv) {
@@ -5551,6 +5556,7 @@ Scheme_Object *srp_SQLBrowseConnect(int argc,Scheme_Object **argv) {
   SQLSMALLINT inConnectStringLen;
   SQLCHAR outConnectString[2048];
   SQLSMALLINT actualLen;
+  Scheme_Object *retval;
   BOOL hasInfo;
 
   if (SQL_HDBCP(argv[0]) == FALSE) {
@@ -5572,8 +5578,8 @@ Scheme_Object *srp_SQLBrowseConnect(int argc,Scheme_Object **argv) {
 
   hasInfo = checkSQLReturn(sr,"browse-connect");
 
-  sql_return(scheme_make_sized_string((char *)outConnectString,actualLen,TRUE),
-	     hasInfo,"browse-connect");
+  retval = scheme_make_sized_string((char *)outConnectString,actualLen,TRUE);
+  sql_return(retval,hasInfo,"browse-connect");
 }
 
 Scheme_Object *srp_SQLBulkOperations(int argc,Scheme_Object **argv) {
@@ -5630,6 +5636,7 @@ Scheme_Object *srp_SQLColAttributes(int argc,Scheme_Object **argv) {
   SQLINTEGER numBuffer;
   SQLSMALLINT actualLen;
   SRP_NAMED_TYPED_CONSTANT *p;
+  Scheme_Object *retval;
   BOOL hasInfo;
 
   if (SQL_HSTMTP(argv[0]) == FALSE) {
@@ -5683,12 +5690,11 @@ Scheme_Object *srp_SQLColAttributes(int argc,Scheme_Object **argv) {
 			 buff,bufflen,&actualLen,&numBuffer);
     hasInfo = checkSQLReturn(sr,"col-attributes");		       
 
-    sql_return(scheme_intern_symbol
-	       (findIntegerName
-		(fieldIdString,numBuffer,
-		 namedColAttrsIntegers,
-		 sizeray(namedColAttrsIntegers))),
-	       hasInfo,"col-attributes");
+    retval = 
+      scheme_intern_symbol(findIntegerName(fieldIdString,numBuffer,
+					   namedColAttrsIntegers,
+					   sizeray(namedColAttrsIntegers)));
+    sql_return(retval,hasInfo,"col-attributes");
 
   case string :
 

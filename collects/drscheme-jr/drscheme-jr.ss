@@ -265,9 +265,12 @@
 
 (define namespace (make-namespace 'no-constants
 				  (if annotate?
-				      'hash-percent-syntax
-				      ;'all-syntax
-				      'all-syntax)))
+				    (begin
+				      (printf "hash-percent~n")
+				      'hash-percent-syntax)
+				    (begin
+				      (printf "all~n")
+				      'all-syntax))))
 
 (with-parameterization parameterization
   (let ([u@ (unit/sig->unit

@@ -1,0 +1,166 @@
+
+The Virtual Card Library
+------------------------
+
+cards.ss defines the following procedures: 
+
+ (make-table [title] [w] [h]) returns a table named title that is w
+      cards wide and h cards high. A table is an mred:frame% object, 
+      with extra methods described below. The table is not intially shown, 
+      so (send table show #t) shows it. The arguments are optional,
+      with the default values "Cards", 7, and 3.
+ (make-deck) returns a list of 52 cards, one for each suite-value 
+      combination. The cards are all face-down, sorted lowest-suite
+      then lowest-value. A card is an object, with methods described 
+      below. A card can only be on one table at a time.
+ (shuffle-list list count) shuffles the given list count times,
+      returning the new list. Shuffling simulates an actual shuffle:
+      the list is split into halves which are merged back together by
+      repeatedly pulling the top card off one of the halves, randomly 
+      selecting one half or the other. According to a mathematical theorem, 
+      7 is a large enough count to get a perfect shuffle.
+
+plus a structure:
+
+  (struct region (x y w h label callback))
+      x, y, w, h are coordinates on the table,
+      label is a string to label the region or #f for no label. When the
+        region is added to a table, the label is drawn in 12-point (about
+        12-pixel) text, centered horizontally and 5 pixels down from the 
+        region's top outline. If label is #f, no label or box is drawn 
+        for the region.
+      callback is a procedure that takes a list of cards that were
+        dragged to the region; if callback is #f, the region is not
+        active (i.e., dragging cards to the region doesn't highlight the
+        region box). The region remains hilited until the callback returns.
+     The only mutator on the structure that is available is set-region-callback!.
+     The structure created by make-region actually has extra hidden fields.
+
+Table methods:
+   
+   (send t add-card card x y) - adds card to the table with its top-left
+        corner at x,y in table pixels.
+   (send t add-cards cards x y [offset]) - adds list of cards at x,y; the
+        optional offset procedure is called with an index i (counting from
+        0) and it should return two values: dx and dy; the ith card is
+        the placed at x+dx and y+dy. The cards are added in order on top of
+        cards already one the tabel such that the first card in the list is
+        topmost.
+   (send t add-cards-to-region cards r) - adds cards to fill the region r,
+        fanning them out bottom-right to top-left. The region r does not have
+        to be added to the table.
+
+   (send t remove-card card) - removes card from the table
+   (send t remove-cards cards) - removes cards from the table
+
+   (send t move-card card x y)
+   (send t move-cards cards x y [offset])
+   (send t move-cards-to-region cards r)
+        These are like the add-card methods, except that they move cards
+        already on the table. The movement of the cards is animated. All
+        of the cards are moved at once.
+
+   (send t flip-card card) - flips card over with animation.
+   (send t flip-cards cards) - flips all cards over (at once) with animation.
+
+   (send t card-face-up card)
+   (send t cards-face-up cards)
+   (send t card-face-down card)
+   (send t cards-face-down cards)
+        These are like flip-card, but only cards that are not already face
+        up/down are flipped.
+
+   (send t card-to-front card) - moves card in front of all other cards.
+   (send t card-to-back card) - moves card behind all other cards.
+   (send t stack-cards cards) - the first card is not moved; the second
+        cards is moved to follow immediately behind the first one, then
+        (send t stack-cards (cdr cards)) is called.
+
+   (send t table-width) - returns the width of the table in pixels.
+   (send t table-height) - returns the height of the table in pixels.
+
+   (send t begin-card-sequence) - starts a sequence of card or region changes
+        that won't be animated or updated until the end of the sequence.
+   (send t end-card-sequence) - ends a sequence; begin-/end- pairs can be 
+        nested.
+   
+   (send t add-region r) - adds the region r to the table; regions are
+        drawn in the order that they are added to the table, and when
+        a region added later is hilighted, it can obscure regions added
+        earlier.
+   (send t remove-region r) - removes the region r from the table.
+
+   (send t set-button-action which action) - sets the way that a mouse
+        click is handled. The which argument must be 1, 2, or 3 indicating
+        the left, middle, or right button, respectively. The action argument
+        must be one of:
+           'drag/one - drag only the clicked-on card
+           'drag-raise/one - like drag/one, but raise the card to the
+                  top on a click
+           'drag/above - drag the card along with any card on top of the
+                  card (i.e., more towards the front and overlapping with
+                  the card). The on-top-of relation is closed transitively.
+           'drag-raise/above
+           'drag/below - drag the card along with any card underneath the
+                  card (i.e., more towards the back and overlapping with
+                  the card). The underneath relation is closed transitively.
+           'drag-raise/below
+        The initial settings are:
+           1 - 'drag-raise/above
+           2 - 'drag/one
+           3 - 'drag/below
+
+   (send t set-double-click-action) - sets the procedure to be called when
+        a card is double-clicked. The procedure is called with the 
+        double-clicked card. The default procedure flips the cards along
+        with its on-top-of cards, raises the cards, and reverses the
+        front-to-back order of the cards
+
+   (send t pause secs) - pauses, allowing the table display to be updated
+        (unless a sequence is active), but not letting the user click on the
+        cards.
+
+   (send t animated) - returns #t is animation is on.
+   (send t animated on?) - enables/disbales animation.
+   
+Card methods:
+
+   (send c card-width) - returns the width of the card in pixels.
+   (send c card-height) - returns the height of the card in pixels.
+       All cards have the same width and height.
+
+   (send c flip) - flips the card without animation. This is useful
+       for flipping a card before it is added to a table.
+   (send c face-up)
+   (send c face-down)
+       Makes the card face up/down.
+
+   (send c face-down?) - #t if the card is currently face-down.
+
+   (send c get-suite-id) - 1, 2, 3, or 4.
+   (send c get-suite) - 'clubs, 'diamonds, 'hearts, or 'spades
+   (send c get-value) - 1 (Ace), 2, ... 10, 11 (Jack), 12 (Queen), or 13 (King)
+   
+   (send c user-can-flip)
+   (send c user-can-flip can?)
+       Determines whether the user can flip the card interactively, usually
+       by double-clicking it. Initially #t.
+   (send c user-can-move)
+   (send c user-can-move can?)
+       Determines whether the user can move the card interactively, usually
+       by dragging it.  Initially #t.
+   (send c snap-back-after-move)
+   (send c snap-back-after-move on?)
+       Assuming user can move the card interactively, determines whether the
+       card stays where the user dragged it or snaps back to its original
+       place.  Initially #f.
+
+   (send c copy) - makes a new card with the same suite and value.
+
+
+Signed Unit and Signature
+-------------------------
+
+sig.ss defines the cards^ signature. cardr.ss contains
+a signed unit that exports cards^ and imports: wx^ 
+mred^ mzlib:function^.

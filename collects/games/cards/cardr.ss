@@ -362,26 +362,44 @@
 	(send m select-object bm)
 	m)))
 
+  (define (make-semi dc w h)
+    (let* ([bm (make-object wx:bitmap% (floor (/ w 2)) h)]
+	   [mdc (make-object wx:memory-dc%)])
+      (send mdc select-object bm)
+      (let loop ([i (floor (/ w 2))])
+	(unless (zero? i)
+	  (send mdc blit i 0 1 h dc (* 2 i) 0)
+	  (loop (sub1 i))))
+      mdc))
+
   (define sc (make-object wx:snip-class%))
   (send sc set-classname "card")
   (send (wx:get-the-snip-class-list) add sc)
 
   (define card%
-    (class wx:snip% (suite-id value width height front back)
+    (class wx:snip% (suite-id value width height front back semi-front semi-back)
 	   (inherit set-snipclass set-count get-admin)
 	   (private
 	    [flipped? #f]
+	    [semi-flipped? #f]
 	    [can-flip? #t]
 	    [can-move? #t]
-	    [snap-back? #f])
+	    [snap-back? #f]
+	    [refresh
+	     (lambda ()
+	       (let ([a (get-admin)])
+		 (unless (null? a)
+		   (send a needs-update this 0 0 width height))))])
 	   (public
 	    [face-down? (lambda () flipped?)]
 	    [flip
 	     (lambda ()
 	       (set! flipped? (not flipped?))
-	       (let ([a (get-admin)])
-		 (unless (null? a)
-		   (send a needs-update this 0 0 width height))))]
+	       (refresh))]
+	    [semi-flip
+	     (lambda ()
+	       (set! semi-flipped? (not semi-flipped?))
+	       (refresh))]
 	    [face-up (lambda () (when flipped? (flip)))]
 	    [face-down (lambda () (unless flipped? (flip)))]
 	    [resize
@@ -423,10 +441,15 @@
 	       (unless (null? h) (set-box! h height)))]
 	    [draw
 	     (lambda (dc x y left top right bottom dx dy draw-caret)
-	       (send dc blit x y width height 
-		     (if flipped? back front) 
-		     0 0))]
-	    [copy (lambda () (make-object card% suite-id value width height front back))])
+	       (if semi-flipped?
+		   (send dc blit (+ x (/ width 4)) y (/ width 2) height 
+			 (if flipped? semi-back semi-front) 
+			 0 0)
+		   (send dc blit x y width height 
+			 (if flipped? back front) 
+			 0 0)))]
+	    [copy (lambda () (make-object card% suite-id value width height 
+					  front back semi-front semi-back))])
 	   (private
 	     [save-x (box 0)]
 	     [save-y (box 0)])
@@ -470,7 +493,8 @@
 	   [h (send back get-height)]
 	   [back (let ([m (make-object wx:memory-dc%)])
 		   (send m select-object back)
-		   m)])
+		   m)]
+	   [semi-back (make-semi back w h)])
       (let sloop ([suite 4])
 	(if (zero? suite)
 	    null
@@ -478,17 +502,18 @@
 	      (sleep)
 	      (if (zero? value)
 		  (sloop (sub1 suite))
-		  (cons (make-object card%
-				     suite
-				     value
-				     w h
-				     (get-bitmap/dc
-				      (here 
-				       (format "card-~a-~a.gif"
-					       (sub1 value)
-					       (sub1 suite))))
-				     back)
-			(vloop (sub1 value)))))))))
+		  (let ([front (get-bitmap/dc
+				(here 
+				 (format "card-~a-~a.gif"
+					 (sub1 value)
+					 (sub1 suite))))])
+		    (cons (make-object card%
+				       suite
+				       value
+				       w h
+				       front back
+				       (make-semi front w h) semi-back)
+			  (vloop (sub1 value))))))))))
   
   (send tmpframe show #f)
 
@@ -503,10 +528,12 @@
 			  h))]
 	[begin-card-sequence
 	 (lambda ()
+	   (set! in-sequence (add1 in-sequence))
 	   (send pb begin-edit-sequence))]
 	[end-card-sequence
 	 (lambda ()
-	   (send pb end-edit-sequence))]
+	   (send pb end-edit-sequence)
+	   (set! in-sequence (sub1 in-sequence)))]
 	[add-card
 	 (lambda (card x y)
 	   (position-cards (list card) x y (lambda (p) (values 0 0)) add-cards-callback))]
@@ -525,6 +552,44 @@
 	[move-cards-to-region
 	 (lambda (cards region)
 	   (position-cards-in-region cards region (ivar pb move-to)))]
+	[remove-card
+	 (lambda (card)
+	   (remove-cards (list card)))]
+	[remove-cards
+	 (lambda (cards)
+	   (begin-card-sequence)
+	   (for-each (lambda (c) (send pb delete c)) cards)
+	   (end-card-sequence))]
+	[flip-card
+	 (lambda (card)
+	   (flip-cards (list card)))]
+	[flip-cards
+	 (lambda (cards)
+	   (if (or (not animate?) (positive? in-sequence))
+	       (for-each (lambda (c) (send c flip)) cards)
+	       (let ([flip-step
+		      (lambda (go)
+			(let ([start (current-milliseconds)])
+			  (begin-card-sequence)
+			  (go)
+			  (end-card-sequence)
+			  (pause (max 0 (- (/ ANIMATION-TIME ANIMATION-STEPS)
+					   (/ (- (current-milliseconds) start) 1000))))))])
+		 (flip-step (lambda () (for-each (lambda (c) (send c semi-flip)) cards)))
+		 (flip-step (lambda () (for-each (lambda (c) (send c flip)) cards)))
+		 (flip-step (lambda () (for-each (lambda (c) (send c semi-flip)) cards))))))]
+	[card-face-up
+	 (lambda (card)
+	   (cards-face-up (list card)))]
+	[cards-face-up
+	 (lambda (cards)
+	   (flip-cards (filter (lambda (c) (send c face-down?)) cards)))]
+	[card-face-down
+	 (lambda (card)
+	   (cards-face-down (list card)))]
+	[cards-face-down
+	 (lambda (cards)
+	   (flip-cards (filter (lambda (c) (not (send c face-down?))) cards)))]
 	[card-to-front
 	 (lambda (card)
 	   (send pb set-before card null))]
@@ -559,7 +624,11 @@
 	     ; Can't move the cards during this time:
 	     (send c enable #f)
 	     (wx:yield s)
-	     (send c enable #t)))])
+	     (send c enable #t)))]
+	[animated
+	 (case-lambda 
+	  [() animate?]
+	  [(on?) (set! animate? (and on? #t))])])
       (private
 	[add-cards-callback
 	 (lambda (card x y)
@@ -568,6 +637,7 @@
 	 (lambda (card x y)
 	   (send pb move-to card x y))]
 	[animate? #t]
+	[in-sequence 0]
         [position-cards
 	 (lambda (cards x y offset set)
 	   (let ([positions (let loop ([l cards][n 0])
@@ -576,7 +646,7 @@
 				  (let-values ([(dx dy) (offset n)])
 				    (cons (cons (+ x dx) (+ y dy))
 					  (loop (cdr l) (add1 n))))))])
-	     (if (or (not animate?) (eq? set add-cards-callback))
+	     (if (or (not animate?) (positive? in-sequence) (eq? set add-cards-callback))
 		 (begin
 		   (begin-card-sequence)
 		   (for-each (lambda (c p) (set c (car p) (cdr p))) cards positions)

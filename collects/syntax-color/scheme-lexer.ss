@@ -294,7 +294,7 @@
      [(eof) (values lexeme 'eof #f #f #f)]
      [(:or bad-char bad-str 
            (:& bad-id
-               (complement (:: (:or reader-command sharing "#<<" "#\\" "#|" "#;" "#&" script) any-string))))
+               (complement (:: (:or (:: "#" (:or f t)) reader-command sharing "#<<" "#\\" "#|" "#;" "#&" script) any-string))))
       (ret lexeme 'error #f start-pos end-pos)]
      [any-char (extend-error lexeme start-pos end-pos input-port)]))
   

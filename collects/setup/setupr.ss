@@ -406,8 +406,7 @@
     (let loop ([path path])
       (cond
        [(directory-exists? path)
-	(for-each (lambda (e) (loop (build-path path e)))
-		  (directory-list path))]
+	(void)]
        [(file-exists? path)
 	(printout)
 	(unless (delete-file path)
@@ -426,13 +425,18 @@
 
   (define (clean-collection cc)
     (let* ([info (cc-info cc)]
+	   [default (box 'default)]
 	   [paths (call-info
-		   info 'clean (list "compiled")
+		   info
+		   'clean
+		   (list "compiled" (build-path "compiled" "native" (system-library-subpath)))
 		   (lambda (x)
-		     (unless (and (list? x)
+		     (unless
+			 (or (eq? x default)
+			     (and (list? x)
 				  (andmap string? x))
 		       (error 'setup-plt "expected a list of strings for 'clean, got: ~s"
-			      x))))]
+			      x)))))]
 	   [printed? #f]
 	   [print-message
 	    (lambda ()

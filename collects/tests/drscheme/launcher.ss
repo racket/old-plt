@@ -49,9 +49,10 @@
   (set-language-level! "Graphical without Debugging (MrEd)")
   (run-launcher/no-teachpack listener 'no-teachpack 'the-correct-answer))
 
-(define (teachpack-test)
+(define (teachpack-test language insert-junk)
   (define-values (port-num listener) (get-port))
   (define drs (wait-for-drscheme-frame))
+  (set-language-level! language)
   (call-with-output-file tmp-teachpack
     (lambda (port)
       (write
@@ -66,8 +67,9 @@
        port))
     'truncate)
   (clear-definitions drs)
+  (insert-junk)
   (type-in-definitions drs `(send-back 'the-correct-answer))
-  (fw:test:menu-select "File" "Save")
+  (fw:test:menu-select "File" "Save Definitions")
   (fw:test:menu-select "Language" "Clear All Teachpacks")
   (use-get/put-dialog
    (lambda ()
@@ -76,4 +78,19 @@
   (run-launcher/no-teachpack listener 'teachpack-beginner 'the-correct-answer))
 
 (teachpackless-test)
-(teachpack-test)
+
+;(teachpack-test "Graphical (MrEd)" void)
+;(teachpack-test "Textual (MzScheme)" void)
+;(teachpack-test "Textual without Debugging (MzScheme)" void)
+;(teachpack-test "Graphical without Debugging (MrEd)" void)
+;(teachpack-test "Beginning Student" void)
+;(teachpack-test "Intermediate Student" void)
+;(teachpack-test "Advanced Student" void)
+
+(teachpack-test "Beginning Student"
+		(lambda ()
+		  (let ([drs (wait-for-drscheme-frame)])
+		    (fw:test:menu-select "Edit" "Insert Text Box")
+		    (fw:test:keystroke #\a)
+		    (fw:test:keystroke #\b)
+		    (fw:test:keystroke #\c))))

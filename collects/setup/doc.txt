@@ -85,10 +85,13 @@ Additional info.ss fields trigger additional setup actions:
 > 'clean - a list of pathnames to be deleted when the --clean or
   -c flag is passed to setup-plt. The pathnames must be relative to
   the collection.  If the any path names a directory, each of the
-  files in the directory and in any subdirectory are deleted, but the
-  directory structure itself is preserved. If the path names a file,
+  files in the directory are deleted but none of the subdirectories of that
+  directory are checked. If the path names a file,
   the file is deleted.  The default, if this flag is not specified, is
   to delete all files in the compiled subdirectory.
+  and all of the files in the architecture-specific subdirectory of
+  the compiled directory, for the architecture that setup-plt
+  is running under.
 
 
  Unpacking .plt Distribution Archives

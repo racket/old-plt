@@ -1,5 +1,6 @@
 (class ("Throwable" "java" "lang")
        (public)
+       #t     
        ()
        (("Throwable" (public) ctor () () ("Throwable" "java" "lang"))
 	("Throwable" (public) ctor (("String" "java" "lang")) () ("Throwable" "java" "lang"))
@@ -33,4 +34,5 @@
 
        ()
        (("Object" "java" "lang"))
-       (("Serializable" "java" "io")))
+       (("Serializable" "java" "io"))
+       "version1")

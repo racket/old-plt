@@ -1,5 +1,6 @@
 (class ("Object" "java" "lang")
        (public)
+       #t
        ()
        (("Object" (public) ctor () () ("Object" "java" "lang"))
 	("clone" (protected) ("Object" "java" "lang") () (("CloneNotSupportedException" "java" "lang"))("Object" "java" "lang"))
@@ -15,5 +16,6 @@
         ("wait" (public final) void (long int) (("InterruptedException" "java" "lang")) ("Object" "java" "lang")))
        ()
        (("Object" "java" "lang"))
-       ())
+       ()
+       "version1")
 

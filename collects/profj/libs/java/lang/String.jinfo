@@ -1,5 +1,6 @@
 (class ("String" "java" "lang")
        (public final)
+       #t     
        (("CASE_INSENSITIVE_ORDER" (public static final) 
                                   ("String" "java" "lang")
                                   ("Comparator" "java" "util")))
@@ -83,4 +84,5 @@
  
        ()
        (("Object" "java" "lang"))
-       (("Serializable" "java" "io") ("Comparable" "java" "lang") ("CharSequence" "java" "lang")))
+       (("Serializable" "java" "io") ("Comparable" "java" "lang") ("CharSequence" "java" "lang"))
+       "version1")

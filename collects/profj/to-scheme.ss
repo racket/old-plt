@@ -80,7 +80,7 @@
           (make-syntax #f 'null #f)
           (cond
             ((prim-numeric-type? name) (make-syntax #f 0 #f))
-            ((eq? 'char name) (make-syntax #f '#\ #f))
+            ((eq? 'char name) (make-syntax #f '#\space #f))
             ((eq? 'boolean name) (make-syntax #f '#f #f))
             (else (make-syntax #f 'null #f))))))
   
@@ -473,10 +473,14 @@
       (unless (> depth 0) (loc (def-file class)))
       
       (let*-values (((header) (def-header class))
-                    ((parent parent-src) 
+                    ((parent parent-src extends-object?)
                      (if (null? (header-extends header))
-                         (values "Object" #f)
-                         (get-parent (header-extends header))))
+                         (values "Object" #f #t)
+                         (let-values (((p p-s) (get-parent (header-extends header))))
+                           (values p p-s
+                                   (class-record-object? 
+                                    (send type-recs get-class-record 
+                                          (name->type (car (header-extends header)) #f #f 'full type-recs)))))))
                     ((class*) (create-syntax #f 'class* (build-src (def-key-src class))))
                     ((class-members) (separate-members (def-members class)))
                     ((methods) (separate-methods (members-method class-members) (make-accesses null null null null null null)))
@@ -519,7 +523,10 @@
                           ,(create-local-names (append (make-method-names (accesses-private methods) null type-recs)
                                                        restricted-methods))
                           (define ,class
-                            (,class* ,(translate-id parent parent-src) ,(translate-implements (header-implements header))
+                            (,class* ,(if extends-object?
+                                          (translate-id parent parent-src)
+                                          `(Object-Mix ,(translate-id parent parent-src)))
+                                     ,(translate-implements (header-implements header))
                              
                              ,@(map (lambda (f) (translate-field (map modifier-kind (field-modifiers f))
                                                                  (field-type f)
@@ -1790,7 +1797,10 @@
                          `(javaRuntime:instanceof-array #t ,expr (quote ,(type-spec-name type)) ,(type-spec-dim type))
                          `(javaRuntime:instanceof-array #f ,expr ,(get-class-name type) ,(type-spec-dim type)))
                      (build-src src))
-        (make-syntax #f `(is-a? ,expr ,(get-class-name type)) (build-src src))))
+        (let ((syntax-type (get-class-name type)))
+          (if (or (eq? (syntax-e syntax-type) 'Object) (eq? (syntax-e syntax-type) 'java.lang.Object))
+              (make-syntax #f `(is-a? ,expr ObjectI) (build-src src))
+              (make-syntax #f `(is-a? ,expr ,syntax-type) (build-src src))))))
   
   ;translate-assignment: (U access array-access) symbol syntax expression ?? src src -> syntax
   (define (translate-assignment name op expr assign-to type key src)

@@ -161,13 +161,13 @@
 ;                                                                                                          
 ;                                                                                                          
     
-  ;; (make-class-record (list string) (list symbol) boolean (list field-record) 
+  ;; (make-class-record (list string) (list symbol) boolean boolean (list field-record) 
   ;;                    (list method-records) (list inner-record) (list (list strings)) (list (list strings)))
   ;; After full processing fields and methods should contain all inherited fields 
   ;; and methods.  Also parents and ifaces should contain all super-classes/ifaces
-  (define-struct class-record (name modifiers class? fields methods inners parents ifaces))
+  (define-struct class-record (name modifiers class? object? fields methods inners parents ifaces))
 
-  (define interactions-record (make-class-record (list "interactions") null #f null null null null null))
+  (define interactions-record (make-class-record (list "interactions") null #f #f null null null null null))
   
   ;; (make-field-record string (list symbol) bool (list string) type)
   (define-struct field-record (name modifiers init? class type))
@@ -509,18 +509,24 @@
             (car (cadr assignable-count))) (method-conflict-fail))
         (else (car assignable)))))
       
-  ;; read-records: string -> class-record
+  (define type-version "version1")
+  (define type-length 10)
+  
+  ;; read-records: string -> (U class-record #f)
   (define (read-record filename)
     (letrec ((parse-class/iface
               (lambda (input)
-                (make-class-record (list-ref input 1)
-                                   (list-ref input 2)
-                                   (symbol=? 'class (car input))
-                                   (map parse-field (list-ref input 3))
-                                   (map parse-method (list-ref input 4))
-                                   (map parse-inner (list-ref input 5))
-                                   (list-ref input 6)
-                                   (list-ref input 7))))
+                (and (= (length input) type-length)
+                     (equal? type-version (list-ref input 9))
+                     (make-class-record (list-ref input 1)
+                                        (list-ref input 2)
+                                        (symbol=? 'class (car input))
+                                        (list-ref input 3)
+                                        (map parse-field (list-ref input 4))
+                                        (map parse-method (list-ref input 5))
+                                        (map parse-inner (list-ref input 6))
+                                        (list-ref input 7)
+                                        (list-ref input 8)))))
              (parse-field
               (lambda (input)
                 (make-field-record (car input)
@@ -562,11 +568,13 @@
                      'interface)
                  (class-record-name r)
                  (class-record-modifiers r)
+                 (class-record-object? r)
                  (map field->list (class-record-fields r))
                  (map method->list (class-record-methods r))
                  (map inner->list (class-record-inners r))
                  (class-record-parents r)
-                 (class-record-ifaces r))))
+                 (class-record-ifaces r)
+                 type-version)))
              (field->list
               (lambda (f)
                 (list

@@ -140,9 +140,10 @@
             val
             (raise-class-cast
              (format "Cast to ~a~a failed for ~a" name (make-brackets dim) (send (convert-to-string val) get-mzscheme-string))))
-        (if (is-a? val type)
-            val
-            (raise-class-cast (format "Cast to ~a failed for ~a" name (send val my-name))))))
+        (cond
+          ((and (eq? Object type) (is-a? val ObjectI)) val)
+          ((is-a? val type) val)
+          (else (raise-class-cast (format "Cast to ~a failed for ~a" name (send val my-name)))))))
   
   ;instanceof-array: bool val (U class sym) int -> bool
   (define (instanceof-array prim? val type dim)

@@ -186,32 +186,34 @@
     (let* ((dir (if (and (equal? "scheme" (car in-dir)) (scheme-ok?)) (cdr in-dir) in-dir))
            (class-name (cons class path))
            (type-path (string-append (build-path (apply build-path dir) "compiled" class) ".jinfo"))
-           (file-path (build-path (apply build-path dir) class))
-           (new-level (box level)))
-      (cond
-        ((is-import-restricted? class path level) (used-restricted-import class path caller-src))
-        ((send type-recs get-class-record class-name #f (lambda () #f)) void)
-        ((file-exists? type-path) 
-         (send type-recs add-class-record (read-record type-path))
-         (send type-recs add-require-syntax class-name (build-require-syntax class path dir #f)))
-        ((and (scheme-ok?) (not (eq? dir in-dir)) (check-scheme-file-exists? file-path))
-         (send type-recs add-to-records class-name (make-scheme-record class (cdr path) dir null))
-         (send type-recs add-require-syntax class-name (build-require-syntax class path dir #f)))
-        ((check-file-exists? file-path new-level)
-         (send type-recs add-to-records 
-               class-name
-               (lambda () 
-                 (let* ((suffix (case (unbox new-level) 
+           (class-path (build-path (apply build-path dir) class))
+           (new-level (box level))
+           (class-exists? (check-file-exists? class-path new-level))
+           (suffix (case (unbox new-level) 
                                   ((beginner) ".bjava")
                                   ((intermediate) ".ijava")
                                   ((advanced) ".ajava")
                                   ((full) ".java")))
-                        (location (string-append class suffix))
+           (file-path (string-append class-path suffix)))
+      (cond
+        ((is-import-restricted? class path level) (used-restricted-import class path caller-src))
+        ((send type-recs get-class-record class-name #f (lambda () #f)) void)
+        ((and (file-exists? type-path) (or (core? class-name) (older-than? file-path type-path)) (read-record type-path))
+         =>
+         (lambda (record)
+           (send type-recs add-class-record record)
+           (send type-recs add-require-syntax class-name (build-require-syntax class path dir #f))))
+        ((and (scheme-ok?) (not (eq? dir in-dir)) (check-scheme-file-exists? class-path))
+         (send type-recs add-to-records class-name (make-scheme-record class (cdr path) dir null))
+         (send type-recs add-require-syntax class-name (build-require-syntax class path dir #f)))
+        (class-exists?
+         (send type-recs add-to-records 
+               class-name
+               (lambda () 
+                 (let* ((location (string-append class suffix))
                         (ast (begin (input-port 
-                                     (lambda () 
-                                       (call-with-input-file (string-append file-path suffix) (lambda (x) x))))
-                                    (call-with-input-file (string-append file-path suffix) 
-                                      (lambda (p) (parse p location (unbox new-level)))))))
+                                     (lambda () (call-with-input-file file-path (lambda (x) x))))
+                                    (call-with-input-file file-path (lambda (p) (parse p location (unbox new-level)))))))
                    (send type-recs set-compilation-location location (build-path (apply build-path dir) "compiled"))
                    (build-info ast (unbox new-level) type-recs 'not_look_up)
                    (send type-recs get-class-record class-name #f (lambda () 'internal-error "Failed to add record"))
@@ -221,6 +223,22 @@
       (when add-to-env (send type-recs add-to-env class path loc))
       (send type-recs add-class-req class-name (not add-to-env) loc)))
 
+  ;determines if file a is older than file b
+  ;older-than?: string string -> bool
+  (define (older-than? file-a file-b)
+    (and (file-exists? file-a)
+         (file-exists? file-b)
+         (<= (file-or-directory-modify-seconds file-a)
+            (file-or-directory-modify-seconds file-b))))
+  
+  ;core: (list string) -> bool
+  ;Determines if the given class is a core class not written in Java
+  (define (core? class)
+    (member class `(("Object" "java" "lang")
+                   ("String" "java" "lang")
+                   ("Throwable" "java" "lang")
+                   ("Comparable" "java" "lang")
+                   ("Serializable" "java" "io"))))
   
   ;check-file-exists?: string box -> bool
   ;side-effect: modifies contents of box
@@ -463,6 +481,7 @@
                            cname
                            (check-class-modifiers level (def-kind class) modifiers)
                            #t
+                           #t
                            (append f (filter class-specific-field? (class-record-fields super-record)))
                            (append m (filter (lambda (meth)
                                                (class-specific-method? meth m))
@@ -581,6 +600,7 @@
                            iname
                            (check-interface-modifiers level (header-modifiers info))
                            #f
+                           #t
                            (apply append (cons f (map class-record-fields super-records)))
                            (apply append (cons m (map class-record-methods super-records)))
                            (apply append (cons i (map class-record-inners super-records)))

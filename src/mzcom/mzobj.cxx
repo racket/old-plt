@@ -127,20 +127,19 @@ void setupSchemeEnv(void) {
   GetModuleFileName(GetModuleHandle("mzcom.exe"),exeBuff,sizeof(exeBuff));
 
   scheme_add_global("mzcom-exe",scheme_make_string(exeBuff),env);
+  scheme_set_exec_cmd(exeBuff);
 
-  // if something goes wrong, it's likely to be here 
-  scheme_eval_string("(current-library-collection-paths "
-		     " (path-list-string->path-list "
-		     "  (or (getenv \"PLTCOLLECTS\") \"\") "
-		     "  (or (ormap (lambda (p)  "
-		     "               (and p (directory-exists? p) (list p))) "
-		     "             (list (let ([v (getenv \"PLTHOME\")]) "
-		     "                     (and v  "
-		     "                          (build-path v \"collects\"))) "
-		     "                    (find-executable-path  "
-		     "                     mzcom-exe "
-		     "                     (build-path 'up))))"
-		     "      null)))",env);
+  {
+    Scheme_Object *clcp, *flcp, *a[1];
+    
+    clcp = scheme_builtin_value("current-library-collection-paths");
+    flcp = scheme_builtin_value("find-library-collection-paths");
+
+    if (clcp && flcp) {
+      a[0] = _scheme_apply(flcp, 0, NULL);
+      _scheme_apply(clcp, 1, a);
+    }
+  }
 }
 
 DWORD WINAPI evalLoop(LPVOID args) {

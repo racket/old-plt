@@ -497,7 +497,7 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
 
     ulen = theStrlen + extra;
     if (qd_spacing)
-      alloc_ulen = (2 * ulen) + 1;
+      alloc_ulen = 2 * (ulen + 1);
     else
       alloc_ulen = ulen;
     if (alloc_ulen > QUICK_UBUF_SIZE)
@@ -523,7 +523,7 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
 			      theStrlen, NULL, 0, -1, 
 			      NULL, 1 /*UTF-16*/, '?');
     if (qd_spacing)
-      alloc_ulen = (2 * ulen) + 1;
+      alloc_ulen = 2 * (ulen + 1);
     else
       alloc_ulen = ulen;
     if (alloc_ulen > QUICK_UBUF_SIZE)

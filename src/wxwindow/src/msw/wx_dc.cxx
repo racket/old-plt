@@ -14,6 +14,7 @@
 
 #include "../../../wxcommon/Region.h"
 #include "wx_pdf.h"
+#include "../../../mzscheme/include/scheme.h"
 
 #include <math.h>
 
@@ -29,12 +30,6 @@ static HANDLE null_brush;
 static HANDLE null_pen;
 
 void RegisterGDIObject(HANDLE x);
-
-extern "C" {
-  int scheme_utf8_decode(const unsigned char *s, int start, int len, 
-			 unsigned int *us, int dstart, int dlen,
-			 long *ipos, char utf16, int permissive);
-};
 
 static is_nt()
 {
@@ -1022,9 +1017,9 @@ static int ucs4_strlen(const unsigned int *c)
 #define QUICK_UBUF_SIZE 1024
 static wchar_t u_buf[QUICK_UBUF_SIZE];
 
-wchar_t *convert_to_drawable_format(const char *text, int d, int ucs4, long *_ulen)
+wchar_t *convert_to_drawable_format(const char *text, int d, int ucs4, long *_ulen, Bool combine)
 {
-  int ulen;
+  int ulen, alloc_ulen;
   wchar_t *unicode;
   int theStrlen;
 
@@ -1045,13 +1040,17 @@ wchar_t *convert_to_drawable_format(const char *text, int d, int ucs4, long *_ul
     }
 
     ulen = theStrlen + extra;
-    if (ulen > QUICK_UBUF_SIZE)
-      unicode = new WXGC_ATOMIC wchar_t[ulen];
+    if (combine)
+      alloc_ulen = ulen;
+    else
+      alloc_ulen = 2 * (ulen + 1);
+    if (alloc_ulen > QUICK_UBUF_SIZE)
+      unicode = new WXGC_ATOMIC wchar_t[alloc_ulen];
     else
       unicode = u_buf;
     
     /* UCS-4 -> UTF-16 conversion */
-    for (i = 0, extra = 0; i < theStrlen; i++) {
+    for (i = 0, extra = (combine ? 0 : 1); i < theStrlen; i++) {
       v = ((unsigned int *)text)[d+i];
       if (v > 0xFFFF) {
 	unicode[i+extra] = 0xD8000000 | ((v >> 10) & 0x3FF);
@@ -1065,13 +1064,43 @@ wchar_t *convert_to_drawable_format(const char *text, int d, int ucs4, long *_ul
     ulen = scheme_utf8_decode((unsigned char *)text, d, 
 			      theStrlen, NULL, 0, -1, 
 			      NULL, 1 /*UTF-16*/, '?');
-    if (ulen > QUICK_UBUF_SIZE)
-      unicode = new WXGC_ATOMIC wchar_t[ulen];
+    if (combine)
+      alloc_ulen = ulen;
+    else
+      alloc_ulen = 2 * (ulen + 1);
+    if (alloc_ulen > QUICK_UBUF_SIZE)
+      unicode = new WXGC_ATOMIC wchar_t[alloc_ulen];
     else
       unicode = u_buf;
     ulen = scheme_utf8_decode((unsigned char *)text, d, theStrlen, 
-			      (unsigned int *)unicode, 0, -1, 
+			      (unsigned int *)unicode, combine ? 0 : 1, -1, 
 			      NULL, 1 /*UTF-16*/, '?');
+  }
+
+  /* In non-combine mode, prevent all sorts of glyph combinations */
+  if (!combine) {
+    unsigned int i, j = 0;
+    /* start with left-to-right override: */
+    ulen++;
+    unicode[0] = 0x202D;
+    /* remove other control characters: */
+    for (i = 1; i < ulen; i++) {
+      if (scheme_iscontrol(unicode[i])) {
+	j++;
+      } else {
+	unicode[i - j] = unicode[i];
+      }
+    }
+    ulen -= j;
+    /* Add ZWNJ to prevent other combinations */
+    /*  I think is this redundant, because other attributes
+	(in t estyle or layout) disable combinations. But just
+	in case... */
+    for (i = ulen; i--; ) {
+      unicode[(2 * i) + 1] = 0x200C;
+      unicode[(2 * i)] = unicode[i];
+    }
+    ulen *= 2;
   }
   
   *_ulen = ulen;
@@ -1118,7 +1147,7 @@ void wxDC::DrawText(const char *text, float x, float y, Bool combine, Bool ucs4,
   
   SetRop(dc, wxSOLID);
 
-  ustring = convert_to_drawable_format(text, d, ucs4, &len);
+  ustring = convert_to_drawable_format(text, d, ucs4, &len, combine);
 
   (void)TextOutW(dc, (int)XLOG2DEV(xx1), (int)YLOG2DEV(yy1), ustring, len);
 
@@ -1377,7 +1406,7 @@ void wxDC::GetTextExtent(const char *string, float *x, float *y,
     return;
   }
 
-  ustring = convert_to_drawable_format(string, d, ucs4, &len);
+  ustring = convert_to_drawable_format(string, d, ucs4, &len, combine);
 
   GetTextExtentPointW(dc, ustring, len, &sizeRect);
   if (descent || topSpace)

@@ -191,20 +191,20 @@ exec mzscheme -r "$0" "$0" "$@"
   (syntax-rules () [(_ var type val ...) (_cmake-object var `type val ...)]))
 
 (define symbols '())
+(define (add-symbols syms)
+  (for-each (lambda (s)
+              (when (assq s symbols)
+                (error 'defsymbols "symbol ~s already defined" s))
+              (set! symbols
+                    (cons (list s (string-append
+                                   (regexp-replace
+                                    #rx"-" (symbol->string s) "_")
+                                   "_sym"))
+                          symbols))
+              (~ "static Scheme_Object *"(cadar symbols)";"))
+            syms))
 (define-syntax defsymbols
-  (syntax-rules ()
-    [(_ sym ...)
-     (for-each
-      (lambda (s)
-        (when (assq s symbols)
-          (error 'defsymbols "symbol ~s already defined" s))
-        (set! symbols
-              (cons (list s (string-append (regexp-replace
-                                            #rx"-" (symbol->string s) "_")
-                                           "_sym"))
-                    symbols))
-        (~ "static Scheme_Object *"(cadar symbols)";"))
-      '(sym ...))]))
+  (syntax-rules () [(_ sym ...) (add-symbols '(sym ...))]))
 
 :}
 

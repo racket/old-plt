@@ -30,32 +30,37 @@
         (parameterize
 	 ([external-browser browser-param])
 	 (send-url url #t))
-	(letrec
-	  ([monitor-thread
-	    (thread
-	     (lambda ()
-	       (wait-start-semaphore)
-	       (set! tried #t)
-	       (kill-thread timer-thread)))]
-	   [timer-thread
-	    (thread
-	     (lambda ()
-	       (sleep browser-timeout)
-	       (set! tried #t)
-	       (kill-thread monitor-thread)
-	       (set-plt-browser!)
-               ; shutdown old server
-	       ((hd-cookie->exit-proc hd-cookie))
-	       (fprintf (current-error-port)
-			"Switching to PLT browser.~n")
-	       (internal-start-help-server hd-cookie)
-               (set! browser-param (external-browser))
-	       (send-url url)))])
-          (with-handlers 
-	    ([void (lambda _ (fprintf (current-error-port)
-				      (string-append
-				       "Help Desk browser failed.~n")))])
-	    (send-url (build-dispatch-url hd-cookie url))))))
+	(begin
+	  (unless (get-preference 'external-browser 
+				  (lambda () #f))
+            ; should be no-op, except in Unix
+            (update-browser-preference url))
+	  (letrec
+	    ([monitor-thread
+	      (thread
+	       (lambda ()
+		 (wait-start-semaphore)
+		 (set! tried #t)
+		 (kill-thread timer-thread)))]
+	     [timer-thread
+	      (thread
+	       (lambda ()
+		 (sleep browser-timeout)
+		 (set! tried #t)
+		 (kill-thread monitor-thread)
+		 (set-plt-browser!)
+                 ; shutdown old server
+		 ((hd-cookie->exit-proc hd-cookie))
+		 (fprintf (current-error-port)
+			  "Switching to PLT browser.~n")
+		 (internal-start-help-server hd-cookie)
+		 (set! browser-param (external-browser))
+		 (send-url url)))])
+	    (with-handlers 
+	     ([void (lambda _ (fprintf (current-error-port)
+				       (string-append
+					"Help Desk browser failed.~n")))])
+	     (send-url (build-dispatch-url hd-cookie url)))))))
 
   (define (help-desk-browser hd-cookie)
     (help-desk-navigate hd-cookie 

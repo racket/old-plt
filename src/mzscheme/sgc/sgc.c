@@ -4241,8 +4241,11 @@ void GC_push_all_stack(void *sp, void *ep)
   PUSH_COLLECT(s, e, 0);
 
   prepare_stack_collect();
+}
 
-  collect();
+void GC_flush_mark_stack()
+{
+  collect();  
 }
 
 void do_GC_gcollect(void *stack_now)

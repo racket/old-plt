@@ -81,6 +81,8 @@ static void push_copied_stacks(void)
       cs->pushed = 1;
   }
 
+  GC_flush_mark_stack();
+
   do {
     pushed_one = 0;
     for (cs = *first_copied_stack; cs; cs = *cs->next)

@@ -986,7 +986,7 @@ static long user_read_result(const char *who, Scheme_Input_Port *port,
 	if (false_ok)
 	  return SCHEME_UNLESS_READY;
 	scheme_arg_mismatch(who, 
-			    "returned #f when no progress event was supplied: ",
+			    "returned #f when no progress evt was supplied: ",
 			    val);
 	return 0;
       } else if (SCHEME_PROCP(val)) {
@@ -2673,7 +2673,7 @@ do_read_char(char *name, int argc, Scheme_Object *argv[], int peek, int spec, in
 	  }
 	  if (!SAME_OBJ(port, SCHEME_PTR1_VAL(unless_evt))) {
 	    scheme_arg_mismatch(name, 
-				"event is not a progress evt for the given port: ",
+				"evt is not a progress evt for the given port: ",
 				unless_evt);
 	    return NULL;
 	  }
@@ -2771,8 +2771,7 @@ do_read_line (int as_bytes, const char *who, int argc, Scheme_Object *argv[])
   Scheme_Object *port;
   int ch;
   int crlf = 0, cr = 0, lf = 1;
-  mzchar *buf, *oldbuf, onstack[32];
-  char *bbuf, *oldbbuf;
+  char *buf, *oldbuf, onstack[32];
   long size = 31, oldsize, i = 0;
 
   if (argc && !SCHEME_INPORTP(argv[0]))
@@ -2806,20 +2805,10 @@ do_read_line (int as_bytes, const char *who, int argc, Scheme_Object *argv[])
   if ((Scheme_Object *)port == scheme_orig_stdin_port)
     scheme_flush_orig_outputs();
 
-  if (as_bytes) {
-    buf = NULL;
-    bbuf = (char *)onstack;
-    size *= sizeof(mzchar);
-  } else {
-    bbuf = NULL;
-    buf = onstack;
-  }
+  buf = onstack;
 
   while (1) {
-    if (as_bytes)
-      ch = scheme_get_byte(port);
-    else
-      ch = scheme_getc(port);
+    ch = scheme_get_byte(port);
     if (ch == EOF) {
       if (!i)
 	return scheme_eof;
@@ -2842,35 +2831,23 @@ do_read_line (int as_bytes, const char *who, int argc, Scheme_Object *argv[])
       if (lf) break;
     }
 
-    if (as_bytes) {
-      if (i >= size) {
-	oldsize = size;
-	oldbbuf = bbuf;
-	
-	size *= 2;
-	bbuf = (char *)scheme_malloc_atomic(size + 1);
-	memcpy(bbuf, oldbbuf, oldsize);
-      }
-      bbuf[i++] = ch;
-    } else {
-      if (i >= size) {
-	oldsize = size;
-	oldbuf = buf;
-	
-	size *= 2;
-	buf = (mzchar *)scheme_malloc_atomic((size + 1) * sizeof(mzchar));
-	memcpy(buf, oldbuf, oldsize * sizeof(mzchar));
-      }
-      buf[i++] = ch;
+    if (i >= size) {
+      oldsize = size;
+      oldbuf = buf;
+      
+      size *= 2;
+      buf = (char *)scheme_malloc_atomic(size + 1);
+      memcpy(buf, oldbuf, oldsize);
     }
+    buf[i++] = ch;
   }
 
   if (as_bytes) {
-    bbuf[i] = '\0';
-    return scheme_make_sized_byte_string(bbuf, i, bbuf == (char *)onstack);
+    buf[i] = '\0';
+    return scheme_make_sized_byte_string(buf, i, buf == (char *)onstack);
   } else {
     buf[i] = '\0';
-    return scheme_make_sized_char_string(buf, i, buf == onstack);
+    return scheme_make_sized_utf8_string(buf, i);
   }
 }
 
@@ -2976,7 +2953,7 @@ do_general_read_bytes(int as_bytes,
   if (unless_evt) {
     if (!SAME_OBJ(port, SCHEME_PTR1_VAL(unless_evt))) {
       scheme_arg_mismatch(who, 
-			  "event is not a progress evt for the given port: ",
+			  "evt is not a progress evt for the given port: ",
 			  unless_evt);
       return NULL;
     }
@@ -3105,7 +3082,7 @@ peeked_read(int argc, Scheme_Object *argv[])
 
   if (!SAME_OBJ(port, SCHEME_PTR1_VAL(unless_evt))) {
     scheme_arg_mismatch("port-commit-peeked", 
-			"event is not a progress evt for the given port: ",
+			"evt is not a progress evt for the given port: ",
 			unless_evt);
     return NULL;
   }

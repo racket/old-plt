@@ -591,6 +591,11 @@
 			    (vector-length code-points))
 		      (if ((vector-length code-points) . > . 1)
 			  (begin
+			    (test (integer->char (vector-ref code-points 0))
+				  bytes-utf-8-ref s 0)
+			    (test (integer->char (vector-ref code-points
+							     (sub1 (vector-length code-points))))
+				  bytes-utf-8-ref s (sub1 (vector-length code-points)))
 			    (let ([post-1 (bytes-utf-8-index s 1)])
 			      (test #t positive? post-1)
 			      (test (list->vector (cdr (vector->list code-points)))
@@ -619,6 +624,31 @@
 			      'status status))
 		      (let ([convert
 			     (lambda (prefix)
+			       (test (+ (vector-length code-points) (bytes-length prefix))
+				     bytes-utf-8-length (bytes-append prefix s) #\?)
+			       (test (vector-length code-points)
+				     bytes-utf-8-length (bytes-append prefix s) #\? (bytes-length prefix))
+			       (test (if (equal? prefix #"") 
+					 #f 
+					 (integer->char (bytes-ref prefix 0)))
+				     bytes-utf-8-ref (bytes-append prefix s) 0)
+			       (test (if (equal? prefix #"") 
+					 (if (equal? #() code-points)
+					     #f
+					     #\?)
+					 (integer->char (bytes-ref prefix 0)))
+				     bytes-utf-8-ref (bytes-append prefix s) 0 #\?)
+			       (test (if (equal? #() code-points)
+					 (if (equal? #"" prefix)
+					     #f
+					     (integer->char (bytes-ref prefix (sub1 (bytes-length prefix)))))
+					 (integer->char
+					  (or (vector-ref code-points (sub1 (vector-length code-points)))
+					      (char->integer #\?))))
+				     bytes-utf-8-ref (bytes-append prefix s) 
+				     (max 0 (+ (bytes-length prefix) (sub1 (vector-length code-points))))
+				     #\?)
+
 			       (let-values ([(s2 n status) 
 					     (bytes-convert utf-8-iconv-p (bytes-append prefix s))]
 					    [(pl) (bytes-length prefix)])

@@ -3947,6 +3947,7 @@ int mark_regwork_MARK(void *p) {
   gcMARK(r->str);
   gcMARK(r->instr);
   gcMARK(r->port);
+  gcMARK(r->unless_evt);
   gcMARK(r->startp);
   gcMARK(r->endp);
   gcMARK(r->peekskip);
@@ -3959,6 +3960,7 @@ int mark_regwork_FIXUP(void *p) {
   gcFIXUP(r->str);
   gcFIXUP(r->instr);
   gcFIXUP(r->port);
+  gcFIXUP(r->unless_evt);
   gcFIXUP(r->startp);
   gcFIXUP(r->endp);
   gcFIXUP(r->peekskip);

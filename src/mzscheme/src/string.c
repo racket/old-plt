@@ -574,17 +574,17 @@ scheme_init_string (Scheme_Env *env)
   scheme_add_global_constant("bytes-utf-8-index", 
 			     scheme_make_prim_w_arity(byte_string_utf8_index,
 						      "bytes-utf-8-index",
-						      2, 3),
+						      2, 4),
 			     env);
   scheme_add_global_constant("bytes-utf-8-length",
 			     scheme_make_prim_w_arity(byte_string_utf8_length,
 						      "bytes-utf-8-length",
-						      1, 3),
+						      1, 4),
 			     env);
   scheme_add_global_constant("bytes-utf-8-ref",
 			     scheme_make_prim_w_arity(byte_string_utf8_ref,
 						      "bytes-utf-8-ref",
-						      2, 3),
+						      2, 4),
 			     env);
 
   scheme_add_global_constant("bytes->string/utf-8",
@@ -1281,7 +1281,7 @@ static Scheme_Object *char_string_utf8_length (int argc, Scheme_Object *argv[])
 static Scheme_Object *
 byte_string_utf8_length (int argc, Scheme_Object *argv[])
 {
-  int len;
+  int len, perm;
   long istart, ifinish;
   char *chars;
 
@@ -1290,13 +1290,20 @@ byte_string_utf8_length (int argc, Scheme_Object *argv[])
   
   chars = SCHEME_BYTE_STR_VAL(argv[0]);
 
+  if ((argc > 1) && !SCHEME_FALSEP(argv[1])) {
+    if (!SCHEME_CHARP(argv[1]))
+      scheme_wrong_type("bytes-utf-8-length", "character or #f", 1, argc, argv);
+    perm = 1;
+  } else
+    perm = 0;
+    
   scheme_get_substring_indices("bytes-utf-8-length", argv[0], argc, argv, 
-			       1, 2,
+			       2, 3,
 			       &istart, &ifinish);
   
   len = scheme_utf8_decode((unsigned char *)chars, istart, ifinish,
 			   NULL, 0, -1,
-			   NULL, 0, 0);
+			   NULL, 0, perm);
 
   if (len < 0)
     return scheme_false;
@@ -1308,7 +1315,7 @@ static Scheme_Object *
 byte_string_utf8_index(int argc, Scheme_Object *argv[])
 {
   long istart, ifinish, pos = -1, opos, ipos;
-  int result;
+  int result, perm;
   char *chars;
 
   if (!SCHEME_BYTE_STRINGP(argv[0]))
@@ -1327,14 +1334,21 @@ byte_string_utf8_index(int argc, Scheme_Object *argv[])
     scheme_wrong_type("bytes-utf-8-index", "non-negative exact integer", 1, argc, argv);
   }
 
+  if ((argc > 2) && !SCHEME_FALSEP(argv[2])) {
+    if (!SCHEME_CHARP(argv[2]))
+      scheme_wrong_type("bytes-utf-8-index", "character or #f", 1, argc, argv);
+    perm = 1;
+  } else
+    perm = 0;
+    
   scheme_get_substring_indices("bytes-utf-8-index", argv[0], argc, argv, 
-			       2, 3,
+			       3, 4,
 			       &istart, &ifinish);
   
   result = utf8_decode_x((unsigned char *)chars, istart, ifinish,
 			 NULL, 0, pos,
 			 &ipos, &opos,
-			 0, 0, 0, 0);
+			 0, 0, 0, perm ? 1 : 0);
   
   if (((result < 0) && (result != -3))
       || ((ipos == ifinish) && (opos <= pos)))
@@ -1349,6 +1363,7 @@ byte_string_utf8_ref(int argc, Scheme_Object *argv[])
   long istart, ifinish, pos = -1, opos, ipos;
   char *chars;
   unsigned int us[1];
+  Scheme_Object *perm;
 
   if (!SCHEME_BYTE_STRINGP(argv[0]))
     scheme_wrong_type("bytes-utf-8-ref", "byte string", 0, argc, argv);
@@ -1366,27 +1381,38 @@ byte_string_utf8_ref(int argc, Scheme_Object *argv[])
     scheme_wrong_type("bytes-utf-8-ref", "non-negative exact integer", 1, argc, argv);
   }
 
+  if ((argc > 2) && !SCHEME_FALSEP(argv[2])) {
+    if (!SCHEME_CHARP(argv[2]))
+      scheme_wrong_type("bytes-utf-8-ref", "character or #f", 1, argc, argv);
+    perm = argv[2];
+  } else
+    perm = 0;
+    
   scheme_get_substring_indices("bytes-utf-8-ref", argv[0], argc, argv, 
-			       2, 3,
+			       3, 4,
 			       &istart, &ifinish);
   
   if (pos > 0) {
-    opos = scheme_utf8_decode((unsigned char *)chars, istart, ifinish,
-			      NULL, 0, pos,
-			      &ipos, 0, 0);
+    utf8_decode_x((unsigned char *)chars, istart, ifinish,
+		  NULL, 0, pos,
+		  &ipos, &opos,
+		  0, 0, 0, perm ? 1 : 0);
     if (opos < pos)
       return scheme_false;
     istart = ipos;
   }
 
-  opos = scheme_utf8_decode((unsigned char *)chars, istart, ifinish,
-			    us, 0, 1,
-			    &ipos, 0, 0);
+  utf8_decode_x((unsigned char *)chars, istart, ifinish,
+		us, 0, 1,
+		&ipos, &opos,
+		0, 0, 0, perm ? 0xFFFF : 0);
 
   if (opos < 1)
     return scheme_false;
+  else if (us[0] == 0xFFFF)
+    return perm;
   else
-    return scheme_make_integer_value_from_unsigned(us[0]);
+    return scheme_make_character(us[0]);
 }
 
 /********************************************************************/
@@ -3026,6 +3052,7 @@ static Scheme_Object *byte_string_open_converter(int argc, Scheme_Object **argv)
   iconv_t cd;
   int kind;
   int permissive;
+  int need_regis = 1;
   Scheme_Custodian_Reference *mref;
 
   if (!SCHEME_CHAR_STRINGP(argv[0]))
@@ -3058,6 +3085,7 @@ static Scheme_Object *byte_string_open_converter(int argc, Scheme_Object **argv)
     else
       permissive = 0;
     cd = (iconv_t)-1;
+    need_regis = (*to_e && *from_e);
   } else {
     if (!iconv_open)
       return scheme_false;
@@ -3084,10 +3112,13 @@ static Scheme_Object *byte_string_open_converter(int argc, Scheme_Object **argv)
   c->kind = kind;
   c->permissive = permissive;
   c->cd = cd;
-  mref = scheme_add_managed(NULL,
-			    (Scheme_Object *)c,
-			    close_converter,
-			    NULL, 1);
+  if (!need_regis)
+    mref = NULL;
+  else
+    mref = scheme_add_managed(NULL,
+			      (Scheme_Object *)c,
+			      close_converter,
+			      NULL, 1);
   c->mref = mref;
 
   return (Scheme_Object *)c;

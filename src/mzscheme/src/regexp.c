@@ -941,6 +941,7 @@ typedef struct Regwork {
   char *str;              /* copy of regstr; used only to protect before thread swaps */
   char *instr;
   Scheme_Object *port;
+  Scheme_Object *unless_evt;
   rxpos instr_size;       /* For port reads */
   rxpos input_maxend;     /* For port reads */
   rxpos input, input_end; /* String-input pointer. */
@@ -954,7 +955,8 @@ typedef struct Regwork {
  * Forwards.
  */
 STATIC int regtry(regexp *, char *, int, int, rxpos *, rxpos *, Regwork *rw, int);
-STATIC int regtry_port(regexp *, Scheme_Object *, rxpos *, rxpos *, 
+STATIC int regtry_port(regexp *, Scheme_Object *, Scheme_Object *,
+		       rxpos *, rxpos *, 
 		       char **, rxpos *, rxpos *, rxpos, Scheme_Object*, Scheme_Object*, int);
 STATIC int regmatch(Regwork *rw, rxpos);
 STATIC int regrepeat(Regwork *rw, rxpos);
@@ -977,7 +979,7 @@ regexec(const char *who,
 	int stringpos, int stringlen, 
 	/* Always used: */
 	rxpos *startp, rxpos *endp,
-	Scheme_Object *port, 
+	Scheme_Object *port, Scheme_Object *unless_evt, 
 	/* Used only when port is non-NULL: */
 	char **stringp, int peek, int get_offsets,
 	Scheme_Object *discard_oport, 
@@ -1067,7 +1069,7 @@ regexec(const char *who,
       rxpos len = 0, space = 0;
 
       *stringp = NULL;
-      if (regtry_port(prog, port, startp, endp, stringp, &len, &space, 0, portend, peekskip, 1)) {
+      if (regtry_port(prog, port, unless_evt, startp, endp, stringp, &len, &space, 0, portend, peekskip, 1)) {
 	if (!peek) {
 	  /* Need to consume matched chars: */
 	  char *drain;
@@ -1160,7 +1162,8 @@ regexec(const char *who,
 	  skip = 0;
 	}
 
-	if (regtry_port(prog, port, startp, endp, stringp, &len, &space, skip, portend, peekskip, !space)) {
+	if (regtry_port(prog, port, unless_evt, startp, endp, stringp, &len, &space, skip, 
+			portend, peekskip, !space)) {
 	  if (!peek) {
 	    char *drain;
 
@@ -1255,7 +1258,8 @@ regtry(regexp *prog, char *string, int stringpos, int stringlen, rxpos *startp, 
    - regtry - try match in a port
    */
 static int			/* 0 failure, 1 success */
-regtry_port(regexp *prog, Scheme_Object *port, rxpos *startp, rxpos *endp, 
+regtry_port(regexp *prog, Scheme_Object *port, Scheme_Object *unless_evt,
+	    rxpos *startp, rxpos *endp, 
 	    char **work_string, rxpos *len, rxpos *size, rxpos skip, 
 	    Scheme_Object *maxlen, Scheme_Object *peekskip, 
 	    int atstart)
@@ -1264,6 +1268,7 @@ regtry_port(regexp *prog, Scheme_Object *port, rxpos *startp, rxpos *endp,
   Regwork rw;
 
   rw.port = port;
+  rw.unless_evt = unless_evt;
   rw.instr_size = *size;
   if (maxlen && SCHEME_INTP(maxlen))
     rw.input_maxend = SCHEME_INT_VAL(maxlen);
@@ -1327,16 +1332,18 @@ static void read_more_from_regport(Regwork *rw, rxpos need_total)
     peekskip = scheme_make_integer(rw->input_end);
 
   /* Fill as much of our buffer as possible: */
-  got = scheme_get_byte_string("regexp-match", rw->port, 
-			       rw->instr, rw->input_end, got,
-			       1, /* read at least one char, and as much as possible */
-			       1, peekskip);
+  got = scheme_get_byte_string_unless("regexp-match", rw->port, 
+				      rw->instr, rw->input_end, got,
+				      1, /* read at least one char, and as much as possible */
+				      1, peekskip,
+				      rw->unless_evt);
 
   regstr = rw->str;
 
-  if (got == EOF)
+  if (!got || (got == EOF)) {
     rw->port = NULL; /* turn off further port reading */
-  else {
+    rw->unless_evt = NULL;
+  } else {
     rw->input_end += got;
 
     /* Non-blocking read got enough? If not, try again in blocking mode: */
@@ -2529,7 +2536,7 @@ static Scheme_Object *gen_compare(char *name, int pos,
   char *full_s;
   rxpos *startp, *endp;
   int offset = 0, orig_offset, endset, m, was_non_byte;
-  Scheme_Object *iport, *oport = NULL, *startv = NULL, *endv = NULL, *dropped;
+  Scheme_Object *iport, *oport = NULL, *startv = NULL, *endv = NULL, *dropped, *unless_evt;
   
   if (SCHEME_TYPE(argv[0]) != scheme_regexp_type
       && !SCHEME_BYTE_STRINGP(argv[0])
@@ -2564,7 +2571,6 @@ static Scheme_Object *gen_compare(char *name, int pos,
     }
     startv = argv[2];
       
-
     if (argc > 3) {
       if (!SCHEME_FALSEP(argv[3])) {
 	endset = scheme_extract_index(name, 3, argc, argv, len + 1, 1);
@@ -2594,6 +2600,27 @@ static Scheme_Object *gen_compare(char *name, int pos,
 	    scheme_wrong_type(name, "output-port or #f", 4, argc, argv);
 	  oport = argv[4];
 	}
+      }
+    }
+  }
+
+  unless_evt = NULL;
+  if (argc > 4) {
+    if (!SCHEME_FALSEP(argv[5])) {
+      unless_evt = argv[5];
+      if (!SAME_TYPE(SCHEME_TYPE(unless_evt), scheme_progress_evt_type)) {
+	scheme_wrong_type(name, "progress evt or #f", 5, argc, argv);
+	return NULL;
+      }
+      if (!iport) {
+	scheme_arg_mismatch(name, 
+			    "progress evt cannot be used with string input: ",
+			    unless_evt);
+      } else if (!SAME_OBJ(iport, SCHEME_PTR1_VAL(unless_evt))) {
+	scheme_arg_mismatch(name,
+			    "evt is not a progress evt for the given port:",
+			    unless_evt);
+	return NULL;
       }
     }
   }
@@ -2643,7 +2670,7 @@ static Scheme_Object *gen_compare(char *name, int pos,
   dropped = scheme_make_integer(0);
 
   m = regexec(name, r, full_s, offset, endset - offset, startp, endp,
-	      iport, &full_s, peek, pos, oport, startv, endv, &dropped);
+	      iport, unless_evt, &full_s, peek, pos, oport, startv, endv, &dropped);
 
   if (m) {
     int i;
@@ -2791,7 +2818,7 @@ static Scheme_Object *gen_replace(const char *name, int argc, Scheme_Object *arg
     int m;
 
     m = regexec("regexp-replace", r, source, srcoffset, sourcelen - srcoffset, startp, endp,
-		NULL, NULL, 0, 0, NULL, NULL, NULL, NULL);
+		NULL, NULL, NULL, 0, 0, NULL, NULL, NULL, NULL);
 
     if (m) {
       char *insert;
@@ -2955,12 +2982,12 @@ void scheme_regexp_initialize(Scheme_Env *env)
   scheme_add_global_constant("regexp-match-peek",
 			     scheme_make_prim_w_arity(compare_peek,
 						      "regexp-match-peek",
-						      2, 4),
+						      2, 5),
 			     env);
   scheme_add_global_constant("regexp-match-peek-positions", 
 			     scheme_make_prim_w_arity(positions_peek, 
 						      "regexp-match-peek-positions",
-						      2, 4),
+						      2, 5),
 			     env);
   scheme_add_global_constant("regexp-replace", 
 			     scheme_make_prim_w_arity(replace, 

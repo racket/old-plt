@@ -1587,6 +1587,7 @@ mark_regwork {
   gcMARK(r->str);
   gcMARK(r->instr);
   gcMARK(r->port);
+  gcMARK(r->unless_evt);
   gcMARK(r->startp);
   gcMARK(r->endp);
   gcMARK(r->peekskip);

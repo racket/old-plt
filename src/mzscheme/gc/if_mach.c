@@ -1,6 +1,6 @@
 /* Conditionally execute a command based on machine and OS from config.h */
 /* Boehm, November 21, 1994 1:40 pm PST */
-# include "config.h"
+# include "gcconfig.h"
 # include <stdio.h>
 
 /* MATTHEW: added (an optional) NOT flag to invert the test,

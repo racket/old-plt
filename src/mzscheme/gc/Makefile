@@ -39,7 +39,9 @@ OPT= -O
 
 CFLAGS= -DNO_SIGNALS $(WARN) $(OPT) $(OPTIONS) $(DEBUGFLAGS) -DSILENT -DOLD_BLOCK_ALLOC
 # Setjmp_test may yield overly optimistic results when compiled
-# without optimization.
+#  without optimization.
+# For dynamic library builds, it may be necessary to add flags to generate
+#  PIC code, e.g. -fPIC on Linux.
 # -DSILENT disables statistics printing, and improves performance.
 # -DCHECKSUMS reports on erroneously clear dirty bits, and unexpectedly
 #   altered stubborn objects, at substantial performance cost.
@@ -50,11 +52,12 @@ CFLAGS= -DNO_SIGNALS $(WARN) $(OPT) $(OPTIONS) $(DEBUGFLAGS) -DSILENT -DOLD_BLOC
 # -DSOLARIS_THREADS enables support for Solaris (thr_) threads.
 #   (Clients should also define SOLARIS_THREADS and then include
 #   gc.h before performing thr_ or dl* or GC_ operations.)
-#   Must also define -D_REENTRANT
+#   Must also define -D_REENTRANT.
 # -D_SOLARIS_PTHREADS enables support for Solaris pthreads.
 #   Define SOLARIS_THREADS as well.
 # -DIRIX_THREADS enables support for Irix pthreads.  See README.irix.
-# -DLINUX_THREADS enables support for Irix pthreads.  See README.linux.
+# -DLINUX_THREADS enables support for Xavier Leroy's Linux threads.
+#   see README.linux.  -D_REENTRANT may also be required.
 # -DALL_INTERIOR_POINTERS allows all pointers to the interior
 #   of objects to be recognized.  (See gc_priv.h for consequences.)
 # -DSMALL_CONFIG tries to tune the collector for small heap sizes,
@@ -102,6 +105,8 @@ CFLAGS= -DNO_SIGNALS $(WARN) $(OPT) $(OPTIONS) $(DEBUGFLAGS) -DSILENT -DOLD_BLOC
 #   in a sepearte postpass, and hence their memory won't be reclaimed.
 #   Not recommended unless you are implementing a language that specifies
 #   these semantics.
+# -DFINALIZE_ON_DEMAND causes finalizers to be run only in response
+#   to explicit GC_invoke_finalizers() calls.
 # -DATOMIC_UNCOLLECTABLE includes code for GC_malloc_atomic_uncollectable.
 #   This is useful if either the vendor malloc implementation is poor,
 #   or if REDIRECT_MALLOC is used.
@@ -123,6 +128,8 @@ CFLAGS= -DNO_SIGNALS $(WARN) $(OPT) $(OPTIONS) $(DEBUGFLAGS) -DSILENT -DOLD_BLOC
 #   allocation strategy.  The new strategy tries harder to minimize
 #   fragmentation, sometimes at the expense of spending more time in the
 #   large block allocator and/or collecting more frequently.
+#   If you expect the allocator to promtly use an explicitly expanded
+#   heap, this is highly recommended.
 
 LIBGC_CFLAGS= -O -DNO_SIGNALS -DSILENT \
     -DREDIRECT_MALLOC=GC_malloc_uncollectable \
@@ -150,16 +157,17 @@ CORD_OBJS=  cord/$(OBJDIR)/cordbscs.o cord/$(OBJDIR)/cordxtra.o cord/$(OBJDIR)/c
 
 SRCS= $(CSRCS) mips_sgi_mach_dep.s rs6000_mach_dep.s alpha_mach_dep.s \
     sparc_mach_dep.s gc.h gc_typed.h gc_hdrs.h gc_priv.h gc_private.h \
-    config.h gc_mark.h include/gc_inl.h include/gc_inline.h gc.man \
+    gcconfig.h gc_mark.h include/gc_inl.h include/gc_inline.h gc.man \
     threadlibs.c if_mach.c if_not_there.c gc_cpp.cc gc_cpp.h weakpointer.h \
     gcc_support.c mips_ultrix_mach_dep.s include/gc_alloc.h gc_alloc.h \
-    sparc_sunos4_mach_dep.s solaris_threads.h $(CORD_SRCS)
+    include/new_gc_alloc.h include/javaxfc.h sparc_sunos4_mach_dep.s \
+    solaris_threads.h $(CORD_SRCS)
 
 OTHER_FILES= Makefile PCR-Makefile OS2_MAKEFILE NT_MAKEFILE BCC_MAKEFILE \
            README test.c test_cpp.cc setjmp_t.c SMakefile.amiga \
            SCoptions.amiga README.amiga README.win32 cord/README \
            cord/gc.h include/gc.h include/gc_typed.h include/cord.h \
-           include/ec.h include/private/cord_pos.h include/private/config.h \
+           include/ec.h include/private/cord_pos.h include/private/gcconfig.h \
            include/private/gc_hdrs.h include/private/gc_priv.h \
 	   include/gc_cpp.h README.rs6000 \
            include/weakpointer.h README.QUICK callprocs pc_excludes \
@@ -193,13 +201,13 @@ SPECIALCFLAGS =
 
 all: $(OBJDIR)/gc.a # gctest # MATTHEW: remove gctest
 
-pcr: PCR-Makefile gc_private.h gc_hdrs.h gc.h config.h $(OBJDIR)/mach_dep.o $(SRCS)
+pcr: PCR-Makefile gc_private.h gc_hdrs.h gc.h gcconfig.h $(OBJDIR)/mach_dep.o $(SRCS)
 	make -f PCR-Makefile depend
 	make -f PCR-Makefile
 
 $(OBJS) $(OBJDIR)/test.o $(OBJDIR)/dyn_load.o $(OBJDIR)/dyn_load_sunos53.o: \
     $(srcdir)/gc_priv.h $(srcdir)/gc_hdrs.h $(srcdir)/gc.h \
-    $(srcdir)/config.h $(srcdir)/gc_typed.h 
+    $(srcdir)/gcconfig.h $(srcdir)/gc_typed.h 
 # The dependency on Makefile is needed.  Changing
 # options such as -DSILENT affects the size of GC_arrays,
 # invalidating all .o files that rely on gc_priv.h
@@ -243,17 +251,23 @@ $(OBJDIR)/dyn_load_sunos53.o: dyn_load.c
 	$(CC) $(CFLAGS) -DSUNOS53_SHARED_LIB -c $(srcdir)/dyn_load.c -o $@
 
 # SunOS5 shared library version of the collector
-libgc.so: $(OBJS) $(OBJDIR)/dyn_load_sunos53.o
-	$(CC) -G -o libgc.so $(OBJS) $(OBJDIR)/dyn_load_sunos53.o -ldl
+sunos5gc.so: $(OBJS) $(OBJDIR)/dyn_load_sunos53.o
+	$(CC) -G -o $(OBJDIR)/sunos5gc.so $(OBJS) $(OBJDIR)/dyn_load_sunos53.o -ldl
+	ln $(OBJDIR)/sunos5gc.so $(OBJDIR)/libgc.so
 
 # Alpha/OSF shared library version of the collector
 libalphagc.so: $(OBJS)
-	ld -shared -o libalphagc.so $(OBJS) $(OBJDIR)/dyn_load.o -lc
+	ld -shared -o $(OBJDIR)/libalphagc.so $(OBJS) $(OBJDIR)/dyn_load.o -lc
 
 # IRIX shared library version of the collector
 libirixgc.so: $(OBJS) $(OBJDIR)/dyn_load.o
-	ld -shared -o libirixgc.so $(OBJS) $(OBJDIR)/dyn_load.o -lc
-	ln libirixgc.so libgc.so
+	ld -shared -o $(OBJDIR)/libirixgc.so $(OBJS) $(OBJDIR)/dyn_load.o -lc
+	ln $(OBJDIR)/libirixgc.so $(OBJDIR)/libgc.so
+
+# Linux shared library version of the collector
+liblinuxgc.so: $(OBJS) $(OBJDIR)/dyn_load.o
+	gcc -shared -o $(OBJDIR)/liblinuxgc.so $(OBJS) $(OBJDIR)/dyn_load.o -lo
+	ln $(OBJDIR)/liblinuxgc.so $(OBJDIR)/libgc.so
 
 $(OBJDIR)/mach_dep.o: $(srcdir)/mach_dep.c $(srcdir)/mips_sgi_mach_dep.s $(srcdir)/mips_ultrix_mach_dep.s $(srcdir)/rs6000_mach_dep.s $(UTILS)
 	rm -f $(OBJDIR)/mach_dep.o
@@ -297,20 +311,20 @@ cord/cordtest: $(srcdir)/cord/cordtest.c $(CORD_OBJS) $(OBJDIR)/gc.a $(UTILS)
 
 cord/de: $(srcdir)/cord/de.c cord/$(OBJDIR)/cordbscs.o cord/$(OBJDIR)/cordxtra.o $(OBJDIR)/gc.a $(UTILS)
 	rm -f cord/de
-	./$(EXEDIR)/if_mach SPARC DRSNX $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/$(OBJDIR)/cordbscs.o cord/$(OBJDIR)/cordxtra.o $(OBJDIR)/gc.a $(CURSES) -lucb
+	./$(EXEDIR)/if_mach SPARC DRSNX $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/$(OBJDIR)/cordbscs.o cord/$(OBJDIR)/cordxtra.o $(OBJDIR)/gc.a $(CURSES) -lucb`./$(EXEDIR)/threadlibs`
 	./$(EXEDIR)/if_mach HP_PA "" $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/$(OBJDIR)/cordbscs.o cord/$(OBJDIR)/cordxtra.o $(OBJDIR)/gc.a $(CURSES) -ldld
 	./$(EXEDIR)/if_mach RS6000 "" $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/$(OBJDIR)/cordbscs.o cord/$(OBJDIR)/cordxtra.o $(OBJDIR)/gc.a -lcurses
-	./$(EXEDIR)/if_mach I386 LINUX $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/$(OBJDIR)/cordbscs.o cord/$(OBJDIR)/cordxtra.o $(OBJDIR)/gc.a -lcurses
+	./$(EXEDIR)/if_mach I386 LINUX $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/$(OBJDIR)/cordbscs.o cord/$(OBJDIR)/cordxtra.o $(OBJDIR)/gc.a -lcurses`./$(EXEDIR)/threadlibs`
 	./$(EXEDIR)/if_mach ALPHA LINUX $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/$(OBJDIR)/cordbscs.o cord/$(OBJDIR)/cordxtra.o $(OBJDIR)/gc.a -lcurses
 	./$(EXEDIR)/if_not_there cord/de $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/$(OBJDIR)/cordbscs.o cord/$(OBJDIR)/cordxtra.o $(OBJDIR)/gc.a $(CURSES) `./$(EXEDIR)/threadlibs`
 
-$(EXEDIR)/if_mach: $(srcdir)/if_mach.c $(srcdir)/config.h
+$(EXEDIR)/if_mach: $(srcdir)/if_mach.c $(srcdir)/gcconfig.h
 	$(CC) $(CFLAGS) -o $(EXEDIR)/if_mach $(srcdir)/if_mach.c
 
 $(EXEDIR)/if_not_there: $(srcdir)/if_not_there.c
 	$(CC) $(CFLAGS) -o $(EXEDIR)/if_not_there $(srcdir)/if_not_there.c
 
-$(EXEDIR)/threadlibs: $(srcdir)/threadlibs.c $(srcdir)/config.h Makefile
+$(EXEDIR)/threadlibs: $(srcdir)/threadlibs.c $(srcdir)/gcconfig.h Makefile
 	$(CC) $(CFLAGS) -o $(EXEDIR)/threadlibs $(srcdir)/threadlibs.c
 
 clean: 

@@ -21,7 +21,11 @@
 
 /* We put this here to minimize the risk of inlining. */
 /*VARARGS*/
-void GC_noop() {}
+#ifdef __WATCOMC__
+  void GC_noop(void *p, ...) {}
+#else
+  void GC_noop() {}
+#endif
 
 /* Single argument version, robust against whole program analysis. */
 void GC_noop1(x)
@@ -32,11 +36,11 @@ word x;
     sink = x;
 }
 
-mark_proc GC_mark_procs[MAX_MARK_PROCS] = {0};
+/* mark_proc GC_mark_procs[MAX_MARK_PROCS] = {0} -- declared in gc_priv.h */
+
 word GC_n_mark_procs = 0;
 
-/* MATTHEW: To work with MSVC /MD flag. Client must
-   call GC_pre_init(). */
+/* MATTHEW: To work with MSVC /MD flag. Client must call GC_pre_init(). */
 #ifdef USE_MSVC_MD_LIBRARY
 # define INIT_FLD(x) 0
 #else

@@ -1445,7 +1445,7 @@
 
   (include "qq.ss")
 
-  (include "shared.ss")
+;  (include "shared.ss")
 
   (add-primitivized-micro-form 'reference scheme-vocabulary
     (let* ((kwd '())

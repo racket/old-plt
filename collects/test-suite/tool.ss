@@ -14,13 +14,12 @@
    "private/test-case-box.ss"
    "private/find-scheme-menu.ss")
   
+  (define-signature menu-extentions^ ())
   (define menu-extentions@
-    (unit/sig drscheme:tool-exports^
+    (unit/sig menu-extentions^;drscheme:tool-exports^
       (import drscheme:tool^ test-case-box^)
       
-      (define (phase1) (void))
-      (define (phase2) (void))
-      
+      (define delay? false)
       (define needs-reset? false)
       
       ;; Adds the test suite tool menu to the Dr. Scheme frame
@@ -35,7 +34,8 @@
             (send (get-definitions-text) for-each-test-case
                   (lambda (case) (send case reset)))
             (super-execute-callback)
-            (set! needs-reset? true))
+            (set! needs-reset? true)
+            (set! delay? true))
           
           ;; enable all of the test-cases
           (define (enable enable?)
@@ -81,26 +81,33 @@
 
       (drscheme:get/extend:extend-unit-frame test-case-mixin)
       
-      ;; Adds a hook in the reset-highlighting to clear all of the test-case results when the appropriate
-      ;; STATUS: It's better to override reset-highlighting but this after-insert/delete works for now.
+      ;; Adds a hook in the reset-highlighting to clear all of the test-case results when
+      ;; the appropriate
+      ;; STATUS: It's better to override reset-highlighting but this after-insert/delete works
+      ;; for now.
       ;(define clear-results-mixin
       ;  (mixin (drscheme:rep:text<%>) ()
       (define (clear-results-mixin %)
         (class %
           (inherit find-first-snip)
           
-          (rename [super-after-insert after-insert])
-          (define/override (after-insert start len)
-            (super-after-insert start len)
-            (reset-test-case-boxes))
+          ;(rename [super-after-insert after-insert])
+          ;(define/override (after-insert start len)
+          ;  (super-after-insert start len)
+          ;  (reset-test-case-boxes))
           
-          (rename [super-after-delete after-delete])
-          (define/override (after-delete start len)
-            (super-after-delete start len)
-            (reset-test-case-boxes))
-        
-          (rename [super-set-modified set-modified])
-          (define/override (set-modified b)
+          ;(rename [super-after-delete after-delete])
+          ;(define/override (after-delete start len)
+          ;  (super-after-delete start len)
+          ;  (reset-test-case-boxes))
+
+          (define/public delay-reset
+            (case-lambda
+              [() delay?]
+              [(v) (set! delay? v)]))
+          
+          #;(rename [super-set-modified set-modified])
+          #;(define/override (set-modified b)
             (super-set-modified b)
             (when b (reset-test-case-boxes)))
           
@@ -124,7 +131,22 @@
 
       (define require-macro-mixin
         (mixin ((class->interface drscheme:rep:text%)) ()
-          (inherit get-user-namespace)
+          (inherit get-user-namespace get-canvas)
+          
+          (define (find-frame area)
+            (let ([parent (send area get-parent)])
+              (if parent
+                  (find-frame parent)
+                  area)))
+          
+          (rename [super-reset-highlighting reset-highlighting])
+          (define/override (reset-highlighting)
+            (super-reset-highlighting)
+            (let ([text (send (find-frame (get-canvas)) get-definitions-text)])
+              (if (send text delay-reset)
+                  (send text delay-reset false)
+                  (send text reset-test-case-boxes)))) 
+          
           (rename [super-reset-console reset-console])
           (define/override (reset-console)
             (super-reset-console)
@@ -137,8 +159,8 @@
   (define tool@
     (compound-unit/sig
      (import (TOOL : drscheme:tool^))
-     (link (MENU   : drscheme:tool-exports^ (menu-extentions@ TOOL CASE))
+     (link (MENU   : menu-extentions^ (menu-extentions@ TOOL CASE))
            (CASE   : test-case-box^ (test-case-box@ TOOL)))
-     (export (var (MENU phase1))
-             (var (MENU phase2)))))
+     (export (var (CASE phase1))
+             (var (CASE phase2)))))
   )

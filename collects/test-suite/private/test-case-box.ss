@@ -10,32 +10,44 @@
    (lib "tool.ss" "drscheme")
    (lib "etc.ss")
    (lib "match.ss")
-   (lib "aligned-pasteboard.ss" "mrlib")
    (lib "framework.ss" "framework")
    (lib "readerr.ss" "syntax")
    (lib "string-constant.ss" "string-constants")
-   (lib "snip-lib.ss" "mrlib" "private" "aligned-pasteboard")
-   "fixed-width-label-snip.ss"
-   "grey-editor.ss"
-   "button-snip.ss"
-   "test-case.ss"
-   "tabbable-text.ss")
+   (lib "embedded-gui.ss" "embedded-gui")
+   (lib "string-constant.ss" "string-constants")
+   "test-case.ss")
   
-  (define-signature test-case-box^ (test-case-box%))
+  (define-signature test-case-box^ (test-case-box% phase1 phase2))
   (define test-case-box@
     (unit/sig test-case-box^
       (import drscheme:tool^)
       
+      (define test-case:program-editor% false)
+      
+      (define (phase1) (void))
+      (define (phase2)
+        (set! test-case:program-editor%
+              (tabbable-text-mixin 
+               ((drscheme:unit:get-program-editor-mixin)
+                scheme:text%))))
+      
       (define test-case-box%
-        (class* (decorated-editor-snip-mixin aligned-editor-snip%) (readable-snip<%>)
+        (class* (decorated-editor-snip-mixin editor-snip%) (readable-snip<%>)
           (inherit get-admin)
           
           (init-field
            [enabled? true]
-           [error-box? false]
-           [comment (new comment-text%)]
-           [to-test (new to-test-text%)]
-           [expected (new to-test-text%)])
+           [actual-show? false]
+           [collapsed? false]
+           [to-test (new test-case:program-editor%)]
+           [expected (new test-case:program-editor%)])
+          
+          (field
+           [actual (new actual-text%)]
+           [result (new result-snip%
+                        (status (if enabled?
+                                    'unknown
+                                    'disabled)))])
           
           ;; read-one-special (integer? any? (union integer? false?) (union integer? false?)
           ;;                   (union integer? false?) . -> . any? integer? false?)
@@ -67,25 +79,28 @@
                                 (cond [(eof-object? expr) stxs]
                                       [else (loop (cons expr stxs))]))))
                           (error 'text->syntax-object "Invalid language settings"))))
-                    (match (read-all-syntax)
-                      [() (raise-read-error (string-constant test-case-empty-error)
-                                            source line #f position 1)]
-                      [(stx) stx]
-                      [(stx next rest-stx ...)
-                       (raise-read-error (string-constant test-case-too-many-expressions-error)
-                                         text
-                                         (syntax-line next)
-                                         (syntax-column next)
-                                         (syntax-position next)
-                                         (syntax-span next))])))
-                
+                  (match (read-all-syntax)
+                    [() (raise-read-error (string-constant test-case-empty-error)
+                                          source line #f position 1)]
+                    [(stx) stx]
+                    [(stx next rest-stx ...)
+                     (raise-read-error (string-constant test-case-too-many-expressions-error)
+                                       text
+                                       (syntax-line next)
+                                       (syntax-column next)
+                                       (syntax-position next)
+                                       (syntax-span next))])))
+              
               (values
                (if enabled?
                    (with-syntax ([to-test-stx (text->syntax-object to-test)]
                                  [exp-stx (text->syntax-object expected)]
                                  [update-stx (lambda (x) (update x))]
                                  [set-actuals-stx set-actuals])
-                     (syntax/loc (datum->syntax-object false 'ignored (list source line column position 1))
+                     (syntax/loc (datum->syntax-object
+                                  false
+                                  'ignored
+                                  (list source line column position 1))
                        (test-case equal? to-test-stx exp-stx update-stx set-actuals-stx)))
                    (syntax-property #'(define-values () (values)) 
                                     'stepper-skip-completely
@@ -94,13 +109,15 @@
                true)))
           
           ;; (boolean? . -> . void?)
-          ;; sets the test case to the proper view
+          ;; sets the test case to the proper result bassed on if it was correct
           (define/public (update pass?)
             (send result update (if pass? 'pass 'fail)))
           
           ;; (-> void?)
           ;; resets the state of the test case
+          ;; STATUS: Should I use an edit sequence of pb right here?
           (define/public (reset)
+            (show-actual false)
             (send* actual
               (lock false)
               (erase)
@@ -118,6 +135,12 @@
                   (begin (set! enabled? false)
                          (reset)
                          (send result update 'disabled)))))
+          
+          ;; tells the test-box to take the caret
+          (define/public (take-caret)
+            (send pb set-caret-owner
+                  (send (send to-test get-admin) get-snip)
+                  'display))
           
           ;; set-actuals ((is-a?/c expand-program%) (listof any?) . -> . void?)
           ;; set the text in the actual field to the value given
@@ -150,38 +173,25 @@
           ;;;;;;;;;;
           ;; Saving and Copying
           
-          ;; this is incomplete. I'll fix it when insertion works.
           (define/override (copy)
-            (let ([new-comment (new comment-text%)]
-                  [new-to-test (new to-test-text%)]
-                  [new-expected (new to-test-text%)])
-              (send comment copy-self-to new-comment)
+            (let ([new-to-test (new test-case:program-editor%)]
+                  [new-expected (new test-case:program-editor%)])
               (send to-test copy-self-to new-to-test)
               (send expected copy-self-to new-expected)
               (new test-case-box%
                    (enabled? enabled?)
-                   (error-box? error-box?)
-                   (comment new-comment)
+                   (actual-show? actual-show?)
+                   (collapsed? collapsed?)
                    (to-test new-to-test)
                    (expected new-expected))))
           
           (define/override (write f)
-            ;; must write the enabled? and error-box? fields
-            (send comment write-to-file f)
             (send to-test write-to-file f)
-            (send expected write-to-file f))
-          
-          (define/public (read-from-file f)
-            ;; must read the enabled? and error-box? fields
-            (send* comment
-              (erase)
-              (read-from-file f))
-            (send* to-test
-              (erase)
-              (read-from-file f))
-            (send* expected
-              (erase)
-              (read-from-file f)))
+            (send expected write-to-file f)
+            (send f put (if enabled? 1 0))
+            (send f put (if collapsed? 1 0))
+            ;; Don't make actual persistant
+            #;(send f put (if actual-show? 1 0)))
           
           ;;;;;;;;;;
           ;; Layout
@@ -206,188 +216,119 @@
           ;         (callback (lambda (m e) (void))))
           ;    the-menu))
           ;(define/override (get-position) 'top-right)
+
+          (define (show-actual show?)
+            (set! actual-show? show?)
+            (send actual-pane show actual-show?))
           
-          ;; tells the test-box to take the caret
-          (define/public (take-caret)
-            (send editor set-caret-owner top-line 'global)
-            (send (send top-line get-editor) set-caret-owner
-                  (send (send comment get-admin) get-snip)))
-          
-          (define (hide-entries)
-            (send* editor
-              (lock false)
-              (begin-edit-sequence)
-              (release-snip to-test-line)
-              (release-snip exp-line)
-              (release-snip act-line)
-              (end-edit-sequence)
-              (lock true)))
-          
-          (define (show-entries)
-            (send* editor
-              (lock false)
-              (begin-edit-sequence)
-              (insert to-test-line false)
-              (insert exp-line false)
-              (insert act-line false)
-              (end-edit-sequence)
-              (lock true)))
-          
+          (define (collapse bool)
+            (set! collapsed? bool)
+            (send left show (not collapsed?))
+            (send right show (not collapsed?)))
+            
           (field
-           [editor (new vertical-pasteboard%)]
-           [turn-button
-            (new turn-button-snip%
-                 (turn-down hide-entries)
-                 (turn-up show-entries))]
-           [result (new result-snip%
-                        (status (if enabled? 'unknown 'disabled)))]
-           [actual (new actual-text%)]
-           [top-line (make-top-line turn-button comment result)]
-           [to-test-line (make-line (string-constant test-case-to-test) to-test)]
-           [exp-line (make-line (string-constant test-case-expected) expected)]
-           [act-line (make-line (string-constant test-case-actual) actual
-                                (grey-editor-snip-mixin editor-snip%))])
+           [pb (new aligned-pasteboard% (align 'horizontal))]
+           [left (new vertical-alignment%
+                      (parent pb)
+                      (show? (not collapsed?)))]
+           [right (new vertical-alignment%
+                       (parent pb)
+                       (show? (not collapsed?)))]
+           [button-pane (new vertical-alignment% (parent pb))]
+           [to-test-pane (new vertical-alignment% (parent left))]
+           [expected-pane (new vertical-alignment% (parent right))]
+           [actual-pane (new vertical-alignment%
+                             (parent right)
+                             (show? actual-show?))])
           
-          (set-tabbing comment to-test expected)
+          (super-new (editor pb))
           
-          (send* editor
-            (insert top-line)
-            (insert to-test-line false)
-            (insert exp-line false)
-            (insert act-line false)
-            (lock true))
+          (define (labeled-field alignment label text)
+            (send* alignment
+              ;; I string-append here to give space after the label
+              ;; They look a lot better without something right after them.
+              (add (make-object string-snip% (string-append label "     ")))
+              (add (new stretchable-editor-snip%
+                        (editor text)
+                        (stretchable-height false)))))
           
-          (super-new
-           (editor editor)
-           (stretchable-height false)
-           (stretchable-width false))
+            (labeled-field to-test-pane (string-constant test-case-to-test) to-test)
+            (labeled-field expected-pane (string-constant test-case-expected) expected)
+            (send* actual-pane
+              (add (make-object string-snip% (string-constant test-case-actual)))
+              (add (new (grey-editor-snip-mixin stretchable-editor-snip%)
+                        (editor actual)
+                        (stretchable-height false))))
           
+            (send* button-pane
+              (add result)
+              ;; NOTE: When you add the collapse feature, be sure that
+              ;; error-reporting on collapsed test-cases highlight the
+              ;; test-case. (PR6955)
+              (add (new turn-button-snip%
+                        (state (if collapsed? 'up 'down))
+                        (turn-down
+                         (lambda () (collapse true)))
+                        (turn-up
+                         (lambda () (collapse false)))))
+              (add (new turn-button-snip%
+                        (state (if actual-show? 'down 'up))
+                        (turn-down
+                         (lambda () (show-actual false)))
+                        (turn-up
+                         (lambda () (show-actual true))))))
+          
+          (set-tabbing to-test expected)
+          
+          ;;;;;;;;;;
+          ;; Snip class
+
           (inherit set-snipclass)
           (set-snipclass tcb-sc)))
+      
+      ;;;;;;;;;;
+      ;; Snip class
       
       (define test-case-box-snipclass%
         (class snip-class%
           (define/override (read f)
-            (let ([case (new test-case-box%)])
-              (send case read-from-file f)
-              case))
+            (let ([to-test (new test-case:program-editor%)]
+                  [expected (new test-case:program-editor%)]
+                  [enabled? (box 0)]
+                  [collapsed? (box 0)]
+                  #;[actual-show? (box 0)])
+              (send to-test read-from-file f)
+              (send expected read-from-file f)
+              (send f get enabled?)
+              (send f get collapsed?)
+              ;; Don't make actual persistant
+              #;(send f get actual-show?)
+              (new test-case-box%
+                   (enabled? (if (zero? (unbox enabled?)) false true))
+                   (collapsed? (if (zero? (unbox collapsed?)) false true))
+                   #;(actual-show? (if (zero? (unbox actual-show?)) false true))
+                   (to-test to-test)
+                   (expected expected))))
           (super-new)))
       
       (define tcb-sc (new test-case-box-snipclass%))
       (send tcb-sc set-classname "test-case-box%")
       (send tcb-sc set-version 1)
       (send (get-the-snip-class-list) add tcb-sc)
-      
-      ;; Notes: This code can be replaced by drscheme:unit:program-editor-mixin when I figure out how
-      ;;        to make the results of the test case boxes be reset when (and only when) highlighting
-      ;;        is being reset.
-      (define (clear-results-program-editor-mixin %)
-        (class %
-          (inherit get-admin begin-edit-sequence end-edit-sequence)
-          (rename [super-after-insert after-insert]
-                  [super-after-delete after-delete])
-          (define (get-frame)
-            ;; gets the top most editor in the tree of snips and editors
-            (define (editor-root ed)
-              (let ([parent (editor-parent ed)])
-                (cond
-                  [(is-a? parent area<%>) parent]
-                  [(is-a? parent snip%)
-                   (editor-root (snip-parent parent))]
-                  [else false])))
-            
-            ;; gets the canvas or snip that the pasteboard is displayed in
-            ;; status: what if there is more than one canvas?
-            (define (editor-parent ed)
-              (let ([admin (send ed get-admin)])
-                (cond
-                  [(is-a? admin editor-snip-editor-admin<%>)
-                   (send admin get-snip)]
-                  [(is-a? admin editor-admin%)
-                   (send ed get-canvas)]
-                  [else false])))
-            
-            (let ([er (editor-root this)])
-              (if er
-                  (send er get-top-level-window)
-                  false)))
-          
-          (define (alert-of-modify)
-            (let ([frame (get-frame)])
-              (when frame
-                (send (send frame get-interactions-text) reset-highlighting)
-                (send* (send frame get-definitions-text)
-                  (set-modified true)
-                  (reset-test-case-boxes)))))
-
-          ;(rename [super-on-insert on-insert])
-          ;(define/override (on-insert start len)
-          ;  (begin-edit-sequence)
-          ;  (super-on-insert start len)
-          ;  (end-edit-sequence))
-
-          (define/override (after-insert start len)
-            (alert-of-modify)
-            ;(begin-edit-sequence)
-            (super-after-insert start len)
-            ;(end-edit-sequence)
-            )
-          (define/override (after-delete start len)
-            (alert-of-modify)
-            (super-after-delete start len))
-          (super-new)))
-  
-      (define comment-text% (tabbable-text-mixin (editor:keymap-mixin text:basic%)))
-      (define to-test-text% (tabbable-text-mixin (clear-results-program-editor-mixin scheme:text%)))
       ))
-  
-  ;; the top line of the test-case
-  ;; STATUS: the typing field should stretch to the width of the test-case
-  (define (make-top-line turn-snip comment result-snip)
-    (let ([pb (new horizontal-pasteboard%)])
-      (send* pb
-        (insert turn-snip false)
-        (insert (new stretchable-editor-snip%
-                     (min-width 100)
-                     (editor comment))
-                false)
-        (insert result-snip false)
-        (lock true))
-      (new aligned-editor-snip%
-           (with-border? false)
-           (stretchable-height false)
-           (top-margin 0)
-           (bottom-margin 0)
-           (left-margin 0)
-           (right-margin 0)
-           (editor pb))))
-  
-  ;; a line labeled with the given string and containing a given text
-  (define make-line
-    (opt-lambda (str text (snipclass editor-snip%))
-      (let ([pb (new horizontal-pasteboard%)])
-        (send* pb
-          (insert (field-label str) false)
-          (insert (text-field text snipclass) false)
-          (lock true))
-        (new aligned-editor-snip%
-             (with-border? false)
-             (top-margin 0)
-             (bottom-margin 0)
-             (right-margin 0)
-             (left-margin 0)
-             (editor pb)))))
-  
+
   ;; ((-> void?) (-> void?) (symbols 'up 'down) . -> . snip%)
   ;; a snip which acts as a toggle button for rolling a window up and down
   (define turn-button-snip%
     (class toggle-button-snip%
+      (init state)
       (init-field turn-down turn-up)
       (super-new
-       (images1 (cons (icon "turn-down.gif") (icon "turn-down-click.gif")))
-       (images2 (cons (icon "turn-up.gif") (icon "turn-up-click.gif")))
-       (callback1 (lambda (b e) (turn-down)))
-       (callback2 (lambda (b e) (turn-up))))))
+       (state (if (symbol=? state 'down) 'off 'on))
+       (images-off (cons (icon "turn-down.gif") (icon "turn-down-click.gif")))
+       (images-on (cons (icon "turn-up.gif") (icon "turn-up-click.gif")))
+       (callback-off (lambda (b e) (turn-down)))
+       (callback-on (lambda (b e) (turn-up))))))
   
   ;; a snip which will display a pass/fail result
   (define result-snip%
@@ -409,23 +350,12 @@
       (update status)))
   
   ;; a text field fit to be in a test-case (no borders or margins etc.)
-  ;; STATUS: this should really return an stretchable-snip<%> not an editor-snip% of fixed size.
+  ;; STATUS: this should really return an stretchable-snip<%> not an
+  ;; editor-snip% of fixed size.
   (define text-field
     (opt-lambda (text (snipclass editor-snip%))
       (new (stretchable-editor-snip-mixin snipclass)
            (editor text))))
-  
-  ;; a snip to label a text case field
-  ;; STATUS: This code breaks single point of control for the names of the text fields.
-  (define (field-label str)
-    (new (fixed-width-label-snip (list (string-constant test-case-to-test)
-                                       (string-constant test-case-expected)
-                                       (string-constant test-case-actual)))
-         (label str)
-         (top-margin 0)
-         (bottom-margin 0)
-         (left-margin 0)
-         (right-margin 0)))
   
   (define (icon str)
     (build-path (collection-path "icons") str))
@@ -441,14 +371,4 @@
       (super-new)
       (hide-caret true)
       (lock true)))
-  
-  ;;;;;;;;;;
-  ;; tests
-
-  ;(define f (new frame% (label "test") (width 200) (height 200)))
-  ;(define e (new text%))
-  ;(define c (new editor-canvas% (editor e) (parent f)))
-  ;(define t (new test-case-box%))
-  ;(send e insert t)
-  ;(send f show #t)
   )

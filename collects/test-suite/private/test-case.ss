@@ -1,3 +1,9 @@
+#|
+This module provides a test-case macro for the test-case-box to expand into.
+The test-case box does not immediatly expand into the body of the macro itself
+because the macro is able to check the (syntax-local-context) of the invocation
+to give better error messages when the test-case is not at the top level.
+|#
 (module test-case mzscheme
   
   (provide test-case)
@@ -9,9 +15,10 @@
          [(module top-level)
           (syntax-property
            #`(define-values ()
-               (let ([to-test-values (call-with-values (lambda () #,(syntax-property #`to-test-stx
-                                                                                     'stepper-test-suite-hint
-                                                                                     #t)) 
+               (let ([to-test-values (call-with-values
+                                      (lambda () #,(syntax-property #`to-test-stx
+                                                                    'stepper-test-suite-hint
+                                                                    #t))
                                                        list)]
                      [exp-values (call-with-values (lambda () exp-stx) list)])
                  (record (and (= (length to-test-values) (length exp-values))

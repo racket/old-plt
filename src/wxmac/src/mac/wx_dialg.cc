@@ -379,7 +379,6 @@ static void ExtensionCallback(NavEventCallbackMessage callBackSelector,
 			      &which);
 
 	  if (which == kAlertStdAlertCancelButton) {
-	    printf("cancel\n");
 	    callBackParms->eventData.itemHit = -1;
 	    return;
 	  }
@@ -446,7 +445,7 @@ char *wxFileSelector(char *message, char *default_path,
 
     cbi = new wxCallbackInfo();
     cbi->initial_directory = default_path;
-    cbi->force_extension = ".txt";
+    cbi->force_extension = NULL;
 
     NavGetDefaultDialogCreationOptions(&dialogOptions);
     if (default_filename) 

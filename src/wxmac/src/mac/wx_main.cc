@@ -50,6 +50,7 @@ extern "C" {
 }
 #endif
 extern int wxGetOriginalAppFSSpec(FSSpec *spec);
+extern void wxCheckATSUCapability();
 
 FSSpec wx_app_spec;
 
@@ -81,6 +82,8 @@ int wxEntry(int argc, char* argv[])
   wxInitializePrintSetupData(1);
 
   wxGetOriginalAppFSSpec(&wx_app_spec);
+
+  void wxCheckATSUCapability();
 
   wxTheApp->OnInit();
   

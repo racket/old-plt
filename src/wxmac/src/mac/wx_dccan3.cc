@@ -26,7 +26,7 @@ static OSStatus atsuSetStyleFromGrafPtrParams( ATSUStyle iStyle, short txFont, s
 static double DrawMeasLatin1Text(const char *text, int d, int theStrlen, int bit16,
 				 int just_meas, int given_font, 
 				 short txFont, short txSize, short txFace,
-				 int again);
+				 int again, int qd_spacing);
 
 //-----------------------------------------------------------------------------
 void wxCanvasDC::DrawText(const char* text, float x, float y, Bool use16, int d)
@@ -115,7 +115,22 @@ void wxCanvasDC::GetTextExtent(const char* string, float* x, float* y, float* de
 
 //----------------------------------------------------------------------
 
-#define ALWAYS_USE_ATSU 0
+#ifdef OS_X
+static int always_use_atsu = 1;
+# define ALWAYS_USE_ATSU always_use_atsu
+#else
+# define ALWAYS_USE_ATSU 0
+#endif
+
+void wxCheckATSUCapability()
+{
+#ifdef OS_X
+  SInt32 res;
+  Gestalt(gestaltATSUVersion, &res);
+  if ((res >> 16) <  7 /* gestaltATSUUpdate6 */)
+    always_use_atsu = 0;
+#endif
+}
 
 void DrawLatin1Text(const char *text, int d, int theStrlen, int bit16, Bool qd_spacing)
 {
@@ -138,7 +153,7 @@ void DrawLatin1Text(const char *text, int d, int theStrlen, int bit16, Bool qd_s
     if (is_sym)
       /* Symbol font hack: don't convert */
       i = theStrlen;
-    else if (ALWAYS_USE_ATSU)
+    else if (!qd_spacing || ALWAYS_USE_ATSU)
       i = 0;
     else {
       for (i = 0; i < theStrlen; i++) {
@@ -160,7 +175,7 @@ void DrawLatin1Text(const char *text, int d, int theStrlen, int bit16, Bool qd_s
 
       amt = theStrlen;
 
-      (void)DrawMeasLatin1Text(text, d, amt, bit16, 0, 0, 0, 0, 0, again);
+      (void)DrawMeasLatin1Text(text, d, amt, bit16, 0, 0, 0, 0, 0, again, qd_spacing);
 	  
       d += amt;
       theStrlen -= amt;
@@ -187,7 +202,7 @@ void GetLatin1TextWidth(const char *text, int d, int theStrlen,
       theStrlen = strlen(text+d);
     
     if (txFont != 23) {
-      if (ALWAYS_USE_ATSU) {
+      if (!qd_spacing || ALWAYS_USE_ATSU) {
 	i = 0;
       } else {
 	/* Check whether we need to go into Unicode mode to get Latin-1 *x output: */
@@ -216,17 +231,13 @@ void GetLatin1TextWidth(const char *text, int d, int theStrlen,
     /* it's all ASCII, where MacRoman == Latin-1 */
     /* so *x is right */
   } else if (text) {
-    if (qd_spacing) {
+    if (qd_spacing || !ALWAYS_USE_ATSU) {
       /* Need to split the string into parts */
       *x = 0;
       while (theStrlen) {
-	if (ALWAYS_USE_ATSU) {
-	  i = 0;
-	} else {
-	  for (i = 0; i < theStrlen; i++) {
-	    if (((unsigned char *)text)[i + d] > 127)
-	      break;
-	  }
+	for (i = 0; i < theStrlen; i++) {
+	  if (((unsigned char *)text)[i + d] > 127)
+	    break;
 	}
 
 	/* Measure the leasing ASCII part, if any: */
@@ -247,7 +258,7 @@ void GetLatin1TextWidth(const char *text, int d, int theStrlen,
 	  *x += DrawMeasLatin1Text(text, d, amt, bit16,
 				   1, 1, 
 				   txFont, fsize, txFace,
-				   again);
+				   again, qd_spacing);
 	  d += amt;
 	  theStrlen -= amt;
 	  again = 1;
@@ -257,7 +268,7 @@ void GetLatin1TextWidth(const char *text, int d, int theStrlen,
       *x = DrawMeasLatin1Text(text, d, theStrlen, bit16,
 			      1, 1, 
 			      txFont, fsize, txFace,
-			      again);
+			      again, qd_spacing);
       again = 1;
     }
   }
@@ -272,7 +283,7 @@ void GetLatin1TextWidth(const char *text, int d, int theStrlen,
 static double DrawMeasLatin1Text(const char *text, int d, int theStrlen, int bit16,
 				 int just_meas, int given_font, 
 				 short txFont, short txSize, short txFace,
-				 int again)
+				 int again, int qd_spacing)
 {
   ATSUTextLayout layout;
   ByteCount ubytes, converted, usize;
@@ -318,10 +329,10 @@ static double DrawMeasLatin1Text(const char *text, int d, int theStrlen, int bit
 				  &theATSUstyle,
 				  &layout);
 
-  {
+  if (qd_spacing) {
 #if 1
-    /* We write down a literal constant because the 10.1
-       headers are broken. */
+    /* We write down a literal constant, because the constants aren't
+       in 10.1 */
     ll_attribs = 0x11f4040;
 #else
     ll_attribs = (kATSLineFractDisable 

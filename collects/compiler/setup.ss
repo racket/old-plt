@@ -445,11 +445,12 @@
 
 (define errors null)
 (define (record-error cc desc go)
-  (with-handlers ([void (lambda (x)
-			  (if (exn? x)
-			      (fprintf (current-error-port) "~a~n" (exn-message x))
-			      (fprintf (current-error-port) "~s~n" x))
-			  (set! errors (cons (cons cc desc) errors)))])
+  (with-handlers ([(lambda (x) (not (exn:misc:user-break? x)))
+		   (lambda (x)
+		     (if (exn? x)
+			 (fprintf (current-error-port) "~a~n" (exn-message x))
+			 (fprintf (current-error-port) "~s~n" x))
+		     (set! errors (cons (cons cc desc) errors)))])
     (go)))
 
 (define (make-it desc compile-collection)

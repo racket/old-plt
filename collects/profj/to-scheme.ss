@@ -219,6 +219,87 @@
   
   ;find-dependent-defs: (list defs) -> (list (list defs))
   (define (find-dependent-defs defs type-recs)
+    (let* ((for-each-def (lambda (defs thunk) (for-each thunk defs)))
+           (find 
+            (lambda (req)
+              (letrec ((walker 
+                        (lambda (defs)
+                          (and (not (null? defs))
+                               (if (and (equal? (req-path req)
+                                                (get-package (car defs) type-recs))
+                                        (equal? (req-class req)
+                                                (id-string (def-name (car defs)))))
+                                   (car defs)
+                                   (walker (cdr defs)))))))
+                (walker defs))))
+           (get-requires
+            (lambda (def)
+              (filter (lambda (x) x) (map find (def-uses def)))))
+           )
+      (get-strongly-connected-components defs for-each-def get-requires)))
+  
+  ;get-strongly-connected-components: GRAPH (GRAPH (NODE -> void) -> void) (NODE -> (list NODE)) -> (list (list NODE))
+  (define (get-strongly-connected-components graph for-each-node get-connected-nodes)
+    
+    (let ((marks (make-hash-table))
+          (strongly-connecteds null)
+          (cur-cycle-length 0)
+          (current-cycle null))
+      
+      (letrec ((already-in-cycle? (lambda (n) (eq? 'in-cycle (hash-table-get marks n))))
+               
+               (in-current-cycle?
+                (lambda (n) (hash-table-get current-cycle n (lambda () #f))))
+               (current-cycle-memq
+                (lambda (nodes)
+                  (ormap in-current-cycle? nodes)))
+               (add-to-current-cycle
+                (lambda (n) 
+                  (set! cur-cycle-length (add1 cur-cycle-length))
+                  (hash-table-put! current-cycle n #t)))
+               (retrieve-current-cycle
+                (lambda () (hash-table-map current-cycle (lambda (key v) key))))
+               
+               (componentize 
+                (lambda (node successors member?)
+                  (unless (already-in-cycle? node)
+                    ;(printf "componentize ~a ~a ~a~n" node successors member?)
+                    (let ((added? #f)
+                          (cur-length cur-cycle-length))
+                      (when (and (not member?) (current-cycle-memq successors))
+                        (set! added? #t)
+                        (add-to-current-cycle node))
+                      (hash-table-put! marks node 'in-progress)
+                      (for-each 
+                       (lambda (successor)
+                         (unless (or (in-current-cycle? successor)
+                                     (eq? 'in-progress (hash-table-get marks successor)))
+                           (componentize successor (get-connected-nodes successor) #f)))
+                       successors)
+                      ;(printf "finished successors for ~a~n" node)
+                      (if (or added? (= cur-length cur-cycle-length))
+                          (hash-table-put! marks node 'no-info)
+                          (componentize node successors #f)))))))
+        
+        (for-each-node graph (lambda (n) (hash-table-put! marks n 'no-info)))
+        
+        (for-each-node graph
+                       (lambda (node)
+                         (when (eq? (hash-table-get marks node) 'no-info)
+                           (set! current-cycle (make-hash-table))
+                           (add-to-current-cycle node)
+                           (for-each (lambda (node) (componentize node (get-connected-nodes node) #f))
+                                     (get-connected-nodes node))
+                           (set! strongly-connecteds (cons (retrieve-current-cycle) strongly-connecteds))
+                           (hash-table-for-each
+                            current-cycle
+                            (lambda (n v) (hash-table-put! marks n 'in-a-cycle))))))
+        
+        strongly-connecteds)))
+  
+  ;This is the old find-dependent-defs: unreliable and known to have inifite-loop causing bugs
+  ;find-dependent-defs: (list defs) -> (list (list defs))
+  #;(define (find-dependent-defs defs type-recs)
     (letrec ((not-found
               (lambda (def msg tbl)
                 (lambda ()
@@ -241,10 +322,10 @@
              ;find-cycle: def -> void
              (find-cycle 
               (lambda (def)
-                ;(printf "find-cycle for def ~a with reqs ~a~n" (id-string (def-name def))
-                ;        (map req-class (def-uses def)))
-                ;(printf "find-cycle required defs found were ~a~n" 
-                ;       (map id-string (map def-name (filter (lambda (x) x) (map find (def-uses def)))))) 
+                (printf "find-cycle for def ~a with reqs ~a~n" (id-string (def-name def))
+                        (map req-class (def-uses def)))
+                (printf "find-cycle required defs found were ~a~n" 
+                       (map id-string (map def-name (filter (lambda (x) x) (map find (def-uses def)))))) 
                 (for-each (lambda (reqD)
                             (cond
                               ((or (completed? reqD) (in-cycle? reqD)) (void))
@@ -256,9 +337,9 @@
              ;exists-path-to-cycle: def (list def)-> bool
              (exists-path-to-cycle? 
               (lambda (def explored-list)
-                ;(printf "exists-path-to-cycle? for ~a~n" (id-string (def-name def)))
+                (printf "exists-path-to-cycle? for ~a~n" (id-string (def-name def)))
                 (let ((reqs-in-cycle (filter (lambda (req)
-                                               ;(printf "reqs-in-cycle: looking at ~a~n" (id-string (def-name req)))
+                                               (printf "reqs-in-cycle: looking at ~a~n" (id-string (def-name req)))
                                                (and (not (completed? req))
                                                     (or (in-cycle? req)
                                                         (and (dependence-on-cycle req)
@@ -266,8 +347,8 @@
                                                         (and (not (memq req explored-list))
                                                              (exists-path-to-cycle? req (cons def explored-list))))))
                                              (filter (lambda (x) x) (map find (def-uses def))))))
-                  ;(printf "exists-path-to-cycle? reqs-in-cycle for ~a is ~a~n" (id-string (def-name def))
-                  ;        (map id-string (map def-name reqs-in-cycle)))
+                  (printf "exists-path-to-cycle? reqs-in-cycle for ~a is ~a~n" (id-string (def-name def))
+                          (map id-string (map def-name reqs-in-cycle)))
                   (and (not (null? reqs-in-cycle))
                        (hash-table-put! cycle def 'in-cycle)))))
              
@@ -300,21 +381,21 @@
       
       (for-each (lambda (def)
                   (unless (completed? def)
-                    ;(printf "Started on def ~a~n" (id-string (def-name def)))
+                    (printf "Started on def ~a~n" (id-string (def-name def)))
                     (set! cycle (make-hash-table))
                     (hash-table-put! cycle def 'in-cycle)
                     (find-cycle def)
-                    ;(printf "Completed looking for cycle for def ~a~n" (id-string (def-name def)))
-                    ;(printf "hashtable for def ~a includes ~a~n" (id-string (def-name def))
-                    ;        (hash-table-map cycle (lambda (k v) (cons (id-string (def-name k)) v))))
+                    (printf "Completed looking for cycle for def ~a~n" (id-string (def-name def)))
+                    (printf "hashtable for def ~a includes ~a~n" (id-string (def-name def))
+                            (hash-table-map cycle (lambda (k v) (cons (id-string (def-name k)) v))))
                     (let ((cyc (filter (lambda (d)
                                          (eq? (hash-table-get cycle d) 'in-cycle))
                                        (hash-table-map cycle (lambda (k v) k)))))
                       (for-each (lambda (c) (hash-table-put! completed c 'completed))
                                 cyc)
-                      ;(printf "cycle for ~a is ~a~n" (id-string (def-name def)) (map id-string (map def-name cyc)))
-                      ;(printf "completed table after ~a is ~a" (id-string (def-name def))
-                      ;        (hash-table-map completed (lambda (k v) (list (id-string (def-name k)) v))))
+                      (printf "cycle for ~a is ~a~n" (id-string (def-name def)) (map id-string (map def-name cyc)))
+                      (printf "completed table after ~a is ~a" (id-string (def-name def))
+                              (hash-table-map completed (lambda (k v) (list (id-string (def-name k)) v))))
                       (set! cycles (cons cyc cycles)))))
                 defs)
       cycles))

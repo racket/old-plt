@@ -48,7 +48,7 @@
 # ifndef USE_SENORA_GC
 #  define USE_SENORA_GC
 # endif
-# define USE_MEMORY_TRACING 
+# define USE_MEMORY_TRACING
 #endif
 
 #ifdef MZ_PRECISE_GC
@@ -141,6 +141,15 @@ typedef struct FSSpec mzFSSpec;
 
 #define MZ_EXTERN extern MZ_DLLSPEC
 
+/* Define _W64 for MSC if needed. */
+#if defined(_MSC_VER) && !defined(_W64)
+# if !defined(__midl) && (defined(_X86_) || defined(_M_IX86)) && _MSC_VER >= 1300
+# define _W64 __w64
+# else
+# define _W64
+# endif
+#endif
+
 /* PPC Linux plays a slimy trick: it defines strcpy() as a macro that
    uses __extension__. This breaks the 3m xform. */
 #if defined(MZ_PRECISE_GC) && defined(strcpy)
@@ -155,7 +164,7 @@ END_XFORM_SKIP;
 #endif
 
 #ifdef __cplusplus
-extern "C" 
+extern "C"
 {
 #endif
 
@@ -216,7 +225,7 @@ typedef struct {
     long int_val;
     Scheme_Object *ptr_val;
   } u;
-} Scheme_Small_Object;  
+} Scheme_Small_Object;
 
 /* A floating-point number: */
 typedef struct {
@@ -255,6 +264,25 @@ typedef struct Scheme_Vector {
 # include "../src/stypes.h"
 #endif
 
+/* This rather elaborate pair of NO-OPS is used to persuade the     */
+/* MSVC compiler that we really do want to convert between pointers */
+/* and integers. */
+
+#if defined(_MSC_VER)
+# define OBJ_TO_LONG(ptr) ((long)(_W64 long)(ptr))
+# define LONG_TO_OBJ(l)   ((Scheme_Object *)(void *)(_W64 long)(long)(l))
+#else
+# define OBJ_TO_LONG(ptr) ((long)(ptr))
+# define LONG_TO_OBJ(l) ((Scheme_Object *)(void *)(long)(l))
+#endif
+
+/* Scheme Objects are always aligned on 2-byte boundaries, so  */
+/* words of type Scheme_Object * will always have zero in the  */
+/* least significant bit.  Therefore, we can use this bit as a */
+/* tag to indicate that the `pointer' isn't really a pointer   */
+/* but a 31-bit signed immediate integer. */
+
+#define SCHEME_INTP(obj)     (OBJ_TO_LONG(obj) & 0x1)
 
 #define SAME_PTR(a, b) ((a) == (b))
 #define NOT_SAME_PTR(a, b) ((a) != (b))
@@ -273,8 +301,7 @@ typedef struct Scheme_Vector {
 /*========================================================================*/
 
 #define SCHEME_CHARP(obj)    SAME_TYPE(SCHEME_TYPE(obj), scheme_char_type)
-
-#define SCHEME_INTP(obj)     (((long)obj) & 0x1)
+/* SCHEME_INTP defined above */
 #define SCHEME_DBLP(obj)     SAME_TYPE(SCHEME_TYPE(obj), scheme_double_type)
 #ifdef MZ_USE_SINGLE_FLOATS
 # define SCHEME_FLTP(obj)     SAME_TYPE(SCHEME_TYPE(obj), scheme_float_type)
@@ -354,7 +381,7 @@ typedef struct Scheme_Vector {
 /*========================================================================*/
 
 #define SCHEME_CHAR_VAL(obj) (((Scheme_Small_Object *)(obj))->u.char_val)
-#define SCHEME_INT_VAL(obj)  (((long)(obj))>>1)
+#define SCHEME_INT_VAL(obj)  (OBJ_TO_LONG(obj)>>1)
 #define SCHEME_DBL_VAL(obj)  (((Scheme_Double *)(obj))->double_val)
 #ifdef MZ_USE_SINGLE_FLOATS
 # define SCHEME_FLT_VAL(obj)  (((Scheme_Float *)(obj))->float_val)
@@ -387,7 +414,7 @@ typedef struct Scheme_Vector {
 #define SCHEME_VEC_BASE(obj) SCHEME_VEC_ELS(obj)
 
 #define SCHEME_ENVBOX_VAL(obj)  (*((Scheme_Object **)(obj)))
-#define SCHEME_WEAK_BOX_VAL(obj) SCHEME_BOX_VAL(obj) 
+#define SCHEME_WEAK_BOX_VAL(obj) SCHEME_BOX_VAL(obj)
 
 #define SCHEME_PTR_VAL(obj)  (((Scheme_Small_Object *)(obj))->u.ptr_val)
 #define SCHEME_PTR1_VAL(obj) ((obj)->u.two_ptr_val.ptr1)
@@ -412,7 +439,7 @@ typedef struct Scheme_Vector {
 /*               fast basic Scheme constructor macros                     */
 /*========================================================================*/
 
-#define scheme_make_integer(i) ((Scheme_Object *)((((long)i) << 1) | 0x1))
+#define scheme_make_integer(i)    LONG_TO_OBJ ((OBJ_TO_LONG(i) << 1) | 0x1)
 #define scheme_make_character(ch) (scheme_char_constants[(unsigned char)(ch)])
 
 /*========================================================================*/
@@ -484,7 +511,7 @@ typedef struct {
    (rec)->maxa = amax, \
    (rec)->flags = flgs, \
    rec)
- 
+
 #define _scheme_fill_prim_case_closure(rec, cfunc, dt, nm, ccount, cses, flgs) \
   ((rec)->p.type = scheme_closed_prim_type, \
    (rec)->p.prim_val = cfunc, \
@@ -913,10 +940,10 @@ typedef struct Scheme_Config {
 typedef struct Scheme_Input_Port Scheme_Input_Port;
 typedef struct Scheme_Output_Port Scheme_Output_Port;
 
-typedef long (*Scheme_Get_String_Fun)(Scheme_Input_Port *port, 
+typedef long (*Scheme_Get_String_Fun)(Scheme_Input_Port *port,
 				      char *buffer, long offset, long size,
 				      int nonblock);
-typedef long (*Scheme_Peek_String_Fun)(Scheme_Input_Port *port, 
+typedef long (*Scheme_Peek_String_Fun)(Scheme_Input_Port *port,
 				       char *buffer, long offset, long size,
 				       Scheme_Object *skip,
 				       int nonblock);
@@ -1006,7 +1033,7 @@ struct Scheme_Output_Port
 /*                               modules                                  */
 /*========================================================================*/
 
-typedef void (*Scheme_Invoke_Proc)(Scheme_Env *env, long phase_shift, 
+typedef void (*Scheme_Invoke_Proc)(Scheme_Env *env, long phase_shift,
 				   Scheme_Object *self_modidx, void *data);
 
 /*========================================================================*/

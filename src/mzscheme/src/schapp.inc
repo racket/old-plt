@@ -36,8 +36,10 @@
   v = _scheme_force_value(v);
 
 #if PRIM_CHECK_MULTI
-  if (v == SCHEME_MULTIPLE_VALUES)
+  if (v == SCHEME_MULTIPLE_VALUES) {
     scheme_wrong_return_arity(NULL, 1, scheme_multiple_count, scheme_multiple_array, NULL);
+    return NULL; /* Shouldn't get here */
+  }
 #endif
 
   DEBUG_CHECK_TYPE(v);

@@ -1037,12 +1037,12 @@ void scheme_swap_process(Scheme_Process *new_process)
   scheme_zero_unneeded_rands(scheme_current_process);
 
   if (SETJMP(scheme_current_process)) {
-    RESETJMP(scheme_current_process);
     /* We're back! */
 #ifdef RUNSTACK_IS_GLOBAL
     MZ_RUNSTACK = scheme_current_process->runstack;
     MZ_RUNSTACK_START = scheme_current_process->runstack_start;
 #endif
+    RESETJMP(scheme_current_process);
   } else {
     /* We're leaving... */
 #ifdef RUNSTACK_IS_GLOBAL
@@ -1111,12 +1111,12 @@ static void start_child(Scheme_Process *child,
 			Scheme_Object *child_eval)
 {
   if (SETJMP(child)) {
-    RESETJMP(child);
-
 #ifdef RUNSTACK_IS_GLOBAL
     MZ_RUNSTACK = scheme_current_process->runstack;
     MZ_RUNSTACK_START = scheme_current_process->runstack_start;
 #endif
+
+    RESETJMP(child);
 
 #ifndef MZ_REAL_THREADS
     if (return_to_process)

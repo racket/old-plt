@@ -1,0 +1,4 @@
+** To play _Spider_, run the "Games" application. **
+
+Spider is a solitare card game.
+

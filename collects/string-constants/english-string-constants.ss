@@ -584,6 +584,8 @@
  (filename "Filename: ")
  (create "Create")
  (please-choose-an-executable-filename "Please choose a filename to save the executable.")
+ 
+ (create-servlet "Create Servlet...")
   
  ;;; buttons
  (execute-button-label "Execute") 

@@ -88,6 +88,9 @@
 
 (define debug-info (lambda () aries:error-box))
 
+(print-struct #t)
+(error-print-width 200)
+
 (define exception-handler
   (lambda (exn)
     (let ([report (exn-debug-info exn)])
@@ -117,13 +120,14 @@
 	(primitive-eval annotated)))))
 
 (define mzrice-eval
-  (let* ([loc (zodiac:make-location 0 0 0 'eval)]
-	 [z (zodiac:make-zodiac 'mzrice-eval loc loc)])
-    (lambda (x)
-      '(printf "eval; x: ~a~n" x)
-      (let* ([read (zodiac:structurize-syntax x z)])
-	'(printf "eval; read: ~a~n" read)
-	(mzrice-expand-eval read)))))
+  (lambda (x)
+    '(printf "eval; x: ~a~n" x)
+    (let* ([z (or (unbox aries:error-box)
+		  (let ([loc (zodiac:make-location 0 0 0 'eval)])
+		    (zodiac:make-zodiac 'mzrice-eval loc loc)))]
+	   [read (zodiac:structurize-syntax x z)])
+      '(printf "eval; read: ~a~n" read)
+      (mzrice-expand-eval read))))
 
 (define mzrice-load
   (lambda (f)

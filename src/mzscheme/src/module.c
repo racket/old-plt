@@ -805,7 +805,8 @@ static Scheme_Object *_dynamic_require(int argc, Scheme_Object *argv[],
 	  count = srcm->num_indirect_provides;
 	  if (position >= 0) {
 	    i = position;
-	    if ((SCHEME_SYM_LEN(name) == SCHEME_SYM_LEN(srcm->indirect_provides[i]))
+	    if ((i < srcm->num_indirect_provides)
+		&& (SCHEME_SYM_LEN(name) == SCHEME_SYM_LEN(srcm->indirect_provides[i]))
 		&& !memcmp(SCHEME_SYM_VAL(name), SCHEME_SYM_VAL(srcm->indirect_provides[i]), SCHEME_SYM_LEN(name))) {
 	      name = srcm->indirect_provides[i];
 	      srcname = name;
@@ -3302,7 +3303,11 @@ Scheme_Object *scheme_apply_for_syntax_in_env(Scheme_Object *proc, Scheme_Env *e
   rhs_env = scheme_new_comp_env(env, NULL, SCHEME_TOPLEVEL_FRAME);
 
   scheme_on_next_top(rhs_env, NULL, scheme_false, NULL, 
-		     env, (env->link_midx ? env->link_midx : env->module->src_modidx));
+		     env, (env->link_midx 
+			   ? env->link_midx 
+			   : (env->module
+			      ? env->module->src_modidx
+			      : NULL)));
   return scheme_apply_multi(proc, 0, NULL);
 }
 

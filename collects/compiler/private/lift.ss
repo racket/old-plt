@@ -51,6 +51,10 @@
 
       (define procedures null)
 
+      (define single-module-mode? #f)
+      (define (set-single-module-mode! v)
+	(set! single-module-mode? v))
+
       ;; find-all-procedures!
       (define find-all-procedures!
 	(letrec ([find!
@@ -181,7 +185,16 @@
 	  (if (eq? (procedure-code-liftable code) 'unknown-liftable)
 	      (if (and lifting-allowed?
 		       (or mutual-lifting-allowed? 
-			   (set-empty? (code-free-vars code))))
+			   (set-empty? (code-free-vars code)))
+		       (or single-module-mode?
+			   (andmap (case-lambda 
+				    [(var)
+				     (or (not (mod-glob? var))
+					 (let ([modname (mod-glob-modname var)])
+					   (if (eq? modname '#%kernel)
+					       #t
+					       (not modname))))])
+				   (set->list (code-global-vars code)))))
 		  ;; Liftable only if there are no free (non-pls) global vars
 		  (begin
 		    ;; Mark this one in case we encounter a cycle:

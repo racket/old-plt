@@ -240,6 +240,7 @@
       (init-field trans? tables needs-top?)
       (super-instantiate ())
       (inherit-field src-stx) ;; The identifier
+      (inherit-field cert-stxes) ;; The identifier
       
       (define mbind #f)
       (define bucket (global-bucket ((if trans? tables-et-global-ht tables-global-ht) tables) src-stx))
@@ -275,20 +276,22 @@
 
       (define/override (can-dup/move?) (valueable?))
 
-      (define/override (clone env) (make-object global% trans? tables needs-top? src-stx))
+      (define/override (clone env) (make-object global% trans? tables needs-top? src-stx cert-stxes))
 
       (define/override (global->local env)
         (or (ormap (lambda (e)
                      (and (module-identifier=? (car e) src-stx)
-                          (make-object ref% (cdr e) src-stx)))
+                          (make-object ref% (cdr e) src-stx cert-stxes)))
                    env)
             this))
 
+      (inherit recertify)
       (define/override (sexpr)
-        (if needs-top?
-            (with-syntax ([stx src-stx])
-              (syntax (#%top . stx)))
-            src-stx))
+	(recertify 
+	 (if needs-top?
+	     (with-syntax ([stx src-stx])
+	       (syntax (#%top . stx)))
+	     src-stx)))
       
       (define/public (set-mutated) (set-bucket-mutated?! bucket #t))
       (define/public (set-inited) (set-bucket-inited-before-use?! bucket #t))))
@@ -297,7 +300,7 @@
     (class exp% 
       (init-field always-inited?)
       (super-instantiate ())
-      (inherit-field src-stx)
+      (inherit-field src-stx cert-stxes)
       (define value #f)
       (define used 0)
       (define mutated? #f)
@@ -322,7 +325,8 @@
           (datum->syntax-object
            #f
            (gensym (syntax-e src-stx))
-           src-stx)))
+           src-stx
+	   cert-stxes)))
 
 
       (define/override (reset-varflags)
@@ -343,9 +347,10 @@
              value
              (send value get-value)))
       
+      (inherit recertify)
       (define/override (sexpr)
         ;; `(==lexical== ,name ,used ,mutated? ,inited? ,(get-value))
-        src-stx
+        (recertify src-stx)
         )
       (define/public (orig-name)
         (syntax-e src-stx))))
@@ -412,7 +417,7 @@
     (class exp%
       (init-field subs)
       (super-instantiate ())
-      (inherit-field src-stx)
+      (inherit-field src-stx cert-stxes)
       (inherit merge-certs)
       
       (define/override (nonbind-sub-exprs) subs)
@@ -456,22 +461,22 @@
         (make-object begin% 
           (map (lambda (x) (send x clone env)) 
                subs)
-          src-stx))
+          src-stx
+	  cert-stxes))
 
       (inherit recertify)
       (define/override (sexpr)
 	(with-syntax ([(body ...) (body-sexpr)])
-	  (recertify
-	   (syntax/loc src-stx (begin body ...)))))
+	  (syntax/loc src-stx (begin body ...))))
 
       (define/override (body-sexpr)
-	(map get-sexpr subs))))
+	(map (lambda (e) (recertify (get-sexpr e))) subs))))
   
   (define top-def% 
     (class exp% 
       (init-field formname varnames expr tables)
       (super-instantiate ())
-      (inherit-field src-stx)
+      (inherit-field src-stx cert-stxes)
       (define globals #f)
       
       (define/override (nonbind-sub-exprs) (list expr))
@@ -487,7 +492,8 @@
                                      varnames 
                                      (send expr clone env)
                                      tables
-                                     src-stx))
+                                     src-stx
+				     cert-stxes))
 
       (inherit recertify)
       (define/override (sexpr)
@@ -534,7 +540,7 @@
     (class exp% 
       (init-field val)
       (super-instantiate ())
-      (inherit-field src-stx)
+      (inherit-field src-stx cert-stxes)
       
       (define/public (get-const-val) val)
 
@@ -564,7 +570,7 @@
              [else this])]
           [else (make-object void% src-stx)]))
       
-      (define/override (clone env) (make-object constant% val src-stx))
+      (define/override (clone env) (make-object constant% val src-stx cert-stxes))
       
       (inherit recertify)
       (define/override (sexpr)
@@ -587,7 +593,7 @@
     (class constant% 
       (init stx)
       (super-instantiate ((void) stx))
-      (inherit-field src-stx)
+      (inherit-field src-stx cert-stxes)
 
       (define/override (sexpr) (quote-syntax (void)))
 
@@ -596,7 +602,7 @@
             (make-object constant% #t src-stx)
             this))
 
-      (define/override (clone env) (make-object void% src-stx))))
+      (define/override (clone env) (make-object void% src-stx cert-stxes))))
 
 
   (define app%
@@ -673,7 +679,8 @@
 						(map list vars)
 						rands
 						body
-						src-stx)])
+						src-stx
+						cert-stxes)])
 		     (send let-form merge-certs this)
 		     (send let-form merge-certs rator)
 		     (send let-form simplify ctx))))
@@ -800,7 +807,8 @@
                                       (car l)
                                       l-stx))
                                    tables
-                                   src-stx)])
+                                   src-stx
+				   cert-stxes)])
                             (cond
                               [(null? (cdr l)) test]
                               [else (let ([rest (loop (cdr l))])
@@ -810,7 +818,8 @@
                                         test
                                         true
                                         rest
-                                        src-stx))])))))])
+                                        src-stx
+					cert-stxes))])))))])
 	     (send xformed merge-certs this)
              (send xformed simplify ctx))]
           
@@ -869,7 +878,8 @@
                                             (send rand clone env))
                                           rands)
                                      tables
-                                     src-stx))
+                                     src-stx
+				     cert-stxes))
 
       (inherit recertify)
       (define/override (sexpr)
@@ -909,7 +919,7 @@
     (class exp% 
       (init-field varss normal?s bodys)
       (super-instantiate ())
-      (inherit-field src-stx)
+      (inherit-field src-stx cert-stxes)
       (define simplifying-body #f)
       
       
@@ -993,7 +1003,8 @@
             (map car varss+bodys)
             normal?s
             (map cdr varss+bodys)
-            src-stx)))
+            src-stx
+	    cert-stxes)))
 
       (inherit recertify)
       (define/override (sexpr)
@@ -1120,7 +1131,8 @@
                    (send rhs clone (if letrec? body-env env)))
                  rhss)
             (send body clone body-env)
-            src-stx)))
+            src-stx
+	    cert-stxes)))
 
       (define/override (get-value) (send body get-value))
 	
@@ -1141,7 +1153,7 @@
     
   (define let%
     (class local% 
-      (init -varss -rhss -body -stx)
+      (init -varss -rhss -body -stx -cert-stxes)
       (inherit get-varss get-rhss get-body)
       
       (define/override (set-known-values)
@@ -1149,11 +1161,11 @@
                   (get-varss) (get-rhss))
         (super set-known-values))
       
-      (super-instantiate ((quote-syntax let-values) -varss -rhss -body -stx))))
+      (super-instantiate ((quote-syntax let-values) -varss -rhss -body -stx -cert-stxes))))
 
   (define letrec%
     (class local% 
-      (init -varss -rhss -body -stx) 
+      (init -varss -rhss -body -stx -cert-stxes) 
       (inherit get-varss get-rhss)
       
       (define/override (set-known-values)
@@ -1166,13 +1178,13 @@
         (for-each install-values (get-varss) (get-rhss))
         (super set-known-values))
 
-      (super-instantiate ((quote-syntax letrec-values) -varss -rhss -body -stx))))
+      (super-instantiate ((quote-syntax letrec-values) -varss -rhss -body -stx -cert-stxes))))
 
   (define set!%
     (class exp% 
       (init-field var val)
       (super-instantiate ())
-      (inherit-field src-stx)
+      (inherit-field src-stx cert-stxes)
       
       (define/override (nonbind-sub-exprs) (list var val))
       (define/override (set-nonbind-sub-exprs s) 
@@ -1196,7 +1208,8 @@
         (make-object set!% 
           (send var clone env)
           (send val clone env)
-          src-stx))
+          src-stx
+	  cert-stxes))
 
       (inherit recertify)
       (define/override (sexpr)
@@ -1275,7 +1288,8 @@
                 (send test get-if-then)
                 then
                 (make-object void% src-stx)
-                src-stx)
+                src-stx
+		cert-stxes)
               (make-object void% src-stx)
               src-stx
 	      cert-stxes)
@@ -1288,7 +1302,8 @@
           (send test clone env)
           (send then clone env)
           (send else clone env)
-          src-stx))
+          src-stx
+	  cert-stxes))
       
       (inherit recertify)
       (define/override (sexpr)
@@ -1306,7 +1321,7 @@
     (class exp% 
       (init-field first rest)
       (super-instantiate ())
-      (inherit-field src-stx)
+      (inherit-field src-stx cert-stxes)
       
       (define/override (nonbind-sub-exprs) (list first rest))
       (define/override (set-nonbind-sub-exprs s)
@@ -1328,7 +1343,9 @@
       (define/override (clone env) 
         (make-object begin0%
           (send first clone env)
-          (send rest clone env)))
+          (send rest clone env)
+	  src-stx
+	  cert-stxes))
 	
       (inherit recertify)
       (define/override (sexpr)
@@ -1342,7 +1359,7 @@
     (class exp% 
       (init-field key val body)
       (super-instantiate ())
-      (inherit-field src-stx)
+      (inherit-field src-stx cert-stxes)
 
       (define/override (nonbind-sub-exprs) (list key val body))
       (define/override (set-nonbind-sub-exprs s)
@@ -1356,7 +1373,9 @@
         (make-object wcm%
           (send key clone env)
           (send val clone env)
-          (send body clone env)))
+          (send body clone env)
+	  src-stx
+	  cert-stxes))
 
       (inherit recertify)
       (define/override (sexpr)
@@ -1464,7 +1483,8 @@
                                        lex-vars)
                                   tables 
                                   (send (car defs) get-stx))
-                                (send (car defs) get-stx))
+                                (send (car defs) get-stx)
+				(send (car defs) get-cert-stxes))
                               tables
                               (send (car defs) get-stx))
                             l))))])
@@ -1618,7 +1638,8 @@
                   (loop rhs (if rec? body-env env)))
                 rhses)
            (loop (syntax (begin . body)) body-env)
-           stx))]))
+           stx
+	   (list stx)))]))
 
   (define (stx-bound-assq ssym l)
     (ormap (lambda (p)
@@ -1631,7 +1652,7 @@
       (if s
 	  (let ([b (cdr s)])
 	    (if (b . is-a? . binding%)
-		(make-object ref% b (send var get-stx))
+		(make-object ref% b (send var get-stx) (send var get-cert-stxes))
 		;; it's a global%:
 		b))
 	  var)))
@@ -1810,8 +1831,9 @@
 	(send p reorganize)
 	(send p set-known-values)
 	(let ([p (send p simplify (make-context 'all null))])
-	  (get-sexpr (if for-mzc?
-			 p
-			 (send p deorganize)))))))
-
+	  (let ([v (get-sexpr (if for-mzc?
+				  p
+				  (send p deorganize)))])
+	    v)))))
+	
   (provide optimize))

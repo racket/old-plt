@@ -696,8 +696,10 @@
 		  ;;-----------------------------------------------------------------------
 		  ;; record module name, if a single declaration
 
+		  (set-single-module-mode! #f)
 		  (when (and (= 1 (length (block-source s:file-block)))
 			     (zodiac:module-form? (car (block-source s:file-block))))
+		    (set-single-module-mode! #t)
 		    (set! compiler:module-decl-name 
 			  (syntax-e (zodiac:module-form-name (car (block-source s:file-block))))))
 

@@ -261,7 +261,8 @@
 
   (provide compiler:lift^)
   (define-signature compiler:lift^
-    (lift-lambdas!))
+    (lift-lambdas!
+     set-single-module-mode!))
 
   (provide compiler:closure^)
   (define-signature compiler:closure^

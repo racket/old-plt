@@ -404,6 +404,8 @@ void *GC_malloc_atomic_uncollectable(size_t s) { return malloc(s); }
 void *GC_malloc_allow_interior(size_t s) {return allocate_big(s, PAGE_ARRAY);}
 void GC_free(void *p) {}
 
+extern long scheme_get_process_milliseconds();
+
 /* this function resizes generation 0 to the closest it can get (erring high)
    to the size we've computed as ideal */
 inline static void resize_gen0(unsigned long new_size)
@@ -411,13 +413,20 @@ inline static void resize_gen0(unsigned long new_size)
   struct mpage *work = gen0_pages, *prev = NULL;
   unsigned long alloced_size = 0;
 
+  long start_time;
+  int dump_all = 0;
+
+  printf("-> resize start\n");
+
+  start_time = scheme_get_process_milliseconds();
+  
   /* fist make sure the big pages pointer is clean */
   gen0_big_pages = NULL; 
 
   /* then, clear out any parts of gen0 we're keeping, and deallocated any
      parts we're throwing out */
   while(work) {
-    if(alloced_size > new_size) {
+    if(dump_all || (alloced_size > new_size)) {
       /* there should really probably be an ASSERT here. If prev is NULL,
 	 that's a BIG, BIG PROBLEM. After allocating it at startup, the
 	 first page in gen0_pages should *never* be deallocated, so we
@@ -444,8 +453,11 @@ inline static void resize_gen0(unsigned long new_size)
       work->size = HEADER_SIZEB;
       prev = work;
       work = work->next;
+      dump_all = 1;
     }
   }
+
+  printf("bzero %d\n", scheme_get_process_milliseconds() - start_time);
 
   /* if we're short, add more */
   while(alloced_size < new_size) {
@@ -468,6 +480,8 @@ inline static void resize_gen0(unsigned long new_size)
   /* set the two size variables */
   gen0_max_size = alloced_size;
   gen0_current_size = 0;
+
+  printf("resize %d\n", scheme_get_process_milliseconds() - start_time);
 }
 
 #define difference(x, y) ((x > y) ? (x - y) : (y - x))

@@ -1,3 +1,4 @@
+
 (unit/sig ()
   (import mred^
 	  mzlib:core^
@@ -615,6 +616,13 @@
 	 (lambda (file)
            (send files-list-box append (get-file-list-box-string file)))
 	 files))
+      
+      (define (refresh-elaboration-files-list-box)
+	(send elaboration-files-list-box clear)
+	(for-each
+	 (lambda (file)
+           (send elaboration-files-list-box append (get-file-list-box-string file)))
+	 elaboration-files))
 
       (define (swap index)
 	(is-changed)
@@ -750,7 +758,7 @@
 	 [(null? l) (error 'nth-cdr "got to end of list with ~s cdrs left" n)]
 	 [else (nth-cdr (- n 1) (cdr l))]))
 
-      (define (add-files add-single-file)
+      (define (add-files add-single-file refresh-list-box)
 
 	(define new-files
 	  (let ([user-result (get-file-list)])
@@ -845,9 +853,9 @@
 	    (let ([rel-file (file:find-relative-path
 			     project-dir
 			     new-file)])
-	      (set! files (append files (list (cons 'build-path (my-explode-path rel-file))))))]
+	      (add-single-file (cons 'build-path (my-explode-path rel-file))))]
 	   [else
-	    (set! files (append files (list (cons 'build-path (my-explode-path new-file)))))]))
+	    (add-single-file (cons 'build-path (my-explode-path new-file)))]))
 
 	(when new-files
 	  (let ([collections (let ([drs-collections (all-collections)]
@@ -905,7 +913,7 @@
 			 (loop (cdr exploded-collection-paths)))]))))
 	     new-files))
 	  (is-changed)
-	  (refresh-files-list-box)))
+	  (refresh-list-box)))
 
       (define (load-file filename)
 	(with-handlers ([(lambda (x) #t)
@@ -1339,10 +1347,12 @@
        check
        (preferences:get 'drscheme:project-manager:add-files-as-relative?))
       (make-object separator-menu-item% project-menu)
-      (make-object menu-item% "Add Files..." project-menu (lambda x (add-files (lambda (f)       
-                                                                                 (void)
-                                                                                 )))
-      (make-object menu-item% "Add Files..." project-menu (lambda x (add-elaborated-files)))
+      (make-object menu-item% "Add Files..." project-menu
+        (lambda x (add-files (lambda (f) (set! files (append files (list f))))
+                             (lambda () (refresh-files-list-box)))))
+      (make-object menu-item% "Add Elaborated Files..." project-menu
+        (lambda x (add-files (lambda (f) (set! elaboration-files (append elaboration-files (list f))))
+                             (lambda () (refresh-elaboration-files-list-box)))))
       (make-object menu-item% "Choose Language..." project-menu (lambda x (configure-language)) #\l)
       (make-object menu-item% "Configure Collection Paths..." project-menu (lambda x (configure-collection-paths)))
 
@@ -1370,9 +1380,32 @@
 
       (define top-horizontal-panel (make-object horizontal-panel% top-panel))
 
+      (define elaboration-files-outer-panel (make-object vertical-pane% top-horizontal-panel))
+      (define elaboration-files-panel (make-object horizontal-panel% elaboration-files-outer-panel '(border)))
+      (define elaboration-files-vp (make-object vertical-panel% elaboration-files-panel))
+      (define elaboration-files-message (make-object message% "Elaboration Files" elaboration-files-vp))
+      (define elaboration-files-list-box (make-object list-box% #f null elaboration-files-vp
+                                           (lambda (lb evt)
+                                             '(-list-box-callback (send evt get-event-type)))
+                                           '(single)))
+      (define elaboration-files-button-panel (make-object vertical-panel% elaboration-files-panel))
+      (define elaboration-files-up-button (make-object button% "Up" elaboration-files-button-panel (lambda x (move-file-up))))
+      (define elaboration-files-down-button (make-object button% "Down" elaboration-files-button-panel (lambda x (move-file-down))))
+      (let ([spacer (make-object horizontal-panel% elaboration-files-button-panel)])
+        (send spacer stretchable-height #f)
+        (send spacer min-height 16))
+      (define elaboration-files-open-button (make-object button% "Open" elaboration-files-button-panel (lambda x (open-file))))
+      (define elaboration-files-remove-button (make-object button% "Remove" elaboration-files-button-panel (lambda x (remove-file))))
+      (define elaboration-files-pathize-button (make-object button% "Make Abs" elaboration-files-button-panel (lambda x (swap-abs/rel-file))))
+      (send elaboration-files-button-panel stretchable-width #f)
+      (send elaboration-files-button-panel set-alignment 'center 'center)
+      
       (define to-load-files-outer-panel (make-object vertical-panel% top-horizontal-panel))
+      
       (define to-load-files-panel (make-object horizontal-panel% to-load-files-outer-panel '(border)))
-      (define files-list-box (make-object list-box% #f null to-load-files-panel
+      (define to-load-vp (make-object vertical-panel% to-load-files-panel))
+      (define to-load-message (make-object message% "Main Files" to-load-vp))
+      (define files-list-box (make-object list-box% #f null to-load-vp
 					  (lambda (lb evt)
 					    (files-list-box-callback
 					     (send evt get-event-type)))
@@ -1390,30 +1423,13 @@
       (define pathize-button (make-object button% "Make Abs" to-load-button-panel (lambda x (swap-abs/rel-file))))
       
       (send to-load-button-panel stretchable-width #f)
-      (send to-load-button-panel set-alignment 'center 'center)
-
-      (define elaboration-files-outer-panel (make-object vertical-pane% top-horizontal-panel))
-      (define elaboration-files-panel (make-object horizontal-panel% elaboration-files-outer-panel '(border)))
-      (define elaboration-files-list-box (make-object list-box% #f null elaboration-files-panel
-                                           (lambda (lb evt)
-                                             '(-list-box-callback (send evt get-event-type)))
-                                           '(single)))
-      (define elaboration-files-button-panel (make-object vertical-panel% elaboration-files-panel))
-      (define elaboration-files-up-button (make-object button% "Up" elaboration-files-button-panel (lambda x (move-file-up))))
-      (define elaboration-files-down-button (make-object button% "Down" elaboration-files-button-panel (lambda x (move-file-down))))
-      (let ([spacer (make-object horizontal-panel% elaboration-files-button-panel)])
-        (send spacer stretchable-height #f)
-        (send spacer min-height 16))
-      (define elaboration-files-open-button (make-object button% "Open" elaboration-files-button-panel (lambda x (open-file))))
-      (define elaboration-files-remove-button (make-object button% "Remove" elaboration-files-button-panel (lambda x (remove-file))))
-      (define elaboration-files-pathize-button (make-object button% "Make Abs" elaboration-files-button-panel (lambda x (swap-abs/rel-file))))
-      (send elaboration-files-button-panel stretchable-width #f)
-      (send elaboration-files-button-panel set-alignment 'center 'center)
-      
+      (send to-load-button-panel set-alignment 'center 'center)      
       
       (define loaded-files-outer-panel (make-object vertical-panel% top-horizontal-panel))
       (define loaded-files-panel (make-object horizontal-panel% loaded-files-outer-panel '(border)))
-      (define loaded-files-hierarchical-list (make-object hierlist% loaded-files-panel))
+      (define loaded-files-vp (make-object vertical-panel% loaded-files-panel))
+      (define loaded-files-message (make-object message% "Files Actually Loaded" loaded-files-vp))
+      (define loaded-files-hierarchical-list (make-object hierlist% loaded-files-vp))
       (define loaded-files-button-panel (make-object vertical-panel% loaded-files-panel))
       (define open-loaded-file-button (make-object button% "Open" loaded-files-button-panel (lambda x (open-loaded-file))))
       (send loaded-files-button-panel set-alignment 'center 'center)

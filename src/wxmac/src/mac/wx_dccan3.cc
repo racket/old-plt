@@ -36,7 +36,7 @@ void wxCanvasDC::DrawText(const char* text, float x, float y, Bool use16, int d)
   int theStrlen = strlen(text+d);
   ::DrawText(text+d, 0, theStrlen); // WCH: kludge, mac procedure same name as wxWindows method
   
-  // mflatt: look at pen, use distance travelled instead of calculating 
+  // look at pen, use distance travelled instead of calculating 
   // the length of the string (again)
   float w, h;
   ::GetPen(&end);
@@ -45,6 +45,8 @@ void wxCanvasDC::DrawText(const char* text, float x, float y, Bool use16, int d)
 
   CalcBoundingBox(x + w, y + h);
   CalcBoundingBox(x, y);
+
+  ReleaseCurrentDC();
 }
 
 //-----------------------------------------------------------------------------
@@ -80,21 +82,16 @@ void wxCanvasDC::GetTextExtent(const char* string, float* x, float* y, float* de
 {
   float x2, y2, descent2, externalLeading2;
   if (the_font)
-    {
-      the_font->GetTextExtent((char *)string+d, &x2, &y2, &descent2, &externalLeading2, use16);
-    }
+    the_font->GetTextExtent((char *)string+d, &x2, &y2, &descent2, &externalLeading2, use16);
   else if (font)
-    {
-      font->GetTextExtent((char *)string+d, &x2, &y2, &descent2, &externalLeading2, use16);
-    }
-  else
-    {
-      *x = -1;
-      *y = -1;
-      if (descent) *descent = 0.0;
-      if (internalLeading) *internalLeading = 0.0;
-      return;
-    }
+    font->GetTextExtent((char *)string+d, &x2, &y2, &descent2, &externalLeading2, use16);
+  else {
+    *x = -1;
+    *y = -1;
+    if (descent) *descent = 0.0;
+    if (internalLeading) *internalLeading = 0.0;
+    return;
+  }
 
   *x = XDEV2LOGREL(x2);
   *y = YDEV2LOGREL(y2);

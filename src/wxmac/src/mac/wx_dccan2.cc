@@ -31,7 +31,7 @@ void wxCanvasDC::Clear(void)
   if (!Ok()) return;
   
   SetCurrentDC();
-  wxMacSetCurrentTool(kNoTool);
+  wxMacSetCurrentTool(kBGTool);
 
   int w, h;
   if (canvas)
@@ -44,6 +44,8 @@ void wxCanvasDC::Clear(void)
   Rect theClearRect = {0, 0, h, w};
   OffsetRect(&theClearRect,SetOriginX,SetOriginY);
   ::EraseRect(&theClearRect);
+
+  ReleaseCurrentDC();
 }
 
 void wxCanvasDC::GetSize(float *width, float *height)
@@ -75,13 +77,14 @@ void wxCanvasDC::CrossHair(float x, float y)
   GetSize(&ww, &hh) ;
   wxMacDrawLine(0, yy, ww, yy);
   wxMacDrawLine(xx, 0, xx, hh);
+
+  ReleaseCurrentDC();
 }
 
 //-----------------------------------------------------------------------------
 void wxCanvasDC::FloodFill(float x, float y, wxColour *col, int style)
      //=============================================================================
 {
-  SetCurrentDC();
 }
 
 //-----------------------------------------------------------------------------
@@ -96,6 +99,8 @@ Bool wxCanvasDC::GetPixel(float x, float y, wxColour *col)
 
   GetCPixel(XLOG2DEV(x) + SetOriginX, YLOG2DEV(y) + SetOriginY, &rgb);
   col->Set(rgb.red >> 8, rgb.green >> 8, rgb.blue >> 8);
+
+  ReleaseCurrentDC();
 
   return TRUE;
 }
@@ -120,6 +125,8 @@ void wxCanvasDC::SetPixel(float x, float y, wxColour *col)
     rgb.blue = col->Blue() << 8;
   }
   SetCPixel(XLOG2DEV(x) + SetOriginX, YLOG2DEV(y) + SetOriginY, &rgb);
+
+  ReleaseCurrentDC();
 }
 
 //-----------------------------------------------------------------------------
@@ -143,6 +150,7 @@ void wxCanvasDC::DrawLine(float x1, float y1, float x2, float y2)
   wxMacDrawLine(XLOG2DEV(x1), YLOG2DEV(y1), XLOG2DEV(x2), YLOG2DEV(y2));
   CalcBoundingBox(x1, y1);
   CalcBoundingBox(x2, y2);
+  ReleaseCurrentDC();
 }
 
 //-----------------------------------------------------------------------------
@@ -256,6 +264,8 @@ void wxCanvasDC::DrawArc(float x,float y,float w,float h,float start,float end)
   
   CalcBoundingBox(x, y);
   CalcBoundingBox(x + w, y + h);
+
+  ReleaseCurrentDC();
 }
 
 //-----------------------------------------------------------------------------
@@ -271,6 +281,7 @@ void wxCanvasDC::DrawPoint(float x, float y)
   wxMacSetCurrentTool(kPenTool);
   wxMacDrawPoint(XLOG2DEV(x), YLOG2DEV(y));
   CalcBoundingBox(x, y);
+  ReleaseCurrentDC();
 }
 
 //-----------------------------------------------------------------------------
@@ -287,8 +298,6 @@ void wxCanvasDC::DrawPolygon(int n, wxPoint points[],
     rgn->SetPolygon(n, points, xoffset, yoffset, fillStyle);
     PaintStipple(rgn);
   }
-
-
 
   Point *xpoints1 = new Point[n+1];
   for (int i = 0; i < n; i++)
@@ -326,6 +335,8 @@ void wxCanvasDC::DrawPolygon(int n, wxPoint points[],
 
   delete[] xpoints1;
   KillPoly(thePolygon);
+
+  ReleaseCurrentDC();
 }
 
 //-----------------------------------------------------------------------------
@@ -360,6 +371,8 @@ void wxCanvasDC::DrawLines(int n, wxIntPoint points[], int xoffset, int yoffset)
       
       delete[] xpoints;
       KillPoly(thePolygon);
+
+      ReleaseCurrentDC();
     }
 }
 
@@ -395,6 +408,8 @@ void wxCanvasDC::DrawLines(int n, wxPoint points[], float xoffset, float yoffset
       
       delete[] xpoints;
       KillPoly(thePolygon);
+
+      ReleaseCurrentDC();
     }
 }
 
@@ -418,21 +433,21 @@ void wxCanvasDC::DrawRectangle(float x, float y, float width, float height)
   int right = XLOG2DEV(x + width);
   Rect theRect = {top, left, bottom, right};
   OffsetRect(&theRect,SetOriginX,SetOriginY);
-  if (current_brush && current_brush->GetStyle() != wxTRANSPARENT)
-    {
-      if (!rgn) {
-	wxMacSetCurrentTool(kBrushTool);
-	PaintRect(&theRect);
-      }
+  if (current_brush && current_brush->GetStyle() != wxTRANSPARENT) {
+    if (!rgn) {
+      wxMacSetCurrentTool(kBrushTool);
+      PaintRect(&theRect);
     }
+  }
 
-  if (current_pen && current_pen->GetStyle() != wxTRANSPARENT)
-    {
-      wxMacSetCurrentTool(kPenTool);
-      FrameRect(&theRect);
-    }
+  if (current_pen && current_pen->GetStyle() != wxTRANSPARENT) {
+    wxMacSetCurrentTool(kPenTool);
+    FrameRect(&theRect);
+  }
   CalcBoundingBox(x, y);
   CalcBoundingBox(x + width, y + height);
+
+  ReleaseCurrentDC();
 }
 
 //-----------------------------------------------------------------------------
@@ -484,6 +499,8 @@ void wxCanvasDC::DrawRoundedRectangle
 
   CalcBoundingBox(x, y);
   CalcBoundingBox(x + width, y + height);
+
+  ReleaseCurrentDC();
 }
 
 //-----------------------------------------------------------------------------
@@ -505,21 +522,21 @@ void wxCanvasDC::DrawEllipse(float x, float y, float width, float height)
   int right = XLOG2DEV(x + width);
   Rect theRect = {top, left, bottom, right};
   OffsetRect(&theRect,SetOriginX,SetOriginY);
-  if (current_brush && current_brush->GetStyle() != wxTRANSPARENT)
-    {
-      if (!rgn) {
-	wxMacSetCurrentTool(kBrushTool);
-	PaintOval(&theRect);
-      }
+  if (current_brush && current_brush->GetStyle() != wxTRANSPARENT) {
+    if (!rgn) {
+      wxMacSetCurrentTool(kBrushTool);
+      PaintOval(&theRect);
     }
+  }
 
-  if (current_pen && current_pen->GetStyle() != wxTRANSPARENT)
-    {
-      wxMacSetCurrentTool(kPenTool);
-      FrameOval(&theRect);
-    }
+  if (current_pen && current_pen->GetStyle() != wxTRANSPARENT) {
+    wxMacSetCurrentTool(kPenTool);
+    FrameOval(&theRect);
+  }
   CalcBoundingBox(x, y);
   CalcBoundingBox(x + width, y + height);
+
+  ReleaseCurrentDC();
 }
 
 /*-----------------------------------
@@ -570,10 +587,14 @@ Bool wxCanvasDC::Blit(float xdest, float ydest, float width, float height,
     int ixsrc = (int)floor(xsrc);
     int iysrc = (int)floor(ysrc);
     
-    if (ixsrc > source->GetWidth())
+    if (ixsrc > source->GetWidth()) {
+      ReleaseCurrentDC();
       return TRUE;
-    if (iysrc > source->GetHeight())
+    }
+    if (iysrc > source->GetHeight()) {
+      ReleaseCurrentDC();
       return TRUE;
+    }
 
     if (iysrc + height > source->GetHeight())
       height = source->GetHeight() - iysrc;
@@ -601,7 +622,10 @@ Bool wxCanvasDC::Blit(float xdest, float ydest, float width, float height,
       
       maskRgn = NewRgn();
       err = BitMapToRegion(maskRgn,GetPortBitMapForCopyBits(mask->x_pixmap));
-      if (err != noErr) return FALSE;
+      if (err != noErr) {
+	ReleaseCurrentDC();
+	return FALSE;
+      }
     }
     
     ::CopyBits(srcbm, dstbm, &srcr, &destr, mode, maskRgn);
@@ -612,6 +636,8 @@ Bool wxCanvasDC::Blit(float xdest, float ydest, float width, float height,
     CalcBoundingBox(xdest, ydest);
     CalcBoundingBox(xdest + width, ydest + height);
   }
+
+  ReleaseCurrentDC();
 
   return TRUE;
 }
@@ -650,4 +676,6 @@ void wxCanvasDC::TryColour(wxColour *src, wxColour *dest)
     else
       dest->Set(0, 0, 0);
   }
+
+  ReleaseCurrentDC();
 }

@@ -128,29 +128,12 @@ wxCanvasDC::~wxCanvasDC(void)
   onpaint_reg = NULL;
 }
 
-//-----------------------------------------------------------------------------
 void wxCanvasDC::BeginDrawing(void)
-     //-----------------------------------------------------------------------------
 {
-  if (cMacDoingDrawing) {
-    // wxFatalError("Tried BeginDrawing while already DoingDrawing.");
-    return;
-  }
-  cMacDoingDrawing = TRUE;
-
-  SetCurrentDC();
 }
 
-//-----------------------------------------------------------------------------
 void wxCanvasDC::EndDrawing(void)
-     //-----------------------------------------------------------------------------
 {
-  if (!cMacDoingDrawing) {
-    // wxFatalError("Tried EndDrawing while not DoingDrawing.");
-    return;
-  }
-  
-  cMacDoingDrawing = FALSE;
 }
 
 
@@ -179,10 +162,12 @@ extern "C" {
 
 //-----------------------------------------------------------------------------
 void wxCanvasDC::SetCurrentDC(void) // mac platform only
-     //-----------------------------------------------------------------------------
+  //-----------------------------------------------------------------------------
 {
   if (!Ok()) return;
   
+  dc_set_depth++;
+
   CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
   if (IsPortOffscreen(theMacGrafPort)) {
     ::SetGWorld(theMacGrafPort, NULL);
@@ -194,18 +179,30 @@ void wxCanvasDC::SetCurrentDC(void) // mac platform only
   if (canvas)
     canvas->ClientArea()->FrameContentAreaOffset(&SetOriginX, &SetOriginY);
 
-  if (cMacDC->currentUser() != this)
-    { // must setup platform
-      cMacDC->setCurrentUser(this);
-      wxMacSetClip();
-      cMacCurrentTool = kPenTool; /* to force setting bg, etc. */
-      wxMacSetCurrentTool(kNoTool);
+  if (cMacDC->currentUser() != this) { 
+    // must setup platform
+    cMacDC->setCurrentUser(this);
+    wxMacSetClip();
+    ToolChanged(kNoTool);
+  }
+}
+
+void wxCanvasDC::ReleaseCurrentDC(void)
+{
+  if (!--dc_set_depth) {
+    if (canvas && (cMacCurrentTool != kNoTool)) {
+      /* We have to go back to the canvas's drawings settings --- at
+	 least the bg color --- otherwise controls might get drawn
+	 wrong. That's because the DC GrafPtr is the same as the Window GrafPtr. */
+      cMacCurrentTool = kNoTool;
+      canvas->MacSetBackground();
     }
+  }
 }
 
 //-----------------------------------------------------------------------------
 void wxCanvasDC::SetCanvasClipping(void)
-     //-----------------------------------------------------------------------------
+  //-----------------------------------------------------------------------------
 {
   if (current_reg) ::DisposeRgn(current_reg);
   if (clipping || onpaint_reg) {
@@ -224,51 +221,49 @@ void wxCanvasDC::SetCanvasClipping(void)
   if (!Ok()) return;
   
   wxObject* theCurrentUser = cMacDC->currentUser();
-  if (theCurrentUser == this)
-    { // must update platfrom
-      CGrafPtr savep;
-      GDHandle savegd;
-      CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
-      
-      ::GetGWorld(&savep, &savegd);  
-      ::SetGWorld(theMacGrafPort, wxGetGDHandle());
-
-      wxMacSetClip();
-
-      ::SetGWorld(savep, savegd);
-    }
+  if (theCurrentUser == this) { 
+    // must update
+    CGrafPtr savep;
+    GDHandle savegd;
+    CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
+    
+    ::GetGWorld(&savep, &savegd);  
+    ::SetGWorld(theMacGrafPort, wxGetGDHandle());
+    
+    wxMacSetClip();
+    
+    ::SetGWorld(savep, savegd);
+  }
 }
 
 //-----------------------------------------------------------------------------
 void wxCanvasDC::GetClippingBox(float *x,float *y,float *w,float *h)
-     //-----------------------------------------------------------------------------
+  //-----------------------------------------------------------------------------
 {
   CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
 
-  if (current_reg)
-    {
-      RgnHandle clipRgn = NewRgn();
-      Rect theClipRect;
+  if (current_reg) {
+    RgnHandle clipRgn = NewRgn();
+    Rect theClipRect;
       
-      GetPortClipRegion(theMacGrafPort,clipRgn);
-      GetRegionBounds(clipRgn,&theClipRect);
+    GetPortClipRegion(theMacGrafPort,clipRgn);
+    GetRegionBounds(clipRgn,&theClipRect);
 
-      int theX = theClipRect.left;
-      int theY = theClipRect.top;
-      int theWidth = theClipRect.right - theClipRect.left;
-      int theHeight = theClipRect.bottom - theClipRect.top;
-      *x = XDEV2LOG(theX) ;
-      *y = YDEV2LOG(theY) ;
-      *w = XDEV2LOGREL(theWidth) ;
-      *h = YDEV2LOGREL(theHeight) ;
-    }
-  else
-    *x = *y = *w = *h = 0; // WCH wx_win: this doesn't seem right
+    int theX = theClipRect.left;
+    int theY = theClipRect.top;
+    int theWidth = theClipRect.right - theClipRect.left;
+    int theHeight = theClipRect.bottom - theClipRect.top;
+    *x = XDEV2LOG(theX) ;
+    *y = YDEV2LOG(theY) ;
+    *w = XDEV2LOGREL(theWidth) ;
+    *h = YDEV2LOGREL(theHeight) ;
+  } else
+    *x = *y = *w = *h = 0;
 }
 
 //-----------------------------------------------------------------------------
 void wxCanvasDC::SetPaintRegion(Rect* paintRect)
-     //-----------------------------------------------------------------------------
+  //-----------------------------------------------------------------------------
 {
   if (onpaint_reg) ::DisposeRgn(onpaint_reg);
   onpaint_reg = ::NewRgn();
@@ -279,7 +274,7 @@ void wxCanvasDC::SetPaintRegion(Rect* paintRect)
 
 //-----------------------------------------------------------------------------
 void wxCanvasDC::SetClippingRect(float cx, float cy, float cw, float ch)
-     //-----------------------------------------------------------------------------
+  //-----------------------------------------------------------------------------
 {
   clipping = new wxRegion(this);
   clipping->SetRectangle(cx, cy, cw, ch);
@@ -288,7 +283,7 @@ void wxCanvasDC::SetClippingRect(float cx, float cy, float cw, float ch)
 
 //-----------------------------------------------------------------------------
 void wxCanvasDC::SetClippingRegion(wxRegion *r)
-     //-----------------------------------------------------------------------------
+  //-----------------------------------------------------------------------------
 {
   clipping = r;
   SetCanvasClipping();
@@ -296,7 +291,7 @@ void wxCanvasDC::SetClippingRegion(wxRegion *r)
 
 //-----------------------------------------------------------------------------
 wxRegion* wxCanvasDC::GetClippingRegion()
-     //-----------------------------------------------------------------------------
+  //-----------------------------------------------------------------------------
 {
   return clipping;
 }
@@ -391,24 +386,6 @@ void wxCanvasDC::SetBackground(wxColour* color)
 {
   current_background_color = color;
 
-  if (Ok()) {
-    
-    if (cMacDC->currentUser() == this
-	&& (cMacCurrentTool == kNoTool))
-      { // must update platform to kNoTool
-	CGrafPtr savep;
-	GDHandle savegd;
-	CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
-	
-	::GetGWorld(&savep, &savegd);  
-	::SetGWorld(theMacGrafPort, wxGetGDHandle());
-
-        InstallColor(color, FALSE);
-
-	::SetGWorld(savep, savegd);
-      }
-  }
-
   ToolChanged(kNoTool);
 }
 
@@ -427,71 +404,12 @@ void wxCanvasDC::EndPage(void){ }
 //-----------------------------------------------------------------------------
 void wxCanvasDC::SetMapMode(int mode)
 {
-  mapping_mode = mode;
-
-  int pixel_width = 0;
-  int pixel_height = 0;
-  int mm_width = 0;
-  int mm_height = 0;
-
-  // First, calculate how to scale from mm to pixels.
-  // Then we just need to find the scaling factor from ? to mm and multiply
-  // by the first scaling factor.
-
-  if (wxSubType(__type, wxTYPE_DC_PRINTER)) {
-    pixel_width = 800;
-    pixel_height = 1200;
-  } else {
-    pixel_width = 640;
-    pixel_height = 480;
-  }
-  mm_width = 225;
-  mm_height = 169;
-
-  float mm2pixelsX = pixel_width/mm_width;
-  float mm2pixelsY = pixel_height/mm_height;
-
-  switch (mode)
-    {
-    case MM_TWIPS:
-      {
-	logical_scale_x = (float)(twips2mm * mm2pixelsX);
-	logical_scale_y = (float)(twips2mm * mm2pixelsY);
-	break;
-      }
-    case MM_POINTS:
-      {
-	logical_scale_x = (float)(pt2mm * mm2pixelsX);
-	logical_scale_y = (float)(pt2mm * mm2pixelsY);
-	break;
-      }
-    case MM_METRIC:
-      {
-	logical_scale_x = mm2pixelsX;
-	logical_scale_y = mm2pixelsY;
-	break;
-      }
-    case MM_LOMETRIC:
-      {
-	logical_scale_x = (float)(mm2pixelsX/10.0);
-	logical_scale_y = (float)(mm2pixelsY/10.0);
-	break;
-      }
-    default:
-    case MM_TEXT:
-      {
-	logical_scale_x = 1.0;
-	logical_scale_y = 1.0;
-	break;
-      }
-    }
-
-  ToolChanged(kNoTool);
+  /* not used */
 }
 
 //-----------------------------------------------------------------------------
 void wxCanvasDC::SetUserScale(float x, float y)
-     //-----------------------------------------------------------------------------
+  //-----------------------------------------------------------------------------
 {
   user_scale_x = x;
   user_scale_y = y;
@@ -538,8 +456,9 @@ float wxCanvasDC::FLogicalToDeviceYRel(float y) { return YLOG2DEVREL(y); }
 //-----------------------------------------------------------------------------
 void wxCanvasDC::wxMacSetClip(void)
 {
-  SetCurrentDC();
-  if (canvas && !canvas->WantsFocus()) { // => canvas is hidden (HACK!)
+  /* current GrafPtr is set when this function is called */
+
+  if (canvas && !canvas->WantsFocus()) { // => canvas is hidden
     Rect zeroClipRect = {0, 0, 0, 0};
     ::ClipRect(&zeroClipRect);
   } else {
@@ -559,141 +478,140 @@ void wxCanvasDC::wxMacSetClip(void)
 //-----------------------------------------------------------------------------
 
 void wxCanvasDC::wxMacSetCurrentTool(wxMacToolType whichTool)
+  /* assumes that SetCurrentDC() has been called, already */  
 {
   if (!Ok()) return;
-  
-  SetCurrentDC();
 
-  // mflatt: shortcut
   if (whichTool == cMacCurrentTool)
     return;
 
-  switch (whichTool)
+  switch (whichTool) {
+  case kNoTool:
+    break;
+  case kBGTool:
+    InstallColor(current_background_color, FALSE);
+    PenMode(patCopy);
+    break;
+  case kBrushTool:
     {
-    case kNoTool:
-      InstallColor(current_background_color, FALSE);
-      PenMode(patCopy);
-      break;
-    case kBrushTool:
-      {
-	int theBrushStyle = current_brush->GetStyle();
-	int log = theBrushStyle == wxXOR ? patXor : patCopy;
-	if ((theBrushStyle == wxSOLID) || (theBrushStyle == wxXOR))
-	  PenPat(GetBlackPattern());
-	else if (theBrushStyle == wxTRANSPARENT)
-	  PenPat(GetWhitePattern()); // WCH : does this work??
-	else if (IS_HATCH(theBrushStyle)) {
-	  macGetHatchPattern(theBrushStyle, &cMacPattern);
-	  PenPat(&cMacPattern);
-	  log = patOr;
-	} else {
-	  PenPat(GetBlackPattern());
-	}
-	
-	InstallColor(current_background_color, FALSE);
-	InstallColor(current_brush->GetColour(), TRUE);
-	PenMode(log);
+      int theBrushStyle = current_brush->GetStyle();
+      int log = theBrushStyle == wxXOR ? patXor : patCopy;
+      if ((theBrushStyle == wxSOLID) || (theBrushStyle == wxXOR))
+	PenPat(GetBlackPattern());
+      else if (theBrushStyle == wxTRANSPARENT)
+	PenPat(GetWhitePattern());
+      else if (IS_HATCH(theBrushStyle)) {
+	macGetHatchPattern(theBrushStyle, &cMacPattern);
+	PenPat(&cMacPattern);
+	log = patOr;
+      } else {
+	PenPat(GetBlackPattern());
       }
-      break;
-    case kPenTool:
-      {
-	int pensize = current_pen->GetWidth();
-	int thePenWidth = (pensize ? pensize : 1);
-	PenSize(thePenWidth, thePenWidth);
+	
+      InstallColor(current_background_color, FALSE);
+      InstallColor(current_brush->GetColour(), TRUE);
+      PenMode(log);
+    }
+    break;
+  case kPenTool:
+    {
+      int pensize = current_pen->GetWidth();
+      int thePenWidth = (pensize ? pensize : 1);
+      PenSize(thePenWidth, thePenWidth);
 
-	int thePenStyle = current_pen->GetStyle();
-	int log = patCopy;
-	switch (thePenStyle) {
-	case wxXOR:
-	  thePenStyle = wxSOLID;
-	  log = patXor;
-	  break;
-	case wxXOR_DOT:
-	  thePenStyle = wxDOT;
-	  log = patXor;
-	  break;
-	case wxXOR_LONG_DASH:
-	  thePenStyle = wxLONG_DASH;
-	  log = patXor;
-	  break;
-	case wxXOR_SHORT_DASH:
-	  thePenStyle = wxSHORT_DASH;
-	  log = patXor;
-	  break;
-	case wxXOR_DOT_DASH:
-	  thePenStyle = wxDOT_DASH;
-	  log = patXor;
-	  break;
-	}
-	wxBitmap *bm = current_pen->GetStipple();
-	if (bm && bm->Ok() && (bm->GetDepth() == 1)
-	    && (bm->GetWidth() == 8) && (bm->GetHeight() == 8)) {
-	  GDHandle savegd; CGrafPtr saveport;
-	  char p[8]; int i, k;
-	  GetGWorld(&saveport, &savegd);
-	  SetGWorld(bm->x_pixmap, 0);
-	  for (i = 0; i < 8; i++) {
-	    p[i] = 0;
-	    for (k = 0; k < 8; k++) {
-	      RGBColor cpix;
-	      ::GetCPixel(k, i, &cpix);
-	      p[i] = p[i] << 1;
-	      if (!cpix.red) {
-		p[i] |= 1;
-	      }
+      int thePenStyle = current_pen->GetStyle();
+      int log = patCopy;
+      switch (thePenStyle) {
+      case wxXOR:
+	thePenStyle = wxSOLID;
+	log = patXor;
+	break;
+      case wxXOR_DOT:
+	thePenStyle = wxDOT;
+	log = patXor;
+	break;
+      case wxXOR_LONG_DASH:
+	thePenStyle = wxLONG_DASH;
+	log = patXor;
+	break;
+      case wxXOR_SHORT_DASH:
+	thePenStyle = wxSHORT_DASH;
+	log = patXor;
+	break;
+      case wxXOR_DOT_DASH:
+	thePenStyle = wxDOT_DASH;
+	log = patXor;
+	break;
+      }
+      wxBitmap *bm = current_pen->GetStipple();
+      if (bm && bm->Ok() && (bm->GetDepth() == 1)
+	  && (bm->GetWidth() == 8) && (bm->GetHeight() == 8)) {
+	GDHandle savegd; CGrafPtr saveport;
+	char p[8]; int i, k;
+	GetGWorld(&saveport, &savegd);
+	SetGWorld(bm->x_pixmap, 0);
+	for (i = 0; i < 8; i++) {
+	  p[i] = 0;
+	  for (k = 0; k < 8; k++) {
+	    RGBColor cpix;
+	    ::GetCPixel(k, i, &cpix);
+	    p[i] = p[i] << 1;
+	    if (!cpix.red) {
+	      p[i] |= 1;
 	    }
 	  }
-	  SetGWorld(saveport, savegd);
-	  PenPat((Pattern *)p);
-	} else if (thePenStyle == wxSOLID)
-	  PenPat(GetBlackPattern());
-	else if (thePenStyle == wxTRANSPARENT)
-	  PenPat(GetWhitePattern());
-	else if ((thePenStyle == wxDOT)
-		 || (thePenStyle == wxSHORT_DASH)) {
-	  PenPat(GetLightGrayPattern());
-	  if (log == patCopy) log = patOr;
-	} else if ((thePenStyle == wxLONG_DASH)
-		   || (thePenStyle == wxDOT_DASH)) {
-	  PenPat(GetDarkGrayPattern());
-	  if (log == patCopy) log = patOr;
-	} else if (IS_HATCH(thePenStyle)) {
-	  macGetHatchPattern(thePenStyle, &cMacPattern);
-	  PenPat(&cMacPattern);
-	} else {
-	  PenPat(GetBlackPattern());
 	}
-
-	InstallColor(current_pen->GetColour(), TRUE);
-	InstallColor(current_background_color, FALSE);
-	PenMode(log);
+	SetGWorld(saveport, savegd);
+	PenPat((Pattern *)p);
+      } else if (thePenStyle == wxSOLID)
+	PenPat(GetBlackPattern());
+      else if (thePenStyle == wxTRANSPARENT)
+	PenPat(GetWhitePattern());
+      else if ((thePenStyle == wxDOT)
+	       || (thePenStyle == wxSHORT_DASH)) {
+	PenPat(GetLightGrayPattern());
+	if (log == patCopy) log = patOr;
+      } else if ((thePenStyle == wxLONG_DASH)
+		 || (thePenStyle == wxDOT_DASH)) {
+	PenPat(GetDarkGrayPattern());
+	if (log == patCopy) log = patOr;
+      } else if (IS_HATCH(thePenStyle)) {
+	macGetHatchPattern(thePenStyle, &cMacPattern);
+	PenPat(&cMacPattern);
+      } else {
+	PenPat(GetBlackPattern());
       }
-      break;
-    case kTextTool:
-      InstallColor(current_text_foreground, TRUE);
-      if (current_bk_mode != wxTRANSPARENT)
-	InstallColor(current_text_background, FALSE);
-      else
-	BackColor(whiteColor);
-      ::TextFont(font->GetMacFontNum());
-      ::TextSize(font->GetPointSize());
-      ::TextFace(font->GetMacFontStyle());
-      ::TextMode((current_bk_mode == wxTRANSPARENT) ? srcOr : srcCopy);
-      InstallLogicalFunction(wxCOPY);
-      break;
-    case kBlitTool:
-      ForeColor(blackColor);
-      BackColor(whiteColor);
-      InstallLogicalFunction(wxCOPY);
-      break;
-    case kColorBlitTool:
-      InstallColor(current_background_color, FALSE);
+
       InstallColor(current_pen->GetColour(), TRUE);
-      InstallLogicalFunction(wxCOPY);
-      break;
-    case kQuillTool:
-      break;
+      InstallColor(current_background_color, FALSE);
+      PenMode(log);
     }
+    break;
+  case kTextTool:
+    InstallColor(current_text_foreground, TRUE);
+    if (current_bk_mode != wxTRANSPARENT)
+      InstallColor(current_text_background, FALSE);
+    else
+      BackColor(whiteColor);
+    ::TextFont(font->GetMacFontNum());
+    ::TextSize(font->GetPointSize());
+    ::TextFace(font->GetMacFontStyle());
+    ::TextMode((current_bk_mode == wxTRANSPARENT) ? srcOr : srcCopy);
+    InstallLogicalFunction(wxCOPY);
+    break;
+  case kBlitTool:
+    ForeColor(blackColor);
+    BackColor(whiteColor);
+    InstallLogicalFunction(wxCOPY);
+    break;
+  case kColorBlitTool:
+    InstallColor(current_background_color, FALSE);
+    InstallColor(current_pen->GetColour(), TRUE);
+    InstallLogicalFunction(wxCOPY);
+    break;
+  case kQuillTool:
+    break;
+  }
 
   cMacCurrentTool = whichTool;
 }

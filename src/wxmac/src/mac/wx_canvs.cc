@@ -59,7 +59,7 @@ wxCanvas::wxCanvas // Constructor (given parentArea)
 {
   InitDefaults();
 
-  wx_dc = new wxCanvasDC(this); // wx_dc should be defined in wx_canvas not wxb_canvas??
+  wx_dc = new wxCanvasDC(this);
 }
 
 //-----------------------------------------------------------------------------
@@ -87,7 +87,7 @@ wxCanvas::wxCanvas // Constructor (given parentWindow)
 //-----------------------------------------------------------------------------
 wxCanvas::~wxCanvas(void)
 {
-  if (wx_dc) delete wx_dc; // WCH: should be done in wxbCanvas
+  if (wx_dc) delete wx_dc;
 }
 
 //=============================================================================
@@ -107,7 +107,7 @@ void wxCanvas::InitDefaults(void)
   vScrollingEnabled = TRUE;
   scrollAutomanaged = TRUE;
 
-  wx_dc = new wxCanvasDC(this); // wx_dc should be defined in wx_canvas not wxb_canvas??
+  wx_dc = new wxCanvasDC(this);
 
   if (cStyle & wxBORDER) {
     int direction = Direction::wxAll;
@@ -152,18 +152,6 @@ void wxCanvas::AddWhiteRgn(RgnHandle rgn)
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 //-----------------------------------------------------------------------------
-void wxCanvas::BeginDrawing(void)
-{
-  if (wx_dc) wx_dc->BeginDrawing();
-}
-
-//-----------------------------------------------------------------------------
-void wxCanvas::EndDrawing(void)
-{
-  if (wx_dc) wx_dc->EndDrawing();
-}
-
-//-----------------------------------------------------------------------------
 void wxCanvas::SetColourMap(wxColourMap* cmap)
 {
 }
@@ -173,14 +161,13 @@ void wxCanvas::SetColourMap(wxColourMap* cmap)
 //-----------------------------------------------------------------------------
 void wxCanvas::OnClientAreaDSize(int dW, int dH, int dX, int dY)
 {
-  // update deviceContext ?
-  if (wx_dc)
-    {
-      int clientWidth = ClientArea()->Width();
-      int clientHeight= ClientArea()->Height();
-      Rect paintRect = {0, 0, clientHeight, clientWidth};
-      wx_dc->SetPaintRegion(&paintRect);
-    }
+  // update deviceContext
+  if (wx_dc) {
+    int clientWidth = ClientArea()->Width();
+    int clientHeight= ClientArea()->Height();
+    Rect paintRect = {0, 0, clientHeight, clientWidth};
+    wx_dc->SetPaintRegion(&paintRect);
+  }
   
   if (cScroll && scrollAutomanaged
       && (requested_x_step_size > 0 || requested_y_step_size > 0))

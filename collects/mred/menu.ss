@@ -131,7 +131,7 @@
 				       [key (key-proc symbol)])
 				   (when key
 				     (let ([name (string-append keymap-string key)])
-				       (send keymap add-key-function name (lambda (x y) (callback)))
+				       (send keymap add-key-function name (lambda (x y) (callback) #t))
 				       (send keymap map-function key name))))))
 			     platforms))
 		 id))]

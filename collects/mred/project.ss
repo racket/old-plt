@@ -210,7 +210,8 @@
 		       (set! project-filename (mzlib:file:normalize-path filename))
 		       (set! project-dir (mzlib:file:path-only project-filename)))
 		     (if (and filename (file-exists? filename))
-			 (catch read-error
+			 (call/ec
+                           (lambda (read-error)
 			   (with-input-from-file filename
 			     (lambda ()
 			       (parse-options (read) read-error)
@@ -223,7 +224,7 @@
 					"Error")
 				       (read-error #f))
 				     (send project-item-list append item)
-				     (loop))))))))
+				     (loop)))))))))
 		     (set! project-modified? #f)
 		     (let ([name (or (and filename (mzlib:file:file-name-from-path filename))
 				     "Untitled Project")])

@@ -17,7 +17,8 @@
 	     (public
 	      [splay
 	       (lambda (pos)
-		 (catch exit
+		 (call/ec
+                   (lambda (exit)
 			(if (not tree) (exit #f))
 			(let* ([N (make-node #f #f 0 0)]
 			       [r N]
@@ -66,7 +67,7 @@
 					(set! l t)
 					(loop (node-right t))))))
 			       (else
-				(break-at t))))))))]
+				(break-at t)))))))))]
 	      [put
 	       (lambda (pos jump-to)
 		 (let ([pos (- pos offset)]

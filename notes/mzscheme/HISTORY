@@ -1,3 +1,9 @@
+
+101/7:
+
+ * Fixed regexp-match so a pattern can be used concurrently by
+   multiple threads.
+
 101/6:
 
  * Added `timezone-offset' field to the `date' structure.

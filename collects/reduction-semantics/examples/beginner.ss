@@ -64,6 +64,7 @@
              (or false ... e-ctxt e ...))
      
      (d/e-v (define x (lambda (x x ...) e))
+            (define x v)
             (define (x x x ...) e)
             (define-struct x (x ...))
             v)
@@ -252,8 +253,8 @@
       lang
       (side-condition
        ((name before d/e-v) ...
-        (in-hole (name ctxt d/e-ctxt) ((name f x) (name arg v) ...))
-        (name after d/e) ...)
+        (in-hole d/e-ctxt ((name f x) v ...))
+        d/e ...)
        (and (not (prim-op? f))
             (not (defined? f before))))
       (format "reference to undefined identifier: ~a" f))
@@ -286,6 +287,52 @@
         ,(replace ctxt hole (multi-subst var arg body))
         ,@after))
      
+     ;; reference to non-procedure define:
+     (reduction
+      lang
+      ((name before d/e-v) ...
+       (define (name a x) (name val v))
+       (name middle d/e-v) ...
+       (in-hole (name ctxt d/e-ctxt) (name a x))
+       (name after d/e) ...)
+      `(,@before
+        (define ,a ,val)
+        ,@middle
+        ,(replace ctxt hole val)
+        ,@after))
+     
+     ;; unbound reference to top-level id in hole:
+     (reduction
+      lang
+      (side-condition
+       ((name before d/e-v) ...
+        (in-hole d/e-ctxt (name a x))
+        d/e ...)
+       (and (not (prim-op? a))
+            (not (defined? a before))))
+      (format "reference to undefined identifier: ~a" a))
+     
+     ;; reference to procedure-bound var in hole:
+     (reduction
+      lang
+      ((name before d/e-v) ...
+       (define ((name f x) (name var x) ...) (name body e))
+       (name middle d/e-v) ...
+       (in-hole d/e-ctxt (name f x))
+       (name after d/e) ...)
+      (format "~a is a procedure, so it must be applied to arguments" f))
+     
+     ;; reference to non-procedure-bound-var in application
+     (reduction
+      lang
+      ((name before d/e-v) ...
+       (define (name a x) (name val v))
+       (name middle d/e-v) ...
+       (in-hole d/e-ctxt ((name a x) v ...))
+       (name after d/e) ...)
+      (format "procedure application: expected procedure, given: ~a" val))
+     
+    
      ((struct? ((name maker maker) v ...)) . --> . 'true)
      ((struct? non-struct-value) . --> . 'false)
      
@@ -819,7 +866,33 @@
      
      (test
       '((if false 'x 'y))
-      '('y))))
+      '('y))
+     
+     ; test non-procedure-defs in context:
+     (test
+      `((+ 3 4) (define a 3) (+ 5 6))
+      `(7 (define a 3) 11))
+     
+     ; test reduction of non-procedure-defs:
+     (test 
+      `((define a 13) (define b (+ a 9)) (+ 3 4))
+      `((define a 13) (define b 22) 7))
+     
+     ; test reduction of unbound ids in hole:
+     (test 
+      `(x)
+      "reference to undefined identifier: x")
+     
+     ; test reduction of function-bound id in hole:
+     (test
+      `((define (a x) (+ x 1)) a)
+      "a is a procedure, so it must be applied to arguments")
+     
+     ; test reduction of non-procedure-def in application:
+     (test
+      `((define a 3) (a 9))
+      "procedure application: expected procedure, given: 3")))
+  
 
   (define (run-big-test)
     (parameterize ([show-dots #t])

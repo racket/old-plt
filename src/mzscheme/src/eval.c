@@ -2143,25 +2143,30 @@ static Scheme_Object *check_top(const char *when, Scheme_Object *form, Scheme_Co
     scheme_wrong_syntax(NULL, NULL, form, NULL);
 
   if (env->genv->module) {
-    Scheme_Object *modidx, *symbol = c;
+    Scheme_Object *modidx, *symbol = c, *tl_id;
     int bad;
 
-    modidx = scheme_stx_module_name(&symbol, env->genv->phase, NULL, NULL);
-    if (modidx) {
-      /* If it's an access path, resolve it: */
-      if (env->genv->module
-	  && SAME_OBJ(scheme_module_resolve(modidx), env->genv->module->modname))
-	bad = 0;
-      else
+    tl_id = scheme_tl_id_sym(env->genv, symbol, 0);
+    if (NOT_SAME_OBJ(tl_id, SCHEME_STX_SYM(symbol))) {
+      /* Since the module has a rename for this id, it's certainly defined. */
+    } else {
+      modidx = scheme_stx_module_name(&symbol, env->genv->phase, NULL, NULL);
+      if (modidx) {
+	/* If it's an access path, resolve it: */
+	if (env->genv->module
+	    && SAME_OBJ(scheme_module_resolve(modidx), env->genv->module->modname))
+	  bad = 0;
+	else
+	  bad = 1;
+      } else
 	bad = 1;
-    } else
-      bad = 1;
 
-    if (bad || !scheme_lookup_in_table(env->genv->toplevel, (const char *)SCHEME_STX_SYM(c)))
-      scheme_wrong_syntax(when, NULL, c, 
-			  (env->genv->phase
-			   ? "unbound variable in module (transformer environment)"
-			   : "unbound variable in module"));
+      if (bad || !scheme_lookup_in_table(env->genv->toplevel, (const char *)SCHEME_STX_SYM(c)))
+	scheme_wrong_syntax(when, NULL, c, 
+			    (env->genv->phase
+			     ? "unbound variable in module (transformer environment)"
+			     : "unbound variable in module"));
+    }
   }
 
   return c;
@@ -2174,13 +2179,15 @@ top_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, 
 
   c = check_top(scheme_compile_stx_string, form, env);
 
+  c = scheme_tl_id_sym(env->genv, c, 0);
+
   if (env->genv->module && !rec[drec].resolve_module_ids) {
     /* Self-reference in a module; need to remember the modidx.  Don't
        need a pos, because the symbol's gensym-ness (if any) will be
        preserved within the module. */
-    c =  scheme_hash_module_variable(env->genv, env->genv->module->self_modidx, c, -1);
+    c = scheme_hash_module_variable(env->genv, env->genv->module->self_modidx, c, -1);
   } else
-    c = (Scheme_Object *)scheme_global_bucket(SCHEME_STX_SYM(c), env->genv);
+    c = (Scheme_Object *)scheme_global_bucket(c, env->genv);
 
   return scheme_register_toplevel_in_prefix(c, env, rec, drec);
 }

@@ -1318,6 +1318,97 @@ Scheme_Object *scheme_hash_module_variable(Scheme_Env *env, Scheme_Object *modid
   return val;
 }
 
+Scheme_Object *scheme_tl_id_sym(Scheme_Env *env, Scheme_Object *id, int is_def)
+/* The `env' argument can actually be a hash table. */
+{
+  Scheme_Object *marks = NULL, *sym, *map, *l, *a, *amarks, *m, *best_match;
+  int best_match_skipped, ms;
+  Scheme_Hash_Table *marked_names;
+
+  sym = SCHEME_STX_SYM(id);
+
+  if (SCHEME_HASHTP((Scheme_Object *)env))
+    marked_names = (Scheme_Hash_Table *)env;
+  else {
+    /* If there's no table and we're not defining, bail out fast */
+    if (!is_def && !env->marked_names)
+      return sym;
+    marked_names = env->marked_names;
+  }
+
+  if (is_def) {
+    /* If we're defining, see if we need to create a table.  Getting
+       marks is reletaively expensive, but we only do this once per
+       definition. */
+    marks = scheme_stx_extract_marks(id);
+    if (SCHEME_NULLP(marks))
+      return sym;
+  }
+
+  if (!marked_names) {
+    marked_names = scheme_make_hash_table(SCHEME_hash_ptr);
+    env->marked_names = marked_names;
+  }
+
+  map = scheme_hash_get(marked_names, sym);
+
+  if (!map) {
+    /* If we're not defining, we can bail out before extracting marks. */
+    if (!is_def)
+      return sym;
+    else
+      map = scheme_null;
+  }
+
+  if (!marks) {
+    /* We really do need the marks. Get them. */
+    marks = scheme_stx_extract_marks(id);
+    if (SCHEME_NULLP(marks))
+      return sym;
+  }
+
+  best_match = NULL;
+  best_match_skipped = scheme_list_length(marks);
+
+  /* Find a mapping that matches the longest tail of marks */
+  for (l = map; SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {
+    a = SCHEME_CAR(l);
+    amarks = SCHEME_CAR(a);
+    if (is_def) {
+      if (scheme_equal(amarks, marks)) {
+	best_match = SCHEME_CDR(a);
+	break;
+      }
+    } else {
+      for (m = marks, ms = 0; 
+	   SCHEME_PAIRP(m) && (ms < best_match_skipped);
+	   m = SCHEME_CDR(m), ms++) {
+	if (scheme_equal(amarks, m)) {
+	  if (ms < best_match_skipped) {
+	    best_match = SCHEME_CDR(a);
+	    best_match_skipped = ms;
+	    break;
+	  }
+	}
+      }
+    }
+  }
+  
+  if (!best_match) {
+    if (!is_def)
+      return sym;
+
+    /* Adding a definition. */
+    best_match = scheme_make_exact_symbol(SCHEME_SYM_VAL(sym), SCHEME_SYM_LEN(sym));
+    a = scheme_make_pair(marks, best_match);
+    map = scheme_make_pair(a, map);
+    
+    scheme_hash_set(marked_names, sym, map);
+  }
+
+  return best_match;
+}
+
 static Scheme_Object *make_uid()
 {
   char name[20];
@@ -1602,12 +1693,12 @@ Scheme_Object *scheme_add_env_renames(Scheme_Object *stx, Scheme_Comp_Env *env,
 */
 
 Scheme_Object *
-scheme_lookup_binding(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
+scheme_lookup_binding(Scheme_Object *find_id, Scheme_Comp_Env *env, int flags)
 {
   Scheme_Comp_Env *frame;
   int j = 0, p = 0, modpos, skip_stops = 0;
   Scheme_Bucket *b;
-  Scheme_Object *val, *modidx, *modname, *srcsym;
+  Scheme_Object *val, *modidx, *modname, *src_find_id, *find_global_id;
   Scheme_Env *genv;
   long phase;
 
@@ -1632,8 +1723,8 @@ scheme_lookup_binding(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
       for (i = frame->num_bindings; i--; ) {
 	if (frame->values[i]) {
 	  if (frame->uids) uid = frame->uids[i];
-	  if (SAME_OBJ(SCHEME_STX_VAL(symbol), SCHEME_STX_VAL(frame->values[i]))
-	      && scheme_stx_env_bound_eq(symbol, frame->values[i], uid, phase)) {
+	  if (SAME_OBJ(SCHEME_STX_VAL(find_id), SCHEME_STX_VAL(frame->values[i]))
+	      && scheme_stx_env_bound_eq(find_id, frame->values[i], uid, phase)) {
 	    /* Found a lambda- or let-bound variable: */
 	    if (flags & SCHEME_DONT_MARK_USE)
 	      return scheme_make_local(scheme_local_type, 0);
@@ -1646,19 +1737,19 @@ scheme_lookup_binding(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
       for (i = COMPILE_DATA(frame)->num_const; i--; ) {
 	int issame;
 	if (frame->flags & SCHEME_CAPTURE_WITHOUT_RENAME)
-	  issame = scheme_stx_module_eq(symbol, COMPILE_DATA(frame)->const_names[i], phase);
+	  issame = scheme_stx_module_eq(find_id, COMPILE_DATA(frame)->const_names[i], phase);
 	else {
 	  if (COMPILE_DATA(frame)->const_uids) uid = COMPILE_DATA(frame)->const_uids[i];
-	  issame = (SAME_OBJ(SCHEME_STX_VAL(symbol), 
+	  issame = (SAME_OBJ(SCHEME_STX_VAL(find_id), 
 			     SCHEME_STX_VAL(COMPILE_DATA(frame)->const_names[i]))
-		    && scheme_stx_env_bound_eq(symbol, COMPILE_DATA(frame)->const_names[i], uid, phase));
+		    && scheme_stx_env_bound_eq(find_id, COMPILE_DATA(frame)->const_names[i], uid, phase));
 	}
       
 	if (issame) {
 	  val = COMPILE_DATA(frame)->const_vals[i];
 	
 	  if (!val) {
-	    scheme_wrong_syntax(scheme_compile_stx_string, NULL, symbol,
+	    scheme_wrong_syntax(scheme_compile_stx_string, NULL, find_id,
 				"variable used out of context");
 	    return NULL;
 	  }
@@ -1668,7 +1759,7 @@ scheme_lookup_binding(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
 	    else if (SAME_TYPE(SCHEME_TYPE(val), scheme_lazy_macro_type))
 	      return force_lazy_macro(val, phase);
 	    else
-	      scheme_wrong_syntax(scheme_set_stx_string, NULL, symbol,
+	      scheme_wrong_syntax(scheme_set_stx_string, NULL, find_id,
 				  "local syntax identifier cannot be mutated");
 	    return NULL;
 	  }
@@ -1681,13 +1772,13 @@ scheme_lookup_binding(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
     p += frame->num_bindings;
   }
 
-  srcsym = symbol;
-  modidx = scheme_stx_module_name(&symbol, phase, NULL, NULL);
+  src_find_id = find_id;
+  modidx = scheme_stx_module_name(&find_id, phase, NULL, NULL);
   
   /* Used out of context? */
   if (SAME_OBJ(modidx, scheme_undefined)) {
     if (!(flags & SCHEME_OUT_OF_CONTEXT_OK))
-      scheme_wrong_syntax(scheme_compile_stx_string, NULL, symbol,
+      scheme_wrong_syntax(scheme_compile_stx_string, NULL, find_id,
 			  "identifier used out of context");
     return NULL;
   }
@@ -1713,7 +1804,7 @@ scheme_lookup_binding(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
 	}
 
 	if (!genv) {
-	  scheme_wrong_syntax("require", NULL, srcsym, 
+	  scheme_wrong_syntax("require", NULL, src_find_id, 
 			      "broken compiled code (phase %d): cannot find module %S",
 			      env->genv->phase, modname);
 	  return NULL;
@@ -1727,7 +1818,7 @@ scheme_lookup_binding(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
     if (genv->module) {
       /* Free variable. Maybe don't continue. */
       if (flags & SCHEME_SETTING) {
-	scheme_wrong_syntax(scheme_set_stx_string, NULL, srcsym, "unbound variable in module");
+	scheme_wrong_syntax(scheme_set_stx_string, NULL, src_find_id, "unbound variable in module");
 	return NULL;
       }
       if (flags & SCHEME_NULL_FOR_UNBOUND)
@@ -1735,17 +1826,22 @@ scheme_lookup_binding(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
     }
   }
 
+  if (!modname && SCHEME_STXP(find_id))
+    find_global_id = scheme_tl_id_sym(env->genv, find_id, 0);
+  else
+    find_global_id = find_id;
+
   /* Try syntax table: */
   if (modname)
-    val = scheme_module_syntax(modname, env->genv, SCHEME_STX_SYM(symbol));
+    val = scheme_module_syntax(modname, env->genv, find_id);
   else {
     /* Only try syntax table if there's not an explicit (later)
        variable mapping: */
     if (genv->shadowed_syntax 
-	&& scheme_hash_get(genv->shadowed_syntax, SCHEME_STX_SYM(symbol)))
+	&& scheme_hash_get(genv->shadowed_syntax, find_global_id))
       val = NULL;
     else
-      val = scheme_lookup_in_table(genv->syntax, (const char *)SCHEME_STX_SYM(symbol));
+      val = scheme_lookup_in_table(genv->syntax, (const char *)find_global_id);
   }
   
   if (val) {
@@ -1756,22 +1852,25 @@ scheme_lookup_binding(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
 
   if (modname) {
     Scheme_Object *pos;
-    pos = scheme_check_accessible_in_module(genv, symbol, srcsym, -1, 1);
+    pos = scheme_check_accessible_in_module(genv, find_id, src_find_id, -1, 1);
     modpos = SCHEME_INT_VAL(pos);
   } else
     modpos = -1;
 
   if (modname && (flags & SCHEME_SETTING)) {
-    if (SAME_OBJ(srcsym, symbol) || SAME_OBJ(SCHEME_STX_SYM(srcsym), symbol))
-      symbol = NULL;
-    scheme_wrong_syntax(scheme_set_stx_string, symbol, srcsym, "cannot mutate module-required variable");
+    if (SAME_OBJ(src_find_id, find_id) || SAME_OBJ(SCHEME_STX_SYM(src_find_id), find_id))
+      find_id = NULL;
+    scheme_wrong_syntax(scheme_set_stx_string, find_id, src_find_id, "cannot mutate module-required variable");
+    return NULL;
   }
 
   if (!modname && (flags & SCHEME_SETTING) && genv->module) {
     /* Check for set! of unbound variable: */
     
-    if (!scheme_lookup_in_table(genv->toplevel, (const char *)symbol))
-      scheme_wrong_syntax(scheme_set_stx_string, NULL, srcsym, "unbound variable in module");
+    if (!scheme_lookup_in_table(genv->toplevel, (const char *)find_global_id)) {
+      scheme_wrong_syntax(scheme_set_stx_string, NULL, src_find_id, "unbound variable in module");
+      return NULL;
+    }
   }
 
   if (!modname && (flags & SCHEME_NULL_FOR_UNBOUND))
@@ -1781,15 +1880,15 @@ scheme_lookup_binding(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
      idea, because it causes module instances to be preserved. */
   if (modname && !(flags & SCHEME_RESOLVE_MODIDS) && !SAME_OBJ(modidx, kernel_symbol)) {
     /* Create a module variable reference, so that idx is preserved: */
-    return scheme_hash_module_variable(env->genv, modidx, symbol, modpos);
+    return scheme_hash_module_variable(env->genv, modidx, find_id, modpos);
   }
 
   if (!modname && (flags & SCHEME_SETTING) && genv->module) {
     /* Need to return a variable reference in this case, too. */
-    return scheme_hash_module_variable(env->genv, genv->module->self_modidx, symbol, modpos);
+    return scheme_hash_module_variable(env->genv, genv->module->self_modidx, find_global_id, modpos);
   }
 
-  b = scheme_bucket_from_table(genv->toplevel, (char *)SCHEME_STX_SYM(symbol));
+  b = scheme_bucket_from_table(genv->toplevel, (char *)find_global_id);
 
   if ((flags & SCHEME_ELIM_CONST) && b && b->val 
       && (((Scheme_Bucket_With_Flags *)b)->flags & GLOB_IS_CONST)
@@ -2016,6 +2115,30 @@ void scheme_dup_symbol_check(DupCheckRecord *r, const char *where,
   }
 
   scheme_hash_set(r->ht, symbol, scheme_true);
+}
+
+void scheme_check_context(Scheme_Env *env, Scheme_Object *name, Scheme_Object *form, Scheme_Object *ok_modidx)
+{
+  Scheme_Object *mod, *id = name;
+  int bad = 0;
+
+  mod = scheme_stx_source_module(id, NULL);
+
+  if (mod && SCHEME_TRUEP(mod) && NOT_SAME_OBJ(ok_modidx, mod)) {
+    bad = 1;
+  } else {
+    mod = scheme_stx_module_name(&id, env->phase, NULL, NULL);
+    if (SAME_OBJ(mod, scheme_undefined))
+      bad = 2;
+  }
+
+  if (bad) {
+    scheme_wrong_syntax(NULL, name, form, 
+			"identifier for a %s definition already has a %s%s context",
+			ok_modidx ? "module-body" : "top-level",
+			(ok_modidx && (bad == 1)) ? "different " : "",
+			(bad == 2) ? "lexical" : "module");
+  }
 }
 
 /*========================================================================*/

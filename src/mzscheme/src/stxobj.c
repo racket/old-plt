@@ -87,6 +87,7 @@ typedef struct Module_Renames {
                                           (cons modidx exportname) OR
                                           (cons-immutable modidx nominal_modidx) OR
                                           (list* modidx exportname nominal_modidx nominal_exportname) */
+  Scheme_Hash_Table *marked_names; /* shared with module environment while compiling the module */
 } Module_Renames;
 
 static Module_Renames *krn;
@@ -731,7 +732,7 @@ void scheme_set_rename(Scheme_Object *rnm, int pos, Scheme_Object *oldname)
 
 /******************** module renames ********************/
 
-Scheme_Object *scheme_make_module_rename(long phase, int nonmodule)
+Scheme_Object *scheme_make_module_rename(long phase, int nonmodule, Scheme_Hash_Table *marked_names)
 {
   Module_Renames *mr;
   Scheme_Hash_Table *ht;
@@ -744,6 +745,7 @@ Scheme_Object *scheme_make_module_rename(long phase, int nonmodule)
   mr->ht = ht;
   mr->phase = phase;
   mr->nonmodule = nonmodule;
+  mr->marked_names = marked_names;
 
   if (!krn) {
     REGISTER_SO(krn);
@@ -1078,6 +1080,49 @@ Scheme_Object *scheme_stx_content(Scheme_Object *o)
   return stx->val;
 }
 
+Scheme_Object *scheme_stx_extract_marks(Scheme_Object *stx)
+{
+  WRAP_POS awl;
+  Scheme_Object *acur_mark, *first = scheme_null, *last = NULL, *p;
+
+  WRAP_POS_INIT(awl, ((Scheme_Stx *)stx)->wraps);
+
+  while (1) {
+    /* Skip over renames and cancelled marks: */
+    acur_mark = NULL;
+    while (1) {
+      if (WRAP_POS_END_P(awl))
+	break;
+      if (SCHEME_NUMBERP(WRAP_POS_FIRST(awl))) {
+	if (acur_mark) {
+	  if (SAME_OBJ(acur_mark, WRAP_POS_FIRST(awl))) {
+	    acur_mark = NULL;
+	    WRAP_POS_INC(awl);
+	  } else
+	    break;
+	} else {
+	  acur_mark = WRAP_POS_FIRST(awl);
+	  WRAP_POS_INC(awl);
+	}
+      } else {
+	WRAP_POS_INC(awl);
+      }
+    }
+
+    if (acur_mark) {
+      p = scheme_make_pair(acur_mark, scheme_null);
+      if (!last)
+	first = p;
+      else
+	SCHEME_CDR(last) = p;
+      last = p;
+    }
+
+    if (WRAP_POS_END_P(awl))
+      return first;
+  }
+}
+
 /*========================================================================*/
 /*                           stx comparison                               */
 /*========================================================================*/
@@ -1197,11 +1242,16 @@ static Scheme_Object *resolve_env(Scheme_Object *a, long phase,
 	  is_in_module = 1;
 	
 	if (phase == mrn->phase) {
-	  Scheme_Object *rename, *nominal = NULL;
+	  Scheme_Object *rename, *nominal = NULL, *glob_id;
 	  
-	  rename = scheme_hash_get(mrn->ht, SCHEME_STX_VAL(a));
+	  if (mrn->marked_names)
+	    glob_id = scheme_tl_id_sym((Scheme_Env *)mrn->marked_names, a, 0);
+	  else
+	    glob_id = SCHEME_STX_VAL(a);
+
+	  rename = scheme_hash_get(mrn->ht, glob_id);
 	  if (!rename && mrn->plus_kernel) {
-	    rename = scheme_hash_get(krn->ht, SCHEME_STX_VAL(a));
+	    rename = scheme_hash_get(krn->ht, glob_id);
 	    nominal = mrn->plus_kernel_nominal_source;
 	  }
 	  
@@ -1221,7 +1271,7 @@ static Scheme_Object *resolve_env(Scheme_Object *a, long phase,
 	      if (SCHEME_PAIRP(rename)) {
 		if (SCHEME_IMMUTABLEP(rename)) {
 		  /* (cons-immutable modidx nominal_modidx) case */
-		  get_names[0] = SCHEME_STX_VAL(a);
+		  get_names[0] = glob_id;
 		  get_names[1] = SCHEME_CDR(rename);
 		  get_names[2] = get_names[0];
 		} else {
@@ -1238,7 +1288,7 @@ static Scheme_Object *resolve_env(Scheme_Object *a, long phase,
 		  }
 		}
 	      } else {
-		get_names[0] = SCHEME_STX_VAL(a);
+		get_names[0] = glob_id;
 		get_names[2] = NULL; /* finish below */
 	      }
 
@@ -1393,24 +1443,29 @@ static Scheme_Object *get_module_src_name(Scheme_Object *a, long phase)
 	
 	if (phase == mrn->phase) {
 	  /* Module rename: */
-	  Scheme_Object *rename;
+	  Scheme_Object *rename, *glob_id;
 	  
-	  rename = scheme_hash_get(mrn->ht, SCHEME_STX_VAL(a));
+	  if (mrn->marked_names)
+	    glob_id = scheme_tl_id_sym((Scheme_Env *)mrn->marked_names, a, 0);
+	  else
+	    glob_id = SCHEME_STX_VAL(a);
+
+	  rename = scheme_hash_get(mrn->ht, glob_id);
 	  if (!rename && mrn->plus_kernel)
-	    rename = scheme_hash_get(krn->ht, SCHEME_STX_VAL(a));
+	    rename = scheme_hash_get(krn->ht, glob_id);
 	  
 	  if (rename) {
 	    /* match; set result: */
 	    if (SCHEME_PAIRP(rename)) {
 	      if (SCHEME_IMMUTABLEP(rename)) {
-		result = SCHEME_STX_VAL(a);
+		result = glob_id;
 	      } else {
 		result = SCHEME_CDR(rename);
 		if (SCHEME_PAIRP(result))
 		  result = SCHEME_CAR(result);
 	      }
 	    } else
-	      result = SCHEME_STX_VAL(a);
+	      result = glob_id;
 	  } else
 	    result = NULL;
 	}
@@ -2069,7 +2124,7 @@ static Scheme_Object *wraps_to_datum(Scheme_Object *w_in,
 	    if (local_key) {
 	      stack = CONS(local_key, stack);
 	    } else {
-	      /* Convert hash table to list: */
+	      /* Convert hash table to vector: */
 	      int i, j, count = 0;
 	      Scheme_Object *l, *idi;
 	    
@@ -2099,6 +2154,21 @@ static Scheme_Object *wraps_to_datum(Scheme_Object *w_in,
 	      local_key = scheme_make_integer(rns->count);
 	      scheme_hash_set(rns, a, local_key);
 	    
+	      if (mrn->marked_names && mrn->marked_names->count) {
+		Scheme_Object *d = scheme_null, *p;
+
+		for (i = mrn->marked_names->size; i--; ) {
+		  if (mrn->marked_names->vals[i]) {
+		    p = CONS(mrn->marked_names->keys[i],
+			     mrn->marked_names->vals[i]);
+		    d = CONS(p, d);
+		  }
+		}
+
+		l = CONS(l, d);
+	      } else
+		l = CONS(l, scheme_null);
+	      
 	      l = CONS(scheme_make_integer(mrn->phase), l);
 	      if (mrn->plus_kernel) {
 		l = CONS(scheme_true,l);
@@ -2532,12 +2602,13 @@ static Scheme_Object *datum_to_wraps(Scheme_Object *w,
       scheme_hash_set(rns, local_key, a);
     } else if (SCHEME_PAIRP(a)) {
       /* A rename table:
-           - (<index-num> [#t] <phase-num> . #(<table-elem> ...))
+           - (<index-num> [#t] <phase-num> #(<table-elem> ...) 
+	       . ((<sym> (<marked-list> . <target-gensym>) ...) ...)) ; <- marked_names
 	where a <table-elem> is actually two values, one of:
            - <exname> <modname>
            - <exname> (<modname> . <defname>)
       */
-      Scheme_Object *local_key;
+      Scheme_Object *local_key, *mns;
       Module_Renames *mrn;
       Scheme_Object *p, *key;
       int plus_kernel, i, count;
@@ -2559,9 +2630,13 @@ static Scheme_Object *datum_to_wraps(Scheme_Object *w,
       phase = SCHEME_INT_VAL(SCHEME_CAR(a));
       a = SCHEME_CDR(a);
 
-      mrn = (Module_Renames *)scheme_make_module_rename(phase, 0);
+      mrn = (Module_Renames *)scheme_make_module_rename(phase, 0, NULL);
       mrn->plus_kernel = plus_kernel;
       /* note: information on nominals has been dropped */
+
+      if (!SCHEME_PAIRP(a)) return NULL;
+      mns = SCHEME_CDR(a);
+      a = SCHEME_CAR(a);
 
       if (!SCHEME_VECTORP(a)) return NULL;
       count = SCHEME_VEC_SIZE(a);
@@ -2575,6 +2650,32 @@ static Scheme_Object *datum_to_wraps(Scheme_Object *w,
 	scheme_hash_set(mrn->ht, key, p);
       }
 
+      /* Extract the mark-rename table, if any: */
+      if (SCHEME_PAIRP(mns)) {
+	Scheme_Hash_Table *ht;
+
+	ht = scheme_make_hash_table(SCHEME_hash_ptr);
+	for (; SCHEME_PAIRP(mns); mns = SCHEME_CDR(mns)) {
+	  p = SCHEME_CAR(mns);
+	  if (!SCHEME_PAIRP(p)) { printf("no pair\n"); return NULL; }
+	  key = SCHEME_CAR(p);
+	  p = SCHEME_CDR(p);
+	  if (!SCHEME_SYMBOLP(key)) return NULL;
+	  scheme_hash_set(ht, key, p);
+
+	  /* Check shape of a mark/name list: */
+	  for (; SCHEME_PAIRP(p); p = SCHEME_CDR(p)) {
+	    key = SCHEME_CAR(p);
+	    if (!SCHEME_PAIRP(key))  return NULL;
+	    if (!SCHEME_SYMBOLP(SCHEME_CDR(key))) return NULL;
+	  }
+	  if (!SCHEME_NULLP(p)) return NULL;
+	}
+	if (!SCHEME_NULLP(mns)) return NULL;
+
+	mrn->marked_names = ht;
+      }
+
       scheme_hash_set(rns, local_key, (Scheme_Object *)mrn);
 
       a = (Scheme_Object *)mrn;
@@ -2584,7 +2685,7 @@ static Scheme_Object *datum_to_wraps(Scheme_Object *w,
       
       if (!env->rename) {
 	Scheme_Object *rn;
-	rn = scheme_make_module_rename(0, 1);
+	rn = scheme_make_module_rename(0, 1, NULL);
 	env->rename = rn;
       }
       a = env->rename;
@@ -2594,7 +2695,7 @@ static Scheme_Object *datum_to_wraps(Scheme_Object *w,
       scheme_prepare_exp_env(env);
       if (!env->exp_env->rename) {
 	Scheme_Object *rn;
-	rn = scheme_make_module_rename(1, 1);
+	rn = scheme_make_module_rename(1, 1, NULL);
 	env->exp_env->rename = rn;
       }
       a = env->exp_env->rename;

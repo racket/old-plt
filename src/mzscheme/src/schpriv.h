@@ -473,7 +473,7 @@ void scheme_set_rename(Scheme_Object *rnm, int pos, Scheme_Object *oldname);
 Scheme_Object *scheme_add_rename(Scheme_Object *o, Scheme_Object *rename);
 Scheme_Object *scheme_add_mark_barrier(Scheme_Object *o);
 
-Scheme_Object *scheme_make_module_rename(long phase, int nonmodule);
+Scheme_Object *scheme_make_module_rename(long phase, int nonmodule, Scheme_Hash_Table *mns);
 void scheme_extend_module_rename(Scheme_Object *rn, Scheme_Object *modname, 
 				 Scheme_Object *locname, Scheme_Object *exname, 
 				 Scheme_Object *nominal_src, Scheme_Object *nominal_ex);
@@ -506,6 +506,8 @@ Scheme_Object *scheme_stx_phase_shift(Scheme_Object *stx, long shift,
 
 int scheme_stx_list_length(Scheme_Object *list);
 int scheme_stx_proper_list_length(Scheme_Object *list);
+
+Scheme_Object *scheme_stx_extract_marks(Scheme_Object *stx);
 
 Scheme_Object *scheme_resolve_placeholders(Scheme_Object *obj, int mkstx);
 Scheme_Hash_Table *scheme_setup_datum_graph(Scheme_Object *o, int for_print);
@@ -1330,6 +1332,7 @@ void scheme_check_identifier(const char *formname, Scheme_Object *id,
 			     const char *where,
 			     Scheme_Comp_Env *env,
 			     Scheme_Object *form);
+void scheme_check_context(Scheme_Env *env, Scheme_Object *id, Scheme_Object *form, Scheme_Object *ok_modix);
 
 Scheme_Object *scheme_check_immediate_macro(Scheme_Object *first, 
 					    Scheme_Comp_Env *env, 
@@ -1610,6 +1613,8 @@ struct Scheme_Env {
                                3. modchain for previous phase (or #f) */
 
   Scheme_Hash_Table *modvars; /* for scheme_module_variable_type hashing */
+
+  Scheme_Hash_Table *marked_names; /* for mapping marked ids to uninterned symbols */
 };
 
 /* A module access path (or "idx") is a pair: sexp * symbol-or-#f
@@ -1686,6 +1691,8 @@ void scheme_add_global_keyword(const char *name, Scheme_Object *v, Scheme_Env *e
 void scheme_add_global_keyword_symbol(Scheme_Object *name, Scheme_Object *v, Scheme_Env *env);
 void scheme_add_global_constant(const char *name, Scheme_Object *v, Scheme_Env *env);
 void scheme_add_global_constant_symbol(Scheme_Object *name, Scheme_Object *v, Scheme_Env *env);
+
+Scheme_Object *scheme_tl_id_sym(Scheme_Env *env, Scheme_Object *id, int is_def);
 
 Scheme_Object *scheme_sys_wraps(Scheme_Comp_Env *env);
 

@@ -674,6 +674,11 @@ void scheme_define_parse(Scheme_Object *form,
     name = SCHEME_STX_CAR(vars);
     scheme_check_identifier(NULL, name, NULL, env, form);
 
+    if (!env->genv->module) {
+      /* Check that the name doesn't have a foreign context: */
+      scheme_check_context(env->genv, name, form, NULL);
+    }
+
     vars = SCHEME_STX_CDR(vars);
 
     for (rest = vars; SCHEME_STX_PAIRP(rest); rest = SCHEME_STX_CDR(rest)) {
@@ -703,9 +708,10 @@ define_values_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_
     Scheme_Object *name, *pr, *bucket;
 
     name = SCHEME_STX_CAR(var);
+    name = scheme_tl_id_sym(globals, name, 1);
 
     if (rec[drec].resolve_module_ids || !env->genv->module) {
-      bucket = (Scheme_Object *)scheme_global_bucket(SCHEME_STX_SYM(name), globals);
+      bucket = (Scheme_Object *)scheme_global_bucket(name, globals);
     } else {
       /* Create a module variable reference, so that idx is preserved: */
       bucket = scheme_hash_module_variable(env->genv, env->genv->module->self_modidx, name, -1);
@@ -2877,9 +2883,11 @@ static Scheme_Object *define_syntaxes_resolve(Scheme_Object *data, Resolve_Info 
 									cons(names, val)))));
 }
 
-static Scheme_Object *stx_val(Scheme_Object *name, Scheme_Object *_ignored)
+static Scheme_Object *stx_val(Scheme_Object *name, Scheme_Object *_env)
 {
-  return SCHEME_STX_VAL(name);
+  Scheme_Env *env = (Scheme_Env *)_env;
+
+  return scheme_tl_id_sym(env, name, 1);
 }
 
 static Scheme_Object *
@@ -2896,13 +2904,13 @@ define_syntaxes_syntax(Scheme_Object *form, Scheme_Comp_Env *env,
 
   scheme_define_parse(form, &names, &code, 1, env);
 
+  scheme_prepare_exp_env(env->genv);
+
   /* Get prefixed-based accessors for syntax buckets: */
-  names = scheme_named_map_1(NULL, stx_val, names, NULL);
+  names = scheme_named_map_1(NULL, stx_val, names, (Scheme_Object *)env->genv->exp_env);
 
   dummy = scheme_make_environment_dummy(env);
   
-  scheme_prepare_exp_env(env->genv);
-
   exp_env = scheme_new_comp_env(env->genv->exp_env, 0);
 
   erec.dont_mark_local_use = 0;

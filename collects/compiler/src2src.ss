@@ -36,8 +36,6 @@
   (define (non-valueable-prims) (procedure-calling-prims))
 
   (define recert-insp (current-code-inspector))
-  (define (recertify stx orig-stx)
-    (syntax-recertify stx orig-stx recert-insp #f))
 
   (define (keep-mzc-property stx-out stx)
     (let ([v (syntax-property stx 'mzc-cffi)]
@@ -83,6 +81,7 @@
           (begin
             (printf "~a~n" src-stx)
             (error 'stx)))
+      (init-field [cert-stxes (list src-stx)])
       (field (known-value #f))
       
       ;; resets known-value computation, use counts, etc.
@@ -186,7 +185,26 @@
       (define/public (get-stx) src-stx)
 
       ;; convert back to a syntax object
-      (define/public (sexpr) src-stx)
+      (define/public (sexpr) 
+	(recertify src-stx))
+
+      ;; adds certifications back to result of sexp, when needed
+      (define/public (recertify stx)
+	(for-each (lambda (orig-stx)
+		    (unless (eq? orig-stx stx)
+		      (syntax-recertify stx orig-stx recert-insp #f)))
+		  cert-stxes))
+
+      ;; returns cert stxes
+      (define/public (get-cert-stxes)
+	cert-stxes)
+      
+      ;; merges cert info from another expression
+      (define/public (merge-certs exp)
+	(set! cert-stxes 
+	      (append (filter (lambda (i) (not (memq i cert-stxes)))
+			      (send exp get-cert-stxes))
+		      cert-stxes)))
       
       ;; list of body exprs (avoids redundant `begin', just for
       ;; readability)
@@ -374,13 +392,14 @@
       (define/override (clone env) (lookup-clone binding this env))
       (define/override (substitute env) (lookup-clone binding this env))
 
+      (inherit recertify)
       (define/override (sexpr) 
         (let ([x (send binding sexpr)])
 	  (recertify (datum->syntax-object
-			     x
-			     (syntax-e x)
-			     src-stx)
-			    src-stx)))
+		      x
+		      (syntax-e x)
+		      src-stx))))
+
       (define/public (get-binding) binding)
       (define/public (orig-name) (send binding orig-name))))
       
@@ -390,6 +409,7 @@
       (init-field subs)
       (super-instantiate ())
       (inherit-field src-stx)
+      (inherit merge-certs)
       
       (define/override (nonbind-sub-exprs) subs)
       (define/override (set-nonbind-sub-exprs s) (set! subs s))
@@ -417,12 +437,15 @@
                         (send r drop-uses)
                         rest]
                        [(is-a? r begin%)
+			(merge-certs r)
                         (append (send r nonbind-sub-exprs)
                                 rest)]
                        [else (cons r rest)]))])))
         (if (and (pair? subs)
                  (null? (cdr subs)))
-            (car subs)
+            (let ([v (car subs)])
+	      (send v merge-certs this)
+	      v)
             this))
 
       (define/override (clone env)
@@ -431,11 +454,12 @@
                subs)
           src-stx))
 
+      (inherit recertify)
       (define/override (sexpr)
 	(with-syntax ([(body ...) (body-sexpr)])
 	  (recertify
-	   (syntax/loc src-stx (begin body ...))
-	   src-stx)))
+	   (syntax/loc src-stx (begin body ...)))))
+
       (define/override (body-sexpr)
 	(map get-sexpr subs))))
   
@@ -461,13 +485,13 @@
                                      tables
                                      src-stx))
 
+      (inherit recertify)
       (define/override (sexpr)
         (with-syntax ([formname formname]
                       [(varname ...) varnames]
                       [rhs (get-sexpr expr)])
 	  (recertify
-	   (syntax/loc src-stx (formname (varname ...) rhs))
-	   src-stx)))
+	   (syntax/loc src-stx (formname (varname ...) rhs)))))
 
       (define/public (get-vars) varnames)
       (define/public (get-rhs) expr)
@@ -538,22 +562,22 @@
       
       (define/override (clone env) (make-object constant% val src-stx))
       
+      (inherit recertify)
       (define/override (sexpr)
-	(recertify
-	 (let ([vstx (datum->syntax-object (quote-syntax here) val src-stx)])
-	   (cond
-	    [(or (number? val)
-		 (string? val)
-		 (boolean? val)
-		 (char? val))
-	     vstx]
-	    [(syntax? val)
-	     (with-syntax ([vstx vstx])
-	       (syntax (quote-syntax vstx)))]
+	(let ([vstx (datum->syntax-object (quote-syntax here) val src-stx)])
+	  (cond
+	   [(or (number? val)
+		(string? val)
+		(boolean? val)
+		(char? val))
+	    vstx]
+	   [(syntax? val)
+	    (with-syntax ([vstx vstx])
+	      (recertify
+	       (syntax (quote-syntax vstx))))]
 	    [else
 	     (with-syntax ([vstx vstx])
-	       (syntax (quote vstx)))]))
-	 src-stx))))
+	       (syntax (quote vstx)))])))))
 
   (define void%
     (class constant% 
@@ -575,8 +599,10 @@
     (class exp% 
       (init-field rator rands tables)
       (super-instantiate ())
-      (inherit-field src-stx)
-      
+      (inherit-field src-stx
+		     cert-stxes)
+      (inherit merge-certs)
+
       (define known-single-result? #f)
 
       (inherit set-known-value)
@@ -639,12 +665,14 @@
 		   (for-each (lambda (var rand)
 			       (install-values (list var) rand))
 			     vars rands)
-		   (send (make-object let%
-				      (map list vars)
-				      rands
-				      body
-				      src-stx)
-			 simplify ctx)))
+		   (let ([let-form (make-object let%
+						(map list vars)
+						rands
+						body
+						src-stx)])
+		     (send let-form merge-certs this)
+		     (send let-form merge-certs rator)
+		     (send let-form simplify ctx))))
 	       (begin
 		 (unless (send rator arg-count-ok? (length rands))
 		   (warning "immediate procedure called with wrong number of arguments"
@@ -686,7 +714,8 @@
                   (cadr rands)
                   (car rands)))
              tables
-             src-stx)]
+             src-stx
+	     cert-stxes)]
           ;; (- x 1) => (sub1 x)
           [(and (is-a? rator global%)
                 (send rator is-kernel?)
@@ -698,7 +727,8 @@
              (make-object global%  (send rator is-trans?) tables #f (quote-syntax sub1))
              (list (car rands))
              tables
-             src-stx)]
+             src-stx
+	     cert-stxes)]
           
           ;; (car x) where x is known to be a list construction
           [(and (is-a? rator global%)
@@ -777,6 +807,7 @@
                                         true
                                         rest
                                         src-stx))])))))])
+	     (send xformed merge-certs this)
              (send xformed simplify ctx))]
           
           ;; (values e) where e has result arity 1
@@ -785,6 +816,7 @@
                 (eq? 'values (send rator orig-name))
                 (= 1 (length rands))
                 (equal? 1 (send (car rands) get-result-arity)))
+	   (send (car rands) merge-certs this)
            (known-single-result (car rands))]
           
           ;; Check arity of other calls to primitives
@@ -835,14 +867,14 @@
                                      tables
                                      src-stx))
 
+      (inherit recertify)
       (define/override (sexpr)
 	(recertify
 	 (keep-mzc-property
 	  (with-syntax ([rator (get-sexpr rator)]
 			[(rand ...) (map get-sexpr rands)])
 	    (syntax/loc src-stx (rator rand ...)))
-	  src-stx)
-	 src-stx))
+	  src-stx)))
 
       ;; Checks whether the expression is an app of `values'
       ;; to a particular set of bindings.
@@ -959,6 +991,7 @@
             (map cdr varss+bodys)
             src-stx)))
 
+      (inherit recertify)
       (define/override (sexpr)
         (with-syntax ([(vars ...)
                        (map (lambda (vars normal?)
@@ -980,14 +1013,14 @@
 		(with-syntax ([body (car (syntax->list (syntax (body ...))))])
 		  (syntax/loc src-stx
 		    (lambda vars ... . body))))
-	    src-stx)
-	   src-stx)))))
+	    src-stx))))))
 
   (define local% 
     (class exp% 
       (init-field form varss rhss body)
       (super-instantiate ())
-      (inherit-field src-stx)
+      (inherit-field src-stx cert-stxes)
+      (inherit merge-certs)
       
       (define/public (get-rhss) rhss)
       (define/public (get-varss) varss)
@@ -1041,8 +1074,10 @@
              (car rhss)
              (send body get-if-then)
              (send body get-if-else)
-             src-stx)]
+             src-stx
+	     cert-stxes)]
           [(null? varss)
+	   (send body merge-certs this)
            (send body simplify ctx)]
           ;; (let-values [(x) y] ...) whether y is inited, and
           ;;  neither x nor y is mutated => replace x by y
@@ -1084,6 +1119,7 @@
 
       (define/override (get-value) (send body get-value))
 	
+      (inherit recertify)
       (define/override (sexpr)
         (with-syntax ([form form]
                       [(vars ...)
@@ -1096,8 +1132,7 @@
 	  (recertify
 	   (syntax/loc src-stx
 	     (form ([vars rhs] ...) 
-		   body ...))
-	   src-stx)))))
+		   body ...)))))))
     
   (define let%
     (class local% 
@@ -1158,19 +1193,19 @@
           (send val clone env)
           src-stx))
 
-	(define/override (sexpr)
-          (with-syntax ([var (get-sexpr var)]
-                        [val (get-sexpr val)])
-	    (recertify
-	     (syntax/loc src-stx
-	       (set! var val))
-	     src-stx)))))
+      (inherit recertify)
+      (define/override (sexpr)
+	(with-syntax ([var (get-sexpr var)]
+		      [val (get-sexpr val)])
+	  (recertify
+	   (syntax/loc src-stx
+	     (set! var val)))))))
 
   (define if%
     (class exp% 
       (init-field test then else)
       (super-instantiate ())
-      (inherit-field src-stx)
+      (inherit-field src-stx cert-stxes)
       
       (define/public (get-if-test) test)
       (define/public (get-if-then) then)
@@ -1237,7 +1272,8 @@
                 (make-object void% src-stx)
                 src-stx)
               (make-object void% src-stx)
-              src-stx)
+              src-stx
+	      cert-stxes)
             simplify ctx)]
           
           [else this]))
@@ -1249,6 +1285,7 @@
           (send else clone env)
           src-stx))
       
+      (inherit recertify)
       (define/override (sexpr)
         (with-syntax ([test (get-sexpr test)]
                       [then (get-sexpr then)])
@@ -1258,15 +1295,13 @@
 		 (if test then))
 	       (with-syntax ([else (get-sexpr else)])
 		 (syntax/loc src-stx
-		   (if test then else))))
-	   src-stx)))))
+		   (if test then else)))))))))
 
   (define begin0%
     (class exp% 
       (init-field first rest)
       (super-instantiate ())
       (inherit-field src-stx)
-      
       
       (define/override (nonbind-sub-exprs) (list first rest))
       (define/override (set-nonbind-sub-exprs s)
@@ -1281,6 +1316,7 @@
         (if (send rest no-side-effect?)
             (begin
               (send rest drop-uses)
+	      (send first merge-certs this)
               first)
             this))
 	
@@ -1289,13 +1325,13 @@
           (send first clone env)
           (send rest clone env)))
 	
-	(define/override (sexpr)
-          (with-syntax ([first (get-sexpr first)]
-                        [(rest ...) (get-body-sexpr rest)])
-	    (recertify
-	     (syntax/loc src-stx
-	       (begin0 first rest ...))
-	     src-stx)))))
+      (inherit recertify)
+      (define/override (sexpr)
+	(with-syntax ([first (get-sexpr first)]
+		      [(rest ...) (get-body-sexpr rest)])
+	  (recertify
+	   (syntax/loc src-stx
+	     (begin0 first rest ...)))))))
 
   (define wcm%
     (class exp% 
@@ -1317,14 +1353,14 @@
           (send val clone env)
           (send body clone env)))
 
+      (inherit recertify)
       (define/override (sexpr)
         (with-syntax ([key (get-sexpr key)]
                       [val (get-sexpr val)]
                       [body (get-sexpr body)])
 	  (recertify
 	   (syntax/loc src-stx
-	     (with-continuation-mark key val body))
-	   src-stx)))))
+	     (with-continuation-mark key val body)))))))
 
   (define module%
     (class exp% 
@@ -1475,6 +1511,7 @@
                        (cdr body)))))))
         (super deorganize))
 
+      (inherit recertify)
       (define/override (sexpr)
 	(with-syntax ([name name]
 		      [init-req init-req]
@@ -1487,8 +1524,7 @@
 	       (#%plain-module-begin
 		req-prov ...
 		body ...
-		et-body ...)))
-	   src-stx)))
+		et-body ...))))))
       (define/override (body-sexpr)
 	(list (sexpr)))))
 

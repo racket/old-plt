@@ -158,7 +158,7 @@ typedef struct {
 # define MZC_BYTES_SET(p, v, i, x) ((SCHEME_INTP(i) && SCHEME_MUTABLE_BYTE_STRINGP(v) && SCHEME_INTP(x) \
                                       && (SCHEME_INT_VAL(x) >= 0) && (SCHEME_INT_VAL(x) <= 255) \
                                       && (SCHEME_INT_VAL(i) >= 0) && (SCHEME_INT_VAL(i) < SCHEME_BYTE_STRLEN_VAL(v)) \
-                                     ? (SCHEME_STR_VAL(v)[SCHEME_INT_VAL(i)] = SCHEME_CHAR_VAL(x), scheme_void) \
+                                     ? (SCHEME_BYTE_STR_VAL(v)[SCHEME_INT_VAL(i)] = SCHEME_INT_VAL(x), scheme_void) \
 				     : (arg[0] = v, arg[1] = i, arg[2] = x, _scheme_direct_apply_primitive_multi(p, 3, arg))))
 /* End safe versions */
 #endif

@@ -176,10 +176,14 @@ int wxEntry(int argc, char *argv[])
 
   // init private and public data
   /* Set if not set... */
-  if (!wxAPP_CLASS)
+  if (!wxAPP_CLASS) {
+    wxREGGLOB(wxAPP_CLASS);
     wxAPP_CLASS = wxFileNameFromPath(argv[0]);
-  if (!wxAPP_NAME)
+  }
+  if (!wxAPP_NAME) {
+    wxREGGLOB(wxAPP_NAME);
     wxAPP_NAME  = wxFileNameFromPath(argv[0]);
+  }
 
   xargc = filter_x_readable(argv, argc, &x_display_str);
   ate = xargc - 1;

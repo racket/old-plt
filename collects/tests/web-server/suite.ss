@@ -8,7 +8,7 @@
 ; more-here - test flushing pending requests to a terminated servlet
 
 (module suite mzscheme
-  (provide broken? start-server files-broken? authentication-broken?
+  (provide broken? broken?/remote start-server files-broken? authentication-broken?
            normal-servlets-broken? errors-broken?)
   (require (lib "process.ss")
            (lib "etc.ss")
@@ -30,6 +30,7 @@
   (print-struct #t)
   
   ; broken? : nat -> (+ false str)
+  ;; the cadilac broken? function, starts the server automatically.
   (define (broken? port)
     (or (channels-broken?)
         (let ([server (start-server port)])
@@ -39,11 +40,22 @@
 		(or (and (not (subprocess? server)) server)
 		    (files-broken? port)
 		    (authentication-broken? port)
-		    (normal-servlets-broken? port)
+                    (normal-servlets-broken? port)
 		    (extended-servlets-broken? port)
 		    (errors-broken? port)
 		    (timeouts-broken? port)))
 	      (lambda () (kill-subprocess server))))))
+  
+  ; broken?/remote: nat -> (+ false str)
+  ;; like broken? but assumes that a server is already running on port
+  (define (broken?/remote port)
+    (or (files-broken? port)
+        (authentication-broken? port)
+        (normal-servlets-broken? port)
+        (extended-servlets-broken? port)
+        (errors-broken? port)
+        ;(timeouts-broken? port)
+        ))
 
   ; channels-broken? : -> (U str #f)
   ; more here - stress test for synchronization defects
@@ -138,6 +150,7 @@
   
   ; files-broken? : nat -> (+ false string)
   (define (files-broken? port)
+    (printf "files-broken?:~n")
     (with-handlers ([void (lambda (exn) (format "test-files: error starting up ~a" exn))])
       (let* ([file-path (build-path web-root "htdocs" "index.html")]
 	     [implicit-url (local-url port "")]
@@ -157,8 +170,15 @@
 	       (let* ([http-port (get-impure-port url extra-headers)]
 		      [headers (purify-port http-port)])
 		 (error-add (format "problem-with-url: ~s: " (url->string url))
-			    (or (mime-headers-problem? headers header-match)
-				(input-port-diff http-port file-input)))))))))))
+                            (or (mime-headers-problem? headers header-match)
+                                (input-port-diff http-port file-input)))))))))))
+  
+  (define (print-port i-port)
+    (printf "inside print-port~n")
+    (let loop ([l (read-line i-port)])
+      (unless (eof-object? l)
+        (printf "~a~n" l)
+        (loop (read-line i-port)))))
   
   ; : url header-pattern regexp -> (U false str)
   (define (broken-url-regexp? to-test header-match expected)
@@ -183,6 +203,7 @@
   
   ; authentication-broken? : nat -> (+ false str)
   (define (authentication-broken? port)
+    (printf "authentication-broken?:~n")
     (let* ([forbidden-file-path (build-path web-root "conf" "forbidden.html")]
 	   [okay-file-path (build-path web-root "htdocs" "secret" "index.html")]
 	   [forbidden-content-length (content-length-header forbidden-file-path)]
@@ -208,6 +229,7 @@
   
   ; normal-servlets-broken? : Nat -> (+ false str)
   (define (normal-servlets-broken? port)
+    (printf "normal-servlets-broken?:~n")
     (let* ([local-test-url
             (lambda (path)
               (local-url port (string-append "servlets/tests/" path)))]
@@ -259,6 +281,7 @@
   ; errors-broken? : Nat -> (+ false str)
   ; tests file-not-found, servlet-error, and protocol-error.  The access-denied error is under authentication-broken?
   (define (errors-broken? port)
+    (printf "errors-broken?:~n")
     (let* ([not-found-path (build-path web-root "conf" "not-found.html")]
 	   [not-found-headers (append usual-headers (list (content-length-header not-found-path)))]
 	   [non-unit-headers (append usual-headers (list generic-content-length-header))]
@@ -286,6 +309,7 @@
   
   ; timeouts-broken? : nat -> (U false str)
   (define (timeouts-broken? port)
+    (printf "timeouts-broken?:~n")
     (delimit-resources
      (lambda ()
        (let-values ([(in out) (tcp-connect TEST-IP port)])

@@ -298,22 +298,16 @@
 			 (and (= 1 (get-robot (get-spot board x y)))
                               (not (and (= (search-player-x (player-cur)) x) (= (search-player-y (player-cur)) y))) ))))
 
-  (define (is-robot-within? x y n)
-    (let ((max-x (+ x n))
-	  (max-y (+ y n)))
-    (let loop ((i (- y n))
-	       (j (- x n)))
-      (cond
-       ((= j x) (loop i (add1 j)))
-       ((= i y) (loop (add1 i) (- x n)))
-       ((> i max-y) #f)
-       ((> j max-x) (loop (add1 i) (- x n)))
-       ((= 1 (get-robot (get-spot (board) j i)))
-	(printf "Robot is within!~n")
-	#t)
-       (else
-	(loop i (add1 j)))))))
-	
+  
+  (define (is-robot-within? x y n robots)
+    (ormap (lambda (robot)
+             (<= (+ (abs (- x (robot-x robot)))
+                    (abs (- y (robot-y robot))))
+                 n))
+           (filter (lambda (r)
+                     (not (and (= x (robot-x r))
+                               (= y (robot-y r)))))
+                   robots)))
 
 
  ;  (define (is-robot-within? x y n)

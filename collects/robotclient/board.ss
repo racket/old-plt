@@ -7,8 +7,8 @@
            (lib "lex.ss" "parser-tools")
            (lib "yacc.ss" "parser-tools"))
 
-  (provide get-type get-robot get-valid set-valid set-invalid get-weight set-weight
-           get-spot set-spot get-player-x get-player-y
+  (provide get-type get-valid set-valid set-invalid get-weight set-weight
+           get-spot get-player-x get-player-y
            (struct command (bid command arg))
            (struct package (id x y weight))
 	   package->string
@@ -332,9 +332,9 @@
 					  (robot-y new-robot))))
 	   (hash-table-put! (robot-table) (robot-id new-robot) new-robot)))
        responses)
-      (hash-table-for-each (robot-table)
-                           (lambda (k v)
-                             (printf "~a - ~a~n" k v)))
+      ;;(hash-table-for-each (robot-table)
+      ;;                    (lambda (k v)
+      ;;                       (printf "~a - ~a~n" k v)))
       (robot-indexes alive-robots)
       (let ((robots (map (lambda (id) (hash-table-get (robot-table) id))
                          (robot-indexes))))

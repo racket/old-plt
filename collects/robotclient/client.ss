@@ -73,7 +73,7 @@
     (let ((command (compute-move packages robots)))
       ;;(printf "Sending command: ~a (bid ~a)~n" (command-command command)
       ;;	  (command-bid command))
-      (printf "fight or flight~n")
+      ;;(printf "fight or flight~n")
       (send-command command out)))
   
   (define (do-turn update-score in out)
@@ -113,8 +113,8 @@
 			 (lambda (x)
 			   (path-loc (cons (get-player-x) (get-player-y)))
 			   (compute-move-ff packages robots out))))
-	  (send-command (compute-baseline-move packages robots) out)
-	  (printf "baseline~n"))))
+	  (send-command (compute-baseline-move packages robots) out))))
+	  ;;(printf "baseline~n"))))
 
       (let ((robots (read-response! update-score
 				    packages

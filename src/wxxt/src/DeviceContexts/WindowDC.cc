@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: WindowDC.cc,v 1.19 1999/01/14 22:24:11 mflatt Exp $
+ * $Id: WindowDC.cc,v 1.20 1999/02/04 01:29:48 mflatt Exp $
  *
  * Purpose: device context to draw drawables
  *          (windows and pixmaps, even if pixmaps are covered by wxMemoryDC)
@@ -470,7 +470,7 @@ void wxWindowDC::DrawPolygon(int n, wxPoint pts[], float xoff, float yoff,
     xpts[n].x = xpts[0].x; // close figure
     xpts[n].y = xpts[0].y;
     if (current_brush && current_brush->GetStyle() != wxTRANSPARENT) {
-	XSetFillRule(DPY, PEN_GC, fill_rule[fill]);
+	XSetFillRule(DPY, BRUSH_GC, fill_rule[fill]);
 	XFillPolygon(DPY, DRAWABLE, BRUSH_GC, xpts, n, Complex, 0);
     }
     if (current_pen && current_pen->GetStyle() != wxTRANSPARENT)

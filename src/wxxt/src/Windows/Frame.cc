@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Frame.cc,v 1.11 1998/12/30 19:14:05 mflatt Exp $
+ * $Id: Frame.cc,v 1.12 1999/01/06 15:03:56 mflatt Exp $
  *
  * Purpose: base class for all frames
  *
@@ -318,7 +318,10 @@ void wxFrame::CreateStatusLine(int number, char *)
 	    constr->width.Unconstrained();
 	}
 	status[i]->SetConstraints(constr);
+
     }
+
+    Layout();
 }
 
 void wxFrame::SetStatusText(char *text, int number)

@@ -942,7 +942,7 @@ typedef struct Regwork {
   char *instr;
   Scheme_Object *port;
   Scheme_Object *unless_evt;
-  int nonblock;
+  short nonblock, aborted;
   rxpos instr_size;       /* For port reads */
   rxpos input_maxend;     /* For port reads */
   rxpos input, input_end; /* String-input pointer. */
@@ -1273,7 +1273,8 @@ regtry_port(regexp *prog, Scheme_Object *port, Scheme_Object *unless_evt, int no
 
   rw.port = port;
   rw.unless_evt = unless_evt;
-  rw.nonblock = nonblock;
+  rw.nonblock = (short)nonblock;
+  rw.aborted = 0;
   rw.instr_size = *size;
   if (maxlen && SCHEME_INTP(maxlen))
     rw.input_maxend = SCHEME_INT_VAL(maxlen);
@@ -1287,7 +1288,10 @@ regtry_port(regexp *prog, Scheme_Object *port, Scheme_Object *unless_evt, int no
   *len = rw.input_end;
   *size = rw.instr_size;
 
-  return m;
+  if (rw.aborted)
+    return 0;
+  else
+    return m;
 }
 
 #define NEED_INPUT(rw, v, n) if (rw->port && (((v) + (n)) > rw->input_end)) read_more_from_regport(rw, (v) + (n))
@@ -1348,6 +1352,8 @@ static void read_more_from_regport(Regwork *rw, rxpos need_total)
   regstr = rw->str;
 
   if (!got || (got == EOF)) {
+    if (!got)
+      rw->aborted = 1;
     rw->port = NULL; /* turn off further port reading */
     rw->unless_evt = NULL;
   } else {
@@ -1357,6 +1363,8 @@ static void read_more_from_regport(Regwork *rw, rxpos need_total)
     if (need_total > rw->input_end) {
       if (rw->nonblock) {
 	rw->port = NULL; /* turn off further port reading */
+	rw->unless_evt = NULL;
+	rw->aborted = 1;
       } else {
 	if (rw->peekskip)
 	  peekskip = scheme_bin_plus(scheme_make_integer(rw->input_end), rw->peekskip);
@@ -1371,9 +1379,10 @@ static void read_more_from_regport(Regwork *rw, rxpos need_total)
 					    rw->unless_evt);
 	regstr = rw->str;
       
-	if (got == EOF)
+	if (got == EOF) {
 	  rw->port = NULL; /* turn off further port reading */
-	else
+	  rw->unless_evt = NULL;
+	} else
 	  rw->input_end += got;
       }
     }

@@ -71,7 +71,8 @@
   (test 'lo read p))
 
 ;; read synchronization events
-(define (go mk-hello sync atest btest ctest)
+(define (go mk-hello sync atest btest)
+  (test #t list? (list mk-hello sync atest btest))
   (test #"" sync (read-bytes-evt 0 (mk-hello)))
   (let ([p (mk-hello)])
     (atest #"hello" sync (read-bytes-evt 5 p))
@@ -101,14 +102,20 @@
   (let ([p (mk-hello)])
     (atest '(#"hello") sync (regexp-match-evt #rx"....." p)))
   (let ([p (mk-hello)])
-    (ctest '(#"hello") sync (regexp-match-evt #rx".*" p)))
+    (atest '(#"hello") sync (regexp-match-evt #rx".*" p)))
   (let ([p (mk-hello)])
     (atest '(#"hel") sync (regexp-match-evt #rx"..." p))
-    (atest '(#"lo") sync (regexp-match-evt #rx".." p))))
-(go (lambda () (open-input-bytes #"hello")) sync test test test)
+    (atest '(#"lo") sync (regexp-match-evt #rx".." p)))
+  (let ([p (mk-hello)])
+    (atest #"hello" sync (read-bytes-line-evt p))
+    (atest eof sync (read-bytes-line-evt p) (eof-evt p)))
+  (let ([p (mk-hello)])
+    (atest "hello" sync (read-line-evt p))
+    (atest eof sync (read-line-evt p) (eof-evt p))))
+(go (lambda () (open-input-bytes #"hello")) sync test test)
 
 (define (sync/poll . args) (apply sync/timeout 0 args))
-(go (lambda () (open-input-bytes #"hello")) sync/poll test test test)
+(go (lambda () (open-input-bytes #"hello")) sync/poll test test)
 
 (define (delay-hello)
   (let-values ([(r w) (make-pipe)])
@@ -117,7 +124,7 @@
 	      (write-string "hello" w)
 	      (close-output-port w)))
     r))
-(go delay-hello sync test test test)
+(go delay-hello sync test test)
 
 (go delay-hello sync/poll 
     (lambda args
@@ -126,12 +133,34 @@
       (apply test (if (string? (car args))
 		      (make-string (string-length (car args)))
 		      (make-bytes (bytes-length (car args))))
-	     (cdr args)))
-    (lambda args
-      (apply test '(#"") (cdr args))))
+	     (cdr args))))
 
-(report-errs)
-done  
+
+;; extra checks for read-line-evt:
+(let ([p (open-input-string "ab\nc")])
+  (test "ab" sync (read-line-evt p))
+  (test "c" sync (read-line-evt p))
+  (test #f sync/timeout 0 (read-line-evt p)))
+(let ([p (open-input-string "ab\nc")])
+  (test "ab\nc" sync (read-line-evt p 'return))
+  (test #f sync/timeout 0 (read-line-evt p 'return)))
+(let ([p (open-input-string "ab\r\nc\r")])
+  (test "ab" sync (read-line-evt p 'return))
+  (test "\nc" sync (read-line-evt p 'return))
+  (test #f sync/timeout 0 (read-line-evt p 'return)))
+(let ([p (open-input-string "ab\r\nc\r")])
+  (test "ab" sync (read-line-evt p 'return-linefeed))
+  (test "c\r" sync (read-line-evt p 'return-linefeed))
+  (test #f sync/timeout 0 (read-line-evt p 'return-linefeed)))
+(let ([p (open-input-string "ab\r\nc\r")])
+  (test "ab" sync (read-line-evt p 'any))
+  (test "c" sync (read-line-evt p 'any))
+  (test #f sync/timeout 0 (read-line-evt p 'any)))
+(let ([p (open-input-string "ab\r\nc\r")])
+  (test "ab" sync (read-line-evt p 'any-one))
+  (test "" sync (read-line-evt p 'any-one))
+  (test "c" sync (read-line-evt p 'any-one))
+  (test #f sync/timeout 0 (read-line-evt p 'any-one)))
 
 ;; input-port-append tests
 (let* ([do-test
@@ -169,4 +198,4 @@ done
 		(loop (add1 n))))))])
   (do-tests '("apple" "banana"))
   (do-tests '("ax" "b" "cz")))
-   
+

@@ -22,6 +22,9 @@
     (and (bytes? b) (not (immutable? b))))
   (define (mutable-string? b)
     (and (string? b) (not (immutable? b))))
+
+  (define (line-mode-symbol? s)
+    (memq s '(linefeed return return-linefeed any any-one)))
   
   (provide/contract (read-bytes-avail!-evt (mutable-bytes? input-port-with-progress-evts? 
 							   . -> . evt?))
@@ -35,7 +38,15 @@
 								  . -> . evt?))
 		    (regexp-match-evt ((union regexp? byte-regexp? string? bytes?) 
 				       input-port-with-progress-evts? 
-				       . -> . evt?)))
+				       . -> . evt?))
+
+		    (read-bytes-line-evt (case->
+					  (input-port-with-progress-evts? . -> . evt?)
+					  (input-port-with-progress-evts? line-mode-symbol? . -> . evt?)))
+		    (read-line-evt (case->
+				    (input-port-with-progress-evts? . -> . evt?)
+				    (input-port-with-progress-evts? line-mode-symbol? . -> . evt?)))
+		    (eof-evt (input-port-with-progress-evts? . -> . evt?)))
 
   ;; ----------------------------------------
 
@@ -599,4 +610,39 @@
 	       [else (try-again)]))]))))
     (poll-or-spawn go))
 
-  )
+  (define-syntax (newline-rx stx)
+    (syntax-case stx ()
+      [(_ str) (datum->syntax-object #'here
+				     (byte-regexp 
+				      (string->bytes/latin-1
+				       (format "^(?:(.*?)~a)|(.+?$)"
+					       (syntax-e #'str)))))]))
+
+  (define read-bytes-line-evt
+    (opt-lambda (input-port [mode 'linefeed])
+      (convert-evt
+       (regexp-match-evt (case mode
+			   [(linefeed) (newline-rx "\n")]
+			   [(return) (newline-rx "\r")]
+			   [(return-linefeed) (newline-rx "\r\n")]
+			   [(any) (newline-rx "(?:\r\n|\r|\n)")]
+			   [(any-one) (newline-rx "[\r\n]")])
+			 input-port)
+       (lambda (m)
+	 (or (cadr m)
+	     (caddr m))))))
+  
+  (define read-line-evt
+    (opt-lambda (input-port [mode 'linefeed])
+      (convert-evt
+       (read-bytes-line-evt input-port mode)
+       (lambda (s)
+	 (if (eof-object? s)
+	     s
+	     (bytes->string/utf-8 s #\?))))))
+
+  (define (eof-evt input-port)
+    (convert-evt
+     (regexp-match-evt #rx#"^$" input-port)
+     (lambda (x)
+       eof))))

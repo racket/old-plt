@@ -94,6 +94,7 @@
                                          (quote-syntax override-final)
                                          (quote-syntax rename)
                                          (quote-syntax inherit)
+                                         (quote-syntax inner)
                                          this-id
                                          super-instantiate-id
                                          super-make-object-id
@@ -132,7 +133,7 @@
                        (syntax-case stx (init init-rest field init-field inherit-field
                                               private public override 
                                               public-final override-final
-                                              rename inherit)
+                                              rename inherit inner)
                          [(form idp ...)
                           (and (identifier? (syntax form))
                                (or (module-identifier=? (syntax form) (quote-syntax init))
@@ -222,18 +223,23 @@
                           (bad "ill-formed inherit clause" stx)]
                          [(inherit-field . rest)
                           (bad "ill-formed inherit-field clause" stx)]
-                         [(rename idp ...)
+                         [(kw idp ...)
+			  (and (identifier? #'kw)
+			       (or (module-identifier=? #'rename #'kw)
+				   (module-identifier=? #'inner #'kw)))
                           (for-each 
                            (lambda (idp)
                              (syntax-case idp ()
                                [(iid eid) (and (identifier? (syntax iid)) (identifier? (syntax eid))) 'ok]
                                [else
                                 (bad 
-                                 "rename element is not a pair of identifiers"
+                                 (format "~a element is not a pair of identifiers" (syntax-e #'kw))
                                  idp)]))
                            (syntax->list (syntax (idp ...))))]
                          [(rename . rest)
                           (bad "ill-formed rename clause" stx)]
+                         [(inner . rest)
+                          (bad "ill-formed inner clause" stx)]
                          [_ 'ok]))
                      defn-and-exprs)
            
@@ -288,7 +294,8 @@
                                                               public-final
                                                               override-final
                                                               rename
-                                                              inherit)))
+                                                              inherit
+							      inner)))
                                      defn-and-exprs
                                      cons)]
                            [(plain-inits)
@@ -330,7 +337,9 @@
                            [(renames)
                             (flatten pair (extract* (list (quote-syntax rename)) decls))]
                            [(inherits)
-                            (flatten pair (extract* (list (quote-syntax inherit)) decls))])
+                            (flatten pair (extract* (list (quote-syntax inherit)) decls))]
+                           [(inners)
+                            (flatten pair (extract* (list (quote-syntax inner)) decls))])
                
                ;; At most one init-rest:
                (unless (or (null? init-rest-decls)
@@ -376,6 +385,7 @@
                       [plain-init-names (map norm-init/field-iid normal-plain-inits)]
                       [inherit-names (map car inherits)]
                       [rename-names (map car renames)]
+                      [inner-names (map car inners)]
                       [local-public-normal-names (map car (append publics overrides))]
                       [local-public-names (append (map car (append public-finals override-finals))
                                                   local-public-normal-names)]
@@ -387,6 +397,7 @@
                                           plain-init-names
                                           inherit-names
                                           rename-names
+                                          inner-names
                                           (list 
                                            this-id
                                            super-instantiate-id
@@ -605,6 +616,7 @@
                                          plain-init-names
                                          inherit-names
                                          rename-names
+                                         inner-names
                                          (list this-id super-instantiate-id super-make-object-id super-new-id)))])
                        (when dup
                          (bad "duplicate declared identifier" dup)))
@@ -624,7 +636,8 @@
                                             (hash-table-put! ht (syntax-e id) #t))
                                           l)))])
                        ;; method names
-                       (check-dup "method" (map cdr (append publics overrides public-finals override-finals)))
+                       (check-dup "method" (map cdr (append publics overrides 
+							    public-finals override-finals)))
                        ;; inits
                        (check-dup "init" (map norm-init/field-eid (append normal-inits)))
                        ;; fields
@@ -657,6 +670,19 @@
                                      "method declared but not defined"
                                      pubovr-name))))))
                         local-method-names))
+
+		     ;; ---- Check that inner doesn't have a non-final decl ---
+		     (unless (null? inners)
+		       (let ([ht (make-hash-table)])
+			 (for-each (lambda (pub)
+				     (hash-table-put! ht (syntax-e (cdr pub)) #t))
+				   (append publics overrides))
+			 (for-each (lambda (inn)
+				     (when (hash-table-get ht (syntax-e (cdr inn)) (lambda () #f))
+				       (bad
+					"inner method is declared non-final"
+					(cdr inn))))
+				   inners)))
                      
                      ;; ---- Convert expressions ----
                      ;;  Non-method definitions to set!
@@ -717,6 +743,8 @@
                        ;; ---- set up field and method mappings ----
                        (with-syntax ([(rename-orig ...) (map car renames)]
                                      [(rename-temp ...) (generate-temporaries (map car renames))]
+                                     [(inner-orig ...) (map car inners)]
+                                     [(inner-temp ...) (generate-temporaries (map car inners))]
                                      [(private-name ...) (map car privates)]
                                      [(private-temp ...) (map mk-method-temp (map car privates))]
                                      [(public-final-name ...) (map car public-finals)]
@@ -763,6 +791,7 @@
                                       inherit-field-name ...
                                       local-field ...
                                       rename-orig ...
+                                      inner-orig ...
                                       method-name ...
                                       private-name ...
                                       public-final-name ...
@@ -789,6 +818,11 @@
                                                        (quote the-obj)
                                                        (quote-syntax rename-orig)
                                                        (quote-syntax rename-temp))
+                                      ...
+                                      (make-inner-map (quote-syntax the-finder)
+						      (quote the-obj)
+						      (quote-syntax inner-orig)
+						      (quote-syntax inner-temp))
                                       ...
                                       (make-method-map (quote-syntax the-finder)
                                                        (quote the-obj)
@@ -850,6 +884,7 @@
                                            [public-final-names (map localize-cdr public-finals)]
                                            [override-final-names (map localize-cdr override-finals)]
                                            [rename-names (map localize-cdr renames)]
+                                           [inner-names (map localize-cdr inners)]
                                            [inherit-names (map localize-cdr inherits)]
                                            [num-fields (datum->syntax-object
                                                         (quote-syntax here)
@@ -896,6 +931,7 @@
                                     `inherit-field-names
                                     ;; Method names:
                                     `rename-names
+                                    `inner-names
                                     `public-final-names
                                     `public-names
                                     `override-final-names
@@ -912,6 +948,7 @@
                                                inherit-field-accessor ...  ; inherit
                                                inherit-field-mutator ...
                                                rename-temp ...
+					       inner-temp ...
                                                method-accessor ...) ; public, override, inherit
                                         (let-syntaxes mappings
                                                       stx-def ...
@@ -1108,6 +1145,7 @@
 			method-ids     ; reverse-ordered list of public method names
 
 			methods        ; vector of methods
+			beta-methods   ; vector of vector of methods
 			meth-flags     ; vector: #f => primitive-implemented
                                        ;         'final => final
 
@@ -1145,6 +1183,7 @@
 			 inherit-field-names ; list of symbols (not included in num-fields)
 			 
 			 rename-names        ; list of symbols
+			 inner-names
 			 public-final-names
 			 public-normal-names
 			 override-final-names
@@ -1198,6 +1237,7 @@
 	    [field-ht (if no-new-fields?
 			  (class-field-ht super)
 			  (make-hash-table))]
+	    [super-method-ht (class-method-ht super)]
 	    [super-method-ids (class-method-ids super)]
 	    [super-field-ids (class-field-ids super)]
 	    [super-field-ht (class-field-ht super)])
@@ -1244,25 +1284,28 @@
 
 	;; Check that superclass has expected methods, and get indices
 	(let ([get-indices
-	       (lambda (ids)
+	       (lambda (method-ht what ids)
 		 (map
 		  (lambda (id)
 		    (hash-table-get 
 		     method-ht id
 		     (lambda ()
 		       (obj-error 'class*/names 
-				  "superclass does not provide an expected method: ~a~a" 
+				  "~a does not provide an expected method for ~a: ~a~a" 
+				  (if (eq? method-ht super-method-ht) "superclass" "class")
+				  what
 				  id
 				  (for-class name)))))
 		  ids))]
 	      [method-width (+ (class-method-width super) (length public-names))]
 	      [field-width (+ (class-field-width super) num-fields)])
-	  (let ([rename-indices (get-indices rename-names)]
-		[inherit-indices (get-indices inherit-names)]
-		[replace-final-indices (get-indices override-final-names)]
-		[replace-normal-indices (get-indices override-normal-names)]
-		[new-final-indices (get-indices public-final-names)]
-		[new-normal-indices (get-indices public-normal-names)])
+	  (let ([rename-indices (get-indices super-method-ht "rename" rename-names)]
+		[inner-indices (get-indices method-ht "inner" inner-names)]
+		[inherit-indices (get-indices super-method-ht "inherit" inherit-names)]
+		[replace-final-indices (get-indices super-method-ht "override-final" override-final-names)]
+		[replace-normal-indices (get-indices super-method-ht "override" override-normal-names)]
+		[new-final-indices (get-indices method-ht "public-final" public-final-names)]
+		[new-normal-indices (get-indices method-ht "public" public-normal-names)])
 
 	    ;; -- Check that all interfaces are satisfied --
 	    (for-each
@@ -1305,6 +1348,9 @@
 		   [methods (if no-method-changes?
 				(class-methods super)
 				(make-vector method-width))]
+		   [beta-methods (if no-method-changes?
+				     (class-beta-methods super)
+				     (make-vector method-width))]
 		   [meth-flags (if no-method-changes?
 				   (class-meth-flags super)
 				   (make-vector method-width))]
@@ -1315,7 +1361,7 @@
 				  (let-values ([(struct: make- ? -ref -set) (make-struct-type 'insp #f 0 0)])
 				    make-)
 				  method-width method-ht method-names
-				  methods meth-flags
+				  methods beta-methods meth-flags
 				  field-width field-ht field-names
 				  'struct:object 'object? 'make-object 'field-ref 'field-set!
 				  init-args
@@ -1393,10 +1439,36 @@
 		      (hash-table-put! field-ht (car ids) (cons c pos))
 		      (loop (cdr ids) (add1 pos))))
 
-		  ;; -- Extract superclass methods ---
+		  ;; -- Extract superclass methods and make inners ---
 		  (let ([renames (map (lambda (index)
 					(vector-ref (class-methods super) index))
-				      rename-indices)])
+				      rename-indices)]
+			[inners (let ([new-finals (make-vector method-width #f)])
+				  ;; To compute `inner' indices, we need to know which methods
+				  ;;  are final in this new class. We'll compute this again below,
+				  ;;  but we need it now
+				  (for-each (lambda (id)
+					      (vector-set! new-finals (hash-table-get method-ht id) #t))
+					    final-names)				  
+				  (map (lambda (mname index)
+					 (let ([depth (+ (if (index . < . (class-method-width super))
+							     (vector-length (vector-ref (class-beta-methods super) 
+											index))
+							     0)
+							 (if (vector-ref new-finals index) 0 -1))])
+					   (when (negative? depth)
+					     (obj-error 'class*/names 
+							"inner method not final: ~a~a~a" 
+							mname
+							(for-class name)))
+					   (lambda (obj default)
+					     (let* ([inner (vector-ref (vector-ref (class-beta-methods (object-ref obj)) 
+										   index)
+								       depth)])
+					       (or inner
+						   (lambda args default))))))
+					 inner-names
+				       inner-indices))])
 		    ;; -- Create method accessors --
 		    (let ([method-accessors (map (lambda (index)
 						   (lambda (obj)
@@ -1413,36 +1485,46 @@
 					   (append inh-accessors
 						   inh-mutators
 						   renames
+						   inners
 						   method-accessors))])
 			;; -- Fill in method tables --
 			;;  First copy old methods
 			(unless no-method-changes?
 			  (hash-table-for-each
-			   (class-method-ht super)
+			   super-method-ht
 			   (lambda (name index)
 			     (vector-set! methods index (vector-ref (class-methods super) index))
+			     (vector-set! beta-methods index (vector-ref (class-beta-methods super) index))
 			     (vector-set! meth-flags index (vector-ref (class-meth-flags super) index)))))
 			;; Add new methods:
 			(for-each (lambda (index method)
 				    (vector-set! methods index method)
-				    (vector-set! meth-flags index (not make-struct:prim)))
+				    (vector-set! beta-methods index (vector)))
 				  (append new-final-indices new-normal-indices)
 				  new-methods)
 			;; Override old methods:
 			(for-each (lambda (index method id)
-				    (when (eq? 'final (vector-ref meth-flags index))
-				      (obj-error 'class*/names 
-						 "cannot override final method: ~a~a"
-						 id
-						 (for-class name)))
-				    (vector-set! methods index method)
+				    (let ([v (vector-ref beta-methods index)])
+				      (if (zero? (vector-length v))
+					  ;; Normal mode - set vtable entry
+					  (vector-set! methods index method)
+					  ;; Under final mode - set extended vtable entry
+					  (let ([v (list->vector (vector->list v))])
+					    (vector-set! v (sub1 (vector-length v)) method)
+					    (vector-set! beta-methods index v))))
 				    (vector-set! meth-flags index (not make-struct:prim)))
 				  (append replace-final-indices replace-normal-indices)
 				  override-methods
 				  override-names)
 			;; Mark final methods:
 			(for-each (lambda (id)
-				    (vector-set! meth-flags (hash-table-get method-ht id) 'final))
+				    (let ([index (hash-table-get method-ht id)])
+				      (vector-set! meth-flags index 'final)
+				      ;; Expand `inner' vector, adding a #f to indicate that
+				      ;;  no inner function is available, so far
+				      (let ([v (list->vector (append (vector->list (vector-ref beta-methods index))
+								     (list #f)))])
+					(vector-set! beta-methods index v))))
 				  final-names)
 
 			;; --- Install initializer into class ---
@@ -1596,7 +1678,7 @@
 		   void ; never inspectable
 
 		   0 (make-hash-table) null
-		   (vector) (vector)
+		   (vector) (vector) (vector)
 		   
 		   0 (make-hash-table) null
 		   
@@ -2317,6 +2399,7 @@
 		   0 null null ; no fields
 
 		   null ; no renames
+		   null ; no inners
 		   null new-names
 		   null override-names
 		   null ; no inherits
@@ -2427,6 +2510,7 @@
                         
                         methods-vec
                         (list->vector (map (lambda (x) 'final) method-ids))
+			'dont-use-me!
                         
                         (+ 1 field-count method-count)
                         field-ht

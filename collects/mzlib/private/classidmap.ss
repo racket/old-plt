@@ -150,6 +150,49 @@
 	     "misuse of super method (not in application)" 
 	     stx)])))))
 
+  (define (make-inner-map the-finder the-obj the-binder rename-temp)
+    (let ([set!-stx (datum->syntax-object the-finder 'set!)]
+	  [lambda-stx (datum->syntax-object the-finder 'lambda)])
+      (mk-set!-trans
+       the-binder
+       (lambda (stx)
+	 (syntax-case stx ()
+	   [(set! id expr)
+	    (module-identifier=? (syntax set!) set!-stx)
+	    (raise-syntax-error 'class "cannot mutate inner method" stx)]
+	   [(id (lambda () default) . args)
+	    (module-identifier=? (syntax lambda) lambda-stx)
+	    (let ([target (find the-finder the-obj stx)])
+	      (binding
+	       the-binder (syntax id)
+	       (datum->syntax-object 
+		the-finder
+		(make-method-apply (list (find the-finder rename-temp stx) target #'default)
+				   target (syntax args))
+		stx)))]
+	   [(id (lambda largs default) . args)
+	    (module-identifier=? (syntax lambda) lambda-stx)
+	    (raise-syntax-error 
+	     'class 
+	     "misuse of inner method (lambda for default does not take zero arguments)" 
+	     stx)]
+	   [(id (lambda . rest) . args)
+	    (module-identifier=? (syntax lambda) lambda-stx)
+	    (raise-syntax-error 
+	     'class 
+	     "misuse of inner method (ill-formed lambda for default)" 
+	     stx)]
+	   [(id . args)
+	    (raise-syntax-error 
+	     'class 
+	     "misuse of inner method (no lambda-wrapped default after name)" 
+	     stx)]
+	   [_else
+	    (raise-syntax-error 
+	     'class 
+	     "misuse of inner method (not in application)" 
+	     stx)])))))
+
   (define init-error-map
     (make-set!-transformer
      (lambda (stx)
@@ -214,7 +257,8 @@
 
 
   (provide make-this-map make-field-map make-method-map 
-	   make-direct-method-map make-rename-map
+	   make-direct-method-map 
+	   make-rename-map make-inner-map
 	   init-error-map super-error-map 
 	   make-with-method-map
 	   flatten-args

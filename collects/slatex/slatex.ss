@@ -20,7 +20,16 @@
 	(case (system-type)
 	  [(macos)
 	   (system "OTEX")
+
+           ;; boy, wouldn't it be great if the "actv" version worked?!?!?
 	   ;(send-event "OTEX" "misc" "acvt")
+           (let ([oztex-location (build-path (car (filesystem-root-list))
+                                             "Applications"
+                                             "OzTeX"
+                                             "OzTeX")])
+             (when (file-exists? oztex-location)
+               (send-event "MACS" "aevt" "odoc" (vector 'file oztex-location))))
+             
 	   (send-event "OTEX" "aevt" "odoc" (vector 'file file))]
 	   [(windows unix)
 	    (system (format "latex ~a" file))])))))

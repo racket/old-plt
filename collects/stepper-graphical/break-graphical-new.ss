@@ -69,8 +69,7 @@
   (define test-dc (make-object m:bitmap-dc% (make-object m:bitmap% 1 1)))
   (define debug-highlight-color (make-object m:color% 255 255 255))
   (send test-dc try-color (make-object m:color% 145 211 219) debug-highlight-color)
-  (define clear-highlight-thunk #f)
-  
+
   ; ----------------------------------------------------------------
   
   (define (add-to-popup pm val)
@@ -110,6 +109,28 @@
                   (send frame show #f)
                   (semaphore-post break-semaphore)
                   (set! break-semaphore #f))]
+               
+               [listbox-callback
+                (lambda (list-box event)
+                  (let* ([selections (send list-box get-selections)]
+                         [_ (unless (= length selections 1)
+                              (error 'listbox-callback "# of listbox selections is not 1"))]
+                         [mark (send list-box get-data (car selections))]
+                         [source (mark-source mark)]
+                         [source-file (z:location-file (z:zodiac-start source))]
+                         [source-start (z:location-offset (z:zodiac-start source))]
+                         [source-finish (z:location-offset (z:zodiac-finish source))])
+                    (when clear-highlight-thunk 
+                      (clear-highlight-thunk))
+                    (if (eq? source-file (ivar drscheme-frame definitions-text))
+                        (set! clear-highlight-thunk 
+                              (send defns-text highlight-range source-start source-end debug-highlight-color))
+                        (m:message-box "source text is not in this buffer" '(ok)))
+                    (clear-var-highlights)
+                    (highlight-vars
+                  )]
+               
+               
                 
                [show-var-values
                 (lambda (binding x y)
@@ -124,18 +145,63 @@
                           (inexact->exact x) (inexact->exact y)
                           )))]
                
-               [clear-highlights
+               [clear-var-highlights
                 (lambda ()
                   (for-each (lambda (entry)
                               (send defns-text change-style standard-style (car entry) (cadr entry)))
-                            text-region-table))]
+                            text-region-table)
+                  (set! text-region-table null))]
                
+               [zodiac-abbr
+                (lambda (zodiac)
+                  (ccond ; we need a z:parsed iterator...
+                        [(z:varref? src)
+                         "<varref>"]
+                        [(z:app? src)
+                         "<application>"]
+                        [(z:struct-form? src)
+                         "<struct-form>"]
+                        [(z:if-form? src)
+                         "(if <test> <then> <else>)"]
+                        [(z:quote-form? src)
+                         "(quote <val>)"]
+                        [(z:begin-form? src)
+                         "(begin <bodies>)"]
+                        [(z:begin0-form? src)
+                         "(begin0 <bodies>)"]
+                        [(z:let-values-form? src)
+                         "(let-values ([(<vars>) ... ] ...) <body>)"]
+                        [(z:letrec-values-form? src)
+                         "(letrec-values ([(<vars>) ...] ...) <body>)"]
+                        [(z:define-values-form? src)
+                         "(define-values (<vars>) <bodies>)"]
+                        [(z:set!-form? src)
+                         "(set! <var> <body>)"]
+                        [(z:case-lambda-form? src)
+                         "(case-lambda ((<args>) <bodies>) ...)"]
+                        [(z:with-continuation-mark-form? src)
+                         "(with-continuation-mark <key> <mark> <body>)"]
+                        [(z:unit-form? src)
+                         "(unit <imports> <exports> <clauses>)"]
+                        [(z:compound-unit-form? src)
+                         "(compound-unit <imports> <links> <exports>)"]
+                        [(z:invoke-unit-form? src)
+                         "(invoke-unit ...)"]
+                        [(z:interface-form? src)
+                         "(interface ...)"]
+                        [(z:class*/names-form? src)
+                         "(class*/names ...)"]))]
+                  
                ; highlight-vars 
                   
                [highlight-vars
                 (lambda (mark)
                   (let* ([src (marks:mark-source mark)]
-                         [mark-bindings (map marks:mark-binding-binding (marks:mark-bindings mark))]
+                         [mark-bindings (apply append
+                                               (map (lambda (mark)
+                                                      (map marks:mark-binding-binding
+                                                           (marks:mark-bindings mark)))
+                                                    stored-mark-list))]
                          [highlight-var ; (parsed [binding | slot | top-level-varref] -> (void))
                           (lambda (ref binding)
                             (let* ([start (z:location-offset (z:zodiac-start ref))]
@@ -236,16 +302,7 @@
                                              (for-each recur (z:sequence-clause-exprs src))]))
                                    (z:class*/names-form-inst-clauses src))]))))])
 
-      (public [set-zodiac!
-               (lambda (new-parsed)
-                 (if (z:parsed? new-parsed)
-                     (begin
-                       (set! parsed new-parsed)
-                       (set! needs-update #t)
-                       (set! text-region-table null))
-                     (e:internal-error new-parsed "not a parsed zodiac value")))]
-              
-              [handle-breakpoint
+      (public [handle-breakpoint
                (lambda (mark-list semaphore)
                  (set! break-semaphore semaphore)
                  (set! stored-mark-list mark-list)
@@ -254,8 +311,16 @@
                        (send defns-text clear)
                        (send (ivar drscheme-frame definitions-text) copy-self-to defns-text)
                        (set! needs-update #f))
-                     (clear-highlights))
-                 ;(for-each highlight-vars mark-list)
+                     (begin
+                       (clear-var-highlights)
+                       (when clear-highlight-thunk
+                         (clear-highlight-thunk)))
+                 (send context-lbox clear)
+                 (for-each 
+                  (lambda (mark)
+                    ; will show even stale marks
+                    (send context-lbox append (zodiac-abbr (marks:mark-source mark)) mark))
+                  mark-list)
                  (send frame show #t))])
                  
       (sequence (super-init))
@@ -263,7 +328,7 @@
       (private [frame (make-object debugger-frame% this)]
                [area-container (send frame get-area-container)]
                [control-panel (make-object m:horizontal-panel% area-container)]
-               [context-lbox (make-object m:listbox% control-panel)]
+               [context-lbox (make-object m:list-box% #f null control-panel listbox-callback)]
                [defns-canvas (make-object m:editor-canvas% area-container)]
                [defns-text (make-object debugger-text%)]
                [standard-style (send (send defns-text get-style-list) find-named-style "Standard")]

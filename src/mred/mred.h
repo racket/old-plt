@@ -118,3 +118,31 @@ MRED_EXTERN MrEd_Run_From_Cmd_Line_Proc mred_run_from_cmd_line;
 # define MRED3M ""
 #endif
 #define BANNER "MrEd" MRED3M " version " MZSCHEME_VERSION ", Copyright (c) 1995-2002 PLT\n"
+
+#ifndef WINDOW_STDIO
+/* Removing "|| defined(wx_msw)" below uses the Windows console.
+   The danger is that closing that console kills MrEd without
+   any chance of cancelling the kill. */
+# if defined(wx_mac) || defined(wx_msw)
+#  define WINDOW_STDIO 1
+# else
+#  define WINDOW_STDIO 0
+# endif
+#endif
+
+#ifndef WCONSOLE_STDIO
+# if defined(wx_msw) && !WINDOW_STDIO
+#  define WCONSOLE_STDIO 1
+# else
+#  define WCONSOLE_STDIO 0
+# endif
+#endif
+
+#ifndef REDIRECT_STDIO
+# if (defined(wx_msw) || defined(wx_mac)) && !WINDOW_STDIO && !WCONSOLE_STDIO
+#  define REDIRECT_STDIO 1
+# else
+#  define REDIRECT_STDIO 0
+# endif
+#endif
+

@@ -296,8 +296,8 @@ int main(int argc, char *argv[])
   ::TEInit();
   ::InitMenus();
   for (int i=0; i<4; i++) {
-	::MoreMasters();
-          }
+    ::MoreMasters();
+  }
 #endif
   
   Drop_GetArgs(&argc, &argv);

@@ -17,34 +17,43 @@
 	 ([current-eventspace (make-eventspace)])
 	 (queue-callback th)))
 
- (define (show-ok title caption details)
+      ; string (list string (listof string)) (union (listof string) #f) -> void
+      (define (show-ok title captions details)
         (letrec ([frame 
                   (instantiate frame% ()
                     (label title)
-		    (alignment '(center center))
-		    (min-width 200)
+		    (min-width 50)
+		    (alignment '(left center))
                     (stretchable-height #f)
                     (stretchable-width #f)
                     (style '(no-resize-border)))]
                  [main-panel (instantiate vertical-panel% () 
                                (parent frame) 
+                               (stretchable-width #f)
                                (stretchable-height #f)
                                (alignment '(center center)))]
                  [panel-sep 4]
-                 [msg-width 100]	       
-                 [make-hpanel
-                  (lambda ()
-                    (instantiate horizontal-panel% () 
-                      (parent main-panel)
-                      (vert-margin panel-sep)
-                      (alignment '(center center))))]
-                 [row-panel (make-hpanel)]
+                 [msg-width 50]	       
+                 [make-make-panel
+                  (lambda (c%)
+		    (lambda ()
+		      (instantiate c% () 
+				   (parent main-panel)
+				   (vert-margin panel-sep) 
+				   (alignment '(center center)))))]
+                 [make-hpanel (make-make-panel horizontal-panel%)]
+                 [make-vpanel (make-make-panel vertical-panel%)]
+                 [row-panel (make-vpanel)]
                  [make-msg
                   (lambda (msg panel)
                     (instantiate message% () 
-                      (min-width msg-width)
-                      (label msg) (parent panel)))]
-                 [status-msg (make-msg caption row-panel)]               
+				 (min-width msg-width)
+				 (label msg) (parent panel)))]
+                 [status-msgs 
+		  (map
+		   (lambda (msg)
+		     (make-msg msg row-panel))
+		   captions)]
                  [details-panel #f]
                  [showing-details #f]
                  [details-text "Details "]
@@ -63,13 +72,16 @@
                     (set! details-button-callback hide-details)
                     (unless details-panel
                       (set! details-panel                         
-                            (instantiate horizontal-panel% () 
+                            (instantiate vertical-panel% () 
                               (parent main-panel)
                               (style '(border))
                               (border 2)
                               (vert-margin panel-sep)
-                              (alignment '(center center))))                  
-                      (make-msg details details-panel)))]
+                              (alignment '(left center))))                  
+		      (for-each
+		       (lambda (d)
+			 (make-msg d details-panel))
+		       details)))]
                  [details-button-callback
                   (lambda (e bv)
                     (if showing-details
@@ -78,7 +90,7 @@
                  [buttons-panel (make-hpanel)]
                  [ok-button (instantiate button% ()
                               (label "OK")
-                              (min-width 50)
+                              (min-width 20)
                               (parent buttons-panel)
                               (callback (lambda (b ev) 
                                           (send frame show #f))))]
@@ -91,7 +103,7 @@
 		  (and details
 		       (instantiate button% ()
 				    (label show-details-button-text)
-				    (min-width 50)
+				    (min-width 20)
 				    (parent buttons-panel)
 				    (callback details-button-callback)))])
 	  (send frame center)

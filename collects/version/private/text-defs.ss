@@ -13,11 +13,19 @@
       (define (run-thunk th)
 	(th))
 
-      (define (show-ok title caption details)
-	(printf "~a~n" caption)
+      ; string (list string (listof string)) (union (listof string) #f) -> void
+      (define (show-ok title captions details)
+	(printf "~a~n" (car captions))
+	(for-each
+	 (lambda (c)
+	   (printf " ~a~n" c))
+	 (cdr captions))
 	(when details
 	      (printf (string-constant vc-details-text))
-	      (printf "~a~n" details)))
+              (for-each
+		(lambda (d)		
+		  (printf " ~a~n" d))
+		details)))
       
       (define (show-error-ok title caption)
 	(show-ok #f

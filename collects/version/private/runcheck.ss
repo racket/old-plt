@@ -121,7 +121,7 @@
 			  (run-thunk
 			   (lambda () 
 			     (show-ok (string-constant vc-network-timeout)
-				      (string-constant vc-cannot-connect)
+				      (list (string-constant vc-cannot-connect))
 				      #f))))
 			(begin
 			  (sleep 1)
@@ -204,25 +204,20 @@
 	       
 		 (show-ok 
 		  dialog-title
-		  (string-append
+		  (list 
 		   (string-constant vc-old-binaries)
-		   nl nl
 		   (format 
 		    (string-constant vc-binary-information-format)
 		    binary-version binary-iteration)
-		   nl nl
 		   (format 
 		    (string-constant vc-latest-binary-information-format)
 		    latest-binary-version latest-binary-iteration)
-		   nl nl
-	           (string-constant vc-updates-available)
-		   " "
-		   download-url-string)
+	           (string-append (string-constant vc-updates-available) " " download-url-string))
 		  #f)
 	       
 		 ; else offer info for installed packages
 	       
-		 (let* ([all-strings
+		 (let* ([details
 			 (map 
 			  (lambda (r)
 			    (let*-values
@@ -243,37 +238,26 @@
 				  installed-version installed-iteration 
 				  latest-version latest-iteration))]
 			      [else ""])))
-			  (cdr responses))]
-			[folded-string
-			 (foldr 
-			  (lambda (s a)
-			    (if a 
-				(if (empty-string? s)
-				    a
-				    (string-append " " s nl a))
-				(string-append " " s)))
-			  #f
-			  all-strings)])
+			  (cdr responses))])
 		 
 		   (show-ok 
 		    dialog-title
-		    (string-append
+		    (list
 		     (if needs-update
 			 (string-constant vc-need-update-string)
 			 (string-constant vc-no-update-string))
-		     nl
-		     " "
 		     (format current-format
 			     (string-constant vc-binary-name)
 			     binary-version binary-iteration))
 		    (if needs-update
-			(string-append
-			 folded-string
-			 nl nl
-			 (string-constant vc-updates-available)
-			 " "
-			 download-url-string)
-			folded-string)))))))
+			(append details
+				(list
+				 ""
+				 ""
+				 (string-constant vc-updates-available)
+				 ""
+				 download-url-string))
+			details)))))))
 	(when sync?
 	      (semaphore-post sync-sem)))
 

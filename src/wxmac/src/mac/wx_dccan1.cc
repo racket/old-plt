@@ -619,6 +619,14 @@ static void HiliteMode()
 
 //-----------------------------------------------------------------------------
 
+static CGLineJoin join_style[] = { kCGLineJoinBevel, kCGLineJoinMiter, kCGLineJoinRound };
+static CGLineCap cap_style[]  = { kCGLineCapRound, kCGLineCapSquare, kCGLineCapButt };
+
+static float dotted[] = {2, 5, /* offset */ 2};
+static float short_dashed[] = {4, 4, /* offset */ 2};
+static float long_dashed[] = {4, 8, /* offset */ 2};
+static float dotted_dashed[] = {6, 6, 2, 6, /* offset */ 4};
+
 void wxCanvasDC::wxMacSetCurrentTool(wxMacToolType whichTool)
   /* assumes that SetCurrentDC() has been called, already */  
 {
@@ -688,6 +696,9 @@ void wxCanvasDC::wxMacSetCurrentTool(wxMacToolType whichTool)
       wxColor *c = current_pen->GetColour();
       int r, g, b;
       double pw;
+      float *dashes;
+      int ndash;
+      float offset;
 
       r = c->Red();
       g = c->Green();
@@ -703,6 +714,39 @@ void wxCanvasDC::wxMacSetCurrentTool(wxMacToolType whichTool)
 	  pw = 1 / user_scale_x;
       }
       CGContextSetLineWidth(cg, pw);
+
+      CGContextSetLineJoin(cg, join_style[current_pen->GetJoin() - wxJOIN_BEVEL]);
+      CGContextSetLineCap(cg, cap_style[current_pen->GetCap() - wxCAP_ROUND]);
+
+      switch (current_pen->GetStyle ()) {
+      case wxDOT:
+	dashes = dotted;
+	ndash = (sizeof(dotted) / sizeof(float)) - 1;
+	break;
+      case wxSHORT_DASH:
+	dashes = short_dashed;
+	ndash = (sizeof(short_dashed) / sizeof(float)) - 1;
+	break;
+      case wxLONG_DASH:
+	dashes = long_dashed;
+	ndash = (sizeof(long_dashed) / sizeof(float)) - 1;
+	break;
+      case wxDOT_DASH:
+	dashes = dotted_dashed;
+	ndash = (sizeof(dotted_dashed) / sizeof(float)) - 1;
+	break;
+      case wxSOLID:
+      case wxTRANSPARENT:
+      default:
+	dashes = NULL;
+	ndash = 0;
+	break;
+      }
+      if (ndash)
+	offset = dashes[ndash];
+      else
+	offset = 0;
+      CGContextSetLineDash(cg, offset, dashes, ndash);
     } else {
       int pensize;
       int thePenWidth;
@@ -865,6 +909,7 @@ CGContextRef wxCanvasDC::GetCG()
       visRgn = NewRgn();
       if (visRgn) {
 	::CopyRgn(onpaint_reg, clipRgn); // GetPortClipRegion(qdp, clipRgn);
+	::OffsetRgn(clipRgn, gdx, gdy);
 	GetPortVisibleRegion(qdp, visRgn);
 	SectRgn(clipRgn, visRgn, clipRgn);
 	DisposeRgn(visRgn);

@@ -541,15 +541,19 @@ void wxCanvasDC::DrawPolygon(int n, wxPoint points[],
   if (anti_alias) {
     CGContextRef cg;
     CGMutablePathRef path;
+    double pw;
 
     SetCurrentDC(TRUE);
     cg = GetCG();
 
     CGContextSaveGState(cg);
 
+    pw = current_pen->GetWidthF();
+
     if ((anti_alias == 2)
 	&& (user_scale_x == 1.0)
-	&& (user_scale_y == 1.0)) {
+	&& (user_scale_y == 1.0)
+	&& (pw <= 1.0)) {
       xoffset += 0.5;
       yoffset += 0.5;
     }
@@ -565,7 +569,10 @@ void wxCanvasDC::DrawPolygon(int n, wxPoint points[],
       wxMacSetCurrentTool(kBrushTool);
       CGContextBeginPath(cg);
       CGContextAddPath(cg, path);
-      CGContextFillPath(cg);
+      if (fillStyle == wxODDEVEN_RULE)
+	CGContextEOFillPath(cg);
+      else
+	CGContextFillPath(cg);
     }
     if (current_pen && current_pen->GetStyle() != wxTRANSPARENT) {
       wxMacSetCurrentTool(kPenTool);
@@ -641,11 +648,15 @@ void wxCanvasDC::DrawLines(int n, wxPoint points[], double xoffset, double yoffs
 
   if (anti_alias) {
     CGContextRef cg;
+    double pw;
     int i;
+
+    pw = current_pen->GetWidthF();
 
     if ((anti_alias == 2)
 	&& (user_scale_x == 1.0)
-	&& (user_scale_y == 1.0)) {
+	&& (user_scale_y == 1.0)
+	&& (pw <= 1.0)) {
       xoffset += 0.5;
       yoffset += 0.5;
     }

@@ -1440,7 +1440,8 @@
       (define sorting-list (instantiate sorting-list% ()
                              (parent top-half)
                              (stretchable-height #f)
-                             (line-count 1)
+                             (vertical-inset 2)
+			     (line-count 1)
                              (style '(hide-hscroll))))
       (define header-list (make-object header-list% top-half))
       (send (send header-list get-editor) set-line-spacing 0)
@@ -1623,7 +1624,6 @@
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;      
 
       (send sorting-list min-height 5)
-      (send sorting-list set-line-count 1)
       (define sorting-text (send (send sorting-list new-item) get-editor))
       (define sorting-text-from (make-object text%))
       (send sorting-text-from insert "From")

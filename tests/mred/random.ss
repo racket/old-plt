@@ -8,6 +8,7 @@
        [name name-in]
        [items '()]
        [num-items 0]
+       [baddies null]
        
        [parents-count 
 	(if parents
@@ -56,7 +57,12 @@
 			     (random c))))])
 	    (if (< n num-items)
 		(list-ref items n)
-		(choose-parent-example (- n num-items)))))])))
+		(choose-parent-example (- n num-items)))))]
+       [add-bad
+	(lambda (i)
+	  (set! baddies (cons i baddies)))]
+       [bad-examples
+	(lambda () baddies)])))
 
 (define boxed-example-list%
   (class () (parent)
@@ -71,7 +77,9 @@
 	(let ([ex (send parent choose-example)])
 	  (if (void? ex)
 	      (void)
-	      (box ex))))])))
+	      (box ex))))]
+     [bad-examples
+      (lambda () (cons 5 (map box (send parent bad-examples))))])))
 
 (define listed-example-list%
   (class () (parent)
@@ -81,12 +89,23 @@
       (lambda ()
 	(let ([l (map list (send parent all-examples))])
 	  l))]
+     [add
+      (lambda (v)
+	(unless (list? v)
+	  (error 'add "rejected: ~a in: ~a" x name))
+	(for-each
+	 (lambda (i)
+	   (send parent add i))
+	 v))]
      [choose-example
       (opt-lambda ([which #f])
 	(let ([ex (send parent choose-example)])
 	  (if (void? ex)
 	      (void)
-	      (list ex))))])))
+	      (list ex))))]
+     [bad-examples
+      (lambda ()
+	(cons 5 (map list (send parent bad-examples))))])))
 
 (define optional-example-list%
   (class () (parent val)
@@ -103,7 +122,9 @@
       (opt-lambda ([which #f])
 	(if (zero? (random 2))
 	    val
-	    (send parent choose-example)))])))
+	    (send parent choose-example)))]
+     [bad-examples
+      (lambda () (cons #t (send parent bad-examples)))])))
 
 (define choose-example-list%
   (class () (parents)
@@ -116,7 +137,9 @@
      [choose-example
       (opt-lambda ([which #f])
 	(send (list-ref parents (random (length parents)))
-	      choose-example which))])))
+	      choose-example which))]
+     [bad-examples
+      (lambda () null)])))
 
 (define unknown-example-list%
   (class () (who)
@@ -126,7 +149,9 @@
      [add void]
      [choose-example
       (opt-lambda ([which #f])
-	(format "[dummy for ~a]" name))])))
+	(format "[dummy for ~a]" name))]
+     [bad-examples
+      (lambda () null)])))
 
 (define discrete-example-list%
   (class () (vals)
@@ -138,7 +163,39 @@
 				 "no good: ~a" x)))]
      [choose-example
       (opt-lambda ([which #f])
-	(list-ref vals (random (length vals))))])))
+	(list-ref vals (random (length vals))))]
+     [bad-examples
+      (lambda ()
+	(if (member 'bad-example-symbol vals)
+	    null
+	    (list 'bad-example-symbol)))])))
+
+(define number-example-list%
+  (class () (parent start end)
+    (public
+      [name `(number in ,start ,end)]
+      [all-examples
+       (lambda ()
+	 (filter ok (send parent all-examples)))]
+      [ok (lambda (v) (<= start v end))]
+      [add (lambda (v)
+	     (send parent add v)
+	     (unless (ok v)
+	       (error 'add "rejected (late): ~a in: ~a" x name)))]
+      [choose-example
+       (opt-lambda ([which #f])
+	 (let loop ()
+	   (let ([v (send parent choose-example which)])
+	     (if (ok v)
+		 v
+		 (loop)))))]
+      [bad-examples
+       (lambda ()
+	 (list* (sub1 start)
+		(if (= (add1 end) end)
+		    (- start 2)
+		    (add1 end))
+		(send parent bad-examples)))])))
 
 (define-struct (fatal-exn struct:exn) ())
 
@@ -182,7 +239,8 @@
 									   null-results))
 						  (error ',name "got null"))))))
 		   (if (or (regexp-match "%$" strname) (regexp-match "<%>$" strname))
-		       `((send ,(el-name name) set-filter (lambda (x) (is-a? x ,name))))
+		       `((send ,(el-name name) set-filter (lambda (x) (is-a? x ,name)))
+			 (send ,(el-name name) add-bad 5))
 		       null)
 		   rest)))))))
 
@@ -193,7 +251,6 @@
   ubyte
   integer
   integer-list
-  nonnegative-integer
   symbol
   real
   string
@@ -201,9 +258,6 @@
   boolean
   procedure
   eventspace
-  0-to-255
-  0-to-10000
-  -10000-to-10000
 
   (area<%> window<%> subarea<%> area-container<%>)
 
@@ -348,16 +402,24 @@
 (send char-example-list set-filter char?)
 (send string-example-list set-filter string?)
 (send symbol-example-list set-filter symbol?)
-(send real-example-list set-filter number?)
-(send integer-example-list set-filter (lambda (x) (and (number? x) (integer? x))))
-(send nonnegative-integer-example-list set-filter (lambda (x) (and (number? x) (integer? x) (not (negative? x)))))
-(send integer-list-example-list set-filter (lambda (x) (and (list? x) (andmap (lambda (x) (and (number? x) (integer? x))) x))))
+(send real-example-list set-filter real?)
+(send integer-example-list set-filter (lambda (x) (and (number? x) (exact? x) (integer? x))))
+(send integer-list-example-list set-filter (lambda (x) (and (list? x) (andmap (lambda (x) (and (number? x) (exact? x) (integer? x))) x))))
 
 (define false-example-list (make-object example-list% 'false '()))
 (send false-example-list add #f)
+(send false-example-list add-bad #t)
+
+(send char-example-list add-bad 'not-a-char)
+(send string-example-list add-bad 'not-a-string)
+(send symbol-example-list add-bad "not a symbol")
+(send real-example-list add-bad 4+5i) 
+(send integer-example-list add-bad 5.0)
+(send integer-list-example-list add-bad 7)
 
 (define empty-list-example-list (make-object example-list% 'empty-list '()))
 (send empty-list-example-list add null)
+(send empty-list-example-list add-bad #f)
 
 (send* boolean-example-list
        (add #t)
@@ -389,68 +451,29 @@
        (add 256)
        (add 255)
        (add 1023)
-       (add 1000)
-       (add 5.0))
+       (add 1000))
 
-(send* nonnegative-integer-example-list
-       (add 0) (add 0) (add 0) (add 0)
-       (add 0) (add 0) (add 0) (add 0)
-       (add 0) (add 0) (add 0) (add 0)
-       (add 0) (add 0) (add 0) (add 0)
-       (add 1)
-       (add 2)
-       (add 3)
-       (add 4)
-       (add 5)
-       (add 6)
-       (add 7)
-       (add 8)
-       (add 9)
-       (add 10)
-       (add 16)
-       (add 32)
-       (add 64)
-       (add 128)
-       (add 256)
-       (add 255)
-       (add 1023)
-       (add 1000)
-       (add 5.0))
+(send* real-example-list
+       (add 0.0) (add 0.0)
+       (add -1.0)
+       (add -2.0)
+       (add -1000.0)
+       (add 1.0)
+       (add 2.0)
+       (add 256.0)
+       (add +inf.0)
+       (add -inf.0)
+       (add 2/3)
+       (add -100/9))
 
-(send* 0-to-255-example-list
-       (add 0) (add 0) (add 0)
-       (add 0) (add 0) (add 0)
-       (add 0) (add 0) (add 0)
-       (add 0) (add 0) (add 0)
-       (add 0) (add 0) (add 0)
-       (add 1)
-       (add 2)
-       (add 3)
-       (add 4)
-       (add 5)
-       (add 6)
-       (add 7)
-       (add 8)
-       (add 9)
-       (add 10)
-       (add 16)
-       (add 32)
-       (add 64)
-       (add 128)
-       (add 255)
-       (add 5))
+(define non-negative-integer-example-list (make-object number-example-list% integer-example-list 0 +inf.0))
+(define positive-integer-example-list (make-object number-example-list% integer-example-list 1 +inf.0))
 
-(send* 0-to-10000-example-list
-       (add 0) (add 100) (add 1000) (add 10000))
+(define non-negative-real-example-list (make-object number-example-list% real-example-list 0 +inf.0))
+(define positive-integer-example-list (make-object number-example-list% real-example-list 1e-200 +inf.0))
 
-(send* -10000-to-10000-example-list
-       (add 0) (add 100) (add 1000) (add 10000)
-       (add -100) (add -1000) (add -10000))
-
-(send* integer-list-example-list
-       (add '(0))
-       (add '(1 2 3))
-       (add '(0 100 1000)))
+(define (range-integer-example-list s e)
+  (make-object number-example-list% integer-example-list s e))
 
 (send* symbol-example-list
        (add 'ok) (add 'change-family))
@@ -540,6 +563,20 @@
 			    (map (lambda (v) (cons v other)) values))
 			  rest)))))))
 
+(define-struct posargs (good bads))
+
+(define (get-bad-args l)
+  (let/ec bad
+    (let loop ([l l])
+      (if (null? l)
+	  '()
+	  (let* ([source (car l)]
+		 [good (send source choose-example #f)]
+		 [bads (send source bad-examples)])
+	    (if (void? good)
+		(bad (format "no examples: ~a" (ivar source name)))
+		(cons (make-posargs good bads) (loop (cdr l)))))))))
+
 (define thread-output-port current-output-port)
 
 (define (apply-args v dest name k)
@@ -564,9 +601,60 @@
 
 (define (try-all-args arg-types dest name k)
   (let ([vs (get-all-args arg-types)])
-    (map (lambda (v)
-	   (apply-args v dest name k))
-	 vs)))
+    (for-each (lambda (v)
+		(apply-args v dest name k))
+	      vs)))
+
+(define (apply-bad-args v dest name k)
+  (fprintf (thread-output-port) "~a: ~s" name v)
+  (flush-output (thread-output-port))
+  (with-handlers ([exn:application:type?
+		   (lambda (x)
+		     (fprintf (thread-output-port) ": exn: ~a~n"
+			      (exn-message x))
+		     ;; Check that exn is from the right place:
+		     (let ([class (if (list? name) 
+				      (let ([n (car name)])
+					(if (symbol? n)
+					    n
+					    '|.|))
+				      name)]
+			   [method (if (list? name) (cadr name) 'initialization)])
+		       (when (eq? method 'initialization)
+			 ; init is never inherited, so class name really should be present
+			 (unless (regexp-match (symbol->string class) (exn-message x))
+			   (fprintf (thread-output-port) 
+				    "  NO OCCURRENCE of class name ~a in the error message~n"
+				    class)))
+		       (unless (regexp-match (symbol->string method) (exn-message x))
+			 (fprintf (thread-output-port) 
+				  "  NO OCCURRENCE of method ~a in the error message~n"
+				  method))))]
+		  [(lambda (x) (not (fatal-exn? x)))
+		   (lambda (x)
+		     (fprintf (thread-output-port)
+			      ": WRONG EXN TYPE: ~a~n"
+			      (exn-message x)))])
+    (k v)
+    (flush-display)
+    (fprintf (thread-output-port) ": NO EXN RAISED~n")))
+
+(define (try-bad-args arg-types dest name k)
+  (let ([args (get-bad-args arg-types)])
+    (cond
+     [(not (list? args)) (fprintf (thread-output-port) "~a: failure in bad-testing: ~a~n" name args)]
+     [else
+      (let loop ([pres null][posts args])
+	(unless (null? posts)
+	  (for-each
+	   (lambda (bad)
+	     (apply-bad-args (append
+			      (map posargs-good pres)
+			      (list bad)
+			      (map posargs-good (cdr posts)))
+			     dest name k))
+	   (posargs-bads (car posts)))
+	  (loop (append pres (list (car posts))) (cdr posts))))])))
 
 (define (create-some cls try)
   (when (class? cls)
@@ -589,6 +677,11 @@
   (fprintf (thread-output-port) "creating all exhaustively...~n")
   (hash-table-for-each classinfo (lambda (k v)
 				   (create-some k try-all-args))))
+
+(define (create-all-bad)
+  (fprintf (thread-output-port) "creating all with bad arguments...~n")
+  (hash-table-for-each classinfo (lambda (k v)
+				   (create-some k try-bad-args))))
 
 (define (try-methods cls try)
   (let* ([v (hash-table-get classinfo cls)]
@@ -622,6 +715,10 @@
 
 (define (call-all-random)
   (call-random null))
+
+(define (call-all-bad)
+  (fprintf (thread-output-port) "calling all with bad arguments...~n")
+  (hash-table-for-each classinfo (lambda (k v) (try-methods k try-bad-args))))
 
 (define (call-all-non-editor)
   (call-random (list :editor-buffer% :editor-edit% :editor-snip% :editor-pasteboard% 'EditorGlobal)))
@@ -836,8 +933,14 @@
        (printf "Undocumented global: ~a~n" i)))
    actual-n))
 
-(exit 0)
+(unless (and (>= (vector-length argv) 1)
+	     (string=? (vector-ref argv 0) "-r"))
+  (exit 0))
 
 (random-seed 79)
+
+(create-all-bad)
+(call-all-bad)
+
 (create-all-random)
 (call-all-random)

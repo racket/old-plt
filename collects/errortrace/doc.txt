@@ -130,7 +130,7 @@ Profiling information is accumulated in a hash table. If a procedure
 is redefined, new profiling information is accumulated for the new
 version of the procedure, but the old information is also preserved.
 
-To retireve all profiling information accumulated so far, call
+To retrieve all profiling information accumulated so far, call
 `get-profile-results':
 
 > (get-profile-results) - returns a list of lists that contain:

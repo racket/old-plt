@@ -228,8 +228,8 @@ cygwin-install:
 	cp mzscheme.exe $(srcdir)/../../mzscheme.exe
 	cd $(srcdir)/dynsrc/; command.com /C  gmkmzdyn.bat
 	cp mzstart.exe $(srcdir)/../../collects/launcher/mzstart.exe
-	cp libgc.a $(WLIBDIR)/libgc.a
-	cp libmzscheme.a $(WLIBDIR)/libmzscheme.a
+	cp libgc.a $(WLIBIDIR)/libgc.a
+	cp libmzscheme.a $(WLIBIDIR)/libmzscheme.a
 	echo 'CC=gcc' > $(WBUILDINFO)
 	echo 'CFLAGS=-g -O2 -Wall ' >> $(WBUILDINFO)
 	echo 'LIBS=-lm  -lm  gmzwin.exp' >> $(WBUILDINFO)

@@ -118,7 +118,7 @@ see `README' in that folder.
 
     Cygwin: Create the other executables (besides mred.exe and
     mzscheme.exe) by running
-       mzscheme.exe -mvqL- setup.ss compiler
+       mzscheme.exe -mvqL- setup.ss setup
     in the plt directory (one directory up from here). The above makes
     the .zo files, too, but add -n to the end of the command to skip
     the .zo-compiling step. Afterwards, `plt/Setup PLT.exe' and

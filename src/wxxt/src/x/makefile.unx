@@ -1,7 +1,10 @@
 
 # This file simply provides some compatibility with wxWindows/Motif
 
-include ../make$(MZPLATFORMSUFFIX).env
+PLTSRCDIR = ../../..
+include ../xtmake.env
+
+WXDIR = ../..
 
 IMAGEBASEDIR = $(WXDIR)/utils/image
 IMAGELIBDIR = $(IMAGEBASEDIR)/lib/sys$(MZPLATFORMSUFFIX)
@@ -44,15 +47,15 @@ all: $(IMAGELIBDIR) $(IMAGEOBJMAINDIR) $(IMAGEOBJDIR) \
      ../Utilities/$(WXOBJS) \
      ../Windows/$(WXOBJS) \
      ../XWidgets/$(WXOBJS)
-	cd ..; $(MAKE) WXDIR='$(WXDIR)'
-	cd ../../utils/image/src/; $(MAKE) WXDIR='$(WXDIR)' -f makefile.unx
-	cd ../../contrib/xpm/lib/; $(MAKE) WXDIR='$(WXDIR)'
+	cd ..; $(MAKE)
+	cd ../../utils/image/src/; $(MAKE) -f makefile.unx
+	cd ../../contrib/xpm/lib/; $(MAKE)
 
 clean:
-	cd ..; $(MAKE) WXDIR='$(WXDIR)' clean
-	cd ../../contrib/xpm/lib; make clean	
+	cd ..; $(MAKE) clean
+	cd ../../contrib/xpm/lib; $(MAKE) clean
 	rm -f $(XPMLIBDIR)/libXpm.a
-	cd ../../utils/image/src; $(MAKE) WXDIR='$(WXDIR)' -f makefile.unx cleaneach
+	cd ../../utils/image/src; $(MAKE) -f makefile.unx cleaneach
 
 $(XPMOBJMAINDIR):
 	mkdir $(XPMOBJMAINDIR)

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: wx.h,v 1.2 1998/09/23 00:11:53 mflatt Exp $
+ * $Id: wx.h,v 1.3 1999/11/04 17:25:31 mflatt Exp $
  *
  * Purpose: wxWindows Xt-port main include file
  *
@@ -57,7 +57,6 @@
 
 #include <Application/GlobalData.h>
 #include <Dialogs/Dialogs.h>
-#include <Misc/wx_mgstr.h>
 #include <Utilities/Utilities.h>
 
 #endif // wx_h
@@ -335,28 +334,16 @@
 #	include "DataStructures/Object.h"
 #endif
 #if defined(Uses_wxList)
-//#	include "DataStructures/List.h"
-#	include "DataStructures/wx_list.h"
-#endif
-//#if defined(Uses_wxStringList)
-//#	include "DataStructures/StringList.h"
-//#endif
-#if defined(Uses_wxPathList)
-#	include "DataStructures/PathList.h"
+#	include "../../wxcommon/wx_list.h"
 #endif
 #if defined(Uses_wxHashTable)
-//#	include "DataStructures/HashTable.h"
-#	include "DataStructures/wx_hash.h"
+#	include "../../wxcommon/wx_hash.h"
 #endif
 #if defined(Uses_wxTypeTree)
 #	include "DataStructures/TypeTree.h"
 #endif
 #if defined(Uses_wxPrintSetup)
 #	include "DataStructures/PrintSetup.h"
-#endif
-#if defined(Uses_wxString)
-//#	include "DataStructures/String.h"
-#	include "DataStructures/wxstring.h"
 #endif
 
 //--- application -------------------------------------------------------------
@@ -368,7 +355,6 @@
 //--- event handling ----------------------------------------------------------
 
 #if defined(Uses_wxEvent)
-//#	include "EventHandling/Event.h"
 #	include "EventHandling/wx_sysev.h"
 #	include "EventHandling/wx_stdev.h"
 #endif
@@ -400,7 +386,7 @@
 #endif
 
 #if defined(Uses_wxRegion)
-#	include "GDI-Classes/Region.h"
+#	include "../../wxcommon/Region.h"
 #endif
 
 //--- device contexts ---------------------------------------------------------
@@ -559,45 +545,4 @@
 
 #if defined(Uses_wxSlider)
 #	include "Windows/Slider.h"
-#endif
-
-#if USE_EXTENDED_STATICS && defined(Uses_wxStaticItems)
-#	include "Windows/StaticItems.h"
-#endif
-
-#if USE_TOOLBAR && defined(Uses_wxToolBar)
-#	include "Windows/ToolBar.h"
-#endif
-
-#if USE_VLBOX && defined(Uses_wxVirtListBox)
-#	include "Windows/VirtListBox.h"
-#endif
-
-//--- text items ---
-#if defined(Uses_wxText)
-#	include "Windows/Text.h"
-#endif
-
-#if defined(Uses_wxMultiText)
-#	include "Windows/MultiText.h"
-#endif
-
-#if defined(Uses_wxTextWindow)
-#	include "Windows/TextWindow.h"
-#endif
-
-//--- dialogs ------- ---------------------------------------------------------
-
-#if defined(Uses_wxDialogBase)
-#	include "Dialogs/DialogBase.h"
-#endif
-
-//--- drawing classes ---------------------------------------------------------
-
-#if USE_WXGRAPH && defined(Uses_wxGraphLayout)
-#	include "DrawingClasses/wxgraph.h"
-#endif
-
-#if USE_WXTREE && defined(Uses_wxTreeLayout)
-#	include "DrawingClasses/wxtree.h"
 #endif

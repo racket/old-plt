@@ -1,7 +1,8 @@
 
-WXDIR=$(shell pwd)/../wxxt
+WXDIR=../wxxt
 
-include $(WXDIR)/src/make$(MZPLATFORMSUFFIX)$(MREDMAKEFILESUFFIX).env
+PLTSRCDIR = ..
+include $(WXDIR)/src/xtmake.env
 
 # system name for installation
 INSTALLSYS = `../../bin/archsys`
@@ -53,8 +54,8 @@ all:  objects $(OBJDIR)
 	cd ../mzscheme; $(MAKE) $(EXPORT) mzschemelib++
 	$(MAKE) wx
 	if [ -f wrap/wrap.ss ] ; then $(MAKE) mred-wrap ; fi
-	cd wxs; $(MAKE) WXDIR='$(WXDIR)'
-	cd wxme; $(MAKE) WXDIR='$(WXDIR)'
+	cd wxs; $(MAKE)
+	cd wxme; $(MAKE)
 	$(MAKE) $(MRED) MRCHECK='$(MRCHECK)'
 
 mred-wrap:
@@ -93,11 +94,11 @@ $(OBJDIR)/checkm.o: misc/checkm.c
 	$(CC) $(CFLAGS) $(LOCALFLAGS) -c misc/checkm.c -o $(OBJDIR)/checkm.o
 
 wx:
-	cd $(WXDIR)/src/x; $(MAKE) WXDIR='$(WXDIR)' -f makefile.unx
+	cd $(WXDIR)/src/x; $(MAKE) -f makefile.unx
 
 $(OBJDIR)/mred.o : mred.cxx wxme/wx_media.h wxme/wx_medad.h wxs/wxscheme.h ../mzscheme/cmdline.inc mred.h \
                    ../mzscheme/include/scheme.h ../mzscheme/src/schvers.h $(WXINCDEP) $(WXDIR)/src/Windows/Frame.h \
-                   $(WXDIR)/src/DataStructures/Object.h $(WXDIR)/src/DataStructures/wx_list.h
+                   $(WXDIR)/src/DataStructures/Object.h ../wxcommon/wx_list.h
 	$(CXX) $(CPPFLAGS) $(LOCALFLAGS) -c mred.cxx -o $(OBJDIR)/mred.o
 
 $(OBJDIR)/mred_ee.o : $(OBJDIR)/mred.o
@@ -107,7 +108,7 @@ ee-main:
 	$(OBJDIR)/mred_ee.o
 
 $(OBJDIR)/mredx.o : mredx.cxx ../mzscheme/include/scheme.h mred.h $(WXDIR)/src/Windows/Frame.h \
-                    $(WXDIR)/src/DataStructures/Object.h $(WXDIR)/src/DataStructures/wx_list.h
+                    $(WXDIR)/src/DataStructures/Object.h ../wxcommon/wx_list.h
 	$(CXX) $(CPPFLAGS) $(LOCALFLAGS) -c mredx.cxx -o $(OBJDIR)/mredx.o
 
 $(OBJDIR)/dl_stub.o: misc/dl_stub.c
@@ -127,10 +128,10 @@ depend:
 TILDES=*~ ../collects/mrdemo/*~ demo/turtles/*~ demo/morph/*~ system/*~ collects/mred/*~ tests/*~ misc/*~ windows/*~ ../*~
 
 clean-mred:
-	cd $(WXDIR)/src/x; $(MAKE) WXDIR='$(WXDIR)' -f makefile.unx clean
+	cd $(WXDIR)/src/x; $(MAKE) -f makefile.unx clean
 	rm -rf objects/*/*.o $(TILDES) core
-	cd wxme; $(MAKE) WXDIR='$(WXDIR)' clean
-	cd wxs; $(MAKE) WXDIR='$(WXDIR)' clean
+	cd wxme; $(MAKE) clean
+	cd wxs; $(MAKE) clean
 
 clean:
 	$(MAKE) clean-mred

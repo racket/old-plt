@@ -1,17 +1,16 @@
 
-WXDIR=$(shell pwd)/../../wxxt
-
-include $(WXDIR)/src/make$(MZPLATFORMSUFFIX).env
+PLTSRCDIR = ../..
+include ../../wxxt/src/xtmake.env
 
 LOCALFLAGS = 
 
 WXSCFLAGS = $(XINCLUDE) $(INC) $(OPTIONS) $(GUI) $(WARN) $(OPT) $(DEBUGFLAGS)
 
-WXSCHEMEHEADERS = wxscheme.h ../../mzscheme/src/stypes.h ../../mzscheme/include/scheme.h $(WXDIR)/src/DataStructures/Object.h $(WXDIR)/src/DataStructures/wx_list.h
+WXSCHEMEHEADERS = wxscheme.h ../../mzscheme/src/stypes.h ../../mzscheme/include/scheme.h ../../wxxt/src/DataStructures/Object.h ../../wxcommon/wx_list.h
 MEDIAHEADERS = ../wxme/wx_media.h ../wxme/wx_medad.h ../wxme/wx_snip.h
-WINDOWHEADERS = $(WXDIR)/src/Windows/Window.h
-MAINDCHEADERS = $(WXDIR)/src/DeviceContexts/DC.h
-DCHEADERS = $(MAINDCHEADERS) $(WXDIR)/src/DeviceContexts/WindowDC.h $(WXDIR)/src/DeviceContexts/PSDC.h
+WINDOWHEADERS = ../../wxxt/src/Windows/Window.h
+MAINDCHEADERS = ../../wxxt/src/DeviceContexts/DC.h
+DCHEADERS = $(MAINDCHEADERS) ../../wxxt/src/DeviceContexts/WindowDC.h ../../wxxt/src/DeviceContexts/PSDC.h
 
 OBJDIR=objects/sys$(MZPLATFORMSUFFIX)$(GUISUFFIX)
 
@@ -180,7 +179,7 @@ $(OBJDIR)/wxs_dc.o : wxs_dc.cxx $(WXSCHEMEHEADERS) $(DCHEADERS)
 	$(WXSCC) wxs_dc.cxx -o $(OBJDIR)/wxs_dc.o
 $(OBJDIR)/wxs_evnt.o : wxs_evnt.cxx $(WXSCHEMEHEADERS)
 	$(WXSCC) wxs_evnt.cxx -o $(OBJDIR)/wxs_evnt.o
-$(OBJDIR)/wxs_fram.o : wxs_fram.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS) $(WXDIR)/src/Windows/Frame.h
+$(OBJDIR)/wxs_fram.o : wxs_fram.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS) ../../wxxt/src/Windows/Frame.h
 	$(WXSCC) wxs_fram.cxx -o $(OBJDIR)/wxs_fram.o
 $(OBJDIR)/wxs_gage.o : wxs_gage.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS)
 	$(WXSCC) wxs_gage.cxx -o $(OBJDIR)/wxs_gage.o

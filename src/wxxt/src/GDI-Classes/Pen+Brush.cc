@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Pen+Brush.cc,v 1.6 1998/10/30 00:01:39 mflatt Exp $
+ * $Id: Pen+Brush.cc,v 1.7 1999/11/04 17:25:34 mflatt Exp $
  *
  * Purpose: pen and brush classes needed for drawing
  *
@@ -264,7 +264,7 @@ wxBrush *wxBrushList::FindOrCreateBrush(char *colour, int style)
 }
 
 #define UseXtRegions
-#include "Region.h"
+#include "../../../wxcommon/Region.h"
 #include "wx_types.h"
 
-#include "Region.cc"
+#include "../../../wxcommon/Region.cxx"

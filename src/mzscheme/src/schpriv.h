@@ -233,8 +233,8 @@ extern Scheme_Object *scheme_date;
 #ifdef RUNSTACK_IS_GLOBAL
 extern Scheme_Object **scheme_current_runstack;
 extern Scheme_Object **scheme_current_runstack_start;
-extern MZ_MARK_POS_TYPE scheme_current_cont_mark_stack;
-extern MZ_MARK_STACK_TYPE scheme_current_cont_mark_pos;
+extern MZ_MARK_STACK_TYPE scheme_current_cont_mark_stack;
+extern MZ_MARK_POS_TYPE scheme_current_cont_mark_pos;
 # define MZ_RUNSTACK scheme_current_runstack
 # define MZ_RUNSTACK_START scheme_current_runstack_start
 # define MZ_CONT_MARK_STACK scheme_current_cont_mark_stack

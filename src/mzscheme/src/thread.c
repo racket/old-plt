@@ -2057,9 +2057,9 @@ void scheme_swap_thread(Scheme_Thread *new_thread)
     if (scheme_current_thread->cc_ok)
       *(scheme_current_thread->cc_ok) = 1;
     if ((scheme_current_thread->runstack_owner
-	 && (*scheme_current_thread->runstack_owner) != scheme_current_thread)
+	 && ((*scheme_current_thread->runstack_owner) != scheme_current_thread))
 	|| (scheme_current_thread->cont_mark_stack_owner
-	    && (*scheme_current_thread->cont_mark_stack_owner) != scheme_current_thread)) {
+	    && ((*scheme_current_thread->cont_mark_stack_owner) != scheme_current_thread))) {
       scheme_takeover_stacks(scheme_current_thread);
     }
   } else {

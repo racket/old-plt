@@ -2149,7 +2149,9 @@ int scheme_escape_continuation_ok(Scheme_Object *ec)
 
 #define TOTAL_STACK_SIZE (sizeof(Scheme_Object*) * SCHEME_STACK_SIZE)
 
-static Scheme_Saved_Stack *copy_out_runstack(Scheme_Thread *p)
+static Scheme_Saved_Stack *copy_out_runstack(Scheme_Thread *p,
+					     Scheme_Object **runstack,
+					     Scheme_Object **runstack_start)
 {
   Scheme_Saved_Stack *saved, *isaved, *csaved;
   long size;
@@ -2159,14 +2161,14 @@ static Scheme_Saved_Stack *copy_out_runstack(Scheme_Thread *p)
 #ifdef MZTAG_REQUIRED
   saved->type = scheme_rt_saved_stack;
 #endif
-  size = p->runstack_size - (MZ_RUNSTACK - MZ_RUNSTACK_START);
+  size = p->runstack_size - (runstack - runstack_start);
   saved->runstack_size = size;
   {
     Scheme_Object **start;
     start = MALLOC_N(Scheme_Object*, size);
     saved->runstack_start = start;
   }
-  memcpy(saved->runstack_start, MZ_RUNSTACK, size * sizeof(Scheme_Object *));
+  memcpy(saved->runstack_start, runstack, size * sizeof(Scheme_Object *));
   isaved = saved;
   for (csaved = p->runstack_saved; csaved; csaved = csaved->prev) {
     {
@@ -2192,13 +2194,14 @@ static Scheme_Saved_Stack *copy_out_runstack(Scheme_Thread *p)
   return saved;
 }
 
-static Scheme_Cont_Mark *copy_out_mark_stack(Scheme_Thread *p)
+static Scheme_Cont_Mark *copy_out_mark_stack(Scheme_Thread *p, 
+					     MZ_MARK_POS_TYPE pos)
 {
   long cmcount;
   Scheme_Cont_Mark *cont_mark_stack_copied;
 
   /* Copy cont mark stack: */
-  cmcount = (long)MZ_CONT_MARK_STACK;
+  cmcount = (long)pos;
   if (cmcount) {
     cont_mark_stack_copied = MALLOC_N(Scheme_Cont_Mark, cmcount);
     while (cmcount--) {
@@ -2328,9 +2331,9 @@ call_cc (int argc, Scheme_Object *argv[])
   p->ku.k.p1 = argv[0];
   argv[0] = NULL;
 
-  saved = copy_out_runstack(p);
+  saved = copy_out_runstack(p, MZ_RUNSTACK, MZ_RUNSTACK_START);
   cont->runstack_copied = saved;
-  msaved = copy_out_mark_stack(p);
+  msaved = copy_out_mark_stack(p, MZ_CONT_MARK_STACK);
   cont->cont_mark_stack_copied = msaved;
 
   cont->runstack_owner = p->runstack_owner;
@@ -2394,7 +2397,7 @@ call_cc (int argc, Scheme_Object *argv[])
       Scheme_Thread *op;
       op = *p->runstack_owner;
       if (op) {
-	saved = copy_out_runstack(op);
+	saved = copy_out_runstack(op, op->runstack, op->runstack_start);
 	op->runstack_swapped = saved;
       }
       *p->runstack_owner = p;
@@ -2411,7 +2414,7 @@ call_cc (int argc, Scheme_Object *argv[])
       Scheme_Thread *op;
       op = *p->cont_mark_stack_owner;
       if (op) {
-	msaved = copy_out_mark_stack(op);
+	msaved = copy_out_mark_stack(op, op->cont_mark_stack);
 	op->cont_mark_stack_swapped = msaved;
       }
       *p->cont_mark_stack_owner = p;
@@ -2450,7 +2453,7 @@ void scheme_takeover_stacks(Scheme_Thread *p)
     Scheme_Saved_Stack *swapped;
     op = *p->runstack_owner;
     if (op) {
-      swapped = copy_out_runstack(op);
+      swapped = copy_out_runstack(op, op->runstack, op->runstack_start);
       op->runstack_swapped = swapped;
     }
     *(p->runstack_owner) = p;
@@ -2463,7 +2466,7 @@ void scheme_takeover_stacks(Scheme_Thread *p)
     Scheme_Cont_Mark *swapped;
     op = *p->cont_mark_stack_owner;
     if (op) {
-      swapped = copy_out_mark_stack(op);
+      swapped = copy_out_mark_stack(op, op->cont_mark_stack);
       op->cont_mark_stack_swapped = swapped;
     }
     *(p->cont_mark_stack_owner) = p;

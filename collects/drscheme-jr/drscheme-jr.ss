@@ -134,7 +134,7 @@
 				 params
 				 (mzlib-core pretty-print@)
 				 (mzlib-core file@))]
-      [aries : plt:aries^ ((reference-library-unit/sig "ariesu.ss" "cogen")
+      [aries : plt:aries^ ((reference-library-unit/sig "ariesr.ss" "cogen")
 			    zodiac zodiac:interface)])
     (export (unit params)
       (unit zodiac)

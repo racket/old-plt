@@ -1041,6 +1041,9 @@ void scheme_add_atexit_closer(Scheme_Exit_Closer_Func f)
 
 void scheme_schedule_custodian_close(Scheme_Custodian *c)
 {
+  /* This procedure might be called by a garbage collector to register
+     a resource-based kill. */
+
   if (!scheduled_kills) {
     REGISTER_SO(scheduled_kills);
     scheduled_kills = scheme_null;

@@ -591,73 +591,73 @@
 
       (define header-list%
 	(class100 hierarchical-list% args
-	       (inherit get-items show-focus)
-	       (private-field
-		 [selected #f])
-	       (public
-		 [mark (lambda (marked?) 
-			 (when selected
-			   (let* ([uid (send selected user-data)]
-				  [m (assoc uid mailbox)]
-				  [flags (message-flags m)])
-			     (unless (eq? (not marked?) 
-					  (not (memq 'marked flags)))
-			       (set-message-flags! m (if marked?
-							 (cons 'marked flags)
-							 (remq 'marked flags)))
-			       (write-mailbox)
-			       (apply-style selected 
-					    (if marked? 
-						marked-delta
-						unmarked-delta))
-			       (status "~aarked" 
-				       (if marked? "M" "Unm"))))))]
-		 [hit (lambda () (when selected
-				   (on-double-select selected)))]
-		 [mark-message (lambda () (mark #t))]
-		 [unmark-message (lambda () (mark #f))]
-		 [selected-hit? (lambda () (eq? selected current-selected))])
-	       (override
-		 [on-select
-		  (lambda (i) (set! selected i))]
-		 [on-double-select
-		  (lambda (i)
-		    (let ([e (send message get-editor)]
-			  [uid (send i user-data)])
-		      (send e lock #f)
-		      (send e erase)
-		      (set-current-selected #f)
-		      (let* ([h (get-header uid)]
-			     [small-h (if show-full-headers?
-					  h
-					  (let loop ([l (reverse MESSAGE-FIELDS-TO-SHOW)]
-						     [small-h empty-header])
-					    (if (null? l)
-						small-h
-						(let ([v (extract-field (car l) h)])
-						  (if v
-						      (loop (cdr l) (insert-field
-								     (car l)
-								     v
-								     small-h))
-						      (loop (cdr l) small-h))))))])
-			(send e insert (crlf->lf small-h)
-			      0 'same #f))
-		      (send e insert (crlf->lf (as-background 
-						enable-main-frame
-						(lambda (break-bad break-ok) 
-						  (with-handlers ([exn:break?
-								   (lambda (x) "<interrupted>")])
-						    (get-body uid)))
-						void))
-			    (send e last-position) 'same #f)
-                      (when SHOW-URLS (hilite-urls e))
-		      (send e set-position 0)
-		      (set-current-selected i)
-		      (send e lock #t)))])
-	       (sequence
-		 (apply super-init args)
-		 (show-focus #t))))
+          (inherit get-items show-focus)
+          (private-field
+           [selected #f])
+          (public
+            [mark (lambda (marked?) 
+                    (when selected
+                      (let* ([uid (send selected user-data)]
+                             [m (assoc uid mailbox)]
+                             [flags (message-flags m)])
+                        (unless (eq? (not marked?) 
+                                     (not (memq 'marked flags)))
+                          (set-message-flags! m (if marked?
+                                                    (cons 'marked flags)
+                                                    (remq 'marked flags)))
+                          (write-mailbox)
+                          (apply-style selected 
+                                       (if marked? 
+                                           marked-delta
+                                           unmarked-delta))
+                          (status "~aarked" 
+                                  (if marked? "M" "Unm"))))))]
+            [hit (lambda () (when selected
+                              (on-double-select selected)))]
+            [mark-message (lambda () (mark #t))]
+            [unmark-message (lambda () (mark #f))]
+            [selected-hit? (lambda () (eq? selected current-selected))])
+          (override
+            [on-select
+             (lambda (i) (set! selected i))]
+            [on-double-select
+             (lambda (i)
+               (let ([e (send message get-editor)]
+                     [uid (send i user-data)])
+                 (send e lock #f)
+                 (send e erase)
+                 (set-current-selected #f)
+                 (let* ([h (get-header uid)]
+                        [small-h (if show-full-headers?
+                                     h
+                                     (let loop ([l (reverse MESSAGE-FIELDS-TO-SHOW)]
+                                                [small-h empty-header])
+                                       (if (null? l)
+                                           small-h
+                                           (let ([v (extract-field (car l) h)])
+                                             (if v
+                                                 (loop (cdr l) (insert-field
+                                                                (car l)
+                                                                v
+                                                                small-h))
+                                                 (loop (cdr l) small-h))))))])
+                   (send e insert (crlf->lf small-h)
+                         0 'same #f))
+                 (send e insert (crlf->lf (as-background 
+                                           enable-main-frame
+                                           (lambda (break-bad break-ok) 
+                                             (with-handlers ([exn:break?
+                                                              (lambda (x) "<interrupted>")])
+                                               (get-body uid)))
+                                           void))
+                       (send e last-position) 'same #f)
+                 (when SHOW-URLS (hilite-urls e))
+                 (send e set-position 0)
+                 (set-current-selected i)
+                 (send e lock #t)))])
+          (sequence
+            (apply super-init args)
+            (show-focus #t))))
 
       (define (header-changing-action downloads? go)
 	(let ([old-mailbox mailbox])
@@ -749,61 +749,69 @@
       (send vertical-line-snipclass set-version 1)
       (send vertical-line-snipclass set-classname "sirmail:vertical-line%")
       (send (get-the-snip-class-list) add vertical-line-snipclass)
-      (define body-pen (send the-pen-list find-or-create-pen
-			     "GREEN" 0 'solid))
-      (define body-brush (send the-brush-list find-or-create-brush
-			       "WHITE" 'solid))
+      (define body-pen (send the-pen-list find-or-create-pen "forest green" 0 'solid))
+      (define body-brush (send the-brush-list find-or-create-brush "WHITE" 'solid))
       (define vertical-line-snip%
 	(class100 snip% ()
-	       (inherit set-snipclass get-style)
-	       (private-field
-		 [width 15]
-		 [height 10])
-	       (override
-		 [get-extent
-		  (lambda (dc x y w-box h-box descent-box space-box lspace-box rspace-box)
-		    (for-each (lambda (box) (when box (set-box! box 0)))
-			      (list lspace-box rspace-box))
-		    (let ([old-font (send dc get-font)])
-		      (send dc set-font (send (get-style) get-font))
-		      (let-values ([(w h descent ascent)
-				    (send dc get-text-extent "yxX")])
-			(set! height h)
-			(when descent-box
-			  (set-box! descent-box descent))
-			(when space-box
-			  (set-box! space-box ascent))
-			(when w-box
-			  (set-box! w-box width))
-			(when h-box
-			  (set-box! h-box h)))
-		      (send dc set-font old-font)))]
-		 [draw
-		  (lambda (dc x y left top right bottom dx dy draw-caret)
-		    (let ([orig-pen (send dc get-pen)]
-			  [orig-brush (send dc get-brush)])
-		      (send dc set-pen body-pen)
-		      (send dc set-brush body-brush)
-		      
-		      (send dc draw-line 
-			    (+ x (quotient width 2))
-			    y
-			    (+ x (quotient width 2))
-			    (+ y (- height 1)))
-		      
-		      (send dc set-pen orig-pen)
-		      (send dc set-brush orig-brush)))]
-		 [write
-		  (lambda (s)
-		    (void))]
-		 [copy
-		  (lambda ()
-		    (let ([s (make-object vertical-line-snip%)])
-		      (send s set-style (get-style))
-		      s))])
-	       (sequence
-		 (super-init)
-		 (set-snipclass vertical-line-snipclass))))
+          (inherit set-snipclass get-style get-admin)
+          (private-field
+           [width 15]
+           [height 10])
+          (override
+            [get-extent
+             (lambda (dc x y w-box h-box descent-box space-box lspace-box rspace-box)
+               (for-each (lambda (box) (when box (set-box! box 0)))
+                         (list w-box h-box lspace-box rspace-box))
+               (let ([old-font (send dc get-font)])
+                 (send dc set-font (send (get-style) get-font))
+                 (let-values ([(w h descent ascent)
+                               (send dc get-text-extent "yxX")])
+                   (when w-box
+                     (set-box! w-box width))
+
+                   ;; add one here because I know the descent for the entire
+                   ;; line is going to be one more than the descent of the font.
+                   (when descent-box
+                     (set-box! descent-box (+ descent 1)))
+
+                   (when space-box
+                     (set-box! space-box ascent))
+                   (let ([text (and (get-admin)
+                                    (send (get-admin) get-editor))])
+                     
+                     ;; add 2 here because I know lines are two pixels taller
+                     ;; than the font. How do I know? I just know.
+                     (set! height (+ h 2))
+                     (when h-box
+                       (set-box! h-box (+ h 2)))
+                     
+                     (send dc set-font old-font)))))]
+            [draw
+             (lambda (dc x y left top right bottom dx dy draw-caret)
+               (let ([orig-pen (send dc get-pen)]
+                     [orig-brush (send dc get-brush)])
+                 (send dc set-pen body-pen)
+                 (send dc set-brush body-brush)
+                 
+                 (send dc draw-line 
+                       (+ x (quotient width 2))
+                       y
+                       (+ x (quotient width 2))
+                       (+ y (- height 1)))
+                 
+                 (send dc set-pen orig-pen)
+                 (send dc set-brush orig-brush)))]
+            [write
+             (lambda (s)
+               (void))]
+            [copy
+             (lambda ()
+               (let ([s (make-object vertical-line-snip%)])
+                 (send s set-style (get-style))
+                 s))])
+          (sequence
+            (super-init)
+            (set-snipclass vertical-line-snipclass))))
 
       (define common-style-list #f)
       (define (single-style t)
@@ -814,14 +822,18 @@
 	t)
 
       (define (make-field w)
-	(let ([m (make-object editor-snip% 
-			      (single-style (let ([e (make-object text% 0.0)])
-					      (send e set-keymap #f)
-					      (send e set-max-undo-history 0)
-					      e))
-			      #f 
-			      0 0 0 0 0 0 0 0
-			      w w 'none 'none)])
+	(let ([m (instantiate editor-snip% ()
+                   (editor (single-style (let ([e (make-object text% 0.0)])
+                                           (send e set-keymap #f)
+                                           (send e set-max-undo-history 0)
+                                           e)))
+                   (with-border? #f )
+                   (top-margin 1)
+                   (top-inset 1)
+                   (bottom-margin 1)
+                   (bottom-inset 1)
+                   (min-width w)
+                   (max-width w))])
 	  (send m set-flags (remove 'handles-events (send m get-flags)))
 	  m))
 
@@ -837,6 +849,7 @@
 			   (let ([m (regexp-match re:one-line s)])
 			     (if m (car m) s)))])
 	  (send e begin-edit-sequence)
+          (send e set-line-spacing 0)
 	  (send i user-data (message-uid m))
 	  (send e insert from)
 	  (send e insert sep)
@@ -874,6 +887,7 @@
       (set! main-frame f)
       (define button-panel (make-object horizontal-panel% f))
       (define header-list (make-object header-list% f))
+      (send (send header-list get-editor) set-line-spacing 0)
       (define message (make-object editor-canvas% f))
       (let ([e (make-object text%)])
 	((current-text-keymap-initializer) (send e get-keymap))

@@ -141,3 +141,64 @@ button is being depressed.
 
 See calc-button-min-sizes for help calculating the min sizes
 of the button.
+
+
+
+[][][][][][][][][][][][][][][][][][][][][][][][][][][][][][]
+
+                     _plot.ss_
+
+[][][][][][][][][][][][][][][][][][][][][][][][][][][][][][]
+
+plot.ss provides a simple tool for plotting data values to a 
+device context.
+
+
+Two structures are provided:
+===========================================================
+> (struct data-set ((points (listof (is-a?/c point%)))
+		    (connected? any?)
+		    (pen (is-a?/c pen%))
+		    (min-x number?)
+		    (max-x number?)   
+		    (min-y number?)   
+		    (max-y number?)))
+
+points: the list of data values.
+connected: determines whether the points are connected by a line or not.
+pen: the pen% to draw the points/lines with.
+min-x, max-x, min-y, max-y: indicate the window coordinates that the
+data should be drawn in.
+
+===========================================================
+
+> (struct plot-setup ((axis-label-font (is-a?/c font%))
+		      (axis-number-font (is-a?/c font%))
+		      (axis-pen (is-a?/c pen%))
+		      (grid? any?)
+		      (grid-pen (is-a?/c pen%))
+		      (x-axis-marking (listof number?))
+		      (y-axis-marking (listof number?))
+		      (x-axis-label string?)
+		      (y-axis-label string?)))
+
+axis-label-font: the font% the axis-labels is drawn with.
+axis-number-font: the font% the numbering on the axes is
+drawn with.
+axis-pen: the pen% the axis is drawn with.
+grid?: whether a grid should be drawn in at each axis marking.
+grid-pen: the pen% to draw the grid with.
+x-axis-marking: where marks should be placed on the x-axis.
+y-axis-marking: where marks should be placed on the y-axis.
+x-axis-label-string: the x-axis label.
+y-axis-label-string: the y-axis label.
+
+===========================================================
+
+One function is provided:
+===========================================================
+> (plot (is-a?/c dc<%>) (listof data-set?) plot-setup?)
+
+Draws the data-sets on the dc<%> configured by the setup.
+Uses window coordinates that will accommodate all of the
+data sets.

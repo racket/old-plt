@@ -938,3 +938,24 @@ PROCEDURES -----------------------------------------------------------
   Attempts to find the address of a nameserver on the present system.
   Under Unix, this procedure parses /etc/resolv.conf to extract the
   first nameserver address.
+
+==========================================================================
+_Base 64 Encoding_, _base64_
+==========================================================================
+
+Collection: net
+Files: _base64.ss_, _base64r.ss_, _base64s.ss_
+
+ABSTRACT -------------------------------------------------------------
+
+Implements a Base 64 (mime-standard) encoder. (We'll implement a
+decoder eventually.)
+
+PROCEDURES -----------------------------------------------------------
+
+> (base64-encode string) -> string
+
+  Consumes a string and returns its base64 encoding as a new string.
+  The returned string is broken into 72-character lines separated by
+  CRLF combinations, and it always ends with the "=" base64
+  terminator.

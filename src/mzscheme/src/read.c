@@ -1805,7 +1805,7 @@ skip_whitespace_comments(Scheme_Object *port, Scheme_Object *stxsrc)
 
 #define ZO_CHECK(x) if (!(x)) ill_formed_code(port);
 #define RANGE_CHECK(x, y) ZO_CHECK (x y)
-#define RANGE_CHECK_GETS(x) RANGE_CHECK(x, < port->size - port->pos)
+#define RANGE_CHECK_GETS(x) RANGE_CHECK(x, <= port->size - port->pos)
 
 typedef struct CPort {
   long pos, size;

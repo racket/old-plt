@@ -28,7 +28,7 @@
   (define (get-precompiled-path file.so)
     (let loop ([path-in file.so])
       (let*-values (((path name _) (split-path path-in)))
-        (if (string=? name "compiled")
+        (if (string=? (path->string name) "compiled")
 	    (build-path (cond
 			 ((eq? 'relative path) 'same)
 			 (else path))

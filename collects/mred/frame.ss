@@ -378,7 +378,7 @@
 	       (when file-menu:open
 		 (set! file-menu:open-id
 		       (send file-menu append-item (case wx:platform
-						     [(windows) (string-append "&Open" file-menu:open-string "..." "Ctrl+O")]
+						     [(windows) (string-append "&Open" file-menu:open-string "..." tab "Ctrl+O")]
 						     [(macintosh) (string-append "Open" file-menu:open-string "..." tab "Cmd+O")]
 						     [else (string-append "&Open" file-menu:open-string "..." tab "Ctl+x Ctl+f")])
 			     file-menu:open

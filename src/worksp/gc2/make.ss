@@ -197,7 +197,7 @@
 	     (> (file-or-directory-modify-seconds f)
 		ms))
 	   objs)
-      (unless (system- (format "cl.exe ~a /MT /Zi /Fe~a ~a ~a ~a"
+      (unless (system- (format "cl.exe ~a /MT /Zi /Fe~a unicows.lib ~a ~a ~a"
 			       (if exe? "" "/LD /DLL")
 			       dll
 			       (let loop ([objs (append objs sys-libs)])
@@ -212,6 +212,7 @@
 	(error 'winmake "~a link failed" (if exe? "EXE" "DLL"))))))
 
 (let ([objs (list*
+	     "../libmzsch/Release/uniplt.obj"
 	     "xsrc/gc2.obj"
 	     "xsrc/mzsj86.obj"
 	     "xsrc/foreign.obj"
@@ -228,6 +229,7 @@
 
 (let ([objs (list
 	     "xsrc/main.obj"
+	     "../libmzsch/Release/uniplt.obj"
 	     "../../../libmzsch3mxxxxxxx.lib")])
   (link-dll objs null exe "" #t))
 
@@ -386,6 +388,7 @@
 	 (string-append wx-inc " -DMZ_PRECISE_GC -DGC2_AS_IMPORT -Dwx_msw"))
 
 (let ([objs (append (list
+		     "../libmzsch/Release/uniplt.obj"
 		     "xsrc/wxGC.obj"
 		     "xsrc/wxJPEG.obj"
 		     "xsrc/xcglue.obj")
@@ -420,6 +423,7 @@
 (let ([objs (list
 	     "mred.res"
 	     "xsrc/mrmain.obj"
+	     "../libmzsch/Release/uniplt.obj"
 	     "../../../libmzsch3mxxxxxxx.lib"
 	     "../../../libmred3mxxxxxxx.lib")])
   (link-dll objs (list "advapi32.lib") "../../../MrEd3m.exe" "/link /subsystem:windows" #t))

@@ -19,6 +19,9 @@ draws a disk at posn with given radius and color
 draws a rectangle at posn with given width, height, and color
 <li><code> draw-solid-line</code> : posn posn symbol -> true; <br>
 draws a line from one posn to other
+<li><code> wait-for-mouse-click</code> : -> posn; <br>
+waits for the user to click on the mouse, within the window (the operation 
+is a quasi-constructor for posns)
 <br>
 <li><code> sleep-for-a-while</code> : number -> true; <br>
 suspends evaluation for the given number of seconds 

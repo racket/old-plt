@@ -18,6 +18,8 @@
 	   outline-rect
 	   filled-circle
 	   outline-circle
+           color-line
+           text
 
 	   image-inside?
 	   find-image
@@ -194,6 +196,18 @@
       (send dc set-pen (or (send the-pen-list find-or-create-pen (symbol->string color) 1 pen)
 			   (error (format "unknown color: ~a" color))))
       dc))
+
+  (define (color-line x y color)
+    (let ([dc (new-dc+bm 'color-line x y color 'transparent 'solid)])
+      (send dc draw-line 0 0 x y)
+      (dc->snip dc)))
+
+   (define (text str)
+     (let ([dc (new-dc+bm 'text 200 30 'black 'transparent 'solid)])
+       (let*-values ([(x y d s) (send dc get-text-extent str)]
+                     [(dc) (new-dc+bm 'text x y 'black 'transparent 'solid)])
+         (send dc draw-text str 0 0)
+         (dc->snip dc))))
 
   (define (a-rect who w h color brush pen)
     (let ([dc (new-dc+bm who w h color brush pen)])

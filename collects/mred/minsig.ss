@@ -1,3 +1,4 @@
-(define-signature mred:wx^ ())
+
+(require-library "wxs.ss" "mred")
 
 (require-library "minwxsig.ss" "mred")

@@ -1,20 +1,17 @@
 
 ;; #%ized so it can be loaded in the "R5RS" namespace
-;; Weird begin-elaboration-time structure lets it
-;;  be compiled correctly, too.
 
 (#%require-library "invoke.ss")
 
-(#%begin-elaboration-time (define define-syntax #%void))
-
-(define-values/invoke-unit (define-syntax
+(begin-elaboration-time
+ (define-values/invoke-unit (define-syntax
 			      -:sr:tag
 			      -:sr:untag
 			      -:sr:flatten
 			      -:sr:matches-pattern?
 			      -:sr:get-bindings
 			      -:sr:expand-pattern)
-   (#%require-library "synruler.ss"))
+   (#%require-library "synruler.ss")))
 
 (#%define-macro define-syntax define-syntax)
 

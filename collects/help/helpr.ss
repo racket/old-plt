@@ -4,6 +4,7 @@
 	  (file : mzlib:file^)
 	  (url : mzlib:url^)
           (plt-installer : setup:plt-installer^)
+	  [info : setup:info^]
 	  (mred : mred^)
 	  (framework : framework^)
 	  (mixin : (frame-mixin))
@@ -13,7 +14,6 @@
 			     mred framework)]
 	[search : help:search^ ((require-relative-library "search.ss")
 				doc-position function)]
-	[info : setup:info^ ((require-library "get-infor.ss" "setup"))]
 	[help : help:help-window^
 	      ((require-relative-library "helpwin.ss")
 	       info search

@@ -10,6 +10,9 @@
 		       ((require-library "pconverr.ss")
 			(mzlib string)
 			(mzlib function))]
+
+	[get-info : setup:info^ ((require-library "get-infor.ss" "setup"))]
+
 	[text : drscheme:text^ ((require-relative-library "edit.ss")
 				mzlib:date framework zodiac)]
 	[snip : drscheme:snip^ ((require-relative-library "snip.ss") mred)]
@@ -17,7 +20,8 @@
                                   mred framework (mzlib string) (mzlib function))]
         [export* : drscheme:export^ ((require-relative-library "export.ss")
 				     mred mzlib mzlib:date framework
-				     plt-installer print-convert app
+				     plt-installer get-info
+				     print-convert app
 				     text snip
 				     init graph
 				     cogen zodiac)]
@@ -50,7 +54,7 @@
 			      (export* help-desk))]
 
 
-	[tool : () 
+	[tool : ()
 	      ((require-relative-library "tool.ss")
 	       mred mzlib framework
 	       print-convert 
@@ -70,15 +74,18 @@
 				(mzlib function)
 				(mzlib file)
                                 plt-installer)])
-  (export (unit mzlib)
+  (export (open mzlib)
+	  (open print-convert)
 	  (unit mred)
 	  (open framework)
 	  (open plt-installer)
-	  (unit print-convert)
+	  (open get-info)
+
+	  (unit zodiac zodiac)
+	  (unit cogen plt:aries)
+
 	  (unit init drscheme:init)
 	  (unit prefs drscheme:prefs)
-	  (unit cogen drscheme:cogen)
-	  (unit zodiac zodiac)
 	  (unit text drscheme:text)
 	  (unit snip drscheme:snip)
 	  (unit export* drscheme:export)

@@ -3,6 +3,7 @@
 			   [mzlib:date : mzlib:date^]
 			   [framework : framework^]
 			   [plt-installer : setup:plt-installer^]
+			   [get-info : setup:info^]
 			   [print-convert : mzlib:print-convert^]
 			   [app : drscheme:app^]
 			   [text : drscheme:text^]
@@ -85,6 +86,7 @@
 		    (mzlib file)
 		    url
 		    plt-installer
+		    get-info
 		    (mred : mred^)
 		    framework
 		    frame
@@ -92,8 +94,7 @@
 		    basis)])
 
 	
-  (export (unit help-info)
-          (unit interface)
+  (export (unit interface)
           (unit basis)
 	  (unit frame)
 	  (unit unit)
@@ -102,4 +103,5 @@
 	  (unit load-handler)
 	  (unit rep)
 	  (unit help-desk)
-	  (unit language)))
+	  (unit language)
+	  (unit help-info)))

@@ -81,47 +81,47 @@
 	(super-change-to-file filename)
 	(set-project-window filename))
 
-      (define execute-callback-dialog #f)
-      (define execute-callback-panel #f)
       (define (execute-callback)
 	(cond
 	 [project-window
-	  (unless execute-callback-dialog
-	    (set! execute-callback-dialog (make-object dialog% "Execute project?"))
-	    (make-object message% "Execute the project or just this file?" execute-callback-dialog)
-	    (set! execute-callback-panel (make-object horizontal-panel% execute-callback-dialog))
-	    (send execute-callback-panel set-alignment 'center 'center))
-	  (send execute-callback-panel change-children (lambda (l) null))
-	  (let* ([pref
-		  (preferences:get 'drscheme:project-manager:execute-callback-project?)]
-		 [project-button
-		  (make-object button% "Project" execute-callback-panel
-			       (lambda x
-				 (preferences:set
-				  'drscheme:project-manager:execute-callback-project?
-				  #t)
-				 (send execute-callback-dialog show #f))
-			       (if pref
-				   '(border)
-				   '()))]
-		 [file-button
-		  (make-object button% "File" execute-callback-panel
-			       (lambda x
-				 (preferences:set
-				  'drscheme:project-manager:execute-callback-project?
-				  #f)
-				 (send execute-callback-dialog show #f))
-			       (if pref
-				   '()
-				   '(border)))])
-	    (send (if pref project-button file-button) focus)
-	    (send execute-callback-dialog show #t))
+	  (let* ([execute-callback-dialog (make-object dialog% "Execute project?" this)]
+		 [_ (make-object message% "Execute the project or just this file?" execute-callback-dialog)]
+		 [execute-callback-panel (make-object horizontal-panel% execute-callback-dialog)])
+	    (send execute-callback-panel set-alignment 'center 'center)
+	    (let* ([pref
+		    (preferences:get 'drscheme:project-manager:execute-callback-project?)]
+		   [cancelled? #t]
+		   [project-button
+		    (make-object button% "Project" execute-callback-panel
+				 (lambda x
+				   (set! cancelled? #f)
+				   (preferences:set
+				    'drscheme:project-manager:execute-callback-project?
+				    #t)
+				   (send execute-callback-dialog show #f))
+				 (if pref
+				     '(border)
+				     '()))]
+		   [file-button
+		    (make-object button% "File" execute-callback-panel
+				 (lambda x
+				   (set! cancelled? #f)
+				   (preferences:set
+				    'drscheme:project-manager:execute-callback-project?
+				    #f)
+				   (send execute-callback-dialog show #f))
+				 (if pref
+				     '()
+				     '(border)))])
+	      (send (if pref project-button file-button) focus)
+	      (send execute-callback-dialog show #t))
 
-	  (if (preferences:get 'drscheme:project-manager:execute-callback-project?)
-	      (begin
-		(send project-window show #t)
-		(send project-window execute-project))
-	      (super-execute-callback))]
+	    (unless cancelled?
+	      (if (preferences:get 'drscheme:project-manager:execute-callback-project?)
+		  (begin
+		    (send project-window show #t)
+		    (send project-window execute-project))
+		  (super-execute-callback))))]
 	 [else
 	  (super-execute-callback)]))
 	  

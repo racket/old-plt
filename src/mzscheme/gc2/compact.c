@@ -19,7 +19,13 @@
 
 #ifdef NO_GC_SIGNALS
 # undef GENERATIONS
-#define GENERATIONS 0
+# define GENERATIONS 0
+#endif
+
+#ifdef OS_X
+/* In 10.2, SIGBUS handling doesn't work right. */
+# undef GENERATIONS
+# define GENERATIONS 0
 #endif
 
 #define USE_FREELIST 0

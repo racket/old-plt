@@ -1165,7 +1165,10 @@
 	    (values null #f #f)
 	    (values
 	     `(lambda (e)
-		(if (equal? ,(syntax-e p) (syntax-e e))
+		(if ,(let ([test `(equal? ,(syntax-e p) (syntax-e e))])
+		       (if id-is-rest? ; might get a syntax pair
+			   `(and (syntax? e) ,test)
+			   test))
 		    null
 		    #f))
 	     #f

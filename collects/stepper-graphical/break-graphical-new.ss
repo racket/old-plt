@@ -81,22 +81,22 @@
   
   ; ----------------------------------------------------------------
   
-  (define (binding-name binding)
-    (ccond [(z:binding? binding)
-            (z:binding-orig-name binding)]
-           [(box? binding)
-            (if (null? (unbox binding))
-                (e:internal-error #f "empty slot in binding list")
-                (z:varref-var (car (unbox binding))))]))
+;  (define (binding-name binding)
+;    (ccond [(z:binding? binding)
+;            (z:binding-orig-name binding)]
+;           [(box? binding)
+;            (if (null? (unbox binding))
+;                (e:internal-error #f "empty slot in binding list")
+;                (z:varref-var (car (unbox binding))))]))
   
-  (define (is-drscheme-definitions-editor? editor)
-    (and (is-a? editor m:editor<%>)
-         (send editor get-canvas)
-         (is-a? (send editor get-canvas) d:unit:definitions-canvas%)))
+;  (define (is-drscheme-definitions-editor? editor)
+;    (and (is-a? editor m:editor<%>)
+;         (send editor get-canvas)
+;         (is-a? (send editor get-canvas) d:unit:definitions-canvas%)))
   
-  (define (get-drscheme-frame editor)
-    (and (is-drscheme-definitions-editor? editor)
-         (send (send editor get-canvas) get-top-level-window)))
+;  (define (get-drscheme-frame editor)
+;    (and (is-drscheme-definitions-editor? editor)
+;         (send (send editor get-canvas) get-top-level-window)))
   
   (define (find-location-text zodiac)
     (let* ([source (z:location-file (z:zodiac-start zodiac))])
@@ -106,20 +106,8 @@
             "Can't copy text yet")
           (format "~a : ~a" (z:location-offset (z:zodiac-start zodiac)) (z:location-file (z:zodiac-start zodiac))))))
   
- (define (collapse-tree cons-tree)
-    (let loop ([tree cons-tree] [result null])
-      (cond 
-        [(pair? tree) (loop (cdr tree) (loop (car tree) result))]
-        [(null? tree) result]
-        [else (cons tree result)])))
   
-  ;(equal? (collapse-tree (list 3 4 (list (list 5 6) (cons 7 8)) (list 9)))
-  ;        (list 9 8 7 6 5 4 3))
 
-  (define (add-to-popup popup val)
-    (cond ([struct? val]
-  
-       
   (define debugger%
     (class object% (drscheme-frame)
 

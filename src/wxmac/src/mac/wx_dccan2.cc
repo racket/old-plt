@@ -643,19 +643,22 @@ Bool wxCanvasDC::Blit(float xdest, float ydest, float width, float height,
     int mode;
     int ixsrc, iysrc, h, w, x, y;
 
-    switch (rop)
-      {
-      case wxXOR:  
-	mode = srcXor; 
-	break;
-      case wxSOLID: 
-	mode = srcOr; 
-	break;
-      case wxSTIPPLE: /* = opaque */
-      default:
-	mode = srcCopy;
-	break;
-      }
+    if (source->GetDepth() == 1) {
+      switch (rop)
+	{
+	case wxXOR:  
+	  mode = srcXor; 
+	  break;
+	case wxSOLID:
+	  mode = srcOr;
+	  break;
+	case wxSTIPPLE: /* = opaque */
+	default:
+	  mode = srcCopy;
+	  break;
+	}
+    } else
+      mode = srcCopy;
     
     ixsrc = (int)floor(xsrc);
     iysrc = (int)floor(ysrc);

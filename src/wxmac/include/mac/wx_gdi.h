@@ -116,7 +116,7 @@ class wxBitmap: public wxObject
 
   virtual Bool Create(int width, int height, int depth = -1);
   virtual Bool LoadFile(char *name, long flags = wxBITMAP_DISCARD_COLOURMAP | wxBITMAP_TYPE_RESOURCE, wxColour *bg = NULL);
-  virtual Bool SaveFile(char *name, int type, wxColourMap *cmap = NULL);
+  virtual Bool SaveFile(char *name, int type, int quality = 75, wxColourMap *cmap = NULL);
 
   inline Bool Ok(void) { return ok; }
   inline int GetWidth(void) { return width; }

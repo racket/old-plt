@@ -1064,8 +1064,6 @@ Bool wxBitmap::LoadFile(char *name, long flags, wxColour *bg)
 	x_pixmap = NULL;
       }
       ok = FALSE;
-    } else {
-      SetDepth(wxDisplayDepth());
     }	
   } else if (flags & wxBITMAP_TYPE_PNG) {
     ok = wx_read_png(name, this, getMask, bg);
@@ -1075,8 +1073,6 @@ Bool wxBitmap::LoadFile(char *name, long flags, wxColour *bg)
 	x_pixmap = NULL;
       }
       ok = FALSE;
-    } else {
-      SetDepth(wxDisplayDepth());
     }	
   } else {
     ok = FALSE;
@@ -1084,7 +1080,7 @@ Bool wxBitmap::LoadFile(char *name, long flags, wxColour *bg)
   return ok;
 }
 
-Bool wxBitmap::SaveFile(char *name, int type, wxColourMap *cmap)
+Bool wxBitmap::SaveFile(char *name, int type, int quality, wxColourMap *cmap)
 {
   Bool isok = FALSE;
 
@@ -1117,7 +1113,7 @@ Bool wxBitmap::SaveFile(char *name, int type, wxColourMap *cmap)
 
     isok = (errorStatus == XpmSuccess);
   } else if (type & wxBITMAP_TYPE_JPEG) {
-    isok = write_JPEG_file(name, this, 75);
+    isok = write_JPEG_file(name, this, quality);
   } else if (type & wxBITMAP_TYPE_PNG) {
     isok = wx_write_png(name, this);
   }

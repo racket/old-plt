@@ -1287,7 +1287,7 @@
                         ((close-to-keyword? (id-string (car acc)))
                          (close-to-keyword-error 'field (car acc) (id-src (car acc))))
                         (else
-                         (variable-not-found-error 'not-found) (car acc) (id-src (car acc)))))))))
+                         (variable-not-found-error 'not-found (car acc) (id-src (car acc))))))))))
            (set-access-name! exp new-acc)
            (check-sub-expr exp))))))
   

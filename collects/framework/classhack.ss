@@ -9,3 +9,8 @@
     (compile-c-extensions (list classhack.c) framework-dir)))
 
 (load-extension classhack.so) ;; now we have interface->names, class->names and interface->super-interfaces
+
+(delete-file classhack.so)
+(let ([classhack.o (build-path framework-dir "classhack.o")])
+  (when (file-exists? classhack.o)
+    (delete-file classhack.o)))

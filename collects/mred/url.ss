@@ -13,7 +13,7 @@
 
 (define mred:url@
   (unit/sig mred:url^
-    (import mzlib:function^)
+    (import (f : mzlib:function^))
 
     ;; if the path is absolute, it just arbitrarily picks the first
     ;; filesystem root.
@@ -62,16 +62,16 @@
       (lambda (x)
 	(match x
 	  [($ url scheme host port path params query fragment)
-	   (foldr (lambda (both sofar) ;; multiple values suck.
-		    (if (andmap (lambda (x) x) both)
-			(string-append (first both) (second both) sofar)
-			sofar))
-		  ""
-		  (list (list scheme "://")
-			(list host "")
-			(list ":" (and port (number->string port)))
-			(list path "")
-			(list "#" fragment)))])))
+	   (f:foldr (lambda (both sofar) ;; multiple values suck.
+		      (if (andmap (lambda (x) x) both)
+			  (string-append (first both) (second both) sofar)
+			  sofar))
+		    ""
+		    (list (list scheme "://")
+			  (list host "")
+			  (list ":" (and port (number->string port)))
+			  (list path "")
+			  (list "#" fragment)))])))
 
     ; url->default-port : url -> num
     (define url->default-port

@@ -593,6 +593,8 @@ by Felleisen and Flatt.
 
 The _helper.ss_ module provides additional helper functions and syntax.
 
+ ------- Memoization -------
+
 > (define-memoized (f arg ...) expr ...)    SYNTAX
 
   Like `define' for function defitions, except that the function is
@@ -600,17 +602,88 @@ The _helper.ss_ module provides additional helper functions and syntax.
   arguments are provided later, the same result is returned
   immeduately.
 
-> (lambda-memoized (arg ...) expr)
+> (lambda-memoized (arg ...) expr)          SYNTAX
 
   Like `lambda' except that the resulting function is "memoized" (see
   `define-memoized' above).
 
-> (lang-match-lambda (variable) grammar-expr [pattern bodies ...] ...)
+ ------- Matching -------
+
+> (lang-match-lambda (variable) grammar-expr 
+    [pattern bodies ...] ...)                                SYNTAX
 
   Combines a pattern-matching dispatch with a `lambda', producing a
   function that takes a single argument and pattern-matches. Each
   `pattern' is as for `reduction', and the names that the pattern
   binds are visible in the `bodies'.
+
+> (lang-match-lambda* (variable ...) main-variable grammar-expr 
+    [pattern bodies ...] ...)                                SYNTAX
+
+  Generalizes `lang-match-lambda' to create a multi-arity procedure.
+  The `main-variable' must be one of the `variables', and it is the
+  variable used for matching.
+
+> lang-match-lambda-memoized                                 SYNTAX
+> lang-match-lambda-memoized*                                SYNTAX
+
+  Memoized versions of the above.
+
+ ------- Backtracking -------
+
+A function that supports backtracking must returns one of the
+following:
+
+  * #f to indicate failure
+  * any other value to indicate simple success
+  * (many-results l) to indicates success with any of the
+    results in the list l
+  * (explore-results ...) or (explore-parallel-results ...),
+    which explores the results of recursive calls to generate
+    one or more result values lazily
+
+Whenever the backtracking function calls itself (or another
+backtracking function in a cooperative set), it should use
+`explore-results' or `explore-parallel-results' instead of
+inspecting the value directly. To get a single result from
+the backtracking function, uses `first-result'.
+
+> many-results : ((listof any) . -> . any)
+
+Aggregates potential results for future exploration.
+
+> (explore-results (id) backtrackable-expr                   SYNTAX
+        body-expr ...)
+
+  Evaluates `backtrackable-expr'. In the simple case, `id' is bound to
+  the result, the the result of the `explore-results' expression is
+  the result of evaluating `body-expr's.
+
+  If `backtrackable-expr' produces multiple alternatives (via
+  `many-results') or if it produces a backtrackable computation, the
+  result is a backtrackable computation. This backtrackable
+  computation proceeds bey generating each successful result from
+  `backtrackable-expr', and then feeding the result to the
+  `body-expr's to refine the results. Naturally, `body-expr' can
+  contain futher uses of `explore-results' or `many-results' which are
+  folded into the backtracking exploration.
+
+> (explore-parallel-results (results-id) backtrackable-list-expr
+     body-expr ...)
+
+  Generalizes `explore-results' where `backtrackable-list-expr'
+  produces a list of backtrackable results, and `body-expr' is called
+  with successful combinations aggregated into `results-id' as a list.
+
+> first-result : (any . -> . any)
+
+  If the argument to `first-result' is a backtrackable computation, it
+  is explored to obtain the first success, and that success is
+  returned. If complete backtracking fails, the result is #f. If the
+  argument to `first-result' is any other value, it is returned
+  immediately.
+
+ ------- Misc -------
 
 > function-reduce* : ((listof red?)
                       any?

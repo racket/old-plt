@@ -29,30 +29,42 @@
       (for-each (lambda (i) (hash-table-put! ht i #t)) l)
       (hash-table-map ht (lambda (k v) k))))
   
-  (define-syntaxes (lang-match-lambda lang-match-lambda-memoized)
+  (define-syntaxes (lang-match-lambda* 
+		    lang-match-lambda-memoized*
+		    lang-match-lambda
+		    lang-match-lambda-memoized)
     (let ([generic
            (lambda (lam)
              (lambda (stx)
                (syntax-case stx ()
-                 [(_ (id) grammar [pattern result] ...)
+                 [(_ (id ...) main-id grammar [pattern result] ...)
                   (with-syntax ([red (generate-temporaries #'(pattern ...))]
-                                [lam lam])
+                                [lam lam]
+				[ids #'(id ...)])
                     (syntax/loc
                      stx
                      (let ([lang grammar]
                            [escape (make-parameter void)])
-                       (let ([reds (list (reduction grammar pattern ((escape) (lambda (id) result)))
+                       (let ([reds (list (reduction grammar pattern ((escape) (lambda ids result)))
                                          ...)])
-                         (lam (id)
+                         (lam (id ...)
                               ((let/ec esc
                                  (parameterize ([escape esc])
-                                   (reduce reds id)
-                                   (error 'lang-match-lambda "no pattern matched input: ~e" id)))
-                               id))))))])))])
+                                   (reduce reds main-id)
+                                   (error 'lang-match-lambda "no pattern matched input: ~e" main-id)))
+                               id ...))))))])))]
+	  [single
+	   (lambda (multi)
+	     (lambda (stx)
+	       (syntax-case stx ()
+		 [(_ (id) grammar [pattern result] ...)
+		  (with-syntax ([multi multi])
+		    #'(multi (id) id grammar [pattern result] ...))])))])
       (values
        (generic #'lambda)
-       (generic #'lambda-memoized))))
-  
+       (generic #'lambda-memoized)
+       (single #'lang-match-lambda*)
+       (single #'lang-match-lambda-memoized*))))
   
     (define (transitive-closure orig)
     ;; Copy initial mapping:
@@ -122,15 +134,69 @@
 		    (length l)
 		    expr)])))))
 
+  (define-struct multi-result (choices))
+
+  ;; ----------------------------------------
+  ;; Path exploration:
+  
+  (define-syntax (explore-results stx)
+    (syntax-case stx ()
+      [(_ (id) result-expr body-expr bes ...)
+       #'(let ([try (lambda (id) body-expr bes ...)])
+           (let ([r result-expr])
+             (do-explore r try)))]))
+
+  (define-syntax (explore-parallel-results stx)
+    (syntax-case stx ()
+      [(_ (list-id) result-list-expr body-expr bes ...)
+       #'(let ([try (lambda (list-id) body-expr bes ...)])
+           (let loop ([rs result-list-expr][es null])
+             (if (null? rs)
+                 (try (reverse es))
+                 (do-explore 
+                  (car rs)
+                  (lambda (e)
+                    (loop (cdr rs) (cons e es)))))))]))
+  
+  (define (do-explore r try)
+    (cond
+      [(multi-result? r)
+       (let loop ([l (multi-result-choices r)])
+         (if (null? l)
+             #f
+             (let ([v (try ((car l)))])
+               (if (not v)
+                   (loop (cdr l))
+                   (make-multi-result 
+                    (append (if (multi-result? v)
+                                (multi-result-choices v)
+                                (list (lambda () v)))
+                            (list (lambda () (loop (cdr l))))))))))]
+      [else (try r)]))
+
+  (define (many-results l)
+    (make-multi-result (map (lambda (v) (lambda () v)) l)))
+  
+  (define (first-result result)
+    (let/ec k
+      (explore-results (x) result
+        (k x))))
+  
   (provide
    define-memoized
    lambda-memoized
    lang-match-lambda
-   lang-match-lambda-memoized)
+   lang-match-lambda-memoized
+   lang-match-lambda*
+   lang-match-lambda-memoized*
+   explore-results
+   explore-parallel-results)
   (provide/contract
    (function-reduce* ((listof red?) any? (any? . -> . boolean?) 
 		      . -> . (listof any?)))
    (unique-names? ((listof symbol?) . -> . boolean?))
    (generate-string (-> string?))
    (all-of (any? (any? . -> . any) . -> . (listof any?)))
-   (transitive-closure ((listof pair?) . -> . (listof (listof any?))))))
+   (transitive-closure ((listof pair?) . -> . (listof (listof any?))))
+   (many-results ((listof any?) . -> . any))
+   (first-result (any? . -> . any))))

@@ -33,7 +33,7 @@
 		 (sequence
 		   (super-init)
 		   (set-classname  "hyper-data-class")
-		   (send wx:the-buffer-data-class-list add this)))))
+		   (send (wx:get-the-buffer-data-class-list) add this)))))
 
     (define-struct hyperlink (anchor-start 
 			      anchor-end

@@ -1344,5 +1344,6 @@ void wxFrame::AddDragAccept(wxWindow *target, Bool on)
     }
   } else {
     drag_targets->Append(target);
+    drag_targets->Show(target, FALSE); /* make link weak */
   }
 }

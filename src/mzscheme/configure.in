@@ -13,6 +13,8 @@
 #  OPTIONS - C and C++ flags, not needed for configure-time tests
 #  MZOPTIONS - MzScheme-only flags
 #  MROPTIONS - MrEd-only flags
+#  CGCOPTIONS - Boehm-GC-only flags
+#  GC2OPTIONS - GC2-only flags
 #
 # Note: we use CPPFLAGS for configure-time testing only because
 # it needs to include C++ flags that we don't want for MzScheme.
@@ -168,6 +170,7 @@ MZBINTARGET=normal-bin
 MZINSTALLTARGET=normal-install
 
 MZOPTIONS=
+CGCOPTIONS=
 GC2OPTIONS=
 
 LIBS=
@@ -395,7 +398,10 @@ case $OS in
     if test "$CC" = "gcc"; then
       COMPFLAGS="$COMPFLAGS -fPIC"
     else
-      COMPFLAGS="$COMPFLAGS -Wp,-H,64000 -Aa -D_HPUX_SOURCE +Z"
+      CFLAGS="$CFLAGS -Wp,-H,64000"
+      COMPFLAGS="$COMPFLAGS -Aa -D_HPUX_SOURCE +Z"
+      CGCOPTIONS="$CGCOPTIONS +ESdbgasm"
+      MZOPTIONS="$MZOPTIONS +e"
     fi
     LIBS="$LIBS -Wl,-E"
     # For Xaw and Xmu:
@@ -925,6 +931,7 @@ AC_SUBST(X_EXTRA_LIBS)
 
 AC_SUBST(OPTIONS)
 AC_SUBST(MZOPTIONS)
+AC_SUBST(CGCOPTIONS)
 AC_SUBST(GC2OPTIONS)
 AC_SUBST(MROPTIONS)
 AC_SUBST(GCDIR)

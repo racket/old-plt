@@ -3269,13 +3269,13 @@ do_letrec_syntaxes(const char *where, int normal,
 	for (l = SCHEME_STX_CAR(a); SCHEME_STX_PAIRP(l); l = SCHEME_STX_CDR(l)) {
 	  a = SCHEME_STX_CAR(l);
 	  scheme_check_identifier(where, a, NULL, stx_env, forms);
-	  scheme_dup_symbol_check(&r, where, a, "binding", form);
+	  scheme_dup_symbol_check(&r, where, a, "binding", forms);
 	  cnt++;
 	}
       } else {
 	a = SCHEME_STX_CAR(a);
 	scheme_check_identifier(where, a, NULL, stx_env, forms);
-	scheme_dup_symbol_check(&r, where, a, "binding", form);
+	scheme_dup_symbol_check(&r, where, a, "binding", forms);
 	cnt++;
       }
     }

@@ -1699,7 +1699,7 @@
 
   (-define (ellipsis-count-error sexp sloc)
     (raise-syntax-error
-     '(syntax syntax mzscheme)
+     'syntax
      "incompatible ellipsis match counts for template"
      sexp
      sloc))

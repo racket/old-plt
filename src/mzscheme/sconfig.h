@@ -397,9 +397,9 @@
 
 #endif
 
-  /************** HP/UX with cc ****************/
+  /************** HP/UX with cc or gcc ****************/
 
-#if (defined(_PA_RISC1_0) || defined(_PA_RISC1_1)) && !defined(linux)
+#if defined(__hpux)
 
 # define SCHEME_PLATFORM_LIBRARY_SUBPATH "parisc-hpux"
 

@@ -35,6 +35,13 @@ void GC_cleanup(void *obj, void *ignored);
 
 /******************** Special kinds of GC *********************/
 
+#if SGC_STD_DEBUGGING
+# ifndef USE_SENORA_GC
+#  define USE_SENORA_GC
+# endif
+# define USE_MEMORY_TRACING 
+#endif
+
 #ifdef USE_SENORA_GC
 extern void *GC_cpp_malloc(size_t);
 #endif
@@ -174,10 +181,14 @@ inline void gc::operator delete(void * /*obj*/)
 
 #ifdef OPERATOR_NEW_ARRAY
 inline void *gc::operator new[](size_t size) {
-#if defined(USE_SENORA_GC) || defined(MZ_PRECISE_GC)
+#if defined(MZ_PRECISE_GC)
   return GC_cpp_malloc_array(size);
 #else
+# ifdef USE_SENORA_GC
+  return ::operator new(size);
+# else
   return gc::operator new(size);
+# endif
 #endif
 }
     

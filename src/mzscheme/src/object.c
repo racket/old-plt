@@ -4261,7 +4261,7 @@ static long count_cvars(ClassVariable *cvar, Scheme_Hash_Table *ht)
   long e = 0;
 
   while (cvar) {
-    e += scheme_count_memory(cvar->name, ht);
+    e += (ht ? scheme_count_memory(cvar->name, ht) : 0);
 
     switch(cvar->vartype) {
     case varPUBLIC:
@@ -4269,11 +4269,11 @@ static long count_cvars(ClassVariable *cvar, Scheme_Hash_Table *ht)
     case varPRIVATE:
     case varNOTHING:
     case varINPUT:
-      e += scheme_count_memory(cvar->u.value, ht);
+      e += (ht ? scheme_count_memory(cvar->u.value, ht) : 0);
       break;
     case varINHERIT:
     case varRENAME:
-      e += scheme_count_memory(cvar->u.source.name, ht);
+      e += (ht ? scheme_count_memory(cvar->u.source.name, ht) : 0);
     }
 
     cvar = cvar->next;
@@ -4292,7 +4292,7 @@ void scheme_count_class(Scheme_Object *o, long *s, long *e, Scheme_Hash_Table *h
     + (sclass->pos + 1) * sizeof(Scheme_Class*)
     + sclass->closure_size * sizeof(int);
 
-  *e += scheme_count_memory((Scheme_Object *)sclass->superclass, ht);
+  *e += (ht ? scheme_count_memory((Scheme_Object *)sclass->superclass, ht) : 0);
   
   *e += count_cvars(sclass->ivars, ht);
 
@@ -4302,8 +4302,8 @@ void scheme_count_class(Scheme_Object *o, long *s, long *e, Scheme_Hash_Table *h
 void scheme_count_generic(Scheme_Object *o, long *s, long *e, Scheme_Hash_Table *ht)
 {
   *s = sizeof(Generic_Data);
-  *e = scheme_count_memory(((Generic_Data *)o)->clori, ht);
-  *e = scheme_count_memory(((Generic_Data *)o)->ivar_name, ht);
+  *e = (ht ? scheme_count_memory(((Generic_Data *)o)->clori, ht) : 0);
+  *e = (ht ? scheme_count_memory(((Generic_Data *)o)->ivar_name, ht) : 0);
 }
 
 void scheme_count_class_data(Scheme_Object *o, long *s, long *e, Scheme_Hash_Table *ht)
@@ -4314,7 +4314,7 @@ void scheme_count_class_data(Scheme_Object *o, long *s, long *e, Scheme_Hash_Tab
 	+ (data->num_ivar + data->num_private + data->num_ref) * sizeof(ClassVariable)
 	+ data->closure_size * sizeof(short));
 
-  *e += scheme_count_memory(data->super_expr, ht);
+  *e += (ht ? scheme_count_memory(data->super_expr, ht) : 0);
 
   *e = 0;
 }

@@ -808,14 +808,14 @@ Scheme_Object *scheme_dump_gc_stats(int c, Scheme_Object *p[])
 			      (i < NUM_TYPE_SLOTS-1)
 			      ? scheme_get_type_name(i)
 			      : "other",
-			      scheme_memory_count[i],
+			      scheme_memory_actual_count[i],
 			      scheme_memory_size[i],
 			      scheme_memory_actual_size[i],
 			      scheme_memory_lo[i],
 			      scheme_memory_hi[i]);
 	if (scheme_memory_actual_count[i] != scheme_memory_count[i]) {
-	  scheme_console_printf("%30.30s actual count: %10ld\n",
-				"", scheme_memory_actual_count[i]);
+	  scheme_console_printf("%30.30s reach count: %10ld\n",
+				"", scheme_memory_count[i]);
 	}
 	total_count += scheme_memory_count[i];
 	total_size += scheme_memory_size[i];

@@ -217,6 +217,18 @@ char *wxButton::GetLabel(void)
     return label;
 }
 
+void wxButton::ChangeToGray(Bool gray)
+{
+  if (!X->handle) // forbid, if no widget associated
+    return NULL;
+
+  wxItem::ChangeToGray(gray);
+
+  if (gray) {
+    /* Un-click it, if during a click */
+    XtVaSetValues(X->handle, XtNframeType, XfwfRaised, NULL);
+  }
+}
 
 //-----------------------------------------------------------------------------
 // do the same as if button was clicked

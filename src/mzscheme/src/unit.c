@@ -3201,7 +3201,7 @@ void scheme_count_unit(Scheme_Type type, Scheme_Object *o, long *s, long *e,
 	    + ((sizeof(int) + sizeof(ParamMap *)) * d->num_subunits));
       for (i = d->num_subunits; i--; ) {
 	*s += (sizeof(ParamMap) * d->param_counts[i]);
-	*e += scheme_count_memory(d->subunit_exprs[i], ht);
+	*e += (ht ? scheme_count_memory(d->subunit_exprs[i], ht) : 0);
       }
     }
     break;

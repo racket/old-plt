@@ -1936,6 +1936,10 @@ static unsigned long cpp_lo[NUM_OBJ_KIND], cpp_hi[NUM_OBJ_KIND];
 
 static int trace_path_type;
 
+#if SGC_STD_DEBUGGING
+# define USE_WXOBJECT_TRACE_COUNTER
+#endif
+
 #ifdef USE_WXOBJECT_TRACE_COUNTER
 
 void wxTraceCount(void *o, int size)

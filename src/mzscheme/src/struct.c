@@ -1053,9 +1053,11 @@ void scheme_count_struct_info(Scheme_Object *o, long *s, long *e,
   Struct_Info *info = (Struct_Info *)o;
 
   *s = sizeof(Struct_Info);
-  *e = scheme_count_memory(info->name, ht)
-     + scheme_count_memory(info->parent_type_expr, ht)
-     + scheme_count_memory(info->fields, ht);
+  *e = (ht 
+	? (scheme_count_memory(info->name, ht)
+	   + scheme_count_memory(info->parent_type_expr, ht)
+	   + scheme_count_memory(info->fields, ht))
+	: 0);
 }
 #endif
 

@@ -32,8 +32,8 @@ In Make.env, change variables as necessary:
    * Set the program names, such as the C compiler
 
    * Set OPTIONS:
-        * Add -DOPERATOR_NEW_ARRAY if the C++ compiler uses separate new
-          and new[] operators. For example, this flag is needed for gcc
+        * Add -DOPERATOR_NEW_ARRAY if the C++ compiler uses separate `new'
+          and `new[]' operators. For example, this flag is needed for gcc
           version 2.6.3 and later, but not for version 2.5.8.
 
    * Probably the XLIB and/or XINCLUDE directory lists need to be

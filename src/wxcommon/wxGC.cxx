@@ -17,7 +17,16 @@ Authors: John R. Ellis and Jesse Hull
 **************************************************************************/
 /* Boehm, December 20, 1994 7:26 pm PST */
 
+#include <stddef.h>
 #include "wxGC.h"
+
+#ifdef USE_SENORA_GC
+struct GC_Set *cpp_objects;
+typedef void (*GC_finalization_proc)(void *, void *);
+#if SGC_STD_DEBUGGING
+# define USE_WXOBJECT_TRACE_COUNTER
+#endif
+#endif
 
 void *operator new(size_t size)
 {
@@ -46,7 +55,7 @@ void gc_cleanup::install_cleanup(void)
 # else
 #  ifdef wx_xt
 #   define ALLOW_NON_BASE 0
-#   define CHECK_BASE 1
+#   define CHECK_BASE 0
 #  else
 #   define ALLOW_NON_BASE 1
 #   define CHECK_BASE 0
@@ -113,7 +122,7 @@ void operator delete[](void * /*obj*/)
 
 #ifdef USE_SENORA_GC
 
-struct GC_Set *wx_objects, *cpp_objects;
+struct GC_Set *wx_objects;
 
 # ifdef USE_WXOBJECT_TRACE_COUNTER
 extern void wxTraceCount(void *, int);

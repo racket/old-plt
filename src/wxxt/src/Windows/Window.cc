@@ -1564,8 +1564,11 @@ void wxWindow::WindowEventHandler(Widget w,
 
 	  if (subWin)
 	    *continue_to_dispatch_return = TRUE;
-	  else
-	    win->OnChar(wxevent);
+	  else {
+	    /* Double-check that pre-on-char didn't disable: */
+	    if (!win->IsGray())
+	      win->OnChar(wxevent);
+	  }
 	}
 	wxevent->eventHandle = NULL; /* MATTHEW: [5] */
         /* Event was handled by OnFunctionKey and/or OnChar */ }
@@ -1652,7 +1655,10 @@ void wxWindow::WindowEventHandler(Widget w,
 		&& !wxSubType(win->__type, wxTYPE_MENU_BAR)
 		&& !wxSubType(win->__type, wxTYPE_PANEL))
 	      win->SetFocus();
-	    win->OnEvent(wxevent);
+
+	    /* It's possible that the window has become disabled... */
+	    if (!win->IsGray())
+	      win->OnEvent(wxevent);
 	  }
 	}
 	wxevent->eventHandle = NULL; /* MATTHEW: [5] */
@@ -1697,8 +1703,10 @@ void wxWindow::WindowEventHandler(Widget w,
 	wxevent->rightDown	= xev->xcrossing.state & Button3Mask;
 	wxevent->timeStamp       = xev->xbutton.time; /* MATTHEW */
 	*continue_to_dispatch_return = FALSE; /* Event was handled by OnEvent */ 
-	if (!win->CallPreOnEvent(win, wxevent))
-	  win->OnEvent(wxevent);
+	if (!win->CallPreOnEvent(win, wxevent)) {
+	  if (!win->IsGray())
+	    win->OnEvent(wxevent);
+	}
 	wxevent->eventHandle = NULL; /* MATTHEW: [5] */
       }
       break;
@@ -1731,8 +1739,10 @@ void wxWindow::WindowEventHandler(Widget w,
 	if (!win->CallPreOnEvent(win, wxevent)) {
 	  if (subWin)
 	    *continue_to_dispatch_return = TRUE;
-	  else
-	    win->OnEvent(wxevent);
+	  else {
+	    if (!win->IsGray())
+	      win->OnEvent(wxevent);
+	  }
 	}
 	wxevent->eventHandle = NULL; /* MATTHEW: [5] */
       }

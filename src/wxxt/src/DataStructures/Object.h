@@ -63,6 +63,10 @@ typedef struct {
 #endif
 #define WXGC_NO_CLEANUP FALSE
 
+#if SGC_STD_DEBUGGING
+# define MEMORY_USE_METHOD
+#endif
+
 class wxObject : public gc_cleanup
 {
 public:

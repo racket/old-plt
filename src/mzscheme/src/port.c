@@ -8007,7 +8007,7 @@ void scheme_count_input_port(Scheme_Object *port, long *s, long *e,
 {
   Scheme_Input_Port *ip = (Scheme_Input_Port *)port;
 
-  *e = scheme_count_memory(ip->read_handler, ht);
+  *e = (ht ? scheme_count_memory(ip->read_handler, ht) : 0);
   *s = sizeof(Scheme_Input_Port);
 
   if (ip->sub_type == file_input_port_type)
@@ -8026,9 +8026,11 @@ void scheme_count_input_port(Scheme_Object *port, long *s, long *e,
     Scheme_Object **d;
     d = (Scheme_Object **)ip->port_data;
     *s += (3 * sizeof(Scheme_Object *));
-    *e += (scheme_count_memory(d[0], ht)
-	   + scheme_count_memory(d[1], ht)
-	   + scheme_count_memory(d[2], ht));
+    *e += (ht 
+	   ? (scheme_count_memory(d[0], ht)
+	      + scheme_count_memory(d[1], ht)
+	      + scheme_count_memory(d[2], ht))
+	   : 0);
   } else if (ip->sub_type == pipe_read_port_type) {
     if (ht && !scheme_lookup_in_table(ht, (const char *)ip->port_data)) {
       Scheme_Pipe *p = (Scheme_Pipe *)ip->port_data;
@@ -8062,8 +8064,10 @@ void scheme_count_output_port(Scheme_Object *port, long *s, long *e,
     Scheme_Object **d;
     d = (Scheme_Object **)op->port_data;
     *s += (2 * sizeof(Scheme_Object *));
-    *e += (scheme_count_memory(d[0], ht)
-	   + scheme_count_memory(d[1], ht));
+    *e += (ht 
+	   ? (scheme_count_memory(d[0], ht)
+	      + scheme_count_memory(d[1], ht))
+	   : 0);
   } else if (op->sub_type == pipe_read_port_type) {
     if (!scheme_lookup_in_table(ht, (const char *)op->port_data)) {
       Scheme_Pipe *p = (Scheme_Pipe *)op->port_data;

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Button.h,v 1.3 1999/11/18 16:35:07 mflatt Exp $
+ * $Id: Button.h,v 1.4 1999/11/25 16:32:23 mflatt Exp $
  *
  * Purpose: button panel item
  *
@@ -59,6 +59,8 @@ public:
     void SetLabel(wxBitmap *bitmap);
 
     virtual char  *GetLabel(void);
+
+    virtual void ChangeToGray(Bool gray);
 
 private:
 #   ifdef Have_Xt_Types

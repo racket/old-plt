@@ -71,17 +71,12 @@
 
 		      (begin 
 
-			; exit if this is the only frame
-
-			(let ([frames 
-			       (send mred:group:the-frame-group 
-				     get-frames)])
-			  (when (eq? (length frames) 1)
-				(mred:exit:exit)))
-
 			(do-close) 
-			
-			#t)
+
+			; return #f if the frame is still around
+
+			(not (memq this (send mred:group:the-frame-group 
+					 get-frames))))
 
 		      #f))])
 

@@ -3894,7 +3894,7 @@ static int mark_reply_item(void *p, Mark_Proc mark)
     gcMARK(r->next);
   }
 
-  return sizeof(ReplyItem);
+  return gcBYTES_TO_WORDS(sizeof(ReplyItem));
 }
 #endif
 

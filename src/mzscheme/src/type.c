@@ -35,10 +35,6 @@ static Scheme_Type maxtype, allocmax;
 long scheme_type_table_count;
 #endif
 
-#ifdef MZ_PRECISE_GC
-static void register_traversers(void);
-#endif
-
 void
 scheme_init_type (Scheme_Env *env)
 {
@@ -174,10 +170,6 @@ scheme_init_type (Scheme_Env *env)
 
   set_name(_scheme_values_types_, "<resurrected>");
   set_name(_scheme_compiled_values_types_, "<internal>");
-
-#ifdef MZ_PRECISE_GC
-  register_traversers();
-#endif
 }
 
 Scheme_Type scheme_make_type(const char *name)
@@ -278,28 +270,33 @@ static int bad_trav(void *p, Mark_Proc mark)
 
 static int variable_obj(void *p, Mark_Proc mark)
 {
-  /* FIXME */
-  return sizeof(Scheme_Bucket);
+  if (mark) {
+    Scheme_Bucket *b = (Scheme_Bucket *)p;
+
+    gcMARK(b->val);
+  }
+
+  return gcBYTES_TO_WORDS(sizeof(Scheme_Bucket_With_Ref_Id));
 }
 
 static int local_obj(void *p, Mark_Proc mark)
 {
-  return sizeof(Scheme_Local);
+  return gcBYTES_TO_WORDS(sizeof(Scheme_Local));
 }
 
 static int second_of_cons(void *p, Mark_Proc mark)
 {
   if (mark)
-    gcMARK(PTR2_VAL((Scheme_Object *)p));
-  return sizeof(Scheme_Object);
+    gcMARK(SCHEME_PTR2_VAL((Scheme_Object *)p));
+  return gcBYTES_TO_WORDS(sizeof(Scheme_Object));
 }
 
-static int second_of_cons(void *p, Mark_Proc mark)
+static int small_object(void *p, Mark_Proc mark)
 {
   if (mark)
     gcMARK(((Scheme_Small_Object *)p)->u.ptr_value);
 
-  return sizeof(Scheme_Small_Object);
+  return gcBYTES_TO_WORDS(sizeof(Scheme_Small_Object));
 }
 
 static int app_rec(void *p, Mark_Proc mark)
@@ -312,9 +309,9 @@ static int app_rec(void *p, Mark_Proc mark)
       gcMARK(r->args[i]);
   }
 
-  return (sizeof(Scheme_App_Rec) 
-	  + ((r->num_args - 1) * sizeof(Scheme_Object *))
-	  + (r->num_args * sizeof(char)));
+  return gcBYTES_TO_WORDS((sizeof(Scheme_App_Rec) 
+			   + (r->num_args * sizeof(Scheme_Object *))
+			   + ((r->num_args + 1) * sizeof(char))));
 }
 
 static int seq_rec(void *p, Mark_Proc mark)
@@ -327,8 +324,8 @@ static int seq_rec(void *p, Mark_Proc mark)
       gcMARK(s->array[i]);
   }
 
-  return (sizeof(Scheme_Sequence)
-	  + ((s->count - 1) * sizeof(Scheme_Object *)));
+  return gcBYTES_TO_WORDS((sizeof(Scheme_Sequence)
+			   + ((s->count - 1) * sizeof(Scheme_Object *))));
 }
 
 static int branch_rec(void *p, Mark_Proc mark)
@@ -341,7 +338,7 @@ static int branch_rec(void *p, Mark_Proc mark)
     gcMARK(b->fbranch);
   }
 
-  return sizeof(Scheme_Branch_Rec);
+  return gcBYTES_TO_WORDS(sizeof(Scheme_Branch_Rec));
 }
 
 static int unclosed_proc(void *p, Mark_Proc mark)
@@ -351,11 +348,11 @@ static int unclosed_proc(void *p, Mark_Proc mark)
 
     if (d->name)
       gcMARK(d->name);
-    gcMARK(data->code);
-    gcMARK(data->closure_map);
+    gcMARK(d->code);
+    gcMARK(d->closure_map);
   }
 
-  return sizeof(Scheme_Closure_Compilation_Data);
+  return gcBYTES_TO_WORDS(sizeof(Scheme_Closure_Compilation_Data));
 }
 
 static int let_value(void *p, Mark_Proc mark)
@@ -367,7 +364,7 @@ static int let_value(void *p, Mark_Proc mark)
     gcMARK(l->body);
   }
 
-  return sizeof(Scheme_Let_Value);
+  return gcBYTES_TO_WORDS(sizeof(Scheme_Let_Value));
 }
 
 static int let_void(void *p, Mark_Proc mark)
@@ -378,7 +375,7 @@ static int let_void(void *p, Mark_Proc mark)
     gcMARK(l->body);
   }
 
-  return sizeof(Scheme_Let_Void);
+  return gcBYTES_TO_WORDS(sizeof(Scheme_Let_Void));
 }
 
 static int letrec(void *p, Mark_Proc mark)
@@ -392,7 +389,7 @@ static int letrec(void *p, Mark_Proc mark)
     gcMARK(l->body);
   }
 
-  return sizeof(Scheme_Letrec);
+  return gcBYTES_TO_WORDS(sizeof(Scheme_Letrec));
 }
 
 static int let_one(void *p, Mark_Proc mark)
@@ -404,7 +401,7 @@ static int let_one(void *p, Mark_Proc mark)
     gcMARK(l->body);
   }
 
-  return sizeof(Scheme_Let_One);
+  return gcBYTES_TO_WORDS(sizeof(Scheme_Let_One));
 }
 
 static int with_cont_mark(void *p, Mark_Proc mark)
@@ -417,7 +414,7 @@ static int with_cont_mark(void *p, Mark_Proc mark)
     gcMARK(w->body);
   }
 
-  return sizeof(Scheme_Let_One);
+  return gcBYTES_TO_WORDS(sizeof(Scheme_With_Continuation_Mark));
 }
 
 static int comp_unclosed_proc(void *p, Mark_Proc mark)
@@ -430,7 +427,7 @@ static int comp_unclosed_proc(void *p, Mark_Proc mark)
     gcMARK(c->name);
   }
 
-  return sizeof(Scheme_Closure_Compilation_Data);
+  return gcBYTES_TO_WORDS(sizeof(Scheme_Closure_Compilation_Data));
 }
 
 static int comp_let_value(void *p, Mark_Proc mark)
@@ -443,7 +440,7 @@ static int comp_let_value(void *p, Mark_Proc mark)
     gcMARK(c->body);
   }
 
-  return sizeof(Scheme_Compiled_Let_Value);
+  return gcBYTES_TO_WORDS(sizeof(Scheme_Compiled_Let_Value));
 }
 
 static int let_header(void *p, Mark_Proc mark)
@@ -454,23 +451,36 @@ static int let_header(void *p, Mark_Proc mark)
     gcMARK(h->body);
   }
 
-  return sizeof(Scheme_Let_Header);
+  return gcBYTES_TO_WORDS(sizeof(Scheme_Let_Header));
 }
 
 static int prim_proc(void *p, Mark_Proc mark)
 {
-  return sizeof(Scheme_Primitive_Proc);
+  Scheme_Primitive_Proc *prim = (Scheme_Primitive_Proc *)p;
+
+  if (mark) {
+    gcMARK(prim->name);
+  }
+
+  if (prim->flags & SCHEME_PRIM_IS_MULTI_RESULT)
+    return gcBYTES_TO_WORDS(sizeof(Scheme_Prim_W_Result_Arity));
+  else
+    return gcBYTES_TO_WORDS(sizeof(Scheme_Primitive_Proc));
 }
 
 static int closed_prim_proc(void *p, Mark_Proc mark)
 {
-  if (mark) {
-    Scheme_Closed_Primitive_Proc *c = (Scheme_Closed_Primitive_Proc *)p;
+  Scheme_Closed_Primitive_Proc *c = (Scheme_Closed_Primitive_Proc *)p;
 
-    gcMARK(SCHEME_CLSD_PRIM_DATA(prim));
+  if (mark) {
+    gcMARK(c->name);
+    gcMARK(SCHEME_CLSD_PRIM_DATA(c));
   }
 
-  return sizeof(Scheme_Closed_Primitive_Proc);
+  if (c->flags & SCHEME_PRIM_IS_MULTI_RESULT)
+    return gcBYTES_TO_WORDS(sizeof(Scheme_Closed_Prim_W_Result_Arity));
+  else
+    return gcBYTES_TO_WORDS(sizeof(Scheme_Closed_Primitive_Proc));
 }
 
 static int linked_closure(void *p, Mark_Proc mark)
@@ -484,8 +494,8 @@ static int linked_closure(void *p, Mark_Proc mark)
     gcMARK(c->code);
   }
   
-  return (sizeof(Scheme_Closed_Compiled_Procedure)
-	  + (c->closure_size - 1) * sizeof(Scheme_Object *));
+  return gcBYTES_TO_WORDS((sizeof(Scheme_Closed_Compiled_Procedure)
+			   + (c->closure_size - 1) * sizeof(Scheme_Object *)));
 }
 
 static int case_closure(void *p, Mark_Proc mark)
@@ -500,8 +510,8 @@ static int case_closure(void *p, Mark_Proc mark)
     gcMARK(c->name);
   }
 
-  return (sizeof(Scheme_Case_Lambda)
-	  + ((c->count - 1) * sizeof(Scheme_Object *)));
+  return gcBYTES_TO_WORDS((sizeof(Scheme_Case_Lambda)
+			   + ((c->count - 1) * sizeof(Scheme_Object *))));
 }
 
 static void mark_cjs(Scheme_Continuation_Jump_State *cjs, Mark_Proc mark)
@@ -522,7 +532,7 @@ static void mark_stack_state(Scheme_Stack_State *ss, Mark_Proc mark)
 
 static void mark_jmpup(Scheme_Jumpup_Buf *buf, Mark_Proc mark)
 {
-  gcMARK(buf->copy);
+  gcMARK(buf->stack_copy);
   gcMARK(buf->cont);
 }
 
@@ -543,7 +553,7 @@ static int cont_proc(void *p, Mark_Proc mark)
     mark_stack_state(&c->ss, mark);
   }
 
-  return sizeof(Scheme_Cont);
+  return gcBYTES_TO_WORDS(sizeof(Scheme_Cont));
 }
 
 static int mark_dyn_wind(void *p, Mark_Proc mark)
@@ -559,7 +569,7 @@ static int mark_dyn_wind(void *p, Mark_Proc mark)
     mark_stack_state(&dw->envss, mark);
   }
 
-  return sizeof(Scheme_Dynamic_Wind);
+  return gcBYTES_TO_WORDS(sizeof(Scheme_Dynamic_Wind));
 }
 
 static int mark_overflow(void *p, Mark_Proc mark)
@@ -568,10 +578,10 @@ static int mark_overflow(void *p, Mark_Proc mark)
     Scheme_Overflow *o = (Scheme_Overflow *)p;
 
     gcMARK(o->prev);
-    mark_jmpup(&o->buf, mark);
+    mark_jmpup(&o->cont, mark);
   }
 
-  return sizeof(Scheme_Overflow);
+  return gcBYTES_TO_WORDS(sizeof(Scheme_Overflow));
 }
 
 static int escaping_cont_proc(void *p, Mark_Proc mark)
@@ -586,23 +596,31 @@ static int escaping_cont_proc(void *p, Mark_Proc mark)
     mark_cjs(&c->cjs, mark);
   }
 
-  return sizeof(Scheme_Escaping_Cont);
+  return gcBYTES_TO_WORDS(sizeof(Scheme_Escaping_Cont));
 }
 
 static int char_obj(void *p, Mark_Proc mark)
 {
-  return sizeof(Scheme_Small_Object);
+  return gcBYTES_TO_WORDS(sizeof(Scheme_Small_Object));
 }
 
 static int bignum_obj(void *p, Mark_Proc mark)
 {
-  if (mark) {
-    Scheme_Bignum *b = (Scheme_Bignum *)p;
+  Scheme_Bignum *b = (Scheme_Bignum *)p;
 
-    gcMARK(b->digits);
+  if (mark) {
+    if (!b->allocated_inline)
+      gcMARK(b->digits);
   }
 
-  return sizeof(Scheme_Bignum);
+  if (!b->allocated_inline)
+    return gcBYTES_TO_WORDS(sizeof(Scheme_Bignum));
+  else {
+    if (SCHEME_BIGLEN(b) > 1)
+      return gcBYTES_TO_WORDS(sizeof(Scheme_Bignum) + sizeof(bigdig));
+    else
+      return gcBYTES_TO_WORDS(sizeof(Small_Bignum));
+  }
 }
 
 static int rational_obj(void *p, Mark_Proc mark)
@@ -614,13 +632,13 @@ static int rational_obj(void *p, Mark_Proc mark)
     gcMARK(r->denom);
   }
 
-  return sizeof(Scheme_Rational);
+  return gcBYTES_TO_WORDS(sizeof(Scheme_Rational));
 }
 
 static int float_obj(void *p, Mark_Proc mark)
 {
 #ifdef MZ_USE_SINGLE_FLOATS
-  return sizeof(Scheme_Float);
+  return gcBYTES_TO_WORDS(sizeof(Scheme_Float));
 #else
   return bad_trav(p, mark);
 #endif
@@ -628,7 +646,7 @@ static int float_obj(void *p, Mark_Proc mark)
 
 static int double_obj(void *p, Mark_Proc mark)
 {
-  return sizeof(Scheme_Double);
+  return gcBYTES_TO_WORDS(sizeof(Scheme_Double));
 }
 
 static int complex_obj(void *p, Mark_Proc mark)
@@ -640,23 +658,24 @@ static int complex_obj(void *p, Mark_Proc mark)
     gcMARK(c->i);
   }
 
-  return sizeof(Scheme_Complex);
+  return gcBYTES_TO_WORDS(sizeof(Scheme_Complex));
 }
 
 static int string_obj(void *p, Mark_Proc mark)
 {
   if (mark) {
-    gcMARK(SCHEME_STR_VAL(p));
+    Scheme_Object *o = (Scheme_Object *)p;
+    gcMARK(SCHEME_STR_VAL(o));
   }
 
-  return sizeof(Scheme_Object);
+  return gcBYTES_TO_WORDS(sizeof(Scheme_Object));
 }
 
 static int symbol_obj(void *p, Mark_Proc mark)
 {
   Scheme_Symbol *s = (Scheme_Symbol *)p;
 
-  return sizeof(Scheme_Symbol) + s->len;
+  return gcBYTES_TO_WORDS(sizeof(Scheme_Symbol) + s->len);
 }
 
 static int cons_cell(void *p, Mark_Proc mark)
@@ -668,7 +687,7 @@ static int cons_cell(void *p, Mark_Proc mark)
     gcMARK(SCHEME_CDR(o));
   }
 
-  return sizeof(Scheme_Object);
+  return gcBYTES_TO_WORDS(sizeof(Scheme_Object));
 }
 
 static int vector_obj(void *p, Mark_Proc mark)
@@ -676,12 +695,13 @@ static int vector_obj(void *p, Mark_Proc mark)
   Scheme_Vector *vec = (Scheme_Vector *)p;
 
   if (mark) {
+    int i;
     for (i = vec->size; i--; )
       gcMARK(vec->els[i]);
   }
 
-  return (sizeof(Scheme_Vector) 
-	  + ((vec->size - 1) * sizeof(Scheme_Object *)));
+  return gcBYTES_TO_WORDS((sizeof(Scheme_Vector) 
+	  + ((vec->size - 1) * sizeof(Scheme_Object *))));
 }
 
 static int input_port(void *p, Mark_Proc mark)
@@ -695,7 +715,7 @@ static int input_port(void *p, Mark_Proc mark)
     gcMARK(ip->read_handler);
   }
 
-  return sizeof(Scheme_Input_Port);
+  return gcBYTES_TO_WORDS(sizeof(Scheme_Input_Port));
 }
 
 static int output_port(void *p, Mark_Proc mark)
@@ -710,13 +730,13 @@ static int output_port(void *p, Mark_Proc mark)
     gcMARK(op->print_handler);
   }
 
-  return sizeof(Scheme_Output_Port);
+  return gcBYTES_TO_WORDS(sizeof(Scheme_Output_Port));
 }
 
 
 static int syntax_compiler(void *p, Mark_Proc mark)
 {
-  return sizeof(Scheme_Object);
+  return gcBYTES_TO_WORDS(sizeof(Scheme_Object));
 }
 
 static int promise_val(void *p, Mark_Proc mark)
@@ -731,7 +751,7 @@ static int promise_val(void *p, Mark_Proc mark)
 #endif
   }
 
-  return sizeof(Scheme_Promise);
+  return gcBYTES_TO_WORDS(sizeof(Scheme_Promise));
 }
 
 static int process_val(void *_p, Mark_Proc mark)
@@ -795,7 +815,7 @@ static int process_val(void *_p, Mark_Proc mark)
     gcMARK(p->mref);
   }
 
-  return sizeof(Scheme_Process);
+  return gcBYTES_TO_WORDS(sizeof(Scheme_Process));
 }
 
 static int cont_mark_set_val(void *p, Mark_Proc mark)
@@ -805,7 +825,7 @@ static int cont_mark_set_val(void *p, Mark_Proc mark)
     gcMARK(s->chain);
   }
 
-  return sizeof(Scheme_Cont_Mark_Set);
+  return gcBYTES_TO_WORDS(sizeof(Scheme_Cont_Mark_Set));
 }
 
 static int sema_val(void *p, Mark_Proc mark)
@@ -819,7 +839,7 @@ static int sema_val(void *p, Mark_Proc mark)
 #endif
   }
 
-  return sizeof(Scheme_Sema);
+  return gcBYTES_TO_WORDS(sizeof(Scheme_Sema));
 }
 
 static int hash_table_val(void *p, Mark_Proc mark)
@@ -830,7 +850,7 @@ static int hash_table_val(void *p, Mark_Proc mark)
     gcMARK(ht->buckets);
   }
 
-  return sizeof(Scheme_Hash_Table);
+  return gcBYTES_TO_WORDS(sizeof(Scheme_Hash_Table));
 }
 
 static int namespace_val(void *p, Mark_Proc mark)
@@ -843,12 +863,12 @@ static int namespace_val(void *p, Mark_Proc mark)
     gcMARK(e->init);
   }
 
-  return sizeof(Scheme_Env);
+  return gcBYTES_TO_WORDS(sizeof(Scheme_Env));
 }
 
 static int random_state_val(void *p, Mark_Proc mark)
 {
-  return sizeof(Scheme_Random_State);
+  return gcBYTES_TO_WORDS(sizeof(Scheme_Random_State));
 }
 
 static int compilation_top_val(void *p, Mark_Proc mark)
@@ -858,7 +878,7 @@ static int compilation_top_val(void *p, Mark_Proc mark)
     gcMARK(t->code);
   }
 
-  return sizeof(Scheme_Compilation_Top);
+  return gcBYTES_TO_WORDS(sizeof(Scheme_Compilation_Top));
 }
 
 static int svector_val(void *p, Mark_Proc mark)
@@ -869,10 +889,10 @@ static int svector_val(void *p, Mark_Proc mark)
     gcMARK(SCHEME_SVEC_VEC(o));
   }
 
-  return sizeof(Scheme_Object);
+  return gcBYTES_TO_WORDS(sizeof(Scheme_Object));
 }
 
-static void register_traversers(void)
+void scheme_register_traversers(void)
 {
   GC_register_traverser(scheme_variable_type, variable_obj);
   GC_register_traverser(scheme_local_type, local_obj);
@@ -912,8 +932,8 @@ static void register_traversers(void)
   GC_register_traverser(scheme_integer_type, bad_trav);
   GC_register_traverser(scheme_bignum_type, bignum_obj);
   GC_register_traverser(scheme_rational_type, rational_obj);
-  GC_register_traverser(scheme_float_type,  float_trav);
-  GC_register_traverser(scheme_double_type, double_trav);
+  GC_register_traverser(scheme_float_type,  float_obj);
+  GC_register_traverser(scheme_double_type, double_obj);
   GC_register_traverser(scheme_complex_izi_type, complex_obj);
   GC_register_traverser(scheme_complex_type, complex_obj);
   GC_register_traverser(scheme_string_type, string_obj);
@@ -943,20 +963,23 @@ static void register_traversers(void)
   GC_register_traverser(scheme_exp_time_type, small_object);
   GC_register_traverser(scheme_namespace_type, namespace_val);
   GC_register_traverser(scheme_random_state_type, random_state_val);
-  GC_register_traverser(scheme_regexp_type, regexp_val);
   
   GC_register_traverser(scheme_compilation_top_type, compilation_top_val);
 
-  GC_register_traverser(scheme_envunbox_type, bad_trav);
+  GC_register_traverser(scheme_envunbox_type, small_object);
   GC_register_traverser(scheme_eval_waiting_type, bad_trav);
   GC_register_traverser(scheme_tail_call_waiting_type, bad_trav);
-  GC_register_traverser(scheme_undefined_type, char_val); /* small */
+  GC_register_traverser(scheme_undefined_type, char_obj); /* small */
   GC_register_traverser(scheme_multiple_values_type, bad_trav);
   GC_register_traverser(scheme_placeholder_type, char_obj); /* small */
   GC_register_traverser(scheme_case_lambda_sequence_type, case_closure);
   GC_register_traverser(scheme_begin0_sequence_type, seq_rec);
 
   GC_register_traverser(scheme_svector_type, svector_val);
+
+  GC_register_traverser(scheme_reserved_1_type, bad_trav);
+  GC_register_traverser(scheme_reserved_3_type, bad_trav);
+  GC_register_traverser(scheme_reserved_5_type, bad_trav);
 }
 
 #endif

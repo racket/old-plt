@@ -212,12 +212,14 @@ get_bucket (Scheme_Hash_Table *table, const char *key, int add, Scheme_Bucket *b
   } else {
     size_t bsize;
 
+#ifndef MZ_PRECISE_GC
     if (!table->has_constants)
       bsize = sizeof(Scheme_Bucket);
-    else if (table->has_constants == 2)
-      bsize = sizeof(Scheme_Bucket_With_Ref_Id);
-    else
+    else if (table->has_constants != 2)
       bsize = sizeof(Scheme_Bucket_With_Const_Flag);
+    else
+#endif
+      bsize = sizeof(Scheme_Bucket_With_Ref_Id);
 
 #if USE_FOREVER
     if (table->forever)
@@ -232,8 +234,9 @@ get_bucket (Scheme_Hash_Table *table, const char *key, int add, Scheme_Bucket *b
       ((Scheme_Bucket_With_Const_Flag *)bucket)->flags = 0;
 
     if (table->weak) {
-      bucket->key = (char *)scheme_malloc_atomic(sizeof(void *));
+      bucket->key = (char *)MALLOC_ONE_WEAK(void *);
       *(void **)bucket->key = (void *)key;
+      /* FXIME: Precise GC */
       scheme_weak_reference_indirect((void **)bucket->key, (void *)key);
       scheme_weak_reference_indirect((void **)&bucket->val, (void *)key);
     } else

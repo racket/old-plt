@@ -7655,18 +7655,22 @@ void scheme_count_output_port(Scheme_Object *port, long *s, long *e,
 }
 #endif
 
+/**********************************************************************/
+
 #ifdef MZ_PRECISE_GC
 
-static int mark_listener_val(void *p, Mark_Proc mark)
+static int mark_listener(void *p, Mark_Proc mark)
 {
   if (mark) {
-    gcMARK(p->mref);
+    listener_t *l = (listener_t *)p;
+
+    gcMARK(l->mref);
 #ifdef USE_MAC_TCP
-    gcMARK(p->datas);
+    gcMARK(l->datas);
 #endif
   }
 
-  return sizeof(listener_t);
+  return gcBYTES_TO_WORDS(sizeof(listener_t));
 }
 
 #ifdef WINDOWS_PROCESSES
@@ -7678,7 +7682,7 @@ static int mark_thread_memory(void *p, Mark_Proc mark)
     gcMARK(tm->next);
   }
 
-  return sizeof(Scheme_Thread_Memory);
+  return gcBYTES_TO_WORDS(sizeof(Scheme_Thread_Memory));
 }
 #endif
 
@@ -7690,7 +7694,7 @@ static int mark_input_file(void *p, Mark_Proc mark)
     gcMARK(i->f);
   }
 
-  return sizeof(Scheme_Input_File);
+  return gcBYTES_TO_WORDS(sizeof(Scheme_Input_File));
 }
 
 #if defined(WIN32_FD_HANDLES) || defined(USE_BEOS_PORT_THREADS)
@@ -7705,7 +7709,7 @@ static int mark_tested_input_file(void *p, Mark_Proc mark)
 #endif
   }
 
-  return sizeof(Tested_Input_File);
+  return gcBYTES_TO_WORDS(sizeof(Tested_Input_File));
 }
 
 static int mark_tcp_select_info(void *p, Mark_Proc mark)
@@ -7713,7 +7717,7 @@ static int mark_tcp_select_info(void *p, Mark_Proc mark)
   if (mark) {
   }
 
-  return sizeof(Tcp_Select_Info);
+  return gcBYTES_TO_WORDS(sizeof(Tcp_Select_Info));
 }
 #endif
 
@@ -7722,10 +7726,10 @@ static int mark_indexed_string(void *p, Mark_Proc mark)
   if (mark) {
     Scheme_Indexed_String *is = (Scheme_Indexed_String *)p;
     
-    gcMARK(p->string);
+    gcMARK(is->string);
   }
 
-  return sizeof(Scheme_Indexed_String);
+  return gcBYTES_TO_WORDS(sizeof(Scheme_Indexed_String));
 }
 
 static int mark_output_file(void *p, Mark_Proc mark)
@@ -7736,7 +7740,7 @@ static int mark_output_file(void *p, Mark_Proc mark)
     gcMARK(o->f);
   }
 
-  return sizeof(Scheme_Output_File);
+  return gcBYTES_TO_WORDS(sizeof(Scheme_Output_File));
 }
 
 static int mark_load_handler_data(void *p, Mark_Proc mark)
@@ -7749,7 +7753,7 @@ static int mark_load_handler_data(void *p, Mark_Proc mark)
     gcMARK(d->p);
   }
 
-  return sizeof(LoadHandlerData);
+  return gcBYTES_TO_WORDS(sizeof(LoadHandlerData));
 }
 
 static int mark_load_data(void *p, Mark_Proc mark)
@@ -7763,7 +7767,7 @@ static int mark_load_data(void *p, Mark_Proc mark)
     gcMARK(d->old_load_dir);
   }
 
-  return sizeof(LoadData);
+  return gcBYTES_TO_WORDS(sizeof(LoadData));
 }
 
 static int mark_pipe(void *_p, Mark_Proc mark)
@@ -7777,22 +7781,22 @@ static int mark_pipe(void *_p, Mark_Proc mark)
 #endif
   }
 
-  return sizeof(Scheme_Pipe);
+  return gcBYTES_TO_WORDS(sizeof(Scheme_Pipe));
 }
 
 #ifdef USE_TCP
 static int mark_tcp(void *p, Mark_Proc mark)
 {
   if (mark) {
+# ifdef USE_MAC_TCP
     Scheme_Tcp *tcp = (Scheme_Tcp *)p;
 
-# ifdef USE_MAC_TCP
     gcMARK(tcp->tcp);
     gcMARK(tcp->activeRcv);
 # endif
   }
 
-  return sizeof(Scheme_Tcp);
+  return gcBYTES_TO_WORDS(sizeof(Scheme_Tcp));
 }
 
 # ifdef USE_MAC_TCP
@@ -7804,7 +7808,7 @@ static int mark_write_data(void *p, Mark_Proc mark)
     gcMARK(d->xpb);
   }
 
-  return sizeof(WriteData);
+  return gcBYTES_TO_WORDS(sizeof(WriteData));
 }
 # endif
 #endif
@@ -7815,7 +7819,7 @@ static int mark_input_fd(void *p, Mark_Proc mark)
   if (mark) {
   }
 
-  return sizeof(Scheme_FD);
+  return gcBYTES_TO_WORDS(sizeof(Scheme_FD));
 }
 #endif
 
@@ -7828,7 +7832,7 @@ static int mark_system_child(void *p, Mark_Proc mark)
     gcMARK(sc->next);
   }
 
-  return sizeof(System_Child);
+  return gcBYTES_TO_WORDS(sizeof(System_Child));
 }
 #endif
 
@@ -7838,7 +7842,7 @@ static int mark_beos_process(void *p, Mark_Proc mark)
   if (mark) {
   }
 
-  return sizeof(BeOSProcess);
+  return gcBYTES_TO_WORDS(sizeof(BeOSProcess));
 }
 #endif
 
@@ -7852,13 +7856,13 @@ static int mark_oskit_console_input(void *p, Mark_Proc mark)
     gcMARK(c->next);
   }
 
-  return sizeof(osk_console_input);
+  return gcBYTES_TO_WORDS(sizeof(osk_console_input));
 }
 #endif
 
 static void register_traversers(void)
 {
-  GC_register_traverser(scheme_listener_type, listener_val);  
+  GC_register_traverser(scheme_listener_type, mark_listener);  
 #ifdef WINDOWS_PROCESSES
   GC_register_traverser(scheme_rt_thread_memory, mark_thread_memory);
 #endif

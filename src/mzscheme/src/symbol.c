@@ -105,7 +105,7 @@ static Scheme_Object *symbol_bucket(Scheme_Hash_Table *table,
 	break;
       }
     } else if ((length == SCHEME_SYM_LEN(bucket))
-	&& !memcmp(key, SCHEME_SYM_VAL(bucket), length))
+	       && !memcmp(key, SCHEME_SYM_VAL(bucket), length))
       return (Scheme_Object *)bucket;
     h = (h + h2) % table->size;
   }
@@ -122,7 +122,7 @@ static Scheme_Object *symbol_bucket(Scheme_Hash_Table *table,
     newsize = scheme_hash_primes[++table->step];
     
     asize = (size_t)newsize * sizeof(Scheme_Bucket *);
-    table->buckets = (Scheme_Bucket **)scheme_malloc_atomic(asize);
+    table->buckets = MALLOC_N_WEAK(Scheme_Bucket *, newsize);
     table->size = newsize;
     memset((char *)table->buckets, 0, asize);
 

@@ -657,8 +657,10 @@ static int check_unit(Scheme_Object *form, Scheme_Comp_Env *env,
   
   /* Extend environment: */
   indirect_env = env = scheme_add_compilation_frame(indirect_first, env, 
-						    SCHEME_AUTO_UNBOX 
+						    SCHEME_AUTO_UNBOX
+#ifndef MZ_PRECISE_GC 
 						    | SCHEME_ANCHORED_FRAME
+#endif
 						    | SCHEME_PRIM_GLOBALS_ONLY);
 
   for (c = 0; c < import_count; c++)
@@ -667,8 +669,11 @@ static int check_unit(Scheme_Object *form, Scheme_Comp_Env *env,
   l = unit_varlist(body->first, scheme_null, 0);
   count = scheme_list_length(l);
   env = scheme_add_compilation_frame(l, env, 
-				     SCHEME_AUTO_UNBOX 
-				     | SCHEME_ANCHORED_FRAME);
+				     SCHEME_AUTO_UNBOX
+#ifndef MZ_PRECISE_GC 
+				     | SCHEME_ANCHORED_FRAME
+#endif
+				     );
 
   if (rec) {
     recs = MALLOC_N_RT(Scheme_Compile_Info, expr_count);
@@ -957,7 +962,11 @@ static Scheme_Object *link_unit(Scheme_Object *o, Link_Info *info)
     scheme_link_info_set_anchor_offset(info, c);
     for (i = 0; i < c; i++)
       scheme_link_info_add_mapping(info, i, i, 
-				   SCHEME_INFO_BOXED | SCHEME_INFO_ANCHORED);
+				   SCHEME_INFO_BOXED 
+#ifndef MZ_PRECISE_GC 
+				   | SCHEME_INFO_ANCHORED
+#endif
+				   );
   }
 
   for (e = label->body; e; e = e->next) {
@@ -1894,8 +1903,13 @@ static Scheme_Object *InvokeUnit(Scheme_Object *data_in)
 	  return NULL;
 	}
 	((Scheme_Bucket_With_Const_Flag *)e)->flags |= GLOB_IS_PERMANENT;
+#ifdef MZ_PRECISE_GC
+	boxes[i] = e;
+	anchors[i] = NULL;
+#else
 	boxes[i] = (Scheme_Object *)&((Scheme_Bucket *)e)->val;
 	anchors[i] = e;
+#endif
       } else {
 	boxes[i] = MZ_RUNSTACK[SCHEME_LOCAL_POS(e)];
 	if (data->anchor_positions[ap] > 0)
@@ -3096,6 +3110,8 @@ void scheme_count_unit(Scheme_Type type, Scheme_Object *o, long *s, long *e,
 }
 #endif
 
+/**********************************************************************/
+
 #ifdef MZ_PRECISE_GC
 
 static int mark_unit_val(void *p, Mark_Proc mark)
@@ -3108,7 +3124,7 @@ static int mark_unit_val(void *p, Mark_Proc mark)
     gcMARK(u->data);
   }
 
-  return sizeof(Scheme_Unit);
+  return gcBYTES_TO_WORDS(sizeof(Scheme_Unit));
 }
 
 static int mark_unit_body_val(void *p, Mark_Proc mark)
@@ -3121,7 +3137,7 @@ static int mark_unit_body_val(void *p, Mark_Proc mark)
     gcMARK(b->defname);
   } 
   
-  return sizeof(BodyData);
+  return gcBYTES_TO_WORDS(sizeof(BodyData));
 }
 
 static int compound_unit_data_val(void *p, Mark_Proc mark)
@@ -3129,7 +3145,7 @@ static int compound_unit_data_val(void *p, Mark_Proc mark)
   if (mark) {
     CompoundData *d = (CompoundData *)p;
 
-    d->export = mark(d->exports);
+    gcMARK(d->exports);
     gcMARK(d->subunit_exprs);
     gcMARK(d->tags);
     gcMARK(d->param_counts);
@@ -3137,7 +3153,7 @@ static int compound_unit_data_val(void *p, Mark_Proc mark)
     gcMARK(d->defname);
   } 
 
-  return sizeof(CompoundData);
+  return gcBYTES_TO_WORDS(sizeof(CompoundData));
 }
 
 static int invoke_unit_data_val(void *p, Mark_Proc mark)
@@ -3151,7 +3167,7 @@ static int invoke_unit_data_val(void *p, Mark_Proc mark)
     gcMARK(d->expr);
   }
   
-  return sizeof(InvokeUnitData);
+  return gcBYTES_TO_WORDS(sizeof(InvokeUnitData));
 }
 
 static int mark_unit_id(void *p, Mark_Proc mark)
@@ -3165,7 +3181,7 @@ static int mark_unit_id(void *p, Mark_Proc mark)
     gcMARK(id->next);
   }
   
-  return sizeof(UnitId);
+  return gcBYTES_TO_WORDS(sizeof(UnitId));
 }
 
 static int mark_body_expr(void *p, Mark_Proc mark)
@@ -3185,7 +3201,7 @@ static int mark_body_expr(void *p, Mark_Proc mark)
     gcMARK(body->next);
   }
   
-  return sizeof(BodyExpr);
+  return gcBYTES_TO_WORDS(sizeof(BodyExpr));
 }
 
 static int mark_body_var(void *p, Mark_Proc mark)
@@ -3196,7 +3212,7 @@ static int mark_body_var(void *p, Mark_Proc mark)
     gcMARK(v->id);
   }
   
-  return sizeof(BodyVar);
+  return gcBYTES_TO_WORDS(sizeof(BodyVar));
 }
 
 static int mark_param_map(void *p, Mark_Proc mark)
@@ -3205,10 +3221,10 @@ static int mark_param_map(void *p, Mark_Proc mark)
     ParamMap *map = (ParamMap *)p;
 
     if (map->index >=0)
-      gcMARK(map->ext_id);
+      gcMARK(map->u.ext_id);
   }
   
-  return sizeof(ParamMap);
+  return gcBYTES_TO_WORDS(sizeof(ParamMap));
 }
 
 static int mark_export_source(void *p, Mark_Proc mark)
@@ -3219,7 +3235,7 @@ static int mark_export_source(void *p, Mark_Proc mark)
     gcMARK(s->ext_id);
   }
   
-  return sizeof(ExportSource);
+  return gcBYTES_TO_WORDS(sizeof(ExportSource));
 }
 
 static int mark_unit_data_closure(void *p, Mark_Proc mark)
@@ -3233,7 +3249,7 @@ static int mark_unit_data_closure(void *p, Mark_Proc mark)
     gcMARK(cl->defname);
   }
   
-  return sizeof(UnitDataClosure);
+  return gcBYTES_TO_WORDS(sizeof(UnitDataClosure));
 }
 
 static int mark_compound_linked_data(void *p, Mark_Proc mark)
@@ -3247,7 +3263,7 @@ static int mark_compound_linked_data(void *p, Mark_Proc mark)
     gcMARK(d->defname);
   }
   
-  return sizeof(CompoundLinkedData);
+  return gcBYTES_TO_WORDS(sizeof(CompoundLinkedData));
 }
 
 static int mark_do_invoke_data(void *p, Mark_Proc mark)
@@ -3260,14 +3276,14 @@ static int mark_do_invoke_data(void *p, Mark_Proc mark)
     gcMARK(d->unit);
   }
   
-  return sizeof(Do_Invoke_Data);
+  return gcBYTES_TO_WORDS(sizeof(Do_Invoke_Data));
 }
 
 static void register_traversers(void)
 {
   GC_register_traverser(scheme_unit_type, mark_unit_val);
   GC_register_traverser(scheme_compiled_unit_type, mark_unit_val);
-  GC_register_traverser(scheme_unit_body_data_type, unit_body_val);
+  GC_register_traverser(scheme_unit_body_data_type, mark_unit_body_val);
   GC_register_traverser(scheme_unit_compound_data_type, compound_unit_data_val);
   GC_register_traverser(scheme_invoke_unit_data_type, invoke_unit_data_val);
 

@@ -211,6 +211,7 @@ Scheme_Env *scheme_basic_env ()
   scheme_init_true_false();
 
 #ifdef MZ_PRECISE_GC
+  scheme_register_traversers();
   register_traversers();
 #endif
 
@@ -1390,7 +1391,12 @@ Scheme_Object *scheme_make_envunbox(Scheme_Object *value)
 {
   Scheme_Object *obj;
 
+#ifdef MZ_PRECISE_GC
+  obj = (Scheme_Object *)scheme_malloc_envunbox(sizeof(Scheme_Small_Object));
+  obj->type = scheme_envunbox_type;
+#else
   obj = (Scheme_Object *)scheme_malloc_envunbox(sizeof(Scheme_Object*));
+#endif
   SCHEME_ENVBOX_VAL(obj) = value;
 
   return obj;
@@ -1631,9 +1637,9 @@ static int mark_comp_env(void *p, Mark_Proc mark)
   if (mark) {
     Scheme_Full_Comp_Env *e = (Scheme_Full_Comp_Env *)p;
 
-    gcMARK(e->basic.genv);
-    gcMARK(e->basic.next);
-    gcMARK(e->basic.values);
+    gcMARK(e->base.genv);
+    gcMARK(e->base.next);
+    gcMARK(e->base.values);
 
     gcMARK(e->data.stat_dists);
     gcMARK(e->data.sd_depths);
@@ -1641,7 +1647,7 @@ static int mark_comp_env(void *p, Mark_Proc mark)
     gcMARK(e->data.use);
   }
 
-  return sizeof(Scheme_Full_Comp_Env);
+  return gcBYTES_TO_WORDS(sizeof(Scheme_Full_Comp_Env));
 }
 
 static int mark_const_binding(void *p, Mark_Proc mark)
@@ -1654,13 +1660,13 @@ static int mark_const_binding(void *p, Mark_Proc mark)
     gcMARK(b->next);
   } 
   
-  return sizeof(Constant_Binding);
+  return gcBYTES_TO_WORDS(sizeof(Constant_Binding));
 }
 
 static int mark_link_info(void *p, Mark_Proc mark)
 {
   if (mark) {
-    Link_Info *i = (Link_Info *)i;
+    Link_Info *i = (Link_Info *)p;
 
     gcMARK(i->old_pos);
     gcMARK(i->new_pos);
@@ -1668,7 +1674,7 @@ static int mark_link_info(void *p, Mark_Proc mark)
     gcMARK(i->next);
   }
 
-  return sizeof(Link_Info);
+  return gcBYTES_TO_WORDS(sizeof(Link_Info));
 }
 
 static void register_traversers(void)

@@ -703,7 +703,11 @@ typedef Scheme_Object *(*Scheme_Type_Writer)(Scheme_Object *obj);
 #define SCHEME_INPORT_VAL(obj) (((Scheme_Input_Port *)(obj))->port_data)
 #define SCHEME_OUTPORT_VAL(obj) (((Scheme_Output_Port *)(obj))->port_data)
 #define SCHEME_VAR_BUCKET(obj) ((Scheme_Bucket *)(obj))
-#define SCHEME_ENVBOX_VAL(obj)  (*((Scheme_Object **)(obj)))
+#ifdef MZ_PRECISE_GC
+# define SCHEME_ENVBOX_VAL(obj)  SCHEME_PTR_VAL(obj)
+#else
+# define SCHEME_ENVBOX_VAL(obj)  (*((Scheme_Object **)(obj)))
+#endif
 
 #define SCHEME_ASSERT(expr,msg) ((expr) ? 1 : (scheme_signal_error(msg), 0))
 
@@ -857,7 +861,7 @@ void *scheme_malloc(size_t size);
 # define scheme_malloc_stubborn_tagged GC_malloc_one_stubborn_tagged
 # define scheme_malloc_eternal_tagged GC_malloc_eternal_tagged
 # define scheme_malloc_uncollectable_tagged GC_malloc_uncollectable_tagged
-# define scheme_malloc_envunbox GC_malloc
+# define scheme_malloc_envunbox GC_malloc_one_tagged
 # define scheme_malloc_weak GC_malloc_weak
 # define scheme_malloc_weak_tagged GC_malloc_one_weak_tagged
 #else

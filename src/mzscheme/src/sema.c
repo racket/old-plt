@@ -412,19 +412,19 @@ static Scheme_Object *block_sema_breakable(int n, Scheme_Object **p)
 
 /**********************************************************************/
 
-#ifdef MZ_PRCISE_GC
+#ifdef MZ_PRECISE_GC
 
 static int mark_breakable_wait(void *p, Mark_Proc mark)
 {
   if (mark) {
     BreakableWait *w = (BreakableWait *)p;
     
-    gcMARK(p->config);
-    gcMARK(p->orig_param_val);
-    gcMARK(p->sema);
+    gcMARK(w->config);
+    gcMARK(w->orig_param_val);
+    gcMARK(w->sema);
   }
 
-  return sizeof(BreakableWait);
+  return gcBYTES_TO_WORDS(sizeof(BreakableWait));
 }
 
 static int mark_sema_waiter(void *p, Mark_Proc mark)
@@ -432,12 +432,12 @@ static int mark_sema_waiter(void *p, Mark_Proc mark)
   if (mark) {
     Scheme_Sema_Waiter *w = (Scheme_Sema_Waiter *)p;
 
-    gcMARK(p->p);
-    gcMARK(p->prev);
-    gcMARK(p->next);
+    gcMARK(w->p);
+    gcMARK(w->prev);
+    gcMARK(w->next);
   }
 
-  return sizeof(Scheme_Sema_Waiter);
+  return gcBYTES_TO_WORDS(sizeof(Scheme_Sema_Waiter));
 }
 
 static void register_traversers(void)

@@ -2588,7 +2588,7 @@ static int mark_closure_info(void *p, Mark_Proc mark)
     gcMARK(i->real_closure_map);
   }
 
-  return sizeof(Closure_Info);
+  return gcBYTES_TO_WORDS(sizeof(Closure_Info));
 }
 
 static int mark_dyn_wind_cell(void *p, Mark_Proc mark)
@@ -2600,7 +2600,7 @@ static int mark_dyn_wind_cell(void *p, Mark_Proc mark)
     gcMARK(l->next);
   }
   
-  return sizeof(Scheme_Dynamic_Wind_List);
+  return gcBYTES_TO_WORDS(sizeof(Scheme_Dynamic_Wind_List));
 }
 
 static int mark_dyn_wind_info(void *p, Mark_Proc mark)
@@ -2613,7 +2613,7 @@ static int mark_dyn_wind_info(void *p, Mark_Proc mark)
     gcMARK(d->post);
   }
 
-  return sizeof(Dyn_Wind);
+  return gcBYTES_TO_WORDS(sizeof(Dyn_Wind));
 }
 
 static int mark_cont_mark_chain(void *p, Mark_Proc mark)
@@ -2626,7 +2626,7 @@ static int mark_cont_mark_chain(void *p, Mark_Proc mark)
     gcMARK(c->next);
   }
 
-  return sizeof(Scheme_Cont_Mark_Chain);
+  return gcBYTES_TO_WORDS(sizeof(Scheme_Cont_Mark_Chain));
 }
 
 static void register_traversers(void)

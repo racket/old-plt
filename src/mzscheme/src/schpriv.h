@@ -209,6 +209,9 @@ typedef struct {
 
 /* ininitializarion */
 void scheme_init_stack_check(void);
+#ifdef MZ_PRECISE_GC
+void scheme_register_traversers(void);
+#endif
 Scheme_Process *scheme_make_process(void);
 void scheme_init_true_false(void);
 void scheme_init_symbol_table (void);
@@ -281,7 +284,12 @@ typedef long bigdig;
 
 typedef struct {
   Scheme_Type type;
+#if MZ_PRECISE_GC
+  char pos;
+  char allocated_inline;
+#else
   short pos;
+#endif
   int len;
   bigdig *digits;
 } Scheme_Bignum;
@@ -821,6 +829,7 @@ extern Scheme_Object *scheme_local[MAX_CONST_LOCAL_POS][2];
 # define MALLOC_ONE_RT(x) MALLOC_ONE_TAGGED(x)
 # define MALLOC_N_RT(x,c) MALLOC_N_TAGGED(x,c)
 # define MALLOC_ONE_WEAK(x) _MALLOC_N(x, 1, scheme_malloc_weak)
+# define MALLOC_N_WEAK(x,c) _MALLOC_N(x, c, scheme_malloc_weak)
 # define MALLOC_ONE_TAGGED_WEAK(x) _MALLOC_N(x, 1, scheme_malloc_weak_tagged)
 # define MALLOC_ONE_WEAK_RT(x) MALLOC_ONE_TAGGED_WEAK(x)
 #else
@@ -828,6 +837,7 @@ extern Scheme_Object *scheme_local[MAX_CONST_LOCAL_POS][2];
 # define MALLOC_ONE_RT(x) MALLOC_ONE(x)
 # define MALLOC_N_RT(x,c) MALLOC_N(x,c)
 # define MALLOC_ONE_WEAK(x) MALLOC_ONE_ATOMIC(x)
+# define MALLOC_N_WEAK(x,c) MALLOC_N_ATOMIC(x,c)
 # define MALLOC_ONE_WEAK_RT(x) MALLOC_ONE_WEAK(x)
 # define MALLOC_ONE_TAGGED_WEAK(x) MALLOC_ONE_WEAK(x)
 #endif

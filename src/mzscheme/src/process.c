@@ -334,6 +334,10 @@ extern BOOL WINAPI DllMain(HINSTANCE inst, ULONG reason, LPVOID reserved);
 # endif
 #endif
 
+#ifndef MZ_PRECISE_GC
+# define scheme_process_hop_type scheme_process_type
+#endif
+
 void scheme_init_process(Scheme_Env *env)
 {
   scheme_add_global_constant("dump-memory-stats",
@@ -698,7 +702,7 @@ static Scheme_Process *make_process(Scheme_Process *after, Scheme_Config *config
      register a weak indirection with the manager. That way, the thread
      (and anything it points to) can be collected one GC cycle earlier. */
   process->mr_hop = MALLOC_ONE_WEAK_RT(Scheme_Process_Manager_Hop);
-  process->mr_hop->type = scheme_process_type;
+  process->mr_hop->type = scheme_process_hop_type;
   process->mr_hop->p = process;
 
   process->mref = scheme_add_managed(mgr
@@ -932,7 +936,7 @@ Scheme_Manager_Reference *scheme_add_managed(Scheme_Manager *m, Scheme_Object *o
   b = MALLOC_ONE_WEAK(Scheme_Object*);
   *b = o;
 
-  mr = MALLOC_ONE_WEAK_RT(Scheme_Manager_Reference);
+  mr = MALLOC_ONE_WEAK(Scheme_Manager_Reference);
 
   if (!m)
     m = (Scheme_Manager *)scheme_get_param(scheme_config, MZCONFIG_MANAGER);
@@ -999,7 +1003,7 @@ static Scheme_Process *do_close_managed(Scheme_Manager *m)
       m->data[i] = NULL;
       --m->count;
 
-      if (SCHEME_PROCESSP(o)) {
+      if (SAME_TYPE(SCHEME_TYPE(o), scheme_process_hop_type)) {
 #ifndef NO_SCHEME_THREADS
 	/* We've added an indirection and made it weak. See mr_hop note above. */
 	Scheme_Process *p = ((Scheme_Process_Manager_Hop *)o)->p;
@@ -2533,7 +2537,7 @@ static Scheme_Object *call_as_nested_process(int argc, Scheme_Object *argv[])
   p->nestee = np;
 
   np->mr_hop = MALLOC_ONE_WEAK_RT(Scheme_Process_Manager_Hop);
-  np->mr_hop->type = scheme_process_type;
+  np->mr_hop->type = scheme_process_hop_type;
   np->mr_hop->p = np;
   np->mref = scheme_add_managed(mgr, (Scheme_Object *)np->mr_hop, NULL, NULL, 0);
   scheme_weak_reference((void **)&np->mr_hop->p);
@@ -2743,6 +2747,7 @@ static Scheme_Config *make_initial_config(void)
 
   config = (Scheme_Config *)scheme_malloc_tagged(sizeof(Scheme_Config) + 
 						 (max_configs - 1) * sizeof(Scheme_Object*));
+  config->type = scheme_config_type;
   
   scheme_set_param(config, MZCONFIG_ENABLE_BREAK, scheme_true);
   scheme_set_param(config, MZCONFIG_CAN_READ_GRAPH, scheme_true);
@@ -3936,7 +3941,7 @@ int scheme_sproc_mutex_try_down(void *s)
 
 /**********************************************************************/
 
-#ifdef MZ_PRCISE_GC
+#ifdef MZ_PRECISE_GC
 
 static int mark_config_val(void *p, Mark_Proc mark)
 {
@@ -3949,8 +3954,8 @@ static int mark_config_val(void *p, Mark_Proc mark)
     c->extensions = mark(c->extensions);
   }
 
-  return (sizeof(Scheme_Config)
-	  + ((max_configs - 1) * sizeof(Scheme_Object*)));
+  return gcBYTES_TO_WORDS((sizeof(Scheme_Config)
+			   + ((max_configs - 1) * sizeof(Scheme_Object*))));
 }
 
 static int mark_will_executor_val(void *p, Mark_Proc mark)
@@ -3963,7 +3968,7 @@ static int mark_will_executor_val(void *p, Mark_Proc mark)
     e->last = mark(e->last);
   } 
 
-  return sizeof(WillExecutor);
+  return gcBYTES_TO_WORDS(sizeof(WillExecutor));
 }
 
 static int mark_manager_val(void *p, Mark_Proc mark)
@@ -3981,7 +3986,18 @@ static int mark_manager_val(void *p, Mark_Proc mark)
     m->children = mark(m->children);
   }
 
-  return sizeof(Scheme_Manager);
+  return gcBYTES_TO_WORDS(sizeof(Scheme_Manager));
+}
+
+static int mark_process_hop(void *p, Mark_Proc mark)
+{
+  if (mark) {
+    Scheme_Process_Manager_Hop *hop = (Scheme_Process_Manager_Hop *)p;
+
+    gcMARK(hop->p);
+  } 
+
+  return gcBYTES_TO_WORDS(sizeof(Scheme_Process_Manager_Hop));
 }
 
 static int mark_namespace_option(void *p, Mark_Proc mark)
@@ -3992,7 +4008,7 @@ static int mark_namespace_option(void *p, Mark_Proc mark)
     gcMARK(o->key);
   }
 
-  return sizeof(Scheme_NSO);
+  return gcBYTES_TO_WORDS(sizeof(Scheme_NSO));
 }
 
 static int mark_param_data(void *p, Mark_Proc mark)
@@ -4004,7 +4020,7 @@ static int mark_param_data(void *p, Mark_Proc mark)
     gcMARK(d->defval);
   }
 
-  return sizeof(ParamData);
+  return gcBYTES_TO_WORDS(sizeof(ParamData));
 }
 
 static int mark_param_ext_rec(void *p, Mark_Proc mark)
@@ -4012,12 +4028,11 @@ static int mark_param_ext_rec(void *p, Mark_Proc mark)
   if (mark) {
     ParamExtensionRec *r = (ParamExtensionRec *)p;
     
-    gcMARK(r->key);
     gcMARK(r->data);
     gcMARK(r->next);
   }
 
-  return sizeof(ParamExtensionRec);
+  return gcBYTES_TO_WORDS(sizeof(ParamExtensionRec));
 }
 
 static int mark_param_ext_rec_data(void *p, Mark_Proc mark)
@@ -4029,7 +4044,7 @@ static int mark_param_ext_rec_data(void *p, Mark_Proc mark)
     gcMARK(d->p);
   }
 
-  return sizeof(ParamExtensionRecData);
+  return gcBYTES_TO_WORDS(sizeof(ParamExtensionRecData));
 }
 
 static int mark_will(void *p, Mark_Proc mark)
@@ -4043,7 +4058,7 @@ static int mark_will(void *p, Mark_Proc mark)
     gcMARK(w->next);
   }
 
-  return sizeof(ActiveWill);
+  return gcBYTES_TO_WORDS(sizeof(ActiveWill));
 }
 
 static int mark_will_registration(void *p, Mark_Proc mark)
@@ -4055,7 +4070,7 @@ static int mark_will_registration(void *p, Mark_Proc mark)
     gcMARK(r->w);
   }
 
-  return sizeof(WillRegistration);
+  return gcBYTES_TO_WORDS(sizeof(WillRegistration));
 }
 
 static void register_traversers(void)
@@ -4063,6 +4078,7 @@ static void register_traversers(void)
   GC_register_traverser(scheme_config_type, mark_config_val);
   GC_register_traverser(scheme_will_executor_type, mark_will_executor_val);
   GC_register_traverser(scheme_manager_type, mark_manager_val);
+  GC_register_traverser(scheme_process_hop_type, mark_process_hop);
 
   GC_register_traverser(scheme_rt_namespace_option, mark_namespace_option);
   GC_register_traverser(scheme_rt_param_data, mark_param_data);

@@ -2673,17 +2673,17 @@ static Scheme_Object *read_case_lambda(Scheme_Object *obj)
 
 /**********************************************************************/
 
-#ifdef MZ_PRCISE_GC
+#ifdef MZ_PRECISE_GC
 
 static int mark_linker_name(void *p, Mark_Proc mark)
 {
   if (mark) {
-    Linker_Name *n = (Linker_name *)p;
+    Linker_Name *n = (Linker_Name *)p;
     
     gcMARK(n->sym);
   }
 
-  return sizeof(Linker_Name);
+  return gcBYTES_TO_WORDS(sizeof(Linker_Name));
 }
 
 static void register_traversers(void)
@@ -2692,5 +2692,3 @@ static void register_traversers(void)
 }
 
 #endif
-
-#endif /* NO_SCHEME_THREADS */

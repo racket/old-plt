@@ -167,6 +167,7 @@ enum {
   scheme_rt_unit_data_closure,
   scheme_rt_compound_linked_data,
   scheme_rt_do_invoke_data,
+  scheme_process_hop_type,
 #endif
 
   _scheme_last_type_

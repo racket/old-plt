@@ -3337,7 +3337,7 @@ static int mark_comp_info(void *p, Mark_Proc mark)
     gcMARK(i->value_name);
   }
 
-  return sizeof(Scheme_Compile_Info);
+  return gcBYTES_TO_WORDS(sizeof(Scheme_Compile_Info));
 }
 
 static int mark_cont_mark(void *p, Mark_Proc mark)
@@ -3350,7 +3350,7 @@ static int mark_cont_mark(void *p, Mark_Proc mark)
     gcMARK(cm->cached_chain);
   }
 
-  return sizeof(Scheme_Cont_Mark);
+  return gcBYTES_TO_WORDS(sizeof(Scheme_Cont_Mark));
 }
 
 static int mark_saved_stack(void *p, Mark_Proc mark)
@@ -3364,7 +3364,7 @@ static int mark_saved_stack(void *p, Mark_Proc mark)
     saved->runstack = saved->runstack_start + (saved->runstack - old);
   }
 
-  return sizeof(Scheme_Saved_Stack);
+  return gcBYTES_TO_WORDS(sizeof(Scheme_Saved_Stack));
 }
 
 static int mark_eval_in_env(void *p, Mark_Proc mark)
@@ -3378,7 +3378,7 @@ static int mark_eval_in_env(void *p, Mark_Proc mark)
     gcMARK(ee->old);
   }
   
-  return sizeof(Eval_In_Env);
+  return gcBYTES_TO_WORDS(sizeof(Eval_In_Env));
 }
 
 static void register_traversers(void)

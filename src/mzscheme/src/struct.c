@@ -1010,6 +1010,8 @@ void scheme_count_struct_info(Scheme_Object *o, long *s, long *e,
 }
 #endif
 
+/**********************************************************************/
+
 #if MZ_PRECISE_GC
 
 static int mark_struct_val(void *p, Mark_Proc mark)
@@ -1024,8 +1026,8 @@ static int mark_struct_val(void *p, Mark_Proc mark)
     gcMARK(s->stype);
   } 
 
-  return (sizeof(Scheme_Structure) 
-	  + ((s->stype->num_slots - 1) * sizeof(Scheme_Object *)));
+  return gcBYTES_TO_WORDS((sizeof(Scheme_Structure) 
+			   + ((s->stype->num_slots - 1) * sizeof(Scheme_Object *))));
 }
 
 static int mark_struct_type_val(void *p, Mark_Proc mark)
@@ -1039,8 +1041,8 @@ static int mark_struct_type_val(void *p, Mark_Proc mark)
     gcMARK(t->type_name);
   }
 
-  return (sizeof(Scheme_Struct_Type)
-	  + (t->name_pos * sizeof(Scheme_Struct_Type *)));
+  return gcBYTES_TO_WORDS((sizeof(Scheme_Struct_Type)
+	  + (t->name_pos * sizeof(Scheme_Struct_Type *))));
 }
 
 static int mark_struct_info_val(void *p, Mark_Proc mark)
@@ -1054,7 +1056,7 @@ static int mark_struct_info_val(void *p, Mark_Proc mark)
     gcMARK(i->memo_names);
   } 
 
-  return sizeof(Struct_Info);
+  return gcBYTES_TO_WORDS(sizeof(Struct_Info));
 }
 
 static int mark_struct_proc_info(void *p, Mark_Proc mark)
@@ -1066,7 +1068,7 @@ static int mark_struct_proc_info(void *p, Mark_Proc mark)
     gcMARK(i->func_name);
   } 
 
-  return sizeof(Struct_Proc_Info);
+  return gcBYTES_TO_WORDS(sizeof(Struct_Proc_Info));
 }
 
 static void register_traversers(void)

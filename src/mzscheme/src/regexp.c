@@ -38,6 +38,7 @@
 typedef struct regexp {
   Scheme_Type type;
   long nsubexp;
+  long regsize;
   char regstart;		/* Internal use only. */
   char reganch;			/* Internal use only. */
   char *regmust;		/* Internal use only: relative to self */
@@ -254,6 +255,8 @@ regcomp(char *exp)
   
   r->type = scheme_regexp_type;
   
+  r->regsize = regsize;
+
   r->nsubexp = regnpar;
   
   /* Second pass: emit code. */
@@ -1206,7 +1209,7 @@ regstrcspn(char *s1, char *s2)
    - regsub - perform substitutions after a regexp match
    */
 static 
-char *regsub(regexp *prog, char *source, long *lenout, unsigned long srcbase, char **startp, char **endp)
+char *regsub(regexp *prog, char *source, long *lenout, char *insrc, unsigned long srcbase, char **startp, char **endp)
 {
   char *dest;
   MZREGISTER char *src;
@@ -1269,7 +1272,7 @@ char *regsub(regexp *prog, char *source, long *lenout, unsigned long srcbase, ch
 	memcpy(dest, old, destlen);
 	dst = dest + destlen;
       }
-      memcpy(dst, source + ((unsigned long)startp[no] - srcbase), len);
+      memcpy(dst, insrc + ((unsigned long)startp[no] - srcbase), len);
       dst += len;
       destlen += len;
     }
@@ -1418,7 +1421,7 @@ static Scheme_Object *gen_replace(int argc, Scheme_Object *argv[], int all)
       
       /* GC may happen now. But startp[*], endp[*], and srcbase are atomic */
 
-      insert = regsub(r, SCHEME_STR_VAL(argv[2]), &len, srcbase, startp, endp);
+      insert = regsub(r, SCHEME_STR_VAL(argv[2]), &len, source, srcbase, startp, endp);
       
       end = SCHEME_STRTAG_VAL(argv[1]);
       
@@ -1492,20 +1495,26 @@ static Scheme_Object *regexp_p(int argc, Scheme_Object *argv[])
 }
 
 #ifdef MZ_PRECISE_GC
-static int mark_regexp_val(void *p, Mark_Proc mark)
+static int mark_regexp(void *p, Mark_Proc mark)
 {
-  if (mark) {
-    regexp *r = (regexp *)p;
+  regexp *r = (regexp *)p;
 
+  if (mark) {
     r->regmust = (char *)p + ((char *)r->regmust - (char *)p);
   }
 
-  return sizeof(regexp);
+  return gcBYTES_TO_WORDS((sizeof(regexp) + r->regsize));
 }
 #endif
 
 void scheme_regexp_initialize(Scheme_Env *env)
 {
+#ifdef MZ_PRECISE_GC
+  if (scheme_starting_up) {
+    GC_register_traverser(scheme_regexp_type, mark_regexp);
+  }
+#endif
+
   scheme_add_global_constant("regexp", 
 			     scheme_make_prim_w_arity(make_regexp, 
 						      "regexp", 

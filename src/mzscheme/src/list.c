@@ -1280,13 +1280,14 @@ Scheme_Object *scheme_make_weak_box(Scheme_Object *v)
 {
   Scheme_Small_Object *obj;
 
-  obj = (Scheme_Small_Object *)
-    scheme_malloc_atomic_tagged(sizeof(Scheme_Small_Object));
+  obj = MALLOC_ONE_TAGGED_WEAK(Scheme_Small_Object);
 
   obj->type = scheme_weak_box_type;
 
   obj->u.ptr_val = v;
+#ifndef MZ_PRECISE_GC
   scheme_weak_reference((void **)&obj->u.ptr_val);
+#endif
 
   return (Scheme_Object *)obj;
 }

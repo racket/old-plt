@@ -4034,12 +4034,14 @@ void scheme_count_class_data(Scheme_Object *o, long *s, long *e, Scheme_Hash_Tab
 
 #endif
 
+/**********************************************************************/
+
 #ifdef MZ_PRECISE_GC
 
 static int mark_object_val(void *p, Mark_Proc mark)
 {
   Internal_Object *obj = (Internal_Object *)p;
-  Scheme_Class *sclass = (Scheme_Class *)obj.o.sclass;
+  Scheme_Class *sclass = (Scheme_Class *)obj->o.sclass;
   
   if (mark) {
     int i;
@@ -4047,11 +4049,10 @@ static int mark_object_val(void *p, Mark_Proc mark)
       gcMARK(obj->slots[i]);
 
     gcMARK(obj->o.sclass);
-    gcMARK(obj->o.primdata);
   }
 
-  return (sizeof(Internal_Object) 
-	  + (sizeof(Scheme_Object *) * (sclass->num_slots - 1)));
+  return gcBYTES_TO_WORDS((sizeof(Internal_Object) 
+			   + (sizeof(Scheme_Object *) * (sclass->num_slots - 1))));
 }
 
 static int mark_class_val(void *p, Mark_Proc mark)
@@ -4087,7 +4088,7 @@ static int mark_class_val(void *p, Mark_Proc mark)
     gcMARK(c->interface_maps);
   }
 
-  return sizeof(Scheme_Class);
+  return gcBYTES_TO_WORDS(sizeof(Scheme_Class));
 }
 
 static int mark_generic_data_val(void *p, Mark_Proc mark)
@@ -4099,7 +4100,7 @@ static int mark_generic_data_val(void *p, Mark_Proc mark)
     gcMARK(g->ivar_name);
   }
 
-  return sizeof(Generic_Data);
+  return gcBYTES_TO_WORDS(sizeof(Generic_Data));
 }
 
 static int mark_interface_val(void *p, Mark_Proc mark)
@@ -4115,7 +4116,7 @@ static int mark_interface_val(void *p, Mark_Proc mark)
     gcMARK(i->defname);
   }
   
-  return sizeof(Scheme_Interface);
+  return gcBYTES_TO_WORDS(sizeof(Scheme_Interface));
 }
 
 static int mark_class_data_val(void *p, Mark_Proc mark)
@@ -4138,7 +4139,7 @@ static int mark_class_data_val(void *p, Mark_Proc mark)
     gcMARK(d->defname);
   }
 
-  return sizeof(Class_Data);
+  return gcBYTES_TO_WORDS(sizeof(Class_Data));
 }
 
 static int mark_interface_data_val(void *p, Mark_Proc mark)
@@ -4151,7 +4152,7 @@ static int mark_interface_data_val(void *p, Mark_Proc mark)
     gcMARK(d->defname);
   }
   
-  return sizeof(Interface_Data);
+  return gcBYTES_TO_WORDS(sizeof(Interface_Data));
 }
 
 static int mark_dup_check(void *p, Mark_Proc mark)
@@ -4162,7 +4163,7 @@ static int mark_dup_check(void *p, Mark_Proc mark)
     gcMARK(r->scheck_hash);
   }
 
-  return sizeof(DupCheckRecord);
+  return gcBYTES_TO_WORDS(sizeof(DupCheckRecord));
 }
 
 static int mark_class_var(void *p, Mark_Proc mark)
@@ -4190,7 +4191,7 @@ static int mark_class_var(void *p, Mark_Proc mark)
     }
   }
 
-  return sizeof(ClassVariable);
+  return gcBYTES_TO_WORDS(sizeof(ClassVariable));
 }
 
 static int mark_class_method(void *p, Mark_Proc mark)
@@ -4201,7 +4202,7 @@ static int mark_class_method(void *p, Mark_Proc mark)
     gcMARK(m->closed_name);
   }
 
-  return sizeof(CMethod);
+  return gcBYTES_TO_WORDS(sizeof(CMethod));
 }
 
 static int mark_class_assembly(void *p, Mark_Proc mark)
@@ -4209,7 +4210,7 @@ static int mark_class_assembly(void *p, Mark_Proc mark)
   if (mark)
     mark_class_data_val(p, mark);
 
-  return sizeof(Scheme_Class_Assembly);
+  return gcBYTES_TO_WORDS(sizeof(Scheme_Class_Assembly));
 }
 
 static int mark_init_object_rec(void *p, Mark_Proc mark)
@@ -4219,15 +4220,15 @@ static int mark_init_object_rec(void *p, Mark_Proc mark)
   if (mark) {
     int i;
 
-    for (i = sclass->count; i--; ) {
+    for (i = r->count; i--; ) {
       gcMARK(r->frames[i].cmethods);
       gcMARK(r->frames[i].refs);
       gcMARK(r->frames[i].ivars);
     }
   }
 
-  return (sizeof(Init_Object_Rec)
-	  + ((sclass->count - 1) * sizeof(Init_Frame)));
+  return gcBYTES_TO_WORDS((sizeof(Init_Object_Rec)
+			   + ((r->count - 1) * sizeof(Init_Frame))));
 }
 
 static int mark_super_init_data(void *p, Mark_Proc mark)
@@ -4239,7 +4240,7 @@ static int mark_super_init_data(void *p, Mark_Proc mark)
     gcMARK(d->irec);
   }
 
-  return sizeof(SuperInitData);
+  return gcBYTES_TO_WORDS(sizeof(SuperInitData));
 }
 
 static void register_traversers(void)

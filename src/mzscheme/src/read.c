@@ -1353,6 +1353,8 @@ static Scheme_Object *read_compact_svector(CPort *port, int l)
   short *v;
 
   o = scheme_alloc_object();
+  o->type = scheme_svector_type;
+
   SCHEME_SVEC_LEN(o) = l;
   if (l)
     v = MALLOC_N_ATOMIC(short, l);

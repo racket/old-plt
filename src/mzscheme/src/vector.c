@@ -41,7 +41,7 @@ scheme_init_vector (Scheme_Env *env)
 {
   if (scheme_starting_up) {
     REGISTER_SO(zero_length_vector);
-    zero_length_vector = (Scheme_Object *)scheme_malloc_tagged(sizeof(Scheme_Vector));
+    zero_length_vector = (Scheme_Object *)scheme_malloc_tagged(sizeof(Scheme_Vector) - sizeof(Scheme_Object *));
     zero_length_vector->type = scheme_vector_type;
     SCHEME_VEC_SIZE(zero_length_vector) = 0;
   }

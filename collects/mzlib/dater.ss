@@ -34,7 +34,7 @@
 |#
 
     (define legal-formats
-      (list 'american 'chinese 'german 'indian 'irish 'julian 'international-date-format))
+      (list 'american 'chinese 'german 'indian 'irish 'julian 'iso-8601))
 
     (define date-display-format 
       (make-parameter 'american
@@ -126,7 +126,7 @@
 		   (values (list (julian/scalinger->string
 				   (date->julian/scalinger date)))
 		           (list ", " hour24 ":" minute ":" second))]
-                  [(international-date-format)
+                  [(iso-8601)
                    (values
                     (list year "-" (add-zero (date-month date)) "-" (add-zero (date-day date)))
                     (list " " hour24 ":" minute ":" second))]

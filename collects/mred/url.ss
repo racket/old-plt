@@ -419,9 +419,18 @@
 			(first-slash #f))
 	      (cond
 		((>= index end-point)
-		  (values (substring path begin-point end-point)
-		    #f
-		    ""))
+		  ; We come here only if the string has not had a /
+		  ; yet.  This can happen in two cases:
+		  ; 1. The input is a relative URL, and the hostname
+		  ;    will not be specified.  In such cases, has-host?
+		  ;    will be false.
+		  ; 2. The input is an absolute URL with a hostname,
+		  ;    and the intended path is "/", but the URL is missing
+		  ;    a "/" at the end.
+		  (let ((host/path (substring path begin-point end-point)))
+		    (if has-host?
+		      (values host/path #f "/")
+		      (values #f #f host/path))))
 		((char=? #\: (string-ref path index))
 		  (loop (add1 index) (or first-colon index) first-slash))
 		((char=? #\/ (string-ref path index))

@@ -25,6 +25,17 @@
 (define plt:mzscheme-parameters@
   (reference-library-unit/sig "sparamu.ss" "backward"))
 
+(define zodiac:mzscheme-parameters@
+  (unit/sig plt:parameters^
+    (import (plt : plt:parameters^))
+
+    (define case-sensitive? plt:case-sensitive?)
+    (define unmatched-cond/case-is-error? plt:unmatched-cond/case-is-error?)
+    (define allow-set!-on-undefined? plt:allow-set!-on-undefined?)
+    (define allow-improper-lists? plt:allow-improper-lists?)
+    (define check-syntax-level 'advanced)))
+; plt:check-syntax-level)))
+
 (define zodiac:system@
   (reference-unit/sig "link.ss"))
 
@@ -36,10 +47,12 @@
 	(link
 	  (INTERFACE : zodiac:interface^
 	    (zodiac:default-interface@))
-	  (PARAMETERS : plt:parameters^
+	  (ACTUAL-PARAMETERS : plt:parameters^
 	    (plt:mzscheme-parameters@))
+	  (LOCAL-PARAMETERS : plt:parameters^
+	    (zodiac:mzscheme-parameters@ ACTUAL-PARAMETERS))
 	  (SYSTEM : zodiac:system^
-	    (zodiac:system@ INTERFACE PARAMETERS
+	    (zodiac:system@ INTERFACE LOCAL-PARAMETERS
 	      (MZLIB-CORE pretty-print@)
 	      (MZLIB-CORE file@)))
 	  (MZLIB-CORE : mzlib:core^

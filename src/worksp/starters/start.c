@@ -32,41 +32,41 @@ static char *protect(char *s)
 
   for (naya = s; *naya; naya++) {
     if (isspace(*naya) || (*naya == '\'')) {
-	  has_space = 1;
-	  was_slash = 0;
+      has_space = 1;
+      was_slash = 0;
     } else if (*naya == '"') {
-	  has_quote += 1 + (2 * was_slash);
-	  was_slash = 0;
-	} else if (*naya == '\\') {
-	  was_slash++;
-	} else
-	  was_slash = 0;
+      has_quote += 1 + (2 * was_slash);
+      was_slash = 0;
+    } else if (*naya == '\\') {
+      was_slash++;
+    } else
+      was_slash = 0;
   }
 
   if (has_space || has_quote) {
-	char *p;
-	int wrote_slash = 0;
+    char *p;
+    int wrote_slash = 0;
 
-	naya = malloc(strlen(s) + 3 + 3*has_quote);
-	naya[0] = '"';
-	for (p = naya + 1; *s; s++) {
-		if (*s == '"') {
-			while (wrote_slash--)
-			  *(p++) = '\\';
-			*(p++) = '"'; /* endquote */
-			*(p++) = '\\';
-			*(p++) = '"'; /* protected */
-            *(p++) = '"'; /* start quote again */
-			wrote_slash = 0;
-		} else if (*s == '\\') {
-		  *(p++) = '\\';
-		  wrote_slash++;
-		} else {
-		  *(p++) = *s;
-		  wrote_slash = 0;
-		}
-	}
-	*(p++) = '"';
+    naya = malloc(strlen(s) + 3 + 3*has_quote);
+    naya[0] = '"';
+    for (p = naya + 1; *s; s++) {
+      if (*s == '"') {
+	while (wrote_slash--)
+	  *(p++) = '\\';
+	*(p++) = '"'; /* endquote */
+	*(p++) = '\\';
+	*(p++) = '"'; /* protected */
+	*(p++) = '"'; /* start quote again */
+	wrote_slash = 0;
+      } else if (*s == '\\') {
+	*(p++) = '\\';
+	wrote_slash++;
+      } else {
+	*(p++) = *s;
+	wrote_slash = 0;
+      }
+    }
+    *(p++) = '"';
     *p = 0;
 
     return naya;
@@ -79,80 +79,80 @@ static int parse_command_line(int count, char **command,
 			      char *buf, int maxargs)
 
 {
-    char *parse, *created, *write;
-	int findquote = 0;
+  char *parse, *created, *write;
+  int findquote = 0;
     
-    parse = created = write = buf;
-	while (*parse) {
-      while (*parse && isspace(*parse)) parse++;
-	  while (*parse && (!isspace(*parse) || findquote))	{
-        if (*parse== '"') {
-		  findquote = !findquote;
-	    } else if (*parse== '\\') {
-		  char *next;
-		  for (next = parse; *next == '\\'; next++);
-		  if (*next == '"') {
-		    /* Special handling: */
-			int count = (next - parse), i;
-			for (i = 1; i < count; i += 2)
-				*(write++) = '\\';
-			parse += (count - 1);
-			if (count & 0x1) {
-			  *(write++) = '\"';
-			  parse++;
-			}
-		  }	else
-			*(write++) = *parse;
-	    } else
-		  *(write++) = *parse;
-		parse++;
+  parse = created = write = buf;
+  while (*parse) {
+    while (*parse && isspace(*parse)) parse++;
+    while (*parse && (!isspace(*parse) || findquote))	{
+      if (*parse== '"') {
+	findquote = !findquote;
+      } else if (*parse== '\\') {
+	char *next;
+	for (next = parse; *next == '\\'; next++);
+	if (*next == '"') {
+	  /* Special handling: */
+	  int count = (next - parse), i;
+	  for (i = 1; i < count; i += 2)
+	    *(write++) = '\\';
+	  parse += (count - 1);
+	  if (count & 0x1) {
+	    *(write++) = '\"';
+	    parse++;
 	  }
-	  if (*parse)
-		  parse++;
-	  *(write++) = 0;
+	}	else
+	  *(write++) = *parse;
+      } else
+	*(write++) = *parse;
+      parse++;
+    }
+    if (*parse)
+      parse++;
+    *(write++) = 0;
 	  
-	  if (*created)	{
-        command[count++] = created;
-		if (count == maxargs)
-			return count;
-	  }
-      created = write;
-	}
-
+    if (*created)	{
+      command[count++] = created;
+      if (count == maxargs)
 	return count;
+    }
+    created = write;
+  }
+
+  return count;
 }
 
 static char *make_command_line(int argc, char **argv)
 {
-	int i, len = 0;
-	char *r;
+  int i, len = 0;
+  char *r;
 
-    for (i = 0; i < argc; i++) {
-		len += strlen(argv[i]) + 1;
-	}
-	r = malloc(len);
-	len = 0;
-	for (i = 0; i < argc; i++) {
-		int l = strlen(argv[i]);
-		if (len) r[len++] = ' ';
-		memcpy(r + len, argv[i], l);
-		len += l;
-	}
-	r[len] = 0;
-	return r;
+  for (i = 0; i < argc; i++) {
+    len += strlen(argv[i]) + 1;
+  }
+  r = malloc(len);
+  len = 0;
+  for (i = 0; i < argc; i++) {
+    int l = strlen(argv[i]);
+    if (len) r[len++] = ' ';
+    memcpy(r + len, argv[i], l);
+    len += l;
+  }
+  r[len] = 0;
+  return r;
 }
 
 #ifdef MZSTART
 void WriteStr(HANDLE h, const char *s) {
-	DWORD done;
-	WriteFile(h, s, strlen(s), &done, NULL);
+  DWORD done;
+  WriteFile(h, s, strlen(s), &done, NULL);
 }
 #endif
 
 
 #ifdef MRSTART
 int APIENTRY WinMain(HANDLE hInstance, HANDLE hPrevInstance, 
-					 LPSTR m_lpCmdLine, int nCmdShow)
+		     LPSTR m_lpCmdLine, int nCmdShow)
 #else
 int main(int argc_in, char **argv_in)
 #endif
@@ -188,7 +188,7 @@ int main(int argc_in, char **argv_in)
 #ifdef MRSTART
     MessageBox(NULL, "Can't find " GOEXE, "Error", MB_OK);
 #else
-	WriteStr(out, "Can't find " GOEXE "\n");
+    WriteStr(out, "Can't find " GOEXE "\n");
 #endif
     exit(-1);
   }
@@ -198,61 +198,40 @@ int main(int argc_in, char **argv_in)
 
   args[0] = go;
 
-#if 0
-#ifdef DRSCHEME
-  args[1] = "-A";
-  args[2] = "drscheme";
-  args[3] = "--";
-  count = 4;
-#endif
-#ifdef MZRICE
-  args[1] = "-mqve";
-  args[2] = "(require-library \"go.ss\" \"mzrice\")";
-  args[3] = "--";
-  count = 4;
-#endif
-#ifdef MZC
-  args[1] = "-mqve";
-  args[2] = "(require-library \"start.ss\" \"compiler\")";
-  args[3] = "--";
-  count = 4;
-#endif
-#endif
-
 #ifdef MRSTART
   {
     char *buf;
     
     buf = malloc(strlen(m_lpCmdLine) + 1);
     memcpy(buf, m_lpCmdLine, strlen(m_lpCmdLine) + 1);
-	count = parse_command_line(count, args, buf, MAX_ARGS);
+    count = parse_command_line(count, args, buf, MAX_ARGS);
   }
 #else
   {
-	  int i;
-	  for (i = 1; i < argc_in; i++)
-		  args[count++] = argv_in[i];
+    int i;
+    for (i = 1; i < argc_in; i++)
+      args[count++] = argv_in[i];
   }
 #endif
-
+  
   args[count] = NULL;
-
+  
   for (i = 0; i < count; i++) {
     args[i] = protect(args[i]);
     /* MessageBox(NULL, args[i], "Argument", MB_OK); */
   }
-
-  _putenv(plthome);
-
-  for (i = 0; i < sizeof(si); i++)
-	((char *)&si)[i] = 0;
-  si.cb = sizeof(si);
-
-  if (!CreateProcess(args[0],
-	                 make_command_line(count, args),
-					 NULL, NULL, TRUE,
-  					0, NULL, NULL, &si, &pi)) {
   
+  _putenv(plthome);
+  
+  for (i = 0; i < sizeof(si); i++)
+    ((char *)&si)[i] = 0;
+  si.cb = sizeof(si);
+  
+  if (!CreateProcess(go,
+		     make_command_line(count, args),
+		     NULL, NULL, TRUE,
+		     0, NULL, NULL, &si, &pi)) {
+    
 #ifdef MRSTART
     MessageBox(NULL, "Can't start " GOEXE, "Error", MB_OK);
 #else
@@ -261,12 +240,12 @@ int main(int argc_in, char **argv_in)
     return -1;
   } else {
 #if WAITTILDONE
-	 DWORD result;
-	 WaitForSingleObject(pi.hProcess, INFINITE);
-	 GetExitCodeProcess(pi.hProcess, &result);
-	 return result;
+    DWORD result;
+    WaitForSingleObject(pi.hProcess, INFINITE);
+    GetExitCodeProcess(pi.hProcess, &result);
+    return result;
 #else
-	  return 0;
+    return 0;
 #endif
   }
 }

@@ -227,7 +227,11 @@
 	      (build-path p (cadr s))))]
 	 [(eq? (car s) 'file)
 	  (let ([p (cadr s)])
-	    (path->complete-path p (get-dir)))]
+	    (path->complete-path p (let ([d (get-dir)])
+				     (if (path-string? d)
+					 d
+					 (or (current-load-relative-directory)
+					     (current-directory))))))]
 	 [else #f]))))
 
   (define (resolve-module-path-index mpi relto)
@@ -264,10 +268,12 @@
 		 (set! relto-mp (relto-mp)))
 	       (cond
 		[(path-string? relto-mp)
-		 (bytes->string/utf-8
+		 (bytes->string/locale
 		  (apply
 		   bytes-append
-		   (let ([m (regexp-match re:path-only relto-mp)])
+		   (let ([m (regexp-match re:path-only (if (path? relto-mp)
+							   (path->bytes relto-mp)
+							   (string->bytes/locale relto-mp)))])
 		     (if m
 			 (cadr m)
 			 #"."))
@@ -275,7 +281,9 @@
 			  (cond
 			   [(eq? e 'same) #"/."]
 			   [(eq? e 'up) #"/.."]
-			   [else (bytes-append #"/" (path->bytes e))]))
+			   [else (bytes-append #"/" (if (path? e)
+							(path->bytes e)
+							e))]))
 			elements)))]
 		[else (let ([path (path->string
 				   (apply build-path

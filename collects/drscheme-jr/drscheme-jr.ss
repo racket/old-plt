@@ -131,18 +131,20 @@
 	     (case-lambda
 	      [() (eq? (basis:setting-printing setting) 'constructor-style)]
 	      [(x) (basis:set-setting-printing!
+		    setting
 		    (if x
 			'constructor-style
-			'quasi-r4rs-style))])
+			'r4rs-style))])
 	     "print values using constructor style input syntax"
 	     (lambda (setting) (eq? (basis:setting-printing setting) 'constructor-style)))
        (list "--quasi-printing"
 	     (case-lambda
 	      [() (eq? (basis:setting-printing setting) 'quasi-style)]
 	      [(x) (basis:set-setting-printing!
+		    setting
 		    (if x
 			'quasi-style
-			'quasi-r4rs-style))])
+			'r4rs-style))])
 	     "print values using quasi-quote style input syntax"
 	     (lambda (setting) (eq? (basis:setting-printing setting) 'quasi-style)))))
 
@@ -305,7 +307,8 @@
 								((cadr s))))
 							flags))
 		  (newline))
-		'truncate/replace))
+		'truncate/replace)
+	      (printf "Settings saved.~n"))
 	   (,(format "Save current settings to:~n           ~a" (get-argv-file)))]
 	  [("--show")
 	   ,(lambda (_) (printf "Current settings: ~a~n" (make-implies-string #f)))

@@ -102,7 +102,7 @@ typedef jmpbuf jmp_buf[1];
 /* Provide GC_free that only works on chunks (i.e., large allocation
    blocks); frees on small blacks are ignored */
 
-#define PROVIDE_MALLOC_AND_FREE SGC_STD_DEBUGGING_UNIX
+#define PROVIDE_MALLOC_AND_FREE 0
 /* Defines malloc(), realloc(), calloc(), and  free() in terms of 
    the collector. Platform-specific allocation routines (e.g., sbrk())
    must then be used for low-level allocations by the collector;

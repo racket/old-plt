@@ -276,37 +276,29 @@
  (file-menu-label-other "F&ile")
 
  (new-info  "Open a new file")
- (new-menu-item-before "&New")
- (new-menu-item-after "")
+ (new-menu-item "&New")
 
  (open-info "Open a file from disk")
- (open-menu-item-before "&Open")
- (open-menu-item-after "...")
+ (open-menu-item "&Open...")
 
  (revert-info "Revert this file to the copy on disk")
- (revert-menu-item-before "&Revert")
- (revert-menu-item-after "")
+ (revert-menu-item "&Revert")
 
  (save-info "Save this file to disk")
- (save-menu-item-before "&Save")
- (save-menu-item-after "")
+ (save-menu-item "&Save")
 
  (save-as-info "Prompt for a filename and save this file to disk")
- (save-as-menu-item-before "Save")
- (save-as-menu-item-after " &As ...")
+ (save-as-menu-item "Save &As...")
 
  (print-info "Send this file to a printer")
- (print-menu-item-before "&Print")
- (print-menu-item-after "...")
+ (print-menu-item "&Print...")
 
  (close-info "Close this file")
- (close-menu-item-before "&Close")
- (close-menu-item-after "")
+ (close-menu-item "&Close")
 
  (quit-info "Close all windows")
- (quit-menu-item-before-windows "E&xit")
- (quit-menu-item-before-others "&Quit")
- (quit-menu-item-after "")
+ (quit-menu-item-windows "E&xit")
+ (quit-menu-item-others "&Quit")
  
  (edit-menu-label "&Edit")
  
@@ -333,20 +325,16 @@
  (select-all-menu-item "Select A&ll")
  
  (find-info "Search for a string")
- (find-menu-item-before "Find")
- (find-menu-item-after "...")
+ (find-menu-item "Find...")
 
  (find-again-info "Search for the same string as before")
- (find-again-menu-item-before "Find Again")
- (find-again-menu-item-after "")
+ (find-again-menu-item "Find Again")
  
  (replace-and-find-again-info "Replace the current text and search for the same string as before")
- (replace-and-find-again-menu-item-before "Replace && Find Again")
- (replace-and-find-again-menu-item-after "")
+ (replace-and-find-again-menu-item "Replace && Find Again")
 
  (preferences-info "Configure your preferences")
- (preferences-menu-item-before "")
- (preferences-menu-item-after "Preferences...")
+ (preferences-menu-item "Preferences...")
 
  (keybindings-info "Show the currently active keybindings")
  (keybindings-menu-item "Keybindings")
@@ -367,9 +355,12 @@
 
  (help-menu-label "&Help")
  (about-info "Credits and details for this application")
- (about-menu-item-before "About ")
+ (about-menu-item "About ")
  (about-menu-item-after "...")
  
+ ;;; help-desk-specific menus
+ (new-help-desk "New Help Desk")
+
  ;;; exiting and quitting are you sure dialog
  ;;; (exit is used on windows, quit on macos. go figure)
  (exit-lc "exit")
@@ -419,7 +410,10 @@
  (interactions-menu-item-help-string "Show/Hide the interactions window")
  
  ;;; file menu
- (definitions "Definitions")
+ (save-definitions-as "Save Definitions As...")
+ (save-definitions "Save Definitions")
+ (print-definitions "Print Definitions...")
+ (about-drscheme "About DrScheme")
  (save-other "Save Other")
  (save-definitions-as-text "Save Definitions As Text...")
  (save-interactions "Save Interactions")

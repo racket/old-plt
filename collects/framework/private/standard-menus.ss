@@ -190,7 +190,7 @@
    (define file-menu:new-callback
      (lambda (item control) (handler:edit-file #f) #t))
    (define file-menu:get-new-item (lambda () file-menu:new-item))
-   (define file-menu:new-string (lambda () ""))
+   (define file-menu:new-string (lambda () (string-constant new-menu-item)))
    (define file-menu:new-help-string (lambda () (string-constant new-info)))
    (define file-menu:new-on-demand (lambda (menu-item) (void)))
    (define file-menu:create-new? (lambda () #t))
@@ -206,7 +206,7 @@
    (define file-menu:open-callback
      (lambda (item control) (handler:open-file) #t))
    (define file-menu:get-open-item (lambda () file-menu:open-item))
-   (define file-menu:open-string (lambda () ""))
+   (define file-menu:open-string (lambda () (string-constant open-menu-item)))
    (define file-menu:open-help-string (lambda () (string-constant open-info)))
    (define file-menu:open-on-demand (lambda (menu-item) (void)))
    (define file-menu:create-open? (lambda () #t))
@@ -221,7 +221,8 @@
     file-menu:create-revert?)
    (define file-menu:revert-callback (lambda (x y) (void)))
    (define file-menu:get-revert-item (lambda () file-menu:revert-item))
-   (define file-menu:revert-string (lambda () ""))
+   (define file-menu:revert-string
+     (lambda () (string-constant revert-menu-item)))
    (define file-menu:revert-help-string
      (lambda () (string-constant revert-info)))
    (define file-menu:revert-on-demand (lambda (menu-item) (void)))
@@ -237,7 +238,7 @@
     file-menu:create-save?)
    (define file-menu:save-callback (lambda (x y) (void)))
    (define file-menu:get-save-item (lambda () file-menu:save-item))
-   (define file-menu:save-string (lambda () ""))
+   (define file-menu:save-string (lambda () (string-constant save-menu-item)))
    (define file-menu:save-help-string (lambda () (string-constant save-info)))
    (define file-menu:save-on-demand (lambda (menu-item) (void)))
    (define file-menu:create-save? (lambda () #f))
@@ -250,7 +251,8 @@
     file-menu:create-save-as?)
    (define file-menu:save-as-callback (lambda (x y) (void)))
    (define file-menu:get-save-as-item (lambda () file-menu:save-as-item))
-   (define file-menu:save-as-string (lambda () ""))
+   (define file-menu:save-as-string
+     (lambda () (string-constant save-as-menu-item)))
    (define file-menu:save-as-help-string
      (lambda () (string-constant save-as-info)))
    (define file-menu:save-as-on-demand (lambda (menu-item) (void)))
@@ -267,7 +269,8 @@
     file-menu:create-print?)
    (define file-menu:print-callback (lambda (x y) (void)))
    (define file-menu:get-print-item (lambda () file-menu:print-item))
-   (define file-menu:print-string (lambda () ""))
+   (define file-menu:print-string
+     (lambda () (string-constant print-menu-item)))
    (define file-menu:print-help-string
      (lambda () (string-constant print-info)))
    (define file-menu:print-on-demand (lambda (menu-item) (void)))
@@ -285,7 +288,8 @@
    (define file-menu:close-callback
      (lambda (item control) (when (can-close?) (on-close) (show #f)) #t))
    (define file-menu:get-close-item (lambda () file-menu:close-item))
-   (define file-menu:close-string (lambda () ""))
+   (define file-menu:close-string
+     (lambda () (string-constant close-menu-item)))
    (define file-menu:close-help-string
      (lambda () (string-constant close-info)))
    (define file-menu:close-on-demand (lambda (menu-item) (void)))
@@ -303,7 +307,11 @@
      (lambda (item control)
        (parameterize ((exit:frame-exiting this)) (exit:exit))))
    (define file-menu:get-quit-item (lambda () file-menu:quit-item))
-   (define file-menu:quit-string (lambda () ""))
+   (define file-menu:quit-string
+     (lambda ()
+       (if (eq? (system-type) 'windows)
+         (string-constant quit-menu-item-windows)
+         (string-constant quit-menu-item-others))))
    (define file-menu:quit-help-string (lambda () (string-constant quit-info)))
    (define file-menu:quit-on-demand (lambda (menu-item) (void)))
    (define file-menu:create-quit? (lambda () #t))
@@ -323,7 +331,7 @@
            (send edit do-edit-operation 'undo)))
        #t))
    (define edit-menu:get-undo-item (lambda () edit-menu:undo-item))
-   (define edit-menu:undo-string (lambda () ""))
+   (define edit-menu:undo-string (lambda () (string-constant undo-menu-item)))
    (define edit-menu:undo-help-string (lambda () (string-constant undo-info)))
    (define edit-menu:undo-on-demand
      (lambda (item)
@@ -348,7 +356,7 @@
            (send edit do-edit-operation 'redo)))
        #t))
    (define edit-menu:get-redo-item (lambda () edit-menu:redo-item))
-   (define edit-menu:redo-string (lambda () ""))
+   (define edit-menu:redo-string (lambda () (string-constant redo-menu-item)))
    (define edit-menu:redo-help-string (lambda () (string-constant redo-info)))
    (define edit-menu:redo-on-demand
      (lambda (item)
@@ -376,7 +384,7 @@
            (send edit do-edit-operation 'cut)))
        #t))
    (define edit-menu:get-cut-item (lambda () edit-menu:cut-item))
-   (define edit-menu:cut-string (lambda () ""))
+   (define edit-menu:cut-string (lambda () (string-constant cut-menu-item)))
    (define edit-menu:cut-help-string (lambda () (string-constant cut-info)))
    (define edit-menu:cut-on-demand
      (lambda (item)
@@ -403,7 +411,7 @@
            (send edit do-edit-operation 'copy)))
        #t))
    (define edit-menu:get-copy-item (lambda () edit-menu:copy-item))
-   (define edit-menu:copy-string (lambda () ""))
+   (define edit-menu:copy-string (lambda () (string-constant copy-menu-item)))
    (define edit-menu:copy-help-string (lambda () (string-constant copy-info)))
    (define edit-menu:copy-on-demand
      (lambda (item)
@@ -430,7 +438,8 @@
            (send edit do-edit-operation 'paste)))
        #t))
    (define edit-menu:get-paste-item (lambda () edit-menu:paste-item))
-   (define edit-menu:paste-string (lambda () ""))
+   (define edit-menu:paste-string
+     (lambda () (string-constant paste-menu-item)))
    (define edit-menu:paste-help-string
      (lambda () (string-constant paste-info)))
    (define edit-menu:paste-on-demand
@@ -458,7 +467,11 @@
            (send edit do-edit-operation 'clear)))
        #t))
    (define edit-menu:get-clear-item (lambda () edit-menu:clear-item))
-   (define edit-menu:clear-string (lambda () ""))
+   (define edit-menu:clear-string
+     (lambda ()
+       (if (eq? (system-type) 'windows)
+         (string-constant clear-menu-item-windows)
+         (string-constant clear-menu-item-windows))))
    (define edit-menu:clear-help-string
      (lambda () (string-constant clear-info)))
    (define edit-menu:clear-on-demand
@@ -486,7 +499,8 @@
            (send edit do-edit-operation 'select-all)))
        #t))
    (define edit-menu:get-select-all-item (lambda () edit-menu:select-all-item))
-   (define edit-menu:select-all-string (lambda () ""))
+   (define edit-menu:select-all-string
+     (lambda () (string-constant select-all-menu-item)))
    (define edit-menu:select-all-help-string
      (lambda () (string-constant select-all-info)))
    (define edit-menu:select-all-on-demand
@@ -510,7 +524,7 @@
     edit-menu:create-find?)
    (define edit-menu:find-callback (lambda (x y) (void)))
    (define edit-menu:get-find-item (lambda () edit-menu:find-item))
-   (define edit-menu:find-string (lambda () ""))
+   (define edit-menu:find-string (lambda () (string-constant find-menu-item)))
    (define edit-menu:find-help-string (lambda () (string-constant find-info)))
    (define edit-menu:find-on-demand
      (lambda (item)
@@ -528,7 +542,8 @@
     edit-menu:create-find-again?)
    (define edit-menu:find-again-callback (lambda (x y) (void)))
    (define edit-menu:get-find-again-item (lambda () edit-menu:find-again-item))
-   (define edit-menu:find-again-string (lambda () ""))
+   (define edit-menu:find-again-string
+     (lambda () (string-constant find-again-menu-item)))
    (define edit-menu:find-again-help-string
      (lambda () (string-constant find-again-info)))
    (define edit-menu:find-again-on-demand
@@ -548,7 +563,8 @@
    (define edit-menu:replace-and-find-again-callback (lambda (x y) (void)))
    (define edit-menu:get-replace-and-find-again-item
      (lambda () edit-menu:replace-and-find-again-item))
-   (define edit-menu:replace-and-find-again-string (lambda () ""))
+   (define edit-menu:replace-and-find-again-string
+     (lambda () (string-constant replace-and-find-again-menu-item)))
    (define edit-menu:replace-and-find-again-help-string
      (lambda () (string-constant replace-and-find-again-info)))
    (define edit-menu:replace-and-find-again-on-demand
@@ -572,7 +588,8 @@
      (lambda (item control) (preferences:show-dialog) #t))
    (define edit-menu:get-preferences-item
      (lambda () edit-menu:preferences-item))
-   (define edit-menu:preferences-string (lambda () ""))
+   (define edit-menu:preferences-string
+     (lambda () (string-constant preferences-menu-item)))
    (define edit-menu:preferences-help-string
      (lambda () (string-constant preferences-info)))
    (define edit-menu:preferences-on-demand (lambda (menu-item) (void)))
@@ -590,7 +607,8 @@
     help-menu:create-about?)
    (define help-menu:about-callback (lambda (x y) (void)))
    (define help-menu:get-about-item (lambda () help-menu:about-item))
-   (define help-menu:about-string (lambda () ""))
+   (define help-menu:about-string
+     (lambda () (string-constant about-menu-item)))
    (define help-menu:about-help-string
      (lambda () (string-constant about-info)))
    (define help-menu:about-on-demand (lambda (menu-item) (void)))
@@ -619,13 +637,7 @@
           (instantiate
             (get-menu-item%)
             ()
-            (label
-             (let ((special (file-menu:new-string))
-                   (base (string-constant new-menu-item-before))
-                   (suffix (string-constant new-menu-item-after)))
-               (if (string=? special "")
-                 (string-append base suffix)
-                 (string-append base " " special suffix))))
+            (label (file-menu:new-string))
             (parent file-menu)
             (callback
               (let ((file-menu:new-callback
@@ -641,13 +653,7 @@
           (instantiate
             (get-menu-item%)
             ()
-            (label
-             (let ((special (file-menu:open-string))
-                   (base (string-constant open-menu-item-before))
-                   (suffix (string-constant open-menu-item-after)))
-               (if (string=? special "")
-                 (string-append base suffix)
-                 (string-append base " " special suffix))))
+            (label (file-menu:open-string))
             (parent file-menu)
             (callback
               (let ((file-menu:open-callback
@@ -663,13 +669,7 @@
           (instantiate
             (get-menu-item%)
             ()
-            (label
-             (let ((special (file-menu:revert-string))
-                   (base (string-constant revert-menu-item-before))
-                   (suffix (string-constant revert-menu-item-after)))
-               (if (string=? special "")
-                 (string-append base suffix)
-                 (string-append base " " special suffix))))
+            (label (file-menu:revert-string))
             (parent file-menu)
             (callback
               (let ((file-menu:revert-callback
@@ -686,13 +686,7 @@
           (instantiate
             (get-menu-item%)
             ()
-            (label
-             (let ((special (file-menu:save-string))
-                   (base (string-constant save-menu-item-before))
-                   (suffix (string-constant save-menu-item-after)))
-               (if (string=? special "")
-                 (string-append base suffix)
-                 (string-append base " " special suffix))))
+            (label (file-menu:save-string))
             (parent file-menu)
             (callback
               (let ((file-menu:save-callback
@@ -707,13 +701,7 @@
           (instantiate
             (get-menu-item%)
             ()
-            (label
-             (let ((special (file-menu:save-as-string))
-                   (base (string-constant save-as-menu-item-before))
-                   (suffix (string-constant save-as-menu-item-after)))
-               (if (string=? special "")
-                 (string-append base suffix)
-                 (string-append base " " special suffix))))
+            (label (file-menu:save-as-string))
             (parent file-menu)
             (callback
               (let ((file-menu:save-as-callback
@@ -730,13 +718,7 @@
           (instantiate
             (get-menu-item%)
             ()
-            (label
-             (let ((special (file-menu:print-string))
-                   (base (string-constant print-menu-item-before))
-                   (suffix (string-constant print-menu-item-after)))
-               (if (string=? special "")
-                 (string-append base suffix)
-                 (string-append base " " special suffix))))
+            (label (file-menu:print-string))
             (parent file-menu)
             (callback
               (let ((file-menu:print-callback
@@ -752,13 +734,7 @@
           (instantiate
             (get-menu-item%)
             ()
-            (label
-             (let ((special (file-menu:close-string))
-                   (base (string-constant close-menu-item-before))
-                   (suffix (string-constant close-menu-item-after)))
-               (if (string=? special "")
-                 (string-append base suffix)
-                 (string-append base " " special suffix))))
+            (label (file-menu:close-string))
             (parent file-menu)
             (callback
               (let ((file-menu:close-callback
@@ -774,16 +750,7 @@
           (instantiate
             (get-menu-item%)
             ()
-            (label
-             (let ((special (file-menu:quit-string))
-                   (base
-                    (if (eq? (system-type) 'windows)
-                      (string-constant quit-menu-item-before-windows)
-                      (string-constant quit-menu-item-before-others)))
-                   (suffix (string-constant quit-menu-item-after)))
-               (if (string=? special "")
-                 (string-append base suffix)
-                 (string-append base " " special suffix))))
+            (label (file-menu:quit-string))
             (parent file-menu)
             (callback
               (let ((file-menu:quit-callback
@@ -799,13 +766,7 @@
           (instantiate
             (get-menu-item%)
             ()
-            (label
-             (let ((special (edit-menu:undo-string))
-                   (base (string-constant undo-menu-item))
-                   (suffix ""))
-               (if (string=? special "")
-                 (string-append base suffix)
-                 (string-append base " " special suffix))))
+            (label (edit-menu:undo-string))
             (parent edit-menu)
             (callback
               (let ((edit-menu:undo-callback
@@ -820,13 +781,7 @@
           (instantiate
             (get-menu-item%)
             ()
-            (label
-             (let ((special (edit-menu:redo-string))
-                   (base (string-constant redo-menu-item))
-                   (suffix ""))
-               (if (string=? special "")
-                 (string-append base suffix)
-                 (string-append base " " special suffix))))
+            (label (edit-menu:redo-string))
             (parent edit-menu)
             (callback
               (let ((edit-menu:redo-callback
@@ -842,13 +797,7 @@
           (instantiate
             (get-menu-item%)
             ()
-            (label
-             (let ((special (edit-menu:cut-string))
-                   (base (string-constant cut-menu-item))
-                   (suffix ""))
-               (if (string=? special "")
-                 (string-append base suffix)
-                 (string-append base " " special suffix))))
+            (label (edit-menu:cut-string))
             (parent edit-menu)
             (callback
               (let ((edit-menu:cut-callback
@@ -864,13 +813,7 @@
           (instantiate
             (get-menu-item%)
             ()
-            (label
-             (let ((special (edit-menu:copy-string))
-                   (base (string-constant copy-menu-item))
-                   (suffix ""))
-               (if (string=? special "")
-                 (string-append base suffix)
-                 (string-append base " " special suffix))))
+            (label (edit-menu:copy-string))
             (parent edit-menu)
             (callback
               (let ((edit-menu:copy-callback
@@ -886,13 +829,7 @@
           (instantiate
             (get-menu-item%)
             ()
-            (label
-             (let ((special (edit-menu:paste-string))
-                   (base (string-constant paste-menu-item))
-                   (suffix ""))
-               (if (string=? special "")
-                 (string-append base suffix)
-                 (string-append base " " special suffix))))
+            (label (edit-menu:paste-string))
             (parent edit-menu)
             (callback
               (let ((edit-menu:paste-callback
@@ -908,16 +845,7 @@
           (instantiate
             (get-menu-item%)
             ()
-            (label
-             (let ((special (edit-menu:clear-string))
-                   (base
-                    (if (eq? (system-type) 'windows)
-                      (string-constant clear-menu-item-windows)
-                      (string-constant clear-menu-item-windows)))
-                   (suffix ""))
-               (if (string=? special "")
-                 (string-append base suffix)
-                 (string-append base " " special suffix))))
+            (label (edit-menu:clear-string))
             (parent edit-menu)
             (callback
               (let ((edit-menu:clear-callback
@@ -933,13 +861,7 @@
           (instantiate
             (get-menu-item%)
             ()
-            (label
-             (let ((special (edit-menu:select-all-string))
-                   (base (string-constant select-all-menu-item))
-                   (suffix ""))
-               (if (string=? special "")
-                 (string-append base suffix)
-                 (string-append base " " special suffix))))
+            (label (edit-menu:select-all-string))
             (parent edit-menu)
             (callback
               (let ((edit-menu:select-all-callback
@@ -957,13 +879,7 @@
           (instantiate
             (get-menu-item%)
             ()
-            (label
-             (let ((special (edit-menu:find-string))
-                   (base (string-constant find-menu-item-before))
-                   (suffix (string-constant find-menu-item-after)))
-               (if (string=? special "")
-                 (string-append base suffix)
-                 (string-append base " " special suffix))))
+            (label (edit-menu:find-string))
             (parent edit-menu)
             (callback
               (let ((edit-menu:find-callback
@@ -978,13 +894,7 @@
           (instantiate
             (get-menu-item%)
             ()
-            (label
-             (let ((special (edit-menu:find-again-string))
-                   (base (string-constant find-again-menu-item-before))
-                   (suffix (string-constant find-again-menu-item-after)))
-               (if (string=? special "")
-                 (string-append base suffix)
-                 (string-append base " " special suffix))))
+            (label (edit-menu:find-again-string))
             (parent edit-menu)
             (callback
               (let ((edit-menu:find-again-callback
@@ -1001,15 +911,7 @@
           (instantiate
             (get-menu-item%)
             ()
-            (label
-             (let ((special (edit-menu:replace-and-find-again-string))
-                   (base
-                    (string-constant replace-and-find-again-menu-item-before))
-                   (suffix
-                     (string-constant replace-and-find-again-menu-item-after)))
-               (if (string=? special "")
-                 (string-append base suffix)
-                 (string-append base " " special suffix))))
+            (label (edit-menu:replace-and-find-again-string))
             (parent edit-menu)
             (callback
               (let ((edit-menu:replace-and-find-again-callback
@@ -1027,13 +929,7 @@
           (instantiate
             (get-menu-item%)
             ()
-            (label
-             (let ((special (edit-menu:preferences-string))
-                   (base (string-constant preferences-menu-item-before))
-                   (suffix (string-constant preferences-menu-item-after)))
-               (if (string=? special "")
-                 (string-append base suffix)
-                 (string-append base " " special suffix))))
+            (label (edit-menu:preferences-string))
             (parent edit-menu)
             (callback
               (let ((edit-menu:preferences-callback
@@ -1052,13 +948,7 @@
           (instantiate
             (get-menu-item%)
             ()
-            (label
-             (let ((special (help-menu:about-string))
-                   (base (string-constant about-menu-item-before))
-                   (suffix (string-constant about-menu-item-after)))
-               (if (string=? special "")
-                 (string-append base suffix)
-                 (string-append base " " special suffix))))
+            (label (help-menu:about-string))
             (parent help-menu)
             (callback
               (let ((help-menu:about-callback

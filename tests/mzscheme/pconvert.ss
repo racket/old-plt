@@ -15,7 +15,7 @@
 (define (xc) (class object% () (sequence (super-init))))
 
 (let ()
-  (define-struct test (value constructor-sexp
+  (define-struct pctest (value constructor-sexp
 			     whole/frac-constructor-sexp
 			     shared-constructor-sexp
 			     quasi-sexp
@@ -29,8 +29,8 @@
   (define get-value
     (lambda (test-case)
       (cond
-	[(test? test-case)
-	 (test-value test-case)]
+	[(pctest? test-case)
+	 (pctest-value test-case)]
 	[(no-cons-test? test-case)
 	 (no-cons-test-value test-case)]
 	[(same-test? test-case)
@@ -58,14 +58,14 @@
 	;(printf "testing: ~s~n" before)
 	;(printf ".") (flush-output (current-output-port))
 	(cond
-	  [(test? test-case)
-	   (cmp test-constructor-sexp #t #f #f #t #f)
-	   (cmp test-whole/frac-constructor-sexp #t #f #f #t #t)
-	   (cmp test-shared-constructor-sexp #t #f #t #t #f)
-	   (cmp test-quasi-sexp #f #f #f #t #f)
-	   (cmp test-whole/frac-quasi-sexp #f #f #f #t #t)
-	   (cmp test-shared-quasi-sexp #f #f #t #t #f)
-	   (cmp test-cons-as-list #t #f #f #f #f)]
+	  [(pctest? test-case)
+	   (cmp pctest-constructor-sexp #t #f #f #t #f)
+	   (cmp pctest-whole/frac-constructor-sexp #t #f #f #t #t)
+	   (cmp pctest-shared-constructor-sexp #t #f #t #t #f)
+	   (cmp pctest-quasi-sexp #f #f #f #t #f)
+	   (cmp pctest-whole/frac-quasi-sexp #f #f #f #t #t)
+	   (cmp pctest-shared-quasi-sexp #f #f #t #t #f)
+	   (cmp pctest-cons-as-list #t #f #f #f #f)]
 	  [(no-cons-test? test-case)
 	   (cmp no-cons-test-shared-constructor-sexp #t #f #t #t #t)
 	   (cmp no-cons-test-constructor-sexp #t #f #f #t #t)
@@ -118,17 +118,17 @@
      (make-same-test 1/2 1/2)
      (make-same-test 1.1 1.1)
 
-     (make-test -10/3 -10/3 '(+ -3 -1/3) -10/3 -10/3 '(+ -3 -1/3) -10/3 -10/3)
-     (make-test 3/2 3/2 '(+ 1 1/2) 3/2 3/2 '(+ 1 1/2) 3/2 3/2)
+     (make-pctest -10/3 -10/3 '(+ -3 -1/3) -10/3 -10/3 '(+ -3 -1/3) -10/3 -10/3)
+     (make-pctest 3/2 3/2 '(+ 1 1/2) 3/2 3/2 '(+ 1 1/2) 3/2 3/2)
 
-     (make-test (list 1) '(list 1) '(list 1) '(list 1) '`(1) '`(1) '`(1) '(cons 1 empty))
-     (make-test (list 1/2) '(list 1/2) '(list 1/2) '(list 1/2)
+     (make-pctest (list 1) '(list 1) '(list 1) '(list 1) '`(1) '`(1) '`(1) '(cons 1 empty))
+     (make-pctest (list 1/2) '(list 1/2) '(list 1/2) '(list 1/2)
 		'`(1/2) '`(1/2)  '`(1/2)
 		'(cons 1/2 empty))
-     (make-test (list 3/2) '(list 3/2) '(list (+ 1 1/2)) '(list 3/2)
+     (make-pctest (list 3/2) '(list 3/2) '(list (+ 1 1/2)) '(list 3/2)
 		'`(3/2) '`(,(+ 1 1/2)) '`(3/2)
 		'(cons 3/2 empty))
-     (make-test (list 1/2+1/2i) 
+     (make-pctest (list 1/2+1/2i) 
 		'(list 1/2+1/2i) 
 		'(list (+ 1/2 (* 0+1i 1/2))) 
 		'(list 1/2+1/2i)
@@ -136,7 +136,7 @@
 		'`(,(+ 1/2 (* 0+1i 1/2)))  
 		'`(1/2+1/2i)
 		'(cons 1/2+1/2i empty))
-     (make-test (list 3/2+1/2i) 
+     (make-pctest (list 3/2+1/2i) 
 		'(list 3/2+1/2i) 
 		'(list (+ (+ 1 1/2) (* 0+1i 1/2))) 
 		'(list 3/2+1/2i)
@@ -144,7 +144,7 @@
 		'`(,(+ (+ 1 1/2) (* 0+1i 1/2)))  
 		'`(3/2+1/2i)
 		'(cons 3/2+1/2i empty))
-     (make-test (list 1/2+3/2i) 
+     (make-pctest (list 1/2+3/2i) 
 		'(list 1/2+3/2i) 
 		'(list (+ 1/2 (* 0+1i (+ 1 1/2)))) 
 		'(list 1/2+3/2i)
@@ -152,7 +152,7 @@
 		'`(,(+ 1/2 (* 0+1i (+ 1 1/2))))  
 		'`(1/2+3/2i)
 		'(cons 1/2+3/2i empty))
-     (make-test (list 3/2+3/2i) 
+     (make-pctest (list 3/2+3/2i) 
 		'(list 3/2+3/2i) 
 		'(list (+ (+ 1 1/2) (* 0+1i (+ 1 1/2)))) 
 		'(list 3/2+3/2i)
@@ -170,12 +170,12 @@
      (make-same-test (delay 1) '(delay ...))
      (make-same-test (let () (define-struct a (a) (make-inspector)) (make-a 3)) '(make-a 3))
      (make-same-test (box 3) '(box 3))
-     (make-test null 'empty 'empty 'empty '`() '`() '`() 'empty)
+     (make-pctest null 'empty 'empty 'empty '`() '`() '`() 'empty)
      (make-same-test add1 'add1)
      (make-same-test (void) '(void))
      (make-same-test (unit (import) (export)) '(unit ...))
      (make-same-test (make-weak-box 12) '(make-weak-box 12))
-     (make-same-test (regexp "1") '(regexp ...))
+     (make-same-test (regexp "1") '(regexp "1"))
      (make-same-test (module-path-index-join #f #f) '(module-path-index-join false false))
      (make-same-test (lambda () 0) '(lambda () ...))
      
@@ -185,10 +185,9 @@
      (make-same-test (syntax ()) '(syntax ()))
      (make-same-test (syntax (a)) '(syntax (a)))
      (make-same-test (syntax (a . b)) '(syntax (a . b)))
-     (make-same-test (syntax (a . b)) (syntax (a . b)))
      (make-same-test (syntax (a b . c)) '(syntax (a b . c)))
 
-     (make-same-test (syntax #'a) '#'a)
+     (make-same-test #'a '#'a)
 
      ;; sadly, these two tests come out the same 
      ;; -- there is no way to distinguish them as sexps.
@@ -214,8 +213,8 @@
       (with-syntax ([a (lambda (x y) x)]
                     [b (lambda (x) x)])
         (syntax (a b)))
-      '(with-syntax ([=1= (lambda (a1 a2) x)]
-                     [=2= (lambda (a1) x)])
+      '(with-syntax ([=1= (lambda (a1 a2) ...)]
+                     [=2= (lambda (a1) ...)])
          (syntax (=1= =2=))))
 
      (make-same-test
@@ -229,19 +228,18 @@
      (make-same-test
       (with-syntax ([b (lambda (x) x)])
         (syntax (a b c)))
-      '(make-same-test
-        (with-syntax ([=1= (lambda (x) x)])
-          (syntax (a =1= c)))))
+      '(with-syntax ([=1= (lambda (a1) ...)])
+         (syntax (a =1= c))))
 
      (make-same-test
       (with-syntax ([a (lambda (x y) x)])
         (with-syntax ([a (vector (syntax (a)))]
                       [b (lambda (x) x)])
           (syntax (a b c))))
-      (with-syntax ([=1= (vector (with-syntax ([=2= (lambda (a1 a2) ...)])
-                                   (syntax (=2=))))]
-                    [=3= (lambda (a1) ...)])
-        (syntax (=1= =3= c))))
+      '(with-syntax ([=1= (vector (with-syntax ([=2= (lambda (a1 a2) ...)])
+                                    (syntax (=2=))))]
+                     [=3= (lambda (a1) ...)])
+         (syntax (=1= =3= c))))
      
      (make-same-test xl 'xl)
      (make-same-test (letrec ([xl (lambda () 1)]) xl) '(lambda () ...))
@@ -276,7 +274,7 @@
 		       (hash-table-put! ht 'x 1)
 		       ht)
 		     '(make-hash-table))
-     (make-test (list 'a (box (list ())) (cons 1 '()))
+     (make-pctest (list 'a (box (list ())) (cons 1 '()))
 		'(list (quote a) (box (list empty)) (list 1))
 		'(list (quote a) (box (list empty)) (list 1))
 		'(list (quote a) (box (list empty)) (list 1))
@@ -287,7 +285,7 @@
 		       (cons (box (cons empty empty))
 			     (cons (cons 1 empty)
 				   empty))))
-     (make-test (list "" "" (vector) (vector))
+     (make-pctest (list "" "" (vector) (vector))
 		'(list "" "" (vector) (vector))
 		'(list "" "" (vector) (vector))
 		'(list "" "" (vector) (vector))
@@ -295,7 +293,7 @@
 		'`("" "" ,(vector) ,(vector))
 		'`("" "" ,(vector) ,(vector))
 		'(cons "" (cons "" (cons (vector) (cons (vector) empty)))))
-     (make-test (let ([x (list 1)]) (set-car! x x) x)
+     (make-pctest (let ([x (list 1)]) (set-car! x x) x)
 		'(shared ([-0- (list -0-)]) -0-)
 		'(shared ([-0- (list -0-)]) -0-)
 		'(shared ([-0- (list -0-)]) -0-)
@@ -303,7 +301,7 @@
 		'(shared ([-0- `(,-0-)]) -0-)
 		'(shared ([-0- `(,-0-)]) -0-)
 		'(shared ([-0- (cons -0- empty)]) -0-))
-     (make-test (let ([x (list 1)]) (set-cdr! x x) x)
+     (make-pctest (let ([x (list 1)]) (set-cdr! x x) x)
 		'(shared ([-0- (cons 1 -0-)]) -0-)
 		'(shared ([-0- (cons 1 -0-)]) -0-)
 		'(shared ([-0- (cons 1 -0-)]) -0-)
@@ -311,7 +309,7 @@
 		'(shared ([-0- `(1 . ,-0-)]) -0-)
 		'(shared ([-0- `(1 . ,-0-)]) -0-)
 		'(shared ([-0- (cons 1 -0-)]) -0-))
-     (make-test (let* ([a (list 1 2 3)]
+     (make-pctest (let* ([a (list 1 2 3)]
 		       [b (list 1 a (cdr a))])
 		  (set-car! b b)
 		  (append b (list (list 2 3))))
@@ -386,7 +384,7 @@
   (for-each run-test tests))
 
 (let ()
-  (define make-test-shared
+  (define make-pctest-shared
     (lambda (shared?)
       (lambda (object output)
 	(parameterize ([constructor-style-printing #t]
@@ -399,15 +397,15 @@
 		    `(list ,output ,output))
 		print-convert
 		(list object object))))))
-  (define test-shared (make-test-shared #t))
-  (define test-not-shared (make-test-shared #f))
+  (define test-shared (make-pctest-shared #t))
+  (define test-not-shared (make-pctest-shared #f))
 
   (test-not-shared #t 'true)
   (test-not-shared #f 'false)
   (test-not-shared 1 1)
   (test-not-shared 3276832768327683276832768327683276832768
 		   3276832768327683276832768327683276832768)
-  (test-shared (regexp "") '(regexp ...))
+  (test-shared (regexp "") '(regexp ""))
   (let ([in (open-input-string "")]) (test-shared in in))
   (let ([out (open-output-string)]) (test-shared out out))
   (test-not-shared #\a #\a)

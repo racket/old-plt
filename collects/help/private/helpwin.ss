@@ -257,11 +257,11 @@
                            (send edit do-edit-operation const))))])
                   
                   (override
-                    [file-menu:new-string (lambda () (string-constant help-desk))]
+                    [file-menu:new-string (lambda () (string-constant new-help-desk))]
                     [file-menu:new-callback (lambda (i e) (new-help-frame initial-url))]
                     [file-menu:create-new? (lambda () #t)]
                     
-                    [file-menu:open-string (lambda () (string-constant url))]
+                    [file-menu:open-string (lambda () (string-constant open-url...))]
                     [file-menu:open-callback
                      (lambda (i e)
                        (open-url-from-user this (lambda (x) (goto-url x))))]
@@ -291,7 +291,7 @@
                     [edit-menu:select-all-callback (lambda (menu evt) (edit-menu:do 'select-all))]
                     [edit-menu:create-select-all? (lambda () #t)]
                     
-                    [help-menu:about-string (lambda () (string-constant help-desk))]
+                    [help-menu:about-string (lambda () (string-constant about-help-desk))]
                     [help-menu:about-callback
                      (lambda (i e)
                        (message-box (string-constant about-help-desk)
@@ -303,7 +303,7 @@
                     
                     [help-menu:after-about
                      (lambda (menu)
-                       (make-object menu-item% (string-constant help) menu
+                       (make-object menu-item% (string-constant help-on-help) menu
                          (lambda (i e)
                            (message-box
                             (string-constant help-on-help)

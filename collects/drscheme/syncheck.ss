@@ -1,6 +1,15 @@
 #|
 
   TODO:
+     - remove the booleans in the variable annotations
+       about level of syntax
+     - add these tests:
+       
+       (module m mzscheme (require (lib "list.ss") (lib "list.ss")) foldl)
+       (module m mzscheme (require (lib "etc.ss") (lib "etc.ss")) (rec f 1))
+       
+     to make sure that both "etc"s and both "list"s get arrows.
+       
      - write test suite for arrows and menus
 |#
 
@@ -19,6 +28,13 @@
   (define tool@
     (unit/sig ()
       (import drscheme:tool^)
+
+
+      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      ;;;                                                                ;;;
+      ;;;                             GUI                                ;;;
+      ;;;                                                                ;;;
+      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       
       (define add/mult-set
         (lambda (m v)
@@ -574,6 +590,11 @@
                                    report-error-text
                                    '(no-hscroll))])
               (send editor-canvas set-line-count 2))
+            (instantiate button% () 
+              (label (string-constant hide))
+              (parent report-error-panel)
+              (callback (lambda (x y) (hide-error-report)))
+              (stretchable-height #t))
             (make-object vertical-panel% report-error-parent-panel))
           
           (define (hide-error-report) 
@@ -763,6 +784,12 @@
       (define report-error-style (make-object style-delta% 'change-style 'slant))
       (send report-error-style set-delta-foreground "red")
       
+      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      ;;;                                                                ;;;
+      ;;;                     Syntax Traversals                          ;;;
+      ;;;                                                                ;;;
+      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
        ;; type req/tag = (make-req/tag syntax sexp boolean)
       (define-struct req/tag (req-stx req-sexp used?))
       
@@ -786,23 +813,26 @@
                                  [varref (cdr varref/level)]
                                  [include?
                                   (if high-level?
-                                      (annotate-require-var req-syn/tags varref)
-                                      (annotate-require-var req/tags varref))])
+                                      (annotate-require-var req-syn/tags varref #t)
+                                      (annotate-require-var req/tags varref #f))])
                             (if include?
                                 (loop (cdr varrefs/levels))
                                 (cons varref (loop (cdr varrefs/levels)))))]))])
-          (for-each (annotate-macro req/tags)
+          (for-each (annotate-macro req/tags #f)
                     (map cdr (filter (lambda (x) (not (car x))) referenced-macros)))
-          (for-each (annotate-macro req-syn/tags) 
+          (for-each (annotate-macro req-syn/tags #t)
                     (map cdr (filter car referenced-macros)))
           (for-each annotate-unused-require req/tags)
           (for-each annotate-unused-require req-syn/tags)
           reduced-varrefs))
       
       ;; annotate-macro : (listof req/tag) -> syntax[original] -> void
-      (define (annotate-macro req/tags)
+      (define (annotate-macro req/tags high-level?)
         (lambda (stx)
-          (let ([mod-req-path (get-module-req-path stx)])
+          (let ([mod-req-path (get-module-req-path ((if high-level?
+                                                        identifier-transformer-binding
+                                                        identifier-binding)
+                                                    stx))])
             (for-each (lambda (req/tag)
                         (when (equal? (req/tag-req-sexp req/tag) mod-req-path)
                           (connect-syntaxes (req/tag-req-stx req/tag) stx )
@@ -814,12 +844,15 @@
         (unless (req/tag-used? req/tag)
           (color (req/tag-req-stx req/tag) unbound-variable-style-str)))
       
-      ;; annotate-require-var : (listof req/tags) syntax -> boolean
+      ;; annotate-require-var : (listof req/tags) syntax boolean -> boolean
       ;; returns #t if `varref' comes from a module import
       ;; effect: colors `varref' and adds binding structure arrows,
       ;;         if it is a require-bound ids,
-      (define (annotate-require-var req/tags varref)
-        (let ([id-mod-path (get-module-req-path varref)])
+      (define (annotate-require-var req/tags varref high-level?)
+        (let ([id-mod-path (get-module-req-path ((if high-level? 
+                                                     identifier-transformer-binding
+                                                     identifier-binding)
+                                                 varref))])
           (and id-mod-path
                (let ([req/tag/f (memf (lambda (x) (equal? (req/tag-req-sexp x) id-mod-path))
                                       req/tags)])
@@ -832,19 +865,19 @@
                             (connect-syntaxes (req/tag-req-stx req/tag) varref)))
                         #t))))))
       
-      ;; get-module-req-path : syntax[identifier] -> (union #f require-sexp)
-      (define (get-module-req-path stx)
-        (let ([binding (identifier-binding stx)])
-          (and (pair? binding)
-               (let ([mod-path (caddr binding)])
-                 (if (module-path-index? mod-path)
-                     (let loop ([mpi mod-path]
-                                [ph #f])
-                       (let-values ([(main rest) (module-path-index-split mpi)])
-                         (if rest
-                             (loop rest main)
-                             ph)))
-                     mod-path)))))
+      ;; get-module-req-path : binding -> (union #f require-sexp)
+      ;; argument is the result of identifier-binding or identifier-transformer-binding
+      (define (get-module-req-path binding)
+        (and (pair? binding)
+             (let ([mod-path (caddr binding)])
+               (if (module-path-index? mod-path)
+                   (let loop ([mpi mod-path]
+                              [ph #f])
+                     (let-values ([(main rest) (module-path-index-split mpi)])
+                       (if rest
+                           (loop rest main)
+                           ph)))
+                   mod-path))))
       
       ;; annotate-variables : namespace (listof syntax) (listof syntax) -> void
       ;; colors the variables, free are turned unbound color, bound are turned

@@ -40,7 +40,6 @@
  (interactions-menu-item-help-string "Interaktionsfenster anzeigen/verstecken")
 
  ;; file menu
- (definitions "Definitionen")
  (save-other "Speichere Andere")
  (save-definitions-as-text "Speichere Definitionen als Text...")
  (save-interactions "Speichere Interaktionen") ; fixme: besserer Begriff?

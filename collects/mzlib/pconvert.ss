@@ -55,7 +55,7 @@
   (define-struct convert-share-info (share-hash expand-shared?))
 
   (define current-build-share-name-hook 
-    (make-parameter (lambda (e) #f)
+    (make-parameter (let ([original-build-share-name-hook (lambda (e) #f)]) original-build-share-name-hook)
 		    (lambda (f)
 		      (unless (procedure-arity-includes? f 1)
 			(raise-type-error 'current-build-share-name-hook "procedure of arity 1" f))
@@ -96,7 +96,9 @@
 			(equal? expr #()))
 		    (k #f)
 		    (let ([val (hash-table-get share-hash expr 
-					       (lambda () (hash expr) (k #f)))])
+					       (lambda ()
+                                                 (hash expr)
+                                                 (k #f)))])
 		      (when val
 			(set-share-info-shared?! val #t))
 		      val))))]
@@ -112,29 +114,32 @@
 		       (char? expr) (void? expr)
 		       (null? expr)
 		       (eq? expr undefined-val) ; #<undefined> test - yuck
-		       ; (regexp? expr) 
-		       ; (port? expr)
-		       ; (promise? expr)
-		       ; (object? expr) (class? expr) (interface? exp)
-		       ; (unit? expr)
-		       ; (procedure? expr)
 		       )
 		   'atomic]
-		  [(object-name expr) 'atomic]
-		  [(box? expr) (unless (build-sub expr)
-				 (build (unbox expr)))]
-		  [(hash-table? expr) (unless (build-sub expr)
-					(hash-table-for-each 
-					 expr
-					 (lambda (key value)
-					   (build value))))]
-		  [(pair? expr) (unless (build-sub expr)
-				  (build (car expr))
-				  (build (cdr expr)))]
-		  [(vector? expr) (unless (build-sub expr)
-				    (for-each build (vector->list expr)))]
-		  [(struct? expr) (unless (build-sub expr)
-				    (for-each build (vector->list (struct->vector expr))))]
+		  [(and (not (struct? expr))  ;; struct names are the wrong thing, here
+                        (not (regexp? expr))
+                        (not (procedure? expr))
+                        (object-name expr))
+                   'atomic]
+		  [(box? expr) 
+                   (unless (build-sub expr)
+                     (build (unbox expr)))]
+		  [(hash-table? expr) 
+                   (unless (build-sub expr)
+                     (hash-table-for-each 
+                      expr
+                      (lambda (key value)
+                        (build value))))]
+		  [(pair? expr)  
+                   (unless (build-sub expr)
+                     (build (car expr))
+                     (build (cdr expr)))]
+		  [(vector? expr) 
+                   (unless (build-sub expr)
+                     (for-each build (vector->list expr)))]
+		  [(struct? expr) 
+                   (unless (build-sub expr)
+                     (for-each build (vector->list (struct->vector expr))))]
 		  [else (build-sub expr)]))
 	       build-sub))])
 	(build expr)
@@ -303,7 +308,8 @@
 		     [constructor-style
 		      (let* ([build-named
 			      (lambda (expr build-unnamed)
-				(let ([answer (object-name expr)])
+				(let ([answer (and (not (struct? expr))
+                                                   (object-name expr))])
 				  (if answer
 				      (if (eq? (with-handlers ([not-break-exn? 
                                                                 (lambda (x) #f)])
@@ -317,118 +323,119 @@
 			   expr
 			   (lambda (expr)
 			     (cond
-			      [(null? expr) (guard/quasiquote (lambda () 'empty))]
-			      [(and (list? expr)
-				    (abbreviate-cons-as-list)
-				    (or (and first-time
-					     (doesnt-contain-shared-conses (cdr expr)))
-					(doesnt-contain-shared-conses expr)))
-			       (guard/quasiquote
-                                (lambda ()
-                                  `(list ,@(map recur expr))))]
-			      [(pair? expr)
-			       (guard/quasiquote
-				(lambda ()
-				  `(cons ,(recur (car expr)) ,(recur (cdr expr)))))]
-			      [(weak-box? expr) `(make-weak-box ,(recur (weak-box-value expr)))]
-			      [(box? expr) `(box ,(recur (unbox expr)))]
-			      [(hash-table? expr) `(make-hash-table)]
-			      [(vector? expr) `(vector ,@(map recur (vector->list expr)))]
-			      [(symbol? expr) `',expr]
-			      [(string? expr) expr]
-			      [(primitive? expr) (object-name expr)]
-			      [(procedure? expr)
-			       (build-named 
-				expr
-				(lambda ()
-				  (let ([arity (procedure-arity expr)])
-				    (if (list? arity)
-					`(case-lambda . ,(make-lambda-helper arity))
-					`(lambda ,(make-lambda-helper arity) ...)))))]
-			      [(regexp? expr) `(regexp ...)]
-                              [(syntax? expr) 
-                               (let* ([objs null]
-                                      [names null]
-                                      [datum
-                                       (let loop ([expr expr])
-                                         (cond
-                                           [(syntax? expr)
-                                            (let ([datum (syntax-e expr)])
-                                              (cond
-                                                [(null? datum) null]
-                                                [(self-quoting? datum) datum]
-                                                [(pair? datum)
-                                                 (let ([lst (syntax->list expr)])
-                                                   (cond
-                                                     [(and lst
-                                                           (= (length lst) 2)
-                                                           (symbol? (syntax-e (car lst))))
-                                                      (list (syntax-e (car lst))
-                                                            (loop (cadr lst)))]
-                                                     [else (improper-map loop datum)]))]
-                                                [else 
-                                                 (let ([name (make-syntax-name)])
-                                                   (set! names (cons name names))
-                                                   (set! objs (cons (recur datum)
-                                                                    objs))
-                                                   name)]))]
-                                           [else (recur expr)]))])
-                                 (if (null? objs)
-                                     `(syntax ,datum)
-                                     `(with-syntax (,@(map (lambda (obj name) `[,name ,obj])
-                                                           (reverse objs)
-                                                           (reverse names)))
-                                        (syntax ,datum))))]
-			      [(module-path-index? expr) 
-                               (let-values ([(left right) (module-path-index-split expr)])
-                                 `(module-path-index-join ,(recur left) ,(recur right)))]
-                              [(interface? expr) `(interface ...)]
-			      [(class? expr) 
-			       (build-named 
-				expr
-				(lambda () '(class ...)))]
-			      [(object? expr) `(make-object
-						,(build-named 
-						  (object-interface expr)
-						  (lambda () '(class ...)))
-						...)]
-			      [(void? expr) '(void)]
-			      [(promise? expr) '(delay ...)]
-			      [(unit? expr) (build-named 
-					     expr
-					     (lambda () 
-					       '(unit ...)))]
-			      [(struct? expr)
-			       (let ([name (symbol->string
-					    (vector-ref (struct->vector expr) 0))])
-				 (cons (string->symbol
-					(string-append
-					 "make-" (substring name
-							    (string-length "struct:")
-							    (string-length name))))
-				       (map recur (cdr (vector->list
-							(struct->vector expr))))))]
-			      [(and (number? expr) (exact? expr))
-			       (let-values ([(whole frac whole-i frac-i) (get-whole/frac expr)])
-				 (cond
-				  [(not (whole/fractional-exact-numbers)) expr]
-				  [(and (or (zero? whole)
-					    (zero? frac))
-					(zero? whole-i)
-					(zero? frac-i))
-				   expr]
-				  [(real? expr) `(+ ,whole ,frac)]
-				  [(and (or (zero? whole) (zero? frac))
-					(or (zero? whole-i) (zero? frac-i)))
-				   `(+ ,(real-part expr) (* +1i ,(imag-part expr)))]
-				  [(or (zero? whole-i) (zero? frac-i))
-				   `(+ (+ ,whole ,frac) (* +1i ,(imag-part expr)))]
-				  [(or (zero? whole) (zero? frac))
-				   `(+ ,(real-part expr) (* +1i (+ ,whole-i ,frac-i)))]
-				  [else `(+ (+ ,whole ,frac) (* +1i (+ ,whole-i ,frac-i)))]))]
-			      [(eq? expr #f) (if (booleans-as-true/false) 'false #f)]
-			      [(eq? expr #t) (if (booleans-as-true/false) 'true #t)]
-			      [else expr]))
+                               [(null? expr) (guard/quasiquote (lambda () 'empty))]
+                               [(and (list? expr)
+                                     (abbreviate-cons-as-list)
+                                     (or (and first-time
+                                              (doesnt-contain-shared-conses (cdr expr)))
+                                         (doesnt-contain-shared-conses expr)))
+                                (guard/quasiquote
+                                 (lambda ()
+                                   `(list ,@(map recur expr))))]
+                               [(pair? expr)
+                                (guard/quasiquote
+                                 (lambda ()
+                                   `(cons ,(recur (car expr)) ,(recur (cdr expr)))))]
+                               [(weak-box? expr) `(make-weak-box ,(recur (weak-box-value expr)))]
+                               [(box? expr) `(box ,(recur (unbox expr)))]
+                               [(hash-table? expr) `(make-hash-table)]
+                               [(vector? expr) `(vector ,@(map recur (vector->list expr)))]
+                               [(symbol? expr) `',expr]
+                               [(string? expr) expr]
+                               [(primitive? expr) (object-name expr)]
+                               [(procedure? expr)
+                                (build-named 
+                                 expr
+                                 (lambda ()
+                                   (let ([arity (procedure-arity expr)])
+                                     (if (list? arity)
+                                         `(case-lambda . ,(make-lambda-helper arity))
+                                         `(lambda ,(make-lambda-helper arity) ...)))))]
+                               [(regexp? expr) `(regexp ,(or (object-name expr)
+                                                             '...))]
+                               [(syntax? expr) 
+                                (let* ([objs null]
+                                       [names null]
+                                       [datum
+                                        (let loop ([expr expr])
+                                          (cond
+                                            [(syntax? expr)
+                                             (let ([datum (syntax-e expr)])
+                                               (cond
+                                                 [(null? datum) null]
+                                                 [(self-quoting? datum) datum]
+                                                 [(pair? datum)
+                                                  (let ([lst (syntax->list expr)])
+                                                    (cond
+                                                      [(and lst
+                                                            (= (length lst) 2)
+                                                            (symbol? (syntax-e (car lst))))
+                                                       (list (syntax-e (car lst))
+                                                             (loop (cadr lst)))]
+                                                      [else (improper-map loop datum)]))]
+                                                 [else 
+                                                  (let ([name (make-syntax-name)])
+                                                    (set! names (cons name names))
+                                                    (set! objs (cons (recur datum)
+                                                                     objs))
+                                                    name)]))]
+                                            [else (recur expr)]))])
+                                  (if (null? objs)
+                                      `(syntax ,datum)
+                                      `(with-syntax (,@(map (lambda (obj name) `[,name ,obj])
+                                                            (reverse objs)
+                                                            (reverse names)))
+                                         (syntax ,datum))))]
+                               [(module-path-index? expr) 
+                                (let-values ([(left right) (module-path-index-split expr)])
+                                  `(module-path-index-join ,(recur left) ,(recur right)))]
+                               [(interface? expr) `(interface ...)]
+                               [(class? expr) 
+                                (build-named 
+                                 expr
+                                 (lambda () '(class ...)))]
+                               [(object? expr) `(make-object
+                                                    ,(build-named 
+                                                      (object-interface expr)
+                                                      (lambda () '(class ...)))
+                                                  ...)]
+                               [(void? expr) '(void)]
+                               [(promise? expr) '(delay ...)]
+                               [(unit? expr) (build-named 
+                                              expr
+                                              (lambda () 
+                                                '(unit ...)))]
+                               [(struct? expr)
+                                (let ([name (symbol->string
+                                             (vector-ref (struct->vector expr) 0))])
+                                  `(,(string->symbol
+                                      (string-append
+                                       "make-" (substring name
+                                                          (string-length "struct:")
+                                                          (string-length name))))
+                                    ,@(map recur (cdr (vector->list
+                                                       (struct->vector expr))))))]
+                               [(and (number? expr) (exact? expr))
+                                (let-values ([(whole frac whole-i frac-i) (get-whole/frac expr)])
+                                  (cond
+                                    [(not (whole/fractional-exact-numbers)) expr]
+                                    [(and (or (zero? whole)
+                                              (zero? frac))
+                                          (zero? whole-i)
+                                          (zero? frac-i))
+                                     expr]
+                                    [(real? expr) `(+ ,whole ,frac)]
+                                    [(and (or (zero? whole) (zero? frac))
+                                          (or (zero? whole-i) (zero? frac-i)))
+                                     `(+ ,(real-part expr) (* +1i ,(imag-part expr)))]
+                                    [(or (zero? whole-i) (zero? frac-i))
+                                     `(+ (+ ,whole ,frac) (* +1i ,(imag-part expr)))]
+                                    [(or (zero? whole) (zero? frac))
+                                     `(+ ,(real-part expr) (* +1i (+ ,whole-i ,frac-i)))]
+                                    [else `(+ (+ ,whole ,frac) (* +1i (+ ,whole-i ,frac-i)))]))]
+                               [(eq? expr #f) (if (booleans-as-true/false) 'false #f)]
+                               [(eq? expr #t) (if (booleans-as-true/false) 'true #t)]
+                               [else expr]))
 			   recur)))])
 		  (let ([es (convert-share-info-expand-shared? csi)])
 		    (set-convert-share-info-expand-shared?! csi #f)

@@ -1,5 +1,5 @@
 ;;
-;; $Id: test-unit.ss,v 1.5 2001/03/19 04:30:26 robby Exp $
+;; $Id: test-unit.ss,v 1.6 2001/06/17 05:21:36 robby Exp $
 ;;
 ;; (mred:test:run-interval [msec]) is parameterization for the
 ;; interval (in milliseconds) between starting actions.
@@ -562,30 +562,30 @@
 			[this-name (car item-names)]
 			[wanted-names (cdr item-names)])
 	       (cond
-		[(null? items)
-		 (error 'menu-select "didn't find a menu: ~e" item-names)]
-		[else (let ([i (car items)])
-			(cond
-			 [(not (is-a? i mred:labelled-menu-item<%>))
-			  (loop (cdr items)
-				this-name
-				wanted-names)]
-			 [(string=? this-name (send i get-plain-label))
-			  (cond
-			   [(and (null? wanted-names)
-				 (not (is-a? i mred:menu-item-container<%>)))
-			    i]
-			   [(and (not (null? wanted-names))
-				 (is-a? i mred:menu-item-container<%>))
-			    (loop (send i get-items)
-				  (car wanted-names)
-				  (cdr wanted-names))]
-			   [else
-			    (error menu-tag "no menu matching ~e" item-names)])]
-			 [else
-			  (loop (cdr items)
-				this-name
-				wanted-names)]))]))))])))
+                 [(null? items)
+                  (error 'menu-select "didn't find a menu: ~e, entire list: ~e" this-name item-names)]
+                 [else (let ([i (car items)])
+                         (cond
+                           [(not (is-a? i mred:labelled-menu-item<%>))
+                            (loop (cdr items)
+                                  this-name
+                                  wanted-names)]
+                           [(string=? this-name (send i get-plain-label))
+                            (cond
+                              [(and (null? wanted-names)
+                                    (not (is-a? i mred:menu-item-container<%>)))
+                               i]
+                              [(and (not (null? wanted-names))
+                                    (is-a? i mred:menu-item-container<%>))
+                               (loop (send i get-items)
+                                     (car wanted-names)
+                                     (cdr wanted-names))]
+                              [else
+                               (error menu-tag "no menu matching ~e" item-names)])]
+                           [else
+                            (loop (cdr items)
+                                  this-name
+                                  wanted-names)]))]))))])))
   
   
   ;;

@@ -276,37 +276,29 @@
  (file-menu-label-other "A&rchivo")
 
  (new-info  "Abre un nuevo archivo")
- (new-menu-item-before "&Nuevo")
- (new-menu-item-after "")
+ (new-menu-item "&Nuevo")
 
  (open-info "Abre un nuevo archivo del disco")
- (open-menu-item-before "&Abrir")
- (open-menu-item-after "...")
+ (open-menu-item "&Abrir...")
 
  (revert-info "Revertir este archivo a la copia en disco")
- (revert-menu-item-before "&Revertir")
- (revert-menu-item-after "")
+ (revert-menu-item "&Revertir")
 
  (save-info "Salva este archivo a disco")
- (save-menu-item-before "&Guardar")
- (save-menu-item-after "")
+ (save-menu-item "&Guardar")
 
  (save-as-info "Te pide un nombre para salvar este archivo a disco")
- (save-as-menu-item-before "Guardar")
- (save-as-menu-item-after " &como ...")
+ (save-as-menu-item "Guardar &como ...")
 
  (print-info "Envía este archivo a una impresora")
- (print-menu-item-before "&Imprimir")
- (print-menu-item-after "...")
+ (print-menu-item "&Imprimir...")
 
  (close-info "Cierra este archivo")
- (close-menu-item-before "&Cerrar")
- (close-menu-item-after "")
+ (close-menu-item "&Cerrar")
 
  (quit-info "Cierra todas las ventanas")
- (quit-menu-item-before-windows "&Salir")
- (quit-menu-item-before-others "&Salir") ;; FIXME: salir is exit, so quit is ???
- (quit-menu-item-after "")
+ (quit-menu-item-windows "&Salir")
+ (quit-menu-item-others "&Salir") ;; FIXME: salir is exit, so quit is ???
  
  (edit-menu-label "&Edición")
  
@@ -333,20 +325,16 @@
  (select-all-menu-item "&Selecciona todo")
  
  (find-info "Busca una cadena")
- (find-menu-item-before "&Buscar")
- (find-menu-item-after "...")
+ (find-menu-item "&Buscar...")
 
  (find-again-info "Busca la misma cadena que antes")
- (find-again-menu-item-before "Volver a buscar")
- (find-again-menu-item-after "")
+ (find-again-menu-item "Volver a buscar")
  
  (replace-and-find-again-info "Reemplaza el texto actual y busca por la misma cadena que antes")
- (replace-and-find-again-menu-item-before "Reemplaza && buscar otra vez")
- (replace-and-find-again-menu-item-after "")
+ (replace-and-find-again-menu-item "Reemplaza && buscar otra vez")
 
  (preferences-info "Configura tus preferencias")
- (preferences-menu-item-before "")
- (preferences-menu-item-after "Personalizar...")
+ (preferences-menu-item "Personalizar...")
 
  (keybindings-info "Muestra los enlaces de tecla activos")
  (keybindings-menu-item "Enlaces de teclas")
@@ -364,8 +352,10 @@
 
  (help-menu-label "&Ayuda")
  (about-info "Créditos y detalles de esta apliación")
- (about-menu-item-before "Acerca ")
- (about-menu-item-after "...")
+ (about-menu-item "Acerca ...")
+
+ ;;; help-desk-specific menus
+ (new-help-desk "&Nuevo Módulo de Ayuda")
  
  ;;; exiting and quitting are you sure dialog
  ;;; (exit is used on windows, quit on macos. go figure)
@@ -416,7 +406,10 @@
  (interactions-menu-item-help-string "Mostrar/Esconder la ventana de Interacciones")
 
  ;;; file menu
- (definitions "Definiciones")
+ (save-definitions-as "Salvar Definiciones como...")
+ (save-definitions "Salvar Definiciones")
+ (print-definitions "Imprimir Definiciones...")
+ (about-drscheme "Acerca DrScheme")
  (save-other "Salvar otros")
  (save-definitions-as-text "Salvar Definiciones como Texto...")
  (save-interactions "Salvar Interacciones")

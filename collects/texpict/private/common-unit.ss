@@ -377,8 +377,8 @@
                                     ,dy2
                                     ,(pict-draw rest)))
                              w h
-                             (combine-ascent fd1 rd1 fd2 rd2 fh rh h)
-                             (combine-descent fd2 rd2 fd1 rd1 fh rh h)
+                             (combine-ascent fd1 rd1 fd2 rd2 fh rh h (+ dy1 fh) (+ dy2 rh))
+                             (combine-descent fd2 rd2 fd1 rd1 fh rh h (- h dy1) (- h dy2))
                              (list (make-child first dx1 dy1 1 1)
                                    (make-child rest dx2 dy2 1 1))))])))))]
 	      [2max (lambda (a b c . rest) (max a b))]
@@ -396,9 +396,11 @@
                        (+ (max (pict-descent first) (pict-descent rest))
                           (max (- (pict-height first) (pict-descent first))
                                (- (pict-height rest) (pict-descent rest)))))]
-	      [min-ad (lambda (a b oa ob ah bh h)
+	      [min-ad (lambda (a b oa ob ah bh h da db)
 			(- h (max oa ob) (max (- ah oa a)
-					      (- bh ob b))))])
+					      (- bh ob b))))]
+	      [xmin-ad (lambda (a b oa ob ah bh h da db)
+			 (min (+ (- h da) a) (+ (- h db) b)))])
 	  (values
 	   (make-append-boxes 2max 3+ 
 			      zero (lambda (fw fh rw rh sep . a) (+ sep rh))
@@ -421,17 +423,17 @@
 			      (lambda (fw fh rw rh sep . a) (- (max fh rh) fh))
 			      (lambda (fw fh rw rh sep . a) (+ sep fw))
 			      (lambda (fw fh rw rh sep . a) (- (max fh rh) rh))
-			      max2 min2)
+			      xmin-ad xmin-ad)
 	   (make-append-boxes 3+ 2max
 			      zero
 			      (lambda (fw fh rw rh sep . a) (quotient* (- (max fh rh) fh) 2))
 			      (lambda (fw fh rw rh sep . a) (+ sep fw))
 			      (lambda (fw fh rw rh sep . a) (quotient* (- (max fh rh) rh) 2))
-			      min2 max2)
+			      xmin-ad xmin-ad)
 	   (make-append-boxes 3+ 2max 
 			      zero zero
 			      (lambda (fw fh rw rh sep . a) (+ sep fw)) zero
-			      min2 max2)
+			      xmin-ad xmin-ad)
 	   (make-append-boxes 3+ a-max
 			      zero
 			      (lambda (fw fh rw rh sep fd1 fd2 rd1 rd2 h) 

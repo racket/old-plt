@@ -13,6 +13,7 @@
  (accept-and-exit "Accepter et Quitter")
  
  ;;; general purpose (DrScheme is hereby a word in every language, by decree of Robby :)
+ (plt "PLT")
  (drscheme "DrScheme")
  (ok "OK")
  (cancel "Annuler")
@@ -288,6 +289,9 @@
  (open-info "Ouvrir un fichier à partir du disque dur.")
  (open-menu-item "&Ouvrir")
  
+ (open-recent-info "Une liste des fichiers ouverts récemment.")
+ (open-recent-menu-item "Ouvrir récent")
+ 
  (revert-info "Retour à la version originale de ce fichier sur le disque dur.")
  (revert-menu-item "&Retour version disque")
  
@@ -359,6 +363,8 @@
  (bring-frame-to-front... "Amener une fenêtre au premier plan...") ;;; corresponding title of menu item
  
  (show-menu-label "&Montrer")
+ (show-overview "Montrer le contour") 
+ (hide-overview "Cacher le contour")
  
  (help-menu-label "&Aide")
  (about-info "Auteurs et détails concernant ce logiciel.")
@@ -487,6 +493,8 @@
  (already-added-teachpack "Le TeachPack ~a a déjà été ajouté.")
  
  ;;; Language dialog
+ (introduction-to-language-dialog
+  "Veuillez sélectionner un language. Un étudiant dans un cours d'introduction préférera le language par defaut.")
  (language-dialog-title "Configurer le language")
  (case-sensitive-label "Différentier les lettres majuscules des minuscules.")
  (output-style-label "Style d'impression des résultats")
@@ -511,11 +519,12 @@
  (beginning-student/abbrev "Etudiant niveau débutant avec abréviations pour les listes")
  (intermediate-student "Etudiant niveau intermédiaire")
  (advanced-student "Etudiant niveau avancé")
+ (full-language "Complet") ;; also in the HtDP languages section
  (how-to-design-programs "How to Design Programs") ;; should agree with MIT Press on this one...
  (r5rs-like-languages "R5RS et languages semblabes")
  (mred-lang-name "Graphique sans débogage (MrEd)")
  (mzscheme-lang-name "Textuel sans débogage (MzScheme)")
- (r5rs-lang-name "R5RS sans débogage")
+ (r5rs-lang-name "Standard (R5RS)")
  (unknown-debug-frame "[inconnu]")
  
  (bad-module-language-specs
@@ -528,7 +537,6 @@
  (stack-frame-in-current-definitions "définitions")
  (mzscheme-w/debug "Textuel (MzScheme)")
  (mred-w/debug "Graphique (MrEd)")
- (r5rs-w/debug "R5RS")
  
  ;;; repl stuff
  (evaluation-terminated "Evaluation terminée.")

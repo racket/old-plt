@@ -117,11 +117,11 @@
     (struct private-clause (internals exprs))
     (struct local-clause (exports internals exprs))
     (struct inherit-clause (inheriteds))
-    (struct inherit-from-clause (super inheriteds))
+    (struct inherit-from-clause (super))
     (struct rename-clause (internals inheriteds))
-    (struct rename-from-clause (super internals inheriteds))
+    (struct rename-from-clause (super))
     (struct share-clause (exports internals inheriteds))
-    (struct share-from-clause (super exports internals inheriteds))
+    (struct share-from-clause (super))
     (struct sequence-clause (exprs))))
 
 (define-signature zodiac:scheme-units^

@@ -101,7 +101,7 @@
   ; also models events, where 'value' is all the events that
   ; haven't yet occurred (more specifically, an event-cons cell whose
   ; tail is *undefined*)
-  (define-values (signal
+  (define-values (struct:signal
                   make-signal
                   signal?
                   signal-value
@@ -350,8 +350,8 @@
       [(fn arg1) (lambda () (fn (value-now arg1)))]
       [(fn arg1 arg2) (lambda () (fn (value-now arg1) (value-now arg2)))]
       [(fn arg1 arg2 arg3) (lambda () (fn (value-now arg1)
-                                              (value-now arg2)
-                                              (value-now arg3)))]
+                                          (value-now arg2)
+                                          (value-now arg3)))]
       [(fn . args) (lambda () (apply fn (map value-now args)))]))
 
   (define (lift strict? fn . args)
@@ -894,10 +894,11 @@
                      (snapshot (dtime)
                        (when (cons? the-args)
                          (set! myself (first the-args)))
-                       (when (>= now (+ last-time dtime))
+                       (when (and dtime (>= now (+ last-time dtime)))
                          (emit (thunk))
                          (set! last-time now))
-                       (schedule-alarm (+ last-time dtime) myself)))
+                       (when dtime
+                         (schedule-alarm (+ last-time dtime) myself))))
                    dtime))])
       (send-event ret ret)
       ret))

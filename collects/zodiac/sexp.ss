@@ -7,61 +7,61 @@
   (define identity (lambda (x) x))
 
   (define structurize-syntax
-    (opt-lambda (expr source (marks '()) (table #f))
-      (let ((origin (make-origin 'non-source 'never-mind))
-	     (start (zodiac-start source))
-	     (finish (zodiac-finish source)))
-	(letrec
-	  ((structurize
-	     (lambda (expr)
-	       (cond
-		 ((zodiac? expr) expr)
-		 ((and table
-		    (hash-table-get table expr (lambda () #f)))
-		   =>
-		   (lambda (cached-input)
-		     cached-input))
-		 ((pair? expr)
-		   (let loop ((expr expr) (rev-seen '()) (length 0))
-		     (cond
-		       ((pair? expr)
-			 (loop (cdr expr)
-			   (cons (structurize (car expr)) rev-seen)
-			   (add1 length)))
-		       ((null? expr)
-			 (z:make-list origin start finish
-			   (reverse rev-seen)
-			   length '()))
-		       (else
-			 (z:make-improper-list origin start finish
-			   (reverse
-			     (cons (structurize expr) rev-seen))
-			   (add1 length)
-			   (make-period start)
-			   '())))))
-		 ((symbol? expr)
-		   (z:make-symbol
-		     origin start finish expr expr marks))
-		 ((null? expr)
-		   (z:make-list origin start finish '() 0 marks))
-		 ((string? expr)
-		   (z:make-string origin start finish expr))
-		 ((number? expr)
-		   (z:make-number origin start finish expr))
-		 ((boolean? expr)
-		   (z:make-boolean origin start finish expr))
-		 ((type-symbol? expr)
-		   (z:make-type-symbol origin start finish expr))
-		 ((char? expr)
-		   (z:make-char origin start finish expr))
-		 (else
-		   (z:make-list origin start finish
-		     (list
-		       (z:make-symbol origin start finish
-			 'quote 'quote '(-1))
-		       expr)
-		     2 marks))))))
-	  (structurize expr)))))
+    (let ((origin (make-origin 'non-source 'never-mind)))
+      (opt-lambda (expr source (marks '()) (table #f))
+	(let ((start (zodiac-start source))
+	       (finish (zodiac-finish source)))
+	  (letrec
+	    ((structurize
+	       (lambda (expr)
+		 (cond
+		   ((zodiac? expr) expr)
+		   ((and table
+		      (hash-table-get table expr (lambda () #f)))
+		     =>
+		     (lambda (cached-input)
+		       cached-input))
+		   ((pair? expr)
+		     (let loop ((expr expr) (rev-seen '()) (length 0))
+		       (cond
+			 ((pair? expr)
+			   (loop (cdr expr)
+			     (cons (structurize (car expr)) rev-seen)
+			     (add1 length)))
+			 ((null? expr)
+			   (z:make-list origin start finish
+			     (reverse rev-seen)
+			     length '()))
+			 (else
+			   (z:make-improper-list origin start finish
+			     (reverse
+			       (cons (structurize expr) rev-seen))
+			     (add1 length)
+			     (make-period start)
+			     '())))))
+		   ((symbol? expr)
+		     (z:make-symbol
+		       origin start finish expr expr marks))
+		   ((null? expr)
+		     (z:make-list origin start finish '() 0 marks))
+		   ((string? expr)
+		     (z:make-string origin start finish expr))
+		   ((number? expr)
+		     (z:make-number origin start finish expr))
+		   ((boolean? expr)
+		     (z:make-boolean origin start finish expr))
+		   ((type-symbol? expr)
+		     (z:make-type-symbol origin start finish expr))
+		   ((char? expr)
+		     (z:make-char origin start finish expr))
+		   (else
+		     (z:make-list origin start finish
+		       (list
+			 (z:make-symbol origin start finish
+			   'quote 'quote '(-1))
+			 expr)
+		       2 marks))))))
+	    (structurize expr))))))
 
   (define set-macro-origin
     (lambda (parsed-term head-sexp)

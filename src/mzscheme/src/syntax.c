@@ -679,6 +679,8 @@ define_values_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_
     rec[drec].value_name = SCHEME_STX_SYM(var);
   }
 
+  env = scheme_no_defines(env);
+
   val = scheme_compile_expr(val, env, rec, drec);
 
   return scheme_make_syntax_compiled(DEFINE_VALUES_EXPD, cons(first, val));
@@ -2409,7 +2411,7 @@ Scheme_Object *scheme_compile_sequence(Scheme_Object *forms,
     Scheme_Object *first, *val;
 
     first = SCHEME_STX_CAR(forms);
-    first = scheme_check_immediate_macro(first, env, rec, drec, -1, scheme_false, &val);
+    first = scheme_check_immediate_macro(first, env, rec, drec, -1, scheme_false, 0, &val);
 
     if (SAME_OBJ(val, scheme_begin_syntax) && SCHEME_STX_PAIRP(first)) {      
       /* Flatten begin: */

@@ -58,6 +58,7 @@ static void make_init_env(void);
 static Scheme_Object *namespace_variable_binding(int, Scheme_Object *[]);
 static Scheme_Object *local_exp_time_value(int argc, Scheme_Object *argv[]);
 static Scheme_Object *local_exp_time_name(int argc, Scheme_Object *argv[]);
+static Scheme_Object *local_context(int argc, Scheme_Object *argv[]);
 static Scheme_Object *make_set_transformer(int argc, Scheme_Object *argv[]);
 
 static Scheme_Object *write_variable(Scheme_Object *obj);
@@ -361,6 +362,12 @@ static void make_init_env(void)
 						      "syntax-local-name",
 						      0, 0),
 			     env);
+  scheme_add_global_constant("syntax-local-context", 
+			     scheme_make_prim_w_arity(local_context,
+						      "syntax-local-context",
+						      0, 0),
+			     env);
+
   scheme_add_global_constant("make-set!-transformer", 
 			     scheme_make_prim_w_arity(make_set_transformer,
 						      "make-set!-transformer",
@@ -1688,6 +1695,26 @@ local_exp_time_name(int argc, Scheme_Object *argv[])
 		     "syntax-local-name: not currently transforming");
 
   return sym;
+}
+
+static Scheme_Object *
+local_context(int argc, Scheme_Object *argv[])
+{
+  Scheme_Comp_Env *env;
+
+  env = scheme_current_thread->current_local_env;
+  if (!env)
+    scheme_raise_exn(MZEXN_MISC, 
+		     "syntax-local-context: not currently transforming");
+
+  if (env->flags & SCHEME_INTDEF_FRAME)
+    return scheme_intern_symbol("internal-define");
+  else if (scheme_is_module_env(env))
+    return scheme_intern_symbol("module");
+  else if (scheme_is_toplevel(env))
+    return scheme_intern_symbol("top-level");
+  else
+    return scheme_intern_symbol("expression");
 }
 
 static Scheme_Object *

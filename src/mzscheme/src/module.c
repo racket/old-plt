@@ -1672,7 +1672,7 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
   fm = scheme_add_rename(fm, et_rn);
 
   if (!check_mb) {
-    fm = scheme_check_immediate_macro(fm, env, rec, drec, depth, scheme_false, &mbval);
+    fm = scheme_check_immediate_macro(fm, menv->init, rec, drec, depth, scheme_false, 0, &mbval);
 
     /* If expansion is not the primitive `#%module-begin', add local one: */
     if (!SAME_OBJ(mbval, modbeg_syntax)) {
@@ -1950,7 +1950,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 
   /* Expand each expression in form up to `begin', `define-values', `define-syntax', 
      `require', `provide', and `#%app'. */
-  xenv = scheme_new_compilation_frame(0, SCHEME_CAPTURE_WITHOUT_RENAME, env);
+  xenv = scheme_new_compilation_frame(0, SCHEME_CAPTURE_WITHOUT_RENAME | SCHEME_MODULE_FRAME, env);
   {
     Scheme_Object *stop;
     stop = scheme_get_stop_expander();

@@ -1262,6 +1262,7 @@ Scheme_Object *scheme_check_immediate_macro(Scheme_Object *first,
 					    Scheme_Compile_Info *rec,
 					    int drec,
 					    int depth, Scheme_Object *boundname,
+					    int int_def_pos,
 					    Scheme_Object **current_val);
 
 Scheme_Object *scheme_compile_expand_macro_app(Scheme_Object *name, Scheme_Object *macro,
@@ -1400,8 +1401,9 @@ int *scheme_env_get_flags(Scheme_Comp_Env *frame, int start, int count);
 #define SCHEME_TOPLEVEL_FRAME 1
 #define SCHEME_MODULE_FRAME 2
 #define SCHEME_LAMBDA_FRAME 4
-#define SCHEME_NO_RENAME 8
-#define SCHEME_CAPTURE_WITHOUT_RENAME 16
+#define SCHEME_INTDEF_FRAME 8
+#define SCHEME_NO_RENAME 16
+#define SCHEME_CAPTURE_WITHOUT_RENAME 32
 
 /* Flags used with scheme_static_distance */
 #define SCHEME_ELIM_CONST 1

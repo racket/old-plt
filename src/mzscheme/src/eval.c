@@ -166,6 +166,11 @@ static Scheme_Object *unknown_symbol, *void_link_symbol, *quote_symbol;
 static Scheme_Object *letrec_syntaxes_symbol, *begin_symbol;
 static Scheme_Object *let_symbol;
 
+static Scheme_Object *internal_define_symbol;
+static Scheme_Object *module_symbol;
+static Scheme_Object *expression_symbol;
+static Scheme_Object *top_level_symbol;
+
 static Scheme_Object *zero_rands_ptr; /* &zero_rands_ptr is dummy rands pointer */
 
 static Scheme_Object *scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env, 
@@ -249,6 +254,16 @@ scheme_init_eval (Scheme_Env *env)
   letrec_syntaxes_symbol = scheme_intern_symbol("letrec-syntaxes");
   begin_symbol = scheme_intern_symbol("begin");
   
+  REGISTER_SO(module_symbol);
+  REGISTER_SO(internal_define_symbol);
+  REGISTER_SO(expression_symbol);
+  REGISTER_SO(top_level_symbol);
+
+  module_symbol = scheme_intern_symbol("module");
+  internal_define_symbol = scheme_intern_symbol("internal-define");
+  expression_symbol = scheme_intern_symbol("expression");
+  top_level_symbol = scheme_intern_symbol("top-level");
+
   scheme_install_type_writer(scheme_application_type, write_application);
   scheme_install_type_reader(scheme_application_type, read_application);
   scheme_install_type_writer(scheme_sequence_type, write_sequence);
@@ -287,7 +302,7 @@ scheme_init_eval (Scheme_Env *env)
   scheme_add_global_constant("local-expand", 
 			     scheme_make_prim_w_arity(local_expand, 
 						      "local-expand",
-						      2, 2), 
+						      3, 3), 
 			     env);
   scheme_add_global_constant("expand-once", 
 			     scheme_make_prim_w_arity(expand_once, 
@@ -1435,9 +1450,11 @@ Scheme_Object *scheme_check_immediate_macro(Scheme_Object *first,
 					    Scheme_Comp_Env *env, 
 					    Scheme_Compile_Info *rec, int drec,
 					    int depth, Scheme_Object *boundname,
+					    int internel_def_pos,
 					    Scheme_Object **current_val)
 {
   Scheme_Object *name, *val, *orig;
+  Scheme_Comp_Env *xenv = NULL;
 
   orig = first;
 
@@ -1468,8 +1485,15 @@ Scheme_Object *scheme_check_immediate_macro(Scheme_Object *first,
   if (!val) {
     return first;
   } else if (SAME_TYPE(SCHEME_TYPE(val), scheme_macro_type)) {
-    /* Yep, it's a macro; expand once */
-    first = scheme_expand_expr(first, env, 1, boundname);
+    /* Yep, it's a macro; expand once. Also, extend env to indicate
+       an internal-define position, if necessary. */
+    if (!xenv) {
+      if (internel_def_pos)
+	xenv = scheme_new_compilation_frame(0, SCHEME_INTDEF_FRAME, env);
+      else
+	xenv = env;
+    }
+    first = scheme_expand_expr(first, xenv, 1, boundname);
   } else {
     return first;
   }
@@ -1786,7 +1810,7 @@ compile_expand_app(Scheme_Object *forms, Scheme_Comp_Env *env,
     if (SCHEME_STX_PAIRP(name) && SCHEME_STX_SYMBOLP(SCHEME_STX_CAR(name))) {
       Scheme_Object *gval, *origname = name;
 
-      name = scheme_check_immediate_macro(name, env, rec, drec, depth, boundname, &gval);
+      name = scheme_check_immediate_macro(name, env, rec, drec, depth, boundname, 0, &gval);
       
       if (SAME_OBJ(gval, scheme_lambda_syntax)) {
 	Scheme_Object *argsnbody;
@@ -2025,7 +2049,7 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
 
     /* Check for macro expansion, which could mask the real
        define-values, define-syntax, etc.: */
-    first = scheme_check_immediate_macro(first, env, rec, drec, depth, scheme_false, &gval);
+    first = scheme_check_immediate_macro(first, env, rec, drec, depth, scheme_false, 1, &gval);
 
     if (SAME_OBJ(gval, scheme_begin_syntax)) {
       /* Inline content */
@@ -2090,7 +2114,7 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
 	if (!SCHEME_STX_NULLP(result)) {
 	  first = SCHEME_STX_CAR(result);
 	  first = scheme_datum_to_syntax(first, forms, forms, 0, 0);
-	  first = scheme_check_immediate_macro(first, env, rec, drec, depth, scheme_false, &gval);
+	  first = scheme_check_immediate_macro(first, env, rec, drec, depth, scheme_false, 1, &gval);
 	  more = 1;
 	  if ((values && NOT_SAME_OBJ(gval, scheme_define_values_syntax))
 	      || (!values && NOT_SAME_OBJ(gval, scheme_define_syntaxes_syntax))) {
@@ -3706,27 +3730,41 @@ local_expand(int argc, Scheme_Object **argv)
 {
   Scheme_Comp_Env *env;
   Scheme_Object *l, *local_mark;
-  int cnt, pos;
+  int cnt, pos, kind;
 
   env = scheme_current_thread->current_local_env;
 
   if (!env)
     scheme_raise_exn(MZEXN_MISC, "local-expand: not currently transforming");
 
+  if (SAME_OBJ(argv[1], internal_define_symbol))
+    kind = SCHEME_INTDEF_FRAME;
+  else if (SAME_OBJ(argv[1], module_symbol))
+    kind = SCHEME_MODULE_FRAME;
+  else if (SAME_OBJ(argv[1], top_level_symbol))
+    kind = SCHEME_MODULE_FRAME;
+  else if (SAME_OBJ(argv[1], expression_symbol))
+    kind = 0;
+  else {
+    scheme_wrong_type("local-expand", "'expression, 'top-level, 'internal-define, or 'module",
+		      1, argc, argv);
+    return NULL;
+  }
+
   /* For each given stop-point identifier, shadow any potential syntax
      in the environment with an identity-expanding syntax expander. */
 
   (void)scheme_get_stop_expander();
 
-  env = scheme_new_compilation_frame(0, SCHEME_CAPTURE_WITHOUT_RENAME, env);
+  env = scheme_new_compilation_frame(0, SCHEME_CAPTURE_WITHOUT_RENAME | kind, env);
   local_mark = scheme_current_thread->current_local_mark;
   
-  cnt = scheme_stx_proper_list_length(argv[1]);
+  cnt = scheme_stx_proper_list_length(argv[2]);
   if (cnt > 0)
     scheme_add_local_syntax(cnt, env);
   pos = 0;
 
-  for (l = argv[1]; SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {
+  for (l = argv[2]; SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {
     Scheme_Object *i;
     
     i = SCHEME_CAR(l);

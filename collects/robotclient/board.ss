@@ -22,7 +22,10 @@
   ;; wall = 2
   ;; home = 3
   
-  
+  ;; The board is a vector of fixnums with this it pattern
+  ;; 1 2 1 25
+  ;; robot? type valid? weight
+
   (define-syntax get-type
     (syntax-rules ()
       ((_ n)
@@ -337,6 +340,11 @@
                  (player-money)
                  (score)
                  (packages-held))))
+	(for-each (lambda (robot)
+		    (cond
+		     ((not (= 1 (get-robot (get-spot (board) (robot-x robot) (robot-y robot)))))
+		      (printf "Robot at (~a,~a) not on board~n" (robot-x robot) (robot-y robot)))))
+		  robots)
         robots)))
   
   (define (read-good-char in)

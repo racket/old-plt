@@ -9,9 +9,13 @@
 	   (fprintf (current-error-port) 
 		    "Error: can't install MzCOM on non-Windows machine~n")
 	   (failure-thunk))
-	 '(let ([fn ".\\mzcom.exe"])
-	    (when (file-exists? fn)
-		  (system (string-append fn " /RegServer")))))]
+	 (let ([exe-path (build-path (collection-path "mzcom") "mzcom.exe")]) 
+	   (if (not (file-exists? exe-path))
+	       (begin
+		 (fprintf (current-error-port) 
+			  "Warning: MzCOM binary not installed~n")
+		 (failure-thunk))
+	       `(system (format "~a /RegServer" ,exe-path)))))]
     [(blurb)
      (list
       "MzCOM is a COM class that makes Scheme available to any COM client.")]

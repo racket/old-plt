@@ -308,7 +308,7 @@
 		   (when literal-expression
 		     (write literal-expression o)))
 		 'append)
-		(let ([end (file-size dest)]
+		(let ([end (data-fork-size dest)]
 		      [cmdpos (with-input-from-file dest find-cmdline)])
 		  (when verbose?
 		    (fprintf (current-error-port) "Setting command line~n"))

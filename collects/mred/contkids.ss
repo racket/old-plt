@@ -78,7 +78,7 @@
     ;  containers.
     ; input: item%: a wx:item% descendant (but see below) from which the
     ;          new class will be derived.
-    ;        stretch-x?/stretch-y?: booleans which specify the default
+    ;        stretch-x/stretch-y: booleans which specify the default
     ;          stretchability behavior for the new class.
     ;        make-default-size: a function which takes the args of the
     ;          item%  class and returns a list of these args but ensures
@@ -91,7 +91,7 @@
     ; through this function to create panel%.  (Yes, this is
     ; cheating.  So what's your point?)
     (define make-item%
-      (opt-lambda (item% stretch-x? stretch-y? make-default-size)
+      (opt-lambda (item% stretch-x stretch-y make-default-size)
 	(class item% args
 	  (inherit
 	    get-width
@@ -166,24 +166,24 @@
 		  (error 'user-min-height
 		    "Expected a non-negative real; received ~s" val)))]
 	    
-	    ; stretchable-in-x?: gets/sets horiz stretchability property.
+	    ; stretchable-in-x: gets/sets horiz stretchability property.
 	    ; input: either nothing or a boolean.
 	    ; returns: (if nothing passed in) current stretchability
             ;   property. 
 	    ; effects: (if boolean value passed in) sets H stretchability
 	    ;   prop. to specified value.
-	    [stretchable-in-x?
-	      (make-item-param stretch-x? boolean?
+	    [stretchable-in-x
+	      (make-item-param stretch-x boolean?
 		(lambda (val)
-		  (error 'stretchable-in-x?
+		  (error 'stretchable-in-x
 		    "Expected a boolean; received ~s" val)))]
 	    
-	    ; stretchable-in-y?: see stretchable-in-x? but substitute "y"
+	    ; stretchable-in-y: see stretchable-in-x but substitute "y"
             ;   for "x" and "horizontal" for "vertical".
-	    [stretchable-in-y?
-	      (make-item-param stretch-y? boolean?
+	    [stretchable-in-y
+	      (make-item-param stretch-y boolean?
 		(lambda (val)
-		  (error 'stretchable-in-y?
+		  (error 'stretchable-in-y
 		    "Expected a boolean; received ~s" val)))]
 	    
 	    ; set-label: replace the superclass's method with a call to
@@ -207,8 +207,8 @@
 		(let* ([min-size (get-min-size)]
 		       [result (make-child-info (default-x) (default-y)
 						(car min-size) (cadr min-size)
-						(stretchable-in-x?)
-						(stretchable-in-y?))])
+						(stretchable-in-x)
+						(stretchable-in-y))])
 		  (mred:debug:printf 'container-child-get-info
 		    "container-child-get-info: Result: ~s" result)
 		  result))]
@@ -335,8 +335,8 @@
 	  get-width
 	  get-height
 	  set-size
-	  stretchable-in-x?
-	  stretchable-in-y?
+	  stretchable-in-x
+	  stretchable-in-y
 	  min-height
 	  min-width)
 	(private
@@ -357,7 +357,7 @@
 			    (get-two-int-values get-client-size)])
 		(let ([delta-w (- (get-width) client-width)]
 		      [delta-h (- (get-height) client-height)]
-		      [horizontal? (positive? (bitwise-and style
+		      [horizontal (positive? (bitwise-and style
 						wx:const-horizontal))])
 		  (mred:debug:printf
 		   'container-child-set-min-sizes
@@ -373,13 +373,13 @@
 		    (get-width) (get-height))
 		  (mred:debug:printf 'container-child-set-min-sizes
 		    "container-child-set-min-sizes: setting sizes & leaving")
-		  (set! min-width (if horizontal?
+		  (set! min-width (if horizontal
 				      (+ (* range pixels-per-value)
 					 delta-w)
 				      ; client-height is the default
 				      ; dimension in the minor direction.
 				      (+ client-height delta-w)))
-		  (set! min-height (if horizontal?
+		  (set! min-height (if horizontal
 				       (+ client-height delta-h)
 				       (+ (* range pixels-per-value)
 					  delta-h))))))])
@@ -405,11 +405,11 @@
 			 ; see slider% for discussion of why force-redraw
 			 ; is unnecessary here.
 			 (begin
-			   (stretchable-in-x? #t)
-			   (stretchable-in-y? #f))
+			   (stretchable-in-x #t)
+			   (stretchable-in-y #f))
 			 (begin
-			   (stretchable-in-x? #f)
-			   (stretchable-in-y? #t))))
+			   (stretchable-in-x #f)
+			   (stretchable-in-y #t))))
 	      new-args)))))
 			 
 	
@@ -439,8 +439,8 @@
 	(inherit
 	  min-width
 	  min-height
-	  stretchable-in-x?
-	  stretchable-in-y?
+	  stretchable-in-x
+	  stretchable-in-y
 	  get-client-size
 	  get-width
 	  get-height)
@@ -471,7 +471,7 @@
 		(let ([full-width (get-width)]
 		      [full-height (get-height)]
 		      [range (add1 (- max-val min-val))]
-		      [horizontal? (positive? (bitwise-and style
+		      [horizontal (positive? (bitwise-and style
 						wx:const-horizontal))])
 		  (mred:debug:printf
 		   'container-child-set-min-sizes
@@ -491,11 +491,11 @@
 		    "container-child-set-min-sizes: "
 		    "setting sizes and leaving"))
 		  (set! min-width
-		    (if horizontal?
+		    (if horizontal
 			(+ (* range pixels-per-value) (- full-width client-w))
 			full-width))
 		  (set! min-height
-		    (if horizontal?
+		    (if horizontal
 			full-height
 			(+ (* range pixels-per-value)
 			   (- full-height client-h)))))))])
@@ -522,11 +522,11 @@
 		   ; have to force a redraw.
 		   (if (positive? (bitwise-and style wx:const-horizontal))
 		       (begin
-			 (stretchable-in-x? #t)
-			 (stretchable-in-y? #f))
+			 (stretchable-in-x #t)
+			 (stretchable-in-y #f))
 		       (begin
-			 (stretchable-in-x? #f)
-			 (stretchable-in-y? #t))))
+			 (stretchable-in-x #f)
+			 (stretchable-in-y #t))))
 	    args))))
     
     (define text%;; for now

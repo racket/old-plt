@@ -4,74 +4,16 @@
 	Version="7.00"
 	Name="MzCOM"
 	SccProjectName=""
-	SccLocalPath=""
-	Keyword="AtlProj">
+	SccLocalPath="">
 	<Platforms>
 		<Platform
 			Name="Win32"/>
 	</Platforms>
 	<Configurations>
 		<Configuration
-			Name="Release|Win32"
-			OutputDirectory=".\Release"
-			IntermediateDirectory=".\Release"
-			ConfigurationType="1"
-			UseOfMFC="0"
-			UseOfATL="1"
-			ATLMinimizesCRunTimeLibraryUsage="FALSE"
-			CharacterSet="2">
-			<Tool
-				Name="VCCLCompilerTool"
-				Optimization="1"
-				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\..\..\include;..\..\mzcom;."
-				PreprocessorDefinitions="WIN32,NDEBUG,_WINDOWS"
-				StringPooling="TRUE"
-				RuntimeLibrary="0"
-				EnableFunctionLevelLinking="TRUE"
-				UsePrecompiledHeader="2"
-				PrecompiledHeaderFile=".\Release/MzCOM.pch"
-				AssemblerListingLocation=".\Release/"
-				ObjectFile=".\Release/"
-				ProgramDataBaseFileName=".\Release/"
-				WarningLevel="3"
-				SuppressStartupBanner="TRUE"
-				CompileAs="0"/>
-			<Tool
-				Name="VCCustomBuildTool"/>
-			<Tool
-				Name="VCLinkerTool"
-				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="odbc32.lib odbccp32.lib wsock32.lib libmzschxxxxxxx.lib libmzgcxxxxxxx.lib"
-				OutputFile="../../../collects/mzcom/mzcom.exe"
-				LinkIncremental="1"
-				SuppressStartupBanner="TRUE"
-				AdditionalLibraryDirectories="..\libmzsch\Release;..\libmzgc\Release"
-				ProgramDatabaseFile=".\Release/mzcom.pdb"
-				SubSystem="2"/>
-			<Tool
-				Name="VCMIDLTool"
-				TypeLibraryName=".\Release/MzCOM.tlb"/>
-			<Tool
-				Name="VCPostBuildEventTool"/>
-			<Tool
-				Name="VCPreBuildEventTool"/>
-			<Tool
-				Name="VCPreLinkEventTool"/>
-			<Tool
-				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="NDEBUG"
-				Culture="1033"
-				AdditionalIncludeDirectories="..\..\mzcom"/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"/>
-			<Tool
-				Name="VCWebDeploymentTool"/>
-		</Configuration>
-		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory=".\Debug"
-			IntermediateDirectory=".\Debug"
+			OutputDirectory="Debug"
+			IntermediateDirectory="Debug"
 			ConfigurationType="1"
 			UseOfMFC="0"
 			UseOfATL="1"
@@ -80,36 +22,33 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\..\include;..\..\mzcom;."
-				PreprocessorDefinitions="WIN32,_DEBUG,_WINDOWS"
+				AdditionalIncludeDirectories="..\..\mzscheme\include,."
+				PreprocessorDefinitions="WIN32,_DEBUG,_WINDOWS,GC_DLL"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
 				UsePrecompiledHeader="2"
-				PrecompiledHeaderFile=".\Debug/MzCOM.pch"
-				AssemblerListingLocation=".\Debug/"
-				ObjectFile=".\Debug/"
-				ProgramDataBaseFileName=".\Debug/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
-				DebugInformationFormat="4"
+				DebugInformationFormat="3"
 				CompileAs="0"/>
 			<Tool
-				Name="VCCustomBuildTool"/>
+				Name="VCCustomBuildTool"
+				Description="Copy files to final location"
+				CommandLine="copy /y $(OutDir)\$(ProjectName).exe ..\..\..\$(ProjectName).exe
+copy /y $(OutDir)\$(ProjectName).pdb ..\..\..\$(ProjectName).pdb
+"
+				Outputs="..\..\..\$(ProjectName).pdb,..\..\..\$(ProjectName).exe"
+/>
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="libcmtd.lib odbc32.lib odbccp32.lib wsock32.lib libmzschxxxxxxx.lib libmzgcxxxxxxx.lib libmzgc.lib"
-				OutputFile="../../../collects/mzcom/mzcom.exe"
-				LinkIncremental="2"
+				OutputFile="$(OutDir)\$(ProjectName).exe"
 				SuppressStartupBanner="TRUE"
-				AdditionalLibraryDirectories="..\libmzsch\Debug;..\libmzgc\Debug"
-				IgnoreDefaultLibraryNames="libcmt.lib"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\Debug/mzcom.pdb"
 				SubSystem="2"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName=".\Debug/MzCOM.tlb"/>
+				TypeLibraryName="$(OutDir)\$(ProjectName).tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -118,9 +57,69 @@
 				Name="VCPreLinkEventTool"/>
 			<Tool
 				Name="VCResourceCompilerTool"
+				AdditionalIncludeDirectories="..\..\mzcom,$(OutDir),$(NOINHERIT)"
 				PreprocessorDefinitions="_DEBUG"
-				Culture="1033"
-				AdditionalIncludeDirectories=".\..\mzcom"/>
+				Culture="1033"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+		</Configuration>
+		<Configuration
+			Name="Release|Win32"
+			OutputDirectory="Release"
+			IntermediateDirectory="Release"
+			ConfigurationType="1"
+			UseOfMFC="0"
+			UseOfATL="1"
+			ATLMinimizesCRunTimeLibraryUsage="FALSE"
+			CharacterSet="2">
+			<Tool
+				Name="VCCLCompilerTool"
+				GlobalOptimizations="TRUE"
+				InlineFunctionExpansion="2"
+				EnableIntrinsicFunctions="TRUE"
+				FavorSizeOrSpeed="1"
+				AdditionalIncludeDirectories="..\..\mzscheme\include,."
+				PreprocessorDefinitions="WIN32,NDEBUG,_WINDOWS,GC_DLL"
+				StringPooling="TRUE"
+				RuntimeLibrary="0"
+				EnableFunctionLevelLinking="TRUE"
+				UsePrecompiledHeader="2"
+				WarningLevel="3"
+				SuppressStartupBanner="TRUE"
+				DebugInformationFormat="3"
+				CompileAs="0"/>
+			<Tool
+				Name="VCCustomBuildTool"
+				Description="Copy files to final location"
+				CommandLine="copy /y $(OutDir)\$(ProjectName).exe ..\..\..\$(ProjectName).exe
+copy /y $(OutDir)\$(ProjectName).pdb ..\..\..\$(ProjectName).pdb
+"
+				Outputs="..\..\..\$(ProjectName).pdb,..\..\..\$(ProjectName).exe"
+/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalOptions="/MACHINE:I386"
+				OutputFile="$(OutDir)\$(ProjectName).exe"
+				LinkIncremental="1"
+				SuppressStartupBanner="TRUE"
+				GenerateDebugInformation="TRUE"
+				SubSystem="2"/>
+			<Tool
+				Name="VCMIDLTool"
+				TypeLibraryName="$(OutDir)\$(ProjectName).tlb"/>
+			<Tool
+				Name="VCPostBuildEventTool"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				AdditionalIncludeDirectories="..\..\mzcom,$(OutDir),$(NOINHERIT)"
+				PreprocessorDefinitions="NDEBUG"
+				Culture="1033"/>
 			<Tool
 				Name="VCWebServiceProxyGeneratorTool"/>
 			<Tool
@@ -133,27 +132,9 @@
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat">
 			<File
 				RelativePath="..\..\mzcom\mzcom.cxx">
-				<FileConfiguration
-					Name="Debug|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories="..\..\..\include,..\..\mzcom,.;../../mzscheme/include ../worksp/mzcom;$(NoInherit)"/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\mzcom\mzcom.idl">
-				<FileConfiguration
-					Name="Release|Win32">
-					<Tool
-						Name="VCMIDLTool"
-						TypeLibraryName="./mzcom.tlb"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32">
-					<Tool
-						Name="VCMIDLTool"
-						TypeLibraryName="./mzcom.tlb"/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\mzcom\mzobj.cxx">
@@ -174,12 +155,6 @@
 			<File
 				RelativePath="..\..\mzcom\mzobj.h">
 			</File>
-			<File
-				RelativePath="resource.h">
-			</File>
-			<File
-				RelativePath="..\..\mzcom\resource.h">
-			</File>
 		</Filter>
 		<Filter
 			Name="Resource Files"
@@ -195,18 +170,6 @@
 			</File>
 			<File
 				RelativePath=".\mzcom.rc">
-				<FileConfiguration
-					Name="Release|Win32">
-					<Tool
-						Name="VCResourceCompilerTool"
-						AdditionalIncludeDirectories="..\..\mzcom;$(OUTDIR);$(NoInherit)"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32">
-					<Tool
-						Name="VCResourceCompilerTool"
-						AdditionalIncludeDirectories=".\..\mzcom;$(OUTDIR);$(NoInherit)"/>
-				</FileConfiguration>
 			</File>
 		</Filter>
 	</Files>

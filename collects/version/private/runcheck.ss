@@ -130,6 +130,11 @@
 					(inner-loop (cdr dirs)))
 				  (inner-loop (cdr dirs))))))))))))
 
+      (when (null? version-collects)
+	  (show-ok "No version information"
+		   "No packages to check")
+	  (exit 0))
+
       (when (or (not (null? command-collects))
 		(eq? 'yes
 		     (get-yes-no "PLT version check" 

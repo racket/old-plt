@@ -91,14 +91,26 @@
   ;(equal? (collapse-tree (list 3 4 (list (list 5 6) (cons 7 8)) (list 9)))
   ;        (list 9 8 7 6 5 4 3))
   
+  (define (add-to-popup popup val)
+    
+  
   (define debugger%
     (class object% (drscheme-frame)
 
       (private [parsed #f]
                [needs-update #t]
                [clear-highlight-thunks null]
+               [mark-list #f]
                
                [show-var-values
+                (lambda (binding)
+                  (let* ([values (lookup-binding-list mark-list binding)]
+                         [pm (make-object popup-menu%)])
+                    (for-each (lambda (val)
+                                (add-to-popup pm val))
+                              values)
+                    (send f popup-menu 0 0)))]
+                    
                [highlight-vars
                 (lambda (mark)
                   (let* ([src (mark-source mark)]

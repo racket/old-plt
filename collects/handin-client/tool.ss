@@ -222,10 +222,9 @@
 			  (activate-ok)
 			  (send status set-label (format "Connected securely for ~a." handin-name)))))))))
 
-      (rename [super-on-close on-close])
-      (define/override (on-close)
-	(custodian-shutdown-all comm-cust)
-	(super-on-close))
+      (define/augment (on-close)
+	(inner (void) on-close)
+	(custodian-shutdown-all comm-cust))
 
       (send ok enable #f)
       (send assignment enable #f)
@@ -368,10 +367,9 @@
 	      (set! comm-cust (make-custodian))))))
 
        (define comm-cust (make-custodian))
-       (rename [super-on-close on-close])
-       (define/override (on-close)
-	 (custodian-shutdown-all comm-cust)
-	 (super-on-close))
+       (define/augment (on-close)
+	 (inner (void) on-close)
+	 (custodian-shutdown-all comm-cust))
 
        (define button-panel (new horizontal-pane%
 				 [parent this]
@@ -458,7 +456,7 @@
      (build-path (collection-path this-collection) "icon.png")))
 
   (define (editors->string editors)
-    (let* ([base (make-object editor-stream-out-string-base%)]
+    (let* ([base (make-object editor-stream-out-bytes-base%)]
 	   [stream (make-object editor-stream-out% base)])
       (write-editor-version stream base)
       (write-editor-global-header stream)
@@ -495,16 +493,13 @@
 		   get-interactions-text)
 	  (super-instantiate ())
 
-	  (rename [super-file-menu:between-open-and-revert
-                   file-menu:between-open-and-revert])
           (define/override (file-menu:between-open-and-revert file-menu)
             (new menu-item%
 		 (label (format "Manage ~a..." handin-name))
 		 (parent file-menu)
 		 (callback (lambda (m e) (manage-handin-account))))
-            (super-file-menu:between-open-and-revert file-menu))
+            (super file-menu:between-open-and-revert file-menu))
 
-	  (rename (super-help-menu:after-about help-menu:after-about))
           (define/override (help-menu:after-about menu)
 	    (when web-menu-name
 	      (new menu-item%
@@ -512,7 +507,7 @@
 		   (parent menu)
 		   (callback (lambda (item evt)
 			       (send-url web-address)))))
-            (super-help-menu:after-about menu))
+            (super help-menu:after-about menu))
 
 	  (define button
 	    (new button% 

@@ -349,7 +349,7 @@
       (define (indirect v w i)
         (vector-ref v (vector-ref w i)))
       (if (empty? ops)
-          (list a b c d x)
+          (list a b c d X)
           (let* ((op      (first ops))
                  (indices (first op))
                  (k       (second op))

@@ -2153,7 +2153,7 @@ in the HTML 4.0 spec are:
   the document. The name is separated from the value by `=' and
   name/value pairs are separated from each other by either `;' or `&'.
   When encoding, `;' is used as the separator by default. When
-  decoding, both `;' and `&' are parsed as separators.
+  decoding, both `;' and `&' are parsed as separators by default.
 
 NB: RFC 2396 supersedes RFC 1738.
 
@@ -2204,8 +2204,11 @@ PROCEDURES -----------------------------------------------------------
   select the separator. The default is 'semi.
  
 
-> (form-urlencoded->alist string)
+> (form-urlencoded->alist string [separator-mode-sym])
   : String -> alist
 
   Decode a string encoded using the application/x-www-form-urlencoded
   encoding rules into an alist of key/value pairs.
+
+  The `separator-mode-sym' argument must be either 'amp, 'semi, or
+  'both to select the separator. The default is 'both.

@@ -230,7 +230,10 @@
       (define form-urlencoded->alist
 	(opt-lambda (str [mode 'both])
 	  (define key-regexp (regexp "[^=]*"))
-	  (define value-regexp (regexp "[^&;]*"))
+	  (define value-regexp (case mode
+				 [(semi) (regexp "[^;]*")]
+				 [(ampm) (regexp "[^&]*")]
+				 [else (regexp "[^&;]*")]))
 	  (define (next-key str start)
 	    (if (>= start (string-length str))
 		#f

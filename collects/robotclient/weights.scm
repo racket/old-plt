@@ -40,7 +40,7 @@
 ;(define water-push-bid (make-parameter 1))
 ;(define blank-push-bid (make-parameter 1))
 ;(define max-bid-const (make-parameter 10))
-;(define max-bid (make-parameter 0))
+(define max-bid (make-parameter 0))
 
 
   (define-struct search-player (x y id money capacity packages))

@@ -797,4 +797,80 @@
 		 '(close-input-port r2))))
   (tcp-close l))
 
+;;----------------------------------------------------------------------
+;; Security guards:
+
+;; Files - - - - - - - - - - - - - - - - - - - - - -
+
+(define (make-file-sg ok-modes)
+  (make-security-guard (current-security-guard)
+		       (lambda (who path modes)
+			 (unless (andmap (lambda (m) (memq m ok-modes))
+					 modes)
+			   (raise (cons 'fs-reject who))))
+		       void))
+(define (fs-reject? who)
+  (lambda (x) (and (pair? x)
+		   (eq? (car x) 'fs-reject)
+		   (eq? (cdr x) who))))
+  
+(parameterize ([current-security-guard (make-file-sg '(exists read))])
+  (test #t string? (expand-path "tmp1"))
+  (test #t file-exists? "tmp1")
+  (test #f directory-exists? "tmp1")
+  (test #f link-exists? "tmp1")
+
+  (err/rt-test (open-output-file "tmp1") (fs-reject? 'open-output-file))
+  (err/rt-test (delete-file "tmp1") (fs-reject? 'delete-file))
+  (err/rt-test (rename-file-or-directory "tmp1" "tmp11") (fs-reject? 'rename-file-or-directory))
+  (err/rt-test (copy-file "tmp1" "tmp11") (fs-reject? 'copy-file))
+  (let ([p (open-input-file "tmp1")])
+    (test #t input-port? p)
+    (close-input-port p))
+  (test #t list? (directory-list)))
+
+(parameterize ([current-security-guard (make-file-sg '(exists write))])
+  (test #t string? (expand-path "tmp1"))
+  (err/rt-test (open-input-file "tmp1") (fs-reject? 'open-input-file))
+  (err/rt-test (open-output-file "tmp1" 'append) (fs-reject? 'open-output-file))
+  (err/rt-test (open-output-file "tmp1" 'update) (fs-reject? 'open-output-file))
+  (err/rt-test (directory-list) (fs-reject? 'directory-list))
+  (err/rt-test (directory-list (current-directory)) (fs-reject? 'directory-list))
+  (err/rt-test (delete-directory (current-directory)) (fs-reject? 'delete-directory))
+  (err/rt-test (rename-file-or-directory "tmp1" "tmp11") (fs-reject? 'rename-file-or-directory))
+  (err/rt-test (copy-file "tmp1" "tmp11") (fs-reject? 'copy-file))
+  (err/rt-test (file-or-directory-modify-seconds "tmp1") (fs-reject? 'file-or-directory-modify-seconds))
+  (err/rt-test (file-or-directory-permissions "tmp1") (fs-reject? 'file-or-directory-permissions))
+  (err/rt-test (file-size "tmp1") (fs-reject? 'file-size)))
+
+(parameterize ([current-security-guard (make-file-sg '(read write))])
+  (err/rt-test (current-directory) (fs-reject? 'current-directory))
+  (err/rt-test (current-directory "tmp1") (fs-reject? 'current-directory))
+  (err/rt-test (current-drive) (lambda (x)
+				 (or (exn:unsupported? x) ((fs-reject? 'current-drive) x))))
+  (err/rt-test (expand-path "tmp1") (fs-reject? 'expand-path))
+  (err/rt-test (resolve-path "tmp1") (fs-reject? 'resolve-path))
+  (err/rt-test (simplify-path "../tmp1") (fs-reject? 'simplify-path))
+  (err/rt-test (file-exists? "tmp1") (fs-reject? 'file-exists?))
+  (err/rt-test (directory-exists? "tmp1") (fs-reject? 'directory-exists?))
+  (err/rt-test (link-exists? "tmp1") (fs-reject? 'link-exists?))
+  (err/rt-test (path->complete-path "tmp1") (fs-reject? 'path->complete-path))
+  (err/rt-test (filesystem-root-list) (fs-reject? 'filesystem-root-list))
+  (err/rt-test (find-system-path 'temp-dir) (fs-reject? 'find-system-path)))
+
+;; Network - - - - - - - - - - - - - - - - - - - - - -
+
+(define (net-reject? who)
+  (lambda (x) (and (pair? x)
+		   (eq? (car x) 'net-reject)
+		   (eq? (cdr x) who))))
+
+(parameterize ([current-security-guard 
+		(make-security-guard (current-security-guard)
+				     void
+				     (lambda (who host port)
+				       (raise (cons 'net-reject who))))])
+  (err/rt-test (tcp-connect "other" 123)  (net-reject? 'tcp-connect))
+  (err/rt-test (tcp-listen 123)  (net-reject? 'tcp-listen)))
+
 (report-errs)

@@ -9,6 +9,7 @@ AC_INIT(mzscheme/src/bignum.c)
 AC_ARG_ENABLE(mred, [  --enable-mred           compile MrEd as well as MzScheme (enabled by default)], , enable_mred=yes )
 
 AC_ARG_ENABLE(gl, [  --enable-gl             include OpenGL in MrEd (enabled by default for Linux)])
+AC_ARG_ENABLE(gl, [  --enable-xft             use Xrender when available (enabled by default)])
 
 AC_ARG_ENABLE(dynlib, [  --enable-dynlib         create shared libraries])
 
@@ -572,6 +573,27 @@ if test "${enable_gl}" = "yes" ; then
         fi
       fi
     fi
+  fi
+fi
+
+################ Xrender ##################
+
+if test "${enable_xft}" = "" ; then  
+  enable_xft=yes
+fi
+
+if test "${enable_xft}" = "yes" ; then  
+  AC_CHECK_HEADER(X11/extensions/Xrender.h, enable_xft=yes, enable_xft=no)
+  if test "${enable_xft}" = "yes" ; then  
+    AC_CHECK_LIB(Xrender, XRenderQueryExtension, enable_xft="yes", enable_xft="no", $X_LIBS -lX11 -lXext -lXrender)
+    if test "${enable_xft}" = "yes" ; then  
+      MROPTIONS="$MROPTIONS -DWX_USE_XRENDER"
+      X_EXTRA_LIBS="$X_EXTRA_LIBS -lXrender"
+    else
+      echo "no Xrender libs; Xrender support disabled"
+    fi
+  else
+    echo "no Xrender headers; Xrender support disabled"
   fi
 fi
 

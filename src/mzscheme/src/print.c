@@ -504,8 +504,10 @@ static void setup_graph_table(Scheme_Object *obj, Scheme_Hash_Table *ht,
 }
 
 static char *
-print_to_string(Scheme_Object *obj, long *len, int write,
-		Scheme_Object *port, long maxl, Scheme_Process *p,
+print_to_string(Scheme_Object *obj, 
+		long * volatile len, int write,
+		Scheme_Object *port, long maxl, 
+		Scheme_Process * volatile p,
 		Scheme_Config *config)
 {
   Scheme_Hash_Table * volatile ht;

@@ -522,7 +522,7 @@ int start_linux_fs(char *diskname, char *partname, int net)
   oskit_linux_init_ide();
   if (net)
     oskit_linux_init_net();
-  /* oskit_linux_init_scsi(); */
+  oskit_linux_init_scsi();
   printf(">> Probing devices\n");
   oskit_dev_probe();
   printf(">> Filesystem initialization\n");

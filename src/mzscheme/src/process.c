@@ -1282,9 +1282,9 @@ static void remove_process(Scheme_Process *r)
   scheme_remove_managed(r->mref, (Scheme_Object *)r->mr_hop);
 }
 
-static void start_child(Scheme_Process *child,
-			Scheme_Process *return_to_process,
-			Scheme_Object *child_eval)
+static void start_child(Scheme_Process * volatile child,
+			Scheme_Process * volatile return_to_process,
+			Scheme_Object * volatile child_eval)
 {
   if (SETJMP(child)) {
 #ifdef RUNSTACK_IS_GLOBAL
@@ -2620,10 +2620,10 @@ static Scheme_Object *def_nested_exn_handler(int argc, Scheme_Object *argv[])
 
 static Scheme_Object *call_as_nested_process(int argc, Scheme_Object *argv[])
 {
-  Scheme_Process *p = scheme_current_process, *np;
+  Scheme_Process *p = scheme_current_process, * volatile np;
   Scheme_Manager *mgr;
-  Scheme_Object *v;
-  int failure;
+  Scheme_Object * volatile v;
+  volatile int failure;
 
   scheme_check_proc_arity("call-in-nested-thread", 0, 0, argc, argv);
   if (argc > 1) {
@@ -3541,15 +3541,13 @@ int scheme_pthread_semaphore_down_breakable(void *s)
 
 #ifdef ___MZ_USE_LINUX_PTHREADS
   {
-    Scheme_Process *p = scheme_current_process;
+    Scheme_Process * volatile p = scheme_current_process;
 
     if (!scheme_setjmp(p->signal_buf)) {
       p->jump_on_signal = 1;
 #endif
 
-      
       v = !sem_wait((sem_t *)s);
-
 
 #ifdef ___MZ_USE_LINUX_PTHREADS
       p->jump_on_signal = 0;

@@ -104,7 +104,7 @@ oskit:
 	$(XMAKE) g-c
 	$(XMAKE) dynlib
 	$(XMAKE) mzlibrary
-	$(XMAKE) $(MZOSKDEST)
+	$(XMAKE) MZOSKDEST='$(MZOSKDEST)' $(MZOSKDEST)
 
 mzschemelib: 
 	./ifaix $(XMAKE) aixdl

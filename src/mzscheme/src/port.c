@@ -69,6 +69,7 @@ static int mzerrno = 0;
 # ifndef OSKIT_TEST
 #  include <x86/pc/direct_cons.h> 
 # endif
+extern int osk_not_console; /* set by cmd-line flag */
 #endif
 #ifdef INCLUDE_OSKIT_SOCKET
 # include <oskit/net/socket.h>
@@ -564,7 +565,9 @@ scheme_init_port (Scheme_Env *env)
 			      : make_fd_input_port(0, "STDIN")
 #else
 # ifdef USE_OSKIT_CONSOLE
-			      : make_oskit_console_input_port()
+			      : (osk_not_console
+				 ? make_tested_file_input_port(stdin, "STDIN", 1)
+				 : make_oskit_console_input_port())
 # else
 			      : make_tested_file_input_port(stdin, "STDIN", 1)
 # endif
@@ -1878,7 +1881,7 @@ static void release_flushing_lock(Scheme_Process *p)
 
 static void flush_fd(Scheme_Output_Port *op, char * volatile bufstr, volatile int buflen)
 {
-  Scheme_FD *fop = (Scheme_FD *)op->port_data;
+  Scheme_FD * volatile fop = (Scheme_FD *)op->port_data;
   volatile int offset = 0;
 
   if (fop->flushing) {
@@ -2546,7 +2549,8 @@ make_oskit_console_input_port()
 
 void scheme_check_keyboard_input(void)
 {
-  osk_char_ready((Scheme_Input_Port *)scheme_orig_stdin_port);
+  if (!osk_not_console)
+    osk_char_ready((Scheme_Input_Port *)scheme_orig_stdin_port);
 }
 
 #endif
@@ -4683,7 +4687,7 @@ Scheme_Object *scheme_load(const char *file)
 {
   Scheme_Object *p[1];
   mz_jmp_buf savebuf;
-  Scheme_Object *val;
+  Scheme_Object * volatile val;
 
   p[0] = scheme_make_string(file);
   memcpy(&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf));

@@ -127,6 +127,12 @@ static int finish_cmd_line_run(FinishArgs *fa, void (*repl)(void))
   return exit_val;
 }
 
+#ifdef USE_OSKIT_CONSOLE
+/* Hack to disable normal input mode: */
+int osk_not_console = 0;
+#endif
+
+
 static int run_from_cmd_line(int argc, char *argv[], 
 			     Scheme_Env *(*mk_basic_env)(void),
 			     int (*cont_run)(FinishArgs *f))
@@ -365,6 +371,11 @@ static int run_from_cmd_line(int argc, char *argv[],
 #if defined(_IBMR2)
 	case 'p':
 	  signal(SIGDANGER, dangerdanger);
+	  break;
+#endif
+#ifdef USE_OSKIT_CONSOLE
+	case 'S':
+	  osk_not_console = 1;
 	  break;
 #endif
 	case 'R':

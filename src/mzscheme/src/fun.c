@@ -750,13 +750,14 @@ typedef Scheme_Object *(*Overflow_K_Proc)(void);
 void *scheme_top_level_do(void *(*k)(void), int eb)
 {
   void *v;
-  long *old_cc_ok, *cc_ok;
-  long *old_ec_ok;
-  void *old_cc_start;
+  long * volatile old_cc_ok;
+  long * volatile cc_ok;
+  long * volatile old_ec_ok;
+  void * volatile old_cc_start;
   mz_jmp_buf save, oversave;
   Scheme_Stack_State envss;
   Scheme_Comp_Env *save_current_local_env;
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Process * volatile p = scheme_current_process;
   int set_overflow;
 #ifdef MZ_PRECISE_GC
   void *external_stack;
@@ -1799,9 +1800,9 @@ static Scheme_Object *
 call_cc (int argc, Scheme_Object *argv[])
 {
   Scheme_Object *ret;
-  Scheme_Cont *cont;
+  Scheme_Cont * volatile cont;
   Scheme_Dynamic_Wind *dw;
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Process * volatile p = scheme_current_process;
   Scheme_Saved_Stack *saved, *isaved, *csaved;
   long size, cmcount;
   
@@ -2152,7 +2153,9 @@ Scheme_Object *scheme_dynamic_wind(void (*pre)(void *),
   volatile int err;
   Scheme_Dynamic_Wind * volatile dw;
   volatile int save_count;
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Process * volatile p;
+
+  p = scheme_current_process;
 
   dw = MALLOC_ONE_RT(Scheme_Dynamic_Wind);
 #ifdef MZTAG_REQUIRED
@@ -2675,7 +2678,9 @@ default_prompt_read_handler(int argc, Scheme_Object *argv[])
 void scheme_rep()
 {
   mz_jmp_buf save;
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Process * volatile p;
+
+  p = scheme_current_process;
 
   memcpy(&save, &p->error_buf, sizeof(mz_jmp_buf));
   if (scheme_setjmp(p->error_buf)) {

@@ -3305,6 +3305,9 @@ static Scheme_Object *collpaths_gen_p(int argc, Scheme_Object **argv, int rel)
   if (scheme_proper_list_length(v) < (rel ? 1 : 0))
     return NULL;
 
+  if (SCHEME_NULLP(v))
+    return v;
+
   while (SCHEME_PAIRP(v)) {
     Scheme_Object *s;
     s = SCHEME_CAR(v);
@@ -4059,7 +4062,7 @@ static pascal Boolean while_waiting(EventRecord *e, long *sleeptime, RgnHandle *
 {
    mz_jmp_buf save;
 
-	if (escaped) return TRUE;
+   if (escaped) return TRUE;
 
    if (scheme_handle_aewait_event)
      scheme_handle_aewait_event(e);

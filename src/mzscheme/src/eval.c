@@ -375,7 +375,9 @@ static Scheme_Object *make_application(Scheme_Object *orig_app,
 
   if (!nv && can_opt_const) {
     /* They're all values. Applying folding prim or closure? */
-    Scheme_Object *f = linked ? linked[0] : SCHEME_CAR(v);
+    Scheme_Object * volatile f;
+
+    f = linked ? linked[0] : SCHEME_CAR(v);
 
     if ((SCHEME_PRIMP(f) && (((Scheme_Primitive_Proc *)f)->flags & SCHEME_PRIM_IS_FOLDING))
 	|| (SCHEME_CLSD_PRIMP(f) 

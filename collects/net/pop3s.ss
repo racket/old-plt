@@ -3,6 +3,21 @@
     connect-to-server disconnect-from-server
     authenticate/plain-text
     get-mailbox-status
-    get-message/headers
-    get-message/complete
-    make-desired-header extract-desired-headers))
+    get-message/complete get-message/headers get-message/body
+    delete-message
+    
+    make-desired-header extract-desired-headers
+
+    (struct pop3 ())
+    (struct cannot-connect ())
+    (struct username-rejected ())
+    (struct password-rejected ())
+    (struct not-ready-for-transaction (communicator))
+    (struct not-given-headers (communicator message))
+    (struct not-given-message (communicator message))
+    (struct cannot-delete-message (communicator message))
+    (struct disconnect-not-quiet (communicator))
+    (struct malformed-server-response (communicator))
+
+    )
+  )

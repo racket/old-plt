@@ -975,7 +975,8 @@ read_list(Scheme_Object *port,
 	      : list);
     } else if ((ch == '.')
 	       && (next = scheme_peekc(port),
-		   (isspace(next)
+		   ((next == EOF)
+		    || isspace(next)
 		    || (next == '(')
 		    || (next == ')')
 		    || (next == '"')
@@ -1341,7 +1342,7 @@ read_character(Scheme_Object *port CURRENTPROCPRM)
     i = 1;
     buf = onstack;
     buf[0] = tolower(ch);
-    while ((ch = scheme_peekc(port), isalpha(ch))) {
+    while ((ch = scheme_peekc(port), (ch != EOF) && isalpha(ch))) {
       scheme_getc(port);
       if (i >= size) {
 	oldsize = size;

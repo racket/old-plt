@@ -1,6 +1,6 @@
 ;;
 ;;  zodiac:reader-code@
-;;  $Id: reader.ss,v 1.3 1997/09/10 19:14:08 shriram Exp $
+;;  $Id: reader.ss,v 1.4 1998/11/04 19:52:53 mflatt Exp $
 ;;
 ;;  Zodiac Reader  July 96
 ;;  mwk, plt group, Rice university.
@@ -115,6 +115,7 @@
    (define pack-vector    (pack-seqn  zodiac:make-vector))
 
    (define allow-improper-lists (make-parameter #t))
+   (define allow-reader-quasiquote (make-parameter #t))
 
    (define pack-imp-list 
      (lambda (open-token  close-token  head  len  dot)
@@ -125,7 +126,7 @@
                      head  len  dot '())])
          (if (allow-improper-lists)
              obj 
-             (z:r-s-e  obj  "improper lists are not allowed")))))
+             (z:r-s-e  obj  "Misuse of `.': improper lists are not allowed")))))
 
    ;; convert  (a . (b . ())) ==> (a b)  if parameter set
    ;; and obj after dot is list or imp-list.
@@ -190,6 +191,14 @@
                                (eq?  type  'quasiquote)
                                (eq?  type  'unquote) 
                                (eq?  type  'unquote-splicing))
+			   (unless (or (eq?  type  'quote) 
+				       (allow-reader-quasiquote))
+			     (z:r-s-e  token 
+				       (format "illegal use of \"~a\""
+					       (case type
+						 [(quasiquote) "`"]
+						 [(unquote) ","]
+						 [else ",@"]))))
                            (read-quote  type  token)]
                           [(eq?  type  'period) 
                            (make-period  (zodiac-start  token))]

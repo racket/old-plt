@@ -37,6 +37,7 @@
 				allow-set!-on-undefined?
 				unmatched-cond/case-is-error?
 				allow-improper-lists?
+				allow-reader-quasiquote?
 				sharing-printing?
 				abbreviate-cons-as-list?
 				signal-undefined
@@ -58,6 +59,7 @@
 			       (allow-set!-on-undefined? #f)
 			       (unmatched-cond/case-is-error? #t)
 			       (allow-improper-lists? #f)
+			       (allow-reader-quasiquote? #f)
 			       (sharing-printing? #f)
 			       (abbreviate-cons-as-list? #f)
 			       (signal-undefined #t)
@@ -76,6 +78,7 @@
 				   (allow-set!-on-undefined? #f)
 				   (unmatched-cond/case-is-error? #t)
 				   (allow-improper-lists? #f)
+				   (allow-reader-quasiquote? #t)
 				   (sharing-printing? #f)
 				   (abbreviate-cons-as-list? #f)
 				   (signal-undefined #t)
@@ -94,6 +97,7 @@
 			       (allow-set!-on-undefined? #f)
 			       (unmatched-cond/case-is-error? #t)
 			       (allow-improper-lists? #f)
+			       (allow-reader-quasiquote? #t)
 			       (sharing-printing? #t)
 			       (abbreviate-cons-as-list? #t)
 			       (signal-undefined #t)
@@ -112,6 +116,7 @@
 			       (allow-set!-on-undefined? #f)
 			       (unmatched-cond/case-is-error? #f)
 			       (allow-improper-lists? #t)
+			       (allow-reader-quasiquote? #t)
 			       (sharing-printing? #f)
 			       (abbreviate-cons-as-list? #t)
 			       (signal-undefined #f)
@@ -130,6 +135,7 @@
 				    (allow-set!-on-undefined? #f)
 				    (unmatched-cond/case-is-error? #f)
 				    (allow-improper-lists? #t)
+				    (allow-reader-quasiquote? #t)
 				    (sharing-printing? #f)
 				    (abbreviate-cons-as-list? #t)
 				    (signal-undefined #f)
@@ -535,6 +541,8 @@
 	    ;; via a dynamic link in basis.ss
 	    (zodiac:allow-improper-lists (or (not (setting-use-zodiac? setting))
 					     (setting-allow-improper-lists? setting)))
+	    ;; Allow ` , and ,@ ? - FIXME!
+	    (zodiac:allow-reader-quasiquote (setting-allow-reader-quasiquote? setting))
 	    
 	    (eq?-only-compares-symbols (setting-eq?-only-compares-symbols? setting))
 	    (<=-at-least-two-args (setting-<=-at-least-two-args setting))

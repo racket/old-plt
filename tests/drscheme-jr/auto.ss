@@ -1,6 +1,4 @@
 ;; Language levels test suite.
-;; To run:
-;;   mzscheme -r auto.ss -l <Language>
 
 ;; The current implementation is specific to DrScheme Jr, but I'll
 ;; abstract out the right things to make it work for DrScheme, too.
@@ -8,7 +6,7 @@
 ;; There's a little source-position testing here (it checks to make
 ;; sure a reasonable line is reported).
 
-(let ()
+(define (go)
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;                      Testing utilities                       ;;
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -250,7 +248,6 @@
 		    "reference to undefined identifier")))
   (try "some-undefined-identifier"
        '(error "reference to undefined identifier"))
-
 
   ;; ;;;;;;;;;;;;;;;;;;;;;; lambda ;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -576,4 +573,19 @@
   (printf "~nDone: ~a.~n"
 	  (if error?
 	      "ERRORS ENCOUNTERED"
-	      "no errors")))
+	      "no errors"))
+
+  error?)
+
+(let ([go go]
+      [errs? #f])
+  (set! argv #("-l" "Beginner"))
+  (set! errs? (go))
+  (set! argv #("-l" "Intermediate"))
+  (set! errs? (or (go) errs?))
+  (set! argv #("-l" "Advanced"))
+  (set! errs? (or (go) errs?))
+  (set! argv #("-l" "MzSchemeDebug"))
+  (set! errs? (or (go) errs?))
+  (when errs?
+    (printf "THERE WERE ERRORS~n")))

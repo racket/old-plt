@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.169 1999/01/16 15:47:06 mflatt Exp $
+; $Id: scm-main.ss,v 1.170 1999/02/01 22:39:10 mflatt Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -552,7 +552,7 @@
 				      (null? (cddr v)))
 				 (loop (cadr v) (string-append "'" prefix))]
 				[else (values v prefix)]))])
-		(static-error expr "misuse of quote: '~a~s is not a symbol" prefix v)))
+		(static-error expr "Misuse of quote: '~a~s is not a symbol" prefix v)))
 	    (static-error expr "Malformed quote")))
 	(static-error expr "Malformed quote"))))
 
@@ -1013,7 +1013,7 @@
 	  (or (pat:match-and-rewrite expr m&e out-pattern kwd env)
 	    (static-error expr "Malformed delay")))))
 
-  (add-primitivized-macro-form 'delay intermediate-vocabulary delay-macro)
+  (add-primitivized-macro-form 'delay advanced-vocabulary delay-macro)
   (add-primitivized-macro-form 'delay scheme-vocabulary delay-macro)
 
   (define time-macro
@@ -1848,13 +1848,17 @@
     (b-e/c-t 'begin-construction-time "begin-construction-time" "construction" #t)
     (b-e/c-t 'begin-elaboration-time "begin-elaboration-time" "elaboration" #f))
 
-  (add-primitivized-macro-form 'unquote common-vocabulary
+  (define unquote-micro
     (lambda (expr env)
       (static-error expr "Unquote outside quasiquote")))
+  (add-primitivized-macro-form 'unquote intermediate-vocabulary unquote-micro)
+  (add-primitivized-macro-form 'unquote scheme-vocabulary unquote-micro)
 
-  (add-primitivized-macro-form 'unquote-splicing common-vocabulary
+  (define unquote-splicing-micro
     (lambda (expr env)
       (static-error expr "Unquote-splicing outside quasiquote")))
+  (add-primitivized-macro-form 'unquote-splicing intermediate-vocabulary unquote-splicing-micro)
+  (add-primitivized-macro-form 'unquote-splicing scheme-vocabulary unquote-splicing-micro)
 
   (include "quasi.ss")
 

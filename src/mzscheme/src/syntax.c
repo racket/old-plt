@@ -597,11 +597,10 @@ define_execute(Scheme_Object *vars, Scheme_Object *vals, int defmacro,
 	
 	  scheme_set_global_bucket("define-values", b, values[i], 1);
 	  scheme_shadow(((Scheme_Bucket_With_Home *)b)->home, (Scheme_Object *)b->key, 1);
-	  
-	  if (defmacro)
-	    scheme_pop_prefix(save_runstack);
 	}
       }
+      if (defmacro)
+	scheme_pop_prefix(save_runstack);
 	
       return scheme_void;
     }

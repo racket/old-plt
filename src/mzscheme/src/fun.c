@@ -1053,7 +1053,7 @@ void *top_level_do(void *(*k)(void), int eb, void *sj_start)
       scheme_set_external_stack_val(external_stack);
 #endif
     if (cc_ok) {
-      if (*cc_ok == 1) {
+      if ((*cc_ok == 1) && (cc_ok != thread_init_cc_ok)) {
 	/* It wasn't used */
 	available_cc_ok = cc_ok;
       } else
@@ -1097,7 +1097,7 @@ void *top_level_do(void *(*k)(void), int eb, void *sj_start)
   }
 
   if (cc_ok) {
-    if (*cc_ok == 1) {
+    if ((*cc_ok == 1) && (cc_ok != thread_init_cc_ok)) {
       /* It wasn't used */
       available_cc_ok = cc_ok;
     } else

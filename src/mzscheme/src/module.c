@@ -3652,6 +3652,13 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 
 	  names = scheme_named_map_1(NULL, stx_sym, names, (Scheme_Object *)env->genv);
 
+	  /* Add a renaming for each name: */
+	  for (l= names; SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {
+	    m = SCHEME_CAR(l);
+	    scheme_extend_module_rename(for_stx ? et_rn : rn, self_modidx, m, m, self_modidx, m,
+					for_stx ? 1 : 0);
+	  }
+	  
 	  mrec.comp = 1;
 	  mrec.dont_mark_local_use = 0;
 	  mrec.resolve_module_ids = 0;
@@ -3683,13 +3690,6 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	  eval_defmacro(names, count, m, eenv->genv, rhs_env, rp, mrec.max_let_depth, 0, 
 			(for_stx ? env->genv->exp_env->toplevel : env->genv->syntax), for_stx,
 			rec[drec].certs);
-
-	  /* Add a renaming for each name: */
-	  for (l= names; SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {
-	    m = SCHEME_CAR(l);
-	    scheme_extend_module_rename(for_stx ? et_rn : rn, self_modidx, m, m, self_modidx, m,
-					for_stx ? 1 : 0);
-	  }
 
 	  if (rec[drec].comp)
 	    e = NULL;

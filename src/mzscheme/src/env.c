@@ -1947,7 +1947,7 @@ scheme_lookup_binding(Scheme_Object *find_id, Scheme_Comp_Env *env, int flags,
 		      Scheme_Env **_menv, int *_protected)
 {
   Scheme_Comp_Env *frame;
-  int j = 0, p = 0, modpos, skip_stops = 0, mod_defn_phase;
+  int j = 0, p = 0, modpos, skip_stops = 0, mod_defn_phase, module_self_reference = 0;
   Scheme_Bucket *b;
   Scheme_Object *val, *modidx, *modname, *src_find_id, *find_global_id;
   Scheme_Env *genv;
@@ -2042,6 +2042,9 @@ scheme_lookup_binding(Scheme_Object *find_id, Scheme_Comp_Env *env, int flags,
       modidx = NULL;
       modname = NULL;
       genv = env->genv;
+      /* So we can distinguish between unbound variables in a module
+	 and references to top-level definitions: */
+      module_self_reference = 1;
     } else {
       genv = scheme_module_access(modname, env->genv, mod_defn_phase);
 
@@ -2125,16 +2128,28 @@ scheme_lookup_binding(Scheme_Object *find_id, Scheme_Comp_Env *env, int flags,
   }
 
   if (!modname && (flags & SCHEME_SETTING) && (genv->module && !genv->rename)) {
-    /* Check for set! of unbound variable: */
-    
+    /* Check for set! of unbound variable: */    
     if (!scheme_lookup_in_table(genv->toplevel, (const char *)find_global_id)) {
       scheme_wrong_syntax(scheme_set_stx_string, NULL, src_find_id, "unbound variable in module");
       return NULL;
     }
   }
 
-  if (!modname && (flags & SCHEME_NULL_FOR_UNBOUND))
-    return NULL;
+  if (!modname && (flags & SCHEME_NULL_FOR_UNBOUND)) {
+    if (module_self_reference) {
+      /* Since the module has a rename for this id, it's certainly defined. */
+      if (!(flags & SCHEME_RESOLVE_MODIDS)) {
+	/* This is the same thing as #%top handling in compile mode. But
+	   for expand mode, it prevents wrapping the identifier with #%top. */
+	/* Don't need a pos, because the symbol's gensym-ness (if any) will be
+	   preserved within the module. */
+	return scheme_hash_module_variable(genv, genv->module->self_modidx, find_id, 
+					   genv->module->insp,
+					   -1, genv->mod_phase);
+      }
+    } else
+      return NULL;
+  }
 
   /* Used to have `&& !SAME_OBJ(modidx, modname)' below, but that was a bad
      idea, because it causes module instances to be preserved. */
@@ -2935,14 +2950,22 @@ local_module_introduce(int argc, Scheme_Object *argv[])
   if (!SCHEME_STXP(s))
     scheme_wrong_type("syntax-local-module-introduce", "syntax", 0, argc, argv);
 
-  if (env->genv->module) {
-    if (env->genv->module->rn_stx && !SAME_OBJ(scheme_true, env->genv->module->rn_stx)) {
-      v = scheme_stx_to_rename(env->genv->module->rn_stx);
-      s = scheme_add_rename(s, v);
-    }
-    if (env->genv->module->et_rn_stx && !SAME_OBJ(scheme_true, env->genv->module->et_rn_stx)) {
-      v = scheme_stx_to_rename(env->genv->module->et_rn_stx);
-      s = scheme_add_rename(s, v);
+  v = scheme_stx_source_module(s, 0);
+  if (SCHEME_FALSEP(v)) {
+    if (env->genv->module) {
+      if (env->genv->module->rn_stx && !SAME_OBJ(scheme_true, env->genv->module->rn_stx)) {
+	v = scheme_stx_to_rename(env->genv->module->rn_stx);
+	s = scheme_add_rename(s, v);
+      }
+      if (env->genv->module->et_rn_stx && !SAME_OBJ(scheme_true, env->genv->module->et_rn_stx)) {
+	v = scheme_stx_to_rename(env->genv->module->et_rn_stx);
+	s = scheme_add_rename(s, v);
+      }
+    } else {
+      if (env->genv->rename)
+	s = scheme_add_rename(s, env->genv->rename);
+      if (env->genv->et_rename)
+	s = scheme_add_rename(s, env->genv->et_rename);
     }
   }
 

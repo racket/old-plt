@@ -36,6 +36,9 @@
       [SCHEME-MAIN : zodiac:scheme-main^
 	(zodiac:scheme-main@ MISC TOP-STRUCTS READ-STRUCTS SEXP
 	  PATTERN SCHEME-CORE EXPANDER INTERFACE)]
+      [SCHEME-SPIDEY : zodiac:scheme-mrspidey^
+	(zodiac:scheme-mrspidey@ MISC TOP-STRUCTS READ-STRUCTS SEXP
+	  PATTERN SCHEME-CORE SCHEME-MAIN EXPANDER INTERFACE)]
       [SCHEME-OBJ : zodiac:scheme-objects^
 	(zodiac:scheme-objects@ MISC TOP-STRUCTS READ-STRUCTS SEXP
 	  PATTERN SCHEME-CORE EXPANDER INTERFACE)]
@@ -51,4 +54,5 @@
       (open SEXP) (open PATTERN) (open CORRELATE) (open EXPANDER)
       (open SCHEME-CORE) (open SCHEME-MAIN)
       (open SCHEME-OBJ) (open SCHEME-UNIT)
-      (open SCHEME-OBJ+UNIT))))
+      (open SCHEME-OBJ+UNIT)
+      (open SCHEME-SPIDEY))))

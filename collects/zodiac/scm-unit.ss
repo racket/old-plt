@@ -224,7 +224,9 @@
     (add-sym-micro unit-exports-vocab
       (lambda (expr env attributes vocab)
 	(register-export expr attributes)
-	(cons expr expr)))
+	(let ((expand-vocab (get-attribute attributes 'exports-expand-vocab)))
+	  (cons (expand-expr expr env attributes expand-vocab)
+	    expr))))
 
     (add-list-micro unit-exports-vocab
       (let* ((kwd '())
@@ -240,7 +242,10 @@
 		  (valid-syntactic-id? internal)
 		  (valid-syntactic-id? external)
 		  (register-export internal attributes)
-		  (cons internal external))))
+		  (let ((expand-vocab (get-attribute attributes
+					'exports-expand-vocab)))
+		    (cons (expand-expr internal env attributes expand-vocab)
+		      external)))))
 	    (else
 	      (static-error expr "Malformed export declaration"))))))
 
@@ -276,6 +281,8 @@
 					       attributes
 					       unit-clauses-vocab))
 					in:clauses))
+			(_ (put-attribute attributes 'exports-expand-vocab
+			     unit-clauses-vocab))
 			(proc:exports (map (lambda (e)
 					     (expand-expr e env
 					       attributes
@@ -380,11 +387,11 @@
 		       (exports (pat:pexpand '(exports ...) p-env kwd)))
 		  (valid-syntactic-id? tag)
 		  (if (check-link tag attributes)
-		    (cons tag
-		      (map (lambda (e)
+		    (map (lambda (e)
+			   (cons tag
 			     (expand-expr e env attributes
-			       c-unit-exports-vocab))
-			exports))
+			       c-unit-exports-vocab)))
+		      exports)
 		    (static-error tag "Not a valid tag")))))
 	    (else
 	      (static-error expr "Invalid export clause"))))))
@@ -438,10 +445,11 @@
 					 (loop (cdr args))))))))
 			  in:link-tags in:link-bodies))
 		      (proc:export-clauses
-			(map (lambda (e)
-			       (expand-expr e env
-				 attributes c-unit-export-clause-vocab))
-			  in:export-clauses))
+			(apply append
+			  (map (lambda (e)
+				 (expand-expr e env
+				   attributes c-unit-export-clause-vocab))
+			    in:export-clauses)))
 		      (_ (retract-env (map car proc:imports) env)))
 		    (remove-vars-attribute attributes)
 		    (create-compound-unit-form
@@ -518,7 +526,7 @@
       (lambda (expr p->r)
 	`(unit (import ,@(map p->r (unit-form-imports expr)))
 	   (export ,@(map (lambda (e)
-			    `(,(sexp->raw (car e)) ,(sexp->raw (cdr e))))
+			    `(,(p->r (car e)) ,(sexp->raw (cdr e))))
 		       (unit-form-exports expr)))
 	   ,@(map p->r (unit-form-clauses expr)))))
 
@@ -542,12 +550,9 @@
 		 (compound-unit-form-links expr)))
 	   (export
 	     ,@(map (lambda (export-clause)
-		      (let ((tag (car export-clause))
-			     (exports (map (lambda (export)
-					     `(,(sexp->raw (car export))
-						,(sexp->raw (cdr export))))
-					(cdr export-clause))))
-			`(,(sexp->raw tag) ,@exports)))
+		      `(,(sexp->raw (car export-clause))
+			 (,(sexp->raw (cadr export-clause))
+			   ,(sexp->raw (cddr export-clause)))))
 		 (compound-unit-form-exports expr))))))
 
     (extend-parsed->raw invoke-unit-form?

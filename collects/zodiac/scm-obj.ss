@@ -1,5 +1,3 @@
-; See also mzlib/macro.ss
-
 (define zodiac:scheme-objects@
   (unit/sig zodiac:scheme-objects^
     (import zodiac:misc^ (z : zodiac:structures^) (z : zodiac:reader-structs^)

@@ -27,6 +27,7 @@
 (load-recent "corelate")
 (load-recent "scm-core")
 (load-recent "scm-main")
+(load-recent "scm-spdy")
 (load-recent "scm-obj")
 (load-recent "scm-unit")
 (load-recent "scm-ou")

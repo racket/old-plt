@@ -172,14 +172,16 @@
     ; ----------------------------------------------------------------------
 
     (define scheme-expand
-      (lambda (expr)
+      (opt-lambda (expr (vocab scheme-vocabulary)
+		    (params (current-parameterization)))
 	(let ((attr (make-attributes)))
-	  (expand expr attr scheme-vocabulary))))
+	  (expand expr attr vocab params))))
 
     (define scheme-expand-program
-      (lambda (exprs)
+      (opt-lambda (exprs (vocab scheme-vocabulary)
+		    (params (current-parameterization)))
 	(let ((attr (make-attributes)))
-	  (expand-program exprs attr scheme-vocabulary))))
+	  (expand-program exprs attr vocab params))))
 
     ; ----------------------------------------------------------------------
 

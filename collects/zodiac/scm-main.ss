@@ -1360,13 +1360,15 @@
 		  (let ((real-name (sexp->raw macro-name))
 			 (real-handler (sexp->raw macro-handler)))
 		    (add-macro-form real-name vocab
-		      (eval
-			`(lambda (m-expr m-env)
-			   (,structurize-syntax
-			     (#%apply ,real-handler
-			       (let ((in (#%cdr (,sexp->raw m-expr))))
-				 in))
-			     m-expr))))
+		      (with-parameterization zodiac-parameterization
+			(lambda ()
+			  (eval
+			    `(lambda (m-expr m-env)
+			       (,structurize-syntax
+				 (#%apply ,real-handler
+				   (let ((in (#%cdr (,sexp->raw m-expr))))
+				     in))
+				 m-expr))))))
 		    (expand-expr (structurize-syntax '(#%void) expr)
 		      env attributes vocab)))))
 	    (else

@@ -157,13 +157,17 @@
 	  (else
 	    (static-error expr "Invalid body")))))
 
+    (define zodiac-parameterization (current-parameterization))
+
     (define expand
-      (lambda (expr attr vocab)
+      (opt-lambda (expr attr vocab (params (current-parameterization)))
+	(set! zodiac-parameterization params)
 	(expand-expr expr (make-new-environment) attr vocab)))
 
     (define expand-program
-      (lambda (exprs attr vocab)
-	(put-attribute attr 'top-levels (make-hash-table))
+      (opt-lambda (exprs attr vocab (params (current-parameterization)))
+	(set! zodiac-parameterization params)
+ 	(put-attribute attr 'top-levels (make-hash-table))
 	(map (lambda (expr)
 	       (expand-expr expr (make-new-environment) attr vocab))
 	  exprs)))

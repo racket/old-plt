@@ -20,6 +20,7 @@
 
 (define-signature zodiac:expander^
   (expand expand-program expand-expr
+    zodiac-parameterization
     add-micro-form add-macro-form
     add-list-micro add-ilist-micro add-lit-micro add-sym-micro
     get-list-micro get-ilist-micro get-lit-micro get-sym-micro
@@ -136,6 +137,22 @@
 (define-signature zodiac:scheme-objects+units^
   ())
 
+(define-signature zodiac:scheme-mrspidey^
+  ((struct poly-form (exp))
+    (struct :-form (exp type))
+    (struct type:-form (type attrs))
+    (struct st:control-form (para val))
+    (struct cache-form (exp za kind cd))
+    (struct define-type-form (sym type))
+    (struct define-constructor-form (sym modes))
+    create-poly-form
+    create-:-form
+    create-type:-form
+    create-st:control-form
+    create-cache-form
+    create-define-type-form
+    create-define-constructor-form))
+
 (define-signature zodiac:system^
   ((open zodiac:structures^)
     (open zodiac:scanner-parameters^)
@@ -149,4 +166,5 @@
     (open zodiac:scheme-main^)
     (open zodiac:scheme-objects^)
     (open zodiac:scheme-units^)
-    (open zodiac:scheme-objects+units^)))
+    (open zodiac:scheme-objects+units^)
+    (open zodiac:scheme-mrspidey^)))

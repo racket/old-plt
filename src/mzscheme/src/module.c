@@ -2949,11 +2949,23 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	fst = NULL;
 
       if (fst && SCHEME_STX_SYMBOLP(fst) && scheme_stx_module_eq(begin_stx, fst, 0)) {
+	Scheme_Object *l, *ll, *a;
+
 	if (scheme_stx_proper_list_length(e) < 0)
 	  scheme_wrong_syntax(NULL, NULL, form, "bad syntax (" IMPROPER_LIST_FORM ")");
-	fst = SCHEME_STX_CDR(e);
+
+	/* Extract body of `begin' and add tracking information */
+	l = scheme_copy_list(scheme_flatten_syntax_list(SCHEME_STX_CDR(e), NULL));
+	for (ll = l; !SCHEME_NULLP(ll); ll = SCHEME_CDR(ll)) {
+	  a = SCHEME_CAR(ll);
+	  a = scheme_stx_track(a, e, fst);
+	  SCHEME_CAR(ll) = a;
+	}
+	
+	
 	fm = SCHEME_STX_CDR(fm);
-	fm = scheme_append(scheme_flatten_syntax_list(fst, NULL), fm);
+	fm = scheme_append(l, fm);
+	
 	if (SCHEME_STX_NULLP(fm)) {
 	  e = NULL;
 	  break;

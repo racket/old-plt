@@ -1599,7 +1599,7 @@ Bool wxDC::Blit(float xdest, float ydest, float width, float height,
 
 	  GdiFlush();
 	  for (j = 0; j < ih; j++) {
-	    pPixel = (BYTE *) pBits + iw * 4 * (ih - j);
+	    pPixel = (BYTE *) pBits + iw * 4 * (ih - j - 1);
 	    for (i = 0; i < iw; i++) {
 	      mcol = ::GetPixel(mdc, i + xsrc1, j + ysrc1);
 	      gray = ((int)GetRValue(mcol)

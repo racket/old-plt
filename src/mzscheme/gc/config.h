@@ -503,7 +503,7 @@
 #	  define HEAP_START DATAEND
 #       endif
 #	define PROC_VDB
-#	define HEURISTIC1
+#	define HEURISTIC2
 #	include <unistd.h>
 #       define GETPAGESIZE()  sysconf(_SC_PAGESIZE)
 		/* getpagesize() appeared to be missing from at least one */

@@ -585,8 +585,6 @@ ptr_t GC_get_stack_base()
 	     result = (ptr_t)((((word)(&dummy))
 	     		       + STACKBOTTOM_ALIGNMENT_M1)
 			      & ~STACKBOTTOM_ALIGNMENT_M1);
-             /* MATTHEW: if it's all the way at the top, result is zero! */
-             if (!result) result = (ptr_t)-1;
 #	   else
 	     result = (ptr_t)(((word)(&dummy))
 			      & ~STACKBOTTOM_ALIGNMENT_M1);

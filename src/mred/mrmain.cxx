@@ -44,6 +44,12 @@ extern long wxMediaCreatorId;
 int wx_in_terminal;
 #endif
 
+#ifdef MPW_CPLUS
+extern "C" { typedef int (*ACTUAL_MAIN_PTR)(int argc, char **argv); }
+# define CAST_ACTUAL_MAIN (ACTUAL_MAIN_PTR)
+#else
+# define CAST_ACTUAL_MAIN /* empty */
+#endif
 
 #if defined(_IBMR2)
 static void dangerdanger(int)
@@ -344,7 +350,7 @@ int main(int argc, char *argv[])
   }
 #endif
 
-  scheme_actual_main = actual_main;
+  scheme_actual_main = CAST_ACTUAL_MAIN actual_main;
   mred_run_from_cmd_line = run_from_cmd_line;
   mred_finish_cmd_line_run = finish_cmd_line_run;
 

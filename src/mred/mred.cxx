@@ -69,11 +69,14 @@
 #endif
 
 #ifdef wx_mac
-# include <unistd.h>
 # ifndef WX_CARBON
 #  include <Events.h>
 # endif
+# ifdef OS_X
 extern int wx_in_terminal;
+# else
+#  define wx_in_terminal 0
+# endif
 #else
 #define wx_in_terminal 0
 #endif
@@ -96,6 +99,51 @@ wxFrame *mred_real_main_frame;
 extern void wxMediaIOCheckLSB(void);
 
 #include "mred.h"
+
+#ifdef MPW_CPLUS
+extern "C" {
+  typedef void (*GC_F_PTR)(void *, void *);
+  typedef void (*ON_KILL_PTR)(struct Scheme_Thread *p);
+  typedef Scheme_Object *(*MK_PTR)(void);
+  typedef void (*IGNORE_PTR)(char *, GC_word);
+  typedef void (*CONSOLE_PRINTF_PTR)(char *str, ...);
+  typedef void (*CONSOLE_OUTPUT_PTR)(char *str, long len);
+  typedef void (*EXIT_PTR)(int);
+}
+# define CAST_SCP (Scheme_Closed_Prim *)
+# define CAST_GCP (GC_F_PTR)
+# define CAST_SCCC (Scheme_Close_Custodian_Client *)
+# define CAST_BLKCHK (Scheme_Ready_Fun)
+# define CAST_WU (Scheme_Needs_Wakeup_Fun)
+# define CAST_TOK (ON_KILL_PTR)
+# define CAST_GS (Scheme_Get_String_Fun)
+# define CAST_IREADY (Scheme_In_Ready_Fun)
+# define CAST_ICLOSE (Scheme_Close_Input_Fun)
+# define CAST_WS (Scheme_Write_String_Fun)
+# define CAST_MK (MK_PTR)
+# define CAST_SLEEP (SLEEP_PROC_PTR)
+# define CAST_IGNORE (IGNORE_PTR)
+# define CAST_PRINTF (CONSOLE_PRINTF_PTR)
+# define CAST_OUTPUT (CONSOLE_OUTPUT_PTR)
+# define CAST_EXIT (EXIT_PTR)
+#else
+# define CAST_SCP /* empty */
+# define CAST_GCP /* empty */
+# define CAST_SCCC  /* empty */
+# define CAST_BLKCHK /* empty */
+# define CAST_WU /* empty */
+# define CAST_TOK /* empty */
+# define CAST_GS /* empty */
+# define CAST_IREADY /* empty */
+# define CAST_ICLOSE /* empty */
+# define CAST_WS /* empty */
+# define CAST_MK /* empty */
+# define CAST_SLEEP /* empty */
+# define CAST_IGNORE /* empty */
+# define CAST_PRINTF /* empty */
+# define CAST_OUTPUT /* empty */
+# define CAST_EXIT /* empty */
+#endif
 
 /* Set by mrmain.cxx: */
 /* (The indirection is needed to avoid mutual .dll dependencies.) */
@@ -599,7 +647,7 @@ static MrEdContext *MakeContext(MrEdContext *c, Scheme_Config *config)
 		   NULL, NULL);
 #else
   scheme_register_finalizer(gcOBJ_TO_PTR(c->finalized),
-			    CollectingContext, NULL,
+			    CAST_GCP CollectingContext, NULL,
 			    NULL, NULL);
 #endif
   WXGC_IGNORE(c, c->finalized);
@@ -622,7 +670,9 @@ static MrEdContext *MakeContext(MrEdContext *c, Scheme_Config *config)
   
   {
     Scheme_Custodian_Reference *mr;
-    mr = scheme_add_managed(NULL, (Scheme_Object *)mr_hop, kill_eventspace, NULL, 0);
+    mr = scheme_add_managed(NULL, (Scheme_Object *)mr_hop, 
+			    CAST_SCCC kill_eventspace, 
+			    NULL, 0);
     c->mref = mr;
   }
 
@@ -968,7 +1018,7 @@ void MrEdDoNextEvent(MrEdContext *c, int (*alt)(void *), void *altdata)
 
     scheme_current_thread->block_descriptor = -1;
     scheme_current_thread->blocker = (Scheme_Object *)c;
-    scheme_current_thread->block_check = check_for_nested_event;
+    scheme_current_thread->block_check = CAST_BLKCHK check_for_nested_event;
     scheme_current_thread->block_needs_wakeup = NULL;
     do {
       scheme_thread_block(0);
@@ -1086,7 +1136,7 @@ static Scheme_Object *handle_events(void *cx, int, Scheme_Object **)
 
   this_thread = scheme_current_thread;
   c->handler_running = this_thread;
-  this_thread->on_kill = on_handler_killed;
+  this_thread->on_kill = CAST_TOK on_handler_killed;
   this_thread->kill_data = c;
   c->suspended = 0;
   c->ready = 0;
@@ -1141,7 +1191,7 @@ static void event_found(MrEdContext *c)
     c->waiting_for_nested = 0;
   } else {
     Scheme_Object *cp;
-    cp = scheme_make_closed_prim(handle_events, c);
+    cp = scheme_make_closed_prim(CAST_SCP handle_events, c);
     scheme_thread_w_custodian(cp, c->main_config,
 			    (Scheme_Custodian *)scheme_get_param(c->main_config, 
 							       MZCONFIG_CUSTODIAN));
@@ -1280,7 +1330,7 @@ void wxDoEvents()
 
     {
       Scheme_Object *cp;
-      cp = scheme_make_closed_prim(handle_events, c);
+      cp = scheme_make_closed_prim(CAST_SCP handle_events, c);
       scheme_thread(cp, c->main_config);
     }
 
@@ -1292,7 +1342,7 @@ void wxDoEvents()
     /* Block until initialized: */
     scheme_current_thread->block_descriptor = -1;
     scheme_current_thread->blocker = NULL;
-    scheme_current_thread->block_check = check_initialized;
+    scheme_current_thread->block_check = CAST_BLKCHK check_initialized;
     scheme_current_thread->block_needs_wakeup = NULL;
     do {
       scheme_thread_block(0);
@@ -1304,8 +1354,8 @@ void wxDoEvents()
     do {
       scheme_current_thread->block_descriptor = -1;
       scheme_current_thread->blocker = NULL;
-      scheme_current_thread->block_check = try_dispatch;
-      scheme_current_thread->block_needs_wakeup = wakeup_on_dispatch;
+      scheme_current_thread->block_check = CAST_BLKCHK try_dispatch;
+      scheme_current_thread->block_needs_wakeup = CAST_WU wakeup_on_dispatch;
 
       scheme_thread_block(0);
 
@@ -1316,8 +1366,6 @@ void wxDoEvents()
     } while (KEEP_GOING);
   }
 }
-
-typedef int (*a_Block_Check_Function)(Scheme_Object *);
 
 void wxDispatchEventsUntil(int (*f)(void *), void *data)
 {
@@ -1331,7 +1379,7 @@ void wxDispatchEventsUntil(int (*f)(void *), void *data)
     do {
       scheme_current_thread->block_descriptor = -1;
       scheme_current_thread->blocker = (Scheme_Object *)data;
-      scheme_current_thread->block_check = (a_Block_Check_Function)f;
+      scheme_current_thread->block_check = (Scheme_Ready_Fun)f;
       scheme_current_thread->block_needs_wakeup = NULL;
       do {
 	scheme_thread_block(0);
@@ -1347,7 +1395,7 @@ void wxDispatchEventsUntil(int (*f)(void *), void *data)
   }
 }
 
-static void (*mzsleep)(float secs, void *fds);
+static SLEEP_PROC_PTR mzsleep;
 
 static void MrEdSleep(float secs, void *fds)
 {
@@ -1909,6 +1957,10 @@ static void MrEdSchemeMessages(char *msg, ...)
     }
   } else {
 # define VSP_BUFFER_SIZE 4096
+# ifdef MPW_CPLUS
+    /* FIXME: No vsnprintf in MPW. */
+#  define vsnprintf(x, y, z, w) vsprintf(x, z, w)
+# endif
     char buffer[VSP_BUFFER_SIZE];
     MSC_IZE(vsnprintf)(buffer, VSP_BUFFER_SIZE, msg, args);
     ioFrame->media->Insert((char *)buffer, ioFrame->endpos);
@@ -2034,10 +2086,10 @@ static Scheme_Object *MrEdMakeStdIn(void)
 
   ip = scheme_make_input_port(scheme_make_port_type("mred-console-input-port"), 
 			      readp,
-			      mrconsole_get_string,
+			      CAST_GS mrconsole_get_string,
 			      NULL,
-			      mrconsole_char_ready,
-			      mrconsole_close,
+			      CAST_IREADY mrconsole_char_ready,
+			      CAST_ICLOSE mrconsole_close,
 			      NULL,
 			      0);
   
@@ -2065,7 +2117,7 @@ static Scheme_Object *MrEdMakeStdOut(void)
   Scheme_Object *outtype = scheme_make_port_type("stdout");
 
   return (Scheme_Object *)scheme_make_output_port(outtype, NULL,
-						  stdout_write,
+						  CAST_WS stdout_write,
 						  NULL, NULL, NULL, 0);
 }
 
@@ -2088,7 +2140,7 @@ static Scheme_Object *MrEdMakeStdErr(void)
   Scheme_Object *errtype = scheme_make_port_type("stderr");
 
   return (Scheme_Object *)scheme_make_output_port(errtype, NULL,
-						  stderr_write,
+						  CAST_WS stderr_write,
 						  NULL, NULL, NULL, 0);
 }
 #endif
@@ -2468,8 +2520,11 @@ void *wxOutOfMemory()
   return NULL;
 } 
 
+extern "C" {
+  typedef void (*OOM_ptr)(void);
+}
 
-static void (*mr_save_oom)(void);
+static OOM_ptr mr_save_oom;
 static mz_jmp_buf oom_buf;
 
 static void not_so_much_memory(void)
@@ -2486,7 +2541,7 @@ void *wxMallocAtomicIfPossible(size_t s)
 
   mr_save_oom = GC_out_of_memory;
   if (!scheme_setjmp(oom_buf)) {
-    GC_out_of_memory = not_so_much_memory;
+    GC_out_of_memory = (OOM_ptr)not_so_much_memory;
     v = scheme_malloc_atomic(s);
   } else {
     v = NULL;
@@ -2543,7 +2598,7 @@ static Scheme_Env *setup_basic_env()
   scheme_set_param(scheme_config, mred_eventspace_param, (Scheme_Object *)mred_main_context);
 
   wxREGGLOB(def_dispatch);
-  def_dispatch = scheme_make_prim_w_arity(def_event_dispatch_handler,
+  def_dispatch = scheme_make_prim_w_arity(CAST_SP def_event_dispatch_handler,
 					  "default-event-dispatch-handler",
 					  1, 1);
   scheme_set_param(scheme_config, mred_event_dispatch_param, def_dispatch);
@@ -2559,7 +2614,7 @@ static Scheme_Env *setup_basic_env()
   mred_main_context->handler_running = scheme_current_thread;
 
   mzsleep = scheme_sleep;
-  scheme_sleep = MrEdSleep;
+  scheme_sleep = CAST_SLEEP MrEdSleep;
 
 #if ADD_OBJ_DUMP
   scheme_add_global("dump-object-stats", 
@@ -2584,16 +2639,16 @@ wxFrame *MrEdApp::OnInit(void)
 
 #if REDIRECT_STDIO || WINDOW_STDIO || WCONSOLE_STDIO
   if (!wx_in_terminal) {
-    scheme_make_stdin = MrEdMakeStdIn;
-    scheme_make_stdout = MrEdMakeStdOut;
-    scheme_make_stderr = MrEdMakeStdErr;
+    scheme_make_stdin = CAST_MK MrEdMakeStdIn;
+    scheme_make_stdout = CAST_MK MrEdMakeStdOut;
+    scheme_make_stderr = CAST_MK MrEdMakeStdErr;
   }
 #endif
 
 #if !defined(USE_SENORA_GC) && !defined(MZ_PRECISE_GC)
-  GC_set_warn_proc(MrEdIgnoreWarnings);
+  GC_set_warn_proc(CAST_IGNORE MrEdIgnoreWarnings);
 #endif
-  GC_out_of_memory = MrEdOutOfMemory;
+  GC_out_of_memory = (OOM_ptr)MrEdOutOfMemory;
 
 #ifdef SGC_STD_DEBUGGING
   scheme_external_dump_info = dump_cpp_info;
@@ -2604,9 +2659,9 @@ wxFrame *MrEdApp::OnInit(void)
 #endif
 
 #if REDIRECT_STDIO || WINDOW_STDIO || WCONSOLE_STDIO
-  scheme_console_printf = MrEdSchemeMessages;
+  scheme_console_printf = CAST_PRINTF MrEdSchemeMessages;
   if (!wx_in_terminal) {
-    scheme_console_output = MrEdSchemeMessagesOutput;
+    scheme_console_output = CAST_OUTPUT MrEdSchemeMessagesOutput;
   }
 #endif
 
@@ -2734,10 +2789,10 @@ void MrEdApp::RealInit(void)
 
   wxMediaIOCheckLSB(/* scheme_console_printf */);
 
-  scheme_current_thread->on_kill = on_main_killed;
+  scheme_current_thread->on_kill = CAST_TOK on_main_killed;
 #if WINDOW_STDIO
   if (!wx_in_terminal)
-    scheme_exit = MrEdExit;
+    scheme_exit = CAST_EXIT MrEdExit;
 #endif
 
   exit_val = mred_finish_cmd_line_run();

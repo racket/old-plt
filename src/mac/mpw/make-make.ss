@@ -425,7 +425,7 @@
 	      all-srcs)
     
     (printf "\rall \304 {OBJS}\r")
-    (printf "\tPPCLink {OBJS} \"{SharedLibraries}CarbonLib\" \"{SharedLibraries}StdCLib\"  \"{PPCLibraries}MrCPlusLib.o\" \"{PPCLibraries}PPCCRuntime.o\" \"{PPCLibraries}StdCRuntime.o\" -o MrEd -c 'MrEd' -m __appstart -sym big\r")
+    (printf "\tPPCLink {OBJS} \"{SharedLibraries}CarbonLib\" \"{SharedLibraries}StdCLib\"  \"{PPCLibraries}MrCPlusLib.o\" \"{PPCLibraries}PPCCRuntime.o\" \"{PPCLibraries}StdCRuntime.o\" -o MrEd -c 'MrEd' -m __appstart\r") ;;  -sym big
     (printf "\tRez ::cw:MrEd.r -o MrEd -append\r")
     
     (printf "\rcarbon.dump \304 carbon.c\r\tMrCpp carbon.c -rtti off -dump carbon.dump\r\r\r")

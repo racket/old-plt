@@ -6,6 +6,10 @@
  *  Copyright (c) 1997-2000 Kyle Hammond
  *	All Rights Reserved
 */
+#ifndef OS_X
+# include <Carbon.h>
+# define __APPEARANCE__
+#endif
 #if ALIST_USEAPPEARANCEMGR
 #ifndef __APPEARANCE__
 	#include <Appearance.h>
@@ -234,16 +238,17 @@ OSErr _ALDrag(Point mouseLoc, EventModifiers modifiers, unsigned long clickTime,
 {	ALPtr		pAL = *hAL;
 	DragReference	theDrag = nil;
 	GWorldPtr		dragGWorld = nil;
+	GDHandle			saveDevice;
 	RgnHandle		dragRgn = nil;
 	EventRecord	theEvent;
-	GrafPtr		savePort;
+	CGrafPtr		savePort;
 	OSErr		err;
 	ALCell		theCell;
 
 	HLock((Handle)hAL);
 
 	// set up the port
-	GetPort(&savePort);
+	GetGWorld(&savePort, &saveDevice);
 	SetPortWindowPort(pAL->winRef);
 
 	// turn the cursor into an arrow
@@ -316,7 +321,7 @@ cleanup:
 		DisposeRgn(dragRgn);
 
 	// restore the port
-	SetPort(savePort);
+	SetGWorld(savePort, saveDevice);
 
 	// return result code
 	return err;

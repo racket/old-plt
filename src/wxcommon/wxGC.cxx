@@ -27,6 +27,15 @@ Authors: John R. Ellis and Jesse Hull
 #include <stddef.h>
 #include "wxGC.h"
 
+#ifdef MPW_CPLUS
+extern "C" {
+  typedef void (*GC_F_PTR)(void *, void *);
+}
+# define CAST_GCP (GC_F_PTR)
+#else
+# define CAST_GCP /* empty */
+#endif
+
 #ifdef USE_SENORA_GC
 struct GC_Set *cpp_objects;
 typedef void (*GC_finalization_proc)(void *, void *);
@@ -91,7 +100,7 @@ void gc_cleanup::install_cleanup(void)
 # endif
 
   GC_register_finalizer_ignore_self(gcOBJ_TO_PTR(this), 
-				    GC_cleanup, NULL, 
+				    CAST_GCP GC_cleanup, NULL, 
 				    &old_fn, &old_data);
 
 # if CHECK_BASE

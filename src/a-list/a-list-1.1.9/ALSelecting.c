@@ -6,6 +6,10 @@
  *  Copyright (c) 1997-2000 Kyle Hammond
  *	All Rights Reserved
 */
+#ifndef OS_X
+# include <Carbon.h>
+# define __APPEARANCE__
+#endif
 #ifndef __TOOLUTILS__
 	#include <ToolUtils.h>
 #endif
@@ -17,7 +21,7 @@ static void local_ALHiliteCell(const ALCellPtr theCell, unsigned long offset, AL
 static void local_ALHiliteCell(const ALCellPtr theCell, unsigned long offset, ALHandle hAL)
 {	ALPtr	pAL;
 	RgnHandle	saveClip, auxRgn;
-	GrafPtr	savePort;
+	CGrafPtr	savePort;
 	GDHandle saveDev;
 #if ALIST_HAVE_CELLDATA
 	Boolean	saveDataLock;
@@ -353,7 +357,7 @@ ALIST_API RgnHandle ALGetCellHiliteRgn(const ALCellPtr theCell, ALHandle hAL)
 	ALPtr		pAL;
 	RgnHandle		hiliteRgn;
 	Rect			selRect;
-	GrafPtr		savePort;
+	CGrafPtr		savePort;
         GDHandle        saveDev;
 	Boolean		saveALLock, saveSLLock;
 	ALSelectionPtr	sPtr;
@@ -431,7 +435,7 @@ ALIST_API RgnHandle ALGetSelectedHiliteRgn(ALHandle hAL)
 	ALPtr		pAL;
 	RgnHandle		hiliteRgn;
 	Rect			selRect;
-	GrafPtr		savePort;
+	CGrafPtr		savePort;
         GDHandle        saveDev;
 	Boolean		saveALLock, saveSLLock;
 	ALCell		theCell;

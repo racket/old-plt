@@ -7,15 +7,20 @@
  *  Copyright (c) 1997-2000 Kyle Hammond
  *	All Rights Reserved
 */
+#ifndef OS_X
+# include <Carbon.h>
+# define __APPEARANCE__
+#endif
+
+#include "AListInternal.h"
 #ifndef __APPEARANCE__
-	#include <Appearance.h>
+# include <Appearance.h>
 #endif
 #if defined( TARGET_API_MAC_CARBON )
-	#if !defined( __CONTROLDEFINITIONS__ )
-		#include <ControlDefinitions.h>
-	#endif
+# if !defined( __CONTROLDEFINITIONS__ )
+#  include <ControlDefinitions.h>
+# endif
 #endif
-#include "AListInternal.h"
 
 static void	local_ALLookupSelector(const ALLookupTable *table, ALSelector selector, ALFieldDescriptor *desc);
 static OSErr	local_ALGetField(const ALLookupTable *table, ALSelector selector, long *info, void *structure);
@@ -202,7 +207,7 @@ ALIST_API void ALActivate(Boolean isActive, ALHandle hAL)
 ALIST_API ControlPartCode ALSetFocus(ControlPartCode focusPart, ALHandle hAL)
 {	ControlPartCode	result;
 	Boolean			oldFocus;
-	GrafPtr			savePort;
+	CGrafPtr			savePort;
 	WindowPtr		winRef;
 
 	if (hAL == nil || *hAL == nil)
@@ -239,11 +244,13 @@ ALIST_API ControlPartCode ALSetFocus(ControlPartCode focusPart, ALHandle hAL)
 
 	// If the focus changed, redraw if the alFDrawFocus feature is turned on.
 	if ( BTST((*hAL)->features, alFDrawFocus) && oldFocus != (BTST((*hAL)->flags, alFFocused) != 0)) {
-		GetPort(&savePort);
-		ALGetInfo(alWindow, &winRef, hAL);
-		SetPortWindowPort(winRef);
-		_ALDrawListBorder(hAL);
-		SetPort(savePort);
+	  GDHandle        saveDevice;
+	  
+	  GetGWorld(&savePort, &saveDevice);
+	  ALGetInfo(alWindow, &winRef, hAL);
+	  SetPortWindowPort(winRef);
+	  _ALDrawListBorder(hAL);
+	  SetGWorld(savePort, saveDevice);
 	}
 
 	return result;

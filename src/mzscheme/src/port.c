@@ -5543,9 +5543,9 @@ static void default_sleep(float v, void *fds)
 
 #else
 # ifndef NO_SLEEP
-# ifndef NO_USLEEP
+#  ifndef NO_USLEEP
    usleep((unsigned)(v * 1000));
-#  else
+#   else
    sleep(v);
 #  endif
 # endif

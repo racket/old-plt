@@ -222,7 +222,7 @@ static void BuildMacMenuString(StringPtr setupstr, StringPtr showstr, char *item
     }
     s++;
   }
-  showstr[0] = (char)(d - (char *)setupstr)-1;
+  showstr[0] = (char)(d - (char *)showstr)-1;
   setupstr[1] = 'X'; // temporary menu item name
   if (spc && !stripCmds) {
     setupstr[2] = '/';

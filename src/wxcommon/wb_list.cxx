@@ -17,7 +17,7 @@
 #  define  Uses_wxStringList
 #  include "wx.h"
 # else
-#  ifdef OS_X
+#  ifdef WX_CARBON
 #   include "wx_list.h"
 #   include "wx_utils.h"
 #  endif

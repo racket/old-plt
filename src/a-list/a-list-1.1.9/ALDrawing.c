@@ -6,6 +6,10 @@
  *  Copyright (c) 1997-2000 Kyle Hammond
  *	All Rights Reserved
 */
+#ifndef OS_X
+# include <Carbon.h>
+# define __APPEARANCE__
+#endif
 #ifndef __APPEARANCE__
 	#include <Appearance.h>
 #endif
@@ -625,7 +629,7 @@ ALIST_API void ALDrawCell(const ALCellPtr theCell, ALHandle hAL)
 #endif
 	Rect				entireCellRect, dataPortionCellRect;
 	Rect				box;
-	GrafPtr			savePort;
+	CGrafPtr			savePort;
 	GDHandle saveDev;
 	RgnHandle			saveClip;
 	QDDrawingState	saveDrawingState;

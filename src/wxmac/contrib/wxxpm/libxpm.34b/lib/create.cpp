@@ -39,26 +39,11 @@
  */
 
 #include "xpm34p.h"
-#ifdef VMS
-#include "sys$library:ctype.h"
-#else
 #include <ctype.h>
-#endif
-#if (defined(FOR_MAC) && defined(__MWERKS__))
+#if defined(FOR_MAC) && !defined(OS_X)
 extern int strcasecmp(char *s1, char *s2);
 #endif
 LFUNC(xpmVisualType, int, (Visual *visual));
-
-#if !defined(FOR_MSW) && !defined(FOR_MAC)
-LFUNC(SetCloseColor, int, (Display *display, Colormap colormap,
-			   Visual *visual, XColor *col,
-			   Pixel *image_pixel, Pixel *mask_pixel,
-			   Pixel **pixels, unsigned int *npixels,
-			   XpmAttributes *attributes,
-			   XColor *cols, int ncols));
-#else
-/* let the window system take care of close colors */
-#endif
 
 LFUNC(SetColor, int, (Display *display, Colormap colormap, Visual *visual,
 		      char *colorname, unsigned int color_index,

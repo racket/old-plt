@@ -4,10 +4,10 @@
 #include "wx_main.h"
 #include <stdarg.h>
 #include <ctype.h>
-#ifdef WX_CARBON
-#include <sys/types.h>
+#ifdef OS_X
+# include <sys/types.h>
+# include <unistd.h>
 #endif
-#include <unistd.h>
 #ifndef WX_CARBON
 # include <Strings.h>
 # include <Gestalt.h>
@@ -15,26 +15,29 @@
 # include <Sound.h>
 # include <Folders.h>
 # include <PPCToolbox.h>
+#endif
+#ifndef OS_X
 extern "C" long atol(char *);
 extern "C" int atoi(char *);
 #endif
 
+// static int wxFindFileFlags = 0;
+
 extern "C" {
-#ifdef WX_CARBON
-# include <sys/stat.h>
-#else
-# include <stat.h>
-#endif        
+  extern char *scheme_mac_spec_to_path(FSSpec *spec);
 }
 
 static int wxFindFileFlags = 0;
 
+extern "C" {
+  extern char *scheme_mac_spec_to_path(FSSpec *spec);
+}
+
 #ifndef OS_X
 extern "C" {
-#endif
-  extern char *scheme_mac_spec_to_path(FSSpec *spec);
-#ifndef OS_X
+  extern int scheme_file_exists(char *filename);
 }
+#define stat(name, ignored) !scheme_file_exists(name)
 #endif
 
 // Get a temporary filename, opening and closing the file.
@@ -77,31 +80,44 @@ char *wxGetTempFileName (const char *prefix, char *dest)
   
   buf = new char[temp_len + strlen(prefix) + 20];
 
-  for (short suffix = last_temp + 1; suffix != last_temp; ++suffix %= 1000)
-    {
-      struct stat stbuf;
-      sprintf (buf, "%s¥%s%d", temp_folder, prefix, (int) suffix); // CJC FIXME - really should get a temp folder
-      if (stat ((char *)buf, &stbuf) != 0)
-	{
-	  // Touch the file to create it (reserve name)
-	  FILE *fd = fopen (buf, "w");
-	  if (fd)
-	    fclose (fd);
-	  last_temp = suffix;
-          if (dest)
-	    strcpy(dest, buf);
-	  else
-	    dest = copystring(buf);
-	  return dest;
-	}
+  for (short suffix = last_temp + 1; suffix != last_temp; ++suffix %= 1000) {
+#ifdef OS_X
+    struct stat stbuf;
+#endif
+    sprintf (buf, "%s¥%s%d", temp_folder, prefix, (int) suffix); // CJC FIXME - really should get a temp folder
+    if (stat ((char *)buf, &stbuf) != 0) {
+      // Touch the file to create it (reserve name)
+      FILE *fd = fopen (buf, "w");
+      if (fd) {
+	fclose (fd);
+	last_temp = suffix;
+	if (dest)
+	  strcpy(dest, buf);
+	else
+	  dest = copystring(buf);
+	return dest;
+      }
     }
+  }
   if (dest) dest[0] = 0;
   return NULL;
 }
 
+#ifndef OS_X
+extern "C" int scheme_mac_path_to_spec(const char *filename, FSSpec *spec);
+#endif
+
 void wxRemoveFile(char *filename)
 {
+#if OS_X
   unlink(filename);
+#else
+  FSSpec sp;
+
+  if (scheme_mac_path_to_spec(filename, &sp)) {
+    FSpDelete(&sp);
+  }
+#endif
 }
 
 // Get free memory in bytes, or -1 if cannot determine amount (e.g. on UNIX)
@@ -258,8 +274,8 @@ Bool wxGetHostName(char *buf, int maxSize)
 }
 
 // Get user ID e.g. jacs
+#ifdef OS_X
 Bool wxGetUserId(char *buf, int maxSize)
-#ifdef WX_CARBON
 {
   CFStringRef username;
   
@@ -267,12 +283,15 @@ Bool wxGetUserId(char *buf, int maxSize)
   return CFStringGetCString(username, buf,maxSize,kCFStringEncodingISOLatin1);
 }
 #else
-{	return wxGetUserName(buf,maxSize); }
+Bool wxGetUserId(char *buf, int maxSize)
+{
+  return wxGetUserName(buf,maxSize);
+}
 #endif
 
 // Get user name e.g. Julian Smart
+#ifdef OS_X
 Bool wxGetUserName(char *buf, int maxSize)
-#ifdef WX_CARBON
 {
   CFStringRef username;
   
@@ -280,20 +299,10 @@ Bool wxGetUserName(char *buf, int maxSize)
   return CFStringGetCString(username, buf,maxSize,kCFStringEncodingISOLatin1);
 }
 #else    
-{	Bool good = FALSE;
- unsigned long userRef;
- Str32 name;
-	
- if (maxSize>32)
-   {	good = GetDefaultUser( &userRef, name) == noErr;
-   if (good) {
-     CopyPascalStringToC(name,buf);
-   }
-   }
- return good;
+Bool wxGetUserName(char *buf, int maxSize)
+{	
+  return FALSE;
 }
-
-
 #endif
 
 #ifdef WX_CARBON

@@ -15,11 +15,15 @@
 #define __QDDrawingState_h_		0x0100
 
 #if !defined( __ALISTOPTIMIZATIONS_H_ )
-	#include "AListOptimizations.h"
+# include "AListOptimizations.h"
 #endif
 
-#ifdef OS_X
-#include <Carbon/Carbon.h>
+#ifdef WX_CARBON
+# ifdef OX_X
+#  include <Carbon/Carbon.h>
+# else
+#  include <Carbon.h>
+# endif
 #endif
 
 typedef struct {

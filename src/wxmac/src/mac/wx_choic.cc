@@ -93,6 +93,11 @@
 #define MSPACEY 1
 
 
+wxChoice::wxChoice()
+{
+  /* dummy - not used */
+}
+
 wxChoice::wxChoice (wxPanel * panel, wxFunction func, char *Title,
 		    int x, int y, int width, int height, int N, char **Choices,
 		    long style, char *name

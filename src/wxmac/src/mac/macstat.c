@@ -9,8 +9,12 @@
 #include "macstat.h"
 #include "macdefs.h"
 // CJC - depending on your headers you need one or more of these: 
-#include <TextUtils.h>
-#include <Strings.h>	
+#ifdef WX_CARBIN
+# include <Carbon.h>
+#else
+# include <TextUtils.h>
+# include <Strings.h>	
+#endif
 
 /* Bits in ioFlAttrib: */
 #define LOCKBIT	(1<<0)		/* File locked */
@@ -56,6 +60,7 @@ stat(char *path, struct stat *buf)
 		if (pb.f.ioFlFndrInfo.fdType == 'APPL')
 			buf->st_mode |= 0111;
 	}
+#if 0
 	buf->st_ino = pb.hf.ioDirID;
 	buf->st_nlink = 1;
 	buf->st_uid = 1;
@@ -66,5 +71,6 @@ stat(char *path, struct stat *buf)
 	buf->st_rsize = pb.f.ioFlRLgLen;
 	*(unsigned long *)buf->st_type = pb.f.ioFlFndrInfo.fdType;
 	*(unsigned long *)buf->st_creator = pb.f.ioFlFndrInfo.fdCreator;
+#endif
 	return 0;
 }

@@ -6,6 +6,10 @@
  *  Copyright (c) 1997-2000 Kyle Hammond
  *	All Rights Reserved
 */
+#ifndef OS_X
+# include <Carbon.h>
+# define __APPEARANCE__
+#endif
 #include "AListInternal.h"
 #include "LongControls.h"
 

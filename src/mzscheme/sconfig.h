@@ -675,6 +675,7 @@
 # define TIME_TYPE_IS_UNSIGNED
 
 # define NO_SYS_INCLUDE_SUBDIR
+# define NO_SLEEP
 # define NO_USLEEP
 # define NO_STAT_PROC
 # define DONT_IGNORE_PIPE_SIGNAL
@@ -682,7 +683,7 @@
 # define POW_HANDLES_INF_CORRECTLY
 # define TRIG_ZERO_NEEDS_SIGN_CHECK
 
-# define USE_MAC_TCP
+/* # define USE_MAC_TCP */
 
 # define SIGSET_IS_SIGNAL
 

@@ -2276,7 +2276,9 @@ tcp_accept_break(int argc, Scheme_Object *argv[])
 
 static void register_tcp_listener_wait()
 {
+#ifdef USE_TCP
   scheme_add_waitable(scheme_listener_type, tcp_check_accept, tcp_accept_needs_wakeup, NULL);
+#endif
 }
 
 static Scheme_Object *tcp_listener_p(int argc, Scheme_Object *argv[])
@@ -2288,6 +2290,7 @@ static Scheme_Object *tcp_listener_p(int argc, Scheme_Object *argv[])
 
 static Scheme_Object *tcp_addresses(int argc, Scheme_Object *argv[])
 {
+#ifdef USE_TCP
   Scheme_Tcp *tcp = NULL;
   int closed = 0;
   unsigned long here_a, there_a;
@@ -2356,10 +2359,15 @@ static Scheme_Object *tcp_addresses(int argc, Scheme_Object *argv[])
   result[1] = scheme_make_string(sa);
 
   return scheme_values(2, result);
+#else
+  /* First arg can't possible be right! */
+  scheme_wrong_type("tcp-addresses", "tcp-port", 0, argc, argv);
+#endif
 }
 
 static Scheme_Object *tcp_abandon_port(int argc, Scheme_Object *argv[])
 {
+#ifdef USE_TCP
   if (SCHEME_OUTPORTP(argv[0])) {
     Scheme_Output_Port *op;
     op = (Scheme_Output_Port *)argv[0];
@@ -2383,6 +2391,7 @@ static Scheme_Object *tcp_abandon_port(int argc, Scheme_Object *argv[])
       return scheme_void;
     }
   }
+#endif
 
   scheme_wrong_type("tcp-abandon-port", "tcp-port", 0, argc, argv);
 

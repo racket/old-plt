@@ -53,9 +53,13 @@
 #include <ctype.h>
 
 #ifdef wx_mac
- #ifdef WX_CARBON
-  #include <Quicktime/Movies.h>
- #else
+# ifdef WX_CARBON
+#  ifdef OS_X
+#   include <Quicktime/Movies.h>
+#  else
+#   include <Movies.h>
+#  endif
+# else
   #include <Gestalt.h>
   #include <Movies.h>
   #include <ColorPicker.h>
@@ -85,11 +89,12 @@ public:
 
 static GCBitmap *gc_bitmaps = NULL;
 extern "C" {
-  MZ_EXTERN void (*GC_collect_start_callback)(void);
-  MZ_EXTERN void (*GC_collect_end_callback)(void);
+  typedef void (*GC_START_END_PTR)();
+  MZ_EXTERN GC_START_END_PTR GC_collect_start_callback;
+  MZ_EXTERN GC_START_END_PTR GC_collect_end_callback;
 };
-static void (*orig_collect_start_callback)(void);
-static void (*orig_collect_end_callback)(void);
+static GC_START_END_PTR orig_collect_start_callback;
+static GC_START_END_PTR orig_collect_end_callback;
 static void collect_start_callback(void);
 static void collect_end_callback(void);
 
@@ -137,9 +142,9 @@ void wxsScheme_setup(Scheme_Env *env)
   message_box = scheme_false;
 
   orig_collect_start_callback = GC_collect_start_callback;
-  GC_collect_start_callback = collect_start_callback;
+  GC_collect_start_callback = (GC_START_END_PTR)collect_start_callback;
   orig_collect_end_callback = GC_collect_end_callback;
-  GC_collect_end_callback = collect_end_callback;
+  GC_collect_end_callback = (GC_START_END_PTR)collect_end_callback;
 }
 
 extern "C" {
@@ -380,7 +385,7 @@ static Scheme_Object *wxsCurrentGLContext(int argc, Scheme_Object **argv)
   v = scheme_param_config("current-gl-context",
 			  scheme_make_integer(gl_param),
 			  argc, argv,
-			  -1, canvas_p, "canvas", 1);
+			  -1, CAST_SP canvas_p, "canvas", 1);
 
 #ifdef USE_GL
   on_thread_swap(NULL);
@@ -461,8 +466,8 @@ static Scheme_Object *wxSchemeGetColourFromUser(int argc, Scheme_Object **argv)
   cpInfo.dialogOrigin.h = 0;
   cpInfo.dialogOrigin.v = 0;
   cpInfo.pickerType = 0; 
-  cpInfo.eventProc = &NullEventFilter;
-  cpInfo.colorProc = &MyColorChangedCallback;
+  cpInfo.eventProc = NewUserEventUPP(NullEventFilter);
+  cpInfo.colorProc = NewColorChangedUPP(MyColorChangedCallback);
   cpInfo.colorProcData = 0;
   cpInfo.mInfo.editMenuID = 128; // Not sure this will work.
   CopyCStringToPascal(s,cpInfo.prompt);
@@ -1075,7 +1080,7 @@ static Scheme_Object *wxPlaySound(int argc, Scheme_Object **argv)
   }
       
   ok = TRUE;
-     
+
 /*
   // old play sound code
   Bool local_async = TRUE;
@@ -1389,7 +1394,7 @@ static Scheme_Object *wxSchemeCurrentPSSetup(int argc, Scheme_Object **argv)
   return scheme_param_config("current-ps-setup", 
 			     scheme_make_integer(mred_ps_setup_param),
 			     argc, argv,
-			     -1, PS_Setup_p, "ps-setup% instance", 0);
+			     -1, CAST_SP PS_Setup_p, "ps-setup% instance", 0);
 }
 
 /***********************************************************************/
@@ -1408,7 +1413,7 @@ static Scheme_Object *wxSchemeCurrentEventspace(int argc, Scheme_Object **argv)
   return scheme_param_config("current-eventspace", 
 			     scheme_make_integer(mred_eventspace_param),
 			     argc, argv,
-			     -1, Eventspace_p, "eventspace", 0);
+			     -1, CAST_SP Eventspace_p, "eventspace", 0);
 }
 
 static Scheme_Object *wxSchemeEventDispatchHandler(int argc, Scheme_Object **argv)
@@ -1551,7 +1556,7 @@ static Scheme_Object *wLabelShortcutsVisible(int argc, Scheme_Object **argv)
 extern char *scheme_mac_spec_to_path(FSSpec *spec);
 # endif
 # ifndef OS_X
-extern char *wxmac_startup_directory;
+#  define wxmac_startup_directory 0
 # endif
 #endif
 
@@ -2088,50 +2093,50 @@ static void wxScheme_Install(Scheme_Env *global_env)
   wxREGGLOB(wxs_app_quit_proc);
   wxREGGLOB(wxs_app_file_proc);
 
-  wxs_app_file_proc = scheme_make_prim_w_arity(DefaultAppFileProc,
+  wxs_app_file_proc = scheme_make_prim_w_arity(CAST_SP DefaultAppFileProc,
 					       "default-application-file-handler",
 					       1, 1);
-  wxs_app_quit_proc = scheme_make_prim_w_arity(DefaultAppQuitProc,
+  wxs_app_quit_proc = scheme_make_prim_w_arity(CAST_SP DefaultAppQuitProc,
 					       "default-application-quit-handler",
 					       0, 0);
 
   scheme_install_xc_global("special-control-key", 
-			   scheme_make_prim_w_arity(SpecialCtlKey, 
+			   scheme_make_prim_w_arity(CAST_SP SpecialCtlKey, 
 						    "special-control-key", 
 						    1, 1), 
 			   global_env);
   
   scheme_install_xc_global("application-file-handler",
-			   scheme_make_prim_w_arity(ApplicationFileProc,
+			   scheme_make_prim_w_arity(CAST_SP ApplicationFileProc,
 						    "application-file-handler",
 						    0, 1),
 			   global_env);
   scheme_install_xc_global("application-quit-handler",
-			   scheme_make_prim_w_arity(ApplicationQuitProc,
+			   scheme_make_prim_w_arity(CAST_SP ApplicationQuitProc,
 						    "application-quit-handler",
 						    0, 1),
 			   global_env);
   
   scheme_install_xc_global("get-color-from-user",
-			   scheme_make_prim_w_arity(wxSchemeGetColourFromUser,
+			   scheme_make_prim_w_arity(CAST_SP wxSchemeGetColourFromUser,
 						    "get-color-from-user",
 						    0, 3),
 			   global_env);
   
   scheme_install_xc_global("get-font-from-user",
-			   scheme_make_prim_w_arity(wxSchemeGetFontFromUser,
+			   scheme_make_prim_w_arity(CAST_SP wxSchemeGetFontFromUser,
 						    "get-font-from-user",
 						    0, 3),
 			   global_env);
   
   scheme_install_xc_global("get-face-list",
-			   scheme_make_prim_w_arity(wxSchemeGetFontList,
+			   scheme_make_prim_w_arity(CAST_SP wxSchemeGetFontList,
 						    "get-face-list",
 						    0, 0),
 			   global_env);
   
   scheme_install_xc_global("get-panel-background",
-			   scheme_make_prim_w_arity(wxSchemeGetPanelBackground,
+			   scheme_make_prim_w_arity(CAST_SP wxSchemeGetPanelBackground,
 						    "get-panel-background",
 						    0, 0),
 			   global_env);
@@ -2140,41 +2145,41 @@ static void wxScheme_Install(Scheme_Env *global_env)
   scheme_install_xc_global("play-sound", scheme_false, global_env);
 #else
   scheme_install_xc_global("play-sound", 
-			     scheme_make_prim_w_arity(wxPlaySound, 
+			     scheme_make_prim_w_arity(CAST_SP wxPlaySound, 
 						      "play-sound", 
 						      2, 2), 
 			     global_env);
 #endif
 
   scheme_install_xc_global("make-eventspace",
-			     scheme_make_prim_w_arity(wxSchemeMakeEventspace,
+			     scheme_make_prim_w_arity(CAST_SP wxSchemeMakeEventspace,
 						      "make-eventspace",
 						      0, 0),
 			     global_env);
   scheme_install_xc_global("current-eventspace",
-			   scheme_register_parameter(wxSchemeCurrentEventspace,
+			   scheme_register_parameter(CAST_SP wxSchemeCurrentEventspace,
 						     "current-eventspace",
 						     mred_eventspace_param),
 			   global_env);
   scheme_install_xc_global("event-dispatch-handler",
-			   scheme_register_parameter(wxSchemeEventDispatchHandler,
+			   scheme_register_parameter(CAST_SP wxSchemeEventDispatchHandler,
 						     "event-dispatch-handler",
 						     mred_event_dispatch_param),
 			   global_env);
   scheme_install_xc_global("eventspace?",
-			   scheme_make_prim_w_arity(Eventspace_p,
+			   scheme_make_prim_w_arity(CAST_SP Eventspace_p,
 						    "eventspace?",
 						    1, 1),
 			   global_env);
 
   scheme_install_xc_global("current-ps-setup",
-			   scheme_register_parameter(wxSchemeCurrentPSSetup,
+			   scheme_register_parameter(CAST_SP wxSchemeCurrentPSSetup,
 						     "current-ps-setup",
 						     mred_ps_setup_param),
 			   global_env);
 
   scheme_install_xc_global("queue-callback",
-			   scheme_make_prim_w_arity(queue_callback,
+			   scheme_make_prim_w_arity(CAST_SP queue_callback,
 						    "queue-callback",
 						    1, 2),
 			   global_env);
@@ -2183,97 +2188,97 @@ static void wxScheme_Install(Scheme_Env *global_env)
 
 
   scheme_install_xc_global("check-for-break",
-			   scheme_make_prim_w_arity(wxSchemeCheckForBreak,
+			   scheme_make_prim_w_arity(CAST_SP wxSchemeCheckForBreak,
 						    "check-for-break",
 						    0, 0),
 			   global_env);
 
 
   scheme_install_xc_global("find-graphical-system-path",
-			   scheme_make_prim_w_arity(wxSchemeFindDirectory,
+			   scheme_make_prim_w_arity(CAST_SP wxSchemeFindDirectory,
 						    "find-graphical-system-path",
 						    1, 1),
 			   global_env);
 
   scheme_install_xc_global("get-top-level-windows",
-			   scheme_make_prim_w_arity(wxSchemeGetFrameList,
+			   scheme_make_prim_w_arity(CAST_SP wxSchemeGetFrameList,
 						    "get-top-level-windows",
 						    0, 0),
 			   global_env);
 
   scheme_install_xc_global("register-collecting-blit",
-			   scheme_make_prim_w_arity(wxSchemeRegisterCollectingBitmap,
+			   scheme_make_prim_w_arity(CAST_SP wxSchemeRegisterCollectingBitmap,
 						    "register-collecting-blit",
 						    7, 11),
 			   global_env);
   scheme_install_xc_global("unregister-collecting-blit",
-			   scheme_make_prim_w_arity(wxSchemeUnregisterCollectingBitmap,
+			   scheme_make_prim_w_arity(CAST_SP wxSchemeUnregisterCollectingBitmap,
 						    "unregister-collecting-blit",
 						    1, 1),
 			   global_env);
 
   scheme_install_xc_global("shortcut-visible-in-label?",
-			   scheme_make_prim_w_arity(wLabelShortcutsVisible,
+			   scheme_make_prim_w_arity(CAST_SP wLabelShortcutsVisible,
 						    "shortcut-visible-in-label?",
 						    0, 1),
 			   global_env);
 
 
   scheme_install_xc_global("eventspace-shutdown?",
-			   scheme_make_prim_w_arity(Shutdown_p,
+			   scheme_make_prim_w_arity(CAST_SP Shutdown_p,
 						    "eventspace-shutdown?",
 						    1, 1),
 			   global_env);
 
   scheme_install_xc_global("in-atomic-region",
-			   scheme_make_prim_w_arity(wxInAtomicRegion,
+			   scheme_make_prim_w_arity(CAST_SP wxInAtomicRegion,
 						    "in-atomic-region",
 						    1, 1),
 			   global_env);
 
   scheme_install_xc_global("set-executer",
-			   scheme_make_prim_w_arity(SetExecuter,
+			   scheme_make_prim_w_arity(CAST_SP SetExecuter,
 						    "set-executer",
 						    1, 1),
 			   global_env);
 
   scheme_install_xc_global("set-editor-snip-maker",
-			   scheme_make_prim_w_arity(SetMediaSnipMaker,
+			   scheme_make_prim_w_arity(CAST_SP SetMediaSnipMaker,
 						    "set-editor-snip-maker",
 						    1, 1),
 			   global_env);
   
   scheme_install_xc_global("set-text-editor-maker",
-			   scheme_make_prim_w_arity(SetMediaEditMaker,
+			   scheme_make_prim_w_arity(CAST_SP SetMediaEditMaker,
 						    "set-text-editor-maker",
 						    1, 1),
 			   global_env);
   
   scheme_install_xc_global("set-pasteboard-editor-maker",
-			   scheme_make_prim_w_arity(SetMediaPasteboardMaker,
+			   scheme_make_prim_w_arity(CAST_SP SetMediaPasteboardMaker,
 						    "set-pasteboard-editor-maker",
 						    1, 1),
 			   global_env);
   scheme_install_xc_global("set-menu-tester",
-			   scheme_make_prim_w_arity(SetIsMenu,
+			   scheme_make_prim_w_arity(CAST_SP SetIsMenu,
 						    "set-menu-tester",
 						    1, 1),
 			   global_env);
   
   scheme_install_xc_global("location->window",
-			   scheme_make_prim_w_arity(wxsLocationToWindow,
+			   scheme_make_prim_w_arity(CAST_SP wxsLocationToWindow,
 						    "location->window",
 						    2, 2),
 			   global_env);
 
   scheme_install_xc_global("set-dialogs",
-			   scheme_make_prim_w_arity(SetDialogs,
+			   scheme_make_prim_w_arity(CAST_SP SetDialogs,
 						    "set-dialogs",
 						    4, 4),
 			   global_env);
 
   scheme_install_xc_global("send-event",
-			   scheme_make_prim_w_arity(wxSendEvent,
+			   scheme_make_prim_w_arity(CAST_SP wxSendEvent,
 						    "send-event",
 						    3, 5),
 			   global_env);
@@ -2282,7 +2287,7 @@ static void wxScheme_Install(Scheme_Env *global_env)
   init_gl_mgr();
 #endif
   scheme_install_xc_global("current-gl-context",
-			   scheme_register_parameter(wxsCurrentGLContext,
+			   scheme_register_parameter(CAST_SP wxsCurrentGLContext,
 						     "current-gl-context",
 						     gl_param),
 			   global_env);

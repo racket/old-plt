@@ -45,6 +45,10 @@ static int dispatched = 1;
 
 #define leaveEvt 42
 
+extern "C" {
+  typedef void (*HANDLE_AE)(EventRecord *e);
+}
+
 static int QueueTransferredEvent(EventRecord *e);
 typedef struct MrQueueElem *MrQueueRef;
 
@@ -62,9 +66,6 @@ typedef struct {
 
 void MrEdInitFirstContext(MrEdContext *)
 {
-#ifdef MACINTOSH_EVENTS
-  scheme_handle_aewait_event = QueueMrEdEvent;
-#endif
 }
 
 void MrEdInitNewContext(MrEdContext *)
@@ -961,7 +962,7 @@ int MrEdCheckForBreak(void)
 #ifdef OS_X
 #include <pthread.h>
 static volatile int thread_running, need_post;
-static void (*mzsleep)(float secs, void *fds);
+static SLEEP_PROC_PTR mzsleep;
 static pthread_t watcher;
 static volatile float sleep_secs;
 
@@ -1072,7 +1073,7 @@ static int EndFDWatcher(void)
 
 static RgnHandle msergn;
 
-void MrEdMacSleep(float secs, void *fds, void (*mzsleep)(float secs, void *fds))
+void MrEdMacSleep(float secs, void *fds, SLEEP_PROC_PTR mzsleep)
 {
   /* If we're asked to sleep less than 1/60 of a second, then don't
      bother with WaitNextEvent. */

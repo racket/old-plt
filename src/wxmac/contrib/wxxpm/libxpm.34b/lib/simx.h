@@ -43,7 +43,11 @@
 #endif
 #if  defined(FOR_MAC) 
 #ifdef WX_CARBON
-# include <Carbon/Carbon.h>
+# ifdef OS_X
+#  include <Carbon/Carbon.h>
+# else
+#  include <Carbon.h>
+# endif
 #else
 # include <QDOffscreen.h>
 # include <QuickDraw.h>

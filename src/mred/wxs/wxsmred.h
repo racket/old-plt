@@ -38,3 +38,9 @@ MRED_EXTERN Scheme_Object *wxSchemeFindDirectory(int argc, Scheme_Object **argv)
 extern int wxGetPreference(const char *name, int *res);
 
 void wxscheme_early_gl_init(void);
+
+#ifdef MPW_CPLUS
+# define CAST_SP (Scheme_Prim *)
+#else
+# define CAST_SP 
+#endif

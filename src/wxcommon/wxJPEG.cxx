@@ -11,6 +11,13 @@ extern "C" {
 # include "jpeglib.h"
 }
 
+#ifdef MPW_CPLUS
+extern "C" { typedef void (*JPEG_ERROR_F_PTR)(j_common_ptr info); }
+# define CAST_JPEGP (JPEG_ERROR_F_PTR)
+#else
+# define CAST_JPEGP /* empty */
+#endif
+
 #ifdef wx_x
 # define WX_QUANTIZE 1
 # define Q_NOT !
@@ -142,7 +149,7 @@ int read_JPEG_file(char * filename, wxBitmap *bm)
 
   /* We set up the normal JPEG error routines, then override error_exit. */
   cinfo.err = jpeg_std_error(&jerr.pub);
-  jerr.pub.error_exit = my_error_exit;
+  jerr.pub.error_exit = CAST_JPEGP my_error_exit;
   /* Establish the setjmp return context for my_error_exit to use. */
   if (setjmp(jerr.setjmp_buffer)) {
     /* If we get here, the JPEG code has signaled an error.

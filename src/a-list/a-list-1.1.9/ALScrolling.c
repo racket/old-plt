@@ -6,6 +6,10 @@
  *  Copyright (c) 1997-2000 Kyle Hammond
  *	All Rights Reserved
 */
+#ifndef OS_X
+# include <Carbon.h>
+# define __APPEARANCE__
+#endif
 #include "AListInternal.h"
 #include "LongControls.h"
 
@@ -147,7 +151,7 @@ ALIST_API void ALScrollCells(long dCols, long dRows, ALHandle hAL)
 ALIST_API void ALScrollPixels(long hOffset, long vOffset, ALHandle hAL)
 {	ALPtr	pAL;
 	Rect		viewRect;
-	GrafPtr	savePort;
+	CGrafPtr	savePort;
 	GDHandle saveDev;
 	Boolean	hideOutline, saveALLock;
 

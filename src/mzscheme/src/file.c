@@ -51,6 +51,13 @@
 #ifdef IO_INCLUDE
 # include <io.h>
 #endif
+#if defined(MACINTOSH_EVENTS)
+# ifdef OS_X
+#  include <Carbon/Carbon.h>
+# else
+#  include <Carbon.h>
+# endif
+#endif
 #ifdef USE_MAC_FILE_TOOLBOX
 # include <Files.h>
 #endif
@@ -632,7 +639,13 @@ static int find_mac_file(const char *filename, int use_real_cwd,
 	p++;
       
       strcat(vbuf, ":");
-      hrec.volumeParam.ioNamePtr = c2pstr(vbuf);
+      {
+	/* C to Pascal string: */
+	int clen = strlen(vbuf);
+	memmove(vbuf + 1, vbuf, clen);
+	vbuf[0] = clen;
+      }
+      hrec.volumeParam.ioNamePtr = (unsigned char *)vbuf;
       hrec.volumeParam.ioVRefNum = 0;
       hrec.volumeParam.ioVolIndex = -1;
       if (PBHGetVInfo(&hrec, 0))
@@ -692,7 +705,12 @@ static int find_mac_file(const char *filename, int use_real_cwd,
 	spec->parID = find_dir_id;
 	memcpy((void *)spec->name, buf, len);
 	spec->name[len] = 0;
-	c2pstr((char *)spec->name);
+	{
+	  /* C to Pascal string: */
+	  int clen = strlen((char *)spec->name);
+	  memmove(spec->name + 1, spec->name, clen);
+	  spec->name[0] = clen;
+	}
 	
 	pbrec.hFileInfo.ioNamePtr = spec->name;
 	pbrec.hFileInfo.ioVRefNum = spec->vRefNum;
@@ -3298,6 +3316,23 @@ static Scheme_Object *make_directory(int argc, Scheme_Object *argv[])
   return scheme_false;
 #else
   char *filename;
+
+# ifdef USE_MAC_FILE_TOOLBOX	  
+  FSSpec spec;
+
+  filename = SCHEME_STR_VAL(argv[0]);
+  if (has_null(filename, SCHEME_STRTAG_VAL(argv[0])))
+    raise_null_error("make-directory", argv[0], "");
+
+  scheme_security_check_file("make-directory", filename, SCHEME_GUARD_FILE_WRITE);
+
+  if (find_mac_file(filename, 0, &spec, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)) {
+    SInt32 created;
+    errno = FSpDirCreate(&spec, smSystemScript, &created);
+    if (!errno)
+      return scheme_void;
+  }  
+# else
   int len, copied;
 
   if (!SCHEME_STRINGP(argv[0]))
@@ -3322,16 +3357,14 @@ static Scheme_Object *make_directory(int argc, Scheme_Object *argv[])
 
   while (1) {
     if (!MSC_IZE(mkdir)(filename
-#ifndef MKDIR_NO_MODE_FLAG
+#  ifndef MKDIR_NO_MODE_FLAG
 			, 0xFFFF
-#endif
+# endif
 			))
       return scheme_void;
-#ifndef MAC_FILE_SYSTEM
-    else if (errno != EINTR)
-#endif
       break;
   }
+# endif
 
   scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		   argv[0],
@@ -3353,6 +3386,21 @@ static Scheme_Object *delete_directory(int argc, Scheme_Object *argv[])
 # endif
   char *filename;
 
+# ifdef USE_MAC_FILE_TOOLBOX	  
+  FSSpec spec;
+
+  filename = SCHEME_STR_VAL(argv[0]);
+  if (has_null(filename, SCHEME_STRTAG_VAL(argv[0])))
+    raise_null_error("delete-directory", argv[0], "");
+
+  scheme_security_check_file("delete-directory", filename, SCHEME_GUARD_FILE_DELETE);
+
+  if (find_mac_file(filename, 0, &spec, 1, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)) {
+    errno = FSpDelete(&spec);
+    if (!errno)
+      return scheme_void;
+  }  
+# else
   if (!SCHEME_STRINGP(argv[0]))
     scheme_wrong_type("delete-directory", "string", 0, argc, argv);
 
@@ -3365,7 +3413,7 @@ static Scheme_Object *delete_directory(int argc, Scheme_Object *argv[])
   while (1) {
     if (!MSC_IZE(rmdir)(filename))
       return scheme_void;
-#ifdef DOS_FILE_SYSTEM
+#  ifdef DOS_FILE_SYSTEM
     else if ((errno == EACCES) && !tried_cwd) {
       /* Maybe we're using the target directory. Try a real setcwd. */
       scheme_os_setcwd(SCHEME_STR_VAL(scheme_get_param(scheme_config, 
@@ -3373,12 +3421,10 @@ static Scheme_Object *delete_directory(int argc, Scheme_Object *argv[])
 		       0);
       tried_cwd = 1;
     }
-#endif
-#ifndef MAC_FILE_SYSTEM
-    else if (errno != EINTR)
-#endif
+#  endif
       break;
   }
+# endif
 
   scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		   argv[0],

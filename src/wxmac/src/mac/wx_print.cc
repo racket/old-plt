@@ -11,7 +11,11 @@
 # include <FixMath.h>
 #endif
 #ifdef WX_CARBON
-# include <ApplicationServices/ApplicationServices.h>
+# ifdef OS_X
+#  include <ApplicationServices/ApplicationServices.h>
+# else
+#  include <ApplicationServices.h>
+# endif
 #endif
 
 #include "common.h"
@@ -30,13 +34,7 @@
 #include "wx_messg.h"
 
 #include <stdlib.h>
-#ifndef wx_mac
-#include <commdlg.h>
-#endif
-
-#ifdef wx_mac
 #include "wx_dcps.h"
-#endif
 
 pascal void printIdle(void)
 {

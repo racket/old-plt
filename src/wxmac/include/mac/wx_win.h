@@ -16,7 +16,11 @@
 #include "wxDirection.h"
 #include "wxScrollData.h"
 #if defined(WX_CARBON)
-#include <Carbon/Carbon.h>
+# ifdef OS_X
+#  include <Carbon/Carbon.h>
+# else
+#  include <Carbon.h>
+# endif
 #else
 #	include <Menus.h>
 #	include <QuickDraw.h>

@@ -38,8 +38,8 @@
 #ifdef UNISTD_INCLUDE
 # include <unistd.h>
 #endif
-#include <ctype.h>
 #ifdef UNIX_IMAGE_DUMPS
+# include <ctype.h>
 # include "schgc.h"
 #endif
 
@@ -48,8 +48,10 @@ extern void *GC_get_stack_base();
 
 MZ_DLLSPEC int (*scheme_actual_main)(int argc, char **argv);
 
+#ifdef UNIX_IMAGE_DUMPS
 static Scheme_Object *(*scheme_dump_heap)(char *filename) = NULL;
 static Scheme_Object *(*scheme_load_heap)(char *filename, Scheme_Object *argvec) = NULL;
+#endif
 
 static char *no_dumps;
 extern int scheme_file_open_count;
@@ -96,6 +98,7 @@ static Scheme_Object *dump_heap(int argc, Scheme_Object **argv)
 				    "write-image-to-file", NULL,
 				    SCHEME_GUARD_FILE_WRITE);
 
+#ifdef UNIX_IMAGE_DUMPS
   if (scheme_dump_heap) {
     if (no_dumps) {
       scheme_raise_exn(MZEXN_MISC,
@@ -127,11 +130,12 @@ static Scheme_Object *dump_heap(int argc, Scheme_Object **argv)
       } else
 	return v;
     }
-  } else {
-    scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
-		     "write-image-to-file: not supported");
-    return NULL;
   }
+#endif
+  
+  scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
+		   "write-image-to-file: not supported");
+  return NULL;
 }
 
 static Scheme_Object *load_heap(int argc, Scheme_Object **argv)
@@ -164,12 +168,13 @@ static Scheme_Object *load_heap(int argc, Scheme_Object **argv)
 				    "read-image-from-file", NULL,
 				    SCHEME_GUARD_FILE_READ);
 
+#ifdef UNIX_IMAGE_DUMPS
   if (scheme_load_heap)
     scheme_load_heap(filename, argv[1]);
-  else
-    scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
-		     "read-image-from-file: not supported");
+#endif
 
+  scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
+		   "read-image-from-file: not supported");
   return NULL;
 }
 

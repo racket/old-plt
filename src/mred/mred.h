@@ -98,13 +98,17 @@ void MrEdInitFirstContext(MrEdContext *c);
 void MrEdInitNewContext(MrEdContext *c);
 void MrEdDestroyContext(MrEdFinalizedContext *c);
 
+extern "C" {
+  typedef void (*SLEEP_PROC_PTR)(float seconds, void *fds);
+}
+
 #ifdef wx_msw
 void MrEdMSWSleep(float secs, void *fds);
 MRED_EXTERN void mred_clean_up_gdi_objects(void);
 #endif
 
 #ifdef wx_mac
-void MrEdMacSleep(float secs, void *fds, void (*mzsleep)(float secs, void *fds));
+void MrEdMacSleep(float secs, void *fds, SLEEP_PROC_PTR mzsleep);
 void wxmac_reg_globs(void);
 #endif
 

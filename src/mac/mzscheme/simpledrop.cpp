@@ -1,6 +1,10 @@
 
-#ifdef OS_X
-# include <Carbon/Carbon.h>
+#ifdef WX_CARBON
+# ifdef OS_X
+#  include <Carbon/Carbon.h>
+# else
+#  include <Carbon.h>
+# endif
 #else
 # include <Files.h>
 # include <EPPC.h>
@@ -295,7 +299,7 @@ void Drop_GetArgs(int *argc, char ***argv, int *in_terminal)
     
     WaitNextEvent(highLevelEventMask, &event, 0x7FFFFFFF, 0L);
     if (event.what == kHighLevelEvent) {
-#ifdef OS_X
+#ifdef WX_CARBON
       AEProcessAppleEvent(&event);
 #else
       // high level events do not occur under OS X (per se, now they're just apple events)

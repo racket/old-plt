@@ -13,12 +13,19 @@
 #define wxb_commonh
 
 #ifdef WX_CARBON
-# include <Carbon/Carbon.h>
+# ifdef OS_X
+#  include <Carbon/Carbon.h>
+# else
+#  include <Carbon.h>
+#  include <string.h>
+# endif
 #else
 # include <QuickDraw.h>
 #endif
 
-#define macintosh
+#ifndef macintosh
+# define macintosh
+#endif
 #undef GUSI
 #define DEBUG_NEW 0
 

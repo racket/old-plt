@@ -3,12 +3,20 @@
            "configuration-table-structures.ss")
   (provide (struct timeouts (default-servlet password servlet-connection file-per-byte file-base))
            (struct paths (host-base log htdocs servlet)))
-    
+  
+  ; configuration = (make-configuration nat nat num (str -> host-configuration))
+  (provide-define-struct
+   configuration
+   (port max-waiting initial-connection-timeout virtual-hosts))
+  
   ; host = (make-host (listof str) (str str -> (U #f str)) (str str sym url str -> str)
   ;                   passwords resopnders timeouts paths (U oport #f))
-  (provide-define-struct host (indices servlet-path format-log-message passwords responders timeouts paths log))
+  (provide-define-struct
+   host
+   (indices servlet-path format-log-message passwords responders timeouts paths log))
   
-  ; passwords = (listof (list* relm:str protected-dir-regexp:str (listof (list user:sym password:str))))
+  ; passwords = (listof (list* relm:str protected-dir-regexp:str
+  ;                            (listof (list user:sym password:str))))
   
   ; responders = (make-responders (url tst -> response)
   ;                               (url tst -> response)
@@ -17,5 +25,6 @@
   ;                               response
   ;                               (url -> response)
   ;                               response)
-  (provide-define-struct responders
-    (servlet servlet-loading authentication servlets-refreshed passwords-refreshed file-not-found protocol)))
+  (provide-define-struct
+   responders
+   (servlet servlet-loading authentication servlets-refreshed passwords-refreshed file-not-found protocol)))

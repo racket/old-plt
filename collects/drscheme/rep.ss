@@ -310,7 +310,7 @@
 		       (let ([zodiac-read (reader)])
 			 (if (zodiac:eof? zodiac-read)
 			     (cleanup)
-			     (send-scheme (aries:annotate (zodiac:scheme-expand zodiac-read))
+			     (send-scheme (aries:annotate (zodiac:scheme-expand zodiac-read param))
 					  void
 					  (lambda (error?)
 					    (if error?
@@ -338,7 +338,7 @@
 				   [z-sexp (reader)])
 			  (if (zodiac:eof? z-sexp)
 			      last
-			      (loop (user-eval (aries:annotate (zodiac:scheme-expand z-sexp)))
+			      (loop (user-eval (aries:annotate (zodiac:scheme-expand z-sexp param)))
 				    (reader))))))
 		    (lambda ()
 		      (when (input-port? re-p)

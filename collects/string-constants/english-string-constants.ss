@@ -323,7 +323,11 @@ please adhere to these guidelines:
  (install-plt-file "Install ~a or open for editing?")
  (install-plt-file/yes "Install")
  (install-plt-file/no "Edit")
- 
+
+ (plt-installer-progress-window-title "Installer Progress") ;; frame title
+ (plt-installer-abort-installation "Abort Installation") ;; button label
+ (plt-installer-aborted "Aborted.") ;; msg that appears in the installation window when installation is aborted
+
  ;;; about box
  (about-drscheme-frame-title "About DrScheme")
  (take-a-tour "Take a Tour!")
@@ -1003,7 +1007,5 @@ please adhere to these guidelines:
  (wizard-next "Next")
  (wizard-back "Back")
  (wizard-finish "Finish")
-
- (plt-installer-progress-window-title "Installer Progress")
  
  )

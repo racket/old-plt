@@ -190,6 +190,11 @@ please adhere to these guidelines:
  (cs-mouse-over-variable-import "variable ~s imported from ~s")
  (cs-mouse-over-syntax-import "syntax ~s imported from ~s")
 
+ (cs-lexical-variable "lexical variable")
+ (cs-lexical-syntax "lexical syntax")
+ (cs-imported-variable "imported variable")
+ (cs-imported-syntax "imported syntax")
+
  ;;; info bar at botttom of drscheme frame
  (collect-button-label "GC")
  (read-only "Read only")
@@ -236,6 +241,15 @@ please adhere to these guidelines:
  (mode-submenu-label "Modes")
  (scheme-mode "Scheme mode")
  (text-mode "Text mode")
+
+ (scheme-mode-color-symbol "Symbol")
+ (scheme-mode-color-keyword "Keyword")
+ (scheme-mode-color-comment "Comment")
+ (scheme-mode-color-string "String")
+ (scheme-mode-color-constant "Constant")
+ (scheme-mode-color-parenthesis "Parenthesis")
+ (scheme-mode-color-error "Error")
+ (scheme-mode-color-other "Other")
  
  (url "URL")
  (url: "URL:")

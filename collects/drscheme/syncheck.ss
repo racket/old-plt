@@ -134,15 +134,14 @@ Check Syntax separates four classes of identifiers:
                   [super-on-insert on-insert]
                   [super-after-delete after-delete]
                   [super-on-delete on-delete])
+          
           (inherit begin-edit-sequence end-edit-sequence)
           (define/override (on-delete start len)
             (begin-edit-sequence)
             (super-on-delete start len))
           (define/override (after-delete start len)
             (super-after-delete start len)
-            (let ([st (find-syncheck-text this)])
-              (when st
-                (send st syncheck:clear-arrows)))
+            (clean-up)
             (end-edit-sequence))
           
           (define/override (on-insert start len)
@@ -150,11 +149,17 @@ Check Syntax separates four classes of identifiers:
             (super-on-insert start len))
           (define/override (after-insert start len)
             (super-after-insert start len)
-            (let ([st (find-syncheck-text this)])
-              (when st
-                (send st syncheck:clear-arrows)))
+            (clean-up)
             (end-edit-sequence))
 
+          (define/private (clean-up)
+            (let ([st (find-syncheck-text this)])
+              (when st
+                (let ([can (send st get-canvas)])
+                  (when can
+                    (let ([fr (send can get-top-level-window)])
+                      (send fr syncheck:clear-highlighting)))))))
+          
 	  (super-instantiate ())))
       
       
@@ -295,6 +300,7 @@ Check Syntax separates four classes of identifiers:
                   (set-arrow-end-x! arrow end-x)
                   (set-arrow-end-y! arrow end-y)))
               
+              ;; syncheck:init-arrows : -> void
               (define/public (syncheck:init-arrows)
                 (set! tacked-hash-table (make-hash-table))
                 (set! arrow-vectors (make-hash-table))
@@ -302,6 +308,8 @@ Check Syntax separates four classes of identifiers:
                 (let ([f (get-top-level-window)])
                   (when f
                     (send f open-status-line 'drscheme:check-syntax:mouse-over))))
+              
+              ;; syncheck:clear-arrows : -> void
               (define/public (syncheck:clear-arrows)
                 (when (or arrow-vectors cursor-location cursor-text)
                   (let ([any-tacked? #f])
@@ -806,15 +814,9 @@ Check Syntax separates four classes of identifiers:
               (send definitions begin-edit-sequence #f)
               (send definitions lock #f)
               (send definitions syncheck:clear-arrows)
-              (for-each (lambda (text)
-                          (send text begin-edit-sequence)
-                          (let* ([list (send text get-style-list)]
-                                 [style (send list find-named-style "Standard")])
-                            (when style
-                              (send text change-style
-                                    style 0 (send definitions last-position) #f))))
+              (for-each (lambda (text) 
+                          (send text thaw-colorer))
                         cleanup-texts)
-              (for-each (lambda (text) (send text end-edit-sequence)) cleanup-texts)
               (set! cleanup-texts '())
               (send definitions lock locked?)
               (send definitions end-edit-sequence)))
@@ -822,6 +824,7 @@ Check Syntax separates four classes of identifiers:
           ;; syncheck:add-to-cleanup-texts : (is-a?/c text%) -> void
           (define/public (syncheck:add-to-cleanup-texts txt)
             (unless (memq txt cleanup-texts)
+              (send txt freeze-colorer)
               (set! cleanup-texts (cons txt cleanup-texts))))
           
 	  (define/override (on-close)
@@ -1149,36 +1152,52 @@ Check Syntax separates four classes of identifiers:
         (send keymap map-function "c:x;b" "jump to binding occurrence")
         (send keymap map-function "c:x;n" "jump to next bound occurrence")
         (send keymap map-function "c:x;d" "jump to definition (in other file)"))
-        
+
+      (define lexically-bound-variable-style-pref 'drscheme:check-syntax:lexically-bound-variable)
+      (define lexically-bound-syntax-style-pref 'drscheme:check-syntax:lexically-bound-syntax)
+      (define imported-syntax-style-pref 'drscheme:check-syntax:imported-syntax)
+      (define imported-variable-style-pref 'drscheme:check-syntax:imported-variable)
+      
+      (define lexically-bound-variable-style-name "drscheme:check-syntax:lexically-bound-variable")
+      (define lexically-bound-syntax-style-name "drscheme:check-syntax:lexically-bound-syntax")
+      (define imported-syntax-style-name "drscheme:check-syntax:imported-syntax")
+      (define imported-variable-style-name "drscheme:check-syntax:imported-variable")
+
+      (define error-style-name (fw:scheme:short-sym->style-name 'error))
+      (define constant-style-name (fw:scheme:short-sym->style-name 'constant))
+      
       (define (syncheck-add-to-preferences-panel parent)
         (fw:color-prefs:build-color-selection-panel parent
-                                                    (string->symbol lexically-bound-variable-style-str)
-                                                    lexically-bound-variable-style-str
-                                                    lexically-bound-variable-style-str)
+                                                    lexically-bound-variable-style-pref
+                                                    lexically-bound-variable-style-name
+                                                    (string-constant cs-lexical-variable))
         (fw:color-prefs:build-color-selection-panel parent
-                                                    (string->symbol lexically-bound-syntax-style-str)
-                                                    lexically-bound-syntax-style-str
-                                                    lexically-bound-syntax-style-str)
+                                                    lexically-bound-syntax-style-pref
+                                                    lexically-bound-syntax-style-name
+                                                    (string-constant cs-lexical-syntax))
         (fw:color-prefs:build-color-selection-panel parent
-                                                    (string->symbol imported-variable-style-str)
-                                                    lexically-bound-variable-style-str
-                                                    lexically-bound-variable-style-str)
+                                                    imported-variable-style-pref
+                                                    lexically-bound-variable-style-name
+                                                    (string-constant cs-imported-variable))
         (fw:color-prefs:build-color-selection-panel parent
-                                                    (string->symbol imported-syntax-style-str)
-                                                    imported-syntax-style-str
-                                                    imported-syntax-style-str))
+                                                    imported-syntax-style-pref
+                                                    imported-syntax-style-name
+                                                    (string-constant cs-imported-syntax)))
+      
+      (fw:color-prefs:register-color-pref lexically-bound-variable-style-pref
+                                          lexically-bound-variable-style-name
+                                          (make-object color% 89 131 255))
+      (fw:color-prefs:register-color-pref imported-variable-style-pref
+                                          imported-variable-style-name
+                                          (make-object color% 145 89 255))
+      (fw:color-prefs:register-color-pref lexically-bound-syntax-style-pref
+                                          lexically-bound-syntax-style-name
+                                          (make-object color% 0 64 255))
+      (fw:color-prefs:register-color-pref imported-syntax-style-pref
+                                          imported-syntax-style-name
+                                          (make-object color% 85 0 255))
 
-      ;; prefix-style : (union symbol string) -> string
-      (define (prefix-style x) (format "syntax-coloring:Scheme:~a" x))      
-            
-      ;; all strings naming styles
-      (define error-style-str (prefix-style 'error))
-      (define constant-style-str (prefix-style 'constant))
 
-      (define lexically-bound-variable-style-str (prefix-style 'lexically-bound-variable))
-      (define lexically-bound-syntax-style-str (prefix-style 'lexically-bound-syntax))
-      (define imported-syntax-style-str (prefix-style 'imported-syntax))
-      (define imported-variable-style-str (prefix-style 'imported-variable))
                                           
                                           
 
@@ -1425,12 +1444,12 @@ Check Syntax separates four classes of identifiers:
                 [(quote datum)
                  (begin 
                    (annotate-raw-keyword sexp (if high-level? high-macrefs macrefs))
-                   ;(color-internal-structure (syntax datum) constant-style-str)
+                   ;(color-internal-structure (syntax datum) constant-style-name)
                    )]
                 [(quote-syntax datum)
                  (begin 
                    (annotate-raw-keyword sexp (if high-level? high-macrefs macrefs))
-                   ;(color-internal-structure (syntax datum) constant-style-str)
+                   ;(color-internal-structure (syntax datum) constant-style-name)
                    )]
                 [(with-continuation-mark a b c)
                  (begin
@@ -1445,7 +1464,7 @@ Check Syntax separates four classes of identifiers:
                    (for-each loop (syntax->list (syntax (pieces ...)))))]
                 [(#%datum . datum)
                  (begin
-                   ;(color-internal-structure (syntax datum) constant-style-str)
+                   ;(color-internal-structure (syntax datum) constant-style-name)
                    (annotate-raw-keyword sexp (if high-level? high-macrefs macrefs)))
                  ]
                 [(#%top . var)
@@ -1543,7 +1562,7 @@ Check Syntax separates four classes of identifiers:
       ;; annotate-unused-require : syntax -> void
       (define (annotate-unused-require req/tag)
         (unless (req/tag-used? req/tag)
-          (color (req/tag-req-stx req/tag) error-style-str)))
+          (color (req/tag-req-stx req/tag) error-style-name)))
 
       ;; annotate-variables : namespace id-set[six of them] (listof syntax) (listof syntax) -> void
       ;; colors in and draws arrows for variables, according to their classifications
@@ -1564,7 +1583,10 @@ Check Syntax separates four classes of identifiers:
           (hash-table-for-each require-for-syntaxes (lambda (k v) (hash-table-put! unused-require-for-syntaxes k #t)))
         
           ;(printf "> color binders\n")
-          (for-each (lambda (vars) (for-each (lambda (x) (color-variable x identifier-binding)) vars))
+          (for-each (lambda (vars) (for-each (lambda (x)
+                                               (when (syntax-original? x)
+                                                 (color-variable x identifier-binding)))
+                                             vars))
                     (get-idss binders))
           ;(printf "> color varrefs\n")
           (for-each (lambda (vars) (for-each 
@@ -1590,7 +1612,10 @@ Check Syntax separates four classes of identifiers:
                     (get-idss high-varrefs))
           
           ;(printf "> color mac binders\n")
-          (for-each (lambda (vars) (for-each (lambda (x) (color-syntax x identifier-binding)) vars))
+          (for-each (lambda (vars) (for-each (lambda (x)
+                                               (when (syntax-original? x)
+                                                 (color-syntax x identifier-binding)))
+                                             vars))
                     (get-idss mac-binders))
           ;(printf "> color macrefs\n")
           (for-each (lambda (vars) (for-each
@@ -1626,7 +1651,7 @@ Check Syntax separates four classes of identifiers:
         (hash-table-for-each
          unused
          (lambda (k v)
-           (for-each (lambda (stx) (color stx error-style-str))
+           (for-each (lambda (stx) (color stx error-style-name))
                      (hash-table-get requires k)))))
       
       ;; connect-identifier : syntax
@@ -1638,7 +1663,9 @@ Check Syntax separates four classes of identifiers:
       (define (connect-identifier var all-binders unused requires get-binding)
         (let ([binders (get-ids all-binders var)])
           (when binders
-            (for-each (lambda (x) (connect-syntaxes x var))
+            (for-each (lambda (x)
+                        (when (syntax-original? x)
+                          (connect-syntaxes x var)))
                       binders))
           
           (when (and unused requires)
@@ -1668,19 +1695,18 @@ Check Syntax separates four classes of identifiers:
                (or (get-ids binders var)
                    (parameterize ([current-namespace user-namespace])
                      (namespace-variable-value (syntax-e var) #t (lambda () #f))))])
-          ;(printf "top-bound? ~s ~s\n" (syntax-e var) top-bound?)
           (if top-bound?
-              (color var lexically-bound-variable-style-str)
-              (color var error-style-str))
+              (color var lexically-bound-variable-style-name)
+              (color var error-style-name))
           (connect-identifier var binders #f #f identifier-binding)))
       
       ;; color-syntax : syntax (union identifier-binding identifier-transformer-binding) -> void
       (define (color-syntax var get-binding)
-        (color-identifier var get-binding lexically-bound-syntax-style-str imported-syntax-style-str))
+        (color-identifier var get-binding lexically-bound-syntax-style-name imported-syntax-style-name))
       
       ;; color-variable : syntax (union identifier-binding identifier-transformer-binding) -> void
       (define (color-variable var get-binding)
-        (color-identifier var get-binding lexically-bound-variable-style-str imported-variable-style-str))
+        (color-identifier var get-binding lexically-bound-variable-style-name imported-variable-style-name))
 
       ;; color-identifier : syntax (union identifier-binding identifier-transformer-binding) string string -> void
       (define (color-identifier var get-binding lexical-color imported-color)
@@ -1803,8 +1829,8 @@ Check Syntax separates four classes of identifiers:
       (define (annotate-bound-in-sources biss)
         (for-each
          (lambda (bis)
-           (color (car bis) lexically-bound-variable-style-str)
-           (color (cdr bis) lexically-bound-variable-style-str)
+           (color (car bis) lexically-bound-variable-style-name)
+           (color (cdr bis) lexically-bound-variable-style-name)
            (connect-syntaxes (car bis) (cdr bis)))
          biss))
       
@@ -1974,8 +2000,7 @@ Check Syntax separates four classes of identifiers:
                      [rst (cdr e)])
                  (if (syntax? fst)
                      (begin
-                       (when (syntax-original? fst)
-                         (add-id id-set fst))
+                       (add-id id-set fst)
                        (loop rst))
                      (loop rst)))]
               [(null? e) (void)]

@@ -1618,7 +1618,8 @@ do_map(int argc, Scheme_Object *argv[], char *name, int make_result,
     for (i = 0; i < argc ; i++) {
       if (!SCHEME_PAIRP(working[i])) {
 	/* There was a mutation! */
-	scheme_raise_exn(MZEXN_MISC, 
+	scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, 
+			 working[i],
 			 "%s: argument list mutated",
 			 name);
 	return NULL;

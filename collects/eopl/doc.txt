@@ -57,9 +57,17 @@ Differences from the book:
   Defined in the EoPL textbook's Appendix A.
 
 > eopl:error
-> eopl:printf
 
   As in the book.
+
+> eopl:printf
+> eopl:pretty-print
+
+  Same as MzScheme's `printf' and `pretty-print'.
+
+> eopl:error-stop
+
+  A function that takes no arguments and aborts.
 
 > list-of
 > always?

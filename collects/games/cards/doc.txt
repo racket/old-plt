@@ -19,6 +19,12 @@ The _cards.ss_ module defines the following procedures:
       then lowest-value. A card is an object, with methods described 
       below. A card can only be on one table at a time.
 
+> (make-card front-bm back-bm-or-#f suit-id value) returns a single
+      card given a bitmap for the front, an optional bitmap for the
+      back, and arbitrary values for the card's suit and value (which
+      are returned by the card's `get-value' and `get-suit-id'
+      methods). All provided bitmaps should be 71 by 96 pixels.
+
 > (shuffle-list list n) shuffles the given `list' `n' times, returning
       the new list. Shuffling simulates an actual shuffle: the list is
       split into halves which are merged back together by repeatedly
@@ -184,15 +190,15 @@ Table methods: [in addition to standard frame% methods]
            'middle - 'drag/one
            'right - 'drag/below
 
-> set-double-click-action :: (send t set-double-click-action) - sets
-        the procedure to be called when a card is double-clicked. The
-        procedure is called with the double-clicked card. The default
-        procedure flips the cards along with its on-top-of cards,
-        raises the cards, and reverses the front-to-back order of the
-        cards
+> set-double-click-action :: (send t set-double-click-action proc) -
+        sets the procedure to be called when a card is
+        double-clicked. The procedure is called with the
+        double-clicked card. The default procedure flips the cards
+        along with its on-top-of cards, raises the cards, and reverses
+        the front-to-back order of the cards
 
-> set-single-click-action :: (send t set-single-click-action) - sets
-        the procedure to be called when a card is single-clicked,
+> set-single-click-action :: (send t set-single-click-action proc) -
+        sets the procedure to be called when a card is single-clicked,
         after the button action is initiated. (If the card is
         double-clicked, this action is inoked for the first click,
         then the double-click action is invoked.) The default action
@@ -225,14 +231,17 @@ Card methods:
 > face-down? :: (send c face-down?) - #t if the card is currently
        face down.
 
-> get-suit-id :: (send c get-suit-id) - 1, 2, 3, or 4 (see `get-suit'
-       for corresponding suit names)
+> get-suit-id :: (send c get-suit-id) - normally 1, 2, 3, or 4 (see
+       `get-suit' for corresponding suit names), but the result can be
+       anything for a card created by `make-card'
 
-> get-suit :: (send c get-suit) - 'clubs, 'diamonds, 'hearts, or
-       'spades
+> get-suit :: (send c get-suit) - 'clubs, 'diamonds, 'hearts, 'spades,
+       or 'unknown, depending on whether `get-suit-id' returns 1, 2,
+       3, 4, or something else
 
-> get-value :: (send c get-value) - 1 (Ace), 2, ... 10, 11 (Jack), 12
-       (Queen), or 13 (King)
+> get-value :: (send c get-value) - normally 1 (Ace), 2, ... 10, 11
+       (Jack), 12 (Queen), or 13 (King), but the result can be
+       anything for a card created by `make-card'
    
 > user-can-flip :: (send c user-can-flip)
 > user-can-flip :: (send c user-can-flip can?)

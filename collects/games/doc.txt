@@ -51,6 +51,10 @@ or other games installed as sub-collections of the "games" collection
 
                                               - by Matthew
 
+ * _Memory_ (matching game) - In case you have small children, too.
+
+                                              - by Matthew
+
  * _Paint by Number_ - A logic game. Click the "Help" button in Paint
    by Numbers for more details.
 

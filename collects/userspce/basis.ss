@@ -351,7 +351,8 @@
   ;; drscheme-error-value->string-handler : TST number -> string
   (define (drscheme-error-value->string-handler x n)
     (let ([port (open-output-string)])
-      (parameterize ([current-output-port port])
+      (parameterize ([current-output-port port]
+		     [mzlib:pretty-print:pretty-print-columns 'infinity])
 	(drscheme-print/void x))
       (let ([long-string (get-output-string port)])
 	(close-output-port port)

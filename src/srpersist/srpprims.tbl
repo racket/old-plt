@@ -4,97 +4,98 @@ static SRP_PRIM srpPrims[] = {
 
   // utility procedures
 
-  { srp_make_indicator,"sql-make-indicator",0,0 },  //tested
-  { srp_read_indicator,"sql-read-indicator",1,1 },  //tested
+  { srp_make_length,"sql-make-length",0,0 },  
+  { srp_read_length,"sql-read-length",1,1 },  
+  { srp_make_indicator,"sql-make-indicator",0,0 },  
+  { srp_read_indicator,"sql-read-indicator",1,1 },  
   { srp_set_indicator,"sql-set-indicator",2,3 },    
-  { srp_read_row_status,"sql-read-row-status",1,1 }, //tested
-  { srp_read_boxed_uint,"sql-read-boxed-uint",1,1 },
-  { srp_read_op_parms,"sql-read-op-parms",1,1 },    //not supported by Access driver
-  { srp_make_buffer,"sql-make-buffer",2,2 },        //tested
-  { srp_read_buffer,"sql-read-buffer",1,1 },        //tested
-  { srp_write_buffer,"sql-write-buffer",2,2 },
+  { srp_read_row_status,"sql-read-row-status",1,1 },
+  { srp_read_op_parms,"sql-read-op-parms",1,1 },    
+  { srp_make_buffer,"sql-make-buffer",2,2 },        
+  { srp_read_buffer,"sql-read-buffer",1,1 },        
+  { srp_write_buffer,"sql-write-buffer",2,2 },      
 	
   // from SQL.H
 
-  { srp_SQLAllocConnect,"sql-alloc-connect",1,1 },  //tested
-  { srp_SQLAllocEnv,"sql-alloc-env",0,0 },          //tested
-  { srp_SQLAllocHandle,"sql-alloc-handle",1,2 },    //tested
-  { srp_SQLAllocStmt,"sql-alloc-stmt",1,1 },        //tested
-  { srp_SQLBindCol,"sql-bind-col",4,4 },            //tested
-  { srp_SQLBindParam,"sql-bind-param",7,7 },        //tested  
-  { srp_SQLCancel,"sql-cancel",1,1 },               //tested
-  { srp_SQLCloseCursor,"sql-close-cursor",1,1 },    //tested
-  { srp_SQLColAttribute,"sql-col-attribute",3,3 },  //tested
-  { srp_SQLColumns,"sql-columns",9,9 },
-  { srp_SQLConnect,"sql-connect",4,4 },             //tested
-  { srp_SQLCopyDesc,"sql-copy-desc",2,2 },          //no hdesc's available from driver
-  { srp_SQLDataSources,"sql-data-sources",8,8 },
-  { srp_SQLDescribeCol,"sql-describe-col",2,2 },    //tested
-  { srp_SQLDisconnect,"sql-disconnect",1,1 },       //tested
-  { srp_SQLEndTran,"sql-end-tran",2,2 },            //tested
-  { srp_SQLError,"sql-error",8,8 },
-  { srp_SQLExecDirect,"sql-exec-direct",2,2 },      //tested
-  { srp_SQLExecute,"sql-execute",1,1 },             //tested
-  { srp_SQLFetch,"sql-fetch",1,1 },                 //tested
-  { srp_SQLFetchScroll,"sql-fetch-scroll",2,3 },    //tested
-  { srp_SQLFreeConnect,"sql-free-connect",1,1 },    //tested
-  { srp_SQLFreeEnv,"sql-free-env",1,1 },            //tested
-  { srp_SQLFreeHandle,"sql-free-handle",1,1 },      //tested
-  { srp_SQLFreeStmt,"sql-free-stmt",2,2 },          //tested
-  { srp_SQLGetConnectAttr,"sql-get-connect-attr",2,2 }, //tested
-  { srp_SQLGetConnectOption,"sql-get-connect-option",2,2 }, //tested
-  { srp_SQLGetCursorName,"sql-get-cursor-name",1,1 }, //tested
-  { srp_SQLGetData,"sql-get-data",4,4 },             //tested
-  { srp_SQLGetDescField,"sql-get-desc-field",6,6 },
-  { srp_SQLGetDescRec,"sql-get-desc-rec",11,11 },
-  { srp_SQLGetDiagField,"sql-get-diag-field",7,7 },
-  { srp_SQLGetDiagRec,"sql-get-diag-rec",2,2 },        //tested  
-  { srp_SQLGetEnvAttr,"sql-get-env-attr",2,2 },        //tested
-  { srp_SQLGetFunctions,"sql-get-functions",2,2 },     //tested
-  { srp_SQLGetInfo,"sql-get-info",2,3 },               //tested
-  { srp_SQLGetStmtAttr,"sql-get-stmt-attr",2,2 },      //tested
-  { srp_SQLGetStmtOption,"sql-get-stmt-option",2,2 },  //tested
-  { srp_SQLGetTypeInfo,"sql-get-type-info",2,2 },
-  { srp_SQLNumResultCols,"sql-num-result-cols",1,1 },  //tested
-  { srp_SQLParamData,"sql-param-data",1,1 },           //tested
-  { srp_SQLPrepare,"sql-prepare",2,2 },                //tested
-  { srp_SQLPutData,"sql-put-data",2,2 },
-  { srp_SQLRowCount,"sql-row-count",1,1 },             //tested
-  { srp_SQLSetConnectAttr,"sql-set-connect-attr",3,3 },//tested
-  { srp_SQLSetConnectOption,"sql-set-connect-option",3,3 }, //tested
-  { srp_SQLSetCursorName,"sql-set-cursor-name",2,2 },  //tested
-  { srp_SQLSetDescField,"sql-set-desc-field",5,5 },
-  { srp_SQLSetDescRec,"sql-set-desc-rec",10,10 },
-  { srp_SQLSetEnvAttr,"sql-set-env-attr",3,3 },        //tested
-  { srp_SQLSetParam,"sql-set-param",8,8 },
-  { srp_SQLSetStmtAttr,"sql-set-stmt-attr",3,3 },      //tested
-  { srp_SQLSetStmtOption,"sql-set-stmt-option",3,3 },  //tested
-  { srp_SQLSpecialColumns,"sql-special-columns",10,10 },
-  { srp_SQLStatistics,"sql-statistics",9,9 },
-  { srp_SQLTables,"sql-tables",9,9 },
-  { srp_SQLTransact,"sql-transact",3,3 },
+  { srp_SQLAllocConnect,"sql-alloc-connect",1,1 },  
+  { srp_SQLAllocEnv,"sql-alloc-env",0,0 },          
+  { srp_SQLAllocHandle,"sql-alloc-handle",1,2 },    
+  { srp_SQLAllocStmt,"sql-alloc-stmt",1,1 },        
+  { srp_SQLBindCol,"sql-bind-col",4,4 },            
+  { srp_SQLBindParam,"sql-bind-param",7,7 },        
+  { srp_SQLCancel,"sql-cancel",1,1 },               
+  { srp_SQLCloseCursor,"sql-close-cursor",1,1 },    
+  { srp_SQLColAttribute,"sql-col-attribute",3,3 },  
+  { srp_SQLColumns,"sql-columns",5,5 },             
+  { srp_SQLConnect,"sql-connect",4,4 },             
+  { srp_SQLCopyDesc,"sql-copy-desc",2,2 },          
+  { srp_SQLDataSources,"sql-data-sources",2,2 },    
+  { srp_SQLDescribeCol,"sql-describe-col",2,2 },    
+  { srp_SQLDisconnect,"sql-disconnect",1,1 },       
+  { srp_SQLEndTran,"sql-end-tran",2,2 },            
+  { srp_SQLError,"sql-error",3,3 },                 
+  { srp_SQLExecDirect,"sql-exec-direct",2,2 },      
+  { srp_SQLExecute,"sql-execute",1,1 },             
+  { srp_SQLFetch,"sql-fetch",1,1 },                 
+  { srp_SQLFetchScroll,"sql-fetch-scroll",2,3 },    
+  { srp_SQLFreeConnect,"sql-free-connect",1,1 },    
+  { srp_SQLFreeEnv,"sql-free-env",1,1 },            
+  { srp_SQLFreeHandle,"sql-free-handle",1,1 },      
+  { srp_SQLFreeStmt,"sql-free-stmt",2,2 },          
+  { srp_SQLGetConnectAttr,"sql-get-connect-attr",2,2 }, 
+  { srp_SQLGetConnectOption,"sql-get-connect-option",2,2 }, 
+  { srp_SQLGetCursorName,"sql-get-cursor-name",1,1 }, 
+  { srp_SQLGetData,"sql-get-data",4,4 },             
+  { srp_SQLGetDescField,"sql-get-desc-field",3,3 },  
+  { srp_SQLGetDescRec,"sql-get-desc-rec",2,2 },      
+  { srp_SQLGetDiagField,"sql-get-diag-field",3,3 },  
+  { srp_SQLGetDiagRec,"sql-get-diag-rec",2,2 },      
+  { srp_SQLGetEnvAttr,"sql-get-env-attr",2,2 },      
+  { srp_SQLGetFunctions,"sql-get-functions",2,2 },   
+  { srp_SQLGetInfo,"sql-get-info",2,3 },             
+  { srp_SQLGetStmtAttr,"sql-get-stmt-attr",2,2 },    
+  { srp_SQLGetStmtOption,"sql-get-stmt-option",2,2 },
+  { srp_SQLGetTypeInfo,"sql-get-type-info",2,2 },    
+  { srp_SQLNumResultCols,"sql-num-result-cols",1,1 },
+  { srp_SQLParamData,"sql-param-data",1,1 },         
+  { srp_SQLPrepare,"sql-prepare",2,2 },              
+  { srp_SQLPutData,"sql-put-data",2,2 },             
+  { srp_SQLRowCount,"sql-row-count",1,1 },           
+  { srp_SQLSetConnectAttr,"sql-set-connect-attr",3,3 },
+  { srp_SQLSetConnectOption,"sql-set-connect-option",3,3 },
+  { srp_SQLSetCursorName,"sql-set-cursor-name",2,2 },  
+  { srp_SQLSetDescField,"sql-set-desc-field",4,4 },    
+  { srp_SQLSetDescRec,"sql-set-desc-rec",8,9 },        
+  { srp_SQLSetEnvAttr,"sql-set-env-attr",3,3 },        
+  { srp_SQLSetParam,"sql-set-param",5,7 },             
+  { srp_SQLSetStmtAttr,"sql-set-stmt-attr",3,3 },      
+  { srp_SQLSetStmtOption,"sql-set-stmt-option",3,3 },  
+  { srp_SQLSpecialColumns,"sql-special-columns",7,7 }, 
+  { srp_SQLStatistics,"sql-statistics",6,6 },          
+  { srp_SQLTables,"sql-tables",5,5 },                  
+  { srp_SQLTransact,"sql-transact",3,3 },              
 
   // from SQLEXT.H
 
-  { srp_SQLDriverConnect,"sql-driver-connect",3,3},   //tested
-  { srp_SQLBrowseConnect,"sql-browse-connect",6,6 },
-  { srp_SQLColAttributes,"sql-col-attributes",3,3 },  //tested
-  { srp_SQLColumnPrivileges,"sql-column-privileges",9,9 },
-  { srp_SQLDescribeParam,"sql-describe-param",6,6 },
-  { srp_SQLExtendedFetch,"sql-extended-fetch",3,3 },  //tested
-  { srp_SQLForeignKeys,"sql-foreign-keys",13,13 },
-  { srp_SQLMoreResults,"sql-more-results",1,1 },      //tested
-  { srp_SQLNativeSql,"sql-native-sql",6,6 },
-  { srp_SQLNumParams,"sql-num-params",1,1 },          //tested
-  { srp_SQLParamOptions,"sql-param-options",3,3 },
-  { srp_SQLPrimaryKeys,"sql-primary-keys",4,4 },      //unsupported by Access driver
-  { srp_SQLProcedureColumns,"sql-procedure-columns",9,9 },
-  { srp_SQLProcedures,"sql-procedures",7,7 },
-  { srp_SQLSetPos,"sql-set-pos",4,4 },                   // tested
-  { srp_SQLTablePrivileges,"sql-table-privileges",7,7 },
-  { srp_SQLDrivers,"sql-drivers",8,8 },
-  { srp_SQLBindParameter,"sql-bind-parameter",10,10 },
-  { srp_SQLSetScrollOptions,"sql-set-scroll-options",4,4 }, //tested
+  { srp_SQLDriverConnect,"sql-driver-connect",3,3},   
+  { srp_SQLBrowseConnect,"sql-browse-connect",2,2 },  
+  { srp_SQLColAttributes,"sql-col-attributes",3,3 },  
+  { srp_SQLColumnPrivileges,"sql-column-privileges",5,5 }, 
+  { srp_SQLDescribeParam,"sql-describe-param",2,2 },  
+  { srp_SQLExtendedFetch,"sql-extended-fetch",3,3 },  
+  { srp_SQLForeignKeys,"sql-foreign-keys",7,7 },      
+  { srp_SQLMoreResults,"sql-more-results",1,1 },      
+  { srp_SQLNativeSql,"sql-native-sql",2,2 },          
+  { srp_SQLNumParams,"sql-num-params",1,1 },          
+  { srp_SQLParamOptions,"sql-param-options",2,2 },    
+  { srp_SQLPrimaryKeys,"sql-primary-keys",4,4 },      
+  { srp_SQLProcedureColumns,"sql-procedure-columns",5,5 }, 
+  { srp_SQLProcedures,"sql-procedures",4,4 },            
+  { srp_SQLSetPos,"sql-set-pos",4,4 },                   
+  { srp_SQLTablePrivileges,"sql-table-privileges",4,4 },    
+  { srp_SQLDrivers,"sql-drivers",2,2 },                     
+  { srp_SQLBindParameter,"sql-bind-parameter",7,8 },        
+  { srp_SQLSetScrollOptions,"sql-set-scroll-options",4,4 },
 
   // miscellany
 

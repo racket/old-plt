@@ -1,4 +1,4 @@
-// srpersist.cpp 
+// srpersist.cxx
 
 #include "stdafx.h"
 
@@ -24,6 +24,12 @@
 #include "srpconsts.tbl"
 #include "srpinfo.tbl"
 #include "srpbitmask.tbl"
+
+#ifndef WIN32
+typedef boolean BOOL
+#endif
+
+static Scheme_Unit *srp_unit;  // the unit returned by the extension 
 
 static SRP_BUFFER_TBL_ENTRY *bufferTable[BUFFER_TBL_SIZE];
 
@@ -106,7 +112,7 @@ char *findIntegerName(char *name,SQLUINTEGER value,
 }
 
 SQLUINTEGER findNamedInteger(char *name,char *intName,
-		      SRP_NAMED_BITS_DICT *dict,size_t dictsize) {
+			     SRP_NAMED_BITS_DICT *dict,size_t dictsize) {
   SRP_NAMED_BITS_DICT *p;
 
   p = namedBitsDictSearch(name,dict,dictsize);
@@ -293,6 +299,17 @@ char *rowStatusToString(SQLUSMALLINT rowStatus) {
 
 // utilities
 
+Scheme_Object *srp_make_length(int argc,Scheme_Object **argv) {
+  SRP_SQL_LENGTH *retval;
+
+  retval = (SRP_SQL_LENGTH *)scheme_malloc_eternal(sizeof(SRP_SQL_LENGTH));
+
+  retval->type = sql_length_type; 
+  retval->value = 0;
+
+  return (Scheme_Object *)retval;
+}
+
 Scheme_Object *srp_make_indicator(int argc,Scheme_Object **argv) {
   SRP_SQL_INDICATOR *retval;
 
@@ -302,23 +319,6 @@ Scheme_Object *srp_make_indicator(int argc,Scheme_Object **argv) {
   retval->value = 0;
 
   return (Scheme_Object *)retval;
-}
-
-Scheme_Object *srp_read_boxed_uint(int argc,Scheme_Object **argv) {
-  SQLUINTEGER *val;
-
-  if (SQL_BOXED_UINTP(argv[0]) == FALSE) {
-    scheme_wrong_type("sql-read-boxed-uint","sql-boxed-uint",0,argc,argv);
-  }
-
-  val = SQL_BOXED_UINT_VAL(argv[0]);
-
-  if (val == NULL) {
-    scheme_signal_error("sql-read-boxed-uint: NULL box");
-  }
-
-  return scheme_make_integer_value_from_unsigned(*val);
-
 }
 
 Scheme_Object *srp_read_op_parms(int argc,Scheme_Object **argv) {
@@ -390,6 +390,14 @@ Scheme_Object *srp_read_indicator(int argc,Scheme_Object **argv) {
   return value_object;
 }
 
+Scheme_Object *srp_read_length(int argc,Scheme_Object **argv) {
+  if (SQL_LENGTHP(argv[0]) == FALSE) {
+    scheme_wrong_type("sql-read-length","sql-length",0,argc,argv);
+  }
+
+  return scheme_make_integer_value(SQL_LENGTH_VAL(argv[0]));
+}
+
 Scheme_Object *srp_set_indicator(int argc,Scheme_Object **argv) {
   char *lenString;
   SRP_SQL_INDICATOR *indicator;
@@ -398,7 +406,7 @@ Scheme_Object *srp_set_indicator(int argc,Scheme_Object **argv) {
     scheme_wrong_type("sql-set-indicator","sql-indicator",0,argc,argv);
   }
 
-  if (SQL_INDICATORP(argv[1]) == FALSE) {
+  if (SCHEME_SYMBOLP(argv[1]) == FALSE) {
     scheme_wrong_type("sql-set-indicator","symbol",1,argc,argv);
   }
 
@@ -411,7 +419,7 @@ Scheme_Object *srp_set_indicator(int argc,Scheme_Object **argv) {
 
     if (argc != 3) {
       scheme_signal_error("sql-set-indicator: "
-			  "%s requires additional int argument",lenString);
+			  "%s requires additional integer argument",lenString);
     }
 
     if (SCHEME_INTP(argv[2]) == FALSE) {
@@ -459,7 +467,7 @@ Scheme_Object *srp_read_row_status(int argc,Scheme_Object **argv) {
   SQLUINTEGER numRows;
   Scheme_Object *retval;
   Scheme_Object *symbol;
-  int i;
+  long i;
 
   if (SQL_ROW_STATUSP(argv[0]) == FALSE) {
     scheme_wrong_type("sql-read-row-status","sql-row-status",0,argc,argv);
@@ -474,6 +482,178 @@ Scheme_Object *srp_read_row_status(int argc,Scheme_Object **argv) {
     symbol = scheme_intern_symbol(rowStatusToString(values[i]));
     retval = scheme_make_pair(symbol,retval);
   }
+
+  return retval;
+
+}
+
+char *APDArrayStatusToString(SQLUSMALLINT status) {
+  switch(status) {
+  case SQL_PARAM_PROCEED :
+    return "sql-param-proceed";
+  case SQL_PARAM_IGNORE :
+    return "sql-param-ignore";
+  default :
+    scheme_signal_error("Unknown array status (%X) for APD descriptor",status);
+  }
+  return NULL;
+}
+
+char *IPDArrayStatusToString(SQLUSMALLINT status) {
+  switch(status) {
+  case SQL_PARAM_SUCCESS :
+    return "sql-param-success";
+  case SQL_PARAM_SUCCESS_WITH_INFO :
+    return "sql-param-success-with-info";
+  case SQL_PARAM_ERROR :
+    return "sql-param-error";
+  case SQL_PARAM_UNUSED :
+    return "sql-param-unused";
+  case SQL_PARAM_DIAG_UNAVAILABLE :
+    return "sql-param-unavailable";
+  default :
+    scheme_signal_error("Unknown IPD array status (%X)",status);
+  }
+  return NULL;
+}
+
+char *ARDArrayStatusToString(SQLUSMALLINT status) {
+  switch(status) {
+  case SQL_ROW_PROCEED :
+    return "sql-row-proceed";
+  case SQL_ROW_IGNORE :
+    return "sql-row-ignore";
+  default :
+    scheme_signal_error("Unknown ARD array status (%X)",status);
+  }
+  return NULL;
+}
+
+char *IRDArrayStatusToString(SQLUSMALLINT status) {
+  switch(status) {
+  case SQL_ROW_SUCCESS :
+    return "sql-row-success";
+  case SQL_ROW_SUCCESS_WITH_INFO :
+    return "sql-row-success-with-info";
+  case SQL_ROW_ERROR :
+    return "sql-row-error";
+  case SQL_ROW_UPDATED :
+    return "sql-row-updated";
+  case SQL_ROW_DELETED :
+    return "sql-row-deleted";
+  case SQL_ROW_ADDED :
+    return "sql-row-added";
+  case SQL_ROW_NOROW :
+    return "sql-row-norow";
+  default :
+    scheme_signal_error("Unknown IRD array status (%X)",status);
+  }
+  return NULL;
+}
+
+Scheme_Object *srp_read_array_status(int argc,Scheme_Object **argv) {
+  SQLRETURN sr;
+  SQLUSMALLINT *values;
+  DESCTYPE descType;
+  SQLHDESC hdesc;
+  SQLUINTEGER arraySize;
+  SQLSMALLINT descCount;
+  SQLUINTEGER *pRowsCount;
+  SQLINTEGER actualLen;
+  Scheme_Object *retval;
+  long i;
+
+  if (SQL_ARRAY_STATUSP(argv[0]) == FALSE) {
+    scheme_wrong_type("sql-read-array-status","sql-array-status",0,argc,argv);
+  }
+
+  values = SQL_ARRAY_STATUS_VAL(argv[0]);
+  descType = SQL_ARRAY_STATUS_DESCTYPE(argv[0]);
+  hdesc = SQL_ARRAY_STATUS_HDESC(argv[0]);
+
+  if (values == NULL) {
+    return scheme_null;
+  }
+
+  retval = scheme_null;
+
+  switch(descType) {
+  case APD :
+
+    sr = SQLGetDescField(hdesc,1,SQL_DESC_COUNT,
+			 &descCount,sizeof(descCount),&actualLen);
+
+    if (sr != SQL_SUCCESS) {
+      scheme_signal_error("Can't get array size for APD descriptor");
+    }
+
+    retval = scheme_null;
+
+    for (i = descCount - 1; i >= 0; i--) {
+      retval = scheme_make_pair(scheme_intern_symbol(APDArrayStatusToString(values[i])),
+				retval);
+    }
+
+    return retval;
+
+  case ARD :
+
+    sr = SQLGetDescField(hdesc,1,SQL_DESC_COUNT,
+			 &arraySize,sizeof(arraySize),&actualLen);
+
+    if (sr != SQL_SUCCESS) {
+      scheme_signal_error("Can't get rowset size for ARD descriptor");
+    }
+
+    retval = scheme_null;
+
+    for (i = arraySize - 1; i >= 0; i--) {
+      retval = scheme_make_pair(scheme_intern_symbol(ARDArrayStatusToString(values[i])),
+				retval);
+    }
+
+    return retval;
+
+  case IPD :
+
+    sr = SQLGetDescField(hdesc,1,SQL_DESC_COUNT,
+			 &descCount,sizeof(descCount),&actualLen);
+
+    if (sr != SQL_SUCCESS) {
+      scheme_signal_error("Can't get parameter count for IPD descriptor");
+    }
+
+    retval = scheme_null;
+
+    for (i = descCount - 1; i >= 0; i--) {
+      retval = scheme_make_pair(scheme_intern_symbol(IPDArrayStatusToString(values[i])),
+				retval);
+    }
+
+    return retval;
+
+  case IRD :
+
+    sr = SQLGetDescField(hdesc,1,SQL_DESC_ROWS_PROCESSED_PTR,
+			 &pRowsCount,sizeof(pRowsCount),&actualLen);
+
+    if (sr != SQL_SUCCESS) {
+      scheme_signal_error("Can't get rowset size for IRD descriptor");
+    }
+
+    retval = scheme_null;
+
+    for (i = *pRowsCount - 1; i >= 0; i--) {
+      retval = scheme_make_pair(scheme_intern_symbol(IRDArrayStatusToString(values[i])),
+				retval);
+    }
+
+    return retval;
+
+  case EXPLICIT :
+
+    scheme_signal_error("Can't get array status for explicitly-allocated descriptor");
+  } 
 
   return retval;
 
@@ -782,18 +962,10 @@ unsigned long *getIntervalSecond(SQL_INTERVAL_STRUCT *p) {
 
 Scheme_Object *srp_write_buffer(int argc,Scheme_Object **argv) {
   SQLSMALLINT CDataType;
-  //  Scheme_Object *currList,*currVal;
   void *buffer;
   long numElts;
-  long longVal;
-  unsigned long uLongVal;
   Scheme_Object *accessors[5];
   INTERVAL_FIELD_ACCESSOR fields[5];
-  SQL_NUMERIC_STRUCT *pNumeric;
-  SQL_DATE_STRUCT *pDate;
-  SQL_TIME_STRUCT *pTime;
-  SQL_TIMESTAMP_STRUCT *pTimeStamp;
-  int i;
   
   if (SQL_BUFFERP(argv[0]) == FALSE) {
     scheme_wrong_type("sql-write-buffer","int",0,argc,argv);
@@ -1129,16 +1301,20 @@ Scheme_Object *srp_write_buffer(int argc,Scheme_Object **argv) {
   return scheme_void;
 }
 
-// actual ODBC procedures
-
 Scheme_Object *srp_SQLLenBinaryAttr(int argc,Scheme_Object **argv) {
+  long intVal;
+
   if (SCHEME_INTP(argv[0]) == FALSE) {
     scheme_wrong_type("sql-len-binary-attr","int",0,argc,argv);
   }
 
+  if (scheme_get_int_val(argv[0],&intVal) == 0) {
+    scheme_signal_error("sql-len-binary-attr: number too big");
+  }
+
   // Scheme equivalent of SQL_LEN_BINARY_ATTR macro in SQLEXT.H
 
-  return scheme_make_integer_value(-100L - SCHEME_INT_VAL(argv[0])); 
+  return scheme_make_integer_value(-100L - intVal);
 }
 
 void scheme_add_prim_to_env(Scheme_Env *env,
@@ -1268,26 +1444,56 @@ void checkSQLReturn(SQLRETURN sr,char *f) {
   case SQL_SUCCESS :
     return;
 
-  case SQL_SUCCESS_WITH_INFO :
-    return;
-
   case SQL_NO_DATA :
     scheme_signal_error("SQL_NO_DATA error in %s",f);
 
   case SQL_INVALID_HANDLE :
     scheme_signal_error("SQL_INVALID_HANDLE error in %s",f);
 
-  case SQL_NEED_DATA :
-    scheme_signal_error("SQL_NEED_DATA error in %s",f);
-
   case SQL_ERROR :
     scheme_signal_error("Unspecified error in %s",f);
+
+    /*  case SQL_NEED_DATA :
+    scheme_signal_error("SQL_NEED_DATA error in %s",f);
+    */
+
+  case SQL_SUCCESS_WITH_INFO :
+    return;
 
   default :
     ;
   }
 
 }
+
+char *sqlReturnToString(SQLRETURN sr) {
+
+ switch (sr) {
+
+  case SQL_SUCCESS :
+    return "sql-success";
+
+  case SQL_NO_DATA :
+    return "sql-no-data";
+
+  case SQL_INVALID_HANDLE :
+    return "sql-invalid-handle";
+
+  case SQL_ERROR :
+    return "sql-error";
+
+ case SQL_NEED_DATA :
+   return "sql-need-data";
+ 
+ case SQL_SUCCESS_WITH_INFO :
+   return "sql-success-with-info";
+
+  default :
+    return "?";
+ }
+}
+
+// actual ODBC procedures
 
 // Functions in SQL.H
 
@@ -1362,8 +1568,8 @@ Scheme_Object *srp_SQLAllocHandle(int argc,Scheme_Object **argv) {
   }
 
   if (argc < 2) {
-    scheme_signal_error("In sql-alloc-handle, when first argument is "
-			"not 'sql-handle-env, another argument is required"); 
+    scheme_signal_error("sql-alloc-handle: unless first argument "
+			"is 'sql-handle-env, second argument required"); 
   }
 
   if (stricmp(handleTypeString,"sql-handle-dbc") == 0) {
@@ -1420,6 +1626,7 @@ Scheme_Object *srp_SQLAllocHandle(int argc,Scheme_Object **argv) {
 
     retval = (SRP_SQL_HDESC *)scheme_malloc(sizeof(SRP_SQL_HDESC));
     retval->type = sql_hdesc_type;
+    retval->descType = EXPLICIT;
     retval->hdesc = descHandle;
 
     return (Scheme_Object *)retval;
@@ -1541,6 +1748,7 @@ Scheme_Object *srp_SQLBindParam(int argc,Scheme_Object **argv) {
   }
    
   stmtHandle = SQL_HSTMT_VAL(argv[0]);
+
   paramNum = (short)(SCHEME_INT_VAL(argv[1]));
 
   SQLTypeName = SCHEME_SYM_VAL(argv[2]);
@@ -2420,11 +2628,10 @@ Scheme_Object *srp_SQLGetDescField(int argc,Scheme_Object **argv) {
   SQLHDESC descHandle;
   SQLSMALLINT recNumber;
   SQLSMALLINT fieldId;
+  SRP_CONST_TYPE fieldType;
   char *fieldIdString;
-  SQLPOINTER buffer;
-  SQLINTEGER bufferLen;
   SQLINTEGER actualLen;
-  SRP_NAMED_SMALL_CONSTANT *p;
+  SRP_NAMED_TYPED_CONSTANT *p;
 
   if (SQL_HDESCP(argv[0]) == FALSE) {
     scheme_wrong_type("sql-get-desc-field","sql-hdesc",0,argc,argv);
@@ -2438,31 +2645,193 @@ Scheme_Object *srp_SQLGetDescField(int argc,Scheme_Object **argv) {
     scheme_wrong_type("sql-get-desc-field","symbol",2,argc,argv);
   }
 
-  if (SQL_BUFFERP(argv[3]) == FALSE) {
-    scheme_wrong_type("sql-get-desc-field","sql-buffer",2,argc,argv);
-  }
-
   fieldIdString = SCHEME_SYM_VAL(argv[2]);
 
-  p = namedSmallConstSearch(fieldIdString,fieldDescriptors);
+  p = namedTypedConstSearch(fieldIdString,fieldDescriptors);
 
   if (p == NULL) {
     scheme_signal_error("sql-get-desc-field: invalid field identifier: %s",
 			fieldIdString);
   }
 
-  fieldId = p->val;
+  fieldId = (SQLSMALLINT)(p->val);
+  fieldType = p->type;
 
   descHandle = SQL_HDESC_VAL(argv[0]);
   recNumber = (SQLSMALLINT)SCHEME_INT_VAL(argv[1]);
-  buffer = SQL_BUFFER_VAL(argv[3]);
-  bufferLen = SQL_BUFFER_LEN(argv[3]);
 
-  sr = SQLGetDescField(descHandle,recNumber,fieldId,
-		       buffer,bufferLen,&actualLen);
+  switch(fieldType) {
+
+  case sqlsmallint :
+
+    SQLSMALLINT smallIntVal;
+
+    sr = SQLGetDescField(descHandle,recNumber,fieldId,
+			 &smallIntVal,sizeof(SQLSMALLINT),&actualLen);
+
+    checkSQLReturn(sr,"sql-get-desc-field");
+ 
+    return scheme_make_integer(smallIntVal);
+
+  case sqlinteger :
+
+    SQLINTEGER intVal;
+
+    sr = SQLGetDescField(descHandle,recNumber,fieldId,
+			 &intVal,sizeof(SQLINTEGER),&actualLen);
+
+    checkSQLReturn(sr,"sql-get-desc-field");
+
+    return scheme_make_integer_value(intVal);
+    
+  case sqluinteger :
+
+    SQLUINTEGER uintVal;
+
+    sr = SQLGetDescField(descHandle,recNumber,fieldId,
+			 &uintVal,sizeof(SQLUINTEGER),&actualLen);
+
+    checkSQLReturn(sr,"sql-get-desc-field");
+
+    return scheme_make_integer_value_from_unsigned(uintVal);
+    
+  case string :
+
+    char buff[2048];
+
+    sr = SQLGetDescField(descHandle,recNumber,fieldId,
+			 buff,sizeof(buff),&actualLen);
+
+    checkSQLReturn(sr,"sql-get-desc-field");
+
+    return scheme_make_string(buff);
+    
+  case sqlbool :
+
+    SQLINTEGER boolVal;
+
+    sr = SQLGetDescField(descHandle,recNumber,fieldId,
+			 &boolVal,sizeof(SQLINTEGER),&actualLen);
+
+    checkSQLReturn(sr,"sql-get-desc-field");
+
+    return (boolVal == SQL_FALSE) ? scheme_false : scheme_true;
+
+  case namedinteger :
+    SQLINTEGER namedIntVal;
+
+    sr = SQLGetDescField(descHandle,recNumber,fieldId,
+			 &namedIntVal,sizeof(SQLINTEGER),&actualLen);
+
+    checkSQLReturn(sr,"sql-get-desc-field");
+
+    return scheme_intern_symbol(findIntegerName(fieldIdString,namedIntVal,
+						namedFieldDescriptors,
+						sizeray(namedFieldDescriptors)));
+
+  case sqlbuffer :
+    SQLPOINTER p;
+    SRP_SQL_BUFFER *pBuffer;
+
+    sr = SQLGetDescField(descHandle,recNumber,fieldId,
+			 &p,sizeof(SQLPOINTER),&actualLen);
+
+    checkSQLReturn(sr,"sql-get-desc-field");
+
+    if (p == NULL) {
+      scheme_signal_error("NULL data pointer");
+    }
+
+    pBuffer = lookupBufferFromAddress(p);
+
+    if (pBuffer == NULL) {
+      scheme_signal_error("Internal buffer, can't be made into Scheme value");
+    }
+
+    return (Scheme_Object *)pBuffer;
+
+  case sqlindicator :
+    SQLINTEGER *pIntVal;
+    SRP_SQL_INDICATOR *pIndicator;
+
+    sr = SQLGetDescField(descHandle,recNumber,fieldId,
+			 &pIntVal,sizeof(SQLINTEGER *),&actualLen);
+
+    checkSQLReturn(sr,"sql-get-desc-field");
+
+    pIndicator = (SRP_SQL_INDICATOR *)scheme_malloc_eternal(sizeof(SRP_SQL_INDICATOR));
+    pIndicator->type = sql_indicator_type;
+    pIndicator->value = *pIntVal;
+
+    return (Scheme_Object *)pIndicator;
+
+  case arraystatus :
+    SQLUSMALLINT *pSmallUintVal;
+    SRP_SQL_ARRAY_STATUS *pArrayStatus;
+
+    sr = SQLGetDescField(descHandle,recNumber,fieldId,
+			 &pSmallUintVal,sizeof(SQLUSMALLINT *),&actualLen);
+
+    checkSQLReturn(sr,"sql-get-desc-field");
+
+    pArrayStatus = (SRP_SQL_ARRAY_STATUS *)scheme_malloc_eternal(sizeof(SRP_SQL_ARRAY_STATUS));
+    pArrayStatus->type = sql_array_status_type;
+    pArrayStatus->hdesc = descHandle;
+    pArrayStatus->descType = SQL_HDESC_DESCTYPE(argv[0]);
+    pArrayStatus->values = pSmallUintVal;
+
+    return (Scheme_Object *)pArrayStatus;
+
+  case bindingoffset :
+    // SQLINTEGER *pIntVal;
+    SRP_SQL_BINDING_OFFSET *pBindingOffset;
+
+    sr = SQLGetDescField(descHandle,recNumber,fieldId,
+			 &pIntVal,sizeof(SQLINTEGER *),&actualLen);
+
+    checkSQLReturn(sr,"sql-get-desc-field");
+
+    pBindingOffset = (SRP_SQL_BINDING_OFFSET *)scheme_malloc_eternal(sizeof(SRP_SQL_BINDING_OFFSET));
+    pBindingOffset->type = sql_binding_offset_type;
+    pBindingOffset->val = pIntVal;
+
+    return (Scheme_Object *)pBindingOffset;
+
+  case rowsprocessed :
+    SQLUINTEGER *pUintVal;
+    SRP_SQL_ROWS_PROCESSED *pRowsProcessed;
+
+    sr = SQLGetDescField(descHandle,recNumber,fieldId,
+			 &pUintVal,sizeof(SQLUINTEGER *),&actualLen);
+
+    checkSQLReturn(sr,"sql-get-desc-field");
+
+    pRowsProcessed = (SRP_SQL_ROWS_PROCESSED *)scheme_malloc_eternal(sizeof(SRP_SQL_ROWS_PROCESSED));
+    pRowsProcessed->type = sql_rows_processed_type;
+    pRowsProcessed->val = pUintVal;
+
+    return (Scheme_Object *)pRowsProcessed;
+
+  case octetlength :
+    // SQLINTEGER *pIntVal;
+    SRP_SQL_OCTET_LENGTH *pOctetLength;
+
+    sr = SQLGetDescField(descHandle,recNumber,fieldId,
+			 &pIntVal,sizeof(SQLINTEGER *),&actualLen);
+
+    checkSQLReturn(sr,"sql-get-desc-field");
+
+    pOctetLength = (SRP_SQL_OCTET_LENGTH *)scheme_malloc_eternal(sizeof(SRP_SQL_OCTET_LENGTH));
+    pOctetLength->type = sql_octet_length_type;
+    pOctetLength->val = pIntVal;
+
+    return (Scheme_Object *)pOctetLength;
+
+  default :
+    scheme_signal_error("sql-get-desc-field: unknown field type %X",fieldType);
+  }
 
   return scheme_void;
-
 }
 
 Scheme_Object *srp_SQLGetDescRec(int argc,Scheme_Object **argv) {
@@ -2492,9 +2861,6 @@ Scheme_Object *srp_SQLGetDescRec(int argc,Scheme_Object **argv) {
   }
   
   recNumber = (SQLSMALLINT)SCHEME_INT_VAL(argv[1]);
-  if (recNumber > SQL_DESC_COUNT) {
-    scheme_signal_error("sql-get-desc-rec: invalid record number: %d",(int)recNumber);
-  }
 
   descHandle = SQL_HDESC_VAL(argv[0]);
 
@@ -2516,7 +2882,7 @@ Scheme_Object *srp_SQLGetDescRec(int argc,Scheme_Object **argv) {
   subtypeString = "?";
 
   for (i = 0; i < sizeray(datetimeIntervalCodes); i++) {
-    if (datetimeIntervalCodes[i].val == subtype) {
+    if ((SQLINTEGER)(datetimeIntervalCodes[i].val) == subtype) {
       subtypeString = datetimeIntervalCodes[i].scheme_name;
       break;
     }
@@ -2544,9 +2910,8 @@ Scheme_Object *srp_SQLGetDiagField(int argc,Scheme_Object **argv) {
   SQLSMALLINT recNumber;
   SQLSMALLINT diagId;
   char *diagIdString;
-  SQLPOINTER buffer;
-  SQLSMALLINT bufferLen;
   SQLSMALLINT actualLen;
+  SRP_NAMED_TYPED_CONSTANT *p;
 
   if (SQL_HENVP(argv[0]) == FALSE && 
       SQL_HDBCP(argv[0]) == FALSE &&
@@ -2562,43 +2927,83 @@ Scheme_Object *srp_SQLGetDiagField(int argc,Scheme_Object **argv) {
 		      "small-int",1,argc,argv);
   }
 
-  if (isSmallInt(argv[2]) == FALSE && SCHEME_SYMBOLP(argv[2]) == FALSE) {
-    scheme_wrong_type("sql-get-diag-field","sym or small-int",2,argc,argv);
+  if (SCHEME_SYMBOLP(argv[2]) == FALSE) {
+    scheme_wrong_type("sql-get-diag-field","symbol",2,argc,argv);
   }
 
-  if (SQL_BUFFERP(argv[3])) {
-    scheme_wrong_type("sql-get-diag-field","sql-buffer",3,argc,argv);
-  }
+  diagIdString = SCHEME_SYM_VAL(argv[2]);
 
-  if (SCHEME_SYMBOLP(argv[2])) {
-    SRP_NAMED_SMALL_CONSTANT *p;
+  p = namedTypedConstSearch(diagIdString,diagFields);
 
-    diagIdString = SCHEME_SYM_VAL(argv[2]);
-
-    p = namedSmallConstSearch(diagIdString,diagFields);
-
-    if (p == NULL) {
-      scheme_signal_error("sql-get-diag-field: invalid diagnostic id: %s",
-			  diagIdString);
-    }
-
-    diagId = p->val;
-  }
-  else {  
-    diagId = (SQLSMALLINT)SCHEME_INT_VAL(argv[2]);
+  if (p == NULL) {
+    scheme_signal_error("Invalid diagnostic: %s",diagIdString);
   }
     
+  diagId = (SQLUSMALLINT)(p->val);
+
   SchemeObjectToHandle(argv[0],&handle,&handleType);
 
   recNumber = (SQLSMALLINT)SCHEME_INT_VAL(argv[1]);
 
-  buffer = SQL_BUFFER_VAL(argv[3]);
-  bufferLen = (SQLSMALLINT)SQL_BUFFER_LEN(argv[3]);
+  switch(p->type) {
 
-  sr = SQLGetDiagField(handleType,handle,recNumber,diagId,
-		       buffer,bufferLen,&actualLen);
+  case sqlinteger :
 
-  checkSQLReturn(sr,"sql-get-diag-field");		       
+    SQLINTEGER intVal;
+
+    sr = SQLGetDiagField(handleType,handle,recNumber,diagId,
+			 &intVal,0,&actualLen);
+    
+    checkSQLReturn(sr,"sql-get-diag-field");		       
+
+    return scheme_make_integer_value(intVal);
+
+  case possiblynamedinteger :
+
+    // SQLINTEGER intVal;
+    char *diagString;
+
+    sr = SQLGetDiagField(handleType,handle,recNumber,diagId,
+			 &intVal,0,&actualLen);
+    
+    checkSQLReturn(sr,"sql-get-diag-field");		       
+
+    diagString = findIntegerName(diagIdString,intVal,
+			       namedDiagFieldIntegers,
+			       sizeray(namedDiagFieldIntegers));
+
+    if (strcmp(diagString,NO_BIT_NAME) == 0) {
+      return scheme_make_integer_value(intVal);
+    }
+
+    return scheme_intern_symbol(diagString);
+
+  case string :
+
+    char buffer[2048];
+
+    sr = SQLGetDiagField(handleType,handle,recNumber,diagId,
+			 buffer,sizeof(buffer),&actualLen);
+    
+    checkSQLReturn(sr,"sql-get-diag-field");		       
+
+    return scheme_make_sized_string(buffer,actualLen,TRUE);
+
+  case sqlreturn :
+
+    SQLRETURN returnVal;
+
+    sr = SQLGetDiagField(handleType,handle,recNumber,diagId,
+			 &returnVal,sizeof(returnVal),&actualLen);
+
+    checkSQLReturn(sr,"sql-get-diag-field");		       
+
+    return scheme_intern_symbol(sqlReturnToString(returnVal));
+
+  default :
+
+    scheme_signal_error("Unknown diagnostic type: %X",(int)p->type);
+  }
 
   return scheme_void;
 
@@ -3117,6 +3522,25 @@ Scheme_Object *srp_SQLGetStmtAttr(int argc,Scheme_Object **argv) {
 
       retval = (SRP_SQL_HDESC *)scheme_malloc(sizeof(SRP_SQL_HDESC));
       retval->type = sql_hdesc_type;
+
+      switch(attribute) {
+
+      case SQL_ATTR_APP_PARAM_DESC :
+	retval->descType = APD;
+	break;
+      case SQL_ATTR_APP_ROW_DESC :
+	retval->descType = ARD;
+	break;
+      case SQL_ATTR_IMP_PARAM_DESC :
+	retval->descType = IPD;
+	break;
+      case SQL_ATTR_IMP_ROW_DESC :
+	retval->descType = IRD;
+	break;
+      default :
+	scheme_signal_error("sql-get-stmt-attribute: unknown hdesc type");
+      }
+      
       retval->hdesc = (SQLHDESC)number;
 
       return (Scheme_Object *)retval;
@@ -3172,7 +3596,7 @@ Scheme_Object *srp_SQLGetStmtOption(int argc,Scheme_Object **argv) {
   p = namedTypedConstSearch(optionString,stmtAttributes);
 
   if (p == NULL) {
-    scheme_signal_error("sql-get-stmt-attr: invalid option: %s",
+    scheme_signal_error("sql-get-stmt-option: invalid option: %s",
 			optionString);
   }
 
@@ -3265,6 +3689,25 @@ Scheme_Object *srp_SQLGetStmtOption(int argc,Scheme_Object **argv) {
 
       retval = (SRP_SQL_HDESC *)scheme_malloc(sizeof(SRP_SQL_HDESC));
       retval->type = sql_hdesc_type;
+
+      switch(option) {
+
+      case SQL_ATTR_APP_PARAM_DESC :
+	retval->descType = APD;
+	break;
+      case SQL_ATTR_APP_ROW_DESC :
+	retval->descType = ARD;
+	break;
+      case SQL_ATTR_IMP_PARAM_DESC :
+	retval->descType = IPD;
+	break;
+      case SQL_ATTR_IMP_ROW_DESC :
+	retval->descType = IRD;
+	break;
+      default :
+	scheme_signal_error("sql-get-stmt-option: unknown hdesc type");
+      }
+      
       retval->hdesc = (SQLHDESC)number;
 
       return (Scheme_Object *)retval;
@@ -3690,10 +4133,11 @@ Scheme_Object *srp_SQLSetDescField(int argc,Scheme_Object **argv) {
   SQLHDESC descHandle;
   SQLSMALLINT recNumber;
   SQLSMALLINT fieldId;
+  SQLINTEGER intVal;
+  SQLUINTEGER uintVal;
+  SRP_CONST_TYPE fieldType;
   char *fieldIdString;
-  SQLPOINTER buffer;
-  SQLINTEGER bufferLen;
-  SRP_NAMED_SMALL_CONSTANT *p;    
+  SRP_NAMED_TYPED_CONSTANT *p;    
 
   if (SQL_HDESCP(argv[0]) == FALSE) {
     scheme_wrong_type("sql-set-desc-field","sql-hdesc",0,argc,argv);    
@@ -3707,13 +4151,9 @@ Scheme_Object *srp_SQLSetDescField(int argc,Scheme_Object **argv) {
     scheme_wrong_type("sql-set-desc-field","symbol",2,argc,argv);    
   }
 
-  if (SQL_BUFFERP(argv[3]) == FALSE) {
-    scheme_wrong_type("sql-set-desc-field","sql-buffer",3,argc,argv);    
-  }
-
   fieldIdString = SCHEME_SYM_VAL(argv[2]);
 
-  p = namedSmallConstSearch(fieldIdString,fieldDescriptors);
+  p = namedTypedConstSearch(fieldIdString,fieldDescriptors);
 
   if (p == NULL) {
       scheme_signal_error("sql-set-desc-field: invalid field id: %s",
@@ -3721,14 +4161,159 @@ Scheme_Object *srp_SQLSetDescField(int argc,Scheme_Object **argv) {
 
   }
 
-  fieldId = p->val;
-  
+  fieldId = (SQLSMALLINT)(p->val);
+  fieldType = p->type;
+
   descHandle = SQL_HDESC_VAL(argv[0]);
   recNumber = (SQLSMALLINT)SCHEME_INT_VAL(argv[1]);
-  buffer = SQL_BUFFER_VAL(argv[2]);
-  bufferLen = SQL_BUFFER_LEN(argv[2]);
 
-  sr = SQLSetDescField(descHandle,recNumber,fieldId,buffer,bufferLen);
+  switch(fieldType) {
+
+  case sqlsmallint :
+
+    if (isSmallInt(argv[3]) == FALSE) {
+      scheme_wrong_type("sql-set-desc-field","small-int",3,argc,argv);    
+    }
+
+    sr = SQLSetDescField(descHandle,recNumber,fieldId,
+			 (SQLPOINTER)SCHEME_INT_VAL(argv[3]),0);
+
+    break;
+
+  case sqlinteger :
+
+    if (SCHEME_EXACT_INTEGERP(argv[3]) == FALSE) {
+      scheme_wrong_type("sql-set-desc-field","int",3,argc,argv);    
+    }
+
+    if (scheme_get_int_val(argv[3],&intVal) == 0) {
+      scheme_signal_error("sql-set-desc-field: exact integer value too large");
+    }
+
+    sr = SQLSetDescField(descHandle,recNumber,fieldId,
+			 (SQLPOINTER)intVal,0);
+
+    break;
+ 
+  case sqluinteger :
+
+    if (SCHEME_EXACT_INTEGERP(argv[3]) == FALSE) {
+      scheme_wrong_type("sql-set-desc-field","unsigned int",3,argc,argv);    
+    }
+
+    if (scheme_get_unsigned_int_val(argv[3],&uintVal) == 0) {
+      scheme_signal_error("sql-set-desc-field: exact integer value too large");
+    }
+
+    sr = SQLSetDescField(descHandle,recNumber,fieldId,(SQLPOINTER)uintVal,0);
+    
+    break;
+
+  case string :
+
+    if (SCHEME_STRINGP(argv[3]) == FALSE) {
+      scheme_wrong_type("sql-set-desc-field","string",3,argc,argv);    
+    }
+
+    sr = SQLSetDescField(descHandle,recNumber,fieldId,
+			 (SQLPOINTER)SCHEME_STR_VAL(argv[3]),
+			 SCHEME_STRLEN_VAL(argv[3]));
+    
+    break;
+
+  case sqlbool :
+
+    intVal = (argv[3] == scheme_false) ? SQL_FALSE : SQL_TRUE;
+
+    sr = SQLSetDescField(descHandle,recNumber,fieldId,(SQLPOINTER)intVal,0);
+
+    break;
+
+  case namedinteger :
+
+    if (SCHEME_SYMBOLP(argv[3]) == FALSE) {
+      scheme_wrong_type("sql-set-desc-field","symbol",3,argc,argv);    
+    }
+
+    uintVal = findNamedInteger(fieldIdString,SCHEME_SYM_VAL(argv[3]),
+			       namedFieldDescriptors,sizeray(namedFieldDescriptors));
+
+    sr = SQLSetDescField(descHandle,recNumber,fieldId,
+			 (SQLPOINTER)uintVal,0);
+
+    break;
+
+  case sqlbuffer :
+
+    if (SQL_BUFFERP(argv[3]) == FALSE) {
+      scheme_wrong_type("sql-set-desc-field","sql-buffer",3,argc,argv);    
+    }
+
+    sr = SQLSetDescField(descHandle,recNumber,fieldId,
+			 (SQLPOINTER)SQL_BUFFER_VAL(argv[3]),sizeof(SQLPOINTER));
+
+    break;
+
+  case sqlindicator :
+
+    if (SQL_INDICATORP(argv[3]) == FALSE) {
+      scheme_wrong_type("sql-set-desc-field","sql-indicator",3,argc,argv);    
+    }
+
+    sr = SQLSetDescField(descHandle,recNumber,fieldId,
+			 (SQLPOINTER)&SQL_INDICATOR_VAL(argv[3]),
+			 sizeof(SQLPOINTER));
+
+    break;
+
+  case arraystatus :
+
+    if (SQL_ARRAY_STATUSP(argv[3]) == FALSE) {
+      scheme_wrong_type("sql-set-desc-field","sql-array-status",3,argc,argv);
+    }
+
+    sr = SQLSetDescField(descHandle,recNumber,fieldId,
+			 (SQLPOINTER)SQL_ARRAY_STATUS_VAL(argv[3]),
+			 sizeof(SQLPOINTER));
+
+
+  case bindingoffset :
+
+    if (SQL_BINDING_OFFSETP(argv[3]) == FALSE) {
+      scheme_wrong_type("sql-set-desc-field","sql-binding-offset",3,argc,argv);
+    }
+
+    sr = SQLSetDescField(descHandle,recNumber,fieldId,
+			 (SQLPOINTER)SQL_BINDING_OFFSET_VAL(argv[3]),
+			 sizeof(SQLPOINTER));
+
+    break;
+
+  case rowsprocessed :
+
+    if (SQL_ROWS_PROCESSEDP(argv[3]) == FALSE) {
+      scheme_wrong_type("sql-set-desc-field","sql-rows-processed",3,argc,argv);
+    }
+
+    sr = SQLSetDescField(descHandle,recNumber,fieldId,
+			 (SQLPOINTER)SQL_ROWS_PROCESSED_VAL(argv[3]),
+			 sizeof(SQLPOINTER));
+
+    break;
+
+  case octetlength :
+
+    if (SQL_OCTET_LENGTHP(argv[3]) == FALSE) {
+      scheme_wrong_type("sql-set-desc-field","sql-octet-length",3,argc,argv);
+    }
+
+    sr = SQLSetDescField(descHandle,recNumber,fieldId,
+			 (SQLPOINTER)SQL_OCTET_LENGTH_VAL(argv[3]),
+			 sizeof(SQLPOINTER));
+
+  default :
+    scheme_signal_error("sql-set-desc-field: unknown field type %X",fieldType);
+  }
 
   checkSQLReturn(sr,"sql-set-desc-field");
 
@@ -3743,53 +4328,44 @@ Scheme_Object *srp_SQLSetDescRec(int argc,Scheme_Object **argv) {
   char *typeString;
   SQLSMALLINT subType;
   char *subTypeString;
-  SQLINTEGER len;
+  SQLINTEGER octetLen;
   SQLSMALLINT precision;
   SQLSMALLINT scale;
   SQLPOINTER buffer;
   SRP_NAMED_SMALL_CONSTANT *p;    
-  SQLINTEGER stringLen;
+  SQLINTEGER *length;
   SQLINTEGER indicator;
-  Scheme_Object *retval;
 
   if (SQL_HDESCP(argv[0]) == FALSE) {
-    scheme_wrong_type("sql-set-desc-field","sql-hdesc",0,argc,argv);    
+    scheme_wrong_type("sql-set-desc-rec","sql-hdesc",0,argc,argv);    
   }
 
   if (isSmallInt(argv[1]) == FALSE) {
-    scheme_wrong_type("sql-set-desc-field","small-int",1,argc,argv);    
+    scheme_wrong_type("sql-set-desc-rec","small-int",1,argc,argv);    
   }
   
   if (SCHEME_SYMBOLP(argv[2]) == FALSE) {
-    scheme_wrong_type("sql-set-desc-field","symbol",1,argc,argv);    
+    scheme_wrong_type("sql-set-desc-rec","symbol",1,argc,argv);    
   }
 
-  if (SCHEME_INTP(argv[3]) == FALSE) {
-    scheme_wrong_type("sql-set-desc-field","int",3,argc,argv);    
+  if (isSmallInt(argv[3]) == FALSE) {
+    scheme_wrong_type("sql-set-desc-rec","small-int",3,argc,argv);    
   }
 
   if (isSmallInt(argv[4]) == FALSE) {
-    scheme_wrong_type("sql-set-desc-field","small-int",4,argc,argv);    
+    scheme_wrong_type("sql-set-desc-rec","small-int",4,argc,argv);    
   }
 
-  if (isSmallInt(argv[5]) == FALSE) {
-    scheme_wrong_type("sql-set-desc-field","small-int",5,argc,argv);    
+  if (SQL_BUFFERP(argv[5]) == FALSE) {
+    scheme_wrong_type("sql-set-desc-rec","sql-buffer",5,argc,argv);    
   }
 
-  if (isSmallInt(argv[6]) == FALSE) {
-    scheme_wrong_type("sql-set-desc-field","small-int",6,argc,argv);    
+  if (SQL_LENGTHP(argv[6]) == FALSE) {
+    scheme_wrong_type("sql-set-desc-rec","sql-length",6,argc,argv);    
   }
 
-  if (SQL_BUFFERP(argv[7]) == FALSE) {
-    scheme_wrong_type("sql-set-desc-field","sql-buffer",7,argc,argv);    
-  }
-
-  if (SCHEME_INTP(argv[8]) == FALSE) {
-    scheme_wrong_type("sql-set-desc-field","int",8,argc,argv);    
-  }
-
-  if (SCHEME_INTP(argv[9]) == FALSE) {
-    scheme_wrong_type("sql-set-desc-field","int",9,argc,argv);    
+  if (SQL_INDICATORP(argv[7]) == FALSE) {
+    scheme_wrong_type("sql-set-desc-rec","int",7,argc,argv);    
   }
 
   typeString = SCHEME_SYM_VAL(argv[2]);
@@ -3799,43 +4375,48 @@ Scheme_Object *srp_SQLSetDescRec(int argc,Scheme_Object **argv) {
   if (p == NULL) {
       scheme_signal_error("sql-set-desc-rec: invalid data type: %s",
 			  typeString);
-
   }
 
   type = p->val;
 
-  subTypeString = SCHEME_SYM_VAL(argv[3]);
+  if (type == SQL_DATETIME || type == SQL_INTERVAL) {
 
-  p = namedSmallConstSearch(subTypeString,datetimeIntervalCodes);
+    if (SCHEME_INTP(argv[8]) == FALSE) {
+      scheme_wrong_type("sql-set-desc-rec","int",3,argc,argv);    
+    }
+
+    subTypeString = SCHEME_SYM_VAL(argv[8]);
+
+    p = namedSmallConstSearch(subTypeString,datetimeIntervalCodes);
  
-  if (p == NULL) {
+    if (p == NULL) {
       scheme_signal_error("sql-set-desc-rec: invalid date/time interval code: %s",
 			  subTypeString);
+      
+    }
 
+    subType = p->val;
   }
-
-  subType = p->val;
+  else {
+    subType = 0;
+  }
 
   descHandle = SQL_HDESC_VAL(argv[0]);
   recNumber = (SQLSMALLINT)SCHEME_INT_VAL(argv[1]);
-  len = SCHEME_INT_VAL(argv[4]);
-  precision = (SQLSMALLINT)SCHEME_INT_VAL(argv[5]);
-  scale = (SQLSMALLINT)SCHEME_INT_VAL(argv[6]);
-  buffer = SQL_BUFFER_VAL(argv[7]);
-  stringLen = SCHEME_INT_VAL(argv[8]);
-  indicator = SCHEME_INT_VAL(argv[9]);
+  precision = (SQLSMALLINT)SCHEME_INT_VAL(argv[3]);
+  scale = (SQLSMALLINT)SCHEME_INT_VAL(argv[4]);
+  octetLen = SQL_BUFFER_LEN(argv[5]);
+  buffer = SQL_BUFFER_VAL(argv[5]);
+  length = &SQL_LENGTH_VAL(argv[6]);
+  indicator = SQL_INDICATOR_VAL(argv[7]);
   
   sr = SQLSetDescRec(descHandle,recNumber,type,subType,
-		     len,precision,scale,buffer,
-		     &stringLen,&indicator);
+		     octetLen,precision,scale,buffer,
+		     length,&indicator);
   
   checkSQLReturn(sr,"sql-set-desc-rec");
 
-  retval = scheme_null;
-  retval = scheme_make_pair(scheme_make_integer(indicator),retval);
-  retval = scheme_make_pair(scheme_make_integer(stringLen),retval);
-
-  return retval;
+  return scheme_void;
 }
 
 Scheme_Object *srp_SQLSetEnvAttr(int argc,Scheme_Object **argv) {
@@ -3919,14 +4500,13 @@ Scheme_Object *srp_SQLSetParam(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
   SQLHSTMT stmtHandle;
   SQLUSMALLINT paramNumber;
-  SQLSMALLINT valueType;
-  char *valTypeString;
+  SQLSMALLINT CDataType;
   SQLSMALLINT paramType;
   char *paramTypeString;
-  SQLUINTEGER lenPrecision;
-  SQLSMALLINT paramScale;
+  SQLUINTEGER precision;
+  SQLSMALLINT scale;
   SQLPOINTER buffer;
-  SQLINTEGER actualLen;
+  SQLINTEGER *indicator;
   SRP_NAMED_SMALL_CONSTANT *p;
 
   if (SQL_HSTMTP(argv[0]) == FALSE) {
@@ -3941,52 +4521,70 @@ Scheme_Object *srp_SQLSetParam(int argc,Scheme_Object **argv) {
     scheme_wrong_type("sql-set-param","symbol",2,argc,argv);
   } 
 
-  if (SCHEME_SYMBOLP(argv[3]) == FALSE) {
-    scheme_wrong_type("sql-set-param","symbol",3,argc,argv);
-  } 
-
-  if (isUnsignedInt(argv[4]) == FALSE) {
-    scheme_wrong_type("sql-set-param","int",4,argc,argv);
+  if (SQL_BUFFERP(argv[3]) == FALSE) {
+    scheme_wrong_type("sql-set-param","sql-buffer",3,argc,argv);
   }
 
- if (isSmallInt(argv[5]) == FALSE) {
-    scheme_wrong_type("sql-set-param","small-int",5,argc,argv);
+  if (SQL_INDICATORP(argv[4]) == FALSE) {
+    scheme_wrong_type("sql-set-param","sql-indicator",4,argc,argv);
   }
 
-  if (SQL_BUFFERP(argv[6]) == FALSE) {
-    scheme_wrong_type("sql-set-param","sql-buffer",6,argc,argv);
-  }
+  paramTypeString = SCHEME_SYM_VAL(argv[2]);
 
-  valTypeString = SCHEME_SYM_VAL(argv[2]);
-
-  p = namedSmallConstSearch(valTypeString,CDataTypes);
-
-  if (p == NULL) {
-      scheme_signal_error("sql-set-param: invalid value type: %s",
-			  valTypeString);
-  }
-
-  valueType = p->val;
-
-  paramTypeString = SCHEME_SYM_VAL(argv[3]);
-
-  p = namedSmallConstSearch(valTypeString,SQLDataTypes);
+  p = namedSmallConstSearch(paramTypeString,SQLDataTypes);
 
   if (p == NULL) {
       scheme_signal_error("sql-set-param: invalid parameter type: %s",
-			  valTypeString);
+			  paramTypeString);
   }
 
   paramType = p->val;
 
+  CDataType = SQL_BUFFER_CTYPE(argv[3]);
+
+  switch(paramType) {
+
+  case SQL_DECIMAL:
+  case SQL_NUMERIC:
+  case SQL_TIMESTAMP:
+
+    if (argc != 7) {
+      scheme_wrong_count("sql-set-param",6,6,argc,argv);
+    }
+
+    if (isUnsignedInt(argv[5]) == FALSE) {
+      scheme_wrong_type("sql-set-param","int",5,argc,argv);
+    }
+
+    if (isSmallInt(argv[6]) == FALSE) {
+      scheme_wrong_type("sql-set-param","small-int",6,argc,argv);
+    }
+
+    scheme_get_unsigned_int_val(argv[5],&precision);
+
+    if (paramType == SQL_TIMESTAMP && (precision < 16 || precision > 26)) {
+      scheme_signal_error("Timestamp precision must be between 16 and 26");
+    }
+
+    scale = (SQLSMALLINT)SCHEME_INT_VAL(argv[6]);
+
+    break;
+
+  default :
+    
+    precision = SQL_BUFFER_LEN(argv[3]);
+    scale = 0L;
+
+    break;
+  }
+
   stmtHandle = SQL_HSTMT_VAL(argv[0]);
   paramNumber = (SQLUSMALLINT)SCHEME_INT_VAL(argv[1]);
-  scheme_get_unsigned_int_val(argv[4],&lenPrecision);
-  paramScale = (SQLSMALLINT)SCHEME_INT_VAL(argv[5]);
-  buffer = SQL_BUFFER_VAL(argv[6]);
+  buffer = SQL_BUFFER_VAL(argv[3]);
+  indicator = &SQL_INDICATOR_VAL(argv[4]);
 
-  sr = SQLSetParam(stmtHandle,paramNumber,valueType,paramType,
-		   lenPrecision,paramScale,buffer,&actualLen);
+  sr = SQLSetParam(stmtHandle,paramNumber,CDataType,paramType,
+		   precision,scale,buffer,indicator);
 
   checkSQLReturn(sr,"sql-set-param");
 
@@ -4479,10 +5077,6 @@ Scheme_Object *srp_SQLStatistics(int argc,Scheme_Object **argv) {
     scheme_wrong_type("sql-statistics","sql-hstmt",0,argc,argv);
   }
 
-  if (SCHEME_SYMBOLP(argv[1]) == FALSE) {
-    scheme_wrong_type("sql-statistics","symbol",1,argc,argv);
-  }
-
   for (i = 1; i <= 3; i++) {
     if (SCHEME_STRINGP(argv[i]) == FALSE) {
       scheme_wrong_type("sql-statistics","string",i,argc,argv);
@@ -4560,24 +5154,20 @@ Scheme_Object *srp_SQLTables(int argc,Scheme_Object **argv) {
     scheme_wrong_type("sql-tables","sql-hstmt",0,argc,argv);
   }
 
-  if (SCHEME_SYMBOLP(argv[1]) == FALSE) {
-    scheme_wrong_type("sql-tables","symbol",1,argc,argv);
-  }
-
   for (i = 1; i <= 2; i++) {
     if (SCHEME_STRINGP(argv[i]) == FALSE && 
 	SCHEME_SYMBOLP(argv[i]) == FALSE) {
-      scheme_wrong_type("sql-tables","string or sym",i,argc,argv);
+      scheme_wrong_type("sql-tables","string or symbol",i,argc,argv);
     }
   }
 
   if (SCHEME_STRINGP(argv[3]) == FALSE) {
-    scheme_wrong_type("sql-tables","string or sym",i,argc,argv);
+    scheme_wrong_type("sql-tables","string or symbol",i,argc,argv);
   }
 
   if (SCHEME_STRINGP(argv[4]) == FALSE && 
       SCHEME_SYMBOLP(argv[4]) == FALSE) {
-    scheme_wrong_type("sql-tables","string or sym",4,argc,argv);
+    scheme_wrong_type("sql-tables","string or symbol",4,argc,argv);
   }
 
   stmtHandle = SQL_HSTMT_VAL(argv[0]);
@@ -4971,7 +5561,7 @@ Scheme_Object *srp_SQLDescribeParam(int argc,Scheme_Object **argv) {
 			&dataType,&paramSize,&decimalDigits,
 			&nullable);
 
-  checkSQLReturn(sr,"sql-describe-col");		       
+  checkSQLReturn(sr,"sql-describe-param");		       
 
   dataTypeString = "?";
 
@@ -5169,7 +5759,7 @@ Scheme_Object *srp_SQLNumParams(int argc,Scheme_Object **argv) {
   SQLSMALLINT numParams;
 
   if (SQL_HSTMTP(argv[0]) == FALSE) {
-    scheme_wrong_type("sql-native-sql","sql-hstmt",0,argc,argv);
+    scheme_wrong_type("sql-num-params","sql-hstmt",0,argc,argv);
   }
 
   stmtHandle = SQL_HSTMT_VAL(argv[0]);  
@@ -5316,7 +5906,7 @@ Scheme_Object *srp_SQLProcedures(int argc,Scheme_Object **argv) {
       scheme_wrong_type("sql-procedures","string",i,argc,argv);
     }
   } 
-  
+
   stmtHandle = SQL_HSTMT_VAL(argv[0]);
   
   catalogName = (SQLCHAR *)SCHEME_STR_VAL(argv[1]);
@@ -5437,8 +6027,8 @@ Scheme_Object *srp_SQLTablePrivileges(int argc,Scheme_Object **argv) {
 Scheme_Object *srp_SQLDrivers(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
   SQLHENV envHandle;
-  SQLUSMALLINT direction;
-  char *directionString;
+  SQLUSMALLINT selection;
+  char *selectionString;
   SQLCHAR description[2048];
   SQLCHAR attributes[2048];
   SQLSMALLINT actualLen1,actualLen2;
@@ -5452,22 +6042,22 @@ Scheme_Object *srp_SQLDrivers(int argc,Scheme_Object **argv) {
     scheme_wrong_type("sql-drivers","symbol",1,argc,argv);
   }
 
-  directionString = SCHEME_SYM_VAL(argv[1]);
+  selectionString = SCHEME_SYM_VAL(argv[1]);
 
-  if (stricmp(directionString,"sql-fetch-first") == 0) {
-    direction = SQL_FETCH_FIRST;
+  if (stricmp(selectionString,"sql-fetch-first") == 0) {
+    selection = SQL_FETCH_FIRST;
   }
-  else if (stricmp(directionString,"sql-fetch-next") == 0) {
-    direction = SQL_FETCH_NEXT;
+  else if (stricmp(selectionString,"sql-fetch-next") == 0) {
+    selection = SQL_FETCH_NEXT;
   }
   else {
-    scheme_signal_error("sql-drivers: invalid direction: %s",
-			directionString);
+    scheme_signal_error("sql-drivers: invalid selection: %s",
+			selectionString);
   }
 
   envHandle = SQL_HENV_VAL(argv[0]);
   
-  sr = SQLDrivers(envHandle,direction,
+  sr = SQLDrivers(envHandle,selection,
 		  description,sizeray(description),&actualLen1,
 		  attributes,sizeray(attributes),&actualLen2);
 
@@ -5491,14 +6081,13 @@ Scheme_Object *srp_SQLBindParameter(int argc,Scheme_Object **argv) {
   SQLSMALLINT ioType;
   char *ioTypeString;
   SQLSMALLINT valueType;
-  char *valueTypeString;
   SQLSMALLINT paramType;
   char *paramTypeString;
-  SQLUINTEGER colSize;
+  SQLUINTEGER valueSize;
   SQLSMALLINT decimalDigits;
   SQLPOINTER buffer;
   SQLINTEGER bufferLen;
-  SQLINTEGER *paramLength;
+  SQLINTEGER indicator;
   SRP_NAMED_SMALL_CONSTANT *p;      
   int i;
 
@@ -5510,26 +6099,22 @@ Scheme_Object *srp_SQLBindParameter(int argc,Scheme_Object **argv) {
     scheme_wrong_type("sql-bind-parameter","unsigned-small-int",1,argc,argv);
   }
 
-  for (i = 2; i <= 4; i++) {
+  for (i = 2; i <= 3; i++) {
     if (SCHEME_SYMBOLP(argv[i]) == FALSE) {
       scheme_wrong_type("sql-bind-parameter","symbol",i,argc,argv);
     }
   }
 
-  if (isUnsignedInt(argv[5]) == FALSE) {
-    scheme_wrong_type("sql-bind-parameter","unsigned-int",5,argc,argv);
+  if (isSmallInt(argv[4]) == FALSE) {
+    scheme_wrong_type("sql-bind-parameter","small-int",4,argc,argv);
+  }
+  
+  if (SQL_BUFFERP(argv[5]) == FALSE) {
+    scheme_wrong_type("sql-bind-parameter","sql-buffer",5,argc,argv);
   }
 
-  if (isSmallInt(argv[6]) == FALSE) {
-    scheme_wrong_type("sql-bind-parameter","small-int",6,argc,argv);
-  }
-
-  if (SQL_BUFFERP(argv[7]) == FALSE) {
-    scheme_wrong_type("sql-bind-parameter","sql-buffer",7,argc,argv);
-  }
-
-  if (SQL_PARAMLENGTHP(argv[8]) == FALSE) {
-    scheme_wrong_type("sql-bind-parameter","sql-paramlength",8,argc,argv);
+  if (SQL_INDICATORP(argv[6]) == FALSE) {
+    scheme_wrong_type("sql-bind-parameter","sql-indicator",6,argc,argv);
   }
 
   ioTypeString = SCHEME_SYM_VAL(argv[2]);
@@ -5548,18 +6133,7 @@ Scheme_Object *srp_SQLBindParameter(int argc,Scheme_Object **argv) {
 			ioTypeString);
   }
 
-  valueTypeString = SCHEME_SYM_VAL(argv[3]);
-
-  p = namedSmallConstSearch(valueTypeString,CDataTypes);
-
-  if (p == NULL) {
-    scheme_signal_error("sql-bind-parameter: invalid value type: %s",
-			valueTypeString);
-  }
-
-  valueType = p->val;
-
-  paramTypeString = SCHEME_SYM_VAL(argv[4]);
+  paramTypeString = SCHEME_SYM_VAL(argv[3]);
 
   p = namedSmallConstSearch(paramTypeString,SQLDataTypes);
 
@@ -5570,18 +6144,51 @@ Scheme_Object *srp_SQLBindParameter(int argc,Scheme_Object **argv) {
 
   paramType = p->val;
 
+  switch(paramType) {
+
+  case SQL_DECIMAL :
+  case SQL_NUMERIC :
+  case SQL_TIME :
+  case SQL_TIMESTAMP :
+  case SQL_TYPE_TIME :
+  case SQL_INTERVAL_SECOND :
+  case SQL_INTERVAL_DAY_TO_SECOND :
+  case SQL_INTERVAL_HOUR_TO_SECOND :
+  case SQL_INTERVAL_MINUTE_TO_SECOND :
+
+      // need Decimals
+
+      if (argc != 8) {
+	scheme_wrong_count("sql-bind-parameter",8,8,argc,argv);
+      }
+
+      if (isSmallInt(argv[7]) == FALSE) {
+	scheme_wrong_type("sql-bind-parameter","small-int",7,argc,argv);
+      }
+
+      decimalDigits = (SQLSMALLINT)SCHEME_INT_VAL(argv[6]);
+
+      break;
+
+
+  default :
+
+    decimalDigits = 0;
+    break;
+  }
+
   stmtHandle = SQL_HSTMT_VAL(argv[0]);
   paramNumber = (SQLUSMALLINT)SCHEME_INT_VAL(argv[1]);
-  scheme_get_unsigned_int_val(argv[5],&colSize);
-  decimalDigits = (SQLSMALLINT)SCHEME_INT_VAL(argv[6]);
-  buffer = SQL_BUFFER_VAL(argv[7]);
-  bufferLen = SQL_BUFFER_LEN(argv[7]);
-  paramLength = SQL_PARAMLENGTH_VAL(argv[8]);
+  buffer = SQL_BUFFER_VAL(argv[5]);
+  valueType = SQL_BUFFER_CTYPE(argv[5]);
+  bufferLen = SQL_BUFFER_LEN(argv[5]);
+  scheme_get_unsigned_int_val(argv[4],&valueSize);
+  indicator = SQL_INDICATOR_VAL(argv[6]);
 
   sr = SQLBindParameter(stmtHandle,paramNumber,ioType,
 			valueType,paramType,
-			colSize,decimalDigits,
-			buffer,bufferLen,paramLength);
+			valueSize,decimalDigits,
+			buffer,bufferLen,&indicator);
 
   checkSQLReturn(sr,"sql-bind-param");    
 
@@ -5674,10 +6281,48 @@ Scheme_Object *stringArrayToSchemeSymbolList(char **strs,int count) {
   return retval;
 }
 
+char **schemeSymbolListToStringArray(Scheme_Object **objs,int n) {
+  char **strs;
+  int i;
+
+  strs = (char **)scheme_malloc(n * sizeof(char *));
+
+  for (i = 0; i < n; i++) {
+    strs[i] = SCHEME_SYM_VAL(objs[i]);
+  }
+
+  return strs;
+}
+
+Scheme_Object *srp_unit_init(Scheme_Object **boxes,Scheme_Object **anchors,
+			     Scheme_Unit *m,void *debug_request) {
+  int nameCount;
+  int i,j,k;
+
+  for (i = 0; i < sizeray(srpPrims); i++) {
+    SCHEME_ENVBOX_VAL(boxes[i]) = scheme_make_prim_w_arity(srpPrims[i].c_fun,
+							   srpPrims[i].name,
+							   srpPrims[i].minargs,
+							   srpPrims[i].maxargs);
+    anchors[i] = boxes[i];
+  }
+
+  for (i = 0,k = sizeray(srpPrims); i < sizeray(srpStructs); i++) {
+    nameCount = srpStructs[i].nameCount;
+    for (j = 0; j < nameCount; j++,k++) {
+      SCHEME_ENVBOX_VAL(boxes[k]) = (*(srpStructs[i].pStructFuns))[j];
+      anchors[k] = boxes[k];
+    }
+  }
+  
+  return scheme_void;
+}
+
 Scheme_Object *scheme_initialize(Scheme_Env *env) {
   Scheme_Object *structType,*structNameSymbol,**structNames,**structValues;
   int nameCount;
-  int i,j;
+  int structNameCount;
+  int i,j,k;
 
   sql_date_type = scheme_make_type("<sql-date>");
   sql_decimal_type = scheme_make_type("<sql-decimal>");
@@ -5691,8 +6336,13 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
   sql_hdesc_type = scheme_make_type("<sql-hdesc>");
   sql_boxed_uint_type = scheme_make_type("<sql-boxed-uint>");
   sql_buffer_type = scheme_make_type("<sql-buffer>");
+  sql_length_type = scheme_make_type("<sql-length>");
   sql_indicator_type = scheme_make_type("<sql-indicator>");
   sql_row_status_type = scheme_make_type("<sql-row-status>");
+  sql_array_status_type = scheme_make_type("<sql-array-status>");
+  sql_binding_offset_type = scheme_make_type("<sql-binding-offset>");
+  sql_rows_processed_type = scheme_make_type("<sql-rows-processed>");
+  sql_octet_length_type = scheme_make_type("<sql-octet-length>");
   sql_op_parms_type = scheme_make_type("<sql-op-parms>");
   sql_guid_type = scheme_make_type("<sql-guid>");
   sql_paramlength_type = scheme_make_type("<sql-paramlength>");
@@ -5704,17 +6354,19 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
   namedBitsDictSort(namedConnectAttrIntegers);
   namedBitsDictSort(namedEnvAttrIntegers);
   namedBitsDictSort(bitMaskTable);
+  namedBitsDictSort(namedFieldDescriptors);
+  namedBitsDictSort(namedDiagFieldIntegers);
 
   namedTypedConstSort(sqlInfo);
   namedTypedConstSort(colAttributes);
   namedTypedConstSort(colAttributesOld);
+  namedTypedConstSort(fieldDescriptors);
   namedTypedConstSort(settableConnectionAttributes);
   namedTypedConstSort(readOnlyConnectionAttributes);
   namedTypedConstSort(envAttributes);
 
   namedConstSort(sqlFunctions);
   namedConstSort(diagFields);
-  namedConstSort(fieldDescriptors);
   namedConstSort(fetchOrientation);
   namedConstSort(fetchScrolls);
   namedConstSort(scrollConcurrency);
@@ -5726,18 +6378,17 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
   namedConstSort(stmtFreeOptions);
   namedConstSort(CDataTypes);
   namedConstSort(SQLDataTypes);
-
-  // primitives
-
-  for (i = 0; i < sizeray(srpPrims); i++) {
-    scheme_add_prim_to_env(env,
-			   srpPrims[i].c_fun,
-			   srpPrims[i].name,
-			   srpPrims[i].minargs,
-			   srpPrims[i].maxargs);
-  }
+  namedConstSort(descDataTypes);
+  namedConstSort(SQLDescUnnamed);
+  namedConstSort(SQLDescSearchable);
+  namedConstSort(SQLDescParameterTypes);
+  namedConstSort(datetimeIntervalCodes);
+  namedConstSort(SQLColNumbers);
+  namedConstSort(SQLRowNumbers);
 
   // structures
+
+  structNameCount = 0;
 
   for (i = 0; i < sizeray(srpStructs); i++) {
     structNameSymbol = scheme_intern_symbol(srpStructs[i].name);
@@ -5745,19 +6396,39 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
     structNames = scheme_make_struct_names(structNameSymbol,
 					   stringArrayToSchemeSymbolList(srpStructs[i].fields,srpStructs[i].numFields),
 					   0,&nameCount);
+    srpStructs[i].names = schemeSymbolListToStringArray(structNames,nameCount);
     structValues = scheme_make_struct_values(structType,structNames,nameCount,0);    
     *(srpStructs[i].pStructFuns) = structValues;
-    for (j = 0; j < nameCount; j++) {
-      scheme_add_global(SCHEME_SYM_VAL(structNames[j]),structValues[j],env);
+    srpStructs[i].nameCount = nameCount;
+    structNameCount += nameCount;
+  }
+
+  srp_unit = (Scheme_Unit *)scheme_malloc(sizeof(Scheme_Unit));
+  srp_unit->type = scheme_unit_type;
+  srp_unit->num_imports = 0;
+  srp_unit->num_exports = sizeray(srpPrims) + structNameCount;
+  srp_unit->exports = (Scheme_Object **)
+    scheme_malloc((sizeray(srpPrims) + structNameCount) * sizeof(Scheme_Object *));
+  srp_unit->export_debug_names = NULL;
+  srp_unit->init_func = srp_unit_init;
+  
+  for (i = 0; i < sizeray(srpPrims); i++) {
+    srp_unit->exports[i] = scheme_intern_symbol(srpPrims[i].name);
+  }
+
+  for (i = 0,k = sizeray(srpPrims); i < sizeray(srpStructs); i++) {
+    nameCount = srpStructs[i].nameCount;
+    for (j = 0; j < nameCount; j++,k++) {
+      srp_unit->exports[k] = scheme_intern_symbol(srpStructs[i].names[j]);
     }
   }
 
   puts("SisterPersist extension for MzScheme, "
        "Copyright (c) 1999 Rice PLT (Paul Steckler)");
 
-  return scheme_void;
+  return (Scheme_Object *)srp_unit;
 }
 
 Scheme_Object *scheme_reload(Scheme_Env *env) {
-  return scheme_void;
+  return (Scheme_Object *)srp_unit;
 }

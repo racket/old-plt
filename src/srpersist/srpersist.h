@@ -38,6 +38,10 @@
 
 #define NO_BIT_NAME "sql-unknown-number"
 
+#ifndef WIN32
+typedef long BOOL
+#endif
+
 typedef struct _buffer_tbl_entry_ {
   void *address;
   SRP_SQL_BUFFER *buffer;
@@ -58,6 +62,8 @@ typedef struct _srp_struct_ {
   Scheme_Object ***pStructFuns;
   char **fields;
   int numFields;
+  char **names;
+  int nameCount;
 } SRPSTRUCT;
 
 typedef struct _named_constant_ {
@@ -72,11 +78,13 @@ typedef struct _named_small_constant_ {
 
 typedef  enum _const_type_ { 
   sqlinteger,
+  sqlsmallint,
   sqlusmallint,
   sqluinteger,
   sqlbool,
   namedusmallint,
   namedinteger,
+  possiblynamedinteger,
   nameduinteger,
   possiblynameduinteger,
   boolstring,
@@ -86,9 +94,16 @@ typedef  enum _const_type_ {
   hdbc,
   hstmt,
   hdesc,
+  sqlreturn,
   opparms,
+  sqlindicator,
   rowstatus,
+  arraystatus,
+  bindingoffset,
+  rowsprocessed,
+  octetlength,
   sqlboxeduint,
+  sqlbuffer
 } SRP_CONST_TYPE;
 
 typedef struct _named_typed_constant_ {
@@ -167,6 +182,8 @@ void writeUTinyBuffer(unsigned char *buffer,Scheme_Object *);
 
 // utilities
 
+SRP_PRIM_DECL(srp_make_length);
+SRP_PRIM_DECL(srp_read_length);
 SRP_PRIM_DECL(srp_make_indicator);
 SRP_PRIM_DECL(srp_read_indicator);
 SRP_PRIM_DECL(srp_set_indicator);
@@ -388,14 +405,3 @@ extern Scheme_Object **minuteToSecondIntervalStructFuns;
 #define MINUTE_TO_SECOND_INTERVAL_SIGN         minuteToSecondIntervalStructFuns[PI_1]
 #define MINUTE_TO_SECOND_INTERVAL_MINUTE       minuteToSecondIntervalStructFuns[PI_2]
 #define MINUTE_TO_SECOND_INTERVAL_SECOND       minuteToSecondIntervalStructFuns[PI_3]
-     
-
-
-
-
-
-
-
-
-
-

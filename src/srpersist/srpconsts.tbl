@@ -214,25 +214,40 @@ SRP_NAMED_BITS_DICT namedEnvAttrIntegers[] = {
   { "sql-attr-odbc-version", odbcVersionBits, sizeray(odbcVersionBits) },
 };
 
-SRP_NAMED_SMALL_CONSTANT diagFields[] = {
-  { "sql-diag-dynamic-function",SQL_DIAG_DYNAMIC_FUNCTION },
-  { "sql-diag-connection-name", SQL_DIAG_CONNECTION_NAME },
-  { "sql-diag-class-origin", SQL_DIAG_CLASS_ORIGIN },
-  { "sql-diag-message-text", SQL_DIAG_MESSAGE_TEXT },
-  { "sql-diag-server-name", SQL_DIAG_SERVER_NAME },
-  { "sql-diag-sqlstate", SQL_DIAG_SQLSTATE },
-  { "sql-diag-subclass-origin", SQL_DIAG_SUBCLASS_ORIGIN },
-  { "sql-diag-cursor-row-count", SQL_DIAG_CURSOR_ROW_COUNT },
-  { "sql-diag-dynamic-function-code", SQL_DIAG_DYNAMIC_FUNCTION_CODE },
-  { "sql-diag-number", SQL_DIAG_NUMBER },
-  { "sql-diag-row-count", SQL_DIAG_ROW_COUNT },
-  { "sql-diag-column-number", SQL_DIAG_COLUMN_NUMBER },
-  { "sql-diag-native", SQL_DIAG_NATIVE },
-  { "sql-diag-row-number", SQL_DIAG_ROW_NUMBER },
-  { "sql-diag-returncode", SQL_DIAG_RETURNCODE },
+SRP_NAMED_TYPED_CONSTANT diagFields[] = {
+  { "sql-diag-dynamic-function",SQL_DIAG_DYNAMIC_FUNCTION, string },
+  { "sql-diag-connection-name", SQL_DIAG_CONNECTION_NAME, string },
+  { "sql-diag-class-origin", SQL_DIAG_CLASS_ORIGIN, string },
+  { "sql-diag-message-text", SQL_DIAG_MESSAGE_TEXT, string },
+  { "sql-diag-server-name", SQL_DIAG_SERVER_NAME, string },
+  { "sql-diag-sqlstate", SQL_DIAG_SQLSTATE, string },
+  { "sql-diag-subclass-origin", SQL_DIAG_SUBCLASS_ORIGIN, string },
+  { "sql-diag-cursor-row-count", SQL_DIAG_CURSOR_ROW_COUNT, sqlinteger },
+  { "sql-diag-dynamic-function-code", SQL_DIAG_DYNAMIC_FUNCTION_CODE, sqlinteger },
+  { "sql-diag-number", SQL_DIAG_NUMBER, sqlinteger },
+  { "sql-diag-row-count", SQL_DIAG_ROW_COUNT, sqlinteger },
+  { "sql-diag-column-number", SQL_DIAG_COLUMN_NUMBER, possiblynamedinteger },
+  { "sql-diag-native", SQL_DIAG_NATIVE, sqlinteger },
+  { "sql-diag-row-number", SQL_DIAG_ROW_NUMBER, possiblynamedinteger },
+  { "sql-diag-returncode", SQL_DIAG_RETURNCODE, sqlreturn },
 };
 
-SRP_NAMED_SMALL_CONSTANT datetimeIntervalCodes[] = {
+SRP_NAMED_CONSTANT SQLColNumbers[] = {
+  { "sql-no-column-number",SQL_NO_COLUMN_NUMBER },
+  { "sql-column-number-unknown",SQL_COLUMN_NUMBER_UNKNOWN },
+};
+
+SRP_NAMED_CONSTANT SQLRowNumbers[] = {
+  { "sql-no-row-number",SQL_NO_ROW_NUMBER },
+  { "sql-row-number-unknown",SQL_ROW_NUMBER_UNKNOWN },
+};
+
+SRP_NAMED_BITS_DICT namedDiagFieldIntegers[] = {
+  { "sql-diag-column-number", SQLColNumbers, sizeray(SQLColNumbers) },
+  { "sql-diag-row-number", SQLRowNumbers, sizeray(SQLRowNumbers) },
+};
+
+SRP_NAMED_CONSTANT datetimeIntervalCodes[] = {
   // Datetime types
 
   { "sql-code-date",SQL_CODE_DATE },
@@ -255,54 +270,53 @@ SRP_NAMED_SMALL_CONSTANT datetimeIntervalCodes[] = {
   { "sql-code-year-to-month",SQL_CODE_YEAR_TO_MONTH },
 };
 
-SRP_NAMED_SMALL_CONSTANT fieldDescriptors[] = {
-  
-  // header fields
+SRP_NAMED_CONSTANT SQLDescParameterTypes[] = {
+  { "sql-param-input", SQL_PARAM_INPUT },
+  { "sql-param-output", SQL_PARAM_OUTPUT },
+  { "sql-param-input-output", SQL_PARAM_INPUT_OUTPUT },
+};
 
-  { "sql-desc-alloc-type", SQL_DESC_ALLOC_TYPE },
-  { "sql-desc-array-size", SQL_DESC_ARRAY_SIZE },
-  { "sql-desc-array-status-ptr", SQL_DESC_ARRAY_STATUS_PTR },
-  { "sql-desc-bind-offset-ptr", SQL_DESC_BIND_OFFSET_PTR },
-  { "sql-desc-bind-type", SQL_DESC_BIND_TYPE },
-  { "sql-desc-count", SQL_DESC_COUNT },
-  { "sql-desc-rows-processed-ptr", SQL_DESC_ROWS_PROCESSED_PTR },
+SRP_NAMED_CONSTANT SQLDescSearchable[] = {
+  { "sql-searchable", SQL_SEARCHABLE },
+  { "sql-pred-char", SQL_PRED_CHAR },
+  { "sql-like-only", SQL_LIKE_ONLY },
+  { "sql-pred-basic", SQL_PRED_BASIC },
+  { "sql-all-except-like", SQL_ALL_EXCEPT_LIKE },
+  { "sql-pred-none", SQL_PRED_NONE },
+  { "sql-unsearchable", SQL_UNSEARCHABLE },
+};
 
-  // record fields
+SRP_NAMED_CONSTANT SQLDescUnnamed[] = {
+  { "sql-named", SQL_NAMED },
+  { "sql-unnamed", SQL_UNNAMED },
+};
 
-  { "sql-desc-auto-unique-value", SQL_DESC_AUTO_UNIQUE_VALUE },
-  { "sql-desc-base-column-name", SQL_DESC_BASE_COLUMN_NAME },
-  { "sql-desc-base-table-name ", SQL_DESC_BASE_TABLE_NAME },
-  { "sql-desc-case-sensitive", SQL_DESC_CASE_SENSITIVE },
-  { "sql-desc-catalog-name", SQL_DESC_CATALOG_NAME },
-  { "sql-desc-concise-type",  SQL_DESC_CONCISE_TYPE },
-  { "sql-desc-data-ptr", SQL_DESC_DATA_PTR },
-  { "sql-desc-datetime-interval-code", SQL_DESC_DATETIME_INTERVAL_CODE },
-  { "sql-desc-datetime-interval-precision", SQL_DESC_DATETIME_INTERVAL_PRECISION },
-  { "sql-desc-display-size", SQL_DESC_DISPLAY_SIZE },
-  { "sql-desc-fixed-prec-scale", SQL_DESC_FIXED_PREC_SCALE },
-  { "sql-desc-indicator-ptr", SQL_DESC_INDICATOR_PTR },
-  { "sql-desc-label", SQL_DESC_LABEL },
-  { "sql-desc-length", SQL_DESC_LENGTH },
-  { "sql-desc-literal-prefix", SQL_DESC_LITERAL_PREFIX },
-  { "sql-desc-literal-suffix", SQL_DESC_LITERAL_SUFFIX },
-  { "sql-desc-local-type-name", SQL_DESC_LOCAL_TYPE_NAME },
-  { "sql-desc-name", SQL_DESC_NAME },
-  { "sql-desc-nullable", SQL_DESC_NULLABLE },
-  { "sql-desc-num-prec-radix", SQL_DESC_NUM_PREC_RADIX },
-  { "sql-desc-octet-length", SQL_DESC_OCTET_LENGTH },
-  { "sql-desc-octet-length-ptr", SQL_DESC_OCTET_LENGTH_PTR },
-  { "sql-desc-parameter-type", SQL_DESC_PARAMETER_TYPE },
-  { "sql-desc-precision", SQL_DESC_PRECISION },
-  { "sql-desc-rowver", SQL_DESC_ROWVER },
-  { "sql-desc-scale", SQL_DESC_SCALE },
-  { "sql-desc-schema-name", SQL_DESC_SCHEMA_NAME },
-  { "sql-desc-searchable", SQL_DESC_SEARCHABLE },
-  { "sql-desc-table-name", SQL_DESC_TABLE_NAME },
-  { "sql-desc-type", SQL_DESC_TYPE },
-  { "sql-desc-type-name", SQL_DESC_TYPE_NAME },
-  { "sql-desc-unnamed", SQL_DESC_UNNAMED },
-  { "sql-desc-unsigned", SQL_DESC_UNSIGNED },
-  { "sql-desc-updatable", SQL_DESC_UPDATABLE },
+SRP_NAMED_CONSTANT descDataTypes[] = {
+  { "sql-char", SQL_CHAR },
+  { "sql-varchar", SQL_VARCHAR },
+  { "sql-longvarchar", SQL_LONGVARCHAR },
+  { "sql-wchar", SQL_WCHAR },
+  { "sql-wvarchar", SQL_WVARCHAR },
+  { "sql-wlongvarchar", SQL_WLONGVARCHAR }, 
+  { "sql-decimal", SQL_DECIMAL },
+  { "sql-numeric", SQL_NUMERIC },
+  { "sql-smallint", SQL_SMALLINT },
+  { "sql-integer", SQL_INTEGER },
+  { "sql-real", SQL_REAL },
+  { "sql-float", SQL_FLOAT },
+  { "sql-double", SQL_DOUBLE },
+  { "sql-bit", SQL_BIT },
+  { "sql-tinyint", SQL_TINYINT },
+  { "sql-bigint", SQL_BIGINT },
+  { "sql-binary", SQL_BINARY },
+  { "sql-varbinary", SQL_VARBINARY },
+  { "sql-longvarbinary", SQL_LONGVARBINARY },
+  { "sql-datetime", SQL_DATETIME },
+  { "sql-type-date", SQL_TYPE_DATE },
+  { "sql-type-time", SQL_TYPE_TIME },
+  { "sql-type-timestamp", SQL_TYPE_TIMESTAMP },
+  { "sql-interval", SQL_INTERVAL },
+  { "sql-guid", SQL_GUID },
 };
 
 SRP_NAMED_TYPED_CONSTANT settableConnectionAttributes[] = {
@@ -473,6 +487,12 @@ SRP_NAMED_SMALL_CONSTANT SQLDataTypes[] = {
   { "sql-guid", SQL_GUID },
 };
 
+SRP_NAMED_CONSTANT descNullableBits[] = {
+  { "sql-nullable", SQL_NULLABLE },
+  { "sql-no-nulls", SQL_NO_NULLS },
+  { "sql-nullable-unknown", SQL_NULLABLE_UNKNOWN },
+};
+
 SRP_NAMED_CONSTANT SQLColDataTypes[] = {
   { "sql-char", SQL_CHAR },
   { "sql-varchar", SQL_VARCHAR },
@@ -511,13 +531,74 @@ SRP_NAMED_CONSTANT SQLColDataTypes[] = {
   { "sql-guid", SQL_GUID },
 };
 
-// SQLColAttribute - no 's'
-
-SRP_NAMED_CONSTANT descNullableBits[] = {
-  { "sql-nullable", SQL_NULLABLE },
-  { "sql-no-nulls", SQL_NO_NULLS },
-  { "sql-nullable-unknown", SQL_NULLABLE_UNKNOWN },
+SRP_NAMED_CONSTANT descUpdatableBits[] = {
+  { "sql-attr-readonly", SQL_ATTR_READONLY },
+  { "sql-attr-write", SQL_ATTR_WRITE },
+  { "sql-attr-readwrite-unknown", SQL_ATTR_READWRITE_UNKNOWN },
 };
+
+SRP_NAMED_BITS_DICT namedFieldDescriptors[] = {
+  { "sql-desc-concise-type",SQLColDataTypes, sizeray(SQLColDataTypes) },
+  { "sql-desc-datetime-interval-code",datetimeIntervalCodes,sizeray(datetimeIntervalCodes) },
+  { "sql-desc-nullable",descNullableBits,sizeray(descNullableBits) },
+  { "sql-desc-parameter-type",SQLDescParameterTypes,sizeray(SQLDescParameterTypes) },
+  { "sql-desc-searchable",SQLDescSearchable,sizeray(SQLDescSearchable) },
+  { "sql-desc-type",descDataTypes,sizeray(descDataTypes) },
+  { "sql-desc-unnamed",SQLDescUnnamed, sizeray(SQLDescUnnamed) },
+  { "sql-desc-updatable",descUpdatableBits,sizeray(descUpdatableBits) },
+};
+
+SRP_NAMED_TYPED_CONSTANT fieldDescriptors[] = {
+  
+  // header fields
+
+  { "sql-desc-alloc-type", SQL_DESC_ALLOC_TYPE, sqlsmallint},
+  { "sql-desc-array-size", SQL_DESC_ARRAY_SIZE, sqluinteger },
+  { "sql-desc-array-status-ptr", SQL_DESC_ARRAY_STATUS_PTR, arraystatus },
+  { "sql-desc-bind-offset-ptr", SQL_DESC_BIND_OFFSET_PTR, bindingoffset },
+  { "sql-desc-bind-type", SQL_DESC_BIND_TYPE, sqlinteger },
+  { "sql-desc-count", SQL_DESC_COUNT, sqlsmallint },
+  { "sql-desc-rows-processed-ptr", SQL_DESC_ROWS_PROCESSED_PTR, rowsprocessed },
+
+  // record fields
+
+  { "sql-desc-auto-unique-value", SQL_DESC_AUTO_UNIQUE_VALUE, sqlinteger },
+  { "sql-desc-base-column-name", SQL_DESC_BASE_COLUMN_NAME, string },
+  { "sql-desc-base-table-name ", SQL_DESC_BASE_TABLE_NAME, string },
+  { "sql-desc-case-sensitive", SQL_DESC_CASE_SENSITIVE, sqlbool },
+  { "sql-desc-catalog-name", SQL_DESC_CATALOG_NAME, string },
+  { "sql-desc-concise-type",  SQL_DESC_CONCISE_TYPE, namedinteger },
+  { "sql-desc-data-ptr", SQL_DESC_DATA_PTR, sqlbuffer },
+  { "sql-desc-datetime-interval-code", SQL_DESC_DATETIME_INTERVAL_CODE, namedinteger },
+  { "sql-desc-datetime-interval-precision", SQL_DESC_DATETIME_INTERVAL_PRECISION, sqlinteger },
+  { "sql-desc-display-size", SQL_DESC_DISPLAY_SIZE, sqlinteger },
+  { "sql-desc-fixed-prec-scale", SQL_DESC_FIXED_PREC_SCALE, sqlbool },
+  { "sql-desc-indicator-ptr", SQL_DESC_INDICATOR_PTR, sqlindicator },
+  { "sql-desc-label", SQL_DESC_LABEL, string },
+  { "sql-desc-length", SQL_DESC_LENGTH, sqluinteger },
+  { "sql-desc-literal-prefix", SQL_DESC_LITERAL_PREFIX, string },
+  { "sql-desc-literal-suffix", SQL_DESC_LITERAL_SUFFIX, string },
+  { "sql-desc-local-type-name", SQL_DESC_LOCAL_TYPE_NAME, string },
+  { "sql-desc-name", SQL_DESC_NAME, string },
+  { "sql-desc-nullable", SQL_DESC_NULLABLE, namedinteger },
+  { "sql-desc-num-prec-radix", SQL_DESC_NUM_PREC_RADIX, sqlinteger },
+  { "sql-desc-octet-length", SQL_DESC_OCTET_LENGTH, sqlinteger },
+  { "sql-desc-octet-length-ptr", SQL_DESC_OCTET_LENGTH_PTR, octetlength },
+  { "sql-desc-parameter-type", SQL_DESC_PARAMETER_TYPE, namedinteger },
+  { "sql-desc-precision", SQL_DESC_PRECISION, sqlsmallint },
+  { "sql-desc-rowver", SQL_DESC_ROWVER, sqlbool },
+  { "sql-desc-scale", SQL_DESC_SCALE, sqlsmallint },
+  { "sql-desc-schema-name", SQL_DESC_SCHEMA_NAME, string },
+  { "sql-desc-searchable", SQL_DESC_SEARCHABLE, namedinteger },
+  { "sql-desc-table-name", SQL_DESC_TABLE_NAME, string },
+  { "sql-desc-type", SQL_DESC_TYPE, namedinteger },
+  { "sql-desc-type-name", SQL_DESC_TYPE_NAME, string },
+  { "sql-desc-unnamed", SQL_DESC_UNNAMED, namedinteger },
+  { "sql-desc-unsigned", SQL_DESC_UNSIGNED, sqlbool },
+  { "sql-desc-updatable", SQL_DESC_UPDATABLE, namedinteger },
+};
+
+// SQLColAttribute - no 's'
 
 SRP_NAMED_CONSTANT descSearchableBits[] = {
   { "sql-pred-none", SQL_PRED_NONE },
@@ -526,23 +607,12 @@ SRP_NAMED_CONSTANT descSearchableBits[] = {
   { "sql-pred-searchable", SQL_PRED_SEARCHABLE },
 };
 
-SRP_NAMED_CONSTANT descUnnamedBits[] = {
-  { "sql-named", SQL_NAMED },
-  { "sql-unnamed", SQL_UNNAMED },
-};
-
-SRP_NAMED_CONSTANT descUpdatableBits[] = {
-  { "sql-attr-readonly", SQL_ATTR_READONLY },
-  { "sql-attr-write", SQL_ATTR_WRITE },
-  { "sql-attr-readwrite-unknown", SQL_ATTR_READWRITE_UNKNOWN },
-};
-
 SRP_NAMED_BITS_DICT namedColAttrIntegers[] = {
   { "sql-desc-concise-type", SQLColDataTypes, sizeray(SQLColDataTypes) },
   { "sql-desc-nullable", descNullableBits, sizeray(descNullableBits) },
   { "sql-desc-searchable", descSearchableBits, sizeray(descSearchableBits) },
   { "sql-desc-type", SQLColDataTypes, sizeray(SQLColDataTypes) },
-  { "sql-desc-unnamed", descUnnamedBits, sizeray(descUnnamedBits) },
+  { "sql-desc-unnamed", SQLDescUnnamed, sizeray(SQLDescUnnamed) },
   { "sql-desc-updatable", descUpdatableBits, sizeray(descUpdatableBits) },
 };
 

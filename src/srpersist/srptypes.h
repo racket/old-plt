@@ -16,8 +16,13 @@ extern Scheme_Type sql_hstmt_type;
 extern Scheme_Type sql_hdesc_type;
 extern Scheme_Type sql_boxed_uint_type;
 extern Scheme_Type sql_buffer_type;
+extern Scheme_Type sql_length_type;
 extern Scheme_Type sql_indicator_type;
 extern Scheme_Type sql_row_status_type;
+extern Scheme_Type sql_array_status_type;
+extern Scheme_Type sql_binding_offset_type;
+extern Scheme_Type sql_rows_processed_type;
+extern Scheme_Type sql_octet_length_type;
 extern Scheme_Type sql_op_parms_type;
 extern Scheme_Type sql_guid_type;
 extern Scheme_Type sql_paramlength_type;
@@ -37,8 +42,13 @@ typedef struct _sql_hstmt_ {
   SQLHDBC hstmt;
 } SRP_SQL_HSTMT;
 
+typedef enum _desctype_ {
+  APD,ARD,IPD,IRD,EXPLICIT
+} DESCTYPE;
+
 typedef struct _sql_hdesc_ {
   Scheme_Type type;
+  DESCTYPE descType;
   SQLHDESC hdesc;
 } SRP_SQL_HDESC;
 
@@ -55,6 +65,11 @@ typedef struct _sql_buffer_ {
   int eltSize;
 } SRP_SQL_BUFFER;
 
+typedef struct _sql_length_ {
+  Scheme_Type type;
+  SQLINTEGER value;
+} SRP_SQL_LENGTH;
+
 typedef struct _sql_indicator_ {
   Scheme_Type type;
   SQLINTEGER value;
@@ -66,16 +81,33 @@ typedef struct _sql_row_status_ {
   SQLUSMALLINT *values;
 } SRP_SQL_ROW_STATUS;
 
+typedef struct _sql_array_status_ {
+  Scheme_Type type;
+  SQLHDESC hdesc;
+  DESCTYPE descType;
+  SQLUSMALLINT *values;
+} SRP_SQL_ARRAY_STATUS;
+
+typedef struct _sql_binding_offset_ {
+  Scheme_Type type;
+  SQLINTEGER *val;
+} SRP_SQL_BINDING_OFFSET;
+
+typedef struct _sql_rows_processed_ {
+  Scheme_Type type;
+  SQLUINTEGER *val;
+} SRP_SQL_ROWS_PROCESSED;
+
+typedef struct _sql_octet_length_ {
+  Scheme_Type type;
+  SQLINTEGER *val;
+} SRP_SQL_OCTET_LENGTH;
+
 typedef struct _sql_op_parms_ {
   Scheme_Type type;
   SQLUINTEGER paramSetSize;
   SQLUSMALLINT *values;
 } SRP_SQL_OP_PARMS;
-
-typedef struct _sql_paramlength_ {
-  Scheme_Type type;
-  SQLINTEGER *lens;
-} SRP_SQL_PARAMLENGTH;
 
 typedef struct _sql_guid_ {
   Scheme_Type type;
@@ -93,6 +125,7 @@ typedef struct _sql_guid_ {
 
 #define SQL_HDESCP(o) (!SCHEME_INTP(o) && o->type == sql_hdesc_type)
 #define SQL_HDESC_VAL(o) (((SRP_SQL_HDESC *)o)->hdesc)
+#define SQL_HDESC_DESCTYPE(o) (((SRP_SQL_HDESC *)o)->descType)
 
 #define SQL_BUFFERP(o) (!SCHEME_INTP(o) && o->type == sql_buffer_type) 
 #define SQL_BUFFER_VAL(o) (((SRP_SQL_BUFFER *)o)->storage)
@@ -100,6 +133,9 @@ typedef struct _sql_guid_ {
 #define SQL_BUFFER_ELTSIZE(o) (((SRP_SQL_BUFFER *)o)->eltSize)
 #define SQL_BUFFER_LEN(o) (SQL_BUFFER_NUMELTS(o) * SQL_BUFFER_ELTSIZE(o))
 #define SQL_BUFFER_CTYPE(o) (((SRP_SQL_BUFFER *)o)->CDataType)
+
+#define SQL_LENGTHP(o) (!SCHEME_INTP(o) && o->type == sql_length_type) 
+#define SQL_LENGTH_VAL(o) (((SRP_SQL_LENGTH *)o)->value)
 
 #define SQL_INDICATORP(o) (!SCHEME_INTP(o) && o->type == sql_indicator_type) 
 #define SQL_INDICATOR_VAL(o) (((SRP_SQL_INDICATOR *)o)->value)
@@ -127,8 +163,19 @@ typedef struct _sql_guid_ {
 #define SQL_ROW_STATUS_VAL(o) (((SRP_SQL_ROW_STATUS *)o)->values)
 #define SQL_ROW_STATUS_LEN(o) (((SRP_SQL_ROW_STATUS *)o)->numRows)
 
-#define SQL_PARAMLENGTHP(o) (!SCHEME_INTP(o) && o->type == sql_paramlength_type) 
-#define SQL_PARAMLENGTH_VAL(o) (((SRP_SQL_PARAMLENGTH *)o)->lens)
+#define SQL_ARRAY_STATUSP(o) (!SCHEME_INTP(o) && o->type == sql_array_status_type) 
+#define SQL_ARRAY_STATUS_VAL(o) (((SRP_SQL_ARRAY_STATUS *)o)->values)
+#define SQL_ARRAY_STATUS_HDESC(o) (((SRP_SQL_ARRAY_STATUS *)o)->hdesc)
+#define SQL_ARRAY_STATUS_DESCTYPE(o) (((SRP_SQL_ARRAY_STATUS *)o)->descType)
+
+#define SQL_BINDING_OFFSETP(o) (!SCHEME_INTP(o) && o->type == sql_binding_offset_type) 
+#define SQL_BINDING_OFFSET_VAL(o) (((SRP_SQL_BINDING_OFFSET *)o)->val)
+
+#define SQL_ROWS_PROCESSEDP(o) (!SCHEME_INTP(o) && o->type == sql_rows_processed_type) 
+#define SQL_ROWS_PROCESSED_VAL(o) (((SRP_SQL_ROWS_PROCESSED *)o)->val)
+
+#define SQL_OCTET_LENGTHP(o) (!SCHEME_INTP(o) && o->type == sql_octet_length_type) 
+#define SQL_OCTET_LENGTH_VAL(o) (((SRP_SQL_OCTET_LENGTH *)o)->val)
 
 #define SQL_BUFFER_UNDEFINED_LEN  (LONG_MIN)
 

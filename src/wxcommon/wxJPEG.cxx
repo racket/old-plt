@@ -595,7 +595,7 @@ int wx_read_png(char *file_name, wxBitmap *bm, int w_mask, wxColour *bg)
    png_structp png_ptr;
    png_infop info_ptr;
    png_uint_32 width, height;
-   int bit_depth, color_type, interlace_type, is_mono = 0;
+   int bit_depth, color_type, interlace_type, is_mono = 0, row_width;
    unsigned int number_passes, pass, y;
    FILE *fp;
    png_bytep *rows, row;
@@ -749,9 +749,16 @@ int wx_read_png(char *file_name, wxBitmap *bm, int w_mask, wxColour *bg)
 
    /* Allocate the memory to hold the image using the fields of info_ptr. */
 
+#ifdef MZ_PRECISE_GC
+   rows = (png_bytep *)GC_malloc(sizeof(png_bytep) * height);
+#else
    rows = new png_bytep[height];
+#endif
+
+   row_width = png_get_rowbytes(png_ptr, info_ptr);
    for (y = 0; y < height; y++) {
-     rows[y] = (png_bytep)(new WXGC_ATOMIC char[png_get_rowbytes(png_ptr, info_ptr)]);
+     row = new WXGC_ATOMIC png_byte[row_width];
+     rows[y] = row;
    }
 
    dc = create_dc(width, height, bm, is_mono);
@@ -829,10 +836,10 @@ int wx_write_png(char *file_name, wxBitmap *bm)
    png_structp png_ptr;
    png_infop info_ptr;
    int width, height;
-   int bit_depth, color_type;
+   int bit_depth, color_type, row_width;
    int y;
    FILE *fp;
-   png_bytep *rows;
+   png_bytep *rows, row;
    wxMemoryDC *dc = NULL;
    wxMemoryDC *mdc = NULL;
    wxBitmap *mbm = NULL;
@@ -921,9 +928,15 @@ int wx_write_png(char *file_name, wxBitmap *bm)
    png_write_info(png_ptr, info_ptr);
 
    /* Allocate the memory to hold the image using the fields of info_ptr. */
+#ifdef MZ_PRECISE_GC
+   rows = (png_bytep *)GC_malloc(sizeof(png_bytep) * height);
+#else
    rows = new png_bytep[height];
+#endif
+   row_width = png_get_rowbytes(png_ptr, info_ptr);
    for (y = 0; y < height; y++) {
-     rows[y] = (png_bytep)(new WXGC_ATOMIC char[png_get_rowbytes(png_ptr, info_ptr)]);
+     row = new WXGC_ATOMIC png_byte[row_width];
+     rows[y] = row;
    }
 
    dc = create_reader_dc(bm, &desel);

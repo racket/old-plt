@@ -876,7 +876,7 @@ void wxWindow::SetFocus(void)
   if (!X->frame) // forbid, if no widget associated
     return;
 
-  if (IsGray())
+  if (IsGray() || !IsShown())
     return;
 
   if (misc_flags & FOCUS_FLAG)
@@ -920,11 +920,11 @@ Bool wxWindow::Show(Bool show)
     if (!X->handle) // forbid, if no widget associated
       return TRUE;
 
-    /* MATTHEW: [5] Get rid of or restore focus traversal */
+    /* Get rid of or restore focus traversal */
     if (XtIsSubclass(X->frame, xfwfCommonWidgetClass))
       XtVaSetValues(X->frame, XtNtraversalOn, (Boolean)show, NULL);
 
-    /* MATTHEW: [6] Show/hide frame */
+    /* Show/hide frame */
     if (show)
       XtManageChild(X->frame);
     else

@@ -1,19 +1,38 @@
-
 (module mzrl mzscheme
-  
-  (define wrote-error? #f)
 
-  (define (readline s)
-    (unless wrote-error?
-      (set! wrote-error? #t)
-      (error 'readline "extension not compiled"))
-    (display s)
-    (flush-output)
-    (read-line))
+(require (lib "ffi.ss"))
 
-  (define (add-history l)
-    (unless wrote-error?
-      (set! wrote-error? #t)
-      (error 'add-history "extension not compiled")))
+(define libtermcap  (ffi-lib "libtermcap.so")) ; needed
+(define libreadline (ffi-lib "libreadline.so"))
 
-  (provide readline add-history))
+(define* readline
+  (get-ffi-obj #"readline" libreadline (_fun _string -> _string/eof)))
+
+(define* add-history
+  (get-ffi-obj #"add_history" libreadline (_fun _string -> _void)))
+
+(define (completion-function func)
+  (let ([cur '()])
+    (define (complete str state)
+      (if (zero? state)
+        (begin (set! cur (func str)) (complete str 1))
+        (and (pair? cur)
+             (begin0 (malloc (add1 (string-length (car cur)))
+                             (car cur) 'eternal)
+               (set! cur (cdr cur))))))
+    complete))
+
+(define* (set-completion-function! func)
+  (if func
+    (set-ffi-obj! #"rl_completion_entry_function" libreadline
+                  (_fun _string _int -> _pointer)
+                  (completion-function func))
+    (set-ffi-obj! #"rl_completion_entry_function" libreadline _pointer #f)))
+
+(set-ffi-obj! #"rl_readline_name" libreadline _string "mzscheme")
+
+;; make it possible to run Scheme threads while waiting for input
+(set-ffi-obj! #"rl_event_hook" libreadline (_fun -> _int)
+              (lambda () (sync/enable-break (current-input-port)) 0))
+
+)

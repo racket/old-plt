@@ -1,4 +1,4 @@
-; Time-stamp: <97/11/06 12:49:15 shriram>
+; Time-stamp: <97/11/10 23:33:17 shriram>
 
 (unit/sig mzlib:pop3^
   (import)
@@ -14,6 +14,15 @@
   (define-struct communicator (sender receiver server port state))
 
   (define-struct (pop3 struct:exn) ())
+  (define-struct (cannot-connect struct:pop3) ())
+  (define-struct (username-rejected struct:pop3) ())
+  (define-struct (password-rejected struct:pop3) ())
+  (define-struct (not-ready-for-transaction struct:pop3) (communicator))
+  (define-struct (not-given-headers struct:pop3) (communicator message))
+  (define-struct (not-given-message struct:pop3) (communicator message))
+  (define-struct (cannot-delete-message struct:exn) (communicator message))
+  (define-struct (disconnect-not-quiet struct:pop3) (communicator))
+  (define-struct (malformed-server-response struct:pop3) (communicator))
 
   ;; signal-error :
   ;; (exn-args ... -> exn) x format-string x values ... ->
@@ -26,6 +35,26 @@
 		 (apply format format-string args)
 		 ((debug-info-handler))
 		 exn-args)))))
+
+  ;; signal-malformed-response-error :
+  ;; exn-args -> ()
+
+  ;; -- in practice, it takes only one argument: a communicator.
+
+  (define signal-malformed-response-error
+    (signal-error make-malformed-server-response
+      "malformed response from server"))
+
+  ;; confirm-transaction-mode :
+  ;; communicator x string -> ()
+
+  ;; -- signals an error otherwise.
+
+  (define confirm-transaction-mode
+    (lambda (communicator error-message)
+      (unless (eq? (communicator-state communicator) 'transaction)
+	((signal-error make-not-ready-for-transaction error-message)
+	  communicator))))
 
   ;; default-pop-port-number :
   ;; number
@@ -52,7 +81,10 @@
 	  (let ((response (get-status-response/basic communicator)))
 	    (cond
 	      ((+ok? response) communicator)
-	      ((-err? response) (error 'pop3))))))))
+	      ((-err? response)
+		((signal-error make-cannot-connect
+		   "cannot connect to ~a on port ~a"
+		   server-name port-number)))))))))
 
   ;; authenticate/plain-text :
   ;; string x string x communicator -> ()
@@ -73,9 +105,11 @@
 		  ((+ok? status)
 		    (set-communicator-state! communicator 'transaction))
 		  ((-err? status)
-		    (error 'pop3)))))
+		    ((signal-error make-password-rejected
+		       "password was rejected"))))))
 	    ((-err? status)
-	      (error 'pop3)))))))
+	      ((signal-error make-username-rejected
+		 "username was rejected"))))))))
 
   ;; get-mailbox-status :
   ;; communicator -> num x num
@@ -85,21 +119,38 @@
   (define get-mailbox-status
     (let ((stat-regexp (regexp "([0-9]+) ([0-9]+)")))
       (lambda (communicator)
-	(unless (eq? (communicator-state communicator) 'transaction)
-	  (error 'pop3))
+	(confirm-transaction-mode communicator
+	  "cannot get mailbox status unless in transaction mode")
 	(send-to-server communicator "STAT")
 	(apply values
 	  (map string->number
 	    (get-status-response/match communicator stat-regexp #f))))))
 
+  ;; get-message/complete :
+  ;; communicator x num -> list (string) x list (string)
+
+  (define get-message/complete
+    (lambda (communicator message)
+      (confirm-transaction-mode communicator
+	"cannot get message headers unless in transaction state")
+      (send-to-server communicator "RETR ~a" message)
+      (let ((status (get-status-response/basic communicator)))
+	(cond
+	  ((+ok? status)
+	    (split-header/body (get-multi-line-response communicator)))
+	  ((-err? status)
+	    ((signal-error make-not-given-message
+	       "not given message ~a" message)
+	      communicator message))))))
+
   ;; get-message/headers :
   ;; communicator x num -> list (string)
 
   (define get-message/headers
-    (opt-lambda (communicator message)
-      (unless (eq? (communicator-state communicator) 'transaction)
-	(error 'pop3))
-      (send-to-server communicator "TOP ~a" message)
+    (lambda (communicator message)
+      (confirm-transaction-mode communicator
+	"cannot get message headers unless in transaction state")
+      (send-to-server communicator "TOP ~a 0" message)
       (let ((status (get-status-response/basic communicator)))
 	(cond
 	  ((+ok? status)
@@ -108,22 +159,18 @@
 			     (get-multi-line-response communicator))))
 	      headers))
 	  ((-err? status)
-	    (error 'pop3))))))
+	    ((signal-error make-not-given-headers
+	       "not given headers to message ~a" message)
+	      communicator message))))))
 
-  ;; get-message/complete :
-  ;; communicator x num -> list (string) x list (string)
+  ;; get-message/body :
+  ;; communicator x num -> list (string)
 
-  (define get-message/complete
+  (define get-message/body
     (lambda (communicator message)
-      (unless (eq? (communicator-state communicator) 'transaction)
-	(error 'pop3))
-      (send-to-server communicator "RETR ~a" message)
-      (let ((status (get-status-response/basic communicator)))
-	(cond
-	  ((+ok? status)
-	    (split-header/body (get-multi-line-response communicator)))
-	  ((-err? status)
-	    (error 'pop3))))))
+      (let-values (((headers body)
+		     (get-message/complete communicator message)))
+	body)))
 
   ;; split-header/body :
   ;; list (string) -> list (string) x list (string)
@@ -140,6 +187,23 @@
 	    (if (string=? first "")
 	      (values (reverse header) rest)
 	      (loop rest (cons first header))))))))
+
+  ;; delete-message :
+  ;; communicator x num -> ()
+
+  (define delete-message
+    (lambda (communicator message)
+      (confirm-transaction-mode communicator
+	"cannot delete message unless in transaction state")
+      (send-to-server communicator "DELE ~a" message)
+      (let ((status (get-status-response/basic communicator)))
+	(cond
+	  ((-err? status)
+	    ((signal-error make-cannot-delete-message
+	       "no message numbered ~a available to be deleted" message)
+	      communicator message))
+	  ((+ok? status)
+	    'deleted)))))
 
   ;; close-communicator :
   ;; communicator -> ()
@@ -160,7 +224,10 @@
 	(close-communicator communicator)
 	(cond
 	  ((+ok? response) (void))
-	  ((-err? response) (error 'pop3))))))
+	  ((-err? response)
+	    ((signal-error make-disconnect-not-quiet
+	       "got error status upon disconnect")
+	      communicator))))))
 
   ;; send-to-server :
   ;; communicator x format-string x list (values) -> ()
@@ -200,7 +267,7 @@
 		(let ((r (regexp-match -err-regexp status-line)))
 		  (if r
 		    (values -err (cadr r))
-		    (error 'pop3))))))))))
+		    (signal-malformed-response-error communicator))))))))))
 
   ;; get-status-response/basic :
   ;; communicator -> server-responses
@@ -226,11 +293,13 @@
 		     (get-server-status-response communicator)))
 	(if (and +regexp (+ok? response))
 	  (let ((r (regexp-match +regexp rest)))
-	    (if r (cdr r) (error 'pop3)))
+	    (if r (cdr r)
+	      (signal-malformed-response-error communicator)))
 	  (if (and -regexp (-err? response))
 	    (let ((r (regexp-match -regexp rest)))
-	      (if r (cdr r) (error 'pop3)))
-	    (error 'pop3))))))
+	      (if r (cdr r)
+		(signal-malformed-response-error communicator)))
+	    (signal-malformed-response-error communicator))))))
 
   ;; get-multi-line-response :
   ;; communicator -> list (string)
@@ -242,7 +311,7 @@
 	  (let ((l (get-one-line-from-server receiver)))
 	    (cond
 	      ((eof-object? l)
-		(error 'pop3))
+		(signal-malformed-response-error communicator))
 	      ((string=? l ".")
 		'())
 	      ((and (> (string-length l) 1)

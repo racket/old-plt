@@ -2,16 +2,16 @@
 (require-library "macro.ss")
 (require-library "constant.ss")
 
-(constant let-enumerate)
-(constant catch-error)
+; Zodiac provides these:
 (constant send*)
-(constant class*-asi)
-(constant class-asi)
-(constant define-some)
-(constant define-struct-tree)
-(constant define-virtual-struct)
 (constant local)
 (constant recur)
-(constant make-spawner)
+
 (constant opt-lambda)
+(constant let-enumerate)
+(constant catch-error)
+(constant class*-asi)
+(constant class-asi)
+(constant rec)
+(constant let+)
 

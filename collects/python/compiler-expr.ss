@@ -218,10 +218,12 @@
   ;; 5.2.1
   (define identifier%
     (class expression%
-      ;; name-string: string?
+      ;; name-string: string?  [or a symbol, sometimes, created by aug-assign%]
       (init name-string)
       ;; name: symbol?
-      (define name (string->symbol name-string))
+      (define name (if (symbol? name-string)
+                       name-string
+                       (string->symbol name-string)))
       
       (define/public (get-symbol) name)
       

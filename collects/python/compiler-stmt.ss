@@ -220,12 +220,70 @@
         (send expression set-bindings! enclosing-scope))
        ; (send target set-bindings! enclosing-scope))
 
+      (define inplace-op (case op
+                           [(+=) '__iadd__]
+                           [(-=) '__isub__]
+                           [(*=) '__imul__]
+                           [(/=) '__idiv__]
+                           [(%=) '__imod__]
+                           [(&=) '__iand__]
+                           [(\|=) '__ior__]
+                           [(^=) '__inot__]
+                           [(<<=) '__ilshift__]
+                           [(>>=) '__irshift__]
+                           [(**=) '__ipow__]
+                           [(//=) '__itruediv__]))
+
+      (define safe-meth (case op
+                          [(+=) '__add__]
+                          [(-=) '__sub__]
+                          [(*=) '__mul__]
+                          [(/=) '__div__]
+                          [(%=) '__mod__]
+                          [(&=) '__and__]
+                          [(\|=) '__or__]
+                          [(^=) '__not__]
+                          [(<<=) '__lshift__]
+                          [(>>=) '__rshift__]
+                          [(**=) '__pow__]
+                          [(//=) '__truediv__]))
+
+      (define safe-op (case op
+                        [(+=) '+]
+                        [(-=) '-]
+                        [(*=) '*]
+                        [(/=) '/]
+                        [(%=) '%]
+                        [(&=) '&]
+                        [(\|=) '\|]
+                        [(^=) '^]
+                        [(<<=) '<<]
+                        [(>>=) '>>]
+                        [(**=) '**]
+                        [(//=) '//]))
       
       ;;daniel
       (inherit ->orig-so)
       (inherit-field start-pos end-pos)
       (define orig-targ-exp targ-exp)
       (define/override (to-scheme)
+        (let ([targ (gensym 'targ)]
+              [expr (gensym 'expr)])
+          (->orig-so `(let ([,targ ,(send orig-targ-exp to-scheme)]
+                            [,expr ,(send expression to-scheme)])
+                        (if (has-member? ,targ ',inplace-op)
+                            (python-method-call ,targ ',inplace-op ,expr)
+                            ,(send (make-object assignment%
+                                    (list orig-targ-exp)
+                                    (make-object binary%
+                                      (make-object identifier% targ start-pos end-pos)
+                                      safe-op
+                                      (make-object identifier% expr start-pos end-pos)
+                                      start-pos end-pos) ; start-pos, end-pos
+                                    start-pos end-pos)
+                                  to-scheme))))))
+                                        
+        #|
         (->orig-so (send (make-object assignment%
                            (list orig-targ-exp)
                            (make-object binary%
@@ -245,7 +303,7 @@
                              expression
                              start-pos end-pos) ; start-pos, end-pos
                            start-pos end-pos)
-                         to-scheme)))
+                         to-scheme))) |#
       
       (super-instantiate ())))
 

@@ -157,22 +157,24 @@
                         (add-annotation e)
                         e)))
                  (drscheme:debug:test-coverage-enabled (python-settings-test-coverage? settings))
-                 (with-handlers ([void (lambda (x)
-                                         (printf "~a~n"
-                                                 (exn-message x)))])
-                   (namespace-attach-module outer-namespace path)
-                   (namespace-transformer-require path)
-                   (namespace-require path)
-                   (load-extension (build-path (this-expression-source-directory)
-                                               "c" "stringobject.so"))
-                   )
+;                 (with-handlers ([void (lambda (x)
+;                                         (printf "~a~n"
+;                                                 (exn-message x)))])
+;                   (namespace-attach-module outer-namespace path)
+;                   (namespace-transformer-require path)
+;                   (namespace-require path)
+;                   (load-extension (build-path (this-expression-source-directory)
+;                                               "c" "stringobject.so"))
+;                   )
                  ))))
           (define/public (render-value value settings port port-write)
             (render-python-value value port port-write))
           (define/public (render-value/format value settings port port-write width)
             (render-python-value/format value port port-write))
 
-
+          ;; default implementation provided by Robby
+          (define/public (order-manuals x) (values x #t))
+          
 	  (define/public (create-executable settings parent src-file)
 	    (let ([dst-file (drscheme:language:put-executable
 			     parent src-file #f #f

@@ -70,6 +70,7 @@ PyObject* spy_ext_call_fn_intintarg(int argc, Scheme_Object* argv[]);
 PyObject* spy_ext_call_fn_intobjarg(int argc, Scheme_Object* argv[]);
 PyObject* spy_ext_call_fn_intintobjarg(int argc, Scheme_Object* argv[]);
 PyObject* spy_ext_call_fn_objobj(int argc, Scheme_Object* argv[]);
+PyObject* spy_ext_call_fn_objobjarg(int argc, Scheme_Object* argv[]);
 PyObject* spy_ext_call_bound_varargs(int argc, Scheme_Object* argv[]);
 PyObject* spy_ext_call_bound_noargs(int argc, Scheme_Object* argv[]);
 PyObject* spy_ext_call_bound_onearg(int argc, Scheme_Object* argv[]);
@@ -191,8 +192,8 @@ Scheme_Object* scheme_initialize(Scheme_Env* env)
                      pns );
 
 #define ADD_CALL_GLOBAL(arity_name, arity_number) \
-  scheme_add_global( "spy-ext-call-fn-##arity_name##" , \
-                     scheme_make_prim_w_arity(spy_ext_call_fn_##arity_name , "spy-ext-call-fn-##arity_name##", arity_number, arity_number), \
+  scheme_add_global( "spy-ext-call-fn-" #arity_name, \
+                     scheme_make_prim_w_arity(spy_ext_call_fn_##arity_name , "spy-ext-call-fn-" #arity_name, arity_number, arity_number), \
                      pns );
 
 ADD_CALL_GLOBAL(intarg, 3);
@@ -200,6 +201,7 @@ ADD_CALL_GLOBAL(intintarg, 4);
 ADD_CALL_GLOBAL(intobjarg, 4);
 ADD_CALL_GLOBAL(intintobjarg, 5);
 ADD_CALL_GLOBAL(objobj, 3);
+ADD_CALL_GLOBAL(objobjarg, 4);
 
   scheme_add_global( "spy-ext-call-fn-coercion",
                      scheme_make_prim_w_arity(spy_ext_call_fn_inquiry, "spy-ext-call-fn-coercion", 3, 3),
@@ -440,6 +442,15 @@ PyObject* spy_ext_call_fn_objobj(int argc, Scheme_Object* argv[])
   int ret;
   printf("spy_ext_call_fn_objobj: calling\n");
   ret = (*((objobjproc) SCHEME_CPTR_VAL(fn)))(argv[1], argv[2]);
+  return PyInt_FromInt(ret);
+}
+
+PyObject* spy_ext_call_fn_objobjarg(int argc, Scheme_Object* argv[])
+{
+  Scheme_Object* fn = argv[0];
+  int ret;
+  printf("spy_ext_call_fn_objobjarg: calling\n");
+  ret = (*((objobjargproc) SCHEME_CPTR_VAL(fn)))(argv[1], argv[2], argv[3]);
   return PyInt_FromInt(ret);
 }
 
@@ -707,12 +718,12 @@ static void addmethod_coercion_many(PyTypeObject* type, const name_coercion_fn_p
 #define DEF_ADDMETHOD(arity_name, fn_type) \
   static PyObject* wrap_ext_function_##arity_name (coercion f, const char* name) \
   { \
-    printf("wrap_ext_function_##arity_name : name: %s\n", name); \
-    PyObject* wrapped = sapply2("python-wrap-ext-function-##arity_name##", \
-                                scheme_make_cptr((void*) f, "python-ext-function-##arity_name##"), \
+    printf("wrap_ext_function_" #arity_name ": name: %s\n", name); \
+    PyObject* wrapped = sapply2("python-wrap-ext-function-" #arity_name, \
+                                scheme_make_cptr((void*) f, "python-ext-function-" #arity_name), \
                                 sym(name)); \
     ASSERT_PN(wrapped); \
-    printf("wrap_ext_function_##arity_name : done with: %s\n", name); \
+    printf("wrap_ext_function_" #arity_name ": done with: %s\n", name); \
     return wrapped; \
   } \
   typedef struct name_##arity_name##_fn_pair \
@@ -732,6 +743,7 @@ DEF_ADDMETHOD(intintarg, intintargfunc)
 DEF_ADDMETHOD(intobjarg, intobjargproc)
 DEF_ADDMETHOD(intintobjarg, intintobjargproc)
 DEF_ADDMETHOD(objobj, objobjproc)
+DEF_ADDMETHOD(objobjarg, objobjargproc)
 
 // init-spy-ext-method-table: py-module% symbol py-type% -> void
 Scheme_Object* init_spy_ext_method_table(int argc, Scheme_Object* argv[])
@@ -834,6 +846,7 @@ Scheme_Object* init_spy_ext_method_table(int argc, Scheme_Object* argv[])
                                            {0,0}};
     const name_intarg_fn_pair iapairs[] = {{"__mul__", sm->sq_repeat},
                                            {"__getitem__", sm->sq_item},
+                                           {"__imul__", sm->sq_inplace_repeat},
                                            {0,0}};
     const name_intintarg_fn_pair iiapairs[] = {{"__getslice__", sm->sq_slice},
                                            {0,0}};
@@ -853,11 +866,27 @@ Scheme_Object* init_spy_ext_method_table(int argc, Scheme_Object* argv[])
     addmethod_intobjarg_many(type, ioapairs);
     addmethod_intintobjarg_many(type, iioapairs);
     addmethod_objobj_many(type, oopairs);
-
-    // TODO: the rest of the sequence methods
     }
 
-
+  if ( type->tp_as_mapping )
+    {
+    PyMappingMethods* mm = type->tp_as_mapping;
+    const name_inquiry_fn_pair ipairs[] = {{"__len__", mm->mp_length},
+                                           {0,0}};
+    const name_binary_fn_pair bpairs[] = {{"__subscript__", mm->mp_subscript}, {0,0}};
+    const name_objobjarg_fn_pair ooapairs[] = {{"__isubscript__", mm->mp_ass_subscript}, {0,0}};
+    addmethod_inquiry_many(type, ipairs);
+    addmethod_binary_many(type, bpairs);
+    addmethod_objobjarg_many(type, ooapairs);
+    }
+/*
+  if ( type->tp_as_buffer )
+    {
+    PyBufferMethods* bm = type->tp_as_buffer;
+    // yeah, that's great.
+    }
+*/
+  
   printf("INIT-SPY-EXT-METHOD-TABLE: added %d methods.\n", i);
   return NULL;
 }
@@ -1489,4 +1518,3 @@ void* PyMem_Realloc(void* o, size_t new_size)
     memcpy(new_buffer, o, amt_to_copy);
   return new_buffer;
 }
-

@@ -1194,6 +1194,46 @@
               (cons fn-ptr args)))
      name))
 
+  ;; python-wrap-ext-function-intarg: cptr symbol -> py-function%
+  (define (python-wrap-ext-function-intarg fn-ptr name)
+    (let ([spy-ext-call-fn-intarg (pns-get 'spy-ext-call-fn-intarg)])
+      (procedure->py-function%
+       (lambda (a b)
+         (spy-ext-call-fn-intarg fn-ptr a b))
+       name)))
+
+  ;; python-wrap-ext-function-intintarg: cptr symbol -> py-function%
+  (define (python-wrap-ext-function-intintarg fn-ptr name)
+    (let ([spy-ext-call-fn-intintarg (pns-get 'spy-ext-call-fn-intintarg)])
+      (procedure->py-function%
+       (lambda (a b c)
+         (spy-ext-call-fn-intintarg fn-ptr a b c))
+       name)))
+
+  ;; python-wrap-ext-function-intobjarg: cptr symbol -> py-function%
+  (define (python-wrap-ext-function-intobjarg fn-ptr name)
+    (let ([spy-ext-call-fn-intobjarg (pns-get 'spy-ext-call-fn-intobjarg)])
+      (procedure->py-function%
+       (lambda (a b c)
+         (spy-ext-call-fn-intobjarg fn-ptr a b c))
+       name)))
+     
+  ;; python-wrap-ext-function-intarg: cptr symbol -> py-function%
+  (define (python-wrap-ext-function-intintobjarg fn-ptr name)
+    (let ([spy-ext-call-fn-intintobjarg (pns-get 'spy-ext-call-fn-intintobjarg)])
+      (procedure->py-function%
+       (lambda (a b c d)
+         (spy-ext-call-fn-intintobjarg fn-ptr a b c d))
+       name)))
+
+  ;; python-wrap-ext-function-unary: cptr symbol -> py-function%
+  (define (python-wrap-ext-function-unary fn-ptr name)
+    (let ([spy-ext-call-fn-unary (pns-get 'spy-ext-call-fn-unary)])
+      (procedure->py-function%
+       (lambda (a)
+         (spy-ext-call-fn-unary fn-ptr a))
+       name)))
+     
   ;; python-wrap-ext-function-binary: cptr symbol -> py-function%
   (define (python-wrap-ext-function-binary fn-ptr name)
     (procedure->py-function%
@@ -1203,6 +1243,14 @@
                     (cons a
                           (cons b null)))))
      name))
+
+  ;; python-wrap-ext-function-ternary: cptr symbol -> py-function%
+  (define (python-wrap-ext-function-ternary fn-ptr name)
+    (let ([spy-ext-call-fn-ternary (pns-get 'spy-ext-call-fn-ternary)])
+      (procedure->py-function%
+       (lambda (a b c)
+         (spy-ext-call-fn-ternary fn-ptr a b c))
+       name)))
      
   ;; python-wrap-ext-function-inquiry: cptr symbol -> py-function%
   (define (python-wrap-ext-function-inquiry fn-ptr name)
@@ -1212,6 +1260,14 @@
               (cons fn-ptr
                     (cons self null))))
      name))
+
+  ;; python-wrap-ext-function-coercion: cptr symbol -> py-function%
+  (define (python-wrap-ext-function-coercion fn-ptr name)
+    (let ([spy-ext-call-fn-coercion (pns-get 'spy-ext-call-fn-coercion)])
+      (procedure->py-function%
+       (lambda (a b)
+         (spy-ext-call-fn-coercion fn-ptr a b))
+       name)))
      
   ;; python-wrap-ext-method: cptr symbol -> py-function%
   (define (python-wrap-ext-method-varargs fn-ptr name)

@@ -17,15 +17,14 @@
     "Download SrPersist from "
     (PRE  
      " " 
-     (A ((HREF "http://www.plt-scheme.org/software/srpersist/")) 
-	"http://www.plt-scheme.org/software/srpersist/") ". ")
+     (A ((HREF "http://www.plt-scheme.org/software/srpersist/")
+	 (TARGET "_top")) "http://www.plt-scheme.org/software/srpersist/") ". ")
     "ODBC is a very low-level interface. "
     "Francisco Solsona has built a higher-level interface, "
     "SchemeQL, that uses SrPersist.  See "
     (PRE 
      " " 
-     (A ((HREF "http://schematics.sourceforge.net/schemeql.html"))
-	"http://schematics.sourceforge.net/schemeql.html"))
+     (A ((HREF "http://schematics.sourceforge.net/schemeql.html")
+	 (TARGET "_top")) "http://schematics.sourceforge.net/schemeql.html"))
     " for more details.")))
-
 

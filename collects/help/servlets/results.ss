@@ -283,25 +283,18 @@
      (let ([result (extract-binding/single 'lucky bindings)])
        (not (string=? result "false")))))
     
-  ; two ways to get here
-  ;  (1) via search in HD, which gives bindings for
-  ;       search-string, search-type, match-type
-  ;  (2) via goto-manual-link, which gives a binding for
-  ;       hd-url
   (let* ([bindings (request-bindings initial-request)]
-	 [make-maybe-get (lambda (default)
-			   (lambda (sym)
-			     (with-handlers
-			      ([void (lambda _ default)])
-			      (extract-binding/single sym bindings))))]
-	 [binding-vals (map (make-maybe-get "")
-			    '(search-string search-type match-type))]
-	 [hd-url ((make-maybe-get #f) 'hd-url)])
+	 [maybe-get (lambda (sym)
+		      (with-handlers
+		       ([void (lambda _ "")])
+		       (extract-binding/single sym bindings)))]
+	 [binding-vals (map maybe-get
+			    '(search-string search-type match-type))])
     (cond
-     [hd-url (redirect-to hd-url)]
      [(= (string-length (car binding-vals)) 0)
       empty-search-page]
      [else
       (apply search-results 
 	     (lucky-search? bindings)
 	     binding-vals)])))
+

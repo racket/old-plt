@@ -57,9 +57,8 @@
     (P)
     "A paper that discusses DrScheme in "
     "more detail is available in the paper: " 
-    (A ((HREF "http://www.ccs.neu.edu/scheme/pubs#jfp01-fcffksf"))
-       "DrScheme: A Programming Environment for Scheme") ".")))
-
+    (A ((HREF "http://www.ccs.neu.edu/scheme/pubs#jfp01-fcffksf")
+	(TARGET "_top")) "DrScheme: A Programming Environment for Scheme") ".")))
 
 
 

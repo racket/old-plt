@@ -3,7 +3,8 @@
   (require (lib "launcher.ss" "launcher")
 	   (lib "url.ss" "net")
 	   (lib "process.ss")
-	   (lib "etc.ss"))
+	   (lib "etc.ss")
+	   (lib "string-constant.ss" "string-constants"))
 
   (require "util.ss")
 
@@ -44,7 +45,7 @@
 	   (INPUT ((TYPE "submit")
 		   (ID "stop")
 		   (NAME "stop")
-		   (VALUE "Stop")))
+		   (VALUE ,(string-constant stop))))
 	   (P)
 	   "If JavaScript is enabled in your browser, an "
 	   "installation log should appear in a separate browser "

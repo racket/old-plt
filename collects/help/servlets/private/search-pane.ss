@@ -110,7 +110,7 @@
 				,(make-search-link "http://bugs.plt-scheme.org/query/"
 						   (string-constant 
 						    query-bug-reports)
-						   (main-frame))))))))))
+						   "_top")))))))))
 
   (define search-pane
     (opt-lambda ([search-string ""])

@@ -73,8 +73,7 @@
 			   (close-input-port iport))
 	       (show "<P>"
 		     (xexpr->string
-		      `(A ((HREF ,(string-append "/doc/" manual "/"))
-			   (TARGET "_top"))
+		      `(A ((HREF ,(string-append "/doc/" manual "/")))
 			  "Click here"))
 		     " to view manual"
 		     "<P>"

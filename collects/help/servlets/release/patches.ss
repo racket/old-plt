@@ -17,6 +17,6 @@
     (P)
     'nbsp 'nbsp
     ,(let ([url (format "http://download.plt-scheme.org/patches/~a/" (version))])
-       `(A ((HREF ,url)) ,url))))
-
+       `(A ((HREF ,url)
+	    (TARGET "_top")) ,url))))
 

@@ -24,7 +24,8 @@
     "To subscribe to " (TT "plt-announce@list.cs.brown.edu") ", visit the "
     "Web page "
     (BLOCKQUOTE
-     (A ((HREF "http://list.cs.brown.edu/mailman/listinfo/plt-announce/")) "http://list.cs.brown.edu/mailman/listinfo/plt-announce/"))
+     (A ((HREF "http://list.cs.brown.edu/mailman/listinfo/plt-announce/")
+	 (TARGET "_top")) "http://list.cs.brown.edu/mailman/listinfo/plt-announce/"))
     " or send email to "
     (BLOCKQUOTE
      (A ((HREF "mailto:plt-announce-request@list.cs.brown.edu"))
@@ -42,7 +43,8 @@
     (P)
     "Only subscribers can post to the list. To subscribe, visit the Web page "
     (BLOCKQUOTE
-     (A ((HREF "http://list.cs.brown.edu/mailman/listinfo/plt-scheme/")) "http://list.cs.brown.edu/mailman/listinfo/plt-scheme/"))
+     (A ((HREF "http://list.cs.brown.edu/mailman/listinfo/plt-scheme/")
+	 (TARGET "_top")) "http://list.cs.brown.edu/mailman/listinfo/plt-scheme/"))
     " or send email to "
     (BLOCKQUOTE
      (A ((HREF "mailto:plt-scheme-request@list.cs.brown.edu")) "plt-scheme-request@list.cs.brown.edu"))
@@ -62,7 +64,8 @@
     "hemos adoptado la política de que sólo los suscriptores a la lista "
     "pueden enviar mensajes. Para suscribirte, visita la página de Web "
     (BLOCKQUOTE
-     (A ((HREF "http://list.cs.brown.edu/mailman/listinfo/plt-scheme-es/")) "http://list.cs.brown.edu/mailman/listinfo/plt-scheme-es/"))
+     (A ((HREF "http://list.cs.brown.edu/mailman/listinfo/plt-scheme-es/")
+	 (TARGET "_top")) "http://list.cs.brown.edu/mailman/listinfo/plt-scheme-es/"))
     " o envía un mensaje a "
     (BLOCKQUOTE
      (A ((HREF "mailto:plt-scheme-es-request@list.cs.brown.edu")) "plt-scheme-es-request@list.cs.brown.edu"))

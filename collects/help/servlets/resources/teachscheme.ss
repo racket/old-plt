@@ -27,5 +27,5 @@
     "as well as those who just wish to explore the subject."
     (P)
     "For more information, see the " 
-    (A ((HREF "http://www.teach-scheme.org/Workshops/"))
-       "TeachScheme! Workshops page") ".")))
+    (A ((HREF "http://www.teach-scheme.org/Workshops/")
+	(TARGET "_top")) "TeachScheme! Workshops page") ".")))

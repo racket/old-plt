@@ -13,7 +13,7 @@
      (H1  "External Resources")
      (P)
      "DrScheme is created by "
-     (A ((HREF "http://www.plt-scheme.org/")) "PLT") 
+     (A ((HREF "http://www.plt-scheme.org/") (TARGET "_top")) "PLT") 
      ", the Programming Languages Team "
      "based at Northeastern University, the University of Utah, and "
      "Brown University. "
@@ -31,5 +31,5 @@
      (P)
      "Also, the Schemers.org Web site provides links for "
      "many Scheme resources, including books, implementations, "
-     "and libraries: " (A ((HREF "http://www.schemers.org/"))
-			  "http://www.schemers.org/") ".")))
+     "and libraries: " (A ((HREF "http://www.schemers.org/") 
+			   (TARGET "_top")) "http://www.schemers.org/") ".")))

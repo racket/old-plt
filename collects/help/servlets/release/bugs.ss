@@ -30,5 +30,6 @@
 	    '("DrScheme" "MzScheme" "MrEd" "Stepper")))
     (P)
     "For an up-to-date list of bug reports, see the "
-    (A ((HREF "http://bugs.plt-scheme.org/query/")) "PLT bug report query page")) "."))
+    (A ((HREF "http://bugs.plt-scheme.org/query/")
+	(TARGET "_top")) "PLT bug report query page")) "."))
 

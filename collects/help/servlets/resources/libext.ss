@@ -22,8 +22,8 @@
      (A ((NAME "databases") (VALUE "databases")))
      "Many libraries and extensions are available for PLT software. "
      "See the " 
-     (A ((HREF "http://www.cs.utah.edu/plt/develop/")) 
-	"PLT libraries and extensions")
+     (A ((HREF "http://www.cs.utah.edu/plt/develop/")
+	 (TARGET "_top")) "PLT libraries and extensions")
      " page for a comprehensive listing." 
      (P)
      "If you write a PLT library or extension, we would like to "

@@ -75,9 +75,6 @@
 				  refresh-done))))
        (show "</PRE>")
        (show "<P>")
-       (show (xexpr->string
-	      `(A ((HREF "/servlets/manuals.ss")) "Manuals page"))
-	     "<BR>")
        (show (xexpr->string home-page))
        (show "</BODY></HTML>")
        (semaphore-post refresh-semaphore)))))

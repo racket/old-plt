@@ -18,8 +18,8 @@
     "controlling COM and ActiveX components within DrScheme, "
     "MzScheme, or MrEd.  MysterX is available from "
     (PRE 
-     'nbsp 'nbsp  (A ((HREF "http://www.plt-scheme.org/software/mysterx/"))
-		     "http://www.plt-scheme.org/software/mysterx/"))
+     'nbsp 'nbsp  (A ((HREF "http://www.plt-scheme.org/software/mysterx/")
+		      (TARGET "_top")) "http://www.plt-scheme.org/software/mysterx/"))
     (P)
     ,(collection-doc-link "mysterx"
 			  "The MysterX collection"))))

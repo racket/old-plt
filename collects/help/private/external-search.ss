@@ -19,17 +19,15 @@
    (goto-manual-link
     (hd-cookie? string? string? . -> . any?)))
 
-  (define (index-format-prefix)
-    (if (use-frames?)
-	"http://127.0.0.1:~a/servlets/index.ss?"
-	"http://127.0.0.1:~a/servlets/results.ss?"))
+  (define search-url-prefix
+    "http://127.0.0.1:~a/servlets/external-search.ss?")
 
   ; hd-cookie string string string any -> void
   ; shows search result in default browser
   (define (search-for-docs cookie search-string search-type match-type lucky?)
     (let* ([port (hd-cookie->port cookie)]
 	   [url (format 
-		 (string-append (index-format-prefix)
+		 (string-append search-url-prefix
 				"search-string=~a&"
 				"search-type=~a&"
 				"match-type=~a&"
@@ -43,8 +41,7 @@
 	   [hd-url (finddoc-page-anchor manual index-key)]
            ; hd-url is /doc/<manual>/... or /servlet/...
 	   [url (format
-		 (string-append (index-format-prefix)
-				"hd-url=~a")
+		 (string-append search-url-prefix "hd-url=~a")
 		 (hd-cookie->port cookie)
 		 (hexify-string hd-url))])
       (help-desk-navigate url))))

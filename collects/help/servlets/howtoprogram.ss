@@ -17,7 +17,8 @@
      " provides an introduction to programming using the DrScheme environment. "
      "The book is not distributed with DrScheme, but it is available online at " 
      (PRE  
-      "   " (A ((HREF "http://www.htdp.org/")) "http://www.htdp.org/"))  
+      "   " (A ((HREF "http://www.htdp.org/")
+		(TARGET "_top")) "http://www.htdp.org/"))  
      (P)
      "Help Desk provides the following interactive support for the textbook:"
      (UL  

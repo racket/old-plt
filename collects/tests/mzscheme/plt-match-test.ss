@@ -1,5 +1,6 @@
 (load-relative "loadtest.ss")
 (SECTION 'PLT-MATCH)
+
 (require (lib "plt-match.ss"))
 
 (define-syntax test-mac
@@ -34,6 +35,8 @@
       ((_ t result)
        #`(test #t #,(syntax/loc stx (lambda () (test-mac t result)))))))) 
 
+
+
 ;;quasi-quote tests 
 (mytest (match '(1 2 3 4 . 5)
              (`(1 2 ,@(list 3 4) . ,b) b))
@@ -51,8 +54,14 @@
              (`(,a ,b ,c) (list a b c)))
       '(1 2 3))
 
+;(unquote-splicing (list a b c))
+
 (mytest (match '(c a b 1 2 3 r f i) 
              (`(c a b ,@(list a b c) r f i) (list a b c)))
+      '(1 2 3))
+
+(mytest (match '(c a b 1 2 3 r f i) 
+             (`(c a b (unquote-splicing (list a b c)) r f i) (list a b c)))
       '(1 2 3))
 
 (mytest (match '(3 4 #\c a b 1 (2 (c d)))

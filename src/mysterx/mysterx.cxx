@@ -2172,8 +2172,6 @@ short int buildMethodArgumentsUsingFuncDesc(FUNCDESC *pFuncDesc,
   char errBuff[256];
   short int numParamsPassed;
   short int numOptParams;
-  short int numDefaultParams;
-  short int numDefaultsNeeded;
   BOOL lastParamIsRetval;
   int i,j,k;
   static DISPID dispidPropPut = DISPID_PROPERTYPUT;
@@ -2193,8 +2191,6 @@ short int buildMethodArgumentsUsingFuncDesc(FUNCDESC *pFuncDesc,
     lastParamIsRetval = FALSE;
   }
 
-  numDefaultParams = 0;
-
   if (numOptParams == -1) {  // last args get packaged into SAFEARRAY
 
     // this branch is untested
@@ -2204,10 +2200,6 @@ short int buildMethodArgumentsUsingFuncDesc(FUNCDESC *pFuncDesc,
     for (i = numParamsPassed - numOptParams - 1; i >= 0; i--) { 
       if (isDefaultParam(pFuncDesc,i)) {
 	numOptParams++;
-	numDefaultParams++;
-      }
-      else {
-	break;
       }
     }
 
@@ -2226,10 +2218,6 @@ short int buildMethodArgumentsUsingFuncDesc(FUNCDESC *pFuncDesc,
     for (i = numParamsPassed - numOptParams - 1; i >= 0; i--) { 
       if (isDefaultParam(pFuncDesc,i)) {
 	numOptParams++;
-	numDefaultParams++;
-      }
-      else {
-	break;
       }
     }
 
@@ -2282,7 +2270,6 @@ short int buildMethodArgumentsUsingFuncDesc(FUNCDESC *pFuncDesc,
     methodArguments->cNamedArgs = 0;
     methodArguments->cArgs = numParamsPassed;
     break;
-
   }
 
   if (numParamsPassed > 0) {
@@ -2312,26 +2299,20 @@ short int buildMethodArgumentsUsingFuncDesc(FUNCDESC *pFuncDesc,
     }
   }
 
-  // use default values
-
-  numDefaultsNeeded = numParamsPassed - numOptParams + // required
-                      numDefaultParams -               // possible defaults
-                      (argc - 2);                      // actually supplied 
-
-  for (i = numParamsPassed - 1 - (argc - 2),j = 0,k = argc - 2; 
-       j < numDefaultsNeeded; 
-       i--,j++,k++) {
-    methodArguments->rgvarg[i] =
-      pFuncDesc->lprgelemdescParam[k].paramdesc.pparamdescex->varDefaultValue;
-  }
-
   // omitted optional arguments
+  // supply default if available
 
   if (numOptParams > 0) {
-    for (i = numParamsPassed - 1 - (argc - 2) - numDefaultParams; i >= 0; i--) {
-      VariantInit(&methodArguments->rgvarg[i]);
-      methodArguments->rgvarg[i].vt = VT_ERROR;
-      methodArguments->rgvarg[i].lVal = DISP_E_PARAMNOTFOUND;
+    for (i = numParamsPassed - 1 - (argc - 2), j = argc - 2; i >= 0; i--,j++) {
+      if (isDefaultParam(pFuncDesc,i)) {
+	methodArguments->rgvarg[i] =
+	  pFuncDesc->lprgelemdescParam[j].paramdesc.pparamdescex->varDefaultValue;
+      }
+      else {
+	VariantInit(&methodArguments->rgvarg[i]);
+	methodArguments->rgvarg[i].vt = VT_ERROR;
+	methodArguments->rgvarg[i].lVal = DISP_E_PARAMNOTFOUND;
+      }
     }
   }
 

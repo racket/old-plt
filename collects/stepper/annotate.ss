@@ -73,40 +73,60 @@
       (apply inr lsts)))
 
   ; a BINDING is a syntax-object
+  ; a VARREF is a syntax-object
   
   ; a BINDING-SET is (union 'all (listof BINDING))
+  ; a VARREF-SET is (listof VARREF)
   
-  ; binding-set-union takes some lists of bindings where no element appears twice in one list, and 
-  ; forms a new list which is the union of the sets.
-  ; binding-set-union : (listof BINDING-SET) *-> BINDING-SET
+  ; note: a BINDING-SET which is not 'all may be used as a VARREF-SET.
+  ; this is because they both consist of syntax objects, and a binding
+  ; answers true to bound-identifier=? with itself, just like a varref
+  ; in the scope of that binding would.
   
-  (define binding-set-union
-    (lambda args
-      (foldl binding-set-pair-union
-	     null
-	     args)))
+  ; binding-set-union: BINDING-SET *-> BINDING-SET
+  ; varref-set-union: VARREF-SET *-> VARREF-SET
   
-  ; binding-set-pair-union: BINDING-SET BINDING-SET -> BINDING-SET
-  
-  (define (binding-set-pair-union a-set b-set)
-    (cond [(or (eq? a-set 'all) (eq? b-set 'all)) 'all]
-          [else (append a-set (remq* a-set b-set))]))
-  
+  (define-values (binding-set-union
+                  varref-set-union)
+    (local ((define (set-pair-union a-set b-set comparator)
+              (append (remove* a-set b-set comparator) a-set))
+            
+            (define (varref-set-pair-union a-set b-set)
+              (set-pair-union a-set b-set free-identifier=?))
+            
+            (define (binding-set-pair-union a-set b-set)
+              (set-pair-union a-set b-set eq?))
+            
+            (define (pair-union->varargs-union fn)
+              (lambda args
+                (foldl fn null args)))
+            
+            (define binding-set-union
+              (pair-union->varargs-union binding-set-pair-union))
+            
+            (define varref-set-union
+              (pair-union->varargs-union varref-set-pair-union)))
+      (values binding-set-union
+              varref-set-union)))
 
-  ; binding-set-intersect : BINDING-SET BINDING-SET -> BINDING-SET
+  ; binding-set-varref-set-intersect : BINDING-SET VARREF-SET -> BINDING-SET
+  ; return the subset of bindings that appear in the varrefs
   
-  (define (binding-set-intersect a-set b-set)
+  (define (binding-set-varref-set-intersect bindings varrefs)
     (cond [(eq? a-set 'all) b-set]
-          [(eq? b-set 'all) a-set]
-          [else (remq* (remq* a-set b-set) b-set)]))
+          [else (filter (lambda (binding)
+                          (ormap (lambda (varref)
+                                   (bound-identifier=? binding varref))
+                                 varrefs))
+                        bindings)]))
   
-  ; binding-set-remove : BINDING-SET BINDING-SET -> BINDING-SET
+  ; varref-set-remove-bindings : VARREF-SET (BINDING-SET - 'all) -> VARREF-SET
+  ; remove bindings from varrefs
   
-  (define (binding-set-remove a-set b-set expr) ; removes a from b
-    (cond [(eq? a-set 'all) null]
-          [(eq? b-set 'all)
-	   (internal-error expr "tried to remove finite set of bindings from 'all")]
-          [else (remq* a-set b-set)]))
+  (define (varref-set-remove-bindings varrefs bindings)
+    (cond [(eq? bindings 'all)
+           (error 'varref-set-remove-bindings "binding-set 'all passed as second argument, first argument was: ~s" varrefs)]
+          [else (remove* bindings varrefs bound-identifier=?)]))
       
   ; WARNING: because of how syntax-property works, these properties will have a default value of #f.
   ; that's what we want, in this case.
@@ -138,7 +158,7 @@
   (define (make-debug-info source tail-bound free-bindings advance-warning label lifting?)
     (let* ([kept-bindings (if (eq? tail-bound 'all)
                               free-bindings
-                              (binding-set-intersect tail-bound
+                              (binding-set-varref-set-intersect tail-bound
                                                      free-bindings))]
            [var-clauses (map (lambda (x) 
                                (list x (d->so #f `(quote-syntax ,x))))
@@ -185,14 +205,6 @@
   
   (define initial-env-package null)
   
-;  (define (flatten-unit-clauses clauses)
-;    (if (null? clauses)
-;        null
-;        (if  (z:begin-form? (car clauses))
-;             (append (flatten-unit-clauses (z:begin-form-bodies (car clauses)))
-;                     (flatten-unit-clauses (cdr clauses)))
-;             (cons (car clauses) (flatten-unit-clauses (cdr clauses))))))
-
   (define (extract-top-level-vars exprs)
     (apply append
            (map (lambda (expr)
@@ -428,23 +440,27 @@
                   
                   [let-abstraction
                    (lambda (vars-fn vals-fn body-fn output-identifier check-fn make-init-list)
-                     (let*-values
-                         ([(binding-sets) (vars-fn expr)]
-                          [(binding-list) (apply append binding-sets)]
-                          [(vals) (vals-fn expr)]
-                          [(_1) (check-fn vals binding-list)]
-                          [(lifted-var-sets) (map (lambda (x) (map get-lifted-var x)) binding-sets)]
-                          [(lifted-vars) (apply append lifted-var-sets)]
+                     (let*-2vals
+                         ([binding-sets (vars-fn expr)]
+                          [binding-list (apply append binding-sets)]
+                          [vals (vals-fn expr)]
+                          [_1 (check-fn vals binding-list)]
+                          [lifted-var-sets (map (lambda (x) (map get-lifted-var x)) binding-sets)]
+                          [lifted-vars (apply append lifted-var-sets)]
                           [(annotated-vals free-bindings-vals)
-                           (dual-map (let-rhs-recur null) vals binding-sets lifted-gensym-sets)]
+                           (2vals-map (let-rhs-recur null) vals binding-sets lifted-var-sets)]
                           [(annotated-body free-bindings-body)
                            (let-body-recur (body-fn expr) binding-list)]
-                          [(free-bindings) (remq* binding-list 
-                                                  (apply binding-set-union free-bindings-body free-bindings-vals))])
+                          [free-bindings (varref-set-remove-bindings 
+                                          (apply varref-set-union free-bindings-body free-bindings-vals) 
+                                          binding-list)])
+                         
+                         ;; COME BACK TO THIS WHEN WE TACKLE LET & LETREC
+                         
                        (ccond [cheap-wrap?
                                (let* ([bindings
                                        (map (lambda (bindings val)
-                                              `(,(map get-binding-name bindings) ,val))
+                                              (d->so #f `(,bindings ,val)))
                                             binding-sets
                                             annotated-vals)]
                                       [annotated
@@ -473,22 +489,98 @@
                                       [wrapped-begin
                                        (wcm-wrap (make-debug-info expr 
                                                                   (binding-set-union tail-bound binding-list)
-                                                                  (binding-set-union free-bindings binding-list)
+                                                                  (varref-set-union free-bindings binding-list) ; NB using bindings as varrefs
                                                                   null ; advance warning
                                                                   'let-body
                                                                   foot-wrap?)
                                                  middle-begin)]
                                       [whole-thing
                                        `(,output-identifier ,outer-initialization ,wrapped-begin)])
-                                 (values whole-thing free-bindings))])))])
+                                 (values whole-thing free-bindings))])))]
+                  
+                  )
 	     
              ; find the source expression and associate it with the parsed expression
              
-             (when (and red-exprs foot-wrap?)
-               (set-expr-read! expr (find-read-expr expr))) 
-	     
-	     (cond
-	       
+;             (when (and red-exprs foot-wrap?)
+;               (set-expr-read! expr (find-read-expr expr))) 
+
+	     (define (lambda-abstraction clause)
+               (with-syntax [(args bodies) clause]
+                 (utils:improper-foreach utils:check-for-keyword args) ; should we do this in 200?
+                 (utils:improper-foreach mark-never-undefined args)
+                 (let*-2vals ([(annotated-bodies free-varref-sets)
+                               (2vals-map lambda-body-recur bodies)]
+                              [new-free-bindings (varref-set-remove-bindings (apply varref-set-union free-varref-sets)
+                                                                             binding-list)])
+                             
+                 (let*-2vals ([(annotated free-bindings)
+                               (lambda-body-recur body)]
+                              [new-free-bindings (varref-set-remove-bindings free-bindings binding-list)]
+                             
+             (syntax-case
+
+                 [(lambda args bodies)
+                  
+                      
+                   
+                 [(case-lambda clauses)
+                  (let*-2vals 
+                    ([(annotated-cases free-bindings-cases)
+                      (2vals-map
+                       (lambda (arglist body)
+                         (let ([binding-list (z:arglist-vars arglist)]
+                               [args (utils:arglist->ilist arglist)])
+                           (utils:improper-foreach utils:check-for-keyword args) 
+                           (utils:improper-foreach mark-never-undefined args)
+                           (let*-values
+                               ([(annotated free-bindings)
+                                 (lambda-body-recur body)]
+                                [(new-free-bindings) (varref-set-remove-bindings free-bindings binding-list)]
+                                [(new-annotated) (list (utils:improper-map get-binding-name args) annotated)]) 
+                             (values new-annotated new-free-bindings))))
+                       (z:case-lambda-form-args expr)
+                       (z:case-lambda-form-bodies expr))]
+                     [(annotated-case-lambda) (cons '#%case-lambda annotated-cases)] 
+                     [(new-free-bindings) (apply varref-set-union free-bindings-cases)]
+                     [(closure-info) (make-debug-info-app 'all new-free-bindings 'none)]
+                     [(procedure-name) (ccond [(symbol? procedure-name-info)
+                                               procedure-name-info]
+                                              [(pair? procedure-name-info)
+                                               (car procedure-name-info)]
+                                              [(eq? procedure-name-info #f)
+                                               #f])]
+                     [(closure-storing-proc)
+                       (lambda (closure debug-info . extra)
+                         (closure-table-put! closure (make-closure-record 
+                                                      procedure-name
+                                                      debug-info
+                                                      #f
+                                                      (if (not (null? extra))
+                                                          (car extra)
+                                                          #f)))
+                         closure)])
+                  (if cheap-wrap?
+                      (values annotated-case-lambda new-free-bindings)
+                      (let* ([patched (inferred-name-patch annotated-case-lambda)]
+                             [captured
+                              (if (memq 'no-closure-capturing wrap-opts)
+                                  annotated-case-lambda
+                                  (cond [(symbol? procedure-name-info)
+                                         `(,closure-storing-proc ,patched ,closure-info)]
+                                        [(pair? procedure-name-info)
+                                         (if foot-wrap?
+                                             `(,closure-storing-proc ,patched ,closure-info ,(cadr procedure-name-info))
+                                             `(,closure-storing-proc ,patched ,closure-info #f))]
+                                        [else
+                                         `(,closure-storing-proc ,patched ,closure-info)]))])
+                        (values 
+                         (ccond [foot-wrap? 
+                                 (wcm-wrap (make-debug-info-normal new-free-bindings)
+                                           captured)]
+                                [ankle-wrap? 
+                                 captured]) ; no wcm is needed because evaluation of closures cannot cause exceptions.
+                         new-free-bindings))))]                 
 	       ; the variable forms 
 	       
                [(z:varref? expr)
@@ -565,7 +657,7 @@
                     ([(sub-exprs) (cons (z:app-fun expr) (z:app-args expr))]
                      [(annotated-sub-exprs free-bindings-sub-exprs)
                       (dual-map non-tail-recur sub-exprs)]
-                     [(free-bindings) (apply binding-set-union free-bindings-sub-exprs)])
+                     [(free-bindings) (apply varref-set-union free-bindings-sub-exprs)])
                   (values 
                    (ccond [cheap-wrap? (appropriate-wrap annotated-sub-exprs free-bindings)]
                           [(or ankle-wrap? foot-wrap?)
@@ -599,7 +691,7 @@
                                                                                   (return-value-wrap arg-temp-syms)
                                                                                   arg-temp-syms)))]
                                       [debug-info (make-debug-info-app new-tail-bound
-                                                                       (binding-set-union free-bindings arg-temps)
+                                                                       (varref-set-union free-bindings arg-temps) ; NB using bindings as vars
                                                                        'not-yet-called)]
                                       [let-body (wcm-wrap debug-info `(#%begin ,@set!-list ,final-app))])
                                  `(#%let-values ,let-clauses ,let-body)))])
@@ -636,7 +728,7 @@
                       (tail-recur (z:if-form-then expr))]
                      [(annotated-else free-bindings-else) 
                       (tail-recur (z:if-form-else expr))]
-                     [(free-bindings) (binding-set-union free-bindings-test 
+                     [(free-bindings) (varref-set-union free-bindings-test 
                                                          free-bindings-then 
                                                          free-bindings-else)]
                      [(if-temp-sym) (z:binding-var if-temp)]
@@ -664,7 +756,7 @@
                                           (#%set! ,if-temp-sym ,annotated-test)
                                           ,(break-wrap annotated-2))]
                              [debug-info (make-debug-info-app (binding-set-union tail-bound (list if-temp))
-                                                              (binding-set-union free-bindings (list if-temp))
+                                                              (varref-set-union free-bindings (list if-temp))
                                                               'none)]
                              [wcm-wrapped (wcm-wrap debug-info annotated)]
                              [outer-annotated `(#%let ((,if-temp-sym ,*unevaluated*)) ,wcm-wrapped)])
@@ -689,7 +781,7 @@
                                    (top-level-annotate/inner expr)) 
                                  bodies)])
                        (values `(#%begin ,@annotated-bodies)
-                               (apply binding-set-union free-bindings)))
+                               (apply varref-set-union free-bindings)))
                     (let*-values 
                         ([(bodies) (z:begin-form-bodies expr)]
                          [(all-but-last-body last-body-list) 
@@ -699,7 +791,7 @@
                           (dual-map non-tail-recur all-but-last-body)]
                          [(annotated-final free-bindings-final)
                           (tail-recur last-body)]
-                         [(free-bindings) (apply binding-set-union free-bindings-final free-bindings-a)]
+                         [(free-bindings) (apply varref-set-union free-bindings-final free-bindings-a)]
                          [(debug-info) (make-debug-info-normal free-bindings)]
                          [(annotated) `(#%begin ,@(append annotated-a (list annotated-final)))])
                        (values (ccond [(or cheap-wrap? ankle-wrap?) (appropriate-wrap annotated free-bindings)]
@@ -713,7 +805,7 @@
                       (result-recur (car bodies))]
                      [(annotated-bodies free-bindings-lists)
                       (dual-map non-tail-recur (cdr bodies))]
-                     [(free-bindings) (apply binding-set-union free-bindings-first free-bindings-lists)]
+                     [(free-bindings) (apply varref-set-union free-bindings-first free-bindings-lists)]
                      [(debug-info) (make-debug-info-normal free-bindings)]
                      [(annotated) `(#%begin0 ,annotated-first ,@annotated-bodies)])
                   (values (ccond [(or cheap-wrap? ankle-wrap?) (appropriate-wrap annotated free-bindings)]
@@ -772,7 +864,7 @@
                       (set!-rhs-recur (z:set!-form-val expr) (if (z:top-level-varref? var)
                                                                  (z:varref-var var)
                                                                  (z:binding-orig-name (z:bound-varref-binding var))))]
-                     [(free-bindings) (binding-set-union (if (z:top-level-varref? var)
+                     [(free-bindings) (varref-set-union (if (z:top-level-varref? var)
                                                              null
                                                              (list (z:bound-varref-binding var)))
                                                          rhs-free-bindings)]
@@ -783,63 +875,7 @@
                                    (wcm-wrap (make-debug-info-normal free-bindings) annotated)])
                            free-bindings))]
                 
-               [(z:case-lambda-form? expr)
-		(let*-values 
-                    ([(annotated-cases free-bindings-cases)
-                      (dual-map
-                       (lambda (arglist body)
-                         (let ([binding-list (z:arglist-vars arglist)]
-                               [args (utils:arglist->ilist arglist)])
-                           (utils:improper-foreach utils:check-for-keyword args) 
-                           (utils:improper-foreach mark-never-undefined args)
-                           (let*-values
-                               ([(annotated free-bindings)
-                                 (lambda-body-recur body)]
-                                [(new-free-bindings) (binding-set-remove binding-list free-bindings expr)]
-                                [(new-annotated) (list (utils:improper-map get-binding-name args) annotated)]) 
-                             (values new-annotated new-free-bindings))))
-                       (z:case-lambda-form-args expr)
-                       (z:case-lambda-form-bodies expr))]
-                     [(annotated-case-lambda) (cons '#%case-lambda annotated-cases)] 
-                     [(new-free-bindings) (apply binding-set-union free-bindings-cases)]
-                     [(closure-info) (make-debug-info-app 'all new-free-bindings 'none)]
-                     [(procedure-name) (ccond [(symbol? procedure-name-info)
-                                               procedure-name-info]
-                                              [(pair? procedure-name-info)
-                                               (car procedure-name-info)]
-                                              [(eq? procedure-name-info #f)
-                                               #f])]
-                     [(closure-storing-proc)
-                       (lambda (closure debug-info . extra)
-                         (closure-table-put! closure (make-closure-record 
-                                                      procedure-name
-                                                      debug-info
-                                                      #f
-                                                      (if (not (null? extra))
-                                                          (car extra)
-                                                          #f)))
-                         closure)])
-                  (if cheap-wrap?
-                      (values annotated-case-lambda new-free-bindings)
-                      (let* ([patched (inferred-name-patch annotated-case-lambda)]
-                             [captured
-                              (if (memq 'no-closure-capturing wrap-opts)
-                                  annotated-case-lambda
-                                  (cond [(symbol? procedure-name-info)
-                                         `(,closure-storing-proc ,patched ,closure-info)]
-                                        [(pair? procedure-name-info)
-                                         (if foot-wrap?
-                                             `(,closure-storing-proc ,patched ,closure-info ,(cadr procedure-name-info))
-                                             `(,closure-storing-proc ,patched ,closure-info #f))]
-                                        [else
-                                         `(,closure-storing-proc ,patched ,closure-info)]))])
-                        (values 
-                         (ccond [foot-wrap? 
-                                 (wcm-wrap (make-debug-info-normal new-free-bindings)
-                                           captured)]
-                                [ankle-wrap? 
-                                 captured]) ; no wcm is needed because evaluation of closures cannot cause exceptions.
-                         new-free-bindings))))]
+               
                                 
                ; the annotation for w-c-m is insufficient for
                ; stepping: there must be an intermediate let & set!s to
@@ -854,7 +890,7 @@
                       (non-tail-recur (z:with-continuation-mark-form-val expr))]
                      [(annotated-body free-bindings-body)
                       (result-recur (z:with-continuation-mark-form-body expr))]
-                     [(free-bindings) (binding-set-union free-bindings-key free-bindings-val free-bindings-body)]
+                     [(free-bindings) (varref-set-union free-bindings-key free-bindings-val free-bindings-body)]
                      [(debug-info) (make-debug-info-normal free-bindings)]
                      [(annotated) `(#%with-continuation-mark
                                     ,annotated-key
@@ -865,289 +901,6 @@
                                    (wcm-wrap debug-info annotated)])
                            free-bindings))]
                
-               [foot-wrap?
-                (internal-error expr "cannot annotate units or classes in foot-wrap mode")]
-               
-               [(z:unit-form? expr)
-                (let* ([imports (z:unit-form-imports expr)]
-                       [exports (map (lambda (export)
-                                       (list (translate-varref (car export))
-                                             (z:read-object (cdr export))))
-                                     (z:unit-form-exports expr))]
-                       [_ (for-each utils:check-for-keyword imports)]
-                       [clauses (flatten-unit-clauses (z:unit-form-clauses expr))]
-                       [unit-vars (extract-top-level-vars clauses)])
-                  (cond 
-                   [cheap-wrap?
-                    (let*-values
-                        ([(annotated-clauses free-vars-lists)
-                          (dual-map (lambda (expr)
-                                      (top-level-annotate/inner expr))
-                                    clauses)]
-                         [(annotated) `(#%unit
-                                        (import ,@(map get-binding-name imports))
-                                        (export ,@exports)
-                                        ,@annotated-clauses)]
-                         [(free-bindings) 
-                          (binding-set-remove
-                           (binding-set-union imports
-                                              (map z:top-level-varref/bind-slot 
-                                                   (filter z:top-level-varref/bind?
-                                                           unit-vars)))
-                           (apply binding-set-union free-vars-lists)
-                           expr)])
-                      (values (appropriate-wrap annotated free-bindings) free-bindings))]
-                   [ankle-wrap?
-                    (let*-values
-                        ([(process-clause)
-                          (lambda (clause)
-                            (if (z:define-values-form? clause)
-                                (let*-values
-                                    ([(binding-names) (map z:varref-var (z:define-values-form-vars clause))]
-                                     [(annotated-rhs free-vars)
-                                      (set!-rhs-recur (z:define-values-form-val clause) 
-                                                      (if (null? binding-names)
-                                                          #f
-                                                          (car binding-names)))]
-                                     [(set!-form) `(#%set!-values ,binding-names ,annotated-rhs)])
-                                  (values (appropriate-wrap set!-form null) free-vars))
-                                (let*-values
-                                    ([(annotated free-vars) (non-tail-recur clause)])
-                                  (values annotated free-vars))))]
-                         [(annotated-clauses free-vars-clauses)
-                          (dual-map process-clause clauses)]
-                         [(unit-var-names) (map z:varref-var unit-vars)]
-                         [(unit-var-slots) (map z:top-level-varref/bind-slot unit-vars)]
-                         [(initial-define-list)
-                          (if (null? unit-var-names)
-                              null
-                              (list `(#%define-values ,unit-var-names (#%values ,@unit-var-names))))]
-                         [(free-vars)
-                          (apply binding-set-union unit-var-slots free-vars-clauses)]
-                         [(annotated-innards)
-                          (if (null? annotated-clauses)
-                              null
-                              (append initial-define-list
-				      (list (appropriate-wrap `(#%begin ,@annotated-clauses) free-vars))))]
-                         [(annotated-unit)
-                          `(#%unit
-                            (import ,@(map get-binding-name imports))
-                            (export ,@exports)
-                            ,@annotated-innards)]
-                         [(free-vars-outside)
-                          (binding-set-remove
-                           (binding-set-union imports
-                                              unit-var-slots)
-                           free-vars
-                           expr)])
-                      (values annotated-unit free-vars-outside))]
-                   [else (error expr 
-                                "annotation style ~a for unit is neither 'ankle-wrap or 'cheap-wrap"
-                                wrap-style)]))]
-                         
-               [(z:compound-unit-form? expr)
-                (let ((imports (map get-binding-name
-                                    (z:compound-unit-form-imports expr)))
-                      (links (z:compound-unit-form-links expr))
-                      (exports (z:compound-unit-form-exports expr)))
-                  (let*-values
-                      ([(new-links links-free-vars-sets)
-                        (dual-map
-                         (lambda (link-clause)
-                           (let*-values 
-                               ([(tag) (utils:read->raw (car link-clause))]
-                                [(sub-unit sub-unit-free-vars) 
-                                 (no-enclosing-recur (cadr link-clause))]
-                                [(imports)
-                                 (map (lambda (import)
-                                        (if (z:lexical-varref? import)
-                                            (translate-varref import)
-                                            `(,(utils:read->raw (car import))
-                                              ,(utils:read->raw (cdr import)))))
-                                      (cddr link-clause))])
-                             (values `(,tag (,sub-unit ,@imports)) sub-unit-free-vars)))
-                           links)]
-                       [(new-exports)
-                        (map
-                         (lambda (export-clause)
-                           `(,(utils:read->raw (car export-clause))
-                             (,(utils:read->raw (cadr export-clause))
-                              ,(utils:read->raw (cddr export-clause)))))
-                         exports)]
-                       [(e) `(#%compound-unit
-                              (import ,@imports)
-                              (link ,@new-links)
-                              (export ,@new-exports))]
-                       [(free-bindings) (apply binding-set-union links-free-vars-sets)])
-                    (values (appropriate-wrap e free-bindings) free-bindings)))]
-               
-               [(z:invoke-unit-form? expr)
-                (let*-values ([(unit-exp free-bindings-unit) (non-tail-recur (z:invoke-unit-form-unit expr))]
-                              [(free-bindings-other) (mod-filter (lambda (v) (cond [(z:bound-varref? v) (z:bound-varref-binding v)]
-                                                                                   [(utils:is-unit-bound? v) 
-                                                                                    (z:top-level-varref/bind-slot v)]
-                                                                                   [else #f]))
-                                                                 (z:invoke-unit-form-variables expr))]
-                              [(annotated) `(#%invoke-unit ,unit-exp
-                                             ,@(map translate-varref
-                                                    (z:invoke-unit-form-variables expr)))]
-                              [(free-bindings) (binding-set-union free-bindings-other free-bindings-unit)])
-                  (values (appropriate-wrap annotated free-bindings) free-bindings))]
-               
-               [(z:interface-form? expr)
-                (let*-values ([(vars) (z:interface-form-variables expr)]
-                              [(super-exprs super-expr-free-sets)
-                               (dual-map non-tail-recur (z:interface-form-super-exprs expr))]
-                              [(_) (for-each utils:check-for-keyword vars)]
-                              [(annotated) `(#%interface ,super-exprs
-                                             ,@(map utils:read->raw vars))]
-                              [(free-bindings) (apply binding-set-union super-expr-free-sets)])
-                  (values (appropriate-wrap annotated free-bindings) free-bindings))]
-               
-               [(z:class*/names-form? expr)
-                (let* ([process-arg
-                        (lambda (element)
-                          (if (pair? element)
-                              (let-values ([(annotated free-vars) 
-                                            (no-enclosing-recur (cdr element))])
-                                (values
-                                 (and (utils:check-for-keyword (car element))
-                                      (list (get-binding-name (car element))
-                                            annotated))
-                                 free-vars))
-                              (values
-                               (and (utils:check-for-keyword element)
-                                    (get-binding-name element))
-                               null)))]
-                       [paroptarglist->ilist
-                        (lambda (paroptarglist)
-                          (cond
-                            ((z:sym-paroptarglist? paroptarglist)
-                             (process-arg (car (z:paroptarglist-vars paroptarglist))))
-                            ((z:list-paroptarglist? paroptarglist)
-                             (dual-map process-arg (z:paroptarglist-vars paroptarglist)))
-                            ((z:ilist-paroptarglist? paroptarglist)
-                             (let-values ([(vars free-var-sets)
-                                           (dual-map process-arg (z:paroptarglist-vars paroptarglist))])
-                               (values
-                                (let loop ((vars vars))
-                                  (if (null? (cddr vars))
-                                      (cons (car vars) (cadr vars))
-                                      (cons (car vars) (loop (cdr vars)))))
-                                free-var-sets)))
-                            (else
-                             (internal-error paroptarglist
-					     "Given to paroptarglist->ilist"))))]
-                       [process-clause
-                        (lambda (clause)
-                          (cond
-                            [(z:public-clause? clause)
-                             (let*-values ([(ann-exprs free-var-sets) 
-                                            (dual-map class-rhs-recur 
-                                                      (z:public-clause-exprs clause)
-                                                      (z:public-clause-exports clause))])
-                               (values 
-                                `(public
-                                   ,@(map (lambda (internal export expr)
-                                            `((,(get-binding-name internal)
-                                               ,(utils:read->raw export))
-                                              ,expr))
-                                          (z:public-clause-internals clause)
-                                          (z:public-clause-exports clause)
-                                          ann-exprs))
-                                (z:public-clause-internals clause)
-                                (apply binding-set-union free-var-sets)))]
-                            [(z:override-clause? clause)
-                             (let*-values ([(ann-exprs free-var-sets) 
-                                            (dual-map class-rhs-recur 
-                                                      (z:override-clause-exprs clause)
-                                                      (z:override-clause-exports clause))])
-                               (values
-                                `(override
-                                   ,@(map (lambda (internal export expr)
-                                            `((,(get-binding-name internal)
-                                               ,(utils:read->raw export))
-                                              ,expr))
-                                          (z:override-clause-internals clause)
-                                          (z:override-clause-exports clause)
-                                          ann-exprs))
-                                (z:override-clause-internals clause)
-                                (apply binding-set-union free-var-sets)))]
-                            [(z:private-clause? clause)
-                             (let*-values ([(ann-exprs free-var-sets) 
-                                            (dual-map no-enclosing-recur (z:private-clause-exprs clause))])
-                               (values
-                                `(private
-                                   ,@(map (lambda (internal expr)
-                                            `(,(get-binding-name internal)
-                                              ,expr))
-                                          (z:private-clause-internals clause)
-                                          ann-exprs))
-                                (z:private-clause-internals clause)
-                                (apply binding-set-union free-var-sets)))]
-                            [(z:inherit-clause? clause)
-                             (values
-                              `(inherit
-                                 ,@(map (lambda (internal inherited)
-                                          `(,(get-binding-name internal)
-                                            ,(utils:read->raw inherited)))
-                                        (z:inherit-clause-internals clause)
-                                        (z:inherit-clause-imports clause)))
-                              (z:inherit-clause-internals clause)
-                              null)]
-                            [(z:rename-clause? clause)
-                             (values
-                              `(rename
-                                ,@(map (lambda (internal import)
-                                         `(,(get-binding-name internal)
-                                           ,(utils:read->raw import)))
-                                       (z:rename-clause-internals clause)
-                                       (z:rename-clause-imports clause)))
-                              (z:rename-clause-internals clause)
-                              null)]
-                            [(z:sequence-clause? clause)
-                             (let*-values ([(ann-exprs free-var-sets) 
-                                            (dual-map no-enclosing-recur (z:sequence-clause-exprs clause))])
-                               (values
-                                `(sequence
-                                   ,@ann-exprs)
-                                null
-                                (apply binding-set-union free-var-sets)))]))]
-                       [b-s-remove 
-                        (lambda (a b) (binding-set-remove a b expr))])
-                   (let*-values
-                       ([(ann-super-expr free-bindings-super-expr)
-                         (non-tail-recur (z:class*/names-form-super-expr expr))]
-                        [(ann-interfaces free-binding-sets-interfaces)
-                         (dual-map non-tail-recur (z:class*/names-form-interfaces expr))]
-                        [(ann-clauses class-binding-sets free-binding-sets-clauses)
-                         (triple-map process-clause (z:class*/names-form-inst-clauses expr))]
-                        [(ann-args free-binding-sets-init-vars)
-                         (paroptarglist->ilist (z:class*/names-form-init-vars expr))]
-                        [(init-vars-bindings)
-                         (map (lambda (b)
-                                (if (pair? b) (car b) b))
-                              (z:paroptarglist-vars (z:class*/names-form-init-vars expr)))]
-                        [(free-bindings)
-                         (apply binding-set-union
-                                (b-s-remove (apply binding-set-union init-vars-bindings
-                                                   (list (z:class*/names-form-this expr)
-                                                         (z:class*/names-form-super-init expr))       
-                                                   class-binding-sets)
-                                            (apply binding-set-union 
-                                                   (append free-binding-sets-init-vars
-                                                           free-binding-sets-clauses)))
-                                free-bindings-super-expr free-binding-sets-interfaces)]
-                        [(annotated)
-                         `(#%class*/names
-                           (,(get-binding-name (z:class*/names-form-this expr))
-                            ,(get-binding-name (z:class*/names-form-super-init expr)))
-                           ,ann-super-expr
-                           ,ann-interfaces
-                           ,ann-args
-                           ,@ann-clauses)])
-                     (values (appropriate-wrap annotated free-bindings) free-bindings)))]          
-	       
 	       [else
 		(internal-error
 		 expr

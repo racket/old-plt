@@ -68,7 +68,7 @@ exit 1
     (set! this-script (path->string name))))
 
 (define (setup-environment)
-  (putenv "PLTHOME" plthome)
+  (putenv "PLTHOME" (path->string plthome))
   (putenv "PLTCOLLECTS" "")
   (current-library-collection-paths (list (build-path plthome "collects"))))
 

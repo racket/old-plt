@@ -17,6 +17,7 @@ typedef struct {
   BOOL *pResetFlag;
 } THREAD_GLOBALS;
 
+extern HINSTANCE globHinst;
 extern DWORD WINAPI evalLoop(LPVOID);
 
 /////////////////////////////////////////////////////////////////////////////
@@ -42,7 +43,7 @@ class ATL_NO_VTABLE CMzObj :
     HANDLE threadHandle;
     BOOL errorState;
     
-    void RaiseExn(const OLECHAR *);
+    void RaiseError(const OLECHAR *);
     BOOL testThread(void);
 
   public:
@@ -67,6 +68,7 @@ END_CONNECTION_POINT_MAP()
 
 // IMzObj
 public:
+	STDMETHOD(About)(void);
         STDMETHOD(Eval)(BSTR,LPBSTR);
 };
 

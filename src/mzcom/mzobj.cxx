@@ -1,5 +1,7 @@
 // mzobj.cxx : Implementation of CMzObj
 
+#include <resource.h>
+
 #include "stdafx.h"
 #include "mzcom.h"
 #include "mzobj.h"
@@ -183,10 +185,10 @@ CMzObj::~CMzObj(void) {
   }
 }
 
-void CMzObj::RaiseExn(const OLECHAR *msg) {
+void CMzObj::RaiseError(const OLECHAR *msg) {
   BSTR bstr;
   bstr = SysAllocString(msg);
-  Fire_Exn(bstr);
+  Fire_Error(bstr);
   SysFreeString(bstr);
 }
 
@@ -194,16 +196,16 @@ BOOL CMzObj::testThread(void) {
   DWORD threadStatus;
 
   if (threadHandle == NULL) {
-    RaiseExn(L"No evaluator");
+    RaiseError(L"No evaluator");
     return FALSE;
   }
 
   if (GetExitCodeThread(threadHandle,&threadStatus) == 0) { 
-    RaiseExn(L"Evaluator may be terminated");
+    RaiseError(L"Evaluator may be terminated");
   }
 
   if (threadStatus != STILL_ACTIVE) {
-    RaiseExn(L"Evaluator terminated");
+    RaiseError(L"Evaluator terminated");
     return FALSE;
   }
 
@@ -222,15 +224,38 @@ STDMETHODIMP CMzObj::Eval(BSTR input, LPBSTR output) {
   // wait until evaluator done or eval thread terminated
   if (WaitForMultipleObjects(2,evalSems,FALSE,INFINITE) ==
       WAIT_OBJECT_0 + 1) {
-    RaiseExn(L"Scheme terminated evaluator");
+    RaiseError(L"Scheme terminated evaluator");
     return E_FAIL;
   }
   *output = globOutput;
   ReleaseSemaphore(inputMutex,1,NULL);
 
   if (errorState) {
-    RaiseExn(L"Scheme evaluation error");
+    RaiseError(L"Scheme evaluation error");
   }
 
   return hr;
+}
+
+BOOL WINAPI dlgProc(HWND hDlg,UINT msg,WPARAM wParam,LPARAM) {
+  switch(msg) {
+  case WM_INITDIALOG :
+    SetActiveWindow(hDlg);
+    return TRUE;
+  case WM_COMMAND :
+    switch (LOWORD(wParam)) { 
+    case IDOK :
+    case IDCANCEL :
+      EndDialog(hDlg,0);
+      return FALSE;
+    }
+  default :
+    return FALSE;
+  }
+}
+
+STDMETHODIMP CMzObj::About(void) {
+  DialogBox(globHinst,MAKEINTRESOURCE(ABOUTBOX),
+	    NULL,dlgProc);
+  return S_OK;
 }

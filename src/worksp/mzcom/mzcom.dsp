@@ -166,6 +166,14 @@ SOURCE=..\..\mzcom\StdAfx.h
 
 SOURCE=..\..\mzcom\MzObj.rgs
 # End Source File
+# Begin Source File
+
+SOURCE=.\mzobj.rgs
+# End Source File
+# Begin Source File
+
+SOURCE=.\mzscheme.ico
+# End Source File
 # End Group
 # End Target
 # End Project

@@ -14,6 +14,7 @@
 #include "MzObj.h"
 
 
+HINSTANCE globHinst;
 CComModule _Module;
 
 BEGIN_OBJECT_MAP(ObjectMap)
@@ -28,7 +29,8 @@ BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID /*lpReserved*/)
 {
     if (dwReason == DLL_PROCESS_ATTACH)
     {
-        _Module.Init(ObjectMap, hInstance, &LIBID_MZCOMLib);
+        globHinst = hInstance;
+       _Module.Init(ObjectMap, hInstance, &LIBID_MZCOMLib);
         DisableThreadLibraryCalls(hInstance);
     }
     else if (dwReason == DLL_PROCESS_DETACH)

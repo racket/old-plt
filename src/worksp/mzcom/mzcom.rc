@@ -99,6 +99,58 @@ IDR_MZOBJ               REGISTRY DISCARDABLE    "MzObj.rgs"
 
 /////////////////////////////////////////////////////////////////////////////
 //
+// Dialog
+//
+
+ABOUTBOX DIALOG DISCARDABLE  0, 0, 192, 106
+STYLE DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION
+CAPTION "MzCOM"
+FONT 8, "MS Sans Serif"
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,69,82,50,14,BS_CENTER
+    CTEXT           "MzCOM v. 102",IDC_STATIC,64,11,61,8
+    CTEXT           "Copyright (c) 2000 PLT (Paul Steckler)",IDC_STATIC,44,
+                    22,126,9
+    CTEXT           "MzScheme v. 102",IDC_STATIC,55,36,75,8
+    CTEXT           "Copyright (c) 1995-2000 PLT (Matthew Flatt)",IDC_STATIC,
+                    27,47,143,8
+    ICON            MZICON,IDC_STATIC,14,16,21,20
+    CONTROL         "http://www.cs.rice.edu/CS/PLT/packages/mzcom/",
+                    IDC_STATIC,"Static",SS_LEFTNOWORDWRAP | WS_GROUP,13,63,
+                    165,11
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO DISCARDABLE 
+BEGIN
+    ABOUTBOX, DIALOG
+    BEGIN
+        LEFTMARGIN, 1
+        RIGHTMARGIN, 190
+        TOPMARGIN, 1
+        BOTTOMMARGIN, 105
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+MZICON                  ICON    DISCARDABLE     "mzscheme.ico"
+
+/////////////////////////////////////////////////////////////////////////////
+//
 // String Table
 //
 

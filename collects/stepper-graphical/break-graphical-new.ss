@@ -72,25 +72,8 @@
 
   ; ----------------------------------------------------------------
   
-  (define (add-to-popup pm val . options)
-    (cond [(procedure? val)
-           (make-object m:menu-item% "(closure)" pm void)]
-          [(struct? val)
-           (make-object m:menu-item% "(structure)" pm void)]
-          [(class? val)
-           (make-object m:menu-item% "(class)" pm void)]
-          [(object? val)
-           (make-object m:menu-item% "(object)" pm void)]
-          [(unit? val)
-           (make-object m:menu-item% "(unit)" pm void)]
-          [else
-           (let ([sp (open-output-string)])
-             (write (pc:print-convert val) sp)
-             (if (memq 'highlighted options)
-                 (let ([item (make-object m:checkable-menu-item% (get-output-string sp) pm void)])
-                   (send item check #t))
-                 (make-object m:menu-item% (get-output-string sp) pm void)))]))
-
+  (define-struct lbox-info (mark closure?))
+  
   (define debugger%
     (class object% (drscheme-frame)
 
@@ -114,6 +97,7 @@
                [stored-mark-list #f]
                [text-region-table null] ; candidate for hash-table-ization, if speed is needed
                [clear-highlight-thunk #f]
+               [stored-selection #f]
 
                [context-lbox-selection
                 (lambda ()
@@ -139,21 +123,26 @@
                
                [listbox-callback
                 (lambda (list-box event)
-                  (unless (= (length (send list-box get-selections)) 0) ; i.e., nothing selected 
-                    (let* ([selection (context-lbox-selection)]
-                           [mark (send list-box get-data selection)]
-                           [source (marks:mark-source mark)]
-                           [source-file (z:location-file (z:zodiac-start source))]
-                           [source-start (z:location-offset (z:zodiac-start source))]
-                           [source-finish (z:location-offset (z:zodiac-finish source))])
-                      (when clear-highlight-thunk 
-                        (clear-highlight-thunk))
-                      (if (eq? source-file (ivar drscheme-frame definitions-text))
-                          (set! clear-highlight-thunk 
-                                (send defns-text highlight-range source-start (+ 1 source-finish) debug-highlight-color #f))
-                          (m:message-box "source text is not in this buffer" '(ok)))
-                      ;(clear-var-highlights)
-                      (highlight-vars mark))))]
+                  (if (= (length (send list-box get-selections)) 0) ; i.e., nothing selected 
+                      (begin (send list-box select saved-selection)
+                             (message-box "BAD user! No deselecting the current item." '(ok)))
+                      (let* ([selection (context-lbox-selection)]
+                             [lbox-info (send list-box get-data selection)]
+                             [mark (lbox-info-mark lbox-info)]
+                             [closure? (lbox-info-closure? lbox-info)]
+                             [source (marks:mark-source mark)]
+                             [source-file (z:location-file (z:zodiac-start source))]
+                             [source-start (z:location-offset (z:zodiac-start source))]
+                             [source-finish (z:location-offset (z:zodiac-finish source))])
+                        (set! stored-selection selection) ; in case someone deselects it
+                        (when clear-highlight-thunk 
+                          (clear-highlight-thunk))
+                        (if (eq? source-file (ivar drscheme-frame definitions-text))
+                            (set! clear-highlight-thunk 
+                                  (send defns-text highlight-range source-start (+ 1 source-finish) debug-highlight-color #f))
+                            (m:message-box "source text is not in this buffer" '(ok)))
+                        (clear-var-highlights)
+                        (highlight-vars mark closure?))))]
 
                [show-var-values
                 (lambda (binding x y)
@@ -178,72 +167,102 @@
                                   (extract-vals after)])
                             (for-each (lambda (val)
                                         (add-to-popup pm val))
-                                      (reverse (cdr rev-before-vals)))
+                                      (reverse after-vals))
                             (add-to-popup pm (car rev-before-vals) 'highlighted)
                             (for-each (lambda (val)
                                         (add-to-popup pm val))
-                                      after-vals))))
+                                      rev-before-vals))))
                     (send frame popup-menu pm (inexact->exact x) (inexact->exact y))))]
                
-               [clear-var-highlights
-                (lambda ()
-                  (for-each (lambda (entry)
-                              (send defns-text change-style 
-                                    (send (send defns-text get-style-list) find-named-style "Standard")
-                                    (car entry) (cadr entry)))
-                            text-region-table)
-                  (set! text-region-table null))]
+                 [add-to-popup
+                  (lambda (pm val . options)
+                    (cond [(procedure? val)
+                           (make-object m:menu-item% "(closure)" pm (make-display-closure val))]
+                          [(struct? val)
+                           (make-object m:menu-item% "(structure)" pm void)]
+                          [(class? val)
+                           (make-object m:menu-item% "(class)" pm void)]
+                          [(object? val)
+                           (make-object m:menu-item% "(object)" pm void)]
+                          [(unit? val)
+                           (make-object m:menu-item% "(unit)" pm void)]
+                          [else
+                           (let ([sp (open-output-string)])
+                             (write (pc:print-convert val) sp)
+                             (if (memq 'highlighted options)
+                                 (let ([item (make-object m:checkable-menu-item% (get-output-string sp) pm void)])
+                                   (send item check #t))
+                                 (make-object m:menu-item% (get-output-string sp) pm void)))]))]
+                 
+                 [make-display-closure
+                  (lambda (closure)
+                    (lambda (menu event)
+                      ([
+                    ; whoops!  need to get into the closure table
+                    )]
+                 
                
-               [zodiac-abbr
-                (lambda (src)
-                  (ccond ; we need a z:parsed iterator...
-                        [(z:varref? src)
-                         "<varref>"]
-                        [(z:app? src)
-                         "<application>"]
-                        [(z:struct-form? src)
-                         "<struct-form>"]
-                        [(z:if-form? src)
-                         "(if <test> <then> <else>)"]
-                        [(z:quote-form? src)
-                         "(quote <val>)"]
-                        [(z:begin-form? src)
-                         "(begin <bodies>)"]
-                        [(z:begin0-form? src)
-                         "(begin0 <bodies>)"]
-                        [(z:let-values-form? src)
-                         "(let-values ([(<vars>) ... ] ...) <body>)"]
-                        [(z:letrec-values-form? src)
-                         "(letrec-values ([(<vars>) ...] ...) <body>)"]
-                        [(z:define-values-form? src)
-                         "(define-values (<vars>) <bodies>)"]
-                        [(z:set!-form? src)
-                         "(set! <var> <body>)"]
-                        [(z:case-lambda-form? src)
-                         "(case-lambda ((<args>) <bodies>) ...)"]
-                        [(z:with-continuation-mark-form? src)
-                         "(with-continuation-mark <key> <mark> <body>)"]
-                        [(z:unit-form? src)
-                         "(unit <imports> <exports> <clauses>)"]
-                        [(z:compound-unit-form? src)
-                         "(compound-unit <imports> <links> <exports>)"]
-                        [(z:invoke-unit-form? src)
-                         "(invoke-unit ...)"]
-                        [(z:interface-form? src)
-                         "(interface ...)"]
-                        [(z:class*/names-form? src)
-                         "(class*/names ...)"]))]
+                 [clear-var-highlights
+                  (lambda ()
+                    (for-each (lambda (entry)
+                                (send defns-text change-style 
+                                      (send (send defns-text get-style-list) find-named-style "Standard")
+                                      (car entry) (cadr entry)))
+                              text-region-table)
+                    (set! text-region-table null))]
+                 
+                 [zodiac-abbr
+                  (lambda (src)
+                    (ccond ; we need a z:parsed iterator...
+                     [(z:varref? src)
+                      "<varref>"]
+                     [(z:app? src)
+                      "<application>"]
+                     [(z:struct-form? src)
+                      "<struct-form>"]
+                     [(z:if-form? src)
+                      "(if <test> <then> <else>)"]
+                     [(z:quote-form? src)
+                      "(quote <val>)"]
+                     [(z:begin-form? src)
+                      "(begin <bodies>)"]
+                     [(z:begin0-form? src)
+                      "(begin0 <bodies>)"]
+                     [(z:let-values-form? src)
+                      "(let-values ([(<vars>) ... ] ...) <body>)"]
+                     [(z:letrec-values-form? src)
+                      "(letrec-values ([(<vars>) ...] ...) <body>)"]
+                     [(z:define-values-form? src)
+                      "(define-values (<vars>) <bodies>)"]
+                     [(z:set!-form? src)
+                      "(set! <var> <body>)"]
+                     [(z:case-lambda-form? src)
+                      "(case-lambda ((<args>) <bodies>) ...)"]
+                     [(z:with-continuation-mark-form? src)
+                      "(with-continuation-mark <key> <mark> <body>)"]
+                     [(z:unit-form? src)
+                      "(unit <imports> <exports> <clauses>)"]
+                     [(z:compound-unit-form? src)
+                      "(compound-unit <imports> <links> <exports>)"]
+                     [(z:invoke-unit-form? src)
+                      "(invoke-unit ...)"]
+                     [(z:interface-form? src)
+                      "(interface ...)"]
+                     [(z:class*/names-form? src)
+                      "(class*/names ...)"]))]
                   
                ; highlight-vars 
                   
                [highlight-vars
-                (lambda (mark)
+                (lambda (mark closure?)
                   (let* ([src (marks:mark-source mark)]
-                         [mark-bindings (apply append
-                                               (map (lambda (mark)
-                                                      (map marks:mark-binding-binding
-                                                           (marks:mark-bindings mark)))
-                                                    stored-mark-list))]
+                         [mark-bindings (if closure?
+                                            (apply append
+                                                   (map (lambda (mark)
+                                                          (map marks:mark-binding-binding
+                                                               (marks:mark-bindings mark)))
+                                                        stored-mark-list))
+                                            (map marks:mark-binding-binding (marks:mark-bindings mark)))]
                          [highlight-var ; (parsed [binding | slot | top-level-varref] -> (void))
                           (lambda (ref binding)
                             (let* ([start (z:location-offset (z:zodiac-start ref))]
@@ -364,9 +383,11 @@
                  (for-each 
                   (lambda (mark)
                     ; will show even stale marks
-                    (send context-lbox append (zodiac-abbr (marks:mark-source mark)) mark))
-                  mark-list)
-                 (send context-lbox select (- (send context-lbox get-number) 1))
+                    (send context-lbox append (zodiac-abbr (marks:mark-source mark)) (make-lbox-info mark #f)))
+                  (reverse mark-list))
+                 (let ([last-element (- (send context-lbox get-number) 1)])
+                   (send context-lbox select last-element)
+                   (set! stored-selection last-element))
                  (listbox-callback context-lbox 'bogus-event)
                  (send frame show #t))])
                  

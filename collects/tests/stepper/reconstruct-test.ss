@@ -518,6 +518,8 @@
 (test-intermediate-sequence "(local ((define (a x) (+ x 9))) (a 6))"
                             `((())))
 
+(test-intermediate-sequence "(local ((define (a x) (+ x 13))) a)"
+                            `((())))
 (test-intermediate-sequence "(local ((define (a x) (+ x 9)) (define b a)) (b 1))")
 
 

@@ -16,6 +16,95 @@
 (err/rt-test (thread (lambda (x) 8)) type?)
 (arity-test thread? 1 1)
 
+;; ----------------------------------------
+;; Thread sets
+
+(define (test-set-balance as bs cs ds
+			  sa sb sc sd
+			  a% b% c% d%)
+  (let ([a (box 0)]
+	[b (box 0)]
+	[c (box 0)]
+	[d (box 0)]
+	[stop? #f])
+    
+    (define (go box s s-amt)
+      (parameterize ([current-thread-set s])
+	(thread (lambda ()
+		  (let loop ()
+		    (set-box! box (add1 (unbox box)))
+		    (sleep s-amt)
+		    (unless stop?
+		      (loop)))))))
+    
+    (go a as sa)
+    (go b bs sb)
+    (go c cs sc)
+    (go d ds sd)
+
+    (sleep SLEEP-TIME)
+
+    (set! stop? #t)
+
+    (let ([va (/ (unbox a) a%)]
+	  [vb (unbox b)]
+	  [vc (unbox c)]
+	  [vd (unbox d)])
+      (define (roughly= x y)
+	(<= (* (- x 1) 0.9) y (* (+ x 1) 1.1)))
+
+      (test #t roughly= vb (* b% va))
+      (test #t roughly= vc (* c% va))
+      (test #t roughly= vd (* d% va)))))
+
+;; Simple test:
+(let ([ts (make-thread-set)])
+  (test-set-balance (current-thread-set) ts ts ts
+		    0 0 0 0
+		    1 1/3 1/3 1/3))
+
+;; Make two sets, should be balanced:
+(let ([ts1 (make-thread-set)]
+      [ts2 (make-thread-set)])
+  (test-set-balance ts1 ts2 ts2 ts1
+		    0 0 0 0
+		    1 1 1 1))
+
+;; Like first test, but with an explicit "root" set
+(let* ([ts1 (make-thread-set)]
+       [ts2 (make-thread-set ts1)])
+  (test-set-balance ts1 ts2 ts2 ts2
+		    0 0 0 0
+		    1 1/3 1/3 1/3))
+
+;; Like second test, but with an explicit "root" set
+(let* ([ts0 (make-thread-set)]
+       [ts1 (make-thread-set ts0)]
+       [ts2 (make-thread-set ts0)])
+  (test-set-balance ts1 ts2 ts2 ts1
+		    0 0 0 0
+		    1 1 1 1))
+
+;; Check that suspended threads don't break
+;;  scheduling. (The test really continues past this
+;;  one, since the threads don't die right away.)
+(let* ([ts0 (make-thread-set)]
+       [ts1 (make-thread-set ts0)]
+       [ts2 (make-thread-set ts0)])
+  (test-set-balance ts1 ts2 ts2 ts1
+		    0 0 (* SLEEP-TIME 10) (* SLEEP-TIME 10)
+		    1 1 0 0))
+
+(arity-test make-thread-set 0 1)
+(err/rt-test (make-thread-set 5) type?)
+(arity-test thread-set? 1 1)
+(test #t thread-set? (make-thread-set))
+(test #f thread-set? 5)
+(arity-test current-thread-set 0 1)
+(err/rt-test (current-thread-set 5))
+
+;; ----------------------------------------
+
 ; Should be able to make an arbitrarily deep chain of custodians
 ; if only the first & last are accssible:
 (test #t custodian?
@@ -87,7 +176,11 @@
 (test #f custodian? 1)
 (arity-test custodian? 1 1)
 
-(arity-test custodian-shutdown-all 1 1)
+(arity-test custodian-shutdown-all 1 2)
+(err/rt-test (custodian-shutdown-all 0))
+(err/rt-test (custodian-shutdown-all (make-custodian) 5))
+(err/rt-test (custodian-shutdown-all (make-custodian) (make-custodian))
+	     exn:application:mismatch?)
 
 (arity-test make-custodian 0 1)
 (err/rt-test (make-custodian 0))
@@ -874,6 +967,35 @@
   (thread-suspend t2)
   (thread-resume t2)
   (test #f thread-running? t3))
+
+;; Check creation of a custodian between custodians for thread-resume
+(let ([check-escape
+       (lambda (mode)
+	 (let* ([c0 (make-custodian)]
+		[c1 (make-custodian c0)]
+		[c2 (make-custodian c0)]
+		[t1 (parameterize ([current-custodian c1])
+		      (thread (lambda () (let loop () (sleep) (loop)))))]
+		[t2 (parameterize ([current-custodian c2])
+		      (thread (lambda () (let loop () (sleep) (loop)))))])
+	   (thread-resume t1 t2)
+	   ;; Killing c1 shouldn't stop t1 anymore
+	   (custodian-shutdown-all c1)
+	   (test #t thread-running? t1)
+	   (custodian-shutdown-all c2)
+	   (test #f thread-running? t2)
+	   (test #t thread-running? t1)
+	   (case mode
+	     [(manual-check)
+	      (for-each (lambda (i)
+			  (when (custodian? i)
+			    (custodian-shutdown-all i)))
+			(custodian-managed-list c0 (current-custodian)))]
+	     [(csa-2)
+	      (custodian-shutdown-all c1 c0)])
+	   (test #f thread-running? t1)))])
+  (check-escape 'manual-check)
+  (check-escape 'csa-2))
 
 ;; ----------------------------------------
 

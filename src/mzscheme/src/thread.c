@@ -478,7 +478,7 @@ void scheme_init_thread(Scheme_Env *env)
   scheme_add_global_constant("custodian-shutdown-all",
 			     scheme_make_prim_w_arity(custodian_close_all,
 						      "custodian-shutdown-all",
-						      1, 1),
+						      1, 2),
 			     env);
   scheme_add_global_constant("custodian-managed-list",
 			     scheme_make_prim_w_arity(custodian_to_list,
@@ -893,7 +893,7 @@ static void remove_managed(Scheme_Custodian_Reference *mr, Scheme_Object *o,
   }
 }
 
-static void adjust_custodian_family(void *mgr, void *ignored)
+static void adjust_custodian_family(void *mgr, void *skip_move)
 {
   /* Threads note: because this function is only called as a
      finalization callback, it is automatically syncronized by the GC
@@ -937,19 +937,51 @@ static void adjust_custodian_family(void *mgr, void *ignored)
     }
 
     /* Add remaining managed items to parent: */
-    for (i = 0; i < r->count; i++) {
-      if (r->boxes[i]) {
-	CUSTODIAN_FAM(r->mrefs[i]) = parent;
-	add_managed_box(parent, r->boxes[i], r->mrefs[i], r->closers[i], r->data[i]);
+    if (!skip_move) {
+      for (i = 0; i < r->count; i++) {
+	if (r->boxes[i]) {
+	  CUSTODIAN_FAM(r->mrefs[i]) = parent;
+	  add_managed_box(parent, r->boxes[i], r->mrefs[i], r->closers[i], r->data[i]);
+	}
       }
     }
   }
 
   CUSTODIAN_FAM(r->parent) = NULL;
   CUSTODIAN_FAM(r->sibling) = NULL;
-  CUSTODIAN_FAM(r->children) = NULL;
+  if (!skip_move)
+    CUSTODIAN_FAM(r->children) = NULL;
   CUSTODIAN_FAM(r->global_prev) = NULL;
   CUSTODIAN_FAM(r->global_next) = NULL;
+}
+
+void insert_custodian(Scheme_Custodian *m, Scheme_Custodian *parent)
+{
+  /* insert into parent's list: */
+  CUSTODIAN_FAM(m->parent) = parent;
+  if (parent) {
+    CUSTODIAN_FAM(m->sibling) = CUSTODIAN_FAM(parent->children);
+    CUSTODIAN_FAM(parent->children) = m;
+  } else
+    CUSTODIAN_FAM(m->sibling) = NULL;
+
+  /* Insert into global chain. A custodian is always inserted
+     directly after its parent, so families stay together, and
+     the local list stays in the same order as the sibling list. */
+  if (parent) {
+    Scheme_Custodian *next;
+    next = CUSTODIAN_FAM(parent->global_next);
+    CUSTODIAN_FAM(m->global_next) = next;
+    CUSTODIAN_FAM(m->global_prev) = parent;
+    CUSTODIAN_FAM(parent->global_next) = m;
+    if (next)
+      CUSTODIAN_FAM(next->global_prev) = m;
+    else
+      last_custodian = m;
+  } else {
+    CUSTODIAN_FAM(m->global_next) = NULL;
+    CUSTODIAN_FAM(m->global_prev) = NULL;
+  }
 }
 
 Scheme_Custodian *scheme_make_custodian(Scheme_Custodian *parent) 
@@ -978,37 +1010,18 @@ Scheme_Custodian *scheme_make_custodian(Scheme_Custodian *parent)
   m->global_prev = mw;
 
   CUSTODIAN_FAM(m->children) = NULL;
-  CUSTODIAN_FAM(m->sibling) = NULL;
 
-  /* insert into parent's list: */
-  CUSTODIAN_FAM(m->parent) = parent;
-  if (parent) {
-    CUSTODIAN_FAM(m->sibling) = CUSTODIAN_FAM(parent->children);
-    CUSTODIAN_FAM(parent->children) = m;
-  } else
-    CUSTODIAN_FAM(m->sibling) = NULL;
-
-  /* Insert into global chain. A custodian is always inserted
-     directly after its parent, so families stay together, and
-     the local list stays in the same order as the sibling list. */
-  if (parent) {
-    Scheme_Custodian *next;
-    next = CUSTODIAN_FAM(parent->global_next);
-    CUSTODIAN_FAM(m->global_next) = next;
-    CUSTODIAN_FAM(m->global_prev) = parent;
-    CUSTODIAN_FAM(parent->global_next) = m;
-    if (next)
-      CUSTODIAN_FAM(next->global_prev) = m;
-    else
-      last_custodian = m;
-  } else {
-    CUSTODIAN_FAM(m->global_next) = NULL;
-    CUSTODIAN_FAM(m->global_prev) = NULL;
-  }
+  insert_custodian(m, parent);
 
   scheme_add_finalizer(m, adjust_custodian_family, NULL);
 
   return m;
+}
+
+static void move_custodian(Scheme_Custodian *child, Scheme_Custodian *old_parent, Scheme_Custodian *new_parent) 
+{
+  adjust_custodian_family(child, old_parent);
+  insert_custodian(child, new_parent);
 }
 
 static void rebox_willdone_object(void *o, void *mr)
@@ -1273,10 +1286,38 @@ static Scheme_Object *custodian_p(int argc, Scheme_Object *argv[])
 
 static Scheme_Object *custodian_close_all(int argc, Scheme_Object *argv[])
 {
+  Scheme_Custodian *c;
+
   if (!SCHEME_CUSTODIANP(argv[0]))
     scheme_wrong_type("custodian-shutdown-all", "custodian", 0, argc, argv);
 
-  scheme_close_managed((Scheme_Custodian *)argv[0]);
+  c = (Scheme_Custodian *)argv[0];
+
+  if (argc > 1) {
+    Scheme_Custodian *c2, *prev_c;
+
+    if (!SCHEME_CUSTODIANP(argv[1]))
+      scheme_wrong_type("custodian-shutdown-all", "custodian", 1, argc, argv);
+    
+    c2 = (Scheme_Custodian *)argv[1];
+
+    /* Look for prev_c2, a child of c whose descendent is c2 */
+    prev_c = c;
+    while (c && NOT_SAME_OBJ(c, c2)) {
+      prev_c = c;
+      c = CUSTODIAN_FAM(c->parent);
+    }
+    if (c)
+      c = prev_c;
+    else {
+      scheme_arg_mismatch("custodian-shutdown-all",
+			  "the second custodian does not "
+			  "manage the first custodian: ",
+			  argv[0]);
+    }
+  }
+
+  scheme_close_managed(c);
 
   return scheme_void;
 }
@@ -3706,7 +3747,9 @@ static Scheme_Object *thread_resume(int argc, Scheme_Object *argv[])
   if (promote_to) {
     /* Promote p so that it's managed by the custodian that is
        the least upper bound of the custodians managing p
-       and promote_to. */
+       and promote_to. If that custodian is not generated,
+       and it's neither p's nor promote_to's custodian,
+       then make one and splice it in between. */
     Scheme_Custodian *c1, *c2, *c;
     int depth1, depth2;
 
@@ -3721,22 +3764,37 @@ static Scheme_Object *thread_resume(int argc, Scheme_Object *argv[])
 	c = CUSTODIAN_FAM(c->parent);
       }
       if (!c) {
+	Scheme_Custodian *prev_c1 = NULL, *prev_c2 = NULL;
+
 	/* c1 and c2 have some common ancestor. Balance
 	   the depths to start looking in lock step: */
 	while (depth1 > depth2) {
+	  prev_c1 = c1;
 	  c1 = CUSTODIAN_FAM(c1->parent);
 	  --depth1;
 	}
 	while (depth2 > depth2) {
+	  prev_c1 = c2;
 	  c2 = CUSTODIAN_FAM(c2->parent);
 	  --depth2;
 	}
 
 	while (NOT_SAME_OBJ(c1, c2)) {
+	  prev_c1 = c1;
+	  prev_c2 = c2;
 	  c1 = CUSTODIAN_FAM(c1->parent);
 	  c2 = CUSTODIAN_FAM(c2->parent);
 	}
 	c = c1; /* which is the same as c2 */
+
+	if (!c->was_gen) {
+	  /* Move prev_c1 and prev_c2 to a new child of c */
+	  c1 = scheme_make_custodian(c);
+	  c1->was_gen = 1;
+	  move_custodian(prev_c1, c, c1);
+	  move_custodian(prev_c2, c, c1);
+	  c = c1;
+	}
       } /* else c2 is more powerful than c1, and that's what we want */
       
 

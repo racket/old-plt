@@ -750,6 +750,20 @@ static LONG WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, in
     return retval;
   }
 
+
+  if (!dialog) {
+    switch (message) {
+    case WM_NCLBUTTONDOWN:
+    case WM_NCRBUTTONDOWN:
+    case WM_NCMBUTTONDOWN:
+    case WM_SYSKEYUP:
+      /* Guess that this could trigger a menu pop-up. */
+      /* Pre-emptively simulate WM_INITMENU message. */
+      wnd->OnMenuClick();
+      break;
+    }
+  }
+
   wnd->last_msg = message;
   wnd->last_wparam = wParam;
   wnd->last_lparam = lParam;

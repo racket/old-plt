@@ -320,6 +320,16 @@ int wxEventTrampoline(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
     tramp = 1;
     *res = 1;
     break;
+    /* These three are for pre-emptive WM_INITMENU */
+  case WM_NCLBUTTONDOWN:
+  case WM_NCRBUTTONDOWN:
+  case WM_NCMBUTTONDOWN:
+    if (wParam == HTMENU) {
+      tramp = 1;
+      *res = 1;
+    } else
+      tramp = 0;
+    break;
   default:
     tramp = 0;
     break;

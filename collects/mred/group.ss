@@ -55,32 +55,34 @@
 		      (lambda (f1 f2)
 			(string-ci<=? (get-name f1)
 				      (get-name f2))))])
-	       (for-each
-		(lambda (menu-list)
-		  (let ([menu (car menu-list)]
-			[old-ids (cdr menu-list)])
-		    (for-each (lambda (id) (send menu delete id))
-			      old-ids)
-		    (let ([new-ids
-			   (map
-			    (lambda (frame)
-			      (let ([frame (frame-frame frame)]
-				    [default-name "Untitled"])
-				(send menu append-item
-				      (let ([title (send frame get-title)])
-					(if (string=? title "")
-					    (if (ivar-in-class? 'get-entire-title (object-class frame))
-						(let ([title (send frame get-entire-title)])
-						  (if (string=? title "")
-						      default-name
-						      title))
-						default-name)
-					    title))
-				      (lambda ()
-					(send frame show #t)))))
-			    sorted-frames)])
-		      (cons menu new-ids))))
-		windows-menus)))])
+	       (set!
+		windows-menus
+		(map
+		 (lambda (menu-list)
+		   (let ([menu (car menu-list)]
+			 [old-ids (cdr menu-list)])
+		     (for-each (lambda (id) (send menu delete id))
+			       old-ids)
+		     (let ([new-ids
+			    (map
+			     (lambda (frame)
+			       (let ([frame (frame-frame frame)]
+				     [default-name "Untitled"])
+				 (send menu append-item
+				       (let ([title (send frame get-title)])
+					 (if (string=? title "")
+					     (if (ivar-in-class? 'get-entire-title (object-class frame))
+						 (let ([title (send frame get-entire-title)])
+						   (if (string=? title "")
+						       default-name
+						       title))
+						 default-name)
+					     title))
+				       (lambda ()
+					 (send frame show #t)))))
+			     sorted-frames)])
+		       (cons menu new-ids))))
+		 windows-menus))))])
 	       
 	
 	(public

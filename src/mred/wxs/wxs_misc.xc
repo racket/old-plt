@@ -187,12 +187,33 @@ void check_ps_mode(int v, Scheme_Object *p)
 
 @ "copy-from" : void copy(wxPrintSetupData!);
 
-@ "can-show-native?" : bool CanShowNative();
-@ "show-native" : bool ShowNative(wxWindow^=NULL); : : /DLGORFRAME[0.METHODNAME("ps-setup","show-native")]
-
 @END
 
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif
+static Bool wxCanShowNative()
+{
+  wxPrintSetupData *pss;
+  pss = wxGetThePrintSetupData();
+  return pss->CanShowNative();
+}
+static Bool wxShowNative(wxWindow *w)
+{
+  wxPrintSetupData *pss;
+  pss = wxGetThePrintSetupData();
+  return pss->ShowNative(w);
+}
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
 
+@GLOBAL wxPrintSetupGlobal
+
+@ "can-show-print-setup?" : bool wxCanShowNative();
+@ "show-print-setup" : bool wxShowNative(wxWindow^=NULL); : : /DLGORFRAME[0.METHODNAME("ps-setup","show-native")]
+
+@END
 
 #if 0
 

@@ -3216,6 +3216,7 @@ static void wxScheme_Install(Scheme_Env *global_env)
   objscheme_setup_wxClipboardGlobal(global_env);
   objscheme_setup_wxClipboardClient(global_env);
   objscheme_setup_wxPrintSetupData(global_env);
+  objscheme_setup_wxPrintSetupGlobal(global_env);
 
   objscheme_setup_wxsGlobal(global_env);
   objscheme_setup_wxsMenuItemGlobal(global_env);

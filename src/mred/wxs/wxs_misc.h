@@ -25,7 +25,6 @@ void objscheme_setup_wxClipboardClient(Scheme_Env *env);
 int objscheme_istype_wxClipboardClient(Scheme_Object *obj, const char *stop, int nullOK);
 Scheme_Object *objscheme_bundle_wxClipboardClient(class wxClipboardClient *realobj);
 class wxClipboardClient *objscheme_unbundle_wxClipboardClient(Scheme_Object *obj, const char *where, int nullOK);
-extern class wxWindow *objscheme_unbundle_wxWindow(Scheme_Object *, const char *, int);
 extern class wxPrintSetupData *objscheme_unbundle_wxPrintSetupData(Scheme_Object *, const char *, int);
 #endif
 void objscheme_setup_wxPrintSetupData(Scheme_Env *env);
@@ -33,4 +32,8 @@ void objscheme_setup_wxPrintSetupData(Scheme_Env *env);
 int objscheme_istype_wxPrintSetupData(Scheme_Object *obj, const char *stop, int nullOK);
 Scheme_Object *objscheme_bundle_wxPrintSetupData(class wxPrintSetupData *realobj);
 class wxPrintSetupData *objscheme_unbundle_wxPrintSetupData(Scheme_Object *obj, const char *where, int nullOK);
+extern class wxWindow *objscheme_unbundle_wxWindow(Scheme_Object *, const char *, int);
+#endif
+void objscheme_setup_wxPrintSetupGlobal(Scheme_Env *env);
+#ifndef WXS_SETUP_ONLY
 #endif

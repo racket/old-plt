@@ -213,7 +213,7 @@ void wxRegion::SetRoundedRectangle(double x, double y, double width, double heig
   }
 
 # ifdef wx_msw
-  rgn = CreateRoundRectRgn(ix, iy, ix + iw, iy + ih, xradius, yradius); // SET-ORIGIN FLAGGED
+  rgn = CreateRoundRectRgn(ix, iy, ix + iw, iy + ih, xradius, yradius);
 # endif
 # ifdef wx_mac
   /* This code uses the current port. We don't know what the current
@@ -231,7 +231,7 @@ void wxRegion::SetRoundedRectangle(double x, double y, double width, double heig
     {
       Rect r2;
       SetRect(&r2, ix, iy, ix + iw, iy + ih);
-      FrameRoundRect(&r2, xradius, yradius); // SET-ORIGIN FLAGGED
+      FrameRoundRect(&r2, xradius, yradius);
       CloseRgn(rgn);
     }
 
@@ -252,13 +252,13 @@ void wxRegion::SetEllipse(double x, double y, double width, double height)
 
   if (!no_prgn) {
 #ifdef WX_USE_CAIRO
-    /* cairo_arc() went bad for clipping in v0.3.0, so we avoid it. */
+    /* cairo_arc() went bad for clipping, so we avoid it. */
     {
       wxPath *p;
       p = new wxPath();
-      p->Arc(x, y, width, height, 0, 2 * wxPI, TRUE);
+      p->Arc(x, y, width, height, 0, 2 * wxPI, FALSE);
       p->Close();
-      prgn = new wxPathPathRgn(dc, p, 0, 0, wxODDEVEN_RULE);
+      prgn = new wxPathPathRgn(dc, p, 0, 0, wxWINDING_RULE);
     }
 #else
     prgn = new wxArcPathRgn(dc, x, y, width, height, 0, 2 * wxPI);
@@ -479,14 +479,14 @@ void wxRegion::SetArc(double x, double y, double w, double h, double start, doub
   save_no_prgn = no_prgn;
   if (!no_prgn) {
 #ifdef WX_USE_CAIRO
-    /* cairo_arc() went bad for clipping in v0.3.0, so we avoid it. */
+    /* cairo_arc() went bad for clipping, so we avoid it. */
     {
       wxPath *p;
       p = new wxPath();
       p->MoveTo(x + w / 2, y + h / 2);
-      p->Arc(x, y, w, h, start, end, TRUE);
+      p->Arc(x, y, w, h, end, start, FALSE);
       p->Close();
-      prgn = new wxPathPathRgn(dc, p, 0, 0, wxODDEVEN_RULE);
+      prgn = new wxPathPathRgn(dc, p, 0, 0, wxWINDING_RULE);
     }
 #else
     prgn = new wxArcPathRgn(dc, x, y, w, h, start, end);
@@ -645,7 +645,7 @@ void wxRegion::Union(wxRegion *r)
 
 #ifdef wx_msw
   if (!rgn) {
-    rgn = CreateRectRgn(0, 0, 1, 1); // SET-ORIGIN FLAGGED
+    rgn = CreateRectRgn(0, 0, 1, 1);
     CombineRgn(rgn, r->rgn, rgn, RGN_COPY);
   } else
     CombineRgn(rgn, r->rgn, rgn, RGN_OR);
@@ -935,6 +935,8 @@ void wxRegion::Install(long target, Bool align)
     /* Empty region: */
 #ifdef WX_USE_CAIRO
     cairo_new_path(CAIRO_DEV);
+    /* Empty path confuses some versions of Cairo, so
+       clip to two non-overlapping regions */
     cairo_move_to(CAIRO_DEV, 0, 0);
     cairo_line_to(CAIRO_DEV, 1, 0);
     cairo_line_to(CAIRO_DEV, 1, 1);
@@ -1681,6 +1683,7 @@ Bool wxIntersectPathRgn::Install(long target, Bool reverse, Bool align)
   Bool aoe;
 
   aoe = a->Install(target, reverse, align);
+
 #ifdef WX_USE_CAIRO
   if (aoe)
     cairo_set_fill_rule(CAIRO_DEV, CAIRO_FILL_RULE_EVEN_ODD);
@@ -1713,6 +1716,7 @@ Bool wxIntersectPathRgn::Install(long target, Bool reverse, Bool align)
     GP = p;
   }
 #endif
+
   return b->Install(target, reverse, align);
 }
 

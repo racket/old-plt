@@ -1100,7 +1100,6 @@ void check_ps_mode(int v, Scheme_Object *p)
 // @ "set-options" : void SetPrinterOptions(pstring);
 
 
-
 class os_wxPrintSetupData : public wxPrintSetupData {
  public:
 
@@ -1131,54 +1130,6 @@ CONSTRUCTOR_INIT(: wxPrintSetupData())
 os_wxPrintSetupData::~os_wxPrintSetupData()
 {
     objscheme_destroy(this, (Scheme_Object *) __gc_external);
-}
-
-static Scheme_Object *os_wxPrintSetupDataShowNative(int n,  Scheme_Object *p[])
-{
-  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  REMEMBER_VAR_STACK();
-  Bool r;
-  objscheme_check_valid(os_wxPrintSetupData_class, "show-native in ps-setup%", n, p);
-  class wxWindow* x0 INIT_NULLED_OUT;
-
-  SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, x0);
-
-  
-  if (n > (POFFSET+0)) {
-    x0 = WITH_VAR_STACK(objscheme_unbundle_wxWindow(p[POFFSET+0], "show-native in ps-setup%", 1));
-  } else
-    x0 = NULL;
-
-  if (x0 && !wxSubType(((wxObject *)x0)->__type, wxTYPE_FRAME) && !wxSubType(((wxObject *)x0)->__type, wxTYPE_DIALOG_BOX)) scheme_wrong_type(METHODNAME("ps-setup","show-native"), "frame or dialog box", POFFSET+0, n, p);
-  r = WITH_VAR_STACK(((wxPrintSetupData *)((Scheme_Class_Object *)p[0])->primdata)->ShowNative(x0));
-
-  
-  
-  READY_TO_RETURN;
-  return (r ? scheme_true : scheme_false);
-}
-
-static Scheme_Object *os_wxPrintSetupDataCanShowNative(int n,  Scheme_Object *p[])
-{
-  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  REMEMBER_VAR_STACK();
-  Bool r;
-  objscheme_check_valid(os_wxPrintSetupData_class, "can-show-native? in ps-setup%", n, p);
-
-  SETUP_VAR_STACK_REMEMBERED(1);
-  VAR_STACK_PUSH(0, p);
-
-  
-
-  
-  r = WITH_VAR_STACK(((wxPrintSetupData *)((Scheme_Class_Object *)p[0])->primdata)->CanShowNative());
-
-  
-  
-  READY_TO_RETURN;
-  return (r ? scheme_true : scheme_false);
 }
 
 static Scheme_Object *os_wxPrintSetupDatacopy(int n,  Scheme_Object *p[])
@@ -1766,10 +1717,8 @@ void objscheme_setup_wxPrintSetupData(Scheme_Env *env)
 
   wxREGGLOB(os_wxPrintSetupData_class);
 
-  os_wxPrintSetupData_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "ps-setup%", "object%", (Scheme_Method_Prim *)os_wxPrintSetupData_ConstructScheme, 25));
+  os_wxPrintSetupData_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "ps-setup%", "object%", (Scheme_Method_Prim *)os_wxPrintSetupData_ConstructScheme, 23));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "show-native" " method", (Scheme_Method_Prim *)os_wxPrintSetupDataShowNative, 0, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "can-show-native?" " method", (Scheme_Method_Prim *)os_wxPrintSetupDataCanShowNative, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "copy-from" " method", (Scheme_Method_Prim *)os_wxPrintSetupDatacopy, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "set-margin" " method", (Scheme_Method_Prim *)os_wxPrintSetupDataSetMargin, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "set-editor-margin" " method", (Scheme_Method_Prim *)os_wxPrintSetupDataSetEditorMargin, 2, 2));
@@ -1858,5 +1807,83 @@ class wxPrintSetupData *objscheme_unbundle_wxPrintSetupData(Scheme_Object *obj, 
 }
 
 
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif
+static Bool wxCanShowNative()
+{
+  wxPrintSetupData *pss;
+  pss = wxGetThePrintSetupData();
+  return pss->CanShowNative();
+}
+static Bool wxShowNative(wxWindow *w)
+{
+  wxPrintSetupData *pss;
+  pss = wxGetThePrintSetupData();
+  return pss->ShowNative(w);
+}
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
+
+
+
+static Scheme_Object *wxPrintSetupGlobalwxShowNative(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  Bool r;
+  class wxWindow* x0 INIT_NULLED_OUT;
+
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, x0);
+
+  
+  if (n > (0+0)) {
+    x0 = WITH_VAR_STACK(objscheme_unbundle_wxWindow(p[0+0], "show-print-setup in ps-setup%", 1));
+  } else
+    x0 = NULL;
+
+  if (x0 && !wxSubType(((wxObject *)x0)->__type, wxTYPE_FRAME) && !wxSubType(((wxObject *)x0)->__type, wxTYPE_DIALOG_BOX)) scheme_wrong_type(METHODNAME("ps-setup","show-native"), "frame or dialog box", POFFSET+0, n, p);
+  r = WITH_VAR_STACK(wxShowNative(x0));
+
+  
+  
+  READY_TO_RETURN;
+  return (r ? scheme_true : scheme_false);
+}
+
+static Scheme_Object *wxPrintSetupGlobalwxCanShowNative(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  Bool r;
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+
+  
+  r = WITH_VAR_STACK(wxCanShowNative());
+
+  
+  
+  READY_TO_RETURN;
+  return (r ? scheme_true : scheme_false);
+}
+
+void objscheme_setup_wxPrintSetupGlobal(Scheme_Env *env)
+{
+  Scheme_Object *functmp INIT_NULLED_OUT;
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, env);
+  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity((Scheme_Prim *)wxPrintSetupGlobalwxShowNative, "show-print-setup", 0, 1));
+  WITH_VAR_STACK(scheme_install_xc_global("show-print-setup", functmp, env));
+  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity((Scheme_Prim *)wxPrintSetupGlobalwxCanShowNative, "can-show-print-setup?", 0, 0));
+  WITH_VAR_STACK(scheme_install_xc_global("can-show-print-setup?", functmp, env));
+  READY_TO_RETURN;
+}
 
 

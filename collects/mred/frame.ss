@@ -204,9 +204,7 @@
 						   ,menu-after-string)
 					     ,name ,(build-id name "-help-string")
 					     #f 
-					     (and (mred:preferences:get-preference
-						   'mred:menu-bindings)
-						  ,key)))))))]
+					     ,key))))))]
 		       [build-between-ivar
 			(lambda (between)
 			  (string->symbol 

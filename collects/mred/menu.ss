@@ -2,6 +2,7 @@
   (unit/sig mred:menu^
     (import [wx : wx^]
 	    [mred:constants : mred:constants^]
+	    [mred:preferences : mred:preferences^]
 	    [mzlib:function : mzlib:function^])
 	    
     (mred:debug:printf 'invoke "mred:menu@")
@@ -95,16 +96,22 @@
 		 id))]
 	    [append-item
 	     (opt-lambda (label callback [help ()] [checkable? #f] [key #f])
-	       (let* ([key-proc (cond
-				 [(procedure? key) key]
-				 [(string? key) (lambda (platform)
-						  (case platform
-						    [(macintosh) (string-append "d:" key)]
-						    [(windows) (string-append "c:" key)]
-						    [else (string-append "c:m;" key)]))]
-				 [(not key) (lambda (s) #f)]
-				 [else (error 'mred:menu% "append-item: last arg (key) must be either #f, a procedure or a string. Args were: ~a"
-					      (list label callback help checkable? key))])]
+	       (let* ([key-proc
+		       (cond
+			 [(not (mred:preferences:get-preference
+				'mred:menu-bindings))
+			  (lambda (s) #f)]
+			 [(procedure? key) key]
+			 [(string? key)
+			  (lambda (platform)
+			    (case platform
+			      [(macintosh) (string-append "d:" key)]
+			      [(windows) (string-append "c:" key)]
+			      [else (string-append "c:m;" key)]))]
+			 [(not key) (lambda (s) #f)]
+			 [else (error 'mred:menu% 
+				      "append-item: last arg (key) must be either #f, a procedure or a string. Args were: ~a"
+				      (list label callback help checkable? key))])]
 		      [this-key (key-proc wx:platform)]
 		      [platforms (list 'unix  'windows  'macintosh)]
 		      [label-with-key (if this-key 

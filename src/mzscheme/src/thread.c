@@ -877,7 +877,7 @@ static void remove_managed(Scheme_Custodian_Reference *mr, Scheme_Object *o,
 
   for (i = m->count; i--; ) {
     if (m->boxes[i] && SAME_OBJ((xCUSTODIAN_FAM(m->boxes[i])),  o)) {
-      CUSTODIAN_FAM(m->boxes[i]) = 0;
+      xCUSTODIAN_FAM(m->boxes[i]) = 0;
       m->boxes[i] = NULL;
       CUSTODIAN_FAM(m->mrefs[i]) = 0;
       m->mrefs[i] = NULL;
@@ -1183,7 +1183,7 @@ Scheme_Thread *scheme_do_close_managed(Scheme_Custodian *m, Scheme_Exit_Closer_F
 	  the_thread = NULL;
 	}
 
-	CUSTODIAN_FAM(m->boxes[i]) = NULL;
+	xCUSTODIAN_FAM(m->boxes[i]) = NULL;
 	CUSTODIAN_FAM(m->mrefs[i]) = NULL;
 	
 	/* Set m->count to i in case a GC happens while

@@ -231,6 +231,8 @@ static void MenuInitialize(request, new, args, num_args)
     mw->menu.state->menu     = mw->menu.contents;
     mw->menu.state->selected = NULL;
     mw->menu.state->prev     = NULL;
+    mw->menu.state->delta    = 0;
+    mw->menu.state->scrolled = 0;
 
     mw->menu.moused_out = 0;
     mw->menu.grabbed = FALSE;
@@ -475,6 +477,7 @@ static void DoSelect(w, time, force)
 	;
     UnhighlightItem(mw, ms, ms->selected);
     ms->selected = NULL; /* MATTHEW */
+    ms->delta = 0;
     if (mw->menu.popped_up) {
 	mw->menu.popped_up = FALSE;
 	XtPopdown(XtParent(mw));
@@ -816,12 +819,20 @@ static SizeFunction SizeFunctionList[] = {
 
 /* Compute Menu */
 
+#define TOO_TALL_SCROLL_HEIGHT 14
+
 static void ComputeMenuSize(MenuWidget mw, menu_state *ms)
 {
     unsigned  left_width, label_width, right_width, height;
     unsigned  max_left_width, max_label_width, max_right_width, max_height;
+    unsigned  screen_h, usable_h, vis_count = 0, item_count = 0;
     Boolean   in_menubar = (mw->menu.horizontal && !ms->prev);
     menu_item *item, *pushright_item=NULL;
+
+    screen_h = HeightOfScreen(XtScreen(mw));
+    usable_h = screen_h - (2*mw->menu.shadow_width + 2*TOO_TALL_SCROLL_HEIGHT);
+
+    ms->too_tall = 0;
 
     max_left_width = max_label_width = max_right_width = max_height = 0;
     for (item=ms->menu; item; item=item->next) {
@@ -846,12 +857,23 @@ static void ComputeMenuSize(MenuWidget mw, menu_state *ms)
 	    SET_MAX_VALUE(left_width);
 	    SET_MAX_VALUE(label_width);
 	    SET_MAX_VALUE(right_width);
+	    if ((max_height + height) < usable_h) {
+	      vis_count++;
+	    } else if (!ms->too_tall) {
+	      screen_h = max_height + 2*TOO_TALL_SCROLL_HEIGHT;
+	      ms->too_tall = 1;
+	    }
 	    item->start  = max_height + mw->menu.shadow_width;
 	    max_height  += height;
 	    item->end    = max_height + mw->menu.shadow_width;
+	    item_count++;
 	}
 #       undef SET_MAX_VALUE
     }
+
+    if (ms->too_tall)
+      max_height = screen_h;
+
     if (!max_height && in_menubar) {
       /* For menu bar: make it at least as tall as with an item */
       max_height = mw->menu.font->ascent + mw->menu.font->descent
@@ -905,7 +927,7 @@ static void DrawTextItem(MenuWidget mw, menu_state *ms, menu_item *item,
 	    mw->menu.normal_GC,
 	    x,
 	    y,
-	    (in_menubar? item->end-item->start: ms->w-2*mw->menu.shadow_width),
+	    (in_menubar? item->end-item->start + ms->delta: ms->w-2*mw->menu.shadow_width),
 	    (in_menubar? ms->h-2*mw->menu.shadow_width: item->end-item->start),
 	    mw->menu.shadow_width,
 	    (ms->selected==item) ? XAW3D_OUT : XAW3D_BACKGROUND);
@@ -1036,10 +1058,35 @@ static void DisplayMenu(MenuWidget mw, menu_state *ms)
 {
     menu_item *item;
     unsigned  x, y;
+    int s, final;
     Boolean   in_menubar = (mw->menu.horizontal && !ms->prev);
 
     x = y = mw->menu.shadow_width;
-    for (item=ms->menu; item; item=item->next) {
+    item = ms->menu;
+    if (ms->too_tall) {
+      for (s = ms->scrolled; s--; ) {
+	if (item)
+	  item = item->next;
+      }
+      final = (ms->h - (TOO_TALL_SCROLL_HEIGHT + mw->menu.shadow_width)) - ms->delta;
+
+      if (ms->scrolled) {
+	Xaw3dDrawArrow(XtDisplay((Widget)mw), ms->win,
+		       mw->menu.top_shadow_GC,
+		       mw->menu.bot_shadow_GC,
+		       mw->menu.normal_GC,
+		       mw->menu.normal_GC,
+		       x + ((ms->w - TOO_TALL_SCROLL_HEIGHT) / 2),
+		       y + 2,
+		       TOO_TALL_SCROLL_HEIGHT - 4,
+		       0,
+		       UP,
+		       0);
+      }
+      y += TOO_TALL_SCROLL_HEIGHT;
+    } else
+      final = 35000;
+    for (; item && (item->end < final); item=item->next) {
         if (item->type == MENU_HELP)
 	  x = item->start;
 	DrawFunctionList[item->type](mw, ms, item, x, y);
@@ -1050,9 +1097,29 @@ static void DisplayMenu(MenuWidget mw, menu_state *ms)
 	    } else
 		x = item->end;
 	} else {
-	    y = item->end;
+	    y = item->end + ms->delta;
 	}
+	s--;
     }
+
+    ms->arrow_start = y;
+    if (ms->too_tall && item) {
+      y = ms->h - (TOO_TALL_SCROLL_HEIGHT + mw->menu.shadow_width);
+      Xaw3dDrawArrow(XtDisplay((Widget)mw), ms->win,
+		     mw->menu.top_shadow_GC,
+		     mw->menu.bot_shadow_GC,
+		     mw->menu.normal_GC,
+		     mw->menu.normal_GC,
+		     x + ((ms->w - TOO_TALL_SCROLL_HEIGHT) / 2),
+		     y + 2,
+		     TOO_TALL_SCROLL_HEIGHT - 4,
+		     0,
+		     DOWN,
+		     0);
+      ms->can_go_down = 1;
+    } else
+      ms->can_go_down = 0;
+
     Xaw3dDrawRectangle(
 	XtDisplay((Widget)mw), ms->win,
 	mw->menu.top_shadow_GC,
@@ -1085,7 +1152,7 @@ static void ComputeItemPos(MenuWidget mw, menu_state *ms, menu_item *item,
 	*y = mw->menu.shadow_width;
     } else {
 	*x = mw->menu.shadow_width;
-	*y = item->start;
+	*y = item->start + ms->delta;
     }
 }
 
@@ -1104,6 +1171,9 @@ static void MakeNewMenuWindow(MenuWidget mw, menu_state *prev, menu_item *item,
     new->prev      = prev;
     mw->menu.state = new;
     ComputeMenuSize(mw, new);
+    new->delta     = (new->too_tall ? TOO_TALL_SCROLL_HEIGHT : 0);
+    new->scrolled  = 0;
+    new->scroll_top = new->menu;
 
     /* position window on screen */
     if (mw->menu.horizontal && !prev->prev) { /* item in menubar? */
@@ -1190,26 +1260,36 @@ static int HandleMotionEvent(MenuWidget mw, XMotionEvent *ev)
     menu_item  *item = NULL;
     Dimension  pushright = 0;
     Boolean    foundone = 0;
+    int        scroll = 0;
 
     /* find menu_state belonging to event */
     if (ev) {
       for (ms = mw->menu.state; ms; ms = ms->prev) {
 	if (ms->x <= ev->x_root && ev->x_root <= ms->x + ms->w
 	    &&  ms->y <= ev->y_root && ev->y_root <= ms->y + ms->h) {
-	  foundone = 1;
-	  /* find menu_item belonging to event */
-	  for (item = ms->menu; item; item = item->next)
-	    if (mw->menu.horizontal && !ms->prev) {
-	      if (!pushright && item->type == MENU_PUSHRIGHT)
-		pushright = ms->w - item->end - item->start;
-	      else if (ms->x + pushright + item->start <= ev->x_root
-		       && ev->x_root < ms->x + pushright + item->end)
-		break;
-	    } else {
-	      if (ms->y + item->start <= ev->y_root
-		  &&  ev->y_root < ms->y + item->end)
-		break;
-	    }
+	  if (ms->too_tall) {
+	    if (ev->y_root <= (ms->y + TOO_TALL_SCROLL_HEIGHT + mw->menu.shadow_width))
+	      scroll = -1;
+	    else if (ev->y_root >= ms->arrow_start)
+	      scroll = 1;
+	  }
+
+	  if (!scroll) {
+	    foundone = 1;
+	    /* find menu_item belonging to event */
+	    for (item = ms->menu; item; item = item->next)
+	      if (mw->menu.horizontal && !ms->prev) {
+		if (!pushright && item->type == MENU_PUSHRIGHT)
+		  pushright = ms->w - item->end - item->start;
+		else if (ms->x + pushright + item->start <= ev->x_root
+			 && ev->x_root < ms->x + pushright + item->end)
+		  break;
+	      } else {
+		if (ms->y + item->start + ms->delta <= ev->y_root
+		    &&  ev->y_root < ms->y + item->end + ms->delta)
+		  break;
+	      }
+	  }
 	  break;
 	}
       }
@@ -1220,10 +1300,34 @@ static int HandleMotionEvent(MenuWidget mw, XMotionEvent *ev)
 
     if (!item) { /* if pointer not on menu_item unhighlight last selected */
       UnhighlightItem(mw, mw->menu.state, mw->menu.state->selected);
+      if (scroll) {
+	if (scroll < 0) {
+	  if (ms->scrolled) {
+	    ms->scrolled -= 1;
+	    ms->scroll_top = ms->scroll_top->prev;
+	    ms->delta += (ms->scroll_top->end - ms->scroll_top->start);
+	  } else
+	    scroll = 0;
+	} else {
+	  if (ms->can_go_down) {
+	    ms->scrolled += 1;
+	    ms->scroll_top = ms->scroll_top->next;
+	    ms->delta -= (ms->scroll_top->end - ms->scroll_top->start);
+	  }  else
+	    scroll = 0;
+	}
+
+	if (scroll) {
+	  XFillRectangle(XtDisplay((Widget)mw), ms->win, 
+			 mw->menu.erase_GC,
+			 0, 0, ms->w, ms->h);
+	  DisplayMenu(mw, mw->menu.state);
+	}
+      }
       return 0;
     }
     if (item == ms->selected) /* pointer on the same item */
-	return 1;
+      return 1;
     /* unhighlight old item on same level (ms!) and highlight new item */
     UnhighlightItem(mw, ms, ms->selected);
     HighlightItem(mw, ms, item);

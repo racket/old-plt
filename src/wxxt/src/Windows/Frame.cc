@@ -146,6 +146,15 @@ static void wxFrameMapProc(Widget w, XtPointer clientData,
 
 extern "C" void *scheme_current_process;
 
+/* Copied off a newsgroup somewhere: */
+typedef struct {
+  int flags;
+  int functions;
+  int decorations;
+  int inputMode;
+  int unknown;
+} wxMWM_Hints;
+
 Bool wxFrame::Create(wxFrame *frame_parent, char *title,
 		     int x, int y, int width, int height,
 		     int _style, char *name)
@@ -230,6 +239,43 @@ Bool wxFrame::Create(wxFrame *frame_parent, char *title,
 
     if (wxIsBusy())
       wxXSetBusyCursor(this, wxHOURGLASS_CURSOR);
+
+    if (_style & wxNO_RESIZE_BORDER) {
+      /* Copied off a newsgroup somewhere: */
+      Atom WM_HINTS;
+      Display *display = XtDisplay(X->frame);
+      Window window = XtWindow(X->frame);
+
+      /* First try to set MWM hints */
+      WM_HINTS = XInternAtom(display, "_MOTIF_WM_HINTS", True);
+      if ( WM_HINTS != None ) {
+#define MWM_HINTS_DECORATIONS (1L << 1)
+	wxMWM_Hints MWMHints = { MWM_HINTS_DECORATIONS, 0, 0, 0, 0 };
+	
+	XChangeProperty(display, window, WM_HINTS, WM_HINTS, 32,
+			PropModeReplace, (unsigned char *)&MWMHints,
+			sizeof(MWMHints)/4);
+      }
+      /* Now try to set KWM hints */
+      WM_HINTS = XInternAtom(display, "KWM_WIN_DECORATION", True);
+      if ( WM_HINTS != None ) {
+	long KWMHints = 0;
+	
+	XChangeProperty(display, window, WM_HINTS, WM_HINTS, 32,
+			PropModeReplace, (unsigned char *)&KWMHints,
+			sizeof(KWMHints)/4);
+      }
+      /* Now try to set GNOME hints */
+      WM_HINTS = XInternAtom(display, "_WIN_HINTS", True);
+      if ( WM_HINTS != None ) {
+	long GNOMEHints = 0;
+	
+	XChangeProperty(display, window, WM_HINTS, WM_HINTS, 32,
+			PropModeReplace, (unsigned char *)&GNOMEHints,
+			sizeof(GNOMEHints)/4);
+      }
+    }
+
 
     if (!plt_mask) {
       plt_mask = XCreateBitmapFromData(wxAPP_DISPLAY, wxAPP_ROOT, plt_xbm, plt_width, plt_height);

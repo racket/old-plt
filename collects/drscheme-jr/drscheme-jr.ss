@@ -49,7 +49,7 @@
    (list '--case-sens read-case-sensitive #t)
    (list '--case-insens read-case-sensitive #f)
    (list '--set-undef compile-allow-set!-undefined #t)
-   (list '--no-set-undef compile-allow-set!-undefined #t)
+   (list '--no-set-undef compile-allow-set!-undefined #f)
    (list '--auto-else compile-allow-cond-fallthrough #t)
    (list '--no-auto-else compile-allow-cond-fallthrough #f)
    (list '--signal-undef (lambda () (set! signal-undef #t)))

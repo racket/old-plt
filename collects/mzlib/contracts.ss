@@ -1444,6 +1444,7 @@
         [(xxx . args) (raise-syntax-error err-name "unknown arrow constructor" ctxt-stx (syntax xxx))]
         [_ (raise-syntax-error err-name "malformed arrow clause" ctxt-stx stx)]))
     
+    
     ;; set-inferred-name-from : syntax syntax -> syntax
     (define (set-inferred-name-from with-name to-be-named)
       (let ([name (syntax-local-infer-name with-name)])

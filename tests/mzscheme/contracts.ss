@@ -881,13 +881,35 @@
       (send (make-object d%) m 100))
    "pos-d")
   
+  
+  (test/spec-passed/result
+   'class-contract=>2
+   '(let* ([c% (class object% (super-instantiate ()))]
+           [wc% (contract (class-contract) c% 'pos-c 'neg-c)]
+           [d% (class c% (super-instantiate ()))]
+           [wd% (contract (class-contract) d% 'pos-d 'neg-d)])
+      (list (subclass? wd% wc%)
+            (implementation? wd% (class->interface wc%))
+            (is-a? (make-object wd%) wc%)
+            (is-a? (make-object wd%) (class->interface wc%))
+            (is-a? (instantiate wd% ()) wc%)
+            (is-a? (instantiate wd% ()) (class->interface wc%))))
+   (list #t #t #t #t #t #t))
+  
+  
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ;;                                                        ;;
+  ;;   Flat Contract Tests                                  ;;
+  ;;                                                        ;;
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  
   (test/spec-failed
    'not/f1
    '(contract (not/f integer?)
               1
               'pos
               'neg)
-   "pos-d")
+   "pos")
   
   (test/spec-passed/result
    'not/f2

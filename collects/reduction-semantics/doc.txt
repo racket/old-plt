@@ -155,7 +155,7 @@ binds a list of matches to <symbol>, instead of a single match.
 (A nested duplicated pattern creates a list of list matches,
 etc.) Ellipses may be placed anywhere inside the row of 
 patterns,  except in the first position or immediately after
-another ellipses.  Multiple ellispes are allowed.
+another ellipses.  Multiple ellipses are allowed.
 
 > (language (non-terminal pattern ...) ...)     SYNTAX
 
@@ -300,6 +300,25 @@ compiles a sexpression pattern to a pattern.
 This helper function accepts an sexpression and a
 variable. It returns a variable not in the sexpression with
 a prefix the same as the second argument.
+
+> make-bindings : ((listof rib?) . -> . bindings?)
+> bindings? : (any? . -> . boolean?)
+> bindings-table : (bindings? . -> . (listof rib?))
+
+Constructor, predicate, and selector functions for the bindings values
+returned by match-pattern.  Each bindings value represents the bindings
+established for a single parse of the term; multiple such parses may be
+possible in some situations.
+
+> make-rib : (symbol? any? . -> . rib?)
+> rib? : (any? . -> . boolean?)
+> rib-name : (rib? . -> . symbol?)
+> rib-exp : (rib? . -> . any?)
+
+Constructor, predicate, and selector functions for the rib values contained
+within a bindings.  Each rib associates a name with an s-expression from
+the language, or a list of such s-expressions, if the (name ...) clause is
+followed by an ellipsis.  Nested ellipses produce nested lists.
 
 ======================================================================
 

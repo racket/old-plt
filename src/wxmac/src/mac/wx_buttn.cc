@@ -584,7 +584,11 @@ void wxButton::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac platform
 	{
 		int clientWidth, clientHeight;
 		GetClientSize(&clientWidth, &clientHeight);
+#ifdef OS_X	
 		::SizeControl(cMacControl, clientWidth - 2 * PAD_X, clientHeight - 2 * PAD_Y);
+#else
+		::SizeControl(cMacControl, clientWidth, clientHeight);
+#endif
 	}
 
 	if (dX || dY)

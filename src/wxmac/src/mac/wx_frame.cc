@@ -71,7 +71,11 @@ wxFrame::wxFrame // Constructor (for frame window)
 
 	cUserHidden = TRUE;
 
+#ifdef OS_X
 	CWindowPtr theMacWindow;
+#else
+	WindowPtr theMacWindow;
+#endif
 
 	/* Make sure we have the right device: */
     CGrafPtr wPort;

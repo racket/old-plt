@@ -23,6 +23,7 @@ static const char sccsid[] = "%W% %G%";
   #include <StandardFile.h>
   #include <TextUtils.h>
   #include <Strings.h>
+  #include <LowMem.h>
 #endif
 #ifdef PYLIB
 extern "C" {

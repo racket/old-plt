@@ -87,7 +87,8 @@ Bool wxIsClipboardFormatAvailable(int dataFormat)
   
   err = GetCurrentScrap(&scrap);
   return ((err != noErr)||(GetScrapFlavorFlags(scrap,format,&dontcare) != noErr));
-#else  
+#else
+  SInt32 offset;  
   return (GetScrap(NULL, format, &offset) > 0);
 #endif
 }
@@ -149,6 +150,8 @@ wxObject *wxGetClipboardData(int dataFormat, long *size)
 #else  
   h = NewHandle(10);
   CheckMemOK(h);
+  SInt32 offset;
+  
   length = GetScrap(h, format, &offset);
 
   if (length < 0)

@@ -358,7 +358,7 @@ void wxChoice::DrawChoice(Bool active)
 	PolyHandle poly;
 	poly = OpenPoly();
 	if (poly) {
-		MoveTo(r.right - TRIANGLE_WIDTH - TRANGLE_RIGHT_SPACE + SetOriginX,
+		MoveTo(r.right - TRIANGLE_WIDTH - TRIANGLE_RIGHT_SPACE + SetOriginX,
 			   (r.top + (r.bottom - r.top - TRIANGLE_HEIGHT) / 2) + SetOriginY);
 	    Line(TRIANGLE_WIDTH, 0);
 	    Line(-(TRIANGLE_WIDTH / 2), TRIANGLE_HEIGHT);
@@ -372,7 +372,7 @@ void wxChoice::DrawChoice(Bool active)
 		return;
 		
 	r.left += ::CharWidth('¥') + ::CharWidth(' ') + MSPACEX;
-	r.right -= TRIANGLE_WIDTH - TRANGLE_RIGHT_SPACE;
+	r.right -= TRIANGLE_WIDTH - TRIANGLE_RIGHT_SPACE;
 	
 	Str255	s;
 	if (selection < 0)

@@ -263,7 +263,11 @@ void wxCheckBox::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac platfo
 	{
 		int clientWidth, clientHeight;
 		GetClientSize(&clientWidth, &clientHeight);
+#ifdef OS_X
 		::SizeControl(cMacControl, clientWidth - (2 * PAD_X), clientHeight - (2 * PAD_Y));
+#else
+		::SizeControl(cMacControl, clientWidth, clientHeight);
+#endif
 	}
 
 	if (dX || dY)

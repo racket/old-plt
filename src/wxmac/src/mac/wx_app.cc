@@ -17,6 +17,9 @@ static const char sccsid[] = "%W% %G%";
  #include <Devices.h>
  #include <Resources.h>
  #include <Balloons.h>
+ #include <QuickDraw.h>
+ #include <Gestalt.h>
+ #include <Sound.h>
 #endif
 #include "wx_main.h"	// WCH : should split out stuff for wx_app.h and wb_app.h
 #include "wx_frame.h"

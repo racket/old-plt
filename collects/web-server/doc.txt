@@ -111,7 +111,10 @@ the servlet^ signature consisting of the following imports:
 		optional HTTP headers for this request
     - bindings : environment
 		 name value pairs from the form submitted or the query part
-               of the URL.
+                 of the URL.
+    - bindings/raw : either a string or an environment
+                     For file uploads bindings/raw is identical to bindings.
+                     Otherwise, it contains the unparsed get or post data.
 
 The path part of the URL supplies the file path to the servlet relative to the
 "servlets" directory.  However, paths may also contain extra path components

@@ -1773,12 +1773,14 @@
               args atypes))
   
   ;; 15.9
-  ;;check-class-alloc: expr name (list type) src type-records (list string) env symbol bool-> type
+  ;;check-class-alloc: expr (U name identifier) (list type) src type-records (list string) env symbol bool-> type
   (define (check-class-alloc exp name/def args src type-recs c-class env level static?)
-    (let* ((name (if (def? name/def)
-                  (begin (check-inner-def name/def level type-recs c-class env)
-                         (make-name (def-name name/def) null (id-src (def-name name/def))))
-                  name/def))
+    (let* ((name (cond
+                   ((def? name/def)
+                    (check-inner-def name/def level type-recs c-class env)
+                    (make-name (def-name name/def) null (id-src (def-name name/def))))
+                   ((id? name/def) (make-name name/def null (id-src name/def)))
+                   (else name/def)))
            (type (name->type name/def c-class (name-src name) level type-recs))
            (class-record (get-record (send type-recs get-class-record type c-class) type-recs))
            (methods (get-method-records (car (class-record-name class-record)) class-record)))

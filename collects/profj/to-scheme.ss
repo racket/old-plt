@@ -1663,8 +1663,9 @@
   (define (overridden? name)
     (hash-table-get (class-override-table) name (lambda () #f)))
   
-  ;translate-class-alloc: name (list type) (list syntax) src bool method-record-> syntax
+  ;translate-class-alloc: (U name id) (list type) (list syntax) src bool method-record-> syntax
   (define (translate-class-alloc class-type arg-types args src inner? ctor-record)
+    (when (id? class-type) (set! class-type (make-name class-type null (id-src class-type))))
     (let ((class-string (get-class-string class-type))
           (class-id (name-id class-type)))
       (if inner?

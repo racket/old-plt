@@ -502,7 +502,7 @@
   (define make-new-unit-frame%
     (lambda (super%)
       (class super% args
-	(inherit button-panel definitions-text interactions-text)
+	(inherit button-panel definitions-canvas definitions-text interactions-text)
 	
 	(rename [super-disable-evaluation disable-evaluation]
 		[super-enable-evaluation enable-evaluation])
@@ -958,6 +958,7 @@
 			  (send definitions-text set-modified #f))
 			(send definitions-text set-styles-fixed #t)
 			(built-in?) ;; kills the thread created for built-in?
+                        (send definitions-canvas focus)
 			(mred:end-busy-cursor)))))
 		 (mred:message-box
 		  "Check Syntax"

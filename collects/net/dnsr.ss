@@ -284,7 +284,9 @@
 		    (let loop ()
 		      (let ([l (read-line)])
 			(or (and (string? l)
-				 (let ([m (regexp-match "nameserver ([0-9]+[.][0-9]+[.][0-9]+[.][0-9]+)" l)])
+				 (let ([m (regexp-match 
+					   (format "nameserver[ ~a]+([0-9]+[.][0-9]+[.][0-9]+[.][0-9]+)" #\tab)
+					   l)])
 				   (and m (cadr m))))
 			    (and (not (eof-object? l))
 				 (loop))))))))]

@@ -182,7 +182,7 @@
       
       (define (colorer-callback)
         (channel-put sync #f)
-        (sleep .1)
+        (sleep .01)
         (unless finished?
           (break-thread background-thread)
           (channel-get sync))
@@ -201,16 +201,16 @@
                              (channel-put sync #f)
                              (channel-get sync)
                              (cond
-                               (in (printf "continuing~n") ((exn:break-continuation exn)))
+                               (in #;(printf "continuing~n") ((exn:break-continuation exn)))
                                (else
-                                (printf "restarting~n")
+                                #;(printf "restarting~n")
                                 (break-enabled #f)
                                 (restart #f))))))
              (when starting?
                (channel-get sync))
              ;(with-handlers ((not-break-exn? void))
                (set! input-port-start-pos current-pos)
-               (printf "~a~n" current-pos)
+               #;(printf "~a~n" current-pos)
                (set! in (open-input-text-editor this
                                                 input-port-start-pos
                                                 end-pos))

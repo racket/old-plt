@@ -287,15 +287,6 @@ static pascal OSErr CmdLineMessage(const AppleEvent *evt, AppleEvent *b, long c)
   cmdLine = (char *)NewPtr(size + 1);
   AEGetNthPtr(&cmdList, 1, typeChar, &keywd, &retType, (Ptr)cmdLine, size, &size);
 
-#if 0
-  {
-    char buf[256];
-    sprintf(buf + 1, "cmdline %d '%4.4s' %20.20s", size, &retType, cmdLine);
-    buf[0] = strlen(buf);
-    DebugStr((unsigned char *)buf);
-  }
-#endif
-
   cmdLine[size] = 0;
   scheme_mac_ready = 1;
   parse_commandline(cmdLine, NULL, 0);
@@ -317,12 +308,6 @@ static void Install(void)
   err = AEInstallEventHandler('PLT ', 'cmdl', NewAEEventHandlerUPP(CmdLineMessage), 0, 0);
 }
 
-#ifdef WX_CARBON
-# define SLEEP_TIME 0x7FFFFFFF
-#else
-# define SLEEP_TIME 60
-#endif
-
 void Drop_GetArgs(int *argc, char ***argv, int *in_terminal)
 {
   *in_terminal = 1;
@@ -333,26 +318,9 @@ void Drop_GetArgs(int *argc, char ***argv, int *in_terminal)
   while (!scheme_mac_ready) {
     EventRecord event;
     
-    WaitNextEvent(highLevelEventMask, &event, SLEEP_TIME, 0L);
+    WaitNextEvent(highLevelEventMask, &event, 0x7FFFFFFF, 0L);
     if (event.what == kHighLevelEvent) {
-#ifdef WX_CARBON
       AEProcessAppleEvent(&event);
-#else
-      // high level events do not occur under OS X (per se, now they're just apple events)
-      if ((event.message == 'PLT ') && ((*(long *)&event.where) == 'cmdl')) {
-        /* Replaces OpenApp or OpenDocs: */
-        TargetID src;
-        unsigned long ref, len;
-        char *data;
-        data = (char *)scheme_malloc(5000);
-        len = 4999;
-        AcceptHighLevelEvent(&src, &ref, data, &len);
-        data[len] = 0;
-        scheme_mac_ready = 1;
-        parse_commandline(data, NULL, 0);
-      } else
-        AEProcessAppleEvent(&event);
-#endif
     }
   }
 

@@ -1,10 +1,18 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR Free Software Foundation, Inc.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
 msgid ""
 msgstr ""
-"Date: 2000-04-05 06:59:57-0600\n"
-"From: Matthew Flatt,,,, <mflatt@c281491-a>\n"
-"Content-Type: text/plain; charset=\n"
-"Xgettext-Options: --default-domain=wbuild --directory=../../../../../../wxxt/src/x/wbuild --add-comments --keyword=_ --keyword=N_ --files-from=../../../../../../wxxt/src/x/wbuild/po/POTFILES.in\n"
-"Files: src/wbuild.c src/util.c src/generatec.c src/generateh.c src/generatedoc.c src/declarefunc.c src/printbody.c\n"
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2000-04-07 09:44-0600\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: ENCODING\n"
 
 #: src/wbuild.c:267
 msgid ""
@@ -26,6 +34,7 @@ msgid ""
 msgstr ""
 
 #: src/wbuild.c:286
+#, c-format
 msgid ""
 "Copyright (C) %s Joel N. Weber II\n"
 "This is free software; see the source for copying conditions.  There is NO\n"
@@ -33,53 +42,66 @@ msgid ""
 msgstr ""
 
 #: src/wbuild.c:291
+#, c-format
 msgid "Written by %s\n"
 msgstr ""
 
 #: src/util.c:1113
+#, c-format
 msgid "%s:%d: cyclic dependency found in superclasses of %s\n"
 msgstr ""
 
 #: src/generatec.c:466
+#, c-format
 msgid "%s:%d: method \"%s\" or class \"%s\" not found\n"
 msgstr ""
 
 #: src/generatec.c:851
+#, c-format
 msgid "superclass %s not found\n"
 msgstr ""
 
 #: src/generateh.c:184 src/generateh.c:234 src/generateh.c:705
+#, c-format
 msgid "%s:%d: Missing type for `%s'\n"
 msgstr ""
 
 #: src/generatedoc.c:149
+#, c-format
 msgid "%s:%d: unmatched \"|\" in text\n"
 msgstr ""
 
 #: src/printbody.c:62
+#, c-format
 msgid "%s:%d: (in %s) no superclass (#) defined\n"
 msgstr ""
 
 #: src/printbody.c:80
+#, c-format
 msgid "%s:%d: (in %s) identifier `#%s' is unknown\n"
 msgstr ""
 
 #: src/printbody.c:111
+#, c-format
 msgid "%s:%d: (in %s) identifier `$%s' is unknown\n"
 msgstr ""
 
 #: src/printbody.c:134 src/printbody.c:188
+#, c-format
 msgid "%s:%d: (in %s) missing `)' after `$%s(%s'\n"
 msgstr ""
 
 #: src/printbody.c:144 src/printbody.c:197
+#, c-format
 msgid "%s:%d: (in %s) class `%s' is not a superclass\n"
 msgstr ""
 
 #: src/printbody.c:154
+#, c-format
 msgid "%s:%d: (in %s) missing identifier after `$(%s)'\n"
 msgstr ""
 
 #: src/printbody.c:207
+#, c-format
 msgid "%s:%d: (in %s) missing identifier after `$%s()'\n"
 msgstr ""

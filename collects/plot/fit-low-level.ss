@@ -27,12 +27,12 @@
 
   (define get-asym-error
     (get-ffi-obj "get_asym_error" libfit
-      (_fun (len) :: ;; len is only used for list conversion
+      (_fun (len : _?) ; len is only used for list conversion
             -> (_list o _double* len))))
 
   (define get-asym-error-percent
     (get-ffi-obj "get_asym_error_percent" libfit
-      (_fun (len) :: ;; len is only used for list conversion
+      (_fun (len : _?) ; len is only used for list conversion
             -> (_list o _double* len))))
 
   (define get-rms

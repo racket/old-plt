@@ -274,10 +274,11 @@
 ;; `-> expr'               specify different output, can use previous names
 ;; Also, see below for custom function types.
 
-(provide _fun)
-(define-syntax (_fun stx)
-  (define (err msg . sub) (apply raise-syntax-error '_fun msg stx sub))
-  (define (split-by key args)
+(begin-for-syntax ; utilities for _fun
+ ;; use module-or-top-identifier=? because we use keywords like `=' and want to
+ ;; make it possible to play with it at the toplevel
+ (define id=? module-or-top-identifier=?)
+ (define (split-by key args)
     (let loop ([args args] [r (list '())])
       (cond [(null? args) (reverse! (map reverse! r))]
             [(eq? key (car args)) (loop (cdr args) (cons '() r))]
@@ -288,7 +289,48 @@
       (if (null? l)
         (reverse! r)
         (let ([x (f (car l))]) (loop (cdr l) (if x (cons x r) r))))))
-  (define id=? module-or-top-identifier=?)
+  (define (add-renamer body from to)
+   (with-syntax ([body body] [from from] [to to])
+     #'(let-syntax ([to (syntax-id-rules ()
+                          [(_?_ . _rest_) (from . _rest_)] [_?_ from])])
+         body)))
+ (define (custom-type->keys type err)
+   (define stops (map (lambda (s) (datum->syntax-object type s #f))
+                      '(#%app #%top #%datum)))
+   ;; Expand `type' using expand-fun-syntax
+   (define orig (expand-fun-syntax type))
+   (define (with-arg x)
+     (syntax-case* x (=>) id=?
+       [(id => body) (identifier? #'id)
+        ;; Extract #'body from its context, use a key it needs certification:
+        (list #'id (syntax-recertify #'body orig #f fun-cert-key))]
+       [_else x]))
+   (let ([keys '()])
+     (define (setkey! key val . id?)
+       (cond
+        [(assq key keys)
+         (err "bad expansion of custom type (two `~a:'s)" key type)]
+        [(and (pair? id?) (car id?) (not (identifier? val)))
+         (err "bad expansion of custom type (`~a:' expects an identifier)"
+              key type)]
+        [else (set! keys (cons (cons key val) keys))]))
+     (let loop ([t orig])
+       (define (next rest . args) (apply setkey! args) (loop rest))
+       (syntax-case* t (type: expr: bind: pre: post: 1st-arg: prev-arg:) id=?
+         [(type: t x ...)      (next #'(x ...) 'type #'t)]
+         [(expr:     e  x ...) (next #'(x ...) 'expr #'e)]
+         [(bind:     id x ...) (next #'(x ...) 'bind #'id #t)]
+         [(1st-arg:  id x ...) (next #'(x ...) '1st  #'id #t)]
+         [(prev-arg: id x ...) (next #'(x ...) 'prev #'id #t)]
+         ;; in the following two cases pass along orig for recertifying
+         [(pre:      p  x ...) (next #'(x ...) 'pre  (with-arg #'p))]
+         [(post:     p  x ...) (next #'(x ...) 'post (with-arg #'p))]
+         [() (and (pair? keys) keys)]
+         [_else #f])))))
+
+(provide _fun)
+(define-syntax (_fun stx)
+  (define (err msg . sub) (apply raise-syntax-error '_fun msg stx sub))
   (syntax-case stx ()
     [(_ x ...)
      (let ([xs (map (lambda (x)
@@ -300,58 +342,10 @@
        (define (bind! x) (set! bind (append! bind (list x))))
        (define (pre!  x) (set! pre  (append! pre  (list x))))
        (define (post! x) (set! post (append! post (list x))))
-       (define (custom-type-keys type0)
-         (define stops
-           (map (lambda (s) (datum->syntax-object type0 s #f))
-                '(#%app #%top #%datum)))
-         (define (with-arg t x)
-           (syntax-case* x (=>) id=?
-             [(id => body) (identifier? #'id)
-              (begin
-                (list #'id
-                      ;; We're extracting #'body from its context, but
-                      ;;  we have a key if #'body needs certification:
-                      (syntax-recertify #'body t #f fun-cert-key)))]
-             [_else x]))
-         (let ([keys '()])
-           (define (setkey! key val . id?)
-             (cond
-              [(assq key keys)
-               (err "bad expansion of custom type (two `~a:'s)" key type0)]
-              [(and (pair? id?) (car id?) (not (identifier? val)))
-               (err (string-append "bad expansion of custom type "
-                                   "(`~a:' expects an identifier)")
-                    key type0)]
-              [else (set! keys (cons (cons key val) keys))]))
-           ;; Expand `type0' using expand-fun-syntax
-           (define orig (expand-fun-syntax type0))
-           (let loop ([t orig])
-             (define (next rest . args) (apply setkey! args) (loop rest))
-             (syntax-case* t (type: expr: bind: pre: post: 1st-arg: prev-arg:)
-                           id=?
-               [(type: t x ...)
-                (next #'(x ...) 'type (syntax-case #'t () [#f #f] [_ #'t]))]
-               [(expr:     e  x ...) (next #'(x ...) 'expr #'e)]
-               [(bind:     id x ...) (next #'(x ...) 'bind #'id #t)]
-               ;; in the following two cases pass along orig for recertifying
-               [(pre:      p  x ...) (next #'(x ...) 'pre
-                                                     (with-arg orig #'p))]
-               [(post:     p  x ...) (next #'(x ...) 'post
-                                                     (with-arg orig #'p))]
-               [(1st-arg:  id x ...) (next #'(x ...) '1st  #'id #t)]
-               [(prev-arg: id x ...) (next #'(x ...) 'prev #'id #t)]
-               [() (and (pair? keys) keys)]
-               [_else #f]))))
-       (define (t-n-e clause type name expr)
-         (let ([keys (custom-type-keys type)])
+       (define ((t-n-e clause) type name expr)
+         (let ([keys (custom-type->keys type err)])
            (define (getkey key)
              (cond [(assq key keys) => cdr] [else #f]))
-           (define (add-renamer body from to)
-             (with-syntax ([body body] [from from] [to to])
-               #'(let-syntax ([to (syntax-id-rules ()
-                                    [(_?_ . _rest_) (from . _rest_)]
-                                    [_?_ from])])
-                   body)))
            (define (arg x . no-expr?)
              (define use-expr?
                (and (list? x) (= 2 (length x)) (identifier? (car x))))
@@ -387,70 +381,63 @@
                     (lambda (x) (pre!  #`[#,name #,(arg x #t)]))])
              (cond [(getkey 'post) =>
                     (lambda (x) (post! #`[#,name #,(arg x)]))]))
-           (unless (or type expr)
-             (err "got ignored input with no expression" clause))
+           ;; turn a #f syntax to #f
+           (set! type (and type (syntax-case type () [#f #f] [_ type])))
            (when type ; remember these for later usages
              (unless 1st-arg (set! 1st-arg name))
              (set! prev-arg name))
            (list type name expr)))
-       (let ([dd (split-by ':: xs)])
-         (case (length dd)
+       ;; parse "::"
+       (let ([s (split-by ':: xs)])
+         (case (length s)
            [(0) (err "something bad happened (::)")]
            [(1) #f]
-           [(2)
-            (let ([ar (split-by '-> (car dd))])
-              (case (length ar)
-                [(0) (err "something bad happened (-> ::)")]
-                [(1) (set! input-names (car dd))]
-                [(2) (set! input-names (car ar)) (set! output-expr (cadr ar))]
-                [else
-                 (err "saw two or more instances of `->' on left of `::'")]))
-            (if (and input-names (not (= 1 (length input-names))))
-              (err "bad wrapper formals")
-              (set! input-names (car input-names)))
-            (set! xs (cadr dd))]
+           [(2) (if (and (= 1 (length (car s))) (not (eq? '-> (caar s))))
+                  (begin (set! xs (cadr s)) (set! input-names (caar s)))
+                  (err "bad wrapper formals"))]
            [else (err "saw two or more instances of `::'")]))
-       (let ([ar (split-by '-> xs)])
-         (when (null? ar) (err "something bad happened (->)"))
-         (when (null? (cdr ar)) (err "missing output type"))
-         (set! inputs (car ar))
-         (set! output-type (cadr ar))
-         (unless (null? (cddr ar))
-           (when output-expr (err "ambiguous output expression"))
-           (set! output-expr (caddr ar))
-           (unless (null? (cdddr ar))
-             (err "saw three or more instances of `->'"))))
-       (cond [(not output-type) (err "no output type")]
-             [(null? output-type) (err "missing output type")]
-             [(null? (cdr output-type)) (set! output-type (car output-type))]
-             [else (err "extraneous output type" (cadr output-type))])
-       (cond [(not output-expr)]
-             [(null? output-expr) (err "missing output expression")]
-             [(null? (cdr output-expr)) (set! output-expr (car output-expr))]
-             [else (err "extraneous output expression" (cadr output-expr))])
+       ;; parse "->"
+       (let ([s (split-by '-> xs)])
+         (case (length s)
+           [(0) (err "something bad happened (->)")]
+           [(1) (err "missing output type")]
+           [(2 3) (set! inputs (car s))
+                  (case (length (cadr s))
+                    [(1) (set! output-type (caadr s))]
+                    [(0) (err "missing output type after `->'")]
+                    [else (err "extraneous output type" (cadadr s))])
+                  (unless (null? (cddr s))
+                    (case (length (caddr s))
+                      [(1) (set! output-expr (caaddr s))]
+                      [(0) (err "missing output expression after `->'")]
+                      [else (err "extraneous output expression"
+                                 (cadr (caddr s)))]))]
+           [else (err "saw three or more instances of `->'")]))
        (set! inputs
              (map (lambda (sub temp)
-                    (syntax-case* sub (: =) id=?
-                      [(name : type)        (t-n-e sub #'type #'name #f)]
-                      [(type = expr)        (t-n-e sub #'type temp   #'expr)]
-                      [(name : type = expr) (t-n-e sub #'type #'name #'expr)]
-                      [type                 (t-n-e sub #'type temp   #f)]))
+                    (let ([t-n-e (t-n-e sub)])
+                      (syntax-case* sub (: =) id=?
+                        [(name : type)        (t-n-e #'type #'name #f)]
+                        [(type = expr)        (t-n-e #'type temp   #'expr)]
+                        [(name : type = expr) (t-n-e #'type #'name #'expr)]
+                        [type                 (t-n-e #'type temp   #f)])))
                   inputs
                   (generate-temporaries (map (lambda (x) 'tmp) inputs))))
        ;; when processing the output type, only the post code matters
        (set! pre! (lambda (x) #f))
        (set! output
-             (let ([temp (car (generate-temporaries #'(ret)))])
+             (let ([temp (car (generate-temporaries #'(ret)))]
+                   [t-n-e (t-n-e output-type)])
                (syntax-case* output-type (: =) id=?
-                 [(name : type) (t-n-e output-type #'type #'name output-expr)]
+                 [(name : type) (t-n-e #'type #'name output-expr)]
                  [(type = expr) (if output-expr
                                   (err "extraneous output expression" #'expr)
-                                  (t-n-e output-type #'type temp #'expr))]
+                                  (t-n-e #'type temp #'expr))]
                  [(name : type = expr)
                                 (if output-expr
                                   (err "extraneous output expression" #'expr)
-                                  (t-n-e output-type #'type #'name #'expr))]
-                 [type          (t-n-e output-type #'type temp output-expr)])))
+                                  (t-n-e #'type #'name #'expr))]
+                 [type          (t-n-e #'type temp output-expr)])))
        (if (or (caddr output) input-names (ormap caddr inputs)
                (ormap (lambda (x) (not (car x))) inputs)
                (pair? bind) (pair? pre) (pair? post))

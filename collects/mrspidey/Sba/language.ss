@@ -343,6 +343,9 @@
        (false          false)
        (boolean=?      (bool bool -> bool))
 
+       ;; units	
+       (unit/sig?      (_ -> bool))	
+	
        ;; numbers
        (complex?       (_ -> bool)       (predicate* (#t num) _))
        (real?          (_ -> bool)       (predicate* (#t num) _))

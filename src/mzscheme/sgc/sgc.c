@@ -4,34 +4,26 @@
   Copyright (c) 1996-98 Matthew Flatt
   All rights reserved.
 
+    This library is free software; you can redistribute it and/or
+    modify it under the terms of the GNU Library General Public
+    License as published by the Free Software Foundation; either
+    version 2 of the License, or (at your option) any later version.
+
+    This library is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+    Library General Public License for more details.
+
+    You should have received a copy of the GNU Library General Public
+    License along with this library; if not, write to the Free
+    Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+
   After Boehm et al.
 
-  Please see the full copyright in the documentation.
+  Note: this implementation is probably still a little hardwired for
+  32-bit addresses.
 
-  This collector is intended mainly for debugging and memory tracing,
-  but it can also act as a reasonbaly effecient, general-purpose
-  conservative collector.
-
-  It's probably still a little hardwired for 32-bit addresses.
-
-  The stack base must be manually identified with GC_set_stack_base();
-  no garbage collection will occur before this function is called.
-
-  All non-stack/register roots (i.e., global variables) must be
-  registered with GC_add_roots(). For certain platforms, this is
-  actually done automatically for static variables, but it can't be 
-  done portably in general. (See AUTO_STATIC_ROOTS_IF_POSSIBLE in
-  the flags section.)
-
-  GC space is allocated using malloc() and free(). Alternatively, the
-  GC can define malloc() and free() itself if platform-specific
-  allocation routines are supported.  
-  
-  This collector is not recommended as a replacement for Boehm's GC if
-  you can get Boehm's to work at all. SenoraGC MIGHT be useful if, for
-  some reason, Boehm's collector does not work for your platform.
-  SenoraGC MIGHT be useful as a debugging collector if you can figure
-  out the [undocumented] debugging utilities. */
+ */
 
 #include <stdlib.h>
 #include <setjmp.h>

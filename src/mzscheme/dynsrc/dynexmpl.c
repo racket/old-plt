@@ -1,5 +1,7 @@
 
-/* Example dynamically-loaded MzScheme extension */
+/* Example dynamically-loaded MzScheme extension, but not a good one.
+
+   For example extensions, see plt/collects/mzscheme/examples. */
 
 #include "escheme.h"
 #include <time.h>

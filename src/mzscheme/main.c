@@ -21,6 +21,14 @@
   All rights reserved.
 */
 
+/* This file defines MzScheme's main(), which is a jumble of
+   platform-specific initialization.  The included file "cmdline.inc"
+   defines command-line parsing.  (MrEd also uses "cmdline.inc".)
+
+   The rest of the source code resides in the `src' subdirectory
+   (except for the garbage collector, which is in `gc' or `sgc',
+   depending on which one you're using). */
+
 #include "scheme.h"
 
 /* #define STANDALONE_WITH_EMBEDDED_EXTENSION */
@@ -90,22 +98,22 @@ static void dangerdanger(int ignored)
 
 #ifndef NO_USER_BREAK_HANDLER
 
-#ifdef MACINTOSH_EVENTS
+# ifdef MACINTOSH_EVENTS
 static Scheme_Object *orig_evaluator;
-#endif
+# endif
 
-#ifndef MACINTOSH_EVENTS
+# ifndef MACINTOSH_EVENTS
 static void user_break_hit(int ignore)
 {
   scheme_break_thread(NULL);
 
-# ifdef SIGSET_NEEDS_REINSTALL
+#  ifdef SIGSET_NEEDS_REINSTALL
   MZ_SIGSET(SIGINT, user_break_hit);
-# endif
+#  endif
 }
-#endif
+# endif
 
-#ifdef MACINTOSH_EVENTS
+# ifdef MACINTOSH_EVENTS
 
 static int WeAreFront()
 {
@@ -138,7 +146,7 @@ static int is_break_event(EventRecord *e)
 
 static int check_break_flag()
 {
-#ifdef MACINTOSH_GIVE_TIME
+# ifdef MACINTOSH_GIVE_TIME
   static long last_time;
   static int front = 1;
 
@@ -149,13 +157,13 @@ static int check_break_flag()
         if (is_break_event(&e)) {
 	       return 1;
 	     }
-# ifdef MACINTOSH_SIOUX
+#  ifdef MACINTOSH_SIOUX
         SIOUXHandleOneEvent(&e);
-# endif
+#  endif
        }
       last_time = TickCount();
     }
-#endif
+# endif
     return 0;
 }
 
@@ -164,9 +172,9 @@ static void handle_one(EventRecord *e)
   if (is_break_event(e))
     scheme_break_thread(NULL);
   
-# ifdef MACINTOSH_SIOUX
+#  ifdef MACINTOSH_SIOUX
   SIOUXHandleOneEvent(e);
-# endif
+#  endif
 }
 
 static void MacSleep(float secs, void *fds)
@@ -180,7 +188,7 @@ static void MacSleep(float secs, void *fds)
    }
 }
 
-#endif
+# endif
 
 #endif
 
@@ -207,14 +215,14 @@ void Drop_Quit()
 
 #ifndef DONT_PARSE_COMMAND_LINE
 
-#ifdef MACINTOSH_SIOUX
-# pragma far_data on
+# ifdef MACINTOSH_SIOUX
+#  pragma far_data on
 static void SetSIOUX(void)
 {
   SIOUXSettings.initializeTB = 0;
 }
-# pragma far_data off
-#endif
+#  pragma far_data off
+# endif
 
 #endif /* DONT_PARSE_COMMAND_LINE */
 
@@ -264,13 +272,13 @@ extern int GC_free_space_divisor;
 
 static void do_scheme_rep(void)
 {
-# ifndef NO_USER_BREAK_HANDLER
-#  ifdef MACINTOSH_EVENTS
+#ifndef NO_USER_BREAK_HANDLER
+# ifdef MACINTOSH_EVENTS
   scheme_set_param(scheme_config, MZCONFIG_ENABLE_BREAK, scheme_true);
   
   orig_evaluator = scheme_get_param(scheme_config, MZCONFIG_EVAL_HANDLER);
-#  endif
 # endif
+#endif
 
   /* enter read-eval-print loop */
   scheme_rep();
@@ -282,6 +290,7 @@ static int cont_run(FinishArgs *f)
   return finish_cmd_line_run(f, do_scheme_rep);
 }
 
+/* main() calls actual_main() through scheme_image_main().*/
 int actual_main(int argc, char *argv[])
 {
 #ifdef NO_GCING
@@ -312,11 +321,11 @@ int actual_main(int argc, char *argv[])
   MoreMasters();
   MoreMasters();
 	
-#ifdef MACINTOSH_SIOUX
-# pragma far_data on
+# ifdef MACINTOSH_SIOUX
+#  pragma far_data on
   SIOUXSettings.initializeTB = 0;
-# pragma far_data off
-#endif
+#  pragma far_data off
+# endif
 
   scheme_handle_aewait_event = handle_one;
 

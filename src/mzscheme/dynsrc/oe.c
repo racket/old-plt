@@ -2,7 +2,9 @@
 /* This serves as a vague test of MzScheme's FFI, so it shows how to
    do especially stange things, such as defining Scheme classes and
    interfaces from C. It's somewhat annotated, but it's not good
-   example code in general. */
+   example code in general.
+
+   For example extensions, see plt/collects/mzscheme/examples. */
 
 #include "escheme.h"
 

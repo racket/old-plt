@@ -312,12 +312,14 @@
 	      (in-pattern '(quote body))
 	      (m&e (pat:make-match&env in-pattern kwd)))
 	(lambda (expr env attributes vocab)
-	  (let ((p-env (pat:match-against m&e expr env)))
-	    (if p-env
-	      (create-quote-form
-		(pat:pexpand 'body p-env kwd)
-		expr)
-	      (static-error expr "Malformed quote"))))))
+	  (if (and (z:list? expr)
+		(= 2 (z:sequence-length expr)))
+	    (let ((contents (expose-list expr)))
+	      (if (and (z:symbol? (car contents))
+		    (eq? 'quote (z:read-object (car contents))))
+		(create-quote-form (cadr contents) expr)
+		(static-error expr "Malformed quote")))
+	    (static-error expr "Malformed quote")))))
 
     (when (language>=? 'side-effecting)
       (add-micro-form 'set! scheme-vocabulary

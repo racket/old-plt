@@ -53,6 +53,6 @@
   (gui lang reductions '((lambda (x) (x x)) (lambda (x) (x x))))
   
   ;(gui lang reductions '((call/cc call/cc) (call/cc call/cc)))
-  (gui lang reductions '((lambda (x) ((call/cc call/cc) x)) (call/cc call/cc)))
+  ;(gui lang reductions '((lambda (x) ((call/cc call/cc) x)) (call/cc call/cc)))
   
   )

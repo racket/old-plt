@@ -1,82 +1,46 @@
 (module term mzscheme
+  (provide term term-let)
+  
+  (define-syntax (term orig-stx)
+    (define (rewrite stx)
+      (let loop ([stx stx])
+        (syntax-case stx (unquote unquote-splicing)
+          [(unquote x)
+           (with-syntax ([x-rewrite (loop (syntax x))])
+             (syntax (unsyntax x-rewrite)))]
+          [(unquote . x)
+           (raise-syntax-error 'term "malformed unquote" orig-stx stx)]
+          [(unquote-splicing x)
+           (with-syntax ([x-rewrite (loop (syntax x))])
+             (syntax (unsyntax-splicing x-rewrite)))]
+          [(unquote-splicing . x)
+           (raise-syntax-error 'term "malformed unquote splicing" orig-stx stx)]
+          [(x ...)
+           (with-syntax ([(x-rewrite ...) (map loop (syntax->list (syntax (x ...))))])
+             (syntax (x-rewrite ...)))]
+          [_ stx])))
 
+    (syntax-case orig-stx ()
+      [(_ arg)
+       (with-syntax ([rewritten (rewrite (syntax arg))])
+         (syntax (syntax-object->datum (quasisyntax rewritten))))]))
+  
   (define-syntax (term-let stx)
     (syntax-case stx ()
-      [(_ ((name rhs) ...) body)
-       (syntax (let-syntax ([name 'rhs] ...) body))]))
-  
-  (define-syntax (term stx)
-    
-    (define (rewrite-ellipses stx)
-      (let loop ([stx stx]
-                 [last #f])
-        (syntax-case stx (...)
-          [()
-           (if last
-               (with-syntax ([last last])
-                 (syntax (last)))
-               (syntax ()))]
-          [(dots . y)
-           (and (identifier? #'dots) (module-identifier=? #'dots (quote-syntax ...)))
-           (begin
-             (unless last
-               (raise-syntax-error 'term "misplaced ellipses" stx (syntax dots)))
-             (with-syntax ([y (loop (syntax y) #f)]
-                           [last last])
-               (syntax ((dots last) . y))))]
-          [(x . y)
-           (with-syntax ([y (loop (syntax y) (loop (syntax x) #f))])
-             (if last
-                 (with-syntax ([last last])
-                   (syntax (last . y)))
-                 (syntax y)))]
-          [id
-           (identifier? (syntax id))
-           stx])))
-
-    #|
-      ;; where else could these go?
-    (define (test-re in expected)
-      (let ([got (syntax-object->datum (rewrite-ellipses in))])
-        (unless (equal? got expected)
-          (error 'test-re "for ~s expected ~s got ~s"
-                 (syntax-object->datum in)
-                 expected 
-                 got))))
-    
-    (test-re (quote-syntax ()) '())
-    (test-re (quote-syntax x) 'x)
-    (test-re (quote-syntax (a)) '(a))
-    (test-re (quote-syntax (a b c)) '(a b c))
-    (test-re (quote-syntax (a ...)) '((... a)))
-    (test-re (quote-syntax (a b ... c)) '(a (... b) c))
-    (test-re (quote-syntax (a b ... c ...)) '(a (... b) (... c)))
-    |#    
-
-    (syntax-case stx ()
-      [(_ arg)
-       (let loop ([arg (syntax arg)])
-         (syntax-case arg ()
-           [x
-            (identifier? (syntax x))
-            (let ([v (syntax-local-value (syntax x) (lambda () #f))])
-              (if v
-                  v
-                  (syntax 'x)))]
-           [() (syntax '())]
-           [(dots y)
-            (and (identifier? #'dots) (module-identifier=? #'dots (quote-syntax ...)))
-            ...]
-           [(x . y)
-            (with-syntax ([x-stx (loop (syntax x))]
-                          [y-stx (loop (syntax y))])
-              (syntax (cons x-stx y-stx)))]))]))
-  
-  
+      [(_ ([x rhs] ...) body)
+       (syntax
+        (with-syntax ([x rhs] ...)
+          body))]
+      [_ (raise-syntax-error 'term-let "malformed term" stx)]))
+#|  
   (define (test stx exp)
     (unless (equal? (eval stx) exp)
-      (error)))
+      (error 'test "~s" (syntax-object->datum stx))))
   
-  (test
-   #'(term-let ([x 111]) (term (y x)))
-   (list 'y 111)))
+  (test (quote-syntax (term 1)) 1)
+  (test (quote-syntax (term (1 2))) (list 1 2))
+  (test (quote-syntax (term (1 ,(+ 1 1)))) (list 1 2))
+  (test (quote-syntax (term-let ([x 1]) (term (x x)))) (list 1 1))
+  (test (quote-syntax (term-let ([(x ...) (list 1 2 3)]) (term ((y x) ...)))) '((y 1) (y 2) (y 3)))
+|#
+)

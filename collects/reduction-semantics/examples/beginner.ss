@@ -1,3 +1,13 @@
+#|
+
+This is the semantics of Beginner Scheme, one of the
+languages in DrScheme.
+
+The first test case fails because the beginner spec
+is broken for that program (ie, the model faithfully
+reflects the (broken) spec).
+
+|#
 
 (module beginner mzscheme
   (require (lib "reduction-semantics.ss" "reduction-semantics")
@@ -22,10 +32,6 @@
   are there any primops that take zero arguments?
   (should that be syntacically disallowed?)
 
-  The first test case fails because the beginner spec
-  needs to be fixed for that program. Then, the test
-  case can be fixed.
-  
   |#
   
   (define lang

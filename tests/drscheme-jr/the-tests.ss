@@ -28,6 +28,10 @@ all-levels
 all-levels
 (lambda (x) 5)
 
+'inexact
+all-levels
+3.14
+
 'app
 all-levels
 (define test-define-f (lambda (x) 5)) 

@@ -58,13 +58,18 @@
 	(hash-table-put! <list-funcs> "hd" (cons (make-arrow (list (make-tlist (make-tvar "'a"))) (make-tvar "'a")) car))
 	(hash-table-put! <list-funcs> "tl" (cons (make-arrow (list (make-tlist (make-tvar "'a"))) (make-tlist (make-tvar "'a"))) cdr))
 	(hash-table-put! <list-funcs> "rev" (cons (make-arrow (list (make-tlist (make-tvar "'a"))) (make-tlist (make-tvar "'a"))) reverse))
-	(hash-table-put! <list-funcs> "map" (cons (make-arrow (list (make-arrow (list (make-tvar "'a")) (make-tvar "'b"))) (make-arrow (list (make-tlist (make-tvar "'a"))) (make-tlist (make-tvar "'b"))))  map))
-	(hash-table-put! <list-funcs> "filter" (cons (make-arrow (list (make-arrow (list (make-tvar "'a")) "bool")) (make-arrow (list (make-tlist (make-tvar "'a"))) (make-tlist (make-tvar "'a")))) filter))
+	(hash-table-put! <list-funcs> "map" (cons (make-arrow (list (make-arrow (list (make-tvar "'a")) (make-tvar "'b"))) (make-arrow (list (make-tlist (make-tvar "'a"))) (make-tlist (make-tvar "'b"))))  <map>))
+	(hash-table-put! <list-funcs> "filter" (cons (make-arrow (list (make-arrow (list (make-tvar "'a")) "bool")) (make-arrow (list (make-tlist (make-tvar "'a"))) (make-tlist (make-tvar "'a")))) <filter>))
 	(hash-table-put! <list-funcs> "append" (cons (make-arrow (list (make-tlist (make-tvar "'a"))) (make-arrow (list (make-tlist (make-tvar "'a"))) (make-tlist (make-tvar "'a")))) <append>))
+	(hash-table-put! <list-funcs> "length" (cons (make-arrow (list (make-tlist (make-tvar "'a"))) "int") length))
 
 	;; The string functions
+	(define (<uppercase> oldstr)
+	  (list->string (map char-upcase (string->list oldstr))))
+
 	(define <string-funcs> (make-hash-table 'equal))
 	(hash-table-put! <string-funcs> "length" (cons (make-arrow (list "string") "int") string-length))
+	(hash-table-put! <string-funcs> "uppercase" (cons (make-arrow (list "string") "string") <uppercase>))
 
 	;; The array functions
 	(define (array-get arr)
@@ -228,6 +233,20 @@
 	    (begin (set-box! b v)
 		   (make-<unit> #f))))
 
+	(define (<min> x)
+	  (lambda (y)
+	    (cond
+	     [(number? x) (if (< x y) x y)]
+	     [(string? x) (if (string<? x y) x y)]
+	     [(boolean? x) (if x y x)])))
+
+	(define (<max> x)
+	  (lambda (y)
+	    (cond
+	     [(number? x) (if (> x y) x y)]
+	     [(string? x) (if (string>? x y) x y)]
+	     [(boolean? x) (if x x y)])))
+
 	(define (<> a)
 	  (lambda (b)
 	    (not (equal? a b))))
@@ -307,6 +326,8 @@
 	(hash-table-put! built-in-and-user-funcs "<=" (cons (make-arrow (list (make-tvar "'a")) (make-arrow (list (make-tvar "'a")) "bool")) <le>))
 	(hash-table-put! built-in-and-user-funcs ">" (cons (make-arrow (list (make-tvar "'a")) (make-arrow (list (make-tvar "'a")) "bool")) <gt>))
 	(hash-table-put! built-in-and-user-funcs ">=" (cons (make-arrow (list (make-tvar "'a")) (make-arrow (list (make-tvar "'a")) "bool")) <ge>))
+	(hash-table-put! built-in-and-user-funcs "min" (cons (make-arrow (list (make-tvar "'a")) (make-arrow (list (make-tvar "'a")) (make-tvar "'a"))) <min>))
+	(hash-table-put! built-in-and-user-funcs "max" (cons (make-arrow (list (make-tvar "'a")) (make-arrow (list (make-tvar "'a")) (make-tvar "'a"))) <max>))
 	(hash-table-put! built-in-and-user-funcs "or" (cons (make-arrow (list "bool") (make-arrow (list "bool") "bool")) <or>))
 	(hash-table-put! built-in-and-user-funcs "||" (cons (make-arrow (list "bool") (make-arrow (list "bool") "bool")) <or>))
 	(hash-table-put! built-in-and-user-funcs "&&" (cons (make-arrow (list "bool") (make-arrow (list "bool") "bool")) <and>))

@@ -558,7 +558,7 @@
 			   (empty-context)
 			   (raise-syntax-error #f (format "Expected ~a but found ~a" type t2) patsyn))) ]
 		    [($ ast:ppat_tuple plist)
-		     (begin (pretty-print (format "plist: ~a" plist))
+		     (begin ;(pretty-print (format "plist: ~a" plist))
 			    
 			    (when (unify type (make-<tuple> (letrec 
 							      ([ftvarlist (lambda (len)

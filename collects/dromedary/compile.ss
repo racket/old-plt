@@ -459,7 +459,7 @@
 	     #`(begin
 ;		 (#,(create-syntax #f `match-define (build-src lsrc)) #,varpat #,val)
 		 (match-define #,varpat #,val)
-		 #,val))))
+		 #,varpat))))
 
 
      (define (compile-let rec bindings finalexpr context ksrc isrc)

@@ -244,6 +244,26 @@
 	;(make-pexp_assertfalse null)
 	(p-define-struct pexp_assertfalse (null))
 
+	; constant => const_int of int
+	;           | const_char of char
+	;           | const_string of string
+	;           | const_float of float
+	(define (constant? c)
+	  (or
+	   (const_int? c)
+	   (const_char? c)
+	   (const_string? c)
+	   (const_float? c)))
+
+	;(make-const_int int)
+	(p-define-struct const_int (c))
+	;(make-const_char char)
+	(p-define-struct const_char (c))
+	;(make-const_string string)
+	(p-define-struct const_string (c))
+	;(make-const_float float)
+	(p-define-struct const_float (c))
+	
 	; longident => lident of string
 	;            | ldot of longident * string
         ;            | lapply of longident * longident

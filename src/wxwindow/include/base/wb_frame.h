@@ -15,7 +15,7 @@
 #include "common.h"
 #include "wx_win.h"
 
-#define wxMAX_STATUS   5
+#define wxMAX_STATUS   1
 
 class wxMenuBar;
 class wxPanel ;

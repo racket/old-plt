@@ -29,9 +29,6 @@ class wxbItem: public wxWindow
 
    wxFont *buttonFont;
    wxFont *labelFont;
-   wxColour *backColour;
-   wxColour *labelColour;
-   wxColour *buttonColour;
 
    int labelPosition;
 
@@ -53,9 +50,6 @@ class wxbItem: public wxWindow
 
   inline virtual wxFont  *GetLabelFont(void)        { return labelFont ; }
   inline virtual wxFont  *GetButtonFont(void)       { return buttonFont ; }
-  inline virtual wxColour*GetBackgroundColour(void) { return backColour ; }
-  inline virtual wxColour*GetLabelColour(void)      { return labelColour ; }
-  inline virtual wxColour*GetButtonColour(void)     { return buttonColour ; }
 };
 
 #endif // wxb_itemh

@@ -46,7 +46,6 @@ Bool wxCheckBox::Create(wxPanel *panel, wxFunction func, char *Title, wxBitmap *
   } else if (!Title)
     Title = " "; // Apparently needed or checkbox won't show
 
-  SetName(name);
   panel->AddChild(this);
   wxWinType = wxTYPE_HWND;
   windowStyle = style;

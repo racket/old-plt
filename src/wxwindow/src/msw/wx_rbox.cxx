@@ -121,7 +121,6 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func,
                        int N, char **Choices, wxBitmap **bmChoices,
                        int MajorDim, long _style, char *name)
 {
-  SetName(name);
   panel->AddChild(this);
   if (MajorDim==0)
     MajorDim = N ;

@@ -77,21 +77,6 @@ void wxbPanel::SetButtonFont(wxFont *theFont)
   buttonFont = theFont;
 }
 
-void wxbPanel::SetBackgroundColour(wxColour *col)
-{
-  backColour = col;
-}
-
-void wxbPanel::SetLabelColour(wxColour *col)
-{
-  labelColour = col;
-}
-
-void wxbPanel::SetButtonColour(wxColour *col)
-{
-  buttonColour = col;
-}
-
 /*
  * Called if in editing mode
  */

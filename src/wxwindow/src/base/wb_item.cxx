@@ -25,9 +25,6 @@ wxbItem::wxbItem (wxPanel *panel)
     labelPosition = panel->label_position;
     buttonFont = panel->buttonFont;
     labelFont = panel->labelFont;
-    backColour = panel->backColour;
-    labelColour = panel->labelColour;
-    buttonColour = panel->buttonColour;
   }
 }
 

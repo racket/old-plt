@@ -57,7 +57,6 @@ Bool wxChoice::Create(wxPanel *panel, wxFunction func, char *Title,
 {
   panel->AddChild(this);
 
-  SetName(name);
   no_strings = N;
 
   wxWinType = wxTYPE_HWND;

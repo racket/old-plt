@@ -56,8 +56,6 @@ Bool wxButton::Create(wxPanel *panel, wxFunction Function,
     bm_label = bitmap;
   }
 
-  SetName(name);
-
   panel->AddChild(this);
   
   wxWinType = wxTYPE_HWND;

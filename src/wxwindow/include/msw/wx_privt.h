@@ -40,7 +40,6 @@ public:
     float last_y_pos;
     int last_event;
     HWND handle;
-    HANDLE accelerator_table;
     HMENU hMenu; // Menu, if any
 
     Bool mouse_in_window;
@@ -48,22 +47,17 @@ public:
     Bool is_dialog;
     Bool userColours; // Usually FALSE, wxUSER_COLOURS overrides CTL3D etc. settings
     HDC cdc;
-    HBRUSH background_brush;
-    COLORREF background_colour;
-    Bool background_transparent;
-    Bool canDeleteBackgroundBrush;
-    wxBrush *backgroundBrushAnchor;
 
     wxWindow *wx_window;
 
-    HDC ldc ;
-    int dc_count ;
+    HDC ldc;
+    int dc_count;
 
     wxWnd(void);
     ~wxWnd(void);
 
-    HDC GetHDC(void) ;
-    void ReleaseHDC(void) ;
+    HDC GetHDC(void);
+    void ReleaseHDC(void);
 
     void Create(wxWnd *parent, char *wclass, wxWindow *wx_win, char *title,
                int x, int y, int width, int height,
@@ -92,9 +86,6 @@ public:
     virtual void OnHScroll(WORD nSBCode, WORD pos, HWND control);
     virtual void OnVScroll(WORD nSBCode, WORD pos, HWND control);
     virtual BOOL OnCommand(WORD id, WORD cmd, HWND control);
-    virtual HBRUSH OnCtlColor(HDC dc, HWND pWnd, UINT nCtlColor,
-                              UINT message, WPARAM wParam, LPARAM lParam);
-    virtual BOOL OnColorChange(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
     virtual BOOL OnEraseBkgnd(HDC pDC);
     virtual void OnMenuSelect(WORD item, WORD flags, HMENU sysmenu);
     virtual void OnMenuClick();
@@ -119,10 +110,6 @@ public:
     virtual LONG DefWindowProc(UINT nMsg, WPARAM wParam, LPARAM lParam);
     virtual BOOL ProcessMessage(MSG* pMsg);
     virtual void DestroyWindow(void);
-
-    // Set background brush, deleting old one if necessary and
-    // noting whether we can delete the new one in future.
-    void SetBackgroundBrush(HBRUSH br, Bool canDelete, wxBrush *wxbr = NULL);
 
     // Detach "Window" menu from menu bar so it doesn't get deleted
     void DetachWindowMenu(void);
@@ -161,6 +148,7 @@ public:
 
   // Handlers
   BOOL OnEraseBkgnd(HDC pDC);
+  BOOL OnPaint(void);
 };
 
 class wxFrameWnd : public wxWnd
@@ -248,7 +236,7 @@ public:
 #define         wxTYPE_MDICHILD          4
 #define VIEWPORT_EXTENT 1000
 
-class wxFont ;
+class wxFont;
 
 void wxGetCharSize(HWND wnd, int *x, int *y,wxFont *the_font);
 void wxSliderEvent(HWND control, WORD wParam, WORD pos);

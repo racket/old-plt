@@ -26,20 +26,20 @@ public:
               char *dialog_template);
 
   // Handlers
-  LONG DefWindowProc(UINT nMsg, UINT wParam, LONG lParam);
+  LONG DefWindowProc(UINT nMsg, WPARAM wParam, LPARAM lParam);
   BOOL ProcessMessage(MSG* pMsg);
   BOOL OnEraseBkgnd(HDC pDC);
   BOOL OnClose(void);
 };
 
 wxDialogWnd::wxDialogWnd(wxWnd *parent, wxWindow *wx_win,
-              int x, int y, int width, int height,
-              char *dialog_template):
+			 int x, int y, int width, int height,
+			 char *dialog_template):
   wxSubWnd(parent, NULL, wx_win, x, y, width, height, 0, dialog_template)
 {
 }
-
-LONG wxDialogWnd::DefWindowProc(UINT nMsg, UINT wParam, LONG lParam)
+ 
+LONG wxDialogWnd::DefWindowProc(UINT nMsg, WPARAM wParam, LPARAM lParam)
 {
   return FALSE; /* Not processed */
 }
@@ -66,20 +66,9 @@ BOOL wxDialogWnd::OnClose(void)
 
 BOOL wxDialogWnd::OnEraseBkgnd(HDC pDC)
 {
-  if (background_brush)
-  {
-    RECT rect;
-    GetClientRect(handle, &rect);
-    int mode = SetMapMode(pDC, MM_TEXT);
-    FillRect(pDC, &rect, background_brush);
-    SetMapMode(pDC, mode);
-    return TRUE;
-  }
-  else return FALSE;
+  return FALSE;
 }
 
-// Dialog box - like panel but doesn't need a frame, and is modal or
-// non-modal
 wxDialogBox::wxDialogBox(wxWindow *Parent, char *Title, Bool Modal, 
                int x, int y, int width, int height, long style, char *name):
   wxbDialogBox((wxWindow *)Parent, Title, Modal, x, y, width, height, style, name)
@@ -90,21 +79,19 @@ wxDialogBox::wxDialogBox(wxWindow *Parent, char *Title, Bool Modal,
 Bool wxDialogBox::Create(wxWindow *Parent, char *Title, Bool Modal, 
                          int x, int y, int width, int height, long style, char *name)
 {
-  SetName(name);
-
   // Do anything that needs to be done in the generic base class
   wxbDialogBox::Create(Parent, Title, Modal, x, y, width, height, style, name);
 
-  has_child = FALSE ;
+  has_child = FALSE;
 
   hSpacing = PANEL_HSPACING;
   vSpacing = PANEL_VSPACING;
   
-  initial_hspacing = hSpacing ;
-  initial_vspacing = vSpacing ;
+  initial_hspacing = hSpacing;
+  initial_vspacing = vSpacing;
 
-  current_hspacing = hSpacing ;
-  current_vspacing = vSpacing ;
+  current_hspacing = hSpacing;
+  current_vspacing = vSpacing;
   
   labelFont = wxTheFontList->FindOrCreateFont(8, wxSYSTEM, wxNORMAL, wxNORMAL, FALSE);
   buttonFont = wxTheFontList->FindOrCreateFont(8, wxSYSTEM, wxNORMAL, wxNORMAL, FALSE);
@@ -124,20 +111,16 @@ Bool wxDialogBox::Create(wxWindow *Parent, char *Title, Bool Modal,
   modal_showing = FALSE;
 
   if (width < 0)
-    width = 0; // was 500
+    width = 0;
   if (height < 0)
-    height = 0; // was 500
+    height = 0;
 
   // Allows creation of dialogs with & without captions under MSWindows
   wxDialogWnd *wnd;
-  if (!(style & wxNO_CAPTION)) {
-    wnd = new wxDialogWnd(cparent, this, x, y, width, height,
-                          (style & wxMAXIMIZE) ? "wxCaptionResizeDialog" : "wxCaptionDialog");
-  }
-  else{
-    wnd = new wxDialogWnd(cparent, this, x, y, width, height,
-                          (style & wxMAXIMIZE) ? "wxNoCaptionResizeDialog" : "wxNoCaptionDialog");
-  }
+  wnd = new wxDialogWnd(cparent, this, x, y, width, height,
+			!(style & wxNO_CAPTION)
+			? ((style & wxMAXIMIZE) ? "wxCaptionResizeDialog" : "wxCaptionDialog")
+			: ((style & wxMAXIMIZE) ? "wxNoCaptionResizeDialog" : "wxNoCaptionDialog"));
 
   handle = (char *)wnd;
   SetWindowText(wnd->handle, Title);

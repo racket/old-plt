@@ -26,9 +26,6 @@ class wxItem: public wxbItem
  public:
    wxList *subControls; // For controls like radiobuttons which are really composite
    FARPROC oldWndProc; // For subclassed controls
-   wxBrush *backBrush;
-   int mswLastXPos, mswLastYPos;
-   int mswLastEvent;
    Bool isBeingDeleted; // Fudge because can't access parent
                         // when being deleted (don't know why)
 

@@ -33,21 +33,12 @@ class wxWindow: public wxbWindow
   HANDLE ms_handle;                   // For menus and hwnds: using 'handle'
                                       // causes too many compiler messages
   int wxWinType;                      // For knowing how to delete the object
-  int cxChar;
-  int cyChar;
   int windows_id;
-  Bool mouseInWindow ;
   Bool winEnabled;
   short internal_gray_disabled;
 
   RECT updateRect;             // Bounding box for screen damage area
   HRGN updateRgn;                  // NT allows access to the rectangle list
-
-  // Caret data
-  int caretWidth;
-  int caretHeight;
-  Bool caretEnabled;
-  Bool caretShown;
 
   wxWindow *focusWindow;
 

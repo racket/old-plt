@@ -892,6 +892,7 @@ void wxDC::SetBackground(wxColour *c)
 {
   current_background_color->CopyFrom(c);
 
+#if 0
   if (canvas) {
     wxCanvasWnd *wnd = (wxCanvasWnd *)canvas->handle;
     wxBrush *br = wxTheBrushList->FindOrCreateBrush(c, wxSOLID);
@@ -899,6 +900,7 @@ void wxDC::SetBackground(wxColour *c)
     wnd->background_colour = RGB(c->Red(), c->Green(), c->Blue());
     wnd->background_transparent = FALSE;
   }
+#endif
   
   HDC dc = ThisDC();
 

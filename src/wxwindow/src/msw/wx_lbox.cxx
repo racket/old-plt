@@ -49,7 +49,6 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func,
                        int x, int y, int width, int height,
                        int N, char **Choices, long style, char *name)
 {
-  SetName(name);
   panel->AddChild(this);
   multiple = Multiple & wxMULTIPLE_MASK;
   wxWinType = wxTYPE_HWND;

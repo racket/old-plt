@@ -90,10 +90,8 @@ class wxbWindow: public wxEvtHandler
  public:
   wxCursor *wx_cursor;                        // Window's cursor
 
-  Bool paintingEnabled;
   Bool winCaptured;
   char *handle;                                // Pointer to real window
-  char *windowName;                            // Window name
 
   wxFunction callback;                         // Callback associated with the window
   virtual void Callback(wxFunction);           // Adds callback
@@ -141,9 +139,6 @@ class wxbWindow: public wxEvtHandler
   // title; for items, this is the label or button text.
   inline virtual char *GetLabel(void) { return GetTitle(); }
 
-  inline virtual char *GetName(void) { return windowName; }
-  virtual void SetName(char *name);
-
   inline virtual void Fit(void) {};                  // Size window to fit contents
   inline virtual void Centre(int WXUNUSED(direction)) {};      // Centre item on panel,
                                                // or frame on screen
@@ -153,7 +148,6 @@ class wxbWindow: public wxEvtHandler
   // A concession to our friends across the pond
   inline void Center(int direction = wxHORIZONTAL) { Centre(direction); }
 
-  inline virtual void EnablePainting(Bool enable) { paintingEnabled = enable; }
   inline virtual void Paint(void) { OnPaint(); }
 
   virtual Bool PopupMenu(wxMenu *menu, float x, float y) = 0;

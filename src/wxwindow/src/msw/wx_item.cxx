@@ -54,9 +54,6 @@ wxItem::wxItem(wxPanel *pnl) : wxbItem(pnl)
 {
   isFafa = FALSE ;
   oldWndProc = 0;
-  mswLastXPos = 0;
-  mswLastYPos = 0;
-  mswLastEvent = 0;
   isBeingDeleted = FALSE;
 }
 

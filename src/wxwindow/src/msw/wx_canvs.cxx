@@ -37,8 +37,6 @@ Bool wxCanvas::
 Create (wxWindow * parent, int x, int y, int width, int height, long style,
 	char *name)
 {
-  SetName(name);
-
   wxWinType = wxTYPE_XWND;
   windowStyle = style;
   clipping = FALSE;
@@ -60,8 +58,6 @@ Create (wxWindow * parent, int x, int y, int width, int height, long style,
   msflags |= WS_CLIPSIBLINGS;
 
   wxCanvasWnd *wnd = new wxCanvasWnd (cparent, this, x, y, width, height, msflags);
-  wnd->SetBackgroundBrush((HBRUSH)GetStockObject(WHITE_BRUSH), FALSE);
-  wnd->background_colour = RGB(255, 255, 255);
   handle = (char *) wnd;
 
   if (parent)
@@ -405,8 +401,8 @@ void wxWnd::DeviceToLogical (float *x, float *y)
 }
 
 wxCanvasWnd::wxCanvasWnd (wxWnd * parent, wxWindow * wx_win,
-	     int x, int y, int width, int height, DWORD style):
-wxSubWnd (parent, wxCanvasClassName, wx_win, x, y, width, height, style)
+			  int x, int y, int width, int height, DWORD style)
+: wxSubWnd (parent, wxCanvasClassName, wx_win, x, y, width, height, style)
 {
   is_canvas = TRUE;
 }
@@ -414,23 +410,42 @@ wxSubWnd (parent, wxCanvasClassName, wx_win, x, y, width, height, style)
 
 BOOL wxCanvasWnd::OnEraseBkgnd (HDC pDC)
 {
-  if (background_brush)
-    {
-      RECT rect;
-      GetClientRect (handle, &rect);
-      int mode = SetMapMode (pDC, MM_TEXT);
-      FillRect (pDC, &rect, background_brush);
-      SetMapMode (pDC, mode);
+  RECT rect;
+  GetClientRect(handle, &rect);
+  int mode = SetMapMode(pDC, MM_TEXT);
+  FillRect(pDC, &rect, (HBRUSH)GetStockObject(WHITE_BRUSH));
+  SetMapMode(pDC, mode);
 
-      wxCanvas *canvas = (wxCanvas *) wx_window;
-	  if (canvas->wx_dc) {
-        SetViewportExtEx (pDC, VIEWPORT_EXTENT, VIEWPORT_EXTENT, NULL);
-        SetWindowExtEx (pDC, canvas->wx_dc->window_ext_x, canvas->wx_dc->window_ext_y, NULL);
-	  }
-
-      return TRUE;
-    }
-  else
-    return FALSE;
+  wxCanvas *canvas = (wxCanvas *)wx_window;
+  if (canvas->wx_dc) {
+    SetViewportExtEx(pDC, VIEWPORT_EXTENT, VIEWPORT_EXTENT, NULL);
+    SetWindowExtEx(pDC, canvas->wx_dc->window_ext_x, canvas->wx_dc->window_ext_y, NULL);
+  }
+  
+  return TRUE;
 }
 
+BOOL wxCanvasWnd::OnPaint(void)
+{
+  int retval = 0;
+
+  if (wx_window) {
+    HRGN tRgn;
+    tRgn = CreateRectRgn(0,0,0,0);
+    
+    if (GetUpdateRgn(handle, tRgn, FALSE)) {
+      PAINTSTRUCT ps;
+
+      cdc = BeginPaint(handle, &ps);
+      wx_window->OnPaint();
+      EndPaint(handle, &ps);
+      cdc = NULL;
+      
+      retval = 1;
+    }
+    
+    DeleteObject(tRgn);
+  }
+
+  return retval;
+}

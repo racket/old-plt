@@ -74,11 +74,11 @@ void wxInitialize(HINSTANCE hInstance)
   wndclass.style         = CS_HREDRAW | CS_VREDRAW;
   wndclass.lpfnWndProc   = (WNDPROC)wxWndProc;
   wndclass.cbClsExtra    = 0;
-  wndclass.cbWndExtra    = sizeof( DWORD ); // was 4
+  wndclass.cbWndExtra    = sizeof(DWORD);
   wndclass.hInstance     = hInstance;
   wndclass.hIcon         = wxSTD_FRAME_ICON;
-  wndclass.hCursor       = NULL /* LoadCursor( NULL, IDC_ARROW ) */;
-  wndclass.hbrBackground =  (HBRUSH)(COLOR_BTNFACE+1) ;
+  wndclass.hCursor       = NULL;
+  wndclass.hbrBackground = (HBRUSH)(COLOR_BTNFACE+1);
   wndclass.lpszMenuName  = NULL;
   wndclass.lpszClassName = wxFrameClassName;
 
@@ -92,11 +92,11 @@ void wxInitialize(HINSTANCE hInstance)
   wndclass1.style         = CS_HREDRAW | CS_VREDRAW;
   wndclass1.lpfnWndProc   = (WNDPROC)wxWndProc;
   wndclass1.cbClsExtra    = 0;
-  wndclass1.cbWndExtra    = sizeof( DWORD ); // was 4
+  wndclass1.cbWndExtra    = sizeof(DWORD);
   wndclass1.hInstance     = hInstance;
   wndclass1.hIcon         = wxSTD_FRAME_ICON;
-  wndclass1.hCursor       = NULL /* LoadCursor( NULL, IDC_ARROW ) */;
-  wndclass1.hbrBackground =  (HBRUSH)(COLOR_APPWORKSPACE+1) ;
+  wndclass1.hCursor       = NULL;
+  wndclass1.hbrBackground = (HBRUSH)(COLOR_APPWORKSPACE+1);
   wndclass1.lpszMenuName  = NULL;
 
   wndclass1.lpszClassName = wxMDIFrameClassName;
@@ -110,11 +110,11 @@ void wxInitialize(HINSTANCE hInstance)
   wndclass4.style         = CS_HREDRAW | CS_VREDRAW;
   wndclass4.lpfnWndProc   = (WNDPROC)wxWndProc;
   wndclass4.cbClsExtra    = 0;
-  wndclass4.cbWndExtra    = sizeof( DWORD ); // was 4
+  wndclass4.cbWndExtra    = sizeof(DWORD);
   wndclass4.hInstance     = hInstance;
   wndclass4.hIcon         = wxSTD_FRAME_ICON;
-  wndclass4.hCursor       = NULL /* LoadCursor( NULL, IDC_ARROW ) */;
-  wndclass4.hbrBackground =  (HBRUSH)(COLOR_BTNFACE+1) ;
+  wndclass4.hCursor       = NULL;
+  wndclass4.hbrBackground = (HBRUSH)(COLOR_BTNFACE+1);
   wndclass4.lpszMenuName  = NULL;
   wndclass4.lpszClassName = wxMDIChildFrameClassName;
 
@@ -130,11 +130,11 @@ void wxInitialize(HINSTANCE hInstance)
   wndclass2.style         = CS_HREDRAW | CS_VREDRAW;
   wndclass2.lpfnWndProc   = (WNDPROC)wxWndProc;
   wndclass2.cbClsExtra    = 0;
-  wndclass2.cbWndExtra    = sizeof( DWORD ); // was 4
+  wndclass2.cbWndExtra    = sizeof(DWORD);
   wndclass2.hInstance     = hInstance;
   wndclass2.hIcon         = NULL;
   wndclass2.hCursor       = NULL;
-  wndclass2.hbrBackground = (HBRUSH)GetStockObject( LTGRAY_BRUSH );
+  wndclass2.hbrBackground = (HBRUSH)(COLOR_BTNFACE+1);
   wndclass2.lpszMenuName  = NULL;
   wndclass2.lpszClassName = wxPanelClassName;
   if (!RegisterClass( &wndclass2 ))
@@ -146,14 +146,14 @@ void wxInitialize(HINSTANCE hInstance)
   memset(&wndclass3, 0, sizeof(WNDCLASS));   // start with NULL defaults
   // Use CS_OWNDC to avoid messing about restoring the context
   // for every graphic operation.
-  wndclass3.style         = CS_HREDRAW | CS_VREDRAW | CS_OWNDC | CS_DBLCLKS ; 
+  wndclass3.style         = CS_HREDRAW | CS_VREDRAW | CS_OWNDC | CS_DBLCLKS; 
   wndclass3.lpfnWndProc   = (WNDPROC)wxWndProc;
   wndclass3.cbClsExtra    = 0;
-  wndclass3.cbWndExtra    = sizeof( DWORD ); // was 4
+  wndclass3.cbWndExtra    = sizeof(DWORD); // was 4
   wndclass3.hInstance     = hInstance;
   wndclass3.hIcon         = NULL;
   wndclass3.hCursor       = NULL;
-  wndclass3.hbrBackground = (HBRUSH)(COLOR_WINDOW+1) ;
+  wndclass3.hbrBackground = (HBRUSH)(COLOR_WINDOW+1);
   wndclass3.lpszMenuName  = NULL;
   wndclass3.lpszClassName = wxCanvasClassName;
   if (!RegisterClass( &wndclass3))
@@ -485,12 +485,12 @@ HBRUSH SetupBackground(HWND wnd)
   if (strncmp(tmp,wxCanvasClassName,127)==0
       || strncmp(tmp,wxMDIChildFrameClassName,127)==0)
   {
-    SetClassLong(wnd,GCL_HBRBACKGROUND,(LONG)NULL) ;
+    SetClassLong(wnd,GCL_HBRBACKGROUND,(LONG)NULL);
     return brushBack;
   } else if (strncmp(tmp,wxFrameClassName,127)==0
 	     || strncmp(tmp,wxMDIFrameClassName,127)==0)
   {
-    SetClassLong(wnd,GCL_HBRBACKGROUND,(LONG)NULL) ;
+    SetClassLong(wnd,GCL_HBRBACKGROUND,(LONG)NULL);
     return brushFrame;
   }
 

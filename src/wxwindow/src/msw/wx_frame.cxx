@@ -44,7 +44,6 @@ Bool wxFrame::Create(wxFrame *Parent, char *title, int x, int y,
 {
   wxbFrame::Create(Parent, title, x, y, width, height, style, name);
   
-  SetName(name);
   frame_type = style & (wxSDI | wxMDI_PARENT | wxMDI_CHILD);
   if (!frame_type) frame_type = wxSDI;
   windowStyle = style;

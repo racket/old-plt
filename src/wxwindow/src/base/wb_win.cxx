@@ -19,11 +19,9 @@ wxbWindow::wxbWindow(void)
   window_parent = NULL;
   font = NULL;
   handle = NULL;
-  windowName = NULL;
   callback = 0;
   wx_cursor = NULL /* wxSTANDARD_CURSOR */;
   children = new wxChildList;
-  paintingEnabled = TRUE;
   winCaptured = FALSE;
   internal_disabled = 0;
   is_shown = 1;
@@ -33,8 +31,6 @@ wxbWindow::wxbWindow(void)
 // Destructor
 wxbWindow::~wxbWindow(void)
 {
-  if (windowName)
-    delete[] windowName;
 }
 
 char *wxbWindow::GetHandle(void)
@@ -126,16 +122,6 @@ void wxbWindow::MakeModal(Bool modal)
       node = node->Next();
     }
   }
-}
-
-void wxbWindow::SetName(char *name)
-{
-  if (windowName)
-    delete[] windowName;
-  if (name)
-    windowName = copystring(name);
-  else
-    windowName = NULL;
 }
 
 // If nothing defined for this, try the parent.

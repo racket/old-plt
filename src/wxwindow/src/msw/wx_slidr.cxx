@@ -29,7 +29,6 @@ wxSlider::wxSlider(wxPanel *panel, wxFunction func, char *label, int value,
 Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
            int min_value, int max_value, int width, int x, int y, long style, char *name)
 {
-  SetName(name);
   panel->AddChild(this);
   wxWinType = wxTYPE_HWND;
   windowStyle = style;

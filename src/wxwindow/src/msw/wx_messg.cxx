@@ -25,7 +25,6 @@ wxMessage::wxMessage(wxPanel *panel, wxBitmap *image, int x, int y, long style, 
   
 Bool wxMessage::Create(wxPanel *panel, char *label, int x, int y, long style, char *name)
 {
-  SetName(name);
   panel->AddChild(this);
   wxWinType = wxTYPE_HWND;
   windowStyle = style;
@@ -65,13 +64,7 @@ Bool wxMessage::Create(wxPanel *panel, wxBitmap *image, int x, int y, long style
   image->selectedIntoDC++;
   bm_label = image;
 
-  SetName(name);
   if (panel) panel->AddChild(this);
-  buttonFont = panel->buttonFont ;
-  labelFont = panel->labelFont ;
-  backColour = panel->backColour ;
-  labelColour = panel->labelColour ;
-  buttonColour = panel->buttonColour ;
   wxWinType = wxTYPE_HWND;
   windowStyle = style;
   wxWnd *cparent = NULL;

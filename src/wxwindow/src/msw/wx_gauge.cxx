@@ -25,7 +25,6 @@ Bool wxGauge::Create(wxPanel *panel, char *label,
 		     int range, int x, int y, int width, int height,
 		     long style, char *name)
 {
-  SetName(name);
   panel->AddChild(this);
 
   static_label = 0;

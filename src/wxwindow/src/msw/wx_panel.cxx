@@ -13,7 +13,7 @@
 
 #include "wx_dcpan.h"
 
-extern char wxCanvasClassName[];
+extern char wxPanelClassName[];
 
 class wxPanelWnd : public wxSubWnd
 {
@@ -43,21 +43,12 @@ LONG wxPanelWnd::DefWindowProc(UINT nMsg, UINT wParam, LONG lParam)
 
 BOOL wxPanelWnd::ProcessMessage(MSG* pMsg)
 {
-    return FALSE;
+  return FALSE;
 }
 
 BOOL wxPanelWnd::OnEraseBkgnd(HDC pDC)
 {
-  if (background_brush)
-  {
-    RECT rect;
-    GetClientRect(handle, &rect);
-    int mode = SetMapMode(pDC, MM_TEXT);
-    FillRect(pDC, &rect, background_brush);
-    SetMapMode(pDC, mode);
-    return TRUE;
-  }
-  else return FALSE;
+  return FALSE;
 }
 
 wxPanel::wxPanel(void)
@@ -83,9 +74,6 @@ wxPanel::wxPanel(void)
   last_created = 0;
   labelFont = NULL;
   buttonFont = NULL;
-  backColour = NULL;
-  labelColour = NULL;
-  buttonColour = NULL;
 }
 
 // Constructor
@@ -105,22 +93,14 @@ Bool wxPanel::Create(wxWindow *parent, int x, int y, int width, int height, long
   if (!parent)
     return FALSE;
 
-  SetName(name);
-
   if (wxSubType(parent->__type, wxTYPE_PANEL)) {
     wxPanel *parentPanel = (wxPanel *)parent;
     parentPanel->GetValidPosition(&x,&y);
     labelFont = parentPanel->labelFont;
     buttonFont = parentPanel->buttonFont;
-    backColour = parentPanel->backColour;
-    labelColour = parentPanel->labelColour;
-    buttonColour = parentPanel->buttonColour;
   } else {
     labelFont = wxTheFontList->FindOrCreateFont(8, wxSYSTEM, wxNORMAL, wxNORMAL, FALSE);
     buttonFont = wxTheFontList->FindOrCreateFont(8, wxSYSTEM, wxNORMAL, wxNORMAL, FALSE);
-    backColour = NULL;
-    labelColour = NULL;
-    buttonColour = NULL;
   }
 
   cursor_x = PANEL_LEFT_MARGIN;
@@ -152,7 +132,7 @@ Bool wxPanel::Create(wxWindow *parent, int x, int y, int width, int height, long
     exflags |= WS_EX_STATICEDGE;
   msflags |= WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS;
 
-  wxPanelWnd *wnd = new wxPanelWnd(cparent, wxCanvasClassName, this, x, y, width, height, 
+  wxPanelWnd *wnd = new wxPanelWnd(cparent, wxPanelClassName, this, x, y, width, height, 
 				   msflags, exflags);
 
   handle = (char *)wnd;

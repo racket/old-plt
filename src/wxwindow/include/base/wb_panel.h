@@ -47,9 +47,6 @@ class wxbPanel: public wxCanvas
 
   wxFont *labelFont;
   wxFont *buttonFont;
-  wxColour *backColour;
-  wxColour *labelColour;
-  wxColour *buttonColour;
 
   wxbPanel(void);
   wxbPanel(wxWindow *window,
@@ -66,9 +63,6 @@ class wxbPanel: public wxCanvas
 
   virtual void SetButtonFont(wxFont *font);
   virtual void SetLabelFont(wxFont *font);
-  virtual void SetButtonColour(wxColour *col);
-  virtual void SetLabelColour(wxColour *col);
-  virtual void SetBackgroundColour(wxColour *col);
 
   wxObject *GetChild(int number);
 

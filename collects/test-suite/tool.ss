@@ -82,6 +82,20 @@
                  (demand-callback has-editor-on-demand))])
           (let ([parent (find-scheme-menu (get-special-menu))])
             (and parent
+;                 (new menu-item%
+;                      (parent parent)
+;                      (label (string-constant test-case-convert-to-box))
+;                      (callback
+;                       (lambda (menu event)
+;                         (let ([text (get-edit-target-object)])
+;                           (let ([s (send text get-start-position)]
+;                                 [e (send text get-end-position)])
+;                             (if (= s e)
+;                                 (message-box (string-constant test-case-menu-title)
+;                                              (string-constant test-case-no-selection))
+;                                 (let ([str (
+;                                 
+;                         ...)))
                  (new menu-item%
                       (parent parent)
                       (label (string-constant test-case-disable-all))

@@ -7,6 +7,7 @@
    (lib "etc.ss")
    (lib "list.ss")
    (lib "mred.ss" "mred")
+   (lib "framework.ss" "framework")
    (lib "tool.ss" "drscheme")
    (lib "aligned-pasteboard.ss" "mrlib")
    (lib "match.ss")
@@ -158,7 +159,7 @@
                           (parent error-panel)
                           (stretchable-width false)
                           (stretchable-height false))]
-           [error-text (instantiate text% ()
+           [error-text (instantiate (text:hide-caret/selection-mixin text:basic%) ()
                          (auto-wrap true))]
            [ec (instantiate editor-canvas% ()
                  (parent error-panel)
@@ -166,6 +167,8 @@
                  (style '(no-hscroll))
                  (stretchable-height true)
                  (stretchable-width true))])
+          
+          (send error-text hide-caret true)
           
           (instantiate message% ()
             (parent label-panel)
@@ -201,22 +204,24 @@
                           (send sd set-delta-background "lightpink")
                           (send text change-style sd start stop))
                         (highlight-errors errors)])])
-              (drscheme:debug:make-debug-error-display-handler/text
-               (lambda () error-text)
-               (lambda (text thunk) (thunk))
-               highlight-errors
-               (lambda (msg exn)
-                 (send* error-text
-                   (lock false)
-                   (erase)
-                   (lock true))
-                 (drscheme:rep:insert-error-in-text/highlight-errors
-                  error-text
-                  highlight-errors
-                  msg exn
-                  false)
-                 (show-error-panel)
-                 ((super-get-error-handler) msg exn)))))
+              (lambda (msg exn)
+                (send* error-text
+                  (lock false)
+                  (erase)
+                  (lock true))
+                ((drscheme:debug:make-debug-error-display-handler/text
+                 (lambda () error-text)
+                 (lambda (text thunk) (thunk))
+                 (lambda (text info) (highlight-errors info))
+                 (lambda (msg exn)
+                   (drscheme:rep:insert-error-in-text/highlight-errors
+                    error-text
+                    highlight-errors
+                    msg exn
+                    false)
+                   (show-error-panel)
+                   ((super-get-error-handler) msg exn)))
+                 msg exn))))
             
           ;; hide-error-panel (-> void?)
           ;; hide the error display

@@ -1899,7 +1899,9 @@ void scheme_process_block_w_process(float sleep_time, Scheme_Process *p)
 	/* Blocked on nestee */
       } else if (next->running & MZTHREAD_KILLED) {
 	/* This one has been terminated. */
-	if ((next->running & MZTHREAD_NEED_KILL_CLEANUP) || next->nester) {
+	if ((next->running & MZTHREAD_NEED_KILL_CLEANUP) 
+	    || next->nester
+	    || !next->next) {
 	  /* The thread needs to clean up. Swap it in so it can die. */
 	  break;
 	} else

@@ -97,7 +97,7 @@ is stored in a module top-level and that's namespace-specific.
       (define stupid-internal-define-syntax1
         (maybe-add-candidate (build-path (collection-path "doc") 'up) internal-host))
       (define stupid-internal-define-syntax2
-        (maybe-add-candidate (build-path (find-system-path 'addon-dir) (version)) addon-host))
+        (maybe-add-candidate (build-path (find-system-path 'addon-dir)) addon-host))
       
       ; given a manual path, convert to absolute Web path
       ; manual path is an anchored path to a collects/doc manual, never a servlet
@@ -108,7 +108,6 @@ is stored in a module top-level and that's namespace-specific.
               ;; shouldn't happen, unless documentation is found outside the user's addon dir
               ;; and also outside the PLT tree.
               [(null? candidates) "/cannot-find-docs.html"]
-              
               [else
                (let ([candidate (car candidates)])
                  (cond

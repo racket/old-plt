@@ -94,8 +94,10 @@ class wxbMenuBar: public wxItem
   // menu too if itemMenu is non-NULL.
   wxMenuItem *FindItemForId(int itemId, wxMenu **menuItem = NULL);
 
+  int Number();
+
   /* MATTHEW: [6] */
-  virtual void Delete(wxMenu *menu, int index = 0);
+  virtual Bool Delete(wxMenu *menu, int index = 0);
   virtual Bool OnAppend(wxMenu *menu, char *title) = 0;
   virtual Bool OnDelete(wxMenu *menu, int index) = 0;
 };

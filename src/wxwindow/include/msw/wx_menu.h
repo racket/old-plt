@@ -50,9 +50,11 @@ class wxMenu: public wxbMenu
   void Break(void) ;
 
   /* MATTHEW: [6] */
-  void DeleteItem(int, int);
-  void Delete(int id);
-  void DeleteByPosition(int pos);
+  Bool DeleteItem(int, int);
+  Bool Delete(int id);
+  Bool DeleteByPosition(int pos);
+
+  int Number(void);
 
   BOOL MSWCommand(UINT param, WORD id);
 };

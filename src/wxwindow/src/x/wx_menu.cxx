@@ -270,7 +270,7 @@ void wxMenu:: Append (int Id, char *Label, wxMenu * SubMenu, char *helpString)
 }
 
 /* MATTHEW: [6] New method */
-void wxMenu::DeleteItem(int Id, int  Pos)
+Bool wxMenu::DeleteItem(int Id, int  Pos)
 {
   wxMenuItem *item = NULL;
   wxNode *node;
@@ -283,7 +283,7 @@ void wxMenu::DeleteItem(int Id, int  Pos)
   }
 
   if (!node)
-    return;
+    return FALSE;
 
 #ifdef wx_motif
   item->DestroyItem(TRUE);
@@ -301,16 +301,25 @@ void wxMenu::DeleteItem(int Id, int  Pos)
   }
 
   menuItems.DeleteObject(item);
+
+  --no_items;
+
+  return TRUE;
 }
 
-void wxMenu::Delete(int Id)
+Bool wxMenu::Delete(int Id)
 {
-  DeleteItem(Id, -1);
+  return DeleteItem(Id, -1);
 }
 
-void wxMenu::DeleteByPosition(int Id)
+Bool wxMenu::DeleteByPosition(int Id)
 {
-  DeleteItem(0, Id);
+  return DeleteItem(0, Id);
+}
+
+int wxMenu::Number()
+{
+  return no_items;
 }
 
 void wxMenu:: Enable (int Id, Bool Flag)

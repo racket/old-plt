@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994     
- * RCS_ID:      $Id: wx_win.cxx,v 1.5 1998/04/11 13:58:21 mflatt Exp $
+ * RCS_ID:      $Id: wx_win.cxx,v 1.6 1998/04/11 21:59:26 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -306,131 +306,68 @@ void wxWindow::SetFocus(void)
 
 
 void wxWindow::ChangeToGray(Bool gray)
-
 {
-
   /* Nothing extra to do over enabling */
-
 }
-
-
 
 Bool wxWindow::IsGray(void)
-
 {
-
   return !winEnabled || internal_gray_disabled;
-
 }
-
-
 
 void wxWindow::InternalEnable(Bool enable, Bool gray)
-
 {
-
   Bool do_something;
-
   short start_igd = internal_gray_disabled;
 
-  
-
   if (!enable) {
-
     do_something = !internal_disabled;
-
     internal_disabled++;
-
     if (gray)
-
       internal_gray_disabled++;
-
   } else { 
-
     --internal_disabled;
-
     do_something = !internal_disabled;
-
     if (gray)
-
       --internal_gray_disabled;
-
   }
-
-
 
   if (do_something && winEnabled) {
-
     HWND hWnd = GetHWND();
-
     if (hWnd)
-
       ::EnableWindow(hWnd, (BOOL)enable);
-
   }
-
-
 
   if ((!!internal_gray_disabled != !!start_igd) && winEnabled)
-
     ChangeToGray(!!internal_gray_disabled);
-
 }
-
-
 
 void wxWindow::Enable(Bool enable)
-
 {
-
   if (winEnabled == !!enable)
-
     return;
 
-
-
   winEnabled = enable;
-
   
-
   if (!internal_disabled) {
-
     HWND hWnd = GetHWND();
-
     if (hWnd)
-
       ::EnableWindow(hWnd, (BOOL)enable);
-
   }
-
-
 
   /* Doing handle sensitive makes it gray: */
-
   if (!internal_gray_disabled)
-
     ChangeToGray(!enable);
-
 }
-
-
 
 void wxWindow::InternalGrayChildren(Bool gray)
-
 {
-
   wxChildNode *cn;
-
   for (cn = GetChildren()->First(); cn; cn = cn->Next()) {
-
     wxWindow *w = (wxWindow *)cn->Data();
-
     w->InternalEnable(!gray, TRUE);
-
   }
-
 }
-
 
 void wxWindow::CaptureMouse(void)
 {

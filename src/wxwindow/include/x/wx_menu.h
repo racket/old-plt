@@ -72,9 +72,11 @@ class wxMenu: public wxbMenu
   void Break(void) ;
 
   /* MATTHEW: [6] */
-  void DeleteItem(int id, int pos);
-  void Delete(int id);
-  void DeleteByPosition(int pos);
+  Bool DeleteItem(int id, int pos);
+  Bool Delete(int id);
+  Bool DeleteByPosition(int pos);
+
+  int Number(void);
 
 #ifdef wx_motif
   Widget CreateMenu(wxMenuBar *menuBar, Widget parent, wxMenu *topMenu,

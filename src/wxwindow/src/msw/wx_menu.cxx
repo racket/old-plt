@@ -121,11 +121,11 @@ void wxMenu::Append(int Id, char *Label, char *helpString, Bool checkable)
 
   if (Id==-2)
   {
-	 int ms_flag = MF_DISABLED;
-	 if (ms_handle)
-		EnableMenuItem((HMENU)ms_handle, no_items, MF_BYPOSITION | ms_flag);
-	 else if (save_ms_handle) // For Dynamic Menu Append, Thx!!
-		EnableMenuItem((HMENU)save_ms_handle, no_items, MF_BYPOSITION | ms_flag);
+    int ms_flag = MF_DISABLED;
+    if (ms_handle)
+      EnableMenuItem((HMENU)ms_handle, no_items, MF_BYPOSITION | ms_flag);
+    else if (save_ms_handle) // For Dynamic Menu Append, Thx!!
+      EnableMenuItem((HMENU)save_ms_handle, no_items, MF_BYPOSITION | ms_flag);
   }
 
   no_items ++;
@@ -193,7 +193,7 @@ void wxMenu::Append(int Id, char *Label, wxMenu *SubMenu, char *helpString)
 }
 
 /* MATTHEW: [6] Add method; does not delete removed submenus */
-void wxMenu::DeleteItem(int id, int Pos)
+Bool wxMenu::DeleteItem(int id, int Pos)
 {
   wxNode *node;
   wxMenuItem *item;
@@ -201,76 +201,85 @@ void wxMenu::DeleteItem(int id, int Pos)
   HMENU menu;
 
   for (pos = 0, node = menuItems.First(); node && Pos--; node = node->Next(), pos++) {
-	 item = (wxMenuItem *)node->Data();
-	 if ((Pos < 0) && (item->itemId == id))
-		break;
+    item = (wxMenuItem *)node->Data();
+    if ((Pos < 0) && (item->itemId == id))
+      break;
   }
 
   if (!node)
-	return;
+    return FALSE;
+  
+  item = (wxMenuItem *)node->Data();
 
   menu = (HMENU)(ms_handle ? ms_handle : save_ms_handle);
 
   if (item->subMenu) {
-	 RemoveMenu(menu, (UINT)pos, MF_BYPOSITION);
-	 item->subMenu->ms_handle = item->subMenu->save_ms_handle;
-	 item->subMenu->save_ms_handle = NULL;
+    RemoveMenu(menu, (UINT)pos, MF_BYPOSITION);
+    item->subMenu->ms_handle = item->subMenu->save_ms_handle;
+    item->subMenu->save_ms_handle = NULL;
 #if 0
-	 item->subMenu->window_parent = NULL;
-	 RemoveChild(item->subMenu); /* MATTHEW: [11] */
+    item->subMenu->window_parent = NULL;
+    RemoveChild(item->subMenu); /* MATTHEW: [11] */
 #endif
-	 item->subMenu->top_level_menu = NULL;
+    item->subMenu->top_level_menu = NULL;
   } else
-	 DeleteMenu(menu, (UINT)pos, MF_BYPOSITION);
-
+    DeleteMenu(menu, (UINT)pos, MF_BYPOSITION);
+  
   menuItems.DeleteNode(node);
   delete item;
+
+  --no_items;
+
+  return TRUE;
 }
 
-void wxMenu::Delete(int id)
+Bool wxMenu::Delete(int id)
 {
-  DeleteItem(id, -1);
+  return DeleteItem(id, -1);
 }
 
-void wxMenu::DeleteByPosition(int pos)
+Bool wxMenu::DeleteByPosition(int pos)
 {
-  DeleteItem(0, pos);
+  return DeleteItem(0, pos);
+}
+
+int wxMenu::Number()
+{
+  return no_items;
 }
 
 void wxMenu::Enable(int Id, Bool Flag)
 {
   int ms_flag;
   if (Flag)
-	 ms_flag = MF_ENABLED;
+    ms_flag = MF_ENABLED;
   else
-	 ms_flag = MF_GRAYED;
-
+    ms_flag = MF_GRAYED;
+  
   wxMenuItem *item = FindItemForId(Id) ;
   if (item==NULL)
-	 return;
+    return;
 
   if (item->subMenu==NULL)
   {
-	 // Because you reset ms_handle, that cannot works in cascaded menus, no???
-	 if (ms_handle)
-		EnableMenuItem((HMENU)ms_handle, Id, MF_BYCOMMAND | ms_flag);
-	 else if (save_ms_handle)
-		EnableMenuItem((HMENU)save_ms_handle, Id, MF_BYCOMMAND | ms_flag);
-  }
-  else
-  {
-	 wxMenu *father = item->subMenu->top_level_menu ;
-	 wxNode *node = father->menuItems.First() ;
-	 int i=0 ;
-	 while (node)
-	 {
-		wxMenuItem *matched = (wxMenuItem*)node->Data() ;
-		if (matched==item)
-		  break ;
-		i++ ;
-		node = node->Next() ;
-	 }
-	 EnableMenuItem((HMENU)father->save_ms_handle, i, MF_BYPOSITION | ms_flag);
+    HMENU mh = ms_handle ? (HMENU)ms_handle : (HMENU)save_ms_handle;
+    // Because you reset ms_handle, that cannot works in cascaded menus, no???
+    if (mh)
+      EnableMenuItem(mh, Id, MF_BYCOMMAND | ms_flag);
+  } else {
+    wxMenu *father = item->subMenu->top_level_menu;
+    wxNode *node = father->menuItems.First();
+    int i=0;
+    while (node) {
+      wxMenuItem *matched = (wxMenuItem*)node->Data() ;
+      if (matched==item)
+	break ;
+      i++ ;
+      node = node->Next();
+    }
+    HMENU mh = father->ms_handle ? (HMENU)father->ms_handle : (HMENU)father->save_ms_handle;
+    if (mh)
+      EnableMenuItem(mh, i, MF_BYPOSITION | ms_flag);
   }
 }
 
@@ -278,51 +287,50 @@ void wxMenu::Check(int Id, Bool Flag)
 {
   wxMenuItem *item = FindItemForId(Id) ;
   if (!item || !item->checkable)
-	 return ;
+    return;
   int ms_flag;
+  HMENU mh = ms_handle ? (HMENU)ms_handle : (HMENU)save_ms_handle;
+
   if (Flag)
-	 ms_flag = MF_CHECKED;
+    ms_flag = MF_CHECKED;
   else
-	 ms_flag = MF_UNCHECKED;
-  if (ms_handle)
-	 CheckMenuItem((HMENU)ms_handle, Id, MF_BYCOMMAND | ms_flag);
-  else if (save_ms_handle)
-	 CheckMenuItem((HMENU)save_ms_handle, Id, MF_BYCOMMAND | ms_flag);
+    ms_flag = MF_UNCHECKED;
+
+  if (mh)
+    CheckMenuItem(mh, Id, MF_BYCOMMAND | ms_flag);
 }
 
 Bool wxMenu::Checked(int Id)
 {
-  int Flag ;
-  if (ms_handle)
-	 Flag=GetMenuState((HMENU)ms_handle, Id, MF_BYCOMMAND) ;
-  else if (save_ms_handle)
-	 Flag=GetMenuState((HMENU)save_ms_handle, Id, MF_BYCOMMAND) ;
-  
+  int Flag = -1;
+  HMENU mh = ms_handle ? (HMENU)ms_handle : (HMENU)save_ms_handle;
+
+  if (mh)
+    Flag = GetMenuState(mh, Id, MF_BYCOMMAND) ;
+
   if (Flag == -1)
     return FALSE;
-
-  if (Flag&MF_CHECKED)
-	 return TRUE ;
+  
+  if (Flag & MF_CHECKED)
+    return TRUE;
   else
-	 return FALSE ;
+    return FALSE;
 }
 
 void wxMenu::SetTitle(char *label)
 {
   if (title)
-	 delete[] title ;
+    delete[] title ;
   if (label)
-	 title = copystring(label) ;
+    title = copystring(label) ;
   else
-	 title = copystring(" ") ;
-  if (ms_handle)
-	 ModifyMenu((HMENU)ms_handle, 0,
-				 MF_BYPOSITION | MF_STRING | MF_DISABLED,
-				 -2,title);
-  else if (save_ms_handle)
-	 ModifyMenu((HMENU)save_ms_handle, 0,
-				 MF_BYPOSITION | MF_STRING | MF_DISABLED,
-				 -2,title);
+    title = copystring(" ") ;
+
+  HMENU mh = ms_handle ? (HMENU)ms_handle : (HMENU)save_ms_handle;
+  if (mh)
+    ModifyMenu(mh, 0,
+	       MF_BYPOSITION | MF_STRING | MF_DISABLED,
+	       -2,title);
 }
 
 char *wxMenu::GetTitle()
@@ -336,38 +344,38 @@ void wxMenu::SetLabel(int Id,char *label)
   if (item==NULL)
 	 return;
 
+
   item->itemName = copystring(label);
 
   if (item->subMenu==NULL)
   {
-	 if (ms_handle)
-	 {
-      UINT was_flag = GetMenuState((HMENU)ms_handle,Id,MF_BYCOMMAND) ;
-      ModifyMenu((HMENU)ms_handle,Id,MF_BYCOMMAND|MF_STRING|was_flag,Id,label) ;
+    HMENU mh = ms_handle ? (HMENU)ms_handle : (HMENU)save_ms_handle;
+
+    if (mh) {
+	UINT was_flag = GetMenuState(mh,Id,MF_BYCOMMAND) ;
+	ModifyMenu(mh,Id,MF_BYCOMMAND|MF_STRING|was_flag,Id,label) ;
     }
-    else if (save_ms_handle)
-    {
-      UINT was_flag = GetMenuState((HMENU)save_ms_handle,Id,MF_BYCOMMAND) ;
-      ModifyMenu((HMENU)save_ms_handle,Id,MF_BYCOMMAND|MF_STRING|was_flag,Id,label) ;
-	 }
   }
   else
   {
-	 wxMenu *father = item->subMenu->top_level_menu ;
-    wxNode *node = father->menuItems.First() ;
+    wxMenu *father = item->subMenu->top_level_menu;
+    wxNode *node = father->menuItems.First();
     int i = 0 ;
     while (node)
     {
       wxMenuItem *matched = (wxMenuItem*)node->Data() ;
       if (matched==item)
-		  break ;
-		i++ ;
-		node = node->Next() ;
-	 }
+	break ;
+      i++ ;
+      node = node->Next() ;
+    }
     // Here, we have the position.
-	 ModifyMenu((HMENU)father->save_ms_handle,i,
-               MF_BYPOSITION|MF_STRING|MF_POPUP,
-               (UINT)item->subMenu->save_ms_handle,label) ;
+
+    HMENU mh = father->ms_handle ? (HMENU)father->ms_handle : (HMENU)father->save_ms_handle;
+    if (mh) {
+      ModifyMenu(mh, i, MF_BYPOSITION|MF_STRING|MF_POPUP,
+		 (UINT)item->subMenu->save_ms_handle, label);
+    }
   }
 }
 
@@ -380,12 +388,32 @@ char *wxMenu::GetLabel(int Id)
   if (!item)
     return NULL;
 
-  if (ms_handle)
-    len = GetMenuString((HMENU)ms_handle,Id,tmp,127,MF_BYCOMMAND) ;
-  else if (save_ms_handle)
-    len = GetMenuString((HMENU)save_ms_handle,Id,tmp,127,MF_BYCOMMAND) ;
-  else
-    len = 0 ;
+  if (item->subMenu == NULL) {
+    HMENU mh = ms_handle ? (HMENU)ms_handle : (HMENU)save_ms_handle;
+    if (mh)
+      len = GetMenuString(mh,Id,tmp,127,MF_BYCOMMAND) ;
+    else
+      len = 0 ;
+  } else {
+    wxMenu *father = item->subMenu->top_level_menu;
+    wxNode *node = father->menuItems.First();
+    int i = 0 ;
+    while (node)
+    {
+      wxMenuItem *matched = (wxMenuItem*)node->Data() ;
+      if (matched==item)
+	break ;
+      i++ ;
+      node = node->Next() ;
+    }
+    // Here, we have the position.
+    HMENU mh = father->ms_handle ? (HMENU)father->ms_handle : (HMENU)father->save_ms_handle;
+    if (mh)
+      len = GetMenuString(mh,i,tmp,127,MF_BYPOSITION) ;
+    else
+      len = 0 ;
+  }
+
   tmp[len] = '\0' ;
   return(tmp) ;
 }
@@ -394,6 +422,7 @@ BOOL wxMenu::MSWCommand(UINT WXUNUSED(param), WORD id)
 {
   /* MATTHEW: auto-check checkable */
   wxMenuItem *item = FindItemForId(id) ;
+
   if (item && item->checkable)
     Check(id,!Checked(id));
 
@@ -567,6 +596,8 @@ void wxMenuBar::Enable(int Id, Bool Flag)
   if (!item)
     return;
 
+
+
   itemMenu->Enable(Id, Flag);
 }
 
@@ -605,7 +636,9 @@ Bool wxMenuBar::Checked(int Id)
   if (!item)
     return FALSE;
 
+
   return itemMenu->Checked(Id);
+
 }
 
 void wxMenuBar::SetLabel(int Id,char *label)
@@ -615,6 +648,8 @@ void wxMenuBar::SetLabel(int Id,char *label)
 
   if (!item)
 	 return;
+
+
 
   itemMenu->SetLabel(Id, label);
 }
@@ -627,15 +662,21 @@ char *wxMenuBar::GetLabel(int Id)
   if (!item)
      return NULL;
 
+
   return itemMenu->GetLabel(Id);
 }
 
 void wxMenuBar::SetLabelTop(int pos,char *label)
 {
+
   if (pos < 0 || pos >= n)
+
 	  return;
 
+
+
   titles[pos] = copystring(label);
+
 
   UINT was_flag = GetMenuState((HMENU)ms_handle,pos,MF_BYPOSITION) ;
   if (was_flag&MF_POPUP)
@@ -647,10 +688,16 @@ void wxMenuBar::SetLabelTop(int pos,char *label)
   else
 	 ModifyMenu((HMENU)ms_handle,pos,MF_BYPOSITION|MF_STRING|was_flag,pos,label) ;
 
+
+
   if (menu_bar_frame) {
+
 	wxWnd *cframe = (wxWnd*)menu_bar_frame->handle ;
+
 	HWND hand = (HWND)cframe->handle ;
+
 	DrawMenuBar(hand) ;
+
  }
 }
 
@@ -658,7 +705,9 @@ char *wxMenuBar::GetLabelTop(int pos)
 {
   static char tmp[128] ;
   int len = GetMenuString((HMENU)ms_handle,pos,tmp,127,MF_BYPOSITION) ;
+
   if (!len)
+
     return 0L;
   tmp[len] = '\0' ;
   char *p = copystring(tmp) ;

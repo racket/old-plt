@@ -54,6 +54,24 @@ static void post_scheme(atomic_timeout_t old)
   scheme_on_atomic_timeout = old;
 }
 
+Scheme_Object *lookup_width(Scheme_Object *table_key)
+{
+  Scheme_Object *val;
+  val = scheme_hash_get(width_table, table_key);
+  if (!val) {
+    val = scheme_hash_get(old_width_table, table_key);
+    if (val) {
+      /* Move it to the new table, so we find it faster, and
+	 so it's kept on the next rotation: */
+      Scheme_Object *new_key;
+      new_key = scheme_make_sized_byte_string(SCHEME_BYTE_STR_VAL(table_key), sizeof(wxKey), 1);
+      scheme_hash_set(width_table, new_key, val);
+      scheme_hash_set(old_width_table, table_key, NULL);
+    }
+  }
+  return val;
+}
+
 static void init_ATSU_style(void);
 static OSStatus atsuSetStyleFromGrafPtrParams( ATSUStyle iStyle, short txFont, short txSize, SInt16 txFace, int smoothing, 
 					       double angle, double scale_y, int qd_spacing);
@@ -185,18 +203,7 @@ void wxCanvasDC::DrawText(const char* text, double x, double y, Bool combine, Bo
        glyphs: */ 
     for (i = d; s[i]; i++) {
       k->code = s[i];
-      val = scheme_hash_get(width_table, table_key);
-      if (!val) {
-	val = scheme_hash_get(old_width_table, table_key);
-	if (val) {
-	  /* Move it to the new table, so we find it faster, and
-	     so it's kept on the next rotation: */
-	  Scheme_Object *new_key;
-	  new_key = scheme_make_sized_byte_string(SCHEME_BYTE_STR_VAL(table_key), sizeof(wxKey), 1);
-	  scheme_hash_set(width_table, new_key, val);
-	  scheme_hash_set(old_width_table, table_key, NULL);
-	}
-      }
+      val = lookup_width(table_key);
       if (!val)
 	break;
       glyph = SCHEME_INT_VAL(SCHEME_VEC_ELS(val)[2]);
@@ -835,18 +842,7 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
 	di = 1;
       
       ((wxKey *)SCHEME_BYTE_STR_VAL(table_key))->code = wc;
-      val = scheme_hash_get(width_table, table_key);
-      if (!val) {
-	val = scheme_hash_get(old_width_table, table_key);
-	if (val) {
-	  /* Move it to the new table, so we find it faster, and
-	     so it's kept on the next rotation: */
-	  Scheme_Object *new_key;
-	  new_key = scheme_make_sized_byte_string(SCHEME_BYTE_STR_VAL(table_key), sizeof(wxKey), 1);
-	  scheme_hash_set(width_table, new_key, val);
-	  scheme_hash_set(old_width_table, table_key, NULL);
-	}
-      }
+      val = lookup_width(table_key);
       if (!val) {
 	all = 0;
 	widths[i] = -1;
@@ -1364,7 +1360,7 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
 	    UniCharCount plen, total_plen;
 	    for (i = old_width_table->size; i--; ) {
 	      if (old_width_table->vals[i]) {
-		layout = *(ATSUTextLayout *)SCHEME_CDR(old_width_table->vals[i]);
+		layout = *(ATSUTextLayout *)(SCHEME_VEC_ELS(old_width_table->vals[i])[1]);
 		ATSUGetTextLocation(layout,
 				    &ptr,
 				    &is_hand,

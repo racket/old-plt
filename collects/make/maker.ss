@@ -62,7 +62,7 @@
 							 s)
 						 (with-handlers ([(lambda (x) #t)
 								  (lambda (exn)
-								    (raise (make-exn:make (format "Failed to make ~a; ~a"
+								    (raise (make-exn:make (format "make: Failed to make ~a; ~a"
 												  (car line)
 												  (if (exn? exn)
 												      (exn-message exn)

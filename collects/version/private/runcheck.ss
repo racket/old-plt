@@ -16,10 +16,10 @@
       (define download-url-string "http://download.plt-scheme.org/")
 
       (define check-question 
-	"Check versions of all PLT software over the Internet?")
+	"Check for updates of all PLT software over the Internet?")
 
       (define star "*")
-      (define dialog-title "PLT version status")
+      (define dialog-title "PLT update status")
 
       (define rv-sym 'release-version)
       (define no-info-sym 'no-info-file)
@@ -29,6 +29,8 @@
 
       (define nl (string #\newline))
       (define (empty-string? s) (string=? s ""))
+
+      (define up-to-format "~a v.~a (iteration ~a) is up-to-date")
 	
       (define (make-url-string vcs)
 	(string-append
@@ -253,7 +255,7 @@
 					 (apply values data)])
 				       (cond
 					[(eq? verdict 'up-to-date)
-					 (format "~a v.~a (iteration ~a) is up to date"
+					 (format up-to-format
 						 package installed-version installed-iteration)]
 					[(eq? verdict 'update)
 					 (begin
@@ -278,8 +280,8 @@
 			     (show-ok 
 			      dialog-title
 			      (string-append
-			       (format "Binary v.~a (iteration ~a) is up-to-date"
-				       binary-version binary-iteration)
+			       (format up-to-format
+				       "Binary" binary-version binary-iteration)
 			       nl
 			       (if needs-update
 				   (string-append

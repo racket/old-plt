@@ -3,19 +3,21 @@
 ; Print a little more than MzScheme automatically does:
 (error-print-width 1000)
 
+(define mred:debug:turned-on (box (list 'startup 'invoke)))
+
 (define mred:debug@
   (let* ([debug-env (getenv "MREDDEBUG")]
 	 [debug-on? (and debug-env (string=? debug-env "on"))])
     (unit (import)
-      (export (dprintf printf) turn-on turn-off turned-on
+      (export (dprintf printf) turn-on turn-off
 	      exit? new-console new-eval make-new-console)
 
-      (define turned-on (list 'startup 'invoke))
-
-      (define turn-on (lambda (s) (set! turned-on (cons s turned-on))))
+      (define turn-on (lambda (s) (set-box! 
+				   (global-defined-value 'mred:debug:turned-on)
+				   (cons s (unbox (global-defined-value 'mred:debug:turned-on))))))
       (define turn-off (lambda (s) 
-			 (set! turned-on 
-			       (let loop ([l turned-on])
+			 (set-box! (global-defined-value 'mred:debug:turned-on)
+			       (let loop ([l (unbox (global-defined-value 'mred:debug:turned-on))])
 				 (cond
 				   [(null? l) null]
 				   [else (if (eq? (car l) s)
@@ -25,7 +27,7 @@
 
       (define dprintf (if debug-on? 
 			  (lambda (tag . args)
-			    (when (member tag turned-on)
+			    (when (member tag (unbox (global-defined-value 'mred:debug:turned-on)))
 			      (apply printf args)
 			      (newline)))
 			  (lambda args (void))))
@@ -41,6 +43,7 @@
 	      (set! new-console 
 		    (new-eval `(begin
 				 (define q (lambda () (send mred:console-frame show #f)))
+				 (define mred:debug:turned-on ,(global-defined-value 'mred:debug:turned-on))
 				 (define mred:system-source-directory 
 				   ,(global-defined-value 'mred:system-source-directory))
 				 (invoke-open-unit ,((global-defined-value 'mred:make-invokable-unit))

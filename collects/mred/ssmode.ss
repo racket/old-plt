@@ -43,9 +43,9 @@
 	  (rename [super-on-char on-char]
 		  [super-install install])
 	  (public
-	    [indents (box (make-hash-table))])
+	    [indents (void)])
 	  (sequence
-	    (let ([hash-table (unbox indents)])
+	    (let ([hash-table (make-hash-table)])
 	      (for-each (lambda (x) (hash-table-put! hash-table x 'define))
 			'(define defmacro define-macro
 			   define-signature define-syntax define-schema))
@@ -71,14 +71,15 @@
 			   call-with-input-file with-input-from-file
 			   with-input-from-port call-with-output-file
 			   with-output-to-file with-output-to-port))
-	      '(mred:preferences:set-preference-default 'tabify hash-table)
-	      '(mred:preferences:set-preference-un/marshall
+	      (mred:preferences:set-preference-default 'tabify hash-table)
+	      (mred:preferences:set-preference-un/marshall
 		'tabify 
 	       (lambda (t) (hash-table-map t list))
 	       (lambda (l) (let ([h (make-hash-table)])
 			     (for-each (lambda (x) (apply hash-table-put! h x))
 				       l)
-			     h)))))
+			     h)))
+	      (set! indents (mred:preferences:get-preference-box 'tabify))))
 	  (public
 	    [name "Scheme"]
 	    [backward-cache (make-object mred:match-cache:match-cache%)]

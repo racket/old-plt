@@ -29,13 +29,14 @@
   (lambda preds
     (logical-inverse (apply one-of preds))))
 
-(define vector-map
+(define vector-map ; modified by PAS, but looks to be unused
   (lambda (f vec)
-    (let ((x (make-vector (vector-length vec))))
+    (let* ([vec-len (vector-length vec)]
+	   [x (make-vector vec-len)])
       (let loop ((i 0))
-	(if (= i (vector-length vec))
-	    vec
-	    (begin (vector-set! vec i (f (vector-ref vec i)))
+	(if (>= i vec-len)
+	    x
+	    (begin (vector-set! x i (f (vector-ref vec i)))
 		   (loop (add1 i))))))))
 
 (define improper-map
@@ -210,17 +211,22 @@
 
 (define set-intersect ; O(|a|*|b|)
   (lambda (a b)
-    (let intersect ([a (set->list a)]
-		    [acc null])
-      (cond
-       [(null? a) (list->set acc)]
-       [(set-memq? (car a) b) (intersect (cdr a) (cons (car a) acc))]
-       [else (intersect (cdr a) acc)]))))
+    (if (or (set-empty? a)
+	    (set-empty? b))
+	empty-set
+	(let intersect ([a (set->list a)]
+			[acc null])
+	  (cond
+	   [(null? a) (list->set acc)]
+	   [(set-memq? (car a) b) (intersect (cdr a) (cons (car a) acc))]
+	   [else (intersect (cdr a) acc)])))))
 
 (define (set-subset? s1 s2)
-  (let ([l1 (set->list s1)]
-	[l2 (set->list s2)])
-    (andmap (lambda (elt) (memq elt l2)) l1)))
+  (if (eq? s1 s2)
+      #t
+      (let ([l1 (set->list s1)]
+	    [l2 (set->list s2)])
+	(andmap (lambda (elt) (memq elt l2)) l1))))
 
 ;; -----> End list implementation <-----
 

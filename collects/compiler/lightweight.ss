@@ -1268,8 +1268,7 @@
 		     [inst-clause-varrefs
 		      (fold-sets (map cdr inst-clause-pairs))]
 		     [class-code (get-annotation a)]
-		     [binders (set-union this-fvs
-					 super-init-fvs
+		     [binders (set-union (set-union this-fvs super-init-fvs)
 					 (list->set
 					  (append
 					   (class-code-public-lookup-bindings class-code)
@@ -1412,14 +1411,16 @@
      (traverse-ast-with-scope-zactor ast add-entries-zactor)))
 
  (define (closure-analyze asts)
-   (let* ([done #f]
+   (let* ([inner-done #f]
+	  [outer-done #f]
 	  [prop-phi!
 	   (lambda (t1 t2)
 	     (let ([t1-phi (phi t1)]
 		   [t2-phi (phi t2)])
 	       (unless (set-subset? t1-phi t2-phi)
 		       (set-phi! t2 (set-union t1-phi t2-phi))
-		       (set! done #f))))]
+		       (set! inner-done #f)
+		       (set! outer-done #f))))]
 	  [do-set-zactor 
 	   (make-object
 	    (class zactor% ()
@@ -1566,14 +1567,19 @@
 
 		   (sequence (super-init))))])
 
-     (let closure-loop ()
-       (unless done
-	       (set! done #t)
+     (let outer-closure-loop ()
+       (unless outer-done
+	       (set! outer-done #t)
 	       (for-each 
 		(lambda (ast)
-		  (traverse-ast-with-zactor ast do-set-zactor))
+		  (set! inner-done #f)
+		  (let inner-closure-loop ()
+		      (unless inner-done
+			      (set! inner-done #t)
+			      (traverse-ast-with-zactor ast do-set-zactor)
+			      (inner-closure-loop))))
 		asts)
-	       (closure-loop)))))
+	       (outer-closure-loop)))))
 
  (define (escape-analyze ast)
    (letrec ([done #f]

@@ -48,12 +48,20 @@
 
 (test #t file-exists? existant)
 
+(define deepdir (build-path "down" "deep"))
+
+(when (directory-exists? deepdir) 
+  (for-each delete-file (directory-list deepdir))
+  (delete-directory deepdir))
+(when (directory-exists? "down")
+  (for-each delete-file (directory-list "down"))
+  (delete-directory "down"))
+  
 (test #t make-directory/tf "down")
 (test #f make-directory/tf "down")
 (test #t directory-exists? "down")
 (test #f file-exists? "down")
 
-(define deepdir (build-path "down" "deep"))
 (test #t make-directory/tf deepdir)
 (test #f make-directory/tf deepdir)
 (test #t directory-exists? deepdir)

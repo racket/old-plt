@@ -3662,7 +3662,21 @@ int scheme_utf8_decode_all(const unsigned char *s, int len, unsigned int *us, in
 }
 
 int scheme_utf8_decode_prefix(const unsigned char *s, int len, unsigned int *us, int permissive)
+     /* us != NULL */
 {
+  {
+    /* Try fast path (all ASCII) */
+    int i;
+    for (i = 0; i < len; i++) {
+      if (s[i] < 128)
+	us[i] = s[i];
+      else
+	break;
+    }
+    if (i == len)
+      return len;
+  }
+
   return utf8_decode_x(s, 0, len, us, 0, -1, NULL, NULL, 0, 0, NULL, 1, permissive);
 }
 

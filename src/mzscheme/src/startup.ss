@@ -3181,6 +3181,13 @@
 			(cloop (cdr paths))))
 		  (cloop (cdr paths))))))))
 
+  (define _loader.so
+    (path-replace-suffix
+     (bytes->path #"_loader.ss")
+     (case (system-type)
+       [(windows) #".dll"]
+       [else #".so"])))
+
   (define current-load/use-compiled
     (make-parameter
      (let ([default-load/use-compiled
@@ -3209,23 +3216,25 @@
 			       [(base file dir?) (split-path path)]
 			       [(base) (if (eq? base 'relative) 'same base)]
 			       [(modes) (use-compiled-file-paths)])
-		   (let* ([get-so (lambda (file)
+		   (let* ([get-so (lambda (file rep-sfx?)
 				    (lambda (compiled-dir)
 				      (build-path base
 						  compiled-dir
 						  "native"
 						  (system-library-subpath)
-						  (path-replace-suffix
-						   file
-						   (case (system-type)
-						     [(windows) #".dll"]
-						     [else #".so"])))))]
+						  (if rep-sfx?
+						      (path-replace-suffix
+						       file
+						       (case (system-type)
+							 [(windows) #".dll"]
+							 [else #".so"]))
+						      file))))]
 			  [zo (lambda (compiled-dir)
 				(build-path base
 					    compiled-dir
 					    (path-replace-suffix file #".zo")))]
-			  [so (get-so file)]
-			  [_loader-so (get-so (bytes->path #"_loader.ss"))]
+			  [so (get-so file #t)]
+			  [_loader-so (get-so _loader.so #f)]
 			  [path-d (date-of (lambda (dir) path) modes)]
 			  [with-dir (lambda (t) 
 				      (parameterize ([current-load-relative-directory 
@@ -3284,6 +3293,7 @@
   (define -re:auto (byte-regexp #"^,"))
   (define -re:ok-relpath (byte-regexp #"^[-a-zA-Z0-9_. ]+(/+[-a-zA-Z0-9_. ]+)*$"))
   (define -module-hash-table-table (make-hash-table 'weak)) ; weak map from namespace to module ht
+  (define -lib-path-cache (make-hash-table 'weak 'equal)) ; weak map from `lib' path + corrent-library-paths to symbols
   
   (define -loading-filename (gensym))
 
@@ -3311,7 +3321,7 @@
 					     base))))
 			       (current-load-relative-directory)
 			       (current-directory)))])
-	    (let ([filename
+	    (let ([s-parsed
 		   ;; Non-string result represents an error
 		   (cond
 		    [(string? s)
@@ -3341,19 +3351,23 @@
 			 (not (list? s)))
 		     #f]
 		    [(eq? (car s) 'lib)
-		     (let ([cols (let ([len (length s)])
-				   (if (= len 2)
-				       (list "mzlib")
-				       (if (> len 2)
-					   (cddr s)
-					   #f)))])
-		       (and cols
-			    (andmap (lambda (x) (and (string? x) 
-						     (relative-path? x))) cols)
-			    (string? (cadr s))
-			    (relative-path? (cadr s))
-			    (let ([p (-find-col 'standard-module-name-resolver (car cols) (cdr cols))])
-			      (build-path p (cadr s)))))]
+		     (hash-table-get
+		      -lib-path-cache
+		      (cons s (current-library-collection-paths))
+		      (lambda ()
+			(let ([cols (let ([len (length s)])
+				      (if (= len 2)
+					  (list "mzlib")
+					  (if (> len 2)
+					      (cddr s)
+					      #f)))])
+			  (and cols
+			       (andmap (lambda (x) (and (string? x) 
+							(relative-path? x))) cols)
+			       (string? (cadr s))
+			       (relative-path? (cadr s))
+			       (let ([p (-find-col 'standard-module-name-resolver (car cols) (cdr cols))])
+				 (build-path p (cadr s)))))))]
 		    [(eq? (car s) 'file)
 		     (and (= (length s) 2)
 			  (let ([p (cadr s)])
@@ -3361,31 +3375,47 @@
 				 (path-string? p)
 				 (path->complete-path p (get-dir)))))]
 		    [else #f])])
-	      (unless (path? filename)
+	      (unless (or (path? s-parsed)			  
+			  (vector? s-parsed))
 		(if stx
 		    (raise-syntax-error
 		     'require
-		     (format "bad module path~a" (if filename
-						     (car filename)
+		     (format "bad module path~a" (if s-parsed
+						     (car s-parsed)
 						     ""))
 		     stx)
 		    (raise-type-error 
 		     'standard-module-name-resolver
-		     (format "module path~a" (if filename
-						 (car filename)
+		     (format "module path~a" (if s-parsed
+						 (car s-parsed)
 						 ""))
 		     s)))
-	      ;; At this point, filename is a complete path
-	      (let* ([filename (simplify-path (expand-path filename))]
-		     [normal-filename (normal-case-path filename)])
-		(let-values ([(base name dir?) (split-path filename)])
-		  (let* ([no-sfx (path-replace-suffix name #"")]
-			 [no-sfx-string (bytes->string/latin-1 (path->bytes no-sfx))]
-			 [abase (format ",~a" (bytes->string/latin-1 (path->bytes (normal-case-path base))))])
-		    (let ([modname (string->symbol (string-append
-						    abase
-						    (bytes->string/latin-1
-						     (path->bytes no-sfx))))]
+	      ;; At this point, s-parsed is a complete path
+	      (let* ([filename (if (vector? s-parsed)
+				   (vector-ref s-parsed 0)
+				   (simplify-path (expand-path s-parsed)))]
+		     [normal-filename (if (vector? s-parsed)
+					  (vector-ref s-parsed 1)
+					  (normal-case-path filename))])
+		(let-values ([(base name dir?) (if (vector? s-parsed)
+						   (values 'ignored (vector-ref s-parsed 2) 'ignored)
+						   (split-path filename))])
+		  (let* ([no-sfx (if (vector? s-parsed)
+				     (vector-ref s-parsed 3)
+				     (path-replace-suffix name #""))]
+			 [abase (if (vector? s-parsed)
+				    (vector-ref s-parsed 4)
+				    (format ",~a" (bytes->string/latin-1 (path->bytes (normal-case-path base)))))])
+		    (let ([modname (if (vector? s-parsed)
+				       (vector-ref s-parsed 5)
+				       (string->symbol (string-append
+							abase
+							(bytes->string/latin-1
+							 (path->bytes no-sfx)))))]
+			  [suffix (if (vector? s-parsed)
+				      (vector-ref s-parsed 6)
+				      (let ([m (regexp-match -re:suffix (path->bytes name))])
+					(if m (car m) #t)))]
 			  [ht (hash-table-get
 			       -module-hash-table-table
 			       (namespace-module-registry (current-namespace))
@@ -3396,9 +3426,7 @@
 						    ht)
 				   ht)))])
 		      ;; Loaded already?
-		      (let ([got (hash-table-get ht modname (lambda () #f))]
-			    [suffix (let ([m (regexp-match -re:suffix (path->bytes name))])
-				      (if m (car m) #t))])
+		      (let ([got (hash-table-get ht modname (lambda () #f))])
 			(when got
 			  ;; Check the suffix, which gets lost when creating a key:
 			  (unless (or (symbol? got) (equal? suffix got))
@@ -3429,8 +3457,21 @@
 			      (parameterize ([current-module-name-prefix prefix])
 				((current-load/use-compiled) 
 				 filename 
-				 (string->symbol no-sfx-string)))))
+				 (string->symbol (bytes->string/latin-1 (path->bytes no-sfx)))))))
 			  (hash-table-put! ht modname suffix)))
+		      ;; If a `lib' path, cache pathname manipulations
+		      (when (and (not (vector? s-parsed))
+				 (pair? s)
+				 (eq? (car s) 'lib))
+			(hash-table-put! -lib-path-cache
+					 (cons s (current-library-collection-paths))
+					 (vector filename
+						 normal-filename
+						 name
+						 no-sfx
+						 abase
+						 modname
+						 suffix)))
 		      ;; Result is the module name:
 		      modname))))))]
 	 [else

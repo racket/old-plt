@@ -3231,6 +3231,29 @@ static Scheme_Object *do_simplify_path(Scheme_Object *path, Scheme_Object *cycle
   int isdir;
   Scheme_Object *file, *base;
 
+#if defined(UNIX_FILE_SYSTEM) || defined(DOS_FILE_SYSTEM)
+  /* Faster check --- avoids split operations, if possible */
+  {
+    char *s;
+    int len, i, saw_dot = 0;
+    s = SCHEME_PATH_VAL(path);
+    len = SCHEME_PATH_LEN(path);
+    if (scheme_is_complete_path(s, len)) {
+      for (i = 0; i < len; i++) {
+	if (s[i] == '.')
+	  saw_dot = 1;
+	else if (IS_A_SEP(s[i])) {
+	  if (saw_dot)
+	    break;
+	  saw_dot = 0;
+	}
+      }
+      if (i == len)
+	return path;
+    }
+  }
+#endif
+
   /* Check whether it can be simplified: */
   base = path;
   do {

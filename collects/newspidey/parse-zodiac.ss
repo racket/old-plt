@@ -138,6 +138,9 @@
   (letrec ([sort-loc (lambda (sym offset l)
                        (if (null? l)
                            (list (list offset sym))
+                           ;; in case of equality, add after the existing
+                           ;; one => top term appears first for a given
+                           ;; offset ?
                            (if (< offset (caar l))
                                (cons (list offset sym)
                                      l)
@@ -943,7 +946,7 @@
     (let ([set-vars (find-loc offset *location-list*)])
       (if (null? set-vars)
           #f
-          set-vars))))
+          (car set-vars)))))
 
 (define (get-type sym)
   (type-reduce (mk-type (make-Set-var sym))))
@@ -951,12 +954,12 @@
 (define (pp-type type)
   (cond
     [(Type-Arrow? type)
-     (apply string-append
-            "(("
-            (map pp-type (Type-Arrow-doms type))
-            ") -> "
-            (pp-type (Type-Arrow-rng type))
-            ")")]
+     (string-append
+      "("
+      (apply string-append (map pp-type (Type-Arrow-doms type)))
+      " -> "
+      (pp-type (Type-Arrow-rng type))
+      ")")]
     [(Type-Cons? type)
      (string-append "(cons "
                     (pp-type (Type-Cons-car type))
@@ -964,33 +967,33 @@
                     (pp-type (Type-Cons-cdr type))
                     ")")]
     [(Type-Scheme? type)
-     (apply string-append
-            "(for all"
-            (map (lambda (sym) (string-append " " (symbol->string sym)))
-                 (Type-Scheme-vars type))
-            ": "
-            (pp-type (Type-Scheme-type type))
-            ")")]
+     (string-append
+      "(for all"
+      (apply string-append (map (lambda (sym) (string-append " " (symbol->string sym)))
+                                (Type-Scheme-vars type)))
+      ": "
+      (pp-type (Type-Scheme-type type))
+      ")")]
     [(Set-var? type)
      (symbol->string (Set-var-name type))]
     [(Type-Rec? type)
-     (apply string-append
-            "(rec ("
-            (map (lambda (binding)
-                   (string-append "["
-                                  (symbol->string (Set-var-name (Type-Binding-set-var binding)))
-                                  " "
-                                  (pp-type (Type-Binding-type binding))
-                                  "]"))
-                 (Type-Rec-bindings type))
-            ") "
-            (pp-type (Type-Rec-type type))
-            ")")]
+     (string-append
+      "(rec ("
+      (apply string-append (map (lambda (binding)
+                                  (string-append "["
+                                                 (symbol->string (Set-var-name (Type-Binding-set-var binding)))
+                                                 " "
+                                                 (pp-type (Type-Binding-type binding))
+                                                 "]"))
+                                (Type-Rec-bindings type)))
+      ") "
+      (pp-type (Type-Rec-type type))
+      ")")]
     [(Type-Union? type)
-     (apply string-append
-            "(union "
-            (map pp-type (Type-Union-types type))
-            ")")]
+     (string-append
+      "(union "
+      (apply string-append (map pp-type (Type-Union-types type)))
+      ")")]
     [(Const? type)
      (if (number? (Const-val type))
          (number->string (Const-val type))

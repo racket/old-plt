@@ -16,13 +16,15 @@ extern CGrafPtr wxMainColormap;
 static ATSUStyle theATSUstyle;
 static TextToUnicodeInfo t2uinfo;
 
-static OSStatus atsuSetStyleFromGrafPtr(ATSUStyle iStyle, int smoothing, float angle);
-static OSStatus atsuSetStyleFromGrafPtrParams( ATSUStyle iStyle, short txFont, short txSize, SInt16 txFace, int smoothing, float angle);
+static OSStatus atsuSetStyleFromGrafPtr(ATSUStyle iStyle, int smoothing, float angle, float scale_y);
+static OSStatus atsuSetStyleFromGrafPtrParams( ATSUStyle iStyle, short txFont, short txSize, SInt16 txFace, int smoothing, 
+					       float angle, float scale_y);
 static double DrawMeasLatin1Text(const char *text, int d, int theStrlen, int bit16,
 				 int just_meas, int given_font, 
 				 short txFont, short txSize, short txFace,
 				 int again, int qd_spacing, int smoothing,
-				 float angle, int sym_map);
+				 float angle, int sym_map,
+				 float scale_x, float scale_y);
 
 #ifndef FloatToFixed
 # define FloatToFixed(a) ((Fixed)((float) (a) * fixed1)) 
@@ -76,11 +78,12 @@ void wxCanvasDC::DrawText(const char* text, float x, float y, Bool use16, int d,
 
   ::GetFontInfo(&fontInfo);
   /* ascent is already scaled */
-  start.h = XLOG2DEV(x) + (int)(fontInfo.ascent * sin(angle));
-  start.v = YLOG2DEV(y) + (int)(fontInfo.ascent * cos(angle));
+  start.h = XLOG2DEV(x + (fontInfo.ascent * sin(angle)));
+  start.v = YLOG2DEV(y + (fontInfo.ascent * cos(angle)));
   MoveTo(start.h + SetOriginX, start.v + SetOriginY); // move pen to start drawing text
 
-  DrawLatin1Text(text, d, -1, use16, TRUE, font->GetEffectiveSmoothing(user_scale_y), angle);
+  DrawLatin1Text(text, d, -1, use16, TRUE, font->GetEffectiveSmoothing(user_scale_y), angle,
+		 user_scale_x, user_scale_y);
 
   // look at pen, use distance travelled instead of calculating 
   // the length of the string (again)
@@ -99,12 +102,14 @@ float wxCanvasDC::GetCharHeight(void)
      //-----------------------------------------------------------------------------
 {
   int theCharHeight;
-  if (font)
-    theCharHeight = (int)font->GetCharHeight();
-  else
+  if (font) {
+    /* We provide the scale only for font selection. 
+       The result is unscaled (as we need it). */
+    theCharHeight = (int)font->GetCharHeight(user_scale_x, user_scale_y);
+  } else
     theCharHeight = 12;
 
-  return XDEV2LOGREL(theCharHeight);
+  return theCharHeight;
 }
 
 //-----------------------------------------------------------------------------
@@ -112,12 +117,14 @@ float wxCanvasDC::GetCharWidth(void)
      //-----------------------------------------------------------------------------
 {
   int theCharWidth;
-  if (font)
-    theCharWidth = (int)font->GetCharWidth();
-  else
+  if (font) {
+    /* We provide the scale only for font selection.
+       The result is unscaled (as we need it). */
+    theCharWidth = (int)font->GetCharWidth(user_scale_x, user_scale_y);
+  } else
     theCharWidth = 12;
 
-  return XDEV2LOGREL(theCharWidth);
+  return theCharWidth;
 }
 
 //-----------------------------------------------------------------------------
@@ -126,10 +133,16 @@ void wxCanvasDC::GetTextExtent(const char* string, float* x, float* y, float* de
 			       int d)
 {
   float x2, y2, descent2, externalLeading2;
+
+  /* Note: extent result is unscaled. We provide scales only in case it matters
+     in font selection. */
+
   if (the_font)
-    the_font->GetTextExtent((char *)string, d, &x2, &y2, &descent2, &externalLeading2, use16, user_scale_y);
+    the_font->GetTextExtent((char *)string, d, &x2, &y2, &descent2, &externalLeading2, use16, 
+			    user_scale_x, user_scale_y);
   else if (font)
-    font->GetTextExtent((char *)string, d, &x2, &y2, &descent2, &externalLeading2, use16, user_scale_y);
+    font->GetTextExtent((char *)string, d, &x2, &y2, &descent2, &externalLeading2, use16,
+			user_scale_x, user_scale_y);
   else {
     *x = -1;
     *y = -1;
@@ -138,9 +151,9 @@ void wxCanvasDC::GetTextExtent(const char* string, float* x, float* y, float* de
     return;
   }
 
-  *x = XDEV2LOGREL(x2);
-  *y = YDEV2LOGREL(y2);
-  if (descent) *descent = YDEV2LOGREL(descent2);
+  *x = x2;
+  *y = y2;
+  if (descent) *descent = descent2;
   if (internalLeading) *internalLeading = 0.0;
 }
 
@@ -168,7 +181,8 @@ void wxCheckATSUCapability()
 #endif
 }
 
-void DrawLatin1Text(const char *text, int d, int theStrlen, int bit16, Bool qd_spacing, int smoothing, float angle)
+void DrawLatin1Text(const char *text, int d, int theStrlen, int bit16, Bool qd_spacing, int smoothing, float angle,
+		    float scale_x, float scale_y)
 {
   int i;
   int is_sym = 0;
@@ -200,7 +214,21 @@ void DrawLatin1Text(const char *text, int d, int theStrlen, int bit16, Bool qd_s
 
     if (i) {
       /* Up to i, it's all ASCII, where MacRoman == Latin-1 */
-      ::DrawText(text+d, 0, i); // WCH: kludge, mac procedure same name as wxWindows method
+      int reset_size = 0;
+      if (scale_y != 1.0) {
+	GrafPtr iGrafPtr;
+	int ssize;
+
+	GetPort( &iGrafPtr );
+	reset_size = GetPortTextSize(iGrafPtr);
+	ssize = (int)floor(scale_y * reset_size);
+	if (!ssize)
+	  ssize = 1;
+	::TextSize(ssize);
+      }
+      ::DrawText(text+d, 0, i);
+      if (reset_size)
+	::TextSize(reset_size);
 
       d += i;
       theStrlen -= i;
@@ -214,7 +242,8 @@ void DrawLatin1Text(const char *text, int d, int theStrlen, int bit16, Bool qd_s
       else
 	amt = 1;
 
-      (void)DrawMeasLatin1Text(text, d, amt, bit16, 0, 0, 0, 0, 0, again, qd_spacing, smoothing, angle, is_sym);
+      (void)DrawMeasLatin1Text(text, d, amt, bit16, 0, 0, 0, 0, 0, again, qd_spacing, smoothing, angle, is_sym,
+			       scale_x, scale_y);
 	  
       d += amt;
       theStrlen -= amt;
@@ -225,13 +254,12 @@ void DrawLatin1Text(const char *text, int d, int theStrlen, int bit16, Bool qd_s
 
 void GetLatin1TextWidth(const char *text, int d, int theStrlen, 
 			short txFont, short txSize, short txFace,
-			int bit16, float scale,
+			int bit16, float scale_y,
 			float* x, float* y,
 			float* descent, float* externalLeading,
-			Bool qd_spacing)
+			Bool qd_spacing, float scale_x)
 {
   FontInfo fontInfo;
-  int fsize;
   const char *meas = NULL;
   int i, is_sym = (txFont == 23);
   int again = 0;
@@ -260,9 +288,7 @@ void GetLatin1TextWidth(const char *text, int d, int theStrlen,
   } else
     theStrlen = 0;
   
-  fsize = (int)floor(txSize * scale);
-
-  *x = wxTextFontInfo(txFont, fsize, txFace,
+  *x = wxTextFontInfo(txFont, txSize, txFace,
 		      &fontInfo, (char *)meas, 
 		      d, theStrlen);
 
@@ -273,8 +299,9 @@ void GetLatin1TextWidth(const char *text, int d, int theStrlen,
     if (!qd_spacing || ALWAYS_USE_ATSU) {
       *x = DrawMeasLatin1Text(text, d, theStrlen, bit16,
 			      1, 1, 
-			      txFont, fsize, txFace,
-			      again, qd_spacing, wxSMOOTHING_DEFAULT, 0.0, is_sym);
+			      txFont, txSize, txFace,
+			      again, qd_spacing, wxSMOOTHING_DEFAULT, 0.0, is_sym,
+			      scale_x, scale_y);
       again = 1;
     } else {
       /* Need to split the string into parts */
@@ -285,9 +312,9 @@ void GetLatin1TextWidth(const char *text, int d, int theStrlen,
 	    break;
 	}
 
-	/* Measure the leasing ASCII part, if any: */
+	/* Measure the leading ASCII part, if any: */
 	if (i) {
-	  *x += wxTextFontInfo(txFont, fsize, txFace,
+	  *x += wxTextFontInfo(txFont, txSize, txFace,
 			       &fontInfo, 
 			       (char *)text, d, i);
 	  d += i;
@@ -302,9 +329,10 @@ void GetLatin1TextWidth(const char *text, int d, int theStrlen,
       
 	  *x += DrawMeasLatin1Text(text, d, amt, bit16,
 				   1, 1, 
-				   txFont, fsize, txFace,
+				   txFont, txSize, txFace,
 				   again, qd_spacing,
-				   wxSMOOTHING_DEFAULT, 0.0, is_sym);
+				   wxSMOOTHING_DEFAULT, 0.0, is_sym,
+				   scale_x, scale_y);
 	  d += amt;
 	  theStrlen -= amt;
 	  again = 1;
@@ -324,7 +352,8 @@ static double DrawMeasLatin1Text(const char *text, int d, int theStrlen, int bit
 				 int just_meas, int given_font, 
 				 short txFont, short txSize, short txFace,
 				 int again, int qd_spacing, int smoothing,
-				 float angle, int is_sym)
+				 float angle, int is_sym,
+				 float scale_x, float scale_y)
 {
   ATSUTextLayout layout;
   ByteCount usize;
@@ -351,7 +380,8 @@ static double DrawMeasLatin1Text(const char *text, int d, int theStrlen, int bit
   CGContextRef cgctx;
   Rect portRect;
   RGBColor eraseColor;
-  int use_cgctx = always_use_atsu && (smoothing != wxSMOOTHING_PARTIAL);
+  int use_cgctx = (always_use_atsu 
+		   && ((smoothing != wxSMOOTHING_PARTIAL) || (scale_x != scale_y)));
 # define xOS_X_ONLY(x) x
 #else
 # define use_cgctx 0
@@ -416,14 +446,19 @@ static double DrawMeasLatin1Text(const char *text, int d, int theStrlen, int bit
       }
       DisposeRgn(clipRgn);
     }
+    
+    /* Set scale */
+    CGContextScaleCTM(cgctx, scale_x, scale_y);
   }
 #endif
 
   if (!again) {
     if (given_font)
-      atsuSetStyleFromGrafPtrParams(theATSUstyle, txFont, txSize, txFace, smoothing, angle);
+      atsuSetStyleFromGrafPtrParams(theATSUstyle, txFont, txSize, txFace, smoothing, 
+				    angle, (use_cgctx || just_meas) ? 1.0 : scale_y);
     else
-      atsuSetStyleFromGrafPtr(theATSUstyle, smoothing, angle);
+      atsuSetStyleFromGrafPtr(theATSUstyle, smoothing, angle, 
+			      (use_cgctx || just_meas) ? 1.0 : scale_y);
   }
 
   ATSUCreateTextLayoutWithTextPtr((UniCharArrayPtr)unicode,
@@ -487,6 +522,9 @@ static double DrawMeasLatin1Text(const char *text, int d, int theStrlen, int bit
     result = (Fix2X(bounds.upperRight.x) - Fix2X(bounds.upperLeft.x));
     if (result < 0)
       result = 0;
+    if (!use_cgctx && !just_meas) {
+      result = result / scale_y;
+    }
   }
 
   if (!just_meas) {
@@ -501,20 +539,21 @@ static double DrawMeasLatin1Text(const char *text, int d, int theStrlen, int bit
     GetPen(&start);
     
     if ((angle == 0.0) && (GetPortTextMode(iGrafPtr) == srcCopy)) {
-      Rect theRect;
+      float rt, rl, rr, rb;
       FontInfo fontInfo;
       ::GetFontInfo(&fontInfo);
-      theRect.left = start.h;
-      theRect.top = start.v - fontInfo.ascent;
-      theRect.bottom = start.v + fontInfo.descent;
-      theRect.right = theRect.left + (int)floor(result);
+      rl = start.h;
+      rt = start.v - (fontInfo.ascent * scale_y);
+      rb = start.v + (fontInfo.descent * scale_y);
+      rr = rl + (result * scale_x);
 #ifdef OS_X
       if (use_cgctx) {
 	CGRect cgr;
-	cgr.origin.x = theRect.left;
-	cgr.origin.y = portRect.top + (portRect.bottom - theRect.bottom);
-	cgr.size.width = theRect.right - theRect.left;
-	cgr.size.height = theRect.bottom - theRect.top;
+	cgr.origin.x = rl / scale_x;
+	cgr.origin.y = (portRect.top + (portRect.bottom - rb)) / scale_y;
+	cgr.size.width = (rr - rl) / scale_x;
+	cgr.size.height = (rb - rt) / scale_y;
+
 	CGContextSetRGBFillColor(cgctx, 
 				 (float)eraseColor.red / 65535.0,
 				 (float)eraseColor.green / 65535.0,
@@ -523,17 +562,28 @@ static double DrawMeasLatin1Text(const char *text, int d, int theStrlen, int bit
 	CGContextFillRect(cgctx, cgr);
       } else
 #endif
-	EraseRect(&theRect);
+	{
+	  Rect theRect;
+	  theRect.left = (int)floor(rl);
+	  theRect.top = (int)floor(rt);
+	  theRect.right = (int)floor(rr);
+	  theRect.bottom = (int)floor(rb);
+	  EraseRect(&theRect);
+	}
     }
     
     {
       Fixed sx, sy;
+      long isx, isy;
+
+      isx = (long)floor(start.h / scale_x);
+      isy = xOS_X_ONLY((long)floor((portRect.top + (portRect.bottom - start.v)) / scale_y));
 
       sx = (use_cgctx 
-	    ? Long2Fix(start.h) 
+	    ? Long2Fix(isx) 
 	    : kATSUUseGrafPortPenLoc);
       sy = (use_cgctx 
-	    ? xOS_X_ONLY(Long2Fix(portRect.top + (portRect.bottom - start.v)))
+	    ? Long2Fix(isy)
 	    : kATSUUseGrafPortPenLoc);
 
       ATSUDrawText(layout, 
@@ -556,7 +606,7 @@ static double DrawMeasLatin1Text(const char *text, int d, int theStrlen, int bit
 
     /* QuickDraw is back again in OS X: */
     if (!just_meas)
-      MoveTo(start.h + (int)floor(result), start.v);
+      MoveTo(start.h + (int)floor(result * scale_x), start.v);
   } else {
 #ifdef OS_X
     if (use_cgctx) {
@@ -604,7 +654,8 @@ atsuFONDtoFontID( short    iFONDNumber,
 #define apple_require(x, y) if (!(x)) return status;
 
 static OSStatus
-atsuSetStyleFromGrafPtrParams( ATSUStyle iStyle, short txFont, short txSize, SInt16 txFace, int smoothing, float angle)
+atsuSetStyleFromGrafPtrParams( ATSUStyle iStyle, short txFont, short txSize, SInt16 txFace, int smoothing, 
+			       float angle, float scale_y)
 {
  OSStatus status = noErr;
 
@@ -652,7 +703,9 @@ atsuSetStyleFromGrafPtrParams( ATSUStyle iStyle, short txFont, short txSize, SIn
  isUnderline = ( txFace & underline ) != 0;
  isCondensed = ( txFace & condense ) != 0;
  isExtended = ( txFace & extend ) != 0;
- 
+
+ if (scale_y != 1.0)
+   txSize = (short)floor(txSize * scale_y);
  if ( txSize == 0 ) {
    // this would already be set correctly in a brand-new style
    txSize = (short) ( GetScriptVariable( FontToScript( txFont ), smScriptPrefFondSize ) & 0xFFFFU );
@@ -689,7 +742,7 @@ atsuSetStyleFromGrafPtrParams( ATSUStyle iStyle, short txFont, short txSize, SIn
 }
 
 static OSStatus
-atsuSetStyleFromGrafPtr(ATSUStyle iStyle, int smoothing, float angle)
+atsuSetStyleFromGrafPtr(ATSUStyle iStyle, int smoothing, float angle, float scale_y)
 {
  short    txFont, txSize;
  SInt16   txFace;
@@ -701,5 +754,5 @@ atsuSetStyleFromGrafPtr(ATSUStyle iStyle, int smoothing, float angle)
  txSize = GetPortTextSize(iGrafPtr);
  txFace = GetPortTextFace(iGrafPtr);
  
- return atsuSetStyleFromGrafPtrParams(iStyle, txFont, txSize, txFace, smoothing, angle);
+ return atsuSetStyleFromGrafPtrParams(iStyle, txFont, txSize, txFace, smoothing, angle, scale_y);
 }

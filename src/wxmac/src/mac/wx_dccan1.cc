@@ -604,9 +604,12 @@ void wxCanvasDC::wxMacSetCurrentTool(wxMacToolType whichTool)
 
       pensize = current_pen->GetWidth();
       thePenWidth = (pensize ? pensize : 1);
-      if (pensize)
-	PenSize(XLOG2DEVREL(thePenWidth), YLOG2DEVREL(thePenWidth));
-      else
+      if (pensize) {
+	int sx, sy;
+	sx = XLOG2DEVREL(thePenWidth);
+	sy = YLOG2DEVREL(thePenWidth);
+	PenSize(sx ? sx : 1, sy ? sy : 1);
+      } else
 	PenSize(1, 1);
       
       thePenStyle = current_pen->GetStyle();
@@ -695,11 +698,7 @@ void wxCanvasDC::wxMacSetCurrentTool(wxMacToolType whichTool)
       BackColor(whiteColor);
     BackPat(GetWhitePattern());
     ::TextFont(font->GetMacFontNum());
-    {
-      float ps;
-      ps = font->GetPointSize();
-      ::TextSize((short)floor(ps * user_scale_y));
-    }
+    ::TextSize((short)font->GetPointSize());
     ::TextFace(font->GetMacFontStyle());
     ::TextMode((current_bk_mode == wxTRANSPARENT) ? srcOr : srcCopy);
     InstallLogicalFunction(wxCOPY);

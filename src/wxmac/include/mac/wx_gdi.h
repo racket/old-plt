@@ -43,11 +43,11 @@ class wxFont: public wxbFont
 	       Bool underlined = FALSE, int smoothing = wxSMOOTHING_DEFAULT, Bool sip = FALSE);
 	~wxFont(void);
 
-	float GetCharHeight(void);		// Mac Platform Only?
-	float GetCharWidth(void);
+	float GetCharHeight(float scale_x = 1.0, float scale_y = 1.0);
+	float GetCharWidth(float scale_x = 1.0, float scale_y = 1.0);
 	void  GetTextExtent(char* string, int delta, float* x, float* y,
 			    float* descent, float* externalLeading, Bool use16 = FALSE,
-			    float scale = 1.0);
+			    float scale_x = 1.0, float scale_y = 1.0);
 
 	int GetMacFontNum(void); // mac platform only
 	Style GetMacFontStyle(void); // mac platform only

@@ -1,7 +1,7 @@
 ; In the first clause, the first label is the origin label (the origin of the arrow), the
 ; second label in the one flowing along the arrow. The destination of the arrow is embedded
 ; in the edge, and can be obtained by applying the second clause.
-; (define-type edge (case-lambda [label label -> void] [-> label]))
+; (define-type edge (case-lambda [label label -> boolean] [-> label]))
 
 (module
  constraints-gen-and-prop mzscheme
@@ -28,24 +28,24 @@
  ; debug XXX
  ;read-and-analyze label-case-lambda-exps label-set label-term)
  
-; (define-syntax debug1
-;   (let ([counter 1])
-;     (lambda (stx)
-;       (syntax-case stx ()
-;         [(_ args ...)
-;          (begin
-;            (printf "debug counter: ~a~n" counter)
-;            (let* ([stx-args (syntax (args ...))]
-;                   [stx-args-list (syntax-e stx-args)]
-;                   [stx-out (datum->syntax-object
-;                             stx-args
-;                             `(#%app debug2 ,counter ,@stx-args-list))])
-;              (set! counter (add1 counter))
-;              stx-out))]))))
-; 
-; (define (debug2 n . args)
-;   (printf "debug: ~a args: ~a~n" n args)
-;   (apply cdr args))
+;  (define-syntax debug1
+;    (let ([counter 1])
+;      (lambda (stx)
+;        (syntax-case stx ()
+;          [(_ args ...)
+;           (begin
+;             (printf "debug counter: ~a~n" counter)
+;             (let* ([stx-args (syntax (args ...))]
+;                    [stx-args-list (syntax-e stx-args)]
+;                    [stx-out (datum->syntax-object
+;                              stx-args
+;                              `(#%app debug2 ,counter ,@stx-args-list))])
+;               (set! counter (add1 counter))
+;               stx-out))]))))
+;  
+;  (define (debug2 n . args)
+;    (printf "debug: ~a args: ~a~n" n args)
+;    (apply pp-type args))
  
  ; XXX perf analysis
  (define ast-nodes 0)
@@ -98,6 +98,9 @@
  ; car = label, cdr = label
  (define-struct (label-cons label) (car cdr) (make-inspector))
  
+ (define-struct (label-vector label) (element) (make-inspector))
+ (define-struct (label-promise label) (value) (make-inspector))
+ 
  ; rest-arg?s = (listof boolean), req-args = (listof number), argss = (listof (listof label)),
  ; exps = (listof label), top-free-varss = (listof (listof labels)),
  ; app-thunks = (listof (-> void))
@@ -113,21 +116,22 @@
  (define-struct (label-case-lambda label)
                 (rest-arg?s req-args argss exps top-free-varss app-thunks) (make-inspector))
  
- ; labels = label
+ ; label = label (a label-cons based list of labels)
  ; used to simulate multiple values. So this label is going to flow around and work pretty
  ; much like a cons label. the problem is that multiple values are not first-class in Scheme,
  ; so we have to be careful to only propagate them through edges that correspond to the result
  ; of applications, never through edges that correspond to arguments of applications. Hence
  ; the reason for the complication in create-simple-edge. Note that define-struct expands
  ; into a define-values, so we need all that stuff.
- (define-struct (label-values label) (labels) (make-inspector))
+ (define-struct (label-values label) (label) (make-inspector))
  
  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; MISC
  
  (define *dummy* (void))
  (define *dummy-thunk* (lambda () *dummy*))
- (define *hash-table-fail-empty* (lambda () '()))
- (define *hash-table-fail-false* (lambda () #f))
+ (define *fail-empty* (lambda () '()))
+ (define *fail-false* (lambda () #f))
+ (define *id* (lambda (x) x))
  
  ; (listof (list (listof term) label symbol string))
  ; term is where the error occured
@@ -139,6 +143,58 @@
    (set! *errors* '())
    (set! *top-level-name->label* (make-hash-table))
    )
+ 
+ ; length of list composed of label-cons
+ (define (label-list-length start-label)
+   (letrec ([count-length
+             (lambda (label count)
+               (if (label-cons? label)
+                 (count-length (label-cons-cdr label) (add1 count))
+                 (if (and (label-cst? label)
+                          (null? (label-cst-value label)))
+                   count
+                   ;(error 'label-list-length
+                   ;       "not a label list: ~a ~a ~a"
+                   ;       (syntax-object->datum
+                   ;        (label-term start-label))
+                   ;       (pp-type (get-type start-label))
+                   ;       label))))])
+                   ; the assumption is that we'll never call this function
+                   ; for something not a list. So if what we have doesn't
+                   ; look like a list, then it's an infinite list.
+                   +inf.0)))])
+     (count-length start-label 0)))
+ 
+ ; like ormap, except that it continues processing the list even after the first non-#f
+ ; is encountered
+ (define ormap-strict
+   (letrec ([ormap-strict-1-acc
+             (lambda (f l acc)
+               (if (null? l)
+                 acc
+                 (if (f (car l))
+                   (ormap-strict-1-acc f (cdr l) #t)
+                   (ormap-strict-1-acc f (cdr l) acc))))])
+     (lambda (f l)
+       (if (null? l)
+         #t
+         (ormap-strict-1-acc f (cdr l) (f (car l)))))))
+ 
+ ; like ormap, except that it continues processing the list even after the first non-#f
+ ; is encountered
+ ; l1 is a label-cons based list, l1 and l2 have the same length
+ (define label-ormap-strict
+   (letrec ([ormap-strict-2-acc
+             (lambda (f l1 l2 acc)
+               (if (null? l2)
+                 acc
+                 (if (f (label-cons-car l1) (car l2))
+                   (ormap-strict-2-acc f (label-cons-cdr l1) (cdr l2) #t)
+                   (ormap-strict-2-acc f (label-cons-cdr l1) (cdr l2) acc))))])
+     (lambda (f l1 l2)
+       (if (null? l2)
+         #t
+         (ormap-strict-2-acc f (label-cons-cdr l1) (cdr l2) (f (label-cons-car l1) (car l2)))))))
  
  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; LOCAL ENVIRONMENT
  
@@ -175,7 +231,7 @@
  ; symbol -> (union label #f)
  ; finds the label for a top level var.
  (define (lookup-top-level-name name)
-   (hash-table-get *top-level-name->label* name *hash-table-fail-false*))
+   (hash-table-get *top-level-name->label* name *fail-false*))
  
  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; PROPAGATION
  
@@ -202,14 +258,16 @@
          ; don't have to keep track of in/out edges. We still have to put the
          ; inflowing-label in the set, because otherwise nothing is going to be
          ; propagated when we add a new edge to the in-label.
-         (hash-table-put! in-set inflowing-label (cons '() '()))
-         (for-each (lambda (edge)
-                     (printf "propagate ~a from ~a to ~a~n"
-                             (syntax-object->datum (label-term inflowing-label))
-                             (syntax-object->datum (label-term out-label))
-                             (syntax-object->datum (label-term in-label)))
-                     (edge in-label inflowing-label))
-                   (label-edges in-label))]
+         (unless (hash-table-get in-set inflowing-label *fail-false*)
+           (hash-table-put! in-set inflowing-label (cons '() '())))
+         ;(printf "propagate ~a from ~a to ~a (type ~a)~n"
+         ;        (pp-type (get-type inflowing-label))
+         ;        (syntax-object->datum (label-term out-label))
+         ;        (syntax-object->datum (label-term in-label))
+         ;        (label-type-var in-label))
+         (ormap-strict (lambda (edge)
+                         (edge in-label inflowing-label))
+                       (label-edges in-label))]
         [() in-label])
        (case-lambda
         [(out-label inflowing-label)
@@ -220,14 +278,15 @@
            (set-label-tunnel?! inflowing-label #f))
          (let* ([out-set (label-set out-label)]
                 [in/out-edges-pair-in-set
-                 (hash-table-get in-set inflowing-label *hash-table-fail-false*)]
+                 (hash-table-get in-set inflowing-label *fail-false*)]
                 [in/out-edges-pair-out-set
-                 (hash-table-get out-set inflowing-label *hash-table-fail-false*)])
+                 (hash-table-get out-set inflowing-label *fail-false*)])
            (if in/out-edges-pair-in-set
              ; the value has already flown before into this set, which means it has
              ; already been propagated further down. So we just need to update the
              ; in/out edges. Note that a side effect of this is that we never loop
-             ; indefinitely inside a cycle.
+             ; indefinitely inside a cycle, which is mandatory if we generate things
+             ; like (listof number) as a recursive type.
              (let ([in-edges-in-set (car in/out-edges-pair-in-set)]
                    [out-edges-in-set (cdr in/out-edges-pair-in-set)]
                    [in-edges-out-set (car in/out-edges-pair-out-set)]
@@ -237,7 +296,8 @@
                                       out-edges-in-set))
                (hash-table-put! out-set inflowing-label
                                 (cons in-edges-out-set
-                                      (cons in-label out-edges-out-set))))
+                                      (cons in-label out-edges-out-set)))
+               #t)
              ; first time this inflowing label is propagated to in-label, so update the
              ; in/out edges and propagate further down.
              (let ([in-edges-out-set (car in/out-edges-pair-out-set)]
@@ -247,16 +307,17 @@
                (hash-table-put! out-set inflowing-label
                                 (cons in-edges-out-set
                                       (cons in-label out-edges-out-set)))
-               (for-each (lambda (edge)
-                     (printf "propagate ~a from ~a to ~a~n"
-                             (syntax-object->datum (label-term inflowing-label))
-                             (syntax-object->datum (label-term out-label))
-                             (syntax-object->datum (label-term in-label)))
-                           (edge in-label inflowing-label))
-                         (label-edges in-label)))))]
+               ;(printf "propagate ~a from ~a to ~a (type ~a)~n"
+               ;        (pp-type (get-type inflowing-label))
+               ;        (syntax-object->datum (label-term out-label))
+               ;        (syntax-object->datum (label-term in-label))
+               ;        (label-type-var in-label))
+               (ormap-strict (lambda (edge)
+                               (edge in-label inflowing-label))
+                             (label-edges in-label)))))]
         [() in-label]))))
  
- ; label (label (listof label) -> void) -> void
+ ; label edge -> void
  ; creates an edge from out-label to in-label and start the propagation for all the labels
  ; in out-label's set.
  ; Note: an edge is a function that updates the set of the in-label (and propagates further down
@@ -272,11 +333,12 @@
                     existing-edges)
        (set! graph-edges (add1 graph-edges))
        (set-label-edges! out-label (cons new-edge existing-edges))
+       ; note: no need to return a boolean, because we never check this result in union-
        (hash-table-for-each (label-set out-label)
                             (lambda (label in/out-edges)
                               (new-edge out-label label))))))
  
- ; edge label -> void
+ ; edge label -> edge
  ; We must be able to take care of all the following different cases:
  ; (define-values (x) a)
  ; (define-values (x) (values a))
@@ -295,29 +357,43 @@
    (case-lambda
     [(out-label inflowing-label)
      (if (label-values? inflowing-label)
-       (let ([values-labels (label-values-labels inflowing-label)])
-         (if (= (length values-labels) 1)
-           ; we have something like (define-values (x) (... (values a) ...)), so we add a
-           ; new direct edge from a to x. Of course this new edge has to be itself a recursive
-           ; unpacking edge, since some (values b) could later flow into a. Note that, since
-           ; our edges are independant of their origin, we can re-use the same simple edge.
-           ; Watch then the nice infinitely-looking recursion. We are just creating a
-           ; potentialy infinite number of unpacking edges, lazily. Also, since our edges
-           ; are closures already containing the target label (the one for x),
-           ; extend-edge-for-values doesn't need the target label as an explicit parameter.
-           ; Only the origin label (the one corresponding to some use of "values") ever
-           ; changes. This is just plain beautiful.
-           (let ([new-origin-label (car values-labels)])
-             (add-edge-and-propagate-set-through-edge
-              new-origin-label
-              (extend-edge-for-values simple-edge)))
-           ; (define-values (x) (... (values a b ...) ...))
-           (set! *errors*
-                 (cons (list (list (label-term inflowing-label))
-                             'red
-                             (format "context expected 1 value, received ~a values"
-                                     (length values-labels)))
-                       *errors*))))
+       ; we have something like (values a) flowing in. Now what flows into a is a list
+       ; that contains the labels for the multiples values, so we have to extract that.
+       (let ([label-list (hash-table-map (label-set (label-values-label inflowing-label))
+                                         (lambda (label in/out-edges)
+                                           label))])
+         (if (= (length label-list) 1)
+           (let ([values-label (car label-list)])
+             ; we do not expect an infinite list here
+             (if (= (label-list-length values-label) 1)
+               ; we have something like (define-values (x) (... (values a) ...)), so we add a
+               ; new direct edge from a to x. Of course this new edge has to be itself a recursive
+               ; unpacking edge, since some (values b) could later flow into a. Note that, since
+               ; our edges are independant of their origin, we can re-use the same simple edge.
+               ; Watch then the nice infinitely-looking recursion. We are just creating a
+               ; potentialy infinite number of unpacking edges, lazily. Also, since our edges
+               ; are closures already containing the target label (the one for x),
+               ; extend-edge-for-values doesn't need the target label as an explicit parameter.
+               ; Only the origin label (the one corresponding to some use of "values") ever
+               ; changes. This is just plain beautiful.
+               (let ([new-origin-label (label-cons-car values-label)])
+                 (add-edge-and-propagate-set-through-edge
+                  new-origin-label
+                  (extend-edge-for-values simple-edge)))
+               ; (define-values (x) (... (values a b ...) ...))
+               (begin
+                 (set! *errors*
+                       (cons (list (list (label-term inflowing-label))
+                                   'red
+                                   (format "extend-edge-for-values: context expected 1 value, received ~a values"
+                                           (label-list-length values-label)))
+                             *errors*))
+                 #f)))
+           (error 'extend-edge-for-values "values didn't contain list: ~a"
+                  (map (lambda (label)
+                         (pp-type (get-type label)))
+                       label-list))
+           ))
        ; (define-values (x) a) or equivalent (e.g. the result of analysing something like
        ; (define-values (x) (values (values (values a)))), after three levels of recursion).
        (simple-edge out-label inflowing-label))]
@@ -347,6 +423,600 @@
  ; put a label in it's own set, for terms that are value sources
  (define (initialize-label-set-for-value-source label)
    (hash-table-put! (label-set label) label (cons '() '())))
+ 
+ ; (listof label) term -> boolean
+ ; Note that we make sure that all free variables are bound before
+ ; creating the edges, and we check all free variables even if we
+ ; already know some of them are unbound.
+ ; Note also that a free variable can not be captured by a lexical
+ ; binding, it has to be a top level binding.
+ (define (lookup-and-bind-top-level-vars free-vars-labels-in term)
+   (let ([binding-labels-in
+          (map
+           (lambda (free-var-label-in)
+             (let* ([free-var-name-in (syntax-e (label-term free-var-label-in))]
+                    [binding-label-in (lookup-top-level-name free-var-name-in)])
+               (if binding-label-in
+                 binding-label-in
+                 (let ([primitive-type-scheme (lookup-primitive-type-scheme free-var-name-in)])
+                   (if primitive-type-scheme
+                     ; no polyvariance for primitives here...
+                     (reconstruct-graph-from-type-scheme
+                      primitive-type-scheme (make-hash-table)
+                      (label-term free-var-label-in))
+                     (begin
+                       (set! *errors*
+                             (cons
+                              (list
+                               (list (label-term free-var-label-in) term)
+                               'red
+                               (format "reference to undefined identifier: ~a in function ~a"
+                                       free-var-name-in
+                                       (syntax-object->datum term)))
+                              *errors*))
+                       #f))))))
+           free-vars-labels-in)])
+     ; we don't expect to have many free variables, so processing
+     ; free-vars-labels-in twice and binding-labels once should be ok.
+     (if (andmap *id* binding-labels-in)
+       (begin
+         (for-each
+          (lambda (binding-label-in free-var-label-in)
+            (add-edge-and-propagate-set-through-edge
+             binding-label-in
+             (extend-edge-for-values
+              (create-simple-edge free-var-label-in))))
+          binding-labels-in
+          free-vars-labels-in)
+         #t)
+       #f)))
+ 
+ ; (listof booleans) (listof integer) (listof (listof label)) (listof label) term boolean -> edge
+ ; The four first parameters simulate the surrounding case-lambda specification. We could
+ ; wrap it inside a real case-lambda label, but we would have to create fake values for the
+ ; other components of the structure...
+ (define (create-case-lambda-edge rest-arg?s-around req-args-around
+                                  argss-labelss-around exps-labels-around
+                                  term covariant?)
+   (let ([edge-fake-destination (gensym)])
+     (case-lambda
+      [(out-label inflowing-case-lambda-label)
+       ; inflowing-case-lambda-label doesn't go anywhere, it's components are just connected to
+       ; the rest of the graph (around), so out-label (which will be the op-label from which
+       ; the case-lambda label is flowing out) is not used. I.e. op-label (out-label)
+       ; is a sink for functions.
+       ; Note: only case-lambdas generated from primitives can ever be contravariant,
+       ; and it's exactly when we generate an edge for a contravariant case-lambda
+       ; generated from a primitive that we need to reset the tunneling of inflowing labels...
+       (unless covariant?
+         (set-label-tunnel?! inflowing-case-lambda-label #f))
+       (if (label-case-lambda? inflowing-case-lambda-label)
+         (let ([top-around-thunk
+                (let loop-clauses-around
+                  (; one thunk wrapped around this one for each around clause that's been
+                   ; matched. If there's a matchinf error, it will be #f, and the test below
+                   ; will be false, stopping the loop-clauses-around loop.
+                   [around-thunk *dummy-thunk*]
+                   [rest-arg?s-around rest-arg?s-around]
+                   [req-args-around req-args-around]
+                   [argss-labelss-around argss-labelss-around]
+                   [exps-labels-around exps-labels-around])
+                  (if (null? rest-arg?s-around)
+                    around-thunk
+                    (let ([top-in-thunk
+                           ; search match for current around clause, returning a thunk that
+                           ; creates all the right edges, or #f.
+                           (let loop-clauses-in
+                             ([rest-arg?s-in (label-case-lambda-rest-arg?s inflowing-case-lambda-label)]
+                              [req-args-in (label-case-lambda-req-args inflowing-case-lambda-label)]
+                              [argss-labelss-in (label-case-lambda-argss inflowing-case-lambda-label)]
+                              [exps-labels-in (label-case-lambda-exps inflowing-case-lambda-label)]
+                              [top-free-varss-labelss-in
+                               (label-case-lambda-top-free-varss inflowing-case-lambda-label)]
+                              [app-thunks-in (label-case-lambda-app-thunks inflowing-case-lambda-label)]) 
+                             (if (null? rest-arg?s-in)
+                               ; No match found.
+                               (begin
+                                 (set! *errors*
+                                       (cons (list
+                                              (list term)
+                                              'red
+                                              (format "procedure application: arity mismatch, given: ~a; ~a required arguments was given"
+                                                      (if (label-prim? inflowing-case-lambda-label)
+                                                        ; this won't work if we use a primitive
+                                                        ; in a higer-order way, but they can
+                                                        ; always trace the case-lambda back,
+                                                        ; so that should be good enough.
+                                                        (syntax-object->datum term)
+                                                        (syntax-object->datum
+                                                         (label-term inflowing-case-lambda-label)))
+                                                      (car req-args-around)))
+                                             *errors*))
+                                 #f)
+                               (let ([rest-arg?-in (car rest-arg?s-in)]
+                                     [req-arg-in (car req-args-in)]
+                                     [rest-arg?-around (car rest-arg?s-around)]
+                                     [req-arg-around (car req-args-around)])
+                                 ; case 2 is similiar to case 5 and case 3 similar to case 4,
+                                 ; except that both case 4 and 5 don't go till they reach null.
+                                 (cond
+                                   [(and (or (and (not rest-arg?-in) (not rest-arg?-around))
+                                             (and rest-arg?-in rest-arg?-around))
+                                         (= req-arg-in req-arg-around))
+                                    ; exact one-to-one match between in and around, with or without
+                                    ; rest args, it's the same
+                                    (lambda ()
+                                      (when (lookup-and-bind-top-level-vars
+                                             (car top-free-varss-labelss-in) term)
+                                        ; make internal apps flow
+                                        ((car app-thunks-in))
+                                        (set-car! app-thunks-in *dummy-thunk*)
+                                        (let args-loop-in
+                                          ([args-labels-in (car argss-labelss-in)]
+                                           [args-labels-around (car argss-labelss-around)])
+                                          (unless (null? args-labels-in)
+                                            (add-edge-and-propagate-set-through-edge
+                                             (car args-labels-around)
+                                             (extend-edge-for-values
+                                              (create-simple-edge (car args-labels-in))))
+                                            (args-loop-in (cdr args-labels-in)
+                                                          (cdr args-labels-around))))
+                                        ; edge from body of clause to app term itself
+                                        ; note that we do not detect multiple values here
+                                        (add-edge-and-propagate-set-through-edge
+                                         (car exps-labels-in)
+                                         (create-simple-edge (car exps-labels-around)))))]
+                                   [(and rest-arg?-in (not rest-arg?-around)
+                                         (<= req-arg-in req-arg-around))
+                                    ; fixed number of args around and the in function can
+                                    ; take them all. So we just have to create a label list for
+                                    ; the rest argument.
+                                    (lambda ()
+                                      (when (lookup-and-bind-top-level-vars
+                                             (car top-free-varss-labelss-in) term)
+                                        ; make internal apps flow
+                                        ((car app-thunks-in))
+                                        (set-car! app-thunks-in *dummy-thunk*)
+                                        (let args-loop-in
+                                          ([args-labels-in (car argss-labelss-in)]
+                                           [args-labels-around (car argss-labelss-around)])
+                                          ; we know we have a rest arg, so the list is not null
+                                          (if (null? (cdr args-labels-in))
+                                            ; create list for rest arg
+                                            (let* ([rest-arg-label (car args-labels-in)]
+                                                   [rest-arg-term (label-term rest-arg-label)]
+                                                   [args-labels-around-in-labellist
+                                                    (let rest-loop-around ([args-labels-around
+                                                                            args-labels-around])
+                                                      (if (null? args-labels-around)
+                                                        (let ([null-label
+                                                               (make-label-cst
+                                                                #f #f #f #t
+                                                                rest-arg-term
+                                                                (make-hash-table)
+                                                                '()
+                                                                '())])
+                                                          (set! graph-nodes (add1 graph-nodes))
+                                                          (initialize-label-set-for-value-source
+                                                           null-label)
+                                                          ;(associate-label-with-term-position
+                                                          ; null-label rest-arg-term)
+                                                          null-label)
+                                                        (let ([cons-label
+                                                               (make-label-cons
+                                                                #f #f #f #t
+                                                                rest-arg-term
+                                                                (make-hash-table)
+                                                                '()
+                                                                (car args-labels-around)
+                                                                (rest-loop-around
+                                                                 (cdr args-labels-around)))])
+                                                          (set! graph-nodes (add1 graph-nodes))
+                                                          (initialize-label-set-for-value-source
+                                                           cons-label)
+                                                          ;(associate-label-with-term-position
+                                                          ; cons-label rest-arg-term)
+                                                          cons-label)))])
+                                              ; we know args-label-around-inlabellist is not
+                                              ; a multiple value...
+                                              (add-edge-and-propagate-set-through-edge
+                                               args-labels-around-in-labellist
+                                               (create-simple-edge rest-arg-label)))
+                                            ; normal args
+                                            (begin
+                                              (add-edge-and-propagate-set-through-edge
+                                               (car args-labels-around)
+                                               (extend-edge-for-values
+                                                (create-simple-edge (car args-labels-in))))
+                                              (args-loop-in (cdr args-labels-in)
+                                                            (cdr args-labels-around)))))
+                                        ; edge from body of clause to app term itself
+                                        ; note that we do not detect multiple values here
+                                        (add-edge-and-propagate-set-through-edge
+                                         (car exps-labels-in)
+                                         (create-simple-edge (car exps-labels-around)))))]
+                                   [(and (not rest-arg?-in) rest-arg?-around
+                                         (>= req-arg-in req-arg-around))
+                                    ; in fct takes a fixed number of args and there's some of
+                                    ; them around in the rest argument => distribute  what
+                                    ; is in the rest arg around by creating cons-distributing
+                                    ; labels/edges. The problem is that we don't want to add
+                                    ; any edges between in and around as long as we aren't sure
+                                    ; we have the right number of arguments flowing into the
+                                    ; rest argument. So we use a separate inner thunk to delay
+                                    ; the creation of the edges for the regular arguments
+                                    ; until we know the right number of args is actually flowing
+                                    ; into the rest arg...
+                                    (let ([inner-thunk
+                                           ; edge from body of clause to app term itself
+                                           ; note that we do not detect multiple values here
+                                           (lambda ()
+                                             (add-edge-and-propagate-set-through-edge
+                                              (car exps-labels-in)
+                                              (create-simple-edge (car exps-labels-around))))])
+                                      (let args-loop-around
+                                        ([args-labels-in (car argss-labelss-in)]
+                                         [args-labels-around (car argss-labelss-around)])
+                                        ; we know we have a rest arg, so the list is not null
+                                        (if (null? (cdr args-labels-around))
+                                          ; distribute list for rest arg, if we can
+                                          ; note: we can create all the edges here in the let
+                                          ; directly, because nothing will flow into them
+                                          ; unless we add the arg-number-checking-edge to
+                                          ; rest-arg-label, i.e. not until the lambda in the
+                                          ; body of this let is applied (which will itself
+                                          ; only happen when the top level loop terminates).
+                                          (let* ([rest-arg-label (car args-labels-around)]
+                                                 [rest-arg-term (label-term rest-arg-label)]
+                                                 [splitting-rest-arg-label
+                                                  (let rest-loop-in
+                                                    ([args-labels-in args-labels-in])
+                                                    (if (null? args-labels-in)
+                                                      (let ([null-label
+                                                             (make-label-cst
+                                                              #f #f #f #t
+                                                              rest-arg-term
+                                                              (make-hash-table)
+                                                              '()
+                                                              '())])
+                                                        ; note that there's no need to type
+                                                        ; check here, because the only thing
+                                                        ; that ever flows in is '(), since we
+                                                        ; already checked the length below.
+                                                        ; (except in the case of an infinite
+                                                        ; list flowing in, in which case we don't
+                                                        ; want to type check anything anyway).
+                                                        ; Also, there's no no need to reset
+                                                        ; the tunnel, since the rest arg list
+                                                        ; was created internally and the user
+                                                        ; has no way to access it directly.
+                                                        ;(associate-label-with-type
+                                                        ; null-checking-label
+                                                        ; (make-type-cst '()))
+                                                        null-label)
+                                                      (let* ([car-label (car args-labels-in)]
+                                                             [car-edge (create-simple-edge car-label)]
+                                                             [cdr-label (rest-loop-in (cdr args-labels-in))]
+                                                             [cdr-edge (create-simple-edge cdr-label)]
+                                                             [cons-label (create-simple-prim-label term)]
+                                                             [cons-edge
+                                                              (let ([edge-fake-destination
+                                                                     (gensym)])
+                                                                (case-lambda
+                                                                 [(out-label inflowing-label)
+                                                                  ; cons sink => no use for
+                                                                  ; out-label here. No need to
+                                                                  ; reset tunneling for 
+                                                                  ; inflowing-label, because
+                                                                  ; the cons list was created
+                                                                  ; internally anyway, so the
+                                                                  ; user has no way to access it...
+                                                                  ; Note: we still have to test
+                                                                  ; that we actually have a
+                                                                  ; label-cons, in case the
+                                                                  ; inflowing list is infinite,
+                                                                  ; because then '() will flow in
+                                                                  ; too.
+                                                                  (when (label-cons? inflowing-label)
+                                                                    (and 
+                                                                     (add-edge-and-propagate-set-through-edge
+                                                                      (label-cons-car inflowing-label)
+                                                                      car-edge)
+                                                                     (add-edge-and-propagate-set-through-edge
+                                                                      (label-cons-cdr inflowing-label)
+                                                                      cdr-edge)))]
+                                                                 ; cons sink
+                                                                 [() edge-fake-destination]))])
+                                                        ;(associate-label-with-type cons-label
+                                                        ;                           (make-type-cons
+                                                        ;                            (make-type-cst 'top) 
+                                                        ;                            (make-type-cst 'top)))
+                                                        (add-edge-and-propagate-set-through-edge
+                                                         cons-label cons-edge)
+                                                        cons-label)))]
+                                                 [splitting-rest-arg-edge
+                                                  (create-simple-edge splitting-rest-arg-label)]
+                                                 [arg-number-checking-edge
+                                                  (let ([edge-fake-destination (gensym)]
+                                                        [inner-thunk inner-thunk])
+                                                    (case-lambda
+                                                     [(out-label inflowing-label)
+                                                      (let ([rest-list-length (label-list-length inflowing-label)])
+                                                        (if (or (= rest-list-length +inf.0) ; infinite list
+                                                                (= (+ rest-list-length req-arg-around)
+                                                                   req-arg-in))
+                                                          (begin
+                                                            (when (lookup-and-bind-top-level-vars
+                                                                   (car top-free-varss-labelss-in) term)
+                                                              ; make internal apps flow
+                                                              ((car app-thunks-in))
+                                                              (set-car! app-thunks-in *dummy-thunk*)
+                                                              (add-edge-and-propagate-set-through-edge
+                                                               inflowing-label
+                                                               splitting-rest-arg-edge)
+                                                              (inner-thunk)))
+                                                          (begin
+                                                            (set! *errors*
+                                                                  (cons
+                                                                   (list
+                                                                    (list (label-term inflowing-case-lambda-label))
+                                                                    'red
+                                                                    (format "possible arity error (might be a side effect of generating an infinite list): function ~a expected ~a arguments, received ~a"
+                                                                            ; this would underline the primitive that generated the list
+                                                                            ;(syntax-object->datum
+                                                                            ; (label-term 
+                                                                            ;  inflowing-label))
+                                                                            (syntax-object->datum
+                                                                             (label-term
+                                                                              inflowing-case-lambda-label))
+                                                                            req-arg-in
+                                                                            (+ rest-list-length req-arg-around)
+                                                                            ))
+                                                                   *errors*))
+                                                            #f)))]
+                                                     ; sink
+                                                     [() edge-fake-destination]))])
+                                            (lambda ()
+                                              ; that's the only thing the top level loop will
+                                              ; have to do for this clause if all the clauses are
+                                              ; matched. Everything else will be done when args
+                                              ; flow into the rest arg.
+                                              (add-edge-and-propagate-set-through-edge
+                                               rest-arg-label
+                                               arg-number-checking-edge)))
+                                          ; normal args
+                                          (begin
+                                            (set! inner-thunk
+                                                  (let ([inner-thunk inner-thunk])
+                                                    (lambda ()
+                                                      (add-edge-and-propagate-set-through-edge
+                                                       (car args-labels-around)
+                                                       (extend-edge-for-values
+                                                        (create-simple-edge (car args-labels-in))))
+                                                      (inner-thunk))))
+                                            (args-loop-around (cdr args-labels-in)
+                                                              (cdr args-labels-around))))))]
+                                   [(and rest-arg?-in rest-arg?-around
+                                         (> req-arg-in req-arg-around))
+                                    ; same problem here as in the previous case...
+                                    (let ([inner-thunk
+                                           ; edge from body of clause to app term itself
+                                           ; note that we do not detect multiple values here
+                                           (lambda ()
+                                             (add-edge-and-propagate-set-through-edge
+                                              (car exps-labels-in)
+                                              (create-simple-edge (car exps-labels-around))))])
+                                      (let args-loop-around
+                                        ([args-labels-in (car argss-labelss-in)]
+                                         [args-labels-around (car argss-labelss-around)])
+                                        ; we know we have a rest arg, so the list is not null
+                                        (if (null? (cdr args-labels-around))
+                                          ; distribute list for rest arg, if we can
+                                          ; note: we can create all the edges here in the let
+                                          ; directly, because nothing will flow into them
+                                          ; unless we add the arg-number-checking-edge to
+                                          ; rest-arg-label, i.e. not until the lambda in the
+                                          ; body of this let is applied (which will itself
+                                          ; only happen when the top level loop terminates).
+                                          (let* ([rest-arg-label (car args-labels-around)]
+                                                 [rest-arg-term (label-term rest-arg-label)]
+                                                 [splitting-rest-arg-label
+                                                  (let rest-loop-in
+                                                    ([args-labels-in args-labels-in])
+                                                    (if (null? (cdr args-labels-in))
+                                                      ; all the remaining values in the list of rest-arg-around
+                                                      ; flow into rest-arg-in
+                                                      (car args-labels-in)
+                                                      (let* ([car-label (car args-labels-in)]
+                                                             [car-edge (create-simple-edge car-label)]
+                                                             [cdr-label (rest-loop-in (cdr args-labels-in))]
+                                                             [cdr-edge (create-simple-edge cdr-label)]
+                                                             [cons-label (create-simple-prim-label term)]
+                                                             [cons-edge
+                                                              (let ([edge-fake-destination
+                                                                     (gensym)])
+                                                                (case-lambda
+                                                                 [(out-label inflowing-label)
+                                                                  ; cons sink => no use for
+                                                                  ; out-label here. No need to
+                                                                  ; reset tunneling for 
+                                                                  ; inflowing-label, because
+                                                                  ; the cons list was created
+                                                                  ; internally anyway, so the
+                                                                  ; user has no way to access it...
+                                                                  ; Note: we still have to test
+                                                                  ; that we actually have a
+                                                                  ; label-cons, in case the
+                                                                  ; inflowing list is infinite.
+                                                                  ; because then '() will flow in
+                                                                  ; too.
+                                                                  (when (label-cons? inflowing-label)
+                                                                    (and 
+                                                                     (add-edge-and-propagate-set-through-edge
+                                                                      (label-cons-car inflowing-label)
+                                                                      car-edge)
+                                                                     (add-edge-and-propagate-set-through-edge
+                                                                      (label-cons-cdr inflowing-label)
+                                                                      cdr-edge)))]
+                                                                 ; cons sink
+                                                                 [() edge-fake-destination]))])
+                                                        ;(associate-label-with-type cons-label
+                                                        ;                           (make-type-cons
+                                                        ;                            (make-type-cst 'top) 
+                                                        ;                            (make-type-cst 'top)))
+                                                        (add-edge-and-propagate-set-through-edge
+                                                         cons-label cons-edge)
+                                                        cons-label)))]
+                                                 [splitting-rest-arg-edge
+                                                  (create-simple-edge splitting-rest-arg-label)]
+                                                 [arg-number-checking-edge
+                                                  (let ([edge-fake-destination (gensym)]
+                                                        [inner-thunk inner-thunk])
+                                                    (case-lambda
+                                                     [(out-label inflowing-label)
+                                                      (let ([rest-list-length (label-list-length inflowing-label)])
+                                                        (if (or (= rest-list-length +inf.0) ; infinite list
+                                                                (= (+ rest-list-length req-arg-around)
+                                                                   req-arg-in))
+                                                          (begin
+                                                            (when (lookup-and-bind-top-level-vars
+                                                                   (car top-free-varss-labelss-in) term)
+                                                              ; make internal apps flow
+                                                              ((car app-thunks-in))
+                                                              (set-car! app-thunks-in *dummy-thunk*)
+                                                              (add-edge-and-propagate-set-through-edge
+                                                               inflowing-label
+                                                               splitting-rest-arg-edge)
+                                                              (inner-thunk)))
+                                                          (begin
+                                                            (set! *errors*
+                                                                  (cons
+                                                                   (list
+                                                                    (list (label-term inflowing-case-lambda-label))
+                                                                    'red
+                                                                    (format "possible arity error (might be a side effect of generating an infinite list): function ~a expected ~a arguments, received ~a"
+                                                                            ; this would underline the primitive that generated the list
+                                                                            ;(syntax-object->datum
+                                                                            ; (label-term 
+                                                                            ;  inflowing-label))
+                                                                            (syntax-object->datum
+                                                                             (label-term
+                                                                              inflowing-case-lambda-label))
+                                                                            req-arg-in
+                                                                            (+ rest-list-length req-arg-around)
+                                                                            ))
+                                                                   *errors*))
+                                                            #f)))]
+                                                     ; sink
+                                                     [() edge-fake-destination]))])
+                                            (lambda ()
+                                              ; that's the only thing the top level loop will
+                                              ; have to do for this clause if all the clauses are
+                                              ; matched. Everything else will be done when args
+                                              ; flow into the rest arg.
+                                              (add-edge-and-propagate-set-through-edge
+                                               rest-arg-label
+                                               arg-number-checking-edge)))
+                                          ; normal args
+                                          (begin
+                                            (set! inner-thunk
+                                                  (let ([inner-thunk inner-thunk])
+                                                    (lambda ()
+                                                      (add-edge-and-propagate-set-through-edge
+                                                       (car args-labels-around)
+                                                       (extend-edge-for-values
+                                                        (create-simple-edge (car args-labels-in))))
+                                                      (inner-thunk))))
+                                            (args-loop-around (cdr args-labels-in)
+                                                              (cdr args-labels-around))))))]
+                                   [(and rest-arg?-in rest-arg?-around
+                                         (< req-arg-in req-arg-around))
+                                    (lambda ()
+                                      (when (lookup-and-bind-top-level-vars
+                                             (car top-free-varss-labelss-in) term)
+                                        ; make internal apps flow
+                                        ((car app-thunks-in))
+                                        (set-car! app-thunks-in *dummy-thunk*)
+                                        (let args-loop-in
+                                          ([args-labels-in (car argss-labelss-in)]
+                                           [args-labels-around (car argss-labelss-around)])
+                                          ; we know we have a rest arg, so the list is not null
+                                          (if (null? (cdr args-labels-in))
+                                            ; create list for rest arg
+                                            (let* ([rest-arg-label (car args-labels-in)]
+                                                   [rest-arg-term (label-term rest-arg-label)]
+                                                   [args-labels-around-in-labellist
+                                                    (let rest-loop-around ([args-labels-around
+                                                                            args-labels-around])
+                                                      (if (null? (cdr args-labels-around))
+                                                        ; everything in rest-arg-around will flow
+                                                        ; into rest-arg-in, plus some other stuff
+                                                        ; around the list.
+                                                        (car args-labels-around)
+                                                        (let ([cons-label
+                                                               (make-label-cons
+                                                                #f #f #f #t
+                                                                rest-arg-term
+                                                                (make-hash-table)
+                                                                '()
+                                                                (car args-labels-around)
+                                                                (rest-loop-around
+                                                                 (cdr args-labels-around)))])
+                                                          (set! graph-nodes (add1 graph-nodes))
+                                                          (initialize-label-set-for-value-source
+                                                           cons-label)
+                                                          ;(associate-label-with-term-position
+                                                          ; cons-label rest-arg-term)
+                                                          cons-label)))])
+                                              ; we know args-label-around-inlabellist is not
+                                              ; a multiple value...
+                                              (add-edge-and-propagate-set-through-edge
+                                               args-labels-around-in-labellist
+                                               (create-simple-edge rest-arg-label)))
+                                            ; normal args
+                                            (begin
+                                              (add-edge-and-propagate-set-through-edge
+                                               (car args-labels-around)
+                                               (extend-edge-for-values
+                                                (create-simple-edge (car args-labels-in))))
+                                              (args-loop-in (cdr args-labels-in)
+                                                            (cdr args-labels-around)))))
+                                        ; edge from body of clause to app term itself
+                                        ; note that we do not detect multiple values here
+                                        (add-edge-and-propagate-set-through-edge
+                                         (car exps-labels-in)
+                                         (create-simple-edge (car exps-labels-around)))))]
+                                   [else ; keep looking for a matching clause
+                                    (loop-clauses-in
+                                     (cdr rest-arg?s-in) (cdr req-args-in)
+                                     (cdr argss-labelss-in) (cdr exps-labels-in)
+                                     (cdr top-free-varss-labelss-in) (cdr app-thunks-in))]))))])
+                      (if top-in-thunk
+                        (loop-clauses-around (lambda ()
+                                               ; connect the current around clause
+                                               (top-in-thunk)
+                                               ; and all the other ones before it
+                                               (around-thunk))
+                                             (cdr rest-arg?s-around)
+                                             (cdr req-args-around)
+                                             (cdr argss-labelss-around)
+                                             (cdr exps-labels-around))
+                        #f))))])
+           (when top-around-thunk
+             (top-around-thunk)))
+         ; trying to apply something not a function
+         ; Note: nothing was done, so there's nothing to undo
+         (begin
+           (set! *errors*
+                 (cons (list (list term)
+                             'red
+                             (format "procedure application: expected procedure, given: ~a"
+                                     (syntax-object->datum
+                                      (label-term inflowing-case-lambda-label))))
+                       *errors*))
+           #f))]
+      ; function value sink => unique, fake destination
+      [() edge-fake-destination])))
  
  ; syntax-object (listof (cons symbol label)) label -> label
  ; gamma is the binding-variable-name-to-label environment
@@ -478,187 +1148,19 @@
      (let* ([app-label (create-simple-label term)]
             [op-term (syntax op)]
             [op-label (create-label-from-term op-term gamma enclosing-lambda-label)]
+            [stx-actual-args (syntax (actual-args ...))]
             [actual-args-labels
              (map (lambda (actual-arg)
                     (create-label-from-term actual-arg gamma enclosing-lambda-label))
-                  (syntax-e (syntax (actual-args ...))))]
+                  (syntax-e stx-actual-args))]
             [actual-args-length (length actual-args-labels)]
-            [edge
-             (let ([edge-fake-destination (gensym)])
-               (case-lambda
-                [(out-label inflowing-label)
-                 ; inflowing-label doesn't go anywhere, it's components are just connected to
-                 ; the rest of the graph, so out-label (which will be the op-label from which
-                 ; the case-lambda label is flowing out) is not used. I.e. op-label (out-label)
-                 ; is a sink for functions.
-                 (if (label-case-lambda? inflowing-label)
-                   ; loop on clauses, looking for arity match
-                   (let clauses-loop ([rest-arg?s
-                                       (label-case-lambda-rest-arg?s inflowing-label)]
-                                      [req-args
-                                       (label-case-lambda-req-args inflowing-label)]
-                                      [formal-argss-labels
-                                       (label-case-lambda-argss inflowing-label)]
-                                      [body-exps-label
-                                       (label-case-lambda-exps inflowing-label)]
-                                      [top-free-varss-labels
-                                       (label-case-lambda-top-free-varss inflowing-label)]
-                                      [app-thunks
-                                       (label-case-lambda-app-thunks inflowing-label)]) 
-                     (if (null? rest-arg?s)
-                       ; Note: nothing was done, so there's nothing to undo
-                       (set! *errors*
-                             (cons (list
-                                    (list op-term)
-                                    'red
-                                    (format "procedure application: arity mismatch, given: ~a; arguments were: ~a"
-                                            (if (label-prim? inflowing-label)
-                                              ; this won't work if we use a primitive
-                                              ; in a higer-order way, but they can always
-                                              ; trace the case-lambda back, so that should
-                                              ; be good enough.
-                                              (syntax-object->datum op-term)
-                                              (syntax-object->datum
-                                               (label-term inflowing-label)))
-                                            (syntax-object->datum (syntax (actual-args ...)))))
-                                   *errors*))
-                       (let ([rest-arg? (car rest-arg?s)]
-                             [req-arg (car req-args)])
-                         (if (or (and (not rest-arg?) (= actual-args-length req-arg))
-                                 (and rest-arg? (>= actual-args-length req-arg)))
-                           ; arity match
-                           ; first, take care of all the top level free variables in the
-                           ; clause.
-                           ; Note that we make sure that all free variables are bound before
-                           ; creating the edges, and we check all free variables even if we
-                           ; already know some of them are unbound.
-                           ; Note also that a free variable can not be captured by a lexical
-                           ; binding, it has to be a top level binding.
-                           (let* ([free-vars-labels (car top-free-varss-labels)]
-                                  [binding-labels
-                                   (map
-                                    (lambda (free-var-label)
-                                      (let* ([free-var-name
-                                              (syntax-e (label-term free-var-label))]
-                                             [binding-label
-                                              (lookup-top-level-name free-var-name)])
-                                        (unless binding-label
-                                          (set! *errors*
-                                                (cons
-                                                 (list
-                                                  (list (label-term free-var-label) op-term)
-                                                  'red
-                                                  (format "reference to undefined identifier: ~a in function ~a"
-                                                          free-var-name
-                                                          (syntax-object->datum op-term)))
-                                                 *errors*)))
-                                        binding-label))
-                                    free-vars-labels)])
-                             ; we don't expect to have many free variables, so processing
-                             ; free-vars-labels once and binding-labels twice should be ok.
-                             (when (andmap (lambda (x) x) binding-labels)
-                               (for-each
-                                (lambda (binding-label free-var-label)
-                                  (add-edge-and-propagate-set-through-edge
-                                   binding-label
-                                   (extend-edge-for-values
-                                    (create-simple-edge free-var-label))))
-                                binding-labels
-                                free-vars-labels)
-                               ; then, make the applications inside this clause of
-                               ; inflowing-label flow (only once).
-                               ((car app-thunks))
-                               (set-car! app-thunks *dummy-thunk*)
-                               ; args edges (including special processing for rest arg, if any)
-                               ; don't do all that stuff if there's no arg at all, because of
-                               ; the cdr just below (which in turn is needed because we want
-                               ; to treat the last arg differently when it's a rest arg)
-                               (when (or rest-arg? (> req-arg 0))
-                                 (let args-loop ([formal-args-labels (car formal-argss-labels)]
-                                                 [actual-args-labels actual-args-labels])
-                                   (if (null? (cdr formal-args-labels))
-                                     (if rest-arg?
-                                       ; create list for all the remaining actual args,
-                                       ; and make the list flow into the rest arg
-                                       (let* ([rest-arg-label (car formal-args-labels)]
-                                              [rest-arg-term (label-term rest-arg-label)]
-                                              [prim? (label-prim? inflowing-label)]
-                                              [actual-args-label-labellist
-                                               (let rest-loop ([actual-args-labels
-                                                                actual-args-labels])
-                                                 (if (null? actual-args-labels)
-                                                   (let* ([null-label (make-label-cst
-                                                                       #f #f #f prim?
-                                                                       rest-arg-term
-                                                                       (make-hash-table)
-                                                                       '()
-                                                                       '())])
-                                                     (set! graph-nodes (add1 graph-nodes))
-                                                     (initialize-label-set-for-value-source
-                                                      null-label)
-                                                     ;(associate-label-with-term-position
-                                                     ; null-label rest-arg-term)
-                                                     null-label)
-                                                   (let* ([cons-label
-                                                           (make-label-cons
-                                                            #f #f #f prim?
-                                                            rest-arg-term
-                                                            (make-hash-table)
-                                                            '()
-                                                            (car actual-args-labels)
-                                                            (rest-loop
-                                                             (cdr actual-args-labels)))])
-                                                     (set! graph-nodes (add1 graph-nodes))
-                                                     (initialize-label-set-for-value-source
-                                                      cons-label)
-                                                     ;(associate-label-with-term-position
-                                                     ; cons-label rest-arg-term)
-                                                     cons-label)))])
-                                         (add-edge-and-propagate-set-through-edge
-                                          actual-args-label-labellist
-                                          (extend-edge-for-values
-                                           (create-simple-edge rest-arg-label))))
-                                       ; normal last arg
-                                       (let ([formal-arg-label (car formal-args-labels)]
-                                             [actual-arg-label (car actual-args-labels)])
-                                         (add-edge-and-propagate-set-through-edge
-                                          actual-arg-label
-                                          (extend-edge-for-values
-                                           (create-simple-edge formal-arg-label)))))
-                                     ; all formal args except last one
-                                     (begin
-                                       (let ([formal-arg-label (car formal-args-labels)]
-                                             [actual-arg-label (car actual-args-labels)])
-                                         (add-edge-and-propagate-set-through-edge
-                                          actual-arg-label
-                                          (extend-edge-for-values
-                                           (create-simple-edge formal-arg-label))))
-                                       (args-loop (cdr formal-args-labels)
-                                                  (cdr actual-args-labels)))))
-                                 )
-                               ; edge from body of clause to app term itself
-                               ; note that we do not detect multiple values here
-                               (let ([body-exp-label (car body-exps-label)])
-                                 (add-edge-and-propagate-set-through-edge
-                                  body-exp-label
-                                  (create-simple-edge app-label)))
-                               ; flow sensitivity here ?
-                               ))
-                           ; no arity match for this clause, keep looking
-                           (clauses-loop (cdr rest-arg?s) (cdr req-args)
-                                         (cdr formal-argss-labels) (cdr body-exps-label)
-                                         (cdr top-free-varss-labels) (cdr app-thunks))))))
-                   ; trying to apply something not a function
-                   ; Note: nothing was done, so there's nothing to undo
-                   (set! *errors*
-                         (cons (list (list op-term)
-                                     'red
-                                     (format "procedure application: expected procedure, given: ~a; arguments were: ~a"
-                                             (syntax-object->datum (label-term inflowing-label))
-                                             (syntax-object->datum (syntax (actual-args ...)))))
-                               *errors*)))]
-                ; function value sink => unique, fake destination
-                [() edge-fake-destination]))])
+            [edge (create-case-lambda-edge
+                   (list #f)
+                   (list actual-args-length)
+                   (list actual-args-labels)
+                   (list app-label)
+                   op-term
+                   #t)])
        ; If the app is inside a lambda, we delay the addition of the edge until the enclosing
        ; lambda is itself applied.
        (if enclosing-lambda-label
@@ -751,36 +1253,50 @@
                     ; the different variables. I.e. it's a sink for multiple values. So we
                     ; have no need for out-label here.
                     (if (label-values? inflowing-label)
-                      (let ([values-labels (label-values-labels inflowing-label)])
-                        (if (= (length values-labels) vars-length)
-                          ; we have something like
-                          ; (define-values (x y) (... (values a b) ...)), so we add a
-                          ; new direct edge from a to x and b to y. Of course these new
-                          ; edges have to be themselves recursive unpacking edges, since
-                          ; some (values c) could later flow into either a or b.
-                          (for-each
-                           (lambda (new-origin-label var-label)
-                             (add-edge-and-propagate-set-through-edge
-                              new-origin-label
-                              (extend-edge-for-values (create-simple-edge var-label))))
-                           values-labels vars-labels)
-                          ; (define-values (x y) (... (values a b c) ...))
-                          (set! *errors*
-                                (cons
-                                 (list (list (label-term inflowing-label))
-                                       'red
-                                       (format "context expected ~a value, received ~a values"
-                                               vars-length (length values-labels)))
-                                 *errors*))))
+                      (let ([label-list (hash-table-map (label-set (label-values-label
+                                                                    inflowing-label))
+                                                        (lambda (label in/out-edges)
+                                                          label))])
+                        (if (= (length label-list) 1)
+                          (let ([values-label (car label-list)])
+                            ; we do not expect an infinite list here
+                            (if (= (label-list-length values-label) vars-length)
+                              ; we have something like
+                              ; (define-values (x y) (... (values a b) ...)), so we add a
+                              ; new direct edge from a to x and b to y. Of course these new
+                              ; edges have to be themselves recursive unpacking edges, since
+                              ; some (values c) could later flow into either a or b.
+                              (label-ormap-strict
+                               (lambda (new-origin-label var-label)
+                                 (add-edge-and-propagate-set-through-edge
+                                  new-origin-label
+                                  (extend-edge-for-values (create-simple-edge var-label))))
+                               values-label vars-labels)
+                              ; (define-values (x y) (... (values a b c) ...))
+                              (begin
+                                (set! *errors*
+                                      (cons
+                                       (list (list (label-term inflowing-label))
+                                             'red
+                                             (format "define-values: context expected ~a value, received ~a values"
+                                                     vars-length (label-list-length values-label)))
+                                       *errors*))
+                                #f)))
+                          (error 'define-values "values didn't contain list: ~a"
+                                 (map (lambda (label)
+                                        (pp-type (get-type label)))
+                                      label-list))))
                       ; (define-values (x y) (... 1 ...))
-                      (set! *errors*
-                            (cons
-                             (list
-                              (list term)
-                              'red
-                              (format "define-values: context expected ~a values, received 1 non-multiple-values value"
-                                      vars-length))
-                             *errors*)))]
+                      (begin
+                        (set! *errors*
+                              (cons
+                               (list
+                                (list term)
+                                'red
+                                (format "define-values: context expected ~a values, received 1 non-multiple-values value"
+                                        vars-length))
+                               *errors*))
+                        #f))]
                    ; multiple values sink => unique, fake destination
                    [() edge-fake-destination]))])
            (add-edge-and-propagate-set-through-edge
@@ -845,40 +1361,56 @@
                                ; are connected to the different variables. I.e. it's a sink for
                                ; multiple values. So we have no need for out-label here.
                                (if (label-values? inflowing-label)
-                                 (let ([values-labels (label-values-labels inflowing-label)])
-                                   (if (= (length values-labels) vars-length)
-                                     ; we have something like
-                                     ; (let-values ([(x y) (... (values a b) ...)]...) ...),
-                                     ; so we add a new direct edge from a to x and b to y.
-                                     ; Of course these new edges have to be themselves
-                                     ; recursive unpacking edges, since some (values c)
-                                     ; could later flow into either a or b.
-                                     (for-each
-                                      (lambda (new-origin-label var-label)
-                                        (add-edge-and-propagate-set-through-edge
-                                         new-origin-label
-                                         (extend-edge-for-values
-                                          (create-simple-edge var-label))))
-                                      values-labels vars-labels)
-                                     ; (let-values ([(x y) (... (values a b c ...) ...)]
-                                     ;             ...) ...)
-                                     (set! *errors*
-                                           (cons
-                                            (list
-                                             (list (label-term inflowing-label))
-                                             'red
-                                             (format "context expected ~a value, received ~a values"
-                                                     vars-length (length values-labels)))
-                                            *errors*))))
+                                 (let ([label-list (hash-table-map
+                                                    (label-set (label-values-label
+                                                                inflowing-label))
+                                                    (lambda (label in/out-edges)
+                                                      label))])
+                                   (if (= (length label-list) 1)
+                                     (let ([values-label (car label-list)]) 
+                                       ; we do not expect an infinite list here
+                                       (if (= (label-list-length values-label) vars-length)
+                                         ; we have something like
+                                         ; (let-values ([(x y) (... (values a b) ...)]...) ...),
+                                         ; so we add a new direct edge from a to x and b to y.
+                                         ; Of course these new edges have to be themselves
+                                         ; recursive unpacking edges, since some (values c)
+                                         ; could later flow into either a or b.
+                                         (label-ormap-strict
+                                          (lambda (new-origin-label var-label)
+                                            (add-edge-and-propagate-set-through-edge
+                                             new-origin-label
+                                             (extend-edge-for-values
+                                              (create-simple-edge var-label))))
+                                          values-label vars-labels)
+                                         ; (let-values ([(x y) (... (values a b c ...) ...)]
+                                         ;             ...) ...)
+                                         (begin
+                                           (set! *errors*
+                                                 (cons
+                                                  (list
+                                                   (list (label-term inflowing-label))
+                                                   'red
+                                                   (format "let-values: context expected ~a value, received ~a values"
+                                                           vars-length
+                                                           (label-list-length values-label)))
+                                                  *errors*))
+                                           #f)))
+                                     (error 'let-values "values didn't contain list: ~a"
+                                            (map (lambda (label)
+                                                   (pp-type (get-type label)))
+                                                 label-list))))
                                  ; (let-values ([(x y) (... 1 ...)] ...) ...)
-                                 (set! *errors*
-                                       (cons
-                                        (list
-                                         (list term)
-                                         'red
-                                         (format "let-values: context expected ~a values, received 1 non-multiple-values value"
-                                                 vars-length))
-                                        *errors*)))]
+                                 (begin
+                                   (set! *errors*
+                                         (cons
+                                          (list
+                                           (list term)
+                                           'red
+                                           (format "let-values: context expected ~a values, received 1 non-multiple-values value"
+                                                   vars-length))
+                                          *errors*))
+                                   #f))]
                               ; multiple values sink
                               [() edge-fake-destination]))])
                       (add-edge-and-propagate-set-through-edge
@@ -915,7 +1447,7 @@
                       [dummy-edge (case-lambda
                                    [(out-label inflowing-label)
                                     ; sink edge, so no need for out-label
-                                    *dummy*]
+                                    #t]
                                    ; test value sink
                                    [() edge-fake-destination])]
                       [self-modifying-edge
@@ -925,35 +1457,35 @@
                          (if (and (label-cst? inflowing-label)
                                   (not (label-cst-value inflowing-label)))
                            (begin
-                             (add-edge-and-propagate-set-through-edge
-                              else-label if-edge)
                              (set! self-modifying-edge
                                    (case-lambda
                                     [(out-label inflowing-label)
                                      ; sink edge, so no need for out-label
                                      (when (or (not (label-cst? inflowing-label))
                                                (label-cst-value inflowing-label))
-                                       (add-edge-and-propagate-set-through-edge
-                                        then-label if-edge)
                                        ; it would be more efficient to directly remove the edge.
-                                       (set! self-modifying-edge dummy-edge))]
+                                       (set! self-modifying-edge dummy-edge)
+                                       (add-edge-and-propagate-set-through-edge
+                                        then-label if-edge))]
                                     ; test value sink
-                                    [() edge-fake-destination])))
-                           (begin
+                                    [() edge-fake-destination]))
                              (add-edge-and-propagate-set-through-edge
-                              then-label if-edge)
+                              else-label if-edge))
+                           (begin
                              (set! self-modifying-edge
                                    (case-lambda
                                     [(out-label inflowing-label)
                                      ; sink edge, so no need for out-label
                                      (when (and (label-cst? inflowing-label)
                                                 (not (label-cst-value inflowing-label)))
-                                       (add-edge-and-propagate-set-through-edge
-                                        else-label if-edge)
                                        ; it would be more efficient to directly remove the edge.
-                                       (set! self-modifying-edge dummy-edge))]
+                                       (set! self-modifying-edge dummy-edge)
+                                       (add-edge-and-propagate-set-through-edge
+                                        else-label if-edge))]
                                     ; test value sink
-                                    [() edge-fake-destination]))))]
+                                    [() edge-fake-destination]))
+                             (add-edge-and-propagate-set-through-edge
+                              then-label if-edge)))]
                         ; test value sink
                         [() edge-fake-destination])])
                self-modifying-edge)])
@@ -1001,12 +1533,11 @@
              ; free var at top level XXX must be a primitive (explicit call to
              ; primitive at top level)
              (let ([primitive-type-scheme (lookup-primitive-type-scheme identifier-name)])
-               (printf "primitive type scheme: ~a~n" primitive-type-scheme)
                (if primitive-type-scheme
                  ; we allow a primitive like pi to evaluate to multiple values...
                  (add-edge-and-propagate-set-through-edge
                   (reconstruct-graph-from-type-scheme
-                   primitive-type-scheme (make-hash-table) term)
+                   primitive-type-scheme (make-hash-table) identifier)
                   (create-simple-edge bound-label))
                  (set! *errors*
                        (cons (list (list term)
@@ -1018,21 +1549,32 @@
     [var
      ; we cannot directly return the binding label, because, even though it makes for a
      ; simpler graph and simpler types, it screws up the arrows
-     (let* ([bound-label (create-simple-label term)]
-            [binding-label (lookup-env (syntax var) gamma)])
+     (let* ([var-stx (syntax var)]
+            [var-name (syntax-e var-stx)]
+            [bound-label (create-simple-label term)]
+            [binding-label (lookup-env var-stx gamma)])
        (if binding-label
          (add-edge-and-propagate-set-through-edge
           binding-label
           (extend-edge-for-values (create-simple-edge bound-label)))
          ; no binding label at all. Either a construct we don't know how to analyze yet,
          ; or an implicit call to a primitive (call to cons as the result of using
-         ; quasiquotes, stuff like that - don't ask me why  such primitive calls are
-         ; not wrapped inside a #%top...)
-         (set! *errors*
-               (cons (list (list term)
-                           'red
-                           (format "unknown construct: ~a" (syntax-object->datum (syntax var))))
-                     *errors*)))
+         ; quasiquotes, call to make-a-promise when using delay, stuff like that - don't
+         ; ask me why  such primitive calls are not wrapped inside a #%top...)
+         (if (lookup-primitive-type-scheme var-name)
+           (let ([binding-label (create-label-from-term
+                                 (datum->syntax-object var-stx
+                                                       (cons '#%top var-stx)
+                                                       var-stx var-stx)
+                                 gamma enclosing-lambda-label)])
+             (add-edge-and-propagate-set-through-edge
+              binding-label
+              (extend-edge-for-values (create-simple-edge bound-label))))
+           (set! *errors*
+                 (cons (list (list term)
+                             'red
+                             (format "unknown or not yet supported construct: ~a" (syntax-object->datum var-stx)))
+                       *errors*))))
        bound-label)]
     ))
  
@@ -1042,25 +1584,33 @@
  (define-struct (type-empty type) () (make-inspector))
  (define-struct (type-cst type) (type) (make-inspector))
  (define-struct (type-cons type) (car cdr) (make-inspector))
+ (define-struct (type-vector type) (element) (make-inspector))
  (define-struct (type-case-lambda type) (rest-arg?s req-args argss exps) (make-inspector))
  (define-struct (type-var type) (name recur) (make-inspector))
  (define-struct (type-union type) (elements) (make-inspector))
  (define-struct (type-rec type) (vars types body) (make-inspector))
- (define-struct (type-values type) (types) (make-inspector))
+ (define-struct (type-values type) (type) (make-inspector))
  (define-struct (type-flow-var type) (name) (make-inspector))
+ (define-struct (type-promise type) (value) (make-inspector))
  (define-struct (type-scheme type) (flow-vars type^Cs type) (make-inspector))
  
  ; XXX
- (define *basic-types* '(top bottom
-                             void
-                             boolean char symbol string char
-                             integer exact-integer inexact-integer
-                             rational exact-rational inexact-rational
-                             real exact-real inexact-real
-                             complex exact-complex inexact-complex
-                             number exact-number inexact-number
-                             ))
- (define *type-constructors* '(forall cons listof case-lambda -> *-> void union rec-type))
+ (define *basic-types* '(top
+                         void boolean symbol char letter string
+                         number exact-number inexact-number
+                         complex exact-complex inexact-complex
+                         real exact-real inexact-real
+                         rational exact-rational inexact-rational
+                         integer exact-integer inexact-integer
+                         bottom
+                         ))
+ (define *type-constructors* '(forall
+                               cons listof
+                               vector union values
+                               case-lambda -> *-> rest
+                               promise
+                               rec-type
+                               ))
  (define *all-type-keywords* (append *basic-types* *type-constructors*))
  
  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; PRIMITIVE TYPE PARSER AND LOOKUP
@@ -1070,7 +1620,7 @@
  
  ; symbol -> (union type-scheme #f)
  (define (lookup-primitive-type-scheme name)
-   (hash-table-get *primitive-types-table* name *hash-table-fail-false*))
+   (hash-table-get *primitive-types-table* name *fail-false*))
  
  ; -> void
  (define (initialize-primitive-type-schemes)
@@ -1095,7 +1645,7 @@
                  (let ([primitive-name (car prim-entry)]
                        [primitive-type (cadr prim-entry)])
                    (when (hash-table-get *primitive-types-table*
-                                         primitive-name *hash-table-fail-false*)
+                                         primitive-name *fail-false*)
                      (raise-syntax-error
                       'initialize-primitive-type-schemes
                       (format "found duplicate for primitive ~a in file ~a"
@@ -1125,7 +1675,7 @@
                    'parse&check-type-scheme
                    (format "flow variable ~a is already the name of a basic type or type constructor, in type scheme for primitive ~a in file ~a"
                            flow-var primitive-name filename)))
-                (when (hash-table-get delta-flow flow-var *hash-table-fail-false*)
+                (when (hash-table-get delta-flow flow-var *fail-false*)
                   (raise-syntax-error
                    'parse&check-type-scheme
                    (format "duplicate flow variable ~a in type scheme for primitive ~a in file ~a"
@@ -1208,53 +1758,39 @@
                                [req-args (vector-ref other-clauses-types 1)]
                                [argss-typess (vector-ref other-clauses-types 2)]
                                [exps-types (vector-ref other-clauses-types 3)])
-                          (cond
-                            [(list? args)
-                             (if (and (pair? args) ; could be empty
-                                      (memq (car args) *type-constructors*))
-                               ; we have a single rest arg that's a complex type.
-                               (vector (cons #t rest-arg?s)
-                                       (cons 0 req-args)
-                                       (cons (list (parse&check-type args delta-flow delta-type
-                                                                     (not covariant?)
-                                                                     primitive-name filename))
-                                             argss-typess)
-                                       (cons exp-type exps-types))
-                               ; normal (possibly empty) list of (possibly complex) args
-                               (vector (cons #f rest-arg?s)
-                                       (cons (length args) req-args)
-                                       (cons (map (lambda (arg)
-                                                    (parse&check-type arg delta-flow delta-type
-                                                                      (not covariant?)
-                                                                      primitive-name filename))
-                                                  args)
-                                             argss-typess)
-                                       (cons exp-type exps-types)))]
-                            [(symbol? args)
-                             ; single simple rest argument
-                             (vector (cons #t rest-arg?s)
-                                     (cons 0 req-args)
-                                     (cons (list (parse&check-type args delta-flow delta-type
-                                                                   (not covariant?)
-                                                                   primitive-name filename))
-                                           argss-typess)
-                                     (cons exp-type exps-types))]
-                            [else
-                             ; improper list with a rest argument, so convert to proper list
-                             (let ([args (let loop ([args args])
-                                           (if (pair? args)
-                                             (cons (car args)
-                                                   (loop (cdr args)))
-                                             (list args)))])
-                               (vector (cons #t rest-arg?s)
-                                       (cons (sub1 (length args)) req-args)
-                                       (cons (map (lambda (arg)
-                                                    (parse&check-type arg delta-flow delta-type
-                                                                      (not covariant?)
-                                                                      primitive-name filename))
-                                                  args)
-                                             argss-typess)
-                                       (cons exp-type exps-types)))]))
+                          (if (list? args)
+                            (let ([args-length (length args)])
+                              (if (and (pair? args) ; could be empty
+                                       (eq? (car args) 'rest))
+                                ; list of (possibly complex) args with (possibly complex) rest arg
+                                (if (> args-length 1)
+                                  (vector (cons #t rest-arg?s)
+                                          (cons (- args-length 2) req-args)
+                                          (cons (map (lambda (arg)
+                                                       (parse&check-type arg delta-flow delta-type
+                                                                         (not covariant?)
+                                                                         primitive-name filename))
+                                                     (cdr args))
+                                                argss-typess)
+                                          (cons exp-type exps-types))
+                                  (raise-syntax-error
+                                   'parse&check-type
+                                   (format "missing rest argument in argument list for clause in case-lambda type in type scheme for primitive ~a in file ~a: expected (rest arg-type args-types ...), got ~a"
+                                           primitive-name filename args)))
+                                ; normal (possibly empty) list of (possibly complex) args
+                                (vector (cons #f rest-arg?s)
+                                        (cons args-length req-args)
+                                        (cons (map (lambda (arg)
+                                                     (parse&check-type arg delta-flow delta-type
+                                                                       (not covariant?)
+                                                                       primitive-name filename))
+                                                   args)
+                                              argss-typess)
+                                        (cons exp-type exps-types))))
+                            (raise-syntax-error
+                             'parse&check-type
+                             (format "malformed argument list for clause in case-lambda type in type scheme for primitive ~a in file ~a: expected (args-types ...), got ~a"
+                                     primitive-name filename args))))
                         (raise-syntax-error
                          'parse&check-type
                          (format "malformed clause in case-lambda type in type scheme for primitive ~a in file ~a: expected (args-types exp-type), got ~a"
@@ -1275,19 +1811,21 @@
                'parse&check-type
                (format "malformed cons type in type scheme for primitive ~a in file ~a: ~a"
                        primitive-name filename sexp)))]
-           [(eq? type-kw 'void)
-            (if (= (length sexp) 1)
-              (make-type-cst (void))
-              (raise-syntax-error
-               'parse&check-type
-               (format "malformed void type in type scheme for primitive ~a in file ~a: ~a"
-                       primitive-name filename sexp)))]
            [(eq? type-kw 'union)
             (make-type-union (map (lambda (elt-sexp)
                                     (parse&check-type
                                      elt-sexp delta-flow delta-type covariant?
                                      primitive-name filename))
                                   (cdr sexp)))]
+           [(eq? type-kw 'values)
+            (if (= (length sexp) 2)
+              (make-type-values (parse&check-type
+                                 (cadr sexp) delta-flow delta-type covariant?
+                                 primitive-name filename))
+              (raise-syntax-error
+               'parse&check-type
+               (format "malformed values type in type scheme for primitive ~a in file ~a: expected (values type), got ~a"
+                       primitive-name filename sexp)))]
            [(eq? type-kw 'rec-type)
             (if (= (length sexp) 3)
               (let* ([clauses (cadr sexp)]
@@ -1298,7 +1836,7 @@
                                   (= (length clause) 2))
                            (let ([type-var-name (car clause)])
                              (if (or (assq type-var-name delta-type)
-                                     (hash-table-get delta-flow sexp *hash-table-fail-false*))
+                                     (hash-table-get delta-flow sexp *fail-false*))
                                (raise-syntax-error
                                 'parse&check-type
                                 (format "recursive type variable ~a used twice or conflicts with flow variable name in type scheme for primitive ~a in file ~a"
@@ -1335,6 +1873,29 @@
                'parse&check-type
                (format "malformed listof type in type scheme for primitive ~a in file ~a: expected (listof type), got ~a"
                        primitive-name filename sexp)))]
+           [(eq? type-kw 'vector)
+            (if (= (length sexp) 2)
+              (make-type-vector (parse&check-type
+                                 (cadr sexp) delta-flow delta-type covariant?
+                                 primitive-name filename))
+              (raise-syntax-error
+               'parse&check-type
+               (format "malformed vector type in type scheme for primitive ~a in file ~a: expected (vector type), got ~a"
+                       primitive-name filename sexp)))]
+           [(eq? type-kw 'promise)
+            (if (= (length sexp) 2)
+              (make-type-promise (parse&check-type
+                                  (cadr sexp) delta-flow delta-type covariant?
+                                  primitive-name filename))
+              (raise-syntax-error
+               'parse&check-type
+               (format "malformed promise type in type scheme for primitive ~a in file ~a: expected (promise type), got ~a"
+                       primitive-name filename sexp)))]
+           [(eq? type-kw 'rest)
+            (raise-syntax-error
+             'parse&check-type
+             (format "illegal use of rest in type scheme for primitive ~a in file ~a: ~a"
+                     primitive-name filename sexp))]
            [else
             (let* ([sexp-length (length sexp)]
                    [sexp-length-1 (sub1 sexp-length)]
@@ -1352,15 +1913,11 @@
                 [(and (>= sexp-length-3 0)
                       (eq? (list-ref sexp sexp-length-2) '*->))
                  (let ([exp-sexp (list-ref sexp sexp-length-1)]
-                       [rest-sexp (list-ref sexp sexp-length-3)]
+                       [rest-sexp (list `(listof ,(list-ref sexp sexp-length-3)))]
                        [list-head (list-head! sexp sexp-length-3
                                               primitive-name filename)])
-                   ; the arg list is either an improper list with the rest arg type at the end,
-                   ; or directly the (possible complex) rest arg type. the parser will know 
-                   ; the difference because one is improper and the other one start with a
-                   ; constructor name.
                    (parse&check-type
-                    `(case-lambda [,(set-list-tail-cdr! list-head `(listof ,rest-sexp))
+                    `(case-lambda [,(cons 'rest (set-list-tail-cdr! list-head rest-sexp))
                                    ,exp-sexp])
                     delta-flow delta-type covariant? primitive-name filename))]
                 [else
@@ -1376,7 +1933,14 @@
          'parse&check-type
          (format "improper list found in type scheme for primitive ~a in file ~a: ~a"
                  primitive-name filename sexp))]
-       [(hash-table-get delta-flow sexp *hash-table-fail-false*)
+       [(memq sexp *type-constructors*)
+        =>
+        (lambda (_)
+          (raise-syntax-error
+           'parse&check-type-scheme
+           (format "type variable ~a is already the name of a type constructor, in type scheme for primitive ~a in file ~a"
+                   sexp primitive-name filename)))]
+       [(hash-table-get delta-flow sexp *fail-false*)
         =>
         (lambda (type-info)
           (if covariant?
@@ -1403,6 +1967,10 @@
         (cond
           [(eq? sexp 'boolean)
            (make-type-union (list (make-type-cst #t) (make-type-cst #f)))]
+          [(eq? sexp 'void)
+           (make-type-cst (void))]
+          [(eq? sexp 'bottom)
+           (make-type-empty)]
           [else (make-type-cst sexp)])])))
  
  ; (listof alpha) number sexp symbol string -> (listof alpha)
@@ -1450,6 +2018,16 @@
  (define (lookup-flow-var-in-env env flow-var)
    (hash-table-get env flow-var))
  
+ ; like map, but over a list made of label-cons instead of cons
+ (define (type-list-map f tl)
+   (if (type-cons? tl)
+     (cons (f (type-cons-car tl))
+           (type-list-map f (type-cons-cdr tl)))
+     (if (and (type-cst? tl)
+              (eq? (type-cst-type tl) '()))
+       '()
+       (error 'type-list-map "not a type list: ~a" tl))))
+
  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; GRAPH RECONSTRUCTION FROM TYPE
  
  ; type (hash-table-of symbol label) term -> label
@@ -1461,20 +2039,36 @@
      (begin
        (for-each (lambda (flow-var type^C)
                    (let ([label (create-simple-prim-label term)])
-                     (associate-label-with-type label type^C)
-                     (add-flow-var-to-env delta-flow flow-var label)))
+                     ;(associate-label-with-type label type^C)
+                     (add-flow-var-to-env delta-flow flow-var (cons label type^C))))
                  (type-scheme-flow-vars type)
                  (type-scheme-type^Cs type))
-       (reconstruct-graph-from-type (type-scheme-type type) delta-flow '() term #t))
-     (reconstruct-graph-from-type type delta-flow '() term #t)))
+       (reconstruct-graph-from-type (type-scheme-type type) delta-flow '() term #t #f))
+     (reconstruct-graph-from-type type delta-flow '() term #t #f)))
  
- ; type (hash-table-of type-flow-var label) (listof type-var label) term boolean -> label
+ ; type (hash-table-of type-flow-var (cons label type)) (listof type-var label)
+ ; term boolean label -> label
  ; reconstructs a graph from type representing the primitive represented by term,
  ; using environment delta.
+ ; delta-flow is the flow-var->label environment, delta-type is the type-var->label one.
+ ; term is the term for the primitive whose type we are analyzing. It's just used for underlining
+ ; erros. covariant? is self-explanatory...
+ ; contra-union? is a boolean telling whether the parent label we are dealing
+ ; with is a union in contravariant position: since the flows are not filtered by types,
+ ; everything that flows into a union will normally flow into the different componants
+ ; of the union. We don't want that, because then things might flow into a label were they
+ ; should flow into and trigger a false error. The best example is this is with lists: it's
+ ; a recursive type that contains a union of the empty list and of a recursive cons. If a
+ ; cons flows into a list label, the cons will flow in both parts of the union, and trigger
+ ; an error when it flows into the empty label. So we have to do some filtering. This means
+ ; that we are not going to create a simple edge between the union label and the empty label
+ ; when we analyze the union type, but we are going to create a filtering edge between the
+ ; union label and the empty label when we analyze the empty type. To do that we need to
+ ; keep track of the parent union label.
  ; Note how we use associate-label-with-type to memorize type checking only in the contravariant
  ; case. The type to check in the covariant case is always top, since we assume internal
  ; correctness of the graph generation from a primitive type.
- (define (reconstruct-graph-from-type type delta-flow delta-type term covariant?)
+ (define (reconstruct-graph-from-type type delta-flow delta-type term covariant? contra-union?)
    (if covariant?
      ; covariant cases
      (cond
@@ -1486,11 +2080,11 @@
                          [exps-labels (cdr other-clauses-labels)])
                      (cons (cons (map (lambda (arg-type)
                                         (reconstruct-graph-from-type
-                                         arg-type delta-flow delta-type term #f))
+                                         arg-type delta-flow delta-type term #f #f))
                                       args-types)
                                  argss-labelss)
                            (cons (reconstruct-graph-from-type
-                                  exp-type delta-flow delta-type term #t)
+                                  exp-type delta-flow delta-type term #t #f)
                                  exps-labels))))
                  (cons '()'())
                  (type-case-lambda-argss type)
@@ -1515,13 +2109,33 @@
                       (make-hash-table)
                       '()
                       (reconstruct-graph-from-type
-                       (type-cons-car type) delta-flow delta-type term #t)
+                       (type-cons-car type) delta-flow delta-type term #t #f)
                       (reconstruct-graph-from-type
-                       (type-cons-cdr type) delta-flow delta-type term #t))])
+                       (type-cons-cdr type) delta-flow delta-type term #t #f))])
+          (initialize-label-set-for-value-source label)
+          label)]
+       [(type-vector? type)
+        (let ([label (make-label-vector
+                      #f #f #f #t
+                      term
+                      (make-hash-table)
+                      '()
+                      (reconstruct-graph-from-type
+                       (type-vector-element type) delta-flow delta-type term #t #f))])
+          (initialize-label-set-for-value-source label)
+          label)]
+       [(type-promise? type)
+        (let ([label (make-label-promise
+                      #f #f #f #t
+                      term
+                      (make-hash-table)
+                      '()
+                      (reconstruct-graph-from-type
+                       (type-promise-value type) delta-flow delta-type term #t #f))])
           (initialize-label-set-for-value-source label)
           label)]
        [(type-flow-var? type)
-        (lookup-flow-var-in-env delta-flow type)]
+        (car (lookup-flow-var-in-env delta-flow type))]
        [(type-var? type)
         (cdr (assq type delta-type))]
        [(type-cst? type)
@@ -1538,7 +2152,7 @@
        [(type-union? type)
         (let* ([elt-labels (map (lambda (elt-type)
                                   (reconstruct-graph-from-type
-                                   elt-type delta-flow delta-type term #t))
+                                   elt-type delta-flow delta-type term #t #f))
                                 (type-union-elements type))]
                [union-label (create-simple-prim-label term)]
                ; can return multiple values
@@ -1547,6 +2161,17 @@
                       (add-edge-and-propagate-set-through-edge elt-label union-edge))
                     elt-labels)
           union-label)]
+       [(type-values? type)
+        (let* ([values-content-label (reconstruct-graph-from-type
+                                       (type-values-type type) delta-flow delta-type term #t #f)]
+               [values-label (make-label-values
+                              #f #f #f #t
+                              term
+                              (make-hash-table)
+                              '()
+                              values-content-label)])
+          (initialize-label-set-for-value-source values-label)
+          values-label)]
        [(type-rec? type)
         (let* ([clauses-vars-types&labels (map (lambda (type-var)
                                                  (cons type-var (create-simple-prim-label term)))
@@ -1554,7 +2179,7 @@
                [all-var-labels (append clauses-vars-types&labels delta-type)]
                [clauses-types-labels (map (lambda (clause-type)
                                             (reconstruct-graph-from-type
-                                             clause-type delta-flow all-var-labels term #t))
+                                             clause-type delta-flow all-var-labels term #t #f))
                                           (type-rec-types type))])
           ; note: we never check whether all clauses are used. If they are not, they'll be
           ; garbage collected after we return from here.
@@ -1563,8 +2188,11 @@
                        clause-type-label
                        (create-simple-edge (cdr clause-var-type&label))))
                     clauses-vars-types&labels clauses-types-labels)
-          (reconstruct-graph-from-type (type-rec-body type) delta-flow all-var-labels term #t))]
-       [else (error 'reconstruct-graph-from-type "unknown covariant type: ~a" type)]
+          (reconstruct-graph-from-type (type-rec-body type) delta-flow all-var-labels term #t #f))]
+       [(type-empty? type)
+        (create-simple-prim-label term)]
+       [else (error 'reconstruct-graph-from-type "unknown covariant type for primitive ~a: ~a"
+                    (syntax-e term) type)]
        )
      ; contravariant cases
      ;
@@ -1575,79 +2203,350 @@
      ; is the entrance of the tunnel. Scary scary.
      ;
      (cond
+       [(type-case-lambda? type)
+        (let* ([rest-arg?s-around (type-case-lambda-rest-arg?s type)]
+               [req-args-around (type-case-lambda-req-args type)]
+               [argss-labelss-around (map (lambda (args-types)
+                                            (map (lambda (arg-type)
+                                                   (reconstruct-graph-from-type
+                                                    arg-type delta-flow delta-type term #t #f))
+                                                 args-types))
+                                          (type-case-lambda-argss type))]
+               [exps-labels-around (map (lambda (exp-type)
+                                          (reconstruct-graph-from-type
+                                           exp-type delta-flow delta-type term #f #f))
+                                        (type-case-lambda-exps type))]
+               [case-lambda-label (create-simple-prim-label term)]
+               [case-lambda-edge (create-case-lambda-edge
+                                  rest-arg?s-around
+                                  req-args-around
+                                  argss-labelss-around
+                                  exps-labels-around
+                                  term
+                                  #f)])
+          ;(associate-label-with-type case-lambda-label (make-type-case-lambda XXX)
+          (add-edge-and-propagate-set-through-edge case-lambda-label case-lambda-edge)
+          case-lambda-label)]
        [(type-cons? type)
         (let* ([car-label (reconstruct-graph-from-type
-                           (type-cons-car type) delta-flow delta-type term #f)]
+                           (type-cons-car type) delta-flow delta-type term #f #f)]
                [car-edge (create-simple-edge car-label)]
                [cdr-label (reconstruct-graph-from-type
-                           (type-cons-cdr type) delta-flow delta-type term #f)]
+                           (type-cons-cdr type) delta-flow delta-type term #f #f)]
                [cdr-edge (create-simple-edge cdr-label)]
                [cons-label (create-simple-prim-label term)]
                [cons-edge
                 (let ([edge-fake-destination (gensym)])
-                  (case-lambda
-                   [(out-label inflowing-label)
-                    ; cons sink => no use for out-label here
-                    ; must reset tunneling for inflowing-label
-                    (set-label-tunnel?! inflowing-label #f)
-                    (if (label-cons? inflowing-label)
-                      (begin
-                        (add-edge-and-propagate-set-through-edge
-                         (label-cons-car inflowing-label)
-                         car-edge)
-                        (add-edge-and-propagate-set-through-edge
-                         (label-cons-cdr inflowing-label)
-                         cdr-edge))
-                      ; XXX should we do this here because we can, or in check-primitive-types
-                      ; because that's where it should be done... ? We don't have access to
-                      ; term anymore in check-primitive-types... See the commented call to
-                      ; associate-label-with-type below.
-                      (set! *errors*
-                            (cons (list (list term)
-                                        'red
-                                        (format "primitive expects argument of type <pair>; given ~a"
-                                                (syntax-object->datum
-                                                 (label-term inflowing-label))))
-                                  *errors*)))]
-                   ; cons sink
-                   [() edge-fake-destination]))])
+                  (if contra-union?
+                    ; non-error-checking edge
+                    (case-lambda
+                     [(out-label inflowing-label)
+                      ; cons sink => no use for out-label here
+                      ; must reset tunneling for inflowing-label
+                      (set-label-tunnel?! inflowing-label #f)
+                      (if (label-cons? inflowing-label)
+                        (and (add-edge-and-propagate-set-through-edge
+                              (label-cons-car inflowing-label)
+                              car-edge)
+                             (add-edge-and-propagate-set-through-edge
+                              (label-cons-cdr inflowing-label)
+                              cdr-edge))
+                        #f)]
+                     ; cons sink
+                     [() edge-fake-destination])
+                    ; error checking edge
+                    (case-lambda
+                     [(out-label inflowing-label)
+                      ; cons sink => no use for out-label here
+                      ; must reset tunneling for inflowing-label
+                      (set-label-tunnel?! inflowing-label #f)
+                      (if (label-cons? inflowing-label)
+                        (and (add-edge-and-propagate-set-through-edge
+                              (label-cons-car inflowing-label)
+                              car-edge)
+                             (add-edge-and-propagate-set-through-edge
+                              (label-cons-cdr inflowing-label)
+                              cdr-edge))
+                        ; XXX should we do this here because we can, or in check-primitive-types
+                        ; because that's where it should be done... ? We don't have access to
+                        ; term anymore in check-primitive-types (yet)... See the commented call to
+                        ; associate-label-with-type below.
+                        (begin
+                          (set! *errors*
+                                (cons (list (list term)
+                                            'red
+                                            (format "primitive expects argument of type <pair>; given ~a"
+                                                    (pp-type (get-type inflowing-label))))
+                                      ;(syntax-object->datum
+                                      ; (label-term inflowing-label))))
+                                      *errors*))
+                          #f))]
+                     ; cons sink
+                     [() edge-fake-destination])))])
           ;(associate-label-with-type cons-label (make-type-cons
           ;                                       (make-type-cst 'top)
           ;                                       (make-type-cst 'top)))
           (add-edge-and-propagate-set-through-edge cons-label cons-edge)
           cons-label)]
+       [(type-vector? type)
+        (let* ([element-label (reconstruct-graph-from-type
+                               (type-vector-element type) delta-flow delta-type term #f #f)]
+               [element-edge (create-simple-edge element-label)]
+               [vector-label (create-simple-prim-label term)]
+               [vector-edge
+                (let ([edge-fake-destination (gensym)])
+                  (if contra-union?
+                    ; non-error-checking edge
+                    (case-lambda
+                     [(out-label inflowing-label)
+                      ; vector sink => no use for out-label here
+                      ; must reset tunneling for inflowing-label
+                      (set-label-tunnel?! inflowing-label #f)
+                      (if (label-vector? inflowing-label)
+                        (add-edge-and-propagate-set-through-edge
+                         (label-vector-element inflowing-label)
+                         element-edge)
+                        #f)]
+                     ; vector sink
+                     [() edge-fake-destination])
+                    ; error checking edge
+                    (case-lambda
+                     [(out-label inflowing-label)
+                      ; vector sink => no use for out-label here
+                      ; must reset tunneling for inflowing-label
+                      (set-label-tunnel?! inflowing-label #f)
+                      (if (label-vector? inflowing-label)
+                        (add-edge-and-propagate-set-through-edge
+                         (label-vector-element inflowing-label)
+                         element-edge)
+                        ; XXX should we do this here because we can, or in check-primitive-types
+                        ; because that's where it should be done... ? We don't have access to
+                        ; term anymore in check-primitive-types (yet)... See the commented call to
+                        ; associate-label-with-type below.
+                        (begin
+                          (set! *errors*
+                                (cons (list (list term)
+                                            'red
+                                            (format "primitive expects argument of type <vector>; given ~a"
+                                                    (pp-type (get-type inflowing-label))))
+                                      ;(syntax-object->datum
+                                      ; (label-term inflowing-label))))
+                                      *errors*))
+                          #f))]
+                     ; vector sink
+                     [() edge-fake-destination])))])
+          ;(associate-label-with-type vector-label (make-type-vector (make-type-cst 'top))
+          (add-edge-and-propagate-set-through-edge vector-label vector-edge)
+          vector-label)]
+       [(type-promise? type)
+        (let* ([element-label (reconstruct-graph-from-type
+                               (type-promise-value type) delta-flow delta-type term #f #f)]
+               [element-edge (create-simple-edge element-label)]
+               [promise-label (create-simple-prim-label term)]
+               [promise-edge
+                (let ([edge-fake-destination (gensym)])
+                  (if contra-union?
+                    ; non-error-checking edge
+                    (case-lambda
+                     [(out-label inflowing-label)
+                      ; promise sink => no use for out-label here
+                      ; must reset tunneling for inflowing-label
+                      (set-label-tunnel?! inflowing-label #f)
+                      (if (label-promise? inflowing-label)
+                        (add-edge-and-propagate-set-through-edge
+                         (label-promise-value inflowing-label)
+                         element-edge)
+                        #f)]
+                     ; promise sink
+                     [() edge-fake-destination])
+                    ; error checking edge
+                    (case-lambda
+                     [(out-label inflowing-label)
+                      ; promise sink => no use for out-label here
+                      ; must reset tunneling for inflowing-label
+                      (set-label-tunnel?! inflowing-label #f)
+                      (if (label-promise? inflowing-label)
+                        (add-edge-and-propagate-set-through-edge
+                         (label-promise-value inflowing-label)
+                         element-edge)
+                        ; XXX should we do this here because we can, or in check-primitive-types
+                        ; because that's where it should be done... ? We don't have access to
+                        ; term anymore in check-primitive-types (yet)... See the commented call to
+                        ; associate-label-with-type below.
+                        (begin
+                          (set! *errors*
+                                (cons (list (list term)
+                                            'red
+                                            (format "primitive expects argument of type <promise>; given ~a"
+                                                    (pp-type (get-type inflowing-label))))
+                                      ;(syntax-object->datum
+                                      ; (label-term inflowing-label))))
+                                      *errors*))
+                          #f))]
+                     ; promise sink
+                     [() edge-fake-destination])))])
+          ;(associate-label-with-type promise-label (make-type-promise (make-type-cst 'top))
+          (add-edge-and-propagate-set-through-edge promise-label promise-edge)
+          promise-label)]
        [(type-flow-var? type)
-        ; associate-label-with-type has already been done when analyzing the type scheme
-        (lookup-flow-var-in-env delta-flow type)]         
+        (let* ([label&type^C (lookup-flow-var-in-env delta-flow type)]
+               [label (car label&type^C)])
+          (unless contra-union?
+            (associate-label-with-type label (cdr label&type^C)))
+          label)]
        [(type-var? type)
         (cdr (assq type delta-type))]
        [(type-cst? type)
-        (let ([label (make-label-cst
-                      #f #f #f #t
-                      term
-                      (make-hash-table)
-                      '()
-                      ; the type parser ensures that type-cst is only created for
-                      ; non-list (i.e. atomic) types => 3, 'foo, 'int
-                      (type-cst-type type))])
-          (associate-label-with-type label type)
-          label)]
+        (let* ([cst-label (make-label-cst
+                           #f #f #f #t
+                           term
+                           (make-hash-table)
+                           '()
+                           ; the type parser ensures that type-cst is only created for
+                           ; non-list (i.e. atomic) types => 3, 'foo, 'int
+                           (type-cst-type type))]
+               ; must add a dummy out edge to reset tunelling
+               ; note: we could do some type-checking here, but we really ought to
+               ; do it before the inflowing-label flows into the set, not after. For
+               ; now, we just do the type checking after the end of the analysis.
+               [cst-edge
+                (let ([edge-fake-destination (gensym)])
+                  (case-lambda
+                   [(out-label inflowing-label)
+                    ; cst sink => no use for out-label here
+                    ; must reset tunneling for inflowing-label
+                    (set-label-tunnel?! inflowing-label #f)
+                    #t]
+                   ; promise sink
+                   [() edge-fake-destination]))])
+          ; propagation to such a label always works, so post checking is necessary
+          ; note that propagation always works because we don't do any type-based
+          ; filtering. This means that if the cst is inside a union, the propagation to
+          ; the union will always work, and the error detection will only happen after
+          ; the fact (which might be ok, since a label flowing into a cst doesn't go
+          ; anywhere else)
+          (associate-label-with-type cst-label type)
+          (add-edge-and-propagate-set-through-edge cst-label cst-edge)
+          cst-label)]
+       [(type-values? type)
+        (let* ([values-content-label (reconstruct-graph-from-type
+                                     (type-values-type type) delta-flow delta-type term #f #f)]
+               [values-content-edge (create-simple-edge values-content-label)]
+               [values-label (create-simple-prim-label term)]
+               [values-edge
+                (let ([edge-fake-destination (gensym)])
+                  (if contra-union?
+                    ; non-error-checking edge
+                    (case-lambda
+                     [(out-label inflowing-label)
+                      ; values sink => no use for out-label here
+                      (if (label-values? inflowing-label)
+                        ; the label-list of multiple values that might flow in might contain
+                        ; more than one value, but that's ok.
+                        ; must reset tunneling for inflowing-label
+                        (begin
+                          (set-label-tunnel?! inflowing-label #f)
+                          (add-edge-and-propagate-set-through-edge
+                           (label-values-label inflowing-label)
+                           values-content-edge))
+                        ; we are in contravariant position, so the value x that flows out
+                        ; is unique and equivalent to (values x). So we simulate that. Note
+                        ; that multiple values are in fact label-lists of labels inside a
+                        ; values label, so we have to simulate the label-list part...
+                        (let* ([null-label (make-label-cst #f #f #f #t
+                                                           term
+                                                           (make-hash-table)
+                                                           '()
+                                                           '())]
+                               [cons-label (make-label-cons #f #f #f #t
+                                                            term
+                                                            (make-hash-table)
+                                                            '()
+                                                            inflowing-label
+                                                            null-label)])
+                          (initialize-label-set-for-value-source null-label)
+                          (initialize-label-set-for-value-source cons-label)
+                          (add-edge-and-propagate-set-through-edge
+                           cons-label
+                           values-content-edge)))]
+                     ; values sink
+                     [() edge-fake-destination])
+                    ; error checking edge
+                    (case-lambda
+                     [(out-label inflowing-label)
+                      ; values sink => no use for out-label here
+                      (if (label-values? inflowing-label)
+                        ; must reset tunneling for inflowing-label
+                        (begin
+                          (set-label-tunnel?! inflowing-label #f)
+                          (add-edge-and-propagate-set-through-edge
+                           (label-values-label inflowing-label)
+                           values-content-edge))
+                        (let* ([null-label (make-label-cst #f #f #f #t
+                                                           term
+                                                           (make-hash-table)
+                                                           '()
+                                                           '())]
+                               [cons-label (make-label-cons #f #f #f #t
+                                                            term
+                                                            (make-hash-table)
+                                                            '()
+                                                            inflowing-label
+                                                            null-label)])
+                          (initialize-label-set-for-value-source null-label)
+                          (initialize-label-set-for-value-source cons-label)
+                          (add-edge-and-propagate-set-through-edge
+                           cons-label
+                           values-content-edge)))]
+                     ; vector sink
+                     [() edge-fake-destination])))])
+          ;(associate-label-with-type values-label (make-type-values (make-type-cst 'top))
+          (add-edge-and-propagate-set-through-edge values-label values-edge)
+          values-label)]
        [(type-union? type)
         (let* ([elt-labels (map (lambda (elt-type)
+                                  ; reconstruct without error checking
+                                  ; XXX this does not work in the case of a flow var,
+                                  ; because associate-label-with-type has already been done.
                                   (reconstruct-graph-from-type
-                                   elt-type delta-flow delta-type term #f))
+                                   elt-type delta-flow delta-type term #f #t))
                                 (type-union-elements type))]
-               [union-label (create-simple-prim-label term)])
+               [union-label (create-simple-prim-label term)]
+               [union-label-in-between (create-simple-prim-label term)]
+               [simple-non-error-checking-edge (create-simple-edge union-label-in-between)]
+               [error-checking-edge
+                (case-lambda
+                 [(out-label inflowing-label)
+                  (if (simple-non-error-checking-edge out-label inflowing-label)
+                    #t
+                    (begin
+                      (set! *errors*
+                            (cons (list (list term)
+                                        'red
+                                        (format "value ~a not a subtype of union ~a inside application of ~a"
+                                                (pp-type (get-type inflowing-label))
+                                                ;(syntax-object->datum
+                                                ; (label-term inflowing-label))
+                                                (pp-type type)
+                                                (syntax-object->datum term)))
+                                  *errors*))
+                      ; stop error up-propagation
+                      #t))]
+                 [() (simple-non-error-checking-edge)])])
           ; edges can't propagate multiple values
           (for-each (lambda (elt-label)
                       (add-edge-and-propagate-set-through-edge
-                       union-label
+                       union-label-in-between
                        (extend-edge-for-values (create-simple-edge elt-label))))
                     elt-labels)
-          ; no associate-label-with-type: the types will be separately checked by the elements
-          ; XXX this is buggy, see comment for union- in paper, but since subtype doesn't
-          ; exist yet anyway...
-          union-label)]
+          (if contra-union?
+            ; union inside a union, so forget about checking at this level
+            union-label-in-between
+            (begin
+              (add-edge-and-propagate-set-through-edge
+               union-label
+               (extend-edge-for-values error-checking-edge))
+              union-label)))]
        [(type-rec? type)
         (let* ([clauses-vars-types&labels (map (lambda (type-var)
                                                  (cons type-var (create-simple-prim-label term)))
@@ -1655,10 +2554,11 @@
                [all-var-labels (append clauses-vars-types&labels delta-type)]
                [clauses-types-labels (map (lambda (clause-type)
                                             (reconstruct-graph-from-type
-                                             clause-type delta-flow all-var-labels term #f))
+                                             clause-type delta-flow all-var-labels term #f #f))
                                           (type-rec-types type))]
                [rec-body-label (reconstruct-graph-from-type
-                                (type-rec-body type) delta-flow all-var-labels term #f)])
+                                (type-rec-body type) delta-flow all-var-labels term #f #f)]
+               [rec-label (create-simple-prim-label term)])
           ; note: we never check whether all clauses are used. If they are not, they'll be
           ; garbage collected after we return from here.
           (for-each (lambda (clause-var-type&label clause-type-label)
@@ -1667,8 +2567,22 @@
                        (create-simple-edge clause-type-label)))
                     clauses-vars-types&labels clauses-types-labels)
           ; (associate-label-with-type rec-body-label type) which type ?
-          rec-body-label)]
-       [else (error 'reconstruct-graph-from-type "unknown contravariant type: ~a" type)]
+          ; or (associate-label-with-type rec-label type)
+          ; should there be an (unless contra-union? ...) ?
+          ;
+          ; note: if type is the type corresponding, say, to a list, then if (list 1 2 3)
+          ; flows into rec-label, then rec-body-label will contain (list 1 2 3), (list 2 3),
+          ; (list 3), and ().
+          (add-edge-and-propagate-set-through-edge
+           rec-label
+           (extend-edge-for-values (create-simple-edge rec-body-label)))
+          rec-label)]
+       [(type-empty? type)
+        (let ([label (create-simple-prim-label)])
+          (associate-label-with-type label type)
+          label)]
+       [else (error 'reconstruct-graph-from-type "unknown contravariant type for primitive ~a: ~a"
+                    (syntax-e term) type)]
        )))
  
  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; POST ANALYSIS TYPE CHECKING FOR PRIMITIVES
@@ -1713,7 +2627,7 @@
  
  ; number -> (union label #f)
  (define (lookup-label-from-position position)
-   (hash-table-get *position->label* position *hash-table-fail-false*))
+   (hash-table-get *position->label* position *fail-false*))
  
  (define type-var-counter 'uninitialized)
  (define (create-type-var-name)
@@ -1829,6 +2743,15 @@
                                    [(label-cons? label)
                                     (make-type-cons (get-non-rec-type (label-cons-car label))
                                                     (get-non-rec-type (label-cons-cdr label)))]
+                                   [(label-vector? label)
+                                    (make-type-vector (get-non-rec-type
+                                                       (label-vector-element label)))]
+                                   [(label-promise? label)
+                                    (make-type-promise (get-non-rec-type
+                                                        (label-promise-value label)))]
+                                   [(label-values? label)
+                                    (make-type-values (get-non-rec-type
+                                                       (label-values-label label)))]
                                    [(label-case-lambda? label)
                                     (let ([all-types
                                            (list:foldr
@@ -1846,9 +2769,6 @@
                                                              #f ; does not matter here
                                                              (car all-types)
                                                              (cdr all-types)))]
-                                   [(label-values? label)
-                                    (make-type-values
-                                     (map get-non-rec-type (label-values-labels label)))]
                                    [else (error 'get-non-rec-type "unknown label: ~a" label)])))]
               [type-union-elements-flattened
                (let loop ([cur-types type-union-elements])
@@ -1877,7 +2797,7 @@
            ; hash table of rec-types, and just return the type variable.
            (begin
              (set-type-var-recur! type-var #f)
-             (unless (hash-table-get *rec-types* label *hash-table-fail-false*)
+             (unless (hash-table-get *rec-types* label *fail-false*)
                (hash-table-put! *rec-types* label (cons type-var final-type)))
              type-var)
            ;                 (make-type-rec (list type-var)
@@ -1908,8 +2828,17 @@
      ;          [(void? val) "void"]
      ;          [else (error 'pp-type "unknown datum: ~a" val)]))]
      [(type-cons? type)
-      (string-append "(cons " (pp-type (type-cons-car type)) " "
+      (string-append "(cons "
+                     (pp-type (type-cons-car type)) " "
                      (pp-type (type-cons-cdr type)) ")")]
+     [(type-vector? type)
+      (string-append "(vector " (pp-type (type-vector-element type)) ")")]
+     [(type-promise? type)
+      (string-append "(promise "
+                     ; skipping the thunk inside the promise (we know it's always a
+                     ; thunk because delay is a macro...)
+                     (pp-type (car (type-case-lambda-exps (type-promise-value type))))
+                     ")")]
      [(type-case-lambda? type)
       (string-append
        "(case-lambda "
@@ -1930,9 +2859,9 @@
              "-> ")
            (pp-type body-exp-type)
            "]"
-           (if (string=? str "")
-             ""
-             " ")
+           ;(if (string=? str "")
+           ;  ""
+           ;  " ")
            str))
         ""
         (type-case-lambda-rest-arg?s type)
@@ -1955,18 +2884,27 @@
         ")"
         (type-union-elements type)))]
      [(type-values? type)
-      (string-append
-       "(values "
-       (list:foldr
-        (lambda (union-element str)
-          (string-append
-           (pp-type union-element)
-           (if (string=? str ")")
-             ""
-             " ")
-           str))
-        ")"
-        (type-values-types type)))]
+      (let ([values-type (type-values-type type)])
+        (if (type-empty? values-type)
+          (pp-type values-type)
+          (let* ([values-types-list (type-list-map *id* (type-values-type type))]
+                 [values-types-list-length (length values-types-list)])
+            (cond
+              [(zero? values-types-list-length)
+               (pp-type (make-type-empty))]
+              [(= values-types-list-length 1)
+               (pp-type (car values-types-list))]
+              [else (string-append
+                     "(values "
+                     (list:foldr
+                      (lambda (type str)
+                        (string-append (pp-type type)
+                                       (if (string=? str ")")
+                                         ""
+                                         " ")
+                                       str))
+                      ")"
+                      values-types-list))]))))]
      [(type-rec? type)
       (string-append
        "(rec-type ("
@@ -1976,7 +2914,28 @@
            "["
            (symbol->string (type-var-name var))
            " "
-           (pp-type type)
+           ; poor man's type beautifier
+           (if (and (type-union? type)
+                    (= (length (type-union-elements type)) 2)
+                    (or (and (type-cst? (car (type-union-elements type)))
+                             (null? (type-cst-type (car (type-union-elements type))))
+                             (type-cons? (cadr (type-union-elements type)))
+                             (type-var? (type-cons-cdr (cadr (type-union-elements type))))
+                             (eq? (type-var-name (type-cons-cdr (cadr (type-union-elements type))))
+                                  (type-var-name var)))
+                        (and (type-cst? (cadr (type-union-elements type)))
+                             (null? (type-cst-type (cadr (type-union-elements type))))
+                             (type-cons? (car (type-union-elements type)))
+                             (type-var? (type-cons-cdr (car (type-union-elements type))))
+                             (eq? (type-var-name (type-cons-cdr (car (type-union-elements type))))
+                                  (type-var-name var)))))
+             (string-append
+              "(listof "
+              (pp-type (if (type-cst? (car (type-union-elements type)))
+                         (type-cons-car (cadr (type-union-elements type)))
+                         (type-cons-car (car (type-union-elements type)))))
+              ")")
+             (pp-type type))
            (if (string=? str ") ")
              "]"
              "] ")

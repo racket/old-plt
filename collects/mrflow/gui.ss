@@ -16,9 +16,9 @@
  (provide tool@)
  
  (define tool@
+   (begin
    (unit/sig ()
      (import drscheme:tool^)
-     
      ; used for clickable locations in the program
      (define can-click-style (make-object style-delta% 'change-weight 'bold))
      (send can-click-style set-delta-foreground "purple")
@@ -109,7 +109,8 @@
 
              (end-edit-sequence)
              
-             (set! analyzed? #t))]
+             (set! analyzed? #t)
+             )]
           [remove-analysis
            (lambda ()
              (set! analyzed? #f)
@@ -400,7 +401,8 @@
                                  [else
                                   (message-box "unknown exception"
                                                (format "unknown exception: ~a" exn))]))
-                             (mrflow:create-label-from-term syntax-object/exception '() #f))
+                           (unless (eof-object? syntax-object/exception)
+                             (mrflow:create-label-from-term syntax-object/exception '() #f)))
                          (loop)))
                  (mrflow:check-primitive-types)
                  (printf "time: ~a ms~n" (- (current-milliseconds) start)))
@@ -411,6 +413,8 @@
                
                (send (get-definitions-text) mrflow:run-analysis))))])
          ;(sequence
+         ; XXX state is shared between instances of the tool, so we could do
+         ; this call only once, outside the mixin...
          (mrflow:initialize-primitive-type-schemes)
          (send (get-button-panel) change-children
                (lambda (l)
@@ -418,3 +422,4 @@
          ;)
          )))))
  )
+)

@@ -119,6 +119,9 @@ in several significant ways:
      - Sub-typing declarations must be changed, usually by deleting
        `struct:'.
 
+     - Struct instances can be `equal?' only if transparent (see
+       below).
+
    The new `define-struct' is slightly less powerful than the old one,
    though in ways that are unlikely to matter. For example, the new
    form cannot extend a structure type descriptor that is passed into

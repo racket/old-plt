@@ -71,14 +71,14 @@
 "on the number in the decimal state"
 ""
 "See also"
-"@flink drscheme:snip:make-decimal-snip %"
+"@flink drscheme:snip:make-repeating-decimal-snip %"
 ".")
 
 (drscheme:unit:open-drscheme-window
  (case->
   (-> (is-a?/c drscheme:unit:frame%))
   ((union string? false?) . -> . (is-a?/c drscheme:unit:frame%)))
- ((filename) ())
+ (() (filename))
 
 "Opens a drscheme frame that displays \\var{filename},"
 "or nothing if \\var{filename} is \\rawscm{\\#f} or not supplied.")
@@ -395,7 +395,8 @@
 "\\var{interface}. Languages that are unaware of"
 "the specifics of \\var{extension} use"
 "\\var{default-implementation} via"
-"@flink drscheme:language:get-default-mixin.")
+"@flink drscheme:language:get-default-mixin %"
+".")
 
 (drscheme:language:get-default-mixin
  (-> ((implementation?/c drscheme:language:language<%>) . ->d . (lambda (%) (subclass?/c %))))
@@ -418,9 +419,9 @@
 "Prompts the user, with an explanatory dialog, asking if they"
 "want to create a stand-alone executable or a launcher. See"
 "also "
-"@flink create-module-based-stand-alone-executable "
+"@flink drscheme:language:create-module-based-stand-alone-executable "
 "and"
-"@flink create-module-based-launcher %"
+"@flink drscheme:language:create-module-based-launcher %"
 "."
 ""
 "Uses \\var{parent} as the parent to the explanatory dialog.")
@@ -475,7 +476,7 @@
   use-copy?)
 
 "This procedure is identical to "
-"@flink create-module-based-stand-alone-executable %"
+"@flink drscheme:language:create-module-based-stand-alone-executable %"
 ", except that it creates a launcher instead of a"
 "stand-alone executable.")
 
@@ -546,6 +547,7 @@
  (drscheme:language:simple-settings?
   . -> .
   (symbols 'constructor 'quasiquote 'write))
+ (simple-settings)
 
 "Extracts the printing-style setting from a simple-settings.")
 
@@ -574,7 +576,15 @@
   boolean?)
  (simple-settings)
 
-"Extracts the insert-newline ssetting from a simple-settings.")
+"Extracts the insert-newline setting from a simple-settings.")
+
+(drscheme:language:simple-settings-debugging
+ (drscheme:language:simple-settings?
+  . -> .
+  boolean?)
+ (simple-settings)
+
+"Extracts the debugging setting from a simple-settings.")
 
 (drscheme:language:simple-settings?
  (any? . -> . boolean?)
@@ -595,12 +605,14 @@
   printing-style
   fraction-style
   show-sharing
-  insert-newlines)
+  insert-newlines
+  debugging)
 
 "Constructs a simple settings.")
 
 (drscheme:language:simple-settings->vector
  (drscheme:language:simple-settings? . -> . vector?)
+ (simple-settings)
 
 "Constructs a vector whose first index is the symbol"
 "\\rawscm{'struct:simple-settings}"
@@ -620,7 +632,8 @@
    void?)
   (string? boolean? (symbols 'keyword 'keyword+index 'all) . -> . void?)
   (string? boolean? . -> . void?))
- ((key lucky? type mode)
+ (()
+  (key lucky? type mode)
   (key lucky? type)
   (key lucky?))
 

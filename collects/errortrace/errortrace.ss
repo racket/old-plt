@@ -289,7 +289,7 @@
 		[l (exn-debug-info x)])
        (cond
 	 [(or (zero? n) (null? l)) (void)]
-	 [else
+	 [(pair? l)
 	  (let ([m (car l)])
 	    (fprintf p "  ~e in ~a~n" 
 		     (cdr m)
@@ -298,7 +298,8 @@
 			   file
 			   "UNKNOWN"))))
 	  (loop (- n 1)
-		(cdr l))])))
+		(cdr l))]
+	 [else (void)])))
    
    (current-exception-handler
     (let ([orig (current-exception-handler)])

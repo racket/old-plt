@@ -83,7 +83,7 @@
       p))
 
   (define (arrow-line dx dy size)
-    (let-values ([(a adx ady) (arrow/delta size (atan dy dx))])
+    (let-values ([(a adx ady) (arrowhead/delta size (atan dy dx))])
       (picture
        0 0
        `((connect 0 0 ,dx ,dy)

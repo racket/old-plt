@@ -243,7 +243,7 @@ not to forget: teachpakcs
           (define/override (get-style-delta)
             (get-htdp-style-delta))
           
-          (inherit get-reader)
+          (inherit get-reader set-printing-parameters)
           (define/override (front-end/complete-program input settings)
             (let-values ([(port source offset line col) (drscheme:language:open-program-for-reading input)])
               (let ([state 'init]
@@ -257,13 +257,17 @@ not to forget: teachpakcs
                                         (if (eof-object? result)
                                             null
                                             (cons result (loop)))))]
-                                   [language-module (get-module)])
+                                   [language-module (get-module)]
+                                   [(require-specs ...) 
+                                    (begin
+                                      '(teachpack-cache-require-specs 
+                                        (send rep get-user-teachpack-cache))
+                                      '())])
                        (set! state 'require)
-                       (let* ([mod (expand (syntax (module #%htdp language-module body-exp ...)))]
-                              [r-mod (rewrite-module mod)])
-                         ;(oprintf "~s\n" (syntax-object->datum mod))
-                         ;(oprintf "~s\n" (syntax-object->datum r-mod))
-                         r-mod))]
+                       (let ([mod (expand (syntax (module #%htdp language-module 
+                                                    (require require-specs ...)
+                                                    body-exp ...)))])
+                         (rewrite-module mod)))]
                     [(require) 
                      (set! state 'done)
                      (syntax (require #%htdp))]
@@ -287,70 +291,53 @@ not to forget: teachpakcs
       
       ;; rewrite-bodies : (listof syntax) -> syntax
       (define (rewrite-bodies bodies)
-        (let ([required-specs (make-hash-table 'equal)])
-          (let loop ([bodies bodies]
-                     [ids null])
-            ;(oprintf "loop: ~s\n" (length bodies))
-            (cond
-              [(null? bodies) 
-               (list
-                (with-syntax ([(ids ...) ids])
-                  (syntax (provide ids ...))))]
-              [else
-               (let ([body (car bodies)])
-                 (syntax-case body (define-values define-syntaxes require require-for-syntax provide)
-                   [(define-values (new-vars ...) e)
-                    (cons body (loop (cdr bodies)
-                                     (append
-                                      ids 
-                                      (filter-ids (syntax (new-vars ...))))))]
-                   [(define-syntaxes (new-vars ...) e)
-                    (cons body (loop (cdr bodies)
-                                     (append
-                                      ids 
-                                      (filter-ids (syntax (new-vars ...))))))]
-                   [(require specs ...)
-                    '(for-each (lambda (spec)
-                                 (syntax-case spec (prefix all-except rename)
-                                   [(prefix identifier module-name) 
-                                    (hash-table-put! required-specs
-                                                     (syntax-object->datum (syntax module-name)) 
-                                                     (syntax module-name))]
-                                   [(all-except module-name identifer ...) 
-                                    (hash-table-put! required-specs
-                                                     (syntax-object->datum (syntax module-name))
-                                                     (syntax module-name))]
-                                   [(rename module-name local-identifer exported-identifer)
-                                    (hash-table-put! required-specs 
-                                                     (syntax-object->datum (syntax module-name))
-                                                     (syntax module-name))]
-                                   [module-name
-                                    (hash-table-put! required-specs 
-                                                     (syntax-object->datum (syntax module-name))
-                                                     (syntax module-name))]))
-                               (syntax->list (syntax (specs ...))))
-                    (loop (cdr bodies) ids)]
-                   [(require-for-syntax specs ...)
-                    (cons body (loop (cdr bodies) ids))]
-                   [(provide specs ...)
-                    (loop (cdr bodies) ids)]
-                   [else 
-                    (let ([new-exp
-                           (with-syntax ([body body]
-                                         [drscheme:rep:current-value-port drscheme:rep:current-value-port])
-                             (syntax 
-                              (let ([already-exited? #f])
-                                (dynamic-wind
-                                 void
-                                 (lambda ()
-                                   (let ([value body])
-                                     (unless already-exited?
-                                       (print value (drscheme:rep:current-value-port))
-                                       (newline (drscheme:rep:current-value-port)))
-                                     value))
-                                 (lambda ()
-                                   (set! already-exited? #t))))))])
-                      (cons new-exp (loop (cdr bodies) ids)))]))]))))
+        (let loop ([bodies bodies]
+                   [ids null])
+          (cond
+            [(null? bodies) 
+             (list
+              (with-syntax ([(ids ...) ids])
+                (syntax (provide ids ...))))]
+            [else
+             (let ([body (car bodies)])
+               (syntax-case body (define-values define-syntaxes require require-for-syntax provide)
+                 [(define-values (new-vars ...) e)
+                  (cons body (loop (cdr bodies)
+                                   (append
+                                    ids 
+                                    (filter-ids (syntax (new-vars ...))))))]
+                 [(define-syntaxes (new-vars ...) e)
+                  (cons body (loop (cdr bodies)
+                                   (append
+                                    ids 
+                                    (filter-ids (syntax (new-vars ...))))))]
+                 [(require specs ...)
+                  (loop (cdr bodies) ids)]
+                 [(require-for-syntax specs ...)
+                  (cons body (loop (cdr bodies) ids))]
+                 [(provide specs ...)
+                  (loop (cdr bodies) ids)]
+                 [else 
+                  (let ([new-exp
+                         (with-syntax ([body body]
+                                       [print-results
+                                        (lambda (results)
+                                          (let ([rep (drscheme:rep:current-rep)])
+                                            (when rep
+                                              (send rep display-results results))))])
+                           (syntax 
+                            (let ([already-exited? #f])
+                              (dynamic-wind
+                               void
+                               (lambda ()
+                                 (call-with-values
+                                  (lambda () body)
+                                  (lambda results
+                                    (unless already-exited?
+                                      (print-results results)))))
+                               (lambda ()
+                                 (set! already-exited? #t))))))])
+                    (cons new-exp (loop (cdr bodies) ids)))]))])))
       
       ;; filter-ids : syntax[list] -> listof syntax
       (define (filter-ids ids)

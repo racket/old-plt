@@ -25,6 +25,9 @@
       ;; type cache-entry = (make-cache-entry string[filename])
       (define-struct cache-entry (filename))
       
+      (define (cache-entry-require-spec cache-entry)
+        `(file ,(cache-entry-filename cache-entry)))
+      
       ;; new-teachpack-cache : -> teachpack-cache
       (define new-teachpack-cache
         (opt-lambda ([filenames '[]])
@@ -60,7 +63,7 @@
                              (set-cache-entry-filename! cache-entry #f)
                              (show-teachpack-error filename exn))])
             (verify-no-new-exports filename)
-            (namespace-require `(file ,filename)))))
+            (namespace-require (cache-entry-require-spec cache-entry)))))
 
       ;; verify-no-new-exports : string -> void
       ;; ensures that the teachpack wouldn't override any thing in the user's namespace
@@ -125,6 +128,11 @@
       ;; teachpack-cache-filenames : teachpack-cache -> (listof string)
       (define (teachpack-cache-filenames cache)
         (map cache-entry-filename (teachpack-cache-tps cache)))
+
+      ;; teachpack-cache-filenames : teachpack-cache -> (listof string)
+      (define (teachpack-cache-require-specs cache)
+        (map (lambda (x) (cache-entry-require-spec x))
+             (teachpack-cache-tps cache)))
       
       ;; launcher-init-code : teachpack-cache -> sexp
       ;; constructs code to be put in  a module that loads the teachpacks.
@@ -133,13 +141,13 @@
         `(begin
            (void)
            ,@(map (lambda (ce)
-                    `(namespace-require '(file ,(cache-entry-filename ce))))
+                    `(namespace-require ,(cache-entry-require-spec ce)))
                   (teachpack-cache-tps cache))))
       
       ;; launcher-modules-to-embed : teachpack-cache -> (listof module-spec)
       ;; the modules to embed in a stand-alone executable.
       (define (launcher-modules-to-embed cache)
-        (map (lambda (ce) `(file ,(cache-entry-filename ce)))
+        (map (lambda (ce) (cache-entry-require-spec ce))
              (teachpack-cache-tps cache)))
 
       ;; show-teachpack-error : string TST -> void

@@ -5,8 +5,9 @@
   (provide eval-compile-time-part-of-top-level
 	   eval-compile-time-part-of-top-level/compile
            expand-top-level-with-compile-time-evals
-           expand-syntax-top-level-with-compile-time-evals)
-  
+           expand-syntax-top-level-with-compile-time-evals
+           expand-syntax-top-level-with-compile-time-evals/flatten)
+
   ;; eval-compile-time-part-of-top-level/compile : syntax -> (listof compiled-expression)
   (define (eval-compile-time-part-of-top-level/compile expr)
     (map (lambda (e) (compile-and-eval-compile-time-part e #t))
@@ -20,6 +21,18 @@
     (expand-syntax-top-level-with-compile-time-evals 
      (namespace-syntax-introduce stx)))
 
+  ;; expand-syntax-top-level-with-compile-time-evals/flatten : syntax -> (listof syntax)
+  (define (expand-syntax-top-level-with-compile-time-evals/flatten stx)
+    (let loop ([stx stx])
+      (let ([e (expand-syntax-to-top-form stx)])
+        (syntax-case e (begin)
+          [(begin expr ...)
+           (apply append (map loop (syntax->list (syntax (expr ...)))))]
+          [else 
+           (let ([e (expand-syntax e)])
+             (compile-and-eval-compile-time-part e #f)
+             (list e))]))))
+  
   (define (expand-syntax-top-level-with-compile-time-evals stx)
     (let ([e (expand-syntax-to-top-form stx)])
       (syntax-case e (begin)

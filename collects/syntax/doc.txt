@@ -83,6 +83,12 @@ _toplevel.ss_: helper for moduleless compilation and expansion
   The `stx' argument should have a context already, possibily
   introduced with `namespacae-inroduce-syntax'.
 
+> (expand-top-level-with-compile-time-evals/flatten stx) - 
+  Just like expand-top-level-with-compile-time-evals,
+  except that it returns a list of syntax objects, none of
+  which have a begin. These syntax objects are the
+  flattened out contents of any begins in `stx'.
+
 > (expand-syntax-top-level-with-compile-time-evals stx)
   Like `expand-top-level-with-compile-time-evals', but `stx' should
   have a context already, possibily introduced with

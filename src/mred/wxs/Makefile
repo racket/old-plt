@@ -141,7 +141,7 @@ wxs_mpb.cxx : wxs_mpb.xc  wxs_mbuf.xci wxs_fcs.xci $(XCDEPEND)
 	$(XCTOCXX) wxs_mpb.xc
 wxs_obj.cxx : wxs_obj.xc  $(XCDEPEND)
 	$(XCTOCXX) wxs_obj.xc
-wxs_panl.cxx : wxs_panl.xc wxs_panl.xci wxs_fram.xci wxs_cnvs.xci wxs_dorf.xci wxs_win.xci $(XCDEPEND) $(CB_DEPEND)
+wxs_panl.cxx : wxs_panl.xc wxs_panl.xci wxs_fram.xci wxs_cnvs.xci wxs_dorf.xci wxs_ifnt.xci wxs_win.xci $(XCDEPEND) $(CB_DEPEND)
 	$(XCTOCXX) wxs_panl.xc
 wxs_rado.cxx : wxs_rado.xc  range.xci $(XCDEPEND) $(CB_DEPEND) $(LIST_DEPEND) $(ITEM_DEPEND)
 	$(XCTOCXX) wxs_rado.xc

@@ -574,7 +574,7 @@ static Scheme_Object *os_wxPanelSetButtonFont(Scheme_Object *obj, int n,  Scheme
   class wxFont* x0;
 
   
-  x0 = objscheme_unbundle_wxFont(p[0], "set-button-font in panel%", 0);
+  x0 = objscheme_unbundle_wxFont(p[0], "set-control-font in panel%", 0);
 
   
   ((wxPanel *)((Scheme_Class_Object *)obj)->primdata)->SetButtonFont(x0);
@@ -988,8 +988,8 @@ if (os_wxPanel_class) {
 
  scheme_add_method_w_arity(os_wxPanel_class, "get-label-font", os_wxPanelGetLabelFont, 0, 0);
  scheme_add_method_w_arity(os_wxPanel_class, "set-label-font", os_wxPanelSetLabelFont, 1, 1);
- scheme_add_method_w_arity(os_wxPanel_class, "get-button-font", os_wxPanelGetButtonFont, 0, 0);
- scheme_add_method_w_arity(os_wxPanel_class, "set-button-font", os_wxPanelSetButtonFont, 1, 1);
+ scheme_add_method_w_arity(os_wxPanel_class, "get-control-font", os_wxPanelGetButtonFont, 0, 0);
+ scheme_add_method_w_arity(os_wxPanel_class, "set-control-font", os_wxPanelSetButtonFont, 1, 1);
  scheme_add_method_w_arity(os_wxPanel_class, "get-label-position", os_wxPanelGetLabelPosition, 0, 0);
  scheme_add_method_w_arity(os_wxPanel_class, "set-label-position", os_wxPanelSetLabelPosition, 1, 1);
  scheme_add_method_w_arity(os_wxPanel_class, "on-char", os_wxPanelOnChar, 1, 1);

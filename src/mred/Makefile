@@ -54,7 +54,7 @@ FTPDIR = /home/scheme/FTP/plt/staging
 
 all:  objects $(OBJDIR)
 	cd ../mzscheme; $(MAKE) $(EXPORT) mzschemelib++
-	if [ -f wrap/mred.ss ] ; then $(MAKE) mred-wrap ; fi
+	if [ -f wrap/wrap.ss ] ; then $(MAKE) mred-wrap ; fi
 	cd wxs; $(MAKE) WXDIR='$(WXDIR)'
 	cd wxme; $(MAKE) WXDIR='$(WXDIR)'
 	$(MAKE) $(MRED) MRCHECK='$(MRCHECK)'

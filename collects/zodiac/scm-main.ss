@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.106 1997/08/11 17:01:41 shriram Exp $
+; $Id: scm-main.ss,v 1.107 1997/08/11 17:09:50 shriram Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -1212,7 +1212,7 @@
 				(if (null? rest)
 				  (cond-clause-answer first)
 				  (static-error (cond-clause-text first)
-				    "else only allowed in last position")))
+				    "else allowed only in last position")))
 			      (else
 				`(if ,(cond-clause-question first)
 				   ,(cond-clause-answer first)

@@ -563,7 +563,7 @@
                              (,(py-so 'py-if) ,(send test to-scheme)
                               (begin ,(send body to-scheme continue-symbol)
                                      (,loop))))))
-                         ,(send else to-scheme)))))
+                         ,(if else (send else to-scheme))))))
       
       
       (super-instantiate ())))

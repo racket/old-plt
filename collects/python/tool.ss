@@ -100,7 +100,7 @@
                    (namespace-require path))))))
           (define/public (render-value value settings port port-write)
             (let ([to-render (if (python-node? value)
-                                (py-object%->string value)
+                                (format "~a~n" (py-object%->string value))
                                 value)])
               (if port-write
                   (port-write to-render)

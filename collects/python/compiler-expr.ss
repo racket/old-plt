@@ -541,7 +541,7 @@
         (for-each (lambda (x) (send x set-bindings! enclosing-scope)) pos)
         (for-each (lambda (x) (send (cdr x) set-bindings! enclosing-scope)) key))
       
-       (printf "call  pos: ~a~nkey: ~a~nseq: ~a~ndict: ~a~n" pos key seq dict)
+     ;  (printf "call  pos: ~a~nkey: ~a~nseq: ~a~ndict: ~a~n" pos key seq dict)
      
       ;;daniel
       (inherit ->orig-so)

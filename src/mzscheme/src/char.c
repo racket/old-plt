@@ -230,7 +230,7 @@ static void char_un_error(char *name, int argc, Scheme_Object *argv[])
      if (uc) { c = toupper(c); }     \
      if (!eq && mzCAN_LOCALE && loc) { \
         char a[2], b[2]; a[1] = 0; b[1] = 0; a[0] = (char)prev; b[0] = (char)c; \
-        if (strcoll(a, b) comp 0) rv = scheme_false; \
+        if (!(strcoll(a, b) comp 0)) rv = scheme_false; \
      } else if (!(prev comp c)) rv = scheme_false;   \
      prev = c;     \
    }     \

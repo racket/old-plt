@@ -295,6 +295,8 @@ scheme_init_string (Scheme_Env *env)
 						       "locale-enabled",
 						       MZCONFIG_LOCALE), 
 			     env);
+
+  scheme_reset_locale();
 }
 
 void

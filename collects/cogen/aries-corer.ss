@@ -156,7 +156,7 @@
 	   (if (utils:is-unit-bound? expr)
 	       (translate-bound-varref expr #t)
 	       (begin
-		 (utils:check-for-keyword/proc expr)		   
+		 (utils:check-for-syntax-or-macro-keyword expr)		   
 		 (wrap expr (z:varref-var expr))))]
 	  
 	  [(z:app? expr)

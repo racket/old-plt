@@ -21,9 +21,29 @@
   
   (define closure-temp (gensym "closure-temp-"))
   
+  ; list-partition takes a list and a number, and returns two lists; the first one contains the
+  ; first n elements of the list, and the second contains the remainder.  If n is greater than
+  ; the length of the list, the exn:application:mismatch exception is raised.
+  
+  (define (list-partition lst n)
+    (if (= n 0)
+        (values null lst)
+        (if (null? lst)
+            (list-ref lst 0) ; cheap way to generate exception
+            (let-values ([(first rest) (list-partition (cdr lst) (- n 1))])
+              (values (cons (car lst) first) rest)))))
+  
+  ; dual-map : (('a -> (values 'b 'c)) ('a list)) -> (values ('b list) ('c list))
+  
+  (define (dual-map f lst) 
+    (if (null? lst)
+        (values null null)
+        (let-values ([(a b) (f (car lst))]
+                     [(a-rest b-rest) (dual-map f (cdr lst))])
+          (values (cons a a-rest) (cons b b-rest)))))
+    
   ; var-set-union takes some lists of varrefs where no element appears twice in one list, and 
-  ; forms a new list which is the union of the sets.  when a top-level and a non-top-level
-  ; varref have the same name, we must keep the non-top-level one.
+  ; forms a new list which is the union of the sets.
   
   (define (varref-remove* a-set b-set)
     (remove* a-set 
@@ -123,10 +143,12 @@
   
   (define initial-env-package null)
   
-  ; annotate takes a list of expressions to annotate, a list of previously-defined variables
-  ; (in the form returned by annotate), and a break routine to be called at breakpoints in the
-  ; annotated code (may also be #f) and returns an annotated expression list, along with a new pair
-  ; of environments (to be passed back in etc.)
+  ; annotate takes a list of zodiac:read expressions, a list of zodiac:parsed expressions,
+  ; a list of previously-defined variables, and a break routine to be called at breakpoints.
+  ; actually, I'm not sure that annotate works for more than one expression, even though
+  ; it's supposed to take a whole list.  I wouldn't count on it. Also, both the red-exprs
+  ; and break arguments may be #f, the first during a zodiac:elaboration-evaluator call,
+  ; the second during any non-stepper use.
   
   (define (annotate red-exprs parsed-exprs input-struct-proc-names break)
     (local
@@ -184,15 +206,7 @@
                  (if (= offset (z:location-offset (z:zodiac-start expr)))
                      expr
                      (cond
-                       ((z:scalar? expr)
-
-			;;; ROBBY
-			;;; scalars can contain code now;
-			;;; perhaps we will do this differently later.
-			;;; Suggestions welcome.
-			expr
-			;(e:static-error "starting offset inside scalar:" offset)
-			)
+                       ((z:scalar? expr) (e:static-error "starting offset inside scalar:" offset))
                        ((z:sequence? expr) 
                         (let ([object (z:read-object expr)])
                             (cond
@@ -225,22 +239,24 @@
          ; c) a list of all top-level variables which occur in the program
          ; d) a boolean indicating whether this expression will be the r.h.s. of a reduction
          ;    (and therefore should be broken before)
+         ; e) a boolean indicating whether this expression is top-level (and therefore should
+         ;    not be wrapped, if a begin).
          ;
          ; it returns
          ; a) an annotated s-expression
          ; b) a list of varrefs for the variables which occur free in the expression
          ;
-	 ;(z:parsed (union (list-of z:varref) 'all) (list-of z:varref) bool -> 
+	 ;(z:parsed (union (list-of z:varref) 'all) (list-of z:varref) bool bool -> 
          ;          sexp (list-of z:varref))
 	 
-	 (define (annotate/inner expr tail-bound pre-break?)
+	 (define (annotate/inner expr tail-bound pre-break? top-level?)
 	   
            ; translate-varref: (bool bool -> sexp (listof varref))
 	   
-	   (let* ([tail-recur (lambda (expr) (annotate/inner expr tail-bound #t))]
-                  [define-values-recur (lambda (expr) (annotate/inner expr tail-bound #f))]
-                  [non-tail-recur (lambda (expr) (annotate/inner expr null #f))]
-                  [lambda-body-recur (lambda (expr) (annotate/inner expr 'all #t))]
+	   (let* ([tail-recur (lambda (expr) (annotate/inner expr tail-bound #t #f))]
+                  [define-values-recur (lambda (expr) (annotate/inner expr tail-bound #f #f))]
+                  [non-tail-recur (lambda (expr) (annotate/inner expr null #f #f))]
+                  [lambda-body-recur (lambda (expr) (annotate/inner expr 'all #t #f))]
                   [make-debug-info-normal (lambda (free-vars)
                                             (make-debug-info expr tail-bound free-vars 'none))]
                   [make-debug-info-app (lambda (tail-bound free-vars label)
@@ -254,33 +270,43 @@
 
                   
                   [translate-varref
-                   (lambda (maybe-undef? top-level?)
-                     (let* ([v (z:varref-var expr)]
-                            [real-v (if (z:top-level-varref? expr)
-                                        v
-                                        (z:binding-orig-name
-                                         (z:bound-varref-binding expr)))]
-                            [free-vars (list expr)]
-                            [debug-info (make-debug-info-normal free-vars)]
-                            [annotated (if (and maybe-undef? (utils:signal-undefined))
-                                           `(#%if (#%eq? ,v ,utils:the-undefined-value)
-                                             (#%raise (,utils:make-undefined
-                                                       ,(format utils:undefined-error-format real-v)
-                                                       (#%current-continuation-marks)
-                                                       (#%quote ,v)))
-                                             ,v)
-                                           v)])
-                       (values (wcm-break-wrap debug-info (return-value-wrap annotated)) free-vars)))])
+                   (lambda ()
+                     )])
 	     
              ; find the source expression and associate it with the parsed expression
              
-             (set-expr-read! expr (find-read-expr expr))
+             (when red-exprs
+               (set-expr-read! expr (find-read-expr expr)))
 	     
 	     (cond
 	       
 	       ; the variable forms 
 	       
-	       [(z:bound-varref? expr)
+               [(z:varref? expr)
+                (let* ([v (z:varref-var expr)]
+                       [real-v (if (z:top-level-varref? expr)
+                                   v
+                                   (z:binding-orig-name
+                                    (z:bound-varref-binding expr)))]
+                       [maybe-undef? (or (and (z:bound-varref? expr) 
+                                              (not (never-undefined? (z:bound-varref-binding expr))))
+                                         (utils:is-unit-bound? expr))]
+                       [truly-top-level? (and (z:top-level-varref? expr) (not (utils:unit-bound-varref? expr)))]
+                       [_ (when truly-top-level?
+                            (utils:check-for-syntax-or-macro-keyword expr))]
+                       [free-vars (list expr)]
+                       [debug-info (make-debug-info-normal free-vars)]
+                       [annotated (if (and maybe-undef? (utils:signal-undefined))
+                                      `(#%if (#%eq? ,v ,utils:the-undefined-value)
+                                        (#%raise (,utils:make-undefined
+                                                  ,(format utils:undefined-error-format real-v)
+                                                  (#%current-continuation-marks)
+                                                  (#%quote ,v)))
+                                        ,real-v)
+                                      v)])
+                  (values (wcm-break-wrap debug-info (return-value-wrap annotated)) free-vars))
+
+                [(z:bound-varref? expr)
 		(translate-varref 
 		 (not (never-undefined? (z:bound-varref-binding expr)))
 		 #f)]
@@ -289,7 +315,7 @@
 		(if (utils:is-unit-bound? expr)
 		    (translate-varref #t #f)
 		    (begin
-		      (utils:check-for-keyword/proc expr)
+		      
 		      (translate-varref #f #t)))]
 	       
 	       [(z:app? expr)
@@ -377,12 +403,137 @@
                 (values (wcm-wrap (make-debug-info-normal null)
                                   `(#%quote ,(utils:read->raw (z:quote-form-expr expr)))) 
                         null)]
-	       
+               
                [(z:begin-form? expr)
-                ]
-	       ; there is no begin, begin0, or let in beginner. but can they be generated? 
-	       ; for instance by macros? Maybe.
-	       
+                (if top-level?
+                    (let+ ([val bodies (z:begin-form-bodies expr)]
+                           [val (values annotated-bodies free-vars)
+                                (dual-map (lambda (expr)
+                                            (annotate/inner expr 'all #f #t))
+                                          bodies)])
+                       (values `(#%begin ,@annotated-bodies)
+                               (apply var-set-union free-vars)))
+                    (let+ ([val bodies (z:begin-form-bodies expr)]
+                           [val (values all-but-last-body last-body) 
+                                (list-partition bodies (- (length bodies) 1))]
+                           [val (values annotated-a free-vars-a)
+                                (dual-map non-tail-recur all-but-last-body)]
+                           [val (values annotated-final free-vars-final)
+                                (tail-recur last-body)]
+                           [val free-vars (apply var-set-union free-vars-final free-vars-a)]
+                           [val debug-info (make-debug-info-normal free-vars)])
+                       (values (wcm-wrap debug-info 
+                                         `(#%begin ,@(append annotated-a (list annotated-final))))
+                               free-vars)))]
+
+               [(z:begin0-form? expr)
+                (let+ ([val bodies (z:begin0-form-bodies expr)]
+                       [val (values annotated-bodies free-vars-lists)
+                            (dual-map non-tail-recur bodies)]
+                       [val free-vars (apply var-set-union free-vars-lists)]
+                       [debug-info (make-debug-info-normal free-vars)])
+                   (values (wcm-wrap debug-info
+                                     `(#%begin0 ,@annotated-bodes))
+                           free-vars))]
+               
+               ; gott in himmel! this transformation is complicated.  Just for the record,
+               ; here's a sample transformation:
+               ;(let-values ([(a b c) e1] [(d e) e2]) e3)
+               ;
+               ;turns into
+               ;
+               ;(let-values ([(dummy1 dummy2 dummy3 dummy4 dummy5)
+               ;              (values *undefined* *undefined* *undefined* *undefined* *undefined*)])
+               ;  (with-continuation-mark 
+               ;   key huge-value
+               ;   (begin
+               ;     (set!-values (dummy1 dummy2 dummy3) e1)
+               ;     (set!-values (dummy4 dummy5) e2)
+               ;     (let-values ([(a b c d e) (values dummy1 dummy2 dummy3 dummy4 dummy5)])
+               ;       e3))))
+               ;
+               ; let me know if you can do it in less.
+                      
+               [(z:let-values-form? expr)
+                (let+ ([val var-sets (z:let-values-form-vars expr)]
+                       [val var-set-list (apply append var-sets)]
+                       [val vals (z:let-values-form-vals expr)]
+                       [_ (for-each utils:check-for-keyword var-set-list)]
+                       [_ (for-each mark-never-undefined var-set)]
+                       [val dummy-var-sets
+                            (let ([counter 0])
+                              (map (lambda (var-set)
+                                     (map (lambda (var) 
+                                            (begin0 
+                                              (get-arg-symbol counter)
+                                              (set! counter (+ counter 1))))
+                                          var-set))
+                                   var-sets))]
+                       [val dummy-var-list (apply append dummy-var-sets)]
+                       [val outer-dummy-initialization
+                            `([,dummy-var-list (#%values ,@(build-list (length dummy-var-list) *undefined*))])]
+                       [val (values annotated-vals free-vars-vals)
+                            (dual-map non-tail-recur vals)]
+                       [val set!-clauses
+                            (map (lambda (dummy-var-set val)
+                                   `(#%set!-values ,dummy-var-set ,val))
+                                 dummy-var-sets
+                                 annotated-vals)]
+                       [val inner-transference
+                            `([,var-set-list (values ,@dummy-var-list)])]
+                       [val (values annotated-body free-vars-body)
+                            (tail-recur (z:let-values-form-body expr))]
+                       ; time to work from the inside out again
+                       [val inner-let-values
+                            `(#%let-values ,inner-transference ,annotated-body)]
+                       [val middle-begin
+                            `(#%begin ,@set!-clauses ,inner-let-values)]
+                       [val free-vars (apply var-set-union free-vars-body free-vars-vals)]
+                       [val wrapped-begin
+                            (wcm-wrap (make-debug-info-app (var-set-union tail-bound dummy-var-list)
+                                                           (var-set-union free-vars dummy-var-list)
+                                                           'none)
+                                      middle-begin)]
+                       [val whole-thing
+                            `(#%let-values ,outer-dummy-initialization ,wrapped-begin)])
+                   (values whole-thing free-vars))]
+               
+               [(z:letrec*-values-form? expr)
+                ; Are all RHSes values? ...
+                (when (andmap z:case-lambda-form? (z:letrec*-values-form-vals expr))
+                  ; ...yes , mark vars as never undefined.
+                  ; (We do this before annotating any RHS!)
+                  (for-each (lambda (vars)
+                              (for-each mark-never-undefined vars))
+                            (z:letrec*-values-form-vars expr)))
+                (let+ ([val var-sets (z:letrec*-values-form-vars expr)]
+                       [val var-set-list (apply append var-sets)]
+                       [val vals (z:letrec*-values-form-vals expr)]
+                       [_ (when (andmap z:case-lambda-form? vals)
+                            (for-each mark-never-undefined var-set-list))]
+                       [_ (for-each check-for-keyword var-set-list)]
+                       [val outer-initialization
+                            `((,var-set-list (values ,@var-set-list)))]
+                       [val (values annotated-bodies free-vars-vals)
+                            (dual-map non-tail-recur vals)]
+                       [val set!-clauses
+                            (map (lambda (var-set val)
+                                   `(#%set!-values ,var-set ,val))
+                                 var-sets
+                                 annotated-vals)]
+                       [val (values annotated-body free-vars-body)
+                            (tail-recur (z:letrec*-values-form-body expr))]
+                       [val middle-begin
+                            `(#%begin ,@set!-clauses ,annotated-body)]
+                       [val free-vars (apply var-set-union free-vars-body free-vars-vals)]
+                       [val wrapped-begin
+                            (wcm-wrap (make-debug-info-app (var-set-union tail-bound var-set-list)
+                                                           (var-set-union free-vars var-set-list))
+                                      middle-begin)]
+                       [val whole-thing
+                            `(#%let-values ,outer-initialization ,wrapped-begin)])
+                   (values whole-thing (varref-remove* var-set-list free-vars)))]
+               
 	       [(z:define-values-form? expr)
 		(let+ ([val vars (z:define-values-form-vars expr)]
 		       [val _ (map utils:check-for-keyword vars)]
@@ -412,8 +563,14 @@
                                        ,annotated-val) 
                                      free-vars)]))]
 	       
-	       ; there is no set! in beginner level
-	       
+	       [(z:set!-form? expr)
+                (utils:check-for-keyword (z:set!-form-var expr))
+                (let+ ([val (values annotated rhs-free-vars)
+                            (non-tail-recur (z:set!-form-val expr))]
+                       [val free-vars (var-set-union (list z:set!-form-var) rhs-free-vars)]
+                       [val debug-info (make-debug-info-normal free-vars)])
+                   (values `(#%set! (translate-varref #f
+                
 	       [(z:case-lambda-form? expr)
 		(let* ([annotate-case
 			(lambda (arglist body)
@@ -447,7 +604,22 @@
 		  (values hash-wrapped
 			  new-free-vars))]
 	       
-	       ; there's no with-continuation-mark in beginner level.
+               
+               [(z:with-continuation-mark-form? expr)
+                (let+ ([val (values annotated-key free-vars-key)
+                            (recur-non-tail (z:with-continuation-mark-form-key expr))]
+                       [val (values annotated-val free-vars-val)
+                            (recur-non-tail (z:with-continuation-mark-form-val expr))]
+                       [val (values annotated-body free-vars-body)
+                            (recur-non-tail (z:with-continuation-mark-form-body expr))]
+                       [val free-vars (var-set-union free-vars-key free-vars-val free-vars-body)]
+                       [val debug-info (make-debug-info-normal free-vars)])
+                   (values (wcm-wrap debug-info
+                                     `(#%with-continuation-mark
+                                       annotated-key
+                                       annotated-val
+                                       annotated-body))
+                           free-vars))]
 	       
 	       ; there are _definitely_ no units or classes
 	       
@@ -459,7 +631,7 @@
          
          (define (annotate/top-level expr)
            (let-values ([(annotated dont-care)
-                         (annotate/inner expr 'all #f)])
+                         (annotate/inner expr 'all #f #t)])
              annotated)))
          
          ; body of local

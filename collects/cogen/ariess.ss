@@ -11,7 +11,7 @@
 
 (define-signature cogen-utils^
   (check-for-keyword
-   check-for-keyword/proc
+   check-for-syntax-or-macro-keyword
    
    the-undefined-value
    (struct undefined (id))

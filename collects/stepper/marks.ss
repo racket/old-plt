@@ -39,7 +39,9 @@
   
   (define (display-mark mark)
     (let ([exposed (expose-mark mark)])
-      (printf "source: ~a~n" (z:sexp->raw (zcp:read-getter (z:parsed-back (car exposed)))))
+      (printf "source: ~a~n" (let ([read (zcp:read-getter (z:parsed-back (car exposed)))])
+                               (and read
+                                    (z:sexp->raw read))))
       (printf "label: ~a~n" (cadr exposed))
       (printf "bindings:~n")
       (for-each (lambda (binding-pair)

@@ -28,8 +28,8 @@
 	    (e:static-error id "Invalid use of keyword ~s" real-id))))))
   
   (define check-for-keyword (check-for-keyword/both #t))
-  (define check-for-keyword/proc (check-for-keyword/both #f))
-  
+  (define check-for-syntax-or-macro-keyword (check-for-keyword/both #f))
+    
   (define the-undefined-value (letrec ((x x)) x))
   
   (define-struct (undefined struct:exn) (id))

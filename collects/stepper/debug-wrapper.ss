@@ -16,7 +16,10 @@
   (define (annotate sexp zodiac-read)
     (let-values 
         ([(annotateds new-envs)
-          (annotate:annotate (list zodiac-read) (list sexp) current-environments #f)])
+          (annotate:annotate (and zodiac-read (list zodiac-read)) 
+                             (list sexp) 
+                             current-environments 
+                             #f)])
       (set! current-environments new-envs)
       (car annotateds)))
   
@@ -41,9 +44,8 @@
         (semaphore-wait break-semaphore)
         break-resume-value)))
   
-  ;; these need to be conected to the annotater at some point.
-  (define signal-not-boolean (make-parameter #f (lambda (x) x)))
-  (define signal-undefined (make-parameter #f (lambda (x) x)))
+  (define signal-not-boolean utils:signal-not-boolean)
+  (define signal-undefined utils:signal-not-boolean)
   
   ; initialization --- should be called once per execute
   (set! current-environments annotate:initial-env-package))

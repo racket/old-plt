@@ -55,11 +55,12 @@
     (let ([result (assoc (string->symbol manual) user-doc-positions)])
       (and result (cadr result))))
   
-  ; Known manuals:
+  ; known-docs: (listof (cons string[subdir-of-doc-dir] string[title]))
   (define known-docs
     '(("beginning" . "Beginning Student Language")
       ("beginning-abbr" . "Beginning Student with List Abbreviations Language")
       ("advanced" . "Advanced Student Language")
+      ("insidemz" . "Inside PLT MzScheme")
       ("intermediate" . "Intermediate Student Language")
       ("intermediate-lambda" . "Intermediate Student with Lambda Language")
       ("drscheme" . "PLT DrScheme: Programming Environment Manual")
@@ -70,7 +71,8 @@
       ("framework" . "PLT Framework: GUI Application Framework")
       ("misclib" . "PLT Miscellaneous Libraries: Reference Manual")
       ("mzc" . "PLT mzc: MzScheme Compiler Manual")
-      ("insidemz" . "Inside PLT MzScheme")
+      ("srfi" . "SRFI documents inside PLT")
+      ;("teachpack" . "Teachpacks title??")
       ("tools" . "PLT Tools: DrScheme Extension Manual")
       ("tour" . "A Brief Tour of DrScheme")
       ("t-y-scheme" . "Teach Yourself Scheme in Fixnum Days")

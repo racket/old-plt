@@ -29,7 +29,7 @@
       (lambda (prim-name a b)
 	(unless (list? b)
 	  (error prim-name
-		 "second argument must be of type <proper list>, given ~a and ~a"
+		 "second argument must be of type <list>, given ~a and ~a"
 		 a b))))
     
     (define check-last
@@ -41,7 +41,7 @@
 	     (let ([last (car l)])
 	       (unless (list? last)
 		 (error prim-name
-			"last argument must be of type <proper list>, given ~a; all args: ~a"
+			"last argument must be of type <list>, given ~a; all args: ~a"
 			last
 			args)))]
 	    [else (loop (cdr l))]))))

@@ -72,8 +72,8 @@
       (lambda (port)
 	(pretty-print
 	 (list (problem-name problem)
-	       (problem-cols problem)
 	       (problem-rows problem)
+	       (problem-cols problem)
 	       (problem-solution problem)
 	       (send canvas get-grid))
 	 port))
@@ -120,7 +120,7 @@
      [(null? ps) (set-problem (car problems))
 		 (send choice set-selection 0)]
      [else (let ([problem (car ps)])
-	     (if (string=? "First" (problem-name problem))
+	     (if (string=? "Izay" (problem-name problem))
 		 (begin (set-problem problem)
 			(send choice set-selection n))
 		 (loop (+ n 1)

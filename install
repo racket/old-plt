@@ -22,6 +22,8 @@ exit
   (error './install "no arguments allowed on the command line")
   (exit 1))
 
+(define release-date "August 2002")
+
 (define didnothing " (nothing to do)")
 
 (define plthome (current-directory))
@@ -145,6 +147,7 @@ exit
       (if (or in-rpm-install? in-rpm-build?)
 	  #f
 	  (begin
+	    (printf "This distribution was created in ~a~n" release-date)
 	    (printf "Check for updates of PLT software over the Internet (y/n)? [y] ")
 	    (get-y-n)))))
 

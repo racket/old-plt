@@ -111,7 +111,8 @@
 				 new-weight)))]
 		 [bid (if (could-player-move? (board) x y p)
                           (begin
-                            (printf "Possible player move, max-bid:~a~n" (max-bid))
+                           ; (printf "Possible player move, max-bid:~a~n" (max-bid))
+
 			  (figure-bid (board) x y p))
 			  1)])
 		(values weight (if (= (round bid) 0)
@@ -166,12 +167,12 @@
 	  (syntax-rules ()
 			((_ board x y p)
 			 (cond
-			  [(water-escape? board x y p) (* (water-escape-bid) (max-bid))]
-			  [(water-push? board x y p) (* (water-push-bid) (max-bid))]
-			  [(blank-escape? board x y p) (* (blank-escape-bid) (max-bid))]
-			  [(wall-escape? board x y p) (* (wall-escape-bid) (max-bid))]
-			  [(blank-push? board x y p) (* (blank-push-bid) (max-bid))]
-			  [(wall-push? board x y p) (* (wall-push-bid) (max-bid))]
+			  [(water-escape? board x y p) (begin (printf "Doing a water escape") (* (water-escape-bid) (max-bid)))]
+			  [(water-push? board x y p) (begin (printf "Doing a water push") (* (water-push-bid) (max-bid)))]
+			  [(blank-escape? board x y p)(begin (printf "Doing a blank escape")  (* (blank-escape-bid) (max-bid)))]
+			  [(wall-escape? board x y p) (begin (printf "Doing a wall escape") (* (wall-escape-bid) (max-bid)))]
+			  [(blank-push? board x y p)(begin (printf "Doing a blank push")  (* (blank-push-bid) (max-bid)))]
+			  [(wall-push? board x y p) (begin (printf "Doing a wall push") (* (wall-push-bid) (max-bid)))]
                           [else 1]))))
 	
 	(define (most-of player-left lop)
@@ -380,6 +381,8 @@
 	(define-syntax water-escape?
 	  (syntax-rules ()
 			((_ board x y p)
+
+                           
 			 (if (and (pinned? board (search-player-x (player-cur)) (search-player-y (player-cur)) 1)
 				  (or (not (is-robot? board x y )) (not (wall? board (+ x (- x (search-player-x (player-cur)))) (+ y (- y (search-player-y (player-cur))))))))
 			     1

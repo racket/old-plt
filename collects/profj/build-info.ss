@@ -552,7 +552,7 @@
                                      null
                                      (make-block 
                                      (list (make-call #f #f #f (make-special-name #f #f "super") null #f)) #f)
-                                    #f
+                                    #t
                                     rec
                                     #f)))
            (set-def-members! class (cons method (def-members class)))

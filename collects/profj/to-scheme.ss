@@ -1623,11 +1623,29 @@
       (cond
         ;Constructor case
         ((special-name? method-name)
-         (let ((c-name (build-identifier (build-constructor-name 
-                                          (if (equal? (special-name-name method-name) "super")
-                                              (parent-name)
-                                              (class-name)) 
-                                          (method-record-atypes method-record)))))
+         (let* ((name (if (equal? (special-name-name method-name) "super")
+                          (parent-name)
+                          (class-name)))
+                (c-name (build-identifier (build-constructor-name name
+                                                                  (method-record-atypes method-record))))
+                (generic-c-name (build-identifier (build-generic-name name c-name))))
+           #;(create-syntax #f
+                          (cond
+                            ((equal? (special-name-name method-name) "this")
+                             `(,c-name ,@args))
+                            ((equal? (parent-name) "Object")
+                             `(send ,(if expr expression 'this) ,c-name ,@args))
+                            ((and expr cant-be-null?)
+                             `(send-generic ,expression ,generic-c-name ,@args))
+                            ((not expr)
+                             `(send-generic this ,generic-c-name ,@args))
+                            (else
+                             `(let ((,unique-name ,expression))
+                                (if (null? ,unique-name)
+                                    (javaRuntime:nullError 'method)
+                                    (send-generic ,unique-name ,generic-c-name ,@args)))))
+                          (build-src src))
+           
            (if cant-be-null?
                (create-syntax #f `(send ,(if expr expression 'this) ,c-name ,@args) (build-src src))
                (create-syntax #f 
@@ -1644,7 +1662,8 @@
                                           (method-record-atypes method-record)))
                 (m-name (if static?
                             (build-static-name temp (car (method-record-class method-record)))
-                            temp)))
+                            temp))
+                (generic-name (build-generic-name (car (method-record-class method-record)) m-name)))
            (cond 
              ((special-name? expr)
               (let* ((over? (overridden? (string->symbol m-name)))

@@ -3,6 +3,7 @@
 
 (module tex2page-aux mzscheme
   (require (lib "process.ss"))
+  (require (lib "date.ss"))
   (provide (all-defined-except ))
 
 (define make-table
@@ -13,11 +14,11 @@
     (hash-table-get ht k (let ((d (if (null? d) #f (car d)))) (lambda () d)))))
 
 ; ensure shell-magic above
-;Configured for Scheme dialect plt by scmxlate, v 1a10,
+;Configured for Scheme dialect plt by scmxlate, v 2003-06-01,
 ;(c) Dorai Sitaram, 
 ;http://www.ccs.neu.edu/~dorai/scmxlate/scmxlate.html
 
-(define *tex2page-version* "2003-05-30")
+(define *tex2page-version* "2003-06-04")
 
 (define *tex2page-website*
   "http://www.ccs.neu.edu/~dorai/tex2page/tex2page-doc.html")
@@ -48,6 +49,26 @@
 
 (define *metapost*
   (case *operating-system* ((unix) "mpost") ((windows) "mp") (else "mpost")))
+
+(define *navigation-sentence-begin* "Go to ")
+
+(define *navigation-first-name* "first")
+
+(define *navigation-previous-name* "previous")
+
+(define *navigation-next-name* "next")
+
+(define *navigation-page-name* " page")
+
+(define *navigation-contents-name* "contents")
+
+(define *navigation-index-name* "index")
+
+(define *navigation-sentence-end* "")
+
+(define *last-modified* "Last modified")
+
+(define *html-conversion-by* "HTML conversion by")
 
 (define *scheme-version* (string-append "MzScheme " (version)))
 
@@ -92,24 +113,7 @@
 
 (define *invisible-space* (list '*invisible-space*))
 
-(define *the-days* (vector "Sun" "Mon" "Tues" "Wed" "Thurs" "Fri" "Sat"))
-
-(define *the-months*
-  (vector
-    "Jan"
-    "Feb"
-    "March"
-    "April"
-    "May"
-    "June"
-    "July"
-    "Aug"
-    "Sept"
-    "Oct"
-    "Nov"
-    "Dec"))
-
-(define *the-months-fulsomely*
+(define *month-names*
   (vector
     "January"
     "February"
@@ -474,35 +478,14 @@
 
 (define *zeroth-html-page* #f)
 
-(define alphabetic-week-day (lambda (i) (vector-ref *the-days* i)))
-
-(define alphabetic-month (lambda (i) (vector-ref *the-months* (- i 1))))
-
-(define get-time-zone
-  (lambda () (let ((tz (getenv "TZ"))) (if tz (string-append " " tz) ""))))
+(define strftime-like
+  (lambda (ignore-format d)
+    (string-append
+      (date->string d)
+      (let ((tz (getenv "TZ"))) (if tz (string-append " " tz) "")))))
 
 (define seconds->human-time
-  (lambda (s)
-    (let ((d (seconds->date s)))
-      (if (not d)
-        ""
-        (let ((h (date-hour d)) (m (date-minute d)))
-          (string-append
-            (alphabetic-week-day (date-week-day d))
-            ", "
-            (alphabetic-month (date-month d))
-            " "
-            (number->string (date-day d))
-            ", "
-            (number->string (date-year d))
-            ", "
-            (number->string (let ((h (modulo h 12))) (if (= h 10) 12 h)))
-            ":"
-            (if (< m 10) "0" "")
-            (number->string m)
-            " "
-            (if (<= 0 h 11) "am" "pm")
-            (get-time-zone)))))))
+  (lambda (s) (strftime-like "%a, %b %e, %Y, %l:%M %p %Z" (seconds->date s))))
 
 (define number->roman
   (lambda (n upcase?)
@@ -1546,7 +1529,7 @@
   (optarg #f)
   (thunk #f)
   (prim #f)
-  (delay #f))
+  (defer #f))
 
 (defstruct cdef (argpat #f) (expansion #f) (optarg #f) (active #f))
 
@@ -1557,7 +1540,7 @@
     (set!tdef.optarg lft (tdef.optarg rt))
     (set!tdef.thunk lft (tdef.thunk rt))
     (set!tdef.prim lft (tdef.prim rt))
-    (set!tdef.delay lft (tdef.delay rt))))
+    (set!tdef.defer lft (tdef.defer rt))))
 
 (define copy-cdef
   (lambda (lft rt)
@@ -1573,10 +1556,10 @@
     (set!tdef.optarg d #f)
     (set!tdef.thunk d #f)
     (set!tdef.prim d #f)
-    (set!tdef.delay d #f)))
+    (set!tdef.defer d #f)))
 
 (define tex-def
-  (lambda (name argpat expansion optarg thunk prim delay frame)
+  (lambda (name argpat expansion optarg thunk prim defer frame)
     (unless frame (set! frame (top-texframe)))
     (let ((d
            (cond
@@ -1592,7 +1575,7 @@
       (set!tdef.optarg d optarg)
       (set!tdef.thunk d thunk)
       (set!tdef.prim d prim)
-      (set!tdef.delay d delay))))
+      (set!tdef.defer d defer))))
 
 (define tex-def-prim
   (lambda (prim thunk)
@@ -1615,7 +1598,7 @@
                 lft-def)))))
       (cond
        ((find-def rt) => (lambda (rt-def) (copy-tdef lft-def rt-def)))
-       (else (cleanse-tdef lft-def) (set!tdef.delay lft-def rt))))))
+       (else (cleanse-tdef lft-def) (set!tdef.defer lft-def rt))))))
 
 (define tex-let-prim (lambda (lft rt) (tex-let lft rt *primitive-texframe*)))
 
@@ -1818,9 +1801,8 @@
     (let ((m (get-gcount "\\month")))
       (if (= m 0)
         (emit "[today]")
-        (fluid-let
-          ((*the-months* *the-months-fulsomely*))
-          (emit (alphabetic-month m))
+        (begin
+          (emit (vector-ref *month-names* (- m 1)))
           (emit " ")
           (emit (get-gcount "\\day"))
           (emit ", ")
@@ -1886,7 +1868,7 @@
 (define do-csname
   (lambda ()
     (ignorespaces)
-    (let loop ((r (list *esc-char*)))
+    (let loop ((r '()))
       (let ((c (snoop-actual-char)))
         (cond
          ((char=? c *esc-char*)
@@ -1894,9 +1876,10 @@
             (cond
              ((string=? x "\\endcsname")
               (toss-back-char *invisible-space*)
-              (for-each toss-back-char r))
-             (else (terror 'do-csname)))))
-         (else (get-actual-char) (loop (cons c r))))))))
+              (for-each toss-back-string r)
+              (toss-back-char *esc-char*))
+             (else (loop (cons (expand-ctl-seq-into-string x) r))))))
+         (else (get-actual-char) (loop (cons (string c) r))))))))
 
 (define do-cssblock
   (lambda ()
@@ -2042,7 +2025,8 @@
                    (emit-page-node-link-start
                      *toc-page*
                      (string-append *html-node-prefix* "toc_" lbl)))
-                 (emit "Part ")
+                 (tex2page-string "\\partname")
+                 (emit " ")
                  (emit lbl-val)
                  (when write-to-toc? (emit-link-stop))))
              (emit "</div><br>")
@@ -2059,6 +2043,7 @@
                      (string-append *html-node-prefix* "toc_" lbl)))
                  (tex2page-string
                    (if *inside-appendix?* "\\appendixname" "\\chaptername"))
+                 (emit " ")
                  (emit lbl-val)
                  (when write-to-toc? (emit-link-stop))))
              (emit "</div><br>")
@@ -2213,7 +2198,7 @@
              ((< i-tbl i-fig) 'table)
              (else (terror 'do-caption "cant happen"))))
            (counter-name (if (eqv? type 'table) "table" "figure"))
-           (caption-title (if (eqv? type 'table) "Table " "Figure "))
+           (caption-title (if (eqv? type 'table) "\\tablename" "\\figurename"))
            (num (bump-dotted-counter counter-name)))
       (get-bracketed-text-if-any)
       (emit "</td></tr>")
@@ -2221,7 +2206,8 @@
       (emit "<tr><td align=")
       (emit *display-justification*)
       (emit "><b>")
-      (emit caption-title)
+      (tex2page-string caption-title)
+      (emit " ")
       (emit num)
       (emit ":</b>")
       (emit-nbsp 2)
@@ -2353,8 +2339,8 @@
       (when (eqv? *tex-format* 'latex)
         (tex2page-string
           (if *using-chapters?*
-            "\\chapter*{Contents}"
-            "\\section*{Contents}")))
+            "\\chapter*{\\contentsname}"
+            "\\section*{\\contentsname}")))
       (emit-anchor (string-append *html-node-prefix* "toc_start"))
       (!toc-page *html-page-count*)
       (write-aux `(!toc-page ,*html-page-count*))
@@ -2780,14 +2766,14 @@
                ((eat-word "pt") 1)
                ((eat-word "in") 72.27)
                ((eat-word "bp") (* (/ 72) 72.27))
-               ((eat-word "cc") (* 12 1238/1157))
+               ((eat-word "cc") (* 12 1238 (/ 1157)))
                ((eat-word "cm") (* (/ 2.54) 72.27))
-               ((eat-word "dd") 1238/1157)
+               ((eat-word "dd") (/ 1238 1157))
                ((eat-word "in") 72.27)
                ((eat-word "mm") (* 0.1 (/ 2.54) 72.27))
                ((eat-word "pc") 12)
                ((eat-word "pt") 1)
-               ((eat-word "sp") 1/65536)
+               ((eat-word "sp") (/ 65536))
                ((eat-word "true") (loop))
                (else 1))))))))))
 
@@ -3314,8 +3300,8 @@
     (when (eqv? *tex-format* 'latex)
       (tex2page-string
         (if *using-chapters?*
-          "\\chapter*{Bibliography}"
-          "\\section*{References}")))
+          "\\chapter*{\\bibname}"
+          "\\section*{\\refname}")))
     (bgroup)
     (set! *bibitem-num* 0)
     (tex2page-string "\\let\\em\\it")
@@ -3400,7 +3386,9 @@
     (set! *using-index?* #t)
     (when insert-heading?
       (tex2page-string
-        (if *using-chapters?* "\\chapter*{Index}" "\\section*{Index}"))
+        (if *using-chapters?*
+          "\\chapter*{\\indexname}"
+          "\\section*{\\indexname}"))
       (emit-newline))
     (emit-anchor (string-append *html-node-prefix* "index_start"))
     (!index-page *html-page-count*)
@@ -3643,12 +3631,14 @@
              *colophon-mentions-last-mod-time?*
              *last-modification-time*
              (> *last-modification-time* 0))
-        (emit "Last modified: ")
+        (tex2page-string *last-modified*)
+        (emit ": ")
         (emit (seconds->human-time *last-modification-time*))
         (emit "<br>")
         (emit-newline))
       (when *colophon-mentions-tex2page?*
-        (emit "HTML conversion by ")
+        (tex2page-string *html-conversion-by*)
+        (emit " ")
         (when *colophon-links-to-tex2page-website?*
           (emit-link-start
             "http://www.ccs.neu.edu/~dorai/tex2page/tex2page-doc.html"))
@@ -3688,16 +3678,17 @@
                  *output-extension*)))))
       (unless (and first-page? last-page?)
         (do-end-para)
-        (emit "<div align=right class=navigation><i>[Go to ")
+        (emit "<div align=right class=navigation><i>[")
+        (emit *navigation-sentence-begin*)
         (emit "<span")
         (when first-page? (emit " class=disable"))
         (emit ">")
         (unless first-page? (emit-link-start first-page))
-        (emit "first")
+        (emit *navigation-first-name*)
         (unless first-page? (emit-link-stop))
         (emit ", ")
         (unless first-page? (emit-link-start prev-page))
-        (emit "previous")
+        (emit *navigation-previous-name*)
         (unless first-page? (emit-link-stop))
         (emit "</span>")
         (emit "<span")
@@ -3707,10 +3698,10 @@
         (emit ", ")
         (when first-page? (emit "</span>"))
         (unless last-page? (emit-link-start next-page))
-        (emit "next")
+        (emit *navigation-next-name*)
         (unless last-page? (emit-link-stop))
         (emit "</span>")
-        (emit " page")
+        (emit *navigation-page-name*)
         (when (or *toc-page* *index-page*)
           (emit "<span")
           (when (or
@@ -3728,7 +3719,7 @@
               (emit-page-node-link-start
                 *toc-page*
                 (string-append *html-node-prefix* "toc_start")))
-            (emit "contents")
+            (emit *navigation-contents-name*)
             (unless toc-page? (emit-link-stop))
             (emit "</span>"))
           (when *index-page*
@@ -3744,9 +3735,10 @@
               (emit-page-node-link-start
                 *index-page*
                 (string-append *html-node-prefix* "index_start")))
-            (emit "index")
+            (emit *navigation-index-name*)
             (unless index-page? (emit-link-stop))
             (emit "</span>")))
+        (emit *navigation-sentence-end*)
         (emit "]</i></div>")
         (do-para)))))
 
@@ -5236,7 +5228,7 @@
       =>
       (lambda (y)
         (cond
-         ((tdef.delay y) => (lambda (z) z))
+         ((tdef.defer y) => (lambda (z) z))
          ((tdef.thunk y) #f)
          (else
           (cond
@@ -5269,8 +5261,8 @@
        (ht
         (tex-def-count "\\time" (+ (* 60 (date-hour ht)) (date-minute ht)) #t)
         (tex-def-count "\\day" (date-day ht) #t)
-        (tex-def-count "\\month" (date-month ht) #t)
-        (tex-def-count "\\year" (date-year ht) #t))
+        (tex-def-count "\\month" (+ (date-month ht) (- 1) 1) #t)
+        (tex-def-count "\\year" (+ 0 (date-year ht)) #t))
        (else
         (tex-def-count "\\time" 0 #t)
         (tex-def-count "\\day" 0 #t)
@@ -5386,7 +5378,7 @@
 
 (define find-corresp-prim
   (lambda (ctlseq)
-    (let ((y (find-def ctlseq))) (or (and y (tdef.delay y)) ctlseq))))
+    (let ((y (find-def ctlseq))) (or (and y (tdef.defer y)) ctlseq))))
 
 (define find-corresp-prim-thunk
   (lambda (ctlseq)
@@ -6079,10 +6071,13 @@
   (lambda ()
     (let ((c (snoop-actual-char)))
       (cond
-       ((eof-object? c) "")
-       ((char=? c *esc-char*) (emit-html-string (get-ctl-seq)))
+       ((eof-object? c) #f)
+       ((char=? c *esc-char*)
+        (get-actual-char)
+        (toss-back-char *invisible-space*)
+        (toss-back-string "\\TIIPbackslash"))
        ((char=? c *comment-char*) (eat-till-eol) (do-string))
-       (else (emit-html-char (get-actual-char)))))))
+       (else (toss-back-char (get-actual-char)))))))
 
 (define do-verbatim-latex
   (lambda ()
@@ -6744,7 +6739,7 @@
       =>
       (lambda (y)
         (cond
-         ((tdef.delay y) => toss-back-string)
+         ((tdef.defer y) => toss-back-string)
          ((tdef.thunk y) => (lambda (th) (th)))
          (else
           (expand-tex-macro
@@ -8463,6 +8458,30 @@
 (tex-def-prim "\\xspace" do-xspace)
 
 (tex-def-prim "\\yen" (lambda () (emit "&yen;")))
+
+(tex-def-prim "\\contentsname" (lambda () (emit "Contents")))
+
+(tex-def-prim "\\listfigurename" (lambda () (emit "List of Figures")))
+
+(tex-def-prim "\\listtablename" (lambda () (emit "List of Tables")))
+
+(tex-def-prim "\\refname" (lambda () (emit "References")))
+
+(tex-def-prim "\\indexname" (lambda () (emit "Index")))
+
+(tex-def-prim "\\figurename" (lambda () (emit "Figure")))
+
+(tex-def-prim "\\tablename" (lambda () (emit "Table")))
+
+(tex-def-prim "\\partname" (lambda () (emit "Part")))
+
+(tex-def-prim "\\appendixname" (lambda () (emit "Appendix")))
+
+(tex-def-prim "\\abstractname" (lambda () (emit "Abstract")))
+
+(tex-def-prim "\\bibname" (lambda () (emit "Bibliography")))
+
+(tex-def-prim "\\chaptername" (lambda () (emit "Chapter")))
 
 (tex-def-prim "\\\\" (lambda () (do-cr "\\\\")))
 

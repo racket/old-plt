@@ -10,8 +10,10 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
-#define USE_MMAP 0
+#define USE_MMAP 1
+#define ALIGN_DOUBLES 0
 
 #if USE_MMAP
 /* For mmap: */
@@ -30,7 +32,7 @@ typedef short Type_Tag;
 #define SAFETY 0
 #define RECYCLE_HEAP 0
 
-#define GROW_FACTOR 2
+#define GROW_FACTOR 1
 
 void (*GC_collect_start_callback)(void);
 void (*GC_collect_end_callback)(void);
@@ -64,6 +66,8 @@ static char *alloc_bitmap;
 static char zero_sized[4];
 
 static void *park[2];
+
+static int cycle_count = 0;
 
 /******************************************************************************/
 
@@ -463,12 +467,14 @@ static void *mark(void *p)
 #endif
 	
       size = tag_table[tag](p, NULL);
+#if ALIGN_DOUBLES
       if (!(size & 0x1)) {
 	if ((long)new_tagged_high & 0x4) {
 	  ((Type_Tag *)new_tagged_high)[0] = SKIP;
 	  new_tagged_high += 1;
 	}
       }
+#endif
 	
       {
 	int i;
@@ -499,12 +505,14 @@ static void *mark(void *p)
       if (!size)
 	return ((void **)p)[1];
 
+#if ALIGN_DOUBLES
       if (!(size & 1)) {
 	if (!((long)new_untagged_low & 0x4)) {
 	  new_untagged_low--;
 	  *(long *)new_untagged_low = 0;
 	}
       }
+#endif
       size++;
 
       new_untagged_low -= size;
@@ -630,6 +638,8 @@ void gcollect(int needsize)
   INITTIME();
   PRINTTIME((STDERR, "gc: start: %ld\n", GETTIMEREL()));
 
+  cycle_count++;
+
   if (!initialized) {
     tag_table[weak_box_tag] = mark_weak_box;
     tag_table[gc_weak_array_tag] = mark_weak_array;
@@ -638,7 +648,7 @@ void gcollect(int needsize)
     GC_add_roots(&run_queue, (char *)&run_queue + sizeof(run_queue) + 1);
     GC_add_roots(&last_in_queue, (char *)&last_in_queue + sizeof(last_in_queue) + 1);
     GC_add_roots(&park, (char *)&park + sizeof(park) + 1);
-    initialized = 0;
+    initialized = 1;
   }
 
   weak_boxes = NULL;
@@ -669,6 +679,11 @@ void gcollect(int needsize)
     }
 
     new_space = malloc_pages(new_size + 4);
+
+    if (!new_space) {
+      printf("Out of memory");
+      abort();
+    }
   }
 
   /******************** Make bitmap image: ****************************/
@@ -933,6 +948,11 @@ void gcollect(int needsize)
 
   PRINTTIME((STDERR, "gc: free: %ld\n", GETTIMEREL()));
 
+  if (new_untagged_low < new_tagged_high) {
+    printf("Ouch: Tagged area collided with untagged area.\n");
+    abort();
+  }
+
   alloc_size = new_size;
   GC_alloc_space = new_space;
   GC_alloc_top = GC_alloc_space + alloc_size;
@@ -1001,6 +1021,7 @@ static void *malloc_tagged(size_t size_in_bytes)
   void **m, **naya;
 
   size_in_bytes = ((size_in_bytes + 3) & 0xFFFFFFFC);
+#if ALIGN_DOUBLES
   if (!(size_in_bytes & 0x4)) {
     /* Make sure memory is 8-aligned */
     if (((long)tagged_high & 0x4)) {
@@ -1012,6 +1033,7 @@ static void *malloc_tagged(size_t size_in_bytes)
       tagged_high += 1;
     }
   }
+#endif
 
   m = tagged_high;
   naya = tagged_high + (size_in_bytes >> 2);
@@ -1038,6 +1060,7 @@ static void *malloc_untagged(size_t size_in_bytes, unsigned long nonatomic)
     return zero_sized;
 
   size_in_bytes = ((size_in_bytes + 3) & 0xFFFFFFFC);
+#if ALIGN_DOUBLES
   if (!(size_in_bytes & 0x4)) {
     /* Make sure memory is 8-aligned */
     if ((long)untagged_low & 0x4) {
@@ -1049,6 +1072,7 @@ static void *malloc_untagged(size_t size_in_bytes, unsigned long nonatomic)
       ((long *)untagged_low)[0] = 0;
     }
   }
+#endif
 
   naya = untagged_low - ((size_in_bytes >> 2) + 1);
   if (naya < tagged_high) {

@@ -252,8 +252,8 @@ void GC_register_traverser(short tag, Traverse_Proc proc);
    happens where an instance of the tag as been allocated. */
 
 #define gcMARK_HERE(mark, x) if (!((long)(x) & 0x1) \
-                                 && ((void *)(x) >= GC_alloc_space) \
-                                 && ((void *)(x) <= GC_alloc_top)) \
+                                 && ((unsigned long)(x) >= (unsigned long)GC_alloc_space) \
+                                 && ((unsigned long)(x) <= (unsigned long)GC_alloc_top)) \
                                x = mark(x)
 /*
    A macro that, given the mark procedure supplied to a traverser and

@@ -55,20 +55,24 @@
   (newline (current-error-port))
   (set! exit-with-error? #t))
 
+(define per-block-push? #t)
+
 ;; Header:
-(printf "#define FUNCCALL(x) x~n")
-(printf "#define FUNCCALL_EMPTY(x) (SETUP(0), (x))~n")
+(printf "#define FUNCCALL(setup, x) (setup, x)~n")
+(printf "#define FUNCCALL_EMPTY(x) FUNCCALL(SETUP(0), x)~n")
 (printf "#define PREPARE_VAR_STACK(size) void *__gc_var_stack__[size+2]; __gc_var_stack__[0] = GC_variable_stack; __gc_var_stack__[1] = (void *)GC_variable_count;~n")
 (printf "#define SETUP(x) (GC_variable_stack = __gc_var_stack__, GC_variable_count = x)~n")
 (printf "#define PUSH(v, x) (__gc_var_stack__[x+2] = (void *)&(v))~n")
 (printf "#define PUSHARRAY(v, l, x) (__gc_var_stack__[x+2] = (void *)0, __gc_var_stack__[x+3] = (void *)&(v), __gc_var_stack__[x+4] = (void *)l)~n")
+(printf "#define BLOCK_SETUP(x) ~a" (if per-block-push? "x" "/* skipped */"))
 
 (define-struct tok (n line col file))
 (define-struct (seq struct:tok) (close in))
 (define-struct (parens struct:seq) ())
 (define-struct (brackets struct:seq) ())
 (define-struct (braces struct:seq) ())
-(define-struct (call struct:tok) (func args live))
+(define-struct (call struct:tok) (func args live tag))
+(define-struct (block-push struct:tok) (vars tag super-tag))
 (define-struct (note struct:tok) (s))
 
 (define-struct vtype ())
@@ -77,34 +81,13 @@
 (define-struct (struct-array-type struct:struct-type) (count))
 (define-struct (union-type struct:vtype) ())
 
-(define-struct live-var-info (maxlive vars new-vars num-calls))
+(define-struct live-var-info (tag maxlive maxpush vars new-vars pushed-vars num-calls))
 
 (define-struct prototype (type pointer? pointer?-determined?))
 
 (define-struct c++-class (parent prototyped))
 
 (define c++-classes null)
-
-(define e (let ([source #f])
-	    (letrec ([translate
-		      (lambda (v)
-			(when (cadr v)
-			  (set! source (cadr v)))
-			(if (pair? (car v))
-			    (let ([body (map translate (cddddr v))])
-			      ((cond
-				[(string=? "(" (caar v)) make-parens]
-				[(string=? "[" (caar v)) make-brackets]
-				[(string=? "{" (caar v)) make-braces])
-			       (caar v) (caddr v) (cadddr v)
-			       source
-			       (cond
-				[(string=? "(" (caar v)) ")"]
-				[(string=? "[" (caar v)) "]"]
-				[(string=? "{" (caar v)) "}"])
-			       body))
-			    (make-tok (car v) (caddr v) (cadddr v) source)))])
-	      (map translate e-raw))))
 
 (define label? #t)
 
@@ -174,6 +157,21 @@
 	  size))]
    [else 1]))
 
+(define (replace-live-vars live-vars new-live-vars)
+  (make-live-var-info (live-var-info-tag live-vars)
+		      (live-var-info-maxlive live-vars)
+		      (live-var-info-maxpush live-vars)
+		      new-live-vars
+		      (live-var-info-new-vars live-vars)
+		      (live-var-info-pushed-vars live-vars)
+		      (live-var-info-num-calls live-vars)))
+
+(define gentag
+  (let ([count 0])
+    (lambda ()
+      (set! count (add1 count))
+      (format "XfOrM~a" count))))
+
 (define next-indent #f)
 
 (define (newline/indent i)
@@ -190,6 +188,51 @@
   (display s))
 
 (define re:quote-or-backslash (regexp "[\\\"]"))
+
+(define (push-vars l plus comma)
+  (let loop ([l l][n 0][comma comma])
+    (unless (null? l)
+      (loop (cdr l)
+	    (let push-var ([full-name (caar l)][vtype (cdar l)][n n][comma comma])
+	      (cond
+	       [(union-type? vtype)
+		(log-error "[UNION]: Can't push union onto mark stack: ~a." full-name)
+		(printf "~aPUSHUNION(~a, ~a~a)" comma full-name n plus)
+		(add1 n)]
+	       [(array-type? vtype)
+		(printf "~aPUSHARRAY(~a, ~a, ~a~a)" comma full-name (array-type-count vtype) n plus)
+		(+ 3 n)]
+	       [(struct-type? vtype)
+		(let aloop ([array-index 0][n n][comma comma])
+		  ;; Push each struct in array (or only struct if not an array)
+		  (let loop ([n n][l (cdr (assq (struct-type-struct vtype) struct-defs))][comma comma])
+		    (if (null? l)
+			(if (and (struct-array-type? vtype)
+				 (< (add1 array-index) (struct-array-type-count vtype)))
+			    ;; Next in array
+			    (aloop (add1 array-index) n comma)
+			    ;; All done
+			    n)
+			(loop (push-var (format "~a~a.~a"
+						full-name 
+						(if (struct-array-type? vtype)
+						    (format "[~a]" array-index)
+						    "")
+						(caar l))
+					(cdar l)
+					n
+					comma)
+			      (cdr l)
+			      ", "))))]
+	       [else
+		(printf "~aPUSH(~a, ~a~a)" comma full-name n plus)
+		(+ n 1)]))
+	    ", "))))
+
+(define (total-push-size vars)
+  (apply + (map (lambda (x)
+		  (get-variable-size (cdr x)))
+		vars)))
 
 (define (print-it e indent semi-newlines?)
   (let loop ([e e][prev #f])
@@ -228,49 +271,37 @@
 	  (newline/indent indent)]
 	 [(call? v)
 	  (if (null? (call-live v))
-	      (display/indent v "FUNCCALL_EMPTY((")
+	      (display/indent v "FUNCCALL_EMPTY(")
 	      (begin
-		(display/indent v (format "FUNCCALL((SETUP(~a), " 
-					  (apply + (map (lambda (x)
-							  (get-variable-size (cdr x)))
-							(call-live v)))))
-		(let loop ([l (call-live v)][n 0])
-		  (unless (null? l)
-		    (loop (cdr l)
-			  (let push-var ([full-name (caar l)][vtype (cdar l)][n n])
-			    (cond
-			     [(union-type? vtype)
-			      (log-error "[UNION]: Can't push union onto mark stack: ~a." full-name)
-			      (printf "PUSHUNION(~a, ~a), " full-name n)
-			      (add1 n)]
-			     [(array-type? vtype)
-			      (printf "PUSHARRAY(~a, ~a, ~a), " full-name (array-type-count vtype) n)
-			      (+ 3 n)]
-			     [(struct-type? vtype)
-			      (let aloop ([array-index 0][n n])
-				;; Push each struct in array (or only struct if not an array)
-				(let loop ([n n][l (cdr (assq (struct-type-struct vtype) struct-defs))])
-				  (if (null? l)
-				      (if (and (struct-array-type? vtype)
-					       (< (add1 array-index) (struct-array-type-count vtype)))
-					  ;; Next in array
-					  (aloop (add1 array-index) n)
-					  ;; All done
-					  n)
-				      (loop (push-var (format "~a~a.~a"
-							      full-name 
-							      (if (struct-array-type? vtype)
-								  (format "[~a]" array-index)
-								  "")
-							      (caar l))
-						      (cdar l)
-						      n)
-					    (cdr l)))))]
-			     [else
-			      (printf "PUSH(~a, ~a), " full-name n)
-			      (+ n 1)])))))))
+		(display/indent v (format "FUNCCALL(SETUP_~a((SETUP(~a)" 
+					  (call-tag v)
+					  (total-push-size (call-live v))))
+		(push-vars (call-live v) "" ", ")
+		(display/indent v ")), ")))
 	  (print-it (append (call-func v) (list (call-args v))) indent #f)
-	  (display/indent v "))")]
+	  (display/indent v ")")]
+	 [(block-push? v)
+	  (let ([size (total-push-size (block-push-vars v))]
+		[prev-add (if (block-push-super-tag v)
+			      (format "+~a_COUNT" (block-push-super-tag v))
+			      "")]
+		[tag (block-push-tag v)]
+		[tabbing (if (zero? indent)
+			     ""
+			     (make-string (sub1 indent) #\space))])
+	    (unless (zero? size)
+	      (display/indent v "BLOCK_SETUP((")
+	      (push-vars (block-push-vars v) prev-add "")
+	      (display/indent v "));")
+	      (newline))
+	    (printf "#~adefine ~a_COUNT (~a~a)~n" tabbing tag size prev-add)
+	    (printf "#~adefine SETUP_~a(x) " tabbing tag)
+	    (cond
+	     [(and (zero? size) (block-push-super-tag v)) 
+	      (printf "SETUP_~a(x)" (block-push-super-tag v))]
+	     [per-block-push? (printf "SETUP(~a_COUNT)" tag)]
+	     [else (printf "x")])
+	    (newline/indent indent))]
 	 [else
 	  (if (string? (tok-n v))
 	      (begin
@@ -666,12 +697,12 @@
 	(tok-file body-v)
 	(seq-close body-v)
 	(let-values ([(body-e live-vars)
-		      (convert-body body-e arg-vars (make-live-var-info -1 null null 0) #t)])
+		      (convert-body body-e arg-vars arg-vars (make-live-var-info #f -1 0 null null null 0) #t)])
 	  body-e))))))
 
-(define (convert-body body-e extra-vars live-vars setup-stack?)
+(define (convert-body body-e extra-vars pushable-vars live-vars setup-stack?)
   (let ([el (body->lines body-e #f)])
-      (let-values ([(decls body) (split-decls el)])
+    (let-values ([(decls body) (split-decls el)])
 	(let* ([local-vars 
 		(apply
 		 append
@@ -687,14 +718,20 @@
 		       (append extra-vars local-vars))])
 	  ;; Convert calls and body (recusively)
 	  (let-values ([(orig-maxlive) (live-var-info-maxlive live-vars)]
+		       [(orig-maxpush) (live-var-info-maxpush live-vars)]
+		       [(orig-tag) (live-var-info-tag live-vars)]
 		       [(body-x live-vars)
 			(let loop ([body body])
 			  (cond
 			   [(null? body)
-			    ;; Locally-defined arrays and records are always live.
-			    ;; Start with 0 maxlive in case we want to check whether anything
-			    ;;  was pushed in the block.
-			    (values null (make-live-var-info -1
+			    ;; Starting live-vars record for this block:
+			    ;;  Create new tag
+			    ;;  Locally-defined arrays and records are always live.
+			    ;;  Start with -1 maxlive in case we want to check whether anything
+			    ;;   was pushed in the block.
+			    (values null (make-live-var-info (gentag)
+							     -1
+							     0
 							     (append
 							      (let loop ([vars local-vars])
 								(cond
@@ -705,6 +742,7 @@
 								 [else (loop (cdr vars))]))
 							      (live-var-info-vars live-vars))
 							     (live-var-info-new-vars live-vars)
+							     (live-var-info-pushed-vars live-vars)
 							     (live-var-info-num-calls live-vars)))]
 			   [(eq? (tok-n (caar body)) START_XFORM_SKIP)
 			    (let skip-loop ([body (cdr body)])
@@ -732,7 +770,7 @@
 								   live-vars
 								   #f)])
 			      (values (cons e rest) live-vars))]))])
-	    ;; Collect live vars and look for function calls in decl section:
+	    ;; Collect live vars and look for function calls in decl section.
 	    (let ([live-vars
 		   (let loop ([decls decls][live-vars live-vars])
 		     (if (null? decls)
@@ -747,26 +785,46 @@
 					     ;; complain about function calls:
 					     (convert-function-calls (car el) extra-vars live-vars #t)])
 				 (dloop (cdr el) live-vars))))))])
-	      (values (apply
-		       append
-		       (append
-			decls
-			(list (append (if label?
-					  (list (make-note 'note #f #f #f (format "/* PTRVARS: ~a */" (map car vars))))
-					  null)
-				      (if setup-stack?
-					  (apply append (live-var-info-new-vars live-vars))
-					  null)
-				      (if (and setup-stack? (not (negative? (live-var-info-maxlive live-vars))))
-					  (list (make-note 'note #f #f #f (format "PREPARE_VAR_STACK(~a);" 
-										  (live-var-info-maxlive live-vars))))
-					  null)))
-			body-x))
-		      (make-live-var-info (max orig-maxlive
-					       (live-var-info-maxlive live-vars))
-					  (live-var-info-vars live-vars)
-					  (live-var-info-new-vars live-vars)
-					  (live-var-info-num-calls live-vars)))))))))
+	      ;; Calculate vars to push in this block
+	      (let ([newly-pushed (filter (lambda (x)
+					    (or (assq (car x) local-vars)
+						(assq (car x) pushable-vars)))
+					  (live-var-info-pushed-vars live-vars))])
+		(values (apply
+			 append
+			 (append
+			  decls
+			  (list (append (if label?
+					    (list (make-note 'note #f #f #f (format "/* PTRVARS: ~a */" (map car vars))))
+					    null)
+					(if setup-stack?
+					    (apply append (live-var-info-new-vars live-vars))
+					    null)
+					(if (and setup-stack? (not (negative? (live-var-info-maxlive live-vars))))
+					    (list (make-note 'note #f #f #f (format "PREPARE_VAR_STACK(~a);" 
+										    (if per-block-push?
+											(+ (total-push-size newly-pushed)
+											   (live-var-info-maxpush live-vars))
+											(live-var-info-maxlive live-vars)))))
+					    null)
+					(if (negative? (live-var-info-maxlive live-vars))
+					    null
+					    (list (make-block-push
+						   "block push"
+						   #f #f #f
+						   newly-pushed (live-var-info-tag live-vars) orig-tag)))))
+			  body-x))
+			;; Restore original tag and union max live vars:
+			(make-live-var-info orig-tag
+					    (max orig-maxlive
+						 (live-var-info-maxlive live-vars))
+					    (max orig-maxpush
+						 (+ (total-push-size newly-pushed)
+						    (live-var-info-maxpush live-vars)))
+					    (live-var-info-vars live-vars)
+					    (live-var-info-new-vars live-vars)
+					    (live-var-info-pushed-vars live-vars)
+					    (live-var-info-num-calls live-vars))))))))))
 
 (define (body-var-decl? e)
   (and (pair? e)
@@ -861,13 +919,17 @@
 				 ok-calls
 				 #t
 				 (make-live-var-info
+				  (live-var-info-tag live-vars)
 				  (live-var-info-maxlive live-vars)
+				  (live-var-info-maxpush live-vars)
 				  (live-var-info-vars live-vars)
+				  ;; Add newly-created vars for lifting to declaration set
 				  (cons (append (prototype-type (cdr p-m))
 						(list
 						 (make-tok new-var #f #f #f)
 						 (make-tok semi #f #f #f)))
 					(live-var-info-new-vars live-vars))
+				  (live-var-info-pushed-vars live-vars)
 				  (live-var-info-num-calls live-vars))))
 			 (loop (cdr el) (cons (car el) new-args) setups new-vars 
 			       (if must-convert?
@@ -941,16 +1003,14 @@
 			    (lift-out-calls args live-vars)]
 			   [(args live-vars)
 			    (convert-paren-interior args vars 
-						    (make-live-var-info 
-						     (live-var-info-maxlive live-vars)
+						    (replace-live-vars 
+						     live-vars
 						     (append (map (lambda (x)
 								    (cons (car x) (make-vtype)))
 								  (filter (lambda (x)
 									    (cdr x))
 									  new-vars))
-							     (live-var-info-vars live-vars))
-						     (live-var-info-new-vars live-vars)
-						     (live-var-info-num-calls live-vars))
+							     (live-var-info-vars live-vars)))
 						    ok-calls)]
 			   [(func live-vars)
 			    (convert-function-calls (reverse func) vars live-vars #t)]
@@ -962,14 +1022,12 @@
 				  (let-values ([(setup live-vars)
 						(convert-function-calls (car setups) vars 
 									;; Remove var for this one:
-									(make-live-var-info 
-									 (live-var-info-maxlive live-vars)
+									(replace-live-vars
+									 live-vars
 									 (remove (caar new-vars)
 										 (live-var-info-vars live-vars)
 										 (lambda (a b)
-										   (eq? a (car b))))
-									 (live-var-info-new-vars live-vars)
-									 (live-var-info-num-calls live-vars))
+										   (eq? a (car b)))))
 									#f)])
 				    (loop (cdr setups)
 					  (cdr new-vars)
@@ -980,48 +1038,53 @@
 					  live-vars))))])
 	       ;; Put everything back together. Lifted out calls go into a sequence
 	       ;;  before the main function call.
-	       (loop rest-
-		     (let ([call (if (and (null? (cdr func))
-					  (memq (tok-n (car func)) non-gcing-functions))
-				     ;; Call without pointer pushes
-				     (make-parens
-				      "(" #f #f #f ")"
-				      (append func (list args)))
-				     ;; Call with pointer pushes
-				     (make-call
-				      "func call"
-				      #f
-				      #f
-				      #f
-				      func
-				      args
-				      (if (and (null? (cdr func))
-					       (memq (tok-n (car func)) non-returning-functions))
-					  ;; non-returning -> don't need to push vars
-					  null
-					  (live-var-info-vars orig-live-vars))))])
-		       (cons (if (null? setups)
-				 call
-				 (make-parens
-				  "(" #f #f #f ")"
-				  (append
-				   (apply append setups)
-				   (list call))))
-			     result))
-		     (make-live-var-info (max (apply + (map (lambda (x)
-							      (get-variable-size (cdr x)))
-							    (live-var-info-vars orig-live-vars)))
-					      (live-var-info-maxlive live-vars))
-					 (live-var-info-vars live-vars)
-					 (live-var-info-new-vars live-vars)
-					 (add1 (live-var-info-num-calls live-vars))))))))]
+	       (let ([pushed-vars (if (and (null? (cdr func))
+					   (memq (tok-n (car func)) non-returning-functions))
+				      ;; non-returning -> don't need to push vars
+				      null
+				      (live-var-info-vars orig-live-vars))])
+		 (loop rest-
+		       (let ([call (if (and (null? (cdr func))
+					    (memq (tok-n (car func)) non-gcing-functions))
+				       ;; Call without pointer pushes
+				       (make-parens
+					"(" #f #f #f ")"
+					(append func (list args)))
+				       ;; Call with pointer pushes
+				       (make-call
+					"func call"
+					#f
+					#f
+					#f
+					func
+					args
+					pushed-vars
+					(live-var-info-tag orig-live-vars)))])
+			 (cons (if (null? setups)
+				   call
+				   (make-parens
+				    "(" #f #f #f ")"
+				    (append
+				     (apply append setups)
+				     (list call))))
+			       result))
+		       (make-live-var-info (live-var-info-tag live-vars)
+					   ;; maxlive is either size for this push or old maxlive:
+					   (max (total-push-size (live-var-info-vars orig-live-vars))
+						(live-var-info-maxlive live-vars))
+					   ;; note: maxpush calculated at block level
+					   (live-var-info-maxpush live-vars)
+					   (live-var-info-vars live-vars)
+					   (live-var-info-new-vars live-vars)
+					   ;; Add newly-pushed variable to pushed set:
+					   (let* ([old-pushed (live-var-info-pushed-vars live-vars)]
+						  [new-pushed (filter (lambda (x) (not (assq (car x) old-pushed))) pushed-vars)])
+					     (append new-pushed old-pushed))
+					   (add1 (live-var-info-num-calls live-vars)))))))))]
        [(eq? 'goto (tok-n (car e-)))
 	;; Goto - assume all vars are live
 	(loop (cdr e-) (cons (car e-) result) 
-	      (make-live-var-info (live-var-info-maxlive live-vars)
-				  vars 
-				  (live-var-info-new-vars live-vars)
-				  (live-var-info-num-calls live-vars)))]
+	      (replace-live-vars live-vars vars))]
        [(eq? '= (tok-n (car e-)))
 	;; Check for assignments where the LHS can move due to
 	;; a function call on the RHS
@@ -1062,30 +1125,38 @@
 				     (not (null? (cddr e-)))
 				     (memq (tok-n (caddr e-)) '(for while)))]
 		      [(orig-new-vars) (live-var-info-new-vars live-vars)]
+		      [(orig-pushed-vars) (live-var-info-pushed-vars live-vars)]
 		      ;; Proc to convert body once
 		      [(convert-brace-body) 
 		       (lambda (live-vars)
-			 (convert-body (seq-in v) vars live-vars #f))]
+			 (convert-body (seq-in v) vars null live-vars #f))]
 		      ;; First conversion
 		      [(e live-vars) (convert-brace-body live-vars)]
-		      ;; Proc to filter live vars, dropping vars no longer in scope:
+		      ;; Proc to filter live and pushed vars, dropping vars no longer in scope:
 		      [(filter-live-vars)
 		       (lambda (live-vars)
-			 (let ([new-live-vars (let loop ([l (live-var-info-vars live-vars)])
-						(cond
-						 [(null? l) null]
-						 [(assq (caar l) vars)
-						  (cons (car l) (loop (cdr l)))]
-						 [else (loop (cdr l))]))])
-			   (make-live-var-info (live-var-info-maxlive live-vars)
+			 (let* ([not-declared (lambda (x) (assq (car x) vars))]
+				[new-live-vars (filter
+						not-declared
+						(live-var-info-vars live-vars))]
+				[new-pushed-vars (filter
+						  not-declared
+						  (live-var-info-pushed-vars live-vars))])
+			   (make-live-var-info (live-var-info-tag live-vars)
+					       (live-var-info-maxlive live-vars)
+					       (live-var-info-maxpush live-vars)
 					       new-live-vars
 					       (live-var-info-new-vars live-vars)
+					       new-pushed-vars
 					       (live-var-info-num-calls live-vars))))]
 		      [(restore-new-vars)
 		       (lambda (live-vars)
-			 (make-live-var-info (live-var-info-maxlive live-vars)
+			 (make-live-var-info (live-var-info-tag live-vars)
+					     (live-var-info-maxlive live-vars)
+					     (live-var-info-maxpush live-vars)
 					     (live-var-info-vars live-vars)
 					     orig-new-vars
+					     orig-pushed-vars
 					     (live-var-info-num-calls live-vars)))]
 		      [(e live-vars rest extra)
 		       (cond
@@ -1134,11 +1205,9 @@
 	;; Add a live variable:
 	(loop (cdr e-)
 	      (cons (car e-) result)
-	      (make-live-var-info (live-var-info-maxlive live-vars)
-				  (cons (assq (tok-n (car e-)) vars)
-					(live-var-info-vars live-vars))
-				  (live-var-info-new-vars live-vars)
-				  (live-var-info-num-calls live-vars)))]
+	      (replace-live-vars live-vars 
+				 (cons (assq (tok-n (car e-)) vars)
+				       (live-var-info-vars live-vars))))]
        [(and (memq (tok-n (car e-)) '(while do for))
 	     (case (tok-n (car e-))
 	       [(do)
@@ -1241,6 +1310,29 @@
      (let* ([sube (top-level sube ".h")])
        (append l sube)))
    null))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define e (let ([source #f])
+	    (letrec ([translate
+		      (lambda (v)
+			(when (cadr v)
+			  (set! source (cadr v)))
+			(if (pair? (car v))
+			    (let ([body (map translate (cddddr v))])
+			      ((cond
+				[(string=? "(" (caar v)) make-parens]
+				[(string=? "[" (caar v)) make-brackets]
+				[(string=? "{" (caar v)) make-braces])
+			       (caar v) (caddr v) (cadddr v)
+			       source
+			       (cond
+				[(string=? "(" (caar v)) ")"]
+				[(string=? "[" (caar v)) "]"]
+				[(string=? "{" (caar v)) "}"])
+			       body))
+			    (make-tok (car v) (caddr v) (cadddr v) source)))])
+	      (map translate e-raw))))
 
 (foldl-statement
  e

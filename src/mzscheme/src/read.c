@@ -221,6 +221,10 @@ void scheme_alloc_list_stack(Scheme_Process *process)
   process->list_stack_pos = 0;
   sa = MALLOC_N_RT(Scheme_Object, NUM_CELLS_PER_STACK);
   process->list_stack = sa;
+#ifdef MZ_PRECISE_GC
+  /* Must set the tag on the first element: */
+  process->list_stack[0].type = scheme_pair_type;
+#endif
 }
 
 #define DO_CHAR_PARAM(name, pos) \

@@ -110,17 +110,18 @@ static void free_pages(void *p, size_t len)
 
   /* Try to free pages in larger blocks, since the OS may be slow. */
 
-  for (i = 0; i < BLOCKFREE_CACHE_SIZE; i++) {
-    if (p == blockfree[i].start + blockfree[i].len) {
-      blockfree[i].len += len;
-      return;
+  for (i = 0; i < BLOCKFREE_CACHE_SIZE; i++)
+    if(blockfree[i].start && (blockfree[i].len < (1024 * 1024))) {
+      if (p == blockfree[i].start + blockfree[i].len) {
+	blockfree[i].len += len;
+	return;
+      }
+      if (p + len == blockfree[i].start) {
+	blockfree[i].start = p;
+	blockfree[i].len += len;
+	return;
+      }
     }
-    if (p + len == blockfree[i].start) {
-      blockfree[i].start = p;
-      blockfree[i].len += len;
-      return;
-    }
-  }
 
   for (i = 0; i < BLOCKFREE_CACHE_SIZE; i++) {
     if (!blockfree[i].start) {

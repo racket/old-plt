@@ -56,15 +56,19 @@
       project:set-project-window
       project:get-project-window))
   
+  (preferences:set-default 'drscheme:project-manager:execute-callback-project?
+			   #t boolean?)
   (define (make-project-aware-unit-frame super%)
     (class/d* super% (project-aware-frame<%>) args
 
       ((inherit get-menu-bar definitions-text set-label-prefix)
-       (override change-to-file
+       (override execute-callback
+		 change-to-file
 		 file-menu:between-print-and-close
 		 file-menu:between-new-and-open
 		 file-menu:between-open-and-revert)
-       (rename [super-change-to-file change-to-file]
+       (rename [super-execute-callback execute-callback]
+	       [super-change-to-file change-to-file]
 	       [super-file-menu:between-open-and-revert file-menu:between-open-and-revert]
 	       [super-file-menu:between-new-and-open file-menu:between-new-and-open]
 	       [super-file-menu:between-print-and-close file-menu:between-print-and-close])
@@ -77,6 +81,46 @@
 	(super-change-to-file filename)
 	(set-project-window filename))
 
+      (define execute-callback-dialog #f)
+      (define execute-callback-panel #f)
+      (define (execute-callback)
+	(unless execute-callback-dialog
+	  (set! execute-callback-dialog (make-object dialog% "Execute project?"))
+	  (make-object message% "Execute the project or just this file?" execute-callback-dialog)
+	  (set! execute-callback-panel (make-object horizontal-panel% execute-callback-dialog))
+	  (send execute-callback-panel set-alignment 'center 'center))
+	(send execute-callback-panel change-children (lambda (l) null))
+	(let* ([pref
+		(preferences:get 'drscheme:project-manager:execute-callback-project?)]
+	       [project-button
+		(make-object button% "Project" execute-callback-panel
+			     (lambda x
+			       (preferences:set
+				'drscheme:project-manager:execute-callback-project?
+				#t)
+			       (send execute-callback-dialog show #f))
+			     (if pref
+				 '(border)
+				 '()))]
+	       [file-button
+		(make-object button% "File" execute-callback-panel
+			     (lambda x
+			       (preferences:set
+				'drscheme:project-manager:execute-callback-project?
+				#f)
+			       (send execute-callback-dialog show #f))
+			     (if pref
+				 '()
+				 '(border)))])
+	  (send (if pref project-button file-button) focus)
+	  (send execute-callback-dialog show #t))
+
+	(if (preferences:get 'drscheme:project-manager:execute-callback-project?)
+	    (when project-window
+	      (send project-window show #t)
+	      (send project-window execute-project))
+	    (super-execute-callback)))
+	  
       (define (set-project-window fn)
 	(let ([f (ormap (lambda (f) 
 			  (if (send f has-file? (send definitions-text get-filename))
@@ -133,6 +177,10 @@
 
   (define project-save-file-tag ";;___project_file_(special_tag)___")
 
+
+  (preferences:set-default 'drscheme:project-manager:add-files-as-relative?
+			   #t
+			   boolean?)
   (define project-frame%
     (class/d (drscheme:frame:basics-mixin frame:standard-menus%) (filename)
       ((inherit get-area-container get-menu-bar set-label)
@@ -150,6 +198,7 @@
 		 file-menu:between-open-and-revert)
        (public project-name ;; : string
                has-file? ;; : (string -> boolean)
+	       execute-project ;; : (-> void)
                ))
 
       (define (on-close)
@@ -694,10 +743,6 @@
 	 [(zero? n) l]
 	 [(null? l) (error 'nth-cdr "got to end of list with ~s cdrs left" n)]
 	 [else (nth-cdr (- n 1) (cdr l))]))
-
-      (preferences:set-default 'drscheme:project-manager:add-files-as-relative?
-			       #t
-			       boolean?)
 
       (define (add-files)
 

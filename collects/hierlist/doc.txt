@@ -146,6 +146,26 @@ _hierlist_ defines three classes:
 
 --------------------------------------------------
 
+If you use the `find-position' and `find-snip' methods of a
+hierarchical-list%, you will get back
+hierarchical-item-snip% and hierarchical-list-snip%
+objects. They support these methods:
+
+> hierarchical-item-snip% derived from editor-snip%
+
+> get-item :: (send a-hl-item-snip get-item) - returns the 
+     hierarchical-list-item<%> corresponding to this snip
+
+> hierarchical-list-snip% derived from editor-snip%
+
+> get-item :: (send a-hl-list-snip get-item) - returns the 
+     hierarchical-list-item<%> corresponding to this snip
+
+> get-content-buffer :: (send a-hl-list-snip get-content-buffer) -
+     returns the text% that contains the sub-items.
+
+--------------------------------------------------
+
 _Hierlist keystrokes_
 
 Hierlists support these keystrokes:

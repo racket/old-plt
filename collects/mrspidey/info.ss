@@ -11,6 +11,7 @@
     [(compile-omit-files)
      (list "pltrc-co.ss" "macros.ss"
 	   "handlers.ss" "mred.ss" "text.ss")]
-    [(compile-subcollections) (list (list "Sba")
-				    (list "Gui"))]
+    [(compile-subcollections) (list (list "mrspidey" "Sba")
+				    (list "mrspidey" "Gui")
+				    (list "drscheme" "tools" "analysis"))]
     [else (failure)]))

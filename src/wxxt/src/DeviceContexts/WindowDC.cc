@@ -2549,10 +2549,9 @@ Visual *wxGetGLWindowVisual()
 		  if ((v == want_db) && !errorFlagged) {
 		    glXGetConfig(wxAPP_DISPLAY, visi + i, GLX_AUX_BUFFERS, &v);
 		    glXGetConfig(wxAPP_DISPLAY, visi + i, GLX_STENCIL_SIZE, &v2);
-		    if ((v <= min_aux_match) && (v2 <= min_sten_match)) {
+		    if ((v <= min_aux_match) && (v2 <= min_sten_match) && !errorFlagged) {
 		      min_aux_match = v;
 		      min_sten_match = v2;
-		      printf("got suggested %d\n", want_db);
 		      if (want_db)
 			vi = visi + i;
 		      else

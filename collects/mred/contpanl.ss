@@ -501,20 +501,28 @@
 		     [extra-per-stretchable (if (zero? num-stretchable)
 						0
 						(inexact->exact
-						 (round
+						 (floor
 						  (/ extra-space
 						     num-stretchable))))]
+		     [leftover (- extra-space (* extra-per-stretchable num-stretchable))]
 		     [num-children (length kid-info)])
 		(letrec
 		    ([pc-help
-		      (lambda (kid-info left-edge)
+		      (lambda (kid-info left-edge leftover)
 			(if (null? kid-info)
 			    null
 			    (let* ([curr-info (car kid-info)]
+				   [rest (cdr kid-info)]
 				   [major-posn left-edge]
+				   [next-leftover (if (zero? leftover)
+						      0
+						      (- leftover 1))]
+				   [extra-this-stretchable (if (zero? leftover)
+							       extra-per-stretchable
+							       (+ extra-per-stretchable 1))]
 				   [major-size
 				    (if (child-major-stretch curr-info)
-					(+ extra-per-stretchable
+					(+ extra-this-stretchable
 					   (child-major-size curr-info))
 					(child-major-size curr-info))]
 				   [minor-posn (if (child-minor-stretch
@@ -540,12 +548,13 @@
 				(get-y-info major-posn minor-posn)
 				(get-x-info major-size minor-size)
 				(get-y-info major-size minor-size))
-			       (pc-help (cdr kid-info)
-					(+ major-size major-posn spacing))))))])
+			       (pc-help rest
+					(+ major-size major-posn spacing)
+					next-leftover)))))])
 		  (mred:debug:printf
 		   'container-panel-redraw
 		   "container-panel-redraw: redrawing panel's children")
-		  (pc-help kid-info border)))))))
+		  (pc-help kid-info border leftover)))))))
       
       (define make-spacing
 	(lambda (panel)

@@ -1885,8 +1885,6 @@ Bool wxWindow::GetsFocus()
 
 void wxWindow::MaybeMoveControls()
 {
-	wxFatalError("MaybeMoveControls called with an object that is neither a\n\
-	              panel nor an item.  This violates the invariant that panels\n\
-	              may contain only other panels or items.",
-	              "Invariant Violation");
+	// do nothing.  The hope is that panels do not contain non-panel windows which 
+	// contain controls, directly or indirectly.  I don't really know.
 }

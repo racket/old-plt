@@ -62,6 +62,8 @@ public:
   virtual void ChangeToGray(Bool gray);
   
   void TrackPart(int);
+protected:
+  void InsetSliderRect(Rect *r);  
 };
 
 #endif // IN_CPROTO

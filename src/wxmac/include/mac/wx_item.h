@@ -49,6 +49,9 @@ public:
 	virtual void OnChar(wxKeyEvent *event); // mac platform only
         
         ControlHandle cMacControl;
+
+    virtual void MaybeMoveControls();
+
 protected:
     virtual void ChangeToGray(Bool gray);
     
@@ -58,7 +61,6 @@ protected:
     int padTop;
     int padBottom;
 
-    virtual void MaybeMoveControls();
         
 };
 

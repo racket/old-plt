@@ -383,11 +383,15 @@ char *wxFileSelector(char *message, char *default_path,
     // get the user's reply:
     NavReplyRecord *reply = new NavReplyRecord;
     if (NavDialogGetReply(outDialog,reply) != noErr) {
+      //TEMPORARY
+      fprintf(stderr,"NavDialogGetReply failed.\n");
       NavDialogDispose(outDialog);
       return NULL;
     }
     NavDialogDispose(outDialog);
     if (! reply->validRecord) {
+      //TEMPORARY
+      fprintf(stderr,"reply->validRecord is FALSE.\n");
       NavDisposeReply(reply);
       return NULL;
     }
@@ -429,22 +433,15 @@ char *wxFileSelector(char *message, char *default_path,
       return scheme_mac_spec_to_path(&fsspec);
       
     } else { // saving file
-        int strLen = 256;
+    	int strLen = CFStringGetLength(reply->saveFileName) + 1;
         char *str = new char[strLen];
-        Bool longEnough = FALSE;
-        OSErr err;
-        
-        while (! longEnough) {
-          err = CFStringGetCString(reply->saveFileName,str,strLen,CFStringGetSystemEncoding());
-          if (err == kUCOutputBufferTooSmall) {
-            delete str;
-            strLen *= 2;
-            str = new char[strLen];
-          } else if (err != noErr) {
-            NavDisposeReply(reply);
-            return NULL;
-          }
-        }
+
+		if (CFStringGetCString(reply->saveFileName,str,strLen,CFStringGetSystemEncoding()) == FALSE) {
+			// Unable to convert string
+			NavDisposeReply(reply);
+			delete str;
+			return NULL;
+		}
         
         NavDisposeReply(reply);
         

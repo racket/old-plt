@@ -155,14 +155,14 @@ public:
 
 	virtual void SetSize(int x, int y, int width, int height, int flags = wxSIZE_AUTO);
 
+	virtual void MaybeMoveControls();
+	
 //=============================================================================
 // Protected methods
 //=============================================================================
 protected:
 
 
-	virtual void MaybeMoveControls();
-	
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 	// Tree methods
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

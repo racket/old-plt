@@ -340,6 +340,8 @@ public:
 	wxCursor *GetEffectiveCursor(void);
 	
 	Bool GetsFocus();
+
+	virtual void MaybeMoveControls();
 	
 protected:
 	/* ChildrenInternalGray is a local abstraction which calls
@@ -359,7 +361,6 @@ protected:
      *
      * Needed Invariant: Panels contain only controls and other panels.
 	 */
-	virtual void MaybeMoveControls();
 
 //=============================================================================
 // Private methods

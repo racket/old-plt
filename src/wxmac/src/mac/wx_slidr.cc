@@ -52,9 +52,7 @@ static const char sccsid[] = "%W% %G%";
 //
 #define SetBounds(rect, top, left, bottom, right) ::SetRect(rect, left, top, right, bottom)
 
-static void InsetSliderRect(Rect *r);
-
-static void InsetSliderRect(Rect *r) 
+void wxSlider::InsetSliderRect(Rect *r) 
 {
 	r->left += padLeft;
 	r->top += padTop;
@@ -173,7 +171,7 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
     Rect r = controlRect;    
     OffsetRect(&r,SetOriginX,SetOriginY);
 #ifdef OS_X    
-    InsetSliderRect(style,&r);
+    InsetSliderRect(&r);
 #endif    
 	cMacControl = ::NewControl(GetWindowFromPort(theMacGrafPort), &r, NULL,
 			TRUE, value, min_value, max_value, kControlSliderProc, (long)this);
@@ -279,7 +277,7 @@ void wxSlider::OnClientAreaDSize(int dW, int dH, int dX, int dY)
 		if (windowStyle & wxVERTICAL) {
 			controlRect.bottom = clientHeight;
 			r = controlRect;
-			InsetSliderRect(windowStyle,&r);
+			InsetSliderRect(&r);
 			
 			::SizeControl(cMacControl, r.right - r.left, r.bottom - r.top);
 			valueRect.top = (clientHeight - vhgt) / 2;
@@ -289,7 +287,7 @@ void wxSlider::OnClientAreaDSize(int dW, int dH, int dX, int dY)
 		} else {
 			controlRect.right = clientWidth;
 			r = controlRect;
-			InsetSliderRect(windowStyle,&r);
+			InsetSliderRect(&r);
 			::SizeControl(cMacControl, r.right - r.left, r.bottom - r.top);
 			valueRect.left = (clientWidth - vwid) / 2;
 			valueRect.right = valueRect.left + vwid;
@@ -303,7 +301,7 @@ void wxSlider::OnClientAreaDSize(int dW, int dH, int dX, int dY)
 		cMacDC->setCurrentUser(NULL); // macDC no longer valid
 		SetCurrentDC(); // put newcontrolRect at (0, 0)
 		Rect r = controlRect;
-		InsetSliderRect(windowStyle,&r);
+		InsetSliderRect(&r);
         ::MoveControl(cMacControl,SetOriginX + r.left,SetOriginY + r.top);
 	}
 }

@@ -8,6 +8,8 @@
 
   (define (text-mixin %)
     (class %
+
+      ;; ---------------------- Lexing state ----------------------------------
       
       ;; The tree of valid tokens, starting at start-pos
       (define tokens #f)
@@ -19,22 +21,31 @@
       ;; The starting position of the invalid-tokens tree
       (define invalid-tokens-start #f)
 
-      ;; A list of thunks that color the buffer
-      (define colors null)
-
-      (define start-pos 0)
+      ;; The position of the next token to be read
+      (define current-pos start-pos)
       
+      ;; ---------------------- Interactions state ----------------------------
+      ;; The position to start the coloring at.
+      (define start-pos 0)
+      ;; The position to stop coloring at.
       (define end-pos 'end)
       
+      ;; ---------------------- Preferences -----------------------------------
+      (define should-color? #t)
+      (define remove-prefs-callback-thunk #f)
+      
+      
+      ;; ---------------------- Multi-threading -------------------------------
+      ;; A list of thunks that color the buffer
+      (define colors null)
       ;; A channel for communication between the background tokenizer and the foreground
       ;; thread.
       (define sync (make-channel))
-      
       (define background-thread #f)
-      
-      (define should-color? #t)
-      
-      (define remove-prefs-callback-thunk #f)
+      ;; The input port tokens are read from.  Any change to the text% invalidates this port.
+      (define in #f)
+      (define input-port-start-pos start-pos)
+
       
       (inherit get-prompt-position
                change-style begin-edit-sequence end-edit-sequence
@@ -44,7 +55,10 @@
         (set! tokens #f)
         (set! invalid-tokens #f)
         (set! invalid-tokens-start #f)
-        (set! colors null))
+        (set! current-pos start-pos)
+        (set! colors null)
+        (set! in #f)
+        (set! input-port-start-pos start-pos))
       
       (define (color)
         (unless (null? colors)
@@ -78,57 +92,58 @@
         (set! end-pos 0)
         (super-reset-console))
       
-      (define (sync-invalid current-pos)
+      (define (sync-invalid)
         (when (and invalid-tokens (< invalid-tokens-start current-pos))
           (let ((min-tree (search-min! invalid-tokens null)))
             (set! invalid-tokens (node-right min-tree))
             (set! invalid-tokens-start (+ invalid-tokens-start
                                           (node-token-length min-tree)))
-            (sync-invalid current-pos))))
+            (sync-invalid))))
       
-      (define (re-tokenize prefix get-token in input-start-pos current-pos)
+      (define (re-tokenize prefix get-token)
         (let-values (((type data new-token-start new-token-end) (get-token in)))
           (unless (eq? 'eof type)
             (let ((len (- new-token-end new-token-start)))
-              (sync-invalid (+ len current-pos))
+              (set! current-pos (+ len current-pos))
+              (sync-invalid)
               (set! colors (cons
                             (lambda ()
                               (change-style
                                (preferences:get (string->symbol (format "syntax-coloring:~a:~a"
                                                                         prefix
                                                                         type)))
-                               (sub1 (+ input-start-pos new-token-start))
-                               (sub1 (+ input-start-pos new-token-end))
+                               (sub1 (+ input-port-start-pos new-token-start))
+                               (sub1 (+ input-port-start-pos new-token-end))
                                #f))
                             colors))
               (set! tokens (insert-after! tokens (make-node len data 0 #f #f)))
               (cond
-                ((and invalid-tokens (= invalid-tokens-start (+ len current-pos)))
+                ((and invalid-tokens (= invalid-tokens-start current-pos))
                  (set! tokens (insert-after! tokens (search-min! invalid-tokens null)))
                  (set! invalid-tokens #f)
                  (set! invalid-tokens-start #f))
                 (else
-                 (re-tokenize prefix get-token in input-start-pos (+ current-pos len))))))))
+                 (re-tokenize prefix get-token)))))))
     
       (define/public (do-insert/delete prefix get-token port-wrapper edit-start-pos change-length)
         (when should-color?
           (when (> edit-start-pos start-pos)
             (set! edit-start-pos (sub1 edit-start-pos)))
+          (let-values (((orig-token-start orig-token-end valid-tree invalid-tree)
+                        (split tokens (- edit-start-pos start-pos))))
+            (set! invalid-tokens invalid-tree)
+            (set! tokens valid-tree)
+            (set! invalid-tokens-start (+ orig-token-end change-length))
+            (set! current-pos (+ start-pos orig-token-start))
+            (set! input-port-start-pos (+ start-pos orig-token-start))
+            (set! in (port-wrapper (open-input-text-editor
+                                    this
+                                    input-port-start-pos
+                                    end-pos))))
           (channel-put
            sync
            (lambda ()
-             (let-values (((orig-token-start orig-token-end valid-tree invalid-tree)
-                           (split tokens (- edit-start-pos start-pos))))
-               (let ((in (port-wrapper (open-input-text-editor 
-                                        this
-                                        (+ start-pos orig-token-start)
-                                        end-pos))))
-                 (set! invalid-tokens invalid-tree)
-                 (set! tokens valid-tree)
-                 (set! invalid-tokens-start (+ orig-token-end change-length))
-                 (re-tokenize prefix get-token in
-                              (+ start-pos orig-token-start)
-                              (+ start-pos orig-token-start))))))
+             (re-tokenize prefix get-token)))
           (channel-get sync)
           (begin-edit-sequence #f)
           (color)

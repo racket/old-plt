@@ -757,14 +757,18 @@
             (for-each 
              (lambda (v)
                (unless (void? v)
-                 (let ([v (if (basis:r4rs-style-printing? (basis:current-setting))
-                              v
-                              (print-convert:print-convert v))])
+                 (let* ([setting (basis:current-setting)]
+			[v (if (basis:r4rs-style-printing? setting)
+			       v
+			       (print-convert:print-convert v))])
                    (parameterize ([mzlib:pretty-print:pretty-print-size-hook
                                    (lambda (x _ port) (and (is-a? x mred:snip%) 1))]
                                   [mzlib:pretty-print:pretty-print-print-hook
                                    (lambda (x _ port) (this-result-write x))])
-                     (mzlib:pretty-print:pretty-print v this-result)))))
+		     (if (basis:setting-use-pretty-printer? setting)
+			 (mzlib:pretty-print:pretty-print v this-result)
+			 (parameterize ([mzlib:pretty-print:pretty-print-columns 'infinity])
+			   (mzlib:pretty-print:pretty-print v this-result)))))))
              anss)))
         
         

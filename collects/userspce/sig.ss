@@ -99,7 +99,8 @@
 		    print-tagged-inexact-numbers
 		    whole/fractional-exact-numbers
                     print-booleans-as-true/false
-		    printing))
+		    printing
+		    use-pretty-printer?))
    make-setting/parse
 
    find-setting-named

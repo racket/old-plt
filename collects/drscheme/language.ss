@@ -207,6 +207,11 @@
 			  basis:setting-print-booleans-as-true/false
 			  "Print booleans as true and false"
 			  output-syntax-panel)]
+	 [use-pretty-printer
+	  (make-check-box basis:set-setting-use-pretty-printer?!
+			  basis:setting-use-pretty-printer?
+			  "Use pretty printer to format values"
+			  output-syntax-panel)]
 	 [ok-panel (make-object mred:horizontal-pane% main)]
 	 [hide-button (make-object mred:button%
 			"Hide Details"

@@ -83,6 +83,7 @@
 	  (unit unit)
 	  (unit program)
 	  (unit get/extend)
+	  (unit load-handler)
 	  (unit rep)
 	  (unit help-desk)
 	  (unit language)))

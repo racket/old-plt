@@ -49,7 +49,8 @@
 				printing
 				print-exact-as-decimal?
 				read-decimal-as-exact?
-				define-argv?))
+				define-argv?
+				use-pretty-printer?))
   
   ;; settings : (list-of setting)
   (define settings
@@ -76,7 +77,8 @@
 	     (printing constructor-style)
 	     (print-exact-as-decimal? #t)
 	     (read-decimal-as-exact? #t)
-	     (define-argv? #f)))
+	     (define-argv? #f)
+	     (use-pretty-printer? #t)))
 	  (make-setting/parse
 	   `((name "Intermediate Student")
 	     (extra-definitions-unit-name "intermediate.ss")
@@ -100,7 +102,8 @@
              (printing constructor-style)
 	     (print-exact-as-decimal? #t)
 	     (read-decimal-as-exact? #t)
-	     (define-argv? #f)))
+	     (define-argv? #f)
+	     (use-pretty-printer? #t)))
 	  (make-setting/parse
 	   `((name "Advanced Student")
 	     (extra-definitions-unit-name ((mred@ "advanced.ss")
@@ -126,7 +129,8 @@
              (printing constructor-style)
 	     (print-exact-as-decimal? #t)
 	     (read-decimal-as-exact? #t)
-	     (define-argv? #f)))
+	     (define-argv? #f)
+	     (use-pretty-printer? #t)))
 	  (make-setting/parse
 	   `((name "Textual Full Scheme (MzScheme)")
 	     (vocabulary-symbol mzscheme-debug)
@@ -150,7 +154,8 @@
              (printing r4rs-style)
 	     (print-exact-as-decimal? #f)
 	     (read-decimal-as-exact? #f)
-	     (define-argv? #t)))
+	     (define-argv? #t)
+	     (use-pretty-printer? #t)))
 	  (make-setting/parse
 	   `((name "Textual Full Scheme without Debugging (MzScheme)")
 	     (extra-definitions-unit-name #f)
@@ -174,7 +179,8 @@
              (printing r4rs-style)
 	     (print-exact-as-decimal? #f)
 	     (read-decimal-as-exact? #f)
-	     (define-argv? #t)))))
+	     (define-argv? #t)
+	     (use-pretty-printer? #t)))))
   
   (define (snoc x y) (append y (list x)))
   
@@ -553,12 +559,14 @@
   
   ;; drscheme-print/void : TST -> void
   ;; effect: prints the value, on the screen, attending to the values of the current setting
-  (define drscheme-print/void
-    (lambda (v)
-      (let ([value (if (r4rs-style-printing? (current-setting))
-                       v
-                       (mzlib:print-convert:print-convert v))])
-        (mzlib:pretty-print:pretty-print value))))
+  (define (drscheme-print/void v)
+    (let* ([setting (current-setting)]
+	   [value (if (r4rs-style-printing? setting)
+		      v
+		      (mzlib:print-convert:print-convert v))])
+      (if (setting-use-pretty-printer? setting)
+	  (mzlib:pretty-print:pretty-print value)
+	  (write value))))
   
   ;; drscheme-port-print-handler : TST port -> void
   ;; effect: prints the value on the port

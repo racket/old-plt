@@ -713,7 +713,8 @@
 	    (port-read-handler this-in (lambda (x) (transparent-read)))
 	    (with-parameterization user-parameterization
 	      (lambda ()
-		(parameterization-branch-handler (lambda () user-parameterization))))))))
+		(parameterization-branch-handler 
+		 (make-parameterization (lambda () user-parameterization)))))))))
       
     (define console-edit% (make-console-edit% mred:edit:edit%))
 

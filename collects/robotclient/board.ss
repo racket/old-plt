@@ -11,7 +11,9 @@
            get-spot set-spot get-player-x get-player-y
            (struct command (bid command arg))
            (struct package (id x y weight))
+	   package->string
            (struct robot (id x y))
+	   num-robots
            read-board! read-response!
            fix-home!)
            
@@ -127,6 +129,13 @@
   ;; (make-package num num num num)
   (define-struct package (id x y weight) (make-inspector))
 
+  (define (package->string p)
+    (format "~a (~a, ~a) - weight ~a"
+	    (package-id p)
+	    (package-x p)
+	    (package-y p)
+	    (package-weight p)))
+
   ;; (make-robot num num num)
   (define-struct robot (id x y))
 
@@ -135,7 +144,8 @@
 
   ;; robot-indexes: num list
   (define robot-indexes (make-parameter null))
-  
+  (define (num-robots) (length (robot-indexes)))
+
   (define-struct response (id name arg) (make-inspector))
   
   (define-tokens rt (NUM))
@@ -270,13 +280,7 @@
 	       ((= (response-id r) (player-id))
                 (let ((p (hash-table-get package-table (response-arg r))))
                   (cond
-                    ((gui)
-                     (send (gui) log 
-                           (format "Picked up: ~a - dest: (~a, ~a) - weight: ~a"
-                                   (package-id p)
-                                   (package-x p)
-                                   (package-y p)
-                                   (package-weight p)))))
+                    ((gui) (send (gui) log (format "Picked up package: ~a" (package->string p)))))
                   (packages-held
                    (cons p (packages-held)))))))
 	     ((D)
@@ -290,8 +294,7 @@
 				     (= (get-player-y) (package-y p)))
 				(cond
                                   ((gui) (send (gui) log
-                                               (format "Dropped: ~a - ~a points"
-                                                       drop (package-weight p)))))
+                                               (format "Dropped package: ~a" (package->string p)))))
                                 (add-score (package-weight p)))))
 			    (packages-held))
 		  (packages-held
@@ -396,23 +399,21 @@
     (read-initial-response! input))
     
   (define (fix-home!)
-    (let ((spot (get-spot (board) (get-player-x) (get-player-y))))
+    (let* ((px (get-player-x))
+	   (py (get-player-y))
+	   (spot (get-spot (board) px py)))
       (cond
-        ((= 3 (get-type spot))
-         (let ([px (get-player-x)]
-               [py (get-player-y)])
-           (begin
-             (cond 
-               ((gui)
-                (send (gui) change-board px py #\.)))
-             (home-list (remove-home px py (home-list)))
-             (set-spot (board) px py (set-empty spot))))))))
+       ((= 3 (get-type spot))
+	(cond 
+	 ((gui)
+	  (send (gui) change-board px py #\.)))
+	(home-list (remove-home px py (home-list)))
+	(set-spot (board) px py (set-empty spot))))))
   
   (define (remove-home x y hl)
     (cond
-     ((null? hl) hl)
-     ((and (= x (caar hl))
-	   (= y (cdar hl)))
+     ((null? hl) null)
+     ((and (= x (caar hl)) (= y (cdar hl)))
       (cdr hl))
      (else
       (cons (car hl) (remove-home x y (cdr hl))))))

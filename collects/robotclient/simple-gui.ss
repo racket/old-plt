@@ -109,14 +109,12 @@
           (send pack-text delete)
           (for-each (lambda (p)
                       (send pack-text insert
-                            (format "holding package: ~a - dest (~a, ~a) - weight ~a~n"
-                                    (package-id p) (package-x p) (package-y p)
-                                    (package-weight p))))
+                            (format "holding package: ~a~n" (package->string p))))
                     packages-held)
           (send pack-text end-edit-sequence)))
 
       (define/public (change-board x y char)
-        (string-set! (list-ref board y) x char))
+        (string-set! (list-ref board (sub1 y)) (sub1 x) char))
       
       (define/public (end) (send f show #t))
       

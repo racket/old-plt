@@ -40,6 +40,7 @@
       (let loop ((id (read in)))
         (cond
           ((eof-object? id) null)
+          ((eq? 'Robot id) (raise 'dead-robot))
           (else
            (cons
             (make-package id (read in) (read in) (read in))
@@ -73,9 +74,19 @@
     (let loop ((packages (read-packages in))
                (robots null))
       (cond
+       ((gui)
+	(for-each
+	 (lambda (p)
+	   (send (gui) log (format "Package on ground at (~a, ~a): ~a" 
+				   (get-player-x)
+				   (get-player-y)
+				   (package->string p))))
+	 packages)))
+      (cond
        ((null? packages) (fix-home!)))
       (cond
-       (baseline? (send-command (compute-baseline-move packages robots) out))
+       ((or baseline? (= 1 (num-robots)))
+	(send-command (compute-baseline-move packages robots) out))
        (else
         (let ((command (compute-move packages robots)))
           (send-command command out))))

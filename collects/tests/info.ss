@@ -5,5 +5,4 @@
 				   ("tests" "framework")
 				   ("tests" "utils")))
   (define tools (list '("tool.ss" "drscheme")))
-  (define tool-icons (list '("bb.gif" "icons")))
   (define tool-names (list "DrScheme Test Suites")))

@@ -344,6 +344,42 @@ typedef struct {
   Finalization *prim_first, *prim_last;
 } Finalizations;
 
+#ifdef MZ_PRECISE_GC
+
+START_XFORM_SKIP;
+
+static int mark_finalization(void *p, Mark_Proc mark)
+{
+  if (mark) {
+    Finalization *f = (Finalization *)p;
+
+    gcMARK(f->data);
+    gcMARK(f->next);
+    gcMARK(f->prev);
+  }
+
+  return sizeof(Finalization);
+}
+
+static int mark_finalizations(void *p, Mark_Proc mark)
+{
+  if (mark) {
+    Finalizations *f = (Finalizations *)p;
+
+    gcMARK(f->scheme_first);
+    gcMARK(f->scheme_last);
+    gcMARK(f->prim_first);
+    gcMARK(f->prim_last);
+    gcMARK(f->ext_data);
+  }
+
+  return sizeof(Finalizations);
+}
+
+END_XFORM_SKIP;
+
+#endif
+
 static void do_next_finalization(void *o, void *data)
 {
   Finalizations *fns = *(Finalizations **)data;
@@ -377,6 +413,9 @@ static void do_next_finalization(void *o, void *data)
 
 /* Makes gc2 xformer happy: */
 typedef void (*finalizer_function)(void *p, void *data);
+#ifdef MZ_PRECISE_GC
+static int traversers_registered;
+#endif
 
 static void add_finalizer(void *v, void (*f)(void*,void*), void *data, 
 			  int prim, int ext,
@@ -390,6 +429,14 @@ static void add_finalizer(void *v, void (*f)(void*,void*), void *data,
   void *olddata;
   Finalizations *fns, **fns_ptr, *prealloced;
   Finalization *fn;
+
+#ifdef MZ_PRECISE_GC
+  if (!traversers_registered) {
+    GC_register_traverser(scheme_rt_finalization, mark_finalization);
+    GC_register_traverser(scheme_rt_finalizations, mark_finalizations);
+    traversers_registered = 1;
+  }
+#endif
 
 #ifndef MZ_PRECISE_GC
   /* FIXME */

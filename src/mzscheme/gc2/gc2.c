@@ -9,10 +9,15 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#define USE_MMAP 0
+
+#if USE_MMAP
 /* For mmap: */
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/mman.h>
+#include <errno.h>
+#endif
 
 typedef short Scheme_Type;
 #define MZTAG_REQUIRED
@@ -54,22 +59,57 @@ static GC_Weak_Box *weak_boxes;
 
 /******************************************************************************/
 
+#if USE_MMAP
+
 int fd, fd_created;
+
+#define PAGE_SIZE 4096
 
 void *malloc_pages(size_t len)
 {
+  void *r;
+
   if (!fd_created) {
     fd_created = 1;
-    fd = open("/dev/zero", O_RDONLY);
+    fd = open("/dev/zero", O_RDWR);
   }
 
-  return mmap(NULL, len, PROT_READ | PROT_WRITE, 0, fd, 0);
+  if (len & (PAGE_SIZE - 1)) {
+    len += PAGE_SIZE - (len & (PAGE_SIZE - 1));
+  }
+
+  r = mmap(NULL, len, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+
+  if (r  == (void *)-1) {
+    printf("mmap failed: %d\n", errno);
+    exit(-1);
+  }
+
+  return r;
 }
 
 void free_pages(void *p, size_t len)
 {
   munmap(p, len);
 }
+
+#endif
+
+/******************************************************************************/
+
+#if !USE_MMAP
+
+void *malloc_pages(size_t len)
+{
+  return malloc(len);
+}
+
+void free_pages(void *p, size_t len)
+{
+  free(p);
+}
+
+#endif
 
 /******************************************************************************/
 
@@ -195,7 +235,7 @@ static int mark_weak_box(void *p, Mark_Proc mark)
     gcMARK(wb->val);
   }
 
-  return BYTES_TO_WORDS(sizeof(GC_Weak_Box));
+  return gcBYTES_TO_WORDS(sizeof(GC_Weak_Box));
 }
 
 static void *mark(void *p)
@@ -441,7 +481,7 @@ void gcollect(int needsize)
 
       bitmap[diff >> 3] |= (1 << (diff & 0x7));
 
-      printf("tag %d\n", tag);
+      /* printf("tag %d\n", tag); */
 
 #if SAFETY
       if ((tag < 0) || (tag >= _scheme_last_type_) || !tag_table[tag]) {

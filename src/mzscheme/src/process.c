@@ -716,7 +716,11 @@ static Scheme_Process *make_process(Scheme_Process *after, Scheme_Config *config
     hop = MALLOC_ONE_WEAK_RT(Scheme_Process_Manager_Hop);
     process->mr_hop = hop;
     hop->type = scheme_process_hop_type;
-    hop->p = (Scheme_Process *)WEAKIFY((Scheme_Object *)process);
+    {
+      Scheme_Process *wp;
+      wp = (Scheme_Process *)WEAKIFY((Scheme_Object *)process);
+      hop->p = wp;
+    }
 
     mref = scheme_add_managed(mgr
 			      ? mgr
@@ -2646,7 +2650,11 @@ static Scheme_Object *call_as_nested_process(int argc, Scheme_Object *argv[])
     hop = MALLOC_ONE_WEAK_RT(Scheme_Process_Manager_Hop);
     np->mr_hop = hop;
     hop->type = scheme_process_hop_type;
-    hop->p = (Scheme_Process *)WEAKIFY((Scheme_Object *)np);
+    {
+      Scheme_Process *wp;
+      wp = (Scheme_Process *)WEAKIFY((Scheme_Object *)np);
+      hop->p = wp;
+    }
     mref = scheme_add_managed(mgr, (Scheme_Object *)hop, NULL, NULL, 0);
     np->mref = mref;
 #ifndef MZ_PRECISE_GC
@@ -2679,7 +2687,7 @@ static Scheme_Object *call_as_nested_process(int argc, Scheme_Object *argv[])
 
   scheme_remove_managed(np->mref, (Scheme_Object *)np->mr_hop);
 #ifdef MZ_PRECISE_GC
-  WEAKIFIED(np->mr_hop) = NULL;
+  WEAKIFIED(np->mr_hop->p) = NULL;
 #else
   scheme_unweak_reference((void **)&np->mr_hop->p);
 #endif

@@ -1456,6 +1456,7 @@ print_string(Scheme_Object *string, int notdisplay, Scheme_Thread *p)
       case '\n': esc = "\\n";  break;
       case '\r': esc = "\\r";  break;
       case '\t': esc = "\\t";  break;
+      case '\v': esc = "\\v";  break;
       default:
 	if (isprint(str[i])) {
 	  esc = NULL;

@@ -638,6 +638,14 @@ stx_val {
   gcBYTES_TO_WORDS(sizeof(Scheme_Stx));
 }
 
+stx_off_val {
+ mark:
+  Scheme_Stx_Offset *o = (Scheme_Stx_Offset *)p;
+  gcMARK(stx->src);
+ size:
+  gcBYTES_TO_WORDS(sizeof(Scheme_Stx_Offset));
+}
+
 module_val {
  mark:
   Scheme_Module *m = (Scheme_Module *)p;

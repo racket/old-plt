@@ -272,7 +272,7 @@ scheme_init_string (Scheme_Env *env)
   scheme_add_global_constant("system-type", 
 			     scheme_make_prim_w_arity(system_type,
 						      "system-type", 
-						      0, 0),
+						      0, 1),
 			     env);
   scheme_add_global_constant("system-library-subpath",
 			     scheme_make_prim_w_arity(system_library_subpath,
@@ -1337,9 +1337,160 @@ static Scheme_Object *sch_putenv(int argc, Scheme_Object *argv[])
 #endif
 }
 
+#ifdef MACINTOSH_EVENTS
+# include <Gestalt.h>
+void machine_details(char *s)
+{
+   OSErr err;
+   long lng;
+   char sysvers[30];
+   unsigned char machine_name[256];
+   int i;
+
+   err = Gestalt(gestaltSystemVersion, &lng);
+   if (err != noErr) {
+     strcpy(sysver, "<unknown system>");
+   } else {
+     sprintf(sysvers, "%d.%d.%d",
+	     (lng >> 16) & 0xff,
+	     (lng >> 8) & 0xff,
+	     lng & 0xff);
+   }
+
+   err = Gestalt(gestaltMachineType, &lng);
+   if (err != noErr) {
+     strcpy(machine_name, "<unknown machine>");
+   } else {
+     memset(machine_name, 0, 256);
+     GetIndString(machine_name, kMachineNameStrID,lng);
+     memmove(machine_name, machine_name + 1, machine_name[0] + 1);
+   }
+
+   sprintf(s, "%s %s", sysver, machine_name);
+}
+#endif
+
+#ifdef DOS_FILE_SYSTEM
+# include <windows.h>
+void machine_details(char *buff)
+{
+  OSVERSIONINFO info;
+  BOOL hasInfo;
+  char buff[1024]; 
+  char *p;
+
+  info.dwOSVersionInfoSize = sizeof(info);
+  
+  GetVersionEx(&info);
+
+  hasInfo = FALSE;
+
+  p = info.szCSDVersion;
+
+  while (p < info.szCSDVersion + sizeof(info.szCSDVersion) &&
+	 *p) {
+    if (*p != ' ') {
+      hasInfo = TRUE;
+      break;
+    }
+    p++;
+  }
+
+  sprintf(buff,"Windows %s %ld.%ld (Build %ld)%s%s",
+	  (info.dwPlatformId == VER_PLATFORM_WIN32_WINDOWS) ?
+	  "9x" :
+	  (info.dwPlatformId == VER_PLATFORM_WIN32_NT) ?
+	  "NT" : "Unknown platform",
+	  info.dwMajorVersion,info.dwMinorVersion,
+	  (info.dwPlatformId == VER_PLATFORM_WIN32_NT) ?
+	  info.dwBuildNumber :
+	  info.dwBuildNumber & 0xFFFF,
+	  hasInfo ? " " : "",hasInfo ? info.szCSDVersion : "");
+}
+#endif
+
+#if !defined(MACINTOSH_EVENTS) && !defined(DOS_FILE_SYSTEM)
+static char *uname_locations[] = { "/bin/uname",
+				   "/usr/bin/uname",
+				   /* The above should cover everything, but
+				      just in case... */
+				   "/sbin/uname",
+				   "/usr/sbin/uname",
+				   "/usr/local/uname",
+				   NULL };
+
+static int try_subproc(Scheme_Object *subprocess_proc, char *prog)
+{
+  Scheme_Object *a[5];
+
+  if (!scheme_setjmp(scheme_error_buf)) {
+    a[0] = scheme_false;
+    a[1] = scheme_false;
+    a[2] = scheme_false;
+    a[3] = scheme_make_string(prog);
+    a[4] = scheme_make_string("-a");
+    _scheme_apply_multi(subprocess_proc, 5, a);
+    return 1;
+  } else {
+    return 0;
+  }
+}
+
+void machine_details(char *buff)
+{
+  Scheme_Object *subprocess_proc;
+  int i;
+  mz_jmp_buf savebuf;
+
+  memcpy(&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf));
+
+  subprocess_proc = scheme_builtin_value("subprocess");
+
+  for (i = 0; uname_locations[i]; i++) {
+    if (scheme_file_exists(uname_locations[i])) {
+      /* Try running it. */
+      if (try_subproc(subprocess_proc, uname_locations[i])) {
+	Scheme_Object *sout, *sin, *serr, *subp;
+	long c;
+
+	subp = scheme_current_thread->ku.multiple.array[0];
+	sout = scheme_current_thread->ku.multiple.array[1];
+	sin = scheme_current_thread->ku.multiple.array[2];
+	serr = scheme_current_thread->ku.multiple.array[3];
+
+	scheme_close_output_port(sin);
+	scheme_close_input_port(serr);
+
+	/* Read result: */
+	c = scheme_get_chars(sout, 1023, buff, 0);
+	buff[c] = 0;
+	
+	scheme_close_input_port(sout);
+
+	/* Remove trailing whitespace (especially newlines) */
+	while (c && isspace(((unsigned char *)buff)[c - 1]))
+	  buff[--c] = 0;
+
+	return;
+      }
+    }
+  }
+
+  strcpy(buff, "<unknown machine>");
+}
+#endif
+
 static Scheme_Object *system_type(int argc, Scheme_Object *argv[])
 {
-  return sys_symbol;
+  if (!argc || SCHEME_FALSEP(argv[0]))
+    return sys_symbol;
+  else {
+    char buff[1024];
+
+    machine_details(buff);
+
+    return scheme_make_string(buff);
+  }
 }
 
 static Scheme_Object *system_library_subpath(int argc, Scheme_Object *argv[])

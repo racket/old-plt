@@ -417,10 +417,20 @@ typedef struct Scheme_Stx {
   Scheme_Object *props;
 } Scheme_Stx;
 
+typedef struct Scheme_Stx_Offset {
+  Scheme_Type type;
+  long line, col, pos;
+  Scheme_Object *src;
+} Scheme_Stx_Offset;
+
 Scheme_Object *scheme_make_stx(Scheme_Object *val, 
 			       long line, long col, 
 			       Scheme_Object *src,
 			       Scheme_Object *props);
+Scheme_Object *scheme_make_stx_w_offset(Scheme_Object *val, 
+					long line, long col, 
+					Scheme_Object *src,
+					Scheme_Object *props);
 Scheme_Object *scheme_make_graph_stx(Scheme_Object *stx,
 				     long line, long col);
 

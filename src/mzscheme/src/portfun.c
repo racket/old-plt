@@ -272,7 +272,7 @@ scheme_init_port_fun(Scheme_Env *env)
   scheme_add_global_constant("read-syntax", 
 			     scheme_make_prim_w_arity(read_syntax_f,
 						      "read-syntax", 
-						      1, 2), 
+						      1, 3), 
 			     env);
   scheme_add_global_constant("read-char", 
 			     scheme_make_prim_w_arity(read_char, 
@@ -1439,6 +1439,7 @@ static Scheme_Object *read_syntax_f(int argc, Scheme_Object *argv[])
 {
   Scheme_Thread *p = scheme_current_thread;
   Scheme_Object *port;
+  Scheme_Object *delta = scheme_false;
 
   if ((argc > 1) && !SCHEME_INPORTP(argv[1]))
     scheme_wrong_type("read-syntax", "input-port", 1, argc, argv);
@@ -1447,17 +1448,96 @@ static Scheme_Object *read_syntax_f(int argc, Scheme_Object *argv[])
     port = argv[1];
   else
     port = CURRENT_INPUT_PORT(p->config);
+
+  if (argc > 2) {
+    /* Argument should be a list: (list line col pos) */
+    Scheme_Object *a, *l;
+    
+    l = argv[2];
+    if (SCHEME_PAIRP(l)) {
+      a = SCHEME_CAR(l);
+      if ((SCHEME_INTP(a) && (SCHEME_INT_VAL(a) >= 0))
+	  || (SCHEME_BIGNUMP(a) && SCHEME_BIGPOS(a))) {
+	l = SCHEME_CDR(l);
+	if (SCHEME_PAIRP(l)) {
+	  a = SCHEME_CAR(l);
+	  if ((SCHEME_INTP(a) && (SCHEME_INT_VAL(a) >= 0))
+	      || (SCHEME_BIGNUMP(a) && SCHEME_BIGPOS(a))) {
+	    l = SCHEME_CDR(l);
+	    if (SCHEME_PAIRP(l)) {
+	      a = SCHEME_CAR(l);
+	      if ((SCHEME_INTP(a) && (SCHEME_INT_VAL(a) >= 0))
+		  || (SCHEME_BIGNUMP(a) && SCHEME_BIGPOS(a))) {
+		l = SCHEME_CDR(l);
+		if (SCHEME_NULLP(l))
+		  l = NULL;
+	      }
+	    }
+	  }
+	}
+      }
+    }
+
+    if (l)
+      scheme_wrong_type("read-syntax", "#f or list of three non-negative exact integers", 2, argc, argv);
+    
+    delta = argv[2];
+  }
   
   if (((Scheme_Input_Port *)port)->read_handler) {
-    Scheme_Object *o[2];
+    Scheme_Object *o[3], *result;
     o[0] = port;
     o[1] = argv[0];
-    return _scheme_apply(((Scheme_Input_Port *)port)->read_handler, 2, o);
+    if (SCHEME_FALSEP(delta))
+      delta = scheme_make_pair(scheme_make_integer(0),
+			       scheme_make_pair(scheme_make_integer(0),
+						scheme_make_pair(scheme_make_integer(0),
+								 scheme_null)));
+    o[2] = delta;
+
+    result = _scheme_apply(((Scheme_Input_Port *)port)->read_handler, 3, o);
+    if (SCHEME_STXP(result))
+      return result;
+    else {
+      o[0] = result;
+      /* -1 for argument count indicates "result" */
+      scheme_wrong_type("read handler for read-syntax", "syntax object", 0, -1, o);
+      return NULL;
+    }
   } else {
+    Scheme_Object *src = argv[0];
+
+    if (SCHEME_TRUEP(delta)) {
+      Scheme_Stx_Offset *o;
+      Scheme_Object *line, *col, *pos;
+      
+      line = SCHEME_CAR(delta);
+      delta = SCHEME_CDR(delta);
+      col = SCHEME_CAR(delta);
+      pos = SCHEME_CADR(delta);
+
+      /* FIXME: what do we do with offsets that are too large? */
+      if (SCHEME_BIGNUMP(line))
+	line = scheme_make_integer(0);
+      if (SCHEME_BIGNUMP(col))
+	col = scheme_make_integer(0);
+      if (SCHEME_BIGNUMP(pos))
+	pos = scheme_make_integer(0);
+
+      o = MALLOC_ONE_TAGGED(Scheme_Stx_Offset);
+      o->type = scheme_stx_offset_type;
+      o->src = src;
+      o->line = SCHEME_INT_VAL(line);
+      o->col = SCHEME_INT_VAL(col);
+      o->pos = SCHEME_INT_VAL(pos);
+
+      src = (Scheme_Object *)o;
+    }
+
     if (port == scheme_orig_stdin_port)
       scheme_flush_orig_outputs();
 
-    return scheme_internal_read(port, argv[0],
+    return scheme_internal_read(port, src,
 				SCHEME_TRUEP(scheme_get_param(p->config, MZCONFIG_CAN_READ_COMPILED)),
 				p->config
 #ifdef MZ_REAL_THREADS
@@ -1965,11 +2045,17 @@ static Scheme_Object *port_read_handler(int argc, Scheme_Object *argv[])
     else
       return default_read_handler;
   } else {
-    scheme_check_proc_arity("port-read-handler", 1, 1, argc, argv);
     if (argv[1] == default_read_handler)
       ip->read_handler = NULL;
-    else
+    else {
+      if (!scheme_check_proc_arity(NULL, 1, 1, argc, argv)
+	  || !scheme_check_proc_arity(NULL, 3, 1, argc, argv)) {
+	scheme_wrong_type("port-read-handler", "procedure (arity 1 and 3)", 1, argc, argv);
+	return NULL;
+      }
+      
       ip->read_handler = argv[1];
+    }
 
     return scheme_void;
   }

@@ -509,16 +509,16 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht CU
 	    Scheme_Object *chr;
 	    chr = read_character(port, line, col CURRENTPROCARG);
 	    if (stxsrc)
-	      chr = scheme_make_stx(chr, line, col, stxsrc, STX_SRCTAG);
+	      chr = scheme_make_stx_w_offset(chr, line, col, stxsrc, STX_SRCTAG);
 	    return chr;
 	  }
 	case 'T':
 	case 't': return (stxsrc 
-			  ? scheme_make_stx(scheme_true, line, col, stxsrc, STX_SRCTAG) 
+			  ? scheme_make_stx_w_offset(scheme_true, line, col, stxsrc, STX_SRCTAG) 
 			  : scheme_true);
 	case 'F':
 	case 'f': return (stxsrc 
-			  ? scheme_make_stx(scheme_false, line, col, stxsrc, STX_SRCTAG) 
+			  ? scheme_make_stx_w_offset(scheme_false, line, col, stxsrc, STX_SRCTAG) 
 			  : scheme_false);
 	case 'X':
 	case 'x': return read_number(port, stxsrc, line, col, 0, 0, 16, 1 CURRENTPROCARG);
@@ -538,7 +538,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht CU
 	    Scheme_Object *cpld;
 	    cpld = read_compiled(port, ht CURRENTPROCARG);
 	    if (stxsrc) 
-	      cpld = scheme_make_stx(cpld, line, col, stxsrc, STX_SRCTAG);
+	      cpld = scheme_make_stx_w_offset(cpld, line, col, stxsrc, STX_SRCTAG);
 	    return cpld;
 	  } else {
 	    scheme_read_err(port, line, col, 0, 
@@ -578,7 +578,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht CU
 		v = scheme_syntax_to_datum(v, 0, NULL);
 	    } else if (stxsrc) {
 	      Scheme_Object *s;
-	      s = scheme_make_stx(scheme_false, line, col, stxsrc, STX_SRCTAG);
+	      s = scheme_make_stx_w_offset(scheme_false, line, col, stxsrc, STX_SRCTAG);
 	      v = scheme_datum_to_syntax(v, s, scheme_false, 1, 0);
 	    }
 	    return v;
@@ -703,6 +703,9 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht CU
 	      scheme_hash_set(*ht, scheme_make_integer(vector_length), (void *)ph);
 	      
 	      v = read_inner(port, stxsrc, ht CURRENTPROCARG);
+	      if (SCHEME_EOFP(v))
+		scheme_read_err(port, line, col, 1,
+				"read: expected an element for graph (found end-of-file)");
 	      if (stxsrc)
 		v = scheme_make_graph_stx(v, line, col);
 	      SCHEME_PTR_VAL(ph) = v;
@@ -943,12 +946,13 @@ read_list(Scheme_Object *port,
       if (!list)
 	list = scheme_null;
       return (stxsrc
-	      ? scheme_make_stx(list, line, col, stxsrc, STX_SRCTAG)
+	      ? scheme_make_stx_w_offset(list, line, col, stxsrc, STX_SRCTAG)
 	      : list);
     }
 
     scheme_ungetc(ch, port);
     car = read_inner(port, stxsrc, ht CURRENTPROCARG);
+    /* can't be eof, due to check above */
 
     if (USE_LISTSTACK(use_stack)) {
       if (local_list_stack_pos >= NUM_CELLS_PER_STACK) {
@@ -985,7 +989,7 @@ read_list(Scheme_Object *port,
       }
 
       return (stxsrc
-	      ? scheme_make_stx(list, line, col, stxsrc, STX_SRCTAG)
+	      ? scheme_make_stx_w_offset(list, line, col, stxsrc, STX_SRCTAG)
 	      : list);
     } else if (!local_can_read_dot
 	       && (ch == '.')
@@ -1011,6 +1015,7 @@ read_list(Scheme_Object *port,
 			"read: illegal use of \".\"");
 	return NULL;
       }
+      /* can't be eof, due to check above: */
       cdr = read_inner(port, stxsrc, ht CURRENTPROCARG);
       ch = skip_whitespace_comments(port);
       if (ch != closer) {
@@ -1044,7 +1049,7 @@ read_list(Scheme_Object *port,
 	}
 
 	return (stxsrc
-		? scheme_make_stx(list, line, col, stxsrc, STX_SRCTAG)
+		? scheme_make_stx_w_offset(list, line, col, stxsrc, STX_SRCTAG)
 		: list);
       }
     } else {
@@ -1083,7 +1088,7 @@ read_string(Scheme_Object *port,
     if (ch == EOF)
       scheme_read_err(port, startline, start, 1,
 		      "read: expected a '\"'; started");
-    /* Note: errors will leave junk on the port, with an open \". */
+    /* Note: errors will tend to leave junk on the port, with an open \". */
     /* Escape-sequence handling by Eli Barzilay. */
     if (ch == '\\') {
       ch = scheme_getc(port);
@@ -1104,10 +1109,10 @@ read_string(Scheme_Object *port,
       case 'x':
 	ch = scheme_getc(port);
 	if (isxdigit(ch)) {
-	  n = ch<='9' ? ch-'0' : toupper(ch)-'A';
+	  n = ch<='9' ? ch-'0' : (toupper(ch)-'A'+10);
 	  ch = scheme_getc(port);
 	  if (isxdigit(ch)) {
-	    n = n*16 + (ch<='9' ? ch-'0' : toupper(ch)-'A');
+	    n = n*16 + (ch<='9' ? ch-'0' : (toupper(ch)-'A'+10));
 	  } else {
 	    scheme_ungetc(ch, port);
 	  }
@@ -1157,7 +1162,7 @@ read_string(Scheme_Object *port,
 
   result = scheme_make_immutable_sized_string(buf, i, i <= 31);
   if (stxsrc)
-    result =  scheme_make_stx(result, line, col, stxsrc, STX_SRCTAG);
+    result =  scheme_make_stx_w_offset(result, line, col, stxsrc, STX_SRCTAG);
   return result;
 }
 
@@ -1356,7 +1361,7 @@ read_number_or_symbol(Scheme_Object *port,
     o = scheme_intern_exact_symbol(buf, i);
 
   if (stxsrc)
-    o = scheme_make_stx(o, line, col, stxsrc, STX_SRCTAG);
+    o = scheme_make_stx_w_offset(o, line, col, stxsrc, STX_SRCTAG);
 
   return o;
 }
@@ -1510,12 +1515,15 @@ read_quote(Scheme_Object *port,
   Scheme_Object *obj, *ret;
 
   obj = read_inner(port, stxsrc, ht CURRENTPROCARG);
+  if (SCHEME_EOFP(obj))
+    scheme_read_err(port, line, col, 1,
+		    "read: expected an element for quote (found end-of-file)");
   ret = (stxsrc
-	 ? scheme_make_stx(quote_symbol, line, col, stxsrc, STX_SRCTAG)
+	 ? scheme_make_stx_w_offset(quote_symbol, line, col, stxsrc, STX_SRCTAG)
 	 : quote_symbol);
   ret = scheme_make_pair(ret, scheme_make_pair(obj, scheme_null));
   if (stxsrc)
-    ret = scheme_make_stx(ret, line, col, stxsrc, STX_SRCTAG);
+    ret = scheme_make_stx_w_offset(ret, line, col, stxsrc, STX_SRCTAG);
   return ret;
 }
 
@@ -1528,13 +1536,16 @@ read_quasiquote(Scheme_Object *port,
   Scheme_Object *quoted_obj, *ret;
   
   quoted_obj = read_inner(port, stxsrc, ht CURRENTPROCARG);
+  if (SCHEME_EOFP(quoted_obj))
+    scheme_read_err(port, line, col, 1,
+		    "read: expected an element for backquote (found end-of-file)");
   ret = (stxsrc
-	 ? scheme_make_stx(quasiquote_symbol, line, col, stxsrc, STX_SRCTAG)
+	 ? scheme_make_stx_w_offset(quasiquote_symbol, line, col, stxsrc, STX_SRCTAG)
 	 : quasiquote_symbol);
   ret = scheme_make_pair(ret, scheme_make_pair(quoted_obj, scheme_null));
   
   if (stxsrc)
-    ret = scheme_make_stx(ret, line, col, stxsrc, STX_SRCTAG);
+    ret = scheme_make_stx_w_offset(ret, line, col, stxsrc, STX_SRCTAG);
   return ret;
 }
 
@@ -1547,13 +1558,16 @@ read_unquote(Scheme_Object *port,
   Scheme_Object *obj, *ret;
 
   obj = read_inner(port, stxsrc, ht CURRENTPROCARG);
+  if (SCHEME_EOFP(obj))
+    scheme_read_err(port, line, col, 1,
+		    "read: expected an element for unquoting comma (found end-of-file)");
   ret = (stxsrc
-	 ? scheme_make_stx(unquote_symbol, line, col, stxsrc, STX_SRCTAG)
+	 ? scheme_make_stx_w_offset(unquote_symbol, line, col, stxsrc, STX_SRCTAG)
 	 : unquote_symbol);
   ret = scheme_make_pair(ret, scheme_make_pair (obj, scheme_null));
 
   if (stxsrc)
-    ret = scheme_make_stx(ret, line, col, stxsrc, STX_SRCTAG);
+    ret = scheme_make_stx_w_offset(ret, line, col, stxsrc, STX_SRCTAG);
   return ret;
 }
 
@@ -1566,12 +1580,15 @@ read_unquote_splicing(Scheme_Object *port,
   Scheme_Object *obj, *ret;
 
   obj = read_inner(port, stxsrc, ht CURRENTPROCARG);
+  if (SCHEME_EOFP(obj))
+    scheme_read_err(port, line, col, 1,
+		    "read: expected an element for unquoting ,@ (found end-of-file)");
   ret = (stxsrc
-	 ? scheme_make_stx(unquote_splicing_symbol, line, col, stxsrc, STX_SRCTAG)
+	 ? scheme_make_stx_w_offset(unquote_splicing_symbol, line, col, stxsrc, STX_SRCTAG)
 	 : unquote_splicing_symbol);
   ret = scheme_make_pair(ret, scheme_make_pair (obj, scheme_null));
   if (stxsrc)
-    ret = scheme_make_stx(ret, line, col, stxsrc, STX_SRCTAG);
+    ret = scheme_make_stx_w_offset(ret, line, col, stxsrc, STX_SRCTAG);
   return ret;
 }
 
@@ -1585,10 +1602,14 @@ static Scheme_Object *read_box(Scheme_Object *port,
 
   o = read_inner(port, stxsrc, ht CURRENTPROCARG);
   
+  if (SCHEME_EOFP(o))
+    scheme_read_err(port, line, col, 1,
+		    "read: expected an element for #& box (found end-of-file)");
+
   bx = scheme_box(o);
 
   if (stxsrc)
-    bx = scheme_make_stx(bx, line, col, stxsrc, STX_SRCTAG);
+    bx = scheme_make_stx_w_offset(bx, line, col, stxsrc, STX_SRCTAG);
 
   return bx;
 }
@@ -1602,12 +1623,15 @@ read_syntax_quote(Scheme_Object *port,
   Scheme_Object *obj, *ret;
 
   obj = read_inner(port, stxsrc, ht CURRENTPROCARG);
+  if (SCHEME_EOFP(obj))
+    scheme_read_err(port, line, col, 1,
+		    "read: expected an element for #' syntax (found end-of-file)");
   ret = (stxsrc
-	 ? scheme_make_stx(syntax_symbol, line, col, stxsrc, STX_SRCTAG)
+	 ? scheme_make_stx_w_offset(syntax_symbol, line, col, stxsrc, STX_SRCTAG)
 	 : syntax_symbol);
   ret = scheme_make_pair(ret, scheme_make_pair(obj, scheme_null));
   if (stxsrc)
-    ret = scheme_make_stx(ret, line, col, stxsrc, STX_SRCTAG);
+    ret = scheme_make_stx_w_offset(ret, line, col, stxsrc, STX_SRCTAG);
   return ret;
 }
 

@@ -381,12 +381,11 @@
                                                      ,if-temp)))
                                          inner-annotated)))]
                   [val if-temp-varref-list (list (create-bogus-bound-varref if-temp #f))]
-		  [val free-vars (var-set-union if-temp-varref-list
-                                                free-vars-test 
+		  [val free-vars (var-set-union free-vars-test 
                                                 free-vars-then 
                                                 free-vars-else)]
 		  [val debug-info (make-debug-info-app (var-set-union tail-bound if-temp-varref-list)
-                                                       free-vars
+                                                       (var-set-union free-vars if-temp-varref-list)
                                                        'none)]
                   [val wcm-wrapped (wcm-wrap debug-info annotated)]
                   [val outer-annotated `(#%let ((,if-temp (#%quote ,*unevaluated*))) ,wcm-wrapped)])
@@ -570,7 +569,9 @@
                             (non-tail-recur (z:set!-form-val expr))]
                        [val free-vars (var-set-union (list (z:set!-form-var expr)) rhs-free-vars)]
                        [val debug-info (make-debug-info-normal free-vars)])
-                   (values `(#%set! ,v ,annotated) free-vars))]
+                   (values (wcm-wrap (make-debug-info-normal free-vars)
+                                     `(#%set! ,v ,annotated))
+                           free-vars))]
                 
 	       [(z:case-lambda-form? expr)
 		(let* ([annotate-case

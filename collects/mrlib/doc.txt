@@ -24,6 +24,18 @@ remains over the same list of snips, the method is not
 called). Also, this method is called with the empty list if
 the mouse leaves the pasteboard.
 
+> (send a-graph-pasteboard<%> set-arrowhead-params angle-width short-side long-size)
+
+Sets drawing parameters for the arrowhead. The first is the
+angle of the arrowhead's point, in radians. The second is
+the length of the outside line of the arrowhead and the last
+is the distance from the arrohead's point to the place where
+the arrowhead comes together.
+
+> (send a-graph-pasteboard<%> get-arrowhead-params) -> (values number number number)
+
+Returns the current settings for the arrowhead's drawing.
+
 The _graph-pasteboard-mixin_ overrides many methods to draw
 lines between graph-snip<%>s that it contains and
 implements the graph-pasteboard<%> interface.

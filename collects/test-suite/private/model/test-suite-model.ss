@@ -26,6 +26,11 @@
       (field
        [program (instantiate text% ())])
       
+      ;; set-expander (class? . -> . void?)
+      ;; set the expander class to be used
+      (define/public (set-expander c%)
+        (set! expand-program-class c%))
+      
       ;; get-program (-> string?)
       ;; the filename of the program to be tested by the test-suite
       (define/public (get-program)

@@ -52,21 +52,23 @@
 	       [show
 		(lambda (on?)
 		  (when on?
-		    (unless (member this (send mred:group:the-frame-group get-frames))
-		      (send mred:group:the-frame-group insert-frame this)))
+			(unless (member this (send mred:group:the-frame-group 
+						   get-frames))
+			    (send mred:group:the-frame-group 
+				  insert-frame this)))
 		  (super-show on?))]
 	       [can-close? (lambda () (send mred:group:the-frame-group
 					    can-remove-frame?
 					    this))]
-	       [do-close (lambda () (send mred:group:the-frame-group
-					  remove-frame
-					  this))]
+	       [do-close (lambda () 
+			   (send mred:group:the-frame-group
+				 remove-frame
+				 this))]
 	       [on-close
 		(lambda ()
-		  (if (and (super-on-close)
+		  (if (and (super-on-close) 
 			   (can-close?))
-		      (begin (do-close)
-			     #t)
+		      (begin (do-close) #t)
 		      #f))])
 	     (sequence 
 	       (mred:debug:printf 'super-init "before empty-frame%")
@@ -326,12 +328,66 @@
 			      (make-between 'help-menu 'after-about #f))])
 	       `(rec mred:standard-menus-frame
 		     (class-asi super%
-		       (inherit make-menu on-close show)
-		       (rename [super-make-menu-bar make-menu-bar])
+		       (inherit make-menu on-close)
+		       (rename [super-make-menu-bar make-menu-bar]
+			       [super-show show]
+			       [super-do-close do-close])
+		       (private [get-standard-menu-close-item 
+				 (lambda (frame)
+				   (let* ([close-string (if (eq? wx:platform 'windows)
+							    "&Close"
+							    "Close")]
+					  [file-menu (ivar frame file-menu)])
+				     (if file-menu 
+					 (send file-menu find-item close-string)
+					 #f)))]
+				[set-close-menu-item-state! 
+				 (lambda (frame state)
+				   (let ([close-menu-item 
+					  (get-standard-menu-close-item frame)])
+				     (when close-menu-item
+					   (send (ivar frame file-menu) enable close-menu-item state))))])
 		       (public [file-menu 'file-menu-uninitialized]
 			       [edit-menu 'edit-menu-uninitialized]
 			       [windows-menu 'windows-menu-uninitialized]
-			       [help-menu 'help-menu-uninitialized])
+			       [help-menu 'help-menu-uninitialized]
+			       [show 
+				(lambda (on?)
+
+				  (when on?
+
+					(let ([frames (send mred:group:the-frame-group get-frames)])
+
+					  (case (length frames)
+
+					    [(0) 
+
+					     ; disable File|Close if frame is singleton
+
+					     (set-close-menu-item-state! this #f)]
+
+					    [(1)
+
+					     ; enable File|Close in existing singleton frame
+
+					     (set-close-menu-item-state! (car frames) #t)]
+					    
+					    [else void])))
+
+				  (super-show on?))]
+			       [do-close
+				(lambda ()
+
+				  (super-do-close)
+
+				  (let ([frames (send mred:group:the-frame-group 
+						      get-frames)])
+
+				    ; disable File|Close if remaining frame is singleton
+
+				    (when (eq? (length frames) 1)
+					  (set-close-menu-item-state! (car frames) #f))))])
+
 		       ,@(map (lambda (x)
 				(if (between? x)
 				    (build-between-public-clause x)
@@ -747,8 +803,9 @@
 		    (send super-root delete-child search-panel)
 		    (clear-highlight)
 		    (unless startup?
-		      (send (send (get-edit-to-search)
-				  get-canvas) set-focus))
+			    (send 
+			     (send (get-edit-to-search) get-canvas) 
+			     set-focus))
 		    (set! hidden? #t))]
 		 [unhide-search
 		  (lambda ()
@@ -962,8 +1019,8 @@
 	     (class super-info% args
 	       (rename [super-make-root-panel make-root-panel])
 	       (private
-		 [rest-panel 'unitiaialized-root]
-		 [super-root 'unitiaialized-super-root])
+		 [rest-panel 'uninitialized-root]
+		 [super-root 'uninitialized-super-root])
 	       (public
 		 [make-root-panel
 		  (lambda (% parent)
@@ -1294,7 +1351,7 @@
 	   (class-asi class%
 	     (public
 	       [get-edit% (lambda () mred:edit:info-pasteboard%)])))))
-  
+
   (define empty-frame% (make-empty-frame% mred:container:frame%))
   (define menu-frame% (make-menu-frame% empty-frame%))
   (define standard-menus-frame% (make-standard-menus-frame% menu-frame%))

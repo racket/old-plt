@@ -83,8 +83,13 @@ class wxUpdateCursorTimer : public wxTimer
   }
   void Notify(void) {
     Stop();
-    admin->updateCursorTimer = NULL;
-    admin->canvas->UpdateCursorNow();
+    if (admin) {
+      admin->updateCursorTimer = NULL;
+      admin->canvas->UpdateCursorNow();
+    }
+  }
+  void Cancel() {
+    admin = NULL;
   }
 };
 
@@ -1088,6 +1093,8 @@ wxCanvasMediaAdmin::wxCanvasMediaAdmin(wxMediaCanvas *c)
 
 wxCanvasMediaAdmin::~wxCanvasMediaAdmin()
 {
+  if (updateCursorTimer)
+    updateCursorTimer->Cancel();
 }
 
 wxDC *wxCanvasMediaAdmin::GetDC(float *fx, float *fy)

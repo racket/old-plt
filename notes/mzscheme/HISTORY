@@ -1,294 +1,161 @@
 
->> See MzScheme_300.txt for information on major changes in
-   MzScheme 299.X. Minor changes are listed below.
+Version 299.100, March 2005
 
-Version 299.33
-Added module-template-identifier=? and identifier-template-binding
-
-Version 299.32
-Eliminated "identifier for a definition has a module context"
- errors
-
-Version 299.30
-Struct property types are now overridable in subtypes
-Added "serialize.ss" module to MzLib
-Added module-compiled-exports
-Added continuation-mark-set->list*
-
-Version 299.29
-Added binding of greek-lambda character (code point #x03BB) to
- expand to lambda
-Changed Mac OS preferences file name to "org.plt-scheme.prefs.ss"
-Change default buffering of file-stream output ports
-
-Version 299.28
-Added H-expression mode to reader, triggered by #hx or #honu,
- and escaped by #sx
-Added read-honu, read-honu-syntax, and print-honu
-
-Version 299.27
-Changed exp-time structure type info to allow #f in place
- of a mutator id
-
-Version 299.25
-Changed character datatype to include #\uFFFE and #\uFFFF
-Removed optional argument of continuation-mark-set->list
-Fixed syntax-recertify bug that affected mzc compilation
- with contracts
-
-Version 299.23
-Windows: changed find-system-path to use the registry-specified
- profile directory for a user's home, instead of HOMEDRIVE and
- HOMEPATH
-Added 'doc-dir and 'desk-dir to find-system-path
-Removed use of #%top from references to a module's own bindings
-Changed generate-temporaries and syntax-local-module-introduce
- to add the top-level context when a top-level expression is
- expanded
-Added syntax-local-lift-expression
-Added local-expand/capture-lifts and 
- local-transformer-expand/capture-lift
-
-Version 299.22
-Changed characters to range in value up to #x10FFFF instead of
- #x7FFFFFFF
-Changed locale encoding for Windows to be an extension of UTF-8
- that can handle misplaced surrogates, #xFFFF, and #xFFFE
-Changed \U to accept up to six digits, instead of eight
-Added \' escape for strings (for compatibility with C & Java)
-Changed regexp-replace* to raise an exception if it matches an
- empty string
-Renamed udp-send-evt and udp-receive-evt to udp-send-ready-evt
- and udp-receive-ready-evt
-Added udp-send-evt, udp-send-to-evt, and udp-receive!-evt
-Added tcp-accept-evt
-
-Version 299.21
-Added #<< here strings
-
-Version 299.20
-Changed the interface to `make-primitive-class'; see
- plt/collects/mzscheme/examples/tree.cxx for details
-
-Version 299.19
-Added locale-string-encoding
-Added pipe-content-length
-Changed call-with-semaphore[/enable-break] to accept
- extra arguments for the called function
-
-Version 299.18
-Changed permissive UTF-8 decoding to include a "?" for every
- ill-formed byte (instead of just those with high bits)
-Changed {read,peek}-bytes-avail!{,*,/enable-break} to produce
- a special-reading procedure when a stream contains specials
-Changed the random-number generator to use L'Ecuyer's MRG32k3a
- algorithm, as encouraged by SRFI-37
-Changed random to accept 0 arguments to generate a random real
- number, and added pseudo-random-generator->vector and
- vector->pseudo-random-generator; these are compatible
- with the SRFI-27 reference implementation
-Added syntax-property-symbol-keys
-Added make-pipe-with-specials to MzLib's "port.ss"; procedures
- like copy-port now also handle specials
-
-Version 299.17
-In a syntax template, when an identifier has more ellipses
- then in the pattern, inner ellipses bind more
- tightly than the outer ellipses
-Contract names in MzLib;s "contract.ss" are more uniform; if the
- name of a contract a suffix, the suffix is now "/c" (instead of
- one of "/p", "/c", or "/f")
-
-Version 299.16
-Inside MzScheme: added scheme_set_type_printer, scheme_print_bytes,
- and scheme_print_string
-Changed syntax-local-certify to syntax-local-certifier
-
-Version 299.15
-Removed syntax-recertify-constrained?, syntax-extend-certificate-env,
-  make-syntax-certificate-env, and syntax-certificate-env?
-Added syntax-local-certify and changed syntax-recertify
-Added 'module-begin to the set of possible results from
- syntax-local-context
-Added begin-with-definitions to (lib "etc.ss")
-Changed eval, expand, etc. so that only the leading
- identifier in a module form is given context
-
-Version 299.14
-Removed fluid-let-syntax
-Added (lib "stxparam.ss"), partly as a replacement for
- fluid-let-syntax
-Completed syntax-recertify, syntax-recertify-constrained?,
- and syntax-extend-certificate-env
-Added make-syntax-certificate-env and syntax-certificate-env?
-Added hash-table-copy
-Changed display of paths to drop "#<path:...>" wrapper
-Removed class*/names; the "class.ss" library now exports this,
- super-new, super-instantiate, and super-make-object
-Changed #; for top-level read; graph assignments are forgotten
- before reading the next expression
-Added rename-transformer-target
-
-Version 299.13
-Added protect sub-form of provide
-Added current-code-inspector
-Added certification of contexts for unexported identifiers
-Unix and Mac OS X: path expansion removes redundant slashes
-Added optional port name arguments to make-pipe
- and open-{input,output}-{string,bytes}
-Added syntax-recertify, syntax-recertify-constrained?,
- and syntax-extend-certificate-context
-namespace-unprotect-module
-Changed module->namespace and module re-definition so
- that they're controlled by the code inspector, not
- the modules attach state
-
-Version 299.12
-Added hash-table-count
-
-Version 299.11
-New forms:
-  require-for-template [core form]
-  define-values-for-syntax [core form]
-  define-for-syntax
-  begin-for-syntax
-New procedures:
-  local-transformer-expand
-  syntax-transforming?
-module-compiled-imports now returns 3 values
-indentifier-[transformer-]binding returns a list of five items
- instead of four for a module-bound identifier
-
-Version 299.10
-Changed the class system; see MzScheme_300.txt
-
-Version 299.9
-Changed convert-evt to wrap-evt, and finish-evt to handle-evt
-Added print-unreadable parameter
-Changed module expansion/compilation so that it's deterministic,
- as long as macros do not use gensym or external side-effects;
- using generate-temporaries preserves determinism
-Changed file-stream-buffer-mode to work on input ports
-Changed internal strategy for evaluating `quote-syntax' expressions
-
-Version 299.8
-Added an err-char argument to bytes-utf-8-length, bytes-utf-8-index,
- and bytes-utf-8-ref; the new optional argument is before the optional
- start-index argument
-Changed make-input-port again, replacing peek and read events
- with progress events and commits
-Removed read-bytes-avail!-evt and peek-bytes-avail!-evt
-Added port-progress-evt, port-commit-peeked, and
- port-provides-progress-evts?
-Added an optional progress-event argument to peek-bytes-avail!,
- etc., before the port argument
-Added an optional progress-event argument to regexp-match-peek
- and regexp-match-peek-positions
-Peeking from a limited pipe effectively increases its capacity,
- temporarily
-
-Version 299.7
-Case-sensitivity is enabled by default (for `read' and when reading
- modules)
-The break-enabled procedure no longer corresponds to a parameter
-Added parameterize-break, current-break-parameterization, and
- call-with-break-parameterization
-A with-handlers handler is not called in tail position with
- respect to the with-handlers form
-The with-handlers* form is like with-handlers, but breaks are
- not disabled for a handler, and a handle is tail-called
-Changed object-wait-multiple to sync, "waitable" to "evt", etc.
-Added call-with-semaphore and call-with-semaphore/enable-break
-Moved most of (lib "thread.ss") to (lib "port.ss"), and many
- remaining useless procedures (such as dynamic-enable-break)
- were removed
-Changed make-custom-input-port to make-input-port
-Changed make-custom-output-port to make-output-port
-
-Version 299.6
-An exception handler or dynamic-wind pre/post thunk can
- re-enable breaks through the break-enabled parameter
-Breaks are initially disabled for with-handlers predicates
- and handlers
-While an exception handler is called, the current exception
- handler is reset to the default handler; similarly,
- the error display and escape handlers are called by the
- default exception handler in a context that resets the
- corresponding parameters to the default handlers
-An exception handler can handle exceptions that are raised
- during the handler (by using with-handlers or setting the
- current-exception-handler parameter)
-During the evaluation of dynamic-wind pre and post thunks,
- the current continuation marks and parameterization are reset
- to those active at the time of the dynamic-wind call
- (except that the parameterization is extended to disable
- breaks)
-Added current-parameterization and call-with-parameterization
-Added current-compile parameter, which is used by compile
- and by the default evaluation handler
-
-Version 299.5
-Changed object-name for input ports and output ports
-Changed read-syntax to make the source name optional (defaults
- to the port's name)
-Added write-special and write-special-avail*
-Extended make-custom-input-port to accept an optional port name
-Extended make-custom-output-port to accept an optional
- write-special-proc and an optional port name
-A location-offset lists for a port read handler can contain #f
-
-Version 299.4
-Changed use-compiled-file-kinds to use-compiled-file-paths
-
-Version 299.3
-Simplified the built-in exn hierarchy; the built-in exn structures
- are immutable, and fields guards enforce "type" contraints; the
- new exn:srclocs property identifies exns with source-location
- information
-Added construct-time field guards to structure types
-Changes raise-syntax-error so that it no longer accepts a list
- as its first argument
-"net" collection:
- - According to rfc2396, params of a url (uri, really) can appear
-   attached to any part of the path, so the data definitions have
-   changed correspondingly.
- - url/user is gone. All url structs have users (it may be #f as with
-   other fields in a url).
- - There is no extra encoding/decoding required once a url has been
-   parsed anymore (so decode-some-url-parts is gone). For example,
-   url->params may return a string with a space in it if a %20 appears
-   in the original url (as a string). The %20 is restored when calling
-   url->string.
-
-Version 299.2
-Changed continuations to allow a thread to invoke a continuation
- captured in a different thread, and changed parameters; see 
- MzScheme_300.txt
-Added thread cells
-0.0 and -0.0 are now considered the same by eqv?
-Changed \u and #\u to allow only up to 4 digits
-Added \U and #\U to allow up to 8 digits
-Added continuation-mark-set-first
-Added call-with-continuation-barrier
-Renamed "continuation boundary" to "continuation barrier"
-Removed exists check for current-directory
-
-Version 299.1
-Added Unicode support; see MzScheme_300.txt
-Removed the char-locale... operations
-Removed char->latin-1-integer and latin-1-integer->char
-Added string-copy!, read-string!, peek-string!, and write-string
-Added convert-stream to thread.ss
-Added \u syntax in strings and chars
-Fixed log for large exact integers
-Added make-alarm
-Added terminal-port?
-Addede path-string?, path-replace-suffix
-Renamed all of the number "byte-string" functions to "bytes"
-Regexp grammar changed to match docs with respect to "-"
-Changed pref dir (all platforms) and pref file name
- (except Windows)
-
+>> See MzScheme_300.txt for information on major changes since
+   version 209. Relatively minor changes are listed here.
+Unicode and Strings:
+ Removed char-locale... operations
+ Removed char->latin-1-integer and latin-1-integer->char
+ Added string-copy!, read-string!, peek-string!, and write-string
+ Added convert-stream, reencode-input-port, etc. to port.ss
+ Added \u and \U syntax in strings and chars
+ Fixed log for large exact integers
+ Added path-string?, path-replace-suffix
+ Renamed all of the number "byte-string" functions to "bytes"
+ Added \' escape for strings (for compatibility with C & Java)
+ Added locale-string-encoding
+ Changed regexp-replace* to raise an exception if it matches an
+  empty string
+ Added binding of greek-lambda character (code point #x03BB) to
+  expand to lambda
+Paths:
+ Changed pref dir (all platforms) and pref file name (except Windows);
+  changed home dir under Windows to use the registry-specified profile
+  directory
+ Added 'doc-dir and 'desk-dir to find-system-path
+ Unix and Mac OS X: path expansion removes redundant slashes
+ Removed exists check for current-directory
+Ports:
+ Change default buffering of file-stream output ports
+ Changed file-stream-buffer-mode to work on input ports
+ Changed make-custom-input-port to make-input-port
+ Changed make-custom-output-port to make-output-port
+ Added terminal-port?
+ Added pipe-content-length
+ Changed {read,peek}-bytes-avail!{,*,/enable-break} to produce
+  a special-reading procedure when a stream contains specials
+ Added make-pipe-with-specials to MzLib's "port.ss"; procedures
+  like copy-port now also handle specials
+ Moved most of (lib "thread.ss") to (lib "port.ss"), and many
+  remaining useless procedures (such as dynamic-enable-break)
+  were removed
+ Added port-progress-evt, port-commit-peeked, and
+  port-provides-progress-evts?
+ Added an optional progress-event argument to peek-bytes-avail!,
+  etc., before the port argument
+ Added an optional progress-event argument to regexp-match-peek
+  and regexp-match-peek-positions
+ Peeking from a limited pipe effectively increases its capacity,
+  temporarily
+ Added optional port name arguments to make-pipe
+  and open-{input,output}-{string,bytes}
+ Changed object-name for input ports and output ports
+ Added write-special and write-special-avail*
+ A location-offset lists for a port read handler can contain #f
+ Changed read-syntax to make the source name optional (defaults
+  to the port's name)
+Syntax and Macros: 
+ Eliminated "identifier for a definition has a module context"
+  errors
+ In a syntax template, when an identifier has more ellipses
+  then in the pattern, inner ellipses bind more
+  tightly than the outer ellipses
+ New forms: require-for-template (core), define-values-for-syntax
+  (core), define-for-syntax, begin-for-syntax
+ New procedures: local-transformer-expand, syntax-transforming?,
+  syntax-local-lift-expression, local-expand/capture-lifts,
+  local-transformer-expand/capture-lift, syntax-recertify, 
+  module-template-identifier=?, identifier-template-binding,
+  rename-transformer-target
+ Removed fluid-let-syntax, syntax-local-certifier
+ Added (lib "stxparam.ss"), partly as a replacement for
+  fluid-let-syntax
+ Removed use of #%top from references to a module's own bindings
+ Added protect sub-form of provide
+ module-compiled-imports now returns 3 values
+ indentifier-[transformer-]binding returns a list of five items
+  instead of four for a module-bound identifier
+ Added 'module-begin to the set of possible results from
+  syntax-local-context
+ Added begin-with-definitions to (lib "etc.ss")
+ Added syntax-property-symbol-keys
+ Added namespace-unprotect-module
+ Changed eval, expand, etc. so that only the leading
+  identifier in a module form is given context
+ Changed module expansion/compilation so that it's deterministic,
+  as long as macros do not use gensym or external side-effects;
+  using generate-temporaries preserves determinism
+ Changed module->namespace and module re-definition so that they're
+  controlled by the code inspector, not the modules attach state
+ Added current-compile parameter, which is used by compile
+  and by the default evaluation handler
+ Changed expansion-time structure type info to allow #f in place
+  of a mutator id
+ Added construct-time field guards to structure types
+ Changed raise-syntax-error so that it no longer accepts a list
+  as its first argument
+Reader Syntax:
+ Added #<< here strings
+ Added H-expression mode to reader, triggered by #hx or #honu,
+  and escaped by #sx
+ Added read-honu, read-honu-syntax, and print-honu
+ Changed #; for top-level read; graph assignments are forgotten
+  before reading the next expression
+Control Flow and Paramaters:
+ While an exception handler is called, the current exception
+  handler is reset to the default handler; similarly,
+  the error display and escape handlers are called by the
+  default exception handler in a context that resets the
+  corresponding parameters to the default handlers
+ An exception handler can handle exceptions that are raised
+  during the handler (by using with-handlers or setting the
+  current-exception-handler parameter)
+ During the evaluation of dynamic-wind pre and post thunks,
+  the current continuation marks and parameterization are reset
+  to those active at the time of the dynamic-wind call
+  (except that the parameterization is extended to disable
+  breaks)
+ Added current-parameterization and call-with-parameterization
+ Added continuation-mark-set-first
+ Removed optional argument of continuation-mark-set->list
+ Added continuation-mark-set->list*
+ Added call-with-continuation-barrier
+ Renamed "continuation boundary" to "continuation barrier"
+ Added call-with-semaphore and call-with-semaphore/enable-break
+Events:
+ Renamed udp-send-evt and udp-receive-evt to udp-send-ready-evt
+  and udp-receive-ready-evt
+ Added udp-send-evt, udp-send-to-evt, and udp-receive!-evt
+ Added tcp-accept-evt
+ Added make-alarm
+Misc:
+ Regexp grammar changed to match docs with respect to "-"
+ Struct property types are now overridable in subtypes
+ Added module-compiled-exports
+ Added hash-table-copy and hash-table-count
+ 0.0 and -0.0 are now considered the same by eqv?
+ Changed the random-number generator to use L'Ecuyer's MRG32k3a
+  algorithm, as encouraged by SRFI-37
+ Changed random to accept 0 arguments to generate a random real
+  number, and added pseudo-random-generator->vector and
+  vector->pseudo-random-generator; these are compatible
+  with the SRFI-27 reference implementation
+ Added print-unreadable parameter
+ Changed use-compiled-file-kinds to use-compiled-file-paths
+Libraries:
+ "class.ss" MzLib module: changed the interface to 
+  make-primitive-class; see plt/collects/mzscheme/examples/tree.cxx 
+  for details
+ "serialize.ss" MzLib module: new
+ "contract.ss" MzLib module: names are more uniform; if the name of a
+  contract a suffix, the suffix is now "/c" (instead of one of "/p",
+  "/c", or "/f")
+ "url.ss" in the "net" collection: new url data definition; url/user is
+   gone, and no extra encoding/decoding required once a url has been
+   parsed anymore
+Inside MzScheme: 
+ Added scheme_set_type_printer, scheme_print_bytes,
+  and scheme_print_string
 
 Version 209, December 2004
 Fixed (abs -1073741824)

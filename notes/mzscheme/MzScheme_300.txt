@@ -24,7 +24,7 @@ in several significant ways:
    never produce a string. See the "Paths" section below for more
    details.
 
- * The new "foreign.ss" library in MzLib provides access to foriegn
+ * The new "foreign.ss" library in MzLib provides access to foreign
    libraries dynamically and directly in Scheme. See "PLT Foreign
    Interface Manual" for more information.
 
@@ -40,7 +40,7 @@ in several significant ways:
    end of a command previously would have been enough to send the
    command to ispell. Now, the output must be flushed explicitly
    (using `flush-output') or the buffer mode must be explicitly
-   changed to by-line (using `file-stream-muffer-mode').
+   changed to by-line (using `file-stream-buffer-mode').
 
    TCP ports are not file-stream ports, and TCP output remains
    unbuffered.
@@ -146,11 +146,13 @@ in several significant ways:
    closer to macro definitions. See the MzScheme manual for more
    information.
 
- * Unexported module bindings are more secure, and they can be made
-   completely secure by changing the current code inspector. The new
-   module-security mesaures imply changes to programs that transform
-   the result of `expand' and feed the transformed program back to
-   `eval'.  See the MzScheme manual for more information.
+ * Unexported module bindings are more secure because they can only
+   appear in certified contexts, and they can be made completely
+   secure by changing the current code inspector. Certification
+   management is automatic for most macros, but certification requires
+   changes to programs that transform the result of `expand' and feed
+   the transformed program back to `eval'.  See the MzScheme manual
+   for more information.
 
 ======================================================================
  Unicode
@@ -164,22 +166,20 @@ single code point in Unicode, so the "code point" approximation of
 MzScheme manual for an overview of MzScheme's approach to Unicode and
 locales.
 
-Actually, "char" corresponds to Unicode extended to include code
-points up to (sub1 (expt 2 31)). In particular, `integer->char'
-produces a character for every exact integer from 0 to #x7FFFFFFF,
-except #xFFFF, #xFFFE, and #xD800 to #xDFFF (which are not code points
-and never will be).
+In particular, `integer->char' produces a character for every exact
+integer from 0 to #x10FFFF, except #xD800 to #xDFFF (which are
+reserved for surrogates in some encodings of Unicode).
 
 The `bytes->string/utf-8' and `string->bytes/utf-8' functions convert
-between the two kinds of strings via UTF-8.  The `bytes->string/utf-8'
-accepts an optional character to use in place of bad encoding
-sequences (otherwise an exception is raised).
+between byte string and character strings via UTF-8.  The
+`bytes->string/utf-8' procedure accepts an optional character to use
+in place of bad encoding sequences (otherwise an exception is raised).
 
-A general `bytes-convert' interface lets you convert among different
-encodings in a bytes, including UTF-8 and the current locale's
-encoding. The conversion interface can deal with input that ends
-mid-encoding, so it can be used for conversion on streams, too. (The
-converter uses iconv() where available.)
+A general `bytes-convert' interface converts among different encodings
+in a bytes, including UTF-8 and the current locale's encoding. The
+conversion interface can deal with input that ends mid-encoding, so it
+can be used for conversion on streams, too. (The converter uses iconv
+where available.)
 
 Internally, strings are encoded as UCS-4, but symbols are encoded in
 UTF-8.
@@ -206,10 +206,10 @@ Other details:
    Similarly, #rx"...." is a regexp, while #rx#"...." is a byte
    regexp.
 
- * Use #\uXXXX or #\UXXXXXXXX for arbitrary character constants, where
+ * Use #\uXXXX or #\UXXXXXX for arbitrary character constants, where
    each X is a hexadecimal digit and the resulting number identifies a
    code point. In a string (but not a byte string), use "\uXXXX" or
-   "\UXXXXXXXX".
+   "\UXXXXXX".
 
  * All of the `char-whitespace?', `char-alphabetic?', etc. functions
    are defined in accordance with SRFI-14. New functions include
@@ -231,13 +231,15 @@ Other details:
    numbers, but all `char-whitespace?' characters are treated as
    whitespace by `read'.
 
- * MzScheme effectively assumes UTF-8 stdin and stdout. DrScheme reads
-   and writes text files using UTF-8.
+ * MzScheme effectively assumes UTF-8 stdin and stdout, but library
+   procedures like `reencode-input-port' can be used to accommodate
+   other encodings, including the locale's encoding. DrScheme reads
+   and writes files using UTF-8.
 
 Ports
 -----
 
-"port" still means "byte port" in MzScheme. Various port operations,
+"Port" still means "byte port" in MzScheme. Various port operations,
 like `read-string-avail!', have been renamed to to `read-bytes-avail!'.
 
 Character operations on a port, such as `read-char' and `read-string',
@@ -253,10 +255,10 @@ column by 1, instead of 2.
  Paths
 ======================================================================
 
-Under Unix, paths fundamentally byte strings, not strings. Typically,
-the correct printing of a path use the current locale's encoding, but
-there's no guarantee that the path is well-formed using the current
-locale's encoding.
+Under Unix, paths are fundamentally byte strings, not strings.
+Typically, the correct printing of a path use the current locale's
+encoding, but there's no guarantee that the path is well-formed using
+the current locale's encoding.
 
 To mediate these view of paths, MzScheme now supplies a "path"
 datatype, with operations `path->string', `string->path',
@@ -268,10 +270,11 @@ All functions that consume a pathname accept a string and implicitly
 convert it (via the user's locale's default encoding) to a byte-string
 pathname.
 
-Under Windows, where a pathname is a UTF-16 string, MzScheme
-internally converts to and from byte strings via UTF-8<->UTF-16. A
-byte string that is not a UTF-8 encoding will never correspond to a
-pathname under Windows.
+Under Windows, where a pathname is an array of UTF-16 code units,
+MzScheme internally converts to and from byte strings via
+UTF-8<->UTF-16, but extended to support unpaired surrogates and other
+code units that are invalid in an encoding. A byte string that is not
+a UTF-8 encoding will never correspond to a pathname under Windows.
 
 ======================================================================
  Classes
@@ -403,7 +406,7 @@ Example:
 An augmentation itself can be made overrideable using `augride', which
 is a contraction of "augment, but allow the augment to be overridden".
 Similarly, `overment' overrides a method, but allows subclasses only
-to augment this overridding.
+to augment this overriding.
 
   (define dot%
     (class img%
@@ -489,17 +492,21 @@ A complete list of keywords:
 The new exception hierarchy distinguishes between breaks and failures
 at nearly the top level of the hierarchy. In particular, most
 `with-handlers' expressions should use the `exn:fail?' predicate,
-insteda of the old (and now removed) `not-break-exn?' predicate.
+instead of the old (and now removed) `not-break-exn?' predicate.
 
 The "type" and "mismatch" exceptions have been merged into
 `exn:fail:contract'. Similarly, `exn:i/o:tcp' and `exn:i/o:udp'
 have been merged into `exn:fail:network'.
 
 Many exception fields have been eliminated, but certain exceptions
-contain multiple source loations instead of just one. Instead of a
+contain multiple source locations instead of just one. Instead of a
 single type for all exceptions with source locations, the
 `exn:srclocs' property identifies exceptions with source-location
 information.
+
+Field guards are triggered when an exception record is created, and it
+ checks the "type" of the field arguments. Mutators are not exported
+ for exception fields.
 
 Structs:
 
@@ -542,13 +549,16 @@ casts to and from Scheme_Object* do not run afoul of C99's aliasing
 assumptions.
 
 SCHEME_STRINGP(), etc. have been replaced by SCHEME_CHAR_STRINGP(),
-etc. and SCHEME_BYTE_STRINGP(), etc.  A character is reprsented by the
+etc. and SCHEME_BYTE_STRINGP(), etc.  A character is represented by the
 `mzchar' type, which corresponds to an unsigned integer (4 bytes).
+Use the functions scheme_char_string_to_byte_string() and
+scheme_byte_string_to_char_string() to convert between string types
+via UTF-8. Several UTF-8/UTF-16 <-> mzchar conversion functions are
+also provided.
 
 In addition to functions scheme_char_string...() which operate on
 `mzchar' arrays, some functions scheme_utf8_string...() are provided,
 which accept a `char' array and interpret it as a UTF-8 encoding.
-Several UTF-8 <-> mzchar conversion functions are also provided.
 
 SCHEME_PATHP() recognizes the new path type. Use SCHEME_STRING_PATHP()
 to recognize either a string or path, and use scheme_string_to_path()
@@ -576,7 +586,7 @@ catching an exception is now as follows:
   }
   scheme_current_thread->error_buf = save;
 
-The input and output port driver interfaces have changed to accomodate
+The input and output port driver interfaces have changed to accommodate
 progress events and commits (for input ports) and write events (for
 output ports). For most port types, the new features can be
 implemented automatically by MzScheme with a small amount of extra

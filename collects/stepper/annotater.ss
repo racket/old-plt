@@ -165,14 +165,19 @@
   
   (define initial-env-package null)
   
-  (define (extract-top-level-slots exprs)
-    (apply binding-set-union
+  (define (flatten-unit-clauses clauses)
+    (if (null? clauses)
+        null
+        (if  (z:begin-form? (car clauses))
+             (append (flatten-unit-clauses (z:begin-form-bodies (car clauses)))
+                     (flatten-unit-clauses (cdr clauses)))
+             (cons (car clauses) (flatten-unit-clauses (cdr clauses))))))
+    
+  (define (extract-top-level-vars exprs)
+    (apply append
            (map (lambda (expr)
                   (cond ([z:define-values-form? expr]
-                         (map z:top-level-varref/bind-slot (filter z:top-level-varref/bind? 
-                                                                   (z:define-values-form-vars expr))))
-                        ([z:begin-form? expr]
-                         (extract-top-level-slots (z:begin-form-bodies expr)))
+                         (z:define-values-form-vars expr))
                         (else null)))
                 exprs)))
   
@@ -402,7 +407,7 @@
                   ; a mark after, so only one of each.  groovy, eh?
                   
                   [let-abstraction
-                   (lambda (vars-fn vals-fn body-fn output-identifier check-fn)
+                   (lambda (vars-fn vals-fn body-fn output-identifier check-fn make-init-list)
                      (let*-values
                          ([(binding-sets) (vars-fn expr)]
                           [(binding-list) (apply append binding-sets)]
@@ -429,8 +434,7 @@
                               [(or ankle-wrap? foot-wrap?)
                                (let* ([create-index-finder (lambda (binding)
                                                              `(,binding-indexer))]
-                                      [unevaluated-list (build-list (length binding-list) 
-                                                                    (lambda (_) *unevaluated*))]
+                                      [unevaluated-list (make-init-list binding-names)]
                                       [outer-initialization
                                        (if ankle-wrap?
                                            `((,binding-names (#%values ,@unevaluated-list)))
@@ -706,7 +710,10 @@
                                  '#%let*-values
                                  (lambda (vals binding-list)
                                    (for-each utils:check-for-keyword binding-list)
-                                   (for-each mark-never-undefined binding-list)))]
+                                   (for-each mark-never-undefined binding-list))
+                                 (lambda (bindings)
+                                   (build-list (length bindings) 
+                                               (lambda (_) *unevaluated*))))]
                
                [(z:letrec-values-form? expr)
                 (let-abstraction z:letrec-values-form-vars
@@ -716,7 +723,9 @@
                                  (lambda (vals binding-list)
                                    (when (andmap z:case-lambda-form? vals)
                                      (for-each mark-never-undefined binding-list))
-                                   (for-each utils:check-for-keyword binding-list)))]
+                                   (for-each utils:check-for-keyword binding-list))
+                                 (lambda (bindings)
+                                   bindings))]
                
 	       [(z:define-values-form? expr)  
 		(let*-values
@@ -846,22 +855,26 @@
                                        (list (translate-varref (car export))
                                              (z:read-object (cdr export))))
                                      (z:unit-form-exports expr))]
-                       [_ (for-each utils:check-for-keyword imports)])
+                       [_ (for-each utils:check-for-keyword imports)]
+                       [clauses (flatten-unit-clauses (z:unit-form-clauses expr))]
+                       [unit-vars (extract-top-level-vars clauses)])
                   (cond 
                    [cheap-wrap?
                     (let*-values
-                        ([(clauses free-vars-lists)
+                        ([(annotated-clauses free-vars-lists)
                           (dual-map (lambda (expr)
                                       (top-level-annotate/inner expr))
-                                    (z:unit-form-clauses expr))]
+                                    clauses)]
                          [(annotated) `(#%unit
                                         (import ,@(map get-binding-name imports))
                                         (export ,@exports)
-                                        ,@clauses)]
+                                        ,@annotated-clauses)]
                          [(free-bindings) 
                           (binding-set-remove
                            (binding-set-union imports
-                                              (extract-top-level-slots (z:unit-form-clauses expr)))
+                                              (map z:top-level-varref/bind-slot 
+                                                   (filter z:top-level-varref/bind?
+                                                           unit-vars)))
                            (apply binding-set-union free-vars-lists)
                            expr)])
                       (values (appropriate-wrap annotated free-bindings) free-bindings))]
@@ -878,27 +891,20 @@
                                                           #f
                                                           (car binding-names)))]
                                      [(set!-form) `(#%set!-values ,binding-names ,annotated-rhs)])
-                                  (values (appropriate-wrap set!-form null) 
-                                          (binding-set-union (map z:top-level-varref/bind-slot
-                                                                  (z:define-values-form-vars clause))
-                                                             free-vars)))
+                                  (values (appropriate-wrap set!-form null) free-vars))
                                 (let*-values
                                     ([(annotated free-vars) (non-tail-recur clause)])
-                                  (values (appropriate-wrap annotated free-vars) free-vars))))]
-                         [(extract-defined-vars)
-                           (lambda (clause)
-                             (if (z:define-values-form? clause)
-                                 (map z:varref-var (z:define-values-form-vars clause))
-                                 null))]
+                                  (values annotated free-vars))))]
                          [(annotated-clauses free-vars-clauses)
-                          (dual-map process-clause (z:unit-form-clauses expr))]
-                         [(defined-vars) (apply append (map extract-defined-vars (z:unit-form-clauses expr)))]
+                          (dual-map process-clause clauses)]
+                         [(unit-var-names) (map z:varref-var unit-vars)]
+                         [(unit-var-slots) (map z:top-level-varref/bind-slot unit-vars)]
                          [(initial-define-list)
-                          (if (null? defined-vars)
+                          (if (null? unit-var-names)
                               null
-                              (list `(#%define-values ,defined-vars (#%values ,@defined-vars))))]
+                              (list `(#%define-values ,unit-var-names (#%values ,@unit-var-names))))]
                          [(free-vars)
-                          (apply binding-set-union free-vars-clauses)]
+                          (apply binding-set-union unit-var-slots free-vars-clauses)]
                          [(annotated-innards)
                           (if (null? annotated-clauses)
                               null
@@ -912,7 +918,7 @@
                          [(free-vars-outside)
                           (binding-set-remove
                            (binding-set-union imports
-                                              (extract-top-level-slots (z:unit-form-clauses expr)))
+                                              unit-var-slots)
                            free-vars
                            expr)])
                       (values annotated-unit free-vars-outside))]

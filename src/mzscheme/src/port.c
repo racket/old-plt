@@ -3362,13 +3362,13 @@ fd_need_wakeup(Scheme_Input_Port *port, void *fds)
 #ifdef WINDOWS_FILE_HANDLES
   if (fip->th) {
     /* See fd-char_ready */
-    if (!fip->checking) {
-      if (fip->avail || fip->err || fip->eof) {
+    if (!fip->th->checking) {
+      if (fip->th->avail || fip->th->err || fip->th->eof) {
 	/* Data is ready. We shouldn't be trying to sleep, so force an
 	   immediate wake-up: */
 	scheme_add_fd_nosleep(fds);
       } else {
-	fip->checking = 1;
+	fip->th->checking = 1;
 	ReleaseSemaphore(fip->th->checking_sema, 1, NULL);
 	scheme_add_fd_handle((void *)fip->th->ready_sema, fds, 1);
       }

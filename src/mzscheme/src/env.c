@@ -1384,7 +1384,7 @@ Scheme_Object *scheme_add_env_renames(Scheme_Object *stx, Scheme_Comp_Env *env,
 	     a dup_check hash table left from the previous round. */
 	  Scheme_Hash_Table *ht;
 	  Scheme_Object *name;
-	  int rcount = 0, rstart, rstart_sec = 0;
+	  int rcount = 0, rstart, rstart_sec = 0, vstart;
 	  
 	  rstart = env->rename_rstart;
 	  if (env->renames) {
@@ -1394,7 +1394,10 @@ Scheme_Object *scheme_add_env_renames(Scheme_Object *stx, Scheme_Comp_Env *env,
 	      env->renames = SCHEME_CDR(env->renames);
 	    else
 	      env->renames = NULL;
-	  }
+	    vstart = env->rename_var_count;
+	    rcount = vstart - rstart;
+	  } else
+	    vstart = 0;
 
 	  /* Create or find the hash table: */
 	  if (env->dup_check)
@@ -1439,10 +1442,10 @@ Scheme_Object *scheme_add_env_renames(Scheme_Object *stx, Scheme_Comp_Env *env,
 	      } else
 		rcount++;
 	    }
-	  } else
+	  } else 
 	    rstart_sec = 1;
 
-	  for (i = rstart; (i < env->num_bindings) && env->values[i]; i++) {
+	  for (i = vstart; (i < env->num_bindings) && env->values[i]; i++) {
 	    int found = 0;
 	    name = SCHEME_STX_VAL(env->values[i]);
 

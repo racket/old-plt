@@ -534,6 +534,7 @@
 #ifdef __CYGWIN32__
 # define UNIX_PROCESSES
 # define FILES_HAVE_FDS
+# define USE_FD_PORTS
 # define HAS_CYGWIN_IOB
 # define SIGCHILD_DOESNT_INTERRUPT_SELECT
 #else

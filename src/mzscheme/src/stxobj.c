@@ -687,6 +687,8 @@ Scheme_Object *scheme_make_rename(Scheme_Object *newname, int c)
   Scheme_Object *v;
   int i;
 
+  if (!c) *(long *)0x0 = 1;
+
   v = scheme_make_vector((2 * c) + 2, NULL);
   SCHEME_VEC_ELS(v)[0] = newname;
   if (c > 15) {
@@ -1741,9 +1743,9 @@ static void simplify_lex_renames(Scheme_Object *wraps, Scheme_Hash_Table *lex_ca
   while (!WRAP_POS_END_P(w)) {
     if (SCHEME_VECTORP(WRAP_POS_FIRST(w))) {
       key = WRAP_POS_KEY(w);
-      if (!SAME_OBJ(key, old_key))
+      if (!SAME_OBJ(key, old_key)) {
 	v = scheme_hash_get(lex_cache, key);
-      else
+      } else
 	v = NULL;
       old_key = key;
 
@@ -1757,8 +1759,9 @@ static void simplify_lex_renames(Scheme_Object *wraps, Scheme_Hash_Table *lex_ca
 	if ((SCHEME_VEC_SIZE(v) > 2) /* a simplified vec can be empty */
 	    && !SCHEME_SYMBOLP(SCHEME_VEC_ELS(v)[2])) {
 	  /* Need to simplify, but do deepest first: */
-	  if (SCHEME_NULLP(stack) || !SAME_OBJ(SCHEME_CAR(stack), key))
+	  if (SCHEME_NULLP(stack) || !SAME_OBJ(SCHEME_CAR(stack), key)) {
 	    stack = CONS(key, stack);
+	  }
 	} else {
 	  if (WRAP_POS_END_P(prev))
 	    WRAP_POS_COPY(prev, w);
@@ -1800,10 +1803,10 @@ static void simplify_lex_renames(Scheme_Object *wraps, Scheme_Hash_Table *lex_ca
 	  SCHEME_VEC_ELS(v2)[2+pos] = name;
 	  WRAP_POS_INIT(w2, ((Scheme_Stx *)stx)->wraps);
 	  if (same_marks(&w2, &w, 0)) {
-	    /* Either this name is in prev, in which case
-	       the answer must match this rename's target, or
-	       this rename's answer applies. */
-	    int ok = 0;
+	    /* Either this name is in prev, in which case the answer
+	       must match this rename's target, or this rename's
+	       answer applies. */
+	    Scheme_Object *ok = NULL;
 
 	    if (!WRAP_POS_END_P(prev)) {
 	      WRAP_POS w3;
@@ -1822,21 +1825,28 @@ static void simplify_lex_renames(Scheme_Object *wraps, Scheme_Hash_Table *lex_ca
 		  psize = (SCHEME_VEC_SIZE(vp) - 2) / 2;
 		  for (j = 0; j < psize; j++) {
 		    if (SAME_OBJ(SCHEME_VEC_ELS(vp)[2+j], name)) {
-		      ok = SAME_OBJ(SCHEME_VEC_ELS(vp)[2+psize+j], other_env);
+		      if (SAME_OBJ(SCHEME_VEC_ELS(vp)[2+psize+j], other_env)) {
+			ok = SCHEME_VEC_ELS(v)[0];
+		      } else {
+			ok = NULL; 
+			/* Or should ok be 
+			     SCHEME_VEC_ELS(vp)[2+psize+j]
+			   which is the value from prev? */
+		      }
 		      break;
 		    }
 		  }
-		  if (j < size)
+		  if (j < psize)
 		    break;
 		}
 	      }
-	      if (WRAP_POS_END_P(w3))
-		ok = SCHEME_FALSEP(other_env);
+	      if (WRAP_POS_END_P(w3) && SCHEME_FALSEP(other_env))
+		ok = SCHEME_VEC_ELS(v)[0];
 	    } else
-	      ok = 1;
+	      ok = SCHEME_VEC_ELS(v)[0];
 
 	    if (ok) {
-	      SCHEME_VEC_ELS(v2)[2+size+pos] = SCHEME_VEC_ELS(v)[0];
+	      SCHEME_VEC_ELS(v2)[2+size+pos] = ok;
 	      pos++;
 	    }
 	  }
@@ -1922,8 +1932,9 @@ static Scheme_Object *wraps_to_datum(Scheme_Object *w_in,
       if (SCHEME_VEC_SIZE(a) > 2) {
 
 	if (!SCHEME_SYMBOLP(SCHEME_VEC_ELS(a)[2])) {
-	  /* a is not a simplified table; need to look it up; */
-	  /* if simplifies is non-null, then we already have. */
+	  /* a is not a simplified table; need to look it up; if
+	     simplifies is non-null, then we already have found a list
+	     of simplified tables for the current wrap segment. */
 	  if (SCHEME_NULLP(simplifies)) {
 	    simplifies = scheme_hash_get(lex_cache, old_key);
 	    /* assert: a is not NULL; see the simplify_lex_rename() call above */
@@ -1936,7 +1947,7 @@ static Scheme_Object *wraps_to_datum(Scheme_Object *w_in,
 	  /* used up one simplification: */
 	  simplifies = SCHEME_CDR(simplifies);
 	  if (!SCHEME_LISTP(simplifies))
-	      *(long *)0x0 = 1;
+	    *(long *)0x0 = 1;
 	}
 	  
 	/* Simplification may have left us with the null table: */

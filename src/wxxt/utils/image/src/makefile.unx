@@ -1,0 +1,119 @@
+# Makefile for image example (UNIX).
+# Change the WXDIR directory, and CPPFLAGS and LDFLAGS, for your system.
+
+WXDIR = ../../..
+
+# All common UNIX compiler flags and options are now in
+# this central makefile.
+include $(WXDIR)/src/make$(MZPLATFORMSUFFIX).env
+
+IMAGEDIR = $(WXDIR)/utils/image
+IMAGELIB = $(IMAGEDIR)/lib/sys$(MZPLATFORMSUFFIX)/libimage$(GUISUFFIX).a
+OBJDIR = $(IMAGEDIR)/src/objects/sys$(MZPLATFORMSUFFIX)$(GUISUFFIX)
+OBJECTS = $(OBJDIR)/wx_image.$(OBJSUFF) $(OBJDIR)/wx_img.$(OBJSUFF) $(OBJDIR)/wx_gif.$(OBJSUFF) $(OBJDIR)/wx_gifwr.$(OBJSUFF) $(OBJDIR)/wx_gam.$(OBJSUFF) $(OBJDIR)/wx_pbm.$(OBJSUFF) $(OBJDIR)/wx_24to8.$(OBJSUFF) $(OBJDIR)/wx_pm.$(OBJSUFF) $(OBJDIR)/wx_xbm.$(OBJSUFF) $(OBJDIR)/wx_bmp.$(OBJSUFF) $(OBJDIR)/wx_pcx.$(OBJSUFF)
+
+LDFLAGS = $(XLIB) -L$(IMAGEDIR)/lib -L$(WXDIR)/lib
+
+XVIEWLDLIBS = -limage_ol -lwx_ol -lxview -lolgx -lX11 -lm $(COMPLIBS)
+MOTIFLDLIBS = -limage_motif -lwx_motif -lXm -lXt -lX11 -lm $(COMPLIBS)
+HPLDLIBS = -limage_hp -lwx_hp -lXm -lXt -lX11 -lm $(HPCOMPLIBS)
+# Default
+LDLIBS=$(XVIEWLDLIBS)
+
+all:	$(OBJDIR) $(IMAGELIB)
+
+.SUFFIXES:
+
+wx:
+	cd $(WXDIR)/src/x; $(MAKE) -f makefile.unx GUI=$(GUI)
+
+motif:
+	$(MAKE) -f makefile.unx GUI=-Dwx_motif OPT='$(OPT)' GUISUFFIX=_motif LDLIBS='$(MOTIFLDLIBS)' XVIEW_LINK=
+motif_prof:
+	$(MAKE) -f makefile.unx GUI=-Dwx_motif OPT='$(OPT)' GUISUFFIX=_motif_prof LDLIBS='$(MOTIFLDLIBS)' XVIEW_LINK=
+
+demo_motif:
+	$(MAKE) -f makefile.unx test_motif GUI=-Dwx_motif OPT='$(OPT)' GUISUFFIX=_motif LDLIBS='$(MOTIFLDLIBS)' XVIEW_LINK=
+
+xview:
+	$(MAKE) -f makefile.unx GUI=-Dwx_xview OPT='$(OPT)' GUISUFFIX=_ol
+xview_prof:
+	$(MAKE) -f makefile.unx GUI=-Dwx_xview OPT='$(OPT)' GUISUFFIX=_ol_prof
+
+demo_ol:
+	cd $(WXDIR)/src/x; $(MAKE) -f makefile.unx xview OPT='$(OPT)'
+	$(MAKE) -f makefile.unx test_ol GUI=-Dwx_xview OPT='$(OPT)' GUISUFFIX=_ol
+
+hp:
+	$(MAKE) -f makefile.unx GUI=-Dwx_motif GUISUFFIX=_hp CC=CC DEBUGFLAGS='' WARN='-w' \
+           XINCLUDE='$(HPXINCLUDE)' XLIB='$(HPXLIB)' XVIEW_LINK='' CCLEX='cc' \
+           LDLIBS='$(HPLDLIBS)'
+
+demo_hp:
+	$(MAKE) -f makefile.unx test_hp GUI=-Dwx_motif GUISUFFIX=_hp CC=CC DEBUGFLAGS='' WARN='-w' \
+           XINCLUDE='$(HPXINCLUDE)' XLIB='$(HPXLIB)' XVIEW_LINK='' CCLEX='cc' \
+           LDLIBS='$(HPLDLIBS)'
+
+$(OBJDIR):
+	mkdir $(OBJDIR)
+
+$(IMAGELIB): $(OBJECTS)	
+	rm -f $@
+	ar rv $@ $(OBJECTS)
+	$(RANLIB) $@
+
+$(OBJDIR)/wx_image.$(OBJSUFF):	wx_image.$(SRCSUFF) wx_image.h wx_imgx.h
+	$(CXX) -c $(CPPFLAGS) -o $@ wx_image.$(SRCSUFF)
+
+
+$(OBJDIR)/wx_img.$(OBJSUFF):	wx_img.$(SRCSUFF) wx_image.h wx_imgx.h
+	$(CXX) -c $(CPPFLAGS) -o $@ wx_img.$(SRCSUFF)
+
+$(OBJDIR)/wx_gif.$(OBJSUFF):	wx_gif.$(SRCSUFF) wx_image.h wx_imgx.h
+	$(CXX) -c $(CPPFLAGS) -o $@ wx_gif.$(SRCSUFF)
+
+$(OBJDIR)/wx_gifwr.$(OBJSUFF):	wx_gifwr.$(SRCSUFF) wx_image.h wx_imgx.h
+	$(CXX) -c $(CPPFLAGS) -o $@ wx_gifwr.$(SRCSUFF)
+
+$(OBJDIR)/wx_gam.$(OBJSUFF):	wx_gam.$(SRCSUFF) wx_image.h wx_imgx.h
+	$(CXX) -c $(CPPFLAGS) -o $@ wx_gam.$(SRCSUFF)
+
+$(OBJDIR)/wx_pbm.$(OBJSUFF):	wx_pbm.$(SRCSUFF) wx_image.h wx_imgx.h
+	$(CXX) -c $(CPPFLAGS) -o $@ wx_pbm.$(SRCSUFF)
+
+$(OBJDIR)/wx_bmp.$(OBJSUFF):	wx_bmp.$(SRCSUFF) wx_image.h wx_imgx.h
+	$(CXX) -c $(CPPFLAGS) -o $@ wx_bmp.$(SRCSUFF)
+
+$(OBJDIR)/wx_pcx.$(OBJSUFF):	wx_pcx.$(SRCSUFF) wx_image.h wx_imgx.h
+	$(CXX) -c $(CPPFLAGS) -o $@ wx_pcx.$(SRCSUFF)
+
+$(OBJDIR)/wx_xbm.$(OBJSUFF):	wx_xbm.$(SRCSUFF) wx_image.h wx_imgx.h
+	$(CXX) -c $(CPPFLAGS) -o $@ wx_xbm.$(SRCSUFF)
+
+$(OBJDIR)/wx_pm.$(OBJSUFF):	wx_pm.$(SRCSUFF) wx_image.h wx_imgx.h
+	$(CXX) -c $(CPPFLAGS) -o $@ wx_pm.$(SRCSUFF)
+
+$(OBJDIR)/wx_24to8.$(OBJSUFF):	wx_24to8.$(SRCSUFF) wx_image.h wx_imgx.h
+	$(CXX) -c $(CPPFLAGS) -o $@ wx_24to8.$(SRCSUFF)
+
+$(OBJDIR)/test.$(OBJSUFF):		test.h test.$(SRCSUFF) wx_image.h wx_imgx.h
+	$(CXX) -c $(CPPFLAGS) -o $@ test.$(SRCSUFF)
+
+test$(GUISUFFIX): $(OBJDIR)/test.$(OBJSUFF) $(WXLIB) $(IMAGELIB)
+	$(CXX) $(LDFLAGS) -o test$(GUISUFFIX) $(OBJDIR)/test.$(OBJSUFF) $(XVIEW_LINK) $(LDLIBS)
+
+tmp.$(OBJSUFF):		tmp.$(SRCSUFF)
+	$(CXX) -c $(CPPFLAGS) -o $@ tmp.$(SRCSUFF)
+
+cleaneach:
+	rm -f $(OBJECTS) $(IMAGELIB) core
+
+clean_motif:
+	$(MAKE) -f makefile.unx GUISUFFIX=_motif cleaneach 
+
+clean_ol:
+	$(MAKE) -f makefile.unx GUISUFFIX=_ol cleaneach 
+
+clean_hp:
+	$(MAKE) -f makefile.unx GUISUFFIX=_hp cleaneach 
+

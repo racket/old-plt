@@ -1,0 +1,117 @@
+/*								-*- C++ -*-
+ * $Id: Bitmap.h,v 1.1 1996/01/10 14:56:12 markus Exp $
+ *
+ * Purpose: bitmap classes to implement pixmaps, icons, and cursors
+ *
+ * Authors: Markus Holzem and Julian Smart
+ *
+ * Copyright: (C) 1995, AIAI, University of Edinburgh (Julian)
+ * Copyright: (C) 1995, GNU (Markus)
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ */
+
+#ifndef Bitmap_h
+#define Bitmap_h
+
+#ifdef __GNUG__
+#pragma interface
+#endif
+
+#ifdef Have_X_Types
+// easier access to X-Pixmap and X-Cursor
+#define GETPIXMAP(obj) (*((Pixmap*)((obj)->GetHandle())))
+#define GETCURSOR(obj) (*((Cursor*)((obj)->GetHandle())))
+#endif
+
+class wxBitmap_Xintern;
+class wxCursor_Xintern;
+
+class wxItem;
+
+class wxBitmap : public wxObject { // bitmap representation
+DECLARE_DYNAMIC_CLASS(wxBitmap)
+public:
+    wxBitmap(void);
+    wxBitmap(char bits[], int width, int height, int depth = 1);
+    wxBitmap(int width, int height, int depth = -1);
+#if USE_XPM
+    wxBitmap(char **data, wxItem *anItem = NULL);
+#endif
+    wxBitmap(char *name, long flags = wxBITMAP_DEFAULT);
+    ~wxBitmap(void);
+    // create and destroy
+    Bool Create(int width, int height, int depth = -1);
+    void Destroy(void);
+    // get information about bitmap
+    int  GetDepth(void);
+    int  GetHeight(void);
+    void GetHotSpot(int *x, int *y);
+    int  GetWidth(void);
+    // set and get colourmap
+    wxColourMap* GetColourMap(void)
+        { return cmap; }
+    void SetColourMap(wxColourMap *new_cmap)
+        { cmap = (new_cmap ? new_cmap : wxAPP_COLOURMAP); }
+    // load and save bitmap
+    Bool LoadFile(char *name, long flags = wxBITMAP_DEFAULT);
+    Bool SaveFile(char *name, int type, wxColourMap *cmap = NULL);
+    // X representation
+    virtual Bool  Ok(void) { return (Xbitmap != NULL); }
+    virtual void* GetHandle(void); // return type Pixmap*
+protected:
+    wxBitmap_Xintern *Xbitmap;
+    wxColourMap      *cmap;
+
+public:
+    /* MATTHEW: [4] */
+    int selectedIntoDC; /* safety */
+};
+
+class wxCursor : public wxBitmap { // cursor representation
+DECLARE_DYNAMIC_CLASS(wxCursor)
+public:
+    wxCursor(void);
+    wxCursor(char bits[], int width, int height /* , int x=0, int y=0 */);
+    wxCursor(char *name, long flags = wxBITMAP_DEFAULT, int x=0, int y=0);
+    wxCursor(int cursor_type);
+    ~wxCursor(void);
+    // X representation
+    virtual Bool  Ok(void) { return (Xcursor != NULL); }
+    virtual void* GetHandle(void); // return type Cursor*, GetPixmap returns NULL!
+private:
+    wxCursor_Xintern *Xcursor;
+};
+
+class wxIcon : public wxBitmap { // icon representation
+DECLARE_DYNAMIC_CLASS(wxIcon)
+public:
+    wxIcon(void);
+    wxIcon(char bits[], int width, int height, int depth = 1);
+    wxIcon(int width, int height, int depth = -1);
+#if USE_XPM
+    wxIcon(char **data);
+#endif
+    wxIcon(char *name, long flags = wxBITMAP_DEFAULT);
+};
+
+class wxGDIList : public wxList { // GDI list representation (list of bitmaps)
+DECLARE_DYNAMIC_CLASS(wxGDIList)
+public:
+    wxGDIList(void);
+    ~wxGDIList(void);
+};
+
+#endif // Bitmap_h

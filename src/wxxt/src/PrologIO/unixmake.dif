@@ -1,0 +1,25 @@
+OBJECTS = $(OBJDIR)/read.$(OBJSUFF) $(OBJDIR)/prorpc.$(OBJSUFF) $(OBJDIR)/parser.$(OBJSUFF)
+
+parser.c: parser.y
+	$(YACC) parser.y
+	sed -e "s/y.tab.c/parser.y/g" < y.tab.c | \
+	sed -e "s/BUFSIZ/5000/g"            | \
+	sed -e "s/YYLMAX 200/YYLMAX 5000/g" | \
+	sed -e "s/yy/PROIO_yy/g"            | \
+	sed -e "s/input/PROIO_input/g"      | \
+	sed -e "s/unput/PROIO_unput/g"      > parser.c
+	rm -f y.tab.c
+
+lexer.c: lexer.l
+	$(LEX) lexer.l
+	sed -e "s/lex.yy.c/lexer.l/g" < lex.yy.c | \
+	sed -e "s/yy/PROIO_yy/g"       | \
+	sed -e "s/input/PROIO_input/g" | \
+	sed -e "s/unput/PROIO_unput/g" > lexer.c
+	rm -f lex.yy.c
+
+$(OBJDIR)/parser.$(OBJSUFF): lexer.c parser.c
+	$(CCLEX) -c $(CPPFLAGS) -o $@ parser.c
+
+cleaneach:
+	rm -f $(OBJECTS) $(TESTOBJECTS) lexer.c parser.c test$(GUISUFFIX) $(PROLOGLIB) core

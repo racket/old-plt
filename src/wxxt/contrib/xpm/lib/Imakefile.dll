@@ -1,0 +1,52 @@
+XCOMM
+XCOMM XPM Imakefile.dll for Linux - Mitch (m.dsouza@mrc-apu.cam.ac.uk)
+XCOMM
+
+#undef LibraryObjectRule
+#define LibraryObjectRule()						@@\
+									@@\
+CC=gcc -bi486-linuxaout							@@\
+JUMP_LIB=libXpm								@@\
+DLL_VERSION=$(SOXPMLIBREV)						@@\
+GCC_LIB=`$(CC) --print-libgcc-file-name`				@@\
+LOAD_ADDR=0x60700000							@@\
+DLL_TOOLS_DIR=/usr/bin							@@\
+JUMP_AS=/usr/bin/jumpas							@@\
+JUMP_DIR=./jump								@@\
+AS=as									@@\
+AR=ar cr								@@\
+RANLIB=ranlib								@@\
+STRIP=strip								@@\
+ARFLAGS=								@@\
+export JUMP_DIR JUMP_LIB						@@\
+									@@\
+all:: $(JUMP_LIB).a $(JUMP_LIB).so.$(DLL_VERSION)			@@\
+									@@\
+.c.o:									@@\
+	_NormalObjCompile(-S)						@@\
+	@$(JUMP_AS) -o $(JUMP_DIR)/$*.o $*.s 2>/dev/null		@@\
+	@$(AS) -o $*.o $*.s						@@\
+	@$(RM) $*.s							@@\
+									@@\
+$(JUMP_LIB).so.$(DLL_VERSION): $(JUMP_DIR)/$(JUMP_LIB).a		@@\
+	$(RANLIB) $<							@@\
+	$(DLL_TOOLS_DIR)/mkimage -f -l $(JUMP_LIB)	\		@@\
+		-v $(DLL_VERSION) -a $(LOAD_ADDR) \			@@\
+		-j 0x4000 -g 4096 $(JUMP_DIR)/$(JUMP_LIB).a	\	@@\
+		-- -L$(USRLIBDIR) -lX11 $(GCC_LIB) -lc -dll-verbose	@@\
+	$(DLL_TOOLS_DIR)/mkstubs -f -l $(JUMP_LIB)		\	@@\
+		-v $(DLL_VERSION) -a $(LOAD_ADDR) \			@@\
+		-j 0x4000 -g 4096 $(JUMP_LIB) 				@@\
+	$(DLL_TOOLS_DIR)/verify-shlib \					@@\
+		-l $(JUMP_LIB).so.$(DLL_VERSION) \			@@\
+		$(JUMP_LIB).sa						@@\
+	-$(DLL_TOOLS_DIR)/libinfo $(JUMP_LIB).sa			@@\
+	$(STRIP) $(JUMP_LIB).so.$(DLL_VERSION)				@@\
+									@@\
+									@@\
+$(JUMP_DIR)/$(JUMP_LIB).a: $(OBJS:%.o=jump/%.o)				@@\
+	$(AR) $@ $^							@@\
+									@@\
+clean::									@@\
+	$(RM) lib* verify.out; cd jump; $(RM) *.[soa] jump.params
+

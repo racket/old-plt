@@ -1,0 +1,43 @@
+Hi,							     10th October `95
+
+THE SHARED LIBRARY INCLUDED IS FOR DLL X11R6 (XFree86-3.1.x) AND ELF.
+
+To build, just type the following standard steps...
+
+	% xmkmf
+	% make Makefiles
+	% make
+
+That should build everything - i.e the shared DLL library, the stub, the
+static library and the sxpm executable. If you have the ELF development
+environment in place (i.e. the ELF X11 libs) then it will built the ELF
+library instead.
+
+The changes I made are the inclusion of the lib/jump directory and its
+contents and also lib/Imakefile and lib/Imakefile.dll for the DLL building
+procedure. Do a diff on lib/Imakefile and lib/Imakefile.org to see the
+changes.
+
+From now on the DLL library numbering procedure will follow the SOXPMLIBREV
+scheme. Look in lib/xpm.h for more info.
+
+To install: (from this directory):
+
+For both:
+	% cp lib/xpm*.h /usr/X11R6/include/X11
+For ELF:
+	% cp elf/* /usr/X11R6/lib
+For a.out:
+	% cp a.out/* /usr/X11R6/lib
+For both:
+	% ldconfig
+
+PLEASE DO NOT REMOVE YOUR OLDER libXpm.so.3 LIBRARY AS THIS VERSION IS NOT
+BACKWARD COMPATIBLE.
+
+NOTE: It is an unfortunate consequence that the binary will have the same
+revision number for both R5, R6 and ELF if we continue to follow the
+author's numbering scheme.
+
+P.S. For any problems/questions I may be reached at
+       mitchum.dsouza@mrc-apu.cam.ac.uk

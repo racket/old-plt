@@ -130,9 +130,14 @@
       (unless (assoc mailbox-name mailboxes)
 	(error 'sirmail "No local mapping for mailbox: ~a" mailbox-name))
       
+      (define (string/bytes->path s)
+	(if (string? s)
+	    (string->path s)
+	    (bytes->path s)))
+
       ;; find the mailbox for this window:
       (define mailbox-dir (build-path (LOCAL-DIR) 
-				      (bytes->path (cadr (assoc mailbox-name mailboxes)))))
+				      (string/bytes->path (cadr (assoc mailbox-name mailboxes)))))
       
       (unless (directory-exists? mailbox-dir)
 	(make-directory mailbox-dir))

@@ -4,4 +4,4 @@
   (define mred-launcher-libraries (list "slideshow.ss"))
   (define mred-launcher-names (list "Slideshow"))
   (define compile-omit-files
-    (list "tutorial-show.ss")))
+    (list "tutorial-show.ss" "initial-ones.ss")))

@@ -366,7 +366,9 @@
     (define make-simple-frame%
       (lambda (super%)
 	(class super% ([name frame-name])
-	  (inherit panel get-client-size get-title set-title set-icon status-line-panel)
+	  (inherit panel get-client-size get-title set-title set-icon
+		   ;status-line-panel
+		   )
 	  (rename [super-on-close on-close])
 	  (public
 	    [WIDTH frame-width]

@@ -51,13 +51,14 @@
       (define varref:inexact 32)
       (define varref:env 64)
       (define varref:in-module 128)
+      (define varref:module-stx-string 256)
 
       (define mi-counter -1)
-      (define-struct varref:module-invoke (id syntax?))
-      (define (make-module-invokes)
+      (define-struct varref:module-invoke (id syntax? context-path-index))
+      (define (make-module-invokes self-path-index)
 	(set! mi-counter (add1 mi-counter))
-	(values (make-varref:module-invoke mi-counter #f)
-		(make-varref:module-invoke mi-counter #t)))
+	(values (make-varref:module-invoke mi-counter #f self-path-index)
+		(make-varref:module-invoke mi-counter #t self-path-index)))
 
       (define (get-num-module-invokes)
 	(add1 mi-counter))

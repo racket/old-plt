@@ -287,7 +287,8 @@
 			  #f ; see split-module in driver.ss
 			  (zodiac:module-form-provides ast)
 			  (zodiac:module-form-syntax-provides ast)
-			  (zodiac:module-form-kernel-reprovide-hint ast)))]
+			  (zodiac:module-form-kernel-reprovide-hint ast)
+			  (zodiac:module-form-self-path-index ast)))]
 
 		     ;;---------------------------------------------------------------
 		     ;; SET! EXPRESSIONS / DEFINE EXPRESSIONS

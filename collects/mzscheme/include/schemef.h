@@ -145,10 +145,6 @@ Scheme_Type scheme_make_type(const char *name);
 
 char *scheme_get_type_name(Scheme_Type type);
 
-/* Type readers & writers for compiled code data */
-void scheme_install_type_reader(Scheme_Type type, Scheme_Type_Reader f);
-void scheme_install_type_writer(Scheme_Type type, Scheme_Type_Writer f);
-
 /*========================================================================*/
 /*                              constants                                 */
 /*========================================================================*/
@@ -232,7 +228,8 @@ Scheme_Object *scheme_do_eval(Scheme_Object *obj, int _num_rands, Scheme_Object 
 Scheme_Object *scheme_do_eval_w_thread(Scheme_Object *obj, int _num_rands, Scheme_Object **rands, int val, Scheme_Thread *p);
 #endif
 
-Scheme_Object *scheme_eval_compiled_stx_string(Scheme_Object *str, Scheme_Env *env);
+Scheme_Object *scheme_eval_compiled_stx_string(Scheme_Object *str, Scheme_Env *env, 
+					       long shift, Scheme_Object *modidx);
 
 /*========================================================================*/
 /*                           memory management                            */

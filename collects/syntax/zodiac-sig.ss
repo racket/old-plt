@@ -83,7 +83,8 @@
 			       syntax-body         ; begin form
 			       provides  ; lstof (sym | (def-sym . prvd-sym) | (mod-path def-sym . prvd-sym))
 			       syntax-provides  ;  ditto
-			       kernel-reprovide-hint)) ; #f | #t | exclude-sym
+			       kernel-reprovide-hint ; #f | #t | exclude-sym
+			       self-path-index))   ; module path index
      create-module-form
      (struct require/provide-form ())                create-require/provide-form
 

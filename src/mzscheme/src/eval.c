@@ -3473,7 +3473,8 @@ Scheme_Object *scheme_eval_linked_expr_multi(Scheme_Object *obj, int let_depth)
 }
 
 /* for mzc: */
-Scheme_Object *scheme_eval_compiled_stx_string(Scheme_Object *str, Scheme_Env *env)
+Scheme_Object *scheme_eval_compiled_stx_string(Scheme_Object *str, Scheme_Env *env,
+					       long shift, Scheme_Object *modidx)
 {
   Scheme_Object *port, *expr;
 #ifdef MZ_REAL_THREADS
@@ -3492,6 +3493,16 @@ Scheme_Object *scheme_eval_compiled_stx_string(Scheme_Object *str, Scheme_Env *e
 
   /* Unwrap syntax once; */
   expr = SCHEME_STX_VAL(expr);
+
+  /* If modidx, then last element is a mmodule index; shift the rest. */
+  if (modidx) {
+    int i, len = SCHEME_VEC_SIZE(expr);
+    Scheme_Object *orig = SCHEME_VEC_ELS(expr)[len - 1], *s;
+    for (i = 0; i < len - 1; i++) {
+      s = scheme_stx_phase_shift(SCHEME_VEC_ELS(expr)[i], shift, orig, modidx);
+      SCHEME_VEC_ELS(expr)[i] = s;
+    }
+  }
 
   return expr;
 }

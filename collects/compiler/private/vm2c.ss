@@ -337,9 +337,10 @@
 		   kind i
 		   (if (or per-load? module) ", Scheme_Per_Load_Statics *PLS" "")
 		   (if module
-		       (format ", Scheme_Object *self_modidx, Scheme_Per_Invoke_~aStatics_~a *PMIS" 
-			       (if mod-syntax? "Syntax_" "")
-			       module)
+		       (format 
+			", long phase_shift, Scheme_Object *self_modidx, Scheme_Per_Invoke_~aStatics_~a *PMIS" 
+			(if mod-syntax? "Syntax_" "")
+			module)
 		       ""))
 	  (when (> max-arity 0)
 	    (fprintf c-port
@@ -1551,8 +1552,12 @@
 		   ;; HACK! - abused constants to communicate
 		   ;;  a direct call to scheme_read_compiled_stx_string():
 		   [(zodiac:varref? (zodiac:read-object ast))
-		    (emit-expr "scheme_eval_compiled_stx_string(S.~a, SCHEME_CURRENT_ENV(pr))"
-			       (vm->c:convert-symbol (zodiac:varref-var (zodiac:read-object ast))))]
+		    (let ([for-mod? (varref:has-attribute? (zodiac:read-object ast)
+							   varref:module-stx-string)])
+		      (emit-expr "scheme_eval_compiled_stx_string(S.~a, SCHEME_CURRENT_ENV(pr), ~a, ~a)"
+				 (vm->c:convert-symbol (zodiac:varref-var (zodiac:read-object ast)))
+				 (if for-mod? "phase_shift" "0")
+				 (if for-mod? "self_modidx" "NULL")))]
 		   
 		   [else (compiler:internal-error
 			  ast

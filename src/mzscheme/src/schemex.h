@@ -187,7 +187,8 @@ Scheme_Object *(*scheme_do_eval)(Scheme_Object *obj, int _num_rands, Scheme_Obje
 #else
 Scheme_Object *(*scheme_do_eval_w_thread)(Scheme_Object *obj, int _num_rands, Scheme_Object **rands, int val, Scheme_Thread *p);
 #endif
-Scheme_Object *(*scheme_eval_compiled_stx_string)(Scheme_Object *str, Scheme_Env *env);
+Scheme_Object *(*scheme_eval_compiled_stx_string)(Scheme_Object *str, Scheme_Env *env, 
+					       long shift, Scheme_Object *modidx);
 /*========================================================================*/
 /*                           memory management                            */
 /*========================================================================*/

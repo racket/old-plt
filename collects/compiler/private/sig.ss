@@ -64,8 +64,9 @@
      varref:inexact
      varref:env
      varref:in-module
+     varref:module-stx-string
 
-     (struct varref:module-invoke (id syntax?))
+     (struct varref:module-invoke (id syntax? context-path-index))
      make-module-invokes
      get-num-module-invokes
      is-module-invoke?

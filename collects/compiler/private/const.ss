@@ -102,7 +102,7 @@
 		    (make-empty-box)
 		    #f #f #f
 		    def #f
-		    #f #f #f)])
+		    #f #f #f #f)])
 	  (set-annotation! 
 	   def 
 	   (make-module-info mi 
@@ -387,10 +387,27 @@
 		    (cons var compiler:per-load-static-list)))
 	  sv))
 
+      ;; We collect syntax objects together to share the cost of of
+      ;; the rename tables. More gnerally, to get the expansion-time
+      ;; info to use-time, we use the bytecode writer built into
+      ;; MzScheme, putting multiple syntax objects together into a
+      ;; syntax vector. The scheme_eval_compiled_stx_string() will
+      ;; unpack it, and perform any necessary phase shifts. To perform
+      ;; the module mapping associated with the phase shift,
+      ;; scheme_eval_compiled_stx_string() expects the "syntax" vector
+      ;; to have a module index path (the "self" path) as its last
+      ;; element.
       (define (const:finish-syntax-constants!)
 	(unless (null? syntax-constants)
 	  (let ([s (open-output-string)]
-		[c (compile `(quote-syntax ,(list->vector (map cdr syntax-constants))))])
+		[c (compile `(quote-syntax ,(list->vector 
+					     (let ([l (map cdr syntax-constants)]
+						   [mi (varref:current-invoke-module)])
+					       (if mi
+						   (append 
+						    l 
+						    (list (varref:module-invoke-context-path-index mi)))
+						   l)))))])
 	    (display c s)
 	    (let ([syntax-string (get-output-string s)])
 	      (const:intern-string syntax-string)
@@ -434,7 +451,9 @@
 			    strvar ;; <------ HACK! See "HACK!" in vm2c.ss
 			    #f))))])
 		   (if (varref:current-invoke-module)
-		       (wrap-module-definition def (varref:current-invoke-module))
+		       (begin
+			 (varref:add-attribute! strvar varref:module-stx-string) ;; More HACK!
+			 (wrap-module-definition def (varref:current-invoke-module)))
 		       def)))
 
 		;; Create construction code for each

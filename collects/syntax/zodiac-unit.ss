@@ -291,7 +291,8 @@
 					 [(rename mod . _)
 					  (syntax mod)]
 					 [(all-except mod . _)
-					  (syntax mod)]))
+					  (syntax mod)]
+					 [_else r]))
 				     (stx->list (stx-cdr (zodiac-stx (car body)))))
 				(loop (cdr body)))]
 			      [else (loop (cdr body))])))]
@@ -323,7 +324,8 @@
 		     et-body)
 		    (syntax-property stx 'module-variable-provides)
 		    (syntax-property stx 'module-syntax-provides)
-		    (syntax-property stx 'module-kernel-reprovide-hint)))]
+		    (syntax-property stx 'module-kernel-reprovide-hint)
+		    (syntax-property stx 'module-self-path-index)))]
 		[(require i ...)
 		 (make-require/provide-form
 		  stx
@@ -664,16 +666,17 @@
       (define-struct (module-form struct:parsed) (name requires for-syntax-requires 
 						       body syntax-body 
 						       provides syntax-provides 
-						       kernel-reprovide-hint))
+						       kernel-reprovide-hint
+						       self-path-index))
       (define (create-module-form z name rt-requires et-requires 
 				  rt-body et-body 
 				  var-provides syntax-provides 
-				  kernel-hint)
+				  kernel-hint self)
 	(make-module-form (zodiac-stx z) (mk-back) 
 			  name rt-requires et-requires 
 			  rt-body et-body 
 			  var-provides syntax-provides 
-			  kernel-hint))
+			  kernel-hint self))
 
       (define-struct (require/provide-form struct:parsed) ())
       (define (create-require/provide-form z)

@@ -1,7 +1,7 @@
 (module search mzscheme
   
   (require "board.ss"
-	   "client-parameters.ss"
+           "client-parameters.ss"
            "heuristics.ss"
            "weights.scm")
   
@@ -91,9 +91,10 @@
       (make-move (+ weighted-g weight) x y back g (if command? command? (make-command bid (car special) (cadr special))))))
   
   (define (generate-first-moves x y packages)
-    (let ((maker (move-maker (weight-from-goal 1) (make-cord x y) 1 #f))
+    (let ((maker (move-maker 0 (make-cord x y) 1 #f))
           (old-x (cord-x (last-move)))
           (old-y (cord-y (last-move))))
+      (display (list (list old-x old-y) (list x y))) (display " : ") 
       (let-values (((p-weight p-bid _ p) (calc-weight 'P x y (current-player) packages))
                    ((d-weight d-bid d __) (if (not (null? (search-player-packages (current-player))))
                                               (calc-weight 'D x y (current-player) null)
@@ -114,7 +115,7 @@
                                               (not (and (= old-x x)
                                                         (= old-y (add1 y)))))
                                          (get-move-weight x (add1 y)) (values #f void))))
-;        (display (list p-weight d-weight n-weight s-weight e-weight w-weight)) (newline)
+        (display (list n-weight s-weight e-weight w-weight)) (newline)
         (cond 
           ((not (null? d)) (maker d-weight x y d-bid 'D d))
           ((not (null? p)) (maker p-weight x y p-bid 'P p))
@@ -159,7 +160,7 @@
     (display "x and y: ")(display (get-player-x))(display " : ")(display (get-player-y))(newline)
     (queue-head null)
     (in-queue 0)
-    (when (null? (last-move)) (last-move (make-cord -inf.0) (make-cord -inf.0)))
+    (when (null? (last-move)) (last-move (make-cord -inf.0 -inf.0)))
     (best-cmd null)
     (best-weight -inf.0)
     
@@ -174,14 +175,9 @@
     
     (display (best-cmd)) (display ":")
     (display (best-weight))(newline)
-    (last-move (make-cord (case (command-command (best-cmd))
-                            ((e) (add1 (get-player-x)))
-                            ((w) (sub2 (get-player-x)))
-                            (else (get-player-x)))
-                          (case (command-command (best-cmd))
-                            ((n) (add1 (get-player-y)))
-                            ((s) (sub1 (get-player-y)))
-                            (else (get-player-y)))))
+    (last-move (make-cord (get-player-x)
+                          (get-player-y)))
+
     (best-cmd)
     )
 

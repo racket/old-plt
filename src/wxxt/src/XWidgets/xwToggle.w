@@ -1,8 +1,6 @@
 # Toggle widget
 # Bert Bos <bert@let.rug.nl>
 # Version 2.1 for FWF V4.0
-# 
-# $Id: xwToggle.w,v 1.4 1999/07/21 23:37:36 mflatt Exp $
 
 @class XfwfToggle(XfwfButton)  @file=xwToggle
 

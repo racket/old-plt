@@ -174,7 +174,10 @@
 
       (define blank (format "[~a~a~a~a~a]" #\space #\tab #\newline #\return #\vtab))
       (define re:all-blank (regexp (format "^~a*$" blank)))
-      
+      (define re:quoted (regexp "\"[^\"]*\""))
+      (define re:comma (regexp ","))
+      (define re:comma-separated (regexp "([^,]*),(.*)"))
+
       (define (extract-addresses s form)
 	(unless (memq form '(name address full all))
 	  (raise-type-error 'extract-addresses 
@@ -184,8 +187,8 @@
 	    null
 	    (let loop ([prefix ""][s s])
 	      ;; Which comes first - a quote or a comma?
-	      (let ([mq (regexp-match-positions "\"[^\"]*\"" s)]
-		    [mc (regexp-match-positions "," s)])
+	      (let ([mq (regexp-match-positions re:quoted s)]
+		    [mc (regexp-match-positions re:comma s)])
 		(if (and mq mc (< (caar mq) (caar mc) (cdar mq)))
 		    ;; Quote contains a comma
 		    (loop (string-append 
@@ -193,7 +196,7 @@
 			   (substring s 0 (cdar mq)))
 			  (substring s (cdar mq) (string-length s)))
 		    ;; Normal comma parsing:
-		    (let ([m (regexp-match "([^,]*),(.*)" s)])
+		    (let ([m (regexp-match re:comma-separated s)])
 		      (if m
 			  (let ([n (extract-one-name (string-append prefix (cadr m)) form)]
 				[rest (extract-addresses (caddr m) form)])
@@ -211,22 +214,32 @@
       (define (one-result form s)
 	(select-result form s s s))
 
+      (define re:quoted-name (regexp (format "^~a*(\"[^\"]*\")(.*)" blank)))
+      (define re:parened-name (regexp (format "(.*)[(]([^)]*)[)]~a*$" blank)))
+      (define re:simple-name (regexp (format "^~a*(.*)(<.*>)~a*$" blank blank)))
+      (define re:normal-name (regexp (format "~a*<([^>]*)>~a*" blank blank)))
+      (define re:double-less (regexp "<.*<"))
+      (define re:double-greater (regexp ">.*>"))
+      (define re:bad-chars (regexp "[,\"()<>]"))
+      (define re:tail-blanks (regexp (format "~a+$" blank)))
+      (define re:head-blanks (regexp (format "^~a+" blank)))
+
       (define (extract-one-name s form)
 	(cond
-	 [(regexp-match (format "^~a*(\"[^\"]*\")(.*)" blank) s)
+	 [(regexp-match re:quoted-name s)
 	  => (lambda (m)
 	       (let ([name (cadr m)]
 		     [addr (extract-angle-addr (caddr m))])
 		 (select-result form name addr
 				(format "~a <~a>" name addr))))]
 	 ;; ?!?!? Where does the "addr (name)" standard come from ?!?!?
-	 [(regexp-match (format "(.*)[(]([^)]*)[)]~a*$" blank) s)
+	 [(regexp-match re:parened-name s)
 	  => (lambda (m)
 	       (let ([name (caddr m)]
 		     [addr (extract-simple-addr (cadr m))])
 		 (select-result form name addr 
 				(format "~a (~a)" addr name))))]
-	 [(regexp-match (format "^~a*(.*)(<.*>)~a*$" blank blank) s)
+	 [(regexp-match re:simple-name s)
 	  => (lambda (m)
 	       (let ([name (regexp-replace (format "~a*$" blank) (cadr m) "")]
 		     [addr (extract-angle-addr (caddr m))])
@@ -238,22 +251,22 @@
 	  (one-result form (extract-simple-addr s))]))
 
       (define (extract-angle-addr s)
-	(if (or (regexp-match "<.*<" s) (regexp-match ">.*>" s))
+	(if (or (regexp-match re:double-less s) (regexp-match re:double-greater s))
 	    (error 'extract-address "too many angle brackets: ~a" s)
-	    (let ([m (regexp-match (format "~a*<([^>]*)>~a*" blank blank) s)])
+	    (let ([m (regexp-match re:normal-name s)])
 	      (if m
 		  (extract-simple-addr (cadr m))
 		  (error 'extract-address "cannot parse address: ~a" s)))))
 
       (define (extract-simple-addr s)
 	(cond
-	 [(regexp-match "[,\"()<>]" s)
+	 [(regexp-match re:bad-chars s)
 	  (error 'extract-address "cannot parse address: ~a" s)]
 	 [else 
 	  ;; final whitespace strip
 	  (regexp-replace
-	   (format "~a*$" blank)
-	   (regexp-replace (format "~a*" blank) s "")
+	   re:tail-blanks
+	   (regexp-replace re:head-blanks s "")
 	   "")]))
 
       (define (assemble-address-field addresses)

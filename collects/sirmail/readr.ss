@@ -1039,7 +1039,7 @@
 		   #\M)
       (make-object menu-item% "&Resume Message..." file-menu
         (lambda (i e) 
-          (let ([file (get-file "Select message to reume"
+          (let ([file (get-file "Select message to resume"
                                 main-frame)])
             (when file
               (start-new-mailer file "" "" "" "" "" null)))))
@@ -1215,7 +1215,7 @@
       (make-object menu-item% "by Order Received" sort-menu (lambda (i e) (sort-by-order-received)))
       
       (define (sort-by-date) (sort-by (list (list "date" date-cmp))))
-      (define (sort-by-sender) (sort-by (list (list "from" string-cmp))))
+      (define (sort-by-sender) (sort-by (list (list "from" from-cmp))))
       (define (sort-by-subject) (sort-by (list (list "subject" subject-cmp))))
       (define (sort-by-order-received) (sort-by null))
       
@@ -1267,6 +1267,12 @@
 	 (get-date a)
 	 (get-date b)))
       
+      (define re:quote "[\"<>]")
+      (define (from-cmp aid bid a b)
+	(string-cmp aid bid 
+		    (regexp-replace* re:quote (car (extract-addresses a 'name)) "")
+		    (regexp-replace* re:quote (car (extract-addresses b 'name)) "")))
+
       (define re:re (regexp "^[rR][eE]: *(.*)"))
       (define (subject-cmp aid bid a b)
 	(let ([simplify (lambda (s)
@@ -1279,9 +1285,9 @@
 	  (string-cmp aid bid (simplify a) (simplify b))))
       
       (define (string-cmp aid bid a b)
-	(if (string-ci=? a b)
+	(if (string-locale-ci=? a b)
 	    'same
-	    (string-ci<? a b)))
+	    (string-locale-ci<? a b)))
       
       (define (sort-by fields)
 	(let* ([ht (make-hash-table)]
@@ -1552,12 +1558,41 @@
 	    (send disable-button-panel set-label-font font)
 	    (send m show #f)
 	    (values m d))))
+
+      (preferences:set-default 'sirmail:show-gc-icon #f (lambda (x) #t))
+
+      ;; Optional GC icon (lots of work for this little thing!)
+      (when (preferences:get 'sirmail:show-gc-icon)
+	(let* ([gif (make-object bitmap% (build-path (collection-path "icons") "recycle.gif"))]
+	       [w (send gif get-width)]
+	       [h (send gif get-height)]
+	       [recycle-bm (make-object bitmap% (quotient w 2) (quotient h 2))]
+	       [dc (make-object bitmap-dc% recycle-bm)])
+	  (send dc set-scale 0.5 0.5)
+	  (send dc draw-bitmap gif 0 0)
+	  (send dc set-bitmap #f)
+	  (let* ([w (send recycle-bm get-width)]
+		 [h (send recycle-bm get-height)]
+		 [canvas (instantiate canvas% (button-panel)
+				      [min-width w]
+				      [min-height h]
+				      [stretchable-width #f]
+				      [stretchable-height #f])]
+		 [empty-bm (make-object bitmap% w h)]
+		 [dc (make-object bitmap-dc% empty-bm)])
+	    (send dc clear)
+	    (send dc set-bitmap #f)
+	    (register-collecting-blit canvas 
+				      0 0 w h
+				      recycle-bm empty-bm
+				      0 0 0 0))))
+
       (define cancel-button
 	(make-object button% "Stop" button-panel
 		     (lambda (b e) (cancel-button-todo))))
       (define cancel-button-todo void)
       (send cancel-button enable #f)
-      
+
       (define (download-all)
 	(get-new-mail)
 	(header-changing-action

@@ -49,6 +49,6 @@
 	   [SEND : sirmail:send^
 		 (send@
 		  (ENV : (exit-sirmail)) UTILS OPTIONS READ
-		  MRED IMAP SMTP HEAD BASE64 HIER
+		  MRED IMAP SMTP HEAD BASE64 QP HIER
 		  TXT EMACS)])
      (export))))

@@ -12,8 +12,7 @@
 		   (read-accept-graph #t)
 		   (read-decimal-as-inexact #t)
 		   (read-accept-dot #t)
-		   (read-accept-quasiquote #t)
-		   (current-locale #f))
+		   (read-accept-quasiquote #t))
       (thunk)))
 
   (define (raise-wrong-module-name filename expected-name name)

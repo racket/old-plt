@@ -149,7 +149,7 @@
       
       (define display-qp-encoded
         (lambda (line out)
-          (let* ((blanks (regexp "[ 	]+$"))
+          (let* ((blanks (regexp "[ \t]+$"))
                  (pos (regexp-match-positions blanks line))
                  (col (caar pos))
                  (rest-of-line (substring line col (string-length line))))

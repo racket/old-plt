@@ -363,12 +363,13 @@
 			  fields))
 	      (values mime non-mime)))))
       
+      (define re:content (regexp (format "^~a" (regexp-quote "content-" #f))))
+      (define re:mime (regexp (format "^~a:" (regexp-quote "mime-version" #f))))
+
       (define mime-header?
         (lambda (h)
-          (let ((content (regexp "^[Cc]ontent-"))
-                (mime (regexp "^MIME-Version:")))
-            (or (regexp-match content h)
-                (regexp-match mime h)))))
+	  (or (regexp-match re:content h)
+	      (regexp-match re:mime h))))
       
       
       ;;; Headers
@@ -377,10 +378,11 @@
       ;; 	   *(";" parameter)
       ;; 	   ; Matching of media type and subtype
       ;; 	   ; is ALWAYS case-insensitive.
+      (define re:content-type (regexp (format "^~a:([^/]+)/([^/]+)$" (regexp-quote "content-type" #f))))
       (define content
         (lambda (header entity)
           (let* ((params (string-tokenizer #\; header))
-                 (one (regexp "^[Cc]ontent-[Tt]ype:([^/]+)/([^/]+)$"))
+                 (one re:content-type)
                  (h (trim-all-spaces (car params)))
                  (target (regexp-match one h))
                  (old-param (entity-params entity)))
@@ -412,10 +414,11 @@
       ;; disposition := "Content-Disposition" ":"
       ;;		  disposition-type
       ;;		  *(";" disposition-parm)
+      (define re:content-disposition (regexp (format "^~a:(.+)$" (regexp-quote "content-disposition" #f))))
       (define dispositione
         (lambda (header entity)
           (let* ((params (string-tokenizer #\; header))
-                 (reg (regexp "^[Cc]ontent-[Dd]isposition:(.+)$"))
+                 (reg re:content-disposition)
                  (h (trim-all-spaces (car params)))
                  (target (regexp-match reg h))
                  (disp-struct (entity-disposition entity)))
@@ -426,9 +429,10 @@
                  (disp-params (cdr params) disp-struct)))))
       
       ;; version := "MIME-Version" ":" 1*DIGIT "." 1*DIGIT
+      (define re:mime-version (regexp (format "^~a:([0-9]+)\\.([0-9]+)$" (regexp-quote "MIME-Version" #f))))
       (define version
         (lambda (header message)
-          (let* ((reg (regexp "^MIME-Version:([0-9]+)\\.([0-9]+)$"))
+          (let* ((reg re:mime-version)
                  (h (trim-all-spaces header))
                  (target (regexp-match reg h)))
             (and target
@@ -437,9 +441,10 @@
                   (string->number (regexp-replace reg h "\\1.\\2")))))))
       
       ;;   description := "Content-Description" ":" *text
+      (define re:content-description (regexp (format "^~a:[ \t\r\n]*(.*)$" (regexp-quote "content-description" #f))))
       (define description
         (lambda (header entity)
-          (let* ((reg (regexp "^[Cc]ontent-[Dd]escription:[ 	]*(.*)$"))
+          (let* ((reg re:content-description)
                  (target (regexp-match reg header)))
             (and target
                  (set-entity-description!
@@ -447,9 +452,10 @@
                   (trim-spaces (regexp-replace reg header "\\1")))))))
       
       ;;   encoding := "Content-Transfer-Encoding" ":" mechanism
+      (define re:content-transfer-encoding (regexp (format "^~a:(.+)$" (regexp-quote "content-transfer-encoding" #f))))
       (define encoding
         (lambda (header entity)
-          (let* ((reg (regexp "^[Cc]ontent-[Tt]ransfer-[Ee]ncoding:(.+)$"))
+          (let* ((reg re:content-transfer-encoding)
                  (h (trim-all-spaces header))
                  (target (regexp-match reg h)))
             (and target
@@ -458,9 +464,10 @@
                   (mechanism (regexp-replace reg h "\\1")))))))
       
       ;;   id := "Content-ID" ":" msg-id
+      (define re:content-id (regexp (format "^~a:(.+)$" (regexp-quote "content-id" #f))))
       (define id
         (lambda (header entity)
-          (let* ((reg (regexp "^[Cc]ontent-ID:(.+)$"))
+          (let* ((reg re:content-id)
                  (h (trim-all-spaces header))
                  (target (regexp-match reg h)))
             (and target

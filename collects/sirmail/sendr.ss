@@ -12,7 +12,8 @@
   (require (lib "imap-sig.ss" "net")
 	   (lib "smtp-sig.ss" "net")
 	   (lib "head-sig.ss" "net")
-	   (lib "base64-sig.ss" "net"))
+	   (lib "base64-sig.ss" "net")
+	   (lib "qp-sig.ss" "net"))
 
   (require (lib "hierlist-sig.ss" "hierlist"))
 
@@ -28,6 +29,7 @@
 	      net:smtp^
 	      net:head^
 	      net:base64^
+	      net:qp^
 	      hierlist^
 	      (install-text-functions)
 	      (install-emacs-bindings))
@@ -344,6 +346,7 @@
 					 '(0))])
 			     (when type
 			       (let* ([encodings '("7bit"
+						   "quoted-printable"
 						   "base64")]
 				      [encoding (get-choices-from-user
 						 "Content Encoding"
@@ -374,6 +377,7 @@
 								    (read-string (file-size file))))])
 						   (case (string->symbol encoding)
 						     [(base64) (base64-encode content)]
+						     [(quoted-printable) (qp-encode content)]
 						     [(7bit) (lf->crlf content)])))])
 				       (send (send i get-editor) insert (enclosure-name enc))
 				       (send i user-data enc)

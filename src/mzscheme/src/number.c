@@ -544,16 +544,9 @@ MSC_IZE(inline)
 #endif
 int minus_zero_p(double d)
 {
-  double a[2];
-  long *f, *s;
-
-  a[0] = d;
-  a[1] = scheme_floating_point_nzero;
-
-  f = (long *)a;
-  s = (long *)(a + 1);
-
-  if (f[0] == s[0] && f[1] == s[1])
+  /* Relies on 4-byte "int": */
+  if (((int *)&d)[0] == ((int *)&scheme_floating_point_nzero)[0]
+      && ((int *)&d)[1] == ((int *)&scheme_floating_point_nzero)[1])
     return 1;
 
   return 0;

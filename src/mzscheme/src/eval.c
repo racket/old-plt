@@ -560,10 +560,6 @@ void scheme_init_stack_check()
 int scheme_check_runstack(long size)
      /* Checks whether the Scheme stack has `size' room left */
 {
-#ifndef RUNSTACK_IS_GLOBAL
-  Scheme_Thread *p = scheme_current_thread;
-#endif
-
   return ((MZ_RUNSTACK - MZ_RUNSTACK_START) >= (size + TAIL_COPY_THRESHOLD));
 }
 
@@ -2776,9 +2772,6 @@ static Scheme_Object *do_eval_k(void)
 
 static void unbound_global(Scheme_Object *obj)
 {
-#ifndef RUNSTACK_IS_GLOBAL
-  Scheme_Thread *p = scheme_current_thread;
-#endif
   Scheme_Object *tmp;
 
   tmp = MZ_RUNSTACK[SCHEME_TOPLEVEL_DEPTH(obj)];
@@ -4503,9 +4496,6 @@ Scheme_Object **scheme_push_prefix(Scheme_Env *genv, Resolve_Prefix *rp,
 				   Scheme_Object *src_modidx, Scheme_Object *now_modidx,
 				   int src_phase, int now_phase)
 {
-#ifndef RUNSTACK_IS_GLOBAL
-  Scheme_Thread *p = scheme_current_thread;
-#endif
   Scheme_Object **rs_save, **rs, *v, **a;
   int i;
 
@@ -4538,10 +4528,6 @@ Scheme_Object **scheme_push_prefix(Scheme_Env *genv, Resolve_Prefix *rp,
 
 void scheme_pop_prefix(Scheme_Object **rs)
 {
-#ifndef RUNSTACK_IS_GLOBAL
-  Scheme_Thread *p = scheme_current_thread;
-#endif
-
   MZ_RUNSTACK = rs;
 }
 

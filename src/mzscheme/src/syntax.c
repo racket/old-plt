@@ -1028,9 +1028,6 @@ with_cont_mark_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Sche
 static Scheme_Object *
 set_execute (Scheme_Object *data)
 {
-#ifndef RUNSTACK_IS_GLOBAL
-  Scheme_Thread *p = scheme_current_thread;
-#endif
   Scheme_Object *val, *set_undef, *tl, **toplevels;
   Scheme_Bucket *var;
 
@@ -1501,9 +1498,6 @@ Scheme_Object *bangboxenv_execute(Scheme_Object *data)
 {
   int pos = SCHEME_INT_VAL(SCHEME_CAR(data));
   Scheme_Object *bb;
-#ifndef RUNSTACK_IS_GLOBAL
-  Scheme_Thread *p = scheme_current_thread;
-#endif
 
   data = SCHEME_CDR(data);
   

@@ -240,10 +240,10 @@ extern MZ_MARK_STACK_TYPE scheme_current_cont_mark_pos;
 # define MZ_CONT_MARK_STACK scheme_current_cont_mark_stack
 # define MZ_CONT_MARK_POS scheme_current_cont_mark_pos
 #else
-# define MZ_RUNSTACK (p->runstack)
-# define MZ_RUNSTACK_START (p->runstack_start)
-# define MZ_CONT_MARK_STACK (p->cont_mark_stack)
-# define MZ_CONT_MARK_POS (p->cont_mark_pos)
+# define MZ_RUNSTACK (scheme_current_thread->runstack)
+# define MZ_RUNSTACK_START (scheme_current_thread->runstack_start)
+# define MZ_CONT_MARK_STACK (scheme_current_thread->cont_mark_stack)
+# define MZ_CONT_MARK_POS (scheme_current_thread->cont_mark_pos)
 #endif
 
 extern volatile int scheme_fuel_counter;

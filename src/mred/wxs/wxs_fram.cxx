@@ -747,7 +747,7 @@ static Scheme_Object *os_wxFrameSetIcon(Scheme_Object *obj, int n,  Scheme_Objec
   
   x0 = objscheme_unbundle_wxBitmap(p[0], "set-icon in frame%", 0);
   if (n > 1) {
-    x1 = objscheme_unbundle_wxBitmap(p[1], "set-icon in frame%", 0);
+    x1 = objscheme_unbundle_wxBitmap(p[1], "set-icon in frame%", 1);
   } else
     x1 = NULL;
 

@@ -1666,7 +1666,7 @@ void wxPostScriptDC::GetTextExtent (const char *string, float *x, float *y,
   int Weight;
 
   float widthSum = 0.0;
-  float height = (float)Size;
+  float height;
   unsigned char *p;
 
   if (!fontToUse)

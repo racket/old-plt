@@ -141,6 +141,9 @@ class os_wxSnip : public wxSnip {
 
   os_wxSnip(Scheme_Object * obj);
   ~os_wxSnip();
+  float GetScrollStepOffset(long x0);
+  long FindScrollStep(float x0);
+  long GetNumScrollSteps();
   void SetAdmin(class wxSnipAdmin* x0);
   Bool Resize(float x0, float x1);
   void Write(class wxMediaStreamOut& x0);
@@ -175,6 +178,107 @@ os_wxSnip::os_wxSnip(Scheme_Object * o)
 os_wxSnip::~os_wxSnip()
 {
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
+}
+
+float os_wxSnip::GetScrollStepOffset(long x0)
+{
+  Scheme_Object *p[1];
+  Scheme_Object *v;
+  mz_jmp_buf savebuf;
+  Scheme_Object *method;
+  int sj;
+  static void *mcache = 0;
+
+  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxSnip_class, "get-scroll-step-offset", &mcache);
+  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
+    COPY_JMPBUF(savebuf, scheme_error_buf);
+    sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
+  } else sj = 1;
+  if (sj) {
+return wxSnip::GetScrollStepOffset(x0);
+  } else {
+  
+  p[0] = scheme_make_integer(x0);
+  
+
+  v = scheme_apply(method, 1, p);
+  
+  
+  COPY_JMPBUF(scheme_error_buf, savebuf);
+
+  return objscheme_unbundle_float(v, "get-scroll-step-offset in snip%"", extracting return value");
+  }
+}
+
+long os_wxSnip::FindScrollStep(float x0)
+{
+  Scheme_Object *p[1];
+  Scheme_Object *v;
+  mz_jmp_buf savebuf;
+  Scheme_Object *method;
+  int sj;
+  static void *mcache = 0;
+
+  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxSnip_class, "find-scroll-step", &mcache);
+  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
+    COPY_JMPBUF(savebuf, scheme_error_buf);
+    sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
+  } else sj = 1;
+  if (sj) {
+return wxSnip::FindScrollStep(x0);
+  } else {
+  
+  p[0] = scheme_make_double(x0);
+  
+
+  v = scheme_apply(method, 1, p);
+  
+  
+  COPY_JMPBUF(scheme_error_buf, savebuf);
+
+  return objscheme_unbundle_integer(v, "find-scroll-step in snip%"", extracting return value");
+  }
+}
+
+long os_wxSnip::GetNumScrollSteps()
+{
+  Scheme_Object **p = NULL;
+  Scheme_Object *v;
+  mz_jmp_buf savebuf;
+  Scheme_Object *method;
+  int sj;
+  static void *mcache = 0;
+
+  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxSnip_class, "get-num-scroll-steps", &mcache);
+  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
+    COPY_JMPBUF(savebuf, scheme_error_buf);
+    sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
+  } else sj = 1;
+  if (sj) {
+return wxSnip::GetNumScrollSteps();
+  } else {
+  
+  
+
+  v = scheme_apply(method, 0, p);
+  
+  
+  COPY_JMPBUF(scheme_error_buf, savebuf);
+
+  return objscheme_unbundle_integer(v, "get-num-scroll-steps in snip%"", extracting return value");
+  }
 }
 
 void os_wxSnip::SetAdmin(class wxSnipAdmin* x0)
@@ -894,6 +998,70 @@ static Scheme_Object *os_wxSnipNext(Scheme_Object *obj, int n,  Scheme_Object *p
   
   
   return objscheme_bundle_wxSnip(r);
+}
+
+#pragma argsused
+static Scheme_Object *os_wxSnipGetScrollStepOffset(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  float r;
+  objscheme_check_valid(obj);
+  long x0;
+
+  
+  x0 = objscheme_unbundle_integer(p[0], "get-scroll-step-offset in snip%");
+
+  
+  if (((Scheme_Class_Object *)obj)->primflag)
+    r = ((os_wxSnip *)((Scheme_Class_Object *)obj)->primdata)->wxSnip::GetScrollStepOffset(x0);
+  else
+    r = ((wxSnip *)((Scheme_Class_Object *)obj)->primdata)->GetScrollStepOffset(x0);
+
+  
+  
+  return scheme_make_double(r);
+}
+
+#pragma argsused
+static Scheme_Object *os_wxSnipFindScrollStep(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  long r;
+  objscheme_check_valid(obj);
+  float x0;
+
+  
+  x0 = objscheme_unbundle_float(p[0], "find-scroll-step in snip%");
+
+  
+  if (((Scheme_Class_Object *)obj)->primflag)
+    r = ((os_wxSnip *)((Scheme_Class_Object *)obj)->primdata)->wxSnip::FindScrollStep(x0);
+  else
+    r = ((wxSnip *)((Scheme_Class_Object *)obj)->primdata)->FindScrollStep(x0);
+
+  
+  
+  return scheme_make_integer(r);
+}
+
+#pragma argsused
+static Scheme_Object *os_wxSnipGetNumScrollSteps(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  long r;
+  objscheme_check_valid(obj);
+
+  
+
+  
+  if (((Scheme_Class_Object *)obj)->primflag)
+    r = ((os_wxSnip *)((Scheme_Class_Object *)obj)->primdata)->wxSnip::GetNumScrollSteps();
+  else
+    r = ((wxSnip *)((Scheme_Class_Object *)obj)->primdata)->GetNumScrollSteps();
+
+  
+  
+  return scheme_make_integer(r);
 }
 
 #pragma argsused
@@ -1669,10 +1837,13 @@ void objscheme_setup_wxSnip(void *env)
 if (os_wxSnip_class) {
     objscheme_add_global_class(os_wxSnip_class, "snip%", env);
 } else {
-  os_wxSnip_class = objscheme_def_prim_class(env, "snip%", "object%", os_wxSnip_ConstructScheme, 32);
+  os_wxSnip_class = objscheme_def_prim_class(env, "snip%", "object%", os_wxSnip_ConstructScheme, 35);
 
  scheme_add_method_w_arity(os_wxSnip_class, "previous", os_wxSnipPrevious, 0, 0);
  scheme_add_method_w_arity(os_wxSnip_class, "next", os_wxSnipNext, 0, 0);
+ scheme_add_method_w_arity(os_wxSnip_class, "get-scroll-step-offset", os_wxSnipGetScrollStepOffset, 1, 1);
+ scheme_add_method_w_arity(os_wxSnip_class, "find-scroll-step", os_wxSnipFindScrollStep, 1, 1);
+ scheme_add_method_w_arity(os_wxSnip_class, "get-num-scroll-steps", os_wxSnipGetNumScrollSteps, 0, 0);
  scheme_add_method_w_arity(os_wxSnip_class, "set-admin", os_wxSnipSetAdmin, 1, 1);
  scheme_add_method_w_arity(os_wxSnip_class, "resize", os_wxSnipResize, 2, 2);
  scheme_add_method_w_arity(os_wxSnip_class, "write", os_wxSnipWrite, 1, 1);
@@ -1781,6 +1952,9 @@ class os_wxTextSnip : public wxTextSnip {
 
   os_wxTextSnip(Scheme_Object * obj, long x0 = 0);
   ~os_wxTextSnip();
+  float GetScrollStepOffset(long x0);
+  long FindScrollStep(float x0);
+  long GetNumScrollSteps();
   void SetAdmin(class wxSnipAdmin* x0);
   Bool Resize(float x0, float x1);
   void Write(class wxMediaStreamOut& x0);
@@ -1815,6 +1989,107 @@ os_wxTextSnip::os_wxTextSnip(Scheme_Object * o, long x0)
 os_wxTextSnip::~os_wxTextSnip()
 {
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
+}
+
+float os_wxTextSnip::GetScrollStepOffset(long x0)
+{
+  Scheme_Object *p[1];
+  Scheme_Object *v;
+  mz_jmp_buf savebuf;
+  Scheme_Object *method;
+  int sj;
+  static void *mcache = 0;
+
+  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxTextSnip_class, "get-scroll-step-offset", &mcache);
+  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
+    COPY_JMPBUF(savebuf, scheme_error_buf);
+    sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
+  } else sj = 1;
+  if (sj) {
+return wxTextSnip::GetScrollStepOffset(x0);
+  } else {
+  
+  p[0] = scheme_make_integer(x0);
+  
+
+  v = scheme_apply(method, 1, p);
+  
+  
+  COPY_JMPBUF(scheme_error_buf, savebuf);
+
+  return objscheme_unbundle_float(v, "get-scroll-step-offset in text-snip%"", extracting return value");
+  }
+}
+
+long os_wxTextSnip::FindScrollStep(float x0)
+{
+  Scheme_Object *p[1];
+  Scheme_Object *v;
+  mz_jmp_buf savebuf;
+  Scheme_Object *method;
+  int sj;
+  static void *mcache = 0;
+
+  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxTextSnip_class, "find-scroll-step", &mcache);
+  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
+    COPY_JMPBUF(savebuf, scheme_error_buf);
+    sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
+  } else sj = 1;
+  if (sj) {
+return wxTextSnip::FindScrollStep(x0);
+  } else {
+  
+  p[0] = scheme_make_double(x0);
+  
+
+  v = scheme_apply(method, 1, p);
+  
+  
+  COPY_JMPBUF(scheme_error_buf, savebuf);
+
+  return objscheme_unbundle_integer(v, "find-scroll-step in text-snip%"", extracting return value");
+  }
+}
+
+long os_wxTextSnip::GetNumScrollSteps()
+{
+  Scheme_Object **p = NULL;
+  Scheme_Object *v;
+  mz_jmp_buf savebuf;
+  Scheme_Object *method;
+  int sj;
+  static void *mcache = 0;
+
+  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxTextSnip_class, "get-num-scroll-steps", &mcache);
+  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
+    COPY_JMPBUF(savebuf, scheme_error_buf);
+    sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
+  } else sj = 1;
+  if (sj) {
+return wxTextSnip::GetNumScrollSteps();
+  } else {
+  
+  
+
+  v = scheme_apply(method, 0, p);
+  
+  
+  COPY_JMPBUF(scheme_error_buf, savebuf);
+
+  return objscheme_unbundle_integer(v, "get-num-scroll-steps in text-snip%"", extracting return value");
+  }
 }
 
 void os_wxTextSnip::SetAdmin(class wxSnipAdmin* x0)
@@ -2548,6 +2823,70 @@ static Scheme_Object *os_wxTextSnipInsert(Scheme_Object *obj, int n,  Scheme_Obj
 }
 
 #pragma argsused
+static Scheme_Object *os_wxTextSnipGetScrollStepOffset(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  float r;
+  objscheme_check_valid(obj);
+  long x0;
+
+  
+  x0 = objscheme_unbundle_integer(p[0], "get-scroll-step-offset in text-snip%");
+
+  
+  if (((Scheme_Class_Object *)obj)->primflag)
+    r = ((os_wxTextSnip *)((Scheme_Class_Object *)obj)->primdata)->wxTextSnip::GetScrollStepOffset(x0);
+  else
+    r = ((wxTextSnip *)((Scheme_Class_Object *)obj)->primdata)->GetScrollStepOffset(x0);
+
+  
+  
+  return scheme_make_double(r);
+}
+
+#pragma argsused
+static Scheme_Object *os_wxTextSnipFindScrollStep(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  long r;
+  objscheme_check_valid(obj);
+  float x0;
+
+  
+  x0 = objscheme_unbundle_float(p[0], "find-scroll-step in text-snip%");
+
+  
+  if (((Scheme_Class_Object *)obj)->primflag)
+    r = ((os_wxTextSnip *)((Scheme_Class_Object *)obj)->primdata)->wxTextSnip::FindScrollStep(x0);
+  else
+    r = ((wxTextSnip *)((Scheme_Class_Object *)obj)->primdata)->FindScrollStep(x0);
+
+  
+  
+  return scheme_make_integer(r);
+}
+
+#pragma argsused
+static Scheme_Object *os_wxTextSnipGetNumScrollSteps(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  long r;
+  objscheme_check_valid(obj);
+
+  
+
+  
+  if (((Scheme_Class_Object *)obj)->primflag)
+    r = ((os_wxTextSnip *)((Scheme_Class_Object *)obj)->primdata)->wxTextSnip::GetNumScrollSteps();
+  else
+    r = ((wxTextSnip *)((Scheme_Class_Object *)obj)->primdata)->GetNumScrollSteps();
+
+  
+  
+  return scheme_make_integer(r);
+}
+
+#pragma argsused
 static Scheme_Object *os_wxTextSnipSetAdmin(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3142,10 +3481,13 @@ void objscheme_setup_wxTextSnip(void *env)
 if (os_wxTextSnip_class) {
     objscheme_add_global_class(os_wxTextSnip_class, "text-snip%", env);
 } else {
-  os_wxTextSnip_class = objscheme_def_prim_class(env, "text-snip%", "snip%", os_wxTextSnip_ConstructScheme, 21);
+  os_wxTextSnip_class = objscheme_def_prim_class(env, "text-snip%", "snip%", os_wxTextSnip_ConstructScheme, 24);
 
  scheme_add_method_w_arity(os_wxTextSnip_class, "read", os_wxTextSnipRead, 2, 2);
  scheme_add_method_w_arity(os_wxTextSnip_class, "insert", os_wxTextSnipInsert, 2, 3);
+ scheme_add_method_w_arity(os_wxTextSnip_class, "get-scroll-step-offset", os_wxTextSnipGetScrollStepOffset, 1, 1);
+ scheme_add_method_w_arity(os_wxTextSnip_class, "find-scroll-step", os_wxTextSnipFindScrollStep, 1, 1);
+ scheme_add_method_w_arity(os_wxTextSnip_class, "get-num-scroll-steps", os_wxTextSnipGetNumScrollSteps, 0, 0);
  scheme_add_method_w_arity(os_wxTextSnip_class, "set-admin", os_wxTextSnipSetAdmin, 1, 1);
  scheme_add_method_w_arity(os_wxTextSnip_class, "resize", os_wxTextSnipResize, 2, 2);
  scheme_add_method_w_arity(os_wxTextSnip_class, "write", os_wxTextSnipWrite, 1, 1);
@@ -3242,6 +3584,9 @@ class os_wxTabSnip : public wxTabSnip {
 
   os_wxTabSnip(Scheme_Object * obj);
   ~os_wxTabSnip();
+  float GetScrollStepOffset(long x0);
+  long FindScrollStep(float x0);
+  long GetNumScrollSteps();
   void SetAdmin(class wxSnipAdmin* x0);
   Bool Resize(float x0, float x1);
   void Write(class wxMediaStreamOut& x0);
@@ -3276,6 +3621,107 @@ os_wxTabSnip::os_wxTabSnip(Scheme_Object * o)
 os_wxTabSnip::~os_wxTabSnip()
 {
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
+}
+
+float os_wxTabSnip::GetScrollStepOffset(long x0)
+{
+  Scheme_Object *p[1];
+  Scheme_Object *v;
+  mz_jmp_buf savebuf;
+  Scheme_Object *method;
+  int sj;
+  static void *mcache = 0;
+
+  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxTabSnip_class, "get-scroll-step-offset", &mcache);
+  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
+    COPY_JMPBUF(savebuf, scheme_error_buf);
+    sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
+  } else sj = 1;
+  if (sj) {
+return wxTabSnip::GetScrollStepOffset(x0);
+  } else {
+  
+  p[0] = scheme_make_integer(x0);
+  
+
+  v = scheme_apply(method, 1, p);
+  
+  
+  COPY_JMPBUF(scheme_error_buf, savebuf);
+
+  return objscheme_unbundle_float(v, "get-scroll-step-offset in tab-snip%"", extracting return value");
+  }
+}
+
+long os_wxTabSnip::FindScrollStep(float x0)
+{
+  Scheme_Object *p[1];
+  Scheme_Object *v;
+  mz_jmp_buf savebuf;
+  Scheme_Object *method;
+  int sj;
+  static void *mcache = 0;
+
+  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxTabSnip_class, "find-scroll-step", &mcache);
+  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
+    COPY_JMPBUF(savebuf, scheme_error_buf);
+    sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
+  } else sj = 1;
+  if (sj) {
+return wxTabSnip::FindScrollStep(x0);
+  } else {
+  
+  p[0] = scheme_make_double(x0);
+  
+
+  v = scheme_apply(method, 1, p);
+  
+  
+  COPY_JMPBUF(scheme_error_buf, savebuf);
+
+  return objscheme_unbundle_integer(v, "find-scroll-step in tab-snip%"", extracting return value");
+  }
+}
+
+long os_wxTabSnip::GetNumScrollSteps()
+{
+  Scheme_Object **p = NULL;
+  Scheme_Object *v;
+  mz_jmp_buf savebuf;
+  Scheme_Object *method;
+  int sj;
+  static void *mcache = 0;
+
+  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxTabSnip_class, "get-num-scroll-steps", &mcache);
+  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
+    COPY_JMPBUF(savebuf, scheme_error_buf);
+    sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
+  } else sj = 1;
+  if (sj) {
+return wxTabSnip::GetNumScrollSteps();
+  } else {
+  
+  
+
+  v = scheme_apply(method, 0, p);
+  
+  
+  COPY_JMPBUF(scheme_error_buf, savebuf);
+
+  return objscheme_unbundle_integer(v, "get-num-scroll-steps in tab-snip%"", extracting return value");
+  }
 }
 
 void os_wxTabSnip::SetAdmin(class wxSnipAdmin* x0)
@@ -3964,6 +4410,70 @@ wxTabSnip::GetExtent(x0, x1, x2, x3, x4, x5, x6, x7, x8);
 }
 
 #pragma argsused
+static Scheme_Object *os_wxTabSnipGetScrollStepOffset(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  float r;
+  objscheme_check_valid(obj);
+  long x0;
+
+  
+  x0 = objscheme_unbundle_integer(p[0], "get-scroll-step-offset in tab-snip%");
+
+  
+  if (((Scheme_Class_Object *)obj)->primflag)
+    r = ((os_wxTabSnip *)((Scheme_Class_Object *)obj)->primdata)->wxTabSnip::GetScrollStepOffset(x0);
+  else
+    r = ((wxTabSnip *)((Scheme_Class_Object *)obj)->primdata)->GetScrollStepOffset(x0);
+
+  
+  
+  return scheme_make_double(r);
+}
+
+#pragma argsused
+static Scheme_Object *os_wxTabSnipFindScrollStep(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  long r;
+  objscheme_check_valid(obj);
+  float x0;
+
+  
+  x0 = objscheme_unbundle_float(p[0], "find-scroll-step in tab-snip%");
+
+  
+  if (((Scheme_Class_Object *)obj)->primflag)
+    r = ((os_wxTabSnip *)((Scheme_Class_Object *)obj)->primdata)->wxTabSnip::FindScrollStep(x0);
+  else
+    r = ((wxTabSnip *)((Scheme_Class_Object *)obj)->primdata)->FindScrollStep(x0);
+
+  
+  
+  return scheme_make_integer(r);
+}
+
+#pragma argsused
+static Scheme_Object *os_wxTabSnipGetNumScrollSteps(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  long r;
+  objscheme_check_valid(obj);
+
+  
+
+  
+  if (((Scheme_Class_Object *)obj)->primflag)
+    r = ((os_wxTabSnip *)((Scheme_Class_Object *)obj)->primdata)->wxTabSnip::GetNumScrollSteps();
+  else
+    r = ((wxTabSnip *)((Scheme_Class_Object *)obj)->primdata)->GetNumScrollSteps();
+
+  
+  
+  return scheme_make_integer(r);
+}
+
+#pragma argsused
 static Scheme_Object *os_wxTabSnipSetAdmin(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -4553,8 +5063,11 @@ void objscheme_setup_wxTabSnip(void *env)
 if (os_wxTabSnip_class) {
     objscheme_add_global_class(os_wxTabSnip_class, "tab-snip%", env);
 } else {
-  os_wxTabSnip_class = objscheme_def_prim_class(env, "tab-snip%", "text-snip%", os_wxTabSnip_ConstructScheme, 19);
+  os_wxTabSnip_class = objscheme_def_prim_class(env, "tab-snip%", "text-snip%", os_wxTabSnip_ConstructScheme, 22);
 
+ scheme_add_method_w_arity(os_wxTabSnip_class, "get-scroll-step-offset", os_wxTabSnipGetScrollStepOffset, 1, 1);
+ scheme_add_method_w_arity(os_wxTabSnip_class, "find-scroll-step", os_wxTabSnipFindScrollStep, 1, 1);
+ scheme_add_method_w_arity(os_wxTabSnip_class, "get-num-scroll-steps", os_wxTabSnipGetNumScrollSteps, 0, 0);
  scheme_add_method_w_arity(os_wxTabSnip_class, "set-admin", os_wxTabSnipSetAdmin, 1, 1);
  scheme_add_method_w_arity(os_wxTabSnip_class, "resize", os_wxTabSnipResize, 2, 2);
  scheme_add_method_w_arity(os_wxTabSnip_class, "write", os_wxTabSnipWrite, 1, 1);
@@ -4719,6 +5232,9 @@ class os_wxImageSnip : public wxImageSnip {
 
   os_wxImageSnip(Scheme_Object * obj, nstring x0 = NULL, int x1 = 0, Bool x2 = FALSE, Bool x3 = TRUE);
   ~os_wxImageSnip();
+  float GetScrollStepOffset(long x0);
+  long FindScrollStep(float x0);
+  long GetNumScrollSteps();
   void SetAdmin(class wxSnipAdmin* x0);
   Bool Resize(float x0, float x1);
   void Write(class wxMediaStreamOut& x0);
@@ -4753,6 +5269,107 @@ os_wxImageSnip::os_wxImageSnip(Scheme_Object * o, nstring x0, int x1, Bool x2, B
 os_wxImageSnip::~os_wxImageSnip()
 {
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
+}
+
+float os_wxImageSnip::GetScrollStepOffset(long x0)
+{
+  Scheme_Object *p[1];
+  Scheme_Object *v;
+  mz_jmp_buf savebuf;
+  Scheme_Object *method;
+  int sj;
+  static void *mcache = 0;
+
+  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxImageSnip_class, "get-scroll-step-offset", &mcache);
+  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
+    COPY_JMPBUF(savebuf, scheme_error_buf);
+    sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
+  } else sj = 1;
+  if (sj) {
+return wxImageSnip::GetScrollStepOffset(x0);
+  } else {
+  
+  p[0] = scheme_make_integer(x0);
+  
+
+  v = scheme_apply(method, 1, p);
+  
+  
+  COPY_JMPBUF(scheme_error_buf, savebuf);
+
+  return objscheme_unbundle_float(v, "get-scroll-step-offset in image-snip%"", extracting return value");
+  }
+}
+
+long os_wxImageSnip::FindScrollStep(float x0)
+{
+  Scheme_Object *p[1];
+  Scheme_Object *v;
+  mz_jmp_buf savebuf;
+  Scheme_Object *method;
+  int sj;
+  static void *mcache = 0;
+
+  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxImageSnip_class, "find-scroll-step", &mcache);
+  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
+    COPY_JMPBUF(savebuf, scheme_error_buf);
+    sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
+  } else sj = 1;
+  if (sj) {
+return wxImageSnip::FindScrollStep(x0);
+  } else {
+  
+  p[0] = scheme_make_double(x0);
+  
+
+  v = scheme_apply(method, 1, p);
+  
+  
+  COPY_JMPBUF(scheme_error_buf, savebuf);
+
+  return objscheme_unbundle_integer(v, "find-scroll-step in image-snip%"", extracting return value");
+  }
+}
+
+long os_wxImageSnip::GetNumScrollSteps()
+{
+  Scheme_Object **p = NULL;
+  Scheme_Object *v;
+  mz_jmp_buf savebuf;
+  Scheme_Object *method;
+  int sj;
+  static void *mcache = 0;
+
+  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxImageSnip_class, "get-num-scroll-steps", &mcache);
+  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
+    COPY_JMPBUF(savebuf, scheme_error_buf);
+    sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
+  } else sj = 1;
+  if (sj) {
+return wxImageSnip::GetNumScrollSteps();
+  } else {
+  
+  
+
+  v = scheme_apply(method, 0, p);
+  
+  
+  COPY_JMPBUF(scheme_error_buf, savebuf);
+
+  return objscheme_unbundle_integer(v, "get-num-scroll-steps in image-snip%"", extracting return value");
+  }
 }
 
 void os_wxImageSnip::SetAdmin(class wxSnipAdmin* x0)
@@ -5554,6 +6171,70 @@ static Scheme_Object *os_wxImageSnipLoadFile(Scheme_Object *obj, int n,  Scheme_
 }
 
 #pragma argsused
+static Scheme_Object *os_wxImageSnipGetScrollStepOffset(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  float r;
+  objscheme_check_valid(obj);
+  long x0;
+
+  
+  x0 = objscheme_unbundle_integer(p[0], "get-scroll-step-offset in image-snip%");
+
+  
+  if (((Scheme_Class_Object *)obj)->primflag)
+    r = ((os_wxImageSnip *)((Scheme_Class_Object *)obj)->primdata)->wxImageSnip::GetScrollStepOffset(x0);
+  else
+    r = ((wxImageSnip *)((Scheme_Class_Object *)obj)->primdata)->GetScrollStepOffset(x0);
+
+  
+  
+  return scheme_make_double(r);
+}
+
+#pragma argsused
+static Scheme_Object *os_wxImageSnipFindScrollStep(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  long r;
+  objscheme_check_valid(obj);
+  float x0;
+
+  
+  x0 = objscheme_unbundle_float(p[0], "find-scroll-step in image-snip%");
+
+  
+  if (((Scheme_Class_Object *)obj)->primflag)
+    r = ((os_wxImageSnip *)((Scheme_Class_Object *)obj)->primdata)->wxImageSnip::FindScrollStep(x0);
+  else
+    r = ((wxImageSnip *)((Scheme_Class_Object *)obj)->primdata)->FindScrollStep(x0);
+
+  
+  
+  return scheme_make_integer(r);
+}
+
+#pragma argsused
+static Scheme_Object *os_wxImageSnipGetNumScrollSteps(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  long r;
+  objscheme_check_valid(obj);
+
+  
+
+  
+  if (((Scheme_Class_Object *)obj)->primflag)
+    r = ((os_wxImageSnip *)((Scheme_Class_Object *)obj)->primdata)->wxImageSnip::GetNumScrollSteps();
+  else
+    r = ((wxImageSnip *)((Scheme_Class_Object *)obj)->primdata)->GetNumScrollSteps();
+
+  
+  
+  return scheme_make_integer(r);
+}
+
+#pragma argsused
 static Scheme_Object *os_wxImageSnipSetAdmin(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -6163,13 +6844,16 @@ void objscheme_setup_wxImageSnip(void *env)
 if (os_wxImageSnip_class) {
     objscheme_add_global_class(os_wxImageSnip_class, "image-snip%", env);
 } else {
-  os_wxImageSnip_class = objscheme_def_prim_class(env, "image-snip%", "snip%", os_wxImageSnip_ConstructScheme, 24);
+  os_wxImageSnip_class = objscheme_def_prim_class(env, "image-snip%", "snip%", os_wxImageSnip_ConstructScheme, 27);
 
  scheme_add_method_w_arity(os_wxImageSnip_class, "set-offset", os_wxImageSnipSetOffset, 2, 2);
  scheme_add_method_w_arity(os_wxImageSnip_class, "set-bitmap", os_wxImageSnipSetBitmap, 1, 1);
  scheme_add_method_w_arity(os_wxImageSnip_class, "get-filetype", os_wxImageSnipGetFiletype, 0, 0);
  scheme_add_method_w_arity(os_wxImageSnip_class, "get-filename", os_wxImageSnipGetFilename, 1, 1);
  scheme_add_method_w_arity(os_wxImageSnip_class, "load-file", os_wxImageSnipLoadFile, 1, 4);
+ scheme_add_method_w_arity(os_wxImageSnip_class, "get-scroll-step-offset", os_wxImageSnipGetScrollStepOffset, 1, 1);
+ scheme_add_method_w_arity(os_wxImageSnip_class, "find-scroll-step", os_wxImageSnipFindScrollStep, 1, 1);
+ scheme_add_method_w_arity(os_wxImageSnip_class, "get-num-scroll-steps", os_wxImageSnipGetNumScrollSteps, 0, 0);
  scheme_add_method_w_arity(os_wxImageSnip_class, "set-admin", os_wxImageSnipSetAdmin, 1, 1);
  scheme_add_method_w_arity(os_wxImageSnip_class, "resize", os_wxImageSnipResize, 2, 2);
  scheme_add_method_w_arity(os_wxImageSnip_class, "write", os_wxImageSnipWrite, 1, 1);
@@ -6271,6 +6955,9 @@ class os_wxMediaSnip : public wxMediaSnip {
 
   os_wxMediaSnip(Scheme_Object * obj, class wxMediaBuffer* x0 = NULL, Bool x1 = TRUE, int x2 = wxMSNIPBOX_XMARGIN, int x3 = wxMSNIPBOX_YMARGIN, int x4 = wxMSNIPBOX_XMARGIN, int x5 = wxMSNIPBOX_YMARGIN, int x6 = wxMSNIPBOX_XINSET, int x7 = wxMSNIPBOX_YINSET, int x8 = wxMSNIPBOX_XINSET, int x9 = wxMSNIPBOX_YINSET, int x10 = -1, int x11 = -1, int x12 = -1, int x13 = -1);
   ~os_wxMediaSnip();
+  float GetScrollStepOffset(long x0);
+  long FindScrollStep(float x0);
+  long GetNumScrollSteps();
   void SetAdmin(class wxSnipAdmin* x0);
   Bool Resize(float x0, float x1);
   void Write(class wxMediaStreamOut& x0);
@@ -6305,6 +6992,107 @@ os_wxMediaSnip::os_wxMediaSnip(Scheme_Object * o, class wxMediaBuffer* x0, Bool 
 os_wxMediaSnip::~os_wxMediaSnip()
 {
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
+}
+
+float os_wxMediaSnip::GetScrollStepOffset(long x0)
+{
+  Scheme_Object *p[1];
+  Scheme_Object *v;
+  mz_jmp_buf savebuf;
+  Scheme_Object *method;
+  int sj;
+  static void *mcache = 0;
+
+  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaSnip_class, "get-scroll-step-offset", &mcache);
+  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
+    COPY_JMPBUF(savebuf, scheme_error_buf);
+    sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
+  } else sj = 1;
+  if (sj) {
+return wxMediaSnip::GetScrollStepOffset(x0);
+  } else {
+  
+  p[0] = scheme_make_integer(x0);
+  
+
+  v = scheme_apply(method, 1, p);
+  
+  
+  COPY_JMPBUF(scheme_error_buf, savebuf);
+
+  return objscheme_unbundle_float(v, "get-scroll-step-offset in editor-snip%"", extracting return value");
+  }
+}
+
+long os_wxMediaSnip::FindScrollStep(float x0)
+{
+  Scheme_Object *p[1];
+  Scheme_Object *v;
+  mz_jmp_buf savebuf;
+  Scheme_Object *method;
+  int sj;
+  static void *mcache = 0;
+
+  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaSnip_class, "find-scroll-step", &mcache);
+  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
+    COPY_JMPBUF(savebuf, scheme_error_buf);
+    sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
+  } else sj = 1;
+  if (sj) {
+return wxMediaSnip::FindScrollStep(x0);
+  } else {
+  
+  p[0] = scheme_make_double(x0);
+  
+
+  v = scheme_apply(method, 1, p);
+  
+  
+  COPY_JMPBUF(scheme_error_buf, savebuf);
+
+  return objscheme_unbundle_integer(v, "find-scroll-step in editor-snip%"", extracting return value");
+  }
+}
+
+long os_wxMediaSnip::GetNumScrollSteps()
+{
+  Scheme_Object **p = NULL;
+  Scheme_Object *v;
+  mz_jmp_buf savebuf;
+  Scheme_Object *method;
+  int sj;
+  static void *mcache = 0;
+
+  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaSnip_class, "get-num-scroll-steps", &mcache);
+  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
+    COPY_JMPBUF(savebuf, scheme_error_buf);
+    sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
+  } else sj = 1;
+  if (sj) {
+return wxMediaSnip::GetNumScrollSteps();
+  } else {
+  
+  
+
+  v = scheme_apply(method, 0, p);
+  
+  
+  COPY_JMPBUF(scheme_error_buf, savebuf);
+
+  return objscheme_unbundle_integer(v, "get-num-scroll-steps in editor-snip%"", extracting return value");
+  }
 }
 
 void os_wxMediaSnip::SetAdmin(class wxSnipAdmin* x0)
@@ -7288,6 +8076,70 @@ static Scheme_Object *os_wxMediaSnipSetMaxWidth(Scheme_Object *obj, int n,  Sche
 }
 
 #pragma argsused
+static Scheme_Object *os_wxMediaSnipGetScrollStepOffset(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  float r;
+  objscheme_check_valid(obj);
+  long x0;
+
+  
+  x0 = objscheme_unbundle_integer(p[0], "get-scroll-step-offset in editor-snip%");
+
+  
+  if (((Scheme_Class_Object *)obj)->primflag)
+    r = ((os_wxMediaSnip *)((Scheme_Class_Object *)obj)->primdata)->wxMediaSnip::GetScrollStepOffset(x0);
+  else
+    r = ((wxMediaSnip *)((Scheme_Class_Object *)obj)->primdata)->GetScrollStepOffset(x0);
+
+  
+  
+  return scheme_make_double(r);
+}
+
+#pragma argsused
+static Scheme_Object *os_wxMediaSnipFindScrollStep(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  long r;
+  objscheme_check_valid(obj);
+  float x0;
+
+  
+  x0 = objscheme_unbundle_float(p[0], "find-scroll-step in editor-snip%");
+
+  
+  if (((Scheme_Class_Object *)obj)->primflag)
+    r = ((os_wxMediaSnip *)((Scheme_Class_Object *)obj)->primdata)->wxMediaSnip::FindScrollStep(x0);
+  else
+    r = ((wxMediaSnip *)((Scheme_Class_Object *)obj)->primdata)->FindScrollStep(x0);
+
+  
+  
+  return scheme_make_integer(r);
+}
+
+#pragma argsused
+static Scheme_Object *os_wxMediaSnipGetNumScrollSteps(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  long r;
+  objscheme_check_valid(obj);
+
+  
+
+  
+  if (((Scheme_Class_Object *)obj)->primflag)
+    r = ((os_wxMediaSnip *)((Scheme_Class_Object *)obj)->primdata)->wxMediaSnip::GetNumScrollSteps();
+  else
+    r = ((wxMediaSnip *)((Scheme_Class_Object *)obj)->primdata)->GetNumScrollSteps();
+
+  
+  
+  return scheme_make_integer(r);
+}
+
+#pragma argsused
 static Scheme_Object *os_wxMediaSnipSetAdmin(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -7982,7 +8834,7 @@ void objscheme_setup_wxMediaSnip(void *env)
 if (os_wxMediaSnip_class) {
     objscheme_add_global_class(os_wxMediaSnip_class, "editor-snip%", env);
 } else {
-  os_wxMediaSnip_class = objscheme_def_prim_class(env, "editor-snip%", "snip%", os_wxMediaSnip_ConstructScheme, 35);
+  os_wxMediaSnip_class = objscheme_def_prim_class(env, "editor-snip%", "snip%", os_wxMediaSnip_ConstructScheme, 38);
 
  scheme_add_method_w_arity(os_wxMediaSnip_class, "get-inset", os_wxMediaSnipGetInset, 4, 4);
  scheme_add_method_w_arity(os_wxMediaSnip_class, "set-inset", os_wxMediaSnipSetInset, 4, 4);
@@ -7998,6 +8850,9 @@ if (os_wxMediaSnip_class) {
  scheme_add_method_w_arity(os_wxMediaSnip_class, "get-max-width", os_wxMediaSnipGetMaxWidth, 0, 0);
  scheme_add_method_w_arity(os_wxMediaSnip_class, "set-max-height", os_wxMediaSnipSetMaxHeight, 1, 1);
  scheme_add_method_w_arity(os_wxMediaSnip_class, "set-max-width", os_wxMediaSnipSetMaxWidth, 1, 1);
+ scheme_add_method_w_arity(os_wxMediaSnip_class, "get-scroll-step-offset", os_wxMediaSnipGetScrollStepOffset, 1, 1);
+ scheme_add_method_w_arity(os_wxMediaSnip_class, "find-scroll-step", os_wxMediaSnipFindScrollStep, 1, 1);
+ scheme_add_method_w_arity(os_wxMediaSnip_class, "get-num-scroll-steps", os_wxMediaSnipGetNumScrollSteps, 0, 0);
  scheme_add_method_w_arity(os_wxMediaSnip_class, "set-admin", os_wxMediaSnipSetAdmin, 1, 1);
  scheme_add_method_w_arity(os_wxMediaSnip_class, "resize", os_wxMediaSnipResize, 2, 2);
  scheme_add_method_w_arity(os_wxMediaSnip_class, "write", os_wxMediaSnipWrite, 1, 1);
@@ -8141,7 +8996,7 @@ return NULL;
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_wxBufferData(v, "read in buffer-data-class%"", extracting return value", 1);
+  return objscheme_unbundle_wxBufferData(v, "read in editor-data-class%"", extracting return value", 1);
   }
 }
 
@@ -8154,7 +9009,7 @@ static Scheme_Object *os_wxBufferDataClassRead(Scheme_Object *obj, int n,  Schem
   class wxMediaStreamIn* x0;
 
   
-  x0 = objscheme_unbundle_wxMediaStreamIn(p[0], "read in buffer-data-class%", 0);
+  x0 = objscheme_unbundle_wxMediaStreamIn(p[0], "read in editor-data-class%", 0);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -8173,7 +9028,7 @@ static Scheme_Object *objscheme_wxBufferDataClass_Getclassname(Scheme_Object *ob
   string v;
 
   objscheme_check_valid(obj);
-  if (n) scheme_wrong_count("get-classname in buffer-data-class%", 0, 0, n, p);
+  if (n) scheme_wrong_count("get-classname in editor-data-class%", 0, 0, n, p);
   cobj = (Scheme_Class_Object *)obj;
   if (cobj->primflag)
     v = ((os_wxBufferDataClass *)cobj->primdata)->wxBufferDataClass::classname;
@@ -8189,9 +9044,9 @@ static Scheme_Object *objscheme_wxBufferDataClass_Setclassname(Scheme_Object *ob
   Scheme_Class_Object *cobj=(Scheme_Class_Object *)obj;
   string v;
 
-  if (n != 1) scheme_wrong_count("set-classname in buffer-data-class%", 1, 1, n, p);
+  if (n != 1) scheme_wrong_count("set-classname in editor-data-class%", 1, 1, n, p);
 
-  v = (string)objscheme_unbundle_string(p[0], "set-classname in buffer-data-class%");
+  v = (string)objscheme_unbundle_string(p[0], "set-classname in editor-data-class%");
   ((wxBufferDataClass *)cobj->primdata)->classname = v;
 
   return scheme_void;
@@ -8203,7 +9058,7 @@ static Scheme_Object *objscheme_wxBufferDataClass_Getrequired(Scheme_Object *obj
   Bool v;
 
   objscheme_check_valid(obj);
-  if (n) scheme_wrong_count("get-required in buffer-data-class%", 0, 0, n, p);
+  if (n) scheme_wrong_count("get-required in editor-data-class%", 0, 0, n, p);
   cobj = (Scheme_Class_Object *)obj;
   if (cobj->primflag)
     v = ((os_wxBufferDataClass *)cobj->primdata)->wxBufferDataClass::required;
@@ -8219,9 +9074,9 @@ static Scheme_Object *objscheme_wxBufferDataClass_Setrequired(Scheme_Object *obj
   Scheme_Class_Object *cobj=(Scheme_Class_Object *)obj;
   Bool v;
 
-  if (n != 1) scheme_wrong_count("set-required in buffer-data-class%", 1, 1, n, p);
+  if (n != 1) scheme_wrong_count("set-required in editor-data-class%", 1, 1, n, p);
 
-  v = objscheme_unbundle_bool(p[0], "set-required in buffer-data-class%");
+  v = objscheme_unbundle_bool(p[0], "set-required in editor-data-class%");
   ((wxBufferDataClass *)cobj->primdata)->required = v;
 
   return scheme_void;
@@ -8234,7 +9089,7 @@ static Scheme_Object *os_wxBufferDataClass_ConstructScheme(Scheme_Object *obj, i
 
   
   if (n != 0) 
-    scheme_wrong_count("initialization in buffer-data-class%", 0, 0, n, p);
+    scheme_wrong_count("initialization in editor-data-class%", 0, 0, n, p);
 
   
   realobj = new os_wxBufferDataClass(obj);
@@ -8249,9 +9104,9 @@ static Scheme_Object *os_wxBufferDataClass_ConstructScheme(Scheme_Object *obj, i
 void objscheme_setup_wxBufferDataClass(void *env)
 {
 if (os_wxBufferDataClass_class) {
-    objscheme_add_global_class(os_wxBufferDataClass_class, "buffer-data-class%", env);
+    objscheme_add_global_class(os_wxBufferDataClass_class, "editor-data-class%", env);
 } else {
-  os_wxBufferDataClass_class = objscheme_def_prim_class(env, "buffer-data-class%", "object%", os_wxBufferDataClass_ConstructScheme, 5);
+  os_wxBufferDataClass_class = objscheme_def_prim_class(env, "editor-data-class%", "object%", os_wxBufferDataClass_ConstructScheme, 5);
 
  scheme_add_method_w_arity(os_wxBufferDataClass_class, "read", os_wxBufferDataClassRead, 1, 1);
 
@@ -8276,7 +9131,7 @@ int objscheme_istype_wxBufferDataClass(Scheme_Object *obj, const char *stop, int
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, nullOK ? "buffer-data-class% object or " XC_NULL_STR: "buffer-data-class% object", -1, 0, &obj);
+    scheme_wrong_type(stop, nullOK ? "editor-data-class% object or " XC_NULL_STR: "editor-data-class% object", -1, 0, &obj);
     return 0;
   }
 }
@@ -8352,7 +9207,7 @@ static Scheme_Object *os_wxBufferDataClassListNth(Scheme_Object *obj, int n,  Sc
   int x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "nth in buffer-data-class-list%");
+  x0 = objscheme_unbundle_integer(p[0], "nth in editor-data-class-list%");
 
   
   r = ((wxBufferDataClassList *)((Scheme_Class_Object *)obj)->primdata)->Nth(x0);
@@ -8387,7 +9242,7 @@ static Scheme_Object *os_wxBufferDataClassListAdd(Scheme_Object *obj, int n,  Sc
   class wxBufferDataClass* x0;
 
   
-  x0 = objscheme_unbundle_wxBufferDataClass(p[0], "add in buffer-data-class-list%", 0);
+  x0 = objscheme_unbundle_wxBufferDataClass(p[0], "add in editor-data-class-list%", 0);
 
   
   ((wxBufferDataClassList *)((Scheme_Class_Object *)obj)->primdata)->Add(x0);
@@ -8406,7 +9261,7 @@ static Scheme_Object *os_wxBufferDataClassListFindPosition(Scheme_Object *obj, i
   class wxBufferDataClass* x0;
 
   
-  x0 = objscheme_unbundle_wxBufferDataClass(p[0], "find-position in buffer-data-class-list%", 0);
+  x0 = objscheme_unbundle_wxBufferDataClass(p[0], "find-position in editor-data-class-list%", 0);
 
   
   r = ((wxBufferDataClassList *)((Scheme_Class_Object *)obj)->primdata)->FindPosition(x0);
@@ -8425,7 +9280,7 @@ static Scheme_Object *os_wxBufferDataClassListFind(Scheme_Object *obj, int n,  S
   string x0;
 
   
-  x0 = (string)objscheme_unbundle_string(p[0], "find in buffer-data-class-list%");
+  x0 = (string)objscheme_unbundle_string(p[0], "find in editor-data-class-list%");
 
   
   r = ((wxBufferDataClassList *)((Scheme_Class_Object *)obj)->primdata)->Find(x0);
@@ -8442,7 +9297,7 @@ static Scheme_Object *os_wxBufferDataClassList_ConstructScheme(Scheme_Object *ob
 
   
   if (n != 0) 
-    scheme_wrong_count("initialization in buffer-data-class-list%", 0, 0, n, p);
+    scheme_wrong_count("initialization in editor-data-class-list%", 0, 0, n, p);
 
   
   realobj = new os_wxBufferDataClassList(obj);
@@ -8457,9 +9312,9 @@ static Scheme_Object *os_wxBufferDataClassList_ConstructScheme(Scheme_Object *ob
 void objscheme_setup_wxBufferDataClassList(void *env)
 {
 if (os_wxBufferDataClassList_class) {
-    objscheme_add_global_class(os_wxBufferDataClassList_class, "buffer-data-class-list%", env);
+    objscheme_add_global_class(os_wxBufferDataClassList_class, "editor-data-class-list%", env);
 } else {
-  os_wxBufferDataClassList_class = objscheme_def_prim_class(env, "buffer-data-class-list%", "object%", os_wxBufferDataClassList_ConstructScheme, 5);
+  os_wxBufferDataClassList_class = objscheme_def_prim_class(env, "editor-data-class-list%", "object%", os_wxBufferDataClassList_ConstructScheme, 5);
 
  scheme_add_method_w_arity(os_wxBufferDataClassList_class, "nth", os_wxBufferDataClassListNth, 1, 1);
  scheme_add_method_w_arity(os_wxBufferDataClassList_class, "number", os_wxBufferDataClassListNumber, 0, 0);
@@ -8484,7 +9339,7 @@ int objscheme_istype_wxBufferDataClassList(Scheme_Object *obj, const char *stop,
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, nullOK ? "buffer-data-class-list% object or " XC_NULL_STR: "buffer-data-class-list% object", -1, 0, &obj);
+    scheme_wrong_type(stop, nullOK ? "editor-data-class-list% object or " XC_NULL_STR: "editor-data-class-list% object", -1, 0, &obj);
     return 0;
   }
 }
@@ -8583,7 +9438,7 @@ return 0;
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_bool(v, "write in buffer-data%"", extracting return value");
+  return objscheme_unbundle_bool(v, "write in editor-data%"", extracting return value");
   }
 }
 
@@ -8596,7 +9451,7 @@ static Scheme_Object *os_wxBufferDataWrite(Scheme_Object *obj, int n,  Scheme_Ob
   class wxMediaStreamOut* x0;
 
   
-  x0 = objscheme_unbundle_wxMediaStreamOut(p[0], "write in buffer-data%", 0);
+  x0 = objscheme_unbundle_wxMediaStreamOut(p[0], "write in editor-data%", 0);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -8615,7 +9470,7 @@ static Scheme_Object *objscheme_wxBufferData_Getdataclass(Scheme_Object *obj, in
   class wxBufferDataClass* v;
 
   objscheme_check_valid(obj);
-  if (n) scheme_wrong_count("get-dataclass in buffer-data%", 0, 0, n, p);
+  if (n) scheme_wrong_count("get-dataclass in editor-data%", 0, 0, n, p);
   cobj = (Scheme_Class_Object *)obj;
   if (cobj->primflag)
     v = ((os_wxBufferData *)cobj->primdata)->wxBufferData::dataclass;
@@ -8631,9 +9486,9 @@ static Scheme_Object *objscheme_wxBufferData_Setdataclass(Scheme_Object *obj, in
   Scheme_Class_Object *cobj=(Scheme_Class_Object *)obj;
   class wxBufferDataClass* v;
 
-  if (n != 1) scheme_wrong_count("set-dataclass in buffer-data%", 1, 1, n, p);
+  if (n != 1) scheme_wrong_count("set-dataclass in editor-data%", 1, 1, n, p);
 
-  v = objscheme_unbundle_wxBufferDataClass(p[0], "set-dataclass in buffer-data%", 1);
+  v = objscheme_unbundle_wxBufferDataClass(p[0], "set-dataclass in editor-data%", 1);
   ((wxBufferData *)cobj->primdata)->dataclass = v;
 
   return scheme_void;
@@ -8645,7 +9500,7 @@ static Scheme_Object *objscheme_wxBufferData_Getnext(Scheme_Object *obj, int n, 
   class wxBufferData* v;
 
   objscheme_check_valid(obj);
-  if (n) scheme_wrong_count("get-next in buffer-data%", 0, 0, n, p);
+  if (n) scheme_wrong_count("get-next in editor-data%", 0, 0, n, p);
   cobj = (Scheme_Class_Object *)obj;
   if (cobj->primflag)
     v = ((os_wxBufferData *)cobj->primdata)->wxBufferData::next;
@@ -8661,9 +9516,9 @@ static Scheme_Object *objscheme_wxBufferData_Setnext(Scheme_Object *obj, int n, 
   Scheme_Class_Object *cobj=(Scheme_Class_Object *)obj;
   class wxBufferData* v;
 
-  if (n != 1) scheme_wrong_count("set-next in buffer-data%", 1, 1, n, p);
+  if (n != 1) scheme_wrong_count("set-next in editor-data%", 1, 1, n, p);
 
-  v = objscheme_unbundle_wxBufferData(p[0], "set-next in buffer-data%", 1);
+  v = objscheme_unbundle_wxBufferData(p[0], "set-next in editor-data%", 1);
   ((wxBufferData *)cobj->primdata)->next = v;
 
   return scheme_void;
@@ -8676,7 +9531,7 @@ static Scheme_Object *os_wxBufferData_ConstructScheme(Scheme_Object *obj, int n,
 
   
   if (n != 0) 
-    scheme_wrong_count("initialization in buffer-data%", 0, 0, n, p);
+    scheme_wrong_count("initialization in editor-data%", 0, 0, n, p);
 
   
   realobj = new os_wxBufferData(obj);
@@ -8691,9 +9546,9 @@ static Scheme_Object *os_wxBufferData_ConstructScheme(Scheme_Object *obj, int n,
 void objscheme_setup_wxBufferData(void *env)
 {
 if (os_wxBufferData_class) {
-    objscheme_add_global_class(os_wxBufferData_class, "buffer-data%", env);
+    objscheme_add_global_class(os_wxBufferData_class, "editor-data%", env);
 } else {
-  os_wxBufferData_class = objscheme_def_prim_class(env, "buffer-data%", "object%", os_wxBufferData_ConstructScheme, 5);
+  os_wxBufferData_class = objscheme_def_prim_class(env, "editor-data%", "object%", os_wxBufferData_ConstructScheme, 5);
 
  scheme_add_method_w_arity(os_wxBufferData_class, "write", os_wxBufferDataWrite, 1, 1);
 
@@ -8718,7 +9573,7 @@ int objscheme_istype_wxBufferData(Scheme_Object *obj, const char *stop, int null
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, nullOK ? "buffer-data% object or " XC_NULL_STR: "buffer-data% object", -1, 0, &obj);
+    scheme_wrong_type(stop, nullOK ? "editor-data% object or " XC_NULL_STR: "editor-data% object", -1, 0, &obj);
     return 0;
   }
 }

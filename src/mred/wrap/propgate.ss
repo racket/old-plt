@@ -8,9 +8,9 @@
  bitmap%
  brush%
  brush-list%
- buffer-data%
- buffer-data-class%
- buffer-data-class-list%
+ editor-data%
+ editor-data-class%
+ editor-data-class-list%
  canvas-dc%
  check-for-break
  clipboard%
@@ -41,7 +41,7 @@
  get-face-list
  get-editor-print-margin
  get-resource
- get-the-buffer-data-class-list
+ get-the-editor-data-class-list
  get-the-snip-class-list
  icon%
  id-to-menu-item
@@ -54,7 +54,6 @@
  make-eventspace
  make-meta-file-placeable
  editor-admin%
- editor<%>
  editor-set-x-selection-mode
  editor-snip-editor-admin%
  editor-stream-in%

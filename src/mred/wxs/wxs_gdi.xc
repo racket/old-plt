@@ -219,10 +219,10 @@
 @ "get-join" : SYM[join] GetJoin();
 @ "set-join" : void SetJoin(SYM[join]);
 
-@ "get-colour" : wxColour% GetColour();
-@ "set-colour" : void SetColour(wxColour%);  : : /CHECKMUT[wxPen."pen".METHODNAME("pen%","set-colour")] <> color%
-@ "set-colour" : void SetColour(string);  : : /CHECKMUT[wxPen."pen".METHODNAME("pen%","set-colour")] <> color name
-@ "set-colour" : void SetColour(int,int,int);  : : /CHECKMUT[wxPen."pen".METHODNAME("pen%","set-colour")] <> rgb values
+@ "get-color" : wxColour% GetColour();
+@ "set-color" : void SetColour(wxColour%);  : : /CHECKMUT[wxPen."pen".METHODNAME("pen%","set-colour")] <> color%
+@ "set-color" : void SetColour(string);  : : /CHECKMUT[wxPen."pen".METHODNAME("pen%","set-colour")] <> color name
+@ "set-color" : void SetColour(int,int,int);  : : /CHECKMUT[wxPen."pen".METHODNAME("pen%","set-colour")] <> rgb values
 
 @ "get-stipple" : wxBitmap! GetStipple();
 @ "set-stipple" : void SetStipple(wxBitmap^); : : /CHECKVOIDABLEOK[0]|CHECKMUT[wxPen."pen".METHODNAME("pen%","set-stipple")]

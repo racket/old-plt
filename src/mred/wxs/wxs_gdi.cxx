@@ -2365,8 +2365,8 @@ static Scheme_Object *os_wxPenSetColour(Scheme_Object *obj, int n,  Scheme_Objec
 
     
     if (n != 1) 
-      scheme_wrong_count("set-colour in pen% (color% case)", 1, 1, n, p);
-    x0 = objscheme_unbundle_wxColour(p[0], "set-colour in pen% (color% case)", 0);
+      scheme_wrong_count("set-color in pen% (color% case)", 1, 1, n, p);
+    x0 = objscheme_unbundle_wxColour(p[0], "set-color in pen% (color% case)", 0);
 
     if (!((wxPen *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) scheme_signal_error("%s: this %s%% object is locked (in use by a dc%% or in a list of %s constants)", METHODNAME("pen%","set-colour"), "pen", "pen");
     ((wxPen *)((Scheme_Class_Object *)obj)->primdata)->SetColour(*x0);
@@ -2378,8 +2378,8 @@ static Scheme_Object *os_wxPenSetColour(Scheme_Object *obj, int n,  Scheme_Objec
 
     
     if (n != 1) 
-      scheme_wrong_count("set-colour in pen% (color name case)", 1, 1, n, p);
-    x0 = (string)objscheme_unbundle_string(p[0], "set-colour in pen% (color name case)");
+      scheme_wrong_count("set-color in pen% (color name case)", 1, 1, n, p);
+    x0 = (string)objscheme_unbundle_string(p[0], "set-color in pen% (color name case)");
 
     if (!((wxPen *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) scheme_signal_error("%s: this %s%% object is locked (in use by a dc%% or in a list of %s constants)", METHODNAME("pen%","set-colour"), "pen", "pen");
     ((wxPen *)((Scheme_Class_Object *)obj)->primdata)->SetColour(x0);
@@ -2393,10 +2393,10 @@ static Scheme_Object *os_wxPenSetColour(Scheme_Object *obj, int n,  Scheme_Objec
 
     
     if (n != 3) 
-      scheme_wrong_count("set-colour in pen% (rgb values case)", 3, 3, n, p);
-    x0 = objscheme_unbundle_integer(p[0], "set-colour in pen% (rgb values case)");
-    x1 = objscheme_unbundle_integer(p[1], "set-colour in pen% (rgb values case)");
-    x2 = objscheme_unbundle_integer(p[2], "set-colour in pen% (rgb values case)");
+      scheme_wrong_count("set-color in pen% (rgb values case)", 3, 3, n, p);
+    x0 = objscheme_unbundle_integer(p[0], "set-color in pen% (rgb values case)");
+    x1 = objscheme_unbundle_integer(p[1], "set-color in pen% (rgb values case)");
+    x2 = objscheme_unbundle_integer(p[2], "set-color in pen% (rgb values case)");
 
     if (!((wxPen *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) scheme_signal_error("%s: this %s%% object is locked (in use by a dc%% or in a list of %s constants)", METHODNAME("pen%","set-colour"), "pen", "pen");
     ((wxPen *)((Scheme_Class_Object *)obj)->primdata)->SetColour(x0, x1, x2);
@@ -2595,8 +2595,8 @@ if (os_wxPen_class) {
  scheme_add_method_w_arity(os_wxPen_class, "get-style", os_wxPenGetStyle, 0, 0);
  scheme_add_method_w_arity(os_wxPen_class, "set-stipple", os_wxPenSetStipple, 1, 1);
  scheme_add_method_w_arity(os_wxPen_class, "get-stipple", os_wxPenGetStipple, 0, 0);
- scheme_add_method(os_wxPen_class, "set-colour", os_wxPenSetColour);
- scheme_add_method_w_arity(os_wxPen_class, "get-colour", os_wxPenGetColour, 0, 0);
+ scheme_add_method(os_wxPen_class, "set-color", os_wxPenSetColour);
+ scheme_add_method_w_arity(os_wxPen_class, "get-color", os_wxPenGetColour, 0, 0);
  scheme_add_method_w_arity(os_wxPen_class, "set-join", os_wxPenSetJoin, 1, 1);
  scheme_add_method_w_arity(os_wxPen_class, "get-join", os_wxPenGetJoin, 0, 0);
  scheme_add_method_w_arity(os_wxPen_class, "set-cap", os_wxPenSetCap, 1, 1);

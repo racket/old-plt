@@ -22,12 +22,15 @@
  area<%>
  top-level-window<%>
  subarea<%>
+ subwindow<%>
  area-container<%>
  area-container-window<%>
  canvas<%>
  control<%>
+ list-control<%>
  menu-item<%>
  separator-menu-item%
+ shortcut-menu-item<%>
  labelled-menu-item<%>
  menu-item%
  checkable-menu-item%
@@ -38,6 +41,7 @@
  popup-menu%
  get-top-level-windows
  editor-snip%
+ editor<%>
  text%
  pasteboard%
  graphical-read-eval-print-loop

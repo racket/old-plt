@@ -4801,7 +4801,7 @@ static Scheme_Object *wxMediaGlobalwxGetMediaPrintMargin(int n,  Scheme_Object *
 
 void objscheme_setup_wxMediaGlobal(void *env)
 {
-  scheme_install_xc_global("get-the-buffer-data-class-list", scheme_make_prim_w_arity(wxMediaGlobalwxGetTheBufferDataClassList, "get-the-buffer-data-class-list", 0, 0), env);
+  scheme_install_xc_global("get-the-editor-data-class-list", scheme_make_prim_w_arity(wxMediaGlobalwxGetTheBufferDataClassList, "get-the-editor-data-class-list", 0, 0), env);
   scheme_install_xc_global("get-the-snip-class-list", scheme_make_prim_w_arity(wxMediaGlobalwxGetTheSnipClassList, "get-the-snip-class-list", 0, 0), env);
   scheme_install_xc_global("editor-set-x-selection-mode", scheme_make_prim_w_arity(wxMediaGlobalwxMediaSetXSelectionMode, "editor-set-x-selection-mode", 1, 1), env);
   scheme_install_xc_global("add-pasteboard-keymap-functions", scheme_make_prim_w_arity(wxMediaGlobalwxAddMediaPasteboardFunctions, "add-pasteboard-keymap-functions", 1, 1), env);

@@ -197,6 +197,6 @@ static void *wxbDCToBuffer(wxMediaBuffer *b, double x, double y)
 @ "editor-set-x-selection-mode" : void wxMediaSetXSelectionMode(bool);
 
 @ "get-the-snip-class-list" : wxSnipClassList! wxGetTheSnipClassList()
-@ "get-the-buffer-data-class-list" : wxBufferDataClassList! wxGetTheBufferDataClassList()
+@ "get-the-editor-data-class-list" : wxBufferDataClassList! wxGetTheBufferDataClassList()
 
 @END

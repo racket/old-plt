@@ -50,6 +50,7 @@ void objscheme_setup_basePrinterDC(void *env);
 int objscheme_istype_basePrinterDC(Scheme_Object *obj, const char *stop, int nullOK);
 Scheme_Object *objscheme_bundle_basePrinterDC(class basePrinterDC *realobj);
 class basePrinterDC *objscheme_unbundle_basePrinterDC(Scheme_Object *obj, const char *where, int nullOK);
+extern Scheme_Object *objscheme_bundle_baseMetaFile(class baseMetaFile *);
 #endif
 void objscheme_setup_baseMetaFileDC(void *env);
 #ifndef WXS_SETUP_ONLY

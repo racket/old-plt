@@ -2411,7 +2411,7 @@ if (os_wxStyle_class) {
  scheme_add_method_w_arity(os_wxStyle_class, "get-text-height", os_wxStyleGetTextHeight, 1, 1);
  scheme_add_method_w_arity(os_wxStyle_class, "get-transparent-text-backing", os_wxStyleGetTransparentTextBacking, 0, 0);
  scheme_add_method_w_arity(os_wxStyle_class, "get-alignment", os_wxStyleGetAlignment, 0, 0);
- scheme_add_method_w_arity(os_wxStyle_class, "get-colour", os_wxStyleGetBackground, 0, 0);
+ scheme_add_method_w_arity(os_wxStyle_class, "get-background", os_wxStyleGetBackground, 0, 0);
  scheme_add_method_w_arity(os_wxStyle_class, "get-foreground", os_wxStyleGetForeground, 0, 0);
  scheme_add_method_w_arity(os_wxStyle_class, "get-font", os_wxStyleGetFont, 0, 0);
  scheme_add_method_w_arity(os_wxStyle_class, "get-underlined", os_wxStyleGetUnderlined, 0, 0);

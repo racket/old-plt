@@ -79,7 +79,7 @@ static wxColour* dcGetTextForeground(wxDC *dc)
 
 @ Q "blit" : bool Blit(float,float,float,float,wxCanvasDC!,float,float,SYM[logicalFunc]=wxCOPY); : : /CheckOkFalse|CheckFalse[4] : : rFALSE
 
-@ Q "try-colour" : void TryColour(wxColour!,wxColour!);
+@ Q "try-color" : void TryColour(wxColour!,wxColour!);
 
 // @ Q "set-map-mode" : void SetMapMode(SYM[mapMode]); : : /CheckOk
 @ Q "set-background-mode" : void SetBackgroundMode(SYM[solidity]); :  : /CheckOk
@@ -190,6 +190,8 @@ public:
 class baseMetaFileDC : public wxMetaFileDC {
 public:
   baseMetaFileDC(char *s = NULL);
+
+  baseMetaFile* baseClose() { return (baseMetaFile *)close(); }
 };
 
 baseMetaFileDC::baseMetaFileDC(char *s)
@@ -205,6 +207,8 @@ public:
   baseMetaFileDC(char * = NULL) {
     scheme_signal_error("%s", METHODNAME("meta-file-dc%","initialization")": only supported for Windows");
   }
+
+  baseMetaFile* baseClose() { return NULL; }
 };
 
 #endif
@@ -214,6 +218,8 @@ public:
 @CLASSID wxTYPE_DC_METAFILE
 
 @CREATOR (string=NULL);
+
+@ "close" : baseMetaFile! baseClose()
 
 @END
 

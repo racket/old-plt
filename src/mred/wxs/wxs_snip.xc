@@ -142,7 +142,7 @@
 @MACRO rZERO = return 0;
 @MACRO rNULL = return NULL;
 
-@CLASSBASE wxBufferDataClass "buffer-data-class" : "object"
+@CLASSBASE wxBufferDataClass "editor-data-class" : "object"
 
 @CREATOR ()
 
@@ -155,7 +155,7 @@
 
 @END
 
-@CLASSBASE wxBufferDataClassList "buffer-data-class-list" : "object"
+@CLASSBASE wxBufferDataClassList "editor-data-class-list" : "object"
 
 @CREATOR ()
 
@@ -169,7 +169,7 @@
 
 @END
 
-@CLASSBASE wxBufferData "buffer-data" : "object"
+@CLASSBASE wxBufferData "editor-data" : "object"
 
 @CREATOR ()
 

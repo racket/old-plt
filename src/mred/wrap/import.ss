@@ -20,6 +20,7 @@
  window%
  get-top-level-windows
  editor-snip%
+ editor<%>
  text%
  pasteboard%
  play-sound

@@ -846,8 +846,8 @@ static Scheme_Object *os_wxDCTryColour(Scheme_Object *obj, int n,  Scheme_Object
   class wxColour* x1;
 
   
-  x0 = objscheme_unbundle_wxColour(p[0], "try-colour in dc<%>", 0);
-  x1 = objscheme_unbundle_wxColour(p[1], "try-colour in dc<%>", 0);
+  x0 = objscheme_unbundle_wxColour(p[0], "try-color in dc<%>", 0);
+  x1 = objscheme_unbundle_wxColour(p[1], "try-color in dc<%>", 0);
 
   
   ((wxDC *)((Scheme_Class_Object *)obj)->primdata)->TryColour(x0, x1);
@@ -1555,7 +1555,7 @@ if (os_wxDC_class) {
  scheme_add_method_w_arity(os_wxDC_class, "set-device-origin", os_wxDCSetDeviceOrigin, 2, 2);
  scheme_add_method_w_arity(os_wxDC_class, "set-user-scale", os_wxDCSetUserScale, 2, 2);
  scheme_add_method_w_arity(os_wxDC_class, "set-background-mode", os_wxDCSetBackgroundMode, 1, 1);
- scheme_add_method_w_arity(os_wxDC_class, "try-colour", os_wxDCTryColour, 2, 2);
+ scheme_add_method_w_arity(os_wxDC_class, "try-color", os_wxDCTryColour, 2, 2);
  scheme_add_method_w_arity(os_wxDC_class, "blit", os_wxDCBlit, 7, 8);
  scheme_add_method_w_arity(os_wxDC_class, "draw-icon", os_wxDCDrawIcon, 3, 3);
  scheme_add_method_w_arity(os_wxDC_class, "get-char-width", os_wxDCGetCharWidth, 0, 0);
@@ -2250,6 +2250,8 @@ class basePrinterDC *objscheme_unbundle_basePrinterDC(Scheme_Object *obj, const 
 class baseMetaFileDC : public wxMetaFileDC {
 public:
   baseMetaFileDC(char *s = NULL);
+
+  baseMetaFile* baseClose() { return (baseMetaFile *)close(); }
 };
 
 baseMetaFileDC::baseMetaFileDC(char *s)
@@ -2265,9 +2267,12 @@ public:
   baseMetaFileDC(char * = NULL) {
     scheme_signal_error("%s", METHODNAME("meta-file-dc%","initialization")": only supported for Windows");
   }
+
+  baseMetaFile* baseClose() { return NULL; }
 };
 
 #endif
+
 
 
 
@@ -2292,6 +2297,23 @@ os_baseMetaFileDC::os_baseMetaFileDC(Scheme_Object * o, string x0)
 os_baseMetaFileDC::~os_baseMetaFileDC()
 {
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
+}
+
+#pragma argsused
+static Scheme_Object *os_baseMetaFileDCbaseClose(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  class baseMetaFile* r;
+  objscheme_check_valid(obj);
+
+  
+
+  
+  r = ((baseMetaFileDC *)((Scheme_Class_Object *)obj)->primdata)->baseClose();
+
+  
+  
+  return objscheme_bundle_baseMetaFile(r);
 }
 
 #pragma argsused
@@ -2323,8 +2345,9 @@ void objscheme_setup_baseMetaFileDC(void *env)
 if (os_baseMetaFileDC_class) {
     objscheme_add_global_class(os_baseMetaFileDC_class, "meta-file-dc%", env);
 } else {
-  os_baseMetaFileDC_class = objscheme_def_prim_class(env, "meta-file-dc%", "dc%", os_baseMetaFileDC_ConstructScheme, 0);
+  os_baseMetaFileDC_class = objscheme_def_prim_class(env, "meta-file-dc%", "dc%", os_baseMetaFileDC_ConstructScheme, 1);
 
+ scheme_add_method_w_arity(os_baseMetaFileDC_class, "close", os_baseMetaFileDCbaseClose, 0, 0);
 
 
   scheme_made_class(os_baseMetaFileDC_class);

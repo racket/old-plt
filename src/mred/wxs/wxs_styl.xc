@@ -159,7 +159,7 @@
 @ "get-underlined" : bool GetUnderlined();
 @ "get-font" : wxFont! GetFont();
 @ "get-foreground" : wxColour% GetForeground();
-@ "get-colour" : wxColour% GetBackground();
+@ "get-background" : wxColour% GetBackground();
 @ "get-alignment" : int GetAlignment();
 @ "get-transparent-text-backing" : bool GetTransparentTextBacking();
 

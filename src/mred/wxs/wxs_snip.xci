@@ -26,3 +26,6 @@
 
 @ s "set-admin" : void SetAdmin(wxSnipAdmin^);
 
+@ s "get-num-scroll-steps" : long GetNumScrollSteps()
+@ s "find-scroll-step" :  long FindScrollStep(float)
+@ s "get-scroll-step-offset" : float GetScrollStepOffset(long)

@@ -158,7 +158,7 @@
      [(eof) end-pos]
      [(special) (read-line-comment input-port)]
      [(special-comment) (read-line-comment input-port)]
-     [(special-error) (read-line-comment input-port)]))
+     ))
   
   (define read-block-comment
     (lexer
@@ -167,7 +167,7 @@
      [(re:or "*" "/" (complement (re:: any-string (re:or "*" "/") any-string))) (read-block-comment input-port)]
      [(special) (read-block-comment input-port)]
      [(special-comment) (read-block-comment input-port)]
-     [(special-error) (read-block-comment input-port)]))
+     ))
   
   #;(define read-document-comment
       (lexer
@@ -407,7 +407,6 @@
      ((eof) (values lexeme 'eof #f start-pos end-pos))
        
      ((special) (syn-val "" 'error #f start-pos end-pos))
-     ((special-error) (syn-val "" 'error #f start-pos end-pos))     
      ((special-comment) (syn-val "" 'comment #f start-pos end-pos))
        
      ((re:+ (re:/ "09" "az" "AZ")) (syn-val lexeme 'error #f start-pos end-pos))

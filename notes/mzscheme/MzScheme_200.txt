@@ -200,6 +200,9 @@ in several significant ways:
    which implement a port in terms of non-blocking, string-based
    operations instead of blocking, character-based operations.
 
+ * The built-in regular-expression matcher works on input ports (in
+   addition to strings).
+
  * The mzc compiler supports a subset of the Gambit-C foreign-function
    interface.
 

@@ -6809,11 +6809,14 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
   unsigned short origid, id;
   int errpart = 0, errid = 0;
 #ifdef USE_SOCKETS_TCP
-  struct hostent *host;
-  tcp_address dest_addr;
 # ifndef PROTOENT_IS_INT
   struct protoent *proto;
 # endif
+  struct hostent *host;
+  tcp_address dest_addr;
+  tcp_address *dest_addr_p;
+
+  dest_addr_p = &dest_addr;
 #endif
 
   if (!SCHEME_STRINGP(argv[0]))
@@ -6904,11 +6907,11 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
 #ifdef USE_SOCKETS_TCP
   host = gethostbyname(address);
   if (host) {
-    dest_addr.sin_family = AF_INET;
-    dest_addr.sin_port = id;
-    memset(&dest_addr.sin_addr, 0, sizeof(dest_addr.sin_addr));
-    memset(&dest_addr.sin_zero, 0, sizeof(dest_addr.sin_zero));
-    memcpy(&dest_addr.sin_addr, host->h_addr_list[0], host->h_length); 
+    dest_addr_p->sin_family = AF_INET;
+    dest_addr_p->sin_port = id;
+    memset(&dest_addr_p->sin_addr, 0, sizeof(dest_addr_p->sin_addr));
+    memset(&dest_addr_p->sin_zero, 0, sizeof(dest_addr_p->sin_zero));
+    memcpy(&dest_addr_p->sin_addr, host->h_addr_list[0], host->h_length); 
 
 #ifndef PROTOENT_IS_INT
     proto = getprotobyname("tcp");
@@ -6928,7 +6931,7 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
 	setsockopt(s, SOL_SOCKET, SO_SNDBUF, (char *)&size, sizeof(int));
 # endif
 #endif
-	status = connect(s, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
+	status = connect(s, (struct sockaddr *)dest_addr_p, sizeof(dest_addr));
 #ifdef USE_UNIX_SOCKETS_TCP
 	if (status)
 	  status = errno;

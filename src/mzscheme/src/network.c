@@ -1247,7 +1247,7 @@ static void tcp_close_input(Scheme_Input_Port *port)
 }
 
 static long tcp_write_string(Scheme_Output_Port *port, 
-			     const char *s, long len, long offset,
+			     const char *s, long offset, long len, 
 			     int rarely_block)
 {
   /* TCP writes aren't buffered at all right now. */
@@ -1295,16 +1295,15 @@ static long tcp_write_string(Scheme_Output_Port *port,
       if (rarely_block)
 	return sent;
       else
-	tcp_write_string(port, s, len - sent, offset + sent, rarely_block);
+	sent += tcp_write_string(port, s, offset + sent, len - sent, 0);
       errid = 0;
     } else if ((len > 1) && SEND_BAD_MSG_SIZE(errid)) {
       /* split the message and try again: */
       int half = (len / 2);
-      sent = tcp_write_string(port, s, half, offset, rarely_block);
+      sent = tcp_write_string(port, s, offset, half, rarely_block);
       if (rarely_block)
 	return sent;
-      sent = tcp_write_string(port, s, len - half, offset + half, 0);
-      sent += half;
+      sent += tcp_write_string(port, s, offset + half, len - half, 0);
       errid = 0;
     } else if (SEND_WOULD_BLOCK(errid)) {
       errid = 0;
@@ -1397,10 +1396,10 @@ static long tcp_write_string(Scheme_Output_Port *port,
     } else if (!errid) {
       if (bytes) {
       	/* Do partial write: */
-        sent = tcp_write_string(port, s, bytes, offset, rarely_block);
+        sent = tcp_write_string(port, s, offset, bytes, rarely_block);
 	if (rarely_block)
 	  return sent;
-        sent = tcp_write_string(port, s, len - bytes, offset + bytes, 0);
+        sent = tcp_write_string(port, s, offset + bytes, len - bytes, 0);
 	sent += bytes;
       } else
         would_block = 1;

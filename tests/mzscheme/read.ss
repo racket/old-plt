@@ -259,8 +259,10 @@
   (let* ([pos 0]
 	 [incpos! (lambda () (set! pos (add1 pos)))])
     (make-input-port
-     ;; Read char:
-     (lambda ()
+     ;; Waitable:
+     #f
+     ;; Non-blocking read string:
+     (lambda (str)
        (let loop ([s stream][p pos])
 	 (if (null? s)
 	     eof
@@ -269,7 +271,8 @@
 		   (if ((string-length i) . > . p)
 		       (begin
 			(incpos!)
-			(string-ref i p))
+			(string-set! str 0 (string-ref i p))
+			1)
 		       (loop (cdr s) (- p (string-length i))))
 		   ;; a special:
 		   (cond
@@ -278,12 +281,10 @@
 		       (check-pos where line col pos)
 		       (values (car s) (special-size (car s))))]
 		    [else (loop (cdr s) (sub1 p))]))))))
-     ;; Char ready?
-     (lambda () #t)
+     ;; Peek char
+     #f
      ;; Close proc
-     (lambda () #t)
-     ;; Peek proc
-     #f)))
+     (lambda () #t))))
 
 ;; Simple read:
 (let* ([p (make-p `("(list "

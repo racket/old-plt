@@ -21,6 +21,17 @@
 
 (define teval eval)
 
+(namespace-variable-value 
+ 'building-flat-tests?
+ #f
+ (lambda ()
+   (namespace-set-variable-value! 'building-flat-tests? #f)))
+(namespace-variable-value 
+ 'in-drscheme?
+ #f
+ (lambda ()
+   (namespace-set-variable-value! 'in-drscheme? #f)))
+
 (define SECTION (lambda args
 		  (let ([ep (current-error-port)])
 		    (display "SECTION" ep) (write args ep) (newline ep)

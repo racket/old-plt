@@ -1,17 +1,6 @@
 
 (load-relative "loadtest.ss")
 
-(namespace-variable-value 
- 'building-flat-tests?
- #f
- (lambda ()
-   (namespace-set-variable-value! 'building-flat-tests? #f)))
-(namespace-variable-value 
- 'in-drscheme?
- #f
- (lambda ()
-   (namespace-set-variable-value! 'in-drscheme? #f)))
-
 (load-relative "basic.ss")
 (load-relative "read.ss")
 (load-relative "macro.ss")

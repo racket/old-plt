@@ -214,26 +214,28 @@
 
 (define (go read-line/expire)
   (define p (let ([c 0]
-		  [nl-sleep? #f]
+		  [nl-sema (make-semaphore 1)]
 		  [nl? #f])
-	      (make-input-port (lambda () 
-				 (when nl-sleep?
-				       (sleep 0.4)
-				       (set! nl-sleep? #f))
-				 (if nl?
-				     (begin
-				       (set! nl? #f)
-				       #\newline)
-				     (begin
-				       (set! nl? #t)
-				       (set! nl-sleep? #t)
-				       (set! c (add1 c))
-				       (integer->char c))))
-			       (lambda ()
-				 (when nl-sleep?
-				       (sleep 0.4)
-				       (set! nl-sleep? #f))
-				 #t)
+	      (make-input-port nl-sema
+			       (lambda (s) 
+				 (let ([c (if nl?
+					      (if (semaphore-try-wait? nl-sema)
+						  #\newline
+						  #f)
+					      (begin
+						(set! nl? #t)
+						(thread (lambda ()
+							  (sleep 0.4)
+							  (semaphore-post nl-sema)))
+						(set! c (add1 c))
+						(semaphore-wait nl-sema)
+						(integer->char c)))])
+				   (if c
+				       (begin
+					 (string-set! s 0 c)
+					 1)
+				       0)))
+			       #f
 			       void)))
   (test #f read-line/expire p 0.2) ; should get char but not newline
   (test "" read-line/expire p 0.6)) ; picks up newline

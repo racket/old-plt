@@ -170,8 +170,8 @@
 (err/rt-test (file-position s 'one))
 (err/rt-test (file-position s -1))
 (err/rt-test (file-position s (expt 2 100)) exn:application:mismatch?)
-(err/rt-test (file-position (make-input-port void void void) 100) exn:application:mismatch?)
-(err/rt-test (file-position (make-output-port void void) 100) exn:application:mismatch?)
+(err/rt-test (file-position (make-input-port #f void #f void) 100) exn:application:mismatch?)
+(err/rt-test (file-position (make-output-port #f void void void) 100) exn:application:mismatch?)
 (arity-test file-position 1 2)
 
 (define (test-read-line r1 r2 s1 s2 flags sep)
@@ -459,28 +459,41 @@
 (err/rt-test (make-pipe (- (expt 2 40))))
 (err/rt-test (make-pipe "hello"))
 
-(test #t input-port? (make-input-port void void void))
-(err/rt-test (read (make-input-port void void void)))
-(arity-test make-input-port 3 4)
-(err/rt-test (make-input-port 8 void void))
-(err/rt-test (make-input-port void 8 void))
-(err/rt-test (make-input-port void void 8))
-(err/rt-test (make-input-port add1 void void))
-(err/rt-test (make-input-port void add1 void))
-(err/rt-test (make-input-port void void add1))
+(test #t input-port? (make-input-port #f void void void))
+(test #t input-port? (make-input-port #f void #f void))
+(test #t input-port? (make-input-port (make-semaphore) void #f void))
+(err/rt-test (read (make-input-port #f void void void)))
+(err/rt-test (read-char (make-input-port #f void void void)))
+(err/rt-test (peek-char (make-input-port #f void void void)))
+(arity-test make-input-port 4 4)
+(err/rt-test (make-input-port 8 void void void))
+(err/rt-test (make-input-port void void void void))
+(err/rt-test (make-input-port #f 8 void void))
+(err/rt-test (make-input-port #f void 8 void))
+(err/rt-test (make-input-port #f void void 8))
+(err/rt-test (make-input-port #f cons void void))
+(err/rt-test (make-input-port #f void add1 void))
+(err/rt-test (make-input-port #f void void add1))
 
-(test #t output-port? (make-output-port void void))
-(arity-test make-output-port 2 2)
-(err/rt-test (make-output-port 8 void))
-(err/rt-test (make-output-port void 8))
-(err/rt-test (make-output-port (lambda () 9) void))
-(err/rt-test (make-output-port void add1))
+(test #t output-port? (make-output-port #f void void void))
+(test #t output-port? (make-output-port (make-semaphore) void void void))
+(arity-test make-output-port 4 4)
+(err/rt-test (make-output-port 8 void void void))
+(err/rt-test (make-output-port void void void void))
+(err/rt-test (make-output-port #f 8 void void))
+(err/rt-test (make-output-port #f void 8 void))
+(err/rt-test (make-output-port #f void void 8))
+(err/rt-test (make-output-port #f add1 void void))
+(err/rt-test (make-output-port #f void add1 void))
+(err/rt-test (make-output-port #f void void add1))
 
 (let ([p (make-input-port 
-	  (lambda () #\a) 
-	  (lambda () #t) 
-	  void 
-	  (lambda () #\b))])
+	  #f
+	  (lambda (s) (string-set! s 0 #\a) 1)
+	  (lambda (s skip)
+	    (test 0 'skip-is-0 skip)
+	    (string-set! s 0 #\b) 1)
+	  void)])
   (test #\a read-char p)
   (test #\b peek-char p)
   (test #\a read-char p)
@@ -491,10 +504,10 @@
 
 (let* ([s (open-input-string "(apple \"banana\" [coconut])")]
        [p (make-input-port 
-	   (lambda () (read-char s))
-	   (lambda () #t)
-	   void 
-	   (lambda () (peek-char s)))])
+	   s
+	   (lambda (str) (string-set! str 0 (read-char s)) 1)
+	   (lambda (str skip) (string-set! str 0 (peek-char s)) 1)
+	   void)])
   (test '(apple "banana" [coconut]) read p))
 
 (define test-file 
@@ -507,7 +520,7 @@
 (close-output-port test-file)
 (check-test-file "tmp2")
 
-(define ui (make-input-port (lambda () #\") (lambda () #t) void))
+(define ui (make-input-port #f (lambda (s) (string-set! s 0 #\") 1) #f void))
 (test "" read ui)
 (arity-test (port-read-handler ui) 1 3 '(2))
 (err/rt-test ((port-read-handler ui) 8))
@@ -749,8 +762,9 @@
 (arity-test read-eval-print-loop 0 0)
 (test (void) 'r-e-p-l-return 
       (parameterize ([current-input-port (make-input-port
-					  (lambda () eof)
-					  void
+					  #f
+					  (lambda (s) eof)
+					  #f
 					  void)])
 	   (read-eval-print-loop)))
 

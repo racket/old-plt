@@ -18,8 +18,11 @@
 			     (cons c (loop (cdr s)))]))))))])
     (let* ([oldp (current-output-port)]
 	   [cp (make-output-port
-		(lambda (s)
-		  (display (censor s) oldp))
+		#f
+		(lambda (s start end flush?)
+		  (display (censor (substring s start end)) oldp)
+		  (- end start))
+		void
 		void)])
       (dynamic-wind
        (lambda () (current-output-port cp))

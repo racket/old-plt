@@ -239,7 +239,7 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Object *exp
 		       fail_err_symbol,
 		       "load-extension: couldn't open \"%s\" (%s)",
 		       filename, dlerror());
-    
+
     handle = dl;
     
 #ifdef UNDERSCORE_DYNLOAD_SYMBOL_PREFIX

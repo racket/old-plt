@@ -711,31 +711,23 @@ static long
 user_get_or_peek_string(Scheme_Input_Port *port, 
 			char *buffer, long offset, long size,
 			int *nonblock, int *eof_on_error,
-			int peek, long peek_skip, int special_is_ok)
+			int peek, long peek_skip)
 {
   Scheme_Object *fun, *val, *waitable, *a[3];
   char *vb;
-  int special_ok;
   User_Input_Port *uip = (User_Input_Port *)port->port_data;
-
-  special_ok = scheme_special_ok || special_is_ok;
-  scheme_special_ok = 0;
 
  try_again:
 
   val = uip->peeked;
-  if (SCHEME_TRUEP(val)) {
+  if (val) {
     /* leftover from a peek used to implement `char-ready?' */
-    uip->peeked = scheme_false;
+    uip->peeked = NULL;
     if (SCHEME_CHARP(val)) {
       buffer[offset] = SCHEME_CHAR_VAL(val);
       return 1;
     } else if (SCHEME_VOIDP(val)) {
-      if (special_ok) {
-	return SCHEME_SPECIAL;
-      } else {
-	scheme_bad_time_for_special(peek ? "peek-char" : "read-char", (Scheme_Object *)port);
-      }
+      return SCHEME_SPECIAL;
     } else
       return EOF;
   }
@@ -769,7 +761,7 @@ user_get_or_peek_string(Scheme_Input_Port *port,
 	/* Call scheme_getc to signal the error */
 	scheme_getc((Scheme_Object *)port);
       }
-      if (SCHEME_TRUEP(uip->peeked))
+      if (uip->peeked)
 	goto try_again;
     } else if (SCHEME_FALSEP(val)) {
       *nonblock = 1;
@@ -787,8 +779,8 @@ user_get_or_peek_string(Scheme_Input_Port *port,
     fun = uip->read_proc;
 
   vb = scheme_malloc_atomic(size + 1);
-  a[1] = scheme_make_sized_string(vb, size, 0);
-  a[2] = scheme_make_integer(peek_skip);
+  a[0] = scheme_make_sized_string(vb, size, 0);
+  a[1] = scheme_make_integer(peek_skip);
   val = scheme_apply(fun, peek ? 2 : 1, a);
 
   if (SCHEME_EOFP(val))
@@ -800,13 +792,8 @@ user_get_or_peek_string(Scheme_Input_Port *port,
       if (SCHEME_BIGNUMP(val) && SCHEME_BIGPOS(val)) {
 	n = -1;
       } else if (scheme_check_proc_arity(NULL, 4, 0, 1, &val)) {
-	if (special_ok) {
-	  port->special = val;
-	  return SCHEME_SPECIAL;
-	} else {
-	  scheme_bad_time_for_special(peek ? "peek-char" : "read-char", (Scheme_Object *)port);
-	  return 0;
-	}
+	port->special = val;
+	return SCHEME_SPECIAL;
       } else {
 	scheme_wrong_type(peek ? "user port peek-string" : "user port read-string", 
 			  "non-negative exact integer, eof, or procedure of arity 4", 
@@ -841,7 +828,7 @@ user_get_string(Scheme_Input_Port *port,
 		char *buffer, long offset, long size,
 		int *nonblock, int *eof_on_error)
 {
-  return user_get_or_peek_string(port, buffer, offset, size, nonblock, eof_on_error, 0, 0, 0);
+  return user_get_or_peek_string(port, buffer, offset, size, nonblock, eof_on_error, 0, 0);
 }
 
 static long 
@@ -850,7 +837,7 @@ user_peek_string(Scheme_Input_Port *port,
 		 long skip,
 		 int *nonblock, int *eof_on_error)
 {
-  return user_get_or_peek_string(port, buffer, offset, size, nonblock, eof_on_error, 1, skip, 0);
+  return user_get_or_peek_string(port, buffer, offset, size, nonblock, eof_on_error, 1, skip);
 }
 
 static int
@@ -865,7 +852,7 @@ user_char_ready(Scheme_Input_Port *port)
      effectively determines the result, because the peek function
      checks the waitable. */
 
-  c = user_get_or_peek_string(port, s, 0, 1, &nonblock, NULL, 1, 0, 1);
+  c = user_get_or_peek_string(port, s, 0, 1, &nonblock, NULL, 1, 0);
   if (c == EOF) {
     if (!nonblock)
       uip->peeked = scheme_true;
@@ -957,7 +944,7 @@ user_write_string(Scheme_Output_Port *port, const char *str, long offset, long l
     SCHEME_SET_IMMUTABLE(p[0]);
     p[1] = scheme_make_integer(0);
     p[2] = scheme_make_integer(len);
-    p[4] = (rarely_block ? scheme_false : scheme_true);
+    p[3] = (rarely_block ? scheme_false : scheme_true);
     
     val = scheme_apply(uop->write_proc, 4, p);
   }
@@ -971,7 +958,7 @@ user_write_string(Scheme_Output_Port *port, const char *str, long offset, long l
       return -1;
   } if (SCHEME_INTP(val) 
       && (SCHEME_INT_VAL(val) >= 0)
-      && (SCHEME_INT_VAL(val) < len)) {
+      && (SCHEME_INT_VAL(val) <= len)) {
     int n;
 
     n = SCHEME_INT_VAL(val);
@@ -988,8 +975,8 @@ user_write_string(Scheme_Output_Port *port, const char *str, long offset, long l
 
     /* In this case, no progress when we need to make some progress... */
   } else {
-    if ((SCHEME_INTP(val) && SCHEME_INT_VAL(val) > 0)
-	&& (SCHEME_BIGNUMP(val) && SCHEME_BIGPOS(val))) {
+    if ((SCHEME_INTP(val) && (SCHEME_INT_VAL(val) > 0))
+	|| (SCHEME_BIGNUMP(val) && SCHEME_BIGPOS(val))) {
       scheme_arg_mismatch("user port write-string",
 			  "result integer is larger than the supplied string: ",
 			  val);
@@ -1075,8 +1062,8 @@ static void pipe_did_read(Scheme_Pipe *pipe)
 }
 
 static long pipe_get_string(Scheme_Input_Port *p, 
-			   char *buffer, long offset, long size,
-			   int *nonblock, int *eof_on_error)
+			    char *buffer, long offset, long size,
+			    int *nonblock, int *eof_on_error)
 {
   Scheme_Pipe *pipe;
   long c;
@@ -1126,7 +1113,7 @@ static long pipe_get_string(Scheme_Input_Port *p,
       n = pipe->bufend - pipe->bufstart;
       if (n > size)
 	n = size;
-      memcpy(buffer + offset, pipe->buf + pipe->bufstart, n);
+      memcpy(buffer + offset + c, pipe->buf + pipe->bufstart, n);
       pipe->bufstart += n;
       size -= n;
       c += n;
@@ -1478,8 +1465,8 @@ make_output_port (int argc, Scheme_Object *argv[])
 
   if (!SCHEME_FALSEP(argv[0]) && !scheme_is_waitable(argv[0]))
     scheme_wrong_type("make-output-port", "waitable or #f", 0, argc, argv);
-  scheme_check_proc_arity("make-output-port", 0, 1, argc, argv);
-  scheme_check_proc_arity("make-output-port", 4, 2, argc, argv);
+  scheme_check_proc_arity("make-output-port", 4, 1, argc, argv);
+  scheme_check_proc_arity("make-output-port", 0, 2, argc, argv);
   scheme_check_proc_arity("make-output-port", 0, 3, argc, argv);
 
   uop = MALLOC_ONE_RT(User_Output_Port);

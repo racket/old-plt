@@ -239,7 +239,7 @@ int scheme_internal_checking_char;
 
 MZ_DLLSPEC int scheme_binary_mode_stdio;
 
-int scheme_special_ok;
+static int special_is_ok;
 
 /* locals */
 #ifdef MZ_FDS
@@ -1059,17 +1059,18 @@ long scheme_get_string(const char *who,
 		       int peek, long peek_skip)
 {
   Scheme_Input_Port *ip;
-  long got = 0, total_got = 0, i;
-  long orig_size;
+  long got = 0, total_got = 0, gc, i;
   int non_block_val, eof_on_error_val, *non_block, *eof_on_error;
+  int special_ok = special_is_ok;
   Scheme_Get_String_Fun gs;
   Scheme_Peek_String_Fun ps;
+
+  /* back-door argument: */
+  special_is_ok = 0;
 
   if (!size)
     return 0;
 
-  orig_size = size;
-  
   ip = (Scheme_Input_Port *)port;
 
   gs = ip->get_string_fun;
@@ -1111,9 +1112,8 @@ long scheme_get_string(const char *who,
       if (!peek)
 	ip->ungotten_count = i;
     } else if (ip->ungotten_special) {
-      if (!scheme_special_ok)
+      if (!special_ok)
 	scheme_bad_time_for_special(who, port);
-      scheme_special_ok = 0;
       if (!peek) {
 	ip->special = ip->ungotten_special;
 	ip->ungotten_special = NULL;
@@ -1137,9 +1137,10 @@ long scheme_get_string(const char *who,
 			    1, ip->ungotten_count);
       if (v == EOF)
 	return EOF;
-      else if (v == SCHEME_SPECIAL)
+      else if (v == SCHEME_SPECIAL) {
+	ip->special = NULL;
 	scheme_bad_time_for_special(who, port);
-      else if (v == peek_skip) {
+      } else if (v == peek_skip) {
 	peek_skip = 0;
 	/* Ok, we're ready to continue! */
       } else
@@ -1161,14 +1162,12 @@ long scheme_get_string(const char *who,
 	eof_on_error = NULL;
 
       if (peek && ps)
-	i = ps(ip, buffer, offset + got, size, peek_skip, non_block, eof_on_error);
+	gc = ps(ip, buffer, offset + got, size, peek_skip, non_block, eof_on_error);
       else
-	i = gs(ip, buffer, offset + got, size, non_block, eof_on_error);
+	gc = gs(ip, buffer, offset + got, size, non_block, eof_on_error);
 
-      if (i == SCHEME_SPECIAL) {
-	if (!got && !total_got && scheme_special_ok) {
-	  scheme_special_ok = 0;
-
+      if (gc == SCHEME_SPECIAL) {
+	if (!got && !total_got && special_ok) {
 	  if (peek) {
 	    ip->ungotten_special = ip->special;
 	    ip->special = NULL;
@@ -1180,29 +1179,31 @@ long scheme_get_string(const char *who,
 	if ((got || total_got) && only_avail) {
 	  ip->ungotten_special = ip->special;
 	  ip->special = NULL;
-	  i = 0;
+	  gc = 0;
 	} else {
+	  ip->special = NULL;
 	  scheme_bad_time_for_special(who, port);
 	  return 0;
 	}
-      } else if (i == EOF) {
+      } else if (gc == EOF) {
 	if (eof_on_error_val) {
-	  i = 0;
+	  gc = 0;
 	} if (non_block_val) {
-	  i = 0;
+	  gc = 0;
 	} else {
 	  if (!got && !total_got)
 	    return EOF;
-	  i = 0;
+	  gc = 0;
+	  size = 0; /* so that we stop */
 	}
       }
-      mzAssert(i >= 0);
+      mzAssert(gc >= 0);
     } else
-      i = 0;
+      gc = 0;
 
-    got += i;
-    peek_skip += i;
-    size -= i;
+    got += gc;
+    peek_skip += gc;
+    size -= gc;
 
     if (!peek) {
       /****************************************************/
@@ -1212,6 +1213,10 @@ long scheme_get_string(const char *who,
 	ip->position += got;
       if (ip->count_lines) {
 	int c;
+
+	mzAssert(ip->lineNumber >= 0);
+	mzAssert(ip->column >= 0);
+	mzAssert(ip->position >= 0);
 
 	ip->readpos += got; /* add for CR LF below */
 	
@@ -1224,6 +1229,7 @@ long scheme_get_string(const char *who,
 	if (i >= 0) {
 	  int n = 0;
 	  ip->charsSinceNewline = c + 1;
+	  i++;
 	  while (i--) {
 	    if (buffer[offset + i] == '\n') {
 	      if (!(i &&( buffer[offset + i - 1] == '\r'))
@@ -1234,6 +1240,7 @@ long scheme_get_string(const char *who,
 	    } else if (buffer[offset + i] == '\r')
 	      n++;
 	  }
+	  mzAssert(n > 0);
 	  ip->lineNumber += n;
 	  ip->was_cr = (buffer[offset + got - 1] == '\r');
 	} else
@@ -1246,13 +1253,17 @@ long scheme_get_string(const char *who,
 	  else
 	    ip->column++;
 	}
+
+	mzAssert(ip->lineNumber >= 0);
+	mzAssert(ip->column >= 0);
+	mzAssert(ip->position >= 0);
       }
     } else if (!ps) {
       /* need to save newly peeked string */
       unsigned char *uca;
       long j, k;
 
-      if (ip->ungotten_count + i > ip->ungotten_allocated) {
+      if (ip->ungotten_count + gc > ip->ungotten_allocated) {
 	unsigned char *old;
 	long oldc;
 	
@@ -1262,8 +1273,8 @@ long scheme_get_string(const char *who,
 	  ip->ungotten_allocated = 2 * oldc;
 	else
 	  ip->ungotten_allocated = 5;
-	if (ip->ungotten_allocated < oldc + i)
-	  ip->ungotten_allocated = oldc + i;
+	if (ip->ungotten_allocated < oldc + gc)
+	  ip->ungotten_allocated = oldc + gc;
 	
 	
 	uca = (unsigned char *)scheme_malloc_atomic(ip->ungotten_allocated);
@@ -1273,13 +1284,13 @@ long scheme_get_string(const char *who,
       } else
 	uca = ip->ungotten;
 
-      for (j = ip->ungotten_count + i, k = 0; k < i; k++, j--) {
-	uca[j] = buffer[k + offset];
+      for (j = ip->ungotten_count + gc - 1, k = 0; k < gc; k++, j--) {
+	uca[j] = buffer[offset + k];
       }
-      ip->ungotten_count += i;
+      ip->ungotten_count += gc;
     }
 
-    offset += i;
+    offset += gc;
     total_got += got;
     got = 0; /* for next round, if any */
 
@@ -1314,16 +1325,7 @@ scheme_getc(Scheme_Object *port)
 int
 scheme_getc_special_ok(Scheme_Object *port)
 {
-  Scheme_Input_Port *ip;
-
-  ip = (Scheme_Input_Port *)port;
-
-  if (SAME_OBJ(ip->sub_type, scheme_user_input_port_type)
-      && !ip->ungotten_count
-      && !ip->closed) {
-    scheme_special_ok = 1;
-  }
-   
+  special_is_ok = 1;   
   return scheme_getc(port);
 }
 
@@ -1369,16 +1371,7 @@ int scheme_peekc(Scheme_Object *port)
 int
 scheme_peekc_special_ok(Scheme_Object *port)
 {
-  Scheme_Input_Port *ip;
-
-  ip = (Scheme_Input_Port *)port;
-
-  if (SAME_OBJ(ip->sub_type, scheme_user_input_port_type)
-      && !ip->ungotten_count
-      && !ip->closed) {
-    scheme_special_ok = 1;
-  }
-   
+  special_is_ok = 1;
   return scheme_peekc(port);
 }
 
@@ -1431,14 +1424,17 @@ scheme_ungetc (int ch, Scheme_Object *port)
 
   if (ip->position > 0)
     --ip->position;
-  --ip->column;
-  --ip->readpos;
-  if (!(--ip->charsSinceNewline)) {
-    --ip->lineNumber;
-    ip->column = ip->oldColumn;
-    /* If you back up over two lines, then lineNumber and column will be wrong. */
-  } else if (ch == '\t')
-    ip->column = ip->oldColumn;
+  if (ip->count_lines) {
+    --ip->column;
+    --ip->readpos;
+    if (!(--ip->charsSinceNewline)) {
+      mzAssert(ip->lineNumber > 0);
+      --ip->lineNumber;
+      ip->column = ip->oldColumn;
+      /* If you back up over two lines, then lineNumber and column will be wrong. */
+    } else if (ch == '\t')
+      ip->column = ip->oldColumn;
+  }
 }
 
 int
@@ -1575,7 +1571,7 @@ Scheme_Object *scheme_get_special(Scheme_Object *port, Scheme_Object *src, long 
 
 void scheme_bad_time_for_special(const char *who, Scheme_Object *port)
 {
-  scheme_arg_mismatch(who, "non-character in an unsupported context, from port:", port);
+  scheme_arg_mismatch(who, "non-character in an unsupported context, from port: ", port);
 }
 
 void
@@ -1699,7 +1695,7 @@ scheme_put_string(const char *who, Scheme_Object *port,
 
   ws = op->write_string_fun;
 
-  if ((rarely_block == 1) || !len )
+  if ((rarely_block == 1) && !len)
     /* By definition, a partial-progress write on a 0-length string is
        the same as a non-blocking flush */
     rarely_block = 0;
@@ -1800,7 +1796,7 @@ scheme_write_string_avail(int argc, Scheme_Object *argv[])
     port = CURRENT_OUTPUT_PORT(scheme_config);
 
   putten = scheme_put_string("write-string-avail", port, 
-			     SCHEME_STR_VAL(str), size + start, start, 
+			     SCHEME_STR_VAL(str), start, size + start,
 			     1);
 
   mzAssert(putten >= 0);
@@ -3092,7 +3088,7 @@ static long fd_get_string(Scheme_Input_Port *port,
 		? size
 		: fip->bufcount);
 	  
-	  memcpy(buffer + offset, fip->buffer + fip->buffpos, bc);
+	  memcpy(buffer + offset, fip->buffer, bc);
 	  fip->buffpos = bc;
 	  fip->bufcount -= bc;
 	  
@@ -3778,7 +3774,7 @@ static long flush_fd(Scheme_Output_Port *op,
 	immediate_only == 2 => never block */
 {
   Scheme_FD * volatile fop = (Scheme_FD *)op->port_data;
-  long wrote = 0;
+  volatile long wrote = 0;
 
   if (fop->flushing) {
     if (scheme_force_port_closed) {

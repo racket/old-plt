@@ -25,13 +25,16 @@
 (define erroring-set? #f)
 
 (define erroring-port
-  (make-output-port (let ([orig (current-output-port)])
-		      (lambda (s) 
+  (make-output-port #f
+		    (let ([orig (current-output-port)])
+		      (lambda (s start end flush?) 
 			(if erroring-set?
 			    (begin
 			      (set! erroring-set? #f)
 			      (error 'output))
-			    (display s orig))))
+			    (display (substring s start end) orig))
+			(- end start)))
+		    void
 		    void))
 
 (define erroring-eval
@@ -160,8 +163,8 @@
 		      #f)
 
 		(list current-input-port
-		      (list (make-input-port (lambda () #\x) (lambda () #t) void)
-			    (make-input-port (lambda () (error 'bad)) (lambda () #t) void))
+		      (list (make-input-port #f (lambda (s) (string-set! s 0 #\x) 1) #f void)
+			    (make-input-port #f (lambda (s) (error 'bad)) #f void))
 		      '(read-char)
 		      exn:user?
 		      '("bad string"))

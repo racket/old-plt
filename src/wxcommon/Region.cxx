@@ -1146,7 +1146,7 @@ Bool wxRectanglePathRgn::Install(long target, Bool reverse, Bool align)
   } else {
     wxGPathAddLine(CURRENT_GP, xx, yy, xx + ww, yy);
     wxGPathAddLine(CURRENT_GP, xx + ww, yy, xx + ww, yy + hh);
-    wxGPathAddLine(CURRENT_GP, xx + ww, yy + ww, xx, yy + hh);
+    wxGPathAddLine(CURRENT_GP, xx + ww, yy + hh, xx, yy + hh);
   }
   wxGPathCloseFigure(CURRENT_GP);
 #endif

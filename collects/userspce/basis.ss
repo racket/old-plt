@@ -528,8 +528,11 @@
   
 
   (define (teaching-level? setting)
-    (member (setting-name setting)
-            '("Beginner" "Intermediate" "Advanced")))
+    (let* ([name (setting-name setting)]
+	   [ans (or (equal? name "Beginner")
+		    (equal? name "Intermediate")
+		    (equal? name "Advanced"))])
+      ans))
 
   ;; initialize-parameters : custodian
   ;;                         (list-of symbols)
@@ -611,7 +614,7 @@
         (params:allow-improper-lists improper-lists?))
       (params:eq?-only-compares-symbols (setting-eq?-only-compares-symbols? setting))
       (params:<=-at-least-two-args (setting-<=-at-least-two-args setting))
-      (unless (teaching-level? setting)
+      (when (teaching-level? setting)
         (global-define-values/invoke-unit/sig ricedefs^ ricedefs@ #f (params : plt:userspace:params^)))
       ;; end ricedefs
       

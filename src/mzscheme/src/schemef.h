@@ -83,7 +83,7 @@ void scheme_making_progress();
 void scheme_weak_suspend_thread(Scheme_Thread *p);
 void scheme_weak_resume_thread(Scheme_Thread *p);
 
-int scheme_block_until(int (*f)(Scheme_Object *), void (*fdfd)(Scheme_Object *, void *), void *, float);
+int scheme_block_until(Scheme_Ready_Fun f, Scheme_Needs_Wakeup_Fun, Scheme_Object *, float);
 
 int scheme_in_main_thread(void);
 

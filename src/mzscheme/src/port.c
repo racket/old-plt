@@ -4646,7 +4646,7 @@ static Scheme_Object *subprocess_wait(int argc, Scheme_Object **argv)
   {
     Scheme_Subprocess *sp = (Scheme_Subprocess *)argv[0];
 
-    scheme_block_until(subp_done, subp_needs_wakeup, sp, (float)0.0);
+    scheme_block_until(subp_done, subp_needs_wakeup, (Scheme_Object *)sp, (float)0.0);
 
     return scheme_void;
   }

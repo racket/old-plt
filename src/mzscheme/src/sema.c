@@ -289,7 +289,7 @@ int scheme_wait_sema(Scheme_Object *o, int just_try)
 	  scheme_current_thread->suspend_break = 1;
 	  a[0] = w;
 	  a[1] = scheme_current_thread;
-	  scheme_block_until(out_of_line, NULL, a, (float)0.0);
+	  scheme_block_until(out_of_line, NULL, (Scheme_Object *)a, (float)0.0);
 	  scheme_current_thread->suspend_break = 0;
 	} else {
 	  /* Mark the thread to indicate that we need to clean up

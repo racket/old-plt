@@ -909,7 +909,6 @@ scheme_read_syntax(Scheme_Object *port, Scheme_Object *stxsrc)
 
 Scheme_Object *scheme_resolve_placeholders(Scheme_Object *obj, int mkstx)
 {
-  Scheme_Thread *p = scheme_current_thread;
   return resolve_references(obj, NULL, mkstx);
 }
 

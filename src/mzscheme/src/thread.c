@@ -1523,7 +1523,7 @@ static Scheme_Object *thread_wait(int argc, Scheme_Object *args[])
   p = (Scheme_Thread *)args[0];
 
   if (MZTHREAD_STILL_RUNNING(p->running)) {
-    scheme_block_until(thread_wait_done, NULL, p, 0);
+    scheme_block_until(thread_wait_done, NULL, (Scheme_Object *)p, 0);
   }
 
   return scheme_void;
@@ -2286,8 +2286,8 @@ void scheme_making_progress()
   scheme_current_thread->ran_some = 1;
 }
 
-int scheme_block_until(int (*f)(Scheme_Object *), void (*fdf)(Scheme_Object *,void*), 
-		       void *data, float delay)
+int scheme_block_until(Scheme_Ready_Fun f, Scheme_Needs_Wakeup_Fun fdf, 
+		       Scheme_Object *data, float delay)
 {
   int result;
   Scheme_Thread *p = scheme_current_thread;
@@ -2740,7 +2740,7 @@ static Scheme_Object *object_wait(int argc, Scheme_Object *argv[])
     timeout = 0.0; /* means "no timeout" to block_until */
 
   if (!waiting_ready((Scheme_Object *)waiting)) {
-    scheme_block_until(waiting_ready, waiting_needs_wakeup, waiting, timeout);
+    scheme_block_until(waiting_ready, waiting_needs_wakeup, (Scheme_Object *)waiting, timeout);
   }
 
   if (waiting->result)

@@ -1370,7 +1370,7 @@ int scheme_tcp_write_nb_string(char *s, long len, long offset, int rarely_block,
 
   if (would_block) {
     /* Block for writing: */
-    scheme_block_until(tcp_check_write, tcp_write_needs_wakeup, port, (float)0.0);
+    scheme_block_until(tcp_check_write, tcp_write_needs_wakeup, (Scheme_Object *)port, (float)0.0);
 
     /* Closed while blocking? */
     if (((Scheme_Output_Port *)port)->closed) {

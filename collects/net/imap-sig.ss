@@ -11,6 +11,8 @@
      imap-disconnect
      imap-force-disconnect
      imap-reselect
+     imap-examine
+     imap-noop
      imap-status
 
      imap-get-messages

@@ -901,6 +901,17 @@ PROCEDURES -----------------------------------------------------------
   determine whether a mailbox has changed at all (e.g., via a copy
   instead of a move).
 
+> (imap-examine imap mailbox-string)
+  -> two values: message count and recent message count
+
+  Like `imap-reselect', but the mailbox is selected as read-only.
+
+> (imap-noop imap mailbox-string)
+  -> two values: message count or #f and recent message count or #f
+
+  Potentially returns information like `imap-reselect', but without
+  changing the mailbox selection.
+
 > (imap-status imap mailbox-string status-symbol-list)
   -> list of status values
 

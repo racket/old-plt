@@ -216,18 +216,29 @@
 	  (imap-connect* r w username password inbox)))
       
       (define (imap-reselect imap inbox)
-	(let ([r (imap-connection-r imap)]
-	      [w (imap-connection-w imap)])
-	  (let ([init-count 0]
-		[init-recent 0])
-	    (check-ok (imap-send r w (format "SELECT ~a" (str->arg inbox))
-				 (lambda (i)
-				   (when (and (list? i) (= 2 (length i)))
-				     (cond
-				      [(tag-eq? (cadr i) 'EXISTS)
-				       (set! init-count (car i))]
-				      [(tag-eq? (cadr i) 'RECENT)
-				       (set! init-recent (car i))])))))
+        (imap-selectish-command imap (format "SELECT ~a" (str->arg inbox))))
+	
+      (define (imap-examine imap inbox)
+	(imap-selectish-command imap (format "EXAMINE ~a" (str->arg inbox))))
+
+      ;; returns (values #f #f) if no change since last check
+      (define (imap-noop imap)
+        (imap-selectish-command imap "NOOP"))
+
+      ;; icky name, someone think of something better!
+      (define (imap-selectish-command imap command-string)
+        (let ([r (imap-connection-r imap)]
+              [w (imap-connection-w imap)])
+          (let ([init-count #f]
+                [init-recent #f])
+            (check-ok (imap-send r w command-string
+                                (lambda (i)
+                                  (when (and (list? i) (= 2 (length i)))
+                                    (cond
+                                      [(tag-eq? (cadr i) 'EXISTS)
+                                       (set! init-count (car i))]
+                                      [(tag-eq? (cadr i) 'RECENT)
+                                       (set! init-recent (car i))])))))
 	    (values init-count init-recent))))
 
       (define (imap-status imap inbox flags)

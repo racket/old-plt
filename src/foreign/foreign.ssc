@@ -602,7 +602,7 @@ Scheme_Object *utf16_pointer_to_ucs4_string(unsigned short *utf)
                        [pred  (get 'pred)]
                        [s->c  (get 's->c)]
                        [c->s  (get 'c->s)]
-                       [ptr?  (and ftype (equal? "pointer" ftype))])
+                       [ptr?  (equal? "pointer" ftype)])
                   body)))
             types)))]))
 
@@ -963,7 +963,7 @@ void free_libffi_type(void *ignored, void *p)
   return SCHEME_FFIANYPTRP(argv[0]) ? scheme_true : scheme_false;
 }
 
-{:(cdefine cpointer-type 1):}
+{:(cdefine cpointer-tag 1):}
 {
   Scheme_Object *type;
   if (!SCHEME_FFIANYPTRP(argv[0]))
@@ -973,7 +973,7 @@ void free_libffi_type(void *ignored, void *p)
   return (type==NULL) ? scheme_false : type;
 }
 
-{:(cdefine set-cpointer-type! 2):}
+{:(cdefine set-cpointer-tag! 2):}
 {
   if (!SCHEME_CPTRP(argv[0]))
     scheme_wrong_type(MYNAME, "proper-cpointer", 0, argc, argv);
@@ -1127,8 +1127,7 @@ static void* scheme_to_c(Scheme_Object *type, void *dst,
  * The arguments can be specified in any order at all since they are all
  * different types, the only requirement is for a size, either a number of
  * bytes or a type.  If no mode is specified, then scheme_malloc will be used
- * when the type is _pointer or _scheme, otherwise scheme_malloc_atomic is
- * used. */
+ * when the type is any pointer, otherwise scheme_malloc_atomic is used. */
 {:(cdefine malloc 1 4):}
 {
   int i, size=0, num=0, failok=0;
@@ -1169,9 +1168,7 @@ static void* scheme_to_c(Scheme_Object *type, void *dst,
   if ((num == 0) && (size == 0)) scheme_signal_error(MYNAME": no size given");
   size = ((size==0) ? 1 : size) * ((num==0) ? 1 : num);
   if (mode == NULL)
-    mf = (base != NULL
-          && (CTYPE_PRIMLABEL(base) == FOREIGN_scheme
-              || CTYPE_PRIMLABEL(base) == FOREIGN_pointer))
+    mf = (base != NULL && CTYPE_PRIMTYPE(base) == &ffi_type_pointer)
       ? scheme_malloc : scheme_malloc_atomic;
   else if (SAME_OBJ(mode, nonatomic_sym))     mf = scheme_malloc;
   else if (SAME_OBJ(mode, atomic_sym))        mf = scheme_malloc_atomic;
@@ -1218,7 +1215,7 @@ static void* scheme_to_c(Scheme_Object *type, void *dst,
 
 {:(defsymbols abs):}
 
-/* (ptr-ref cpointer type [[abs] n]) -> the object at the given location */
+/* (ptr-ref cpointer type [['abs] n]) -> the object at the given location */
 /* n defaults to 0 which is the only value that should be used with ffi_objs */
 /* if n is given, an 'abs flag can precede it to make n be a byte offset rather
  * than some multiple of sizeof(type). */
@@ -1259,7 +1256,7 @@ static void* scheme_to_c(Scheme_Object *type, void *dst,
   return c_to_scheme(argv[1], ptr);
 }
 
-/* (ptr-set! cpointer type [[abs] n] value) -> void */
+/* (ptr-set! cpointer type [['abs] n] value) -> void */
 /* n defaults to 0 which is the only value that should be used with ffi_objs */
 /* if n is given, an 'abs flag can precede it to make n be a byte offset rather
  * than some multiple of sizeof(type). */
@@ -1355,7 +1352,7 @@ void do_ptr_finalizer(void *p, void *finalizer)
 
 {:(defsymbols pointer):}
 
-/* (register-finalizer ptrobj finalizer [scheme]) -> old-finalizer */
+/* (register-finalizer ptrobj finalizer ['pointer]) -> old-finalizer */
 /* The finalizer is called by the primitive finalizer mechanism, make sure */
 /* no references to the object are recreated.  #f means erase existing */
 /* finalizer if any.*/
@@ -1383,7 +1380,7 @@ void do_ptr_finalizer(void *p, void *finalizer)
   if (!(SCHEME_FALSEP(argv[1]) || SCHEME_PROCP(argv[1])))
     scheme_wrong_type(MYNAME, "procedure-or-false", 1, argc, argv);
   scheme_register_finalizer
-    (argv[0], (ptrsym ? do_ptr_finalizer : do_scm_finalizer),
+    (ptr, (ptrsym ? do_ptr_finalizer : do_scm_finalizer),
      argv[1], NULL, &old);
   return (old == NULL) ? scheme_false : (Scheme_Object*)old;
 }
@@ -1655,7 +1652,7 @@ void free_cl_cif_args(void *ignored, void *p)
   cl_cif_args = malloc(sizeof(closure_and_cif) + nargs*sizeof(ffi_cif*));
   cl = &(cl_cif_args->closure); /* cl is the same as cl_cif_args */
   cif = &(cl_cif_args->cif);
-  atypes = (ffi_type **)((intptr_t)cl_cif_args) + sizeof(closure_and_cif);
+  atypes = (ffi_type **)(((char*)cl_cif_args) + sizeof(closure_and_cif));
   for (i=0, p=itypes; i<nargs; i++, p=SCHEME_CDR(p)) {
     if (NULL == (base = get_ctype_base(SCHEME_CAR(p))))
       scheme_wrong_type(MYNAME, "list-of-C-types", 1, argc, argv);

@@ -918,8 +918,8 @@ static Scheme_Object *foreign_cpointer_p(int argc, Scheme_Object *argv[])
 }
 
 #undef MYNAME
-#define MYNAME "cpointer-type"
-static Scheme_Object *foreign_cpointer_type(int argc, Scheme_Object *argv[])
+#define MYNAME "cpointer-tag"
+static Scheme_Object *foreign_cpointer_tag(int argc, Scheme_Object *argv[])
 {
   Scheme_Object *type;
   if (!SCHEME_FFIANYPTRP(argv[0]))
@@ -930,8 +930,8 @@ static Scheme_Object *foreign_cpointer_type(int argc, Scheme_Object *argv[])
 }
 
 #undef MYNAME
-#define MYNAME "set-cpointer-type!"
-static Scheme_Object *foreign_set_cpointer_type(int argc, Scheme_Object *argv[])
+#define MYNAME "set-cpointer-tag!"
+static Scheme_Object *foreign_set_cpointer_tag(int argc, Scheme_Object *argv[])
 {
   if (!SCHEME_CPTRP(argv[0]))
     scheme_wrong_type(MYNAME, "proper-cpointer", 0, argc, argv);
@@ -1329,8 +1329,7 @@ static Scheme_Object *fail_ok_sym;
  * The arguments can be specified in any order at all since they are all
  * different types, the only requirement is for a size, either a number of
  * bytes or a type.  If no mode is specified, then scheme_malloc will be used
- * when the type is _pointer or _scheme, otherwise scheme_malloc_atomic is
- * used. */
+ * when the type is any pointer, otherwise scheme_malloc_atomic is used. */
 #undef MYNAME
 #define MYNAME "malloc"
 static Scheme_Object *foreign_malloc(int argc, Scheme_Object *argv[])
@@ -1373,9 +1372,7 @@ static Scheme_Object *foreign_malloc(int argc, Scheme_Object *argv[])
   if ((num == 0) && (size == 0)) scheme_signal_error(MYNAME": no size given");
   size = ((size==0) ? 1 : size) * ((num==0) ? 1 : num);
   if (mode == NULL)
-    mf = (base != NULL
-          && (CTYPE_PRIMLABEL(base) == FOREIGN_scheme
-              || CTYPE_PRIMLABEL(base) == FOREIGN_pointer))
+    mf = (base != NULL && CTYPE_PRIMTYPE(base) == &ffi_type_pointer)
       ? scheme_malloc : scheme_malloc_atomic;
   else if (SAME_OBJ(mode, nonatomic_sym))     mf = scheme_malloc;
   else if (SAME_OBJ(mode, atomic_sym))        mf = scheme_malloc_atomic;
@@ -1426,7 +1423,7 @@ static Scheme_Object *foreign_free(int argc, Scheme_Object *argv[])
 
 static Scheme_Object *abs_sym;
 
-/* (ptr-ref cpointer type [[abs] n]) -> the object at the given location */
+/* (ptr-ref cpointer type [['abs] n]) -> the object at the given location */
 /* n defaults to 0 which is the only value that should be used with ffi_objs */
 /* if n is given, an 'abs flag can precede it to make n be a byte offset rather
  * than some multiple of sizeof(type). */
@@ -1469,7 +1466,7 @@ static Scheme_Object *foreign_ptr_ref(int argc, Scheme_Object *argv[])
   return c_to_scheme(argv[1], ptr);
 }
 
-/* (ptr-set! cpointer type [[abs] n] value) -> void */
+/* (ptr-set! cpointer type [['abs] n] value) -> void */
 /* n defaults to 0 which is the only value that should be used with ffi_objs */
 /* if n is given, an 'abs flag can precede it to make n be a byte offset rather
  * than some multiple of sizeof(type). */
@@ -1571,7 +1568,7 @@ void do_ptr_finalizer(void *p, void *finalizer)
 
 static Scheme_Object *pointer_sym;
 
-/* (register-finalizer ptrobj finalizer [scheme]) -> old-finalizer */
+/* (register-finalizer ptrobj finalizer ['pointer]) -> old-finalizer */
 /* The finalizer is called by the primitive finalizer mechanism, make sure */
 /* no references to the object are recreated.  #f means erase existing */
 /* finalizer if any.*/
@@ -1601,7 +1598,7 @@ static Scheme_Object *foreign_register_finalizer(int argc, Scheme_Object *argv[]
   if (!(SCHEME_FALSEP(argv[1]) || SCHEME_PROCP(argv[1])))
     scheme_wrong_type(MYNAME, "procedure-or-false", 1, argc, argv);
   scheme_register_finalizer
-    (argv[0], (ptrsym ? do_ptr_finalizer : do_scm_finalizer),
+    (ptr, (ptrsym ? do_ptr_finalizer : do_scm_finalizer),
      argv[1], NULL, &old);
   return (old == NULL) ? scheme_false : (Scheme_Object*)old;
 }
@@ -1877,7 +1874,7 @@ static Scheme_Object *foreign_ffi_callback(int argc, Scheme_Object *argv[])
   cl_cif_args = malloc(sizeof(closure_and_cif) + nargs*sizeof(ffi_cif*));
   cl = &(cl_cif_args->closure); /* cl is the same as cl_cif_args */
   cif = &(cl_cif_args->cif);
-  atypes = (ffi_type **)((intptr_t)cl_cif_args) + sizeof(closure_and_cif);
+  atypes = (ffi_type **)(((char*)cl_cif_args) + sizeof(closure_and_cif));
   for (i=0, p=itypes; i<nargs; i++, p=SCHEME_CDR(p)) {
     if (NULL == (base = get_ctype_base(SCHEME_CAR(p))))
       scheme_wrong_type(MYNAME, "list-of-C-types", 1, argc, argv);
@@ -1977,10 +1974,10 @@ void scheme_init_foreign(Scheme_Env *env)
     scheme_make_prim_w_arity(foreign_make_cstruct_type, "make-cstruct-type", 1, 1), menv);
   scheme_add_global("cpointer?",
     scheme_make_prim_w_arity(foreign_cpointer_p, "cpointer?", 1, 1), menv);
-  scheme_add_global("cpointer-type",
-    scheme_make_prim_w_arity(foreign_cpointer_type, "cpointer-type", 1, 1), menv);
-  scheme_add_global("set-cpointer-type!",
-    scheme_make_prim_w_arity(foreign_set_cpointer_type, "set-cpointer-type!", 2, 2), menv);
+  scheme_add_global("cpointer-tag",
+    scheme_make_prim_w_arity(foreign_cpointer_tag, "cpointer-tag", 1, 1), menv);
+  scheme_add_global("set-cpointer-tag!",
+    scheme_make_prim_w_arity(foreign_set_cpointer_tag, "set-cpointer-tag!", 2, 2), menv);
   scheme_add_global("ffi-callback?",
     scheme_make_prim_w_arity(foreign_ffi_callback_p, "ffi-callback?", 1, 1), menv);
   scheme_add_global("ctype-sizeof",

@@ -16,7 +16,7 @@ extern CGrafPtr wxMainColormap;
 static ATSUStyle theATSUstyle;
 static TextToUnicodeInfo t2uinfo;
 
-static OSStatus atsuSetStyleFromGrafPtr( ATSUStyle iStyle );
+static OSStatus atsuSetStyleFromGrafPtr(ATSUStyle iStyle);
 static OSStatus atsuSetStyleFromGrafPtrParams( ATSUStyle iStyle, short txFont, short txSize, SInt16 txFace);
 static double DrawMeasLatin1Text(const char *text, int d, int theStrlen, int bit16,
 				 int just_meas, int given_font, 
@@ -112,7 +112,7 @@ void wxCanvasDC::GetTextExtent(const char* string, float* x, float* y, float* de
 //----------------------------------------------------------------------
 
 #ifdef OS_X
-static int always_use_atsu = 0;
+static int always_use_atsu = 1;
 # define ALWAYS_USE_ATSU always_use_atsu
 #else
 # define ALWAYS_USE_ATSU 0
@@ -121,6 +121,7 @@ static int always_use_atsu = 0;
 void wxCheckATSUCapability()
 {
 #ifdef OS_X
+  /* Disable always_use_atsu if the part we need isn't there */
   SInt32 res;
   Gestalt(gestaltATSUVersion, &res);
   if (res <  (7 << 16) /* gestaltATSUUpdate6 */)
@@ -290,9 +291,31 @@ static double DrawMeasLatin1Text(const char *text, int d, int theStrlen, int bit
   char *unicode, u_buf[QUICK_UBUF_SIZE];
   double result = 0;
   ATSLineLayoutOptions ll_attribs;
-  GC_CAN_IGNORE ATSUAttributeTag  ll_theTags[] = { kATSULineLayoutOptionsTag };
-  GC_CAN_IGNORE ByteCount    ll_theSizes[] = { sizeof(ATSLineLayoutOptions) };
-  ATSUAttributeValuePtr ll_theValues[ 1 /* = sizeof(ll_theTags) / sizeof(ATSUAttributeTag) */ ];
+  GC_CAN_IGNORE ATSUAttributeTag  ll_theTags[] = { kATSULineLayoutOptionsTag 
+#ifdef OS_X
+						   , kATSUCGContextTag
+# define lxNUM_TAGS 2
+#else
+# define lxNUM_TAGS 1
+#endif
+  };
+  GC_CAN_IGNORE ByteCount    ll_theSizes[] = { sizeof(ATSLineLayoutOptions) 
+#ifdef OS_X
+					       , sizeof(CGContextRef)
+#endif
+  };
+  ATSUAttributeValuePtr ll_theValues[ lxNUM_TAGS /* = sizeof(ll_theTags) / sizeof(ATSUAttributeTag) */ ];
+#ifdef OS_X
+  CGrafPtr qdp;
+  CGContextRef cgctx;
+  Rect portRect;
+  RGBColor eraseColor;
+  int use_cgctx = always_use_atsu;
+# define xOS_X_ONLY(x) x
+#else
+# define use_cgctx 0
+# define xOS_X_ONLY(x) 0
+#endif
 
   if (!theATSUstyle) {
     CreateTextToUnicodeInfoByEncoding(kTextEncodingISOLatin1, &t2uinfo);
@@ -312,6 +335,39 @@ static double DrawMeasLatin1Text(const char *text, int d, int theStrlen, int bit
 			   usize, &converted, &ubytes,
 			   (UniCharArrayPtr)unicode);
 
+#ifdef OS_X
+  GetPort(&qdp);
+  if (!just_meas) {
+    Rect r = { -1, -1, 0, 0};
+
+    GetPortBounds(qdp, &portRect); 
+    GetBackColor(&eraseColor);
+
+    EraseRect(&r);
+  }
+
+  if (use_cgctx && QDBeginCGContext(qdp, &cgctx))
+    use_cgctx = 0;
+
+  if (use_cgctx && !just_meas) {
+    /* Make clipping regions match (including BeginUpdate effect) */
+    RgnHandle clipRgn;
+    clipRgn = NewRgn();
+    if (clipRgn) {
+      RgnHandle visRgn;
+      visRgn = NewRgn();
+      if (visRgn) {
+	GetPortClipRegion(qdp, clipRgn);
+	GetPortVisibleRegion(qdp, visRgn);
+	SectRgn(clipRgn, visRgn, clipRgn);
+	ClipCGContextToRegion(cgctx, &portRect, clipRgn);
+	DisposeRgn(visRgn);
+      }
+      DisposeRgn(clipRgn);
+    }
+  }
+#endif
+
   if (!again) {
     if (given_font)
       atsuSetStyleFromGrafPtrParams(theATSUstyle, txFont, txSize, txFace);
@@ -328,19 +384,28 @@ static double DrawMeasLatin1Text(const char *text, int d, int theStrlen, int bit
 				  &theATSUstyle,
 				  &layout);
 
-  if (qd_spacing) {
+  if (qd_spacing || use_cgctx) {
+    if (qd_spacing) {
 #if 1
-    /* We write down a literal constant, because the constants aren't
-       in 10.1 */
-    ll_attribs = 0x11f4040;
+      /* We write down a literal constant, because the constants aren't
+	 in 10.1 */
+      ll_attribs = 0x11f4040;
 #else
-    ll_attribs = (kATSLineFractDisable 
-		  | kATSLineDisableAutoAdjustDisplayPos
-		  | kATSLineDisableAllLayoutOperations
-		  | kATSLineUseDeviceMetrics);
+      ll_attribs = (kATSLineFractDisable 
+		    | kATSLineDisableAutoAdjustDisplayPos
+		    | kATSLineDisableAllLayoutOperations
+		    | kATSLineUseDeviceMetrics);
 #endif
-    ll_theValues[0] = &ll_attribs;
-    ATSUSetLayoutControls(layout, 1, ll_theTags, ll_theSizes, ll_theValues);
+      ll_theValues[0] = &ll_attribs;
+    } else {
+      ll_theTags[0] = ll_theTags[1];
+      ll_theSizes[0] = ll_theSizes[1];
+    }
+#ifdef OS_X
+    ll_theValues[(qd_spacing ? 1 : 0)] = &cgctx;
+#endif
+    ATSUSetLayoutControls(layout, (lxNUM_TAGS - (use_cgctx ? 0 : 1) - (qd_spacing ? 0 : 1)),
+			  ll_theTags, ll_theSizes, ll_theValues);
   }
 
   {
@@ -365,9 +430,13 @@ static double DrawMeasLatin1Text(const char *text, int d, int theStrlen, int bit
     GrafPtr iGrafPtr;
     Point start;
 
-    GetPort( &iGrafPtr );
+#ifdef OS_X
+    iGrafPtr = qdp;
+#else    
+    GetPort(&iGrafPtr);
+#endif
     GetPen(&start);
-
+    
     if (GetPortTextMode(iGrafPtr) == srcCopy) {
       Rect theRect;
       FontInfo fontInfo;
@@ -375,20 +444,70 @@ static double DrawMeasLatin1Text(const char *text, int d, int theStrlen, int bit
       theRect.left = start.h;
       theRect.top = start.v - fontInfo.ascent;
       theRect.bottom = start.v + fontInfo.descent;
-      theRect.right = theRect.left + (int)ceil(result);
-      EraseRect(&theRect);
+      theRect.right = theRect.left + (int)floor(result);
+#ifdef OS_X
+      if (use_cgctx) {
+	CGRect cgr;
+	cgr.origin.x = theRect.left;
+	cgr.origin.y = portRect.top + (portRect.bottom - theRect.bottom);
+	cgr.size.width = theRect.right - theRect.left;
+	cgr.size.height = theRect.bottom - theRect.top;
+	CGContextSetRGBFillColor(cgctx, 
+				 (float)eraseColor.red / 65535.0,
+				 (float)eraseColor.green / 65535.0,
+				 (float)eraseColor.blue / 65535.0,
+				 1.0);
+	CGContextFillRect(cgctx, cgr);
+      } else
+#endif
+	EraseRect(&theRect);
+    }
+    
+    {
+      Fixed sx, sy;
+
+      sx = (use_cgctx 
+	    ? Long2Fix(start.h) 
+	    : kATSUUseGrafPortPenLoc);
+      sy = (use_cgctx 
+	    ? xOS_X_ONLY(Long2Fix(portRect.top + (portRect.bottom - start.v)))
+	    : kATSUUseGrafPortPenLoc);
+
+      ATSUDrawText(layout, 
+		   kATSUFromTextBeginning,
+		   kATSUToTextEnd,
+		   sx, sy);
     }
 
-    ATSUDrawText(layout, 
-		 kATSUFromTextBeginning,
-		 kATSUToTextEnd,
-		 kATSUUseGrafPortPenLoc,
-		 kATSUUseGrafPortPenLoc);
+#ifdef OS_X
+    if (use_cgctx) {
+      /* I don't think this flush is supposed to be
+	 necessary. However, sometimes text gets lost in the draw.ss
+	 test without it. (Notably, text gets lost only when drawing
+	 directly to the screen, and not when drawing to a bitmap. */
+      CGContextSynchronize(cgctx);
 
-    MoveTo(start.h + (int)floor(result), start.v);
+      QDEndCGContext(qdp, &cgctx);
+    }
+#endif
+
+    /* QuickDraw is back again in OS X: */
+    if (!just_meas)
+      MoveTo(start.h + (int)floor(result), start.v);
+  } else {
+#ifdef OS_X
+    if (use_cgctx) {
+      QDEndCGContext(qdp, &cgctx);
+    }
+#endif
   }
 
   ATSUDisposeTextLayout(layout);
+
+#ifdef OS_X
+  if (use_cgctx) {
+  }
+#endif
 
   return result;
 }
@@ -425,6 +544,8 @@ static OSStatus
 atsuSetStyleFromGrafPtrParams( ATSUStyle iStyle, short txFont, short txSize, SInt16 txFace)
 {
  OSStatus status = noErr;
+
+#define xNUM_TAGS 8
  
  GC_CAN_IGNORE ATSUAttributeTag  theTags[] = { kATSUFontTag,
 					       kATSUSizeTag,
@@ -442,7 +563,7 @@ atsuSetStyleFromGrafPtrParams( ATSUStyle iStyle, short txFont, short txSize, SIn
 					   sizeof(Boolean),
 					   sizeof(Boolean),
 					   sizeof(RGBColor) };
- ATSUAttributeValuePtr theValues[ 8 /* = sizeof(theTags) / sizeof(ATSUAttributeTag) */ ];
+ ATSUAttributeValuePtr theValues[ xNUM_TAGS /* = sizeof(theTags) / sizeof(ATSUAttributeTag) */ ];
  
  ATSUFontID   atsuFont;
  Fixed    atsuSize;
@@ -463,8 +584,10 @@ atsuSetStyleFromGrafPtrParams( ATSUStyle iStyle, short txFont, short txSize, SIn
  isCondensed = ( txFace & condense ) != 0;
  isExtended = ( txFace & extend ) != 0;
  
- if ( txSize == 0 )
-  txSize = (short) ( GetScriptVariable( FontToScript( txFont ), smScriptPrefFondSize ) & 0xFFFFU ); // this would already be set correctly in a brand-new style
+ if ( txSize == 0 ) {
+   // this would already be set correctly in a brand-new style
+   txSize = (short) ( GetScriptVariable( FontToScript( txFont ), smScriptPrefFondSize ) & 0xFFFFU );
+ }
  atsuSize = Long2Fix( txSize );
  
  GetForeColor( &textColor );
@@ -478,14 +601,14 @@ atsuSetStyleFromGrafPtrParams( ATSUStyle iStyle, short txFont, short txSize, SIn
  theValues[5] = &isCondensed;
  theValues[6] = &isExtended;
  theValues[7] = &textColor;
- 
- status = ATSUSetAttributes( iStyle, sizeof(theTags) / sizeof(ATSUAttributeTag), theTags, theSizes, theValues );
+
+ status = ATSUSetAttributes( iStyle, xNUM_TAGS, theTags, theSizes, theValues );
 
  return status;
 }
 
 static OSStatus
-atsuSetStyleFromGrafPtr( ATSUStyle iStyle )
+atsuSetStyleFromGrafPtr(ATSUStyle iStyle)
 {
  short    txFont, txSize;
  SInt16   txFace;

@@ -193,7 +193,9 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func,
 	   | alDoDynamicScroll
 	   | alDoDrawFocus
 	   | alDoDrawRect
+#ifndef OS_X
 	   | alDoDrawOffscreen
+#endif
 	   | alDoRowsOnly);
   
   if (!(multiple & (wxMULTIPLE | wxEXTENDED))) {

@@ -13,31 +13,45 @@
        [else
 	(list* 'apply id this (reverse (cons args accum)))])))
 
-  (define (make-field-map this-id field-accessor field-mutator)
-    (let ([set!-stx (datum->syntax-object this-id 'set!)])
+  (define (make-this-map the-obj)
+    (let ([set!-stx (datum->syntax-object the-obj 'set!)])
+      (make-set!-transformer
+       (lambda (stx)
+	 (syntax-case stx ()
+	   [(set! id expr)
+	    (module-identifier=? (syntax set!) set!-stx)
+	    (raise-syntax-error 'class "cannot mutate object identifier" stx)]
+	   [(id . args)
+	    (datum->syntax-object 
+	     stx
+	     (cons the-obj (syntax args))
+	     stx)]
+	   [id the-obj])))))
+
+  (define (make-field-map the-obj field-accessor field-mutator)
+    (let ([set!-stx (datum->syntax-object the-obj 'set!)])
       (make-set!-transformer
        (lambda (stx)
 	 (syntax-case stx ()
 	   [(set! id expr)
 	    (module-identifier=? (syntax set!) set!-stx)
 	    (datum->syntax-object 
-	     this-id 
-	     (list field-mutator this-id (syntax expr))
+	     the-obj
+	     (list field-mutator the-obj (syntax expr))
 	     stx)]
 	   [(id . args)
 	    (datum->syntax-object 
-	     this-id 
-	     (cons (list field-accessor this-id) 
-		   (syntax args))
+	     the-obj
+	     (cons (list field-accessor the-obj) (syntax args))
 	     stx)]
 	   [_else
 	    (datum->syntax-object 
-	     this-id 
-	     (list field-accessor this-id)
+	     the-obj
+	     (list field-accessor the-obj)
 	     stx)])))))
 
-  (define (make-method-map this-id method-accessor)
-    (let ([set!-stx (datum->syntax-object this-id 'set!)])
+  (define (make-method-map the-obj method-accessor)
+    (let ([set!-stx (datum->syntax-object the-obj 'set!)])
       (make-set!-transformer
        (lambda (stx)
 	 (syntax-case stx ()
@@ -46,10 +60,10 @@
 	    (raise-syntax-error 'class "cannot mutate method" stx)]
 	   [(id . args)
 	    (datum->syntax-object 
-	     this-id 
+	     the-obj
 	     (make-method-apply
-	      (list method-accessor this-id) 
-	      this-id
+	      (list method-accessor the-obj)
+	      the-obj
 	      (syntax args))
 	     stx)]
 	   [_else
@@ -60,8 +74,8 @@
 
   ;; For methods that are dirrectly available via their names
   ;;  (e.g., private methods)
-  (define (make-direct-method-map this-id new-name)
-    (let ([set!-stx (datum->syntax-object this-id 'set!)])
+  (define (make-direct-method-map the-obj new-name)
+    (let ([set!-stx (datum->syntax-object the-obj 'set!)])
       (make-set!-transformer
        (lambda (stx)
 	 (syntax-case stx ()
@@ -70,11 +84,8 @@
 	    (raise-syntax-error 'class "cannot mutate method" stx)]
 	   [(id . args)
 	    (datum->syntax-object 
-	     this-id 
-	     (make-method-apply
-	      new-name
-	      this-id
-	      (syntax args))
+	     the-obj
+	     (make-method-apply new-name the-obj (syntax args))
 	     stx)]
 	   [_else
 	    (raise-syntax-error 
@@ -82,8 +93,8 @@
 	     "misuse of method (not in application)" 
 	     stx)])))))
 
-  (define (make-rename-map rename-temp this-id)
-    (let ([set!-stx (datum->syntax-object rename-temp 'set!)])
+  (define (make-rename-map the-obj rename-temp)
+    (let ([set!-stx (datum->syntax-object the-obj 'set!)])
       (make-set!-transformer
        (lambda (stx)
 	 (syntax-case stx ()
@@ -92,8 +103,8 @@
 	    (raise-syntax-error 'class "cannot mutate super method" stx)]
 	   [(id . args)
 	    (datum->syntax-object 
-	     this-id
-	     (make-method-apply rename-temp this-id (syntax args))
+	     the-obj
+	     (make-method-apply rename-temp the-obj (syntax args))
 	     stx)]
 	   [_else
 	    (raise-syntax-error 
@@ -126,7 +137,7 @@
        [else
 	(reverse (cons args accum))])))
 
-  (provide make-field-map make-method-map 
+  (provide make-this-map make-field-map make-method-map 
 	   make-direct-method-map make-rename-map
 	   init-error-map super-error-map flatten-args))
 

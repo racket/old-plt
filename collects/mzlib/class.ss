@@ -19,6 +19,9 @@
 	     ...)
 	 (let-values ([(defn-and-exprs) (syntax->list (syntax (defn-or-expr ...)))]
 		      [(this-id) (syntax this-id)]
+		      [(the-obj) (datum->syntax-object (quote-syntax here) 
+						       ;; Non-hygenic:
+						       (gensym (box 'self)))]
 		      [(super-instantiate-id super-make-object-id)
 		       (let ([s (syntax supers)])
 			 (if (stx-null? s)
@@ -97,7 +100,10 @@
 					     [_else (cons e (loop (cdr l)))])))))]
 		 [bad (lambda (msg expr)
 			(raise-syntax-error 'class* msg stx expr))]
-		 [class-name (syntax-local-name)])
+		 [class-name (let ([s (syntax-local-name)])
+			       (if (syntax? s)
+				   (syntax-e s)
+				   s))])
 
 	     ;; ------ Basic syntax checks -----
 	     (for-each (lambda (stx)
@@ -278,19 +284,21 @@
 			[local-public-names (append (map car (append public-finals override-finals))
 						    local-public-normal-names)]
 			[local-method-names (append (map car privates) local-public-names)]
-			[proc-shape (lambda (name expr xforms)
+			[expand-stop-names (append
+					    local-method-names
+					    (list 
+					     this-id
+					     super-instantiate-id
+					     super-make-object-id)
+					    (kernel-form-identifier-list
+					     (quote-syntax here)))]
+			[proc-shape (lambda (name expr xform?)
 				      ;; expands an expression so we can check whether
 				      ;; it has the right form
 				      (define (expand expr)
 					(local-expand
 					 expr
-					 (append
-					  (kernel-form-identifier-list
-					   (quote-syntax here))
-					  (list 
-					   this-id
-					   super-instantiate-id
-					   super-make-object-id))))
+					 expand-stop-names))
 				      ;; Checks whether the vars sequence is well-formed
 				      (define (vars-ok? vars)
 					(or (identifier? vars)
@@ -311,71 +319,46 @@
 								 (or class-name 
 								     ""))) 
 					 #f))
-				      ;; filter: removes shadows vars, so that we
-				      ;;  don't unshadow them
-				      (define (filter xforms vars rec-name new-name)
-					(let ([vars ;; flatten var list
-					       (let loop ([vars vars])
-						 (cond
-						  [(identifier? vars) (list vars)]
-						  [(stx-null? vars) null]
-						  [(stx-pair? vars)
-						   (cons (stx-car vars)
-							 (loop (stx-cdr vars)))]))]
-					      [base 
-					       (if rec-name
-						   (with-syntax ([old-name rec-name]
-								 [new-name new-name]
-								 [this-id this-id])
-						     (list 
-						      (syntax
-						       (old-name (make-direct-method-map 
-								  (quote-syntax this-id)
-								  (quote-syntax new-name))))))
-						   null)])
-					  (let loop ([xforms (syntax->list xforms)])
-					    (cond
-					     [(null? xforms) base]
-					     [(ormap (lambda (id)
-						       (bound-identifier=? id (stx-car (car xforms))))
-						     vars)
-					      (loop (cdr xforms))]
-					     [else (cons (car xforms) (loop (cdr xforms)))]))))
+				      ;; Need a local rename?
+				      (define (make-xforms rec-name new-name)
+					(if rec-name
+					    (with-syntax ([old-name rec-name]
+							  [new-name new-name]
+							  [the-obj the-obj])
+					      (syntax
+					       ((old-name (make-direct-method-map 
+							   (quote-syntax the-obj)
+							   (quote-syntax new-name))))))
+					    (syntax ())))
 				      ;; -- tranform loop starts here --
 				      (let loop ([stx expr][can-expand? #t][rec-name #f][new-name #f])
 					(syntax-case stx (lambda case-lambda letrec-values let-values)
 					  [(lambda vars body1 body ...)
 					   (vars-ok? (syntax vars))
-					   (if xforms
-					       (with-syntax ([this-id this-id]
-							     [xforms (filter xforms (syntax vars) 
-									     rec-name new-name)]
+					   (if xform?
+					       (with-syntax ([the-obj the-obj]
+							     [xforms (make-xforms rec-name new-name)]
 							     [name (mk-name)])
 						 (syntax/loc stx 
 						   (let ([name
-							  (lambda (this-id . vars) 
+							  (lambda (the-obj . vars) 
 							    (letrec-syntax xforms
-							      body1 body ...))])
+								body1 body ...))])
 						     name)))
 					       stx)]
 					  [(lambda . _)
 					   (bad "ill-formed lambda expression for method" stx)]
 					  [(case-lambda [vars body1 body ...] ...)
 					   (andmap vars-ok? (syntax->list (syntax (vars ...))))
-					   (if xforms
-					       (with-syntax ([this-id this-id]
-							     [(xforms ...)
-							      (map
-							       (lambda (vars)
-								 (filter xforms vars
-									 rec-name new-name))
-							       (syntax->list (syntax (vars ...))))]
+					   (if xform?
+					       (with-syntax ([the-obj the-obj]
+							     [xforms (make-xforms rec-name new-name)]
 							     [name (mk-name)])
 						 (syntax/loc stx
 						   (let ([name
-							  (case-lambda [(this-id . vars) 
+							  (case-lambda [(the-obj . vars) 
 									(letrec-syntax xforms
-									  body1 body ...)] ...)])
+									    body1 body ...)] ...)])
 						     name)))
 					       stx)]
 					  [(case-lambda . _)
@@ -391,7 +374,7 @@
 					   (let* ([letrec? (module-identifier=? (syntax let-) 
 										(quote-syntax letrec-values))]
 						  [id1 (syntax id1)]
-						  [new-id (if (and letrec? xforms)
+						  [new-id (if (and letrec? xform?)
 							      (datum->syntax-object
 							       #f
 							       (gensym (syntax-e id1))
@@ -557,18 +540,25 @@
 								  -1)])
 						(syntax/loc e (set! id (extract-rest-args n init-args))))]
 					     [_else e]))
-					 exprs)])
+					 exprs)]
+			     [mk-method-temp
+			      (lambda (id-stx)
+				(datum->syntax-object (quote-syntax here)
+						      ;; Non-hygenic:
+						      (gensym (box (syntax-e id-stx)))))])
 
 			 ;; ---- set up field and method mappings ----
 			 (with-syntax ([(rename-orig ...) (map car renames)]
 				       [(rename-temp ...) (generate-temporaries (map car renames))]
 				       [(private-name ...) (map car privates)]
-				       [(private-temp ...) (generate-temporaries (map car privates))]
+				       [(private-temp ...) (map mk-method-temp (map car privates))]
 				       [(public-final-name ...) (map car public-finals)]
 				       [(override-final-name ...) (map car override-finals)]
-				       [(public-final-temp ...) (generate-temporaries 
+				       [(public-final-temp ...) (map
+								 mk-method-temp
 								 (map car public-finals))]
-				       [(override-final-temp ...) (generate-temporaries 
+				       [(override-final-temp ...) (map
+								   mk-method-temp
 								   (map car override-finals))]
 				       [(method-name ...) (append local-public-normal-names
 								  (map car inherits))]
@@ -601,31 +591,34 @@
 								   plain-inits)])
 			   (let ([mappings
 				  ;; make-XXX-map is supplied by private/classidmap.ss
-				  (with-syntax ([this-id this-id])
+				  (with-syntax ([the-obj the-obj]
+						[this-id this-id])
 				    (syntax 
-				     ([all-field
-				       (make-field-map (quote-syntax this-id)
+				     ([this-id
+				       (make-this-map (quote-syntax the-obj))]
+				      [all-field
+				       (make-field-map (quote-syntax the-obj)
 						       (quote-syntax field-accessor)
 						       (quote-syntax field-mutator))]
 				      ...
 				      [rename-orig
-				       (make-rename-map (quote-syntax rename-temp)
-							(quote-syntax this-id))]
+				       (make-rename-map (quote-syntax the-obj)
+							(quote-syntax rename-temp))]
 				      ...
 				      [method-name
-				       (make-method-map (quote-syntax this-id)
+				       (make-method-map (quote-syntax the-obj)
 							(quote-syntax method-accessor))]
 				      ...
 				      [private-name
-				       (make-direct-method-map (quote-syntax this-id)
+				       (make-direct-method-map (quote-syntax the-obj)
 							       (quote-syntax private-temp))]
 				      ...
 				      [public-final-name
-				       (make-direct-method-map (quote-syntax this-id)
+				       (make-direct-method-map (quote-syntax the-obj)
 							       (quote-syntax public-final-temp))]
 				      ...
 				      [override-final-name
-				       (make-direct-method-map (quote-syntax this-id)
+				       (make-direct-method-map (quote-syntax the-obj)
 							       (quote-syntax override-final-temp))]
 				      ...)))]
 				 [extra-init-mappings
@@ -643,7 +636,7 @@
 					(ormap 
 					 (lambda (m)
 					   (and (bound-identifier=? (car m) name)
-						(with-syntax ([proc (proc-shape (car m) (cdr m) mappings)]
+						(with-syntax ([proc (proc-shape (car m) (cdr m) #t)]
 							      [extra-init-mappings extra-init-mappings])
 						  (syntax
 						   (letrec-syntax extra-init-mappings
@@ -683,8 +676,10 @@
 					     [(public-final-method ...) (map (find-method methods) (map car public-finals))]
 					     [(override-final-method ...) (map (find-method methods) (map car override-finals))]
 					     [mappings mappings]
+
+					     [extra-init-mappings extra-init-mappings]
 					     [exprs exprs]
-					     [this-id this-id]
+					     [the-obj the-obj]
 					     [super-instantiate-id super-instantiate-id]
 					     [super-make-object-id super-make-object-id]
 					     [name class-name])
@@ -714,30 +709,31 @@
 							     field-mutator ...
 							     rename-temp ...
 							     method-accessor ...) ; public, override, inherit
-				       (letrec ([private-temp private-method]
-						...
-						[public-final-temp public-final-method]
-						...
-						[override-final-temp override-final-method]
-						...)
-					 (values
-					  (list public-final-temp ... . public-methods)
-					  (list override-final-temp ... . override-methods)
-					  ;; Initialization
-					  (lambda (this-id super-id init-args)
-					    (letrec-syntax ([super-instantiate-id
-							     (lambda (stx)
-							       (syntax-case stx () 
-								 [(_ (arg (... ...)) (kw kwarg) (... ...))
-								  (syntax (-instantiate super-id _ #f (list arg (... ...)) (kw kwarg) (... ...)))]))])
-					      (let ([super-make-object-id
-						     (lambda args
-						       (super-id #f args null))])
-						(let ([plain-init-name undefined]
-						      ...)
-						  (letrec-syntax mappings
-						    (void) ; in case the body is empty
-						    . exprs))))))))
+				       (letrec-syntax mappings
+					   (letrec ([private-temp private-method]
+						    ...
+						    [public-final-temp public-final-method]
+						    ...
+						    [override-final-temp override-final-method]
+						    ...)
+					     (values
+					      (list public-final-temp ... . public-methods)
+					      (list override-final-temp ... . override-methods)
+					      ;; Initialization
+					      (lambda (the-obj super-id init-args)
+						(letrec-syntax ([super-instantiate-id
+								 (lambda (stx)
+								   (syntax-case stx () 
+								     [(_ (arg (... ...)) (kw kwarg) (... ...))
+								      (syntax (-instantiate super-id _ #f (list arg (... ...)) (kw kwarg) (... ...)))]))])
+						  (let ([super-make-object-id
+							 (lambda args
+							   (super-id #f args null))])
+						    (let ([plain-init-name undefined]
+							  ...)
+						      (void) ; in case the body is empty
+						      . exprs))))))))
+				     ;; Not primitive:
 				     #f)))))))))))))))])))
 
   (define-syntax class*

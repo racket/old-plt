@@ -345,7 +345,7 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
     Setup_Procedure f;
     char *vers;
     CFragConnectionID connID;
-    
+
     if (get_ext_file_spec( &spec, filename ) && load_ext_file_spec( &spec, &connID ) )
       {
 	OSErr err;
@@ -553,15 +553,13 @@ static Boolean get_ext_file_spec(FSSpec *spec, const char *filename)
 			if ((myCPBPtr->hFileInfo.ioFlAttrib & ioDirMask) != 0) 
 			{   /* we have a directory */
 				spec->parID   = myCPBPtr->hFileInfo.ioDirID;
-				strcpy( ( char * )spec->name, filename );
-				c2pstr( ( char * )spec->name );
+				c2pstrcpy(spec->name,filename);
 				ret = true;
 			}
 		}
 #else
 		/* copy the extension filename to the FSSpec */
-		strcpy( ( char * )spec->name, filename );
-		c2pstr( ( char * )spec->name );
+		c2pstrcpy(spec->name,filename);
 		ret = true;
 
 #endif
@@ -573,7 +571,7 @@ static Boolean get_ext_file_spec(FSSpec *spec, const char *filename)
 
 static Boolean load_ext_file_spec(FSSpec *spec, CFragConnectionID *connID)
 {
-	OSErr err = GetDiskFragment(spec, 0, 0, 0, kPrivateCFragCopy, connID, 0, 0);
+	OSErr err = GetDiskFragment(spec, 0, 0, 0, kPrivateCFragCopy, connID, 0, NULL);
 	return err==noErr;
 }
 

@@ -67,32 +67,33 @@
 
 (define collection->cc
   (lambda (collection-p)
-    (let ([dir (apply collection-path collection-p)])
-      (with-handlers ([(lambda (x)
-			 (and (exn:i/o:filesystem:file? x)
-			      (string=? (exn:i/o:filesystem-pathname x)
-					(build-path dir "info.ss"))))
-		       (lambda (x) #f)]
-		      [void
-		       (lambda (x)
-			 (printf "Warning: error loading info.ss: ~a~n"
-				 (if (exn? x)
-				     (exn-message x)
-				     x)))])
-	 (let* ([info (parameterize ([require-library-use-compiled #f])
-			(apply require-library "info.ss" collection-p))]
-		[name (call-info info 'name #f
-				 (lambda (x)
-				   (unless (string? x)
-					   (error "result is not a string:" x))))])
-	   (and
-	    name
-	    (call-info info 'compile-prefix #f void)
-	    (make-cc
-	     collection-p
-	     (apply collection-path collection-p)
-	     name
-	     info)))))))
+    (with-handlers ([void (lambda (x) #f)])
+      (let ([dir (apply collection-path collection-p)])
+	(with-handlers ([(lambda (x)
+			   (and (exn:i/o:filesystem:file? x)
+				(string=? (exn:i/o:filesystem-pathname x)
+					  (build-path dir "info.ss"))))
+			 (lambda (x) #f)]
+			[void
+			 (lambda (x)
+			   (printf "Warning: error loading info.ss: ~a~n"
+				   (if (exn? x)
+				       (exn-message x)
+				       x)))])
+	   (let* ([info (parameterize ([require-library-use-compiled #f])
+			  (apply require-library "info.ss" collection-p))]
+		  [name (call-info info 'name #f
+				   (lambda (x)
+				     (unless (string? x)
+					     (error "result is not a string:" x))))])
+	     (and
+	      name
+	      (call-info info 'compile-prefix #f void)
+	      (make-cc
+	       collection-p
+	       (apply collection-path collection-p)
+	       name
+	       info))))))))
 
 (define (cannot-compile c)
   (error 'compile-plt "don't know how to compile collection: ~a" 

@@ -2,7 +2,7 @@
 ;;
 ;; parser-tests.ss
 ;; Richard Cobbe
-;; $Id: parser-tests.ss,v 1.4 2004/08/10 15:54:04 cobbe Exp $
+;; $Id: parser-tests.ss,v 1.5 2004/08/17 21:12:45 cobbe Exp $
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -19,7 +19,7 @@
                                make-final-classes))
 
   (define-assertion (assert-parse-exn msg val expr)
-    (with-handlers ([exn:aj:parse?
+    (with-handlers ([exn:cj:parse?
                      (lambda (exn)
                        (and (string=? msg (exn-message exn))
                             (equal? val (exn:application-value exn))))]
@@ -27,7 +27,7 @@
       (begin expr #f)))
 
   (define-assertion (assert-inheritance-cycle expr)
-    (with-handlers ([exn:aj:parse?
+    (with-handlers ([exn:cj:parse?
                      (lambda (exn)
                        (and (string=? "inheritance cycle" (exn-message exn))
                             (temp-class? (exn:application-value exn))))]
@@ -35,7 +35,7 @@
       (begin expr #f)))
 
   (schemeunit-test
-   (make-test-suite "Tests for Acquired Java parser."
+   (make-test-suite "Classic Java parser"
 
      (make-test-case "initial program"
        (mv-assert equal?

@@ -2,7 +2,7 @@
 ;;
 ;; parser.ss
 ;; Richard Cobbe
-;; $Id: parser.ss,v 1.5 2004/08/10 17:00:18 cobbe Exp $
+;; $Id: parser.ss,v 1.6 2004/08/17 21:12:29 cobbe Exp $
 ;;
 ;; Implements the parser for the S-Expression based source syntax for
 ;; ClassicJava.
@@ -18,12 +18,12 @@
            "ast.ss")
 
   (provide/contract (parse-program (-> sexp? program?))
-                    (struct exn:aj:parse ()))
+                    (struct exn:cj:parse ()))
 
   (provide expand-parse-exn)
 
   (with-public-inspector
-   (define-struct (exn:aj:parse exn:application) ())
+   (define-struct (exn:cj:parse exn:application) ())
    (define-struct temp-class (name superclass fields methods)))
 
   #;
@@ -46,12 +46,12 @@
 
   ;; display the parse exception in human-readable form (for debugging)
   ;; USAGE: (expand-parse-exn body)
-  ;;    Evaluates to result of body.  If body throws an exn:aj:parse, evaluates
+  ;;    Evaluates to result of body.  If body throws an exn:cj:parse, evaluates
   ;;    to structure describing exception.
   (define-syntax expand-parse-exn
     (syntax-rules ()
       [(_ expr)
-       (with-handlers ([exn:aj:parse? struct->vector])
+       (with-handlers ([exn:cj:parse? struct->vector])
          expr)]))
 
   ;; parse-init-program :: SExpr -> (Hash-Table ID Temp-Class) Src-Expr
@@ -61,7 +61,7 @@
     (lambda (src)
       (unless (and (list? src)
                    (not (null? src)))
-        (raise (make-exn:aj:parse "bad program" (current-continuation-marks)
+        (raise (make-exn:cj:parse "bad program" (current-continuation-marks)
                                   src)))
       (let ([table (make-hash-table)])
         (hash-table-put! table 'Object
@@ -74,13 +74,13 @@
             (loop (cdr src))])))))
 
   ;; add-to-table! :: Temp-Class (Hash-Table Class-Name Temp-Class) -> ()
-  ;; adds temp cdefn to table; raises exn:aj:parse if already present
+  ;; adds temp cdefn to table; raises exn:cj:parse if already present
   (define add-to-table!
     (lambda (cdefn table)
       (when (hash-table-get table
                             (temp-class-name cdefn)
                             (lambda () #f))
-        (raise (make-exn:aj:parse "duplicate class definition"
+        (raise (make-exn:cj:parse "duplicate class definition"
                                   (current-continuation-marks)
                                   cdefn)))
       (hash-table-put! table (temp-class-name cdefn) cdefn)))
@@ -115,7 +115,7 @@
                      [class class0]
                      [history null])
           (when (memq class history)
-            (raise (make-exn:aj:parse "inheritance cycle"
+            (raise (make-exn:cj:parse "inheritance cycle"
                                       (current-continuation-marks)
                                       class0)))
           (unless (hash-table-get final-table name (lambda () #f))
@@ -124,7 +124,7 @@
                     (if parent-name
                         (hash-table-get temp-table parent-name
                                         (lambda ()
-                                          (raise (make-exn:aj:parse
+                                          (raise (make-exn:cj:parse
                                                   "parent class doesn't exist"
                                                   (current-continuation-marks)
                                                   class))))
@@ -170,7 +170,7 @@
       [('if e1 e2 e3) (make-if-expr (parse-expr e1)
                                     (parse-expr e2)
                                     (parse-expr e3))]
-      [bogus (raise (make-exn:aj:parse "bad expression"
+      [bogus (raise (make-exn:cj:parse "bad expression"
                                        (current-continuation-marks)
                                        bogus))]))
 
@@ -188,7 +188,7 @@
        (make-temp-class name superclass
                         (map (parse-field (make-class-type name)) fields)
                         (map parse-method methods))]
-      [bogus (raise (make-exn:aj:parse "bad definition"
+      [bogus (raise (make-exn:cj:parse "bad definition"
                                        (current-continuation-marks)
                                        bogus))]))
 
@@ -199,7 +199,7 @@
       (match-lambda
         [((? type-name? type) (? field-name? fd))
          (make-field (parse-type type) declaring-class fd)]
-        [bogus (raise (make-exn:aj:parse "bad field definition"
+        [bogus (raise (make-exn:cj:parse "bad field definition"
                                          (current-continuation-marks)
                                          bogus))])))
 
@@ -210,7 +210,7 @@
       ['int (make-ground-type 'int)]
       ['bool (make-ground-type 'bool)]
       [(? class-name? cname) (make-class-type cname)]
-      [bogus (raise (make-exn:aj:parse "bad type" (current-continuation-marks)
+      [bogus (raise (make-exn:cj:parse "bad type" (current-continuation-marks)
                                        bogus))]))
 
   ;; parses a method definition
@@ -221,7 +221,7 @@
        (let-values ([(names types) (mv-map parse-arg args)])
          (make-method (parse-type type) name names types
                       (parse-expr body)))]
-      [bogus (raise (make-exn:aj:parse "bad method definition"
+      [bogus (raise (make-exn:cj:parse "bad method definition"
                                        (current-continuation-marks)
                                        bogus))]))
 
@@ -231,7 +231,7 @@
     (match-lambda
       [((? type-name? type) (? arg-name? name))
        (values name (parse-type type))]
-      [bogus (raise (make-exn:aj:parse "bad argument definition"
+      [bogus (raise (make-exn:cj:parse "bad argument definition"
                                        (current-continuation-marks)
                                        bogus))]))
   )

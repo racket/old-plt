@@ -1,0 +1,134 @@
+#
+# File:		makefile.bcc
+# Author:	Julian Smart
+# Created:	1993
+# Updated:	
+# Copyright:	(c) 1993, AIAI, University of Edinburgh
+#
+# "%W% %G%"
+#
+# Makefile : Builds wxXPM library for Windows 3.1
+
+!if "$(BCCDIR)" == ""
+!error You must define the BCCDIR variable in autoexec.bat, e.g. BCCDIR=d:\bc4
+!endif
+
+!if "$(WXWIN)" == ""
+!error You must define the WXWIN variable in autoexec.bat, e.g. WXWIN=c:\wx
+!endif
+
+# Change these if needed.
+WXDIR = $(WXWIN)
+OPT = -O2
+DEBUG_FLAGS = -v
+BOR_VER = 4
+
+#!if "$(BOR_VER)" == "3.1"
+#BCCDIR = d:\bc3
+#!elif "$(BOR_VER)" == "4"
+#BCCDIR = d:\bc4
+#!endif
+
+XPMDIR = $(WXDIR)\contrib\wxxpm
+XPMINC = $(XPMDIR)\libxpm.34b\lib
+XPMLIB = $(XPMDIR)\xpm.lib
+CFG = $(WXDIR)\src\wxwin.cfg
+
+DUMMY=$(WXDIR)\src\msw\dummy.obj
+
+THISDIR = $(XPMDIR)
+
+INC = /I$(WXDIR)\include\base /I$(WXDIR)\include\msw /I$(XPMINC) /I.
+
+!if "$(FINAL)" == "0"
+LINKFLAGS=/v/Vt /Twe /L$(WXDIR)\lib;$(BCCDIR)\lib
+OPT = -Od
+DEBUG_FLAGS= -v
+!else
+LINKFLAGS=/Twe /L$(WXDIR)\lib;$(BCCDIR)\lib
+OPT = -O2
+DEBUG_FLAGS=
+!endif
+CPPFLAGS=$(DEBUG_FLAGS) $(OPT) @$(CFG)
+CFLAGS=$(DEBUG_FLAGS) $(OPT) /I$(XPMINC) /DFOR_MSW @$(CFG)
+OBJDIR=.
+
+.c.obj:
+	bcc $(CFLAGS) -c {$< }
+
+# xpmpixm.obj\
+XPMOBJECTS = 	$(OBJDIR)\crbuffri.obj\
+		$(OBJDIR)\crdatfri.obj\
+		$(OBJDIR)\create.obj $(OBJDIR)\crifrbuf.obj\
+		$(OBJDIR)\crifrdat.obj\
+		$(OBJDIR)\data.obj\
+		$(OBJDIR)\hashtab.obj $(OBJDIR)\misc.obj\
+		$(OBJDIR)\parse.obj $(OBJDIR)\rdftodat.obj\
+		$(OBJDIR)\rdftoi.obj\
+		$(OBJDIR)\rgb.obj $(OBJDIR)\scan.obj\
+		$(OBJDIR)\simx.obj $(OBJDIR)\wrffrdat.obj\
+		$(OBJDIR)\wrffrp.obj $(OBJDIR)\wrffri.obj
+
+all:    $(XPMLIB)
+
+wx:
+        cd $(WXDIR)\src\msw
+        nmake -f makefile.dos all FINAL=$(FINAL)
+        cd $(THISDIR)
+
+$(XPMLIB):      $(XPMOBJECTS)
+        erase $(XPMLIB)
+        tlib /P128 @&&!
+$(XPMLIB) &
++$(XPMOBJECTS:.obj =.obj +)
+!
+
+$(OBJDIR)\crbuffri.obj: libxpm.34b\lib\crbuffri.c
+
+$(OBJDIR)\crbuffrp.obj: libxpm.34b\lib\crbuffrp.c
+
+$(OBJDIR)\crdatfri.obj: libxpm.34b\lib\crdatfri.c
+
+$(OBJDIR)\crdatfrp.obj: libxpm.34b\lib\crdatfrp.c
+
+$(OBJDIR)\create.obj: libxpm.34b\lib\create.c
+
+$(OBJDIR)\crifrbuf.obj: libxpm.34b\lib\crifrbuf.c
+
+$(OBJDIR)\crifrdat.obj: libxpm.34b\lib\crifrdat.c
+
+$(OBJDIR)\crpfrbuf.obj: libxpm.34b\lib\crpfrbuf.c
+
+$(OBJDIR)\crpfrdat.obj: libxpm.34b\lib\crpfrdat.c
+
+$(OBJDIR)\data.obj: libxpm.34b\lib\data.c
+
+$(OBJDIR)\hashtab.obj: libxpm.34b\lib\hashtab.c
+
+$(OBJDIR)\misc.obj: libxpm.34b\lib\misc.c
+
+$(OBJDIR)\parse.obj: libxpm.34b\lib\parse.c
+
+$(OBJDIR)\rdftodat.obj: libxpm.34b\lib\rdftodat.c
+
+$(OBJDIR)\rdftoi.obj: libxpm.34b\lib\rdftoi.c
+
+$(OBJDIR)\rdftop.obj: libxpm.34b\lib\rdftop.c
+
+$(OBJDIR)\rgb.obj: libxpm.34b\lib\rgb.c
+
+$(OBJDIR)\scan.obj: libxpm.34b\lib\scan.c
+
+$(OBJDIR)\simx.obj: libxpm.34b\lib\simx.c
+
+$(OBJDIR)\wrffrdat.obj: libxpm.34b\lib\wrffrdat.c
+
+$(OBJDIR)\wrffri.obj: libxpm.34b\lib\wrffri.c
+
+$(OBJDIR)\wrffrp.obj: libxpm.34b\lib\wrffrp.c
+
+clean:
+        erase *.obj *.exe *.lib
+
+
+

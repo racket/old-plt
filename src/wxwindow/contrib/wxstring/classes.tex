@@ -1,0 +1,637 @@
+ 
+\chapter{Alphabetical member function reference}
+\setheader{{\it CHAPTER \thechapter}}{}{}{}{}{{\it CHAPTER \thechapter}}%
+\setfooter{\thepage}{}{}{}{}{\thepage}
+
+All user activity concerning string objects
+is controlled by the {\bf wxString} class.
+
+\section{\class{wxString}: wxObject}
+{\bf CAVE:} The description of the memberfunctions is very
+sparse in the moment. It will be extended in the next
+version of the help file. The list of memberfunctions
+is complete.
+
+\membersection{wxString::wxString}\label{wxstringconstruct}
+\func{void}{wxString}{\param{void}{}}\\
+\func{void}{wxString}{\param{const wxString&}{ x}}\\
+\func{void}{wxString}{\param{const wxSubString&}{ x}}\\
+\func{void}{wxString}{\param{const char*}{ t}}\\
+\func{void}{wxString}{\param{const char*}{ t}, \param{int}{ len}}\\
+\func{void}{wxString}{\param{char}{ c}}
+
+constructors
+
+\membersection{wxString::\destruct{wxString}}\label{wxstringdestruct}
+\func{void}{\destruct{wxString}}{\void}
+
+String destructor.
+
+\membersection{wxString::Alloc}\label{wxstringAlloc}
+\func{void}{Alloc}{\param{int}{ newsize}}
+
+preallocate some space for wxString
+
+\membersection{wxString::Allocation}\label{wxstringAllocation}
+\func{int}{Allocation}{\param{void}{}} \param{ const}{}
+
+report current allocation (not length!)
+
+\membersection{wxString::Append}\label{wxstringAppend}
+\func{wxString&}{Append}{\param{const char*}{ cs}}\\
+\func{wxString&}{Append}{\param{const wxString&}{ s}}
+
+concatenation
+
+\func{wxString&}{Append}{\param{char}{ c}, \param{int}{ rep = 1}}
+
+Append c rep times
+
+\membersection{wxString::After}\label{wxstringAfter}
+\func{wxSubString}{After}{\param{int}{ pos}}\\
+\func{wxSubString}{After}{\param{const wxString&}{ x}, \param{int}{ startpos = 0}}\\
+\func{wxSubString}{After}{\param{const wxSubString&}{ x}, \param{int}{ startpos = 0}}\\
+\func{wxSubString}{After}{\param{const char*}{ t}, \param{int}{ startpos = 0}}\\
+\func{wxSubString}{After}{\param{char}{ c}, \param{int}{ startpos = 0}}\\
+\func{wxSubString}{After}{\param{const wxRegex&}{ r}, \param{int}{ startpos = 0}}
+
+\membersection{wxString::At}\label{wxstringAt}
+\func{wxSubString}{At}{\param{int}{ pos}, \param{int}{ len}}\\
+\func{wxSubString}{operator ()}{\param{int}{ pos}, \param{int}{ len}}
+
+\func{wxSubString}{At}{\param{const wxString&}{ x}, \param{int}{ startpos = 0}}\\
+\func{wxSubString}{At}{\param{const wxSubString&}{ x}, \param{int}{ startpos = 0}}\\
+\func{wxSubString}{At}{\param{const char*}{ t}, \param{int}{ startpos = 0}}\\
+\func{wxSubString}{At}{\param{char}{ c}, \param{int}{ startpos = 0}}\\
+\func{wxSubString}{At}{\param{const wxRegex&}{ r}, \param{int}{ startpos = 0}}
+
+wxSubString extraction
+
+Note that you can't take a substring of a const wxString, since
+this leaves open the possiblility of indirectly modifying the
+wxString through the wxSubString
+
+\membersection{wxString::Before}\label{wxstringBefore}
+\func{wxSubString}{Before}{\param{int}{ pos}}\\
+\func{wxSubString}{Before}{\param{const wxString&}{ x}, \param{int}{ startpos = 0}}\\
+\func{wxSubString}{Before}{\param{const wxSubString&}{ x}, \param{int}{ startpos = 0}}\\
+\func{wxSubString}{Before}{\param{const char*}{ t}, \param{int}{ startpos = 0}}\\
+\func{wxSubString}{Before}{\param{char}{ c}, \param{int}{ startpos = 0}}\\
+\func{wxSubString}{Before}{\param{const wxRegex&}{ r}, \param{int}{ startpos = 0}}
+
+\membersection{wxString::Capitalize}\label{wxstringCapitalize}
+\func{void}{Capitalize}{\param{void}{}}\\
+\func{friend wxString}{Capitalize}{\param{wxString&}{ x}}
+
+\membersection{wxString::Cat}\label{wxstringCat}
+\func{friend void}{Cat}{\param{const wxString&}{ a}, \param{const wxString&}{ b}, \param{wxString&}{ c}}\\
+\func{friend void}{Cat}{\param{const wxString&}{ a}, \param{const wxSubString&}{ b}, \param{wxString&}{ c}}\\
+\func{friend void}{Cat}{\param{const wxString&}{ a}, \param{const char*}{ b}, \param{wxString&}{ c}}\\
+\func{friend void}{Cat}{\param{const wxString&}{ a}, \param{char}{ b}, \param{wxString&}{ c}}\\
+\func{friend void}{Cat}{\param{const wxSubString&}{ a}, \param{const wxString&}{ b}, \param{wxString&}{ c}}\\
+\func{friend void}{Cat}{\param{const wxSubString&}{ a}, \param{const wxSubString&}{ b}, \param{wxString&}{ c}}\\
+\func{friend void}{Cat}{\param{const wxSubString&}{ a}, \param{const char*}{ b}, \param{wxString&}{ c}}\\
+\func{friend void}{Cat}{\param{const wxSubString&}{ a}, \param{char}{ b}, \param{wxString&}{ c}}\\
+\func{friend void}{Cat}{\param{const char*}{ a}, \param{const wxString&}{ b}, \param{wxString&}{ c}}\\
+\func{friend void}{Cat}{\param{const char*}{ a}, \param{const wxSubString&}{ b}, \param{wxString&}{ c}}\\
+\func{friend void}{Cat}{\param{const char*}{ a}, \param{const char*}{ b}, \param{wxString&}{ c}}\\
+\func{friend void}{Cat}{\param{const char*}{ a}, \param{char}{ b}, \param{wxString&}{ c}}
+
+concatenate first 2 args, store result in last arg
+
+\func{friend void}{Cat}{\param{const wxString&}{ a}, \param{const wxString&}{ b}, \param{const wxString&}{ c}, \param{wxString&}{ d}}\\
+\func{friend void}{Cat}{\param{const wxString&}{ a}, \param{const wxString&}{ b}, \param{const wxSubString&}{ c}, \param{wxString&}{ d}}\\
+\func{friend void}{Cat}{\param{const wxString&}{ a}, \param{const wxString&}{ b}, \param{const char*}{ c}, \param{wxString&}{ d}}\\
+\func{friend void}{Cat}{\param{const wxString&}{ a}, \param{const wxString&}{ b}, \param{char}{ c}, \param{wxString&}{ d}}\\
+\func{friend void}{Cat}{\param{const wxString&}{ a}, \param{const wxSubString&}{ b}, \param{const wxString&}{ c}, \param{wxString&}{ d}}\\
+\func{friend void}{Cat}{\param{const wxString&}{ a}, \param{const wxSubString&}{ b}, \param{const wxSubString&}{ c}, \param{wxString&}{ d}}\\
+\func{friend void}{Cat}{\param{const wxString&}{ a}, \param{const wxSubString&}{ b}, \param{const char*}{ c}, \param{wxString&}{ d}}\\
+\func{friend void}{Cat}{\param{const wxString&}{ a}, \param{const wxSubString&}{ b}, \param{char}{ c}, \param{wxString&}{ d}}\\
+\func{friend void}{Cat}{\param{const wxString&}{ a}, \param{const char*}{ b}, \param{const wxString&}{ c}, \param{wxString&}{ d}}\\
+\func{friend void}{Cat}{\param{const wxString&}{ a}, \param{const char*}{ b}, \param{const wxSubString&}{ c}, \param{wxString&}{ d}}\\
+\func{friend void}{Cat}{\param{const wxString&}{ a}, \param{const char*}{ b}, \param{const char*}{ c}, \param{wxString&}{ d}}\\
+\func{friend void}{Cat}{\param{const wxString&}{ a}, \param{const char*}{ b}, \param{char}{ c}, \param{wxString&}{ d}}
+
+\func{friend void}{Cat}{\param{const char*}{ a}, \param{const wxString&}{ b}, \param{const wxString&}{ c}, \param{wxString&}{ d}}\\
+\func{friend void}{Cat}{\param{const char*}{ a}, \param{const wxString&}{ b}, \param{const wxSubString&}{ c}, \param{wxString&}{ d}}\\
+\func{friend void}{Cat}{\param{const char*}{ a}, \param{const wxString&}{ b}, \param{const char*}{ c}, \param{wxString&}{ d}}\\
+\func{friend void}{Cat}{\param{const char*}{ a}, \param{const wxString&}{ b}, \param{char}{ c}, \param{wxString&}{ d}}\\
+\func{friend void}{Cat}{\param{const char*}{ a}, \param{const wxSubString&}{ b}, \param{const wxString&}{ c}, \param{wxString&}{ d}}\\
+\func{friend void}{Cat}{\param{const char*}{ a}, \param{const wxSubString&}{ b}, \param{const wxSubString&}{ c}, \param{wxString&}{ d}}\\
+\func{friend void}{Cat}{\param{const char*}{ a}, \param{const wxSubString&}{ b}, \param{const char*}{ c}, \param{wxString&}{ d}}\\
+\func{friend void}{Cat}{\param{const char*}{ a}, \param{const wxSubString&}{ b}, \param{char}{ c}, \param{wxString&}{ d}}\\
+\func{friend void}{Cat}{\param{const char*}{ a}, \param{const char*}{ b}, \param{const wxString&}{ c}, \param{wxString&}{ d}}\\
+\func{friend void}{Cat}{\param{const char*}{ a}, \param{const char*}{ b}, \param{const wxSubString&}{ c}, \param{wxString&}{ d}}\\
+\func{friend void}{Cat}{\param{const char*}{ a}, \param{const char*}{ b}, \param{const char*}{ c}, \param{wxString&}{ d}}\\
+\func{friend void}{Cat}{\param{const char*}{ a}, \param{const char*}{ b}, \param{char}{ c}, \param{wxString&}{ d}}
+
+double concatenation, by request. (yes, there are too many versions, 
+but if one is supported, then the others should be too...)
+Concatenate first 3 args, store in last arg
+
+\membersection{wxString::Chars}\label{wxstringChars}
+\func{const char*}{Chars}{\param{void}{}} \param{ const}{}
+
+conversion
+
+\membersection{wxString::CompareTo}\label{wxstringCompareTo}
+\begin{verbatim}
+#define NO_POS ((int)(-1)) // undefined position
+enum CaseCompare {exact, ignoreCase};
+\end{verbatim}
+  
+\func{int}{CompareTo}{\param{const char*}{ cs}, \param{CaseCompare}{ cmp = exact}} \param{ const}{}\\
+\func{int}{CompareTo}{\param{const wxString&}{ cs}, \param{CaseCompare}{ cmp = exact}} \param{ const}{}
+
+\membersection{wxString::Contains}\label{wxstringContains}
+\func{Bool}{Contains}{\param{char}{ c}} \param{ const}{}\\
+\func{Bool}{Contains}{\param{const wxString&}{ y}} \param{ const}{}\\
+\func{Bool}{Contains}{\param{const wxSubString&}{ y}} \param{ const}{}\\
+\func{Bool}{Contains}{\param{const char*}{ t}} \param{ const}{}\\
+\func{Bool}{Contains}{\param{const wxRegex&}{ r}} \param{ const}{}
+
+return 1 if target appears anyhere in wxString; else 0
+
+\func{Bool}{Contains}{\param{const char*}{ pat}, \param{CaseCompare}{ cmp}} \param{ const}{}\\
+\func{Bool}{Contains}{\param{const wxString&}{ pat}, \param{CaseCompare}{ cmp}} \param{ const}{}
+
+case dependent/independent variation 
+
+\func{Bool}{Contains}{\param{char}{ c}, \param{int}{ pos}} \param{ const}{}\\
+\func{Bool}{Contains}{\param{const wxString&}{ y}, \param{int}{ pos}} \param{ const}{}\\
+\func{Bool}{Contains}{\param{const wxSubString&}{ y}, \param{int}{ pos}} \param{ const}{}\\
+\func{Bool}{Contains}{\param{const char*}{ t}, \param{int}{ pos}} \param{ const}{}\\
+\func{Bool}{Contains}{\param{const wxRegex&}{ r}, \param{int}{ pos}} \param{ const}{}
+
+return 1 if target appears anywhere after position pos 
+(or before, if pos is negative) in wxString; else 0
+
+\membersection{wxString::Copy}\label{wxstringCopy}
+\func{wxString}{Copy}{\param{void}{}} \param{ const}{}
+
+duplication 
+
+\membersection{wxString::Del}\label{wxstringDel}
+\func{wxString&}{Del}{\param{int}{ pos}, \param{int}{ len}}
+
+delete len chars starting at pos
+
+\func{wxString&}{Del}{\param{const wxString&}{ y}, \param{int}{ startpos = 0}}\\
+\func{wxString&}{Del}{\param{const wxSubString&}{ y}, \param{int}{ startpos = 0}}\\
+\func{wxString&}{Del}{\param{const char*}{ t}, \param{int}{ startpos = 0}}\\
+\func{wxString&}{Del}{\param{char}{ c}, \param{int}{ startpos = 0}}\\
+\func{wxString&}{Del}{\param{const wxRegex&}{ r}, \param{int}{ startpos = 0}}
+
+delete the first occurrence of target after startpos
+
+\membersection{wxString::DownCase}\label{wxstringDownCase}
+\func{void}{Downcase}{\param{void}{}}\\
+\func{friend wxString}{Downcase}{\param{wxString&}{ x}}
+
+\membersection{wxString::Elem}\label{wxstringElem}
+\func{char}{Elem}{\param{int}{ i}} \param{ const}{}
+
+element extraction
+
+\membersection{wxString::Empty}\label{wxstringEmpty}
+\func{int}{Empty}{\param{void}{}} \param{ const}{}
+
+\membersection{wxString::Error}\label{wxstringError}
+\func{void}{Error}{\param{const char*}{ msg}} \param{ const}{}
+
+\membersection{wxString::First}\label{wxstringFirst}
+\func{int}{First}{\param{char}{ c}} \param{ const}{}\\
+\func{int}{First}{\param{const char*}{ cs}} \param{ const}{}\\
+\func{int}{First}{\param{const wxString&}{ cs}} \param{ const}{}
+
+first or last occurrence of item
+ 
+\membersection{wxString::Firstchar}\label{wxstringFirstchar}
+\func{char}{Firstchar}{\param{void}{}} \param{ const}{}
+
+element extraction
+
+\membersection{wxString::Freq}\label{wxstringFreq}
+\func{int}{Freq}{\param{char}{ c}} \param{ const}{}\\
+\func{int}{Freq}{\param{const wxString&}{ y}} \param{ const}{}\\
+\func{int}{Freq}{\param{const wxSubString&}{ y}} \param{ const}{}\\
+\func{int}{Freq}{\param{const char*}{ t}} \param{ const}{}
+
+return number of occurences of target in wxString
+
+\membersection{wxString::From}\label{wxstringFrom}
+\func{wxSubString}{From}{\param{int}{ pos}}\\
+\func{wxSubString}{From}{\param{const wxString&}{ x}, \param{int}{ startpos = 0}}\\
+\func{wxSubString}{From}{\param{const wxSubString&}{ x}, \param{int}{ startpos = 0}}\\
+\func{wxSubString}{From}{\param{const char*}{ t}, \param{int}{ startpos = 0}}\\
+\func{wxSubString}{From}{\param{char}{ c}, \param{int}{ startpos = 0}}\\
+\func{wxSubString}{From}{\param{const wxRegex&}{ r}, \param{int}{ startpos = 0}}
+
+\membersection{wxString::GetData}\label{wxstringGetData}
+\func{char*}{GetData}{\param{void}{}}
+
+wxWindows compatibility conversion
+
+\membersection{wxString::GSub}\label{wxstringGSub}
+\func{int}{GSub}{\param{const wxString&}{ pat}, \param{const wxString&}{ repl}}\\
+\func{int}{GSub}{\param{const wxSubString&}{ pat}, \param{const wxString&}{ repl}}\\
+\func{int}{GSub}{\param{const char*}{ pat}, \param{const wxString&}{ repl}}\\
+\func{int}{GSub}{\param{const char*}{ pat}, \param{const char*}{ repl}}\\
+\func{int}{GSub}{\param{const wxRegex&}{ pat}, \param{const wxString&}{ repl}}
+
+global substitution: substitute all occurrences of pat with repl (return number of matches)
+
+\membersection{wxString::Index}\label{wxstringIndex}
+\func{int}{Index}{\param{char}{ c}, \param{int}{ startpos = 0}} \param{ const}{}\\
+\func{int}{Index}{\param{const wxString&}{ y}, \param{int}{ startpos = 0}} \param{ const}{}\\
+\func{int}{Index}{\param{const wxString&}{ y}, \param{int}{ startpos}, \param{CaseCompare}{ cmp}} \param{ const}{}\\
+\func{int}{Index}{\param{const wxSubString&}{ y}, \param{int}{ startpos = 0}} \param{ const}{}\\
+\func{int}{Index}{\param{const char*}{ t}, \param{int}{ startpos = 0}} \param{ const}{}\\
+\func{int}{Index}{\param{const char*}{ t}, \param{int}{ startpos}, \param{CaseCompare}{ cmp}} \param{ const}{}\\
+\func{int}{Index}{\param{const wxRegex&}{ r}, \param{int}{ startpos = 0}} \param{ const}{}
+
+return position of target in string or -1 for failure
+
+\membersection{wxString::Insert}\label{wxstringInsert}
+\func{wxString&}{Insert}{\param{int}{ pos}, \param{const char*}{ s}}\\
+\func{wxString&}{Insert}{\param{int}{ pos}, \param{const wxString&}{ s}}
+
+insertion
+ 
+\membersection{wxString::IsAscii}\label{wxstringIsAscii}
+\func{int}{IsAscii}{\param{void}{}} \param{ const}{}
+
+classification (should be capital, because of ctype.h macros!)
+
+\membersection{wxString::IsDefined}\label{wxstringIsDefined}
+\func{int}{IsDefined}{\param{void}{}} \param{ const}{}
+
+classification (should be capital, because of ctype.h macros!)
+
+\membersection{wxString::IsNull}\label{wxstringIsNull}
+\func{int}{IsNull}{\param{void}{}} \param{ const}{}
+
+classification (should be capital, because of ctype.h macros!)
+
+\membersection{wxString::IsNumber}\label{wxstringIsNumber}
+\func{int}{IsNumber}{\param{void}{}} \param{ const}{}
+
+classification (should be capital, because of ctype.h macros!)
+
+\membersection{wxString::IsWord}\label{wxstringIsWord}
+\func{int}{IsWord}{\param{void}{}} \param{ const}{}
+
+classification (should be capital, because of ctype.h macros!)
+
+\membersection{wxString::Last}\label{wxstringLast}
+\func{int}{Last}{\param{char}{ c}} \param{ const}{}\\
+\func{int}{Last}{\param{const char*}{ cs}} \param{ const}{}\\
+\func{int}{Last}{\param{const wxString&}{ cs}} \param{ const}{}
+
+first or last occurrence of item
+
+\membersection{wxString::Lastchar}\label{wxstringLastchar}
+\func{char}{Lastchar}{\param{void}{}} \param{ const}{}
+
+element extraction
+
+\membersection{wxString::Length}\label{wxstringLength}
+\func{unsigned int}{Length}{\param{void}{}} \param{ const}{}
+
+\membersection{wxString::LowerCase}\label{wxstringLowerCase}
+\func{void}{LowerCase}{\param{void}{}}\\
+
+\membersection{wxString::Matches}\label{wxstringMatches}
+\func{Bool}{Matches}{\param{char}{ c}, \param{int}{ pos = 0}} \param{ const}{}\\
+\func{Bool}{Matches}{\param{const wxString&}{ y}, \param{int}{ pos = 0}} \param{ const}{}\\
+\func{Bool}{Matches}{\param{const wxSubString&}{ y}, \param{int}{ pos = 0}} \param{ const}{}\\
+\func{Bool}{Matches}{\param{const char*}{ t}, \param{int}{ pos = 0}} \param{ const}{}\\
+\func{Bool}{Matches}{\param{const wxRegex&}{ r}, \param{int}{ pos = 0}} \param{ const}{}
+
+return 1 if target appears at position pos in wxString; else 0
+
+\membersection{wxString::OK}\label{wxstringOK}
+\func{int}{OK}{\param{void}{}} \param{ const}{}
+
+\membersection{wxString::Prepend}\label{wxstringPrepend}
+\func{wxString&}{Prepend}{\param{const wxString&}{ y}}\\
+\func{wxString&}{Prepend}{\param{const wxSubString&}{ y}}\\
+\func{wxString&}{Prepend}{\param{const char*}{ t}}\\
+\func{wxString&}{Prepend}{\param{char}{ c}}
+
+Prepend
+
+\func{wxString&}{Prepend}{\param{char}{ c}, \param{int}{ rep=1}}
+
+Prepend c rep times
+ 
+\membersection{wxString::Readline}\label{wxstringReadline}
+\func{friend int}{Readline}{\param{istream&}{ s}, \param{wxString&}{ x}, 
+ \param{char}{ terminator = '$\backslash$n'}, 
+ \param{int}{ discard_terminator = 1}}\\
+\func{friend int}{Readline}{\param{FILE *}{ f}, \param{wxString&}{ x}, 
+ \param{char}{ terminator = '$\backslash$n'}, 
+ \param{int}{ discard_terminator = 1}}
+
+\membersection{wxString::Remove}\label{wxstringRemove}
+\func{wxString&}{RemoveLast}{\param{void}{}}\\ 
+\func{wxString&}{Remove}{\param{int}{ pos}}\\
+\func{wxString&}{Remove}{\param{int}{ pos}, \param{int}{ len}}
+
+Remove pos to end of string
+
+\membersection{wxString::Replace}\label{wxstringReplace}
+\func{wxString&}{Replace}{\param{int}{ pos}, \param{int}{ n}, \param{const char*}{ s}}\\
+\func{wxString&}{Replace}{\param{int}{ pos}, \param{int}{ n}, \param{const wxString&}{ s}}
+
+\membersection{wxString::Replicate}\label{wxstringReplicate}
+\func{friend wxString}{Replicate}{\param{char}{ c}, \param{int}{ n}}\\
+\func{friend wxString}{Replicate}{\param{const wxString&}{ y}, \param{int}{ n}}
+
+replication
+
+\membersection{wxString::Reverse}\label{wxstringReverse}
+\func{void}{Reverse}{\param{void}{}}\\
+\func{friend wxString}{Reverse}{\param{wxString&}{ x}}
+
+\membersection{wxString::sprintf}\label{wxstringsprintf}
+\func{void}{sprintf}{\param{const char *}{ fmt}}
+
+formatted assignment
+we do not use the 'sprintf' constructor anymore, because with that
+constructor, every initialisation with a string would go through
+sprintf and this is not desireable, because sprintf interprets
+some characters. with the above function we can write i.e.:
+
+\begin{verbatim}
+wxString msg; msg.sprintf("Processing item %d\n", count);
+\end{verbatim}
+
+\membersection{wxString::Strip}\label{wxstringStrip}
+\begin{verbatim}
+enumStripType {leading = 0x1, trailing = 0x2, both = 0x3};
+\end{verbatim}
+
+\func{wxSubString}{Strip}{\param{StripType}{ s = trailing}, \param{char}{ c = ' '}}
+
+strip chars at the front and/or end
+stripType is defined for bitwise ORing!
+
+\membersection{wxString::SubString}\label{wxstringSubString}
+\func{wxString}{SubString}{\param{int}{ from}, \param{int}{ to}}
+
+Edward Z.'s additions
+
+\membersection{wxString::Through}\label{wxstringThrough}
+\func{wxSubString}{Through}{\param{int}{ pos}}\\
+\func{wxSubString}{Through}{\param{const wxString&}{ x}, \param{int}{ startpos = 0}}\\
+\func{wxSubString}{Through}{\param{const wxSubString&}{ x}, \param{int}{ startpos = 0}}\\
+\func{wxSubString}{Through}{\param{const char*}{ t}, \param{int}{ startpos = 0}}\\
+\func{wxSubString}{Through}{\param{char}{ c}, \param{int}{ startpos = 0}}\\
+\func{wxSubString}{Through}{\param{const wxRegex&}{ r}, \param{int}{ startpos = 0}}
+
+\membersection{wxString::Upcase}\label{wxstringUpcase}
+\func{void}{Upcase}{\param{void}{}}\\
+\func{friend wxString}{Upcase}{\param{wxString&}{ x}}
+
+\membersection{wxString::UpperCase}\label{wxstringUpperCase}
+\func{void}{UpperCase}{\param{void}{}}\\
+
+\membersection{wxString::operator =}\label{wxstringoperatorassign}
+\func{wxString&}{operator =}{\param{const wxString&}{ y}}\\
+\func{wxString&}{operator =}{\param{const char*}{ y}}\\
+\func{wxString&}{operator =}{\param{char}{ c}}\\
+\func{wxString&}{operator =}{\param{const wxSubString&}{ y}}
+
+assignment
+ 
+\membersection{wxString::operator +=}\label{wxstringPlusEqual}
+\func{wxString&}{operator +=}{\param{const wxString&}{ y}}\\
+\func{wxString&}{operator +=}{\param{const wxSubString&}{ y}}\\
+\func{wxString&}{operator +=}{\param{const char*}{ t}}\\
+\func{wxString&}{operator +=}{\param{char}{ c}}
+
+concatenation
+
+\membersection{wxString::operator[]}\label{wxstringoperatorbracket}
+\func{char&}{operator []}{\param{int}{ i}}
+
+element extraction
+
+\membersection{wxString::operator()}\label{wxstringoperatorparenth}
+\func{char&}{operator()}{\param{int}{ i}}
+
+\membersection{wxString::operator <<}\label{wxstringoperatorout}
+\func{friend ostream&}{operator<<}{\param{ostream&}{ s}, \param{const wxString&}{ x}}\\
+\func{friend ostream&}{operator<<}{\param{ostream&}{ s}, \param{const wxSubString&}{ x}}
+
+\membersection{wxString::operator >>}\label{wxstringoperatorin}
+\func{friend istream&}{operator>>}{\param{istream&}{ s}, \param{wxString&}{ x}}
+
+\membersection{wxString::operator const char *}\label{wxstringoperatorconstcharpt}
+\func{}{operator const char*}{\param{void}{}} \param{ const}{}
+
+conversion
+
+\membersection{wxCHARARG}\label{wxstringwxCHARARG}
+\begin{verbatim}
+#define wxCHARARG(s) ((char *)(s).Chars())  
+\end{verbatim}
+
+Here is a very, very, very ugly macro, but it makes things more
+transparent in cases, where a library function requires a 
+(char *) argument. This is especially the case in wxWindows,
+where all char-arguments are (char *) and not (const char *).
+this macro should only be used in such cases and NOT to
+modify the internal data.
+The conventional way would be 'function((char *)string.Chars())'.
+with the macro this can be achieved by 'function(wxCHARARG(string))'.
+this makes it better clear, that the usage should be confined
+to arguments!
+
+\membersection{CommonPrefix}\label{wxstringCommonPrefix}
+\func{friend wxString}{CommonPrefix}{\param{const wxString&}{ x}, \param{const wxString&}{ y},\\
+ \param{int}{ startpos = 0}}\\
+
+\membersection{CommonSuffix}\label{wxstringCommonSuffix}
+\func{friend wxString}{CommonSuffix}{\param{const wxString&}{ x}, \param{const wxString&}{ y},\\
+ \param{int}{ startpos = -1}}
+
+\membersection{Compare}\label{wxstringCompare}
+\func{int}{Compare}{\param{const wxString&}{ x}, \param{const wxString&}{ y}}\\
+\func{int}{Compare}{\param{const wxString&}{ x}, \param{const wxSubString&}{ y}}\\
+\func{int}{Compare}{\param{const wxString&}{ x}, \param{const char*}{ y}}\\
+\func{int}{Compare}{\param{const wxSubString&}{ x}, \param{const wxString&}{ y}}\\
+\func{int}{Compare}{\param{const wxSubString&}{ x}, \param{const wxSubString&}{ y}}\\
+\func{int}{Compare}{\param{const wxSubString&}{ x}, \param{const char*}{ y}}
+
+case dependent
+
+\membersection{FCompare}\label{wxstringFCompare}
+\func{int}{FCompare}{\param{const wxString&}{ x}, \param{const wxString&}{ y}}
+
+ignore case
+
+\membersection{Comparison operators}\label{wxstringComparison}
+\func{int}{operator==}{\param{const wxString&}{ x}, \param{const wxString&}{ y}}\\ 
+\func{int}{operator!=}{\param{const wxString&}{ x}, \param{const wxString&}{ y}}\\
+\func{int}{operator> }{\param{const wxString&}{ x}, \param{const wxString&}{ y}}\\
+\func{int}{operator>=}{\param{const wxString&}{ x}, \param{const wxString&}{ y}}\\
+\func{int}{operator< }{\param{const wxString&}{ x}, \param{const wxString&}{ y}}\\
+\func{int}{operator<=}{\param{const wxString&}{ x}, \param{const wxString&}{ y}}\\
+\func{int}{operator==}{\param{const wxString&}{ x}, \param{const wxSubString&}{ y}}\\
+\func{int}{operator!=}{\param{const wxString&}{ x}, \param{const wxSubString&}{ y}}\\
+\func{int}{operator> }{\param{const wxString&}{ x}, \param{const wxSubString&}{ y}}\\
+\func{int}{operator>=}{\param{const wxString&}{ x}, \param{const wxSubString&}{ y}}\\
+\func{int}{operator< }{\param{const wxString&}{ x}, \param{const wxSubString&}{ y}}\\
+\func{int}{operator<=}{\param{const wxString&}{ x}, \param{const wxSubString&}{ y}}\\
+\func{int}{operator==}{\param{const wxString&}{ x}, \param{const char*}{ t}}\\
+\func{int}{operator!=}{\param{const wxString&}{ x}, \param{const char*}{ t}}\\
+\func{int}{operator> }{\param{const wxString&}{ x}, \param{const char*}{ t}}\\
+\func{int}{operator>=}{\param{const wxString&}{ x}, \param{const char*}{ t}}\\
+\func{int}{operator< }{\param{const wxString&}{ x}, \param{const char*}{ t}}\\
+\func{int}{operator<=}{\param{const wxString&}{ x}, \param{const char*}{ t}}\\
+\func{int}{operator==}{\param{const wxSubString&}{ x}, \param{const wxString&}{ y}}\\
+\func{int}{operator!=}{\param{const wxSubString&}{ x}, \param{const wxString&}{ y}}\\
+\func{int}{operator> }{\param{const wxSubString&}{ x}, \param{const wxString&}{ y}}\\
+\func{int}{operator>=}{\param{const wxSubString&}{ x}, \param{const wxString&}{ y}}\\
+\func{int}{operator< }{\param{const wxSubString&}{ x}, \param{const wxString&}{ y}}\\
+\func{int}{operator<=}{\param{const wxSubString&}{ x}, \param{const wxString&}{ y}}\\
+\func{int}{operator==}{\param{const wxSubString&}{ x}, \param{const wxSubString&}{ y}}\\
+\func{int}{operator!=}{\param{const wxSubString&}{ x}, \param{const wxSubString&}{ y}}\\
+\func{int}{operator> }{\param{const wxSubString&}{ x}, \param{const wxSubString&}{ y}}\\
+\func{int}{operator>=}{\param{const wxSubString&}{ x}, \param{const wxSubString&}{ y}}\\
+\func{int}{operator< }{\param{const wxSubString&}{ x}, \param{const wxSubString&}{ y}}\\
+\func{int}{operator<=}{\param{const wxSubString&}{ x}, \param{const wxSubString&}{ y}}\\
+\func{int}{operator==}{\param{const wxSubString&}{ x}, \param{const char*}{ t}}\\
+\func{int}{operator!=}{\param{const wxSubString&}{ x}, \param{const char*}{ t}}\\
+\func{int}{operator> }{\param{const wxSubString&}{ x}, \param{const char*}{ t}}\\
+\func{int}{operator>=}{\param{const wxSubString&}{ x}, \param{const char*}{ t}}\\
+\func{int}{operator< }{\param{const wxSubString&}{ x}, \param{const char*}{ t}}\\
+\func{int}{operator<=}{\param{const wxSubString&}{ x}, \param{const char*}{ t}}
+
+\membersection{operator +}\label{wxstringoperatorplus}
+\func{wxString}{operator +}{\param{const wxString&}{ x}, \param{const wxString&}{ y}}\\
+\func{wxString}{operator +}{\param{const wxString&}{ x}, \param{const wxSubString&}{ y}}\\
+\func{wxString}{operator +}{\param{const wxString&}{ x}, \param{const char*}{ y}}\\
+\func{wxString}{operator +}{\param{const wxString&}{ x}, \param{char}{ y}}\\
+\func{wxString}{operator +}{\param{const wxSubString&}{ x}, \param{const wxString&}{ y}}\\
+\func{wxString}{operator +}{\param{const wxSubString&}{ x}, \param{const wxSubString&}{ y}}\\
+\func{wxString}{operator +}{\param{const wxSubString&}{ x}, \param{const char*}{ y}}\\
+\func{wxString}{operator +}{\param{const wxSubString&}{ x}, \param{char}{ y}}\\
+\func{wxString}{operator +}{\param{const char*}{ x}, \param{const wxString&}{ y}}\\
+\func{wxString}{operator +}{\param{const char*}{ x}, \param{const wxSubString&}{ y}}
+
+\membersection{Join}\label{wxstringJoin}
+\func{friend wxString}{Join}{\param{wxString}{ src[]}, \param{int}{ n}, \param{const wxString&}{ sep}}
+
+\membersection{Split}\label{wxstringSplit}
+\func{friend int}{Split}{\param{const wxString&}{ x}, \param{wxString}{ res[]}, \param{int}{ maxn},\\
+ \param{const wxString&}{ sep}}\\
+\func{friend int}{Split}{\param{const wxString&}{ x}, \param{wxString}{ res[]}, \param{int}{ maxn},\\
+ \param{const wxRegex&}{ sep}}\\
+
+Split string into array res at separators; return number of elements
+
+\chapter{Categorized member function reference}
+\setheader{{\it CHAPTER \thechapter}}{}{}{}{}{{\it CHAPTER \thechapter}}%
+\setfooter{\thepage}{}{}{}{}{\thepage}
+
+\section{Assigment}
+\helpref{wxString::operator =}{wxstringoperatorassign}\\
+
+\section{Classification}
+\helpref{wxString::IsAscii}{wxstringIsAscii}\\
+\helpref{wxString::IsWord}{wxstringIsWord}\\
+\helpref{wxString::IsNumber}{wxstringIsNumber}\\
+\helpref{wxString::IsNull}{wxstringIsNull}\\
+\helpref{wxString::IsDefined}{wxstringIsDefined}\\
+
+\section{Comparisons (case sensitive and insensitive)}
+\helpref{wxString::CompareTo}{wxstringCompareTo}\\
+\helpref{Compare}{wxstringCompare}\\
+\helpref{FCompare}{wxstringFCompare}\\
+\helpref{Comparisons}{wxstringComparison}\\
+
+\section{Composition and Concatenation}
+\helpref{wxString::operator +=}{wxstringPlusEqual}\\
+\helpref{wxString::Append}{wxstringAppend}\\
+\helpref{wxString::Prepend}{wxstringPrepend}\\
+\helpref{wxString::Cat}{wxstringCat}\\
+\helpref{operator +}{wxstringoperatorplus}\\
+
+\section{Constructors/Destructors}
+\helpref{wxString::wxString}{wxstringconstruct}\\
+\helpref{wxString::~wxString}{wxstringdestruct}\\
+
+\section{Conversions}
+\helpref{wxString::operator const char *}{wxstringoperatorconstcharpt}\\
+\helpref{wxString::Chars}{wxstringChars}\\
+\helpref{wxString::GetData}{wxstringGetData}\\
+
+\section{Deletion/Insertion}
+\helpref{wxString::Del}{wxstringDel}\\
+\helpref{wxString::Remove}{wxstringRemove}\\
+\helpref{wxString::Insert}{wxstringInsert}\\
+\helpref{Split}{wxstringSplit}\\
+\helpref{Join}{wxstringJoin}\\
+
+\section{Duplication}
+\helpref{wxString::Copy}{wxstringCopy}\\
+\helpref{wxString::Replicate}{wxstringReplicate}\\
+
+\section{Element access}
+\helpref{wxString::operator[]}{wxstringoperatorbracket}\\
+\helpref{wxString::operator()}{wxstringoperatorparenth}\\
+\helpref{wxString::Elem}{wxstringElem}\\
+\helpref{wxString::Firstchar}{wxstringFirstchar}\\
+\helpref{wxString::Lastchar}{wxstringLastchar}\\
+
+\section{Extraction of Substrings}
+\helpref{wxString::At}{wxstringAt}\\
+\helpref{wxString::Before}{wxstringBefore}\\
+\helpref{wxString::Through}{wxstringThrough}\\
+\helpref{wxString::From}{wxstringFrom}\\
+\helpref{wxString::After}{wxstringAfter}\\
+\helpref{wxString::SubString}{wxstringSubString}\\
+
+\section{Input/Output}
+\helpref{wxString::sprintf}{wxstringsprintf}\\
+\helpref{wxString::operator<<}{wxstringoperatorout}\\
+\helpref{wxString::operator>>}{wxstringoperatorin}\\
+\helpref{wxString::Readline}{wxstringReadline}\\
+
+\section{Searching/Matching}
+\helpref{wxString::Index}{wxstringIndex}\\
+\helpref{wxString::Contains}{wxstringContains}\\
+\helpref{wxString::Matches}{wxstringMatches}\\
+\helpref{wxString::Freq}{wxstringFreq}\\
+\helpref{wxString::First}{wxstringFirst}\\
+\helpref{wxString::Last}{wxstringLast}\\
+
+\section{Substitution}
+\helpref{wxString::GSub}{wxstringGSub}\\
+\helpref{wxString::Replace}{wxstringReplace}\\
+
+\section{Status}
+\helpref{wxString::Length}{wxstringLength}\\
+\helpref{wxString::Empty}{wxstringEmpty}\\
+\helpref{wxString::Allocation}{wxstringAllocation}\\
+
+\section{Transformations}
+\helpref{wxString::Reverse}{wxstringReverse}\\
+\helpref{wxString::Upcase}{wxstringUpcase}\\
+\helpref{wxString::UpperCase}{wxstringUpperCase}\\
+\helpref{wxString::DownCase}{wxstringDownCase}\\
+\helpref{wxString::LowerCase}{wxstringLowerCase}\\
+\helpref{wxString::Capitalize}{wxstringCapitalize}\\
+
+\section{Utilities}
+\helpref{wxString::Strip}{wxstringStrip}\\
+\helpref{wxString::Error}{wxstringError}\\
+\helpref{wxString::OK}{wxstringOK}\\
+\helpref{wxString::Alloc}{wxstringAlloc}\\
+\helpref{wxCHARARG}{wxstringwxCHARARG}\\
+\helpref{CommonPrefix}{wxstringCommonPrefix}\\
+\helpref{CommonSuffix}{wxstringCommonSuffix}\\
+

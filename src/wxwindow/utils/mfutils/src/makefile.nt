@@ -1,0 +1,100 @@
+#
+# File:		makefile.nt
+# Author:	Julian Smart
+# Created:	1993
+# Updated:	
+# Copyright:	(c) 1993, AIAI, University of Edinburgh
+#
+# "%W% %G%"
+#
+!include <ntwin32.mak>
+OS_SPEC=/nologo -DWINNT -DMS_WINDOWS -Dwx_msw
+ALLFLAGS= $(OS_SPEC) $(cflags) $(cvars) $(cdebug)
+# Makefile : Builds Hypertext hytext.lib library for Windows 3.1
+
+# Change CWORK to wherever wxWindows is found
+WXDIR = $(WX)
+WXLIB = $(WXDIR)\lib\wx.lib
+WXINC = $(WXDIR)\include
+
+HYPDIR = $(WXDIR)\utils\hytext
+HYPINC = $(HYPDIR)\src
+HYPLIB = $(HYPDIR)\lib\hytext.lib
+
+INC = /I$(WXDIR)\include\base /I$(WXDIR)\include\msw
+
+#
+# Not used
+#
+#LIBS=$(WXLIB) $(HYPLIB) libw llibcew commdlg ddeml shell
+
+#---------------------------------------------------------------------
+# Not yet tested with NT
+#
+#!ifndef FINAL
+#FINAL=0
+#!endif
+
+#PRECOMP=/YuWX.H 
+
+#!if "$(FINAL)" == "0"
+#OPT = /Od
+#CPPFLAGS= /AL /W3 /Zi /G2sw $(OPT) /Dwx_msw $(INC) $(PRECOMP) /Fp$(WXDIR)\src\msw\wx.pch
+#CFLAGS= /AL /W3 /Zi /G2sw /Od /Dwx_msw
+#LINKFLAGS=/NOD /CO /ONERROR:NOEXE
+#!else
+# /Ox for real FINAL version
+#OPT = /Ox
+#CPPFLAGS= /AL /W3 /Od /G2sw $(OPT) /Dwx_msw $(INC) $(PRECOMP) /Fp$(WXDIR)\src\msw\wx.pch
+#CFLAGS= /AL /W3 /Od /G2sw /Dwx_msw
+#LINKFLAGS=/NOD /ONERROR:NOEXE
+#!endif
+#---------------------------------------------------------------------
+
+SOURCES = hytext.cc
+HEADERS = hytext.h
+OBJECTS = hytext.obj
+
+all:    $(HYPLIB)
+
+wx:
+        cd $(WXDIR)\src
+        nmake -f makefile.nt $(WXLIB) FINAL=$(FINAL)
+        cd $(HYPDIR)\src
+
+#
+# Obsol.
+#
+#$(HYPLIB):      $(OBJECTS)
+#        erase $(HYPLIB)
+#        lib /PAGESIZE:128 @<<
+#$(HYPLIB)
+#y
+#$(OBJECTS)
+#nul
+#;
+#<<
+
+#
+# NT lib.
+#
+$(HYPLIB): $(OBJECTS)
+	-erase $(HYPLIB)
+	$(implib) @<<
+-out:$(HYPLIB)
+-machine:$(CPU)
+$(OBJECTS)
+<<
+
+$(OBJECTS):     $(HYPINC)\hytext.h
+
+# Optimizing causes a weird problem where blocks aren't read properly.
+hytext.obj: hytext.cc $(HYPINC)\hytext.h
+        $(cc) @<<
+$(ALLFLAGS) $(INC) /Od /c /Tp $*.cc
+<<
+
+clean:
+        erase *.obj *.exe *.lib ..\lib\*.lib
+
+cleanall:	clean

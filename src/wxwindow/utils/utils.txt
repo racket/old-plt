@@ -1,0 +1,48 @@
+
+wxWindows Utilities
+-------------------
+
+colours         A colour sampler for wxWindows.
+
+dib             Various Windows BMP routines. In the default wxWindows
+                setup, this code is used to implement some wxBitmap
+                loading/saving methods.
+
+hytext          A simple hypertext window class (used in wxHelp).
+
+image           wxImage class for X *ONLY*. In the default wxWindows
+                setup, this code is used to implement some wxBitmap
+                loading methods. Don't try compiling this under
+                Windows.
+
+mfutils         A start at machine-independent Windows Metafile
+                reading code.
+
+prologio        File loading and saving utilities, as used by
+                wxBuilder and the .wxr resource loading code.
+                Included in the wxWindows .lib or .a library
+                by default.
+
+rcparser        Parses Windows resource files, and loads .ico and
+                .cur files. Included in the wxWindows library by
+                default.
+
+tex2rtf         The tool used to maintain wxWindows documentation
+                in multiple formats. Generates HTML, WinHelp RTF,
+                linear RTF and wxHelp files from simplified LaTeX
+                files. Also available separately from AIAI's ftp site.
+
+winstall        An easy-to-use Windows application installation utility.
+
+wxbuild         wxBuilder; the wxWindows screen-painter/code generator.
+
+wxgraph         A graph layout algorithm (nodes and arcs, not bar
+                charts!).
+
+wxtree          A tree layout algorithm.
+
+xpmshow         An XPM<->BMP conversion program. Works best under
+                Windows. wxXPM must be compiled into wxWindows for
+                this to compile properly.
+    
+

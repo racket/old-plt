@@ -1,0 +1,85 @@
+#
+# File:		makefile.dos
+# Author:	Julian Smart
+# Created:	1993
+# Updated:	
+# Copyright:	(c) 1993, AIAI, University of Edinburgh
+#
+# "%W% %G%"
+#
+# Makefile : Builds DIB dib.lib library for Windows 3.1
+
+# Change WXDIR or WXWIN to wherever wxWindows is found
+WXDIR = $(WXWIN)
+WXLIB = $(WXDIR)\lib\wx.lib
+WXINC = $(WXDIR)\include
+
+DIBDIR = $(WXDIR)\utils\dib
+DIBINC = $(DIBDIR)
+DIBLIB = $(DIBDIR)\dib.lib
+
+INC = /I$(WXDIR)\include\base /I$(WXDIR)\include\msw
+
+LIBS=$(WXLIB) $(DIBLIB) libw llibcew commdlg ddeml shell # ctl3d
+
+# Set this to nothing if your compiler is MS C++ 7
+ZOPTION=
+
+!ifndef FINAL
+FINAL=0
+!endif
+
+PRECOMP=/YuWX.H 
+
+!if "$(FINAL)" == "0"
+OPT = /Od
+CPPFLAGS= /AL /W4 /Gt4 /Zi $(ZOPTION) /G2sw $(OPT) /Dwx_msw $(INC) # $(PRECOMP) /Fp$(WXDIR)\src\msw\wx.pch
+CFLAGS= /AL /W4 /Gt4 /Zi /G2sw /Od /Dwx_msw
+LINKFLAGS=/NOD /CO /ONERROR:NOEXE
+!else
+# /Ox for real FINAL version
+OPT = /Ox
+CPPFLAGS= /AL /W4 /Gt4 /Zi /Os /G2sw $(OPT) /Dwx_msw $(INC) # $(PRECOMP) /Fp$(WXDIR)\src\msw\wx.pch
+CFLAGS= /AL /W4 /Gt4 /Zi /Os /G2sw /Dwx_msw
+LINKFLAGS=/NOD /ONERROR:NOEXE
+!endif
+
+SOURCES = dib.cc
+HEADERS = dib.h
+OBJECTS = dib.obj # gifdecod.obj gifencod.obj
+
+all:    $(DIBLIB)
+
+wx:
+        cd $(WXDIR)\src
+        nmake -f makefile.dos $(WXLIB) FINAL=$(FINAL)
+
+$(DIBLIB):      $(OBJECTS)
+        erase $(DIBLIB)
+        lib /PAGESIZE:128 @<<
+$(DIBLIB)
+y
+$(OBJECTS)
+nul
+;
+<<
+
+dib.obj: dib.cc dib.h
+        cl @<<
+$(CPPFLAGS) /Od /c /Tp $*.cc
+<<
+
+gifencod.obj: gifencod.c gif.h
+        cl @<<
+$(CFLAGS) /Od /c $*.c
+<<
+
+gifdecod.obj: gifdecod.c gif.h
+        cl @<<
+$(CFLAGS) /Od /c $*.c
+<<
+
+clean:
+        erase *.obj *.exe *.lib
+
+cleanall:	clean

@@ -1,0 +1,58 @@
+#************************************************************************
+# Makefile for wxstring library under VMS
+#
+# by Stefan Hammes
+# (incomplete) update history:
+# 26.05.94
+# 28.08.94
+# 19.11.94
+# 11.04.95
+#************************************************************************
+
+#************************************************************************
+# Definition section
+# (cave: definitions and includes must begin with ',')
+#************************************************************************
+
+APPOPTS = 
+APPDEFS = 
+APPINCS = 
+
+#************************************************************************
+# Module section
+#************************************************************************
+
+# Name of main module
+MAIN = []wxstring
+
+# Object modules of the application.
+OBJS = wxregex.obj wxstrgnu.obj
+OBJLIST =wxregex.obj,wxstrgnu.obj
+
+.include [--.src]makevms.env
+
+# main dependency
+#+++steve162: changed 'all'->'$(MAIN).olb'
+$(MAIN).olb : $(OBJS)
+#---steve162
+	lib/create $(MAIN).olb $(OBJLIST)
+	- purge $(MAIN).olb
+
+demo : test.exe
+    @ Continue
+	
+# Warnings about multiply defined 'main' can be ignored
+test.exe : test.$(OBJ)
+    $(LINK) $(LINKFLAGS) /exec=test.exe test.$(OBJ),$(OBJLIST),$(WXLIB)/lib,$(OPTSFILE)/option
+    - purge *.exe
+
+#************************************************************************
+# Header file depedencies following
+#************************************************************************
+#+++steve162: changed wxstring.h -> wxstrgnu.h
+wxstrgnu.obj : wxstrgnu.cc wxstrgnu.h wxregex.h
+wxregex.obj : wxregex.cc wxregex.h
+
+test.obj : test.cc wxstrgnu.h wxregex.h
+#---steve162
+

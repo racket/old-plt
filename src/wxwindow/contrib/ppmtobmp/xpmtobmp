@@ -1,0 +1,1 @@
+cat $1.xpm|sed 's,None,grey,g'|sed 's,	.*	,	,'|sed 's,	.* c ,	c ,'|xpmtoppm|ppmtobmp >$1.bmp

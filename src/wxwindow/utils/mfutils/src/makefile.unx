@@ -1,0 +1,88 @@
+#
+# File:		makefile.unx
+# Author:	Julian Smart
+# Created:	1993
+# Updated:	
+# Copyright:	(c) 1993, AIAI, University of Edinburgh
+#
+# "%W% %G%"
+#
+# Makefile for libmfutils.a, Windows-independent metafile utilities
+
+WXDIR = ../../..
+
+# All common UNIX compiler flags and options are now in
+# this central makefile.
+include $(WXDIR)/src/make.env
+
+MFDIR = $(WXDIR)/utils/mfutils
+MFINC = $(MFDIR)/src
+MFLIB = $(MFDIR)/lib/libmfutils$(GUISUFFIX).a
+OBJDIR = $(MFDIR)/src/objects$(GUISUFFIX)
+DOCUTILSDIR = $(WXDIR)/utils/tex2rtf/src
+
+OBJECTS = $(OBJDIR)/mfutils.$(OBJSUFF)
+
+all:	$(OBJDIR) $(MFLIB)
+
+.SUFFIXES:
+
+motif:
+	cd $(WXDIR)/src/x; $(MAKE) -f makefile.unx motif OPT='$(OPT)'
+	$(MAKE) -f makefile.unx GUI=-Dwx_motif OPT='$(OPT)' DEBUG='$(DEBUG)' DEBUGFLAGS='$(DEBUGFLAGS)' GUISUFFIX=_motif LDLIBS='$(MOTIFLDLIBS)' XVIEW_LINK=
+
+xview:
+	cd $(WXDIR)/src/x; $(MAKE) -f makefile.unx xview OPT='$(OPT)'
+	$(MAKE) -f makefile.unx GUI=-Dwx_xview OPT='$(OPT)' DEBUG='$(DEBUG)' DEBUGFLAGS='$(DEBUGFLAGS)' GUISUFFIX=_ol
+
+hp:
+	$(MAKE) -f makefile.unx GUI=-Dwx_motif GUISUFFIX=_hp CC=CC DEBUG='' DEBUGFLAGS='$(DEBUGFLAGS)' WARN='-w' \
+           XINCLUDE='$(HPXINCLUDE)' XLIB='$(HPXLIB)' XVIEW_LINK='' CCLEX='cc' \
+           LDLIBS='$(HPLDLIBS)'
+
+$(MFLIB): $(OBJECTS)
+	rm -f $@
+	ar $(AROPTIONS) $@ $(OBJECTS)
+	$(RANLIB) $@
+
+$(OBJECTS):     $(MFINC)/mfutils.h
+
+$(OBJDIR):
+	mkdir $(OBJDIR)
+
+$(OBJDIR)/mfutils.$(OBJSUFF):	mfutils.$(SRCSUFF)
+	$(CC) -c $(CPPFLAGS) -o $@ mfutils.$(SRCSUFF)
+
+docs:	ps xlp
+ps:	$(MFDIR)/docs/manual.ps
+xlp:	$(MFDIR)/docs/mfutils.xlp
+html:	$(MFDIR)/docs/mfutils_contents.html
+
+$(MFDIR)/docs/mfutils.xlp:	$(MFDIR)/docs/classes.tex $(MFDIR)/docs/manual.tex $(DOCUTILSDIR)/tex2rtf_ol
+	$(DOCUTILSDIR)/tex2rtf_ol /project/2/gryphon/jacs/wx/utils/mfutils/docs/manual.tex $(MFDIR)/docs/tmp.xlp -xlp -twice
+	sed -e "s/WXHELPCONTENTS/mfutils Manual/g" < $(MFDIR)/docs/tmp.xlp > $(MFDIR)/docs/mfutils.xlp
+	/bin/rm -f $(MFDIR)/docs/tmp.xlp
+
+$(MFDIR)/docs/mfutils_contents.html:	$(MFDIR)/docs/classes.tex $(MFDIR)/docs/manual.tex $(DOCUTILSDIR)/tex2rtf_ol
+	cd $(MFDIR)/docs
+	/project/2/gryphon/jacs/wx/utils/wxhelp/src/tex2rtf_ol /project/2/gryphon/jacs/wx/utils/mfutils/docs/manual.tex /project/2/gryphon/jacs/wx/utils/mfutils/docs/mfutils -twice -html
+	/bin/cp ../docs/*.html /user/11/jacs/html/mfutils
+	/bin/rm -f ../docs/*.html
+
+$(MFDIR)/docs/manual.dvi:	$(MFDIR)/docs/manual.tex $(MFDIR)/docs/classes.tex
+	cd $(MFDIR)/docs; latex manual; latex manual; makeindex manual; latex manual; \
+
+$(MFDIR)/docs/manual.ps:	$(MFDIR)/docs/manual.dvi
+	cd $(MFDIR)/docs; dvips -f -r < manual.dvi > manual.ps
+
+cleaneach:
+	rm -f $(OBJECTS) $(MFDIR)/lib/libmfutils$(GUISUFFIX).a core
+
+clean_motif:
+	$(MAKE) -f makefile.unx GUISUFFIX=_motif cleaneach 
+
+clean_ol:
+	$(MAKE) -f makefile.unx GUISUFFIX=_ol cleaneach 
+
+clean_hp:
+	$(MAKE) -f makefile.unx GUISUFFIX=_hp cleaneach 

@@ -1,0 +1,58 @@
+#
+# File:		makefile.nt
+# Author:	Julian Smart
+# Created:	1993
+# Updated:	Ulrich Leodotler <ulrich@lab1.psy.univie.ac.at>, 1995
+# Copyright:	(c) 1993, AIAI, University of Edinburgh
+#
+# "%W% %G%"
+#
+# Makefile : Builds DIB dib.lib library for Windows NT
+
+!include <..\..\src\ntwxwin.mak>
+
+DIBDIR = $(WXDIR)\utils\dib
+DIBINC = $(DIBDIR)
+DIBLIB = $(DIBDIR)\dib.lib
+
+INC = /I$(WXBASEINC) /I$(WXINC)
+
+
+SOURCES = dib.cc
+HEADERS = dib.h
+OBJECTS = dib.obj # gifdecod.obj gifencod.obj
+
+all:    $(DIBLIB)
+
+wx:
+        cd $(WXDIR)\src
+        nmake -f makefile.nt
+	cd $(DIBDIR)
+
+$(DIBLIB):      $(OBJECTS)
+	-erase $(DIBLIB)
+        $(implib) @<<
+-out:$(DIBLIB)
+-machine:$(CPU)
+$(OBJECTS)
+<<
+
+dib.obj: dib.cc dib.h
+        cl @<<
+$(CPPFLAGS) /Od /c /Tp $*.cc
+<<
+
+gifencod.obj: gifencod.c gif.h
+        cl @<<
+$(CFLAGS) /Od /c $*.c
+<<
+
+gifdecod.obj: gifdecod.c gif.h
+        cl @<<
+$(CFLAGS) /Od /c $*.c
+<<
+
+clean:
+        erase *.obj *.exe *.lib
+
+cleanall:	clean

@@ -1,0 +1,54 @@
+gauge.geometry: 300x300+400+200
+*.background: grey
+
+
+*g1.orientation: HORIZONTAL
+*g1.height: 20
+*g1.foreground: red
+*g1.leftAttachment: ATTACH_FORM
+*g1.rightAttachment: ATTACH_FORM
+*g1.topAttachment: ATTACH_FORM
+*g1.leftOffset: 10
+*g1.rightOffset: 10
+*g1.topOffset: 10
+*g1.shadowThickness: 1
+
+
+*g2.processingDirection: MAX_ON_TOP
+*g2.width: 20
+*g2.foreground: green
+*g2.leftAttachment: ATTACH_FORM
+*g2.topAttachment: ATTACH_FORM
+*g2.bottomAttachment: ATTACH_FORM
+*g2.bottomOffset: 10
+*g2.leftOffset: 10
+*g2.topOffset: 50
+*g2.shadowThickness: 1
+
+
+
+*XmGauge.minimum: 0
+*XmGauge.maximum: 100
+*XmGauge.value: 10
+
+*file.labelString: File
+*help.labelString: Help
+*open.labelString: Open...
+*save.labelString: Save...
+*quit.labelString: Quit
+*index.labelString: Index
+*context.labelString: On context
+*version.labelString: Version
+
+
+*file.mnemonic: F
+*help.mnemonic: H
+*open.mnemonic: O
+*save.mnemonic: S
+*quit.mnemonic: Q
+*index.mnemonic: I
+*context.mnemonic: O
+*version.mnemonic: V
+
+*fontList: lucidasans-bold-12
+*XmPushButton.highlightThickness: 0

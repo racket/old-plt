@@ -1,0 +1,398 @@
+#************************************************************************
+# Makefile for wxWindows 1.62d library under VMS
+#
+# The dependencies are mostly copied from the UNIX makefile.
+# N.b.: we have only one makefile for the X and the Base Objects.
+#
+# You must define the following symbol (e.g. in 'login.com'):
+#
+# $ make == "mms/descrip=makefile.vms/macro=(ALPHA=1,WXDIR=[hammes.wxw162)"
+#
+# You can also use 'VAX=1'. The 'WXWIN' should be point to your
+# wxWindows directory (watch the format!!!)
+#
+# by Stefan Hammes
+# (incomplete) update history:
+# 26.05.94
+# 28.08.94
+# 19.11.94
+# 11.04.95
+# 09.06.95
+#************************************************************************
+
+#************************************************************************
+# Definition section for additional compiler arguments
+# (cave: definitions and includes must begin with ',')
+#************************************************************************
+
+APPOPTS = 
+APPDEFS = 
+APPINCS =
+
+# All common VMS compiler flags and options are now in
+# this central makefile.
+# Additionally the subsidiary libraries are specified there
+.include [-]makevms.env
+
+#************************************************************************
+# Module section
+# For VMS we need the comma separated lists
+#************************************************************************
+
+# Object modules of the application. (main.c is included by wx_main.cc!)
+XOBJS = wx_main.obj wx_win.obj wx_frame.obj\
+  wx_canvs.obj wx_panel.obj wx_item.obj\
+  wx_clipb.obj wx_text.obj wx_utils.obj wx_mf.obj\
+  wx_gdi.obj wx_dialg.obj wx_dc.obj wx_ipc.obj\
+  wx_timer.obj wx_stat.obj wx_vlbox.obj wx_scrol.obj\
+  wx_buttn.obj wx_check.obj wx_choic.obj wx_gauge.obj\
+  wx_group.obj wx_lbox.obj wx_rbox.obj wx_slidr.obj\
+  wx_txt.obj wx_mtxt.obj wx_messg.obj wx_menu.obj\
+  wx_cmdlg.obj
+
+XOBJLIST =wx_main.obj,wx_win.obj,wx_frame.obj,\
+wx_canvs.obj,wx_panel.obj,wx_item.obj,\
+wx_clipb.obj,wx_text.obj,wx_utils.obj,wx_mf.obj,\
+wx_gdi.obj,wx_dialg.obj,wx_dc.obj,wx_ipc.obj,\
+wx_timer.obj,wx_stat.obj,wx_vlbox.obj,wx_scrol.obj,\
+wx_buttn.obj,wx_check.obj,wx_choic.obj,wx_gauge.obj,\
+wx_group.obj,wx_lbox.obj,wx_rbox.obj,wx_slidr.obj,\
+wx_txt.obj,wx_mtxt.obj,wx_messg.obj,wx_menu.obj,\
+wx_cmdlg.obj
+
+BASEOBJS = [-.base]wb_win.obj [-.base]wb_frame.obj [-.base]wb_panel.obj\
+  [-.base]wb_utils.obj [-.base]wb_main.obj [-.base]wb_item.obj\
+  [-.base]wb_list.obj [-.base]wb_obj.obj [-.base]wb_ps.obj\
+  [-.base]wb_text.obj [-.base]wb_gdi.obj [-.base]wb_dialg.obj\
+  [-.base]wb_canvs.obj [-.base]wb_dc.obj [-.base]wb_mf.obj\
+  [-.base]wb_hash.obj [-.base]wb_ipc.obj [-.base]wb_form.obj\
+  [-.base]wb_timer.obj [-.base]wb_help.obj [-.base]wb_types.obj\
+  [-.base]wb_sysev.obj [-.base]wb_stdev.obj [-.base]wb_mgstr.obj\
+  [-.base]wx_enhdg.obj [-.base]wb_data.obj [-.base]wb_res.obj\
+  [-.base]wb_stat.obj [-.base]wb_scrol.obj [-.base]wb_vlbox.obj\
+  [-.base]wx_lay.obj [-.base]wx_doc.obj [-.base]wx_mem.obj [-.base]wb_print.obj\
+  [-.base]wx_tbar.obj [-.base]wx_bbar.obj [-.base]wx_date.obj [-.base]wxstring.obj\
+  [-.base]wx_date.obj [-.base]wx_time.obj [-.base]wx_frac.obj [-.base]wb_cmdlg.obj
+BASEOBJLIST =[-.base]wb_win.obj,[-.base]wb_frame.obj,[-.base]wb_panel.obj,\
+[-.base]wb_utils.obj,[-.base]wb_main.obj,[-.base]wb_item.obj,\
+[-.base]wb_list.obj,[-.base]wb_obj.obj,[-.base]wb_ps.obj,\
+[-.base]wb_text.obj,[-.base]wb_gdi.obj,[-.base]wb_dialg.obj,\
+[-.base]wb_canvs.obj,[-.base]wb_dc.obj,[-.base]wb_mf.obj,\
+[-.base]wb_hash.obj,[-.base]wb_ipc.obj,[-.base]wb_form.obj,\
+[-.base]wb_timer.obj,[-.base]wb_help.obj,[-.base]wb_types.obj,\
+[-.base]wb_sysev.obj,[-.base]wb_stdev.obj,[-.base]wb_mgstr.obj,\
+[-.base]wx_enhdg.obj,[-.base]wb_data.obj,[-.base]wb_res.obj,\
+[-.base]wb_stat.obj,[-.base]wb_scrol.obj,[-.base]wb_vlbox.obj,\
+[-.base]wx_lay.obj,[-.base]wx_doc.obj,[-.base]wx_mem.obj,[-.base]wb_print.obj,\
+[-.base]wx_tbar.obj,[-.base]wx_bbar.obj,[-.base]wx_date.obj,[-.base]wxstring.obj,\
+[-.base]wx_date.obj,[-.base]wx_time.obj,[-.base]wx_frac.obj,[-.base]wb_cmdlg.obj
+
+
+OBJS = $(XOBJS) $(BASEOBJS)
+OBJLIST = $(XOBJLIST),$(BASEOBJLIST)
+
+# main dependency
+lib : $(EXTRATARGETS) $(WXLIB)
+	@ Continue
+
+all : lib samples utils
+	@ Continue
+
+# VMS likes only commands < 1019 characters!!!
+$(WXLIB) : $(OBJS) $(EXTRAOBJS)
+	lib/create $(WXLIB) $(XOBJLIST) /log
+	lib/insert $(WXLIB) $(BASEOBJLIST) /log
+	lib/insert $(WXLIB) $(EXTRAOBJLIST) /log
+	purge $(WXLIB)
+
+#************************************************************************
+# Extra targets
+#************************************************************************
+prologio :
+	set default $(WXDIR).utils.prologio.src]
+    make
+	set default $(WXDIR).src.x]
+
+image :
+	set default $(WXDIR).utils.image.src]
+    make
+	set default $(WXDIR).src.x]
+
+xpm :
+	set default $(WXDIR).contrib.wxxpm]
+    make
+	set default $(WXDIR).src.x]
+
+gauge :
+	set default $(WXDIR).contrib.wxgauge]
+    make
+	set default $(WXDIR).src.x]
+
+wxstring :
+	set default $(WXDIR).contrib.wxstring]
+    make
+	set default $(WXDIR).src.x]
+
+#************************************************************************
+# Samples
+#************************************************************************
+samples :
+	set def [--.samples.hello]
+	make
+	set def [-.animate]
+	make
+	set def [-.fractal]
+	make
+	set def [-.form]
+	make
+	set def [-.mdi]
+	make
+	set def [-.minimal]
+	make
+	set def [-.layout]
+	make
+	set def [-.docview]
+	make
+	set def [-.printing]
+	make
+	set def [-.toolbar]
+	make
+	set def [--.src.x]
+
+#************************************************************************
+# Utils
+#************************************************************************
+utils :
+    @ Continue
+
+#************************************************************************
+# Header file depedencies following
+#************************************************************************
+
+$(OBJS) :	[--.include.base]wx_setup.h
+$(OBJS) :	[--.include.base]common.h [--.include.base]wx_obj.h
+
+wx_win.obj :	wx_win.cc [--.include.x]wx_win.h
+
+wx_frame.obj :	wx_frame.cc [--.include.x]wx_win.h [--.include.x]wx_frame.h\
+                [--.include.base]wx_stdev.h [--.include.x]wx_main.h
+
+wx_panel.obj :	wx_panel.cc [--.include.x]wx_win.h [--.include.x]wx_frame.h \
+                [--.include.x]wx_panel.h [--.include.base]wx_stdev.h [--.include.base]wx_list.h
+
+wx_canvs.obj :	wx_canvs.cc [--.include.x]wx_win.h [--.include.x]wx_frame.h\
+                [--.include.x]wx_canvs.h [--.include.base]wx_stdev.h [--.include.x]wx_gdi.h\
+                [--.include.base]wx_list.h [--.include.x]wx_dc.h
+
+wx_dc.obj :        wx_dc.cc [--.include.x]wx_win.h [--.include.x]wx_frame.h\
+                [--.include.x]wx_canvs.h [--.include.base]wx_stdev.h [--.include.x]wx_gdi.h\
+                [--.include.base]wx_list.h [--.include.x]wx_dc.h [--.include.x]wx_dccan.h [--.include.x]wx_dcmem.h
+
+wx_mf.obj :        wx_mf.cc [--.include.x]wx_win.h [--.include.x]wx_frame.h\
+                [--.include.x]wx_canvs.h [--.include.base]wx_stdev.h [--.include.x]wx_gdi.h\
+                [--.include.x]wx_mf.h
+
+wx_text.obj :	wx_text.cc [--.include.x]wx_win.h [--.include.x]wx_frame.h\
+                [--.include.x]wx_text.h [--.include.base]wx_stdev.h
+
+wx_item.obj :	wx_item.cc [--.include.x]wx_win.h [--.include.x]wx_frame.h\
+                [--.include.x]wx_panel.h [--.include.x]wx_item.h [--.include.base]wx_stdev.h
+
+wx_main.obj :	wx_main.cc [--.include.x]wx_main.h main.c
+
+wx_cmdlg.obj :	wx_cmdlg.cc [--.include.x]wx_cmdlg.h
+
+# The following doesn't work, see the file 'wx_main.cc' for details.
+# Therefore we have the above dependency to 'main.c'
+
+# use the C++ compiler because of flag problems with the C compiler
+#main.obj :	main.c
+#      	$(CXX) $(CFLAGS) /object=$*.$(OBJ) $*.c
+#        - purge $*.$(OBJ)
+
+wx_event.obj :     wx_event.cc [--.include.base]wx_stdev.h
+
+wx_gdi.obj :	wx_gdi.cc [--.include.x]wx_gdi.h [--.include.base]wx_list.h
+
+#+++steve162: changed to .x
+wx_clipb.obj :	wx_clipb.cc [--.include.x]wx_clipb.h
+#---steve162
+
+wx_ipc.obj :	wx_ipc.cc [--.include.x]wx_ipc.h
+
+wx_dialg.obj :	wx_dialg.cc [--.include.x]wx_dialg.h [--.include.x]wx_panel.h [--.include.x]wx_win.h [--.include.x]wx_item.h
+
+wx_timer.obj :     wx_timer.cc [--.include.x]wx_timer.h
+
+wx_utils.obj :     wx_utils.cc [--.include.base]wx_utils.h
+
+wx_stat.obj :     wx_stat.cc [--.include.x]wx_stat.h
+
+wx_scrol.obj :     wx_scrol.cc [--.include.x]wx_scrol.h
+
+wx_vlbox.obj :     wx_vlbox.cc [--.include.x]wx_vlbox.h
+
+wx_check.obj :     wx_check.cc [--.include.x]wx_check.h
+
+wx_choic.obj :     wx_choic.cc [--.include.x]wx_choic.h
+
+wx_buttn.obj :     wx_buttn.cc [--.include.x]wx_buttn.h
+
+wx_messg.obj :     wx_messg.cc [--.include.x]wx_messg.h
+
+wx_lbox.obj :     wx_lbox.cc [--.include.x]wx_lbox.h
+
+wx_rbox.obj :     wx_rbox.cc [--.include.x]wx_rbox.h
+
+wx_menu.obj :     wx_menu.cc [--.include.x]wx_menu.h
+
+wx_txt.obj :     wx_txt.cc [--.include.x]wx_txt.h
+
+wx_mtxt.obj :     wx_mtxt.cc [--.include.x]wx_mtxt.h
+
+wx_gauge.obj :     wx_gauge.cc [--.include.x]wx_gauge.h
+
+wx_slidr.obj :     wx_slidr.cc [--.include.x]wx_slidr.h
+
+wx_group.obj :     wx_group.cc [--.include.x]wx_group.h
+
+# we have no OpenLook under VMS
+#objects_ol/sb_scrol.o:	sb_scrol.c
+#	$(CCC) -c $(CFLAGS) -o $@ sb_scrol.c
+
+#+++steve162: these dependencies make problems with some VMS
+#[--.include.x]wx_win.h :  [--.include.base]wb_win.h
+#[--.include.x]wx_main.h :  [--.include.base]wb_main.h
+#[--.include.x]wx_frame.h :  [--.include.base]wb_frame.h
+#[--.include.x]wx_panel.h :  [--.include.base]wb_panel.h
+#[--.include.x]wx_text.h :  [--.include.base]wb_text.h
+#[--.include.x]wx_dialg.h :  [--.include.base]wb_dialg.h
+#[--.include.x]wx_ipc.h :  [--.include.base]wb_ipc.h
+#[--.include.x]wx_gdi.h :  [--.include.base]wb_gdi.h
+#[--.include.x]wx_canvs.h :  [--.include.base]wb_canvs.h
+#[--.include.x]wx_mf.h :  [--.include.base]wb_mf.h
+#[--.include.x]wx_item.h :  [--.include.base]wb_item.h
+#[--.include.x]wx_buttn.h :  [--.include.base]wb_buttn.h
+#[--.include.x]wx_messg.h :  [--.include.base]wb_messg.h
+#[--.include.x]wx_choic.h :  [--.include.base]wb_choic.h
+#[--.include.x]wx_check.h :  [--.include.base]wb_check.h
+#[--.include.x]wx_lbox.h :  [--.include.base]wb_lbox.h
+#[--.include.x]wx_txt.h :  [--.include.base]wb_txt.h
+#[--.include.x]wx_mtxt.h :  [--.include.base]wb_mtxt.h
+#[--.include.x]wx_slidr.h :  [--.include.base]wb_slidr.h
+#[--.include.x]wx_menu.h :  [--.include.base]wb_menu.h
+#---steve162
+
+[-.base]wb_win.obj :	[-.base]wb_win.cc [--.include.x]wx_win.h [--.include.base]wx_obj.h
+
+[-.base]wb_data.obj :	[-.base]wb_data.cc
+
+[-.base]wb_frame.obj :	[-.base]wb_frame.cc [--.include.x]wx_win.h [--.include.x]wx_frame.h\
+                [--.include.base]wx_stdev.h [--.include.x]wx_main.h
+
+[-.base]wb_panel.obj :	[-.base]wb_panel.cc [--.include.x]wx_win.h [--.include.x]wx_frame.h \
+                [--.include.x]wx_panel.h [--.include.base]wx_stdev.h [--.include.base]wx_list.h
+
+[-.base]wb_canvs.obj :	[-.base]wb_canvs.cc [--.include.x]wx_win.h [--.include.x]wx_frame.h\
+                [--.include.x]wx_canvs.h [--.include.base]wx_stdev.h [--.include.x]wx_gdi.h\
+                [--.include.base]wx_list.h [--.include.x]wx_dc.h
+
+[-.base]wb_dc.obj :        [-.base]wb_dc.cc [--.include.x]wx_win.h [--.include.x]wx_frame.h\
+                [--.include.x]wx_canvs.h [--.include.base]wx_stdev.h [--.include.x]wx_gdi.h\
+                [--.include.base]wx_list.h [--.include.x]wx_dc.h
+
+[-.base]wb_ps.obj :        [-.base]wb_ps.cc [--.include.x]wx_win.h [--.include.base]wx_list.h [--.include.x]wx_dc.h
+
+[-.base]wb_mf.obj :        [-.base]wb_mf.cc [--.include.x]wx_win.h [--.include.x]wx_frame.h\
+                [--.include.x]wx_canvs.h [--.include.base]wx_stdev.h [--.include.x]wx_gdi.h\
+                [--.include.x]wx_mf.h
+
+[-.base]wb_text.obj :	[-.base]wb_text.cc [--.include.x]wx_win.h [--.include.x]wx_frame.h\
+                [--.include.x]wx_text.h [--.include.base]wx_stdev.h
+
+[-.base]wb_item.obj :	[-.base]wb_item.cc [--.include.x]wx_win.h [--.include.x]wx_frame.h\
+                [--.include.x]wx_panel.h [--.include.x]wx_item.h [--.include.base]wx_stdev.h
+
+[-.base]wb_main.obj :	[-.base]wb_main.cc [--.include.x]wx_main.h
+
+[-.base]wb_obj.obj :	[-.base]wb_obj.cc [--.include.base]wx_obj.h
+
+[-.base]wb_event.obj :     [-.base]wb_event.cc [--.include.base]wx_stdev.h
+
+[-.base]wb_list.obj :	[-.base]wb_list.cc [--.include.base]wx_list.h
+
+[-.base]wxstring.obj :	[-.base]wxstring.cc [--.include.base]wxstring.h
+
+[-.base]wb_hash.obj :      [-.base]wb_hash.cc [--.include.base]wx_list.h [--.include.base]wx_hash.h
+
+[-.base]wb_gdi.obj :	[-.base]wb_gdi.cc [--.include.x]wx_gdi.h [--.include.base]wx_list.h
+
+[-.base]wb_ipc.obj :	[-.base]wb_ipc.cc [--.include.x]wx_ipc.h [--.include.base]wx_obj.h
+
+[-.base]wb_dialg.obj :	[-.base]wb_dialg.cc [--.include.x]wx_dialg.h [--.include.x]wx_panel.h [--.include.x]wx_win.h [--.include.x]wx_item.h
+
+[-.base]wb_form.obj :      [-.base]wb_form.cc [--.include.base]wx_form.h [--.include.x]wx_panel.h [--.include.x]wx_win.h
+
+[-.base]wb_timer.obj :     [-.base]wb_timer.cc [--.include.x]wx_timer.h [--.include.base]wx_obj.h
+
+[-.base]wb_help.obj :	[-.base]wb_help.cc [--.include.base]wx_help.h [--.include.x]wx_ipc.h [--.include.base]wx_obj.h
+
+[-.base]wb_types.obj :	[-.base]wb_types.cc [--.include.base]wx_types.h [--.include.base]wx_obj.h
+
+[-.base]wb_mgstr.obj :	[-.base]wb_mgstr.cc [--.include.base]wx_mgstr.h
+
+[-.base]wb_res.obj :	[-.base]wb_res.cc [--.include.base]wx_res.h
+
+[-.base]wb_sysev.obj :	[-.base]wb_sysev.cc [--.include.base]wx_sysev.h [--.include.base]wx_types.h
+
+[-.base]wb_stdev.obj :	[-.base]wb_stdev.cc [--.include.base]wx_sysev.h [--.include.base]wx_stdev.h [--.include.base]wx_types.h
+
+[-.base]wb_utils.obj :     [-.base]wb_utils.cc [--.include.base]wx_utils.h [--.include.base]wx_obj.h
+
+[-.base]wx_enhdg.obj :     [-.base]wx_enhdg.cc [--.include.base]wx_enhdg.h [--.include.base]wx_obj.h [--.include.x]wx_dialg.h
+
+[-.base]wx_doc.obj :     [-.base]wx_doc.cc [--.include.base]wx_doc.h
+
+[-.base]wx_mem.obj :     [-.base]wx_mem.cc [--.include.base]wx_mem.h
+
+[-.base]wx_lay.obj :     [-.base]wx_lay.cc [--.include.base]wx_lay.h
+
+[-.base]wb_print.obj :     [-.base]wb_print.cc [--.include.base]wx_print.h
+
+[-.base]wx_tbar.obj :     [-.base]wx_tbar.cc [--.include.base]wx_tbar.h
+
+[-.base]wx_bbar.obj :     [-.base]wx_bbar.cc [--.include.base]wx_bbar.h
+
+[-.base]wx_date.obj :     [-.base]wx_date.cc [--.include.base]wx_date.h
+
+[-.base]wx_time.obj :     [-.base]wx_time.cc [--.include.base]wx_time.h
+
+[-.base]wx_frac.obj :     [-.base]wx_frac.cc [--.include.base]wx_frac.h
+
+[-.base]wb_cmdlg.obj :     [-.base]wb_cmdlg.cc [--.include.base]wb_cmdlg.h
+
+#+++steve162: these dependencies make problems with some VMS
+#[--.include.x]wx_win.h :  [--.include.base]wb_win.h
+#[--.include.x]wx_main.h :  [--.include.base]wb_main.h
+#[--.include.x]wx_frame.h :  [--.include.base]wb_frame.h
+#[--.include.x]wx_panel.h :  [--.include.base]wb_panel.h
+#[--.include.x]wx_text.h :  [--.include.base]wb_text.h
+#[--.include.x]wx_dialg.h :  [--.include.base]wb_dialg.h
+#[--.include.x]wx_ipc.h :  [--.include.base]wb_ipc.h
+#[--.include.x]wx_gdi.h :  [--.include.base]wb_gdi.h
+#[--.include.x]wx_canvs.h :  [--.include.base]wb_canvs.h
+#[--.include.x]wx_mf.h :  [--.include.base]wb_mf.h
+#[--.include.x]wx_item.h :  [--.include.base]wb_item.h
+#[--.include.x]wx_buttn.h :  [--.include.base]wb_buttn.h
+#[--.include.x]wx_messg.h :  [--.include.base]wb_messg.h
+#[--.include.x]wx_choic.h :  [--.include.base]wb_choic.h
+#[--.include.x]wx_check.h :  [--.include.base]wb_check.h
+#[--.include.x]wx_lbox.h :  [--.include.base]wb_lbox.h
+#[--.include.x]wx_txt.h :  [--.include.base]wb_txt.h
+#[--.include.x]wx_mtxt.h :  [--.include.base]wb_mtxt.h
+#[--.include.x]wx_slidr.h :  [--.include.base]wb_slidr.h
+#[--.include.x]wx_menu.h :  [--.include.base]wb_menu.h
+## [--.include.base]wx_enhdg.h :	[--.include.x]wx_dialg.h
+
+# end of makefile.vms
+

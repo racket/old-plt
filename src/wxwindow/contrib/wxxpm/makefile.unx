@@ -1,0 +1,162 @@
+#
+# makefile for wxxpm
+#
+# File:		makefile.unx
+# Author:	Julian Smart
+# Created:	1995
+# Updated:	
+# Copyright:	(c) 1995, AIAI, University of Edinburgh
+#
+# "%W% %G%"
+#
+
+WXDIR = ../..
+
+# All common UNIX compiler flags and options are now in
+# this central makefile.
+include $(WXDIR)/src/make$(MZPLATFORMSUFFIX).env
+
+# You may need to change this to $(CCC): but on my system,
+# the standard C compiler doesn't like ANSI prototypes.
+XPMCOMPILER=$(CC)
+
+GAUGEDIR=$(WXDIR)/contrib/xmgauge
+IMAGEDIR=$(WXDIR)/utils/image
+IMAGELIB=$(IMAGEDIR)/lib
+
+INC = -I$(WXDIR)/include/base -I$(WXDIR)/include/x -I./libxpm.34b/lib
+OBJDIR=objects$(GUISUFFIX)
+
+XVIEWLDLIBS = -lwx_ol -lxview -lolgx -lX11 -lm $(COMPLIBS)
+MOTIFLDLIBS = -lwx_motif -lXm -lXt -lX11 -lm $(COMPLIBS)
+HPLDLIBS = -lwx_hp -lXm -lXt -lX11 -lm $(HPCOMPLIBS)
+# Default
+LDLIBS=$(XVIEWLDLIBS)
+
+CPPFLAGS = $(XINCLUDE) $(INC) $(OPTIONS) $(GUI) -DDEBUG='$(DEBUG)' $(DEBUGFLAGS) $(WARN) $(OPT) -L.
+
+SOURCES_LIB = 	libxpm.34b/lib/crbuffri.c libxpm.34b/lib/crbuffrp.c \
+		libxpm.34b/lib/crdatfri.c libxpm.34b/lib/crdatfrp.c \
+		libxpm.34b/lib/create.c libxpm.34b/lib/crifrbuf.c \
+		libxpm.34b/lib/crifrdat.c libxpm.34b/lib/crpfrbuf.c \
+		libxpm.34b/lib/crpfrdat.c libxpm.34b/lib/data.c \
+		libxpm.34b/lib/hashtab.c libxpm.34b/lib/misc.c \
+		libxpm.34b/lib/parse.c libxpm.34b/lib/rdftodat.c \
+		libxpm.34b/lib/rdftoi.c libxpm.34b/lib/rdftop.c \
+		libxpm.34b/lib/rgb.c libxpm.34b/lib/scan.c \
+		libxpm.34b/lib/simx.c libxpm.34b/lib/wrffrdat.c \
+		libxpm.34b/lib/wrffri.c libxpm.34b/lib/wrffrp.c
+
+XPMLIB=libxpm$(GUISUFFIX).a
+
+OBJECTS_LIB = 	$(OBJDIR)/crbuffri.$(OBJSUFF) $(OBJDIR)/crbuffrp.$(OBJSUFF) \
+		$(OBJDIR)/crdatfri.$(OBJSUFF) $(OBJDIR)/crdatfrp.$(OBJSUFF) \
+		$(OBJDIR)/create.$(OBJSUFF) $(OBJDIR)/crifrbuf.$(OBJSUFF) \
+		$(OBJDIR)/crifrdat.$(OBJSUFF) $(OBJDIR)/crpfrbuf.$(OBJSUFF) \
+		$(OBJDIR)/crpfrdat.$(OBJSUFF) $(OBJDIR)/data.$(OBJSUFF) \
+		$(OBJDIR)/hashtab.$(OBJSUFF) $(OBJDIR)/misc.$(OBJSUFF) \
+		$(OBJDIR)/parse.$(OBJSUFF) $(OBJDIR)/rdftodat.$(OBJSUFF) \
+		$(OBJDIR)/rdftoi.$(OBJSUFF) $(OBJDIR)/rdftop.$(OBJSUFF) \
+		$(OBJDIR)/rgb.$(OBJSUFF) $(OBJDIR)/scan.$(OBJSUFF) \
+		$(OBJDIR)/simx.$(OBJSUFF) $(OBJDIR)/wrffrdat.$(OBJSUFF) \
+		$(OBJDIR)/wrffri.$(OBJSUFF) $(OBJDIR)/wrffrp.$(OBJSUFF)
+
+
+.SUFFIXES:
+
+all:    $(OBJDIR) libxpm$(GUISUFFIX).a
+
+wx_ol:
+	cd $(WXDIR)/src/x; $(MAKE) -f makefile.unx xview OPT='$(OPT)'
+
+wx_motif:
+	cd $(WXDIR)/src/x; $(MAKE) -f makefile.unx motif OPT='$(OPT)'
+
+linux_motif_sl:
+	$(MAKE) -f makefile.unx GUI='-Dwx_motif -D_LINUX_DLL' OPT='$(OPT)' GUISUFFIX=_motif LDLIBS='$(MOTIFLDLIBS)' XVIEW_LINK=
+
+motif:
+	$(MAKE) -f makefile.unx all GUI=-Dwx_motif OPT='$(OPT)' GUISUFFIX=_motif LDLIBS='$(MOTIFLDLIBS)' XVIEW_LINK=
+
+motif_prof:
+	$(MAKE) -f makefile.unx all GUI=-Dwx_motif OPT='$(OPT)' GUISUFFIX=_motif_prof LDLIBS='$(MOTIFLDLIBS)' XVIEW_LINK=
+
+xview:
+	$(MAKE) -f makefile.unx GUI=-Dwx_xview OPT='$(OPT)' GUISUFFIX=_ol
+xview_prof:
+	$(MAKE) -f makefile.unx GUI=-Dwx_xview OPT='$(OPT)' GUISUFFIX=_ol_prof
+
+hp:
+	$(MAKE) -f makefile.unx GUI=-Dwx_motif GUISUFFIX=_hp CC=CC DEBUG='$(DEBUG)' DEBUGFLAGS='' WARN='-w' \
+           XINCLUDE='-I/usr/include/Motif1.2 -I/usr/include/X11R5' \
+           XLIB='-L/usr/lib/Motif1.2 -L/usr/lib/X11R5' \
+           XVIEW_LINK='' \
+           LDLIBS='-lwx_hp -lXm -lXt -lX11 -lm'
+
+$(OBJDIR):
+	mkdir $(OBJDIR)
+
+$(XPMLIB): $(OBJECTS_LIB)
+	rm -f $@
+	ar $(AROPTIONS) $@ $(OBJECTS_LIB)
+	$(RANLIB) $@
+
+$(OBJDIR)/crbuffri.$(OBJSUFF): libxpm.34b/lib/crbuffri.c
+	 $(XPMCOMPILER) -c $(CPPFLAGS) -o $@ libxpm.34b/lib/crbuffri.c
+$(OBJDIR)/crbuffrp.$(OBJSUFF): libxpm.34b/lib/crbuffrp.c
+	 $(XPMCOMPILER) -c $(CPPFLAGS) -o $@ libxpm.34b/lib/crbuffrp.c
+$(OBJDIR)/crdatfri.$(OBJSUFF): libxpm.34b/lib/crdatfri.c
+	 $(XPMCOMPILER) -c $(CPPFLAGS) -o $@ libxpm.34b/lib/crdatfri.c
+$(OBJDIR)/crdatfrp.$(OBJSUFF): libxpm.34b/lib/crdatfrp.c
+	 $(XPMCOMPILER) -c $(CPPFLAGS) -o $@ libxpm.34b/lib/crdatfrp.c
+$(OBJDIR)/create.$(OBJSUFF): libxpm.34b/lib/create.c
+	 $(XPMCOMPILER) -c $(CPPFLAGS) -o $@ libxpm.34b/lib/create.c
+$(OBJDIR)/crifrbuf.$(OBJSUFF): libxpm.34b/lib/crifrbuf.c
+	 $(XPMCOMPILER) -c $(CPPFLAGS) -o $@ libxpm.34b/lib/crifrbuf.c
+$(OBJDIR)/crifrdat.$(OBJSUFF): libxpm.34b/lib/crifrdat.c
+	 $(XPMCOMPILER) -c $(CPPFLAGS) -o $@ libxpm.34b/lib/crifrdat.c
+$(OBJDIR)/crpfrbuf.$(OBJSUFF): libxpm.34b/lib/crpfrbuf.c
+	 $(XPMCOMPILER) -c $(CPPFLAGS) -o $@ libxpm.34b/lib/crpfrbuf.c
+$(OBJDIR)/crpfrdat.$(OBJSUFF): libxpm.34b/lib/crpfrdat.c
+	 $(XPMCOMPILER) -c $(CPPFLAGS) -o $@ libxpm.34b/lib/crpfrdat.c
+$(OBJDIR)/data.$(OBJSUFF): libxpm.34b/lib/data.c
+	 $(XPMCOMPILER) -c $(CPPFLAGS) -o $@ libxpm.34b/lib/data.c
+$(OBJDIR)/hashtab.$(OBJSUFF): libxpm.34b/lib/hashtab.c
+	 $(XPMCOMPILER) -c $(CPPFLAGS) -o $@ libxpm.34b/lib/hashtab.c
+$(OBJDIR)/misc.$(OBJSUFF): libxpm.34b/lib/misc.c
+	 $(XPMCOMPILER) -c $(CPPFLAGS) -o $@ libxpm.34b/lib/misc.c
+$(OBJDIR)/parse.$(OBJSUFF): libxpm.34b/lib/parse.c
+	 $(XPMCOMPILER) -c $(CPPFLAGS) -o $@ libxpm.34b/lib/parse.c
+$(OBJDIR)/rdftodat.$(OBJSUFF): libxpm.34b/lib/rdftodat.c
+	 $(XPMCOMPILER) -c $(CPPFLAGS) -o $@ libxpm.34b/lib/rdftodat.c
+$(OBJDIR)/rdftoi.$(OBJSUFF): libxpm.34b/lib/rdftoi.c
+	 $(XPMCOMPILER) -c $(CPPFLAGS) -o $@ libxpm.34b/lib/rdftoi.c
+$(OBJDIR)/rdftop.$(OBJSUFF): libxpm.34b/lib/rdftop.c
+	 $(XPMCOMPILER) -c $(CPPFLAGS) -o $@ libxpm.34b/lib/rdftop.c
+$(OBJDIR)/rgb.$(OBJSUFF): libxpm.34b/lib/rgb.c
+	 $(XPMCOMPILER) -c $(CPPFLAGS) -o $@ libxpm.34b/lib/rgb.c
+$(OBJDIR)/scan.$(OBJSUFF): libxpm.34b/lib/scan.c
+	 $(XPMCOMPILER) -c $(CPPFLAGS) -o $@ libxpm.34b/lib/scan.c
+$(OBJDIR)/simx.$(OBJSUFF): libxpm.34b/lib/simx.c
+	 $(XPMCOMPILER) -c $(CPPFLAGS) -o $@ libxpm.34b/lib/simx.c
+$(OBJDIR)/wrffrdat.$(OBJSUFF): libxpm.34b/lib/wrffrdat.c
+	 $(XPMCOMPILER) -c $(CPPFLAGS) -o $@ libxpm.34b/lib/wrffrdat.c
+$(OBJDIR)/wrffri.$(OBJSUFF): libxpm.34b/lib/wrffri.c
+	 $(XPMCOMPILER) -c $(CPPFLAGS) -o $@ libxpm.34b/lib/wrffri.c
+$(OBJDIR)/wrffrp.$(OBJSUFF): libxpm.34b/lib/wrffrp.c
+	 $(XPMCOMPILER) -c $(CPPFLAGS) -o $@ libxpm.34b/lib/wrffrp.c
+
+clean_motif:
+	$(MAKE) -f makefile.unx GUISUFFIX=_motif cleanany
+
+clean_ol:
+	$(MAKE) -f makefile.unx GUISUFFIX=_ol cleanany
+
+clean_ol:
+	$(MAKE) -f makefile.unx GUISUFFIX=_ol cleanany
+
+clean_hp:
+	$(MAKE) -f makefile.unx GUISUFFIX=_hp cleanany
+
+cleanany:
+	rm -f $(OBJECTS) $(OBJECTS_LIB)  wxxpm$(GUISUFFIX) core

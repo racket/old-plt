@@ -1,0 +1,72 @@
+
+# Makefile for Motif gauge (UNIX).
+# Change the WXDIR directory, and CPPFLAGS and LDFLAGS, for your system.
+# Usage: $(MAKE) -f makefile.unx motif
+
+WXDIR = ../..
+
+# All common UNIX compiler flags and options are now in
+# this central makefile.
+include $(WXDIR)/src/make$(MZPLATFORMSUFFIX).env
+
+GAUGEDIR = $(WXDIR)/contrib/xmgauge
+GAUGELIB = $(GAUGEDIR)/libgauge$(GUISUFFIX).a
+OBJDIR = objects$(GUISUFFIX)
+OBJECTS = $(OBJDIR)/gauge.o
+
+LDFLAGS = $(XLIB) -L$(GAUGEDIR)/lib -L$(WXDIR)/lib -L.
+
+MOTIFLDLIBS = -lgauge_motif -lwx_motif -lXm -lXt -lX11 -lm $(COMPLIBS)
+HPLDLIBS = -lgauge_hp -lwx_hp -lXm -lXt -lX11 -lm $(HPCOMPLIBS)
+# Default
+LDLIBS=$(XVIEWLDLIBS)
+
+all:	$(OBJDIR) $(GAUGELIB)
+
+.SUFFIXES:
+
+motif:
+	$(MAKE) -f makefile.unx GUI=-Dwx_motif OPT='$(OPT)' GUISUFFIX=_motif LDLIBS='$(MOTIFLDLIBS)' XVIEW_LINK=
+
+motif_prof:
+	$(MAKE) -f makefile.unx GUI=-Dwx_motif OPT='$(OPT)' GUISUFFIX=_motif_prof LDLIBS='$(MOTIFLDLIBS)' XVIEW_LINK=
+
+demo_motif:
+	$(MAKE) -f makefile.unx test_motif GUI=-Dwx_motif OPT='$(OPT)' GUISUFFIX=_motif LDLIBS='$(MOTIFLDLIBS)' XVIEW_LINK=
+
+hp:
+	$(MAKE) -f makefile.unx GUI=-Dwx_motif GUISUFFIX=_hp CC=CC DEBUGFLAGS='' DEBUG='$(DEBUG)' WARN='-w' \
+           XINCLUDE='$(HPXINCLUDE)' XLIB='$(HPXLIB)' XVIEW_LINK='' CCLEX='cc' \
+           LDLIBS='$(HPLDLIBS)'
+
+demo_hp:
+	$(MAKE) -f makefile.unx test_hp GUI=-Dwx_motif GUISUFFIX=_hp CC=CC DEBUG='$(DEBUG)' DEBUGFLAGS='' WARN='-w' \
+           XINCLUDE='$(HPXINCLUDE)' XLIB='$(HPXLIB)' XVIEW_LINK='' CCLEX='cc' \
+           LDLIBS='$(HPLDLIBS)'
+
+$(OBJDIR):
+	mkdir $(OBJDIR)
+
+$(GAUGELIB): $(OBJECTS)	
+	rm -f $@
+	ar rv $@ $(OBJECTS)
+	$(RANLIB) $@
+
+$(OBJDIR)/gauge.o:	gauge.c gauge.h gaugep.h
+	$(CCC) -c $(CFLAGS) -o $@ gauge.c
+
+$(OBJDIR)/main.o:		gauge.h main.c
+	$(CCC) -c $(CFLAGS) -o $@ main.c
+
+test$(GUISUFFIX): $(OBJDIR)/main.o $(GAUGELIB)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o test$(GUISUFFIX) $(OBJDIR)/main.o $(OBJDIR)/gauge.o $(LDLIBS)
+
+cleaneach:
+	rm -f $(OBJECTS) $(IMAGELIB) core
+
+clean_motif:
+	$(MAKE) -f makefile.unx GUISUFFIX=_motif cleaneach 
+
+clean_hp:
+	$(MAKE) -f makefile.unx GUISUFFIX=_hp cleaneach 
+

@@ -2567,18 +2567,13 @@ static char *read_compact_chars(CPort *port,
 {
   /* Range check is performed before the function is called. */
   char *s;
-  char *src;
-  int i;
 
   if (l < bsize)
     s = buffer;
   else
     s = (char *)scheme_malloc_atomic(l + 1);
 
-  src = (char *)port->start + port->pos;
-  for (i = 0; i < l; i++) {
-    s[i] = src[i];
-  }
+  memcpy(s, port->start + port->pos, l);
   port->pos += l;
 
   s[l] = 0;

@@ -60,6 +60,9 @@ volatile int scheme_fuel_counter;
 Scheme_Thread **scheme_current_thread_ptr;
 volatile int *scheme_fuel_counter_ptr;
 #endif
+void (*scheme_start_atomic)(void);
+void (*scheme_end_atomic)(void);
+void (*scheme_end_atomic_no_swap)(void);
 void (*scheme_out_of_fuel)(void);
 Scheme_Object *(*scheme_thread)(Scheme_Object *thunk);
 Scheme_Object *(*scheme_thread_w_details)(Scheme_Object *thunk, 

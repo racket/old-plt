@@ -649,7 +649,8 @@
           (define/override (get-position) 'left-top)
 
           (define/public (read-special source line column position)
-            (raise (make-special-comment 1)))
+            #`(special)
+            #;(raise (make-special-comment 1)))
           
           (super-instantiate ())
           (inherit set-snipclass get-editor)

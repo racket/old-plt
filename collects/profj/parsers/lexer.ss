@@ -304,9 +304,10 @@
      ("/*" (begin (read-block-comment input-port) (return-without-pos (get-token input-port))))
      #;("/**" (begin (read-document-comment input-port) (return-without-pos (get-token input-port))))
        
-     ((special) 
+     ((special)
       (syntax-case lexeme ()
         ((parse-example-box examples) (token-EXAMPLE (make-example-box (syntax examples))))
+        ((special) (return-without-pos (get-token input-port)))
         (_ (token-OTHER_SPECIAL (list lexeme start-pos end-pos)))))
      #;(begin(printf "lexing a special")
             (syntax-case lexeme ()

@@ -77,7 +77,7 @@ string=? ; exec ${PLTHOME}/bin/mzscheme -qr $0 "$@"
     [(i386-linux i386-freebsd)
      (add-flags current-extension-linker-flags
 		(list "--whole-archive"))]
-    [else (fpritnf (current-error-port)
+    [else (fprintf (current-error-port)
 		   "mzmake.ss Warning: trying to use .a library, but don't know how to force inclusion;~
                   ~n   result may have undefined references~n")]))
 

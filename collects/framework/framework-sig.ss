@@ -4,7 +4,7 @@
 	   "gui-utils-sig.ss"
 	   "private/sig.ss")
 
-  (provide framework^ frameworkc^)
+  (provide framework^ frameworkc^ framework-class^)
 
   (define-signature frameworkc^
     ([unit application : framework:application^]
@@ -21,24 +21,44 @@
      [unit scheme-paren : framework:scheme-paren^]
      [unit path-utils : framework:path-utils^]
      [unit icon : framework:icon^]
-
      [unit editor : framework:editor^]
      [unit pasteboard : framework:pasteboard^]
      [unit text : framework:text^]
-
      [unit finder : framework:finder^]
-
      [unit group : framework:group^]
-
      [unit canvas : framework:canvas^]
-
      [unit panel : framework:panel^]
-
      [unit menu : framework:menu^]
-     
      [unit frame : framework:frame^]
      [unit scheme : framework:scheme^]
      [unit main : framework:main^]))
+
+  (define-signature framework-class^
+    ([unit application : framework:application-class^]
+     [unit version : framework:version-class^]
+     [unit color-model : framework:color-model-class^]
+     [unit exn : framework:exn-class^]
+     [unit exit : framework:exit-class^]
+     [unit preferences : framework:preferences-class^]
+     [unit autosave : framework:autosave-class^]
+     [unit handler : framework:handler-class^] 
+     [unit keymap : framework:keymap-class^]
+     [unit match-cache : framework:match-cache-class^]
+     [unit paren : framework:paren-class^]
+     [unit scheme-paren : framework:scheme-paren-class^]
+     [unit path-utils : framework:path-utils-class^]
+     [unit icon : framework:icon-class^]
+     [unit editor : framework:editor-class^]
+     [unit pasteboard : framework:pasteboard-class^]
+     [unit text : framework:text-class^]
+     [unit finder : framework:finder-class^]
+     [unit group : framework:group-class^]
+     [unit canvas : framework:canvas-class^]
+     [unit panel : framework:panel-class^]
+     [unit menu : framework:menu-class^]
+     [unit frame : framework:frame-class^]
+     [unit scheme : framework:scheme-class^]
+     [unit main : framework:main-class^]))
 
   (define-signature framework^
     ([unit test : framework:test^]

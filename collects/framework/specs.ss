@@ -5,7 +5,9 @@
            ->d
            ->*
            ->d*
-           case->)
+           case->
+           provide/contract)
+  
   (require-for-syntax mzscheme
                       (lib "list.ss")
 		      (lib "name.ss" "syntax")
@@ -13,10 +15,81 @@
   
   (require (lib "class.ss"))
   
+  ;; (provide/contract (id expr) ...)
+  ;; provides each `id' with the contract `expr'.
+  (define-syntax (provide/contract provide-stx)
+    (syntax-case provide-stx ()
+      [(_ (id ctrct) ...)
+       (andmap identifier? (syntax->list (syntax (id ...))))
+       (with-syntax ([(id-rename ...) (generate-temporaries (syntax (id ...)))]
+                     [pos-blame-stx (datum->syntax-object provide-stx 'here)]
+                     [module-source-as-symbol (datum->syntax-object 
+                                               provide-stx
+                                               'module-source-as-symbol)]
+                     [pos-blame 
+                      (datum->syntax-object 
+                       provide-stx
+                       'module-source-as-symbol)])
+         (syntax
+          (begin
+            (provide (rename id-rename id) ...)
+            (require (lib "contract-helpers.scm" "framework" "private"))            
+            (define-syntax id-rename
+              (make-set!-transformer
+               (lambda (stx)
+                 (with-syntax ([neg-blame-stx (datum->syntax-object stx 'here)]
+                               [m-stx stx])
+                   (syntax-case stx (set!)
+                     [(set! _ body) (raise-syntax-error
+                                     #f 
+                                     "cannot mutate provide/contract identifier"
+                                     stx
+                                     (syntax _))]
+                     [(_ arg (... ...)) 
+                      (syntax 
+                       ((-contract ctrct
+                                   id
+                                   (module-source-as-symbol (quote-syntax pos-blame-stx)) 
+                                   (module-source-as-symbol (quote-syntax neg-blame-stx))
+                                   (quote-syntax _))
+                        arg
+                        (... ...)))]
+                     [_
+                      (identifier? (syntax _))
+                      (syntax 
+                       (-contract ctrct
+                                  id  
+                                  (module-source-as-symbol (quote-syntax pos-blame-stx)) 
+                                  (module-source-as-symbol (quote-syntax neg-blame-stx))
+                                  (quote-syntax _)))])))))
+            ...)))]
+      [(_ clauses ...)
+       (for-each
+	(lambda (clause)
+	  (syntax-case clause ()
+	    [(x y)
+	     (identifier? (syntax x))
+	     (void)]
+	    [(x y)
+	     (raise-syntax-error
+	      'provide/contract
+	      "malformed clause (expected an identifier as first item in clause)"
+	      provide-stx
+	      (syntax x))]
+	    [_ (raise-syntax-error
+		'provide/contract
+		"malformed clause (expected two items in each clause)"
+		provide-stx
+		clause)]))
+	(syntax->list (syntax (clauses ...))))]))
+  
   (define (raise-error src-info to-blame fmt . args)
-    (error 'contract-violation
-           (string-append (format "blame: ~a; contract: ~s; " to-blame src-info)
-                          (apply format fmt args))))
+    (error
+     'contract-error
+     (string-append (format "blame: ~a; contract established at: ~s; " 
+                            to-blame
+                            src-info)
+                    (apply format fmt args))))
   
   (define-struct contract (f))
 
@@ -24,25 +97,10 @@
     (lambda (stx)
       (syntax-case stx ()
         [(_ a-contract to-check pos-blame-e neg-blame-e)
-         (with-syntax ([src-loc (cond
-                                  [(and (syntax-source stx)
-                                        (syntax-span stx)
-                                        (syntax-line stx)
-                                        (syntax-column stx))
-                                   (format "~a: ~a.~a[~a]"
-                                           (syntax-source stx)
-                                           (syntax-line stx)
-                                           (syntax-column stx)
-                                           (syntax-span stx))]
-                                  [(and (syntax-source stx)
-                                        (syntax-position stx))
-                                   (format "~a: ~a"
-                                           (syntax-source stx)
-                                           (syntax-position stx))]
-                                  [else
-                                   (format "~s" (syntax-object->datum (syntax a-contract)))])])
+         (with-syntax ([src-loc (datum->syntax-object stx 'here)])
            (syntax
-            (-contract a-contract to-check pos-blame-e neg-blame-e src-loc)))]
+            (-contract a-contract to-check pos-blame-e neg-blame-e
+                       (quote-syntax src-loc))))]
         [(_ a-contract-e to-check pos-blame-e neg-blame-e src-info-e)
          (let ([name (syntax-local-infer-name (syntax a-contract-e))])
            (with-syntax ([named-a-contract-e
@@ -69,7 +127,14 @@
                          a-contract 
                          name
                          src-info))
-                (check-contract a-contract name pos-blame neg-blame src-info-e)))))])))
+                (unless (syntax? src-info)
+                  (error 'contract "expected syntax as last argument, got: ~e, other args ~e ~e ~e ~e"
+                         src-info
+                         neg-blame 
+                         pos-blame
+                         a-contract 
+                         name))
+                (check-contract a-contract name pos-blame neg-blame src-info)))))])))
   
   (define-syntaxes (-> ->* ->d ->d* case->)
     (let ()

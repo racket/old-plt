@@ -832,7 +832,7 @@
         (when (memq level `(advanced full))
           (check-gtequal-access mods name parms cname over? (method-src method)))
         
-        (unless (is-eq-subclass? ret (method-record-rtype over?) type-recs)
+        (unless (type=? ret (method-record-rtype over?))
           (override-return-error name parms cname ret 
                         (method-record-rtype over?)
                         (type-spec-src (method-type method))))

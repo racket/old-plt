@@ -601,7 +601,7 @@
                 ((semi-colon? next-tok) 
                  (parse-error "Expected a constructor body, ; is only allowed for abstract methods" next-start next-end))
                 (else
-                 (parse-error ("Expected a constructor body, starting with {, found ~a" next-out) next-start next-end)))))
+                 (parse-error (format "Expected a constructor body, starting with {, found ~a" next-out) next-start next-end)))))
            ((or (prim-type? tok) (id-token? tok))
             (let* ((next (getter))
                    (next-tok (get-tok next))
@@ -675,7 +675,7 @@
                  (parse-error (format "Method body begins with a {, found ~a" next-out) next-start next-end))
                 ((semi-colon? next-tok) (parse-members next (getter) 'start getter))
                 (else
-                 (parse-error ("Expected a method body, starting with {, found ~a" next-out) next-start next-end)))))
+                 (parse-error (format "Expected a method body, starting with {, found ~a" next-out) next-start next-end)))))
            ((or (prim-type? tok) (id-token? tok))
             (let* ((next (getter))
                    (next-tok (get-tok next))

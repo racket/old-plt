@@ -76,7 +76,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\..\mzscheme\include,..\..\mzscheme\gc"
+				AdditionalIncludeDirectories="..\..\mzscheme\include,..\..\mzscheme\src,..\..\mzscheme\gc,..\..\foreign\libffi_msvc"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;__STDC__;_USRDLL;GC_DLL"
 				StringPooling="TRUE"
 				RuntimeLibrary="0"
@@ -211,6 +211,12 @@
 				RelativePath="..\..\mzscheme\src\builtin.c">
 			</File>
 			<File
+				RelativePath="..\..\foreign\libffi_msvc\ffi.c">
+			</File>
+			<File
+				RelativePath="..\..\foreign\foreign.c">
+			</File>
+			<File
 				RelativePath="..\..\mzscheme\src\gmp\gmp.c">
 			</File>
 			<File
@@ -238,13 +244,22 @@
 				RelativePath="..\..\mzscheme\src\portfun.c">
 			</File>
 			<File
+				RelativePath="..\..\foreign\libffi_msvc\prep_cif.c">
+			</File>
+			<File
 				RelativePath="..\..\mzscheme\src\stxobj.c">
 			</File>
 			<File
 				RelativePath="..\..\mzscheme\src\thread.c">
 			</File>
 			<File
+				RelativePath="..\..\foreign\libffi_msvc\types.c">
+			</File>
+			<File
 				RelativePath="..\..\mzscheme\src\vector.c">
+			</File>
+			<File
+				RelativePath="..\..\foreign\libffi_msvc\win32.c">
 			</File>
 		</Filter>
 		<Filter

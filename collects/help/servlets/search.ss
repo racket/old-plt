@@ -55,10 +55,10 @@
 		 (METHOD "POST"))
 		(TABLE ((CELLSPACING "0")
 			(CELLPADDING "0"))
-		 (TR 
+		 (TR ((VALIGN "top"))
 		  (TD 
-		   (TABLE 
-		    (TR  
+		   (TABLE
+		    (TR 
 		     (TD ((ALIGN "right"))
 			 (B ,(color-with search-fg
 					 "Search for:")))
@@ -102,7 +102,8 @@
 			   (CELLPADDING "0"))
 			  (TR 
 			   (TD
-			    ,(make-search-link "/servlets/main.ss" "Help Desk home"
+			    ,(make-search-link "/servlets/main.ss" 
+					       "Help Desk home"
 					       "main")))
 			  (TR
 			   (TD 

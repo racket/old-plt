@@ -146,13 +146,13 @@
      [(string? item)
       (mxprims:com-get-property obj item)]
      [else
-      (error "For COM property, expected a string or a 2-element list with a string a the first element")]))
+      (error "For COM property, expected a string or a list with a string a the first element")]))
 
   (define (com-get-property obj . path)
     (cond 
      [(null? path) 
       (error 'com-get-property
-	     "Expected one or more properties (strings or 2-element lists with a string as the first element)")]
+	     "Expected one or more properties (strings or lists with a string as the first element)")]
      [(null? (cdr path))
       (get-item-property obj (car path))]
      [else (apply com-get-property
@@ -169,12 +169,11 @@
       (let ([ppty (car path-and-value)]
 	    [val (cadr path-and-value)])
 	(if (list? ppty)
-	    (if (and (string? (car ppty))
-		     (= 2 (length ppty)))
+	    (if (string? (car ppty))
 		(apply mxprims:com-set-property! obj 
 		       (append ppty (list val)))
 		(error 'com-set-property! 
-		       "Indexed property must be a 2-element list with a string (property name) as the first element"))
+		       "Indexed property must be a list with a string (property name) as the first element"))
 	    (mxprims:com-set-property! obj ppty val)))]
      [else (apply com-set-property!
 		  (get-item-property obj (car path-and-value))

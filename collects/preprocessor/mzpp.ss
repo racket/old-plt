@@ -10,29 +10,32 @@
 (define no-spaces? (make-parameter #f))
 (define debug?     (make-parameter #f))
 
-(define swallow-newline? (make-parameter #f))
-
 (define current-indentation (make-parameter '()))
+(define current-spaces      (make-parameter #f))
+(define current-newline?    (make-parameter #f))
 
 (provide thunk)
 (define-syntax thunk
   (syntax-rules () [(thunk body0 body1 ...) (lambda () body0 body1 ...)]))
 
 (provide push-indentation pop-indentation)
-(define (push-indentation n)
-  (swallow-newline? #t)
-  (current-indentation (cons (make-string n #\space) (current-indentation))))
+(define (push-indentation i)
+  (current-indentation (cons i (current-indentation))))
 (define (pop-indentation)
-  (current-indentation (cdr (current-indentation))))
+  (current-indentation (cdr (current-indentation)))
+  (current-spaces 'x))
 
 (provide newline*)
 (define (newline*)
-  (if (no-spaces?)
-    (newline)
-    (let ([indent (current-indentation)])
-      (unless (swallow-newline?) (newline))
-      (swallow-newline? #f)
-      (unless (null? indent) (display (car indent))))))
+  (cond
+   [(no-spaces?) (newline)]
+   [(eq? '- (current-spaces)) (current-spaces #f)]
+   [(and (current-newline?) (eq? 'x (current-spaces))) (current-spaces #f)]
+   [else (newline)
+         (let ([i (current-indentation)] [s (current-spaces)])
+           (when (string? s) (display s))
+           (current-spaces (and (pair? i) (car i)))
+           (current-newline? #t))]))
 
 (provide show)
 (define (show . args)
@@ -40,11 +43,18 @@
     (cond [(or (void? x) (not x) (null? x))]
           [(procedure? x)
            (if (procedure-arity-includes? x 0)
-             (show (x))
+             (call-with-values x show)
              (error 'mzpp "got a bad procedure value: ~e" x))]
           [(promise? x) (show (force x))]
           [(pair? x) (show (car x)) (show (cdr x))]
-          [else (swallow-newline? #f) (display x)]))
+          [else (if (no-spaces?)
+                  (display x)
+                  (let ([spc1 (current-spaces)]
+                        [spc2 (and (string? x) (regexp-match #rx"^ *$" x))])
+                    (when (string? spc1) (display spc1))
+                    (current-spaces (and spc2 (car spc2)))
+                    (unless spc2 (display x))
+                    (current-newline? #f)))]))
   (for-each show args))
 
 (define (process)
@@ -77,34 +87,39 @@
   (set-markers (beg-mark) (end-mark))
   (close)
   (let loop ([str (read-line)] [k 0])
-    (cond [(eof-object? str)]
-          [skip-to-re
-           (when (regexp-match skip-to-re str)
-             (set! skip-to-re #f) (skip-to #f))
-           (loop (read-line) 0)]
-          [(and (zero? k) (regexp-match token-change-string str)) =>
-           (lambda (m)
-             (set-markers (cadr m) (caddr m))
-             ;; the follwing has no effect on the current text, but will on
-             ;; included texts
-             (writeln `(thunk (beg-mark ,(cadr m)) (end-mark ,(caddr m))))
-             (loop (read-line) 0))]
-          [(regexp-match-positions token-re str k) =>
-           (lambda (m)
-             (let ([token (substring str (caar m) (cdar m))])
-               (unless (= k (caar m)) (disp (substring str k (caar m))))
-               (cond [(cadr m) (disp (substring str (+ 1 (caadr m)) (cdar m)))]
-                     [(equal? token (beg-mark))
-                      (open) (writeln `(thunk (push-indentation ,(caar m))))]
-                     [(equal? token (end-mark))
-                      (close) (writeln `(thunk (pop-indentation)))]
-                     [else (disp token)])
-               (loop str (cdar m))))]
-          [else (cond [(= k (string-length str))]
-                      [(zero? k) (disp str)]
-                      [else (disp (substring str k))])
-                (newln)
-                (loop (read-line) 0)]))
+    (cond
+     [(eof-object? str)]
+     [skip-to-re
+      (when (regexp-match skip-to-re str)
+        (set! skip-to-re #f) (skip-to #f))
+      (loop (read-line) 0)]
+     [(and (zero? k) (regexp-match token-change-string str)) =>
+      (lambda (m)
+        (set-markers (cadr m) (caddr m))
+        ;; the follwing has no effect on the current text, but will on included
+        ;; texts
+        (writeln `(thunk (beg-mark ,(cadr m)) (end-mark ,(caddr m))))
+        (loop (read-line) 0))]
+     [(regexp-match-positions token-re str k) =>
+      (lambda (m)
+        (let ([token (substring str (caar m) (cdar m))])
+          (unless (= k (caar m)) (disp (substring str k (caar m))))
+          (cond [(cadr m) (disp (substring str (+ 1 (caadr m)) (cdar m)))]
+                [(equal? token (beg-mark))
+                 (open)
+                 (writeln `(thunk (push-indentation
+                                   ,(regexp-replace* #rx"[^ \t\n]"
+                                                     (substring str 0 (caar m))
+                                                     " "))))]
+                [(equal? token (end-mark))
+                 (close) (writeln `(thunk (pop-indentation)))]
+                [else (disp token)])
+          (loop str (cdar m))))]
+     [else (cond [(= k (string-length str))]
+                 [(zero? k) (disp str)]
+                 [else (disp (substring str k))])
+           (newln)
+           (loop (read-line) 0)]))
   (open))
 
 (define (pp-repl)
@@ -121,9 +136,11 @@
        (if (input-port? file)
          (parameterize ([stdin file]) (process))
          (let-values ([(dir name _) (split-path file)])
-           (printf "~s\n" `(thunk (cd ,(if (string? dir) dir (cd)))))
+           (printf "~s\n" `(thunk (cd ,(if (string? dir) dir (cd)))
+                                  (current-file ,name)))
            (with-input-from-file file process)
-           (printf "~s\n" `(thunk (cd ,(cd))))))) ; return to original dir
+           (printf "~s\n" `(thunk (cd ,(cd)) ; return to original dir
+                                  (current-file #f))))))
      files))
   (if (debug?)
     (do-files)
@@ -137,7 +154,7 @@
                 (close-output-port out)))
       (parameterize ([stdin in]) (abort-handler pp-repl))
       (done)))
-  (swallow-newline? #t))
+  (current-spaces '-))
 
 (provide include)
 (define (include . files)

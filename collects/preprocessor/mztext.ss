@@ -313,9 +313,10 @@
                   [(dir) (if (string? dir) dir (cd))])
       ;; could `add-to-input' and then `run' if we wrap this by a (cd dir), but
       ;; instead, plant cd-thunks in the input stream.
-      (add-to-input (lambda () (cd dir))
-                    (if (input-port? f) f (open-input-file f))
-                    (lambda () (cd curdir)))))
+      (add-to-input
+       (lambda () (cd dir) (current-file (and (string? name) name)))
+       (if (input-port? f) f (open-input-file f))
+       (lambda () (cd curdir) (current-file #f)))))
   (swallow-newline) ; swallow *before* more stuff is added
   (for-each cd+file (reverse inputs))
   (run))

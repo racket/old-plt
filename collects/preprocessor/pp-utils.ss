@@ -6,6 +6,9 @@
 (define stderr current-error-port)
 (define cd     current-directory)
 
+(provide current-file)
+(define current-file (make-parameter #f))
+
 (provide add-eval do-evals)
 (define evals (make-parameter '()))
 (define (add-eval expr) (evals (cons expr (evals))))

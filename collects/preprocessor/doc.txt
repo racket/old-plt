@@ -78,22 +78,22 @@ and ending markers:
 
 First, this file is converted to the following Scheme code:
 
-  |(thunk (cd "tmp/"))
-  |(thunk (push-indentation 0))
+  |(thunk (cd "tmp/") (current-file "foo"))
+  |(thunk (push-indentation ""))
   | (define bar "BAR") (thunk (pop-indentation))
   |newline*
   |"foo1"
   |newline*
   |"foo2 "
-  |(thunk (push-indentation 5))
+  |(thunk (push-indentation "     "))
   | bar newline* bar (thunk (pop-indentation))
   |" baz"
   |newline*
   |"foo3"
   |newline*
-  |(thunk (cd "/home/eli"))
+  |(thunk (cd "/home/eli") (current-file #f))
 
-which is being fed to the REPL, which then prints:
+which is then fed to the REPL, resulting in the following output:
 
   |foo1
   |foo2 BAR
@@ -120,7 +120,7 @@ side effects).  For example:
   |<< (if (zero? (random 2))
   |     (list >>foo1<<)
   |     (list >>foo2<<))
-  |   newline >>
+  |>>
   |<< (if (zero? (random 2)) (list >>
   |foo1
   |<<) (list >>
@@ -272,7 +272,7 @@ used is `no-spaces?' but even that makes little sense on selected parts.
 
 The following are bindings that are used in preprocessed texts:
 
-> (push-indentation int)
+> (push-indentation str)
 > (pop-indentation)
 
   These two calls are used to save the indentation column where the
@@ -321,6 +321,11 @@ Miscellaneous:
 
   These are shorter names for the corresponding port parameters and
   `current-directory'.
+
+> current-file
+
+  This is a parameter that holds the name of the currently processed
+  file, or #f if none.
 
 
 ========================================================================
@@ -672,3 +677,8 @@ Miscellaneous:
 
   These are shorter names for the corresponding port parameters and
   `current-directory'.
+
+> current-file
+
+  This is a parameter that holds the name of the currently processed
+  file, or #f if none.

@@ -44,23 +44,15 @@
 ;(define max-bid-const (make-parameter 10))
   (define max-bid (make-parameter 0))
   (define player-cur (make-parameter #f))
+  (define robots (make-parameter null))
   
   
   (define-struct search-player (x y id money capacity packages))
   
 	(define (update-robots robot-list p)
+          (robots robot-list)
           (player-cur p)
-          (let ([around-val (if (> (home-squares) (dest-squares))
-                                (home-squares)
-                                (dest-squares))])
-            (do 
-                ([y (- (search-player-y (player-cur)) around-val) (+ y 1)]
-                 [counter-y 0 (+ counter-y 1)])
-	      ((< counter-y (+ 1 (* 2 around-val))) (void 2))
-              (do ([x (- (search-player-x (player-cur)) around-val) (+ x 1)]
-                   [counter-x 0 (+ counter-x 1)])
-                ((< counter-x (+ 1 (* 2 around-val))) (void 2))
-                (set-invalid (get-spot board x y))))))
+          )
 	;; 
 
 	
@@ -76,9 +68,7 @@
 		 [no-packages (if (null? (search-player-packages (player-cur)))
 				    1
 				    0)]
-		 [weight (if (= 1 (get-valid spot))
-			     (get-weight spot)
-			     (let ([new-weight
+		 [weight (let ([new-weight
 				    (+ (if (could-player-move? (board) x y (player-cur))
                                            (+ (* (wall-danger-value) (wall-danger? (board) x y))
                                               (* (water-danger-value) (water-danger? (board) x y))
@@ -140,7 +130,7 @@
 			       (begin
 				 (set-weight (inexact->exact (round new-weight)) (get-spot (board) x y))
 				 (set-valid (get-spot (board) x y))
-				 (inexact->exact (round new-weight)))))]
+				 (inexact->exact (round new-weight))))]
 		 [bid (if (could-player-move? (board) x y p)
                           (begin
                            ; (printf "Possible player move, max-bid:~a~n" (max-bid))
@@ -295,7 +285,7 @@
 	  (syntax-rules ()
 			((_ board x y)
                          
-			 (and (= 1 (get-robot (get-spot board x y)))
+			 (and (not (null (filter (lambda (rob) (= x (robot-x rob)) (= y (robot-y rob))) (robots))))
                               (not (and (= (search-player-x (player-cur)) x) (= (search-player-y (player-cur)) y))) ))))
 
   

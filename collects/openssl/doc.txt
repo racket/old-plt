@@ -88,16 +88,25 @@ Per-platform notes:
 
  * Windows
 
-   The setup script wants "libeay32.lib" and "ssleay32.lib", which it
+   The setup script needs "libeay32.lib" and "ssleay32.lib", which it
    can find automatically if they are installed as
-   plt/collects/openssl/openssl/{lib,ssl}easy32.lib. Similarly, it
-   wants header files, which it can find automatically if they are
-   installed as plt/collects/openssl/openssl/include/openssl/ssl.h,
-   etc. At run-time, "libeay32.dll" and "ssleay32.dll" must be found
-   by the system for application using the OpenSSL library (e.g., in
-   the system folder, in the same directory as the application).
+   plt/collects/openssl/openssl/{lib,ssl}easy32.lib. Similarly, the
+   setup script needs several OpenSSL header files (such as "ssl.h"),
+   which it can find automatically if they are installed as
+   plt/collects/openssl/openssl/include/openssl/ssl.h, etc.
 
-   To designate a directory other than plt/collects/openssl
+   At run-time, the DLLs "libeay32.dll" and "ssleay32.dll" must be
+   found by Windows as it tries to load the "mzssl.dll" extension. For
+   example, if the two DLLs are installed in the system folder, they
+   will be found. (Another possibility is the folder containing the
+   ".exe" that uses the "mzssl.dll" extension.)
+
+   To designate a directory other than plt/collects/openssl/openssl
+   for .lib and .h files, define the environment variable
+   PLT_EXTENSION_LIB_PATHS. The variable's value should be a
+   semicolon-separated path list, where one of the paths contains
+   "include" and "lib" subdirectories with the OpenSSL headers and
+   libraries.
 
    If OpenSLL is built with cygwin, ".a" files are generated instead
    of ".lib" an ".dll" files. Presumably "mzssl.c" could be made to

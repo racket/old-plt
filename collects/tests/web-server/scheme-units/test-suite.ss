@@ -2,7 +2,6 @@
 ;; mzscheme -mvf test-suite.ss
 ;; From collects/tests/web-server/scheme-units
 (require (lib "text-ui.ss" "schemeunit")
-         (lib "graphical-ui.ss" "schemeunit")
          "test-authentication.ss"
          "test-channel.ss"
          "test-serve-static-html.ss"

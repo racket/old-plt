@@ -14,13 +14,29 @@
   (define-syntax class*/names
     (lambda (stx)
       (syntax-case stx ()
-	[(_  (this-id super-instantiate-id super-make-object-id) super-expression (interface-expr ...)
+	[(_  (this-id . supers) super-expression (interface-expr ...)
 	     defn-or-expr
 	     ...)
-	 (let ([defn-and-exprs (syntax->list (syntax (defn-or-expr ...)))]
-	       [this-id (syntax this-id)]
-	       [super-instantiate-id (syntax super-instantiate-id)]
-	       [super-make-object-id (syntax super-make-object-id)])
+	 (let-values ([(defn-and-exprs) (syntax->list (syntax (defn-or-expr ...)))]
+		      [(this-id) (syntax this-id)]
+		      [(super-instantiate-id super-make-object-id)
+		       (let ([s (syntax supers)])
+			 (if (stx-null? s)
+			     (values (quote-syntax super-instantiate)
+				     (quote-syntax super-make-object))
+			     (values (stx-car s)
+				     (let ([s2 (stx-cdr s)])
+				       (if (stx-null? s2)
+					   (quote-syntax super-make-object)
+					   (begin0
+					    (stx-car s2)
+					    (unless (stx-null? (stx-cdr s2))
+					      (when (and (identifier? (stx-car s))
+							 (identifier? (stx-car s2)))
+						(raise-syntax-error
+						 'class*/names
+						 "extra forms following this, super-instantiate, and super-make-object"
+						 stx)))))))))])
 	   (unless (identifier? this-id)
 	     (raise-syntax-error
 	      'class*/names
@@ -929,7 +945,7 @@
   (define object<%> (make-interface 'object% null null #f))
   (define object% (make-class 'object%
 			      0 (vector #f) 
-			      'object<%>
+			      object<%>
 
 			      0 (make-hash-table) null
 			      (vector)
@@ -1176,7 +1192,7 @@
     (unless (interface? i)
       (raise-type-error 'interface-extension? "interface" 1 v i))
     (and (interface? i)
-	 '(let loop ([v v])
+	 (let loop ([v v])
 	   (or (eq? v i)
 	       (ormap loop (interface-supers v))))))
   
@@ -1227,6 +1243,6 @@
 	   send class-field-accessor class-field-mutator
 	   (rename make-generic/proc make-generic) apply-generic
 	   is-a? subclass? implementation? interface-extension?
-	   method-in-interface? interface->method-names
+	   method-in-interface? interface->method-names class->interface
 	   exn:object? struct:exn:object make-exn:object))
 

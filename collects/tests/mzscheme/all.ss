@@ -20,7 +20,7 @@
 (load-relative "syntax.ss")
 (load-relative "module.ss")
 (load-relative "number.ss")
-(load-relative "object.ss")
+(load-relative "object2.ss")
 (load-relative "struct.ss")
 (load-relative "unit.ss")
 (load-relative "unitsig.ss")

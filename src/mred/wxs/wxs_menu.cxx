@@ -88,6 +88,7 @@ static void CB_TOSCHEME(CB_REALCLASS *obj, wxCommandEvent *event);
 
 
 
+
 class os_wxMenu : public wxMenu {
  public:
   Scheme_Object *callback_closure;
@@ -136,6 +137,28 @@ static Scheme_Object *os_wxMenumenuSelect(int n,  Scheme_Object *p[])
 
   
   WITH_VAR_STACK(menuSelect(((wxMenu *)((Scheme_Class_Object *)p[0])->primdata)));
+
+  
+  
+  READY_TO_RETURN;
+  return scheme_void;
+}
+
+static Scheme_Object *os_wxMenuSetWidth(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  objscheme_check_valid(os_wxMenu_class, "set-width in menu%", n, p);
+  int x0;
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+  x0 = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET+0], "set-width in menu%"));
+
+  
+  WITH_VAR_STACK(((wxMenu *)((Scheme_Class_Object *)p[0])->primdata)->SetWidth(x0));
 
   
   
@@ -494,9 +517,10 @@ void objscheme_setup_wxMenu(Scheme_Env *env)
 
   wxREGGLOB(os_wxMenu_class);
 
-  os_wxMenu_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "menu%", "object%", (Scheme_Method_Prim *)os_wxMenu_ConstructScheme, 12));
+  os_wxMenu_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "menu%", "object%", (Scheme_Method_Prim *)os_wxMenu_ConstructScheme, 13));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMenu_class, "select" " method", (Scheme_Method_Prim *)os_wxMenumenuSelect, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMenu_class, "set-width" " method", (Scheme_Method_Prim *)os_wxMenuSetWidth, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMenu_class, "set-title" " method", (Scheme_Method_Prim *)os_wxMenuSetTitle, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMenu_class, "set-label" " method", (Scheme_Method_Prim *)os_wxMenuSetLabel, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMenu_class, "set-help-string" " method", (Scheme_Method_Prim *)os_wxMenuSetHelpString, 2, 2));

@@ -52,6 +52,8 @@ static void menuSelect(wxMenu *XTMAC_UNUSED(m))
 @ "set-label" : void SetLabel(ExactLong, string); : :
 @ "set-title" : void SetTitle(string);
 
+@ "set-width" : void SetWidth(int);
+
 @ m "select" : void menuSelect();
 
 @END

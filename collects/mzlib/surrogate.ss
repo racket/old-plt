@@ -1,15 +1,15 @@
-(module delegate mzscheme
+(module surrogate mzscheme
   (require (lib "class.ss"))
 
-  (provide delegating<%>
-           delegate)
+  (provide host<%>
+           surrogate)
   
-  (define delegating<%> 
+  (define host<%> 
     (interface ()
-      set-delegate
-      get-delegate))
+      set-surrogate
+      get-surrogate))
   
-  (define-syntax (delegate stx)
+  (define-syntax (surrogate stx)
     
     (define (make-empty-method method-spec)
       (syntax-case method-spec ()
@@ -62,14 +62,14 @@
         (lambda (spec)
           (syntax-case spec ()
             [(id ...) (syntax [(id ...) 
-                               (when delegate
-                                 (send delegate name this id ...))
+                               (when surrogate
+                                 (send surrogate name this id ...))
                                (super-name id ...)])]
             [id
              (identifier? (syntax id))
              (syntax [name 
-                      (when delegate
-                        (send delegate name this . id))
+                      (when surrogate
+                        (send surrogate name this . id))
                       (super-name . id)])]))))
     
     (syntax-case stx ()
@@ -84,38 +84,38 @@
                            (syntax->list
                             (syntax (method-spec ...))))])
          (syntax
-          (let ([delegate<%>
+          (let ([surrogate<%>
                  (interface ()
-                   on-disable-delegate
-                   on-enable-delegate
+                   on-disable-surrogate
+                   on-enable-surrogate
                    ids ...)])
             (values
              (lambda (super%)
                (class* super% (delegating<%>)
-                 (field [delegate #f])
-                 (define/public (set-delegate d)
-                   (when delegate
-                     (send delegate on-disable-delegate this))
+                 (field [surrogate #f])
+                 (define/public (set-surrogate d)
+                   (when surrogate
+                     (send surrogate on-disable-surrogate this))
                    (when d
                      (unless (object? d)
-                       (error 'set-delegate "expected an object, got: ~e" d))
+                       (error 'set-surrogate "expected an object, got: ~e" d))
                      (let ([methods-to-impl '(on-enable on-disable ids ...)]
                            [i (object-interface d)])
                        (for-each (lambda (x) 
                                    (unless (method-in-interface? x i)
-                                     (error 'set-delegate "expected object to implement an ~s method" x)))
+                                     (error 'set-surrogate "expected object to implement an ~s method" x)))
                                  methods-to-impl))
-                     (set! delegate d)
-                     (send delegate on-enable-delegate this)))
-                 (define/public (get-delegate) delegate)
+                     (set! surrogate d)
+                     (send surrogate on-enable-surrogate this)))
+                 (define/public (get-surrogate) surrogate)
                  
                  overriding-methods ...
                  
                  (super-new)))
              
-             (class* object% (delegate<%>)
-               (define/public (on-enable-delegate) (void))
-               (define/public (on-disable-delegate) (void))
+             (class* object% (surrogate<%>)
+               (define/public (on-enable-surrogate) (void))
+               (define/public (on-disable-surrogate) (void))
                empty-methods ...
                (super-new))
-             delegate<%>))))])))
+             surrogate<%>))))])))

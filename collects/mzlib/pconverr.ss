@@ -14,6 +14,7 @@
     (define quasi-read-style-printing (make-parameter #t))
     (define abbreviate-cons-as-list (make-parameter #t))
     (define whole/fractional-exact-numbers (make-parameter #t))
+    (define empty-list-name (make-parameter 'null))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     ;; share-hash is the hash-table containing info on what cons cells
@@ -252,7 +253,7 @@
 			     expr
 			     (lambda (expr)
 			       (cond
-				[(null? expr) (guard (lambda () 'null))]
+				[(null? expr) (guard (lambda () (empty-list-name)))]
 				[(and (list? expr)
 				      (abbreviate-cons-as-list)
 				      (or (and first-time

@@ -348,4 +348,7 @@
 (arity-test build-share 1 1)
 (arity-test get-shared 1 2)
 (arity-test print-convert-expr 3 3)
+(test 'null print-convert '())
+(parameterize ([empty-list-name 'empty])
+  (test 'empty print-convert '()))
 (report-errs)

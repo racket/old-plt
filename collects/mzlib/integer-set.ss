@@ -201,9 +201,25 @@
   
   ;; split : integer-set integer-set -> integer-set integer-set integer-set
   ;; returns (s1 intersect s2), s1 - (s1 intersect s2) and s2 - (s1 intersect s2)
+  ;; Of course, s1 - (s1 intersect s2) = s1 intersect (complement s2) = s1 - s2
   (define (split s1 s2)
     (split-acc (integer-set-contents s1) (integer-set-contents s2) null null null))
-      
+    
+  ;; intersect: integer-set integer-set -> integer-set
+  (define (intersect s1 s2)
+    (let-values (((i s1-s2 s2-s1) (split s1 s2)))
+      i))
+         
+  ;; difference: integer-set integer-set -> integer-set
+  (define (difference s1 s2)
+    (let-values (((i s1-s2 s2-s1) (split s1 s2)))
+      s1-s2))
+  
+  ;; xor: integer-set integer-set -> integer-set
+  (define (xor s1 s2)
+    (let-values (((i s1-s2 s2-s1) (split s1 s2)))
+      (merge s1-s2 s2-s1)))
+  
   (test-block ((s (lambda (s1 s2)
                     (map integer-set-contents
                          (call-with-values (lambda () (split (make-integer-set s1)
@@ -420,6 +436,9 @@
                                         (((i int) (j (and/c int (>=/c i)))) . ->r . integer-set?)))
                     (rename merge union (integer-set? integer-set? . -> . integer-set?))
                     (split (integer-set? integer-set? . -> . (values integer-set? integer-set? integer-set?)))
+                    (intersect (integer-set? integer-set? . -> . integer-set?))
+                    (difference (integer-set? integer-set? . -> . integer-set?))
+                    (xor (integer-set? integer-set? . -> . integer-set?))
                     (complement (((s integer-set?) (min int) (max (and/c int (>=/c min)))) . ->r . integer-set?))
                     (member? (int integer-set? . -> . any))
                     (get-integer (integer-set? . -> . (union false/c int)))

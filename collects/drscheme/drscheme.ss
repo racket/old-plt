@@ -1,6 +1,11 @@
+(define graphical-debug? #t)
+(define textual-debug? #f)
+
 (require-library "macro.ss")
-;(require-library "grepl.ss" "drscheme")
-;(require-library "rload.ss" "drscheme")
+(when graphical-debug?
+  (require-library "grepl.ss" "drscheme"))
+(when (or graphical-debug? textual-debug?)
+  (require-library "rload.ss" "drscheme"))
 
 (require-library "mred-interfaces.ss" "framework")
 (require-library "errortrace.ss" "errortrace")
@@ -13,10 +18,6 @@
 (define (orig-output t)
   (parameterize ([current-output-port original-output-port])
     (t)))
-
-
-(define graphical-debug? #f)
-(define textual-debug? #f)
 
 (define drscheme-namespace (current-namespace))
 (define drscheme-custodian #f)

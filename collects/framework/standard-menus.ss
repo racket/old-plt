@@ -544,4 +544,5 @@
                           help-menu:about
                           (if (preferences:get 'framework:menu-bindings) #f #f)
                           (help-menu:about-help-string)))))
-         (sequence (help-menu:after-about (get-help-menu)))))
+         (sequence (help-menu:after-about (get-help-menu)))
+         (sequence (reorder-menus this))))

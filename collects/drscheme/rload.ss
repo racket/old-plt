@@ -49,6 +49,7 @@
 			 (set! old-message (send (list-ref loading-messages index) get-label))
 			 (send (list-ref loading-messages index) set-label
 			       (format "loading: ~a because ~a" filename reason))
+			 (send loading-frame show #t)
 			 (let ([anss (call-with-values (lambda () (ol filename)) list)])
 			   (hash-table-put! (get-value-ht) sym anss)
 			   (send (list-ref loading-messages index) set-label old-message)

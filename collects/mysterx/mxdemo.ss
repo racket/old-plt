@@ -7,7 +7,7 @@
 
 (send caldoc insert-html 
 	(string-append	
-	"<H1>MysterX Demo</H1>"
+	"<H1 id=\"mx-header\">MysterX Demo</H1>"
 	"<p>"
 	"<hr>"
 	"<p>"
@@ -123,24 +123,26 @@
 	(invoke cal "NextYear")))
 
 (define button-handlers
-  `((About ,about-handler)
-    (Hide ,hide-handler)
-    (Show ,show-handler)
-    (Rub-me ,rub-me-handler)
-    (Today ,today-handler)
-    (Yesterday ,yesterday-handler)
-    (Tomorrow ,tomorrow-handler)
-    (Last-month ,last-month-handler)
-    (Next-month ,next-month-handler)
-    (Last-year ,last-year-handler)
-    (Next-year ,next-year-handler)))
+  `(("About" ,about-handler)
+    ("Hide" ,hide-handler)
+    ("Show" ,show-handler)
+    ("Rub-me" ,rub-me-handler)
+    ("Today" ,today-handler)
+    ("Yesterday" ,yesterday-handler)
+    ("Tomorrow" ,tomorrow-handler)
+    ("Last-month" ,last-month-handler)
+    ("Next-month" ,next-month-handler)
+    ("Last-year" ,last-year-handler)
+    ("Next-year" ,next-year-handler)))
 
 (for-each
  (lambda (sym-handler)
    (send ctrldoc register-event-handler 
-	'BUTTON              ; tag
-	(car sym-handler)    ; id
-	(cadr sym-handler))) ; handler
+	(send ctrldoc find-element 
+	              "BUTTON"              ; tag
+                      (car sym-handler))    ; id
+	(cadr sym-handler)))                ; handler
  button-handlers)
 
 (send ctrldoc handle-events)
+

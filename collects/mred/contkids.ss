@@ -40,10 +40,6 @@
     ; default spacing around edge of panel
     (define const-default-border 10)
     
-    ; minimum sizes for buttons.
-    (define min-button-height (if (eq? wx:platform 'macintosh) 20 0))
-    (define min-button-width (if (eq? wx:platform 'macintosh) 58 0))
-    
     (define counter 0)
     
     ; this structure holds the information that a child will need to send
@@ -90,8 +86,7 @@
     ; through this function to create panel%.  (Yes, this is
     ; cheating.  So what's your point?)
     (define make-item%
-      (opt-lambda (item% stretch-x? stretch-y? make-default-size
-			 [init-min-width 0] [init-min-height 0])
+      (opt-lambda (item% stretch-x? stretch-y? make-default-size)
 	(class item% args
 	  (inherit
 	    get-width
@@ -157,14 +152,14 @@
 	    ; if new value is not a non-negative real number.  Forces a
 	    ; redraw upon a set.
 	    [user-min-width
-	      (make-item-param init-min-width non-negative-number?
+	      (make-item-param 0 non-negative-number?
 		(lambda (val)
 		  (error 'user-min-width
 		    "Expected a non-negative real; received ~s" val)))]
 
 	    ; like user-min-width, but the other direction.
 	    [user-min-height
-	      (make-item-param init-min-height non-negative-number?
+	      (make-item-param 0 non-negative-number?
 		(lambda (val)
 		  (error 'user-min-height
 		    "Expected a non-negative real; received ~s" val)))]
@@ -288,8 +283,7 @@
     ; these next definitions descend classes from the children of wx:item%
     ; which can be inserted into panel% objects.
     (define button%
-      (make-item% wx:button% #f #f standard-make-default-size
-	  min-button-width min-button-height))
+      (make-item% wx:button% #f #f standard-make-default-size))
 
     (define check-box%
       (make-item% wx:check-box% #f #f standard-make-default-size))

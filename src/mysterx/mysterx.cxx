@@ -433,14 +433,26 @@ void scheme_release_com_object(void *comObject,void *pIDispatch) {
   MX_MANAGED_OBJ_RELEASED(comObject) = TRUE;
 }
 
-void mx_register_com_object(Scheme_Object *obj,IDispatch *pIDispatch) {
-  pIDispatch->AddRef();
+void mx_register_object(Scheme_Object *obj,IUnknown *pIUnknown,
+			void (*release_fun)(void *p, void *data)) {
 
-  scheme_register_finalizer(obj,scheme_release_com_object,pIDispatch,NULL,NULL);
-  scheme_add_managed((Scheme_Manager *)scheme_get_param(scheme_config,MZCONFIG_MANAGER),
+  if (pIUnknown == NULL) {
+    // nothing to do
+    return;
+  }
+
+  pIUnknown->AddRef();
+
+  scheme_register_finalizer(obj,release_fun,pIUnknown,NULL,NULL);
+  scheme_add_managed((Scheme_Manager *)scheme_get_param(scheme_config,
+							MZCONFIG_MANAGER),
 		     (Scheme_Object *)obj,
-		     (Scheme_Close_Manager_Client *)scheme_release_com_object,
-		     pIDispatch,0);
+		     (Scheme_Close_Manager_Client *)release_fun,
+		     pIUnknown,0);
+}
+
+void mx_register_com_object(Scheme_Object *obj,IDispatch *pIDispatch) {
+  mx_register_object(obj,pIDispatch,scheme_release_com_object);
 }
 
 Scheme_Object *mx_com_register_object(int argc,Scheme_Object **argv) {
@@ -467,13 +479,7 @@ void scheme_release_simple_com_object(void *comObject,void *pIUnknown) {
 }
 
 void mx_register_simple_com_object(Scheme_Object *obj,IUnknown *pIUnknown) {
-  pIUnknown->AddRef();
-
-  scheme_register_finalizer(obj,scheme_release_simple_com_object,pIUnknown,NULL,NULL);
-  scheme_add_managed((Scheme_Manager *)scheme_get_param(scheme_config,MZCONFIG_MANAGER),
-		     (Scheme_Object *)obj,
-		     (Scheme_Close_Manager_Client *)scheme_release_simple_com_object,
-		     pIUnknown,0);
+  mx_register_object(obj,pIUnknown,scheme_release_simple_com_object);
 }
 
 void scheme_release_browser(void *wb,void *) {
@@ -2971,7 +2977,7 @@ Scheme_Object *variantToSchemeObject(VARIANTARG *pVariantArg) {
   if (pVariantArg->vt & VT_ARRAY) {
     return safeArrayToSchemeVector(pVariantArg->parray);
   }
-  
+
   switch(pVariantArg->vt) {
     
   case VT_EMPTY :
@@ -3024,7 +3030,7 @@ Scheme_Object *variantToSchemeObject(VARIANTARG *pVariantArg) {
     return mx_make_scode(pVariantArg->scode);
     
   case VT_DISPATCH :
-    
+
     return mx_make_idispatch(pVariantArg->pdispVal);
     
   case VT_UNKNOWN :
@@ -3418,14 +3424,14 @@ static Scheme_Object *mx_make_call(int argc,Scheme_Object **argv,
   }
   
   // invoke requested method
-  
+
   hr = pIDispatch->Invoke(pTypeDesc->memID,IID_NULL,LOCALE_SYSTEM_DEFAULT,
 			  invKind,
 			  &methodArguments,
 			  (invKind == INVOKE_PROPERTYPUT) ? NULL : &methodResult,
 			  &exnInfo,
 			  &errorIndex);
-  
+
   if (hr == DISP_E_EXCEPTION) {
     char errBuff[2048];
     char description[1024];
@@ -3469,7 +3475,7 @@ static Scheme_Object *mx_make_call(int argc,Scheme_Object **argv,
 	    SCHEME_STR_VAL(argv[1]),inv_kind_string(invKind));
     codedComError(buff,hr);
   }
-  
+
   // unmarshall data passed by reference, cleanup
 
   for (i = 2,j = numParamsPassed - 1; i < argc; i++,j--) {
@@ -3485,7 +3491,7 @@ static Scheme_Object *mx_make_call(int argc,Scheme_Object **argv,
   }
   
   // unmarshall return value
-  
+
   return variantToSchemeObject(&methodResult);
   
 }
@@ -4310,7 +4316,7 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
 
   if (isatty(fileno(stdin))) {
     fputs("MysterX extension for MzScheme, "
-	  "Copyright (c) 1999-2000 Rice PLT (Paul Steckler)",stderr);
+	  "Copyright (c) 1999-2000 PLT (Paul Steckler)",stderr);
   }
   
   return (Scheme_Object *)mx_unit;

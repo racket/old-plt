@@ -82,7 +82,6 @@ Scheme_Object *mx_make_scode(SCODE scode) {
   return (Scheme_Object *)retval;
 }
 
-
 Scheme_Object *mx_make_idispatch(IDispatch *pIDispatch) {
   MX_COM_Object *retval;
 

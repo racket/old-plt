@@ -61,12 +61,12 @@
   (invoke-unit/sig
    (compound-unit/sig
     (import (SOPTION : setup-option^))
-    (link [LAUNCHER : launcher-maker^ ((require-library "launcherr.ss" "launcher"))]
-	  [STRING : mzlib:string^ ((require-library "stringr.ss"))]
+    (link [STRING : mzlib:string^ ((require-library "stringr.ss"))]
 	  [FILE : mzlib:file^ ((require-library "filer.ss") STRING FUNCTION)]
 	  [FUNCTION : mzlib:function^ ((require-library "functior.ss"))]
 	  [COMPILE : mzlib:compile^ ((require-library "compiler.ss"))]
 	  [PRETTY-PRINT : mzlib:pretty-print^ ((require-library "prettyr.ss"))]
+	  [LAUNCHER : launcher-maker^ ((require-library "launcherr.ss" "launcher") FILE)]
 	  [DCOMPILE : dynext:compile^ ((require-library "compiler.ss" "dynext"))]
 	  [DLINK : dynext:link^ ((require-library "linkr.ss" "dynext"))]
 	  [DFILE : dynext:file^ ((require-library "filer.ss" "dynext"))]

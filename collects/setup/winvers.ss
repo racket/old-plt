@@ -19,7 +19,8 @@
         (build-path vers "mzscheme.exe"))))
 
   (define (patch-files)
-    (parameterize ((current-command-line-arguments (vector plthome)))
+    (parameterize ((current-command-line-arguments
+                    (vector (path->bytes plthome))))
       (dynamic-require `(lib "winvers-change.ss" "setup") #f)))
 
   (let ([argv (current-command-line-arguments)])

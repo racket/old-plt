@@ -1,7 +1,7 @@
 ;; Moy
 ;; reworked by Robby
 
-;; aries adds only begins to the transformed source
+;; aries adds only begin and let (in the app case) to the transformed source
 
 (plt:require-library "ariess.ss")
 
@@ -48,9 +48,9 @@
       (lambda (zodiac x)
 	(let ([start (zodiac:zodiac-start zodiac)]
 	      [finish (zodiac:zodiac-finish zodiac)])
-	  `(begin (,set-box! ,error-box
-			     ,(zodiac:make-zodiac #f start finish))
-		  ,x))))
+	  `(#%begin (,set-box! ,error-box
+				 ,(zodiac:make-zodiac #f start finish))
+		    ,x))))
 
     (define annotate
       (lambda (expr)
@@ -67,44 +67,45 @@
 						(symbol->string id)))
 		(wrap expr id)))]
 	 
-	 ;; why is this here? 
-	 [(zodiac:bound? expr)
-	  (printf "zoidac:bound: ~a~n" expr)
-	  (zodiac:bound-var)]
-
 	 [(zodiac:app? expr)
 	  (let* ([aries:app-arg (gensym 'aries:app-arg)]
 		 [aries:app-break (gensym 'aries:app-break)]
 		 [last-arg (gensym 'last-arg)]
-		 [fun (annotate (zodiac:app-fun expr))]
-		 [args (map annotate (zodiac:app-args expr))])
-	    (wrap expr `(,fun ,@args)))]
+		 [fun-sym (gensym "fun")]
+		 [args (map (lambda (x) `(,(gensym "arg")
+					  ,(annotate x)))
+			    (zodiac:app-args expr))])
+	    `(#%let ([,fun-sym ,(annotate (zodiac:app-fun expr))]
+		     ,@args)
+	       ,(wrap expr `(,fun-sym ,@(map car args)))))]
 
 	 [(zodiac:delay-form? expr)
-	  `(delay ,(annotate (zodiac:delay-form-expr expr)))]
+	  `(#%delay ,(annotate (zodiac:delay-form-expr expr)))]
 	 
 	 [(zodiac:if-form? expr)
-	  `(if ,(annotate (zodiac:if-form-test expr))
-	       ,(annotate (zodiac:if-form-then expr))
-	       ,(annotate (zodiac:if-form-else expr)))]
+	  `(#%if ,(annotate (zodiac:if-form-test expr))
+		 ,(annotate (zodiac:if-form-then expr))
+		 ,(annotate (zodiac:if-form-else expr)))]
 	 
 	 [(zodiac:lambda-form? expr)
 	  (let ([args (improper-map zodiac:bound-var
 				    (zodiac:lambda-form-args expr))])
-	    `(lambda ,args
-	       ,(annotate (zodiac:lambda-form-body expr))))]
+	    `(#%lambda ,args
+		       ,(annotate (zodiac:lambda-form-body expr))))]
 	 
 	 [(zodiac:set!-form? expr)
-	  (wrap expr `(set! ,(zodiac:id-var (zodiac:set!-form-var expr))
-			    ,(annotate (zodiac:set!-form-val expr))))]
+	  (let ([g (gensym "set!")])
+	    `(#%let ([,g ,(annotate (zodiac:set!-form-val expr))])
+		    ,(wrap expr `(#%set! ,(zodiac:id-var (zodiac:set!-form-var expr))
+					 ,g))))]
 	 
 ;	 [(zodiac:time-form? expr) `(time ,(annotate (zodiac:time-form-expr expr)))]
 
-	 [(zodiac:quote-form? expr) `(quote ,(unparse-read (zodiac:quote-form-expr expr)))]
+	 [(zodiac:quote-form? expr) `(#%quote ,(unparse-read (zodiac:quote-form-expr expr)))]
 
 	 [(zodiac:begin-form? expr)
-	  `(begin ,(annotate (zodiac:begin-form-first expr))
-		  ,(annotate (zodiac:begin-form-rest expr)))]
+	  `(#%begin ,(annotate (zodiac:begin-form-first expr))
+		    ,(annotate (zodiac:begin-form-rest expr)))]
 	 
 	 [(zodiac:letrec-form? expr)
 	  (let ([bindings
@@ -112,15 +113,15 @@
 			`(,(zodiac:bound-var var) ,(annotate val)))
 		      (zodiac:letrec-form-vars expr)
 		      (zodiac:letrec-form-vals expr))])
-	    `(letrec ,bindings
-	       ,(annotate (zodiac:letrec-form-body expr))))]
+	    `(#%letrec ,bindings
+		       ,(annotate (zodiac:letrec-form-body expr))))]
 	 
 	 [(zodiac:define-form? expr)
-	  `(define ,(zodiac:id-var (zodiac:define-form-var expr))
-	     ,(annotate (zodiac:define-form-val expr)))]
+	  `(#%define ,(zodiac:id-var (zodiac:define-form-var expr))
+		     ,(annotate (zodiac:define-form-val expr)))]
 
 	 [(zodiac:define-struct-form? expr)
-	  `(define-struct ,(if (zodiac:define-struct-form-super expr)
+	  `(#%define-struct ,(if (zodiac:define-struct-form-super expr)
 				 `(,(zodiac:symbol-orig-name
 				     (zodiac:define-struct-form-type expr))
 				   ,(annotate (zodiac:define-struct-form-super expr)))
@@ -138,10 +139,12 @@
 	(let ([reader (zodiac:read port (zodiac:make-location 1 1 offset file))])
 	  (let read-loop ([exprs null])
 	    (let ([expr (reader)])
+	      '(printf "expr: ~s~n" expr)
 	      (if (zodiac:eof? expr)
 		  (apply values (reverse exprs))
 		  (let* ([expanded (zodiac:expand expr)]
+			 [_ '(printf "expanded: ~s~n" expanded)]
 			 [annotated (annotate expanded)])
 		    '(begin ((global-defined-value 'pretty-print) annotated)
-			    (newline))
+			   (newline))
 		    (read-loop (cons annotated exprs)))))))))))

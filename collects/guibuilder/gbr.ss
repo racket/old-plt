@@ -998,14 +998,12 @@
 					"Add Item")]
 		 [delete-item (make-object mred:button% item-buttons-panel
 					   (lambda (b e)
-					     (let* ([lsb (box null)])
-					       (unless (zero? (send items-list get-selections lsb))
-						 (let loop ([ls (reverse (unbox lsb))])
-						   (unless (null? ls)
-						     (send items-list delete (car ls))
-						     (set! items (delete items (car ls)))
-						     (loop (cdr ls))))
-						 (gb-need-recalc-size))))
+					     (let loop ([ls (reverse (send items-list get-selections))])
+					       (unless (null? ls)
+						 (send items-list delete (car ls))
+						 (set! items (delete items (car ls)))
+						 (loop (cdr ls))))
+					     (gb-need-recalc-size))
 					   "Delete Item")])))]
 	  [get-items
 	   (lambda ()

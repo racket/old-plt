@@ -1,6 +1,7 @@
 
 (module include mzscheme
   (require-for-syntax (lib "stx.ss" "syntax")
+		      (lib "path-spec.ss" "syntax")
 		      "private/increader.ss")
   (require (lib "etc.ss"))
 
@@ -14,13 +15,7 @@
       (syntax-case stx ()
 	[(_ orig-stx ctx loc fn reader)
 	 ;; Parse the file name
-	 (let ([file
-		(syntax-case* (syntax fn) (build-path) module-or-top-identifier=?
-		  [fn
-		   (string? (syntax-e (syntax fn)))
-		   (syntax-e (syntax fn))]
-		  [(build-path elem1 elem ...)
-		   (apply build-path (syntax-object->datum (syntax (elem1 elem ...))))])]
+	 (let ([c-file (resolve-path-spec (syntax fn) (syntax loc) (syntax orig-stx) #'build-path)]
 	       [ctx (syntax ctx)]
 	       [loc (syntax loc)]
 	       [reader (syntax reader)]
@@ -43,87 +38,64 @@
 		"reader is not a procedure of two arguments"
 		orig-stx))
 
-	     ;; Complete the file name
-	     (let ([c-file
-		    (if (complete-path? file)
-			file
-			(path->complete-path
-			 file
-			 (cond
-			  ;; Src of include expression is a path?
-			  [(and (string? (syntax-source loc))
-				(complete-path? (syntax-source loc)))
-			   (let-values ([(base name dir?) 
-					 (split-path (syntax-source loc))])
-			     (if dir?
-				 (syntax-source loc)
-				 base))]
-			  ;; Load relative?
-			  [(current-load-relative-directory)]
-			  ;; Current directory
-			  [(current-directory)]
-			  [else (raise-syntax-error
-				 #f
-				 "can't determine a base path"
-				 orig-stx)])))])
-	       ;; Open the included file
-	       (let ([p (with-handlers ([not-break-exn?
-					 (lambda (exn)
-					   (raise-syntax-error
-					    #f
-					    (format
-					     "can't open include file (~a)"
-					     (if (exn? exn)
-						 (exn-message exn)
-						 exn))
-					    orig-stx
-					    c-file))])
-			  (open-input-file c-file))])
-		 (port-count-lines! p)
-		 ;; Read expressions from file
-		 (let ([content
-			(let loop ()
-			  (let ([r (with-handlers ([not-break-exn?
-						    (lambda (exn)
-						      (raise-syntax-error
-						       #f
-						       (format
-							"read error (~a)"
-							(if (exn? exn)
-							    (exn-message exn)
-							    exn))
-						       orig-stx))])
-				     (read-syntax c-file p))])
-			    (if (eof-object? r)
-				null
-				(cons r (loop)))))])
-		   ;; Preserve src info for content, but set its
-		   ;; lexical context to be that of the include expression
-		   (let ([lexed-content
-			  (let loop ([content content])
-			    (cond
-			     [(pair? content)
-			      (cons (loop (car content))
-				    (loop (cdr content)))]
-			     [(null? content) null]
-			     [else
-			      (let ([v (syntax-e content)])
-				(datum->syntax-object
-				 ctx
-				 (cond
-				  [(pair? v) 
-				   (loop v)]
-				  [(vector? v)
-				   (list->vector (loop (vector->list v)))]
-				  [(box? v)
-				   (box (loop (unbox v)))]
-				  [else
-				   v])
-				 content))]))])
-		     (datum->syntax-object
-		      (quote-syntax here)
-		      `(begin ,@lexed-content)
-		      orig-stx)))))))]))
+	     ;; Open the included file
+	     (let ([p (with-handlers ([not-break-exn?
+				       (lambda (exn)
+					 (raise-syntax-error
+					  #f
+					  (format
+					   "can't open include file (~a)"
+					   (if (exn? exn)
+					       (exn-message exn)
+					       exn))
+					  orig-stx
+					  c-file))])
+			(open-input-file c-file))])
+	       (port-count-lines! p)
+	       ;; Read expressions from file
+	       (let ([content
+		      (let loop ()
+			(let ([r (with-handlers ([not-break-exn?
+						  (lambda (exn)
+						    (raise-syntax-error
+						     #f
+						     (format
+						      "read error (~a)"
+						      (if (exn? exn)
+							  (exn-message exn)
+							  exn))
+						     orig-stx))])
+				   (read-syntax c-file p))])
+			  (if (eof-object? r)
+			      null
+			      (cons r (loop)))))])
+		 ;; Preserve src info for content, but set its
+		 ;; lexical context to be that of the include expression
+		 (let ([lexed-content
+			(let loop ([content content])
+			  (cond
+			   [(pair? content)
+			    (cons (loop (car content))
+				  (loop (cdr content)))]
+			   [(null? content) null]
+			   [else
+			    (let ([v (syntax-e content)])
+			      (datum->syntax-object
+			       ctx
+			       (cond
+				[(pair? v) 
+				 (loop v)]
+				[(vector? v)
+				 (list->vector (loop (vector->list v)))]
+				[(box? v)
+				 (box (loop (unbox v)))]
+				[else
+				 v])
+			       content))]))])
+		   (datum->syntax-object
+		    (quote-syntax here)
+		    `(begin ,@lexed-content)
+		    orig-stx))))))]))
     
     (define (check-fn-form fn stx)
       ;; Check form of fn:

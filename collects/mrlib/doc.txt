@@ -336,10 +336,10 @@ to the original image file.
 
 > (bitmap-constant file-spec)                       SYNTAX
 
-The `file-spec' is the same as for MzLib's `include'.
+The `file-spec' is the same as for MzLib's `include': a path string, a
+`build-path' form, or a `lib' form.
 
 > (bitmap-constant/relative-to source file-spec)    SYNTAX
 
 Analogous to `include-at/relative-to', though only a source is needed
 (no context).
-

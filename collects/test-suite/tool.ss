@@ -1,6 +1,6 @@
 (module tool mzscheme
   
-  (provide test-case-box-tool@)
+  (provide tool@)
   
   (require
    (lib "etc.ss")
@@ -10,7 +10,8 @@
    (lib "tool.ss" "drscheme")
    (lib "framework.ss" "framework")
    (lib "snip-lib.ss" "mrlib" "private" "aligned-pasteboard")
-   "private/test-case-box.ss")
+   "private/test-case-box.ss"
+   "private/find-scheme-menu.ss")
   
   (define menu-extentions@
     (unit/sig drscheme:tool-exports^
@@ -25,7 +26,8 @@
       ;; Updates the needs-reset? when the the program is executed
       (define (test-case-mixin %)
         (class %
-          (inherit get-definitions-text get-edit-target-object get-menu-bar)
+          (inherit get-definitions-text get-edit-target-object get-menu-bar
+                   get-special-menu)
           
           (rename [super-execute-callback execute-callback])
           (define/override (execute-callback)
@@ -36,32 +38,42 @@
             (send (get-definitions-text) for-each-test-case
                   (lambda (case) (send case enable enable?))))
           
+          ;; this function is copied from the drscheme/private/unit.ss file
+          (define (has-editor-on-demand menu-item)
+            (let ([edit (get-edit-target-object)])
+              (send menu-item enable (and edit (is-a? edit editor<%>)))))
+          
           (super-new)
           
           (field
-           [test-suite-menu
-            (new menu% (label "Test Suite")
-                 (parent (get-menu-bar)))]
+           ;[test-suite-menu (new menu% (label "Test Suite") (parent (get-menu-bar)))]
+           [test-cases-enabled? true]
            [insert-menu-item
             (new menu-item%
                  (label "Insert Test Case")
-                 (parent test-suite-menu)
+                 (parent (get-special-menu))
                  (callback
                   (lambda (menu event)
-                    (let ([test-box (new test-case-box%
-                                         (enabled? (send enable-menu-item is-checked?)))]
+                    (let ([test-box (new test-case-box% (enabled? test-cases-enabled?))]
                           [text (get-edit-target-object)])
-                      (send text insert test-box)
-                      ;(send test-box resize 600 100)
-                      (send text set-caret-owner test-box 'global)))))]
+                      (when text
+                        (send text begin-edit-sequence)
+                        (send text insert test-box)
+                        (send test-box take-caret)
+                        (send text end-edit-sequence)))))
+                 (demand-callback has-editor-on-demand))]
            [enable-menu-item
-            (new checkable-menu-item%
-                 (parent test-suite-menu)
-                 (label "Enable Test Cases")
-                 (checked true)
+            (new menu-item%
+                 (parent (find-scheme-menu (get-special-menu)))
+                 (label "Disable All Test Cases")
                  (callback
                   (lambda (menu event)
-                    (enable (send menu is-checked?)))))])
+                    (set! test-cases-enabled? (not test-cases-enabled?))
+                    (if test-cases-enabled?
+                        (send enable-menu-item set-label "Disable all Test Cases")
+                        (send enable-menu-item set-label "Enable all Test Cases"))
+                    (send (get-definitions-text) for-each-test-case
+                          (lambda (tc) (send tc enable test-cases-enabled?))))))])
           ))
       
       (drscheme:get/extend:extend-unit-frame test-case-mixin)
@@ -119,7 +131,7 @@
       
       (drscheme:get/extend:extend-interactions-text require-macro-mixin)))
   
-  (define test-case-box-tool@
+  (define tool@
     (compound-unit/sig
      (import (TOOL : drscheme:tool^))
      (link (MENU   : drscheme:tool-exports^ (menu-extentions@ TOOL CASE))

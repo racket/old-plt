@@ -1,5 +1,5 @@
 (module info (lib "infotab.ss" "setup")
   (define name "Test Suite")
-  (define tools '(("test-suite-tool.ss")))
+  (define tools '(("tool.ss")))
   (define tool-names (list "The Test Suite Tool"))
   (define tool-icons (list '("question-mark.png" "test-suite" "private" "icons"))))

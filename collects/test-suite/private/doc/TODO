@@ -1,3 +1,17 @@
+;;;;;;;;;;;;
+;; Design ;;
+;;;;;;;;;;;;
+
+Will "Insert Test Case" eventually move to the "Special" menu?
+Perhaps "Enable Test Cases" goes in the "Scheme" menu?
+
+Is it possible to make the Test Suite menu just have a single word?
+It's confusing to look at with a space in the middle. Perhaps "Test"
+
+Probably the "Enable Test Cases" should not be a checkable menu item,
+but should change it's label between "Enable All Test Cases" and
+"Disable All Test Cases".
+
 ;;;;;;;;;;
 ;; Todo ;;
 ;;;;;;;;;;
@@ -25,25 +39,8 @@ add a button to disable a test case.
 ;; Bugs ;;
 ;;;;;;;;;;
 
-copy-paste:
-aligned pasteboards are going haywire when the get inserted from a save
-or copy-paste operation.
-Status: I don't know if it's working because the insertion of the pasteboards
-        so messed up.
-
-pasteboard: robby
-Improve layout, Insertion look good, Make responsive:
-
-rename-call:
-the word call is just plain confusing. I need to give it a better name.
-
 string-constants:
 I need to use the string constants
-
-eof:
-eof on no value. This is no longer a problem because I don't allow empty
-boxes but it'd probablly be a good idea to understand why it contains
-this 3D value.
 
 namespace: robby
 Adding the test-case macro to the top-level require makes test-cases in
@@ -61,3 +58,9 @@ stays depressed.
 keys-presses: important
 If you press control-z or control-y in the test-cases you can undo some of
 the inserts and even see some of the snip handles when stuff gets uninserted
+
+This may be the same as what you describe below, but when I type this:
+(let loop () (loop)) into a test case window and then type more close
+parens after that, things vibrate in a strange way.
+
+test-suite entry boxes are not locked when the program is executing

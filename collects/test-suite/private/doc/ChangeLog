@@ -1,3 +1,11 @@
+2003/12/18
+  * Made the test-box take the caret when inserted.
+  * Made error reporting for out of context test-cases highlight the box
+  * Made tabbing work
+
+2003/12/16
+  * Made the aligned-pasteboards work
+
 2003/11/17
   * Made event handling of the pasteboards work differently
 

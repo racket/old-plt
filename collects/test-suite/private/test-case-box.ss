@@ -1,5 +1,3 @@
-;; Known bug, the test case box will not grow if the value put into the actual box is bigger than the
-;; other values. Clicking in the actual box grows it however.
 (module test-case-box mzscheme
   
   (provide test-case-box^ test-case-box@)
@@ -66,11 +64,12 @@
                                          (syntax-span next))]))))
               (values
                (if enabled?
-                   (with-syntax ([call-stx (text->syntax-object to-test)]
+                   (with-syntax ([to-test-stx (text->syntax-object to-test)]
                                  [exp-stx (text->syntax-object expected)]
                                  [update-stx (lambda (x) (update x))]
                                  [set-actuals-stx set-actuals])
-                     #'(test-case equal? call-stx exp-stx update-stx set-actuals-stx))
+                     (syntax/loc (datum->syntax-object false 'ignored (list source line column position 1))
+                       (test-case equal? to-test-stx exp-stx update-stx set-actuals-stx)))
                    #'(define-values () (values)))
                1
                true)))
@@ -188,23 +187,31 @@
           ;    the-menu))
           ;(define/override (get-position) 'top-right)
           
-          (set-tabbing comment to-test expected)
+          ;; tells the test-box to take the caret
+          (define/public (take-caret)
+            (send editor set-caret-owner top-line 'global)
+            (send (send top-line get-editor) set-caret-owner
+                  (send (send comment get-admin) get-snip)))
           
           (define (hide-entries)
             (send* editor
+              (lock false)
               (begin-edit-sequence)
-              (release-snip call-line)
+              (release-snip to-test-line)
               (release-snip exp-line)
               (release-snip act-line)
-              (end-edit-sequence)))
+              (end-edit-sequence)
+              (lock true)))
           
           (define (show-entries)
             (send* editor
+              (lock false)
               (begin-edit-sequence)
-              (insert call-line false)
+              (insert to-test-line false)
               (insert exp-line false)
               (insert act-line false)
-              (end-edit-sequence)))
+              (end-edit-sequence)
+              (lock true)))
           
           (field
            [editor (new vertical-pasteboard%)]
@@ -212,29 +219,29 @@
             (new turn-button-snip%
                  (turn-down hide-entries)
                  (turn-up show-entries))]
-           [result (new result-snip%)]
+           [result (new result-snip%
+                        (status (if enabled? 'unknown 'disabled)))]
            [actual (new actual-text%)]
            [top-line (make-top-line turn-button comment result)]
-           [call-line (make-line "To test" to-test)]
+           [to-test-line (make-line "To test" to-test)]
            [exp-line (make-line "Expected" expected)]
            [act-line (make-line "Actual" actual
                                 (grey-editor-snip-mixin editor-snip%))])
           
+          (set-tabbing comment to-test expected)
+          
           (send* editor
             (insert top-line)
-            (insert call-line false)
+            (insert to-test-line false)
             (insert exp-line false)
-            (insert act-line false))
+            (insert act-line false)
+            (lock true))
           
           (super-new
            (editor editor)
-           ;(top-margin 3)
-           ;(bottom-margin 3)
-           ;(left-margin 3)
-           ;(right-margin 3)
            (stretchable-height false)
            (stretchable-width false))
-          (enable enabled?)
+          
           (inherit set-snipclass)
           (set-snipclass tcb-sc)))
       
@@ -403,13 +410,11 @@
   
   ;;;;;;;;;;
   ;; tests
-  
-;  (define align? #t)
-;  (define f (new frame% (label "test") (width 200) (height 200)))
-;  (define e (new (if align? vertical-pasteboard% pasteboard%)))
-;  (define c (new (if align? aligned-editor-canvas% editor-canvas%) (editor e) (parent f)))
-;  (define t (new test-case-box%))
-;  (send t resize 500 100)
-;  (send e insert t)
-;  (send f show #t)
+
+  ;(define f (new frame% (label "test") (width 200) (height 200)))
+  ;(define e (new text%))
+  ;(define c (new editor-canvas% (editor e) (parent f)))
+  ;(define t (new test-case-box%))
+  ;(send e insert t)
+  ;(send f show #t)
   )

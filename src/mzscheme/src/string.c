@@ -3518,18 +3518,14 @@ static int utf8_decode_x(const unsigned char *s, int start, int end,
 	      continue;
 	    }
 	    /* We finished. One last check: */
-	    if (((v >= 0xD800) && (v <= 0xDFFF))
-		|| (v == 0xFFFE)
-		|| (v == 0xFFFF)
+	    if ((((v >= 0xD800) && (v <= 0xDFFF))
+		 || (v == 0xFFFE)
+		 || (v == 0xFFFF)
+		 || (v > 0x10FFFF))
 # ifdef WINDOWS_UNICODE_SUPPORT
-		|| ((v > 0x10FFFF)
-		    ? (utf16
-		       ? (((v >= 0x10FFFF) && (v < 0x11D800))
-			  || (v > 0x11FFFF))
-		       : 1)
-		    : 0)
-# else
-		|| (v > 0x10FFFF)
+		&& (!utf16
+		    /* If UTF-16 for Windows, just apply upper-limit check */
+		    || (v > 0x10FFFF))
 # endif
 		) {
 	      /* UTF-16 surrogates or other illegal code units */
@@ -3621,26 +3617,14 @@ static int utf8_decode_x(const unsigned char *s, int start, int end,
       if (compact) {
 	if (utf16) {
 	  if (v > 0xFFFF) {
-# ifdef WINDOWS_UNICODE_SUPPORT
-	    if (v >= 0x11D800) {
-	      /* 0x11Dxxx means misplaced surrogate 0xDxxx,
-		 so misplace it! */
-	      if (us) {
-		v -= 0x110000;
-		((unsigned short *)us)[j] =v;
-	      }
-	    } else
-# endif
-	      {
-		if (us) {
-		  v -= 0x10000;
-		  if (j + 1 >= dstart)
-		    break;
-		  ((unsigned short *)us)[j] = 0xD800 | ((v >> 10) & 0x3FF);
-		  ((unsigned short *)us)[j+1] = 0xDC00 | (v & 0x3FF);
-		}
-		j++;
-	      }
+	    if (us) {
+	      v -= 0x10000;
+	      if (j + 1 >= dstart)
+		break;
+	      ((unsigned short *)us)[j] = 0xD800 | ((v >> 10) & 0x3FF);
+	      ((unsigned short *)us)[j+1] = 0xDC00 | (v & 0x3FF);
+	    }
+	    j++;
 	  } else if (us) {
 	    ((unsigned short *)us)[j] = v;
 	  }
@@ -3822,10 +3806,17 @@ int scheme_utf8_encode(const unsigned int *us, int start, int end,
 	wc = ((unsigned short *)us)[i];
 	if ((wc & 0xF800) == 0xD800) {
 	  /* Unparse surrogates. We assume that the surrogates are
-	     well formed. */
-	  i++;
-	  wc = ((wc & 0x3FF) << 10) + ((((unsigned short *)us)[i]) & 0x3FF);
-	  wc += 0x10000;
+	     well formed, unless this is Windows. */
+# ifdef WINDOWS_UNICODE_SUPPORT
+	  if ((i + 1 >= end)
+	      || (((((unsigned short *)us)[i]) & 0xF800) != 0xD800)) {
+	  } else 
+# endif
+	    {
+	      i++;
+	      wc = ((wc & 0x3FF) << 10) + ((((unsigned short *)us)[i]) & 0x3FF);
+	      wc += 0x10000;
+	    }
 	}
       } else {
 	wc = us[i];
@@ -3857,8 +3848,7 @@ int scheme_utf8_encode(const unsigned int *us, int start, int end,
 # ifdef WINDOWS_UNICODE_SUPPORT
 	  if ((i + 1 >= end)
 	      || (((((unsigned short *)us)[i]) & 0xF800) != 0xD800)) {
-	    /* Bad encoding. We encode this into non-unicode area: */
-	    wc += 0x110000;
+	    /* Let the misplaced surrogate through */
 	  } else
 # endif
 	    {

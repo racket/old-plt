@@ -57,12 +57,12 @@
       (compound-unit/sig
        (import)
        (link
-	[t : net:tcp^ ((make-ssl-tcp@
+	[T : net:tcp^ ((make-ssl-tcp@
 			"server-cert.pem" "private-key.pem" #f #f
 			#f #f #f))]
-	[c : web-config^ (config@)]
-	[s : web-server^ (web-server@ T C)])
-       (export (open s)))
+	[C : web-config^ (config@)]
+	[S : web-server^ (web-server@ T C)])
+       (export (open S)))
       #f)
 
     (serve)))

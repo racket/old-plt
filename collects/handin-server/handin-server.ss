@@ -1,6 +1,7 @@
 #cs
 (module handin-server mzscheme
   (require (lib "thread.ss")
+	   (lib "port.ss")
 	   (lib "mzssl.ss" "openssl")
 	   (lib "file.ss")
 	   (lib "date.ss")
@@ -248,7 +249,7 @@
 	      [session-channel (make-channel)]
 	      [status-box (box #f)])
 	  (let ([watcher
-		 (with-handlers ([exn:misc:unsupported? 
+		 (with-handlers ([exn:fail:unsupported? 
 				  (lambda (x) 
 				    (set! no-limit-warning? #t)
 				    (LOG "WARNING: per-session memory limit not supported by MrEd")
@@ -258,7 +259,7 @@
 		     (thread (lambda ()
 			       (let ([session-thread (channel-get session-channel)])
 				 (let loop ()
-				   (if (object-wait-multiple 3 session-thread)
+				   (if (sync/timeout 3 session-thread)
 				       (begin
 					 (LOG "session killed while ~s" (unbox status-box))
 					 (fprintf w "~s\n"
@@ -322,7 +323,7 @@
 	    (let ([r-safe (make-limited-input-port r 1024)])
 	      (fprintf w "handin\n")
 	      ;; Check protocol:
-	      (with-handlers ([not-break-exn?
+	      (with-handlers ([exn:fail?
 			       (lambda (exn)
 				 (let ([msg (if (exn? exn)
 						(exn-message exn)

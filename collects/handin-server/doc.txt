@@ -352,17 +352,17 @@ Checker Utilities
 The _utils.ss_ module provides utilities helpful in implementing
 `checker' functions:
 
-> (unpack-submission string) - returns two text% objects corresponding
+> (unpack-submission bytes) - returns two text% objects corresponding
   to the submitted definitions and interactions windows.
 
-> (unpack-test-suite-submission string) - returns a pasteboard%
+> (unpack-test-suite-submission bytes) - returns a pasteboard%
   object corresponding to the submitted test-suite window. The
   pasteboard contains a sequence of editor-snip% objects, each each
   editor-snip% contains a text% with three embedded editor-snip%s: one
   for the test expression, one for the expected result, and one for
   the equality predicate.
 
-> (is-test-suite-submission? string) - returns #t if `string' can be
+> (is-test-suite-submission? bytes) - returns #t if `string' can be
   read as an old-style test suite, #f otherwise.
 
 
@@ -378,9 +378,9 @@ The _utils.ss_ module provides utilities helpful in implementing
   The actual evaluation of expressions happens in a newly created
   eventspace and namespace.
 
-> (make-evaluator/submission language teachpack-paths str) - like
+> (make-evaluator/submission language teachpack-paths bytes) - like
   `make-evaluator', but the definitions content is supplied as a
-  submission string.
+  submission byte string.
 
 > (call-with-evaluator language teachpack-paths program-port proc) -
   calls `proc' with an evaluator for the given language, teachpack
@@ -390,7 +390,7 @@ The _utils.ss_ module provides utilities helpful in implementing
   "executing your code", and it catches all exceptions to re-raise
   them in a form suitable as a submission error.
 
-> (call-with-evaluator/submission language teachpack-paths str proc) -
+> (call-with-evaluator/submission language teachpack-paths bytes proc) -
    like `call-with-evaluator', but the definitions content is supplied
    as a submission string.
 
@@ -398,8 +398,8 @@ The _utils.ss_ module provides utilities helpful in implementing
 > (evaluate-all source input-port eval) - like `load' on an input
   port.
 
-> (evaluate-submission string eval) - like `load' on a non-test-suite
-  submission string.
+> (evaluate-submission bytes eval) - like `load' on a non-test-suite
+  submission byte string.
 
 
 > (check-proc eval expect-v compare-proc proc-name arg ...) - calls

@@ -29,7 +29,7 @@
 	   test-history-enabled)
 
   (define (unpack-submission str)
-    (let* ([base (make-object editor-stream-in-string-base% str)]
+    (let* ([base (make-object editor-stream-in-bytes-base% str)]
 	   [stream (make-object editor-stream-in% base)]
 	   [definitions-text (make-object text%)]
 	   [interactions-text (make-object text%)])
@@ -41,7 +41,7 @@
       (values definitions-text interactions-text)))
 
   (define (unpack-test-suite-submission str)
-    (let* ([base (make-object editor-stream-in-string-base% str)]
+    (let* ([base (make-object editor-stream-in-bytes-base% str)]
 	   [stream (make-object editor-stream-in% base)]
 	   [ts (make-object ts-load%)])
       (read-editor-version stream base #t)
@@ -51,9 +51,8 @@
       ts))
 
   (define (is-test-suite-submission? str)
-    (with-handlers () ; [not-break-exn? (lambda (x) #f)])
-      (send (unpack-test-suite-submission str)
-	    got-program?)))
+    (send (unpack-test-suite-submission str)
+	  got-program?))
 
   ;; Test Suite Unpacking ----------------------------------------
   ;; This code duplicates just enough of the test-suite snips
@@ -122,13 +121,12 @@
       (define got-p? #f)
       (define/public (got-program?) got-p?)
 
-      (rename [super-read-header-from-file read-header-from-file])
       (define/override (read-header-from-file stream name)
 	(if (string=? name program-header-field-name)
 	    (begin
 	      (set! got-p? #t)
 	      (send program read-from-file stream))
-	    (super-read-header-from-file stream name)))
+	    (super read-header-from-file stream name)))
 
       (super-new)))
 
@@ -225,13 +223,13 @@
   ;;  Auto-test utils
 
   (define (check-defined e id)
-    (with-handlers ([exn:syntax? void]
-		    [exn:variable?
+    (with-handlers ([exn:fail:syntax? void]
+		    [exn:fail:contract:variable?
 		     (lambda (x)
 		       (error
 			(format
 			 "\"~a\" is not defined, but it must be defined for handin"
-			 (exn:variable-id x))))])
+			 (exn:fail:contract:variable-id x))))])
       (e #`(#,namespace-variable-value '#,id #t))))
 
   (define (mk-args args)

@@ -1,0 +1,26 @@
+% Program rules
+
+\rulesection{file\_input}
+\label{filezzzinputb}
+This non-terminal is the result of the parser in the following situations:
+\begin{itemize}
+\item when parsing a complete Python program (from a file or from a string);
+\item when parsing a module;
+\item when parsing a string passed to the exec statement.
+\end{itemize}
+
+\begin{tabular}{lcl}
+{\bf \verb+<+file\_input\verb+>+} & ::=  & $\varepsilon$ \\
+ & \verb+|+  & {\bf \verb+<+file\_input~\ref{filezzzinputb}\verb+>+}  NEWLINE \\
+ & \verb+|+  & {\bf \verb+<+file\_input~\ref{filezzzinputb}\verb+>+}  {\bf \verb+<+stmt~\ref{stmtb}\verb+>+}  \\
+\end{tabular}
+
+\rulesection{eval\_input}
+\label{evalzzzinputb}
+Eval Input is used by the Python \verb+eval+ and \verb+input+ functions.  Only expressions (\ref{tuplezzzorzzztestb}), possibly followed by newlines, are allowed. \\
+
+\begin{tabular}{lcl}
+{\bf \verb+<+eval\_input\verb+>+} & ::=  & {\bf \verb+<+tuple\_or\_test~\ref{tuplezzzorzzztestb}\verb+>+}  \\
+ & \verb+|+  & {\bf \verb+<+eval\_input~\ref{evalzzzinputb}\verb+>+}  NEWLINE \\
+\end{tabular}
+

@@ -1,0 +1,7 @@
+This section presents the grammar for Python programs currently supported by the Python-to-Scheme compiler.
+
+The starting non-terminal is usually {\bf \verb+<+file\_input~\ref{filezzzinputb}\verb+>+}, but {\bf \verb+<+eval\_input~\ref{evalzzzinputb}\verb+>+} is used instead by the \verb|eval| function.
+
+If a non-terminal is named {\bf nonterm\_list\_plus}, it is assumed that it defines the regular expression {\bf nonterm+}, while {\bf nonterm\_list} usually defines the regular expression {\bf nonterm*}, though it might be {\bf (nonterm ,)*} as well.
+
+The empty string is represented by $\varepsilon$.

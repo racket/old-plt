@@ -998,6 +998,45 @@
             (interface-extension? (object-interface d) (object-interface c))))
    (list #t #t #t #t #t))
   
+  (test/spec-passed
+   'recursive-class1
+   '(letrec ([cc (class-contract (public m (-> dd dd)))]
+             [dd (class-contract (public n (-> cc cc)))]
+             [c% (contract cc (class object% (define/public (m x) x) (super-instantiate ())) 'c-pos 'c-neg)]
+             [d% (contract dd (class object% (define/public (n x) x) (super-instantiate ())) 'd-pos 'd-neg)])
+      (send (make-object c%) m d%)
+      (send (make-object d%) n c%)))
+  
+  (test/spec-failed
+   'recursive-class1
+   '(letrec ([cc (class-contract (public m (-> dd dd)))]
+             [dd (class-contract (public n (-> cc cc)))]
+             [c% (contract cc (class object% (define/public (m x) x) (super-instantiate ())) 'c-pos 'c-neg)]
+             [d% (contract dd (class object% (define/public (n x) x) (super-instantiate ())) 'd-pos 'd-neg)])
+      (send (make-object c%) m c%))
+   "c-neg")
+  
+  (test/spec-passed
+   'recursive-object1
+   '(letrec ([cc (object-contract (m (-> dd dd)))]
+             [dd (object-contract (m (-> cc cc)))]
+             [% (class object% (define/public (m x) x) (super-instantiate ()))]
+             [c (contract cc (make-object %) 'c-pos 'c-neg)]
+             [d (contract dd (make-object %) 'd-pos 'd-neg)])
+      (send c m d)
+      (send d m c)))
+  
+  (test/spec-failed
+   'recursive-object2
+   '(letrec ([cc (object-contract (m (-> dd dd)))]
+             [dd (object-contract (n (-> cc cc)))]
+             [% (class object% (define/public (m x) x) (define/public (n x) x) (super-instantiate ()))]
+             [c (contract cc (make-object %) 'c-pos 'c-neg)]
+             [d (contract dd (make-object %) 'd-pos 'd-neg)])
+      (send c m c))
+   "c-neg")
+  
+  
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;                                                        ;;
   ;;   Flat Contract Tests                                  ;;

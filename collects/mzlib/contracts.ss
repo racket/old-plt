@@ -18,12 +18,12 @@
 
   (require-for-syntax mzscheme
                       "list.ss"
-                      (lib "match.ss")
+                      "match.ss"
                       (lib "stx.ss" "syntax")
                       (lib "name.ss" "syntax"))
   
   (require "private/class-sneaky.ss"
-           (lib "etc.ss"))
+           "etc.ss")
   
   (require (lib "contract-helpers.scm" "mzlib" "private"))
   (require-for-syntax (prefix a: (lib "contract-helpers.scm" "mzlib" "private")))
@@ -883,8 +883,6 @@
           (andmap identifier? (syntax->list (syntax (meth-name ...)))))
          (let* ([outer-args (syntax (val pos-blame neg-blame src-info))]
                 [val-meth-names (syntax->list (syntax (meth-name ...)))]
-                [val-publics? (map (lambda (x) (eq? 'public (syntax-e x)))
-                                   (syntax->list (syntax (method-specifier ...))))]
                 [super-meth-names (map prefix-super val-meth-names)]
                 [val-meth-contracts (syntax->list (syntax (meth-contract ...)))]
                 [val-meth-contract-vars (generate-temporaries val-meth-contracts)])
@@ -895,34 +893,15 @@
                          [(super-meth-name ...) super-meth-names]
                          [(get-meth-contract ...) (map method-name->contract-method-name val-meth-names)]
                          [(method ...)
-                          (map (lambda (meth-name meth-contract-var contract-stx public?) 
-                                 (if public?
-                                     (make-class-wrapper-method outer-args
-                                                                meth-name
-                                                                meth-contract-var
-                                                                contract-stx)
-                                     (make-class-wrapper-method/impl outer-args
-                                                                     meth-name
-                                                                     meth-contract-var
-                                                                     contract-stx)))
+                          (map (lambda (meth-name meth-contract-var contract-stx) 
+                                 (make-class-wrapper-method outer-args
+                                                            meth-name
+                                                            meth-contract-var
+                                                            contract-stx))
                                val-meth-names
                                val-meth-contract-vars
-                               val-meth-contracts
-                               val-publics?)]
+                               val-meth-contracts)]
                          [(meth-contract-var ...) val-meth-contract-vars]
-                         [(method-contract-declarations ...) 
-                          (map (lambda (src-stx meth-name meth-contract-var public?)
-                                 (if public?
-                                     (make-public-method-contract-declaration src-stx
-                                                                              meth-name
-                                                                              meth-contract-var)
-                                     (make-override-method-contract-declaration src-stx
-                                                                                meth-name
-                                                                                meth-contract-var)))
-                               val-meth-contracts
-                               val-meth-names
-                               val-meth-contract-vars
-                               val-publics?)]
                          [this (datum->syntax-object (syntax form) 'this stx)]
                          [super-init (datum->syntax-object (syntax form) 'super-instantiate stx)]
                          [super-make (datum->syntax-object (syntax form) 'super-make-object stx)])
@@ -934,9 +913,16 @@
                                 (syntax/loc stx 
                                   (super-init ())))])
                (syntax/loc stx
-                 (let ([meth-contract-var meth-contract] ...)
-                   (make-contract
-                    (lambda outer-args
+                 (make-contract
+                  (lambda outer-args
+                    (let ([super-contracts-ht 
+                           (let loop ([cls val])
+                             (cond
+                               [(sneaky-class? cls) (sneaky-class-contract-table cls)]
+                               [else (let ([super (class-super-class cls)])
+                                       (and super
+                                            (loop super)))]))]
+                          [meth-contract-var meth-contract] ...)
                       (unless (class? val)
                         (raise-contract-error src-info pos-blame neg-blame "expected a class, got: ~e" val))
                       (let ([class-i (class->interface val)])
@@ -948,25 +934,18 @@
                                                 "expected class to have method ~a, got: ~e"
                                                 'meth-name
                                                 val))
-                        ...
-                        
-                        (let ([override-spec? (eq? 'override 'method-specifier)]
-                              [override? (method-in-interface? 'get-meth-contract class-i)])
-                          (unless (boolean=? override-spec? override?)
-                            (if override-spec?
-                                (error 'class-contract "method ~a is declared as an overriding method in ~e, but isn't" 'meth-name val)
-                                (error 'class-contract "method ~a is declared as a public method in ~e, but isn't" 'meth-name val))))
                         ...)
-                      
-                      (class*/names-sneaky  
-                       (this super-init super-make) val ()
-                       
-                       method-contract-declarations ...
-                       
-                       (rename [super-meth-name meth-name] ...)
-                       method ...
-                       call-super-initializer))
-                    (lambda x (error 'impl-contract "unimplemented for class contracts"))))))))]
+                      (let ([c (class*/names-sneaky
+                                (this super-init super-make) val ()
+                                
+                                (rename [super-meth-name meth-name] ...)
+                                method ...
+                                call-super-initializer)]
+                            [ht (make-hash-table)])
+                        (set-sneaky-class-contract-table! c ht)
+                        (hash-table-put! ht 'meth-name meth-contract-var) ...
+                        c)))
+                  (lambda x (error 'impl-contract "unimplemented for class contracts")))))))]
         [(_ (meth-specifier meth-name meth-contract) ...)
          (for-each (lambda (specifier name)
                      (unless (method-specifier? name)
@@ -1002,9 +981,9 @@
                                val-meth-contracts)]
                          [(meth-contract-var ...) val-meth-contract-vars])
              (syntax/loc stx
-               (let ([meth-contract-var meth-contract] ...)
-                 (make-contract
-                  (lambda outer-args
+               (make-contract
+                (lambda outer-args
+                  (let ([meth-contract-var meth-contract] ...)
                     (unless (object? val)
                       (raise-contract-error src-info pos-blame neg-blame "expected an object, got: ~e" val))
                     (let ([obj-i (object-interface val)])
@@ -1022,8 +1001,8 @@
                      val
                      (class object%
                       method ...
-                      (super-instantiate ()))))
-                  (lambda x (error 'impl-contract "unimplemented for object contracts")))))))]
+                      (super-instantiate ())))))
+                (lambda x (error 'impl-contract "unimplemented for object contracts"))))))]
         [(_ (meth-name meth-contract) ...)
          (for-each (lambda (name)
                      (unless (identifier? name)
@@ -1096,70 +1075,37 @@
                     [method-name-string (symbol->string (syntax-e method-name))]
                     [contract-var contract-var])
         (syntax/loc contract-stx
-         (define/override method-name
-           (lambda args
-             (let ([super-method (lambda x (super-method-name . x))]
-                   [method-specific-src-info 
-                    (if (identifier? src-info)
-                        (datum->syntax-object
-                         src-info
-                         (string->symbol
-                          (string-append
-                           (symbol->string (syntax-e src-info))
-                           " method "
-                           method-name-string)))
-                        src-info)])
-               (apply (check-contract contract-var
-                                      super-method
-                                      pos-blame
-                                      neg-blame
-                                      method-specific-src-info)
-                      args)))))))
-
-    ;; make-class-wrapper-method/impl : syntax syntax[identifier] syntax[identifier] syntax -> syntax
-    ;; constructs a wrapper method that checks the pre and post-condition, and
-    ;; calls the super method inbetween.
-    (define (make-class-wrapper-method/impl outer-args method-name contract-var contract-stx)
-      (with-syntax ([(val pos-blame neg-blame src-info) outer-args]
-                    [super-method-name (prefix-super method-name)]
-                    [method-name method-name]
-                    [get-super-contract (prefix-super (method-name->contract-method-name method-name))]
-                    [contract-var contract-var])
-        (syntax/loc contract-stx
-         (define/override method-name
-           (lambda args
-             (let ([super-method (lambda x (super-method-name . x))])
-               (apply (check-implication contract-var
-                                         (get-super-contract)
-                                         (check-contract contract-var
-                                                         super-method
-                                                         pos-blame
-                                                         neg-blame
-                                                         src-info)
-                                         pos-blame
-                                         src-info) 
-                      args)))))))
-    
-    ;; make-public-method-contract-declaration : syntax syntax -> syntax
-    (define (make-public-method-contract-declaration src-stx meth-name meth-contract-var)
-      (with-syntax ([get-contract (method-name->contract-method-name meth-name)]
-                    [meth-contract-var meth-contract-var]
-                    [meth-name meth-name])
-        (syntax/loc src-stx
-          (define/public (get-contract)
-            meth-contract-var))))
-    
-    ;; make-override-method-contract-declaration : syntax syntax -> syntax
-    (define (make-override-method-contract-declaration src-stx meth-name meth-contract-var)
-      (with-syntax ([get-contract (method-name->contract-method-name meth-name)]
-                    [super-get-contract (prefix-super (method-name->contract-method-name meth-name))]
-                    [meth-contract-var meth-contract-var]
-                    [meth-name meth-name])
-        (syntax/loc src-stx
-          (begin
-            (rename [super-get-contract get-contract])
-            (define/override (get-contract) 
-              meth-contract-var)))))
+          (define/override method-name
+            (lambda args
+              (let* ([super-method (lambda x (super-method-name . x))]
+                     [method-specific-src-info 
+                      (if (identifier? src-info)
+                          (datum->syntax-object
+                           src-info
+                           (string->symbol
+                            (string-append
+                             (symbol->string (syntax-e src-info))
+                             " method "
+                             method-name-string)))
+                          src-info)]
+                     [super-contract (and super-contracts-ht
+                                          (hash-table-get super-contracts-ht
+                                                          'method-name
+                                                          (lambda () #f)))]
+                     [wrapped-method (check-contract contract-var
+                                                     super-method
+                                                     pos-blame
+                                                     neg-blame
+                                                     method-specific-src-info)])
+                (apply 
+                 (if super-contract
+                     (check-implication contract-var
+                                        super-contract
+                                        wrapped-method
+                                        pos-blame
+                                        src-info)
+                     wrapped-method)
+                 args)))))))
     
     ;; prefix-super : syntax[identifier] -> syntax[identifier]
     ;; adds super- to the front of the identifier

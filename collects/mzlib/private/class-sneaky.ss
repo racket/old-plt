@@ -26,6 +26,26 @@ primitives:
 
   is-a?
   object-interface
+  
+These functions:
+
+  set-sneaky-class-contract-table!
+  sneaky-class-contract-table
+  sneaky-class?
+
+are used by the contract implementation to store
+the classes contracts in a hash table on the class
+to ensure that substitutability works out.
+
+This function:
+  
+  class-super-class
+
+is used by the contract system to iterate over
+a class's superclasses when contracts are added
+to the class. The iteration is used to find
+any superclass that has contracts to ensure that
+substitutability is checked properly.
 
 |#
 (module class-sneaky mzscheme
@@ -1160,8 +1180,23 @@ primitives:
 			no-super-init?); #t => no super-init needed
                     insp)
   
-  (define-struct (sneaky-class class) ())
-
+  (define-values (struct:sneaky-class
+                  make-sneaky-class
+                  sneaky-class?
+                  sneaky-class-contract-table
+                  set-sneaky-class-contract-table!)
+    (let-values ([(struct:sneaky-class make-sneaky-class sneaky-class? sneaky-class-get sneaky-class-set!)
+                  (make-struct-type 'sneaky-class struct:class 0 1)])
+      (values struct:sneaky-class
+              make-sneaky-class 
+              sneaky-class?
+              (let ([sneaky-class-contract-table (lambda (sc) (sneaky-class-get sc 0))])
+                sneaky-class-contract-table)
+              (let ([set-sneaky-class-contract-table!
+                     (lambda (sc t)
+                       (sneaky-class-set! sc 0 t))])
+                set-sneaky-class-contract-table!))))
+  
   (define (compose-class name                ; symbol
 			 super               ; class
 			 interfaces          ; list of interfaces
@@ -2145,10 +2180,18 @@ primitives:
   ;; class is masquerading as.
   (define (unsneak-class c)
     (cond
-      [(sneaky-class? c) 
-       (let ([v (class-supers c)])
-         (unsneak-class (vector-ref v (- (vector-length v) 2))))]
+      [(sneaky-class? c)
+       ;; since object% is not a sneaky class, we
+       ;; know that class-super-class doesn't return #f
+       (unsneak-class (class-super-class c))]
       [else c]))
+  
+  ;; class-super-class : class -> (union class #f)
+  ;; returns the superclass of c.
+  (define (class-super-class c)
+    (let ([v (class-supers c)]) 
+      (and ((vector-length v) . > . 1)
+           (vector-ref v (- (vector-length v) 2)))))
   
   ;; unsneak-object : object -> object
   ;; returns the object that the sneaky
@@ -2270,6 +2313,8 @@ primitives:
     (if name (format " for interface: ~a" name) ""))
   
   (provide class*/names-sneaky make-object/sneaky
+           set-sneaky-class-contract-table! sneaky-class-contract-table sneaky-class?
+           class-super-class
            
            (rename :class class)
 	   class* class*/names

@@ -18,6 +18,8 @@
   
   (define gui (make-parameter #f))
   
+  (define path-loc (make-parameter (cons 0 0)))
+
   (define (init-parameters)
     (score 0)
     (home-list null)
@@ -29,4 +31,5 @@
     (player-initial-money 0)
     (packages-held null)
     (gui #f)
+    (path-loc (cons 0 0))
     ))

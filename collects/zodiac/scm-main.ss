@@ -1359,7 +1359,6 @@
 		  (valid-syntactic-id? macro-name)
 		  (let* ((real-name (sexp->raw macro-name))
 			  (raw-handler (sexp->raw macro-handler))
-			  ; ROBBY: raw-handler was being pretty-printed
 			  (real-handler (with-parameterization
 					  zodiac-user-parameterization
 					  (lambda ()

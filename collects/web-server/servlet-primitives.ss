@@ -39,7 +39,9 @@
     (set! *page-channel* x))
   
   (define *last-page-sent* #f)
-  (define *open-new-window* #t)
+  ;(define *open-new-window* #t)
+  ; always re-use an exisiting window.
+  (define *open-new-window* #f)
   
   ; output-page : page -> void
   (define (output-page page)

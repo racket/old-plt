@@ -13,6 +13,12 @@
 #ifndef SCHEME_H
 #define SCHEME_H
 
+#if defined(__MWERKS__)
+# ifdef MZSCHEME_USES_NEAR_GLOBALS
+#  pragma far_data off
+# endif
+#endif
+
 /* The next line is used and set during installation: */
 #define INCLUDE_WITHOUT_PATHS
 
@@ -903,6 +909,9 @@ void scheme_restore_nonmain_thread(void);
 #ifdef MAC_FILE_SYSTEM
 extern long scheme_creator_id;
 #endif
+#ifdef MACINTOSH_EVENTS
+extern void (*scheme_handle_aewait_event)(EventRecord *e);
+#endif
 extern void *(*scheme_get_sema_callback_context)(void);
 
 extern Scheme_Object *(*scheme_make_stdin)(void);
@@ -1057,6 +1066,12 @@ extern Scheme_Extension_Table *scheme_extension_table;
 
 #ifdef __cplusplus
 };
+#endif
+
+#if defined(__MWERKS__)
+# ifdef MZSCHEME_USES_NEAR_GLOBALS
+#  pragma far_data reset
+# endif
 #endif
 
 #endif /* ! SCHEME_H */

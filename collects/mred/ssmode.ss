@@ -127,10 +127,9 @@
 		  [delete-callback
 		   (lambda (list-box)
 		     (lambda (button command)
-		       (let* ([selections (box null)]
-			      [_ (send list-box get-selections selections)]
-			      [symbols (map (lambda (x) (string->symbol (send list-box get-string x))) (unbox selections))])
-			 (for-each (lambda (x) (send list-box delete x)) (reverse (unbox selections)))
+		       (let* ([selections (send list-box get-selections)]
+			      [symbols (map (lambda (x) (string->symbol (send list-box get-string x))) selections)])
+			 (for-each (lambda (x) (send list-box delete x)) (reverse selections))
 			 (let ([ht (mred:preferences:get-preference 'mred:tabify)])
 			   (for-each (lambda (x) (hash-table-remove! ht x)) symbols)))))]
 		  [main-panel (make-object mred:horizontal-panel% p)]

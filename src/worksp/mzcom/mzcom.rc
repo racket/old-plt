@@ -113,13 +113,13 @@ CAPTION "MzCOM"
 FONT 8, "MS Sans Serif"
 BEGIN
     DEFPUSHBUTTON   "OK",IDOK,69,69,50,14,BS_CENTER
-    CTEXT           "MzCOM v. 103",IDC_STATIC,64,11,61,8
-    CTEXT           "Copyright (c) 2000 PLT (Paul Steckler)",IDC_STATIC,44,
+    CTEXT           "MzCOM v. 200",IDC_STATIC,64,11,61,8
+    CTEXT           "Copyright (c) 2001 PLT (Paul Steckler)",IDC_STATIC,44,
                     22,126,9
-    CTEXT           "MzScheme v. 103",IDC_STATIC,55,36,75,8
-    CTEXT           "Copyright (c) 1995-2000 PLT (Matthew Flatt)",IDC_STATIC,
+    CTEXT           "MzScheme v. 200",IDC_STATIC,55,36,75,8
+    CTEXT           "Copyright (c) 1995-2001 PLT (Matthew Flatt)",IDC_STATIC,
                     27,47,143,8
-    ICON            MZICON,IDC_STATIC,14,16,21,20
+    ICON            MZICON,IDC_STATIC,14,16,20,20
 END
 
 

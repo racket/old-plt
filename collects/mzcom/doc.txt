@@ -23,7 +23,7 @@ Loading MzCOM
 To load a COM object, COM hosts require a COM class 
 name or a ProgID.  MzCOM has the class name 
 "MzObj Class" and the ProgID "MzCOM.MzObj.<version>",
-where <version> is the version number, such as 102.
+where <version> is the version number, such as 200.
 
 In the Visual BASIC environment, from the menu 
 Project|References, check "MzCOM Type Library".  

@@ -1,5 +1,12 @@
 ;; info.ss for mzcom collection
 
+(module info (lib "infotab.ss" "setup")
+  (define name "MzCOM")
+  (define blurb
+    (list
+      "MzCOM is a COM class that makes Scheme available to any COM client.")))
+
+#|
 (lambda (request failure-thunk)
   (case request
     [(name) "MzCOM"]
@@ -22,3 +29,4 @@
      (list
       "MzCOM is a COM class that makes Scheme available to any COM client.")]
     [else (failure-thunk)]))
+|#

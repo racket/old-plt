@@ -116,9 +116,9 @@ void setupSchemeEnv(void) {
   // set up exception trapping
   
   wrapper = 
-    "(#%lambda (thunk) "
-    "(#%with-handlers ([#%void (#%lambda (exn) (#%cons #f exn))]) "
-    "(#%cons #t (thunk))))";
+    "(lambda (thunk) "
+    "(with-handlers ([void (lambda (exn) (cons #f exn))]) "
+    "(cons #t (thunk))))";
   
   exn_catching_apply = scheme_eval_string(wrapper,env);
   exn_p = scheme_lookup_global(scheme_intern_symbol("exn?"),env);
@@ -130,19 +130,19 @@ void setupSchemeEnv(void) {
 
   scheme_add_global("mzcom-exe",scheme_make_string(exeBuff),env);
 
-  scheme_eval_string("(#%current-library-collection-paths "
-		     "(#%path-list-string->path-list "
-		     "(#%or (#%getenv \"PLTCOLLECTS\") \"\") "
-		     "(#%or "
-		     "(#%ormap "
-		     "(#%lambda (f) (#%let ([p (f)]) "
-		     "(#%and p (#%directory-exists? p) (#%list p)))) "
-		     "(#%list"
-		     "(#%lambda () (#%let ((v (#%getenv \"PLTHOME\"))) "
-		     "(#%and v (#%build-path v \"collects\")))) "
-		     "(#%lambda () (#%find-executable-path mzcom-exe \"..\")) "
-		     "(#%lambda () \"c:\\plt\\collects\") "
-		     ")) #%null)))",
+  scheme_eval_string("(current-library-collection-paths "
+		     "(path-list-string->path-list "
+		     "(or (getenv \"PLTCOLLECTS\") \"\") "
+		     "(or "
+		     "(ormap "
+		     "(lambda (f) (let ([p (f)]) "
+		     "(and p (directory-exists? p) (list p)))) "
+		     "(list"
+		     "(lambda () (let ((v (getenv \"PLTHOME\"))) "
+		     "(and v (build-path v \"collects\")))) "
+		     "(lambda () (find-executable-path mzcom-exe \"..\")) "
+		     "(lambda () \"c:\\plt\\collects\") "
+		     ")) null)))",
 		     env); 
 }
 
@@ -165,7 +165,7 @@ DWORD WINAPI evalLoop(LPVOID args) {
 
   // make sure all MzScheme calls in this thread
 
-  GC_use_registered_statics = 1;
+  scheme_set_stack_base(NULL,1);
 
   setupSchemeEnv();
 
@@ -194,7 +194,7 @@ DWORD WINAPI evalLoop(LPVOID args) {
 
       case WAIT_TIMEOUT :
 
-	scheme_eval_string("(#%sleep)",env);
+	scheme_eval_string("(sleep)",env);
 	break;
 
       case WAIT_OBJECT_0 + 1:
@@ -215,7 +215,7 @@ DWORD WINAPI evalLoop(LPVOID args) {
 	  DispatchMessage(&msg);
 	}
 
-	scheme_eval_string("(#%sleep)",env);
+	scheme_eval_string("(sleep)",env);
 
 	break;
 

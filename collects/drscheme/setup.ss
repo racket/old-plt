@@ -20,7 +20,7 @@
 				       [else #f]))
     (define allow-improper-lists-in-lambda? (case pref
 					      [(core) #f]
-					      [else #f]))
+					      [else #t]))
     (define unmatched-cond/case-is-error? #t)
     (define check-syntax-level pref)))
 
@@ -52,16 +52,18 @@
 	      [choice-callback
 	       (let ([state #t])
 		 (lambda (_ evt)
-		   (when state
-		     (set! state #f)
-		     (wx:message-box "Any changes to this setting will not take effect until DrScheme is restarted"
-				     "Warning"))
 		   (mred:set-preference 'drscheme:scheme-level
 					(case (send evt get-command-int)
 					  [(0) 'core]
 					  [(1) 'structured]
 					  [(2) 'side-effects]
-					  [(3) 'advanced]))))]
+					  [(3) 'advanced]))
+		   (when state
+		     (set! state #f)
+		     (unless (mred:get-choice "Any changes to this setting will not take effect until DrScheme is restarted"
+					      "Continue Working"
+					      "Exit")
+		       (mred:exit)))))]
 	     [choice (make-object mred:choice% main choice-callback
 				  "Language"
 				  -1 -1 -1 -1

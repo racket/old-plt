@@ -129,25 +129,30 @@
 	  [(null? (cdr l)) (car l)]
 	  [else (last (cdr l))])))
 
+    (define list? (if params:allow-improper-lists?
+		      #%list?
+		      (lambda (l) (or (cons? l) (null? l)))))
+
     (define make-last-checked
       (lambda (prim prim-name)
 	(if params:allow-improper-lists?
 	    prim
-	    (lambda args
-	      (let ([l (last args)])
-		(if (cons? l)
-		    (apply prim args)
-		    (error prim-name
-			   "last argument must be of type <proper list>, given ~a; all args: ~a"
-			   l
-			   args)))))))
+	    (case-lambda
+	     [() (prim)]
+	     [args (let ([l (last args)])
+		     (if (list? l)
+			 (apply prim args)
+			 (error prim-name
+				"last argument must be of type <proper list>, given ~a; all args: ~a"
+				l
+				args)))]))))
 
     (define make-second-checked 
       (lambda (prim prim-name)
 	(if params:allow-improper-lists?
 	    prim
 	    (lambda (a b)
-	      (if (cons? b)
+	      (if (list? b)
 		  (prim a b)
 		  (error prim-name
 			 "second argument must be of type <proper list>, given ~a and ~a"
@@ -155,9 +160,6 @@
 
     (define cons (make-second-checked #%cons 'cons))
     (define set-cdr! (make-second-checked #%set-cdr! 'set-cdr!))
-    (define list? (if params:allow-improper-lists?
-		      #%list?
-		      (lambda (l) (or (cons? l) (null? l)))))
     (define list* (make-last-checked #%list* 'list*))
     (define append (make-last-checked #%append 'append))
     (define append! (make-last-checked #%append! 'append!))))

@@ -48,7 +48,7 @@
               [(x) (void)]))
           (define/public (default-settings) null)
           (define/public (default-settings? x) #t)
-          (define/public (front-end input settings)
+          (define/public (front-end/complete-program input settings)
             (let-values ([(port name)
                           (if (string? input)
                               (values (open-input-file input) (path->complete-path input))
@@ -67,6 +67,9 @@
                       eof
                       (begin0 (compile-python-ast (car ast-list))
                               (set! ast-list (cdr ast-list))))))))
+          
+          (define/public (front-end/interaction input settings)
+            (front-end/complete-program input settings))
           
           (define/public (get-style-delta) #f)
           (define/public (get-language-position) (list "Python"))

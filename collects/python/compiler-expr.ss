@@ -352,6 +352,13 @@
         (send expression set-bindings! enclosing-scope)
         (send sub set-bindings! enclosing-scope))
       
+      ;;danie
+      (inherit ->orig-so)
+      (define/override (to-scheme)
+        (->orig-so `(,(py-so 'python-method-call) ,(send expression to-scheme)
+                                                  '__getitem__
+                                                  ,(send sub to-scheme))))
+      
       (super-instantiate ())))
   
   ;; 5.3.3

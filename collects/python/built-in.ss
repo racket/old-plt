@@ -18,4 +18,5 @@
   (define None py-none)
   (define NoneType py-none%)
   (define type py-type%)
-  (define classmethod py-classmethod%))
+  (define classmethod py-classmethod%)
+  )

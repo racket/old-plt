@@ -24,7 +24,8 @@
 
  The documentation here may be sufficient to get started with
  SrPersist, but you will certainly want to consult an ODBC reference for 
- more information.
+ more information.  The file tutorial.txt in the SrPersist collection 
+ provides some simple examples of how to use SrPersist.
 
  SrPersist is not
  ----------------
@@ -152,7 +153,7 @@
 
  Besides these SrPersist-particular exceptions, other kinds of errors 
  may raise exceptions.  For example, passing a value of the
- wrong type to a SrPersis procedure will raise an exception.
+ wrong type to a SrPersist procedure will raise an exception.
 
  Handles
  -------
@@ -182,20 +183,20 @@
 
  ODBC 1.0.
 
- Returns a fresh `environment handle'. 
+ Returns a fresh environment handle. 
 
 > (alloc-connect henv) 
 
  ODBC 1.0, deprecated in favor of `alloc-handle'.
 
- Returns a fresh `connection handle', given `henv', an
+ Returns a fresh connection handle, given `henv', an
  environment handle.
 
 > (alloc-stmt hdbc) 
 
  ODBC 1.0, deprecated in favor of `alloc-handle'.
 
- Returns a fresh `statement handle', given `hdbc', a 
+ Returns a fresh statement handle, given `hdbc', a 
  connection handle
 
 > (alloc-handle htype [handle])
@@ -326,6 +327,53 @@
  Establishes a connection, given a connection handle `hdbc', and 
  strings for a database server `dbms', a `name' and `password'.
  Returns the value of `hdbc'.
+
+> (browse-connect hdbc connect-string)
+
+ Connects to a data source, given a connection handle `hdbc'
+ and connection string `connect-string'.  The connection string
+ consists of keyword and value pairs.  See `driver-connect'
+ for the format of such pairs.  The first time `browse-connect' 
+ is called, the connection string must contain either the
+ DSN or DRIVER keywords.  `browse-connect' returns a connection string 
+ with a sequence of keywords and value pairs.  Those pairs not
+ preceded by an asterisk are mandatory in the next call to
+ browse-connect.  If the supplied connection string does not 
+ contain all needed attributes to make a connection, a `exn-need-data'
+ exception is raised, which contains a connection string indicating 
+ which attributes are missing. 
+ 
+> (driver-connect hdbc connect-string prompt)
+
+ Connects to an ODBC driver, given a connection handle `hdbc',
+ the string `connect-string', and the symbol `prompt'.
+ The connect-string is a possibly-empty sequence of 
+ keyword, attribute pairs:
+
+   keyword=attribute;... 
+
+ where `keyword' is any of 
+
+   DSN       data source
+   UID       user id
+   PWD       password
+   FILEDSN   name of a .dsn file containing a connection string
+   DRIVER    driver description
+   SAVEFILE  a .dsn file for saving the connection attributes
+
+ or a driver-specific keyword.  DSN and DRIVER are mutually-exclusive.  
+ DRIVER is ODBC 2.0, while FILEDSN and SAVEFILE are ODBC 3.0.
+ For DRIVER only, the attribute may be surrounded by 
+ curly braces {}, useful if the attribute contains a semicolon.
+ `prompt' is one of the symbols 
+
+   'sql-driver-prompt              prompt for required information
+   'sql-driver-complete            prompt if DSN not in connect-string
+   'sql-driver-complete-required   prompt if DSN not in connect-string
+   'sql-driver-noprompt            do not prompt for information
+ 
+ driver-connect returns a connection string indicating all the
+ keywords and values that were passed to the data source.
 
 > (disconnect hdbc)
 
@@ -1220,56 +1268,8 @@
  `set-connect-attr'.  See `set-connect-attr' for more information.
  Returns the value of `hdbc'.
 
-> (driver-connect hdbc connect-string prompt)
-
- Connects to an ODBC driver, given a connection handle `hdbc',
- the string `connect-string', and the symbol `prompt'.
- The connect-string is a possibly-empty sequence of 
- keyword, attribute pairs:
-
-   keyword=attribute;... 
-
- where `keyword' is any of 
-
-   DSN       data source
-   UID       user id
-   PWD       password
-   FILEDSN   name of a .dsn file containing a connection string
-   DRIVER    driver description
-   SAVEFILE  a .dsn file for saving the connection attributes
-
- or a driver-specific keyword.  DSN and DRIVER are mutually-exclusive.  
- DRIVER is ODBC 2.0, while FILEDSN and SAVEFILE are ODBC 3.0.
- For DRIVER only, the attribute may be surrounded by 
- curly braces {}, useful if the attribute contains a semicolon.
- `prompt' is one of the symbols 
-
-   'sql-driver-prompt              prompt for required information
-   'sql-driver-complete            prompt if DSN not in connect-string
-   'sql-driver-complete-required   prompt if DSN not in connect-string
-   'sql-driver-noprompt            do not prompt for information
- 
- driver-connect returns a connection string indicating all the
- keywords and values that were passed to the data source.
-
-> (browse-connect hdbc connect-string)
-
- Connects to a data source, given a connection handle `hdbc'
- and connection string `connect-string'.  The connection string
- consists of keyword and value pairs.  See `driver-connect'
- for the format of such pairs.  The first time `browse-connect' 
- is called, the connection string must contain either the
- DSN or DRIVER keywords.  `browse-connect' returns a connection string 
- with a sequence of keywords and value pairs.  Those pairs not
- preceded by an asterisk are mandatory in the next call to
- browse-connect.  If the supplied connection string does not 
- contain all needed attributes to make a connection, a `exn-need-data'
- exception is raised, which contains a connection string indicating 
- which attributes are missing. 
- 
  Statements and Parameters
  -------------------------
-
 
 > (prepare hstmt sql)
 

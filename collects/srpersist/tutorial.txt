@@ -58,10 +58,10 @@ driver-connect, you have to know the name of the
 database system, which may not be obvious.  To find out
 this information, you can call
 
-    (data-source henv 'sql-fetch-first)
+    (data-sources henv 'sql-fetch-first)
 
 to get a data source name and its description.  Calling
-data-source with 'sql-fetch-next gets the next data source;
+data-sources with 'sql-fetch-next gets the next data source;
 you can continue making such calls until you've enumerated
 all possible data sources.
 

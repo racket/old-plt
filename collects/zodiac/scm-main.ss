@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.165 1999/01/05 20:24:33 mflatt Exp $
+; $Id: scm-main.ss,v 1.166 1999/01/06 23:09:57 mflatt Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -1673,7 +1673,7 @@
 		'((#%call/ec
 		    (lambda (k)
 		      (let ((handlers (#%list
-					(cons pred handler)
+					(#%cons pred handler)
 					...)))
 			(parameterize
 			  ((#%current-exception-handler

@@ -61,11 +61,15 @@
      (lambda (p v)
        (if v
 	   (let ([new-unit (and (file-exists? v)
-				(load/cd v))])
+				(with-handlers
+				 ((void (lambda (x)
+					  (wx:message-box (exn-message x) "Invalid Library")
+					  (raise x))))
+				 (load/cd v)))])
 	     (if ((global-defined-value 'unit/sig?) new-unit)
 		 (set! library-unit new-unit)
 		 (begin
-		   (wx:message-box (format "Invalid File: ~a" v) "ERROR")
+		   (wx:message-box (format "Invalid Library: ~a" v) "ERROR")
 		   #f)))
 	   (set! library-unit #f))))
 

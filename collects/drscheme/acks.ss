@@ -23,7 +23,7 @@
      "Gann Bierner, "
      "Richard Cobbe, "
      "Moy Easwaran, "
-     "Kathy Fisler, "
+     "Kathi Fisler, "
      "Cormac Flanagan, "
      "Sebastian Good, "
      "Kathy Gray, "

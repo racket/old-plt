@@ -83,6 +83,7 @@ long scheme_hash_key(Scheme_Object *o);
 #else
 # define scheme_hash_key(o) ((long)(o))
 #endif
+typedef int (*Compare_Proc)(void *v1, void *v2);
 
 Scheme_Object *scheme_dump_gc_stats(int c, Scheme_Object *p[]);
 

@@ -2530,7 +2530,8 @@ static Scheme_Object *datum_to_syntax_inner(Scheme_Object *o,
       SCHEME_VEC_ELS(result)[i] = a;
     }
 
-    SCHEME_SET_VECTOR_IMMUTABLE(result);
+    if (size)
+      SCHEME_SET_VECTOR_IMMUTABLE(result);
   } else {
     result = o;
   }

@@ -87,14 +87,14 @@ static Scheme_Object *unbox (int argc, Scheme_Object *argv[]);
 static Scheme_Object *set_box (int argc, Scheme_Object *argv[]);
 
 static Scheme_Object *make_hash_table(int argc, Scheme_Object *argv[]);
-static Scheme_Object *make_hash_table_weak(int argc, Scheme_Object *argv[]);
-static Scheme_Object *make_hash_table_weak(int argc, Scheme_Object *argv[]);
 static Scheme_Object *hash_table_p(int argc, Scheme_Object *argv[]);
 static Scheme_Object *hash_table_put(int argc, Scheme_Object *argv[]);
 static Scheme_Object *hash_table_get(int argc, Scheme_Object *argv[]);
 static Scheme_Object *hash_table_remove(int argc, Scheme_Object *argv[]);
 static Scheme_Object *hash_table_map(int argc, Scheme_Object *argv[]);
 static Scheme_Object *hash_table_for_each(int argc, Scheme_Object *argv[]);
+static Scheme_Object *eq_hash_code(int argc, Scheme_Object *argv[]);
+static Scheme_Object *equal_hash_code(int argc, Scheme_Object *argv[]);
 
 static Scheme_Object *make_weak_box(int argc, Scheme_Object *argv[]);
 static Scheme_Object *weak_box_value(int argc, Scheme_Object *argv[]);
@@ -104,6 +104,8 @@ static Scheme_Object *weak_boxp(int argc, Scheme_Object *argv[]);
 #define BOXP "box?"
 #define UNBOX "unbox"
 #define SETBOX "set-box!"
+
+static Scheme_Object *weak_symbol, *equal_symbol;
 
 void
 scheme_init_list (Scheme_Env *env)
@@ -398,12 +400,7 @@ scheme_init_list (Scheme_Env *env)
   scheme_add_global_constant("make-hash-table", 
 			     scheme_make_prim_w_arity(make_hash_table, 
 						      "make-hash-table", 
-						      0, 0), 
-			     env);
-  scheme_add_global_constant("make-hash-table-weak", 
-			     scheme_make_prim_w_arity(make_hash_table_weak, 
-						      "make-hash-table-weak", 
-						      0, 0), 
+						      0, 2), 
 			     env);
   scheme_add_global_constant("hash-table?", 
 			     scheme_make_folding_prim(hash_table_p, 
@@ -436,6 +433,17 @@ scheme_init_list (Scheme_Env *env)
 						      2, 2), 
 			     env);
 
+  scheme_add_global_constant("eq-hash-code", 
+			     scheme_make_prim_w_arity(eq_hash_code, 
+						      "eq-hash-code", 
+						      1, 1), 
+			     env);
+  scheme_add_global_constant("equal-hash-code", 
+			     scheme_make_prim_w_arity(equal_hash_code, 
+						      "equal-hash-code", 
+						      1, 1), 
+			     env);
+
   scheme_add_global_constant("make-weak-box",
 			     scheme_make_prim_w_arity(make_weak_box,
 						      "make-weak-box",
@@ -451,6 +459,12 @@ scheme_init_list (Scheme_Env *env)
 						      "weak-box?",
 						      1, 1, 1),
 			     env);
+
+  REGISTER_SO(weak_symbol);
+  REGISTER_SO(equal_symbol);
+
+  weak_symbol = scheme_intern_symbol("weak");
+  equal_symbol = scheme_intern_symbol("equal");
 }
 
 Scheme_Object *scheme_make_pair(Scheme_Object *car, Scheme_Object *cdr)
@@ -1197,22 +1211,66 @@ static Scheme_Object *set_box(int c, Scheme_Object *p[])
   return scheme_void;
 }
 
-static Scheme_Object *do_make_hash_table(int weak)
+static int compare_equal(void *v1, void *v2)
 {
-  if (weak)
-    return (Scheme_Object *)scheme_make_bucket_table(20, SCHEME_hash_weak_ptr);
-  else
-    return (Scheme_Object *)scheme_make_hash_table(SCHEME_hash_ptr);
+  return !scheme_equal((Scheme_Object *)v1, (Scheme_Object *)v2);
+}
+
+static void make_hash_indices_for_equal(void *v, long *h1, long *h2)
+{
+  *h1 = scheme_equal_hash_key((Scheme_Object *)v);
+  *h2 = scheme_equal_hash_key2((Scheme_Object *)v);
 }
 
 static Scheme_Object *make_hash_table(int argc, Scheme_Object *argv[])
 {
-  return do_make_hash_table(0);
-}
+  int flags[2] = { 0, 0 };
+  int i;
+  
+  for (i = 0; i < argc; i++) {
+    int j;
+    if (SAME_OBJ(argv[i], weak_symbol))
+      j = 0;
+    else if (SAME_OBJ(argv[i], equal_symbol))
+      j = 1;
+    else {
+      scheme_wrong_type("make-hash-table", "'weak or 'equal", i, argc, argv);
+      return NULL;
+    }
 
-static Scheme_Object *make_hash_table_weak(int argc, Scheme_Object *argv[])
-{
-  return do_make_hash_table(1);
+    if (flags[j])
+      scheme_arg_mismatch("make-hash-table", "redundant flag: ", argv[i]);
+
+    flags[j] = 1;
+  }
+
+  if (flags[0]) {
+    /* Weak */
+    Scheme_Bucket_Table *t;
+
+    t = scheme_make_bucket_table(20, SCHEME_hash_weak_ptr);
+
+    if (flags[1]) {
+      t->mutex = scheme_make_sema(1);
+      t->compare = compare_equal;
+      t->make_hash_indices = make_hash_indices_for_equal;
+    }
+
+    return (Scheme_Object *)t;
+  } else {
+    /* Normal */
+    Scheme_Hash_Table *t;
+
+    t = scheme_make_hash_table(SCHEME_hash_ptr);
+
+    if (flags[1]) {
+      t->mutex = scheme_make_sema(1);
+      t->compare = compare_equal;
+      t->make_hash_indices = make_hash_indices_for_equal;
+    }
+
+    return (Scheme_Object *)t;
+  }
 }
 
 static Scheme_Object *hash_table_p(int argc, Scheme_Object *argv[])
@@ -1225,11 +1283,17 @@ static Scheme_Object *hash_table_put(int argc, Scheme_Object *argv[])
   if (!(SCHEME_HASHTP(argv[0]) || SCHEME_BUCKTP(argv[0])))
     scheme_wrong_type("hash-table-put!", "hash table", 0, argc, argv);
 
-  if (SCHEME_BUCKTP(argv[0]))
-    scheme_add_to_table((Scheme_Bucket_Table *)argv[0], (char *)argv[1], 
-			(void *)argv[2], 0);
-  else
-    scheme_hash_set((Scheme_Hash_Table *)argv[0], argv[1], argv[2]);
+  if (SCHEME_BUCKTP(argv[0])) {
+    Scheme_Bucket_Table *t = (Scheme_Bucket_Table *)argv[0];
+    if (t->mutex) scheme_wait_sema(t->mutex,0);
+    scheme_add_to_table(t, (char *)argv[1], (void *)argv[2], 0);
+    if (t->mutex) scheme_post_sema(t->mutex);
+  } else{
+    Scheme_Hash_Table *t = (Scheme_Hash_Table *)argv[0];
+    if (t->mutex) scheme_wait_sema(t->mutex, 0);
+    scheme_hash_set(t, argv[1], argv[2]);
+    if (t->mutex) scheme_post_sema(t->mutex);
+  }
 
   return scheme_void;
 }
@@ -1241,10 +1305,17 @@ static Scheme_Object *hash_table_get(int argc, Scheme_Object *argv[])
   if (!(SCHEME_HASHTP(argv[0]) || SCHEME_BUCKTP(argv[0])))
     scheme_wrong_type("hash-table-get", "hash table", 0, argc, argv);
 
-  if (SCHEME_BUCKTP(argv[0]))
-    v = scheme_lookup_in_table((Scheme_Bucket_Table *)argv[0], (char *)argv[1]);
-  else
-    v = scheme_hash_get((Scheme_Hash_Table *)argv[0], argv[1]);
+  if (SCHEME_BUCKTP(argv[0])){
+    Scheme_Bucket_Table *t = (Scheme_Bucket_Table *)argv[0];
+    if (t->mutex) scheme_wait_sema(t->mutex, 0);
+    v = scheme_lookup_in_table(t, (char *)argv[1]);
+    if (t->mutex) scheme_post_sema(t->mutex);
+  } else {
+    Scheme_Hash_Table *t = (Scheme_Hash_Table *)argv[0];
+    if (t->mutex) scheme_wait_sema(t->mutex, 0);
+    v = scheme_hash_get(t, argv[1]);
+    if (t->mutex) scheme_post_sema(t->mutex);
+  } 
 
   if (v)
     return (Scheme_Object *)v;
@@ -1266,13 +1337,20 @@ static Scheme_Object *hash_table_remove(int argc, Scheme_Object *argv[])
 
   if (SCHEME_BUCKTP(argv[0])) {
     Scheme_Bucket *b;
+    Scheme_Bucket_Table *t = (Scheme_Bucket_Table *)argv[0];
+    if (t->mutex) scheme_wait_sema(t->mutex, 0);
     b = scheme_bucket_or_null_from_table((Scheme_Bucket_Table *)argv[0], (char *)argv[1], 0);
     if (b) {
       HT_EXTRACT_WEAK(b->key) = NULL;
       b->val = NULL;
     }
-  } else
-    scheme_hash_set((Scheme_Hash_Table *)argv[0], argv[1], NULL);
+    if (t->mutex) scheme_post_sema(t->mutex);
+  } else{
+    Scheme_Hash_Table *t = (Scheme_Hash_Table *)argv[0];
+    if (t->mutex) scheme_wait_sema(t->mutex, 0);
+    scheme_hash_set(t, argv[1], NULL);
+    if (t->mutex) scheme_post_sema(t->mutex);
+  }
 
   return scheme_void;
 }
@@ -1357,6 +1435,34 @@ static Scheme_Object *hash_table_map(int argc, Scheme_Object *argv[])
 static Scheme_Object *hash_table_for_each(int argc, Scheme_Object *argv[])
 {
   return do_map_hash_table(argc, argv, "hash-table-for-each", 0);
+}
+
+static Scheme_Object *eq_hash_code(int argc, Scheme_Object *argv[])
+{
+  long v;
+
+  if (SCHEME_INTP(argv[0]))
+    return argv[0];
+
+#ifdef MZ_PRECISE_GC
+  v = scheme_hash_key(argv[0]);
+#else
+  v = ((long)argv[0]) >> 2;
+#endif
+
+  return scheme_make_integer(v);
+}
+
+static Scheme_Object *equal_hash_code(int argc, Scheme_Object *argv[])
+{
+  long v;
+
+  if (SCHEME_INTP(argv[0]))
+    return argv[0];
+
+  v = scheme_equal_hash_key(argv[0]);
+
+  return scheme_make_integer(v);
 }
 
 Scheme_Object *scheme_make_weak_box(Scheme_Object *v)

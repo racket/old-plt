@@ -567,6 +567,7 @@ hash_table_val {
 
   gcMARK(ht->keys);
   gcMARK(ht->vals);
+  gcMARK(ht->mutex);
 
  size:
   gcBYTES_TO_WORDS(sizeof(Scheme_Hash_Table));
@@ -577,6 +578,7 @@ bucket_table_val {
   Scheme_Bucket_Table *ht = (Scheme_Bucket_Table *)p;
 
   gcMARK(ht->buckets);
+  gcMARK(ht->mutex);
 
  size:
   gcBYTES_TO_WORDS(sizeof(Scheme_Bucket_Table));

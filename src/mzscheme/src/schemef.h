@@ -607,6 +607,8 @@ int scheme_equal(Scheme_Object *obj1, Scheme_Object *obj2);
 #ifdef MZ_PRECISE_GC
 long scheme_hash_key(Scheme_Object *o);
 #endif
+long scheme_equal_hash_key(Scheme_Object *o);
+long scheme_equal_hash_key2(Scheme_Object *o);
 
 Scheme_Object *scheme_build_list(int argc, Scheme_Object **argv);
 

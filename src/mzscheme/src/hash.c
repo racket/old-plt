@@ -22,6 +22,7 @@
 */
 
 #include "schpriv.h"
+#include "schmach.h"
 #include <string.h>
 #include <ctype.h>
 
@@ -332,10 +333,16 @@ get_bucket (Scheme_Bucket_Table *table, const char *key, int add, Scheme_Bucket 
 {
   hash_v_t h, h2;
   Scheme_Bucket *bucket;
+  Compare_Proc compare = table->compare;
+
 
  rehash_key:
 
-  {
+  if (table->make_hash_indices) {
+    table->make_hash_indices((void *)key, &h, &h2);
+    h = h % table->size;
+    h2 = h2 % table->size;
+  } else {
     long lkey;
     lkey = PTR_TO_LONG((Scheme_Object *)key);
     h = (lkey >> 2) % table->size;
@@ -363,6 +370,8 @@ get_bucket (Scheme_Bucket_Table *table, const char *key, int add, Scheme_Bucket 
 	  }
 	} else if (SAME_PTR(hk, key))
 	  return bucket;
+	else if (compare && !compare((void *)hk, (void *)key))
+	  return bucket;
       } else if (add)
 	break;
       h = (h + h2) % table->size;
@@ -370,6 +379,8 @@ get_bucket (Scheme_Bucket_Table *table, const char *key, int add, Scheme_Bucket 
   } else {
     while ((bucket = table->buckets[h])) {
       if (SAME_PTR(bucket->key, key))
+	return bucket;
+      else if (compare && !compare((void *)bucket->key, (void *)key))
 	return bucket;
       h = (h + h2) % table->size;
     }
@@ -706,3 +717,176 @@ long scheme_hash_key(Scheme_Object *o)
 END_XFORM_SKIP;
 
 #endif
+
+/*========================================================================*/
+/*                           equal? hashing                               */
+/*========================================================================*/
+
+static Scheme_Object *hash_k(void)
+{
+  Scheme_Thread *p = scheme_current_thread;
+  Scheme_Object *v = (Scheme_Object *)p->ku.k.p1;
+
+  p->ku.k.p1 = NULL;
+  
+  return (Scheme_Object *)scheme_equal_hash_key(v);
+}
+
+/* Number of lists/vectors/structs/boxes to hash before
+   paying for a stack check. */
+#define HASH_COUNT_START 20
+
+long scheme_equal_hash_key(Scheme_Object *o)
+{
+  Scheme_Type t;
+  long k = 0;
+  static int hash_counter = HASH_COUNT_START;
+
+ top:
+  t = SCHEME_TYPE(o);
+  k += t;
+
+  if (t == scheme_integer_type) {
+    return k + SCHEME_INT_VAL(o);
+#ifdef MZ_USE_SINGLE_FLOATS
+  } else if (t == scheme_float_type) {
+    float f;
+    f = SCHEME_FLOAT_VAL(o);
+    return k + *(long *)&f;
+#endif
+  } else if (t == scheme_double_type) {
+    double d;
+    d = SCHEME_DBL_VAL(o);
+    return k + ((long *)&d)[0] + ((long *)&d)[1];
+  } else if (t == scheme_bignum_type) {
+    int i = SCHEME_BIGLEN(o);
+    bigdig *d = SCHEME_BIGDIG(o);
+    
+    while (i--) {
+      k += d[i];
+    }
+    
+    return k;
+  } else if (t == scheme_rational_type) {
+    k += scheme_equal_hash_key(scheme_rational_numerator(o));
+    o = scheme_rational_denominator(o);
+  } else if ((t == scheme_complex_type) || (t == scheme_complex_izi_type)) {
+    Scheme_Complex *c = (Scheme_Complex *)o;
+    k += scheme_equal_hash_key(c->r);
+    o = c->i;
+  } else if (t == scheme_pair_type) {
+#   include "mzhashchk.inc"
+    k += scheme_equal_hash_key(SCHEME_CAR(o));
+    o = SCHEME_CDR(o);
+  } else if (t == scheme_vector_type) {
+    int len = SCHEME_VEC_SIZE(o), i;
+#   include "mzhashchk.inc"
+
+    if (!len)
+      return k + 1;
+    
+    --len;
+    for (i = 0; i < len; i++) {
+      SCHEME_USE_FUEL(1);
+      k += scheme_equal_hash_key(SCHEME_VEC_ELS(o)[i]);
+      k = (k << 1) + k;
+    }
+    
+    o = SCHEME_VEC_ELS(o)[len];
+  } else if (t == scheme_string_type) {
+    int i = SCHEME_STRLEN_VAL(o);
+    char *s = SCHEME_STR_VAL(o);
+    
+    while (i--) {
+      k += s[i];
+    }
+    
+    return k;
+  } else  if (t == scheme_structure_type) {
+    Scheme_Structure *s = (Scheme_Structure *)o;
+    int len, i;
+#   include "mzhashchk.inc"
+
+    len = SCHEME_STRUCT_NUM_SLOTS(s);
+    k += PTR_TO_LONG((Scheme_Object *)s->stype);
+
+    if (!len)
+      return k;
+
+    --len;
+    for (i = 0; i < len; i++) {
+      SCHEME_USE_FUEL(1);
+      k += scheme_equal_hash_key(s->slots[i]);
+      k = (k << 1) + k;
+    }
+    
+    o = s->slots[len];
+  } else if (SCHEME_BOXP(o)) {
+    SCHEME_USE_FUEL(1);
+    k += 1;
+    o = SCHEME_BOX_VAL(o);
+  } else
+    return k + (PTR_TO_LONG(o) >> 4);
+
+  k = (k << 1) + k;
+  goto top;
+}
+
+long scheme_equal_hash_key2(Scheme_Object *o)
+{
+  Scheme_Type t;
+
+ top:
+  t = SCHEME_TYPE(o);
+
+  if (t == scheme_integer_type) {
+    return t;
+#ifdef MZ_USE_SINGLE_FLOATS
+  } else if (t == scheme_float_type) {
+    return t;
+#endif
+  } else if (t == scheme_double_type) {
+    double d = SCHEME_DBL_VAL(o);
+    return ((long *)&d)[1];
+  } else if (t == scheme_bignum_type) {
+    return SCHEME_BIGDIG(o)[0];
+  } else if (t == scheme_rational_type) {
+    return scheme_equal_hash_key(scheme_rational_numerator(o));
+  } else if ((t == scheme_complex_type) || (t == scheme_complex_izi_type)) {
+    Scheme_Complex *c = (Scheme_Complex *)o;
+    return (scheme_equal_hash_key(c->r)
+	    + scheme_equal_hash_key(c->i));
+  } else if (t == scheme_pair_type) {
+    return (scheme_equal_hash_key(SCHEME_CAR(o))
+	    + scheme_equal_hash_key(SCHEME_CDR(o)));
+  } else if (t == scheme_vector_type) {
+    int len = SCHEME_VEC_SIZE(o), i;
+    long k = 0;
+
+    for (i = 0; i < len; i++) {
+      SCHEME_USE_FUEL(1);
+      k += scheme_equal_hash_key(SCHEME_VEC_ELS(o)[i]);
+    }
+    
+    return k;
+  } else if (t == scheme_string_type) {
+    return SCHEME_STRLEN_VAL(o);
+  } else  if (t == scheme_structure_type) {
+    Scheme_Structure *s = (Scheme_Structure *)o;
+    int len, i;
+    long k = 0;
+
+    len = SCHEME_STRUCT_NUM_SLOTS(s);
+
+    for (i = 0; i < len; i++) {
+      SCHEME_USE_FUEL(1);
+      k += scheme_equal_hash_key(s->slots[i]);
+    }
+    
+    return k;
+  } else if (SCHEME_BOXP(o)) {
+    o = SCHEME_BOX_VAL(o);
+    goto top;
+  } else
+    return t;
+}

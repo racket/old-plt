@@ -1401,7 +1401,8 @@ static Scheme_Object *ok_cmdline(int argc, Scheme_Object **argv)
     
     /* Make sure vector and strings are immutable: */
     vec2 = scheme_make_vector(size, NULL);
-    SCHEME_SET_VECTOR_IMMUTABLE(vec2);
+    if (size)
+      SCHEME_SET_VECTOR_IMMUTABLE(vec2);
     for (i = 0; i < size; i++) {
       str = SCHEME_VEC_ELS(vec)[i];
       if (!SCHEME_IMMUTABLE_STRINGP(str)) {

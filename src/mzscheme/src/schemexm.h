@@ -343,6 +343,8 @@
 #ifdef MZ_PRECISE_GC
 #define scheme_hash_key (scheme_extension_table->scheme_hash_key)
 #endif
+#define scheme_equal_hash_key (scheme_extension_table->scheme_equal_hash_key)
+#define scheme_equal_hash_key2 (scheme_extension_table->scheme_equal_hash_key2)
 #define scheme_build_list (scheme_extension_table->scheme_build_list)
 #define scheme_list_length (scheme_extension_table->scheme_list_length)
 #define scheme_proper_list_length (scheme_extension_table->scheme_proper_list_length)

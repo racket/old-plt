@@ -268,7 +268,7 @@
       ;; new-mailer : ... -> frame[with send-message method]
       (define (new-mailer file to cc subject other-headers body enclosures)
 	(define f% (class frame:basic%
-		     (inherit get-menu-bar set-icon)
+		     (inherit get-menu-bar set-icon get-eventspace)
                      [define/public (send-message)
                        (send-msg)]
                      (define/augment (can-close?)
@@ -281,9 +281,9 @@
                                       this)))
 			    (inner #t can-close?)))
                      (define/augment (on-close)
-                       (send message-editor on-close)
+		       (send message-editor on-close)
 		       (inner (void) on-close)
-                       (exit-sirmail))
+                       (exit-sirmail "mailer close"))
                      (super-instantiate ())
                      (when send-icon
                        (set-icon send-icon send-icon-mask))))

@@ -38,11 +38,11 @@
   ;; eventspace. Each should terminate by calling `exit'.
   ;; We install an exit handler so that we only actually
   ;; exit when the last window is closed.
-  
+
   (define prim-exit (exit-handler))
   (define exit-eventspaces null)
   (define exit-sema (make-semaphore 1))
-  (define (exit-sirmail)
+  (define (exit-sirmail where)
     (let ([evtsp (current-eventspace)])
       ;; Lock is because a separate process might be calling exit
       ;;  or starting up
@@ -62,17 +62,17 @@
       (semaphore-post exit-sema)
       (queue-callback
        (lambda ()
-	 (exit-handler (lambda (x) (exit-sirmail)))
+	 (exit-handler (lambda (x) (exit-sirmail "a")))
 	 (let ([eeh (error-escape-handler)])
 	   (error-escape-handler
 	    (lambda () 
 	      (unless (pair? (get-top-level-windows))
 		;; Didn't start up...
-		(exit-sirmail))
+		(exit-sirmail "b"))
 	      (eeh))))
 	 (thunk)
 	 (yield 'wait)
-	 (exit-sirmail)))))
+	 (exit-sirmail "c")))))
 
   ;; Reader windows -----------------------------------------------------------
   
@@ -120,7 +120,7 @@
                     (with-folders-lock
                      (lambda ()
                        (set! folders-window #f)
-                       (exit-sirmail))))]
+                       (exit-sirmail "d"))))]
                  [mailbox-name inbox-name]
                  [mailbox-options default-mailbox-options])
              (start-new-window

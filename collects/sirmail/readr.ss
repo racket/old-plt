@@ -1521,11 +1521,11 @@
 				       "Error"
 				       "There was an error disconnecting. Exit anyway?"
 				       main-frame))
-			     (exit-sirmail)
+			     (exit-sirmail "read-window exception (1)")
 			     (send main-frame show #f)))])
 	  (disconnect)
 	  (when biff (send biff stop))
-	  (exit-sirmail)
+	  (exit-sirmail "read-window exception (2)")
 	  (send main-frame show #f)))
             
       (define (get-new-mail)

@@ -8,8 +8,7 @@ Read the instructions in plt/src/mac/cw/README
  Compiling for MacOS X using X Windows
 ========================================================================
 
-1) in sconfig.h, comment out the '#define MACINTOSH_EVENTS' line
-2) build as indicated by plt/src/README for UNIX platforms
+Build as indicated by plt/src/README for UNIX platforms
 
 ========================================================================
  Compiling for MacOS X

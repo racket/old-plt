@@ -1,45 +1,129 @@
+; Input ports have three statuses:
+;   "raw" = they've just been opened
+;   "impure" = they have text waiting
+;   "pure" = the MIME headers have been read
+
+; Things we still need:
+; combine-url/relative : url x str -> url
+; lookup-mime-header : list mime-header -> str + #f
+
+(define-signature mred:url^
+  (http/get-impure-port    ; url x list (str) -> in-port
+    display-pure-port      ; in-port -> ()
+    string->url            ; str -> url
+    call/input-url         ; url x (in-port -> ()) x list (str) -> ()
+    purify-port            ; in-port -> ()
+))
+
 (define mred:url@
   (unit/sig mred:url^
     (import)
 
+    ; method : str + #f    path : str
+    ; search : str + #f    fragment : str + #f
     (define-struct url (method path search fragment))
 
-    ;; if the path is absolute, it just arbitrarily picks the first
-    ;; filesystem root.
-    (define unixpath->path
-      (letrec* ([r (regexp "([^/]*)/(.*)")]
-		[translate-dir
-		 (lambda (s)
-		   (cond
-		    [(string=? s "") 'same] ;; handle double slashes
-		    [(string=? s "..") 'up]
-		    [(string=? s ".") 'same]
-		    [else s]))]
-		[build-relative-path
-		 (lambda (s)
-		   (let ([m (regexp-match r s)])
-		     (cond
-		      [(string=? s "") 'same]
-		      [(not m) s]
-		      [else
-		       (build-path (translate-dir (cadr m))
-				   (build-relative-path (caddr m)))])))])
-	       (lambda (s)
-		 (let ([root (car (filesystem-root-list))])
-		   (cond
-		    [(string=? s "") ""]
-		    [(string=? s "/") root]
-		    [(char=? #\/ (string-ref s 0))
-		     (build-path root
-				 (build-relative-path (substring s 1 (string-length s))))]
-		    [else (build-relative-path s)])))))
+    ; name : str (all lowercase; not including the colon)
+    ; value : str (doesn't have the eol delimiter)
+    (define-struct mime-header (name value))
+
+    ; host : str + #f    port : num + #f    path : str
+    (define-struct accessor (host port path))
+
+    ; url->default-port : url -> num
+    (define url->default-port
+      (lambda (url)
+	(let ((method (url-method url)))
+	  (cond
+	    ((string=? method "http") 80)
+	    ((not method) 80)
+	    (else
+	      (error 'url->default-port "Method ~s not supported"
+		(url-method url)))))))
+
+    ; make-ports : url x accessor -> in-port x out-port
+    (define make-ports
+      (lambda (url accessor)
+	(let ((port-number (or (accessor-port accessor)
+			     (url->default-port url))))
+	  (tcp-connect (accessor-host accessor) port-number))))
+
+    ; http/get-impure-port : url x list (str) -> in-port
+    (define http/get-impure-port
+      (lambda (url strings)
+	(let ((accessor (url->accessor url)))
+	  (let-values (((server->client client->server)
+			 (make-ports url accessor)))
+	    (for-each (lambda (s)
+			(display s client->server))
+	      (cons (format "GET ~a HTTP/1.0~n" (accessor-path accessor))
+		strings))
+	    (newline client->server)
+	    (close-output-port client->server)
+	    server->client))))
+
+    ; display-pure-port : in-port -> ()
+    (define display-pure-port
+      (lambda (server->client)
+	(let loop ()
+	  (let ((c (read-char server->client)))
+	    (unless (eof-object? c)
+	      (display c)
+	      (loop))))
+	(close-input-port server->client)))
+
+    ; call/input-url : url x (in-port -> ()) x list (str) -> ()
+    (define call/input-url
+      (lambda (url handler params)
+	(let ((server->client (http/get-impure-port url params)))
+	  (dynamic-wind
+	    (lambda () 'do-nothing)
+	    (lambda () (handler server->client))
+	    (lambda () (close-input-port server->client))))))
+
+    (define empty-line?
+      (lambda (chars)
+	(or (null? chars)
+	  (and (memv (car chars) '(#\return #\linefeed #\tab #\space))
+	    (empty-line? (cdr chars))))))
+
+    (define extract-mime-headers-as-char-lists
+      (lambda (port)
+	(let headers-loop ((headers '()))
+	  (let char-loop ((header '()))
+	    (let ((c (read-char port)))
+	      (if (eof-object? c)
+		(reverse headers)	; CHECK: INCOMPLETE MIME: SERVER BUG
+		(if (char=? c #\newline)
+		  (if (empty-line? header)
+		    (reverse headers)
+		    (begin
+		      (headers-loop (cons (reverse header) headers))))
+		  (char-loop (cons c header)))))))))
+
+    ; purify-port : in-port -> list mime-header
+    (define purify-port
+      (lambda (port)
+	(let ((headers-as-chars (extract-mime-headers-as-char-lists port)))
+	  (let header-loop ((headers headers-as-chars))
+	    (if (null? headers)
+	      '()
+	      (let ((header (car headers)))
+		(let char-loop ((pre '()) (post header))
+		  (if (null? post)
+		    (header-loop (cdr headers))
+		    (if (char=? #\: (car post))
+		      (cons (make-mime-header
+			      (list->string (reverse pre))
+			      (list->string post))
+			(header-loop (cdr headers)))
+		      (char-loop (cons (char-downcase (car post)) pre)
+			(cdr post)))))))))))
 
     (define character-set-size 256)
 
     (define marker-list
       '(#\: #\? #\#))
-
-    (define default-port-number/http 80)
 
     (define ascii-marker-list
       (map char->integer marker-list))
@@ -51,13 +135,14 @@
       (lambda (c)
 	(vector-ref marker-locations (char->integer c))))
 
-    (define parse-url
-      (lambda (url)
+    ; string->url : str -> url
+    (define string->url
+      (lambda (string)
 	(let loop ((markers ascii-marker-list))
 	  (unless (null? markers)
 	    (vector-set! marker-locations (car markers) #f)
 	    (loop (cdr markers))))
-	(let loop ((chars (string->list url)) (index 0))
+	(let loop ((chars (string->list string)) (index 0))
 	  (unless (null? chars)
 	    (let ((first (car chars)))
 	      (when (memq first marker-list)
@@ -74,7 +159,7 @@
 	      (path-start (if first-colon (add1 first-colon) 0))
 	      (search-start (and first-question (add1 first-question)))
 	      (fragment-start (and first-hash (add1 first-hash))))
-	    (let ((total-length (string-length url)))
+	    (let ((total-length (string-length string)))
 	      (let*
 		((scheme-finish (and scheme-start first-colon))
 		  (path-finish (if first-question first-question
@@ -86,119 +171,52 @@
 				     total-length))))
 		(make-url
 		  (and scheme-start
-		    (cons scheme-start scheme-finish))
-		  (cons path-start path-finish)
+		    (substring string scheme-start scheme-finish))
+		  (substring string path-start path-finish)
 		  (and search-start
-		    (cons search-start search-finish))
+		    (substring string search-start search-finish))
 		  (and fragment-start
-		    (cons fragment-start fragment-finish)))))))))
+		    (substring string fragment-start fragment-finish)))))))))
 
-    (define decompose-path
-      (lambda (sub-url)
-	(let loop ((chars (string->list sub-url))
-		    (this-string '())
-		    (strings '()))
-	  (if (null? chars)
-	    (reverse
-	      (cons (list->string (reverse this-string)) strings))
-	    (if (char=? #\/ (car chars))
-	      (loop (cdr chars) '()
-		(cons (list->string (reverse this-string)) strings))
-	      (loop (cdr chars) (cons (car chars) this-string)
-		strings))))))
-
-    (define normalize-path
-      (lambda (paths)
-	(let loop ((paths paths) (result '()))
-	  (cond
-	    ((null? paths) (reverse result))
-	    ((string=? "" (car paths))
-	      (loop (cdr paths) result))
-	    ((string=? "." (car paths))
-	      (if (null? result)
-		(loop (cdr paths) (cons (car paths) result))
-		(loop (cdr paths) result)))
-	    ((string=? ".." (car paths))
-	      (if (null? result)
-		(loop (cdr paths) (cons (car paths) result))
-		(loop (cdr paths) (cdr result))))
-	    (else
-	      (loop (cdr paths) (cons (car paths) result)))))))
-
-    (define path->host/port/path
-      (lambda (boundaries url)
-	(let ((begin-point (+ 2 (car boundaries)))  ; skip over "//" after http:
-	       (end-point (cdr boundaries)))
+    ; url->accessor : url -> accessor
+    (define url->accessor
+      (lambda (url)
+	(let* ((path (url-path url))
+		(begin-point 2)		; skip over leading "//"
+		(end-point (string-length path)))
 	  (let loop ((index begin-point)
 		      (first-colon #f)
 		      (first-slash #f))
 	    (cond
 	      ((>= index end-point)
-		(values #f #f (substring url begin-point end-point)))
-	      ((char=? #\: (string-ref url index))
+		(make-accessor #f #f (substring path begin-point end-point)))
+	      ((char=? #\: (string-ref path index))
 		(loop (add1 index) (or first-colon index) first-slash))
-	      ((char=? #\/ (string-ref url index))
+	      ((char=? #\/ (string-ref path index))
 		(if first-colon
-		  (values
-		    (substring url begin-point first-colon)
-		    (string->number (substring url (add1 first-colon) index))
-		    (substring url index end-point))
-		  (values
-		    (substring url begin-point index)
+		  (make-accessor
+		    (substring path begin-point first-colon)
+		    (string->number (substring path (add1 first-colon) index))
+		    (substring path index end-point))
+		  (make-accessor
+		    (substring path begin-point index)
 		    #f
-		    (substring url index end-point))))
+		    (substring path index end-point))))
 	      (else
 		(loop (add1 index) first-colon first-slash)))))))
 
-    (define get-url-i/o-ports
-      (lambda (url)
-	(let ((url (parse-url url)))
-	  (let ((method (url-method url))
-		 (path (url-path url))
-		 (search (url-search url))
-		 (fragment (url-fragment url)))
-	    (let-values
-	      (((hostname port-number access-path)
-		 (path->host/port/path path url)))
-	      (let-values
-		(((input-port output-port)
-		   (let ((port-number (or port-number default-port-number/http)))
-		     (tcp-connect hostname port-number))))
-		(fprintf output-port "GET ~a HTTP/1.0~n" access-path)
-		(values input-port output-port)))))))
-
-    (define print-text-at-url
-      (lambda (url)
-	(let ((server->client (get-port-for-url url)))
-	  (let loop ()
-	    (let ((c (read-char server->client)))
-	      (unless (eof-object? c)
-		(display c)
-		(loop))))
-	  (close-input-port server->client))))
-
-    (define get-port-for-url
-      (lambda (url)
-	(let-values
-	  (((server->client client->server)
-	     (get-url-i/o-ports url)))
-	  (newline client->server)
-	  (close-output-port client->server)
-	  (let* ((protocol (read server->client))
-		  (code (read server->client)))
-	    (let loop ()
-	      (let ((r (read-line server->client)))
-		(unless (string=? r "")
-		  (loop))))
-	    (close-input-port server->client)
-	    server->client))))
-
-    (define call-with-input-url
-      (lambda (url handler)
-	(let ((p (get-port-for-url url)))
-	  (dynamic-wind
-	    (lambda () 'do-nothing)
-	    (lambda () (handler p))
-	    (lambda () (close-input-port p))))))
-
       ))
+
+; This is commented out; it's here for debugging.
+(quote
+  (begin
+    (invoke-open-unit/sig mred:url@ #f)
+    (define url:cs "http://www.cs.rice.edu/")
+    (define url:me "http://www.cs.rice.edu/~shriram/")
+    (define (test str)
+      (call/input-url
+	(string->url str)
+	(lambda (p)
+	  (purify-port p)
+	  (display-pure-port p))
+	'()))))

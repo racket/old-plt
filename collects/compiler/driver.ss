@@ -217,7 +217,8 @@
 			      (eval (p->r expr))))]
 		       [zodiac:user-macro-body-evaluator
 			(lambda (f . args) (apply f args))])
-	  (map r-eval (zodiac:scheme-expand-program exprs 'previous vocab))))))
+	  (map (lambda (expr) (r-eval (zodiac:scheme-expand expr 'previous vocab)))
+	       exprs)))))
 
   (define elaborate-namespace (make-namespace))
 

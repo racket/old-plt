@@ -194,7 +194,7 @@
   
   (test/spec-failed
    'contract-arrow-values4
-   '((contract (-> (integer?) (values integer? integer?))
+   '((contract (-> integer? (values integer? integer?))
                (lambda (x) (values #t 1))
                'pos
                'neg)

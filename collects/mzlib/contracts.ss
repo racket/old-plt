@@ -18,6 +18,7 @@
   (require-for-syntax mzscheme
                       "list.ss"
                       "match.ss"
+                      (lib "stx.ss" "syntax")
                       (lib "name.ss" "syntax"))
   
   (require "private/class-sneaky.ss"
@@ -249,7 +250,8 @@
                            [constructor-code (code-for-one-id
                                               stx
                                               constructor-id
-                                              (build-constructor-contract field-contract-ids 
+                                              (build-constructor-contract stx
+                                                                          field-contract-ids 
                                                                           predicate-id))]
                            [(field-contracts ...) field-contracts]
                            [(field-contract-ids ...) field-contract-ids]
@@ -263,14 +265,15 @@
                   constructor-code
                   (provide struct-name))))))
          
-         ;; build-constructor-contract : (listof syntax) syntax -> syntax
-         (define (build-constructor-contract field-contract-ids predicate-id)
+         ;; build-constructor-contract : syntax (listof syntax) syntax -> syntax
+         (define (build-constructor-contract stx field-contract-ids predicate-id)
            (with-syntax ([(field-contract-ids ...) field-contract-ids]
                          [predicate-id predicate-id])
-             (syntax (field-contract-ids 
-                      ...
-                      . -> . 
-                      (let ([predicate-id (lambda (x) (predicate-id x))]) predicate-id)))))
+             (syntax/loc stx
+               (field-contract-ids 
+                ...
+                . -> . 
+                (let ([predicate-id (lambda (x) (predicate-id x))]) predicate-id)))))
          
          ;; build-selector-contract : syntax syntax -> syntax
          ;; constructs the contract for a selector
@@ -480,10 +483,9 @@
     (lambda (stx)
       (syntax-case stx ()
         [(_ a-contract to-check pos-blame-e neg-blame-e)
-         (with-syntax ([src-loc (datum->syntax-object stx 'here)])
+         (with-syntax ([src-loc (syntax/loc stx here)])
            (syntax/loc stx
-             (-contract a-contract to-check pos-blame-e neg-blame-e
-                        (quote-syntax src-loc))))]
+             (-contract a-contract to-check pos-blame-e neg-blame-e (quote-syntax src-loc))))]
         [(_ a-contract-e to-check pos-blame-e neg-blame-e src-info-e)
          (syntax/loc stx
            (let ([a-contract a-contract-e]
@@ -632,16 +634,16 @@
 	     (if (symbol? datum)
 		 (format "broke ~a's contract" datum)
 		 "failed contract"))])
-    (raise
-     (make-exn
-      (string->immutable-string
-       (string-append (format "~a~a: ~a ~a: "
-			      blame-src
-			      other-party
-			      to-blame
-			      specific-blame)
-		      (apply format fmt args)))
-      (current-continuation-marks)))))
+      (raise
+       (make-exn
+        (string->immutable-string
+         (string-append (format "~a~a: ~a ~a: "
+                                blame-src
+                                other-party
+                                to-blame
+                                specific-blame)
+                        (apply format fmt args)))
+        (current-continuation-marks)))))
   
   ;; src-info-as-string : (union syntax #f) -> string
   (define (src-info-as-string src-info)
@@ -1110,10 +1112,9 @@
                    [any #t]
                    [_ #f])]
                 [range-values
-                 (syntax-case rng-normal (any)
+                 (syntax-case* rng-normal (any values) module-or-top-identifier=?
                    [any (syntax (any?))] ;; range-values isn't actually used in this case
                    [(values x ...)
-                    (eq? (syntax-e (syntax values)) 'values)
                     (syntax (x ...))]
                    [_ (with-syntax ([rng-normal rng-normal])
                         (syntax (rng-normal)))])])

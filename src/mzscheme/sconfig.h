@@ -137,6 +137,7 @@
 #  define SOME_FDS_ARE_NOT_SELECTABLE
 #  define NEED_RESET_STDOUT_BLOCKING
 #  define USE_TIMEZONE_AND_ALTZONE_VAR
+#  define USE_NULL_TO_DISCONNECT_UDP
 # else
 /* SunOS4 */
 # define SCHEME_PLATFORM_LIBRARY_SUBPATH "sparc-sunos4"
@@ -972,8 +973,11 @@
  /* CANT_SET_SOCKET_BUFSIZE turns off setting the buffer size for
     Unix TCP sockets. */
 
+ /* USE_NULL_TO_DISCONNECT_UDP calls connect() with NULL instead of
+    an AF_UNSPEC address to disconnect a UDP socket. */
+
   /***********************/
- /* Threades & Signals */
+ /* Threads & Signals  */
 /***********************/
 
 /* These are flags about the implementation of system, process, etc. */

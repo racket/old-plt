@@ -2852,14 +2852,19 @@ static Scheme_Object *udp_bind_or_connect(const char *name, int argc, Scheme_Obj
     } else {
       int ok;
 
-      ok = !connect(udp->s, (struct sockaddr *)&udp_bind_addr, sizeof(udp_bind_addr));
+#ifdef USE_NULL_TO_DISCONNECT_UDP
+      if (!origid)
+	ok = !connect(udp->s, NULL, 0);
+      else
+#endif
+	ok = !connect(udp->s, (struct sockaddr *)&udp_bind_addr, sizeof(udp_bind_addr));
       if (!ok)
 	errid = SOCK_ERRNO();
       else
 	errid = 0;
 
       if (!ok && (errid == mz_AFNOSUPPORT) && !origid) {
-	/* It's ok. We were trying to dicsonnect */
+	/* It's ok. We were trying to disconnect */
 	ok = 1;
       }
 

@@ -161,7 +161,7 @@ void wxsScheme_setup(Scheme_Env *env)
 
   qsort(rec->v, rec->count, sizeof(char*) + sizeof(Scheme_Object *), 
 	(int (*)(const void *, const void *))strcmp);
-  u = (Scheme_Unit *)scheme_malloc(sizeof(Scheme_Unit));
+  u = (Scheme_Unit *)scheme_malloc_tagged(sizeof(Scheme_Unit));
   u->type = scheme_unit_type;
   u->num_imports = 0;
   u->num_exports = rec->count;

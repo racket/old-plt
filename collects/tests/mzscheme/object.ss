@@ -185,9 +185,9 @@
 
 (define (test-rename rename object%)
   (teval #`(test #t class? (class #,object% (#,rename))))
-  (teval #`(err/rt-test (class #,object% (#,rename [x x])) #,exn:fail:object?))
-  (teval #`(err/rt-test (class #,object% (#,rename [y x])) #,exn:fail:object?))
-  (teval #`(err/rt-test (class #,object% (#,rename [y x][z x])) #,exn:fail:object?))
+  (teval #`(err/rt-test (class #,object% (#,rename [x x])) exn:fail:object?))
+  (teval #`(err/rt-test (class #,object% (#,rename [y x])) exn:fail:object?))
+  (teval #`(err/rt-test (class #,object% (#,rename [y x][z x])) exn:fail:object?))
   (syntax-test #`(class #,object% (#,rename . x)))
   (syntax-test #`(class #,object% (#,rename x)))
   (syntax-test #`(class #,object% (#,rename [x 1])))
@@ -197,8 +197,8 @@
   
   10)
 
-(test-rename #'rename-super object%)
-(test-rename #'rename-inner object%)
+(test-rename #'rename-super #'object%)
+(test-rename #'rename-inner #'object%)
 
 (define (class-keyword-test kw)
   (syntax-test kw)

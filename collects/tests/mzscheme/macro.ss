@@ -227,7 +227,10 @@
 
 (test 6 'plus (keep-context + 1 2 3))
 (test 6 'plus (keep-context . (+ 1 2 3)))
-(test 6 'plus (discard-context keep-context . (+ 1 2 3)))
+
+(unless building-flat-tests?
+  (eval-syntax
+   #'(test 6 'plus (discard-context keep-context . (+ 1 2 3)))))
 
 (syntax-test #'(discard-context + 1 2 3))
 (syntax-test #'(discard-context . (+ 1 2 3)))

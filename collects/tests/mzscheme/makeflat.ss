@@ -23,7 +23,7 @@
 (define old-namespace (current-namespace))
 
 (pretty-print '(define error-test void) flatp)
-(pretty-print '(define building-flat-tests #t) flatp)
+(pretty-print '(define building-flat-tests? #t) flatp)
 (pretty-print '(define section #f) flatp)
 
 (define (flat-pp v)

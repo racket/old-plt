@@ -16,6 +16,7 @@ static const char sccsid[] = "%W% %G%";
 #include "wx_dccan.h"
 #include "wx_utils.h"
 #include "wx_canvs.h"
+#include "wx_rgn.h"
 #include "wx_privt.h"
 
 static PixMapHandle	bdiag,
@@ -141,9 +142,72 @@ void wxCanvasDC::DrawLine(float x1, float y1, float x2, float y2)
 }
 
 //-----------------------------------------------------------------------------
+static void FillWithStipple(wxDC *dc, wxRegion *r, wxBrush *brush)
+{
+  float x, y, w, h, bw, bh;
+  int xstart, xend, ystart, yend, i, j;
+  wxRegion *old;
+
+  wxBitmap *bm = brush->GetStipple();
+  int style = brush->GetStyle();
+  wxColour *c = &brush->GetColour();
+
+  old = dc->GetClippingRegion();
+  r->Intersect(old);
+
+  r->BoundingBox(&x, &y, &w, &h);
+  bw = bm->GetWidth();
+  bh = bm->GetHeight();
+
+  x = dc->LogicalToDeviceX(x);
+  y = dc->LogicalToDeviceY(y);
+  w = dc->LogicalToDeviceXRel(w);
+  h = dc->LogicalToDeviceYRel(h);
+  
+  xstart = floor(x / bw);
+  xend = floor((x + w + bw - 0.00001) / bw);
+
+  ystart = floor(y / bh);
+  yend = floor((y + h + bh - 0.00001) / bh);
+
+  dc->SetClippingRegion(r);
+
+  for (i = xstart; i < xend; i++)
+    for (j = ystart; j < yend; j++)
+      dc->Blit(dc->DeviceToLogicalX(i * bw), 
+               dc->DeviceToLogicalY(j * bh), 
+               dc->DeviceToLogicalXRel(bw), 
+               dc->DeviceToLogicalYRel(bh),
+               bm, 0, 0, style, c);
+
+  dc->SetClippingRegion(old);
+}
+
+wxRegion *wxCanvasDC::BrushStipple()
+{
+  if (current_brush) {
+    wxBitmap *bm = current_brush->GetStipple();
+    if (bm && bm->Ok())
+      return new wxRegion(this);
+  }
+  return NULL;
+}
+
+void wxCanvasDC::PaintStipple(wxRegion *r)
+{
+  FillWithStipple(this, r, current_brush);
+}
+
+//-----------------------------------------------------------------------------
 void wxCanvasDC::DrawArc(float x,float y,float w,float h,float start,float end)
 {
-	SetCurrentDC();
+    SetCurrentDC();
+
+    wxRegion *rgn;
+    if (rgn = BrushStipple()) {
+      rgn->SetArc(x, y, w, h, start, end);
+      PaintStipple(rgn);
+    }
 
     int xx = XLOG2DEV(x); int yy = XLOG2DEV(y);
     int ww = XLOG2DEVREL(w); int hh = XLOG2DEVREL(h);
@@ -173,8 +237,10 @@ void wxCanvasDC::DrawArc(float x,float y,float w,float h,float start,float end)
 	rect.bottom = rect.top + hh;
 
     if (current_brush && current_brush->GetStyle() != wxTRANSPARENT) {
-      wxMacSetCurrentTool(kBrushTool);
-      PaintArc(&rect, alpha1, alpha2);
+      if (!rgn) {
+        wxMacSetCurrentTool(kBrushTool);
+        PaintArc(&rect, alpha1, alpha2);
+      }
     }
     if (current_pen && current_pen->GetStyle() != wxTRANSPARENT) {
       wxMacSetCurrentTool(kPenTool);
@@ -204,6 +270,15 @@ void wxCanvasDC::DrawPolygon(int n, wxPoint points[],
 {
 	SetCurrentDC();
 	if (n <= 0) return;
+
+    wxRegion *rgn;
+    if (rgn = BrushStipple()) {
+      rgn->SetPolygon(n, points, xoffset, yoffset, fillStyle);
+      PaintStipple(rgn);
+    }
+
+
+
 	Point *xpoints1 = new Point[n+1];
 	for (int i = 0; i < n; i++)
 	{
@@ -226,8 +301,10 @@ void wxCanvasDC::DrawPolygon(int n, wxPoint points[],
 
 	if (current_brush && current_brush->GetStyle() != wxTRANSPARENT)
 	{
+	    if (!rgn) {
 		if (cMacCurrentTool != kBrushTool) wxMacSetCurrentTool(kBrushTool);
 		PaintPoly(thePolygon);
+	    }
 	}
 
 	if (current_pen && current_pen->GetStyle() != wxTRANSPARENT)
@@ -311,6 +388,13 @@ void wxCanvasDC::DrawRectangle(float x, float y, float width, float height)
 //-----------------------------------------------------------------------------
 {
 	SetCurrentDC();
+	
+    wxRegion *rgn;
+    if (rgn = BrushStipple()) {
+      rgn->SetRectangle(x, y, width, height);
+      PaintStipple(rgn);
+    }
+
 	int top = YLOG2DEV(y);
 	int left = XLOG2DEV(x);
 	int bottom = YLOG2DEV(y + height);
@@ -318,8 +402,10 @@ void wxCanvasDC::DrawRectangle(float x, float y, float width, float height)
 	Rect theRect = {top, left, bottom, right};
 	if (current_brush && current_brush->GetStyle() != wxTRANSPARENT)
 	{
+	    if (!rgn) {
 		wxMacSetCurrentTool(kBrushTool);
 		PaintRect(&theRect);
+	    }
 	}
 
 	if (current_pen && current_pen->GetStyle() != wxTRANSPARENT)
@@ -336,7 +422,19 @@ void wxCanvasDC::DrawRoundedRectangle
 					(float x, float y, float width, float height, float radius)
 {
 	SetCurrentDC();
-	if (radius < 0.0) radius = 0.0; // Negative radius can crash your ENTIRE X server. Wow!
+	
+    wxRegion *rgn;
+    if (rgn = BrushStipple()) {
+      rgn->SetRoundedRectangle(x, y, width, height, radius);
+      PaintStipple(rgn);
+    }
+
+	if (radius < 0.0) {
+	  float w = width;
+	  if (height < w)
+	    w = height;
+	  radius = (-radius) * w;
+	}
     
 	int phys_radius = XLOG2DEVREL(radius);
 
@@ -351,8 +449,10 @@ void wxCanvasDC::DrawRoundedRectangle
 
 	if (current_brush && current_brush->GetStyle() != wxTRANSPARENT)
 	{
+	    if (!rgn) {
 		wxMacSetCurrentTool(kBrushTool);
 		PaintRoundRect(&theRect, phys_rwidth, phys_rheight);
+	    }
 	}
 
 	if (current_pen && current_pen->GetStyle() != wxTRANSPARENT)
@@ -369,6 +469,13 @@ void wxCanvasDC::DrawRoundedRectangle
 void wxCanvasDC::DrawEllipse(float x, float y, float width, float height)
 {
 	SetCurrentDC();
+	
+     wxRegion *rgn;
+    if (rgn = BrushStipple()) {
+      rgn->SetEllipse(x, y, width, height);
+      PaintStipple(rgn);
+    }
+
 	int top = YLOG2DEV(y);
 	int left = XLOG2DEV(x);
 	int bottom = YLOG2DEV(y + height);
@@ -376,8 +483,10 @@ void wxCanvasDC::DrawEllipse(float x, float y, float width, float height)
 	Rect theRect = {top, left, bottom, right};
 	if (current_brush && current_brush->GetStyle() != wxTRANSPARENT)
 	{
+	    if (!rgn) {
 		wxMacSetCurrentTool(kBrushTool);
 		PaintOval(&theRect);
+	    }
 	}
 
 	if (current_pen && current_pen->GetStyle() != wxTRANSPARENT)

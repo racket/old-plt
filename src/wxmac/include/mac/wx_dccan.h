@@ -116,6 +116,9 @@ class wxCanvasDC: public wxbCanvasDC
   
   void InstallColor(wxColour &c, int fg);
   void InstallLogicalFunction(int func);
+  
+  wxRegion *BrushStipple();
+  void PaintStipple(wxRegion *);
 };
 
 #endif // IN_CPROTO

@@ -1236,6 +1236,8 @@ case_lambda_syntax (Scheme_Object *form, Scheme_Comp_Env *env,
 				  + (count - 1) * sizeof(Scheme_Object *));
   cl->type = scheme_case_lambda_sequence_type;
   cl->count = count;
+  if (!name)
+    name = scheme_source_to_name(orig_form);
   cl->name = name;
 
   scheme_compile_rec_done_local(rec, drec);

@@ -314,8 +314,6 @@ static int run_from_cmd_line(int argc, char *_argv[],
       argv[0] = "-c";
     else if (!strcmp("--set-undef", argv[0]))
       argv[0] = "-s";
-    else if (!strcmp("--no-auto-else", argv[0]))
-      argv[0] = "-a";
     else if (!strcmp("--script", argv[0]))
       argv[0] = "-r";
     else if (!strcmp("--script-cd", argv[0]))
@@ -367,9 +365,6 @@ static int run_from_cmd_line(int argc, char *_argv[],
 	  break;
 	case 's':
 	  scheme_allow_set_undefined = 1;
-	  break;
-	case 'a':
-	  scheme_allow_cond_auto_else = 0;
 	  break;
 	case 'e':
 	  if (argc < 2) {
@@ -543,8 +538,6 @@ static int run_from_cmd_line(int argc, char *_argv[],
       PRINTF(EDESC);
     if (scheme_allow_set_undefined)
       PRINTF(SDESC);
-    if (!scheme_allow_cond_auto_else)
-      PRINTF(ADESC);
 # ifdef DOS_FILE_SYSTEM
 #  if !defined(FILES_HAVE_FDS)
 #   if !defined(DETECT_WIN32_CONSOLE_STDIN) || defined(NO_STDIN_THREADS)
@@ -649,7 +642,6 @@ static int run_from_cmd_line(int argc, char *_argv[],
 	 "  -g, --case-sens : " GDESC
 	 "  -c, --esc-cont : " EDESC
 	 "  -s, --set-undef : " SDESC
-	 "  -a, --no-auto-else : " ADESC
 	 " Miscellaneous switches:\n"
 	 "  -- : No argument following this switch is used as a switch.\n"
 # if defined(_IBMR2)

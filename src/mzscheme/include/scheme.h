@@ -790,7 +790,6 @@ enum {
   MZCONFIG_ERROR_ESCAPE_HANDLER,
 
   MZCONFIG_ALLOW_SET_UNDEFINED,
-  MZCONFIG_COND_AUTO_ELSE,
 
   MZCONFIG_MANAGER,
   MZCONFIG_INSPECTOR,
@@ -1135,7 +1134,6 @@ extern int scheme_case_sensitive; /* Defaults to 0 */
 extern int scheme_no_keywords; /* Defaults to 0 */
 extern int scheme_allow_set_undefined; /* Defaults to 0 */
 extern int scheme_escape_continuations_only; /* Defaults to 0 */
-extern int scheme_allow_cond_auto_else; /* Defaults to 1 */
 extern int scheme_square_brackets_are_parens; /* Defaults to 1 */
 extern int scheme_curly_braces_are_parens; /* Defaults to 1 */
 extern int scheme_hash_percent_syntax_only; /* Defaults to 0 */

@@ -8,7 +8,7 @@
   (display (compile '(cons 1 2)) p)
   (close-output-port p))
 
-(define-struct tester (x))
+(define-struct (tester (current-inspector)) (x))
 (define a-tester (make-tester 5))
 
 (define (check-write-string display v s)
@@ -69,8 +69,8 @@
 (test 'two test-param2) 
 
 (arity-test make-parameter 1 2)
-(error-test '(make-parameter 0 zero-arg-proc))
-(error-test '(make-parameter 0 two-arg-proc))
+(err/rt-test (make-parameter 0 zero-arg-proc))
+(err/rt-test (make-parameter 0 two-arg-proc))
 
 (define-struct bad-test (value exn?))
 
@@ -170,12 +170,6 @@
 		      "bad setting")
 |#
 		
-		(list compile-allow-cond-fallthrough
-		      (list #t #f)
-		      '(cond)
-		      exn:else?
-		      #f)
-		
 		(list compile-allow-set!-undefined
 		      (list #t #f)
 		      '(eval `(set! ,(gensym) 9))
@@ -184,9 +178,9 @@
 
 		(list current-namespace
 		      (list (make-namespace)
-			    (make-namespace 'hash-percent-syntax))
+			    (make-namespace 'empty))
 		      '(begin 0)
-		      exn:variable?
+		      exn:syntax?
 		      '("bad setting"))
 
 		(list error-print-width
@@ -324,7 +318,7 @@
      (parameterize ([param alt1])
 	  (test (void) void (teval expr)))
      (parameterize ([param alt2])
-	  (error-test expr exn?))))
+	  (error-test (datum->syntax expr #f #f) exn?))))
  params)
 
 (define test-param3 (make-parameter 'hi))
@@ -371,14 +365,14 @@
 					(bad-test-exn? bad))
 				(values bad
 					exn:application:type?))])
-		(error-test `(,param ,bad) exn?)))
+		(err/rt-test (param bad) exn?)))
 	    bads))))
  params)
 
 (test #t parameter-procedure=? read-accept-compiled read-accept-compiled)
 (test #f parameter-procedure=? read-accept-compiled read-case-sensitive)
-(error-test '(parameter-procedure=? read-accept-compiled 5))
-(error-test '(parameter-procedure=? 5 read-accept-compiled))
+(err/rt-test (parameter-procedure=? read-accept-compiled 5))
+(err/rt-test (parameter-procedure=? 5 read-accept-compiled))
 (arity-test parameter-procedure=? 2 2)
 (arity-test parameter? 1 1)
 

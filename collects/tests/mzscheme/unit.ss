@@ -130,7 +130,7 @@
 (syntax-test #'(compound-unit (import) (link (a (b))) (export (a (x)))))
 (syntax-test #'(compound-unit (import) (link (a (b))) (export (1 w))))
 
-(test unit? (compound-unit (import) (link) (export)))
+(test #t unit? (compound-unit (import) (link) (export)))
 
 ; Simple:
 

@@ -446,6 +446,8 @@ Scheme_Hash_Table *scheme_setup_datum_graph(Scheme_Object *o, int for_print);
 #define SCHEME_STX_CDR(o) (SCHEME_PAIRP(o) ? SCHEME_CDR(o) : SCHEME_CDR(scheme_stx_content(o)))
 #define SCHEME_STX_SYM(o) (SCHEME_STXP(o) ? SCHEME_STX_VAL(o) : o)
 
+Scheme_Object *scheme_source_to_name(Scheme_Object *code);
+
 /*========================================================================*/
 /*                   syntax run-time structures                           */
 /*========================================================================*/

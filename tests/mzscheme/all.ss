@@ -21,16 +21,12 @@
   (load-relative "param.ss"))
 (load-relative "file.ss")
 (load-relative "path.ss")
-(unless (defined? 'building-flat-tests)
-  (load-relative "hashper.ss"))
 (unless (or (defined? 'building-flat-tests)
 	    (defined? 'read/zodiac)
 	    (defined? 'in-drscheme?))
   (load-relative "optimize.ss"))
 (unless (defined? 'building-flat-tests)
   (load-relative "name.ss"))
-(unless (defined? 'building-flat-tests)
-  (load-relative "multi-expand.ss"))
 
 ;; Ok, so this isn't really all of them. Here are more:
 ; thrport.ss

@@ -18,69 +18,11 @@
 
 (test `,void eval `',void)
 
-(define flag-map
-  (list (list 'keywords 
-	      'no-keywords
-	      '(#%let ([#%lambda 7]) (void)) 
-	      exn:syntax?
-	      #f)
-	(list 'call/cc=call/ec
-	      'call/cc!=call/ec
-	      '((call/cc (#%lambda (x) x)) void)
-	      exn:application:continuation?
-	      #f)
-	(list 'hash-percent-syntax
-	      'all-syntax
-	      '(if #t (void))
-	      exn:variable?
-	      #f)))
-
-(define (do-one-by-one more less)
-  (let loop ([n (length flag-map)])
-    (unless (zero? n)
-	    (let ([test-info
-		   (let loop ([l flag-map][p 1])
-		     (if (null? l)
-			 '()
-			 (let* ([g (car l)]
-				[g++ (cdddr g)])
-			   (cons
-			    (cond
-			     [(= p n) (cons (less g) (less g++))]
-			     [else (cons (more g) (more g++))])
-			    (loop (cdr l) (add1 p))))))])
-	      (let* ([flags (map car test-info)]
-		     [namespace (apply make-namespace flags)])
-		(printf "trying: ~s~n" flags)
-		(let loop ([tests (map caddr flag-map)]
-			   [results (map cdr test-info)])
-		  (if (null? results)
-		      '()
-		      (begin
-			(if (car results)
-			    (error-test 
-			     `(with-handlers ([(#%lambda (x) #f) void]) ; outside parameterize re-raises exns after escaping
-				(parameterize ([current-namespace ,namespace])
-				  (eval ',(car tests))))
-			     (car results))
-			    (with-handlers ([(lambda (x) #f) void]) 
-			      (parameterize ([current-namespace namespace])
-			        (test (void) eval (car tests)))))
-			(loop (cdr tests) (cdr results)))))))
-	    (loop (sub1 n)))))
-
-(unless (defined? 'building-flat-tests)
-    (do-one-by-one car cadr)
-    (do-one-by-one cadr car))
-
 ; Test primitive-name
 (let ([gvl (parameterize ([current-namespace (make-namespace)]) (make-global-value-list))]
       [aliases (list (cons "call/cc" "call-with-current-continuation")
 		     (cons "call/ec" "call-with-escape-continuation")
-		     (cons "interaction-environment" "current-namespace")
-		     (cons "unit/sig?" "unit-with-signature?")
-		     (cons "unit/sig->unit" "unit-with-signature-unit")
-		     (cons "unit-with-signature->unit" "unit-with-signature-unit"))])
+		     (cons "interaction-environment" "current-namespace"))])
   (test #t 'names
 	(andmap
 	 (lambda (nv-pair)

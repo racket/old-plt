@@ -27,21 +27,21 @@
 (test #f relative-path? (string #\a #\nul #\b))
 
 (arity-test relative-path? 1 1)
-(error-test '(relative-path? 'a))
+(err/rt-test (relative-path? 'a))
 
 (test #t absolute-path? (current-directory))
 (test #f absolute-path? (build-path 'up))
 (test #f absolute-path? (string #\a #\nul #\b))
 
 (arity-test absolute-path? 1 1)
-(error-test '(absolute-path? 'a))
+(err/rt-test (absolute-path? 'a))
 
 (test #t complete-path? (current-directory))
 (test #f complete-path? (build-path 'up))
 (test #f complete-path? (string #\a #\nul #\b))
 
 (arity-test complete-path? 1 1)
-(error-test '(complete-path? 'a))
+(err/rt-test (complete-path? 'a))
 
 (call-with-output-file "tmp6" void 'replace)
 (define existant "tmp6")
@@ -81,9 +81,9 @@
 (test #f file-exists? (build-path deepdir 'up 'up "badfile"))
 (test #f file-exists? (build-path 'same deepdir 'same 'up 'same 'up "badfile"))
 
-(error-test '(open-output-file (build-path "wrong" "down" "tmp8"))
+(err/rt-test (open-output-file (build-path "wrong" "down" "tmp8"))
 	    exn:i/o:filesystem?)
-(error-test '(open-output-file (build-path deepdir "wrong" "tmp7"))
+(err/rt-test (open-output-file (build-path deepdir "wrong" "tmp7"))
 	    exn:i/o:filesystem?)
 
 (define start-time (current-seconds))
@@ -293,7 +293,7 @@
       (lambda (rel)
 	(test-path (build-path cabsol rel) path->complete-path rel cabsol)
 	(test-path (build-path cabsol rel rel) path->complete-path rel (build-path cabsol rel))
-	(error-test `(path->complete-path ,rel ,rel) exn:i/o:filesystem?))
+	(err/rt-test (path->complete-path rel rel) exn:i/o:filesystem?))
       rels)))
  absols)
 
@@ -323,7 +323,7 @@
   (lambda (abs1)
     (for-each
      (lambda (abs2)
-       (error-test `(build-path ,abs1 ,abs2) exn:i/o:filesystem?))
+       (err/rt-test (build-path abs1 abs2) exn:i/o:filesystem?))
      absols))
   nondrive-roots))
 
@@ -363,8 +363,8 @@
 (arity-test split-path 1 1)
 
 (arity-test path->complete-path 1 2)
-(error-test '(path->complete-path 1))
-(error-test '(path->complete-path "a" 1))
+(err/rt-test (path->complete-path 1))
+(err/rt-test (path->complete-path "a" 1))
 
 (test-path (build-path "a" "b") simplify-path (build-path "a" "b"))
 (let ([full-path
@@ -381,17 +381,17 @@
 
 (map
  (lambda (f)
-   (error-test `(,f (string #\a #\nul #\b)) exn:i/o:filesystem?))
- '(build-path split-path file-exists? directory-exists?
-	      delete-file directory-list make-directory delete-directory
-	      file-or-directory-modify-seconds file-or-directory-permissions 
-	      expand-path resolve-path simplify-path path->complete-path
-	      open-input-file open-output-file))
+   (err/rt-test (f (string #\a #\nul #\b)) exn:i/o:filesystem?))
+ (list build-path split-path file-exists? directory-exists?
+       delete-file directory-list make-directory delete-directory
+       file-or-directory-modify-seconds file-or-directory-permissions 
+       expand-path resolve-path simplify-path path->complete-path
+       open-input-file open-output-file))
 (map 
  (lambda (f)
-   (error-test `(,f (string #\a #\nul #\b) "a") exn:i/o:filesystem?)
-   (error-test `(,f "a" (string #\a #\nul #\b)) exn:i/o:filesystem?))
- '(rename-file-or-directory path->complete-path))
+   (err/rt-test (f (string #\a #\nul #\b) "a") exn:i/o:filesystem?)
+   (err/rt-test (f "a" (string #\a #\nul #\b)) exn:i/o:filesystem?))
+ (list rename-file-or-directory path->complete-path))
 
 ; normal-case-path doesn't check for pathness:
 (test #t string? (normal-case-path (string #\a #\nul #\b)))

@@ -627,6 +627,36 @@ scheme_resolve_closure_compilation(Scheme_Object *_data, Resolve_Info *info)
   return (Scheme_Object *)data;
 }
 
+Scheme_Object *scheme_source_to_name(Scheme_Object *code)
+{
+  Scheme_Stx *cstx = (Scheme_Stx *)code;
+  if (cstx->line > 0) {
+    char buf[50], src[20];
+    Scheme_Object *name;
+
+    src[0] = 0;
+    if (cstx->src && SCHEME_STRINGP(cstx->src)) {
+      if (SCHEME_STRLEN_VAL(cstx->src) < 20)
+	memcpy(src, SCHEME_STR_VAL(cstx->src), SCHEME_STRLEN_VAL(cstx->src) + 1);
+      else {
+	memcpy(src, SCHEME_STR_VAL(cstx->src) + SCHEME_STRLEN_VAL(cstx->src) - 19, 20);
+	src[0] = '.';
+	src[1] = '.';
+	src[2] = '.';
+      }
+    }
+
+    sprintf(buf, "%s%s%ld.%ld", 
+	    src, (src[0] ? ":" : ""),
+	    cstx->line, cstx->col);
+
+    name = scheme_intern_symbol(buf);
+    return name;
+  }
+
+  return NULL;
+}
+
 Scheme_Object *
 scheme_make_closure_compilation(Scheme_Comp_Env *env, Scheme_Object *code, 
 				Scheme_Compile_Info *rec, int drec)
@@ -680,30 +710,9 @@ scheme_make_closure_compilation(Scheme_Comp_Env *env, Scheme_Object *code,
 
   data->name = rec[drec].value_name;
   if (!data->name) {
-    Scheme_Stx *cstx = (Scheme_Stx *)code;
-    if (cstx->line > 0) {
-      char buf[50], src[20];
-      Scheme_Object *name;
-
-      src[0] = 0;
-      if (cstx->src && SCHEME_STRINGP(cstx->src)) {
-	if (SCHEME_STRLEN_VAL(cstx->src) < 20)
-	  memcpy(src, SCHEME_STR_VAL(cstx->src), SCHEME_STRLEN_VAL(cstx->src) + 1);
-	else {
-	  memcpy(src, SCHEME_STR_VAL(cstx->src) + SCHEME_STRLEN_VAL(cstx->src) - 19, 20);
-	  src[0] = '.';
-	  src[1] = '.';
-	  src[2] = '.';
-	}
-      }
-
-      sprintf(buf, "%s%s%ld.%ld", 
-	      src, (src[0] ? ":" : ""),
-	      cstx->line, cstx->col);
-
-      name = scheme_intern_symbol(buf);
-      data->name = name;
-    }
+    Scheme_Object *name;
+    name = scheme_source_to_name(code);
+    data->name= name;
   }
 
   scheme_compile_rec_done_local(rec, drec);

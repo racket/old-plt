@@ -2837,9 +2837,6 @@ static Scheme_Config *make_initial_config(void)
   scheme_set_param(config, MZCONFIG_ALLOW_SET_UNDEFINED, (scheme_allow_set_undefined
 							  ? scheme_true
 							  : scheme_false));
-  scheme_set_param(config, MZCONFIG_COND_AUTO_ELSE, (scheme_allow_cond_auto_else
-						     ? scheme_true
-						     : scheme_false));
 
   scheme_set_param(config, MZCONFIG_REQUIRE_COLLECTION, scheme_false);
 

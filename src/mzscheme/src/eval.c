@@ -107,8 +107,6 @@
 #define EMBEDDED_DEFINES_START_ANYWHERE 1
 
 /* globals */
-int scheme_allow_cond_auto_else = 1;
-
 Scheme_Object *scheme_eval_waiting;
 Scheme_Object *scheme_multiple_values;
 
@@ -134,7 +132,6 @@ static Scheme_Object *expand_once(int argc, Scheme_Object **argv);
 static Scheme_Object *enable_break(int, Scheme_Object *[]);
 static Scheme_Object *current_eval(int argc, Scheme_Object *[]);
 
-static Scheme_Object *allow_auto_cond_else(int argc, Scheme_Object **argv);
 static Scheme_Object *allow_set_undefined(int argc, Scheme_Object **argv);
 
 static Scheme_Object *app_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec);
@@ -300,11 +297,6 @@ scheme_init_eval (Scheme_Env *env)
 						       MZCONFIG_EVAL_HANDLER),
 			     env);
 
-  scheme_add_global_constant("compile-allow-cond-fallthrough", 
-			     scheme_register_parameter(allow_auto_cond_else, 
-						       "compile-allow-cond-fallthrough",
-						       MZCONFIG_COND_AUTO_ELSE), 
-			     env);
   scheme_add_global_constant("compile-allow-set!-undefined", 
 			     scheme_register_parameter(allow_set_undefined, 
 						       "compile-allow-set!-undefined",
@@ -3677,14 +3669,6 @@ Scheme_Object *scheme_eval_string(const char *str, Scheme_Env *env)
 Scheme_Object *scheme_eval_string_multi(const char *str, Scheme_Env *env)
 {
   return scheme_eval_string_all(str, env, 0);
-}
-
-static Scheme_Object *allow_auto_cond_else(int argc, Scheme_Object **argv)
-{
-  return scheme_param_config("compile-auto-cond-else", 
-			     scheme_make_integer(MZCONFIG_COND_AUTO_ELSE),
-			     argc, argv,
-			     -1, NULL, NULL, 1);
 }
 
 static Scheme_Object *allow_set_undefined(int argc, Scheme_Object **argv)

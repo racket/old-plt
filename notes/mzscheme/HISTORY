@@ -1,4 +1,95 @@
 
+Version 102/10:
+
+ * Changed `read-string!' to `read-string-avail!', which reads only as
+   many characters as are immediately ready, blocking only if no chars
+   are available. (The old `read-string!' can be efficiently
+   implemented with the new one.)
+
+   In the current `read-string!' (and `read-string'), characters can
+   be lost if the read gets a few and then encounters a read
+   error. The `read-string-avail!' procedure does not have this
+   problem, because an error after reading at least one character is
+   treated like blocking. (The error will be ignored, to be triggered
+   on the next read.)
+
+ * Added `read-string-avail!/enable-break', to be used in a context
+   where breaks are disabled. The guarantee is that either the read
+   gets all the characters it can and returns, or it raises an
+   exception (possibly a break exception) without reading any
+   characters.
+
+ * Added `write-string-avail' and `write-string-avail/enable-break',
+   which are analogous to `read-string-avail!' and
+   `read-string-avail!/enable-break'.
+
+   The return value in the non-exception case is the number of chars
+   that could be written (and flushed) immediately. If no characters
+   can be written, it blocks until at least one can be.
+
+   As with `read-string-avail!', an error after writing at least one
+   character is treated like blocking. (Output mechanisms like `write'
+   and `display' can still fumble characters.)
+
+ * Added `process[*]/ports', which is like `process[*]', but it takes
+   three file-stream ports to use for the subprocess's stdio streams:
+   an input port for the process's stdin, and output ports for the
+   process's stdout and stderr.
+
+   If #f is provided for one of the streams, then `process[*]/ports'
+   makes a pipe and return the other end for the corresponding stream,
+   as for `process[*]'. But when a port is provided for a particular
+   stream, `process[*]/ports' does not create the corresponding pipe,
+   and instead use the given port, returning #f for that stream.
+
+   If a provided port is not a file-stream port (created by
+   `open-input-file' or `process[*][/file-ports]', or one of the
+   original stdio ports), then an exception would be raised.
+
+ * Added `file-stream-port?', useful with `process[*]/ports' and
+   `file-position' (which requires a file-stream port for changing the
+   position).
+
+ * Fixed the error-handling subsystem to properly handle error
+   messages containing a non-terminating nul character (e.g., due to
+   including in an error message a string argument that contained a
+   nul).
+
+ * Inside MzScheme:
+
+    - Added scheme_register_static(), which is like
+      scheme_register_extension_global(), but it only registers the
+      given location if the collector does not know how to find static
+      variables anyway. (This is true for precise GC, Senora GC on
+      many platforms, and the regular GC under Windows when a flag is
+      set as described below).
+
+    - Provided a way to fix the GC--thread problems under Windows.  If
+      an embedding application is willing to explicitly register its
+      static variables with scheme_register_static(), then set the
+      GC_use_registered_statics variable to 1 before calling a
+      MzScheme or GC function. Then, then collector will not try to
+      scan all active pages to find globals (which can crash if a
+      separate Windows thread unmaps a page while the collector is
+      running), and instead only collect from the registered static
+      variable locations.
+
+      The standalone versions of MzScheme and MrEd both use this new
+      collection mechanism.
+
+    - Changed scheme_get_chars to include a new last argument: an
+      offset into the string.
+
+    - Added embedding-settable function scheme_console_output, which
+      is used to report errors that were not handled correctly by the
+      normal mechanisms.
+
+    - Restricted the format string accepted by scheme_signal_error,
+      scheme_raise_exn, and scheme_warning, but also added format
+      directives to handle non-terminating nul characters in strings.
+
+ * Added `mergesort' to MzLib's function.ss.
+
 Version 102/9:
 
  * Added immutable strings and pairs, with `string->immutable-string'
@@ -38,6 +129,9 @@ Version 102/8:
  * (angle 0.0) is 0, and (angle -0.0) is pi. This is consistent with
    the distinction between 0.0+0i and 0.0+0.0i, and with the notion of
    0.0 as "infinitesimally small". Also, fixed (angle +nan.0).
+
+ * (expt 0 x) raises divide-by-zero if x is negative (instead of
+   returning 0), and returns +nan.0 if x is +nan.0.
 
  * Fixed `regexp' and friends to work on strings (patterns and
    targets) that contain null characters. (PR 1350)
@@ -152,8 +246,9 @@ Changed time-apply to return four values, and to take an argument
  list to provide to the timed procedure
 Changed angle on inexact zero (0 for 0.0, pi for -0.0)
 Fixed angle on +nan.0
+Fixed expt on 0 and a negative number
 Added 'exec-file flag to find-system-path
-Added square to MzLib's function.ss
+Added square and mergesort to MzLib's function.ss
 Added tcp-addresses
 Inside MzScheme: scheme_basic_env() initializes break-enabled
  to #f instead of #t

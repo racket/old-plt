@@ -38,6 +38,7 @@ typedef short Type_Tag;
 #define SAFETY 0
 #define RECYCLE_HEAP 0
 #define NOISY 0
+#define MARK_STATS 0
 
 #define ALLOC_GC_PHASE 0
 #define SKIP_FORCED_GC 0
@@ -1090,10 +1091,18 @@ static void init_all_mpages(int young)
 
 /* Mark: mark a block as reachable. */
 
+#if MARK_STATS
+long mark_calls, mark_hits, mark_recalls, mark_colors, mark_one, mark_many, mark_slow;
+#endif
+
 void GC_mark(void *p)
 {
   unsigned long g = ((unsigned long)p >> MAPS_SHIFT);
   MPage *map;
+
+#if MARK_STATS
+  mark_calls++;
+#endif
 
   map = mpage_maps[g];
   if (map) {
@@ -1104,11 +1113,21 @@ void GC_mark(void *p)
     page = map + addr;
     type = page->type;
     if (type && !(type & MTYPE_OLD)) {
+#if MARK_STATS
+      mark_hits++;
+#endif
+
       if (type & MTYPE_BIGBLOCK) {
-	if (type & MTYPE_CONTINUED)
+	if (type & MTYPE_CONTINUED) {
+#if MARK_STATS
+	  mark_recalls++;
+#endif
 	  GC_mark(page->o.bigblock_start);
-	else {
+	} else {
 	  if (!(type & COLOR_MASK)) {
+#if MARK_STATS
+	    mark_colors++;
+#endif
 	    page->type |= GRAY_BIT;
 	    
 	    if (!(type & MTYPE_ATOMIC)) {
@@ -1144,6 +1163,10 @@ void GC_mark(void *p)
 
 	v = page->u.offsets[offset];
 	if (!(v & COLOR_MASK)) {
+#if MARK_STATS
+	  mark_colors++;
+#endif
+
 	  page->u.offsets[offset] = (v | GRAY_BIT);
 
 	  if (!(type & GRAY_BIT)) {
@@ -1198,6 +1221,10 @@ static void propagate_tagged_mpage(void **bottom, MPage *page)
     p = bottom + offset;
     tag = *(Type_Tag *)p;
     mark_table[tag](p);
+
+#if MARK_STATS
+    mark_one++;
+#endif
   } else {
     offset = page->gray_end + 1;
     p = bottom + offset;
@@ -1240,6 +1267,10 @@ static void propagate_tagged_mpage(void **bottom, MPage *page)
       --p;
       --offset;
     }
+
+#if MARK_STATS
+    mark_many++;
+#endif
   }
 
   if (page == gray_first) {
@@ -1248,6 +1279,12 @@ static void propagate_tagged_mpage(void **bottom, MPage *page)
     tail_iterations++;
     goto go_again;
   }
+
+#if MARK_STATS
+  if (page->type & GRAY_BIT) {
+    mark_slow++;
+  }
+#endif
 }
 
 static void propagate_tagged_whole_mpage(void **p, MPage *page)
@@ -2150,7 +2187,7 @@ static void designate_modified(void *p)
 void fault_handler(int sn, struct sigcontext sc)
 {
   designate_modified((void *)sc.cr2);
-  signal(SIGSEGV, (void (*)(int))sigsegv_handler);
+  signal(SIGSEGV, (void (*)(int))fault_handler);
 }
 #define NEED_SIGSEGV
 #endif
@@ -2452,6 +2489,10 @@ static void gcollect(int full)
   iterations = 0;
   tail_iterations = 0;
 
+#if MARK_STATS
+  mark_calls = mark_hits = mark_recalls = mark_colors = mark_one = mark_many = mark_slow = 0;
+#endif
+
   /* Propagate, loop to do finalization */
   while (1) { 
 
@@ -2597,8 +2638,20 @@ static void gcollect(int full)
 
   }
 
-  PRINTTIME((STDERR, "gc: mark (i:%d c:%ld t:%ld): %ld\n", 
-	     inited_pages, iterations, tail_iterations, GETTIMEREL()));
+#if MARK_STATS
+# define STATS_FORMAT " {c=%ld h=%ld c=%ld r=%ld o=%ld m=%ld s=%ld}"
+# define STATS_ARGS mark_calls, mark_hits, mark_colors, mark_recalls, mark_one, mark_many, mark_slow,
+#else
+# define STATS_FORMAT
+# define STATS_ARGS
+#endif
+
+  PRINTTIME((STDERR, "gc: mark (i:%d c:%ld t:%ld)"
+	     STATS_FORMAT
+	     ": %ld\n", 
+	     inited_pages, iterations, tail_iterations, 
+	     STATS_ARGS
+	     GETTIMEREL()));
 
   /******************************************************/
 

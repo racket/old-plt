@@ -97,10 +97,13 @@ void (*scheme_signal_error)(char *msg, ...);
 void (*scheme_raise_exn)(int exnid, ...);
 void (*scheme_warning)(char *msg, ...);
 void (*scheme_raise)(Scheme_Object *exn);
-void (*scheme_wrong_count)(const char *name, int minc, int maxc, int argc,
-			Scheme_Object **argv);
+void (*scheme_wrong_count)(const char *name, int minc, int maxc,
+			int argc, Scheme_Object **argv);
+void (*scheme_wrong_count_m)(const char *name, int minc, int maxc, 
+			  int argc, Scheme_Object **argv,
+			  int is_method);
 void (*scheme_case_lambda_wrong_count)(const char *name, int argc, 
-				    Scheme_Object **argv, int count, ...);
+				    Scheme_Object **argv, int is_method, int count, ...);
 void (*scheme_wrong_type)(const char *name, const char *expected, 
 		       int which, int argc,
 		       Scheme_Object **argv);
@@ -265,6 +268,7 @@ Scheme_Object *(*scheme_make_folding_closed_prim)(Scheme_Closed_Prim *prim,
 					       void *data, const char *name,
 					       short mina, short maxa,
 					       short functional);
+void (*scheme_prim_is_method)(Scheme_Object *o);
 Scheme_Object *(*scheme_make_pair)(Scheme_Object *car, Scheme_Object *cdr);
 Scheme_Object *(*scheme_make_immutable_pair)(Scheme_Object *car, Scheme_Object *cdr);
 Scheme_Object *(*scheme_make_string)(const char *chars);

@@ -275,7 +275,7 @@
 				    (list (vector eloc ...)
 					  (lambda (iloc ...)
 					    (let ([intname undefined] ...)
-					      (letrec-syntaxes redirections
+					      (letrec-syntaxes+values redirections ()
 						(void) ; in case the body would be empty
 						defn&expr ...))))))))))))))))))])))
   

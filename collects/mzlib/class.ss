@@ -323,6 +323,8 @@
 					     super-make-object-id)
 					    (kernel-form-identifier-list
 					     (quote-syntax here)))]
+			[add-method-property (lambda (l)
+					       (syntax-property l 'method-arity-error #t))]
 			[proc-shape (lambda (name expr xform?)
 				      ;; expands an expression so we can check whether
 				      ;; it has the right form
@@ -360,12 +362,13 @@
 					       (with-syntax ([the-obj the-obj]
 							     [the-finder the-finder]
 							     [name (mk-name name)])
-						 (syntax/loc stx 
-						   (let ([name
-							  (lambda (the-obj . vars) 
-							    (fluid-let-syntax ([the-finder (quote-syntax the-obj)])
-							      body1 body ...))])
-						     name)))
+						 (let ([l (syntax/loc stx 
+							      (lambda (the-obj . vars) 
+								(fluid-let-syntax ([the-finder (quote-syntax the-obj)])
+										  body1 body ...)))])
+						   (with-syntax ([l (add-method-property l)])
+						     (syntax/loc stx 
+							 (let ([name l]) name)))))
 					       stx)]
 					  [(lambda . _)
 					   (bad "ill-formed lambda expression for method" stx)]
@@ -375,12 +378,13 @@
 					       (with-syntax ([the-obj the-obj]
 							     [the-finder the-finder]
 							     [name (mk-name name)])
-						 (syntax/loc stx
-						   (let ([name
-							  (case-lambda [(the-obj . vars) 
-									(fluid-let-syntax ([the-finder (quote-syntax the-obj)])
-									  body1 body ...)] ...)])
-						     name)))
+						 (let ([cl (syntax/loc stx
+							       (case-lambda [(the-obj . vars) 
+									     (fluid-let-syntax ([the-finder (quote-syntax the-obj)])
+											       body1 body ...)] ...))])
+						   (with-syntax ([cl (add-method-property cl)])
+						     (syntax/loc stx
+							 (let ([name cl]) name)))))
 					       stx)]
 					  [(case-lambda . _)
 					   (bad "ill-formed case-lambda expression for method" stx)]
@@ -713,7 +717,7 @@
 						(with-syntax ([proc (proc-shape (car m) (cdr m) #t)]
 							      [extra-init-mappings extra-init-mappings])
 						  (syntax
-						   (letrec-syntaxes extra-init-mappings
+						   (letrec-syntaxes+values extra-init-mappings ()
 						     proc)))))
 					 methods)))])
 			       
@@ -784,7 +788,7 @@
 							     field-mutator ...
 							     rename-temp ...
 							     method-accessor ...) ; public, override, inherit
-				       (letrec-syntaxes mappings
+				       (letrec-syntaxes+values mappings ()
 					   (letrec ([private-temp private-method]
 						    ...
 						    [public-final-temp public-final-method]
@@ -1756,12 +1760,13 @@
 				   (let ([obj obj-expr])
 				     (values (find-with-method obj 'name) obj))]
 				  ...)
-		       (letrec-syntaxes ([(id) (make-with-method-map
-						(quote-syntax set!)
-						(quote-syntax id)
-						(quote-syntax method)
-						(quote-syntax method-obj))]
-					 ...)
+		       (letrec-syntaxes+values ([(id) (make-with-method-map
+						       (quote-syntax set!)
+						       (quote-syntax id)
+						       (quote-syntax method)
+						       (quote-syntax method-obj))]
+						...)
+					       ()
 			 body0 body1 ...)))))]
 	;; Error cases:
 	[(_ (clause ...) . body)

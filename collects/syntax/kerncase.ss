@@ -31,7 +31,7 @@
 	    case-lambda
 	    if
 	    quote
-	    letrec-syntaxes
+	    letrec-syntaxes+values
 	    fluid-let-syntax
 	    with-continuation-mark
 	    #%app

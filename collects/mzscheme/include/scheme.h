@@ -386,6 +386,7 @@ typedef struct Scheme_Vector {
 #define SCHEME_PRIM_IS_MULTI_RESULT 256
 #define SCHEME_PRIM_IS_GENERIC 512
 #define SCHEME_PRIM_IS_USER_PARAMETER 1024
+#define SCHEME_PRIM_IS_METHOD 2048
 
 typedef struct Scheme_Object *
 (Scheme_Prim)(int argc, struct Scheme_Object *argv[]);
@@ -428,22 +429,24 @@ typedef struct {
   short *cases;
 } Scheme_Closed_Case_Primitive_Proc;
 
-#define _scheme_fill_prim_closure(rec, cfunc, dt, nm, amin, amax) \
+#define _scheme_fill_prim_closure(rec, cfunc, dt, nm, amin, amax, flgs) \
   ((rec)->type = scheme_closed_prim_type, \
    (rec)->prim_val = cfunc, \
    (rec)->data = (void *)(dt), \
    (rec)->name = nm, \
    (rec)->mina = amin, \
    (rec)->maxa = amax, \
+   (rec)->flags = flgs, \
    rec)
-   
-#define _scheme_fill_prim_case_closure(rec, cfunc, dt, nm, ccount, cses) \
+ 
+#define _scheme_fill_prim_case_closure(rec, cfunc, dt, nm, ccount, cses, flgs) \
   ((rec)->p.type = scheme_closed_prim_type, \
    (rec)->p.prim_val = cfunc, \
    (rec)->p.data = (void *)(dt), \
    (rec)->p.name = nm, \
    (rec)->p.mina = -2, \
    (rec)->p.maxa = -(ccount), \
+   (rec)->p.flags = flgs, \
    (rec)->cases = cses, \
    rec)
 

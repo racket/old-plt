@@ -40,7 +40,7 @@
 	       ,@(map (lambda (clause)
 			`(,(car clause) ,@(map annotate (cdr clause))))
 		      (cdr expr)))]
-	    [(#%let-values #%letrec*-values)
+	    [(#%let-values #%letrec-values)
 	     `(,(car expr)
 	       ,(map (lambda (clause)
 		       `(,(car clause) ,(annotate (cadr clause))))

@@ -54,7 +54,7 @@
     (lambda ()
       (unless invoked?
 	(set! invoked? #t)
-	(print-struct #t)
+	(mred:change-splash-message "Invoking...")
 	(invoke-open-unit/sig (mred:make-invokable-unit))
 	(mred:user-setup)))))
 

@@ -109,13 +109,13 @@
 				   (set! syntax-level (cadr p))
 				   (loop (cddr l)))
 				 (bad-arguments "bad level name: ~s" level)))))]
-	  [(--help) (printf "MzRice flags:~n  --help~n  --level level, where level is in: ~s~n~a  --choose~n  --~n"
+	  [(--help) (printf "MzRice flags:~n  --help~n  --level <level>, where <level> is in: ~s~n~a  --choose~n  --~n"
 			    (map car language-levels)
 			    (let loop ([l simple-args])
 			      (if (null? l)
 				  ""
 				  (string-append
-				   (format "  ~s~n" (cadr l))
+				   (format "  ~s~n" (caar l))
 				   (loop (cdr l))))))
 		    (exit 0)]
 	  [(--) (list->vector (cdr l))]

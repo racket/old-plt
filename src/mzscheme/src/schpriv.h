@@ -1162,7 +1162,8 @@ float scheme_get_val_as_float(const Scheme_Object *n);
 #endif
 
 #if !defined(USE_IEEE_FP_PREDS) && !defined(USE_SCO_IEEE_PREDS) \
-    && !defined(USE_OSF_FP_PREDS) && !defined(USE_PALM_INF_TESTS)
+    && !defined(USE_OSF_FP_PREDS) && !defined(USE_PALM_INF_TESTS) \
+    && !defined(USE_MSVC_FP_PREDS)
 # define MZ_IS_POS_INFINITY(d) ((d) == scheme_infinity_val)
 # define MZ_IS_NEG_INFINITY(d) ((d) == scheme_minus_infinity_val)
 # ifdef NAN_EQUALS_ANYTHING
@@ -1203,6 +1204,7 @@ extern int scheme_is_nan(double);
 #     define MZ_IS_NAN(d) __isnand(d)
 #    else
 #     ifdef USE_MSVC_FP_PREDS
+#      include <float.h>
 #      define MZ_IS_POS_INFINITY(d) (_fpclass(d) == _FPCLASS_PINF)
 #      define MZ_IS_NEG_INFINITY(d) (_fpclass(d) == _FPCLASS_NINF)
 #      define MZ_IS_NAN(d) _isnan(d)

@@ -813,7 +813,8 @@
 	 ;; they either take one argument or no pointer arguments.
 	 ;; So we can ignore them:
 
-	 strlen cos sin exp pow log sqrt atan2 isnan isinf
+	 strlen cos sin exp pow log sqrt atan2 
+	 isnan isinf fpclass _fpclass _isnan __isfinited
 	 floor ceil round fmod fabs __maskrune _errno
 	 isalpha isdigit isspace tolower toupper
 	 fread fwrite socket fcntl setsockopt connect send recv close

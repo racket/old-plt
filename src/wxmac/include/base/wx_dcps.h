@@ -23,13 +23,14 @@ class wxBrush;
 class wxColour;
 class wxColourMap;
 class wxFont;
-class wxIcon;
 class wxList;
 class wxPen;
 class ofstream;
 #else
 #include "wx_dc.h"
 #endif
+
+class wxMemoryDC;
 
 #if USE_POSTSCRIPT
 
@@ -42,10 +43,8 @@ typedef       void    *wxPostScriptDC ;
 #endif
 
 #ifdef wx_xt
-# define BLIT_DC_TYPE wxDC
 # define DRAW_TEXT_CONST /* empty */
 #else
-# define BLIT_DC_TYPE wxCanvasDC
 # define DRAW_TEXT_CONST const
 #endif
 
@@ -128,7 +127,6 @@ class wxPostScriptDC: public wxDC
   // Any number of control points - a list of pointers to wxPoints
   void DrawSpline(wxList *points);
   void DrawSpline(int n, wxPoint points[]);
-  void DrawIcon(wxIcon *icon, float x, float y);
   /* MATTHEW: [2] 16-bit fonts */
   void DrawText(DRAW_TEXT_CONST char *text, float x, float y, Bool use16 = FALSE);
 
@@ -165,7 +163,9 @@ class wxPostScriptDC: public wxDC
   int LogicalToDeviceXRel(float x);
   int LogicalToDeviceYRel(float y);
   Bool Blit(float xdest, float ydest, float width, float height,
-            BLIT_DC_TYPE *source, float xsrc, float ysrc, int rop = wxCOPY);
+            wxBitmap *source, float xsrc, float ysrc, int rop = wxCOPY);
+  Bool Blit(float xdest, float ydest, float width, float height,
+            wxMemoryDC *source, float xsrc, float ysrc, int rop = wxCOPY);
   inline Bool CanGetTextExtent(void) { return USE_AFM_FOR_POSTSCRIPT; }
   inline Bool CanDrawBitmap(void) { return TRUE; }
 

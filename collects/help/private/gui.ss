@@ -96,54 +96,51 @@
               (define/override (get-editor%) (hd-editor-mixin (super get-editor%)))
               
               (define/override (remap-url url)
-                (printf "url ~s\n" url)
-                (begin0
-                  (cond
-                    [(url? url)
-                     (cond
-                       
-                       ;; .plt files are always internal, no matter where from
-                       ;; they will be caught elsewhere.
-                       [(and (url-path url)
-                             (not (null? (url-path url)))
-                             (regexp-match #rx".plt$" (car (last-pair (url-path url)))))
-                        url]
-                       
-                       ;; files on download.plt-scheme.org in /doc are considered
-                       ;; things that we should view in the browser itself.
-                       [(is-download.plt-scheme.org/doc-url? url)
-                        url]
-                       
-                       ;; on the internal host
-                       [(and (equal? internal-host (url-host url))
-                             (equal? internal-port (url-port url)))
-                        (let* ([path (url-path url)]
-                               [coll (and (pair? path)
-                                          (pair? (cdr path))
-                                          (cadr path))])
-                          ;; check to see if the docs are installed
-                          (if (and coll
-                                   (assoc coll known-docs)
-                                   (not (has-index-installed? (string->path coll))))
-                              (let ([doc-pr (assoc coll known-docs)]
-                                    [url-str (url->string url)])
-                                (make-missing-manual-url  coll (cdr doc-pr) url-str))
-                              url))]
-                       
-                       [(and (equal? addon-host (url-host url))
-                             (equal? internal-port (url-port url)))
-                        url]
-                       
-                       ;; send the url off to another browser
-                       [(or (and (preferences:get 'drscheme:help-desk:ask-about-external-urls)
-                                 (ask-user-about-separate-browser))
-                            (preferences:get 'drscheme:help-desk:separate-browser))
-                        (send-url (url->string url))
-                        #f]
-                       
-                       [else url])]
-                    [else url])
-                  (printf "done\n")))
+                (cond
+                  [(url? url)
+                   (cond
+                     
+                     ;; .plt files are always internal, no matter where from
+                     ;; they will be caught elsewhere.
+                     [(and (url-path url)
+                           (not (null? (url-path url)))
+                           (regexp-match #rx".plt$" (car (last-pair (url-path url)))))
+                      url]
+                     
+                     ;; files on download.plt-scheme.org in /doc are considered
+                     ;; things that we should view in the browser itself.
+                     [(is-download.plt-scheme.org/doc-url? url)
+                      url]
+                     
+                     ;; on the internal host
+                     [(and (equal? internal-host (url-host url))
+                           (equal? internal-port (url-port url)))
+                      (let* ([path (url-path url)]
+                             [coll (and (pair? path)
+                                        (pair? (cdr path))
+                                        (cadr path))])
+                        ;; check to see if the docs are installed
+                        (if (and coll
+                                 (assoc coll known-docs)
+                                 (not (has-index-installed? (string->path coll))))
+                            (let ([doc-pr (assoc coll known-docs)]
+                                  [url-str (url->string url)])
+                              (make-missing-manual-url  coll (cdr doc-pr) url-str))
+                            url))]
+                     
+                     [(and (equal? addon-host (url-host url))
+                           (equal? internal-port (url-port url)))
+                      url]
+                     
+                     ;; send the url off to another browser
+                     [(or (and (preferences:get 'drscheme:help-desk:ask-about-external-urls)
+                               (ask-user-about-separate-browser))
+                          (preferences:get 'drscheme:help-desk:separate-browser))
+                      (send-url (url->string url))
+                      #f]
+                     
+                     [else url])]
+                  [else url]))
               (super-new)))
           
           ;; has-index-installed? : path -> boolean

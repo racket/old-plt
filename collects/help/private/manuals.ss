@@ -177,15 +177,18 @@
         (cond
           [(null? dirs) null]
           [else (let* ([dir (car dirs)]
-                       [info (get-info/full dir)]
-                       [html-doc-paths (info 'html-docs (lambda () #f))])
+                       [info (get-info/full dir)])
                   (cond
-                    [(and (list? html-doc-paths)
-                          (andmap path-string? html-doc-paths))
-                     (append (map (lambda (x) (build-path dir x)) html-doc-paths)
-                             (loop (cdr dirs)))]
-                    [else
-                     (loop (cdr dirs))]))]))))
+                    [info
+                     (let ([html-doc-paths (info 'html-docs (lambda () #f))])
+                       (cond
+                         [(and (list? html-doc-paths)
+                               (andmap path-string? html-doc-paths))
+                          (append (map (lambda (x) (build-path dir x)) html-doc-paths)
+                                  (loop (cdr dirs)))]
+                         [else
+                          (loop (cdr dirs))]))]
+                    [else (loop (cdr dirs))]))]))))
   
   (define (find-doc-directories-in-doc-collection)
     (let loop ([paths (current-library-collection-paths)]

@@ -12,6 +12,7 @@ is stored in a module top-level and that's namespace-specific.
            (lib "list.ss")
            (lib "string.ss")
            (lib "servlet.ss" "web-server")
+           "../private/internal-hp.ss"
            "../private/path.ss"
            "../private/docpos.ss"
            "../private/search.ss"
@@ -81,19 +82,52 @@ is stored in a module top-level and that's namespace-specific.
           (build-path (collection-path "mzlib") 'up))))
       (define web-root-len (length exp-web-root))
       
+      (define manual-path-candidates '())
+      (define (maybe-add-candidate candidate host)
+        (with-handlers ([exn:fail? void])
+          (set! manual-path-candidates
+                (cons (list (explode-path (normalize-path candidate))
+                            (λ (segments)
+                              (format "http://~a:~a~a"
+                                      host
+                                      internal-port
+                                      (apply string-append (map (λ (x) (format "/~a" (path->string x))) 
+                                                                segments)))))
+                      manual-path-candidates))))
+      (define stupid-internal-define-syntax1
+        (maybe-add-candidate (build-path (collection-path "doc") 'up) internal-host))
+      (define stupid-internal-define-syntax2
+        (maybe-add-candidate (build-path (find-system-path 'addon-dir) (version)) addon-host))
+      
       ; given a manual path, convert to absolute Web path
       ; manual path is an anchored path to a collects/doc manual, never a servlet
       (define (tidy-manual-path manual-path)
-        (let* ([exp-manual-path (explode-path manual-path)]
-               [exp-tidy-path 
-                (let loop ([path exp-manual-path]
-                           [n 0])
-                  (if (>= n web-root-len)
-                      path
-                      (loop (cdr path) (add1 n))))])
-          ; insert internal slashes, make absolute by prepending slash
-          (string-append "/" (fold-into-web-path (map path->string exp-tidy-path)))))
-      
+        (let ([segments (explode-path (normalize-path manual-path))])
+          (let loop ([candidates manual-path-candidates])
+            (cond
+              ;; shouldn't happen, unless documentation is found outside the user's addon dir
+              ;; and also outside the PLT tree.
+              [(null? candidates) "/cannot-find-docs.html"]
+              
+              [else
+               (let ([candidate (car candidates)])
+                 (cond
+                   [(subpath/tail (car candidate) segments)
+                    =>
+                    (λ (l-o-path)
+                      ((cadr candidate) l-o-path))]
+                   [else (loop (cdr candidates))]))]))))
+                    
+      (define (subpath/tail short long)
+        (let loop ([short short]
+                   [long long])
+          (cond
+            [(null? short) long]
+            [(null? long) #f]
+            [(equal? (car short) (car long))
+             (loop (cdr short) (cdr long))]
+            [else #f])))
+        
       (define (keyword-string? ekey)
         (and (string? ekey)
              (not (string=? ekey ""))))

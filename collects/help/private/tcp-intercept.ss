@@ -126,22 +126,10 @@
                        (string=? addon-host hostname-string))
                    (equal? internal-port port))
               (let-values ([(req-in req-out) (make-pipe)]
-                           [(resp-in resp-out) (make-pipe)]
-                           [(extra-in extra-out) (make-pipe)])
-                (thread 
-                 (λ ()
-                   (let loop ()
-                     (let ([c (read-char extra-in)])
-                       (cond
-                         [(eof-object? c)
-                          (close-output-port req-out)]
-                         [else
-                          (display c (current-error-port))
-                          (display c req-out)
-                          (loop)])))))
+                           [(resp-in resp-out) (make-pipe)])
                 (parameterize ([current-custodian (make-custodian)])
                   (serve-ports req-in resp-out))
-                (values resp-in extra-out))
+                (values resp-in req-out))
               (raw hostname-string port))))
       
       ; : str nat -> iport oport

@@ -919,16 +919,27 @@ static void count_managed(Scheme_Custodian *m, int *c, int *a, int *u, int *t,
 }
 #endif
 
-#if defined(USE_TAGGED_ALLOCATION) || (defined(MZ_PRECISE_GC) && 0)
-#ifdef MZ_PRECISE_GC
-START_XFORM_SKIP;
-#endif
-#if defined(MZ_PRECISE_GC) && defined(DOS_FILE_SYSTEM)
-extern void gc_fprintf(int ignored, const char *c, ...);
-# define object_console_printf gc_fprintf
+#if defined(MZ_PRECISE_GC)
+/* Change to 1 to get tracing: */
+# define MZ_PRECISE_GC_TRACE 0
 #else
-# define object_console_printf fprintf
+# define MZ_PRECISE_GC_TRACE 0
 #endif
+
+#if MZ_PRECISE_GC_TRACE
+extern int GC_trace_for_tag;
+#endif
+
+#if defined(USE_TAGGED_ALLOCATION) || MZ_PRECISE_GC_TRACE
+# ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+# endif
+# if defined(MZ_PRECISE_GC) && defined(DOS_FILE_SYSTEM)
+extern void gc_fprintf(int ignored, const char *c, ...);
+#  define object_console_printf gc_fprintf
+# else
+#  define object_console_printf fprintf
+# endif
 void scheme_print_tagged_value(const char *prefix, 
 			       void *v, int xtagged, unsigned long diff, int max_w,
 			       const char *suffix)
@@ -1257,6 +1268,30 @@ Scheme_Object *scheme_dump_gc_stats(int c, Scheme_Object *p[])
   }
 
 #else
+
+# if MZ_PRECISE_GC_TRACE
+  GC_trace_for_tag = -1;
+  if (c && SCHEME_SYMBOLP(p[0])) {
+    Scheme_Object *sym;
+    char *s;
+    int i, maxpos;
+
+    sym = p[0];
+    s = scheme_symbol_val(sym);
+
+    maxpos = scheme_num_types();
+
+    for (i = 0; i < maxpos; i++) {
+      void *tn;
+      tn = scheme_get_type_name(i);
+      if (tn && !strcmp(tn, s)) {
+	GC_trace_for_tag = i;
+	break;
+      }
+    }
+  }
+#endif
+
   GC_dump();
 #endif
 

@@ -2562,13 +2562,16 @@
 					     ;; complain about function calls in the decl area:
 					     (convert-function-calls (car el) extra-vars &-vars c++-class live-vars "in decls" #f #t)])
 				 (dloop (cdr el) live-vars))))))])
-	      ;; Calculate vars to push in this block
-	      (let ([newly-pushed (filter (lambda (x)
-					    (or (assq (car x) local-vars)
-						(assq (car x) pushable-vars)
-						(and setup-stack-return-type
-						     (is-generated? x))))
-					  (live-var-info-pushed-vars live-vars))])
+	      ;; Calculate vars to push in this block. Make sure there are no duplicates.
+	      (let ([newly-pushed (let ([ht (make-hash-table)])
+				    (for-each (lambda (x)
+						(when (or (assq (car x) local-vars)
+							  (assq (car x) pushable-vars)
+							  (and setup-stack-return-type
+							       (is-generated? x)))
+						  (hash-table-put! ht (car x) x)))
+					      (live-var-info-pushed-vars live-vars))
+				    (hash-table-map ht (lambda (k v) v)))])
 		(values (apply
 			 append
 			 (append

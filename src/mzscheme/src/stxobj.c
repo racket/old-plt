@@ -1312,6 +1312,9 @@ static Scheme_Cert *cons_cert(Scheme_Object *mark, Scheme_Object *modidx,
 {
   Scheme_Cert *cert;
 
+  if (next_cert && (next_cert->so.type != scheme_certifications_type))
+    *(long *)0x0 = 1;
+
   cert = MALLOC_ONE_RT(Scheme_Cert);
   cert->so.type = scheme_certifications_type;
   cert->mark = mark;

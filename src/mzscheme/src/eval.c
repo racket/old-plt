@@ -284,7 +284,7 @@ scheme_init_eval (Scheme_Env *env)
   REGISTER_SO(top_level_symbol);
 
   module_symbol = scheme_intern_symbol("module");
-  module_begin_symbol = scheme_intern_symbol("module");
+  module_begin_symbol = scheme_intern_symbol("module-begin");
   internal_define_symbol = scheme_intern_symbol("internal-define");
   expression_symbol = scheme_intern_symbol("expression");
   top_level_symbol = scheme_intern_symbol("top-level");

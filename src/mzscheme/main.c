@@ -302,6 +302,18 @@ int actual_main(int argc, char *argv[])
   } else
     prog = "MzScheme";
 
+#ifdef DOS_FILE_SYSTEM
+  {
+    int l = strlen(prog);
+    if (l <= 4 || strcmp(prog + l - 4, ".exe")) {
+      char *s = scheme_malloc_atomic(l + 4 + 1);
+      memcpy(s, prog, l);
+      memcpy(s + l, ".exe", 5);
+      prog = s;
+    }
+  }
+#endif
+
   if (argc && (!strcmp(argv[0], "--restore")
 	       || ((argv[0][0] == '-') && (argv[0][1] == 'R')))) {
     printf("Image loading (with --restore or -R<file>) is not supported.\n");

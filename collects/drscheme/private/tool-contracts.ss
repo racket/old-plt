@@ -71,7 +71,7 @@
     boolean?
     (-> void?)
     (-> void?)
-    ((union eof-object? syntax? (cons/p string? any?))
+    ((union eof-object? syntax? (cons/c string? any?))
      (-> any)
      . -> .
      any)
@@ -135,7 +135,7 @@
     (-> void?)
     . -> .
     ((union port? drscheme:language:text/pos?)
-     ((union eof-object? syntax? (cons/p string? any?))
+     ((union eof-object? syntax? (cons/c string? any?))
       (-> any)
       . -> .
       any)
@@ -158,7 +158,7 @@
     (-> void?)
     . -> .
     ((union port? drscheme:language:text/pos?)
-     ((union eof-object? syntax? (cons/p string? any?))
+     ((union eof-object? syntax? (cons/c string? any?))
       (-> any)
       . -> .
       any)
@@ -328,8 +328,8 @@
    "Adds the profiling preferences panel.")
   
   (drscheme:debug:open-and-highlight-in-file
-   ((cons/p (union symbol? (is-a?/c editor<%>))
-            (cons/p number? number?))
+   ((cons/c (union symbol? (is-a?/c editor<%>))
+            (cons/c number? number?))
     . -> .
     void?)
    (debug-info)
@@ -585,7 +585,7 @@
 ;               ;      
   
   (drscheme:rep:get-error-ranges
-   (-> (union false? (cons/p (list/p any? number? number?) (listof (list/p any? number? number?)))))
+   (-> (union false? (cons/c (list/c any? number? number?) (listof (list/c any? number? number?)))))
    ()
    "Returns the currently highlighted error range, or \\scheme|#f|"
    "if there is none.")
@@ -600,13 +600,13 @@
    (val)
    "Determines if \\var{val} is an exn:loc or not.")
   (drscheme:rep:exn:locs-locs
-   (drscheme:rep:exn:locs? . -> . (listof (list/p (is-a?/c text:basic<%>) number? number?)))
+   (drscheme:rep:exn:locs? . -> . (listof (list/c (is-a?/c text:basic<%>) number? number?)))
    (loc)
    "Extracts the loc field from the exn.")
   (drscheme:rep:make-exn:locs
    (string?
     continuation-mark-set?
-    (listof (list/p (is-a?/c text:basic<%>) number? number?))
+    (listof (list/c (is-a?/c text:basic<%>) number? number?))
     . -> .
     drscheme:rep:exn:locs?)
    (message continuation-mark-set locs)
@@ -1014,7 +1014,7 @@
     (union (lambda (x) (eq? x #t)) (symbols 'mzscheme 'mred))
     . -> .
     (union false?
-           (list/p (symbols 'no-show 'launcher 'stand-alone)
+           (list/c (symbols 'no-show 'launcher 'stand-alone)
                    (symbols 'no-show 'mred 'mzscheme)
                    string?)))
    (parent program-name show-type? show-base?)
@@ -1342,14 +1342,14 @@
                              . -> .
                              (-> any?)))
      (get-language-name (-> string?))
-     (get-language-numbers (-> (cons/p number? (listof number?))))
-     (get-language-position (-> (cons/p string? (listof string?))))
+     (get-language-numbers (-> (cons/c number? (listof number?))))
+     (get-language-position (-> (cons/c string? (listof string?))))
      (get-language-url (-> (union false? string?)))
      (get-one-line-summary (-> string?))
      (get-comment-character (-> (values string? char?)))
      (get-style-delta (-> (union false?
                                  (is-a?/c style-delta%)
-                                 (listof (list/p (is-a?/c style-delta%) number? number?)))))
+                                 (listof (list/c (is-a?/c style-delta%) number? number?)))))
      (marshall-settings (any? . -> . printable?))
      (on-execute (any? ((-> any) . -> . any) . -> . any))
      (render-value (any? 

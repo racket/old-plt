@@ -459,8 +459,8 @@
             (begin
               (set! help-desk-frame-mixin
                     (compose
-                     (lambda (x) (class* x (help-desk-frame<%>) (super-new)))
                      addl-mixins
+                     (lambda (x) (class* x (help-desk-frame<%>) (super-new)))
                      make-catch-url-frame-mixin
                      bug-report/help-desk-mixin
                      make-help-desk-framework-mixin

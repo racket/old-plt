@@ -4,7 +4,7 @@
            (lib "contract.ss"))
   
   (provide/contract 
-   [colldocs (-> (values (listof (list/p path? path?))
+   [colldocs (-> (values (listof (list/c path? path?))
                          (listof string?)))])
   
   ; Gets a list of collections that contain a doc.txt file

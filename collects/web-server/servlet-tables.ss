@@ -12,7 +12,7 @@
   (define-struct servlet-instance (invoke-id k-table next-k-id mutex))
 
   (provide/contract
-   [continuation-url? (url? . -> . (union boolean? (list/p symbol? number?)))]
+   [continuation-url? (url? . -> . (union boolean? (list/c symbol? number?)))]
    [embed-ids (symbol? number? url? . -> . string?)]
    [create-new-instance! (hash-table? symbol? . -> . servlet-instance?)]
    )

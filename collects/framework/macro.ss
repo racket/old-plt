@@ -35,18 +35,40 @@
                                      [(internal-name external-name) (syntax external-name)]
                                      [else x]))
                        (syntax->list x)))])
+           (define (get-super-names stx)
+             (syntax-case stx (inherit rename 
+                                       override overment override-final
+                                       define/override define/overment define/override-final
+                                       augment augride augment-final
+                                       define/augment define/augride define/augment-final)
+               [(inherit names ...) (extract-renamed-names (syntax (names ...)))]
+               [(rename [x names] ...) (syntax->list (syntax (names ...)))]
+               [(override names ...) (extract-renamed-names (syntax (names ...)))]
+               [(overment names ...) (extract-renamed-names (syntax (names ...)))]
+               [(override-final names ...) (extract-renamed-names (syntax (names ...)))]
+               [(augment names ...) (extract-renamed-names (syntax (names ...)))]
+               [(augride names ...) (extract-renamed-names (syntax (names ...)))]
+               [(augment-final names ...) (extract-renamed-names (syntax (names ...)))]
+               
+               [(define/augment (name . names) . rest) (extract-renamed-names (syntax (name)))]
+               [(define/augment name . rest) (identifier? (syntax name)) (extract-renamed-names (syntax (name)))]
+               [(define/augride (name . names) . rest) (extract-renamed-names (syntax (name)))]
+               [(define/augride name . rest) (identifier? (syntax name)) (extract-renamed-names (syntax (name)))]
+               [(define/augment-final (name . names) . rest) (extract-renamed-names (syntax (name)))]
+               [(define/augment-final name . rest) (identifier? (syntax name)) (extract-renamed-names (syntax (name)))]
+               [(define/override (name . names) . rest) (extract-renamed-names (syntax (name)))]
+               [(define/override name . rest) (identifier? (syntax name)) (extract-renamed-names (syntax (name)))]
+               [(define/overment (name . names) . rest) (extract-renamed-names (syntax (name)))]
+               [(define/overment name . rest) (identifier? (syntax name)) (extract-renamed-names (syntax (name)))]
+               [(define/override-final (name . names) . rest) (extract-renamed-names (syntax (name)))]
+               [(define/override-final name . rest) (identifier? (syntax name)) (extract-renamed-names (syntax (name)))]
+               [else null]))
            (with-syntax ([(from-ids ...) (generate-temporaries (syntax (from ...)))]
                          [(to-ids ...) (generate-temporaries (syntax (to ...)))]
                          [(super-vars ...)
                           (apply
                            append
-                           (map (lambda (stx)
-                                  (syntax-case stx (inherit rename override override-final)
-                                    [(inherit names ...) (extract-renamed-names (syntax (names ...)))]
-                                    [(rename [x names] ...) (syntax->list (syntax (names ...)))]
-                                    [(override names ...) (extract-renamed-names (syntax (names ...)))]
-                                    [(override-final names ...) (extract-renamed-names (syntax (names ...)))]
-                                    [else null]))
+                           (map get-super-names
                                 (syntax->list (syntax (clauses ...)))))]
                          [mixin-name (or (with-syntax ([tmp (syntax-local-name)])
                                            (syntax (quote tmp)))

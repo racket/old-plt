@@ -251,9 +251,9 @@ please adhere to these guidelines:
  (scheme-mode-color-error "Error")
  (scheme-mode-color-other "Other")
  (color-syntax-interactively "Color syntax interactively")
- (syntax-coloring "Syntax Coloring")
  ;; the ~a is filled in with one of the above (scheme-mode-*)
  (syntax-coloring-choose-color "Choose a color for ~a")
+ (preferences-colors "Colors") ;; used in the preferences dialog
  
  (url "URL")
  (url: "URL:")
@@ -451,6 +451,8 @@ please adhere to these guidelines:
  (open-files-in-tabs "Open files in separate tabs (not separate windows)")
  (show-interactions-on-execute "Automatically open interactions window when running a program")
  (limit-interactions-size "Limit interactions size")
+ (background-color "Background color")
+ (choose-a-background-color "Please choose a background color")
 
  ; title of the color choosing dialog
  (choose-paren-highlight-color "Choose Parenthesis Highlight Color")

@@ -2451,7 +2451,7 @@ add struct contracts for immutable structs?
            flat-murec-contract
 	   union
            and/c
-	   not/f
+	   not/c
            =/c >=/c <=/c </c >/c 
            integer-in
 	   real-in
@@ -2462,10 +2462,11 @@ add struct contracts for immutable structs?
            symbols
 	   is-a?/c subclass?/c implementation?/c
            listof list-immutableof 
-           vectorof vector-immutableof vector/p vector-immutable/c 
-           cons-immutable/c cons/p list-immutable/c list/p 
-           box-immutable/c box/p
-	   mixin-contract make-mixin-contract)
+           vectorof vector-immutableof vector/c vector-immutable/c 
+           cons-immutable/c cons/c list-immutable/c list/c
+           box-immutable/c box/c
+	   mixin-contract make-mixin-contract
+           syntax/c)
   
   (define-syntax (flat-rec-contract stx)
     (syntax-case stx  ()
@@ -2736,9 +2737,9 @@ add struct contracts for immutable structs?
                      (loop (lambda (x) (fst (ctct x)))
                            (cdr rest)))]))))))]))
 
-  (define (not/f f)
+  (define (not/c f)
     (unless (flat-contract/predicate? f)
-      (error 'not/f "expected a procedure of arity 1 or <flat-named-contract>, given: ~e" f))
+      (error 'not/c "expected a procedure of arity 1 or <flat-named-contract>, given: ~e" f))
     (build-flat-contract
      (build-compound-type-name 'not/f (proc/ctc->ctc f))
      (lambda (x) (not (test-proc/flat-contract f x)))))
@@ -2827,9 +2828,9 @@ add struct contracts for immutable structs?
 	    (andmap (lambda (ele) (test-proc/flat-contract p ele))
 		    (vector->list v))))))
 
-  (define (vector/p . args)
+  (define (vector/c . args)
     (unless (andmap flat-contract/predicate? args)
-      (error 'vector/p "expected flat contracts as arguments, got: ~a"
+      (error 'vector/c "expected flat contracts as arguments, got: ~a"
              (let loop ([args args])
                (cond
                  [(null? args) ""]
@@ -2839,7 +2840,7 @@ add struct contracts for immutable structs?
                         (loop (cdr args)))]))))
     (let ([largs (length args)])
       (build-flat-contract
-       (apply build-compound-type-name 'vector/p (map proc/ctc->ctc args))
+       (apply build-compound-type-name 'vector/c (map proc/ctc->ctc args))
        (lambda (v)
          (and (vector? v)
               (= (vector-length v) largs)
@@ -2847,21 +2848,21 @@ add struct contracts for immutable structs?
                       args
                       (vector->list v)))))))
   
-  (define (box/p pred)
+  (define (box/c pred)
     (unless (flat-contract/predicate? pred)
-      (error 'box/p "expected a flat contract or a procedure of arity 1, got: ~e" pred))
+      (error 'box/c "expected a flat contract or a procedure of arity 1, got: ~e" pred))
     (build-flat-contract
-     (build-compound-type-name 'box/p (proc/ctc->ctc pred))
+     (build-compound-type-name 'box/c (proc/ctc->ctc pred))
      (lambda (x)
        (and (box? x)
 	    (test-proc/flat-contract pred (unbox x))))))
 
-  (define (cons/p hdp tlp)
+  (define (cons/c hdp tlp)
     (unless (and (flat-contract/predicate? hdp)
                  (flat-contract/predicate? tlp))
-      (error 'cons/p "expected two flat contracts or procedures of arity 1, got: ~e and ~e" hdp tlp))
+      (error 'cons/c "expected two flat contracts or procedures of arity 1, got: ~e and ~e" hdp tlp))
     (build-flat-contract
-     (build-compound-type-name 'cons/p (proc/ctc->ctc hdp) (proc/ctc->ctc tlp))
+     (build-compound-type-name 'cons/c (proc/ctc->ctc hdp) (proc/ctc->ctc tlp))
      (lambda (x)
        (and (pair? x)
             (test-proc/flat-contract hdp (car x))
@@ -2940,9 +2941,9 @@ add struct contracts for immutable structs?
                                             immutable-vector
                                             vector-immutable/c))
        
-  (define (list/p . args)
+  (define (list/c . args)
     (unless (andmap flat-contract/predicate? args)
-      (error 'list/p "expected flat contracts, got: ~a"
+      (error 'list/c "expected flat contracts, got: ~a"
              (let loop ([args args])
                (cond
                  [(null? args) ""]
@@ -2953,14 +2954,14 @@ add struct contracts for immutable structs?
     (let loop ([args args])
       (cond
 	[(null? args) (flat-contract null?)]
-	[else (cons/p (car args) (loop (cdr args)))])))
+	[else (cons/c (car args) (loop (cdr args)))])))
   
   (define (list-immutable/c . args)
     (unless (andmap (lambda (x) (or (contract? x)
                                     (and (procedure? x)
                                          (procedure-arity-includes? x 1))))
                     args)
-      (error 'list/p "expected flat contracts or procedures of arity 1, got: ~a"
+      (error 'list/c "expected flat contracts or procedures of arity 1, got: ~a"
              (let loop ([args args]) 
                (cond
                  [(null? args) ""]
@@ -2973,9 +2974,9 @@ add struct contracts for immutable structs?
 	[(null? args) (flat-contract null?)]
 	[else (cons-immutable/c (car args) (loop (cdr args)))])))
 
-  (define (syntax/p c)
+  (define (syntax/c c)
     (unless (flat-contract/predicate? c)
-      (error 'syntax/p "expected argument of type <flat-contract> or procedure of arity 1, got ~e" c))
+      (error 'syntax/c "expected argument of type <flat-contract> or procedure of arity 1, got ~e" c))
     (build-flat-contract
      (let ([pred (flat-contract-predicate c)])
        (lambda (val)

@@ -21,7 +21,7 @@
                 [host (union false? string?)]
                 [port (union false? number?)]
                 [path (listof (union string? path/param?))]
-                [query (listof (cons/p symbol? string?))]
+                [query (listof (cons/c symbol? string?))]
                 [fragment (union false? string?)]))
    (struct path/param ([path string?]
                        [param string?]))
@@ -43,6 +43,6 @@
    (combine-url/relative (url? string? . -> . url?))
    (url-exception? (any? . -> . boolean?))
    (current-proxy-servers
-    (case-> ((union false? (listof (list/p string? string? number?))) . -> . void?)
-            (-> (union false? (listof (list/p string? string? number?))))))))
+    (case-> ((union false? (listof (list/c string? string? number?))) . -> . void?)
+            (-> (union false? (listof (list/c string? string? number?))))))))
 

@@ -22,7 +22,7 @@
                     [get-doc-name (path? . -> . string?)]
                     [find-doc-directories (-> (listof path?))]
                     [find-doc-directory (path? . -> . (union false? path?))]
-                    [find-doc-names (-> (listof (cons/p path? string?)))]
+                    [find-doc-names (-> (listof (cons/c path? string?)))]
                     
                     [goto-manual-link (any? string? string? . -> . any)]
                     [get-index-file (path? . -> . (union false? path?))])

@@ -26,7 +26,7 @@
   
   (provide/contract 
    (set-bug-report-info! any?)
-   (find-doc-names (-> (listof (cons/p path? string?))))
+   (find-doc-names (-> (listof (cons/c path? string?))))
    (goto-manual-link (string? string? . -> . any))
    
    (goto-hd-location (symbol? . -> . any))

@@ -2,6 +2,10 @@
 >> See MzScheme_300.txt for information on major changes in
    MzScheme 299.X. Minor changes are listed below.
 
+Contract names are more uniform. If the name of a contract
+ has a suffix, the suffix is now "/c" (earlier, they used to
+ be /p, /c, or /f).
+
 Version 299.17
 In a syntax template, when an identifier has more ellipses
  then in the pattern, inner ellipses bind more

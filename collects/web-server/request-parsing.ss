@@ -16,12 +16,12 @@
   ;; header?: any? -> boolean
   ;; is this a header?
   (define header?
-    (cons/p symbol? bytes?))
+    (cons/c symbol? bytes?))
 
   ;; bindings? any? -> boolean
   ;; is this a binding
   (define binding?
-    (cons/p symbol? string?))
+    (cons/c symbol? string?))
 
   (provide/contract
    [struct request ([method symbol?] [uri url?] [headers (listof header?)]

@@ -5,7 +5,7 @@
   (provide/contract
    [standard-html-doc-position (path? . -> . number?)]
    [user-defined-doc-position (path? . -> . (union false? number?))]
-   [known-docs (listof (cons/p path? string?))]
+   [known-docs (listof (cons/c path? string?))]
    [set-doc-position! (path? number? . -> . void?)]
    [reset-doc-positions! (-> void?)])
   

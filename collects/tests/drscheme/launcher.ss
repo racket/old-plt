@@ -7,8 +7,11 @@
 		[(unix) "launcher-test-tmp"]
 		[(windows) "launcher-test-tmp.exe"]
 		[else (error 'launcher.ss "cannot run this test under ~s" (system-type))])))
+(define tmp-teachpack
+  (build-path (collection-path "tests" "drscheme")
+	      "launcher-test-teachpack.ss"))
 
-(define-values (port-num listener)
+(define (get-port)
   (let loop ([n 100])
     (unless (zero? n)
       (with-handlers ([(lambda (x) #t)
@@ -18,24 +21,7 @@
 	  (values tcp-port
 		  (tcp-listen tcp-port)))))))
 
-(define drs (wait-for-drscheme-frame))
-(define definitions-canvas (ivar drs definitions-canvas))
-(send definitions-canvas focus)
-(fw:test:menu-select "Edit" "Select All")
-(for-each
- fw:test:keystroke
- (let ([port (open-output-string)])
-   (parameterize ([current-output-port port])
-     (write
-      `(let-values ([(in out) (tcp-connect "localhost" ,port-num)])
-	 (write '() out))))
-   (string->list (get-output-string port))))
-(when (file-exists? tmp-filename)
-  (delete-file tmp-filename))
-(save-drscheme-window-as tmp-filename)
-
-(define (create-launcher language teachpack)
-  (set-language-level! language)
+(define (run-launcher/no-teachpack listener test expected)
   (when (file-exists? tmp-launcher)
     (delete-file tmp-launcher))
   (use-open/close-dialog
@@ -44,8 +30,45 @@
    tmp-launcher)
   (let-values ([(l-in l-out l-pid l-err l-proc) (apply values (process* tmp-launcher))]
 	       [(in out) (tcp-accept listener)])
-    (printf "about to read~n")
-    (unless (null? (read in))
-      (error))))
+    (let ([got (read in)])
+      (unless (equal? expected got)
+	(error test "expected ~s, got ~s" expected got)))))
 
-(create-launcher "Graphical without Debugging (MrEd)" #f)
+(define (teachpackless-test)
+  (define-values (port-num listener) (get-port))
+  (define drs (wait-for-drscheme-frame))
+  (type-in-definitions
+   drs
+   `(let-values ([(in out) (tcp-connect "localhost" ,port-num)])
+      (write 'the-correct-answer out)))
+  (when (file-exists? tmp-filename)
+    (delete-file tmp-filename))
+  (save-drscheme-window-as tmp-filename)
+  (set-language-level! "Graphical without Debugging (MrEd)")
+  (run-launcher/no-teachpack listener 'no-teachpack 'the-correct-answer))
+
+(define (teachpack-test)
+  (define-values (port-num listener) (get-port))
+  (define drs (wait-for-drscheme-frame))
+  (call-with-output-file tmp-teachpack
+    (lambda (port)
+      (write
+       `(unit/sig (send-back)
+	  (import plt:userspace^)
+	  (define (send-back sexp)
+	    (let-values ([(in out) (tcp-connect "localhost" ,port-num)])
+	      (write sexp out)
+	      (close-output-port out)
+	      (close-input-port in))))
+       port))
+    'truncate)
+  (type-in-definitions drs `(send-back 'the-correct-answer))
+  (fw:test:menu-select "Language" "Clear All Teachpacks")
+  (use-get/put-dialog
+   (lambda ()
+     (fw:test:menu-select "Language" "Add Teachpack..."))
+   tmp-teachpack)
+  (run-launcher/no-teachpack listener 'teachpack-beginner 'the-correct-answer))
+
+(teachpackless-test)
+(teachpack-test)

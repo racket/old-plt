@@ -4,7 +4,7 @@
 
 (define-signature drscheme:test-util^
   (save-drscheme-window-as
-   use-open/close-dialog
+   use-get/put-dialog
    do-execute
    test-util-error
    poll-until

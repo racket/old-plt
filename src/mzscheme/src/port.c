@@ -209,7 +209,8 @@ typedef struct Scheme_FD {
   MZTAG_IF_REQUIRED
   int fd;                   /* fd is really a HANDLE in Windows */
   long bufcount, buffpos;
-  char flushing, regfile, flush, textmode;
+  char flushing, regfile, flush;
+  char textmode; /* Windows: textmode => CRLF conversion; SOME_FDS_... => select definitely works */
   unsigned char *buffer;
   int *refcount;
 
@@ -1357,9 +1358,12 @@ long scheme_get_byte_string_unless(const char *who,
     if (size) {
       int nonblock;
 
-      if (only_avail == 2)
-	nonblock = 1;
-      else if (only_avail == -1)
+      if (only_avail == 2) {
+	if (got)
+	  nonblock = 2;
+	else
+	  nonblock = 1;
+      } else if (only_avail == -1)
 	nonblock = -1;
       else
 	nonblock = 0;
@@ -1401,9 +1405,9 @@ long scheme_get_byte_string_unless(const char *who,
 
 	/* Finally, call port's get or peek: */
 	if (peek && ps)
-	  gc = ps(ip, buffer, offset + got, size, peek_skip, only_avail == 2, unless);
+	  gc = ps(ip, buffer, offset + got, size, peek_skip, nonblock, unless);
 	else {
-	  gc = gs(ip, buffer, offset + got, size, only_avail == 2, unless);
+	  gc = gs(ip, buffer, offset + got, size, nonblock, unless);
 
 	  if (!peek && gc && ip->progress_evt
 	      && (gc != EOF) 
@@ -3723,18 +3727,30 @@ long scheme_set_file_position(Scheme_Object *port, long pos)
 Scheme_Object *
 scheme_file_buffer(int argc, Scheme_Object *argv[])
 {
-  Scheme_Output_Port *op;
+  Scheme_Output_Port *op = NULL;
+  Scheme_Input_Port *ip = NULL;
 
-  if (!SCHEME_OUTPORTP(argv[0])
+  if ((!SCHEME_OUTPORTP(argv[0]) && !SCHEME_INPORTP(argv[0]))
       || SCHEME_FALSEP(scheme_file_stream_port_p(1, argv)))
-    scheme_wrong_type("file-stream-buffer-mode", "file-stream-output-port", 0, argc, argv);
+    scheme_wrong_type("file-stream-buffer-mode", "file-stream port", 0, argc, argv);
 
-  op = (Scheme_Output_Port *)argv[0];
+  if (SCHEME_OUTPORTP(argv[0]))
+    op = (Scheme_Output_Port *)argv[0];
+  else
+    ip = (Scheme_Input_Port *)argv[0];
 
   if (argc == 1) {
 #ifdef MZ_FDS
-    if (SAME_OBJ(op->sub_type, fd_output_port_type)) {
-      Scheme_FD *fd = (Scheme_FD *)op->port_data;
+    Scheme_FD *fd;
+    
+    if (op && SAME_OBJ(op->sub_type, fd_output_port_type))
+      fd = (Scheme_FD *)op->port_data;
+    else if (ip && SAME_OBJ(ip->sub_type, fd_input_port_type))
+      fd = (Scheme_FD *)ip->port_data;
+    else
+      fd = NULL;
+    
+    if (fd) {
       switch (fd->flush) {
       case MZ_FLUSH_NEVER:
 	return block_symbol;
@@ -3757,42 +3773,68 @@ scheme_file_buffer(int argc, Scheme_Object *argv[])
 	&& !SAME_OBJ(s, none_symbol))
       scheme_wrong_type("file-stream-buffer-mode", "'none, 'line, or 'block", 1, argc, argv);
 
-    if (SAME_OBJ(op->sub_type, file_output_port_type)) {
-      FILE *f = ((Scheme_Output_File *)op->port_data)->f;
-      int bad;
+    if (ip && SAME_OBJ(s, line_symbol))
+      scheme_arg_mismatch("file-stream-buffer-mode", 
+			  "'line buffering not supported for an input port",
+			  argv[0]);
 
-      if (SAME_OBJ(s, block_symbol))
-	bad = setvbuf(f, NULL, _IOFBF, 0);
-      else if (SAME_OBJ(s, line_symbol))
-	bad = setvbuf(f, NULL, _IOLBF, 0);
+    {
+      FILE *f;
+      
+      if (op && SAME_OBJ(op->sub_type, file_output_port_type))
+	f = ((Scheme_Output_File *)op->port_data)->f;
+      else if (op && SAME_OBJ(ip->sub_type, file_input_port_type))
+	f = ((Scheme_Input_File *)ip->port_data)->f;
       else
-	bad = setvbuf(f, NULL, _IONBF, 0);
+	f = NULL;
 
-      if (bad) {
-	scheme_raise_exn(MZEXN_FAIL_FILESYSTEM,
-			 "file-stream-buffer-mode: error changing buffering (%e)",
-			 errno);
-	return NULL;
+      if (f) {
+	int bad;
+
+	if (SAME_OBJ(s, block_symbol))
+	  bad = setvbuf(f, NULL, _IOFBF, 0);
+	else if (op && SAME_OBJ(s, line_symbol))
+	  bad = setvbuf(f, NULL, _IOLBF, 0);
+	else
+	  bad = setvbuf(f, NULL, _IONBF, 0);
+
+	if (bad) {
+	  scheme_raise_exn(MZEXN_FAIL_FILESYSTEM,
+			   "file-stream-buffer-mode: error changing buffering (%e)",
+			   errno);
+	  return NULL;
+	}
       }
-    }
 
 #ifdef MZ_FDS
-    if (SAME_OBJ(op->sub_type, fd_output_port_type)) {
-      Scheme_FD *fd = (Scheme_FD *)op->port_data;
-      if (SAME_OBJ(s, block_symbol))
-	fd->flush = MZ_FLUSH_NEVER;
-      else if (SAME_OBJ(s, line_symbol)) {
-	int go;
-	go = (fd->flush == MZ_FLUSH_NEVER);
-	fd->flush = MZ_FLUSH_BY_LINE;
-	if (go)
-	  flush_fd(op, NULL, 0, 0, 0, 0);
-      } else {
-	fd->flush = MZ_FLUSH_ALWAYS;
-	flush_fd(op, NULL, 0, 0, 0, 0);
+      {
+	Scheme_FD *fd;
+   
+	if (op && SAME_OBJ(op->sub_type, fd_output_port_type))
+	  fd = (Scheme_FD *)op->port_data;
+	else if (ip && SAME_OBJ(ip->sub_type, fd_input_port_type))
+	  fd = (Scheme_FD *)ip->port_data;
+	else
+	  fd = NULL;
+	
+	if (fd) {
+	  if (SAME_OBJ(s, block_symbol))
+	    fd->flush = MZ_FLUSH_NEVER;
+	  else if (op && SAME_OBJ(s, line_symbol)) {
+	    int go;
+	    go = (fd->flush == MZ_FLUSH_NEVER);
+	    fd->flush = MZ_FLUSH_BY_LINE;
+	    if (go)
+	      flush_fd(op, NULL, 0, 0, 0, 0);
+	  } else {
+	    fd->flush = MZ_FLUSH_ALWAYS;
+	    if (op)
+	      flush_fd(op, NULL, 0, 0, 0, 0);
+	  }
+	}
       }
-    }
 #endif
+    }
 
     return scheme_void;
   }
@@ -4002,7 +4044,7 @@ fd_byte_ready (Scheme_Input_Port *port)
 
 # ifdef SOME_FDS_ARE_NOT_SELECTABLE
     /* Try a non-blocking read: */
-    if (!r) {
+    if (!r && !fip->textmode) {
       int c, ready;
 
       c = try_get_fd_char(fip->fd, &ready);
@@ -4047,6 +4089,9 @@ static long fd_get_string(Scheme_Input_Port *port,
 
     return bc;
   } else {
+    if ((nonblock == 2) && (fip->flush == MZ_FLUSH_ALWAYS))
+      return 0;
+
     while (1) {
       /* Loop until a read succeeds. */
       int none_avail = 0;
@@ -4091,7 +4136,7 @@ static long fd_get_string(Scheme_Input_Port *port,
 	return bc;
       }
 
-      if (size >= MZPORT_FD_DIRECT_THRESHOLD) {
+      if ((size >= MZPORT_FD_DIRECT_THRESHOLD) && (fip->flush != MZ_FLUSH_ALWAYS)) {
 	ext_target = 1;
 	target = buffer;
 	target_offset = offset;
@@ -4100,7 +4145,10 @@ static long fd_get_string(Scheme_Input_Port *port,
 	ext_target = 0;
 	target = (char *)fip->buffer;
 	target_offset = 0;
-	target_size = MZPORT_FD_BUFFSIZE;
+	if (fip->flush == MZ_FLUSH_ALWAYS)
+	  target_size = 1;
+	else
+	  target_size = MZPORT_FD_BUFFSIZE;
       }
 
 #ifdef WINDOWS_FILE_HANDLES
@@ -4109,19 +4157,23 @@ static long fd_get_string(Scheme_Input_Port *port,
 	   reading never blocks. */
 	DWORD rgot, delta;
 
-	rgot = target_size;
-
 	if (fip->textmode) {
 	  ext_target = 0;
 	  target = fip->buffer;
 	  target_offset = 0;
-	  target_size = MZPORT_FD_BUFFSIZE;
+	  if (fip->flush == MZ_FLUSH_ALWAYS)
+	    target_size = 1;
+	  else
+	    target_size = MZPORT_FD_BUFFSIZE;
 	}
+
+	rgot = target_size;
 
 	/* Pending CR in text mode? */
 	if (fip->textmode == 2) {
 	  delta = 1;
-	  rgot--;
+	  if (rgot > 1)
+	    rgot--;
 	  fip->buffer[0] = '\r';
 	} else
 	  delta = 0;
@@ -4374,9 +4426,16 @@ make_fd_input_port(int fd, Scheme_Object *name, int regfile, int win_textmode, i
   fip->bufcount = 0;
 
   fip->regfile = regfile;
-  fip->textmode = win_textmode;
+#ifdef SOME_FDS_ARE_NOT_SELECTABLE
+  if (regfile || isatty(fd))
+    fip->textmode = 1;
+#else
+  fip->textmode = win_textmode;  
+#endif
 
   fip->refcount = refcount;
+
+  fip->flush = MZ_FLUSH_NEVER;
 
   ip = scheme_make_input_port(fd_input_port_type,
 			      fip,

@@ -554,11 +554,6 @@ thread_val {
   gcMARK(pr->current_local_mark);
   gcMARK(pr->current_local_name);
   
-  gcMARK(pr->quick_inspector);
-
-  gcMARK(pr->print_buffer);
-  gcMARK(pr->print_port);
-  
   gcMARK(pr->overflow_reply);
 
   gcMARK(pr->values_buffer);
@@ -1160,6 +1155,21 @@ mark_read_write_evt {
 }
 
 END port;
+
+/**********************************************************************/
+
+START print;
+
+mark_print_params {
+ mark:
+  PrintParams *pp = (PrintParams *)p;
+  gcMARK(pp->inspector);
+  gcMARK(pp->print_port);
+ size:
+  gcBYTES_TO_WORDS(sizeof(PrintParams));
+}
+
+END print;
 
 /**********************************************************************/
 

@@ -90,6 +90,7 @@ static Scheme_Object *sch_write (int, Scheme_Object *[]);
 static Scheme_Object *display (int, Scheme_Object *[]);
 static Scheme_Object *sch_print (int, Scheme_Object *[]);
 static Scheme_Object *newline (int, Scheme_Object *[]);
+static Scheme_Object *writable_and_readable (int, Scheme_Object *[]);
 static Scheme_Object *write_char (int, Scheme_Object *[]);
 static Scheme_Object *write_byte (int, Scheme_Object *[]);
 static Scheme_Object *load (int, Scheme_Object *[]);
@@ -542,6 +543,7 @@ scheme_init_port_fun(Scheme_Env *env)
 						      "char-ready?", 
 						      0, 1), 
 			     env);
+
   scheme_add_global_constant("write", scheme_write_proc, env);
   scheme_add_global_constant("display", scheme_display_proc, env);
   scheme_add_global_constant("print", scheme_print_proc, env);
@@ -550,6 +552,12 @@ scheme_init_port_fun(Scheme_Env *env)
 						      "newline", 
 						      0, 1), 
 			     env);
+  scheme_add_global_constant("writeable-and-readable?", 
+			     scheme_make_prim_w_arity(writable_and_readable,
+						      "writeable-and-readable?", 
+						      1, 1), 
+			     env);
+
   scheme_add_global_constant("write-char", 
 			     scheme_make_prim_w_arity(write_char, 
 						      "write-char", 
@@ -3391,7 +3399,7 @@ static Scheme_Object *sch_default_display_handler(int argc, Scheme_Object *argv[
   if (!SCHEME_OUTPORTP(argv[1]))
     scheme_wrong_type("default-port-display-handler", "output-port", 1, argc, argv);
 
-  scheme_internal_display(argv[0], argv[1], scheme_current_config());
+  scheme_internal_display(argv[0], argv[1]);
 
   return scheme_void;
 }
@@ -3401,7 +3409,7 @@ static Scheme_Object *sch_default_write_handler(int argc, Scheme_Object *argv[])
   if (!SCHEME_OUTPORTP(argv[1]))
     scheme_wrong_type("default-port-write-handler", "output-port", 1, argc, argv);
 
-  scheme_internal_write(argv[0], argv[1], scheme_current_config());
+  scheme_internal_write(argv[0], argv[1]);
 
   return scheme_void;
 }
@@ -3421,7 +3429,7 @@ static Scheme_Object *sch_default_global_port_print_handler(int argc, Scheme_Obj
   if (!SCHEME_OUTPORTP(argv[1]))
     scheme_wrong_type("default-global-port-print-handler", "output-port", 1, argc, argv);
 
-  scheme_internal_write(argv[0], argv[1], scheme_current_config());
+  scheme_internal_write(argv[0], argv[1]);
 
   return scheme_void;
 }
@@ -3431,16 +3439,13 @@ display_write(char *name,
 	      int argc, Scheme_Object *argv[], int escape)
 {
   Scheme_Object *port;
-  Scheme_Config *config;
-
-  config = scheme_current_config();
 
   if (argc > 1) {
     if (!SCHEME_OUTPORTP(argv[1]))
       scheme_wrong_type(name, "output-port", 1, argc, argv);
     port = argv[1];
   } else
-    port = CURRENT_OUTPUT_PORT(config);
+    port = CURRENT_OUTPUT_PORT(scheme_current_config());
   
   if (escape > 0) {
     if (!((Scheme_Output_Port *)port)->display_handler) {
@@ -3450,7 +3455,7 @@ display_write(char *name,
 			       SCHEME_BYTE_STR_VAL(v), 0, SCHEME_BYTE_STRLEN_VAL(v),
 			       0);
       } else
-	scheme_internal_display(v, port, config);
+	scheme_internal_display(v, port);
     } else {
       Scheme_Object *a[2];
       a[0] = argv[0];
@@ -3463,7 +3468,7 @@ display_write(char *name,
     h = ((Scheme_Output_Port *)port)->write_handler;
     
     if (!h)
-      scheme_internal_write(argv[0], port, config);
+      scheme_internal_write(argv[0], port);
     else {
       Scheme_Object *a[2];
       a[0] = argv[0];
@@ -3522,6 +3527,13 @@ newline (int argc, Scheme_Object *argv[])
   (void)scheme_put_byte_string("newline", port, "\n", 0, 1, 0);
 
   return scheme_void;
+}
+
+static Scheme_Object *writable_and_readable (int argc, Scheme_Object *argv[])
+{
+  return (scheme_is_writable_readable(argv[0]) 
+	  ? scheme_true 
+	  : scheme_false);
 }
 
 static Scheme_Object *

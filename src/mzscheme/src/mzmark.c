@@ -1417,11 +1417,6 @@ int thread_val_MARK(void *p) {
   gcMARK(pr->current_local_mark);
   gcMARK(pr->current_local_name);
   
-  gcMARK(pr->quick_inspector);
-
-  gcMARK(pr->print_buffer);
-  gcMARK(pr->print_port);
-  
   gcMARK(pr->overflow_reply);
 
   gcMARK(pr->values_buffer);
@@ -1503,11 +1498,6 @@ int thread_val_FIXUP(void *p) {
   gcFIXUP(pr->current_local_env);
   gcFIXUP(pr->current_local_mark);
   gcFIXUP(pr->current_local_name);
-  
-  gcFIXUP(pr->quick_inspector);
-
-  gcFIXUP(pr->print_buffer);
-  gcFIXUP(pr->print_port);
   
   gcFIXUP(pr->overflow_reply);
 
@@ -2923,6 +2913,37 @@ int mark_read_write_evt_FIXUP(void *p) {
 
 
 #endif  /* PORT */
+
+/**********************************************************************/
+
+#ifdef MARKS_FOR_PRINT_C
+
+int mark_print_params_SIZE(void *p) {
+  return
+  gcBYTES_TO_WORDS(sizeof(PrintParams));
+}
+
+int mark_print_params_MARK(void *p) {
+  PrintParams *pp = (PrintParams *)p;
+  gcMARK(pp->inspector);
+  gcMARK(pp->print_port);
+  return
+  gcBYTES_TO_WORDS(sizeof(PrintParams));
+}
+
+int mark_print_params_FIXUP(void *p) {
+  PrintParams *pp = (PrintParams *)p;
+  gcFIXUP(pp->inspector);
+  gcFIXUP(pp->print_port);
+  return
+  gcBYTES_TO_WORDS(sizeof(PrintParams));
+}
+
+#define mark_print_params_IS_ATOMIC 0
+#define mark_print_params_IS_CONST_SIZE 1
+
+
+#endif  /* PRINT */
 
 /**********************************************************************/
 

@@ -1677,12 +1677,9 @@ static Scheme_Object *error(int argc, Scheme_Object *argv[])
       newargs[0] = scheme_make_immutable_sized_utf8_string(r, l + l2 + 2);
     }
   } else {
-    Scheme_Config *config;
     Scheme_Object *strout;
     char *str;
     long len, i;
-
-    config = scheme_current_config();
 
     /* String followed by other values: */
     if (!SCHEME_CHAR_STRINGP(argv[0]))
@@ -1690,10 +1687,10 @@ static Scheme_Object *error(int argc, Scheme_Object *argv[])
 
     strout = scheme_make_byte_string_output_port();
 
-    scheme_internal_display(argv[0], strout, config);
+    scheme_internal_display(argv[0], strout);
     for (i = 1; i < argc ; i++) {
       scheme_write_byte_string(" ", 1, strout);
-      scheme_internal_write(argv[i], strout, config);
+      scheme_internal_write(argv[i], strout);
     }
 
     str = scheme_get_sized_byte_string_output(strout, &len);

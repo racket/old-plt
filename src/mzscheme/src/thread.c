@@ -1908,9 +1908,6 @@ static Scheme_Thread *make_thread(Scheme_Config *config,
   process->suspend_break = 0;
   process->external_break = 0;
 
-  process->print_buffer = NULL;
-  process->print_allocated = 0;
-
   process->ran_some = 1;
 
   process->list_stack = NULL;

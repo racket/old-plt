@@ -196,6 +196,7 @@ enum {
   scheme_rt_regwork,
   scheme_rt_buf_holder,
   scheme_rt_parameterization,
+  scheme_rt_print_params,
 #endif
 
   _scheme_last_type_

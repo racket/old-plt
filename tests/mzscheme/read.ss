@@ -166,6 +166,11 @@
 (define b-special (make-special 19))
 
 (define (make-p stream special-size)
+  ;; The `stream' arg is a list of strings and non-strings;
+  ;;  characters from the strings are returned one by one,
+  ;;  and the non-strings are returns as "special" literals.
+  ;; The `special-size' arg meansures the size (in char
+  ;;  positions) of a non-string special literal.
   (let* ([special-ready #f]
 	 [pos 0]
 	 [incpos! (lambda () (set! pos (add1 pos)))])

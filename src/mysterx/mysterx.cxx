@@ -395,7 +395,7 @@ void scheme_release_com_object(void *comObject,void *pIDispatch) {
   if (MX_MANAGED_OBJ_RELEASED(comObject)) {
     return;
   }
-  
+
   // when COM object GC'd, release associated interfaces
 
   pITypeInfo = MX_COM_OBJ_TYPEINFO(comObject);
@@ -446,6 +446,7 @@ Scheme_Object *mx_com_register_object(int argc,Scheme_Object **argv) {
 }
 
 void scheme_release_simple_com_object(void *comObject,void *pIUnknown) {
+
   if (MX_MANAGED_OBJ_RELEASED(comObject)) {
     return;
   }
@@ -466,6 +467,7 @@ void mx_register_simple_com_object(Scheme_Object *obj,IUnknown *pIUnknown) {
 }
 
 void scheme_release_document(void *doc,void *) {
+
   if (MX_MANAGED_OBJ_RELEASED(doc)) {
     return;
   }
@@ -3411,8 +3413,11 @@ Scheme_Object *mx_find_element(int argc,Scheme_Object **argv) {
   retval->released = FALSE;
   retval->valid = TRUE;
   retval->pIHTMLElement = pIHTMLElement;
+
+  /* IE seems to give a reference count of 1 for elements */
+  /* but releasing them appears to cause an error */
   
-  pIHTMLElement->AddRef();  /* IE doesn't do this for us */
+  pIHTMLElement->AddRef();  
 
   mx_register_simple_com_object((Scheme_Object *)retval,pIHTMLElement);
   
@@ -3764,8 +3769,6 @@ Scheme_Object *mx_make_document(int argc,Scheme_Object **argv) {
     codedComError("Can't get event queue interface",hr);
   }
 
-  pIEventQueue->AddRef();
-  
   // may have to wait for document to be created
   
   for (i = 0; i < DOCDISPATCH_TRIES; i++) {
@@ -3805,6 +3808,9 @@ Scheme_Object *mx_make_document(int argc,Scheme_Object **argv) {
   
   pIEventQueue->set_extension_table((int)scheme_extension_table); 
   
+  pIHTMLDocument2->AddRef();
+  pIEventQueue->AddRef();
+
   doc->pIHTMLDocument2 = pIHTMLDocument2;
   doc->pIEventQueue = pIEventQueue;
 
@@ -3891,7 +3897,7 @@ void initMysSinkTable(void) {
 Scheme_Object *scheme_initialize(Scheme_Env *env) {
   HRESULT hr;
   int i;
-  
+
   mx_com_object_type = scheme_make_type("<com-object>");
   mx_com_type_type = scheme_make_type("<com-type>");
   mx_document_type = scheme_make_type("<mx-document>");

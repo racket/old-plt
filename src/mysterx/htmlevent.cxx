@@ -26,6 +26,7 @@ Scheme_Object *make_hash_table;
 static BOOL html_event_available(MX_Document_Object *doc) {
   VARIANT_BOOL val;
 
+  val = 0;
   doc->pIEventQueue->get_EventAvailable(&val);
 
   return val;

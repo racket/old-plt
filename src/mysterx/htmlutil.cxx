@@ -144,7 +144,7 @@ IDispatch *getElementInCollection(IHTMLElementCollection *pEltCollection,int ndx
   pEltCollection->item(variant,emptyVariant,&pIDispatch);
 
   if (pIDispatch == NULL) {
-    scheme_signal_error("Unable to find element");
+    scheme_signal_error("Unable to find element %d in collection",ndx);
   }
 
   return pIDispatch;
@@ -431,6 +431,8 @@ IHTMLStyle *styleInterfaceFromElement(Scheme_Object *o) {
   }
 
   pIHTMLElement = MX_ELEMENT_VAL(o);
+
+  pIHTMLStyle = NULL;
 
   pIHTMLElement->get_style(&pIHTMLStyle);
 

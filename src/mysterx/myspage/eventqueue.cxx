@@ -30,6 +30,8 @@ CEventQueue::CEventQueue(void) {
 }
 
 CEventQueue::~CEventQueue(void) { 
+    MessageBox(NULL,"Destroying EQ","test",0);
+
     if (readSem) {
       CloseHandle(readSem);
     }
@@ -68,6 +70,8 @@ STDMETHODIMP CEventQueue::QueueEvent(IEvent *pEvent) {
 }
 
 STDMETHODIMP CEventQueue::GetEvent(IEvent **ppEvent) {
+  *ppEvent = NULL;
+
   WaitForSingleObject(readSem,INFINITE); 
 
   WaitForSingleObject(mutex,INFINITE);
@@ -83,13 +87,6 @@ STDMETHODIMP CEventQueue::GetEvent(IEvent **ppEvent) {
 }
  
 STDMETHODIMP CEventQueue::get_EventAvailable(VARIANT_BOOL *pVal) {
-  MSG msg;
-
-  while (PeekMessage(&msg,NULL,0,0,PM_REMOVE)) {
-    TranslateMessage(&msg);
-    DispatchMessage(&msg);
-  }
-
   WaitForSingleObject(mutex,INFINITE);
   
   *pVal = (queueLength == 0) ? 0 : -1; 

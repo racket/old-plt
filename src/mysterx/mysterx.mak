@@ -1,6 +1,6 @@
 # mysterx.mak
 
-all : mysterx.dll
+all : mxmain.dll
 
 clean :
         -@erase comtypes.obj
@@ -8,7 +8,7 @@ clean :
         -@erase htmlutil.obj
         -@erase array.obj
         -@erase mysterx.obj
-	-@erase mysterx.dll
+	-@erase mxmain.dll
 
 HTMLHELP=C:\Program Files\HTML Help Workshop 
 SHELL32=F:\SBN
@@ -32,9 +32,9 @@ LINK32_LIBS= \
 LINK32_OBJS= \
         mysterx.obj array.obj comtypes.obj htmlevent.obj htmlutil.obj
 
-mysterx.dll : $(DEF_FILE) $(LINK32_OBJS)
-	$(LINK32) --ld mysterx.dll $(LINK32_OBJS) $(LINK32_LIBS)
-	copy mysterx.dll ..\..\collects\mysterx\compiled\native\win32\i386
+mxmain.dll : $(DEF_FILE) $(LINK32_OBJS)
+	$(LINK32) --ld mxmain.dll $(LINK32_OBJS) $(LINK32_LIBS)
+	copy mxmain.dll ..\..\collects\mysterx\compiled\native\win32\i386
 	
 comtypes.obj : comtypes.cxx mysterx.h stdafx.h
 

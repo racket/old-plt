@@ -123,11 +123,7 @@ STDMETHODIMP CSink::unregister_handler(DISPID dispId) {
 // VARIANT's, unlike VARIANTARG's, cannot have VT_BYREF bit
 
 Scheme_Object *CSink::variantToSchemeObject(VARIANTARG *pVariantArg) {
-  /*
-  char buff[256];
-  _itoa((int)pVariantArg->vt,buff,16);
-  MessageBox(NULL,buff,"pVariantArg->vt",0);
-  */
+
   switch(pVariantArg->vt) {
 
   case VT_NULL :

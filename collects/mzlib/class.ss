@@ -550,10 +550,11 @@
 									  (syntax #f)
 									  (with-syntax ([defexp (stx-car (stx-cdr idp))])
 									    (syntax (lambda () defexp)))))
-								    (syntax->list (syntax (idp ...))))])
+								    (syntax->list (syntax (idp ...))))]
+							      [class-name class-name])
 						  (syntax/loc e 
 						    (begin 
-						      (set! id (extract-arg 'idpos init-args defval))
+						      (set! id (extract-arg 'class-name 'idpos init-args defval))
 						      ...))))]
 					     [(field idp ...)
 					      (syntax/loc e (begin 
@@ -1403,14 +1404,15 @@
 			   (for-class (class-name c))))))))
       o))
 
-  (define (extract-arg name arguments default)
+  (define (extract-arg class-name name arguments default)
     (if (symbol? name)
 	;; Normal mode
 	(let ([a (assq name arguments)])
 	  (cond
 	   [a (cdr a)]
 	   [default (default)]
-	   [else (obj-error "make-object" "no argument for required init variable: ~a" name)]))
+	   [else (obj-error "make-object" "no argument for required init variable: ~a~a" name
+			    (if class-name (format " in class: ~a" class-name) ""))]))
 	;; By-position mode
 	(cond
 	 [(< name (length arguments))

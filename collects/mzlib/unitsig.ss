@@ -299,8 +299,8 @@
 	     (let ([flattened (flatten-signature #f sig)])
 	       (with-syntax ([flattened (map (lambda (x) (datum->syntax-object (syntax signame) x #f))
 					     flattened)])
-		 (syntax
-		  (provide . flattened)))))]))))
+		 (syntax/loc stx
+		   (provide . flattened)))))]))))
   
   (provide define-signature
 	   let-signature

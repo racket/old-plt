@@ -486,6 +486,7 @@
 			   (eof-object? line))
 		      (values lines body vars)]
 		     [(and (stx-pair? line)
+			   (identifier? (stx-car line))
 			   (module-identifier=? (stx-car line) dv-stx))
 		      (syntax-case line ()
 			[(_ (id ...) expr)
@@ -500,6 +501,7 @@
 				       "improper `define-values' clause form"
 				       line)])]
 		     [(and (stx-pair? line)
+			   (identifier? (stx-car line))
 			   (module-identifier=? (stx-car line) begin-stx))
 		      (let ([line-list (stx->list line)])
 			(unless line-list

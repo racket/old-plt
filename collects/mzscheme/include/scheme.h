@@ -454,10 +454,6 @@ typedef struct {
 #define SCHEME_CLOS_ENV(obj) ((obj)->u.closure_val.env)
 #define SCHEME_CLOS_CODE(obj) ((obj)->u.closure_val.code)
 
-/* Type readers & writers for compiled code data */
-typedef Scheme_Object *(*Scheme_Type_Reader)(Scheme_Object *list);
-typedef Scheme_Object *(*Scheme_Type_Writer)(Scheme_Object *obj);
-
 /*========================================================================*/
 /*                      hash tables and environments                      */
 /*========================================================================*/
@@ -870,6 +866,13 @@ typedef struct Scheme_Output_Port
 #else
 # include "../src/schexn.h"
 #endif
+
+/*========================================================================*/
+/*                               modules                                  */
+/*========================================================================*/
+
+typedef void (*Scheme_Invoke_Proc)(Scheme_Env *env, long phase_shift, 
+				   Scheme_Object *self_modidx, void *data);
 
 /*========================================================================*/
 /*                               evaluation                               */

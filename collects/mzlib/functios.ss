@@ -12,6 +12,8 @@
    rest
 
    cons?
+   empty
+   empty?
 
    identity
    compose

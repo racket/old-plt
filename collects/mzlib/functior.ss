@@ -322,5 +322,7 @@
 		 l)
 	     (error 'last-pair "argument not a pair")))))
 
-    (define cons? pair?)
+    (define cons? (lambda (x) (pair? x)))
+    (define empty? (lambda (x) (null? x)))
+    (define empty '())
   )

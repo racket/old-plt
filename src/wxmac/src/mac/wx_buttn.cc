@@ -407,13 +407,16 @@ void wxButton::OnEvent(wxMouseEvent *event) // mac platform only
 	  trackResult = Track(startPt);
 	}
       } else {
-	Highlight(TRUE); // highlight button
-	long delayTicks = 4; // one tick is 1/60th of a second
-	unsigned long finalTicks;
-	Delay(delayTicks, &finalTicks);
-	Highlight(FALSE); // unhighlight button
-	
-	trackResult = 1;
+	if (cActive) {
+	  Highlight(TRUE); // highlight button
+	  long delayTicks = 4; // one tick is 1/60th of a second
+	  unsigned long finalTicks;
+	  Delay(delayTicks, &finalTicks);
+	  Highlight(FALSE); // unhighlight button
+	  
+	  trackResult = 1;
+	} else
+	  trackResult = 0;
       }
       if (trackResult)
 	{

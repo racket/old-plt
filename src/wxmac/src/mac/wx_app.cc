@@ -612,11 +612,10 @@ void wxApp::doMacActivateEvt(void)
 {
   WindowPtr theMacWindow = WindowPtr(cCurrentEvent.message);
   wxFrame* theMacWxFrame = findMacWxFrame(theMacWindow);
-  if (theMacWxFrame)
-    {
-      Bool becomingActive = cCurrentEvent.modifiers & activeFlag;
-      theMacWxFrame->Activate(becomingActive);
-    }
+  if (theMacWxFrame) {
+    Bool becomingActive = cCurrentEvent.modifiers & activeFlag;
+    theMacWxFrame->Activate(becomingActive);
+  }
 }
 
 //-----------------------------------------------------------------------------

@@ -422,7 +422,8 @@ FILE *history;
 /*                                event finders                            */
 /***************************************************************************/
 
-static int CheckForLeave(EventRecord *evt, MrQueueRef q, int check_only, MrEdContext *c,   MrEdContext *keyOk, 
+static int CheckForLeave(EventRecord *evt, MrQueueRef q, int check_only, 
+			 MrEdContext *c, MrEdContext *keyOk, 
 			 EventRecord *event, MrEdContext **which) {
   switch (evt->what) {
   case leaveEvt:
@@ -461,7 +462,8 @@ static int CheckForLeave(EventRecord *evt, MrQueueRef q, int check_only, MrEdCon
 
 static int saw_mup = 0, saw_mdown = 0, saw_kdown = 0, kill_context = 0;
 
-static int CheckForMouseOrKey(EventRecord *e, MrQueueRef osq, int check_only, MrEdContext *c,  MrEdContext *keyOk, 
+static int CheckForMouseOrKey(EventRecord *e, MrQueueRef osq, int check_only, 
+			      MrEdContext *c, MrEdContext *keyOk, 
 			      EventRecord *event, MrEdContext **foundc) {
   int found = 0;
   wxFrame *fr;
@@ -485,29 +487,33 @@ static int CheckForMouseOrKey(EventRecord *e, MrQueueRef osq, int check_only, Mr
 	found = 1;
 	*foundc = keyOk;
 	cont_event_context = NULL;
-      } else if (window != front) {
-	/* Handle bring-window-to-front click immediately */
-	if (!WindowStillHere(window)) {
-	  MrDequeue(osq);
-	} else {
-	  fr = wxWindowPtrToFrame(window, NULL);
-	  fc = fr ? (MrEdContext *)fr->context : NULL;
+      } else if (!WindowStillHere(window)) {
+	MrDequeue(osq);
+      } else {
+	MrEdContext *clickOk;
+
+	fr = wxWindowPtrToFrame(window, NULL);
+	fc = fr ? (MrEdContext *)fr->context : NULL;
+	
+	if (!fr || (c && (fr->context != (void *)c)) 
+	    || (!c && !((MrEdContext *)fr->context)->ready))
+	  clickOk = NULL;
+	else
+	  clickOk = fc;
+
+	if (window != front) {
+	  /* Handle bring-window-to-front click immediately */
 	  if (fc && (!fc->modal_window || (fr == fc->modal_window))) {
 	    SelectWindow(window);
-	    MrDequeue(osq);
 	    cont_event_context = NULL;
 	  } else if (fc && fc->modal_window) {
 	    SysBeep(0);
-	    MrDequeue(osq);
 	    cont_event_context = NULL;
 	    SelectWindow(((wxFrame *)fc->modal_window)->macWindow());
 	  }
 	}
-      } else if (resume_ticks > e->when) {
-	/* Clicked MrEd into foreground - toss the event */
-	MrDequeue(osq);
-      } else {
-	*foundc = keyOk;
+
+	*foundc = clickOk;
 	if (*foundc) {
 	  last_mouse.h = -1;
 	  found = 1;
@@ -566,7 +572,8 @@ static int CheckForMouseOrKey(EventRecord *e, MrQueueRef osq, int check_only, Mr
   return found;
 }
 
-static int CheckForActivate(EventRecord *evt, MrQueueRef q, int check_only, MrEdContext *c,   MrEdContext *keyOk, 
+static int CheckForActivate(EventRecord *evt, MrQueueRef q, int check_only, 
+			    MrEdContext *c, MrEdContext *keyOk, 
 			    EventRecord *event, MrEdContext **which)
 {
   WindowPtr window;
@@ -623,7 +630,8 @@ static int CheckForActivate(EventRecord *evt, MrQueueRef q, int check_only, MrEd
   return FALSE;
 }
 
-static int CheckForUpdate(EventRecord *evt, MrQueueRef q, int check_only, MrEdContext *c,  MrEdContext *keyOk, 
+static int CheckForUpdate(EventRecord *evt, MrQueueRef q, int check_only, 
+			  MrEdContext *c, MrEdContext *keyOk, 
 			  EventRecord *event, MrEdContext **which)
 {
   WindowPtr window;
@@ -1089,31 +1097,38 @@ void MrEdMacSleep(float secs, void *fds, SLEEP_PROC_PTR mzsleep)
 
 wxWindow *wxLocationToWindow(int x, int y)
 {
-  WindowPtr win;
-  Point pt;
-  wxFrame *frame;
-  
-  pt.v = x;
-  pt.h = y;
-  FindWindow(pt,&win);
- 
-  if (win == NULL) {
-    return NULL;
-  }
-  
-  frame = (wxFrame *)GetWRefCon(win);  
-  
-  /* Mac: some frames really represent dialogs. Any modal frame is
-     a dialog, so extract its only child. */
-  if (frame->IsModal()) {
-    wxChildNode *node2;
-    wxChildList *cl;
-    cl = frame->GetChildren();
-    node2 = cl->First();
-    if (node2)
-      return (wxWindow *)node2->Data();
-  } else {
-    return frame;
+  WindowPtr f;
+  Rect bounds;
+
+  f = FrontWindow();
+  while (f) {
+    GetWindowBounds(f, kWindowContentRgn, &bounds);
+    if (IsWindowVisible(f)
+	&& (bounds.left <= x)
+	&& (bounds.right >= x)
+	&& (bounds.top <= y)
+	&& (bounds.bottom >= y)) {
+      /* Found it */
+      wxFrame *frame;
+
+      frame = (wxFrame *)GetWRefCon(f);  
+
+      if (frame) {
+	/* Mac: some frames really represent dialogs. Any modal frame is
+	   a dialog, so extract its only child. */
+	if (frame->IsModal()) {
+	  wxChildNode *node2;
+	  wxChildList *cl;
+	  cl = frame->GetChildren();
+	  node2 = cl->First();
+	  if (node2)
+	    return (wxWindow *)node2->Data();
+	} else
+	  return frame;
+      } else
+	return NULL;
+    }
+    f = GetNextWindow(f);
   }
   
   return NULL;

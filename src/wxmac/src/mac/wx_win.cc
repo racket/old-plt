@@ -1309,23 +1309,19 @@ void wxWindow::GetTextExtent(const char* string, float* x, float* y, float* desc
 
 void wxWindow::Activate(Bool flag) // mac platform only
 {
-  Bool current = OS_Active();
-  
   cActive = flag;
   ShowAsActive(flag);
   wxNode* areaNode = cAreas->First();
-  while (areaNode)
-    {
-      wxArea* area = (wxArea*)areaNode->Data();
-      wxChildNode* childWindowNode = area->Windows()->First();
-      while (childWindowNode)
-	{
-	  wxWindow* childWindow = (wxWindow*)childWindowNode->Data();
-	  childWindow->Activate(flag);
-	  childWindowNode = childWindowNode->Next();
-	}
-      areaNode = areaNode->Next();
+  while (areaNode) {
+    wxArea* area = (wxArea*)areaNode->Data();
+    wxChildNode* childWindowNode = area->Windows()->First();
+    while (childWindowNode) {
+      wxWindow* childWindow = (wxWindow*)childWindowNode->Data();
+      childWindow->Activate(flag);
+      childWindowNode = childWindowNode->Next();
     }
+    areaNode = areaNode->Next();
+  }
   OnActivate(flag);
 }
 
@@ -1367,9 +1363,8 @@ void wxWindow::Paint(void)
 //-----------------------------------------------------------------------------
 
 // Enabling Logic:  a window (or control) is shown as OS-activated when
-// a) the window is active (cActive == true)
-// b) the window is enabled (cEnabled == true)
-// c) no enclosing window is disabled (internal_gray == 0)
+// a) the window is enabled (cEnabled == true)
+// b) no enclosing window is disabled (internal_gray == 0)
 // These are all local properties of windows.
 // So, if we imagine this as a state machine, when does this predicate
 // go from true to false or false to true? The least error-prone way to

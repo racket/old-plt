@@ -577,7 +577,7 @@ void wxFrame::ShowAsActive(Bool flag)
     }
   }
   
-  if (!cFocusWindow && children) {
+  if (flag && !cFocusWindow && children) {
     wxChildNode *node = children->First();
     while (node) {
       wxWindow *win = (wxWindow *)(node->Data());
@@ -589,13 +589,12 @@ void wxFrame::ShowAsActive(Bool flag)
     }
   }
 
-  if (cFocusWindow && this != cFocusWindow)
-    {
-      if (flag)
-	cFocusWindow->OnSetFocus();
-      else
-	cFocusWindow->OnKillFocus();
-    }
+  if (cFocusWindow) {
+    if (flag)
+      cFocusWindow->OnSetFocus();
+    else
+      cFocusWindow->OnKillFocus();
+  }
 }
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -827,12 +826,11 @@ wxWindow* wxFrame::GetFocusWindow(void) { return cFocusWindow; }
 //-----------------------------------------------------------------------------
 void wxFrame::SetFocusWindow(wxWindow* window)
 {
-  if (window != cFocusWindow)
-    {
-      if (cFocusWindow) cFocusWindow->OnKillFocus();
-      cFocusWindow = window;
-      if (window) window->OnSetFocus();
-    }
+  if (window != cFocusWindow) {
+    if (cFocusWindow && cActive) cFocusWindow->OnKillFocus();
+    cFocusWindow = window;
+    if (window && cActive) window->OnSetFocus();
+  }
 }
 
 //-----------------------------------------------------------------------------

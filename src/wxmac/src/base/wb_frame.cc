@@ -68,7 +68,7 @@ void wxbFrame::OnSize(int x, int y)
   for(wxChildNode *node = GetChildren()->First(); node; node = node->Next())
   {
     wxWindow *win = (wxWindow *)(node->Data());
-    WXTYPE winType = win->__type;
+`    WXTYPE winType = win->__type;
 
     if (wxSubType(winType, wxTYPE_PANEL) ||
         wxSubType(winType, wxTYPE_TEXT_WINDOW) ||
@@ -91,31 +91,9 @@ void wxbFrame::OnSize(int x, int y)
   child->SetSize(0, 0, client_x, client_y, 0x70);
 }
 
-// Default activation behaviour - set the focus for the first child
-// subwindow found.
 void wxbFrame::OnActivate(Bool flag)
 {
-  wxWindow::OnActivate(flag); //GRW
-
-  if (!flag)
-    return;
-
-  for(wxChildNode *node = GetChildren()->First(); node; node = node->Next())
-  {
-    // Find a child that's a subwindow, but not a dialog box.
-    wxWindow *child = (wxWindow *)(node->Data());
-    if ((wxSubType(child->__type, wxTYPE_PANEL) &&
-         !wxSubType(child->__type, wxTYPE_DIALOG_BOX)) ||
-        wxSubType(child->__type, wxTYPE_TEXT_WINDOW) ||
-        wxSubType(child->__type, wxTYPE_CANVAS))
-    {
-#if DEBUG > 1
-      wxDebugMsg("wxbFrame::OnActivate: about to set the child's focus.\n");
-#endif
-      child->SetFocus();
-      return;
-    }
-  }
+  wxWindow::OnActivate(flag);
 }
 
 // Default menu selection behaviour - display a help string

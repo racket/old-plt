@@ -26,10 +26,14 @@
   (define (update-channel! x)
     (set! *page-channel* x))
   
+  (define *last-page-sent* #f)
+  
   ; output-page : page -> void
   (define (output-page page)
-    (unless *page-channel*
-      (init-channel))
+    (set! *last-page-sent* page)
+    ;(unless *page-channel*
+    ;  (init-channel))
+    (init-channel)
     (channel-put *page-channel* page))
   
   ; init-channel : -> void
@@ -71,4 +75,12 @@
             (server-loop (current-custodian)
                          listener
                          the-config
-                         big-timeout))))
+                         big-timeout
+                         (lambda ()
+                           ; having a failure thunk without a success thunk makes the control flow
+                           ; strange -- output-page assumes everything works, but if it doesn't
+                           ; we have to go back and try again.  It's rather stateful.  There's
+                           ; probably a more principled way to do this.
+                           (printf "Restarting STOPPED browser...~n")
+                           (init-channel)
+                           (channel-put *page-channel* *last-page-sent*))))))

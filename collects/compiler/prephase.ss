@@ -951,9 +951,9 @@
 		  ;; MrSpidey forms
 		  ;;  MrSpidye is done, so we can just get rid of them
 		  [(zodiac::-form? ast)
-		   (zodiac::-form-expr ast)]
+		   (zodiac::-form-exp ast)]
 		  [(zodiac:poly-form? ast)
-		   (zodiac:poly-form-expr ast)]
+		   (zodiac:poly-form-exp ast)]
 
 		  ;;-----------------------------------------------------------
 		  ;; Unsupported forms

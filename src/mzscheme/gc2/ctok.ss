@@ -129,9 +129,11 @@
 	    (seq (one+/ D) "[.]" (arbno D) (maybe E) (maybe/ FS))
 	    (seq (one+/ D) E (maybe/ FS))
 
+	    "0x1[.]0p2047" ;; strange thing in huge_val.h
+
 	    (seq "0" "[xX]" (one+/ H) IS) ;; hex
 	    (seq "0" (one+/ D) IS) ;; octal
-	    (seq (one+/ D) IS)))) ;; integer
+	    (seq (one+/ D) IS))))  ;; integer
 
   (define char-complex (trans (seq (maybe L) "'([^\\']|\\\\.)+'")))
   (define string-complex (trans (seq (maybe L) "\"([^\\\"]|\\\\.)*\"")))

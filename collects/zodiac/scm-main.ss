@@ -1557,7 +1557,8 @@
 			raw-f))
 		    (expand-expr
 		      (structurize-syntax
-			(if (member raw-f mzscheme-libraries-provided)
+			(if (and (string=? raw-c "standard")
+			      (member raw-f mzscheme-libraries-provided))
 			  `(#%void)
 			  `(require-library ,(quote-form-expr f)
 			     ,(quote-form-expr c)))

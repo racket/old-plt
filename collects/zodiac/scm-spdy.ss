@@ -301,7 +301,8 @@
 			      (static-error f
 				"Library path ~s must be a relative path"
 				raw-f))))
-		    (if (member raw-f mzscheme-libraries-provided)
+		    (if (and (string=? raw-c "standard")
+			  (member raw-f mzscheme-libraries-provided))
 		      (expand-expr (structurize-syntax '(#%void) expr)
 			env attributes vocab)
 		      (let-values (((base name dir?)

@@ -20,21 +20,6 @@
 			      flags)])
 	 body0 body ...)]))
 
-  (define (extract-from-nm rxs file.o)
-    (let-values ([(r w) (make-pipe)])
-      (parameterize ([current-output-port w])
-	(system (format "nm -P ~s" file.o)))
-      (let loop ()
-	(let ([l (read-line r)])
-	  (cond
-	   [(eof-object? l) null]
-	   [(regexp-match #rx"([^ \r\n\t]*)[ \t]*U" l)
-	    => (lambda (s)
-		 (if (ormap (lambda (rx) (regexp-match-positions rx s)) rxs)
-		     (cons s (loop))
-		     (loop)))]
-	   [else (loop)])))))
-  
   (define (pre-install plthome
 		       collection-dir
 		       file.c
@@ -125,12 +110,8 @@
 				(file-exists? (build-path sys-path "lib" (format "lib~a.dylib" lib)))))
 			  find-unix-libs))
 	      (case mach-id
-		[(sparc-solaris i386-solaris) (apply append 
-						     (map (lambda (i) (list "-u" i)) 
-							  (if (and (pair? force-symbols)
-								   (eq? 'nm (car force-symbols)))
-							      (extract-from-nm (cdr force-symbols))
-							      force-symbols)))]
+		[(sparc-solaris i386-solaris) (apply append (map (lambda (i) (list "-u" i)) 
+								 force-symbols))]
 		[(i386-linux i386-freebsd sparc-linux) (list "--whole-archive")]
 		[(win32\\i386) null]
 		[else (fprintf (current-error-port)

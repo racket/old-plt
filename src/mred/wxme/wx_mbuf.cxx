@@ -31,15 +31,15 @@
 #include "wx_check.h"
 #include "wx_dcps.h"
 #ifndef OLD_WXWINDOWS
-#include "wx_cmdlg.h"
+# include "wx_cmdlg.h"
 #endif
 #include "wx_print.h"
 
 #include "wx_media.h"
 #ifndef OLD_WXWINDOWS
-#include "wx_clipb.h"
+# include "wx_clipb.h"
 #else
-#include "wx_gclip.h"
+# include "wx_gclip.h"
 #endif
 #include "wx_ptreq.h"
 #include <ctype.h>

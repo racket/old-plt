@@ -256,35 +256,41 @@
 	    ((pat:match-against m&e expr env)
 	      =>
 	      (lambda (p-env)
-		(let ((in:imports (pat:pexpand '(imports ...) p-env kwd))
-		       (in:exports (pat:pexpand '(exports ...) p-env kwd))
-		       (in:clauses (pat:pexpand '(clauses ...) p-env kwd)))
-		  (make-vars-attribute attributes)
-		  (make-unresolved-attribute attributes)
-		  (let*
-		    ((proc:imports (map (lambda (e)
-					   (expand-expr e env
-					     attributes c/imports-vocab))
-				      in:imports))
-		      (_ (extend-env proc:imports env))
-		      (proc:clauses (map (lambda (e)
-					   (expand-expr e env
-					     attributes
-					     unit-clauses-vocab))
-				      in:clauses))
-		      (proc:exports (map (lambda (e)
-					   (expand-expr e env
-					     attributes
-					     unit-exports-vocab))
-				      in:exports))
-		      (_ (retract-env (map car proc:imports) env)))
-		    (check-unresolved-vars attributes)
-		    (remove-vars-attribute attributes)
-		    (remove-unresolved-attribute attributes)
-		    (create-unit-form
-		      (map car proc:imports)
-		      proc:exports
-		      proc:clauses expr)))))
+		(let ((old-top-level
+			(get-attribute attributes 'top-levels)))
+		  (when old-top-level
+		    (put-attribute attributes 'top-levels (make-hash-table)))
+		  (let ((in:imports (pat:pexpand '(imports ...) p-env kwd))
+			 (in:exports (pat:pexpand '(exports ...) p-env kwd))
+			 (in:clauses (pat:pexpand '(clauses ...) p-env kwd)))
+		    (make-vars-attribute attributes)
+		    (make-unresolved-attribute attributes)
+		    (let*
+		      ((proc:imports (map (lambda (e)
+					    (expand-expr e env
+					      attributes c/imports-vocab))
+				       in:imports))
+			(_ (extend-env proc:imports env))
+			(proc:clauses (map (lambda (e)
+					     (expand-expr e env
+					       attributes
+					       unit-clauses-vocab))
+					in:clauses))
+			(proc:exports (map (lambda (e)
+					     (expand-expr e env
+					       attributes
+					       unit-exports-vocab))
+					in:exports))
+			(_ (retract-env (map car proc:imports) env)))
+		      (check-unresolved-vars attributes)
+		      (remove-vars-attribute attributes)
+		      (remove-unresolved-attribute attributes)
+		      (when old-top-level
+			(put-attribute attributes 'top-levels old-top-level))
+		      (create-unit-form
+			(map car proc:imports)
+			proc:exports
+			proc:clauses expr))))))
 	    (else
 	      (static-error expr "Malformed unit"))))))
 

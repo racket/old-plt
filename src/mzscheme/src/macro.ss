@@ -728,7 +728,8 @@
 	      (make-exn
 	       (#%format "load/cd: cannot open a directory: ~s" n)
 	       (debug)
-	       n))
+	       n
+	       'generic-failure))
 	     (#%if (#%not (#%string? base))
 		 (#%load n)
 		 (#%begin
@@ -739,7 +740,8 @@
 			  "load/cd: directory of ~s does not exist (current directory is ~s)" 
 			  n (#%current-directory))
 			 (debug)
-			 base)))
+			 base
+			 'generic-failure)))
 		   (#%let ([orig (#%current-directory)])
 		     (#%dynamic-wind
 		      (#%lambda () (#%current-directory base))
@@ -812,7 +814,7 @@
 		    (#%unless (#%relative-path? s)
 		      (#%raise (make-exn
 			       (#%format "~a: invalid relative path: ~s" who s)
-			       (debug) s))))]
+			       (debug) s 'ill-formed-path))))]
 	   [with-null (#%lambda (l) (#%let loop ([l l])
 					   (#%if (#%null? l)
 						 #%null
@@ -830,7 +832,8 @@
 				   (#%format "~a: collection not found: ~s in any of: ~s" 
 					     who collection all-paths)
 				   (debug)
-				   collection))
+				   collection
+				   'generic-failure))
 				 (#%let ([dir (#%build-path (#%car paths) collection)])
 				    (#%if (#%directory-exists? dir)
 				       (#%let* ([cpath (#%apply #%build-path dir collection-path)])
@@ -846,7 +849,8 @@
 								 (#%format "require-library: collection ~s does not have sub-collection: ~s in: ~s"
 									   c (#%car l) p)
 								 (debug)
-								 nc)))))))
+								 nc
+								 'generic-failure)))))))
 				       (loop (#%cdr paths))))))))])
 	   
 	  (#%letrec ([core-load/use-compiled
@@ -936,7 +940,8 @@
 						    ""
 						    (#%format " in sub-collection: ~s" collection-path)))
 				    (debug)
-				    (#%apply #%build-path file collection-path))))))]
+				    (#%apply #%build-path file collection-path)
+				    'generic-failure)))))]
 		     [require-library/proc
 		      (#%case-lambda
 		       [(file) (require-library/proc file "mzlib")]
@@ -960,8 +965,9 @@
 									     (make-exn
 									      (#%format "require-library: collection ~s does not have library: ~s in: ~s"
 											(#%apply #%build-path collection collection-path) file c)
-										      (debug)
-										      p)))))
+									      (debug)
+									      p
+									      'generic-failure)))))
 								   #%list))])
 						    (#%hash-table-put! table sym result)
 						    (#%apply #%values result))

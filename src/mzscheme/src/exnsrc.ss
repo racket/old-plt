@@ -46,7 +46,9 @@ strings are types/comments.
 		(write [] "error writing to a port")
 		(closed [] "attempt to operate on a closed port")
 		(*user [] "user-defined input port returned a non-character from the character-getting procedure"))
-	  (filesystem [pathname "path" "file or directory pathname"] "illegal pathname or error manipulating a filesystem object")
+	  (filesystem [pathname "path" "file or directory pathname"
+				detail "symbol" "\\SymbolFirst{ill-formed-path}, \\SymbolFirst{already-exists}, \\SymbolFirst{wrong-version}, or \\SymbolFirst{generic-failure}, indicating the reason for the exception"] 
+		      "illegal pathname or error manipulating a filesystem object")
 	  (*tcp [] "TCP errors"))
      
      (thread [] "raised by \\scmfirst{call-with-custodian}")

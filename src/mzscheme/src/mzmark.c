@@ -2471,9 +2471,10 @@ int mark_tcp_SIZE(void *p) {
 }
 
 int mark_tcp_MARK(void *p) {
-# ifdef USE_MAC_TCP
   Scheme_Tcp *tcp = (Scheme_Tcp *)p;
 
+  gcMARK(tcp->buffer);
+# ifdef USE_MAC_TCP
   gcMARK(tcp->tcp);
   gcMARK(tcp->activeRcv);
 # endif
@@ -2483,9 +2484,10 @@ int mark_tcp_MARK(void *p) {
 }
 
 int mark_tcp_FIXUP(void *p) {
-# ifdef USE_MAC_TCP
   Scheme_Tcp *tcp = (Scheme_Tcp *)p;
 
+  gcFIXUP(tcp->buffer);
+# ifdef USE_MAC_TCP
   gcFIXUP(tcp->tcp);
   gcFIXUP(tcp->activeRcv);
 # endif
@@ -2529,11 +2531,19 @@ int mark_input_fd_SIZE(void *p) {
 }
 
 int mark_input_fd_MARK(void *p) {
+  Scheme_FD *fd = (Scheme_FD *)p;
+
+  gcMARK(fd->buffer);
+
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_FD));
 }
 
 int mark_input_fd_FIXUP(void *p) {
+  Scheme_FD *fd = (Scheme_FD *)p;
+
+  gcFIXUP(fd->buffer);
+
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_FD));
 }

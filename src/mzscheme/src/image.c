@@ -98,8 +98,7 @@ static Scheme_Object *dump_heap(int argc, Scheme_Object **argv)
 
   if (scheme_dump_heap) {
     if (no_dumps) {
-      scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
-		       scheme_make_string(filename),
+      scheme_raise_exn(MZEXN_MISC,
 		       "write-image-to-file: image cannot be saved; %s", 
 		       no_dumps);
       return NULL;
@@ -304,6 +303,7 @@ static Scheme_Object *dump_image(char *filename)
     if (fd == -1) {
       scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		       scheme_make_string(filename),
+		       scheme_intern_symbol("generic-failure"),
 		       "write-image-to-file: couldn't write file %s", 
 		       filename);
     } else {

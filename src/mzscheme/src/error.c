@@ -1304,12 +1304,6 @@ void scheme_raise(Scheme_Object *exn)
   do_raise(exn, 0, 0);
 }
 
-#define NEEDED_BY_SCHEME_BASED_PRIMS(x) \
-        ((x == MZEXN_SYNTAX) || (x == MZEXN_APPLICATION_TYPE) \
-         || (x == MZEXN_APPLICATION_FPRINTF_EXTRA_ARGUMENTS) \
-         || (x == MZEXN_APPLICATION_FPRINTF_NO_ARGUMENT) \
-	 || (x == MZEXN_I_O_FILESYSTEM_DIRECTORY))
-
 void scheme_init_exn(Scheme_Env *env)
 {
   int i, j;

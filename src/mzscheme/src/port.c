@@ -213,7 +213,7 @@ typedef struct Scheme_Tcp {
   MZTAG_IF_REQUIRED
   tcp_t tcp;
   int refcount;
-  char buffer[TCP_BUFFER_SIZE];
+  char *buffer;
   short bufpos, bufmax;
   short hiteof;
 #ifdef USE_MAC_TCP
@@ -240,8 +240,8 @@ typedef struct System_Child {
 typedef struct Scheme_FD {
   MZTAG_IF_REQUIRED
   int fd;
-  int bufcount, buffpos;
-  unsigned char buffer[MZPORT_FD_BUFFSIZE];
+  int bufcount, buffpos, flushing;
+  unsigned char *buffer;
 } Scheme_FD;
 #endif
 
@@ -300,6 +300,8 @@ static Scheme_Object *any_symbol, *any_one_symbol;
 static Scheme_Object *cr_symbol, *lf_symbol, *crlf_symbol;
 
 static Scheme_Object *all_symbol, *non_elaboration_symbol, *none_symbol;
+
+static Scheme_Object *fail_err_symbol;
 
 #ifdef USE_MAC_TCP
 static int num_tcp_send_buffers = 0;
@@ -662,6 +664,9 @@ scheme_init_port (Scheme_Env *env)
 				      2, 2);
       scheme_set_param(config, MZCONFIG_PORT_PRINT_HANDLER, gpph);
     }
+
+    REGISTER_SO(fail_err_symbol);
+    fail_err_symbol = scheme_intern_symbol("generic-failure");
   }
 
   scheme_add_global_constant("eof", scheme_eof, env);
@@ -1453,7 +1458,8 @@ scheme_get_chars(Scheme_Object *port, long size, char *buffer)
 	&& ((Scheme_Input_File *)ip->port_data)->regfile) {
       FILE *f = ((Scheme_Input_File *)ip->port_data)->f;
 #ifdef MZ_PRECISE_GC
-      /* In case page is protected, force removal of protection: */
+      /* In case page is protected, force removal of protection. */
+      /* (But it really should be atomic, and thus never protected.) */
       buffer[got] = 0;
 #endif
       got += fread(buffer + got, 1, size, f);
@@ -1784,6 +1790,21 @@ scheme_close_output_port (Scheme_Object *port)
 
 #ifdef USE_FD_PORTS
 static int
+fd_flush_done(Scheme_Object *port)
+{
+  Scheme_FD *fop;
+
+  fop = (Scheme_FD *)((Scheme_Output_Port *)port)->port_data;
+
+  return !fop->flushing;
+}
+
+static void wait_until_fd_flushed(Scheme_Output_Port *op)
+{
+  scheme_block_until(fd_flush_done, NULL, (Scheme_Object *)op, 0.0);
+}
+
+static int
 fd_write_ready (Scheme_Object *port)
 {
   Scheme_FD *fop;
@@ -1829,12 +1850,17 @@ static void flush_fd(Scheme_Output_Port *op, char *bufstr, int buflen)
   Scheme_FD *fop = (Scheme_FD *)op->port_data;
   int offset = 0;
 
+  if (fop->flushing)
+    wait_until_fd_flushed(op);
+
   if (!bufstr) {
     bufstr = fop->buffer;
     buflen = fop->bufcount;
   }
 
   if (buflen) {
+    fop->flushing = 1;
+
     while (1) {
       long len;
       int flags, errsaved;
@@ -1861,6 +1887,7 @@ static void flush_fd(Scheme_Output_Port *op, char *bufstr, int buflen)
 	offset += len;
     }
 
+    fop->flushing = 0;
     fop->bufcount = 0;
   }
 }
@@ -2200,10 +2227,6 @@ static int fd_getc(Scheme_Input_Port *port)
       scheme_current_process->ran_some = 1;
     }
 
-#ifdef MZ_PRECISE_GC
-    /* In case page is protected, force removal of protection: */
-    fip->buffer[0] = 0;
-#endif
     bc = read(fip->fd, fip->buffer, MZPORT_FD_BUFFSIZE);
     fip->bufcount = bc;
 
@@ -2256,11 +2279,15 @@ make_fd_input_port(int fd, const char *filename)
 {
   Scheme_Input_Port *ip;
   Scheme_FD *fip;
+  unsigned char *bfr;
 
   fip = MALLOC_ONE_RT(Scheme_FD);
 #ifdef MZTAG_REQUIRED
   fip->type = scheme_rt_input_fd;
 #endif
+
+  bfr = (unsigned char *)scheme_malloc_atomic(MZPORT_FD_BUFFSIZE);
+  fip->buffer = bfr;
 
   fip->fd = fd;
   fip->bufcount = 0;
@@ -3193,6 +3220,9 @@ fd_write_string(char *str, long len, Scheme_Output_Port *port)
 
   fop = (Scheme_FD *)port->port_data;
 
+  if (fop->flushing)
+    wait_until_fd_flushed(port);
+
   l = MZPORT_FD_BUFFSIZE - fop->bufcount;
   if (len <= l) {
     memcpy(fop->buffer + fop->bufcount, str, len);
@@ -3223,6 +3253,9 @@ fd_close_output(Scheme_Output_Port *port)
 {
   Scheme_FD *fop = (Scheme_FD *)port->port_data;
 
+  if (fop->flushing)
+    wait_until_fd_flushed(port);
+
   close(fop->fd);
 }
 
@@ -3230,11 +3263,15 @@ Scheme_Object *
 make_fd_output_port(int fd)
 {
   Scheme_FD *fop;
+  unsigned char *bfr;
 
   fop = MALLOC_ONE_RT(Scheme_FD);
 #ifdef MZTAG_REQUIRED
   fop->type = scheme_rt_input_fd;
 #endif
+
+  bfr = (unsigned char *)scheme_malloc_atomic(MZPORT_FD_BUFFSIZE);
+  fop->buffer = bfr;
 
   fop->fd = fd;
   fop->bufcount = 0;
@@ -3383,6 +3420,7 @@ static void filename_exn(char *name, char *msg, char *filename, int err)
 
   scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		   scheme_make_string(filename),
+		   fail_err_symbol,
 		   "%s: %s: \"%.255s\"%s%.255s%s (%d%s)", 
 		   name, msg, filename,
 		   pre, rel, post,
@@ -3526,7 +3564,14 @@ do_open_output_file (char *name, int offset, int argc, Scheme_Object *argv[])
   filename = scheme_expand_filename(filename, namelen, name, NULL);
 
   if (scheme_directory_exists(filename)) {
-    filename_exn(name, "cannot open directory as a file", filename, errno);
+    if (!existsok)
+      scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
+		       argv[0],
+		       scheme_intern_symbol("already-exists"),
+		       "%s: \"%.255s\" exists as a directory", 
+		       name, filename);
+    else
+      filename_exn(name, "cannot open directory as a file", filename, errno);
     return scheme_void;
   }
 
@@ -3537,14 +3582,16 @@ do_open_output_file (char *name, int offset, int argc, Scheme_Object *argv[])
       if (!existsok)
 	scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 			 argv[0],
-			 "%s: file \"%s\" exists", name, filename);
+			 scheme_intern_symbol("already-exists"),
+			 "%s: file \"%.255s\" exists", name, filename);
 #ifdef MAC_FILE_SYSTEM
       if (existsok > 0) {
 #endif
 	if (MSC_IZE(unlink)(filename))
 	  scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 			   argv[0],
-			   "%s: error deleting \"%s\"", 
+			   fail_err_symbol,
+			   "%s: error deleting \"%.255s\"", 
 			   name, filename);
 #ifdef MAC_FILE_SYSTEM
       } else
@@ -3563,7 +3610,8 @@ do_open_output_file (char *name, int offset, int argc, Scheme_Object *argv[])
 	if (MSC_IZE(unlink)(filename))
 	  scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 			   argv[0],
-			   "%s: error deleting \"%s\"", 
+			   fail_err_symbol,
+			   "%s: error deleting \"%.255s\"", 
 			   name, filename);
 	else {
 	  fp = fopen(filename, mode);
@@ -4531,6 +4579,7 @@ static Scheme_Object *abs_directory_p(int argc, Scheme_Object **argv)
     if (!scheme_is_complete_path(s, len))
       scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		       d,
+		       scheme_intern_symbol("ill-formed-path"),
 		       "current-load-relative-directory: not a complete path: \"%.255s\"",
 		       s);
 
@@ -4539,6 +4588,7 @@ static Scheme_Object *abs_directory_p(int argc, Scheme_Object **argv)
     if (!scheme_directory_exists(expanded)) {
       scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		       ed,
+		       fail_err_symbol,
 		       "current-load-relative-directory: directory not found or not a directory: \"%.255s\"",
 		       expanded);
     }
@@ -6514,6 +6564,7 @@ static void tcp_write_needs_wakeup(Scheme_Object *conn, void *fds)
 static Scheme_Tcp *make_tcp_port_data(MAKE_TCP_ARG int refcount)
 {
   Scheme_Tcp *data;
+  char *bfr;
   
   data = MALLOC_ONE_RT(Scheme_Tcp);
 #ifdef MZTAG_REQUIRED
@@ -6522,6 +6573,10 @@ static Scheme_Tcp *make_tcp_port_data(MAKE_TCP_ARG int refcount)
 #ifdef USE_SOCKETS_TCP
   data->tcp = tcp;
 #endif
+
+  bfr = (char *)scheme_malloc_atomic(TCP_BUFFER_SIZE);
+  data->buffer = bfr;
+
   data->bufpos = 0;
   data->bufmax = 0;
   data->hiteof = 0;

@@ -67,7 +67,7 @@ static exn_rec exn_table[] = {
   { 3, NULL, NULL, 0 },
   { 3, NULL, NULL, 0 },
   { 3, NULL, NULL, 0 },
-  { 3, NULL, NULL, 0 },
+  { 4, NULL, NULL, 0 },
   { 2, NULL, NULL, 0 },
   { 2, NULL, NULL, 0 },
   { 2, NULL, NULL, 0 },
@@ -108,7 +108,7 @@ static exn_rec *exn_table;
   exn_table[MZEXN_I_O_PORT_WRITE].args = 3;
   exn_table[MZEXN_I_O_PORT_CLOSED].args = 3;
   exn_table[MZEXN_I_O_PORT_USER].args = 3;
-  exn_table[MZEXN_I_O_FILESYSTEM].args = 3;
+  exn_table[MZEXN_I_O_FILESYSTEM].args = 4;
   exn_table[MZEXN_I_O_TCP].args = 2;
   exn_table[MZEXN_THREAD].args = 2;
   exn_table[MZEXN_MISC].args = 2;
@@ -129,7 +129,7 @@ static const char *MZEXN_APPLICATION_TYPE_FIELDS[1] = { "expected" };
 static const char *MZEXN_SYNTAX_FIELDS[1] = { "expr" };
 static const char *MZEXN_READ_FIELDS[1] = { "port" };
 static const char *MZEXN_I_O_PORT_FIELDS[1] = { "port" };
-static const char *MZEXN_I_O_FILESYSTEM_FIELDS[1] = { "pathname" };
+static const char *MZEXN_I_O_FILESYSTEM_FIELDS[2] = { "pathname", "detail" };
 static const char *MZEXN_MISC_USER_BREAK_FIELDS[1] = { "continuation" };
 
 #endif
@@ -159,7 +159,7 @@ static const char *MZEXN_MISC_USER_BREAK_FIELDS[1] = { "continuation" };
   SETUP_STRUCT(MZEXN_I_O_PORT_WRITE, EXN_PARENT(MZEXN_I_O_PORT), "exn:i/o:port:write", 0, NULL)
   SETUP_STRUCT(MZEXN_I_O_PORT_CLOSED, EXN_PARENT(MZEXN_I_O_PORT), "exn:i/o:port:closed", 0, NULL)
   SETUP_STRUCT(MZEXN_I_O_PORT_USER, EXN_PARENT(MZEXN_I_O_PORT), "exn:i/o:port:user", 0, NULL)
-  SETUP_STRUCT(MZEXN_I_O_FILESYSTEM, EXN_PARENT(MZEXN_I_O), "exn:i/o:filesystem", 1, MZEXN_I_O_FILESYSTEM_FIELDS)
+  SETUP_STRUCT(MZEXN_I_O_FILESYSTEM, EXN_PARENT(MZEXN_I_O), "exn:i/o:filesystem", 2, MZEXN_I_O_FILESYSTEM_FIELDS)
   SETUP_STRUCT(MZEXN_I_O_TCP, EXN_PARENT(MZEXN_I_O), "exn:i/o:tcp", 0, NULL)
   SETUP_STRUCT(MZEXN_THREAD, EXN_PARENT(MZEXN), "exn:thread", 0, NULL)
   SETUP_STRUCT(MZEXN_MISC, EXN_PARENT(MZEXN), "exn:misc", 0, NULL)

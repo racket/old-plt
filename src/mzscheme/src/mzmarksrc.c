@@ -1075,9 +1075,10 @@ mark_pipe {
 #ifdef USE_TCP
 mark_tcp {
  mark:
-# ifdef USE_MAC_TCP
   Scheme_Tcp *tcp = (Scheme_Tcp *)p;
 
+  gcMARK(tcp->buffer);
+# ifdef USE_MAC_TCP
   gcMARK(tcp->tcp);
   gcMARK(tcp->activeRcv);
 # endif
@@ -1102,6 +1103,10 @@ mark_write_data {
 #ifdef USE_FD_PORTS
 mark_input_fd {
  mark:
+  Scheme_FD *fd = (Scheme_FD *)p;
+
+  gcMARK(fd->buffer);
+
  size:
   gcBYTES_TO_WORDS(sizeof(Scheme_FD));
 }

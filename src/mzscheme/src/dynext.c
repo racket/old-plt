@@ -109,6 +109,8 @@ static Scheme_Hash_Table *fullpath_loaded_extensions; /* hash on full path name 
 # define VERSION_AND_VARIANT VERSION
 #endif
 
+static Scheme_Object *fail_err_symbol, *version_err_symbol;
+
 void scheme_init_dynamic_extension(Scheme_Env *env)
 {
   if (scheme_starting_up) {
@@ -135,6 +137,12 @@ void scheme_init_dynamic_extension(Scheme_Env *env)
 				     0, -1);
       scheme_set_param(scheme_config, MZCONFIG_LOAD_EXTENSION_HANDLER, lh);
     }
+
+    REGISTER_SO(fail_err_symbol);
+    REGISTER_SO(version_err_symbol);
+
+    fail_err_symbol = scheme_intern_symbol("generic-failure");
+    version_err_symbol = scheme_intern_symbol("wrong-version");
   }
 
   scheme_add_global_constant("load-extension", 
@@ -230,6 +238,7 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
     if (!dl)
       scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		       scheme_make_string(filename),
+		       fail_err_symbol,
 		       "load-extension: couldn't open \"%s\" (%s)",
 		       filename, dlerror());
     
@@ -249,6 +258,7 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
       dlclose(dl);
       scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		       scheme_make_string(filename),
+		       fail_err_symbol,
 		       "load-extension: \"%s\" is not an extension (%s)", 
 		       filename, err);
     }
@@ -260,6 +270,7 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
       dlclose(dl);
       scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		       scheme_make_string(filename),
+		       version_err_symbol,
 		       "load-extension: bad version %s (not %s) from \"%s\"",
 		       vers, VERSION_AND_VARIANT, filename);
     }
@@ -273,6 +284,7 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
       dlclose(dl);
       scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		       scheme_make_string(filename),
+		       fail_err_symbol,
 		       "load-extension: no %s in \"%s\" (%s)",
 		       init_f ? "scheme_reload" : "scheme_initialize",
 		       filename, err);
@@ -287,6 +299,7 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
     if (!dl)
       scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		       scheme_make_string(filename),
+		       fail_err_symbol,
 		       "load-extension: could not load \"%s\" (%ld)",
 		       filename, GetLastError());
     
@@ -299,6 +312,7 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
       FreeLibrary(dl);
       scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		       scheme_make_string(filename),
+		       fail_err_symbol,
 		       "load-extension: \"%s\" is not an extension (%ld)",
 		       filename, err);
     }
@@ -310,6 +324,7 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
       FreeLibrary(dl);
       scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		       scheme_make_string(filename),
+		       version_err_symbol,
 		       "load-extension: bad version %s (not %s) from \"%s\"",
 		       vers, VERSION_AND_VARIANT, filename);
     }
@@ -321,6 +336,7 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
       FreeLibrary(dl);
       scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		       scheme_make_string(filename),
+		       fail_err_symbol,
 		       "load-extension: no %s in \"%s\"", 
 		       init_f ? "scheme_reload" : "scheme_initialize",
 		       filename);
@@ -341,6 +357,7 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
 	if ( err != noErr )
 	  scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 			   scheme_make_string(filename),
+			   fail_err_symbol,
 			   "load-extension: \"%s\" is not an extension",
 			   filename);
 	
@@ -349,6 +366,7 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
 	if (!vers || strcmp(vers, VERSION_AND_VARIANT))
 	  scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 			   scheme_make_string(filename),
+			   version_err_symbol,
 			   "load-extension: bad version %s (not %s) from \"%s\"",
 			   vers, VERSION_AND_VARIANT, filename);
 	
@@ -364,6 +382,7 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
 	if ( err != noErr )
 	  scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 			   scheme_make_string(filename),
+			   fail_err_symbol,
 			   "load-extension: no %s in \"%s\"", 
 			   init_f ? "scheme_reload" : "scheme_initialize",
 			   filename);
@@ -373,6 +392,7 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
     else
       scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		       scheme_make_string(filename),
+		       fail_err_symbol,
 		       "load-extension: could not load extension: \"%s\"",
 		       filename);
 #endif
@@ -387,6 +407,7 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
     if (image <= 0)
       scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		       scheme_make_string(filename),
+		       fail_err_symbol,
 		       "load-extension: could not load \"%s\" (%ld)",
 		       filename, image);
     
@@ -398,6 +419,7 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
     if (status != B_NO_ERROR)
       scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		       scheme_make_string(filename),
+		       fail_err_symbol,
 		       "load-extension: \"%s\" is not an extension (%ld)",
 		       filename, status);
     
@@ -405,6 +427,7 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
     if (!vers || strcmp(vers, VERSION_AND_VARIANT))
       scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		       scheme_make_string(filename),
+		       version_err_symbol,
 		       "load-extension: bad version %s (not %s) from \"%s\"",
 		       vers, VERSION_AND_VARIANT, filename);
 
@@ -419,6 +442,7 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
     if (status != B_NO_ERROR)
       scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		       scheme_make_string(filename),
+		       fail_err_symbol,
 		       "load-extension: no %s in \"%s\"", 
 		       init_f ? "scheme_reload" : "scheme_initialize",
 		       filename);

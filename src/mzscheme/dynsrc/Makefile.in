@@ -40,7 +40,7 @@ dynexmpl.o: $(srcdir)/dynexmpl.c  $(HEADERS)
 
 ../oe.so: oe.o  $(MZDYNDEP)
 	$(DYNLINK) ../oe.so oe.o
-oe.o: oe.c $(HEADERS)
+oe.o: $(srcdir)/oe.c $(HEADERS)
 	$(CC) $(CFLAGS) -c $(srcdir)/oe.c -o oe.o
 
 clean:

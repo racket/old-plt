@@ -88,6 +88,8 @@ if test "$CC" = '' ; then
   AC_PROG_CXX
 fi
 AC_PROG_RANLIB
+AR=ar
+ARFLAGS=ruv
 
 if test "$CC" = "gcc" ; then 
   AS="gcc -c -x assembler-with-cpp"
@@ -137,7 +139,7 @@ case $OS in
     ;;
   AIX)
     AC_CHECK_LIB(dl, dlopen, , MZBINTARGET=aixdl-bin)
-    LIBS="$LIBS -Wl,-bE:include/mzscheme.exp"
+    LIBS="$LIBS -Wl,-bE:\$(srcdir)/../mzscheme/include/mzscheme.exp"
     ;;
   FreeBSD)
     LIBS="$LIBS -rdynamic"
@@ -169,6 +171,8 @@ case $OS in
     else
       CFLAGS="$CFLAGS -Wp,-H,64000 -Aa -D_HPUX_SOURCE +k +z"
     fi
+    # For -lXaw and -lXmu
+    X_LIBS="-L/usr/contrib/X11R6/lib/ $X_LIBS"
     ;;
   SCO) # How do you really recognize SCO?
     LIBS="$LIBS -lc -lsocket"
@@ -243,6 +247,8 @@ AC_SUBST(CPP)
 AC_SUBST(PERL)
 AC_SUBST(AS)
 AC_SUBST(RANLIB)
+AC_SUBST(AR)
+AC_SUBST(ARFLAGS)
 
 AC_SUBST(x_includes)
 AC_SUBST(x_libraries)

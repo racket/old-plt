@@ -7,6 +7,8 @@ srcdir = @srcdir@
 CC = @CC@
 CXX = @CXX@
 RANLIB = @RANLIB@
+AR = @AR@
+ARFLAGS = @ARFLAGS@
 
 CFLAGS = @CFLAGS@ @OPTIONS@
 

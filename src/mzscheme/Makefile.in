@@ -8,6 +8,8 @@ CC = @CC@
 CPP = @CPP@
 PERL = @PERL@
 
+AR = @AR@
+ARFLAGS = @ARFLAGS@
 RANLIB = @RANLIB@
 
 # GC Directory
@@ -68,8 +70,8 @@ cygwin-dll-setup:
 	cd src; $(MAKE) mzheaders
 	$(MAKE) gmzwin.exp
 
-gmzwin.exp: include/gmzwin.def
-	dlltool --def include/gmzwin.def --output-exp gmzwin.exp --output-lib gmzwin.a --dllname mzscheme.exe
+gmzwin.exp: $(srcdir)/include/gmzwin.def
+	dlltool --def $(srcdir)/include/gmzwin.def --output-exp gmzwin.exp --output-lib gmzwin.a --dllname mzscheme.exe
 
 g-c:
 	cd @GCDIR@; $(MAKE) gc.a 
@@ -87,7 +89,7 @@ mzlibrary:
 	$(MAKE) libmzscheme.a
 
 libmzscheme.a: src/*.o
-	$(AR) ruv libmzscheme.a src/*.o
+	$(AR) $(ARFLAGS) libmzscheme.a src/*.o
 	$(RANLIB) libmzscheme.a
 
 libgc.a: @GCDIR@/gc.a

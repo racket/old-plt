@@ -336,7 +336,7 @@ static void init_tclass(Scheme_Object **init_boxes,
   _scheme_apply(super_init, 0, NULL);
 }
 
-void make_number_indices(void *v, int *h1, int *h2)
+void make_number_indices(void *v, long *h1, long *h2)
 {
   Scheme_Object *args[2];
 

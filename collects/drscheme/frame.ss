@@ -80,10 +80,5 @@
 	   
 	   (private
 	     [running-message
-	      (make-object wx:message% info-panel sleepy-bitmap)])))))
-
-
-
-
-
+	      (make-object mred:message% info-panel sleepy-bitmap)])))))
 

@@ -267,7 +267,7 @@ substitutability is checked properly.
                               (for-each 
                                (lambda (idp)
                                  (syntax-case idp ()
-                                   [(iid eid) (and (identifier? (syntax id)) (identifier? (syntax eid))) 'ok]
+                                   [(iid eid) (and (identifier? (syntax iid)) (identifier? (syntax eid))) 'ok]
                                    [else
                                     (bad 
                                      "rename element is not a pair of identifiers"

@@ -33,10 +33,10 @@
 		     children)) ; list of child records
 (define-struct child (pict dx dy))
 
-(define empty 
+(define blank 
   (case-lambda
-   [() (empty 0 0 0)]
-   [(w h) (empty w h 0)]
+   [() (blank 0 0 0)]
+   [(w h) (blank w h 0)]
    [(w a d) (make-pict `(picture ,w ,(+ a d)) w (+ a d) a d null)]))
 
 (define (extend-pict box dx dy dw da dd draw)
@@ -386,7 +386,7 @@
 		     (raise-type-error 'XXX-append "number" sep))
 	     (let append-boxes ([args args])
 	       (cond
-		[(null? args) (empty)]
+		[(null? args) (blank)]
 		[(null? (cdr args)) (car args)]
 		[else
 		 (let* ([first (car args)]
@@ -616,8 +616,8 @@
 			     (picture
 			      w h
 			      `((place ,x ,y ,cell)))))
-			 (empty (vector-ref csep c) 0)))))
-	     (empty 0 (vector-ref rsep r))))))))]))
+			 (blank (vector-ref csep c) 0)))))
+	     (blank 0 (vector-ref rsep r))))))))]))
 
 (define (record title . fields)
   (let* ([totalwidth (apply max (pict-width title) (map pict-width fields))]

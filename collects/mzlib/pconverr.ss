@@ -286,9 +286,11 @@
 				 (build-named 
 				  expr
 				  (lambda () '(class ...)))]
-				[(object? expr) `(make-object ,(build-named 
-								expr
-								(lambda () '(class ...))))]
+				[(object? expr) `(make-object
+						     ,(build-named 
+						       (object-class expr)
+						       (lambda () '(class ...)))
+						   ...)]
 				[(void? expr) '(void)]
 				[(promise? expr) '(delay ...)]
 				[(struct? expr)

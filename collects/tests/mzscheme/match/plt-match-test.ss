@@ -2,8 +2,8 @@
 (SECTION 'PLT-MATCH)
 
 
-;(require (lib "plt-match.ss"))
-(require "../plt-match.ss")
+(require (lib "plt-match.ss"))
+;(require "../plt-match.ss")
 (require (lib "list.ss"))
 (require (lib "pregexp.ss"))
 

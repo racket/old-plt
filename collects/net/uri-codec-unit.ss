@@ -74,6 +74,7 @@
   (require (lib "unitsig.ss")
            (lib "match.ss")
            (lib "string.ss")
+	   (lib "etc.ss")
            "uri-codec-sig.ss")
 
   (provide uri-codec@)
@@ -202,62 +203,74 @@
 
       ;; listof (cons string string) -> string
       ;; http://www.w3.org/TR/html401/appendix/notes.html#ampersands-in-uris
+      ;; listof (cons symbol string) -> string
       (define alist->form-urlencoded
-        (match-lambda
-         [() ""]
-         [((name . value))
-          (string-append (form-urlencoded-encode name)
-                         "="
-                         (form-urlencoded-encode value))]
-         [((name . value) . rest)
-          (string-append (form-urlencoded-encode name)
-                         "="
-                         (form-urlencoded-encode value)
-                         ";"
-                         (alist->form-urlencoded rest))]))
+        (opt-lambda (args [mode 'semi])
+          (let* ([format-one
+                  (lambda (arg)
+                    (let* ([name (car arg)]
+                           [value (cdr arg)])
+                      (string-append 
+                       (form-urlencoded-encode (symbol->string name))
+                       "="
+                       (form-urlencoded-encode value))))]
+                 [strs (let loop ([args args])
+                         (cond
+                           [(null? args) null]
+                           [(null? (cdr args)) (list (format-one (car args)))]
+                           [else (list* (format-one (car args))
+                                        (if (eq? mode 'semi)
+					    ";"
+					    "&")
+                                        (loop (cdr args)))]))])
+            (apply string-append strs))))
 
       ;; string -> listof (cons string string)  
       ;; http://www.w3.org/TR/html401/appendix/notes.html#ampersands-in-uris
-      (define (form-urlencoded->alist str)
-        (define key-regexp (regexp "[^=]*"))
-        (define value-regexp (regexp "[^&;]*"))
-        (define (next-key str start)
-          (if (>= start (string-length str))
-              #f
-              (match (regexp-match-positions key-regexp str start)
-                     [((start . end))
-                      (vector (let ([s (form-urlencoded-decode (substring str start end))])
-                                (string-lowercase! s)
-                                (string->symbol s))
-                              (add1 end))]
-                     [#f #f])))
-        (define (next-value str start)
-          (if (>= start (string-length str))
-              #f
-              (match (regexp-match-positions value-regexp str start)
-                     [((start . end))
-                      (vector (form-urlencoded-decode (substring str start end))
-                              (add1 end))]
-                     [#f #f])))
-        (define (next-pair str start)
-          (match (next-key str start)
-                 [#(key start)
-                  (match (next-value str start)
-                         [#(value start)
-                          (vector (cons key value) start)]
-                         [#f
-                          (vector (cons key "") (string-length str))])]
-                 [#f #f]))
-        (let loop ([start 0]
-                   [end (string-length str)]
-                   [make-alist (lambda (x) x)])
-          (cond
-           [(>= start end) (make-alist '())]
-           [else
-            (match (next-pair str start)
-                   [#(pair next-start)
-                    (loop next-start end (lambda (x) (make-alist (cons pair x))))]
-                   [#f (make-alist '())])])))
+      (define form-urlencoded->alist
+	(opt-lambda (str [mode 'both])
+	  (define key-regexp (regexp "[^=]*"))
+	  (define value-regexp (case mode
+				 [(semi) (regexp "[^;]*")]
+				 [(ampm) (regexp "[^&]*")]
+				 [else (regexp "[^&;]*")]))
+	  (define (next-key str start)
+	    (if (>= start (string-length str))
+		#f
+		(match (regexp-match-positions key-regexp str start)
+		  [((start . end))
+		   (vector (let ([s (form-urlencoded-decode (substring str start end))])
+			     (string-lowercase! s)
+			     (string->symbol s))
+			   (add1 end))]
+		  [#f #f])))
+	  (define (next-value str start)
+	    (if (>= start (string-length str))
+		#f
+		(match (regexp-match-positions value-regexp str start)
+		  [((start . end))
+		   (vector (form-urlencoded-decode (substring str start end))
+			   (add1 end))]
+		  [#f #f])))
+	  (define (next-pair str start)
+	    (match (next-key str start)
+	      [#(key start)
+	       (match (next-value str start)
+		 [#(value start)
+		  (vector (cons key value) start)]
+		 [#f
+		  (vector (cons key "") (string-length str))])]
+	      [#f #f]))
+	  (let loop ([start 0]
+		     [end (string-length str)]
+		     [make-alist (lambda (x) x)])
+	    (cond
+	     [(>= start end) (make-alist '())]
+	     [else
+	      (match (next-pair str start)
+		[#(pair next-start)
+		 (loop next-start end (lambda (x) (make-alist (cons pair x))))]
+		[#f (make-alist '())])]))))
 
       ))
   )

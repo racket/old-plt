@@ -13,6 +13,8 @@
     (import mred^ mzlib:core^ mzlib:print-convert^ 
 	    zodiac:system^ drscheme:export^ plt:parameters^)
 
+    (debug:printf 'invoke "drscheme:tool@")
+
     (define-struct tool (name file))
 
     (define tools (map (lambda (x) (apply make-tool x))
@@ -32,15 +34,15 @@
 (define drscheme:basis@
   (unit/sig drscheme:basis^
     (import [params : plt:parameters^]
-	    [mred : mred^]
-	    [zodiac : zodiac:system^])
+            [mred : mred^]
+            [zodiac : zodiac:system^])
 
     (rename (user-defined? defined?)
-	    (user-macro? macro?)
-	    (user-syntax? syntax?)
-	    (user-id-macro? id-macro?)
-	    (user-expansion-time-value? expansion-time-value?)
-	    (user-global-defined-value global-defined-value))
+            (user-macro? macro?)
+            (user-syntax? syntax?)
+            (user-id-macro? id-macro?)
+            (user-expansion-time-value? expansion-time-value?)
+            (user-global-defined-value global-defined-value))
 
 ;    (define unit-with-signature->unit (global-defined-value 'unit/sig->unit))
 
@@ -48,11 +50,11 @@
 
     (define level->number
       (lambda (x)
-	(case x
-	  [(core) 0]
-	  [(structured) 1]
-	  [(side-effects) 2]
-	  [(advanced) 3])))
+        (case x
+          [(core) 0]
+          [(structured) 1]
+          [(side-effects) 2]
+          [(advanced) 3])))
     (define level-symbols (list 'core 'structured 'side-effects 'advanced))
     (define level-strings (list "Beginner" "Intermediate" "Advanced" "R4RS"))
 
@@ -61,18 +63,18 @@
      'drscheme:library-file
      (lambda (p v)
        (with-handlers
-	((void (lambda (x)
-		 (wx:message-box (exn-message x) "Invalid Library")
-		 #f)))
-	(if v
-	    (let ([new-unit (and (file-exists? v)
-				 (load/cd v))])
-	      (if ((global-defined-value 'unit/sig?) new-unit)
-		  (set! library-unit new-unit)
-		  (begin
-		    (wx:message-box (format "Invalid Library: ~a" v) "ERROR")
-		    #f)))
-	    (set! library-unit #f)))))
+        ((void (lambda (x)
+                 (wx:message-box (exn-message x) "Invalid Library")
+                 #f)))
+        (if v
+            (let ([new-unit (and (file-exists? v)
+                                 (load/cd v))])
+              (if ((global-defined-value 'unit/sig?) new-unit)
+                  (set! library-unit new-unit)
+                  (begin
+                    (wx:message-box (format "Invalid Library: ~a" v) "ERROR")
+                    #f)))
+            (set! library-unit #f)))))
 
     (define user-defined? 'user-defined?)
     (define user-macro? 'user-macro?)
@@ -83,53 +85,53 @@
     
     (define build-basis
       (lambda (eval)
-	(let* ([plt:userspace@ (global-defined-value 'plt:userspace@)]
-	       [l@
-		(unit/sig ()
-		  (import plt:userspace^)
-		  (when library-unit
-		    (invoke-open-unit/sig library-unit #f plt:userspace^)))]
-	       [params@ (unit/sig plt:parameters^
-			  (import)
-			  (define case-sensitive? params:case-sensitive?) 
-			  (define allow-set!-on-undefined? params:allow-set!-on-undefined?)
-			  (define allow-improper-lists? params:allow-improper-lists?)
-			  (define unmatched-cond/case-is-error? params:unmatched-cond/case-is-error?) 
-			  (define check-syntax-level params:check-syntax-level))]
-	       [c@
-		(compound-unit/sig
-		  (import)
-		  (link [params : plt:parameters^ (params@)]
-			[userspace : plt:userspace^ (plt:userspace@ params)]
-			[library : () (l@ userspace)])
-		  (export (open userspace)))])
-	  ((global-defined-value 'install-unit-with-signature) eval)
-	  (let-values
-	      ([(d? m? s? id? etv? gdv)
-		(eval
-		 `(#%begin
-		   (#%invoke-open-unit-with-signature ,c@ #f)
-		   (#%exit-handler (#%lambda (arg) (,mred:exit)))
-		   
-		   (#%error-display-handler
-		    (#%lambda (msg)
-			      (,display msg)
-			      (,newline)
-			      (wx:message-box
-			       (string-append "Internal Error: " msg)
-			       "Internal Error!")))
-		   (#%print-struct #t)
-		   (#%error-print-width 250)
-		   (#%break-enabled #t)
-		   (#%values defined? macro? syntax?
-			     id-macro? expansion-time-value?
-			     global-defined-value)))])
-	    (set! user-defined? d?)
-	    (set! user-macro? m?)
-	    (set! user-syntax? s?)
-	    (set! user-id-macro? id?)
-	    (set! user-expansion-time-value? etv?)
-	    (set! user-global-defined-value gdv)))))))
+        (let* ([plt:userspace@ (global-defined-value 'plt:userspace@)]
+               [l@
+                (unit/sig ()
+                  (import plt:userspace^)
+                  (when library-unit
+                    (invoke-open-unit/sig library-unit #f plt:userspace^)))]
+               [params@ (unit/sig plt:parameters^
+                          (import)
+                          (define case-sensitive? params:case-sensitive?) 
+                          (define allow-set!-on-undefined? params:allow-set!-on-undefined?)
+                          (define allow-improper-lists? params:allow-improper-lists?)
+                          (define unmatched-cond/case-is-error? params:unmatched-cond/case-is-error?) 
+                          (define check-syntax-level params:check-syntax-level))]
+               [c@
+                (compound-unit/sig
+                  (import)
+                  (link [params : plt:parameters^ (params@)]
+                        [userspace : plt:userspace^ (plt:userspace@ params)]
+                        [library : () (l@ userspace)])
+                  (export (open userspace)))])
+          ((global-defined-value 'install-unit-with-signature) eval)
+          (let-values
+              ([(d? m? s? id? etv? gdv)
+                (eval
+                 `(#%begin
+                   (#%invoke-open-unit-with-signature ,c@ #f)
+                   (#%exit-handler (#%lambda (arg) (,mred:exit)))
+                   
+                   (#%error-display-handler
+                    (#%lambda (msg)
+                              (,display msg)
+                              (,newline)
+                              (wx:message-box
+                               (string-append "Internal Error: " msg)
+                               "Internal Error!")))
+                   (#%print-struct #t)
+                   (#%error-print-width 250)
+                   (#%break-enabled #t)
+                   (#%values defined? macro? syntax?
+                             id-macro? expansion-time-value?
+                             global-defined-value)))])
+            (set! user-defined? d?)
+            (set! user-macro? m?)
+            (set! user-syntax? s?)
+            (set! user-id-macro? id?)
+            (set! user-expansion-time-value? etv?)
+            (set! user-global-defined-value gdv)))))))
 
 (define mred:make-invokable-unit
   (lambda ()
@@ -140,7 +142,7 @@
 	     [print-convert : mzlib:print-convert^
                (mzlib:print-convert@ (mzlib string@) (mzlib function@) hooks)]
 	     [trigger : mzlib:trigger^ (mzlib:trigger@)]
-	     [mred : mred^ (mred@ mzlib trigger (project : mred:application^))]
+	     [mred : mred^ (mred@ mzlib trigger app)]
 	     [interface : zodiac:interface^ (drscheme:zodiac-interface@ zodiac mred)]
 	     [basis : drscheme:basis^ (drscheme:basis@ params mred zodiac)]
 	     [params : plt:parameters^ (drscheme:parameters@ mred basis)]
@@ -148,22 +150,29 @@
 	     [aries : plt:aries^ (plt:aries@ zodiac interface (basis : plt:aries:predicates^))]
 	     [setup : drscheme:setup^ (drscheme:setup@ mred mzlib)]
 	     [tool : drscheme:tool^ 
-		   (drscheme:tool@ mred mzlib print-convert zodiac (project : drscheme:export^) params)]
+		   (drscheme:tool@ mred mzlib print-convert zodiac (app : drscheme:export^) params)]
 	     [spawn : drscheme:spawn^
 		    (drscheme:spawn@ mred mzlib print-convert
 				     params aries zodiac
 				     interface basis)]
 	     [edit : drscheme:edit^ (drscheme:edit@ mred print-convert spawn)]
 	     [frame : drscheme:frame^
-		    (drscheme:frame@ mred mzlib basis setup project tool)]
-	     [project : drscheme:project^ (drscheme:project@ mred mzlib frame edit spawn)])
+		    (drscheme:frame@ mred mzlib basis setup tool)]
+	     [unit : drscheme:unit^
+		    (drscheme:unit@ mred mzlib basis setup compound-unit tool)]
+	     [compound-unit : drscheme:compound-unit^
+		    (drscheme:compound-unit@ mred mzlib unit edit spawn)]
+	     [project : drscheme:project^
+		      (drscheme:project@ mred mzlib frame edit spawn app)]
+	     [app : mred:application^ (drscheme:application@ mred mzlib project)])
        (export (unit mred)
+	       (unit app mred)
 	       (open mzlib)
 	       (open print-convert)
-	       (open setup)
-	       (open tool)
-	       (open spawn)
-	       (open frame)
-	       (open aries)
-	       (unit project mred)
-	       (open zodiac))))))
+	       (unit setup drscheme:setup)
+	       (unit tool drscheme:tool)
+	       (unit spawn drscheme:spawn)
+	       (unit unit drscheme:unit)
+	       (unit aries drscheme:aries)
+	       (unit compound-unit drscheme:compound-unit)
+	       (unit zodiac zodiac))))))

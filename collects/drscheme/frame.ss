@@ -7,7 +7,6 @@
 	    [mzlib : mzlib:core^]
 	    [drscheme:basis : drscheme:basis^]
 	    [drscheme:setup : drscheme:setup^]
-	    [drscheme:project : drscheme:project^]
 	    [drscheme:tool : drscheme:tool^])
     
     (mred:debug:printf 'invoke "drscheme:frame@")
@@ -19,10 +18,10 @@
 					  "drscheme"
 					  "index.htm"))))
     
-    (define scheme-project-member-frame%
+    (define frame%
       (class mred:editor-frame% ([filename #f]
 				 [show? #t]
-				 [frameset drscheme:project:console])
+				 [frameset #f]) ;; used to default to the projects group
 	(inherit canvas add-canvas remove-canvas
 		 set-title-prefix
 		 show menu-bar% make-menu

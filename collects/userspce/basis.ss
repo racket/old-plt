@@ -10,26 +10,26 @@
 	  [mzlib:print-convert : mzlib:print-convert^]
 	  [mzlib:pretty-print : mzlib:pretty-print^]
 	  [mzlib:function : mzlib:function^])
-
+  
   (define initial-line 1)
   (define initial-column 1)
   (define initial-offset 0)
-
+  
   (define original-output-port (current-output-port))
   (define (printf . args)
     (apply fprintf original-output-port args))
-
+  
   (define (report-error . x) (error 'report-error))
   (define (report-unlocated-error . x) (error 'report-unlocated-error))
-
+  
   (define primitive-load (current-load))
   (define primitive-eval (current-eval))
-
+  
   (define r4rs-style-printing (make-parameter #f))
   
   (define this-program (with-handlers ([void (lambda (x) "mzscheme")])
 			 (global-defined-value 'program)))
-
+  
   (define-struct/parse setting (name
 				vocabulary-symbol
 				extra-definitions-unit-name
@@ -50,7 +50,7 @@
 				whole/fractional-exact-numbers
 				printing
 				define-argv?))
-
+  
   ;; settings : (list-of setting)
   (define settings
     (list (make-setting/parse
@@ -160,13 +160,13 @@
 	     (whole/fractional-exact-numbers #f)
 	     (printing r4rs-style)
 	     (define-argv? #t)))))
-
+  
   (define (snoc x y) (append y (list x)))
-
+  
   ;; add-setting : (symbol setting -> void)
   (define (add-setting setting)
     (set! settings (snoc setting settings)))
-
+  
   ;; find-setting-named : string -> setting
   ;; effect: raises an exception if no setting named by the string exists
   (define (find-setting-named name)
@@ -179,8 +179,8 @@
 		(if (string=? name (setting-name setting))
 		    setting
 		    (loop (cdr settings))))])))
-		    
-
+  
+  
   ;; copy-setting : setting -> setting
   (define copy-setting
     (lambda (x)
@@ -190,34 +190,34 @@
   
   ;; get-default-setting : (-> setting)
   (define (get-default-setting) (copy-setting (car settings)))
-
+  
   ;; get-default-setting-name : (-> symbol)
   (define (get-default-setting-name) (setting-name (get-default-setting)))
-
+  
   ;; setting-name->number : string -> int
   (define setting-name->number
     (lambda (name)
       (let loop ([n 0]
 		 [settings settings])
 	(cond
-	 [(null? settings) (error 'level->number "unexpected level: ~a" name)]
-	 [else (let ([setting (car settings)])
-		 (if (string=? name (setting-name setting))
-		     n
-		     (loop (+ n 1)
-			   (cdr settings))))]))))
-
+          [(null? settings) (error 'level->number "unexpected level: ~a" name)]
+          [else (let ([setting (car settings)])
+                  (if (string=? name (setting-name setting))
+                      n
+                      (loop (+ n 1)
+                            (cdr settings))))]))))
+  
   ;; number->setting : (int -> symbol)
   (define number->setting (lambda (n) (list-ref settings n)))
-
+  
   ;; zodiac-vocabulary? : setting -> boolean
   (define (zodiac-vocabulary? setting)
     (not (eq? (setting-vocabulary-symbol setting) 'mzscheme)))
-
+  
   ;; r4rs-style-printing? : setting -> boolean
   (define (r4rs-style-printing? setting)
     (eq? 'r4rs-style (setting-printing setting)))
-
+  
   ;; current-setting : (parameter (+ #f setting))
   (define current-setting
     (make-parameter
@@ -228,14 +228,14 @@
 	   x
 	   (error 'current-setting
 		  "must be a setting or #f")))))
-				 
+  
   ;; current-vocabulary : (parameter (+ #f zodiac:vocabulary))
   (define current-vocabulary (make-parameter #f))
-
+  
   ;; current-zodiac-namespace : (parameter (+ #f namespace))
   ;; If another namespace is installed, drscheme-eval uses primitive-eval
   (define current-zodiac-namespace (make-parameter #f))
-
+  
   ;; syntax-checking-primitive-eval : sexp -> value
   ;; effect: raises user-exn if expression ill-formed
   (define (syntax-checking-primitive-eval expr)
@@ -244,9 +244,9 @@
 		      (lambda (x)
 			(error 'internal-syntax-error (exn-message x)))])
        (expand-defmacro expr))))
-
+  
   (define-struct process-finish (error?))
-
+  
   ;; process-file/zodiac : string
   ;;                       (((+ process-finish sexp zodiac:parsed) ( -> void) -> void)
   ;;                       boolean
@@ -269,7 +269,7 @@
 	  f
 	  annotate?))
        (lambda () (close-input-port port)))))
-
+  
   ;; process-file/no-zodiac : string
   ;;                          ((+ process-finish sexp zodiac:parsed) ( -> void) -> void)
   ;;                       -> void
@@ -278,7 +278,7 @@
     (call-with-input-file filename
       (lambda (port)
 	(process/no-zodiac (lambda () (read port)) f))))
-
+  
   ;; process-sexp/no-zodiac : sexp
   ;;                          ((+ process-finish sexp zodiac:parsed) ( -> void) -> void)
   ;;                       -> void
@@ -291,7 +291,7 @@
 				      sexp)
 			       eof)))
 		       f))
-
+  
   ;; process-sexp/zodiac : sexp
   ;;                       zodiac:sexp
   ;;                       ((+ process-finish sexp zodiac:parsed) ( -> void) -> void)
@@ -307,7 +307,7 @@
 		    (begin (set! gone (zodiac:make-eof z))
 			   (zodiac:structurize-syntax sexp z)))))])
       (process/zodiac reader f annotate?)))
-
+  
   ;; process/zodiac : ( -> zodiac:sexp)
   ;;                  ((+ process-finish sexp zodiac:parsed) ( -> void) -> void)
   ;;                  boolean
@@ -363,7 +363,7 @@
 					       exp)])
 			 (lambda () (f heading-out loop))))))])
 	  (next-iteration)))))
-
+  
   ;; process/no-zodiac : ( -> sexp) ((+ sexp process-finish) ( -> void) -> void) -> void
   (define (process/no-zodiac reader f)
     (let loop ()
@@ -371,7 +371,7 @@
 	(if (eof-object? expr)
 	    (f (make-process-finish #f) void)
 	    (f expr loop)))))
-
+  
   (define (format-source-loc start-location end-location)
     (let ([file (zodiac:location-file start-location)])
       (format "~a: ~a.~a-~a.~a: "
@@ -380,8 +380,8 @@
 	      (zodiac:location-column start-location)
 	      (zodiac:location-line end-location)
 	      (+ (zodiac:location-column end-location) 1))))
-
-  ;; (parameter (string mark-set exn -> void))
+  
+  ;; (parameter (string zodiac:zodiac exn -> void))
   (define error-display/debug-handler
     (make-parameter
      (lambda (msg debug exn)
@@ -391,11 +391,11 @@
 					      (zodiac:zodiac-finish debug))
 			   msg)
 	    msg)))))
-
+  
   ;; bottom-escape-handler : (parameter ( -> A))
   ;; escapes
   (define bottom-escape-handler (make-parameter void))
-
+  
   ;; drscheme-exception-handler : exn -> A
   ;; effect: displays the exn-message and escapes
   (define (drscheme-exception-handler exn)
@@ -413,7 +413,7 @@
     ((error-escape-handler))
     ((error-display-handler) "Exception handler didn't escape")
     ((bottom-escape-handler)))
-
+  
   ;; drscheme-error-value->string-handler : TST number -> string
   (define (drscheme-error-value->string-handler x n)
     (let ([port (open-output-string)])
@@ -432,10 +432,10 @@
 		    (string-set! short-string (- n i) #\.)
 		    (loop (sub1 i)))))
 	      short-string)))))
-
+  
   ;; intermediate-values-during-load : (parameter (TST *-> void))
   (define intermediate-values-during-load (make-parameter (lambda x (void))))
-
+  
   ;; drscheme-load-handler : string ->* TST
   ;;   It should call intermediate-values-during-load in all 3 branches.
   ;;   It only calls it in one, currently.
@@ -450,16 +450,16 @@
 	   (let ([l (string-length filename)])
 	     (and (<= 3 l)
 		  (string=? ".zo" (substring filename (- l 3) l))))])
-
-	(cond
-	 [zo-file?
-	  (parameterize ([current-eval primitive-eval])
-	    (primitive-load filename))]
-	 [(zodiac-vocabulary? (current-setting))
-	  (let* ([process-sexps
-		  (let ([last (list (void))])
-		    (lambda (sexp recur)
-		      (cond
+      
+      (cond
+        [zo-file?
+         (parameterize ([current-eval primitive-eval])
+           (primitive-load filename))]
+        [(zodiac-vocabulary? (current-setting))
+         (let* ([process-sexps
+                 (let ([last (list (void))])
+                   (lambda (sexp recur)
+                     (cond
 		       [(process-finish? sexp)
 			last]
 		       [else
@@ -470,182 +470,182 @@
 				 (apply (intermediate-values-during-load) x)
 				 x)))
 			(recur)])))])
-	    (apply values (process-file/zodiac filename process-sexps #t)))]
-	 [else
-	  (primitive-load filename)])))
-
-    ;; drscheme-eval : sexp ->* TST
-    (define (drscheme-eval-handler sexp)
-      (if (and (zodiac-vocabulary? (current-setting))
-	       (eq? (current-namespace) (current-zodiac-namespace)))
-	  (let* ([z (let ([continuation-stack (continuation-mark-set->list
-					       (current-continuation-marks)
-					       aries:w-c-m-key)])
-		      (if (null? continuation-stack)
-			  (let ([loc (zodiac:make-location 
-				      initial-line initial-column initial-offset
-				      'eval)])
-			    (zodiac:make-zodiac 'mzrice-eval loc loc))
-			  (car continuation-stack)))]
-		 [answer (list (void))]
-		 [f
-		  (lambda (annotated recur)
-		    (if (process-finish? annotated)
-			answer
-			(begin (set! answer
-				     (call-with-values
-				      (lambda () (syntax-checking-primitive-eval annotated))
-				      (lambda x x)))
-			       (recur))))])
-	    (apply values (process-sexp/zodiac sexp z f #t)))
-	  (primitive-eval sexp)))
-
-
-    ;; drscheme-print : TST -> void
-    ;; effect: prints the value, on the screen, attending to the values of the current setting
-    (define drscheme-print
-      (lambda (v)
-	(unless (void? v)
-	  (drscheme-print/void v))))
-
-    ;; drscheme-print/void : TST -> void
-    ;; effect: prints the value, on the screen, attending to the values of the current setting
-    (define drscheme-print/void
-      (lambda (v)
-	(let ([value (if (r4rs-style-printing? (current-setting))
-			 v
-			 (mzlib:print-convert:print-convert v))])
-	  (mzlib:pretty-print:pretty-print value))))
-
+           (apply values (process-file/zodiac filename process-sexps #t)))]
+        [else
+         (primitive-load filename)])))
+  
+  ;; drscheme-eval : sexp ->* TST
+  (define (drscheme-eval-handler sexp)
+    (if (and (zodiac-vocabulary? (current-setting))
+             (eq? (current-namespace) (current-zodiac-namespace)))
+        (let* ([z (let ([continuation-stack (continuation-mark-set->list
+                                             (current-continuation-marks)
+                                             aries:w-c-m-key)])
+                    (if (null? continuation-stack)
+                        (let ([loc (zodiac:make-location 
+                                    initial-line initial-column initial-offset
+                                    'eval)])
+                          (zodiac:make-zodiac 'mzrice-eval loc loc))
+                        (car continuation-stack)))]
+               [answer (list (void))]
+               [f
+                (lambda (annotated recur)
+                  (if (process-finish? annotated)
+                      answer
+                      (begin (set! answer
+                                   (call-with-values
+                                    (lambda () (syntax-checking-primitive-eval annotated))
+                                    (lambda x x)))
+                             (recur))))])
+          (apply values (process-sexp/zodiac sexp z f #t)))
+        (primitive-eval sexp)))
+  
+  
+  ;; drscheme-print : TST -> void
+  ;; effect: prints the value, on the screen, attending to the values of the current setting
+  (define drscheme-print
+    (lambda (v)
+      (unless (void? v)
+        (drscheme-print/void v))))
+  
+  ;; drscheme-print/void : TST -> void
+  ;; effect: prints the value, on the screen, attending to the values of the current setting
+  (define drscheme-print/void
+    (lambda (v)
+      (let ([value (if (r4rs-style-printing? (current-setting))
+                       v
+                       (mzlib:print-convert:print-convert v))])
+        (mzlib:pretty-print:pretty-print value))))
+  
   ;; drscheme-port-print-handler : TST port -> void
   ;; effect: prints the value on the port
   (define (drscheme-port-print-handler value port)
     (parameterize ([mzlib:pretty-print:pretty-print-columns 'infinity]
 		   [current-output-port port])
       (drscheme-print/void value)))
-
+  
   (define ricedefs@ (require-library "ricedefr.ss" "userspce"))
-
-    ;; initialize-parameters : custodian
-    ;;                         (list-of symbols)
-    ;;                         setting
-    ;;                       -> void
-    ;; effect: sets the parameters for drscheme and drscheme-jr
-    (define (initialize-parameters custodian setting)
-      (let*-values ([(namespace-flags) (let ([name (setting-name setting)])
-					 (if (or (string=? "MrEd" name)
-						 (string=? "MrEd Debug" name))
-					     (list 'mred)
-					     (list)))]
-		    [(extra-definitions)
-		     (let ([name (setting-extra-definitions-unit-name setting)])
-		       (let loop ([l name])
-			 (cond
-			  [(string? l) (require-library/proc l "userspce")]
-			  [(pair? l) (if (defined? (caar l))
-					 (loop (cadar l))
-					 (loop (cdr l)))]
-			  [else #f])))]
-		    [(n) (apply make-namespace
-				(if (zodiac-vocabulary? setting)
-				    (append (list 'hash-percent-syntax) namespace-flags)
-				    namespace-flags))])
-	(when (zodiac-vocabulary? setting)
-	  (use-compiled-file-kinds 'non-elaboration))
-	(current-setting setting)
-	(compile-allow-set!-undefined #f)
-	(compile-allow-cond-fallthrough #f)
-	(current-custodian custodian)
-	(error-value->string-handler drscheme-error-value->string-handler)
-	(current-exception-handler drscheme-exception-handler)
-	(initial-exception-handler drscheme-exception-handler)
-	(current-namespace n)
-	(current-zodiac-namespace n)
-	(break-enabled #t)
-	(read-curly-brace-as-paren #t)
-	(read-square-bracket-as-paren #t)
-	(print-struct (not (eq? 'r4rs-style (setting-printing setting))))
-
-	(error-print-width 250)
-	(current-print drscheme-print)
-
-	(current-load-relative-directory #f)
-	(current-require-relative-collection #f)
-
-	(when (zodiac-vocabulary? setting)
-	  (current-vocabulary
-	   (zodiac:create-vocabulary
-	    'scheme-w/user-defined-macros/drscheme
-	    (case (setting-vocabulary-symbol setting)
-	      [(beginner) zodiac:beginner-vocabulary]
-	      [(intermediate) zodiac:intermediate-vocabulary]
-	      [(advanced) zodiac:advanced-vocabulary]
-	      [(mzscheme-debug mred-debug) zodiac:scheme-vocabulary]
-	      [else (error 'init "bad vocabulary spec: ~a ~e"
-			   (setting-vocabulary-symbol setting) setting)])))
-	  (zodiac:reset-previous-attribute 
-	   #f
-	   (eq? (setting-vocabulary-symbol setting)
-		'mred-debug)))
-	
-	(read-case-sensitive (setting-case-sensitive? setting))
-
-	(aries:signal-undefined (setting-signal-undefined setting))
-	(aries:signal-not-boolean (setting-signal-not-boolean setting))
-
-	;; Allow ` , and ,@ ? - FIXME!
-	(zodiac:allow-reader-quasiquote (setting-allow-reader-quasiquote? setting))
-	(zodiac:disallow-untagged-inexact-numbers (setting-disallow-untagged-inexact-numbers setting))
-
-	;;; SHOULD ONLY DO THIS IN CERTAIN LANGUAGE LEVELS!!!
-	;; ricedefs
-	(let ([improper-lists?
-	       (or (not (zodiac-vocabulary? setting))
-		   (setting-allow-improper-lists? setting))])
-	  (zodiac:allow-improper-lists improper-lists?)
-	  (params:allow-improper-lists improper-lists?))
-	(params:eq?-only-compares-symbols (setting-eq?-only-compares-symbols? setting))
-	(params:<=-at-least-two-args (setting-<=-at-least-two-args setting))
-	(global-define-values/invoke-unit/sig ricedefs^ ricedefs@ #f (params : plt:userspace:params^))
-	;; end ricedefs
-
-	(compile-allow-set!-undefined (setting-allow-set!-on-undefined? setting))
-	(compile-allow-cond-fallthrough (not (setting-unmatched-cond/case-is-error? setting)))
-
-	(current-eval drscheme-eval-handler)
-	(current-load drscheme-load-handler)
-
-	(when (setting-define-argv? setting)
-	  (global-defined-value 'argv #())
-	  (global-defined-value 'program this-program))
-
-	(mzlib:print-convert:empty-list-name 'empty)
-
-	(global-port-print-handler drscheme-port-print-handler)
-
-	(case (setting-printing setting)
-	  [(constructor-style)
-	   (r4rs-style-printing #f)
-	   (mzlib:print-convert:constructor-style-printing #t)]
-	  [(quasi-style)
-	   (r4rs-style-printing #f)
-	   (mzlib:print-convert:constructor-style-printing #f)
-	   (mzlib:print-convert:quasi-read-style-printing #f)]
-	  [(quasi-read-style)
-	   (r4rs-style-printing #f)
-	   (mzlib:print-convert:constructor-style-printing #f)
-	   (mzlib:print-convert:quasi-read-style-printing #t)]
-	  [(r4rs-style) (r4rs-style-printing #t)]
-	  [else (error 'install-language "found bad setting-printing: ~a~n" 
-		       (setting-printing setting))])
-
-	(mzlib:pretty-print:pretty-print-show-inexactness (setting-print-tagged-inexact-numbers setting))
-	(mzlib:print-convert:show-sharing (setting-sharing-printing? setting))
-	(mzlib:print-convert:whole/fractional-exact-numbers (setting-whole/fractional-exact-numbers setting))
-	(print-graph (and (r4rs-style-printing) (setting-sharing-printing? setting)))
-	(mzlib:print-convert:abbreviate-cons-as-list (setting-abbreviate-cons-as-list? setting))
-
-	(when extra-definitions
-	  (extra-definitions))
-	(for-each (lambda (l) (apply require-library/proc l))
-		  (setting-macro-libraries setting)))))
+  
+  ;; initialize-parameters : custodian
+  ;;                         (list-of symbols)
+  ;;                         setting
+  ;;                       -> void
+  ;; effect: sets the parameters for drscheme and drscheme-jr
+  (define (initialize-parameters custodian setting)
+    (let*-values ([(namespace-flags) (let ([name (setting-name setting)])
+                                       (if (or (string=? "MrEd" name)
+                                               (string=? "MrEd Debug" name))
+                                           (list 'mred)
+                                           (list)))]
+                  [(extra-definitions)
+                   (let ([name (setting-extra-definitions-unit-name setting)])
+                     (let loop ([l name])
+                       (cond
+                         [(string? l) (require-library/proc l "userspce")]
+                         [(pair? l) (if (defined? (caar l))
+                                        (loop (cadar l))
+                                        (loop (cdr l)))]
+                         [else #f])))]
+                  [(n) (apply make-namespace
+                              (if (zodiac-vocabulary? setting)
+                                  (append (list 'hash-percent-syntax) namespace-flags)
+                                  namespace-flags))])
+      
+      (when (zodiac-vocabulary? setting)
+        (use-compiled-file-kinds 'non-elaboration))
+      (current-setting setting)
+      (compile-allow-set!-undefined #f)
+      (compile-allow-cond-fallthrough #f)
+      (current-custodian custodian)
+      (error-value->string-handler drscheme-error-value->string-handler)
+      (current-exception-handler drscheme-exception-handler)
+      (initial-exception-handler drscheme-exception-handler)
+      (current-namespace n)
+      (current-zodiac-namespace n)
+      (break-enabled #t)
+      (read-curly-brace-as-paren #t)
+      (read-square-bracket-as-paren #t)
+      (print-struct (not (eq? 'r4rs-style (setting-printing setting))))
+      
+      (error-print-width 250)
+      (current-print drscheme-print)
+      
+      (current-load-relative-directory #f)
+      (current-require-relative-collection #f)
+      
+      (when (zodiac-vocabulary? setting)
+        (current-vocabulary
+         (zodiac:create-vocabulary
+          'scheme-w/user-defined-macros/drscheme
+          (case (setting-vocabulary-symbol setting)
+            [(beginner) zodiac:beginner-vocabulary]
+            [(intermediate) zodiac:intermediate-vocabulary]
+            [(advanced) zodiac:advanced-vocabulary]
+            [(mzscheme-debug mred-debug) zodiac:scheme-vocabulary]
+            [else (error 'init "bad vocabulary spec: ~a ~e"
+                         (setting-vocabulary-symbol setting) setting)])))
+        (zodiac:reset-previous-attribute 
+         #f
+         (eq? (setting-vocabulary-symbol setting)
+              'mred-debug)))
+      
+      (read-case-sensitive (setting-case-sensitive? setting))
+      
+      (aries:signal-undefined (setting-signal-undefined setting))
+      (aries:signal-not-boolean (setting-signal-not-boolean setting))
+      
+      ;; Allow ` , and ,@ ? - FIXME!
+      (zodiac:allow-reader-quasiquote (setting-allow-reader-quasiquote? setting))
+      (zodiac:disallow-untagged-inexact-numbers (setting-disallow-untagged-inexact-numbers setting))
+      
+      ;; ricedefs
+      (let ([improper-lists?
+             (or (not (zodiac-vocabulary? setting))
+                 (setting-allow-improper-lists? setting))])
+        (zodiac:allow-improper-lists improper-lists?)
+        (params:allow-improper-lists improper-lists?))
+      (params:eq?-only-compares-symbols (setting-eq?-only-compares-symbols? setting))
+      (params:<=-at-least-two-args (setting-<=-at-least-two-args setting))
+      (global-define-values/invoke-unit/sig ricedefs^ ricedefs@ #f (params : plt:userspace:params^))
+      ;; end ricedefs
+      
+      (compile-allow-set!-undefined (setting-allow-set!-on-undefined? setting))
+      (compile-allow-cond-fallthrough (not (setting-unmatched-cond/case-is-error? setting)))
+      
+      (current-eval drscheme-eval-handler)
+      (current-load drscheme-load-handler)
+      
+      (when (setting-define-argv? setting)
+        (global-defined-value 'argv #())
+        (global-defined-value 'program this-program))
+      
+      (mzlib:print-convert:empty-list-name 'empty)
+      
+      (global-port-print-handler drscheme-port-print-handler)
+      
+      (case (setting-printing setting)
+        [(constructor-style)
+         (r4rs-style-printing #f)
+         (mzlib:print-convert:constructor-style-printing #t)]
+        [(quasi-style)
+         (r4rs-style-printing #f)
+         (mzlib:print-convert:constructor-style-printing #f)
+         (mzlib:print-convert:quasi-read-style-printing #f)]
+        [(quasi-read-style)
+         (r4rs-style-printing #f)
+         (mzlib:print-convert:constructor-style-printing #f)
+         (mzlib:print-convert:quasi-read-style-printing #t)]
+        [(r4rs-style) (r4rs-style-printing #t)]
+        [else (error 'install-language "found bad setting-printing: ~a~n" 
+                     (setting-printing setting))])
+      
+      (mzlib:pretty-print:pretty-print-show-inexactness (setting-print-tagged-inexact-numbers setting))
+      (mzlib:print-convert:show-sharing (setting-sharing-printing? setting))
+      (mzlib:print-convert:whole/fractional-exact-numbers (setting-whole/fractional-exact-numbers setting))
+      (print-graph (and (r4rs-style-printing) (setting-sharing-printing? setting)))
+      (mzlib:print-convert:abbreviate-cons-as-list (setting-abbreviate-cons-as-list? setting))
+      
+      (when extra-definitions
+        (extra-definitions))
+      (for-each (lambda (l) (apply require-library/proc l))
+                (setting-macro-libraries setting)))))

@@ -223,7 +223,6 @@
       (append-editor-operation-menu-items m #f)))
 
   ;; Just a few extra key bindings:
-  (install-standard-text-bindings repl-buffer)
   (let ([console-keymap (make-object keymap%)])
     (send console-keymap add-function
 	  "previous-input"

@@ -18,7 +18,7 @@
 
   ;; turtle-style : (union 'triangle 'line 'empty)
   (define turtle-style 'triangle)
-
+  
   (define plot-window%
     (class mred:frame% (name width height)
       (inherit show)
@@ -76,13 +76,13 @@
 	 (class mred:canvas% args
 	   (inherit get-dc)
 	   (override
-	    [on-paint
-	     (lambda ()
-	       (let ([dc (get-dc)])
-		 (send dc clear)
-		 (send dc draw-bitmap (send memory-dc get-bitmap) 0 0)
-		 (flip-icons)))])
-	    (sequence (apply super-init args)))]
+             [on-paint
+              (lambda ()
+                (let ([dc (get-dc)])
+                  (send dc clear)
+                  (send dc draw-bitmap (send memory-dc get-bitmap) 0 0)
+                  (flip-icons)))])
+           (sequence (apply super-init args)))]
 	[clear
 	 (lambda () 
 	   (send memory-dc clear)
@@ -99,21 +99,21 @@
 	[file-menu (make-object mred:menu% "File" menu-bar)])
       (sequence 
 	(make-object mred:menu-item%
-	  "Print"
-	  file-menu
-	  (lambda (_1 _2)
-	    (print)))
+                     "Print"
+                     file-menu
+                     (lambda (_1 _2)
+                       (print)))
 	(make-object mred:menu-item%
-	  "Close"
-	  file-menu
-	  (lambda (_1 _2)
-	    (turtles #f))))
+                     "Close"
+                     file-menu
+                     (lambda (_1 _2)
+                       (turtles #f))))
       
       (public
 	[save-turtle-bitmap
 	 (lambda (fn type)
 	   (send bitmap save-file fn type))])
-
+      
       (public
 	[canvas (make-object canvas% this)]
 	[wipe-line (let* ([dc (send canvas get-dc)]
@@ -130,7 +130,9 @@
 		       (canvas-pen b-pen)))]
 	[draw-line (let* ([dc (send canvas get-dc)]
 			  [dc-line (ivar memory-dc draw-line)]
-			  [canvas-line (ivar dc draw-line)])
+			  [canvas-line (ivar dc draw-line)]
+			  [dc-pen (ivar memory-dc set-pen)]
+			  [canvas-pen (ivar dc set-pen)])
 		     (lambda (a b c d)
 		       (dc-line a b c d)
 		       (canvas-line a b c d)))])
@@ -205,7 +207,8 @@
 	(set! inner-wipe-line (ivar turtles:window wipe-line))
 	(set! inner-clear-window (ivar turtles:window clear))
 	(set! inner-save-turtle-bitmap (ivar turtles:window save-turtle-bitmap)))
-      (send turtles:window show x)]))
+      (send turtles:window show x)
+      (ivar turtles:window canvas)]))
   
   (define clear 
     (lambda ()

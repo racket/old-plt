@@ -462,9 +462,11 @@
 						  menu
 						  (lambda (item evt)
 						    (unless (null? arrows)
-						      (send (get-top-level-window)
-							    syncheck:button-callback)
-						      '(let* ([arrow (car arrows)]
+                                                      
+                                                      ;; deadlock; why?!?!?!
+						      ;(send (get-top-level-window) syncheck:button-callback)
+                                                      
+						      (let* ([arrow (car arrows)]
 							     [id-name (arrow-id-name arrow)]
 							     [new-id 
 							      (mred:get-text-from-user
@@ -473,7 +475,7 @@
 							       #f
 							       (format "~a" id-name))])
 							((arrow-rename arrow) new-id))
-						      '(invalidate-bitmap-cache))))])
+						      (invalidate-bitmap-cache))))])
 			       (send (get-canvas) popup-menu menu
 				     (inexact->exact (floor (send event get-x)))
 				     (inexact->exact (floor (send event get-y)))))))]
@@ -540,6 +542,7 @@
 					     (drscheme:basis:initialize-parameters
 					      (current-custodian)
 					      (ivar interactions-text user-setting))
+                                             (drscheme:rep:invoke-library)
 					     (let loop ()
 					       (semaphore-wait producer-sem)
 					       (unless shutdown?
@@ -829,10 +832,8 @@
 			     [error #f]
 			     [debug #f]
 			     [msg #f])
-			 (printf "running in evaluation thread~n")
 			 (send interactions-text run-in-evaluation-thread
 			       (lambda ()
-				 (mred:message-box "" "in evaluation thread")
 				 (let/ec k
 				   (parameterize ([current-output-port output-port]
 						  [drscheme:basis:error-display/debug-handler
@@ -859,9 +860,7 @@
 				      0
 				      (send definitions-text last-position)
 				      #f)))))
-			 (printf "waiting for semaphore~n")
 			 (semaphore-wait semaphore)
-			 (printf "got semaphore~n")
 			 (when error-raised?
 			   (send interactions-text report-located-error msg debug error)))
 		       

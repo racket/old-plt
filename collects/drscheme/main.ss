@@ -22,7 +22,7 @@
      s))
 
   (fw:application:current-app-name "DrScheme")
-  ;(fw:version:add-spec 'd 14)  14 has not yet been released
+  (fw:version:add-spec 'd 14) 
   
   
   ;; add preferences

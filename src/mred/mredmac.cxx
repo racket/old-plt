@@ -758,6 +758,8 @@ int MrEdGetNextEvent(int check_only, int current_only,
     event = &ebuf;
   
   c = current_only ? MrEdGetContext() : NULL;
+
+  wxResetCanvasBackgrounds();
     
   keyOk = KeyOk(current_only);
   

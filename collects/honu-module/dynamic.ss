@@ -1,4 +1,4 @@
-(module crocodile mzscheme
+(module dynamic mzscheme
 
   (require-for-syntax (lib "stx.ss" "syntax")
 		      "private/ops.ss"
@@ -22,33 +22,33 @@
    ;; --------------------------------------------------------
    ;; Transformer procedure property and basic struct
 
-   (define-values (prop:croc-transformer croc-transformer? croc-transformer-ref)
-     (make-struct-type-property 'crocodile-transformer))
+   (define-values (prop:honu-transformer honu-transformer? honu-transformer-ref)
+     (make-struct-type-property 'honu-transformer))
 
 
-   (define-values (struct:croc-trans make-croc-trans croc-trans? croc-trans-ref croc-trans-set!)
-     (make-struct-type 'croc-trans #f 1 0 #f 
-		       (list (list prop:croc-transformer #t))
+   (define-values (struct:honu-trans make-honu-trans honu-trans? honu-trans-ref honu-trans-set!)
+     (make-struct-type 'honu-trans #f 1 0 #f 
+		       (list (list prop:honu-transformer #t))
 		       (current-inspector) 0))
 
-   (define (make-crocodile-transformer proc)
+   (define (make-honu-transformer proc)
      (unless (and (procedure? proc)
 		  (procedure-arity-includes? proc 2))
        (raise-type-error
-	'define-crocodile-syntax
+	'define-honu-syntax
 	"procedure (arity 2)"
 	proc))
-     (make-croc-trans proc))
+     (make-honu-trans proc))
 
    ;; --------------------------------------------------------
    ;; Type
 
-   (define-values (struct:croc-type make-croc-type croc-type? croc-type-ref croc-type-set!)
-     (make-struct-type 'croc-type #f 3 0 #f null (current-inspector) 0))
+   (define-values (struct:honu-type make-h-type honu-type? honu-type-ref honu-type-set!)
+     (make-struct-type 'honu-type #f 3 0 #f null (current-inspector) 0))
 
-   (define (croc-type-stx v) (croc-type-ref v 0))
-   (define (croc-type-pred-def-stx v) (croc-type-ref v 1))
-   (define (croc-type-pred-stx v) (croc-type-ref v 2))
+   (define (honu-type-stx v) (honu-type-ref v 0))
+   (define (honu-type-pred-def-stx v) (honu-type-ref v 1))
+   (define (honu-type-pred-stx v) (honu-type-ref v 2))
 
    ;; --------------------------------------------------------
    ;; Parsing blocks
@@ -65,7 +65,7 @@
      (or (and (stx-pair? stx)
 	      (identifier? (stx-car stx))
 	      (let ([v (syntax-local-value (stx-car stx) (lambda () #f))])
-		(and (croc-transformer? v) v)))
+		(and (honu-transformer? v) v)))
 	 (and (stx-pair? stx)
 	      (let ([first (stx-car stx)])
 		(and (stx-pair? first)
@@ -81,7 +81,7 @@
 			   (if (ormap operator? (cdr l))
 			       #f
 			       (let ([v (syntax-local-value (car l) (lambda () #f))])
-				 (and (croc-transformer? v)
+				 (and (honu-transformer? v)
 				      v)))]
 			  [else (loop (cdr l))]))))))))
    
@@ -255,9 +255,9 @@
 
    (define (parse-one-argument proc-id type id k)
      (cons (list id 
-		 (croc-type-stx type)
-		 (croc-type-pred-def-stx type)
-		 (croc-type-pred-stx type))
+		 (honu-type-stx type)
+		 (honu-type-pred-def-stx type)
+		 (honu-type-pred-stx type))
 	   (k)))
 
    (define (parse-arguments orig-args-stx proc-id)
@@ -270,7 +270,7 @@
 	     (let-values ([(type rest-stx) (if trans
 					       (trans args-stx type-context)
 					       (values #f #f))])
-	       (unless (croc-type? type)
+	       (unless (honu-type? type)
 		 (raise-syntax-error
 		  '|procedure declaration|
 		    (format "expected a type ~a" where)
@@ -301,8 +301,8 @@
 		   "expected an argument identifier"
 		   (car rest-stx))]))))))
    
-   (define (make-crocodile-type pred-id mk-pred-def)
-     (make-croc-trans
+   (define (make-honu-type pred-id mk-pred-def)
+     (make-honu-trans
       (lambda (orig-stx ctx)
 	(let* ([pred-id (or pred-id
 			    (car (generate-temporaries '(type-pred))))]
@@ -361,7 +361,7 @@
 					      ((arg arg-type arg-pred-id) ...)
 					      (lambda (temp-id ...)
 						(define-typed arg id arg-type arg-pred-id temp-id) ...
-						(crocodile-unparsed-block id type-name pred-id . body))))
+						(honu-unparsed-block id type-name pred-id . body))))
 					#'rest)))]
 			   ;; --- Error handling ---
 			   [((#%parens . prest) . bad-rest)
@@ -386,7 +386,7 @@
 				       after
 				       #'id)])))]
 	   [(type-context? ctx) 
-	    (values (make-croc-type (stx-car orig-stx) pred-def pred-id) (stx-cdr orig-stx))]
+	    (values (make-h-type (stx-car orig-stx) pred-def pred-id) (stx-cdr orig-stx))]
 	   [(expression-context? ctx)
 	    (raise-syntax-error #f 
 				"illegal in an expression context"
@@ -429,12 +429,12 @@
 				      (stx-car rest-stx)))
 		  type))])
 	 (with-syntax ([(arg ...) (generate-temporaries arg-types)]
-		       [(arg-type ...) (map croc-type-stx arg-types)]
-		       [(arg-pred-def ...) (map croc-type-pred-def-stx arg-types)]
-		       [(arg-pred-id ...) (map croc-type-pred-stx arg-types)]
-		       [result-type (croc-type-stx result-type)]
-		       [result-pred-def (croc-type-pred-def-stx result-type)]
-		       [result-pred-id (croc-type-pred-stx result-type)]
+		       [(arg-type ...) (map honu-type-stx arg-types)]
+		       [(arg-pred-def ...) (map honu-type-pred-def-stx arg-types)]
+		       [(arg-pred-id ...) (map honu-type-pred-stx arg-types)]
+		       [result-type (honu-type-stx result-type)]
+		       [result-pred-def (honu-type-pred-def-stx result-type)]
+		       [result-pred-id (honu-type-pred-stx result-type)]
 		       [n (length arg-types)])
 	   #`(begin
 	       arg-pred-def ...
@@ -488,10 +488,10 @@
        (let ([v (local-expand
 		 #'val
 		 'expression
-		 (cons #'croc-typed
+		 (cons #'honu-typed
 		       kernel-forms))])
-	 (syntax-case v (croc-typed)
-	   [(croc-typed val val-type)
+	 (syntax-case v (honu-typed)
+	   [(honu-typed val val-type)
 	    (compatible-type? #'val #'val-type #'type-name)
 	    ;; No run-time check:
 	    #'val]
@@ -517,9 +517,9 @@
 		    [(set! id rhs)
 		     #'(set! gen-id (check-expr set! id type-name pred-id rhs))]
 		    [(id arg (... ...))
-		     #'(#%app (croc-typed gen-id type-name) arg (... ...))]
+		     #'(#%app (honu-typed gen-id type-name) arg (... ...))]
 		    [id
-		     #'(croc-typed gen-id type-name)]))))))]))
+		     #'(honu-typed gen-id type-name)]))))))]))
 
   (define-syntax (define-typed-procedure stx)
     (syntax-case stx ()
@@ -548,21 +548,21 @@
 				    (length formal-args)
 				    (length actual-args))
 			    stx))
-			 #'(#%app (croc-typed gen-id type-name) 
+			 #'(#%app (honu-typed gen-id type-name) 
 				  (check-expr 'id 'arg arg-type pred-id actual-arg) 
 				  (... ...)))]
 		      [id
-		       #'(croc-typed (let ([id (lambda (arg (... ...))
+		       #'(honu-typed (let ([id (lambda (arg (... ...))
 						 (id arg (... ...)))])
 				       id)
 				     type-name)])))))))]))
 
-  (define-syntax croc-typed
+  (define-syntax honu-typed
     (syntax-rules ()
       [(_ expr type) expr]))
 
   (require-for-syntax (lib "context.ss" "syntax"))
-  (define-syntax (crocodile-block stx)
+  (define-syntax (honu-block stx)
     ;; A block can have mixed exprs and defns. Wrap expressions with
     ;; `(define-values () ... (values))' as needed, and add a (void)
     ;; at the end if needed. Also, wrap the final expression with
@@ -618,12 +618,12 @@
 		[else
 		 (loop (cdr exprs) prev-defns (cons (car exprs) prev-exprs))])))))
 
-  (define-syntax (crocodile-unparsed-block stx)
+  (define-syntax (honu-unparsed-block stx)
     (syntax-case stx (void)
       [(_ proc-id result-type-name result-pred-id . body) 
-       #`(crocodile-block proc-id result-type-name result-pred-id #,@(parse-block #'body))]))
+       #`(honu-block proc-id result-type-name result-pred-id #,@(parse-block #'body))]))
 
-  (define-syntax (crocodile-return stx)
+  (define-syntax (h-return stx)
     (syntax-case stx ()
       [(_ expr) #'expr]))
 
@@ -635,11 +635,11 @@
   ;; Defining a new transformer or new type
 
   (require-for-syntax (lib "define.ss" "syntax"))
-  (define-syntax (define-crocodile-syntax stx)
+  (define-syntax (define-honu-syntax stx)
     (let-values ([(id rhs) (normalize-definition stx #'lambda #f)])
       (with-syntax ([id id]
 		    [rhs rhs])
-	#'(define-syntax id (make-crocodile-transformer rhs)))))
+	#'(define-syntax id (make-honu-transformer rhs)))))
 
   (define-syntax (define-type stx)
     (syntax-case stx ()
@@ -650,13 +650,13 @@
 	     (define pred-id (let ([pred pred-expr])
 				(lambda (v)
 				  (values (pred v) v))))
-	     (define-syntax id (make-crocodile-type #'pred-id #f))))]))
+	     (define-syntax id (make-honu-type #'pred-id #f))))]))
 
   (define-syntax (define-type-constructor stx)
     (syntax-case stx ()
       [(_ id generator-expr)
        (identifier? #'id)
-       #'(define-syntax id (make-crocodile-type #f generator-expr))]))
+       #'(define-syntax id (make-honu-type #f generator-expr))]))
 
   ;; ----------------------------------------
   ;;  Pre-defined types and forms
@@ -671,7 +671,7 @@
 
   (define-type-constructor -> make-proc-predicate)
 
-  (define-crocodile-syntax croc-provide
+  (define-honu-syntax honu-provide
     (lambda (body ctx)
       (unless (top-block-context? ctx)
 	(raise-syntax-error #f "not allowed outside the top level" (stx-car body)))
@@ -688,7 +688,7 @@
 	   (identifier? #'id)
 	   (values #'(provide id) #'rest)]))))
 
-  (define-crocodile-syntax croc-return
+  (define-honu-syntax honu-return
     (lambda (stx ctx)
       (unless (block-context? ctx)
 	(raise-syntax-error #f "allowed only in a block context" (stx-car stx)))
@@ -712,13 +712,13 @@
 	     (stx-car stx)))
 	  (values
 	   (syntax/loc (stx-car stx)
-	     (crocodile-return expr))
+	     (h-return expr))
 	   null)))))
 
   ;; ----------------------------------------
   ;; Main compiler loop
 
-  (define-syntax (croc-unparsed-begin stx)
+  (define-syntax (honu-unparsed-begin stx)
     (syntax-case stx ()
       [(_) #'(begin)]
       [(_ . body) (let-values ([(code rest) (parse-block-one top-block-context
@@ -728,20 +728,21 @@
 							       (values #'(void) null)))])
 		    #`(begin
 			#,code
-			(croc-unparsed-begin #,@rest)))]))
+			(honu-unparsed-begin #,@rest)))]))
 
-  (define-syntax (croc-module-begin stx)
-    #`(#%module-begin
-       (croc-unparsed-begin #,@(stx-cdr stx))))
+  (define-syntax (#%dynamic-honu-module-begin stx)
+    #`(begin
+	#,(syntax-local-introduce #'(require (lib "dynamic.ss" "honu-module")))
+	(honu-unparsed-begin #,@(stx-cdr stx))))
   
   (provide int obj (rename string-type string) ->
 	   (rename set! =)
-	   (rename croc-return return)
+	   (rename honu-return return)
 	   + - * / (rename modulo %)
 	   (rename string->number stringToNumber)
 	   (rename number->string numberToString)
 	   #%datum
 	   #%top
 	   #%parens
-	   (rename croc-module-begin #%module-begin)
-	   (rename croc-provide provide)))
+	   #%dynamic-honu-module-begin
+	   (rename honu-provide provide)))

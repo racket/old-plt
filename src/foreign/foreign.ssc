@@ -1046,7 +1046,7 @@ static void* scheme_to_c(Scheme_Object *type, void *dst,
   if (CTYPE_PRIMLABEL(base) == FOREIGN_fpointer) {
     if (argc > 2)
       scheme_signal_error
-        (MYNAME": referencing a special value with extra arguments");
+        (MYNAME": referencing fpointer with extra arguments");
     else
       ptr = argv[0];
   } else if (size < 0) {
@@ -1088,7 +1088,7 @@ static void* scheme_to_c(Scheme_Object *type, void *dst,
   if (CTYPE_PRIMLABEL(base) == FOREIGN_fpointer) {
     if (argc > 3) {
       scheme_signal_error
-        (MYNAME": setting a special value with extra arguments");
+        (MYNAME": setting fpointer value with extra arguments");
     } else if (SCHEME_CPTRP(argv[0])) {
       ptr = SCHEME_CPTR_VAL(argv[0]);
     } else if SCHEME_FFIOBJP(argv[0]) {

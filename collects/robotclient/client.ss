@@ -1,4 +1,4 @@
-(module client mzscheme
+(module client "mzscheme-test.ss"
   (require "board.ss"
            "baseline.ss"
 	   "client-parameters.ss"
@@ -25,14 +25,13 @@
   (define (read-packages in)
     (let* ((x (read-line in))
            (in (open-input-string x)))
-      ;((lambda (x) (printf "~a~n" x) x)
       (let loop ((id (read in)))
         (cond
           ((eof-object? id) null)
           (else
            (cons
             (make-package id (read in) (read in) (read in))
-            (loop (read in))))))));)
+            (loop (read in))))))))
   
   (define (send-command command out)
     (display (command-bid command) out)
@@ -61,6 +60,12 @@
   (define (do-turn update-score baseline? gui? in out)
     (let loop ((packages (read-packages in))
                (robots null))
+      (printf "~a~n" (map
+		      (lambda (p)
+			(list (package-id p)
+			      (package-x p)
+			      (package-y p)))
+		      packages))
       (cond
         ((null? packages) (fix-home!)))
       (cond

@@ -11,7 +11,8 @@
                (cond
                  ((and (= (get-player-x) (package-x p))
                        (= (get-player-y) (package-y p)))
-                  p)
+		  (printf "drop id: ~a at (~a, ~a)~n" (package-id p)(get-player-x) (get-player-y))
+		  p)
                  (else #f)))
              (packages-held))))
                

@@ -9,7 +9,7 @@
   (provide get-type get-robot get-valid set-valid set-invalid get-weight set-weight
            get-spot set-spot get-player-x get-player-y
            (struct command (bid command arg))
-           (struct package (id weight x y))
+           (struct package (id x y weight))
            (struct robot (id x y))
            read-board! read-response!
            fix-home!)
@@ -123,7 +123,7 @@
   (define-struct command (bid command arg) (make-inspector))
   
   ;; (make-package num num num num)
-  (define-struct package (id weight x y) (make-inspector))
+  (define-struct package (id x y weight) (make-inspector))
 
   ;; (make-robot num num num)
   (define-struct robot (id x y))

@@ -15,7 +15,7 @@
   ;(define web-menu-name "Course Homepage")
   ;(define web-address "http://www.university.edu/course/")
 
-  (define tool-icons (list (list "icon.png" collection)))
-  (define tools '(("tool.ss")))
-  (define tool-names (list name))
+  #;(define tool-icons (list (list "icon.png" collection)))
+  #;(define tools '(("tool.ss")))
+  #;(define tool-names (list name))
   (define requires '(("mred") ("openssl"))))

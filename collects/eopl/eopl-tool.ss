@@ -45,10 +45,9 @@ wraps the load of the module.)
 	(class (drscheme:language:module-based-language->language-mixin
 		(drscheme:language:simple-module-based-language->module-based-language-mixin
 		 language-base%))
-	  (rename [super-on-execute on-execute])
 	  (define/override (use-namespace-require/copy?) #t)
 	  (define/override (on-execute settings run-in-user-thread)
-	    (super-on-execute settings run-in-user-thread)
+	    (super on-execute settings run-in-user-thread)
 	    (run-in-user-thread
 	     (lambda ()
 	       ((namespace-variable-value 'install-eopl-exception-handler)))))

@@ -1,6 +1,6 @@
 (module info (lib "infotab.ss" "setup")
   (define name "ProfessorJ")
-  (define tools (list (list "tool.ss")))
+  #;(define tools (list (list "tool.ss")))
   (define install-collection "installer.ss")
   (define compile-subcollections (list (list "profj" "parsers")
                                        (list "profj" "libs" "java" "lang")

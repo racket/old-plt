@@ -6,9 +6,9 @@
   
   ; for DrScheme
   (define name "MrFlow")
-  (define tools '(("gui.ss")))
-  (define tool-icons '(("mrflow.gif" "icons")))
+  #;(define tools '(("gui.ss")))
+  #;(define tool-icons '(("mrflow.gif" "icons")))
   ; this name shows up in the "About Drscheme" menu
-  (define tool-names '("MrFlow Static Debugger"))
-  (define tool-urls '("http://www.plt-scheme.org/software/mrflow/"))
+  #;(define tool-names '("MrFlow Static Debugger"))
+  #;(define tool-urls '("http://www.plt-scheme.org/software/mrflow/"))
   )

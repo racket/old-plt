@@ -23,7 +23,6 @@ class wxbDialogBox: public wxPanel
 
   void *context;
 
-  wxbDialogBox(void);
   wxbDialogBox(wxWindow *parent, char *title, Bool modal = FALSE,
               int x = -1, int y = -1,
               int width = -1, int height = -1, long style = 0, char *name = "panel");

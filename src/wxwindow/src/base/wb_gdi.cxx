@@ -32,98 +32,6 @@ wxbFont::~wxbFont ()
 {
 }
 
-char *wxbFont::GetFamilyString(void)
-{
-  char *fam = NULL;
-  switch (GetFamily())
-  {
-    case wxDECORATIVE:
-      fam = "wxDECORATIVE";
-      break;
-    case wxROMAN:
-      fam = "wxROMAN";
-      break;
-    case wxSCRIPT:
-      fam = "wxSCRIPT";
-      break;
-    case wxSWISS:
-      fam = "wxSWISS";
-      break;
-    case wxMODERN:
-      fam = "wxMODERN";
-      break;
-    case wxTELETYPE:
-      fam = "wxTELETYPE";
-      break;
-    case wxSYSTEM:
-      fam = "wxSYSTEM";
-      break;
-    case wxSYMBOL:
-      fam = "wxSYMBOL";
-      break;
-    default:
-      fam = "wxDEFAULT";
-      break;
-  }
-  return fam;
-}
-
-/* MATTHEW: [4] New font system */
-char *wxbFont::GetFaceString(void)
-{
-  /* If it's one of the portable faceless fonts, return NULL */
-  switch (GetFamily())
-  {
-  case wxDECORATIVE:
-  case wxROMAN:
-  case wxSCRIPT:
-  case wxSWISS:
-  case wxMODERN:
-  case wxTELETYPE:
-  case wxSYSTEM:
-  case wxSYMBOL:
-    return NULL;
-  default:
-    return wxTheFontNameDirectory->GetFontName(fontid); 
-  }
-}
-
-char *wxbFont::GetStyleString(void)
-{
-  char *styl = NULL;
-  switch (GetStyle())
-  {
-    case wxITALIC:
-      styl = "wxITALIC";
-      break;
-    case wxSLANT:
-      styl = "wxSLANT";
-      break;
-    default:
-      styl = "wxNORMAL";
-      break;
-  }
-  return styl;
-}
-
-char *wxbFont::GetWeightString(void)
-{
-  char *w = NULL;
-  switch (GetWeight())
-  {
-    case wxBOLD:
-      w = "wxBOLD";
-      break;
-    case wxLIGHT:
-      w = "wxLIGHT";
-      break;
-    default:
-      w = "wxNORMAL";
-      break;
-  }
-  return w;
-}
-
 // Colour
 
 wxColour::wxColour (void)
@@ -131,13 +39,7 @@ wxColour::wxColour (void)
   __type = wxTYPE_COLOUR;
   isInit = FALSE;
   locked = 0;
-#ifdef wx_x
-  pixel = -1;
-#endif
-#ifdef wx_msw
   pixel = 0;
-#endif
-//  wxTheColourList->Append (this);
 }
 
 wxColour::wxColour (const unsigned char r, const unsigned char g, const unsigned char b)
@@ -147,13 +49,7 @@ wxColour::wxColour (const unsigned char r, const unsigned char g, const unsigned
   green = g;
   blue = b;
   isInit = TRUE;
-#ifdef wx_x
-  pixel = -1;
-#endif
-#ifdef wx_msw
   pixel = RGB (red, green, blue);
-#endif
-//  wxTheColourList->Append (this);
 }
 
 wxColour::wxColour (const wxColour *col)
@@ -427,7 +323,6 @@ wxInitializeStockObjects (void)
   wxTheBrushList = new wxBrushList;
   wxThePenList = new wxPenList;
   wxTheFontList = new wxFontList;
-  wxTheBitmapList = new wxGDIList;
 
   wxNORMAL_FONT = new wxFont (12, wxSYSTEM, wxNORMAL, wxNORMAL);
   wxSMALL_FONT = new wxFont (10, wxSWISS, wxNORMAL, wxNORMAL);
@@ -479,27 +374,6 @@ wxInitializeStockObjects (void)
 void 
 wxDeleteStockObjects (void)
 {
-  if (wxBLACK)
-    delete wxBLACK;
-  if (wxWHITE)
-    delete wxWHITE;
-  if (wxRED)
-    delete wxRED;
-  if (wxBLUE)
-    delete wxBLUE;
-  if (wxGREEN)
-    delete wxGREEN;
-  if (wxCYAN)
-    delete wxCYAN;
-  if (wxLIGHT_GREY)
-    delete wxLIGHT_GREY;
-
-  if (wxSTANDARD_CURSOR)
-    delete wxSTANDARD_CURSOR;
-  if (wxHOURGLASS_CURSOR)
-    delete wxHOURGLASS_CURSOR;
-  if (wxCROSS_CURSOR)
-    delete wxCROSS_CURSOR;
 }
 
 // Pens
@@ -692,24 +566,6 @@ void wxbBrush::SetStipple (wxBitmap * Stipple)
     --stipple->selectedIntoDC;
 
   stipple = Stipple;
-}
-
-wxGDIList::wxGDIList (void)
-{
-}
-
-wxGDIList::~wxGDIList (void)
-{
-#ifndef wx_x
-  wxNode *node = First ();
-  while (node)
-    {
-      wxObject *object = (wxObject *) node->Data ();
-      wxNode *next = node->Next ();
-      delete object;
-      node = next;
-    }
-#endif
 }
 
 // Pen and Brush lists

@@ -83,30 +83,6 @@ Bool wxRemoveFile(const char *file)
   return FALSE;
 }
 
-Bool wxMkdir(const char *dir)
-{
-  return (mkdir(dir) == 0);
-}
-
-Bool wxRmdir(const char *dir)
-{
-  return (rmdir(dir) == 0);
-}
-
-Bool wxDirExists(const char *dir)
-{
-  WIN32_FIND_DATA fileInfo;
-
-  HANDLE h = FindFirstFile((LPTSTR)dir,(LPWIN32_FIND_DATA)&fileInfo);
-
-  if (h==INVALID_HANDLE_VALUE)
-    return FALSE;
-  else {
-    FindClose(h);
-    return (fileInfo.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY);
-  }
-}
-
 // Get a temporary filename, opening and closing the file.
 char *wxGetTempFileName(const char *prefix, char *buf)
 {
@@ -154,33 +130,7 @@ void wxFatalError(const char *msg, const char *title)
 // Emit a beeeeeep
 void wxBell(void)
 {
-  MessageBeep(MB_OK) ;
-}
-
-int wxGetOsVersion(int *majorVsn, int *minorVsn)
-{
-  DWORD Version = GetVersion();
-  WORD  lowWord = LOWORD(Version);  
-  
-  
-  BOOL  Win32s = ( Version & 0x80000000 );
-  BOOL  Win95   = (( Version & 0xFF ) >= 4);
-  BOOL  WinNT   = Version < 0x80000000;
-  
-  // Get the version number
-  if (majorVsn)
-          *majorVsn = LOBYTE(lowWord);
-  if (minorVsn)
-          *minorVsn = HIBYTE(lowWord);
-
-  if (Win95)
-    return wxWINDOWS_NT /* wxWIN95 */;
-  else if (Win32s)
-    return wxWIN32S;
-  else if (WinNT)
-    return wxWINDOWS_NT;
-  else
-    return wxWINDOWS;
+  MessageBeep(MB_OK);
 }
 
 // Reading and writing resources (eg WIN.INI, .Xdefaults)
@@ -197,21 +147,21 @@ Bool wxWriteResource(const char *section, const char *entry, float value, const 
 {
   char buf[50];
   sprintf(buf, "%.4f", value);
-  return wxWriteResource(section, entry, (char *)buf, file); /* MATTHEW: BC */
+  return wxWriteResource(section, entry, (char *)buf, file);
 }
 
 Bool wxWriteResource(const char *section, const char *entry, long value, const char *file)
 {
   char buf[50];
   sprintf(buf, "%ld", value);
-  return wxWriteResource(section, entry, (char *)buf, file); /* MATTHEW: BC */
+  return wxWriteResource(section, entry, (char *)buf, file);
 }
 
 Bool wxWriteResource(const char *section, const char *entry, int value, const char *file)
 {
   char buf[50];
   sprintf(buf, "%d", value);
-  return wxWriteResource(section, entry, (char *)buf, file); /* MATTHEW: BC */
+  return wxWriteResource(section, entry, (char *)buf, file);
 }
 
 static char *wxUserResourceFile;
@@ -238,7 +188,6 @@ Bool wxGetResource(const char *section, const char *entry, char **value, const c
       return FALSE;
   }
 
-  if (*value) delete[] (*value);
   *value = copystring(wxBuffer);
   return TRUE;
 }
@@ -246,11 +195,10 @@ Bool wxGetResource(const char *section, const char *entry, char **value, const c
 Bool wxGetResource(const char *section, const char *entry, float *value, const char *file)
 {
   char *s = NULL;
-  Bool succ = wxGetResource(section, entry, (char **)&s, file); /* MATTHEW: BC */
+  Bool succ = wxGetResource(section, entry, (char **)&s, file);
   if (succ)
   {
     *value = (float)strtod(s, NULL);
-    delete[] s;
     return TRUE;
   }
   else return FALSE;
@@ -259,11 +207,10 @@ Bool wxGetResource(const char *section, const char *entry, float *value, const c
 Bool wxGetResource(const char *section, const char *entry, long *value, const char *file)
 {
   char *s = NULL;
-  Bool succ = wxGetResource(section, entry, (char **)&s, file); /* MATTHEW: BC */
+  Bool succ = wxGetResource(section, entry, (char **)&s, file);
   if (succ)
   {
     *value = strtol(s, NULL, 10);
-    delete[] s;
     return TRUE;
   }
   else return FALSE;
@@ -272,11 +219,10 @@ Bool wxGetResource(const char *section, const char *entry, long *value, const ch
 Bool wxGetResource(const char *section, const char *entry, int *value, const char *file)
 {
   char *s = NULL;
-  Bool succ = wxGetResource(section, entry, (char **)&s, file); /* MATTHEW: BC */
+  Bool succ = wxGetResource(section, entry, (char **)&s, file);
   if (succ)
   {
     *value = (int)strtol(s, NULL, 10);
-    delete[] s; 
     return TRUE;
   }
   else return FALSE;

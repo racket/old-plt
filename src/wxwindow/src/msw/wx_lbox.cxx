@@ -431,7 +431,7 @@ void wxListBox::SetSize(int x, int y, int width, int height, int sizeFlags)
   MoveWindow((HWND)ms_handle, (int)control_x, (int)control_y,
 	     (int)control_width, (int)control_height, TRUE);
   
-  GetEventHandler()->OnSize(width, height);
+  OnSize(width, height);
 }
 
 void wxListBox::GetSize(int *width, int *height)

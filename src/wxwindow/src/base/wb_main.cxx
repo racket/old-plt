@@ -28,10 +28,6 @@ wxbApp::wxbApp()
 
 wxbApp::~wxbApp(void)
 {
-  if (appName)
-    delete[] appName;
-  if (wx_class)
-    delete[] wx_class;
 }
 
 Bool wxbApp::Initialized(void)
@@ -60,10 +56,6 @@ char *wxbApp::GetAppName(void)
 
 void wxbApp::SetAppName(char *name)
 {
-  if (name == appName)
-    return;
-  if (appName)
-    delete[] appName;
   if (name)
     appName = copystring(name);
 }
@@ -75,10 +67,6 @@ char *wxbApp::GetClassName(void)
 
 void wxbApp::SetClassName(char *name)
 {
-  if (name == wx_class)
-    return;
-  if (wx_class)
-    delete[] wx_class;
   if (name)
     wx_class = copystring(name);
 }
@@ -110,18 +98,6 @@ void wxCommonInit(void)
 
 void wxCommonCleanUp(void)
 {
-  wxDeleteStockObjects() ;
-  // Destroy all GDI lists, etc.
-  delete wxTheBrushList;
-  delete wxThePenList;
-  delete wxTheFontList;
-  delete wxTheBitmapList;
-  delete wxTheColourDatabase;
-
-  wxInitializePrintSetupData(FALSE);
-  delete wxThePrintPaperDatabase;
-  wxThePrintPaperDatabase = NULL;
-
-  delete[] wxBuffer;
+  // MrEd takes care of deleting GDI objects
 }
 

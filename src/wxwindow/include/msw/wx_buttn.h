@@ -23,12 +23,9 @@ class wxButton: public wxbButton
            int width = -1, int height = -1, long style = 0, char *name = "button");
   ~wxButton(void);
 
-  Bool Create(wxPanel *panel, wxFunction func, char *label, int x=-1, int y=-1,
-           int width=-1, int height=-1, long style=0, char *name="button");
-  Bool Create(wxPanel *panel, wxFunction func, wxBitmap *bitmap, int x=-1, int y=-1,
+  Bool Create(wxPanel *panel, wxFunction func, char *label, wxBitmap *bm, int x=-1, int y=-1,
            int width=-1, int height=-1, long style=0, char *name="button");
   void SetSize(int x, int y, int width, int height, int sizeFlags = wxSIZE_AUTO);
-  void SetFocus(void);
   void SetDefault(void);
   void SetLabel(char *);
   void SetLabel(wxBitmap *bitmap);

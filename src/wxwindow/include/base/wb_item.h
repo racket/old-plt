@@ -15,25 +15,19 @@
 #include "wx_dcpan.h"
 #include "wx_stdev.h"
 
-class wxFont ;
+class wxFont;
+class wxPanel;
 
 // General item class
 class wxbItem: public wxWindow
 {
-   Bool isSelected;
-   int handleSize;   // selection handle size
-   int handleMargin; // Distance between item edge and handle edge
-   int dragOffsetX;  // Distance between pointer at start of drag and 
-   int dragOffsetY;  // top-left of item
-   int centreX;      // Save the centre when start resizing manually
-   int centreY;
  public:
-    wxbItem(void);
+    wxbItem(wxPanel *pnl);
    ~wxbItem(void);
 
-   wxFont *buttonFont ;
-   wxFont *labelFont ;
-   wxColour *backColour ;
+   wxFont *buttonFont;
+   wxFont *labelFont;
+   wxColour *backColour;
    wxColour *labelColour;
    wxColour *buttonColour;
 
@@ -52,12 +46,6 @@ class wxbItem: public wxWindow
    virtual void Command(wxCommandEvent *event);        // Simulates an event
    virtual void ProcessCommand(wxCommandEvent *event); // Calls the callback and 
                                                                  // appropriate event handlers
-   virtual float GetCharWidth(void) = 0;
-   virtual float GetCharHeight(void) = 0;
-
-   virtual int GetLabelPosition(void);
-   virtual void SetLabelPosition(int pos);
-
   // Places item in centre of panel - so can't be used BEFORE panel->Fit()
   void Centre(int direction = wxHORIZONTAL);
 

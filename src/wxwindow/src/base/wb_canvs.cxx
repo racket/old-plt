@@ -7,8 +7,6 @@
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-/* static const char sccsid[] = "@(#)wb_canvs.cc	1.2 5/9/94"; */
-
 #include "wx.h"
 
 class wxFrame;
@@ -27,11 +25,6 @@ wxbCanvas::wxbCanvas(wxWindow *WXUNUSED(window), int WXUNUSED(x), int WXUNUSED(y
 
 wxbCanvas::~wxbCanvas(void)
 {
-}
-
-void wxbCanvas::AllowDoubleClick(int value)
-{
-  doubleClickAllowed = value ;
 }
 
 wxCanvasDC *wxbCanvas::GetDC(void)
@@ -100,32 +93,4 @@ void wxbCanvas::OnChar(wxKeyEvent *event)
       break;
     }
   }
-}
-
-float wxbCanvas::GetCharHeight(void)
-{
-  if (wx_dc)
-    return wx_dc->GetCharHeight();
-  else
-    return 0.0;
-}
-
-float wxbCanvas::GetCharWidth(void)
-{
-  if (wx_dc)
-    return wx_dc->GetCharWidth();
-  else
-    return 0.0;
-}
-
-void wxbCanvas::GetTextExtent(const char *string, float *x, float *y,
-                              float *descent, float *externalLeading,
-			      wxFont *theFont,
-			      Bool use16)
-{
-  if (wx_dc)
-    wx_dc->GetTextExtent(string, x, y, descent, externalLeading, theFont, 
-			 use16);
-  else
-    wxWindow::GetTextExtent(string, x, y, descent, externalLeading, theFont);
 }

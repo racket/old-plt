@@ -54,12 +54,6 @@ Bool wxChoice::Create(wxPanel *panel, wxFunction func, char *Title,
                    long style, char *name)
 {
   SetName(name);
-  if (panel) panel->AddChild(this);
-  buttonFont = panel->buttonFont ;
-  labelFont = panel->labelFont ;
-  backColour = panel->backColour ;
-  labelColour = panel->labelColour ;
-  buttonColour = panel->buttonColour ;
   no_strings = N;
 
   wxWinType = wxTYPE_HWND;
@@ -74,18 +68,10 @@ Bool wxChoice::Create(wxPanel *panel, wxFunction func, char *Title,
 
   char *the_label = NULL ;
 
-  if (Title)
-  {
-    the_label = new char[strlen(Title)+1] ;
-    if (style&wxFIXED_LENGTH)
-    {
-      int i;
-      for (i=0;i<(int)strlen(Title);i++)
-        the_label[i]=MEANING_CHARACTER ;
-    }
-    else
-      strcpy(the_label,Title) ;
-    the_label[strlen(Title)] = '\0' ;
+  if (Title) {
+    the_label = new char[strlen(Title)+1];
+    strcpy(the_label,Title);
+    the_label[strlen(Title)] = '\0';
   }
 
   if (Title) {
@@ -110,7 +96,6 @@ Bool wxChoice::Create(wxPanel *panel, wxFunction func, char *Title,
 				     wxhInstance, NULL);
   ms_handle = (HANDLE)wx_combo;
 
-  // Subclass again for purposes of dialog editing mode
   SubclassControl(wx_combo);
 
   HDC the_dc = GetWindowDC((HWND)ms_handle) ;
@@ -127,14 +112,6 @@ Bool wxChoice::Create(wxPanel *panel, wxFunction func, char *Title,
   SetSize(x, y, width, height);
   panel->AdvanceCursor(this);
   Callback(func);
-
-  if (Title)
-  {
-    if (style&wxFIXED_LENGTH)
-      SetLabel(Title) ;
-    if (the_label)
-      delete [] the_label ;
-  }
 
   SetSelection(0);
 
@@ -153,13 +130,11 @@ wxChoice::~wxChoice(void)
 void wxChoice::Append(char *Item)
 {
   SendMessage((HWND)ms_handle, CB_ADDSTRING, 0, (LONG)Item);
-  no_strings ++;
+  no_strings++;
   if (no_strings == 1)
     SetSelection(0);
 }
 
-// Unfortunately, under XView it doesn't redisplay until user resizes
-// window. Any suggestions folks?
 void wxChoice::Clear(void)
 {
   SendMessage((HWND)ms_handle, CB_RESETCONTENT, 0, 0);
@@ -182,25 +157,11 @@ void wxChoice::SetSelection(int n)
 
 int wxChoice::FindString(char *s)
 {
-#ifdef __WATCOMC__
-  // For some reason, Watcom crashes in the CB_FINDSTRINGEXACT message.
-  // Do it the long way instead.
-  char buf[512];
-  for (int i = 0; i < Number(); i++)
-  {
-    int len = (int)SendMessage((HWND)ms_handle, CB_GETLBTEXT, i, (LPARAM)(LPSTR)buf);
-    buf[len] = 0;
-    if (strcmp(buf, s) == 0)
-      return i;
-  }
-  return -1;
-#else
  int pos = (int)SendMessage((HWND)ms_handle, CB_FINDSTRINGEXACT, -1, (LPARAM)(LPSTR)s);
  if (pos == LB_ERR)
    return -1;
  else
    return pos;
-#endif
 }
 
 char *wxChoice::GetString(int n)
@@ -217,14 +178,6 @@ char *wxChoice::GetString(int n)
 
 void wxChoice::SetSize(int x, int y, int width, int height, int sizeFlags)
 {
-// This flag is controlled by wx_setup.h
-// ALS_CHOICE_SIZE is an experimental form of this method. Please, let this
-// code here, when I've more time I'll attempt to merge both...
-//(ALS_CHOICE_SIZE enables you to specify an height!=1, which is the
-// displayed height)
-
-// #if !ALS_CHOICE_SIZE
-
   int currentX, currentY;
   GetPosition(&currentX, &currentY);
   if (x == -1)
@@ -234,9 +187,7 @@ void wxChoice::SetSize(int x, int y, int width, int height, int sizeFlags)
 
   // If we're prepared to use the existing size, then...
   if (width == -1 && height == -1 && ((sizeFlags & wxSIZE_AUTO) != wxSIZE_AUTO))
-  {
     GetSize(&width, &height);
-  }
 
   char buf[300];
 
@@ -345,103 +296,7 @@ void wxChoice::SetSize(int x, int y, int width, int height, int sizeFlags)
   MoveWindow((HWND)ms_handle, (int)control_x, (int)control_y,
                               (int)control_width, (int)control_height, TRUE);
 
-  GetEventHandler()->OnSize(width, height);
-/*
-#else
-  int currentX, currentY;
-  GetPosition(&currentX, &currentY);
-  if (x == -1)
-    x = currentX;
-  if (y == -1)
-    y = currentY;
-
-  char buf[300];
-
-  int y_offset = y;
-  int x_offset = x;
-  float current_width;
-
-  int cx;
-  int cy;
-  float cyf;
-  int label_width ;
-  int label_height ;
-
-  HWND wnd = (HWND)ms_handle;
-
-  if (static_label)
-  {
-    wxGetCharSize(wnd, &cx, &cy,labelFont);
-    GetWindowText(static_label, buf, 300);
-    GetTextExtent(buf, &current_width, &cyf, NULL, NULL,labelFont);
-
-    label_width = (int)(current_width+cx) ;
-    label_height = (int)cyf ;
-    MoveWindow(static_label,x_offset,y_offset,label_width,label_height,TRUE);
-    if (labelPosition == wxVERTICAL)
-      y_offset += cy;
-    else
-      x_offset += (int)(current_width + cx);
-  }
-
-  wxGetCharSize(wnd, &cx, &cy,buttonFont);
-  if (width <= 0)
-  {
-    // Find the longest string
-    if (no_strings == 0)
-      width = 100;
-    else
-    {
-      float len, ht;
-      float longest = 0.0;
-      int i;
-      for (i = 0; i < no_strings; i++)
-      {
-        char *s = GetString(i);
-        GetTextExtent(s, &len, &ht, NULL, NULL,buttonFont);
-        if ( len > longest) longest = len;
-      }
-
-      width = (int)(longest + cx*5);
-    }
-  }
-  // Choice drop-down list depends on number of items (limited to 10)
-  // If height>0, this is the height of the combox box selection field!!
-  // Be careful if you modify this part of code, I've spend a full day
-  // to adjust all computations...
-  // Major pb comes from height<=0, I've not found the REAL formula - Then
-  // I let the original (empiric?) method, which gives us not so bad
-  // results, after all.
-  if (height <= 0)
-  {
-    if (no_strings == 0)
-      height = cy*10;
-    else height = (int)(cy*(min(10, no_strings) + 2)); // Beware: 2 is MULT
-    MoveWindow(wnd, x_offset, y_offset, width, height, TRUE);
-  }
-  else
-  {
-    int hitem = height ;
-    if (no_strings == 0)
-      height = hitem*10+2 ;
-    else
-      height = hitem*min(10,no_strings) +2 ;              //Beware: 2 is ADDED
-    MoveWindow(wnd, x_offset, y_offset, width, height, TRUE);
-    SendMessage(wnd,CB_SETITEMHEIGHT,(WPARAM)-1,hitem) ;
-  }
-
-  if (static_label && labelPosition==wxHORIZONTAL)
-  {
-  // center label verticaly
-
-  LRESULT choiceHeight=SendMessage(wnd,CB_GETITEMHEIGHT,(WPARAM)-1,(LPARAM)0) ;
-    MoveWindow(static_label, (int)x,     (int)(y+(choiceHeight-cyf)/2),
-                             label_width,label_height,
-                             TRUE) ;
-  }
-  GetEventHandler()->OnSize(width, height);
-#endif
-*/
+  OnSize(width, height);
 }
 
 void wxChoice::GetSize(int *width, int *height)

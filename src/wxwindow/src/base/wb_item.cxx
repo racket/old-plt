@@ -26,17 +26,20 @@
  */
 
 // Item members
-wxbItem::wxbItem (void)
+wxbItem::wxbItem (wxPanel *panel)
 {
   __type = wxTYPE_ITEM;
 
-  handleSize = 6;
-  handleMargin = 1;
-  isSelected = FALSE;
-  dragOffsetX = 0;
-  dragOffsetY = 0;
-  centreX = 0;
-  centreY = 0;
+  if (panel) { // NULL for menus
+    window_parent = panel;
+    
+    labelPosition = panel->label_position;
+    buttonFont = panel->buttonFont;
+    labelFont = panel->labelFont;
+    backColour = panel->backColour;
+    labelColour = panel->labelColour;
+    buttonColour = panel->buttonColour;
+  }
 }
 
 wxbItem::~wxbItem (void)
@@ -56,16 +59,6 @@ wxbItem::~wxbItem (void)
 void wxbItem::SetClientSize (int width, int height)
 {
   SetSize (-1, -1, width, height);
-}
-
-int wxbItem::GetLabelPosition (void)
-{
-  return labelPosition;
-}
-
-void wxbItem::SetLabelPosition (int pos)
-{
-  labelPosition = pos;
 }
 
 void wxbItem::Centre (int direction)
@@ -115,32 +108,21 @@ wxbButton::wxbButton (wxPanel * panel, wxFunction WXUNUSED(Function),
 		      char *WXUNUSED(label),
 		      int WXUNUSED(x), int WXUNUSED(y), int WXUNUSED(width), 
 		      int WXUNUSED(height), long style, char *WXUNUSED(name))
+: wxItem(panel)
 {
   __type = wxTYPE_BUTTON;
   windowStyle = style;
-  window_parent = panel;
-  labelPosition = wxHORIZONTAL;
-  buttonFont = panel->buttonFont;
-  labelFont = panel->labelFont;
-  backColour = panel->backColour;
-  labelColour = panel->labelColour;
-  buttonColour = panel->buttonColour;
 }
 
 wxbButton::wxbButton (wxPanel * panel, wxFunction WXUNUSED(Function), 
 		      wxBitmap * WXUNUSED(bitmap),
 		      int WXUNUSED(x), int WXUNUSED(y), int WXUNUSED(width),
 		      int WXUNUSED(height), long style, char *WXUNUSED(name))
+: wxItem(panel)
 {
   __type = wxTYPE_BUTTON;
   windowStyle = style;
-  window_parent = panel;
   labelPosition = wxHORIZONTAL;
-  buttonFont = panel->buttonFont;
-  labelFont = panel->labelFont;
-  backColour = panel->backColour;
-  labelColour = panel->labelColour;
-  buttonColour = panel->buttonColour;
 }
 
 wxbButton::~wxbButton (void)
@@ -153,6 +135,7 @@ wxbButton::~wxbButton (void)
 
 // Construct a menu with optional title (then use append)
 wxbMenu::wxbMenu (char *Title, wxFunction WXUNUSED(func))
+: wxItem(NULL)
 {
   __type = wxTYPE_MENU;
   no_items = 0;
@@ -169,8 +152,6 @@ wxbMenu::wxbMenu (char *Title, wxFunction WXUNUSED(func))
 // The wxWindow destructor will take care of deleting the submenus.
 wxbMenu::~wxbMenu (void)
 {
-  if (title)
-    delete[]title;
 }
 
 wxMenuItem *wxbMenu::FindItemForId (long itemId, wxMenu ** itemMenu, int * pos)
@@ -236,6 +217,7 @@ void wxbMenu::ProcessCommand (wxCommandEvent *event)
  */
 
 wxbMenuBar::wxbMenuBar (void)
+: wxItem(NULL)
 {
   __type = wxTYPE_MENU_BAR;
   n = 0;
@@ -246,6 +228,7 @@ wxbMenuBar::wxbMenuBar (void)
 }
 
 wxbMenuBar::wxbMenuBar (int N, wxMenu * Menus[], char *Titles[])
+: wxItem(NULL)
 {
   __type = wxTYPE_MENU_BAR;
   n = N;
@@ -264,27 +247,20 @@ wxbMenuBar::~wxbMenuBar (void)
 
 void wxbMenuBar::Append (wxMenu * menu, char *title)
 {
-  /* MATTHEW: [6] */
   if (!OnAppend(menu, title))
-	 return;
+    return;
 
   n++;
   wxMenu **new_menus = new wxMenu *[n];
   char **new_titles = new char *[n];
   int i;
 
-  for (i = 0; i < n - 1; i++)
-	 {
-		new_menus[i] = menus[i];
-		menus[i] = NULL;
-		new_titles[i] = titles[i];
-		titles[i] = NULL;
-	 }
-  if (menus)
-	 {
-		delete[]menus;
-		delete[]titles;
-	 }
+  for (i = 0; i < n - 1; i++) {
+    new_menus[i] = menus[i];
+    menus[i] = NULL;
+    new_titles[i] = titles[i];
+    titles[i] = NULL;
+  }
   menus = new_menus;
   titles = new_titles;
 
@@ -292,11 +268,9 @@ void wxbMenuBar::Append (wxMenu * menu, char *title)
   titles[n - 1] = copystring (title);
 
   menu->menu_bar = (wxMenuBar *) this;
-  /* MATTHEW: [11] */
   menu->SetParent(this);
 }
 
-/* MATTHEW: [6] */
 Bool wxbMenuBar::Delete(wxMenu * menu, int i)
 {
   int j;
@@ -317,7 +291,6 @@ Bool wxbMenuBar::Delete(wxMenu * menu, int i)
   if (!OnDelete(menu, i))
     return FALSE;
 
-  /* MATTHEW: [11] */
   menu->SetParent(NULL);
 
   --n;
@@ -373,30 +346,18 @@ char *wxbMenuBar::GetHelpString (long Id)
  
 wxbCheckBox::wxbCheckBox (wxPanel * panel, wxFunction WXUNUSED(func), char *WXUNUSED(Title),
 	     int WXUNUSED(x), int WXUNUSED(y), int WXUNUSED(width), int WXUNUSED(height), long style, char *WXUNUSED(name))
+: wxItem(panel)
 {
   __type = wxTYPE_CHECK_BOX;
   windowStyle = style;
-  window_parent = panel;
-  labelPosition = panel->label_position;
-  buttonFont = panel->buttonFont;
-  labelFont = panel->labelFont;
-  backColour = panel->backColour;
-  labelColour = panel->labelColour;
-  buttonColour = panel->buttonColour;
 }
 
 wxbCheckBox::wxbCheckBox (wxPanel * panel, wxFunction WXUNUSED(func), wxBitmap * WXUNUSED(bitmap),
 	     int WXUNUSED(x), int WXUNUSED(y), int WXUNUSED(width), int WXUNUSED(height), long style, char *WXUNUSED(name))
+: wxItem(panel)
 {
   __type = wxTYPE_CHECK_BOX;
   windowStyle = style;
-  window_parent = panel;
-  labelPosition = panel->label_position;
-  buttonFont = panel->buttonFont;
-  labelFont = panel->labelFont;
-  backColour = panel->backColour;
-  labelColour = panel->labelColour;
-  buttonColour = panel->buttonColour;
 }
 
 wxbCheckBox::~wxbCheckBox (void)
@@ -410,17 +371,11 @@ wxbCheckBox::~wxbCheckBox (void)
 wxbChoice::wxbChoice (wxPanel * panel, wxFunction WXUNUSED(func), char *WXUNUSED(Title),
 	   int WXUNUSED(x), int WXUNUSED(y), int WXUNUSED(width), int WXUNUSED(height), int N, char **WXUNUSED(Choices),
 	   long style, char *WXUNUSED(name))
+: wxItem(panel)
 {
   __type = wxTYPE_CHOICE;
   windowStyle = style;
-  window_parent = panel;
-  labelPosition = panel->label_position;
   no_strings = N;
-  buttonFont = panel->buttonFont;
-  labelFont = panel->labelFont;
-  backColour = panel->backColour;
-  labelColour = panel->labelColour;
-  buttonColour = panel->buttonColour;
 }
 
 wxbChoice::~wxbChoice (void)
@@ -439,12 +394,10 @@ char *wxbChoice::GetStringSelection (void)
 Bool wxbChoice::SetStringSelection (char *s)
 {
   int sel = FindString (s);
-  if (sel > -1)
-    {
-      SetSelection (sel);
-      return TRUE;
-    }
-  else
+  if (sel > -1) {
+    SetSelection (sel);
+    return TRUE;
+  } else
     return FALSE;
 }
 
@@ -459,20 +412,14 @@ wxbListBox::wxbListBox(wxPanel * panel, wxFunction WXUNUSED(func),
 		       int WXUNUSED(width), int WXUNUSED(height),
 		       int WXUNUSED(N), char **WXUNUSED(Choices),
 		       long style, char *WXUNUSED(name))
+: wxItem(panel)
 {
   __type = wxTYPE_LIST_BOX;
   windowStyle = style;
   selected = -1;
   selections = 0;
   multiple = Multiple;
-  window_parent = panel;
   no_items = 0;
-  labelPosition = panel->label_position;
-  buttonFont = panel->buttonFont;
-  labelFont = panel->labelFont;
-  backColour = panel->backColour;
-  labelColour = panel->labelColour;
-  buttonColour = panel->buttonColour;
 }
 
 wxbListBox::~wxbListBox (void)
@@ -496,13 +443,11 @@ char *wxbListBox::GetStringSelection (void)
 
 Bool wxbListBox::SetStringSelection (char *s)
 {
-  int sel = FindString (s);
-  if (sel > -1)
-    {
-      SetOneSelection(sel);
-      return TRUE;
-    }
-  else
+  int sel = FindString(s);
+  if (sel > -1) {
+    SetOneSelection(sel);
+    return TRUE;
+  } else
     return FALSE;
 }
 
@@ -517,18 +462,12 @@ wxbRadioBox::wxbRadioBox (wxPanel * panel, wxFunction WXUNUSED(func),
 			  int WXUNUSED(width), int WXUNUSED(height),
 			  int WXUNUSED(N), char **WXUNUSED(Choices),
 			  int WXUNUSED(majorDim), long style, char *WXUNUSED(name))
+: wxItem(panel)
 {
   __type = wxTYPE_RADIO_BOX;
   windowStyle = style;
   selected = -1;
-  window_parent = panel;
   no_items = 0;
-  labelPosition = panel->label_position;
-  buttonFont = panel->buttonFont;
-  labelFont = panel->labelFont;
-  backColour = panel->backColour;
-  labelColour = panel->labelColour;
-  buttonColour = panel->buttonColour;
 }
 
 wxbRadioBox::wxbRadioBox (wxPanel * panel, wxFunction WXUNUSED(func),
@@ -537,18 +476,12 @@ wxbRadioBox::wxbRadioBox (wxPanel * panel, wxFunction WXUNUSED(func),
 			  int WXUNUSED(width), int WXUNUSED(height),
 			  int WXUNUSED(N), wxBitmap ** WXUNUSED(Choices),
 			  int WXUNUSED(majorDim), long style, char *WXUNUSED(name))
+: wxItem(panel)
 {
   __type = wxTYPE_RADIO_BOX;
   windowStyle = style;
   selected = -1;
-  window_parent = panel;
   no_items = 0;
-  labelPosition = panel->label_position;
-  buttonFont = panel->buttonFont;
-  labelFont = panel->labelFont;
-  backColour = panel->backColour;
-  labelColour = panel->labelColour;
-  buttonColour = panel->buttonColour;
 }
 
 wxbRadioBox::~wxbRadioBox (void)
@@ -573,12 +506,10 @@ char *wxbRadioBox::GetStringSelection (void)
 Bool wxbRadioBox::SetStringSelection (char *s)
 {
   int sel = FindString (s);
-  if (sel > -1)
-    {
-      SetSelection (sel);
-      return TRUE;
-    }
-  else
+  if (sel > -1) {
+    SetSelection (sel);
+    return TRUE;
+  } else
     return FALSE;
 }
 
@@ -590,31 +521,19 @@ Bool wxbRadioBox::SetStringSelection (char *s)
 wxbMessage::wxbMessage (wxPanel * panel, char *WXUNUSED(label),
 			int WXUNUSED(x), int WXUNUSED(y),
 			long style, char *WXUNUSED(name))
+: wxItem(panel)
 {
   __type = wxTYPE_MESSAGE;
   windowStyle = style;
-  window_parent = panel;
-  labelPosition = panel->label_position;
-  buttonFont = panel->buttonFont;
-  labelFont = panel->labelFont;
-  backColour = panel->backColour;
-  labelColour = panel->labelColour;
-  buttonColour = panel->buttonColour;
 }
 
 wxbMessage::wxbMessage (wxPanel * panel, wxBitmap *WXUNUSED(image), 
 			int WXUNUSED(x), int WXUNUSED(y),
 			long style, char *WXUNUSED(name))
+: wxItem(panel)
 {
   __type = wxTYPE_MESSAGE;
   windowStyle = style;
-  window_parent = panel;
-  labelPosition = panel->label_position;
-  buttonFont = panel->buttonFont;
-  labelFont = panel->labelFont;
-  backColour = panel->backColour;
-  labelColour = panel->labelColour;
-  buttonColour = panel->buttonColour;
 }
 
 wxbMessage::~wxbMessage (void)
@@ -629,16 +548,10 @@ wxbSlider::wxbSlider (wxPanel * panel, wxFunction WXUNUSED(func),
 		      char *WXUNUSED(label), int WXUNUSED(value),
 		      int WXUNUSED(min_value), int WXUNUSED(max_value), int WXUNUSED(width),
 		      int WXUNUSED(x), int WXUNUSED(y), long style, char *WXUNUSED(name))
+: wxItem(panel)
 {
   __type = wxTYPE_SLIDER;
   windowStyle = style;
-  window_parent = panel;
-  labelPosition = panel->label_position;
-  buttonFont = panel->buttonFont;
-  labelFont = panel->labelFont;
-  backColour = panel->backColour;
-  labelColour = panel->labelColour;
-  buttonColour = panel->buttonColour;
 }
 
 wxbSlider::~wxbSlider (void)
@@ -653,16 +566,11 @@ wxbGauge::wxbGauge (wxPanel * panel, char *WXUNUSED(label),
 		    int WXUNUSED(range), int WXUNUSED(x), int WXUNUSED(y),
 		    int WXUNUSED(width), int WXUNUSED(height), 
 		    long style, char *WXUNUSED(name))
+: wxItem(panel)
 {
   __type = wxTYPE_GAUGE;
   windowStyle = style;
-  window_parent = panel;
   labelPosition = wxHORIZONTAL;
-  buttonFont = panel->buttonFont;
-  labelFont = panel->labelFont;
-  backColour = panel->backColour;
-  labelColour = panel->labelColour;
-  buttonColour = panel->buttonColour;
 }
 
 wxbGauge::~wxbGauge (void)

@@ -189,61 +189,10 @@ wxColourMap::wxColourMap(void)
   ms_palette = 0;
 }
 
-wxColourMap::wxColourMap(const int n, const unsigned char *red, const unsigned char *green, const unsigned char *blue)
-{
-  Create(n, red, green, blue);
-}
-
 wxColourMap::~wxColourMap(void)
 {
   if (ms_palette)
     DeleteRegisteredGDIObject(ms_palette);
-}
-
-Bool wxColourMap::Create(const int n, const unsigned char *red, const unsigned char *green, const unsigned char *blue)
-{
-  if (ms_palette)
-    return FALSE;
-    
-  NPLOGPALETTE npPal = (NPLOGPALETTE)LocalAlloc(LMEM_FIXED, sizeof(LOGPALETTE) + 
-						(WORD)n * sizeof(PALETTEENTRY));
-  if (!npPal)
-    return(FALSE);
-
-  npPal->palVersion = 0x300;
-  npPal->palNumEntries = n;
-
-  int i;
-  for (i = 0; i < n; i ++) {
-    npPal->palPalEntry[i].peRed = red[i];
-    npPal->palPalEntry[i].peGreen = green[i];
-    npPal->palPalEntry[i].peBlue = blue[i];
-    npPal->palPalEntry[i].peFlags = 0;
-  }
-  ms_palette = CreatePalette((LPLOGPALETTE)npPal);
-  RegisterGDIObject(ms_palette);
-  LocalFree((HANDLE)npPal);
-  return TRUE;
-}
-
-int wxColourMap::GetPixel(const unsigned char red, const unsigned char green, const unsigned char blue)
-{
-  return ::GetNearestPaletteIndex(ms_palette, RGB(red, green, blue));
-}
-
-Bool wxColourMap::GetRGB(const int index, unsigned char *red, unsigned char *green, unsigned char *blue)
-{
-  if (index < 0 || index > 255)
-    return FALSE;
-  
-  PALETTEENTRY entry;
-  if (::GetPaletteEntries(ms_palette, index, 1, &entry)) {
-    *red = entry.peRed;
-    *green = entry.peGreen;
-    *blue = entry.peBlue;
-    return TRUE;
-  } else
-    return FALSE;
 }
 
 // Pens
@@ -1232,19 +1181,11 @@ Bool wxBitmap::LoadFile(char *bitmap_file, long flags)
 #endif
   else if (flags & wxBITMAP_TYPE_GIF)
   {
-    wxColourMap *cmap = NULL;
     Bool success = FALSE;
     if (flags & wxBITMAP_DISCARD_COLOURMAP)
       success = wxLoadGifIntoBitmap(bitmap_file, this);
     else
-      success = wxLoadGifIntoBitmap(bitmap_file, this, &cmap);
-    if (!success && cmap)
-    {
-      delete cmap;
-		cmap = NULL;
-    }
-    if (cmap)
-      bitmapColourMap = cmap;
+      success = wxLoadGifIntoBitmap(bitmap_file, this, NULL);
   }
   else if (flags & wxBITMAP_TYPE_JPEG)
   {

@@ -12,13 +12,6 @@
 // Dialog box - like panel but doesn't need a frame, and is modal or
 // non-modal
 
-wxbDialogBox::wxbDialogBox(void)
-{
-  __type = wxTYPE_DIALOG_BOX;
-  modal = FALSE;
-  SetShown(FALSE);
-}
-
 wxbDialogBox::wxbDialogBox(wxWindow *WXUNUSED(Parent), char *WXUNUSED(Title), Bool Modal, 
 			   int WXUNUSED(x), int WXUNUSED(y), int WXUNUSED(width), int WXUNUSED(height), 
 			   long style, char *WXUNUSED(name)):

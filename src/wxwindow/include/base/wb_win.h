@@ -24,7 +24,6 @@
 class wxCursor;
 class wxFont;
 class wxIcon;
-class wxColourMap;
 class wxMenu;
 class wxWindow;
 class wxBitmap;
@@ -97,8 +96,6 @@ class wxbWindow: public wxEvtHandler
   Bool is_shown;
 
  public:
-  int doubleClickAllowed ;
-  // Font - created on demand, not deleted with window
   wxCursor *wx_cursor;                        // Window's cursor
 
   Bool paintingEnabled;
@@ -137,10 +134,7 @@ class wxbWindow: public wxEvtHandler
 
   virtual Bool Show(Bool show) = 0;
   virtual wxCursor *SetCursor(wxCursor *cursor) = 0;
-  virtual void SetColourMap(wxColourMap *cmap) = 0;
 
-  virtual float GetCharWidth(void) = 0;
-  virtual float GetCharHeight(void) = 0;
   inline virtual void GetTextExtent(const char *WXUNUSED(string), float *WXUNUSED(x), float *WXUNUSED(y),
 				    float *WXUNUSED(descent) = NULL, float *WXUNUSED(externalLeading) = NULL, 
 				    wxFont *WXUNUSED(theFont) = NULL, Bool WXUNUSED(use16) = FALSE) {};
@@ -196,8 +190,6 @@ class wxbWindow: public wxEvtHandler
   virtual void RemoveChild(wxObject *child);   // Removes reference to child
                                        // (but doesn't delete the child object)
   virtual void DestroyChildren(void);  // Removes and destroys all children
-
-  inline wxEvtHandler *GetEventHandler(void) { return this; }
 
   Bool IsShown();
   void SetShown(Bool s);

@@ -155,7 +155,7 @@ void wxMessage::SetSize(int x, int y, int width, int height, int sizeFlags)
   MoveWindow((HWND)ms_handle, x, y, actualWidth, actualHeight, TRUE);
 
   if (!((width == -1) && (height == -1)))
-    GetEventHandler()->OnSize(actualWidth, actualHeight);
+    OnSize(actualWidth, actualHeight);
 }
 
 void wxMessage::SetLabel(char *label)

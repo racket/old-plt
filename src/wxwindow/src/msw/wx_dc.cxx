@@ -24,10 +24,6 @@ static wxMemoryDC *blit_dc;
 
 #define YSCALE(y) (yorigin - (y))
 
-// #define     wx_round(a)    (int)((a)+.5)
-
-IMPLEMENT_DYNAMIC_CLASS(wxDC, wxObject)
-
 static HANDLE null_brush;
 static HANDLE null_pen;
 
@@ -1570,8 +1566,6 @@ HDC wxGetPrinterDC(void)
  * Memory DC
  *
  */
-
-IMPLEMENT_DYNAMIC_CLASS(wxMemoryDC, wxCanvasDC)
 
 wxMemoryDC::wxMemoryDC(Bool ro)
 {

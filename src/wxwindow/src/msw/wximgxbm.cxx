@@ -1,7 +1,7 @@
 /*
  * xvxbm.c - load routine for X11 Bitmap format pictures
  *
- * LoadXBM(fname)  -  loads an X11 Bitmap file\
+ * LoadXBM(fname)  -  loads an X11 Bitmap file
  * WriteXBM(fp, pic, w, h)
  */
 

@@ -61,10 +61,7 @@ class wxWindow: public wxbWindow
 
   virtual Bool Show(Bool show);
   virtual wxCursor *SetCursor(wxCursor *cursor);
-  virtual void SetColourMap(wxColourMap *cmap);
 
-  virtual float GetCharHeight(void);
-  virtual float GetCharWidth(void);
   virtual void GetTextExtent(const char *string, float *x, float *y,
 			     float *descent = NULL, float *externalLeading = NULL, 
 			     wxFont *theFont = NULL, Bool use16bit = FALSE);

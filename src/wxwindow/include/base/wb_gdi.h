@@ -71,10 +71,6 @@ class wxbFont: public wxObject
   inline int GetFontId(void) { return fontid; } /* MATTHEW: [4] New font system */
   inline int GetStyle(void) { return style; }
   inline int GetWeight(void) { return weight; }
-  char *GetFamilyString(void);
-  char *GetFaceString(void); /* MATTHEW: [4] New font system */
-  char *GetStyleString(void);
-  char *GetWeightString(void);
   inline Bool GetUnderlined(void) { return underlined; }
 };
 
@@ -292,18 +288,10 @@ class wxColourDatabase: public wxList
   void Initialize(void);
 };
 
-class wxGDIList: public wxList
-{
- public:
-   wxGDIList(void);
-  ~wxGDIList(void);
-};
-
 // Lists of GDI objects
 extern wxPenList   *wxThePenList;
 extern wxBrushList *wxTheBrushList;
 extern wxFontList   *wxTheFontList;
-extern wxGDIList   *wxTheBitmapList;
 
 // Stock objects
 extern wxFont *wxNORMAL_FONT;

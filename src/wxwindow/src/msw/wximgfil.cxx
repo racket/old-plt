@@ -69,7 +69,6 @@ void * wxGIF::GetRawImage()
 
 wxGIF::~wxGIF()
 {
-  delete ColourMap;
 }
 
 wxGIF::wxGIF( char * path)
@@ -94,7 +93,6 @@ void wxGIF::Create(ushort width, ushort height, ushort deep)
   Width = width; Height = height; Deep = deep;
   lpbi = 0;
   RawImage = 0;
-  ColourMap = 0;
 
   lpbi = new char[width*height];
   if (lpbi == 0)
@@ -127,7 +125,7 @@ wxColourMap *wxGIF::getColorMap()
 	  b[i] =  TabCol.paleta[i].b;
 	}
 	SetColourMap(TabCol.sogct,r,g,b);
-	return GetColourMap();
+	return NULL;
 }
 
 
@@ -602,18 +600,13 @@ void wxGIF::GetRow(ushort n, byte *buf)
 
 BOOL wxGIF::SetColourMap(ushort n, byte *r, byte *g, byte *b)
 {
-  ColourMap = new wxColourMap();
-  if (ColourMap)
-  {
-    numcmapentries = n;
-    for (int i=0; i < n; i++) {
-      red[i] = r[i];
-      green[i] = g[i];
-      blue[i] = b[i];
-    }
-    return TRUE;
+  numcmapentries = n;
+  for (int i=0; i < n; i++) {
+    red[i] = r[i];
+    green[i] = g[i];
+    blue[i] = b[i];
   }
-  return FALSE;
+  return TRUE;
 }
 
 Bool wxLoadGifIntoBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal)

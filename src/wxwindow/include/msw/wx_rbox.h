@@ -45,11 +45,7 @@ class wxRadioBox: public wxbRadioBox
 
   Bool Create(wxPanel *panel, wxFunction func, char *Title,
              int x = -1, int y = -1, int width =-1, int height = -1,
-             int N = 0, char **Choices = NULL,
-             int majorDim = 0, long style = wxHORIZONTAL, char *name = "radioBox");
-  Bool Create(wxPanel *panel, wxFunction func, char *Title,
-             int x, int y, int width, int height,
-             int N, wxBitmap **Choices,
+             int N = 0, char **Choices = NULL, wxBitmap **bmChoices = NULL,
              int majorDim = 0, long style = wxHORIZONTAL, char *name = "radioBox");
              
   BOOL MSWCommand(UINT param, WORD id);

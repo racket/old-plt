@@ -16,10 +16,6 @@ static HMENU emptyMenu;
 wxPen *wxStatusGreyPen = NULL;
 wxPen *wxStatusWhitePen = NULL;
 
-#define IDM_WINDOWTILE  4001
-#define IDM_WINDOWCASCADE 4002
-#define IDM_WINDOWICONS 4003
-#define IDM_WINDOWNEXT 4004
 // This range gives a maximum of 500
 // MDI children. Should be enough :-)
 #define wxFIRST_MDI_CHILD 4100
@@ -40,12 +36,6 @@ wxFrame::wxFrame(wxFrame *Parent, char *title, int x, int y,
 {
   Create(Parent, title, x, y, width, height, style, name);
 }
-
-
-extern void wxCreatedWindow(wxWindow *w);
-
-extern void wxDestroyedWindow(void *, wxWindow *w);
-
 
 Bool wxFrame::Create(wxFrame *Parent, char *title, int x, int y,
                  int width, int height, long style, char *name)
@@ -93,8 +83,6 @@ Bool wxFrame::Create(wxFrame *Parent, char *title, int x, int y,
 
   wx_cursor = wxSTANDARD_CURSOR;  
 
-  wxCreatedWindow(this);
-
   {
     /* Initialize client_d{w,h}, needed when GetCLientSize()
        is called while the frame is iconized. */
@@ -111,24 +99,15 @@ Bool wxFrame::Create(wxFrame *Parent, char *title, int x, int y,
 wxFrame::~wxFrame(void)
 {
   if (wx_menu_bar)
-    delete wx_menu_bar;
+    DELETE_OBJ wx_menu_bar;
 
   int i;
-  for (i = 0; i < wxMAX_STATUS; i++)
-    if (status_window[i])
-    {
+  for (i = 0; i < wxMAX_STATUS; i++) {
+    if (status_window[i]) {
       status_window[i]->DestroyWindow();
       delete status_window[i];
     }
-
-  if (this == wxTheApp->wx_frame)
-  {
-     wxTheApp->wx_frame = NULL;
-     PostQuitMessage(0);
   }
-
-
-  wxDestroyedWindow(context, this);
 }
 
 HMENU wxFrame::GetWinMenu(void)
@@ -246,7 +225,7 @@ void wxFrame::SetClientSize(int width, int height)
   }
 
   MoveWindow(hWnd, point.x, point.y, actual_width, actual_height, (BOOL)TRUE);
-  GetEventHandler()->OnSize(actual_width, actual_height);
+  OnSize(actual_width, actual_height);
 }
 
 void wxFrame::GetSize(int *width, int *height)
@@ -319,7 +298,7 @@ void wxFrame::SetSize(int x, int y, int width, int height, int WXUNUSED(sizeFlag
   if (handle)
   {
     MoveWindow(GetHWND(), x, y, width, height, (BOOL)TRUE);
-    GetEventHandler()->OnSize(width, height);
+    OnSize(width, height);
   }
 }
 
@@ -542,12 +521,10 @@ void wxFrame::SetStatusText(char *text, int number)
   // Microsoft standard: use button colors for status line
   status_window[number]->light_grey_brush = brushFace ;
 
-  if (status_window[number]->status_text)
-    delete[] status_window[number]->status_text;
-
   if (text)
     status_window[number]->status_text = copystring(text);
-  else status_window[number]->status_text = NULL;
+  else 
+    status_window[number]->status_text = NULL;
 
   HDC dc = GetDC(status_window[number]->handle);
   SelectObject(dc, wxSTATUS_LINE_FONT);
@@ -601,12 +578,6 @@ void wxFrame::PositionStatusWindow(void)
   }
 }
 
-void wxFrame::LoadAccelerators(char *table)
-{
-  wxFrameWnd *cframe = (wxFrameWnd *)handle;
-  cframe->accelerator_table = ::LoadAccelerators(wxhInstance, table);
-}
-
 void wxFrame::SystemMenu(void)
 {
   wxWnd *wnd = (wxWnd *)handle;
@@ -655,7 +626,7 @@ wxStatusWnd::wxStatusWnd(wxFrameWnd *parent, int the_height)
   status_text = NULL;
   height = the_height;
   // Microsoft standard: use button colors for status line
-  light_grey_brush = brushFace ;
+  light_grey_brush = brushFace;
 
   Create(parent, wxPanelClassName, NULL, NULL, 0, 0, 100, 100, WS_CHILD);
   ShowWindow(handle, SW_SHOW);
@@ -663,17 +634,14 @@ wxStatusWnd::wxStatusWnd(wxFrameWnd *parent, int the_height)
 
 wxStatusWnd::~wxStatusWnd(void)
 {
-  if (status_text)
-    delete[] status_text;
 }
 
 BOOL wxStatusWnd::OnPaint()
 {
   RECT rect;
-  if (GetUpdateRect(handle, &rect, FALSE))
-  {
+  if (GetUpdateRect(handle, &rect, FALSE)) {
 
-  // Microsoft standard: use button colors for status line
+    // Microsoft standard: use button colors for status line
     light_grey_brush = brushFace ;
 
     PAINTSTRUCT ps;
@@ -741,7 +709,6 @@ BOOL wxStatusWnd::OnPaint()
   return 1;
 }
 
-
 /*
  * Frame window
  *
@@ -797,15 +764,13 @@ wxFrameWnd::~wxFrameWnd(void)
 BOOL wxFrameWnd::OnPaint(void)
 {
   RECT rect;
-  if (GetUpdateRect(handle, &rect, FALSE))
-  {
+  if (GetUpdateRect(handle, &rect, FALSE)) {
     PAINTSTRUCT ps;
     // Hold a pointer to the dc so long as the OnPaint() message
     // is being processed
     cdc = BeginPaint(handle, &ps);
       
-    if (iconized)
-    {
+    if (iconized) {
       HICON the_icon = icon;
       if (the_icon == 0)
         the_icon = defaultIcon;
@@ -826,12 +791,13 @@ BOOL wxFrameWnd::OnPaint(void)
     }
 
     if (!iconized && wx_window)
-      wx_window->GetEventHandler()->OnPaint();
+      wx_window->OnPaint();
 
     EndPaint(handle, &ps);
     cdc = NULL;
     return 0;
   }
+
   return 1;
 }
 
@@ -860,7 +826,7 @@ void wxFrameWnd::OnSize(int bad_x, int bad_y, UINT id)
     frame->PositionStatusWindow();
 
   if (wx_window && wx_window->handle)
-    wx_window->GetEventHandler()->OnSize(bad_x, bad_y);
+    wx_window->OnSize(bad_x, bad_y);
  }
 }
 
@@ -871,7 +837,7 @@ BOOL wxFrameWnd::OnClose(void)
     if (modal && (modal != wx_window))
       return FALSE;
 
-    if (wx_window->GetEventHandler()->OnClose()) {
+    if (wx_window->OnClose()) {
       return TRUE;
     } else return FALSE;
   }
@@ -909,9 +875,9 @@ void wxFrameWnd::OnMenuSelect(WORD nItem, WORD nFlags, HMENU hSysMenu)
 {
   wxFrame *frame = (wxFrame *)wx_window;
   if (nFlags == 0xFFFF && hSysMenu == NULL)
-    frame->GetEventHandler()->OnMenuSelect(-1);
+    frame->OnMenuSelect(-1);
   else if (nFlags != MF_SEPARATOR)
-    frame->GetEventHandler()->OnMenuSelect(nItem);
+    frame->OnMenuSelect(nItem);
 }
 
 BOOL wxFrameWnd::ProcessMessage(MSG* pMsg)
@@ -1011,7 +977,7 @@ void wxMDIFrame::OnSize(int bad_x, int bad_y, UINT id)
   else (void)DefWindowProc(last_msg, last_wparam, last_lparam);
 
   if (wx_window && wx_window->handle)
-    wx_window->GetEventHandler()->OnSize(bad_x, bad_y);
+    wx_window->OnSize(bad_x, bad_y);
   }
 }
 
@@ -1178,14 +1144,14 @@ void wxMDIChild::OnSize(int bad_x, int bad_y, UINT id)
     frame->PositionStatusWindow();
 
   if (wx_window && wx_window->handle)
-    wx_window->GetEventHandler()->OnSize(bad_x, bad_y);
+    wx_window->OnSize(bad_x, bad_y);
  }
 }
 
 BOOL wxMDIChild::OnClose(void)
 {
   if (wx_window && handle) {
-    if (wx_window->GetEventHandler()->OnClose()) {
+    if (wx_window->OnClose()) {
       return TRUE;
     } else 
       return FALSE;
@@ -1208,13 +1174,6 @@ long wxMDIChild::DefWindowProc(UINT message, UINT wParam, LONG lParam)
 
 BOOL wxMDIChild::ProcessMessage(MSG *msg)
 {
-#if 0
-  if (accelerator_table && handle) {
-    wxFrame *parent = (wxFrame *)wx_window->GetParent();
-    HWND parent_hwnd = parent->GetHWND();
-    return ::TranslateAccelerator(parent_hwnd, (HACCEL)accelerator_table, msg);
-  }
-#endif
   return FALSE;
 }
 

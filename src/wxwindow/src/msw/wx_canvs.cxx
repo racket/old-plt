@@ -13,8 +13,6 @@
 
 extern char wxCanvasClassName[];
 
-IMPLEMENT_DYNAMIC_CLASS(wxCanvas, wxWindow)
-
 wxCanvas::wxCanvas (void)
 {
   is_retained = 0;
@@ -99,12 +97,6 @@ wxCanvas::~wxCanvas (void)
   }
 }
 
-void wxCanvas::SetColourMap (wxColourMap * cmap)
-{
-  if (wx_dc)
-    wx_dc->SetColourMap(cmap);
-}
-
 void wxCanvas::SetSize (int x, int y, int w, int h, int sizeFlags)
 {
   int currentX, currentY;
@@ -125,7 +117,7 @@ void wxCanvas::SetSize (int x, int y, int w, int h, int sizeFlags)
   if (wnd)
     {
       MoveWindow (wnd->handle, x, y, w, h, TRUE);
-      GetEventHandler()->OnSize (w, h);
+      OnSize (w, h);
     }
 }
 

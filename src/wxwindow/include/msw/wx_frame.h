@@ -61,7 +61,6 @@ class wxFrame: public wxbFrame
   virtual Bool Iconized(void);
   // Windos 3.x maximize/restore
   virtual void Maximize(Bool maximize);
-  virtual void LoadAccelerators(char *table);
 
   void PositionStatusWindow(void);
   HMENU GetWinMenu(void);

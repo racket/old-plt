@@ -57,7 +57,7 @@ BOOL wxDialogWnd::OnClose(void)
     if (modal && (modal != wx_window))
       return FALSE;
     
-    if (wx_window->GetEventHandler()->OnClose())
+    if (wx_window->OnClose())
       return TRUE;
     else 
       return FALSE;
@@ -77,24 +77,6 @@ BOOL wxDialogWnd::OnEraseBkgnd(HDC pDC)
     return TRUE;
   }
   else return FALSE;
-}
-
-wxDialogBox::wxDialogBox(void)
-{
-  window_parent = NULL;
-  handle = NULL;
-  modal = FALSE;
-  modal_showing = FALSE;
-  has_child = FALSE ;
-
-  hSpacing = PANEL_HSPACING;
-  vSpacing = PANEL_VSPACING;
-  
-  initial_hspacing = hSpacing ;
-  initial_vspacing = vSpacing ;
-
-  current_hspacing = hSpacing ;
-  current_vspacing = vSpacing ;
 }
 
 // Dialog box - like panel but doesn't need a frame, and is modal or
@@ -244,7 +226,7 @@ void wxDialogBox::SetClientSize(int width, int height)
   int actual_height = rect2.bottom - rect2.top - rect.bottom + height;
 
   MoveWindow(wnd->handle, rect2.left, rect2.top, actual_width, actual_height, TRUE);
-  GetEventHandler()->OnSize(actual_width, actual_height);
+  OnSize(actual_width, actual_height);
 }
 
 void wxDialogBox::GetPosition(int *x, int *y)

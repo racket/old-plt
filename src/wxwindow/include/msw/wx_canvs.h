@@ -49,8 +49,6 @@ class wxCanvas: public wxbCanvas
   // Actual size in pixels when scrolling is taken into account
   void GetVirtualSize(int *x, int *y);
 
-  void SetColourMap(wxColourMap *cmap);
-
   // Enable/disable Windows 3.1 scrolling in either direction.
   // If TRUE, wxWindows scrolls the canvas and only a bit of
   // the canvas is invalidated; no Clear() is necessary.

@@ -37,8 +37,6 @@ void wxInitStandardTypes(void)
   wxAllTypes->AddType(wxTYPE_RADIO_BOX,   wxTYPE_ITEM,                       "radio box");
   wxAllTypes->AddType(wxTYPE_GROUP_BOX,   wxTYPE_ITEM,                       "group box");
   wxAllTypes->AddType(wxTYPE_GAUGE,       wxTYPE_ITEM,                       "gauge");
-  wxAllTypes->AddType(wxTYPE_SCROLL_BAR,  wxTYPE_ITEM,                       "scrollbar");
-  wxAllTypes->AddType(wxTYPE_VIRT_LIST_BOX,wxTYPE_ITEM,                      "virtual list box");
 
   wxAllTypes->AddType(wxTYPE_EVENT,       wxTYPE_ANY,                        "event");
   wxAllTypes->AddType(wxTYPE_MOUSE_EVENT, wxTYPE_EVENT,                      "mouse event");

@@ -144,7 +144,7 @@ void wxbWindow::OnCommand(wxWindow *win, wxCommandEvent *event)
 {
   if (window_parent)
   {
-    window_parent->GetEventHandler()->OnCommand(win, event);
+    window_parent->OnCommand(win, event);
   }
 }
 

@@ -21,7 +21,6 @@ class wxFont: public wxbFont
 
   wxFont(void);
   wxFont(int PointSize, int Family, int Style, int Weight, Bool underlined = FALSE);
-  /* MATTHEW: [4] New font system */
   wxFont(int PointSize, const char *Face, int Family, int Style, int Weight, 
 	 Bool underlined = FALSE);
   ~wxFont(void);
@@ -35,11 +34,7 @@ class wxColourMap: public wxObject
  public:
   HPALETTE ms_palette;
   wxColourMap(void);
-  wxColourMap(const int n, const unsigned char *red, const unsigned char *green, const unsigned char *blue);
   ~wxColourMap(void);
-  Bool Create(const int n, const unsigned char *red, const unsigned char *green, const unsigned char *blue);
-  int GetPixel(const unsigned char red, const unsigned char green, const unsigned char blue);
-  Bool GetRGB(const int pixel, unsigned char *red, unsigned char *green, unsigned char *blue);
 };
 
 #define wxColorMap wxColourMap
@@ -50,23 +45,23 @@ class wxPen: public wxbPen
  public:
   float old_width;
   int old_style;
-  int old_join ;
-  int old_cap ;
-  int old_nb_dash ;
-  wxDash *old_dash ;
-  wxBitmap *old_stipple ;
-  COLORREF old_color ;
+  int old_join;
+  int old_cap;
+  int old_nb_dash;
+  wxDash *old_dash;
+  wxBitmap *old_stipple;
+  COLORREF old_color;
 
   HPEN cpen;
-  HPEN my_old_cpen ;
+  HPEN my_old_cpen;
 
   wxPen(void);
   wxPen(wxColour *col, float width, int style);
   wxPen(const char *col, float width, int style);
   ~wxPen(void);
 
-  void ChangePen() ;
-  HPEN SelectPen(HDC dc) ;
+  void ChangePen();
+  HPEN SelectPen(HDC dc);
 
 };
 
@@ -77,10 +72,10 @@ class wxBrush: public wxbBrush
 {
  public:
   HBRUSH cbrush;
-  HBRUSH my_old_cbrush ;
+  HBRUSH my_old_cbrush;
   int old_style;
-  wxBitmap *old_stipple ;
-  COLORREF old_color ;
+  wxBitmap *old_stipple;
+  COLORREF old_color;
 
 
   wxBrush(void);
@@ -88,8 +83,8 @@ class wxBrush: public wxbBrush
   wxBrush(const char *col, int style);
   ~wxBrush(void);
 
-  void ChangeBrush() ;
-  HBRUSH SelectBrush(HDC dc) ;
+  void ChangeBrush();
+  HBRUSH SelectBrush(HDC dc);
 };
 
 // Bitmap
@@ -143,7 +138,7 @@ class wxBitmap: public wxObject
   inline void SetDepth(int d) { depth = d; }
   inline void SetOk(Bool isOk) { ok = isOk; }
   inline wxColourMap *GetColourMap(void) { return bitmapColourMap; }
-  inline void SetColourMap(wxColourMap *cmap) { bitmapColourMap = cmap ; }
+  inline void SetColourMap(wxColourMap *cmap) { bitmapColourMap = cmap; }
 };
 
 // Cursor

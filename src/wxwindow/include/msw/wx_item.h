@@ -16,6 +16,7 @@
 class wxBrush;
 class wxFont;
 class wxColour;
+class wxPanel;
 class wxItem: public wxbItem
 {
  protected:
@@ -29,7 +30,7 @@ class wxItem: public wxbItem
    Bool isBeingDeleted; // Fudge because can't access parent
                         // when being deleted (don't know why)
 
-   wxItem(void);
+   wxItem(wxPanel *panel);
    ~wxItem(void);
 
    void GetSize(int *width, int *height);
@@ -41,8 +42,6 @@ class wxItem: public wxbItem
    char *GetLabel(void);
 
    Bool Show(Bool show);
-   float GetCharHeight(void);
-   float GetCharWidth(void);
 
    // Windows subclassing
    void SubclassControl(HWND hWnd);

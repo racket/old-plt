@@ -144,7 +144,6 @@ void wxMenu::AppendSeparator(void)
 // Pullright item
 void wxMenu::Append(long Id, char *Label, wxMenu *SubMenu, char *helpString)
 {
-  /* MATTHEW: [6] Safety */
   if (!SubMenu->ms_handle)
     return;
 
@@ -172,7 +171,6 @@ void wxMenu::Append(long Id, char *Label, wxMenu *SubMenu, char *helpString)
   no_items++;
 }
 
-/* MATTHEW: [6] Add method; does not delete removed submenus */
 Bool wxMenu::DeleteItem(long Id, int Pos)
 {
   wxNode *node;
@@ -376,7 +374,6 @@ char *wxMenu::GetLabel(long Id)
 
 BOOL wxMenu::MSWCommand(UINT WXUNUSED(param), WORD menuId)
 {
-  /* MATTHEW: auto-check checkable */
   wxMenuItem *item = FindItemForMenuId(menuId);
 
   if (item) {
@@ -405,7 +402,7 @@ Bool wxWindow::PopupMenu(wxMenu *menu, float x, float y)
   wxMenu **ptr;
   HWND hWnd = GetHWND();
   HMENU hMenu = (HMENU)menu->ms_handle;
-  if (!hMenu) return FALSE; /* MATTHEW: [11] */
+  if (!hMenu) return FALSE;
   POINT point;
   point.x = (int)x;
   point.y = (int)y;

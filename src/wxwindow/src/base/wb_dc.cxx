@@ -27,8 +27,6 @@ wxbDC::wxbDC(void)
 
 wxbDC::~wxbDC(void)
 {
-  if (title)
-    delete[] title;
 }
 
 void wxbDC::DrawPolygon(wxList *list, float xoffset, float yoffset,int fillStyle)
@@ -142,7 +140,6 @@ void wxbDC::SetDeviceOrigin(float x, float y)
   device_origin_y = y;
 }
 
-// For use by wxWindows only, unless custom units are required.
 void wxbDC::SetLogicalScale(float x, float y)
 {
   logical_scale_x = x;

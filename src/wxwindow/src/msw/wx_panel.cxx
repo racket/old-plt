@@ -195,7 +195,7 @@ void wxPanel::SetSize(int x, int y, int w, int h, int WXUNUSED(sizeFlags))
   if (wnd)
     MoveWindow(wnd->handle, x, y, w, h, TRUE);
 
-  GetEventHandler()->OnSize(w, h);
+  OnSize(w, h);
 }
 
 /*****************************************************************

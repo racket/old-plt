@@ -21,7 +21,6 @@ extern wxNonlockingHashTable *wxWinHandleList;
 extern wxNonlockingHashTable *wxSliderList;
 extern FARPROC wxGenericControlSubClassProc;
 
-extern void wxSetKeyboardHook(Bool doIt);
 extern void wxWindowInit(void);
 
 long last_msg_time;
@@ -169,15 +168,12 @@ void wxInitialize(HINSTANCE hInstance)
 
   wxWinHandleList = new wxNonlockingHashTable();
   wxSliderList = new wxNonlockingHashTable();
-
-  wxSetKeyboardHook(TRUE);
 }
 
 
 // Cleans up any wxWindows internal structures left lying around
 void wxCleanUp(void)
 {
-  wxSetKeyboardHook(FALSE);
   wxCommonCleanUp();
 
   if (wxSTD_FRAME_ICON)
@@ -466,7 +462,7 @@ Bool wxApp::OnCharHook(wxKeyEvent *event)
 {
   wxWindow *win = wxGetActiveWindow();
   if (win)
-    return win->GetEventHandler()->OnCharHook(event);
+    return win->OnCharHook(event);
   else
     return FALSE;
 }

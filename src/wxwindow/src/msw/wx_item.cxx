@@ -48,7 +48,7 @@ void DoneIds(wxItem *item)
 }
 
 // Item members
-wxItem::wxItem(void)
+wxItem::wxItem(wxPanel *pnl) : wxbItem(pnl)
 {
   isFafa = FALSE ;
   oldWndProc = 0;
@@ -174,30 +174,6 @@ Bool wxItem::Show(Bool show)
   if (show)
     BringWindowToTop(wnd);
   return TRUE;
-}
-
-float wxItem::GetCharHeight(void)
-{
-  TEXTMETRIC lpTextMetric;
-  HWND wnd = (HWND)ms_handle;
-  HDC dc = GetDC(wnd);
-
-  GetTextMetrics(dc, &lpTextMetric);
-  ReleaseDC(wnd, dc);
-
-  return (float)lpTextMetric.tmHeight;
-}
-
-float wxItem::GetCharWidth(void)
-{
-  TEXTMETRIC lpTextMetric;
-  HWND wnd = (HWND)ms_handle;
-  HDC dc = GetDC(wnd);
-
-  GetTextMetrics(dc, &lpTextMetric);
-  ReleaseDC(wnd, dc);
-
-  return (float)lpTextMetric.tmAveCharWidth;
 }
 
 void wxItem::SubclassControl(HWND hWnd)

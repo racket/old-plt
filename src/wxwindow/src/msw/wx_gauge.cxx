@@ -24,12 +24,6 @@ Bool wxGauge::Create(wxPanel *panel, char *label,
 		     long style, char *name)
 {
   SetName(name);
-  if (panel) panel->AddChild(this);
-  buttonFont = panel->buttonFont ;
-  labelFont = panel->labelFont ;
-  backColour = panel->backColour ;
-  labelColour = panel->labelColour ;
-  buttonColour = panel->buttonColour ;
 
   static_label = 0;
   wxWinType = wxTYPE_HWND;
@@ -67,7 +61,6 @@ Bool wxGauge::Create(wxPanel *panel, char *label,
   
   ms_handle = (HANDLE)wx_button;
   
-  // Subclass again for purposes of dialog editing mode
   SubclassControl(wx_button);
 
   int wOrient = 0;
@@ -89,8 +82,6 @@ Bool wxGauge::Create(wxPanel *panel, char *label,
 
   SetSize(x, y, width, height, wxSIZE_AUTO);
   ShowWindow(wx_button, SW_SHOW);
-
-//  Callback(Function);
 
   panel->AdvanceCursor(this);
   return TRUE;
@@ -185,7 +176,7 @@ void wxGauge::SetSize(int x, int y, int width, int height, int sizeFlags)
   MoveWindow((HWND)ms_handle, (int)control_x, (int)control_y, 
 	     (int)control_width, (int)control_height, TRUE);
   
-  GetEventHandler()->OnSize(width, height);
+  OnSize(width, height);
 }
 
 void wxGauge::GetSize(int *width, int *height)

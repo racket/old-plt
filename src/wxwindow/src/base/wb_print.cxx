@@ -17,22 +17,7 @@
 
 #include <commdlg.h>
 
-#if !defined(APIENTRY)	// NT defines APIENTRY, 3.x not
-#define APIENTRY FAR PASCAL
-#endif
- 
-#ifdef WIN32
-#define _EXPORT /**/
-#else
-#define _EXPORT _export
-typedef signed short int SHORT ;
-#endif
- 
-#if !defined(WIN32)	// 3.x uses FARPROC for dialogs
-#define DLGPROC FARPROC
-#endif
-
-LONG APIENTRY _EXPORT wxAbortProc(HDC hPr, int Code);
+LONG APIENTRY wxAbortProc(HDC hPr, int Code);
 
 wxPrintPaperDatabase *wxThePrintPaperDatabase = NULL;
 
@@ -395,8 +380,6 @@ wxPrintout::wxPrintout(char *title)
 
 wxPrintout::~wxPrintout(void)
 {
-  if (printoutTitle)
-    delete[] printoutTitle;
 }
 
 Bool wxPrintout::OnBeginDocument(int WXUNUSED(startPage), int WXUNUSED(endPage))
@@ -438,7 +421,7 @@ void wxPrintout::GetPageInfo(int *minPage, int *maxPage, int *fromPage, int *toP
 
 ****************************************************************************/
 
-LONG APIENTRY _EXPORT wxAbortProc(HDC WXUNUSED(hPr), int WXUNUSED(Code))
+LONG APIENTRY wxAbortProc(HDC WXUNUSED(hPr), int WXUNUSED(Code))
 {
   if (!wxPrinter::abortWindow)              /* If the abort dialog isn't up yet */
     return(TRUE);

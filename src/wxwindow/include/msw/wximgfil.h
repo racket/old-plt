@@ -91,7 +91,6 @@ public:
   ushort Deep;	 				// (bits x pixel)
   ushort Width, Height;    //  Dimensions
   long EfeWidth;	 // Efective Width
-  wxColourMap* ColourMap;
 // to be moved to wx_gdi.h later
   ushort numcmapentries;
   unsigned short red[256];

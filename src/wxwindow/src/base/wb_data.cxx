@@ -14,8 +14,6 @@ char *wxBuffer = NULL;
 wxBrushList *wxTheBrushList = NULL;
 wxPenList   *wxThePenList = NULL;
 wxFontList   *wxTheFontList = NULL;
-wxGDIList   *wxTheBitmapList = NULL;
-//wxGDIList   *wxTheColourList = NULL;
 
 wxColourDatabase *wxTheColourDatabase = NULL;
 

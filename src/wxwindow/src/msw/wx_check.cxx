@@ -22,133 +22,81 @@ wxCheckBox::wxCheckBox(wxPanel *panel, wxFunction func, char *Title,
                        int x, int y, int width, int height, long style, char *name):
   wxbCheckBox(panel, func, Title, x, y, width, height, style, name)
 {
-  Create(panel, func, Title, x, y, width, height, style, name);
+  Create(panel, func, Title, NULL, x, y, width, height, style, name);
 }
 
 wxCheckBox::wxCheckBox(wxPanel *panel, wxFunction func, wxBitmap *bitmap,
                        int x, int y, int width, int height, long style, char *name):
   wxbCheckBox(panel, func, bitmap, x, y, width, height, style, name)
 {
-  Create(panel, func, bitmap, x, y, width, height, style, name);
+  Create(panel, func, NULL, bitmap, x, y, width, height, style, name);
 }
 
-// Single check box item
-Bool wxCheckBox::Create(wxPanel *panel, wxFunction func, char *Title,
+Bool wxCheckBox::Create(wxPanel *panel, wxFunction func, char *Title, wxBitmap *bitmap,
                        int x, int y, int width, int height, long style, char *name)
 {
-  SetName(name);
-  if (panel) panel->AddChild(this);
-  buttonFont = panel->buttonFont ;
-  labelFont = panel->labelFont ;
-  backColour = panel->backColour ;
-  labelColour = panel->labelColour ;
-  buttonColour = panel->buttonColour ;
-  wxWinType = wxTYPE_HWND;
-  windowStyle = style;
-  wxWnd *cparent = NULL;
-  if (panel)
-    cparent = (wxWnd *)panel->handle;
-
-  if (!Title)
+  if (bitmap) {
+    if (!bitmap->Ok() || (bitmap->selectedIntoDC < 0))
+      return Create(panel, func, "<bad-image>", NULL, x, y, width, height, style, name);
+    
+    bitmap->selectedIntoDC++;
+    bm_label = bitmap;
+  } else if (!Title)
     Title = " "; // Apparently needed or checkbox won't show
 
-  panel->GetValidPosition(&x, &y);
-
-  windows_id = (int)NewId(this);
-
-  isFafa = 0;
-  checkWidth = -1 ;
-  checkHeight = -1 ;
-  HWND wx_button = wxwmCreateWindowEx(0, CHECK_CLASS, Title,
-                    CHECK_FLAGS | WS_CLIPSIBLINGS,
-                    0, 0, 0, 0, cparent->handle, (HMENU)windows_id,
-                    wxhInstance, NULL);
-#if CTL3D
-  Ctl3dSubclassCtl(wx_button);
-#endif
-
-  ms_handle = (HANDLE)wx_button;
-
-  // Subclass again for purposes of dialog editing mode
-  SubclassControl(wx_button);
-  
-  HDC the_dc = GetWindowDC((HWND)ms_handle) ;
-/*
-  if (buttonFont && buttonFont->GetInternalFont(the_dc))
-    SendMessage((HWND)ms_handle,WM_SETFONT,
-                (WPARAM)buttonFont->GetInternalFont(the_dc),0L);
-*/
-  if (labelFont && labelFont->GetInternalFont(the_dc))
-    SendMessage((HWND)ms_handle,WM_SETFONT,
-                (WPARAM)labelFont->GetInternalFont(the_dc),0L);
-  ReleaseDC((HWND)ms_handle,the_dc) ;
-
-  SetSize(x, y, width, height);
-
-  ShowWindow(wx_button, SW_SHOW);
-  panel->AdvanceCursor(this);
-  Callback(func);
-  return TRUE;
-}
-
-Bool wxCheckBox::Create(wxPanel *panel, wxFunction func, wxBitmap *bitmap,
-                       int x, int y, int width, int height, long style, char *name)
-{
-  if (!bitmap->Ok() || (bitmap->selectedIntoDC < 0))
-    return Create(panel, func, "<bad-image>", x, y, width, height, style, name);
-  
-  bitmap->selectedIntoDC++;
-  bm_label = bitmap;
-
   SetName(name);
-  if (panel) panel->AddChild(this);
-  buttonFont = panel->buttonFont ;
-  labelFont = panel->labelFont ;
-  backColour = panel->backColour ;
-  labelColour = panel->labelColour ;
-  buttonColour = panel->buttonColour ;
+  panel->AddChild(this);
   wxWinType = wxTYPE_HWND;
   windowStyle = style;
   wxWnd *cparent = NULL;
-  if (panel)
-    cparent = (wxWnd *)panel->handle;
+  cparent = (wxWnd *)panel->handle;
 
   panel->GetValidPosition(&x, &y);
 
   windows_id = (int)NewId(this);
 
-  if (width<0)
-    width = bitmap->GetWidth() ;
-  if (height<0)
-    height = bitmap->GetHeight() ;
-  checkWidth = width ;
-  checkHeight = height ;
-  width += FB_MARGIN ;
-  height += FB_MARGIN ;
-  HWND wx_button = wxwmCreateWindowEx(0, FafaChck, "toggle",
-                    BITCHECK_FLAGS | WS_CLIPSIBLINGS,
-                    0, 0, 0, 0, cparent->handle, (HMENU)windows_id,
-                    wxhInstance, NULL);
-      SetBitmapDimensionEx(bitmap->ms_bitmap,
+  HWND wx_button;
+
+  if (bitmap) {
+    isFafa = TRUE;
+    if (width < 0)
+      width = bitmap->GetWidth();
+    if (height < 0)
+      height = bitmap->GetHeight();
+    checkWidth = width;
+    checkHeight = height;
+    width += FB_MARGIN;
+    height += FB_MARGIN;
+
+    wx_button = wxwmCreateWindowEx(0, FafaChck, "toggle",
+				   BITCHECK_FLAGS | WS_CLIPSIBLINGS,
+				   0, 0, 0, 0, cparent->handle, (HMENU)windows_id,
+				   wxhInstance, NULL);
+    SetBitmapDimensionEx(bitmap->ms_bitmap,
 			 bitmap->GetWidth(),
 			 bitmap->GetHeight(),
 			 NULL);
-      SendMessage((HWND)wx_button,WM_CHANGEBITMAP,
-                  (WPARAM)0xFFFF/*((bitmap->GetHeight()<<8)+bitmap->GetWidth())*/,
-                  (LPARAM)bitmap->ms_bitmap);
-  isFafa = TRUE;
+    SendMessage((HWND)wx_button,WM_CHANGEBITMAP,
+		(WPARAM)0xFFFF,
+		(LPARAM)bitmap->ms_bitmap);
+
+    SubclassControl(wx_button);
+  } else {
+    isFafa = FALSE;
+    checkWidth = -1;
+    checkHeight = -1;
+    wx_button = wxwmCreateWindowEx(0, CHECK_CLASS, Title,
+				   CHECK_FLAGS | WS_CLIPSIBLINGS,
+				   0, 0, 0, 0, cparent->handle, (HMENU)windows_id,
+				   wxhInstance, NULL);
+#if CTL3D
+    Ctl3dSubclassCtl(wx_button);
+#endif
+  }
 
   ms_handle = (HANDLE)wx_button;
 
-  // Subclass again for purposes of dialog editing mode
-  SubclassControl(wx_button);
-
   HDC the_dc = GetWindowDC((HWND)ms_handle) ;
-/*
-  if (buttonFont && buttonFont->GetInternalFont(the_dc))
-    SendMessage((HWND)ms_handle,WM_SETFONT,
-                (WPARAM)buttonFont->GetInternalFont(the_dc),0L);
-*/
   if (labelFont && labelFont->GetInternalFont(the_dc))
     SendMessage((HWND)ms_handle,WM_SETFONT,
                 (WPARAM)labelFont->GetInternalFont(the_dc),0L);
@@ -207,7 +155,7 @@ void wxCheckBox::SetLabel(wxBitmap *bitmap)
 		       bitmap->GetHeight(),
 		       NULL);
   SendMessage((HWND)ms_handle,WM_CHANGEBITMAP,
-	      (WPARAM)0xFFFF/*((bitmap->GetHeight()<<8)+bitmap->GetWidth())*/,
+	      (WPARAM)0xFFFF,
 	      (LPARAM)bitmap->ms_bitmap);
 }
 
@@ -235,19 +183,19 @@ void wxCheckBox::SetSize(int x, int y, int width, int height, int WXUNUSED(sizeF
     GetWindowText(button, buf, 300);
     GetTextExtent(wxStripMenuCodes(buf), &current_width, &cyf,NULL,NULL,labelFont);
     if (width < 0)
-      width = (int)(current_width + RADIO_SIZE) ;
+      width = (int)(current_width + RADIO_SIZE);
     if (height<0)
-      height = (int)(cyf) ;
+      height = (int)(cyf);
   } else {
     if (width<0)
-      width = checkWidth + FB_MARGIN ;
+      width = checkWidth + FB_MARGIN;
     if (height<0)
-      height = checkHeight + FB_MARGIN ;
+      height = checkHeight + FB_MARGIN;
   }
 
   MoveWindow(button, x, y, width, height, TRUE);
 
-  GetEventHandler()->OnSize(width, height);
+  OnSize(width, height);
 }
 
 

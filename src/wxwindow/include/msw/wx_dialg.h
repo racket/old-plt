@@ -23,7 +23,6 @@ class wxDialogBox: public wxbDialogBox
   Bool modal_showing;
   wxList *disabled_windows;
 
-  wxDialogBox(void);
   wxDialogBox(wxWindow *parent, char *title, Bool modal = FALSE,
               int x = -1, int y = -1,
               int width = -1, int height = -1, long style = 0,

@@ -218,28 +218,34 @@ subdirectory.
 Annotated examples are in the examples subdirectory of the parser-tools
 collection directory.
 
-TODO:
-lexer:
-
-parser:
-If the error token can be shifted, but parsing is unable to resume, throw an
-error instead of infinite looping.
-
-both:
 
 Potential future additions:
-lexer:
-POSIX style regular expressions
-DFA minimization
+
+If you need any of these features, or if you have a different handly
+feature in mind, let me know.
+
+lexer generator:
+1) POSIX style regular expressions.  This would take the form of an
+   include-like operation to get a file of lex-abbrevs in POSIX syntax
+   instead of the s-expression syntax.
+2) DFA minimization/compaction.  Should reduce the runtime footprint
+   of a lexer.
 
 parser:
-Increase speed of parser generator
-Fisher-Burke error recovery
-Possibly change the $1 style to something like SML/NJ YACC uses
-LALR table compression
-Error checking for useless productions
-Error check the use of error productions
+1) Increase speed of parser generator.  It's quite slow right now.  I
+   doubt much can be done short of making mzscheme allocation/GC
+   faster
+2) Fisher-Burke error recovery.  Automatically figure out a "good"
+   token to insert when an error is encountered.
+3) Possibly change the $1 style to something like SML/NJ YACC uses.
+   The SML/NJ YACC refers to the Nth occurance of grammar symbol name
+   in a production RHS as nameN.
+4) LALR table compression.  Would reduce the runtime memory
+   requirements of parsers.
+5) Error checking for useless productions.  Right now productions
+   which cannot be used in a parse tree are silently accepted.
 
 both:
-Increase runtime speed
-Add more information for check syntax
+1) Increase runtime speed.  I doubt much can be done short of making
+   mzscheme allocation/GC faster
+2) Add more information for check syntax to draw arrows to more things

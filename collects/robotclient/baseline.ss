@@ -4,6 +4,9 @@
            (lib "list.ss"))
   (provide compute-baseline-move)
   
+  (define MAX_BFS 10000)
+  (define GUESS_TRIES 80)
+
   (define (compute-drops)
     (filter (lambda (x) x)
             (map
@@ -68,32 +71,71 @@
          (set-queue-tail! q null)))
       (set-queue-head! q (cdr (queue-head q)))))
                   
+
+  (define (goal-score spot)
+    (cond
+     ((null? (packages-held))
+      (apply min (map (lambda (home)
+                        (dist (car spot) (cdr spot)
+                              (car home) (cdr home)))
+                      (home-list))))
+     (else
+      (apply min (map (lambda (pack)
+                        (dist (car spot) (cdr spot)
+                              (package-x pack) (package-y pack)))
+                      (packages-held))))))
+	    
+
+  (define (guess-path paths goal?)
+    (let* ((path-vec (list->vector (map reverse! paths)))
+	   (num-paths (vector-length path-vec)))
+      (let loop ((tries GUESS_TRIES)
+                 (best (vector-ref path-vec 0))
+                 (score (goal-score (car (vector-ref path-vec 0)))))
+	(cond
+	 ((> tries 0)
+	  (let* ((p (vector-ref path-vec (random num-paths)))
+		 (s (goal-score (car p))))
+	    (cond
+	     ((> s score)
+	      (loop (sub1 tries) p s))
+	     (else
+	      (loop (sub1 tries) best score)))))
+	 (else best)))))
+
+
   (define (compute-path px py goal?)
     (let ((visited (make-hash-table 'equal))
-          (q (create-queue)))
+          (q (create-queue))
+	  (count 0))
       (enqueue! q (list (cons px py)))
       (let loop ()
-        (let ((path (dequeue! q)))
-          (cond
-            ((goal? (car path)) (reverse! path))
-            (else
-             (for-each (lambda (spot)
-                         (cond
+	(set! count (add1 count))
+	(cond
+	 ((> count MAX_BFS)
+	  (guess-path (queue-head q) goal?))
+	 (else
+	  (let ((path (dequeue! q)))
+	    (cond
+	     ((goal? (car path)) (reverse! path))
+	     (else
+	      (for-each (lambda (spot)
+			  (cond
                            ((not (hash-table-get visited spot (lambda () #f)))
                             (hash-table-put! visited spot #t)
                             (enqueue! q (cons spot path)))))
-                       (filter (lambda (spot)
-                                 (let ((t (get-type (get-spot (board) 
-                                                              (car spot)
-                                                              (cdr spot)))))
-                                   (or (= t 0) (= t 3))))
-                               (let ((x (caar path))
-                                     (y (cdar path)))
-                                 (list (cons (add1 x) y)
-                                       (cons (sub1 x) y)
-                                       (cons x (add1 y))
-                                       (cons x (sub1 y))))))
-             (loop)))))))
+			(filter (lambda (spot)
+				  (let ((t (get-type (get-spot (board) 
+							       (car spot)
+							       (cdr spot)))))
+				    (or (= t 0) (= t 3))))
+				(let ((x (caar path))
+				      (y (cdar path)))
+				  (list (cons (add1 x) y)
+					(cons (sub1 x) y)
+					(cons x (add1 y))
+					(cons x (sub1 y)))))))))
+	  (loop))))))
   
   (define path (make-parameter null))
   

@@ -859,6 +859,26 @@ static Scheme_Object *os_wxPrintSetupDatacopy(Scheme_Object *obj, int n,  Scheme
 }
 
 #pragma argsused
+static Scheme_Object *os_wxPrintSetupDataSetEditorMargin(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  objscheme_check_valid(obj);
+  nnlong x0;
+  nnlong x1;
+
+  
+  x0 = objscheme_unbundle_nonnegative_integer(p[0], "set-editor-margin in ps-setup%");
+  x1 = objscheme_unbundle_nonnegative_integer(p[1], "set-editor-margin in ps-setup%");
+
+  
+  ((wxPrintSetupData *)((Scheme_Class_Object *)obj)->primdata)->SetEditorMargin(x0, x1);
+
+  
+  
+  return scheme_void;
+}
+
+#pragma argsused
 static Scheme_Object *os_wxPrintSetupDataSetLevel2(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1056,6 +1076,32 @@ static Scheme_Object *os_wxPrintSetupDataSetPrinterCommand(Scheme_Object *obj, i
   ((wxPrintSetupData *)((Scheme_Class_Object *)obj)->primdata)->SetPrinterCommand(x0);
 
   
+  
+  return scheme_void;
+}
+
+#pragma argsused
+static Scheme_Object *os_wxPrintSetupDataGetEditorMargin(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  objscheme_check_valid(obj);
+  nnlong _x0;
+  nnlong* x0 = &_x0;
+  nnlong _x1;
+  nnlong* x1 = &_x1;
+
+  
+      *x0 = objscheme_unbundle_nonnegative_integer(objscheme_unbox(p[0], "get-editor-margin in ps-setup%"), "get-editor-margin in ps-setup%"", extracting boxed argument");
+      *x1 = objscheme_unbundle_nonnegative_integer(objscheme_unbox(p[1], "get-editor-margin in ps-setup%"), "get-editor-margin in ps-setup%"", extracting boxed argument");
+
+  
+  ((wxPrintSetupData *)((Scheme_Class_Object *)obj)->primdata)->GetEditorMargin(x0, x1);
+
+  
+  if (n > 0)
+    objscheme_set_box(p[0], scheme_make_integer(_x0));
+  if (n > 1)
+    objscheme_set_box(p[1], scheme_make_integer(_x1));
   
   return scheme_void;
 }
@@ -1289,9 +1335,10 @@ void objscheme_setup_wxPrintSetupData(void *env)
 if (os_wxPrintSetupData_class) {
     objscheme_add_global_class(os_wxPrintSetupData_class, "ps-setup%", env);
 } else {
-  os_wxPrintSetupData_class = objscheme_def_prim_class(env, "ps-setup%", "object%", os_wxPrintSetupData_ConstructScheme, 23);
+  os_wxPrintSetupData_class = objscheme_def_prim_class(env, "ps-setup%", "object%", os_wxPrintSetupData_ConstructScheme, 25);
 
  scheme_add_method_w_arity(os_wxPrintSetupData_class, "copy-from", os_wxPrintSetupDatacopy, 1, 1);
+ scheme_add_method_w_arity(os_wxPrintSetupData_class, "set-editor-margin", os_wxPrintSetupDataSetEditorMargin, 2, 2);
  scheme_add_method_w_arity(os_wxPrintSetupData_class, "set-level-2", os_wxPrintSetupDataSetLevel2, 1, 1);
  scheme_add_method_w_arity(os_wxPrintSetupData_class, "set-afm-path", os_wxPrintSetupDataSetAFMPath, 1, 1);
  scheme_add_method_w_arity(os_wxPrintSetupData_class, "set-paper-name", os_wxPrintSetupDataSetPaperName, 1, 1);
@@ -1303,6 +1350,7 @@ if (os_wxPrintSetupData_class) {
  scheme_add_method_w_arity(os_wxPrintSetupData_class, "set-preview-command", os_wxPrintSetupDataSetPrintPreviewCommand, 1, 1);
  scheme_add_method_w_arity(os_wxPrintSetupData_class, "set-file", os_wxPrintSetupDataSetPrinterFile, 1, 1);
  scheme_add_method_w_arity(os_wxPrintSetupData_class, "set-command", os_wxPrintSetupDataSetPrinterCommand, 1, 1);
+ scheme_add_method_w_arity(os_wxPrintSetupData_class, "get-editor-margin", os_wxPrintSetupDataGetEditorMargin, 2, 2);
  scheme_add_method_w_arity(os_wxPrintSetupData_class, "get-level-2", os_wxPrintSetupDataGetLevel2, 0, 0);
  scheme_add_method_w_arity(os_wxPrintSetupData_class, "get-afm-path", os_wxPrintSetupDataGetAFMPath, 0, 0);
  scheme_add_method_w_arity(os_wxPrintSetupData_class, "get-paper-name", os_wxPrintSetupDataGetPaperName, 0, 0);

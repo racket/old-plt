@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wb_frame.cc,v 1.2 1998/06/02 20:51:41 robby Exp $
+ * RCS_ID:      $Id: wb_frame.cc,v 1.3 1998/08/14 13:56:01 robby Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -56,7 +56,7 @@ wxbFrame::wxbFrame(wxFrame *Parent, char *title, int x, int y,
   windowStyle = style;
   frameToolBar = NULL ;
 
-  WXGC_IGNORE(context);
+  /* WXGC_IGNORE(context); - NO, context itself is not finalized */
   context = wxGetContextForFrame();
 }
 
@@ -65,7 +65,7 @@ Bool wxbFrame::Create(wxFrame *Parent, char *title, int x, int y,
 {
   windowStyle = style;
 
-  WXGC_IGNORE(context);
+  /* WXGC_IGNORE(context); - NO, context itself is not finalized */
   context = wxGetContextForFrame();
 
   if (!Parent) {
@@ -90,13 +90,13 @@ wxbFrame::wxbFrame (char* windowName, wxScreen* parentScreen,
 		status_line_exists (FALSE),
 		wx_menu_bar (NULL)
 {
-	__type = wxTYPE_FRAME;
-
-	WXGC_IGNORE(context);
-	context = wxGetContextForFrame();
-
-    wxTopLevelWindows(ContextWindow())->Append(this);
-    wxTopLevelWindows(ContextWindow())->Show(this, FALSE);
+  __type = wxTYPE_FRAME;
+  
+  /* WXGC_IGNORE(context); - NO, context itself is not finalized */
+  context = wxGetContextForFrame();
+  
+  wxTopLevelWindows(ContextWindow())->Append(this);
+  wxTopLevelWindows(ContextWindow())->Show(this, FALSE);
 }
 
 #endif // wx_mac

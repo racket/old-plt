@@ -15,8 +15,8 @@
 #include "wx_dcps.h"
 #include "wxsmred.h"
 
-#define WXS_SETUP_ONLY 1
 #include "wxs_obj.h"
+#define WXS_SETUP_ONLY 1
 #include "wxs_win.h"
 #include "wxs_fram.h"
 #include "wxs_item.h"
@@ -1079,7 +1079,12 @@ static Scheme_Object *Shutdown_p(int argc, Scheme_Object **argv)
 {
   Scheme_Type type = SCHEME_TYPE(argv[0]);
 
-  if (type == mred_eventspace_type)
+  if (type == mred_eventspace_type) {
+    return wxsIsContextShutdown((void *)argv[0]) ? scheme_true : scheme_false;
+  }
+
+  scheme_wrong_type("eventspace-shutdown?", "eventspace", 0, argc, argv);
+  return NULL;
 }
 
 extern "C" {
@@ -1514,9 +1519,9 @@ static void wxScheme_Install(Scheme_Env *WXUNUSED(env), void *global_env)
 			   global_env);
 
 
-  scheme_install_xc_global("shutdown?",
+  scheme_install_xc_global("eventspace-shutdown?",
 			   scheme_make_prim_w_arity(Shutdown_p,
-						    "shutdown?",
+						    "eventspace-shutdown?",
 						    1, 1),
 			   global_env);
 

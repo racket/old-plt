@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: ListBox.cc,v 1.11 1998/11/17 13:11:49 mflatt Exp $
+ * $Id: ListBox.cc,v 1.12 1998/12/05 01:08:21 mflatt Exp $
  *
  * Purpose: list box panel item
  *
@@ -110,6 +110,7 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func, char *title,
 	 XtNshadeSurplus,   FALSE,
 	 XtNdefaultColumns, 1,
 	 XtNforceColumns,   TRUE,
+	 XtNcursor,         NULL,
 	 XtNmaxSelectable,  (multiple & (wxMULTIPLE | wxEXTENDED)) ? 10000 : 1,
 	 XtNclickExtends,   (Boolean)(multiple & wxEXTENDED),
 	 NULL);

@@ -61,5 +61,6 @@
  get-top-level-edit-target-window
  register-collecting-blit
  unregister-collecting-blit
+ bitmap-dc%
  install-standard-text-bindings
  sleep/yield)

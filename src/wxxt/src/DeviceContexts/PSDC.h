@@ -225,6 +225,8 @@ public:
 	{ print_colour = col; }
     void  SetLevel2(Bool l2)
 	{ print_level_2 = l2; }
+    void SetEditorMargin(long x, long y)
+        { emargin_h = x; emargin_v = y; }
 
     inline char *GetPrinterCommand(void)
 	{ return printer_command; }
@@ -250,6 +252,8 @@ public:
 	{ return print_colour; }
     inline Bool GetLevel2()
 	{ return print_level_2; }
+    void GetEditorMargin(long *x, long *y)
+        { *x = emargin_h; *y = emargin_v; }
 
 private:
     friend class wxPostScriptDC;
@@ -268,6 +272,7 @@ private:
     char   *paper_name;
     Bool   print_colour;
     Bool   print_level_2;
+    long   emargin_h, emargin_v;
 };
 
 extern wxPrintSetupData *wxGetThePrintSetupData();

@@ -121,6 +121,7 @@ Scheme_Object *GetTypes(wxClipboardClient *c)
 @ "get-paper-name" : nstring GetPaperName();
 @ "get-afm-path" : nstring GetAFMPath();
 @ "get-level-2" : bool GetLevel2();
+@ "get-editor-margin" : void GetEditorMargin(nnlong*,nnlong*);
 
 @ "set-command" : void SetPrinterCommand(string);
 @ "set-file" : void SetPrinterFile(pathname);
@@ -133,6 +134,7 @@ Scheme_Object *GetTypes(wxClipboardClient *c)
 @ "set-paper-name" : void SetPaperName(nstring);
 @ "set-afm-path" : void SetAFMPath(nstring);
 @ "set-level-2" : void SetLevel2(bool);
+@ "set-editor-margin" : void SetEditorMargin(nnlong,nnlong);
 
 @ "copy-from" : void copy(wxPrintSetupData%);
 

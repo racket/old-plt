@@ -294,12 +294,19 @@ Bool wxIsPrimEventspace()
   return MrEdGetContext() == mred_main_context;
 }
 
+int wxsIsContextShutdown(void *cx)
+{
+  MrEdContext *c = (MrEdContext *)cx;
+
+  return c->killed;
+}
+
 void *wxsCheckEventspace(char *who)
 {
   MrEdContext *c = (MrEdContext *)wxGetContextForFrame();
   
   if (c->killed)
-    scheme_signal_error("%s: the current eventspace has been shut down", who);
+    scheme_signal_error("%s: the current eventspace has been shutdown", who);
 
   return (void *)c;
 }

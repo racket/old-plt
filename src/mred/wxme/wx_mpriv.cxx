@@ -2554,18 +2554,12 @@ void wxmeGetDefaultSize(float *w, float *h)
 
 void wxGetMediaPrintMargin(long *hm, long *vm)
 {
-  if (hm)
-    *hm = h_margin;
-  if (vm)
-    *vm = v_margin;
+  wxGetThePrintSetupData()->GetEditorMargin(hm, vm);
 }
 
 void wxSetMediaPrintMargin(long hm, long vm)
 {
-  if (hm > -1)
-    h_margin = hm;
-  if (vm > -1)
-    v_margin = vm;
+  wxGetThePrintSetupData()->SetEditorMargin(hm, vm);
 }
 
 typedef struct {
@@ -2584,13 +2578,16 @@ void *wxMediaEdit::BeginPrint(wxDC *dc, Bool fit)
 
   if (fit) {
     float w, h;
+    long hm, vm;
     SaveSizeInfo *savedInfo = new SaveSizeInfo;
     
     savedInfo->maxw = GetMaxWidth();
     savedInfo->bm = SetAutowrapBitmap(NULL);
 
+    wxGetMediaPrintMargin(&hm, &vm);
+
     dc->GetSize(&w, &h);
-    w -= 2 * h_margin;
+    w -= 2 * hm;
     SetMaxWidth(w);
 
     return savedInfo;
@@ -2619,7 +2616,8 @@ Bool wxMediaEdit::HasPrintPage(wxDC *dc, int page)
   if (flowLocked)
     return FALSE;
 
-  float H, W, h, vm, hm;
+  float H, W, h;
+  long vm, hm;
   int i, this_page = 1;
   wxMediaLine *line;
 
@@ -2630,8 +2628,7 @@ Bool wxMediaEdit::HasPrintPage(wxDC *dc, int page)
   if (!W || !H)
     wxmeGetDefaultSize(&W, &H);
 
-  vm = v_margin;
-  hm = h_margin;
+  wxGetMediaPrintMargin(&hm, &vm);
 
   H -= (2 * vm);
   W -= (2 * hm);
@@ -2657,7 +2654,8 @@ void wxMediaEdit::PrintToDC(wxDC *dc, int page)
   if (flowLocked)
     return;
 
-  float H, W, FH, FW, y, h, vm, hm;
+  float H, W, FH, FW, y, h;
+  long vm, hm;
   int i, this_page = 1;
   wxMediaLine *line;
 
@@ -2681,8 +2679,7 @@ void wxMediaEdit::PrintToDC(wxDC *dc, int page)
   FH = H;
   FW = W;
 
-  vm = v_margin;
-  hm = h_margin;
+  wxGetMediaPrintMargin(&hm, &vm);
 
   H -= (2 * vm);
   W -= (2 * hm);

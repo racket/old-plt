@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: WindowDC.cc,v 1.16 1998/12/06 17:44:47 mflatt Exp $
+ * $Id: WindowDC.cc,v 1.17 1998/12/15 17:23:36 mflatt Exp $
  *
  * Purpose: device context to draw drawables
  *          (windows and pixmaps, even if pixmaps are covered by wxMemoryDC)
@@ -154,6 +154,13 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
     if (!src->Ok())
       return FALSE;
 
+    if (src->GetDepth() > 1) {
+      /* Neither rop nor dcolor matter. Use GCBlit. */
+      return GCBlit(xdest, ydest, w, h, src, xsrc, ysrc);
+    }
+
+    /* This is mono to mono/color */
+
     FreeGetPixelCache();
 
     if (src->selectedTo)
@@ -168,13 +175,8 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
 
     savePen = current_pen;
     saveBack = current_background_color;
-    if (src->GetDepth() == 1) {
-      /* Pen GC used for blit: */
-      SetPen(wxThePenList->FindOrCreatePen(dcolor ? dcolor : wxBLACK, 0, rop));
-    } else {
-      SetBackground(wxWHITE);
-      SetPen(wxBLACK_PEN);
-    }
+    /* Pen GC used for blit: */
+    SetPen(wxThePenList->FindOrCreatePen(dcolor ? dcolor : wxBLACK, 0, rop));
 
     int scaled_width
 	= src->GetWidth()  < XLOG2DEVREL(w) ? src->GetWidth()  : XLOG2DEVREL(w);
@@ -182,35 +184,27 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
 	= src->GetHeight() < YLOG2DEVREL(h) ? src->GetHeight() : YLOG2DEVREL(h);
 
     if (DRAWABLE && src->Ok()) {
-	// Check if we're copying from a mono bitmap
-        retval = TRUE;
-	if (src->GetDepth() == 1) {
-	  if ((rop == wxSOLID) || (rop == wxXOR)) {
-	    /* Seems like the easiest way to implement transparent backgrounds is to
-	       use a stipple. */
-	    XGCValues values;
-	    unsigned long mask = GCFillStyle | GCStipple | GCTileStipXOrigin | GCTileStipYOrigin;
-	    values.stipple = GETPIXMAP(src);
-	    values.fill_style = FillStippled;
-	    values.ts_x_origin = ((XLOG2DEV(xdest) - (long)xsrc) % src->GetWidth());
-	    values.ts_y_origin = ((YLOG2DEV(ydest) - (long)ysrc) % src->GetHeight());
-	    XChangeGC(DPY, PEN_GC, mask, &values);
-	    XFillRectangle(DPY, DRAWABLE, PEN_GC, XLOG2DEV(xdest), YLOG2DEV(ydest), scaled_width, scaled_height);
-	  } else {
-	    XCopyPlane(DPY, GETPIXMAP(src), DRAWABLE, PEN_GC,
-		       (long)xsrc, (long)ysrc,
-		       scaled_width, scaled_height,
-		       XLOG2DEV(xdest), YLOG2DEV(ydest), 1);
-	  }
-	} else if (src->GetDepth() == (int)DEPTH) {
-	    XCopyArea(DPY, GETPIXMAP(src), DRAWABLE, PEN_GC,
-		      (long)xsrc, (long)ysrc,
-		      scaled_width, scaled_height,
-		      XLOG2DEV(xdest), YLOG2DEV(ydest));
-	} else
-	  retval = FALSE;
-	CalcBoundingBox(xdest, ydest);
-	CalcBoundingBox(xdest + w, ydest + h);
+      // Check if we're copying from a mono bitmap
+      retval = TRUE;
+      if ((rop == wxSOLID) || (rop == wxXOR)) {
+	/* Seems like the easiest way to implement transparent backgrounds is to
+	   use a stipple. */
+	XGCValues values;
+	unsigned long mask = GCFillStyle | GCStipple | GCTileStipXOrigin | GCTileStipYOrigin;
+	values.stipple = GETPIXMAP(src);
+	values.fill_style = FillStippled;
+	values.ts_x_origin = ((XLOG2DEV(xdest) - (long)xsrc) % src->GetWidth());
+	values.ts_y_origin = ((YLOG2DEV(ydest) - (long)ysrc) % src->GetHeight());
+	XChangeGC(DPY, PEN_GC, mask, &values);
+	XFillRectangle(DPY, DRAWABLE, PEN_GC, XLOG2DEV(xdest), YLOG2DEV(ydest), scaled_width, scaled_height);
+      } else {
+	XCopyPlane(DPY, GETPIXMAP(src), DRAWABLE, PEN_GC,
+		   (long)xsrc, (long)ysrc,
+		   scaled_width, scaled_height,
+		   XLOG2DEV(xdest), YLOG2DEV(ydest), 1);
+      }
+      CalcBoundingBox(xdest, ydest);
+      CalcBoundingBox(xdest + w, ydest + h);
     }
 
     SetPen(savePen);
@@ -247,16 +241,27 @@ Bool wxWindowDC::GCBlit(float xdest, float ydest, float w, float h, wxBitmap *sr
 
     if (DRAWABLE && src->Ok()) {
       XGCValues values;
-      GC gc = XCreateGC(DPY, DRAWABLE, 0, &values);
+      int mask = 0;
+
+      if ((DEPTH == 1) && (src->GetDepth() > 1)) {
+	/* May need to flip 1 & 0... */
+	if (BlackPixelOfScreen(SCN) == 1) {
+	  mask = GCFunction;
+	  values.function = GXcopyInverted;
+	}
+      }
+
+      GC gc = XCreateGC(DPY, DRAWABLE, mask, &values);
       
       retval = TRUE;
-      // Check if we're copying from a mono bitmap
-      if (src->GetDepth() == 1) {
+      if ((src->GetDepth() == 1) || (DEPTH == 1)) {
+	/* mono to color/mono  or  color/mono to mono */
 	XCopyPlane(DPY, GETPIXMAP(src), DRAWABLE, gc,
 		   (long)xsrc, (long)ysrc,
 		   scaled_width, scaled_height,
 		   XLOG2DEV(xdest), YLOG2DEV(ydest), 1);
       } else if (src->GetDepth() == (int)DEPTH) {
+	/* color to color */
 	XCopyArea(DPY, GETPIXMAP(src), DRAWABLE, gc,
 		  (long)xsrc, (long)ysrc,
 		  scaled_width, scaled_height,

@@ -33,7 +33,6 @@
  font-list%
  font-name-directory<%>
  get-face-list
- get-editor-print-margin
  get-resource
  get-the-editor-data-class-list
  get-the-snip-class-list
@@ -53,7 +52,6 @@
  editor-stream-out-base%
  editor-stream-out-string-base%
  editor-wordbreak-map%
- bitmap-dc%
  mouse-event%
  mult-color<%>
  pen%
@@ -66,7 +64,6 @@
  read-editor-global-header
  region%
  scroll-event%
- set-editor-print-margin
  snip%
  snip-admin%
  snip-class%
@@ -91,4 +88,5 @@
  write-editor-global-header
  write-resource
  queue-callback
- yield)
+ yield
+ eventspace-shutdown?)

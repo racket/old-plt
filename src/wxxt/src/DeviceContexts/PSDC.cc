@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: PSDC.cc,v 1.19 1998/11/25 13:06:20 mflatt Exp $
+ * RCS_ID:      $Id: PSDC.cc,v 1.20 1999/01/08 04:17:45 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -2011,6 +2011,7 @@ wxPrintSetupData::wxPrintSetupData(void)
     print_colour = TRUE;
     print_level_2 = TRUE;
     printer_file = NULL;
+    emargin_v = emargin_h = 36;
 }
 
 wxPrintSetupData::~wxPrintSetupData(void)

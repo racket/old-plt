@@ -34,5 +34,6 @@
  file-selector
  register-collecting-blit
  unregister-collecting-blit
+ bitmap-dc%
  shortcut-visible-in-label?
  in-atomic-region)

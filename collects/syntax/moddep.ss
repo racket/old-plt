@@ -21,7 +21,11 @@
 	     [_else #f]))
       ;; It's ok; need to install a specific `module' binding:
       (with-syntax ([(mod nm . _) exp])
-	(syntax (module nm . _)))]
+	(datum->syntax-object exp
+			      (cons (syntax module)
+				    (cdr (syntax-e exp)))
+			      exp
+			      exp))]
      [else
       (and filename
 	   (error 'load-handler 

@@ -304,9 +304,9 @@
 	      (let* ([dest (string-append dest ".app")]
 		     [src (build-path (collection-path "launcher")
 				      "Starter.app")])
-		;(system (string-append "CpMac -r " src " " dest))
-		(unless (directory-exists? dest)
-			(system* "/Developer/Tools/CpMac" "-r" src dest))
+		(when (directory-exists? dest)
+		      (system* "/bin/rm" "-rf" dest))
+		(system* "/bin/cp" "-r" src dest)
 		(call-with-output-file (build-path dest 
 						   "Contents" 
 						   "Resources" 

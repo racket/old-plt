@@ -141,7 +141,7 @@
 	(public
 	  [after-delete
 	   (lambda (snip)
-	     (super-after-delete)
+	     (super-after-delete snip)
 	     (let ([parents (ivar snip parents)]
 		   [children (ivar snip children)])
 	       (for-each (lambda (parent) (send parent remove-child snip))

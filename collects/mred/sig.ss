@@ -1,5 +1,5 @@
 ;;
-;; $Id: sig.ss,v 1.77 1997/10/16 21:46:25 robby Exp robby $
+;; $Id: sig.ss,v 1.78 1997/10/16 21:55:00 robby Exp $
 ;;
 
 (begin-elaboration-time
@@ -228,6 +228,7 @@
 (define-signature mred:edit^
   (make-std-buffer%
    make-pasteboard%
+   make-info-buffer%
    make-info-edit%
    make-file-buffer%
    make-searching-edit%
@@ -242,7 +243,9 @@
    backup-autosave-edit%
    edit%
    return-edit%
+
    pasteboard%
+   info-pasteboard%
    file-pasteboard%
    backup-autosave-pasteboard% 
    
@@ -273,9 +276,15 @@
    make-menu-frame%
    make-standard-menus-frame%
    make-searchable-frame%
+
    make-info-frame%
+   make-edit-info-frame%
+
    make-file-frame%
+
    make-pasteboard-frame%
+   make-pasteboard-file-frame%
+   make-pasteboard-info-frame%
 
    empty-frame%
    menu-frame%
@@ -285,6 +294,7 @@
    info-frame%
    info-file-frame%
    pasteboard-frame%
+   pasteboard-info-frame%
    pasteboard-info-file-frame%))
 
 (define-signature mred:editor-frame^

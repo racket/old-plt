@@ -84,16 +84,16 @@
     (let ([style-delta?
 	   (lambda (x)
 	     (is-a? x wx:style-delta%))])
-      (mred:set-preference-default 'mzprizm:primitive
+      (mred:set-preference-default 'mzprizm:syntax
 				   (let ([s (make-object wx:style-delta%)])
 				     (when (< (wx:display-depth) 8)
 				       (send s set-delta wx:const-change-bold 1))
-				     (send s set-delta-foreground "FIREBRICK")
+				     (send s set-delta-foreground "BLACK")
 				     s)
 				   style-delta?)
-      (mred:set-preference-default 'mzprizm:syntax
-				   (let ([s (make-object wx:style-delta% wx:const-change-bold 1)])
-				     (send s set-delta-foreground "BLACK")
+      (mred:set-preference-default 'mzprizm:primitive
+				   (let ([s (make-object wx:style-delta%)])
+				     (send s set-delta-foreground "BLUE")
 				     s)
 				   style-delta?)
       (mred:set-preference-default 'mzprizm:constant
@@ -111,9 +111,11 @@
 				     s)
 				   style-delta?)
       (mred:set-preference-default '|mzprizm:unbound variable|
-				   (let ([s (make-object wx:style-delta%
-					      wx:const-change-style
-					      wx:const-slant)])
+				   (let ([s (make-object wx:style-delta%)])
+				     (when (< (wx:display-depth) 8)
+				       (send s set-delta
+					     wx:const-change-style
+					     wx:const-slant))
 				     (send s set-delta-foreground "RED")
 				     s)
 				   style-delta?))

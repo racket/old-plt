@@ -412,7 +412,7 @@
 	     (begin-edit-sequence)
 	     (insert #\newline (last-position) (last-position))
 	     (let ([start (last-position)])
-	       (insert "WARNING: Program has changed. Click Execute."
+	       (insert "WARNING: Interactions window is out of sync with the definitions window. Click Execute."
 		       start start)
 	       (let ([end (last-position)])
 		 (change-style WARNING-STYLE-DELTA start end)))

@@ -310,10 +310,10 @@
 			    (mred:url:string->url (get-filename))
 			    url-string))
 			  url-string)])
-		 (send e load-file url-string)
-		 (let ([c (get-canvas)])
-		   (send e add-canvas c)
-		   (send c set-media e))
+		 (when (send e load-file url-string)
+		   (let ([c (get-canvas)])
+		     (send e add-canvas c)
+		     (send c set-media e)))
 		 (send e set-auto-set-wrap #t)))]
 	    [make-clickback-funct
 	     (lambda (url-string)
@@ -577,7 +577,8 @@
 		   (super-do-edit op)))]
 	    [load-file 
 	     (opt-lambda ([filename ()]
-			  [format wx:const-media-ff-guess])
+			  [format wx:const-media-ff-guess]
+			  [show-dialog? #t])
 	       (set! hyperlinks-list ())
 	       (set! hypertags-list ())
 	       (lock #f)

@@ -1,4 +1,3 @@
-
   (unit/sig mred:frame^
     (import mred:wx^
 	    [mred:constants : mred:constants^]
@@ -400,13 +399,20 @@
 		      [filename (send edit get-filename b)])
 		 (if (or (null? filename) (unbox b))
 		     (wx:bell)
-		     (begin (send edit begin-edit-sequence)
-			    (send edit load-file filename)
-			    (when (is-a? edit wx:media-edit%)
-			      (let ([start (send edit get-start-position)]
-				    [end (send edit get-end-position)])
-				(send edit set-position start end)))
-			    (send edit end-edit-sequence)))
+		     (let-values ([(start end)
+				   (if (is-a? edit wx:media-edit%)
+				       (values (send edit get-start-position)
+					       (send edit get-end-position))
+				       (values #f #f))])
+		       (send edit begin-edit-sequence)
+		       (let ([status (send edit load-file filename #f)])
+			 (if status
+			     (when (is-a? edit wx:media-edit%)
+			       (send edit set-position start end))
+			     (mred:gui-utils:message-box
+			      (format "could not read ~a" filename)
+			      "Error Reverting")))
+		       (send edit end-edit-sequence)))
 		 #t))]
 	    [file-menu:save (lambda ()
 			      (send (get-edit) save-file)
@@ -860,7 +866,6 @@
     (define make-info-frame%
       (let* ([time-edit (make-object mred:edit:media-edit%)]
 	     [time-semaphore (make-semaphore 1)]
-	     [magic-space 25]
 	     [wide-time "00:00pm"]
 	     [_ (send time-edit lock #t)]
 	     [update-time
@@ -888,24 +893,6 @@
 		 (lambda ()
 		   (send time-edit lock #t)
 		   (semaphore-post time-semaphore))))]
-	     [determine-width
-	      (lambda (string canvas edit)
-		(send edit set-autowrap-bitmap null)
-		(send canvas call-as-primary-owner
-		      (lambda ()
-			(let ([lb (box 0)]
-			      [rb (box 0)])
-			  (send edit erase)
-			  (send edit insert string)
-			  (send edit position-location 
-				(send edit last-position)
-				rb)
-			  (send edit position-location 0 lb)
-			  '(printf "width: ~a ~a ~a ~a~n" 
-				  (send canvas user-min-width)
-				  lb rb (send time-edit last-position))
-			  (send canvas user-min-width 
-				(+ magic-space (- (unbox rb) (unbox lb))))))))]
 	     [time-thread
 	      (thread
 	       (rec loop
@@ -930,6 +917,27 @@
 		   (set! rest-panel r-root)
 		   r-root))])
 	    
+	    (public
+	      [determine-width
+	       (let ([magic-space 25])
+		 (lambda (string canvas edit)
+		   (send edit set-autowrap-bitmap null)
+		   (send canvas call-as-primary-owner
+			 (lambda ()
+			   (let ([lb (box 0)]
+				 [rb (box 0)])
+			     (send edit erase)
+			     (send edit insert string)
+			     (send edit position-location 
+				   (send edit last-position)
+				   rb)
+			     (send edit position-location 0 lb)
+			     '(printf "width: ~a ~a ~a ~a~n" 
+				      (send canvas user-min-width)
+				      lb rb (send time-edit last-position))
+			     (send canvas user-min-width 
+				   (+ magic-space (- (unbox rb) (unbox lb)))))))))])
+	    
 	    (rename [super-do-close do-close])
 	    (private
 	      [close-panel-callback
@@ -943,52 +951,23 @@
 			(lambda (l)
 			  (if v
 			      (list rest-panel info-panel)
-			      (list rest-panel))))))]
-	      [remove-pref-callback
-	       (mred:preferences:add-preference-callback
-		'mred:line-offsets
-		(lambda (p v)
-		  (edit-position-changed-offset v)
-		  #t))])
+			      (list rest-panel))))))])
 	    (public
 	      [do-close
 	       (lambda ()
 		 (super-do-close)
 		 (send time-canvas set-media null)
 		 (wx:unregister-collecting-blit gc-canvas)
-		 (remove-pref-callback)
 		 (close-panel-callback))])
-
+	    
 	    (inherit get-edit)
 	    (public
 	      [get-info-edit
 	       (lambda ()
 		 (and (procedure? get-edit)
 		      (get-edit)))])
-
+	    
 	    (public
-	      [overwrite-status-changed
-	       (let ([last-state? #f])
-		 (lambda ()
-		   (let ([info-edit (get-info-edit)])
-		     (when info-edit
-		       (let ([overwrite-now? (send info-edit get-overwrite-mode)])
-			 (unless (eq? overwrite-now? last-state?)
-			   (send overwrite-message
-				 show
-				 overwrite-now?)
-			   (set! last-state? overwrite-now?)))))))]
-	      [anchor-status-changed
-	       (let ([last-state? #f])
-		 (lambda ()
-		   (let ([info-edit (get-info-edit)])
-		     (when info-edit
-		       (let ([anchor-now? (send info-edit get-anchor)])
-			 (unless (eq? anchor-now? last-state?)
-			   (send anchor-message
-				 show
-				 anchor-now?)
-			   (set! last-state? anchor-now?)))))))]
 	      [lock-status-changed
 	       (let ([icon-currently-locked? #f])
 		 (lambda ()
@@ -1010,81 +989,29 @@
 				   set-label
 				   (if (send (car label) ok?)
 				       label
-				       (if locked-now? "Locked" "Unlocked"))))))))))]
-	      
-	      [edit-position-changed-offset
-	       (lambda (offset?)
-		 (let ([edit (get-info-edit)])
-		   (when edit
-		     (let ([start (send edit get-start-position)]
-			   [end (send edit get-end-position)]
-			   [make-one
-			    (lambda (pos)
-			      (let* ([line (send edit position-line pos)]
-				     [line-start (send edit line-start-position line)]
-				     [char (- pos line-start)])
-				(format "~a:~a"
-					(if offset?
-					    (add1 line)
-					    line)
-					(if offset?
-					    (add1 char)
-					    char))))])
-		       (when (object? position-edit)
-			 (send* position-edit
-				(lock #f)
-				(erase)
-				(insert 
-				 (if (= start end)
-				     (make-one start)
-				     (string-append (make-one start)
-						    "-"
-						    (make-one end))))
-				(lock #t)))))))]
-	      [edit-position-changed
-	       (lambda ()
-		 (edit-position-changed-offset
-		  (mred:preferences:get-preference 'mred:line-offsets)))])
+				       (if locked-now? "Locked" "Unlocked"))))))))))])
 	    (public
 	      [update-info
 	       (lambda ()
-		 (overwrite-status-changed)
-		 (anchor-status-changed)
-		 (edit-position-changed)
 		 (lock-status-changed))])
 	    (sequence 
 	      (apply super-init args))
 	    
-	    (private
+	    (public
 	      [info-panel (make-object mred:container:horizontal-panel% 
-				       super-root)]
-	      [anchor-message 
-	       (make-object mred:container:canvas-message%
-			    info-panel
-			    (let ([b (mred:icon:get-anchor-bitmap)])
-			      (if (send b ok?)
-				  (cons (mred:icon:get-anchor-mdc) b)
-				  "Anchor"))
-			    -1 -1 wx:const-border)]
-	      [overwrite-message 
-	       (make-object mred:container:canvas-message%
-			    info-panel
-			    "Overwrite"
-			    -1 -1 wx:const-border)]
+				       super-root)])
+	    (private
 	      [lock-message (make-object mred:container:canvas-message%
-			      info-panel 
-			      (let ([b (mred:icon:get-unlock-bitmap)])
-				(if (send b ok?)
-				    (cons (mred:icon:get-unlock-mdc) b)
-				    "Unlocked"))
-			      -1 -1 wx:const-border)]
-	      [position-canvas (make-object mred:canvas:one-line-canvas%
-					    info-panel)]
+					 info-panel 
+					 (let ([b (mred:icon:get-unlock-bitmap)])
+					   (if (send b ok?)
+					       (cons (mred:icon:get-unlock-mdc) b)
+					       "Unlocked"))
+					 -1 -1 wx:const-border)]
 	      [time-canvas (make-object mred:canvas:one-line-canvas% 
 					info-panel)]
 	      [gc-canvas (make-object mred:container:canvas% info-panel
 				      -1 -1 -1 -1 wx:const-border)]
-	      [position-edit (make-object mred:edit:media-edit%)]
 	      [register-gc-blit
 	       (lambda ()
 		 (let ([mdc (mred:icon:get-gc-on-dc)])
@@ -1095,14 +1022,14 @@
 						  (mred:icon:get-gc-height)
 						  (mred:icon:get-gc-on-dc)
 						  (mred:icon:get-gc-off-dc)))))])
-
+	    
 	    (sequence
 	      (unless (mred:preferences:get-preference 'mred:show-status-line)
 		(send super-root change-children
 		      (lambda (l)
 			(list rest-panel))))
 	      (register-gc-blit)
-
+	      
 	      (let ([bw (box 0)]
 		    [bh (box 0)]
 		    [gc-width (mred:icon:get-gc-width)]
@@ -1120,23 +1047,143 @@
 		(stretchable-in-y #f)
 		(spacing 3)
 		(border 3))
-	      (send anchor-message show #f)
-	      (send overwrite-message show #f)
-	      (send* position-canvas
-		(set-media position-edit)
-		(stretchable-in-x #f))
 	      (send* time-canvas 
 		(set-media time-edit)
 		(stretchable-in-x #f))
-	      (determine-width "0000:000-0000:000" 
-			       position-canvas
-			       position-edit)
-	      (edit-position-changed)
-	      (send position-edit lock #t)
 	      (semaphore-wait time-semaphore)
 	      (determine-width wide-time time-canvas time-edit)
 	      (semaphore-post time-semaphore)
 	      (update-time))))))
+    
+    (define make-edit-info-frame%
+      (lambda (super-info%)
+	(class super-info% args
+	  (inherit get-info-edit)
+	  (rename [super-do-close do-close])
+	  (private
+	    [remove-pref-callback
+	     (mred:preferences:add-preference-callback
+	      'mred:line-offsets
+	      (lambda (p v)
+		(edit-position-changed-offset v)
+		#t))])
+	  (public
+	    [do-close
+	     (lambda ()
+	       (super-do-close)
+	       (remove-pref-callback))])
+	  
+	  (public
+	    [overwrite-status-changed
+	     (let ([last-state? #f])
+	       (lambda ()
+		 (let ([info-edit (get-info-edit)])
+		   (when info-edit
+		     (let ([overwrite-now? (send info-edit get-overwrite-mode)])
+		       (unless (eq? overwrite-now? last-state?)
+			 (send overwrite-message
+			       show
+			       overwrite-now?)
+			 (set! last-state? overwrite-now?)))))))]
+	    [anchor-status-changed
+	     (let ([last-state? #f])
+	       (lambda ()
+		 (let ([info-edit (get-info-edit)])
+		   (when info-edit
+		     (let ([anchor-now? (send info-edit get-anchor)])
+		       (unless (eq? anchor-now? last-state?)
+			 (send anchor-message
+			       show
+			       anchor-now?)
+			 (set! last-state? anchor-now?)))))))]
+	    
+	    [edit-position-changed-offset
+	     (lambda (offset?)
+	       (let ([edit (get-info-edit)])
+		 (when edit
+		   (let ([start (send edit get-start-position)]
+			 [end (send edit get-end-position)]
+			 [make-one
+			  (lambda (pos)
+			    (let* ([line (send edit position-line pos)]
+				   [line-start (send edit line-start-position line)]
+				   [char (- pos line-start)])
+			      (format "~a:~a"
+				      (if offset?
+					  (add1 line)
+					  line)
+				      (if offset?
+					  (add1 char)
+					  char))))])
+		     (when (object? position-edit)
+		       (send* position-edit
+			 (lock #f)
+			 (erase)
+			 (insert 
+			  (if (= start end)
+			      (make-one start)
+			      (string-append (make-one start)
+					     "-"
+					     (make-one end))))
+			 (lock #t)))))))]
+	    [edit-position-changed
+	     (lambda ()
+	       (edit-position-changed-offset
+		(mred:preferences:get-preference 'mred:line-offsets)))])
+	  (rename [super-update-info update-info])
+	  (public
+	    [update-info
+	     (lambda ()
+	       (super-update-info)
+	       (overwrite-status-changed)
+	       (anchor-status-changed)
+	       (edit-position-changed))])
+	  (sequence 
+	    (apply super-init args))
+	  
+	  (inherit info-panel)
+	  (private
+	    [anchor-message 
+	     (make-object mred:container:canvas-message%
+			  info-panel
+			  (let ([b (mred:icon:get-anchor-bitmap)])
+			    (if (send b ok?)
+				(cons (mred:icon:get-anchor-mdc) b)
+				"Anchor"))
+			  -1 -1 wx:const-border)]
+	    [overwrite-message 
+	     (make-object mred:container:canvas-message%
+			  info-panel
+			  "Overwrite"
+			  -1 -1 wx:const-border)]
+	    [position-canvas (make-object mred:canvas:one-line-canvas%
+					  info-panel)]
+	    [position-edit (make-object mred:edit:media-edit%)])
+	  
+	  (inherit determine-width)
+	  (sequence
+	    (let ([move-front
+		   (lambda (x l)
+		     (cons x (mzlib:function:remq x l)))])
+	      (send info-panel change-children
+		    (lambda (l)
+		      (move-front
+		       anchor-message
+		       (move-front
+			overwrite-message
+			(move-front
+			 position-canvas
+			 l))))))
+	    (send anchor-message show #f)
+	    (send overwrite-message show #f)
+	    (send* position-canvas
+	      (set-media position-edit)
+	      (stretchable-in-x #f))
+	    (determine-width "0000:000-0000:000" 
+			     position-canvas
+			     position-edit)
+	    (edit-position-changed)
+	    (send position-edit lock #t)))))
     
     (define make-file-frame%
       (lambda (super%)
@@ -1174,16 +1221,25 @@
 	(class-asi class%
 	  (public
 	    [get-edit% (lambda () mred:edit:file-pasteboard%)]))))
+    
+    (define make-pasteboard-info-frame%
+      (lambda (class%)
+	(class-asi class%
+	  (public
+	    [get-edit% (lambda () mred:edit:info-pasteboard%)]))))
 
     (define empty-frame% (make-empty-frame% mred:container:frame%))
     (define menu-frame% (make-menu-frame% empty-frame%))
     (define standard-menus-frame% (make-standard-menus-frame% menu-frame%))
     (define simple-menu-frame% (make-simple-frame% standard-menus-frame%))
     (define searchable-frame% (make-searchable-frame% simple-menu-frame%))
-    (define info-frame% (make-info-frame% searchable-frame%))
+    (define info-frame% (make-edit-info-frame% 
+			 (make-info-frame% searchable-frame%)))
     (define info-file-frame% (make-file-frame% info-frame%))
 
     (define pasteboard-frame% (make-pasteboard-frame% simple-menu-frame%))
+    (define pasteboard-info-frame% (make-pasteboard-info-frame%
+				    (make-info-frame% pasteboard-frame%)))
     (define pasteboard-info-file-frame% (make-pasteboard-file-frame%
-				    (make-file-frame%
-				     pasteboard-frame%))))
+					 (make-file-frame%
+					  pasteboard-info-frame%))))

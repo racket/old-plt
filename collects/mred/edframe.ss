@@ -114,7 +114,14 @@
 			   ; Load in the file, if it exists
 			   (if (and (not untitled?)
 				    (file-exists? filename))
-			       (send edit load-file filename)
+			       (let ([completed? (send edit load-file 
+						       filename #f)])
+				 (unless completed?
+				   (mred:gui-utils:message-box
+				    (format
+				     "Unable to load file ~a"
+				     filename)
+				    "Error loading file")))
 			       (begin
 				 (send edit erase)
 				 (send edit set-filename filename 

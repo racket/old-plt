@@ -1352,8 +1352,8 @@
 	       (send file-menu append-item "&Load Scheme File..."
 		     (lambda ()
 		       (let ((file (mred:finder:get-file)))
-			 (if file
-			     (load-file file)))))
+			 (when file
+			   (load-file file)))))
 	       (send file-menu append-item "Show Console History..." show-interactions-history)
 	       (send file-menu append-separator))])
 	  

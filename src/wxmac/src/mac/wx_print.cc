@@ -76,18 +76,45 @@ PrIdleUPP printIdleUPP=(PrIdleUPP)&printIdle;
 
 static int popen_p;
 
+#ifdef OS_X
+void wxPMBegin(void)
+{
+  if (!popen_p++) {
+    PMBegin();
+    return PMError();
+  }
+  return noErr;
+}
+#else
 void wxPrOpen(void)
 {
-  if (!popen_p++)
-    PMBegin();
+  if (!popen_p++) {
+    PrOpen();
+    return PrError();
+  }
+  return noErr;
 }
+#endif
 
+#ifdef OS_X
+void wxPMEnd(void)
+{
+  if (!--popen_p) {
+    PMEnd();
+    return PMError();
+  }
+  return noErr;
+}
+#else
 void wxPrClose(void)
 {
-  if (!--popen_p)
-    PMEnd();
+  if (!--popen_p) {
+    PrClose();
+    return PrError();
+  }
+  return noErr;
 }
-
+#endif
 
 wxPrintDialog::wxPrintDialog(wxWindow *p, wxPrintData *data):
  wxDialogBox((wxFrame *)p, "Printer Dialog")
@@ -130,8 +157,8 @@ void wxPrintDialog::Show(Bool flag)
 
   PrValidate( printData.macPrData);
 
-  if (PMError() != fnfErr) {
-    prtJob = PMPrintDialog(printData.macPrData);
+  if (PrError() != fnfErr) {
+    prtJob = PrJobDialog(printData.macPrData);
     if (!prtJob)
     {
        (**printData.macPrData).prJob.iLstPage = 0;
@@ -141,7 +168,7 @@ void wxPrintDialog::Show(Bool flag)
     }
   }
 
-  if (PMError())
+  if (PrError())
     DisposeHandle((Handle)printData.macPrData);
 
   wxPrClose();
@@ -341,7 +368,7 @@ Bool wxPrinter::Print(wxWindow *parent, wxPrintout *printout, Bool prompt)
     return FALSE;
 
   wxPrOpen();
-  if (PMError() != fnfErr) {
+  if (PrError() != fnfErr) {
     PrintDefault(printData.macPrData);
   }
 

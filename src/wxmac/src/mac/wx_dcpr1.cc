@@ -31,6 +31,48 @@ void InstallColor(wxColour &c, int fg, Bool Colour);
 //-----------------------------------------------------------------------------
 // Default constructor
 //-----------------------------------------------------------------------------
+#ifdef OS_X
+wxPrinterDC::wxPrinterDC(wxWindow *parent) : wxCanvasDC()
+{
+  PMPrintSettings printSettings;
+  PMPageFormat pageFormat;
+  OSErr err;
+  
+  ok = true;
+  
+  if (wxPMBegin() != noErr) {
+    ok = false;
+    return;
+  }
+
+  if (PMCreatePrintSettings(&printSettings) != noErr) {
+    ok = false;
+    return;
+  }
+  
+  if (PMDefaultPrintSettings(printSettings) != noErr) {
+    ok = false;
+    PMDisposePrintSettings(printSettings);
+    return;
+  }
+  
+  if (PMCreatePageFormat(&pageFormat) != noErr) {
+    ok = false;
+    PMDisposePrintSettings(printSettings);
+    return;
+  }
+  
+  if (PMDefaultPageFormat(pageFormat) != noErr) {
+    ok = false;
+    PMDisposePrintSettings(printSettings);
+    PMDisposePageFormat(pageFormat);
+    return;
+  }
+
+  close_handle = 1;
+  Create(printSettings,pageFormat);
+}
+#else
 wxPrinterDC::wxPrinterDC(wxWindow *parent) : wxCanvasDC()
 {
   THPrint pr;
@@ -42,12 +84,11 @@ wxPrinterDC::wxPrinterDC(wxWindow *parent) : wxCanvasDC()
   pr = (THPrint)NewHandleClear(sizeof(TPrint));
 
   PrintDefault(pr);
-  PrValidate(pr);
-  if (PMError() != fnfErr) {
-    if (!PMPrintDialog(pr)) {
+  if (PrError() != fnfErr) {
+    if (!PrJobDialog(pr)) {
       ok = FALSE;
     }
-    if (PMError())
+    if (PrError())
       ok = FALSE;
   } else
     ok = FALSE;
@@ -59,51 +100,79 @@ wxPrinterDC::wxPrinterDC(wxWindow *parent) : wxCanvasDC()
     DisposeHandle((Handle)pr);
   }
 }
+#endif
 
 
 //-----------------------------------------------------------------------------
+#ifdef OS_X
+wxPrinterDC::wxPrinterDC(PMPrintSettings printSettings, PMPageFormat pageFormat) : wxCanvasDC()
+#else
 wxPrinterDC::wxPrinterDC(THPrint pData) : wxCanvasDC()
+#endif
 {
+  ok = true;
   close_handle = 0;
   wxPrOpen();
+#ifdef OS_X
   Create(pData);
+#else
+  Create(printSettings,pageFormat);
+#endif
 }
 
-
+#ifdef OS_X
+void wxPrinterDC::Create(PMPrintSettings printSettings, PMPageFormat pageFormat)
+#else
 void wxPrinterDC::Create(THPrint pData)
+#endif
 {
-  __type = wxTYPE_DC_PRINTER;
+    GrafPtr grafPtr;
+    __type = wxTYPE_DC_PRINTER;
 
+#ifdef OS_X
+    cPrintSettings = printSettings;
+    cPageFormat = pageFormat;
+    
+    if (PMOpenDocument(cPrintSettings,cPageFormat,&cPrintContext) != noErr) {
+      ok = false;
+      return;
+    }  
+    
+    GrafPtr grafPtr;
+    
+    if (PMGetGrafPtr(cPrintContext, &grafPtr) != noErr) {
+      ok = false;
+      return;
+    }
+
+#else    
     prRecHandle = pData;
-    PMBegin();
-	if (PMError()) {
-      PMEnd();
+
+    prPort = PrOpenDoc(prRecHandle, 0, 0);
+
+    if (PrError()) {
+      PrCloseDoc(prPort);
+      PrClose();
       ok = FALSE;
       return;
     }
 
-	prPort = PMBeginDocument(prRecHandle, 0, 0);
+    grafPtr = &(prPort->gPort);
+#endif
 
-    if (PMError()) {
-      PMEndDocument(prPort);
-      PMEnd();
-      ok = FALSE;
-      return;
-    }
-
-    cMacDC = new wxMacDC((CGrafPtr)&(prPort->gPort));
-	CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
+    cMacDC = new wxMacDC((CGrafPtr)grafPtr);
+    CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
 	
-	cMacDoingDrawing = FALSE;
+    cMacDoingDrawing = FALSE;
 
-  clipping = FALSE;
-  selected_pixmap = NULL;
+    clipping = FALSE;
+    selected_pixmap = NULL;
 
-  current_reg = NULL ;
-  onpaint_reg = NULL ;
+    current_reg = NULL ;
+    onpaint_reg = NULL ;
 
-  min_x = 0; min_y = 0;
-  max_x = 0; max_y = 0;
+    min_x = 0; min_y = 0;
+    max_x = 0; max_y = 0;
 
   pixmapWidth = (**prRecHandle).prInfo.rPage.right;
   pixmapHeight = (**prRecHandle).prInfo.rPage.bottom;
@@ -157,7 +226,7 @@ void wxPrinterDC::Create(THPrint pData)
 wxPrinterDC::~wxPrinterDC(void)
 {
   if (ok) {
-    PMEndDocument(prPort);
+    PrCloseDoc(prPort);
     if (close_handle)
       DisposeHandle((Handle)prRecHandle);
   }
@@ -175,12 +244,12 @@ void wxPrinterDC::EndDoc(void) { }
 void wxPrinterDC::StartPage(void)
 {
   if (prPort)
-    PMBeginPage(prPort, 0); 
+    PrOpenPage(prPort, 0); 
 }
 
 //-----------------------------------------------------------------------------
 void wxPrinterDC::EndPage(void)
 {
   if (prPort)
-    PMEndPage(prPort);
+    PrClosePage(prPort);
 }

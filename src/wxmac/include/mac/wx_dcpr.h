@@ -22,14 +22,26 @@ typedef       void* wxPrinterDC ;
 class wxPrinterDC: public wxCanvasDC
 {
  public:
+
+#ifdef OS_X
+  PMPrintSettings cPrintSettings;
+  PMPageFormat cPageFormat;
+  PMPrintContext cPrintContext;
+#else
   TPPrPort prPort;
   THPrint  prRecHandle;
+#endif  
   int close_handle;
 
   wxPrinterDC(wxWindow *w = NULL);
-  wxPrinterDC(THPrint); // Create a DC corresponding to a canvas
 
+#ifdef OS_X
+  wxPrinterDC(PMPrintSettings, PMPageFormat); // Create a DC corresponding to a canvas
+  void Create(PMPrintSettings, PMPageFormat);
+#else
+  wxPrinterDC(THPrint); // Create a DC corresponding to a canvas
   void Create(THPrint);
+#endif
 
   ~wxPrinterDC(void);
 

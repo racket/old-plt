@@ -19,6 +19,28 @@
 ; The format of the next line is important: file.ss relies on it
 (define cur-section '())(define errs '())
 
+#|
+
+The test form has these two shapes:
+
+  (test <expected> <procdure> <argument1> <argument2> ...)
+  
+  (test <expected> <symbolic-name> <expression>)
+
+In the first case, it applies the result of <procedure> 
+to the results of <argument1> etc and compares that (with equal?)
+to the result of the <expected>
+
+In the second case, it evaluates the <expression> and compares
+the results of that (with equal?) to the value of the
+<expected>. In this case, <symbolic-name> must evaluate to
+something that isn't a procedure. That name is used in the
+transcript.
+  
+|#
+
+
+
 (define teval eval)
 
 (namespace-variable-value 

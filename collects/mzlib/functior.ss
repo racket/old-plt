@@ -179,7 +179,7 @@
 	    (cond
 	     [(null? l) #f]
 	     [(not (pair? l)) 
-	      (raise (make-exn:application:list
+	      (raise (make-exn:application:mismatch
 		      (format "~a: second argument must be a (proper) list; given ~e" name list)
 		      ((debug-info-handler))
 		      list))]
@@ -207,7 +207,7 @@
 	      (if keep?
 		  (cons (car l) frest)
 		  frest))]
-	   [else (raise (make-exn:application:list
+	   [else (raise (make-exn:application:mismatch
 			 (format "filter: second argument must be a (proper) list; given ~e" list)
 			 ((debug-info-handler))
 			 list))])))))

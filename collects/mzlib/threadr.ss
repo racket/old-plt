@@ -128,11 +128,7 @@
 	       [one-done (make-semaphore)]
 	       [branch-handler (lambda ()
 				 (let ([p (make-parameterization)])
-				   (with-parameterization 
-				    p
-				    (lambda () 
-				      (user-break-poll-handler (lambda () #f))
-				      (break-enabled #f)))
+				   ((in-parameterization p break-enabled) #f)
 				   p))]
 	       [threads (parameterize ([parameterization-branch-handler
 					branch-handler])
@@ -179,34 +175,27 @@
 	      #f 
 	      (car result-l)))))]))
 
+  (define dynamic-enable-break
+    (polymorphic
+     (lambda (thunk)
+       (parameterize ([break-enabled #f])
+	 (thunk)))))
+  
   (define dynamic-disable-break
-     (polymorphic
-      (lambda (thunk)
-	(parameterize ([break-enabled #f])
-	  (thunk)))))
-
-   (define dynamic-wind/protect-break
-     (polymorphic
-      (lambda (a b c)
-	(let ([enabled? (break-enabled)])
-	  (dynamic-disable-break
-	   (lambda ()
-	     (dynamic-wind 
-	      a
-	      (if enabled?
-		  (lambda () (dynamic-enable-break b))
-		  b)
-	      c)))))))
-   
-   (define make-single-threader
-     (polymorphic
-      (lambda ()
-	(let ([sema (make-semaphore 1)])
-	  (lambda (thunk)
-	    (dynamic-wind
-	     (lambda () (semaphore-wait sema))
-	     thunk
-	     (lambda () (semaphore-post sema))))))))
+    (polymorphic
+     (lambda (thunk)
+       (parameterize ([break-enabled #f])
+	 (thunk)))))
+  
+  (define make-single-threader
+    (polymorphic
+     (lambda ()
+       (let ([sema (make-semaphore 1)])
+	 (lambda (thunk)
+	   (dynamic-wind
+	    (lambda () (semaphore-wait sema))
+	    thunk
+	    (lambda () (semaphore-post sema))))))))
    
    )
 

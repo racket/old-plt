@@ -36,9 +36,10 @@
 
 (mred-program-launcher-path name) returns a pathname for an executable
    in the current PLT home directory called `name'.  For Windows, the
-   ".exe" suffix is automatically appended to `name', and for X
-   Windows `name' is changed to lowercase and whitespace is changed to
-   `-'.
+   ".exe" suffix is automatically appended to `name'. For Unix and
+   BeOS, `name' is changed to lowercase, whitespace is changed to `-',
+   and the path includes the bin subdirectory of the PLT home
+   directory.
 
 (mzscheme-program-launcher-path name) returns the same pathname as
    (mred-program-launcher-path name).

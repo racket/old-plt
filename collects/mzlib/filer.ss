@@ -186,7 +186,12 @@
        (let ([tmpdir (find-system-path 'temp-dir)])
 	 (let loop ([s (current-seconds)][ms (current-milliseconds)])
 	   (let ([name (build-path tmpdir (format template (format "~a~a" s ms)))])
-	     (with-handlers ([exn:i/o:filesystem:file-exists? (lambda (x) (loop s (add1 ms)))])
+	     (with-handlers ([exn:i/o:filesystem? (lambda (x) 
+						    (if (file-exists? name)
+							;; too slow
+							(loop s (add1 ms))
+							;; It's something else; give up
+							(raise x)))])
 	       (close-output-port (open-output-file name))
 	       name))))]
       [() (make-temporary-file "mztmp~a")]))

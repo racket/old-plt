@@ -6,5 +6,5 @@
    semaphore-wait-multiple
 
    dynamic-disable-break
-   dynamic-wind/protect-break
+   dynamic-enable-break
    make-single-threader))

@@ -499,7 +499,7 @@ wxCursor *wxWindow::SetCursor(wxCursor *new_cursor)
 	    /* Grabbing panel uses this cursor */
 	    XChangeActivePointerGrab(wxAPP_DISPLAY, 
 				     (ButtonPressMask | ButtonReleaseMask
-				      | ButtonMotionMask | PointerMotionMask
+				      | ButtonMotionMask | PointerMotionMask | PointerMotionHintMask
 				      | EnterWindowMask | LeaveWindowMask),
 				     c, 
 				     grabbing_panel_time);
@@ -1118,7 +1118,7 @@ void wxWindow::RegisterAll(Widget ww)
      ButtonPressMask |	// for OnEvent
      ButtonReleaseMask |
      ButtonMotionMask |
-     PointerMotionMask,
+     PointerMotionMask | PointerMotionHintMask,
      FALSE,
      (XtEventHandler)wxWindow::WindowEventHandler,
      (XtPointer)saferef,
@@ -1197,7 +1197,7 @@ void wxWindow::AddEventHandlers(void)
        ButtonPressMask |	// for OnEvent
        ButtonReleaseMask |
        ButtonMotionMask |
-       PointerMotionMask |
+       PointerMotionMask | PointerMotionHintMask |
        EnterWindowMask |
        LeaveWindowMask |
        extra_mask,
@@ -1213,7 +1213,7 @@ void wxWindow::AddEventHandlers(void)
 	 ButtonPressMask |	// for OnEvent
 	 ButtonReleaseMask |
 	 ButtonMotionMask |
-	 PointerMotionMask,
+	 PointerMotionMask | PointerMotionHintMask,
 	 FALSE,
 	 (XtEventHandler)wxWindow::WindowEventHandler,
 	 (XtPointer)saferef,
@@ -1637,7 +1637,7 @@ void wxWindow::WindowEventHandler(Widget w,
 	  c = GETCURSOR(p->cursor);
 	  XChangeActivePointerGrab(wxAPP_DISPLAY, 
 				   (ButtonPressMask | ButtonReleaseMask
-				    | ButtonMotionMask | PointerMotionMask
+				    | ButtonMotionMask | PointerMotionMask | PointerMotionHintMask
 				    | EnterWindowMask | LeaveWindowMask),
 				   c, 
 				   xev->xbutton.time);

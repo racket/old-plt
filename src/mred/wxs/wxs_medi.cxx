@@ -2475,7 +2475,7 @@ static Scheme_Object *os_wxMediaBufferAddSchemeUndo(Scheme_Object *obj, int n,  
   
   x0 = ((void *)p[0]);
 
-  scheme_check_proc_arity(METHODNAME("editor<%>","add-undo"), 0, 0, 1, p);
+  WITH_VAR_STACK(scheme_check_proc_arity(METHODNAME("editor<%>","add-undo"), 0, 0, 1, p));
   WITH_VAR_STACK(((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->AddSchemeUndo(x0));
 
   

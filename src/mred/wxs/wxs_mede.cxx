@@ -3827,7 +3827,7 @@ static Scheme_Object *os_wxMediaEditGetText(Scheme_Object *obj, int n,  Scheme_O
 
   
   
-  return scheme_make_sized_string(r, _x4, 0);
+  return WITH_VAR_STACK(scheme_make_sized_string(r, _x4, 0));
 }
 
 #pragma argsused
@@ -5411,7 +5411,7 @@ static Scheme_Object *os_wxMediaEditInsert(Scheme_Object *obj, int n,  Scheme_Ob
     } else
       x4 = TRUE;
 
-    if ((x0 < 0) || (x0 > SCHEME_STRTAG_VAL(p[1]))) scheme_arg_mismatch(METHODNAME("text%","insert"), "bad string length: ", p[0]);
+    if ((x0 < 0) || (x0 > SCHEME_STRTAG_VAL(p[1]))) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("text%","insert"), "bad string length: ", p[0]));
     WITH_VAR_STACK(((wxMediaEdit *)((Scheme_Class_Object *)obj)->primdata)->Insert(x0, x1, x2, x3, x4));
 
     
@@ -5431,7 +5431,7 @@ static Scheme_Object *os_wxMediaEditInsert(Scheme_Object *obj, int n,  Scheme_Ob
     x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[0], "insert in text% (length, string, and position case)"));
     x1 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[1], "insert in text% (length, string, and position case)"));
 
-    if ((x0 < 0) || (x0 > SCHEME_STRTAG_VAL(p[1]))) scheme_arg_mismatch(METHODNAME("text%","insert"), "bad string length: ", p[0]);
+    if ((x0 < 0) || (x0 > SCHEME_STRTAG_VAL(p[1]))) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("text%","insert"), "bad string length: ", p[0]));
     WITH_VAR_STACK(((wxMediaEdit *)((Scheme_Class_Object *)obj)->primdata)->Insert(x0, x1));
 
     

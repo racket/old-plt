@@ -111,7 +111,7 @@
 @ "flash-off" : void FlashOff();
 
 @MACRO setStringLen[i.s] = x<i> = SCHEME_STRTAG_VAL(p[<s>]);
-@MACRO checkStringLen[i.s] = if ((x<i> < 0) || (x<i> > SCHEME_STRTAG_VAL(p[<s>]))) scheme_arg_mismatch(METHODNAME("text%","insert"), "bad string length: ", p[<i>]);
+@MACRO checkStringLen[i.s] = if ((x<i> < 0) || (x<i> > SCHEME_STRTAG_VAL(p[<s>]))) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("text%","insert"), "bad string length: ", p[<i>]));
 
 @ "insert" : void Insert(-long,string,nnlong,nnls[same]=-1,bool=TRUE);  : : /setStringLen[0.0] <> string and position
 @ "insert" : void Insert(-long,string);  : : /setStringLen[0.0] <> string without position
@@ -187,7 +187,7 @@
 @ "get-snip-position-and-location" : bool GetSnipPositionAndLocation(wxSnip!,nnlong?,float?=NULL,float?=NULL);
 @ "get-snip-position" : long/bNegAsFalse GetSnipPosition(wxSnip!);
 
-@MACRO makeNoCopyString[len] = scheme_make_sized_string(r, <len>, 0)
+@MACRO makeNoCopyString[len] = WITH_VAR_STACK(scheme_make_sized_string(r, <len>, 0))
 
 @ "get-text" : string/makeNoCopyString[_x4] GetText(nnlong=0,nnls[eof]=-1,bool=FALSE,bool=FALSE,-long*=NULL);
 @ "get-character" : uchar GetCharacter(nnlong);

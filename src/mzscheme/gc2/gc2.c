@@ -537,7 +537,7 @@ void GC_init_type_tags(int count, int weakbox)
 #define MOVED ((Type_Tag)0x3000)
 
 #if SEARCH
-void *search_for;
+void *search_for, *search_mark;
 long search_size;
 int detail_cycle;
 int atomic_detail_cycle;
@@ -568,6 +568,12 @@ void *find_start(void *p)
 static void *mark(void *p)
 {
   long diff = ((char *)p - (char *)GC_alloc_space) >> 2;
+
+#if SEARCH
+  if (p == search_mark)
+    stop();
+#endif
+
   if (((long)p & 0x3) || !(alloc_bitmap[diff >> 3] & (1 << (diff & 0x7)))) {
     long diff1 = ((char *)p - (char *)GC_alloc_space);
       
@@ -749,7 +755,7 @@ void check_variable_stack()
     if (var_stack == limit)
       return;
 
-    if (*var_stack && ((unsigned long)*var_stack < (unsigned long)var_stack))
+    if (*var_stack && ((unsigned long)*var_stack <= (unsigned long)var_stack))
       *(int *)0x0 = 1;
 
     var_stack = *var_stack;
@@ -953,10 +959,6 @@ void gcollect(int needsize)
     }
   }
 
-  for (ib = immobile; ib; ib = ib->next) {
-    gcMARK(ib->p);
-  }
-
   PRINTTIME((STDERR, "gc: roots: %ld\n", GETTIMEREL()));
 
   iterations = 0;
@@ -1122,7 +1124,6 @@ void gcollect(int needsize)
 	    if (v == f->p) {
 	      /* Not yet marked. Do content. */
 	      Type_Tag tag = *(Type_Tag *)v;
-
 #if SAFETY
 	      if ((tag < 0) || (tag >= _num_tags_) || !tag_table[tag]) {
 		*(int *)0x0 = 1;
@@ -1234,6 +1235,18 @@ void gcollect(int needsize)
 
     wa = wa->next;
   }
+
+  /* Do immobiles: */
+  /* FIXME: shouldn't need offset of 4! */
+  for (ib = immobile; ib; ib = ib->next) {
+    void *ip, *v;
+    ip = ib->p - 4;
+    v = GC_resolve(ip);
+    if (v != ip) {
+      ib->p = (v + 4);
+    }
+  }
+
 
   /* Cleanup weak finalization links: */
   {

@@ -213,7 +213,7 @@
 			    (string-append
 			     "container-frame-set-size: "
 			     "forcing panel to redraw to ~s ~s ~s ~s")
-			    WX-BORDER-SIZE WX-BORDER-SIZE panel-w panel)
+			    WX-BORDER-SIZE WX-BORDER-SIZE panel-w panel-h)
 			   (send panel set-size
 				 WX-BORDER-SIZE WX-BORDER-SIZE
 				 panel-w panel-h))))

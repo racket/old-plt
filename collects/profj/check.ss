@@ -23,7 +23,6 @@
   ;(make-environment (list var-type) (list type) (list string))
   (define-struct environment (types exns labels))
   
-  
   ;Constant empty environment
   (define empty-env (make-environment null null null))
 
@@ -1136,17 +1135,19 @@
            (if obj
                (set! record (field-lookup fname (check-sub-expr obj) obj src level type-recs))
                (set! record 
-                     (let ((name (var-access-class (field-access-access acc))))
-                       (get-field-record fname
-                                         (get-record 
-                                          (send type-recs get-class-record name
-                                                ((get-importer type-recs) name type-recs level src))
-                                          type-recs)
+                     (let* ((name (var-access-class (field-access-access acc)))
+                            (class-rec (get-record (send type-recs get-class-record name 
+                                                         ((get-importer type-recs) name type-recs level src))
+                                                   type-recs)))
+                       (get-field-record fname class-rec
                                          (lambda () 
-                                           (field-lookup-error 'not-found
-                                                               (string->symbol fname)
-                                                               (make-ref-type name null)
-                                                               src))))))
+                                           (let* ((class? (member fname (send type-recs get-class-env)))
+                                                  (method? (not (null? (get-method-records fname class-rec)))))
+                                             (field-lookup-error (if class? 'class-name 
+                                                                     (if method? 'method-name 'not-found))
+                                                                 (string->symbol fname)
+                                                                 (make-ref-type name null)
+                                                                 src)))))))
            (set-field-access-access! acc (make-var-access 
                                           (memq 'static (field-record-modifiers record))
                                           (memq 'final (field-record-modifiers record))
@@ -1213,7 +1214,12 @@
                                                              (car acc)
                                                              #f))
                              (cdr acc)))))
-                   (else (variable-not-found-error (car acc) (id-src (car acc)))))))
+                   (else 
+                    (let ((class? (member (id-string (car acc)) (send type-recs get-class-env)))
+                          (method? (not (null? (get-method-records (id-string (car acc)) (lookup-this type-recs env))))))
+                      (variable-not-found-error (if class? 'class-name
+                                                    (if method? 'mehtod-name 'not-found)) 
+                                                (car acc) (id-src (car acc))))))))
            (set-access-name! exp new-acc)
            (check-sub-expr exp))))))
   
@@ -1223,12 +1229,15 @@
           (name (string->symbol fname)))
       (cond
         ((reference-type? obj-type)
-         (let ((obj-record (send type-recs get-class-record obj-type
-                                 ((get-importer type-recs) obj-type type-recs level obj-src))))
-           (get-field-record fname 
-                             (get-record obj-record type-recs)
+         (let ((obj-record (get-record (send type-recs get-class-record obj-type
+                                             ((get-importer type-recs) obj-type type-recs level obj-src))
+                                       type-recs)))
+           (get-field-record fname obj-record
                              (lambda () 
-                               (field-lookup-error 'not-found name obj-type src)))))
+                               (let* ((class? (member fname (send type-recs get-class-env)))
+                                      (method? (not (null? (get-method-records fname obj-record)))))
+                                 (field-lookup-error (if class? 'class-name 
+                                                         (if method? 'method-name 'not-found)) name obj-type src))))))
         ((array-type? obj-type)
          (unless (equal? fname "length")
            (field-lookup-error 'array name obj-type src))
@@ -1373,16 +1382,24 @@
                                             type-recs)))
                       (else (prim-call-error call-exp name src level)))))
                  (else 
-                  (get-method-records (id-string name)
-                                      (if static?
-                                          (send type-recs get-class-record c-class)
-                                          this))))))))
+                  (let ((rec (if static? (send type-recs get-class-record c-class) this)))
+                    (if (null? rec) null
+                        (get-method-records (id-string name) rec)))))))))
       
       (when (null? methods)
+        (let* ((rec (if exp-type 
+                        (send type-recs get-class-record exp-type)
+                        (if static? (send type-recs get-class-record c-class) this)))
+               (class? (member (id-string name) (send type-recs get-class-env)))
+               (field? (cond
+                         ((array-type? exp-type) (equal? (id-string name) "length"))
+                         ((null? rec) (member (id-string name) (map field-record-name (send type-recs get-interactions-fields))))
+                         (else (member (id-string name) (get-field-records rec)))))
+               (sub-kind (if class? 'class-name (if field? 'field-name 'not-found))))
         (cond 
-          ((eq? exp-type 'super) (no-method-error 'super exp-type name src))
-          (exp-type (no-method-error 'class exp-type name src))
-          (else (no-method-error 'this exp-type name src))))
+          ((eq? exp-type 'super) (no-method-error 'super sub-kind exp-type name src))
+          (exp-type (no-method-error 'class sub-kind exp-type name src))
+          (else (no-method-error 'this sub-kind exp-type name src)))))
       
       (when (and (not ctor?)
                  (eq? (method-record-rtype (car methods)) 'ctor))
@@ -1701,13 +1718,15 @@
 
   ;;check-access errors
   
-  ;variable-not-found-error: id src -> void
-  (define (variable-not-found-error var src)
+  ;variable-not-found-error: symbol id src -> void
+  (define (variable-not-found-error kind var src)
     (let ((name (id->ext-name var)))
-      (raise-error
-       name
-       (format "reference to undefined identifier ~a" name)
-       name src)))
+      (raise-error name
+                   (case kind
+                     ((not-found) (format "reference to undefined identifier ~a" name))
+                     ((class-name) (format "class ~a used as variable" name))
+                     ((method-name) (format "method ~a used as variable" name)))
+                   name src)))
   
   ;field-lookup-error: symbol symbol type src -> void
   (define (field-lookup-error kind field exp src)
@@ -1717,9 +1736,13 @@
        (case kind
          ((not-found)
           (format "field ~a not found for object with type ~a" field t))
+         ((class-name)
+          (format "Class ~a is being erroneously accessed as a field" field))
+         ((method-name)
+          (format "Method ~a is being erroneously accessed as a field for class ~a" field t))
          ((array)
           (format "~a only has a length field, attempted to access ~a" t field))
-         ((primitive)     
+         ((primitive)
           (format "attempted to access field ~a on ~a, this type does not have fields" field t)))
        field src)))
 
@@ -1762,17 +1785,22 @@
                              (else "class, interface, or array")))
                    n src)))
   
-  ;no-method-error: symbol type id src -> void
-  (define (no-method-error kind exp name src)
+  ;no-method-error: symbol symbol type id src -> void
+  (define (no-method-error kind sub-kind exp name src)
     (let ((t (type->ext-name exp))
           (n (id->ext-name name)))
       (raise-error n
-                   (format "~a does not contain a method ~a"
-                           (case kind
-                             ((class) t)
-                             ((super) "This class's super class")
-                             ((this) "The current class"))
-                           n)
+                   (case sub-kind
+                     ((not-found) (format "~a does not contain a method ~a"
+                                          (case kind
+                                            ((class) t)
+                                            ((super) "This class's super class")
+                                            ((this) "The current class"))
+                                          n))
+                     ((class-name) 
+                      (format "Class ~a is being used as a method, to create an instance of ~a use 'new'" n n))
+                     ((field-name)
+                      (format "Field ~a is being used as a method" n)))                     
                    n src)))
   
   ;restricted-method-call id (list string) src -> void

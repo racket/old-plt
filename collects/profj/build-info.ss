@@ -348,7 +348,7 @@
                        (beginner-ctor-error (header-id info) (id-src (header-id info))))
                      (add-ctor class (lambda (rec) (set! m (cons rec m))) old-methods (header-id info) level))
                    
-                   (valid-field-names? f members level type-recs)
+                   (valid-field-names? f members m level type-recs)
                    (valid-method-sigs? m members level type-recs)
 
                    (when (not (memq 'abstract test-mods))
@@ -467,7 +467,7 @@
                  
                  (let-values (((f m) (process-members members null iname type-recs level)))
                    
-                   (valid-field-names? f members level type-recs)
+                   (valid-field-names? f members m level type-recs)
                    (valid-method-sigs? m members level type-recs)
                    (valid-inherited-methods? super-records (header-extends info) level type-recs)
                    (check-current-methods super-records m members level type-recs)
@@ -503,13 +503,20 @@
              (extension-error 'implement #f (car implements) (id-src (car implements))))
         (valid-iface-implement? (cdr records) (cdr implements))))
   
-  ;valid-field-names? (list field-record) (list member) symbol type-records -> bool
-  (define (valid-field-names? fields members level type-recs)
+  ;valid-field-names? (list field-record) (list member) (list method-record) symbol type-records -> bool
+  (define (valid-field-names? fields members methods level type-recs)
     (or (null? fields)
         (and (field-member? (car fields) (cdr fields))
              (let ((f (find-member (car fields) members level type-recs)))
-               (field-error (field-name f) (field-src f))))
-        (valid-field-names? (cdr fields) members level type-recs)))
+               (field-name-error 'field (field-name f) level (field-src f))))
+        (and (memq level '(beginner intermediate))
+             (or (and (shared-name? (car fields) methods)
+                      (let ((f (find-member (car fields) members level type-recs)))
+                        (field-name-error 'method (field-name f) level (field-src f))))
+                 (and (shared-class-name? (car fields) (send type-recs get-class-env))
+                      (let ((f (find-member (car fields) members level type-recs)))
+                        (field-name-error 'class (field-name f) level (field-src f))))))
+        (valid-field-names? (cdr fields) members methods level type-recs)))
   
   ;field-member: field-record (list field-record) -> bool
   (define (field-member? field fields)
@@ -517,6 +524,20 @@
          (or (equal? (field-record-name field)
                      (field-record-name (car fields)))
              (field-member? field (cdr fields)))))
+  
+  ;shared-name field-record (list method-record) -> bool
+  (define (shared-name? field methods)
+    (and (not (null? methods))
+         (or (equal? (field-record-name field)
+                     (method-record-name (car methods)))
+             (shared-name? field (cdr methods)))))
+  
+  ;shared-class-name?: (U field-record method-record) (list string) -> bool
+  (define (shared-class-name? member classes)
+    (and (not (null? classes))
+         (or (equal? ((if (field-record? member) field-record-name method-record-name) member)
+                      (car classes))
+             (shared-class-name? member (cdr classes)))))
   
   (define (find-member member-record members level type-recs)
     (when (null? members)
@@ -553,6 +574,17 @@
                              (method-name m)
                              (map (lambda (t)
                                     (type-spec-to-type (field-type t) level type-recs))
+                                  (method-parms m))
+                             (car (method-record-class (car methods)))
+                             (method-src m)
+                             (eq? (method-record-rtype (car methods)) 'ctor))))
+        (and (memq level `(beginner intermediate))
+             (not (eq? (method-record-rtype (car methods)) 'ctor))
+             (shared-class-name? (car methods) (send type-recs get-class-env))
+             (let ((m (find-member (car methods) members level type-recs)))
+               (method-error 'class-name
+                             (method-name m)
+                             (map (lambda (t) (type-spec-to-type (field-type t) level type-recs))
                                   (method-parms m))
                              (car (method-record-class (car methods)))
                              (method-src m)
@@ -1013,7 +1045,9 @@
                      ((conflict)
                       (format "Method ~a conflicts with a method inherited from ~a" m-name class))
                      ((not-implement)
-                      (format "Method ~a from ~a is not implemented" m-name class)))
+                      (format "Method ~a from ~a is not implemented" m-name class))
+                     ((class-name)
+                      (format "Method ~a from ~a has the same name as a class, which is not allowed" m-name class)))
                    m-name src)))
 
   ;not-ctor-error: string string src -> void
@@ -1108,11 +1142,18 @@
                            meth (car class) name)
                    name (id-src (field-name parm)))))
 
-  ;field-error: id src -> void
-  (define (field-error name src)
+  ;field-name-error: symbol id symbol src -> void
+  (define (field-name-error kind name level src)
     (let ((n (id->ext-name name)))
-      (raise-error n (format "Multiple fields are declared with the name ~a" n) n src)))
-
+      (raise-error n
+                   (case kind
+                     ((field) (format "Multiple fields have been declared with the name ~a" n))
+                     ((method) (format "~a has been declared as a field and a method, which is not allowed" n))
+                     ((class) 
+                      (format "~a has been declared as a field and a ~a, which is not allowed" n
+                              (if (eq? level 'intermediate) "class or interface" "class"))))
+                   n src)))
+  
   ;import-error: name src -> void
   (define (import-error imp src)
     (raise-error 'import

@@ -237,6 +237,11 @@
                          class
                          path))
       
+      ;Returns the environment of classes for the current location
+      ;get-class-env: -> (list string)
+      (define/public (get-class-env)
+        (hash-table-map (hash-table-get class-environment location) (lambda (key val) key)))
+      
       (define (env-failure)
         (error 'class-environment "Internal Error: environment does not have location"))
       
@@ -359,7 +364,10 @@
         ((null? frec) (fail))
         (else (car frec)))))
 
-  ;; get-method-records: string class-record -> method-record
+  ;get-field-records: class-record -> (list field-record)
+  (define (get-field-records c) (class-record-fields c))
+  
+  ;; get-method-records: string class-record -> (list method-record)
   (define (get-method-records mname c)
     (filter (lambda (m)
               (string=? (method-record-name m) mname))

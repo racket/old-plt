@@ -465,7 +465,7 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
 
       // Check if we're copying from a mono bitmap
       retval = TRUE;
-      if ((rop == wxSOLID) || (rop == wxXOR)) {
+      if ((rop == wxSOLID) || (rop == wxXOR) || (rop == wxCOLOR)) {
 	/* Seems like the easiest way to implement transparent backgrounds is to
 	   use a stipple. */
 	XGCValues values;
@@ -998,7 +998,7 @@ void wxWindowDC::SetBackground(wxColour *c)
   style = current_pen->GetStyle();
   if ((style >= wxXOR_DOT) && (style <= wxXOR_DOT_DASH))
     style = wxXOR;
-  if (current_pen && (style == wxXOR))
+  if (current_pen && ((style == wxXOR) || (style == wxCOLOR)))
     SetPen(current_pen);
   
   if (current_brush && (current_brush->GetStyle() == wxXOR))
@@ -1011,77 +1011,79 @@ void wxWindowDC::SetBrush(wxBrush *brush)
   unsigned long mask;
   wxBitmap *bm;
   unsigned long pixel;
+  int bstyle;
 
-    if (!DRAWABLE) /* MATTHEW: [5] */
-      return;
+  if (!DRAWABLE)
+    return;
 
-    if (current_brush) current_brush->Lock(-1);
+  if (current_brush) current_brush->Lock(-1);
 
-    if (!(current_brush = brush)) // nothing to do without brush
-      return;
+  if (!(current_brush = brush)) // nothing to do without brush
+    return;
 
-    if (current_brush) current_brush->Lock(1);
+  if (current_brush) current_brush->Lock(1);
 
-    // for XChangeGC
-    mask = GCFillStyle | GCForeground | GCFunction;
+  // for XChangeGC
+  mask = GCFillStyle | GCForeground | GCFunction;
 
-    values.fill_style = FillSolid;
-    // wxXOR shall work the correct way
-    {
-      wxColour *bcol;
-      bcol = brush->GetColour();
-      pixel = bcol->GetPixel(current_cmap, IS_COLOR, 1);
+  values.fill_style = FillSolid;
+  // wxXOR shall work the correct way
+  {
+    wxColour *bcol;
+    bcol = brush->GetColour();
+    pixel = bcol->GetPixel(current_cmap, IS_COLOR, 1);
+  }
+  bstyle = brush->GetStyle();
+  if ((bstyle == wxXOR) || (bstyle == wxCOLOR)) {
+    XGCValues values_req;
+    XGetGCValues(DPY, BRUSH_GC, GCBackground, &values_req);
+    values.foreground = pixel ^ values_req.background;
+    values.function = GXxor;
+  } else {
+    values.foreground = pixel;
+    values.function = GXcopy;
+  }
+
+  bm = brush->GetStipple();
+  if (bm && !bm->Ok())
+    bm = NULL;
+
+  if (bm) {
+    Pixmap stipple = (Pixmap)0; // for FillStippled
+    Pixmap tile    = (Pixmap)0; // for FillTiled
+    if (bm->GetDepth() == 1) {
+      if (bm->selectedTo) bm->selectedTo->EndSetPixel();
+      stipple = GETPIXMAP(bm);
+      values.fill_style = ((brush->GetStyle()==wxSTIPPLE) ? FillOpaqueStippled : FillStippled);
+    } else if (bm->GetDepth() == (signed)DEPTH) {
+      if (bm->selectedTo) bm->selectedTo->EndSetPixel();
+      tile = GETPIXMAP(bm);
+      values.fill_style = FillTiled;
+    } // else wrong depth
+    if (stipple) {
+      values.stipple = stipple;
+      mask |= GCStipple;
     }
-    if (brush->GetStyle() == wxXOR) {
-	XGCValues values_req;
-	XGetGCValues(DPY, BRUSH_GC, GCBackground, &values_req);
-	values.foreground = pixel ^ values_req.background;
-	values.function = GXxor;
-    } else {
-	values.foreground = pixel;
-	values.function = GXcopy;
+    if (tile) {
+      values.tile = tile;
+      mask |= GCTile;
+      values.foreground = BlackPixel(DPY, DefaultScreen(DPY));
+      values.function = GXcopy;
     }
-
-    bm = brush->GetStipple();
-    if (bm && !bm->Ok())
-      bm = NULL;
-
-    if (bm) {
+  } else {
+    int style;
+    style = brush->GetStyle();
+    if (wxIS_HATCH(style)) {
       Pixmap stipple = (Pixmap)0; // for FillStippled
-      Pixmap tile    = (Pixmap)0; // for FillTiled
-      if (bm->GetDepth() == 1) {
-	if (bm->selectedTo) bm->selectedTo->EndSetPixel();
-	stipple = GETPIXMAP(bm);
-	values.fill_style = ((brush->GetStyle()==wxSTIPPLE) ? FillOpaqueStippled : FillStippled);
-      } else if (bm->GetDepth() == (signed)DEPTH) {
-	if (bm->selectedTo) bm->selectedTo->EndSetPixel();
-	tile = GETPIXMAP(bm);
-	values.fill_style = FillTiled;
-      } // else wrong depth
+      stipple = hatch_bitmaps[style-wxFIRST_HATCH];
+      values.fill_style = FillStippled;
       if (stipple) {
 	values.stipple = stipple;
 	mask |= GCStipple;
       }
-      if (tile) {
-	values.tile = tile;
-	mask |= GCTile;
-	values.foreground = BlackPixel(DPY, DefaultScreen(DPY));
-	values.function = GXcopy;
-      }
-    } else {
-      int style;
-      style = brush->GetStyle();
-      if (wxIS_HATCH(style)) {
-	Pixmap stipple = (Pixmap)0; // for FillStippled
-	stipple = hatch_bitmaps[style-wxFIRST_HATCH];
-	values.fill_style = FillStippled;
-	if (stipple) {
-	  values.stipple = stipple;
-	  mask |= GCStipple;
-	}
-      }
     }
-    XChangeGC(DPY, BRUSH_GC, mask, &values);
+  }
+  XChangeGC(DPY, BRUSH_GC, mask, &values);
 }
 
 void wxWindowDC::SetColourMap(wxColourMap *new_cmap)
@@ -1148,6 +1150,7 @@ void wxWindowDC::SetPen(wxPen *pen)
 
     switch (style) {
     case wxXOR:
+    case wxCOLOR:
       doXor = 1;
       break;
     case wxXOR_DOT:

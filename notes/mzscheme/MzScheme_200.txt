@@ -37,6 +37,20 @@ in several important ways:
    (for consistency with other names). `defined?' is gone, but it can
    be implemented with `namespace-variable-binding'.
 
+MzLib changes:
+
+ * "functio.ss" was split into "list.ss" and "etc.ss"
+
+ * "macro.ss" was merged into "etc.ss", mostly
+
+ * "invoke.ss" was merged into "unit.ss" and "unitsig.ss"
+
+ * "include.ss" is new; it implements the `include' form that used to
+    be restricted to `unit/sig' bodies
+
+ * "defstru.ss" was roughly re-implemented in "compat.ss" (and the
+    re-implementation matches the Chez form)
+
 Relatively minor changes:
 
  - a set of internal definitions can start anywhere in a sequence of

@@ -57,29 +57,44 @@
 	      super-make-object-id))
 
 	   ;; ----- Expand definitions -----
-	   (let ([defn-and-exprs (map
-				  (lambda (defn-or-expr)
-				    (local-expand
-				     defn-or-expr
-				     (append
-				      (kernel-form-identifier-list (quote-syntax here))
-				      (list 
-				       (quote-syntax init)
-				       (quote-syntax init-rest)
-				       (quote-syntax field)
-				       (quote-syntax init-field)
-				       (quote-syntax inherit-field)
-				       (quote-syntax private)
-				       (quote-syntax public)
-				       (quote-syntax override)
-				       (quote-syntax public-final)
-				       (quote-syntax override-final)
-				       (quote-syntax rename)
-				       (quote-syntax inherit)
-				       this-id
-				       super-instantiate-id
-				       super-make-object-id))))
-				  defn-and-exprs)]
+	   (let ([defn-and-exprs (let ([expand
+					(lambda (defn-or-expr)
+					  (local-expand
+					   defn-or-expr
+					   (append
+					    (kernel-form-identifier-list (quote-syntax here))
+					    (list 
+					     (quote-syntax init)
+					     (quote-syntax init-rest)
+					     (quote-syntax field)
+					     (quote-syntax init-field)
+					     (quote-syntax inherit-field)
+					     (quote-syntax private)
+					     (quote-syntax public)
+					     (quote-syntax override)
+					     (quote-syntax public-final)
+					     (quote-syntax override-final)
+					     (quote-syntax rename)
+					     (quote-syntax inherit)
+					     this-id
+					     super-instantiate-id
+					     super-make-object-id))))])
+				   (let loop ([l defn-and-exprs])
+				     (if (null? l)
+					 null
+					 (let ([e (expand (car l))])
+					   (syntax-case e (begin)
+					     [(begin expr ...)
+					      (loop (append
+						     (syntax->list (syntax (expr ...)))
+						     (cdr l)))]
+					     [(begin . _)
+					      (raise-syntax-error 
+					       'class*
+					       "ill-formed begin expression"
+					       e
+					       stx)]
+					     [_else (cons e (loop (cdr l)))])))))]
 		 [bad (lambda (msg expr)
 			(raise-syntax-error 'class* msg stx expr))]
 		 [class-name (syntax-local-name)])

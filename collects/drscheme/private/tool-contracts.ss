@@ -1348,7 +1348,7 @@
    "cache or not.")
   
   (drscheme:teachpack:teachpack-cache-filenames
-   (drscheme:teachpack:teachpack-cache? . -> . (listof string?))
+   (drscheme:teachpack:teachpack-cache? . -> . (listof path?))
    (teachpack-cache)
    "Returns the list of filenames for the teachpacks"
    "in \\var{teachpack-cache}."

@@ -22,11 +22,11 @@
       ;; the timestamp indicates the last time this teachpack was loaded
       (define-struct teachpack-cache (tps))
       
-      ;; type cache-entry = (make-cache-entry string[filename])
+      ;; type cache-entry = (make-cache-entry path)
       (define-struct cache-entry (filename))
       
       (define (cache-entry-require-spec cache-entry)
-        `(file ,(cache-entry-filename cache-entry)))
+        (cache-entry-filename cache-entry))
       
       ;; new-teachpack-cache : -> teachpack-cache
       (define new-teachpack-cache

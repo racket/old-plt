@@ -854,9 +854,9 @@ char *scheme_bignum_to_string(const Scheme_Object *b, int radix)
     slen = ceil(WORD_SIZE * SCHEME_BIGLEN(b) * 0.30102999566398115) + 1;
 
 #ifdef MZ_PRECISE_GC
-  str = (char *)MALLOC_PROTECT(slen);
+  str = (unsigned char *)MALLOC_PROTECT(slen);
 #else
-  str = (char*)scheme_malloc_atomic(slen);
+  str = (unsigned char *)scheme_malloc_atomic(slen);
 #endif
 
   c_digs = SCHEME_BIGDIG_SAFE(c, csd);
@@ -885,7 +885,7 @@ char *scheme_bignum_to_string(const Scheme_Object *b, int radix)
   else
     slen = slen - i + 1 + (SCHEME_BIGPOS(b) ? 0 : 1);
 
-  str2 = (char*)scheme_malloc_atomic(sizeof(unsigned char) * slen);
+  str2 = (unsigned char *)scheme_malloc_atomic(slen);
 
   start = i;
 
@@ -905,7 +905,7 @@ char *scheme_bignum_to_string(const Scheme_Object *b, int radix)
   
   str2[slen - 1] = 0;
 
-  return str2;
+  return (char *)str2;
 }
 
 Scheme_Object *scheme_read_bignum(const char *str, int offset, int radix)
@@ -913,7 +913,7 @@ Scheme_Object *scheme_read_bignum(const char *str, int offset, int radix)
   int len, negate, stri, alloc, i, test;
   Scheme_Object* o;
   bigdig* digs;
-  char* istring;
+  unsigned char* istring;
 
   if (radix < 0 || radix > 16) {
     return scheme_false;
@@ -946,9 +946,9 @@ Scheme_Object *scheme_read_bignum(const char *str, int offset, int radix)
   /* Convert string of chars to string of bytes: */
 
 #ifdef MZ_PRECISE_GC
-  istring = (char*)MALLOC_PROTECT(len);
+  istring = (unsigned char *)MALLOC_PROTECT(len);
 #else
-  istring = (char*)scheme_malloc_atomic(len);
+  istring = (unsigned char *)scheme_malloc_atomic(len);
 #endif
 
   i = stri;
@@ -962,7 +962,7 @@ Scheme_Object *scheme_read_bignum(const char *str, int offset, int radix)
     else
       return scheme_false;
 
-    if (istring[i - stri] >= radix || istring[i - stri] < 0)
+    if (istring[i - stri] >= radix)
       return scheme_false;    
     ++i;
   }

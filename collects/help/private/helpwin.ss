@@ -274,13 +274,16 @@
                           (override
                             [file-menu:new-string (lambda () "Help Desk")]
                             [file-menu:new-callback (lambda (i e) (new-help-frame initial-url))]
+                            [file-menu:create-new? (lambda () #t)]
                             
                             [file-menu:open-string (lambda () "URL")]
                             [file-menu:open-callback
                              (lambda (i e)
                                (open-url-from-user this (lambda (x) (goto-url x))))]
+                            [file-menu:create-open? (lambda () #t)]
                             
                             [file-menu:print-callback (lambda (i e) (send (send results get-editor) print))]
+                            [file-menu:create-print? (lambda () #t)]
                             
                             [file-menu:between-open-and-revert
                              (lambda (file-menu)
@@ -289,12 +292,19 @@
                                  #\r))]
                             
                             [edit-menu:undo-callback (lambda (menu evt) (edit-menu:do 'undo))]
+                            [edit-menu:create-undo? (lambda () #t)]
                             [edit-menu:redo-callback (lambda (menu evt) (edit-menu:do 'redo))]
+                            [edit-menu:create-redo? (lambda () #t)]
                             [edit-menu:cut-callback (lambda (menu evt) (edit-menu:do 'cut))]
+                            [edit-menu:create-cut? (lambda () #t)]
                             [edit-menu:clear-callback (lambda (menu evt) (edit-menu:do 'clear))]
+                            [edit-menu:create-clear? (lambda () #t)]
                             [edit-menu:copy-callback (lambda (menu evt) (edit-menu:do 'copy))]
+                            [edit-menu:create-copy? (lambda () #t)]
                             [edit-menu:paste-callback (lambda (menu evt) (edit-menu:do 'paste))]
+                            [edit-menu:create-paste? (lambda () #t)]
                             [edit-menu:select-all-callback (lambda (menu evt) (edit-menu:do 'select-all))]
+                            [edit-menu:create-select-all? (lambda () #t)]
                             
                             [edit-menu:find-string (lambda () "in Page")]
                             [edit-menu:find-on-demand (lambda x (void))]
@@ -329,6 +339,7 @@
                                  (send t focus)
                                  (send d show #t))
                                (send results force-display-focus #f))]
+                            [edit-menu:create-find? (lambda () #t)]
                             
                             [help-menu:about-string (lambda () "Help Desk")]
                             [help-menu:about-callback
@@ -342,6 +353,8 @@
                                              Copyright (c) 1995-2001 PLT"
                                              (framework:version:version))
                                             this))]
+                            [help-menu:create-about? (lambda () #f)]
+                            
                             [help-menu:after-about
                              (lambda (menu)
                                (make-object menu-item% "Help" menu

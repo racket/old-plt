@@ -257,7 +257,7 @@
                  (let-values ([(nw nh na nd) (send dc get-text-extent nums)]
                               [(dw dh da dd) (send dc get-text-extent dens)]
                               [(ww wh wa wd) (send dc get-text-extent wholes)])
-                   (set-box/f! h (+ nh dh))
+                   (set-box/f! h (+ nh dh 1))
                    (set-box/f! w (+ ww (max nw dw)))
                    (set-box/f! descent (+ wd (/ dh 2)))
                    (set-box/f! space  (+ wa (/ nh 2)))
@@ -270,7 +270,7 @@
                             [(ww wh wa wd) (send dc get-text-extent wholes)])
                  (let ([frac-w (max nw dw)])
                    (send dc draw-text nums (+ x ww (- (/ nw 2)) (/ frac-w 2)) y)
-                   (send dc draw-text dens (+ x ww (- (/ dw 2)) (/ frac-w 2)) (+ y nh))
+                   (send dc draw-text dens (+ x ww (- (/ dw 2)) (/ frac-w 2)) (+ y nh 1))
                    (send dc draw-text wholes x (+ y (/ nh 2)))
                    (send dc draw-line
                          (+ x ww) (+ y dh)

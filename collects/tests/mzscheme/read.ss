@@ -487,7 +487,7 @@
 			(bytes-set! b 0 c)
 			1]))))
 	      (and use-peek?
-		   (lambda (b skip)
+		   (lambda (b skip progress-evt)
 		     (when (positive? skip)
 		       (error 'ouch!))
 		     (if (null? chars)
@@ -572,7 +572,7 @@
      (lambda (str)
        (read-one str))
      ;; Peek char
-     (lambda (str skip)
+     (lambda (str skip progress-evt)
        (let ([old-p pos])
 	 (let loop ([skip skip])
 	   (unless (zero? skip)

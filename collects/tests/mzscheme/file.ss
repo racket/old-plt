@@ -555,7 +555,7 @@
 (let ([p (make-input-port 
 	  'name
 	  (lambda (s) (bytes-set! s 0 97) 1)
-	  (lambda (s skip)
+	  (lambda (s skip progress-evt)
 	    (test 0 'skip-is-0 skip)
 	    (bytes-set! s 0 98) 1)
 	  void)])
@@ -570,18 +570,20 @@
 (let* ([s (open-input-string "(apple \"banana\" [coconut])")]
        [p (make-input-port 
 	   'name
-	   (lambda (str) (if (or (byte-ready? s)
-				 (zero? (random 2)))
-			     (begin
-			       (bytes-set! str 0 (read-byte s))
-			       1)
-			     s))
-	   (lambda (str skip) (if (or (byte-ready? s)
-				      (zero? (random 2)))
-				  (begin
-				    (bytes-set! str 0 (peek-byte s))
-				    1)
-				  s))
+	   (lambda (str)
+	     (if (or (byte-ready? s)
+		     (zero? (random 2)))
+		 (begin
+		   (bytes-set! str 0 (read-byte s))
+		   1)
+		 s))
+	   (lambda (str skip progress-evt)
+	     (if (or (byte-ready? s)
+		     (zero? (random 2)))
+		 (begin
+		   (bytes-set! str 0 (peek-byte s))
+		   1)
+		 s))
 	   void)])
   (test '(apple "banana" [coconut]) read p))
 
@@ -750,12 +752,12 @@
 		     (bytes-set! s 2 51))]
 	 [test-empty (lambda()
 		       (test #f byte-ready? p)
-		       (test 0 peek-bytes-avail!* s 0 p)
-		       (test 0 peek-bytes-avail!* s 1 p)
+		       (test 0 peek-bytes-avail!* s 0 #f p)
+		       (test 0 peek-bytes-avail!* s 1 #f p)
 		       (test 0 read-bytes-avail!* s p))])
     (test-empty)
 
-    (test 0 peek-bytes-avail!* s 500 p)
+    (test 0 peek-bytes-avail!* s 500 #f p)
     (test 0 read-bytes-avail!* s p)
 
     (let ([test-basic
@@ -764,13 +766,13 @@
 	     (when sync?
 	       (sync p)
 	       (test #t byte-ready? p)
-	       (test 1 peek-bytes-avail!* s 0 p)
+	       (test 1 peek-bytes-avail!* s 0 #f p)
 	       (test str values s)
 	       (reset-s!))
-	     (test 1 peek-bytes-avail! s 0 p)
+	     (test 1 peek-bytes-avail! s 0 #f p)
 	     (test str values s)
 	     (reset-s!)
-	     (test 1 peek-bytes-avail!* s 0 p)
+	     (test 1 peek-bytes-avail!* s 0 #f p)
 	     (test str values s)
 	     (reset-s!)
 	     (test 1 read-bytes-avail!* s p)
@@ -785,19 +787,19 @@
 
     (let ([peek0
 	   (lambda ()
-	     (let ([avail (peek-bytes-avail! s 0 p)])
+	     (let ([avail (peek-bytes-avail! s 0 #f p)])
 	       (cond
 		[(= avail 1) (test #"C23" values s)]
 		[(= avail 2) (test #"CD3" values s)]
 		[else (test 1-or-2 values avail)])))])
       (peek0)
       (reset-s!)  
-      (test 1 peek-bytes-avail! s 1 p)
+      (test 1 peek-bytes-avail! s 1 #f p)
       (test #"D23" values s)
       (reset-s!)
       (peek0)
       (reset-s!)
-      (test 0 peek-bytes-avail!* s 2 p)
+      (test 0 peek-bytes-avail!* s 2 #f p)
       (test 2 read-bytes-avail! s p)
       (test #"CD3" values s)
 
@@ -807,7 +809,7 @@
       (test #"E" peek-bytes 1 0 p)
       (test #"F" peek-bytes 1 1 p)
       (test #"G" peek-bytes 1 2 p)
-      (test 0 peek-bytes-avail!* s 3 p)
+      (test 0 peek-bytes-avail!* s 3 #f p)
       (test #"EFG" read-bytes 3 p)
 
       (test-empty)
@@ -816,7 +818,7 @@
       (test #"HI" peek-bytes 2 0 p)
       (test #"IJ" peek-bytes 2 1 p)
       (test #"J" peek-bytes 1 2 p)
-      (test 0 peek-bytes-avail!* s 3 p)
+      (test 0 peek-bytes-avail!* s 3 #f p)
       (test #"HI" read-bytes 2 p)
       (test #"J" read-bytes 1 p)
 
@@ -874,7 +876,7 @@
 		    (semaphore-peek-evt lock)
 		    (lambda (x) 0))))
 	     (and supply-peek?
-		  (lambda (s d)
+		  (lambda (s d progress-evt)
 		    (if (semaphore-try-wait? lock)
 			(begin0
 			 (let loop ([d d][counter counter])
@@ -925,11 +927,11 @@
 (arity-test read-string! 1 4)
 (arity-test peek-string! 2 5)
 (arity-test read-bytes-avail! 1 4)
-(arity-test peek-bytes-avail! 2 5)
+(arity-test peek-bytes-avail! 2 6)
 (arity-test read-bytes-avail!* 1 4)
-(arity-test peek-bytes-avail!* 2 5)
+(arity-test peek-bytes-avail!* 2 6)
 (arity-test read-bytes-avail!/enable-break 1 4)
-(arity-test peek-bytes-avail!/enable-break 2 5)
+(arity-test peek-bytes-avail!/enable-break 2 6)
 
 (let ([fill-a
        (lambda (s pos)
@@ -945,7 +947,7 @@
 	    (lambda (s) (let ([n (fill-a s pos)])
 			  (set! pos (+ pos n))
 			  n))
-	    (lambda (s skip) (fill-a s (+ pos skip)))
+	    (lambda (s skip progress-evt) (fill-a s (+ pos skip)))
 	    void)])
     (test 48 read-byte p)
     (test 49 peek-byte p)
@@ -990,7 +992,7 @@
 		      0)))
 	    (lambda ()
 	      (set! l #f))
-	    (lambda (s non-block?)
+	    (lambda (s non-block? breakable?)
 	      (set! spec s)
 	      (not non-block?)))])
     (test 0 write-bytes-avail* #"abc" p)

@@ -2011,6 +2011,7 @@ typedef struct Scheme_Pipe {
   MZTAG_IF_REQUIRED
   unsigned char *buf;
   long buflen, bufmax;
+  long bufmaxextra; /* due to peeks, bufmax can effectively grow */
   long bufstart, bufend;
   int eof;
   Scheme_Object *wakeup_on_read;

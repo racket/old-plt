@@ -4,6 +4,67 @@
 (SECTION 'PORT)
 
 ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Tests for progress events and commits
+
+(define (test-hello-port p commit-eof?)
+  (let ([progress-evt1 (port-progress-evt p)])
+    (test #t evt? progress-evt1)
+    (test #f sync/timeout 0 progress-evt1)
+    (test #f sync/timeout 0 progress-evt1)
+    (test #\h read-char p)
+    (test progress-evt1 sync/timeout 0 progress-evt1)
+    (let ([progress-evt2 (port-progress-evt p)])
+      (test #f sync/timeout 0 progress-evt2)
+      (test #\e peek-char p)
+      (test #f sync/timeout 0 progress-evt2)
+      (test #f port-commit-peeked 1 progress-evt1 always-evt p)
+      (test #t port-commit-peeked 1 progress-evt2 always-evt p)
+      (test progress-evt1 sync/timeout 0 progress-evt1)
+      (test progress-evt2 sync/timeout 0 progress-evt2)
+      (let ([progress-evt3 (port-progress-evt p)])
+	(test #\l peek-char p)
+	(test #\l peek-char p 1)
+	(test #\o peek-char p 2)
+	(test eof peek-char p 3)
+	(test eof peek-char p 4)
+	(test #t port-commit-peeked 2 progress-evt3 always-evt p)
+	(test #\o peek-char p)
+	(test eof peek-char p 1)
+	(let ([progress-evt4 (port-progress-evt p)])
+	  (test #f sync/timeout 0 progress-evt4)
+	  (test #t port-commit-peeked (if commit-eof? 2 1) progress-evt4 always-evt p)
+	  (test progress-evt4 sync/timeout 0 progress-evt4)
+	  (let ([progress-evt5 (port-progress-evt p)])
+	    (test #f sync/timeout 0 progress-evt5)
+	    (test eof peek-char p)
+	    (test eof read-char p)
+	    (test #f sync/timeout 0 progress-evt5)
+	    (test #f port-commit-peeked 1 progress-evt5 always-evt p)))))))
+
+(test-hello-port (open-input-string "hello") #f)
+(test-hello-port (open-input-string "hello") #t)
+(let ([test-pipe
+       (lambda (commit-eof?)
+	 (let-values ([(r w) (make-pipe)])
+	   (write-string "hello" w)
+	   (close-output-port w)
+	   (test-hello-port r commit-eof?)))])
+  (test-pipe #f)
+  (test-pipe #t))
+(let ([test-file
+       (lambda (commit-eof?)
+	 (let ([p (begin
+		    (with-output-to-file "tmp8"
+		      (lambda ()
+			(write-string "hello"))
+		      'truncate/replace)
+		    (open-input-file "tmp8"))])
+	   (test-hello-port p commit-eof?)
+	   (close-input-port p)))])
+  (test-file #f)
+  (test-file #t))
+
+;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Based on the MzScheme manual...
 
 ;; A port with no input...
@@ -12,17 +73,19 @@
 (define /dev/null-in 
   (make-input-port 'null
 		   (lambda (s) eof)
-		   (lambda (skip s) eof)
+		   (lambda (skip s progress-evt) eof)
 		   void
-		   (lambda () always-evt)
-		   (lambda (k progress-evt done-evt) #f)))
+		   (lambda () never-evt)
+		   (lambda (k progress-evt done-evt)
+		     (error "no successful peeks!"))))
 (test eof read-char /dev/null-in)
 (test eof peek-char /dev/null-in)
 (test eof read-byte-or-special /dev/null-in)
 (test eof peek-byte-or-special /dev/null-in 100)
 (test #t evt? (port-progress-evt /dev/null-in))
-(test #t evt? (sync/timeout 0 (port-progress-evt /dev/null-in)))
-(test #f port-commit-peeked 100 (port-progress-evt /dev/null-in) always-evt /dev/null-in)
+(test #f sync/timeout 0 (port-progress-evt /dev/null-in))
+(err/rt-test (port-commit-peeked 100 (port-progress-evt /dev/null-in) always-evt /dev/null-in)
+	     exn:fail?)
 (err/rt-test (port-commit-peeked 100 never-evt always-evt /dev/null-in))
 
 ;; A port that produces a stream of 1s:
@@ -42,7 +105,7 @@
     (make-input-port
      'ones
      one!
-     (lambda (s skip) (one! s))
+     (lambda (s skip progress-evt) (one! s))
      void)))
 (test "11111" read-string 5 infinite-ones)
 
@@ -66,7 +129,7 @@
      (lambda (s) 
        (set! n (modulo (add1 n) 3))
        (mod! s 0))
-     (lambda (s skip) 
+     (lambda (s skip progress-evt) 
        (mod! s skip))
      void)))
 (test "01201" read-string 5 mod3-cycle/one-thread)
@@ -112,16 +175,22 @@
 	  [skip (cadr r)]
 	  [ch (caddr r)]
 	  [nack (cadddr r)]
-	  [peek? (cddddr r)])
-      (unless closed?
-	(mod! s skip)
-	(unless peek?
-	  (commit! 1)))
-      ;; Add an event to respond:
-      (serve commit-reqs
-	     (cons (choice-evt nack
-			       (channel-put-evt ch (if closed? 0 1)))
-		   response-evts))))
+	  [peek? (car (cddddr r))]
+	  [progress-evt (cdr (cddddr r))])
+      (let ([nothing? (or closed?
+			  (and progress-evt
+			       (sync/timeout 0 progress-evt)))])
+	(unless nothing?
+	  (mod! s skip)
+	  (unless peek?
+	    (commit! 1)))
+	;; Add an event to respond:
+	(serve commit-reqs
+	       (cons (choice-evt nack
+				 (channel-put-evt ch (if nothing? 
+							 #f
+							 (if closed? 0 1))))
+		     response-evts)))))
   ;; Progress request: send a peek evt for the current 
   ;;  progress-sema
   (define ((handle-progress commit-reqs response-evts) r)
@@ -207,15 +276,15 @@
        (let ([ch (make-channel)])
 	 (f ch nack)
 	 ch))))
-  (define (read-or-peek-evt s skip peek?)
+  (define (read-or-peek-evt s skip peek? progress-evt)
     (req-evt (lambda (ch nack)
-	       (channel-put read-req-ch (list* s skip ch nack peek?)))))
+	       (channel-put read-req-ch (list* s skip ch nack peek? progress-evt)))))
   ;; Make the port:
   (make-input-port 'mod3-cycle
 		   ;; Each handler for the port just sends
 		   ;;  a request to the server
-		   (lambda (s) (read-or-peek-evt s 0 #f))
-		   (lambda (s skip) (read-or-peek-evt s skip #t))
+		   (lambda (s) (read-or-peek-evt s 0 #f #f))
+		   (lambda (s skip progress-evt) (read-or-peek-evt s skip #t progress-evt))
 		   (lambda () ; close
 		     (sync (req-evt
 			    (lambda (ch nack)
@@ -243,12 +312,13 @@
       (test 11 string-length (string-append result1 "," result2))))
   (let ([s (make-bytes 1)]
 	[progress-evt (port-progress-evt mod3-cycle)])
-    (peek-bytes-avail! s 0 mod3-cycle)
+    (test 1 peek-bytes-avail! s 0 progress-evt mod3-cycle)
     (test #"1" values s)
     (test #t 
 	  port-commit-peeked 1 progress-evt (make-semaphore 1)
 	  mod3-cycle)
     (test #t evt? (sync/timeout 0 progress-evt))
+    (test 0 peek-bytes-avail! s 0 progress-evt mod3-cycle)
     (test #f 
 	  port-commit-peeked 1 progress-evt (make-semaphore 1) 
 	  mod3-cycle))
@@ -259,7 +329,7 @@
   (make-input-port
    'voids
    (lambda (s) (lambda args 'void))
-   (lambda (skip s) (lambda args 'void))
+   (lambda (skip s progress-evt) (lambda args 'void))
    void))
 (err/rt-test (read-char infinite-voids) exn:application:mismatch?)
 (test 'void read-char-or-special infinite-voids)
@@ -376,6 +446,21 @@
 (test 3 sync (write-bytes-avail-evt #"Bye" cap-port))
 (test "HELLOBYE" get-output-string orig-port)
 
+;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Peeking in a limited pipe extends the limit:
+
+(let-values ([(in out) (make-pipe 3)])
+  (test 3 write-bytes-avail #"12345" out)
+  (test #\1 peek-char in)
+  (test 1 write-bytes-avail #"12345" out)
+  (test #\1 peek-char in)
+  (test 0 write-bytes-avail* #"12345" out)
+  (test #\2 peek-char in 1)
+  (test 1 write-bytes-avail* #"12345" out)
+  (let ([s (make-bytes 6 (char->integer #\-))])
+    (test 5 read-bytes-avail! s in)
+    (test #"12311-" values s))
+  (test 3 write-bytes-avail #"1234" out))
 
 ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

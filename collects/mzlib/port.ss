@@ -73,16 +73,22 @@
 	  (copy b)
 	  rd))]))
 
+  ;; Not kill-safe.
+  ;; Works only when read proc never returns an event.
   (define (make-input-port/read-to-peek name read fast-peek close)
     (define lock-semaphore (make-semaphore 1))
     (define-values (peeked-r peeked-w) (make-pipe))
     (define peeked-end 0)
     (define special-peeked null)
     (define special-peeked-tail #f)
+    (define progress-requested? #f)
     (define (try-again)
       (convert-evt
        (semaphore-peek-evt lock-semaphore)
        (lambda (x) 0)))
+    (define (make-progress)
+      (write-byte 0 peeked-w)
+      (read-byte peeked-r))
     (define (read-it s)
       (call-with-semaphore
        lock-semaphore
@@ -95,7 +101,9 @@
 	  ;; If nothing is saved from a peeking read,
 	  ;; dispatch to `read', otherwise
 	  (cond
-	   [(null? special-peeked) (read s)]
+	   [(null? special-peeked) 
+	    (when progress-requested? (make-progress))
+	    (read s)]
 	   [else (if (bytes? (car special-peeked))
 		     (let ([b (car special-peeked)])
 		       (set! peeked-end (+ (file-position peeked-r) (bytes-length b)))
@@ -106,22 +114,26 @@
 		       (read-bytes-avail!* s peeked-r))
 		     (begin0
 		      (car special-peeked)
+		      (make-progress)
 		      (set! special-peeked (cdr special-peeked))
 		      (when (null? special-peeked)
 			(set! special-peeked-tail #f))))])))
-    (define (peek-it s skip)
+    (define (peek-it s skip unless-evt)
       (call-with-semaphore
        lock-semaphore
        (lambda ()
-	 (do-peek-it s skip))
+	 (do-peek-it s skip unless-evt))
        try-again))
-    (define (do-peek-it s skip)
-      (let ([v (peek-bytes-avail!* s skip peeked-r)])
+    (define (do-peek-it s skip unless-evt)
+      (let ([v (peek-bytes-avail!* s skip unless-evt peeked-r)])
 	(if (zero? v)
 	    ;; The peek may have failed because peeked-r is empty,
-	    ;; or because the skip is far. Handle nicely the common
-	    ;; case where there are no specials.
+	    ;; because unless-evt is ready, or because the skip is
+	    ;; far. Handle nicely the common case where there are no
+	    ;; specials.
 	    (cond
+	     [(and unless-evt (sync/timeout 0 unless-evt))
+	      0]
 	     [(null? special-peeked)
 	      ;; Empty special queue, so read through the original proc
 	      (let ([r (read s)])
@@ -131,7 +143,7 @@
 		  (set! peeked-end (+ r peeked-end))
 		  (write-bytes s peeked-w 0 r)
 		  ;; Now try again
-		  (peek-bytes-avail!* s skip peeked-r)]
+		  (peek-bytes-avail!* s skip #f peeked-r)]
 		 [else
 		  (set! special-peeked (cons r null))
 		  (set! special-peeked-tail special-peeked)
@@ -169,10 +181,10 @@
 		   [(eof-object? (car l)) 
 		    ;; No peeking past an EOF
 		    eof]
-		   [(pair? (car l))
-		    (if (skip . < . (caar l))
+		   [(procedure? (car l))
+		    (if (skip . < . 1)
 			(car l)
-			(loop (- skip (caar l)) (cdr l)))]
+			(loop (sub1 skip) (cdr l)))]
 		   [(bytes? (car l))
 		    (let ([len (bytes-length (car l))])
 		      (if (skip . < . len)
@@ -182,6 +194,48 @@
 			    n)
 			  (loop (- skip len) (cdr l))))])))])
 	    v)))
+    (define (commit-it amt unless-evt dont-evt)
+      (call-with-semaphore
+       lock-semaphore
+       (lambda ()
+	 (do-commit-it amt unless-evt dont-evt))))
+    (define (do-commit-it amt unless-evt dont-evt)
+      (if (sync/timeout 0 unless-evt)
+	  #f
+	  (let* ([pos (file-position peeked-r)]
+		 [avail (- peeked-end pos)]
+		 [p-commit (min avail amt)])
+	    (let loop ([amt (- amt p-commit)]
+		       [l special-peeked])
+	      (cond
+	       [(amt . <= . 0)
+		;; Enough has been peeked...
+		(unless (zero? p-commit)
+		  (peek-byte peeked-r (sub1 amt))
+		  (port-commit-peeked amt peeked-r))
+		(set! special-peeked l)
+		(when (null? special-peeked)
+		  (set! special-peeked-tail #f))
+		#t]
+	       [(null? l)
+		;; Requested commit was larger than previous peeks
+		#f]
+	       [(bytes? (car l))
+		(let ([bl (bytes-length (car l))])
+		  (if (bl . > . amt)
+		      ;; Split the string
+		      (let ([next (cons
+				   (subbytes (car l) amt)
+				   (cdr l))])
+			(set-car! l (subbytes (car l) 0 amt))
+			(set-cdr! l next)
+			(when (eq? l special-peeked-tail)
+			  (set! special-peeked-tail next))
+			(loop 0 (cdr l)))
+		      ;; Consume this string...
+		      (loop  (- amt bl) (cdr l))))]
+	       [else
+		(loop (sub1 amt) (cdr l))])))))
     (make-input-port
      name
      ;; Read
@@ -191,10 +245,12 @@
 	 (lambda (s skip)
 	   (fast-peek s skip peek-it))
 	 peek-it)
-     close))
-
-
-  
+     close
+     (lambda ()
+       (set! progress-requested? #t)
+       (port-progress-evt peeked-r))
+     commit-it))
+       
 
   (define input-port-append
     (opt-lambda (close-orig? . ports)
@@ -214,12 +270,12 @@
 		 (set! ports (cdr ports))
 		 0]
 		[else n]))))
-       (lambda (str skip)
+       (lambda (str skip unless-evt)
 	 ;; Peeking is more difficult, due to skips.
 	 (let loop ([ports ports][skip skip])
 	   (if (null? ports)
 	       eof
-	       (let ([n (peek-bytes-avail!* str skip (car ports))])
+	       (let ([n (peek-bytes-avail!* str skip unless-evt (car ports))])
 		 (cond
 		  [(eq? n 0) 
 		   ;; Not ready, yet.
@@ -281,7 +337,7 @@
 	(if (zero? upto)
 	    skip
 	    (let* ([half (quotient upto 2)]
-		   [n (peek-bytes-avail!* str (+ skip half) p)])
+		   [n (peek-bytes-avail!* str (+ skip half) #f p)])
 	      (if (eq? n 1)
 		  (loop (- upto half 1) (+ skip half 1))
 		  (loop half skip)))))))
@@ -304,7 +360,7 @@
 	   (let ([count (max 0 (min (- limit got skip) (bytes-length str)))])
 	     (if (zero? count)
 		 eof
-		 (let ([n (peek-bytes-avail!* str skip port 0 count)])
+		 (let ([n (peek-bytes-avail!* str skip #f port 0 count)])
 		   (if (eq? n 0)
 		       port
 		       n)))))

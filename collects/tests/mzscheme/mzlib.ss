@@ -14,6 +14,8 @@
 
 (load-relative "filelib.ss")
 
+(load-relative "portlib.ss")
+
 (load-relative "threadlib.ss")
 
 (load-relative "date.ss")

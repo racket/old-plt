@@ -1187,20 +1187,20 @@ static int
 user_peeked_read(Scheme_Input_Port *port, 
 		 long size,
 		 Scheme_Object *unless_evt,
-		 Scheme_Object *target_ch)
+		 Scheme_Object *target_evt)
 {
   User_Input_Port *uip = (User_Input_Port *)port->port_data;
   Scheme_Object *val, *a[3];
   Scheme_Cont_Frame_Data cframe;
 
   /* FIXME, if possible: the peeked-read procedure should not
-     synchronize target_ch more than once. There doesn't seem to
+     synchronize target_evt more than once. There doesn't seem to
      be a way to enforce this constraint, however, without extra
-     machinery in MzScheme's synchornization. */
+     machinery in MzScheme's synchronization. */
 
   a[0] = scheme_make_integer(size);
   a[1] = unless_evt;
-  a[2] = target_ch;
+  a[2] = target_evt;
 
   /* Disable breaks while calling the port's function: */
   scheme_push_break_enable(&cframe, 0, 0);
@@ -1621,7 +1621,7 @@ static long pipe_get_or_peek_bytes(Scheme_Input_Port *p,
 				   Scheme_Object *unless_evt)
 {
   Scheme_Pipe *pipe;
-  long c;
+  long c, skipped = 0;
 
   pipe = (Scheme_Pipe *)(p->port_data);
 
@@ -1660,10 +1660,12 @@ static long pipe_get_or_peek_bytes(Scheme_Input_Port *p,
       if (n < peek_skip) {
 	peek_skip -= n;
 	bs += n;
+	skipped += n;
 	n = 0;
       } else {
 	bs += peek_skip;
 	n -= peek_skip;
+	skipped += peek_skip;
 	peek_skip = 0;
       }
       if (n > size)
@@ -1690,10 +1692,12 @@ static long pipe_get_or_peek_bytes(Scheme_Input_Port *p,
       if (n < peek_skip) {
 	peek_skip -= n;
 	bs += n;
+	skipped += n;
 	n = 0;
       } else {
 	bs += peek_skip;
 	n -= peek_skip;
+	skipped += peek_skip;
 	peek_skip = 0;
       }
       if (n > size)
@@ -1712,9 +1716,15 @@ static long pipe_get_or_peek_bytes(Scheme_Input_Port *p,
     }
   }
 
-  if (!peek && (c > 0))
+  if (!peek && (c > 0)) {
+    if (pipe->bufmaxextra) {
+      if (pipe->bufmaxextra > c)
+	pipe->bufmaxextra -= c;
+      else 
+	pipe->bufmaxextra = 0;
+    }
     pipe_did_read(p, pipe);
-  else {
+  } else {
     if (!c) {
       if (size && pipe->eof)
 	return EOF;
@@ -1726,6 +1736,12 @@ static long pipe_get_or_peek_bytes(Scheme_Input_Port *p,
 	wp = scheme_make_pair(my_sema, pipe->wakeup_on_write);
 	pipe->wakeup_on_write = wp;
 	scheme_wait_sema(my_sema, (nonblock < 0) ? -1 : 0);
+      }
+    } else if (c > 0) {
+      if (pipe->bufmax) {
+	if (pipe->bufmaxextra < c + skipped) {
+	  pipe->bufmaxextra = c + skipped;
+	}
       }
     }
   }
@@ -1787,9 +1803,25 @@ static long pipe_write_bytes(Scheme_Output_Port *p,
   }
   firstpos = pipe->bufend;
 
+  if (pipe->bufmax) {
+    /* If we've peek in the past, then buflen might have grown larger
+       than bufmax. But for consistency, use that extra space only for
+       peeks. */
+    long extra;
+    extra = pipe->buflen - (pipe->bufmax + pipe->bufmaxextra);
+    if (extra > 0)
+      avail -= extra;
+  }
+
   if (pipe->bufmax && (avail < len)) {
     /* Must we block to write it all? */
-    long xavail = avail + (pipe->bufmax - pipe->buflen);
+    long xavail = avail;
+    long can_extra;
+
+    can_extra = ((pipe->bufmax + pipe->bufmaxextra) - pipe->buflen);
+    if (can_extra > 0)
+      xavail += can_extra;
+    
     if (xavail < len) {
       /* We must block to write it all. */
       Scheme_Object *my_sema;
@@ -1812,6 +1844,15 @@ static long pipe_write_bytes(Scheme_Output_Port *p,
 	} else {
 	  avail = pipe->bufstart - pipe->bufend - 1;
 	}
+	if (pipe->bufmax) {
+	  /* Again, it's possible that the port grew to accomodate
+	     past peeks... */
+	  long extra;
+	  extra = pipe->buflen - (pipe->bufmax + pipe->bufmaxextra);
+	  if (extra > 0)
+	    avail -= extra;
+	}
+
 	if (avail || pipe->eof || p->closed)
 	  goto try_again;
 
@@ -1834,8 +1875,8 @@ static long pipe_write_bytes(Scheme_Output_Port *p,
 
     old = pipe->buf;
     newlen = 2 * (pipe->buflen + len);
-    if (pipe->bufmax && (newlen > pipe->bufmax))
-      newlen = pipe->bufmax;
+    if (pipe->bufmax && (newlen > (pipe->bufmax + pipe->bufmaxextra)))
+      newlen = pipe->bufmax + pipe->bufmaxextra;
 
     {
       unsigned char *uca;
@@ -2851,7 +2892,7 @@ do_general_read_bytes(int as_bytes,
 		      const char *who, int argc, Scheme_Object *argv[],
 		      int alloc_mode, int only_avail, int peek)
 {
-  Scheme_Object *port, *str, *peek_skip, *target_ch = NULL, *unless_evt = NULL;
+  Scheme_Object *port, *str, *peek_skip, *unless_evt = NULL;
   long size, start, finish, got;
   int delta, size_too_big = 0;
 
@@ -2990,8 +3031,6 @@ do_general_read_bytes(int as_bytes,
 	str = scheme_make_sized_char_string(SCHEME_CHAR_STR_VAL(str), got, 1);
     }
     return str;
-  } else if (target_ch) {
-    return got ? scheme_true : scheme_false;
   } else
     return scheme_make_integer(got);
 }

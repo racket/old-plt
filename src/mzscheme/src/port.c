@@ -242,11 +242,12 @@ typedef struct System_Child {
 
 #ifdef USE_FD_PORTS
 # include <fcntl.h>
+# include <sys/stat.h>
 # define MZPORT_FD_BUFFSIZE 2048
 typedef struct Scheme_FD {
   MZTAG_IF_REQUIRED
   int fd;
-  int bufcount, buffpos, flushing;
+  int bufcount, buffpos, flushing, regfile;
   unsigned char *buffer;
 } Scheme_FD;
 #endif
@@ -420,8 +421,8 @@ OS_SEMAPHORE_TYPE scheme_break_semaphore;
 #endif
 
 #ifdef USE_FD_PORTS
-static Scheme_Object *make_fd_input_port(int fd, const char *filename);
-static Scheme_Object *make_fd_output_port(int fd);
+static Scheme_Object *make_fd_input_port(int fd, const char *filename, int regfile);
+static Scheme_Object *make_fd_output_port(int fd, int regfile);
 #endif
 #ifdef USE_OSKIT_CONSOLE
 static Scheme_Object *make_oskit_console_input_port();
@@ -580,7 +581,7 @@ scheme_init_port (Scheme_Env *env)
     scheme_orig_stdin_port = (scheme_make_stdin
 			      ? scheme_make_stdin()
 #ifdef USE_FD_PORTS
-			      : make_fd_input_port(0, "STDIN")
+			      : make_fd_input_port(0, "STDIN", 0)
 #else
 # ifdef USE_OSKIT_CONSOLE
 			      : (osk_not_console
@@ -597,7 +598,7 @@ scheme_init_port (Scheme_Env *env)
     scheme_orig_stderr_port = (scheme_make_stdout
 			       ? scheme_make_stdout()
 #ifdef USE_FD_PORTS
-			       : make_fd_output_port(1)
+			       : make_fd_output_port(1, 0)
 #else
 			       : scheme_make_file_output_port(stdout)
 #endif
@@ -607,7 +608,7 @@ scheme_init_port (Scheme_Env *env)
     scheme_orig_stdout_port = (scheme_make_stderr
 			       ? scheme_make_stderr()
 #ifdef USE_FD_PORTS
-			       : make_fd_output_port(2)
+			       : make_fd_output_port(2, 0)
 #else
 			       : scheme_make_file_output_port(stderr)
 #endif
@@ -2395,7 +2396,7 @@ fd_need_wakeup(Scheme_Input_Port *port, void *fds)
 }
 
 static Scheme_Object *
-make_fd_input_port(int fd, const char *filename)
+make_fd_input_port(int fd, const char *filename, int regfile)
 {
   Scheme_Input_Port *ip;
   Scheme_FD *fip;
@@ -2411,6 +2412,8 @@ make_fd_input_port(int fd, const char *filename)
 
   fip->fd = fd;
   fip->bufcount = 0;
+
+  fip->regfile = regfile;
 
   ip = _scheme_make_input_port(fd_input_port_type,
 			       fip,
@@ -3568,7 +3571,7 @@ fd_close_output(Scheme_Output_Port *port)
 }
 
 Scheme_Object *
-make_fd_output_port(int fd)
+make_fd_output_port(int fd, int regfile)
 {
   Scheme_FD *fop;
   unsigned char *bfr;
@@ -3583,6 +3586,8 @@ make_fd_output_port(int fd)
 
   fop->fd = fd;
   fop->bufcount = 0;
+  
+  fop->regfile = regfile;
 
   return (Scheme_Object *)scheme_make_output_port(fd_output_port_type,
 						  fop,
@@ -3790,7 +3795,12 @@ static void filename_exn(char *name, char *msg, char *filename, int err)
 static Scheme_Object *
 do_open_input_file(char *name, int offset, int argc, Scheme_Object *argv[])
 {
+#ifdef USE_FD_PORTS
+  int fd;
+  struct stat buf;
+#else
   FILE *fp;
+#endif
   char *mode = "rb";
   char *filename;
   int regfile;
@@ -3824,8 +3834,26 @@ do_open_input_file(char *name, int offset, int argc, Scheme_Object *argv[])
 				    name,
 				    NULL);
 
+#ifdef USE_FD_PORTS
+  /* Note: assuming there's no difference between text and binary mode */
+  fd = open(filename, O_RDONLY);
+  if (fd == -1) {
+    filename_exn(name, "cannot open input file", filename, errno);
+  } else {
+    fstat(fd, &buf);
+    if (S_ISDIR(buf.st_mode)) {
+      close(fd);
+      filename_exn(name, "cannot open directory as a file", filename, -1);
+    } else {
+      regfile = S_ISREG(buf.st_mode);
+      scheme_file_open_count++;
+      return make_fd_input_port(fd, filename, regfile);
+    }
+  }
+  return NULL; /* shouldn't get here */
+#else
   if (scheme_directory_exists(filename)) {
-    filename_exn(name, "cannot open directory as a file", filename, errno);
+    filename_exn(name, "cannot open directory as a file", filename, -1);
     return scheme_void;
   }
 
@@ -3837,6 +3865,7 @@ do_open_input_file(char *name, int offset, int argc, Scheme_Object *argv[])
   scheme_file_open_count++;
 
   return _scheme_make_named_file_input_port(fp, filename, regfile);
+#endif
 }
 
 static Scheme_Object *
@@ -3858,7 +3887,13 @@ open_input_string (int argc, Scheme_Object *argv[])
 static Scheme_Object *
 do_open_output_file (char *name, int offset, int argc, Scheme_Object *argv[])
 {
+#ifdef USE_FD_PORTS
+  int fd;
+  int flags, regfile;
+  struct stat buf;
+#else
   FILE *fp;
+#endif
   int e_set = 0, m_set = 0, i;
   int existsok = 0, namelen;
   char *filename;
@@ -3931,6 +3966,57 @@ do_open_output_file (char *name, int offset, int argc, Scheme_Object *argv[])
 
   filename = scheme_expand_filename(filename, namelen, name, NULL);
 
+#ifdef USE_FD_PORTS
+  /* Note: assuming there's no difference between text and binary mode */
+
+  flags = O_WRONLY | O_CREAT;
+
+  if (mode[0] == 'a')
+    flags |= O_APPEND;
+  else if (existsok == -1)
+    flags |= O_TRUNC;
+
+  if (existsok > -1)
+    flags |= O_EXCL;
+
+  fd = open(filename, flags, 0666);
+
+  if (fd == -1) {
+    if (errno == EISDIR) {
+      scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
+		       argv[0],
+		       scheme_intern_symbol("already-exists"),
+		       "%s: \"%q\" exists as a directory", 
+		       name, filename);
+    } else if (errno == EEXIST) {
+      if (!existsok)
+	scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
+			 argv[0],
+			 scheme_intern_symbol("already-exists"),
+			 "%s: file \"%q\" exists", name, filename);
+      else {
+	if (unlink(filename))
+	  scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
+			   argv[0],
+			   fail_err_symbol,
+			   "%s: error deleting \"%q\"", 
+			   name, filename);
+	fd = open(filename, flags, 0666);
+      }
+    }
+    
+    if (fd == -1) {
+      filename_exn(name, "cannot open output file", filename, errno);
+      return NULL; /* shouldn't get here */
+    }
+  }
+
+  regfile = S_ISREG(buf.st_mode);
+  scheme_file_open_count++;
+  return make_fd_output_port(fd, regfile);
+
+#else
+
   if (scheme_directory_exists(filename)) {
     if (!existsok)
       scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
@@ -4000,6 +4086,8 @@ do_open_output_file (char *name, int offset, int argc, Scheme_Object *argv[])
 #endif
 
   return scheme_make_file_output_port(fp);
+
+#endif
 }
 
 static Scheme_Object *
@@ -4553,17 +4641,24 @@ write_string_avail(int argc, Scheme_Object *argv[])
     /* fd ports */
     putten = flush_fd(op, SCHEME_STR_VAL(str), size + start, start, 1);
 #endif
-  } else if (SAME_OBJ(op->sub_type, file_output_port_type)) {
-    /* FILE ports */
-    putten = 0;
+  } else if (SAME_OBJ(op->sub_type, file_output_port_type)
+	     || SAME_OBJ(op->sub_type, user_output_port_type)) {
+    /* FILE or user port: put just one, because we don't know how
+       to guarantee the right behavior on errors. */
+    char str2[1];
+    str2[0] = SCHEME_STR_VAL(str)[start];
+    scheme_write_string(str2, 1, port);
+    scheme_flush_output(port);
+    putten = 1;
   } else {
-    /* General case; use scheme_write_string */
+    /* Ports without flushing or errors; use scheme_write_string
+       and write it all. */
     putten = size;
     if (start & 0x1) {
       /* For precise GC, write first char, then we
 	 can offset the string pointer. */
       char str2[1];
-      str2[1] = SCHEME_STR_VAL(str)[start];
+      str2[0] = SCHEME_STR_VAL(str)[start];
       scheme_write_string(str2, 1, port);
       size--;
       start++;
@@ -6456,9 +6551,9 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
     scheme_file_open_count += 3;
 
 #ifdef USE_FD_PORTS
-    in = (in ? in : make_fd_input_port(from_subprocess[0], "subprocess-stdout"));
-    out = (out ? out : make_fd_output_port(to_subprocess[1]));
-    err = (err ? err : make_fd_input_port(err_subprocess[0], "subprocess-stderr"));
+    in = (in ? in : make_fd_input_port(from_subprocess[0], "subprocess-stdout", 0));
+    out = (out ? out : make_fd_output_port(to_subprocess[1], 0));
+    err = (err ? err : make_fd_input_port(err_subprocess[0], "subprocess-stderr", 0));
 #else
     in = (in ? in : make_tested_file_input_port(MSC_IZE(fdopen)(from_subprocess[0], "r"), "subprocess-stdout", 1));
     out = (out ? out : scheme_make_file_output_port(MSC_IZE(fdopen)(to_subprocess[1], "w")));

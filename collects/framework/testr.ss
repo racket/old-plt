@@ -1,5 +1,5 @@
 ;;
-;; $Id: testr.ss,v 1.1 1998/11/19 17:23:42 robby Exp $
+;; $Id: testr.ss,v 1.2 1998/11/19 20:53:19 robby Exp $
 ;;
 ;; Link the gui tester together into compound unit.
 ;;
@@ -10,13 +10,13 @@
 (compound-unit/sig
 
   (import [mred : mred-interfaces^]
-	  [keymap : framework:keymap^])
+	  [keys : framework:keys^])
 
   (link
     [run : framework:test:run^
       ((require-unit/sig "test-run.ss") mred)]
     [prim : framework:test:primitives^
-      ((require-unit/sig "test-prims.ss") mred keymap run)])
+      ((require-unit/sig "test-prims.ss") mred keys run)])
 
   (export
     (open run)

@@ -1,5 +1,5 @@
 ;;
-;; $Id: frameworkr.ss,v 1.13 1998/11/19 17:23:42 robby Exp $
+;; $Id: frameworkc.ss,v 1.1 1998/11/19 20:53:19 robby Exp $
 ;;
 
 (compound-unit/sig (import [core:string : mzlib:string^]
@@ -7,9 +7,10 @@
 			   [core:pretty-print : mzlib:pretty-print^]
 			   [core:file : mzlib:file^]
 			   [core:thread : mzlib:thread^]
-			   [mred : mred-interfaces^])
-  (link [test : framework:test^ ((require-relative-library-unit/sig "testr.ss") mred keymap)]
-	[application : framework:application^ ((require-relative-library-unit/sig "app.ss"))]
+			   [mred : mred-interfaces^]
+			   [keys : framework:keys^]
+			   [test : framework:test^])
+  (link [application : framework:application^ ((require-relative-library-unit/sig "app.ss"))]
 	[version : framework:version^ ((require-relative-library-unit/sig "version.ss") core:string core:function)]
 	[exn : framework:exn^ ((require-relative-library-unit/sig "exn.ss"))]
 	[exit : framework:exit^ ((require-relative-library-unit/sig "exit.ss") preferences gui-utils)]
@@ -25,7 +26,8 @@
 		  gui-utils finder group  text preferences frame
 		  core:file)] 
 	[keymap : framework:keymap^
-		((require-relative-library-unit/sig "keys.ss") mred preferences finder handler scheme-paren frame)]
+		((require-relative-library-unit/sig "keymap.ss")
+		 mred keys preferences finder handler scheme-paren frame)]
 	[match-cache : framework:match-cache^ ((require-relative-library-unit/sig "mcache.ss"))]
 	[paren : framework:paren^ ((require-relative-library-unit/sig "paren.ss"))]
 	[scheme-paren : framework:scheme-paren^
@@ -77,7 +79,6 @@
 				 preferences exit group
 				 core:function)])
   (export
-   (unit test)
    (unit application)
    (unit version)
    (unit exn)

@@ -1,5 +1,5 @@
 ;;
-;; $Id: test-prims.ss,v 1.1 1998/11/19 17:23:42 robby Exp $
+;; $Id: test-prims.ss,v 1.2 1998/11/19 20:53:19 robby Exp $
 ;;
 ;; Primitives for faking user input.
 ;; Buttons, Keystrokes, Menus, Mice.
@@ -11,7 +11,7 @@
 (unit/sig framework:test:primitives^
   
   (import [mred : mred-interfaces^]
-	  [keymap : framework:keymap^]
+	  [keys : framework:keys^]
 	  [test : framework:test:run^])
   
   (define current-eventspaces
@@ -271,7 +271,7 @@
 	   [all #f])
       (lambda (key)
 	(unless all
-	  (set! all (append letters (map (lambda (s) (string-ref s 0)) (keymap:get-shifted-key-list)))))
+	  (set! all (append letters (map (lambda (s) (string-ref s 0)) (keys:get-shifted-key-list)))))
 	(memq key all))))
     
   ;;

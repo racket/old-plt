@@ -370,6 +370,7 @@ static Scheme_Object *bundle_symset_bitmapType(int v) {
 
 
 
+
   
 
 
@@ -453,6 +454,9 @@ class os_wxMediaPasteboard : public wxMediaPasteboard {
   void OnDefaultEvent(class wxMouseEvent* x0);
   void OnLocalChar(class wxKeyEvent* x0);
   void OnLocalEvent(class wxMouseEvent* x0);
+  float GetSpace();
+  float GetDescent();
+  void GetExtent(nnfloat* x0, nnfloat* x1);
   void BlinkCaret();
   void OwnCaret(Bool x0);
   void Refresh(float x0, float x1, nnfloat x2, nnfloat x3, int x4, class wxColour* x5);
@@ -2916,6 +2920,119 @@ void os_wxMediaPasteboard::OnLocalEvent(class wxMouseEvent* x0)
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
+  
+     READY_TO_RETURN;
+  }
+}
+
+float os_wxMediaPasteboard::GetSpace()
+{
+  Scheme_Object *p[POFFSET+0] INIT_NULLED_ARRAY({ NULLED_OUT });
+  Scheme_Object *v;
+  Scheme_Object *method INIT_NULLED_OUT;
+#ifdef MZ_PRECISE_GC
+  os_wxMediaPasteboard *sElF = this;
+#endif
+  static void *mcache = 0;
+
+  SETUP_VAR_STACK(5);
+  VAR_STACK_PUSH(0, method);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, POFFSET+0);
+  SET_VAR_STACK();
+
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "get-space", &mcache);
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    SET_VAR_STACK();
+    READY_TO_RETURN; return ASSELF wxMediaPasteboard::GetSpace();
+  } else {
+  
+  
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
+
+  v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
+  
+  
+  {
+     float resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_float(v, "get-space in pasteboard%"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
+  }
+}
+
+float os_wxMediaPasteboard::GetDescent()
+{
+  Scheme_Object *p[POFFSET+0] INIT_NULLED_ARRAY({ NULLED_OUT });
+  Scheme_Object *v;
+  Scheme_Object *method INIT_NULLED_OUT;
+#ifdef MZ_PRECISE_GC
+  os_wxMediaPasteboard *sElF = this;
+#endif
+  static void *mcache = 0;
+
+  SETUP_VAR_STACK(5);
+  VAR_STACK_PUSH(0, method);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, POFFSET+0);
+  SET_VAR_STACK();
+
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "get-descent", &mcache);
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    SET_VAR_STACK();
+    READY_TO_RETURN; return ASSELF wxMediaPasteboard::GetDescent();
+  } else {
+  
+  
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
+
+  v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
+  
+  
+  {
+     float resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_float(v, "get-descent in pasteboard%"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
+  }
+}
+
+void os_wxMediaPasteboard::GetExtent(nnfloat* x0, nnfloat* x1)
+{
+  Scheme_Object *p[POFFSET+2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
+  Scheme_Object *v;
+  Scheme_Object *method INIT_NULLED_OUT;
+#ifdef MZ_PRECISE_GC
+  os_wxMediaPasteboard *sElF = this;
+#endif
+  static void *mcache = 0;
+  Scheme_Object *sbox_tmp;
+
+  SETUP_VAR_STACK(7);
+  VAR_STACK_PUSH(0, method);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, POFFSET+2);
+  VAR_STACK_PUSH(5, x0);
+  VAR_STACK_PUSH(6, x1);
+  SET_VAR_STACK();
+
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "get-extent", &mcache);
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    SET_VAR_STACK();
+    READY_TO_RETURN; ASSELF wxMediaPasteboard::GetExtent(x0, x1);
+  } else {
+  
+  p[POFFSET+0] = ((x0) ? (sbox_tmp = WITH_VAR_STACK(scheme_make_double((*x0))), WITH_VAR_STACK(objscheme_box(sbox_tmp))) : XC_SCHEME_NULL);
+  p[POFFSET+1] = ((x1) ? (sbox_tmp = WITH_VAR_STACK(scheme_make_double((*x1))), WITH_VAR_STACK(objscheme_box(sbox_tmp))) : XC_SCHEME_NULL);
+  
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
+
+  v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
+  
+  if (x0) *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+0], "get-extent in pasteboard%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in pasteboard%"", extracting return value via box"", extracting boxed argument")));
+  if (x1) *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+1], "get-extent in pasteboard%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in pasteboard%"", extracting return value via box"", extracting boxed argument")));
   
      READY_TO_RETURN;
   }
@@ -6045,6 +6162,94 @@ static Scheme_Object *os_wxMediaPasteboardFindFirstSnip(int n,  Scheme_Object *p
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxSnip(r));
 }
 
+static Scheme_Object *os_wxMediaPasteboardGetSpace(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  float r;
+  objscheme_check_valid(os_wxMediaPasteboard_class, "get-space in pasteboard%", n, p);
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+
+  
+  if (((Scheme_Class_Object *)p[0])->primflag)
+    r = WITH_VAR_STACK(((os_wxMediaPasteboard *)((Scheme_Class_Object *)p[0])->primdata)->wxMediaPasteboard::GetSpace());
+  else
+    r = WITH_VAR_STACK(((wxMediaPasteboard *)((Scheme_Class_Object *)p[0])->primdata)->GetSpace());
+
+  
+  
+  READY_TO_RETURN;
+  return WITH_REMEMBERED_STACK(scheme_make_double(r));
+}
+
+static Scheme_Object *os_wxMediaPasteboardGetDescent(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  float r;
+  objscheme_check_valid(os_wxMediaPasteboard_class, "get-descent in pasteboard%", n, p);
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+
+  
+  if (((Scheme_Class_Object *)p[0])->primflag)
+    r = WITH_VAR_STACK(((os_wxMediaPasteboard *)((Scheme_Class_Object *)p[0])->primdata)->wxMediaPasteboard::GetDescent());
+  else
+    r = WITH_VAR_STACK(((wxMediaPasteboard *)((Scheme_Class_Object *)p[0])->primdata)->GetDescent());
+
+  
+  
+  READY_TO_RETURN;
+  return WITH_REMEMBERED_STACK(scheme_make_double(r));
+}
+
+static Scheme_Object *os_wxMediaPasteboardGetExtent(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  objscheme_check_valid(os_wxMediaPasteboard_class, "get-extent in pasteboard%", n, p);
+  nnfloat _x0;
+  nnfloat* x0 = &_x0;
+  nnfloat _x1;
+  nnfloat* x1 = &_x1;
+  Scheme_Object *sbox_tmp;
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+  if (XC_SCHEME_NULLP(p[POFFSET+0]))
+    x0 = NULL;
+  else
+    *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+0], "get-extent in pasteboard%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in pasteboard%"", extracting boxed argument")));
+  if (XC_SCHEME_NULLP(p[POFFSET+1]))
+    x1 = NULL;
+  else
+    *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+1], "get-extent in pasteboard%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in pasteboard%"", extracting boxed argument")));
+
+  
+  if (((Scheme_Class_Object *)p[0])->primflag)
+    WITH_VAR_STACK(((os_wxMediaPasteboard *)((Scheme_Class_Object *)p[0])->primdata)->wxMediaPasteboard::GetExtent(x0, x1));
+  else
+    WITH_VAR_STACK(((wxMediaPasteboard *)((Scheme_Class_Object *)p[0])->primdata)->GetExtent(x0, x1));
+
+  
+  if (n > (POFFSET+0) && !XC_SCHEME_NULLP(p[POFFSET+0]))
+    { Scheme_Object *sbv_ = WITH_VAR_STACK(scheme_make_double(_x0)); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+0], sbv_)); } 
+  if (n > (POFFSET+1) && !XC_SCHEME_NULLP(p[POFFSET+1]))
+    { Scheme_Object *sbv_ = WITH_VAR_STACK(scheme_make_double(_x1)); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+1], sbv_)); } 
+  
+  READY_TO_RETURN;
+  return scheme_void;
+}
+
 static Scheme_Object *os_wxMediaPasteboardBlinkCaret(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -6404,7 +6609,7 @@ void objscheme_setup_wxMediaPasteboard(Scheme_Env *env)
 
   wxREGGLOB(os_wxMediaPasteboard_class);
 
-  os_wxMediaPasteboard_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "pasteboard%", "editor%", (Scheme_Method_Prim *)os_wxMediaPasteboard_ConstructScheme, 108));
+  os_wxMediaPasteboard_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "pasteboard%", "editor%", (Scheme_Method_Prim *)os_wxMediaPasteboard_ConstructScheme, 111));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "set-scroll-step" " method", (Scheme_Method_Prim *)os_wxMediaPasteboardSetScrollStep, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "get-scroll-step" " method", (Scheme_Method_Prim *)os_wxMediaPasteboardGetScrollStep, 0, 0));
@@ -6502,6 +6707,9 @@ void objscheme_setup_wxMediaPasteboard(Scheme_Env *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "on-local-char" " method", (Scheme_Method_Prim *)os_wxMediaPasteboardOnLocalChar, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "on-local-event" " method", (Scheme_Method_Prim *)os_wxMediaPasteboardOnLocalEvent, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "find-first-snip" " method", (Scheme_Method_Prim *)os_wxMediaPasteboardFindFirstSnip, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "get-space" " method", (Scheme_Method_Prim *)os_wxMediaPasteboardGetSpace, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "get-descent" " method", (Scheme_Method_Prim *)os_wxMediaPasteboardGetDescent, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "get-extent" " method", (Scheme_Method_Prim *)os_wxMediaPasteboardGetExtent, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "blink-caret" " method", (Scheme_Method_Prim *)os_wxMediaPasteboardBlinkCaret, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "own-caret" " method", (Scheme_Method_Prim *)os_wxMediaPasteboardOwnCaret, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "refresh" " method", (Scheme_Method_Prim *)os_wxMediaPasteboardRefresh, 6, 6));

@@ -231,6 +231,10 @@ extern Scheme_Object *scheme_write_proc, *scheme_display_proc, *scheme_print_pro
 extern Scheme_Object *scheme_date;
 #endif
 
+extern Scheme_Object *scheme_begin_stx;
+extern Scheme_Object *scheme_define_values_stx;
+extern Scheme_Object *scheme_define_syntaxes_stx;
+
 /*========================================================================*/
 /*                    thread state and maintenance                        */
 /*========================================================================*/
@@ -417,6 +421,7 @@ typedef struct Scheme_Struct_Property {
 
 int scheme_is_subinspector(Scheme_Object *i, Scheme_Object *sup);
 int scheme_inspector_sees_part(Scheme_Object *s, Scheme_Object *insp, int pos);
+Scheme_Object *scheme_make_inspector(Scheme_Object *superior);
 
 typedef struct Scheme_Struct_Type {
   Scheme_Object so; /* scheme_structure_type or scheme_proc_struct_type */
@@ -496,6 +501,7 @@ typedef struct Scheme_Stx {
     long lazy_prefix; /* # of initial items in wraps to propagate */
     Scheme_Object *modinfo_cache;
   } u;
+  struct Scheme_Cert *certs;
   Scheme_Object *props;
 } Scheme_Stx;
 
@@ -604,6 +610,13 @@ Scheme_Object *scheme_stx_strip_module_context(Scheme_Object *stx);
 Scheme_Object *scheme_source_to_name(Scheme_Object *code);
 
 #define STX_SRCTAG scheme_false
+
+Scheme_Object *scheme_stx_cert(Scheme_Object *o, Scheme_Object *mark, Scheme_Env *menv, Scheme_Object *plus_stx);
+int scheme_stx_certified(Scheme_Object *stx, Scheme_Object *extra_certs, Scheme_Object *home_insp);
+int scheme_module_protected_wrt(Scheme_Object *home_insp, Scheme_Object *insp);
+
+Scheme_Object *scheme_stx_extract_certs(Scheme_Object *o, Scheme_Object *base_certs);
+Scheme_Object *scheme_stx_add_certs(Scheme_Object *o, Scheme_Object *certs);
 
 /*========================================================================*/
 /*                   syntax run-time structures                           */
@@ -1337,6 +1350,7 @@ typedef struct Scheme_Comp_Env
   short flags;          /* used for expanding/compiling */
   mzshort num_bindings; /* number of `values' slots */
   Scheme_Env *genv;     /* top-level environment */
+  Scheme_Object *insp;  /* code inspector for checking protected */
   Comp_Prefix *prefix;  /* stack base info: globals and stxes */
 
   struct Scheme_Object **values; /* names bound in this frame */
@@ -1361,14 +1375,20 @@ typedef struct Scheme_Comp_Env
 #define CLOS_FOLDABLE 8
 #define CLOS_IS_METHOD 16
 
-typedef struct Scheme_Compile_Info
+typedef struct Scheme_Compile_Expand_Info
 {
   MZTAG_IF_REQUIRED
+  int comp;
+  Scheme_Object *value_name;
+  Scheme_Object *certs;
   int max_let_depth;
   char dont_mark_local_use;
   char resolve_module_ids;
-  Scheme_Object *value_name;
-} Scheme_Compile_Info;
+  int depth;
+} Scheme_Compile_Expand_Info;
+
+typedef Scheme_Compile_Expand_Info Scheme_Compile_Info;
+typedef Scheme_Compile_Expand_Info Scheme_Expand_Info;
 
 typedef struct Resolve_Prefix
 {
@@ -1394,11 +1414,11 @@ typedef struct Resolve_Info
 
 typedef struct Scheme_Object *
 (Scheme_Syntax)(struct Scheme_Object *form, struct Scheme_Comp_Env *env,
-		struct Scheme_Compile_Info *rec, int drec);
+		Scheme_Compile_Info *rec, int drec);
 
 typedef struct Scheme_Object *
 (Scheme_Syntax_Expander)(struct Scheme_Object *form, struct Scheme_Comp_Env *env,
-			 int depth, Scheme_Object *boundname);
+			 Scheme_Expand_Info *rec, int drec);
 
 typedef struct Scheme_Object *(*Scheme_Syntax_Resolver)(Scheme_Object *data, Resolve_Info *info);
 
@@ -1449,8 +1469,8 @@ extern Scheme_Object *scheme_local[MAX_CONST_LOCAL_POS][2];
 #define scheme_get_frame_settable(f) ((f)->basic.has_set_bang)
 #define scheme_get_binding(f, n) ((f)->values[n])
 
-Scheme_Comp_Env *scheme_new_comp_env(Scheme_Env *genv, int flags);
-Scheme_Comp_Env *scheme_new_expand_env(Scheme_Env *genv, int flags);
+Scheme_Comp_Env *scheme_new_comp_env(Scheme_Env *genv, Scheme_Object *insp, int flags);
+Scheme_Comp_Env *scheme_new_expand_env(Scheme_Env *genv, Scheme_Object *insp, int flags);
 
 void scheme_check_identifier(const char *formname, Scheme_Object *id,
 			     const char *where,
@@ -1460,14 +1480,12 @@ void scheme_check_context(Scheme_Env *env, Scheme_Object *id, Scheme_Object *for
 
 Scheme_Object *scheme_check_immediate_macro(Scheme_Object *first,
 					    Scheme_Comp_Env *env,
-					    Scheme_Compile_Info *rec,
-					    int drec,
-					    int depth, Scheme_Object *boundname,
+					    Scheme_Compile_Expand_Info *erec, int drec,
 					    int int_def_pos,
 					    Scheme_Object **current_val,
 					    Scheme_Comp_Env **_xenv);
 
-Scheme_Object *scheme_apply_macro(Scheme_Object *name,
+Scheme_Object *scheme_apply_macro(Scheme_Object *name, Scheme_Env *menv,
 				  Scheme_Object *f, Scheme_Object *code,
 				  Scheme_Comp_Env *env, Scheme_Object *boundname,
 				  int for_set);
@@ -1479,8 +1497,8 @@ Scheme_Comp_Env *scheme_add_compilation_frame(Scheme_Object *vals,
 					 Scheme_Comp_Env *env, int flags);
 Scheme_Comp_Env *scheme_require_renames(Scheme_Comp_Env *env);
 
-Scheme_Object *scheme_lookup_binding(Scheme_Object *symbol, Scheme_Comp_Env *env,
-				     int flags);
+Scheme_Object *scheme_lookup_binding(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags, 
+				     Scheme_Object *certs, Scheme_Env **menv);
 
 Scheme_Object *scheme_add_env_renames(Scheme_Object *stx, Scheme_Comp_Env *env,
 				      Scheme_Comp_Env *upto);
@@ -1579,6 +1597,11 @@ void scheme_merge_lambda_rec(Scheme_Compile_Info *src, int drec,
 			    Scheme_Compile_Info *lam, int dlrec);
 
 
+void scheme_init_expand_recs(Scheme_Expand_Info *src, int drec,
+			     Scheme_Expand_Info *dest, int n);
+
+void scheme_rec_add_certs(Scheme_Compile_Expand_Info *src, int drec, Scheme_Object *stx);
+
 Scheme_Object *scheme_make_closure_compilation(Scheme_Comp_Env *env,
 					       Scheme_Object *uncompiled_code,
 					       Scheme_Compile_Info *rec, int drec);
@@ -1629,11 +1652,11 @@ int *scheme_env_get_flags(Scheme_Comp_Env *frame, int start, int count);
 Scheme_Hash_Table *scheme_map_constants_to_globals(void);
 
 Scheme_Object *scheme_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
-				  int depth, Scheme_Object *boundname);
+				  Scheme_Expand_Info *erec, int drec);
 Scheme_Object *scheme_expand_list(Scheme_Object *form, Scheme_Comp_Env *env,
-				  int depth, Scheme_Object *boundname);
+				  Scheme_Expand_Info *erec, int drec);
 Scheme_Object *scheme_expand_block(Scheme_Object *form, Scheme_Comp_Env *env,
-				   int depth, Scheme_Object *boundname);
+				   Scheme_Expand_Info *erec, int drec);
 
 Scheme_Object *scheme_flatten_begin(Scheme_Object *expr, Scheme_Object *append_onto);
 
@@ -1721,6 +1744,8 @@ struct Scheme_Env {
 
   Scheme_Hash_Table *module_registry; /* symbol -> module ; loaded modules,
 					 shared with modules in same space */
+  Scheme_Object *insp; /* instantiation-time inspector, for granting
+			  protected access and certificates */
 
   /* For compilation, per-declaration: */
   /* First two are passed from module to module-begin: */
@@ -1777,7 +1802,7 @@ typedef struct Scheme_Module
   Scheme_Object *body;        /* or data, if prim_body */
   Scheme_Object *et_body;     /* list of (vector list-of-names expr depth-int resolve-prefix) */
 
-  int functional, et_functional, tt_functional;
+  char functional, et_functional, tt_functional, no_cert;
 
   Scheme_Object **provides;          /* symbols (extenal names) */
   Scheme_Object **provide_srcs;      /* module access paths, #f for self */
@@ -1796,7 +1821,8 @@ typedef struct Scheme_Module
   Scheme_Object *self_modidx;
 
   Scheme_Hash_Table *accessible;
-  Scheme_Object *home_registry; /* NULL, key, or hash-table of weakly helds keys */
+  Scheme_Object *insp; /* declaration-time inspector, for creating certificates
+			  and for module instantiation */
 
   Scheme_Object *hints; /* set by expansion; moved to properties */
   Comp_Prefix *comp_prefix; /* set by body compile, temporary */
@@ -1825,6 +1851,7 @@ typedef struct Module_Variable {
   Scheme_Object so; /* scheme_module_variable_type */
   Scheme_Object *modidx;
   Scheme_Object *sym;
+  Scheme_Object *insp; /* for checking protected/unexported access */
   int pos, mod_phase;
 } Module_Variable;
 
@@ -1847,8 +1874,9 @@ void scheme_module_force_lazy(Scheme_Env *env, int previous);
 
 int scheme_module_export_position(Scheme_Object *modname, Scheme_Env *env, Scheme_Object *varname);
 
-Scheme_Object *scheme_check_accessible_in_module(Scheme_Env *env, Scheme_Object *wrt_registry,
-						 Scheme_Object *symbol, Scheme_Object *stx,
+Scheme_Object *scheme_check_accessible_in_module(Scheme_Env *env, Scheme_Object *prot_insp,
+						 Scheme_Object *symbol, Scheme_Object *stx, 
+						 Scheme_Object *certs, Scheme_Object *unexp_insp,
 						 int position, int want_pos);
 Scheme_Object *scheme_module_syntax(Scheme_Object *modname, Scheme_Env *env, Scheme_Object *name);
 
@@ -1856,7 +1884,8 @@ Scheme_Object *scheme_modidx_shift(Scheme_Object *modidx,
 				   Scheme_Object *shift_from_modidx,
 				   Scheme_Object *shift_to_modidx);
 
-Scheme_Object *scheme_hash_module_variable(Scheme_Env *env, Scheme_Object *modidx, Scheme_Object *stxsym, 
+Scheme_Object *scheme_hash_module_variable(Scheme_Env *env, Scheme_Object *modidx, 
+					   Scheme_Object *stxsym, Scheme_Object *insp,
 					   int pos, int mod_phase);
 
 extern Scheme_Env *scheme_initial_env;

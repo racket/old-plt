@@ -19,6 +19,7 @@ module_var {
 
   gcMARK(mv->modidx);
   gcMARK(mv->sym);
+  gcMARK(mv->insp);
 
  size:
   gcBYTES_TO_WORDS(sizeof(Module_Variable));
@@ -667,6 +668,7 @@ namespace_val {
 
   gcMARK(e->module);
   gcMARK(e->module_registry);
+  gcMARK(e->insp);
 
   gcMARK(e->rename);
   gcMARK(e->et_rename);
@@ -746,6 +748,7 @@ stx_val {
   gcMARK(stx->val);
   gcMARK(stx->srcloc);
   gcMARK(stx->wraps);
+  gcMARK(stx->certs);
   gcMARK(stx->props);
   if (!(MZ_OPT_HASH_KEY(&(stx)->iso) & STX_SUBSTX_FLAG))
     gcMARK(stx->u.modinfo_cache);
@@ -785,7 +788,7 @@ module_val {
   gcMARK(m->self_modidx);
 
   gcMARK(m->accessible);
-  gcMARK(m->home_registry);
+  gcMARK(m->insp);
 
   gcMARK(m->hints);
 
@@ -867,6 +870,7 @@ mark_comp_env {
   Scheme_Full_Comp_Env *e = (Scheme_Full_Comp_Env *)p;
 
   gcMARK(e->base.genv);
+  gcMARK(e->base.insp);
   gcMARK(e->base.prefix);
   gcMARK(e->base.next);
   gcMARK(e->base.values);
@@ -914,6 +918,7 @@ mark_comp_info {
   Scheme_Compile_Info *i = (Scheme_Compile_Info *)p;
   
   gcMARK(i->value_name);
+  gcMARK(i->certs);
 
  size:
   gcBYTES_TO_WORDS(sizeof(Scheme_Compile_Info));
@@ -1655,7 +1660,7 @@ mark_srcloc {
 }
 
 mark_wrapchunk {
-  Wrap_Chunk *wc= (Wrap_Chunk *)p;
+  Wrap_Chunk *wc = (Wrap_Chunk *)p;
  mark:
   int i;
   for (i = wc->len; i--; ) {
@@ -1663,6 +1668,16 @@ mark_wrapchunk {
   }
  size:
   gcBYTES_TO_WORDS(sizeof(Wrap_Chunk) + ((wc->len - 1) * sizeof(Scheme_Object *)));
+}
+
+mark_cert {
+ mark:
+  Scheme_Cert *c = (Scheme_Cert *)p;
+  gcMARK(c->mark);
+  gcMARK(c->insp);
+  gcMARK(c->next);
+ size:
+  gcBYTES_TO_WORDS(sizeof(Scheme_Cert));
 }
 
 END stxobj;

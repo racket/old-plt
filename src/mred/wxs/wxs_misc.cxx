@@ -827,7 +827,7 @@ static Scheme_Object *os_wxClipboardClientGetData(int n,  Scheme_Object *p[])
 
   
   if (((Scheme_Class_Object *)p[0])->primflag)
-    r = WITH_VAR_STACK(((os_wxClipboardClient *)((Scheme_Class_Object *)p[0])->primdata)->GetData(x0, x1));
+    r =  NULL;
   else
     r = WITH_VAR_STACK(((wxClipboardClient *)((Scheme_Class_Object *)p[0])->primdata)->GetData(x0, x1));
 
@@ -850,7 +850,7 @@ static Scheme_Object *os_wxClipboardClientBeingReplaced(int n,  Scheme_Object *p
 
   
   if (((Scheme_Class_Object *)p[0])->primflag)
-    WITH_VAR_STACK(((os_wxClipboardClient *)((Scheme_Class_Object *)p[0])->primdata)->BeingReplaced());
+    {}
   else
     WITH_VAR_STACK(((wxClipboardClient *)((Scheme_Class_Object *)p[0])->primdata)->BeingReplaced());
 

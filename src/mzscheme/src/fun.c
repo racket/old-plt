@@ -76,6 +76,8 @@ Scheme_Object *scheme_tail_call_waiting;
 
 Scheme_Object *scheme_inferred_name_symbol;
 
+static Scheme_Object *certify_mode_symbol, *transparent_symbol, *opaque_symbol;
+
 /* locals */
 static Scheme_Object *procedure_p (int argc, Scheme_Object *argv[]);
 static Scheme_Object *apply (int argc, Scheme_Object *argv[]);
@@ -761,9 +763,6 @@ scheme_make_closure_compilation(Scheme_Comp_Env *env, Scheme_Object *code,
     num_params++;
   }
   data->num_params = num_params;
-  if ((long)data->num_params != num_params) {
-    /* scheme_too_deep(code); */
-  }
   if ((data->num_params > 0) && scheme_has_method_property(code))
     SCHEME_CLOSURE_DATA_FLAGS(data) |= CLOS_IS_METHOD;
 
@@ -1299,8 +1298,67 @@ _scheme_tail_apply_to_list (Scheme_Object *rator, Scheme_Object *rands)
   return X_scheme_apply_to_list(rator, rands, 0, 0);
 }
 
+static Scheme_Object *
+cert_with_specials(Scheme_Object *code, Scheme_Object *mark, Scheme_Env *menv, 
+		   Scheme_Object *orig_code, int phase, int deflt)
+{
+  Scheme_Object *prop;
+
+  if (!certify_mode_symbol) {
+    REGISTER_SO(certify_mode_symbol);
+    REGISTER_SO(transparent_symbol);
+    REGISTER_SO(opaque_symbol);
+    certify_mode_symbol = scheme_intern_symbol("certify-mode");
+    transparent_symbol = scheme_intern_symbol("transparent");
+    opaque_symbol = scheme_intern_symbol("opaque");
+  }
+
+  if (SCHEME_STXP(code)) {
+    prop = scheme_stx_property(code, certify_mode_symbol, NULL);
+    if (SAME_OBJ(prop, opaque_symbol)) {
+      return scheme_stx_cert(code, mark, menv, orig_code);
+    } else if (SAME_OBJ(prop, opaque_symbol)) {
+      /* fall through */
+    } else {
+      /* Default transparency depends on module-identifier=? comparison
+	 to `begin', `define-values', and `define-syntaxes'. */
+      int trans = deflt;
+      if (SCHEME_STX_PAIRP(code)) {
+	Scheme_Object *name;
+	name = SCHEME_STX_CAR(code);
+	if (SCHEME_STX_SYMBOLP(name)) {
+	  if (scheme_stx_module_eq(scheme_begin_stx, name, phase)
+	      || scheme_stx_module_eq(scheme_define_values_stx, name, phase)
+	      || scheme_stx_module_eq(scheme_define_syntaxes_stx, name, phase))
+	    trans = 1;
+	}
+      }
+      
+      if (!trans)
+	return scheme_stx_cert(code, mark, menv, orig_code);
+    }
+  }
+
+  if (SCHEME_STX_PAIRP(code)) {
+    Scheme_Object *a, *d, *v;
+    
+    a = cert_with_specials(SCHEME_STX_CAR(code), mark, menv, orig_code, phase, 0);
+    d = cert_with_specials(SCHEME_STX_CDR(code), mark, menv, orig_code, phase, 1);
+
+    v = scheme_make_pair(a, d);
+
+    if (SCHEME_PAIRP(code))
+      return v;
+
+    return scheme_datum_to_syntax(v, code, code, 0, 2);
+  } else if (SCHEME_STX_NULLP(code))
+    return code;
+
+  return scheme_stx_cert(code, mark, menv, orig_code);
+}
+
 Scheme_Object *
-scheme_apply_macro(Scheme_Object *name,
+scheme_apply_macro(Scheme_Object *name, Scheme_Env *menv,
 		   Scheme_Object *rator, Scheme_Object *code,
 		   Scheme_Comp_Env *env, Scheme_Object *boundname,
 		   int for_set)
@@ -1308,11 +1366,14 @@ scheme_apply_macro(Scheme_Object *name,
   Scheme_Object *orig_code = code;
 
  if (SAME_TYPE(SCHEME_TYPE(rator), scheme_id_macro_type)) {
+   Scheme_Object *mark;
+
    rator = SCHEME_PTR1_VAL(rator);
    /* rator is now an identifier */
 
    /* and it's introduced by this expression: */
-   rator = scheme_add_remove_mark(rator, scheme_new_mark());
+   mark = scheme_new_mark();
+   rator = scheme_add_remove_mark(rator, mark);
 
    if (for_set) {
      Scheme_Object *tail, *setkw;
@@ -1329,6 +1390,8 @@ scheme_apply_macro(Scheme_Object *name,
      code = scheme_make_immutable_pair(rator, code);
      code = scheme_datum_to_syntax(code, orig_code, scheme_sys_wraps(env), 0, 0);
    }
+
+   code = cert_with_specials(code, mark, menv, orig_code, env->genv->phase, 0);
 
    code = scheme_stx_track(code, orig_code, name);
 
@@ -1354,6 +1417,8 @@ scheme_apply_macro(Scheme_Object *name,
    }
 
    code = scheme_add_remove_mark(code, mark);
+
+   code = cert_with_specials(code, mark, menv, orig_code, env->genv->phase, 0);
 
    code = scheme_stx_track(code, orig_code, name);
 

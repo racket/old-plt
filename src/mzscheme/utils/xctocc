@@ -1859,18 +1859,31 @@ sub PrintCallRealMethod
 	    print "$prefix    ";
 	    print $ret_val if ($returntype ne 'void');
 	    &PrintIndirect($returntype) if (!$direct);
-	    print "WITH_VAR_STACK((($newclass *)((Scheme_Class_Object *)p[0])->primdata)->";
-	    if (!$virtualonly) {
+	    if ($virtualonly) {
+		if ($exception ne "SUPER") {
+		    $rets = &ApplyMacros($exception);
+		    if ((substr($rets, -1) eq ';') && (substr($rets, 0, 6) eq 'return')) {
+			print substr($rets, 6);
+		    } else {
+			print STDERR "error: cannot use exception for value: $rets\n";
+			exit(-1);
+		    }
+		    print "\n";
+		} else {
+		    print "{}\n";
+		}
+	    } else {
+		print "WITH_VAR_STACK((($newclass *)((Scheme_Class_Object *)p[0])->primdata)->";
 		if ($implementor ne "") {
 		    print $implementor;
 		} else {
 		    print $oldclass;
 		}
 		print "::";
+		print "${func}(";
+		&PrintArgs($direct);
+		print "));\n";
 	    }
-	    print "${func}(";
-	    &PrintArgs($direct);
-	    print "));\n";
 	    print "$prefix  else\n";
 	    print "$prefix    ";
 	}
@@ -2025,7 +2038,7 @@ sub PrintSpecificFunction
 	print "$prefix  realobj->__gc_external = (void *)p[0];\n";
 	# print "$prefix  objscheme_note_creation(p[0]);\n";
     } else {
-	&PrintCallRealMethod($prefix, "r = ");
+	&PrintCallRealMethod($prefix, "r = ", $vonlyval);
     }
 
     print "$prefix  " . &ApplyMacros($gluepostcall) . "\n";

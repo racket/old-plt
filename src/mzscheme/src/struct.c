@@ -447,10 +447,21 @@ Scheme_Object *scheme_make_initial_inspectors(void)
   return (Scheme_Object *)root;
 }
 
-Scheme_Object *make_inspector(int argc, Scheme_Object **argv)
+Scheme_Object *scheme_make_inspector(Scheme_Object *superior)
+{
+  Scheme_Inspector *naya;
+
+  naya = MALLOC_ONE_TAGGED(Scheme_Inspector);
+  naya->so.type = scheme_inspector_type;
+  naya->depth = ((Scheme_Inspector *)superior)->depth + 1;
+  naya->superior = (Scheme_Inspector *)superior;
+
+  return (Scheme_Object *)naya;
+}
+
+static Scheme_Object *make_inspector(int argc, Scheme_Object **argv)
 {
   Scheme_Object *superior;
-  Scheme_Inspector *naya;
 
   if (argc) {
     superior = argv[0];
@@ -459,12 +470,7 @@ Scheme_Object *make_inspector(int argc, Scheme_Object **argv)
   } else
     superior = scheme_get_param(scheme_current_config(), MZCONFIG_INSPECTOR);
 
-  naya = MALLOC_ONE_TAGGED(Scheme_Inspector);
-  naya->so.type = scheme_inspector_type;
-  naya->depth = ((Scheme_Inspector *)superior)->depth + 1;
-  naya->superior = (Scheme_Inspector *)superior;
-
-  return (Scheme_Object *)naya;
+  return scheme_make_inspector(superior);
 }
 
 Scheme_Object *inspector_p(int argc, Scheme_Object **argv)

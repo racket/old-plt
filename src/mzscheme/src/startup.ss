@@ -2043,7 +2043,7 @@
 
   (-define (with-syntax-fail stx)
     (raise-syntax-error
-     (quote-syntax with-syntax)
+     'with-syntax
      "binding match failed"
      stx))
 
@@ -3362,7 +3362,7 @@
 						 ""))
 		     s)))
 	      ;; At this point, filename is a complete path
-	      (let ([filename (simplify-path (expand-path filename))])
+	      (let ([filename (normal-case-path (simplify-path (expand-path filename)))])
 		(let-values ([(base name dir?) (split-path filename)])
 		  (let ([no-sfx (bytes->string/latin-1 
 				 (path->bytes

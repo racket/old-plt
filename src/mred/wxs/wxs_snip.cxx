@@ -11196,7 +11196,7 @@ static Scheme_Object *os_wxBufferDataClassRead(int n,  Scheme_Object *p[])
 
   
   if (((Scheme_Class_Object *)p[0])->primflag)
-    r = WITH_VAR_STACK(((os_wxBufferDataClass *)((Scheme_Class_Object *)p[0])->primdata)->Read(x0));
+    r =  NULL;
   else
     r = WITH_VAR_STACK(((wxBufferDataClass *)((Scheme_Class_Object *)p[0])->primdata)->Read(x0));
 
@@ -11707,7 +11707,7 @@ static Scheme_Object *os_wxBufferDataWrite(int n,  Scheme_Object *p[])
 
   
   if (((Scheme_Class_Object *)p[0])->primflag)
-    r = WITH_VAR_STACK(((os_wxBufferData *)((Scheme_Class_Object *)p[0])->primdata)->Write(x0));
+    r =  0;
   else
     r = WITH_VAR_STACK(((wxBufferData *)((Scheme_Class_Object *)p[0])->primdata)->Write(x0));
 

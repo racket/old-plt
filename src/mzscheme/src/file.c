@@ -1448,8 +1448,42 @@ static char *do_expand_filename(Scheme_Object *o, char* filename, int ilen, cons
     if (expanded)
       *expanded = 1;
   
-    return naya;
+    filename = naya;
+    ilen = len + flen;
   }
+
+  /* Remove redundant slashes */
+ {
+   int extra = 0, i;
+   
+   for (i = ilen; i-- > 1; ) {
+     if (IS_A_SEP(filename[i])) {
+       if (IS_A_SEP(filename[i - 1])) {
+	 extra++;
+       }
+     }
+   }
+
+   if (extra) {
+     char *naya;
+     naya = (char *)scheme_malloc_atomic(ilen + 1 - extra);
+     extra = 0;
+     for (i = 0; i < ilen; i++) {
+       if (IS_A_SEP(filename[i])
+	   && IS_A_SEP(filename[i + 1])) {
+	 /* Skip */
+	 extra++;
+       } else {
+	 naya[i - extra] = filename[i];
+       }
+     }
+     ilen -= extra;
+     naya[ilen] = 0;
+     filename = naya;
+     if (expanded)
+       *expanded = 1;
+   }
+ }
 #endif
 #ifdef DOS_FILE_SYSTEM
   {

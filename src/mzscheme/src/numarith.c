@@ -328,7 +328,7 @@ scheme_abs(int argc, Scheme_Object *argv[])
 
   if (SCHEME_INTP(o)) {
     int n = SCHEME_INT_VAL(o);
-    return scheme_make_integer(ABS(n));
+    return scheme_make_integer_value(ABS(n));
   } 
   t = _SCHEME_TYPE(o);
 #ifdef MZ_USE_SINGLE_FLOATS

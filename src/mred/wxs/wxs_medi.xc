@@ -78,7 +78,7 @@ static void NoInsertFile(wxMediaBuffer *)
 
 @SETMARK Y = V
 @SETMARK Z = v
-@INCLUDE wxs_mbuf.xci
+// @INCLUDE wxs_mbuf.xci
 
 // X are Methods not intended to be overriden by the user,
 // but acutally are implemented with virtual
@@ -90,10 +90,6 @@ static void NoInsertFile(wxMediaBuffer *)
 // No longer actually in C, but we want them in the editor<%> interface:
 @ m "load-file" : void NoLoadFile()
 @ m "insert-file" : void NoInsertFile()
-
-@ X "get-extent" : void GetExtent(nnfloat?,nnfloat?);
-@ X "get-descent" : float GetDescent(); : : : : XrZERO
-@ X "get-space" : float GetSpace(); : : : : XrZERO
 
 @ X "get-max-width" : nnfs[none] GetMaxWidth(); : : : : XrZERO
 @ X "get-min-width" : nnfs[none] GetMinWidth(); : : : : XrZERO

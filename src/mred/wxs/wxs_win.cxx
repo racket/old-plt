@@ -440,7 +440,7 @@ static Scheme_Object *os_wxWindowOnDropFile(int n,  Scheme_Object *p[])
 
   
   if (((Scheme_Class_Object *)p[0])->primflag)
-    WITH_VAR_STACK(((os_wxWindow *)((Scheme_Class_Object *)p[0])->primdata)->OnDropFile(x0));
+    {}
   else
     WITH_VAR_STACK(((wxWindow *)((Scheme_Class_Object *)p[0])->primdata)->OnDropFile(x0));
 
@@ -470,7 +470,7 @@ static Scheme_Object *os_wxWindowPreOnEvent(int n,  Scheme_Object *p[])
 
   
   if (((Scheme_Class_Object *)p[0])->primflag)
-    r = WITH_VAR_STACK(((os_wxWindow *)((Scheme_Class_Object *)p[0])->primdata)->PreOnEvent(x0, x1));
+    r =  FALSE;
   else
     r = WITH_VAR_STACK(((wxWindow *)((Scheme_Class_Object *)p[0])->primdata)->PreOnEvent(x0, x1));
 
@@ -500,7 +500,7 @@ static Scheme_Object *os_wxWindowPreOnChar(int n,  Scheme_Object *p[])
 
   
   if (((Scheme_Class_Object *)p[0])->primflag)
-    r = WITH_VAR_STACK(((os_wxWindow *)((Scheme_Class_Object *)p[0])->primdata)->PreOnChar(x0, x1));
+    r =  FALSE;
   else
     r = WITH_VAR_STACK(((wxWindow *)((Scheme_Class_Object *)p[0])->primdata)->PreOnChar(x0, x1));
 
@@ -527,7 +527,7 @@ static Scheme_Object *os_wxWindowOnSize(int n,  Scheme_Object *p[])
 
   
   if (((Scheme_Class_Object *)p[0])->primflag)
-    WITH_VAR_STACK(((os_wxWindow *)((Scheme_Class_Object *)p[0])->primdata)->OnSize(x0, x1));
+    {}
   else
     WITH_VAR_STACK(((wxWindow *)((Scheme_Class_Object *)p[0])->primdata)->OnSize(x0, x1));
 
@@ -550,7 +550,7 @@ static Scheme_Object *os_wxWindowOnSetFocus(int n,  Scheme_Object *p[])
 
   
   if (((Scheme_Class_Object *)p[0])->primflag)
-    WITH_VAR_STACK(((os_wxWindow *)((Scheme_Class_Object *)p[0])->primdata)->OnSetFocus());
+    {}
   else
     WITH_VAR_STACK(((wxWindow *)((Scheme_Class_Object *)p[0])->primdata)->OnSetFocus());
 
@@ -573,7 +573,7 @@ static Scheme_Object *os_wxWindowOnKillFocus(int n,  Scheme_Object *p[])
 
   
   if (((Scheme_Class_Object *)p[0])->primflag)
-    WITH_VAR_STACK(((os_wxWindow *)((Scheme_Class_Object *)p[0])->primdata)->OnKillFocus());
+    {}
   else
     WITH_VAR_STACK(((wxWindow *)((Scheme_Class_Object *)p[0])->primdata)->OnKillFocus());
 

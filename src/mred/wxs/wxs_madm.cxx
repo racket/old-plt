@@ -1948,7 +1948,7 @@ static Scheme_Object *os_wxMediaAdminModified(int n,  Scheme_Object *p[])
 
   
   if (((Scheme_Class_Object *)p[0])->primflag)
-    WITH_VAR_STACK(((os_wxMediaAdmin *)((Scheme_Class_Object *)p[0])->primdata)->Modified(x0));
+    {}
   else
     WITH_VAR_STACK(((wxMediaAdmin *)((Scheme_Class_Object *)p[0])->primdata)->Modified(x0));
 
@@ -1972,7 +1972,7 @@ static Scheme_Object *os_wxMediaAdminDelayRefresh(int n,  Scheme_Object *p[])
 
   
   if (((Scheme_Class_Object *)p[0])->primflag)
-    r = WITH_VAR_STACK(((os_wxMediaAdmin *)((Scheme_Class_Object *)p[0])->primdata)->DelayRefresh());
+    r =  FALSE;
   else
     r = WITH_VAR_STACK(((wxMediaAdmin *)((Scheme_Class_Object *)p[0])->primdata)->DelayRefresh());
 
@@ -2003,7 +2003,7 @@ static Scheme_Object *os_wxMediaAdminPopupMenu(int n,  Scheme_Object *p[])
 
   
   if (((Scheme_Class_Object *)p[0])->primflag)
-    r = WITH_VAR_STACK(((os_wxMediaAdmin *)((Scheme_Class_Object *)p[0])->primdata)->PopupMenu(x0, x1, x2));
+    r =  FALSE;
   else
     r = WITH_VAR_STACK(((wxMediaAdmin *)((Scheme_Class_Object *)p[0])->primdata)->PopupMenu(x0, x1, x2));
 
@@ -2026,7 +2026,7 @@ static Scheme_Object *os_wxMediaAdminUpdateCursor(int n,  Scheme_Object *p[])
 
   
   if (((Scheme_Class_Object *)p[0])->primflag)
-    WITH_VAR_STACK(((os_wxMediaAdmin *)((Scheme_Class_Object *)p[0])->primdata)->UpdateCursor());
+    {}
   else
     WITH_VAR_STACK(((wxMediaAdmin *)((Scheme_Class_Object *)p[0])->primdata)->UpdateCursor());
 
@@ -2057,7 +2057,7 @@ static Scheme_Object *os_wxMediaAdminNeedsUpdate(int n,  Scheme_Object *p[])
 
   
   if (((Scheme_Class_Object *)p[0])->primflag)
-    WITH_VAR_STACK(((os_wxMediaAdmin *)((Scheme_Class_Object *)p[0])->primdata)->NeedsUpdate(x0, x1, x2, x3));
+    {}
   else
     WITH_VAR_STACK(((wxMediaAdmin *)((Scheme_Class_Object *)p[0])->primdata)->NeedsUpdate(x0, x1, x2, x3));
 
@@ -2082,7 +2082,7 @@ static Scheme_Object *os_wxMediaAdminResized(int n,  Scheme_Object *p[])
 
   
   if (((Scheme_Class_Object *)p[0])->primflag)
-    WITH_VAR_STACK(((os_wxMediaAdmin *)((Scheme_Class_Object *)p[0])->primdata)->Resized(x0));
+    {}
   else
     WITH_VAR_STACK(((wxMediaAdmin *)((Scheme_Class_Object *)p[0])->primdata)->Resized(x0));
 
@@ -2110,7 +2110,7 @@ static Scheme_Object *os_wxMediaAdminGrabCaret(int n,  Scheme_Object *p[])
 
   
   if (((Scheme_Class_Object *)p[0])->primflag)
-    WITH_VAR_STACK(((os_wxMediaAdmin *)((Scheme_Class_Object *)p[0])->primdata)->GrabCaret(x0));
+    {}
   else
     WITH_VAR_STACK(((wxMediaAdmin *)((Scheme_Class_Object *)p[0])->primdata)->GrabCaret(x0));
 
@@ -2152,7 +2152,7 @@ static Scheme_Object *os_wxMediaAdminScrollTo(int n,  Scheme_Object *p[])
 
   
   if (((Scheme_Class_Object *)p[0])->primflag)
-    r = WITH_VAR_STACK(((os_wxMediaAdmin *)((Scheme_Class_Object *)p[0])->primdata)->ScrollTo(x0, x1, x2, x3, x4, x5));
+    r =  FALSE;
   else
     r = WITH_VAR_STACK(((wxMediaAdmin *)((Scheme_Class_Object *)p[0])->primdata)->ScrollTo(x0, x1, x2, x3, x4, x5));
 
@@ -2205,7 +2205,7 @@ static Scheme_Object *os_wxMediaAdminGetMaxView(int n,  Scheme_Object *p[])
 
   
   if (((Scheme_Class_Object *)p[0])->primflag)
-    WITH_VAR_STACK(((os_wxMediaAdmin *)((Scheme_Class_Object *)p[0])->primdata)->GetMaxView(x0, x1, x2, x3, x4));
+    {}
   else
     WITH_VAR_STACK(((wxMediaAdmin *)((Scheme_Class_Object *)p[0])->primdata)->GetMaxView(x0, x1, x2, x3, x4));
 
@@ -2266,7 +2266,7 @@ static Scheme_Object *os_wxMediaAdminGetView(int n,  Scheme_Object *p[])
 
   
   if (((Scheme_Class_Object *)p[0])->primflag)
-    WITH_VAR_STACK(((os_wxMediaAdmin *)((Scheme_Class_Object *)p[0])->primdata)->GetView(x0, x1, x2, x3, x4));
+    {}
   else
     WITH_VAR_STACK(((wxMediaAdmin *)((Scheme_Class_Object *)p[0])->primdata)->GetView(x0, x1, x2, x3, x4));
 
@@ -2318,7 +2318,7 @@ static Scheme_Object *os_wxMediaAdminGetDC(int n,  Scheme_Object *p[])
 
   
   if (((Scheme_Class_Object *)p[0])->primflag)
-    r = WITH_VAR_STACK(((os_wxMediaAdmin *)((Scheme_Class_Object *)p[0])->primdata)->GetDC(x0, x1));
+    r =  NULL;
   else
     r = WITH_VAR_STACK(((wxMediaAdmin *)((Scheme_Class_Object *)p[0])->primdata)->GetDC(x0, x1));
 
@@ -3145,7 +3145,7 @@ static Scheme_Object *os_wxSnipAdminModified(int n,  Scheme_Object *p[])
 
   
   if (((Scheme_Class_Object *)p[0])->primflag)
-    WITH_VAR_STACK(((os_wxSnipAdmin *)((Scheme_Class_Object *)p[0])->primdata)->Modified(x0, x1));
+    {}
   else
     WITH_VAR_STACK(((wxSnipAdmin *)((Scheme_Class_Object *)p[0])->primdata)->Modified(x0, x1));
 
@@ -3179,7 +3179,7 @@ static Scheme_Object *os_wxSnipAdminPopupMenu(int n,  Scheme_Object *p[])
 
   
   if (((Scheme_Class_Object *)p[0])->primflag)
-    r = WITH_VAR_STACK(((os_wxSnipAdmin *)((Scheme_Class_Object *)p[0])->primdata)->PopupMenu(x0, x1, x2, x3));
+    r =  FALSE;
   else
     r = WITH_VAR_STACK(((wxSnipAdmin *)((Scheme_Class_Object *)p[0])->primdata)->PopupMenu(x0, x1, x2, x3));
 
@@ -3202,7 +3202,7 @@ static Scheme_Object *os_wxSnipAdminUpdateCursor(int n,  Scheme_Object *p[])
 
   
   if (((Scheme_Class_Object *)p[0])->primflag)
-    WITH_VAR_STACK(((os_wxSnipAdmin *)((Scheme_Class_Object *)p[0])->primdata)->UpdateCursor());
+    {}
   else
     WITH_VAR_STACK(((wxSnipAdmin *)((Scheme_Class_Object *)p[0])->primdata)->UpdateCursor());
 
@@ -3229,7 +3229,7 @@ static Scheme_Object *os_wxSnipAdminReleaseSnip(int n,  Scheme_Object *p[])
 
   
   if (((Scheme_Class_Object *)p[0])->primflag)
-    r = WITH_VAR_STACK(((os_wxSnipAdmin *)((Scheme_Class_Object *)p[0])->primdata)->ReleaseSnip(x0));
+    r =  FALSE;
   else
     r = WITH_VAR_STACK(((wxSnipAdmin *)((Scheme_Class_Object *)p[0])->primdata)->ReleaseSnip(x0));
 
@@ -3263,7 +3263,7 @@ static Scheme_Object *os_wxSnipAdminNeedsUpdate(int n,  Scheme_Object *p[])
 
   
   if (((Scheme_Class_Object *)p[0])->primflag)
-    WITH_VAR_STACK(((os_wxSnipAdmin *)((Scheme_Class_Object *)p[0])->primdata)->NeedsUpdate(x0, x1, x2, x3, x4));
+    {}
   else
     WITH_VAR_STACK(((wxSnipAdmin *)((Scheme_Class_Object *)p[0])->primdata)->NeedsUpdate(x0, x1, x2, x3, x4));
 
@@ -3292,7 +3292,7 @@ static Scheme_Object *os_wxSnipAdminRecounted(int n,  Scheme_Object *p[])
 
   
   if (((Scheme_Class_Object *)p[0])->primflag)
-    r = WITH_VAR_STACK(((os_wxSnipAdmin *)((Scheme_Class_Object *)p[0])->primdata)->Recounted(x0, x1));
+    r =  FALSE;
   else
     r = WITH_VAR_STACK(((wxSnipAdmin *)((Scheme_Class_Object *)p[0])->primdata)->Recounted(x0, x1));
 
@@ -3320,7 +3320,7 @@ static Scheme_Object *os_wxSnipAdminResized(int n,  Scheme_Object *p[])
 
   
   if (((Scheme_Class_Object *)p[0])->primflag)
-    WITH_VAR_STACK(((os_wxSnipAdmin *)((Scheme_Class_Object *)p[0])->primdata)->Resized(x0, x1));
+    {}
   else
     WITH_VAR_STACK(((wxSnipAdmin *)((Scheme_Class_Object *)p[0])->primdata)->Resized(x0, x1));
 
@@ -3348,7 +3348,7 @@ static Scheme_Object *os_wxSnipAdminSetCaretOwner(int n,  Scheme_Object *p[])
 
   
   if (((Scheme_Class_Object *)p[0])->primflag)
-    WITH_VAR_STACK(((os_wxSnipAdmin *)((Scheme_Class_Object *)p[0])->primdata)->SetCaretOwner(x0, x1));
+    {}
   else
     WITH_VAR_STACK(((wxSnipAdmin *)((Scheme_Class_Object *)p[0])->primdata)->SetCaretOwner(x0, x1));
 
@@ -3390,7 +3390,7 @@ static Scheme_Object *os_wxSnipAdminScrollTo(int n,  Scheme_Object *p[])
 
   
   if (((Scheme_Class_Object *)p[0])->primflag)
-    r = WITH_VAR_STACK(((os_wxSnipAdmin *)((Scheme_Class_Object *)p[0])->primdata)->ScrollTo(x0, x1, x2, x3, x4, x5, x6));
+    r =  FALSE;
   else
     r = WITH_VAR_STACK(((wxSnipAdmin *)((Scheme_Class_Object *)p[0])->primdata)->ScrollTo(x0, x1, x2, x3, x4, x5, x6));
 
@@ -3444,7 +3444,7 @@ static Scheme_Object *os_wxSnipAdminGetView(int n,  Scheme_Object *p[])
 
   
   if (((Scheme_Class_Object *)p[0])->primflag)
-    WITH_VAR_STACK(((os_wxSnipAdmin *)((Scheme_Class_Object *)p[0])->primdata)->GetView(x0, x1, x2, x3, x4));
+    {}
   else
     WITH_VAR_STACK(((wxSnipAdmin *)((Scheme_Class_Object *)p[0])->primdata)->GetView(x0, x1, x2, x3, x4));
 
@@ -3488,7 +3488,7 @@ static Scheme_Object *os_wxSnipAdminGetViewSize(int n,  Scheme_Object *p[])
 
   
   if (((Scheme_Class_Object *)p[0])->primflag)
-    WITH_VAR_STACK(((os_wxSnipAdmin *)((Scheme_Class_Object *)p[0])->primdata)->GetViewSize(x0, x1));
+    {}
   else
     WITH_VAR_STACK(((wxSnipAdmin *)((Scheme_Class_Object *)p[0])->primdata)->GetViewSize(x0, x1));
 
@@ -3516,7 +3516,7 @@ static Scheme_Object *os_wxSnipAdminGetDC(int n,  Scheme_Object *p[])
 
   
   if (((Scheme_Class_Object *)p[0])->primflag)
-    r = WITH_VAR_STACK(((os_wxSnipAdmin *)((Scheme_Class_Object *)p[0])->primdata)->GetDC());
+    r =  NULL;
   else
     r = WITH_VAR_STACK(((wxSnipAdmin *)((Scheme_Class_Object *)p[0])->primdata)->GetDC());
 
@@ -3540,7 +3540,7 @@ static Scheme_Object *os_wxSnipAdminGetMedia(int n,  Scheme_Object *p[])
 
   
   if (((Scheme_Class_Object *)p[0])->primflag)
-    r = WITH_VAR_STACK(((os_wxSnipAdmin *)((Scheme_Class_Object *)p[0])->primdata)->GetMedia());
+    r =  NULL;
   else
     r = WITH_VAR_STACK(((wxSnipAdmin *)((Scheme_Class_Object *)p[0])->primdata)->GetMedia());
 
@@ -3919,7 +3919,7 @@ static Scheme_Object *os_wxSnipClassRead(int n,  Scheme_Object *p[])
 
   
   if (((Scheme_Class_Object *)p[0])->primflag)
-    r = WITH_VAR_STACK(((os_wxSnipClass *)((Scheme_Class_Object *)p[0])->primdata)->Read(x0));
+    r =  NULL;
   else
     r = WITH_VAR_STACK(((wxSnipClass *)((Scheme_Class_Object *)p[0])->primdata)->Read(x0));
 

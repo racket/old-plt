@@ -27,6 +27,10 @@
 @ Y "own-caret" : void OwnCaret(bool);
 @ Y "blink-caret" : void BlinkCaret(); 
 
+@ Y "get-extent" : void GetExtent(nnfloat?,nnfloat?);
+@ Y "get-descent" : float GetDescent(); : : : : XrZERO
+@ Y "get-space" : float GetSpace(); : : : : XrZERO
+
 @ X "find-first-snip" : wxSnip^ FindFirstSnip();
 
 @ Z "on-local-event" : void OnLocalEvent(wxMouseEvent!);

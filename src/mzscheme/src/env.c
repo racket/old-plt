@@ -594,9 +594,6 @@ static Scheme_Env *make_env(Scheme_Env *base, int semi, int toplevel_size)
 
 	module_registry = scheme_make_hash_table(SCHEME_hash_ptr);
 	module_registry->iso.so.type = scheme_module_registry_type;
-	/* Generate a key, and attach it to the registry by mapping `void'
-	   to the key. (Yes, a bit of a hack.) */
-	scheme_hash_set(module_registry, scheme_void, scheme_make_pair(scheme_void, scheme_void));
       }
     }
   }
@@ -649,6 +646,7 @@ void scheme_prepare_exp_env(Scheme_Env *env)
 
     eenv->module = env->module;
     eenv->module_registry = env->module_registry;
+    eenv->insp = env->insp;
 
     modchain = SCHEME_VEC_ELS(env->modchain)[1];
     if (SCHEME_FALSEP(modchain)) {
@@ -679,6 +677,7 @@ void scheme_prepare_template_env(Scheme_Env *env)
 
     eenv->module = env->module;
     eenv->module_registry = env->module_registry;
+    eenv->insp = env->insp;
 
     modchain = SCHEME_VEC_ELS(env->modchain)[2];
     if (SCHEME_FALSEP(modchain)) {
@@ -707,8 +706,8 @@ Scheme_Env *scheme_clone_module_env(Scheme_Env *menv, Scheme_Env *ns, Scheme_Obj
   menv2->so.type = scheme_namespace_type;
 
   menv2->module = menv->module;
-
   menv2->module_registry = ns->module_registry;
+  menv2->insp = menv->insp;
 
   menv2->syntax = menv->syntax;
 
@@ -1040,6 +1039,7 @@ Scheme_Comp_Env *scheme_new_compilation_frame(int num_bindings, int flags,
   frame->flags = flags | (base->flags & SCHEME_NO_RENAME);
   frame->next = base;
   frame->genv = base->genv;
+  frame->insp = base->insp;
   frame->prefix = base->prefix;
 
   init_compile_data(frame);
@@ -1047,10 +1047,14 @@ Scheme_Comp_Env *scheme_new_compilation_frame(int num_bindings, int flags,
   return frame;
 }
 
-Scheme_Comp_Env *scheme_new_comp_env(Scheme_Env *genv, int flags)
+Scheme_Comp_Env *scheme_new_comp_env(Scheme_Env *genv, Scheme_Object *insp, int flags)
 {
   Scheme_Comp_Env *e;
   Comp_Prefix *cp;
+
+
+  if (!insp)
+    insp = scheme_get_param(scheme_current_config(), MZCONFIG_INSPECTOR);
 
   e = (Scheme_Comp_Env *)MALLOC_ONE_RT(Scheme_Full_Comp_Env);
 #ifdef MZTAG_REQUIRED
@@ -1059,6 +1063,7 @@ Scheme_Comp_Env *scheme_new_comp_env(Scheme_Env *genv, int flags)
   e->num_bindings = 0;
   e->next = NULL;
   e->genv = genv;
+  e->insp = insp;
   e->flags = flags;
   init_compile_data(e);
 
@@ -1072,11 +1077,11 @@ Scheme_Comp_Env *scheme_new_comp_env(Scheme_Env *genv, int flags)
   return e;
 }
 
-Scheme_Comp_Env *scheme_new_expand_env(Scheme_Env *genv, int flags)
+Scheme_Comp_Env *scheme_new_expand_env(Scheme_Env *genv, Scheme_Object *insp, int flags)
 {
   Scheme_Comp_Env *e;
 
-  e = scheme_new_comp_env(genv, flags);
+  e = scheme_new_comp_env(genv, insp, flags);
   e->prefix = NULL;
 
   return e;
@@ -1385,7 +1390,8 @@ static Scheme_Local *get_frame_loc(Scheme_Comp_Env *frame,
   return (Scheme_Local *)scheme_make_local(scheme_local_type, p + i);
 }
 
-Scheme_Object *scheme_hash_module_variable(Scheme_Env *env, Scheme_Object *modidx, Scheme_Object *stxsym,
+Scheme_Object *scheme_hash_module_variable(Scheme_Env *env, Scheme_Object *modidx, 
+					   Scheme_Object *stxsym, Scheme_Object *insp,
 					   int pos, int mod_phase)
 {
   Scheme_Object *val;
@@ -1405,22 +1411,47 @@ Scheme_Object *scheme_hash_module_variable(Scheme_Env *env, Scheme_Object *modid
     scheme_hash_set(env->modvars, modidx, (Scheme_Object *)ht);
   }
 
-  val = scheme_hash_get(ht, stxsym);
-
-  if (!val) {
-    Module_Variable *mv;
-
-    mv = MALLOC_ONE_TAGGED(Module_Variable);
-    mv->so.type = scheme_module_variable_type;
+  /* Loop for inspector-specific hash table, maybe: */
+  while (1) {
     
-    mv->modidx = modidx;
-    mv->sym = stxsym;
-    mv->pos = pos;
-    mv->mod_phase = mod_phase;
-
-    val = (Scheme_Object *)mv;
-
-    scheme_hash_set(ht, stxsym, val);
+    val = scheme_hash_get(ht, stxsym);
+    
+    if (!val) {
+      Module_Variable *mv;
+      
+      mv = MALLOC_ONE_TAGGED(Module_Variable);
+      mv->so.type = scheme_module_variable_type;
+      
+      mv->modidx = modidx;
+      mv->sym = stxsym;
+      mv->insp = insp;
+      mv->pos = pos;
+      mv->mod_phase = mod_phase;
+      
+      val = (Scheme_Object *)mv;
+      
+      scheme_hash_set(ht, stxsym, val);
+      
+      break;
+    } else {
+      /* Check that inspector is the same. */
+      Module_Variable *mv = (Module_Variable *)val;
+      
+      if (!SAME_OBJ(mv->insp, insp)) {
+	/* Need binding for a different inspector. Try again. */
+	val = scheme_hash_get(ht, insp);
+	if (!val) {
+	  Scheme_Hash_Table *ht2;
+	  /* Make a table for this specific inspector */
+	  ht2 = scheme_make_hash_table(SCHEME_hash_ptr);
+	  scheme_hash_set(ht, insp, (Scheme_Object *)ht2);
+	  ht = ht2;
+	  /* loop... */
+	} else
+	  ht = (Scheme_Hash_Table *)val;
+      } else
+	break;
+    }
   }
 
   return val;
@@ -1884,7 +1915,8 @@ Scheme_Object *scheme_add_env_renames(Scheme_Object *stx, Scheme_Comp_Env *env,
 */
 
 Scheme_Object *
-scheme_lookup_binding(Scheme_Object *find_id, Scheme_Comp_Env *env, int flags)
+scheme_lookup_binding(Scheme_Object *find_id, Scheme_Comp_Env *env, int flags,
+		      Scheme_Object *certs, Scheme_Env **_menv)
 {
   Scheme_Comp_Env *frame;
   int j = 0, p = 0, modpos, skip_stops = 0, mod_defn_phase;
@@ -2017,6 +2049,9 @@ scheme_lookup_binding(Scheme_Object *find_id, Scheme_Comp_Env *env, int flags)
     }
   }
 
+  if (_menv && genv->module)
+    *_menv = genv;
+  
   if (!modname && SCHEME_STXP(find_id))
     find_global_id = scheme_tl_id_sym(env->genv, find_id, 0);
   else
@@ -2026,8 +2061,7 @@ scheme_lookup_binding(Scheme_Object *find_id, Scheme_Comp_Env *env, int flags)
   if (modname) {
     val = scheme_module_syntax(modname, env->genv, find_id);
     if (val)
-      scheme_check_accessible_in_module(genv, scheme_hash_get(env->genv->module_registry, scheme_void),
-					find_id, src_find_id, -2, 0);
+      scheme_check_accessible_in_module(genv, env->insp, find_id, src_find_id, certs, NULL, -2, 0);
   } else {
     /* Only try syntax table if there's not an explicit (later)
        variable mapping: */
@@ -2046,8 +2080,7 @@ scheme_lookup_binding(Scheme_Object *find_id, Scheme_Comp_Env *env, int flags)
 
   if (modname) {
     Scheme_Object *pos;
-    pos = scheme_check_accessible_in_module(genv, scheme_hash_get(env->genv->module_registry, scheme_void),
-					    find_id, src_find_id, -1, 1);
+    pos = scheme_check_accessible_in_module(genv, env->insp, find_id, src_find_id, certs, NULL, -1, 1);
     modpos = SCHEME_INT_VAL(pos);
   } else
     modpos = -1;
@@ -2075,12 +2108,16 @@ scheme_lookup_binding(Scheme_Object *find_id, Scheme_Comp_Env *env, int flags)
      idea, because it causes module instances to be preserved. */
   if (modname && !(flags & SCHEME_RESOLVE_MODIDS) && !SAME_OBJ(modidx, kernel_symbol)) {
     /* Create a module variable reference, so that idx is preserved: */
-    return scheme_hash_module_variable(env->genv, modidx, find_id, modpos, mod_defn_phase);
+    return scheme_hash_module_variable(env->genv, modidx, find_id, 
+				       env->insp,
+				       modpos, mod_defn_phase);
   }
 
   if (!modname && (flags & SCHEME_SETTING) && genv->module) {
     /* Need to return a variable reference in this case, too. */
-    return scheme_hash_module_variable(env->genv, genv->module->self_modidx, find_global_id, modpos, genv->mod_phase);
+    return scheme_hash_module_variable(env->genv, genv->module->self_modidx, find_global_id, 
+				       env->insp,
+				       modpos, genv->mod_phase);
   }
 
   b = scheme_bucket_from_table(genv->toplevel, (char *)find_global_id);
@@ -2563,7 +2600,7 @@ namespace_variable_value(int argc, Scheme_Object *argv[])
     init_compile_data((Scheme_Comp_Env *)&inlined_e);
     inlined_e.base.prefix = NULL;
 
-    v = scheme_lookup_binding(id, (Scheme_Comp_Env *)&inlined_e, SCHEME_RESOLVE_MODIDS);
+    v = scheme_lookup_binding(id, (Scheme_Comp_Env *)&inlined_e, SCHEME_RESOLVE_MODIDS, NULL, NULL);
     if (v) {
       if (!SAME_TYPE(SCHEME_TYPE(v), scheme_variable_type)) {
 	use_map = -1;
@@ -2736,7 +2773,8 @@ local_exp_time_value(int argc, Scheme_Object *argv[])
 			      (SCHEME_NULL_FOR_UNBOUND
 			       + SCHEME_RESOLVE_MODIDS
 			       + SCHEME_APP_POS + SCHEME_ENV_CONSTANTS_OK
-			       + SCHEME_OUT_OF_CONTEXT_OK + SCHEME_ELIM_CONST));
+			       + SCHEME_OUT_OF_CONTEXT_OK + SCHEME_ELIM_CONST),
+			      NULL, NULL);
     
     /* Deref globals */
     if (v && SAME_TYPE(SCHEME_TYPE(v), scheme_variable_type))
@@ -3108,12 +3146,16 @@ static Scheme_Object *read_variable(Scheme_Object *obj)
       return (Scheme_Object *)scheme_global_bucket(varname, scheme_initial_env);
     else {
       Module_Variable *mv;
+      Scheme_Object *insp;
+
+      insp = scheme_get_param(scheme_current_config(), MZCONFIG_INSPECTOR);
       
       mv = MALLOC_ONE_TAGGED(Module_Variable);
       mv->so.type = scheme_module_variable_type;
       
       mv->modidx = modname;
       mv->sym = varname;
+      mv->insp = insp; /* FIXME: scheme_true means "trust me"! */
       mv->pos = -1;
       mv->mod_phase = mod_phase;
 

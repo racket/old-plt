@@ -432,7 +432,7 @@ static Scheme_Object *os_wxMediaStreamInBaseRead(int n,  Scheme_Object *p[])
 
   x0 = VectorToArray(NULL, p[POFFSET], &x1);
   if (((Scheme_Class_Object *)p[0])->primflag)
-    r = WITH_VAR_STACK(((os_wxMediaStreamInBase *)((Scheme_Class_Object *)p[0])->primdata)->Read(x0, x1));
+    r =  0;
   else
     r = WITH_VAR_STACK(((wxMediaStreamInBase *)((Scheme_Class_Object *)p[0])->primdata)->Read(x0, x1));
 
@@ -456,7 +456,7 @@ static Scheme_Object *os_wxMediaStreamInBaseBad(int n,  Scheme_Object *p[])
 
   
   if (((Scheme_Class_Object *)p[0])->primflag)
-    r = WITH_VAR_STACK(((os_wxMediaStreamInBase *)((Scheme_Class_Object *)p[0])->primdata)->Bad());
+    r =  0;
   else
     r = WITH_VAR_STACK(((wxMediaStreamInBase *)((Scheme_Class_Object *)p[0])->primdata)->Bad());
 
@@ -481,7 +481,7 @@ static Scheme_Object *os_wxMediaStreamInBaseSkip(int n,  Scheme_Object *p[])
 
   
   if (((Scheme_Class_Object *)p[0])->primflag)
-    WITH_VAR_STACK(((os_wxMediaStreamInBase *)((Scheme_Class_Object *)p[0])->primdata)->Skip(x0));
+    {}
   else
     WITH_VAR_STACK(((wxMediaStreamInBase *)((Scheme_Class_Object *)p[0])->primdata)->Skip(x0));
 
@@ -506,7 +506,7 @@ static Scheme_Object *os_wxMediaStreamInBaseSeek(int n,  Scheme_Object *p[])
 
   
   if (((Scheme_Class_Object *)p[0])->primflag)
-    WITH_VAR_STACK(((os_wxMediaStreamInBase *)((Scheme_Class_Object *)p[0])->primdata)->Seek(x0));
+    {}
   else
     WITH_VAR_STACK(((wxMediaStreamInBase *)((Scheme_Class_Object *)p[0])->primdata)->Seek(x0));
 
@@ -530,7 +530,7 @@ static Scheme_Object *os_wxMediaStreamInBaseTell(int n,  Scheme_Object *p[])
 
   
   if (((Scheme_Class_Object *)p[0])->primflag)
-    r = WITH_VAR_STACK(((os_wxMediaStreamInBase *)((Scheme_Class_Object *)p[0])->primdata)->Tell());
+    r =  0;
   else
     r = WITH_VAR_STACK(((wxMediaStreamInBase *)((Scheme_Class_Object *)p[0])->primdata)->Tell());
 
@@ -846,7 +846,7 @@ static Scheme_Object *os_wxMediaStreamOutBaseWrite(int n,  Scheme_Object *p[])
 
   x0 = WITH_VAR_STACK(__MakecharArray((0+POFFSET < n) ? p[POFFSET+0] : scheme_null, &x1, METHODNAME("editor-stream-out-base%","write")));
   if (((Scheme_Class_Object *)p[0])->primflag)
-    WITH_VAR_STACK(((os_wxMediaStreamOutBase *)((Scheme_Class_Object *)p[0])->primdata)->Write(x0, x1));
+    {}
   else
     WITH_VAR_STACK(((wxMediaStreamOutBase *)((Scheme_Class_Object *)p[0])->primdata)->Write(x0, x1));
 
@@ -870,7 +870,7 @@ static Scheme_Object *os_wxMediaStreamOutBaseBad(int n,  Scheme_Object *p[])
 
   
   if (((Scheme_Class_Object *)p[0])->primflag)
-    r = WITH_VAR_STACK(((os_wxMediaStreamOutBase *)((Scheme_Class_Object *)p[0])->primdata)->Bad());
+    r =  0;
   else
     r = WITH_VAR_STACK(((wxMediaStreamOutBase *)((Scheme_Class_Object *)p[0])->primdata)->Bad());
 
@@ -895,7 +895,7 @@ static Scheme_Object *os_wxMediaStreamOutBaseSeek(int n,  Scheme_Object *p[])
 
   
   if (((Scheme_Class_Object *)p[0])->primflag)
-    WITH_VAR_STACK(((os_wxMediaStreamOutBase *)((Scheme_Class_Object *)p[0])->primdata)->Seek(x0));
+    {}
   else
     WITH_VAR_STACK(((wxMediaStreamOutBase *)((Scheme_Class_Object *)p[0])->primdata)->Seek(x0));
 
@@ -919,7 +919,7 @@ static Scheme_Object *os_wxMediaStreamOutBaseTell(int n,  Scheme_Object *p[])
 
   
   if (((Scheme_Class_Object *)p[0])->primflag)
-    r = WITH_VAR_STACK(((os_wxMediaStreamOutBase *)((Scheme_Class_Object *)p[0])->primdata)->Tell());
+    r =  0;
   else
     r = WITH_VAR_STACK(((wxMediaStreamOutBase *)((Scheme_Class_Object *)p[0])->primdata)->Tell());
 

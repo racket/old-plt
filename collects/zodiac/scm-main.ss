@@ -264,6 +264,12 @@
 					  (loop (cons first seen)
 					    (cdr rest))
 					  (values (reverse seen) rest)))))))
+			       (let loop ((terms terms))
+				 (unless (null? terms)
+				   (when (define-values-form? (car terms))
+				     (static-error (car terms)
+				       "Internal definition not at beginning"))
+				   (loop (cdr terms))))
 			       (if (null? definitions)
 				 (create-begin-form terms expr)
 				 (create-letrec*-values-form
@@ -497,6 +503,10 @@
 		(let ((define-values-helper
 			(lambda (handler)
 			  (lambda (expr env attributes vocab)
+			    (when (language<=? 'structured) ; < side-effecting,
+					; where begin kicks in
+			      (unless (at-top-level? attributes)
+				(static-error expr "Not at top-level")))
 			    (cond
 			      ((pat:match-against m&e-1 expr env)
 				=>

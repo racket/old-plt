@@ -387,7 +387,7 @@ int MrEdGetNextEvent(int check_only, int current_only,
 	        fprintf(log_file_ptr,"L%X\n",win);
 	    }
 	    fflush(log_file_ptr);
-        if (win->IsShown()) {
+        if ((win->__type != -1) && win->IsShown()) {
           fr = (wxFrame *)win->GetRootFrame();
 	      fc = fr ? (MrEdContext *)fr->context : NULL;
 	      if ((!c && !fr) || (!c && fc->ready) || (fc == c)) {

@@ -1,13 +1,10 @@
 #!/bin/sh
 #|
 # PLT software installer
-#
-# Configures PLTHOME path within scripts
-#
-# Can create .zo files or re-use existing ones (modifying .dep files)
-#
+# ----------------------
 # Normally it'll use MzScheme (will search for it at the same place this script
 # is), but it can also be used with mred for graphic installations.
+# Run with `-h' for more information.
 
 # Try to find where mzscheme is, usually where this script is being run from
 if [ -x install -a -d collects ]; then
@@ -49,26 +46,10 @@ exit 1
 
 (define plthome #f)
 (define this-script #f)
-(define didnothing? #t)
-
-;; this will be the same as plthome, except when a `-p' argument is used.
-;; `plthome' always points at the current plthome, the one we use to load
-;; stuff.
-(define fake-plthome #f)
-
-(define zos?          #t)
-(define scripts?      #t)
-(define updates?      #f)
 (define install-mode? #f)
 
-(define (set-install-mode!)
-  (set! install-mode? #t)
-  (set! zos? #t)
-  (set! scripts? #f)
-  (set! updates? #f))
-
 (when (or (getenv "OSX_PLT_INSTALL") (getenv "RPM_INSTALL_PREFIX"))
-  (set-install-mode!))
+  (set! install-mode? #t))
 
 (define (set-plthome this)
   (let-values ([(dir name dir?)
@@ -79,7 +60,6 @@ exit 1
     (current-directory dir)
     (current-directory ".") ; avoid a "/" suffix
     (set! plthome (current-directory))
-    (unless fake-plthome (set! fake-plthome plthome))
     (unless (and (directory-exists? "collects/mzlib") (file-exists? name))
       (error 'install
              "Can't find the PLT installation this script (~a) is part of"
@@ -93,24 +73,9 @@ exit 1
 
 (require (lib "cmdline.ss"))
 (define (process-command-line)
-  (define no-install-flag #f)
-  (define (install-flag-error)
-    (error 'install "Cannot use -i with other flags"))
-  (define-syntax set!!
-    (syntax-rules ()
-      [(set!! var val) (begin (when install-mode? (install-flag-error))
-                              (set! no-install-flag #t)
-                              (set! var val))]))
   (define more-help
     (lambda (help)
-      (for-each display
-                '("This is the PLT installer.\n"
-                  "  When it is used with the \"-i\" flag, it will run in\n"
-                  "  `install-mode' -- updating launchers, and preparing an\n"
-                  "  existing tree for operation.  This is intended as a\n"
-                  "  one-time operation so it will remove itself when it is\n"
-                  "  done.\n"
-                  "Usage: "))
+      (display "This is the PLT installer.\nUsage: ")
       (display help)
       (exit 0)))
   (command-line "install" (current-command-line-arguments)
@@ -118,24 +83,10 @@ exit 1
      (("-i")
       "Install mode.\n\
        This is a `one-time option' that is intended to be used with\n\
-       installers or after retrieving a fresh plt tree; this script will be\n\
-       deleted afterwars.  It cannot be used with any of the other flags."
-      (when no-install-flag (install-flag-error))
-      (set-install-mode!))
-     (("-z") "skip .zo file compilation"                   (set!! zos? #f))
-     (("+z") "compile .zo files (default)"                 (set!! zos? #t))
-     (("-s") "skip modifying PLTHOME in scripts"           (set!! scripts? #f))
-     (("+s") "modify PLTHOME setting in scripts (default)" (set!! scripts? #t))
-     (("-u") "skip on-line updates checking (default)"     (set!! updates? #f))
-     (("+u") "check for on-line updates (temporarily disabled)"
-                                                           (set!! updates? #t))
-     (("-p") explicit-home
-      "use explicit PLTHOME value instead of the current directory."
-      (set!! fake-plthome explicit-home)
-      (unless (absolute-path? explicit-home)
-        (error './install
-               "bad value for PLTHOME, expected an absolute path, got ~s"
-               explicit-home))))
+       installers or after retrieving a fresh plt tree.  This will re-use\n\
+       existing zos (making only missing ones), and recreate the launchers.\n\
+       This script will be deleted afterwars."
+      (set! install-mode? #t)))
     (=> (lambda (_) _) '() more-help)))
 
 ;; Set up GUI if we're using MrEd
@@ -203,83 +154,37 @@ exit 1
                  1))))
       (initial-exception-handler (current-exception-handler)))))
 
-(define (update-scripts)
-  (when scripts?
-    (printf "setting PLTHOME to ~s in scripts:\n" fake-plthome)
-    (parameterize ([current-directory "bin"])
-      (define (scan-file)
-        (let loop ([ls null] [changed? #f])
-          (let ([l (read-line)])
-            (cond
-             ((eof-object? l) (values (reverse ls) changed?))
-             ((regexp-match #rx"^( *)PLTHOME=(.*)$" l) =>
-              (lambda (m)
-                (loop (cons (format "~aPLTHOME=~s" (cadr m) fake-plthome) ls)
-                      #t)))
-             (else (loop (cons l ls) changed?))))))
-      (for-each
-       (lambda (f)
-         (cond
-          [(not (file-exists? f)) '-]
-          [(and (file-exists? f) (> (file-size f) 4096))
-           (printf " skipping ~a\n" f)]
-          [else
-           (set! didnothing? #f)
-           (printf " checking ~a..." f)
-           (let-values ([(lines changed?) (with-input-from-file f scan-file)])
-             (if changed?
-               (begin (printf " updating\n")
-                      (with-output-to-file f
-                        (lambda ()
-                          (for-each (lambda (l) (display l) (newline)) lines))
-                        'truncate))
-               (printf " nothing to do\n")))]))
-       (directory-list)))))
-
-(define (check-updates)
-  (when updates?
-    ((dynamic-require '(lib "check-text.ss" "version") 'check-version))))
-
 (define (create-zos)
-  (if zos?
-    (parameterize
-        (;; Need a new namespace to ensure that all modules are compiled,
-	 ;; including ones we've already loaded.  We also need to re-enable
-	 ;; compiled files, since cm.ss checks on that flag.
-         [current-namespace (make-namespace)]
-         [use-compiled-file-kinds 'all]
-         [current-command-line-arguments
-          (if install-mode? #("--trust-zos" "--no-install") #())]
-         ;; setup will use `exit' when done, so catch these, and stop if
-         ;; non-zero
-         [exit-handler
-          (lambda (n)
-            (unless (zero? n)
-              (error 'install "Errors in compilation process! (~a)" n)))]
-         ;; also, protect `current-directory' since it will change
-         [current-directory (current-directory)])
-      (set! didnothing? #f)
-      (dynamic-require '(lib "setup.ss" "setup") #f))
-    (for-each display
-              (list "Skipping .zo-file creation; create .zo files later by "
-                    "running\n  " plthome "/bin/setup-plt\n"))))
+  (parameterize
+      (;; Need a new namespace to ensure that all modules are compiled,
+       ;; including ones we've already loaded.  We also need to re-enable
+       ;; compiled files, since cm.ss checks on that flag.
+       [current-namespace (make-namespace)]
+       [use-compiled-file-kinds 'all]
+       [current-command-line-arguments
+        (if install-mode? #("--trust-zos" "--no-install") #())]
+       ;; setup will use `exit' when done, so catch these, and stop if
+       ;; non-zero
+       [exit-handler
+        (lambda (n)
+          (unless (zero? n)
+            (error 'install "Errors in compilation process! (~a)" n)))]
+       ;; also, protect `current-directory' since it will change
+       [current-directory (current-directory)])
+    (set! didnothing? #f)
+    (dynamic-require '(lib "setup.ss" "setup") #f)))
 
 (define (main args)
   (set-plthome (car args))
   (setup-environment)
   (process-command-line)
-  (update-scripts)
-  (check-updates)
   (create-zos)
+  (display "PLT installation done.\n")
   (cond [(not install-mode?)
-         (printf "PLT installation done~a.\n"
-                 (if didnothing? " (nothing to do)" ""))
          (when (file-exists? "bin/drscheme")
            (for-each display '("\nRun DrScheme as bin/drscheme.\nFor Help, "
                                "select `Help Desk' from DrScheme's `Help' "
                                "menu,\nor run bin/help-desk.\n")))
          ;; if we're using GUI, and not in install mode, don't close the window
          (exit 0)]
-        [this-script
-         (display "Installation complete.\n")
-         (delete-file this-script)]))
+        [this-script (delete-file this-script)]))

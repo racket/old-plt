@@ -1,0 +1,40 @@
+/*
+ * File:	wx_gbox.h
+ * Purpose:	Tab group panel item
+ * Author:	Matthew
+ * Created:	2002
+ * Copyright:	(c) 2002, PLT
+ */
+
+#ifndef wx_gboxh
+#define wx_gboxh
+
+#include "wx_item.h"
+
+class wxGroupBox : public wxItem
+{
+ public:
+  wxGroupBox(wxPanel *panel, char *label, int style);
+  ~wxGroupBox();
+
+  virtual void DoShow(Bool show);
+  virtual void OnClientAreaDSize(int dW, int dH, int dX, int dY);
+
+  virtual char *GetLabel();
+  virtual void SetLabel(char *);
+
+  virtual void Refresh(void);
+
+  ControlHandle pane;
+
+  virtual void Activate(Bool gray);
+  virtual void MaybeMoveControls();
+
+protected:
+  virtual void ChangeToGray(Bool gray);
+  virtual void Paint(void);
+
+  int orig_height;
+};
+
+#endif // wx_gboxh

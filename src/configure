@@ -5066,7 +5066,6 @@ rm -f core core.* *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext 
 fi
   if test "$linker_dash_e" = "no" ; then
     LDFLAGS="${orig_ldflags}"
-  else
   fi
   echo "$as_me:$LINENO: result: $linker_dash_e" >&5
 echo "${ECHO_T}$linker_dash_e" >&6

@@ -1,6 +1,6 @@
 (module configuration-structures mzscheme
   (require "util.ss"
-           "configuration-table-structures.ss")
+           "configuration-table-structs.ss")
   (provide (struct timeouts (default-servlet password servlet-connection file-per-byte file-base))
            (struct paths (host-base log htdocs servlet)))
   

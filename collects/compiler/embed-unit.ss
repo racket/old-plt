@@ -25,14 +25,11 @@
 	  [(macosx) (values ".app" '(enter-packages) #f)]
 	  [else (values #f null null)]))
 
-      ;; Find executable via (find-system-path 'exec-file), then
-      ;;  fixup name to be MrEd or MzScheme because we may
-      ;;  be running in MzScheme when we want MrEd.
-      ;;  The fixup process is a bit tricky in OS X, since
-      ;;  the MzScheme and MrEd binaries have very different locations.
+      ;; Find executable relative to the "mzlib"
+      ;; collection.
       (define (find-exe mred? variant)
-	(let* ([sp (find-system-path 'exec-file)]
-	       [exe (find-executable-path sp #f)]
+	(let* ([c-path (collection-path "mzlib")]
+	       [base (build-path c-path 'up 'up)]
 	       [fail
 		(lambda ()
 		  (error 'make-embedding-executable
@@ -41,46 +38,41 @@
 	       [variant-suffix (case variant
 				 [(normal) ""]
 				 [(3m) "3m"])])
-	  (unless exe (fail))
-	  (let-values ([(base name dir?) (split-path exe)])
-	    (let* ([mr (regexp-match
-			"^(.*)([Mm][Rr][Ee][Dd][a-zA-Z0-9 ]*)(.*)$"
-			name)]
-		   [mz (regexp-match
-			"^(.*)([Mm][Zz][Ss][Cc][Hh][Ee][Mm][Ee][a-zA-Z0-9 ]*)(.*)$"
-			name)]
-		   [r (or mr mz)])
-	      (unless r (fail))
-	      (if (eq? 'macosx (system-type))
-		  ;; OS X --- found Mz or Mr and need Mz or Mr,
-		  ;;  but Mz and Mr have different paths...
-		  (let ([plt-rel
+	  (let ([exe (build-path
+		      base
+		      (case (system-type)
+			[(macosx)
 			 (cond
 			  [(not mred?)
 			   ;; Need MzScheme:
-			   (build-path"bin" (string-append 
-					     "mzscheme"
-					     variant-suffix))]
+			   (build-path "bin" (string-append 
+					      "mzscheme"
+					      variant-suffix))]
 			  [mred?
 			   ;; Need MrEd:
 			   (build-path (format "MrEd~a.app" variant-suffix)
 				       "Contents" "MacOS" 
-				       (format "MrEd~a" variant-suffix))])])
-		    (if mr
-			(build-path base 'up 'up 'up plt-rel)
-			(build-path base 'up plt-rel)))
-		  ;; Not OS X --- simply splice in the right name:
-		  (let ([exe
-			 (build-path base
-				     (string-append (cadr r)
-						    (if mred?
+				       (format "MrEd~a" variant-suffix))])]
+			[(windows)
+			 (format "~a~a.exe" (if mred?
+						"mred"
+						"mzscheme")
+				 variant-suffix)]
+			[(unix)
+			 (build-path "bin"
+				     (format "~a~a" (if mred?
 							"mred"
 							"mzscheme")
-						    variant-suffix
-						    (cadddr r)))])
-		    (unless (file-exists? exe)
-		      (fail))
-		    exe))))))
+					     variant-suffix))]
+			[(macos)
+			 (format "~a~a" (if mred?
+					    "MrEd"
+					    "MzScheme")
+				 variant-suffix)]))])
+	    (unless (or (file-exists? exe)
+			(directory-exists? exe))
+	      (fail))
+	    exe)))
 
       ;; Find the magic point in the binary:
       (define (find-cmdline)

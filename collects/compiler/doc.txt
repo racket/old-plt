@@ -339,7 +339,7 @@ Embedding Scheme Code to Create a Stand-alone Executable
 ========================================================
 
 The _embed.ss_ library provides a function to embed Scheme code into a
-copy of MzScheme or MrEd, thus creating a (large) _stand-alone_ Scheme
+copy of MzScheme or MrEd, thus creating a _stand-alone_ Scheme
 executable.
 
 The _embedr-unit.ss_ library provides a signed unit, _compiler:embed@_
@@ -349,6 +349,7 @@ _embedr-sig.ss_ library provides the signature, _compiler:embed^_.
 > (make-embedding-executable dest mred? verbose? mod-list literal-file-list literal-sexpr cmdline-list [aux launcher? variant])
   - Copies the MzScheme (if `mred?' is #f) or MrEd (otherwise) binary,
   embedding code into the copied executable to be loaded on startup.
+  The source executable is located relative to the "mzlib" collection.
 
   See the mzc documentation for a simpler interface that is
   well-suited to programs defined with `module'.

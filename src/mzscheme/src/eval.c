@@ -1259,36 +1259,54 @@ static Scheme_Object *
 scheme_inner_compile_list(Scheme_Object *form, Scheme_Comp_Env *env, 
 			  Scheme_Compile_Info *rec, int drec, int start_app_position)
 {
-  if (SCHEME_STX_NULLP(form)) {
+  int len;
+
+  len = scheme_stx_proper_list_length(form);
+
+  if (!len) {
     scheme_compile_rec_done_local(rec, drec);
     scheme_default_compile_rec(rec, drec);
     return scheme_null;
-  } else if (SCHEME_STX_PAIRP(form)) {
-    Scheme_Compile_Info recs[2];
-    Scheme_Object *c1, *c2, *name, *first, *rest;
+  } else if (len > 0) {
+    Scheme_Compile_Info *recs, quick[5];
+    int i;
+    Scheme_Object *c, *p, *comp_first, *comp_last, *name, *first, *rest;
 
     name = rec[drec].value_name;
     scheme_compile_rec_done_local(rec, drec);
-    scheme_init_compile_recs(rec, drec, recs, 2);
-
-    first = SCHEME_STX_CAR(form);
-    rest = SCHEME_STX_CDR(form);
-    if (SCHEME_STX_NULLP(rest))
-      recs[0].value_name = name;
+    
+    if (len <= 5)
+      recs = quick;
     else
-      recs[1].value_name = name;
+      recs = MALLOC_N_RT(Scheme_Compile_Info, len);
+    scheme_init_compile_recs(rec, drec, recs, len);
+    recs[len - 1].value_name = name;
 
-    c1 = scheme_compile_expand_expr(first, env, recs, 0,
-				    1, scheme_false, start_app_position);
-    /* if (start_app_position)
-      recs[0].is_proc_closure = 0; */
-    c2 = scheme_inner_compile_list(rest, env, recs, 1, 0);
+    comp_first = comp_last = NULL;
 
-    scheme_merge_compile_recs(rec, drec, recs, 2);
+    for (i = 0, rest = form; i < len; i++) {
+      first = SCHEME_STX_CAR(rest);
+      rest = SCHEME_STX_CDR(rest);
 
-    return scheme_make_immutable_pair(c1, c2);
-  } else
-    return scheme_compile_expr(form, env, rec, drec);
+      c = scheme_compile_expand_expr(first, env, recs, i,
+				      1, scheme_false,
+				      !i && start_app_position);
+
+      p = scheme_make_immutable_pair(c, scheme_null);
+      if (comp_last)
+	SCHEME_CDR(comp_last) = p;
+      else
+	comp_first = p;
+      comp_last = p;
+    }
+
+    scheme_merge_compile_recs(rec, drec, recs, len);
+
+    return comp_first;
+  } else {
+    scheme_signal_error("internal error: compile-list on non-list");
+    return NULL;
+  }
 }
 
 static Scheme_Object *compile_application(Scheme_Object *form, Scheme_Comp_Env *env,

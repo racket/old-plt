@@ -88,7 +88,7 @@
 				   "/usr/bin/ispell"
 				   "/bin/ispell"
 				   "/usr/local/bin/ispell")))])
-        (if existing
+        (if (not existing)
             (set! has-ispell? #f)
             (begin
               (set! has-ispell? #t)
@@ -102,10 +102,10 @@
 								       ;; Tell ispell to treat every character
 								       ;;  as part of a word, because our lexer
 								       ;;  has already separated words.
-								       (let loop ([n 0][l null])
-									 (if (= n 256)
+								       (let loop ([n 255][l null])
+									 (if (= n 0)
 									     (apply string-append l)
-									     (loop (add1 n)
+									     (loop (sub1 n)
 										   (cons
 										    (format "n~a" n)
 										    l))))))])

@@ -70,8 +70,8 @@
                         (apply action (map recon-call 2-list)))]
          [collector (collect-in-pairs-maker pair-action)])
     (lambda (expr)
-      (lambda (mark-set key break-kind returned-value-list)
-        (let ([mark-list (continuation-mark-set->list mark-set key)])
+      (lambda (mark-set break-kind returned-value-list)
+        (let ([mark-list (extract-mark-list mark-set)])
           (unless (reconstruct:skip-step? break-kind mark-list)
             (case break-kind
               ((normal-break)
@@ -199,11 +199,11 @@
 ;                    ((,highlight-placeholder) ((+ 9 29)))
 ;                    ((,highlight-placeholder) (38))))
 
-(test-mz-sequence "((call-with-current-continuation call-with-current-continuation) (call-with-current-continuation call-with-current-continuation))"
-                  `((((,highlight-placeholder (call-with-current-continuation call-with-current-continuation))) ((call-with-current-continuation call-with-current-continuation)))
-                    (((,highlight-placeholder (call-with-current-continuation call-with-current-continuation))) ((lambda args ...)))
-                    ((((lambda args ...) ,highlight-placeholder)) ((call-with-current-continuation call-with-current-continuation)))
-                    ((((lambda args ...) ,highlight-placeholder)) ((lambda args ...)))))
+;(test-mz-sequence "((call-with-current-continuation call-with-current-continuation) (call-with-current-continuation call-with-current-continuation))"
+;                  `((((,highlight-placeholder (call-with-current-continuation call-with-current-continuation))) ((call-with-current-continuation call-with-current-continuation)))
+;                    (((,highlight-placeholder (call-with-current-continuation call-with-current-continuation))) ((lambda args ...)))
+;                    ((((lambda args ...) ,highlight-placeholder)) ((call-with-current-continuation call-with-current-continuation)))
+;                    ((((lambda args ...) ,highlight-placeholder)) ((lambda args ...)))))
 
 ;(test-mz-sequence '(begin (define g 3) g)
 ;                  `(((,highlight-placeholder) (g))
@@ -241,6 +241,22 @@
                         `(((,highlight-placeholder) ((and true false true)))
                           ((,highlight-placeholder) ((and false true)))
                           ((,highlight-placeholder) ((and false true)))
+                          ((,highlight-placeholder) (false))))
+
+(test-beginner-sequence "(define (a2 x) x) (a2 4)"
+                        `(((,highlight-placeholder) ((a2 4)))
+                          ((,highlight-placeholder) (4))))
+
+(test-beginner-sequence "(define (a3 x) (if true x x)) (a3 false)"
+                        `(((,highlight-placeholder) ((a3 false)))
+                          ((,highlight-placeholder) ((if true false false)))
+                          ((,highlight-placeholder) ((if true false false)))
+                          ((,highlight-placeholder) (false))))
+
+(test-beginner-sequence "(define (b2 x) (and true x)) (b2 false)"
+                        `(((,highlight-placeholder) ((b2 false)))
+                          ((,highlight-placeholder) ((and true false)))
+                          ((,highlight-placeholder) ((and true false)))
                           ((,highlight-placeholder) (false))))
 
 (test-beginner-sequence "(define a1 true)(define (b1 x) (and a1 true x)) (b1 false)"

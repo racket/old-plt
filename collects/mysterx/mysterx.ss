@@ -2569,5 +2569,5 @@
    (lambda () 
      (let loop ()
        (mxprims:process-win-events)
-       (sleep)
+       (sleep 0.01)
        (loop)))))

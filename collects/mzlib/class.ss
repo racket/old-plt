@@ -483,6 +483,15 @@
 	 (identifier? (syntax m))
 	 (syntax ((ivar o m) arg ...))])))
 
+  (define-syntax send*
+    (lambda (stx)
+      (syntax-case stx ()
+	[(_ obj (meth arg ...) ...)
+	 (syntax/loc stx
+		     (let ([o obj])
+		       (send o meth arg ...)
+		       ...))])))
+  
   (define (make-generic/proc c n)
     (unless (or (class? c) (interface? c))
       (raise-type-error 'make-generic "class or interface" 0 c n))
@@ -894,6 +903,20 @@
 	 (with-syntax ([class* (datum->syntax 'class* stx (stx-car stx))])
 	   (syntax/loc stx (class* super-expr () init-vars clauses ...)))])))
 
+  (define-syntax class*-asi
+    (lambda (stx)
+      (syntax-case stx ()
+	[(_ super (interface ...) body ...)
+	 (syntax/loc stx (class* super (interface ...) args
+			   body ...))])))
+
+  (define-syntax class-asi
+    (lambda (stx)
+      (syntax-case stx ()
+	[(_ super body ...)
+	 (syntax/loc stx (class* super () args
+			   body ...))])))
+  
   (define-syntax interface
     (lambda (stx)
       (syntax-case stx ()
@@ -927,13 +950,14 @@
 		   undefined needs-init)
 
   (export class class* class*/names
+	  class-asi class*-asi
 	  interface
 	  make-object object? is-a? subclass? class? interface?
 	  class->interface object-interface
 	  implementation? interface-extension?
 	  ivar-in-interface? interface->ivar-names
 	  class-initialization-arity
-	  ivar send make-generic
+	  ivar send send* make-generic
 	  ivar/proc make-generic/proc
 	  object% ;; object<%>
 	  exn:object? struct:exn:object make-exn:object

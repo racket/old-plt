@@ -2,7 +2,7 @@
 ;; Unit system
 
 (module unit mzscheme
-  (import-for-syntax mzscheme)
+  (import-for-syntax (lib "kerncase.ss" "syntax"))
 
   (define undefined (letrec ([x x]) x))
 
@@ -73,28 +73,8 @@
 				 (lambda (defn-or-expr)
 				   (local-expand
 				    defn-or-expr
-				    (list*
-				     ;; Need all kernel syntax
-				     (quote-syntax begin)
-				     (quote-syntax define-values)
-				     (quote-syntax define-syntax)
-				     (quote-syntax set!)
-				     (quote-syntax let)
-				     (quote-syntax let-values)
-				     (quote-syntax let*)
-				     (quote-syntax let*-values)
-				     (quote-syntax letrec)
-				     (quote-syntax letrec-values)
-				     (quote-syntax lambda)
-				     (quote-syntax case-lambda)
-				     (quote-syntax if)
-				     (quote-syntax struct)
-				     (quote-syntax quote)
-				     (quote-syntax letrec-syntax)
-				     (quote-syntax with-continuation-mark)
-				     (quote-syntax #%app)
-				     (quote-syntax #%unbound)
-				     (quote-syntax #%datum)
+				    (append
+				     (kernel-form-identifier-list (quote-syntax here))
 				     declared-names)))
 				 defns&exprs)])
 			   (apply

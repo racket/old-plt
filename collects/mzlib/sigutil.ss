@@ -410,7 +410,7 @@
 	   clause)))))
 
   (define parse-unit
-    (lambda (expr body sig user-stx-forms dv-stx begin-stx inc-stx)
+    (lambda (expr body sig user-stx-forms dv-stx begin-stx)
       (let ([body (stx->list body)])
 	(unless body
 	  (syntax-error 'unit/sig expr "illegal use of `.'"))
@@ -524,49 +524,6 @@
 			      port-name
 			      body
 			      vars))]
-		     [(and (stx-pair? line)
-			   (module-identifier=? (stx-car line) inc-stx))
-		      (syntax-case line ()
-			[(_ filename)
-			 (string? (syntax-e (syntax filename)))
-			 (let ([file (syntax-e (syntax filename))])
-			   (let-values ([(base name dir?) (split-path file)])
-			     (when dir?
-			       (syntax-error 'unit/sig expr 
-					     (format "cannot include a directory ~s"
-						     file)))
-			     (let* ([old-dir (current-load-relative-directory)]
-				    [c-file (if (and old-dir (not (complete-path? file)))
-						(path->complete-path file old-dir)
-						file)]
-				    [p (open-input-file c-file)])
-			       (let-values ([(lines body vars)
-					     (parameterize ([current-load-relative-directory
-							     (if (string? base) 
-								 (if (complete-path? base)
-								     base
-								     (path->complete-path 
-								      base
-								      (or old-dir 
-									  (current-directory))))
-								 (or old-dir
-								     (current-directory)))])
-					       (dynamic-wind
-						void
-						(lambda ()
-						  (loop null
-							rest-lines
-							p
-							c-file
-							body
-							vars))
-						(lambda ()
-						  (close-input-port p))))])
-				 (loop rest-pre-lines lines port port-name body vars)))))]
-			[else
-			 (syntax-error 'unit/sig expr 
-				       "improper `include' clause form"
-				       line)])]
 		     [else
 		      (loop rest-pre-lines
 			    rest-lines

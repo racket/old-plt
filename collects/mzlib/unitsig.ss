@@ -6,6 +6,7 @@
 
   (import-for-syntax "sigutil.ss")
   (import-for-syntax "sigmatch.ss")
+  (import-for-syntax (lib "kerncase.ss" "syntax"))
 
   (define-struct/export unit/sig (unit imports exports))
 
@@ -37,32 +38,9 @@
 	[(_ sig . rest)
 	 (let ([sig (get-sig 'unit/sig expr #f (syntax sig))])
 	  (let ([a-unit (parse-unit expr (syntax rest) sig
-				    (list
-				     ;; Need all kernel syntax
-				     (quote-syntax begin)
-				     (quote-syntax define-values)
-				     (quote-syntax define-syntax)
-				     (quote-syntax set!)
-				     (quote-syntax let)
-				     (quote-syntax let-values)
-				     (quote-syntax let*)
-				     (quote-syntax let*-values)
-				     (quote-syntax letrec)
-				     (quote-syntax letrec-values)
-				     (quote-syntax lambda)
-				     (quote-syntax case-lambda)
-				     (quote-syntax if)
-				     (quote-syntax struct)
-				     (quote-syntax quote)
-				     (quote-syntax letrec-syntax)
-				     (quote-syntax with-continuation-mark)
-				     (quote-syntax #%app)
-				     (quote-syntax #%unbound)
-				     (quote-syntax #%datum)
-				     (quote-syntax include))  ;; special to unit/sig
+				    (kernel-form-identifier-list (quote-syntax here))
 				    (quote-syntax define-values)
-				    (quote-syntax begin)
-				    (quote-syntax include))])
+				    (quote-syntax begin))])
 	    (check-signature-unit-body sig a-unit (parse-unit-renames a-unit) 'unit/sig expr)
 	    (with-syntax ([imports (datum->syntax
 				    (flatten-signatures (parse-unit-imports a-unit))
@@ -229,6 +207,15 @@
 		 (loop (cdr isig) (cdr expecteds) (add1 pos))))))
 	 units tags isigs))))
 
+  (define signature->symbols
+    (lambda (stx)
+      (syntax-case stx ()
+	[(_ name)
+	 (identifier? (syntax name))
+	 (let ([sig (get-sig 'signature->symbols stx #f (syntax name))])
+	   (with-syntax ([e (explode-sig sig)])
+	     (syntax 'e)))])))
+
   (export-indirect verify-linkage-signature-match)
 
   (export define-signature
@@ -236,5 +223,6 @@
           unit/sig
           compound-unit/sig
 	  invoke-unit/sig
-	  unit->unit/sig))
+	  unit->unit/sig
+	  signature->symbols))
 

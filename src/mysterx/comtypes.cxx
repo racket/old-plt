@@ -80,6 +80,8 @@ Scheme_Object *mx_make_scode(SCODE scode) {
 Scheme_Object *mx_make_idispatch(IDispatch *pIDispatch) {
   MX_COM_Object *retval;
 
+  if (pIDispatch == NULL) return scheme_false;
+
   retval = (MX_COM_Object *)scheme_malloc(sizeof(MX_COM_Object));
 
   retval->type = mx_com_object_type;
@@ -100,13 +102,25 @@ Scheme_Object *mx_make_idispatch(IDispatch *pIDispatch) {
 
 Scheme_Object *mx_make_iunknown(IUnknown *pIUnknown) {
   IDispatch * pIDispatch;
+  IUnknown * pUnk;
   HRESULT hr;
+
+  // Ensure we have the canonical iunknown!
+  hr = pIUnknown->QueryInterface (IID_IUnknown, (void **)&pUnk);
+  if (SUCCEEDED (hr) && pUnk != pIUnknown) {
+      pIUnknown->Release();
+      return mx_make_iunknown (pUnk);
+      }
 
   // Try to get Dispatch pointer
   hr = pIUnknown->QueryInterface (IID_IDispatch, (void **)&pIDispatch);
 
-  if (SUCCEEDED (hr))
-    return mx_make_idispatch (pIDispatch);
+  if (SUCCEEDED (hr)) {
+      pIUnknown->Release();
+      return mx_make_idispatch (pIDispatch);
+      }
+
+  // DebugBreak();
 
   MX_COM_Data_Object *retval;
 

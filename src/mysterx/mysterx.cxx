@@ -376,7 +376,6 @@ static MX_PRIM mxPrims[] = {
   { mx_event_error_pred,"event-error?",1,1},
   { mx_block_until_event,"block-until-event",1,1},
   { mx_process_win_events,"process-win-events",0,0},
-
 };
 
 BOOL isEmptyClsId(CLSID clsId) {
@@ -2129,6 +2128,50 @@ Scheme_Object *elemDescToSchemeType(ELEMDESC *pElemDesc,BOOL ignoreByRef,BOOL is
     isBox = TRUE;
     break;
 
+  case VT_UI2 :
+
+    s = "unsigned-short";
+    break;
+
+  case VT_UI2 | VT_BYREF :
+
+    s = "unsigned-short";
+    isBox = TRUE;
+    break;
+
+  case VT_UI4 :
+
+    s = "unsigned-int";
+    break;
+
+  case VT_UI4 | VT_BYREF :
+
+    s = "unsigned-int";
+    isBox = TRUE;
+    break;
+
+  case VT_UI8 :
+
+    s = "unsigned-long-long";
+    break;
+
+  case VT_UI8 | VT_BYREF :
+
+    s = "unsigned-long-long";
+    isBox = TRUE;
+    break;
+
+  case VT_I1 :
+
+    s = "signed-char";
+    break;
+
+  case VT_I1 | VT_BYREF :
+
+    s = "signed-char";
+    isBox = TRUE;
+    break;
+
   case VT_I2 :
 
     s = "short-int";
@@ -2150,6 +2193,17 @@ Scheme_Object *elemDescToSchemeType(ELEMDESC *pElemDesc,BOOL ignoreByRef,BOOL is
   case VT_INT | VT_BYREF:
 
     s = "int";
+    isBox = TRUE;
+    break;
+
+  case VT_I8 :
+
+    s = "long-long";
+    break;
+
+  case VT_I8 | VT_BYREF :
+
+    s = "long-long";
     isBox = TRUE;
     break;
 
@@ -3076,9 +3130,9 @@ Scheme_Object *variantToSchemeObject(VARIANTARG *pVariantArg) {
 
     return scheme_void;
 
-  case VT_UI1 :
+  case VT_I1 :
 
-    return scheme_make_character((char)(pVariantArg->bVal));
+    return scheme_make_integer (pVariantArg->bVal);
 
   case VT_I2 :
 
@@ -3088,6 +3142,30 @@ Scheme_Object *variantToSchemeObject(VARIANTARG *pVariantArg) {
 
     return scheme_make_integer(pVariantArg->lVal);
 
+  case VT_I8 :
+    LARGE_INTEGER li;
+    li.QuadPart = pVariantArg->llVal;
+    
+    return scheme_make_integer_value_from_long_long (li.u.LowPart, li.u.HighPart);
+
+  case VT_UI1 :
+
+    return scheme_make_character((char)(pVariantArg->bVal));
+
+  case VT_UI2 :
+
+    return scheme_make_integer (pVariantArg->uiVal);
+ 
+  case VT_UI4 :
+
+    return scheme_make_integer_value_from_unsigned (pVariantArg->ulVal);
+
+  case VT_UI8 :
+    ULARGE_INTEGER uli;
+    uli.QuadPart = pVariantArg->ullVal;
+
+    return scheme_make_integer_value_from_unsigned_long_long (uli.u.LowPart, uli.u.HighPart);
+    
   case VT_INT :
 
     return scheme_make_integer(pVariantArg->intVal);
@@ -4568,8 +4646,7 @@ void mx_cleanup(void) {
 }
 
 Scheme_Object *scheme_module_name(void) {
-  mx_name = scheme_intern_symbol(MXMAIN);
-  return mx_name;
+    return scheme_intern_symbol(MXMAIN);
 }
 
 Scheme_Object *scheme_initialize(Scheme_Env *env) {
@@ -4577,6 +4654,7 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
   Scheme_Object *mx_fun;
   int i;
 
+  scheme_register_extension_global(&mx_omit_obj,sizeof(mx_omit_obj));
 
   HWND hwnd;
   hwnd = CreateWindow("AtlAxWin","myspage.DHTMLPage.1",
@@ -4599,10 +4677,7 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
 
   // globals in mysterx.cxx
 
-  scheme_register_extension_global(&mx_name,sizeof(mx_name));
-  scheme_register_extension_global(&mx_omit_obj,sizeof(mx_omit_obj));
-  scheme_register_extension_global(&scheme_date_type,sizeof(scheme_date_type));
-
+  mx_name = scheme_intern_symbol (MXMAIN);
   scheme_date_type = scheme_builtin_value("struct:date");
 
   mx_com_object_type = scheme_make_type("<com-object>");
@@ -4640,6 +4715,7 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
 
   mx_omit_obj = (Scheme_Object *)scheme_malloc(sizeof(MX_OMIT));
   mx_omit_obj->type = mx_com_omit_type;
+
   scheme_add_global("com-omit",mx_omit_obj,env);
 
   scheme_finish_primitive_module(env);

@@ -815,3 +815,24 @@ void GC_dump()
 }
 
 # endif /* NO_DEBUGGING */
+
+
+/* MATTHEW: GC_get_memory_use */
+static void get_size(struct hblk *h, word lptr)
+{
+  hdr *hhdr = HDR(h);
+  long bytes = WORDS_TO_BYTES(hhdr->hb_sz);
+
+  bytes += HDR_BYTES + HBLKSIZE-1;
+  bytes &= ~(HBLKSIZE-1);
+
+  *(long *)lptr += bytes;
+}
+long GC_get_memory_use()
+{
+  long c = 0;
+  LOCK();
+  GC_apply_to_all_blocks(get_size, (word)&c);
+  UNLOCK();
+  return c;
+}

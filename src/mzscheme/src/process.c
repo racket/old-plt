@@ -160,6 +160,8 @@ extern void (*GC_collect_end_callback)(void);
 static void get_ready_for_GC(void);
 static void done_with_GC(void);
 
+extern long GC_get_memory_use();
+
 static Scheme_Object *keywords_symbol, *no_keywords_symbol;
 static Scheme_Object *callcc_is_callec_symbol, *callcc_is_not_callec_symbol;
 static Scheme_Object *hash_percent_syntax_symbol, *all_syntax_symbol, *empty_symbol;
@@ -167,6 +169,7 @@ static Scheme_Object *hash_percent_syntax_symbol, *all_syntax_symbol, *empty_sym
 static Scheme_Sema_Callback *sema_callbacks = NULL;
 
 static Scheme_Object *collect_garbage(int argc, Scheme_Object *args[]);
+static Scheme_Object *current_memory_use(int argc, Scheme_Object *args[]);
 
 #ifndef NO_SCHEME_THREADS
 static Scheme_Object *sch_thread(int argc, Scheme_Object *args[]);
@@ -492,6 +495,11 @@ void scheme_init_process(Scheme_Env *env)
 						      "collect-garbage",
 						      0, 0), 
 			     env);
+  scheme_add_global_constant("current-memory-use", 
+			     scheme_make_prim_w_arity(current_memory_use, 
+						      "current-memory-use",
+						      0, 0), 
+			     env);
 
   if (scheme_starting_up) {
     REGISTER_SO(config_map);
@@ -532,7 +540,13 @@ static Scheme_Object *collect_garbage(int c, Scheme_Object *p[])
   return scheme_void;
 }
 
-static Scheme_Process *make_process(Scheme_Config *config, Scheme_Manager *mgr)
+static Scheme_Object *current_memory_use(int argc, Scheme_Object *args[])
+{
+  return scheme_make_integer(GC_get_memory_use());
+}
+
+static Scheme_Process *make_process(Scheme_Process *after, Scheme_Config *config, 
+				    Scheme_Manager *mgr)
 {
   Scheme_Process *process;
   int prefix = 0;
@@ -617,8 +631,17 @@ static Scheme_Process *make_process(Scheme_Config *config, Scheme_Manager *mgr)
 
   SCHEME_GET_LOCK();
   if (prefix) {
-    process->next = scheme_first_process;
-    scheme_first_process = process;
+    if (after) {
+      process->prev = after;
+      process->next = after->next;
+      process->next->prev = process;
+      process->prev->next = process;
+    } else {
+      process->next = scheme_first_process;
+      process->prev = NULL;
+      process->next->prev = process;
+      scheme_first_process = process;
+    }
   }
 
   process->tail_buffer = (Scheme_Object **)scheme_malloc(buffer_init_size 
@@ -1021,7 +1044,7 @@ void scheme_set_tail_buffer_size(int s)
 
 Scheme_Process *scheme_make_process()
 {
-  return make_process(NULL, NULL);
+  return make_process(NULL, NULL, NULL);
 }
 
 int scheme_in_main_thread(void)
@@ -1066,7 +1089,6 @@ void scheme_swap_process(Scheme_Process *new_process)
 
 static void remove_process(Scheme_Process *r)
 {
-  Scheme_Process *p;
   Scheme_Saved_Stack *saved;
 
   r->running = 0;
@@ -1075,14 +1097,13 @@ static void remove_process(Scheme_Process *r)
   scheme_post_sema(r->done_sema);
 #endif
 
-  if (r == scheme_first_process) {
-    scheme_first_process = r->next;
+  if (r->prev) {
+    r->prev->next = r->next;
+    r->next->prev = r->prev;
   } else {
-    p = scheme_first_process;
-    while (p && p->next != r)
-      p = p->next;
-    if (p)
-      p->next = r->next;
+    if (r->next)
+      r->next->prev = NULL;
+    scheme_first_process = r->next;
   }
 
 #ifdef RUNSTACK_IS_GLOBAL
@@ -1224,7 +1245,7 @@ static Scheme_Object *make_subprocess(Scheme_Object *child_thunk,
   
   scheme_ensure_stack_start(scheme_current_process, child_start);
   
-  child = make_process(config, mgr);
+  child = make_process(NULL, config, mgr);
 
   child->stack_start = child_start;
 
@@ -1249,10 +1270,7 @@ static Scheme_Object *make_subprocess(Scheme_Object *child_thunk,
     have_activity = 1;
   }
 
-  scheme_swap_process(child);
-  
-  /* Because that swap just reset our fuel, we'd better check for a break */
-  scheme_process_block((float)-1);
+  SCHEME_USE_FUEL(1000);
 #endif
   
   return (Scheme_Object *)child;
@@ -1995,17 +2013,16 @@ void scheme_weak_suspend_thread(Scheme_Process *r)
 #ifndef MZ_REAL_THREADS
   Scheme_Process *swap_to = r->next;
 
-  if (r == scheme_first_process) {
-    scheme_first_process = r->next;
+  if (r->prev) {
+    r->prev->next = r->next;
+    r->next->prev = r->prev;
   } else {
-    Scheme_Process *p = scheme_first_process;
-    while (p && p->next != r)
-      p = p->next;
-    if (p)
-      p->next = r->next;
+    if (r->next)
+      r->next->prev = NULL;
+    scheme_first_process = r->next;
   }
 
-  r->next = NULL;
+  r->next = r->prev = NULL;
 
   r->running = 2; /* 2 => running, but weakly suspended */
 
@@ -2027,7 +2044,9 @@ void scheme_weak_resume_thread(Scheme_Process *r)
   if (r->running == 2) {
     r->running = 1;
     r->next = scheme_first_process;
+    r->prev = NULL;
     scheme_first_process = r;
+    r->next->prev = r;
     r->ran_some = 1;
   }
 #endif

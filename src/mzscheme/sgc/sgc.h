@@ -18,6 +18,8 @@ void *GC_base(void *);
 
 void GC_dump(void);
 
+long GC_get_memory_use();
+
 void GC_end_stubborn_change(void *);
 
 void GC_gcollect(void);

@@ -128,18 +128,21 @@
      (lambda (directory filename)
        (let ([dir (explode-path directory)]
 	     [file (explode-path filename)])
-	 (if (not (string=? (car dir) (car file)))
-	     filename
-	     (let loop ([dir (cdr dir)][file (cdr file)])
+	 (if (string=? (normal-case-path (car dir))
+		       (normal-case-path (car file)))
+	     (let loop ([dir (cdr dir)]
+			[file (cdr file)])
 	       (cond
 		[(null? dir) (if (null? file) filename (apply build-path file))]
 		[(null? file) (apply build-path (map (lambda (x) 'up) dir))]
-		[(string=? (car dir) (car file))
+		[(string=? (normal-case-path (car dir))
+			   (normal-case-path (car file)))
 		 (loop (cdr dir) (cdr file))]
 		[else
 		 (apply build-path 
 			(append (map (lambda (x) 'up) dir)
-				file))]))))))
+				file))]))
+	     filename))))
 
    (define file-name-from-path
      (lambda (name)

@@ -6,8 +6,6 @@
   Please see the full copyright in the documentation.
 */
 
-/* This implementation is currently hard-wired for 4-byte words */
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -2446,6 +2444,7 @@ static void freelist_tagged_mpage(void **p, MPage *page)
 
   switch (page->type) {
   case MTYPE_TAGGED:
+  default:
     free_lists = tagged.free_lists;
     break;
   }

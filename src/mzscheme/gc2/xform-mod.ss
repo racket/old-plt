@@ -147,7 +147,7 @@
 
   ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;  Tokenizer
-  ;;   Relies on make-tripe, make-a-seq, and make-pragma
+  ;;   Relies on make-triple, make-a-seq, and make-pragma
   ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
   (define (trans pattern)
@@ -200,7 +200,8 @@
 	(set! source-line (string->number (bytes->string/utf-8 (cadr m))))
 	(set! source-file (caddr m))))
     (let ([pragma (regexp-match re:pragma s p)])
-      (if pragma
+      (if (and pragma
+	       (not (regexp-match-positions re:boring (car pragma))))
 	  (values (make-pragma (cadr pragma) source-file source-line) (line-comment s p))
 	  (values #f (line-comment s p)))))
 
@@ -480,7 +481,7 @@
   (define recorded-cpp-in
     (and precompiled-header
 	 (open-input-file (change-suffix precompiled-header #".e"))))
-  (define re:boring #rx#"^(()|(# .*)|(#line .*)|(#pragma implementation.*)|(#pragma interface.*)|(#pragma once))$")
+  (define re:boring #rx#"^(?:(?:)|(?:# .*)|(?:#line .*)|(?:#pragma implementation.*)|(?:#pragma interface.*)|(?:#pragma once)|(?:#pragma warning.*))$")
   (define (skip-to-interesting-line p)
     (let ([l (read-bytes-line p 'any)])
       (cond
@@ -822,6 +823,7 @@
 	 __builtin_constant_p __builtin_memset
 	 __error __errno_location __toupper __tolower
 	 __attribute__ __mode__ ; not really functions in gcc
+	 __iob_func ; VC 8
 	 scheme_get_milliseconds scheme_get_process_milliseconds
 	 scheme_rational_to_double scheme_bignum_to_double
 	 scheme_rational_to_float scheme_bignum_to_float

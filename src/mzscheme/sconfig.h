@@ -527,7 +527,9 @@
 #  define NAN_EQUALS_ANYTHING
 # endif
 # define INT64_AS_LONG_LONG
-# define POW_HANDLES_INF_CORRECTLY
+# define ATAN2_DOESNT_WORK_WITH_INFINITIES
+         /* With VC 7, ATAN2_DOESNT... wasn't needed, and
+            POW_HANDLES_INF_CORRECTLY worked, too. */
 # define SIN_COS_NEED_DEOPTIMIZE
 #endif
 #ifdef __CYGWIN32__

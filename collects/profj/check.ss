@@ -651,6 +651,7 @@
            (exp-type #f)
            (handle-call-error 
             (lambda (exn)
+              (unless (access? expr) (raise exn))
               (let ((members (car (find-static-class 
                                    (append (access-name expr) (list name))
                                    type-recs #f))))

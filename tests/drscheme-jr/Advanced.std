@@ -1,5 +1,5 @@
 Advanced level tests of DrScheme Jr
-Date: Fri Mar 20 14:51:09 CST 1998
+Date: Mon Mar 23 17:32:36 CST 1998
 DrScheme Jr is loading. Please wait...
 Welcome to DrScheme Jr version 51, Copyright (c) 1995-98 PLT
 Language: Advanced
@@ -69,7 +69,7 @@ Language: Advanced
 |- (list "Intermediate" "Advanced" "R4RS+")
 |- #t
 |- 'letrec-3
-|- (list "Beginner" "Intermediate" "Advanced" "R4RS+")
+|- (list "Intermediate" "Advanced" "R4RS+")
 |- 5
 |- 'case-sense
 |- (list "Beginner" "Intermediate" "Advanced" "R4RS+")
@@ -129,7 +129,7 @@ Language: Advanced
 |- 5
 |- 'eq?-1
 |- (list "Advanced" "R4RS+")
-|- stdin[2723-2731]:1.1-1.9
+|- stdin[2712-2720]:1.1-1.9
    eq?: expected symbols as arguments, received 5, and 5
 |- 'quote-num-1
 |- (list "Advanced" "R4RS+")
@@ -151,131 +151,131 @@ Language: Advanced
 |- 5
 |- 'keyword-interface
 |- null
-|- stdin[3126-3136]:1.1-1.11
+|- stdin[3115-3125]:1.1-1.11
    Invalid use of keyword #%interface
 |- 'keyword-unit
 |- null
-|- stdin[3218-3223]:1.1-1.6
+|- stdin[3207-3212]:1.1-1.6
    Invalid use of keyword #%unit
 |- 'keyword-struct
 |- null
-|- stdin[3306-3313]:1.1-1.8
+|- stdin[3295-3302]:1.1-1.8
    Invalid use of keyword #%struct
 |- 'keyword-unquote
 |- null
-|- stdin[3397-3405]:1.1-1.9
+|- stdin[3386-3394]:1.1-1.9
    Invalid use of keyword #%unquote
 |- 'keyword-let-macro
 |- null
-|- stdin[3491-3501]:1.1-1.11
+|- stdin[3480-3490]:1.1-1.11
    Invalid use of keyword #%let-macro
 |- 'keyword-set!
 |- null
-|- stdin[3583-3588]:1.1-1.6
+|- stdin[3572-3577]:1.1-1.6
    Invalid use of keyword #%set!
 |- 'keyword-if
 |- null
-|- stdin[3667-3670]:1.1-1.4
+|- stdin[3656-3659]:1.1-1.4
    Invalid use of keyword #%if
 |- 'keyword-quote
 |- null
-|- stdin[3752-3758]:1.1-1.7
+|- stdin[3741-3747]:1.1-1.7
    Invalid use of keyword #%quote
 |- 'keyword-begin0
 |- null
-|- stdin[3841-3848]:1.1-1.8
+|- stdin[3830-3837]:1.1-1.8
    Invalid use of keyword #%begin0
 |- 'keyword-begin
 |- null
-|- stdin[3930-3936]:1.1-1.7
+|- stdin[3919-3925]:1.1-1.7
    Invalid use of keyword #%begin
 |- 'keyword-let
 |- null
-|- stdin[4016-4020]:1.1-1.5
+|- stdin[4005-4009]:1.1-1.5
    Invalid use of keyword #%let
 |- 'keyword-let*
 |- null
-|- stdin[4101-4106]:1.1-1.6
+|- stdin[4090-4095]:1.1-1.6
    Invalid use of keyword #%let*
 |- 'keyword-letrec*
 |- null
-|- stdin[4190-4198]:1.1-1.9
+|- stdin[4179-4187]:1.1-1.9
    Invalid use of keyword #%letrec*
 |- 'keyword-letrec
 |- null
-|- stdin[4281-4288]:1.1-1.8
+|- stdin[4270-4277]:1.1-1.8
    Invalid use of keyword #%letrec
 |- 'keyword-lambda
 |- null
-|- stdin[4371-4378]:1.1-1.8
+|- stdin[4360-4367]:1.1-1.8
    Invalid use of keyword #%lambda
 |- 'keyword-let-expansion-time
 |- null
-|- stdin[4473-4492]:1.1-1.20
+|- stdin[4462-4481]:1.1-1.20
    Invalid use of keyword #%let-expansion-time
 |- 'keyword-define-expansion-time
 |- null
-|- stdin[4591-4613]:1.1-1.23
+|- stdin[4580-4602]:1.1-1.23
    Invalid use of keyword #%define-expansion-time
 |- 'keyword-invoke-open-unit
 |- null
-|- stdin[4707-4724]:1.1-1.18
+|- stdin[4696-4713]:1.1-1.18
    Invalid use of keyword #%invoke-open-unit
 |- 'keyword-invoke-unit
 |- null
-|- stdin[4813-4825]:1.1-1.13
+|- stdin[4802-4814]:1.1-1.13
    Invalid use of keyword #%invoke-unit
 |- 'keyword-compound-unit
 |- null
-|- stdin[4916-4930]:1.1-1.15
+|- stdin[4905-4919]:1.1-1.15
    Invalid use of keyword #%compound-unit
 |- 'keyword-unquote-splicing
 |- null
-|- stdin[5024-5041]:1.1-1.18
+|- stdin[5013-5030]:1.1-1.18
    Invalid use of keyword #%unquote-splicing
 |- 'keyword-let-id-macro
 |- null
-|- stdin[5131-5144]:1.1-1.14
+|- stdin[5120-5133]:1.1-1.14
    Invalid use of keyword #%let-id-macro
 |- 'keyword-define-id-macro
 |- null
-|- stdin[5237-5253]:1.1-1.17
+|- stdin[5226-5242]:1.1-1.17
    Invalid use of keyword #%define-id-macro
 |- 'keyword-define-macro
 |- null
-|- stdin[5343-5356]:1.1-1.14
+|- stdin[5332-5345]:1.1-1.14
    Invalid use of keyword #%define-macro
 |- 'keyword-case-lambda
 |- null
-|- stdin[5445-5457]:1.1-1.13
+|- stdin[5434-5446]:1.1-1.13
    Invalid use of keyword #%case-lambda
 |- 'keyword-let-values
 |- null
-|- stdin[5545-5556]:1.1-1.12
+|- stdin[5534-5545]:1.1-1.12
    Invalid use of keyword #%let-values
 |- 'keyword-let*-values
 |- null
-|- stdin[5645-5657]:1.1-1.13
+|- stdin[5634-5646]:1.1-1.13
    Invalid use of keyword #%let*-values
 |- 'keyword-letrec*-values
 |- null
-|- stdin[5749-5764]:1.1-1.16
+|- stdin[5738-5753]:1.1-1.16
    Invalid use of keyword #%letrec*-values
 |- 'keyword-letrec-values
 |- null
-|- stdin[5855-5869]:1.1-1.15
+|- stdin[5844-5858]:1.1-1.15
    Invalid use of keyword #%letrec-values
 |- 'keyword-define-values
 |- null
-|- stdin[5960-5974]:1.1-1.15
+|- stdin[5949-5963]:1.1-1.15
    Invalid use of keyword #%define-values
 |- 'keyword-cond
 |- null
-|- stdin[6056-6061]:1.1-1.6
+|- stdin[6045-6050]:1.1-1.6
    Invalid use of keyword #%cond
 |- 'keyword-class*/names
 |- null
-|- stdin[6150-6163]:1.1-1.14
+|- stdin[6139-6152]:1.1-1.14
    Invalid use of keyword #%class*/names
 |- 'struct-1
 |- (list "Intermediate" "Advanced" "R4RS+")
@@ -298,63 +298,63 @@ Language: Advanced
 |- (list "Intermediate" "Advanced" "R4RS+")
 |- |- 5
 |- 'delay-1
-|- (list "Intermediate" "Advanced" "R4RS+")
+|- (list "Advanced" "R4RS+")
 |- (delay ...)
 |- 'delay-2
-|- (list "Intermediate" "Advanced" "R4RS+")
+|- (list "Advanced" "R4RS+")
 |- (delay ...)
 |- 'delay-3
-|- (list "Intermediate" "Advanced" "R4RS+")
+|- (list "Advanced" "R4RS+")
 |- 5
 |- 'quote-list-1
-|- (list "Intermediate" "Advanced" "R4RS+")
+|- (list "Advanced" "R4RS+")
 |- (list 'a 'a 'a)
 |- 'quote-list-2
-|- (list "Intermediate" "Advanced" "R4RS+")
+|- (list "Advanced" "R4RS+")
 |- (list 'a 'a 'a)
 |- 'empty-list-1
-|- (list "Intermediate" "Advanced" "R4RS+")
+|- (list "Advanced" "R4RS+")
 |- null
 |- 'empty-list-2
-|- (list "Intermediate" "Advanced" "R4RS+")
+|- (list "Advanced" "R4RS+")
 |- null
 |- 'back-quote-1
-|- (list "Intermediate" "Advanced" "R4RS+")
+|- (list "Advanced" "R4RS+")
 |- (list 'a 'a 'a)
 |- 'back-quote-2
-|- (list "Intermediate" "Advanced" "R4RS+")
+|- (list "Advanced" "R4RS+")
 |- (list 'a 'a 'a)
 |- 'back-quote-3
-|- (list "Intermediate" "Advanced" "R4RS+")
+|- (list "Beginner" "Intermediate" "Advanced" "R4RS+")
 |- (list 'a 'a 'a)
 |- 'quasi-quote-1
-|- (list "Intermediate" "Advanced" "R4RS+")
+|- (list "Beginner" "Intermediate" "Advanced" "R4RS+")
 |- 'a
 |- 'quasi-quote-2
-|- (list "Intermediate" "Advanced" "R4RS+")
+|- (list "Advanced" "R4RS+")
 |- (list 'a 'a 'a)
 |- 'quasi-quote-3
-|- (list "Intermediate" "Advanced" "R4RS+")
+|- (list "Advanced" "R4RS+")
 |- (list 'a 'a 'a)
 |- 'quasi-quote-4
-|- (list "Intermediate" "Advanced" "R4RS+")
+|- (list "Advanced" "R4RS+")
 |- (list 'a 'a 'a)
 |- 'set!-id
 |- "R4RS+"
-|- stdin[7837-7870]:1.1-1.34
+|- stdin[7668-7701]:1.1-1.34
    set!: cannot set undefined identifier: some-undefined-identifier
-|- stdin[7934-7958]:1.1-1.25
+|- stdin[7765-7789]:1.1-1.25
    reference to undefined identifier: some-undefined-identifier
 |- 'non-list
 |- "R4RS+"
-|- stdin[8051-8060]:1.1-1.10
+|- stdin[7882-7891]:1.1-1.10
    cons: second argument must be of type <list>, given 3 and 4
 |- 'fallthrough-cond-1
 |- "R4RS+"
-|- stdin[8184-8197]:1.8-1.21
+|- stdin[8015-8028]:1.8-1.21
    no matching cond clause
 |- 'fallthrough-cond-2
 |- "R4RS+"
-|- stdin[8274-8293]:1.8-1.27
+|- stdin[8105-8124]:1.8-1.27
    no matching else clause
 |- 

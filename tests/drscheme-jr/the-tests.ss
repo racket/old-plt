@@ -156,7 +156,7 @@ iar
        (not (odd? 10))))
 
 'letrec-3  ; not defined in R4RS, but okay in DrScheme
-all-levels
+iar
 (letrec ([x 5]
 	 [y x])
   x)
@@ -465,62 +465,62 @@ iar
       8))
 
 'delay-1
-iar
+ar
 (delay 5)
 
 'delay-2
-iar
+ar
 (delay (let ([x (lambda (x) (x x))])
 	 (x x)))
 
 'delay-3
-iar
+ar
 (let* ([x 5]
        [v (delay x)])
   (force v))
 
 'quote-list-1
-iar
+ar
 (quote (a a a))
 
 'quote-list-2
-iar
+ar
 '(a a a)
 
 'empty-list-1
-iar
+ar
 '()
 
 'empty-list-2
-iar
+ar
 (quote ())
 
 'back-quote-1
-iar
+ar
 `(a a a)
 
 'back-quote-2
-iar
+ar
 `(a ,(car '(a a)) a)
 
-'back-quote-3
-iar
+'back-quote-3  
+all-levels     
 `(a ,@(list 'a 'a))
 
 'quasi-quote-1
-iar
+all-levels
 (quasiquote a)
 
 'quasi-quote-2
-iar
+ar
 (quasiquote (a a a))
 
 'quasi-quote-3
-iar
+ar
 (quasiquote (a (unquote (car (quote (a a)))) a))
 
 'quasi-quote-4
-iar
+ar
 (quasiquote (a ,(car (quote (a a))) a))
 
 'set!-id

@@ -678,3 +678,7 @@
 (from "127.0.0.1" to "127.0.0.1" for "/servlets/some-program-name-that-is-not-there")
 (from "127.0.0.1" to "127.0.0.1" for "/servlets/tests/broken.ss")
 (from "127.0.0.1" to "127.0.0.1" for "/servlets/tests/non-unit.ss")
+(from "127.0.0.1" to "127.0.0.1" for "/")
+(from "127.0.0.1" to "127.0.0.1" for "/Defaults/documentation/plt-logo.gif")
+(from "127.0.0.1" to "127.0.0.1" for "/Defaults/documentation/web-server.gif")
+(from "127.0.0.1" to "127.0.0.1" for "/Defaults/")

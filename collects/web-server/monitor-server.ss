@@ -1,17 +1,24 @@
 (module monitor-server mzscheme
   (require (lib "etc.ss")
            (lib "sendmail.ss" "net"))
-  (provide monitor)
+  (provide monitor
+           default-server-port
+           default-poll-frequency-seconds
+           default-server-response-timeout-seconds)
   
   (define OK-REGEXP (regexp "^HTTP/[0-9]*.[0-9]* 200"))
+  
+  (define default-server-port 80)
+  (define default-poll-frequency-seconds 3600)
+  (define default-server-response-timeout-seconds 75)
   
   ; monitor : str str [nat] [num] [num] -> doesn't
   (define monitor
     (opt-lambda (alert-email-address
                  server-name
-                 [server-port 80]
-                 [poll-frequency-seconds 3600]
-                 [server-response-timeout-seconds 75])
+                 [server-port default-server-port]
+                 [poll-frequency-seconds default-poll-frequency-seconds]
+                 [server-response-timeout-seconds default-server-response-timeout-seconds])
       (let check-server ()
         (let* ([cust (make-custodian)]
                [blow-up-handler

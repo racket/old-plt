@@ -47,7 +47,7 @@
 		mred mzlib mzlib:date framework
 		unit app
 		help-desk zodiac)]
-        [dynext-compiler : dynext:compiler^ ((require-library "compiler.ss" "dynext"))]
+        [dynext-compiler : dynext:compile^ ((require-library "compiler.ss" "dynext"))]
         [dynext-linker : dynext:link^ ((require-library "linkr.ss" "dynext"))]
 	[launcher : launcher-maker^ ((require-library "launcherr.ss" "launcher")
                                      (mzlib file)

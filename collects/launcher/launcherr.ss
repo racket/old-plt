@@ -306,13 +306,8 @@
         (unless (file-exists? extension-source-file)
           (error 'maybe-install-aliases "need startup-setup.c to compile startup-setup.so extension"))
         (let ([obj-file (build-path launcher-path "startup-setup.o")])
-          (c:compile-extension (not (compiler:option:verbose))
-                               extension-source-file
-                               obj-file
-                               null)
-          (l:link-extension (not (compiler:option:verbose))
-                            (list obj-file)
-                            extension)))
+          (c:compile-extension #t extension-source-file obj-file null)
+          (l:link-extension #t (list obj-file) extension)))
       (when (or (not (file-exists? marker-file)) ; marker file is missing, or older than any of (gomz, gomr, extension)
                 (let ([marker-file-date (file-or-directory-modify-seconds marker-file)])
                   (ormap (lambda (file) (> (file-or-directory-modify-seconds file) marker-file-date))

@@ -18,15 +18,16 @@
 	    (make-directory cdir))
 	  (compile-file src (build-path cdir
 					(regexp-replace 
-					 -re:suffix src
+					 -re:suffix name
 					 ".zo")))))]
      [(src dest)
       (with-input-from-file* 
        src
        (lambda ()
-	 (with-handlers ([(lambda (x) (not (exn:i/o:filesystem? x)))
+	 (with-handlers ([not-break-exn?
 			  (lambda (exn)
-			    (delete-file dest)
+			    (with-handlers ([void void])
+			      (delete-file dest))
 			    (raise exn))])
 	   (with-output-to-file*
 	    dest

@@ -1,0 +1,5 @@
+(define program "drscheme")
+;(define argv (vector "--help"))
+(define argv (vector))
+(require-library "drscheme-jr.ss" "drscheme-jr")
+(go)

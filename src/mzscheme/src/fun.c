@@ -2113,11 +2113,11 @@ static long get_seconds(void)
 }
 
 #ifdef TIME_TYPE_IS_UNSIGNED
-#define scheme_get_time_val(o, v) scheme_get_unsigned_int_val(o, v)
-#define UNBUNDLE_TIME_TYPE unsigned long
+# define scheme_get_time_val(o, v) scheme_get_unsigned_int_val(o, v)
+# define UNBUNDLE_TIME_TYPE unsigned long
 #else
-#define scheme_get_time_val(o, v) scheme_get_int_val(o, v)
-#define UNBUNDLE_TIME_TYPE long
+# define scheme_get_time_val(o, v) scheme_get_int_val(o, v)
+# define UNBUNDLE_TIME_TYPE long
 #endif
 
 #ifdef USE_MACTIME

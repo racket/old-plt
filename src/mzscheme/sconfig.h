@@ -51,8 +51,8 @@
 
 #define SCHEME_STACK_SIZE 5000
 
- /* SCHEME_STACK_SIZE <X> sets the limit for the internal stack
-    for Scheme variables. */
+ /* SCHEME_STACK_SIZE <X> sets the size of stack segments for Scheme
+    variables. */
 
 /**************** (END PLATFORM-INDEPENDENT OPTIONS) **************/
 

@@ -552,7 +552,7 @@ static Scheme_Process *make_process(Scheme_Process *after, Scheme_Config *config
   } else {
     prefix = 1;
   }
-  
+
   process->engine_weight = 10000;
 
   ATSTEP("making config");
@@ -1539,6 +1539,7 @@ static void get_ready_for_GC()
 #endif
 
 #ifndef MZ_REAL_THREADS
+# define RUNSTACK_TUNE(x) /* x   - Used for performance tuning */
   if (scheme_fuel_counter) {
     Scheme_Process *p;
 
@@ -1546,6 +1547,7 @@ static void get_ready_for_GC()
     for (p = scheme_first_process; p; p = p->next) {
       Scheme_Object **o, **e, **e2;
       Scheme_Saved_Stack *saved;
+      RUNSTACK_TUNE( long size; );
 
       o = p->runstack_start;
       e = p->runstack;
@@ -1554,12 +1556,17 @@ static void get_ready_for_GC()
       while (o < e && (o != e2))
 	*(o++) = NULL;
 
+      RUNSTACK_TUNE( size = p->runstack_size - (p->runstack - p->runstack_start); );
+
       for (saved = p->runstack_saved; saved; saved = saved->prev) {
 	o = saved->runstack_start;
 	e = saved->runstack_start;
+	RUNSTACK_TUNE( size += saved->runstack_size; );
 	while (o < e)
 	  *(o++) = NULL;
       }
+
+      RUNSTACK_TUNE( printf("%ld\n", size); );
 
 # ifdef AGRESSIVE_ZERO_TB
       {

@@ -14,8 +14,7 @@
            (lib "unitsig.ss")
 	   (lib "thread.ss")
            "url-sig.ss"
-           "tcp-sig.ss"
-           "uri-codec.ss")
+           "tcp-sig.ss")
   (provide url@)
   
   (define url@
@@ -447,8 +446,7 @@
 			   "[ \t\f\r\n]*"
 			   "$"))))
 	  (lambda (str)
-	    (let* ([decoded (uri-decode str)]
-                   [m (regexp-match #rx"^[ \t\f\r\n]*file:(.*)$" decoded)])
+	    (let ([m (regexp-match #rx"^[ \t\f\r\n]*file:(.*)$" str)])
 	      ;; File scheme:
 	      (if m
 		  (let ([path+fragment (regexp-match #rx"^([^#]*)(#(.*))?$" (cadr m))])
@@ -465,12 +463,12 @@
 				    fragment)
 			  (url-error "scheme 'file' path ~s neither relative nor absolute" path))))
 		  ;; Other scheme:
-		  (let ((match (regexp-match-positions rx decoded)))
+		  (let ((match (regexp-match-positions rx str)))
 		    (if match
 			(let* ((get-str (lambda (pos skip-left skip-right)
 					  (let ((pair (list-ref match pos)))
 					    (if pair
-						(substring decoded
+						(substring str
 							   (+ (car pair) skip-left)
 							   (- (cdr pair) skip-right))
 						#f))))

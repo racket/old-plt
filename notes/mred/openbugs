@@ -1,7 +1,10 @@
 
 MrEd Engine:
 
-* skill-focus
+* need to add wx:list-box% get-first-item and get-last-item to allow
+  more item alignments
+
+* kill-focus
 
 * command-event: string for text events
 

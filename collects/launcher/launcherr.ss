@@ -21,10 +21,48 @@
 		      dest)
 	   (error 'make-launcher "Couldn't copy template to destination: ~a" dest)))
 
+ (define (string-append/spaces f flags)
+   (if (null? flags)
+       ""
+       (string-append
+	(f (car flags))
+	" "
+	(string-append/spaces f (cdr flags)))))
 
- (define (make-unix-launcher kind str dest)
+ (define (str-list->sh-str flags)
+   (letrec ([trans
+	     (lambda (s)
+	       (cond
+		[(regexp-match "(.*)'(.*)" s)
+		 => (lambda (m)
+		      (string-append (trans (cadr m))
+				     "\"'\""
+				     (trans (caddr m))))]
+		[else (format "'~a'" s)]))])
+     (string-append/spaces trans flags)))
+
+ (define (str-list->dos-str flags)
+   (letrec ([trans
+	     (lambda (s)
+	       (if (or (regexp-match (string #\space #\newline #\tab #\return) s)
+		       (regexp-match "\"" s)
+		       (regexp-match "\\" s))
+		   (list->string
+		    (let loop ([l (string->list s)][wrote-slash 0])
+		      (case (car l)
+			[(#\\) (cons #\\ (loop (cdr l) (add1 wrote-slash)))]
+			[(#\") (append
+				(string->list (make-string wrote-slash #\\))
+				`(#\" #\\ #\" #\")
+				(loop (cdr l) 0))]
+			[else (cons (car l) (loop (cdr l) 0))])))
+		   s))])
+     (string-append/spaces trans flags)))
+
+ (define (make-unix-launcher kind flags dest)
    (install-template dest kind "sh" "sh") ; just for something that's executable
    (let* ([newline (string #\newline)]
+	  [str (str-list->sh-str flags)]
 	  [s (string-append
 	      "#!/bin/sh" newline
 	      "# This script was created by make-~a-launcher" newline
@@ -49,9 +87,10 @@
        (close-output-port p))))
 
 
- (define (make-windows-launcher kind str dest)
+ (define (make-windows-launcher kind flags dest)
    (install-template dest kind "mzstart.exe" "mrstart.exe")
-   (let ([p (open-input-file dest)]
+   (let ([str (str-list->dos-str flags)]
+	 [p (open-input-file dest)]
 	 [m (string->list "<Command Line: Replace This")])
      ; Find the magic start
      (let* ([pos (let loop ([pos 0][l m])
@@ -96,10 +135,10 @@
 		   (write-char #\space p)
 		   (loop (sub1 c))))))))
 
- (define (make-macos-launcher kind str dest)
+ (define (make-macos-launcher kind flags dest)
    (install-template dest kind "MzStarter" "MrStarter")
    (let ([p (open-output-file dest 'truncate)])
-     (display str p)
+     (display (str-list->sh-str flags) p)
      (close-output-port p)))
 
  (define (get-maker)
@@ -115,10 +154,10 @@
    ((get-maker) 'mzscheme flags dest))
 
  (define (make-mred-program-launcher collection dest)
-   (make-mred-launcher (format "-A ~a --" collection) dest))
-
+   (make-mred-launcher (list "-A" collection "--") dest))
+ 
  (define (make-mzscheme-program-launcher file collection dest)
-   (make-mzscheme-launcher (format "-qmL ~a ~a -e '(exit)' --" file collection) dest))
+   (make-mzscheme-launcher (list "-mqvL" file collection "--") dest))
 
  (define l-home (if (eq? (system-type) 'unix)
 		    (build-path plthome "bin")

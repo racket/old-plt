@@ -1,0 +1,32 @@
+
+(make-mred-launcher args dest) - Creates the launcher `dest'. The `dest'
+   executeable will start MrEd with the command-line arguments
+   specified as strings in the list `args'. Extra arguments
+   passed to the launcher at run-time will be appended to this
+   list and passed on to MrEd.
+
+   `make-mred-launcher' transforms `args as necessary to avoid
+   mutations caused by passing the strings through the
+   platform-specific launching mechanism (e.g, as sh arguments), so
+   the strings in `flags' arrive to MrEd intact.
+
+(make-mzscheme-launcher args dest) - Same as `make-mred-launcher',
+   but for starting MzScheme.
+
+(make-mred-program-launcher collection dest) - Calls
+   `make-mred-launcher' with arguments that start the MrEd program
+   implemednted by `collection': (list "-A" collection "--").
+    
+
+(make-mzscheme-program-launcher file collection dest) - Calls
+   `make-mzscheme-launcher' with arguments that start the MzScheme
+   program implemented by `file' in `collection': (list "-mvL-"
+   file collection)
+
+(install-mred-program-launcher collection) - Calls
+   `make-mred-launcher' with the standard desitnation for
+   executables in the current PLT home directory.
+
+(install-mzscheme-program-launcher file collection) - Calls
+   `make-mzscheme-launcher' with the standard desitnation for
+   executables in the current PLT home directory.

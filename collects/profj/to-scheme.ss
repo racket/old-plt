@@ -633,7 +633,8 @@
                    (separate (cdr m)
                              (if (initialize-static (car m))
                                  (update set-members-static-init! (car m) members-static-init h)
-                                 (update set-members-init! (car m) members-init h))))))))
+                                 (update set-members-init! (car m) members-init h))))
+                  (else (error 'separate "not something expected: ~e" (car m)))))))
       (separate members my-members)))
   
   ;make-access-separator: ('a -> (list symbol)) -> ((list 'a) accesses -> accesses)

@@ -2068,20 +2068,24 @@
 
   ;call-arg-error: symbol id (list type) type src -> void
   (define (call-arg-error kind name args exp src)
-    (let ((n (id->ext-name name))
-          (t (get-call-type exp))
-          (as (map type->ext-name args)))
+    (let* ((n (id->ext-name name))
+           (t (get-call-type exp))
+           (call-type (if (and (special-name? name)
+                               (string=? "super" (special-name-name name)))
+                          "super constructor for"
+                          (format "method ~a from" n)))
+           (as (map type->ext-name args)))
       (raise-error n
                    (case kind
                      ((number)
-                      (format "method ~a from ~a has no definition with ~a arguments. Given ~a"
-                              n t (length as) as))
+                      (format "~a ~a has no definition with ~a argument~a. Given ~a"
+                              call-type t (length as) (if (> (length as) 1) "s" "") as))
                      ((no-match)
-                      (format "method ~a from ~a has no definition with compatible types as the given types: ~a"
-                              n t as))
+                      (format "~a ~a has no definition with compatible types as the given types: ~a"
+                              call-type t as))
                      ((conflict)
-                      (format "method ~a from ~a has multiple compatible definitions with given arguments: ~a"
-                              n t as)))
+                      (format "~a ~a has multiple compatible definitions with given arguments: ~a"
+                              call-type t as)))
                    n src)))
   
   ;thrown-error: string id type src -> void
@@ -2128,7 +2132,7 @@
   ;ctor-overload-error: symbol type (list type) src -> void
   (define (ctor-overload-error kind name args src)
     (let ((n (type->ext-name name))
-          (as (map type->ext-name exp)))
+          (as (map type->ext-name args)))
       (raise-error 
        n
        (case kind

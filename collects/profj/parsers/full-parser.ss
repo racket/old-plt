@@ -666,9 +666,9 @@
        [(MethodInvocation) $1]
        [(ArrayAccess) $1]
        ;; 1.1
-       [(PrimitiveType PERIOD class) (error 'unimplemented-1.1)]
+       [(PrimitiveType PERIOD class) (unimplemented-1.1 (build-src 1))]
        ;; 1.1
-       [(Name PERIOD class) (error 'unimplemented-1.1)]
+       [(Name PERIOD class) (unimplemented-1.1 (build-src 1))]
        ;; 1.1
        ;;[(ArrayType PERIOD class)
        ;; 1.1
@@ -676,9 +676,9 @@
        ;; 1.1
        ;;[(Name Dims PERIOD class)
        ;; 1.1
-       [(void PERIOD class) (error 'unimplemented-1.1)]
+       [(void PERIOD class) (unimplemented-1.1 (build-src 1))]
        ;; 1.1
-       [(Name PERIOD this) (error 'unimplemented-1.1)])
+       [(Name PERIOD this) (unimplemented-1.1 (build-src 1))])
       
       (ClassInstanceCreationExpression
        [(new ClassOrInterfaceType O_PAREN ArgumentList C_PAREN)
@@ -687,34 +687,34 @@
 	(make-class-alloc #f (build-src 4) $2 null #f)]
        ;; 1.1
        [(new ClassOrInterfaceType O_PAREN ArgumentList C_PAREN ClassBody)
-	(error 'unimplemented-1.1)]
+	(unimplemented-1.1 (build-src 1))]
        ;; 1.1
        [(new ClassOrInterfaceType O_PAREN C_PAREN ClassBody)
-	(error 'unimplemented-1.1)]
+	(unimplemented-1.1 (build-src 1))]
        ;; 1.1
        [(Primary PERIOD new IDENTIFIER O_PAREN ArgumentList C_PAREN ClassBody)
-	(error 'unimplemented-1.1)]
+	(unimplemented-1.1 (build-src 1))]
        ;; 1.1
        [(Primary PERIOD new IDENTIFIER O_PAREN C_PAREN ClassBody)
-	(error 'unimplemented-1.1)]
+	(unimplemented-1.1 (build-src 1))]
        ;; 1.1
        [(Primary PERIOD new IDENTIFIER O_PAREN ArgumentList C_PAREN)
-	(error 'unimplemented-1.1)]
+	(unimplemented-1.1 (build-src 1))]
        ;; 1.1
        [(Primary PERIOD new IDENTIFIER O_PAREN C_PAREN)
-	(error 'unimplemented-1.1)]
+	(unimplemented-1.1 (build-src 1))]
        ;; 1.1
        [(Name PERIOD new IDENTIFIER O_PAREN ArgumentList C_PAREN ClassBody)
-	(error 'unimplemented-1.1)]
+	(unimplemented-1.1 (build-src 1))]
        ;; 1.1
        [(Name PERIOD new IDENTIFIER O_PAREN C_PAREN ClassBody)
-	(error 'unimplemented-1.1)]
+	(unimplemented-1.1 (build-src 1))]
        ;; 1.1
        [(Name PERIOD new IDENTIFIER O_PAREN ArgumentList C_PAREN)
-	(error 'unimplemented-1.1)]
+	(unimplemented-1.1 (build-src 1))]
        ;; 1.1
        [(Name PERIOD new IDENTIFIER O_PAREN C_PAREN)
-	(error 'unimplemented-1.1)])
+	(unimplemented-1.1 (build-src 1))])
       
       (ArgumentList
        [(Expression) (list $1)]
@@ -729,9 +729,9 @@
         (make-array-alloc #f (build-src 3) (make-type-spec $2 0 (build-src 2 2)) (reverse $3) 0)]
        ;; 1.1
        [(new PrimitiveType Dims ArrayInitializer) 
-        (error 'unimplemented-1.1)]
+        (unimplemented-1.1 (build-src 1))]
        ;; 1.1
-       [(new ClassOrInterfaceType Dims ArrayInitializer) (error 'unimplemented-1.1)])
+       [(new ClassOrInterfaceType Dims ArrayInitializer) (unimplemented-1.1 (build-src 1))])
       
       (DimExprs
        [(DimExpr) (list $1)]
@@ -755,7 +755,7 @@
                                                 (make-id $3 (build-src 3 3))
                                                 #f))]
        ;; 1.1
-       [(Name PERIOD super PERIOD IDENTIFIER) (error 'unimplemented-1.1)])
+       [(Name PERIOD super PERIOD IDENTIFIER) (unimplemented-1.1 (build-src 1))])
       
       (MethodInvocation
        [(Name O_PAREN ArgumentList C_PAREN) (build-name-call $1 (reverse $3) (build-src 4))]
@@ -774,9 +774,9 @@
                        (make-id $3 (build-src 3 3)) null #f)]
        ;; 1.1
        [(Name PERIOD super PERIOD IDENTIFIER O_PAREN ArgumentList C_PAREN)
-	(error 'unimplemented-1.1)]
+	(unimplemented-1.1 (build-src 1))]
        ;; 1.1
-       [(Name PERIOD super PERIOD IDENTIFIER O_PAREN C_PAREN) (error 'unimplemented-1.1)])
+       [(Name PERIOD super PERIOD IDENTIFIER O_PAREN C_PAREN) (unimplemented-1.1 (build-src 1))])
       
       (ArrayAccess
        [(Name O_BRACKET Expression C_BRACKET)
@@ -946,6 +946,14 @@
       
       (ConstantExpression
        [(Expression) $1]))))
+  
+  (define (unimplemented-1.1 src)
+    (raise-read-error "Unimplemented 1.1"
+ 		      (file-path)
+ 		      (src-line src)
+ 		      (src-col src)
+ 		      (src-pos src)
+ 		      (src-span src)))
   
   (define parse-full (car parsers))
   (define parse-full-interactions (cadr parsers))

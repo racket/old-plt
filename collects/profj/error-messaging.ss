@@ -55,7 +55,9 @@
   
   ;id->ext-name: id -> symbol
   (define (id->ext-name id)
-    (string->symbol (id-string id)))
+    (string->symbol (if (special-name? id)
+                        (special-name-name id)
+                        (id-string id))))
   
   ;get-call-type: type -> string
   (define (get-call-type t)

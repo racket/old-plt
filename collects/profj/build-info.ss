@@ -60,6 +60,16 @@
       ;Set location for type error messages
       (build-info-location current-loc)
       
+      (let loop ((cur-defs (package-defs prog)))
+        (unless (null? cur-defs)
+          (when (member (id-string (def-name (car cur-defs)))
+                        (map (lambda (d) (id-string (def-name d))) (cdr cur-defs)))
+            (repeated-def-name-error (def-name (car cur-defs))
+                                     (class-def? (car cur-defs))
+                                     level
+                                     (id-src (def-name (car cur-defs)))))
+          (loop (cdr cur-defs))))
+                        
       ;Add all defs in this file to environment
       (for-each (lambda (def)
                   (let ((defname (cons (id-string (def-name def)) pname))
@@ -995,6 +1005,15 @@
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;Error raising code: code that takes information about the error message and throws the error
+  
+  ;repeated-def-name-error: id bool symbol src -> void
+  (define (repeated-def-name-error name class? level src)
+    (let ((n (id->ext-name name)))
+      (raise-error n
+                   (format "~a ~a shares a name with another class~a. ~a names may not be repeated"
+                           (if class? "Class" "Interface") n (if (eq? level 'beginner) "" " or interface")
+                           (if (eq? level 'beginner) "Class" "Class and interface "))
+                   n src)))
   
   ;modifier-error: symbol modifier -> void
   (define (modifier-error kind mod)

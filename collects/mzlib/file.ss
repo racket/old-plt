@@ -256,23 +256,45 @@
 		  #f))
 	    #f))]))
 
+  (define (with-pref-params thunk)
+    (parameterize ((read-case-sensitive #f)
+		   (read-square-bracket-as-paren #t)
+		   (read-curly-brace-as-paren #t)
+		   (read-accept-box #t)
+		   (read-accept-compiled #f)
+		   (read-accept-bar-quote #t)
+		   (read-accept-graph #t)
+		   (read-decimal-as-inexact #t)
+		   (read-accept-dot #t)
+		   (read-accept-quasiquote #t)
+		   (print-struct #f)
+		   (print-graph #t)
+		   (print-box #t)
+		   (print-vector-length #t))
+      (thunk)))
+
+
   (define pref-box (make-weak-box #f)) ; non-weak box => need to save
-  (define (get-prefs flush?)
+  (define (get-prefs flush? filename)
     (let ([f (and (not flush?)
+		  (not filename)
 		  (weak-box-value pref-box))])
       (or f
 	  (let ([f (let ([v (with-handlers ([not-break-exn? (lambda (x) null)])
-			      (let ([pref-file (let ([f (find-system-path 'pref-file)])
-						 (if (file-exists? f)
-						     ;; Using `file-exists?' means there's technically
-						     ;; a race condition, but something
-						     ;; has gone really wrong if the file disappears.
-						     f
-						     ;; Error here bails out through above `with-handlers'
-						     (build-path (collection-path "defaults")
-								 "plt-prefs.ss")))])
-				(with-input-from-file pref-file
-				  read)))])
+			      (let ([pref-file (or filename
+						   (let ([f (find-system-path 'pref-file)])
+						     (if (file-exists? f)
+							 ;; Using `file-exists?' means there's technically
+							 ;; a race condition, but something
+							 ;; has gone really wrong if the file disappears.
+							 f
+							 ;; Error here bails out through above `with-handlers'
+							 (build-path (collection-path "defaults")
+								     "plt-prefs.ss"))))])
+				(with-pref-params
+				 (lambda ()
+				   (with-input-from-file pref-file
+				     read)))))])
 		     ;; Make sure file content had the right shape:
 		     (if (and (list? v) 
 			      (andmap (lambda (x) 
@@ -282,12 +304,13 @@
 				      v))
 			 v
 			 null))])
-	    (set! pref-box (make-weak-box f))
+	    (unless filename
+	      (set! pref-box (make-weak-box f)))
 	    f))))
 
   (define get-preference
     (case-lambda 
-     [(name fail-thunk refresh-cache?)
+     [(name fail-thunk refresh-cache? filename)
       (unless (symbol? name)
 	(raise-type-error
 	 'get-preference
@@ -299,17 +322,18 @@
 	 'get-preference
 	 "procedure (arity 0)"
 	 fail-thunk))
-      (let ([f (get-prefs refresh-cache?)])
+      (let ([f (get-prefs refresh-cache? filename)])
 	(let ([m (assq name f)])
 	  (if m
 	      (cadr m)
 	      (fail-thunk))))]
-     [(name fail-thunk) (get-preference name fail-thunk #t)]
-     [(name) (get-preference name (lambda () #f) #t)]))
+     [(name fail-thunk refresh-cache?) (get-preference name fail-thunk refresh-cache? #f)]
+     [(name fail-thunk) (get-preference name fail-thunk #t #f)]
+     [(name) (get-preference name (lambda () #f) #t #f)]))
 
   (define put-preferences
     (case-lambda
-     [(names vals lock-there)
+     [(names vals lock-there filename)
       (unless (and (list? names)
 		   (andmap symbol? names))
 	(raise-type-error
@@ -327,7 +351,15 @@
 	 (format "the size of the name list (~a) does not match the size of the value list (~a): "
 		 (length names) (length vals))
 	 vals))
-      (let ([lock-file (build-path (find-system-path 'pref-dir) ".plt-PREFLOCK")])
+      (let-values ([(pref-file lock-file pref-dir)
+		    (let ([filename (or filename (find-system-path 'pref-file))])
+		      (let-values ([(base name dir?) (split-path filename)])
+			(let ([dir (if (symbol? base)
+				       (current-directory)
+				       base)])
+			  (values filename
+				  (build-path dir (format ".LOCK~a" name))
+				  dir))))])
 	(with-handlers ([(lambda (x)
 			   (and (exn:i/o:filesystem? x)
 				(eq? (exn:i/o:filesystem-detail x) 'already-exists)))
@@ -338,7 +370,7 @@
 	  (dynamic-wind
 	      void
 	      (lambda ()
-		(let ([f (get-prefs #t)])
+		(let ([f (get-prefs #t filename)])
 		  (for-each
 		   (lambda (name val)
 		     (let ([m (assq name f)])
@@ -346,27 +378,29 @@
 			   (set-car! (cdr m) val)
 			   (set! f (cons (list name val) f)))))
 		   names vals)
-		  (set! pref-box (make-weak-box f))
+		  (unless filename
+		    (set! pref-box (make-weak-box f)))
 		  ;; To write the file, copy the old one to a temporary name
 		  ;; (preserves permissions, etc), write to the temp file,
-		  ;; then move (atomically) the temp file to the normal name.
-		  (let* ([pref-file (find-system-path 'pref-file)]
-			 [tmp-file (make-temporary-file
-				    (build-path (find-system-path 'pref-dir) "TMPPREF~a")
+		  ;; then move (atomicly) the temp file to the normal name.
+		  (let* ([tmp-file (make-temporary-file
+				    (build-path pref-dir "TMPPREF~a")
 				    (and (file-exists? pref-file) pref-file))])
 		    (with-output-to-file tmp-file
 		      (lambda ()
-			(parameterize ([read-case-sensitive #f]
-				       [print-struct #f])
-			  ;; Poor man's pretty-print: one line per entry
-			  (printf "(~n")
-			  (for-each (lambda (a) (printf " ~s~n" a)) f)
-			  (printf ")~n")))
+			(with-pref-params
+			 (lambda ()
+			   ;; Poor man's pretty-print: one line per entry
+			   (printf "(~n")
+			   (for-each (lambda (a) (printf " ~s~n" a)) f)
+			   (printf ")~n"))))
 		      'truncate/replace)
 		    (rename-file-or-directory tmp-file pref-file #t))))
 	      (lambda ()
 		;; Release lock:
 		(delete-file lock-file)))))]
+     [(names vals lock-there) 
+      (put-preferences names vals lock-there #f)]
      [(names vals) 
       (put-preferences
        names vals 

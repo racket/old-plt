@@ -502,6 +502,7 @@
  (sort-by-name "Sort by name")
  (sort-by-position "Sort by position in file")
  (no-definitions-found "<< no definitions found >>")
+ (jump-to-defn "Jump to ~a")
 
  (recent-items-sort-by-age "Sort by Age")
  (recent-items-sort-by-name "Sort by Name")

@@ -1,9 +1,7 @@
 (module stacktrace mzscheme
   (require (lib "unitsig.ss")
            (lib "kerncase.ss" "syntax")
-           (lib "stx.ss" "syntax")
-           (lib "shared.ss" "stepper" "private")
-           (lib "marks.ss" "stepper" "private"))
+           (lib "stx.ss" "syntax"))
   
   (provide stacktrace@ stacktrace^ stacktrace-imports^)
   
@@ -13,25 +11,31 @@
                                          initialize-profile-point
                                          register-profile-start
                                          register-profile-done))
-  (define-signature stacktrace^ (annotate-top))
+  (define-signature stacktrace^ (annotate-top 
+				 annotate 
+				 st-mark-source
+				 st-mark-bindings))
   
   (define stacktrace@
     (unit/sig stacktrace^
       (import stacktrace-imports^)
-      
+  
+      (define-struct st-mark (source))
+      (define (st-mark-bindings x) null)
+
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       ;; Profiling instrumenter
-      
+
       ;; profile-point : (syntax symbol-or-#f syntax boolean -> syntax)
-      
+
       ;; This procedure is called by `annotate' and `annotate-top' to wrap
       ;; expressions with profile collecting information.  Returning the
       ;; first argument means no profiling information is collected.
-      
+
       ;; The second argument is the point's inferred name, if any, the third
       ;; argument is the source expression, and the fourth argument is #t for
       ;; a transformer expression and #f for a normal expression.
-      
+
       (define (profile-point body name expr trans?)
         (if (profiling-enabled)
             (let ([key (gensym 'profile-point)])
@@ -61,375 +65,265 @@
         (with-syntax ([expr sexpr]
                       [e se])
           (kernel-syntax-case sexpr trans?
-            ;; negligible time to eval
-            [id
-             (identifier? sexpr)
-             (syntax (begin e expr))]
-            [(quote _) (syntax (begin e expr))]
-            [(quote-syntax _) (syntax (begin e expr))]
-            [(#%datum . d) (syntax (begin e expr))]
-            [(#%top . d) (syntax (begin e expr))]
-            
-            ;; No tail effect, and we want to account for the time
-            [(lambda . _) (syntax (begin0 expr e))]
-            [(case-lambda . _) (syntax (begin0 expr e))]
-            [(set! . _) (syntax (begin0 expr e))]
-            
-            [(let-values bindings . body)
-             (with-syntax ([rest (insert-at-tail* se (syntax body) trans?)])
-               (syntax (let-values bindings . rest)))]
-            [(letrec-values bindings . body)
-             (with-syntax ([rest (insert-at-tail* se (syntax body) trans?)])
-               (syntax (letrec-values bindings . rest)))]
-            
-            [(begin . _)
-             (insert-at-tail* se sexpr trans?)]
-            [(with-continuation-mark . _)
-             (insert-at-tail* se sexpr trans?)]
-            
-            [(begin0 body ...)
-             (syntax (begin0 body ... e))]
-            
-            [(if test then)
-             (with-syntax ([then2 (insert-at-tail se (syntax then) trans?)])
-               (syntax (if test then2)))]
-            [(if test then else)
-             ;; WARNING: e inserted twice!
-             (with-syntax ([then2 (insert-at-tail se (syntax then) trans?)]
-                           [else2 (insert-at-tail se (syntax else) trans?)])
-               (syntax (if test then2 else2)))]
-            
-            [(#%app . rest)
-             (if (stx-null? (syntax rest))
-                 ;; null constant
-                 (syntax (begin e expr))
-                 ;; application; exploit guaranteed left-to-right evaluation
-                 (insert-at-tail* se sexpr trans?))]
-            
-            [_else
-             (error 'errortrace
-                    "unrecognized (non-top-level) expression form: ~e"
-                    (syntax-object->datum sexpr))])))
+                              ;; negligible time to eval
+                              [id
+                               (identifier? sexpr)
+                               (syntax (begin e expr))]
+                              [(quote _) (syntax (begin e expr))]
+                              [(quote-syntax _) (syntax (begin e expr))]
+                              [(#%datum . d) (syntax (begin e expr))]
+                              [(#%top . d) (syntax (begin e expr))]
+                              
+                              ;; No tail effect, and we want to account for the time
+                              [(lambda . _) (syntax (begin0 expr e))]
+                              [(case-lambda . _) (syntax (begin0 expr e))]
+                              [(set! . _) (syntax (begin0 expr e))]
+                              
+                              [(let-values bindings . body)
+                               (with-syntax ([rest (insert-at-tail* se (syntax body) trans?)])
+                                 (syntax (let-values bindings . rest)))]
+                              [(letrec-values bindings . body)
+                               (with-syntax ([rest (insert-at-tail* se (syntax body) trans?)])
+                                 (syntax (letrec-values bindings . rest)))]
+                              
+                              [(begin . _)
+                               (insert-at-tail* se sexpr trans?)]
+                              [(with-continuation-mark . _)
+                               (insert-at-tail* se sexpr trans?)]
+                              
+                              [(begin0 body ...)
+                               (syntax (begin0 body ... e))]
+                              
+                              [(if test then)
+                               (with-syntax ([then2 (insert-at-tail se (syntax then) trans?)])
+                                 (syntax (if test then2)))]
+                              [(if test then else)
+                               ;; WARNING: e inserted twice!
+                               (with-syntax ([then2 (insert-at-tail se (syntax then) trans?)]
+                                             [else2 (insert-at-tail se (syntax else) trans?)])
+                                 (syntax (if test then2 else2)))]
+                              
+                              [(#%app . rest)
+                               (if (stx-null? (syntax rest))
+                                   ;; null constant
+                                   (syntax (begin e expr))
+                                   ;; application; exploit guaranteed left-to-right evaluation
+                                   (insert-at-tail* se sexpr trans?))]
+                              
+                              [_else
+                               (error 'errortrace
+                                      "unrecognized (non-top-level) expression form: ~e"
+                                      (syntax-object->datum sexpr))])))
       
+      ;; Result doesn't have a `lambda', so it works
+      ;; for case-lambda
+      (define (annotate-lambda name expr args body trans?)
+	(with-syntax ([body
+		       (profile-point 
+			(map (lambda (e) (annotate e trans?)) (stx->list body))
+			name expr
+			trans?)]
+		      [args args])
+          (syntax (args . body))))
       
-      ;; ANNOTATION
+      (define (keep-lambda-properties orig new)
+        (let ([p (syntax-property orig 'method-arity-error)]
+	      [p2 (syntax-property orig 'inferred-name)])
+          (let ([new (if p
+			 (syntax-property new 'method-arity-error p)
+			 new)])
+	    (if p2
+		(syntax-property new 'inferred-name p2)
+		new))))
       
-      ;; TEMPLATE FUNCTIONS:
-      ;;  these functions' definitions follow the data definitions presented in the Syntax
-      ;;  chapter of the MzScheme Manual. 
+      (define (annotate-let rec? trans? varsl rhsl bodyl)
+        (let ([varses (syntax->list varsl)]
+              [rhses (syntax->list rhsl)]
+              [bodies (syntax->list bodyl)])
+	  (with-syntax ([(rhs ...)
+			 (map
+			  (lambda (vars rhs)
+			    (annotate-named
+			     (syntax-case vars ()
+			       [(id)
+				(syntax id)]
+			       [_else #f])
+			     rhs
+			     trans?))
+			  varses 
+			  rhses)]
+			[(body ...)
+			 (map
+			  (lambda (body)
+			    (annotate body trans?))
+			  bodies)]
+			[(vars ...) varses]
+			[let (if rec? 
+				 (quote-syntax letrec-values)
+				 (quote-syntax let-values))])
+	    (syntax (let ([vars rhs] ...)
+		      body ...)))))
       
-      (define (annotate-top-level-expr stx trans?)
-        (let ([rebuild
-               (lambda (new-stx) 
-                 (rebuild-stx (syntax->list new-stx) stx))])
-          (kernel-syntax-case stx #f
-            [(module identifier name (#%plain-module-begin . module-level-exprs))
-             (rebuild #`(module identifier name 
-                          (#%plain-module-begin 
-                           #,@(map (lambda (expr) (annotate-module-level-expr expr trans?))
-                                   (syntax->list #'module-level-exprs)))))]
-            [else-stx
-             (annotate-general-top-level-expr stx trans?)])))
+      (define (annotate-seq trans? expr who bodyl annotate)
+        (with-syntax ([who who]
+                      [bodyl
+                       (map (lambda (b)
+                              (annotate b trans?))
+                            (syntax->list bodyl))])
+          (syntax/loc expr (who . bodyl))))
       
-      (define (annotate-module-level-expr stx trans?)
-        (kernel-syntax-case stx #f
-          [(provide . provide-specs)
-           stx]
-          [else-stx
-           (annotate-general-top-level-expr stx trans?)]))
+      (define (make-annotate top? name)
+        (lambda (expr trans?)
+          (kernel-syntax-case expr trans?
+                              [_
+                               (identifier? expr)
+                               (if (eq? 'lexical (identifier-binding expr))
+                                   ;; lexical variable - no error possile
+                                   expr
+                                   ;; might be undefined/uninitialized
+                                   (with-mark expr make-st-mark expr))]
+                              
+                              [(#%top . _)
+                               ;; might be undefined/uninitialized
+                               (with-mark expr make-st-mark expr)]
+                              [(#%datum . _)
+                               ;; no error possible
+                               expr]
+                              
+                              ;; Can't put annotation on the outside
+                              [(define-values names rhs)
+                               top?
+                               (with-syntax ([marked (with-mark expr
+								make-st-mark
+                                                                (annotate-named
+                                                                 (syntax-case (syntax names) ()
+                                                                   [(id)
+                                                                    (syntax id)]
+                                                                   [_else #f])
+                                                                 (syntax rhs)
+                                                                 trans?))])
+                                 (syntax/loc expr (define-values names marked)))]
+                              [(begin . exprs)
+                               top?
+                               (annotate-seq
+                                trans? expr (quote-syntax begin)
+                                (syntax exprs)
+                                annotate-top)]
+                              [(define-syntaxes (name ...) rhs)
+                               top?
+                               (with-syntax ([marked (with-mark expr
+								make-st-mark
+                                                                (annotate-named
+                                                                 (let ([l (syntax->list (syntax (name ...)))])
+                                                                   (and (pair? l)
+                                                                        (null? (cdr l))
+                                                                        (car l)))
+                                                                 (syntax rhs)
+                                                                 #t))])
+                                 (syntax/loc expr (define-syntaxes (name ...) marked)))]
+                              
+                              ;; Just wrap body expressions
+                              [(module name init-import (#%plain-module-begin body ...))
+                               top?
+                               (with-syntax ([bodyl
+                                              (map (lambda (b)
+                                                     (annotate-top b trans?))
+                                                   (syntax->list (syntax (body ...))))])
+                                 (datum->syntax-object
+                                  expr
+                                  ;; Preserve original #%module-begin:
+                                  (list (syntax module) (syntax name) (syntax init-import) 
+                                        (cons (syntax #%plain-module-begin) (syntax bodyl)))
+                                  expr))]
+                              
+                              ;; No way to wrap
+                              [(require i ...) expr]
+                              [(require-for-syntax i ...) expr]
+                              ;; No error possible (and no way to wrap)
+                              [(provide i ...) expr]
+                              
+                              ;; No error possible
+                              [(quote _)
+                               expr]
+                              [(quote-syntax _)
+                               expr]
+                              
+                              ;; Wrap body, also a profile point
+                              [(lambda args . body)
+                               (with-syntax ([cl (annotate-lambda name expr 
+                                                                  (syntax args) (syntax body) 
+                                                                  trans?)])
+                                 (keep-lambda-properties expr (syntax/loc expr (lambda . cl))))]
+                              [(case-lambda [args . body] ...)
+                               (with-syntax ([clauses
+                                              (map
+                                               (lambda (args body)
+                                                 (annotate-lambda name expr args body trans?))
+                                               (syntax->list (syntax (args ...))) 
+                                               (syntax->list (syntax (body ...))))])
+                                 (keep-lambda-properties expr (syntax/loc expr (case-lambda . clauses))))]
+                              
+                              ;; Wrap RHSs and body
+                              [(let-values ([vars rhs] ...) . body)
+                               (with-mark expr 
+					  make-st-mark
+                                          (annotate-let #f trans?
+                                                        (syntax (vars ...))
+                                                        (syntax (rhs ...))
+                                                        (syntax body)))]
+                              [(letrec-values ([vars rhs] ...) . body)
+                               (with-mark expr 
+					  make-st-mark
+                                          (annotate-let #t trans?
+                                                        (syntax (vars ...))
+                                                        (syntax (rhs ...))
+                                                        (syntax body)))]
+                              
+                              ;; Wrap RHS
+                              [(set! var rhs)
+                               (with-syntax ([rhs (annotate-named 
+                                                   (syntax var)
+                                                   (syntax rhs)
+                                                   trans?)])
+                                 ;; set! might fail on undefined variable, or too many values:
+                                 (with-mark expr make-st-mark (syntax/loc expr (set! var rhs))))]
+                              
+                              ;; Wrap subexpressions only
+                              [(begin . body)
+                               (with-mark expr
+					  make-st-mark
+                                          (annotate-seq trans? expr (syntax begin) (syntax body) annotate))]
+                              [(begin0 . body)
+                               (with-mark expr
+					  make-st-mark
+                                          (annotate-seq trans? expr (syntax begin0) (syntax body) annotate))]
+                              [(if . body)
+                               (with-mark expr 
+					  make-st-mark 
+					  (annotate-seq trans? expr (syntax if) (syntax body) annotate))]
+                              [(with-continuation-mark . body)
+                               (with-mark expr
+					  make-st-mark
+                                          (annotate-seq 
+                                           trans? expr (syntax with-continuation-mark) (syntax body) annotate))]
+                              
+                              ;; Wrap whole application, plus subexpressions
+                              [(#%app . body)
+                               (if (stx-null? (syntax body))
+                                   ;; It's a null:
+                                   expr
+                                   (with-mark expr
+					      make-st-mark
+                                              (annotate-seq trans? expr 
+                                                            (syntax #%app) (syntax body) 
+                                                            annotate)))]
+                              
+                              [_else
+                               (error 'errortrace
+                                      "unrecognized expression form~a: ~e"
+                                      (if top? " at top-level" "")
+                                      (syntax-object->datum expr))])))
       
-      (define (annotate-general-top-level-expr stx trans?)
-        (let ([rebuild 
-               (lambda (new-stx) 
-                 (rebuild-stx (syntax->list new-stx) stx))])
-          (kernel-syntax-case stx #f
-            [(define-values (var ...) expr)
-             (rebuild #`(define-values (var ...) #,(annotate-expr #`expr
-                                                                  (syntax-case #`(var ...) ()
-                                                                    [(var) #`var]
-                                                                    [_ #f])
-                                                                  trans?)))]
-            [(define-syntaxes (var ...) expr)
-             (rebuild #`(define-syntaxes (var ...) #,(annotate-expr #`expr 
-                                                                    (syntax-case #`(var ...) ()
-                                                                      [(var) #`var]
-                                                                      [_ #f])
-                                                                    #t)))]
-            [(begin . top-level-exprs)
-             (rebuild #`(begin #,@(map (lambda (expr) (annotate-top-level-expr expr trans?))
-                                       (syntax->list #'top-level-exprs))))]
-            [(require . require-specs)
-             stx]
-            [(require-for-syntax . require-specs)
-             stx]
-            [else
-             (annotate-expr stx #f trans?)])))
-      
-      ;; annotate-expr is written using a functional visitor. That is, 
-      ;; annotate-expr is the visitor, and `expose' is a function that,
-      ;; given a syntax-object, produces a cons-tree of sub-expressions
-      ;; paired with contextual information and also a `rebuild' closure
-      ;; that knows how to take the cons-tree back into the desired syntax
-      ;; object.
-      ;;
-      ;; the stx-info structure represents the contextual information revealed
-      ;; by expose about subexpressions.
-      
-      (define (annotate-expr expr inferred-name trans?)
-        (let-values ([(annotated _)
-                      ((annotate-from-info null ; unimportant when tailness = `lambda-body & resulting
-                                           ; free-vars are ignored
-                                           trans?)
-                       (make-stx-info expr 
-                                      `lambda-body ; this tailness causes full capture
-                                      null ; new-bindings does not affect computation
-                                      ; when tailness = 'lambda-body & resulting
-                                      ; free-vars are ignored.
-                                      inferred-name))])
-          annotated))
-      
-      (define-struct stx-info (stx tailness new-bindings inferred-name))
-      
-      (define (annotate-from-info prior-tail-bound trans?)
-        (lambda (info)
-          (let*-values 
-              ([(src) (stx-info-stx info)]
-               [(local-free-vars) (free-vars-of src trans?)]
-               [(my-tail-bound) (tail-bound prior-tail-bound 
-                                            (stx-info-new-bindings info)
-                                            (stx-info-tailness info))]
-               [(pieces rebuilder) (expose src trans?)]
-               [(annotated-tree sub-free-vars) (cons-tree-map/fv (annotate-from-info my-tail-bound trans?)
-                                                                 pieces trans?)]
-               [(free-here) (varref-set-pair-union local-free-vars sub-free-vars)]
-               [(free-for-parent) (varref-set-remove-bindings free-here (stx-info-new-bindings info))]
-               [(rebuilt) (rebuilder annotated-tree)]
-               [(profiled) (if (eq? (stx-info-tailness info) 'lambda-body)
-                               (profile-point rebuilt (stx-info-inferred-name info) src trans?)
-                               rebuilt)]
-               [(mark-maker) (lambda (source) 
-                               (make-debug-info source my-tail-bound free-here 'no-label #f))])
-            (if (should-be-annotated? info (null? pieces) trans?)
-                (values (with-mark src mark-maker profiled)
-                        free-for-parent)
-                (values rebuilt
-                        free-for-parent)))))
-      
-      ;; cons-tree-map/fv walks over a cons tree, building a new one by applying fn to each
-      ;; non-cons non-null item.  fn is also expected to return a list of free-vars.  These
-      ;; free-vars are accumulated with union-vars as the tree is built.
-      
-      (define (cons-tree-map/fv fn tree trans?)
-        (cond [(null? tree) (values null null)]
-              [(pair? tree) (let*-values ([(lhs-ann lhs-fv) (cons-tree-map/fv fn (car tree) trans?)]
-                                          [(rhs-ann rhs-fv) (cons-tree-map/fv fn (cdr tree) trans?)])
-                              (values (cons lhs-ann rhs-ann) (varref-set-pair-union lhs-fv rhs-fv)))]
-              [else (fn tree)]))
-      
-      ;; expose : (syntax-object? boolean? -> (values stx-info? (cons-tree? -> syntax-object?))
-      ;; as described above, expose takes a syntax object and returns two values; a 
-      ;; cons-tree of stx-info structs, and a rebuilder procedure that takes a cons-tree
-      ;; with that shape back into the syntactic form it came from.  The stx-info structure
-      ;; contains the syntax object itself, and associated contextual information necessary
-      ;; for annotation: is it tail, non-tail, or a lambda body? what new bindings is it tail
-      ;; w.r.t.?
-      
-      (define (expose stx trans?)
-        (let* ([tr-info (lambda (stx) 
-                          (make-stx-info stx 'tail null #f))]        ; tail position
-               [nt-info (lambda (stx) 
-                          (make-stx-info stx 'non-tail null #f))]    ; non-tail position
-               [lb-info (lambda (bindings) 
-                          (lambda (stx)
-                            (make-stx-info stx 'lambda-body bindings #f)))] ; lambda body
-               [lt-info (lambda (bindings) 
-                          (lambda (stx)
-                            (make-stx-info stx 'tail bindings #f)))]     ; body of a let
-               [rh-info (lambda (bindings)
-                          (lambda (stx inferred-name)
-                            (make-stx-info stx 'non-tail bindings inferred-name)))] ; let rhs
-               [begin-info
-                (lambda (stx)
-                  (let* ([bodies (syntax->list stx)]
-                         [reversed-bodies (reverse bodies)]
-                         [last-body (car reversed-bodies)]
-                         [all-but-last (reverse! (cdr reversed-bodies))])
-                    (append (map nt-info all-but-last) (list (tr-info last-body)))))]
-               [begin0-info
-                (lambda (stx)
-                  (map nt-info (syntax->list stx)))]
-               [rebuild
-                (lambda (new-stx) 
-                  (rebuild-stx (syntax->list new-stx) stx))]
-               [seq-rebuilder
-                (lambda (token)
-                  (lambda (stx-list)
-                    (rebuild #`(#,token #,@stx-list))))]
-               [lambda-clause-abstraction
-                (lambda (clause)
-                  (kernel-syntax-case clause #f
-                    [(arglist . bodies)
-                     (values
-                      (map (lb-info (arglist-bindings #'arglist)) 
-                           (syntax->list #'bodies))
-                      #`arglist)]
-                    [else
-                     (error 'expr-syntax-object-iterator 
-                            "unexpected (case-)lambda clause: ~a" 
-                            (syntax-object->datum stx))]))]
-               [let-values-abstraction
-                (lambda (stx rec? token)
-                  (kernel-syntax-case stx #f
-                    [(kwd (((variable ...) rhs) ...) . bodies)
-                     (let* ([new-bindings 
-                             (varref-set-union 
-                              (map syntax->list 
-                                   (syntax->list #'((variable ...) ...))))]
-                            [rhs-new-bindings (if rec? new-bindings null)]
-                            [inferred-names (map (lambda (lhs)
-                                                   (syntax-case lhs ()
-                                                     [(var) #`var]
-                                                     [_ #f]))
-                                                 (syntax->list #`((variable ...) ...)))])
-                       (values (cons (map (rh-info rhs-new-bindings) 
-                                          (syntax->list #'(rhs ...))
-                                          inferred-names)
-                                     (map (lt-info new-bindings)
-                                          (syntax->list #'bodies)))
-                               (lambda (annotateds)
-                                 (with-syntax ([(rhs ...) (car annotateds)]
-                                               [(body ...) (cdr annotateds)])
-                                   (rebuild #`(#,token ([(variable ...) rhs] ...) body ...))))))]
-                    [else
-                     (error 'errortrace 
-                            "unexpected let(rec) expression: ~a"
-                            (syntax-object->datum stx))]))]) 
-          (kernel-syntax-case stx trans?
-            [var-stx
-             (identifier? (syntax var-stx))
-             (values null (lambda (_) stx))]
-            [(lambda . clause)
-             (let-values ([(subexps arglist) (lambda-clause-abstraction #`clause)])
-               (values subexps
-                       (lambda (annotateds)
-                         (rebuild #`(lambda #,arglist #,@annotateds)))))]
-            [(case-lambda . clauses)
-             (let*-values ([(clauses-lst) (syntax->list #`clauses)]
-                           [(subexps-list arglist-list) 
-                            (if (null? clauses-lst)
-                                (values null null)
-                                (values-map lambda-clause-abstraction clauses-lst))])
-               (values subexps-list 
-                       (lambda (annotateds-list)
-                         (with-syntax ([(arglist ...) arglist-list]
-                                       [(bodies ...) annotateds-list])
-                           (rebuild #`(case-lambda (arglist . bodies) ...))))))]
-            [(if test then)
-             (values (list (nt-info #`test) (tr-info #`then))
-                     (seq-rebuilder #`if))]
-            [(if test then else)
-             (values (list (nt-info #`test) (tr-info #`then) (tr-info #`else))
-                     (seq-rebuilder #`if))]
-            [(begin . bodies)
-             (values (begin-info #`bodies)
-                     (seq-rebuilder #`begin))]
-            [(begin0 . bodies)
-             (values (begin0-info #`bodies)
-                     (seq-rebuilder #`begin0))]
-            [(let-values . _)
-             (let-values-abstraction stx #f #`let-values)]
-            [(letrec-values . _)
-             (let-values-abstraction stx #t #`letrec-values)]
-            [(set! var val)
-             (values (nt-info #`val)
-                     (lambda (rhs)
-                       (rebuild #`(set! var #,rhs))))]
-            [(quote _)
-             (values null (lambda (_) stx))]
-            [(quote-syntax _)
-             (values null (lambda (_) stx))]
-            [(with-continuation-mark key mark body)
-             (values (list (nt-info #`key) (nt-info #`mark) (tr-info #`body))
-                     (seq-rebuilder #`with-continuation-mark))]
-            [(#%app . exprs)
-             (values (begin0-info #`exprs)
-                     (seq-rebuilder #`#%app))]
-            [(#%datum . _)
-             (values null (lambda (_) stx))]
-            [(#%top . var)
-             (values null (lambda (_) stx))]
-            [else
-             (error 'expr-syntax-object-iterator "unknown expr: ~a" 
-                    (syntax-object->datum stx))])))
-      
-      
-      ; arglist-bindings : (syntax? -> (listof syntax?))
-      ;  return a list of the names in the arglist
-      
-      (define (arglist-bindings arglist-stx)
-        (syntax-case arglist-stx ()
-          [var
-           (identifier? arglist-stx)
-           (list arglist-stx)]
-          [(var ...)
-           (syntax->list arglist-stx)]
-          [(var . others)
-           (cons #'var (arglist-bindings #'others))]))
-      
-      ; tail-bound : (binding-set? (listof syntax?) symbol -> binding-set?)
-      ;  prior: the variables that were tail-bound in the enclosing expression
-      ;  newly-bound: the variables whose bindings were created in the enclosing 
-      ;               expression
-      ;  tailness: 'lambda-body if this expression is the body of a lambda,
-      ;            'tail if this expression is tail wrt the enclosing expression, and
-      ;            'non-tail otherwise
-      
-      (define (tail-bound prior newly-bound tailness)
-        (case tailness
-          ((lambda-body) 'all)
-          ((tail) (binding-set-union (list prior newly-bound)))
-          ((non-tail) newly-bound)
-          (else (error 'tail-bound "unexpected value ~s for tailness argument" 
-                       tailness))))
-      
-      ; should-be-annotated? : (stx-info? boolean? boolean? -> boolean?)
-      ; decides whether an expression should be annotated. 
-      
-      (define (should-be-annotated? info no-subexps? trans?)
-        (if no-subexps?
-            ;; wrap only if an error could occur:
-            (kernel-syntax-case (stx-info-stx info) trans?
-              [var-stx
-               (identifier? (syntax var-stx))
-               (not (eq? 'lexical (identifier-binding #`var-stx)))]
-              [(#%top . var) #t]
-              [else #f])
-            ;; wrap if it could cause an error or if it has new bindings or if it's the body of a lambda:
-            (or (kernel-syntax-case (stx-info-stx info) trans?
-                  [(set! v body) #t]
-                  [(#%app . _) #t]
-                  [_ #f])
-                (not (null? (stx-info-new-bindings info)))
-                (eq? (stx-info-tailness info) 'lambda-body))))
-      
-      ; free-vars-of: (syntax? boolean? -> (listof syntax?))
-      ;  if this expression is a variable reference or a set! of some variable, return it in a list. 
-      ;  otherwise return null.
-      
-      (define (free-vars-of stx trans?)
-        (kernel-syntax-case stx trans?
-          [(#%top . var) ; top-level vars commented out.  They cause problems, & you can look them up later.
-           null]
-          [var-stx
-           (identifier? stx)
-           (list stx)]
-          [(set! v body)
-           (if (identifier-binding #`v)
-               (list #`v)
-               null)]
-          [_
-           null]))
-      
-      (define (annotate-top . args) 
-        (begin
-          (apply annotate-top-level-expr args))))))
+      (define annotate (make-annotate #f #f))
+      (define annotate-top (make-annotate #t #f))
+      (define annotate-named (lambda (name expr trans?) ((make-annotate #t name) expr trans?))))))

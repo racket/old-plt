@@ -18,8 +18,7 @@ to the original stdout of DrScheme.
            (lib "unitsig.ss")
            (lib "class.ss")
            (lib "tool.ss" "drscheme")
-           (lib "mred.ss" "mred")
-	   (lib "marks.ss" "stepper" "private"))
+           (lib "mred.ss" "mred"))
   
   (provide tool@)
   
@@ -342,19 +341,18 @@ to the original stdout of DrScheme.
             [(exn? exn) 
              (let ([cms (continuation-mark-set->list (exn-continuation-marks exn) cm-key)])
                (when (and cms (not (null? cms)))
-                 (let* ([dis (map mark-source cms)]
-			[first-cms (car dis)]
+                 (let* ([first-cms (st-mark-source (car cms))]
                         [src (car first-cms)]
                         [start-position (cadr first-cms)]
                         [end-position (+ start-position (cddr first-cms))])
                    (send rep highlight-error src start-position end-position))))]
             [else (void)])))
       
-      ;; wrap : syntax (any -> syntax) syntax -> syntax
+      ;; with-mark : syntax (any -> syntax) syntax -> syntax
       ;; a member of stacktrace-imports^
       ;; guarantees that the continuation marks associated with cm-key are
       ;; members of the debug-source type
-      (define (with-mark source-stx mark-maker expr)
+      (define (with-mark source-stx make-st-mark expr)
         (let ([source (syntax-source source-stx)]
               [start-position (syntax-position source-stx)]
               [span (syntax-span source-stx)])
@@ -362,7 +360,7 @@ to the original stdout of DrScheme.
                    (number? start-position)
                    (number? span))
               (with-syntax ([expr expr]
-                            [mark (mark-maker `(,source ,(- start-position 1) . ,span))]
+                            [mark (make-st-mark `(,source ,(- start-position 1) . ,span))]
                             [cm-key cm-key])
                 #`(with-continuation-mark
                    'cm-key

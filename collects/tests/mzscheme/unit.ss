@@ -380,25 +380,29 @@
 
 ; Units and objects combined:
 
-(define u@ 
+(define u@
   (unit (import x) (export)  
-	(class* () () () (public (y x)))))
+	(class* object% () () 
+		(public (y x))
+		(sequence (super-init)))))
 (define v (invoke-unit u@ car))
 (test #t class? v)
 (define w (make-object v))
 (test car 'ivar (ivar w y))
 
-(define c% 
-  (class* () () (x)        
-	  (public (z (unit (import) (export) x)))))
+(define c%
+  (class* object% () (x)        
+	  (public (z (unit (import) (export) x)))
+	  (sequence (super-init))))
 (define u (ivar (make-object c% car) z))
 (test #t unit? u)
 (test car 'invoke (invoke-unit u))
 
 
-(define c% 
-  (class* () () (x) (public (y x))
-	  (public (z (unit (import) (export) y)))))
+(define c%
+  (class* object% () (x) (public (y x))
+	  (public (z (unit (import) (export) y)))
+	  (sequence (super-init))))
 (define u (make-object c% 3))
 (define u2 (ivar u z))
 (test #t unit? u2)

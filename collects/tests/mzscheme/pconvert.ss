@@ -11,9 +11,9 @@
 
 (define (xl) 1)
 (define (xu) (unit (import) (export)))
-(define (xc) (class '() ()))
+(define (xc) (class object% () (sequence (super-init))))
 
-(begin
+(init
   (define-struct test (value constructor-sexp
 			     whole/frac-constructor-sexp
 			     shared-constructor-sexp

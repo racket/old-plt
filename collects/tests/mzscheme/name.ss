@@ -62,26 +62,28 @@
 (test 'f inferred-name f)
 
 ; Test class stuff ok when no name
-(test #f inferred-name (class null ()))
+(test #f inferred-name (class object% () (sequence (super-init))))
 (test #f inferred-name (interface ()))
 
 ; Test class stuff ok when name
-(test 'c1 inferred-name (let ([c1 (class null ())]) c1))
+(test 'c1 inferred-name (let ([c1 (class object% () (sequence (super-init)))]) c1))
 (test 'i1 inferred-name (let ([i1 (interface ())]) i1))
 (test 'm inferred-name
       (ivar
        (make-object
-	(class null ()
+	(class object% ()
 	       (public
-		[m (lambda () 10)])))
+		[m (lambda () 10)])
+	       (sequence (super-init))))
        m))
  ; Use external name:
 (test 'mex inferred-name
       (ivar
        (make-object
-	(class null ()
+	(class object% ()
 	       (public
-		[(m mex) (lambda () 10)])))
+		[(m mex) (lambda () 10)])
+	       (sequence (super-init))))
        mex))
 
 ; Test unit stuff ok when no name

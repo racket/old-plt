@@ -73,6 +73,7 @@ MzLib cleanup:
  Moved MzLib's compat.ss out of the core
  Removes all but the first two arguments to pretty-print (the
   rest have parameters, which are more convenient anyway)
+ Changed require to reference-file in refer.ss
 file.ss library: added make-directory*
 pretty-print: default display string handler is now the default
  port display handler instead of the display procedure

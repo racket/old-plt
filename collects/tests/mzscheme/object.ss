@@ -10,22 +10,22 @@
   (syntax-test  `(,cl*))
   (syntax-test  `(,cl* ,@renames . x))
   (syntax-test  `(,cl* ,@renames 0))
-  (syntax-test  `(,cl* ,@renames () . x))
-  (syntax-test  `(,cl* ,@renames () 0))
-  (syntax-test  `(,cl* ,@renames () x))
-  (syntax-test  `(,cl* ,@renames () ()))
-  (syntax-test  `(,cl* ,@renames () () (0) x))
-  (syntax-test  `(,cl* ,@renames () () 0))
-  (syntax-test  `(,cl* ,@renames () () . x))
-  (syntax-test  `(,cl* ,@renames () () () . x))
-  (syntax-test  `(,cl* ,@renames () () () x))
-  (syntax-test  `(,cl* ,@renames () () () public))
-  (syntax-test  `(,cl* ,@renames () () () (x)))
-  (syntax-test  `(,cl* ,@renames () () (x) ()))
+  (syntax-test  `(,cl* ,@renames object% . x))
+  (syntax-test  `(,cl* ,@renames object% 0))
+  (syntax-test  `(,cl* ,@renames object% x))
+  (syntax-test  `(,cl* ,@renames object% ()))
+  (syntax-test  `(,cl* ,@renames object% () (0) x))
+  (syntax-test  `(,cl* ,@renames object% () 0))
+  (syntax-test  `(,cl* ,@renames object% () . x))
+  (syntax-test  `(,cl* ,@renames object% () () . x))
+  (syntax-test  `(,cl* ,@renames object% () () x))
+  (syntax-test  `(,cl* ,@renames object% () () public))
+  (syntax-test  `(,cl* ,@renames object% () () (x)))
+  (syntax-test  `(,cl* ,@renames object% () (x) ()))
 
   (let ()
     (define (try-dotted cl)
-      (syntax-test  `(,cl* ,@renames () () () (,cl . x))))
+      (syntax-test  `(,cl* ,@renames object% () () (,cl . x))))
     
     (map try-dotted '(public override private inherit rename
 			     inherit-from rename-from
@@ -33,13 +33,13 @@
   
   (let ()
     (define (try-defn-kind cl)
-      (syntax-test  `(,cl* ,@renames () () () (,cl 8)))
-      (syntax-test  `(,cl* ,@renames () () () (,cl [8 9])))
-      (syntax-test  `(,cl* ,@renames () () () (,cl [(x) 9])))
-      (syntax-test  `(,cl* ,@renames () () () (,cl [(x y x) 9])))
-      (syntax-test  `(,cl* ,@renames () () () (,cl [x . 1])))
-      (syntax-test  `(,cl* ,@renames () () () (,cl [x 1 . 3])))
-      (syntax-test  `(,cl* ,@renames () () () (,cl [x 1 3]))))
+      (syntax-test  `(,cl* ,@renames object% () () (,cl 8)))
+      (syntax-test  `(,cl* ,@renames object% () () (,cl [8 9])))
+      (syntax-test  `(,cl* ,@renames object% () () (,cl [(x) 9])))
+      (syntax-test  `(,cl* ,@renames object% () () (,cl [(x y x) 9])))
+      (syntax-test  `(,cl* ,@renames object% () () (,cl [x . 1])))
+      (syntax-test  `(,cl* ,@renames object% () () (,cl [x 1 . 3])))
+      (syntax-test  `(,cl* ,@renames object% () () (,cl [x 1 3]))))
     
     (try-defn-kind 'public)
     (try-defn-kind 'override)
@@ -47,69 +47,69 @@
 
   (let ()
     (define (try-defn-rename-kind cl)
-      (syntax-test  `(,cl* ,@renames () () () (,cl [((x) y) 9])))
-      (syntax-test  `(,cl* ,@renames () () () (,cl [(x (y)) 9])))
-      (syntax-test  `(,cl* ,@renames () () () (,cl [(x . y) 9])))
-      (syntax-test  `(,cl* ,@renames () () () (,cl [(x 1) 9])))
-      (syntax-test  `(,cl* ,@renames () () () (,cl [(1 x) 9]))))
+      (syntax-test  `(,cl* ,@renames object% () () (,cl [((x) y) 9])))
+      (syntax-test  `(,cl* ,@renames object% () () (,cl [(x (y)) 9])))
+      (syntax-test  `(,cl* ,@renames object% () () (,cl [(x . y) 9])))
+      (syntax-test  `(,cl* ,@renames object% () () (,cl [(x 1) 9])))
+      (syntax-test  `(,cl* ,@renames object% () () (,cl [(1 x) 9]))))
     (try-defn-rename-kind 'public)
     (try-defn-rename-kind 'override))
 
   (let ()
     (define (try-ref-kind cl)
-      (syntax-test  `(,cl* ,@renames () () () (,cl 8)))
-      (syntax-test  `(,cl* ,@renames () () () (,cl x 8)))
-      (syntax-test  `(,cl* ,@renames () () () (,cl (x . y))))
-      (syntax-test  `(,cl* ,@renames () () () (,cl (x y z)))))
+      (syntax-test  `(,cl* ,@renames object% () () (,cl 8)))
+      (syntax-test  `(,cl* ,@renames object% () () (,cl x 8)))
+      (syntax-test  `(,cl* ,@renames object% () () (,cl (x . y))))
+      (syntax-test  `(,cl* ,@renames object% () () (,cl (x y z)))))
     
     (map try-ref-kind '(inherit rename share)))
-  (error-test `(,cl* ,@renames () () () (inherit x)) exn:object?)
-  (error-test `(,cl* ,@renames () () () (inherit (x y))) exn:object?)
-  (error-test `(,cl* ,@renames () () () (override [x void])) exn:object?)
-  (error-test `(,cl* ,@renames () () () (override [(x y) void])) exn:object?)
-  (syntax-test  `(,cl* ,@renames () () () (inherit (x y z))))
-  (syntax-test  `(,cl* ,@renames () () () (inherit (x 5))))
-  (syntax-test  `(,cl* ,@renames () () () (inherit (x))))
-  (syntax-test  `(,cl* ,@renames () () () (rename x)))
-  (syntax-test  `(,cl* ,@renames () () () (rename (x))))
-  (syntax-test  `(,cl* ,@renames () () () (rename ((x) y))))
-  (syntax-test  `(,cl* ,@renames () () () (rename ((x y) y))))
-  (syntax-test  `(,cl* ,@renames () () () (rename ((1) y))))
+  (error-test `(,cl* ,@renames object% () () (inherit x)) exn:object?)
+  (error-test `(,cl* ,@renames object% () () (inherit (x y))) exn:object?)
+  (error-test `(,cl* ,@renames object% () () (override [x void])) exn:object?)
+  (error-test `(,cl* ,@renames object% () () (override [(x y) void])) exn:object?)
+  (syntax-test  `(,cl* ,@renames object% () () (inherit (x y z))))
+  (syntax-test  `(,cl* ,@renames object% () () (inherit (x 5))))
+  (syntax-test  `(,cl* ,@renames object% () () (inherit (x))))
+  (syntax-test  `(,cl* ,@renames object% () () (rename x)))
+  (syntax-test  `(,cl* ,@renames object% () () (rename (x))))
+  (syntax-test  `(,cl* ,@renames object% () () (rename ((x) y))))
+  (syntax-test  `(,cl* ,@renames object% () () (rename ((x y) y))))
+  (syntax-test  `(,cl* ,@renames object% () () (rename ((1) y))))
 
-  (syntax-test  `(,cl* ,@renames () () () (inherit x) (sequence (set! x 5))))
-  (syntax-test  `(,cl* ,@renames () () () (rename [x y]) (sequence (set! x 5))))
+  (syntax-test  `(,cl* ,@renames object% () () (inherit x) (sequence (set! x 5))))
+  (syntax-test  `(,cl* ,@renames object% () () (rename [x y]) (sequence (set! x 5))))
 
-  (syntax-test  `(,cl* ,@renames () () () (sequence 1 . 2)))
+  (syntax-test  `(,cl* ,@renames object% () () (sequence 1 . 2)))
   
-  (syntax-test  `(,cl* ,@renames () () () (public [x 7] [x 9])))
-  (syntax-test  `(,cl* ,@renames () () (x) (public [x 7])))
-  (syntax-test  `(,cl* ,@renames () () (x) (public [(x w) 7])))
-  (syntax-test  `(,cl* ,@renames () () () (public [(x y) 7] [(z y) 9])))
-  (syntax-test  `(,cl* ,@renames () () () (public [(x y) 7] [(x z) 9])))
+  (syntax-test  `(,cl* ,@renames object% () () (public [x 7] [x 9])))
+  (syntax-test  `(,cl* ,@renames object% () (x) (public [x 7])))
+  (syntax-test  `(,cl* ,@renames object% () (x) (public [(x w) 7])))
+  (syntax-test  `(,cl* ,@renames object% () () (public [(x y) 7] [(z y) 9])))
+  (syntax-test  `(,cl* ,@renames object% () () (public [(x y) 7] [(x z) 9])))
 
-  (syntax-test  `(,cl* ,@renames () a ()))
-  (syntax-test  `(,cl* ,@renames () (1 . a) ())))
+  (syntax-test  `(,cl* ,@renames object% a ()))
+  (syntax-test  `(,cl* ,@renames object% (1 . a) ())))
 
 (test-class* 'class* ())
 (test-class* 'class*/names '((this super)))
 
-(syntax-test  `(class*/names 8 () () () ()))
-(syntax-test  `(class*/names () () () ()))
-(syntax-test  `(class*/names (8) () () ()))
-(syntax-test  `(class*/names (this . 8) () () ()))
-(syntax-test  `(class*/names (this 8) () () ()))
-(syntax-test  `(class*/names (this super-init . 8) () () ()))
-(syntax-test  `(class*/names (this super-init 8) () () ()))
+(syntax-test  `(class*/names 8 object% () () ()))
+(syntax-test  `(class*/names () object% () ()))
+(syntax-test  `(class*/names (8) object% () ()))
+(syntax-test  `(class*/names (this . 8) object% () ()))
+(syntax-test  `(class*/names (this 8) object% () ()))
+(syntax-test  `(class*/names (this super-init . 8) object% () ()))
+(syntax-test  `(class*/names (this super-init 8) object% () ()))
 
-(test #t class? (class* () () ()))
-(test #t class? (class* () () ()))
-(test #t class? (class* () () x))
-(test #t class? (class* () () () (public)))
-(test #t class? (class* () () () (public sequence)))
-(test #t class? (class* () () (x) (public [(y x) 9])))
-(test #t class? (class*/names (this super-init) () () () (public)))
+(test #t class? (class* object% () ()))
+(test #t class? (class* object% () ()))
+(test #t class? (class* object% () x))
+(test #t class? (class* object% () () (public)))
+(test #t class? (class* object% () () (public sequence)))
+(test #t class? (class* object% () (x) (public [(y x) 9])))
+(test #t class? (class*/names (this super-init) object% () () (public)))
 
-(define c (class null () (public x)))
+(define c (class object% () (public x)))
 (error-test `(class c () (public x)) exn:object?)
 (error-test `(class c () (public ([y x] 5))) exn:object?)
 (error-test `(class c () (override ([x y] 5))) exn:object?)
@@ -135,7 +135,7 @@
 
 (test #t interface? (interface ()))
 (test #t interface? (interface () x))
-(test #f interface? (class* () () ()))
+(test #f interface? (class* object% () ()))
 
 (define i0.1 (interface () x y))
 (define i0.2 (interface () y c d))
@@ -149,17 +149,21 @@
 (test #f interface-extension? i0.2 i0.1)
 (test #f interface-extension? i0.1 i0.2)
 
-(error-test '(let [(bad (class* () (i0.1) ()))] bad) exn:object?)
-(test #t class? (class* () (i0.1) () (public x y)))
-(error-test '(let ([cl (class* () (i0.1 i0.2) () (public x y c))]) cl) exn:object?)
-(error-test '(class* () (i1) () (public x y c)) exn:object?)
-(test #t class? (class* () (i0.1 i0.1) () (public x y c d)))
-(error-test '(class* () (i1) () (public x y c d)) exn:object?)
-(test #t class? (class* () (i1) () (public x y c d e)))
+(error-test '(let [(bad (class* object% (i0.1) ()))] bad) exn:object?)
+(test #t class? (class* object% (i0.1) () (public x y)))
+(error-test '(let ([cl (class* object% (i0.1 i0.2) () (public x y c))]) cl) exn:object?)
+(error-test '(class* object% (i1) () (public x y c)) exn:object?)
+(test #t class? (class* object% (i0.1 i0.1) () (public x y c d)))
+(error-test '(class* object% (i1) () (public x y c d)) exn:object?)
+(test #t class? (class* object% (i1) () (public x y c d e)))
+
+; No initialization:
+(define no-init-c% (class* object% () ()))
+(error-test '(make-object no-init-c%) exn:object?)
 
 (define c1 
   (let ((v 10))
-    (class* '() (i1) (in [in-2 'banana] . in-rest)
+    (class* object% (i1) (in [in-2 'banana] . in-rest)
 	   (public (x 1) (y 2))
 	   (private (a in) (b3 3))
 	   (public (b1 2) (b2 2) (e 0))
@@ -176,7 +180,8 @@
 		   (f-1-in-2 (lambda () in-2))
 		   (f-1-in-rest (lambda () in-rest)))
 	   (sequence
-	     (set! e in)))))
+	     (set! e in)
+	     (super-init)))))
   
 (test #t implementation? c1 i0.1)
 (test #t implementation? c1 i0.2)
@@ -187,7 +192,7 @@
 
 (define c2 
   (let ((v 20))
-    (class c1 ()
+    (class c1 object%
 	   (inherit b2 (sup-set-b2 f-1-set-b2))
 	   (rename (also-e e)
 		   (also-b2 b2))
@@ -220,27 +225,30 @@
 (define o2.1 (make-object c2.1))
 
 (define c3
-  (class* () () ()
+  (class* object% () ()
 	  (public (x 6) (z 7) (b2 8)
-		  (f-3-b2 (lambda () b2)))))
+		  (f-3-b2 (lambda () b2)))
+	  (sequence (super-init))))
 
 (define o3 (make-object c3))
 
 (define c6
-  (class null (x-x)
+  (class object% (x-x)
     (public
      [(i-a x-a) (lambda () 'x-a)]
      [(x-a i-a) (lambda () 'i-a)]
      [(i-x x-x) (lambda () 'x-x)]
      [x-a-copy (lambda () (i-a))]
-     [i-a-copy (lambda () (x-a))])))
+     [i-a-copy (lambda () (x-a))])
+    (sequence (super-init))))
 
 (define o6 (make-object c6 'bad))
 
 (define c7
-  (class*/names (self super-init) () () ()
+  (class*/names (self super-init) object% () ()
     (public
-     [get-self (lambda () self)])))
+     [get-self (lambda () self)])
+    (sequence (super-init))))
 
 (define o7 (make-object c7))
 
@@ -378,7 +386,9 @@
 (test 1 g0 o1)
 (test 1 g0 o2)
 (arity-test g0 1 1)
-(test 'hi g0 (make-object (class* () (i0.1) () (public [x 'hi][y 'bye]))))
+(test 'hi g0 (make-object (class* object% (i0.1) () 
+				  (public [x 'hi][y 'bye])
+				  (sequence (super-init)))))
 
 (error-test '(make-generic i0.1 www) exn:object?)
 
@@ -386,9 +396,10 @@
 (error-test '(g0 o3) exn:object?)
 
 (error-test '(class* 7 () ()) exn:object?)
+(error-test '(class* null () ()) exn:object?)
 (error-test '(let ([c (class* 7 () ())]) c) exn:object?)
-(error-test '(class* () (i1 7) ()) exn:object?)
-(error-test '(let ([c (class* () (i1 7) ())]) c) exn:object?)
+(error-test '(class* object% (i1 7) ()) exn:object?)
+(error-test '(let ([c (class* object% (i1 7) ())]) c) exn:object?)
 (error-test '(interface (8) x) exn:object?)
 (error-test '(let ([i (interface (8) x)]) i) exn:object?)
 (error-test '(interface (i1 8) x) exn:object?)
@@ -404,8 +415,8 @@
 	      (let ([c (class* c2 () () (sequence (super-init) (super-init)))]) c))
 	    exn:object?)
 
-(error-test '(make-object (class null (x))) exn:application:arity?)
-(error-test '(make-object (let ([c (class null (x))]) c)) exn:application:arity?)
+(error-test '(make-object (class object% (x))) exn:application:arity?)
+(error-test '(make-object (let ([c (class object% (x))]) c)) exn:application:arity?)
 	      
 
 (define c100
@@ -421,11 +432,13 @@
 (test 100 'send (send o100 f-1-a))
 (test 1 'ivar (ivar o100 z))
 
-(test 5 'init (let ([g-x 8]) (make-object (class* () () ([x (set! g-x 5)]))) g-x))
-(test 8 'init (let ([g-x 8]) (make-object (class* () () ([x (set! g-x 5)])) 0) g-x))
+(test 5 'init (let ([g-x 8]) (make-object (class* object% () ([x (set! g-x 5)]) (sequence (super-init)))) g-x))
+(test 8 'init (let ([g-x 8]) (make-object (class* object% () ([x (set! g-x 5)]) (sequence (super-init))) 0) g-x))
 
 (test (letrec ([x x]) x) 'init (send (make-object 
-				      (class* () () ([x y] [y x]) (public (f (lambda () x)))))
+				      (class* object% () ([x y] [y x]) 
+					      (public (f (lambda () x)))
+					      (sequence (super-init))))
 				     f))
 
 (define inh-test-expr
@@ -438,7 +451,9 @@
 	  [base-class
 	   `(class ,(if super
 			super
-			'(class null (n) (public [name (lambda () n)])))
+			'(class object% (n) 
+				(public [name (lambda () n)])
+				(sequence (super-init))))
 		   ()
 		   ,(if (not rename?)
 			'(inherit name)
@@ -548,8 +563,9 @@
 
 
 ; Test for override/rename order
-(define bsc (class null ()
-	    (public [x (lambda () 10)])))
+(define bsc (class object% ()
+		   (public [x (lambda () 10)])
+		   (sequence (super-init))))
 (define orc (class bsc ()
 	      (public [y (lambda () (super-x))])
 	      (override [x (lambda () 20)])

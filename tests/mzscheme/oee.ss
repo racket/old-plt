@@ -4,8 +4,8 @@
 (if (not (defined? 'SECTION))
     (load-relative "testing.ss"))
 
-(define b1 (class null () (public [z1 7][z2 8])))
-(define b3 (class null () (public [z1 13][z2 14])))
+(define b1 (class object% () (public [z1 7][z2 8]) (sequence (super-init))))
+(define b3 (class object% () (public [z1 13][z2 14]) (sequence (super-init))))
 
 (define i1 (mktinterface (interface () z1)))
 (define i3 (mktinterface (interface () z2)))

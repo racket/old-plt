@@ -3,7 +3,7 @@
 (require-library "core.ss")
 
 (define example-list%
-  (class '() (name-in parents [filter (lambda (x) (not (void? x)))])
+  (class object% (name-in parents [filter (lambda (x) (not (void? x)))])
       (public
        [name name-in]
        [items '()]
@@ -66,10 +66,11 @@
 	(lambda (i)
 	  (set! baddies (cons i baddies)))]
        [bad-examples
-	(lambda () baddies)])))
+	(lambda () baddies)])
+      (sequence (super-init))))
 
 (define boxed-example-list%
-  (class () (parent)
+  (class object% (parent)
     (public
      [name `(boxed ,(ivar parent name))]
      [all-examples
@@ -83,10 +84,11 @@
 	      (void)
 	      (box ex))))]
      [bad-examples
-      (lambda () (cons 5 (map box (send parent bad-examples))))])))
+      (lambda () (cons 5 (map box (send parent bad-examples))))])
+    (sequence (super-init))))
 
 (define listed-example-list%
-  (class () (parent)
+  (class object% (parent)
     (public
      [name `(listed ,(ivar parent name))]
      [all-examples
@@ -109,10 +111,11 @@
 	      (list ex))))]
      [bad-examples
       (lambda ()
-	(cons 5 (map list (send parent bad-examples))))])))
+	(cons 5 (map list (send parent bad-examples))))])
+    (sequence (super-init))))
 
 (define optional-example-list%
-  (class () (parent val)
+  (class object% (parent val)
     (public
      [name `(optional ,(ivar parent name))]
      [all-examples
@@ -128,10 +131,11 @@
 	    val
 	    (send parent choose-example)))]
      [bad-examples
-      (lambda () (cons #t (send parent bad-examples)))])))
+      (lambda () (cons #t (send parent bad-examples)))])
+    (sequence (super-init))))
 
 (define choose-example-list%
-  (class () (parents)
+  (class object% (parents)
     (public
      [name `(choose ,(map (lambda (p) (ivar p name)) parents))]
      [all-examples
@@ -143,10 +147,11 @@
 	(send (list-ref parents (random (length parents)))
 	      choose-example which))]
      [bad-examples
-      (lambda () null)])))
+      (lambda () null)])
+    (sequence (super-init))))
 
 (define unknown-example-list%
-  (class () (who)
+  (class object% (who)
     (public
      [name `(unknown ,who)]
      [all-examples (lambda () null)]
@@ -155,10 +160,11 @@
       (opt-lambda ([which #f])
 	(format "[dummy for ~a]" name))]
      [bad-examples
-      (lambda () null)])))
+      (lambda () null)])
+    (sequence (super-init))))
 
 (define discrete-example-list%
-  (class () (vals)
+  (class object% (vals)
     (public
      [name `(one-of ,@vals)]
      [all-examples (lambda () vals)]
@@ -172,10 +178,11 @@
       (lambda ()
 	(if (member 'bad-example-symbol vals)
 	    null
-	    (list 'bad-example-symbol)))])))
+	    (list 'bad-example-symbol)))])
+    (sequence (super-init))))
 
 (define number-example-list%
-  (class () (parent start end)
+  (class object% (parent start end)
     (public
       [name `(number in ,start ,end)]
       [all-examples
@@ -199,7 +206,8 @@
 		(if (= (add1 end) end)
 		    (- start 2)
 		    (add1 end))
-		(send parent bad-examples)))])))
+		(send parent bad-examples)))])
+    (sequence (super-init))))
 
 (define-struct (fatal-exn struct:exn) ())
 
@@ -335,11 +343,9 @@
   mouse-event%
   key-event%
 
-  (dc<%> pixel-dc<%> post-script-dc%)
-  (pixel-dc<%> bitmap-dc%)
+  (dc<%> bitmap-dc% post-script-dc% printer-dc%)
   bitmap-dc%
   post-script-dc%
-
   printer-dc%
   
   (menu-item-container<%> menu% menu-bar% popup-menu%)

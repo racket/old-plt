@@ -5,16 +5,12 @@ include $(WXDIR)/src/make$(MZPLATFORMSUFFIX).env
 
 OBJDIR=objects/sys$(MZPLATFORMSUFFIX)$(GUISUFFIX)
 
-# Don't use wx_gclip.o in wxWindows 1.62(f) or later
-CLIPOBJ = 
-# CLIPOBJ = $(OBJDIR)/wx_gclip.o
-
 # GCLIBS used only for edjr
 # Don't need GC objects unless you're compiling with garbage collection on
 GCLIBS =
 # GCLIBS = -L../mzscheme/lib/sys -lgc
 
-OBJECTS = $(OBJDIR)/wx_style.o $(CLIPOBJ) $(OBJDIR)/wx_keym.o $(OBJDIR)/wx_mbuf.o \
+OBJECTS = $(OBJDIR)/wx_style.o $(OBJDIR)/wx_keym.o $(OBJDIR)/wx_mbuf.o \
           $(OBJDIR)/wx_media.o $(OBJDIR)/wx_mpriv.o $(OBJDIR)/wx_msnip.o \
           $(OBJDIR)/wx_mline.o $(OBJDIR)/wx_mpbrd.o \
           $(OBJDIR)/wx_medad.o $(OBJDIR)/wx_snip.o $(OBJDIR)/wx_cgrec.o \
@@ -41,15 +37,15 @@ edjr: $(OBJDIR) $(OBJDIR)/libwxme.a $(OBJDIR)/edjr.o $(OBJDIR)/edjrmain.o
 
 MCC = $(CXX) $(CPPFLAGS) $(LOCALFLAGS) -c
 
-$(OBJDIR)/wx_media.o : wx_media.cxx $(HEADERS) wx_keym.h wx_snip.h wx_gclip.h \
+$(OBJDIR)/wx_media.o : wx_media.cxx $(HEADERS) wx_keym.h wx_snip.h \
                        wx_mpriv.h wx_mline.h
 	$(MCC) wx_media.cxx -o $(OBJDIR)/wx_media.o
 
-$(OBJDIR)/wx_mpriv.o : wx_mpriv.cxx $(HEADERS) wx_keym.h wx_snip.h wx_gclip.h wx_mpriv.h \
+$(OBJDIR)/wx_mpriv.o : wx_mpriv.cxx $(HEADERS) wx_keym.h wx_snip.h wx_mpriv.h \
                        wx_mline.h wx_gcrct.h
 	$(MCC) wx_mpriv.cxx -o $(OBJDIR)/wx_mpriv.o
 
-$(OBJDIR)/wx_msnip.o : wx_msnip.cxx $(HEADERS) wx_keym.h wx_snip.h wx_gclip.h wx_madm.h \
+$(OBJDIR)/wx_msnip.o : wx_msnip.cxx $(HEADERS) wx_keym.h wx_snip.h wx_madm.h \
                        wx_mpriv.h wx_gcrct.h
 	$(MCC) wx_msnip.cxx -o $(OBJDIR)/wx_msnip.o
 
@@ -76,9 +72,6 @@ $(OBJDIR)/wx_keym.o : wx_keym.cxx wx_keym.h $(ALLHEADERS)
 
 $(OBJDIR)/wx_medio.o : wx_medio.cxx wx_medio.h $(ALLHEADERS)
 	$(MCC) wx_medio.cxx -o $(OBJDIR)/wx_medio.o
-
-$(OBJDIR)/wx_gclip.o : wx_gclip.cxx wx_gclip.h $(ALLHEADERS)
-	$(MCC) wx_gclip.cxx -o $(OBJDIR)/wx_gclip.o 
 
 $(OBJDIR)/wx_style.o : wx_style.cxx wx_style.h wx_medio.h $(ALLHEADERS)
 	$(MCC) wx_style.cxx -o $(OBJDIR)/wx_style.o 

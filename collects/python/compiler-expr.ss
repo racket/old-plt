@@ -403,6 +403,13 @@
         (for-each (lambda (x) (send x set-bindings! enclosing-scope)) pos)
         (for-each (lambda (x) (send (cdr x) set-bindings! enclosing-scope)) key))
       
+      ;;daniel
+      (inherit ->orig-so)
+      (define/override (to-scheme)
+        (->orig-so `(,(send expression to-scheme) ,@(map (lambda (e)
+                                                           (send e to-scheme))
+                                                         pos))))
+      
       (super-instantiate ())))
   
   

@@ -10,7 +10,7 @@
            "compiler-stmt.ss"
            "compiler-target.ss")
            
-  
+;  (provide build-ast) 
   (provide/contract
    (build-ast (input-port? . -> . (listof (is-a?/c ast-node%))))
    (build-ast-from-file (string? . -> . (listof (is-a?/c ast-node%))))
@@ -379,10 +379,10 @@
       
       (start ((file_input) (reverse $1)))
       
-      (single_input
-       ((NEWLINE) #f)
-       ((simple_stmt) $1)
-       ((compound_stmt NEWLINE) $1))
+;      (single_input
+;       ((NEWLINE) #f)
+;       ((simple_stmt) $1)
+;       ((compound_stmt NEWLINE) $1))
       (file_input (() null)
                   ((file_input NEWLINE) $1)
                   ((file_input stmt) (append (reverse $2) $1)))

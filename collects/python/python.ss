@@ -16,7 +16,7 @@
     (compile-python (read-python path)))
 
   (define (compile-python ast-list)
-    `(begin ,@(map (lambda (ast)
+    #`(begin #,@(map (lambda (ast)
                      (send ast to-scheme))
                    ast-list)))
   
@@ -25,11 +25,12 @@
   (define parse-python-file read-python)
   
   (define (python path)
-    (let ([results (map eval (python-to-scheme path))])
-      (begin
-        (for-each (lambda (x)
-                    (display x) (newline))
-                  results)
-        (list-ref results (sub1 (length results))))))
+    (eval (python-to-scheme path)))
+;    (let ([results (map eval (python-to-scheme path))])
+;      (begin
+;        (for-each (lambda (x)
+;                    (display x) (newline))
+;                  results)
+;        (list-ref results (sub1 (length results))))))
   
   )

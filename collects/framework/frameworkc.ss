@@ -1,5 +1,5 @@
 ;;
-;; $Id: frameworkc.ss,v 1.18 2000/01/25 22:23:02 robby Exp $
+;; $Id: frameworkc.ss,v 1.19 2000/02/07 19:35:12 robby Exp $
 ;;
 
 (compound-unit/sig (import [core:string : mzlib:string^]
@@ -30,7 +30,8 @@
 		  core:file)] 
 	[keymap : framework:keymap^
 		((require-relative-library "keymap.ss")
-		 mred keys preferences finder handler scheme-paren frame)]
+		 mred keys preferences finder handler scheme-paren frame
+		 core:function)]
 	[match-cache : framework:match-cache^ ((require-relative-library "mcache.ss"))]
 	[paren : framework:paren^ ((require-relative-library "paren.ss"))]
 	[scheme-paren : framework:scheme-paren^

@@ -27,9 +27,15 @@
                      (let ([table (send keymap get-map-function-table)])
                        (mred:get-choices-from-user
                         "Key Bindings" "Choose binding"
-                        (hash-table-map 
-                         (lambda (x v) (format "~s" (list x v)))
-                         table)))))
+			(map
+			 (lambda (x)
+			   (format "~a (~a)" (cadr x) (car x)))
+			 (mzlib:function:quicksort
+			  (hash-table-map 
+			   table
+			   list)
+			  (lambda (x y)
+			    (string<=? (cadr x) (cadr y)))))))))
                  (mred:bell))))])
       
       (override
@@ -67,7 +73,7 @@
        [edit-menu:between-find-and-preferences
         (lambda (menu)
           (make-object mred:separator-menu-item% menu)
-          (make-object mred:menu-item% "Keybindings" menu (lambda x (show-keybindings)))
+          (make-object mred:menu-item% "Keybindings" menu (lambda x (show-keybindings)) #\k)
           (make-object mred:separator-menu-item% menu))])
       
       (sequence 

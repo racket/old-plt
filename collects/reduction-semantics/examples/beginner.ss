@@ -15,7 +15,7 @@ reflects the (broken) spec).
            "../subst.ss"
            (lib "match.ss"))
 
-  (provide run-tests print-stats)
+  (provide run-tests)
   
   #|
   
@@ -236,20 +236,20 @@ reflects the (broken) spec).
      
      ((+ number_1 ...) . --> . (apply + (term (number_1 ...))))
      ((side-condition (+ v_arg ...)
-                      (ormap (lambda (arg) (not (number? arg))) (term (v_arg ...))))
+                      (ormap (lambda (v_arg) (not (number? v_arg))) (term (v_arg ...))))
       . e--> .
       "+: expects type <number>")
      
      ((side-condition (/ number_1 number_2s ...)
-                      (andmap (lambda (number_2) (not (zero? number_2))) (term (number_2s ...))))
+                      (andmap (lambda (number_2) (not (zero? number_2))) (term (number_2 ...))))
       . --> .
       (apply / (term (number_1 number_2s ...))))
      ((side-condition (/ number_1 number_2s ...)
-                      (ormap (lambda (number_2) (zero? number_2)) (term (number_2s ...))))
+                      (ormap (lambda (number_2) (zero? number_2)) (term (number_2 ...))))
       . e--> . 
       "/: division by zero")
      ((side-condition (/ v_arg ...)
-                      (ormap (lambda (arg) (not (number? arg))) (term (v_arg ...))))
+                      (ormap (lambda (v_arg) (not (number? v_arg))) (term (v_arg ...))))
       . e--> .
       "/: expects type <number>")
      

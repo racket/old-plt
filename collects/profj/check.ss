@@ -231,8 +231,12 @@
             (static-assigns (get-static-assigns members level)))
         (for-each (lambda (field)
                     (if (memq 'static (map modifier-kind (field-modifiers field)))
-                        (field-set? field static-assigns (car c-class) level #t)
-                        (field-set? field assigns (car c-class) level #f)))
+                        (andmap
+                         (lambda (assign)
+                           (field-set? field assign (car c-class) level #t)) static-assigns)
+                        (andmap
+                         (lambda (assign)
+                           (field-set? field assigns (car c-class) level #f)) assigns)))
                   setting-fields))))
     
   ;create-field-env: (list field-record) env -> env
@@ -275,18 +279,19 @@
   (define (field-needs-set? field level)
     (cond
       ((eq? level 'beginner) #t)
+      ((memq 'final (map modifier-kind (field-modifiers field))) #t)
       (else #f)))
   
-  ;get-assigns: (list member) symbol -> (list assignment)
+  ;get-assigns: (list member) symbol -> (list (list assignment))
   (define (get-assigns members level class)
     (if (eq? level 'beginner)
-        (get-beginner-assigns members class)
+        (list (get-beginner-assigns members class))
         (get-instance-assigns members)))
   
   (define (get-instance-assigns m)
     null)
   
-  ;get-beginner-assigns: (list member) -> (list assign)
+  ;get-beginner-assigns: (list member) -> (list assignment)
   (define (get-beginner-assigns members)
     (cond
       ((null? members) null)

@@ -88,7 +88,7 @@ sproc.o: @GCDIR@/sproc.o
 	cp @GCDIR@/sproc.o sproc.o
 
 mzscheme@NOT_OSX@: libmzscheme.@LIBSFX@ libmzgc.@LIBSFX@ main.o $(SPECIALIZINGOBJECTS)
-	$(CC) -o mzscheme main.o $(SPECIALIZINGOBJECTS) libmzscheme.@LIBSFX@ libmzgc.@LIBSFX@ @LIBS@
+	$(CC) -o mzscheme main.o $(SPECIALIZINGOBJECTS) libmzscheme.@LIBSFX@ libmzgc.@LIBSFX@ @LDFLAGS@ @LIBS@
 
 @INCLUDEDEP@ @srcdir@/../mac/version.mak
 
@@ -98,15 +98,12 @@ $(MZFW): libmzscheme.@LIBSFX@ libmzgc.@LIBSFX@ $(SPECIALIZINGOBJECTS)
 	if [ ! -d PLT_MzScheme.framework ] ; then mkdir PLT_MzScheme.framework ; fi
 	if [ ! -d PLT_MzScheme.framework/Versions ] ; then mkdir PLT_MzScheme.framework/Versions ; fi
 	if [ ! -d PLT_MzScheme.framework/Versions/$(FWVERSION) ] ; then mkdir PLT_MzScheme.framework/Versions/$(FWVERSION) ; fi
-	$(CC) -o $(MZFW) -dynamiclib -all_load $(SPECIALIZINGOBJECTS) libmzscheme.@LIBSFX@ libmzgc.@LIBSFX@ @LIBS@
+	$(CC) -o $(MZFW) -dynamiclib -all_load $(SPECIALIZINGOBJECTS) libmzscheme.@LIBSFX@ libmzgc.@LIBSFX@ @LDFLAGS@ @LIBS@
 	rm -f PLT_MzScheme.framework/PLT_MzScheme
 	ln -s Versions/$(FWVERSION)/PLT_MzScheme PLT_MzScheme.framework/PLT_MzScheme
 
-LDFLAGS_@OSX@=-framework PLT_MzScheme
-LDFLAGS_@NOT_OSX@=
-
 mzscheme@OSX@: $(MZFW) main.o
-	$(CC) -o mzscheme main.o -F. $(LDFLAGS_@OSX@)
+	$(CC) -o mzscheme main.o -F. -framework PLT_MzScheme
 
 # OSKit-based MzScheme
 mzscheme.multiboot : libmzscheme.@LIBSFX@ libmzgc.@LIBSFX@ main.o
@@ -247,7 +244,7 @@ normal-install:
 	cd ..; echo 'CFLAGS=@CFLAGS@ @PREFLAGS@ @COMPFLAGS@' >> $(BUILDINFO)
 	cd ..; echo 'OPTIONS=@OPTIONS@' >> $(BUILDINFO)
 	cd ..; echo 'MZOPTIONS=@MZOPTIONS@' >> $(BUILDINFO)
-	cd ..; echo "LDFLAGS=$(LDFLAGS_)" >> $(BUILDINFO)
+	cd ..; echo "LDFLAGS=@LDFLAGS@" >> $(BUILDINFO)
 	cd ..; echo 'LIBS=@LIBS@' >> $(BUILDINFO)
 
 MZFWDIR = @FRAMEWORK_INSTALL_DIR@/PLT_MzScheme.framework

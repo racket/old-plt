@@ -72,7 +72,7 @@
       mred^
       framework^
       mrspidey-gui^)
-    (version:add-spec 'sd 1)
+    ; (version:add-spec 'sd 1) - removed by PAS
     (lambda (frame)
       (let* ( [edit (ivar frame definitions-text)]
               [name (send edit get-filename)])

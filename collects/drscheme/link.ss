@@ -11,7 +11,7 @@
 	[prefs : drscheme:prefs^ ((reference-unit/sig "prefs.ss") mred)]
 	[basis : drscheme:basis^
 	       ((reference-unit/sig "basis.ss") (language : plt:parameters^) mred zodiac)]
-	[aries : plt:aries^ ((reference-library-unit/sig "ariesu.ss" "cogen")
+	[aries : plt:aries^ ((reference-library-unit/sig "ariesr.ss" "cogen")
 			     zodiac
 			     (interface : zodiac:interface^))]
 	[language : drscheme:language^

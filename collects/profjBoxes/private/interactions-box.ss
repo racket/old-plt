@@ -34,7 +34,7 @@
           #;(any? (union integer? false?) (union integer? false?) (union integer? false?) . -> . any?)
           ;; Called to get the syntax object representing this box
           (define/public read-special
-            (opt-lambda (index source (line false) (column false) (position false))
+            (opt-lambda (source (line false) (column false) (position false))
               #;((is-a?/c text%) . -> . syntax-object?)
               (define (text->syntax-object text)
                 (match (text->syntax-objects text)

@@ -568,48 +568,9 @@ static void print_compact_number(Scheme_Process *p, int n)
 
 static void print_string_in_angle(Scheme_Process *p, const char *start, const char *prefix, int slen)
 {
-  const char *str;
-  int pos;
-
-  str = start;
-  if (slen < 0)
-    slen = strlen(str);
-
-  for (pos = slen; pos--; str++) {
-    if (*str == '<' || *str == '>' || *str == '\\' || *str == '|')
-      break;
-  }
-
-  if (pos >= 0) {
-    int len = 0;
-
-    pos = 0;
-    str = start;
-    print_this_string(p, "|", 1);
-    print_this_string(p, prefix, -1);
-
-    while (pos < slen) {
-      if (*str == '|') {
-	if (len)
-	  print_this_string(p, start, len);
-	print_this_string(p, "\\", 1);
-	print_this_string(p, str, 1);
-	start = str + 1;
-	len = 0;
-      } else
-	len++;
-      str++;
-      pos++;
-    }
-
-    if (len)
-      print_this_string(p, start, len);
-
-    print_this_string(p, "|", 1);
-  } else {
-    print_this_string(p, prefix, -1);
-    print_this_string(p, start, slen);
-  }
+  /* Used to do something special for type symbols. No more. */
+  print_this_string(p, prefix, -1);
+  print_this_string(p, start, slen);
 }
 
 #ifdef DO_STACK_CHECK
@@ -710,28 +671,9 @@ static void print_named(Scheme_Object *obj, const char *kind,
   print_this_string(p, kind, -1);
 
   if (s) {
-    int i;
-
-    if (len == -1)
-      len = strlen(s);
-
     print_this_string(p, ":", 1);
 
-    for (i = 0; i < len; i++) {
-      char c = s[i];
-      if (!isalpha(c) && (c != '-') && (c != '!') && !isdigit(c))
-	break;
-    }
-	  
-    if (i < len) {
-      /* Could be messy - better go through the symbol handler: */
-      int l;
-      Scheme_Object *o = scheme_intern_exact_symbol(s, len);
-      const char *s = scheme_symbol_name_and_size(o, &l, SNF_FOR_TS);
-      
-      print_this_string(p, s, l);
-    } else
-      print_this_string(p, s, -1);
+    print_this_string(p, s, len);
   }
    
   PRINTADDRESS(p, obj);
@@ -817,23 +759,6 @@ print(Scheme_Object *obj, int escaped, int compact, Scheme_Hash_Table *ht,
       } else {
 	print_this_string(p, SCHEME_SYM_VAL(obj), SCHEME_SYM_LEN(obj));
       }
-    }
-  else if (SCHEME_TSYMBOLP(obj))
-    { 
-      if (compact)
-	print_escaped(p, escaped, obj, ht);
-      else {
-	const char *s;
-	int l;
-
-	s = scheme_symbol_name_and_size((Scheme_Object *)SCHEME_PTR_VAL(obj), 
-					&l, SNF_FOR_TS);
-      
-	print_this_string(p, "#<", 2);
-	print_this_string(p, s, l);
-	print_this_string(p, ">", 1);
-      }
-      closed = 1;
     }
   else if (SCHEME_STRINGP(obj))
     {

@@ -37,7 +37,7 @@ DEBUGFLAGS=
 WARN= -Wall
 OPT= -O
 
-CFLAGS= -DNO_SIGNALS $(WARN) $(OPT) $(OPTIONS) $(DEBUGFLAGS) -DSILENT
+CFLAGS= -DNO_SIGNALS $(WARN) $(OPT) $(OPTIONS) $(DEBUGFLAGS) -DSILENT -DOLD_BLOCK_ALLOC
 # Setjmp_test may yield overly optimistic results when compiled
 # without optimization.
 # -DSILENT disables statistics printing, and improves performance.

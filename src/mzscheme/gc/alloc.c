@@ -80,7 +80,11 @@ extern signed_word GC_mem_found;  /* Number of reclaimed longwords	*/
 
 GC_bool GC_dont_expand = 0;
 
+#ifdef OLD_BLOCK_ALLOC
 word GC_free_space_divisor = 4;
+#else
+word GC_free_space_divisor = 2;
+#endif
 
 extern GC_bool GC_collection_in_progress();
 

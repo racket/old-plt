@@ -373,7 +373,6 @@ enum {
   MZCONFIG_CAN_READ_GRAPH,
   MZCONFIG_CAN_READ_COMPILED,
   MZCONFIG_CAN_READ_BOX,
-  MZCONFIG_CAN_READ_TYPE_SYMBOL,
   MZCONFIG_CAN_READ_PIPE_QUOTE,
 
   MZCONFIG_PRINT_GRAPH,
@@ -462,6 +461,8 @@ typedef struct Scheme_Process {
   Scheme_Saved_Stack *runstack_saved;
   Scheme_Object **runstack_tmp_keep;
 
+  Scheme_Object **cont_mark_chain;
+
   long engine_weight;
 
   void *stack_start, *stack_end;
@@ -499,7 +500,6 @@ typedef struct Scheme_Process {
   Scheme_Object *error_escape_proc; /* Per-thread paramaterization */
 
   /* These are used to lock in values during `read': */
-  char quick_can_read_type_symbol;
   char quick_can_read_compiled;
   char quick_can_read_pipe_quote;
   char quick_can_read_box;
@@ -579,8 +579,6 @@ typedef struct Scheme_Process {
   struct Scheme_Process_Manager_Hop *mr_hop;
 
   Scheme_Manager_Reference *mref;
-
-  Scheme_Object **cont_mark_chain;
 } Scheme_Process;
 
 /* Type readers & writers for compiled code data */
@@ -1027,7 +1025,6 @@ extern Scheme_Extension_Table *scheme_extension_table;
 #define SCHEME_NUMBERP(obj)  (SCHEME_INTP(obj) || ((_SCHEME_TYPE(obj) >= scheme_bignum_type) && (_SCHEME_TYPE(obj) <= scheme_complex_type)))
 #define SCHEME_STRINGP(obj)  SAME_TYPE(SCHEME_TYPE(obj), scheme_string_type)
 #define SCHEME_SYMBOLP(obj)  SAME_TYPE(SCHEME_TYPE(obj), scheme_symbol_type)
-#define SCHEME_TSYMBOLP(obj)  SAME_TYPE(SCHEME_TYPE(obj), scheme_type_symbol_type)
 #define SCHEME_BOOLP(obj)    (SAME_OBJ(obj, scheme_true) || SAME_OBJ(obj, scheme_false))
 #define SCHEME_FALSEP(obj)     SAME_OBJ((obj), scheme_false)
 #define SCHEME_TRUEP(obj)     (!SCHEME_FALSEP(obj))

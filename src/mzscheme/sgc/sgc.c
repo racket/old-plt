@@ -105,11 +105,11 @@
    Automatically implies PROVIDE_GC_FREE, but adds extra checks to
    CHECK_FREES if PROVIDE_GC_FREE was not otherwise on */
 
-#define GET_MEM_VIA_SBRK 1
+#define GET_MEM_VIA_SBRK 0
 /* Instead of calling malloc() to get low-level memory, use
    sbrk() directly. (Unix) */
 
-#define GET_MEM_VIA_MMAP (00 && SGC_STD_DEBUGGING_UNIX)
+#define GET_MEM_VIA_MMAP SGC_STD_DEBUGGING_UNIX
 /* Instead of calling malloc() to get low-level memory, use
    mmap() directly. (Unix) */
 
@@ -2066,10 +2066,12 @@ static int num_allocs_stat;
 static int num_nonzero_allocs_stat;
 static int num_common_allocs_stat;
 static int num_block_alloc_checks_stat;
+static int num_block_alloc_nexts_stat;
+static int num_block_alloc_second_checks_stat;
 static int num_chunk_allocs_stat;
 static int num_newblock_allocs_stat;
 #else
-# define ALLOC_STATISTIC(x)
+# define ALLOC_STATISTIC(x) /* empty */
 #endif
 
 #if KEEP_SET_NO || KEEP_CHUNK_SET_NO
@@ -2195,11 +2197,14 @@ void *do_malloc(SET_NO_BACKINFO
 	  search_bit = (FREE_BIT_START | UNMARK_BIT_START);
 	  search_offset = 0;
 	}
-      
+
       find = &block->next;
 
       block = block->next;
       common[cpos + NUM_COMMON_SIZE] = block;
+
+      ALLOC_STATISTIC(num_block_alloc_nexts_stat++);
+      ALLOC_STATISTIC(if (block) num_block_alloc_second_checks_stat++);
     }
 
   } else {
@@ -3046,6 +3051,7 @@ static int num_finish_chunkfree_stat;
 static int num_finish_block_stat;
 static int num_finish_blockkeep_stat;
 static int num_finish_blockfree_stat;
+static int num_finish_blockadjust_stat;
 static int num_finish_blockfiltercycles_stat;
 static int num_finishes_stat;
 #else
@@ -3198,7 +3204,7 @@ static void collect_finish_common(MemoryBlock **blocks,
 #endif
 
     while (block) {
-      int allfree;
+      int unfree;
 
       FINISH_STATISTIC(num_finish_block_stat++);
       
@@ -3230,30 +3236,30 @@ static void collect_finish_common(MemoryBlock **blocks,
       }
 #endif
 
-      allfree = 1;
+      unfree = 0;
       {
 	int j;
 	for (j = ELEM_PER_BLOCK(block); j-- ; ) {
 	  FINISH_STATISTIC(num_finish_blockfiltercycles_stat++);
 	  if ((block->free[j] & ALL_UNMARKED) != ALL_UNMARKED) {
-	    allfree = 0;
+	    unfree = j + 1;
 	    break;
 	  }
 	}
       }
 
 #if KEEP_BLOCKS_FOREVER
-      if (allfree && (kept < KEEP_BLOCKS_FOREVER)) {
+      if (!unfree && (kept < KEEP_BLOCKS_FOREVER)) {
 	int j;
 	block->top = block->start;
 	for (j = ELEM_PER_BLOCK(block); j-- ; )
 	  block->free[j] = 0;
 	kept++;
-	allfree = 0;
+	unfree = 1;
       }
 #endif
 
-      if (allfree) {
+      if (!unfree) {
 	FINISH_STATISTIC(num_finish_blockfree_stat++);
 
 	--num_blocks;
@@ -3271,7 +3277,20 @@ static void collect_finish_common(MemoryBlock **blocks,
 	  block->free[j] |= SHIFT_UNMARK_TO_FREE(block->free[j]);
 #endif
 
-	block->free_search_start = ELEM_PER_BLOCK(block) - 1;
+	/* Push down block->top if it's easy */
+	{
+	  unsigned long dt = (unfree << LOG_FREE_BIT_PER_ELEM) * (unsigned long)block->size;
+	  if (block->top > block->start + dt) {
+	    int k;
+	    FINISH_STATISTIC(num_finish_blockadjust_stat++);
+	    block->top = block->start + dt;
+	    for (k = ELEM_PER_BLOCK(block); --k >= unfree; ) {
+	      block->free[k] = 0;
+	    }
+	  }
+	}
+	
+	block->free_search_start = unfree - 1;
 	block->free_search_bit = (FREE_BIT_START | UNMARK_BIT_START);
 	block->free_search_offset = 0;
 
@@ -4518,12 +4537,16 @@ void do_GC_gcollect(void *stack_now)
 	  "   %d nonzero allocs\n"
 	  "   %d common allocs\n"
 	  "     %d common tries\n"
+	  "     %d common fails\n"
+	  "     %d common second tries\n"
 	  "     %d common newblocks\n"
 	  "   %d chunk allocs\n",
 	  num_allocs_stat,
 	  num_nonzero_allocs_stat,
 	  num_common_allocs_stat,
 	  num_block_alloc_checks_stat,
+	  num_block_alloc_nexts_stat,
+	  num_block_alloc_second_checks_stat,
 	  num_newblock_allocs_stat,
 	  num_chunk_allocs_stat);
 #endif
@@ -4537,7 +4560,8 @@ void do_GC_gcollect(void *stack_now)
 	  "  %d block finishes\n"
 	  "   %d block filter steps\n"
 	  "   %d block keep finishes\n"
-	  "   %d block free finishes\n",
+	  "   %d block free finishes\n"
+	  "   %d block adjust finishes\n",
 	  num_finishes_stat,
 	  num_finish_chunk_stat,
 	  num_finish_chunkkeep_stat,
@@ -4545,7 +4569,8 @@ void do_GC_gcollect(void *stack_now)
 	  num_finish_block_stat,
 	  num_finish_blockfiltercycles_stat,
 	  num_finish_blockkeep_stat,
-	  num_finish_blockfree_stat);
+	  num_finish_blockfree_stat,
+	  num_finish_blockadjust_stat);
 #endif
 }
 

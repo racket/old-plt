@@ -41,7 +41,6 @@ OBJS =  $(OBJDIR)/salloc.o \
 	$(OBJDIR)/struct.o \
 	$(OBJDIR)/symbol.o \
 	$(OBJDIR)/syntax.o \
-	$(OBJDIR)/tsymbol.o \
 	$(OBJDIR)/type.o \
         $(OBJDIR)/unit.o \
 	$(OBJDIR)/vector.o
@@ -75,7 +74,6 @@ SRCS =  salloc.c \
 	struct.c \
 	symbol.c \
 	syntax.c \
-	tsymbol.c \
 	type.c \
         unit.c \
 	vector.c
@@ -192,8 +190,6 @@ $(OBJDIR)/symbol.o: symbol.c
 	$(CC) $(CFLAGS) -c symbol.c -o $(OBJDIR)/symbol.o
 $(OBJDIR)/syntax.o: syntax.c
 	$(CC) $(CFLAGS) -c syntax.c -o $(OBJDIR)/syntax.o
-$(OBJDIR)/tsymbol.o: tsymbol.c
-	$(CC) $(CFLAGS) -c tsymbol.c -o $(OBJDIR)/tsymbol.o
 $(OBJDIR)/type.o: type.c
 	$(CC) $(CFLAGS) -c type.c -o $(OBJDIR)/type.o
 $(OBJDIR)/unit.o: unit.c
@@ -272,8 +268,6 @@ $(OBJDIR)/symbol.o: schpriv.h schexn.h $(SCONFIG) ../include/scheme.h \
 $(OBJDIR)/syntax.o: schpriv.h schexn.h $(SCONFIG) ../include/scheme.h \
          ../src/stypes.h  
 $(OBJDIR)/sema.o: schpriv.h schexn.h $(SCONFIG) ../include/scheme.h \
-         ../src/stypes.h  
-$(OBJDIR)/tsymbol.o: schpriv.h schexn.h $(SCONFIG) ../include/scheme.h \
          ../src/stypes.h  
 $(OBJDIR)/type.o: schpriv.h schexn.h $(SCONFIG) ../include/scheme.h \
         ../src/stypes.h  

@@ -130,7 +130,6 @@ scheme_init_type (Scheme_Env *env)
   set_name(scheme_macro_type, "<macro>");
   set_name(scheme_id_macro_type, "<id-macro>");
   set_name(scheme_vector_type, "<vector>");
-  set_name(scheme_type_symbol_type, "<type-symbol>");
   set_name(scheme_bignum_type, "<bignum-integer>");
   set_name(scheme_escaping_cont_type, "<escape-continuation>");
   set_name(scheme_sema_type, "<semaphore>");
@@ -165,6 +164,7 @@ scheme_init_type (Scheme_Env *env)
 
   set_name(scheme_manager_type, "<custodian>");
 
+  set_name(scheme_reserved_1_type, "<reserved1>");
   set_name(scheme_reserved_2_type, "<reserved2>");
   set_name(scheme_reserved_3_type, "<reserved3>");
 

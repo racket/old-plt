@@ -44,7 +44,6 @@ static Scheme_Object *read_brace_as_paren(int, Scheme_Object *[]);
 static Scheme_Object *read_accept_graph(int, Scheme_Object *[]);
 static Scheme_Object *read_accept_compiled(int, Scheme_Object *[]);
 static Scheme_Object *read_accept_box(int, Scheme_Object *[]);
-static Scheme_Object *read_accept_type_symbol(int, Scheme_Object *[]);
 static Scheme_Object *read_accept_pipe_quote(int, Scheme_Object *[]);
 static Scheme_Object *print_graph(int, Scheme_Object *[]);
 static Scheme_Object *print_struct(int, Scheme_Object *[]);
@@ -68,11 +67,9 @@ static Scheme_Object *read_quote(Scheme_Object *port,
 static Scheme_Object *read_vector(Scheme_Object *port, char closer, 
 				  long reqLen, const char *reqBuffer,
 				  Scheme_Hash_Table **ht CURRENTPROCPRM);
-static Scheme_Object *read_type_symbol(Scheme_Object *port CURRENTPROCPRM);
 static Scheme_Object *read_number(Scheme_Object *port, int, int, int, int 
 				  CURRENTPROCPRM);
-static Scheme_Object *read_symbol(Scheme_Object *port, int type_symbol 
-				  CURRENTPROCPRM);
+static Scheme_Object *read_symbol(Scheme_Object *port CURRENTPROCPRM);
 static Scheme_Object *read_character(Scheme_Object *port CURRENTPROCPRM);
 static Scheme_Object *read_quasiquote(Scheme_Object *port,
 				      Scheme_Hash_Table **ht CURRENTPROCPRM);
@@ -89,7 +86,6 @@ static int skip_whitespace_comments(Scheme_Object *port);
 static int peek_char(Scheme_Object *port);
 
 #ifndef MZ_REAL_THREADS
-#define local_can_read_type_symbol (scheme_current_process->quick_can_read_type_symbol)
 #define local_can_read_compiled (scheme_current_process->quick_can_read_compiled)
 #define local_can_read_pipe_quote (scheme_current_process->quick_can_read_pipe_quote)
 #define local_can_read_box (scheme_current_process->quick_can_read_box)
@@ -105,7 +101,6 @@ static int peek_char(Scheme_Object *port);
 #define local_vector_memory_size (scheme_current_process->vector_memory_size)
 #define local_vector_memory_count (scheme_current_process->vector_memory_count)
 #else
-#define local_can_read_type_symbol (p->quick_can_read_type_symbol)
 #define local_can_read_compiled (p->quick_can_read_compiled)
 #define local_can_read_pipe_quote (p->quick_can_read_pipe_quote)
 #define local_can_read_box (p->quick_can_read_box)
@@ -185,11 +180,6 @@ void scheme_init_read(Scheme_Env *env)
 						       "read-accept-box",
 						       MZCONFIG_CAN_READ_BOX), 
 			     env);
-  scheme_add_global_constant("read-accept-type-symbol", 
-			     scheme_register_parameter(read_accept_type_symbol, 
-						       "read-accept-type-symbol",
-						       MZCONFIG_CAN_READ_TYPE_SYMBOL), 
-			     env);
   scheme_add_global_constant("read-accept-bar-quote",
 			     scheme_register_parameter(read_accept_pipe_quote,
 						       "read-accept-bar-quote",
@@ -256,12 +246,6 @@ static Scheme_Object *
 read_accept_box(int argc, Scheme_Object *argv[])
 {
   DO_CHAR_PARAM("read-accept-box", MZCONFIG_CAN_READ_BOX);
-}
-
-static Scheme_Object *
-read_accept_type_symbol(int argc, Scheme_Object *argv[])
-{
-  DO_CHAR_PARAM("read-accept-type-symbol", MZCONFIG_CAN_READ_TYPE_SYMBOL);
 }
 
 static Scheme_Object *
@@ -347,12 +331,12 @@ read_inner(Scheme_Object *port, Scheme_Hash_Table **ht CURRENTPROCPRM)
     case ']': 
       if (!local_square_brackets_are_parens) {
 	scheme_ungetc(ch, port);
-	return read_symbol(port, 0 CURRENTPROCARG);
+	return read_symbol(port CURRENTPROCARG);
       }
     case '}': 
       if (!local_curly_braces_are_parens) {
 	scheme_ungetc(ch, port);
-	return read_symbol(port, 0 CURRENTPROCARG);
+	return read_symbol(port CURRENTPROCARG);
       }
     case ')': 
       scheme_raise_exn(MZEXN_READ_PAREN,
@@ -368,13 +352,13 @@ read_inner(Scheme_Object *port, Scheme_Hash_Table **ht CURRENTPROCPRM)
     case '[': 
       if (!local_square_brackets_are_parens) {
 	scheme_ungetc(ch, port);
-	return read_symbol(port, 0 CURRENTPROCARG);
+	return read_symbol(port CURRENTPROCARG);
       } else
 	return read_list(port, ']', 0, 0, ht CURRENTPROCARG);
     case '{': 
       if (!local_curly_braces_are_parens) {
 	scheme_ungetc(ch, port);
-	return read_symbol(port, 0 CURRENTPROCARG);
+	return read_symbol(port CURRENTPROCARG);
       } else
 	return read_list(port, '}', 0, 0, ht CURRENTPROCARG);
     case '"': return read_string(port CURRENTPROCARG);
@@ -403,7 +387,7 @@ read_inner(Scheme_Object *port, Scheme_Hash_Table **ht CURRENTPROCPRM)
 	return read_number(port, 0, 0, 10, 0 CURRENTPROCARG);
       } else {
 	scheme_ungetc(ch, port);
-	return read_symbol(port, 0 CURRENTPROCARG);
+	return read_symbol(port CURRENTPROCARG);
       }
     case '#':
       ch = scheme_getc(port);
@@ -412,15 +396,7 @@ read_inner(Scheme_Object *port, Scheme_Hash_Table **ht CURRENTPROCPRM)
 	case '%':
 	  scheme_ungetc('%', port);
 	  scheme_ungetc('#', port);
-	  return read_symbol(port, 0 CURRENTPROCARG);
-	case '<': 
-	  if (local_can_read_type_symbol)
-	    return read_type_symbol(port CURRENTPROCARG);
-	  else
-	    scheme_raise_exn(MZEXN_READ_UNSUPPORTED,
-			     port,
-			     scheme_make_string("<"),
-			     "read: #< expressions not currently enabled");
+	  return read_symbol(port CURRENTPROCARG);
 	case '(': return read_vector(port, ')', -1, NULL, ht CURRENTPROCARG);
 	case '[': 
 	  if (!local_square_brackets_are_parens) {
@@ -644,7 +620,7 @@ read_inner(Scheme_Object *port, Scheme_Hash_Table **ht CURRENTPROCPRM)
       if (isdigit (ch))
 	return read_number(port, 0, 0, 10, 0 CURRENTPROCARG);
       else
-	return read_symbol(port, 0 CURRENTPROCARG);
+	return read_symbol(port CURRENTPROCARG);
     }
 }
 
@@ -695,7 +671,6 @@ scheme_internal_read(Scheme_Object *port, int crc, Scheme_Config *config CURRENT
   Scheme_Object *v;
   Scheme_Hash_Table *ht = NULL;
 
-  local_can_read_type_symbol = SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_CAN_READ_TYPE_SYMBOL));
   local_can_read_compiled = crc;
   local_can_read_pipe_quote = SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_CAN_READ_PIPE_QUOTE));
   local_can_read_box = SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_CAN_READ_BOX));
@@ -949,11 +924,10 @@ read_vector (Scheme_Object *port, char closer,
 static Scheme_Object  *
 read_number_or_symbol(Scheme_Object *port, int is_float, int is_not_float, 
 		      int radix, int radix_set, 
-		      int is_symbol, int type_symbol, int pipe_quote CURRENTPROCPRM)
+		      int is_symbol, int pipe_quote CURRENTPROCPRM)
 {
   char *buf, *oldbuf, onstack[MAX_SYMBOL_SIZE];
   int size, oldsize;
-  int nvdeep = 0;
   int i, ch, quoted, quoted_ever = 0, running_quote = 0;
   int rq_pos = 0, rq_line = 0;
   int case_sens = local_case_sensitive;
@@ -967,7 +941,7 @@ read_number_or_symbol(Scheme_Object *port, int is_float, int is_not_float,
 
   while (((ch = scheme_getc (port)) != EOF)
 	 && (running_quote
-	     || ((!isspace(ch) || (type_symbol && (ch == ' ')))
+	     || (!isspace(ch)
 		 && (ch != '(')
 		 && (ch != ')')
 		 && (ch != '"')
@@ -978,8 +952,7 @@ read_number_or_symbol(Scheme_Object *port, int is_float, int is_not_float,
 		 && ((ch != '[') || !brackets)
 		 && ((ch != '{') || !braces)
 		 && ((ch != ']') || !brackets)
-		 && ((ch != '}') || !braces)
-		 && (!type_symbol || ch != '>' || nvdeep)))) {
+		 && ((ch != '}') || !braces)))) {
     if (ch == '\\' && !running_quote) {
       ch = scheme_getc(port);
       if (ch == EOF) {
@@ -1016,16 +989,6 @@ read_number_or_symbol(Scheme_Object *port, int is_float, int is_not_float,
       ch = tolower(ch);
 
     buf[i++] = ch;
-
-#if TSYM_BALANCE_BRAC
-    /* MzScheme 46: brackets are no longer balanced. */
-    if (type_symbol) {
-      if (ch == '>' && !quoted && !running_quote)
-	--nvdeep;
-      else if (ch == '<' && !quoted && !running_quote)
-	nvdeep++;
-    }
-#endif
   }
 
   if (ch != EOF)
@@ -1074,38 +1037,17 @@ read_number(Scheme_Object *port, int is_float, int is_not_float,
 	    int radix, int radix_set CURRENTPROCPRM)
 {
   return read_number_or_symbol(port, is_float, is_not_float,
-			       radix, radix_set, 0, 0,
+			       radix, radix_set, 0,
 			       local_can_read_pipe_quote
 			       CURRENTPROCARG);
 }
 
 static Scheme_Object  *
-read_symbol(Scheme_Object *port, int type_symbol CURRENTPROCPRM)
+read_symbol(Scheme_Object *port CURRENTPROCPRM)
 {
-  return read_number_or_symbol(port, 0, 0, 10, 0, 1, type_symbol, 
-			       (type_symbol || local_can_read_pipe_quote)
+  return read_number_or_symbol(port, 0, 0, 10, 0, 1, 
+			       local_can_read_pipe_quote
 			       CURRENTPROCARG);
-}
-
-/* '#<' has been read */
-static Scheme_Object *read_type_symbol(Scheme_Object *port CURRENTPROCPRM)
-{
-  Scheme_Object *sym;
-  long pos, l;
-
-  pos = scheme_tell(port);
-  l = scheme_tell_line(port);
-
-  sym = read_symbol(port, 1 CURRENTPROCARG);
-  if (scheme_getc(port) != '>')
-    scheme_raise_exn(MZEXN_READ_EOF,
-		     port,
-		     scheme_make_string(">"),
-		     "read: expected a `>'; started "
-		     "at %ld, line %ld in %s",
-		     pos, l, SCHEME_IPORT_NAME(port));
-
-  return scheme_intern_type_symbol(sym);
 }
 
 /* "#\" has been read */

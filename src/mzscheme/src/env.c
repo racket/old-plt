@@ -328,12 +328,10 @@ Scheme_Env *scheme_top_level_env(void)
   /* The ordering of the first few init calls is important.
 	  Add to the end of the list, not the beginning. */
   MZTIMEIT(symbol-table, scheme_init_symbol_table());
-  MZTIMEIT(type-symbol-table, scheme_init_type_symbol_table());
   MZTIMEIT(type, scheme_init_type(env));
   MZTIMEIT(symbol-type, scheme_init_symbol_type(env));
   MZTIMEIT(fun, scheme_init_fun(env));
   MZTIMEIT(symbol, scheme_init_symbol(env));
-  MZTIMEIT(type-symbol, scheme_init_type_symbol(env));
   MZTIMEIT(list, scheme_init_list(env));
   MZTIMEIT(number, scheme_init_number(env));
   MZTIMEIT(port, scheme_init_port(env));

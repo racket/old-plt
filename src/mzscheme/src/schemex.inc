@@ -277,8 +277,6 @@
   scheme_extension_table->scheme_make_exact_symbol = scheme_make_exact_symbol;
   scheme_extension_table->scheme_symbol_name = scheme_symbol_name;
   scheme_extension_table->scheme_symbol_name_and_size = scheme_symbol_name_and_size;
-  scheme_extension_table->scheme_intern_type_symbol = scheme_intern_type_symbol;
-  scheme_extension_table->scheme_make_type_symbol = scheme_make_type_symbol;
   scheme_extension_table->scheme_make_struct_values = scheme_make_struct_values;
   scheme_extension_table->scheme_make_struct_names = scheme_make_struct_names;
   scheme_extension_table->scheme_make_struct_type = scheme_make_struct_type;

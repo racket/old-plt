@@ -2633,7 +2633,6 @@ static Scheme_Config *make_initial_config(void)
   scheme_set_param(config, MZCONFIG_CAN_READ_GRAPH, scheme_true);
   scheme_set_param(config, MZCONFIG_CAN_READ_COMPILED, scheme_false);
   scheme_set_param(config, MZCONFIG_CAN_READ_BOX, scheme_true);
-  scheme_set_param(config, MZCONFIG_CAN_READ_TYPE_SYMBOL, scheme_true);
   scheme_set_param(config, MZCONFIG_CAN_READ_PIPE_QUOTE, scheme_true);
 
   scheme_set_param(config, MZCONFIG_PRINT_GRAPH, scheme_false);

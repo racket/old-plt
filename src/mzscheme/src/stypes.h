@@ -65,7 +65,7 @@ enum {
   scheme_class_type,
   scheme_structure_type,
   scheme_generic_type, 
-  scheme_type_symbol_type, 
+  scheme_reserved_1_type, 
   scheme_sema_type,
   scheme_hash_table_type,
   scheme_generic_data_type,

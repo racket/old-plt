@@ -1292,7 +1292,12 @@ static void start_child(Scheme_Process *child,
 #ifndef MZ_REAL_THREADS
     if (return_to_process)
       scheme_swap_process(return_to_process);
-#endif    
+
+    if (scheme_current_process->running & MZTHREAD_KILLED) {
+      /* This thread is dead! Give up now. */
+      exit_or_escape(scheme_current_process);
+    }
+#endif
 
     if (!scheme_setjmp(scheme_error_buf)) 
       scheme_apply_multi(child_eval, 0, NULL);

@@ -1165,6 +1165,11 @@ void scheme_finish_primitive_module(Scheme_Env *env)
   env->running = 1;
 }
 
+Scheme_Bucket *scheme_module_bucket(Scheme_Object *mod, Scheme_Object *var, Scheme_Env *env)
+{
+  return NULL;
+}
+
 /**********************************************************************/
 /*                               module                               */
 /**********************************************************************/

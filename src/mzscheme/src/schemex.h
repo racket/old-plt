@@ -338,7 +338,6 @@ int (*scheme_is_inexact)(Scheme_Object *n);
 /*========================================================================*/
 Scheme_Object *(*scheme_expand)(Scheme_Object *form, Scheme_Env *env);
 Scheme_Object *(*scheme_compile)(Scheme_Object *form, Scheme_Env *env, int writeable);
-Scheme_Object *(*scheme_link)(Scheme_Object *compiled, Scheme_Env *env);
 /*========================================================================*/
 /*                               ports                                    */
 /*========================================================================*/
@@ -424,7 +423,7 @@ int (*scheme_return_eof_for_error)();
 /*========================================================================*/
 Scheme_Object *(*scheme_make_namespace)(int argc, Scheme_Object *argv[]);
 void (*scheme_add_namespace_option)(Scheme_Object *key, void (*f)(Scheme_Env *));
-void (*scheme_copy_from_original_env)(Scheme_Env *env);
+void (*scheme_require_from_original_env)(Scheme_Env *env, int syntax_only);
 void (*scheme_add_global)(const char *name, Scheme_Object *val, Scheme_Env *env);
 void (*scheme_add_global_keyword)(const char *name, Scheme_Object *v, Scheme_Env *env);
 void (*scheme_add_global_constant)(const char *name, Scheme_Object *v, Scheme_Env *env);

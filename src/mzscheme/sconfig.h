@@ -279,6 +279,37 @@ int scheme_solaris_semaphore_try_down(void *);
 
 #endif
 
+  /********************* NetBSD ***********************/
+
+#if defined(__NetBSD__)
+
+# define SCHEME_PLATFORM_LIBRARY_SUBPATH "netbsd"
+
+# include "uconfig.h"
+
+# undef HAS_STANDARD_IOB
+# define HAS_BSD_IOB
+
+# define STACK_GROWS_DOWN
+
+# define UNDERSCORE_DYNLOAD_SYMBOL_PREFIX
+
+# define USE_IEEE_FP_PREDS
+# define POW_HANDLES_INF_CORRECTLY
+
+# define SIGSET_IS_SIGNAL
+
+# define USE_TM_GMTOFF_FIELD
+
+#if defined(__alpha__)
+# define SIXTY_FOUR_BIT_INTEGERS
+# define USE_DIVIDE_MAKE_INFINITY
+#endif
+
+# define FLAGS_ALREADY_SET
+
+#endif
+
   /************** x86/OpenBSD with gcc ****************/
               /* Thanks to Bengt Kleberg */
 
@@ -533,7 +564,7 @@ int   scheme_sproc_semaphore_try_down(void *);
 
   /************** ALPHA/OSF1 with gcc ****************/
 
-# if (defined(__alpha) || defined(__alpha__)) && !defined(LINUX)
+# if (defined(__alpha) || defined(__alpha__)) && !defined(LINUX) && !defined(__NetBSD__)
 
 # define SCHEME_PLATFORM_LIBRARY_SUBPATH "alpha-osf1"
 

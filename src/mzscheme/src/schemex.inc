@@ -224,7 +224,6 @@
   scheme_extension_table->scheme_is_inexact = scheme_is_inexact;
   scheme_extension_table->scheme_expand = scheme_expand;
   scheme_extension_table->scheme_compile = scheme_compile;
-  scheme_extension_table->scheme_link = scheme_link;
   scheme_extension_table->scheme_read = scheme_read;
   scheme_extension_table->scheme_read_syntax = scheme_read_syntax;
   scheme_extension_table->scheme_write = scheme_write;
@@ -293,7 +292,7 @@
   scheme_extension_table->scheme_return_eof_for_error = scheme_return_eof_for_error;
   scheme_extension_table->scheme_make_namespace = scheme_make_namespace;
   scheme_extension_table->scheme_add_namespace_option = scheme_add_namespace_option;
-  scheme_extension_table->scheme_copy_from_original_env = scheme_copy_from_original_env;
+  scheme_extension_table->scheme_require_from_original_env = scheme_require_from_original_env;
   scheme_extension_table->scheme_add_global = scheme_add_global;
   scheme_extension_table->scheme_add_global_keyword = scheme_add_global_keyword;
   scheme_extension_table->scheme_add_global_constant = scheme_add_global_constant;

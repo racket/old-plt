@@ -164,7 +164,6 @@ scheme_is_exact
 scheme_is_inexact
 scheme_expand
 scheme_compile
-scheme_link
 scheme_read
 scheme_read_syntax
 scheme_write
@@ -229,7 +228,7 @@ scheme_add_fd_eventmask
 scheme_return_eof_for_error
 scheme_make_namespace
 scheme_add_namespace_option
-scheme_copy_from_original_env
+scheme_require_from_original_env
 scheme_add_global
 scheme_add_global_keyword
 scheme_add_global_constant

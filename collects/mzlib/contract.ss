@@ -10,7 +10,7 @@ add struct contracts for immutable structs?
 (module contract mzscheme
   
   ;; no bytes in v206
-  ;(define (bytes? x) #f)
+  (define (bytes? x) #f)
   
   (provide (rename -contract contract)
            ->

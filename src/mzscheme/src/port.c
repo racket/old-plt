@@ -6070,6 +6070,7 @@ static void tcp_write_string(char *s, long len, Scheme_Output_Port *port)
     scheme_block_until(tcp_check_write, tcp_write_needs_wakeup, data, (float)0.0);
 
     /* Ok - try again! */
+    would_block = 0;
     goto top;
   }
 

@@ -27,84 +27,6 @@
       
       (define image? x:image?)
   
-      
-      (define debugger-frame%
-        (class (drscheme:frame:basics-mixin (frame:frame:standard-menus-mixin frame:frame:basic%))
-          
-          (init-field drscheme-frame)
-          (rename [super-on-close on-close])
-          (public set-printing-proc)
-          
-          (define (set-printing-proc proc)
-            (set! printing-proc proc))
-          
-          (define (printing-proc item evt)
-            (message-box "error?" "shouldn't be called"))
-          
-          (define (file-menu:print a b) (printing-proc a b))
-          
-          ;; CUSTODIAN:
-          
-          (define custodian #f)
-          (define/public (set-custodian! cust)
-            (set! custodian cust))
-          
-          ;; WARNING BOXES:
-          
-          (define program-changed-warning-str (string-constant stepper-program-has-changed))
-          (define window-closed-warning-str (string-constant stepper-program-window-closed))
-
-          (define warning-message-visible-already #f)
-          (define (add-warning-message warning-str)
-            (let ([warning-msg (instantiate x:stepper-warning% () 
-                                 (warning-str warning-str)
-                                 (parent (get-area-container)))])
-              (send (get-area-container)
-                    change-children
-                    (if warning-message-visible-already
-                        (lambda (l) 
-                          (list (car l)
-                                warning-msg
-                                (caddr l)))
-                        (lambda (l)
-                          (list (car l)
-                                warning-msg
-                                (cadr l)))))
-              (set! warning-message-visible-already #t)))
-          
-          (inherit get-area-container)
-          (define program-change-already-warned? #f)
-          (define/public (original-program-changed)
-            (unless program-change-already-warned?
-              (set! program-change-already-warned? #t)
-              (set! can-step #f)
-              (add-warning-message program-changed-warning-str)))
-          
-          (define/public (original-program-gone)
-            (set! can-step #f)
-            (add-warning-message window-closed-warning-str))
-
-          (define can-step #t)
-          (define/public (get-can-step)
-            can-step)
-
-          (override  on-close) ; file-menu:print
-          (define (on-close)
-            (when custodian
-              (custodian-shutdown-all custodian))
-            (send drscheme-frame on-debugger-close)
-            (super-on-close))
-          
-          (super-instantiate ("Debugger" #f debugger-initial-width debugger-initial-height))))
-  
-      (define (view-controller-go drscheme-frame program-expander)
-        (let ([esp (make-eventspace)])
-          (thread 
-           (lambda ()
-             (graphical-read-eval-print-loop esp #t)))
-          
-          (model:go program-expander esp)))
-  
       (define debugger-bitmap
         (drscheme:unit:make-bitmap
          "Debug"
@@ -176,7 +98,7 @@
                                         '(default=1))
                     (begin
                       (set! debugger-exists #t)
-                      (view-controller-go this program-expander))))))
+                      (model:go program-expander))))))
           
           (rename [super-enable-evaluation enable-evaluation])
           (define/override (enable-evaluation)

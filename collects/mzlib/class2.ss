@@ -65,6 +65,7 @@
 				      (kernel-form-identifier-list (quote-syntax here))
 				      (list 
 				       (quote-syntax init)
+				       (quote-syntax init-rest)
 				       (quote-syntax field)
 				       (quote-syntax init-field)
 				       (quote-syntax public)
@@ -81,7 +82,7 @@
 
 	     ;; ------ Basic syntax checks -----
 	     (for-each (lambda (stx)
-			 (syntax-case stx (init field init-field public override rename inherit)
+			 (syntax-case stx (init init-rest field init-field public override rename inherit)
 			   [(form idp ...)
 			    (ormap (lambda (f) (module-identifier=? (syntax form) f))
 				   (list (quote-syntax init)
@@ -101,6 +102,11 @@
 			       (syntax->list (syntax (idp ...)))))]
 			   [(init . rest)
 			    (bad "ill-formed init clause" stx)]
+			   [(init-rest rest)
+			    (identifier? (syntax rest))
+			    'ok]
+			   [(init-rest . rest)
+			    (bad "ill-formed init-rest clause" stx)]
 			   [(init-field . rest)
 			    (bad "ill-formed init-field clause" stx)]
 			   [(field idp ...)
@@ -179,10 +185,12 @@
 						   l)))
 					  l)))]
 		   [pair (lambda (i) (cons i i))])
-	       (let ([inits (flatten values (extract (list (quote-syntax init)
+	       (let ([init-rest-decls (extract (list (quote-syntax init-rest)) #f)]
+		     [inits (flatten values (extract (list (quote-syntax init)
 							   (quote-syntax init-field))
 						     #f))]
-		     [plain-inits (flatten values (extract (list (quote-syntax init))
+		     [plain-inits (flatten values (extract (list (quote-syntax init)
+								 (quote-syntax init-rest))
 							   #f))]
 		     [plain-fields (flatten values (extract (list (quote-syntax field)) #f))]
 		     [plain-init-fields (flatten values (extract (list (quote-syntax init-field)) #f))]
@@ -196,6 +204,10 @@
 					   (quote-syntax inherit))
 				     #t)])
 		 
+		 (unless (or (null? init-rest-decls)
+			     (null? (cdr init-rest-decls)))
+		   (bad "multiple init-rest clauses" (cadr init-rest-decls)))
+
 		 ;; --- Check initialization on inits: ---
 		 (let loop ([inits inits])
 		   (unless (null? inits)
@@ -371,34 +383,53 @@
 		       ;;  Non-method definitions to set!
 		       ;;  Initializations args access/set!
 		       (let ([exprs (map (lambda (e)
-					   (syntax-case e (define-values field)
+					   (syntax-case e (define-values field init-rest)
 					     [(define-values (id ...) expr)
 					      (syntax/loc e (set!-values (id ...) expr))]
 					     [(-init idp ...)
 					      (ormap (lambda (it) (module-identifier=? it (syntax -init)))
 						     (list (quote-syntax init) (quote-syntax init-field)))
-					      (with-syntax ([(id ...)
-							     (map 
-							      (lambda (idp)
-								(if (identifier? idp)
-								    idp
-								    (stx-car idp)))
-							      (syntax->list (syntax (idp ...))))]
-							    [(defval ...) 
-							     (map (lambda (idp)
-								    (if (identifier? idp)
-									(syntax #f)
-									(with-syntax ([defexp (stx-car (stx-cdr idp))])
-									  (syntax (lambda () defexp)))))
-								  (syntax->list (syntax (idp ...))))])
-						(syntax/loc e 
-						  (begin 
-						    (set! id (extract-arg 'id init-args defval))
-						    ...)))]
+					      (let ([ids (map 
+							  (lambda (idp)
+							    (if (identifier? idp)
+								idp
+								(stx-car idp)))
+							  (syntax->list (syntax (idp ...))))])
+						(with-syntax ([(id ...) ids]
+							      [(idpos ...)
+							       (map 
+								(lambda (id)
+								  (if (null? init-rest-decls)
+								      ;; Normal mode: find by id
+								      id
+								      ;; By-pos mode: compute position of id
+								      (let loop ([l inits][p 0])
+									(if (bound-identifier=?
+									     id 
+									     (if (identifier? (car l))
+										 (car l)
+										 (stx-car (car l))))
+									    p
+									    (loop (cdr l) (add1 p))))))
+								ids)]
+							      [(defval ...) 
+							       (map (lambda (idp)
+								      (if (identifier? idp)
+									  (syntax #f)
+									  (with-syntax ([defexp (stx-car (stx-cdr idp))])
+									    (syntax (lambda () defexp)))))
+								    (syntax->list (syntax (idp ...))))])
+						  (syntax/loc e 
+						    (begin 
+						      (set! id (extract-arg 'idpos init-args defval))
+						      ...))))]
 					     [(field idp ...)
 					      (syntax/loc e (begin 
 							      (set! . idp)
 							      ...))]
+					     [(init-rest id)
+					      (with-syntax ([n (length plain-inits)])
+						(syntax/loc e (set! id (extract-rest-args n init-args))))]
 					     [_else e]))
 					 exprs)])
 
@@ -484,11 +515,13 @@
 							       (append
 								plain-fields
 								plain-init-fields))]
-					     [init-names (map (lambda (i)
-								(if (identifier? i)
-								    i
-								    (car i)))
-							      inits)]
+					     [init-names (if (null? init-rest-decls)
+							     (map (lambda (i)
+								    (if (identifier? i)
+									i
+									(car i)))
+								  inits)
+							     #f)]
 					     [public-methods (map find-method (map car publics))]
 					     [override-methods (map find-method (map car overrides))]
 					     [mappings mappings]
@@ -1055,66 +1088,84 @@
     (let ([o ((class-make-object class))])
       ;; Initialize it:
       (let loop ([c class][by-pos-args by-pos-args][named-args named-args])
-	;; Primitive class with by-pos arguments?
-	(when (not (class-init-args c))
-	  (unless (null? named-args)
-	    (obj-error 
-	     "make-object" 
-	     "keyword-based arguments for a class that has only by-position initializers: ~e~a" 
-	     by-pos-args
-	     (for-class (class-name c)))))
-	;; Merge by-pos into named args:
-	(let ([named-args (if (class-init-args c)
-			      ;; Normal merge
-			      (let loop ([al by-pos-args][nl (class-init-args c)])
-				(cond
-				 [(null? al) named-args]
-				 [(null? nl) (obj-error "make-object" "too many initialization arguments: ~e~a" 
-							by-pos-args
-							(for-class (class-name c)))]
-				 [else (cons (cons (car nl) (car al))
-					     (loop (cdr al) (cdr nl)))]))
-			      ;; Fake merge for by-position initializers:
-			      by-pos-args)])
-	  ;; Check for duplicate arguments
-	  (when (class-init-args c)
+	(let ([by-pos-only? (not (class-init-args c))])
+	  ;; Primitive class with by-pos arguments?
+	  (when by-pos-only?
 	    (unless (null? named-args)
-	      (let loop ([l named-args])
-		(unless (null? (cdr l))
-		  (if (assq (caar l) (cdr l))
-		      (obj-error "make-object" "duplicate initialization argument: ~a in: ~e~a"
-				 (caar l)
-				 named-args
-				 (for-class (class-name c)))
-		      (loop (cdr l)))))))
-	  (let ([inited? (class-no-super-init? c)])
-	    ((class-init c) 
-	     o 
-	     ;;; ----- This is the super-init function -----
-	     (lambda (ignore-false by-pos-args new-named-args)
-	       (when inited?
-		 (obj-error "make-object" "superclass already initialized by class initialization~a"
-			    (for-class (class-name c))))
-	       (set! inited? #t)
-	       (let ([named-args (let loop ([l named-args])
-				   (cond
-				    [(null? l) new-named-args]
-				    [(memq (caar l) (class-init-args c))
-				     (loop (cdr l))]
-				    [else (cons (car l) (loop (cdr l)))]))])
-		 (loop (vector-ref (class-supers c) (sub1 (class-pos c))) by-pos-args named-args)))
-	     named-args)
-	    (unless inited?
-	      (obj-error "make-object" "superclass initialization not invoked by initialization~a"
-			 (for-class (class-name c)))))))
+	      (obj-error 
+	       "make-object" 
+	       "class has only by-position initializers, but given keyword-based arguments: ~e~a" 
+	       named-args
+	       (for-class (class-name c)))))
+	  ;; Merge by-pos into named args:
+	  (let ([named-args (if (not by-pos-only?)
+				;; Normal merge
+				(let loop ([al by-pos-args][nl (class-init-args c)])
+				  (cond
+				   [(null? al) named-args]
+				   [(null? nl) (obj-error "make-object" "too many initialization arguments: ~e~a" 
+							  by-pos-args
+							  (for-class (class-name c)))]
+				   [else (cons (cons (car nl) (car al))
+					       (loop (cdr al) (cdr nl)))]))
+				;; Fake merge for by-position initializers:
+				by-pos-args)])
+	    ;; Check for duplicate arguments
+	    (unless by-pos-only?
+	      (unless (null? named-args)
+		(let loop ([l named-args])
+		  (unless (null? (cdr l))
+		    (if (assq (caar l) (cdr l))
+			(obj-error "make-object" "duplicate initialization argument: ~a in: ~e~a"
+				   (caar l)
+				   named-args
+				   (for-class (class-name c)))
+			(loop (cdr l)))))))
+	    (let ([inited? (class-no-super-init? c)])
+	      ((class-init c) 
+	       o 
+	       ;; ----- This is the super-init function -----
+	       (lambda (ignore-false by-pos-args new-named-args)
+		 (when inited?
+		   (obj-error "make-object" "superclass already initialized by class initialization~a"
+			      (for-class (class-name c))))
+		 (set! inited? #t)
+		 (let ([named-args (if by-pos-only?
+				       ;; all old args must have been used up
+				       new-named-args
+				       ;; Normal mode: merge leftover keyowrd-based args with new ones
+				       (let loop ([l named-args])
+					 (cond
+					  [(null? l) new-named-args]
+					  [(memq (caar l) (class-init-args c))
+					   (loop (cdr l))]
+					  [else (cons (car l) (loop (cdr l)))])))])
+		   (loop (vector-ref (class-supers c) (sub1 (class-pos c))) by-pos-args named-args)))
+	       named-args)
+	      (unless inited?
+		(obj-error "make-object" "superclass initialization not invoked by initialization~a"
+			   (for-class (class-name c))))))))
       o))
 
   (define (extract-arg name arguments default)
-    (let ([a (assq name arguments)])
-      (cond
-       [a (cdr a)]
-       [default (default)]
-       [else (obj-error "make-object" "no argument for required init variable: ~a" name)])))
+    (if (symbol? name)
+	;; Normal mode
+	(let ([a (assq name arguments)])
+	  (cond
+	   [a (cdr a)]
+	   [default (default)]
+	   [else (obj-error "make-object" "no argument for required init variable: ~a" name)]))
+	;; By-position mode
+	(cond
+	 [(< name (length arguments))
+	  (list-ref arguments name)]
+	 [default (default)]
+	 [else (obj-error "make-object" "too few initialization arguments")])))
+
+  (define (extract-rest-args skip arguments)
+    (if (< skip (length arguments))
+	(list-tail arguments skip)
+	null))
 
   ;;--------------------------------------------------------------------
   ;;  methods and fields

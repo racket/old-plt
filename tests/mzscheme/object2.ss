@@ -120,5 +120,29 @@
 (err/rt-test (color-fish-color picky))
 (err/rt-test (color-fish-color 6))
 
+(define old-style-fish%
+  (class fish%
+    (public greeting)
+
+    (init -first-name)
+    (init-field last-name)
+    (init-rest -nicknames)
+
+    (define first-name -first-name) 
+    (define nicknames -nicknames) 
+
+    (define (greeting)
+      (format "~a ~a, a.k.a.: ~a"
+	      first-name last-name
+	      nicknames))
+
+    (super-instantiate () (size 12))))
+
+(err/rt-test (instantiate old-style-fish% () (-first-name "Gil") (last-name "Finn")) exn:object?)
+
+(define old-fish (make-object old-style-fish% "Gil" "Finn" "Slick"))
+
+(test "Gil Finn, a.k.a.: (Slick)" 'osf (send old-fish greeting))
+
 
 (report-errs)

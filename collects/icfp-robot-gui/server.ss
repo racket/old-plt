@@ -369,7 +369,7 @@
             (fprintf output "~a~n" s)
             (loop (add1 j)))))
       (let ([r (assoc id robots)])
-        (fprintf output "~a ~a ~a~n" id (list-ref r 3) (list-ref r 4)))
+        (fprintf output "~a ~a ~a~n" id (bot-max-lift r) (bot-money r)))
       ;; Initial robot positions
       (for-each (lambda (r)
                   (fprintf output "#~a X ~a Y ~a " (car r) (cadr r) (caddr r)))

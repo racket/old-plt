@@ -29,6 +29,7 @@
                     accounting information, but is slow and uses (as
                     above) an extra word per tagged object.
 */
+#define ACCNT_PRECISE
 #if !defined(ACCNT_OFF) && !defined(ACCNT_EXTERNAL) && !defined(ACCNT_PRECISE)
 # define ACCNT_INPLACE
 #endif
@@ -90,9 +91,9 @@ typedef struct MPage {
 /*
   Some unavoidably needed forward declarations
 */
-static void init(void);
-static void garbage_collect(int force_full);
-static int is_marked(void *p);
+void init(void);
+void garbage_collect(int force_full);
+int is_marked(void *p);
 
 /*
   Tags for the objects defined in here
@@ -180,7 +181,7 @@ void flush_freed_pages(void) {}
 int fd, fd_created;
 #endif
 
-static int page_size; /* OS page size */
+int page_size; /* OS page size */
 
 void *malloc_pages(size_t len, size_t alignment)
 {
@@ -243,8 +244,8 @@ void *malloc_pages(size_t len, size_t alignment)
 }
 
 #define BLOCKFREE_CACHE_SIZE 10
-static void *blockfree_ptrs[BLOCKFREE_CACHE_SIZE];
-static long blockfree_sizes[BLOCKFREE_CACHE_SIZE];
+void *blockfree_ptrs[BLOCKFREE_CACHE_SIZE];
+long blockfree_sizes[BLOCKFREE_CACHE_SIZE];
 
 void free_pages(void *p, size_t len)
 {
@@ -318,7 +319,7 @@ void protect_pages(void *p, size_t len, int writeable)
 #define PAGES_IN_HEAP		(MAX_HEAP_SIZE / MPAGE_SIZE)
 #define MAX_USED_PAGES		(PAGES_IN_HEAP / 2)
 
-static UWORD used_pages = 0;
+UWORD used_pages = 0;
 
 /* 
    You might think keeping pages around for reallocation would be
@@ -429,13 +430,13 @@ MPage *gen[1][6];
 /*
   This is the list of pages we're collecting
 */
-static MPage *collect_pages = NULL;
+MPage *collect_pages = NULL;
 
 /* 
    For those strange places where someone wants an object of size zero,
    here's what we return:
 */
-static char zero_sized[4];
+char zero_sized[4];
 
 /* 
    this is a constant which defines the maximum size for an object which
@@ -467,7 +468,7 @@ UWORD size_to_collect_at = INIT_HEAP_LIMIT;
 
 MPage *mpage_map[1 << FLINDEX_SIZE][1 << SLINDEX_SIZE];
 
-static void add_to_page_map(MPage *work) {
+void add_to_page_map(MPage *work) {
   MPage *cur = work;
   long size_left = work->flags.bigpage ? work->size : MPAGE_SIZE;
   
@@ -480,7 +481,7 @@ static void add_to_page_map(MPage *work) {
 
 #define find_page(p)		(mpage_map[FLINDEX(p)][SLINDEX(p)])
 
-static void rem_from_page_map(MPage *work) {
+void rem_from_page_map(MPage *work) {
   MPage *cur = work;
   long size_left = work->flags.bigpage ? work->size : MPAGE_SIZE;
 
@@ -498,7 +499,7 @@ static void rem_from_page_map(MPage *work) {
    necessarily triggered by the first allocation, we may have to go
    back and readd some pages
 */
-static void initialize_mpage_subsystem(void) {
+void initialize_mpage_subsystem(void) {
   MPage *work;
   int i;
 
@@ -525,7 +526,7 @@ inline void *alloc_new_bits(size_t size_in_bytes, int type, int force_big) {
     return zero_sized;
   }
 
-#if defined(ACCNT_EXTERNAL) || defined(ACCNT_EXACT)
+#if defined(ACCNT_EXTERNAL) || defined(ACCNT_PRECISE)
   /* 
      If we're keeping external owner information, we always want to
      add a word for this.
@@ -615,7 +616,7 @@ typedef struct MPageList {
   struct MPageList *next;
 } MPageList;
 
-static MPageList *mucked_pages = NULL;
+MPageList *mucked_pages = NULL;
 
 void add_to_mucked_pages(MPage *page) {
   MPageList *work = mucked_pages, *prev = NULL;
@@ -699,7 +700,7 @@ void *copy_bits(void *oldptr, UWORD size_in_words, int type, int tgen
   }
 }
 
-static char *flags_to_strtype(MPage *page) {
+char *flags_to_strtype(MPage *page) {
   if(page->flags.bigpage) {
     switch(page->flags.type) {
     case MPAGE_TAGGED: return "BTGD";
@@ -720,7 +721,7 @@ static char *flags_to_strtype(MPage *page) {
   return "XXXX";
 }
 
-static void dump_mpage_information(FILE *file) {
+void dump_mpage_information(FILE *file) {
   MPage *work;
   int i = 0, j;
   char *format = "%10p                  %i      %5i    %3s (%i)\n";
@@ -1198,6 +1199,64 @@ int is_marked(void *p) {
 #endif
 }
 
+#ifdef ACCNT_PRECISE
+void propogate_bpage_marks(MPage *page);
+int marking_precise = 0;
+
+/* This is the retrace routine when we're doing precise accounting */
+void retrace_owner_computation(void *p) {
+  marking_precise = 1;
+  GC_mark(p);
+  marking_precise = 0;
+}
+
+void mark_precise(void *p) {
+  MPage *page;
+
+  if(!p || ((UWORD)p & 0x1)) return;
+  page = find_page(p);
+  if(!page) return;
+  
+  if(page->flags.bigpage) {
+    ObjHeader *info = (ObjHeader*)((UWORD)page + PAGE_HEADER_SIZE);
+    switch(page->flags.mark) {
+      case MARK_WHITE: return;
+      case MARK_GRAY: info->owner = ownerset_union(info->owner, mark_owner); break;
+      case MARK_BLACK: 
+	info->owner = ownerset_union(info->owner, mark_owner);
+	propogate_bpage_marks(page);
+	break;
+    }
+  } else {
+    ObjHeader *info = (ObjHeader*)((UWORD)p - 4);
+    if(info->mark) {
+      void *newp = *(void**)p;
+      ObjHeader *newinfo = (ObjHeader*)((UWORD)newp - 4);
+      mark_owner = newinfo->owner = ownerset_union(newinfo->owner, mark_owner);
+      switch(page->flags.type) {
+        case MPAGE_TAGGED: mark_table[*(Type_Tag*)newp](newp); break;
+        case MPAGE_ATOMIC: break;
+        case MPAGE_ARRAY: {
+	  void **start = (void**)newp;
+	  void **end = start + info->size;
+	  while(start < end) GC_mark(*(start++)); break;
+	}
+        case MPAGE_TARRAY: {
+	  void **start = (void**)newp;
+	  void **end = start + info->size;
+	  Type_Tag tag = *(Type_Tag*)newp;
+	  while(start < end) {
+	    start += mark_table[tag](start);
+	  }
+	  break;
+	}
+        case MPAGE_XTAGGED: GC_mark_xtagged(newp); break;
+      }
+    }
+  }
+}
+#endif
+
 void GC_mark(const void *p) {
   MPage *page;
 
@@ -1215,6 +1274,9 @@ void GC_mark(const void *p) {
   if(page->flags.gen > mark_gen) return;
 #endif
 
+#ifdef ACCNT_PRECISE
+  if(marking_precise) { mark_precise((void*)p); return; }
+#endif
   if(page->flags.bigpage) {
     /*
       We're on a bigpage. We need to mark this, figure out whatever needs
@@ -1294,7 +1356,8 @@ void GC_mark(const void *p) {
 # endif	
 	  ownerset_account_memory(owner, page->flags.gen, page->size);
 # ifdef ACCNT_PRECISE
-	  retrace_owner_computation(p);
+	  mark_owner = owner;
+	  retrace_owner_computation((void*)p);
 # endif
 	}
 #endif
@@ -1332,6 +1395,7 @@ void GC_mark(const void *p) {
 	   owners in anything downstream. Leave that up to whoever
 	   built the system*/
 # ifdef ACCNT_PRECISE
+	mark_owner = newinfo->owner;
 	retrace_owner_computation(newplace);
 # endif
       }
@@ -1385,7 +1449,7 @@ void GC_mark(const void *p) {
   }
 }
 
-static void propogate_bpage_marks(MPage *page) {
+void propogate_bpage_marks(MPage *page) {
 #if defined(ACCNT_EXTERNAL) || defined(ACCNT_PRECISE)
   void **start = (void**)((UWORD)page + PAGE_HEADER_SIZE + 4);
 #else
@@ -1432,7 +1496,7 @@ void propogate_tagged_marks(MPage *page) {
   page->former_size = page->size;
 }
 
-static void propogate_array_marks(MPage *page) {
+void propogate_array_marks(MPage *page) {
   void **start = (void**)((UWORD)page + page->former_size);
 
 #ifdef ACCNT_INPLACE
@@ -1453,7 +1517,7 @@ static void propogate_array_marks(MPage *page) {
   page->former_size = page->size;
 }
 
-static void propogate_tarray_marks(MPage *page) {
+void propogate_tarray_marks(MPage *page) {
   void **start = (void**)((UWORD)page + page->former_size);
 
 #ifdef ACCNT_INPLACE
@@ -1477,7 +1541,7 @@ static void propogate_tarray_marks(MPage *page) {
   page->former_size = page->size;
 }
 
-static void propogate_xtagged_marks(MPage *page) {
+void propogate_xtagged_marks(MPage *page) {
   void **start = (void**)((UWORD)page + page->former_size);
 
 #ifdef ACCNT_INPLACE
@@ -1514,7 +1578,7 @@ inline void propogate_mpage_marks(MPage *page) {
   }
 }
 
-static void propogate_all_mpages(void) {
+void propogate_all_mpages(void) {
   MPageList *mucked, *temp;
   MPage *work;
 
@@ -1560,9 +1624,9 @@ typedef struct ImmobileBox {
   struct ImmobileBox *next;
 } ImmobileBox;
 
-static ImmobileBox *immobile_boxes = NULL;
+ImmobileBox *immobile_boxes = NULL;
 
-static void mark_immobile_boxes(void) {
+void mark_immobile_boxes(void) {
   ImmobileBox *ibox = immobile_boxes;
   while(ibox) {
 #ifndef ACCNT_OFF    
@@ -1573,7 +1637,7 @@ static void mark_immobile_boxes(void) {
   }
 }
 
-static void fixup_immobile_boxes(void) {
+void fixup_immobile_boxes(void) {
   ImmobileBox *ibox = immobile_boxes;
 
   while(ibox) {
@@ -1582,7 +1646,7 @@ static void fixup_immobile_boxes(void) {
   }
 }
 
-static void initialize_immobile_subsystem(void) {
+void initialize_immobile_subsystem(void) {
   ImmobileBox *ibox = immobile_boxes;
   while(ibox) {
 #ifndef ACCNT_OFF
@@ -1609,9 +1673,9 @@ typedef struct RootSet {
   struct RootSet *next; /* the next RootSet*/
 } RootSet;
 
-static RootSet *roots = NULL;
+RootSet *roots = NULL;
 
-static void add_root(void *start, void *end, UWORD owner) {
+void add_root(void *start, void *end, UWORD owner) {
   RootSet *work = roots;
   int done = 0;
 
@@ -1721,7 +1785,7 @@ static void add_root(void *start, void *end, UWORD owner) {
 
 /* this routine marks all the roots for us. this is called by the collector
    to start things off */
-static void mark_roots(void) {
+void mark_roots(void) {
   RootSet *rtsets;
   Root *rts;
 
@@ -1745,7 +1809,7 @@ static void mark_roots(void) {
 
 /* this routine fixes up all the roots for us in the last stages of 
    collection */
-static void fixup_roots(void) {
+void fixup_roots(void) {
   RootSet *rtsets = roots;
   Root *rts;
 
@@ -1769,7 +1833,7 @@ static void fixup_roots(void) {
 
 /* this routine dumps information about the roots to the given file
    handle. this is used in the main dump routine plus in debugging. */
-static void dump_root_information(FILE *file) {
+void dump_root_information(FILE *file) {
   RootSet *rtsets;
   Root *rts;
 
@@ -1786,7 +1850,7 @@ static void dump_root_information(FILE *file) {
 /* since there's an unfortunate period in the very beginning where 
    we don't know who owns what, this little function is called to
    fix a little munging we've done*/
-static void initialize_roots_subsystem(void) {
+void initialize_roots_subsystem(void) {
   RootSet *rtsets = roots;
   
   if(rtsets) {
@@ -1813,14 +1877,14 @@ typedef struct WeakArray {
   void *data[1];
 } WeakArray;
 
-static WeakArray *weak_arrays;
+WeakArray *weak_arrays;
 
-static int size_weak_array(void *p) {
+int size_weak_array(void *p) {
   WeakArray *a = (WeakArray *)p;
   return gcBYTES_TO_WORDS(sizeof(WeakArray)+((a->count - 1) * sizeof(void *)));
 }
 
-static int mark_weak_array(void *p) {
+int mark_weak_array(void *p) {
   WeakArray *a = (WeakArray *)p;
   gcMARK(a->replace_val);
   a->next = weak_arrays;
@@ -1828,7 +1892,7 @@ static int mark_weak_array(void *p) {
   return gcBYTES_TO_WORDS(sizeof(WeakArray)+((a->count - 1) * sizeof(void *)));
 }
 
-static int fixup_weak_array(void *p) {
+int fixup_weak_array(void *p) {
   WeakArray *a = (WeakArray *)p;
   int i;
   void **data;
@@ -1841,7 +1905,7 @@ static int fixup_weak_array(void *p) {
   return gcBYTES_TO_WORDS(sizeof(WeakArray)+((a->count - 1) * sizeof(void *)));
 }
 
-static void clean_up_weak_arrays(void) {
+void clean_up_weak_arrays(void) {
   WeakArray *wa;
   for(wa = weak_arrays; wa; wa = wa->next) {
     void **data;
@@ -1870,11 +1934,11 @@ typedef struct WeakBox {
 Type_Tag weak_box_tag = 42; /* set by MzScheme*/
 WeakBox *weak_boxes;
 
-static int size_weak_box(void *p) {
+int size_weak_box(void *p) {
   return gcBYTES_TO_WORDS(sizeof(WeakBox));
 }
 
-static int mark_weak_box(void *p) {
+int mark_weak_box(void *p) {
   WeakBox *wb = (WeakBox *)p;
     
   gcMARK(wb->secondary_erase);
@@ -1887,7 +1951,7 @@ static int mark_weak_box(void *p) {
   return gcBYTES_TO_WORDS(sizeof(WeakBox));
 }
 
-static int fixup_weak_box(void *p) {
+int fixup_weak_box(void *p) {
   WeakBox *wb = (WeakBox *)p;
     
   gcFIXUP(wb->secondary_erase);
@@ -1899,7 +1963,7 @@ static int fixup_weak_box(void *p) {
 
 /* after collection we want to kill out the pointers in the weak box*/
 /* list that have died.*/
-static void clean_up_weak_boxes(void) {
+void clean_up_weak_boxes(void) {
   WeakBox *wb;
   for(wb = weak_boxes; wb; wb = wb->next) {
     if(!is_marked(wb->val)) {
@@ -1914,7 +1978,7 @@ static void clean_up_weak_boxes(void) {
   }
 }
 
-static void initialize_weak_subsystem() {
+void initialize_weak_subsystem() {
   GC_register_traversers(weak_box_tag, size_weak_box, mark_weak_box, 
 			 fixup_weak_box);
   GC_register_traversers(gc_weak_array_tag, size_weak_array, mark_weak_array, 
@@ -1935,13 +1999,15 @@ typedef struct Fnl {
   struct Fnl *next;
 } Fnl;
 
-static Fnl *fnls, *run_queue, *last_in_queue;
+static Fnl *fnls = NULL;
+static Fnl *run_queue = NULL;
+static Fnl *last_in_queue = NULL;
 
-static int size_finalizer(void *p) {
+int size_finalizer(void *p) {
   return gcBYTES_TO_WORDS(sizeof(Fnl));
 }
 
-static int mark_finalizer(void *p) {
+int mark_finalizer(void *p) {
   Fnl *fnl = (Fnl *)p;
   gcMARK(fnl->next);
   gcMARK(fnl->data);
@@ -1952,7 +2018,7 @@ static int mark_finalizer(void *p) {
   return gcBYTES_TO_WORDS(sizeof(Fnl));
 }
 
-static int fixup_finalizer(void *p) {
+int fixup_finalizer(void *p) {
   Fnl *fnl = (Fnl *)p;
   gcFIXUP(fnl->next);
   gcFIXUP(fnl->data);
@@ -1968,19 +2034,19 @@ typedef struct Fnl_Weak_Link {
   struct Fnl_Weak_Link *next;
 } Fnl_Weak_Link;
 
-static Fnl_Weak_Link *fnl_weaks;
+Fnl_Weak_Link *fnl_weaks;
 
-static int size_finalizer_weak_link(void *p) {
+int size_finalizer_weak_link(void *p) {
   return gcBYTES_TO_WORDS(sizeof(Fnl_Weak_Link));
 }
 
-static int mark_finalizer_weak_link(void *p) {
+int mark_finalizer_weak_link(void *p) {
   Fnl_Weak_Link *wl = (Fnl_Weak_Link *)p;
   gcMARK(wl->next);
   return gcBYTES_TO_WORDS(sizeof(Fnl_Weak_Link));
 }
 
-static int fixup_finalizer_weak_link(void *p) {
+int fixup_finalizer_weak_link(void *p) {
   Fnl_Weak_Link *wl = (Fnl_Weak_Link *)p;
   gcFIXUP(wl->next);
   gcFIXUP(wl->p);
@@ -1989,7 +2055,7 @@ static int fixup_finalizer_weak_link(void *p) {
 
 /* after collection we need to run through our list of finals and */
 /* clear out weak links that have died*/
-static void clean_up_weak_finals(void) {
+void clean_up_weak_finals(void) {
   Fnl_Weak_Link *wl, *prev, *next;
 
   prev = NULL;
@@ -2004,7 +2070,7 @@ static void clean_up_weak_finals(void) {
   }
 }
 
-static void initialize_final_subsystem() {
+void initialize_final_subsystem() {
   GC_register_traversers(gc_finalization_tag, size_finalizer, mark_finalizer, 
 			 fixup_finalizer);
   GC_register_traversers(gc_finalization_weak_link_tag, 
@@ -2022,7 +2088,7 @@ static void initialize_final_subsystem() {
   int tospace pointin to fromspace. These routines fix all that stuff for us
 */
 
-static void repair_bpage_ptrs(MPage *page) {
+void repair_bpage_ptrs(MPage *page) {
 #if defined(ACCNT_EXTERNAL) || defined(ACCNT_PRECISE)
   void **start = (void**)((UWORD)page + PAGE_HEADER_SIZE + 4);
 #else
@@ -2045,7 +2111,7 @@ static void repair_bpage_ptrs(MPage *page) {
   }
 }
 
-static void repair_tagged_ptrs(MPage *page) {
+void repair_tagged_ptrs(MPage *page) {
   void **start = (void**)((UWORD)page + PAGE_HEADER_SIZE);
   void **end = (void**)((UWORD)page + page->size);
 
@@ -2057,7 +2123,7 @@ static void repair_tagged_ptrs(MPage *page) {
   }
 }
 
-static void repair_array_ptrs(MPage *page) {
+void repair_array_ptrs(MPage *page) {
   void **start = (void**)((UWORD)page + PAGE_HEADER_SIZE);
   void **end = (void**)((UWORD)page + page->size);
   
@@ -2074,7 +2140,7 @@ static void repair_array_ptrs(MPage *page) {
   }
 }
 
-static void repair_tarray_ptrs(MPage *page) {
+void repair_tarray_ptrs(MPage *page) {
   void **start = (void**)((UWORD)page + PAGE_HEADER_SIZE);
   void **end = (void**)((UWORD)page + page->size);
   
@@ -2095,7 +2161,7 @@ static void repair_tarray_ptrs(MPage *page) {
   }
 }
 
-static void repair_xtagged_ptrs(MPage *page) {
+void repair_xtagged_ptrs(MPage *page) {
   void **start = (void**)((UWORD)page + PAGE_HEADER_SIZE);
   void **end = (void**)((UWORD)page + page->size);
 
@@ -2136,7 +2202,7 @@ inline void repair_mpage_ptrs(MPage *page) {
    note that this not only has to repair all the pointers in the new pages,
    but also all the pointers in the older generations which were modified
 */
-static void repair_mpages(void) {
+void repair_mpages(void) {
   MPage *work;
   int i, j;
   int new_top_gen = INCGEN(mark_gen);
@@ -2169,7 +2235,7 @@ static void repair_mpages(void) {
 */
 
 #ifdef GENERATIONS
-static void designate_modified(void *p) {
+void designate_modified(void *p) {
   MPage *page;
   page = find_page(p);
   if(page) {
@@ -2182,7 +2248,7 @@ static void designate_modified(void *p) {
 }
 #endif
 
-static void protect_older_pages(void) {
+void protect_older_pages(void) {
 #ifdef GENERATIONS
   MPage *work;
   int i, j;
@@ -2205,7 +2271,7 @@ static void protect_older_pages(void) {
 /* when we start collection, we want to run the marks that are included in*/
 /* modified pages. for the purposes of owner tests, we assume that the */
 /* info on the page is correct. */
-static void run_older_marks(int top_gen) {
+void run_older_marks(int top_gen) {
 #ifdef GENERATIONS
   MPage *work;
   int i, j;
@@ -2301,7 +2367,7 @@ void initialize_memory_protection_subsystem(void) {
    These are a few helper routines, and then the collector proper
 */
 
-static void shunt_off_collecting_pages(int top_gen) {
+void shunt_off_collecting_pages(int top_gen) {
   MPage *work;
   int i, j;
 
@@ -2323,7 +2389,7 @@ static void shunt_off_collecting_pages(int top_gen) {
     work->flags.mark = MARK_WHITE;
 }
 
-static void rebuild_broken_final_list(void) {
+void rebuild_broken_final_list(void) {
   Fnl *f = fnls, *prev = NULL;
   Fnl_Weak_Link *wl = fnl_weaks, *prevwl = NULL;
   
@@ -2363,7 +2429,7 @@ static void rebuild_broken_final_list(void) {
   }
 }
 
-static void free_dead_pages(void) {
+void free_dead_pages(void) {
   MPage *work, *next;
 
   for(work = collect_pages; work; work = next) {
@@ -2377,7 +2443,7 @@ static void free_dead_pages(void) {
   mucked_pages = NULL;
 }
 
-static void recalculate_heap_size(void) {
+void recalculate_heap_size(void) {
   MPage *work;
   int i, j;
 
@@ -2431,7 +2497,7 @@ static void recalculate_heap_size(void) {
 /*   fclose(file); */
 /* } */
 
-static void garbage_collect(int force_full) {
+void garbage_collect(int force_full) {
   static UWORD collection = 0;
   Fnl *workrq = run_queue;
   int did_fnls;
@@ -2444,11 +2510,16 @@ static void garbage_collect(int force_full) {
     }
 #endif
 #ifdef GENERATIONS
-    if(force_full) mark_gen = GENERATIONS - 1;
-    else if(!(collection & 0xF)) mark_gen = GENERATIONS - 1;
-    else if(!(collection & 0x7)) mark_gen = (GENERATIONS / 2);
-    else if(!(collection & 0x3)) mark_gen = (GENERATIONS / 5);
-    else mark_gen = 0;
+    {
+      int modded = collection % 16;
+      if(force_full || (modded >= 14)) {
+	mark_gen = GENERATIONS - 1;
+      } else if(modded >= 11) {
+	mark_gen = (GENERATIONS / 2);
+      } else if(modded >= 8) {
+	mark_gen = (GENERATIONS / 5);
+      } else mark_gen = 0;
+    }
 #endif    
 /*     debug_dump_heap(collection, mark_gen, 1); */
     collection++;
@@ -2705,7 +2776,7 @@ static void garbage_collect(int force_full) {
   The initialization routine
 */
 
-static void init(void) {
+void init(void) {
   initialize_roots_subsystem();
   initialize_mpage_subsystem();
   initialize_immobile_subsystem();

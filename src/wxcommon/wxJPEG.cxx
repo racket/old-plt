@@ -356,7 +356,6 @@ int write_JPEG_file(char *filename, wxBitmap *bm, int quality)
   row_pointer = new JSAMPLE[3 * wid];
 
   if ((outfile = fopen(filename, "wb")) == NULL) {
-    free(row_pointer);
     if (desel)
       dc->SelectObject(NULL);
     sprintf(jpeg_err_buffer, "can't open %.255s\n", filename);
@@ -378,7 +377,6 @@ int write_JPEG_file(char *filename, wxBitmap *bm, int quality)
     /* If we get here, the JPEG code has signaled an error.
      * We need to clean up the JPEG object, close the input file, and return.
      */
-    free(row_pointer);
     if (desel)
       dc->SelectObject(NULL);
     jpeg_destroy_compress(&cinfo);
@@ -451,8 +449,6 @@ int write_JPEG_file(char *filename, wxBitmap *bm, int quality)
 
   /* This is an important step since it will release a good deal of memory. */
   jpeg_destroy_compress(&cinfo);
-
-  free(row_pointer);
 
   if (desel)
     dc->SelectObject(NULL);

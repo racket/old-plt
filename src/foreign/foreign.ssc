@@ -182,12 +182,11 @@ exec mzscheme -r "$0" "$0" "$@"
 
 ;; Tagged object allocation
 (define (_cmake-object var type . values)
-  (define cstruct (assq type cstructs))
-  (~ var" = ("(cadr cstruct)"_struct*)scheme_malloc_stubborn(sizeof("
-            (cadr cstruct)"_struct));" \\
-     var"->so.type = "(cadr cstruct)"_tag;")
-  (for-each (lambda (v f) (~ var"->"f" = ("v");")) values (cddr cstruct))
-  (~ "scheme_end_stubborn_change("var");"))
+  (define cstruct (cdr (assq type cstructs)))
+  (~ var" = ("(car cstruct)"_struct*)scheme_malloc_tagged(sizeof("
+            (car cstruct)"_struct));" \\
+     var"->so.type = "(car cstruct)"_tag;")
+  (for-each (lambda (v f) (~ var"->"f" = ("v");")) values (cdr cstruct)))
 (define-syntax cmake-object
   (syntax-rules () [(_ var type val ...) (_cmake-object var `type val ...)]))
 
@@ -1337,6 +1336,8 @@ void do_ptr_finalizer(void *p, void *finalizer)
 /*****************************************************************************/
 /* Calling foreign function objects */
 
+#define MAX_QUICK_ARGS 16
+
 Scheme_Object *ffi_do_call(void *data, int argc, Scheme_Object *argv[])
 /* data := {name, c-function, itypes, otype, cif} */
 {
@@ -1348,17 +1349,24 @@ Scheme_Object *ffi_do_call(void *data, int argc, Scheme_Object *argv[])
   Scheme_Object *base;
   ffi_cif       *cif    = (ffi_cif*)(((Scheme_Object**)data)[4]);
   int           nargs   = cif->nargs;
-  GC_CAN_IGNORE ForeignAny oval, *ival;
+  GC_CAN_IGNORE ForeignAny oval, *ivals;
   void **avalues, *p;
+  ForeignAny stack_ivals[MAX_QUICK_ARGS];
+  void *stack_avalues[MAX_QUICK_ARGS];
   int i;
-  ival    = alloca(nargs*sizeof(ForeignAny)); //!!!!!!
-  avalues = alloca(nargs*sizeof(void*));  //!!!!!!
+  if (nargs <= MAX_QUICK_ARGS) {
+    ivals   = stack_ivals;
+    avalues = stack_avalues;
+  } else {
+    ivals   = scheme_malloc(nargs * sizeof(ForeignAny));
+    avalues = scheme_malloc(nargs * sizeof(void*));
+  }
   /* iterate on input values and types */
   for (i=0; i<nargs; i++, itypes=SCHEME_CDR(itypes)) {
     /* convert argv[i] according to current itype */
-    p = scheme_to_c(SCHEME_CAR(itypes), &(ival[i]), argv[i], 0);
+    p = scheme_to_c(SCHEME_CAR(itypes), &(ivals[i]), argv[i], 0);
     /* Establish links from avalues to the actual ivals */
-    avalues[i] = (p == NULL) ? (&(ival[i])) : p;
+    avalues[i] = (p == NULL) ? (&(ivals[i])) : p;
   }
   base = get_ctype_base(otype); /* verified below, so cannot be NULL */
   /* If this is a struct return value, then need to malloc in any case, even if
@@ -1436,9 +1444,13 @@ Scheme_Object *ffi_do_call(void *data, int argc, Scheme_Object *argv[])
 void ffi_do_callback(ffi_cif* cif, void* resultp, void** args, void *userdata)
 {
   ffi_callback_struct *data = (ffi_callback_struct*)userdata;
+  Scheme_Object *argv_stack[MAX_QUICK_ARGS];
   int argc = cif->nargs, i;
   Scheme_Object **argv, *p, *v;
-  argv = alloca(argc*sizeof(Scheme_Object*)); //!!!!!!!!
+  if (argc <= MAX_QUICK_ARGS)
+    argv = argv_stack;
+  else
+    argv = scheme_malloc(argc * sizeof(Scheme_Object*));
   for (i=0, p=data->itypes; i<argc; i++, p=SCHEME_CDR(p)) {
     v = c_to_scheme(SCHEME_CAR(p),args[i]);
     argv[i] = v;

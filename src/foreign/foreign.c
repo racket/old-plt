@@ -14,7 +14,6 @@
 #else
 # include <windows.h>
 # include <wtypes.h>
-# define alloca(x) _alloca(x)
   typedef INT8    int8_t;
   typedef UINT8  uint8_t;
   typedef INT16   int16_t;
@@ -108,12 +107,11 @@ static Scheme_Object *foreign_ffi_lib(int argc, Scheme_Object *argv[])
                        MYNAME": couldn't OPEN %V (%s)", argv[0], dlerror());
 #endif
     ht = scheme_make_hash_table(SCHEME_hash_string);
-    lib = (ffi_lib_struct*)scheme_malloc_stubborn(sizeof(ffi_lib_struct));
+    lib = (ffi_lib_struct*)scheme_malloc_tagged(sizeof(ffi_lib_struct));
     lib->so.type = ffi_lib_tag;
     lib->handle = (handle);
     lib->name = (argv[0]);
     lib->objects = (ht);
-    scheme_end_stubborn_change(lib);
     scheme_hash_set(opened_libs, hashname, (Scheme_Object*)lib);
     /* no dlclose finalizer - since the hash table always keeps a reference */
     /* maybe add some explicit unload at some point */
@@ -209,12 +207,11 @@ static Scheme_Object *foreign_ffi_obj(int argc, Scheme_Object *argv[])
                          dlname, lib->name, err);
     }
 #endif
-    obj = (ffi_obj_struct*)scheme_malloc_stubborn(sizeof(ffi_obj_struct));
+    obj = (ffi_obj_struct*)scheme_malloc_tagged(sizeof(ffi_obj_struct));
     obj->so.type = ffi_obj_tag;
     obj->obj = (dlobj);
     obj->name = (dlname);
     obj->lib = (lib);
-    scheme_end_stubborn_change(obj);
     scheme_hash_set(lib->objects, (Scheme_Object*)dlname, (Scheme_Object*)obj);
   }
   return (obj == NULL) ? scheme_false : (Scheme_Object*)obj;
@@ -826,12 +823,11 @@ static Scheme_Object *foreign_make_ctype(int argc, Scheme_Object *argv[])
   else if (SCHEME_FALSEP(argv[1]) && SCHEME_FALSEP(argv[2]))
     return argv[0];
   else {
-    type = (ctype_struct*)scheme_malloc_stubborn(sizeof(ctype_struct));
+    type = (ctype_struct*)scheme_malloc_tagged(sizeof(ctype_struct));
     type->so.type = ctype_tag;
     type->basetype = (argv[0]);
     type->scheme_to_c = (argv[1]);
     type->c_to_scheme = (argv[2]);
-    scheme_end_stubborn_change(type);
     return (Scheme_Object*)type;
   }
   return NULL; /* shush the compiler */
@@ -875,12 +871,11 @@ static Scheme_Object *foreign_make_cstruct_type(int argc, Scheme_Object *argv[])
   if (ffi_prep_cif(&cif, FFI_DEFAULT_ABI, 1, &ffi_type_void, dummy) != FFI_OK)
     scheme_signal_error("internal error: ffi_prep_cif did not return FFI_OK");
   scheme_end_stubborn_change(libffi_type);
-  type = (ctype_struct*)scheme_malloc_stubborn(sizeof(ctype_struct));
+  type = (ctype_struct*)scheme_malloc_tagged(sizeof(ctype_struct));
   type->so.type = ctype_tag;
   type->basetype = (NULL);
   type->scheme_to_c = ((Scheme_Object*)libffi_type);
   type->c_to_scheme = ((Scheme_Object*)FOREIGN_struct);
-  scheme_end_stubborn_change(type);
   return (Scheme_Object*)type;
 }
 
@@ -1237,14 +1232,17 @@ static Scheme_Object *atomic_sym;
 static Scheme_Object *stubborn_sym;
 static Scheme_Object *uncollectable_sym;
 static Scheme_Object *eternal_sym;
+static Scheme_Object *fail_ok_sym;
 
-/* (malloc num type cpointer flag) -> pointer */
+/* (malloc num type cpointer mode) -> pointer */
 /* The arguments for this function are:
  * - num: bytes to allocate, or the number of instances of type when given,
  * - type: malloc the size of this type (or num instances of it),
  * - cpointer: a source pointer to copy contents from,
  * - mode: a symbol for different allocation functions to use - one of
  *   'atomic, 'stubborn, 'uncollectable, 'eternal
+ * - if an additional 'fail-ok flag is given, then scheme_malloc_fail_ok is
+ *   used with the chosen malloc function
  * The arguments can be specified in any order at all since they are all
  * different types, the only requirement is for a size, either a number of
  * bytes or a type. */
@@ -1252,9 +1250,10 @@ static Scheme_Object *eternal_sym;
 #define MYNAME "malloc"
 static Scheme_Object *foreign_malloc(int argc, Scheme_Object *argv[])
 {
-  int i, size=0, num=0;
+  int i, size=0, num=0, failok=0;
   void *from = NULL, *res = NULL;
   Scheme_Object *mode = NULL, *a;
+  void *(*mf)(size_t);
   for (i=0; i<argc; i++) {
     a = argv[i];
     if (SCHEME_INTP(a)) {
@@ -1271,6 +1270,8 @@ static Scheme_Object *foreign_malloc(int argc, Scheme_Object *argv[])
         scheme_wrong_type(MYNAME, "C-type", i, argc, argv);
       else if (size == 0)
         scheme_wrong_type(MYNAME, "non-void-C-type", i, argc, argv);
+    } else if (SAME_OBJ(a, fail_ok_sym)) {
+      failok = 1;
     } else if (SCHEME_SYMBOLP(a)) {
       if (mode != NULL)
         scheme_signal_error(MYNAME": specifying a second mode symbol: %V", a);
@@ -1286,13 +1287,16 @@ static Scheme_Object *foreign_malloc(int argc, Scheme_Object *argv[])
   }
   if ((num == 0) && (size == 0)) scheme_signal_error(MYNAME": no size given");
   size = ((size==0) ? 1 : size) * ((num==0) ? 1 : num);
-  if (mode == NULL)                      res = scheme_malloc(size);
-  else if (SAME_OBJ(mode, atomic_sym))   res = scheme_malloc_atomic(size);
-  else if (SAME_OBJ(mode, stubborn_sym)) res = scheme_malloc_stubborn(size);
-  else if (SAME_OBJ(mode, eternal_sym))  res = scheme_malloc_eternal(size);
-  else if (SAME_OBJ(mode, uncollectable_sym))
-    res = scheme_malloc_uncollectable(size);
-  else scheme_signal_error(MYNAME": bad allocation mode: %V", mode);
+  if (mode == NULL)                           mf = scheme_malloc;
+  else if (SAME_OBJ(mode, atomic_sym))        mf = scheme_malloc_atomic;
+  else if (SAME_OBJ(mode, stubborn_sym))      mf = scheme_malloc_stubborn;
+  else if (SAME_OBJ(mode, eternal_sym))       mf = scheme_malloc_eternal;
+  else if (SAME_OBJ(mode, uncollectable_sym)) mf = scheme_malloc_uncollectable;
+  else {
+    scheme_signal_error(MYNAME": bad allocation mode: %V", mode);
+    return NULL; /* shush the compiler */
+  }
+  if (failok) res = scheme_malloc_fail_ok(mf,size); else res = mf(size);
   if ((from != NULL) && (res != NULL)) memcpy(res, from, size);
   return scheme_make_foreign_cpointer(res);
 }
@@ -1497,6 +1501,8 @@ static Scheme_Object *foreign_register_finalizer(int argc, Scheme_Object *argv[]
 /*****************************************************************************/
 /* Calling foreign function objects */
 
+#define MAX_QUICK_ARGS 16
+
 Scheme_Object *ffi_do_call(void *data, int argc, Scheme_Object *argv[])
 /* data := {name, c-function, itypes, otype, cif} */
 {
@@ -1508,17 +1514,24 @@ Scheme_Object *ffi_do_call(void *data, int argc, Scheme_Object *argv[])
   Scheme_Object *base;
   ffi_cif       *cif    = (ffi_cif*)(((Scheme_Object**)data)[4]);
   int           nargs   = cif->nargs;
-  GC_CAN_IGNORE ForeignAny oval, *ival;
+  GC_CAN_IGNORE ForeignAny oval, *ivals;
   void **avalues, *p;
+  ForeignAny stack_ivals[MAX_QUICK_ARGS];
+  void *stack_avalues[MAX_QUICK_ARGS];
   int i;
-  ival    = alloca(nargs*sizeof(ForeignAny));
-  avalues = alloca(nargs*sizeof(void*));
+  if (nargs <= MAX_QUICK_ARGS) {
+    ivals   = stack_ivals;
+    avalues = stack_avalues;
+  } else {
+    ivals   = scheme_malloc(nargs * sizeof(ForeignAny));
+    avalues = scheme_malloc(nargs * sizeof(void*));
+  }
   /* iterate on input values and types */
   for (i=0; i<nargs; i++, itypes=SCHEME_CDR(itypes)) {
     /* convert argv[i] according to current itype */
-    p = scheme_to_c(SCHEME_CAR(itypes), &(ival[i]), argv[i], 0);
+    p = scheme_to_c(SCHEME_CAR(itypes), &(ivals[i]), argv[i], 0);
     /* Establish links from avalues to the actual ivals */
-    avalues[i] = (p == NULL) ? (&(ival[i])) : p;
+    avalues[i] = (p == NULL) ? (&(ivals[i])) : p;
   }
   base = get_ctype_base(otype); /* verified below, so cannot be NULL */
   /* If this is a struct return value, then need to malloc in any case, even if
@@ -1598,9 +1611,13 @@ static Scheme_Object *foreign_ffi_call(int argc, Scheme_Object *argv[])
 void ffi_do_callback(ffi_cif* cif, void* resultp, void** args, void *userdata)
 {
   ffi_callback_struct *data = (ffi_callback_struct*)userdata;
+  Scheme_Object *argv_stack[MAX_QUICK_ARGS];
   int argc = cif->nargs, i;
   Scheme_Object **argv, *p, *v;
-  argv = alloca(argc*sizeof(Scheme_Object*));
+  if (argc <= MAX_QUICK_ARGS)
+    argv = argv_stack;
+  else
+    argv = scheme_malloc(argc * sizeof(Scheme_Object*));
   for (i=0, p=data->itypes; i<argc; i++, p=SCHEME_CDR(p)) {
     v = c_to_scheme(SCHEME_CAR(p),args[i]);
     argv[i] = v;
@@ -1646,13 +1663,12 @@ static Scheme_Object *foreign_ffi_callback(int argc, Scheme_Object *argv[])
     scheme_signal_error("internal error: ffi_prep_cif did not return FFI_OK");
   scheme_end_stubborn_change(cif);
   cl = scheme_malloc_stubborn(sizeof(ffi_closure));
-  data = (ffi_callback_struct*)scheme_malloc_stubborn(sizeof(ffi_callback_struct));
+  data = (ffi_callback_struct*)scheme_malloc_tagged(sizeof(ffi_callback_struct));
   data->so.type = ffi_callback_tag;
   data->callback = (cl);
   data->proc = (argv[0]);
   data->itypes = (argv[1]);
   data->otype = (argv[2]);
-  scheme_end_stubborn_change(data);
   if (ffi_prep_closure(cl, cif, &ffi_do_callback, (void*)data) != FFI_OK)
     scheme_signal_error
       ("internal error: ffi_prep_closure did not return FFI_OK");
@@ -1688,6 +1704,8 @@ void scheme_init_foreign(Scheme_Env *env)
   uncollectable_sym = scheme_intern_symbol("uncollectable");
   MZ_REGISTER_STATIC(eternal_sym);
   eternal_sym = scheme_intern_symbol("eternal");
+  MZ_REGISTER_STATIC(fail_ok_sym);
+  fail_ok_sym = scheme_intern_symbol("fail-ok");
   MZ_REGISTER_STATIC(abs_sym);
   abs_sym = scheme_intern_symbol("abs");
   MZ_REGISTER_STATIC(pointer_sym);
@@ -1748,191 +1766,165 @@ void scheme_init_foreign(Scheme_Env *env)
     scheme_make_prim_w_arity(foreign_ffi_call, "ffi-call", 3, 3), menv);
   scheme_add_global("ffi-callback",
     scheme_make_prim_w_arity(foreign_ffi_callback, "ffi-callback", 3, 3), menv);
-  t = (ctype_struct*)scheme_malloc_stubborn(sizeof(ctype_struct));
+  t = (ctype_struct*)scheme_malloc_tagged(sizeof(ctype_struct));
   t->so.type = ctype_tag;
   t->basetype = (NULL);
   t->scheme_to_c = ((Scheme_Object*)(void*)(&ffi_type_void));
   t->c_to_scheme = ((Scheme_Object*)FOREIGN_void);
-  scheme_end_stubborn_change(t);
   scheme_add_global("_void", (Scheme_Object*)t, menv);
-  t = (ctype_struct*)scheme_malloc_stubborn(sizeof(ctype_struct));
+  t = (ctype_struct*)scheme_malloc_tagged(sizeof(ctype_struct));
   t->so.type = ctype_tag;
   t->basetype = (NULL);
   t->scheme_to_c = ((Scheme_Object*)(void*)(&ffi_type_sint8));
   t->c_to_scheme = ((Scheme_Object*)FOREIGN_int8);
-  scheme_end_stubborn_change(t);
   scheme_add_global("_int8", (Scheme_Object*)t, menv);
-  t = (ctype_struct*)scheme_malloc_stubborn(sizeof(ctype_struct));
+  t = (ctype_struct*)scheme_malloc_tagged(sizeof(ctype_struct));
   t->so.type = ctype_tag;
   t->basetype = (NULL);
   t->scheme_to_c = ((Scheme_Object*)(void*)(&ffi_type_uint8));
   t->c_to_scheme = ((Scheme_Object*)FOREIGN_uint8);
-  scheme_end_stubborn_change(t);
   scheme_add_global("_uint8", (Scheme_Object*)t, menv);
   scheme_add_global("_byte", scheme_lookup_global(scheme_intern_symbol("_uint8"),menv), menv);
-  t = (ctype_struct*)scheme_malloc_stubborn(sizeof(ctype_struct));
+  t = (ctype_struct*)scheme_malloc_tagged(sizeof(ctype_struct));
   t->so.type = ctype_tag;
   t->basetype = (NULL);
   t->scheme_to_c = ((Scheme_Object*)(void*)(&ffi_type_sint16));
   t->c_to_scheme = ((Scheme_Object*)FOREIGN_int16);
-  scheme_end_stubborn_change(t);
   scheme_add_global("_int16", (Scheme_Object*)t, menv);
-  t = (ctype_struct*)scheme_malloc_stubborn(sizeof(ctype_struct));
+  t = (ctype_struct*)scheme_malloc_tagged(sizeof(ctype_struct));
   t->so.type = ctype_tag;
   t->basetype = (NULL);
   t->scheme_to_c = ((Scheme_Object*)(void*)(&ffi_type_uint16));
   t->c_to_scheme = ((Scheme_Object*)FOREIGN_uint16);
-  scheme_end_stubborn_change(t);
   scheme_add_global("_uint16", (Scheme_Object*)t, menv);
   scheme_add_global("_word", scheme_lookup_global(scheme_intern_symbol("_uint16"),menv), menv);
-  t = (ctype_struct*)scheme_malloc_stubborn(sizeof(ctype_struct));
+  t = (ctype_struct*)scheme_malloc_tagged(sizeof(ctype_struct));
   t->so.type = ctype_tag;
   t->basetype = (NULL);
   t->scheme_to_c = ((Scheme_Object*)(void*)(&ffi_type_sint32));
   t->c_to_scheme = ((Scheme_Object*)FOREIGN_int32);
-  scheme_end_stubborn_change(t);
   scheme_add_global("_int32", (Scheme_Object*)t, menv);
-  t = (ctype_struct*)scheme_malloc_stubborn(sizeof(ctype_struct));
+  t = (ctype_struct*)scheme_malloc_tagged(sizeof(ctype_struct));
   t->so.type = ctype_tag;
   t->basetype = (NULL);
   t->scheme_to_c = ((Scheme_Object*)(void*)(&ffi_type_uint32));
   t->c_to_scheme = ((Scheme_Object*)FOREIGN_uint32);
-  scheme_end_stubborn_change(t);
   scheme_add_global("_uint32", (Scheme_Object*)t, menv);
-  t = (ctype_struct*)scheme_malloc_stubborn(sizeof(ctype_struct));
+  t = (ctype_struct*)scheme_malloc_tagged(sizeof(ctype_struct));
   t->so.type = ctype_tag;
   t->basetype = (NULL);
   t->scheme_to_c = ((Scheme_Object*)(void*)(&ffi_type_sint64));
   t->c_to_scheme = ((Scheme_Object*)FOREIGN_int64);
-  scheme_end_stubborn_change(t);
   scheme_add_global("_int64", (Scheme_Object*)t, menv);
-  t = (ctype_struct*)scheme_malloc_stubborn(sizeof(ctype_struct));
+  t = (ctype_struct*)scheme_malloc_tagged(sizeof(ctype_struct));
   t->so.type = ctype_tag;
   t->basetype = (NULL);
   t->scheme_to_c = ((Scheme_Object*)(void*)(&ffi_type_uint64));
   t->c_to_scheme = ((Scheme_Object*)FOREIGN_uint64);
-  scheme_end_stubborn_change(t);
   scheme_add_global("_uint64", (Scheme_Object*)t, menv);
   scheme_add_global("_int", scheme_lookup_global(scheme_intern_symbol("_int32"),menv), menv);
   scheme_add_global("_uint", scheme_lookup_global(scheme_intern_symbol("_uint32"),menv), menv);
-  t = (ctype_struct*)scheme_malloc_stubborn(sizeof(ctype_struct));
+  t = (ctype_struct*)scheme_malloc_tagged(sizeof(ctype_struct));
   t->so.type = ctype_tag;
   t->basetype = (NULL);
   t->scheme_to_c = ((Scheme_Object*)(void*)(&ffi_type_sint32));
   t->c_to_scheme = ((Scheme_Object*)FOREIGN_fixint);
-  scheme_end_stubborn_change(t);
   scheme_add_global("_fixint", (Scheme_Object*)t, menv);
-  t = (ctype_struct*)scheme_malloc_stubborn(sizeof(ctype_struct));
+  t = (ctype_struct*)scheme_malloc_tagged(sizeof(ctype_struct));
   t->so.type = ctype_tag;
   t->basetype = (NULL);
   t->scheme_to_c = ((Scheme_Object*)(void*)(&ffi_type_uint32));
   t->c_to_scheme = ((Scheme_Object*)FOREIGN_ufixint);
-  scheme_end_stubborn_change(t);
   scheme_add_global("_ufixint", (Scheme_Object*)t, menv);
-  t = (ctype_struct*)scheme_malloc_stubborn(sizeof(ctype_struct));
+  t = (ctype_struct*)scheme_malloc_tagged(sizeof(ctype_struct));
   t->so.type = ctype_tag;
   t->basetype = (NULL);
   t->scheme_to_c = ((Scheme_Object*)(void*)(&ffi_type_smzlong));
   t->c_to_scheme = ((Scheme_Object*)FOREIGN_long);
-  scheme_end_stubborn_change(t);
   scheme_add_global("_long", (Scheme_Object*)t, menv);
-  t = (ctype_struct*)scheme_malloc_stubborn(sizeof(ctype_struct));
+  t = (ctype_struct*)scheme_malloc_tagged(sizeof(ctype_struct));
   t->so.type = ctype_tag;
   t->basetype = (NULL);
   t->scheme_to_c = ((Scheme_Object*)(void*)(&ffi_type_umzlong));
   t->c_to_scheme = ((Scheme_Object*)FOREIGN_ulong);
-  scheme_end_stubborn_change(t);
   scheme_add_global("_ulong", (Scheme_Object*)t, menv);
-  t = (ctype_struct*)scheme_malloc_stubborn(sizeof(ctype_struct));
+  t = (ctype_struct*)scheme_malloc_tagged(sizeof(ctype_struct));
   t->so.type = ctype_tag;
   t->basetype = (NULL);
   t->scheme_to_c = ((Scheme_Object*)(void*)(&ffi_type_smzlong));
   t->c_to_scheme = ((Scheme_Object*)FOREIGN_fixnum);
-  scheme_end_stubborn_change(t);
   scheme_add_global("_fixnum", (Scheme_Object*)t, menv);
-  t = (ctype_struct*)scheme_malloc_stubborn(sizeof(ctype_struct));
+  t = (ctype_struct*)scheme_malloc_tagged(sizeof(ctype_struct));
   t->so.type = ctype_tag;
   t->basetype = (NULL);
   t->scheme_to_c = ((Scheme_Object*)(void*)(&ffi_type_umzlong));
   t->c_to_scheme = ((Scheme_Object*)FOREIGN_ufixnum);
-  scheme_end_stubborn_change(t);
   scheme_add_global("_ufixnum", (Scheme_Object*)t, menv);
-  t = (ctype_struct*)scheme_malloc_stubborn(sizeof(ctype_struct));
+  t = (ctype_struct*)scheme_malloc_tagged(sizeof(ctype_struct));
   t->so.type = ctype_tag;
   t->basetype = (NULL);
   t->scheme_to_c = ((Scheme_Object*)(void*)(&ffi_type_float));
   t->c_to_scheme = ((Scheme_Object*)FOREIGN_float);
-  scheme_end_stubborn_change(t);
   scheme_add_global("_float", (Scheme_Object*)t, menv);
-  t = (ctype_struct*)scheme_malloc_stubborn(sizeof(ctype_struct));
+  t = (ctype_struct*)scheme_malloc_tagged(sizeof(ctype_struct));
   t->so.type = ctype_tag;
   t->basetype = (NULL);
   t->scheme_to_c = ((Scheme_Object*)(void*)(&ffi_type_double));
   t->c_to_scheme = ((Scheme_Object*)FOREIGN_double);
-  scheme_end_stubborn_change(t);
   scheme_add_global("_double", (Scheme_Object*)t, menv);
-  t = (ctype_struct*)scheme_malloc_stubborn(sizeof(ctype_struct));
+  t = (ctype_struct*)scheme_malloc_tagged(sizeof(ctype_struct));
   t->so.type = ctype_tag;
   t->basetype = (NULL);
   t->scheme_to_c = ((Scheme_Object*)(void*)(&ffi_type_sint));
   t->c_to_scheme = ((Scheme_Object*)FOREIGN_bool);
-  scheme_end_stubborn_change(t);
   scheme_add_global("_bool", (Scheme_Object*)t, menv);
-  t = (ctype_struct*)scheme_malloc_stubborn(sizeof(ctype_struct));
+  t = (ctype_struct*)scheme_malloc_tagged(sizeof(ctype_struct));
   t->so.type = ctype_tag;
   t->basetype = (NULL);
   t->scheme_to_c = ((Scheme_Object*)(void*)(&ffi_type_pointer));
   t->c_to_scheme = ((Scheme_Object*)FOREIGN_string_ucs_4);
-  scheme_end_stubborn_change(t);
   scheme_add_global("_string/ucs-4", (Scheme_Object*)t, menv);
-  t = (ctype_struct*)scheme_malloc_stubborn(sizeof(ctype_struct));
+  t = (ctype_struct*)scheme_malloc_tagged(sizeof(ctype_struct));
   t->so.type = ctype_tag;
   t->basetype = (NULL);
   t->scheme_to_c = ((Scheme_Object*)(void*)(&ffi_type_pointer));
   t->c_to_scheme = ((Scheme_Object*)FOREIGN_string_utf_16);
-  scheme_end_stubborn_change(t);
   scheme_add_global("_string/utf-16", (Scheme_Object*)t, menv);
-  t = (ctype_struct*)scheme_malloc_stubborn(sizeof(ctype_struct));
+  t = (ctype_struct*)scheme_malloc_tagged(sizeof(ctype_struct));
   t->so.type = ctype_tag;
   t->basetype = (NULL);
   t->scheme_to_c = ((Scheme_Object*)(void*)(&ffi_type_pointer));
   t->c_to_scheme = ((Scheme_Object*)FOREIGN_bytes);
-  scheme_end_stubborn_change(t);
   scheme_add_global("_bytes", (Scheme_Object*)t, menv);
-  t = (ctype_struct*)scheme_malloc_stubborn(sizeof(ctype_struct));
+  t = (ctype_struct*)scheme_malloc_tagged(sizeof(ctype_struct));
   t->so.type = ctype_tag;
   t->basetype = (NULL);
   t->scheme_to_c = ((Scheme_Object*)(void*)(&ffi_type_pointer));
   t->c_to_scheme = ((Scheme_Object*)FOREIGN_path);
-  scheme_end_stubborn_change(t);
   scheme_add_global("_path", (Scheme_Object*)t, menv);
-  t = (ctype_struct*)scheme_malloc_stubborn(sizeof(ctype_struct));
+  t = (ctype_struct*)scheme_malloc_tagged(sizeof(ctype_struct));
   t->so.type = ctype_tag;
   t->basetype = (NULL);
   t->scheme_to_c = ((Scheme_Object*)(void*)(&ffi_type_pointer));
   t->c_to_scheme = ((Scheme_Object*)FOREIGN_symbol);
-  scheme_end_stubborn_change(t);
   scheme_add_global("_symbol", (Scheme_Object*)t, menv);
-  t = (ctype_struct*)scheme_malloc_stubborn(sizeof(ctype_struct));
+  t = (ctype_struct*)scheme_malloc_tagged(sizeof(ctype_struct));
   t->so.type = ctype_tag;
   t->basetype = (NULL);
   t->scheme_to_c = ((Scheme_Object*)(void*)(&ffi_type_pointer));
   t->c_to_scheme = ((Scheme_Object*)FOREIGN_pointer);
-  scheme_end_stubborn_change(t);
   scheme_add_global("_pointer", (Scheme_Object*)t, menv);
-  t = (ctype_struct*)scheme_malloc_stubborn(sizeof(ctype_struct));
+  t = (ctype_struct*)scheme_malloc_tagged(sizeof(ctype_struct));
   t->so.type = ctype_tag;
   t->basetype = (NULL);
   t->scheme_to_c = ((Scheme_Object*)(void*)(&ffi_type_pointer));
   t->c_to_scheme = ((Scheme_Object*)FOREIGN_scheme);
-  scheme_end_stubborn_change(t);
   scheme_add_global("_scheme", (Scheme_Object*)t, menv);
-  t = (ctype_struct*)scheme_malloc_stubborn(sizeof(ctype_struct));
+  t = (ctype_struct*)scheme_malloc_tagged(sizeof(ctype_struct));
   t->so.type = ctype_tag;
   t->basetype = (NULL);
   t->scheme_to_c = ((Scheme_Object*)(void*)(&ffi_type_pointer));
   t->c_to_scheme = ((Scheme_Object*)FOREIGN_fmark);
-  scheme_end_stubborn_change(t);
   scheme_add_global("_fmark", (Scheme_Object*)t, menv);
   scheme_finish_primitive_module(menv);
 }

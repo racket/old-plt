@@ -138,15 +138,9 @@ Scheme_Env *scheme_basic_env()
     scheme_make_thread();
     scheme_init_error_escape_proc(scheme_current_thread);
 
-    /* FIXME: this isn't right */
-
     env = scheme_make_empty_env();
-    scheme_require_from_original_env(env, 0);
-    
-    scheme_prepare_exp_env(env);
-    scheme_require_from_original_env(env->exp_env, 0);
+    scheme_install_initial_module_set(env);
 
-    scheme_set_param(scheme_config, MZCONFIG_ENV, (Scheme_Object *)env); 
     scheme_init_port_config();
     scheme_init_port_fun_config();
     scheme_init_error_config();

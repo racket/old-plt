@@ -189,49 +189,22 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func,
   }
   
   ALSetInfo(alClickCellHook,&MyClickInCellUPP,cListReference);
-  
-  //	(**cListHandle).indent.v = tHeight - tDescent;
 
-  // by default the Mac allows fancy selections
-  /*	if (multiple & (wxMULTIPLE | wxEXTENDED)) {
-	#if 0
-	(**cListHandle).selFlags = lExtendDrag | lNoDisjoint | lNoExtend | lNoRect 
-	| lUseSense;
-	#endif
-	}
-	else {
-	(**cListHandle).selFlags |= lOnlyOne;		// ell not one
-	}
-	*/
-  //	cThinBorderArea = new wxBorderArea(this);		// Fits around the Mac listbox 'control'.
-
-  //SetMargin(12,Direction::wxAll,cWindowWidth+6,cWindowHeight+6,
-  //			cWindowX-3,cWindowY-3);	
-
-  /*	cBorderArea = new wxBorderArea(this, 0, Direction::wxAll, 1); // mflatt: for showing keyboard focus
-	wxMargin margin(12);
-	cBorderArea->SetMargin(margin, Direction::wxAll,
-	cWindowWidth + 6, cWindowHeight + 6,
-	cWindowX - 3, cWindowY - 3);
-	((wxBorderArea *)cBorderArea)->cBorder->SetBrush(wxCONTROL_BACKGROUND_BRUSH);
-	*/
-  if (Title)
-    {
-      cListTitle = new wxLabelArea(this, Title, labelFont,
-				   labelPosition == wxVERTICAL ? Direction::wxTop : Direction::wxLeft);
-    }
-  else
+  if (Title) {
+    cListTitle = new wxLabelArea(this, Title, labelFont,
+				 labelPosition == wxVERTICAL ? Direction::wxTop : Direction::wxLeft);
+  } else
     cListTitle = NULL;
-  
   
   if (N)
     this->Set(N, Choices);
   
   if (GetParent()->IsHidden())
     DoShow(FALSE);
-  
 
   ReleaseCurrentDC();
+
+  OnClientAreaDSize(1, 1, 1, 1);
 
   return TRUE;
 }
@@ -268,6 +241,11 @@ void wxListBox::OnClientAreaDSize(int dW, int dH, int dX, int dY)
 {
   if (cHidden) return;
 
+  if (dX || dY) {
+    // Changing the position
+    cMacDC->setCurrentUser(NULL); // macDC no longer valid
+  }
+  
   SetCurrentDC();
   Rect viewRect;
   
@@ -280,25 +258,21 @@ void wxListBox::OnClientAreaDSize(int dW, int dH, int dX, int dY)
   /*if (cHaveVScroll)*/ clientWidth -= KSBWidth;
 
   OffsetRect(&viewRect,SetOriginX,SetOriginY);
-  if (dW || dH)
-    {	// Changing the size
-      ALSetViewRect(&viewRect, cListReference);
-      Rect cellRect;
-      LongPt cell = {0,0};
-      ALGetCellRect(&cellRect,&cell,cListReference);
-      Point size = {cellRect.bottom - cellRect.top, clientWidth };
-      ALSetCellSize(size, cListReference);
-    }
 
-  if (dX || dY)
-    {	// Changing the position
-      cMacDC->setCurrentUser(NULL); // macDC no longer valid
-      SetCurrentDC(); // put newViewRect at (0, 0)
-    }
-  
+  if (dW || dH || dX || dY)
+    ALSetViewRect(&viewRect, cListReference);
+
+  if (dW || dH) {
+    // Changing the size
+    Rect cellRect;
+    LongPt cell = {0,0};
+    ALGetCellRect(&cellRect,&cell,cListReference);
+    Point size = {cellRect.bottom - cellRect.top, clientWidth };
+    ALSetCellSize(size, cListReference);
+  }
+
   if (!cHidden && (dW || dH || dX || dY))
     {
-      OffsetRect(&viewRect,SetOriginX,SetOriginY);
       ::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&viewRect);
     }
   

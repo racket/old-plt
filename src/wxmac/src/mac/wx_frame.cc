@@ -691,7 +691,7 @@ void wxFrame::Show(Bool show)
     ::HideWindow(theMacWindow);
   }
 
-  Paint();
+  /* Paint(); */
 }
 
 //-----------------------------------------------------------------------------

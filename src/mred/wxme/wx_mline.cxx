@@ -21,6 +21,7 @@
 
  */
 
+#include "common.h"
 #include "wx_media.h"
 #include "wx_mline.h"
 #include "wx_ptreq.h"

@@ -22,6 +22,7 @@
  */
 
 #define  Uses_wxPrintSetup /* for wx_xt */
+#include "common.h"
 #include "wx_utils.h"
 #include "wx_win.h"
 #include "wx_dcps.h"

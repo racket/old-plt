@@ -58,6 +58,7 @@
  */
 
 
+#include "common.h"
 #include <stdlib.h>
 #include "wx_image.h"
 #include "wx_utils.h"

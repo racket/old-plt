@@ -96,17 +96,8 @@
 #define _KEY_TYPE int
 #endif
 
-// Since we don't allow creating this anymore, need a Mac fix:
-#if defined(wx_mac)
-#define CDB_FIX os_wxColourDatabase(_KEY_TYPE x) : wxColourDatabase(x) {}
-#else
-#define CDB_FIX 
-#endif
-
 @CLASSBASE wxColourDatabase "color-database" : "object"
 @INTERFACE "color-database"
-
-@VAR CDB_FIX
 
 @ "find-color" : wxColour^ FindColour(string);
 

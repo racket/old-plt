@@ -5,6 +5,9 @@
 #if defined(_MSC_VER)
 # include "wx.h"
 #endif
+#if defined(OS_X) && defined(MZ_PRECISE_GC)
+# include "common.h"
+#endif
 
 #include "wx_obj.h"
 #include "wx_list.h"
@@ -1126,19 +1129,10 @@ class wxColour *objscheme_unbundle_wxColour(Scheme_Object *obj, const char *wher
 #define _KEY_TYPE int
 #endif
 
-// Since we don't allow creating this anymore, need a Mac fix:
-#if defined(wx_mac)
-#define CDB_FIX os_wxColourDatabase(_KEY_TYPE x) : wxColourDatabase(x) {}
-#else
-#define CDB_FIX 
-#endif
-
-
 
 
 class os_wxColourDatabase : public wxColourDatabase {
  public:
-  CDB_FIX
 
   ~os_wxColourDatabase();
 #ifdef MZ_PRECISE_GC

@@ -221,8 +221,8 @@ void wxColour::Get (unsigned char *r, unsigned char *g, unsigned char *b)
   *b = blue;
 }
 
-wxColourDatabase::wxColourDatabase(KeyType type)
-: wxList(type)
+wxColourDatabase::wxColourDatabase()
+  : wxList(wxKEY_STRING)
 {
 }
 

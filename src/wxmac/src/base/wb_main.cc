@@ -75,7 +75,7 @@ void wxCommonInit(void)
   wxREGGLOB(wxBuffer);
   wxBuffer = new char[1500];
   wxREGGLOB(wxTheColourDatabase);
-  wxTheColourDatabase = new wxColourDatabase(wxKEY_STRING);
+  wxTheColourDatabase = new wxColourDatabase();
   wxTheColourDatabase->Initialize();
   wxInitializeFontNameDirectory();
   wxInitializeStockObjects();

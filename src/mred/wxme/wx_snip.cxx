@@ -21,6 +21,7 @@
 
  */
 
+#include "common.h"
 #include "wx_dialg.h"
 #ifndef OLD_WXWINDOWS
 #include "wx_cmdlg.h"

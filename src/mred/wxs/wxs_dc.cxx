@@ -5,6 +5,9 @@
 #if defined(_MSC_VER)
 # include "wx.h"
 #endif
+#if defined(OS_X) && defined(MZ_PRECISE_GC)
+# include "common.h"
+#endif
 
 #include "wx_dccan.h"
 #include "wx_dcmem.h"
@@ -2168,11 +2171,7 @@ public:
 };
 
 basePrinterDC::basePrinterDC(wxWindow *w) 
-: wxPrinterDC(
-#ifdef wx_mac
-	      new wxPrintData()
-#endif
-               )
+: wxPrinterDC( )
 {
 }
 

@@ -25,6 +25,10 @@ wxPrinterDC::wxPrinterDC(wxPrintData *printData) : wxCanvasDC()
 
   __type = wxTYPE_DC_PRINTER;
 
+  if (!printData) {
+    printData = new wxPrintData();
+  }
+
   cPrintData = printData;
   if (!printData->cPrintSession) {
     wxPrintDialog *dialog;

@@ -38,7 +38,7 @@ LDFLAGS = $(XLIB)
 ###########################
 
 XFORM_INC_wx_xt = -Dwx_xt -I$(WXDIR)/src/XWidgets -I$(WXDIR)/src
-XFORM_INC_wx_mac = -Dwx_mac -DOS_X -DWX_CARBON -I$(WXMACDIR)/../utils/image/src -I$(WXMACDIR)/../contrib/wxxpm/libxpm.34b/lib
+XFORM_INC_wx_mac = -Dwx_mac -DOS_X -DWX_CARBON -I$(WXMACDIR)/../utils/image/src -I$(WXMACDIR)/../contrib/wxxpm/libxpm.34b/lib -I$(WXMACDIR)/../../mac/mzscheme
 
 XFORM = ../../mzscheme/mzscheme3m -rq $(srcdir)/../../mzscheme/gc2/xform.ss $(srcdir)/../../mzscheme/gc2/ctok.ss "$(CC) -E -I$(srcdir)/../../mzscheme/gc2 $(XINCLUDE) $(NOGCINC) $(OPTIONS) $(XFORM_INC_@WXVARIANT@) -I$(srcdir)/../../wxcommon/jpeg -I../../wxcommon/jpeg"
 XFORMDEP = $(srcdir)/../../mzscheme/gc2/xform.ss $(srcdir)/../../mzscheme/gc2/ctok.ss $(srcdir)/../../mzscheme/gc2/gc2.h
@@ -326,6 +326,8 @@ macxsrc/wx_image.cc: $(WXMACDIR)/../utils/image/src/wx_image.cc $(WXMACBDIR)/wx_
 	$(XFORM) $(WXMACDIR)/../utils/image/src/wx_image.cc macxsrc/wx_image.cc
 macxsrc/wx_xbm.cc: $(WXMACDIR)/../utils/image/src/wx_xbm.cc $(WXMACBDIR)/wx_xbm.o $(XFORMDEP)
 	$(XFORM) $(WXMACDIR)/../utils/image/src/wx_xbm.cc macxsrc/wx_xbm.cc
+macxsrc/simpledrop.cc: $(srcdir)/../../mac/mzscheme/simpledrop.cpp ../simpledrop.o $(XFORMDEP)
+	$(XFORM) $(srcdir)/../../mac/mzscheme/simpledrop.cpp macxsrc/simpledrop.cc
 
 
 xsrc/wx_media.cc: $(srcdir)/../wxme/wx_media.cxx ../wxme/wx_media.o $(XFORMDEP)
@@ -711,106 +713,120 @@ mwx_tabc.o: macxsrc/wx_tabc.cc $(MACPRECOMPDEP)
 mwx_mac_utils.o: macxsrc/wx_mac_utils.cc $(MACPRECOMPDEP)
 	$(CXX) $(MACXFLAG) $(MACUSEPRECOMP) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o mwx_mac_utils.o macxsrc/wx_mac_utils.cc
 
-mwx_bmp.o: macxsrc/wx_bmp.cc
-	$(CXX) $(MACXFLAG) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o mwx_bmp.o macxsrc/wx_bmp.cc
-mwx_24to8.o: macxsrc/wx_24to8.cc
-	$(CXX) $(MACXFLAG) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o mwx_24to8.o macxsrc/wx_24to8.cc
-mwx_image.o: macxsrc/wx_image.cc
-	$(CXX) $(MACXFLAG) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o mwx_image.o macxsrc/wx_image.cc
-mwx_xbm.o: macxsrc/wx_xbm.cc
-	$(CXX) $(MACXFLAG) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o mwx_xbm.o macxsrc/wx_xbm.cc
+mwx_bmp.o: macxsrc/wx_bmp.cc $(MACPRECOMPDEP)
+	$(CXX) $(MACXFLAG) $(MACUSEPRECOMP) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o mwx_bmp.o macxsrc/wx_bmp.cc
+mwx_24to8.o: macxsrc/wx_24to8.cc $(MACPRECOMPDEP)
+	$(CXX) $(MACXFLAG) $(MACUSEPRECOMP) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o mwx_24to8.o macxsrc/wx_24to8.cc
+mwx_image.o: macxsrc/wx_image.cc $(MACPRECOMPDEP)
+	$(CXX) $(MACXFLAG) $(MACUSEPRECOMP) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o mwx_image.o macxsrc/wx_image.cc
+mwx_xbm.o: macxsrc/wx_xbm.cc $(MACPRECOMPDEP)
+	$(CXX) $(MACXFLAG) $(MACUSEPRECOMP) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o mwx_xbm.o macxsrc/wx_xbm.cc
 
+simpledrop.o: macxsrc/simpledrop.cc
+	$(CXX) $(MACXFLAG) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o simpledrop.o macxsrc/simpledrop.cc
 
-wx_media.o: xsrc/wx_media.cc
-	$(CXX) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wx_media.o xsrc/wx_media.cc
-wx_mpriv.o: xsrc/wx_mpriv.cc
-	$(CXX) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wx_mpriv.o xsrc/wx_mpriv.cc
-wx_snip.o: xsrc/wx_snip.cc
-	$(CXX) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wx_snip.o xsrc/wx_snip.cc
-wx_msnip.o: xsrc/wx_msnip.cc
-	$(CXX) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wx_msnip.o xsrc/wx_msnip.cc
-wx_mbuf.o: xsrc/wx_mbuf.cc
-	$(CXX) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wx_mbuf.o xsrc/wx_mbuf.cc
-wx_mpbrd.o: xsrc/wx_mpbrd.cc
-	$(CXX) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wx_mpbrd.o xsrc/wx_mpbrd.cc
-wx_keym.o: xsrc/wx_keym.cc
-	$(CXX) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wx_keym.o xsrc/wx_keym.cc
-wx_medio.o: xsrc/wx_medio.cc
-	$(CXX) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wx_medio.o xsrc/wx_medio.cc
-wx_medad.o: xsrc/wx_medad.cc
-	$(CXX) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wx_medad.o xsrc/wx_medad.cc
-wx_style.o: xsrc/wx_style.cc
-	$(CXX) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wx_style.o xsrc/wx_style.cc
-wx_mline.o: xsrc/wx_mline.cc
-	$(CXX) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wx_mline.o xsrc/wx_mline.cc
-wx_cgrec.o: xsrc/wx_cgrec.cc
-	$(CXX) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wx_cgrec.o xsrc/wx_cgrec.cc
-wxscheme.o: xsrc/wxscheme.cc
-	$(CXX) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wxscheme.o xsrc/wxscheme.cc
-wxs_bmap.o: xsrc/wxs_bmap.cc
-	$(CXX) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wxs_bmap.o xsrc/wxs_bmap.cc
-wxs_butn.o: xsrc/wxs_butn.cc
-	$(CXX) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wxs_butn.o xsrc/wxs_butn.cc
-wxs_chce.o: xsrc/wxs_chce.cc
-	$(CXX) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wxs_chce.o xsrc/wxs_chce.cc
-wxs_ckbx.o: xsrc/wxs_ckbx.cc
-	$(CXX) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wxs_ckbx.o xsrc/wxs_ckbx.cc
-wxs_cnvs.o: xsrc/wxs_cnvs.cc
-	$(CXX) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wxs_cnvs.o xsrc/wxs_cnvs.cc
-wxs_dc.o: xsrc/wxs_dc.cc
-	$(CXX) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wxs_dc.o xsrc/wxs_dc.cc
-wxs_evnt.o: xsrc/wxs_evnt.cc
-	$(CXX) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wxs_evnt.o xsrc/wxs_evnt.cc
-wxs_fram.o: xsrc/wxs_fram.cc
-	$(CXX) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wxs_fram.o xsrc/wxs_fram.cc
-wxs_gage.o: xsrc/wxs_gage.cc
-	$(CXX) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wxs_gage.o xsrc/wxs_gage.cc
-wxs_gdi.o: xsrc/wxs_gdi.cc
-	$(CXX) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wxs_gdi.o xsrc/wxs_gdi.cc
-wxs_glob.o: xsrc/wxs_glob.cc
-	$(CXX) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wxs_glob.o xsrc/wxs_glob.cc
-wxs_item.o: xsrc/wxs_item.cc
-	$(CXX) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wxs_item.o xsrc/wxs_item.cc
-wxs_lbox.o: xsrc/wxs_lbox.cc
-	$(CXX) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wxs_lbox.o xsrc/wxs_lbox.cc
-wxs_madm.o: xsrc/wxs_madm.cc
-	$(CXX) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wxs_madm.o xsrc/wxs_madm.cc
-wxs_mede.o: xsrc/wxs_mede.cc
-	$(CXX) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wxs_mede.o xsrc/wxs_mede.cc
-wxs_medi.o: xsrc/wxs_medi.cc
-	$(CXX) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wxs_medi.o xsrc/wxs_medi.cc
-wxs_menu.o: xsrc/wxs_menu.cc
-	$(CXX) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wxs_menu.o xsrc/wxs_menu.cc
-wxs_mio.o: xsrc/wxs_mio.cc
-	$(CXX) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wxs_mio.o xsrc/wxs_mio.cc
-wxs_misc.o: xsrc/wxs_misc.cc
-	$(CXX) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wxs_misc.o xsrc/wxs_misc.cc
-wxs_mpb.o: xsrc/wxs_mpb.cc
-	$(CXX) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wxs_mpb.o xsrc/wxs_mpb.cc
-wxs_obj.o: xsrc/wxs_obj.cc
-	$(CXX) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wxs_obj.o xsrc/wxs_obj.cc
-wxs_panl.o: xsrc/wxs_panl.cc
-	$(CXX) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wxs_panl.o xsrc/wxs_panl.cc
-wxs_rado.o: xsrc/wxs_rado.cc
-	$(CXX) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wxs_rado.o xsrc/wxs_rado.cc
-wxs_slid.o: xsrc/wxs_slid.cc
-	$(CXX) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wxs_slid.o xsrc/wxs_slid.cc
-wxs_snip.o: xsrc/wxs_snip.cc
-	$(CXX) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wxs_snip.o xsrc/wxs_snip.cc
-wxs_styl.o: xsrc/wxs_styl.cc
-	$(CXX) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wxs_styl.o xsrc/wxs_styl.cc
-wxs_tabc.o: xsrc/wxs_tabc.cc
-	$(CXX) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wxs_tabc.o xsrc/wxs_tabc.cc
-wxs_win.o: xsrc/wxs_win.cc
-	$(CXX) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wxs_win.o xsrc/wxs_win.cc
-wxJPEG.o: xsrc/wxJPEG.cc
-	$(CXX) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wxJPEG.o xsrc/wxJPEG.cc
-mred.o: xsrc/mred.cc
-	$(CXX) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o mred.o xsrc/mred.cc
-mrmain.o: xsrc/mrmain.cc
-	$(CXX) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o mrmain.o xsrc/mrmain.cc
-mredx.o: xsrc/mredx.cc
-	$(CXX) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o mredx.o xsrc/mredx.cc
+wx_xt_PRECOMPDEP =
+wx_mac_PRECOMPDEP =$(MACPRECOMPDEP)
+PRECOMPDEP = $(@WXVARIANT@_PRECOMPDEP)
+
+wx_xt_EXTRAFLAGS =
+wx_mac_EXTRAFLAGS =$(MACXFLAG) $(MACUSEPRECOMP)
+EXTRAFLAGS = $(@WXVARIANT@_EXTRAFLAGS)
+
+wx_media.o: xsrc/wx_media.cc $(PRECOMPDEP)
+	$(CXX) $(EXTRAFLAGS) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wx_media.o xsrc/wx_media.cc
+wx_mpriv.o: xsrc/wx_mpriv.cc $(PRECOMPDEP)
+	$(CXX) $(EXTRAFLAGS) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wx_mpriv.o xsrc/wx_mpriv.cc
+wx_snip.o: xsrc/wx_snip.cc $(PRECOMPDEP)
+	$(CXX) $(EXTRAFLAGS) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wx_snip.o xsrc/wx_snip.cc
+wx_msnip.o: xsrc/wx_msnip.cc $(PRECOMPDEP)
+	$(CXX) $(EXTRAFLAGS) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wx_msnip.o xsrc/wx_msnip.cc
+wx_mbuf.o: xsrc/wx_mbuf.cc $(PRECOMPDEP)
+	$(CXX) $(EXTRAFLAGS) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wx_mbuf.o xsrc/wx_mbuf.cc
+wx_mpbrd.o: xsrc/wx_mpbrd.cc $(PRECOMPDEP)
+	$(CXX) $(EXTRAFLAGS) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wx_mpbrd.o xsrc/wx_mpbrd.cc
+wx_keym.o: xsrc/wx_keym.cc $(PRECOMPDEP)
+	$(CXX) $(EXTRAFLAGS) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wx_keym.o xsrc/wx_keym.cc
+wx_medio.o: xsrc/wx_medio.cc $(PRECOMPDEP)
+	$(CXX) $(EXTRAFLAGS) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wx_medio.o xsrc/wx_medio.cc
+wx_medad.o: xsrc/wx_medad.cc $(PRECOMPDEP)
+	$(CXX) $(EXTRAFLAGS) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wx_medad.o xsrc/wx_medad.cc
+wx_style.o: xsrc/wx_style.cc $(PRECOMPDEP)
+	$(CXX) $(EXTRAFLAGS) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wx_style.o xsrc/wx_style.cc
+wx_mline.o: xsrc/wx_mline.cc $(PRECOMPDEP)
+	$(CXX) $(EXTRAFLAGS) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wx_mline.o xsrc/wx_mline.cc
+wx_cgrec.o: xsrc/wx_cgrec.cc $(PRECOMPDEP)
+	$(CXX) $(EXTRAFLAGS) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wx_cgrec.o xsrc/wx_cgrec.cc
+
+wxscheme.o: xsrc/wxscheme.cc $(PRECOMPDEP)
+	$(CXX) $(EXTRAFLAGS) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wxscheme.o xsrc/wxscheme.cc
+wxs_bmap.o: xsrc/wxs_bmap.cc $(PRECOMPDEP)
+	$(CXX) $(EXTRAFLAGS) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wxs_bmap.o xsrc/wxs_bmap.cc
+wxs_butn.o: xsrc/wxs_butn.cc $(PRECOMPDEP)
+	$(CXX) $(EXTRAFLAGS) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wxs_butn.o xsrc/wxs_butn.cc
+wxs_chce.o: xsrc/wxs_chce.cc $(PRECOMPDEP)
+	$(CXX) $(EXTRAFLAGS) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wxs_chce.o xsrc/wxs_chce.cc
+wxs_ckbx.o: xsrc/wxs_ckbx.cc $(PRECOMPDEP)
+	$(CXX) $(EXTRAFLAGS) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wxs_ckbx.o xsrc/wxs_ckbx.cc
+wxs_cnvs.o: xsrc/wxs_cnvs.cc $(PRECOMPDEP)
+	$(CXX) $(EXTRAFLAGS) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wxs_cnvs.o xsrc/wxs_cnvs.cc
+wxs_dc.o: xsrc/wxs_dc.cc $(PRECOMPDEP)
+	$(CXX) $(EXTRAFLAGS) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wxs_dc.o xsrc/wxs_dc.cc
+wxs_evnt.o: xsrc/wxs_evnt.cc $(PRECOMPDEP)
+	$(CXX) $(EXTRAFLAGS) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wxs_evnt.o xsrc/wxs_evnt.cc
+wxs_fram.o: xsrc/wxs_fram.cc $(PRECOMPDEP)
+	$(CXX) $(EXTRAFLAGS) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wxs_fram.o xsrc/wxs_fram.cc
+wxs_gage.o: xsrc/wxs_gage.cc $(PRECOMPDEP)
+	$(CXX) $(EXTRAFLAGS) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wxs_gage.o xsrc/wxs_gage.cc
+wxs_gdi.o: xsrc/wxs_gdi.cc $(PRECOMPDEP)
+	$(CXX) $(EXTRAFLAGS) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wxs_gdi.o xsrc/wxs_gdi.cc
+wxs_glob.o: xsrc/wxs_glob.cc $(PRECOMPDEP)
+	$(CXX) $(EXTRAFLAGS) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wxs_glob.o xsrc/wxs_glob.cc
+wxs_item.o: xsrc/wxs_item.cc $(PRECOMPDEP)
+	$(CXX) $(EXTRAFLAGS) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wxs_item.o xsrc/wxs_item.cc
+wxs_lbox.o: xsrc/wxs_lbox.cc $(PRECOMPDEP)
+	$(CXX) $(EXTRAFLAGS) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wxs_lbox.o xsrc/wxs_lbox.cc
+wxs_madm.o: xsrc/wxs_madm.cc $(PRECOMPDEP)
+	$(CXX) $(EXTRAFLAGS) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wxs_madm.o xsrc/wxs_madm.cc
+wxs_mede.o: xsrc/wxs_mede.cc $(PRECOMPDEP)
+	$(CXX) $(EXTRAFLAGS) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wxs_mede.o xsrc/wxs_mede.cc
+wxs_medi.o: xsrc/wxs_medi.cc $(PRECOMPDEP)
+	$(CXX) $(EXTRAFLAGS) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wxs_medi.o xsrc/wxs_medi.cc
+wxs_menu.o: xsrc/wxs_menu.cc $(PRECOMPDEP)
+	$(CXX) $(EXTRAFLAGS) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wxs_menu.o xsrc/wxs_menu.cc
+wxs_mio.o: xsrc/wxs_mio.cc $(PRECOMPDEP)
+	$(CXX) $(EXTRAFLAGS) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wxs_mio.o xsrc/wxs_mio.cc
+wxs_misc.o: xsrc/wxs_misc.cc $(PRECOMPDEP)
+	$(CXX) $(EXTRAFLAGS) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wxs_misc.o xsrc/wxs_misc.cc
+wxs_mpb.o: xsrc/wxs_mpb.cc $(PRECOMPDEP)
+	$(CXX) $(EXTRAFLAGS) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wxs_mpb.o xsrc/wxs_mpb.cc
+wxs_obj.o: xsrc/wxs_obj.cc $(PRECOMPDEP)
+	$(CXX) $(EXTRAFLAGS) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wxs_obj.o xsrc/wxs_obj.cc
+wxs_panl.o: xsrc/wxs_panl.cc $(PRECOMPDEP)
+	$(CXX) $(EXTRAFLAGS) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wxs_panl.o xsrc/wxs_panl.cc
+wxs_rado.o: xsrc/wxs_rado.cc $(PRECOMPDEP)
+	$(CXX) $(EXTRAFLAGS) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wxs_rado.o xsrc/wxs_rado.cc
+wxs_slid.o: xsrc/wxs_slid.cc $(PRECOMPDEP)
+	$(CXX) $(EXTRAFLAGS) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wxs_slid.o xsrc/wxs_slid.cc
+wxs_snip.o: xsrc/wxs_snip.cc $(PRECOMPDEP)
+	$(CXX) $(EXTRAFLAGS) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wxs_snip.o xsrc/wxs_snip.cc
+wxs_styl.o: xsrc/wxs_styl.cc $(PRECOMPDEP)
+	$(CXX) $(EXTRAFLAGS) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wxs_styl.o xsrc/wxs_styl.cc
+wxs_tabc.o: xsrc/wxs_tabc.cc $(PRECOMPDEP)
+	$(CXX) $(EXTRAFLAGS) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wxs_tabc.o xsrc/wxs_tabc.cc
+wxs_win.o: xsrc/wxs_win.cc $(PRECOMPDEP)
+	$(CXX) $(EXTRAFLAGS) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wxs_win.o xsrc/wxs_win.cc
+
+wxJPEG.o: xsrc/wxJPEG.cc $(PRECOMPDEP)
+	$(CXX) $(EXTRAFLAGS) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wxJPEG.o xsrc/wxJPEG.cc
+mred.o: xsrc/mred.cc $(PRECOMPDEP)
+	$(CXX) $(EXTRAFLAGS) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o mred.o xsrc/mred.cc
+mrmain.o: xsrc/mrmain.cc $(PRECOMPDEP)
+	$(CXX) $(EXTRAFLAGS) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o mrmain.o xsrc/mrmain.cc
+mredx.o: xsrc/mredx.cc $(PRECOMPDEP)
+	$(CXX) $(EXTRAFLAGS) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o mredx.o xsrc/mredx.cc
+mredmac.o: xsrc/mredmac.cc $(PRECOMPDEP)
+	$(CXX) $(EXTRAFLAGS) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o mredmac.o xsrc/mredmac.cc
 
 xcglue.o: xsrc/xcglue.c
 	$(CC) -DGC2_JUST_MACROS $(GCPREINC) -c $(CFLAGS) -o xcglue.o xsrc/xcglue.c
@@ -961,7 +977,9 @@ wx_mac_XSRCS = \
   macxsrc/wx_bmp.cc \
   macxsrc/wx_24to8.cc \
   macxsrc/wx_image.cc \
-  macxsrc/wx_xbm.cc
+  macxsrc/wx_xbm.cc \
+\
+  macxsrc/simpledrop.cc
 
 MRED_wx_xt = mredx
 MRED_wx_mac = mredmac
@@ -1160,7 +1178,9 @@ wx_mac_XOBJS = \
   mwx_bmp.o \
   mwx_24to8.o \
   mwx_image.o \
-  mwx_xbm.o
+  mwx_xbm.o \
+\
+  simpledrop.o
 
 MRED_XOBJS = \
   wx_media.o \
@@ -1317,8 +1337,11 @@ wx_mac_PLAIN_OBJS = \
 
 xform: $(XSRCS) xcglue.c
 
+wx_xt_LIBS = -lXpm -L../../wxcommon/jpeg -ljpeg $(LDLIBS)
+wx_mac_LIBS = -framework Carbon -framework QuickTime ../../wxcommon/jpeg/libjpeg.a
+
 ../mred3m: $(XOBJS) $(MZOBJS) $(XWOBJS) ../../mzscheme/src/gmp.o
-	$(LINKER) $(MREDLDFLAGS) -o ../mred3m $(XOBJS) $(MZOBJS) $(@WXVERIANT@_PLAIN_OBJS) ../../mzscheme/src/gmp.o -lXpm -L../../wxcommon/jpeg -ljpeg $(LDLIBS)
+	$(LINKER) $(MREDLDFLAGS) -o ../mred3m $(XOBJS) $(MZOBJS) $(@WXVARIANT@_PLAIN_OBJS) ../../mzscheme/src/gmp.o $(@WXVARIANT@_LIBS)
 
 xsrc:
 	mkdir xsrc

@@ -10,17 +10,7 @@
 # define SELF_SUSPEND_RESUME
 #endif
 
-#ifdef SELF_SUSPEND_RESUME
-/* Note on handling Suspend/Resume events:
-    Before OS X, something in the handling of events messes up the sending of 
-    suspend and resume events. So, we ignore these events if they happen 
-    to occur, but notice suspension and resumption ourselves (by testing 
-    for the current process).
-*/
-static int last_was_front;
-#else
-# define last_was_front 1
-#endif
+#include "common.h"
 
 #include "wx_main.h"
 #include "wx_media.h"
@@ -31,6 +21,18 @@ static int last_was_front;
 
 #ifdef OS_X
 # include <fcntl.h>
+#endif
+
+#ifdef SELF_SUSPEND_RESUME
+/* Note on handling Suspend/Resume events:
+    Before OS X, something in the handling of events messes up the sending of 
+    suspend and resume events. So, we ignore these events if they happen 
+    to occur, but notice suspension and resumption ourselves (by testing 
+    for the current process).
+*/
+static int last_was_front;
+#else
+# define last_was_front 1
 #endif
 
 #define DELAY_TIME 5
@@ -48,17 +50,18 @@ class MrQueueElem; /* defined below */
 static void QueueTransferredEvent(EventRecord *e);
 typedef MrQueueElem *MrQueueRef;
 
-class EventFinderClosure {
-public:
+typedef int (*Checker_Func)(EventRecord *evt, MrQueueRef q, int check_only, 
+			    MrEdContext *c, MrEdContext *keyOk, 
+			    EventRecord *event, MrEdContext **which);
+
+typedef struct EventFinderClosure {
   int check_only;
   MrEdContext *c;
   MrEdContext *keyOk;
   EventRecord *event;
   MrEdContext **which;
-  int (*checker)(EventRecord *evt, MrQueueRef q, int check_only, 
-                 MrEdContext *c, MrEdContext *keyOk, 
-	         EventRecord *event, MrEdContext **which);
-};
+  Checker_Func checker;
+} EventFinderClosure;
 
 static int queue_size, max_queue_size;
 
@@ -164,7 +167,8 @@ static void QueueTransferredEvent(EventRecord *e)
     for (q = first; q; q = q->next) {
       if ((q->event.what == updateEvt)
 	  && (w == ((WindowPtr)q->event.message))) {
-        RgnHandle updateRegionHandle = NewRgn();
+        RgnHandle updateRegionHandle;
+	updateRegionHandle = NewRgn();
 
         GetWindowRegion(w,kWindowUpdateRgn,updateRegionHandle);	
         UnionRgn(updateRegionHandle, q->rgn, q->rgn);
@@ -221,7 +225,8 @@ static void QueueTransferredEvent(EventRecord *e)
       first = NULL;
 #else
     int we_are_front = e->message & resumeFlag;
-    WindowPtr front = FrontWindow();
+    WindowPtr front;
+    front = FrontWindow();
     
     /* This code generates activate events; under classic MacOS, returning an 
      * application to the foreground does not generate (de)activate events.
@@ -449,7 +454,9 @@ static MrEdContext *KeyOk(int current_only)
 
 static int WindowStillHere(WindowPtr win)
 {
-  WindowPtr f = FrontWindow();
+  WindowPtr f;
+
+  f = FrontWindow();
 
   while (f) {
     if (f == win)
@@ -600,9 +607,11 @@ static int CheckForMouseOrKey(EventRecord *e, MrQueueRef osq, int check_only,
 	    SelectWindow(window);
 	    cont_event_context = NULL;
 	  } else if (fc && fc->modal_window) {
+	    wxFrame *mfr;
 	    SysBeep(0);
 	    cont_event_context = NULL;
-	    SelectWindow(((wxFrame *)fc->modal_window)->macWindow());
+	    mfr = (wxFrame *)fc->modal_window;
+	    SelectWindow(mfr->macWindow());
 	  }
 	}
 
@@ -952,7 +961,11 @@ int MrEdGetNextEvent(int check_only, int current_only,
 	fflush(history);
 #endif
       } else {
-	event->modifiers = (keyOk ? GetMods() : 0);
+	if (keyOk) {
+	  event->modifiers = GetMods();
+	} else {
+	  event->modifiers = 0;
+	}
 	event->message = (keyOk ? 1 : 0);
 #ifdef RECORD_HISTORY
 	fprintf(history, "move\n");
@@ -997,7 +1010,8 @@ void MrEdDispatchEvent(EventRecord *e)
     
     {
       Rect windowBounds;
-      RgnHandle contentRgn = NewRgn();
+      RgnHandle contentRgn;
+      contentRgn = NewRgn();
 
       GetWindowBounds(w, kWindowContentRgn, &windowBounds);
       GetWindowRegion(w, kWindowContentRgn, contentRgn);
@@ -1477,7 +1491,7 @@ static int ae_marshall(AEDescList *ae, AEDescList *list_in, AEKeyword kw, Scheme
       l = scheme_proper_list_length(v);
       if (l >= 0) {
 	AEDescList *list;
-	list = new WXGC_ATOMIC AEDescList;
+	list = (AEDescList *)scheme_malloc_atomic(sizeof(AEDescList));
           
         list->descriptorType = typeNull;
         list->dataHandle = NULL;
@@ -1619,7 +1633,8 @@ static Scheme_Object *ae_unmarshall(AppleEvent *reply, AEDescList *list_in, int 
       sz = sizeof(double);
       break;
     case typeChar:
-      data = x_s = (char *)scheme_malloc_atomic(sz + 1);
+      x_s = (char *)scheme_malloc_atomic(sz + 1);
+      data = x_s;
       x_s[0] = 0;
       break;
     case typeAlias:
@@ -1635,7 +1650,7 @@ static Scheme_Object *ae_unmarshall(AppleEvent *reply, AEDescList *list_in, int 
 	Scheme_Object *first = scheme_null, *last = NULL, *v, *rec, **recp;
 	int i;
          
-	list = new WXGC_ATOMIC AEDescList;
+	list = (AEDescList *)scheme_malloc_atomic(sizeof(AEDescList));
           
 	if (list_in) {
 	  if (AEGetNthDesc(list_in, pos, rtype, &kw, list))
@@ -1731,19 +1746,14 @@ static mz_jmp_buf escape_while_waiting;
 static int escaped = 0;
 
 static int handlerInstalled = 0;
-typedef struct ReplyItem {
+class ReplyItem;
+class ReplyItem {
+public:
   long id;
-  AppleEvent ae;
-  struct ReplyItem *next;
-} ReplyItem;
+  AppleEvent *ae;
+  ReplyItem *next;
+};
 static ReplyItem *reply_queue;
-
-#ifdef MZ_PRECISE_GC
-START_XFORM_SKIP;
-#define MARKS_FOR_FILE_C
-#include "mzmark.c"
-END_XFORM_SKIP;
-#endif
 
 static pascal Boolean while_waiting(EventRecord *e, long *sleeptime, RgnHandle *rgn)
 {
@@ -1772,16 +1782,16 @@ static pascal OSErr HandleAnswer(const AppleEvent *evt, AppleEvent *rae, long k)
   ReplyItem *r;
   DescType rtype;
   long sz;
-
+  AppleEvent *ae;
+  
   r = new ReplyItem;
+  ae = (AppleEvent *)scheme_malloc_atomic(sizeof(AppleEvent));
+  r->ae = ae;
   
   AEGetAttributePtr(evt, keyReturnIDAttr, typeLongInteger, &rtype, &r->id, sizeof(long), &sz);
   
-  AEDuplicateDesc(evt, &r->ae);
+  AEDuplicateDesc(evt, r->ae);
 
-#ifdef MZTAG_REQUIRED
-  r->type = scheme_rt_reply_item;
-#endif
   r->next = reply_queue;
   reply_queue = r;
   
@@ -1816,7 +1826,7 @@ static void wait_for_reply(AppleEvent *ae, AppleEvent *reply)
     for (r = reply_queue; r; r = r->next) {
       if (r->id == id) {
 	/* Got the reply */
-	memcpy(reply, &r->ae, sizeof(AppleEvent));
+	memcpy(reply, r->ae, sizeof(AppleEvent));
 	if (prev)
 	  prev->next = r->next;
 	else
@@ -1852,18 +1862,22 @@ int scheme_mac_send_event(char *name, int argc, Scheme_Object **argv,
   classid = check_four(name, 1, argc, argv);
   eventid = check_four(name, 2, argc, argv);
 
-  target = new WXGC_ATOMIC AEAddressDesc;
+  target = (AEAddressDesc *)malloc(sizeof(AEAddressDesc));
   oerr = AECreateDesc(typeApplSignature, &dst, sizeof(long), target);
   if (oerr) {
+    free(target);
+    target = NULL;
     *err = (int)oerr;
     *stage = "application not found: ";
     goto fail;
   }
     
-  ae = new WXGC_ATOMIC AppleEvent;
+  ae = (AppleEvent *)malloc(sizeof(AppleEvent));
   oerr = AECreateAppleEvent(classid, eventid, target, kAutoGenerateReturnID, 
                             kAnyTransactionID, ae);
   if (oerr) {
+    free(ae);
+    ae = NULL;
     *err = (int)oerr;
     *stage = "cannot create event: ";
     ae = NULL;    
@@ -1902,9 +1916,11 @@ int scheme_mac_send_event(char *name, int argc, Scheme_Object **argv,
       scheme_wrong_type(name, expected, 4, argc, argv);
   }
   
-  reply = new WXGC_ATOMIC AppleEvent;
+  reply = (AppleEvent *)malloc(sizeof(AppleEvent));
   oerr = AESend(ae, reply, kAEQueueReply | kAECanInteract, kAENormalPriority, kNoTimeOut, NULL, NULL);
   if (oerr) {
+    free(reply);
+    reply = NULL;
     *err = (int)oerr;
     *stage = "send failed: ";
     reply = NULL;
@@ -1950,9 +1966,18 @@ fail:
   retval = 0;
    
 done:
-  if (ae) AEDisposeDesc(ae);
-  if (reply) AEDisposeDesc(reply);
-  if (target) AEDisposeDesc(target);
+  if (ae) {
+    AEDisposeDesc(ae);
+    free(ae);
+  }
+  if (reply) {
+    AEDisposeDesc(reply);
+    free(reply);
+  }
+  if (target) {
+    AEDisposeDesc(target);
+    free(target);
+  }
   
   if (retval < 0) {
     scheme_longjmp(scheme_error_buf, 1);

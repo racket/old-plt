@@ -16,6 +16,8 @@
 # pragma implementation "wx_timer.h"
 #endif
 
+#include "common.h"
+
 #include "wx_frame.h"
 #include "wx_utils.h"
 #include "wx_main.h"
@@ -1813,39 +1815,58 @@ public:
   Bool hidden, beginEditSeq;
   int endpos;
 
-  IOFrame() : wxFrame(NULL, "Standard Output", -1, -1, 600, 400, 0, "stdout")
-    {
-      display = new wxMediaCanvas(this);
-      
-      media = new IOMediaEdit();
-      display->SetMedia(media);
-      endpos = 0;
-      hidden = FALSE;
+  IOFrame();
+  void OnSize(int x, int y);
+  Bool OnClose(void);
+  void OnMenuCommand(long id);
+  Bool PreOnChar(wxWindow *, wxKeyEvent *e);
+  Bool PreOnEvent(wxWindow *, wxMouseEvent *e);    
+  void CloseIsQuit(void);
+};
 
-      /* Map copy keys: */
-      wxKeymap *km = media->GetKeymap();
-      media->AddBufferFunctions(km);
-      media->AddEditorFunctions(km);
-      km->AddFunction("send-break", SendBreak, NULL);
+IOFrame::IOFrame()
+ : wxFrame(NULL, "Standard Output", -1, -1, 600, 400, 0, "stdout")
+{
+  wxKeymap *km;
+  wxStyle *style;
+  wxStyleList *sl;
+  wxStyleDelta *sd;
+  wxMenuBar *mb;
+  wxMenu *m;
+
+  display = new wxMediaCanvas(this);
+  
+  media = new IOMediaEdit();
+  display->SetMedia(media);
+  endpos = 0;
+  hidden = FALSE;
+
+  /* Map copy keys: */
+  km = media->GetKeymap();
+  media->AddBufferFunctions(km);
+  media->AddEditorFunctions(km);
+  km->AddFunction("send-break", SendBreak, NULL);
 # ifdef wx_msw
-      km->MapFunction("c:c", "copy-clipboard");
-      km->MapFunction("c:x", "copy-clipboard");
-      km->MapFunction("c:v", "paste-clipboard");
+  km->MapFunction("c:c", "copy-clipboard");
+  km->MapFunction("c:x", "copy-clipboard");
+  km->MapFunction("c:v", "paste-clipboard");
 # else
-      km->MapFunction("d:c", "copy-clipboard");
-      km->MapFunction("d:x", "copy-clipboard");
-      km->MapFunction("d:v", "paste-clipboard");
-      km->MapFunction("d:.", "send-break");
+  km->MapFunction("d:c", "copy-clipboard");
+  km->MapFunction("d:x", "copy-clipboard");
+  km->MapFunction("d:v", "paste-clipboard");
+  km->MapFunction("d:.", "send-break");
 # endif
-      km->MapFunction("return", "record-input");
-      km->AddFunction("record-input", RecordInput, NULL);
+  km->MapFunction("return", "record-input");
+  km->AddFunction("record-input", RecordInput, NULL);
 
-      /* Fixed-width font: */
-      wxStyle *style = media->GetStyleList()->FindNamedStyle("Standard");
-      style->SetDelta(new wxStyleDelta(wxCHANGE_FAMILY, wxMODERN));
+  /* Fixed-width font: */
+  sl = media->GetStyleList();
+  style = sl->FindNamedStyle("Standard");
+  sd = new wxStyleDelta(wxCHANGE_FAMILY, wxMODERN);
+  style->SetDelta(sd);
 
 #ifdef wx_mac
-      OnSize(600, 400);
+  OnSize(600, 400);
 #endif
 
 #ifdef wx_mac
@@ -1854,105 +1875,104 @@ public:
 # define CLOSE_MENU_ITEM "Close"
 #endif
 
-      wxMenuBar *mb = new wxMenuBar();
-      SetMenuBar(mb);
-      fileMenu = new wxMenu();
-      fileMenu->Append(77, CLOSE_MENU_ITEM);
-      wxMenu *m = new wxMenu();
-      m->Append(79, "&Copy\tCmd+C");
-      m->Append(81, "&Paste\tCmd+V");
-      m->AppendSeparator();
-      m->Append(83, "&Break\tCmd+.");
-      mb->Append(fileMenu, "File");
-      mb->Append(m, "Edit");
-      
-      have_stdio = 1;
-      Show(TRUE);
+  mb = new wxMenuBar();
+  SetMenuBar(mb);
+  fileMenu = new wxMenu();
+  fileMenu->Append(77, CLOSE_MENU_ITEM);
+  m = new wxMenu();
+  m->Append(79, "&Copy\tCmd+C");
+  m->Append(81, "&Paste\tCmd+V");
+  m->AppendSeparator();
+  m->Append(83, "&Break\tCmd+.");
+  mb->Append(fileMenu, "File");
+  mb->Append(m, "Edit");
+  
+  have_stdio = 1;
+  Show(TRUE);
 
-      beginEditSeq = 0;
-    }
+  beginEditSeq = 0;
+}
 
-  void OnSize(int x, int y)
-    {
-      GetClientSize(&x, &y);
-      if (display)
-	display->SetSize(0, 0, x, y);
-      if (media && (x > 30))
-	media->SetMaxWidth(x - 30);
-    }
+void IOFrame::OnSize(int x, int y)
+{
+  GetClientSize(&x, &y);
+  if (display)
+    display->SetSize(0, 0, x, y);
+  if (media && (x > 30))
+    media->SetMaxWidth(x - 30);
+}
 
-  Bool OnClose(void) 
-    { 
-      hidden = TRUE;
-      if (stdio_kills_prog) {
-	if (scheme_exit)
-	  scheme_exit(exit_val);
+Bool IOFrame::OnClose(void) 
+{ 
+  hidden = TRUE;
+  if (stdio_kills_prog) {
+    if (scheme_exit)
+      scheme_exit(exit_val);
 #ifdef wx_msw
-	mred_clean_up_gdi_objects();
+    mred_clean_up_gdi_objects();
 #endif	
-	scheme_immediate_exit(exit_val);
-      } else {
-	break_console_reading_threads();
-	have_stdio = 0;
-      }
-      return TRUE; 
-    }
+    scheme_immediate_exit(exit_val);
+  } else {
+    break_console_reading_threads();
+    have_stdio = 0;
+  }
+  return TRUE; 
+}
 
-  void OnMenuCommand(long id) 
-    {
-      if (id == 79)
-	media->Copy();
-      else if (id == 81)
-	media->Paste();
-      else if (id == 83)
-	scheme_break_thread(user_main_thread);
-      else if (id == 77)
-        if (OnClose())
-           Show(FALSE);
-    }
+void IOFrame::OnMenuCommand(long id) 
+{
+  if (id == 79)
+    media->Copy();
+  else if (id == 81)
+    media->Paste();
+  else if (id == 83)
+    scheme_break_thread(user_main_thread);
+  else if (id == 77)
+    if (OnClose())
+      Show(FALSE);
+}
     
-  Bool PreOnChar(wxWindow *, wxKeyEvent *e)
-    {
-       PreOnEvent(NULL, NULL);
+Bool IOFrame::PreOnChar(wxWindow *, wxKeyEvent *e)
+{
+  PreOnEvent(NULL, NULL);
 
 #if defined(wx_mac) && WINDOW_STDIO
-       if (e->metaDown && e->KeyCode() == (stdio_kills_prog ? 'q' : 'w')) {
-          OnMenuCommand(77);
-	  return TRUE;
-       }
+  if (e->metaDown && e->KeyCode() == (stdio_kills_prog ? 'q' : 'w')) {
+    OnMenuCommand(77);
+    return TRUE;
+  }
 #endif
 
-       return FALSE;
-    }
+  return FALSE;
+}
 
-  Bool PreOnEvent(wxWindow *, wxMouseEvent *e)
-    {
-      if (beginEditSeq) {
-	 beginEditSeq = 0;
-	 media->EndEditSequence();
-       }
+Bool IOFrame::PreOnEvent(wxWindow *, wxMouseEvent *e)
+{
+  if (beginEditSeq) {
+    beginEditSeq = 0;
+    media->EndEditSequence();
+  }
 
-      return FALSE;
-    }
+  return FALSE;
+}
     
-  void CloseIsQuit(void)
-    {
+void IOFrame::CloseIsQuit(void)
+{
 #ifdef wx_mac
 # define QUIT_MENU_ITEM "Quit\tCmd+Q"
 #else
 # define QUIT_MENU_ITEM "E&xit"
 #endif
-      fileMenu->Delete(77);
-      fileMenu->Append(77, QUIT_MENU_ITEM);
-
-      media->Insert("\n[Exited]", media->LastPosition());
-      if (beginEditSeq) {
-	beginEditSeq = 0;
-	media->EndEditSequence();
-      }
-      media->Lock(1);
-    }
-};
+  fileMenu->Delete(77);
+  fileMenu->Append(77, QUIT_MENU_ITEM);
+  
+  media->Insert("\n[Exited]", media->LastPosition());
+  if (beginEditSeq) {
+    beginEditSeq = 0;
+    media->EndEditSequence();
+  }
+  media->Lock(1);
+}
 
 static IOFrame *ioFrame = NULL;
 
@@ -2068,7 +2088,8 @@ static void MrEdSchemeMessages(char *msg, ...)
       ioFrame->media->BeginEditSequence();
       ioFrame->beginEditSeq = 1;
     }
-    ioFrame->media->Insert(l, s + d, ioFrame->endpos);
+    s = COPYSTRING_TO_ALIGNED(s, d);
+    ioFrame->media->Insert(l, s, ioFrame->endpos);
     ioFrame->endpos += l;
 
     if (l != 1 || s[0] == '\n') {
@@ -2236,7 +2257,9 @@ static long stdout_write(Scheme_Output_Port*, const char *s, long d, long l, int
 
 static Scheme_Object *MrEdMakeStdOut(void)
 {
-  Scheme_Object *outtype = scheme_make_port_type("stdout");
+  Scheme_Object *outtype;
+
+  outtype = scheme_make_port_type("stdout");
 
   return (Scheme_Object *)scheme_make_output_port(outtype, NULL,
 						  CAST_WS stdout_write,
@@ -2260,7 +2283,9 @@ static long stderr_write(Scheme_Output_Port*, const char *s, long d, long l, int
 
 static Scheme_Object *MrEdMakeStdErr(void)
 {
-  Scheme_Object *errtype = scheme_make_port_type("stderr");
+  Scheme_Object *errtype;
+
+  errtype = scheme_make_port_type("stderr");
 
   return (Scheme_Object *)scheme_make_output_port(errtype, NULL,
 						  CAST_WS stderr_write,

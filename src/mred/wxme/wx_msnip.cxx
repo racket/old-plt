@@ -21,6 +21,7 @@
 
  */
 
+#include "common.h"
 #include "wx_media.h"
 
 #include <string.h>

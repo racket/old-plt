@@ -2,6 +2,10 @@
  * Derived from IJG's example.c.
  */
 
+#ifdef MZ_PRECISE_GC
+# include "common.h"
+#endif
+
 #include "wx_dcmem.h"
 #include "wx_gdi.h"
 

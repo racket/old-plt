@@ -23,6 +23,7 @@
 
 #define Uses_wxPrintSetup /* for wx_xt */
 #define Uses_XLib /* for getting black pixel value */
+#include "common.h"
 #include "wx_dialg.h"
 #ifndef OLD_WXWINDOWS
 # include "wx_cmdlg.h"

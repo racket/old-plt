@@ -26,6 +26,7 @@
  * THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include "common.h"
 #include "wx.h"
 #include "wx_image.h"
 

@@ -34,6 +34,10 @@ static void strcpy(char *s, char *d)
 
 #include "simpledrop.h"
 
+#ifndef MZ_PRECISE_GC
+# define GC_CAN_IGNORE /* empty */
+#endif
+
 int scheme_mac_ready, scheme_mac_argc = 0;
 char **scheme_mac_argv;
 
@@ -80,13 +84,15 @@ static char *ThisAppName(void)
 
 static void parse_commandline(char *s, char *src, int addon)
 {
-  char *token, *pos, ender;
+  GC_CAN_IGNORE char *token, *pos, ender;
   int count = 0, i;
   char *command[32];
 
   token = s;
   while (*token && (count < 32)) {
-    while (isspace(*token)) token++;
+    while (isspace(*token)) {
+      token++;
+    }
     if (!*token) break;
 
     pos = token;
@@ -102,8 +108,9 @@ static void parse_commandline(char *s, char *src, int addon)
 	ender = 0;
       
       if (ender) {
-	while (*token && (*token != ender))
+	while (*token && (*token != ender)) {
 	  *(pos++) = *(token++);
+	}
 	if (*token)
 	  token++;
       } else
@@ -119,16 +126,17 @@ static void parse_commandline(char *s, char *src, int addon)
       command[count] = src;
     } else if (src && (command[count][0] == '%') && (command[count][1]) == ':') {
       /* Replace % with file directory */
-      char *s, *r;
+      char *ss, *r;
       int i;
       i = strlen(command[count]) + strlen(src);
       r = (char *)malloc(i + 1);
-      s = scheme_strdup(src);
-      i = strlen(s) - 1;
-      while (i && s[i] != ':')
+      ss = scheme_strdup(src);
+      i = strlen(ss) - 1;
+      while (i && ss[i] != ':') {
 	i--;
-      s[i + 1] = 0;
-      strcpy(r, s);
+      }
+      ss[i + 1] = 0;
+      strcpy(r, ss);
       strcat(r, command[count] + 2);
       command[count] = r;
     }
@@ -181,7 +189,7 @@ static void Startup(char **argv, int argc)
       fclose(f);
     }
     if (buf[0] == '#' && buf[1]  == '!') {
-      char *s;
+      GC_CAN_IGNORE char *s;
       int l;
       
       s = buf + 2;
@@ -216,8 +224,9 @@ static void Startup(char **argv, int argc)
 #else
   scheme_mac_argc = argc + 1;
   scheme_mac_argv = (char **)malloc(scheme_mac_argc * sizeof(char *));
-  for (i = 0; i < argc; i++)
+  for (i = 0; i < argc; i++) {
     scheme_mac_argv[i + 1] = argv[i];
+  }
   scheme_mac_argv[0] = ThisAppName();
 #endif
 }
@@ -399,24 +408,27 @@ void Drop_GetArgs(int *argc, char ***argv, int *in_terminal)
 
 static CFPropertyListRef getPropertyList()
 {
+  CFDataRef       xmlData;
+  CFStringRef error;
+  CFPropertyListRef propertyList;
+  CFBundleRef appBundle;
+  CFURLRef myRef;
+
   // locate the starter's bundle:
-  CFBundleRef appBundle = CFBundleGetMainBundle();
+  appBundle = CFBundleGetMainBundle();
   
   // get a URL for the named resource
-  CFURLRef myRef = CFBundleCopyResourceURL(appBundle, CFSTR(RSRCNAME), 
-					   NULL, NULL);
+  myRef = CFBundleCopyResourceURL(appBundle, CFSTR(RSRCNAME), 
+				  NULL, NULL);
   if (myRef == NULL) {
     return NULL;
   }
   
   // Load the XML data using its URL.
-  CFDataRef       xmlData;
   CFURLCreateDataAndPropertiesFromResource(kCFAllocatorDefault, myRef, 
 					   &xmlData, NULL, NULL, NULL);
 
   // convert to a Property List
-  CFStringRef error;
-  CFPropertyListRef propertyList;
   propertyList = CFPropertyListCreateFromXMLData(kCFAllocatorDefault, xmlData, 
 						 kCFPropertyListImmutable, 
 						 &error);
@@ -430,13 +442,14 @@ static CFPropertyListRef getPropertyList()
 char *ConvertCFStringRef(CFStringRef str)
 {
   static char buf[BUFSIZE];
-
+  char *result;
   Boolean success;
+
   success = CFStringGetCString(str,buf,BUFSIZE,kCFStringEncodingISOLatin1);
   if (!success) {
     return "???";
   }
-  char *result = (char *)malloc(strlen(buf) + 1);
+  result = (char *)malloc(strlen(buf) + 1);
   strcpy(result,buf);
   return result;
 }  
@@ -444,21 +457,22 @@ char *ConvertCFStringRef(CFStringRef str)
 void GetStarterInfo()
 {
   int i;
+  CFPropertyListRef propertyList;
 
-  CFPropertyListRef propertyList = getPropertyList();
+  propertyList = getPropertyList();
 
-  if (propertyList) {
-    
+  if (propertyList) {    
     CFStringRef execName;
     CFArrayRef storedArgsArray;
     CFIndex count;
-    char **storedArgs;
+    char **storedArgs, *tmps;
     
     if (CFDictionaryContainsKey((CFDictionaryRef)propertyList,
 				(const void *)(CFSTR("executable name")))) {
       execName = (CFStringRef)CFDictionaryGetValue((CFDictionaryRef)propertyList,
 						   (CFSTR("executable name")));
-      scheme_mac_argv[0] = ConvertCFStringRef(execName);
+      tmps = ConvertCFStringRef(execName);
+      scheme_mac_argv[0] = tmps;
     }
 
     if (CFDictionaryContainsKey((CFDictionaryRef)propertyList,
@@ -475,8 +489,11 @@ void GetStarterInfo()
     
     storedArgs[0] = scheme_mac_argv[0];
     for (i = 0; i < count; i++) {
-      CFStringRef arg = (CFStringRef)CFArrayGetValueAtIndex(storedArgsArray,i);
-      storedArgs[i + 1] = ConvertCFStringRef(arg);
+      CFStringRef arg;
+      char *tmps;
+      arg = (CFStringRef)CFArrayGetValueAtIndex(storedArgsArray,i);
+      tmps = ConvertCFStringRef(arg);
+      storedArgs[i + 1] = tmps;
     }
     for (i = 1; i < scheme_mac_argc; i++) {
       storedArgs[count + i] = scheme_mac_argv[i];

@@ -21,6 +21,7 @@
 
  */
 
+#include "common.h"
 #include "wx_gdi.h"
 #include "wx_main.h"
 #include "wx_dialg.h"

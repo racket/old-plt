@@ -296,7 +296,7 @@ class wxFontList: public wxObject
 class wxColourDatabase: public wxList
 {
  public:
-  wxColourDatabase(KeyType type);
+  wxColourDatabase();
   ~wxColourDatabase(void) ;
   wxColour *FindColour(const char *colour);
   char *FindName(wxColour *colour);

@@ -34,6 +34,7 @@
  * This software is provided "as is" without any express or implied warranty.
  */
 
+#include "common.h"
 #include <stdlib.h>
 #include "wx_image.h"
 #ifdef wx_mac

@@ -21,6 +21,7 @@
 
  */
 
+#include "common.h"
 #include "wx_main.h"
 #include "wx_keym.h"
 #include "wx_mtype.h"

@@ -26,7 +26,7 @@ class wxPrinterDC: public wxCanvasDC
   wxPrintData *cPrintData;
   int current_phase;
 
-  wxPrinterDC(wxPrintData *); // Create a DC corresponding to a canvas
+  wxPrinterDC(wxPrintData * data = NULL); // Create a DC corresponding to a canvas
 
   ~wxPrinterDC(void);
 

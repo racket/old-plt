@@ -2,6 +2,9 @@
 #if defined(_MSC_VER)
 # include "wx.h"
 #endif
+#if defined(wx_mac)
+# include "common.h"
+#endif
 
 #define Uses_XLib // Xt
 #include "common.h" // wxWindows

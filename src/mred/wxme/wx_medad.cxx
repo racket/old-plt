@@ -6,6 +6,8 @@
  * Copyright:   (c) 1995, Matthew Flatt
  */
 
+#include "common.h"
+
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>

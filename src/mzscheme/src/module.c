@@ -30,8 +30,8 @@ static Scheme_Object *module_begin_expand(Scheme_Object *form, Scheme_Comp_Env *
 
 static Scheme_Object *import_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec);
 static Scheme_Object *import_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Object *boundname);
-static Scheme_Object *import_for_expansion_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec);
-static Scheme_Object *import_for_expansion_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Object *boundname);
+static Scheme_Object *import_for_syntax_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec);
+static Scheme_Object *import_for_syntax_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Object *boundname);
 static Scheme_Object *export_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec);
 static Scheme_Object *export_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Object *boundname);
 
@@ -53,13 +53,13 @@ static Scheme_Object *begin_stx;
 static Scheme_Object *define_values_stx;
 static Scheme_Object *define_syntax_stx;
 static Scheme_Object *import_stx;
-static Scheme_Object *import_for_expansion_stx;
+static Scheme_Object *import_for_syntax_stx;
 static Scheme_Object *export_stx;
 static Scheme_Object *set_stx;
 static Scheme_Object *app_stx;
 static Scheme_Object *unbound_stx;
 
-typedef void (*Check_Func)(Scheme_Object *name, 
+typedef void (*Check_Func)(Scheme_Object *name, Scheme_Object *nominal_modname, 
 			   Scheme_Object *modname, Scheme_Object *srcname, 
 			   int kind, void *data, Scheme_Object *e);
 static Scheme_Object *parse_imports(Scheme_Object *form, Scheme_Object *l, 
@@ -83,9 +83,9 @@ void scheme_init_module(Scheme_Env *env)
 			    scheme_make_compiled_syntax(import_syntax, 
 							import_expand), 
 			    env);
-  scheme_add_global_keyword("import-for-expansion", 
-			    scheme_make_compiled_syntax(import_for_expansion_syntax, 
-							import_for_expansion_expand), 
+  scheme_add_global_keyword("import-for-syntax", 
+			    scheme_make_compiled_syntax(import_for_syntax_syntax, 
+							import_for_syntax_expand), 
 			    env);
   scheme_add_global_keyword("export", 
 			    scheme_make_compiled_syntax(export_syntax, 
@@ -163,7 +163,7 @@ void scheme_finish_kernel(Scheme_Env *env)
   REGISTER_SO(define_values_stx);
   REGISTER_SO(define_syntax_stx);
   REGISTER_SO(import_stx);
-  REGISTER_SO(import_for_expansion_stx);
+  REGISTER_SO(import_for_syntax_stx);
   REGISTER_SO(export_stx);
   REGISTER_SO(set_stx);
   REGISTER_SO(app_stx);
@@ -174,7 +174,7 @@ void scheme_finish_kernel(Scheme_Env *env)
   define_values_stx = scheme_datum_to_syntax(scheme_intern_symbol("define-values"), scheme_false, w);
   define_syntax_stx = scheme_datum_to_syntax(scheme_intern_symbol("define-syntax"), scheme_false, w);
   import_stx = scheme_datum_to_syntax(scheme_intern_symbol("import"), scheme_false, w);
-  import_for_expansion_stx = scheme_datum_to_syntax(scheme_intern_symbol("import-for-expansion"), scheme_false, w);
+  import_for_syntax_stx = scheme_datum_to_syntax(scheme_intern_symbol("import-for-syntax"), scheme_false, w);
   export_stx = scheme_datum_to_syntax(scheme_intern_symbol("export"), scheme_false, w);
   set_stx = scheme_datum_to_syntax(scheme_intern_symbol("set!"), scheme_false, w);
   app_stx = scheme_datum_to_syntax(scheme_intern_symbol("#%app"), scheme_false, w);
@@ -547,7 +547,7 @@ module_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Objec
 /*                          #%module-begin                            */
 /**********************************************************************/
 
-static void check_import_name(Scheme_Object *name, 
+static void check_import_name(Scheme_Object *name, Scheme_Object *nominal_modname,
 			      Scheme_Object *modname, Scheme_Object *exname,
 			      int kind, void *tables, Scheme_Object *e)
 {
@@ -578,7 +578,9 @@ static void check_import_name(Scheme_Object *name,
   }
 
   /* Remember import: */
-  scheme_add_to_table(imported, (const char *)name, scheme_make_pair(modname, exname), 0);
+  scheme_add_to_table(imported, (const char *)name, 
+		      scheme_make_pair(nominal_modname, scheme_make_pair(modname, exname)), 
+		      0);
 }
 
 static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env, 
@@ -588,7 +590,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
   Scheme_Object *fm, *first, *last, *p, *rn, *exp_body, *et_rn;
   Scheme_Comp_Env *xenv, *cenv, *eenv = NULL;
   Scheme_Hash_Table *et_imported; /* just to avoid duplicates */
-  Scheme_Hash_Table *imported;    /* name -> (cons modname srcname) */
+  Scheme_Hash_Table *imported;    /* name -> (cons nominal-modname (cons modname srcname)) */
   Scheme_Hash_Table *exported;    /* exname -> locname */
   Scheme_Hash_Table *reexported;  /* modname -> (cons syntax (list except-name ...)) */
   void *tables[4], *et_tables[4];
@@ -611,7 +613,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
     scheme_add_local_syntax(define_values_stx, stop, xenv);
     scheme_add_local_syntax(define_syntax_stx, stop, xenv);
     scheme_add_local_syntax(import_stx, stop, xenv);
-    scheme_add_local_syntax(import_for_expansion_stx, stop, xenv);
+    scheme_add_local_syntax(import_for_syntax_stx, stop, xenv);
     scheme_add_local_syntax(export_stx, stop, xenv);
     scheme_add_local_syntax(set_stx, stop, xenv);
     scheme_add_local_syntax(app_stx, stop, xenv);
@@ -626,15 +628,18 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
   {
     int i;
     Scheme_Env *iim;
-    Scheme_Object **exs, **exsns, **exss, *mn;
+    Scheme_Object **exs, **exsns, **exss, *mn, *nmn;
 
-    iim = scheme_module_load(SCHEME_CAR(env->genv->imports), env->genv);
+    nmn = SCHEME_CAR(env->genv->imports);
+    iim = scheme_module_load(nmn, env->genv);
     exs = iim->exports;
     exsns = iim->export_src_names;
     exss = iim->export_srcs;
     for (i = iim->num_exports; i--; ) {
-      mn = (exss ? exss[i] : SCHEME_CAR(env->genv->imports));
-      scheme_add_to_table(imported, (const char *)exs[i], scheme_make_pair(mn, exsns[i]), 0);
+      mn = (exss ? exss[i] : nmn);
+      scheme_add_to_table(imported, (const char *)exs[i], 
+			  scheme_make_pair(nmn, scheme_make_pair(mn, exsns[i])), 
+			  0);
     }
   }
   rn = env->genv->rename;
@@ -806,8 +811,8 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	if (rec)
 	  e = scheme_compiled_void();
 	normal = 0;
-      } else if (scheme_stx_module_eq(import_for_expansion_stx, SCHEME_STX_CAR(e), 0)) {	
-	/************ import-for-expansion *************/
+      } else if (scheme_stx_module_eq(import_for_syntax_stx, SCHEME_STX_CAR(e), 0)) {	
+	/************ import-for-syntax *************/
 	Scheme_Object *imods;
 
 	scheme_prepare_exp_env(env->genv);
@@ -1008,11 +1013,10 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
     for (i = imported->size; i--; ) {
       b = bs[i];
       if (b && b->val) {
-	Scheme_Object *modname, *srcname, *name, *ree;
+	Scheme_Object *modname, *name, *ree;
 
 	name = (Scheme_Object *)b->key;
 	modname = SCHEME_CAR((Scheme_Object *)b->val);
-	srcname = SCHEME_CDR((Scheme_Object *)b->val);
 
 	ree = scheme_lookup_in_table(reexported, (const char *)modname);
 	if (ree) {
@@ -1069,6 +1073,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	  exss[count] = env->genv->modname;
 	} else if ((v = scheme_lookup_in_table(imported, (const char *)name))) {
 	  /* Imported */
+	  v = SCHEME_CDR(v);
 	  exsns[count] = SCHEME_CDR(v);
 	  exss[count] = SCHEME_CAR(v);
 	} else {
@@ -1272,7 +1277,7 @@ Scheme_Object *parse_imports(Scheme_Object *form, Scheme_Object *ll,
       if (!iname)
 	iname = exs[j];
 
-      ck(iname, modname, exsns[j], (j >= var_count) ? 2 : 1, data, i);
+      ck(iname, name, modname, exsns[j], (j >= var_count) ? 2 : 1, data, i);
 
       scheme_extend_module_rename(rn, modname, iname, exsns[j]);
 
@@ -1328,7 +1333,7 @@ top_level_import_resolve(Scheme_Object *data, Resolve_Info *rslv)
   return scheme_make_syntax_resolved(top_level_import_link, data);
 }
 
-static void check_dup_import(Scheme_Object *name, 
+static void check_dup_import(Scheme_Object *name, Scheme_Object *nominal_modname, 
 			     Scheme_Object *modname, Scheme_Object *srcname, 
 			     int kind, void *ht, Scheme_Object *e)
 {
@@ -1348,7 +1353,7 @@ static Scheme_Object *do_import(Scheme_Object *form, Scheme_Comp_Env *env,
   char *name;
   Scheme_Env *genv;
 
-  name = for_exp ? "import-for-expansion" : "import";
+  name = for_exp ? "import-for-syntax" : "import";
 
   if (!scheme_is_toplevel(env))
     scheme_wrong_syntax(name, NULL, form, "not at top-level or in module body");
@@ -1397,13 +1402,13 @@ import_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Objec
 }
 
 static Scheme_Object *
-import_for_expansion_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec)
+import_for_syntax_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec)
 {
   return do_import(form, env, rec, drec, 1, scheme_false, 1);
 }
 
 static Scheme_Object *
-import_for_expansion_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Object *boundname)
+import_for_syntax_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Object *boundname)
 {
   return do_import(form, env, NULL, 0, depth, boundname, 1);
 }

@@ -56,7 +56,6 @@ static Scheme_Object *list_globals(int argc, Scheme_Object *argv[]);
 static Scheme_Object *defined(int argc, Scheme_Object *argv[]);
 static Scheme_Object *global_defined_value(int, Scheme_Object *[]);
 static Scheme_Object *local_exp_time_value(int argc, Scheme_Object *argv[]);
-static Scheme_Object *local_exp_time_bound_p(int argc, Scheme_Object *argv[]);
 static Scheme_Object *local_exp_time_name(int argc, Scheme_Object *argv[]);
 static Scheme_Object *id_macro(int argc, Scheme_Object *argv[]);
 
@@ -388,19 +387,14 @@ static void make_init_env(void)
 						      "global-defined-value",
 						      1, 2),
 			     env);
-  scheme_add_global_constant("expansion-time-value", 
+  scheme_add_global_constant("syntax-local-value", 
 			     scheme_make_prim_w_arity(local_exp_time_value,
-						      "expansion-time-value",
-						      1, 1),
+						      "syntax-value",
+						      1, 2),
 			     env);
-  scheme_add_global_constant("expansion-time-bound?", 
-			     scheme_make_prim_w_arity(local_exp_time_bound_p,
-						      "expansion-time-bound?",
-						      1, 1),
-			     env);  
-  scheme_add_global_constant("expansion-time-name", 
+  scheme_add_global_constant("syntax-local-name", 
 			     scheme_make_prim_w_arity(local_exp_time_name,
-						      "expansion-time-name",
+						      "syntax-local-name",
 						      0, 0),
 			     env);
 
@@ -1499,7 +1493,10 @@ local_exp_time_value(int argc, Scheme_Object *argv[])
 
   if (!SCHEME_SYMBOLP(sym)
       && !SCHEME_STX_SYMBOLP(sym))
-    scheme_wrong_type("expansion-time-value", "syntax identifier", 0, argc, argv);
+    scheme_wrong_type("syntax-local-value", "syntax identifier", 0, argc, argv);
+
+  if (argc > 1)
+    scheme_check_proc_arity("syntax-local-value", 0, 1, argc, argv);
 
   if (SCHEME_STXP(sym))
     sym = scheme_add_remove_mark(sym, scheme_current_process->current_local_mark);
@@ -1514,49 +1511,17 @@ local_exp_time_value(int argc, Scheme_Object *argv[])
     v = (Scheme_Object *)(SCHEME_VAR_BUCKET(v))->val;
 
   if (!v || (NOT_SAME_TYPE(SCHEME_TYPE(v), scheme_macro_type)
-	     && NOT_SAME_TYPE(SCHEME_TYPE(v), scheme_syntax_type)))
-    scheme_raise_exn(MZEXN_MISC,
-		     "expansion-time-value: %S is not defined "
-		     "as syntax",
-		     argv[0]);
+	     && NOT_SAME_TYPE(SCHEME_TYPE(v), scheme_syntax_type))) {
+    if (argc > 1)
+      return _scheme_tail_apply(argv[1], 0, NULL);
+    else
+      scheme_raise_exn(MZEXN_MISC,
+		       "syntax-local-value: %S is not defined "
+		       "as syntax",
+		       argv[0]);
+  }
   
   return SCHEME_PTR_VAL(v);
-}
-
-static Scheme_Object *
-local_exp_time_bound_p(int argc, Scheme_Object *argv[])
-{
-  Scheme_Object *v, *sym;
-  Scheme_Comp_Env *env;
-
-  env = scheme_current_process->current_local_env;
-  if (!env)
-    scheme_raise_exn(MZEXN_MISC,
-		     "local-expansion-time-bound?: not currently expansion time");
-
-  sym = argv[0];
-
-  if (!SCHEME_SYMBOLP(sym)
-      && !SCHEME_STX_SYMBOLP(sym))
-    scheme_wrong_type("expansion-time-bound?", "syntax identifier", 0, argc, argv);
-
-  if (SCHEME_STXP(sym))
-    sym = scheme_add_remove_mark(sym, scheme_current_process->current_local_mark);
-
-  v = scheme_static_distance(sym, env,
-			     (SCHEME_NULL_FOR_UNBOUND
-			      + SCHEME_APP_POS + SCHEME_ENV_CONSTANTS_OK
-			      + SCHEME_OUT_OF_CONTEXT_OK + SCHEME_ELIM_CONST));
-
-  /* Deref globals */
-  if (v && SAME_TYPE(SCHEME_TYPE(v), scheme_variable_type))
-    v = (Scheme_Object *)(SCHEME_VAR_BUCKET(v))->val;
-
-  if (!v || (NOT_SAME_TYPE(SCHEME_TYPE(v), scheme_macro_type)
-	     && NOT_SAME_TYPE(SCHEME_TYPE(v), scheme_syntax_type)))
-    return scheme_false;
-  else
-    return scheme_true;
 }
 
 static Scheme_Object *
@@ -1567,7 +1532,7 @@ local_exp_time_name(int argc, Scheme_Object *argv[])
   sym = scheme_current_process->current_local_name;
   if (!sym)
     scheme_raise_exn(MZEXN_MISC, 
-		     "expansion-time-name: not currently expansion time");
+		     "syntax-local-name: not currently expansion time");
 
   return sym;
 }

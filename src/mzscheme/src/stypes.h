@@ -180,5 +180,3 @@ enum {
 
   _scheme_last_type_
 };
-
-extern char *scheme_get_type_name(Scheme_Type type);

@@ -58,6 +58,7 @@
   scheme_extension_table->scheme_unbound_global = scheme_unbound_global;
   scheme_extension_table->scheme_dynamic_wind = scheme_dynamic_wind;
   scheme_extension_table->scheme_make_type = scheme_make_type;
+  scheme_extension_table->scheme_get_type_name = scheme_get_type_name;
   scheme_extension_table->scheme_install_type_reader = scheme_install_type_reader;
   scheme_extension_table->scheme_install_type_writer = scheme_install_type_writer;
   scheme_extension_table->scheme_eof = scheme_eof;

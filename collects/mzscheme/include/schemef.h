@@ -18,6 +18,16 @@
 /* The scheme_extension_table parser is touchy: don't leave a space
    between a function name and it's opening parameter parenthesis. */
 
+#ifdef WINDOWS_DYNAMIC_LOAD
+# if SCHEME_DIRECT_EMBEDDED
+#  define NONPROC /* empty */
+# else
+#  define NONPROC __declspec(dllimport)
+# endif
+#else
+# define NONPROC /* empty */
+#endif
+
 /* After this START tag, all comments should start & end on same line */
 
 /* START */
@@ -52,8 +62,8 @@ Scheme_Env *scheme_get_env(Scheme_Config *config);
 Scheme_Process *scheme_get_current_process();
 #else
 #ifndef LINK_EXTENSIONS_BY_TABLE
-extern Scheme_Process *scheme_current_process;
-extern int scheme_fuel_counter;
+extern NONPROC Scheme_Process *scheme_current_process;
+extern NONPROC int scheme_fuel_counter;
 #else
 extern Scheme_Process **scheme_current_process_ptr;
 extern int *scheme_fuel_counter_ptr;
@@ -124,14 +134,14 @@ void scheme_install_type_reader(Scheme_Type type, Scheme_Type_Reader f);
 void scheme_install_type_writer(Scheme_Type type, Scheme_Type_Writer f);
 
 /* Constants */
-extern Scheme_Object *scheme_eof;
-extern Scheme_Object *scheme_null;
-extern Scheme_Object *scheme_true;
-extern Scheme_Object *scheme_false;
-extern Scheme_Object *scheme_void;
-extern Scheme_Object *scheme_undefined;
-extern Scheme_Object *scheme_tail_call_waiting;
-extern Scheme_Object *scheme_multiple_values;
+extern NONPROC Scheme_Object *scheme_eof;
+extern NONPROC Scheme_Object *scheme_null;
+extern NONPROC Scheme_Object *scheme_true;
+extern NONPROC Scheme_Object *scheme_false;
+extern NONPROC Scheme_Object *scheme_void;
+extern NONPROC Scheme_Object *scheme_undefined;
+extern NONPROC Scheme_Object *scheme_tail_call_waiting;
+extern NONPROC Scheme_Object *scheme_multiple_values;
 
 /* Basics */
 Scheme_Object *scheme_eval(Scheme_Object *obj, Scheme_Env *env);
@@ -163,6 +173,10 @@ Scheme_Object *_scheme_apply_known_closed_prim(Scheme_Object *rator, int argc,
 					       Scheme_Object **argv);
 Scheme_Object *_scheme_apply_known_closed_prim_multi(Scheme_Object *rator, int argc,
 						     Scheme_Object **argv);
+Scheme_Object *_scheme_apply_closed_prim(Scheme_Object *rator, int argc,
+					 Scheme_Object **argv);
+Scheme_Object *_scheme_apply_closed_prim_multi(Scheme_Object *rator, int argc,
+					       Scheme_Object **argv);
 
 Scheme_Object *scheme_values(int c, Scheme_Object **v);
 

@@ -438,7 +438,6 @@ int   scheme_sproc_semaphore_try_down(void *);
 # define USE_MZ_SETJMP
 
 # define WINDOWS_DYNAMIC_LOAD
-# define LINK_EXTENSIONS_BY_TABLE
 
 # if defined(__CYGWIN32__)
 #  define MUST_DEFEAT_FLOAT_REGISTER_OPTIMIZATION

@@ -102,8 +102,8 @@
       (lambda (l r)
 	(remove* l r eqv?))))
 
-   ;; fold : ((A -> B) B (listof A) -> B)
-   ;; fold : ((A1 ... An -> B) B (listof A1) ... (listof An) -> B)
+   ;; fold : ((A B -> B) B (listof A) -> B)
+   ;; fold : ((A1 ... An B -> B) B (listof A1) ... (listof An) -> B)
 
    ;; foldl builds "B" from the beginning of the list to the end of the
    ;; list and foldr builds the "B" from the end of the list to the

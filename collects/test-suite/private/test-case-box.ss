@@ -57,12 +57,12 @@
                                     'unknown
                                     'disabled)))])
           
-          ;; read-one-special (integer? any? (union integer? false?) (union integer? false?)
-          ;;                   (union integer? false?) . -> . any? integer? false?)
-          ;; status: this contract is incorrectly written
-          (define/public read-one-special
-            (opt-lambda (index source (line false) (column false) (position false))
-              ;; (syntax-object? (is-a?/c text%) . -> . syntax-object?)
+          #;(any? (union integer? false?) (union integer? false?) (union integer? false?)
+                  . -> .
+                  any?)
+          (define/public read-special
+            (opt-lambda (source (line false) (column false) (position false))
+              #;(syntax-object? (is-a?/c text%) . -> . syntax-object?)
               ;; a syntax object representing the text with the color of the given object
               (define (text->syntax-object text)
                 (let ([port (open-input-text-editor text)])
@@ -78,8 +78,7 @@
                              language-settings)])
                       (if (drscheme:language-configuration:language-settings? language-settings)
                           (let ([thunk (send language front-end/interaction
-                                             (drscheme:language:make-text/pos
-                                              text 0 (send text last-position))
+                                             (open-input-text-editor text)
                                              settings
                                              (drscheme:teachpack:new-teachpack-cache '()))])
                             (let loop ([stxs empty])
@@ -98,34 +97,31 @@
                                        (syntax-column next)
                                        (syntax-position next)
                                        (syntax-span next))])))
-              
-              (values
-               (if enabled?
-                   (with-syntax ([to-test-stx (text->syntax-object to-test)]
-                                 [exp-stx (text->syntax-object expected)]
-                                 [update-stx (lambda (x) (update x))]
-                                 [set-actuals-stx set-actuals])
-                     (syntax/loc (datum->syntax-object
-                                  false
-                                  'ignored
-                                  (list source line column position 1))
-                       (test-case equal? to-test-stx exp-stx update-stx set-actuals-stx)))
-                   (syntax-property #'(define-values () (values)) 
-                                    'stepper-skip-completely
-                                    #t))
-               1
-               true)))
+              (if enabled?
+                  (with-syntax ([to-test-stx (text->syntax-object to-test)]
+                                [exp-stx (text->syntax-object expected)]
+                                [update-stx (lambda (x) (update x))]
+                                [set-actuals-stx set-actuals])
+                    (syntax/loc (datum->syntax-object
+                                 false
+                                 'ignored
+                                 (list source line column position 1))
+                      (test-case equal? to-test-stx exp-stx update-stx set-actuals-stx)))
+                  (syntax-property #'(define-values () (values)) 
+                                   'stepper-skip-completely
+                                   #t))))
           
           ;; (boolean? . -> . void?)
           ;; sets the test case to the proper result bassed on if it was correct
           (define/public (update pass?)
             (send result update (if pass? 'pass 'fail)))
           
-          ;; (-> void?)
+          #;(-> void?)
           ;; resets the state of the test case
           ;; STATUS: Should I use an edit sequence of pb right here?
           (define/public (reset)
-            (show-actual false)
+            ;; Hiding the actual on reset might be annoying
+            #;(show-actual false)
             (send* actual
               (lock false)
               (erase)
@@ -133,7 +129,7 @@
             (when enabled?
               (send result update 'unknown)))
           
-          ;; enable (boolean? . -> . void?)
+          #;(boolean? . -> . void?)
           ;; enables or disables the test case
           (define/public (enable enable?)
             (unless (boolean=? enabled? enable?)
@@ -150,7 +146,7 @@
                   (send (send to-test get-admin) get-snip)
                   'display))
           
-          ;; set-actuals ((is-a?/c expand-program%) (listof any?) . -> . void?)
+          #;((is-a?/c expand-program%) (listof any?) . -> . void?)
           ;; set the text in the actual field to the value given
           (define (set-actuals vals)
             (unless (empty? vals)
@@ -161,11 +157,14 @@
               (send (send (get-admin) get-editor) begin-edit-sequence)
               (let ([port
                      (make-output-port
-                      false
-                      (lambda (s start end block?)
-                        (send actual insert s)
-                        (string-length s))
-                      void
+                      'set-actuals
+                      always-evt
+                      (lambda (s start end block? enable-breaks?)
+                        (send actual insert
+                              (list->string
+                               (map integer->char
+                                    (bytes->list (subbytes s start end)))))
+                        (- end start))
                       void)])
                 (print (first vals) port)
                 (for-each

@@ -183,8 +183,9 @@
   (define-struct reg (inf sup ret))
   (define-struct unreg (inf sup))
   
-  ; an external event; val is passed to recip's thunk
-  (define-struct external-event (recip-val-pairs ret))
+  ; an external event; contains a list of pairs
+  ; (recip val), where val is passed to recip's thunk
+  (define-struct external-event (recip-val-pairs))
 
   ; update the given signal at the given time
   (define-struct alarm (time signal))
@@ -712,10 +713,8 @@
                  [(? signal? b)
                   (iq-enqueue b)
                   (loop)]
-                 [($ external-event recip-val-pairs ret)
+                 [($ external-event recip-val-pairs)
                   (for-each iq-enqueue recip-val-pairs)
-                  (when ret
-                    (iq-enqueue (list notifier ret)))
                   (loop)]
                  [($ alarm ms beh)
                   (schedule-alarm ms beh)
@@ -927,19 +926,19 @@
     
   ; set-cell! : cell[a] a -> void
   (define (set-cell! ref beh)
-    (! man (make-external-event (list (list ((signal-thunk ref) #t) beh)) #f)))
+    (! man (make-external-event (list (list ((signal-thunk ref) #t) beh)))))
   
   (define (send-event rcvr val)
-    (! man (make-external-event (list (list rcvr val)) #f)))
+    (! man (make-external-event (list (list rcvr val)))))
 
   (define (send-synchronous-event rcvr val)
-    (! man (make-external-event (list (list rcvr val)) (self)))
+    (! man (make-external-event (list (list rcvr val) (list notifier (self)))))
     (receive [(? man?) (void)]))
 
   (define (send-synchronous-events rcvr-val-pairs)
     (unless (ormap list? rcvr-val-pairs) (error "not list"))
     (unless (ormap signal? (map first rcvr-val-pairs)) (error "not signals"))
-    (! man (make-external-event rcvr-val-pairs (self)))
+    (! man (make-external-event (cons (list notifier (self)) rcvr-val-pairs)))
     (receive [(? man?) (void)]))
 
   (define (curried-apply fn)
@@ -1033,6 +1032,13 @@
       
       (super-instantiate (" "))))
   
+  (define (render beh as-snip?)
+    (cond
+      [as-snip? (watch beh)]
+      [(undefined? (value-now beh)) "<undefined>"]
+      [(behavior? beh) (format "#<behavior (~a)>" (value-now beh))]
+      [(event? beh) (format "#<event (last: ~a)>" (efirst (signal-value beh)))]))
+    
   (define (watch beh)
     (cond
       [(undefined? beh)

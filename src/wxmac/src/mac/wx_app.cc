@@ -325,7 +325,10 @@ void wxApp::doMacMouseDown(void)
   switch (windowPart)
     {
     case inMenuBar:
-      if ((cCurrentEvent.what == mouseMenuDown) || StillDown()) {
+      /* This code used to be guarded by a StillDown() check, but the
+	 check doesn't seem to be useful or necessary. In fact, it
+	 interfered with Ctl-F2 menu activation. */
+      {
 	long menuResult;
 	WindowPtr theMacWindow;
 

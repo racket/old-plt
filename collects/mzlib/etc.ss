@@ -508,6 +508,7 @@
                   (hash-table-put! ht key val) ...
                   ht)))]
            [_else (raise-syntax-error 'hash-table "bad syntax" stx)]))]))
+    
 
   (define-syntax (begin-with-definitions stx)
     ;; Body can have mixed exprs and defns. Wrap expressions with

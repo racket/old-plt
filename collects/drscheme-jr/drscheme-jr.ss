@@ -138,39 +138,49 @@
 			 pretty-print-handler))
 
 (define mzrice-expand-eval
-  (lambda (x)
-    (let* ([expanded (zodiac:scheme-expand x)]
-	   [_ '(printf "expanded: ~a~n" expanded)]
-	   [annotated (aries:annotate expanded)]
-	   [_ '(printf "annotated: ~a~n" annotated)])
-      (eval annotated))))
+  (let ([primitive-eval (current-eval)])
+    (lambda (x)
+      (let* ([annotated
+	      (with-parameterization system-parameterization
+		(lambda ()
+		  (let* ([expanded (zodiac:scheme-expand x)]
+			 [_ '(printf "expanded: ~a~n~n" expanded)]
+			 [annotated (aries:annotate expanded)]
+			 [_ '(printf "annotated: ~a~n~n" annotated)])
+		    annotated)))])
+	(primitive-eval annotated)))))
 
 (define mzrice-eval
   (lambda (x)
-    '(printf "eval; x: ~a~n" x)
-    (with-parameterization system-parameterization
-      (lambda ()
-	(let* ([z (or (unbox aries:error-box)
-		      (let ([loc (zodiac:make-location 0 0 0 'eval)])
-			(zodiac:make-zodiac 'mzrice-eval loc loc)))]
-	       [read (zodiac:structurize-syntax x z)])
-	  '(printf "eval; read: ~a~n" read)
-	  (mzrice-expand-eval read))))))
+    '(printf "eval; x: ~a~n~n" x)
+    (let ([read 
+	   (with-parameterization system-parameterization
+	     (lambda ()
+	       (let* ([z (or (unbox aries:error-box)
+			     (let ([loc (zodiac:make-location 0 0 0 'eval)])
+			       (zodiac:make-zodiac 'mzrice-eval loc loc)))]
+		      [read (zodiac:structurize-syntax x z)])
+		 '(printf "eval; read: ~a~n~n" read)
+		 read)))])
+      (mzrice-expand-eval read))))
 
 (define mzrice-load
   (lambda (f)
-    (with-parameterization system-parameterization
-      (lambda ()
-	(call-with-input-file f
-	  (lambda (p)
-	    (let ([read (zodiac:read p (zodiac:make-location 1 1 0 f))])
-	      (let loop ([this (read)]
-			 [next (read)])
-		(cond
-		 [(zodiac:eof? this) (void)]
-		 [(zodiac:eof? next) (mzrice-expand-eval this)]
-		 [else (begin (mzrice-expand-eval this)
-			      (loop next (read)))])))))))))
+    (call-with-input-file f
+      (lambda (p)
+	(let ([read (let ([t (with-parameterization system-parameterization
+			       (lambda ()
+				 (zodiac:read p (zodiac:make-location 1 1 0 f))))])
+		      (lambda ()
+			(with-parameterization system-parameterization
+			  t)))])
+	  (let loop ([this (read)]
+		     [next (read)])
+	    (cond
+	      [(zodiac:eof? this) (void)]
+	      [(zodiac:eof? next) (mzrice-expand-eval this)]
+	      [else (begin (mzrice-expand-eval this)
+			   (loop next (read)))])))))))
 
 (define parameterization (make-parameterization))
 

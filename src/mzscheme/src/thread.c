@@ -5117,7 +5117,11 @@ static Scheme_Object *current_stats(int argc, Scheme_Object *argv[])
 	SCHEME_VEC_ELS(v)[3] = scheme_make_integer(sz);
       }
     case 3:
-      SCHEME_VEC_ELS(v)[2] = (t->block_descriptor ? scheme_true : scheme_false);
+      SCHEME_VEC_ELS(v)[2] = (t->block_descriptor 
+			      ? scheme_true 
+			      : ((t->running & MZTHREAD_SUSPENDED)
+				 ? scheme_true
+				 : scheme_false));
     case 2:
       SCHEME_VEC_ELS(v)[1] = thread_dead_p(1, (Scheme_Object **)&t);
     case 1:

@@ -1,6 +1,8 @@
 _Homogeneous_Vectors_ Library
 
-to load directly: (require (lib "homo-vectors.ss"))
+to load directly: (require (lib "4.ss" "srfi"))
+
+to test: (require (lib "run-tests.ss" "srfi" "4"))
 
 The Homogeneous Vectors library is intended to allow interoperability
 between Scheme programs and those that represent data in the manner of
@@ -349,7 +351,7 @@ Scheme_Object *scheme_module_name()
 
 (require (lib "compile.ss" "dynext"))
 (require (lib "link.ss" "dynext"))
-(require (lib "homo-vectors.ss" "homogeneous-vectors"))
+(require (lib "4.ss" "srfi"))
 
 (current-directory "/Users/clements/clements/collects/homogeneous-vectors")
 

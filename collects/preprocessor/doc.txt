@@ -532,14 +532,14 @@ Dispatching-related bindings:
 
 > dispatchers
 
-  A parameter holding a list of lists -- each one a dispatcher regexp
-  and a handler function.  The regexp should not have any parenthesized
-  subgroups, use "(?:...)" for grouping.  The handler function is
-  invoked whenever the regexp is seen on the input stream: it is invoked
-  on two arguments -- the matched string and a continuation thunk.  It
-  is then responsible for the rest of the processing, usually invoking
-  the continuation thunk to resume the default preprocessing.  For
-  example:
+  A parameter-like procedure (same as `command-marker') holding a list
+  of lists -- each one a dispatcher regexp and a handler function.  The
+  regexp should not have any parenthesized subgroups, use "(?:...)" for
+  grouping.  The handler function is invoked whenever the regexp is seen
+  on the input stream: it is invoked on two arguments -- the matched
+  string and a continuation thunk.  It is then responsible for the rest
+  of the processing, usually invoking the continuation thunk to resume
+  the default preprocessing.  For example:
 
     |@(define (foo-handler str cont)
     |   (add-to-input (list->string (reverse (string->list (get-arg)))))

@@ -5,28 +5,59 @@
 
 (load-relative-extension "compiled/native/mysterx.dll")
 
+(define html-sem (make-semaphore 1))   ; protects HTML insertions
+
 (define mx-element%
-  (class object% (dhtml-element)
+  (class object% (document dhtml-element)
 
 	 (private
-	  [elt dhtml-element])
+	  [elt dhtml-element]
+	  [doc document])
 
 	 (public
 	  [insert-html
 	   (lambda (s)
-	     (element-insert-html elt s))]
+	     (semaphore-wait html-sem)
+	     (begin0 (element-insert-html elt s)
+		     (semaphore-post html-sem)))]
 	  [append-html
 	   (lambda (s)
-	     (element-append-html elt s))]
+	     (semaphore-wait html-sem)
+	     (begin0
+	      (element-append-html elt s)
+	      (semaphore-post html-sem)))]
 	  [replace-html
 	   (lambda (s)
-	     (element-replace-html elt s))]
+	     (semaphore-wait html-sem)
+	     (begin0 
+	      (element-replace-html elt s)
+	      (semaphore-post html-sem)))]
 	  [insert-text 
 	   (lambda (s)
 	     (element-insert-text elt s))]
 	  [append-text
 	   (lambda (s)
 	     (element-append-text elt s))]
+	  [insert-object 
+	   (lambda (object)
+	     (semaphore-wait html-sem)
+	     (let ([old-objects (document-objects doc)])
+	       (element-insert-html elt (coclass->html object))
+               (let* ([new-objects (document-objects doc)])
+		 (semaphore-post html-sem)
+		 (car (remove* old-objects
+			       new-objects
+			       com-object-eq?)))))]
+	  [append-object 
+	   (lambda (object)
+	     (semaphore-wait html-sem)
+	     (let ([old-objects (document-objects doc)])
+	       (element-append-html elt (coclass->html object))
+               (let* ([new-objects (document-objects doc)])
+		 (semaphore-post html-sem)
+		 (car (remove* old-objects
+			       new-objects
+			       com-object-eq?)))))]
 	  [attribute
 	   (lambda (s)
 	     (element-attribute elt s))]
@@ -641,19 +672,28 @@
 	     (document-show doc b))]
 	  [find-element
 	   (lambda (tag id)
-	     (make-object mx-element% (document-find-element doc tag id)))]
+	     (make-object mx-element% doc (document-find-element doc tag id)))]
 	  [objects
 	   (lambda () 
 	     (document-objects doc))]
 	  [insert-html 
 	   (lambda (html-string)
-	     (document-insert-html doc html-string))]
+	     (semaphore-wait html-sem)
+	     (begin0 
+	      (document-insert-html doc html-string)
+	      (semaphore-post html-sem)))]
 	  [append-html 
 	   (lambda (html-string)
-	     (document-append-html doc html-string))]
+	     (semaphore-wait html-sem)
+	     (begin0
+	      (document-append-html doc html-string)
+	      (semaphore-post html-sem)))]
 	  [replace-html 
 	   (lambda (html-string)
-	     (document-replace-html doc html-string))]
+	     (semaphore-wait html-sem)
+	     (begin0 
+	      (document-replace-html doc html-string)
+	      (semaphore-post html-sem)))]
 	  [register-event-handler
 	   (lambda (elt fn)
 	     (semaphore-wait handler-sem)
@@ -671,14 +711,20 @@
 	       (let ([key (make-event-key tag id)])
 		 (hash-table-remove! handler-table key)))
 	     (semaphore-post handler-sem))]
-	   [append-object 
-	    (lambda (object)
-	      (append-html (coclass->html object))
-	      (car (last-pair (document-objects doc))))]
 	   [insert-object 
 	    (lambda (object)
+	      (semaphore-wait html-sem)
 	      (insert-html (coclass->html object))
-	      (car (document-objects doc)))]
+	      (begin0
+	       (car (document-objects doc))
+	       (semaphore-post html-sem)))]
+	   [append-object 
+	    (lambda (object)
+	      (semaphore-wait html-sem)
+	      (append-html (coclass->html object))
+	      (begin0
+	       (car (last-pair (document-objects doc)))
+	       (semaphore-post html-sem)))]
 	   [handle-events 
 	    (lambda ()
 	      (semaphore-wait thread-sem)

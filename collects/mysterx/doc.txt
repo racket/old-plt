@@ -71,15 +71,15 @@ component presentation and event handling.
 
   Kills the thread currently handling events for the document.
 
-> append-object :: (send an-mx-document append-object coclass)
-
-  Append a COM object with class `coclass' to the end of the document.  An 
-  instance of <com-object> is returned.
-
 > insert-object :: (send an-mx-document insert-object coclass)
 
   Inserts a COM object with class `coclass' at the beginning of the 
   document.  An instance of <com-object> is returned.
+
+> append-object :: (send an-mx-document append-object coclass)
+
+  Append a COM object with class `coclass' to the end of the document.  An 
+  instance of <com-object> is returned.
 
 > find-element :: (send an-mx-document find-element tag id)
 
@@ -161,11 +161,11 @@ component can be scripted in MysterX if 1) it supports OLE Automation,
 that is, the IDispatch interface, and 2) publishes type information using
 the ITypeInfo interface.
 
-> (all-com-classes)
+> (com-all-coclasses)
 
   Returns a list of strings for all COM classes registered on a system.
 
-> (all-controls)
+> (com-all-controls)
 
   Returns a list of strings for all COM classes registered on a system
   that have the "Control" subkey. 
@@ -216,11 +216,15 @@ the ITypeInfo interface.
   `val' is a value of suitable type.  Sets the value of the specified 
   property.
 
-> (help! a-com-object topic)
+> (com-help a-com-object topic)
 
   Starts the Window Help system with help about the COM object.
   `a-com-object' is a <com-object> and `topic' is an optional string,
   typically a method or property name. 
+
+> (com-object-eq? a-com-object a-com-object)
+
+  Returns #t if the two COM objects are the same, #f otherwise.
 
   MysterX types
   -------------
@@ -313,6 +317,16 @@ the ITypeInfo interface.
 
   Places the text given by the string `txt' after the HTML element.
   
+> insert-object :: (send an-mx-element insert-object coclass)
+
+  Inserts a COM object with class `coclass' before the HTML element.
+  An instance of <com-object> is returned.
+
+> append-object :: (send an-mx-element append-object coclass)
+
+  Places a COM object with class `coclass' after the HTML element.  
+  An instance of <com-object> is returned.
+
 > attribute :: (send an-mx-element attribute attr)
 
   Retrieves the attribute named by the string `attr'.  The return

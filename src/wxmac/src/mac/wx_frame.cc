@@ -106,9 +106,14 @@ wxFrame::wxFrame // Constructor (for frame window)
 		}
 
 #if defined(__powerc)		
-		result = CreateNewWindow(windowClass, windowAttributes,
-									&theBoundsRect, (GrafPtr *)&theMacWindow);
+		result = ::CreateNewWindow(windowClass, windowAttributes,
+									&theBoundsRect, (WindowPtr *)&theMacWindow);
+							
 #else
+		// NB: CreateNewWindow must be commented out on pre-8.5 platforms, because
+		// it's not defined.  However, if you just #if it out, you get warnings
+		// because theMacWindow is used w/o being defined. -- JBC
+		
         wxFatalError("wxFrame constructor: 68k code should not reach this point.");
         theMacWindow = NULL;
 #endif
@@ -119,6 +124,8 @@ wxFrame::wxFrame // Constructor (for frame window)
 					result);
 			wxFatalError(error);
 		}
+
+		::SetWTitle((WindowPtr)theMacWindow, theWindowTitle);
 		
 		SetWRefCon((GrafPtr)theMacWindow, (long)this);
 		

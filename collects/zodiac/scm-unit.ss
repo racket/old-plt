@@ -717,7 +717,8 @@
 		    expr)
 		  (create-top-level-varref id expr)))))
 	  (else
-	    (internal-error expr "Invalid resolution in unit define-values: ~s" r))))))
+	    (internal-error expr
+	      "Invalid resolution in unit define-values: ~s" r))))))
 
   (add-primitivized-micro-form 'set! unit-clauses-vocab-delta
     (let* ((kwd '())

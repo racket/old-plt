@@ -577,42 +577,53 @@
                 (let-values (((base name dir?) (split-path raw-filename)))
                   (when dir?
                     (static-error filename "Cannot include a directory"))
-                  (let ((original-directory (current-directory))
-                         (p (with-handlers
-			      ((exn:i/o:filesystem:filename?
-				 (lambda (exn)
-				   (static-error filename
-				     "Unable to open file ~s" raw-filename))))
-			      (open-input-file raw-filename))))
-                    (dynamic-wind
-                      (lambda ()
-                        (when (string? base)
-                          (current-directory base)))
-                      (lambda ()
-                        (apply append
-                          (map (lambda (e)
-                                 (expand-expr e env attributes
-                                   vocab))
-                            (let ((reader (z:read p
-                                            (z:make-location
-                                              (z:location-line
-                                                z:default-initial-location)
-                                              (z:location-column
-                                                z:default-initial-location)
-                                              (z:location-offset
-                                                z:default-initial-location)
-                                              (build-path (current-directory)
-                                                name)))))
-                              (let loop ()
-                                (let ((input (reader)))
-                                  (if (z:eof? input)
-                                    '()
-                                    (cons input
-                                      (loop)))))))))
-                      (lambda ()
-                        (current-directory original-directory)
-                        (close-input-port p)))))))))
-        (else
+                  (let* ((original-directory (current-load-relative-directory))
+			  (p (with-handlers
+			       ((exn:i/o:filesystem:filename?
+				  (lambda (exn)
+				    (static-error filename
+				      "Unable to open file ~s" raw-filename))))
+			       (open-input-file
+				 (if (and original-directory
+				       (not (complete-path? raw-filename)))
+				   (path->complete-path raw-filename
+				     original-directory)
+				   raw-filename)))))
+		    (parameterize ([current-load-relative-directory
+				     (if (string? base) 
+				       (if (complete-path? base)
+					 base
+					 (path->complete-path base
+					   (if original-directory 
+					     original-directory 
+					     (current-directory))))
+				       (current-directory))])
+		      (dynamic-wind
+			void
+			(lambda ()
+			  (apply append
+			    (map (lambda (e)
+				   (expand-expr e env attributes
+				     vocab))
+			      (let ((reader (z:read p
+					      (z:make-location
+						(z:location-line
+						  z:default-initial-location)
+						(z:location-column
+						  z:default-initial-location)
+						(z:location-offset
+						  z:default-initial-location)
+						(build-path (current-directory)
+						  name)))))
+				(let loop ()
+				  (let ((input (reader)))
+				    (if (z:eof? input)
+				      '()
+				      (cons input
+					(loop)))))))))
+			(lambda ()
+			  (close-input-port p))))))))))
+	(else
           (static-error expr "Malformed include"))))))
 
 (add-primitivized-micro-form 'unit/sig scheme-vocabulary

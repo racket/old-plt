@@ -8,6 +8,7 @@
 (define mred:container-frames@
   (unit/sig mred:container-frames^
     (import [mred:debug : mred:debug^]
+	    [mred:connections : mred:connections^]
 	    mred:container-children^
 	    mred:container-panels^)
     
@@ -309,7 +310,7 @@
 	    (set! counter (add1 counter))))))
     
     (define frame%
-      (class (make-top-container% wx:frame%) args
+      (class (make-top-container% mred:connections:connections-frame%) args
 	(sequence
 	  (apply (opt-lambda (parent title
 				     [x const-default-posn]
@@ -326,7 +327,7 @@
 		 args))))
     
     (define dialog-box%
-      (class (make-top-container% wx:dialog-box%) args
+      (class (make-top-container% mred:connections:connections-dialog-box%) args
 	(inherit
 	  centre)
 	(rename

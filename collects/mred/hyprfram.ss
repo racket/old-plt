@@ -87,6 +87,7 @@
 		 (set-the-tag #f)))]
 	    [the-tag #f]
 	    [set-the-tag (lambda (tag) (set! the-tag tag))]
+	    [trim-filename (lambda (x) x)]
 	    [set-media  
 	     (opt-lambda (edit [display? #t])
 	       (let ([lazy? (get-lazy-refresh)])
@@ -100,7 +101,7 @@
 		    (set-lazy-refresh lazy?)))))]))))
 
     (define hyper-canvas% 
-      (make-hyper-canvas% mred:canvas:simple-frame-canvas%))
+      (make-hyper-canvas% mred:canvas:frame-title-canvas%))
 
     ; a simple frame w/ a file close and always locked.
     (define make-hyper-basic-frame%

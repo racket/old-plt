@@ -264,7 +264,7 @@
 	(lambda (super%)
 	  (class super% ([name frame-name])
 	    (inherit panel get-client-size set-icon get-menu-bar
-		     make-menu on-close show)
+		     make-menu on-close show active-edit active-canvas)
 	    (rename [super-on-close on-close]
 		    [super-set-title set-title])
 	    (public
@@ -274,7 +274,7 @@
 	    (public
 	      [get-panel%  (lambda () main-panel%)]
 	      
-	      [title-prefix "MrEd"])
+	      [title-prefix name])
 	    
 	    (private
 	      [title ""]
@@ -287,9 +287,7 @@
 		   '(printf "setting-title to ~a~n" t)
 		   (super-set-title t)))])
 	    
-	    ; methods
 	    (public
-	      [on-frame-active (lambda () (void))]
 	      [get-title (lambda () title)]
 	      [set-title
 	       (lambda (t)
@@ -303,7 +301,7 @@
 			    (not (string=? s title-prefix)))
 		   (set! title-prefix s)
 		   (do-title)))]
-	      [get-canvas% (lambda () mred:canvas:simple-frame-canvas%)]
+	      [get-canvas% (lambda () mred:canvas:frame-title-canvas%)]
 	      [get-edit% (lambda () mred:edit:edit%)]
 	      [make-edit
 	       (lambda ()
@@ -315,7 +313,7 @@
 	       (opt-lambda ([format wx:const-media-ff-same])
 		 (let ([file (mred:finder:put-file)])
 		   (when file
-		     (send (active-edit) save-file file format))))]
+		     (send edit save-file file format))))]
 	      [file-menu:revert 
 	       (lambda () 
 		 (let* ([b (box #f)]
@@ -398,35 +396,9 @@
 	    
 	    (public
 	      [canvas (make-object (get-canvas%) panel)]
-	      [active-canvas
-	       (let ([last-active-canvas canvas])
-		 (lambda ()
-		   (if (send last-active-canvas is-focus-on?)
-		       last-active-canvas
-		       (let ([ans
-			      (let loop ([item panel])
-				(cond
-				  [(is-a? item wx:media-canvas%)
-				   (and (send item is-focus-on?)
-					item)]
-				  [(is-a? item wx:panel%)
-				   (ormap loop
-					  (ivar item children))]
-				  [else #f]))])
-			 (when ans
-			   (set! last-active-canvas ans))
-			 ans))))]
-	      [active-edit
-	       (lambda ()
-		 (let ([c (active-canvas)])
-		   (and c
-			(send c get-media))))])
-	    
-	    (public
-	      [last-focus-canvas #f] ; Does this need to be inited during make-canvas?
 	      [edit (make-edit)])
 	    (sequence
-	      (send* canvas (set-frame this) (set-media edit))
+	      (send canvas set-media edit)
 	      (when (send mred:icon:icon ok?)
 		(set-icon mred:icon:icon))
 	      (do-title))))))

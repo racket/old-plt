@@ -2,12 +2,25 @@ SYSTEM HISTORY
 --------------
 Version 45:
 
-- panel is now get-panel to support fancier interactions in the class
-  heirarchy. The searching panel in the search frame is now in it's
-  own panel, with only what sub-classes see as the result of (get-panel)
-  as it's other child.
-- active-canvas and active-edit can now return #f, when the active
-  item in a frame is not a canvas
+- mred:simple-frame-canvas% and mred:editor-canvas% are now obsolete.
+  Instead there are now three important canvas classes in the system:
+  mred:wrapping-canvas% : 
+    handles autowrapping, can create edits automatically, uses
+    style-flags ivar and style initialization for default styles to
+    super-init, and implements edit-modifited and edit-renamed
+  mred:one-line-canvas% 
+    is just the right height to display one line of text.
+    inherits from mred:wrapping-canvas%
+  mred:frame-title-canvas%
+    updates the title of the frame when it recieves focus
+    events. inherits from mred:wrapping-canvas%
+			
+- all of the "connection maintenence" ie edits that know which canvses
+  they are in, frames that know which canvas is the most recently
+  active canvas have been moved into into separate classes that only
+  maintain those connections, mred:connections-media-edit%,
+  mred:connections-media-canvas%, mred:connections-frame%,
+  mred:connections-dialog-box%, and mred:connections-panel%
 - all instance variables class% (e.g. edit% and canvas% on frames) 
   have been changed to get-class%, to support inheiritance.
 - added extra optional arg to mred:local-busy-cursor and

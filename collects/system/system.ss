@@ -202,7 +202,8 @@
 	  (list "sig" "macros"
 
 		;; standard system units
-		"autoload" "autosave" "canvas" "console" "contfram"
+		"autoload" "autosave" "canvas" "connect"
+		"console" "contfram"
 		"contkids" "contpanl" "containr" "edframe"
 		"edit" "exit" "exn" "fileutil" "finder" "findstr" "frame"
 		"group" "guiutils" "handler"
@@ -309,19 +310,16 @@
 
 (define mred:user-setup
   (lambda ()
-    (let* ([home (if (eq? wx:platform 'unix)
-		     (expand-path "~")
-		     "")]
-	   [file (string-append home 
-				(if (eq? wx:platform 'windows)
-				    "mredrc.ss"
-				    ".mredrc"))])
-      (when (file-exists? file)
+    (let* ([init-file (build-path (wx:find-directory 'init)
+				  (if (eq? wx:platform 'unix)
+				      ".mredrc"
+				      "mredrc.ss"))])
+      (when (file-exists? init-file)
 	(let ([orig-escape (error-escape-handler)])
 	  (catch-errors (lambda (s) (wx:message-box s "Error"))
 			(lambda () (orig-escape))
 			(mred:eval-string 
-			 (string-append "(load/cd \"" file "\")"))))))))
+			 (string-append "(load/cd \"" init-file "\")"))))))))
 
 (when (eq? wx:platform 'unix)
   (let* ([default-path "/usr/local/transcript-4.0/lib/"]

@@ -1,3 +1,15 @@
+(define-signature mred:connections^
+  (connections-frame%
+   connections-dialog-box%
+   connections-media-edit%
+   connections-media-pasteboard%
+   connections-media-canvas%
+   connections-panel%
+   make-connections-frame%
+   make-connections-media-buffer%
+   make-connections-media-canvas%
+   make-connections-panel%))
+
 (define-signature mred:version^
   (add-version-spec
    version))
@@ -188,13 +200,14 @@
    pasteboard%))
 
 (define-signature mred:canvas^
-  (make-editor-canvas%
-   make-simple-frame-canvas%
-   editor-canvas%
-   simple-frame-canvas%
-   
+  (make-wrapping-canvas%
+   wrapping-canvas%
+
    make-one-line-canvas%
-   one-line-canvas%))
+   one-line-canvas%
+
+   make-frame-title-canvas%
+   frame-title-canvas%))
 
 (define-signature mred:frame^
   (frame-name
@@ -339,7 +352,7 @@
    (open mred:constants^)
    (open mred:version^)
    (open mred:exn-external^)
-   (open mred:container^) (open mred:preferences^)
+   (open mred:connections^) (open mred:container^) (open mred:preferences^)
    (open mred:autoload^) (open mred:autosave^) (open mred:exit^)
    (open mred:gui-utils^) (open mred:console^) (open mred:path-utils^)
    (open mred:finder^)

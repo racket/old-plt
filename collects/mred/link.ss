@@ -14,9 +14,11 @@
 	    [version : mred:version^ (mred:version@ 
 				      (core function@)
 				      (core string@))]
+	    [connections : mred:connections^
+	      (mred:connections@ debug (core function@))]
 	    [exn : mred:exn^ (mred:exn@ debug)]
 	    [container : mred:container^
-		       (mred:container@ debug (core function@))]
+		       (mred:container@ debug connections (core function@))]
 	    [exit : mred:exit^ (mred:exit@ debug preferences gui-utils)]
 	    [preferences : mred:preferences^
 			 (mred:preferences@ debug exn container exit gui-utils
@@ -49,8 +51,9 @@
 	    [icon : mred:icon^ (mred:icon@ debug constants)]
 	    [menu : mred:menu^ (mred:menu@ debug (core function@))]
 	    [edit : mred:edit^ 
-		  (mred:edit@ debug finder path-utils mode scheme-paren
-			    keymap icon preferences gui-utils (core function@))]
+	      (mred:edit@ debug connections finder path-utils mode
+			  scheme-paren keymap icon preferences gui-utils
+			  (core function@))]
 	    [group : mred:group^ 
 		   (mred:group@ debug preferences editor-frame gui-utils
 			      exit autosave handler (core function@))]
@@ -58,9 +61,9 @@
 		    (mred:canvas@ debug container edit (core file@))]
 	    [panel : mred:panel^ (mred:panel@ debug container canvas (core function@))]
 	    [frame : mred:frame^ 
-		   (mred:frame@ debug preferences edit container canvas icon
-			      menu group finder find-string handler exit autosave
-			      panel gui-utils (core function@) (core file@))]
+	      (mred:frame@ debug preferences edit container canvas icon
+			   menu group finder find-string handler exit autosave
+			   panel gui-utils (core function@) (core file@))]
 	    [find-string : mred:find-string^ 
 			 (mred:find-string@ debug container canvas edit frame)]
 	    [editor-frame : mred:editor-frame^ 
@@ -97,7 +100,7 @@
 	      (open constants)
 	      (open version)
 	      (open (exn : mred:exn-external^))
-	      (open container) (open preferences)
+	      (open connections) (open container) (open preferences)
 	      (open autoload) (open autosave) (open exit)
 	      (open gui-utils) (open console) (open path-utils)
 	      (open finder)

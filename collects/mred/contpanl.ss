@@ -11,6 +11,7 @@
 (define mred:container-panels@
   (unit/sig mred:container-panels^
     (import [mred:debug : mred:debug^]
+	    [mred:connections : mred:connections^]
 	    [mzlib:function : mzlib:function^]
 	    mred:container-children^)
     
@@ -30,7 +31,7 @@
     ; that can hold items and reposition them as necessary.  Note that a
     ; panel can contain other panels.
     (define panel%
-      (class (make-item% wx:panel% #t #t list) args
+      (class (make-item% mred:connections:connections-panel% #t #t list) args
 	(sequence (mred:debug:printf 'creation "creating a panel"))
 	(inherit
 	  object-ID

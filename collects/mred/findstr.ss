@@ -15,7 +15,7 @@
 	  (inherit set-size show center)
 	  (public
 	    [HEIGHT 100]
-	    [get-canvas% (lambda () mred:canvas:editor-canvas%)]
+	    [get-canvas% (lambda () mred:canvas:wrapping-canvas%)]
 	    [get-edit% (lambda () mred:edit:edit%)])
 	  (private
 	    [edit (if (null? in-edit)
@@ -201,7 +201,7 @@
 	    [done-button (make-object mred:container:button%
 				      bottom-panel on-done "OK")])
 	  (private
-	    [find-canvas (make-object mred:canvas:editor-canvas% find-panel)]
+	    [find-canvas (make-object mred:canvas:wrapping-canvas% find-panel)]
 	    [find-edit (send find-canvas get-media)])
 	  (sequence
 	    (send find-canvas user-min-height HEIGHT)
@@ -231,7 +231,7 @@
 					    "Replace...")])
 	  (private
 	    [replace-message-item (make-object mred:container:message% replace-panel "Replace:")]
-	    [replace-canvas (make-object mred:canvas:editor-canvas% replace-panel)]
+	    [replace-canvas (make-object mred:canvas:wrapping-canvas% replace-panel)]
 	    [replace-edit (send replace-canvas get-media)])
 	  (sequence
 	    (send replace-canvas user-min-height HEIGHT)
@@ -405,7 +405,7 @@
 					  (lambda args (search)) "Search")]
 
 	      [replace&search-button (make-object mred:container:button% middle-top-panel 
-						  (lambda x (replace&search)) "Replace & Search")]
+						  (lambda x (replace&search)) "Replace && Search")]
 	      [spacing1 (make-object mred:container:horizontal-panel% middle-top-panel)]
 	      
 	      [middle-bottom-panel (make-object mred:container:horizontal-panel% middle-panel)]
@@ -431,10 +431,6 @@
 			(list middle-panel))
 	      (for-each (lambda (x) (send x stretchable-in-y #f))
 			(list search-panel left-panel))
-	      (for-each (lambda (x)
-			  (send* x
-			    (set-frame this)))
-			(list find-canvas replace-canvas))
 	      (send find-canvas set-media find-edit)
 	      (send replace-canvas set-media replace-edit) 
 	      (send find-edit add-canvas find-canvas)

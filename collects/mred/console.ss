@@ -252,7 +252,7 @@
 	       (set! autoprompting? v))]
 	    [this-out-write
 	     (lambda (s)
-	       (dynamic-break-later
+	       (mzlib:function:dynamic-disable-break
 		(lambda ()
 		  (parameterize ([current-output-port orig-stdout]
 				 [current-error-port orig-stderr])
@@ -265,7 +265,7 @@
 				  start end)))))))]
 	    [this-err-write
 	     (lambda (s)
-	       (dynamic-break-later
+	       (mzlib:function:dynamic-disable-break
 		(lambda ()
 		  (parameterize ([current-output-port orig-stdout]
 				 [current-error-port orig-stderr])
@@ -314,7 +314,7 @@
 		 (set! prompt-position (last-position))))]
 	    [transparent-read
 	     (lambda ()
-	       (dynamic-break-later
+	       (mzlib:function:dynamic-disable-break
 		(lambda ()
 		  (init-transparent-io)
 		  (send transparent-edit flush-console-output)
@@ -688,7 +688,7 @@
 	       (super-on-size width height)
 	       (for-each update-snip-size snips))]))))
 			   
-    (define console-canvas% (make-console-canvas% mred:canvas:simple-frame-canvas%))
+    (define console-canvas% (make-console-canvas% mred:canvas:frame-title-canvas%))
 
     (define make-transparent-io-edit%
       (lambda (super%)
@@ -746,7 +746,6 @@
 	    edit-offset 
 	    other-offset)
 	  (public
-	    [title-prefix "MrEd Console"]
 	    [get-canvas% (lambda () console-canvas%)]
 	    [get-edit% (lambda () console-edit%)])
 	  (public 
@@ -803,14 +802,7 @@
 	    [on-quit mred:exit:exit]
 
 	    [file-menu:revert #f]
-	    [file-menu:close
-	     (cond
-	       [(or close-item? mred:debug:on?)
-		(lambda ()
-		  (when (on-close)
-		    (show #f)))]
-	       [else #f])]
-	    [file-menu:close-string "DEBUG"]
+	    [file-menu:close #f]
 	    [file-menu:between-open-and-save
 	     (lambda (file-menu)
 	       (send file-menu append-item "&Load Scheme File..."
@@ -819,13 +811,10 @@
 			 (if file
 			     (load-file file)))))
 	       (send file-menu append-separator))])
-
-
-	  (public [frame-title "MrEdConsole"])
 	  
 	  (sequence
 	    (mred:debug:printf 'super-init "before console-frame%")
-	    (super-init frame-title)
+	    (super-init "MrEdConsole")
 	    (mred:debug:printf 'super-init "after console-frame%")
 	    (send edit set-file-format wx:const-media-ff-std)
 	    

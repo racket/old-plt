@@ -32,16 +32,18 @@
 (define mred:container@
   (compound-unit/sig
     (import [debug : mred:debug^]
+	    [connections : mred:connections^]
             [function : mzlib:function^])
     (link [container-frames : mred:container-frames^
-			    (mred:container-frames@
-			     debug container-children container-panels)]
+	    (mred:container-frames@ debug connections
+				    container-children
+				    container-panels)]
 	  [container-children : mred:container-children^
-			      (mred:container-children@
-			       debug container-frames container-panels)]
+	    (mred:container-children@ debug connections
+				      container-frames container-panels)]
 	  [container-panels : mred:container-panels^
-			    (mred:container-panels@
-			     debug function container-children)])
+	    (mred:container-panels@ debug connections
+				    function container-children)])
     (export
      (open (container-frames : mred:container-frames^))
      (open (container-children : mred:container-children-export^))

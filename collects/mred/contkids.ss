@@ -24,6 +24,7 @@
 (define mred:container-children@
   (unit/sig mred:container-children^
     (import [mred:debug : mred:debug^]
+	    [mred:connections : mred:connections^]
 	    mred:container-frames^
 	    mred:container-panels^)
     
@@ -460,8 +461,6 @@
 			   (stretchable-in-y #t))))
 		   new-args)))))
     
-    
-    
     (define list-box%
       (make-item% wx:list-box% #t #t
 		  (opt-lambda (parent callback label
@@ -614,5 +613,7 @@
 	(list* parent x y canvas-default-size canvas-default-size args)))
     
     (define canvas% (make-item% wx:canvas% #t #t canvas-args))
-    (define media-canvas% (make-item% wx:media-canvas% #t #t canvas-args))
+    (define media-canvas% (make-item%
+			   mred:connections:connections-media-canvas%
+			   #t #t canvas-args))
     (define text-window% (make-item% wx:text-window% #t #t canvas-args))))

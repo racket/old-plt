@@ -599,7 +599,6 @@
 				    (>= end-pos min-pos)))
 			   end-pos
 			   #f)])
-		 (mred:dv min-pos start-pos limit end-pos ans)
 		 ans))]
 	    [flash-backward-sexp
 	     (lambda (edit start-pos)

@@ -122,6 +122,8 @@ static void* MyGetSize(wxDC *dc)
   return WITH_VAR_STACK(scheme_values(2, a));
 }
 
+@MACRO CheckStringIndex[n.s.i] = if (x<i> >= SCHEME_STRLEN_VAL(p[<s>])) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("dc<%>",<n>), "string index too large: ", p[<i>]));
+
 @CLASSBASE wxDC "dc":"object"
 @INTERFACE "dc"
 
@@ -131,7 +133,7 @@ static void* MyGetSize(wxDC *dc)
 @INCLUDE wxs_draw.xci
 
 // Also in wxWindow:
-@ m "get-text-extent" : void[]/CastToSO//spAnything MyTextExtent(string,wxFont^=NULL,bool=FALSE,int=0);
+@ m "get-text-extent" : void[]/CastToSO//spAnything MyTextExtent(string,wxFont^=NULL,bool=FALSE,nnint=0); : : /CheckStringIndex["get-text-extent".0.3]
 @ Q "get-char-height" : float GetCharHeight();
 @ Q "get-char-width" : float GetCharWidth();
 

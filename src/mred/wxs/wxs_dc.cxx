@@ -217,6 +217,7 @@ static void* MyGetSize(wxDC *dc)
 
 
 
+
 #undef DO_OK_CHECK
 #ifdef DrawsForCanvas
 #define DO_OK_CHECK(v)
@@ -892,7 +893,7 @@ static Scheme_Object *os_wxDCMyTextExtent(Scheme_Object *obj, int n,  Scheme_Obj
   string x0;
   class wxFont* x1;
   Bool x2;
-  int x3;
+  nnint x3;
 
   SETUP_VAR_STACK_REMEMBERED(4);
   VAR_STACK_PUSH(0, p);
@@ -911,11 +912,11 @@ static Scheme_Object *os_wxDCMyTextExtent(Scheme_Object *obj, int n,  Scheme_Obj
   } else
     x2 = FALSE;
   if (n > 3) {
-    x3 = WITH_VAR_STACK(objscheme_unbundle_integer(p[3], "get-text-extent in dc<%>"));
+    x3 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[3], "get-text-extent in dc<%>"));
   } else
     x3 = 0;
 
-  
+  if (x3 >= SCHEME_STRLEN_VAL(p[0])) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("dc<%>","get-text-extent"), "string index too large: ", p[3]));
   r = WITH_VAR_STACK(MyTextExtent(((wxDC *)((Scheme_Class_Object *)obj)->primdata), x0, x1, x2, x3));
 
   
@@ -1097,7 +1098,7 @@ static Scheme_Object *os_wxDCSetClippingRegion(Scheme_Object *obj, int n,  Schem
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxRegion(p[0], "set-clipping-region in dc<%>", 1));
 
-  if (x0 && (x0->GetDC() != ((wxDC *)((Scheme_Class_Object *)obj)->primdata))) scheme_arg_mismatch(METHODNAME("dc<%>","set-clipping-region"), "provided a different dc's region: ", p[0]);
+  if (x0 && (x0->GetDC() != ((wxDC *)((Scheme_Class_Object *)obj)->primdata))) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("dc<%>","set-clipping-region"), "provided a different dc's region: ", p[0]));
   WITH_VAR_STACK(((wxDC *)((Scheme_Class_Object *)obj)->primdata)->SetClippingRegion(x0));
 
   
@@ -1275,7 +1276,7 @@ static Scheme_Object *os_wxDCDrawText(Scheme_Object *obj, int n,  Scheme_Object 
   float x1;
   float x2;
   Bool x3;
-  int x4;
+  nnint x4;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -1291,11 +1292,11 @@ static Scheme_Object *os_wxDCDrawText(Scheme_Object *obj, int n,  Scheme_Object 
   } else
     x3 = FALSE;
   if (n > 4) {
-    x4 = WITH_VAR_STACK(objscheme_unbundle_integer(p[4], "draw-text in dc<%>"));
+    x4 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[4], "draw-text in dc<%>"));
   } else
     x4 = 0;
 
-  DO_OK_CHECK(scheme_void)
+  if (x4 >= SCHEME_STRLEN_VAL(p[0])) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("dc<%>","draw-text"), "string index too large: ", p[4]));DO_OK_CHECK(scheme_void)
   WITH_VAR_STACK(((wxDC *)((Scheme_Class_Object *)obj)->primdata)->DrawText(x0, x1, x2, x3, x4));
 
   

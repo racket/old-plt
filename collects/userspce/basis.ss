@@ -514,12 +514,11 @@
 			   (append (list 'hash-percent-syntax) namespace-flags)
 			   namespace-flags))])
 	(when (zodiac-vocabulary? setting)
-	  (require-library-use-compiled #f))
+	  (use-compiled-file-kinds 'non-elaboration))
 	(current-setting setting)
 	(compile-allow-set!-undefined #f)
 	(compile-allow-cond-fallthrough #f)
 	(current-custodian custodian)
-	(require-library-use-compiled #f)
 	(error-value->string-handler drscheme-error-value->string-handler)
 	(debug-info-handler (let ([drscheme-debug-info-handler
 				   (lambda () (let ([x (current-continuation-marks aries:w-c-m-key)])

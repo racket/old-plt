@@ -93,7 +93,7 @@ char *wxGetCtlLabel(char *label)
 
 wxBitmap *wxItem::CheckMask(wxBitmap *bm)
 {
-#ifdef WX_USE_XRENDER
+  int can_x_render;
   wxBitmap *mbm;
 
   if (!bm)
@@ -103,9 +103,15 @@ wxBitmap *wxItem::CheckMask(wxBitmap *bm)
   if (!mbm)
     return NULL;
 
+#ifdef WX_USE_XRENDER
+  can_x_render = wxXRenderHere();
+#else
+  can_x_render = 0;
+#endif
+
   /* If no X render and non-mono mask, then we have to manually apply
      the alpha mask. See wxBitmap::GetLabelPixmap(). */
-  if (!wxXRenderHere() && (mbm->GetDepth() != 1))
+  if (!can_x_render && (mbm->GetDepth() != 1))
     return NULL;
 
   if ((mbm->GetWidth() == bm->GetWidth())
@@ -121,7 +127,6 @@ wxBitmap *wxItem::CheckMask(wxBitmap *bm)
       return mbm;
     }
   }
-#endif
 
   return NULL;
 }

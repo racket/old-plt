@@ -631,7 +631,15 @@ void wxBitmap::FreeMaskBit()
 
 void *wxBitmap::GetLabelPixmap()
 {
-  if (!wxXRenderHere()
+  int can_x_render;
+
+#ifdef WX_USE_XRENDER
+  can_x_render = wxXRenderHere();
+#else
+  can_x_render = 0;
+#endif
+
+  if (!can_x_render
       && !label_bm 
       && loaded_mask
       && (loaded_mask->GetDepth() != 1)

@@ -1726,7 +1726,7 @@
 "(syntax/loc stx"
 "(letrec-syntaxes+values(((tmp ...) expr) ...)()"
 "(letrec-syntaxes+values(((id ...)(values"
-"(make-rename-transformer(quote-syntax tmp))"
+"(syntax-local-value(quote-syntax tmp) void #f)"
 " ...)) ...)"
 "()"
 " body1 body ...))))))))"

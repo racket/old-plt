@@ -39,7 +39,7 @@
   (define generic-frame%
     (class fw:frame:standard-menus% (name)
 
-      (inherit set-label get-label)
+      (inherit set-label get-label get-area-container)
       (private
 	[filename #f])
       (public
@@ -133,13 +133,10 @@
       (sequence
 	(super-init name))
       (public
-	[top-panel (make-object horizontal-panel% this)]
+	[top-panel (make-object horizontal-panel% (get-area-container))]
 	[help-button
 	 (make-object button% "Help" top-panel (lambda (_1 _2) (show-help)))])
       (sequence
-	(send this change-children (lambda (l) 
-				     (for-each (lambda (c) (send c stretchable-height #f)) l)
-				     l))
 	(send top-panel stretchable-height #f)
 	(send top-panel set-alignment 'right 'center))))
 
@@ -243,7 +240,7 @@
 					 (lambda (_1 _2)
 					   (editor problem))))))
 
-      (inherit top-panel help-button)
+      (inherit top-panel help-button get-area-container)
       (private
 	[gap (make-object horizontal-panel% top-panel)]
 	[set-choice
@@ -263,7 +260,7 @@
 				   top-panel
 				   (lambda (choice evt)
 				     (set-problem (list-ref problems (send choice get-selection)))))]
-	[canvas/spacer-panel (make-object horizontal-panel% this)]
+	[canvas/spacer-panel (make-object horizontal-panel% (get-area-container))]
 	[canvas-panel (make-object vertical-pane% canvas/spacer-panel)]
 	[spacer (make-object grow-box-spacer-pane% canvas/spacer-panel)]
 	[canvas #f])
@@ -316,14 +313,16 @@
 	 (lambda ()
 	   canvas)])
 
+      (sequence
+	(super-init editor-name))
+
+      (inherit get-area-container)
       (private
-	[space/canvas-panel (make-object horizontal-panel% this)]
+	[space/canvas-panel (make-object horizontal-panel% (get-area-container))]
 	[canvas-panel (make-object vertical-pane% space/canvas-panel)]
 	[spacer (make-object grow-box-spacer-pane% canvas-panel)])
 
       (sequence
-	(super-init editor-name)
-
 	(cond
 	 [(pair? indicator)
 	  (set! canvas

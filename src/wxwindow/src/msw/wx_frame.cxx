@@ -386,7 +386,7 @@ Bool wxFrame::Show(Bool show)
   if (!skipShow) {
     ShowWindow(GetHWND(), cshow);
   }
-  if (show) {
+  if (show && (cshow != SW_SHOWNOACTIVATE)) {
     wxwmBringWindowToTop(GetHWND());
     /* OnActivate(TRUE); */
   }

@@ -14,6 +14,7 @@
 (require-library "inflateu.ss")
 (require-library "cmdlineu.ss")
 (require-library "restartu.ss")
+(require-library "transcru.ss")
 
 (require-library "mzlibs.ss")
 

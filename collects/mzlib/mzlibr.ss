@@ -12,7 +12,8 @@
 	 [inflate : mzlib:inflate^ ((require-library-unit/sig "inflater.ss"))]
 	 [command-line : mzlib:command-line^ ((require-library-unit/sig "cmdliner.ss"))]
 	 [restart : mzlib:restart^ ((require-library-unit/sig "restartr.ss")
-				     command-line)])
+				     command-line)]
+	 [transcript : mzlib:transcript^ ((require-library-unit/sig "transcrr.ss"))])
    (export (open core)
 	   (open compat)
 	   (unit zmath)
@@ -20,6 +21,7 @@
 	   (unit date)
 	   (unit inflate)
 	   (unit command-line)
-	   (unit restart)))
+	   (unit restart)
+	   (unit transcript)))
 
 	 

@@ -18,4 +18,5 @@
    (unit date : mzlib:date^)
    (unit inflate : mzlib:inflate^)
    (unit command-line : mzlib:command-line^)
-   (unit restart : mzlib:restart^)))
+   (unit restart : mzlib:restart^)
+   (unit transcript : mzlib:transcript^)))

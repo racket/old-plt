@@ -144,28 +144,38 @@
 
   (define-struct response (id name arg))
   
-  (define (read-response id s)
-    (let* ((command (read s)))
-      (case command
-        ((N S E W) (make-response id command #f))
-        ((P D) (make-response id command (read s)))
-        ((X) 
-         (let ((x (read s)))
-           (read s)
-           (make-response id 'X (cons x (read s))))))))
+  (define (read-num-list in)
+    (let loop ((next (read in)))
+      (cond
+        ((or (eof-object? in) (eq? '^ in)) null)
+        (else (cons next (loop (read in)))))))
+  
+  (define (read-response s)
+    (let loop ((next (read s)))
+      (cond
+        ((eof-object? next) null)
+        (else
+         (let* ((id (read s))
+                (command (read s)))
+           (case command
+             ((N S E W) (cons (make-response id command #f)
+                              (loop (read s))))
+             ((P D) (cons (make-response id command (read-num-list s))
+                          (loop '^)))
+             ((X) 
+              (cons
+               (let ((x (read s)))
+                 (read s)
+                 (make-response id 'X (cons x (read-num-list s))))
+               (loop (read s))))))))))
+         
   
   (define (read-initial-response! in init-gui)
     (let ((s (open-input-string (regexp-replace "#" (read-line in) " ^ "))))
       (let* ((responses
               (filter (lambda (x)
-                        (printf "~a~n" x)
                         (eq? 'X (response-name x)))
-                      (let loop ((in (read s)))
-                        (cond
-                          ((eof-object? in) null)
-                          (else
-                           (cons (read-response in s)
-                                 (loop (read s))))))))
+                      (read-response s)))
              (robots
               (let loop ((responses responses))
                 (cond
@@ -205,9 +215,11 @@
         (gui-update (map (lambda (r)
                            (list (response-id r)
                                  0
-                                 (case (response-command r)
-                                   ((n s w e) (response-command r))
-                                   ((p) (list 'pick (response-arg
+                                 (case (response-name r)
+                                   ((n s w e) (response-name r))
+                                   ((p) (list 'pick (response-arg r)))
+                                   ((d) (list 'drop (response-arg r))))))
+                         responses))
         (for-each
          (lambda (p)
            (hash-table-put! package-table

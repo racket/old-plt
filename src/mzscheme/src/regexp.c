@@ -1369,10 +1369,13 @@ static Scheme_Object *make_regexp(int argc, Scheme_Object *argv[])
 
   if (SCHEME_IMMUTABLE_STRINGP(argv[0]))
     ((regexp *)re)->source = argv[0];
-  else
-    ((regexp *)re)->source = scheme_make_immutable_sized_string(SCHEME_STR_VAL(argv[0]), 
-								SCHEME_STRTAG_VAL(argv[0]), 
-								1);
+  else {
+    Scheme_Object *src;
+    src = scheme_make_immutable_sized_string(SCHEME_STR_VAL(argv[0]), 
+					     SCHEME_STRTAG_VAL(argv[0]), 
+					     1);
+    ((regexp *)re)->source = src;
+  }
   
   return re;
 }

@@ -379,14 +379,28 @@
 	    (f (make-process-finish #f) void)
 	    (f expr loop)))))
   
-  (define (format-source-loc start-location end-location)
-    (let ([file (zodiac:location-file start-location)])
-      (format "~a: ~a.~a-~a.~a: "
-	      file
-	      (zodiac:location-line start-location)
-	      (zodiac:location-column start-location)
-	      (zodiac:location-line end-location)
-	      (+ (zodiac:location-column end-location) 1))))
+  (define format-source-loc 
+    (case-lambda
+     [(start-location end-location)
+      (format-source-loc #t)]
+     [(start-location end-location start-at-one?)
+      (format-source-loc start-location end-location start-at-one? #t)]
+     [(start-location end-location start-at-one? lines-and-columns?)
+      (let ([file (zodiac:location-file start-location)])
+        (if lines-and-columns?
+            (let ([offset (if start-at-one? 0 -1)])
+              (format "~a: ~a.~a-~a.~a: "
+                      file
+                      (+ offset (zodiac:location-line start-location))
+                      (+ offset (zodiac:location-column start-location))
+                      (+ offset (zodiac:location-line end-location))
+                      (+ offset 1 (zodiac:location-column end-location))))
+            (let ([offset (if start-at-one? 1 0)])
+              (format "~a: ~a-~a: "
+                      file
+                      (+ offset (zodiac:location-offset start-location))
+                      (+ 1 offset (zodiac:location-offset end-location))))))]))
+                         
   
   ;; (parameter (string zodiac:zodiac exn -> void))
   (define error-display/debug-handler

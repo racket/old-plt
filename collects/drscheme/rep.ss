@@ -1,4 +1,3 @@
-
 ; =Kernel= means in DrScheme's thread and parameterization
 ; 
 ; =User= means the user's thread and parameterization
@@ -754,6 +753,14 @@
                          (send recent-error-text get-end-position)))))]
         
         [reset-highlighting void]
+        
+        [format-source-loc ;; =Kernel=, =Handler=
+         (lambda (start end)
+           (basis:format-source-loc 
+            start end
+            (fw:preferences:get 'framework:line-offsets)
+            (fw:preferences:get 'framework:display-line-numbers)))]
+        
 	[report-error ; =Kernel=, =Handler=
 	 (lambda (start-location end-location type input-string exn)
 	   (let* ([start (zodiac:location-offset start-location)]
@@ -762,7 +769,7 @@
 		  [message
 		   (if (is-a? file mred:text%)
 		       input-string
-		       (string-append (basis:format-source-loc start-location end-location)
+		       (string-append (format-source-loc start-location end-location)
 				      input-string))])
 	     (report-unlocated-error message exn)
              (set! recent-error-text #f)

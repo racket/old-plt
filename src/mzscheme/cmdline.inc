@@ -8,7 +8,6 @@
 #define EDESC "Call/cc is replaced with call/ec.\n"
 #define ADESC "Fall-through cond or case is an error.\n"
 #define NDESC "Keywords are not enforced.\n"
-#define YDESC "Only #%% syntactic forms are present.\n"
 
 char *cmdline_exe_hack = "[Replace me for EXE hack                                       ]";
 
@@ -66,17 +65,17 @@ static char *make_embedded_load(const char *start, const char *end)
   s = (char *)malloc((2 * strlen(start)) + strlen(end) + 512);
   
   sprintf(s, "%s %s %s %s %s %s",
-	  "(#%let* ([sp (#%find-system-path 'exec-file)] [exe (#%find-executable-path sp #f)]"
-                   "[s (#%with-input-from-file exe (#%lambda () "
-	                "(#%file-position (#%current-input-port)", start, ") "
-                                         "(#%read-string (- ", end, start, "))))]"
-                   "[p (#%open-input-string s)])"
-	    "(#%when (#%and (#%> (#%string-length s) 2)"
-                           "(#%char=? (#%string-ref s 0) #\\#)"
-                           "(#%char=? (#%string-ref s 1) #\\!))"
-               "(#%read-line p))"
-	    "(#%let loop () (#%let ([e (#%parameterize ([#%read-accept-compiled #t]) (#%read p))])"
- 			     "(#%unless (#%eof-object? e) (#%eval e) (loop)))))");
+	  "(let* ([sp (find-system-path 'exec-file)] [exe (find-executable-path sp #f)]"
+                   "[s (with-input-from-file exe (lambda () "
+	                "(file-position (current-input-port)", start, ") "
+                                         "(read-string (- ", end, start, "))))]"
+                   "[p (open-input-string s)])"
+	    "(when (and (> (string-length s) 2)"
+                           "(char=? (string-ref s 0) #\\#)"
+                           "(char=? (string-ref s 1) #\\!))"
+               "(read-line p))"
+	    "(let loop () (let ([e (parameterize ([read-accept-compiled #t]) (read p))])"
+ 			     "(unless (eof-object? e) (eval e) (loop)))))");
 
   return s;
 }
@@ -168,27 +167,27 @@ static int finish_cmd_line_run(FinishArgs *fa, void (*repl)(void))
 static void init_collection_paths(Scheme_Env *global_env)
 {		
   if (!scheme_setjmp(scheme_error_buf)) {
-    scheme_eval_string("(#%current-library-collection-paths "
-		        "(#%path-list-string->path-list "
-		         "(#%or (#%getenv \"PLTCOLLECTS\") \"\")"
-		         "(#%or"
-		          "(#%ormap"
-		           "(#%lambda (f) (#%let ([p (f)]) (#%and p (#%directory-exists? p) (#%list p))))"
-		           "(#%list"
-		            "(#%lambda () (#%let ((v (#%getenv \"PLTHOME\")))"
-		                          "(#%and v (#%build-path v \"collects\"))))"
-		            "(#%lambda () (#%find-executable-path program \"collects\"))"
+    scheme_eval_string("(current-library-collection-paths "
+		        "(path-list-string->path-list "
+		         "(or (getenv \"PLTCOLLECTS\") \"\")"
+		         "(or"
+		          "(ormap"
+		           "(lambda (f) (let ([p (f)]) (and p (directory-exists? p) (list p))))"
+		           "(list"
+		            "(lambda () (let ((v (getenv \"PLTHOME\")))"
+		                          "(and v (build-path v \"collects\"))))"
+		            "(lambda () (find-executable-path program \"collects\"))"
 #ifdef UNIX_FILE_SYSTEM
 # ifdef USE_BEOS_SNOOZE
-		            "(#%lambda () \"/boot/apps/plt/collects\")"
+		            "(lambda () \"/boot/apps/plt/collects\")"
 # else
-		            "(#%lambda () \"/usr/local/lib/plt/collects\")"
+		            "(lambda () \"/usr/local/lib/plt/collects\")"
 # endif
 #endif
 #ifdef DOS_FILE_SYSTEM
-		            "(#%lambda () \"c:\\plt\\collects\")"
+		            "(lambda () \"c:\\plt\\collects\")"
 #endif
-		          ")) #%null)))",
+		          ")) null)))",
 		       global_env);
   }
 }
@@ -593,8 +592,8 @@ static int run_from_cmd_line(int argc, char *_argv[],
 #endif /* NO_FILE_SYSTEM_UTILS */
 
 #ifndef MZSCHEME_CMD_LINE  
-  scheme_eval_string("(#%with-handlers ([void void])"
-		     "  (#%send (current-ps-setup) set-afm-path (collection-path \"afm\")))",
+  scheme_eval_string("(with-handlers ([void void])"
+		     "  (send (current-ps-setup) set-afm-path (collection-path \"afm\")))",
 		     global_env);
 #endif
 

@@ -1017,11 +1017,15 @@ Scheme_Object *scheme_make_syntax_compiled(int idx, Scheme_Object *data)
   return v;  
 }
 
-static Scheme_Object *link_module_variable(Scheme_Object *modname,
+static Scheme_Object *link_module_variable(Scheme_Object *modidx,
 					   Scheme_Object *varname,
 					   Link_Info *info)
 {
+  Scheme_Object *modname;
   Scheme_Env *menv;
+
+  /* If it's a name id, resolve the name. */
+  modname = scheme_module_resolve(modidx);
 
   menv = scheme_module_access(modname, info);
   
@@ -1830,20 +1834,19 @@ static void check_unbound(char *when, Scheme_Object *form, Scheme_Comp_Env *env)
     scheme_wrong_syntax("#%unbound", NULL, form, NULL);
 
   if (env->genv->module) {
-    Scheme_Object *modname, *symbol = c;
+    Scheme_Object *modidx, *symbol = c;
     Scheme_Env *home;
 
-    modname = scheme_stx_module_name(&symbol, env->genv->phase, &home);
-    if (modname) {
-      if (SAME_OBJ(modname, env->genv->module->modname))
-	modname = NULL;
+    modidx = scheme_stx_module_name(&symbol, env->genv->phase, &home);
+    if (modidx) {
+      /* If it's an access path, resolve it: */
+      if (env->genv->module
+	  && SAME_OBJ(scheme_module_resolve(modidx), env->genv->module->modname))
+	modidx = NULL;
     }
 
-    if (modname || !scheme_lookup_in_table(env->genv->toplevel, (const char *)SCHEME_STX_SYM(c))) {
-      symbol = c;
-      modname = scheme_stx_module_name(&symbol, env->genv->phase, &home);
+    if (modidx || !scheme_lookup_in_table(env->genv->toplevel, (const char *)SCHEME_STX_SYM(c)))
       scheme_wrong_syntax(when, NULL, c, "unbound variable in module");
-    }
   }
 }
 

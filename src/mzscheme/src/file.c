@@ -364,9 +364,9 @@ void scheme_init_file(Scheme_Env *env)
 						       "current-library-collection-paths",
 						       MZCONFIG_COLLECTION_PATHS),
 			     env);
-  scheme_add_global_constant("current-require-relative-collection",
+  scheme_add_global_constant("current-load-relative-collection",
 			     scheme_register_parameter(current_require_relative_collection,
-						       "current-require-relative-collection",
+						       "current-load-relative-collection",
 						       MZCONFIG_REQUIRE_COLLECTION),
 			     env);
 #endif

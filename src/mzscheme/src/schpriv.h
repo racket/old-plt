@@ -1437,6 +1437,10 @@ void scheme_shadow(Scheme_Env *env, Scheme_Object *n, int stxtoo);
 /*                              modules                                   */
 /*========================================================================*/
 
+/* A module access path (or "idx") is a pair: sexp * symbol-or-#f
+   The symbol is the resolved module name, or #f if it's not
+   yet resolved. */
+
 typedef struct Scheme_Module
 {
   Scheme_Type type; /* scheme_module_type */
@@ -1444,19 +1448,21 @@ typedef struct Scheme_Module
 
   Scheme_Object *modname;
 
-  Scheme_Object *et_imports; /* list of module names */
-  Scheme_Object *imports; /* list of module names */
+  Scheme_Object *et_imports; /* list of module access paths */
+  Scheme_Object *imports;    /* list of module access paths */
 
   Scheme_Object *body;
   Scheme_Object *et_body;
 
-  Scheme_Object **exports;
-  Scheme_Object **export_srcs;
-  Scheme_Object **export_src_names;
+  Scheme_Object **exports;          /* symbols (extenal names) */
+  Scheme_Object **export_srcs;      /* module access paths, #f for self */
+  Scheme_Object **export_src_names; /* symbols (original internal names) */
   int num_exports;
-  int num_var_exports; /* non-syntax listed first in exports */
-  Scheme_Object **indirect_exports;
+  int num_var_exports;              /* non-syntax listed first in exports */
+  Scheme_Object **indirect_exports; /* symbols (internal names) */
   int num_indirect_exports;
+
+  Scheme_Object *self_modidx;
 
   Scheme_Hash_Table *accessible;
 } Scheme_Module;
@@ -1466,10 +1472,14 @@ Scheme_Object *scheme_sys_wraps(Scheme_Comp_Env *env);
 Scheme_Env *scheme_new_module_env(Scheme_Env *env, Scheme_Module *m);
 int scheme_is_module_env(Scheme_Comp_Env *env);
 
+Scheme_Object *scheme_module_resolve(Scheme_Object *modidx);
 Scheme_Module *scheme_module_load(Scheme_Object *modname, Scheme_Env *env);
 Scheme_Env *scheme_module_access(Scheme_Object *modname, Scheme_Env *env);
+
 void scheme_check_accessible_in_module(Scheme_Env *env, Scheme_Object *symbol, Scheme_Object *stx);
 Scheme_Object *scheme_module_syntax(Scheme_Object *modname, Scheme_Env *env, Scheme_Object *name);
+
+Scheme_Object *scheme_make_modidx(Scheme_Object *path, Scheme_Object *resolved);
 
 /*========================================================================*/
 /*                         errors and exceptions                          */

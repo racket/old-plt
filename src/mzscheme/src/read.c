@@ -1829,6 +1829,18 @@ static Scheme_Object *read_compact(CPort *port,
 	}
       }
       break;
+    case CPT_MODULE_INDEX:
+	{
+	  Scheme_Object *path;
+
+	  l = read_compact_number(port); /* symtab index */
+	  path = read_compact(port, ht, symtab, 0 CURRENTPROCARG);
+
+	  v = scheme_make_modidx(path, scheme_false);
+
+	  symtab[l] = v;
+	}
+	break;
     case CPT_SMALL_LOCAL_START:
     case CPT_SMALL_LOCAL_UNBOX_START:
       {

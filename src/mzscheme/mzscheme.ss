@@ -1653,17 +1653,15 @@
 			(lambda () (load name))
 			(lambda () (current-directory orig))))))))))
 
-  (define-values (load-relative load-relative-extension)
-    (let ([mk
-	   (lambda (load name)
-             (lambda (path)
-               (unless (and (string? path) (or (relative-path? path) (absolute-path? path)))
-                 (raise-type-error name "pathname string" path))
-               (if (complete-path? path)
-		   (load path)
-		   (let ([dir (current-load-relative-directory)])
-           	     (load (if dir (path->complete-path path dir) path))))))])
-      (values (mk load 'load-relative) (mk load-extension 'load-relative-extension))))
+  (define (-load load name path)
+    (unless (and (string? path) (or (relative-path? path) (absolute-path? path)))
+      (raise-type-error name "pathname string" path))
+    (if (complete-path? path)
+	(load path)
+	(let ([dir (current-load-relative-directory)])
+	  (load (if dir (path->complete-path path dir) path)))))
+  (define (load-relative path) (-load load 'load-relative path))
+  (define (load-relative-extension path) (-load load-extension 'load-relative-extension path))
   
   (define path-list-string->path-list
     (let ((r (regexp (let ((sep (case (system-type) 
@@ -1726,6 +1724,170 @@
 	    (let ([p (path->complete-path program)])
 	      (and (file-exists? p) (found-exec p)))))))
 
+  ;; ------------------------------ Collections ------------------------------
+
+  (define (-check-relpath who s)
+    (unless (string? s)
+      (raise-type-error who "string" s))
+    (unless (relative-path? s)
+      (raise (make-exn:i/o:filesystem
+	      (string->immutable-string
+	       (format "~a: invalid relative path: ~s" who s))
+	      (current-continuation-marks) s 'ill-formed-path))))
+
+  (define (-check-collection who collection collection-path)
+    (-check-relpath who collection) 
+    (for-each (lambda (p) (-check-relpath who p)) collection-path))
+  
+  (define (-find-col who collection collection-path)
+    (let ([all-paths (current-library-collection-paths)])
+      (let loop ([paths all-paths])
+	(if (null? paths)
+	    (raise
+	     (make-exn:i/o:filesystem
+	      (string->immutable-string
+	       (format "~a: collection not found: ~s in any of: ~s" 
+		       who collection all-paths))
+	      (current-continuation-marks)
+	      collection
+	      #f))
+	    (let ([dir (build-path (car paths) collection)])
+	      (if (directory-exists? dir)
+		  (let* ([cpath (apply build-path dir collection-path)])
+		    (if (directory-exists? cpath)
+			cpath
+			(let loop ([p dir][l collection-path][c collection])
+			  (let ([np (build-path p (car l))]
+				[nc (build-path c (car l))])
+			    (if (directory-exists? np)
+				(loop np (cdr l) nc)
+				(raise
+				 (make-exn:i/o:filesystem
+				  (string->immutable-string
+				   (format "require-library: collection ~s does not have sub-collection: ~s in: ~s"
+					   c (car l) p))
+				  (current-continuation-marks)
+				  nc
+				  #f)))))))
+		  (loop (cdr paths))))))))
+
+  (define -core-load/use-compiled
+    (let ([re:suffix (regexp "\\..?.?.?$")]
+	  [resolve (lambda (s)
+		     (if (complete-path? s)
+			 s
+			 (let ([d (current-load-relative-directory)])
+			   (if d (path->complete-path s d) s))))]
+	  [date>=?
+	   (lambda (a bm)
+	     (let ([am (with-handlers ([not-break-exn? (lambda (x) #f)])
+			 (file-or-directory-modify-seconds a))])
+	       (or (and (not bm) am) (and am bm (>= am bm)))))])
+      (case-lambda 
+       [(path) (-core-load/use-compiled path #f)]
+       [(path none-there)
+	(unless (and (string? path) (or (relative-path? path) (absolute-path? path)))
+	  (raise-type-error 'load/use-compiled "pathname string" path))
+	(let*-values ([(path) (resolve path)]
+		      [(base file dir?) (split-path path)]
+		      [(base) (if (eq? base 'relative) 'same base)]
+		      [(mode) (use-compiled-file-kinds)]
+		      [(comp?) (not (eq? mode 'none))])
+	  (let* ([get-so (lambda (file)
+			   (if comp?
+			       (build-path base
+					   "compiled"
+					   "native"
+					   (system-library-subpath)
+					   (regexp-replace 
+					    re:suffix file
+					    (case (system-type)
+					      [(windows) ".dll"]
+					      [else ".so"])))
+			       #f))]
+		 [ok-kind? (lambda (file)
+			     (or (eq? mode 'all)
+				 (with-handlers ([not-break-exn? void])
+				   (let-values ([(p) (open-input-file file)])
+				     (dynamic-wind
+					 void
+					 (lambda ()
+					   (not (and (char=? #\' (read-char p))
+						     (char=? #\e (read-char p))
+						     (char=? #\space (read-char p)))))
+					 (lambda () (close-input-port p)))))))]
+		 [zo (and comp?
+			  (build-path base
+				      "compiled"
+				      (regexp-replace re:suffix file ".zo")))]
+		 [so (get-so file)]
+		 [_loader-so (get-so "_loader.ss")]
+		 [path-d (with-handlers ([not-break-exn? (lambda (x) #f)])
+			   (file-or-directory-modify-seconds path))]
+		 [with-dir (lambda (t) 
+			     (parameterize ([current-load-relative-directory 
+					     (if (string? base) base (current-directory))])
+			       (t)))])
+	    (cond
+	     [(and (date>=? _loader-so path-d)
+		   (let ([getter (load-extension _loader-so)])
+		     (getter (string->symbol (regexp-replace re:suffix file "")))))
+	      => (lambda (loader) (with-dir loader))]
+	     [(date>=? so path-d)
+	      (with-dir (lambda () ((current-load-extension) so)))]
+	     [(and (date>=? zo path-d) (ok-kind? zo))
+	      (with-dir (lambda () ((current-load) zo)))]
+	     [(and (not path-d) none-there)
+	      (none-there)]
+	     [else (load path)])))])))
+
+  (define (collection-path collection . collection-path) 
+    (-check-collection 'collection-path collection collection-path)
+    (-find-col 'collection-path collection collection-path))
+
+  (define (load-relative-library file . collection-path)
+    (-check-relpath 'load-relative-library file) 
+    (-check-collection 'load-relative-library file collection-path)
+    (let ([cp (current-load-relative-collection)])
+      (if cp
+	  (apply load-library file (append cp collection-path))
+	  (raise
+	   (make-exn:i/o:filesystem
+	    (string->immutable-string
+	     (format "load-relative-library: there is no current collection for library: ~s~a"
+		     file
+		     (if (null? collection-path)
+			 ""
+			 (format " in sub-collection: ~s" collection-path))))
+	    (current-continuation-marks)
+	    (apply build-path file collection-path)
+	    #f)))))
+
+  (define load-library
+    (case-lambda
+     [(file) (load-library file "mzlib")]
+     [(file collection . collection-path)
+      (-check-relpath 'load-library file) (-check-collection 'load-library collection collection-path)
+      (let* ([c (-find-col 'load-library collection collection-path)]
+	     [p (build-path c file)])
+	(parameterize ([current-load-relative-collection
+			(cons collection collection-path)])
+	  (-core-load/use-compiled
+	   p
+	   (lambda ()
+	     (raise
+	      (make-exn:i/o:filesystem
+	       (string->immutable-string
+		(format "load-library: collection ~s does not have library: ~s in: ~s"
+			(apply build-path collection collection-path) file c))
+	       (current-continuation-marks)
+	       p
+	       #f))))))]))
+
+  (define (load/use-compiled f) (-core-load/use-compiled f #f))
+
+  ;; -------------------------------------------------------------------------
+
   (define (simple-return-primitive? v)
     (unless (primitive? v) (raise-type-error 'simple-return-primitive? "primitive-procedure" v))
     (not (memq (inferred-name v) '(call-with-values 
@@ -1744,6 +1906,7 @@
 	  load/cd
 	  load-relative load-relative-extension
 	  path-list-string->path-list find-executable-path
+	  collection-path load-library load-relative-library load/use-compiled
 	  simple-return-primitive? port? not-break-exn?))
 
 ;;----------------------------------------------------------------------
@@ -1757,3 +1920,14 @@
 (import-for-syntax .misc)
 (import-for-syntax .stxcase-scheme)
 (import-for-syntax .stx)
+
+(current-library-collection-paths
+ (path-list-string->path-list
+  (or (getenv "PLTCOLLECTS") "")
+  (or (ormap
+       (lambda (f) (let ([p (f)]) (and p (directory-exists? p) (list p))))
+       (list
+	(lambda () (let ((v (getenv "PLTHOME")))
+		     (and v (build-path v "collects"))))
+	(lambda () (find-executable-path program "collects")))) 
+      null)))

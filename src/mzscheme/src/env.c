@@ -444,13 +444,14 @@ Scheme_Env *scheme_make_empty_env(void)
 
 static Scheme_Env *make_env(Scheme_Env *base, int semi)
 {
-  Scheme_Hash_Table *toplevel, *syntax, *module_registry, *modules;
+  Scheme_Hash_Table *toplevel, *syntax;
+  Scheme_Hash_Table *module_registry, *modules;
   Scheme_Env *env;
 
   toplevel = scheme_hash_table(GLOBAL_TABLE_SIZE, SCHEME_hash_ptr, 1, 0);
   toplevel->with_home = 1;
 
-  if (semi) {
+  if (semi > 0) {
     syntax = NULL;
     modules = NULL;
     module_registry = NULL;
@@ -461,7 +462,10 @@ static Scheme_Env *make_env(Scheme_Env *base, int semi)
       module_registry = base->module_registry;
     } else {
       modules = scheme_hash_table(GLOBAL_TABLE_SIZE, SCHEME_hash_ptr, 0, 0);
-      module_registry = scheme_hash_table(GLOBAL_TABLE_SIZE, SCHEME_hash_ptr, 0, 0);
+      if (semi < 0)
+	module_registry = NULL;
+      else
+	module_registry = scheme_hash_table(GLOBAL_TABLE_SIZE, SCHEME_hash_ptr, 0, 0);
     }
   }
 
@@ -470,7 +474,7 @@ static Scheme_Env *make_env(Scheme_Env *base, int semi)
 
   env->toplevel = toplevel;
 
-  if (!semi) {
+  if (semi < 1) {
     env->syntax = syntax;
     env->modules = modules;
     env->module_registry = module_registry;
@@ -510,10 +514,11 @@ void scheme_prepare_exp_env(Scheme_Env *env)
 {
   if (!env->exp_env) {
     Scheme_Env *eenv;
-    eenv = make_env(NULL, 0);
+    eenv = make_env(NULL, -1);
     eenv->phase = env->phase + 1;
 
     eenv->module = env->module;
+
     eenv->module_registry = env->module_registry;
 
     env->exp_env = eenv;
@@ -966,7 +971,7 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
   Scheme_Comp_Env *frame;
   int j = 0, p = 0;
   Scheme_Bucket *b;
-  Scheme_Object *val, *modname, *srcsym;
+  Scheme_Object *val, *modidx, *modname, *srcsym;
   Scheme_Env *genv, *home_env;
   long phase;
 
@@ -1032,9 +1037,13 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
   }
 
   srcsym = symbol;
-  modname = scheme_stx_module_name(&symbol, phase, &home_env);
-  if (modname) {
+  modidx = scheme_stx_module_name(&symbol, phase, &home_env);
+  if (modidx) {
+    /* If it's an access path, resolve it: */
+    modname = scheme_module_resolve(modidx);
+
     if (env->genv->module && SAME_OBJ(modname, env->genv->module->modname)) {
+      modidx = NULL;
       modname = NULL;
       genv = env->genv;
     } else {
@@ -1046,8 +1055,10 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
 	return NULL;
       }
     }
-  } else
+  } else {
     genv = env->genv;
+    modname = NULL;
+  }
 
   if (!(flags & SCHEME_GLOB_ALWAYS_REFERENCE)) {
     /* Try syntax table: */
@@ -1070,23 +1081,26 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
   if (modname)
     scheme_check_accessible_in_module(genv, symbol, srcsym);
 
-  if ((flags & SCHEME_NULL_FOR_UNBOUND) && !modname)
-    return NULL;
-
-  b = scheme_bucket_from_table(genv->toplevel, (char *)SCHEME_STX_SYM(symbol));
-
-  if (modname && !b->val) {
-    if (SAME_OBJ(srcsym, symbol) || SAME_OBJ(SCHEME_STX_SYM(srcsym), symbol))
-      symbol = NULL;
-    scheme_wrong_syntax("module", symbol, srcsym, "unbound variable");
-    return NULL;
-  }
-
   if (modname && (flags & SCHEME_SETTING)) {
     if (SAME_OBJ(srcsym, symbol) || SAME_OBJ(SCHEME_STX_SYM(srcsym), symbol))
       symbol = NULL;
     scheme_wrong_syntax("set!", symbol, srcsym, "cannot mutate imported variable");
   }
+
+  if (!modname && (flags & SCHEME_NULL_FOR_UNBOUND))
+    return NULL;
+
+  if (modname && !SAME_OBJ(modidx, modname)) {
+    /* Create a module variable reference, so that idx is preserved: */
+    val = scheme_alloc_object();
+    val->type = scheme_module_variable_type;
+    SCHEME_PTR1_VAL(val) = modidx;
+    SCHEME_PTR2_VAL(val) = SCHEME_STX_SYM(symbol);
+    
+    return val;
+  }
+
+  b = scheme_bucket_from_table(genv->toplevel, (char *)SCHEME_STX_SYM(symbol));
 
   if ((flags & SCHEME_ELIM_CONST) && b && b->val 
       && (((Scheme_Bucket_With_Flags *)b)->flags & GLOB_IS_CONST)

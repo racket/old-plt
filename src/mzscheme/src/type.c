@@ -151,7 +151,6 @@ scheme_init_type (Scheme_Env *env)
   set_name(scheme_regexp_type, "<regexp>");
   set_name(scheme_rename_table_type, "<rename-table>");
 
-  set_name(scheme_unit_type, "<unit>");
   set_name(scheme_compiled_unit_type, "<unit-code>");
   set_name(scheme_unit_compound_data_type, "<compound-unit-code>");
   set_name(scheme_invoke_unit_data_type, "<invoke-unit-code>");
@@ -171,6 +170,7 @@ scheme_init_type (Scheme_Env *env)
   set_name(scheme_id_macro_type, "<id-macro>");
 
   set_name(scheme_module_type, "<module-code>");
+  set_name(scheme_module_index_type, "<module-index>");
 
   set_name(scheme_reserved_1_type, "<reserved1>");
   set_name(scheme_reserved_3_type, "<reserved3>");

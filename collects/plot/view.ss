@@ -50,8 +50,7 @@
         
         get-x-label
         get-y-label
-        get-title
-        
+        get-title 
         start-plot 
         finish-plot
         
@@ -244,7 +243,9 @@
       
       
       
-      (inherit start-plot set-plot-environment finish-plot get-x-min get-x-max get-y-min get-y-max get-renderer)
+      (inherit start-plot set-plot-environment finish-plot 
+               get-x-min get-x-max get-y-min get-y-max get-renderer 
+               get-x-label get-y-label get-title)
       (define (plot)
         (start-plot)
         (set-plot-environment (get-x-min) (get-x-max) (get-y-min) (get-y-max) 0 1)

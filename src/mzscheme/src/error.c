@@ -1617,9 +1617,11 @@ static Scheme_Object *raise_syntax_error(int argc, Scheme_Object *argv[])
   if (scheme_proper_list_length(argv[0]) == 3) {
     if (SCHEME_SYMBOLP(SCHEME_CAR(argv[0]))) {
       sl = SCHEME_CDR(argv[0]);
-      if (SCHEME_SYMBOLP(SCHEME_CAR(argv[0]))) {
+      if (SCHEME_SYMBOLP(SCHEME_CAR(argv[0]))
+	  || SCHEME_FALSEP(SCHEME_CAR(argv[0]))) {
 	sl = SCHEME_CADR(sl);
 	if (!SCHEME_SYMBOLP(sl)
+	    && !SCHEME_FALSEP(sl)
 	    && !SAME_TYPE(SCHEME_TYPE(sl), scheme_module_index_type))
 	  sl = NULL;
 	else

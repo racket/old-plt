@@ -18,7 +18,7 @@
 ;(c) Dorai Sitaram, 
 ;http://www.ccs.neu.edu/~dorai/scmxlate/scmxlate.html
 
-(define *tex2page-version* "2004-08-31")
+(define *tex2page-version* "2004-09-05")
 
 (define *tex2page-website*
   "http://www.ccs.neu.edu/~dorai/tex2page/tex2page-doc.html")
@@ -3698,6 +3698,7 @@
 (define output-navigation-bar
   (lambda ()
     (let* ((first-page? (= *html-page-count* 0))
+           (last-page-not-determined? (< *last-page-number* 0))
            (last-page? (= *html-page-count* *last-page-number*))
            (toc-page? (and *toc-page* (= *html-page-count* *toc-page*)))
            (index-page? (and *index-page* (= *html-page-count* *index-page*)))
@@ -3721,7 +3722,7 @@
                  *html-page-suffix*
                  (number->string (+ *html-page-count* 1))
                  *output-extension*)))))
-      (unless (and first-page? last-page?)
+      (unless (and first-page? (or last-page? last-page-not-determined?))
         (do-end-para)
         (emit "<div align=right class=navigation><i>[")
         (emit *navigation-sentence-begin*)
@@ -3930,7 +3931,8 @@
         "\\end occurred inside a group at level "
         (length *tex-env*)))
     (perform-postludes)
-    (unless (>= *last-page-number* 0) (flag-missing-piece 'last-page))
+    (unless (or (>= *last-page-number* 0) (= *html-page-count* 0))
+      (flag-missing-piece 'last-page))
     (!last-page-number *html-page-count*)
     (write-aux `(!last-page-number ,*last-page-number*))
     (do-end-page)

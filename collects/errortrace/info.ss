@@ -5,9 +5,6 @@
       "Errortrace is a Poor Man's stack-trace-on-exceptions/profiler for "
       "MzScheme. Errortrace is not a complete debugger, and a real debugger "
       "in DrScheme is imminent; meanwhile, using errotrace might be better "
-      "than nothing. See the "
-      `(a ((href ,(format "file:~a" (build-path (collection-path "errortrace") "doc.txt"))))
-	  "doc.txt")
-      " file for more information.")]
+      "than nothing.")]
     [(name) "Errortrace"]
     [else (fail)]))

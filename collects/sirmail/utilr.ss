@@ -5,7 +5,8 @@
 	   (lib "mred-sig.ss" "mred")
 	   (lib "qp-sig.ss" "net")
 	   (lib "base64-sig.ss" "net")
-	   (lib "etc.ss"))
+	   (lib "etc.ss")
+	   (lib "string.ss"))
 
   (require "sirmails.ss")
 
@@ -23,38 +24,39 @@
       (define crlf (string #\return #\linefeed))
 
       (define (split s re)
-	(let loop ([offset 0][accum null])
-	  (let ([m (regexp-match-positions re s offset)])
-	    (if m
-		(let ([start (caar m)]
-		      [end (cdar m)])
-		  (loop end (cons (substring s offset start) accum)))
-		(reverse!
-		 (cons (substring s offset (string-length s))
-		       accum))))))
+	(regexp-split re s))
 
       (define (splice l sep)
 	(if (null? l)
-	    ""
-	    (let ([p (open-output-string)])
+	    #""
+	    (let ([p (open-output-bytes)])
 	      (let loop ([l l])
-		(display (car l) p)
+		(write-bytes (car l) p)
 		(unless (null? (cdr l))
 		  (display sep p)
 		  (loop (cdr l))))
-	      (get-output-string p))))
+	      (get-output-bytes p))))
       
       (define (split-crlf s)
-	(split s (regexp crlf)))
+	(split s #rx#"\r\n"))
 
       (define (split-lf s)
-	(split s (regexp (string #\linefeed))))
+	(split s #rx#"\n"))
 
       (define (crlf->lf s)
-	(splice (split-crlf s) (string #\linefeed)))
+	(splice (split-crlf s) #"\n"))
 
       (define (lf->crlf s)
-	(splice (split-lf s) crlf))
+	(splice (split-lf s) #"\r\n"))
+
+      (define (string-crlf->lf s)
+	(regexp-replace* #rx"\r\n" s "\n"))
+
+      (define (string-lf->crlf s)
+	(regexp-replace* #rx"\n" s "\r\n"))
+
+      (define (string-split-crlf s)
+	(regexp-split #rx"\r\n" s))
 
       (define (enumerate n)
 	(let loop ([n n][a null])
@@ -71,19 +73,7 @@
 		  (loop (cdr l) (add1 pos))))))
 
       (define (string->regexp s)
-	(regexp
-	 (list->string
-	  (apply
-	   append
-	   (map
-	    (lambda (c)
-	      (cond 
-	       [(memq c '(#\$ #\| #\\ #\[ #\] #\. #\* #\? #\+ #\( #\) #\^))
-		(list #\\ c)]
-	       [(char-alphabetic? c)
-		(list #\[ (char-upcase c) (char-downcase c) #\])]
-	       [else (list c)]))
-	    (string->list s))))))
+	(regexp-quote s))
 
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -225,23 +215,23 @@
       ;;  Decoding `from' names                                  ;;
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-      (define re:iso (regexp "^(.*)=[?][iI][sS][oO]-8859-1[?]([qQbB])[?](.*?)[?]=(.*)$"))
+      (define re:iso #rx#"^(.*)=[?][iI][sS][oO]-8859-1[?]([qQbB])[?](.*?)[?]=(.*)$")
       (define (parse-iso-8859-1 s)
 	(and s
 	     (let ([m (regexp-match re:iso s)])
 	       (if m
-		   (let ([s ((if (member (caddr m) '("q" "Q"))
+		   (let ([s ((if (member (caddr m) '(#"q" #"Q"))
 				 ;; quoted-printable; strip newline:
 				 (lambda (s)
 				   (let ([s (qp-decode s)])
-				     (substring s 0 (sub1 (string-length s)))))
+				     (subbytes s 0 (sub1 (bytes-length s)))))
 				 ;; base64:
 				 base64-decode)
 			     (cadddr m))])
 		     (parse-iso-8859-1
 		      (string-append
-		       (cadr m)
-		       s
-		       (cadddr (cdr m)))))
+		       (bytes->string/utf-8 (cadr m))
+		       (bytes->string/latin-1 s)
+		       (bytes->string/utf-8 (cadddr (cdr m))))))
 		   s)))))))
 

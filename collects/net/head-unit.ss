@@ -17,6 +17,9 @@
       (define re:continue (regexp "^[ \t\v]"))
       
       (define (validate-header s)
+	(let ([m (regexp-match #rx"[^\0-\277]" s)])
+	  (when m
+	    (error 'validate-header "non-Latin-1 character in string: ~a" (car m))))
 	(let ([len (string-length s)])
 	  (let loop ([offset 0])
 	    (cond

@@ -214,8 +214,8 @@
 
       (define mime-analyze
         (opt-lambda (input (part #f))
-          (let* ((iport (if (string? input)
-                            (open-input-string input)
+          (let* ((iport (if (bytes? input)
+                            (open-input-bytes input)
                             input))
                  (headers (get-headers iport))
                  (msg (if part

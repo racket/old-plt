@@ -410,7 +410,8 @@
 	(let ([file (build-path mailbox-dir (format "~a" uid))])
 	  (with-input-from-file file
 	    (lambda ()
-	      (read-string (file-size file))))))
+	      (bytes->string/latin-1
+	       (read-bytes (file-size file)))))))
       
       ;; gets cached body or downloads from server (and caches)
       (define (get-body uid)
@@ -436,7 +437,7 @@
 				 '(body)))])
 		(status "Saving message ~a..." uid)
 		(with-output-to-file file
-		  (lambda () (display body))
+		  (lambda () (write-bytes body))
 		  'truncate)
                 
 		(set-message-downloaded?! v #t)
@@ -444,7 +445,7 @@
 	  (begin0
             (with-input-from-file file
               (lambda ()
-                (read-string (file-size file))))
+                (read-bytes (file-size file))))
             (status ""))))
       
       ;; Checks that `mailbox' is synced with the server
@@ -1251,7 +1252,8 @@
                  (set-current-selected #f)
                  (let* ([h (get-header uid)]
 			[small-h (get-viewable-headers h)])
-                   (send e insert (crlf->lf small-h)
+                   (send e insert 
+			 (string-crlf->lf small-h)
                          0 'same #f)
 		   ;; Do the body (possibly mime)
 		   (let ([body (as-background 
@@ -1264,7 +1266,7 @@
 				   (let ([start (send e last-position)])
 				     (send e set-position start)
 				     (send e insert 
-					   (if (string? body) (crlf->lf body) body)
+					   body
 					   start 'same #f)
 				     (let ([end (send e last-position)])
 				       (delta e start end))))])
@@ -2164,7 +2166,10 @@
                                                                                    (exn-message x)
                                                                                    x))))
 								    #f))])
-				   (mime:mime-analyze (string-append header body)))])
+				   (mime:mime-analyze (bytes-append (string->bytes/latin-1 
+								     header 
+								     (char->integer #\?))
+								    body)))])
 	      (let* ([ent (mime:message-entity msg)]
                      [slurp-stream (lambda (ent o)
                                      (with-handlers ([not-break-exn? (lambda (x)
@@ -2175,9 +2180,9 @@
                                                                                     x)))])
                                        ((mime:entity-body ent) o)))]
 		     [slurp (lambda (ent)
-                              (let ([o (open-output-string)])
+                              (let ([o (open-output-bytes)])
                                 (slurp-stream ent o)
-                                (get-output-string o)))]
+                                (get-output-bytes o)))]
 		     [generic (lambda (ent)
 				(let ([fn (or (let ([disp (mime:entity-disposition ent)])
 						(and (not (equal? "" (mime:disposition-filename disp)))
@@ -2208,7 +2213,7 @@
 							  (set! content (slurp ent)))
 							(with-output-to-file fn
 							  (lambda ()
-							    (display content))
+							    (write-bytes content))
 							  'truncate/replace))))
 						  #f #f)
 					    (send t change-style url-delta s (sub1 e))))
@@ -2240,15 +2245,19 @@
                                      void)
                                     (unless text-obj
                                       ;; Copy text in target to `insert':
-                                      (insert (lf->crlf (send target get-text))
-                                              void)))]
+                                      (insert (send target get-text) void)))]
                                  [else
-                                  (insert (slurp ent)
-                                          (lambda (t s e)
-                                            (when (SHOW-URLS) (hilite-urls t s e))
-                                            ;;(handle-formatting e) ; too slow
-                                            (if (eq? disp 'error)
-                                                (send t change-style red-delta s e))))])]
+				  (let ([bytes->string
+					 (cond
+					  [(equal? "UTF-8" (mime:entity-charset ent))
+					   bytes->string/utf-8]
+					  [else bytes->string/latin-1])])
+				    (insert (bytes->string (crlf->lf (slurp ent)) #\?)
+					    (lambda (t s e)
+					      (when (SHOW-URLS) (hilite-urls t s e))
+					      ;;(handle-formatting e) ; too slow
+					      (if (eq? disp 'error)
+						  (send t change-style red-delta s e)))))])]
                               [else
                                (generic ent)]))]
                   [(image) 
@@ -2256,33 +2265,33 @@
 		     (let ([tmp-file (make-temporary-file "sirmail-mime-image-~a")])
 		       (call-with-output-file tmp-file
 			 (lambda (port)
-			   (display (get) port))
+			   (write-bytes (get) port))
 			 'truncate)
 		       (unless no-mime-inline?
 			 (let ([bitmap (make-object bitmap% tmp-file)])
 			   (when (send bitmap ok?)
 			     (insert (make-object image-snip% bitmap) void)
-			     (insert "\r\n" void))
+			     (insert "\n" void))
 			   (delete-file tmp-file)))))]
 		  [(multipart message)
 		   (map (lambda (msg)
 			  (unless (eq? (mime:entity-type ent) 'message)
-			    (insert (format "~a\r\n" (make-string sep-width #\-))
+			    (insert (format "~a\n" (make-string sep-width #\-))
 				    (lambda (t s e) (send t change-style green-delta s (sub1 e)))))
 			  (unless (null? (mime:message-fields msg))
 			    (insert (get-viewable-headers
 				     (let loop ([l (mime:message-fields msg)])
 				       (if (null? l)
-					   "\r\n"
+					   "\n"
 					   (string-append (car l)
-							  "\r\n"
+							  "\n"
 							  (loop (cdr l))))))
 				    void))
 			  (mime-loop msg))
 		   (mime:entity-parts ent))]
 		  [else (generic ent)])))
 	    ;; Non-mime mode:
-	    (insert body void)))
+	    (insert (bytes->string/latin-1 (crlf->lf body)) void)))
 
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       ;;  Biff                                                   ;;
@@ -2371,9 +2380,11 @@
 	  (when (eq? selected current-selected)
 	    (let* ([uid (send selected user-data)]
 		   [h (get-header uid)]
-		   [body (let ([e (send message get-editor)]
-			       [start (string-length (crlf->lf (get-viewable-headers h)))])
-			   (send e get-text start 'eof #t #t))])
+		   [rendered-body (let ([e (send message get-editor)]
+					[start (string-length 
+						(string-crlf->lf 
+						 (get-viewable-headers h)))])
+				    (send e get-text start 'eof #t #t))])
 	      (start-new-mailer
 	       #f
 	       (or (extract-field "Reply-To" h) 
@@ -2416,16 +2427,14 @@
 		     [refs (extract-field "References" h)])
 		 (format "~a~a"
 			 (if id
-			     (format "In-Reply-To: ~a~a" id crlf)
+			     (format "In-Reply-To: ~a\r\n" id)
 			     "")
 			 (if (or refs id)
-			     (format "References: ~a~a"
+			     (format "References: ~a\r\n"
 				     (cond
 				      [(and refs id)
-				       (format "~a~a~a~a~a"
-					       refs crlf #\tab #\tab id)]
-				      [else (or refs id)])
-				     crlf)
+				       (format "~a\r\n\t\t~a" refs id)]
+				      [else (or refs id)]))
 			     "")))
 	       (if quote-in-reply?
                    (let ([date (parse-iso-8859-1 (extract-field "Date" h))]
@@ -2434,16 +2443,15 @@
                             (let ([from (parse-iso-8859-1 (extract-field "From" h))])
                               (car (extract-addresses from 'name))))])
                      (string-append
-                      (cond
-                        [(and date name)
-                         (format "At ~a, ~a wrote:~a" date name crlf)]
-                        [name
-                         (format "Quoting ~a:~a" name crlf)]
-                        [else
-                         (format "Quoting <unknown>:~a" crlf)])
+		      (cond
+		       [(and date name)
+			(format "At ~a, ~a wrote:\r" date name)]
+		       [name
+			(format "Quoting ~a:\r" name)]
+		       [else
+			(format "Quoting <unknown>:\r")])
                       "> "
-                      (let* ([s (splice (split body (string #\linefeed))
-                                        (string-append (string #\linefeed) "> "))]
+                      (let* ([s (regexp-replace #rx"\n" rendered-body "\n> ")]
                              [len (string-length s)])
                         (if (and (>= len 2)
                                  (string=? "> " (substring s (- len 2) len)))
@@ -2473,12 +2481,14 @@
 	       (insert-field
 		"Content-Type" "message/rfc822"
 		(insert-field 
-		 "Content-Transfer-Encoding" "7bit"
+		 "Content-Transfer-Encoding" "8bit"
 		 (insert-field
 		  "Content-Disposition" "inline"
 		  empty-header)))
 	       (lambda ()
-		 (string-append h body))))))))
+		 (split-crlf
+		  (bytes-append (string->bytes/latin-1 h (char->integer #\?))
+				body)))))))))
       
       (define (start-new-mailer file to cc subject other-headers body enclosures)
 	(start-new-window

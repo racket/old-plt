@@ -8,8 +8,9 @@
 	   (lib "mred-sig.ss" "mred")
            (lib "framework.ss" "framework"))
 
-  (require (lib "list.ss"))
-  (require (lib "file.ss")
+  (require (lib "list.ss")
+	   (lib "file.ss")
+	   (lib "string.ss")
 	   (lib "process.ss"))
 
   (require "sirmails.ss"
@@ -126,15 +127,19 @@
       
       (define-struct enclosure (name            ; identifies enclosure in the GUI
 				subheader       ; header for enclosure
-				data-thunk))    ; gets enclosure data (already encoded)
+				data-thunk))    ; gets enclosure data as bytes (already encoded)
 
       ;; Create a message with enclosures.
       ;;  `header' is a message header created with the head.ss library
-      ;;  `body' is a string with CRLF-delimmited lines
+      ;;  `body-lines' is a list of strings and byte strings
       ;;  `enclosures' is a list of `enclosure' structs
-      (define (enclose header body enclosures)
+      (define (enclose header body-lines enclosures)
 	(if (null? enclosures)
-	    (values header body)
+	    (values (insert-field
+		     "Content-Type"
+		     "text/plain; charset=UTF-8"
+		     header)
+		    body-lines)
 	    (let* ([enclosure-datas
                     (map (lambda (e) ((enclosure-data-thunk e))) enclosures)]
                    [boundary
@@ -142,7 +147,9 @@
                     (let loop ()
                       (let* ([b (format "---~a~a~a-----" (random 10000) (random 10000) (random 10000))]
                              [m (regexp b)])
-                        (if (or (regexp-match-positions m body)
+                        (if (or (ormap (lambda (bl)
+					 (regexp-match-positions m bl))
+				       body-lines)
                                 (ormap
                                  (lambda (enc data)
                                    (or (regexp-match-positions m (enclosure-subheader enc))
@@ -162,27 +169,33 @@
 					     boundary)))
 				   empty-header))])
 		(values (append-headers header mime-header)
-			(string-append
-			 (apply
-			  string-append
+			(append
+			 (list
 			  "This is a multi-part message in MIME format."
-			  crlf "--" boundary crlf
+			  (format "--~a" boundary))
+			 (string-split-crlf
 			  (insert-field
 			   "Content-Type"
-			   "text/plain; charset=us-ascii"
+			   "text/plain; charset=UTF-8"
 			   (insert-field
 			    "Content-Transfer-Encoding"
 			    "7bit"
-			    empty-header))
-			  body
-			  (map
-			   (lambda (enc data)
-			     (string-append
-			      crlf "--" boundary crlf
-			      (enclosure-subheader enc)
-			      data))
-			   enclosures enclosure-datas))
-			 crlf "--" boundary "--" crlf))))))
+			    empty-header)))
+			  body-lines
+			  (apply
+			   append
+			   (map
+			    (lambda (enc data)
+			      (cons
+			       (format "--~a" boundary)
+			       (append
+				(string-split-crlf
+				 (enclosure-subheader enc))
+				data)))
+			    enclosures enclosure-datas))
+			  (list
+			   ""
+			   (format "--~a--" boundary))))))))
 
       (define (get-enclosure-type-and-encoding filename mailer-frame)
         (let ([types '("application/postscript"
@@ -351,7 +364,7 @@
 	  (define-values (smtp-server-to-use smtp-port-to-use)
 	    (parse-server-name (SMTP-SERVER) 25))
           (send-message
-           (lf->crlf (send message-editor get-text))
+           (send message-editor get-text)
            smtp-server-to-use
            smtp-port-to-use
            (map (lambda (i) (send i user-data)) 
@@ -465,11 +478,11 @@
                                            (lambda ()
                                              (let ([content (with-input-from-file file
                                                               (lambda ()
-                                                                (read-string (file-size file))))])
+                                                                (read-bytes (file-size file))))])
                                                (case (string->symbol encoding)
-                                                 [(base64) (base64-encode content)]
-                                                 [(quoted-printable) (qp-encode content)]
-                                                 [(7bit) (lf->crlf content)]))))])
+                                                 [(base64) (split-crlf (base64-encode content))]
+                                                 [(quoted-printable) (split-crlf (qp-encode (lf->crlf content)))]
+                                                 [(7bit) (split-lf (crlf->lf content))]))))])
                                  (send (send i get-editor) insert (enclosure-name enc))
                                  (send i user-data enc)
 				 (let ([p (send mailer-frame get-area-container)])
@@ -552,16 +565,16 @@
             ;; Build message skeleton
 	    (begin
 	      (send message-editor insert "To: ")
-	      (send message-editor insert (crlf->lf to))
+	      (send message-editor insert (string-crlf->lf to))
 	      (send message-editor insert #\newline)
 	      (unless (string=? cc "")
 		(send message-editor insert "CC: ")
-		(send message-editor insert (crlf->lf cc))
+		(send message-editor insert (string-crlf->lf cc))
 		(send message-editor insert #\newline))
 	      (send message-editor insert "Subject: ")
-	      (send message-editor insert (crlf->lf subject))
+	      (send message-editor insert (string-crlf->lf subject))
 	      (send message-editor insert #\newline)
-	      (send message-editor insert (crlf->lf other-headers))
+	      (send message-editor insert (string-crlf->lf other-headers))
 	      (send message-editor insert "X-Mailer: SirMail under MrEd ")
 	      (send message-editor insert (version))
 	      (send message-editor insert " (")
@@ -572,7 +585,7 @@
 	      (send message-editor insert #\newline)
               (send message-editor reset-region (send message-editor last-position) 'end)
 	      (let ([message-start (send message-editor last-position)])
-		(send message-editor insert (crlf->lf body))
+		(send message-editor insert body)
 		(if (string=? to "")
 		    (send message-editor set-position (send message-editor paragraph-end-position 0))
 		    (send message-editor set-position message-start)))))
@@ -616,14 +629,16 @@
                             status-message-clear
                             status-done
                             save-before-killing)
-        (let ([re (regexp (format "~a~a" SEPARATOR crlf))])
+        (let ([re (regexp (format "~a\n" SEPARATOR))])
           (let ([m (regexp-match-positions re message-str)])
             (if m
                 (let ([header (string-append 
-			       (substring message-str 0 (caar m)) 
-			       (build-uptime-field) crlf
+			       (string-lf->crlf (substring message-str 0 (caar m)))
+			       (build-uptime-field) "\r\n"
 			       empty-header)]
-                      [body (substring message-str (cdar m) (string-length message-str))])
+                      [body-lines (regexp-split 
+				   #rx"\n" 
+				   (substring message-str (cdar m) (string-length message-str)))])
                   (validate-header header)
                   (let* ([to* (sm-extract-addresses (extract-field "To" header))]
                          [to (map car to*)]
@@ -655,7 +670,7 @@
                                                (status-message-clear)
                                                (raise x))])
                          (break-ok)
-                         (let-values ([(new-header body) (enclose new-header body enclosures)])
+                         (let-values ([(new-header body-lines) (enclose new-header body-lines enclosures)])
                            (break-bad)
                            (unless (null? enclosures)
                              (status-message-starting))
@@ -671,15 +686,18 @@
                                        (loop (add1 n))
                                        (with-output-to-file fn
                                          (lambda ()
-                                           (display (crlf->lf header))
-                                           (display (crlf->lf body)))))))))
+                                           (display (string-crlf->lf header))
+					   (map (lambda (body-line)
+						  (display body-line)
+						  (newline))
+						body-lines))))))))
                            (break-ok)
                            (smtp-sending-end-of-message break-bad)
                            (smtp-send-message smtp-server
                                               simple-from
                                               tos
                                               new-header
-                                              (split-crlf body)
+                                              body-lines
                                               smtp-port))))
                        save-before-killing))
                   (status-done))

@@ -40,7 +40,12 @@
 
       (define (protect-line l)
 	;; If begins with a dot, add one more
-	(if (or (string=? "" l) (not (char=? #\. (string-ref l 0))))
+	(if (or (equal? l #"")
+		(equal? l "")
+		(and (string? l)
+		     (not (char=? #\. (string-ref l 0))))
+		(and (bytes? l)
+		     (not (= (char->integer #\.) (bytes-ref l 0)))))
 	    l
 	    (string-append "." l)))
 

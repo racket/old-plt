@@ -22,6 +22,9 @@
      split-lf
      crlf->lf
      lf->crlf
+     string-crlf->lf
+     string-lf->crlf
+     string-split-crlf
      enumerate
      find
      string->regexp

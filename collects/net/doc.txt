@@ -521,7 +521,8 @@ EXCEPTIONS -----------------------------------------------------------
 
 PROCEDURES -----------------------------------------------------------
 
-> (smtp-send-message server-string from-string to-list-of-strings header message-list-of-strings [port]) -> void
+> (smtp-send-message server-string from-string to-list-of-strings header
+                     message-list-of-strings/bytes [port]) -> void
 
   The first argument is the IP address of the SMTP server. The
   `from-string' argument specifies the mail address of the sender, and
@@ -529,12 +530,12 @@ PROCEDURES -----------------------------------------------------------
   "To", "CC", and "BCC" recipients). The `header' argument is the
   complete message header, which should already include "From", "To",
   and "CC" fields consistent with the given sender and recipients.
-  the `message-list-of-strings' argument is the body of the message,
-  where each string in the list corresponds to a single line of
-  message text; no string in `message-list-of-strings' should contain
-  a carriage return or newline characters. The optional `port'
-  argument specifies the IP port to use in contacting the SMTP server;
-  the default is 25.
+  the `message-list-of-strings/bytes' argument is the body of the
+  message, where each string or byte string in the list corresponds to
+  a single line of message text; no string in
+  `message-list-of-strings' should contain a carriage return or
+  newline characters. The optional `port' argument specifies the IP
+  port to use in contacting the SMTP server; the default is 25.
 
   See the head package for utilities that construct a message headers
   and validate mail address strings.
@@ -1556,7 +1557,7 @@ struct entity
    body into the port, properly decoded (e.g. if body was
    quoted-printable encoded, then the body is written already
    quoted-printable decoded.).  If type is multipart, or message,
-   clearly no characters are written to port. The procedure only works
+   clearly no bytes are written to port. The procedure only works
    once (since the encoded body is pulled from a stream).
 
 ==========================================================================

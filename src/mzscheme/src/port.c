@@ -1785,9 +1785,11 @@ static int do_peekc_skip(Scheme_Object *port, Scheme_Object *skip,
     *unavail = 0;
 
   while(1) {
-    if (in_delta)
+    if (in_delta) {
+      if (!skip)
+	skip = scheme_make_integer(0);
       skip2 = scheme_bin_plus(skip, scheme_make_integer(in_delta));
-    else
+    } else
       skip2 = skip;
 
     v = scheme_get_byte_string("peek-char", port,

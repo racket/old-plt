@@ -83,17 +83,16 @@
                                   [(start-tag? tok)
                                    (let* ([name (start-tag-name tok)]
                                           [auto-start (auto-insert start-name name)])
-                                     (if (and ok-kids
-                                              (not (memq name ok-kids))
-                                              (may-contain name)
-                                              (not auto-start))
-                                         (values null tokens)
-                                         (let*-values ([(element post-element)
-                                                        (if auto-start
-                                                            (read-el (make-start-tag (source-start tok) (source-stop tok) auto-start null) (cons auto-start context) tokens)
-                                                            (read-el tok (cons name context) next-tokens))]
-                                                       [(more-contents left-overs) (read-content post-element)])
-                                           (values (cons element more-contents) left-overs))))]
+                                     (if auto-start
+                                         (read-content (cons (make-start-tag (source-start tok) (source-stop tok) auto-start null) tokens))
+                                         (if (and ok-kids
+                                                  (not (memq name ok-kids))
+                                                  (may-contain name))
+                                             (values null tokens)
+                                             (let*-values ([(element post-element)
+                                                            (read-el tok (cons name context) next-tokens)]
+                                                           [(more-contents left-overs) (read-content post-element)])
+                                               (values (cons element more-contents) left-overs)))))]
                                   [(end-tag? tok)
                                    (let ([name (end-tag-name tok)])
                                      (if (eq? name start-name)
@@ -348,7 +347,7 @@
          (cond
            [(or (eof-object? c) (eq? c char)) null]
            [else (cons c (read-more))])))))
-    
+  
   ;; gen-read-until-string : String -> Input-port -> String
   ;; uses Knuth-Morris-Pratt from
   ;; Introduction to Algorithms, Cormen, Leiserson, and Rivest, pages 869-876

@@ -98,7 +98,8 @@
   
   ;; implicit-starts : Symbol Symbol -> (U #f Symbol)
   (define (implicit-starts parent child)
-    (and (eq? child 'tr) (eq? parent 'table) 'tbody))
+    (or (and (eq? child 'tr) (eq? parent 'table) 'tbody)
+        (and (eq? child 'td) (memq parent '(table tbody tfoot thead)) 'tr)))
   
   ;; may-contain : Kid-lister
   (define may-contain

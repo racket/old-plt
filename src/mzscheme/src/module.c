@@ -636,7 +636,7 @@ static Scheme_Object *_dynamic_require(int argc, Scheme_Object *argv[],
     /* Before starting, check whether the name is provided */
     count = srcm->num_provides;
     if (position >= 0) {
-      if (position < count) {
+      if (position < srcm->num_var_provides) {
 	i = position;
 	if ((SCHEME_SYM_LEN(name) == SCHEME_SYM_LEN(srcm->provides[i]))
 	    && !memcmp(SCHEME_SYM_VAL(name), SCHEME_SYM_VAL(srcm->provides[i]), SCHEME_SYM_LEN(name))) {

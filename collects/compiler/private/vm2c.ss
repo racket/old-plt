@@ -354,7 +354,9 @@
 	    (unless (set-empty? (compiler:get-primitive-refs))
 	      (register "P"))
 	    (unless (not (compiler:any-statics?))
-	      (register "S")))
+	      (register "S"))
+	    (unless (null? (const:get-syntax-strings))
+	      (register "SS")))
 	  (newline port)))
 
       (define (vm->c:emit-case-arities-definitions! port)

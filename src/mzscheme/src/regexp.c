@@ -860,6 +860,7 @@ static rxpos l_strchr(char *str, rxpos a, int l, int c)
  * Work variables for regtry().
  */
 typedef struct Regwork {
+  MZTAG_IF_REQUIRED
   char *str;              /* copy of regstr; used only to protect before thread swaps */
   char *instr;
   Scheme_Object *port;
@@ -1297,10 +1298,25 @@ regmatch(Regwork *rw, rxpos prog)
 # include "mzstkchk.h"
     {
       Scheme_Thread *p = scheme_current_thread;
-      rw->str = regstr; /* in case of thread swap */
-      p->ku.k.p1 = rw;
+      Regwork *rw2;
+      int result;
+
+      /* rw is likely be stack allocated, so copy out to
+	 the heap and then copy result back in on return. */
+      rw2 = MALLOC_ONE_RT(Regwork);
+      memcpy(rw2, rw, sizeof(Regwork));
+#ifdef MZTAG_REQUIRED
+      rw2->type = scheme_rt_regwork;
+#endif
+
+      rw2->str = regstr; /* in case of thread swap */
+      p->ku.k.p1 = rw2;
       p->ku.k.i1 = prog;
-      return (int)scheme_handle_stack_overflow(regmatch_k);
+      result = (int)scheme_handle_stack_overflow(regmatch_k);
+
+      memcpy(rw, rw2, sizeof(Regwork));
+
+      return result;
     }
   }
 #endif

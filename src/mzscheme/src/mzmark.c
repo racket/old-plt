@@ -3629,6 +3629,39 @@ int mark_regexp_FIXUP(void *p) {
 #define mark_regexp_IS_CONST_SIZE 0
 
 
+int mark_regwork_SIZE(void *p) {
+  return
+  gcBYTES_TO_WORDS(sizeof(Regwork));
+}
+
+int mark_regwork_MARK(void *p) {
+  Regwork *r = (Regwork *)p;
+  gcMARK(r->str);
+  gcMARK(r->instr);
+  gcMARK(r->port);
+  gcMARK(r->startp);
+  gcMARK(r->endp);
+  gcMARK(r->peekskip);
+  return
+  gcBYTES_TO_WORDS(sizeof(Regwork));
+}
+
+int mark_regwork_FIXUP(void *p) {
+  Regwork *r = (Regwork *)p;
+  gcFIXUP(r->str);
+  gcFIXUP(r->instr);
+  gcFIXUP(r->port);
+  gcFIXUP(r->startp);
+  gcFIXUP(r->endp);
+  gcFIXUP(r->peekskip);
+  return
+  gcBYTES_TO_WORDS(sizeof(Regwork));
+}
+
+#define mark_regwork_IS_ATOMIC 0
+#define mark_regwork_IS_CONST_SIZE 1
+
+
 #endif  /* REGEXP */
 
 /**********************************************************************/

@@ -1456,6 +1456,19 @@ mark_regexp {
   gcBYTES_TO_WORDS((sizeof(regexp) + r->regsize));
 }
 
+mark_regwork {
+ mark:
+  Regwork *r = (Regwork *)p;
+  gcMARK(r->str);
+  gcMARK(r->instr);
+  gcMARK(r->port);
+  gcMARK(r->startp);
+  gcMARK(r->endp);
+  gcMARK(r->peekskip);
+ size:
+  gcBYTES_TO_WORDS(sizeof(Regwork));
+}
+
 END regexp;
 
 /**********************************************************************/

@@ -511,7 +511,7 @@ void wxPenList::AddPen (wxPen * pen)
 
 wxPen *wxPenList::FindOrCreatePen (wxColour * colour, double width, int style)
 {
-  wxPen *pen; /* MATTHEW: [8] */
+  wxPen *pen;
   int i = 0;
   wxChildNode *node;
 
@@ -533,7 +533,7 @@ wxPen *wxPenList::FindOrCreatePen (wxColour * colour, double width, int style)
       }
     }
   }
-  pen = new wxPen (colour, width, style);
+  pen = new wxPen (colour, width, style, FALSE);
 
   pen->Lock(1);
 
@@ -571,7 +571,7 @@ void wxBrushList::AddBrush(wxBrush *Brush)
 
 wxBrush *wxBrushList::FindOrCreateBrush (wxColour * colour, int style)
 {
-  wxBrush *brush; /* MATTTHEW: [8] */
+  wxBrush *brush;
   int i = 0;
   wxChildNode *node;
 
@@ -592,7 +592,7 @@ wxBrush *wxBrushList::FindOrCreateBrush (wxColour * colour, int style)
     }
   }
 
-  brush = new wxBrush (colour, style);
+  brush = new wxBrush (colour, style, FALSE);
 
   brush->Lock(1);
 

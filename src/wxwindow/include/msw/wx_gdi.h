@@ -69,12 +69,14 @@ class wxPen: public wxbPen
   wxBitmap *old_stipple;
   COLORREF old_color;
   Pen *g_p, *a_g_p;
+  Bool use_const;
+  wxPen *const_pen;
 
   HPEN cpen;
   HPEN my_old_cpen;
 
   wxPen(void);
-  wxPen(wxColour *col, double width, int style);
+  wxPen(wxColour *col, double width, int style, Bool use_const = TRUE);
   wxPen(const char *col, double width, int style);
   ~wxPen(void);
 
@@ -97,9 +99,11 @@ class wxBrush: public wxbBrush
   wxBitmap *old_stipple;
   COLORREF old_color;
   Brush *g_b;
+  Bool use_const;
+  wxBrush *const_brush;
 
   wxBrush(void);
-  wxBrush(wxColour *col, int style);
+  wxBrush(wxColour *col, int style, Bool use_const = TRUE);
   wxBrush(const char *col, int style);
   ~wxBrush(void);
 

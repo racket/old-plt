@@ -491,6 +491,8 @@ wxPen::wxPen(void)
 
   COUNT_P(pen_count);
 
+  use_const = TRUE;
+
   stipple = NULL;
   style = wxSOLID;
   width = 0;
@@ -525,9 +527,10 @@ wxPen::~wxPen()
     DeleteRegisteredGDIObject(cpen);
 
   cpen = NULL;
+  const_pen = NULL;
 }
 
-wxPen::wxPen(wxColour *col, double Width, int Style)
+wxPen::wxPen(wxColour *col, double Width, int Style, Bool _use_const)
 {
   wxColour *c;
 
@@ -536,6 +539,8 @@ wxPen::wxPen(wxColour *col, double Width, int Style)
   c = new wxColour(col);
   c->Lock(1);
   colour = c;
+
+  use_const = _use_const;
 
   stipple = NULL;
   width = Width;
@@ -571,6 +576,8 @@ wxPen::wxPen(const char *col, double Width, int Style)
   c->Lock(1);
   colour = c;
 
+  use_const = TRUE;
+
   stipple = NULL;
   width = Width;
   style = Style;
@@ -604,6 +611,9 @@ static REAL gp_dotted_dashed[] = {6, 6, 2, 6, /* offset */ 4};
 
 Pen *wxPen::GraphicsPen(Bool align, double xs)
 {
+  if (const_pen)
+    return const_pen->GraphicsPen(align, xs);
+
   if (align || !g_p) {
     Pen *p;
     double pw;
@@ -718,108 +728,120 @@ void wxPen::ChangePen(void)
     cpen = NULL;
   }
 
+  const_pen = NULL;
+
   bm = GetStipple();
   if (bm && !bm->Ok())
     bm = NULL;
 
-  if (join==wxJOIN_ROUND        &&
+  if (use_const
+      && join==wxJOIN_ROUND
+      && cap==wxCAP_BUTT
+      && !bm) {
+    wxPen *cp;
+    cp = wxThePenList->FindOrCreatePen(colour, width, style);
+    const_pen = cp;
+  } else {
+    if (join==wxJOIN_ROUND        &&
       cap==wxCAP_BUTT           &&
       style!=wxUSER_DASH        &&
       !bm                       &&
       (width || style == wxSOLID)) {
-    HPEN naya;
-    naya = CreatePen(wx2msPenStyle(style), width, ms_colour);
-    cpen = naya;
-  } else {
-    LOGBRUSH logb;
-    int xwidth = width;
-    DWORD ms_style;
-    wxDash *real_dash;
-
-    ms_style = wx2msPenStyle(style);
-
-    if (!width) {
-      xwidth = 1;
+      HPEN naya;
+      naya = CreatePen(wx2msPenStyle(style), width, ms_colour);
+      cpen = naya;
     } else {
-      xwidth = (int)(current_scale * xwidth);
-      if (!xwidth)
+      LOGBRUSH logb;
+      int xwidth = width;
+      DWORD ms_style;
+      wxDash *real_dash;
+
+      ms_style = wx2msPenStyle(style);
+
+      if (!width) {
 	xwidth = 1;
-    }
+      } else {
+	xwidth = (int)(current_scale * xwidth);
+	if (!xwidth)
+	  xwidth = 1;
+      }
 
-    ms_style |= PS_GEOMETRIC;
+      ms_style |= PS_GEOMETRIC;
     
-    switch(join) {
-    case wxJOIN_BEVEL: ms_style |= PS_JOIN_BEVEL; break;
-    case wxJOIN_MITER: ms_style |= PS_JOIN_MITER; break;
-    default:
-    case wxJOIN_ROUND: ms_style |= PS_JOIN_ROUND; break;
-    }
-
-    switch(cap) {
-    case wxCAP_PROJECTING: ms_style |= PS_ENDCAP_SQUARE; break;
-    case wxCAP_BUTT:       ms_style |= PS_ENDCAP_FLAT;   break;
-    default:
-    case wxCAP_ROUND:      ms_style |= PS_ENDCAP_ROUND;  break;
-    }
-
-    if (bm) {
-      logb.lbStyle = BS_PATTERN;
-      logb.lbHatch = (LONG)stipple->ms_bitmap;
-    } else {
-      switch(style) {
-      case wxBDIAGONAL_HATCH:
-	logb.lbStyle = BS_HATCHED;
-	logb.lbHatch = HS_BDIAGONAL;
-	break;
-      case wxCROSSDIAG_HATCH:
-	logb.lbStyle = BS_HATCHED;
-	logb.lbHatch = HS_DIAGCROSS;
-	break;
-      case wxFDIAGONAL_HATCH:
-	logb.lbStyle = BS_HATCHED;
-	logb.lbHatch = HS_FDIAGONAL;
-	break;
-      case wxCROSS_HATCH:
-	logb.lbStyle = BS_HATCHED;
-	logb.lbHatch = HS_CROSS;
-	break;
-      case wxHORIZONTAL_HATCH:
-	logb.lbStyle = BS_HATCHED;
-	logb.lbHatch = HS_HORIZONTAL;
-	break;
-      case wxVERTICAL_HATCH:
-	logb.lbStyle = BS_HATCHED;
-	logb.lbHatch = HS_VERTICAL;
-	break;
+      switch(join) {
+      case wxJOIN_BEVEL: ms_style |= PS_JOIN_BEVEL; break;
+      case wxJOIN_MITER: ms_style |= PS_JOIN_MITER; break;
       default:
-	logb.lbStyle = BS_SOLID;
-	break;
+      case wxJOIN_ROUND: ms_style |= PS_JOIN_ROUND; break;
       }
-    }
-    logb.lbColor = ms_colour;
 
-    if (style==wxUSER_DASH && nb_dash && dash) {
-      int i;
-      real_dash = new wxDash[nb_dash];
-      for (i=0;i<nb_dash;i++) {
-        real_dash[i] = dash[i] * xwidth;
+      switch(cap) {
+      case wxCAP_PROJECTING: ms_style |= PS_ENDCAP_SQUARE; break;
+      case wxCAP_BUTT:       ms_style |= PS_ENDCAP_FLAT;   break;
+      default:
+      case wxCAP_ROUND:      ms_style |= PS_ENDCAP_ROUND;  break;
       }
-    } else
-      real_dash = NULL;
+
+      if (bm) {
+	logb.lbStyle = BS_PATTERN;
+	logb.lbHatch = (LONG)stipple->ms_bitmap;
+      } else {
+	switch(style) {
+	case wxBDIAGONAL_HATCH:
+	  logb.lbStyle = BS_HATCHED;
+	  logb.lbHatch = HS_BDIAGONAL;
+	  break;
+	case wxCROSSDIAG_HATCH:
+	  logb.lbStyle = BS_HATCHED;
+	  logb.lbHatch = HS_DIAGCROSS;
+	  break;
+	case wxFDIAGONAL_HATCH:
+	  logb.lbStyle = BS_HATCHED;
+	  logb.lbHatch = HS_FDIAGONAL;
+	  break;
+	case wxCROSS_HATCH:
+	  logb.lbStyle = BS_HATCHED;
+	  logb.lbHatch = HS_CROSS;
+	  break;
+	case wxHORIZONTAL_HATCH:
+	  logb.lbStyle = BS_HATCHED;
+	  logb.lbHatch = HS_HORIZONTAL;
+	  break;
+	case wxVERTICAL_HATCH:
+	  logb.lbStyle = BS_HATCHED;
+	  logb.lbHatch = HS_VERTICAL;
+	  break;
+	default:
+	  logb.lbStyle = BS_SOLID;
+	  break;
+	}
+      }
+      logb.lbColor = ms_colour;
+
+      if (style==wxUSER_DASH && nb_dash && dash) {
+	int i;
+	real_dash = new wxDash[nb_dash];
+	for (i=0;i<nb_dash;i++) {
+	  real_dash[i] = dash[i] * xwidth;
+	}
+      } else
+	real_dash = NULL;
     
-    cpen = ExtCreatePen(ms_style, xwidth, &logb,
-			style == wxUSER_DASH ? nb_dash : 0,
-			real_dash);
+      cpen = ExtCreatePen(ms_style, xwidth, &logb,
+			  style == wxUSER_DASH ? nb_dash : 0,
+			  real_dash);
+    }
+
+    RegisterGDIObject(cpen);
   }
-
-  RegisterGDIObject(cpen);
-
-  return;
 }
 
 HPEN wxPen::SelectPen(HDC dc, double scale)
 {
   HPEN prev_pen;
+
+  if (const_pen)
+    return const_pen->SelectPen(dc, scale);
 
   if (scale != current_scale) {
     current_scale = scale;
@@ -880,6 +902,8 @@ wxBrush::wxBrush(void)
 
   COUNT_P(brush_count);
   
+  use_const = TRUE;
+
   c = new wxColour(wxBLACK);
   c->Lock(1);
   colour = c;
@@ -902,13 +926,16 @@ wxBrush::~wxBrush()
     DeleteRegisteredGDIObject(cbrush);
 
   cbrush = NULL;
+  const_brush = NULL;
 }
 
-wxBrush::wxBrush(wxColour *col, int Style)
+wxBrush::wxBrush(wxColour *col, int Style, Bool _use_const)
 {
   wxColour *c;
 
   COUNT_P(brush_count);
+
+  use_const = _use_const;
 
   c = new wxColour(col);
   c->Lock(1);
@@ -926,6 +953,9 @@ wxBrush::wxBrush(wxColour *col, int Style)
 
 Brush *wxBrush::GraphicsBrush()
 {
+  if (const_brush)
+    return const_brush->GraphicsBrush();
+
   if (!g_b) {
     Brush *b;
     b = wxGBrushNew(colour->pixel);
@@ -973,57 +1003,65 @@ void wxBrush::ChangeBrush(void)
     cbrush = NULL;
   }
 
+  const_brush = NULL;
+
   bm = GetStipple();
   if (bm && !bm->Ok())
     bm = NULL;
 
-  if (bm) {
-    cbrush = CreatePatternBrush(bm->ms_bitmap);
+  if (use_const && !bm) {
+    wxBrush *cb;
+    cb = wxTheBrushList->FindOrCreateBrush(colour, style);
+    const_brush = cb;
   } else {
-    switch (style) {
-    case wxTRANSPARENT:
-      break;
-    case wxBDIAGONAL_HATCH:
-      {
-	cbrush = CreateHatchBrush(HS_BDIAGONAL, ms_colour);
+    if (bm) {
+      cbrush = CreatePatternBrush(bm->ms_bitmap);
+    } else {
+      switch (style) {
+      case wxTRANSPARENT:
 	break;
-      }
-    case wxCROSSDIAG_HATCH:
-      {
-	cbrush = CreateHatchBrush(HS_DIAGCROSS, ms_colour);
-	break;
-      }
-    case wxFDIAGONAL_HATCH:
-      {
-	cbrush = CreateHatchBrush(HS_FDIAGONAL, ms_colour);
-	break;
-      }
-    case wxCROSS_HATCH:
-      {
-	cbrush = CreateHatchBrush(HS_CROSS, ms_colour);
-	break;
-      }
-    case wxHORIZONTAL_HATCH:
-      {
-	cbrush = CreateHatchBrush(HS_HORIZONTAL, ms_colour);
-	break;
-      }
-    case wxVERTICAL_HATCH:
-      {
-	cbrush = CreateHatchBrush(HS_VERTICAL, ms_colour);
-	break;
-      }
-    case wxSOLID:
-    default:
-      {
-	cbrush = CreateSolidBrush(ms_colour);
-	break;
+      case wxBDIAGONAL_HATCH:
+	{
+	  cbrush = CreateHatchBrush(HS_BDIAGONAL, ms_colour);
+	  break;
+	}
+      case wxCROSSDIAG_HATCH:
+	{
+	  cbrush = CreateHatchBrush(HS_DIAGCROSS, ms_colour);
+	  break;
+	}
+      case wxFDIAGONAL_HATCH:
+	{
+	  cbrush = CreateHatchBrush(HS_FDIAGONAL, ms_colour);
+	  break;
+	}
+      case wxCROSS_HATCH:
+	{
+	  cbrush = CreateHatchBrush(HS_CROSS, ms_colour);
+	  break;
+	}
+      case wxHORIZONTAL_HATCH:
+	{
+	  cbrush = CreateHatchBrush(HS_HORIZONTAL, ms_colour);
+	  break;
+	}
+      case wxVERTICAL_HATCH:
+	{
+	  cbrush = CreateHatchBrush(HS_VERTICAL, ms_colour);
+	  break;
+	}
+      case wxSOLID:
+      default:
+	{
+	  cbrush = CreateSolidBrush(ms_colour);
+	  break;
+	}
       }
     }
+
+    RegisterGDIObject(cbrush);
   }
-
-  RegisterGDIObject(cbrush);
-
+  
   old_style = style;
   old_stipple = stipple;
   old_color = ms_colour;
@@ -1032,6 +1070,9 @@ void wxBrush::ChangeBrush(void)
 HBRUSH wxBrush::SelectBrush(HDC dc)
 {
   HBRUSH prev_brush;
+
+  if (const_brush)
+    return const_brush->SelectBrush(dc);
 
   if (cbrush && style!=wxTRANSPARENT) {
     prev_brush = (HBRUSH)::SelectObject(dc, cbrush);
@@ -1054,12 +1095,16 @@ wxBrush::wxBrush(const char *col, int Style)
   c->Lock(1);
   colour = c;
 
+  use_const = TRUE;
+
   style = Style;
   stipple = NULL;
   cbrush = NULL;
   old_color = 0;
   old_style = -1;
   old_stipple = NULL;
+
+  ChangeBrush();
 }
 
 // Cursors

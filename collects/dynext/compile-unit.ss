@@ -203,7 +203,7 @@
 				     (printf "compile-extension: ~a~n" command))
 				   (apply my-process* command)))
 			       quiet?)
-		(error 'compile-extension "can't find compiler")))))
+		(error 'compile-extension "can't find an installed C compiler")))))
       
       (include (build-path "private" "macinc.ss"))
       

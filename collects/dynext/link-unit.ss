@@ -302,7 +302,7 @@
 				      quiet?)
 			  (delete-file basefile)
 			  (delete-file expfile))))))
-		(error 'link-extension "can't find linker")))))
+		(error 'link-extension "can't find an installed linker")))))
       
       (define (macos-link quiet? input-files output-file)
 	(macos-make 'link-extension "linking-project" "so" quiet? 

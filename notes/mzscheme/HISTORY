@@ -1,4 +1,10 @@
 
+Version 202.x
+Added support for structure types whose instances act as
+ procedures
+Added open-input-output-file
+Added port-count-lines-enabled parameter
+
 Version 202, August 2002
 Unix: Fixed open on fifos to not block
 Windows 9x: Added workaround for resolution of "127.0.0.1"

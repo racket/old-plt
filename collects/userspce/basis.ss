@@ -539,14 +539,17 @@
 	(current-print drscheme-print)
 
 	(when (zodiac-vocabulary? setting)
-	  (current-vocabulary (zodiac:create-vocabulary
-			       'scheme-w/user-defined-macros/drscheme
-			       (case (setting-vocabulary-symbol setting)
-				 [(beginner) zodiac:beginner-vocabulary]
-				 [(intermediate) zodiac:intermediate-vocabulary]
-				 [(advanced) zodiac:advanced-vocabulary]
-				 [(mzscheme-debug) zodiac:scheme-vocabulary]
-				 [else (error 'init "bad vocabulary spec: ~a ~e" (setting-vocabulary-symbol setting) setting)]))))
+	  (current-vocabulary
+	   (zodiac:create-vocabulary
+	    'scheme-w/user-defined-macros/drscheme
+	    (case (setting-vocabulary-symbol setting)
+	      [(beginner) zodiac:beginner-vocabulary]
+	      [(intermediate) zodiac:intermediate-vocabulary]
+	      [(advanced) zodiac:advanced-vocabulary]
+	      [(mzscheme-debug) zodiac:scheme-vocabulary]
+	      [(mred-debug) (zodiac:get-mred-vocabulary)]
+	      [else (error 'init "bad vocabulary spec: ~a ~e"
+			   (setting-vocabulary-symbol setting) setting)]))))
 	
 	(read-case-sensitive (setting-case-sensitive? setting))
 

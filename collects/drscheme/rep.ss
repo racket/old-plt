@@ -322,19 +322,23 @@
 		     (send a grab-caret))))
 	       (when starting-at-prompt-mode?
 		 (insert-prompt)))
-	     (set-prompt-position (last-position))
 	     (lock c-locked?)
 	     (end-edit-sequence)))]
 
 	  [this-in-read
 	   (lambda ()
-	     (system
-	      (lambda ()
-		(mred:queue-callback
-		 (lambda ()
-		   (init-transparent-io #t)
-		   (send transparent-edit fetch-char))
-		 #f))))])
+	     (let ([s (make-semaphore 0)]
+		   [answer #f])
+	       (system
+		(lambda ()
+		  (mred:queue-callback
+		   (lambda ()
+		     (init-transparent-io #t)
+		     (set! answer (send transparent-edit fetch-char))
+		     (semaphore-post s))
+		   #f)))
+	       (semaphore-wait s)
+	       answer))])
 
 
 	(public
@@ -1473,8 +1477,11 @@
 	     (let* ([last (last-position)]
 		    [start-selection (get-start-position)]
 		    [end-selection (get-end-position)]
-		    [last-str (get-text (- last 1) last)])
-	       (unless (string=? last-str newline-string)
+		    [last-str (if (= last 0)
+				  ""
+				  (get-text (- last 1) last))])
+	       (unless (or (string=? last-str newline-string)
+			   (= last 0))
 		 (insert #\newline last))
 	       (let ([last (last-position)])
 		 (insert (get-prompt) last)
@@ -1648,8 +1655,10 @@
 	       (semaphore-post potential-sexps-protect)
 	       (semaphore-post wait-for-sexp)
 	       (do-post-eval)))])
+	(inherit insert-prompt)
 	(sequence
-	  (apply super-init args)))))
+	  (apply super-init args)
+	  (insert-prompt)))))
 
   (define transparent-io-edit% 
     (make-transparent-io-edit%

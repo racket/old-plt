@@ -18,6 +18,7 @@
   (basis:add-setting 
    (let ([s (basis:copy-setting (basis:find-setting-named "MzScheme Debug"))])
      (basis:set-setting-name! s "MrEd Debug")
+     (basis:set-setting-vocabulary-symbol! s 'mred-debug)
      s))
 
   (fw:application:current-app-name "DrScheme")

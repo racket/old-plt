@@ -324,7 +324,20 @@ case $OS in
 
     CFLAGS="$CFLAGS -DOS_X"
 
+    gcc_vers_three=`gcc -v 2>&1 | grep "version 3[.]"`
+    if test "$gcc_vers_three" = "" ; then
+      MROPTIONS="$MROPTIONS -cpp-precomp"
+    else
+      MROPTIONS="$MROPTIONS -fno-rtti"
+      if test "${enable_quartz}" = "yes" ; then
+        WXPRECOMP='$(WXPRECOMPDIR)/precomp.o'
+        USE_WXPRECOMP='--load-pch $(WXPRECOMPDIR)'
+      fi
+    fi
+
     if test "${enable_quartz}" = "yes" ; then
+      WXVARIANT="wx_mac"
+      INCLUDEDEP="-include"
       CFLAGS="$CFLAGS -fno-common"
       OSX=""
       NOT_OSX=".other"
@@ -398,20 +411,6 @@ fi
 MROPTIONS=
 WXVARIANT="wx_xt"
 INCLUDEDEP="#"
-
-if test "${enable_quartz}" = "yes" ; then
-  MROPTIONS="$MROPTIONS -fpascal-strings"
-  gcc_vers_three=`gcc -v 2>&1 | grep "version 3[.]"`
-  if test "$gcc_vers_three" = "" ; then
-    MROPTIONS="$MROPTIONS -cpp-precomp"
-  else
-    MROPTIONS="$MROPTIONS -fno-rtti"
-    WXPRECOMP='$(WXPRECOMPDIR)/precomp.o'
-    USE_WXPRECOMP='--load-pch $(WXPRECOMPDIR)'
-  fi
-  WXVARIANT="wx_mac"
-  INCLUDEDEP="-include"
-fi
 
 if test "${enable_mred}" = "yes" ; then
   CXXFLAGS="$CXXFLAGS $X_CFLAGS"

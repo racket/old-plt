@@ -200,7 +200,11 @@ static void BuildMacMenuString(StringPtr setupstr, StringPtr showstr, char *item
 		*d++ = ' ';
 	for (s = itemName; *s != '\0'; ) {
 		if (*s == '&') {
-			// spc = *s;
+			if (*(s+1) == '&') {
+			 	*d++ = *s++;
+			} else {
+				// spc = *s;
+			}
 		}
 		else if (*s == '\t') {
 			s++;
@@ -605,7 +609,7 @@ void wxSetUpAppleMenu(wxMenuBar *mbar)
 		::AppendResMenu(appleMenuHandle, 'DRVR');
 	}
 	if (mbar && mbar->wxHelpHackMenu && mbar->iHelpMenuHackNum) {
-		Str255 t = "\pAboutÉ";
+		Str255 t = "\pAboutŠ";
 		wxNode *n = mbar->wxHelpHackMenu->menuItems.Nth(mbar->iHelpMenuHackNum - 1);
 		if (n) {
 		  wxMenuItem *i = (wxMenuItem *)n->Data();

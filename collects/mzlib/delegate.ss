@@ -86,6 +86,8 @@
          (syntax
           (let ([delegate<%>
                  (interface ()
+                   on-disable-delegate
+                   on-enable-delegate
                    ids ...)])
             (values
              (lambda (super%)
@@ -93,7 +95,7 @@
                  (field [delegate #f])
                  (define/public (set-delegate d)
                    (when delegate
-                     (send delegate on-disable this))
+                     (send delegate on-disable-delegate this))
                    (when d
                      (unless (object? d)
                        (error 'set-delegate "expected an object, got: ~e" d))
@@ -104,7 +106,7 @@
                                      (error 'set-delegate "expected object to implement an ~s method" x)))
                                  methods-to-impl))
                      (set! delegate d)
-                     (send delegate on-enable this)))
+                     (send delegate on-enable-delegate this)))
                  (define/public (get-delegate) delegate)
                  
                  overriding-methods ...
@@ -112,8 +114,8 @@
                  (super-new)))
              
              (class* object% (delegate<%>)
-               (define/public (on-enable) (void))
-               (define/public (on-disable) (void))
+               (define/public (on-enable-delegate) (void))
+               (define/public (on-disable-delegate) (void))
                empty-methods ...
                (super-new))
              delegate<%>))))])))

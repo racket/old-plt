@@ -172,7 +172,7 @@
       ; a symbol naming the style  and a delta to set it to
       (define set-slatex-style
         (lambda (sym delta)
-          (let* ([style-list (fw:scheme:get-style-list)]
+          (let* ([style-list (fw:editor:get-standard-style-list)]
                  [name (symbol->string sym)]
                  [style (send style-list find-named-style name)])
             (if style
@@ -191,7 +191,7 @@
              (f frame)
              (send frame show #t))))
       
-      (define simple-scheme-text% (fw:scheme:text-mixin (fw:editor:keymap-mixin fw:text:basic%)))
+      (define standard-style-list-text% (fw:editor:standard-style-list-mixin text%))
       
       (fw:preferences:add-panel
        (string-constant check-syntax)
@@ -206,17 +206,17 @@
                                   'hide-vscroll))]
                        [_ (send c set-line-count 1)]
                        [_ (send c allow-tab-exit #t)]
-                       [e (make-object (class simple-scheme-text%
-                                         (inherit change-style get-style-list)
-                                         (rename [super-after-insert after-insert])
-                                         (override after-insert)
-                                         (define (after-insert pos offset)
-                                           (super-after-insert pos offset)
-                                           (let ([style (send (get-style-list)
-                                                              find-named-style
-                                                              style-name)])
-                                             (change-style style pos (+ pos offset) #f)))
-                                         (super-instantiate ())))]
+                       [e (new (class standard-style-list-text%
+                                 (inherit change-style get-style-list)
+                                 (rename [super-after-insert after-insert])
+                                 (override after-insert)
+                                 (define (after-insert pos offset)
+                                   (super-after-insert pos offset)
+                                   (let ([style (send (get-style-list)
+                                                      find-named-style
+                                                      style-name)])
+                                     (change-style style pos (+ pos offset) #f)))
+                                 (super-instantiate ())))]
                        [_ (fw:preferences:add-callback sym
                                                        (lambda (sym v)
                                                          (set-slatex-style sym v)

@@ -3886,12 +3886,13 @@ void force_exit(void)
 void scheme_setup_forced_exit(void)
 {
 #ifdef USING_TESTED_OUTPUT_FILE
-  scheme_add_atexit_closer(flush_each_output_file);
-
   /* Arrange to skip the flushing of FILEs, because we don't want an
-     exit to get tied up by blocking input (only blocked output). */
-
+     exit to get tied up by blocking input (only blocked output). 
+     Register force_exit before calling scheme_add_atexit_closer(),
+     otherwise the at-exit closers won't be called. */
   atexit(force_exit);
+
+  scheme_add_atexit_closer(flush_each_output_file);
 #endif
 }
 
@@ -5602,7 +5603,7 @@ static void default_sleep(float v, void *fds)
 #if defined(WIN32_FD_HANDLES)
 	result = MsgWaitForMultipleObjects(count, array, FALSE, 
 					   v ? (DWORD)(v * 1000) : INFINITE,
-					   ((win_extended_fd_set *)fds)->wait_event_mask),
+					   ((win_extended_fd_set *)fds)->wait_event_mask);
 #endif	
 #if defined(USE_BEOS_PORT_THREADS)
 	result = wait_multiple_sema(count, array, v);

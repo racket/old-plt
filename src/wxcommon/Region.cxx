@@ -358,7 +358,11 @@ void wxRegion::SetArc(float x, float y, float w, float h, float start, float end
   wxPoint *a;
   int n;
 
+#ifdef MZ_PRECISE_GC
+  a = (wxPoint *)GC_malloc_atomic(sizeof(wxPoint) * 20);
+#else
   a = new wxPoint[20];
+#endif
 
   SetEllipse(x, y, w, h);
 

@@ -63,7 +63,6 @@ extern "C" {
 
 #ifdef MZ_PRECISE_GC
 extern void *GC_cpp_malloc(size_t);
-extern void *GC_cpp_malloc_array(size_t);
 extern void GC_cpp_delete(class gc *);
 # define GC_register_finalizer_ignore_self GC_register_finalizer
 #endif
@@ -181,14 +180,10 @@ inline void gc::operator delete(void * /*obj*/)
 
 #ifdef OPERATOR_NEW_ARRAY
 inline void *gc::operator new[](size_t size) {
-#if defined(MZ_PRECISE_GC)
-  return GC_cpp_malloc_array(size);
-#else
-# ifdef USE_SENORA_GC
+#if defined(USE_SENORA_GC) || defined(MZ_PRECISE_GC)
   return ::operator new(size);
-# else
+#else
   return gc::operator new(size);
-# endif
 #endif
 }
     

@@ -1270,6 +1270,11 @@
 	       [(and (pair? (cddr e))
 		     (brackets? (caddr e)))
 		;; An array of objects
+		(unless atom?
+		  (fprintf (current-error-port)
+			   "Warning [ARRAY] ~a in ~a: array of ~a objects, allocating as array of atomic.~n"
+			   (tok-line t) (tok-file t)
+			   (tok-n t)))
 		(loop (list*
 		       (make-tok (if atom? 
 				     NEW_ATOM_ARRAY 

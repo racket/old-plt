@@ -213,55 +213,6 @@ static int fixup_cpp_object(void *p)
   return size + 1 + gcALIGN_DOUBLE;
 }
 
-static int size_cpp_array_object(void *p)
-{
-  short orig_size = ((short *)p)[1];
-
-  return orig_size + 1 + gcALIGN_DOUBLE;
-}
-
-static int do_cpp_array_object(void *p, int fixup)
-{
-  short size, orig_size = ((short *)p)[1];
-  void **pp = (void **)gcPTR_TO_OBJ(p);
-  gc *obj;
-  size_t s;
-
-  size = orig_size - 1 - gcALIGN_DOUBLE;
-  s = size / (*(long *)pp);
-  
-  /* FIXME: the count stuff is probably g++-specific: */
-  // skip count
-  pp++;
-#if gcALIGN_DOUBLE
-  // double alignment...
-  pp++;
-#endif
-
-  while (size > 0) {
-    obj = (gc *)pp;
-    if (fixup)
-      obj->gcFixup();
-    else
-      obj->gcMark();
-
-    pp += s;
-    size -= s;
-  }
-
-  return orig_size + 1 + gcALIGN_DOUBLE;
-}
-
-static int mark_cpp_array_object(void *p)
-{
-  return do_cpp_array_object(p, 0);
-}
-
-static int fixup_cpp_array_object(void *p)
-{
-  return do_cpp_array_object(p, 1);
-}
-
 static int size_preallocated_object(void *p)
 {
   short size = ((short *)p)[1];
@@ -278,10 +229,6 @@ static void initize(void)
 			 size_cpp_object,
 			 mark_cpp_object,
 			 fixup_cpp_object);
-  GC_register_traversers(scheme_rt_cpp_array_object,
-			 size_cpp_array_object,
-			 mark_cpp_array_object,
-			 fixup_cpp_array_object);
   GC_register_traversers(scheme_rt_preallocated_object,
 			 size_preallocated_object,
 			 size_preallocated_object,
@@ -314,22 +261,6 @@ void GC_cpp_delete(gc *v)
   
   p = gcOBJ_TO_PTR(v);
   ((short *)p)[0] = scheme_rt_preallocated_object;
-}
-
-void *GC_cpp_malloc_array(size_t size)
-{
-  void *p;
-
-  if (!is_initialized) {
-    initize();
-  }
-
-  p = GC_malloc_one_tagged(size + sizeof(AlignedType));
-
-  ((short *)p)[0] = scheme_rt_cpp_array_object;
-  ((short *)p)[1] = (short)gcBYTES_TO_WORDS(size);
-
-  return gcPTR_TO_OBJ(p);
 }
 
 #endif

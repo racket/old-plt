@@ -683,7 +683,11 @@ void wxPostScriptDC::DrawLines(wxList *list, float xoffset, float yoffset)
   wxNode *node;
 
   n = list->Number();
+#ifdef MZ_PRECISE_GC
+  points = (wxPoint *)GC_malloc_atomic(sizeof(wxPoint) * n);
+#else
   points = new wxPoint[n];
+#endif
 
   i = 0;
   for (node = list->First(); node; node = node->Next()) {
@@ -693,8 +697,6 @@ void wxPostScriptDC::DrawLines(wxList *list, float xoffset, float yoffset)
     points[i++].y = point->y;
   }
   DrawLines(n, points, xoffset, yoffset);
-
-  delete[] points;
 }
 
 void wxPostScriptDC::DrawPolygon(wxList *list, float xoffset, float yoffset,int fillStyle)
@@ -704,7 +706,11 @@ void wxPostScriptDC::DrawPolygon(wxList *list, float xoffset, float yoffset,int 
   wxNode *node;
 
   n = list->Number();
+#ifdef MZ_PRECISE_GC
+  points = (wxPoint *)GC_malloc_atomic(sizeof(wxPoint) * n);
+#else
   points = new wxPoint[n];
+#endif
 
   i = 0;
   for(node = list->First(); node; node = node->Next()) {
@@ -713,9 +719,7 @@ void wxPostScriptDC::DrawPolygon(wxList *list, float xoffset, float yoffset,int 
     points[i].x = point->x;
     points[i++].y = point->y;
   }
-  DrawPolygon(n, points, xoffset, yoffset,fillStyle);
-
-  delete[] points;
+  DrawPolygon(n, points, xoffset, yoffset, fillStyle);
 }
 
 #endif

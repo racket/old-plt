@@ -3,6 +3,16 @@ Version 102/7:
 
  * Fixed interaction of `peek-char' and `file-position' (PR 1318).
 
+ * Fixed `close-output-port' so that it flushes stream ports (stdout,
+   stderr, and process ports).
+
+ * Fixed `custodian-shutdown-all' to force-close a blocking output
+   stream (unflushed data is lost).
+
+ * Replaced 'generic-failure as a `detail' in `exn:i/o:filesystem'
+   with #f. Could change to a list later, if there is still strong
+   interest.
+
 Version 102/6:
 
  [No changes]

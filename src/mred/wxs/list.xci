@@ -15,6 +15,7 @@
 
 @IFDEFINE l_ADDRESS = INDIRECT : & : 
 @IFDEFINE l_DEREF = INDIRECT : * : 
+@IFDEFINE l_NEWATOMIC = NEWATOMIC : (AtomicGC) : 
 @IFDEFINE l_NULLOK = ALLOWNULL : 1 : 0
 @IFDEFINE l_TEST = NOTEST :  : , l_NULLOK
 @IFDEFINE l_POINT = POINTERS : * : 
@@ -75,7 +76,7 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
   if (!(len + l_EXTRA))
     return NULL;
 
-  f = WITH_VAR_STACK(new l_TYPE l_POINT[len + l_EXTRA]);
+  f = WITH_VAR_STACK(new l_NEWATOMIC l_TYPE l_POINT[len + l_EXTRA]);
 
   while (!SCHEME_NULLP(l)) {
     if (!SCHEME_LISTP(l)) {

@@ -112,6 +112,7 @@ static void CB_TOSCHEME(CB_REALCLASS *obj, wxCommandEvent *event);
 
 #define l_ADDRESS 
 #define l_DEREF 
+#define l_NEWATOMIC 
 #define l_NULLOK 0
 #define l_TEST 
 #define l_POINT 
@@ -164,7 +165,7 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
   if (!(len + l_EXTRA))
     return NULL;
 
-  f = WITH_VAR_STACK(new l_TYPE l_POINT[len + l_EXTRA]);
+  f = WITH_VAR_STACK(new l_NEWATOMIC l_TYPE l_POINT[len + l_EXTRA]);
 
   while (!SCHEME_NULLP(l)) {
     if (!SCHEME_LISTP(l)) {
@@ -207,6 +208,7 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
 
 #define l_ADDRESS 
 #define l_DEREF 
+#define l_NEWATOMIC 
 #define l_NULLOK 0
 #define l_TEST , l_NULLOK
 #define l_POINT *
@@ -259,7 +261,7 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
   if (!(len + l_EXTRA))
     return NULL;
 
-  f = WITH_VAR_STACK(new l_TYPE l_POINT[len + l_EXTRA]);
+  f = WITH_VAR_STACK(new l_NEWATOMIC l_TYPE l_POINT[len + l_EXTRA]);
 
   while (!SCHEME_NULLP(l)) {
     if (!SCHEME_LISTP(l)) {

@@ -245,6 +245,7 @@ extern wxPoint *objscheme_unbundle_wxPoint(Scheme_Object *, const char *, int);
 
 #define l_ADDRESS &
 #define l_DEREF *
+#define l_NEWATOMIC (AtomicGC)
 #define l_NULLOK 0
 #define l_TEST , l_NULLOK
 #define l_POINT 
@@ -297,7 +298,7 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
   if (!(len + l_EXTRA))
     return NULL;
 
-  f = WITH_VAR_STACK(new l_TYPE l_POINT[len + l_EXTRA]);
+  f = WITH_VAR_STACK(new l_NEWATOMIC l_TYPE l_POINT[len + l_EXTRA]);
 
   while (!SCHEME_NULLP(l)) {
     if (!SCHEME_LISTP(l)) {

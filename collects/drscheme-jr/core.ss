@@ -91,56 +91,61 @@
 	(let loop ()
 	  (let ([continue? #f])
 
-	    (basis:initialize-parameters
-	     user-custodian
-	     settings:setting)
+	    (let* ([sema (make-semaphore 0)]
+		   [repl-thread
+		    (settings:run-in-new-user-thread
+		     (lambda ()
 
-	    (mzlib:thread:dynamic-disable-break
-	     (lambda ()
+		       (basis:initialize-parameters
+			user-custodian
+			settings:setting)
 
-               (settings:initialize-userspace)
+		       (mzlib:thread:dynamic-disable-break
+			(lambda ()
 
-	       (global-defined-value 'read/zodiac read/zodiac)
-	       (global-defined-value 'restart
-				     (let ([die (lambda ()
-						  (set! continue? #t)
-						  (custodian-shutdown-all user-custodian))])
-				       (rec restart
-					    (case-lambda
-					     [(new-file)
-					      (when (or (not (string? new-file))
-							(not (or (relative-path? new-file)
-								 (absolute-path? new-file))))
-						(raise-type-error 'restart "path string" new-file))
-					      (set! file new-file)
-					      (die)]
-					     [() (die)]))))
-               (when settings:show-banner?
-                 (printf "Welcome to DrScheme Jr version ~a, Copyright (c) 1995-2000 PLT~n"
-                         (version))
-                 (printf "Language: ~a~n"
-                         (cadr (assoc (basis:setting-vocabulary-symbol (basis:current-setting))
-                                      (map (lambda (s)
-                                             (list (basis:setting-vocabulary-symbol s)
-                                                   (basis:setting-name s)))
-                                           basis:settings)))))
+			  (settings:initialize-userspace)
+
+			  (global-defined-value 'read/zodiac read/zodiac)
+			  (global-defined-value 'restart
+						(let ([die (lambda ()
+							     (set! continue? #t)
+							     (custodian-shutdown-all user-custodian))])
+						  (rec restart
+						       (case-lambda
+							[(new-file)
+							 (when (or (not (string? new-file))
+								   (not (or (relative-path? new-file)
+									    (absolute-path? new-file))))
+							   (raise-type-error 'restart "path string" new-file))
+							 (set! file new-file)
+							 (die)]
+							[() (die)]))))
+			  (when settings:show-banner?
+			    (printf "Welcome to DrScheme Jr version ~a, Copyright (c) 1995-2000 PLT~n"
+				    (version))
+			    (printf "Language: ~a~n"
+				    (cadr (assoc (basis:setting-vocabulary-symbol (basis:current-setting))
+						 (map (lambda (s)
+							(list (basis:setting-vocabulary-symbol s)
+							      (basis:setting-name s)))
+						      basis:settings)))))))
+
+		       (when (string? file)
+			 (load/prompt file))
+		       (when settings:repl?
+			 (repl))
+		       (settings:load-and-repl-done)
+		       (semaphore-post sema)))])
 	       
-	       (let ([repl-thread
-		      (settings:run-in-new-user-thread
-		       (lambda ()
-			 (when (string? file)
-			   (load/prompt file))
-			 (when settings:repl?
-			   (repl))
-			 (settings:load-and-repl-done)))])
-		 (mzlib:thread:dynamic-enable-break
-		  (lambda ()
-		    (let loop ()
-		      (with-handlers ([exn:misc:user-break?
-				       (lambda (x)
-					 (break-thread repl-thread)
-					 (loop))])
-			(thread-wait repl-thread))))))))
+	      (semaphore-wait sema)
+	      (mzlib:thread:dynamic-enable-break
+	       (lambda ()
+		 (let loop ()
+		   (with-handlers ([exn:misc:user-break?
+				    (lambda (x)
+				      (break-thread repl-thread)
+				      (loop))])
+		     (thread-wait repl-thread))))))
 	    (when continue?
 	      (loop))))))
     go))

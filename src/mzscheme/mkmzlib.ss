@@ -1,7 +1,7 @@
 
 ; Utilities for distributing pre-compiled MzLib
 
-(current-library-collection-paths (list (build-path (current-directory) 'up "collects")))
+(current-library-collection-paths (list (build-path (current-directory) 'up 'up "collects")))
 
 (require-library "compile.ss")
 
@@ -13,8 +13,8 @@
 (define (make-zo)
   (define (go f)
     (printf "Compiling ~a.ss to ~a~a~n" f f suffix)
-    (compile-file (build-path 'up "collects" "mzlib" (string-append f ".ss"))
-		  (build-path 'up "collects" "mzlib" "compiled" (string-append f suffix))
+    (compile-file (build-path 'up 'up "collects" "mzlib" (string-append f ".ss"))
+		  (build-path 'up 'up "collects" "mzlib" "compiled" (string-append f suffix))
 		  flags))
   
   (define (go-unit suffix)

@@ -224,12 +224,12 @@ scheme_init_eval (Scheme_Env *env)
   scheme_add_global_constant("local-expand-defmacro", 
 			     scheme_make_prim_w_arity(local_expand, 
 						      "local-expand-defmacro",
-						      1, 1), 
+						      1, 2), 
 			     env);
   scheme_add_global_constant("local-expand-body-expression", 
 			     scheme_make_prim_w_arity2(local_expand_body_expression, 
 						       "local-expand-body-expression",
-						       1, 1,
+						       1, 2,
 						       2, 2), 
 			     env);
   scheme_add_global_constant("expand-defmacro-once", 
@@ -824,7 +824,9 @@ Scheme_Object *scheme_check_immediate_macro(Scheme_Object *first,
 					    int depth,
 					    Scheme_Object **current_val)
 {
-  Scheme_Object *name, *val;
+  Scheme_Object *name, *val, *orig;
+
+  orig = first;
 
  check_top:
   *current_val = NULL;
@@ -847,9 +849,51 @@ Scheme_Object *scheme_check_immediate_macro(Scheme_Object *first,
   } else if (SAME_TYPE(SCHEME_TYPE(val), scheme_id_macro_type)) {
     /* id macro */
     first = scheme_make_pair(SCHEME_PTR_VAL(val), SCHEME_CDR(first));
-  } else
-    return first;
+  } else {
+    if (SAME_OBJ(val, scheme_define_values_syntax)) {
+      /* Check the form of the definition: can't shadow syntax bindings. */
+      /* Only check identifier if the definition is well-formed. */
+      Scheme_Object *binding, *rest;
+      rest = SCHEME_CDR(first);
+      if (SCHEME_PAIRP(rest)) {
+	binding = SCHEME_CAR(rest);
+	rest = SCHEME_CDR(rest);
+	if (SCHEME_PAIRP(rest) && SCHEME_NULLP(SCHEME_CDR(rest))) {
+	  if (SCHEME_SYMBOLP(binding)) {
+	    /* Binding part is ok */
+	  } else if (SCHEME_PAIRP(binding)) {
+	    rest = SCHEME_CDR(binding);
+	    binding = SCHEME_CAR(binding);
+	    while (SCHEME_PAIRP(rest)) {
+	      if (!SCHEME_SYMBOLP(SCHEME_CAR(rest)))
+		break;
+	      rest = SCHEME_CDR(rest);
+	    }
+	    if (!SCHEME_NULLP(rest) && !SCHEME_SYMBOLP(rest))
+	      binding = NULL;
+	  } else
+	    binding = NULL;
+	  
+	  if (binding) {
+	    /* Check binding id for shadowing syntax */
+	    Scheme_Object *val;
+	    val = scheme_static_distance(binding, env, 
+					 SCHEME_DONT_MARK_USE 
+					 + SCHEME_ENV_CONSTANTS_OK);
+	    if (SAME_TYPE(SCHEME_TYPE(val), scheme_macro_type)
+		|| SAME_TYPE(SCHEME_TYPE(val), scheme_syntax_compiler_type)) {
+	      scheme_wrong_syntax("define-values (in unit or embedded)",
+				  binding, orig,
+				  "unit/embedded binding cannot shadow syntax or macro names");
+	      return NULL;
+	    }
+	  }
+	}
+      }
+    }
 
+    return first;
+  }
 
   if (SCHEME_PAIRP(first))
     goto check_top;
@@ -2847,12 +2891,32 @@ static Scheme_Object *expand(int argc, Scheme_Object **argv)
   return scheme_expand_expr(argv[0], scheme_get_env(scheme_config)->init, -1);
 }
 
+static Scheme_Comp_Env *local_expand_extend_env(Scheme_Object *locals, 
+						Scheme_Comp_Env *env)
+{
+  Scheme_Object *l;
+  
+  for (l = locals; SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {
+    if (!SCHEME_SYMBOLP(SCHEME_CAR(l)))
+      return NULL;
+  }
+  if (!SCHEME_NULLP(l))
+    return NULL;
+  
+  return scheme_add_compilation_frame(locals, env, 0);
+}
+
 static Scheme_Object *
 local_expand(int argc, Scheme_Object **argv)
 {
   Scheme_Comp_Env *env;
 
   env = scheme_current_process->current_local_env;
+  if (env && (argc > 1)) {
+    env = local_expand_extend_env(argv[1], env);
+    if (!env)
+      scheme_wrong_type("local-expand-defmacro", "list of symbols", 1, argc, argv);
+  }
   if (!env)
     scheme_raise_exn(MZEXN_MISC_EXPANSION_TIME,
 		     "local-expand-defmacro: illegal at run-time");
@@ -2867,6 +2931,11 @@ local_expand_body_expression(int argc, Scheme_Object **argv)
   Scheme_Object *expr, *a[2], *gval;
 
   env = scheme_current_process->current_local_env;
+  if (env && (argc > 1)) {
+    env = local_expand_extend_env(argv[1], env);
+    if (!env)
+      scheme_wrong_type("local-expand-body-expression", "list of symbols", 1, argc, argv);
+  }
   if (!env)
     scheme_raise_exn(MZEXN_MISC_EXPANSION_TIME,
 		     "local-expand-body-expression: illegal at run-time");

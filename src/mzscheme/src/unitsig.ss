@@ -2,7 +2,17 @@
 (invoke-unit
  (unit
   (import)
-  (export)
+  ; The exports are meaningless, except that they allow shadowing
+  (export unit/sig
+	  invoke-unit/sig
+	  invoke-open-unit/sig
+	  define-signature
+	  let-signature
+          unit-with-signature
+          compound-unit-with-signature
+	  invoke-unit-with-signature
+	  invoke-open-unit-with-signature
+	  unit->unit-with-signature)
   
   ; Parse-time structs:
   (define-struct signature (name src global-src elems))
@@ -421,13 +431,15 @@
 	 clause))))
 
   (define parse-unit
-    (lambda (expr body)
+    (lambda (expr body sig)
       (unless (and (pair? body)
 		   (pair? (car body))
 		   (eq? 'import (caar body)))
 	      (syntax-error unit/sig expr 
 			    "expected `import' clause"))
       (let* ([imports (parse-imports unit/sig #t #t expr (cdar body))]
+	     [imported-names (flatten-signatures imports)]
+	     [exported-names (flatten-signature #f sig)]
 	     [body (cdr body)])
 	(let-values ([(renames body)
 		      (if (and (pair? body)
@@ -455,91 +467,104 @@
 			   (lambda (name)
 			     (syntax-error unit/sig expr
 					   (format "id \"~s\" renamed twice" name))))
-	     (let loop ([lines body][ports null][body null][vars null])
-	       (cond
-		[(and (null? ports) (null? lines))
-		 (make-parse-unit imports renames vars body)]
-		[(and (null? ports) (not (pair? lines)))
-		 (syntax-error unit/sig expr "improper body list form")]
-		[else
-		 (let-values ([(line line-kind) (local-expand-body-expression
-						 (if (null? ports)
-						     (car lines)
-						     (read (car ports))))]
-			      [(rest-lines) (if (null? ports)
-						(cdr lines)
-						lines)])
-		   (cond
-		    [(and (eof-object? line) (not (null? ports)))
-		     (values lines body vars)]
-		    [(eq? line-kind '#%define-values)
-		     (unless (and (pair? (cdr line))
-				  (list? (cadr line))
-				  (pair? (cddr line))
-				  (null? (cdddr line))
-				  (andmap symbol? (cadr line)))
-			     (syntax-error unit/sig expr 
-					   "improper `define-values' clause form"
-					   line))
-		     (let ([names (cadr line)])
+	     (let* ([renamed-internals (map car renames)]
+		    [swapped-renames (map (lambda (s) (cons (cadr s) (car s))) renames)]
+		    [filtered-exported-names 
+		     (if (null? renames)
+			 exported-names
+			 (let loop ([e exported-names])
+			   (if (null? e)
+			       e
+			       (if (assoc (car e) swapped-renames)
+				   (loop (cdr e))
+				   (cons (car e) (loop (cdr e)))))))]
+		    [local-vars (append renamed-internals filtered-exported-names imported-names)])
+	       (let loop ([lines body][ports null][body null][vars null])
+		 (cond
+		  [(and (null? ports) (null? lines))
+		   (make-parse-unit imports renames vars body)]
+		  [(and (null? ports) (not (pair? lines)))
+		   (syntax-error unit/sig expr "improper body list form")]
+		  [else
+		   (let-values ([(line line-kind) (local-expand-body-expression
+						   (if (null? ports)
+						       (car lines)
+						       (read (car ports)))
+						   local-vars)]
+				[(rest-lines) (if (null? ports)
+						  (cdr lines)
+						  lines)])
+		     (cond
+		      [(and (eof-object? line) (not (null? ports)))
+		       (values lines body vars)]
+		      [(eq? line-kind '#%define-values)
+		       (unless (and (pair? (cdr line))
+				    (list? (cadr line))
+				    (pair? (cddr line))
+				    (null? (cdddr line))
+				    (andmap symbol? (cadr line)))
+			       (syntax-error unit/sig expr 
+					     "improper `define-values' clause form"
+					     line))
+		       (let ([names (cadr line)])
+			 (loop rest-lines
+			       ports
+			       (cons line body)
+			       (append names vars)))]
+		      [(eq? line-kind '#%begin)
+		       (unless (and (pair? (cdr line))
+				    (list? (cdr line)))
+			       (syntax-error unit/sig expr 
+					     "improper `begin' clause form"
+					     line))
+		       (loop (append (cdr line) rest-lines)
+			     ports
+			     body
+			     vars)]
+		      [(and (pair? line)
+			    (eq? (car line) 'include))
+		       (let ([line (local-expand-defmacro line)])
+			 (unless (and (pair? (cdr line))
+				      (string? (cadr line))
+				      (null? (cddr line)))
+				 (syntax-error unit/sig expr 
+					       "improper `include' clause form"
+					       line))
+			    (let ([file (cadr line)])
+			      (let-values ([(base name dir?) (split-path file)])
+		                (when dir?
+				      (syntax-error unit/sig expr 
+						    (format "cannot include a directory ~s"
+							    file)))
+				(let* ([old-dir (current-load-relative-directory)]
+				       [p (open-input-file (if (and old-dir (not (complete-path? file)))
+							       (path->complete-path file old-dir)
+							       file))])
+				  (let-values ([(lines body vars)
+						(parameterize ([current-load-relative-directory
+								(if (string? base) 
+								    (if (complete-path? base)
+									base
+									(path->complete-path base
+											     (if old-dir 
+												 old-dir 
+												 (current-directory))))
+								    (current-directory))])
+						   (dynamic-wind
+						    void
+						    (lambda ()
+						      (loop rest-lines
+							    (cons p ports)
+							    body
+							    vars))
+						    (lambda ()
+						      (close-input-port p))))])
+				       (loop lines ports body vars))))))]
+		      [else
 		       (loop rest-lines
 			     ports
 			     (cons line body)
-			     (append names vars)))]
-		    [(eq? line-kind '#%begin)
-		     (unless (and (pair? (cdr line))
-				  (list? (cdr line)))
-			     (syntax-error unit/sig expr 
-					   "improper `begin' clause form"
-					   line))
-		     (loop (append (cdr line) rest-lines)
-			   ports
-			   body
-			   vars)]
-		    [(and (pair? line)
-			  (eq? (car line) 'include))
-		     (let ([line (local-expand-defmacro line)])
-		       (unless (and (pair? (cdr line))
-				    (string? (cadr line))
-				    (null? (cddr line)))
-			       (syntax-error unit/sig expr 
-					     "improper `include' clause form"
-					     line))
-		       (let ([file (cadr line)])
-			 (let-values ([(base name dir?) (split-path file)])
-		           (when dir?
-				 (syntax-error unit/sig expr 
-					       (format "cannot include a directory ~s"
-						       file)))
-			   (let* ([old-dir (current-load-relative-directory)]
-				  [p (open-input-file (if (and old-dir (not (complete-path? file)))
-							  (path->complete-path file old-dir)
-							  file))])
-			     (let-values ([(lines body vars)
-					   (parameterize ([current-load-relative-directory
-							   (if (string? base) 
-							       (if (complete-path? base)
-								   base
-								   (path->complete-path base
-											(if old-dir 
-											    old-dir 
-											    (current-directory))))
-							       (current-directory))])
-					       (dynamic-wind
-						void
-						(lambda ()
-						  (loop rest-lines
-							(cons p ports)
-							body
-							vars))
-						(lambda ()
-						  (close-input-port p))))])
-				(loop lines ports body vars))))))]
-		    [else
-		     (loop rest-lines
-			   ports
-			   (cons line body)
-			   vars)]))]))))))
+			     vars)]))])))))))
   
   
   (define unit-with-signature
@@ -549,7 +574,7 @@
 		(syntax-error unit/sig expr "improper form"))
 	(let ([sig (get-sig unit/sig expr #f (car body))]
 	      [rest (cdr body)])
-	  (let ([a-unit (parse-unit expr rest)])
+	  (let ([a-unit (parse-unit expr rest sig)])
 	    (check-signature-unit-body sig a-unit (parse-unit-renames a-unit) unit/sig expr)
 	    (result
 	     `(#%make-unit-with-signature

@@ -438,7 +438,10 @@ static int check_unit(Scheme_Object *form, Scheme_Comp_Env *env,
   int dpos, ipos;
   int orig_glob_prim;
   Scheme_Compile_Info *recs;
+  Scheme_Comp_Env *expand_env;
   
+  expand_env = env;
+
   drec.scheck_size = 0;
 
   init_ids(exports);
@@ -465,6 +468,8 @@ static int check_unit(Scheme_Object *form, Scheme_Comp_Env *env,
   import_count = scheme_list_length(params);
   *num_params = import_count;
 
+  expand_env = scheme_add_compilation_frame(params, expand_env, 0);
+
   if (!SCHEME_PAIRP(export)
       || NOT_SAME_OBJ(SCHEME_CAR(export), export_symbol))
     scheme_wrong_syntax(MAKE_UNIT, 
@@ -477,6 +482,15 @@ static int check_unit(Scheme_Object *form, Scheme_Comp_Env *env,
   /* Check for aliases: */
   check_int_ids_unique(exports, MAKE_UNIT, form, &drec, 0, 0, "exported internal");
   check_params(MAKE_UNIT, params, form, NULL, &drec, 0, 1);
+
+  {
+    /* Make list of internal names for exported variables, then extend the
+       expansion environment. */
+    Scheme_Object *el = scheme_null;
+    for (id = exports->first; id; id = id->next)
+      el = cons(id->int_id, el);
+    expand_env = scheme_add_compilation_frame(el, expand_env, 0);
+  }
 
   bodystack = scheme_null; /* Used to flatten begins */
   while (SCHEME_PAIRP(l)) {
@@ -496,7 +510,7 @@ static int check_unit(Scheme_Object *form, Scheme_Comp_Env *env,
       Scheme_Object *gval;
 
       /* Check for macro expansion, which could mask the real define-values */
-      expr = scheme_check_immediate_macro(expr, env, rec, depth, &gval);
+      expr = scheme_check_immediate_macro(expr, expand_env, rec, depth, &gval);
 
       if (SAME_OBJ(gval, scheme_begin_syntax) && SCHEME_PAIRP(SCHEME_CDR(expr))) {
 	Scheme_Object *cl;

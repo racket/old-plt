@@ -2149,7 +2149,7 @@ void scheme_check_context(Scheme_Env *env, Scheme_Object *name, Scheme_Object *f
   Scheme_Object *mod, *id = name;
   int bad = 0;
 
-  mod = scheme_stx_source_module(id, NULL);
+  mod = scheme_stx_source_module(id, 0);
 
   if (mod && SCHEME_TRUEP(mod) && NOT_SAME_OBJ(ok_modidx, mod)) {
     bad = 1;
@@ -2672,9 +2672,22 @@ local_introduce(int argc, Scheme_Object *argv[])
 }
 
 static Scheme_Object *
+introducer_proc(void *mark, int argc, Scheme_Object *argv[])
+{
+  Scheme_Object *s;
+
+  s = argv[0];
+  if (!SCHEME_STXP(s))
+    scheme_wrong_type("syntax-introducer", "syntax", 0, argc, argv);
+
+  return scheme_add_remove_mark(s, (Scheme_Object *)mark);
+}
+
+static Scheme_Object *
 make_introducer(int argc, Scheme_Object *argv[])
 {
-  return scheme_void;
+  return scheme_make_closed_prim_w_arity(introducer_proc, scheme_new_mark(),
+					 "syntax-introducer", 1, 1);
 }
 
 static Scheme_Object *

@@ -1037,23 +1037,25 @@
   (#%lambda (program libpath)
     (#%unless (#%string? program)
       (#%raise-type-error 'find-executable-path "string" program))
-    (#%unless (#%string? libpath)
-      (#%raise-type-error 'find-executable-path "string" libpath))
+    (#%unless (#%or (#%not libpath) (#%relative-path? libpath))
+      (#%raise-type-error 'find-executable-path "relative-path string or #f" libpath))
     (#%letrec ([found-exec
 		(#%lambda (exec-name)
-		  (#%let-values ([(base name isdir?) (#%split-path exec-name)])
-		     (#%if (#%string? base)
-		       (#%let ([lib (#%build-path base libpath)])
-			 (#%if (#%or (#%directory-exists? lib) 
-				     (#%file-exists? lib))
-			     lib
-			     (#%let ([resolved (#%resolve-path exec-name)])
-			       (#%cond
-				[(#%string=? resolved exec-name) #f]
-				[(#%relative-path? resolved)
-				 (found-exec (#%build-path base resolved))]
-			       [else (found-exec resolved)]))))
-		       #f)))])
+                  (#%if libpath
+		        (#%let-values ([(base name isdir?) (#%split-path exec-name)])
+		           (#%if (#%string? base)
+		             (#%let ([lib (#%build-path base libpath)])
+			       (#%if (#%or (#%directory-exists? lib) 
+				           (#%file-exists? lib))
+			           lib
+			           (#%let ([resolved (#%resolve-path exec-name)])
+			             (#%cond
+				      [(#%string=? resolved exec-name) #f]
+				      [(#%relative-path? resolved)
+				       (found-exec (#%build-path base resolved))]
+			             [else (found-exec resolved)]))))
+		             #f))
+			exec-name))])
       (#%if (#%relative-path? program)
 	  (#%let ([paths-str (#%getenv "PATH")]
 		  [win-add (#%lambda (s) (#%if (#%eq? (#%system-type) 'windows) (#%cons "." s) s))])

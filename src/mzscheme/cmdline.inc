@@ -66,11 +66,12 @@ static char *make_embedded_load(const char *start, const char *end)
   s = (char *)malloc(strlen(start) + strlen(end) + 512);
   
   sprintf(s,
-	  "(let* ([sp (find-system-path 'exec-file)] [exe (find-executable-path sp sp)]"
+	  "(let* ([sp (find-system-path 'exec-file)] [exe (find-executable-path sp #f)]"
                  "[s (with-input-from-file exe (lambda () "
 	              "(file-position (current-input-port) %s) (read-string (- %s %s))))]"
                  "[p (open-input-string s)])"
-	     "(let loop () (let ([e (read p)]) (unless (eof-object? e) (eval e) (loop)))))",
+	     "(let loop () (let ([e (parameterize ([read-accept-compiled #t]) (read p))])"
+ 			    "(unless (eof-object? e) (eval e) (loop)))))",
 	  start, end, start);
 
   return s;

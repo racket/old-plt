@@ -419,7 +419,8 @@
 	      =>
 	      (lambda (p-env)
 		(let ((fun (pat:pexpand 'fun p-env kwd))
-		       (expr (pat:pexpand `(lambda args ,@expr-pattern))))
+		       (expr (pat:pexpand `(lambda args ,@expr-pattern)
+			       p-env kwd)))
 		  (valid-syntactic-id? fun)
 		  (cons (list fun) expr))))
 	    ((pat:match-against m&e-2 expr env)

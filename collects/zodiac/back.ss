@@ -1,4 +1,4 @@
-; $Id$
+; $Id: back.ss,v 1.4 1997/07/21 15:51:43 shriram Exp $
 
 (unit/sig zodiac:back-protocol^
   (import zodiac:misc^ zodiac:interface^)
@@ -53,7 +53,7 @@
 	  (lambda (back)		; getter
 	    (let ((v (secure-box-value back)))
 	      (with-handlers
-		((exn:application:range:bounds:vector?
+		((exn:application:mismatch?
 		   (lambda (exception)
 		     (vector-ref (extend-back-vector back) index))))
 		(let ((value (vector-ref v index)))
@@ -66,7 +66,7 @@
 	  (lambda (back value)		; setter
 	    (let ((v (secure-box-value back)))
 	      (with-handlers
-		((exn:application:range:bounds:vector?
+		((exn:application:mismatch?
 		   (lambda (exception)
 		     (vector-set! (extend-back-vector back) index value))))
 		(vector-set! v index value))))))))

@@ -1,4 +1,4 @@
-; $Id: scm-hanc.ss,v 1.51 1998/05/17 02:43:30 shriram Exp $
+; $Id: scm-hanc.ss,v 1.52 1998/05/18 22:56:29 shriram Exp $
 
 (define-struct signature-element (source))
 (define-struct (name-element struct:signature-element) (name))
@@ -1092,7 +1092,7 @@
 		       (small-sig
 			 (expand-expr sig env attributes sig-vocab)))
 		  (with-handlers
-		    ((exn:unit:signature:match:missing?
+		    ((exn:unit?
 		       (lambda (exn)
 			 (static-error expr
 			   (exn-message exn)))))
@@ -1116,7 +1116,7 @@
 		     (small-sig
 		       (expand-expr sig env attributes sig-vocab)))
 		(with-handlers
-		  ((exn:unit:signature:match:missing?
+		  ((exn:unit?
 		     (lambda (exn)
 		       (static-error expr
 			 (exn-message exn)))))
@@ -1190,7 +1190,7 @@
 		       (small-sig
 			 (expand-expr sig env attributes sig-vocab)))
 		  (with-handlers
-		    ((exn:unit:signature:match:missing?
+		    ((exn:unit?
 		       (lambda (exn)
 			 (static-error expr
 			   (exn-message exn)))))
@@ -1216,7 +1216,7 @@
 		     (small-sig
 		       (expand-expr sig env attributes sig-vocab)))
 		(with-handlers
-		  ((exn:unit:signature:match:missing?
+		  ((exn:unit?
 		     (lambda (exn)
 		       (static-error expr
 			 (exn-message exn)))))

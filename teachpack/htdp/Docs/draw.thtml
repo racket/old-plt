@@ -39,14 +39,22 @@ The teachpack also provides <code>clear-</code> operations for each
 <br>
 <br>
 <br>
+The color argument for all functions are optional. 
 
-Sample session: Set teachpack to <code> draw.ss </code> and execute:
+<p>Sample session: Set teachpack to <code> draw.ss </code> and execute:
 <br> <code> > (start 500 500) </code>
+<br> <code> > (draw-solid-disk (make-posn 100 100) 3 RED) </code>
+<br> <code> true </code>
+<br> <code> > (clear-solid-disk (make-posn 100 100) 3 RED) </code>
+<br> <code> true </code>
+<br> <code> > (sleep-for-a-while 1)
 <br> <code> > (draw-solid-disk (make-posn 100 100) 3 RED) </code>
 <br> <code> true </code>
 <br> <code> > (clear-solid-disk (make-posn 100 100) 3) </code>
 <br> <code> true </code>
 <br> <code> > (stop) </code>
 <br> <code> > </code>
+This session opens a window, draws a red disk, clears it, sleeps for a second, 
+and then repeats. The last expression closes the canvas. 
 
 #include foot.tinc

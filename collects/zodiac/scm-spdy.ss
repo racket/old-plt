@@ -225,7 +225,12 @@
 			  (dynamic-wind
 			    (lambda ()
 			      (when (string? base)
-				(current-load-relative-directory base)))
+				(current-load-relative-directory
+				  (if (complete-path? base)
+				    base
+				    (build-path (or original-directory
+						  (current-directory))
+				      base)))))
 			    (lambda ()
 			      (let ((reader
 				      (z:read p

@@ -226,7 +226,7 @@
   (lambda ()
     (let ([application (mred:make-application@)])
       (unit/sig->unit
-       (compound-unit/sig (import ())
+       (compound-unit/sig (import)
 	 (link [core : mzlib:core^ (mzlib:core@)]
 	       [trigger : mzlib:trigger^ (mzlib:trigger@)]
 	       [mred : mred^ (mred@ core trigger application)]

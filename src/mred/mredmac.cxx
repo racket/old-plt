@@ -182,7 +182,7 @@ static void GetSleepTime(int *sleep_time, int *delay_time)
   *delay_time = last_was_front ? DELAY_TIME : 0;
 }
 
-static void TransferQueue(int all)
+static int TransferQueue(int all)
 {
   EventRecord e;
   short mask;
@@ -193,7 +193,7 @@ static void TransferQueue(int all)
   /* Don't call WaitNextEvent too often. */
   static unsigned long lastTime;
   if (TickCount() <= lastTime + delay_time)
-    return;
+    return 0;
 
   mask = everyEvent;
   
@@ -203,6 +203,8 @@ static void TransferQueue(int all)
   }
   
   lastTime = TickCount();
+  
+  return 1;
 }
 
 static void MrDequeue(MrQueueElem *q)
@@ -289,8 +291,8 @@ int MrEdGetNextEvent(int check_only, int current_only,
   MrEdContext *c, *keyOk, *fc, *foundc;
   WindowPtr window;
   wxFrame *fr;
-  int found = 0;
-  int saw_mdown = 0, saw_kdown = 0, we_are_front;
+  int found = 0, kill_context = 0;
+  int saw_mup = 0, saw_mdown = 0, saw_kdown = 0, we_are_front;
   
   if (!event)
     event = &ebuf;
@@ -305,7 +307,12 @@ int MrEdGetNextEvent(int check_only, int current_only,
   	  c, keyOk, cont_event_context);
 #endif
 
-  TransferQueue(0);
+  if (cont_event_context)
+    if (!StillDown())
+      kill_context = 1;
+
+  if (!TransferQueue(0))
+    kill_context = 0;
 
   if (cont_event_context)
     if (!WindowStillHere(cont_event_context_window))
@@ -406,17 +413,21 @@ int MrEdGetNextEvent(int check_only, int current_only,
 	  cont_event_context = NULL;
         } else if (window != front) {
           /* Handle bring-window-to-front click immediately */
-	  fr = wxWindowPtrToFrame(window, NULL);
-	  fc = fr ? (MrEdContext *)fr->context : NULL;
-	  if (fc && (!fc->modal_window || (fr == fc->modal_window))) {
-	    SelectWindow(window);
-	    MrDequeue(osq);
-	    cont_event_context = NULL;
-	  } else if (fc && fc->modal_window) {
-	    SysBeep(0);
-	    MrDequeue(osq);
-	    cont_event_context = NULL;
-	    SelectWindow(((wxFrame *)fc->modal_window)->macWindow());
+          if (!WindowStillHere(window)) {
+            MrDequeue(osq);
+          } else {
+	    fr = wxWindowPtrToFrame(window, NULL);
+	    fc = fr ? (MrEdContext *)fr->context : NULL;
+	    if (fc && (!fc->modal_window || (fr == fc->modal_window))) {
+	      SelectWindow(window);
+	      MrDequeue(osq);
+	      cont_event_context = NULL;
+	    } else if (fc && fc->modal_window) {
+	      SysBeep(0);
+	      MrDequeue(osq);
+	      cont_event_context = NULL;
+	      SelectWindow(((wxFrame *)fc->modal_window)->macWindow());
+	    }
 	  }
 	} else if (resume_ticks > e->when) {
 	  /* Clicked MrEd into foreground - toss the event */
@@ -431,6 +442,7 @@ int MrEdGetNextEvent(int check_only, int current_only,
 	      cont_event_context_window = window;
 	      cont_event_context_modifiers = e->modifiers;
 	      cont_event_context_modifiers |= btnState;
+	      kill_context = 0;
 	    } else
 	      cont_event_context = NULL;
 	  }
@@ -438,6 +450,7 @@ int MrEdGetNextEvent(int check_only, int current_only,
       }
       break;
     case mouseUp:
+      saw_mup = 1;
       if (!cont_event_context) {
       	if (!saw_mdown) {
 	  MrDequeue(osq);
@@ -478,6 +491,9 @@ int MrEdGetNextEvent(int check_only, int current_only,
 
     osq = next;
   }
+  
+  if (kill_context && !saw_mup)
+    cont_event_context = NULL;
   
   if (found) {
     /* Remove intervening mouse/key events: */

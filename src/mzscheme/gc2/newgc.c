@@ -475,16 +475,15 @@ static unsigned short add_owner_set(Scheme_Custodian *cust) {
       return i;
     }
 
-  if(owner_table_top == ((8 << LOG_WORD_SIZE) - (5 + LOG_MPAGE_SIZE))) {
+  if(owner_table_top == (2 << ((8 << LOG_WORD_SIZE) - (6 + LOG_MPAGE_SIZE)))) {
     fprintf(stderr, "Out of entries in the owner table\n");
     fprintf(stderr, "Accounting is going to be invalid for awhile\n");
-    abort();
     return 0;
   }
 
   owner_table_top += OWNER_TABLE_GROW_AMT;
-  if(owner_table_top > ((8 << LOG_WORD_SIZE) - (5 + LOG_MPAGE_SIZE)))
-    owner_table_top = ((8 << LOG_WORD_SIZE) - (5 + LOG_MPAGE_SIZE));
+  if(owner_table_top > (2 << ((8 << LOG_WORD_SIZE) - (6 + LOG_MPAGE_SIZE))))
+    owner_table_top = (2 << ((8 << LOG_WORD_SIZE) - (6 + LOG_MPAGE_SIZE)));
   owner_table = realloc(owner_table, owner_table_top * 
                                      sizeof(struct owner_set *));
   bzero( (void*)((unsigned long)owner_table

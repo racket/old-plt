@@ -312,27 +312,28 @@
 		     (copy-previous-expr previous-expr-pos)))]
 		
 		[do-save-and-eval-or-read-avail
-		 (lambda (str)
-		   (set! previous-expr-pos -1)
-		   (if (null? previous-exprs)
-		       (set! previous-exprs (cons str ()))
-		       (when (not (string=? str (last-str previous-exprs)))
-			 (if (>= (length previous-exprs) max-save-previous-exprs)
-			     (set! previous-exprs (cdr previous-exprs)))
-			 (let loop ([l previous-exprs])
-			   (if (null? (cdr l))
-			       (set-cdr! l (cons str ()))
-			       (loop (cdr l))))))
-		   (if read-waiting?
-		       (read-avail str)
-		       (do-eval str)))]
+		 (lambda (start end)
+		   (let ([str (get-text start end)])
+		     (set! previous-expr-pos -1)
+		     (if (null? previous-exprs)
+			 (set! previous-exprs (cons str ()))
+			 (when (not (string=? str (last-str previous-exprs)))
+			   (if (>= (length previous-exprs) max-save-previous-exprs)
+			       (set! previous-exprs (cdr previous-exprs)))
+			   (let loop ([l previous-exprs])
+			     (if (null? (cdr l))
+				 (set-cdr! l (cons str ()))
+				 (loop (cdr l))))))
+		     (if read-waiting?
+			 (read-avail str)
+			 (do-eval start end))))]
 		[do-eval
-		 (lambda (str)
+		 (lambda (start end)
 		   (do-pre-eval)
 		   (mred:gui-utils:local-busy-cursor
 		    (get-canvas)
 		    (lambda ()
-		      (eval-and-display str)))
+		      (eval-and-display (get-text start end))))
 		   (do-post-eval))]
 		[do-pre-eval
 		 (lambda ()
@@ -350,9 +351,6 @@
 		 (lambda (v)
 		   (cond
 		    [(void? v) v]
-		    [(and (is-a? v wx:snip%)
-			  (not (send v is-owned?)))
-		     (insert v)]
 		    [else (pretty-print-out v)]))]
 		[eval-and-display
 		 (lambda (str)
@@ -406,10 +404,10 @@
 							 prompt-position
 							 last)])
 					 (if balanced?
-					     (let ([str (get-text prompt-position 
-								  start)])
+					     (begin
 					       (delete start last)
-					       (do-save-and-eval-or-read-avail str))
+					       (do-save-and-eval-or-read-avail 
+						prompt-position start))
 					     (super-on-local-char key)))
 				       (if (< start prompt-position)
 					   (let ([match
@@ -666,6 +664,16 @@
 	    (mred:debug:printf 'super-init "after console-frame%")
 	    (send edit set-file-format wx:const-media-ff-std)
 	    
+	    ; setup snips for the pretty printer
+	    (mzlib:pretty-print:pretty-print-size-hook
+	     (lambda (x _) (and (is-a? x wx:snip%) 1)))
+	    (mzlib:pretty-print:pretty-print-print-hook
+	     (lambda (x _) 
+	       (let ([edit (active-edit)])
+		 (send edit insert
+		       (send x copy)
+		       (send edit last-position)))))
+
 	    ; Welcome message and initial prompt:
 	    (when mssg
 	      (send edit insert mssg)

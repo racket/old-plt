@@ -57,7 +57,6 @@
   (define (current-linkage)
     (let* ((links (with-input-from-file (LINKAGE-FILE) read-all))
            (buckets (categorize caar links)))
-      (display buckets)
       (map
        (lambda (x) (cons (car x) (map (lambda (y) (drop-last (cadr y))) (cadr x))))
        buckets)))

@@ -27,7 +27,7 @@
   (make-object menu-item% "Open..." file-menu (lambda (_1 _2) (open)) #\o)
   (define save-item (make-object menu-item% "Save..." file-menu (lambda (_1 _2) (save)) #\s))
   (make-object menu-item% "Save As..." file-menu (lambda (_1 _2) (save-as)))
-  (make-object menu-item% "Close" file-menu (lambda (_1 _2) (close)) #\c)
+  (make-object menu-item% "Close" file-menu (lambda (_1 _2) (close)) #\w)
   (define edit-menu (make-object menu% "Edit" menu-bar))
   (make-object menu-item% "Undo" edit-menu (lambda (_1 _2) (send canvas undo)) #\z)
   (make-object menu-item% "Redo" edit-menu (lambda (_1 _2) (send canvas redo)) #\y)

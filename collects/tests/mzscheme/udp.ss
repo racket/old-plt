@@ -88,23 +88,23 @@
 (test #f udp-connected? udp2)
 
 ;; waitables
-(define udp1-s (udp->send-waitable udp1))
-(test #t object-waitable? udp1-s)
-(test udp1-s object-wait-multiple #f udp1-s)
+(define udp1-s (udp-send-evt udp1))
+(test #t evt? udp1-s)
+(test udp1-s sync udp1-s)
 
-(define udp2-r (udp->receive-waitable udp2))
-(test #t object-waitable? udp2-r)
-(test #f object-wait-multiple 0.05 udp2-r)
+(define udp2-r (udp-receive-evt udp2))
+(test #t evt? udp2-r)
+(test #f sync/timeout 0.05 udp2-r)
 
 (test (void) udp-send-to udp1 "localhost" 40007 #"here's more")
 (sleep 0.05)
-(test udp2-r object-wait-multiple #f udp2-r)
-(test udp2-r object-wait-multiple #f udp2-r)
+(test udp2-r sync udp2-r)
+(test udp2-r sync udp2-r)
 (test-values (list 10 #"127.0.0.1" udp1-port) (lambda () (udp-receive!* udp2 us1)))
-(test #f object-wait-multiple 0.05 udp2-r)
+(test #f sync/timeout 0.05 udp2-r)
 
 ;; break behavior
-(let ([t (parameterize ([break-enabled #f])
+(let ([t (parameterize-break #f
            (thread (lambda ()
 		     (udp-receive!/enable-break udp1 us1)
 		     (set! udp1 #f))))])
@@ -154,9 +154,9 @@
 (err/rt-test (udp-close udp1) exn:fail:network?)
 
 ;; Can stil get waitable after closed:
-(test #t object-waitable? (udp->send-waitable udp1))
-(test #t object-waitable? (udp->receive-waitable udp1))
-(let ([w (udp->send-waitable udp1)])
-  (test w object-wait-multiple #f w))
-(let ([w (udp->receive-waitable udp1)])
-  (test w object-wait-multiple #f w))
+(test #t evt? (udp-send-evt udp1))
+(test #t evt? (udp-receive-evt udp1))
+(let ([w (udp-send-evt udp1)])
+  (test w sync w))
+(let ([w (udp-receive-evt udp1)])
+  (test w sync w))

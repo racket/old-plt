@@ -25,17 +25,17 @@
 (define erroring-set? #f)
 
 (define erroring-port
-  (make-custom-output-port #f
-			   (let ([orig (current-output-port)])
-			     (lambda (s start end flush?) 
-			       (if erroring-set?
-				   (begin
-				     (set! erroring-set? #f)
-				     (error 'output))
-				   (display (subbytes s start end) orig))
-			       (- end start)))
-			   void
-			   void))
+  (make-output-port 'errors
+		    always-evt
+		    (let ([orig (current-output-port)])
+		      (lambda (s start end flush? breakable?) 
+			(if erroring-set?
+			    (begin
+			      (set! erroring-set? #f)
+			      (error 'output))
+			    (display (subbytes s start end) orig))
+			(- end start)))
+		    void))
 
 (define erroring-eval
   (let ([orig (current-eval)])
@@ -163,8 +163,8 @@
 		      #f)
 
 		(list current-input-port
-		      (list (make-custom-input-port (lambda (s) (bytes-set! s 0 (char->integer #\x)) 1) #f void)
-			    (make-custom-input-port (lambda (s) (error 'bad)) #f void))
+		      (list (make-input-port 'in (lambda (s) (bytes-set! s 0 (char->integer #\x)) 1) #f void)
+			    (make-input-port 'in (lambda (s) (error 'bad)) #f void))
 		      '(read-char)
 		      exn:fail?
 		      '("bad string"))
@@ -214,20 +214,6 @@
 		      '(format "~e" 10)
 		      exn:fail?
 		      (list "bad setting" zero-arg-proc one-arg-proc three-arg-proc))
-
-		(list break-enabled
-		      (list #t #f)
-		      '(let ([cont? #f])
-			 (thread-wait
-			  (thread
-			   (lambda ()
-			     (break-thread (current-thread))
-			     (sleep)
-			     (set! cont? #t))))
-			 (when cont?
-			   (error 'break-enabled)))
-		      exn:fail?
-		      #f)
 
 		(list current-print
 		      (list (current-print)

@@ -179,8 +179,8 @@
 (err/rt-test (file-position s 'one))
 (err/rt-test (file-position s -1))
 (err/rt-test (file-position s (expt 2 100)) exn:application:mismatch?)
-(err/rt-test (file-position (make-custom-input-port void #f void) 100) exn:application:mismatch?)
-(err/rt-test (file-position (make-custom-output-port #f void void void) 100) exn:application:mismatch?)
+(err/rt-test (file-position (make-input-port 'name void #f void) 100) exn:application:mismatch?)
+(err/rt-test (file-position (make-output-port 'name always-evt void void) 100) exn:application:mismatch?)
 (arity-test file-position 1 2)
 
 (define (test-read-line r1 r2 s1 s2 flags sep)
@@ -526,37 +526,34 @@
 (err/rt-test (make-pipe (- (expt 2 40))))
 (err/rt-test (make-pipe "hello"))
 
-(test #t input-port? (make-custom-input-port void void void))
-(test #t input-port? (make-custom-input-port void #f void))
-(test #t input-port? (make-custom-input-port void #f void 1000))
-(test 1000 object-name (make-custom-input-port void #f void 1000))
-(err/rt-test (read (make-custom-input-port void void void)))
-(err/rt-test (read-char (make-custom-input-port void void void)))
-(err/rt-test (peek-char (make-custom-input-port void void void)))
-(arity-test make-custom-input-port 3 4)
-(err/rt-test (make-custom-input-port 8 void void))
-(err/rt-test (make-custom-input-port void 8 void))
-(err/rt-test (make-custom-input-port void void 8))
-(err/rt-test (make-custom-input-port cons void void))
-(err/rt-test (make-custom-input-port void add1 void))
-(err/rt-test (make-custom-input-port void void add1))
+(test #t input-port? (make-input-port void void void void))
+(test #t input-port? (make-input-port void void #f void))
+(test #t input-port? (make-input-port 1000 void #f void))
+(test 1000 object-name (make-input-port 1000 void #f void))
+(err/rt-test (read (make-input-port #f void void void)))
+(err/rt-test (read-char (make-input-port #f void void void)))
+(err/rt-test (peek-char (make-input-port #f void void void)))
+(arity-test make-input-port 4 6)
+(err/rt-test (make-custom-input-port #f 8 void void))
+(err/rt-test (make-custom-input-port #f void 8 void))
+(err/rt-test (make-custom-input-port #f void void 8))
+(err/rt-test (make-custom-input-port #f cons void void))
+(err/rt-test (make-custom-input-port #f void add1 void))
+(err/rt-test (make-custom-input-port #f void void add1))
 
-(test #t output-port? (make-custom-output-port #f void void void))
-(test #t output-port? (make-custom-output-port void void void void))
-(test #t output-port? (make-custom-output-port void void void void void))
-(test #t output-port? (make-custom-output-port void void void void void 7786))
-(test 7786 object-name (make-custom-output-port void void void void void 7786))
-(arity-test make-custom-output-port 4 6)
-(err/rt-test (make-custom-output-port 8 void void void))
-(err/rt-test (make-custom-output-port #f 8 void void))
-(err/rt-test (make-custom-output-port #f void 8 void))
-(err/rt-test (make-custom-output-port #f void void 8))
-(err/rt-test (make-custom-output-port #f add1 void void))
-(err/rt-test (make-custom-output-port #f void add1 void))
-(err/rt-test (make-custom-output-port #f void void add1))
-(err/rt-test (write-special 'foo (make-custom-output-port void void void void)) exn:application:mismatch?)
+(test #t output-port? (make-output-port #f always-evt void void))
+(test #t output-port? (make-output-port #f always-evt void void))
+(test 7786 object-name (make-output-port 7786 always-evt void void))
+(arity-test make-output-port 4 7)
+(err/rt-test (make-output-port #f 8 void void void))
+(err/rt-test (make-output-port #f always-evt 8 void))
+(err/rt-test (make-output-port #f always-evt void 8))
+(err/rt-test (make-output-port #f always-evt add1 void))
+(err/rt-test (make-output-port #f always-evt void add1))
+(err/rt-test (write-special 'foo (make-custom-output-port void always-evt void void)) exn:application:mismatch?)
 
-(let ([p (make-custom-input-port 
+(let ([p (make-input-port 
+	  'name
 	  (lambda (s) (bytes-set! s 0 97) 1)
 	  (lambda (s skip)
 	    (test 0 'skip-is-0 skip)
@@ -571,7 +568,8 @@
   (test 3 file-position p))
 
 (let* ([s (open-input-string "(apple \"banana\" [coconut])")]
-       [p (make-custom-input-port 
+       [p (make-input-port 
+	   'name
 	   (lambda (str) (if (or (byte-ready? s)
 				 (zero? (random 2)))
 			     (begin
@@ -626,7 +624,7 @@
 (close-output-port test-file)
 (check-test-file "tmp2")
 
-(define ui (make-custom-input-port (lambda (s) (bytes-set! s 0 (char->integer #\")) 1) #f void))
+(define ui (make-input-port 'name (lambda (s) (bytes-set! s 0 (char->integer #\")) 1) #f void))
 (test "" read ui)
 (arity-test (port-read-handler ui) 1 3 '(2))
 (err/rt-test ((port-read-handler ui) 8))
@@ -839,7 +837,7 @@
     (thread go)))
 
 (define (gsync port)
-  (object-wait-multiple #f port))
+  (sync port))
 
 ;; Test custom port with test-a-port
 (define (test-a-custom-port supply-peek? gdelay gsync)
@@ -853,7 +851,8 @@
 	       (for-each semaphore-post extras)
 	       (set! extras null)
 	       (semaphore-post lock))]
-	 [p (make-custom-input-port
+	 [p (make-input-port
+	     'name
 	     ;; read-bytes:
 	     (lambda (s)
 	       (if (semaphore-try-wait? lock)
@@ -866,10 +865,14 @@
 			    (set! counter (add1 counter))
 			    (loop (add1 got)))
 			  (if (zero? got)
-			      (make-semaphore-peek ready-sema)
+			      (convert-evt
+			       (semaphore-peek-evt ready-sema)
+			       (lambda (x) 0))
 			      got)))
 		    (semaphore-post lock))
-		   (make-semaphore-peek lock)))
+		   (convert-evt
+		    (semaphore-peek-evt lock)
+		    (lambda (x) 0))))
 	     (and supply-peek?
 		  (lambda (s d)
 		    (if (semaphore-try-wait? lock)
@@ -888,9 +891,11 @@
 			       ;; when new things appear:
 			       (let ([s (make-semaphore)])
 				 (set! extras (cons s extras))
-				 s)))
+				 (convert-evt s (lambda (x) 0)))))
 			 (semaphore-post lock))
-			(make-semaphore-peek lock))))
+			(convert-evt
+			 (semaphore-peek-evt lock)
+			 (lambda () 0)))))
 	     void)])
     (test-a-port p (gdelay go) gsync)))
 
@@ -935,7 +940,8 @@
 	       (loop (add1 i))))
 	   l))]
       [pos 0])
-  (let ([p (make-custom-input-port 
+  (let ([p (make-input-port 
+	    'name
 	    (lambda (s) (let ([n (fill-a s pos)])
 			  (set! pos (+ pos n))
 			  n))
@@ -963,22 +969,25 @@
       [s (make-semaphore)]
       [flushed? #f]
       [spec #f])
-  (let ([p (make-custom-output-port
-	    (lambda () (make-semaphore-peek s))
-	    (lambda (bytes start end non-block?)
+  (let ([p (make-output-port
+	    'name
+	    (semaphore-peek-evt s)
+	    (lambda (bytes start end non-block? breakable?)
 	      (define can-block? (not non-block?))
-	      (if (if can-block?
-		      (semaphore-wait s)
-		      (semaphore-try-wait? s))
-		  (let ([len (if can-block?
-				 (- end start)
-				 1)])
-		    (set! l (append l
-				    (list (subbytes bytes start (+ start len)))))
-		    len)
-		  0))
-	    (lambda ()
-	      (set! flushed? #t))
+	      (if (= start end)
+		  (begin
+		    (set! flushed? #t)
+		    0)
+		  (if (if can-block?
+			  (semaphore-wait s)
+			  (semaphore-try-wait? s))
+		      (let ([len (if can-block?
+				     (- end start)
+				     1)])
+			(set! l (append l
+					(list (subbytes bytes start (+ start len)))))
+			len)
+		      0)))
 	    (lambda ()
 	      (set! l #f))
 	    (lambda (s non-block?)
@@ -1138,7 +1147,8 @@
 
 (arity-test read-eval-print-loop 0 0)
 (test (void) 'r-e-p-l-return 
-      (parameterize ([current-input-port (make-custom-input-port
+      (parameterize ([current-input-port (make-input-port
+					  'name
 					  (lambda (s) eof)
 					  #f
 					  void)])
@@ -1240,8 +1250,8 @@
 (err/rt-test (udp-receive! 5 (make-bytes 10)))
 (err/rt-test (udp-receive!* 5 (make-bytes 10)))
 (err/rt-test (udp-receive!/enable-break 5 (make-bytes 10)))
-(err/rt-test (udp->send-waitable 5))
-(err/rt-test (udp->receive-waitable 5))
+(err/rt-test (udp-send-waitable 5))
+(err/rt-test (udp-receive-waitable 5))
 
 (arity-test udp-open-socket 0 0)
 (arity-test udp-close 1 1)
@@ -1259,10 +1269,10 @@
 (arity-test udp-receive! 2 4)
 (arity-test udp-receive!* 2 4)
 (arity-test udp-receive!/enable-break 2 4)
-(arity-test udp->send-waitable 1 1)
-(arity-test udp->receive-waitable 1 1)
+(arity-test udp-send-evt 1 1)
+(arity-test udp-receive-evt 1 1)
 
-(section 'file-after-udp)
+(SECTION 'file-after-udp)
 
 ;;----------------------------------------------------------------------
 ;; Security guards:

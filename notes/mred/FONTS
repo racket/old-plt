@@ -48,7 +48,6 @@ where
          "Swiss", "Modern"", "System", or "Symbol" for a mapping
          defining the default font for a family. Otherwise, it is a
          face name prefixed with "@"
-
   <weight> is either "Medium", "Bold", or "Light"
   <style> is either "Straight", "Italic", or "Slant"
 

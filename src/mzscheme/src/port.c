@@ -2846,6 +2846,7 @@ fd_char_ready (Scheme_Input_Port *port)
       c = try_get_fd_char(fip->fd, &ready);
       if (ready) {
 	if (c != EOF) {
+	  fip->buffpos = 0;
 	  fip->buffer[0] = (unsigned char)c;
 	  fip->bufcount = 1;
 	}

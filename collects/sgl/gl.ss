@@ -761,10 +761,10 @@
                          (error 'gluDeleteQuadric
                                 "unavailable on this system")))))
       (get-ffi-obj 'gluDeleteQuadric glu-lib (_fun _glu-quadric -> _void))))
+
   ;; 6.2
-  #|
-  (define-foreignu gluQuadricCallback _glu-quadric _gl-enum ??? ->)
-  |#
+  ;;(define-foreignu gluQuadricCallback
+  ;;                 _glu-quadric (_gl-enum = GLU_ERROR) (_fun _gl-enum -> _void) ->)
 
   ;; 6.3
   (define-foreignu gluQuadricNormals _glu-quadric _gl-enum ->)

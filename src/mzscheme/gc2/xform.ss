@@ -19,6 +19,7 @@
 
 (require-library "function.ss")
 (require-library "errortrace.ss" "errortrace")
+(error-print-width 100)
 
 (define cpp-process
   (process (format "~a -DMZ_PRECISE_GC ~a ~a"
@@ -156,22 +157,22 @@
        floor ceil round fmod fabs __maskrune
        isalpha isdigit isspace tolower toupper
        fread fwrite socket fcntl setsockopt connect send recv close
-       __builtin_next_arg
+       __builtin_next_arg __error __toupper __tolower
        scheme_get_env
        scheme_get_milliseconds scheme_get_process_milliseconds
        scheme_rational_to_double scheme_bignum_to_double
-       scheme_rational_to_float scheme_bignum_to_float))
+       scheme_rational_to_float scheme_bignum_to_float
+
+       scheme_make_small_bignum scheme_make_small_rational scheme_make_small_complex))
 
 (define non-gcing-functions
   ;; The following don't need wrappers, but we need to check for
-  ;;  nested function calls:
+  ;;  nested function calls because it takes more than one argument:
   '(memcpy
     strcmp strcpy strcat memset
     printf sprintf vsprintf vprintf
     strncmp scheme_strncmp
-    
-    scheme_make_small_bignum scheme_make_small_rational scheme_make_small_complex 
-    ))
+    read write))
 
 (define non-returning-functions
   ;; The following functions never return, so the wrappers
@@ -1012,7 +1013,7 @@
 	 (lambda ()
 	   ;; It's a cast:
 	   (let-values ([(v live-vars)
-			 (convert-paren-interior (car e-) vars live-vars #t)])
+			 (convert-paren-interior (car e-) vars live-vars complain-not-in)])
 	     (loop (cddr e-)
 		   (list* (cadr e-) v result)
 		   live-vars)))
@@ -1249,7 +1250,10 @@
        [(seq? (car e-))
 	;; Do nested body:
 	(let-values ([(v live-vars)
-		      (convert-seq-interior (car e-) (parens? (car e-)) vars live-vars (brackets? (car e-)))])
+		      (convert-seq-interior (car e-) (parens? (car e-)) 
+					    vars live-vars 
+					    (or complain-not-in 
+						(brackets? (car e-))))])
 	  (loop (cdr e-) (cons v result) live-vars))]
        [(and (assq (tok-n (car e-)) vars)
 	     (not (assq (tok-n (car e-)) (live-var-info-vars live-vars))))
@@ -1397,4 +1401,4 @@
  #f)
 
 (when exit-with-error?
-  (exit -1))
+  (error 'xform "Errors converting"))

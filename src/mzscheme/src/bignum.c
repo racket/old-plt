@@ -76,6 +76,10 @@ void scheme_register_bignum()
 }
 #endif
   
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
+
 Scheme_Object *scheme_make_small_bignum(long v, Small_Bignum *o)
 {
   o->o.type = scheme_bignum_type;
@@ -97,6 +101,10 @@ Scheme_Object *scheme_make_small_bignum(long v, Small_Bignum *o)
 
   return (Scheme_Object *)o;
 }
+
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif
 
 Scheme_Object *scheme_make_bignum(long v)
 {
@@ -700,12 +708,16 @@ Scheme_Object *scheme_bignum_power(const Scheme_Object *a, const Scheme_Object *
 
 Scheme_Object *scheme_bignum_max(const Scheme_Object *a, const Scheme_Object *b)
 {
-  return scheme_bignum_normalize((scheme_bignum_lt(a, b)) ? b : a);
+  int lt;
+  lt = scheme_bignum_lt(a, b);
+  return scheme_bignum_normalize(lt ? b : a);
 }
 
 Scheme_Object *scheme_bignum_min(const Scheme_Object *a, const Scheme_Object *b)
 {
-  return scheme_bignum_normalize((scheme_bignum_lt(a, b)) ? a : b);
+  int lt;
+  lt = scheme_bignum_lt(a, b);
+  return scheme_bignum_normalize(lt ? a : b);
 }
 
 static int setup_binop(const Scheme_Object *a, const Scheme_Object *b,

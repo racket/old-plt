@@ -861,8 +861,8 @@ with_cont_mark_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth)
 
   return cons(with_continuation_mark_symbol,
 	      cons(key,
-		   (cons(val,
-			 cons(expr, scheme_null)))));
+		   cons(val,
+			cons(expr, scheme_null))));
 }
 
 static Scheme_Object *

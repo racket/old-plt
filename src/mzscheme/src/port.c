@@ -1779,16 +1779,78 @@ scheme_close_output_port (Scheme_Object *port)
 /* file input ports */
 
 #ifdef USE_FD_PORTS
-static void flush_fd(Scheme_Output_Port *op)
+static int
+fd_write_ready (Scheme_Object *port)
+{
+  Scheme_FD *fop;
+
+  fop = (Scheme_FD *)((Scheme_Output_Port *)port)->port_data;
+
+  {
+    DECL_FDSET(writefds, 1);
+    DECL_FDSET(exnfds, 1);
+    struct timeval time = {0, 0};
+
+    INIT_DECL_FDSET(writefds, 1);
+    INIT_DECL_FDSET(exnfds, 1);
+
+    MZ_FD_ZERO(writefds);
+    MZ_FD_ZERO(exnfds);
+    MZ_FD_SET(fop->fd, writefds);
+    MZ_FD_SET(fop->fd, exnfds);
+    
+    return select(fop->fd + 1, NULL, writefds, exnfds, &time);
+  }
+}
+
+
+static void
+fd_write_need_wakeup(Scheme_Object *port, void *fds)
+{
+  Scheme_FD *fop;
+  void *fds2;
+  int n;
+
+  fop = (Scheme_FD *)((Scheme_Output_Port *)port)->port_data;
+
+  n = fop->fd;
+  fds2 = MZ_GET_FDSET(fds, 1);
+  MZ_FD_SET(n, (fd_set *)fds);
+  fds2 = MZ_GET_FDSET(fds, 2);
+  MZ_FD_SET(n, (fd_set *)fds2);
+}
+
+static void flush_fd(Scheme_Output_Port *op, char *bufstr, int buflen)
 {
   Scheme_FD *fop = (Scheme_FD *)op->port_data;
+  int offset = 0;
 
-  if (fop->bufcount) {
-    long len;
-    len = write(fop->fd, fop->buffer, fop->bufcount);
-    if (len != fop->bufcount) {
-      /* Uh-oh */
+  if (!bufstr) {
+    bufstr = fop->buffer;
+    buflen = fop->bufcount;
+  }
+
+  if (buflen) {
+    while (1) {
+      long len;
+      len = write(fop->fd, bufstr + offset, buflen - offset);
+
+      if (len < 0) {
+	if (errno == EAGAIN) {
+	  scheme_block_until(fd_write_ready, fd_write_need_wakeup, (Scheme_Object *)op, NULL);
+	} else {
+	  scheme_raise_exn(MZEXN_I_O_PORT_WRITE,
+			   op,
+			   "error writing to file port (%d)",
+			   errno);
+	  return;
+	}
+      } else if (len + offset == buflen)
+	break;
+      else
+	offset += len;
     }
+
     fop->bufcount = 0;
   }
 }
@@ -1802,7 +1864,7 @@ static void flush_orig_outputs()
   op = (Scheme_Output_Port *)scheme_orig_stdout_port;
 #ifdef USE_FD_PORTS
   if (SAME_OBJ(op->sub_type, fd_output_port_type))
-    flush_fd(op);
+    flush_fd(op, NULL, 0);
   else
 #endif
     if (SAME_OBJ(op->sub_type, file_output_port_type))
@@ -1811,7 +1873,7 @@ static void flush_orig_outputs()
   op = (Scheme_Output_Port *)scheme_orig_stderr_port;
 #ifdef USE_FD_PORTS
   if (SAME_OBJ(op->sub_type, fd_output_port_type))
-    flush_fd(op);
+    flush_fd(op, NULL, 0);
   else
 #endif
     if (SAME_OBJ(op->sub_type, file_output_port_type))
@@ -2138,7 +2200,11 @@ make_fd_input_port(int fd, const char *filename)
 			       fd_need_wakeup,
 			       1);
 
-  ip->name = scheme_strdup(filename);
+  {
+    char *s;
+    s = scheme_strdup(filename);
+    ip->name = s;
+  }
 
   return (Scheme_Object *)ip;
 }
@@ -3042,47 +3108,6 @@ scheme_make_file_output_port(FILE *fp)
 #ifdef USE_FD_PORTS
 /* fd output ports */
 
-static int
-fd_write_ready (Scheme_Object *port)
-{
-  Scheme_FD *fop;
-
-  fop = (Scheme_FD *)((Scheme_Output_Port *)port)->port_data;
-
-  {
-    DECL_FDSET(writefds, 1);
-    DECL_FDSET(exnfds, 1);
-    struct timeval time = {0, 0};
-
-    INIT_DECL_FDSET(writefds, 1);
-    INIT_DECL_FDSET(exnfds, 1);
-
-    MZ_FD_ZERO(writefds);
-    MZ_FD_ZERO(exnfds);
-    MZ_FD_SET(fop->fd, writefds);
-    MZ_FD_SET(fop->fd, exnfds);
-    
-    return select(fop->fd + 1, NULL, writefds, exnfds, &time);
-  }
-}
-
-
-static void
-fd_write_need_wakeup(Scheme_Object *port, void *fds)
-{
-  Scheme_FD *fop;
-  void *fds2;
-  int n;
-
-  fop = (Scheme_FD *)((Scheme_Output_Port *)port)->port_data;
-
-  n = fop->fd;
-  fds2 = MZ_GET_FDSET(fds, 1);
-  MZ_FD_SET(n, (fd_set *)fds);
-  fds2 = MZ_GET_FDSET(fds, 2);
-  MZ_FD_SET(n, (fd_set *)fds2);
-}
-
 static void
 fd_write_string(char *str, long len, Scheme_Output_Port *port)
 {
@@ -3099,63 +3124,20 @@ fd_write_string(char *str, long len, Scheme_Output_Port *port)
     memcpy(fop->buffer + fop->bufcount, str, len);
     fop->bufcount += len;
   } else {
-    if (fop->bufcount) {
-      while (1) {
-	if (write(fop->fd, fop->buffer, fop->bufcount) != fop->bufcount) {
-	  if (errno == EAGAIN) {
-	    scheme_block_until(fd_write_ready, fd_write_need_wakeup, port, NULL);
-	  } else {
-	    scheme_raise_exn(MZEXN_I_O_PORT_WRITE,
-			     port,
-			     "error writing to file port (%d)",
-			     errno);
-	    return;
-	  }
-	} else
-	  break;
-      }
-      fop->bufcount = 0;
-    }
+    if (fop->bufcount)
+      flush_fd(port, NULL, 0);
     if (len <= MZPORT_FD_BUFFSIZE) {
       memcpy(fop->buffer, str, len);
       fop->bufcount = len;
     } else {
-      while (1) {
-	if (write(fop->fd, str, len) != len) {
-	  if (errno == EAGAIN) {
-	    scheme_block_until(fd_write_ready, fd_write_need_wakeup, port, NULL);
-	  } else {
-	    scheme_raise_exn(MZEXN_I_O_PORT_WRITE,
-			     port,
-			     "error writing to file port (%d)",
-			     errno);
-	    return;
-	  }
-	} else
-	  break;
-      }
+      flush_fd(port, str, len);
       return; /* Don't check for flush */
     }
   }
 
   while (len--) {
     if (*str == '\n' || *str == '\r') {
-      /* Flush: */
-      while (1) {
-	if (write(fop->fd, fop->buffer, fop->bufcount) != fop->bufcount) {
-	  if (errno == EAGAIN) {
-	    scheme_block_until(fd_write_ready, fd_write_need_wakeup, port, NULL);
-	  } else {
-	    scheme_raise_exn(MZEXN_I_O_PORT_WRITE,
-			     port,
-			     "error writing to file port (%d)",
-			     errno);
-	    return;
-	  }
-	} else
-	  break;
-      }
-      fop->bufcount = 0;
+      flush_fd(port, NULL, 0);
       break;
     }
     str++;
@@ -4612,7 +4594,7 @@ _flush_output(int argc, Scheme_Object *argv[])
     fflush (((Scheme_Output_File *)op->port_data)->f);
 #ifdef USE_FD_PORTS
   if (SAME_OBJ(op->sub_type, fd_output_port_type))
-    flush_fd(op);
+    flush_fd(op, NULL, 0);
 #endif
 
   return (scheme_void);

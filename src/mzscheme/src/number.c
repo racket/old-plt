@@ -2527,8 +2527,11 @@ static Scheme_Object *angle (int argc, Scheme_Object *argv[])
   if (SCHEME_COMPLEXP(o)) {
     Scheme_Object *r = (Scheme_Object *)_scheme_complex_real_part(o);
     Scheme_Object *i = (Scheme_Object *)_scheme_complex_imaginary_part(o);
+    double rd, id;
+    id = TO_DOUBLE_VAL(i);
+    rd = TO_DOUBLE_VAL(r);
 
-    return scheme_make_double(atan2(TO_DOUBLE_VAL(i), TO_DOUBLE_VAL(r)));
+    return scheme_make_double(atan2(id, rd));
   } else {
 #ifdef MZ_USE_SINGLE_FLOATS
     if (SCHEME_FLTP(o)) {

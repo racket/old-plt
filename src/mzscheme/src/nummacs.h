@@ -239,7 +239,7 @@ name (const Scheme_Object *n1, const Scheme_Object *n2) \
        if (t2 == scheme_bignum_type) \
          return bn_op((n1), (n2)); \
        if (t2 == scheme_rational_type) \
-	 return rop((scheme_integer_to_rational(n1)), \
+	 return rop(scheme_integer_to_rational(n1), \
 		    (n2)); \
        complexwrap( \
        if (noniziwrap((t2 == scheme_complex_type) ||) (t2 == scheme_complex_izi_type)) { \
@@ -279,7 +279,7 @@ name (const Scheme_Object *n1, const Scheme_Object *n2) \
        } \
        if (t2 == scheme_bignum_type) \
          return rop((n1), \
-		    (scheme_integer_to_rational(n2))); \
+		    scheme_integer_to_rational(n2)); \
        if (t2 == scheme_rational_type) \
 	 return rop((n1), (n2)); \
        complexwrap( \

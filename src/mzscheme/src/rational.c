@@ -52,6 +52,10 @@ Scheme_Object *scheme_integer_to_rational(const Scheme_Object *n)
   return make_rational(n, one, 0);
 }
 
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
+
 Scheme_Object *scheme_make_small_rational(long n, Small_Rational *s)
 {
   s->type = scheme_rational_type;
@@ -60,6 +64,10 @@ Scheme_Object *scheme_make_small_rational(long n, Small_Rational *s)
 
   return (Scheme_Object *)s;
 }
+
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif
 
 int scheme_is_rational_positive(const Scheme_Object *o)
 {

@@ -53,6 +53,10 @@ Scheme_Object *scheme_real_to_complex(const Scheme_Object *n)
   return make_complex(n, zero, 0);
 }
 
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
+
 Scheme_Object *scheme_make_small_complex(const Scheme_Object *n, Small_Complex *s)
 {
   s->type = scheme_complex_type;
@@ -61,6 +65,10 @@ Scheme_Object *scheme_make_small_complex(const Scheme_Object *n, Small_Complex *
 
   return (Scheme_Object *)s;
 }
+
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif
 
 int scheme_is_complex_exact(const Scheme_Object *o)
 {

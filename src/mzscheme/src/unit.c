@@ -945,17 +945,10 @@ static Scheme_Unit *InitCompiledUnitRec(UnitId *exports, int num_imports,
   } else
     m->exports = NULL;
 
-  if (m->num_exports && debuggable) {
-    Scheme_Object **sa;
-    sa = MALLOC_N(Scheme_Object *, m->num_exports);
-    m->export_debug_names = sa;
-  } else
-    m->export_debug_names = NULL;
+  m->export_debug_names = NULL;
 
   for (i = 0, id = exports; id; id = id->next, i++) {
     m->exports[i] = id->ext_id;
-    if (debuggable)
-      m->export_debug_names[i] = id->int_id;
   }
   
   return m;
@@ -1653,7 +1646,6 @@ static Scheme_Object *CloseUnit(Scheme_Object *data)
   m->num_imports = orig->num_imports;
   m->num_exports = orig->num_exports;
   m->exports = orig->exports;
-  m->export_debug_names = orig->export_debug_names;
   
   if (orig->data->type == scheme_unit_body_data_type) {
     UnitDataClosure *cl;
@@ -1782,21 +1774,6 @@ do_close_compound_unit(Scheme_Object *data_in, Scheme_Object **subs_in)
 
   data = (CompoundData *)m->data;
 
-  /* copy export_debug_names so we can set! it */
-  if (m->export_debug_names) {
-    Scheme_Object **orig = m->export_debug_names;
-    Scheme_Object **naya;
-    int i;
-
-    i = m->num_exports;
-    naya = MALLOC_N(Scheme_Object *, i);
-    while (i--) {
-      naya[i] = orig[i];
-    }
-
-    m->export_debug_names = naya;
-  }
-
   num_mods = data->num_subunits;
 
   subunits = MALLOC_N(Scheme_Unit *, num_mods);
@@ -1857,18 +1834,6 @@ do_close_compound_unit(Scheme_Object *data_in, Scheme_Object **subs_in)
 		       scheme_symbol_name(data->tags[data->exports[i].submod_index]),
 		       scheme_symbol_name(data->exports[i].ext_id));
       return NULL;
-    }
-
-    /* set export debug name to <tag>.<prim-exported-name> */
-    if (m->export_debug_names) {
-      Scheme_Unit *submod = subunits[data->exports[i].submod_index];
-      
-      if (submod->export_debug_names) {
-	Scheme_Object *dn;
-	dn = cons(data->tags[data->exports[i].submod_index],
-		  submod->export_debug_names[pos]);
-	m->export_debug_names[i] = dn;
-      }
     }
   }
 
@@ -2415,11 +2380,7 @@ static Scheme_Object *write_compiled_unit(Scheme_Object *o)
 		   cons(m->data,
 			array_to_list(m->exports,
 				      m->num_exports,
-				      (m->export_debug_names
-				       ? array_to_list(m->export_debug_names, 
-						       m->num_exports,
-						       scheme_null)
-				       : scheme_false)))));
+				      scheme_false))));
 }
 
 static Scheme_Object *read_compiled_unit(Scheme_Object *o)
@@ -2444,13 +2405,7 @@ static Scheme_Object *read_compiled_unit(Scheme_Object *o)
     m->exports = sa;
   }
 
-  if (SCHEME_FALSEP(o))
-    m->export_debug_names = NULL;
-  else {
-    Scheme_Object **sa;
-    sa = list_to_array(o, c, NULL);
-    m->export_debug_names = sa;
-  }
+  m->export_debug_names = NULL;
 
   if (SAME_TYPE(SCHEME_TYPE(m->data), scheme_unit_body_data_type))
     m->init_func = do_unit;
@@ -3198,9 +3153,6 @@ void scheme_count_unit(Scheme_Type type, Scheme_Object *o, long *s, long *e,
 
       *s = (sizeof(Scheme_Unit)
 	    + (u->num_exports * sizeof(Scheme_Object *)));
-      if (u->export_debug_names)
-	*s += (u->num_exports * sizeof(Scheme_Object *));
-      
 #if 0
       if ((type == scheme_compiled_unit_type)
 	  || (u->init_func == do_unit)
@@ -3280,7 +3232,6 @@ static int mark_unit_val(void *p, Mark_Proc mark)
     Scheme_Unit *u = (Scheme_Unit *)p;
 
     gcMARK(u->exports);
-    gcMARK(u->export_debug_names);
     gcMARK(u->data);
   }
 

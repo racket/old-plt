@@ -119,10 +119,20 @@
       ;; may-contain : Kid-lister
       (define may-contain
 	(sgml:gen-may-contain (call-with-input-file (find-library "html-spec" "html") read)))
+
+      (define may-contain-anything
+	(sgml:gen-may-contain #f))
+
+      (define use-html-spec (make-parameter #t))
       
       ;; read-html-as-xml : [Input-port] -> (listof Content)
       (define read-html-as-xml
-	(compose clean-up-pcdata (sgml:gen-read-sgml may-contain implicit-starts)))
+	(lambda (port)
+	  ((if (use-html-spec) clean-up-pcdata values)
+	   ((sgml:gen-read-sgml (if (use-html-spec)
+				    may-contain 
+				    may-contain-anything)
+				implicit-starts) port))))
       
       ;; read-html : [Input-port] -> Html
       (define read-html

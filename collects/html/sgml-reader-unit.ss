@@ -29,14 +29,16 @@
       
       ;; gen-may-contain : Spec -> Kid-lister
       (define (gen-may-contain spec)
-	(let ([table (make-hash-table)])
-	  (for-each (lambda (def)
-		      (let ([rhs (cdr def)])
-			(for-each (lambda (name) (hash-table-put! table name rhs))
-				  (car def))))
-		    spec)
-	  (lambda (name)
-	    (hash-table-get table name (lambda () #f)))))
+	(if spec
+	    (let ([table (make-hash-table)])
+	      (for-each (lambda (def)
+			  (let ([rhs (cdr def)])
+			    (for-each (lambda (name) (hash-table-put! table name rhs))
+				      (car def))))
+			spec)
+	      (lambda (name)
+		(hash-table-get table name (lambda () #f))))
+	    (lambda (name) 'all)))
       
       ;; gen-read-sgml : Kid-lister (Symbol Symbol -> (U #f Symbol)) -> [Input-port] -> (listof Content)
       (define (gen-read-sgml may-contain auto-insert)
@@ -95,6 +97,7 @@
 				      (if auto-start
 					  (read-content (cons (make-start-tag (source-start tok) (source-stop tok) auto-start null) tokens))
 					  (if (and ok-kids
+						   (not (eq? ok-kids 'all))
 						   (not (memq name ok-kids))
 						   (may-contain name))
 					      (values null tokens)
@@ -106,7 +109,7 @@
 				    (let ([name (end-tag-name tok)])
 				      (if (eq? name start-name)
 					  (values null next-tokens)
-					  (if (memq name context)
+					  (if (or #t (memq name context)) ;; <<<< always assume end tag had some start
 					      (values null tokens)
 					      (read-content next-tokens))))]
 				   [else ;; content

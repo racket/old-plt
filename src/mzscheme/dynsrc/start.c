@@ -36,8 +36,8 @@
 # define MSC_IZE(x) _ ## x
 #else
 # define MSC_IZE(x) x
-# define DUPLICATE_INPUT
 #endif
+#define DUPLICATE_INPUT
 
 /* Win command lines limited to 1024 chars, so 1024 chars for
    command tail is ample */

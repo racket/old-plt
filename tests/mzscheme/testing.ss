@@ -304,10 +304,13 @@
 (define (find-depth go)
   ; Find depth that triggers a stack overflow (assuming no other
   ; threads are running and overflowing)
-  (let find-loop ([d 100])
-    (let ([v (current-performance-stats)])
+  (let ([v0 (make-vector 6)]
+	[v1 (make-vector 6)])
+    (let find-loop ([d 100])
+      (vector-set-performance-stats! v0)
       (go d)
-      (if (> (vector-ref (current-performance-stats) 2)
-	     (vector-ref v 2))
+      (vector-set-performance-stats! v1)
+      (if (> (vector-ref v1 5)
+	     (vector-ref v0 5))
 	  d
 	  (find-loop (* 2 d))))))

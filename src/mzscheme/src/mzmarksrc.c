@@ -1321,6 +1321,7 @@ mark_waiting {
  
   gcMARK(w->set);
   gcMARK(w->result);
+  gcMARK(w->disable_break);
 
  size:
   gcBYTES_TO_WORDS(sizeof(Waiting));

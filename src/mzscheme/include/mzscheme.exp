@@ -40,6 +40,7 @@ scheme_is_waitable
 scheme_wait_on_waitable
 scheme_waitable_needs_wakeup
 scheme_object_wait_multiple
+scheme_object_wait_multiple_enable_break
 scheme_add_swap_callback
 scheme_call_enable_break
 scheme_close_should_force_port_closed

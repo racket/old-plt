@@ -231,10 +231,6 @@ static void register_thread_wait();
 
 static Scheme_Object *object_waitable_p(int argc, Scheme_Object *args[]);
 static Scheme_Object *waitables_to_waitable(int argc, Scheme_Object *args[]);
-static Scheme_Object *object_wait_break(int argc, Scheme_Object *args[]);
-
-static Scheme_Object *call_with_wait(int argc, Scheme_Object *args[]);
-static Scheme_Object *call_with_wait_break(int argc, Scheme_Object *args[]);
 
 static Scheme_Object *make_custodian(int argc, Scheme_Object *argv[]);
 static Scheme_Object *custodian_p(int argc, Scheme_Object *argv[]);
@@ -332,10 +328,10 @@ void scheme_init_thread(Scheme_Env *env)
 						      0, -1), 
 			     env);
 
-  scheme_add_global_constant("current-performance-stats",
+  scheme_add_global_constant("vector-set-performance-stats!",
 			     scheme_make_prim_w_arity(current_stats,
-						      "current-performance-stats",
-						      0, 0),
+						      "vector-set-performance-stats!",
+						      1, 1),
 			     env);
 
 
@@ -529,27 +525,15 @@ void scheme_init_thread(Scheme_Env *env)
 						      2, -1), 
 			     env);
   scheme_add_global_constant("object-wait-multiple/enable-break", 
-			     scheme_make_prim_w_arity(object_wait_break,
+			     scheme_make_prim_w_arity(scheme_object_wait_multiple_enable_break,
 						      "object-wait-multiple/enable-break", 
 						      2, -1),
 			     env);
-  scheme_add_global_constant("make-waitable-set", 
+  scheme_add_global_constant("waitables->waitable-set", 
 			     scheme_make_prim_w_arity(waitables_to_waitable,
-						      "make-waitable-set", 
-						      1, -1), 
+						      "waitables->waitable-set", 
+						      0, -1), 
 			     env);
-
-  scheme_add_global_constant("call-with-wait/post-on-kill", 
-			     scheme_make_prim_w_arity(call_with_wait,
-						      "call-with-wait/post-on-kill", 
-						      2, 3), 
-			     env);
-  scheme_add_global_constant("call-with-wait/post-on-kill/enable-break", 
-			     scheme_make_prim_w_arity(call_with_wait_break,
-						      "call-with-wait/post-on-kill/enable-break", 
-						      2, 3), 
-			     env);
-
 
   REGISTER_SO(namespace_options);
 
@@ -2850,6 +2834,7 @@ typedef struct Waiting {
   Scheme_Object *result;
   long start_time;
   float timeout;
+  Scheme_Thread *disable_break; /* when result is set */
 } Waiting;
 
 static void waiting_needs_wakeup(Scheme_Object *s, void *fds);
@@ -3201,8 +3186,11 @@ static int waiting_ready(Scheme_Object *s, Scheme_Schedule_Info *sinfo)
 
   v = waitable_set_ready(waiting->set, sinfo);
   if (v) {
-    if (!SCHEME_FALSEP(v))
+    if (!SCHEME_FALSEP(v)) {
       waiting->result = v;
+      if (waiting->disable_break)
+	scheme_set_param(waiting->disable_break->config, MZCONFIG_ENABLE_BREAK, scheme_false);
+    }
     return 1;
   }
 
@@ -3317,7 +3305,7 @@ Waitable_Set *make_waitable_set(const char *name, int argc, Scheme_Object **argv
   return waitable_set;
 }
 
-Scheme_Object *scheme_object_wait_multiple(int argc, Scheme_Object *argv[])
+static Scheme_Object *object_wait_multiple(const char *name, int argc, Scheme_Object *argv[], int with_break)
 {
   Waitable_Set *waitable_set;
   Waiting *waiting;
@@ -3329,7 +3317,7 @@ Scheme_Object *scheme_object_wait_multiple(int argc, Scheme_Object *argv[])
       timeout = scheme_real_to_double(argv[0]);
 
     if (timeout < 0.0) {
-      scheme_wrong_type("object-wait-multiple", "non-negative real number", 0, argc, argv);
+      scheme_wrong_type(name, "non-negative real number", 0, argc, argv);
       return NULL;
     }
 
@@ -3343,14 +3331,14 @@ Scheme_Object *scheme_object_wait_multiple(int argc, Scheme_Object *argv[])
     return argv[1];
   }
 
-  /* Special case: one non-waitable-set argument, no timeout */
-  if ((argc == 2) && SCHEME_FALSEP(argv[0]) && !SCHEME_WAITSETP(argv[1])) {
+  /* Special case: one non-waitable-set argument, no timeout, no break disabling */
+  if ((argc == 2) && SCHEME_FALSEP(argv[0]) && !SCHEME_WAITSETP(argv[1]) && !with_break) {
     Scheme_Schedule_Info sinfo;
     Waitable *w;
 
     w = find_waitable(argv[1]);
     if (!w) {
-      scheme_wrong_type("object-wait-multiple", "waitable", 1, argc, argv);
+      scheme_wrong_type(name, "waitable", 1, argc, argv);
       return NULL;
     }
 
@@ -3359,7 +3347,7 @@ Scheme_Object *scheme_object_wait_multiple(int argc, Scheme_Object *argv[])
     return argv[1];
   }
 
-  waitable_set = make_waitable_set("object-wait-multiple", argc, argv, 1);
+  waitable_set = make_waitable_set(name, argc, argv, 1);
 
   /* Check for another special case: waiting on a set of semaphores without a timeout. */
   if (timeout < 0.0) {
@@ -3383,6 +3371,9 @@ Scheme_Object *scheme_object_wait_multiple(int argc, Scheme_Object *argv[])
   if (timeout < 0.0)
     timeout = 0.0; /* means "no timeout" to block_until */
 
+  if (with_break)
+    waiting->disable_break = scheme_current_thread;
+
   scheme_block_until((Scheme_Ready_Fun)waiting_ready, waiting_needs_wakeup, 
 		     (Scheme_Object *)waiting, timeout);
 
@@ -3392,29 +3383,39 @@ Scheme_Object *scheme_object_wait_multiple(int argc, Scheme_Object *argv[])
     return scheme_false;
 }
 
-static Scheme_Object *object_wait_break(int argc, Scheme_Object *argv[])
+Scheme_Object *scheme_object_wait_multiple(int argc, Scheme_Object *argv[])
 {
+  return object_wait_multiple("object-wait-multiple", argc, argv, 0);
+}
+
+Scheme_Object *do_object_wait_multiple_break(int argc, Scheme_Object *argv[])
+{
+  return object_wait_multiple("object-wait-multiple/enable-break", argc, argv, 1);
+}
+
+Scheme_Object *scheme_object_wait_multiple_enable_break(int argc, Scheme_Object *argv[])
+{
+  Scheme_Object *v;
+
   if (argc == 2 && SCHEME_FALSEP(argv[0]) && SCHEME_SEMAP(argv[1])) {
     scheme_wait_sema(argv[1], -1);
     return scheme_void;
   }
 
-  return scheme_call_enable_break(scheme_object_wait_multiple, argc, argv);
-}
+  /* Since we do special work to disable breaks after a sucessful wait,
+     make sure that the work is necessary, and that it won't interfere
+     with normal breakpoint checking: */
+  v = scheme_get_param(scheme_config, MZCONFIG_ENABLE_BREAK);
 
-Scheme_Object *call_with_wait(int argc, Scheme_Object *argv[])
-{
-  return scheme_void;
-}
-
-static Scheme_Object *call_with_wait_break(int argc, Scheme_Object *argv[])
-{
-  return scheme_call_enable_break(call_with_wait, argc, argv);
+  if (SCHEME_FALSEP(v))
+    return scheme_call_enable_break(do_object_wait_multiple_break, argc, argv);
+  else
+    return object_wait_multiple("object-wait-multiple/enable-break", argc, argv, 0);
 }
 
 static Scheme_Object *waitables_to_waitable(int argc, Scheme_Object *argv[])
 {
-  return (Scheme_Object *)make_waitable_set("make-waitable-set", argc, argv, 0);
+  return (Scheme_Object *)make_waitable_set("waitables->waitable-set", argc, argv, 0);
 }
 
 /*========================================================================*/
@@ -4282,16 +4283,39 @@ END_XFORM_SKIP;
 /*                                 stats                                  */
 /*========================================================================*/
 
-static Scheme_Object *current_stats(int argc, Scheme_Object *args[])
+static Scheme_Object *current_stats(int argc, Scheme_Object *argv[])
 {
+  long cpuend, end, gcend;
   Scheme_Object *v;
+  
+  v = argv[0];
 
-  v = scheme_make_vector(3, NULL);
-  SCHEME_VEC_ELS(v)[0] = scheme_make_integer(did_gc_count);
-  SCHEME_VEC_ELS(v)[1] = scheme_make_integer(thread_swap_count);
-  SCHEME_VEC_ELS(v)[2] = scheme_make_integer(scheme_overflow_count);
+  if (!SCHEME_MUTABLE_VECTORP(v))
+    scheme_wrong_type("vector-set-performance-stats!", "mutable vector", 0, argc, argv);
 
-  return v;
+  cpuend = scheme_get_process_milliseconds();
+  end = scheme_get_milliseconds();
+  gcend = scheme_total_gc_time;
+
+  switch (SCHEME_VEC_SIZE(v)) {
+  default:
+  case 6:
+    SCHEME_VEC_ELS(v)[5] = scheme_make_integer(scheme_overflow_count);
+  case 5:
+    SCHEME_VEC_ELS(v)[4] = scheme_make_integer(thread_swap_count);
+  case 4:
+    SCHEME_VEC_ELS(v)[3] = scheme_make_integer(did_gc_count);
+  case 3:
+    SCHEME_VEC_ELS(v)[2] = scheme_make_integer(gcend);
+  case 2:
+    SCHEME_VEC_ELS(v)[1] = scheme_make_integer(end);
+  case 1:
+    SCHEME_VEC_ELS(v)[0] = scheme_make_integer(cpuend);
+  case 0:
+    break;
+  }
+
+  return scheme_void;
 }
 
 /*========================================================================*/

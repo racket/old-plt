@@ -53,7 +53,9 @@ static Scheme_Object *make_struct_type(int argc, Scheme_Object *argv[]);
 
 static Scheme_Object *make_struct_field_accessor(int argc, Scheme_Object *argv[]);
 static Scheme_Object *make_struct_field_mutator(int argc, Scheme_Object *argv[]);
-static Scheme_Object *struct_field_commit(int argc, Scheme_Object *argv[]);
+
+static Scheme_Object *struct_transact(int argc, Scheme_Object *argv[]);
+static Scheme_Object *struct_transact_break(int argc, Scheme_Object *argv[]);
 
 static Scheme_Object *struct_p(int argc, Scheme_Object *argv[]);
 static Scheme_Object *struct_type_p(int argc, Scheme_Object *argv[]);
@@ -206,10 +208,15 @@ scheme_init_struct (Scheme_Env *env)
 						      2, 3),
 			     env);
 
-  scheme_add_global_constant("struct-field-commit!",
-			     scheme_make_prim_w_arity(struct_field_commit,
-						      "struct-field-commit!",
-						      4, 5),
+  scheme_add_global_constant("struct-transact",
+			     scheme_make_prim_w_arity(struct_transact,
+						      "struct-transact",
+						      6, 6),
+			     env);
+  scheme_add_global_constant("struct-transact/enable-break",
+			     scheme_make_prim_w_arity(struct_transact_break,
+						      "struct-transact/enable-break",
+						      6, 6),
 			     env);
 
 
@@ -565,6 +572,22 @@ static Scheme_Object *check_waitable_property_value_ok(int argc, Scheme_Object *
   return v;
 }
 
+static void pre_sync(void *e)
+{
+  SCHEME_CAR((Scheme_Object *)e) = scheme_get_param(scheme_config, MZCONFIG_ENABLE_BREAK);
+  scheme_set_param(scheme_config, MZCONFIG_ENABLE_BREAK, scheme_false);
+}
+
+static void post_sync(void *e)
+{
+  scheme_set_param(scheme_config, MZCONFIG_ENABLE_BREAK, SCHEME_CAR((Scheme_Object *)e));
+}
+
+static Scheme_Object *do_sync(void *e)
+{
+  return scheme_apply(SCHEME_CDR((Scheme_Object *)e), 0, NULL);
+}
+
 static int waitable_struct_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo)
 {
   Scheme_Object *v;
@@ -597,7 +620,12 @@ static int waitable_struct_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinf
       Scheme_Object *f = v;
 
       while (loop_count) {
-	v = scheme_apply(f, 0, NULL);
+	/* Call f with breaks disabled, in case we're
+	   called by object-wait-multiple/enable-break,
+	   in which case a non-semaphore result should
+	   lead to an unbroken accept. */
+	v = scheme_dynamic_wind(pre_sync, do_sync, post_sync,
+				NULL, scheme_make_pair(scheme_true, f));
 	
 	if (scheme_is_waitable(v)) {
 	  v = scheme_wait_on_waitable(v, 1, sinfo);
@@ -1223,46 +1251,100 @@ static Scheme_Object *make_struct_field_mutator(int argc, Scheme_Object *argv[])
   return make_struct_field_xxor("make-struct-field-mutator", 0, argc, argv);
 }
 
-static Scheme_Object *struct_field_commit(int argc, Scheme_Object *argv[])
+/*========================================================================*/
+/*                           transactions                                 */
+/*========================================================================*/
+
+static void pre_transact(void *e)
+{
+  scheme_push_kill_action((Scheme_Kill_Action_Func)scheme_post_sema, 
+			  SCHEME_CAR((Scheme_Object *)e));
+}
+
+static void post_transact(void *e)
+{
+  scheme_pop_kill_action();
+}
+
+static Scheme_Object *do_transact(void *e)
+{
+  Scheme_Object *a[1];
+
+  a[0] = SCHEME_CDDR((Scheme_Object *)e);
+
+  return _scheme_apply(SCHEME_CADR((Scheme_Object *)e), 1, a);
+}
+
+static Scheme_Object *do_struct_transact(const char *name, int argc, Scheme_Object *argv[], int w_break)
 {
   Struct_Proc_Info *i;
+  Scheme_Object *v;
 
   if (!STRUCT_PROCP(argv[0], SCHEME_PRIM_IS_STRUCT_SETTER)
-      || (((Scheme_Closed_Primitive_Proc *)argv[0])->mina != 3)) {
-    scheme_wrong_type("struct-field-commit!", "field-specific mutator procedure", 0, argc, argv);
+      || (((Scheme_Closed_Primitive_Proc *)argv[0])->mina != 2)) {
+    scheme_wrong_type(name, "field-specific mutator procedure", 0, argc, argv);
+    return NULL;
+  }
+
+  if (!scheme_is_waitable(argv[2])) {
+    scheme_wrong_type(name, "waitable", 2, argc, argv);
     return NULL;
   }
 
   if (!SCHEME_SEMAP(argv[3])) {
-    scheme_wrong_type("struct-field-commit!", "semaphore", 4, argc, argv);
+    scheme_wrong_type(name, "semaphore", 3, argc, argv);
     return NULL;
   }
 
-  if (argc > 4)
-    if (!SCHEME_SEMAP(argv[4])) {
-      scheme_wrong_type("struct-field-commit!", "semaphore", 5, argc, argv);
-      return NULL;
-    }
+  if (!SCHEME_SEMAP(argv[4])) {
+    scheme_wrong_type(name, "semaphore", 4, argc, argv);
+    return NULL;
+  }
+
+  scheme_check_proc_arity(name, 1, 5, argc, argv);
 
   i = (Struct_Proc_Info *)((Scheme_Closed_Primitive_Proc *)argv[0])->data;
   if (!SCHEME_STRUCTP(argv[1])
       || !STRUCT_TYPEP(i->struct_type, ((Scheme_Structure *)argv[1]))) {
     scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
 		     argv[1],
-		     "struct-field-commit!: procedure %s cannot mutate object: %V", 
+		     "struct-transact: procedure %s cannot mutate object: %V", 
 		     i->func_name,
 		     argv[1]);
     return NULL;
   }
 
-  ((Scheme_Structure *)argv[1])->slots[i->field] = argv[2];
+  if (w_break) {
+    Scheme_Object *a[2];
+    a[0] = scheme_false;
+    a[1] = argv[2];
+    v = scheme_object_wait_multiple_enable_break(2, a);
+  } else {
+    Scheme_Schedule_Info sinfo;
+    scheme_init_schedule_info(&sinfo, 0);
+    v = scheme_wait_on_waitable(argv[2], 0, &sinfo);
+  }
 
+  v = scheme_dynamic_wind(pre_transact, do_transact, post_transact,
+			  NULL, scheme_make_pair(argv[4], scheme_make_pair(argv[5], v)));
+
+  /* These two happen atomicly */
+  ((Scheme_Structure *)argv[1])->slots[i->field] = v;
   scheme_post_sema(argv[3]);
-  if (argc > 4)
-    scheme_post_sema(argv[4]);
 
   return scheme_void;
 }
+
+static Scheme_Object *struct_transact(int argc, Scheme_Object *argv[])
+{
+  return do_struct_transact("struct-transact", argc, argv, 0);
+}
+
+static Scheme_Object *struct_transact_break(int argc, Scheme_Object *argv[])
+{
+  return do_struct_transact("struct-transact/enable-break", argc, argv, 1);
+}
+
 
 /*========================================================================*/
 /*                          struct op maker                               */

@@ -1538,10 +1538,8 @@ int sema_val_SIZE(void *p) {
 int sema_val_MARK(void *p) {
   Scheme_Sema *s = (Scheme_Sema *)p;
 
-#if SEMAPHORE_WAITING_IS_COLLECTABLE
   gcMARK(s->first);
   gcMARK(s->last);
-#endif
 
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Sema));
@@ -1550,10 +1548,8 @@ int sema_val_MARK(void *p) {
 int sema_val_FIXUP(void *p) {
   Scheme_Sema *s = (Scheme_Sema *)p;
 
-#if SEMAPHORE_WAITING_IS_COLLECTABLE
   gcFIXUP(s->first);
   gcFIXUP(s->last);
-#endif
 
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Sema));
@@ -3322,9 +3318,9 @@ int mark_waiting_SIZE(void *p) {
 int mark_waiting_MARK(void *p) {
   Waiting *w = (Waiting *)p;
  
-  gcMARK(w->ws);
-  gcMARK(w->argv);
+  gcMARK(w->set);
   gcMARK(w->result);
+  gcMARK(w->disable_break);
 
   return
   gcBYTES_TO_WORDS(sizeof(Waiting));
@@ -3333,9 +3329,9 @@ int mark_waiting_MARK(void *p) {
 int mark_waiting_FIXUP(void *p) {
   Waiting *w = (Waiting *)p;
  
-  gcFIXUP(w->ws);
-  gcFIXUP(w->argv);
+  gcFIXUP(w->set);
   gcFIXUP(w->result);
+  gcFIXUP(w->disable_break);
 
   return
   gcBYTES_TO_WORDS(sizeof(Waiting));
@@ -3343,6 +3339,39 @@ int mark_waiting_FIXUP(void *p) {
 
 #define mark_waiting_IS_ATOMIC 0
 #define mark_waiting_IS_CONST_SIZE 1
+
+
+int mark_waitable_set_SIZE(void *p) {
+  return
+  gcBYTES_TO_WORDS(sizeof(Waitable_Set));
+}
+
+int mark_waitable_set_MARK(void *p) {
+  Waitable_Set *w = (Waiting *)p;
+ 
+  gcMARK(w->ws);
+  gcMARK(w->argv);
+  gcMARK(w->ts);
+  gcMARK(w->tws);
+
+  return
+  gcBYTES_TO_WORDS(sizeof(Waitable_Set));
+}
+
+int mark_waitable_set_FIXUP(void *p) {
+  Waitable_Set *w = (Waiting *)p;
+ 
+  gcFIXUP(w->ws);
+  gcFIXUP(w->argv);
+  gcFIXUP(w->ts);
+  gcFIXUP(w->tws);
+
+  return
+  gcBYTES_TO_WORDS(sizeof(Waitable_Set));
+}
+
+#define mark_waitable_set_IS_ATOMIC 0
+#define mark_waitable_set_IS_CONST_SIZE 1
 
 
 int mark_sinfo_SIZE(void *p) {

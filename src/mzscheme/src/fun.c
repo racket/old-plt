@@ -2476,6 +2476,7 @@ static void post_dyn_wind(void *d)
 static Scheme_Object *dynamic_wind(int c, Scheme_Object *p[])
 {
   Dyn_Wind *dw;
+  Scheme_Object *v;
 
   dw = MALLOC_ONE_RT(Dyn_Wind);
 #ifdef MZTAG_REQUIRED
@@ -2486,8 +2487,38 @@ static Scheme_Object *dynamic_wind(int c, Scheme_Object *p[])
   dw->act = p[1];
   dw->post = p[2];
 
-  return scheme_dynamic_wind(pre_dyn_wind, do_dyn_wind, post_dyn_wind, NULL,
-			     (void *)dw);
+  v = scheme_dynamic_wind(pre_dyn_wind, do_dyn_wind, post_dyn_wind, NULL,
+			  (void *)dw);
+
+  /* We may have just re-activated breaking: */
+  {
+    Scheme_Thread *p = scheme_current_thread;
+    if (p->external_break && scheme_can_break(p, p->config)) {
+      Scheme_Object **save_values;
+      int save_count;
+
+      if (SAME_OBJ(v, SCHEME_MULTIPLE_VALUES)) {
+	save_count = p->ku.multiple.count;
+	save_values = p->ku.multiple.array;
+	p->ku.multiple.array = NULL;
+	if (SAME_OBJ(save_values, p->values_buffer))
+	  p->values_buffer = NULL;
+      } else {
+	save_count = 0;
+	save_values = NULL;
+      }
+
+      scheme_thread_block_w_thread(0.0, p);
+      p->ran_some = 1;
+
+      if (save_values) {
+	p->ku.multiple.count = save_count;
+	p->ku.multiple.array = save_values;
+      }
+    }
+  }
+  
+  return v;
 }
  
 Scheme_Object *scheme_dynamic_wind(void (*pre)(void *),
@@ -2585,12 +2616,6 @@ Scheme_Object *scheme_dynamic_wind(void (*pre)(void *),
   
   memcpy(&p->error_buf, &dw->saveerr, sizeof(mz_jmp_buf));
 
-  /* We may have just re-activated breaking: */
-  if (p->external_break && scheme_can_break(p, p->config)) {
-    scheme_thread_block_w_thread(0.0, p);
-    p->ran_some = 1;
-  }
-  
   if (save_values) {
     p->ku.multiple.count = save_count;
     p->ku.multiple.array = save_values;

@@ -6,44 +6,59 @@
 
 (define SYNC-SLEEP-DELAY 0.1)
 
+;; ----------------------------------------
+;; Waitable sets
+
+(err/rt-test (waitables->waitable-set 7))
+(err/rt-test (waitables->waitable-set (make-semaphore) 7))
+
+(arity-test waitables->waitable-set 0 -1)
+
+(test #f object-wait-multiple SYNC-SLEEP-DELAY (waitables->waitable-set))
+(test #f object-wait-multiple SYNC-SLEEP-DELAY (waitables->waitable-set) (waitables->waitable-set))
+(test #f object-wait-multiple SYNC-SLEEP-DELAY (waitables->waitable-set (waitables->waitable-set) (waitables->waitable-set)))
+
 (let ([s1 (make-semaphore)]
       [s2 (make-semaphore)]
       [s3 (make-semaphore)])
-  (test #f object-wait-multiple SYNC-SLEEP-DELAY (make-waitable-set s1 s2 s3))
+  (test #f object-wait-multiple SYNC-SLEEP-DELAY (waitables->waitable-set s1 s2 s3))
   (semaphore-post s2)
-  (test s2 object-wait-multiple SYNC-SLEEP-DELAY (make-waitable-set s1 s2 s3))
-  (test #f object-wait-multiple SYNC-SLEEP-DELAY (make-waitable-set s1 s2 s3))
-  (let ([set (make-waitable-set s1 s2 s3)])
+  (test s2 object-wait-multiple SYNC-SLEEP-DELAY (waitables->waitable-set s1 s2 s3))
+  (test #f object-wait-multiple SYNC-SLEEP-DELAY (waitables->waitable-set s1 s2 s3))
+  (let ([set (waitables->waitable-set s1 s2 s3)])
     (test #f object-wait-multiple SYNC-SLEEP-DELAY set)
     (semaphore-post s2)
     (test s2 object-wait-multiple SYNC-SLEEP-DELAY set)
     (test #f object-wait-multiple SYNC-SLEEP-DELAY set))
   (thread (lambda () (sleep) (semaphore-post s3)))
-  (test s3 object-wait-multiple SYNC-SLEEP-DELAY (make-waitable-set s1 s2 s3))
-  (test #f object-wait-multiple SYNC-SLEEP-DELAY (make-waitable-set s1 s2 s3))
+  (test s3 object-wait-multiple SYNC-SLEEP-DELAY (waitables->waitable-set s1 s2 s3))
+  (test #f object-wait-multiple SYNC-SLEEP-DELAY (waitables->waitable-set s1 s2 s3))
   (semaphore-post s3)
-  (test s3 object-wait-multiple SYNC-SLEEP-DELAY s1 (make-waitable-set s2 s3))
-  (test #f object-wait-multiple SYNC-SLEEP-DELAY s1 (make-waitable-set s2 s3))
+  (test s3 object-wait-multiple SYNC-SLEEP-DELAY s1 (waitables->waitable-set s2 s3))
+  (test #f object-wait-multiple SYNC-SLEEP-DELAY s1 (waitables->waitable-set s2 s3))
   (semaphore-post s3)
-  (test s3 object-wait-multiple SYNC-SLEEP-DELAY (make-waitable-set s1 s2) s3)
-  (test #f object-wait-multiple SYNC-SLEEP-DELAY (make-waitable-set s1 s2) s3)
-  (let ([set (make-waitable-set s1 s2)])
+  (test s3 object-wait-multiple SYNC-SLEEP-DELAY (waitables->waitable-set s1 s2) s3)
+  (test #f object-wait-multiple SYNC-SLEEP-DELAY (waitables->waitable-set s1 s2) s3)
+  (let ([set (waitables->waitable-set s1 s2)])
     (test #f object-wait-multiple SYNC-SLEEP-DELAY s1 set s3)
     (semaphore-post s2)
     (test s2 object-wait-multiple SYNC-SLEEP-DELAY set s3)
     (test #f object-wait-multiple SYNC-SLEEP-DELAY set s3))
-  (test #f object-wait-multiple SYNC-SLEEP-DELAY (make-waitable-set s1 (make-waitable-set s2 s3)))
+  (test #f object-wait-multiple SYNC-SLEEP-DELAY (waitables->waitable-set s1 (waitables->waitable-set s2 s3)))
   (semaphore-post s3)
-  (test s3 object-wait-multiple SYNC-SLEEP-DELAY (make-waitable-set s1 (make-waitable-set s2 s3)))
-  (test #f object-wait-multiple SYNC-SLEEP-DELAY (make-waitable-set s1 (make-waitable-set s2 s3)))
+  (test s3 object-wait-multiple SYNC-SLEEP-DELAY (waitables->waitable-set s1 (waitables->waitable-set s2 s3)))
+  (test #f object-wait-multiple SYNC-SLEEP-DELAY (waitables->waitable-set s1 (waitables->waitable-set s2 s3)))
   (semaphore-post s3)
-  (test s3 object-wait-multiple SYNC-SLEEP-DELAY (make-waitable-set (make-waitable-set s1 s2) s3))
-  (test #f object-wait-multiple SYNC-SLEEP-DELAY (make-waitable-set (make-waitable-set s1 s2) s3))
-  (let ([set (make-waitable-set s1 (make-waitable-set s2 s3))])
+  (test s3 object-wait-multiple SYNC-SLEEP-DELAY (waitables->waitable-set (waitables->waitable-set s1 s2) s3))
+  (test #f object-wait-multiple SYNC-SLEEP-DELAY (waitables->waitable-set (waitables->waitable-set s1 s2) s3))
+  (let ([set (waitables->waitable-set s1 (waitables->waitable-set s2 s3))])
     (test #f object-wait-multiple SYNC-SLEEP-DELAY set)
     (semaphore-post s3)
     (test s3 object-wait-multiple SYNC-SLEEP-DELAY set)
     (test #f object-wait-multiple SYNC-SLEEP-DELAY set)))
+
+;; ----------------------------------------
+;; Structures as waitables
 
 ;; Bad property value:
 (err/rt-test (make-struct-type 'wt #f 2 0 #f (list (cons prop:waitable -1))) exn:application:mismatch?)
@@ -96,7 +111,7 @@
 	(non-busy-wait wrapped)))))
 
 (test-good-waitable values)
-(test-good-waitable (lambda (x) (make-waitable-set
+(test-good-waitable (lambda (x) (waitables->waitable-set
 				 x
 				 (make-wt 99 (lambda () (make-semaphore))))))
 (test-good-waitable (lambda (x) (lambda () 
@@ -225,5 +240,101 @@
 		 (test #t `(deep-wait . ,n) (and (object-wait-multiple 0 wt) #t))
 		 (semaphore-wait s)
 		 (test #f `(deep-wait . ,n) (object-wait-multiple 0 wt))))))))
+
+
+;; ----------------------------------------
+;; Transactions
+
+(define-struct atomic (val))
+
+(err/rt-test (struct-transact atomic-val (make-atomic 1) (make-semaphore) (make-semaphore) (make-semaphore) void))
+(err/rt-test (struct-transact set-atomic-val! (make-atomic 1) 7 (make-semaphore) (make-semaphore) void))
+(err/rt-test (struct-transact set-atomic-val! (make-atomic 1) (make-semaphore) 7 (make-semaphore) void))
+(err/rt-test (struct-transact set-atomic-val! (make-atomic 1) (make-semaphore) (current-input-port) (make-semaphore) void))
+(err/rt-test (struct-transact set-atomic-val! (make-atomic 1) (make-semaphore) (make-semaphore) 7 void))
+(err/rt-test (struct-transact set-atomic-val! (make-atomic 1) (make-semaphore) (make-semaphore) (make-semaphore) (lambda () 10)))
+(err/rt-test (struct-transact set-atomic-val! (make-atomic 1) (make-semaphore) (make-semaphore) (make-semaphore) (lambda (x y) 10)))
+(err/rt-test (struct-transact set-atomic-val! 7 (make-semaphore) (make-semaphore) (make-semaphore) void) exn:application:mismatch?)
+
+(arity-test struct-transact 6 6)
+(arity-test struct-transact/enable-break 6 6)
+
+(define (test-transactions struct-transact)
+  (let* ([a (make-atomic 5)]
+	 [s (make-semaphore 1)]
+	 [fail (make-semaphore)]
+	 [both (waitables->waitable-set s fail)])
+    (test (void) struct-transact set-atomic-val! a both s fail (lambda (v)
+								 (test s values v)
+								 10))
+    (test #t semaphore-try-wait? s)
+    (semaphore-post s)
+    (test #f semaphore-try-wait? fail)
+    (test 10 atomic-val a)
+    
+    (let ([t (thread
+	      (lambda ()
+		(struct-transact set-atomic-val! a both s fail (lambda (v)
+								 (test s values v)
+								 (kill-thread (current-thread)) 7))))])
+      (thread-wait t)
+      (test #f semaphore-try-wait? s)
+      (test #t semaphore-try-wait? fail)
+      (test 10 atomic-val a))
+    (semaphore-post s) ; reset a
+
+    (let ([ts
+	   (let contend ([n 10])
+	     (if (zero? n)
+		 null
+		 (cons
+		  (thread (lambda ()
+			    (struct-transact set-atomic-val! a both s fail 
+					     (lambda (v) 
+					       (printf "running ~a~n" n)
+					       (test #t 'ok-v (and (memq v (list s fail)) #t))
+					       (if (= 0 (modulo n 3))
+						   (kill-thread (current-thread))
+						   (add1 (begin0
+							  (atomic-val a)
+							  (sleep))))))))
+		  (contend (sub1 n)))))])
+      (for-each thread-wait ts)
+
+      (test 17 atomic-val a))))
+
+(test-transactions struct-transact)
+(test-transactions struct-transact/enable-break)
+
+(let ([a (make-atomic 1)])
+  (let ([t  (parameterize ([break-enabled #f])
+	      (thread
+	       (lambda ()
+		 (struct-transact/enable-break
+		  set-atomic-val! a
+		  (make-semaphore) (make-semaphore) (make-semaphore)
+		  (lambda (v)
+		    'done)))))])
+    (sleep)
+    (test (void) break-thread t)
+    (test (void) thread-wait t)
+    (test 1 atomic-val a))
+  (let* ([s (make-semaphore)]
+	 [t  (parameterize ([break-enabled #f])
+	       (thread
+		(lambda ()
+		  (struct-transact/enable-break
+		   set-atomic-val! a
+		   s (make-semaphore) (make-semaphore)
+		   (lambda (v)
+		     ;; if we get here, it's too late to break
+		     (sleep SYNC-SLEEP-DELAY)
+		     'done)))))])
+    (sleep)
+    (semaphore-post s)
+    (sleep)
+    (test (void) break-thread t)
+    (test (void) thread-wait t)
+    (test 'done atomic-val a)))
 
 (report-errs)

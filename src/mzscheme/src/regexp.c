@@ -1195,11 +1195,16 @@ static void read_more_from_regport(Regwork *rw, rxpos need_total)
     rw->instr_size = size;
   }
 
-  rw->str = regstr; /* get_string can swap threadsa */
+  rw->str = regstr; /* get_string can swap threads */
 
+  if (rw->input_maxend < rw->instr_size)
+    got = rw->input_maxend - rw->input_end;
+  else
+    got = rw->instr_size - rw->input_end;
+  
   /* Fill as much of our buffer as possible: */
   got = scheme_get_string("regexp-match", rw->port, 
-			  rw->instr, rw->input_end, rw->instr_size - rw->input_end,
+			  rw->instr, rw->input_end, got,
 			  1, /* read at least one char, and as much as possible */
 			  1, rw->input_end + rw->peekskip);
 

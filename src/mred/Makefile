@@ -1,5 +1,11 @@
 
-include $(WXDIR)/src/make$(MZPLATFORMSUFFIX).env
+ifdef PLTWXDIR
+ WXDIR=../$(PLTWXDIR)
+else
+ WXDIR=../wxwindow
+endif
+
+include $(WXDIR)/src/make$(MZPLATFORMSUFFIX)$(MREDMAKEFILESUFFIX).env
 
 OBJDIR=objects/sys$(MZPLATFORMSUFFIX)$(GUISUFFIX)
 LIBDIR=lib/sys$(MZPLATFORMSUFFIX)
@@ -125,9 +131,6 @@ repatriate:
 	cd ../mzscheme; $(MAKE) repatriate
 	cd wxs; $(MAKE) HIDEDIR='$(HIDEDIR)' repatriate
 	cd wxme; $(MAKE) HIDEDIR='$(HIDEDIR)' repatriate
-	/bin/ln -s /home/scheme/plt/tests/mred/RCS tests/RCS
-	/bin/ln -s /home/scheme/plt/collects/icons ../collects/icons
-	/bin/ln -s /home/scheme/plt/collects/make/RCS ../collects/make/RCS
 
 bundle:
 	# $(MAKE) exile

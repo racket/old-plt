@@ -253,7 +253,7 @@
 		   (unless (and (pair? s) (list? s) (andmap string? s))
 		     (error 'compile-collection "bad sub-collection path: ~a" s))
 		   (compile-collection s zos?))
-		 (info 'compile-subcollections (lambda () null))))))))      
+		 (info 'compile-subcollections (lambda () null))))))))
       
       (define (compile-collection cp zos?)
         (let ([dir (apply collection-path cp)]
@@ -264,4 +264,13 @@
 	(compile-collection (cons collection cp) #f))
       
       (define (compile-collection-zos collection . cp)
-	(compile-collection (cons collection cp) #t)))))
+	(compile-collection (cons collection cp) #t))
+      
+      (define (compile-directory-extension dir info)
+        (compile-directory dir info #f))
+      
+      (define (compile-directory-zos dir info)
+        (compile-directory dir info #t))
+      
+      
+      )))

@@ -8,24 +8,22 @@
 			(mzlib string)
 			(mzlib function))]
 	[prefs : drscheme:prefs^ ((require-relative-library "prefs.ss") mred framework)]
-	[interface : drscheme:interface^
-		   ((require-library "interface.ss" "userspce") zodiac)]
+	[text : drscheme:text^ ((require-relative-library "edit.ss") framework aries zodiac)]
+	[snip : drscheme:snip^ ((require-relative-library "snip.ss") mred)]
+	[graph : drscheme:graph^ ((require-relative-library "graph.ss") mred framework (mzlib string) (mzlib function))]
+        [export* : drscheme:export^ ((require-relative-library "export.ss")
+				     mred mzlib framework print-convert app
+				     text language snip
+				     init graph
+				     aries zodiac)]
 	[zodiac : zodiac:system^
 		  ((require-library "link.ss" "zodiac")
-		   (interface : zodiac:interface^)
+		   ((export* interface) : zodiac:interface^)
 		   (mzlib pretty-print)
 		   (mzlib file))]
 	[aries : plt:aries^ ((require-library "ariesr.ss" "cogen")
 			     zodiac
-			     (interface : zodiac:interface^))]
-	[text : drscheme:text^ ((require-relative-library "edit.ss") framework aries zodiac)]
-	[snip : drscheme:snip^ ((require-relative-library "snip.ss") mred)]
-	[graph : drscheme:graph^ ((require-relative-library "graph.ss") mred framework (mzlib string) (mzlib function))]
-	[export* : drscheme:export^ ((require-relative-library "export.ss")
-				     mred mzlib framework print-convert app
-				     text language snip
-				     init interface graph
-				     aries zodiac)]
+			     ((export* interface) : zodiac:interface^))]
 	[language : drscheme:language^
 		  ((require-relative-library "language.ss")
 		   mred framework
@@ -65,7 +63,6 @@
 	  (unit prefs drscheme:prefs)
 	  (unit aries drscheme:aries)
 	  (unit language drscheme:language)
-	  (unit interface drscheme:interface)
 	  (unit zodiac zodiac)
 	  (unit text drscheme:text)
 	  (unit snip drscheme:snip)

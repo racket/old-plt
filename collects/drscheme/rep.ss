@@ -784,12 +784,13 @@
       (public
 	[report-located-error ; =Kernel=, =Handler=
 	 (lambda (message di exn)
-	   (if (and (zodiac:zodiac? di)
-		    (basis:zodiac-vocabulary? user-setting))
-	       (let* ([start (zodiac:zodiac-start di)]
-		      [finish (zodiac:zodiac-finish di)])
-		 (report-error start finish 'dynamic message exn))
-	       (report-unlocated-error message exn)))]
+           (if (and di
+                    (zodiac:zodiac? di)
+                    (basis:zodiac-vocabulary? user-setting))
+               (let* ([start (zodiac:zodiac-start di)]
+                      [finish (zodiac:zodiac-finish di)])
+                 (report-error start finish 'dynamic message exn))
+               (report-unlocated-error message exn)))]
 	[report-unlocated-error ; =Kernel=
 	 (lambda (message exn)
 	   (let* ([frame (get-top-level-window)]
@@ -1283,10 +1284,11 @@
 			   (userspace-load filename))))))
 	     
 	     (basis:error-display/debug-handler
-	      (lambda (msg marks exn) 
+	      (lambda (msg marks exn)
 		(queue-system-callback/sync
 		 user-thread
-		 (lambda () (report-located-error msg marks exn)))))
+		 (lambda () 
+                   (report-located-error msg marks exn)))))
 	     
 	     (error-display-handler
 	      (rec drscheme-error-display-handler

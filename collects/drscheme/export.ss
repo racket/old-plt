@@ -7,11 +7,12 @@
 			   [language : drscheme:language^]
 			   [snip : drscheme:snip^]
 			   [init : drscheme:init^]
-			   [interface : drscheme:interface^]
 			   [graph : drscheme:graph^]
 			   [aries : plt:aries^]
 			   [zodiac : zodiac:system^])
-  (link [url : mzlib:url^ ((require-library "urlr.ss" "net") (mzlib file))]
+  (link [interface : drscheme:interface^
+          ((require-library "interface.ss" "userspce") aries zodiac)]
+        [url : mzlib:url^ ((require-library "urlr.ss" "net") (mzlib file))]
         [help-desk : help:drscheme-interface^ ((require-library "start-help-desk.ss" "help")
 					       (mzlib function)
 					       (mzlib string)
@@ -52,7 +53,8 @@
 	[get/extend : drscheme:get/extend^
 		    ((require-relative-library "params.ss") 
 		     mred unit frame rep mzlib)])
-  (export (unit basis)
+  (export (unit interface)
+          (unit basis)
 	  (unit frame)
 	  (unit unit)
 	  (unit program)

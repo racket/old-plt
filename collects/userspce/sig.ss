@@ -104,9 +104,7 @@
 
 (define-signature drscheme:interface^ 
   ((open zodiac:interface^)
-   set-zodiac-phase
-   (struct zodiac-exn (message start-location end-location type))
-   mark-key))
+   set-zodiac-phase))
 
 (define-signature userspace:basis-import^
   (in-mzscheme?))

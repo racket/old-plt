@@ -1,10 +1,7 @@
 (unit/sig drscheme:interface^
-  (import [zodiac : zodiac:system^])
+  (import [aries : plt:aries^]
+          [zodiac : zodiac:system^])
   
-  (define-struct zodiac-exn (message start-location end-location type))
-  
-  (define mark-key (make-parameter (gensym)))
-
   (define zodiac-phase #f)
   (define (set-zodiac-phase sym)
     (unless (or (not sym)
@@ -18,7 +15,8 @@
     (lambda (string object)
       (raise
        (with-continuation-mark 
-	(mark-key) object
+	aries:w-c-m-key 
+        object
 	(case zodiac-phase
 	  [(expander) (make-exn:syntax string (current-continuation-marks) #f)]
 	  [(reader) (make-exn:read string (current-continuation-marks) #f)]

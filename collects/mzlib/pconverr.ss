@@ -68,11 +68,14 @@
 	     [build-sub
 	      (lambda (expr)
 		(let/ec k
-		  (let ([val (hash-table-get share-hash expr 
-					     (lambda () (hash expr) (k #f)))])
-		    (when val
-		      (set-share-info-shared?! val #t))
-		    val)))]
+		  (if (or (equal? expr "")
+			  (equal? expr #()))
+		      (k #f)
+		      (let ([val (hash-table-get share-hash expr 
+						 (lambda () (hash expr) (k #f)))])
+			(when val
+			  (set-share-info-shared?! val #t))
+			val))))]
 	     [build
 	      (lambda (expr)
 		((current-build-share-hook)

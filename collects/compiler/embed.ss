@@ -19,7 +19,7 @@
                              (listof (list/c (union boolean? symbol?) any?))
                              (listof path-string?)
                              any?
-                             (list/c string?))
+                             (listof string?))
                             ((listof (cons/c symbol? any?))
                              any?
                              symbol?)

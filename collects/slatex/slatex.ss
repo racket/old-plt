@@ -75,9 +75,12 @@
        (meta-slatex pdf-latex))))
 
   (define slatex/no-latex
-    (let ([ns (make-namespace)])
+    (let ([ns (make-namespace)]
+          [c-ns (current-namespace)])
       (parameterize ([current-namespace ns])
-	(load/use-compiled (build-path (collection-path "slatex") "slatexsrc.ss"))
+        (namespace-transformer-require 'mzscheme)
+        (namespace-require '(lib "defmacro.ss"))
+	(load (build-path (collection-path "slatex") "slatex.scm"))
 	(namespace-set-variable-value! 'slatex::*texinputs* #f)
 	(namespace-set-variable-value! 'slatex::*texinputs-list* #f))
       (lambda (input-file)

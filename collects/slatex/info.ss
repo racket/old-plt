@@ -10,7 +10,6 @@
 	  " in the "
 	  `(tt () ,(build-path (collection-path "slatex") "slatex-code"))
 	  " directory on this machine."))
-
-  (define compile-omit-files '("slatexsrc.ss"))
   
-  (define install-collection "installer.ss"))
+  (define install-collection "installer.ss")
+  (define compile-omit-files '("slatex.scm")))

@@ -1046,8 +1046,12 @@ MZ_EXTERN Scheme_Object *scheme_eval_waiting;
 #endif
 
 #ifdef MZ_PRECISE_GC
-# define scheme_longjmp(b, v) (GC_variable_stack = (b).gcvs, GC_variable_stack[1] = (b).gcvs_cnt, scheme_mz_longjmp((b).jb, v))
-# define scheme_setjmp(b)     ((b).gcvs = GC_variable_stack, (b).gcvs_cnt = GC_variable_stack[1], scheme_mz_setjmp((b).jb))
+# define scheme_longjmp(b, v) (GC_variable_stack = (b).gcvs, \
+                               (GC_variable_stack ? (GC_variable_stack[1] = (b).gcvs_cnt) : 0), \
+                               scheme_mz_longjmp((b).jb, v))
+# define scheme_setjmp(b)     ((b).gcvs = GC_variable_stack, \
+                               (b).gcvs_cnt = (GC_variable_stack ? GC_variable_stack[1] : 0), \
+                               scheme_mz_setjmp((b).jb))
 #else
 # define scheme_longjmp(b, v) scheme_mz_longjmp(b, v)
 # define scheme_setjmp(b) scheme_mz_setjmp(b)

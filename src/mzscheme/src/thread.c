@@ -3346,7 +3346,7 @@ void scheme_security_check_file(const char *who, const char *filename, int guard
       l = scheme_make_immutable_pair(read_symbol, l);
 
     a[0] = scheme_intern_symbol(who);
-    a[1] = (filename ? scheme_make_immutable_sized_string(filename, -1, 1) : scheme_false);
+    a[1] = (filename ? scheme_make_immutable_sized_string((char *)filename, -1, 1) : scheme_false);
     a[2] = l;
 
     while (sg->parent) {
@@ -3374,7 +3374,7 @@ void scheme_security_check_network(const char *who, const char *host, int port, 
     }
 
     a[0] = scheme_intern_symbol(who);
-    a[1] = (host ? scheme_make_immutable_sized_string(host, -1, 1) : scheme_false);
+    a[1] = (host ? scheme_make_immutable_sized_string((char *)host, -1, 1) : scheme_false);
     a[2] = scheme_make_integer(port);
     a[3] = (client ? client_symbol : server_symbol);
 

@@ -696,6 +696,7 @@ void wxApp::doMacKeyUpDown(Bool down)
 				 2, &converted, &ubytes,
 				 (UniCharArrayPtr)unicode);
 	
+	/* Sleazy conversion from UCS16 to Latin-1: drop high byte */
 	key = unicode[1];
       }
     } // end switch

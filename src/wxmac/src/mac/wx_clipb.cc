@@ -27,7 +27,10 @@ extern void MrEdQueueBeingReplaced(wxClipboardClient *clipOwner);
 static wxList *ClipboardFormats = NULL;
 
 static TextToUnicodeInfo t2uinfo;
-static t2u_ready = 0;
+static int t2u_ready = 0;
+
+static TextToUnicodeInfo m2uinfo;
+static int m2u_ready = 0;
 
 #define CUSTOM_ID_START 100
 
@@ -106,38 +109,46 @@ Bool wxSetClipboardData(int dataFormat, wxObject *obj, int width, int height)
 
   if (format == 'TEXT') {
     /* TEXT means MacRoman to the OS, but Latin-1 to MrEd.
-       Convert Latin-1 to Unicode and use utxt. */
-    ByteCount ubytes, converted, usize;
-    UniCharCount ulen;
-    char *unicode;
+       If necessary, convert Latin-1 to Unicode and use utxt. */
     int i;
 
     length = strlen((char *)obj);
 
-    if (!t2u_ready) {
-      CreateTextToUnicodeInfoByEncoding(kTextEncodingISOLatin1, &t2uinfo);
-      t2u_ready = 1;
+    for (i = 0; i < length; i++) {
+      if (((unsigned char *)obj)[i] > 127)
+	break;
     }
 
-    usize = length * 2;
-    unicode = new WXGC_ATOMIC char[usize];
-    
-    ConvertFromTextToUnicode(t2uinfo, length, (char *)obj, 0,
-			     0, NULL,
-			     NULL, NULL,
-			     usize, &converted, &ubytes,
-			     (UniCharArrayPtr)unicode);
-    
-    obj = (wxObject *)unicode;
-    
-    /* Fixup one more detail: convert newlines to CRs: */
-    for (i = 0; i < length; i++) {
-      if (((UInt16 *)unicode)[i] == '\n') {
-	((UInt16 *)unicode)[i] == '\r';
+    if (i < length) {
+      /* Convert. */
+      ByteCount ubytes, converted, usize;
+      char *unicode;
+
+      if (!t2u_ready) {
+	CreateTextToUnicodeInfoByEncoding(kTextEncodingISOLatin1, &t2uinfo);
+	t2u_ready = 1;
       }
+
+      usize = length * 2;
+      unicode = new WXGC_ATOMIC char[usize];
+      
+      ConvertFromTextToUnicode(t2uinfo, length, (char *)obj, 0,
+			       0, NULL,
+			       NULL, NULL,
+			       usize, &converted, &ubytes,
+			       (UniCharArrayPtr)unicode);
+      
+      obj = (wxObject *)unicode;
+      
+      /* Fixup one more detail: convert newlines to CRs: */
+      for (i = 0; i < length; i++) {
+	if (((UInt16 *)unicode)[i] == '\n') {
+	  ((UInt16 *)unicode)[i] = '\r';
+	}
+      }
+      format = 'utxt';
+      length = usize;
     }
-    format = 'utxt';
-    length = usize;
   } else {
     length = (long)width * height;
   }
@@ -167,20 +178,79 @@ wxObject *wxGetClipboardData(int dataFormat, long *size)
   if (err != noErr) {
     return NULL;
   }    
-  err = GetScrapFlavorSize(scrap,format,&length);
+  err = GetScrapFlavorSize(scrap, format, &length);
   if (err != noErr) {
-    return NULL;
+    if (format == 'TEXT') {
+      /* Wanted Latin-1 text? Try Unicode, too... */
+      format = 'utxt';
+      err = GetScrapFlavorSize(scrap, format, &length);
+      if (err != noErr)
+	return NULL;
+    } else
+      return NULL;
   }
+
   result = new WXGC_ATOMIC char[length + 1];
   got_length = length;
-  err = GetScrapFlavorData(scrap,format,&got_length,result);
+  err = GetScrapFlavorData(scrap, format, &got_length, result);
   if (err != noErr) {
     return NULL;
   } else if (got_length < length)
     length = got_length;
 
-  if (format == 'TEXT')
-    result[length] = 0;
+  if (format == 'TEXT') {
+    /* Got MacRoman. Convert to Unicode if necessary, 
+       then we'll convert to Latin-1... */
+    int i;
+
+    for (i = 0; i < length; i++) {
+      if (((unsigned char *)result)[i] > 127)
+	break;
+    }
+
+    if (i == length) {
+      /* Plain ASCII, where MacRoman == Latin-1 */
+      result[length] = 0;
+    } else {
+      ByteCount ubytes, converted, usize;
+      char *unicode;
+
+      if (!m2u_ready) {
+	CreateTextToUnicodeInfoByEncoding(kTextEncodingMacRoman, &m2uinfo);
+	m2u_ready = 1;
+      }
+
+      usize = length * 2;
+      unicode = new WXGC_ATOMIC char[usize];
+      
+      ConvertFromTextToUnicode(m2uinfo, length, result, 0,
+			       0, NULL,
+			       NULL, NULL,
+			       usize, &converted, &ubytes,
+			       (UniCharArrayPtr)unicode);
+      
+      result = unicode;
+      length = usize;
+      format = 'utxt';
+    }
+  }
+
+  if (format == 'utxt') {
+    /* Sleazy conversion from UCS16 to Latin-1: drop odd bytes */
+    char *l1;
+    int i, l1len;
+
+    l1len = (length >> 1);
+    l1 = new WXGC_ATOMIC char[l1len + 1];
+    for (i = 0; i < l1len; i++) {
+      l1[i] = result[(i << 1) + 1];
+    }
+    l1[l1len] = 0;
+
+    result = l1;
+    length = l1len;
+  }
+
 
   if (size)
     *size = length;

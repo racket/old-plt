@@ -15,7 +15,7 @@
                  pregexp-quote
                  *pregexp-comment-char*)
 
-;Configured for Scheme dialect plt by scmxlate, v 1a6,
+;Configured for Scheme dialect plt by scmxlate, v 2003-08-24,
 ;(c) Dorai Sitaram, 
 ;http://www.ccs.neu.edu/~dorai/scmxlate/scmxlate.html
 
@@ -674,7 +674,9 @@
         (loop
          (- i 1)
          (let ((c (string-ref s i)))
-           (if (memv c '(#\\ #\. #\? #\* #\+ #\| #\[ #\] #\{ #\} #\( #\)))
+           (if (memv
+                c
+                '(#\\ #\. #\? #\* #\+ #\| #\^ #\$ #\[ #\] #\{ #\} #\( #\)))
              (cons #\\ (cons c r))
              (cons c r))))))))
 

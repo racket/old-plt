@@ -328,7 +328,7 @@
    (define file-menu:quit-help-string (lambda () (string-constant quit-info)))
    (define file-menu:quit-on-demand (lambda (menu-item) (void)))
    (define file-menu:create-quit?
-     (lambda () (not (eq? (system-type) 'macosx))))
+     (lambda () (not (current-eventspace-has-standard-menus?))))
    (public file-menu:after-quit)
    (define file-menu:after-quit (lambda (menu) (void)))
    (public edit-menu:undo-callback
@@ -582,7 +582,7 @@
    (public edit-menu:between-find-and-preferences)
    (define edit-menu:between-find-and-preferences
      (lambda (menu)
-       (unless (eq? (system-type) 'macosx)
+       (unless (current-eventspace-has-standard-menus?)
          (make-object separator-menu-item% menu))))
    (public edit-menu:preferences-callback
            edit-menu:get-preferences-item
@@ -600,7 +600,7 @@
      (lambda () (string-constant preferences-info)))
    (define edit-menu:preferences-on-demand (lambda (menu-item) (void)))
    (define edit-menu:create-preferences?
-     (lambda () (not (eq? (system-type) 'macosx))))
+     (lambda () (not (current-eventspace-has-standard-menus?))))
    (public edit-menu:after-preferences)
    (define edit-menu:after-preferences (lambda (menu) (void)))
    (public help-menu:before-about)

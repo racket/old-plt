@@ -71,7 +71,7 @@
 (setup-printf "Collection Paths are: ~a" (current-library-collection-paths))
 
 (define (warning s x)
-  (printf s
+  (setup-printf s
 	  (if (exn? x)
 	      (exn-message x)
 	      x)))
@@ -79,7 +79,7 @@
 (define (call-info info flag default test)
   (with-handlers ([void (lambda (x) 
 			  (warning
-			   (format "Warning: error getting ~a info: ~~a~n"
+			   (format "Warning: error getting ~a info: ~~a"
 				   flag)
 			   x)
 			  default)])
@@ -153,7 +153,7 @@
 			  (close-input-port read-pipe)))])
     (thread (lambda () 
 	      (with-handlers ([void (lambda (x)
-				      (warning "Warning: unpacking error: ~a~n" x))])
+				      (warning "Warning: unpacking error: ~a" x))])
                 (gunzip-through-ports pgz out))
 	      (close-output-port out)))
     get))
@@ -221,7 +221,7 @@
 (define (unpack-archive archive)
   (with-handlers ([void
 		   (lambda (x)
-		     (warning (format "Warning: error unpacking ~a: ~~a~n"
+		     (warning (format "Warning: error unpacking ~a: ~~a"
 				      archive)
 			      x)
 		     null)])
@@ -284,7 +284,7 @@
 			 (lambda (x) #f)]
 			[void
 			 (lambda (x)
-			   (warning "Warning: error loading info.ss: ~a~n" x)
+			   (warning "Warning: error loading info.ss: ~a" x)
 			   #f)])
 	   (let* ([info (parameterize ([require-library-use-compiled #f])
 			  (apply require-library/proc "info.ss" collection-p))]
@@ -515,22 +515,20 @@
 	    collections-to-compile))
 
 (when (call-install)
-  (let ()
-    (for-each (lambda (cc)
+  (for-each (lambda (cc)
+	      (let/ec k
 		(record-error
 		 cc
 		 "General Install"
 		 (lambda ()
-		   (let ([t (call-info (cc-info cc) 'install-collection void
-				       (lambda (p)
-					 (unless (and (procedure? p)
-						      (procedure-arity-includes? p 1))
-					   (error "result is not a procedure of arity 1"))))])
-		     (with-handlers ([void (lambda (x)
-					     (warning "Warning: error running installer: ~a~n"
-						      x))])
-		       (t plthome))))))
-	      collections-to-compile)))
+		   (let ([t ((cc-info cc) 'install-collection (lambda () (k #f)))])
+		     (unless (and (procedure? t)
+				  (procedure-arity-includes? t 1))
+		       (error 'setup-plt
+			      "install-collection: result is not a procedure of arity 1"))
+		     (setup-printf "Installing ~a" (cc-name cc))
+		     (t plthome))))))
+	    collections-to-compile))
 
 (setup-printf "Done setting up")
 

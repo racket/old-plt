@@ -263,7 +263,7 @@ gc2.o: $(srcdir)/gc2.c $(srcdir)/copy.c $(srcdir)/compact.c $(srcdir)/gc2.h
 	$(CC) $(CFLAGS) -c $(srcdir)/gc2.c -o gc2.o
 
 ../mzscheme2k: $(OBJS)
-	$(CC) -o ../mzscheme2k $(OBJS) $(LIBS)
+	$(CC) -o ../mzscheme2k $(OBJS) ../src/gmp.o $(LIBS)
 
 clean:
 	/bin/rm -f lex.yy.c ../mzscheme2k *.o $(XSRCDIR)/*

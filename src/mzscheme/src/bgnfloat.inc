@@ -78,8 +78,7 @@ static void bignum_add1_inplace(Scheme_Object **o)
   
   len = SCHEME_BIGLEN(*o);
 
-  if (len == 0)
-  {
+  if (len == 0) {
     *o = bignum_copy(*o, 1);
     return;
   }

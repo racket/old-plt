@@ -358,7 +358,8 @@
      strcmp strcpy strcat memset
      printf sprintf vsprintf vprintf
      strncmp scheme_strncmp
-     read write)
+     read write
+     bigdig_length)
    (map
     string->symbol
     '("XTextExtents" "XTextExtents16" 

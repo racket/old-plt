@@ -196,6 +196,43 @@
 	(case-lambda
 	 [(f init l) (fold-one f init l)]
 	 [(f init l . ls) (fold-n f init (cons l ls))]))))
+
+   (define assf
+     (polymorphic
+      (lambda (f list)
+	(unless (and (procedure? f)
+		     (procedure-arity-includes? f 1))
+		(raise-type-error 'assf "procedure (arity 1)" f))
+	(let loop ([l list])
+	  (cond
+	   [(null? l) #f]
+	   [(not (pair? l)) 
+	    (raise (make-exn:application:list
+		    (format "assf: second argument must be a (proper) list; given ~e" list)
+		    ((debug-info-handler))
+		    list))]
+	   [(f (car l)) (car l)]
+	   [else (loop (cdr l))])))))
+
+   (define filter
+     (polymorphic
+      (lambda (f list)
+	(unless (and (procedure? f)
+		     (procedure-arity-includes? f 1))
+		(raise-type-error 'filter "procedure (arity 1)" f))
+	(let loop ([l list])
+	  (cond
+	   [(null? l) null]
+	   [(pair? l)
+	    (let* ([keep? (f (car l))]
+		   [frest (loop (cdr l))])
+	      (if keep?
+		  (cons (car l) frest)
+		  frest))]
+	   [else (raise (make-exn:application:list
+			 (format "filter: second argument must be a (proper) list; given ~e" list)
+			 ((debug-info-handler))
+			 list))])))))
    
    (define first (polymorphic (lambda (x) 
 				(unless (pair? x)

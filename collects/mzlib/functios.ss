@@ -1,24 +1,6 @@
 
 (define-signature mzlib:function^
-  (dynamic-disable-break
-   dynamic-wind/protect-break
-   make-single-threader
-   remv
-   remq
-   remove
-   remv*
-   remq*
-   remove*
-   ignore-errors
-   quicksort
-   identity
-   compose
-   foldl
-   foldr
-   cons?
-   last-pair
-
-   first
+  (first
    second
    third
    fourth
@@ -29,8 +11,36 @@
 
    rest
 
+   cons?
+
+   identity
+   compose
+   foldl
+   foldr
+
+   last-pair
+
+   remv
+   remq
+   remove
+   remv*
+   remq*
+   remove*
+
+   assf
+
+   filter
+
    build-string
    build-vector
    build-list
 
-   loop-until))
+   quicksort
+
+   loop-until
+
+   ignore-errors
+
+   dynamic-disable-break
+   dynamic-wind/protect-break
+   make-single-threader))

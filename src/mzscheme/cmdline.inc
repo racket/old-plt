@@ -973,6 +973,7 @@ static int run_from_cmd_line(int argc, char *_argv[],
 	 "  -l <file>, --mzlib <file> : Same as -e '(require (lib \"<file>\"))'.\n"
 	 "  -L <file> <coll> : Same as -e '(require (lib \"<file>\" \"<coll>\"))'.\n"
 	 "  -M <coll> : Same as -e '(require (lib \"<coll>.ss\" \"<coll>\"))'.\n"
+	 "  -M errortrace : Report locations in uncompiled source for run-time errors.\n"
 	 "  -r, --script : Script mode: use as last switch for scripts. Same as -fmv-.\n" 
 	 "  -i, --script-cd : Like -r, but also sets the directory. Same as -dmv-.\n"
 	 "  -u, --require-script : Like -r, but requires a module. Same as -tmv-.\n" 

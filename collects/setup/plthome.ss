@@ -24,11 +24,11 @@
   ;; to work fine and .dep files will just contain absolute path names.  These
   ;; functions work on dep elements -- either a pathname or a pair with a
   ;; pathname in its cdr, the plthome-ified pathname will itself be a pair.
-  (define plthome/ (let* ([plthome (simplify-path plthome)]
-                          [plthome (if (eq? 'windows (system-type))
-                                     (regexp-replace* #rx"\\\\" plthome "/")
-                                     plthome)])
-                     (regexp-replace #rx"/?$" plthome "/")))
+  (define simplify-path*
+    (if (eq? 'windows (system-type))
+      (lambda (str) (regexp-replace* #rx"\\\\" (simplify-path str) "/"))
+      simplify-path))
+  (define plthome/ (regexp-replace #rx"/?$" (simplify-path* plthome) "/"))
   (define plthome/-len (string-length plthome/))
   (define (maybe-cdr-op f)
     (lambda (x)
@@ -38,12 +38,13 @@
   (define plthome-ify
     (maybe-cdr-op
      (lambda (path)
-       (cond [(and (string? path)
-                   (> (string-length path) plthome/-len)
-                   (equal? (substring path 0 plthome/-len) plthome/))
-              (cons 'plthome (substring path plthome/-len))]
-             [(equal? path plthome) (cons 'plthome "")]
-             [else path]))))
+       (let ([path* (and (string? path) (simplify-path* path))])
+         (cond [(and path*
+                     (> (string-length path*) plthome/-len)
+                     (equal? (substring path* 0 plthome/-len) plthome/))
+                (cons 'plthome (substring path* plthome/-len))]
+               [(equal? path* plthome) (cons 'plthome "")]
+               [else path])))))
   (define un-plthome-ify
     (maybe-cdr-op
      (lambda (path)

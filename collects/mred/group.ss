@@ -76,15 +76,16 @@
 		    (begin (set! frames null)
 			   #t)))]
 	    [close-all
-	     (lambda ()
-	       (catch escape
-		 (for-each (lambda (f)
-			     (let ([frame (frame-frame f)])
-			       (if (send frame on-close)
-				   (send frame show #f)
-				   (escape #f))))
-			   frames)
-		 #t))]
+              (lambda ()
+                (call/ec 
+                  (lambda (escape)
+                    (for-each (lambda (f)
+                                (let ([frame (frame-frame f)])
+                                  (if (send frame on-close)
+                                    (send frame show #f)
+                                    (escape #f))))
+                      frames))
+                  #t))]
 	    [new-frame
 	     (lambda (filename)
 	       (if (string? filename)

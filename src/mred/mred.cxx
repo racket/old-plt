@@ -1931,6 +1931,9 @@ static void MrEdOutOfMemory(void)
   Alert(101, NULL);
   ExitToShell();
 #else
+#ifdef wx_x
+  printf("mred: out of memory\n");
+#endif
   _exit(-1);
 #endif
 }

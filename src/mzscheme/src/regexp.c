@@ -2828,7 +2828,7 @@ static Scheme_Object *gen_replace(const char *name, int argc, Scheme_Object *arg
       }
     } else if (!prefix) {
       if (was_non_byte)
-	return argv[0];
+	return argv[1];
       else
 	return orig;
     } else {

@@ -32,8 +32,14 @@
   
   (define (language-dialog)
     (letrec
-	([language-levels (map (lambda (x) (symbol->string (vector-ref x 0))) basis:settings)]
-	 [f (make-object mred:dialog% "Language")]
+	([dialog% (class mred:dialog%
+		    (public
+		      [on-close
+		       (lambda ()
+			 (when (procedure? unregister-callback)
+			   (unregister-callback)))]))]
+	 [language-levels (map (lambda (x) (symbol->string (vector-ref x 0))) basis:settings)]
+	 [f (make-object dialog% "Language")]
 	 [main (make-object mred:vertical-panel% f)]
 	 [language-panel (make-object mred:horizontal-panel% main '(border))]
 	 [customization-panel (make-object mred:horizontal-panel% main)]
@@ -217,11 +223,16 @@
 			  ok-panel
 			  (lambda (button evt) 
 			    (fw:preferences:read)
-			    (send f show #f)))]
+			    (send f show #f)
+			    (when (procedure? unregister-callback)
+			      (unregister-callback))))]
 	 [ok-button (make-object mred:button%
 		      "OK"
 		      ok-panel
-		      (lambda (button evt) (send f show #f)))]
+		      (lambda (button evt) 
+			(send f show #f)
+			(when (procedure? unregister-callback)
+			  (unregister-callback))))]
 	 [compare-setting-to-gui
 	  (lambda (setting)
 	    (let ([compare-check-box
@@ -315,7 +326,17 @@
 		       print-tagged-inexact-numbers
 		       whole/fractional-exact-numbers
 		       abbreviate-cons-as-list?))
-	    (reset-choice))])
+	    (reset-choice))]
+	 [unregister-callback
+	  (fw:preferences:add-callback 'drscheme:settings 
+				       (lambda (p v) 
+					 (send (fw:group:get-the-frame-group)
+					       for-each-frame 
+					       (lambda (x)
+						 (when (is-a? x drscheme:unit:frame%)
+						   (send (ivar x definitions-edit)
+							 language-changed))))
+					 (update-to v)))])
       (send f stretchable-width #f)
       (send f stretchable-height #f)
       (send language-choice stretchable-width #f)
@@ -323,15 +344,6 @@
       (send vocab stretchable-width #f)
       (update-to (fw:preferences:get 'drscheme:settings))
       (show-specifics (not (ormap (lambda (x) (compare-setting-to-gui (vector-ref x 1))) basis:settings)))
-      (fw:preferences:add-callback 'drscheme:settings 
-				    (lambda (p v) 
-				      (send (fw:group:get-the-frame-group)
-					    for-each-frame 
-					    (lambda (x)
-					      (when (is-a? x drscheme:unit:frame%)
-						(send (ivar x definitions-edit)
-						      language-changed))))
-				      (update-to v)))
       (for-each (lambda (x) (send x stretchable-height #f))
 		(list language-panel ok-panel main))
       (send ok-button min-width (send cancel-button get-width))

@@ -128,7 +128,7 @@ void setupSchemeEnv(void) {
 
   scheme_add_global("mzcom-exe",scheme_make_string(exeBuff),env);
 
-  scheme_eval_string("(current-library-collection-paths)"
+  scheme_eval_string("(current-library-collection-paths "
 		     "(path-list-string->path-list "
 		     "(or (getenv \"PLTCOLLECTS\") \"\") "
 		     "(or "

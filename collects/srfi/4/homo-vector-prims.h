@@ -1,15 +1,18 @@
 #ifndef _HOMO_<type-name>_VECTOR_PRIMS_H
 #define _HOMO_<type-name>_VECTOR_PRIMS_H
 
-#ifdef _WIN32 /* Windows isn't C99 in this regard */
- typedef uint32_t UINT32;
- typedef uint16_t UINT16;
- typedef uint8_t UINT8;
- typedef int32_t INT32;
- typedef int16_t INT16;
- typedef int8_t INT8;  
+
+#ifdef _WIN32 
+/* Windows isn't C99 in this regard */
+#include <wtypes.h>
+typedef UINT32 uint32_t;
+typedef UINT16 uint16_t;
+typedef UINT8 uint8_t;
+typedef INT32 int32_t;
+typedef INT16 int16_t;
+typedef INT8 int8_t;  
 #else
- #include <inttypes.h>
+#include <inttypes.h>
 #endif
 
 typedef struct 

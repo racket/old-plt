@@ -1283,6 +1283,9 @@ mark_custodian_val {
   gcMARK(m->sibling);
   gcMARK(m->children);
 
+  gcMARK(m->global_next);
+  gcMARK(m->global_prev);
+
  size:
   gcBYTES_TO_WORDS(sizeof(Scheme_Custodian));
 }

@@ -16,29 +16,6 @@
 
 /*************** (BEGIN PLATFORM-INDEPENDENT OPTIONS) *************/
 
-  /***********************/
- /* Language Extensions */
-/***********************/
-
- /* NO_OBJECT_SYSTEM removes MzScheme's object system. */
-
- /* NO_REGEXP_UTILS removes MzScheme's regular expression utilities. */
-
- /* NO_TCP_SUPPORT removes MzScheme's TCP utilities */
-
- /* NO_SCHEME_THREADS removes MzScheme's threads from the Scheme user. 
-    In this case, custodian-shutdown-all doesn't kill threads. */
-
- /* NO_FILE_SYSTEM_UTILS removes most file system utilities. */
-
-#if defined(NO_FILE_SYSTEM_UTILS) \
-	|| defined(NO_OBJECT_SYSTEM) \
-	|| defined(NO_TCP_SUPPORT) \
-	|| defined(NO_REGEXP_UTILS) \
-	|| defined(NO_SCHEME_THREADS)
-# define MZSCHEME_SOMETHING_OMITTED
-#endif
-
   /*******************************/
  /* Evaluator Tuning Parameters */
 /*******************************/

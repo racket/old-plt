@@ -18,6 +18,7 @@ EXPORTS
  scheme_out_of_fuel
  scheme_thread
  scheme_thread_w_custodian
+ scheme_thread_w_custodian_killkind
  scheme_kill_thread
  scheme_break_thread
  scheme_thread_block

@@ -440,8 +440,8 @@ void scheme_register_traversers(void)
   GC_REG_TRAV(scheme_channel_type, channel_val);
   GC_REG_TRAV(scheme_channel_put_type, channel_put_val);
   GC_REG_TRAV(scheme_semaphore_repost_type, small_object);
-  GC_REG_TRAV(scheme_thread_suspend_type, twoptr_object);
-  GC_REG_TRAV(scheme_thread_resume_type, twoptr_object);
+  GC_REG_TRAV(scheme_thread_suspend_type, twoptr_obj);
+  GC_REG_TRAV(scheme_thread_resume_type, twoptr_obj);
   GC_REG_TRAV(scheme_thread_dead_type, small_object);
   GC_REG_TRAV(scheme_hash_table_type, hash_table_val);
   GC_REG_TRAV(scheme_bucket_table_type, bucket_table_val);

@@ -22,11 +22,10 @@
   scheme_extension_table->scheme_fuel_counter_ptr = scheme_fuel_counter_ptr;
 #endif
   scheme_extension_table->scheme_out_of_fuel = scheme_out_of_fuel;
-#ifndef NO_SCHEME_THREADS
   scheme_extension_table->scheme_thread = scheme_thread;
   scheme_extension_table->scheme_thread_w_custodian = scheme_thread_w_custodian;
+  scheme_extension_table->scheme_thread_w_custodian_killkind = scheme_thread_w_custodian_killkind;
   scheme_extension_table->scheme_kill_thread = scheme_kill_thread;
-#endif
   scheme_extension_table->scheme_break_thread = scheme_break_thread;
   scheme_extension_table->scheme_thread_block = scheme_thread_block;
   scheme_extension_table->scheme_swap_thread = scheme_swap_thread;
@@ -189,12 +188,10 @@
   scheme_extension_table->scheme_make_float = scheme_make_float;
 #endif
   scheme_extension_table->scheme_make_char = scheme_make_char;
-#ifndef NO_SCHEME_THREADS
   scheme_extension_table->scheme_make_sema = scheme_make_sema;
   scheme_extension_table->scheme_post_sema = scheme_post_sema;
   scheme_extension_table->scheme_post_sema_all = scheme_post_sema_all;
   scheme_extension_table->scheme_wait_sema = scheme_wait_sema;
-#endif
   scheme_extension_table->scheme_char_constants = scheme_char_constants;
   scheme_extension_table->scheme_make_channel = scheme_make_channel;
   scheme_extension_table->scheme_get_int_val = scheme_get_int_val;

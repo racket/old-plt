@@ -297,6 +297,9 @@ struct Scheme_Custodian {
   Scheme_Custodian_Reference *parent;
   Scheme_Custodian_Reference *sibling;
   Scheme_Custodian_Reference *children;
+
+  Scheme_Custodian_Reference *global_next;
+  Scheme_Custodian_Reference *global_prev;
 };
 
 Scheme_Thread *scheme_do_close_managed(Scheme_Custodian *m, Scheme_Exit_Closer_Func f);

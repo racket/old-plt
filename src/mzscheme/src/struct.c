@@ -240,9 +240,9 @@ scheme_init_struct (Scheme_Env *env)
 						      "make-wrapped-waitable",
 						      2, 2),
 			     env);
-  scheme_add_global_constant("make-nack-waitable",
+  scheme_add_global_constant("make-nack-guard-waitable",
 			     scheme_make_prim_w_arity(nack_waitable,
-						      "make-nack-waitable",
+						      "make-nack-guard-waitable",
 						      1, 1),
 			     env);
 
@@ -1284,7 +1284,7 @@ static Scheme_Object *nack_waitable(int argc, Scheme_Object *argv[])
 {
   Nack_Waitable *nw;
 
-  scheme_check_proc_arity("make-nack-waitable", 1, 0, argc, argv);
+  scheme_check_proc_arity("make-nack-guard-waitable", 1, 0, argc, argv);
 
   nw = MALLOC_ONE_TAGGED(Nack_Waitable);
   nw->type = scheme_nack_waitable_type;

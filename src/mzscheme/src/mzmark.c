@@ -3209,6 +3209,9 @@ int mark_custodian_val_MARK(void *p) {
   gcMARK(m->sibling);
   gcMARK(m->children);
 
+  gcMARK(m->global_next);
+  gcMARK(m->global_prev);
+
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Custodian));
 }
@@ -3224,6 +3227,9 @@ int mark_custodian_val_FIXUP(void *p) {
   gcFIXUP(m->parent);
   gcFIXUP(m->sibling);
   gcFIXUP(m->children);
+
+  gcFIXUP(m->global_next);
+  gcFIXUP(m->global_prev);
 
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Custodian));

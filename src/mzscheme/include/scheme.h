@@ -687,7 +687,8 @@ typedef struct Scheme_Thread {
   Scheme_Object *blocker; /* semaphore or port */
   Scheme_Ready_Fun block_check;
   Scheme_Needs_Wakeup_Fun block_needs_wakeup;
-  short ran_some;
+  char ran_some;
+  char suspend_to_kill;
 
   short overflow_set;
   struct Scheme_Overflow *overflow;

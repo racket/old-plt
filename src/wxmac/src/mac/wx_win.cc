@@ -1054,10 +1054,10 @@ RgnHandle wxWindow::GetCoveredRegion(int x, int y, int w, int h)
 //-----------------------------------------------------------------------------
 void wxWindow::MacSetBackground(void) // mac platform only
 {
-  if (cEraser == wxWHITE_BRUSH) {
-    BackColor(whiteColor);
-    BackPat(GetWhitePattern());
-  } else {
+  BackColor(whiteColor);
+  BackPat(GetWhitePattern());
+
+  if (cEraser != wxWHITE_BRUSH) {
     int depth;
     depth = wxDisplayDepth();
     SetThemeBackground(kThemeBrushDialogBackgroundActive, depth, depth > 1);

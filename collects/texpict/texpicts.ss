@@ -1,3 +1,4 @@
+(require-library "functios.ss")
 
 (begin-elaboration-time
  (require-relative-library "commons.ss"))

@@ -1,7 +1,8 @@
 (unit/sig ((open texpict-extra^)
 	   (open texpict-common-setup^))
   (import ((open texpict-common^)
-	   (open texpict-internal^)))
+	   (open texpict-internal^))
+	  mzlib:function^)
 
   (define using-pict2e-package
     (make-parameter #f
@@ -189,6 +190,50 @@
   (define (bottom-brace w)
     (make-h-brace "underbrace" w))
 
+  (define (generate-possible-slopes n)
+    (let ([positives
+	   (quicksort
+	    (remove-duplicates
+	     (apply append (build-list n
+				       (lambda (i)
+					 (build-list n
+						     (lambda (j) (/ (+ i 1) (+ j 1))))))))
+	    <=)])
+      (append
+       (reverse (map - positives))
+       (list 0)
+       positives)))
+
+  (define (remove-duplicates lst)
+    (cond
+     [(null? lst) null]
+     [else (cons (car lst)
+		 (remove-duplicates
+		  (filter
+		   (lambda (x) (not (equal? x (car lst))))
+		   (cdr lst))))]))
+
+  (define possible-arrow-slopes (generate-possible-slopes 4))
+  (define possible-line-slopes (generate-possible-slopes 6))
+  (printf "possible-arrow-slopes: ~s~n" possible-arrow-slopes)
+
+  (define (find-slope/robby dh dv possible-slopes)
+    (if (= dh 0)
+	'vertical
+	(let* ([slope (/ dv dh)]
+	       [answer
+		(let loop ([best (car possible-slopes)]
+			   [rst (cdr possible-slopes)])
+		  (cond
+		   [(null? rst) best]
+		   [else
+		    (if (<= (abs (- slope (car rst)))
+			    (abs (- slope best)))
+			(loop (car rst) (cdr rst))
+			(loop best (cdr rst)))]))])
+	  (printf "slope: ~s answer: ~s~n" slope answer)
+	  answer)))
+
   (define (find-slope dh dv max-slope-num h-within v-within) ; max-slope-num is 4 or 6
     ; Result is (slope new-dh), where slope can be 'vertical, in which case
     ;                           new-dh is really dv
@@ -262,6 +307,29 @@
      [(x1 y1 x2 y2 arrow?)
       (if (not (or (use-old-connect) (draw-bezier-lines)))
 	  (~connect 'r +inf.0 x1 y1 x2 y2 arrow?)
+	  (if (draw-bezier-lines)
+	      (let* ([get-len (lambda () (sqrt (+ (* (- x1 x2) (- x1 x2))
+						  (* (- y1 y2)  (- y1 y2)))))]
+		     [c (if (procedure? (draw-bezier-lines))
+			    ((draw-bezier-lines) (get-len))
+			    #f)])
+		`((qbezier ,c ,x1 ,y1 ,(quotient (+ x1 x2) 2) ,(quotient (+ y1 y2) 2) ,x2 ,y2)))	      
+	      (let* ([dh (- x2 x1)]
+		     [dv (- y2 y1)]
+		     [s
+		      (if (using-pict2e-package)
+			  (/ dv dh)
+			  (find-slope/robby
+			   (- x2 x1)
+			   (- y2 y1)
+			   (if arrow? possible-arrow-slopes possible-line-slopes)))])
+		(let-values ([(lh lv ll) (parse-slope s dh)])
+		  `((put ,x1 ,y1 (,(if arrow? 'vector 'line) ,lh ,lv ,ll)))))))]))
+
+#|
+
+  ;; old body of connect
+
 	  (let loop ([dd (if (draw-bezier-lines) 0 1)])
 	    (if (> dd (if (draw-bezier-lines) 0 4))
 		; give up
@@ -282,7 +350,9 @@
 		  (if s
 		      (let-values ([(lh lv ll) (parse-slope s l)])
 			`((put ,x1 ,y1 (,(if arrow? 'vector 'line) ,lh ,lv ,ll))))
-		      (loop (add1 dd)))))))]))
+		      (loop (add1 dd))))))
+
+|#
 
   (define ~connect 
     (case-lambda

@@ -25,8 +25,7 @@
 	 (open (core string))
 	 (open (core compile))
 	 (open (core thread))
-	 (open simple-draw)
-	 (open graphics))))
+	 (open simple-draw))))
     (compound-unit/sig (import)
       (link
        [core : mzlib:core^ ((require-library "corer.ss" "mzlib"))])

@@ -2,7 +2,7 @@
 (when (defined? 'mred^)
   (require-library "graphics.ss" "graphics")
   (require-library "simple-draws.ss" "userspce")
-  (require-library "turtles.ss " "graphics")
+  (require-library "turtles.ss" "graphics")
   (require-library "errors.ss" "userspce"))
 
 (if (defined? 'mred^)

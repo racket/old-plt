@@ -97,7 +97,7 @@
 	     (define-argv? #f)))
 	  (make-setting/parse
 	   `((name "Advanced")
-	     (extra-definitions-unit-name "adcanved.ss")
+	     (extra-definitions-unit-name "advanced.ss")
 	     (macro-libraries ())
 	     (vocabulary-symbol advanced)
 	     (case-sensitive? #t)

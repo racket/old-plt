@@ -13,7 +13,6 @@ portions only in DrScheme.
 
 - beginner.ss adds:
   - mzlib's core libraries
-  - Sixlib, in graphics.ss in the graphics library, and
   - simple-draw.ss
 
 - intermediate.ss adds exactly what beginner.ss does

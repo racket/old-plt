@@ -269,9 +269,10 @@
 	(public
 	  [transparent-edit #f]
 	  [transparent-snip #f]
-	  [this-in-char-ready? (lambda () #t)]
+	  [this-in-char-ready? (lambda () (printf "this-in-char-ready?~n") #t)]
 	  [cleanup-transparent-io
 	   (lambda ()
+	     (printf "cleanup-transparent-io ~a~n" transparent-edit)
 	     (when transparent-edit
 	       (set! saved-newline? #f) 
 	       (send transparent-edit shutdown)
@@ -286,6 +287,7 @@
 	[init-transparent-io
 	 (lambda (grab-focus?)
 	   (begin-edit-sequence)
+	   (printf "init-transparent-io ~a~n" transparent-edit)
 	   (if transparent-edit
 	       (when grab-focus?
 		 (let ([a (send transparent-edit get-admin)])
@@ -334,6 +336,7 @@
 	   (lambda ()
 	     (let ([s (make-semaphore 0)]
 		   [answer #f])
+	       (printf "this-in-read~n")
 	       (system
 		(lambda ()
 		  (mred:queue-callback

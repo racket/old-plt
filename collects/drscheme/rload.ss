@@ -88,7 +88,7 @@
 
    (lambda (fn)
      (unless (file-exists? fn)
-       (error 'load-handler "file ~a does not exist" fn))
+       (error 'rload-handler "file ~s does not exist" fn))
      (let ([sym (string->symbol fn)])
        (dynamic-wind
 	(lambda ()

@@ -104,8 +104,8 @@
 # endif
 #endif
 
-/* PLTSCHEME: Borland, too */
-#if (defined(__WATCOMC__) || defined(__BORLANDC__)) && defined(GC_DLL)
+/* PLTSCHEME: Borland and Cygwin, too */
+#if (defined(__WATCOMC__) || defined(__BORLANDC__) || defined(__CYGWIN32__)) && defined(GC_DLL)
 # ifdef GC_BUILD
 #   define GC_API extern __declspec(dllexport)
 # else

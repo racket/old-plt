@@ -73,6 +73,9 @@ struct obj_kind GC_obj_kinds[MAXOBJKINDS] = {
 
 /* PLTSCHEME: explicit init proc */
 #ifdef USE_MSVC_MD_LIBRARY
+# ifdef __CYGWIN32__
+#  include <windows.h>
+# endif
 void GC_pre_init(void)
 {
   int i = 0;
@@ -92,6 +95,7 @@ BOOL WINAPI DllMain(HINSTANCE inst, ULONG reason, LPVOID reserved)
 {
   if (reason == DLL_PROCESS_ATTACH)
     GC_pre_init();
+  return TRUE;
 }
 # endif
 #endif

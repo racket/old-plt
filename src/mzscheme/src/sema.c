@@ -489,7 +489,7 @@ static Scheme_Object *make_channel(int argc, Scheme_Object **argv)
   ch->first = ch->last = NULL;
   ch->wait_sem = scheme_make_sema(0);
 #ifdef MZ_REAL_THREADS
-  pipe->change_mutex = SCHEME_MAKE_MUTEX();
+  ch->change_mutex = SCHEME_MAKE_MUTEX();
 #endif
 
   return (Scheme_Object *)ch;

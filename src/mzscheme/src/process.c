@@ -1915,12 +1915,12 @@ void scheme_process_block_w_process(float sleep_time, Scheme_Process *p)
     MZ_FD_ZERO(set2);
     
     if (p->block_descriptor == -1) {
-	if (p->block_needs_wakeup)
-	  (p->block_needs_wakeup)(p->blocker, fds);
-	sleep_time = p->sleep_time;
+      if (p->block_needs_wakeup)
+	(p->block_needs_wakeup)(p->blocker, fds);
+      sleep_time = p->sleep_time;
     } else
       scheme_need_wakeup(p->blocker, fds);
-
+    
     if (scheme_sleep)
       scheme_sleep(sleep_time, fds);
   }
@@ -2073,8 +2073,16 @@ static int do_kill_thread(Scheme_Process *p)
     exit(0);
   }
 
-  if (p->running & MZTHREAD_KILLED)
+#ifdef MZ_REAL_THREADS
+  SCHEME_GET_LOCK();
+#endif
+
+  if (!p->running || (p->running & MZTHREAD_KILLED)) {
+#ifdef MZ_REAL_THREADS
+    SCHEME_RELEASE_LOCK();
+#endif
     return 0;
+  }
 
   if (p->on_kill)
     p->on_kill(p);
@@ -2082,14 +2090,11 @@ static int do_kill_thread(Scheme_Process *p)
   scheme_remove_managed(p->mref, (Scheme_Object *)p->mr_hop);
 
 #ifdef MZ_REAL_THREADS
-  SCHEME_GET_LOCK();
-  if (p->running) {
-    p->running |= MZTHREAD_KILLED;
-    if (p == scheme_current_process)
-      kill_self = 1;
-    else
-      p->fuel_counter = 0;
-  }
+  p->running |= MZTHREAD_KILLED;
+  if (p == scheme_current_process)
+    kill_self = 1;
+  else
+    scheme_break_thread(p);
   SCHEME_RELEASE_LOCK();
 #else
   if (p->running) {
@@ -3191,6 +3196,17 @@ static void do_nothing(int ignored)
 # ifdef SIGSET_NEEDS_REINSTALL
   MZ_SIGSET(SIGINT, do_nothing);
 # endif
+
+# ifdef MZ_USE_LINUX_PTHREADS
+  {
+    Scheme_Process *p;
+    p = scheme_current_process;
+    if (p->jump_on_signal) {
+      p->jump_on_signal = 0;
+      scheme_longjmp(p->signal_buf, 1);
+    }
+  }
+#endif
 }
 
 static void *start_pthread_thread(void *_cl)
@@ -3377,7 +3393,27 @@ int scheme_pthread_semaphore_down_breakable(void *s)
   SCHEME_RELEASE_LOCK();
 #endif
 
-  v = !sem_wait((sem_t *)s);
+#ifdef MZ_USE_LINUX_PTHREADS
+  {
+    Scheme_Process *p = scheme_current_process;
+
+    if (!scheme_setjmp(p->signal_buf)) {
+      p->jump_on_signal = 1;
+#endif
+
+      
+      v = !sem_wait((sem_t *)s);
+
+
+#ifdef MZ_USE_LINUX_PTHREADS
+      p->jump_on_signal = 0;
+    } else {
+      /* Somehow, the post was consumed, anyway; restore it. */
+      sem_post((sem_t *)s); 
+      v = 0;
+    }
+  }
+#endif
 
 #ifdef MZ_KEEP_LOCK_INFO
   SCHEME_GET_LOCK();

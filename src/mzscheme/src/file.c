@@ -2664,9 +2664,6 @@ static Scheme_Object *file_modify_seconds(int argc, Scheme_Object **argv)
   if (MSC_IZE(stat)(file, &buf))
     return scheme_false;
 
-  if (S_ISDIR(buf.st_mode))
-    return scheme_false;
-
   return scheme_make_integer_value_from_time(buf.st_mtime);
 #endif
 }

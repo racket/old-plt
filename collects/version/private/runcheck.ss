@@ -19,6 +19,7 @@
 	"Check versions of all PLT software over the Internet?")
 
       (define star "*")
+      (define dialog-title "PLT version status")
 
       (define rv-sym 'release-version)
       (define no-info-sym 'no-info-file)
@@ -47,18 +48,22 @@
 	 "binary-version="
 	 (version)))
 
-      (define newer-version? string>=?)
-
       (define timeout-value 60)
-      
+
+      (define the-port #f)
+
       (define (timer-proc)
 	(let loop ([n 0])
-	  (when (> n timeout-value)
+	  (if (> n timeout-value)
+	      (begin
 		(show-ok "Network timeout" 
 			 "Can't connect to PLT version server")
-		(raise 'timeout))
-	  (sleep 1)
-	  (loop (add1 n))))
+		(when the-port
+                      ; will force exception on pending read
+		      (close-input-port the-port)))
+	      (begin
+		(sleep 1)
+		(loop (add1 n))))))
 
       (define (get-collect-version-info collect)
 	(let ([info-proc 
@@ -79,7 +84,7 @@
 
       ; list of collections with no release-version 
       ;  or version-iteration
-      (define bad-collects
+      (define (bad-collects)
 	(map car
 	     (filter 
 	      (lambda (c)
@@ -97,43 +102,13 @@
 	       a)
 	      s)))
 
-      (define (extract-bad-collection-names sym)
+      (define (extract-bad-collection-names b-c syms)
 	(map car 
 	     (filter (lambda (c)
-		       (eq? (cadr c) sym)
-		       bad-collects))))
+		       (member (cadr c) syms)
+		       b-c))))
 
-      (unless (null? bad-collects)
-	      (let ([bad-info 
-		     (extract-bad-collection-names no-info-sym)]
-		    [no-version 
-		     (extract-bad-collection-names no-release-sym)])
-		(show-ok "Invalid package collections"
-			 (string-append 
-			  (if (null? bad-info)
-			      ""
-			      (string-append
-			       "These collections are not installed:"
-			       nl
-			       (foldr
-				comma-proc
-				#f
-				bad-info)))
-			  (if (null? no-version)
-			      ""
-			      (string-append
-			       (if (null? bad-info) ; add newline
-				   ""
-				   nl)
-			       "These collections have missing or incomplete version information:"
-			       nl
-			       (foldr
-				comma-proc
-				#f
-				no-version)))))
-		(raise 'bad-collections)))
-
-      (define cvi-triples
+      (define (cvi-triples)
 	(if (not (null? args-vis))
 
 	    ; user-specified
@@ -162,88 +137,159 @@
 					(inner-loop (cdr dirs)))
 				  (inner-loop (cdr dirs))))))))))))
 
-      (printf "cv-triples: ~a~n" cvi-triples)
-      (printf "url: ~a~n" (make-url-string cvi-triples))
+      (define (go)
 
-      (when (or (not (null? cvi-triples))
-		(eq? 'yes
-		     (get-yes-no "PLT version check" 
-				 check-question)))
-	    (let* ([port (with-handlers 
-			  ((void 
-			    (lambda _ 
-			      (show-error-ok
-			       "Network failure" 
-			       "Can't connect to PLT version server")
-			      (raise 'network-error))))<
-			  (get-pure-port (string->url 
-					  (make-url-string
-					   cvi-triples))))]
-		   [timeout-thread (thread timer-proc)]
-		   [responses 
-		    (let loop ()
-		      (let ([r (read port)])
-			(if (eof-object? r)
-			    '()
-			    (cons r (loop)))))]
-		   [_ (kill-thread timeout-thread)]
-		   [curr-version (version)]
-		   [needs-update #f])
-		  
-	      (close-input-port port)
+	(let ([b-c (bad-collects)])
 
-	      (printf "responses: ~a~n" responses)
+	  (if (not (null? b-c))
 
-              ; responses are a list of lists of symbol/string pairs: 
-              ;  (((package name)	
-	      ;    (installed-version v)
-              ;    (installed-iteration v)
-	      ;    (latest-version v)
-	      ;    (latest-iteration v)
-              ;    (verdict s))
-              ;    ... )
+	      (let ([bad-info 
+		     (extract-bad-collection-names b-c (list no-info-sym))]
+		    [no-version 
+		     (extract-bad-collection-names b-c (list no-release-sym no-iter-sym))])
+		(show-ok "Invalid package collections"
+			 (string-append 
+			  (if (null? bad-info)
+			      ""
+			      (string-append
+			       "These collections are not installed:"
+			       nl
+			       (foldr
+				comma-proc
+				#f
+				bad-info)))
+			  (if (null? no-version)
+			      ""
+			      (string-append
+			       (if (null? bad-info) ; add newline
+				   ""
+				   nl)
+			       "These collections have missing or incomplete version information:"
+			       nl
+			       (foldr
+				comma-proc
+				#f
+				no-version))))))
 
-	      (let* ([all-strings
-		      (map 
-		       (lambda (r)
-			 (let*-values
-			  ([(data) (map cadr r)]
-			   [(package installed-version installed-iteration 
-				     latest-version latest-iteration verdict)
-			    (apply values data)])
-			  (cond
-			   [(eq? verdict 'up-to-date)
-			    (format "~a v.~a (iteration ~a) is up to date"
-				    package installed-version installed-iteration)]
-			   [(eq? verdict 'update)
-			    (begin
-			      (set! needs-update #t)
-			      (format "~a v.~a (iteration ~a) needs updating to v.~a (iteration ~a)"
-				      package 
-				      installed-version installed-iteration 
-				      latest-version latest-iteration))]
-			   [else ""])))
-		       responses)]
-		     [folded-string
-		      (foldr 
-		       (lambda (s a)
-			 (if a 
-			     (if (empty-string? s)
-				 a
-				 (string-append s nl a))
-			     s))
-		       #f
-		       all-strings)])
+	      ; no bad collections
 
-		(show-ok 
-		 "PLT version status"
-		 (if needs-update
-		     (string-append
-		      folded-string
-		      (string #\newline #\newline)
-		      "Updates are available at "
-		      download-url-string)
-		     folded-string))))))))
-		    
-
+	      (when (or (not (null? args-vis))
+			(eq? 'yes
+			     (get-yes-no "PLT version check" 
+					 check-question)))
+		    (set! the-port 
+			  (with-handlers 
+			   ((void 
+			     (lambda _ 
+			       (show-error-ok
+				"Network failure" 
+				"Can't connect to PLT version server")
+			       (raise 'network-error))))
+			   (get-pure-port (string->url 
+					   (make-url-string
+					    (cvi-triples))))))
 	      
+		    (let* ([timeout-thread (thread timer-proc)]
+			   [responses 
+			    (let loop ()
+			      (let ([r (read the-port)])
+				(if (eof-object? r)
+				    (begin 
+				      (kill-thread timeout-thread)
+				      '())
+				    (cons r (loop)))))]
+			   [curr-version (version)]
+			   [needs-update #f])
+		  
+		      (close-input-port the-port)
+
+                ; responses are a list of lists of symbol/string pairs: 
+                ;  (((package name)	
+	        ;    (installed-version v)
+                ;    (installed-iteration v)
+	        ;    (latest-version v)
+	        ;    (latest-iteration v)
+                ;    (verdict s))
+                ;    ... )
+
+	        ; first handle binary info, which is always first in responses
+
+		      (let*-values
+		       ([(_ binary-version binary-iteration 
+			    latest-binary-version latest-binary-iteration 
+			    binary-verdict)
+			 (apply values (map cadr (car responses)))])
+		       
+		       (if (eq? binary-verdict 'update)
+			   
+                     ; inform user of new binary 
+
+			   (show-ok 
+			    dialog-title
+			    (string-append
+			     "Installed binaries for DrScheme (or MzScheme) "
+			     "are not up-to-date"
+			     nl nl
+			     (format 
+			      "Installed binary version: ~a (iteration ~a)"
+			      binary-version binary-iteration)
+			     nl nl
+			     (format 
+			      "Latest released version: ~a (iteration ~a)"
+			      latest-binary-version latest-binary-iteration)
+			     nl nl
+			     "Updates are available at "
+			     download-url-string))
+		
+                      ; else offer info for installed packages
+
+			   (let* ([all-strings
+				   (map 
+				    (lambda (r)
+				      (let*-values
+				       ([(data) (map cadr r)]
+					[(package installed-version installed-iteration 
+						  latest-version latest-iteration verdict)
+					 (apply values data)])
+				       (cond
+					[(eq? verdict 'up-to-date)
+					 (format "~a v.~a (iteration ~a) is up to date"
+						 package installed-version installed-iteration)]
+					[(eq? verdict 'update)
+					 (begin
+					   (set! needs-update #t)
+					   (format "~a v.~a (iteration ~a) needs updating to v.~a (iteration ~a)"
+						   package 
+						   installed-version installed-iteration 
+						   latest-version latest-iteration))]
+					[else ""])))
+				    (cdr responses))]
+				  [folded-string
+				   (foldr 
+				    (lambda (s a)
+				      (if a 
+					  (if (empty-string? s)
+					      a
+					      (string-append s nl a))
+					  s))
+				    #f
+				    all-strings)])
+			     
+			     (show-ok 
+			      dialog-title
+			      (if needs-update
+				  (string-append
+				   folded-string
+				   (string #\newline #\newline)
+				   "Updates are available at "
+				   download-url-string)
+				  folded-string))))))))))
+
+      ; exceptions are used to report errors elsewhere
+      ; just ignore here
+
+      (with-handlers
+       ((void void))
+       (go)))))
+
+

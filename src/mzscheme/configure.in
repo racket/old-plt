@@ -177,7 +177,7 @@ case $OS in
     case `$UNAME -r` in
       5.*)
        if test "${enable_osthreads}" = "yes" ; then
-	 OPTIONS="${OPTIONS} -DSOLARIS_THREADS"
+	 OPTIONS="${OPTIONS} -DSOLARIS_THREADS -D_REENTRANT"
 	 LIBS="$LIBS -lthread"
        fi
        STATICLINK="-Wl,-Bstatic" # after -ldl

@@ -11,7 +11,7 @@
 	   "prefs-file-unit.ss"
 	   "prefs-file-sig.ss"
            
-           "sig.ss"
+           "framework-sig.ss"
 	   "private/sig.ss"
 
            "private/application.ss"

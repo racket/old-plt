@@ -47,7 +47,7 @@
      MAIL-FROM
      ALIASES
      DEFAULT-DOMAIN
-     SMTP-SERVERS
+     SMTP-SERVER
      SAVE-SENT
 
      ROOT-MAILBOX-FOR-LIST
@@ -60,7 +60,9 @@
      SORT
      SHOW-URLS
      
-     USE-EXTERNAL-COMPOSER?))
+     USE-EXTERNAL-COMPOSER?
+
+     parse-server-name))
 
   (provide sirmail:read^)
   (define-signature sirmail:read^

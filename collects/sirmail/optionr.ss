@@ -6,9 +6,8 @@
            (lib "mred-sig.ss" "mred")
 	   (lib "framework.ss" "framework"))
 
-  (require "sirmails.ss")
-
-  (require "pref.ss")
+  (require "sirmails.ss"
+	   "pref.ss")
 
   (provide option@)
   (define option@
@@ -17,83 +16,50 @@
 	      net:imap^
               mred^)
 
+      (define (parse-server-name s default-port)
+	(let ([m (regexp-match "^([^:]*):([^:]*)$" s)])
+	  (if (and m (string->number (caddr m)))
+	      (values (cadr m) (string->number (caddr m)))
+	      (values s default-port))))
+
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       ;;  Preferences                                            ;;
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-      (define prefs (with-input-from-file
-			(build-path (find-system-path 'pref-dir)
-				    ".sirmail")
-		      read))
 
-      (define (get-pref key)
-	(let ([s (assoc key mailbox-options)])
-	  (if s
-	      (cadr s)
-	      (let ([s (assoc key prefs)])
-		(if s
-		    (cadr s)
-		    (error 'sirmail "can't find preference: ~a" key))))))
+      (define (MAIL-FROM) (get-pref 'sirmail:mail-from))
+      (define (USERNAME) (get-pref 'sirmail:username))
+      (define PASSWORD (get-pref 'sirmail:password))
+      (define (DEFAULT-DOMAIN) (get-pref 'sirmail:default-to-domain))
+      (define (IMAP-SERVER) (get-pref 'sirmail:imap-server))
+      (define (SMTP-SERVER) (get-pref 'sirmail:smtp-server))
+      (define (LOCAL-DIR) (get-pref 'sirmail:local-directory))
+      (define (SAVE-SENT) (get-pref 'sirmail:sent-directory))
 
-      (define (get-optional-pref key)
-	(with-handlers ([void (lambda (x) #f)])
-	  (get-pref key)))
-
-      (define (pref-prefs) (preferences:get sirmail-login-pref))
-      (define (MAIL-FROM) (lookup-pref/prefs 'mail-from (pref-prefs)))
-      (define (USERNAME) (lookup-pref/prefs 'username (pref-prefs)))
-      (define (DEFAULT-DOMAIN) (lookup-pref/prefs 'default-to-domain (pref-prefs)))
-      (define (IMAP-SERVER) (lookup-pref/prefs 'imap-server (pref-prefs)))
-      (define (LOCAL-DIR)
-	(or (lookup-pref/prefs/fail-false 'local-dir (pref-prefs))
-	    (build-path (find-system-path 'home-dir) "SirMail")))
-      (define (SAVE-SENT)
-	(if (lookup-pref/prefs/fail-false 'save-sent? (pref-prefs))
-	    (lookup-pref/prefs 'save-sent-dir (pref-prefs))
-	    #f))
-
-      (define PASSWORD (get-optional-pref 'password))
       (define (get-PASSWORD) PASSWORD)
       (define (set-PASSWORD p) (set! PASSWORD p))
 
-      (define SMTP-SERVERS (let ([many (get-optional-pref 'smtp-servers)])
-			     (if (and (list? many)
-				      (pair? many))
-				 many
-				 (list (get-pref 'smtp-server)))))
-      (define ALIASES (let ([f (get-optional-pref 'aliases-file)]
-			    [aliases (or (get-optional-pref 'aliases) null)])
-			(if f
-			    (append (with-input-from-file f read) aliases)
-			    aliases)))
-      (define SELF-ADDRESSES (get-optional-pref 'self-addresses))
-      (define AUTO-FILE-TABLE (get-optional-pref 'auto-file))
+      (define (BIFF-DELAY) (get-pref 'sirmail:biff-delay))
 
-      (define BIFF-DELAY (get-optional-pref 'biff-delay-seconds))
+      (define (ALIASES) (let ([f (get-pref 'sirmail:aliases-file)])
+			  (with-handlers ([not-break-exn? (lambda (x) null)])
+			    (with-input-from-file f read))))
 
-      (define SORT (get-optional-pref 'sort-by))
+      (define (SELF-ADDRESSES) (get-pref 'sirmail:self-addresses))
 
-      (define MESSAGE-FIELDS-TO-SHOW (or (get-optional-pref 'message-fields)
-					 '("From" "To" "CC" "Subject" "Date" "X-Mailer")))
+      (define (AUTO-FILE-TABLE) (let ([f (get-pref 'sirmail:auto-file-table-file)])
+				  (and f
+				       (with-handlers ([not-break-exn? (lambda (x) null)])
+					 (with-input-from-file f read)))))
 
-      (define ROOT-MAILBOX-FOR-LIST (get-optional-pref 'root-mailbox-folder))
+      (define (SORT) (get-pref 'sirmail:initial-sort))
 
-      (define USE-EXTERNAL-COMPOSER? (get-optional-pref 'use-external-composer?))
+      (define (MESSAGE-FIELDS-TO-SHOW) (get-pref 'sirmail:fields-to-show))
 
-      (let ([n (get-optional-pref 'imap-server-port)])
-	(when n
-	  (imap-port-number n)))
+      (define (ROOT-MAILBOX-FOR-LIST) (get-pref 'sirmail:root-mailbox-folder))
 
-      (define WARN-DOWNLOAD-SIZE 32000)
+      (define (USE-EXTERNAL-COMPOSER?) (get-pref 'sirmail:use-extenal-composer?))
+
+      (define (WARN-DOWNLOAD-SIZE) (get-pref 'sirmail:warn-download-size))
       
-      (define SHOW-URLS 
-        (let ([pref-value (get-optional-pref 'show-urls)])
-          (case pref-value
-            [(#f) #t]
-            [(on) #t]
-            [(off) #f]
-            [else 
-             (message-box 
-              "SirMail"
-              (format "WARNING: uknown value for show-urls pref: ~e, defaulting to on" pref-value))
-             #t]))))))
+      (define (SHOW-URLS) (get-pref 'sirmail:show-urls?)))))

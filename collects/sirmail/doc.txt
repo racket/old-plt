@@ -2,8 +2,6 @@
 _SirMail_ is a _IMAP_ mail client. The current version has a number of
 rough edges, but it is quite useful to the authors.
 
-Configuration is manual, via S-expressions, as described below.
-
 Caveat: All marks (used for deletion and copying) are local to the
 client. SirMail doesn't use the \Deleted IMAP flag until it is ready
 to delete marked messages. Also, it pays no attention to \Deleted
@@ -14,26 +12,34 @@ SirMail (on the local machine).
 
 ------------------------------------------------------------
 
-You can configure most SirMail options by visiting Edit | Preferences
-| Mailbox in the Inbox window.  A few remaining options still require
-manual editing.  The following options are specified through the menu:
+Configure SirMail options by visiting Edit | Preferences | Mailbox in
+a mail-reading or mail-sending window. If the current (or default)
+options do not allow SirMail to start up, you get just the preferences
+dialog, and you must try running again after setting the preferences.
+
+User panel:
 
   - Mail From: The user's email address.
 
   - Username: The username to use when logging into the server.
 
-  - IMAP Server: The IMAP server's host name.
+  - IMAP Server: The IMAP server's host name (incoming mail).
+    Use a ":<portno>" suffix on the host name to connect to
+    port <portno>.
+
+  - SMTP Server: The SMTP server's host name (outgoing mail).
+    Use a ":<portno>" suffix on the host name to connect to
+    port <portno>.
 
   - Local Directory: The pathname of an existing directory where
     SirMail should store downloaded messages.  Defaults to
      (build-path (find-system-path 'home-dir) "SirMail")
 
-  - Save Sent Files?: Check this if you want a copy of messages you
-    sent to be saved in an archive.
+  - Save Sent Files: Check this if you want a copy of messages you
+    sent to be saved in an archive, the set it to a directory where
+    SirMail should save outgoing messages.
 
-  - Save Sent Directory: The pathname of an existing directory where
-    SirMail should save outgoing messages.  This button is only active
-    if you turn Save Sent Files? (see above) on.
+Sending panel:
 
   - Default To Domain: If a destination address that isn't declared as
     an alias doesn't include a domain name, SirMail automatically
@@ -45,38 +51,9 @@ manual editing.  The following options are specified through the menu:
     Domain to `cs.brown.edu' will deliver this to foo@cs.brown.edu
     instead, irrespective of what SMTP server you use.
 
-A few options still need to be configured manually.  To do this,
-create a .sirmail file in (find-system-path 'pref-dir).  It should be,
-when read (not evaluated):
-
-  (list-of (list symbol TST))
-
-where each symbol specifies a configuration parameter and the
-corresponding TST specifies the value that parameter maps to.
-
-Here's an example content for .sirmail:
-
- ((password "not-really")
-  (smtp-server "smtp.cs.brown.edu")
-  (biff-delay-seconds #f)
-  (self-addresses ("sk@cs.brown.edu" "shriram@cs.rice.edu"))
-  (aliases (("mflatt" "mflatt@cs.utah.edu")
-	    ("robby" "robby@cs.rice.edu")
-	    ("me" "sk@cs.brown.edu")
-	    ("plt-design" "plt-design@ccs.neu.edu")
-            ("plt-scheme" "plt-scheme@list.cs.brown.edu")))
-  (aliases-file "~/.sirmail.aliases")
-  (use-external-composer? #t))
-
-The one required entry is:
-
-  - smtp-servers or smtp-server: former is a list of strings naming
-    smtp server hosts, latter is a string naming a single smtp server
-    host.
-
-The optional preferences are:
-
-  - aliases: should be of the form:
+  - Aliases File: SirMail uses this file to resolve shortcut mail
+    addresses when sending mail. The file should contain an expression
+    that reads as a value of the shape
 
       (list-of (list string (union string (list-of string))))
 
@@ -86,27 +63,32 @@ The optional preferences are:
 
     Aliases are expanded recursively.
 
-  - aliases file: string, specifies a filename that contains more
-    alises in the same form as the aliases tag.
+ - Self Addresses: Strings naming your email addresses so followups do
+    not go to yourself.
 
-  - imap-server-port: (union number #f), when number specifies the
-    port to connect to for the imap server.
+Reading panel:
 
-  - self-addresses: a list of strings naming your email addresses 
-    so followups do not go to yourself.
+ - Folder List Root: Names a mailbox to use as the root in the mailbox
+   folder list window. If this option is not provided, the reader
+   window will not contain the "Show Folders Window" menu.
 
-  - password: which should map to a string containing the imap password
-    If you don't specify one, SirMail will interactively query you for
-    it when you connect to get email from the IMAP server.
+ - Auto-File Table File: The file should contain an expression that
+   reads as a value of the shape
 
-  - auto-file: 
+      (list-of (list mailbox-name-string 
+                     (list-of (list field-string regexp-string))))
 
-      (list-of (list mailbox-name (list-of (list field regexp))))
-    
-    specifies where messages should be autofiled based on regular
-    expression matching of various headers in the email. For any
-    email, if it has a header named `field' that mathces `regexp', it
-    is filed into `mailbox-name'.
+   which specifies where messages should be autofiled based on regular
+   expression matching of various headers in the email. For any email,
+   if it has a header named `field-string' that mathces
+   `regexp-string', it is filed into `mailbox-name-string'.
+
+ - Shown Header Fields: Names header fields to to (in order_ when
+   reading a message.
+
+
+Internal options that still need preference-panel support:
+
 
   - biff-delay-seconds: (union #f number); when number specifies how long
     between sirmail waits before polling the mailbox. Only polls when
@@ -117,26 +99,19 @@ The optional preferences are:
     'id indicates sorting by order received and #f means no sorting.
     These should produce the same ordering, but 'id is probably a bit slower.
 
-  - root-mailbox-folder: a string naming a mailbox to use as the root
-    in the mailbox folder list window. If this option is #f or not
-    provided, the reader window will not contain the "Show Folders
-    Window" menu.
-
-  - message-fields: a list of strings naming header fields to show (in
-    order) when reading a message. The default is
-          ("From" "To" "CC" "Subject" "Date" "X-Mailer")
-
   - show-urls: (union 'on 'off), defaults to 'on
     If this is 'on, it hilights urls in the text. Clicking on the
     urls will open a web browser, pointing it at that url.
 
- - use-external-composer?: (union #f #t), defaults to #f
-   If true, you can select an external program for composing
-   outgoing messages.
+  - use-external-composer?: (union #f #t), defaults to #f
+    If true, you can select an external program for composing
+    outgoing messages.
 
 -------------------------------------------------------------------
 
-The format of the mailboxes file is a list of entries, where each
+Implementation Note:
+
+The format of a "mailboxes" file is a list of entries, where each
 entry is a list of at least two elements:
 
  The first element is the local directory for the mailbox's messages.

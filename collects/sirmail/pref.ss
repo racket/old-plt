@@ -1,167 +1,305 @@
-#| 
-
-This file gets REQUIREd by optionr.ss.
-
-To debug: edit out the setting of current-exception-handler in readr.ss.
-
-TO DO:
-
-- correct preferences:set-default's tester
-  (currently assumes won't be invalid)
-- handle all (optional) fields
-- missing fields have value "" -- won't always be appropriate
-  [this assumption is coded into lookup-pref/prefs]
-- hide password entry (on screen and in file)
-
-|#
-
 (module pref mzscheme
 
-  (provide create-preferences 
-	   lookup-pref/prefs
-	   lookup-pref/prefs/fail-false
-	   sirmail-login-pref)
-
   (require (lib "class.ss")
-           (lib "unitsig.ss")
-           (lib "framework.ss" "framework")
-           (lib "framework-sig.ss" "framework")
-           (lib "plt-installer.ss" "setup")
-           (lib "plt-installer-sig.ss" "setup")
-           (lib "mred-sig.ss" "mred")
-           (lib "mred.ss" "mred"))
+	   (lib "framework.ss" "framework")
+	   (lib "mred.ss" "mred")
+	   (lib "list.ss"))
 
-  (define sirmail-login-pref 'sirmail:login)
+  (provide get-pref put-pref
+	   show-pref-dialog
+	   create-preferences)
 
-  (define (make-text-field label panel updater width-num)
-    (make-object text-field% label panel 
-		 (lambda (x y) (updater))
-		 (make-string width-num #\space)))
+  (define (string-or-false? x) (or (not x) (string? x)))
+  (define (ip-string? x) (and (string? x)
+			      (positive? (string-length x))))
 
-  (define make-directory-button
-    (lambda (button-label parent val-box updater)
-      (make-object button% button-label parent
-		   (lambda (the-button event)
-		     (let ([f (get-directory
-			       (string-append "Select " button-label)
-			       #f
-			       (let ([v (unbox val-box)])
-				 (and v 
-				      (string? v)
-				      (or (relative-path? v) (absolute-path? v))
-				      (directory-exists? v)
-				      v)))])
-		       (when f
-			 (set-box! val-box f)
-			 (updater)))))))
 
-  (define (make-check-box label parent updater on?)
-    (let ([c (make-object check-box% label parent updater)])
-      (send c set-value on?)
-      c))
+  ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ;;  Preference Definitions                                 ;;
+  ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-  (define (lookup-pref/prefs/fail-false tag prefs)
-    (cadr (or (assoc tag prefs) '('dummy-tag #f))))
 
-  (define (lookup-pref/prefs tag prefs)
-    (cadr (or (assoc tag prefs) '('dummy-tag ""))))
+  (preferences:set-default 'sirmail:mail-from "SirMail User <sirmail@plt-scheme.org>" string?)
+  (preferences:set-default 'sirmail:username "username" string?)
+  (preferences:set-default 'sirmail:password #f string-or-false?)
+  (preferences:set-default 'sirmail:default-to-domain "plt-scheme.org" ip-string?)
 
-  (define (make-mbox-preferences-panel parent)
-    (letrec ([p (instantiate vertical-panel% (parent)
-                  [stretchable-width #f]
-                  [stretchable-height #t]
-                  [alignment '(left top)])]
+  (preferences:set-default 'sirmail:imap-server "imap.plt-scheme.org" ip-string?)
+  (preferences:set-default 'sirmail:smtp-server "sendmail.plt-scheme.org" ip-string?)
 
-	     ;; update-prefs records the new preferences
-	     [update-prefs
-	      (lambda ()
-		(preferences:set sirmail-login-pref
-				 `((mail-from ,(send mail-from get-value))
-				   (username ,(send username get-value))
-				   (default-to-domain ,(send default-to-domain get-value))
-				   (imap-server ,(send imap-server get-value))
-				   (local-dir ,(unbox local-dir-box))
-				   (save-sent? ,(send save-sent?-check get-value))
-				   (save-sent-dir ,(unbox save-sent-dir-box))
-				   )))]
+  (preferences:set-default 'sirmail:local-directory 
+			   (build-path (find-system-path 'home-dir)
+				       "SirMail")
+			   (lambda (x)
+			     (and (string? x)
+				  (absolute-path? x))))
+  (preferences:set-default 'sirmail:sent-directory 
+			   (build-path (find-system-path 'home-dir)
+				       "SentMail")
+			   (lambda (x)
+			     (or (not x)
+				 (and (string? x)
+				      (absolute-path? x)))))
+  (preferences:set-default 'sirmail:root-mailbox-folder #f string-or-false?)
 
-	     ;; initialize-gui sets up the GUI initially;
-	     ;; update-gui does the job from there on
-	     [initialize-gui
-	      (lambda (prefs)
-		(define (lookup tag)
-		  (lookup-pref/prefs tag prefs))
-		(send mail-from set-value (lookup 'mail-from))
-		(send username set-value (lookup 'username))
-		(send imap-server set-value (lookup 'imap-server))
-		;; nothing to set for local-dir
-		(send save-sent?-check refresh)
-		(send save-sent-dir enable (send save-sent?-check get-value))
-		(send default-to-domain set-value (lookup 'default-to-domain))
-		)]
+  (preferences:set-default 'sirmail:initial-sort 'id
+			   (lambda (x) (memq x '(id date subject from))))
+  (preferences:set-default 'sirmail:biff-delay
+			   60
+			   (lambda (x)
+			     (or (not x)
+				 (and (number? x)
+				      (exact? x)
+				      (integer? x)
+				      (positive? x)))))
+  (preferences:set-default 'sirmail:warn-download-size 32000
+			   (lambda (x) (or (not x) (and (number? x) (real? x)))))
+  (preferences:set-default 'sirmail:external-composer 'xemacs
+			   (lambda (x) (memq x '(xemacs gnu-emacs))))
+  (preferences:set-default 'sirmail:use-extenal-composer? #f boolean?)
+  (preferences:set-default 'sirmail:show-urls? #t boolean?)
+  (preferences:set-default 'sirmail:show-gc-icon #f boolean?)
 
-	     ;; update-gui does the screen updating
-             [update-gui
-              (lambda (prefs)
-		(send mail-from refresh)
-		(send username refresh)
-		(send imap-server refresh)
-		(send local-dir refresh)
-		(send save-sent?-check refresh)
-		(send save-sent-dir refresh)
-		(send default-to-domain refresh)
-		)]
 
-	     [mail-from (make-text-field "Mail From" p update-prefs 20)]
-	     [username (make-text-field "Username" p update-prefs 10)]
-	     [imap-server (make-text-field "IMAP Server" p update-prefs 20)]
+  (preferences:set-default 'sirmail:aliases-file (build-path (find-system-path 'home-dir) ".sirmail.aliases")
+			   (lambda (x) (or (not x)
+					   (and (string? x) (absolute-path? x)))))
+  (preferences:set-default 'sirmail:auto-file-table-file (build-path (find-system-path 'home-dir) ".sirmail.auto-file")
+			   (lambda (x) (or (not x)
+					   (and (string? x) (absolute-path? x)))))
 
-	     [local-dir-box (box (or
-				  (lookup-pref/prefs/fail-false
-				   'local-dir
-				   (preferences:get sirmail-login-pref))
-				  (build-path (find-system-path 'home-dir)
-					      "SirMail")))]
-	     [local-dir
-	      (make-directory-button "Local Directory" p
-				     local-dir-box update-prefs)]
+  (preferences:set-default 'sirmail:self-addresses null
+			   (lambda (x) (and (list? x) (andmap string? x))))
+  (preferences:set-default 'sirmail:fields-to-show '("From" "To" "CC" "Subject" "Date" "X-Mailer")
+			   (lambda (x) (and (list? x) (andmap string? x))))
 
-	     [save-sent?-check
-	      (make-check-box "Save Sent Files?" p
-			      (lambda (the-box event)
-				(send save-sent-dir enable 
-				      (send the-box get-value))
-				(when (send the-box get-value)
-				      (send save-sent-dir refresh))
-				(update-prefs))
-			      (lookup-pref/prefs/fail-false 
-			       'save-sent?
-			       (preferences:get sirmail-login-pref)))]
-	     [save-sent-dir-box (box (or 
-				      (lookup-pref/prefs/fail-false
-				       'save-sent-dir
-				       (preferences:get sirmail-login-pref))
-				      (build-path (unbox local-dir-box)
-						  "Sent")))]
-	     [save-sent-dir
-	      (make-directory-button "Save Sent Directory" p
-				     save-sent-dir-box update-prefs)]
 
-	     ;; other fields go here
+  (let ([fw 560]
+	[fh 600])
+    (let-values ([(display-width display-height) (get-display-size)])
+      (preferences:set-default 'sirmail:frame-width
+			       (min display-height fh)
+			       (lambda (x) (and (number? x) (<= 0 x 32768))))
+      (preferences:set-default 'sirmail:frame-height 
+			       (min display-width fw)
+			       (lambda (x) (and (number? x) (<= 0 x 32768))))))
 
-	     [default-to-domain (make-text-field "Default To  Domain" p update-prefs 20)]
-	     )
+  ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ;;  Preference Manager                                     ;;
+  ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-      (preferences:add-callback sirmail-login-pref
-                                (lambda (name val)
-                                  (update-gui val)))
-      (initialize-gui (preferences:get sirmail-login-pref))
-      p))
+  (define prefs-eventspace (make-eventspace))
+
+  (define (in-preferences-eventspace thunk)
+    (let ([val #f]
+	  [s (make-semaphore)])
+      (parameterize ([current-eventspace prefs-eventspace])
+	(queue-callback
+	 (lambda ()
+	   (with-handlers ([void (lambda (x)
+				   ;; Assume all raised values are exns
+				   (set! val x))])
+	     (set! val (thunk)))
+	   (semaphore-post s))))
+      (semaphore-wait s)
+      (if (exn? val)
+	  (raise val)
+	  val)))
+
+  (define (get-pref id)
+    (in-preferences-eventspace (lambda ()
+				 (preferences:get id))))
+
+  (define (put-pref id val)
+    (in-preferences-eventspace (lambda ()
+				 (preferences:set id val))))
 
   (define (create-preferences edit-menu)
     (make-object menu-item% "Preferences" edit-menu
-		 (lambda (x y) (preferences:show-dialog)))
-    (preferences:add-panel "Mailbox" make-mbox-preferences-panel)
-    (preferences:add-editor-checkbox-panel))
+		 (lambda (x y) (in-preferences-eventspace preferences:show-dialog))))
+  
+  (define (show-pref-dialog)
+    (in-preferences-eventspace 
+     (lambda ()
+       (preferences:show-dialog)
+       (yield 'wait))))
 
-)
+
+  ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ;;  Preference Dialog                                      ;;
+  ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+  (define (make-text-field label panel width-num pref optional?)
+    (define p0 (and optional?
+		    (instantiate horizontal-panel% (panel) [stretchable-height #f])))
+    (define e (and optional?
+		   (make-object check-box% label p0
+				(lambda (c e)
+				  (let ([on? (send c get-value)])
+				    (send t enable on?)
+				    (preferences:set
+				     pref
+				     (and on?
+					  (send t get-value))))))))
+
+    (define t (make-object (class text-field% 
+			     (inherit get-value)
+			     (define/override (on-focus on?)
+			       (unless on?
+				 (preferences:set pref (get-value))))
+			     (super-make-object
+			      (if optional? #f label) (or p0 panel)
+			      void
+			      (make-string width-num #\space)))))
+    (send t set-value (or (preferences:get pref) ""))
+    (preferences:add-callback pref (lambda (name val)
+				     (when e
+				       (send e set-value val))
+				     (when val
+				       (send t set-value val)))))
+	     
+  (define make-file/directory-button
+    (lambda (dir? button-label parent pref enabler)
+      (define p0 (and enabler
+		      (instantiate horizontal-panel% (parent) [stretchable-height #f])))
+      (define e (and enabler
+		     (make-object check-box% enabler p0
+				  (lambda (c e)
+				    (let ([on? (send c get-value)])
+				      (send p enable on?)
+				      (preferences:set
+				       pref
+				       (and on?
+					    (send field get-value))))))))
+      (define p (instantiate horizontal-panel% ((or p0 parent))
+			     [stretchable-height #f]))
+      (define (set-it v)
+	(if (and (absolute-path? v)
+		 (or (and dir? (directory-exists? v))
+		     (and (not dir?) (file-exists? v))))
+	    (preferences:set pref v)
+	    (message-box (if dir? "Directory" "File")
+			 (format "The path ~s ~a"
+				 v
+				 (if (absolute-path? v)
+				     (if dir? 
+					 (if (file-exists? v)
+					     "is not a directory"
+					     "does not exist")
+					 (if (directory-exists? v)
+					     "is not a file"
+					     "does not exist"))
+				     "is ill-formed"))
+			 '(ok stop))))
+      (define field (make-object text-field% button-label p
+				 ;; For now, just counteract edits:
+				 (lambda (t e)
+				   (send field set-value (preferences:get pref)))
+				 (or (preferences:get pref)
+				     (current-directory))))
+      (when e
+	(send e set-value (preferences:get pref)))
+      (preferences:add-callback pref (lambda (name val)
+				       (when e
+					 (send e set-value val))
+				       (when val
+					 (send field set-value val))))
+      (make-object button% "Set..." p (lambda (b e)
+					(let ([v ((if dir? get-directory get-file)
+						  (or enabler button-label))])
+					  (when v
+					    (set-it v)))))
+      p))
+
+  (define (make-text-list label parent pref)
+    (let ([p (make-object vertical-panel% parent)])
+      (define l (make-object list-box% label (or (preferences:get pref) null) p
+			     (lambda (l e)
+			       (send delete enable (pair? (send l get-selections))))
+			     '(multiple)))
+      (define hp (instantiate horizontal-panel% (p) 
+			      [stretchable-height #f]
+			      [alignment '(center center)]))
+      (define add (make-object button% "Add" hp (lambda (b e)
+						  (let ([v (get-text-from-user (format "Add to ~a" label) ""
+									       (send parent get-top-level-window))])
+						    (when v
+						      (send l append v)
+						      (set-prefs))))))
+      (define delete (make-object button% "Delete" hp (lambda (b e)
+							(let ([d (send l get-selections)])
+							  (for-each (lambda (i)
+								      (send l delete i))
+								    (quicksort d >))
+							  (set-prefs)))))
+      (define (set-prefs)
+	(send delete enable (pair? (send l get-selections)))
+	(preferences:set
+	 pref
+	 (let ([n (send l get-number)])
+	   (let loop ([i 0])
+	     (if (= i n)
+		 null
+		 (cons (send l get-string i)
+		       (loop (add1 i))))))))
+      (send delete enable #f)
+      (preferences:add-callback pref (lambda (name val)
+				       (send l clear)
+				       (for-each (lambda (i)
+						   (send l append i))
+						 val)
+				       (send delete enable (pair? (send l get-selections)))))))
+
+  (define (make-user-preferences-panel parent)
+    (let ([p (instantiate vertical-panel% (parent))])
+
+      (make-text-field "Mail From" p 20 'sirmail:mail-from #f)
+      (make-text-field "Username" p 10 'sirmail:username #f)
+      (make-text-field "IMAP Server" p 20 'sirmail:imap-server #f)
+      (make-text-field "SMTP Server" p 20 'sirmail:smtp-server #f)
+
+	
+      (make-file/directory-button #t "Local Directory" p
+				  'sirmail:local-directory
+				  #f)
+
+      (make-file/directory-button #t #f p
+				  'sirmail:local-directory
+				  "Save Sent Files")
+
+      p))
+
+  (define (make-addresses-preferences-panel parent)
+    (let ([p (instantiate vertical-panel% (parent))])
+      
+      (make-text-field "Default To Domain" p 20 'sirmail:default-to-domain #f)
+      (make-file/directory-button #f #f p
+				  'sirmail:aliases-file
+				  "Aliases File")
+
+      (make-text-list "Self Addresses" p 'sirmail:self-addresses)
+
+      p))
+
+  (define (make-mbox-preferences-panel parent)
+    (let ([p (instantiate vertical-panel% (parent))])
+      
+      (make-text-field "Folder List Root" p 20 'sirmail:root-mailbox-folder #t)
+		       
+
+      (make-file/directory-button #f #f p
+				  'sirmail:auto-file-table-file
+				  "Auto-File Table File")
+
+      (make-text-list "Shown Header Fields" p 'sirmail:fields-to-show)
+
+      p))
+
+
+  (in-preferences-eventspace
+   (lambda ()
+     (preferences:add-panel "User" make-user-preferences-panel)
+     (preferences:add-panel "Sending" make-addresses-preferences-panel)
+     (preferences:add-panel "Reading" make-mbox-preferences-panel)
+     (preferences:add-editor-checkbox-panel))))
+

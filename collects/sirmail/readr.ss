@@ -64,9 +64,7 @@
 					"Set preferences (so you're ready to try again)?")
 				       #f
 				       '(yes-no)))
-	    (create-preferences (make-object popup-menu%))
-	    (preferences:show-dialog)
-	    (yield 'wait))))
+	    (show-pref-dialog))))
         
       (initial-exception-handler
        (lambda (x)
@@ -177,10 +175,14 @@
                             (begin
                               (unless (get-PASSWORD)
                                 (let ([p (get-text-from-user "Password" 
-                                                             (format "Password for ~a:" (USERNAME)))])
+                                                             (format "Password for ~a:" (USERNAME))
+							     main-frame)])
                                   (unless p (error 'connect "connection cancelled"))
                                   (set-PASSWORD p)))
-                              (let*-values ([(imap count new) (imap-connect (IMAP-SERVER) (USERNAME) (get-PASSWORD) mailbox-name)]
+                              (let*-values ([(imap count new) (let-values ([(server port-no)
+									    (parse-server-name (IMAP-SERVER) 143)])
+								(parameterize ([imap-port-number port-no])
+								  (imap-connect server (USERNAME) (get-PASSWORD) mailbox-name)))]
                                             [(uid-l) (imap-status imap mailbox-name '(uidnext))])
                                 (status "(Connected, ~a messages)" count)
                                 (set! connection imap)
@@ -358,8 +360,9 @@
 	    (error 'internal-error "unknown message: ~a" uid))
 	  (unless (message-downloaded? v)
 	    (status "Getting message ~a..." uid)
-	    (let ([size (message-size v)])
-	      (when (and size (> size WARN-DOWNLOAD-SIZE))
+	    (let ([size (message-size v)]
+		  [warn-size (WARN-DOWNLOAD-SIZE)])
+	      (when (and size warn-size (> size warn-size))
 		(unless (eq? 'yes
 			     (message-box "Large Message"
 					  (format "The message is ~s bytes.~nReally download?" size)
@@ -455,16 +458,6 @@
       ;;  Mail Reader GUI                                        ;;
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       
-      (let ([fw 560]
-            [fh 600])
-        (let-values ([(display-width display-height) (get-display-size)])
-          (preferences:set-default 'sirmail:frame-width
-                                   (min display-height fh)
-                                   (lambda (x) (and (number? x) (<= 0 x 32768))))
-          (preferences:set-default 'sirmail:frame-height 
-                                   (min display-width fw)
-                                   (lambda (x) (and (number? x) (<= 0 x 32768))))))
-
       (define FROM-WIDTH 150)
       (define SUBJECT-WIDTH 300)
 
@@ -474,7 +467,7 @@
       ;; up to date before calling this function
       (define (update-frame-width)
 	(let* ([goofy-margin 15]
-	       [calc-w (- (preferences:get 'sirmail:frame-width) goofy-margin)])
+	       [calc-w (- (get-pref 'sirmail:frame-width) goofy-margin)])
 	  (set! FROM-WIDTH (quotient calc-w 3))
 	  (set! SUBJECT-WIDTH (- calc-w FROM-WIDTH)))
 	
@@ -648,8 +641,8 @@
           (override
             [on-size
              (lambda (w h)
-               (preferences:set 'sirmail:frame-width w)
-               (preferences:set 'sirmail:frame-height h)
+               (put-pref 'sirmail:frame-width w)
+               (put-pref 'sirmail:frame-height h)
                (update-frame-width))]
             [can-close? (lambda () (send (get-menu-bar) is-enabled?))]
             [on-close (lambda () (logout))]
@@ -1031,8 +1024,8 @@
       (define display-text% (html-text-mixin text%))
       
       (define f (make-object sm-frame% mailbox-name #f 
-                  (preferences:get 'sirmail:frame-width)
-                  (preferences:get 'sirmail:frame-height)))
+                  (get-pref 'sirmail:frame-width)
+                  (get-pref 'sirmail:frame-height)))
       (set! main-frame f)
       (define sizing-panel (make-object panel:vertical-dragable% f))
       (define top-half (make-object vertical-panel% sizing-panel))
@@ -1166,7 +1159,7 @@
             (purge-marked/update-headers))))
       (define move-menu (make-object menu% "&Copy Marked To" msg-menu))
       
-      (when ROOT-MAILBOX-FOR-LIST
+      (when (ROOT-MAILBOX-FOR-LIST)
 	(let ([mailbox-menu (make-object menu% "M&ailboxes" mb)])
 	  (make-object menu-item%
             "&Show Folders Window"
@@ -1189,7 +1182,7 @@
                     (copy-marked-to mbox)
                     (bell)))))))
       
-      (when AUTO-FILE-TABLE
+      (when (AUTO-FILE-TABLE)
 	(make-object separator-menu-item% msg-menu)
 	(make-object menu-item% "Auto File" msg-menu
           (lambda (i e)
@@ -1574,7 +1567,7 @@
 				      (apply-style i marked-delta)))
 				  file-msgs)
 			(write-mailbox)))))))
-	    AUTO-FILE-TABLE))
+	    (AUTO-FILE-TABLE)))
 	 void)
 	(status "Auto file done"))
       
@@ -1596,10 +1589,8 @@
 	    (send m show #f)
 	    (values m d))))
 
-      (preferences:set-default 'sirmail:show-gc-icon #f (lambda (x) #t))
-
       ;; Optional GC icon (lots of work for this little thing!)
-      (when (preferences:get 'sirmail:show-gc-icon)
+      (when (get-pref 'sirmail:show-gc-icon)
 	(let* ([gif (make-object bitmap% (build-path (collection-path "icons") "recycle.gif"))]
 	       [w (send gif get-width)]
 	       [h (send gif get-height)]
@@ -1661,17 +1652,12 @@
       (send f show #t)
       (set! got-started? #t)
 
-      (when SORT
-	(case SORT
+      (when (SORT)
+	(case (SORT)
 	  [(date) (sort-by-date)]
 	  [(subject) (sort-by-subject)]
 	  [(from) (sort-by-sender)]
-	  [(id) (sort-by-order-received)]
-	  [else
-	   (message-box
-	    "SirMail"
-	    (format "invalid setting for SORT preference: ~s" SORT)
-	    main-frame)]))
+	  [(id) (void)])) ;; which is (sort-by-order-received)
       
       (unless (null? mailbox)
 	(let ([last (car (last-pair (send header-list get-items)))])
@@ -1687,7 +1673,7 @@
 	  (parse-iso-8859-1 
 	   (if show-full-headers?
 	       h
-	       (let loop ([l (reverse MESSAGE-FIELDS-TO-SHOW)]
+	       (let loop ([l (reverse (MESSAGE-FIELDS-TO-SHOW))]
 			  [small-h empty-header])
 		 (if (null? l)
 		     small-h
@@ -1803,7 +1789,7 @@
                                  [else
                                   (insert (slurp ent)
                                           (lambda (t s e)
-                                            (when SHOW-URLS (hilite-urls t s e))
+                                            (when (SHOW-URLS) (hilite-urls t s e))
                                             ;;(handle-formatting e) ; too slow
                                             (if (eq? disp 'error)
                                                 (send t change-style red-delta s e))))])]
@@ -1873,13 +1859,13 @@
           (super-instantiate ())))
       
       (define biff
-	(if BIFF-DELAY
+	(if (BIFF-DELAY)
 	    (make-object biff%)
 	    #f))
       
       (define (start-biff)
 	(when biff
-	  (send biff start (* 1000 BIFF-DELAY))))
+	  (send biff start (* 1000 (BIFF-DELAY)))))
       
       (start-biff)
       
@@ -1902,7 +1888,7 @@
 	  (cond
             [(string-ci=? addr my-address)
              #f]
-            [(and SELF-ADDRESSES (member addr SELF-ADDRESSES)) #f]
+            [(and (SELF-ADDRESSES) (member addr (SELF-ADDRESSES))) #f]
             [(and (> (string-length addr) (string-length  my-username-@))
                   (string-ci=? my-username-@ (substring addr 0 (string-length  my-username-@))))
              (eq? (message-box

@@ -109,8 +109,8 @@
                    (make-deep-folder (car rd)
                                      (cadr rd)
                                      (map loop (caddr rd)))])))
-            (make-deep-folder ROOT-MAILBOX-FOR-LIST
-                              ROOT-MAILBOX-FOR-LIST
+            (make-deep-folder (ROOT-MAILBOX-FOR-LIST)
+                              (ROOT-MAILBOX-FOR-LIST)
                               null)))
 
       
@@ -127,9 +127,9 @@
           (let-values ([(imap msg-count recent-count) (imap-open-connection)])
             (begin0
               (make-deep-folder
-               ROOT-MAILBOX-FOR-LIST
-               ROOT-MAILBOX-FOR-LIST
-               (let loop ([mailbox-name ROOT-MAILBOX-FOR-LIST])
+               (ROOT-MAILBOX-FOR-LIST)
+               (ROOT-MAILBOX-FOR-LIST)
+               (let loop ([mailbox-name (ROOT-MAILBOX-FOR-LIST)])
                  (let ([mailbox-name-length (string-length mailbox-name)]
                        [get-child-mailbox-name (lambda (item) (format "~a" (second item)))]
                        [child-mailboxes (imap-list-child-mailboxes imap mailbox-name)])
@@ -332,6 +332,6 @@
       (send frame show #t)
       (send frame min-width 350)
       (send frame min-height 450)
-      (send top-list set-mailbox-name ROOT-MAILBOX-FOR-LIST)
+      (send top-list set-mailbox-name (ROOT-MAILBOX-FOR-LIST))
       (update-gui (read-mailbox-folder))
       frame)))

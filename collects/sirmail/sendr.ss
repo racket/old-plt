@@ -10,7 +10,8 @@
   (require (lib "file.ss")
 	   (lib "process.ss"))
 
-  (require "sirmails.ss")
+  (require "sirmails.ss"
+	   "pref.ss")
 
   (require (lib "imap-sig.ss" "net")
 	   (lib "smtp-sig.ss" "net")
@@ -46,8 +47,6 @@
 
       (define FORWARD-LIST-HEIGHT 50)
 
-      (define SMTP-SERVER (car SMTP-SERVERS))
-
       (define return-bitmap
 	(with-handlers ([void (lambda () #f)])
 	  (let ([bm (make-object bitmap% 
@@ -66,14 +65,10 @@
 
       (define SEPARATOR (make-string 75 #\=))
 
-      ;; Name of editor to use for composing messages externally;
-      ;; defaults to 'xemacs (see definition of external-composer below)
-      (define sirmail:external-composer-pref 'sirmail:external-composer)
-
       ;; Returns a list of <full>-<address> pairs
       (define (resolve-alias addr)
 	(cond
-	 [(assoc addr ALIASES)
+	 [(assoc addr (ALIASES))
 	  => (lambda (m)
 	       (let ([resolve
 		      (lambda (n)
@@ -198,7 +193,7 @@
 	(define mb (make-object menu-bar% f))
 	(define file-menu (make-object menu% "File" mb))
 	(define edit-menu (make-object menu% "Edit" mb))
-	(define composer-menu (and USE-EXTERNAL-COMPOSER?
+	(define composer-menu (and (USE-EXTERNAL-COMPOSER?)
 				   (make-object menu% "Composer" mb)))
 	(define button-pane (make-object horizontal-pane% f))
 	(define title-message (make-object message% "Compose message" button-pane)) 
@@ -209,7 +204,7 @@
 	(define cancel-button-todo void)
 
 	(define external-composer-button
-	  (and USE-EXTERNAL-COMPOSER?
+	  (and (USE-EXTERNAL-COMPOSER?)
 	       (make-object
 		button%
 		"External Composer"
@@ -261,14 +256,8 @@
 	      (send refocus focus))
 	    w))
 
-	(define (parse-server-name s)
-	  (let ([m (regexp-match "^([^:]*):([^:]*)$" s)])
-	    (if (and m (string->number (caddr m)))
-		(values (cadr m) (string->number (caddr m)))
-		(values s 25))))
-
 	(define-values (smtp-server-to-use smtp-port-to-use)
-	  (parse-server-name SMTP-SERVER))
+	  (parse-server-name (SMTP-SERVER) 25))
 
 	(define (send-msg)
           (send-message
@@ -307,9 +296,7 @@
           (build-path queue-directory 
                       (format "enq~a" (+ 1 (length (directory-list queue-directory))))))
         
-	(define external-composer
-	  (get-preference sirmail:external-composer-pref
-			  (lambda () 'xemacs)))
+	(define external-composer (get-pref 'sirmail:external-composer))
 
         (send button-pane stretchable-height #f)
 	(send cancel-button enable #f)
@@ -325,7 +312,7 @@
 	     (send i user-data enc)))
 	 enclosures)
 	
-	(when USE-EXTERNAL-COMPOSER?
+	(when (USE-EXTERNAL-COMPOSER?)
 	  (letrec ([switch (lambda (item e)
 			     (if (send item is-checked?)
 				 (begin
@@ -339,10 +326,7 @@
 					   'xemacs]
 					  [(send gnu-emacs is-checked?)
 					   'gnu-emacs]))
-				   (put-preferences
-				    (list sirmail:external-composer-pref)
-				    (list external-composer))
-				   )
+				   (put-pref 'sirmail:external-composer external-composer))
 				 ;; Turn it back on
 				 (send item check #t)))]
 		   [xemacs (make-object checkable-menu-item% "XEmacs" composer-menu switch)]
@@ -413,21 +397,6 @@
 				       (unless (memq enclosure-list (send f get-children))
 					 (send f add-child enclosure-list))))))))))))
 	(make-object separator-menu-item% file-menu)
-	(when SMTP-SERVERS
-	  (let ([m (make-object menu% "SMTP Server" file-menu)])
-	    (for-each
-	     (lambda (s)
-	       (let ([i (make-object checkable-menu-item% s m
-				     (lambda (i e)
-				       (for-each (lambda (i) (send i check #f)) (send m get-items))
-				       (set! SMTP-SERVER s)
-				       (set!-values (smtp-server-to-use smtp-port-to-use)
-						    (parse-server-name s))
-				       (send i check #t)))])
-		 (when (string=? s SMTP-SERVER)
-		   (send i check #t))))
-	     SMTP-SERVERS))
-	  (make-object separator-menu-item% file-menu))
 	(make-object menu-item% "Close" file-menu
 		     (lambda (i e) 
 		       (when (send f can-close?)

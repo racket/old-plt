@@ -43,10 +43,6 @@
     #f
     mred^)
 
-  (preferences:set-default sirmail-login-pref
-			   '()
-			   (lambda (_) #t))
-
   (define inbox-name "Inbox")
   (define default-mailbox-options null)
   

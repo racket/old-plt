@@ -1,3 +1,13 @@
+Version 103:
+
+Added support for VT_INT 
+Added conversions com-scode->number,
+ number->com-scode, com-currency->number,
+ number->com-currency, com-date->date,
+ date->com-date
+Added predicates com-scode?, com-currency?,
+ com-date?
+
 Version 102-p1:
 
 Added synonyms cci/coclass for 

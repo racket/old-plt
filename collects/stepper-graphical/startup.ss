@@ -8,6 +8,8 @@
   
   ;; ----- debugger startup
   
+  ; this will be used to channel the parsed zodiac to the right debugger.
+  
   (define parent-drscheme-frame 
     (make-parameter #f (lambda (frame)
                          (if (is-a? frame mred:frame%)

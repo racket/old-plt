@@ -73,49 +73,57 @@
   
   ; ----------------------------------------------------------------
   
-;  (define (binding-name binding)
-;    (ccond [(z:binding? binding)
-;            (z:binding-orig-name binding)]
-;           [(box? binding)
-;            (if (null? (unbox binding))
-;                (e:internal-error #f "empty slot in binding list")
-;                (z:varref-var (car (unbox binding))))]))
-  
-;  (define (is-drscheme-definitions-editor? editor)
-;    (and (is-a? editor m:editor<%>)
-;         (send editor get-canvas)
-;         (is-a? (send editor get-canvas) d:unit:definitions-canvas%)))
-  
-;  (define (get-drscheme-frame editor)
-;    (and (is-drscheme-definitions-editor? editor)
-;         (send (send editor get-canvas) get-top-level-window)))
-  
-  (define (find-location-text zodiac)
-    (let* ([source (z:location-file (z:zodiac-start zodiac))])
-      (if (is-drscheme-definitions-editor? source)
-          (let* ([start-offset (z:location-offset (z:zodiac-start zodiac))]
-                 [finish-offset (z:location-offset (z:zodiac-finish zodiac))])
-            "Can't copy text yet")
-          (format "~a : ~a" (z:location-offset (z:zodiac-start zodiac)) (z:location-file (z:zodiac-start zodiac))))))
-  
-  
+  (define (add-to-popup pm val)
+    (cond [(closure? val)
+           (make-object menu-item% "(closure)" pm (void))]
+          [(structure? val)
+           (make-object menu-item% "(structure)" pm (void))]
+          [(class? val)
+           (make-object menu-item% "(class)" pm (void))]
+          [(object? val)
+           (make-object menu-item% "(object)" pm (void))]
+          [(unit? val)
+           (make-object menu-item% "(unit)" pm (void))]
+          [else
+           (let ([sp (open-output-string)])
+             (write (print-convert val) sp)
+             (make-object menu-item% (get-output-string sp) pm (void)))]))
 
   (define debugger%
     (class object% (drscheme-frame)
 
       (private [parsed #f]
                [needs-update #t]
-               [mark-list #f]
+               [stored-mark-list #f]
                [text-region-table null] ; candidate for hash-table-ization, if speed is needed
 
+               [click-callback
+                (lambda (x y loc)
+                  (for-each (lambda (entry)
+                              (if (and (>= loc (car entry))
+                                       (< loc (cadr entry)))
+                                  (show-var-values (caddr entry) x y)))
+                            text-region-table))]
+               
+               [continue-callback
+                (lambda (a b)
+                  (send frame show #f)
+                  (semaphore-post break-semaphore))]
+                
                [show-var-values
-                (lambda (binding)
-                  (let* ([values (lookup-binding-list mark-list binding)]
+                (lambda (binding x y)
+                  (let* ([values (lookup-binding-list stored-mark-list binding)]
                          [pm (make-object popup-menu%)])
                     (for-each (lambda (val)
                                 (add-to-popup pm val))
                               values)
-                    (send f popup-menu 0 0)))]
+                    (send f popup-menu x y)))]
+               
+               [clear-highlights
+                (lambda ()
+                  (for-each (lambda (entry)
+                              (send defns-text change-style standard-style (car entry) (cadr entry)))
+                            text-region-table))]
                
                ; highlight-vars 
                   
@@ -134,7 +142,7 @@
                             (when (memq binding mark-bindings)
                               (highlight-var ref binding)))])
                     (let recur ([src src])
-                      (cond ; we need a z:parsed iterator...
+                      (ccond ; we need a z:parsed iterator...
                         [(z:varref? src)
                          (if (z:top-level-varref? src)
                              (if (utils:unit-bound-varref? src)
@@ -157,7 +165,7 @@
                         [(z:begin0-form? src)
                          (for-each recur (z:begin0-form-bodies src))]
                         [(z:let-values-form? src)
-                         (for-each (lambda (binding-list)
+                         (for-each (lambda (binding-list) ; I believe these should never be highlighted
                                      (for-each (lambda (binding)
                                                  (maybe-highlight-bound-var binding binding))
                                                binding-list))
@@ -165,7 +173,7 @@
                          (for-each recur (z:let-values-form-vals src))
                          (recur (z:let-values-form-body src))]
                         [(z:letrec-values-form? src)
-                         (for-each (lambda (binding-list)
+                         (for-each (lambda (binding-list) ; or these either, or any binding instances, to be honest.
                                      (for-each (lambda (binding)
                                                  (maybe-highlight-bound-var binding binding))
                                                binding-list))
@@ -178,8 +186,51 @@
                         [(z:set!-form? src)
                          (recur (z:define-values-form-var src))
                          (recur (z:define-values-form-val src))]
-                        
-)
+                        [(z:case-lambda-form? src)
+                         (for-each 
+                          (lambda (arglist)
+                            (for-each (lambda (x) (maybe-highlight-bound-var x x)) 
+                                      (z:arglist-vars arglist)))
+                          (z:case-lambda-form-args src))
+                         (for-each recur (z:case-lambda-form-bodies src))]
+                        [(z:with-continuation-mark-form? src)
+                         (recur (z:with-continuation-mark-from-key src))
+                         (recur (z:with-continuation-mark-from-val src))
+                         (recur (z:with-continuation-mark-from-body src))]
+                        [(z:unit-form? src)
+                         ; imports and exports can never be highlighted, same as lambda and let bindings
+                         (for-each recur (z:unit-form-clauses src))]
+                        [(z:compound-unit-form? src)
+                         ; imports and exports not highlighted as with units
+                         (for-each (lambda (link-clause) (recur (cadr link-clause)))
+                                   (z:compound-unit-form-links src))]
+                        [(z:invoke-unit-form? src)
+                         (for-each recur (z:invoke-unit-form-variables src))
+                         (recur (z:invoke-unit-form-unit src))]
+                        [(z:interface-form? src)
+                         (for-each recur (z:interface-form-super-exprs src))]
+                        [(z:class*/names-form? src)
+                         (recur (z:class*/names-form-super-expr src))
+                         (for-each recur (z:class*/names-form-interfaces src))
+                         (for-each (lambda (arg)
+                                     (when (pair? arg)
+                                       (recur (cdr element))))
+                                   (z:paroptarglist-vars (z:class*/names-form-init-vars src)))
+                         (for-each (lambda (clause)
+                                     (ccond [(z:public-clause? src)
+                                             (for-each recur (z:public-clause-exprs src))]
+                                            [(z:override-clause? src)
+                                             (for-each recur (z:override-clause-exprs src))]
+                                            [(z:private-clause? src)
+                                             (for-each recur (z:private-clause-exprs src))]
+                                            [(z:inherit-clause? src)
+                                             (void)]
+                                            [(z:rename-clause? src)
+                                             (void)]
+                                            [(z:sequence-clause? src)
+                                             (for-each recur (z:sequence-clause-exprs src))]))
+                                   (z:class*/names-form-inst-clauses src))]))))])
+
       (public [set-zodiac!
                (lambda (new-parsed)
                  (if (z:parsed? new-parsed)
@@ -190,19 +241,16 @@
                      (e:internal-error new-parsed "not a parsed zodiac value")))]
               
               [handle-breakpoint
-               (lambda (frame-info-list semaphore)
+               (lambda (mark-list semaphore)
                  (set! break-semaphore semaphore)
+                 (set! stored-mark-list mark-list)
                  (if needs-update
                      (begin
                        (send defns-text clear)
                        (send (ivar drscheme-frame definitions-text) copy-self-to defns-text))
-                     (for-each (lambda (x) (x)) clear-highlight-thunks))
-                 
-                 (send frame show #t)
-                 )]
-                 
-              
-              )
+                     (clear-highlights))
+                 (for-each highlight-vars mark-list)
+                 (send frame show #t))])
                  
       (sequence (super-init))
       
@@ -218,7 +266,8 @@
                             (send style-list find-or-create-style standard-style underline-blue-delta))]
                [break-semaphore #f])
       
-      (sequence (send button-panel stretchable-height #f)
+      (sequence (send defns-text set-click-callback! click-callback)
+                (send button-panel stretchable-height #f)
                 (make-object m:button% "continue" button-panel continue-callback)
                 (send interactions-canvas set-editor value-text))
       
@@ -234,9 +283,7 @@
                                                              "while a breakpoint is waiting.")
                                       #f '(ok))
                        #f)
-                     #t))]
-              
-              )))
+                     #t))])))
   
   
   
@@ -286,32 +333,23 @@
   ; ----------------------------------------------------------------
   
   
-  (define-struct frame-info (source full? bindings))
-  
-  (define (parse-break-info mark)
-    (if (marks:cheap-mark? mark)
-        (make-frame-info (marks:cheap-mark-source mark) #f ())
-        (make-frame-info (marks:mark-source mark) #t (marks:mark-bindings mark))))
-  
-  
   (define (break)
-    (let* ([break-info-list (marks:extract-mark-list  (current-continuation-marks))]
+    (let* ([mark-list (current-continuation-marks)]
            [new-semaphore (make-semaphore)])
-      (when (null? break-info-list)
+      (when (null? mark-list)
         (error 'breakpoint "no marks to debug (could be in No Debugging mode?)"))
       (parameterize
           ([m:current-eventspace drscheme-eventspace])
         (m:queue-callback 
          (lambda ()
-           (let* ([frame-info-list (map parse-break-info break-info-list)]
-                  [drscheme-frame (let loop ([frame-info-list frame-info-list])
-                                    (if (null? frame-info-list)
+           (let* ([drscheme-frame (let loop ([mark-list mark-list])
+                                    (if (null? mark-list)
                                         (error "no drscheme marks to hang the debugger from")
                                         (or (get-drscheme-frame (z:location-file
                                                                  (z:zodiac-start
                                                                   (frame-info-source (car frame-info-list)))))
                                             (loop (cdr frame-info-list)))))]
                   [debugger (send drscheme-frame get-debugger)])
-             (send debugger handle-breakpoint frame-info-list new-semaphore))))
+             (send debugger handle-breakpoint mark-list new-semaphore))))
         (semaphore-wait new-semaphore)
         (void)))))

@@ -1670,6 +1670,11 @@ void wxMediaBuffer::FreeOldCopies(void)
     return;
   }
 
+  copyRingBuffer1[copyRingPos] = wxmb_commonCopyBuffer;
+  copyRingBuffer2[copyRingPos] = wxmb_commonCopyBuffer2;
+  copyRingData[copyRingPos] = wxmb_commonCopyRegionData;
+  copyRingStyle[copyRingPos] = wxmb_copyStyleList;
+  
   if (copyRingMax > copyRingDest) {
     /* No more space: delete current ring occupant: */
     wxList *dl;
@@ -1689,11 +1694,6 @@ void wxMediaBuffer::FreeOldCopies(void)
     copyRingPos = copyRingDest;
   }
 
-  copyRingBuffer1[copyRingPos] = wxmb_commonCopyBuffer;
-  copyRingBuffer2[copyRingPos] = wxmb_commonCopyBuffer2;
-  copyRingData[copyRingPos] = wxmb_commonCopyRegionData;
-  copyRingStyle[copyRingPos] = wxmb_copyStyleList;
-  
   wxmb_commonCopyBuffer = new wxList(wxKEY_NONE, FALSE);
   wxmb_commonCopyBuffer2 = new wxList(wxKEY_NONE, FALSE);
   wxmb_commonCopyRegionData = NULL;

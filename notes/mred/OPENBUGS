@@ -10,11 +10,6 @@ MrEd Engine:
 
 * MacOS: bitmaps don't print with platform-specific printing
 
-* wx:dc%'s draw-arc is undefined when input isn't
-   consistent with a circle
-
-* Windows: set-user-scale with wx:memory-dc% doesn't work right
-
 * need to penalize the current thread more for certain primitive
    operations that can take a long time (e.g., loading a bitmap
    or saving a file)

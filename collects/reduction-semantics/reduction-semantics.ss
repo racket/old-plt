@@ -10,11 +10,17 @@
            reduction/context
            language
            replace)
+  
   (provide/contract
    (match-pattern (compiled-pattern any? . -> . (union false? (listof bindings?))))
    (compile-pattern (compiled-lang? any? . -> . compiled-pattern))
    (reduce ((listof (lambda (x) (red? x))) any? . -> . (listof any?)))
-   (variable-not-in (any? symbol? . -> . symbol?)))
+   (variable-not-in (any? symbol? . -> . symbol?))
+   (compatible-closure ((lambda (x) (red? x))
+                        compiled-lang?
+                        symbol?
+                        . -> .
+                        (lambda (x) (red? x)))))
   
   ;; type red = (make-red compiled-pat ((listof (cons sym tst)) -> any)
   (define-struct red (contractum reduct))
@@ -23,6 +29,19 @@
   (define build-red
     (opt-lambda (lang contractum reduct [allow-cross? #f])
       (make-red (compile-pattern/cross lang contractum allow-cross?) reduct)))
+  
+  (define (compatible-closure red lang nt)
+    (let ([new-name 'compatible-closure-context]) ;; should be generative, but ...
+      (make-red (compile-pattern/cross
+                 lang
+                 `(in-hole (name ,new-name (cross ,nt))
+                           ,(red-contractum red))
+                 #t)
+                (lambda (bindings)
+                  (let ([context (lookup-binding bindings new-name)]
+                        [hole (lookup-binding bindings 'hole)]
+                        [res ((red-reduct red) bindings)])
+                    (replace context hole res))))))
   
   ;; (reduction/cc lang nt pattern expression ...)
   (define-syntax (reduction/cc stx)

@@ -335,7 +335,8 @@
             (let ([rewritten (rewrite-ellipses pattern loop)])
               (lambda (exp hole-path)
                 (match-list rewritten exp hole-path)))]
-           
+           [(? procedure?)
+            pattern]
            [else 
             (lambda (exp hole-path)
               (and (eq? pattern exp)

@@ -15,7 +15,8 @@
   (define biggest-editor 35)
 
   (define (setup-progress max)
-    (let* ([f (parameterize ([current-eventspace (make-eventspace)])
+    (let* ([e (make-eventspace)]
+	   [f (parameterize ([current-eventspace e])
 		(make-object frame% "Solver Setup Progress"))]
 	   [g (make-object gauge% #f max f)]
 	   [counter 0])
@@ -27,7 +28,8 @@
 	 [(= counter max)
 	  (collect-garbage)
 	  (send f show #f)]
-	 [else (send g set-value counter)]))))
+	 [else 
+	  (send g set-value counter)]))))
 
   (define generic-frame%
     (class fw:frame:standard-menus% (name)

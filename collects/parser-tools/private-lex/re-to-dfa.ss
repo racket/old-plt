@@ -6,8 +6,7 @@
   ;; and is not expanded into an alternation.
 
   (require (lib "list.ss")
-	   "structs.ss"
-	   "ht.ss")
+	   "structs.ss")
 
   (provide re-ast->dfa)
 
@@ -181,22 +180,23 @@
 			 (hash-table-map 
 			  table 
 			  (lambda (key value)
-			    (let ((v (ht-get state-table 
-					      value
-					      (lambda ()
-						(set! new-states
-						      (cons
-						       value new-states))
-						(ht-put!
-						 state-table
-						 value
-						 value)
-						value))))
+			    (let ((v (hash-table-get 
+				      state-table 
+				      value
+				      (lambda ()
+					(set! new-states
+					      (cons
+					       value new-states))
+					(hash-table-put!
+					 state-table
+					 value
+					 value)
+					value))))
 			      (list key v)))))
 		 new-states))))
 
 	   ;; keeps a canonical instance of each state.
-	   (state-table (make-ht))
+	   (state-table (make-hash-table 'equal))
 	   (nullable-table (nullable n))
 	   (firstpos-table ((firstpos nullable-table) n))
 	   (lastpos-table ((lastpos nullable-table) n))
@@ -204,7 +204,7 @@
 	    ((followpos firstpos-table lastpos-table) n (vector-length chars)))
 	   (first-state (hash-table-get firstpos-table n)))
     ;; We don't want to ever consider null a new state
-    (ht-put! state-table null null)
+    (hash-table-put! state-table null null)
     (let loop ((dstates-unmarked (list first-state))
 	       (dtrans null)
 	       (dstates-marked null))

@@ -136,7 +136,7 @@ void wxButton::Create // Real constructor (given parentPanel, label)
 	Rect boundsRect = {0, 0, ClientArea()->Height(), ClientArea()->Width()};
         OffsetRect(&boundsRect,SetOriginX,SetOriginY);
 	wxMacString theMacTitle = label;
-	const Bool drawNow = FALSE; // WCH: use FALSE, then show after ChangeColour??
+	const Bool drawNow = TRUE; // WCH: use FALSE, then show after ChangeColour??
 	const short offValue = 0;
 	const short minValue = 0;
 	const short maxValue = 1;
@@ -329,14 +329,14 @@ void wxButton::SetDefault(Bool flag) // WCH : modification of original (see belo
 //-----------------------------------------------------------------------------
 void wxButton::OnSetDefault(Bool flag) // WCH : addition to original
 { // WCH: the panel should invoke the default button to distinguish itself
-	if (buttonBitmap)
-		return;
 #ifdef OS_X
         if (cMacControl) {
             char byteFlag = (char)flag;
             SetControlData(cMacControl,kControlEntireControl,kControlPushButtonDefaultTag,1,&byteFlag);
         } else {
 #endif                
+	if (buttonBitmap)
+		return;
             if (flag)
             {
 		wxMargin margin(4);
@@ -570,6 +570,15 @@ void wxButton::ChangeToGray(Bool gray)
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Sizing methods
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+//-----------------------------------------------------------------------------
+void wxButton::SetSize(int x, int y, int width, int height, int flags = wxSIZE_AUTO)
+{
+  fprintf(stderr,"SetSize called for wxButton\n");
+  
+  wxWindow::SetSize(x,y,width,height,flags);
+}
+
 
 //-----------------------------------------------------------------------------
 void wxButton::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac platform only

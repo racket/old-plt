@@ -74,78 +74,46 @@ wxFrame::wxFrame // Constructor (for frame window)
 	WindowPtr theMacWindow;
 
 	/* Make sure we have the right device: */
-    CGrafPtr wPort;
-    GDHandle gdh;
-    GetGWorld(&wPort,&gdh);
-    SetGWorld(wPort, wxGetGDHandle());
+        CGrafPtr wPort;
+        GDHandle gdh;
+        GetGWorld(&wPort,&gdh);
+        SetGWorld(wPort, wxGetGDHandle());
 	
-    OSErr result;
-
-#if (__powerc) || defined(__ppc__)
-
-	if (wxTheApp->MacOS85WindowManagerPresent) {
-			
-		// OS 8.5 window creation enabled
-		// (so we can get resizeable modal windows)
-		
-		WindowClass windowClass;
-		WindowAttributes windowAttributes;
-		
-		if (cStyle & wxMDI_CHILD) { // hack : MDI_CHILD means dialog box
-			windowClass = kMovableModalWindowClass;
-			if (cStyle & wxNO_RESIZE_BORDER) {
-				windowAttributes = kWindowNoAttributes;
-			} else {
-				cIsResizableDialog = TRUE;
-				windowAttributes = (kWindowResizableAttribute);
-			}
+        OSErr result;
+	WindowClass windowClass;
+	WindowAttributes windowAttributes;
+	
+	if (cStyle & wxMDI_CHILD) { // hack : MDI_CHILD means dialog box
+		windowClass = kMovableModalWindowClass;
+		if (cStyle & wxNO_RESIZE_BORDER) {
+			windowAttributes = kWindowNoAttributes;
 		} else {
-			windowClass = kDocumentWindowClass;
-			if (cStyle & wxNO_RESIZE_BORDER) {
-				windowAttributes = kWindowStandardFloatingAttributes;
-			} else {
-				windowAttributes = kWindowStandardDocumentAttributes;
-			}
+			cIsResizableDialog = TRUE;
+			windowAttributes = (kWindowResizableAttribute);
 		}
+	} else {
+		windowClass = kDocumentWindowClass;
+		if (cStyle & wxNO_RESIZE_BORDER) {
+			windowAttributes = kWindowStandardFloatingAttributes;
+		} else {
+			windowAttributes = kWindowStandardDocumentAttributes;
+		}
+	}
 
-		result = ::CreateNewWindow(windowClass, windowAttributes, &theBoundsRect, &theMacWindow);
+	result = ::CreateNewWindow(windowClass, windowAttributes, &theBoundsRect, &theMacWindow);
 							
 									
-		if (result != noErr) {
-			char error[256];
-			sprintf(error,"wxFrameConstructor: Attempt to create window failed with error: %d.",
-					result);
-			wxFatalError(error);
-		}
-
-		::SetWTitle(theMacWindow, theWindowTitle);
-		
-		SetWRefCon(theMacWindow, (long)this);
-		
-	} else {
-#endif
-		// OS 8.5 not enabled, go with old-style window creation
-		
-		int theProcID;
-	 	// GRW adds
-	 	if (cStyle & wxMDI_CHILD) // hack: MDI_CHILD means dialog box
-	 		theProcID = movableDBoxProc;
-	  	else if (cStyle & wxNO_RESIZE_BORDER)
-	 		theProcID = noGrowDocProc;
-	    else
-	 		theProcID = zoomDocProc;
-	
-		const WindowPtr MoveToFront = WindowPtr(-1L);
-		const Bool HasGoAwayBox = TRUE;
-		long theRefCon = (long)this;
-		theMacWindow = ::NewCWindow(NULL, &theBoundsRect, theWindowTitle,
-						!WindowIsVisible, theProcID, MoveToFront, HasGoAwayBox, theRefCon);
-
-#if (__powerc) || defined(__ppc__)
-
+	if (result != noErr) {
+		char error[256];
+		sprintf(error,"wxFrameConstructor: Attempt to create window failed with error: %d.",
+				result);
+		wxFatalError(error);
 	}
-#endif
 
+	::SetWTitle(theMacWindow, theWindowTitle);
+	
+	SetWRefCon(theMacWindow, (long)this);
+		
 	CheckMemOK(theMacWindow);
 	
 	cMacDC = new wxMacDC(GetWindowPort(theMacWindow));
@@ -189,6 +157,10 @@ wxFrame::wxFrame // Constructor (for frame window)
 	
 	if (wxIsBusy())
 	  cBusyCursor = 1;
+          
+        // create a root control, to enable control embedding
+        ControlRef rootControl;
+        ::CreateRootControl(theMacWindow,&rootControl);
 }
 
 //=============================================================================

@@ -124,6 +124,7 @@ public:
 	void DoShow(Bool show);
 	void Paint(void);
 	virtual void OnChar(wxKeyEvent *event); // mac platform only
+        ControlRef	cEmbeddingControl;
 
  	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  	// Tree methods

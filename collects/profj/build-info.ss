@@ -41,7 +41,7 @@
                        (profj-lib? `(lib ,name "profj" "libs" ,@path))
                        (htdch-lib? `(lib ,name "htdch" ,@path))
                        ((and local? (not (to-file))) name)
-                       (else `(file ,(build-path dir name))))))
+                       (else `(file ,(path->bytes (build-path dir name)))))))
            (make-name (lambda ()
                         (if (or (not local?) profj-lib? htdch-lib? (to-file))
                             (string-append name ".ss")

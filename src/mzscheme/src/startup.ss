@@ -1987,16 +1987,17 @@
        sl))
     (let ([l (stx->list sl)])
       (map (lambda (x) 
-	     ((make-syntax-introducer)
-	      (cond
-	       [(symbol? x)
-		(datum->syntax-object #f (append-number x))]
-	       [(string? x)
-		(datum->syntax-object #f (append-number x))]
-	       [(identifier? x)
-		(datum->syntax-object #f (append-number (syntax-e x)))]
-	       [else 
-		(datum->syntax-object #f (append-number 'temp))])))
+	     (syntax-local-module-introduce
+	      ((make-syntax-introducer)
+	       (cond
+		[(symbol? x)
+		 (datum->syntax-object #f (append-number x))]
+		[(string? x)
+		 (datum->syntax-object #f (append-number x))]
+		[(identifier? x)
+		 (datum->syntax-object #f (append-number (syntax-e x)))]
+		[else 
+		 (datum->syntax-object #f (append-number 'temp))]))))
 	   l)))
 
   (provide with-syntax generate-temporaries))

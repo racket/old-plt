@@ -3,6 +3,11 @@ Version 205.1
 Fixed transitivity of numerical comparison for mixed
  inexact--exact comparisons when the inexact versions
  of the numbers are = but the exact versions are not
+generate-temporaries produces identifiers that are
+ suitable for use as defined names in the module
+ being expanded (if any)
+Added syntax-local-module-introduce, which is used
+ by generate-temporaries
 
 
 Version 205, August 2003

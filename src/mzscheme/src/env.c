@@ -69,6 +69,7 @@ static Scheme_Object *local_exp_time_value(int argc, Scheme_Object *argv[]);
 static Scheme_Object *local_exp_time_name(int argc, Scheme_Object *argv[]);
 static Scheme_Object *local_context(int argc, Scheme_Object *argv[]);
 static Scheme_Object *local_introduce(int argc, Scheme_Object *argv[]);
+static Scheme_Object *local_module_introduce(int argc, Scheme_Object *argv[]);
 static Scheme_Object *local_get_shadower(int argc, Scheme_Object *argv[]);
 static Scheme_Object *make_introducer(int argc, Scheme_Object *argv[]);
 static Scheme_Object *make_set_transformer(int argc, Scheme_Object *argv[]);
@@ -449,6 +450,11 @@ static void make_init_env(void)
   scheme_add_global_constant("syntax-local-introduce", 
 			     scheme_make_prim_w_arity(local_introduce,
 						      "syntax-local-introduce",
+						      1, 1),
+			     env);
+  scheme_add_global_constant("syntax-local-module-introduce", 
+			     scheme_make_prim_w_arity(local_module_introduce,
+						      "syntax-local-module_introduce",
 						      1, 1),
 			     env);
   scheme_add_global_constant("make-syntax-introducer", 
@@ -2790,6 +2796,31 @@ local_introduce(int argc, Scheme_Object *argv[])
 
   if (scheme_current_thread->current_local_mark)
     s = scheme_add_remove_mark(s, scheme_current_thread->current_local_mark);
+
+  return s;
+}
+
+static Scheme_Object *
+local_module_introduce(int argc, Scheme_Object *argv[])
+{
+  Scheme_Comp_Env *env;
+  Scheme_Object *s;
+
+  env = scheme_current_thread->current_local_env;
+  if (!env)
+    scheme_raise_exn(MZEXN_MISC, 
+		     "syntax-local-module-introduce: not currently transforming");
+
+  s = argv[0];
+  if (!SCHEME_STXP(s))
+    scheme_wrong_type("syntax-local-module-introduce", "syntax", 0, argc, argv);
+
+  if (env->genv->rename) {
+    s = scheme_add_rename(s, env->genv->rename);
+  }
+  if (env->genv->et_rename) {
+    s = scheme_add_rename(s, env->genv->et_rename);
+  }
 
   return s;
 }

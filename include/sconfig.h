@@ -124,7 +124,9 @@
 # define USE_ON_EXIT_FOR_ATEXIT
 # endif
 
-# define FLUSH_SPARC_REGISTER_WINDOWS
+# ifndef i386
+#  define FLUSH_SPARC_REGISTER_WINDOWS
+# endif
 
 # define FLAGS_ALREADY_SET
 

@@ -394,8 +394,7 @@
   (define-syntax (package* stx)
     (syntax-case stx ()
       [(package* name exports body ...)
-       (with-syntax ([this-pkg (car (generate-temporaries '(this-pkg)))]
-		     [new-name (car (generate-temporaries (list #'name)))])
+       (with-syntax ([this-pkg (car (generate-temporaries '(this-pkg)))])
 	 #`(begin
 	     (package/derived #,stx this-pkg exports
 			      body ...)

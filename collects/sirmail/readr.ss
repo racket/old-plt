@@ -478,7 +478,7 @@
 					  (format "The message is ~s bytes.~nReally download?" size)
 					  main-frame))
 		  (status "")
-		  (error "Download aborted"))))
+		  (error "download aborted"))))
 	    (let*-values ([(imap count new next-uid) (connect 'reuse break-bad break-ok)])
 	      (let ([body (with-handlers ([exn:break?
 					   (lambda (exn)
@@ -486,10 +486,14 @@
 					     (raise exn))])
 			    (break-ok)
 			    (begin0
-			     (caar (imap-get-messages 
-				    imap 
-				    (list (message-position v))
-				    '(body)))
+			     (let ([reply (imap-get-messages 
+					   imap 
+					   (list (message-position v))
+					   '(uid body))])
+			       (if (equal? (caar reply) (message-uid v))
+				   (cadar reply)
+				   (error (string-append "server UID does not match local UID; "
+							 "update the message list and try again"))))
 			     (break-bad)))])
 		(status "Saving message ~a..." uid)
 		(with-output-to-file file

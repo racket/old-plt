@@ -18,4 +18,12 @@
 	  (make-object wx:bitmap% (build-path dir "return.bmp") 
 		       wx:const-bitmap-type-bmp)
 	  (make-object wx:bitmap% (build-path dir "return.xbm") 
+		       wx:const-bitmap-type-xbm))))
+  
+  (define paren-highlight-bitmap 
+    (let ([dir (global-defined-value 'mred:system-source-directory)])
+      (if (eq? wx:platform 'windows)
+	  (make-object wx:bitmap% (build-path dir "paren.bmp") 
+		       wx:const-bitmap-type-bmp)
+	  (make-object wx:bitmap% (build-path dir "paren.xbm") 
 		       wx:const-bitmap-type-xbm)))))

@@ -16,7 +16,7 @@
 			     (if (defined? name)
 				 (escape (apply (eval name) args))
 				 (error 'autoload "still undefined: ~s" name)))])
-		      (if (null? path)
+		      (if (not path)
 			  (begin
 			    (for-each
 			     (lambda (dir)

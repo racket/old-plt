@@ -3,7 +3,7 @@
 ; Print a little more than MzScheme automatically does:
 (error-print-width 100)
 
-(define mred:debug? #f)
+(define mred:debug? #t)
 
 (unless (defined? 'mred:startup-print-status)
    (define mred:startup-print-status 
@@ -43,8 +43,8 @@
     (wx:message-box "Cannot find the MzScheme libraries." "Error")
     (error 'mrsystem "cannot find the MzScheme libraries"))
 (define mzlib:constant-lib? #t)
-(require-library "corec.ss")
-(require-library "triggerc.ss")
+(require-library "core.ss")
+(require-library "trigger.ss")
 
 (define mred:plt-home-directory
   (if (defined? 'mred:plt-home-directory)
@@ -68,10 +68,12 @@
   (define mred:make-new-console
     (lambda ()
       (load "functor-setup.ss")
+      (send mred:new-console show #f)
       (set! mred:new-eval (make-eval 'wx))
       (set! mred:new-console
-	    (new-eval `(begin (define mred:system-source-directory ,mred:system-source-directory)
+	    (mred:new-eval `(begin (define mred:system-source-directory ,mred:system-source-directory)
 			      (define mred:plt-home-directory ,mred:plt-home-directory)
+			      (current-library-path "~mflatt/proj/mred/mzscheme/mzlib")
 			      (require-library "sfunctor.ss")
 			      (invoke-open-unit ,(sigfunctor->functor mred:main@) mred)
 			      (make-object mred:console-frame% #f)))))))
@@ -149,12 +151,12 @@
 	     (orig-escape))
 	   (load-with-cd file)))))))
 
-(if (eq? wx:platform 'unix)
-    (let* ([default-path "/usr/local/transcript-4.0/lib/"]
-	   [path-box (box default-path)])
-      (wx:get-resource "MrEd" "afmPath" path-box)
-      (wx:set-afm-path 
-       (if (or (directory-exists? (unbox path-box))
-	       (not (directory-exists? default-path)))
-	   (unbox path-box)
-	   default-path))))
+(when (eq? wx:platform 'unix)
+  (let* ([default-path "/usr/local/transcript-4.0/lib/"]
+	 [path-box (box default-path)])
+    (wx:get-resource "MrEd" "afmPath" path-box)
+    (wx:set-afm-path 
+     (if (or (directory-exists? (unbox path-box))
+	     (not (directory-exists? default-path)))
+	 (unbox path-box)
+	 default-path))))

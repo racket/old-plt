@@ -4,8 +4,8 @@
 ; Scheme mode for MrEd.
 
 (define-sigfunctor (mred:scheme-mode@ mred:scheme-mode^)
-  (import mred:debug^ mred:mode^ mred:match-cache^ mred:paren^ mred:scheme-paren^ 
-	  mred:icon^ mred:handler^ mred:keymap^
+  (import mred:debug^ mred:mode^ mred:match-cache^ mred:paren^ 
+	  mred:scheme-paren^ mred:icon^ mred:handler^ mred:keymap^
 	  mzlib:string^)
   
   (mred:debug^:dprintf "mred:scheme-mode@~n")
@@ -59,20 +59,111 @@
 	 [name "Scheme"]
 	 [backward-cache (make-object mred:match-cache^:match-cache%)]
 	 [forward-cache (make-object mred:match-cache^:match-cache%)])
+
+
+	(private
+	 [just-once #f]
+	 [suspend-highlight? #f])
 	(public
+	 [on-change-style
+	  (lambda (edit start len)
+	    (send edit begin-edit-sequence)
+	    #t)]
+	 [after-change-style
+	  (lambda (edit start len)
+	    (send edit end-edit-sequence)
+	    (highlight-parens edit))]
+	 [on-edit-sequence
+	  (lambda (edit)
+	    (set! suspend-highlight? #t))]
+	 [after-edit-sequence
+	  (lambda (edit)
+	    (set! suspend-highlight? #f)
+	    (when just-once
+	      (highlight-parens edit)))]
+	 [on-insert
+	  (lambda (edit start size)
+	    (send edit begin-edit-sequence)
+	    #t)]
 	 [after-insert
 	  (lambda (edit start size)
 	    (send backward-cache invalidate start)
 	    (send forward-cache forward-invalidate start size)
+	    (send edit end-edit-sequence)
+	    (highlight-parens edit)
 	    #t)]
 	 [on-delete
 	  (lambda (edit start size)
 	    (send backward-cache invalidate start)
 	    (send forward-cache forward-invalidate (+ start size) (- size))
+	    (send edit begin-edit-sequence)
 	    #t)]
+	 [after-delete
+	  (lambda (edit start size)
+	    (send edit end-edit-sequence)
+	    (highlight-parens edit)
+	    #t)]
+	 [on-set-size-constraint
+	  (lambda (edit)
+	    (send edit begin-edit-sequence)
+	    #t)]
+	 [after-set-size-constraint
+	  (lambda (edit)
+	    (send edit end-edit-sequence)
+	    (highlight-parens edit))]
+	 [after-set-position 
+	  (lambda (edit)
+	    (highlight-parens edit))]
+
+	 [highlight-parens
+	  (let ([clear-old-location (lambda () (void))])
+	    (lambda (edit)
+	      (if suspend-highlight?
+		  (set! just-once #t)
+		  (begin (set! just-once #f)
+			 (send edit begin-edit-sequence)
+			 (clear-old-location)
+			 (set! clear-old-location (lambda () (void)))
+			 (let ([here (send edit get-start-position)]
+			       [there (send edit get-end-position)]
+			       [is-paren?
+				(lambda (f char)
+				  (ormap (lambda (x) (char=? char (string-ref (f x) 0)))
+					 mred:scheme-paren^:scheme-paren-pairs))])
+			   (when (= here there)
+			     (let/ec k
+			       (let-values ([(left right)
+					     (cond
+					      [(is-paren? cdr (send edit get-character (sub1 here))) 
+					       (let ([end-pos (mred:scheme-paren^:scheme-backward-match
+							       edit here (get-limit edit here)
+							       backward-cache)])
+						 (if end-pos
+						     (values end-pos here)
+						     (k (void))))]
+					      [(is-paren? car (send edit get-character here))
+					       (let ([end-pos (mred:scheme-paren^:scheme-forward-match
+							       edit here (send edit last-position)
+							       forward-cache)])
+						 (if end-pos
+						     (values here end-pos)
+						     (k (void))))]
+					      [else (k (void))])])
+				 (let* ([pen (make-object wx:pen% "black" 1 wx:const-stipple)]
+					[brush (make-object wx:brush% "black" wx:const-stipple)])
+				   (if (or #t (<= (wx:display-depth) 8))
+				       (begin (send pen set-stipple mred:icon^:paren-highlight-bitmap)
+					      (send brush set-stipple mred:icon^:paren-highlight-bitmap))
+				       (begin (send pen set-colour "light salmon")
+					      (send brush set-colour "light salmon")))
+				   (set! clear-old-location
+					 (send edit add-range left right pen brush)))))))
+			 (send edit end-edit-sequence)))))]
+
 	 [get-limit
 	  (lambda (edit pos)
 	    0)]
+		
 	 [balance-parens
 	  ;paren balancing keymap callback
 	  (lambda (edit key)
@@ -423,15 +514,6 @@
 		      (wx:bell)))))
 	    #t)]
 
-	 [after-set-position
-	  (lambda (edit)
-	    (let ([delete-old-range #f]
-		  [new-position (send edit get-start-position)])
-	      (when delete-old-range
-		(delete-old-range))
-	      (when (= new-position (send edit get-end-position))
-		'highlight-the-parens)))]
-
 	 [remove-parens-forward
 	  (lambda (edit start-pos)
 	    (let* ([pos (mred:paren^:skip-whitespace edit start-pos 1)]
@@ -462,7 +544,7 @@
 	    (send edit set-tabs '() 8 #f)
 	    (send edit set-autowrap-bitmap mred:icon^:autowrap-bitmap)
 	    (set! tab-size 8)
-	    (super-install edit))]
+            (super-install edit))]
 	 [evaluate-region
 	  (let ([console-evaluate 
 		 (lambda (file)

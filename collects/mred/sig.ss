@@ -109,6 +109,7 @@
 
 (define-signature mred:icon^
   icon
+  paren-highlight-bitmap
   autowrap-bitmap)
 
 (define-signature mred:keymap^

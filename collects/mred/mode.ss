@@ -15,9 +15,19 @@
        
        [on-insert (lambda (edit start len) #t)]
        [after-insert (lambda (edit start len) (void))]
+
        [on-delete (lambda (edit start len) #t)]
        [after-delete (lambda (edit start len) (void))]
        
+       [on-set-style (lambda (edit start len) #t)]
+       [after-set-style (lambda (edit start len) (void))]
+
+       [on-edit-sequence (lambda (edit) (void))]
+       [after-edit-sequence (lambda (edit) (void))]
+
+       [on-set-size-constraint (lambda (edit) #t)]
+       [after-set-size-constraint (lambda (edit) (void))]
+
        [after-set-position (lambda (edit) (void))]
 
        [on-focus (lambda (edit on?) #f)]

@@ -138,18 +138,6 @@
    (let ([b-group% buffer-group%])
     (let-struct frame (frame id)
       (class '() ()
-        (private
-	 [active-frame-change-fns null])
-
-	(public
-	 [add-active-frame-change-fn
-	  (lambda (f)
-	    (set! active-frame-change-fns (cons f active-frame-change-fns)))]
-	 [remove-active-frame-change-fn
-	  (lambda (f)
-	    (set! active-frame-change-fns
-		  (mzlib:function^:remove f active-frame-change-fns eq?)))])
-
 	(private
 	 [active-frame #f]
 	 [frame-counter 0]
@@ -191,7 +179,6 @@
 	     [else (frame-frame (car frames))]))]
 	 [set-active-frame
 	  (lambda (f)
-	    (for-each (lambda (fn) (fn f active-frame)) active-frame-change-fns)
 	    (set! active-frame f))]
 	 [insert-frame
 	  (lambda (f)

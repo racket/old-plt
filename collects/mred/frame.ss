@@ -16,17 +16,8 @@
   (define empty-frame%
     (class-asi wx:frame%
       (inherit show)
-      (private
-       [shutdown (lambda ()
-		   (mred:exit^:remove-exit-callback shutdown)
-		   (on-close)
-		   (show #f))])
-      (sequence
-	(mred:exit^:insert-exit-callback shutdown))
       (public
-       [on-close (lambda ()
-		   (mred:exit^:remove-exit-callback shutdown)
-		   #t)])))
+       [on-close (lambda () #t)])))
 
   (define frame-width 600)
   (define frame-height 600)
@@ -440,7 +431,7 @@
 		(for-each (lambda (canvas)
 			    (let ([m (send canvas get-media)])
 			      (unless (null? m)
-				      (send m do-autosave))))
+				(send m do-autosave))))
 			  canvases)))]
 	 [make-menu-bar
 	  (lambda ()

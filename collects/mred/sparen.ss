@@ -4,6 +4,7 @@
 (define-sigfunctor (mred:scheme-paren@ mred:scheme-paren^)
   (import mred:debug^ mred:paren^)
 
+;; for now the scheme mode assumes that these are all one character long.
   (define scheme-paren-pairs '(("(" . ")")
 			       ("[" . "]")
 			       ("{" . "}")))

@@ -1,4 +1,4 @@
-; $Id$
+; $Id: sigs.ss,v 1.40 1997/07/21 15:51:43 shriram Exp $
 
 (reference "namedarg.ss")
 
@@ -33,7 +33,7 @@
   (make-correlator add-to-correlator find-in-correlator))
 
 (define-signature zodiac:sexp^
-  (structurize-syntax sexp->raw
+  (structurize-syntax sexp->raw sanitized-sexp->raw
     syntax-null? syntax-car syntax-cdr syntax-map
     set-macro-origin
     new-mark mark-expression add/remove-mark expose-list))

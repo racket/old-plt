@@ -1,4 +1,4 @@
-; $Id$
+; $Id: invoke.ss,v 1.24 1997/07/21 15:51:43 shriram Exp $
 
 (reference-library "coreu.ss")
 (reference-library "match.ss")
@@ -35,8 +35,10 @@
     (define unmatched-cond/case-is-error? plt:unmatched-cond/case-is-error?)
     (define allow-set!-on-undefined? plt:allow-set!-on-undefined?)
     (define allow-improper-lists? plt:allow-improper-lists?)
-    (define check-syntax-level 'advanced)))
+    (define check-syntax-level 'structured)))
 ; plt:check-syntax-level)))
+
+; (define language-levels '(core structured side-effecting advanced))
 
 (define zodiac:system@
   (reference-unit/sig "link.ss"))

@@ -72,6 +72,22 @@
 		    [else
 		     (raise-syntax-error #f (format "Cannot typecheck: ~a" stmt) (at stmt (ast:make-src 1 1 1 1)))]))
 
+	   (define (newboundtypes tdlist)
+;	     (pretty-print (format "current newboundtype: ~a" (car tdlist)))
+	     (if (null? tdlist)
+		 null
+		 (cons 
+		  (cons 
+		   (syntax-object->datum (car (car tdlist))) 
+		   (let ([tkind (ast:type_declaration-kind (cdr (car tdlist)))])
+		     (cond
+		      [(ast:ptype_abstract? tkind) (syntax-object->datum (car (car tdlist)))]
+		      [(ast:ptype_variant? tkind) (make-usertype (syntax-object->datum (car (car tdlist))) (car (convert-list (map make-tvar (ast:type_declaration-params (cdr (car tdlist)))) null null)))]
+		      [else (raise-syntax-error "Bad kind: ~a" tkind)])))
+		  (newboundtypes (cdr tdlist)))))
+
+;		 (cons (cons (syntax-object->datum (car (car tdlist))) (make-usertype (syntax-object->datum (car (car tdlist))) (car (convert-list (map make-tvar (ast:type_declaration-params (cdr (car tdlist)))) null null)))) (newboundtypes (cdr tdlist)))))
+
 	   (define (typecheck-structure desc src context)
 ;	     ;(pretty-print (format "typecheck-structure ~a" desc))
 	     (match desc
@@ -209,11 +225,7 @@
 		    [else
 		     (raise-syntax-error #f (format "Cannot typecheck expression: ~a" desc) (at desc src))]) )
 
-	   (define (newboundtypes tdlist)
-;	     (pretty-print (format "current newboundtype: ~a" (car tdlist)))
-	     (if (null? tdlist)
-		 null
-		 (cons (cons (syntax-object->datum (car (car tdlist))) (make-usertype (syntax-object->datum (car (car tdlist))) (car (convert-list (map make-tvar (ast:type_declaration-params (cdr (car tdlist)))) null null)))) (newboundtypes (cdr tdlist)))))
+
 
 		       
 	   (define (typecheck-typedecl td boundlist)
@@ -745,70 +757,76 @@
 		    [uvprime (diff uv ev)])
 	       (cons type uvprime)))
 
-	   (define (unify t1 t2 syn)
-;	     (pretty-print (format "unify ~a ~a" t1 t2))
-	     (cond
+	   (define (unify t1a t2a syn)
+;	     (pretty-print (format "unify ~a ~a" t1a t2a))
+	     (let* ([t1 (if (and (string? t1a) (constructor-lookup t1a))
+			   (constructor-lookup t1a)
+			   t1a)]
+		    [t2 (if (and (string? t2a) (not (string? t1)) (constructor-lookup t2a))
+			   (constructor-lookup t2a)
+			   t2a)])
+	       (cond
 ;	      [(eq? t1 t2) #t]
-	      [(tvar? t1) (unify-var t2 (tvar-tbox t1) syn)]
-	      [(string? t1)
-	       (cond
-		[(string? t2) 
-		 (if (equal? t1 t2) 
-		     #t
-		     (let* ([t1c (constructor-lookup t1)]
-			    [t2c (constructor-lookup t2)]
-			    [t1a (if t1c t1c t1)]
-			    [t2a (if t2c t2c t2)])
-		       (if (equal? t1a t2a)
-			   #t
-			   (raise-syntax-error #f (format "Expected ~a but found ~a" t1a t2a) syn))))]
+		[(tvar? t1) (unify-var t2 (tvar-tbox t1) syn)]
+		[(string? t1)
+		 (cond
+		  [(string? t2) 
+		   (if (equal? t1 t2) 
+		       #t
+		       (let* ([t1c (constructor-lookup t1)]
+			      [t2c (constructor-lookup t2)]
+			      [t1a (if t1c t1c t1)]
+			      [t2a (if t2c t2c t2)])
+			 (if (equal? t1a t2a)
+			     #t
+			     (raise-syntax-error #f (format "Expected ~a but found ~a" t1a t2a) syn))))]
 ;		[(usertype? t2) (equal? t1 (usertype-name t2))]
-		[(tvar? t2) (unify-var t1 (tvar-tbox t2) syn)]
-		[else (begin (raise-syntax-error #f (format "Expected ~a but found ~a" t1 t2) syn ) #f)])]
-
-	      [(arrow? t1)
-	       (cond
-		[(arrow? t2) (and (unify (car (arrow-arglist t1)) (car (arrow-arglist t2)) syn) (unify (arrow-result t1) (arrow-result t2) syn))]
-		[(tvar? t2) (unify-var t1 (tvar-tbox t2) syn)]
-		[else (begin (raise-syntax-error #f (format "Expected ~a -> ~a but found ~a" (car (arrow-arglist t1)) (arrow-result t1) t2) syn) #f)])]
-	      [(<tuple>? t1)
-	       (cond
-		[(<tuple>? t2) 
-		 (if (= (length (<tuple>-list t1)) (length (<tuple>-list t2)))
-		     (andmap unify (<tuple>-list t1) (<tuple>-list t2) (repeat syn (length (<tuple>-list t1))))
-		     (begin (raise-syntax-error #f (format "Expected ~a but found ~a" t1 t2) syn) #f))]
-		[(tvar? t2) (unify-var t1 (tvar-tbox t2) syn)]
-		[else (begin (raise-syntax-error #f "Expected a <tuple> type" syn) #f)])]
-	      [(tlist? t1)
-	       (cond
-		[(tlist? t2) (unify (tlist-type t1) (tlist-type t2) syn)]
-		[(tvar? t2) (unify-var t1 (tvar-tbox t2) syn)]
-		[else (begin (raise-syntax-error #f "Expected a list type" syn) #f)])]
-	      [(tarray? t1)
-	       (cond
-		[(tarray? t2) (unify (tarray-type t1) (tarray-type t2) syn)]
-		[(tvar? t2) (unify-var t1 (tvar-tbox t2) syn)]
-		[else (raise-syntax-error #f "Expected an array type" syn)])]
-	      [(option? t1)
-	       (cond
-		[(option? t2) (unify (option-type t1) (option-type t2) syn)]
-		[(tvar? t2) (unify-var t1 (tvar-tbox t2) syn)]
-		[else (raise-syntax-error #f "Expected an option type" syn)])]
-	      [(ref? t1)
-	       (cond
-		[(ref? t2) (unify (ref-type t1) (ref-type t2) syn)]
-		[(tvar? t2) (unify-var t1 (tvar-tbox t2) syn)]
-		[else (raise-syntax-error #f "Expected an option type" syn)])]
-	      [(usertype? t1)
-	       (cond
-		[(usertype? t2) (if (equal? (usertype-name t1) (usertype-name t2))
-				    (if (= (length (usertype-params t1)) (length (usertype-params t2)))
-					(andmap unify (usertype-params t1) (usertype-params t2) (repeat syn (length (usertype-params t1))))
-					(raise-syntax-error #f (format "Expected ~a with ~a parameters but found it with ~a parameters" (usertype-name t1) (length (usertype-params t1)) (length (usertype-params t2))) syn))
-				    (raise-syntax-error #f (format "Expected ~a(~a) but found ~a(~a)" (usertype-name t1) (length (usertype-params t1)) (usertype-name t2) (length (usertype-params t2))) syn))]
-		 [(tvar? t2) (unify-var t1 (tvar-tbox t2) syn)]
-		 [else (raise-syntax-error #f (format "Expected ~a(~a) but found ~a (usertype doesn't match usertype)" (usertype-name t1) (length (usertype-params t1)) t2) syn)])]
-	      [else (raise-syntax-error #f (format "Bad type to unify ~a" t1) syn)]))
+		  [(tvar? t2) (unify-var t1 (tvar-tbox t2) syn)]
+		  [else (begin (raise-syntax-error #f (format "Expected ~a but found ~a" (print-type t1) (print-type t2)) syn ) #f)])]
+		
+		[(arrow? t1)
+		 (cond
+		  [(arrow? t2) (and (unify (car (arrow-arglist t1)) (car (arrow-arglist t2)) syn) (unify (arrow-result t1) (arrow-result t2) syn))]
+		  [(tvar? t2) (unify-var t1 (tvar-tbox t2) syn)]
+		  [else (begin (raise-syntax-error #f (format "Expected ~a -> ~a but found ~a" (car (arrow-arglist t1)) (arrow-result t1) t2) syn) #f)])]
+		[(<tuple>? t1)
+		 (cond
+		  [(<tuple>? t2) 
+		   (if (= (length (<tuple>-list t1)) (length (<tuple>-list t2)))
+		       (andmap unify (<tuple>-list t1) (<tuple>-list t2) (repeat syn (length (<tuple>-list t1))))
+		       (begin (raise-syntax-error #f (format "Expected ~a but found ~a" t1 t2) syn) #f))]
+		  [(tvar? t2) (unify-var t1 (tvar-tbox t2) syn)]
+		  [else (begin (raise-syntax-error #f "Expected a <tuple> type" syn) #f)])]
+		[(tlist? t1)
+		 (cond
+		  [(tlist? t2) (unify (tlist-type t1) (tlist-type t2) syn)]
+		  [(tvar? t2) (unify-var t1 (tvar-tbox t2) syn)]
+		  [else (begin (raise-syntax-error #f "Expected a list type" syn) #f)])]
+		[(tarray? t1)
+		 (cond
+		  [(tarray? t2) (unify (tarray-type t1) (tarray-type t2) syn)]
+		  [(tvar? t2) (unify-var t1 (tvar-tbox t2) syn)]
+		  [else (raise-syntax-error #f "Expected an array type" syn)])]
+		[(option? t1)
+		 (cond
+		  [(option? t2) (unify (option-type t1) (option-type t2) syn)]
+		  [(tvar? t2) (unify-var t1 (tvar-tbox t2) syn)]
+		  [else (raise-syntax-error #f "Expected an option type" syn)])]
+		[(ref? t1)
+		 (cond
+		  [(ref? t2) (unify (ref-type t1) (ref-type t2) syn)]
+		  [(tvar? t2) (unify-var t1 (tvar-tbox t2) syn)]
+		  [else (raise-syntax-error #f "Expected an option type" syn)])]
+		[(usertype? t1)
+		 (cond
+		  [(usertype? t2) (if (equal? (usertype-name t1) (usertype-name t2))
+				      (if (= (length (usertype-params t1)) (length (usertype-params t2)))
+					  (andmap unify (usertype-params t1) (usertype-params t2) (repeat syn (length (usertype-params t1))))
+					  (raise-syntax-error #f (format "Expected ~a with ~a parameters but found it with ~a parameters" (usertype-name t1) (length (usertype-params t1)) (length (usertype-params t2))) syn))
+				      (raise-syntax-error #f (format "Expected ~a(~a) but found ~a(~a)" (usertype-name t1) (length (usertype-params t1)) (usertype-name t2) (length (usertype-params t2))) syn))]
+		  [(tvar? t2) (unify-var t1 (tvar-tbox t2) syn)]
+		  [else (raise-syntax-error #f (format "Expected ~a but found ~a (usertype doesn't match usertype)" (print-type t1) (print-type t2)) syn)])]
+		[else (raise-syntax-error #f (format "Bad type to unify ~a" t1) syn)])))
 
 	   (define (unify-var type tbox syn)
 	     (if (null? (unbox tbox))
@@ -1097,6 +1115,34 @@
 			[($ ast:ppat_construct longident pat bool) (longident-location longident)]
 			[($ ast:ppat_constraint pat type) (pat-location pat)])))
 
+	   (define (print-type type)
+	     (cond
+;	      [(value-set? type) (let ([nmap (unconvert-tvars (value-set-type type) mappings)])
+;				   (cons (make-value-set (value-set-name type) (car nmap)) (cdr nmap)))]
+	      [(tvariant? type) (tvariant-name type)]
+	      [(usertype? type) (format "~a(~a)" (usertype-name type) (length (usertype-params type)))]
+	      [(list? type) (map print-type type)]
+	      [(string? type) type]
+	      [(<tuple>? type) (format "tuple of ~a" (print-type (<tuple>-list type)))]
+	      [(arrow? type) (format "~a -> ~a" (print-type (car (arrow-arglist type))) (print-type (arrow-result type)))]
+	      [(tlist? type) (format "list of ~a" (print-type (tlist-type type)))]
+	      [(tarray? type) (format "array of ~a" (print-type (tarray-type type)))]
+	      [(option? type) (format "option of ~a" (print-type (option-type type)))]
+	      [(ref? type) (format "ref of ~a" (print-type (ref-type type)))]
+;	      [(mlexn? type) (let ([newtypes (if (null? (tconstructor-argtype (mlexn-types type)))
+;						(cons null mappings)
+;						(unconvert-tvars (tconstructor-argtype (mlexn-types type)) mappings))])
+;			       (cons (make-mlexn (mlexn-name type) (make-tconstructor (car newtypes) (tconstructor-result (mlexn-types type)))) (cdr newtypes)))]
+	      [(tvar? type) (format "tvar of ~a" (let ([dbox (tvar-tbox type)])
+			      (cond
+			       [(string? dbox) dbox]
+			       [(null? (unbox dbox)) "()"]
+			       [else
+				(print-type (unbox dbox))])))]
+	      [else ;(cons type mappings)]))
+	       type]))
+;	       (raise-syntax-error #f (format "Bad type: ~a" type) type)]))
+	    
 	   (define (constructor-lookup name)
 	     (let ([constructor (hash-table-get <constructors> name (lambda () #f))])
 	       (if constructor

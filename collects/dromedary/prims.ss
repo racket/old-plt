@@ -18,6 +18,8 @@
 		 (struct mlexn (name types))
 		 (struct value-set (name type))
 		 (struct <user-type> ())
+		 (struct |Some| (tlist))
+		 (struct |None| (tlist))
 		 != <lt> <gt> <le> <ge> <or> <and> <>
 		 float? any?
 		 array-get
@@ -39,8 +41,8 @@
 	(define-struct option (type))
 	(define-struct <user-type> () (make-inspector))
 
-	(define-struct |Some| (data) (make-inspector))
-	(define-struct |None| (dummy) (make-inspector))
+	(define-struct |Some| (tlist) (make-inspector))
+	(define-struct |None| (tlist) (make-inspector))
 
 	(define <library-names> (make-hash-table 'equal))
 
@@ -76,6 +78,13 @@
 		  c
 		  (((<foldrr> a) (lcdr b)) ((a (last b)) c)))))))
 
+	(define (<foldll> a)
+	  (lambda (b)
+	    (lambda (c)
+	      (if (null? b)
+		  c
+		  (((<foldll> a) (cdr b)) ((a (car b)) c))))))
+
 	(define (<flattenf> a)
 	  (if (null? a)
 	      null
@@ -101,6 +110,16 @@
 			   (list (make-tvar "'b"))
 			   (make-tvar "'b"))))
 			   (make-arrow (list (make-tlist (make-tvar "'a"))) (make-arrow (list (make-tvar "'b")) (make-tvar "'b")))) <foldrr>))
+	(hash-table-put!
+	 <list-funcs>
+	 "fold_left" (cons 
+		       (make-arrow 
+			(list (make-arrow 
+			       (list (make-tvar "'a"))
+			       (make-arrow 
+				(list (make-tvar "'b"))
+				(make-tvar "'a"))))
+			   (make-arrow (list (make-tvar "'a")) (make-arrow (list (make-tlist (make-tvar "'b"))) (make-tvar "'a")))) <foldll>))
 
 
 	;; The string functions
@@ -350,8 +369,8 @@
 	(hash-table-put! <constructors> "bool" (cons "bool" "some error"))
 	(hash-table-put! <constructors> "string" (cons "string" "some error"))
 	(hash-table-put! <constructors> "char" (cons "char" "some error"))
-	(hash-table-put! <constructors> "None" (cons (make-tconstructor null (make-option (make-tvar "'a"))) make-option))
-	(hash-table-put! <constructors> "Some" (cons (make-tconstructor (make-tvar "'a") (make-option (make-tvar "'a"))) make-option))
+	(hash-table-put! <constructors> "None" (cons (make-tconstructor null (make-option (make-tvar "'a"))) (|make-None| #f)))
+	(hash-table-put! <constructors> "Some" (cons (make-tconstructor (make-tvar "'a") (make-option (make-tvar "'a"))) |make-Some|))
 	
 	
 	(define built-in-and-user-funcs (make-hash-table 'equal))

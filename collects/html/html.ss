@@ -13,4 +13,5 @@
     [H : html^ ((require-library "htmlr.ss" "html") X S F FILE)])
    (export (open H)))
  #f
- mzlib:function^)
+ mzlib:function^
+ mzlib:file^)

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Canvas.h,v 1.1 1996/01/10 14:57:04 markus Exp $
+ * $Id: Canvas.h,v 1.1.1.1 1997/12/22 17:28:58 mflatt Exp $
  *
  * Purpose: canvas panel item
  *
@@ -65,6 +65,7 @@ public:
     Bool IsRetained(void)
 	{ return FALSE; };
     void Scroll(int x_pos, int y_pos);
+    void  ScrollPercent(float x_pos, float y_pos);
     virtual void SetScrollbars(int h_pixels, int v_pixels, int x_len, int y_len,
 			       int x_page, int y_page, int x_pos=0, int y_pos=0,
 			       Bool setVirtualSize = TRUE);

@@ -9,7 +9,7 @@ extern void	XfwfDrawImageString(Display *display, Drawable drawable,
 			int *tabs, XFontStruct *fnt);
 extern void     XfwfDrawString(Display *display, Drawable drawable,
 			GC gc, int x, int y, String string, int length,
-			int *tabs, XFontStruct *fnt);
+			int *tabs, XFontStruct *fnt, int drawLine);
 extern void	XtabDrawString(Display *display, Drawable drawable, GC gc,
 			int x, int y, String string, int length, int *tabs);
 extern int *	XfwfTablist2Tabs(char *tablist);

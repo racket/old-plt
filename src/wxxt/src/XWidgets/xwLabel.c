@@ -472,7 +472,7 @@ static void realize(self,mask,attributes)Widget self;XtValueMask * mask;XSetWind
 			     rend, to - rend, ((XfwfLabelWidget)self)->xfwfLabel.tabs, ((XfwfLabelWidget)self)->xfwfLabel.font);\
  	if (w4)\
  	    XfwfDrawString(dpy, win, ((XfwfLabelWidget)self)->xfwfLabel.hl_gc, x + w5, y, ((XfwfLabelWidget)self)->xfwfLabel.label\
- 			     + hstart, hend - hstart, ((XfwfLabelWidget)self)->xfwfLabel.tabs, ((XfwfLabelWidget)self)->xfwfLabel.font);\
+ 			     + hstart, hend - hstart, ((XfwfLabelWidget)self)->xfwfLabel.tabs, ((XfwfLabelWidget)self)->xfwfLabel.font, 1);\
     }while (0 )
 
 

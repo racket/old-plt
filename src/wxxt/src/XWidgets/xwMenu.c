@@ -1,4 +1,4 @@
-/* $Id: xwMenu.c,v 1.8 1998/11/12 18:14:46 mflatt Exp $ */
+/* $Id: xwMenu.c,v 1.9 1998/12/05 01:08:21 mflatt Exp $ */
 
 /***********************************************************
 Copyright 1995 by Markus Holzem
@@ -34,6 +34,7 @@ SOFTWARE.
 
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
+#include <X11/keysym.h>
 
 #include <xwMenuP.h>
 #include <xwTools3d.h>
@@ -132,11 +133,13 @@ static Boolean MenuSetValues();
 static void Start();
 static void Drag();
 static void Select();
+static void Key();
 
 static XtActionsRec MenuActionsList [] = {
     {"start",	Start  },
     {"drag",	Drag   },
-    {"select",	Select }
+    {"select",	Select },
+    {"key",	Key }
 };
 
 static char MenuTranslations [] = 
@@ -145,6 +148,7 @@ Button1 <Motion>:	drag()\n\
 Button2 <Motion>:	drag()\n\
 Button3 <Motion>:	drag()\n\
 <BtnUp>:		select()\n\
+<KeyPress>:		key()\n\
 ";
 
 #define SuperClass ((CoreWidgetClass)&coreClassRec)
@@ -502,6 +506,25 @@ static void Select(w, event, params, num_params)
   DoSelect(w, event->xmotion.time, force);
 }
 
+static void Key(w, event, params, num_params)
+    Widget    w;
+    XEvent    *event;
+    String    *params;
+    Cardinal  *num_params;
+{
+  MenuWidget  mw = (MenuWidget)w;
+  XKeyEvent  *ev   = &event->xkey;
+  KeySym	   keysym;
+
+  (void)XLookupString(ev, NULL, 0, &keysym, NULL);
+
+  switch (keysym) {
+  case XK_Right:
+    printf("here\n");
+    break;
+  }
+}
+
 
 /******************************************************************************
  *
@@ -813,7 +836,7 @@ static void DrawTextItem(MenuWidget mw, menu_state *ms, menu_item *item,
 		     mw->menu.normal_GC : mw->menu.inactive_GC,
 		     x+ms->wLeft+extra_x,
 		     y+mw->menu.shadow_width+mw->menu.vmargin+mw->menu.font->ascent,
-		     label, strlen(label), NULL, mw->menu.font);
+		     label, strlen(label), NULL, mw->menu.font, 0);
     if (item->enabled && item->type!=MENU_TEXT)
 	Xaw3dDrawRectangle(
 	    XtDisplay((Widget)mw), ms->win,
@@ -841,7 +864,7 @@ static void DrawButtonItem(MenuWidget mw, menu_state *ms, menu_item *item,
 		     item->enabled ? mw->menu.normal_GC : mw->menu.inactive_GC,
 		     x+ms->wLeft+ms->wMiddle+(3 * mw->menu.spacing),
 		     y+mw->menu.shadow_width+mw->menu.vmargin+mw->menu.font->ascent,
-		     key, strlen(key), NULL, mw->menu.font);
+		     key, strlen(key), NULL, mw->menu.font, 0);
 }
 
 static void DrawRadioItem(MenuWidget mw, menu_state *ms, menu_item *item,

@@ -15,7 +15,7 @@
  *	counterpart.
  */
 static void
-doDrawImageString(display, drawable, gc, x, y, string, length, tabs, font, draw)
+doDrawImageString(display, drawable, gc, x, y, string, length, tabs, font, line, draw)
      Display *display;
      Drawable drawable;
      GC gc;
@@ -25,6 +25,7 @@ doDrawImageString(display, drawable, gc, x, y, string, length, tabs, font, draw)
      int length;
      int *tabs;
      XFontStruct *font;
+     int line;
      void (*draw)();
 {
   register char	*p, *ep, *ap;
@@ -68,7 +69,7 @@ doDrawImageString(display, drawable, gc, x, y, string, length, tabs, font, draw)
 	  int dir, ascent, descent;
 	  draw(display, drawable, gc, x+tx, y, p, 1);
 	  XTextExtents(font, p, 1, &dir, &ascent, &descent, &overall);
-	  if (*p != '&')
+	  if (line && (*p != '&'))
 	    XDrawLine(display, drawable, gc, x+tx, y+1, x+tx+overall.width, y+1);
 	  length -= 1;
 	  p += 1;
@@ -93,11 +94,11 @@ XfwfDrawImageString(display, drawable, gc, x, y, string, length, tabs, fnt)
      int *tabs;
      XFontStruct *fnt;
 {
-  doDrawImageString(display, drawable, gc, x, y, string, length, tabs, fnt, XDrawImageString);
+  doDrawImageString(display, drawable, gc, x, y, string, length, tabs, fnt, 1, XDrawImageString);
 }
 
 void
-XfwfDrawString(display, drawable, gc, x, y, string, length, tabs, fnt)
+XfwfDrawString(display, drawable, gc, x, y, string, length, tabs, fnt, line)
      Display *display;
      Drawable drawable;
      GC gc;
@@ -107,8 +108,9 @@ XfwfDrawString(display, drawable, gc, x, y, string, length, tabs, fnt)
      int length;
      int *tabs;
      XFontStruct *fnt;
+     int line;
 {
-  doDrawImageString(display, drawable, gc, x, y, string, length, tabs, fnt, XDrawString);
+  doDrawImageString(display, drawable, gc, x, y, string, length, tabs, fnt, line, XDrawString);
 }
 
 /*

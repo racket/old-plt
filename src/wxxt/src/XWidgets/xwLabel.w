@@ -1,6 +1,6 @@
 # Version 2.1 for FWF V4.0
 #
-# $Id: xwLabel.w,v 1.2 1998/01/31 01:16:36 mflatt Exp $
+# $Id: xwLabel.w,v 1.3 1998/12/05 01:08:21 mflatt Exp $
 
 @class XfwfLabel (XfwfBoard) @file=xwLabel
 
@@ -325,7 +325,7 @@ the |rv_gc| GC.
 			     rend, to - rend, $tabs, $font);
  	if (w4)
  	    XfwfDrawString(dpy, win, $hl_gc, x + w5, y, $label
- 			     + hstart, hend - hstart, $tabs, $font);
+ 			     + hstart, hend - hstart, $tabs, $font, 1);
     } while (0)
 
 @proc _expose

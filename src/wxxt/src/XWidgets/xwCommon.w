@@ -2,7 +2,7 @@
 # Bert Bos <bert@let.rug.nl>
 # Version 1.2 for FWF V4.0
 #
-# $Id: xwCommon.w,v 1.5 1998/10/16 15:55:58 mflatt Exp $
+# $Id: xwCommon.w,v 1.6 1998/11/09 17:25:08 mflatt Exp $
 
 @class XfwfCommon (Composite)  @file=xwCommon
 
@@ -411,11 +411,16 @@ focus, the parent is asked to give it to another widget.
     Widget parent = XtParent($);
     Time time = CurrentTime;
 
+#if 0
+    /* For MrEd: no focus delegation. If the widget is being destroyed,
+       it can't still have the efefctive focus. (Either the widget is hidden
+       or its parent is hidden.) */
     if ($traversal_focus) {
         $sensitive = False;
         if (XtIsSubclass(parent, xfwfCommonWidgetClass))
             $parent$traverse(parent, TraverseHome, $, &time);
     }
+#endif
 
     XtCallCallbackList($, $onDestroy, NULL);
     if ($bordergc) XtReleaseGC($, $bordergc); $bordergc = NULL;

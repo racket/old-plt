@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Choice.cc,v 1.9 1998/11/17 13:11:47 mflatt Exp $
+ * $Id: Choice.cc,v 1.10 1998/12/05 01:08:21 mflatt Exp $
  *
  * Purpose: choice panel item
  *
@@ -255,14 +255,14 @@ char *wxChoice::GetString(int n)
 {
   char *s = choice_menu->GetLabel(n);
 
-  return s ? unprotect_amp(s) : NULL;
+  return s ? unprotect_amp(s) : (char *)NULL;
 }
 
 char *wxChoice::GetStringSelection(void)
 {
   char *s = choice_menu->GetLabel(selection);
   
-  return s ? unprotect_amp(s) : NULL;
+  return s ? unprotect_amp(s) : (char *)NULL;
 }
 
 void wxChoice::SetSelection(int n)

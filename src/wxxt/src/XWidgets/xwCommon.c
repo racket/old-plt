@@ -3,93 +3,93 @@
  */
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
-#line 1184 "XWidgets/xwCommon.w"
-#include <stdio.h>
-#line 1185 "XWidgets/xwCommon.w"
-#include <ctype.h>
-#line 1186 "XWidgets/xwCommon.w"
-#include <X11/Xmu/Converters.h>
-#line 1187 "XWidgets/xwCommon.w"
-#include <X11/Xmu/CharSet.h>
-#line 1188 "XWidgets/xwCommon.w"
-#include <X11/Shell.h>
 #line 1189 "XWidgets/xwCommon.w"
-#include <X11/keysym.h>
+#include <stdio.h>
 #line 1190 "XWidgets/xwCommon.w"
-#include "wxAllocColor.h"
+#include <ctype.h>
 #line 1191 "XWidgets/xwCommon.w"
+#include <X11/Xmu/Converters.h>
+#line 1192 "XWidgets/xwCommon.w"
+#include <X11/Xmu/CharSet.h>
+#line 1193 "XWidgets/xwCommon.w"
+#include <X11/Shell.h>
+#line 1194 "XWidgets/xwCommon.w"
+#include <X11/keysym.h>
+#line 1195 "XWidgets/xwCommon.w"
+#include "wxAllocColor.h"
+#line 1196 "XWidgets/xwCommon.w"
 #include "wxAllocColor.c"
 #include <./xwCommonP.h>
 #define focus_detail(detail) (detail ==NotifyAncestor ?"NotifyAncestor":detail ==NotifyVirtual ?"NotifyVirtual":detail ==NotifyInferior ?"NotifyInferior":detail ==NotifyNonlinear ?"NotifyNonlinear":detail ==NotifyNonlinearVirtual ?"NotifyNonlinearVirtual":detail ==NotifyPointer ?"NotifyPointer":detail ==NotifyPointerRoot ?"NotifyPointerRoot":detail ==NotifyDetailNone ?"NotifyDetailNone":"???")
 
 
-#line 933 "XWidgets/xwCommon.w"
+#line 938 "XWidgets/xwCommon.w"
 static void focusIn(
 #if NeedFunctionPrototypes
 Widget,XEvent*,String*,Cardinal*
 #endif
 );
-#line 959 "XWidgets/xwCommon.w"
+#line 964 "XWidgets/xwCommon.w"
 static void focusOut(
 #if NeedFunctionPrototypes
 Widget,XEvent*,String*,Cardinal*
 #endif
 );
-#line 974 "XWidgets/xwCommon.w"
+#line 979 "XWidgets/xwCommon.w"
 static void checkTraverse(
 #if NeedFunctionPrototypes
 Widget,XEvent*,String*,Cardinal*
 #endif
 );
-#line 1027 "XWidgets/xwCommon.w"
+#line 1032 "XWidgets/xwCommon.w"
 static void traverseDown(
 #if NeedFunctionPrototypes
 Widget,XEvent*,String*,Cardinal*
 #endif
 );
-#line 1036 "XWidgets/xwCommon.w"
+#line 1041 "XWidgets/xwCommon.w"
 static void traverseUp(
 #if NeedFunctionPrototypes
 Widget,XEvent*,String*,Cardinal*
 #endif
 );
-#line 1045 "XWidgets/xwCommon.w"
+#line 1050 "XWidgets/xwCommon.w"
 static void traverseLeft(
 #if NeedFunctionPrototypes
 Widget,XEvent*,String*,Cardinal*
 #endif
 );
-#line 1054 "XWidgets/xwCommon.w"
+#line 1059 "XWidgets/xwCommon.w"
 static void traverseRight(
 #if NeedFunctionPrototypes
 Widget,XEvent*,String*,Cardinal*
 #endif
 );
-#line 1066 "XWidgets/xwCommon.w"
+#line 1071 "XWidgets/xwCommon.w"
 static void traverseNext(
 #if NeedFunctionPrototypes
 Widget,XEvent*,String*,Cardinal*
 #endif
 );
-#line 1075 "XWidgets/xwCommon.w"
+#line 1080 "XWidgets/xwCommon.w"
 static void traversePrev(
 #if NeedFunctionPrototypes
 Widget,XEvent*,String*,Cardinal*
 #endif
 );
-#line 1086 "XWidgets/xwCommon.w"
+#line 1091 "XWidgets/xwCommon.w"
 static void traverseNextTop(
 #if NeedFunctionPrototypes
 Widget,XEvent*,String*,Cardinal*
 #endif
 );
-#line 1095 "XWidgets/xwCommon.w"
+#line 1100 "XWidgets/xwCommon.w"
 static void traverseHome(
 #if NeedFunctionPrototypes
 Widget,XEvent*,String*,Cardinal*
 #endif
 );
-#line 1105 "XWidgets/xwCommon.w"
+#line 1110 "XWidgets/xwCommon.w"
 static void traverseCurrent(
 #if NeedFunctionPrototypes
 Widget,XEvent*,String*,Cardinal*
@@ -163,61 +163,61 @@ static void destroy(
 Widget
 #endif
 );
-#line 430 "XWidgets/xwCommon.w"
+#line 435 "XWidgets/xwCommon.w"
 static void highlight_border(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 460 "XWidgets/xwCommon.w"
+#line 465 "XWidgets/xwCommon.w"
 static void unhighlight_border(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 485 "XWidgets/xwCommon.w"
+#line 490 "XWidgets/xwCommon.w"
 static Boolean  accept_focus(
 #if NeedFunctionPrototypes
 Widget,Time *
 #endif
 );
-#line 530 "XWidgets/xwCommon.w"
+#line 535 "XWidgets/xwCommon.w"
 static void hilite_callbacks(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 545 "XWidgets/xwCommon.w"
+#line 550 "XWidgets/xwCommon.w"
 static Boolean  would_accept_focus(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 655 "XWidgets/xwCommon.w"
+#line 660 "XWidgets/xwCommon.w"
 static void traverse(
 #if NeedFunctionPrototypes
 Widget,TraversalDirection ,Widget ,Time *
 #endif
 );
-#line 883 "XWidgets/xwCommon.w"
+#line 888 "XWidgets/xwCommon.w"
 static Boolean  lighter_color(
 #if NeedFunctionPrototypes
 Widget,Pixel ,Pixel *
 #endif
 );
-#line 893 "XWidgets/xwCommon.w"
+#line 898 "XWidgets/xwCommon.w"
 static Boolean  darker_color(
 #if NeedFunctionPrototypes
 Widget,Pixel ,Pixel *
 #endif
 );
-#line 903 "XWidgets/xwCommon.w"
+#line 908 "XWidgets/xwCommon.w"
 static Boolean  set_color(
 #if NeedFunctionPrototypes
 Widget,Pixel ,Pixel *
 #endif
 );
-#line 691 "XWidgets/xwCommon.w"
+#line 696 "XWidgets/xwCommon.w"
 #define done(type, value) do {\
         if (to->addr != NULL) {\
             if (to->size < sizeof(type)) {\
@@ -235,58 +235,58 @@ Widget,Pixel ,Pixel *
     }while (0 )
 
 
-#line 708 "XWidgets/xwCommon.w"
+#line 713 "XWidgets/xwCommon.w"
 static Boolean  cvtStringToAlignment(
 #if NeedFunctionPrototypes
 Display *,XrmValuePtr ,Cardinal *,XrmValuePtr ,XrmValuePtr ,XtPointer *
 #endif
 );
-#line 743 "XWidgets/xwCommon.w"
+#line 748 "XWidgets/xwCommon.w"
 static Boolean  cvtAlignmentToString(
 #if NeedFunctionPrototypes
 Display *,XrmValuePtr ,Cardinal *,XrmValuePtr ,XrmValuePtr ,XtPointer *
 #endif
 );
-#line 772 "XWidgets/xwCommon.w"
+#line 777 "XWidgets/xwCommon.w"
 static char  extraTranslations[] = "<Key>: checkTraverse()";;
-#line 774 "XWidgets/xwCommon.w"
+#line 779 "XWidgets/xwCommon.w"
 static char  extraTranslationsSmall[] = "\
         <FocusIn>: focusIn()\n\
         <FocusOut>: focusOut()";;
-#line 786 "XWidgets/xwCommon.w"
+#line 791 "XWidgets/xwCommon.w"
 static Boolean  traverse_to_direction(
 #if NeedFunctionPrototypes
 Widget,TraversalDirection ,int ,int ,Widget *,int *
 #endif
 );
-#line 835 "XWidgets/xwCommon.w"
+#line 840 "XWidgets/xwCommon.w"
 static void traverse_to_next(
 #if NeedFunctionPrototypes
 Widget,Widget ,Time *
 #endif
 );
-#line 852 "XWidgets/xwCommon.w"
+#line 857 "XWidgets/xwCommon.w"
 static void traverse_to_prev(
 #if NeedFunctionPrototypes
 Widget,Widget ,Time *
 #endif
 );
-#line 865 "XWidgets/xwCommon.w"
+#line 870 "XWidgets/xwCommon.w"
 static void traverse_to_next_top(
 #if NeedFunctionPrototypes
 Widget,Widget ,Time *
 #endif
 );
-#line 708 "XWidgets/xwCommon.w"
+#line 713 "XWidgets/xwCommon.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 708 "XWidgets/xwCommon.w"
+#line 713 "XWidgets/xwCommon.w"
 static Boolean  cvtStringToAlignment(Display * display,XrmValuePtr  args,Cardinal * num_args,XrmValuePtr  from,XrmValuePtr  to,XtPointer * converter_data)
 #else
-#line 708 "XWidgets/xwCommon.w"
+#line 713 "XWidgets/xwCommon.w"
 static Boolean  cvtStringToAlignment(display,args,num_args,from,to,converter_data)Display * display;XrmValuePtr  args;Cardinal * num_args;XrmValuePtr  from;XrmValuePtr  to;XtPointer * converter_data;
 #endif
-#line 709 "XWidgets/xwCommon.w"
+#line 714 "XWidgets/xwCommon.w"
 {
     Alignment a = 0;
     char c, *t, *s = (char*) from->addr;
@@ -318,16 +318,16 @@ static Boolean  cvtStringToAlignment(display,args,num_args,from,to,converter_dat
     }
     done(Alignment, a);
 }
-#line 743 "XWidgets/xwCommon.w"
+#line 748 "XWidgets/xwCommon.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 743 "XWidgets/xwCommon.w"
+#line 748 "XWidgets/xwCommon.w"
 static Boolean  cvtAlignmentToString(Display * display,XrmValuePtr  args,Cardinal * num_args,XrmValuePtr  from,XrmValuePtr  to,XtPointer * converter_data)
 #else
-#line 743 "XWidgets/xwCommon.w"
+#line 748 "XWidgets/xwCommon.w"
 static Boolean  cvtAlignmentToString(display,args,num_args,from,to,converter_data)Display * display;XrmValuePtr  args;Cardinal * num_args;XrmValuePtr  from;XrmValuePtr  to;XtPointer * converter_data;
 #endif
-#line 744 "XWidgets/xwCommon.w"
+#line 749 "XWidgets/xwCommon.w"
 {
     Alignment *a = (Alignment*) from->addr;
 
@@ -350,16 +350,16 @@ static Boolean  cvtAlignmentToString(display,args,num_args,from,to,converter_dat
     default: done(String, "unknown");
     }
 }
-#line 786 "XWidgets/xwCommon.w"
+#line 791 "XWidgets/xwCommon.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 786 "XWidgets/xwCommon.w"
+#line 791 "XWidgets/xwCommon.w"
 static Boolean  traverse_to_direction(Widget self,TraversalDirection  dir,int  x,int  y,Widget * found,int * distance)
 #else
-#line 786 "XWidgets/xwCommon.w"
+#line 791 "XWidgets/xwCommon.w"
 static Boolean  traverse_to_direction(self,dir,x,y,found,distance)Widget self;TraversalDirection  dir;int  x;int  y;Widget * found;int * distance;
 #endif
-#line 787 "XWidgets/xwCommon.w"
+#line 792 "XWidgets/xwCommon.w"
 {
     int i;
     Position rx, ry;
@@ -401,16 +401,16 @@ static Boolean  traverse_to_direction(self,dir,x,y,found,distance)Widget self;Tr
     *found = self;
     return True;
 }
-#line 835 "XWidgets/xwCommon.w"
+#line 840 "XWidgets/xwCommon.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 835 "XWidgets/xwCommon.w"
+#line 840 "XWidgets/xwCommon.w"
 static void traverse_to_next(Widget self,Widget  current,Time * time)
 #else
-#line 835 "XWidgets/xwCommon.w"
+#line 840 "XWidgets/xwCommon.w"
 static void traverse_to_next(self,current,time)Widget self;Widget  current;Time * time;
 #endif
-#line 836 "XWidgets/xwCommon.w"
+#line 841 "XWidgets/xwCommon.w"
 {
     int i = 0;
     Widget parent = XtParent(self);
@@ -421,16 +421,16 @@ static void traverse_to_next(self,current,time)Widget self;Widget  current;Time 
     if (XtIsSubclass(parent, xfwfCommonWidgetClass))
         ((XfwfCommonWidgetClass)parent->core.widget_class)->xfwfCommon_class.traverse(parent, TraverseNext, self, time);
 }
-#line 852 "XWidgets/xwCommon.w"
+#line 857 "XWidgets/xwCommon.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 852 "XWidgets/xwCommon.w"
+#line 857 "XWidgets/xwCommon.w"
 static void traverse_to_prev(Widget self,Widget  current,Time * time)
 #else
-#line 852 "XWidgets/xwCommon.w"
+#line 857 "XWidgets/xwCommon.w"
 static void traverse_to_prev(self,current,time)Widget self;Widget  current;Time * time;
 #endif
-#line 853 "XWidgets/xwCommon.w"
+#line 858 "XWidgets/xwCommon.w"
 {
     int i = 0;
     Widget parent = XtParent(self);
@@ -441,16 +441,16 @@ static void traverse_to_prev(self,current,time)Widget self;Widget  current;Time 
     if (XtIsSubclass(parent, xfwfCommonWidgetClass))
         ((XfwfCommonWidgetClass)parent->core.widget_class)->xfwfCommon_class.traverse(parent, TraversePrev, self, time);
 }
-#line 865 "XWidgets/xwCommon.w"
+#line 870 "XWidgets/xwCommon.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 865 "XWidgets/xwCommon.w"
+#line 870 "XWidgets/xwCommon.w"
 static void traverse_to_next_top(Widget self,Widget  current,Time * time)
 #else
-#line 865 "XWidgets/xwCommon.w"
+#line 870 "XWidgets/xwCommon.w"
 static void traverse_to_next_top(self,current,time)Widget self;Widget  current;Time * time;
 #endif
-#line 866 "XWidgets/xwCommon.w"
+#line 871 "XWidgets/xwCommon.w"
 {
     Widget parent = XtParent(self);
 
@@ -546,7 +546,7 @@ set_color,
 };
 WidgetClass xfwfCommonWidgetClass = (WidgetClass) &xfwfCommonClassRec;
 /*ARGSUSED*/
-#line 933 "XWidgets/xwCommon.w"
+#line 938 "XWidgets/xwCommon.w"
 static void focusIn(self,event,params,num_params)Widget self;XEvent*event;String*params;Cardinal*num_params;
 {
     Time time = CurrentTime;
@@ -571,7 +571,7 @@ static void focusIn(self,event,params,num_params)Widget self;XEvent*event;String
 }
 
 /*ARGSUSED*/
-#line 959 "XWidgets/xwCommon.w"
+#line 964 "XWidgets/xwCommon.w"
 static void focusOut(self,event,params,num_params)Widget self;XEvent*event;String*params;Cardinal*num_params;
 {
     if (event->type != FocusOut)
@@ -588,7 +588,7 @@ static void focusOut(self,event,params,num_params)Widget self;XEvent*event;Strin
 }
 
 /*ARGSUSED*/
-#line 974 "XWidgets/xwCommon.w"
+#line 979 "XWidgets/xwCommon.w"
 static void checkTraverse(self,event,params,num_params)Widget self;XEvent*event;String*params;Cardinal*num_params;
 {
   static KeyCode up, down, left, right, next, prior, tab, enter, home;
@@ -638,63 +638,63 @@ static void checkTraverse(self,event,params,num_params)Widget self;XEvent*event;
 }
 
 /*ARGSUSED*/
-#line 1027 "XWidgets/xwCommon.w"
+#line 1032 "XWidgets/xwCommon.w"
 static void traverseDown(self,event,params,num_params)Widget self;XEvent*event;String*params;Cardinal*num_params;
 {
     ((XfwfCommonWidgetClass)self->core.widget_class)->xfwfCommon_class.traverse(self, TraverseDown, self, &event->xkey.time);
 }
 
 /*ARGSUSED*/
-#line 1036 "XWidgets/xwCommon.w"
+#line 1041 "XWidgets/xwCommon.w"
 static void traverseUp(self,event,params,num_params)Widget self;XEvent*event;String*params;Cardinal*num_params;
 {
     ((XfwfCommonWidgetClass)self->core.widget_class)->xfwfCommon_class.traverse(self, TraverseUp, self, &event->xkey.time);
 }
 
 /*ARGSUSED*/
-#line 1045 "XWidgets/xwCommon.w"
+#line 1050 "XWidgets/xwCommon.w"
 static void traverseLeft(self,event,params,num_params)Widget self;XEvent*event;String*params;Cardinal*num_params;
 {
     ((XfwfCommonWidgetClass)self->core.widget_class)->xfwfCommon_class.traverse(self, TraverseLeft, self, &event->xkey.time);
 }
 
 /*ARGSUSED*/
-#line 1054 "XWidgets/xwCommon.w"
+#line 1059 "XWidgets/xwCommon.w"
 static void traverseRight(self,event,params,num_params)Widget self;XEvent*event;String*params;Cardinal*num_params;
 {
     ((XfwfCommonWidgetClass)self->core.widget_class)->xfwfCommon_class.traverse(self, TraverseRight, self, &event->xkey.time);
 }
 
 /*ARGSUSED*/
-#line 1066 "XWidgets/xwCommon.w"
+#line 1071 "XWidgets/xwCommon.w"
 static void traverseNext(self,event,params,num_params)Widget self;XEvent*event;String*params;Cardinal*num_params;
 {
     ((XfwfCommonWidgetClass)self->core.widget_class)->xfwfCommon_class.traverse(self, TraverseNext, self, &event->xkey.time);
 }
 
 /*ARGSUSED*/
-#line 1075 "XWidgets/xwCommon.w"
+#line 1080 "XWidgets/xwCommon.w"
 static void traversePrev(self,event,params,num_params)Widget self;XEvent*event;String*params;Cardinal*num_params;
 {
     ((XfwfCommonWidgetClass)self->core.widget_class)->xfwfCommon_class.traverse(self, TraversePrev, self, &event->xkey.time);
 }
 
 /*ARGSUSED*/
-#line 1086 "XWidgets/xwCommon.w"
+#line 1091 "XWidgets/xwCommon.w"
 static void traverseNextTop(self,event,params,num_params)Widget self;XEvent*event;String*params;Cardinal*num_params;
 {
     ((XfwfCommonWidgetClass)self->core.widget_class)->xfwfCommon_class.traverse(self, TraverseNextTop, self, &event->xkey.time);
 }
 
 /*ARGSUSED*/
-#line 1095 "XWidgets/xwCommon.w"
+#line 1100 "XWidgets/xwCommon.w"
 static void traverseHome(self,event,params,num_params)Widget self;XEvent*event;String*params;Cardinal*num_params;
 {
     ((XfwfCommonWidgetClass)self->core.widget_class)->xfwfCommon_class.traverse(self, TraverseHome, self, &event->xkey.time);
 }
 
 /*ARGSUSED*/
-#line 1105 "XWidgets/xwCommon.w"
+#line 1110 "XWidgets/xwCommon.w"
 static void traverseCurrent(self,event,params,num_params)Widget self;XEvent*event;String*params;Cardinal*num_params;
 {
     Time time = CurrentTime;
@@ -915,25 +915,30 @@ static void destroy(self)Widget self;
     Widget parent = XtParent(self);
     Time time = CurrentTime;
 
+#if 0
+    /* For MrEd: no focus delegation. If the widget is being destroyed,
+       it can't still have the efefctive focus. (Either the widget is hidden
+       or its parent is hidden.) */
     if (((XfwfCommonWidget)self)->xfwfCommon.traversal_focus) {
         ((XfwfCommonWidget)self)->core.sensitive = False;
         if (XtIsSubclass(parent, xfwfCommonWidgetClass))
             ((XfwfCommonWidgetClass)parent->core.widget_class)->xfwfCommon_class.traverse(parent, TraverseHome, self, &time);
     }
+#endif
 
     XtCallCallbackList(self, ((XfwfCommonWidget)self)->xfwfCommon.onDestroy, NULL);
     if (((XfwfCommonWidget)self)->xfwfCommon.bordergc) XtReleaseGC(self, ((XfwfCommonWidget)self)->xfwfCommon.bordergc); ((XfwfCommonWidget)self)->xfwfCommon.bordergc = NULL;
 }
-#line 430 "XWidgets/xwCommon.w"
+#line 435 "XWidgets/xwCommon.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 430 "XWidgets/xwCommon.w"
+#line 435 "XWidgets/xwCommon.w"
 static void highlight_border(Widget self)
 #else
-#line 430 "XWidgets/xwCommon.w"
+#line 435 "XWidgets/xwCommon.w"
 static void highlight_border(self)Widget self;
 #endif
-#line 431 "XWidgets/xwCommon.w"
+#line 436 "XWidgets/xwCommon.w"
 {
     XRectangle rect[4];
 
@@ -962,16 +967,16 @@ static void highlight_border(self)Widget self;
     if (!((XfwfCommonWidget)self)->xfwfCommon.bordergc) create_bordergc(self);
     XFillRectangles(XtDisplay(self), XtWindow(self), ((XfwfCommonWidget)self)->xfwfCommon.bordergc, &rect[0], 4);
 }
-#line 460 "XWidgets/xwCommon.w"
+#line 465 "XWidgets/xwCommon.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 460 "XWidgets/xwCommon.w"
+#line 465 "XWidgets/xwCommon.w"
 static void unhighlight_border(Widget self)
 #else
-#line 460 "XWidgets/xwCommon.w"
+#line 465 "XWidgets/xwCommon.w"
 static void unhighlight_border(self)Widget self;
 #endif
-#line 461 "XWidgets/xwCommon.w"
+#line 466 "XWidgets/xwCommon.w"
 {
     if (((XfwfCommonWidget)self)->xfwfCommon.highlightThickness == 0) return;
 
@@ -986,16 +991,16 @@ static void unhighlight_border(self)Widget self;
                0, ((XfwfCommonWidget)self)->core.height - ((XfwfCommonWidget)self)->xfwfCommon.highlightThickness,
                ((XfwfCommonWidget)self)->core.width, ((XfwfCommonWidget)self)->xfwfCommon.highlightThickness, False);
 }
-#line 485 "XWidgets/xwCommon.w"
+#line 490 "XWidgets/xwCommon.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 485 "XWidgets/xwCommon.w"
+#line 490 "XWidgets/xwCommon.w"
 static Boolean  accept_focus(Widget self,Time * time)
 #else
-#line 485 "XWidgets/xwCommon.w"
+#line 490 "XWidgets/xwCommon.w"
 static Boolean  accept_focus(self,time)Widget self;Time * time;
 #endif
-#line 486 "XWidgets/xwCommon.w"
+#line 491 "XWidgets/xwCommon.w"
 {
     int i;
 
@@ -1038,16 +1043,16 @@ static Boolean  accept_focus(self,time)Widget self;Time * time;
     }
     return True;
 }
-#line 530 "XWidgets/xwCommon.w"
+#line 535 "XWidgets/xwCommon.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 530 "XWidgets/xwCommon.w"
+#line 535 "XWidgets/xwCommon.w"
 static void hilite_callbacks(Widget self)
 #else
-#line 530 "XWidgets/xwCommon.w"
+#line 535 "XWidgets/xwCommon.w"
 static void hilite_callbacks(self)Widget self;
 #endif
-#line 531 "XWidgets/xwCommon.w"
+#line 536 "XWidgets/xwCommon.w"
 {
   XtPointer on = (XtPointer)(long)((XfwfCommonWidget)self)->xfwfCommon.traversal_focus;
 
@@ -1057,16 +1062,16 @@ static void hilite_callbacks(self)Widget self;
   if (self && XtIsSubclass(self, xfwfCommonWidgetClass))
     XtCallCallbackList(self, ((XfwfCommonWidget)self)->xfwfCommon.focusHiliteChange, on);
 }
-#line 545 "XWidgets/xwCommon.w"
+#line 550 "XWidgets/xwCommon.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 545 "XWidgets/xwCommon.w"
+#line 550 "XWidgets/xwCommon.w"
 static Boolean  would_accept_focus(Widget self)
 #else
-#line 545 "XWidgets/xwCommon.w"
+#line 550 "XWidgets/xwCommon.w"
 static Boolean  would_accept_focus(self)Widget self;
 #endif
-#line 546 "XWidgets/xwCommon.w"
+#line 551 "XWidgets/xwCommon.w"
 {
     int i;
     Widget child;
@@ -1086,16 +1091,16 @@ static Boolean  would_accept_focus(self)Widget self;
 #define LARGE_NUMBER 2000000000 
 
 
-#line 655 "XWidgets/xwCommon.w"
+#line 660 "XWidgets/xwCommon.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 655 "XWidgets/xwCommon.w"
+#line 660 "XWidgets/xwCommon.w"
 static void traverse(Widget self,TraversalDirection  dir,Widget  current,Time * time)
 #else
-#line 655 "XWidgets/xwCommon.w"
+#line 660 "XWidgets/xwCommon.w"
 static void traverse(self,dir,current,time)Widget self;TraversalDirection  dir;Widget  current;Time * time;
 #endif
-#line 656 "XWidgets/xwCommon.w"
+#line 661 "XWidgets/xwCommon.w"
 {
     Widget w, parent = XtParent(self);
     Position x, y;
@@ -1123,42 +1128,42 @@ static void traverse(self,dir,current,time)Widget self;TraversalDirection  dir;W
             XtCallAcceptFocus(w, time);
     }
 }
-#line 883 "XWidgets/xwCommon.w"
+#line 888 "XWidgets/xwCommon.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 883 "XWidgets/xwCommon.w"
+#line 888 "XWidgets/xwCommon.w"
 static Boolean  lighter_color(Widget self,Pixel  base,Pixel * result)
 #else
-#line 883 "XWidgets/xwCommon.w"
+#line 888 "XWidgets/xwCommon.w"
 static Boolean  lighter_color(self,base,result)Widget self;Pixel  base;Pixel * result;
 #endif
-#line 884 "XWidgets/xwCommon.w"
+#line 889 "XWidgets/xwCommon.w"
 {
   return get_scaled_color(self, 1.35, base, result);
 }
-#line 893 "XWidgets/xwCommon.w"
+#line 898 "XWidgets/xwCommon.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 893 "XWidgets/xwCommon.w"
+#line 898 "XWidgets/xwCommon.w"
 static Boolean  darker_color(Widget self,Pixel  base,Pixel * result)
 #else
-#line 893 "XWidgets/xwCommon.w"
+#line 898 "XWidgets/xwCommon.w"
 static Boolean  darker_color(self,base,result)Widget self;Pixel  base;Pixel * result;
 #endif
-#line 894 "XWidgets/xwCommon.w"
+#line 899 "XWidgets/xwCommon.w"
 {
   return get_scaled_color(self, 0.6, base, result);
 }
-#line 903 "XWidgets/xwCommon.w"
+#line 908 "XWidgets/xwCommon.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 903 "XWidgets/xwCommon.w"
+#line 908 "XWidgets/xwCommon.w"
 static Boolean  set_color(Widget self,Pixel  base,Pixel * result)
 #else
-#line 903 "XWidgets/xwCommon.w"
+#line 908 "XWidgets/xwCommon.w"
 static Boolean  set_color(self,base,result)Widget self;Pixel  base;Pixel * result;
 #endif
-#line 904 "XWidgets/xwCommon.w"
+#line 909 "XWidgets/xwCommon.w"
 {
   return get_scaled_color(self, 0.85, base, result);
 }
@@ -1266,16 +1271,16 @@ void XfwfCallExpose(self,event,region)Widget self;XEvent * event;Region  region;
     if (XtIsSubclass(self, xfwfCommonWidgetClass) && ((XfwfCommonWidgetClass)self->core.widget_class)->xfwfCommon_class._expose)
         ((XfwfCommonWidgetClass)self->core.widget_class)->xfwfCommon_class._expose(self, event, region);
 }
-#line 1118 "XWidgets/xwCommon.w"
+#line 1123 "XWidgets/xwCommon.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 1118 "XWidgets/xwCommon.w"
+#line 1123 "XWidgets/xwCommon.w"
 void create_bordergc(Widget self)
 #else
-#line 1118 "XWidgets/xwCommon.w"
+#line 1123 "XWidgets/xwCommon.w"
 void create_bordergc(self)Widget self;
 #endif
-#line 1119 "XWidgets/xwCommon.w"
+#line 1124 "XWidgets/xwCommon.w"
 {
     XtGCMask mask;
     XGCValues values;
@@ -1292,16 +1297,16 @@ void create_bordergc(self)Widget self;
     }
     ((XfwfCommonWidget)self)->xfwfCommon.bordergc = XtGetGC(self, mask, &values);
 }
-#line 1136 "XWidgets/xwCommon.w"
+#line 1141 "XWidgets/xwCommon.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 1136 "XWidgets/xwCommon.w"
+#line 1141 "XWidgets/xwCommon.w"
 Boolean  get_scaled_color(Widget self,float  scale,Pixel  base,Pixel * result)
 #else
-#line 1136 "XWidgets/xwCommon.w"
+#line 1141 "XWidgets/xwCommon.w"
 Boolean  get_scaled_color(self,scale,base,result)Widget self;float  scale;Pixel  base;Pixel * result;
 #endif
-#line 1137 "XWidgets/xwCommon.w"
+#line 1142 "XWidgets/xwCommon.w"
 {
   /* These two must be mutually prime: */
 #define CACHE_SIZE 29
@@ -1341,16 +1346,16 @@ Boolean  get_scaled_color(self,scale,base,result)Widget self;float  scale;Pixel 
 
   return TRUE;
 }
-#line 1177 "XWidgets/xwCommon.w"
+#line 1182 "XWidgets/xwCommon.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 1177 "XWidgets/xwCommon.w"
+#line 1182 "XWidgets/xwCommon.w"
 Boolean  has_focus_now(Widget self)
 #else
-#line 1177 "XWidgets/xwCommon.w"
+#line 1182 "XWidgets/xwCommon.w"
 Boolean  has_focus_now(self)Widget self;
 #endif
-#line 1178 "XWidgets/xwCommon.w"
+#line 1183 "XWidgets/xwCommon.w"
 {
   return ((XfwfCommonWidget)self)->xfwfCommon.traversal_focus;
 }

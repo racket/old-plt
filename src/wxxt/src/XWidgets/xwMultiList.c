@@ -1138,7 +1138,7 @@ int row,column;
 		XfwfDrawString(XtDisplay(mlw),XtWindow(mlw),fg_gc,
 			       str_x,str_y,MultiListItemString(item),
 			       strlen(MultiListItemString(item)),
-			       MultiListTabs(mlw), NULL);
+			       MultiListTabs(mlw), NULL, 0);
 	}
 } /* End RedrawRowColumn */
 	

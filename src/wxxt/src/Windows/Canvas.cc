@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Canvas.cc,v 1.4 1998/09/20 21:48:49 mflatt Exp $
+ * $Id: Canvas.cc,v 1.5 1998/11/17 20:22:39 mflatt Exp $
  *
  * Purpose: canvas panel item
  *
@@ -156,6 +156,39 @@ void wxCanvas::Scroll(int x_pos, int y_pos)
   }
 }
 
+void wxCanvas::ScrollPercent(float x, float y)
+{
+  if (misc_flags & 8) {
+    /* Not managing  - do nothing */
+  } else {
+    /* Managing */
+    int xp, yp, vw, vh, cw, ch;
+    GetVirtualSize(&vw, &vh);
+    GetClientSize(&cw, &ch);
+
+    if (vw > cw)
+      vw -= cw;
+    else
+      vw = 0;
+    if (vh > ch)
+      vh -= ch;
+    else
+      vh = 0;
+
+    if (x >= 0)
+      xp = (int)floor(x * vw);
+    else
+      xp = -1;
+    
+    if (y >= 0)
+      yp = (int)floor(y * vh);
+    else
+      yp = -1;
+    
+    wxItem::Scroll(xp, yp);
+  }
+}
+
 void wxCanvas::SetScrollbars(int h_pixels, int v_pixels, int x_len, int y_len,
 			     int x_page, int y_page, int x_pos, int y_pos,
 			     Bool setVirtualSize)
@@ -207,7 +240,7 @@ void wxCanvas::SetScrollbars(int h_pixels, int v_pixels, int x_len, int y_len,
 
       XtSetValues(X->handle, a, 4);
 
-      Scroll(x_pos, y_pos);
+      wxItem::Scroll(x_pos, y_pos);
       // set scroll steps of scrollbars
       if (X->scroll) {
 	XtVaSetValues(X->scroll,

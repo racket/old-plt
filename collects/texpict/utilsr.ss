@@ -208,21 +208,44 @@
 	 (send dc set-pen p)))
      w h 0 0))
 
+  (define (-add-line base src find-src dest find-dest thickness color arrow-size)
+    (let-values ([(sx sy) (find-src base src)]
+		 [(dx dy) (find-dest base dest)])
+      (cc-superimpose
+       base
+       (let ([p (cons-picture
+		 (ghost (launder base))
+		 `((connect ,sx ,sy ,dx ,dy)
+		   ,@(if arrow-size
+			 (let-values ([(arrow xo yo)
+				       (arrowhead/delta 
+					arrow-size 
+					(atan (- dy sy) 
+					      (- dx sx)))])
+			   `((place ,(+ dx xo) ,(+ dy yo) ,arrow)))
+			 null)))])
+	 (let ([p2 (if thickness
+		       (linewidth thickness p)
+		       p)])
+	   (if color
+	       (colorize p2 color)
+	       p2))))))
+
   (define add-line
     (case-lambda
      [(base src find-src dest find-dest)
-      (add-line base src find-src dest find-dest #f)]
+      (add-line base src find-src dest find-dest #f #f)]
      [(base src find-src dest find-dest thickness)
-      (let-values ([(sx sy) (find-src base src)]
-		   [(dx dy) (find-dest base dest)])
-	(cc-superimpose
-	 base
-	 (let ([p (cons-picture
-		   (ghost (launder base))
-		   `((connect ,sx ,sy ,dx ,dy)))])
-	   (if thickness
-	       (linewidth thickness p)
-	       p))))]))
-	 
+      (add-line base src find-src dest find-dest thickness #f)]
+     [(base src find-src dest find-dest thickness color)
+      (-add-line base src find-src dest find-dest thickness color #f)]))
 
+  (define add-arrow-line
+    (case-lambda
+     [(arrow-size base src find-src dest find-dest)
+      (add-arrow-line arrow-size base src find-src dest find-dest #f #f)]
+     [(arrow-size base src find-src dest find-dest thickness)
+      (add-arrow-line arrow-size base src find-src dest find-dest thickness #f)]
+     [(arrow-size base src find-src dest find-dest thickness color)
+      (-add-line base src find-src dest find-dest thickness color arrow-size)]))
   )

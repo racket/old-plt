@@ -16,4 +16,5 @@
    cloud
    file-icon
 
-   add-line))
+   add-line
+   add-arrow-line))

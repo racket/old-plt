@@ -3140,8 +3140,7 @@ static Scheme_Object *udp_recv(const char *name, int argc, Scheme_Object *argv[]
   while (1) {
     if (udp->s == INVALID_SOCKET) {
       /* socket was closed, maybe while we slept */
-      scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
-		       (Scheme_Object *)udp,
+      scheme_raise_exn(MZEXN_I_O_UDP,
 		       "%s: udp socket is closed: %V",
 		       name, udp);
       return NULL;

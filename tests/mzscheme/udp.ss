@@ -142,3 +142,23 @@
 (err/rt-test (udp-receive!* udp1 (make-string 10) 12) exn:application:mismatch?)
 (err/rt-test (udp-receive!* udp1 (make-string 10) 2 12) exn:application:mismatch?)
 (err/rt-test (udp-receive!* udp1 (make-string 10) 2 0) exn:application:mismatch?)
+
+
+(test (void) udp-close udp1)
+(test (void) udp-close udp2)
+
+;; udp1 is now closed...
+(err/rt-test (udp-bind! udp1 "localhost" 40008) exn:i/o:udp?)
+(err/rt-test (udp-connect! udp1 "localhost" 40007) exn:i/o:udp?)
+(err/rt-test (udp-send-to udp1 "localhost" 40000 "hello") exn:i/o:udp?)
+(err/rt-test (udp-send udp1 "hello") exn:i/o:udp?)
+(err/rt-test (udp-receive! udp1 (make-string 10)) exn:i/o:udp?)
+(err/rt-test (udp-close udp1) exn:i/o:udp?)
+
+;; Can stil get waitable after closed:
+(test #t object-waitable? (udp->send-waitable udp1))
+(test #t object-waitable? (udp->receive-waitable udp1))
+(let ([w (udp->send-waitable udp1)])
+  (test w object-wait-multiple #f w))
+(let ([w (udp->receive-waitable udp1)])
+  (test w object-wait-multiple #f w))

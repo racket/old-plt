@@ -1,4 +1,14 @@
 
+Version 203.3
+Added UDP operations
+Added literal hashtable syntax #hash..., added support
+ for immutable hash tables, and added print-hash-table
+ parameter
+Added literal regexp syntax #rx... and changed the printer
+ to use this notation for printing regexps
+Added port-file-identity
+Fixed MzLib's regexp-split, etc., to work on input ports
+
 Version 203.1
 Changed equal? to compare hash tables by determining whether
  they map the same keys to equal? values

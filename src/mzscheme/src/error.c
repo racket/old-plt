@@ -74,6 +74,7 @@ static void default_printf(char *msg, ...)
   va_start(args, msg);
   vfprintf(stderr, msg, args);
   va_end(args);
+  fflush(stderr);
 }
 
 void scheme_init_error_escape_proc(Scheme_Process *p)

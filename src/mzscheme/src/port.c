@@ -255,6 +255,10 @@ Scheme_Object *scheme_orig_stdout_port;
 Scheme_Object *scheme_orig_stderr_port;
 Scheme_Object *scheme_orig_stdin_port;
 Scheme_Object *scheme_write_proc, *scheme_display_proc, *scheme_print_proc;
+#ifdef USE_FD_PORTS
+static int orig_stdout_fd_flags;
+static int orig_stderr_fd_flags;
+#endif
 
 Scheme_Object *(*scheme_make_stdin)(void) = NULL;
 Scheme_Object *(*scheme_make_stdout)(void) = NULL;
@@ -3156,6 +3160,7 @@ Scheme_Object *
 make_fd_output_port(int fd)
 {
   Scheme_FD *fop;
+  int old_flags;
 
   fop = MALLOC_ONE_RT(Scheme_FD);
 #ifdef MZTAG_REQUIRED
@@ -3166,7 +3171,23 @@ make_fd_output_port(int fd)
   fop->bufcount = 0;
 
   /* Make output non-blocking: */
-  fcntl(fd, F_SETFL, FD_NONBLOCKING);
+  old_flags = fcntl(fd, F_GETFL, 0);
+  fcntl(fd, F_SETFL, old_flags | FD_NONBLOCKING);
+
+  if (old_flags & FD_NONBLOCKING)
+    printf("Already non-blocking: %d\n", fd);
+
+  /* Rememebr original flags, in case we spawn a synchronous child: */
+  switch (fd) {
+  case 1:
+    orig_stdout_fd_flags = old_flags;
+    break;
+  case 2:
+    orig_stderr_fd_flags = old_flags;
+    break;
+  default:
+    break;
+  }
 
   return (Scheme_Object *)scheme_make_output_port(fd_output_port_type,
 						  fop,
@@ -5282,7 +5303,7 @@ static long spawnv(int type, char *command, const char *  const *argv)
 
   for (i = 0; argv[i]; i++);
 
-  p->t = load_image(i, (char **)argv, NULL environ);
+  p->t = load_image(i, (char **)argv, NULL, environ);
   
   if (p->t <= 0)
     return -1;
@@ -5491,6 +5512,10 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
       return scheme_void;
   }
 #else
+  /* Unix version: */
+  if (synchonous)
+    flush_orig_outputs();
+
   if (as_child || !def_exit_on) {
     sigset_t sigs;
 
@@ -5559,6 +5584,15 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
 	MSC_IZE(close)(from_subprocess[1]);
 	MSC_IZE(close)(err_subprocess[0]);
 	MSC_IZE(close)(err_subprocess[1]);
+      } else {
+#ifdef USE_FD_PORTS
+	/* Reset stdout and stderr to original flags: */
+	fcntl(1, F_SETFL, orig_stdout_fd_flags);
+	fcntl(2, F_SETFL, orig_stderr_fd_flags);
+	printf("Resetting %x %x, %x %x\n",
+	       orig_stdout_fd_flags, fcntl(1, F_GETFL, 0),
+	       orig_stderr_fd_flags, fcntl(2, F_GETFL, 0));
+#endif
       }
       
       /* Set real CWD */
@@ -5576,8 +5610,14 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
 
 	if (as_child || !def_exit_on || !v)
 	  _exit(v);
-	else
+	else {
+#ifdef USE_FD_PORTS
+	  /* stdut and stderr back to non-blocking: */
+	  fcntl(1, F_SETFL, orig_stdout_fd_flags | FD_NONBLOCKING);
+	  fcntl(2, F_SETFL, orig_stderr_fd_flags | FD_NONBLOCKING);
+#endif
 	  return scheme_void;
+	}
       } else {
 	int err;
 
@@ -5587,8 +5627,14 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
 
 	if (as_child || !def_exit_on)
 	  _exit(err ? err : -1);
-	else
+	else {
+#ifdef USE_FD_PORTS
+	  /* stdut and stderr back to non-blocking: */
+	  fcntl(1, F_SETFL, orig_stdout_fd_flags | FD_NONBLOCKING);
+	  fcntl(2, F_SETFL, orig_stderr_fd_flags | FD_NONBLOCKING);
+#endif
 	  return scheme_void;
+	}
       }
 
     default: /* parent */

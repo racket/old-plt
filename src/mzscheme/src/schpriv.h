@@ -276,6 +276,8 @@ void scheme_clean_list_stack(Scheme_Thread *p);
 void *scheme_win32_get_break_semaphore(void *th);
 #endif
 
+Scheme_Object *scheme_get_thread_dead(Scheme_Thread *p);
+
 void scheme_zero_unneeded_rands(Scheme_Thread *p);
 
 int scheme_can_break(Scheme_Thread *p, Scheme_Config *config);
@@ -927,6 +929,7 @@ typedef struct Waiting {
 } Waiting;
 
 int scheme_wait_semas_chs(int n, Scheme_Object **o, int just_try, Waiting *waiting);
+Scheme_Object *scheme_make_sema_repost(Scheme_Object *sema);
 
 /*========================================================================*/
 /*                                 numbers                                */

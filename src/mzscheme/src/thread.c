@@ -3368,13 +3368,14 @@ static int resume_suspend_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo)
 
 static Scheme_Object *make_thread_dead(int argc, Scheme_Object *argv[])
 {
-  Scheme_Thread *p;
-
   if (!SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_thread_type))
     scheme_wrong_type("thread-resume-waitable", "thread", 0, argc, argv);
 
-  p = (Scheme_Thread *)argv[0];
+  return scheme_get_thread_dead((Scheme_Thread *)argv[0]);
+}
 
+Scheme_Object *scheme_get_thread_dead(Scheme_Thread *p)
+{
   if (!p->dead_box) {
     Scheme_Object *b;
     Scheme_Object *sema;
@@ -3503,6 +3504,7 @@ static Waiting *make_waiting(Waitable_Set *waitable_set, float timeout, long sta
 static void *splice_ptr_array(void **a, int al, void **b, int bl, int i)
 {
   void **r;
+  int j;
   
   r = MALLOC_N(void*, al + bl - 1);
 
@@ -3510,6 +3512,11 @@ static void *splice_ptr_array(void **a, int al, void **b, int bl, int i)
     memcpy(r, a, i * sizeof(void*));
   if (b)
     memcpy(r + i, b, bl * sizeof(void*));
+  else {
+    for (j = 0; j < bl; j++) {
+      r[i+j] = a[i];
+    }
+  }
   if (a)
     memcpy(r + (i + bl), a + (i + 1), (al - i - 1) * sizeof(void*));
 
@@ -3854,7 +3861,7 @@ static void post_waiting_nacks(Waiting *waiting)
 	l = waiting->nackss[i];
 	if (l) {
 	  for (; SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {
-	    scheme_post_sema(SCHEME_CAR(l));
+	    scheme_post_sema_all(SCHEME_CAR(l));
 	  }
 	}
       }

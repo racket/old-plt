@@ -53,7 +53,7 @@ typedef struct {
   Scheme_Type type;
   MZ_HASH_KEY_EX
   Scheme_Object *maker;
-} Nack_Waitable;
+} Nack_Guard_Waitable;
 
 static Scheme_Object *make_inspector(int argc, Scheme_Object *argv[]);
 static Scheme_Object *inspector_p(int argc, Scheme_Object *argv[]);
@@ -97,6 +97,7 @@ static int waitable_struct_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinf
 static int is_waitable_struct(Scheme_Object *);
 
 static int wrapped_waitable_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo);
+static int nack_guard_waitable_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo);
 static int nack_waitable_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo);
 static int poll_waitable_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo);
 
@@ -205,6 +206,9 @@ scheme_init_struct (Scheme_Env *env)
 
   scheme_add_waitable(scheme_wrapped_waitable_type,
 		      (Scheme_Ready_Fun)wrapped_waitable_is_ready,
+		      NULL, NULL, 1);
+  scheme_add_waitable(scheme_nack_guard_waitable_type,
+		      (Scheme_Ready_Fun)nack_guard_waitable_is_ready,
 		      NULL, NULL, 1);
   scheme_add_waitable(scheme_nack_waitable_type,
 		      (Scheme_Ready_Fun)nack_waitable_is_ready,
@@ -1292,12 +1296,12 @@ static Scheme_Object *wrap_waitable(int argc, Scheme_Object *argv[])
 
 static Scheme_Object *nack_waitable(int argc, Scheme_Object *argv[])
 {
-  Nack_Waitable *nw;
+  Nack_Guard_Waitable *nw;
 
   scheme_check_proc_arity("make-nack-guard-waitable", 1, 0, argc, argv);
 
-  nw = MALLOC_ONE_TAGGED(Nack_Waitable);
-  nw->type = scheme_nack_waitable_type;
+  nw = MALLOC_ONE_TAGGED(Nack_Guard_Waitable);
+  nw->type = scheme_nack_guard_waitable_type;
   nw->maker = argv[0];
 
   return (Scheme_Object *)nw;
@@ -1305,11 +1309,11 @@ static Scheme_Object *nack_waitable(int argc, Scheme_Object *argv[])
 
 static Scheme_Object *poll_waitable(int argc, Scheme_Object *argv[])
 {
-  Nack_Waitable *nw;
+  Nack_Guard_Waitable *nw;
 
   scheme_check_proc_arity("make-poll-guard-waitable", 1, 0, argc, argv);
 
-  nw = MALLOC_ONE_TAGGED(Nack_Waitable);
+  nw = MALLOC_ONE_TAGGED(Nack_Guard_Waitable);
   nw->type = scheme_poll_waitable_type;
   nw->maker = argv[0];
 
@@ -1324,10 +1328,11 @@ static int wrapped_waitable_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sin
   return 0;
 }
 
-static int nack_waitable_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo)
+static int nack_guard_waitable_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo)
 {
-  Nack_Waitable *nw = (Nack_Waitable *)o;
+  Nack_Guard_Waitable *nw = (Nack_Guard_Waitable *)o;
   Scheme_Object *sema, *a[1], *result;
+  Scheme_Object *nack;
 
   if (sinfo->false_positive_ok) {
     sinfo->potentially_false_positive = 1;
@@ -1341,7 +1346,14 @@ static int nack_waitable_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo)
      to run the maker. */
   scheme_set_wait_target(sinfo, o, NULL, sema, 0, 0);
 
-  a[0] = sema;
+  /* Remember both the sema and the current thread's dead waitable: */
+  nack = scheme_alloc_object();
+  nack->type = scheme_nack_waitable_type;
+  SCHEME_PTR1_VAL(nack) = sema;
+  result = scheme_get_thread_dead(scheme_current_thread);
+  SCHEME_PTR2_VAL(nack) = result;
+
+  a[0] = nack;
   result = scheme_apply(nw->maker, 1, a);
 
   if (scheme_is_waitable(result)) {
@@ -1351,9 +1363,28 @@ static int nack_waitable_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo)
     return 1; /* Non-waitable => ready */
 }
 
+static int nack_waitable_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo)
+{
+  Scheme_Object *a[2], *wset;
+
+  wset = SCHEME_PTR1_VAL(o);
+  /* Lazily construct a waitable set: */
+  if (SCHEME_SEMAP(wset)) {
+    a[0] = wset;
+    a[1] = SCHEME_PTR2_VAL(o);
+    wset = scheme_make_waitable_set(2, a);
+    SCHEME_PTR1_VAL(o) = wset;
+  }
+
+  /* Redirect to the set, and wrap with void: */
+  scheme_set_wait_target(sinfo, wset, scheme_void, NULL, 0, 1);
+
+  return 0;
+}
+
 static int poll_waitable_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo)
 {
-  Nack_Waitable *nw = (Nack_Waitable *)o;
+  Nack_Guard_Waitable *nw = (Nack_Guard_Waitable *)o;
   Scheme_Object *a[1], *result;
 
   if (sinfo->false_positive_ok) {
@@ -2284,8 +2315,8 @@ static void register_traversers(void)
   GC_REG_TRAV(scheme_inspector_type, mark_inspector);
 
   GC_REG_TRAV(scheme_wrapped_waitable_type, mark_wrapped_waitable);
-  GC_REG_TRAV(scheme_nack_waitable_type, mark_nack_waitable);
-  GC_REG_TRAV(scheme_poll_waitable_type, mark_nack_waitable);
+  GC_REG_TRAV(scheme_nack_guard_waitable_type, mark_nack_guard_waitable);
+  GC_REG_TRAV(scheme_poll_waitable_type, mark_nack_guard_waitable);
 
   GC_REG_TRAV(scheme_rt_struct_proc_info, mark_struct_proc_info);
 }

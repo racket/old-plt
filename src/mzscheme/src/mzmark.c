@@ -3836,12 +3836,12 @@ int mark_wrapped_waitable_FIXUP(void *p) {
 #define mark_wrapped_waitable_IS_CONST_SIZE 1
 
 
-int mark_nack_waitable_SIZE(void *p) {
+int mark_nack_guard_waitable_SIZE(void *p) {
   return
   gcBYTES_TO_WORDS(sizeof(Nack_Waitable));
 }
 
-int mark_nack_waitable_MARK(void *p) {
+int mark_nack_guard_waitable_MARK(void *p) {
   Nack_Waitable *nw = (Nack_Waitable *)p;
 
   gcMARK(nw->maker);
@@ -3850,7 +3850,7 @@ int mark_nack_waitable_MARK(void *p) {
   gcBYTES_TO_WORDS(sizeof(Nack_Waitable));
 }
 
-int mark_nack_waitable_FIXUP(void *p) {
+int mark_nack_guard_waitable_FIXUP(void *p) {
   Nack_Waitable *nw = (Nack_Waitable *)p;
 
   gcFIXUP(nw->maker);
@@ -3859,8 +3859,8 @@ int mark_nack_waitable_FIXUP(void *p) {
   gcBYTES_TO_WORDS(sizeof(Nack_Waitable));
 }
 
-#define mark_nack_waitable_IS_ATOMIC 0
-#define mark_nack_waitable_IS_CONST_SIZE 1
+#define mark_nack_guard_waitable_IS_ATOMIC 0
+#define mark_nack_guard_waitable_IS_CONST_SIZE 1
 
 
 #endif  /* STRUCT */

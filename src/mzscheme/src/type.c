@@ -188,6 +188,7 @@ scheme_init_type (Scheme_Env *env)
   set_name(scheme_waitable_set_type, "<waitable-set>");
   set_name(scheme_wrapped_waitable_type, "<waitable>");
   set_name(scheme_nack_waitable_type, "<waitable>");
+  set_name(scheme_nack_guard_waitable_type, "<waitable>");
   set_name(scheme_poll_waitable_type, "<waitable>");
   set_name(scheme_semaphore_repost_type, "<semaphore-peek>");
 
@@ -468,6 +469,8 @@ void scheme_register_traversers(void)
   GC_REG_TRAV(scheme_module_index_type, modidx_val);
 
   GC_REG_TRAV(scheme_security_guard_type, guard_val);
+
+  GC_REG_TRAV(scheme_nack_waitable_type, twoptr_obj);
 
   GC_REG_TRAV(scheme_rt_buf_holder, buf_holder);
 }

@@ -157,14 +157,19 @@ static Scheme_Object *make_sema(int n, Scheme_Object **p)
 
 static Scheme_Object *make_sema_repost(int n, Scheme_Object **p)
 {
-  Scheme_Object *o;
-
   if (!SCHEME_SEMAP(p[0]))
     scheme_wrong_type("make-semaphore-peek", "semaphore", 0, n, p);
-  
+ 
+  return scheme_make_sema_repost(p[0]);
+}
+ 
+Scheme_Object *scheme_make_sema_repost(Scheme_Object *sema)
+{
+  Scheme_Object *o;
+
   o = scheme_alloc_small_object();
   o->type = scheme_semaphore_repost_type;
-  SCHEME_PTR_VAL(o) = p[0];
+  SCHEME_PTR_VAL(o) = sema;
 
   return o;
 }

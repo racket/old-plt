@@ -235,6 +235,10 @@
   (thread (lambda () (channel-put c 76)))
   (test 77 object-wait-multiple #f (make-wrapped-waitable c add1)))
 
+(test 78 object-wait-multiple #f 
+      (make-wrapped-waitable (waitables->waitable-set (make-semaphore 1) (make-semaphore 1))
+			     (lambda (x) 78)))
+
 ;; ----------------------------------------
 ;; Nack waitables
 
@@ -246,7 +250,13 @@
 (err/rt-test (make-guard-waitable 10))
 (err/rt-test (make-guard-waitable (lambda (x) 10)))
 
-(let ([s (make-semaphore 1)])
+(let ([s (make-semaphore 1)]
+      [nack-try-wait? (lambda (n)
+			(let ([v (object-wait-multiple 0 n)])
+			  (when v
+			    (test #t void? v)
+			    (test (void) object-wait-multiple #f n))
+			  (and v #t)))])
   (test s object-wait-multiple #f (make-nack-guard-waitable (lambda (nack) s)))
   (test #f semaphore-try-wait? s)
   (semaphore-post s)
@@ -255,13 +265,13 @@
 	  (make-nack-guard-waitable (lambda (nack) 
 				      (set! v nack)
 				      (make-semaphore))))
-    (test #t semaphore-try-wait? v)
+    (test #t nack-try-wait? v)
     (set! v #f)
     (test #f object-wait-multiple SYNC-SLEEP-DELAY
 	  (make-nack-guard-waitable (lambda (nack) 
 				      (set! v nack)
 				      (make-semaphore))))
-    (test #t semaphore-try-wait? v)
+    (test #t nack-try-wait? v)
     (set! v #f)
     (test #f object-wait-multiple 0
 	  (make-nack-guard-waitable (lambda (nack) 
@@ -270,7 +280,7 @@
 	  (make-nack-guard-waitable (lambda (nack) 
 				      (set! v nack)
 				      (make-semaphore))))
-    (test #t semaphore-try-wait? v)
+    (test #t nack-try-wait? v)
     (set! v #f)
     (test #f object-wait-multiple SYNC-SLEEP-DELAY
 	  (make-nack-guard-waitable (lambda (nack) 
@@ -279,7 +289,7 @@
 	  (make-nack-guard-waitable (lambda (nack) 
 				      (set! v nack)
 				      (make-semaphore))))
-    (test #t semaphore-try-wait? v)
+    (test #t nack-try-wait? v)
     (set! v #f)
     (test #f object-wait-multiple SYNC-SLEEP-DELAY
 	  (waitables->waitable-set 
@@ -289,13 +299,13 @@
 	   (make-nack-guard-waitable (lambda (nack) 
 				       (set! v nack)
 				       (make-semaphore)))))
-    (test #t semaphore-try-wait? v)
+    (test #t nack-try-wait? v)
     (set! v #f)
     (test s object-wait-multiple 0
 	  (make-nack-guard-waitable (lambda (nack) 
 				      (set! v nack)
 				      s)))
-    (test #f semaphore-try-wait? v) ; ... but not an exception!
+    (test #f nack-try-wait? v) ; ... but not an exception!
     (semaphore-post s)
     (set! v #f)
     (let loop ()
@@ -305,7 +315,7 @@
 					(make-semaphore)))
 	    s)
       (if v
-	  (test #t semaphore-try-wait? v)
+	  (test #t nack-try-wait? v)
 	  (begin  ; tried the 2nd first, so do test again
 	    (semaphore-post s)
 	    (loop))))
@@ -319,7 +329,7 @@
 								     (/ 1 0))))
 		   exn:application:divide-by-zero?)
       (if v
-	  (test #t semaphore-try-wait? v)
+	  (test #t nack-try-wait? v)
 	  (loop)))
     (set! v #f)
     (let loop ()
@@ -333,7 +343,7 @@
       (if v
 	  (begin
 	    (set! v #f)
-	   (loop))
+	    (loop))
 	  (test #t not v)))
     (set! v null)
     (test #f object-wait-multiple 0
@@ -343,10 +353,34 @@
 	  (make-nack-guard-waitable (lambda (nack) 
 				(set! v (cons nack v))
 				(make-semaphore))))
-    (test '(#t #t) map semaphore-try-wait? v)))
+    (test '(#t #t) map nack-try-wait? v)
+
+    ;; Check that thread kill also implies nack:
+    (set! v #f)
+    (let* ([ready (make-semaphore)]
+	   [t (thread (lambda ()
+			(object-wait-multiple 
+			 #f
+			 (make-nack-guard-waitable
+			  (lambda (nack)
+			    (set! v nack)
+			    (semaphore-post ready)
+			    (make-semaphore))))))])
+      (semaphore-wait ready)
+      (kill-thread t)
+      (test #t nack-try-wait? v))))
+		       
 
 (let ([s (make-semaphore 1)])
   (test s object-wait-multiple 0 (make-guard-waitable (lambda () s))))
+
+(let ([v #f])
+  (test #f object-wait-multiple 0
+	(make-nack-guard-waitable
+	 (lambda (nack)
+	   (set! v nack)
+	   (waitables->waitable-set (make-semaphore) (make-semaphore)))))
+  (test (void) object-wait-multiple 0 v))
 
 ;; ----------------------------------------
 ;; Poll waitables

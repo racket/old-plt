@@ -1531,14 +1531,14 @@ mark_wrapped_waitable {
   gcBYTES_TO_WORDS(sizeof(Wrapped_Waitable));
 }
 
-mark_nack_waitable {
+mark_nack_guard_waitable {
  mark:
-  Nack_Waitable *nw = (Nack_Waitable *)p;
+  Nack_Guard_Waitable *nw = (Nack_Guard_Waitable *)p;
 
   gcMARK(nw->maker);
 
  size:
-  gcBYTES_TO_WORDS(sizeof(Nack_Waitable));
+  gcBYTES_TO_WORDS(sizeof(Nack_Guard_Waitable));
 }
 
 END struct;

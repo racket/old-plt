@@ -6,24 +6,24 @@ Changed load and current-load/default-load-handler: `load'
   now sets the current-load-relative-directory, so a load
   handler does not need to set this parameter
 Added current-load-extension (load-extension handler)
-Added read-image-from-file procedure
-Unix images: removed constraint against using stdio before
- dumps
 Unix: fixed file-or-directory-permissions for group-based 
  permissions when the group is not the current group (but
  still includes the user)
-Windows: fixed directory-exists? et. al for UNC paths
+Windows: fixed directory-exists? et al. for UNC paths
 Added local-expand-body-expression
 Added link-exists?
 Added copy-file
 Added path-list-string->path-list
 Added collection-path
 Changed initial setting of current-library-collection-paths
+Unit definitions and embedded definitions are not allowed
+ to shadow syntax or macro names; this restriction resolves
+ all potential ambiguity resulting from shadowing syntax
 Changed display for symbols containg special characters:
  the special characters are not escaped (or bar-quoted)
 Changed write to use the value of (read-accept-bar-quote)
  for printing symbols containing special charaters; if
- bar qute reading is off, it is turned off for printing, too.
+ bar qute reading is off, it is turned off for printing, too
 Fixed unit/sig: correctly handles syntax where defintions in 
  the unit shadow syntactic forms
 Fixed round of exact rational n/d in the case when (odd? d)
@@ -52,6 +52,9 @@ Changed read-eval-print-loop, removing its cooperation with
 Improved the support for dynamic extensions that gives an 
  error if an extension is already loaded, or calls a
  reloading function provided by the extension (scheme_reload)
+Unix images: removed constraint against using stdio before
+ dumps, but images are disabled by default. Also added
+ read-image-from-file procedure
 
 Version 50, August 26, 1997
 Added compile-time inferrence of names for closures, classes,

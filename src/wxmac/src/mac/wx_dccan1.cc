@@ -265,7 +265,7 @@ void wxCanvasDC::SetPaintRegion(Rect* paintRect)
 	if (onpaint_reg) ::DisposeRgn(onpaint_reg);
 	onpaint_reg = ::NewRgn();
 	CheckMemOK(onpaint_reg);
-	::RectRgn(onpaint_reg, paintRect);
+	::RectRgn(onpaint_reg, paintRect); // SET-ORIGIN FLAGGED
 	SetCanvasClipping();
 }
 
@@ -533,13 +533,13 @@ void wxCanvasDC::wxMacSetClip(void)
 	SetCurrentDC();
 	if (canvas && !canvas->WantsFocus()) { // => canvas is hidden (HACK!)
 		Rect zeroClipRect = {0, 0, 0, 0};
-		::ClipRect(&zeroClipRect);
+		::ClipRect(&zeroClipRect); // SET-ORIGIN FLAGGED
 	} else {
 		if (current_reg)
-			::SetClip(current_reg);
+			::SetClip(current_reg); // SET-ORIGIN FLAGGED
 		else {
 			Rect largestClipRect = {-32767, -32767, 32767, 32767};
-			::ClipRect(&largestClipRect);
+			::ClipRect(&largestClipRect); // SET-ORIGIN FLAGGED
 		}
 	}
 }
@@ -626,7 +626,7 @@ void wxCanvasDC::wxMacSetCurrentTool(wxMacToolType whichTool)
 			    p[i] = 0;
 			    for (k = 0; k < 8; k++) {
 			      RGBColor cpix;
-			      ::GetCPixel(k, i, &cpix);
+			      ::GetCPixel(k, i, &cpix); // SET-ORIGIN FLAGGED
 			      p[i] = p[i] << 1;
 			      if (!cpix.red) {
 			        p[i] |= 1;

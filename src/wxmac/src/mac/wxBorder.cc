@@ -87,7 +87,7 @@ void wxBorder::ShowAsActive(Bool flag) // mac platform only
 		int margin = ParentArea()->Margin().Offset(Direction::wxTop);
 		Rect clientRect = {0, 0, clientHeight, clientWidth};
 		RgnHandle outerRgn = ::NewRgn(); CheckMemOK(outerRgn);
-		::RectRgn(outerRgn, &clientRect);
+		::RectRgn(outerRgn, &clientRect); // SET-ORIGIN FLAGGED
 		RgnHandle innerRgn = ::NewRgn(); CheckMemOK(innerRgn);
 		::CopyRgn(outerRgn, innerRgn); InsetRgn(innerRgn, margin, margin);
 		::DiffRgn(outerRgn, innerRgn, outerRgn);

@@ -115,7 +115,7 @@ Bool wxPrinterDC::Blit(float xdest, float ydest, float width, float height,
 		PixMapHandle srpixh = source->pixmap;
 		int rs = ::LockPixels(srpixh);
 
-		CopyBits((BitMap *) (* srpixh),   (dstbm),	&srcr, &destr, mode, NULL);
+		CopyBits((BitMap *) (* srpixh),   (dstbm),	&srcr, &destr, mode, NULL); // SET-ORIGIN FLAGGED
 
 		if (destpixh) ::UnlockPixels(destpixh);
 		::UnlockPixels(srpixh);

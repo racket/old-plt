@@ -141,7 +141,7 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
 	}
 	valuebase = (int)fDescent;
 	
-	cMacControl = ::NewControl(GetWindowFromPort(theMacGrafPort), &boundsRect, NULL,
+	cMacControl = ::NewControl(GetWindowFromPort(theMacGrafPort), &boundsRect, NULL, // SET-ORIGIN FLAGGED
 			TRUE, value, min_value, max_value, scrollBarProc, (long)this);
 	CheckMemOK(cMacControl);
 	
@@ -190,8 +190,8 @@ void wxSlider::Paint(void)
 		SetFont(valueFont);
 		SetTextInfo();
 		
-		::MoveTo(valueRect.left, valueRect.bottom - valuebase);
-		::EraseRect(&valueRect);
+		::MoveTo(valueRect.left, valueRect.bottom - valuebase); // SET-ORIGIN FLAGGED
+		::EraseRect(&valueRect); // SET-ORIGIN FLAGGED
 		char t[8];
 		sprintf(t,"%d",::GetControlValue(cMacControl));
 		::DrawText(t,0,strlen(t));
@@ -269,13 +269,13 @@ void wxSlider::OnEvent(wxMouseEvent *event) // WCH: mac only ?
 		Point pt = {startV, startH};
 		SetCurrentDC();
 		int part;
-		part = ::TestControl(cMacControl, pt);
+		part = ::TestControl(cMacControl, pt); // SET-ORIGIN FLAGGED
 		if (part) {
 		  if (part == kControlIndicatorPart) {
-		    if (::TrackControl(cMacControl, pt, NULL))
+		    if (::TrackControl(cMacControl, pt, NULL)) // SET-ORIGIN FLAGGED
 		      TrackPart(part);
 		  } else 
-		    ::TrackControl(cMacControl, pt, SCTrackActionProcUPP);
+		    ::TrackControl(cMacControl, pt, SCTrackActionProcUPP); // SET-ORIGIN FLAGGED
 		}
 	}
 }
@@ -303,8 +303,8 @@ void wxSlider::TrackPart(int part)
 	
 	if (!(windowStyle & (wxHORIZONTAL << 2))) {
 		// Draw the new value
-		::MoveTo(valueRect.left+HSP, valueRect.bottom - valuebase);
-		::EraseRect(&valueRect);
+		::MoveTo(valueRect.left+HSP, valueRect.bottom - valuebase); // SET-ORIGIN FLAGGED
+		::EraseRect(&valueRect); // SET-ORIGIN FLAGGED
 		char t[8];
 		sprintf(t,"%d",::GetControlValue(cMacControl));
 		::DrawText(t,0,strlen(t));
@@ -335,8 +335,8 @@ void wxSlider::SetValue(int value)
 	SetCurrentDC();
 	::SetControlValue(cMacControl, value);
 	if (!(windowStyle & (wxHORIZONTAL << 2))) {
-	  ::MoveTo(valueRect.left+HSP, valueRect.bottom - valuebase);
-	  ::EraseRect(&valueRect);
+	  ::MoveTo(valueRect.left+HSP, valueRect.bottom - valuebase); // SET-ORIGIN FLAGGED
+	  ::EraseRect(&valueRect); // SET-ORIGIN FLAGGED
 	  char t[8];
 	  sprintf(t,"%d",::GetControlValue(cMacControl));
 	  ::DrawText(t,0,strlen(t));

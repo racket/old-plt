@@ -1497,7 +1497,7 @@ MACSetImagePixels(Display *dc, XImage *image, unsigned int width, unsigned int h
 				thePixel.red = (apix >> 8) & 0xFF00;
 				thePixel.green = apix  & 0xFF00;
 				thePixel.blue = (apix << 8) & 0xFF00;
-			    SetCPixel(x, y, &thePixel); 
+			    SetCPixel(x, y, &thePixel);  // SET-ORIGIN FLAGGED
 			}
 	    }
     }

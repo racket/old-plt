@@ -48,7 +48,7 @@ void wxCanvasDC::DrawText(const char* text, float x, float y, Bool use16, int d)
 	::GetFontInfo(&fontInfo);
 	start.h = XLOG2DEV(x);
 	start.v = YLOG2DEV(y + fontInfo.ascent);
-	MoveTo(start.h, start.v); // move pen to start drawing text
+	MoveTo(start.h, start.v); // move pen to start drawing text // SET-ORIGIN FLAGGED
 	int theStrlen = strlen(text+d);
 	::DrawText(text+d, 0, theStrlen); // WCH: kludge, mac procedure same name as wxWindows method
 

@@ -41,7 +41,7 @@ void wxPrinterDC::DrawText(const char* text, float x, float y, Bool use16)
 
 	FontInfo fontInfo;
 	::GetFontInfo(&fontInfo);
-	MoveTo(XLOG2DEV(x), YLOG2DEV(y + fontInfo.ascent)); // move pen to start drawing text
+	MoveTo(XLOG2DEV(x), YLOG2DEV(y + fontInfo.ascent)); // move pen to start drawing text // SET-ORIGIN FLAGGED
 	int theStrlen = strlen(text);
 	::DrawText(text, 0, theStrlen); // WCH: kludge, mac procedure same name as wxWindows method
 

@@ -277,10 +277,10 @@ XCreateImage(Display *d, Visual *v,
 	GetGWorld(&saveport, &savegw);
 	QDErr err;
 	GWorldPtr	newGWorld;
-	err = NewGWorld(&newGWorld, 0, &bounds, NULL, NULL, noNewDevice);
+	err = NewGWorld(&newGWorld, 0, &bounds, NULL, NULL, noNewDevice); // SET-ORIGIN FLAGGED
 	if (!err) {
   	  SetGWorld(newGWorld, 0);
-	  ::EraseRect(&bounds);
+	  ::EraseRect(&bounds); // SET-ORIGIN FLAGGED
 	  img->bitmap = newGWorld;	
 	  SetGWorld(saveport, savegw);
 	} else {

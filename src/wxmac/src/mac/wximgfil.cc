@@ -698,7 +698,7 @@ void CreateOffScreenPixMap (CGrafPtr *cport, wxGIF *gif)
 	GetGWorld(&saveport, &savegw);
 	QDErr err;
 	GWorldPtr	newGWorld;
-	err = NewGWorld(&newGWorld, 0, &bounds, NULL, NULL, noNewDevice);
+	err = NewGWorld(&newGWorld, 0, &bounds, NULL, NULL, noNewDevice); // SET-ORIGIN FLAGGED
 	if (err) {
 	  *cport = 0;
 	  return;
@@ -716,7 +716,7 @@ void CreateOffScreenPixMap (CGrafPtr *cport, wxGIF *gif)
 	    cpix.red = 256 *gif->red[v];
 	    cpix.green = 256 *gif->green[v];
 	    cpix.blue = 256 *gif->blue[v];
-	    ::SetCPixel(j, i, &cpix);
+	    ::SetCPixel(j, i, &cpix); // SET-ORIGIN FLAGGED
 	  }
 	}
 	// UnlockPixels(GetGWorldPixMap(newGWorld));

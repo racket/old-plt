@@ -113,7 +113,7 @@ void wxScrollBar::CreateWxScrollBar // common constructor initialization
 	const short minValue = 0;
 	const short maxValue = 0;
 	long refCon = (long)this;
-	cMacControl = ::NewControl(GetWindowFromPort(theMacGrafPort), &boundsRect, theMacLabel(),
+	cMacControl = ::NewControl(GetWindowFromPort(theMacGrafPort), &boundsRect, theMacLabel(), // SET-ORIGIN FLAGGED
 			drawNow, offValue, minValue, maxValue, scrollBarProc, refCon);
 	CheckMemOK(cMacControl);
 	
@@ -219,7 +219,7 @@ void wxScrollBar::Paint(void)
  		PenState oldPenState;
  		::GetPenState(&oldPenState);
  		::PenNormal();
- 		::FrameRect(&controlRect);
+ 		::FrameRect(&controlRect); // SET-ORIGIN FLAGGED
  		::SetPenState(&oldPenState);
  	}
  	// GRW
@@ -274,12 +274,12 @@ void wxScrollBar::OnEvent(wxMouseEvent *event) // mac platform only
 		event->Position(&startH, &startV); // client c.s.
 
 		Point startPt = {startV, startH}; // client c.s.
-		int thePart = ::TestControl(cMacControl, startPt);
+		int thePart = ::TestControl(cMacControl, startPt); // SET-ORIGIN FLAGGED
 		if (thePart)
 		{
 			if (thePart == kControlIndicatorPart)
 			{
-				if (::TrackControl(cMacControl, startPt, NULL))
+				if (::TrackControl(cMacControl, startPt, NULL)) // SET-ORIGIN FLAGGED
 				{
 					Bool horizontal = cStyle & wxHSCROLL;
 					wxWhatScrollData positionScrollData =
@@ -295,7 +295,7 @@ void wxScrollBar::OnEvent(wxMouseEvent *event) // mac platform only
 			}
 			else
 			{
-				::TrackControl(cMacControl, startPt, TrackActionProcUPP);
+				::TrackControl(cMacControl, startPt, TrackActionProcUPP); // SET-ORIGIN FLAGGED
 			}
 		}
 	}
@@ -392,7 +392,7 @@ void wxScrollBar::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac platf
 	{
 		cMacDC->setCurrentUser(NULL); // macDC no longer valid
 		SetCurrentDC(); // put new origin at (0, 0)
-		::MoveControl(cMacControl, 0, 0);
+		::MoveControl(cMacControl, 0, 0); // SET-ORIGIN FLAGGED
 	}
 
 	if (hideToPreventFlicker) ::ShowControl(cMacControl);
@@ -402,6 +402,6 @@ void wxScrollBar::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac platf
 		int clientWidth, clientHeight;
 		GetClientSize(&clientWidth, &clientHeight);
 		Rect clientRect = {0, 0, clientHeight, clientWidth};
-		::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&clientRect);
+		::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&clientRect); // SET-ORIGIN FLAGGED
 	}
 }

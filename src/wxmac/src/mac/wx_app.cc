@@ -700,7 +700,7 @@ void wxApp::doMacMouseMovedMessage(void)
 	if (cMacCursorRgn) ::DisposeRgn(cMacCursorRgn);
 	cMacCursorRgn = ::NewRgn();
 	CheckMemOK(cMacCursorRgn);
-	::SetRectRgn(cMacCursorRgn, -32768, -32768, 32766, 32766);
+	::SetRectRgn(cMacCursorRgn, -32768, -32768, 32766, 32766); // SET-ORIGIN FLAGGED
 }
 
 //-----------------------------------------------------------------------------

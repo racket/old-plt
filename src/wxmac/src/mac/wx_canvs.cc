@@ -142,7 +142,7 @@ void wxCanvas::AddWhiteRgn(RgnHandle rgn)
 	  cClientArea->FrameContentAreaOffset(&theRootX, &theRootY);
 	  GetClientSize(&w, &h);
 	  if (wrgn = NewRgn()) {
-	  	 SetRectRgn(wrgn, theRootX, theRootY, theRootX + w, theRootY + h);
+	  	 SetRectRgn(wrgn, theRootX, theRootY, theRootX + w, theRootY + h); // SET-ORIGIN FLAGGED
 	  	 UnionRgn(rgn, wrgn, rgn);
 	  	 DisposeRgn(wrgn);
 	  }
@@ -391,8 +391,8 @@ void wxCanvas::SetScrollData
 			RgnHandle theUpdateRgn = ::NewRgn();
 			CheckMemOK(theUpdateRgn);
 			theDC->BeginDrawing();
-			::ScrollRect(&scrollRect, -dH, -dV, theUpdateRgn);
-			::InvalWindowRgn(GetWindowFromPort(cMacDC->macGrafPort()),theUpdateRgn);
+			::ScrollRect(&scrollRect, -dH, -dV, theUpdateRgn); // SET-ORIGIN FLAGGED
+			::InvalWindowRgn(GetWindowFromPort(cMacDC->macGrafPort()),theUpdateRgn); // SET-ORIGIN FLAGGED
 			theDC->device_origin_x += -dH;
 			theDC->device_origin_y += -dV;
 			// ((wxCanvasDC *)theDC)->SetCanvasClipping();

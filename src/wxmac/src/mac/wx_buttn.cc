@@ -116,7 +116,7 @@ void wxButton::Create // Real constructor (given parentPanel, label)
 	const short minValue = 0;
 	const short maxValue = 1;
 	short refCon = 0;
-	cMacControl = ::NewControl(GetWindowFromPort(theMacGrafPort), &boundsRect, theMacTitle(),
+	cMacControl = ::NewControl(GetWindowFromPort(theMacGrafPort), &boundsRect, theMacTitle(), // SET-ORIGIN FLAGGED
 			drawNow, offValue, minValue, maxValue, pushButProc + popupUseWFont, refCon);
 	CheckMemOK(cMacControl);
 	
@@ -166,7 +166,7 @@ wxButton::wxButton // Constructor (given parentPanel, bitmap)
 	cWindowHeight = bounds.bottom;
 	cWindowWidth = bounds.right;
 
-	::InvalWindowRect(GetWindowFromPort(theMacGrafPort),&bounds);
+	::InvalWindowRect(GetWindowFromPort(theMacGrafPort),&bounds); // SET-ORIGIN FLAGGED
 	
 	if (GetParent()->IsHidden())
 		DoShow(FALSE);
@@ -375,28 +375,28 @@ static void PaintBitmapButton(Rect *r, wxBitmap *buttonBitmap, Bool pressed, Boo
   
   if (cColour)
     RGBBackColor(&back->pixel);
-  ::EraseRect(&rr);
+  ::EraseRect(&rr); // SET-ORIGIN FLAGGED
 
   if (isgray && cColour)
     RGBForeColor(&dark->pixel);
   else
     ForeColor(blackColor);
-  FrameRoundRect(r, 2 * IB_MARGIN_X, 2 * IB_MARGIN_Y);
+  FrameRoundRect(r, 2 * IB_MARGIN_X, 2 * IB_MARGIN_Y); // SET-ORIGIN FLAGGED
   
   if (cColour) {
     RGBForeColor(&bright->pixel);  
-    MoveTo(rr.left + 1, rr.top);
-    LineTo(rr.right - 2, rr.top);
+    MoveTo(rr.left + 1, rr.top); // SET-ORIGIN FLAGGED
+    LineTo(rr.right - 2, rr.top); // SET-ORIGIN FLAGGED
     
-    MoveTo(rr.left, rr.top + 1);
-    LineTo(rr.left, rr.bottom - 2);
+    MoveTo(rr.left, rr.top + 1); // SET-ORIGIN FLAGGED
+    LineTo(rr.left, rr.bottom - 2); // SET-ORIGIN FLAGGED
 
     RGBForeColor(&dim->pixel);  
-    MoveTo(rr.left + 1, rr.bottom - 1);
-    LineTo(rr.right - 2, rr.bottom - 1);
+    MoveTo(rr.left + 1, rr.bottom - 1); // SET-ORIGIN FLAGGED
+    LineTo(rr.right - 2, rr.bottom - 1); // SET-ORIGIN FLAGGED
     
-    MoveTo(rr.right - 1, rr.top + 1);
-    LineTo(rr.right - 1, rr.bottom - 2);
+    MoveTo(rr.right - 1, rr.top + 1); // SET-ORIGIN FLAGGED
+    LineTo(rr.right - 1, rr.bottom - 2); // SET-ORIGIN FLAGGED
     
     // Reset color for blit
     if (isgray && cColour)
@@ -415,7 +415,7 @@ void wxButton::Paint(void)
 	if (buttonBitmap) {
 	    PaintBitmapButton(&r, buttonBitmap, 0, IsGray(), cColour);
 	} else if (cMacControl) {
-	    ::EraseRect(&r);
+	    ::EraseRect(&r); // SET-ORIGIN FLAGGED
             if (!IsControlVisible(cMacControl)) return;
             ::Draw1Control(cMacControl);
 	}
@@ -483,7 +483,7 @@ void wxButton::OnEvent(wxMouseEvent *event) // mac platform only
 		int trackResult;
 		if (::StillDown()) {
 			if (buttonBitmap == NULL && cMacControl)
-				trackResult = ::TrackControl(cMacControl, startPt, NULL);
+				trackResult = ::TrackControl(cMacControl, startPt, NULL); // SET-ORIGIN FLAGGED
 			else
 				trackResult = Track(startPt);
 		} else {
@@ -543,7 +543,7 @@ void wxButton::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac platform
 	{
 		cMacDC->setCurrentUser(NULL); // macDC no longer valid
 		SetCurrentDC(); // put new origin at (0, 0)
-		::MoveControl(cMacControl, 0, 0);
+		::MoveControl(cMacControl, 0, 0); // SET-ORIGIN FLAGGED
 	}
 
 	if (hideToPreventFlicker) ::ShowControl(cMacControl);
@@ -553,6 +553,6 @@ void wxButton::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac platform
 		int clientWidth, clientHeight;
 		GetClientSize(&clientWidth, &clientHeight);
 		Rect clientRect = {0, 0, clientHeight, clientWidth};
-		::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&clientRect);
+		::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&clientRect); // SET-ORIGIN FLAGGED
 	}
 }

@@ -500,9 +500,9 @@ void wxWindow::DoSetSize(int x, int y, int width, int height) // mac platform on
 		Rect oldWindowRect = { -1, -1, cWindowHeight, cWindowWidth };
 		SetCurrentMacDCNoMargin();
 		MacSetBackground();
-		::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&oldWindowRect);
-		::ClipRect(&oldWindowRect);
-		::EraseRect(&oldWindowRect);
+		::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&oldWindowRect); // SET-ORIGIN FLAGGED
+		::ClipRect(&oldWindowRect); // SET-ORIGIN FLAGGED
+		::EraseRect(&oldWindowRect); // SET-ORIGIN FLAGGED
 	}
 
     if (xIsChanged) cWindowX = x;
@@ -516,9 +516,9 @@ void wxWindow::DoSetSize(int x, int y, int width, int height) // mac platform on
 		cMacDC->setCurrentUser(NULL); // macDC no longer valid
 		SetCurrentMacDCNoMargin(); // put newClientRect at (0, 0)
 		MacSetBackground();
-		::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&newWindowRect); // force redraw of window
-		::ClipRect(&newWindowRect);
-		::EraseRect(&newWindowRect); /* MATTHEW: [5] */
+		::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&newWindowRect); // force redraw of window // SET-ORIGIN FLAGGED
+		::ClipRect(&newWindowRect); // SET-ORIGIN FLAGGED
+		::EraseRect(&newWindowRect); /* MATTHEW: [5] */ // SET-ORIGIN FLAGGED
 	}
 }
 
@@ -530,7 +530,7 @@ void wxWindow::Refresh(void)
 
 	GetClipRect(cClientArea, &theClipRect);
 	SetCurrentMacDC(); // put newClientRect at (0, 0)
-	::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&theClipRect); // force redraw of window
+	::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&theClipRect); // force redraw of window // SET-ORIGIN FLAGGED
 }
 
 //-----------------------------------------------------------------------------
@@ -723,13 +723,13 @@ void wxWindow::SetCurrentDC(void) // mac platform only
 		
 		if (rgn) {
 		  RgnHandle clip = NewRgn();
-		  RectRgn(clip, &theClipRect);
+		  RectRgn(clip, &theClipRect); // SET-ORIGIN FLAGGED
 		  DiffRgn(clip, rgn, clip);
 		  DisposeRgn(rgn);
-		  SetClip(clip);
+		  SetClip(clip); // SET-ORIGIN FLAGGED
 		  DisposeRgn(clip);
 		} else 
-		  ::ClipRect(&theClipRect);
+		  ::ClipRect(&theClipRect); // SET-ORIGIN FLAGGED
 		
 		PenMode(patCopy);
 		SetTextInfo();
@@ -875,13 +875,13 @@ void wxWindow::GetClipRect(wxArea* area, Rect* clipRect) // mac platform only
 	if (ParentArea()) // WCH: must redo this
 	{
 		wxWindow* windowParent = ParentArea()->ParentWindow();
-		Rect parentClipRect;
+		Rect parentClipRect; // SET-ORIGIN FLAGGED
 		windowParent->GetClipRect(cParentArea, &parentClipRect); // parent area c.s.
 		wxMargin parentAreaMargin = area->Margin(cParentArea);
 		int parentAreaX = parentAreaMargin.Offset(Direction::wxLeft);
 		int parentAreaY = parentAreaMargin.Offset(Direction::wxTop);
-		::OffsetRect(&parentClipRect, -parentAreaX, -parentAreaY); // area c.s.
-		::SectRect(&parentClipRect, clipRect, clipRect);
+		::OffsetRect(&parentClipRect, -parentAreaX, -parentAreaY); // area c.s. // SET-ORIGIN FLAGGED
+		::SectRect(&parentClipRect, clipRect, clipRect); // SET-ORIGIN FLAGGED
 		if (clipRect->top < 0) clipRect->top = 0;
 		if (clipRect->left < 0) clipRect->left = 0;
 	}
@@ -1469,7 +1469,7 @@ int wxWindow::Track(Point p)
 	
 	while (::StillDown()) {
 		GetMouse(&p);
-		if (!!PtInRect(p, &r) != on) {
+		if (!!PtInRect(p, &r) != on) { // SET-ORIGIN FLAGGED
 			on = !on;
 			Highlight(on);
 		}
@@ -1478,7 +1478,7 @@ int wxWindow::Track(Point p)
 	if (on)
 		Highlight(FALSE);
 		
-	return PtInRect(p, &r);
+	return PtInRect(p, &r); // SET-ORIGIN FLAGGED
 }
 
 //-----------------------------------------------------------------------------
@@ -1559,11 +1559,11 @@ void wxWindow::DoShow(Bool v)
 	
 	if (v) {
 		MacSetBackground();
-		::ClipRect(&r);
-		::EraseRect(&r);
+		::ClipRect(&r); // SET-ORIGIN FLAGGED
+		::EraseRect(&r); // SET-ORIGIN FLAGGED
 	}
 	
-	::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&r);
+	::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&r); // SET-ORIGIN FLAGGED
 
 	cHidden = v;
 

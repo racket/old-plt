@@ -195,7 +195,7 @@ void wxMessage::SetLabel(wxBitmap *bitmap)
 	int clientWidth, clientHeight;
 	GetClientSize(&clientWidth, &clientHeight);
 	Rect clientRect = {0, 0, clientHeight, clientWidth};
-	::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&clientRect);
+	::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&clientRect); // SET-ORIGIN FLAGGED
 
 //FIXME CJC	SetClientSize(sBitmap->GetWidth(), sBitmap->GetHeight());
 	sBitmap->DrawMac();
@@ -213,7 +213,7 @@ void wxMessage::SetLabel(char* label)
 		int clientWidth, clientHeight;
 		GetClientSize(&clientWidth, &clientHeight);
 		Rect clientRect = {0, 0, clientHeight, clientWidth};
-		::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&clientRect);
+		::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&clientRect); // SET-ORIGIN FLAGGED
 #else
 		Paint();
 #endif
@@ -229,12 +229,12 @@ void wxMessage::Paint(void)
 	int clientWidth, clientHeight;
 	GetClientSize(&clientWidth, &clientHeight);
 	Rect clientRect = {0, 0, clientHeight, clientWidth};
-	::EraseRect(&clientRect);
+	::EraseRect(&clientRect); // SET-ORIGIN FLAGGED
 
 	if (sBitmap) {
 		sBitmap->DrawMac();
 	} else {
-		::TETextBox(cMessage, strlen(cMessage), &clientRect, teJustLeft);
+		::TETextBox(cMessage, strlen(cMessage), &clientRect, teJustLeft); // SET-ORIGIN FLAGGED
 	}
 }
 

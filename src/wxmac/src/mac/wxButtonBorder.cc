@@ -64,7 +64,7 @@ void wxButtonBorder::Paint(void)
 		::GetPenState(&oldPenState);
 		::PenNormal();
 		::PenSize(margin -1 , margin - 1);
-		::FrameRoundRect(&clientRect, 16, 16);
+		::FrameRoundRect(&clientRect, 16, 16); // SET-ORIGIN FLAGGED
 		::SetPenState(&oldPenState);
 	}
 }

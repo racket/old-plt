@@ -270,7 +270,7 @@ void wxChoice::DrawChoice(Bool active)
 {
 	SetCurrentDC();
 	Rect t = TitleRect;
-	::MoveTo(t.left, t.bottom - labelbase);
+	::MoveTo(t.left, t.bottom - labelbase); // SET-ORIGIN FLAGGED
 	SetFont(labelFont);
 	SetTextInfo();
 	int w = 0;
@@ -288,30 +288,30 @@ void wxChoice::DrawChoice(Bool active)
 	
 	Rect r = ValueRect;
 	::InsetRect(&r, -1, -1);
-	::FrameRect(&r);
-	::MoveTo(r.right, r.top+2);
-	::LineTo(r.right, r.bottom);
-	::LineTo(r.left+2, r.bottom);
+	::FrameRect(&r); // SET-ORIGIN FLAGGED
+	::MoveTo(r.right, r.top+2); // SET-ORIGIN FLAGGED
+	::LineTo(r.right, r.bottom); // SET-ORIGIN FLAGGED
+	::LineTo(r.left+2, r.bottom); // SET-ORIGIN FLAGGED
 
 	// mflatt:
 	RGBColor save;
 	GetForeColor(&save);
 	ForeColor(whiteColor);
 	::InsetRect(&r, 1, 1);
-	::PaintRect(&r);
+	::PaintRect(&r); // SET-ORIGIN FLAGGED
 	::InsetRect(&r, -1, -1);
 	::RGBForeColor(&save);
 	
 	PolyHandle poly;
 	poly = OpenPoly();
 	if (poly) {
-		MoveTo(r.right - TRIANGLE_WIDTH - TRANGLE_RIGHT_SPACE, 
+		MoveTo(r.right - TRIANGLE_WIDTH - TRANGLE_RIGHT_SPACE,  // SET-ORIGIN FLAGGED
 			   r.top + (r.bottom - r.top - TRIANGLE_HEIGHT) / 2);
 	    Line(TRIANGLE_WIDTH, 0);
 	    Line(-(TRIANGLE_WIDTH / 2), TRIANGLE_HEIGHT);
 	    Line(-(TRIANGLE_WIDTH / 2), -TRIANGLE_HEIGHT);
 		ClosePoly();
-		PaintPoly(poly);
+		PaintPoly(poly); // SET-ORIGIN FLAGGED
 		KillPoly(poly);
 	}
 	
@@ -327,7 +327,7 @@ void wxChoice::DrawChoice(Bool active)
 	::GetMenuItemText(hDynMenu, selection+1, s);
 	SetFont(valueFont);
 	SetTextInfo();
-	::MoveTo(r.left, r.bottom - valuebase);
+	::MoveTo(r.left, r.bottom - valuebase); // SET-ORIGIN FLAGGED
 	w = 0;
 	int elw = ::CharWidth('É');
 	int tgtw = r.right - r.left - elw;
@@ -439,16 +439,16 @@ void wxChoice::OnEvent(wxMouseEvent *event) // mac platform only
 		int	newsel;
 		Point pos = {ValueRect.top, ValueRect.left};
 		LocalToGlobal(&pos);
-		// if (sTitle) ::InvertRect(&TitleRect);
+		// if (sTitle) ::InvertRect(&TitleRect); // SET-ORIGIN FLAGGED
 		::InsertMenu(hDynMenu, -1);
 		::CalcMenuSize(hDynMenu);
 		newsel = ::PopUpMenuSelect(hDynMenu, pos.v, pos.h, selection+1);
-		// if (sTitle) ::InvertRect(&TitleRect);
+		// if (sTitle) ::InvertRect(&TitleRect); // SET-ORIGIN FLAGGED
 		::DeleteMenu(PopUpID);
 		RGBColor save;
 		::GetForeColor(&save);
 		::ForeColor(whiteColor);
-		::PaintRect(&ValueRect);
+		::PaintRect(&ValueRect); // SET-ORIGIN FLAGGED
 		::RGBForeColor(&save);
 		if (newsel) {
 			newsel = LoWord(newsel) -1;
@@ -579,7 +579,7 @@ void wxChoice::SetLabel(char *label)
 	memcpy(&sTitle[1], label, n);
 	
 	SetCurrentDC();
-	EraseRect(&TitleRect);
+	EraseRect(&TitleRect); // SET-ORIGIN FLAGGED
 	Paint();
 }
 

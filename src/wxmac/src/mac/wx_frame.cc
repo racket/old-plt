@@ -108,7 +108,7 @@ wxFrame::wxFrame // Constructor (for frame window)
 			}
 		}
 
-		result = ::CreateNewWindow(windowClass, windowAttributes, &theBoundsRect, &theMacWindow);
+		result = ::CreateNewWindow(windowClass, windowAttributes, &theBoundsRect, &theMacWindow); // SET-ORIGIN FLAGGED
 							
 									
 		if (result != noErr) {
@@ -299,8 +299,8 @@ void wxFrame::DoSetSize(int x, int y, int width, int height)
 	 		int oldMacHeight = cWindowHeight - PlatformArea()->Margin().Offset(Direction::wxVertical);
 	 		Rect oldGrowRect = {oldMacHeight - 15, oldMacWidth - 15, oldMacHeight, oldMacWidth};
 	 		SetCurrentMacDC();
-	 		InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&oldGrowRect);
-	 		::EraseRect(&oldGrowRect); // MATTHEW: [5] 
+	 		InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&oldGrowRect); // SET-ORIGIN FLAGGED
+	 		::EraseRect(&oldGrowRect); // MATTHEW: [5]  // SET-ORIGIN FLAGGED
 	 	}
 	 }
 
@@ -344,21 +344,21 @@ void wxFrame::DoSetSize(int x, int y, int width, int height)
 	 			r.bottom = h;
 	 			r.left = max(0, w - dw);
 	 			r.right = w;
-		 		::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&r);
+		 		::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&r); // SET-ORIGIN FLAGGED
 	 		}
 	 		if (dh) {
 	 			r.top = max(0, h - dh);
 	 			r.bottom = h;
 	 			r.left = 0;
 	 			r.right = w;
-		 		::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&r);
+		 		::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&r); // SET-ORIGIN FLAGGED
 	 		}
 	 	}
  		
  		if (cStatusPanel) {
  		  Rect r = {0, 0, 32000, 32000};
  		  cStatusPanel->SetCurrentDC();
- 		  EraseRect(&r);
+ 		  EraseRect(&r); // SET-ORIGIN FLAGGED
  		  
  		  cStatusPanel->SetSize(0, theMacHeight - cStatusPanel->Height(),
  		  	                    theMacWidth, -1);
@@ -367,7 +367,7 @@ void wxFrame::DoSetSize(int x, int y, int width, int height)
  		  cStatusText->SetSize(-1, -1, w, -1);
 
  		  cStatusPanel->SetCurrentDC();
- 		  EraseRect(&r);
+ 		  EraseRect(&r); // SET-ORIGIN FLAGGED
  		}
  		
  		// Call OnSize handler
@@ -389,9 +389,9 @@ void wxFrame::Maximize(Bool maximize)
                 GrafPtr theMacGrafPort = cMacDC->macGrafPort();
                 WindowPtr theMacWindow = GetWindowFromPort(theMacGrafPort);
                 Rect portBounds;
-		::EraseRect(GetPortBounds(theMacGrafPort,&portBounds));
+		::EraseRect(GetPortBounds(theMacGrafPort,&portBounds)); // SET-ORIGIN FLAGGED
 		::ZoomWindow(theMacWindow, maximize ? inZoomOut : inZoomIn, TRUE);
-		InvalWindowRect(theMacWindow,&portBounds);
+		InvalWindowRect(theMacWindow,&portBounds); // SET-ORIGIN FLAGGED
 		cMaximized = maximize;
 
 		wxMacRecalcNewSize();
@@ -401,7 +401,7 @@ void wxFrame::Maximize(Bool maximize)
 		  int theMacHeight = cWindowHeight - PlatformArea()->Margin().Offset(Direction::wxVertical);
 		  Rect r = {0, 0, 32000, 32000};
  		  cStatusPanel->SetCurrentDC();
- 		  EraseRect(&r);
+ 		  EraseRect(&r); // SET-ORIGIN FLAGGED
  		  
  		  cStatusPanel->SetSize(0, theMacHeight - cStatusPanel->Height(),
  		  	                    theMacWidth, -1);
@@ -410,7 +410,7 @@ void wxFrame::Maximize(Bool maximize)
  		  cStatusText->SetSize(-1, -1, w, -1);
 
  		  cStatusPanel->SetCurrentDC();
- 		  EraseRect(&r);
+ 		  EraseRect(&r); // SET-ORIGIN FLAGGED
  		}
 	
 		int dW = cWindowWidth - oldWindowWidth;
@@ -606,8 +606,8 @@ void wxFrame::ShowAsActive(Bool flag)
 	 	Rect growRect = {theMacHeight - 15, theMacWidth - 15, theMacHeight, theMacWidth};
 	 	// Erase it now if we're becoming inactive
 	 	if (!flag)
-	 		::EraseRect(&growRect);
-	 	::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&growRect); 
+	 		::EraseRect(&growRect); // SET-ORIGIN FLAGGED
+	 	::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&growRect);  // SET-ORIGIN FLAGGED
 	 }
  	
  	if (!cFocusWindow && children) {
@@ -766,7 +766,7 @@ void wxFrame::MacUpdateWindow(void)
 		if (!::EmptyRgn(GetPortVisibleRegion(GetWindowPort(theMacWindow),visibleRgn)))
 		{
  			// Erase update region
- 			// ::EraseRect(&theMacWindow->portRect);
+ 			// ::EraseRect(&theMacWindow->portRect); // SET-ORIGIN FLAGGED
 
  			// Can't use UpdateControls since each control has it's own coordinate system
  			//		::UpdateControls(theMacWindow, theMacWindow->visRgn);
@@ -797,7 +797,7 @@ void wxFrame::MacUpdateWindow(void)
 	 	int theMacHeight = cWindowHeight - PlatformArea()->Margin().Offset(Direction::wxVertical);
 	 	Rect growRect = {theMacHeight - 15, theMacWidth - 15, theMacHeight, theMacWidth};
 	 	// Avoid drawing scrollbar outlines
-	 	::ClipRect(&growRect);
+	 	::ClipRect(&growRect); // SET-ORIGIN FLAGGED
 	 	// Draw it
 	 	WindowPtr theMacWindow = macWindow();
 	 	RGBColor fore, back;
@@ -805,10 +805,10 @@ void wxFrame::MacUpdateWindow(void)
 	 	::GetBackColor(&back);
 	 	::ForeColor(blackColor);
 	 	::BackColor(whiteColor);
-	 	::EraseRect(&growRect);
+	 	::EraseRect(&growRect); // SET-ORIGIN FLAGGED
 	 	::DrawGrowIcon(theMacWindow);
 	 	// Restore the clipping region
-	 	::SetClip(saveClip);
+	 	::SetClip(saveClip); // SET-ORIGIN FLAGGED
 	 	::DisposeRgn(saveClip);
 	 	::RGBForeColor(&fore);
 	 	::RGBBackColor(&back);
@@ -940,20 +940,20 @@ void wxFrame::Paint(void)
               int theMacWidth = cWindowWidth - PlatformArea()->Margin().Offset(Direction::wxHorizontal);
 	          int theMacHeight = cWindowHeight - PlatformArea()->Margin().Offset(Direction::wxVertical);
               Rect growRect = {theMacHeight - 15, theMacWidth - 15, theMacHeight, theMacWidth};
-              RectRgn(borderRgn, &growRect);
+              RectRgn(borderRgn, &growRect); // SET-ORIGIN FLAGGED
 		    }
-		    SetRectRgn(rgn, 0, 0, cWindowWidth, cWindowHeight + 1);
+		    SetRectRgn(rgn, 0, 0, cWindowWidth, cWindowHeight + 1); // SET-ORIGIN FLAGGED
 			AddWhiteRgn(subrgn);
 			DiffRgn(rgn, subrgn, rgn);
 			if (borderRgn)
 			  DiffRgn(rgn, borderRgn, rgn);
-			EraseRgn(rgn);
+			EraseRgn(rgn); // SET-ORIGIN FLAGGED
 			RGBColor save;
 			GetForeColor(&save);
 			ForeColor(whiteColor);
 			if (borderRgn)
 			  DiffRgn(subrgn, borderRgn, subrgn);
-			PaintRgn(subrgn);
+			PaintRgn(subrgn); // SET-ORIGIN FLAGGED
 			RGBForeColor(&save);
 			if (borderRgn)
 			  DisposeRgn(borderRgn);
@@ -972,9 +972,9 @@ void wxFrame::Paint(void)
 	  cStatusPanel->SetCurrentDC();
       Rect r = { -1, 0, h + 1, w };
       
-      ClipRect(&r); /* hack! */
+      ClipRect(&r); /* hack! */ // SET-ORIGIN FLAGGED
       
-	  EraseRect(&r);
+	  EraseRect(&r); // SET-ORIGIN FLAGGED
 	  cStatusPanel->Paint();
     }
  	// SetCurrentDC();
@@ -993,14 +993,14 @@ RgnHandle wxFrame::GetCoveredRegion(int x, int y, int w, int h)
        RgnHandle rgn = NewRgn();  // this can fail.  use MaxMem to determine validity?
        if (FALSE) {  //(cIsResizableDialog) {
          OpenRgn();
-         MoveTo(theMacHeight, theMacWidth - 15);
-         LineTo(theMacHeight, theMacWidth);
-         LineTo(theMacHeight - 15, theMacWidth);
-         LineTo(theMacHeight, theMacWidth - 15);
+         MoveTo(theMacHeight, theMacWidth - 15); // SET-ORIGIN FLAGGED
+         LineTo(theMacHeight, theMacWidth); // SET-ORIGIN FLAGGED
+         LineTo(theMacHeight - 15, theMacWidth); // SET-ORIGIN FLAGGED
+         LineTo(theMacHeight, theMacWidth - 15); // SET-ORIGIN FLAGGED
          CloseRgn(rgn);
        } else {
          Rect growRect = {theMacHeight - 15, theMacWidth - 15, theMacHeight, theMacWidth};
-         RectRgn(rgn, &growRect);
+         RectRgn(rgn, &growRect); // SET-ORIGIN FLAGGED
        }
        OffsetRgn(rgn, -x, -y);
        return rgn;

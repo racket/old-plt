@@ -276,12 +276,12 @@ void wxListBox::Paint(void)
 	allR = (**cListHandle).rView;
 	if (allR.bottom > lastR.bottom) {
 		allR.top = lastR.bottom;
-		::EraseRect(&allR);
+		::EraseRect(&allR); // SET-ORIGIN FLAGGED
 	}
 	if (allR.right > lastR.right) {
 		allR.top = (**cListHandle).rView.top;
 		allR.left = lastR.right;
-		::EraseRect(&allR);
+		::EraseRect(&allR); // SET-ORIGIN FLAGGED
 	}
 */	
 	wxWindow::Paint();
@@ -318,7 +318,7 @@ void wxListBox::OnClientAreaDSize(int dW, int dH, int dX, int dY)
 	
 	if (!cHidden && (dW || dH || dX || dY))
 	{
-		::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&viewRect);
+		::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&viewRect); // SET-ORIGIN FLAGGED
 	}
 	
 	wxWindow::OnClientAreaDSize(dW, dH, dX, dY);
@@ -360,13 +360,13 @@ static void ManualScroll(ListHandle list, ControlHandle scroll, Point startPt, i
 {
 	if (part == kControlIndicatorPart) {
 	  int oldPos = ::GetControlValue(scroll);
-	  if (::TrackControl(scroll, startPt, NULL)) {
+	  if (::TrackControl(scroll, startPt, NULL)) { // SET-ORIGIN FLAGGED
          int newPos = ::GetControlValue(scroll);
          ::LScroll(0, newPos - oldPos, list);
 	  }
 	} else {
 	  trackList = list;
-	  ::TrackControl(scroll, startPt, TrackActionProcUPP);
+	  ::TrackControl(scroll, startPt, TrackActionProcUPP); // SET-ORIGIN FLAGGED
 	}
 }
 
@@ -393,7 +393,7 @@ void wxListBox::OnEvent(wxMouseEvent *event) // WCH : mac only ?
 		  modifiers += controlKey;
 
 /*		if ((**cListHandle).vScroll) {
-		  int thePart = ::TestControl((**cListHandle).vScroll, startPt);
+		  int thePart = ::TestControl((**cListHandle).vScroll, startPt); // SET-ORIGIN FLAGGED
 		  if (thePart) {
 		    ManualScroll(cListHandle, (**cListHandle).vScroll, startPt, thePart);
 		    return;
@@ -401,7 +401,7 @@ void wxListBox::OnEvent(wxMouseEvent *event) // WCH : mac only ?
 		}
 */
 		/* Click past the last cell => ignore it */
-/*		if (PtInRect(startPt, &(**cListHandle).rView)) {
+/*		if (PtInRect(startPt, &(**cListHandle).rView)) { // SET-ORIGIN FLAGGED
 		  Cell lastCell = { no_items - 1, 0 };
 		  Rect r;
 		  LRect(&r, lastCell, cListHandle);
@@ -421,7 +421,7 @@ void wxListBox::OnEvent(wxMouseEvent *event) // WCH : mac only ?
 		
 			cellWasClicked = false;			
 		
-//		if (PtInRect(startPt, &(**cListHandle).rView) == FALSE)
+//		if (PtInRect(startPt, &(**cListHandle).rView) == FALSE) // SET-ORIGIN FLAGGED
 //			return;							// ie in the scroll bars
 
 //		ALCell cell;

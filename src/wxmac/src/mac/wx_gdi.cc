@@ -650,7 +650,7 @@ wxBitmap::wxBitmap(char bits[], int the_width, int the_height)
 				byte = bits[p];
 				for (int k = 0; k < 8; k++) {
 					if (byte & 1) {			
-						::SetCPixel(j + k, i, &cpix);
+						::SetCPixel(j + k, i, &cpix); // SET-ORIGIN FLAGGED
 					}
 					byte = byte >> 1;
 				}
@@ -684,7 +684,7 @@ wxBitmap::wxBitmap(char *bitmap_file, long flags)
 			Rect bounds = {0, 0, height, width};
 			Create(width, height, depth);
 			SetGWorld(x_pixmap, 0);
-			DrawPicture( h, &bounds);
+			DrawPicture( h, &bounds); // SET-ORIGIN FLAGGED
 	  		::ReleaseResource((Handle)h);
 			::SetGWorld(saveport, savegd);
 			return;
@@ -746,14 +746,14 @@ Bool wxBitmap::Create(int wid, int hgt, int deep)
   GetGWorld(&saveport, &savegw);
   QDErr err;
   GWorldPtr	newGWorld;
-  err = NewGWorld(&newGWorld, (deep == 1) ? 1 : 0, &bounds, NULL, NULL, 
+  err = NewGWorld(&newGWorld, (deep == 1) ? 1 : 0, &bounds, NULL, NULL,  // SET-ORIGIN FLAGGED
                   (deep == 1) ? 0 : noNewDevice);
   if (err == noErr) {
 	  SetGWorld(newGWorld, 0);
 	  ::LockPixels(::GetGWorldPixMap(newGWorld));
 	  if (depth < 1)
 	    depth = wxDisplayDepth();
-	  ::EraseRect(&bounds);
+	  ::EraseRect(&bounds); // SET-ORIGIN FLAGGED
 	  ok = TRUE;
 	  x_pixmap = newGWorld;
 	  SetGWorld(saveport, savegw);
@@ -940,7 +940,7 @@ void wxBitmap::DrawMac(int x, int y, int mode)
                 GDHandle deviceNow;
 		::GetGWorld(&portNow,&deviceNow);
 		PixMapHandle destpixh = GetPortPixMap(portNow);
-		::CopyBits( (BitMap *) *srcpixh, (BitMap *) *destpixh,
+		::CopyBits( (BitMap *) *srcpixh, (BitMap *) *destpixh, // SET-ORIGIN FLAGGED
 			&sbounds, &dbounds, mode, NULL);
 	}
 }

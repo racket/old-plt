@@ -62,8 +62,8 @@ void wxRectBorder::DoShow(Bool on)
 		GetClientSize(&clientWidth, &clientHeight);
 		Rect clientRect = {0, 0, clientHeight, clientWidth};
 		
-		::EraseRect(&clientRect);
-		::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&clientRect);
+		::EraseRect(&clientRect); // SET-ORIGIN FLAGGED
+		::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&clientRect); // SET-ORIGIN FLAGGED
 	}
 	
 	wxWindow::DoShow(on);
@@ -84,28 +84,28 @@ void wxRectBorder::Paint(void)
 	margin = ParentArea()->Margin().Offset(Direction::wxTop) - cWhitespace;
 	if (margin > 0) {
 		::PenSize(margin, margin);
-		::MoveTo(clientRect.left, clientRect.top);
-		::LineTo(clientRect.right - margin, clientRect.top);
+		::MoveTo(clientRect.left, clientRect.top); // SET-ORIGIN FLAGGED
+		::LineTo(clientRect.right - margin, clientRect.top); // SET-ORIGIN FLAGGED
 	}
 
 	margin = ParentArea()->Margin().Offset(Direction::wxBottom) - cWhitespace;
 	if (margin > 0) {
 		::PenSize(margin, margin);
-		::MoveTo(clientRect.left, clientRect.bottom - margin);
-		::LineTo(clientRect.right - margin, clientRect.bottom - margin);
+		::MoveTo(clientRect.left, clientRect.bottom - margin); // SET-ORIGIN FLAGGED
+		::LineTo(clientRect.right - margin, clientRect.bottom - margin); // SET-ORIGIN FLAGGED
 	}
 
 	margin = ParentArea()->Margin().Offset(Direction::wxLeft) - cWhitespace;
 	if (margin > 0) {
 		::PenSize(margin, margin);
-		::MoveTo(clientRect.left, clientRect.top);
-		::LineTo(clientRect.left, clientRect.bottom - margin);
+		::MoveTo(clientRect.left, clientRect.top); // SET-ORIGIN FLAGGED
+		::LineTo(clientRect.left, clientRect.bottom - margin); // SET-ORIGIN FLAGGED
 	}
 
 	margin = ParentArea()->Margin().Offset(Direction::wxRight) - cWhitespace;
 	if (margin > 0) {
 		::PenSize(margin, margin);
-		::MoveTo(clientRect.right - margin, clientRect.top);
-		::LineTo(clientRect.right - margin, clientRect.bottom - margin);
+		::MoveTo(clientRect.right - margin, clientRect.top); // SET-ORIGIN FLAGGED
+		::LineTo(clientRect.right - margin, clientRect.bottom - margin); // SET-ORIGIN FLAGGED
 	}
 }

@@ -32,7 +32,7 @@ wxDC::~wxDC(void)
 void wxDC::wxMacDrawPoint(int x1, int y1)
 //-----------------------------------------------------------------------------
 {
-	MoveTo(x1, y1);
+	MoveTo(x1, y1); // SET-ORIGIN FLAGGED
 	Line(0, 0);
 }
 
@@ -40,8 +40,8 @@ void wxDC::wxMacDrawPoint(int x1, int y1)
 void wxDC::wxMacDrawLine(int x1, int y1, int x2, int y2)
 //-----------------------------------------------------------------------------
 {
-	MoveTo(x1, y1);
-	LineTo(x2, y2);
+	MoveTo(x1, y1); // SET-ORIGIN FLAGGED
+	LineTo(x2, y2); // SET-ORIGIN FLAGGED
 }
 
 void wxDC::SetTextForeground(wxColour *colour)

@@ -2,7 +2,7 @@
 
 string=? ; exec "$PLTHOME/bin/mzscheme" -qr $0 "$@"
 
-(use-compiled-file-kinds 'none)
+(use-compiled-file-paths '())
 (require (lib "cmdline.ss")
 	 (lib "process.ss"))
 

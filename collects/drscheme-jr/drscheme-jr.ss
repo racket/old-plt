@@ -2,6 +2,8 @@
 (reference-library "mzlib.ss")
 (reference-library "pretty.ss")
 
+(reference-library-use-compiled #f)
+
 (begin-elaboration-time
   (define plt-dir (or (getenv "PLTHOME") "/usr/local/lib/plt")))
 

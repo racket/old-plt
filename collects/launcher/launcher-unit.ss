@@ -545,12 +545,19 @@
       (define mzscheme-launcher-up-to-date?
 	(opt-lambda (dest [aux null])
            (cond
-	    [(eq? 'unix (system-type))
-	     (file-exists? dest)]
+	    ;; When running Setup PLT under Windows, the
+	    ;;  launcher process stays running until MzScheme
+	    ;;  completes, which means that it cannot be
+	    ;;  overwritten at that time. So we assume
+	    ;;  that a Setup-PLT-style independent launcher
+	    ;;  is always up-to-date.
 	    [(eq? 'windows (system-type))
 	     (and (let ([m (assq 'independent? aux)])
 		    (and m (cdr m)))
 		  (file-exists? dest))]
+	    ;; For any other setting, we could implement
+	    ;;  a fancy check, but for now always re-create
+	    ;;  launchers.
 	    [else #f])))
 
       (define (install-mred-program-launcher file collection name)

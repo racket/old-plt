@@ -113,7 +113,7 @@ wxs_help.cxx : wxs_help.xc  $(XCDEPEND)
 	$(XCTOCXX) wxs_help.xc
 wxs_ipc.cxx : wxs_ipc.xc  $(XCDEPEND)
 	$(XCTOCXX) wxs_ipc.xc
-wxs_item.cxx : wxs_item.xc  $(XCDEPEND)
+wxs_item.cxx : wxs_item.xc  $(ITEM_DEPEND) $(XCDEPEND)
 	$(XCTOCXX) wxs_item.xc
 wxs_lbox.cxx : wxs_lbox.xc  range.xci $(XCDEPEND) $(CB_DEPEND) $(LIST_DEPEND) $(ITEM_DEPEND)
 	$(XCTOCXX) wxs_lbox.xc

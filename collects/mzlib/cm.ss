@@ -70,48 +70,50 @@
   
   (define (compile-zo path)
     ((trace) (format "~acompiling: ~a" (indent) path))
-    (indent (format "  ~a" (indent)))
-    (let ((zo-name (string-append (get-compilation-path path) ".zo")))
-      (if (and (file-exists? zo-name)
-	       (trust-existing-zos))
-	  (touch zo-name)
-	  (begin
-	    (with-handlers ((not-break-exn? void))
-              (delete-file zo-name))
-            (with-handlers ((exn:get-module-code? (lambda (ex) 
-						    (compilation-failure path zo-name (exn:get-module-code-path ex)))))
-	      (let ([param 
-		     ;; Avoid using cm while loading cm-ctime:
-		     (parameterize ([use-compiled-file-kinds 'none])
-		       (dynamic-require '(lib "cm-ctime.ss" "mzlib" "private")
-					'current-external-file-registrar))]
-		    [external-deps null])
-		(let ((code (parameterize ([param (lambda (ext-file)
-						    (set! external-deps (cons ext-file external-deps)))])
-			      (get-module-code path)))
-		      (code-dir (get-code-dir path)))
-		  (if (not (directory-exists? code-dir))
-		      (make-directory code-dir))
-		  (let ((out (open-output-file zo-name 'replace)))
-		    (with-handlers ((exn:application:type?
-				     (lambda (ex) (compilation-failure path zo-name #f))))
-		      (dynamic-wind 
-			  void
-			  (lambda () (write code out))
-			  (lambda () (close-output-port out)))))
-		  (let ([ss-sec (file-or-directory-modify-seconds path)]
-			[zo-sec (file-or-directory-modify-seconds zo-name)])
-		    (when (< zo-sec ss-sec)
-		      (error 'compile-zo "date for newly created .zo file (~a @ ~a) is before source-file date (~a @ ~a)~a"
-			     zo-name
-			     (format-date (seconds->date zo-sec))
-			     path
-			     (format-date (seconds->date ss-sec))
-			     (if (> ss-sec (current-seconds))
-				 ", which appears to be in the future"
-				 ""))))
-		  (write-deps code path external-deps)))))))
-    (indent (substring (indent) 2 (string-length (indent))))
+    (parameterize ([indent (string-append "  " indent)])
+      (let ([zo-name (string-append (get-compilation-path path) ".zo")])
+        (cond
+         [(and (file-exists? zo-name) (trust-existing-zos)) (touch zo-name)]
+         [else
+          (with-handlers ([not-break-exn? void]) (delete-file zo-name))
+          (with-handlers ([exn:get-module-code?
+                           (lambda (ex)
+                             (compilation-failure
+                              path zo-name (exn:get-module-code-path ex)))])
+            (let* ([param
+                    ;; Avoid using cm while loading cm-ctime:
+                    (parameterize ([use-compiled-file-kinds 'none])
+                      (dynamic-require '(lib "cm-ctime.ss" "mzlib" "private")
+                                       'current-external-file-registrar))]
+                   [external-deps null]
+                   [code (parameterize ([param (lambda (ext-file)
+                                                 (set! external-deps
+                                                       (cons ext-file
+                                                             external-deps)))])
+                           (get-module-code path))]
+                   [code-dir (get-code-dir path)])
+              (if (not (directory-exists? code-dir))
+                (make-directory code-dir))
+              (let ((out (open-output-file zo-name 'replace)))
+                (with-handlers ((exn:application:type?
+                                 (lambda (ex) (compilation-failure path zo-name #f))))
+                  (dynamic-wind
+                    void
+                    (lambda () (write code out))
+                    (lambda () (close-output-port out)))))
+              (let ([ss-sec (file-or-directory-modify-seconds path)]
+                    [zo-sec (file-or-directory-modify-seconds zo-name)])
+                (when (< zo-sec ss-sec)
+                  (error 'compile-zo
+                         "date for newly created .zo file (~a @ ~a) is before source-file date (~a @ ~a)~a"
+                         zo-name
+                         (format-date (seconds->date zo-sec))
+                         path
+                         (format-date (seconds->date ss-sec))
+                         (if (> ss-sec (current-seconds))
+                           ", which appears to be in the future"
+                           ""))))
+              (write-deps code path external-deps)))])))
     ((trace) (format "~aend compile: ~a" (indent) path)))
 
   (define (format-date date)

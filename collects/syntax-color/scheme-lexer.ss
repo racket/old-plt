@@ -96,10 +96,10 @@
                 (:? (:or "\\" "\"")))]
    
 
-   [special-numbers (:or (:: n a n ".0")(:: i n f ".0"))]   
+   [special-numbers (:or (:: n a n ".0") (:: i n f ".0"))]   
    [exponent-marker (:or e s f d l)]
-   [sign (:or "" "+" "-")]
-   [exactness (:or "" "#i" "#e" "#I" "#E")]
+   [sign (char-set "+-")]
+   [exactness (:or "#i" "#e" "#I" "#E")]
    [radix2 (:or "#b" "#B")]
    [radix8 (:or "#o" "#O")]
    [radix10 (:or "" "#d" "#D")]
@@ -139,8 +139,8 @@
   
   (define-lex-trans make-prefix
     (syntax-rules ()
-      ((_ radix) (:or (:: radix exactness)
-                      (:: exactness radix)))))
+      ((_ radix) (:or (:: radix (:? exactness))
+                      (:: (:? exactness) radix)))))
   
   (define-lex-trans make-complex
     (syntax-rules ()
@@ -159,12 +159,12 @@
   (define-lex-trans make-ureal
     (syntax-rules ()
       ((_ digit) (:or (make-uinteger digit)
-                      (:: (make-uinteger digit) "/" (make-uinteger digit))
+                      (:: (make-uinteger digit) "/" (make-uinteger digit) (:? (make-suffix digit)))
                       (make-decimal digit)))))
 
   (define-lex-trans make-real
     (syntax-rules ()
-      ((_ digit) (:or (:: sign (make-ureal digit))
+      ((_ digit) (:or (:: (:? sign) (make-ureal digit))
                       (:: (char-set "+-") special-numbers)))))
   
   (define-lex-trans make-uinteger
@@ -181,7 +181,7 @@
 
   (define-lex-trans make-suffix
     (syntax-rules ()
-      ((_ digit) (:or "" (:: exponent-marker sign (:+ digit))))))
+      ((_ digit) (:or "" (:: exponent-marker (:? sign) (:+ digit))))))
 
   
   (define (ret lexeme type paren start-pos end-pos)

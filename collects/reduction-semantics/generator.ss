@@ -238,13 +238,6 @@
            (proc val z1)
            (loop gen-next))
          void))))
-
-  (define (generate-all/size gens size nonterm)
-    (let ([l null])
-      (for-each-generated/size 
-       (lambda (x) (set! l (cons x l)))
-       gens size nonterm)
-      l))
   
   (define (for-each-generated proc gens nonterm)
     (let loop ([i 0])

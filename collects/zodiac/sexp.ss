@@ -49,6 +49,8 @@
 		     (z:make-number origin start finish expr))
 		   ((boolean? expr)
 		     (z:make-boolean origin start finish expr))
+		   ((type-symbol? expr)
+		     (z:make-type-symbol origin start finish expr))
 		   ((char? expr)
 		     (z:make-char origin start finish expr))
 		   (else

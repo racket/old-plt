@@ -41,6 +41,7 @@
 ;;          boolean
 ;;          char
 ;;          box
+;;          type-symbol
 ;;          external
 ;;       sequence (length)
 ;;          list
@@ -57,6 +58,7 @@
    (struct  boolean ())
    (struct  char    ())
    (struct  box     ())
+   (struct  type-symbol ())
    (struct  external  ())
    (struct  sequence  (length))
    (struct  list  (marks))

@@ -21,8 +21,6 @@
   All rights reserved.
 */
 
-#pragma optimize("", off)
-
 /* This file contains 
 
         * the main eval-apply loop, in scheme_do_eval()

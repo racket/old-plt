@@ -160,7 +160,7 @@
 	  [build-scheme-value (lambda (type scheme-var c-var)
 				(let ([builder
 				       (if (pair? type)
-					   (format "(~a ? scheme_make_cptr(~~a, ~s) : scheme_false)" 
+					   (format "(~a ? scheme_make_cptr(~~a, scheme_make_string(~s)) : scheme_false)" 
 						   c-var
 						   (cadr type))
 					   (case type

@@ -6,8 +6,6 @@ if [ "$PLTHOME" = '' ] ; then
   export PLTHOME
 fi
 
-SYS=`${PLTHOME}/bin/archsys`
-
 # Find X flags and shift them to the front
 findxend()
 {
@@ -66,7 +64,7 @@ findxend()
     xn=yes
   ;;
   *)
-    exec ${PLTHOME}/.bin/${SYS}/mred  ${xa+"-display"} ${xa+"$xa"} ${xb+"-geometry"} ${xb+"$xb"} ${xc+"-bg"} ${xc+"$xc"} ${xd+"-fg"} ${xd+"$xd"} ${xe+"-font"} ${xe+"$xe"} ${xf+"-name"} ${xf+"$xf"} ${xg+"-selectionTimeout"} ${xg+"$xg"} ${xh+"-title"} ${xh+"$xh"} ${xi+"-xnllanguage"} ${xi+"$xi"} ${xj+"-xrm"} ${xj+"$xj"} ${xk+"-iconic"} ${xl+"-rv"} ${xm+"+rv"} ${xn+"-synchronous"} '-mqvL' 'drscheme.ss' 'drscheme' '--'  ${1+"$@"}
+    exec ${PLTHOME}/bin/mred  ${xa+"-display"} ${xa+"$xa"} ${xb+"-geometry"} ${xb+"$xb"} ${xc+"-bg"} ${xc+"$xc"} ${xd+"-fg"} ${xd+"$xd"} ${xe+"-font"} ${xe+"$xe"} ${xf+"-name"} ${xf+"$xf"} ${xg+"-selectionTimeout"} ${xg+"$xg"} ${xh+"-title"} ${xh+"$xh"} ${xi+"-xnllanguage"} ${xi+"$xi"} ${xj+"-xrm"} ${xj+"$xj"} ${xk+"-iconic"} ${xl+"-rv"} ${xm+"+rv"} ${xn+"-synchronous"} '-mvqL' 'drscheme.ss' 'drscheme'  ${1+"$@"}
   ;;
  esac
  shift

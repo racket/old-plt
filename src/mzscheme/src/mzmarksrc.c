@@ -507,6 +507,8 @@ thread_val {
   gcMARK(pr->overflow_reply);
   MARK_jmpup(&pr->overflow_cont);
 
+  gcMARK(pr->values_buffer);
+
   gcMARK(pr->tail_buffer);
   
   gcMARK(pr->ku.k.p1);

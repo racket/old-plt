@@ -1177,6 +1177,8 @@ int thread_val_MARK(void *p) {
   gcMARK(pr->overflow_reply);
   MARK_jmpup(&pr->overflow_cont);
 
+  gcMARK(pr->values_buffer);
+
   gcMARK(pr->tail_buffer);
   
   gcMARK(pr->ku.k.p1);
@@ -1241,6 +1243,8 @@ int thread_val_FIXUP(void *p) {
   
   gcFIXUP(pr->overflow_reply);
   FIXUP_jmpup(&pr->overflow_cont);
+
+  gcFIXUP(pr->values_buffer);
 
   gcFIXUP(pr->tail_buffer);
   

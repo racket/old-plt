@@ -218,6 +218,9 @@ xsrc/xcglue.c: $(srcdir)/../../mzscheme/utils/xcglue.c ../wxs/xcglue.o $(XFORMDE
 xsrc/mred.cc: $(srcdir)/../mred.cxx ../mred.o $(XFORMDEP)
 	$(XFORM) $(srcdir)/../mred.cxx xsrc/mred.cc
 
+xsrc/mrmain.cc: $(srcdir)/../mrmain.cxx ../mrmain.o $(XFORMDEP)
+	$(XFORM) $(srcdir)/../mrmain.cxx xsrc/mrmain.cc
+
 xsrc/mredx.cc: $(srcdir)/../mredx.cxx ../mredx.o $(XFORMDEP)
 	$(XFORM) $(srcdir)/../mredx.cxx xsrc/mredx.cc
 
@@ -488,6 +491,8 @@ wxJPEG.o: xsrc/wxJPEG.cc
 	$(CXX) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wxJPEG.o xsrc/wxJPEG.cc
 mred.o: xsrc/mred.cc
 	$(CXX) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o mred.o xsrc/mred.cc
+mrmain.o: xsrc/mrmain.cc
+	$(CXX) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o mrmain.o xsrc/mrmain.cc
 mredx.o: xsrc/mredx.cc
 	$(CXX) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o mredx.o xsrc/mredx.cc
 
@@ -615,6 +620,7 @@ XSRCS = xsrc/Window.cc \
   xsrc/wxJPEG.cc \
 \
   xsrc/mred.cc \
+  xsrc/mrmain.cc \
   xsrc/mredx.cc
 
 XOBJS = Window.o \
@@ -734,6 +740,7 @@ XOBJS = Window.o \
   wxJPEG.o \
 \
   mred.o \
+  mrmain.o \
   mredx.o \
 \
   xcglue.o \

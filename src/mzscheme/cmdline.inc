@@ -71,7 +71,7 @@ typedef struct {
 
 static int finish_cmd_line_run(FinishArgs *fa, void (*repl)(void))
 {
-  int exit_val = 0;
+  volatile int exit_val = 0;
 
 #ifndef DONT_LOAD_INIT_FILE
   if (!fa->no_init_file) {
@@ -85,7 +85,7 @@ static int finish_cmd_line_run(FinishArgs *fa, void (*repl)(void))
 
 #ifndef DONT_PARSE_COMMAND_LINE
   {
-    int i;
+    volatile int i;
     for (i = 0; i < fa->num_enl; i++) {
       if (fa->is_load[i]) {
 	if (!scheme_load(fa->evals_and_loads[i])) {

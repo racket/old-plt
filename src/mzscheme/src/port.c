@@ -25,6 +25,9 @@
 #ifdef UNISTD_INCLUDE
 # include <unistd.h>
 #endif
+#ifdef USE_ULIMIT
+# include <ulimit.h>
+#endif
 #ifdef FILES_HAVE_FDS
 # include <sys/types.h>
 # include <sys/time.h>
@@ -6814,7 +6817,7 @@ make_tcp_output_port(void *data)
 
 static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
 {
-  char *address = "", * volatile errmsg = "";
+  char * volatile address = "", * volatile errmsg = "";
   unsigned short origid, id;
   int errpart = 0, errid = 0;
 #ifdef USE_SOCKETS_TCP

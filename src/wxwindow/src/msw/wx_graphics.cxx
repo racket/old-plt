@@ -119,12 +119,12 @@ void wxGDrawString(Graphics *g, wchar_t *w, int len, Font *f, PointF *pos, Strin
 {
   Color col(255, GetRValue(c), GetGValue(c), GetBValue(c));
   SolidBrush b(col);
-  g->DrawString(g, w, len, f, pos, fmt, &b);
+  g->DrawString(w, len, f, *pos, fmt, &b);
 }
 
-void wxGMesureString(Graphics *g, wchar_t *w, int len, Font *f, PointF *pos, StringFormat *fmt, RectF *r)
+void wxGMeasureString(Graphics *g, wchar_t *w, int len, Font *f, PointF *pos, StringFormat *fmt, RectF *r)
 {
-  g->MeasureString(g, w, len, f, pos, fmt, r);
+  g->MeasureString(w, len, f, *pos, fmt, r);
 }
 
 GraphicsPath *wxGPathNew(FillMode m)
@@ -223,17 +223,17 @@ void wxGPenRelease(Pen *p)
   delete p;
 }
 
-Font wxGFontCreate(HFONT hf)
+Font *wxGFontNew(HDC dc)
 {
-  new Font(hf);
+  return new Font(dc);
 }
 
-void wxGFontRelease(Font f)
+void wxGFontRelease(Font *f)
 {
   delete f;
 }
 
-StringFormat wxGStringFormatCreate(int flags)
+StringFormat *wxGNewStringFormat(int flags)
 {
   return new StringFormat();
 }

@@ -1620,6 +1620,7 @@ void wxDC::DrawText(const char *text, double x, double y, Bool combine, Bool ucs
   SIZE sizeRect;
   double oox, ooy;
   int fam;
+  Font *g_f;
 
   dc = ThisDC();
 
@@ -1634,17 +1635,20 @@ void wxDC::DrawText(const char *text, double x, double y, Bool combine, Bool ucs
       if (!old_font)
         old_font = f;
     }
-    fam = font->GetFamuly();
-  } else
+    fam = font->GetFamily();
+    g_f = wxGFontNew(dc);
+  } else {
     fam = wxDEFAULT;
+    g_f = NULL;
+  }
   
   ustring = convert_to_drawable_format(text, d, ucs4, &len, fam == wxSYMBOL);
 
   if (wx_gdi_plus) {
     InitGraphics(dc);
     init_the_format();
-    if (current_text_background->Ok())
-      col = current_text_background->pixel;
+    if (current_text_foreground->Ok())
+      col = current_text_foreground->pixel;
     else
       col = 0;
   } else {
@@ -1661,8 +1665,8 @@ void wxDC::DrawText(const char *text, double x, double y, Bool combine, Bool ucs
 		   : OPAQUE));
     SetRop(dc, wxSOLID);
     col  = 0;
+    SetScaleMode(wxWINDOWS_SCALE, dc);
   }
-  SetScaleMode(wxWINDOWS_SCALE, dc);
   
   w = 0;
   d = 0;
@@ -1676,14 +1680,19 @@ void wxDC::DrawText(const char *text, double x, double y, Bool combine, Bool ucs
     else
       alen = 1;
 
-    SetDeviceOrigin(MS_XLOG2DEVREL(x + w) + oox, MS_YLOG2DEVREL(y) + ooy);
-
     if (wx_gdi_plus) {
       PointF p;
+      RectF r;
       p.X = p.Y = 0;
-      wxGDrawString(g, ustring XFORM_OK_PLUS d, alen, &p, the_fmt, col);
+      wxGResetTransform(g);
+      wxGTranslate(g, MS_XLOG2DEVREL(x + w) + oox, MS_YLOG2DEVREL(y) + ooy);
+      wxGScale(g, user_scale_x*logical_scale_x, user_scale_y*logical_scale_y);
+      wxGDrawString(g, ustring XFORM_OK_PLUS d, alen, g_f, &p, the_fmt, col);
+      wxGMeasureString(g, ustring XFORM_OK_PLUS d, alen, g_f, &p, the_fmt, &r);
       w += r.Width;
     } else {
+      SetDeviceOrigin(MS_XLOG2DEVREL(x + w) + oox, MS_YLOG2DEVREL(y) + ooy);
+
       (void)TextOutW(dc, 0, 0, ustring XFORM_OK_PLUS d, alen);
 
       if (alen == 1) {
@@ -1951,17 +1960,22 @@ void wxDC::GetTextExtent(const char *string, double *x, double *y,
   double tx, ty;
   wchar_t *ustring;
   int once = 1, fam;
+  Font *g_f;
 
   if (theFont) {
     oldFont = font;
     SetFont(theFont);
-    fam = theFont->GetFamuly();
   } else {
     SetFont(font);
-    fam = font->GetFamuly();
   }
+  fam = font->GetFamily();
 
   dc = ThisDC();
+
+  if (wx_gdi_plus)
+    g_f = wxGFontNew(dc);
+  else
+    g_f = NULL;
 
   if (!dc) {
     *x = 5;
@@ -1978,10 +1992,9 @@ void wxDC::GetTextExtent(const char *string, double *x, double *y,
     init_the_format();
   } else {
     ReleaseGraphics(dc);
+    SetScaleMode(wxWINDOWS_SCALE, dc);  
   }
 
-  SetScaleMode(wxWINDOWS_SCALE, dc);
-  
   d = 0;
   tx = 0;
   ty = 0;
@@ -1998,10 +2011,10 @@ void wxDC::GetTextExtent(const char *string, double *x, double *y,
       PointF p;
       RectF r;
       p.X = p.Y = 0;
-      wxGMeasureString(g, ustring XFORM_OK_PLUS d, alen, &p, the_fmt, &r);
+      wxGMeasureString(g, ustring XFORM_OK_PLUS d, alen, g_f, &p, the_fmt, &r);
       tx += r.Width;
-      if (rect.Height > ty)
-	ty = rect.Height;
+      if (r.Height > ty)
+	ty = r.Height;
     } else {
       if (alen == 1) {
 	ABCFLOAT cw;

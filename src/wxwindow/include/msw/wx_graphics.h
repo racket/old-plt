@@ -68,7 +68,7 @@ WX_GRAPHICS_EXPORT void WX_GPROC(wxGBrushRelease)(Brush *b);
 WX_GRAPHICS_EXPORT Pen *WX_GPROC(wxGPenNew)(COLORREF c, double pw, LineCap cap, LineJoin join, int ndash, REAL *dashes, REAL offset);
 WX_GRAPHICS_EXPORT void WX_GPROC(wxGPenRelease)(Pen *b);
 
-WX_GRAPHICS_EXPORT Font WX_GPROC(wxGFontCreate)(HFONT hf);
-WX_GRAPHICS_EXPORT void WX_GPROC(wxGFontRelease)(Font f);
+WX_GRAPHICS_EXPORT Font *WX_GPROC(wxGFontNew)(HDC dc);
+WX_GRAPHICS_EXPORT void WX_GPROC(wxGFontRelease)(Font *f);
 
-WX_GRAPHICS_EXPORT StringFormat WX_GPROC(wxGStringFormatCreate)(int flags);
+WX_GRAPHICS_EXPORT StringFormat *WX_GPROC(wxGNewStringFormat)(int flags);

@@ -70,10 +70,10 @@ typedef void (*p_wxGBrushRelease)(Brush *b);
 typedef Pen *(*p_wxGPenNew)(COLORREF c, double pw, LineCap cap, LineJoin join, int ndash, REAL *dashes, REAL offset);
 typedef void (*p_wxGPenRelease)(Pen *b);
 
-typedef Font (*p_wxGFontCreate)(HFONT hf);
-typedef void (*p_wxGFontRelease)(Font f);
+typedef Font *(*p_wxGFontNew)(HDC dc);
+typedef void (*p_wxGFontRelease)(Font *f);
 
-typedef StringFormat (*p_wxGStringFormatCreate)(int flags);
+typedef StringFormat *(*p_wxGNewStringFormat)(int flags);
 
 /* ********************************************************************** */
 
@@ -137,10 +137,10 @@ p_wxGBrushRelease wxGBrushRelease;
 p_wxGPenNew wxGPenNew;
 p_wxGPenRelease wxGPenRelease;
 
-p_wxGFontCreate wxGFontCreate;
+p_wxGFontNew wxGFontNew;
 p_wxGFontRelease wxGFontRelease;
 
-p_wxGStringFormatCreate wxGStringFormatCreate;
+p_wxGNewStringFormat wxGNewStringFormat;
 
 /* ********************************************************************** */
 
@@ -206,10 +206,10 @@ static void GetProcs(HMODULE m)
   wxGPenNew = (p_wxGPenNew)GetProcAddress(m, "wxGPenNew");
   wxGPenRelease = (p_wxGPenRelease)GetProcAddress(m, "wxGPenRelease");
 
-  wxGFontCreate = (p_wxGFontCreate)GetProcAddress(m, "wxGFontCreate");
+  wxGFontNew = (p_wxGFontNew)GetProcAddress(m, "wxGFontNew");
   wxGFontRelease = (p_wxGFontRelease)GetProcAddress(m, "wxGFontRelease");
 
-  wxGStringFormatCreate = (p_wxGStringFormatCreate)GetProcAddress(m, "wxGStringFormatCreate");
+  wxGNewStringFormat = (p_wxGNewStringFormat)GetProcAddress(m, "wxGNewStringFormat");
 }
 
 void wxInitGraphicsPlus()

@@ -1,11 +1,13 @@
 (module search mzscheme
   
   (require "board.ss"
+           "heuristics.ss"
            "weights.scm")
   
   (provide compute-move best-cmd)
   
-  (define (weight-from-goal x) (* -1 x))
+  (define step-weight (make-parameter -1))
+  (define (weight-from-goal x) (* (step-weight) x))
   
   ;(make-qelt qelt move qelt)
   (define-struct qelt (left move right))

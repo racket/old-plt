@@ -593,7 +593,7 @@
 			   (if (> (string-length (symbol->string head))
 				  max-call-head-width)
 			       (pp-general expr col extra #f #f #f pp-expr depth)
-			       (pp-call expr col extra pp-expr depth))))
+			       (pp-list expr col extra pp-expr #t depth))))
 		     (pp-list expr col extra pp-expr #t depth)))))
 
 	 ; (head item1
@@ -698,7 +698,7 @@
 	   (pp-general expr col extra #f pp-expr #f pp-expr depth))
 
 	 (define (pp-cond expr col extra depth)
-	   (pp-call expr col extra pp-expr-list depth))
+	   (pp-list expr col extra pp-expr-list #t depth))
 
 	 (define (pp-class expr col extra depth)
 	   (pp-two-up expr col extra pp-expr-list depth))

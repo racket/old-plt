@@ -82,41 +82,31 @@ typedef       void    *wxKeyEvent;
 #else
 
 // Item or menu event class
+class wxScrollEvent: public wxEvent
+{
+ public:
+  wxScrollEvent();
+
+  int moveType;
+  int direction;
+};
+
+
+// Item or menu event class
 class wxCommandEvent: public wxEvent
 {
   DECLARE_DYNAMIC_CLASS(wxCommandEvent)
 
  public:
-  char *commandString; // String event argument
-  int commandInt;      // Integer event argument
-  long extraLong;      // Additional information (e.g. select/deselect)
-  char *labelString;   // The label of the item
-  char *clientData;    // Arbitrary client data
   wxCommandEvent(WXTYPE commandType = 0);
   inline ~wxCommandEvent(void) {}
+};
 
-  /*
-   * Accessors dependent on context
-   *
-   */
-
-  // Get listbox/choice client data  
-  inline virtual char *GetClientData() { return clientData; }
-
-  // Get listbox selection if single-choice
-  inline virtual int GetSelection() { return commandInt; }
-
-  // Get listbox/choice selection string
-  inline virtual char *GetString() { return commandString; }
-
-  // Get checkbox value
-  inline virtual Bool Checked() { return (Bool)commandInt; }
-
-  // TRUE if the listbox event was a selection.
-  inline virtual Bool IsSelection() { return (Bool)(extraLong == 1); }
-
-  Bool ReadEvent(istream&);
-  Bool WriteEvent(ostream&);
+class wxPopupEvent: public wxCommandEvent
+{
+public:
+  wxPopupEvent();
+  int menuId;
 };
 
 // Mouse event class
@@ -195,9 +185,6 @@ class wxMouseEvent: public wxEvent
 
   // Find the position of the event
   virtual void Position(float *x, float *y);
-
-  Bool ReadEvent(istream&);
-  Bool WriteEvent(ostream&);
 };
 
 // Keyboard input event class
@@ -223,9 +210,6 @@ class wxKeyEvent: public wxEvent
   virtual long KeyCode(void);
 
   virtual void Position(float *x,float *y) ;
-
-  Bool ReadEvent(istream&);
-  Bool WriteEvent(ostream&);
 };
 
 #endif // IN_CPROTO

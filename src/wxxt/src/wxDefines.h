@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: wxDefines.h,v 1.1.1.1 1997/12/22 17:28:42 mflatt Exp $
+ * $Id: wxDefines.h,v 1.2 1998/07/03 21:17:31 mflatt Exp $
  *
  * Purpose: Declarations/definitions common to all wx source files
  *
@@ -357,8 +357,8 @@ enum {
     wxEVENT_TYPE_LEAVE_WINDOW         = 0x3005,
 };
 
-#define WXSCROLLPOS(event)	event.commandInt
-#define WXSCROLLORIENT(event)	event.extraLong
+#define WXSCROLLPOS(event)	event.moveType
+#define WXSCROLLORIENT(event)	event.direction
 
 // defines for wxFont
 //--- default for all others

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Menu.cc,v 1.3 1998/04/22 14:38:47 mflatt Exp $
+ * $Id: Menu.cc,v 1.4 1998/04/22 15:36:34 mflatt Exp $
  *
  * Purpose: simple menu class
  *
@@ -414,10 +414,9 @@ void wxMenu::EventCallback(Widget WXUNUSED(w), XtPointer dclient, XtPointer dcal
       if (item->type == MENU_TOGGLE)
 	item->set = (!item->set);
       
-      wxCommandEvent *event = new wxCommandEvent(wxEVENT_TYPE_MENU_COMMAND);
+      wxPopupEvent *event = new wxPopupEvent();
       
-      event->eventObject = menu;
-      event->commandInt = item->ID;
+      event->menuId = item->ID;
 
       // call callback function
       if (menu->callback)

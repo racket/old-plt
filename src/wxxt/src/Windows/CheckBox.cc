@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: CheckBox.cc,v 1.1.1.1 1997/12/22 17:28:57 mflatt Exp $
+ * $Id: CheckBox.cc,v 1.2 1998/02/05 23:00:31 mflatt Exp $
  *
  * Purpose: check box panel item
  *
@@ -96,7 +96,7 @@ Bool wxCheckBox::Create(wxPanel *panel, wxFunction function, char *label,
     callback = function;
     XtAddCallback(X->handle, XtNonCallback,  wxCheckBox::OnEventCallback,
 		  (XtPointer)this);
-    XtAddCallback(X->handle, XtNoffCallback, wxCheckBox::OffEventCallback,
+    XtAddCallback(X->handle, XtNoffCallback, wxCheckBox::OnEventCallback,
 		  (XtPointer)this);
 
     panel->PositionItem(this, x, y, width, height);
@@ -141,7 +141,7 @@ Bool wxCheckBox::Create(wxPanel *panel, wxFunction function, wxBitmap *bitmap,
     callback = function;
     XtAddCallback(X->handle, XtNonCallback,  wxCheckBox::OnEventCallback,
 		  (XtPointer)this);
-    XtAddCallback(X->handle, XtNoffCallback, wxCheckBox::OffEventCallback,
+    XtAddCallback(X->handle, XtNoffCallback, wxCheckBox::OnEventCallback,
 		  (XtPointer)this);
 
     panel->PositionItem(this, x, y, width, height);
@@ -211,7 +211,6 @@ void wxCheckBox::SetValue(Bool state)
 
 void wxCheckBox::Command(wxCommandEvent &event)
 {
-  SetValue (event.commandInt);
   ProcessCommand (event);
 }
 
@@ -225,21 +224,5 @@ void wxCheckBox::OnEventCallback(Widget WXUNUSED(w),
     wxCheckBox     *checkbox = (wxCheckBox*)clientData;
     wxCommandEvent *event = new wxCommandEvent(wxEVENT_TYPE_CHECKBOX_COMMAND);
 
-    event->eventObject = checkbox;
-    event->commandInt  = TRUE;
-
     checkbox->ProcessCommand(*event);
 }
-
-void wxCheckBox::OffEventCallback(Widget WXUNUSED(w),
-				  XtPointer clientData, XtPointer WXUNUSED(ptr))
-{
-    wxCheckBox     *checkbox = (wxCheckBox*)clientData;
-    wxCommandEvent *event = new wxCommandEvent(wxEVENT_TYPE_CHECKBOX_COMMAND);
-
-    event->eventObject = checkbox;
-    event->commandInt  = FALSE;
-
-    checkbox->ProcessCommand(*event);
-}
-

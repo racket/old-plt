@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: GetText.cc,v 1.2 1996/01/11 10:26:57 markus Exp $
+ * $Id: GetText.cc,v 1.1.1.1 1997/12/22 17:28:49 mflatt Exp $
  *
  * Purpose: get single text input
  *
@@ -30,24 +30,5 @@
 char *wxGetTextFromUser(char *message, char *caption, char *default_value,
 			wxWindow *parent, int x, int y, Bool centre)
 {
-    static char *return_text = NULL;
-
-    // if there is an old text delete it
-    if (return_text)
-	delete return_text;
-    return_text = NULL;
-
-    // create dialog box and text item
-    wxDialogBase *box
-	= DEBUG_NEW wxDialogBase(message, caption,
-				 (centre ? wxCENTRE : 0) | wxOK | wxCANCEL,
-				 parent, x, y);
-    wxText *txt
-	= DEBUG_NEW wxText(box, (wxFunction)NULL, NULL, default_value,
-			   -1, -1, 200, -1, wxPROCESS_ENTER);
-    // wait for input
-    if (box->GetInput() == wxOK)
-	return_text = copystring(txt->GetValue());
-    delete box;
-    return return_text;
+  return NULL;
 }

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: ListBox.cc,v 1.7 1998/07/09 22:45:03 mflatt Exp $
+ * $Id: ListBox.cc,v 1.8 1998/07/18 21:51:04 mflatt Exp $
  *
  * Purpose: list box panel item
  *
@@ -477,19 +477,6 @@ void wxListBox::SetString(int n, char *s)
 
 void wxListBox::Command(wxCommandEvent &event)
 {
-  if (event.extraLong) {
-    if (style & wxMULTIPLE) {
-      /* Deselect others */
-      int c, *l;
-      c = GetSelections(&l);
-      while (c--) {
-	if (l[c] != event.commandInt)
-	  SetSelection(l[c], 0);
-      }
-    }
-    SetSelection(event.commandInt);
-  } else
-    Deselect(event.commandInt);
   ProcessCommand (event);
 }
 
@@ -505,33 +492,9 @@ void wxListBox::EventCallback(Widget WXUNUSED(w),
     wxCommandEvent            *_event = new wxCommandEvent(wxEVENT_TYPE_LISTBOX_COMMAND);
     wxCommandEvent            &event = *_event;
 
-    if (rs->action == XfwfMultiListActionDClick
-	&&  lbox->allow_dclicks) {
+    if (rs->action == XfwfMultiListActionDClick 
+	&& lbox->allow_dclicks)
       event.eventType = wxEVENT_TYPE_LISTBOX_DCLICK_COMMAND;
-      // double click invokes OnDefaultAction
-      lbox->parent->GetEventHandler()->OnDefaultAction(lbox);
-      return; /* MATTHEW */
-    }
-
-    if (lbox->GetWindowStyleFlag() & (wxMULTIPLE | wxEXTENDED)) {
-      event.commandInt    = -1;
-      event.commandString = NULL;
-      event.clientData    = NULL;
-      event.extraLong     = 0;
-    } else {
-      event.commandInt    = rs->item;
-      
-      event.commandString = lbox->GetString(event.commandInt);
-      event.clientData    = lbox->GetClientData(event.commandInt);
-
-      event.extraLong     = (rs->action==XfwfMultiListActionHighlight
-			     || rs->action==XfwfMultiListActionDClick);
-
-      if (!event.extraLong || event.commandInt <= -1)
-	return; /* it was a bad event */
-    }      
-    
-    event.eventObject   = lbox;
 
     lbox->ProcessCommand(event);
 }

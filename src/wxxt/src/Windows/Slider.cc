@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Slider.cc,v 1.1.1.1 1997/12/22 17:28:59 mflatt Exp $
+ * $Id: Slider.cc,v 1.2 1998/02/05 23:00:32 mflatt Exp $
  *
  * Purpose: slider panel item
  *
@@ -148,7 +148,6 @@ void wxSlider::SetValue(int new_value)
 
 void wxSlider::Command(wxCommandEvent &event)
 {
-  SetValue(event.commandInt);
   ProcessCommand(event);
 }
 
@@ -187,8 +186,6 @@ void wxSlider::EventCallback(Widget WXUNUSED(w),
 	XtVaSetValues(slider->X->handle, XtNlabel, tempstring, NULL);
 	// process event
 	wxCommandEvent *event = new wxCommandEvent(wxEVENT_TYPE_SLIDER_COMMAND);
-	event->eventObject = slider;
-	event->commandInt = new_value;
 	slider->ProcessCommand(*event);
     }
 }

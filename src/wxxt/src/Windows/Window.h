@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Window.h,v 1.2 1998/02/05 23:00:33 mflatt Exp $
+ * $Id: Window.h,v 1.3 1998/04/11 13:57:33 mflatt Exp $
  *
  * Purpose: base class for all windows
  *
@@ -159,7 +159,7 @@ public:
     virtual void OnCommand(wxWindow& win, wxCommandEvent& event);
     virtual void OnEvent(wxMouseEvent& event);
     virtual void OnPaint(void);
-    virtual void OnScroll(wxCommandEvent& event);
+    virtual void OnScroll(wxScrollEvent& event);
     virtual Bool PreOnChar(wxWindow *, wxKeyEvent *);
     virtual Bool PreOnEvent(wxWindow *, wxMouseEvent *);
     // get the associated device context

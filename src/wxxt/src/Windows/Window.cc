@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Window.cc,v 1.10 1998/07/18 21:51:05 mflatt Exp $
+ * $Id: Window.cc,v 1.11 1998/08/01 12:42:15 mflatt Exp $
  *
  * Purpose: base class for all windows
  *
@@ -34,6 +34,7 @@
 #define  Uses_wxTypeTree
 #define  Uses_wxWindow
 #define  Uses_wxDialogBox
+#define  Uses_wxItem
 #include "wx.h"
 #define  Uses_ScrollWinWidget
 #define  Uses_ShellWidget
@@ -200,6 +201,7 @@ void wxWindow::SetLabel(char *label)
     char *oldlabel = NULL;
     XtVaGetValues(X->frame, XtNlabel, &oldlabel, NULL);
     if (oldlabel) {
+      label = wxGetCtlLabel(label);
       XtVaSetValues(X->frame, XtNlabel, label, NULL);
     }
 }
@@ -963,7 +965,7 @@ void wxWindow::OnPaint(void)
     XfwfCallExpose(X->handle, X->expose_event, X->expose_region);
 }
 
-void wxWindow::OnScroll(wxCommandEvent& event)
+void wxWindow::OnScroll(wxScrollEvent& event)
 {
   XfwfScrollInfo *sinfo = (XfwfScrollInfo*)event.eventHandle;
   if (!sinfo) return; /* MATTHEW: [5] */
@@ -1198,8 +1200,8 @@ void wxWindow::ScrollEventHandler(Widget    WXUNUSED(w),
 
   XfwfScrollInfo *sinfo = (XfwfScrollInfo*)p_XfwfScrollInfo;
   
-  wxCommandEvent *_wxevent = new wxCommandEvent(wxTYPE_SCROLL_EVENT);
-  wxCommandEvent &wxevent = *_wxevent;
+  wxScrollEvent *_wxevent = new wxScrollEvent();
+  wxScrollEvent &wxevent = *_wxevent;
   
   if (win->misc_flags & NO_AUTO_SCROLL_FLAG) {
     switch (sinfo->reason) {
@@ -1298,7 +1300,6 @@ void wxWindow::WindowEventHandler(Widget w,
 	(void)XLookupString(&(xev->xkey), NULL, 0, &keysym, NULL);
 	// set wxWindows event structure
 	wxevent.eventHandle	= (char*)xev;
-	wxevent.eventObject	= win;
 	wxevent.keyCode		= CharCodeXToWX(keysym);
 	wxevent.x		= win->DeviceToLogicalX(xev->xkey.x);
 	wxevent.y		= win->DeviceToLogicalY(xev->xkey.y);
@@ -1355,7 +1356,6 @@ void wxWindow::WindowEventHandler(Widget w,
 	}
 	// set wxWindows event structure
 	wxevent.eventHandle	= (char*)xev;
-	wxevent.eventObject	= win;
 	wxevent.x		= win->DeviceToLogicalX(xev->xbutton.x);
 	wxevent.y		= win->DeviceToLogicalY(xev->xbutton.y);
 	wxevent.altDown		= /* xev->xbutton.state & Mod3Mask */ FALSE;
@@ -1407,7 +1407,6 @@ void wxWindow::WindowEventHandler(Widget w,
 
 	// set wxWindows event structure
 	wxevent.eventHandle	= (char*)xev;
-	wxevent.eventObject	= win;
 	wxevent.x		= win->DeviceToLogicalX(xev->xcrossing.x);
 	wxevent.y		= win->DeviceToLogicalY(xev->xcrossing.y);
 	wxevent.altDown		= /* xev->xcrossing.state & Mod3Mask */ FALSE;
@@ -1438,7 +1437,6 @@ void wxWindow::WindowEventHandler(Widget w,
 	}
 	// set wxWindows event structure
 	wxevent.eventHandle	= (char*)xev;
-	wxevent.eventObject	= win;
 	wxevent.x		= win->DeviceToLogicalX(xev->xmotion.x);
 	wxevent.y		= win->DeviceToLogicalY(xev->xmotion.y);
 	wxevent.altDown		= /* xev->xmotion.state & Mod3Mask */ FALSE;

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Message.cc,v 1.1.1.1 1997/12/22 17:28:57 mflatt Exp $
+ * $Id: Message.cc,v 1.2 1998/04/10 15:07:21 mflatt Exp $
  *
  * Purpose: message panel item
  *
@@ -173,6 +173,7 @@ void wxMessage::SetAlignment(long alignment)
 
 void wxMessage::SetLabel(char *message)
 {
+  message = wxGetCtlLabel(message);
   if (!bm_label)
     XtVaSetValues(X->handle, XtNlabel, message, XtNbitmap, None, NULL);
 }

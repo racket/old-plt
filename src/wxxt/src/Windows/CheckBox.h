@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: CheckBox.h,v 1.1.1.1 1997/12/22 17:28:57 mflatt Exp $
+ * $Id: CheckBox.h,v 1.2 1998/02/05 23:00:32 mflatt Exp $
  *
  * Purpose: check box panel item
  *
@@ -66,7 +66,6 @@ public:
 private:
 #   ifdef Have_Xt_Types
     static void OnEventCallback(Widget, XtPointer, XtPointer);
-    static void OffEventCallback(Widget, XtPointer, XtPointer);
 #   endif
     wxBitmap *bm_label;
 };

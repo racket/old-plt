@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Choice.cc,v 1.3 1998/04/10 15:07:20 mflatt Exp $
+ * $Id: Choice.cc,v 1.4 1998/07/08 22:01:12 mflatt Exp $
  *
  * Purpose: choice panel item
  *
@@ -218,7 +218,6 @@ void wxChoice::SetStringSelection(char *s)
 
 void wxChoice::Command(wxCommandEvent &event)
 {
-  SetSelection(event.commandInt);
   ProcessCommand(event);
 }
 
@@ -247,16 +246,13 @@ void wxChoice::EventCallback(Widget WXUNUSED(w),
 void wxChoice::MenuEventCallback(wxObject& obj, wxCommandEvent& ev)
 {
     wxChoice       *choice = (wxChoice*)((wxMenu&)obj).GetClientData();
+    wxPopupEvent *pu = (wxPopupEvent *)&ev;
 
     if (!choice->Number())
       return;
 
     wxCommandEvent *event = new wxCommandEvent(wxEVENT_TYPE_CHOICE_COMMAND);
 
-    event->eventObject   = choice;
-    event->commandInt    = ev.commandInt;
-    event->commandString = choice->GetString(ev.commandInt);
-
-    choice->SetSelection(ev.commandInt);
+    choice->SetSelection(pu->menuId);
     choice->ProcessCommand(*event);
 }

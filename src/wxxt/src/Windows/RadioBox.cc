@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: RadioBox.cc,v 1.4 1998/04/22 14:38:47 mflatt Exp $
+ * $Id: RadioBox.cc,v 1.5 1998/05/22 00:41:52 mflatt Exp $
  *
  * Purpose: radio box panel item
  *
@@ -438,7 +438,6 @@ Bool wxRadioBox::Show(int item, Bool show)
 
 void wxRadioBox::Command(wxCommandEvent &event)
 {
-  SetSelection(event.commandInt);
   ProcessCommand(event);
 }
 
@@ -468,9 +467,6 @@ void wxRadioBox::EventCallback(Widget WXUNUSED(w),
 {
     wxRadioBox     *radioBox = (wxRadioBox*)dclient;
     wxCommandEvent *event = new wxCommandEvent(wxEVENT_TYPE_RADIOBOX_COMMAND);
-
-    event->eventObject = radioBox;
-    event->commandInt  = long(dcall); // dcall == selection
 
     radioBox->ProcessCommand(*event);
 }

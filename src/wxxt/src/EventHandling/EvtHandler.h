@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: EvtHandler.h,v 1.2 1996/01/10 23:47:02 markus Exp $
+ * $Id: EvtHandler.h,v 1.1.1.1 1997/12/22 17:28:50 mflatt Exp $
  *
  * Purpose: base event handler of windows etc.
  *
@@ -90,7 +90,7 @@ public:
     inline virtual void OnPaint(void) {};
     inline virtual void OnRightClick(int WXUNUSED(x), int WXUNUSED(y),
 				     int WXUNUSED(keys)) {};
-    inline virtual void OnScroll(wxCommandEvent& WXUNUSED(event)) {};
+    inline virtual void OnScroll(wxScrollEvent& WXUNUSED(event)) {};
     inline virtual void OnSelect(Bool WXUNUSED(select)) {};
     inline virtual void OnSetFocus(void) {};
     inline virtual void OnSize(int WXUNUSED(width), int WXUNUSED(height)) {};

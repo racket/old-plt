@@ -522,7 +522,7 @@
 
 (define table
   (case-lambda
-   [(ncol cells row-aligns col-aligns row-seps col-seps)
+   [(ncol cells col-aligns row-aligns col-seps row-seps)
     (unless (positive? ncol)
 	    (raise-type-error 'table "positive column count" ncol))
     (let ([count (length cells)])

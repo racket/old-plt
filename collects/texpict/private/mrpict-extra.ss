@@ -69,6 +69,17 @@
 	(make-pict `(prog ,f ,h) w h a d null))
       (define prog-picture dc)
 
+      (define current-expected-text-scale (make-parameter (list 1 1)))
+      (define (with-text-scale dc thunk)
+	(let ([x (current-expected-text-scale)])
+	  (if (equal? x '(1 1))
+	      (thunk)
+	      (begin
+		(send dc set-scale (car x) (cadr x))
+		(let-values ([(w h d s) (thunk)])
+		  (send dc set-scale 1 1)
+	          (values w h d s))))))
+
       (define (memq* a l)
 	(if (pair? l)
 	    (or (eq? (car l) a)
@@ -150,9 +161,15 @@
 		  [dc (dc-for-text-size)])
 	      (unless dc
 		(error 'text "no dc<%> object installed for sizing"))
-	      (let-values ([(w h d s) (send dc get-text-extent string s-font)])
+	      (let-values ([(w h d s) (with-text-scale
+				       dc
+				       (lambda ()
+					 (send dc get-text-extent string s-font)))])
 		(if (or sub? sup?)
-		    (let-values ([(ww wh wd ws) (send dc get-text-extent "Wy" font)])
+		    (let-values ([(ww wh wd ws) (with-text-scale
+						 dc
+						 (lambda ()
+						   (send dc get-text-extent "Wy" font)))])
 		      (prog-picture (lambda (dc x y)
 				      (let ([f (send dc get-font)])
 					(send dc set-font s-font)

@@ -11,8 +11,10 @@
   (define black (make-object color% 0 0 0))
   
   (define transparent-pen (make-object pen% "white" 1 'transparent))
+  (define black-pen (make-object pen% "black" 1 'solid))
   (define red-pen (make-object pen% "red" 1 'solid))
   (define transparent-brush (make-object brush% "white" 'transparent))
+  (define motion-brush (make-object brush% "black" 'solid))
   
   (define water-brush (make-object brush% "blue" 'solid))
   (define wall-brush (make-object brush% "brown" 'solid))
@@ -26,7 +28,7 @@
   (define pack-colors (make-package-colors num-pack-icons))
 
   (define-struct pack (icon pen id dest-x dest-y weight x y owner))
-  (define-struct robot (icon id x y packages))
+  (define-struct robot (icon id x y packages motion drop grab dead? moving?))
 
   (define max-width 800)
   (define max-height 600)
@@ -42,6 +44,13 @@
         ;; Each package is (list id x y dest-x dext-y weight)
         (send canvas install-packages orig-pkgs package-list)
         (send canvas install-robots orig-robots robot-list))
+      
+      (define/public (queue-robot-actions actions)
+        ;; Each robot action is (list id (one-of 'e 'w 'n 's (list 'pick id...) (list 'drop id ...)))
+        (send canvas queue-robot-actions actions))
+      
+      (define/public (apply-queued-actions)
+        (send canvas apply-queued-actions))
       
       (super-instantiate (frame))
       (define canvas (make-object board-canvas% this width height board
@@ -63,6 +72,8 @@
                              vpanel))
       (send package-list selectable #f)))
     
+  (define arrow-inset 1)
+  
   (define board-canvas%
     (class canvas%
       (init frame)
@@ -84,8 +95,31 @@
       
       (define robots null)
       
+      (define actions null)
+      
       (define active-i #f)
       (define active-j #f)
+      
+      (define arrow-height (/ cell-paint-size 8))
+      
+      (define up-arrow (list (make-object point% (/ cell-paint-size 2) arrow-inset)
+                             (make-object point% (- cell-paint-size arrow-inset) (+ arrow-inset arrow-height))
+                             (make-object point% arrow-inset (+ arrow-inset arrow-height))))
+      (define down-arrow (list (make-object point% (/ cell-paint-size 2) (- cell-paint-size arrow-inset))
+                               (make-object point% (- cell-paint-size arrow-inset) (- cell-paint-size arrow-height arrow-inset))
+                               (make-object point% arrow-inset (- cell-paint-size arrow-height arrow-inset))))
+      (define left-arrow (list (make-object point% arrow-inset (/ cell-paint-size 2))
+                               (make-object point% (+ arrow-height arrow-inset) arrow-inset)
+                               (make-object point% (+ arrow-height arrow-inset) (- cell-paint-size arrow-inset))))
+      (define right-arrow (list (make-object point% (- cell-paint-size arrow-inset) (/ cell-paint-size 2))
+                                (make-object point% (- cell-paint-size arrow-height arrow-inset) (- arrow-height arrow-inset))
+                                (make-object point% (- cell-paint-size arrow-height arrow-inset) (- cell-paint-size arrow-inset))))
+      (define pickup-arrow (list (make-object point% (* cell-paint-size 3/4) (* 2 arrow-inset))
+                                 (make-object point% (+ (/ cell-paint-size 2) arrow-inset) (+ (* 2 arrow-inset) (* 2 arrow-height)))
+                                 (make-object point% (- cell-paint-size arrow-inset) (+ (* 2 arrow-inset) (* 2 arrow-height)))))
+      (define drop-arrow (list (make-object point% (* cell-paint-size 3/4) (+ (* 2 arrow-inset) (* 2 arrow-height)))
+                                 (make-object point% (+ (/ cell-paint-size 2) arrow-inset) (* 2 arrow-inset))
+                                 (make-object point% (- cell-paint-size arrow-inset) (* 2 arrow-inset))))
       
       (define/public (install-robots orig-robots hlist)
         ;; robot is (list id x y (list pkg-id ...))
@@ -103,7 +137,12 @@
                                             ;; sub1 for 0-indexed
                                             (sub1 (cadr orig))
                                             (sub1 (caddr orig))
-                                            pkgs)])
+                                            pkgs
+                                            #f
+                                            #f
+                                            #f
+                                            #f
+                                            #f)])
                          (for-each (lambda (pkg) 
                                      (when (pack-owner pkg) 
                                        (error 'install
@@ -166,7 +205,152 @@
                            (send e insert (format " ~a" (pack-id p)))
                            (send i user-data (cons (pack-x p) (pack-y p)))))
              packages))
-            
+      
+      (define/public (queue-robot-actions orig-actions)
+        (set! actions
+              (map (lambda (act)
+                     (let ([id (car act)])
+                       (let* ([r (ormap (lambda (r) (and (= (robot-id r) id) r)) robots)]
+                              [get-pkgs (lambda (l)
+                                          (unless (and (list? l)
+                                                       (andmap number? l))
+                                            (error 'queue-robot-actions
+                                                   "bad action ~e"
+                                                   (cadr act)))
+                                          (map (lambda (pid)
+                                                 (let ([pkg (ormap (lambda (pkg)
+                                                                     (and (= (pack-id pkg) pid)
+                                                                          pkg))
+                                                                   packages)])
+                                                   (unless pkg
+                                                     (error 'queue-robot-actions
+                                                            "can't find package ~e"
+                                                            pid))
+                                                   pkg))
+                                               l))])
+                         (unless r
+                           (error 'queue-robot-actions "cannot find robot ~e" id))
+                         (when (or (robot-motion r)
+                                   (robot-grab r)
+                                   (robot-drop r))
+                           (error 'queue-robot-actions "robot ~e has an action already" id))
+                         (cond
+                           [(and (pair? (cadr act)) (eq? (caadr act) 'pick))
+                            (set-robot-motion! r pickup-arrow)
+                            (set-robot-grab! r (get-pkgs (cdadr act)))]
+                           [(and (pair? (cadr act)) (eq? (caadr act) 'drop))
+                            (set-robot-motion! r drop-arrow)
+                            (set-robot-drop! r (get-pkgs (cdadr act)))]
+                           [else
+                            (set-robot-motion! r
+                                               (case (cadr act)
+                                                 [(e) right-arrow]
+                                                 [(w) left-arrow]
+                                                 [(n) up-arrow]
+                                                 [(s) down-arrow]
+                                                 [else (error 'queue-robot-actions
+                                                              "bad action ~e"
+                                                              (cadr act))]))])
+                         r)))
+                   orig-actions))
+        (on-paint))
+      
+      (define/private (find-robot x y)
+        (ormap (lambda (r)
+                 (and (= x (robot-x r))
+                      (= y (robot-y r))
+                      (not (robot-moving? r))
+                      r))
+               robots))
+      
+      (define animate-steps 5)
+      (define/private (animate f)
+        (let loop ([i 1])
+          (unless (> i animate-steps)
+            (let ([continue? (f i)])
+              (sleep/yield 0.1)
+              (on-paint)
+              (when continue?
+                (loop (add1 i)))))))
+      
+      (define/public (apply-queued-actions)
+        (for-each (lambda (r)
+                    (animate
+                     (let loop ([r r][motion (robot-motion r)])
+                       (set-robot-motion! r #f)
+                       (set-robot-moving?! r #t)
+                       (let-values ([(dx dy)
+                                     (cond
+                                       [(eq? motion left-arrow) (values -1 0)]
+                                       [(eq? motion right-arrow) (values 1 0)]
+                                       [(eq? motion up-arrow) (values 0 1)]
+                                       [(eq? motion down-arrow) (values 0 -1)]
+                                       [else (values 0 0)])])
+                         (let ([nx (+ (robot-x r) dx)]
+                               [ny (+ (robot-y r) dy)])
+                           (let* ([push-r (and (or (not (zero? dx))
+                                                   (not (zero? dy)))
+                                               (find-robot nx ny))]
+                                  [sub-animate
+                                   (if push-r
+                                       (begin
+                                         ;; "Reboot" the pushed robot, and push it the
+                                         ;;  same as this one:
+                                         (set-robot-motion! r #f)
+                                         (set-robot-drop! r #f)
+                                         (set-robot-grab! r #f)
+                                         (loop push-r motion)) ;; returns an animation step
+                                       (lambda (i) #f))]) ;; #f "means nothing to animate"
+                             (let* ([on-board? (and (< -1 nx width)
+                                                    (< -1 ny height))]
+                                    [cell (if (and push-r (find-robot nx ny)) ;; still a robot there?
+                                              'wall
+                                              (if on-board?
+                                                  (pos->cell nx ny)
+                                                  'wall))]
+                                    [drop/grab (lambda (r)
+                                                 (when (robot-grab r)
+                                                   (for-each (lambda (pkg)
+                                                               (when (not (pack-owner pkg))
+                                                                 (set-pack-owner! pkg r)
+                                                                 (set-robot-packages! r (cons pkg (robot-packages r)))))
+                                                             (robot-grab r))
+                                                   (set-robot-grab! r #f))
+                                                 (when (robot-drop r)
+                                                   (for-each (lambda (pkg)
+                                                               (when (eq? r (pack-owner pkg))
+                                                                 (set-pack-owner! pkg #f)
+                                                                 (set-robot-packages! r (remq pkg (robot-packages r)))))
+                                                             (robot-drop r))
+                                                   (set-robot-drop! r #f)))])
+                            (if (or (and (zero? dx) (zero? dy)) (eq? cell 'wall))
+                                (begin
+                                  (set-robot-moving?! r #f)
+                                  (lambda (i)
+                                    (drop/grab r)
+                                    (sub-animate i)))
+                                (begin
+                                  (when (eq? cell 'water)
+                                    (set-robot-dead?! r #t))
+                                  (let ([x (robot-x r)]
+                                        [y (robot-y r)])
+                                    (lambda (i)
+                                      (drop/grab r)
+                                      (sub-animate i)
+                                      (set-robot-moving?! r #f)
+                                      (let ([nx (+ x (* (- nx x) (/ i animate-steps)))]
+                                            [ny (+ y (* (- ny y) (/ i animate-steps)))])
+                                        (set-robot-x! r nx)
+                                        (set-robot-y! r ny)
+                                        (for-each (lambda (pkg)
+                                                    (set-pack-x! pkg nx)
+                                                    (set-pack-y! pkg nx))
+                                                  (robot-packages r)))
+                                      #t)))))))))))
+                  actions)
+        (set! actions null)
+        (on-paint))
+
       (define display-w (add1 (* scale width)))
       (define display-h (add1 (* scale height)))
 
@@ -235,8 +419,11 @@
         (values (min (max 0 (floor (/ (sub1 x) scale))) (sub1 width))
                 (- height (min (max 0 (floor (/ (sub1 y) scale))) (sub1 height)) 1)))
   
+      (define (pos->cell i j)
+        (vector-ref (vector-ref board j) i))
+                        
       (define/private (draw-board-pos dc i j non-water-rgn)
-        (let-values ([(cell) (vector-ref (vector-ref board j) i)]
+        (let-values ([(cell) (pos->cell i j)]
                      [(x y) (pos->location i j)])
           (send dc set-brush
                 (case cell
@@ -271,10 +458,15 @@
       
       (define/private (draw-robot dc robot)
         (let-values ([(x y) (pos->location (robot-x robot) (robot-y robot))])
-          (send dc draw-bitmap (car (robot-icon robot)) x y 
+          (when (robot-motion robot)
+            (send dc set-brush motion-brush)
+            (send dc set-pen black-pen)
+            (send dc draw-polygon (robot-motion robot) x y)
+            (send dc set-pen transparent-pen))
+          (send dc draw-bitmap (car (robot-icon robot)) (+ 1 x) y 
                 'solid black 
                 (cdr (robot-icon robot)))))
-    
+            
       (super-instantiate (frame))
       (stretchable-width #f)
       (stretchable-height #f)

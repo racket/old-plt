@@ -142,6 +142,10 @@
 	[get-editor (lambda () (send snip get-item-buffer))]
 	[is-selected? (lambda () (send snip is-selected?))]
 	[select (lambda (on?) (send snip select on?))]
+	[scroll-to (lambda () (send (send snip get-admin)
+				    scroll-to
+				    snip
+				    0 0 0 10 #t))]
 	[user-data (case-lambda [() data][(x) (set! data x)])])
       (sequence (super-init))))
 

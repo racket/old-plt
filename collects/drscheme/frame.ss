@@ -14,7 +14,7 @@
   (define basics-mixin
     (mixin (fw:frame:standard-menus<%>) (basics<%>) args
       (override
-       [help-menu:after-about
+       [help-menu:before-about
 	(lambda (help-menu)
 	  (make-object mred:menu-item%
 	    "Help Desk"

@@ -5,11 +5,10 @@
   (define turtles:window #f)
   (define turtles:shown? #f)
 
-  (define turtle-icon-color "SALMON")
-  (define turtle-icon-pen (send mred:the-pen-list find-or-create-pen
-				turtle-icon-color
-				1 'xor))
-
+  (define icon-pen (send mred:the-pen-list find-or-create-pen "SALMON" 1 'xor))
+  (define w-pen (send mred:the-pen-list find-or-create-pen "white" 1 'solid))
+  (define b-pen (send mred:the-pen-list find-or-create-pen "black" 1 'solid))
+  
   (define show-turtle-icons? #t)
 
   (define plot-window%
@@ -18,17 +17,13 @@
       (public 
 	[bitmap (make-object mred:bitmap% width height #t)])
       (private
-	[w-pen (send mred:the-pen-list find-or-create-pen "white" 1 'solid)]
-	[w-brush (send mred:the-brush-list find-or-create-brush "white" 'solid)]
-	[b-pen (send mred:the-pen-list find-or-create-pen "black" 1 'solid)]
-	[b-brush (send mred:the-brush-list find-or-create-brush "black" 'solid)]
 	[memory-dc (make-object mred:bitmap-dc%)])
       (public
 	[flip-icons
 	 (lambda ()
 	   (flatten (lambda (x) x))
 	   (let ([dc (send canvas get-dc)])
-	     (send dc set-pen turtle-icon-pen)
+	     (send dc set-pen icon-pen)
 	     (for-each (lambda (turtle)
 			 (let ([x (turtle-x turtle)]
 			       [y (turtle-y turtle)]
@@ -70,7 +65,7 @@
 	  "Print"
 	  file-menu
 	  (lambda (_1 _2)
-	    (turtles #f)))
+	    (print)))
 	(make-object mred:menu-item%
 	  "Close"
 	  file-menu
@@ -146,8 +141,15 @@
   (define inner-clear-window init-error)
   (define inner-save-turtle-bitmap init-error)
 
-  (define line (lambda (a b c d) (inner-line a b c d)))
-  (define wipe-line (lambda (a b c d) (inner-wipe-line a b c d)))
+  (define line
+    (lambda (a b c d)
+      (set! lines-in-drawing (cons (make-draw-line a b c d) lines-in-drawing))
+      (inner-line a b c d)))
+  (define wipe-line
+    (lambda (a b c d)
+      (set! lines-in-drawing (cons (make-wipe-line a b c d) lines-in-drawing))
+      (inner-wipe-line a b c d)))
+
   (define clear-window (lambda () (inner-clear-window)))
   (define save-turtle-bitmap (lambda (x y) (inner-save-turtle-bitmap x y)))
 
@@ -172,6 +174,7 @@
     (lambda ()
       (set! turtles-cache empty-cache)
       (set! turtles-state (list clear-turtle))
+      (set! lines-in-drawing null)
       (clear-window)))
   
   ;; cache elements:
@@ -288,7 +291,7 @@
   
   (define turn
     (lambda (c)
-      (turn/radians (* (/ c 360) 2 pi))))
+      (turn/radians (* (/ c 360) 2 3.141592653589793))))
   
   (define move-offset
     (lambda (x y)
@@ -360,35 +363,46 @@
 	      (set! turtles-state save-turtles-state)
 	      (flip-icons))))))
 
-  (define pi 3.1415926535)
-  
-  (lambda ()
-    (turn (/ pi 2))
-    (move 10)
-    (draw 10)
-    (move 20)
-    (turn (/ pi 3))
-    (draw 10)
-    (turn pi)
-    (splitfn (lambda () (turn (/ pi 2))))
-    (move 10)
-    (split*fn (list (lambda () (turn (/ pi 2)))
-		    (lambda () (move 200))
-		    (lambda ()
-		      (splitfn (lambda () 
-				 (turn (/ pi 2)))))))
-    (draw 10)
-    (clear)))
+
+  (define-struct drawing-line (x1 y1 x2 y2))
+  (define-struct (wipe-line struct:drawing-line) ())
+  (define-struct (draw-line struct:drawing-line) ())
+  (define lines-in-drawing null)
+
+  (define (draw-lines-into-dc dc)
+    (for-each (lambda (line)
+		(cond
+		 [(wipe-line? line) (send dc set-pen w-pen)]
+		 [(draw-line? line) (send dc set-pen b-pen)])
+		(send dc draw-line
+		      (drawing-line-x1 line)
+		      (drawing-line-y1 line)
+		      (drawing-line-x2 line)
+		      (drawing-line-y2 line)))
+	      lines-in-drawing))
+
+  ;; used to test printing
+  (define (display-lines-in-drawing)
+    (let* ([lines-in-drawing-canvas%
+	    (class mred:canvas% (frame)
+	      (inherit get-dc)
+	      (override
+	       [on-paint
+		(lambda ()
+		  (draw-lines-into-dc (get-dc)))])
+	      (sequence
+		(super-init frame)))]
+	   [frame (make-object mred:frame% "Lines in Drawing")]
+	   [canvas (make-object lines-in-drawing-canvas% frame)])
+      (send frame show #t)))
 
 
+  (define (print)
+    (let ([dc (make-object mred:post-script-dc%)])
+      (send dc start-doc "Turtles")
+      (send dc start-page)
+      (draw-lines-into-dc dc)
+      (send dc end-page)
+      (send dc end-doc)))
 
-  #|
-  E ::= (move n)
-      | (draw n)
-      | (erase n)
-      | (turn d)
-      | (tprompt E)
-      | (split E)
-      | (split* E ... E)
-      | (flip)  ; not implemented currently
-  |#
+)

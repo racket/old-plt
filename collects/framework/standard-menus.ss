@@ -89,6 +89,7 @@
     edit-menu:preferences-string
     edit-menu:preferences-help-string
     edit-menu:after-preferences
+    help-menu:before-about
     help-menu:about
     help-menu:get-about-item
     help-menu:about-string
@@ -260,6 +261,7 @@
                  (edit-menu:preferences-help-string
                   (lambda () "Configure the preferences")))
          (public (edit-menu:after-preferences (lambda (menu) (void))))
+         (public (help-menu:before-about (lambda (menu) (void))))
          (public (help-menu:about #f)
                  (help-menu:get-about-item (lambda () help-menu:about-item))
                  (help-menu:about-string (lambda () ""))
@@ -563,6 +565,7 @@
                           (if (preferences:get 'framework:menu-bindings) #f #f)
                           (edit-menu:preferences-help-string)))))
          (sequence (edit-menu:after-preferences (get-edit-menu)))
+         (sequence (help-menu:before-about (get-help-menu)))
          (private (help-menu:about-item
                    (and help-menu:about
                         (make-object (get-menu-item%)

@@ -2,11 +2,7 @@
 
 (define-signature turtle^ 
   (turtles
-
-   flip-icons
-
    clear
-
    turn turn/radians
    move move-offset
    draw draw-offset
@@ -15,6 +11,6 @@
    save-turtle-bitmap
 
    splitfn split*fn tpromptfn
-   turtle-window-size))
+   turtle-window-size
 
-
+   display-lines-in-drawing))

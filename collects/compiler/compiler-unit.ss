@@ -30,6 +30,8 @@
 
   (provide compiler@)
 
+  (define orig-namespace (current-namespace))
+
   ;; ;;;;;;;; ----- The main compiler unit ------ ;;;;;;;;;;
   (define compiler@
     (unit/sig compiler^
@@ -38,9 +40,17 @@
 	      dynext:link^
 	      dynext:file^)
 
+      (define current-compiler-dynamic-require-namespace 
+	(make-parameter orig-namespace))
+      (define (c-dynamic-require path id)
+	(if (current-compiler-dynamic-require-namespace)
+	    (parameterize ([current-namespace (current-compiler-dynamic-require-namespace)])
+	      (dynamic-require path id))
+	    (dynamic-require path id)))
+
       (define (make-extension-compiler mode prefix)
-	(let ([u (dynamic-require `(lib "base.ss" "compiler" "private")
-				  'base@)]
+	(let ([u (c-dynamic-require `(lib "base.ss" "compiler" "private")
+				    'base@)]
 	      [init (unit/sig ()
 		      (import compiler:inner^)
 		      (eval-compile-prefix prefix)
@@ -99,7 +109,7 @@
 	(make-unprefixed-compiler 'compile-c-extension-part))
 
       (define (link/glue-extension-parts link? source-files destination-directory)
-	(let ([u (dynamic-require '(lib "ld-unit.ss" "compiler") 'ld@)]
+	(let ([u (c-dynamic-require '(lib "ld-unit.ss" "compiler") 'ld@)]
 	      [init (unit/sig ()
 		      (import compiler:linker^)
 		      (if link?
@@ -169,8 +179,8 @@
 	       source-files file-bases)))))
 
       (define (compile-collection cp zos?)
-	(let ([make (dynamic-require '(lib "make-unit.ss" "make") 'make@)]
-	      [coll (dynamic-require '(lib "collection-unit.ss" "make") 'make:collection@)]
+	(let ([make (c-dynamic-require '(lib "make-unit.ss" "make") 'make@)]
+	      [coll (c-dynamic-require '(lib "collection-unit.ss" "make") 'make:collection@)]
 	      [init (unit/sig ()
 		      (import make:collection^)
 		      make-collection)])

@@ -22,6 +22,7 @@
   (define (run-single-installer file get-target-dir)
     (let ([cust (make-custodian)])
       (parameterize ([current-custodian cust]
+		     [current-namespace (make-namespace)]
 		     [exit-handler (lambda (v) (custodian-shutdown-all cust))])
 	(let ([thd
 	       (thread
@@ -41,14 +42,15 @@
 						 dfile)]
 			  [soption : setup-option^ (setup:option@)]
 			  [set-options : () ((unit/sig ()
-					       (import setup-option^)
+					       (import setup-option^ compiler^)
 					       ;; >>>>>>>>>>>>>> <<<<<<<<<<<<<<<
 					       ;; Here's where we tell setup the archive file!
 					       (archives (list file))
 					       ;; Here's where we make get a directory:
 					       (current-target-directory-getter
 						get-target-dir))
-					     soption)]
+					     soption
+					     compiler)]
 			  [setup : () (setup@
 				       SOPTION
 				       compiler

@@ -182,6 +182,21 @@ next section.
       The compilation process is driven by the `managed-compile-zo'
       function in the "cm.ss" library of the "mzlib" collection.
 
+ Loading compiler support
+ ------------------------
+
+The compiler unit loads certain tools on demand via `dynamic-require'.
+If the namespace used during compilation is different from the
+namespace used to load the compiler, then the namespace used to load
+the compiler should be designated with the following parameter:
+
+>  current-compiler-dynamic-require-namespace
+
+    A parameter whose value is either #f or a namespace. If it is a
+    namespace, then the namespace is used when loading additional
+    parts of the compiler. The default value is the current namespace
+    at the time that the "compiler-unit.ss" module is evaluated.
+
 ---------------------------------------------------------------------------
 
 Options for the Compiler

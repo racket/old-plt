@@ -162,11 +162,12 @@ installing a single .plt file:
      file : string
      get-dir-proc: (-> (union string #f))
 
-   Creates a separate thread, runs the installer in that thread, and
-   returns when the thread completes or dies. It also creates a
-   custodian to manage the created thread, sets the exit handler for
-   the thread to shut down the custodian, and explicitly shuts down
-   the custodian when the created thread terminates or dies.
+   Creates a separate thread and namespace, runs the installer in that
+   thread with the new namespace, and returns when the thread
+   completes or dies. It also creates a custodian to manage the
+   created thread, sets the exit handler for the thread to shut down
+   the custodian, and explicitly shuts down the custodian when the
+   created thread terminates or dies.
 
    The `get-dir-proc' procedure is called if the installer needs a
    target directory for installation, and a #f result means that the
@@ -227,6 +228,15 @@ parameters that control the setup process:
 
 Thus, to unpack a single .plt archive "x.plt", set the `archives'
 parameter to (list "x.plt") and leave `specific-collections' as null.
+
+Beware that the current namespace might intefere with setup
+actions. For example, if setup is supposed to compile a module `(lib
+"foo.ss")' that imports `(lib "bar.ss")', but `(lib "bar.ss")' is
+already loaded in the current namespace, then compilation will use the
+loaded module rather than re-loading it. If `(lib "bar.ss")' has
+changed, re-using the loaded module is unlikely to be the desired
+behavior. Avoid this problem by invoking the setup process in a fresh
+namespace.
 
 Link the options and setup units so that your option-setting code is
 initialized between them, e.g.:

@@ -45,7 +45,8 @@
 	      string (current-continuation-marks) #f))]
 	[else (make-exn:user string (current-continuation-marks))]))))
   
-  ;; report-error : symbol -> (+ zodiac:zodiac zodiac:eof zodiac:period) string (listof TST) ->* ALPHA
+  ;; report-error : symbol ->
+  ;;                string symbol (+ zodiac:zodiac zodiac:eof zodiac:period) string (listof TST) ->* ALPHA
   ;; escapes
   (define report-error
     (lambda (type)
@@ -79,7 +80,13 @@
 	    [else ((error-display-handler)
 		   (format "internal-error.report-error: ~a: ~a" z string))])))))
   
-  ;; static-error : (+ zodiac:zodiac zodiac:eof zodiac:period) string (listof TST) ->* ALPHA
+  ;; static-error : string
+  ;;                symbol
+  ;;		    (union zodiac:zodiac zodiac:eof zodiac:period)
+  ;;		    string
+  ;;		    (listof TST)
+  ;;		    ->*
+  ;;		    ALPHA
   ;; escapes
   (define static-error (report-error 'static))
 

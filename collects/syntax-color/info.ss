@@ -1,3 +1,5 @@
 (module info (lib "infotab.ss" "setup")
-  (define name "String constants")
+  (define name "Syntax Color")
   (define doc.txt "doc.txt"))
+
+

@@ -2,6 +2,7 @@
 
 (module info (lib "infotab.ss" "setup")
   (define name "MysterX")
+  (define doc.txt "doc.txt")
   (define help-desk-message "Mz/Mr: (require (lib \"mysterx.ss\" \"mysterx\"))")
   (define blurb
     (list

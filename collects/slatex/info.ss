@@ -1,5 +1,6 @@
 
 (module info (lib "infotab.ss" "setup")
+  (define doc.txt "doc.txt")
   (define name "SLaTeX")
 
   ;(define tools (list (list "slatex-lang.ss")))

@@ -1,5 +1,6 @@
 (module info (lib "infotab.ss" "setup")
   (define name "Errortrace")
+  (define doc.txt "doc.txt")
   (define blurb
     (list
      "Errortrace is a Poor Man's stack-trace-on-exceptions/profiler for "

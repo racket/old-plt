@@ -1,3 +1,5 @@
 (module info (lib "infotab.ss" "setup")
-  (define name "String constants")
+  (define name "Embedded GUI")
   (define doc.txt "doc.txt"))
+
+

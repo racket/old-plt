@@ -1,5 +1,6 @@
 
 (module info (lib "infotab.ss" "setup")
+  (define doc.txt "doc.txt")
   (define name "Slideshow")
   (define tools (list '("tool.ss")))
   (define tool-names (list "Slideshow"))

@@ -1,5 +1,6 @@
 (module info (lib "infotab.ss" "setup")
   (define name "ProfessorJ")
+  (define doc.txt "doc.txt")
   (define tools (list (list "tool.ss")))
   (define install-collection "installer.ss")
   (define pre-install-collection "pre-installer.ss")

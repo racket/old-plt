@@ -1,5 +1,6 @@
 (module info (lib "infotab.ss" "setup")
   (define name "Setup PLT")
+  (define doc.txt "doc.txt")
 
   (define compile-omit-files
     (list "setup.ss" "winstall.ss"))

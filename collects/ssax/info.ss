@@ -1,5 +1,6 @@
 (module info (lib "infotab.ss" "setup")
   (define name "SSAX/SXML")
+  (define doc.txt "doc.txt")
 
   (define help-desk-message "Mz/Mr: (require (lib \"ssax.ss\" \"ssax\"))")
 

@@ -430,64 +430,6 @@
 		 (send super-root add-child search-panel)
 		 (reset-anchor (get-edit-to-search))
 		 (send search-panel set-focus))])
-	    (private
-	      [search-panel (make-object mred:container:horizontal-panel% super-root)]
-
-	      [left-panel (make-object mred:container:vertical-panel% search-panel)]
-	      [find-canvas (make-object canvas% left-panel)]
-	      [replace-canvas (make-object canvas% left-panel)]
-
-	      [middle-panel (make-object mred:container:horizontal-panel% search-panel)]
-
-	      [middle-left-panel (make-object mred:container:vertical-panel% middle-panel)]
-	      [middle-middle-panel (make-object mred:container:vertical-panel% middle-panel)]
-	      [middle-right-panel (make-object mred:container:vertical-panel% middle-panel)]
-
-	      [spacing1 (make-object mred:container:horizontal-panel% middle-left-panel)]
-	      [spacing2 (make-object mred:container:horizontal-panel% middle-middle-panel)]
-	      [search-button (make-object mred:container:button% middle-left-panel 
-					  (lambda args (search)) "Search")]
-
-	      [replace&search-button (make-object mred:container:button% middle-middle-panel 
-						  (lambda x (replace&search)) "Replace && Search")]
-	      [replace-button (make-object mred:container:button% middle-left-panel (lambda x (replace)) "Replace")]
-	      [replace-all-button (make-object mred:container:button% middle-middle-panel
-					       (lambda x (replace-all)) "Replace All")]
-	      [spacing3 (make-object mred:container:horizontal-panel% middle-left-panel)]
-	      [spacing4 (make-object mred:container:horizontal-panel% middle-middle-panel)]
-
-	      [dir-radio (make-object mred:container:radio-box% middle-right-panel
-				      (lambda (dir-radio evt)
-					(let ([forward (if (= 0 (send evt get-command-int))
-							   1
-							   -1)])
-					  (set-search-direction forward)
-					  (reset-anchor (get-edit-to-search))))
-				      null
-				      -1 -1 -1 -1
-				      (list "Forward" "Backward"))]
-	      [close-button (make-object mred:container:button% middle-right-panel
-					 (lambda args (hide-search)) "Close")]
-	      [hidden? #f])
-	    (sequence
-	      (let ([align
-		     (lambda (x y)
-		       (let ([m (max (send x get-width)
-				     (send y get-width))])
-			 (send x user-min-width m)
-			 (send y user-min-width m)))])
-		(align search-button replace-button)
-		(align replace&search-button replace-all-button))
-	      (send search-panel stretchable-in-y #f)
-	      (for-each (lambda (x) (send* x (stretchable-in-y #f) (stretchable-in-x #f)))
-			(list middle-panel))
-	      (for-each (lambda (x) (send x stretchable-in-y #f))
-			(list search-panel left-panel))
-	      (send find-canvas set-media find-edit)
-	      (send replace-canvas set-media replace-edit) 
-	      (send find-edit add-canvas find-canvas)
-	      (send replace-edit add-canvas replace-canvas)
-	      (hide-search))
 	    (public
 	      [on-close
 	       (lambda ()
@@ -553,7 +495,66 @@
 		     (unhide-search)
 		     (begin
 		       (set-search-direction direction)
-		       (send find-edit search #t beep?))))])))))
+		       (send find-edit search #t beep?))))])
+            (private
+	      [search-panel (make-object mred:container:horizontal-panel% super-root)]
+
+	      [left-panel (make-object mred:container:vertical-panel% search-panel)]
+	      [find-canvas (make-object canvas% left-panel)]
+	      [replace-canvas (make-object canvas% left-panel)]
+
+	      [middle-panel (make-object mred:container:horizontal-panel% search-panel)]
+
+	      [middle-left-panel (make-object mred:container:vertical-panel% middle-panel)]
+	      [middle-middle-panel (make-object mred:container:vertical-panel% middle-panel)]
+	      [middle-right-panel (make-object mred:container:vertical-panel% middle-panel)]
+
+	      [spacing1 (make-object mred:container:horizontal-panel% middle-left-panel)]
+	      [spacing2 (make-object mred:container:horizontal-panel% middle-middle-panel)]
+	      [search-button (make-object mred:container:button% middle-left-panel 
+					  (lambda args (search)) "Search")]
+
+	      [replace&search-button (make-object mred:container:button% middle-middle-panel 
+						  (lambda x (replace&search)) "Replace && Search")]
+	      [replace-button (make-object mred:container:button% middle-left-panel (lambda x (replace)) "Replace")]
+	      [replace-all-button (make-object mred:container:button% middle-middle-panel
+					       (lambda x (replace-all)) "Replace All")]
+	      [spacing3 (make-object mred:container:horizontal-panel% middle-left-panel)]
+	      [spacing4 (make-object mred:container:horizontal-panel% middle-middle-panel)]
+
+	      [dir-radio (make-object mred:container:radio-box% middle-right-panel
+				      (lambda (dir-radio evt)
+					(let ([forward (if (= 0 (send evt get-command-int))
+							   1
+							   -1)])
+					  (set-search-direction forward)
+					  (reset-anchor (get-edit-to-search))))
+				      null
+				      -1 -1 -1 -1
+				      (list "Forward" "Backward"))]
+	      [close-button (make-object mred:container:button% middle-right-panel
+					 (lambda args (hide-search)) "Close")]
+	      [hidden? #f])
+	    (sequence
+	      (let ([align
+		     (lambda (x y)
+		       (let ([m (max (send x get-width)
+				     (send y get-width))])
+			 (send x user-min-width m)
+			 (send y user-min-width m)))])
+		(align search-button replace-button)
+		(align replace&search-button replace-all-button))
+	      (send search-panel stretchable-in-y #f)
+	      (for-each (lambda (x) (send* x (stretchable-in-y #f) (stretchable-in-x #f)))
+			(list middle-panel))
+	      (for-each (lambda (x) (send x stretchable-in-y #f))
+			(list search-panel left-panel))
+	      (send find-canvas set-media find-edit)
+	      (send replace-canvas set-media replace-edit) 
+	      (send find-edit add-canvas find-canvas)
+	      (send replace-edit add-canvas replace-canvas)
+	      (hide-search))
+	    ))))
 
     (define find-string
       (lambda (canvas in-edit x y flags)

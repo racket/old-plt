@@ -3,6 +3,7 @@
     (load-relative "testing.ss"))
 
 (SECTION 'unit)
+(import (lib "unit.ss"))
 
 (syntax-test '(unit))
 (syntax-test '(unit (import)))
@@ -34,10 +35,6 @@
 (syntax-test '(unit (import i) (export b a) (begin (define a 5) (define b 6) . x)))
 (syntax-test '(unit (import i) (export b a) (begin (define a 5) (define b 6)) (define b 6)))
 
-(syntax-test '(unit (import #%car) (export) (define a 5)))
-(syntax-test '(unit (import) (export #%car) (define a 5)))
-(syntax-test '(unit (import) (export #%car) (define #%car 5)))
-(syntax-test '(unit (import) (export) (define #%car 5)))
 (syntax-test '(unit (import) (export) (define-values (3) 5)))
 
 (syntax-test '(unit (import a) (export (a x) b) (define a 5) (define b 6)))
@@ -57,7 +54,6 @@
 (syntax-test '(unit (import i) (export (a x) b) (define x 5) (define b 6)))
 (syntax-test '(unit (import i) (export (a x) b) (set! a 5) (define b 6)))
 
-(syntax-test '(unit (import i) (export) (set! g 5)))
 (syntax-test '(unit (import i) (export) (set! i 5)))
 
 ; Empty exports are syntactically ok::
@@ -77,12 +73,7 @@
 		  (U b))])
 	(export))))
 
-(error-test '(invoke-unit (unit (import not-defined) (export) 10) not-defined) exn:unit?)
-
-(unless (defined? 'test-global-var)
-  (let ()
-    (define test-global-var 5)
-    (syntax-test '(unit (import) (export) test-global-var))))
+(error-test '(invoke-unit (unit (import not-defined) (export) 10) not-defined) exn:variable?)
 
 (test #t unit? (unit (import) (export)))
 (test #t unit? (unit (import) (export) 5))
@@ -232,10 +223,10 @@
 	      (M x v struct:a y x? make-x x-z both))])
     (export)))
 
-  (test (string-append "(5 #(struct:a 5 6) #<struct-type> (proc: y)"
+  (test (string-append "(5 #<struct:a> #<struct-type> (proc: y)"
 		       " (proc: make-x) (proc: x?)"
 		       " (proc: x-z) (proc: both))"
-		       "(5 #t #(struct:a 5 6) #t #f #(struct:x 1 2 3 4) #t #t #f #t)")
+		       "(5 #t #<struct:a> #t #f #<struct:x> #t #t #f #t)")
 	get-output-string p))
 
 ; Compound with circularity
@@ -286,7 +277,7 @@
 
 ; Import linking via invoke-unit
 
-(test '(5 7 (7 2)) 'invoke-unit-linking
+(test '(5 7 (7 7)) 'invoke-unit-linking
       (let ([u (unit (import x) (export) x)]
 	    [v (unit (import x) (export) (lambda () x))]
 	    [x 5])
@@ -325,17 +316,9 @@
 (test 5 'invoke-unit-in-unit (invoke-unit u2))
 
 
-(syntax-test '(define u
-		(invoke-unit
-		 (unit 
-		  (import) (export)
-		  (define x 10)
-		  x
-		  (unit (import) (export)
-			apple
-			x)))))
-
 ; Units and objects combined:
+
+(import (lib "class.ss"))
 
 (define u@
   (unit (import x) (export)  
@@ -445,14 +428,13 @@
 	   (import)
 	   (export b)
 	   (define a 'a)
-	   (define b 'tmp-b)
+	   (define b 'b)
 	   (begin
 	     (define c 'c)
 	     (define-struct d (w)))
 	   (define x '...)
 
 	   (define-struct (e struct:d) ())
-	   (set! b 'b)
 	   (set! x (cons c c))
 
 	   (define i (interface ()))

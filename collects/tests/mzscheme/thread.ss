@@ -233,4 +233,42 @@
 (go read-line/expire1)
 (go read-line/expire2)
 
+;; Make sure queueing works, and check kill/wait interaction:
+(let* ([s (make-semaphore)]
+       [l null]
+       [wait (lambda (who)
+	       (thread
+		(lambda ()
+		  (semaphore-wait s)
+		  (set! l (cons who l)))))]
+       [pause (lambda () (sleep 0.01))])
+  (wait 0) (pause)
+  (wait 1) (pause)
+  (wait 2)
+  (pause)
+  (test null 'queue l)
+  (semaphore-post s) (pause)
+  (test '(0) 'queue l)
+  (semaphore-post s) (pause)
+  (test '(1 0) 'queue l)
+  (semaphore-post s) (pause)
+  (test '(2 1 0) 'queue l)
+  
+  (set! l null)
+  (wait 0) (pause)
+  (let ([t (wait 1)])
+    (pause)
+    (wait 2)
+    (pause)
+    (test null 'queue l)
+    (kill-thread t)
+    (semaphore-post s) (pause)
+    (test '(0) 'queue l)
+    (semaphore-post s) (pause)
+    (test '(2 0) 'queue l)
+    (semaphore-post s) (pause)
+    (test '(2 0) 'queue l)
+    (wait 3) (pause)
+    (test '(3 2 0) 'queue l)))
+
 (report-errs)

@@ -1968,7 +1968,8 @@ void scheme_weak_suspend_thread(Scheme_Process *r)
     
     scheme_swap_process(swap_to);
 
-    if (r->running < 1)
+    /* Killed while suspended? */
+    if ((r->running & MZTHREAD_KILLED) && !(r->running & MZTHREAD_NEED_KILL_CLEANUP))
       scheme_process_block(0);
   }
 #endif
@@ -2087,7 +2088,8 @@ static int do_kill_thread(Scheme_Process *p)
 #else
   if (p->running) {
     p->running |= MZTHREAD_KILLED;
-    scheme_weak_resume_thread(p);
+    if (p->running & MZTHREAD_NEED_KILL_CLEANUP)
+      scheme_weak_resume_thread(p);
   }
   if (p == scheme_current_process)
     kill_self = 1;

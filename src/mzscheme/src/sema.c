@@ -301,6 +301,10 @@ int scheme_wait_sema(Scheme_Object *o, int just_try)
 
 	  if (sema->value) {
 	    --sema->value;
+	    /* If we get the post, we must return WITHOUT BLOCKING. 
+	       MrEd depends on this special property, which insures
+	       that the thread can't be broken or killed between
+	       receiving the post and returning. */
 	    break;
 	  }
 	  /* Otherwise: someone stole the post! Try again. */

@@ -29,4 +29,9 @@
 	  (apply printf format args)
 	  (flush-output)))
 
+      (define print-and-return
+	(lambda (v)
+	  (pretty-print v) (newline)
+	  v))
+
       )))

@@ -17,11 +17,25 @@
 
     ; ----------------------------------------------------------------------
 
-    (define make-vocabulary make-hash-table)
+    (define vocabulary-identifier
+      (string->uninterned-symbol "vocabulary-identification-symbol"))
+
+    (define get-vocabulary-name
+      (lambda (v)
+	(hash-table-get v vocabulary-identifier
+	  (lambda ()
+	    (internal-error 'get-vocabulary-name
+	      "Malformed vocabulary ~s: has no name (even anonymous)" v)))))
+
+    (define make-vocabulary
+      (opt-lambda ((name 'anonymous))
+	(let ((h (make-hash-table)))
+	  (hash-table-put! h vocabulary-identifier name)
+	  h)))
 
     (define copy-vocabulary
-      (lambda (vocab)
-	(let ((new-vocab (make-vocabulary)))
+      (opt-lambda (vocab (name 'anonymous))
+	(let ((new-vocab (make-vocabulary name)))
 	  (hash-table-for-each vocab
 	    (lambda (key value)
 	      (hash-table-put! new-vocab key value)))
@@ -84,6 +98,7 @@
 ;	(printf "Expanding~n") (pretty-print (sexp->raw expr))
 ;	(printf "Expanding~n") (pretty-print expr)
 ;	(printf "Expanding~n") (display expr)
+;	(printf "Expanding in ~s~n" (get-vocabulary-name vocab))
 ;	(printf "in vocabulary~n") (print-env vocab)
 ;	(printf "in~n") (print-env env) (newline)
 	(cond

@@ -403,7 +403,7 @@
 
     ; (local (defs ...) body ...)                                    [micro]
 
-    (define local-extract-vocab (make-vocabulary))
+    (define local-extract-vocab (make-vocabulary 'local-extract-vocab))
 
     (add-micro-form 'local scheme-vocabulary
       (let* ((kwd '(local))

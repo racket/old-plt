@@ -213,7 +213,8 @@
 
     ; ----------------------------------------------------------------------
 
-    (define c/imports-vocab (make-vocabulary))
+    (define c/imports-vocab
+      (make-vocabulary 'c/imports-vocab))
 
     (add-sym-micro c/imports-vocab
       (lambda (expr env attributes vocab)
@@ -222,7 +223,8 @@
 
     ; ----------------------------------------------------------------------
 
-    (define unit-exports-vocab (make-vocabulary))
+    (define unit-exports-vocab
+      (make-vocabulary 'unit-exports-vocab))
 
     (add-sym-micro unit-exports-vocab
       (lambda (expr env attributes vocab)
@@ -313,13 +315,15 @@
 
     ; ----------------------------------------------------------------------
 
-    (define c-unit-link-import-vocab (make-vocabulary))
+    (define c-unit-link-import-vocab
+      (make-vocabulary 'c-unit-link-import-vocab))
 
     (add-sym-micro c-unit-link-import-vocab
       (lambda (expr env attributes vocab)
 	(if (check-import expr attributes)
 	  (list (expand-expr expr env attributes scheme-vocabulary))
-	  (static-error expr "Not an imported identifier"))))
+	  (static-error expr "~a: Not an imported identifier"
+	    (z:read-object expr)))))
 
     (add-list-micro c-unit-link-import-vocab
       (let* ((kwd '())
@@ -336,7 +340,8 @@
 	    (else
 	      (static-error expr "Invalid link syntax"))))))
 
-    (define c-unit-link-body-vocab (make-vocabulary))
+    (define c-unit-link-body-vocab
+      (make-vocabulary 'c-unit-link-body-vocab))
 
     (add-list-micro c-unit-link-body-vocab
       (let* ((kwd '())
@@ -359,7 +364,8 @@
 	    (else
 	      (static-error expr "Invalid linkage body"))))))
 
-    (define c-unit-exports-vocab (make-vocabulary))
+    (define c-unit-exports-vocab
+      (make-vocabulary 'c-unit-exports-vocab))
 
     (add-sym-micro c-unit-exports-vocab
       (lambda (expr env attributes vocab)
@@ -382,7 +388,8 @@
 	    (else
 	      (static-error expr "Invalid export clause"))))))
 
-    (define c-unit-export-clause-vocab (make-vocabulary))
+    (define c-unit-export-clause-vocab
+      (make-vocabulary 'c-unit-export-clause-vocab))
 
     (add-list-micro c-unit-export-clause-vocab
       (let* ((kwd '())
@@ -630,7 +637,8 @@
 
     (define unit-clauses-vocab 'undefined-unit-clauses-vocab)
 
-    (define unit-clauses-vocab-delta (make-vocabulary))
+    (define unit-clauses-vocab-delta
+      (make-vocabulary 'unit-clauses-vocab-delta))
 
     (let ((define-values-helper
 	    (lambda (d-kwd)
@@ -674,7 +682,8 @@
       (define-values-helper 'define-values)
       (define-values-helper '#%define-values))
 
-    (define define-values-id-parse-vocab (make-vocabulary))
+    (define define-values-id-parse-vocab
+      (make-vocabulary 'define-values-id-parse-vocab))
     
     (add-sym-micro define-values-id-parse-vocab
       (lambda (expr env attributes vocab)
@@ -754,7 +763,7 @@
 	      (internal-error expr "Invalid resolution in unit delta: ~s" r))))))
 
     (set! unit-clauses-vocab
-      (merge-vocabulary (copy-vocabulary scheme-vocabulary)
+      (merge-vocabulary (copy-vocabulary scheme-vocabulary 'unit-clauses-vocab)
 	unit-clauses-vocab-delta))
 
     (include "scm-hanc.ss")

@@ -168,9 +168,10 @@
 
     ; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
-    (define ivar-decls-vocab (make-vocabulary))
+    (define ivar-decls-vocab (make-vocabulary 'ivar-decls-vocab))
 
-    (define public-ivar-decl-entry-parser-vocab (make-vocabulary))
+    (define public-ivar-decl-entry-parser-vocab
+      (make-vocabulary 'public-ivar-decl-entry-parser-vocab))
 
     (add-sym-micro public-ivar-decl-entry-parser-vocab
       (lambda (expr env attributes vocab)
@@ -240,7 +241,8 @@
 
     ; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
-    (define private-ivar-decl-entry-parser-vocab (make-vocabulary))
+    (define private-ivar-decl-entry-parser-vocab
+      (make-vocabulary 'private-ivar-decl-entry-parser-vocab))
 
     (add-sym-micro private-ivar-decl-entry-parser-vocab
       (lambda (expr env attributes vocab)
@@ -294,7 +296,8 @@
 
     ; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
-    (define inherit-ivar-decl-entry-parser-vocab (make-vocabulary))
+    (define inherit-ivar-decl-entry-parser-vocab
+      (make-vocabulary 'inherit-ivar-decl-entry-parser-vocab))
 
     (add-sym-micro inherit-ivar-decl-entry-parser-vocab
       (lambda (expr env attributes vocab)
@@ -343,7 +346,8 @@
 
     ; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
-    (define rename-ivar-decl-entry-parser-vocab (make-vocabulary))
+    (define rename-ivar-decl-entry-parser-vocab
+      (make-vocabulary 'rename-ivar-decl-entry-parser-vocab))
 
     (add-list-micro rename-ivar-decl-entry-parser-vocab
       (let* ((kwd '())

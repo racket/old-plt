@@ -358,7 +358,7 @@ fi
 
 if test "${enable_dynlib}" = "yes" ; then
   echo "generating libtool"
-  ${srcdir}/ltconfig ${srcdir}/ltmain.sh
+  ${srcdir}/lt/ltconfig ${srcdir}/lt/ltmain.sh
   LTDIR=`pwd`
   AR="${LTDIR}/libtool $CC -rpath ${srcdir}/../lib -o"
   ARFLAGS=""

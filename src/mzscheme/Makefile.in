@@ -193,15 +193,17 @@ clean:
 install:
 	$(MAKE) @MZINSTALLTARGET@
 
-LIBIDIR=$(srcdir)/../../collects/mzscheme/lib/$(INSTALLSYS)
+LIBIDIR=$(srcdir)/../../lib
+LIBCIDIR=$(srcdir)/../../collects/mzscheme/lib/$(INSTALLSYS)
 BUILDINFO=$(LIBIDIR)/buildinfo
 
 normal-install:
 	if [ ! -d $(srcdir)/../../bin ] ; then mkdir $(srcdir)/../../bin ; fi
 	rm -f $(srcdir)/../../bin/mzscheme
 	cp mzscheme $(srcdir)/../../mzscheme
+	if [ ! -d $(LIBCIDIR) ] ; then mkdir $(LIBCIDIR) ; fi
 	if [ ! -d $(LIBIDIR) ] ; then mkdir $(LIBIDIR) ; fi
-	cp mzdyn.o $(LIBIDIR)/mzdyn.o
+	cp mzdyn.o $(LIBCIDIR)/mzdyn.o
 	cp libmzgc.@LIBSFX@ $(LIBIDIR)/libmzgc.@LIBSFX@
 	cp libmzscheme.@LIBSFX@ $(LIBIDIR)/libmzscheme.@LIBSFX@
 	echo 'CC=@CC@' > $(BUILDINFO)

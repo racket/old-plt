@@ -146,7 +146,7 @@
   ;; Make a page-builder for forms.
   (define/contract form-page-maker 
     ((listof (list/c symbol? string?)) . -> .
-      (string? string? (listof any?) . -> . (string? . -> . any)))
+      (string? string? (listof any/c) . -> . (string? . -> . any)))
     (lambda (attribs)
       (lambda (title body)
         (lambda (k-url)

@@ -17,10 +17,12 @@
   (define *SERVLET-URL* (string-append *SERVER-URL* "/servlets/submit.ss"))
 
   (define (test-stress-memory)
+    (time
     (let loop ((n 0))
       (single-memory-test)
       (printf "Memory stress test ~a~n" n)
       (loop (add1 n))))
+    )
 
   ;; id-display : a -> a
   ;; Print the argument to STDOUT, then produce the argument.
@@ -28,13 +30,13 @@
 
   ;; Read a page and convert it to a Xexpr
   (define (pre-process-page p)
-    (id-display (xml->xexpr (id-display (read-xml/element p)))))
+    (xml->xexpr (read-xml/element p)))
 
   ;; Convert a k-url to a url.
   ;; post-process-page : string -> (string -> url)
   (define (post-process-page inputs)
     (lambda (k-url)
-      (string->url (id-display (string-append *SERVER-URL* k-url "?" inputs)))))
+      (string->url (string-append *SERVER-URL* k-url "?" inputs))))
 
   (define (single-memory-test)
     ;; A user logs in, then closes the Web browser

@@ -159,7 +159,10 @@
      [(string? relto)
       (if dir?
 	  (let-values ([(base n d?) (split-path relto)])
-	    base)
+	    (if (eq? base 'relative)
+		(or (current-load-relative-directory)
+		    (current-directory))
+		base))
 	  relto)]
      [(not dir?)
       (error 'resolve-module-path-index "can't resolve \"self\" with just a relative directory")]

@@ -211,9 +211,9 @@ currently exist).
 
 > (resolve-module-path module-path-v rel-to-path-string/thunk/#f) -
   resolves a module path to filename string. The module path is
-  resolved relative to `rel-to-path-string/thunk/#f' if it is a
-  string, to the directory result of calling the thunk if it is a
-  thunk, or to the current directory otherwise.
+  resolved relative to `rel-to-path-string/thunk/#f' if it is a string
+  (a filename path), to the directory result of calling the thunk if
+  it is a thunk, or to the current directory otherwise.
 
 > (resolve-module-path-index module-path-index rel-to-path-string/thunk/#f)
   - like `resolve-module-path' but the input is a module path index

@@ -2152,6 +2152,7 @@ void scheme_dup_symbol_check(DupCheckRecord *r, const char *where,
       for (i = 0; i < r->count; i++) {
 	scheme_hash_set(ht, r->syms[i], scheme_true);
       }
+      r->count++;
     }
   }
 

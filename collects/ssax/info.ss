@@ -17,6 +17,7 @@
       "look-for-str.scm"
       "output.scm"
       "ppretty-prints.scm"
-      "util.scm")))
+      "util.scm"
+      "lookup-def.scm")))
 
  

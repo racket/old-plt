@@ -28,8 +28,13 @@
 		       (write-char c op)
 		       (loop)))))))
 	    'replace)
-	  (begin0 (make-object wx:image-snip% tmp-filename wx:const-bitmap-type-gif)
-		  (delete-file tmp-filename)))))
+	  (let* ([upath (mred:url:url-path url)]
+		 [kind (if (and (string? upath)
+				(regexp-match "xbm$" upath))
+			   wx:const-bitmap-type-xbm
+			   wx:const-bitmap-type-gif)])
+	    (begin0 (make-object wx:image-snip% tmp-filename kind)
+		    '(delete-file tmp-filename))))))
 			    
     (define cache-image
       (lambda (url)
@@ -139,8 +144,8 @@
 		      (set! i-buffer null)))]
 
 	     [parse-image-source
-	      (let ([re:quote-img (regexp "[Ss][Rr][Cc]=\"([^\"]*)\"")]
-		    [re:img (regexp "[Ss][Rr][Cc]=([^ ]*)")])
+	      (let ([re:quote-img (regexp "[Ss][Rr][Cc][ ]*=[ ]*\"([^\"]*)\"")]
+		    [re:img (regexp "[Ss][Rr][Cc][ ]*=[ ]*([^ ]*)")])
 		(lambda (s)
 		  (let ([m (or (regexp-match re:quote-img s)
 			       (regexp-match re:img s))])
@@ -149,10 +154,10 @@
 			null))))]
 	     
 	     [parse-href
-	      (let ([re:quote-href (regexp "[hH][rR][eE][fF]=\"([^\"]*)\"")]
-		    [re:href (regexp "[hH][rR][eE][fF]=([^ ]*)")]
-		    [re:quote-name (regexp "[nN][aA][mM][eE]=\"([^\"]*)\"")]
-		    [re:name (regexp "[nN][aA][mM][eE]=([^ ]*)")]
+	      (let ([re:quote-href (regexp "[hH][rR][eE][fF][ ]*=[ ]*\"([^\"]*)\"")]
+		    [re:href (regexp "[hH][rR][eE][fF][ ]*=[ ]*([^ ]*)")]
+		    [re:quote-name (regexp "[nN][aA][mM][eE][ ]*=[ ]*\"([^\"]*)\"")]
+		    [re:name (regexp "[nN][aA][mM][eE][ ]*=[ ]*([^ ]*)")]
 		    [href-error
 		     (lambda (s)
 		       (html-error "bad reference in ~s" s))])

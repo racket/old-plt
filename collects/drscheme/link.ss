@@ -67,7 +67,8 @@
 	    [(core) 0]
 	    [(structured) 1]
 	    [(side-effects) 2]
-	    [(advanced) 3])))
+	    [(advanced) 3]
+	    [else (error 'level->number "unexpected level: ~a" x)])))
       (define level-symbols (list 'core 'structured 'side-effects 'advanced))
       (define level-strings (list "Beginner" "Intermediate" "Advanced" "Quasi-R4RS"))
       
@@ -122,7 +123,7 @@
 (define mred:make-invokable-unit
   (lambda ()
     (unit/sig->unit
-     (compound-unit/sig (import ())
+     (compound-unit/sig (import)
        (link [mzlib : mzlib:core^ (mzlib:core@)]
 	     [hooks : mzlib:print-convert-hooks^ (mzlib:print-convert-hooks@)]
 	     [print-convert : mzlib:print-convert^
@@ -131,25 +132,24 @@
 	     [mred : mred^ (mred@ mzlib trigger (app : mred:application^))]
 	     [interface : zodiac:interface^
 			(drscheme:zodiac-interface@ zodiac mred)]
-	     [basis : drscheme:basis^ (drscheme:basis@ params mred zodiac)]
-	     [params : plt:parameters^ (drscheme:parameters@ mred basis)]
-	     [zodiac : zodiac:system^ (zodiac:system@ interface params)]
+	     [basis : drscheme:basis^ (drscheme:basis@ (language : plt:parameters^) mred zodiac)]
+	     [zodiac : zodiac:system^ (zodiac:system@ interface (language : plt:parameters^))]
 	     [aries : plt:aries^ (plt:aries@ zodiac interface)]
 	     [edit : drscheme:edit^ (drscheme:edit@ mred aries zodiac)]
 	     [setup : drscheme:setup^ (drscheme:setup@ mred mzlib)]
 	     [tool : drscheme:tool^ 
-		   (drscheme:tool@ mred mzlib print-convert zodiac params
+		   (drscheme:tool@ mred mzlib print-convert zodiac (language : plt:parameters^)
 				   frame unit compound-unit)]
 	     [rep : drscheme:rep^
 		    (drscheme:rep@ mred mzlib print-convert
-				     params aries zodiac
+				     (language : plt:parameters^) aries zodiac
 				     interface app basis)]
 	     [frame : drscheme:frame^
 		    (drscheme:frame@ mred mzlib basis
 				   setup tool unit
 				   compound-unit zodiac)]
 	     [language : drscheme:language^
-		       (drscheme:language@ mred basis)]
+		       (drscheme:language@ mred basis (mzlib function@))]
 	     [unit : drscheme:unit^
 		    (drscheme:unit@ mred mzlib
 				  setup compound-unit

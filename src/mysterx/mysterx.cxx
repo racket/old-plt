@@ -4302,8 +4302,8 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
   HRESULT hr;
   int i;
 
-  scheme_date_type = scheme_lookup_global(scheme_intern_symbol("struct:date"),
-					  env);
+  scheme_date_type = 
+    scheme_lookup_global(scheme_intern_symbol("#%struct:date"),env);
 
   // globals in mysterx.cxx
 

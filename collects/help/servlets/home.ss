@@ -39,7 +39,7 @@
                         ,(manual-entry "drscheme"
                                        "frequently asked questions"
                                        "FAQ") ", "
-                                       "...")))
+                                              "...")))
                 (UL
                  (LI
                   (B

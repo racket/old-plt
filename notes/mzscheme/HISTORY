@@ -1,61 +1,47 @@
 
-Version 205.10
+Version 206, January 2004
 A shut-down custodian is no longer allowed to manage new
  objects
 Changed thread-resume so that it adds custodians to a thread,
  instead of changing the thread's custodian
 Added make-thread-group, etc.
-
-Version 205.9
 Changed define to support MIT-style curried-procedure forms
-Fixed a bug in the bytecode verifier that caused it to skip
- significant parts of typical bytecode
-Added syntax-track-origin
-Added 'disappeared-binding and 'disappeared-use properties
- and refined 'origin tracking for internal definitions
- and spliced sequences
-
-Version 205.8
-Added vector-immutable
-
-Version 205.7
-Macro templates can include consecutive ... for splicing
- sequences
-Macro patterns can include sub-patterns after ...
-Improved reporting for with-syntax
-
-Version 205.6
-Added integer-sqrt, quotient/remainder, integer-sqrt/remainder
-
-Version 205.5
-Added optional namespace argument to most of the
- namespace- primitives
 Added an optional argument to peek-char and 
  peek-char-or-special to indicate the number of characters
  to skip in the input stream
-Added a hook for (planet ...) module paths to the standard
- module name resolver
-
-Version 205.3
-Changed syntax-local-get-shadower to add the current
- module expansion context, if any
 Added optional argument to file-or-directory-modify-seconds
  for setting the modification date of a file or directory
-
-Version 205.1
+Added integer-sqrt, quotient/remainder, integer-sqrt/remainder
 Fixed transitivity of numerical comparison for mixed
  inexact--exact comparisons when the inexact versions
  of the numbers are = but the exact versions are not
-generate-temporaries produces identifiers that are
- suitable for use as defined names in the module
- being expanded (if any)
-Added syntax-local-module-introduce, which is used
- by generate-temporaries
+Macro templates can include consecutive ... for splicing
+ sequences
+Macro patterns can include sub-patterns after ...
+Improved error reporting for with-syntax
 Non-constant syntax pairs generated from templates
  (in syntax-case, with-syntax, quasisyntax, etc.)
  keep source-location and context information,
  instead of acquiring the context and location of
  the generator expression as a whole
+generate-temporaries produces identifiers that are
+ suitable for use as defined names in the module
+ being expanded (if any)
+Added syntax-local-module-introduce, which is used
+ by generate-temporaries
+Added syntax-track-origin
+Changed syntax-local-get-shadower to add the current
+ module expansion context, if any
+Added 'disappeared-binding and 'disappeared-use properties
+ and refined 'origin tracking for internal definitions
+ and spliced sequences
+Added optional namespace argument to most of the
+ namespace- primitives
+Added vector-immutable
+Fixed a bug in the bytecode verifier that caused it to skip
+ significant parts of typical bytecode
+Added a hook for (planet ...) module paths to the standard
+ module name resolver
 
 Version 205, August 2003
 Extended regexp language with "(?:...)"

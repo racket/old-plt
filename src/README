@@ -10,7 +10,8 @@ available at
   http://www.plt-scheme.org/software/mred/
 
 The MzScheme and MrEd source code should compile and execute on
-Windows, Mac OS, or any Unix/X platform (including Linux).
+Windows, Mac OS X, or any Unix/X platform (including Linux). It
+may also work udner Mac OS 9.
 
 Per-platform instructions are below.
 
@@ -20,7 +21,6 @@ Please report bugs via one of the following:
   - bugs@plt-scheme.org                   (last resort)
 
 -Matthew Flatt
- PLT
  mflatt@plt-scheme.org
 
 ========================================================================
@@ -78,6 +78,8 @@ Mac OS X:
      `system-type' reports 'unix.
 
 Mac OS Classic (PowerPC only):
+
+ Mac OS Classic is no longer supported, but it might work anyway.
 
  MrEd compiles for Mac OS Classic using MPW.  Stand-alone MzScheme is
  not suported for Classic (use MrEd instead), but MzSchemeLib is

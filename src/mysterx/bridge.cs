@@ -733,6 +733,12 @@ namespace SchemeBridge
      [MarshalAs (UnmanagedType.CustomMarshaler, MarshalTypeRef = typeof (MzSchemeObject))] MzSchemeObject cdr);
 
     [DllImport ("libmzschxxxxxxx.dll")]
+    public static extern IntPtr scheme_make_true ();
+
+    [DllImport ("libmzschxxxxxxx.dll")]
+    public static extern IntPtr scheme_make_false ();
+
+    [DllImport ("libmzschxxxxxxx.dll")]
     public static extern IntPtr scheme_make_string (String x);
 
     [DllImport ("libmzschxxxxxxx.dll")]
@@ -940,6 +946,9 @@ namespace SchemeBridge
           return result;
           }
 
+      else if (ManagedObject is Boolean)
+          return (ManagedObject.Equals (true)) ? Scheme.scheme_make_true() : Scheme.scheme_make_false();
+
       else  {
           Console.WriteLine ("MarshalManagedToNative (" + ManagedObject.ToString() + ") => 0");
           return (IntPtr)0;
@@ -1045,7 +1054,51 @@ namespace SchemeBridge
     public Object ConstructorCall (ConstructorInfo meth, BridgeArray args)
     {
       try {
-	  return BridgeWrapper.Wrap (meth.Invoke (args));
+	Object [] converted_args = new Object [meth.GetParameters().Length];
+	for (int i = 0; i < args.Length; i++) {
+	    Type actual_type = args[i].GetType();
+          ParameterInfo paraminfo = meth.GetParameters()[i];
+          ParameterAttributes paramattr = paraminfo.Attributes;
+          Type desired_type = meth.GetParameters()[i].ParameterType;
+	    if (actual_type.Equals (desired_type) ||
+	        actual_type.IsSubclassOf (desired_type))
+                converted_args [i] = args [i];
+	  else if (desired_type.IsValueType && actual_type.IsValueType) {
+                Console.WriteLine ("Have to convert value types or something.");
+                }
+          else if (desired_type.IsEnum &&
+                   args[i] is System.String)
+              converted_args [i] = System.Enum.Parse (desired_type, (System.String)(args[i]));
+          else if ((paramattr & ParameterAttributes.HasFieldMarshal) == paramattr) {
+	      Console.WriteLine ("Parameter " + i + " HasFieldMarshal");
+	      Console.WriteLine ("actual type is " + actual_type);
+	      Console.WriteLine ("desired type is " + desired_type);
+
+              Object [] invoke_args = new Object [1];
+              invoke_args [0] = "hello";
+              MethodInfo getinstancemethod = desired_type.GetMethod ("GetInstance");
+	      if (getinstancemethod == null)
+                 Console.WriteLine ("GetInstance method is NULL, oh my!");
+
+	      Console.WriteLine ("GetInstance method is " + getinstancemethod.ToString());
+              ICustomMarshaler marshaler = (ICustomMarshaler) (getinstancemethod.Invoke (null, invoke_args));
+              Object marshaled =  marshaler.MarshalNativeToManaged ((System.IntPtr)(args [i]));
+              converted_args [i] = marshaled;
+              }
+          else {
+              converted_args [i] = args [i];
+              }
+          }
+
+      for (int i = args.Length; i < meth.GetParameters().Length; i++)
+          converted_args [i] = meth.GetParameters()[i].DefaultValue;
+
+
+	Console.WriteLine ("About to call constructor on:");
+          foreach (Object arg in converted_args)
+              Console.WriteLine ("Arg: " + arg.ToString());
+
+	  return BridgeWrapper.Wrap (meth.Invoke (converted_args));
 	  }
       catch (Exception e) {
           ReportError ("constructor invocation.", e);
@@ -1068,16 +1121,71 @@ namespace SchemeBridge
 
     public void SetPropertyValue (PropertyInfo pi, Object instance, Object new_value, BridgeArray indexes)
     {
+	MethodInfo info = pi.GetSetMethod();
+
+      Object [] converted_args = new Object [info.GetParameters().Length];
+
+      for (int i = 0; i < indexes.Length; i++) {
+          Type actual_type = indexes[i].GetType();
+          ParameterInfo paraminfo = info.GetParameters()[i];
+          ParameterAttributes paramattr = paraminfo.Attributes;
+          Type desired_type = info.GetParameters()[i].ParameterType;
+
+	      Console.WriteLine ("Parameter " + i);
+	      Console.WriteLine ("actual type is " + actual_type);
+	      Console.WriteLine ("desired type is " + desired_type);
+
+          if (actual_type.Equals (desired_type) ||
+              actual_type.IsSubclassOf (desired_type))
+              converted_args [i] = indexes [i];
+          else if (desired_type.IsEnum &&
+                   indexes[i] is System.String) {
+
+
+              converted_args [i] = System.Enum.Parse (desired_type, (System.String)(indexes[i]));
+              }
+          else if ((paramattr & ParameterAttributes.HasFieldMarshal) == paramattr) {
+              Object [] invoke_args = new Object [1];
+              invoke_args [0] = "hello";
+              MethodInfo getinstancemethod = desired_type.GetMethod ("GetInstance");
+              ICustomMarshaler marshaler = (ICustomMarshaler) (getinstancemethod.Invoke (null, invoke_args));
+              Object marshaled =  marshaler.MarshalNativeToManaged ((System.IntPtr)(indexes [i]));
+              converted_args [i] = marshaled;
+              }
+          else {
+              converted_args [i] = indexes [i];
+              }
+          }
+
+      for (int i = indexes.Length; i < info.GetParameters().Length; i++)
+          converted_args [i] = info.GetParameters()[i].DefaultValue;
+
+      Object nv = (new_value is BridgeWrapper)
+                  ? ((BridgeWrapper) new_value).underlying_object
+                  : new_value;
+
+      Type desired_new_value_type = pi.PropertyType;
+      Type actual_new_value_type = nv.GetType();
+
+      Object new_value_object;
+      if (actual_new_value_type.Equals (desired_new_value_type) ||
+	  actual_new_value_type.IsSubclassOf (desired_new_value_type))
+         new_value_object = nv;
+      else if (desired_new_value_type.IsEnum &&
+               nv is System.String)
+         new_value_object = System.Enum.Parse (desired_new_value_type, (System.String)(nv));
+      else
+         new_value_object = nv;
+
+
       try {
           pi.SetValue ((instance is BridgeWrapper)
                        ? ((BridgeWrapper)instance).underlying_object
                        : instance,
-                       (new_value is BridgeWrapper)
-                        ? ((BridgeWrapper)new_value).underlying_object
-                        : new_value,
+                       new_value_object,
                        indexes.Length == 0
                        ? null
-                       : indexes.ToArray());
+                       : converted_args);
           }
       catch (Exception e) {
           ReportError ("set property value.", e);
@@ -1158,8 +1266,12 @@ namespace SchemeBridge
                       return excel_assembly.GetType (typename, true, true);
                       }
                   catch (TypeLoadException e2) {
-                      if (typename.CompareTo ("schemebridge.schemeformproxy") == 0)
+                      if (typename.CompareTo ("schemebridge.containercontrolproxy") == 0)
+                          return typeof (ContainerControlProxy);
+                      else if (typename.CompareTo ("schemebridge.formproxy") == 0)
                           return typeof (FormProxy);
+                      else if (typename.CompareTo ("schemebridge.richtextproxy") == 0)
+                          return typeof (RichTextProxy);
                       else if (typename.CompareTo ("schemebridge.applicationcontext") == 0)
                           return typeof (ApplicationContext);
                       else
@@ -1750,6 +1862,98 @@ namespace SchemeBridge
 
   }
 
+// Since Color is a Value type rather than a class type,
+// we wrap it in a class.
+
+public class ColorClass {
+
+  public System.Drawing.Color realColor;
+
+  public ColorClass (int r, int g, int b) {
+    realColor = System.Drawing.Color.FromArgb (r, g, b);
+    }
+
+  public ColorClass (String name) {
+    realColor = System.Drawing.Color.FromName (name);
+    }
+
+  public static implicit operator System.Drawing.Color (ColorClass source)
+  {
+    return source.realColor;
+  }
+
+  public void Set (int r, int g, int b) {
+    this.realColor = System.Drawing.Color.FromArgb (r, g, b);
+    }
+
+  public int Red
+  {
+    get {
+        return realColor.R;
+        }
+  }
+
+  public int Green
+  {
+    get {
+        return realColor.G;
+        }
+  }
+
+  public int Blue
+  {
+    get {
+        return realColor.B;
+        }
+  }
+}
+
+// It seems that the system cursor collection is bogusly typed.
+
+public class FakeCursor {
+   public System.Windows.Forms.Cursor realCursor;
+
+   public FakeCursor (System.Windows.Forms.Cursor _realCursor) {
+      realCursor = _realCursor;
+      }
+}
+
+public class FakeCursorCollection {
+   public static Object Arrow () {return BridgeWrapper.Wrap (new FakeCursor (System.Windows.Forms.Cursors.Arrow));}
+   public static Object Cross () {return BridgeWrapper.Wrap (new FakeCursor (System.Windows.Forms.Cursors.Cross));}
+   public static Object Hand  () {return BridgeWrapper.Wrap (new FakeCursor (System.Windows.Forms.Cursors.Hand));}
+   public static Object IBeam () {return BridgeWrapper.Wrap (new FakeCursor (System.Windows.Forms.Cursors.IBeam));}
+}
+
+public class FakePen {
+    public System.Drawing.Pen realPen;
+
+    public FakePen (System.Drawing.Pen _realPen) {
+        realPen = _realPen;
+        }
+
+  public System.Drawing.Drawing2D.DashStyle dashStyle {
+    get {
+        return realPen.DashStyle;
+        }
+
+    set {
+	// Another winner:  a `default' name for the argument!
+        realPen.DashStyle = value;
+        }
+  }
+
+}
+
+public class GUIHelper {
+
+  public static Object make_pen (ColorClass color, int width) {
+    return new FakePen (new System.Drawing.Pen (color, width));
+    }
+
+}
+
+
 //////////////////////////////////////
 // As it turns out, there are certain metadata constructs that cannot
 // be manipulated from within the .NET framework.  These have to do
@@ -1761,13 +1965,694 @@ namespace SchemeBridge
 // proxy object back to Scheme.
 /////////////////////////////////////
 
-  public unsafe class FormProxy : System.Windows.Forms.Form
+  public unsafe class ControlProxy : System.Windows.Forms.Control
+  {
+    public MzSchemeObject scheme_control;
+
+    public ControlProxy (MzSchemeObject _scheme_control)
+    {
+      scheme_control = _scheme_control;
+    }
+
+  private void NotifyScheme (String event_name)
+    {
+      IntPtr buffer = new IntPtr();
+      try {
+          buffer = Marshal.AllocCoTaskMem (4);
+          Marshal.WriteIntPtr (buffer, 0, scheme_control.MarshalManagedToNative (event_name));
+          // Console.WriteLine ("Notify scheme of " + event_name);
+          Scheme.scheme_apply (scheme_control, 1, buffer);
+          }
+      finally {
+          if (!IntPtr.Zero.Equals (buffer)) Marshal.FreeCoTaskMem (buffer);
+          }
+    }
+
+    private void NotifyScheme (String event_name, EventArgs e)
+    {
+      NotifyScheme (event_name);
+    }
+
+    private void NotifyScheme (String event_name, MouseEventArgs e)
+    {
+      IntPtr buffer = new IntPtr();
+      try {
+          buffer = Marshal.AllocCoTaskMem (4 * 6);
+          Marshal.WriteIntPtr (buffer, 0, scheme_control.MarshalManagedToNative (event_name));
+          Marshal.WriteIntPtr (buffer, 4,
+                               scheme_control.MarshalManagedToNative
+                               (e.Button == MouseButtons.None       ? "None"
+                                : e.Button == MouseButtons.Left     ? "Left"
+                                : e.Button == MouseButtons.Right    ? "Right"
+                                : e.Button == MouseButtons.XButton1 ? "XButton1"
+                                : e.Button == MouseButtons.XButton2 ? "XButton2"
+                                : "Multiple"));
+          Marshal.WriteIntPtr (buffer, 8, scheme_control.MarshalManagedToNative (e.Clicks));
+          Marshal.WriteIntPtr (buffer, 12, scheme_control.MarshalManagedToNative (e.Delta));
+          Marshal.WriteIntPtr (buffer, 16, scheme_control.MarshalManagedToNative (e.X));
+          Marshal.WriteIntPtr (buffer, 20, scheme_control.MarshalManagedToNative (e.Y));
+          // Console.WriteLine ("Notify scheme of " + event_name);
+
+          Scheme.scheme_apply (scheme_control, 6, buffer);
+          }
+      finally {
+          if (!IntPtr.Zero.Equals (buffer)) Marshal.FreeCoTaskMem (buffer);
+          }
+    }
+
+    private void NotifyScheme (String event_name, System.ComponentModel.CancelEventArgs e)
+    {
+      IntPtr buffer = new IntPtr();
+      try {
+          buffer = Marshal.AllocCoTaskMem (8);
+          Marshal.WriteIntPtr (buffer, 0, scheme_control.MarshalManagedToNative (event_name));
+          Marshal.WriteIntPtr (buffer, 4, scheme_control.MarshalManagedToNative (e.Cancel));
+          // Console.WriteLine ("Notify scheme of " + event_name);
+
+          Scheme.scheme_apply (scheme_control, 2, buffer);
+          }
+      finally {
+          if (!IntPtr.Zero.Equals (buffer)) Marshal.FreeCoTaskMem (buffer);
+          }
+    }
+
+    private void NotifyScheme (String event_name, ControlEventArgs e)
+    {
+      IntPtr buffer = new IntPtr();
+      try {
+          buffer = Marshal.AllocCoTaskMem (4);
+          Marshal.WriteIntPtr (buffer, 0, scheme_control.MarshalManagedToNative (event_name));
+          // Console.WriteLine ("Notify scheme of " + event_name);
+          Scheme.scheme_apply (scheme_control, 1, buffer);
+          }
+      finally {
+          if (!IntPtr.Zero.Equals (buffer)) Marshal.FreeCoTaskMem (buffer);
+          }
+    }
+
+    private void NotifyScheme (String event_name, DragEventArgs e)
+    {
+      IntPtr buffer = new IntPtr();
+      try {
+          buffer = Marshal.AllocCoTaskMem (4 * 3);
+          Marshal.WriteIntPtr (buffer, 0, scheme_control.MarshalManagedToNative (event_name));
+          // other things go here
+          Marshal.WriteIntPtr (buffer, 8, scheme_control.MarshalManagedToNative (e.X));
+          Marshal.WriteIntPtr (buffer, 12, scheme_control.MarshalManagedToNative (e.Y));
+          // Console.WriteLine ("Notify scheme of " + event_name);
+          Scheme.scheme_apply (scheme_control, 3, buffer);
+          }
+      finally {
+          if (!IntPtr.Zero.Equals (buffer)) Marshal.FreeCoTaskMem (buffer);
+          }
+    }
+
+    private void NotifyScheme (String event_name, GiveFeedbackEventArgs e)
+    {
+      IntPtr buffer = new IntPtr();
+      try {
+          buffer = Marshal.AllocCoTaskMem (4);
+          Marshal.WriteIntPtr (buffer, 0, scheme_control.MarshalManagedToNative (event_name));
+          // Console.WriteLine ("Notify scheme of " + event_name);
+          Scheme.scheme_apply (scheme_control, 1, buffer);
+          }
+      finally {
+          if (!IntPtr.Zero.Equals (buffer)) Marshal.FreeCoTaskMem (buffer);
+          }
+    }
+
+    private void NotifyScheme (String event_name, HelpEventArgs e)
+    {
+      IntPtr buffer = new IntPtr();
+      try {
+          buffer = Marshal.AllocCoTaskMem (4);
+          Marshal.WriteIntPtr (buffer, 0, scheme_control.MarshalManagedToNative (event_name));
+          // Console.WriteLine ("Notify scheme of " + event_name);
+          Scheme.scheme_apply (scheme_control, 1, buffer);
+          }
+      finally {
+          if (!IntPtr.Zero.Equals (buffer)) Marshal.FreeCoTaskMem (buffer);
+          }
+    }
+
+    private void NotifyScheme (String event_name, InvalidateEventArgs e)
+    {
+      IntPtr buffer = new IntPtr();
+      try {
+          buffer = Marshal.AllocCoTaskMem (4);
+          Marshal.WriteIntPtr (buffer, 0, scheme_control.MarshalManagedToNative (event_name));
+          // Console.WriteLine ("Notify scheme of " + event_name);
+          Scheme.scheme_apply (scheme_control, 1, buffer);
+          }
+      finally {
+          if (!IntPtr.Zero.Equals (buffer)) Marshal.FreeCoTaskMem (buffer);
+          }
+    }
+
+    private void NotifyScheme (String event_name, InputLanguageChangingEventArgs e)
+    {
+      IntPtr buffer = new IntPtr();
+      try {
+          buffer = Marshal.AllocCoTaskMem (4);
+          Marshal.WriteIntPtr (buffer, 0, scheme_control.MarshalManagedToNative (event_name));
+          // Console.WriteLine ("Notify scheme of " + event_name);
+          Scheme.scheme_apply (scheme_control, 1, buffer);
+          }
+      finally {
+          if (!IntPtr.Zero.Equals (buffer)) Marshal.FreeCoTaskMem (buffer);
+          }
+    }
+
+    private void NotifyScheme (String event_name, InputLanguageChangedEventArgs e)
+    {
+      IntPtr buffer = new IntPtr();
+      try {
+          buffer = Marshal.AllocCoTaskMem (4);
+          Marshal.WriteIntPtr (buffer, 0, scheme_control.MarshalManagedToNative (event_name));
+          // Console.WriteLine ("Notify scheme of " + event_name);
+          Scheme.scheme_apply (scheme_control, 1, buffer);
+          }
+      finally {
+          if (!IntPtr.Zero.Equals (buffer)) Marshal.FreeCoTaskMem (buffer);
+          }
+    }
+
+    private void NotifyScheme (String event_name, KeyEventArgs e)
+    {
+      IntPtr buffer = new IntPtr();
+      try {
+          buffer = Marshal.AllocCoTaskMem (4);
+          Marshal.WriteIntPtr (buffer, 0, scheme_control.MarshalManagedToNative (event_name));
+          // Console.WriteLine ("Notify scheme of " + event_name);
+          Scheme.scheme_apply (scheme_control, 1, buffer);
+          }
+      finally {
+          if (!IntPtr.Zero.Equals (buffer)) Marshal.FreeCoTaskMem (buffer);
+          }
+    }
+
+    private void NotifyScheme (String event_name, KeyPressEventArgs e)
+    {
+      IntPtr buffer = new IntPtr();
+      try {
+          buffer = Marshal.AllocCoTaskMem (4);
+          Marshal.WriteIntPtr (buffer, 0, scheme_control.MarshalManagedToNative (event_name));
+          // Console.WriteLine ("Notify scheme of " + event_name);
+          Scheme.scheme_apply (scheme_control, 1, buffer);
+          }
+      finally {
+          if (!IntPtr.Zero.Equals (buffer)) Marshal.FreeCoTaskMem (buffer);
+          }
+    }
+
+    private void NotifyScheme (String event_name, LayoutEventArgs e)
+    {
+      IntPtr buffer = new IntPtr();
+      try {
+          buffer = Marshal.AllocCoTaskMem (4);
+          Marshal.WriteIntPtr (buffer, 0, scheme_control.MarshalManagedToNative (event_name));
+          // Console.WriteLine ("Notify scheme of " + event_name);
+          Scheme.scheme_apply (scheme_control, 1, buffer);
+          }
+      finally {
+          if (!IntPtr.Zero.Equals (buffer)) Marshal.FreeCoTaskMem (buffer);
+          }
+    }
+
+    private void NotifyScheme (String event_name, QueryAccessibilityHelpEventArgs e)
+    {
+      IntPtr buffer = new IntPtr ();
+      try {
+          buffer = Marshal.AllocCoTaskMem (4 * 4);
+          Marshal.WriteIntPtr (buffer, 0, scheme_control.MarshalManagedToNative (event_name));
+          Marshal.WriteIntPtr (buffer, 4, scheme_control.MarshalManagedToNative (e.HelpKeyword));
+          Marshal.WriteIntPtr (buffer, 8, scheme_control.MarshalManagedToNative (e.HelpNamespace));
+          Marshal.WriteIntPtr (buffer, 12, scheme_control.MarshalManagedToNative (e.HelpString));
+          // Console.WriteLine ("Notify scheme of " + event_name);
+          Scheme.scheme_apply (scheme_control, 4, buffer);
+          }
+      finally {
+          if (!IntPtr.Zero.Equals (buffer)) Marshal.FreeCoTaskMem (buffer);
+          }
+    }
+
+    private void NotifyScheme (String event_name, QueryContinueDragEventArgs e)
+    {
+      IntPtr buffer = new IntPtr();
+      try {
+          buffer = Marshal.AllocCoTaskMem (4);
+          Marshal.WriteIntPtr (buffer, 0, scheme_control.MarshalManagedToNative (event_name));
+          // Console.WriteLine ("Notify scheme of " + event_name);
+          Scheme.scheme_apply (scheme_control, 1, buffer);
+          }
+      finally {
+          if (!IntPtr.Zero.Equals (buffer)) Marshal.FreeCoTaskMem (buffer);
+          }
+    }
+
+    private void NotifyScheme (String event_name, Message e)
+    {
+      IntPtr buffer = new IntPtr();
+      try {
+          buffer = Marshal.AllocCoTaskMem (4);
+          Marshal.WriteIntPtr (buffer, 0, scheme_control.MarshalManagedToNative (event_name));
+          // Console.WriteLine ("Notify scheme of " + event_name);
+          Scheme.scheme_apply (scheme_control, 1, buffer);
+          }
+      finally {
+          if (!IntPtr.Zero.Equals (buffer)) Marshal.FreeCoTaskMem (buffer);
+          }
+    }
+
+    private void NotifyScheme (String event_name, PaintEventArgs e)
+    {
+      IntPtr buffer = new IntPtr();
+      try {
+          buffer = Marshal.AllocCoTaskMem (4);
+          Marshal.WriteIntPtr (buffer, 0, scheme_control.MarshalManagedToNative (event_name));
+          // Console.WriteLine ("Notify scheme of " + event_name);
+          Scheme.scheme_apply (scheme_control, 1, buffer);
+          }
+      finally {
+          if (!IntPtr.Zero.Equals (buffer)) Marshal.FreeCoTaskMem (buffer);
+          }
+    }
+
+    protected override void OnBackColorChanged (EventArgs e)
+    {
+      base.OnBackColorChanged (e);
+      this.NotifyScheme ("BackColorChanged", e);
+    }
+
+    protected override void OnBackgroundImageChanged (EventArgs e)
+    {
+      base.OnBackgroundImageChanged (e);
+      this.NotifyScheme ("BackgroundImageChanged", e);
+    }
+
+    protected override void OnBindingContextChanged (EventArgs e)
+    {
+      base.OnBindingContextChanged (e);
+      this.NotifyScheme ("BindingContextChanged", e);
+    }
+
+    protected override void OnCausesValidationChanged (EventArgs e)
+    {
+      base.OnCausesValidationChanged (e);
+      this.NotifyScheme ("CausesValidationChanged", e);
+    }
+
+    protected override void OnChangeUICues (UICuesEventArgs e)
+    {
+      base.OnChangeUICues (e);
+      this.NotifyScheme ("ChangeUICues", e);
+    }
+
+    protected override void OnClick (EventArgs e)
+    {
+      base.OnClick (e);
+      this.NotifyScheme ("Click", e);
+    }
+
+    protected override void OnContextMenuChanged (EventArgs e)
+    {
+      base.OnContextMenuChanged (e);
+      this.NotifyScheme ("ContextMenuChanged", e);
+    }
+
+    protected override void OnControlAdded (ControlEventArgs e)
+    {
+      base.OnControlAdded (e);
+      this.NotifyScheme ("ControlAdded", e);
+    }
+
+    protected override void OnControlRemoved (ControlEventArgs e)
+    {
+      base.OnControlRemoved (e);
+      this.NotifyScheme ("ControlRemoved", e);
+    }
+
+    protected override void OnCursorChanged (EventArgs e)
+    {
+      base.OnCursorChanged (e);
+      this.NotifyScheme ("CursorChanged", e);
+    }
+
+    protected override void OnDockChanged (EventArgs e)
+    {
+      base.OnDockChanged (e);
+      this.NotifyScheme ("DockChanged", e);
+    }
+
+    protected override void OnDoubleClick (EventArgs e)
+    {
+      base.OnDoubleClick (e);
+      this.NotifyScheme ("DoubleClick", e);
+    }
+
+    protected override void OnDragDrop (DragEventArgs e)
+    {
+      base.OnDragDrop (e);
+      this.NotifyScheme ("DragDrop", e);
+    }
+
+    protected override void OnDragEnter (DragEventArgs e)
+    {
+      base.OnDragEnter (e);
+      this.NotifyScheme ("DragEnter", e);
+    }
+
+    protected override void OnDragLeave (EventArgs e)
+    {
+      base.OnDragLeave (e);
+      this.NotifyScheme ("DragLeave", e);
+    }
+
+    protected override void OnDragOver (DragEventArgs e)
+    {
+      base.OnDragOver (e);
+      this.NotifyScheme ("DragOver", e);
+    }
+
+    protected override void OnEnabledChanged (EventArgs e)
+    {
+      base.OnEnabledChanged (e);
+      this.NotifyScheme ("EnabledChanged", e);
+    }
+
+    protected override void OnEnter (EventArgs e)
+    {
+      base.OnEnter (e);
+      this.NotifyScheme ("Enter", e);
+    }
+
+    protected override void OnFontChanged (EventArgs e)
+    {
+      base.OnFontChanged (e);
+      this.NotifyScheme ("FontChanged", e);
+    }
+
+    protected override void OnForeColorChanged (EventArgs e)
+    {
+      base.OnForeColorChanged (e);
+      this.NotifyScheme ("ForeColorChanged", e);
+    }
+
+    protected override void OnGiveFeedback (GiveFeedbackEventArgs e)
+    {
+      base.OnGiveFeedback (e);
+      this.NotifyScheme ("GiveFeedback", e);
+    }
+
+    protected override void OnGotFocus (EventArgs e)
+    {
+      base.OnGotFocus (e);
+      this.NotifyScheme ("GotFocus", e);
+    }
+
+    protected override void OnHandleCreated (EventArgs e)
+    {
+      base.OnHandleCreated (e);
+      this.NotifyScheme ("HandleCreated", e);
+    }
+
+    protected override void OnHandleDestroyed (EventArgs e)
+    {
+      base.OnHandleDestroyed (e);
+      this.NotifyScheme ("HandleDestroyed", e);
+    }
+
+    protected override void OnHelpRequested (HelpEventArgs e)
+    {
+      base.OnHelpRequested (e);
+      this.NotifyScheme ("HelpRequested", e);
+    }
+
+    protected override void OnImeModeChanged (EventArgs e)
+    {
+      base.OnImeModeChanged (e);
+      this.NotifyScheme ("ImeModeChanged", e);
+    }
+
+    protected override void OnInvalidated (InvalidateEventArgs e)
+    {
+      base.OnInvalidated (e);
+      this.NotifyScheme ("Invalidated", e);
+    }
+
+    protected override void OnKeyDown (KeyEventArgs e)
+    {
+      base.OnKeyDown (e);
+      this.NotifyScheme ("KeyDown", e);
+    }
+
+    protected override void OnKeyPress (KeyPressEventArgs e)
+    {
+      base.OnKeyPress (e);
+      this.NotifyScheme ("KeyPress", e);
+    }
+
+    protected override void OnKeyUp (KeyEventArgs e)
+    {
+      base.OnKeyUp (e);
+      this.NotifyScheme ("KeyUp", e);
+    }
+
+    protected override void OnLayout (LayoutEventArgs e)
+    {
+      base.OnLayout (e);
+      this.NotifyScheme ("Layout", e);
+    }
+
+    protected override void OnLeave (EventArgs e)
+    {
+      base.OnLeave (e);
+      this.NotifyScheme ("Leave", e);
+    }
+
+    protected override void OnLocationChanged (EventArgs e)
+    {
+      base.OnLocationChanged (e);
+      this.NotifyScheme ("LocationChanged", e);
+    }
+
+    protected override void OnLostFocus (EventArgs e)
+    {
+      base.OnLostFocus (e);
+      this.NotifyScheme ("LostFocus", e);
+    }
+
+    protected override void OnMouseDown (MouseEventArgs e)
+    {
+      base.OnMouseDown (e);
+      this.NotifyScheme ("MouseDown", e);
+    }
+
+    protected override void OnMouseEnter (EventArgs e)
+    {
+      base.OnMouseEnter (e);
+      this.NotifyScheme ("MouseEnter", e);
+    }
+
+    protected override void OnMouseHover (EventArgs e)
+    {
+      base.OnMouseHover (e);
+      this.NotifyScheme ("MouseHover", e);
+    }
+
+    protected override void OnMouseMove (MouseEventArgs e)
+    {
+      base.OnMouseMove (e);
+      this.NotifyScheme ("MouseMove", e);
+    }
+
+    protected override void OnMouseLeave (EventArgs e)
+    {
+      base.OnMouseLeave (e);
+      this.NotifyScheme ("MouseLeave", e);
+    }
+
+    protected override void OnMouseUp (MouseEventArgs e)
+    {
+      base.OnMouseUp (e);
+      this.NotifyScheme ("MouseUp", e);
+    }
+
+    protected override void OnMouseWheel (MouseEventArgs e)
+    {
+      base.OnMouseWheel (e);
+      this.NotifyScheme ("MouseWheel", e);
+    }
+
+    protected override void OnMove (EventArgs e)
+    {
+      base.OnMove (e);
+      this.NotifyScheme ("Move", e);
+    }
+
+    protected override void OnNotifyMessage (Message e)
+    {
+      base.OnNotifyMessage (e);
+      this.NotifyScheme ("NotifyMessage", e);
+    }
+
+    protected override void OnPaint (PaintEventArgs e)
+    {
+      base.OnPaint (e);
+      this.NotifyScheme ("Paint", e);
+    }
+
+    protected override void OnPaintBackground (PaintEventArgs e)
+    {
+      base.OnPaintBackground (e);
+      this.NotifyScheme ("PaintBackground", e);
+    }
+
+    protected override void OnParentBackColorChanged (EventArgs e)
+    {
+      base.OnParentBackColorChanged (e);
+      this.NotifyScheme ("ParentBackColorChanged", e);
+    }
+
+    protected override void OnParentBackgroundImageChanged (EventArgs e)
+    {
+      base.OnParentBackgroundImageChanged (e);
+      this.NotifyScheme ("ParentBackgroundImageChanged", e);
+    }
+
+    protected override void OnParentBindingContextChanged (EventArgs e)
+    {
+      base.OnParentBindingContextChanged (e);
+      this.NotifyScheme ("ParentBindingContextChanged", e);
+    }
+
+    protected override void OnParentChanged (EventArgs e)
+    {
+      base.OnParentChanged (e);
+      this.NotifyScheme ("ParentChanged", e);
+    }
+
+    protected override void OnParentEnabledChanged (EventArgs e)
+    {
+      base.OnParentEnabledChanged (e);
+      this.NotifyScheme ("ParentEnabledChanged", e);
+    }
+
+    protected override void OnParentFontChanged (EventArgs e)
+    {
+      base.OnParentFontChanged (e);
+      this.NotifyScheme ("ParentFontChanged", e);
+    }
+
+    protected override void OnParentForeColorChanged (EventArgs e)
+    {
+      base.OnParentForeColorChanged (e);
+      this.NotifyScheme ("ParentForeColorChanged", e);
+    }
+
+    protected override void OnParentRightToLeftChanged (EventArgs e)
+    {
+      base.OnParentRightToLeftChanged (e);
+      this.NotifyScheme ("ParentRightToLeftChanged", e);
+    }
+
+    protected override void OnParentVisibleChanged (EventArgs e)
+    {
+      base.OnParentVisibleChanged (e);
+      this.NotifyScheme ("ParentVisibleChanged", e);
+    }
+
+    protected override void OnQueryContinueDrag (QueryContinueDragEventArgs e)
+    {
+      base.OnQueryContinueDrag (e);
+      this.NotifyScheme ("QueryContinueDrag", e);
+    }
+
+    protected override void OnResize (EventArgs e)
+    {
+      base.OnResize (e);
+      this.NotifyScheme ("Resize", e);
+    }
+
+    protected override void OnRightToLeftChanged (EventArgs e)
+    {
+      base.OnRightToLeftChanged (e);
+      this.NotifyScheme ("RightToLeftChanged", e);
+    }
+
+    protected override void OnSizeChanged (EventArgs e)
+    {
+      base.OnSizeChanged (e);
+      this.NotifyScheme ("SizeChanged", e);
+    }
+
+    protected override void OnStyleChanged (EventArgs e)
+    {
+      base.OnStyleChanged (e);
+      this.NotifyScheme ("StyleChanged", e);
+    }
+
+    protected override void OnSystemColorsChanged (EventArgs e)
+    {
+      base.OnSystemColorsChanged (e);
+      this.NotifyScheme ("SystemColorsChanged", e);
+    }
+
+    protected override void OnTabIndexChanged (EventArgs e)
+    {
+      base.OnTabIndexChanged (e);
+      this.NotifyScheme ("TabIndexChanged", e);
+    }
+
+    protected override void OnTabStopChanged (EventArgs e)
+    {
+      base.OnTabStopChanged (e);
+      this.NotifyScheme ("TabStopChanged", e);
+    }
+
+    protected override void OnTextChanged (EventArgs e)
+    {
+      base.OnTextChanged (e);
+      this.NotifyScheme ("TextChanged", e);
+    }
+
+    protected override void OnValidated (EventArgs e)
+    {
+      base.OnValidated (e);
+      this.NotifyScheme ("Validated", e);
+    }
+
+    protected override void OnValidating (System.ComponentModel.CancelEventArgs e)
+    {
+      base.OnValidating (e);
+      this.NotifyScheme ("Validating", e);
+    }
+
+    protected override void OnVisibleChanged (EventArgs e)
+    {
+      base.OnVisibleChanged (e);
+      this.NotifyScheme ("VisibleChanged", e);
+    }
+  }
+
+
+  public unsafe class ContainerControlProxy : System.Windows.Forms.ContainerControl
   {
     public MzSchemeObject scheme_form;
 
-    public FormProxy (MzSchemeObject _scheme_form)
+    public ContainerControlProxy (MzSchemeObject _scheme_form)
     {
       scheme_form = _scheme_form;
+    }
+
+    public new System.Windows.Forms.Control Parent
+    {
+       get {
+           return base.Parent;
+           }
+       set {
+           base.Parent = value;
+           }
     }
 
     private void NotifyScheme (String event_name)
@@ -1776,6 +2661,7 @@ namespace SchemeBridge
       try {
           buffer = Marshal.AllocCoTaskMem (4);
           Marshal.WriteIntPtr (buffer, 0, scheme_form.MarshalManagedToNative (event_name));
+          // Console.WriteLine ("Notify scheme of " + event_name);
           Scheme.scheme_apply (scheme_form, 1, buffer);
           }
       finally {
@@ -1806,6 +2692,7 @@ namespace SchemeBridge
           Marshal.WriteIntPtr (buffer, 12, scheme_form.MarshalManagedToNative (e.Delta));
           Marshal.WriteIntPtr (buffer, 16, scheme_form.MarshalManagedToNative (e.X));
           Marshal.WriteIntPtr (buffer, 20, scheme_form.MarshalManagedToNative (e.Y));
+          // Console.WriteLine ("Notify scheme of " + event_name);
           Scheme.scheme_apply (scheme_form, 6, buffer);
           }
       finally {
@@ -1820,6 +2707,7 @@ namespace SchemeBridge
           buffer = Marshal.AllocCoTaskMem (8);
           Marshal.WriteIntPtr (buffer, 0, scheme_form.MarshalManagedToNative (event_name));
           Marshal.WriteIntPtr (buffer, 4, scheme_form.MarshalManagedToNative (e.Cancel));
+          // Console.WriteLine ("Notify scheme of " + event_name);
           Scheme.scheme_apply (scheme_form, 2, buffer);
           }
       finally {
@@ -1833,6 +2721,7 @@ namespace SchemeBridge
       try {
           buffer = Marshal.AllocCoTaskMem (4);
           Marshal.WriteIntPtr (buffer, 0, scheme_form.MarshalManagedToNative (event_name));
+          // Console.WriteLine ("Notify scheme of " + event_name);
           Scheme.scheme_apply (scheme_form, 1, buffer);
           }
       finally {
@@ -1844,9 +2733,13 @@ namespace SchemeBridge
     {
       IntPtr buffer = new IntPtr();
       try {
-          buffer = Marshal.AllocCoTaskMem (4);
+          buffer = Marshal.AllocCoTaskMem (4 * 3);
           Marshal.WriteIntPtr (buffer, 0, scheme_form.MarshalManagedToNative (event_name));
-          Scheme.scheme_apply (scheme_form, 1, buffer);
+          // other things go here
+          Marshal.WriteIntPtr (buffer, 4, scheme_form.MarshalManagedToNative (e.X));
+          Marshal.WriteIntPtr (buffer, 8, scheme_form.MarshalManagedToNative (e.Y));
+          // Console.WriteLine ("Notify scheme of " + event_name);
+          Scheme.scheme_apply (scheme_form, 3, buffer);
           }
       finally {
           if (!IntPtr.Zero.Equals (buffer)) Marshal.FreeCoTaskMem (buffer);
@@ -1859,6 +2752,7 @@ namespace SchemeBridge
       try {
           buffer = Marshal.AllocCoTaskMem (4);
           Marshal.WriteIntPtr (buffer, 0, scheme_form.MarshalManagedToNative (event_name));
+          // Console.WriteLine ("Notify scheme of " + event_name);
           Scheme.scheme_apply (scheme_form, 1, buffer);
           }
       finally {
@@ -1872,6 +2766,7 @@ namespace SchemeBridge
       try {
           buffer = Marshal.AllocCoTaskMem (4);
           Marshal.WriteIntPtr (buffer, 0, scheme_form.MarshalManagedToNative (event_name));
+          // Console.WriteLine ("Notify scheme of " + event_name);
           Scheme.scheme_apply (scheme_form, 1, buffer);
           }
       finally {
@@ -1885,6 +2780,7 @@ namespace SchemeBridge
       try {
           buffer = Marshal.AllocCoTaskMem (4);
           Marshal.WriteIntPtr (buffer, 0, scheme_form.MarshalManagedToNative (event_name));
+          // Console.WriteLine ("Notify scheme of " + event_name);
           Scheme.scheme_apply (scheme_form, 1, buffer);
           }
       finally {
@@ -1898,6 +2794,7 @@ namespace SchemeBridge
       try {
           buffer = Marshal.AllocCoTaskMem (4);
           Marshal.WriteIntPtr (buffer, 0, scheme_form.MarshalManagedToNative (event_name));
+          // Console.WriteLine ("Notify scheme of " + event_name);
           Scheme.scheme_apply (scheme_form, 1, buffer);
           }
       finally {
@@ -1911,6 +2808,7 @@ namespace SchemeBridge
       try {
           buffer = Marshal.AllocCoTaskMem (4);
           Marshal.WriteIntPtr (buffer, 0, scheme_form.MarshalManagedToNative (event_name));
+          // Console.WriteLine ("Notify scheme of " + event_name);
           Scheme.scheme_apply (scheme_form, 1, buffer);
           }
       finally {
@@ -1924,6 +2822,7 @@ namespace SchemeBridge
       try {
           buffer = Marshal.AllocCoTaskMem (4);
           Marshal.WriteIntPtr (buffer, 0, scheme_form.MarshalManagedToNative (event_name));
+          // Console.WriteLine ("Notify scheme of " + event_name);
           Scheme.scheme_apply (scheme_form, 1, buffer);
           }
       finally {
@@ -1937,6 +2836,7 @@ namespace SchemeBridge
       try {
           buffer = Marshal.AllocCoTaskMem (4);
           Marshal.WriteIntPtr (buffer, 0, scheme_form.MarshalManagedToNative (event_name));
+          // Console.WriteLine ("Notify scheme of " + event_name);
           Scheme.scheme_apply (scheme_form, 1, buffer);
           }
       finally {
@@ -1950,6 +2850,7 @@ namespace SchemeBridge
       try {
           buffer = Marshal.AllocCoTaskMem (4);
           Marshal.WriteIntPtr (buffer, 0, scheme_form.MarshalManagedToNative (event_name));
+          // Console.WriteLine ("Notify scheme of " + event_name);
           Scheme.scheme_apply (scheme_form, 1, buffer);
           }
       finally {
@@ -1963,6 +2864,7 @@ namespace SchemeBridge
       try {
           buffer = Marshal.AllocCoTaskMem (4);
           Marshal.WriteIntPtr (buffer, 0, scheme_form.MarshalManagedToNative (event_name));
+          // Console.WriteLine ("Notify scheme of " + event_name);
           Scheme.scheme_apply (scheme_form, 1, buffer);
           }
       finally {
@@ -1976,6 +2878,7 @@ namespace SchemeBridge
       try {
           buffer = Marshal.AllocCoTaskMem (4);
           Marshal.WriteIntPtr (buffer, 0, scheme_form.MarshalManagedToNative (event_name));
+          // Console.WriteLine ("Notify scheme of " + event_name);
           Scheme.scheme_apply (scheme_form, 1, buffer);
           }
       finally {
@@ -1989,6 +2892,664 @@ namespace SchemeBridge
       try {
           buffer = Marshal.AllocCoTaskMem (4);
           Marshal.WriteIntPtr (buffer, 0, scheme_form.MarshalManagedToNative (event_name));
+          // Console.WriteLine ("Notify scheme of " + event_name);
+          Scheme.scheme_apply (scheme_form, 1, buffer);
+          }
+      finally {
+          if (!IntPtr.Zero.Equals (buffer)) Marshal.FreeCoTaskMem (buffer);
+          }
+    }
+
+    protected override void OnBackColorChanged (EventArgs e)
+    {
+      base.OnBackColorChanged (e);
+      this.NotifyScheme ("BackColorChanged", e);
+    }
+
+    protected override void OnBackgroundImageChanged (EventArgs e)
+    {
+      base.OnBackgroundImageChanged (e);
+      this.NotifyScheme ("BackgroundImageChanged", e);
+    }
+
+    protected override void OnBindingContextChanged (EventArgs e)
+    {
+      base.OnBindingContextChanged (e);
+      this.NotifyScheme ("BindingContextChanged", e);
+    }
+
+    protected override void OnCausesValidationChanged (EventArgs e)
+    {
+      base.OnCausesValidationChanged (e);
+      this.NotifyScheme ("CausesValidationChanged", e);
+    }
+
+    protected override void OnChangeUICues (UICuesEventArgs e)
+    {
+      base.OnChangeUICues (e);
+      this.NotifyScheme ("ChangeUICues", e);
+    }
+
+    protected override void OnClick (EventArgs e)
+    {
+      base.OnClick (e);
+      this.NotifyScheme ("Click", e);
+    }
+
+    protected override void OnContextMenuChanged (EventArgs e)
+    {
+      base.OnContextMenuChanged (e);
+      this.NotifyScheme ("ContextMenuChanged", e);
+    }
+
+    protected override void OnControlAdded (ControlEventArgs e)
+    {
+      base.OnControlAdded (e);
+      this.NotifyScheme ("ControlAdded", e);
+    }
+
+    protected override void OnControlRemoved (ControlEventArgs e)
+    {
+      base.OnControlRemoved (e);
+      this.NotifyScheme ("ControlRemoved", e);
+    }
+
+    protected override void OnCreateControl ()
+    {
+      base.OnCreateControl ();
+      this.NotifyScheme ("CreateControl");
+    }
+
+    protected override void OnCursorChanged (EventArgs e)
+    {
+      base.OnCursorChanged (e);
+      this.NotifyScheme ("CursorChanged", e);
+    }
+
+    protected override void OnDockChanged (EventArgs e)
+    {
+      base.OnDockChanged (e);
+      this.NotifyScheme ("DockChanged", e);
+    }
+
+    protected override void OnDoubleClick (EventArgs e)
+    {
+      base.OnDoubleClick (e);
+      this.NotifyScheme ("DoubleClick", e);
+    }
+
+    protected override void OnDragDrop (DragEventArgs e)
+    {
+      base.OnDragDrop (e);
+      this.NotifyScheme ("DragDrop", e);
+    }
+
+    protected override void OnDragEnter (DragEventArgs e)
+    {
+      base.OnDragEnter (e);
+      this.NotifyScheme ("DragEnter", e);
+    }
+
+    protected override void OnDragLeave (EventArgs e)
+    {
+      base.OnDragLeave (e);
+      this.NotifyScheme ("DragLeave", e);
+    }
+
+    protected override void OnDragOver (DragEventArgs e)
+    {
+      base.OnDragOver (e);
+      this.NotifyScheme ("DragOver", e);
+    }
+
+    protected override void OnEnabledChanged (EventArgs e)
+    {
+      base.OnEnabledChanged (e);
+      this.NotifyScheme ("EnabledChanged", e);
+    }
+
+    protected override void OnEnter (EventArgs e)
+    {
+      base.OnEnter (e);
+      this.NotifyScheme ("Enter", e);
+    }
+
+    protected override void OnFontChanged (EventArgs e)
+    {
+      base.OnFontChanged (e);
+      this.NotifyScheme ("FontChanged", e);
+    }
+
+    protected override void OnForeColorChanged (EventArgs e)
+    {
+      base.OnForeColorChanged (e);
+      this.NotifyScheme ("ForeColorChanged", e);
+    }
+
+    protected override void OnGiveFeedback (GiveFeedbackEventArgs e)
+    {
+      base.OnGiveFeedback (e);
+      this.NotifyScheme ("GiveFeedback", e);
+    }
+
+    protected override void OnGotFocus (EventArgs e)
+    {
+      base.OnGotFocus (e);
+      this.NotifyScheme ("GotFocus", e);
+    }
+
+    protected override void OnHandleCreated (EventArgs e)
+    {
+      base.OnHandleCreated (e);
+      this.NotifyScheme ("HandleCreated", e);
+    }
+
+    protected override void OnHandleDestroyed (EventArgs e)
+    {
+      base.OnHandleDestroyed (e);
+      this.NotifyScheme ("HandleDestroyed", e);
+    }
+
+    protected override void OnHelpRequested (HelpEventArgs e)
+    {
+      base.OnHelpRequested (e);
+      this.NotifyScheme ("HelpRequested", e);
+    }
+
+    protected override void OnImeModeChanged (EventArgs e)
+    {
+      base.OnImeModeChanged (e);
+      this.NotifyScheme ("ImeModeChanged", e);
+    }
+
+    protected override void OnInvalidated (InvalidateEventArgs e)
+    {
+      base.OnInvalidated (e);
+      this.NotifyScheme ("Invalidated", e);
+    }
+
+    protected override void OnKeyDown (KeyEventArgs e)
+    {
+      base.OnKeyDown (e);
+      this.NotifyScheme ("KeyDown", e);
+    }
+
+    protected override void OnKeyPress (KeyPressEventArgs e)
+    {
+      base.OnKeyPress (e);
+      this.NotifyScheme ("KeyPress", e);
+    }
+
+    protected override void OnKeyUp (KeyEventArgs e)
+    {
+      base.OnKeyUp (e);
+      this.NotifyScheme ("KeyUp", e);
+    }
+
+    protected override void OnLayout (LayoutEventArgs e)
+    {
+      base.OnLayout (e);
+      this.NotifyScheme ("Layout", e);
+    }
+
+    protected override void OnLeave (EventArgs e)
+    {
+      base.OnLeave (e);
+      this.NotifyScheme ("Leave", e);
+    }
+
+    protected override void OnLocationChanged (EventArgs e)
+    {
+      base.OnLocationChanged (e);
+      this.NotifyScheme ("LocationChanged", e);
+    }
+
+    protected override void OnLostFocus (EventArgs e)
+    {
+      base.OnLostFocus (e);
+      this.NotifyScheme ("LostFocus", e);
+    }
+
+    protected override void OnMouseDown (MouseEventArgs e)
+    {
+      base.OnMouseDown (e);
+      this.NotifyScheme ("MouseDown", e);
+    }
+
+    protected override void OnMouseEnter (EventArgs e)
+    {
+      base.OnMouseEnter (e);
+      this.NotifyScheme ("MouseEnter", e);
+    }
+
+    protected override void OnMouseHover (EventArgs e)
+    {
+      base.OnMouseHover (e);
+      this.NotifyScheme ("MouseHover", e);
+    }
+
+    protected override void OnMouseLeave (EventArgs e)
+    {
+      base.OnMouseLeave (e);
+      this.NotifyScheme ("MouseLeave", e);
+    }
+
+    protected override void OnMouseMove (MouseEventArgs e)
+    {
+      base.OnMouseMove (e);
+      this.NotifyScheme ("MouseMove", e);
+    }
+
+    protected override void OnMouseUp (MouseEventArgs e)
+    {
+      base.OnMouseUp (e);
+      this.NotifyScheme ("MouseUp", e);
+    }
+
+    protected override void OnMouseWheel (MouseEventArgs e)
+    {
+      base.OnMouseWheel (e);
+      this.NotifyScheme ("MouseWheel", e);
+    }
+
+    protected override void OnMove (EventArgs e)
+    {
+      base.OnMove (e);
+      this.NotifyScheme ("Move", e);
+    }
+
+    protected override void OnNotifyMessage (Message e)
+    {
+      base.OnNotifyMessage (e);
+      this.NotifyScheme ("NotifyMessage", e);
+    }
+
+    protected override void OnPaint (PaintEventArgs e)
+    {
+      base.OnPaint (e);
+      this.NotifyScheme ("Paint", e);
+    }
+
+    protected override void OnPaintBackground (PaintEventArgs e)
+    {
+      base.OnPaintBackground (e);
+      this.NotifyScheme ("PaintBackground", e);
+    }
+
+    protected override void OnParentBackColorChanged (EventArgs e)
+    {
+      base.OnParentBackColorChanged (e);
+      this.NotifyScheme ("ParentBackColorChanged", e);
+    }
+
+    protected override void OnParentBackgroundImageChanged (EventArgs e)
+    {
+      base.OnParentBackgroundImageChanged (e);
+      this.NotifyScheme ("ParentBackgroundImageChanged", e);
+    }
+
+    protected override void OnParentBindingContextChanged (EventArgs e)
+    {
+      base.OnParentBindingContextChanged (e);
+      this.NotifyScheme ("ParentBindingContextChanged", e);
+    }
+
+    protected override void OnParentChanged (EventArgs e)
+    {
+      base.OnParentChanged (e);
+      this.NotifyScheme ("ParentChanged", e);
+    }
+
+    protected override void OnParentEnabledChanged (EventArgs e)
+    {
+      base.OnParentEnabledChanged (e);
+      this.NotifyScheme ("ParentEnabledChanged", e);
+    }
+
+    protected override void OnParentFontChanged (EventArgs e)
+    {
+      base.OnParentFontChanged (e);
+      this.NotifyScheme ("ParentFontChanged", e);
+    }
+
+    protected override void OnParentForeColorChanged (EventArgs e)
+    {
+      base.OnParentForeColorChanged (e);
+      this.NotifyScheme ("ParentForeColorChanged", e);
+    }
+
+    protected override void OnParentRightToLeftChanged (EventArgs e)
+    {
+      base.OnParentRightToLeftChanged (e);
+      this.NotifyScheme ("ParentRightToLeftChanged", e);
+    }
+
+    protected override void OnParentVisibleChanged (EventArgs e)
+    {
+      base.OnParentVisibleChanged (e);
+      this.NotifyScheme ("ParentVisibleChanged", e);
+    }
+
+    protected override void OnQueryContinueDrag (QueryContinueDragEventArgs e)
+    {
+      base.OnQueryContinueDrag (e);
+      this.NotifyScheme ("QueryContinueDrag", e);
+    }
+
+    protected override void OnResize (EventArgs e)
+    {
+      base.OnResize (e);
+      this.NotifyScheme ("Resize", e);
+    }
+
+    protected override void OnRightToLeftChanged (EventArgs e)
+    {
+      base.OnRightToLeftChanged (e);
+      this.NotifyScheme ("RightToLeftChanged", e);
+    }
+
+    protected override void OnSizeChanged (EventArgs e)
+    {
+      base.OnSizeChanged (e);
+      this.NotifyScheme ("SizeChanged", e);
+    }
+
+    protected override void OnStyleChanged (EventArgs e)
+    {
+      base.OnStyleChanged (e);
+      this.NotifyScheme ("StyleChanged", e);
+    }
+
+    protected override void OnSystemColorsChanged (EventArgs e)
+    {
+      base.OnSystemColorsChanged (e);
+      this.NotifyScheme ("SystemColorsChanged", e);
+    }
+
+    protected override void OnTabIndexChanged (EventArgs e)
+    {
+      base.OnTabIndexChanged (e);
+      this.NotifyScheme ("TabIndexChanged", e);
+    }
+
+    protected override void OnTabStopChanged (EventArgs e)
+    {
+      base.OnTabStopChanged (e);
+      this.NotifyScheme ("TabStopChanged", e);
+    }
+
+    protected override void OnTextChanged (EventArgs e)
+    {
+      base.OnTextChanged (e);
+      this.NotifyScheme ("TextChanged", e);
+    }
+
+    protected override void OnValidated (EventArgs e)
+    {
+      base.OnValidated (e);
+      this.NotifyScheme ("Validated", e);
+    }
+
+    protected override void OnValidating (System.ComponentModel.CancelEventArgs e)
+    {
+      base.OnValidating (e);
+      this.NotifyScheme ("Validating", e);
+    }
+
+    protected override void OnVisibleChanged (EventArgs e)
+    {
+      base.OnVisibleChanged (e);
+      this.NotifyScheme ("VisibleChanged", e);
+    }
+  }
+
+  public unsafe class FormProxy : System.Windows.Forms.Form
+  {
+    public MzSchemeObject scheme_form;
+
+    public FormProxy (MzSchemeObject _scheme_form)
+    {
+      scheme_form = _scheme_form;
+    }
+
+    private void NotifyScheme (String event_name)
+    {
+      IntPtr buffer = new IntPtr();
+      try {
+          buffer = Marshal.AllocCoTaskMem (4);
+          Marshal.WriteIntPtr (buffer, 0, scheme_form.MarshalManagedToNative (event_name));
+          // Console.WriteLine ("Notify scheme of " + event_name);
+          Scheme.scheme_apply (scheme_form, 1, buffer);
+          }
+      finally {
+          if (!IntPtr.Zero.Equals (buffer)) Marshal.FreeCoTaskMem (buffer);
+          }
+    }
+
+    private void NotifyScheme (String event_name, EventArgs e)
+    {
+      NotifyScheme (event_name);
+    }
+
+    private void NotifyScheme (String event_name, MouseEventArgs e)
+    {
+      IntPtr buffer = new IntPtr();
+      try {
+          buffer = Marshal.AllocCoTaskMem (4 * 6);
+          Marshal.WriteIntPtr (buffer, 0, scheme_form.MarshalManagedToNative (event_name));
+          Marshal.WriteIntPtr (buffer, 4,
+                               scheme_form.MarshalManagedToNative
+                               (e.Button == MouseButtons.None       ? "None"
+                                : e.Button == MouseButtons.Left     ? "Left"
+                                : e.Button == MouseButtons.Right    ? "Right"
+                                : e.Button == MouseButtons.XButton1 ? "XButton1"
+                                : e.Button == MouseButtons.XButton2 ? "XButton2"
+                                : "Multiple"));
+          Marshal.WriteIntPtr (buffer, 8, scheme_form.MarshalManagedToNative (e.Clicks));
+          Marshal.WriteIntPtr (buffer, 12, scheme_form.MarshalManagedToNative (e.Delta));
+          Marshal.WriteIntPtr (buffer, 16, scheme_form.MarshalManagedToNative (e.X));
+          Marshal.WriteIntPtr (buffer, 20, scheme_form.MarshalManagedToNative (e.Y));
+          // Console.WriteLine ("Notify scheme of " + event_name);
+          Scheme.scheme_apply (scheme_form, 6, buffer);
+          }
+      finally {
+          if (!IntPtr.Zero.Equals (buffer)) Marshal.FreeCoTaskMem (buffer);
+          }
+    }
+
+    private void NotifyScheme (String event_name, System.ComponentModel.CancelEventArgs e)
+    {
+      IntPtr buffer = new IntPtr();
+      try {
+          buffer = Marshal.AllocCoTaskMem (8);
+          Marshal.WriteIntPtr (buffer, 0, scheme_form.MarshalManagedToNative (event_name));
+          Marshal.WriteIntPtr (buffer, 4, scheme_form.MarshalManagedToNative (e.Cancel));
+          // Console.WriteLine ("Notify scheme of " + event_name);
+          Scheme.scheme_apply (scheme_form, 2, buffer);
+          }
+      finally {
+          if (!IntPtr.Zero.Equals (buffer)) Marshal.FreeCoTaskMem (buffer);
+          }
+    }
+
+    private void NotifyScheme (String event_name, ControlEventArgs e)
+    {
+      IntPtr buffer = new IntPtr();
+      try {
+          buffer = Marshal.AllocCoTaskMem (4);
+          Marshal.WriteIntPtr (buffer, 0, scheme_form.MarshalManagedToNative (event_name));
+          // Console.WriteLine ("Notify scheme of " + event_name);
+          Scheme.scheme_apply (scheme_form, 1, buffer);
+          }
+      finally {
+          if (!IntPtr.Zero.Equals (buffer)) Marshal.FreeCoTaskMem (buffer);
+          }
+    }
+
+    private void NotifyScheme (String event_name, DragEventArgs e)
+    {
+      IntPtr buffer = new IntPtr();
+      try {
+          buffer = Marshal.AllocCoTaskMem (4 * 3);
+          Marshal.WriteIntPtr (buffer, 0, scheme_form.MarshalManagedToNative (event_name));
+          // other things go here
+          Marshal.WriteIntPtr (buffer, 4, scheme_form.MarshalManagedToNative (e.X));
+          Marshal.WriteIntPtr (buffer, 8, scheme_form.MarshalManagedToNative (e.Y));
+          // Console.WriteLine ("Notify scheme of " + event_name);
+          Scheme.scheme_apply (scheme_form, 3, buffer);
+          }
+      finally {
+          if (!IntPtr.Zero.Equals (buffer)) Marshal.FreeCoTaskMem (buffer);
+          }
+    }
+
+    private void NotifyScheme (String event_name, GiveFeedbackEventArgs e)
+    {
+      IntPtr buffer = new IntPtr();
+      try {
+          buffer = Marshal.AllocCoTaskMem (4);
+          Marshal.WriteIntPtr (buffer, 0, scheme_form.MarshalManagedToNative (event_name));
+          // Console.WriteLine ("Notify scheme of " + event_name);
+          Scheme.scheme_apply (scheme_form, 1, buffer);
+          }
+      finally {
+          if (!IntPtr.Zero.Equals (buffer)) Marshal.FreeCoTaskMem (buffer);
+          }
+    }
+
+    private void NotifyScheme (String event_name, HelpEventArgs e)
+    {
+      IntPtr buffer = new IntPtr();
+      try {
+          buffer = Marshal.AllocCoTaskMem (4);
+          Marshal.WriteIntPtr (buffer, 0, scheme_form.MarshalManagedToNative (event_name));
+          // Console.WriteLine ("Notify scheme of " + event_name);
+          Scheme.scheme_apply (scheme_form, 1, buffer);
+          }
+      finally {
+          if (!IntPtr.Zero.Equals (buffer)) Marshal.FreeCoTaskMem (buffer);
+          }
+    }
+
+    private void NotifyScheme (String event_name, InvalidateEventArgs e)
+    {
+      IntPtr buffer = new IntPtr();
+      try {
+          buffer = Marshal.AllocCoTaskMem (4);
+          Marshal.WriteIntPtr (buffer, 0, scheme_form.MarshalManagedToNative (event_name));
+          // Console.WriteLine ("Notify scheme of " + event_name);
+          Scheme.scheme_apply (scheme_form, 1, buffer);
+          }
+      finally {
+          if (!IntPtr.Zero.Equals (buffer)) Marshal.FreeCoTaskMem (buffer);
+          }
+    }
+
+    private void NotifyScheme (String event_name, InputLanguageChangingEventArgs e)
+    {
+      IntPtr buffer = new IntPtr();
+      try {
+          buffer = Marshal.AllocCoTaskMem (4);
+          Marshal.WriteIntPtr (buffer, 0, scheme_form.MarshalManagedToNative (event_name));
+          // Console.WriteLine ("Notify scheme of " + event_name);
+          Scheme.scheme_apply (scheme_form, 1, buffer);
+          }
+      finally {
+          if (!IntPtr.Zero.Equals (buffer)) Marshal.FreeCoTaskMem (buffer);
+          }
+    }
+
+    private void NotifyScheme (String event_name, InputLanguageChangedEventArgs e)
+    {
+      IntPtr buffer = new IntPtr();
+      try {
+          buffer = Marshal.AllocCoTaskMem (4);
+          Marshal.WriteIntPtr (buffer, 0, scheme_form.MarshalManagedToNative (event_name));
+          // Console.WriteLine ("Notify scheme of " + event_name);
+          Scheme.scheme_apply (scheme_form, 1, buffer);
+          }
+      finally {
+          if (!IntPtr.Zero.Equals (buffer)) Marshal.FreeCoTaskMem (buffer);
+          }
+    }
+
+    private void NotifyScheme (String event_name, KeyEventArgs e)
+    {
+      IntPtr buffer = new IntPtr();
+      try {
+          buffer = Marshal.AllocCoTaskMem (4);
+          Marshal.WriteIntPtr (buffer, 0, scheme_form.MarshalManagedToNative (event_name));
+          // Console.WriteLine ("Notify scheme of " + event_name);
+          Scheme.scheme_apply (scheme_form, 1, buffer);
+          }
+      finally {
+          if (!IntPtr.Zero.Equals (buffer)) Marshal.FreeCoTaskMem (buffer);
+          }
+    }
+
+    private void NotifyScheme (String event_name, KeyPressEventArgs e)
+    {
+      IntPtr buffer = new IntPtr();
+      try {
+          buffer = Marshal.AllocCoTaskMem (4);
+          Marshal.WriteIntPtr (buffer, 0, scheme_form.MarshalManagedToNative (event_name));
+          // Console.WriteLine ("Notify scheme of " + event_name);
+          Scheme.scheme_apply (scheme_form, 1, buffer);
+          }
+      finally {
+          if (!IntPtr.Zero.Equals (buffer)) Marshal.FreeCoTaskMem (buffer);
+          }
+    }
+
+    private void NotifyScheme (String event_name, LayoutEventArgs e)
+    {
+      IntPtr buffer = new IntPtr();
+      try {
+          buffer = Marshal.AllocCoTaskMem (4);
+          Marshal.WriteIntPtr (buffer, 0, scheme_form.MarshalManagedToNative (event_name));
+          // Console.WriteLine ("Notify scheme of " + event_name);
+          Scheme.scheme_apply (scheme_form, 1, buffer);
+          }
+      finally {
+          if (!IntPtr.Zero.Equals (buffer)) Marshal.FreeCoTaskMem (buffer);
+          }
+    }
+
+    private void NotifyScheme (String event_name, QueryContinueDragEventArgs e)
+    {
+      IntPtr buffer = new IntPtr();
+      try {
+          buffer = Marshal.AllocCoTaskMem (4);
+          Marshal.WriteIntPtr (buffer, 0, scheme_form.MarshalManagedToNative (event_name));
+          // Console.WriteLine ("Notify scheme of " + event_name);
+          Scheme.scheme_apply (scheme_form, 1, buffer);
+          }
+      finally {
+          if (!IntPtr.Zero.Equals (buffer)) Marshal.FreeCoTaskMem (buffer);
+          }
+    }
+
+    private void NotifyScheme (String event_name, Message e)
+    {
+      IntPtr buffer = new IntPtr();
+      try {
+          buffer = Marshal.AllocCoTaskMem (4);
+          Marshal.WriteIntPtr (buffer, 0, scheme_form.MarshalManagedToNative (event_name));
+          // Console.WriteLine ("Notify scheme of " + event_name);
+          Scheme.scheme_apply (scheme_form, 1, buffer);
+          }
+      finally {
+          if (!IntPtr.Zero.Equals (buffer)) Marshal.FreeCoTaskMem (buffer);
+          }
+    }
+
+    private void NotifyScheme (String event_name, PaintEventArgs e)
+    {
+      IntPtr buffer = new IntPtr();
+      try {
+          buffer = Marshal.AllocCoTaskMem (4);
+          Marshal.WriteIntPtr (buffer, 0, scheme_form.MarshalManagedToNative (event_name));
+          // Console.WriteLine ("Notify scheme of " + event_name);
           Scheme.scheme_apply (scheme_form, 1, buffer);
           }
       finally {
@@ -2477,6 +4038,841 @@ namespace SchemeBridge
     }
   }
 
+  public unsafe class RichTextProxy : System.Windows.Forms.RichTextBox
+  {
+    public MzSchemeObject scheme_form;
+
+    public RichTextProxy (MzSchemeObject _scheme_form)
+    {
+      Console.WriteLine ("Creating a rich text proxy with " + _scheme_form);
+      scheme_form = _scheme_form;
+    }
+
+    private void NotifyScheme (String event_name)
+    {
+      if (scheme_form == null) {
+          Console.WriteLine ("Ignoring event " + event_name + " because object is uninitialized.");
+          return;
+          }
+      IntPtr buffer = new IntPtr();
+      try {
+          buffer = Marshal.AllocCoTaskMem (4);
+          Marshal.WriteIntPtr (buffer, 0, scheme_form.MarshalManagedToNative (event_name));
+          // Console.WriteLine ("Notify scheme of " + event_name);
+          Scheme.scheme_apply (scheme_form, 1, buffer);
+          }
+      finally {
+          if (!IntPtr.Zero.Equals (buffer)) Marshal.FreeCoTaskMem (buffer);
+          }
+    }
+
+    private void NotifyScheme (String event_name, EventArgs e)
+    {
+      if (scheme_form == null) {
+          Console.WriteLine ("Ignoring event " + event_name + " because object is uninitialized.");
+          return;
+          }
+      NotifyScheme (event_name);
+    }
+
+    private void NotifyScheme (String event_name, MouseEventArgs e)
+    {
+      if (scheme_form == null) {
+          Console.WriteLine ("Ignoring event " + event_name + " because object is uninitialized.");
+          return;
+          }
+      IntPtr buffer = new IntPtr();
+      try {
+          buffer = Marshal.AllocCoTaskMem (4 * 6);
+          Marshal.WriteIntPtr (buffer, 0, scheme_form.MarshalManagedToNative (event_name));
+          Marshal.WriteIntPtr (buffer, 4,
+                               scheme_form.MarshalManagedToNative
+                               (e.Button == MouseButtons.None       ? "None"
+                                : e.Button == MouseButtons.Left     ? "Left"
+                                : e.Button == MouseButtons.Right    ? "Right"
+                                : e.Button == MouseButtons.XButton1 ? "XButton1"
+                                : e.Button == MouseButtons.XButton2 ? "XButton2"
+                                : "Multiple"));
+          Marshal.WriteIntPtr (buffer, 8, scheme_form.MarshalManagedToNative (e.Clicks));
+          Marshal.WriteIntPtr (buffer, 12, scheme_form.MarshalManagedToNative (e.Delta));
+          Marshal.WriteIntPtr (buffer, 16, scheme_form.MarshalManagedToNative (e.X));
+          Marshal.WriteIntPtr (buffer, 20, scheme_form.MarshalManagedToNative (e.Y));
+          // Console.WriteLine ("Notify scheme of " + event_name);
+          Scheme.scheme_apply (scheme_form, 6, buffer);
+          }
+      finally {
+          if (!IntPtr.Zero.Equals (buffer)) Marshal.FreeCoTaskMem (buffer);
+          }
+    }
+
+    private void NotifyScheme (String event_name, System.ComponentModel.CancelEventArgs e)
+    {
+      if (scheme_form == null) {
+          Console.WriteLine ("Ignoring event " + event_name + " because object is uninitialized.");
+          return;
+          }
+      IntPtr buffer = new IntPtr();
+      try {
+          buffer = Marshal.AllocCoTaskMem (8);
+          Marshal.WriteIntPtr (buffer, 0, scheme_form.MarshalManagedToNative (event_name));
+          Marshal.WriteIntPtr (buffer, 4, scheme_form.MarshalManagedToNative (e.Cancel));
+          // Console.WriteLine ("Notify scheme of " + event_name);
+          Scheme.scheme_apply (scheme_form, 2, buffer);
+          }
+      finally {
+          if (!IntPtr.Zero.Equals (buffer)) Marshal.FreeCoTaskMem (buffer);
+          }
+    }
+
+    private void NotifyScheme (String event_name, ContentsResizedEventArgs e)
+    {
+      if (scheme_form == null) {
+          Console.WriteLine ("Ignoring event " + event_name + " because object is uninitialized.");
+          return;
+          }
+      IntPtr buffer = new IntPtr();
+      try {
+          buffer = Marshal.AllocCoTaskMem (4);
+          Marshal.WriteIntPtr (buffer, 0, scheme_form.MarshalManagedToNative (event_name));
+          // Console.WriteLine ("Notify scheme of " + event_name);
+          Scheme.scheme_apply (scheme_form, 1, buffer);
+          }
+      finally {
+          if (!IntPtr.Zero.Equals (buffer)) Marshal.FreeCoTaskMem (buffer);
+          }
+    }
+
+    private void NotifyScheme (String event_name, ControlEventArgs e)
+    {
+      if (scheme_form == null) {
+          Console.WriteLine ("Ignoring event " + event_name + " because object is uninitialized.");
+          return;
+          }
+      IntPtr buffer = new IntPtr();
+      try {
+          buffer = Marshal.AllocCoTaskMem (4);
+          Marshal.WriteIntPtr (buffer, 0, scheme_form.MarshalManagedToNative (event_name));
+          // Console.WriteLine ("Notify scheme of " + event_name);
+          Scheme.scheme_apply (scheme_form, 1, buffer);
+          }
+      finally {
+          if (!IntPtr.Zero.Equals (buffer)) Marshal.FreeCoTaskMem (buffer);
+          }
+    }
+
+    private void NotifyScheme (String event_name, DragEventArgs e)
+    {
+      if (scheme_form == null) {
+          Console.WriteLine ("Ignoring event " + event_name + " because object is uninitialized.");
+          return;
+          }
+      IntPtr buffer = new IntPtr();
+      try {
+          buffer = Marshal.AllocCoTaskMem (4 * 3);
+          Marshal.WriteIntPtr (buffer, 0, scheme_form.MarshalManagedToNative (event_name));
+          // other things go here
+          Marshal.WriteIntPtr (buffer, 4, scheme_form.MarshalManagedToNative (e.X));
+          Marshal.WriteIntPtr (buffer, 8, scheme_form.MarshalManagedToNative (e.Y));
+          // Console.WriteLine ("Notify scheme of " + event_name);
+          Scheme.scheme_apply (scheme_form, 3, buffer);
+          }
+      finally {
+          if (!IntPtr.Zero.Equals (buffer)) Marshal.FreeCoTaskMem (buffer);
+          }
+    }
+
+    private void NotifyScheme (String event_name, GiveFeedbackEventArgs e)
+    {
+      if (scheme_form == null) {
+          Console.WriteLine ("Ignoring event " + event_name + " because object is uninitialized.");
+          return;
+          }
+      IntPtr buffer = new IntPtr();
+      try {
+          buffer = Marshal.AllocCoTaskMem (4);
+          Marshal.WriteIntPtr (buffer, 0, scheme_form.MarshalManagedToNative (event_name));
+          // Console.WriteLine ("Notify scheme of " + event_name);
+          Scheme.scheme_apply (scheme_form, 1, buffer);
+          }
+      finally {
+          if (!IntPtr.Zero.Equals (buffer)) Marshal.FreeCoTaskMem (buffer);
+          }
+    }
+
+    private void NotifyScheme (String event_name, HelpEventArgs e)
+    {
+      if (scheme_form == null) {
+          Console.WriteLine ("Ignoring event " + event_name + " because object is uninitialized.");
+          return;
+          }
+      IntPtr buffer = new IntPtr();
+      try {
+          buffer = Marshal.AllocCoTaskMem (4);
+          Marshal.WriteIntPtr (buffer, 0, scheme_form.MarshalManagedToNative (event_name));
+          // Console.WriteLine ("Notify scheme of " + event_name);
+          Scheme.scheme_apply (scheme_form, 1, buffer);
+          }
+      finally {
+          if (!IntPtr.Zero.Equals (buffer)) Marshal.FreeCoTaskMem (buffer);
+          }
+    }
+
+    private void NotifyScheme (String event_name, InvalidateEventArgs e)
+    {
+      if (scheme_form == null) {
+          Console.WriteLine ("Ignoring event " + event_name + " because object is uninitialized.");
+          return;
+          }
+      IntPtr buffer = new IntPtr();
+      try {
+          buffer = Marshal.AllocCoTaskMem (4);
+          Marshal.WriteIntPtr (buffer, 0, scheme_form.MarshalManagedToNative (event_name));
+          // Console.WriteLine ("Notify scheme of " + event_name);
+          Scheme.scheme_apply (scheme_form, 1, buffer);
+          }
+      finally {
+          if (!IntPtr.Zero.Equals (buffer)) Marshal.FreeCoTaskMem (buffer);
+          }
+    }
+
+    private void NotifyScheme (String event_name, InputLanguageChangingEventArgs e)
+    {
+      if (scheme_form == null) {
+          Console.WriteLine ("Ignoring event " + event_name + " because object is uninitialized.");
+          return;
+          }
+      IntPtr buffer = new IntPtr();
+      try {
+          buffer = Marshal.AllocCoTaskMem (4);
+          Marshal.WriteIntPtr (buffer, 0, scheme_form.MarshalManagedToNative (event_name));
+          // Console.WriteLine ("Notify scheme of " + event_name);
+          Scheme.scheme_apply (scheme_form, 1, buffer);
+          }
+      finally {
+          if (!IntPtr.Zero.Equals (buffer)) Marshal.FreeCoTaskMem (buffer);
+          }
+    }
+
+    private void NotifyScheme (String event_name, InputLanguageChangedEventArgs e)
+    {
+      if (scheme_form == null) {
+          Console.WriteLine ("Ignoring event " + event_name + " because object is uninitialized.");
+          return;
+          }
+      IntPtr buffer = new IntPtr();
+      try {
+          buffer = Marshal.AllocCoTaskMem (4);
+          Marshal.WriteIntPtr (buffer, 0, scheme_form.MarshalManagedToNative (event_name));
+          // Console.WriteLine ("Notify scheme of " + event_name);
+          Scheme.scheme_apply (scheme_form, 1, buffer);
+          }
+      finally {
+          if (!IntPtr.Zero.Equals (buffer)) Marshal.FreeCoTaskMem (buffer);
+          }
+    }
+
+    private void NotifyScheme (String event_name, KeyEventArgs e)
+    {
+      if (scheme_form == null) {
+          Console.WriteLine ("Ignoring event " + event_name + " because object is uninitialized.");
+          return;
+          }
+      IntPtr buffer = new IntPtr();
+      try {
+          buffer = Marshal.AllocCoTaskMem (4);
+          Marshal.WriteIntPtr (buffer, 0, scheme_form.MarshalManagedToNative (event_name));
+          // Console.WriteLine ("Notify scheme of " + event_name);
+          Scheme.scheme_apply (scheme_form, 1, buffer);
+          }
+      finally {
+          if (!IntPtr.Zero.Equals (buffer)) Marshal.FreeCoTaskMem (buffer);
+          }
+    }
+
+    private void NotifyScheme (String event_name, KeyPressEventArgs e)
+    {
+      if (scheme_form == null) {
+          Console.WriteLine ("Ignoring event " + event_name + " because object is uninitialized.");
+          return;
+          }
+      IntPtr buffer = new IntPtr();
+      try {
+          buffer = Marshal.AllocCoTaskMem (4);
+          Marshal.WriteIntPtr (buffer, 0, scheme_form.MarshalManagedToNative (event_name));
+          // Console.WriteLine ("Notify scheme of " + event_name);
+          Scheme.scheme_apply (scheme_form, 1, buffer);
+          }
+      finally {
+          if (!IntPtr.Zero.Equals (buffer)) Marshal.FreeCoTaskMem (buffer);
+          }
+    }
+
+    private void NotifyScheme (String event_name, LayoutEventArgs e)
+    {
+      if (scheme_form == null) {
+          Console.WriteLine ("Ignoring event " + event_name + " because object is uninitialized.");
+          return;
+          }
+      IntPtr buffer = new IntPtr();
+      try {
+          buffer = Marshal.AllocCoTaskMem (4);
+          Marshal.WriteIntPtr (buffer, 0, scheme_form.MarshalManagedToNative (event_name));
+          // Console.WriteLine ("Notify scheme of " + event_name);
+          Scheme.scheme_apply (scheme_form, 1, buffer);
+          }
+      finally {
+          if (!IntPtr.Zero.Equals (buffer)) Marshal.FreeCoTaskMem (buffer);
+          }
+    }
+
+    private void NotifyScheme (String event_name, LinkClickedEventArgs e)
+    {
+      if (scheme_form == null) {
+          Console.WriteLine ("Ignoring event " + event_name + " because object is uninitialized.");
+          return;
+          }
+      IntPtr buffer = new IntPtr();
+      try {
+          buffer = Marshal.AllocCoTaskMem (8);
+          Marshal.WriteIntPtr (buffer, 0, scheme_form.MarshalManagedToNative (event_name));
+          Marshal.WriteIntPtr (buffer, 4, scheme_form.MarshalManagedToNative (e.LinkText));
+          // Console.WriteLine ("Notify scheme of " + event_name);
+          Scheme.scheme_apply (scheme_form, 2, buffer);
+          }
+      finally {
+          if (!IntPtr.Zero.Equals (buffer)) Marshal.FreeCoTaskMem (buffer);
+          }
+    }
+
+    private void NotifyScheme (String event_name, QueryContinueDragEventArgs e)
+    {
+      if (scheme_form == null) {
+          Console.WriteLine ("Ignoring event " + event_name + " because object is uninitialized.");
+          return;
+          }
+      IntPtr buffer = new IntPtr();
+      try {
+          buffer = Marshal.AllocCoTaskMem (4);
+          Marshal.WriteIntPtr (buffer, 0, scheme_form.MarshalManagedToNative (event_name));
+          // Console.WriteLine ("Notify scheme of " + event_name);
+          Scheme.scheme_apply (scheme_form, 1, buffer);
+          }
+      finally {
+          if (!IntPtr.Zero.Equals (buffer)) Marshal.FreeCoTaskMem (buffer);
+          }
+    }
+
+    private void NotifyScheme (String event_name, Message e)
+    {
+      if (scheme_form == null) {
+          Console.WriteLine ("Ignoring event " + event_name + " because object is uninitialized.");
+          return;
+          }
+      IntPtr buffer = new IntPtr();
+      try {
+          buffer = Marshal.AllocCoTaskMem (4);
+          Marshal.WriteIntPtr (buffer, 0, scheme_form.MarshalManagedToNative (event_name));
+          // Console.WriteLine ("Notify scheme of " + event_name);
+          Scheme.scheme_apply (scheme_form, 1, buffer);
+          }
+      finally {
+          if (!IntPtr.Zero.Equals (buffer)) Marshal.FreeCoTaskMem (buffer);
+          }
+    }
+
+    private void NotifyScheme (String event_name, PaintEventArgs e)
+    {
+      if (scheme_form == null) {
+          Console.WriteLine ("Ignoring event " + event_name + " because object is uninitialized.");
+          return;
+          }
+      IntPtr buffer = new IntPtr();
+      try {
+          buffer = Marshal.AllocCoTaskMem (4);
+          Marshal.WriteIntPtr (buffer, 0, scheme_form.MarshalManagedToNative (event_name));
+          // Console.WriteLine ("Notify scheme of " + event_name);
+          Scheme.scheme_apply (scheme_form, 1, buffer);
+          }
+      finally {
+          if (!IntPtr.Zero.Equals (buffer)) Marshal.FreeCoTaskMem (buffer);
+          }
+    }
+
+    protected override void OnBackColorChanged (EventArgs e)
+    {
+      base.OnBackColorChanged (e);
+      this.NotifyScheme ("BackColorChanged", e);
+    }
+
+    protected override void OnBackgroundImageChanged (EventArgs e)
+    {
+      base.OnBackgroundImageChanged (e);
+      this.NotifyScheme ("BackgroundImageChanged", e);
+    }
+
+    protected override void OnBindingContextChanged (EventArgs e)
+    {
+      base.OnBindingContextChanged (e);
+      this.NotifyScheme ("BindingContextChanged", e);
+    }
+
+    protected override void OnBorderStyleChanged (EventArgs e)
+    {
+      base.OnBorderStyleChanged (e);
+      this.NotifyScheme ("BorderStyleChanged", e);
+    }
+
+    protected override void OnCausesValidationChanged (EventArgs e)
+    {
+      base.OnCausesValidationChanged (e);
+      this.NotifyScheme ("CausesValidationChanged", e);
+    }
+
+    protected override void OnChangeUICues (UICuesEventArgs e)
+    {
+      base.OnChangeUICues (e);
+      this.NotifyScheme ("ChangeUICues", e);
+    }
+
+    protected override void OnClick (EventArgs e)
+    {
+      base.OnClick (e);
+      this.NotifyScheme ("Click", e);
+    }
+
+    protected override void OnContentsResized (ContentsResizedEventArgs e)
+    {
+      base.OnContentsResized(e);
+      this.NotifyScheme ("ContentsResized", e);
+    }
+
+    protected override void OnContextMenuChanged (EventArgs e)
+    {
+      base.OnContextMenuChanged (e);
+      this.NotifyScheme ("ContextMenuChanged", e);
+    }
+
+    protected override void OnControlAdded (ControlEventArgs e)
+    {
+      base.OnControlAdded (e);
+      this.NotifyScheme ("ControlAdded", e);
+    }
+
+    protected override void OnControlRemoved (ControlEventArgs e)
+    {
+      base.OnControlRemoved (e);
+      this.NotifyScheme ("ControlRemoved", e);
+    }
+
+    protected override void OnCreateControl ()
+    {
+      base.OnCreateControl ();
+      this.NotifyScheme ("CreateControl");
+    }
+
+    protected override void OnCursorChanged (EventArgs e)
+    {
+      base.OnCursorChanged (e);
+      this.NotifyScheme ("CursorChanged", e);
+    }
+
+    protected override void OnDockChanged (EventArgs e)
+    {
+      base.OnDockChanged (e);
+      this.NotifyScheme ("DockChanged", e);
+    }
+
+    protected override void OnDoubleClick (EventArgs e)
+    {
+      base.OnDoubleClick (e);
+      this.NotifyScheme ("DoubleClick", e);
+    }
+
+    protected override void OnDragDrop (DragEventArgs e)
+    {
+      base.OnDragDrop (e);
+      this.NotifyScheme ("DragDrop", e);
+    }
+
+    protected override void OnDragEnter (DragEventArgs e)
+    {
+      base.OnDragEnter (e);
+      this.NotifyScheme ("DragEnter", e);
+    }
+
+    protected override void OnDragLeave (EventArgs e)
+    {
+      base.OnDragLeave (e);
+      this.NotifyScheme ("DragLeave", e);
+    }
+
+    protected override void OnDragOver (DragEventArgs e)
+    {
+      base.OnDragOver (e);
+      this.NotifyScheme ("DragOver", e);
+    }
+
+    protected override void OnEnabledChanged (EventArgs e)
+    {
+      base.OnEnabledChanged (e);
+      this.NotifyScheme ("EnabledChanged", e);
+    }
+
+    protected override void OnEnter (EventArgs e)
+    {
+      base.OnEnter (e);
+      this.NotifyScheme ("Enter", e);
+    }
+
+    protected override void OnFontChanged (EventArgs e)
+    {
+      base.OnFontChanged (e);
+      this.NotifyScheme ("FontChanged", e);
+    }
+
+    protected override void OnForeColorChanged (EventArgs e)
+    {
+      base.OnForeColorChanged (e);
+      this.NotifyScheme ("ForeColorChanged", e);
+    }
+
+    protected override void OnGiveFeedback (GiveFeedbackEventArgs e)
+    {
+      base.OnGiveFeedback (e);
+      this.NotifyScheme ("GiveFeedback", e);
+    }
+
+    protected override void OnGotFocus (EventArgs e)
+    {
+      base.OnGotFocus (e);
+      this.NotifyScheme ("GotFocus", e);
+    }
+
+    protected override void OnHandleCreated (EventArgs e)
+    {
+      base.OnHandleCreated (e);
+      this.NotifyScheme ("HandleCreated", e);
+    }
+
+    protected override void OnHandleDestroyed (EventArgs e)
+    {
+      base.OnHandleDestroyed (e);
+      this.NotifyScheme ("HandleDestroyed", e);
+    }
+
+    protected override void OnHelpRequested (HelpEventArgs e)
+    {
+      base.OnHelpRequested (e);
+      this.NotifyScheme ("HelpRequested", e);
+    }
+
+    protected override void OnHideSelectionChanged (EventArgs e)
+    {
+      base.OnHideSelectionChanged (e);
+      this.NotifyScheme ("HideSelectionChanged", e);
+    }
+
+    protected override void OnHScroll (EventArgs e)
+    {
+      base.OnHScroll (e);
+      this.NotifyScheme ("HScroll", e);
+    }
+
+    protected override void OnImeChange (EventArgs e)
+    {
+      base.OnImeModeChanged (e);
+      this.NotifyScheme ("ImeChange", e);
+    }
+
+    protected override void OnImeModeChanged (EventArgs e)
+    {
+      base.OnImeModeChanged (e);
+      this.NotifyScheme ("ImeModeChanged", e);
+    }
+
+    protected override void OnInvalidated (InvalidateEventArgs e)
+    {
+      base.OnInvalidated (e);
+      this.NotifyScheme ("Invalidated", e);
+    }
+
+    protected override void OnKeyDown (KeyEventArgs e)
+    {
+      base.OnKeyDown (e);
+      this.NotifyScheme ("KeyDown", e);
+    }
+
+    protected override void OnKeyPress (KeyPressEventArgs e)
+    {
+      base.OnKeyPress (e);
+      this.NotifyScheme ("KeyPress", e);
+    }
+
+    protected override void OnKeyUp (KeyEventArgs e)
+    {
+      base.OnKeyUp (e);
+      this.NotifyScheme ("KeyUp", e);
+    }
+
+    protected override void OnLayout (LayoutEventArgs e)
+    {
+      base.OnLayout (e);
+      this.NotifyScheme ("Layout", e);
+    }
+
+    protected override void OnLeave (EventArgs e)
+    {
+      base.OnLeave (e);
+      this.NotifyScheme ("Leave", e);
+    }
+
+    protected override void OnLinkClicked (LinkClickedEventArgs e)
+    {
+      base.OnLinkClicked (e);
+      this.NotifyScheme ("LinkClicked", e);
+    }
+
+    protected override void OnLocationChanged (EventArgs e)
+    {
+      base.OnLocationChanged (e);
+      this.NotifyScheme ("LocationChanged", e);
+    }
+
+    protected override void OnLostFocus (EventArgs e)
+    {
+      base.OnLostFocus (e);
+      this.NotifyScheme ("LostFocus", e);
+    }
+
+    protected override void OnModifiedChanged (EventArgs e)
+    {
+      base.OnModifiedChanged (e);
+      this.NotifyScheme ("ModifiedChanged", e);
+    }
+
+    protected override void OnMouseDown (MouseEventArgs e)
+    {
+      base.OnMouseDown (e);
+      this.NotifyScheme ("MouseDown", e);
+    }
+
+    protected override void OnMouseEnter (EventArgs e)
+    {
+      base.OnMouseEnter (e);
+      this.NotifyScheme ("MouseEnter", e);
+    }
+
+    protected override void OnMouseHover (EventArgs e)
+    {
+      base.OnMouseHover (e);
+      this.NotifyScheme ("MouseHover", e);
+    }
+
+    protected override void OnMouseMove (MouseEventArgs e)
+    {
+      base.OnMouseMove (e);
+      this.NotifyScheme ("MouseMove", e);
+    }
+
+    protected override void OnMouseLeave (EventArgs e)
+    {
+      base.OnMouseLeave (e);
+      this.NotifyScheme ("MouseLeave", e);
+    }
+
+    protected override void OnMouseUp (MouseEventArgs e)
+    {
+      base.OnMouseUp (e);
+      this.NotifyScheme ("MouseUp", e);
+    }
+
+    protected override void OnMouseWheel (MouseEventArgs e)
+    {
+      base.OnMouseWheel (e);
+      this.NotifyScheme ("MouseWheel", e);
+    }
+
+    protected override void OnMove (EventArgs e)
+    {
+      base.OnMove (e);
+      this.NotifyScheme ("Move", e);
+    }
+
+    protected override void OnMultilineChanged (EventArgs e)
+    {
+      base.OnMultilineChanged (e);
+      this.NotifyScheme ("MultilineChanged", e);
+    }
+
+    protected override void OnNotifyMessage (Message e)
+    {
+      base.OnNotifyMessage (e);
+      this.NotifyScheme ("NotifyMessage", e);
+    }
+
+    protected override void OnPaint (PaintEventArgs e)
+    {
+      base.OnPaint (e);
+      this.NotifyScheme ("Paint", e);
+    }
+
+    protected override void OnPaintBackground (PaintEventArgs e)
+    {
+      base.OnPaintBackground (e);
+      this.NotifyScheme ("PaintBackground", e);
+    }
+
+    protected override void OnParentBackColorChanged (EventArgs e)
+    {
+      base.OnParentBackColorChanged (e);
+      this.NotifyScheme ("ParentBackColorChanged", e);
+    }
+
+    protected override void OnParentBackgroundImageChanged (EventArgs e)
+    {
+      base.OnParentBackgroundImageChanged (e);
+      this.NotifyScheme ("ParentBackgroundImageChanged", e);
+    }
+
+    protected override void OnParentBindingContextChanged (EventArgs e)
+    {
+      base.OnParentBindingContextChanged (e);
+      this.NotifyScheme ("ParentBindingContextChanged", e);
+    }
+
+    protected override void OnParentChanged (EventArgs e)
+    {
+      base.OnParentChanged (e);
+      this.NotifyScheme ("ParentChanged", e);
+    }
+
+    protected override void OnParentEnabledChanged (EventArgs e)
+    {
+      base.OnParentEnabledChanged (e);
+      this.NotifyScheme ("ParentEnabledChanged", e);
+    }
+
+    protected override void OnParentFontChanged (EventArgs e)
+    {
+      base.OnParentFontChanged (e);
+      this.NotifyScheme ("ParentFontChanged", e);
+    }
+
+    protected override void OnParentForeColorChanged (EventArgs e)
+    {
+      base.OnParentForeColorChanged (e);
+      this.NotifyScheme ("ParentForeColorChanged", e);
+    }
+
+    protected override void OnParentRightToLeftChanged (EventArgs e)
+    {
+      base.OnParentRightToLeftChanged (e);
+      this.NotifyScheme ("ParentRightToLeftChanged", e);
+    }
+
+    protected override void OnParentVisibleChanged (EventArgs e)
+    {
+      base.OnParentVisibleChanged (e);
+      this.NotifyScheme ("ParentVisibleChanged", e);
+    }
+
+    protected override void OnProtected (EventArgs e)
+    {
+      base.OnProtected (e);
+      this.NotifyScheme ("Protected", e);
+    }
+
+    protected override void OnQueryContinueDrag (QueryContinueDragEventArgs e)
+    {
+      base.OnQueryContinueDrag (e);
+      this.NotifyScheme ("QueryContinueDrag", e);
+    }
+
+    protected override void OnReadOnlyChanged (EventArgs e)
+    {
+      base.OnReadOnlyChanged (e);
+      this.NotifyScheme ("ReadOnlyChanged", e);
+    }
+
+    protected override void OnResize (EventArgs e)
+    {
+      base.OnResize (e);
+      this.NotifyScheme ("Resize", e);
+    }
+
+    protected override void OnRightToLeftChanged (EventArgs e)
+    {
+      base.OnRightToLeftChanged (e);
+      this.NotifyScheme ("RightToLeftChanged", e);
+    }
+
+    protected override void OnSelectionChanged (EventArgs e)
+    {
+      base.OnSelectionChanged (e);
+      this.NotifyScheme ("SelectionChanged", e);
+    }
+
+    protected override void OnSizeChanged (EventArgs e)
+    {
+      base.OnSizeChanged (e);
+      this.NotifyScheme ("SizeChanged", e);
+    }
+
+    protected override void OnStyleChanged (EventArgs e)
+    {
+      base.OnStyleChanged (e);
+      this.NotifyScheme ("StyleChanged", e);
+    }
+
+    protected override void OnSystemColorsChanged (EventArgs e)
+    {
+      base.OnSystemColorsChanged (e);
+      this.NotifyScheme ("SystemColorsChanged", e);
+    }
+
+    protected override void OnTabIndexChanged (EventArgs e)
+    {
+      base.OnTabIndexChanged (e);
+      this.NotifyScheme ("TabIndexChanged", e);
+    }
+
+    protected override void OnTabStopChanged (EventArgs e)
+    {
+      base.OnTabStopChanged (e);
+      this.NotifyScheme ("TabStopChanged", e);
+    }
+
+    protected override void OnTextChanged (EventArgs e)
+    {
+      base.OnTextChanged (e);
+      this.NotifyScheme ("TextChanged", e);
+    }
+
+    protected override void OnValidated (EventArgs e)
+    {
+      base.OnValidated (e);
+      this.NotifyScheme ("Validated", e);
+    }
+
+    protected override void OnValidating (System.ComponentModel.CancelEventArgs e)
+    {
+      base.OnValidating (e);
+      this.NotifyScheme ("Validating", e);
+    }
+
+    protected override void OnVisibleChanged (EventArgs e)
+    {
+      base.OnVisibleChanged (e);
+      this.NotifyScheme ("VisibleChanged", e);
+    }
+
+    protected override void OnVScroll (EventArgs e)
+    {
+      base.OnVScroll (e);
+      this.NotifyScheme ("VScroll", e);
+    }
+  }
+
   public class MessageFilter : System.Windows.Forms.IMessageFilter
   {
     public Helper helper;
@@ -2497,19 +4893,16 @@ namespace SchemeBridge
   public class ApplicationContext : System.Windows.Forms.ApplicationContext
   {
     public Helper helper;
-    public FormProxy random_window;
 
-    public ApplicationContext (Helper _helper, MzSchemeObject callback)
+    public ApplicationContext (Helper _helper)
     {
       helper = _helper;
-      random_window = new FormProxy (callback);
-      random_window.Show();
     }
 
-    public static void main (Helper _helper, MzSchemeObject callback)
+    public static void main (Helper _helper)
     {
       System.Windows.Forms.Application.AddMessageFilter (new MessageFilter (_helper));
-      Application.Run (new ApplicationContext (_helper, callback));
+      Application.Run (new ApplicationContext (_helper));
       return;
     }
   }

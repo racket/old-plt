@@ -1,4 +1,4 @@
-; $Id$
+; $Id: x.ss,v 1.34 1997/07/21 15:51:43 shriram Exp $
 
 (unit/sig zodiac:expander^
   (import
@@ -10,7 +10,7 @@
 
   ; ----------------------------------------------------------------------
 
-  (define-struct resolutions (user?))
+  (define-struct resolutions (name user?))
   (define-struct (micro-resolution struct:resolutions) (rewriter))
   (define-struct (macro-resolution struct:resolutions) (rewriter))
 
@@ -61,6 +61,7 @@
 	(let ((v (vocabulary-record-this vocab))
 	       (names (if (symbol? name/s) (list name/s) name/s))
 	       (r (constructor rewriter)))
+	  (set-resolutions-name! r name/s)
 	  (map (lambda (n)
 		 (hash-table-put! v n r))
 	    names)))))
@@ -72,15 +73,15 @@
 
   (define add-micro-form
     (add-micro/macro-form (lambda (r)
-			    (make-micro-resolution #f r))))
+			    (make-micro-resolution 'dummy #f r))))
 
   (define add-system-macro-form
     (add-micro/macro-form (lambda (r)
-			    (make-macro-resolution #f r))))
+			    (make-macro-resolution 'dummy #f r))))
 
   (define add-user-macro-form
     (add-micro/macro-form (lambda (r)
-			    (make-macro-resolution #t r))))
+			    (make-macro-resolution 'dummy #t r))))
 
   (define add-macro-form add-system-macro-form)
 
@@ -98,7 +99,7 @@
       (lambda (vocab rewriter)
 	(hash-table-put! (vocabulary-record-this vocab)
 	  kwd
-	  (make-micro-resolution #f rewriter)))))
+	  (make-micro-resolution kwd #f rewriter)))))
 
   (define add-list-micro (add-list/sym/lit-micro list-micro-kwd))
   (define add-ilist-micro (add-list/sym/lit-micro ilist-micro-kwd))
@@ -302,7 +303,7 @@
 	    (and w (cdr w)))))))
 
   (define resolve-in-global
-    (let ((top-level-resolution (make-top-level-resolution #f))) ; name-eq?
+    (let ((top-level-resolution (make-top-level-resolution 'dummy #f))) ; name-eq?
       (lambda (name vocab)
 	(let loop ((vocab vocab))
 	  (hash-table-get (vocabulary-record-this vocab)

@@ -9,5 +9,6 @@
    file-name-from-path
    path-only
    delete-directory/files
+   make-directory*
    make-temporary-file
    find-library))

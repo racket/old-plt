@@ -1,8 +1,6 @@
 
 (define-signature dynext:file^
-  (make-directory*
-
-   append-zo-suffix
+  (append-zo-suffix
    append-c-suffix
    append-constant-pool-suffix
    append-object-suffix

@@ -180,6 +180,13 @@
 		   "encountered ~a, neither a file nor a directory"
 		   path)]))
 
+   (define (make-directory* dir)
+     (let-values ([(base name dir?) (split-path dir)])
+       (when (and (string? base)
+		  (not (directory-exists? base)))
+	 (make-directory* base))
+       (make-directory dir)))
+
    (define make-temporary-file
      (case-lambda
       [(template)

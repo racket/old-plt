@@ -3,15 +3,6 @@
  dynext:file^
  (import)
 
- (define (make-directory* dir)
-   (let-values ([(base name dir?) (split-path dir)])
-    (when (and (string? base)
-	       (not (directory-exists? base)))
-      (make-directory* base))
-    (unless (make-directory dir)
-      (error 'make-directory* "couldn't make directory: ~s" 
-	     (path->complete-path dir)))))
-
  (define (append-zo-suffix s)
    (string-append s ".zo"))
 

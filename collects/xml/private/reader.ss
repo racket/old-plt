@@ -64,14 +64,18 @@
          (let ([x (lex in pos)])
            (cond
              [(eof-object? x)
-              (error 'read-xml "unclosed ~a tag at [~a ~a]" name
+              (error 'read-xml "unclosed `~a' tag at [~a ~a]"
+		     name
 		     (format-source a)
 		     (format-source b))]
              [(start-tag? x) (cons (read-element x in pos) (read-content))]
              [(end-tag? x)
               (unless (eq? name (end-tag-name x))
-                (error 'read-xml "start tag ~a at [~a ~a] doesn't match end tag ~a at [~a ~a]"
-                       name a b (end-tag-name x)
+                (error 'read-xml "start tag `~a' at [~a ~a] doesn't match end tag `~a' at [~a ~a]"
+                       name
+		       (format-source a)
+		       (format-source b)
+		       (end-tag-name x)
 		       (format-source (source-start x))
 		       (format-source (source-stop x))))
               null]
@@ -176,7 +180,7 @@
                 (lex-error in pos "expected > to close empty element ~a" name))
               (make-element start (pos) name attrs null)]
              [(#\>) (make-start-tag start (pos) name attrs)]
-             [else (lex-error in pos "expected / or > to close tag ~a" name)]))])))
+             [else (lex-error in pos "expected / or > to close tag `~a'" name)]))])))
   
   ;; lex-attributes : Input-port (-> Location) -> (listof Attribute)
   (define (lex-attributes in pos)
@@ -346,8 +350,8 @@
   
   ;; positionify : Input-port -> Input-port (-> Location)
   (define (positionify in)
-    (let ([char 0]
-	  [line 0]
+    (let ([line 1]
+	  [char 0]
 	  [offset 0])
       (values (make-input-port
                (lambda ()
@@ -364,7 +368,7 @@
   
   ;; lex-error : Input-port String (-> Location) TST* -> alpha
   (define (lex-error in pos str . rest)
-    (error 'lex-error " at positon ~a: ~a" (format-source (pos))
+    (error 'lex-error "at position ~a: ~a" (format-source (pos))
            (apply format str rest)))
 
 
@@ -372,5 +376,5 @@
   ;; to format the source location for an error message
   (define (format-source loc)
     (if (location? loc)
-	(format "~a:~a [~a]" (location-line loc) (location-char loc) (location-offset loc))
+	(format "~a.~a/~a" (location-line loc) (location-char loc) (location-offset loc))
 	(format "~a" loc))))))

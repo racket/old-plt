@@ -2,6 +2,7 @@
 (module shared mzscheme
   (require-for-syntax (lib "stx.ss" "syntax")
 		      (lib "kerncase.ss" "syntax")
+		      (lib "struct.ss" "syntax")
 		      "include.ss")
 
   (provide shared)

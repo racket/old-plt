@@ -1,7 +1,8 @@
 
 ;; Used by ../shared.ss, and also collects/lang/private/teach.ss
 ;; Besides the usual things, this code expects `undefined' and
-;; `the-cons' to be bound.
+;; `the-cons' to be bound, and it expects `struct-declaration-info?'
+;; from the "struct.ss" library of the "syntax" collection.
 
 (syntax-case stx ()
   [(_ ([name expr] ...) body1 body ...)
@@ -34,7 +35,21 @@
 			     [(#%app e ...)
 			      (syntax (e ...))]
 			     [_else e])))
-		       exprs)])
+		       exprs)]
+	   [struct-decl-for (lambda (id)
+			      (and (identifier? id)
+				   (let* ([s (symbol->string (syntax-e id))]
+					  [m (regexp-match-positions "make-" s)])
+				     (and m
+					  (let ([name (datum->syntax-object
+						       id
+						       (string->symbol (string-append (substring s 0 (caar m))
+										      (substring s (cdar m) (string-length s))))
+						       id)])
+					    (let ([v (syntax-local-value name (lambda () #f))])
+					      (and v
+						   (struct-declaration-info? v)
+						   v)))))))])
        (with-syntax ([(init-expr ...)
 		      (map (lambda (expr)
 			     (define (bad n)
@@ -70,7 +85,24 @@
 				(struct-decl-for (syntax make-x))
 				(let ([decl (struct-decl-for (syntax make-x))]
 				      [args (syntax->list (syntax _))])
-				  expr)]
+				  (unless args
+				    (bad "structure constructor"))
+				  (when (or (not (cadr decl))
+					    (ormap not (list-ref decl 4)))
+				    (raise-syntax-error
+				     'shared
+				     "not enough information about the structure type in this context"
+				     stx
+				     expr))
+				  (unless (= (length (list-ref decl 4)) (length args))
+				    (raise-syntax-error
+				     'shared
+				     (format "wrong argument count for structure constructor; expected ~a, found ~a"
+					     (length (list-ref decl 4)) (length args))
+				     stx
+				     expr))
+				  (with-syntax ([undefineds (map (lambda (x) (syntax undefined)) args)])
+				    (syntax (make-x . undefineds))))]
 			       [_else expr]))
 			   exprs)]
 		     [(finish-expr ...)
@@ -99,6 +131,13 @@
 				      (syntax (let ([vec name])
 						(vector-set! vec n e)
 						...)))]
+				   [(make-x e ...)
+				    (struct-decl-for (syntax make-x))
+				    (let ([decl (struct-decl-for (syntax make-x))])
+				      (with-syntax ([(setter ...) (list-ref decl 4)])
+					(syntax
+					 (begin
+					   (setter name e) ...))))]
 				   [_else (syntax (void))])))
 			     names exprs))]
 		     [(check-expr ...)

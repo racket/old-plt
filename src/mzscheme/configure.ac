@@ -367,6 +367,7 @@ case $OS in
     LIBS="$LIBS -rdynamic"
     ;;
   OpenBSD)
+    LIBS="$LIBS -rdynamic"
     ;;
   IRIX)
     STATICLINK="/usr/lib/libC.a /usr/lib/libmalloc.a"

@@ -1850,13 +1850,13 @@ Blit (double xdest, double ydest, double fwidth, double fheight,
 	if (i && !(i & 0x1F))
 	  pstream->Out("\n");
       } else {
-	double r, g, b;
+	double r, gr, b;
 
 	r = ((double)(red) / 255);
-	g = ((double)(green) / 255);
+	gr = ((double)(green) / 255);
 	b = ((double)(blue) / 255);
 
-	pixel = (int)(255 * sqrt(((r * r) + (g * g) + (b * b)) / 3));
+	pixel = (int)(255 * sqrt(((r * r) + (gr * gr) + (b * b)) / 3));
 	
 	printhex(pstream, pixel);
 

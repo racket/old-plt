@@ -47,7 +47,7 @@ class wxDC: public wxbDC
   COLORREF cur_bk;
   int cur_rop;
 
-  Gdiplus::Graphics *g;
+  Graphics *g;
 
   // Store all old GDI objects when do a SelectObject,
   // so we can select them back in (thus unselecting user

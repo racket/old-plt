@@ -62,7 +62,7 @@ class wxRegion : public wxObject
 #endif
 #ifdef wx_msw
   int npaths;
-  Gdiplus::GraphicsPath **paths;
+  GraphicsPath **paths;
   Bool *oes;
 #endif
   wxDC *dc;

@@ -61,7 +61,7 @@ class wxPen: public wxbPen
   wxDash *old_dash;
   wxBitmap *old_stipple;
   COLORREF old_color;
-  Gdiplus::Pen *g_p;
+  Pen *g_p;
 
   HPEN cpen;
   HPEN my_old_cpen;
@@ -74,7 +74,7 @@ class wxPen: public wxbPen
   void ChangePen();
   HPEN SelectPen(HDC dc);
 
-  Gdiplus::Pen *GraphicsPen();
+  Pen *GraphicsPen();
   void ReleaseGraphics();
 };
 
@@ -89,7 +89,7 @@ class wxBrush: public wxbBrush
   int old_style;
   wxBitmap *old_stipple;
   COLORREF old_color;
-  Gdiplus::Brush *g_b;
+  Brush *g_b;
 
   wxBrush(void);
   wxBrush(wxColour *col, int style);
@@ -99,7 +99,7 @@ class wxBrush: public wxbBrush
   void ChangeBrush();
   HBRUSH SelectBrush(HDC dc);
 
-  Gdiplus::Brush *GraphicsBrush();
+  Brush *GraphicsBrush();
   void ReleaseGraphics();
 };
 

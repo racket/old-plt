@@ -1,78 +1,81 @@
 
-(require-library "string.ss")
+; Demonstrates how to define new kinds of `snips' for drawing arbitary
+; graphic objects in editors.
 
-; This demonstrates adding your own snip classes to print arbitary
-;  graphic objects in editor windows. In particular, when the result
-;  of a scheme evalution in the console is a snip, then MrEd uses the
-;  snip in the console rather than printing the textual representation.
+; The snip classes here are loaded by the "editor" sample program,
+; which contains "Insert Plain Box" and "Insert Graph" items in its
+; "Edit" menu.
 
-(define car-try (lambda (list val) (if (null? list) val (car list))))
-(define cdr-try (lambda (list val) (if (null? list) val (cdr list))))
+; NOTE: When the result of an expression in DrScheme's interactions
+; window is a snip, DrScheme copies the snip (by calling its `copy'
+; method) and inserts the copy into the interactions window. So these
+; classes can be partly tested directly in DrScheme's editor. Cut and
+; paste won't work, though, because the snip "class" for marshaling is
+; not in DrScheme's implementation domain, where the editor resides.
 
-; Here's a simple snip that just makes an empty square of a certain
-; size. Try (make-object draw-snip 100 100) and you should get
-; an empty box (100 pixels x 100 pixles) as the result
+(require-library "string.ss") ; defines string->expr
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; A simple snip class that makes an empty square of a certain
+; size. Try (make-object draw-snip% 100 100) in DrScheme to get an
+; empty box (100 pixels x 100 pixles) as the result.
+
 (define draw-snip%
   (class snip% (w-in h-in)
     (inherit get-admin set-snipclass set-count)
-    (public h w)
+    (public 
+      [w w-in]
+      [h h-in])
     (override
-      (get-extent
-       (lambda (dc x y wbox hbox descentbox spacebox
-		   lspacebox rspacebox)
-	 (when hbox
-	   (set-box! hbox h))
-	 (when wbox
-	   (set-box! wbox w))
-	 (when descentbox
-	   (set-box! descentbox 0))
-	 (when spacebox
-	   (set-box! spacebox 0))
-	 (when rspacebox
-	   (set-box! rspacebox 0))
-	 (when lspacebox
-	   (set-box! lspacebox 0))))
-      (draw
-       (lambda (dc x y . other)
-	 (let* ((xw (sub1 (+ x w)))
-		(yh (sub1 (+ y h)))
-		(x (add1 x))
-		(y (add1 y)))
-	   (send dc draw-line x y xw y)
-	   (send dc draw-line xw y xw yh)
-	   (send dc draw-line x yh xw yh)
-	   (send dc draw-line x y x yh))))
-      (copy
-       (lambda ()
-	 (make-object draw-snip% w h)))
-      (write
-       (lambda (stream)
-	 (send stream << w)
-	 (send stream << h)))
-      (resize 
-       (lambda (w-in h-in)
-	 (set! w w-in)
-	 (set! h h-in)
-	 (resized)
-	 #t)))
-    (public
-      (resized
-       (lambda ()
-	 (let ([admin (get-admin)])
-	   (when admin
-	     (send admin resized this #t)))))
-      (refresh
-       (lambda ()
-	 (let ([admin (get-admin)])
-	   (when admin
-	     (send admin needs-update this 0 0 w h))))))
+     [get-extent  ; called by an editor to get the snip's size
+      (lambda (dc x y wbox hbox descentbox spacebox lspacebox rspacebox)
+	(when hbox
+	  (set-box! hbox h))
+	(when wbox
+	  (set-box! wbox w))
+	(when descentbox
+	  (set-box! descentbox 0))
+	(when spacebox
+	  (set-box! spacebox 0))
+	(when rspacebox
+	  (set-box! rspacebox 0))
+	(when lspacebox
+	  (set-box! lspacebox 0)))]
+     [draw  ; called by an editor to draw the snip
+      (lambda (dc x y . other)
+	(let* ((xw (sub1 (+ x w)))
+	       (yh (sub1 (+ y h)))
+	       (x (add1 x))
+	       (y (add1 y)))
+	  (send dc draw-line x y xw y)
+	  (send dc draw-line xw y xw yh)
+	  (send dc draw-line x yh xw yh)
+	  (send dc draw-line x y x yh)))]
+     [copy  ; clones the snip
+      (lambda ()
+	(make-object draw-snip% w h))]
+     [write  ; marshals the snip to a text stream
+      (lambda (stream)
+	(send stream << w)
+	(send stream << h))]
+     [resize  ; called by a pasetboard editor to resize the snip
+      (lambda (w-in h-in)
+	(set! w w-in)
+	(set! h h-in)
+	; send resize notification to the editor containing the snip
+	(let ([admin (get-admin)])
+	  (when admin
+	    (send admin resized this #t)))
+	#t)])
     (sequence
       (super-init)
+      ; Need to set the "class" for unmarshaling from text stream
       (set-snipclass (send (get-the-snip-class-list) find "emptydrawbox"))
-      (set-count 1)
-      (set! h h-in)
-      (set! w w-in))))
+      (set-count 1))))
 
+; The snip "class" is used for unmarshaling a snip from a text stream
 (define draw-snip-class
   (make-object 
    (class snip-class% ()
@@ -89,33 +92,31 @@
        (super-init)
        (set-classname "emptydrawbox")))))
 
+; Register the snip class
 (send (get-the-snip-class-list) add  draw-snip-class)
 
-; Here's a snip class derived from draw-snip. It plots a function.
-; There's a lot of code that tries to find the right part of the
-; function to print or allows you to send it coordinate ranges - 
-; I don't know if this code works. But it works fine if you give it
-; a function on the unit square. (Say, (lambda (x) (* x x)).)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; A snip class derived from draw-snip% that plots a function from 0 to
+; 1. The function is specified as an S-expression to permit
+; marshaling.
+
+;  Try (make-object graph-snip% '(lambda (x) (* x x))) in DrScheme.
 
 (define graph-snip%
-  (class draw-snip% ([fs #f] [xaxes '()] [size '()]
-		     [yaxes '()] [ss '()])
-    (inherit w h refresh resized set-snipclass)
+  (class draw-snip% (function-expression)
+    (inherit w h set-snipclass)
     (rename [super-draw draw])
-    (public [functions '()]
-	    [shades '()]
-	    x-start
-	    x-end
-	    y-start
-	    y-end
+    (public [function (eval function-expression)]
+	    [x-start 0]
+	    [x-end 1]
+	    [y-start (function x-start)]
+	    [y-end (function x-end)]
 	    [lmargin 5] [rmargin 5]
-	    [tmargin 5] [bmargin 5]
-	    [x-num-grid-lines 0]
-	    [y-num-grid-lines 0]
-	    [shade-brush (send the-brush-list find-or-create-brush
-			       "BLACK" 'cross-hatch)])
+	    [tmargin 5] [bmargin 5])
     (override
-      (draw
+      [draw
        (lambda (dc x y . other)
 	 (super-draw dc x y)
 	 (let* ([bottom (- (+ h y) bmargin)]
@@ -141,177 +142,29 @@
 	   (if (<= y-start 0 y-end)
 	       (let ([y-pos (- bottom (* (- y-start) y-inv-scale))])
 		 (send dc draw-line left y-pos right y-pos)))
-	   (for-each
-	    (lambda (f)
-	      (let ([f (eval f)])
-		(let loop ((i 0))
-		  (if (< i graph-w)
-		      (let* ((x0 (+ x-start (* i x-scale)))
-			     (j (y-to-pos (f x0))))
-			(if (and (> j y) (< j bottom))
+	   (let loop ((i 0))
+	     (if (< i graph-w)
+		 (let* ((x0 (+ x-start (* i x-scale)))
+			(j (y-to-pos (function x0))))
+		   (if (and (> j y) (< j bottom))
 			    (send dc draw-point (+ i left) j))
-			(loop (add1 i)))))))
-	    functions)
-	   (for-each
-	    (lambda (f)
-	      (let ([f (eval f)]
-		    [change-1 #f]
-		    [change-1-time #f]
-		    [change-2 #f]
-		    [change-2-time #f])
-		(catch escape
-		  (let loop ([on (f x-start y-end)]
-			     [xdir dx]
-			     [ydir 0]
-			     [x x-start]
-			     [y y-end]
-			     [time 0])
-		    (let ([this-on (f x y)])
-		      (if (not (eq? on this-on))
-			  (let ([pair (cons
-				       (if (< xdir 0)
-					   (- x xdir)
-					   x)
-				       (if (< ydir 0)
-					   (- y ydir)
-					   y))])
-			    (if change-1
-				(begin
-				  (set! change-2 pair)
-				  (set! change-2-time time)
-				  (escape this-on))
-				(begin
-				  (set! change-1 pair)
-				  (set! change-1-time time)))))
-		      (let ([newx (+ x xdir)]
-			    [newy (+ y ydir)])
-			(if (and (<= x-start newx x-end)
-				 (<= y-start newy y-end))
-			    (loop this-on xdir ydir newx newy time)
-			    (cond
-			      [(> xdir 0)
-			       (loop this-on 0 (- dy) x-end y-end 1)]
-			      [(< ydir 0)
-			       (loop this-on(- dx) 0 x-end y-start 2)]
-			      [(< xdir 0) 
-			       (loop this-on 0 dy x-start y-start 3)]
-			      [else (escape #f)]))))))
-		(let ([points
-		       (if change-2
-			   ; Partial shade...
-			   (let ([x1 (x-to-pos (car change-1))]
-				 [x2 (x-to-pos (car change-2))]
-				 [y1 (y-to-pos (cdr change-1))]
-				 [y2 (y-to-pos (cdr change-2))]
-				 [start-on (not (f x-start y-start))]
-				 [pt (lambda (x y)
-				       (make-object point% x y))])
-			     (send dc draw-line x1 y1 x2 y2)
-			     (let ([end-time (if start-on 
-						 change-1-time
-						 change-2-time)]
-				   [end-point (if start-on 
-						  (pt x1 y1)
-						  (pt x2 y2))])
-			       (let loop ([time 
-					   (if start-on 
-					       change-2-time
-					       change-1-time)]
-					  [points
-					   (list (if start-on 
-						     (pt x2 y2)
-						     (pt x1 y1)))])
-				 (if (= time end-time)
-				     (cons end-point points)
-				     (loop
-				      (modulo (add1 time) 4)
-				      (cons
-				       (case time
-					 ((0) (pt right top))
-					 ((1) (pt right bottom))
-					 ((2) (pt left bottom))
-					 ((3) (pt left top)))
-				       points))))))
-			   ; Shade everything or nothing
-			   (if (f x-start y-start)
-			       (list (pt right top)
-				     (pt right bottom)
-				     (pt left bottom)
-				     (pt left top))
-			       #f))])
-		  (if points
-		      (let ([old-brush (send dc get-brush)])
-			(send dc set-brush shade-brush)
-			(send dc draw-polygon points)
-			(send dc set-brush old-brush))))))
-	    shades))))
-      (copy
+		   (loop (add1 i)))))))]
+      [copy
        (lambda ()
-	 (make-object graph-snip%
-		      functions
-		      (cons x-start x-end)
-		      (cons w h)
-		      (cons y-start y-end)
-		      shades)))
-      (write
+	 (make-object graph-snip% function-expression))]
+      [write
        (lambda (stream)
-	 (let ([INT (lambda (x)
-		      (if (exact? x)
-			  x
-			  (inexact->exact x)))]
-	       [FLOAT (lambda (x)
-			(if (inexact? x)
-			    x
-			    (exact->inexact x)))])
-	   (send stream << (expr->string functions)) 
-	   (send stream << (FLOAT x-start))
-	   (send stream << (FLOAT x-end))
-	   (send stream << (INT w))
-	   (send stream << (INT h))
-	   (send stream << (FLOAT y-start))
-	   (send stream << (FLOAT y-end))
-	   (send stream << (expr->string shades))))))
-    (public
-      (set-domain
-       (lambda (s e)
-	 (set! x-start s)
-	 (set! x-end e)
-	 (refresh)))
-      (set-range
-       (lambda (s y-end)
-	 (set! y-start s)
-	 (set! y-end e)
-	 (refresh)))
-      (plot
-       (lambda (f)
-	 (set! functions (cons f functions))
-	 (refresh)))
-      (affine-shade
-       (lambda (f)
-	 (set! shades (cons f shades))
-	 (refresh))))
+	 (send stream << (expr->string functions)))])
     (sequence
-      (let* ((h (car-try size 200))
-	     (w (cdr-try size 200)))
-	(super-init h w)
-	(set-snipclass (send (get-the-snip-class-list) find "graph"))
-	(set! functions fs)
-	(set! shades ss)
-	(set! x-start (car-try xaxes 0))
-	(set! x-end (cdr-try xaxes 1))
-	(let ([f (if fs
-		     (lambda (x) x)
-		     (eval (car fs)))])
-	  (set! y-start (car-try yaxes (f x-start)))
-	  (set! y-end (cdr-try yaxes (f x-end)))
-	  (if (= y-start y-end)
-	      (begin
-		(set! y-start (- y-start 100))
-		(set! y-end (+ y-end 100))))
-	  (if (> y-start y-end)
-	      (let ((start y-start))
-		(set! y-start y-end)
-		(set! y-end start))))))))
+      (super-init 100 100)
+      (set-snipclass (send (get-the-snip-class-list) find "graph"))
+      (when (= y-start y-end)
+	(set! y-start (- y-start 100))
+	(set! y-end (+ y-end 100)))
+      (when (> y-start y-end)
+	(let ((start y-start))
+	  (set! y-start y-end)
+	  (set! y-end start))))))
 
 (define graph-snip-class
   (make-object 
@@ -320,43 +173,11 @@
      (override
        [read
 	(lambda (stream)
-	  (let ([get-string
-		 (lambda ()
-		   (send stream get-string))]
-		[get-integer
-		 (lambda ()
-		   (let ([n-box (box 0)])
-		     (send stream >> n-box)
-		     (unbox n-box)))]
-		[get-float
-		 (lambda ()
-		   (let ([n-box (box 0.0)])
-		     (send stream >> n-box)
-		     (unbox n-box)))])
-	    (let* ([functions (read-from-string (get-string))]
-		   [x-start (get-float)]
-		   [x-end (get-float)]
-		   [w (get-integer)]
-		   [h (get-integer)]
-		   [y-start (get-float)]
-		   [y-end (get-float)]
-		   [shades (read-from-string (get-string))])
-	      (make-object graph-snip%
-			   functions
-			   (cons x-start x-end)
-			   (cons w h)
-			   (cons y-start y-end)
-			   shades))))])
+	  (make-object graph-snip% 
+		       (read-from-string (send stream get-string))))])
      (sequence
        (super-init)
        (set-classname "graph")))))
 
 (send (get-the-snip-class-list) add graph-snip-class)
-
-; Here's a helper function that will make the object for
-; you. Try (graph (lambda (x) (* x x))).
-
-(define graph
-  (lambda (f)
-    (make-object graph-snip% (list f))))
 

@@ -1,5 +1,9 @@
 
-(require-library "graph.ss" "mrdemo")
+; Defines a simple text and/or pasteboard editor program, which
+; demonstrates how to use the basic editor classes. The program also
+; demonstrates how to create menus.
+
+(require-relative-library "graph.ss") ; defines the box and graph snips
 
 (define (new-text-frame) (new-frame text%))
 (define (new-pasteboard-frame) (new-frame pasteboard%))

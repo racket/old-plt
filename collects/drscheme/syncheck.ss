@@ -602,6 +602,29 @@
                (send report-error-text last-position))
               (lock #t)
               (end-edit-sequence))
+
+            (let ([do-highlight
+                   (lambda (src start span)
+                     (when (and (is-a? src fw:text:basic<%>)
+                                (number? start)
+                                (number? span))
+                       (send (get-interactions-text) highlight-error
+                             src
+                             (- start 1)
+                             (+ start span -1))))])
+              (cond
+                [(exn:read? exn)
+                 (do-highlight (exn:read-source exn)
+                               (exn:read-position exn)
+                               (exn:read-span exn))]
+                [(exn:syntax? exn)
+                 (let ([stx (exn:syntax-expr exn)])
+                   (when stx
+                     (do-highlight (syntax-source stx)
+                                   (syntax-position stx)
+                                   (syntax-span stx))))]
+                [else (void)]))
+            
             (show-error-report))
           
           (rename [super-make-root-area-container make-root-area-container])
@@ -700,6 +723,7 @@
                       (if err?
                           (begin
                             (set! err-termination? #t)
+                            (syncheck:clear-highlighting)
                             (report-error (car sexp) (cdr sexp)))
                           (let-values ([(new-binders pre-new-varrefs new-tops
                                                      requires referenced-macros)
@@ -733,16 +757,16 @@
                   (cons check-syntax-button
                         (remove check-syntax-button l))))))
       
-      (define report-error-style (make-object style-delta% 'change-italic))
+      (define report-error-style (make-object style-delta% 'change-style 'slant))
       (send report-error-style set-delta-foreground "red")
       
        ;; type req/tag = (make-req/tag syntax sexp boolean)
       (define-struct req/tag (req-stx req-sexp used?))
       
-      ;; annotate-require-vars : (listof syntax) (listof syntax) (listof syntax[original])
+      ;; annotate-require-vars :    (listof syntax) (listof syntax) (listof syntax[original])
       ;;                         -> (listof syntax)
       ;; returns the sublist of `varrefs' that did not come from module imports.
-      ;; effect: colors all require-bound ids from `tops' and draws arrow for them. 
+      ;; effect: colors all require-bound ids from `varrefs' and draws arrow for them. 
       (define (annotate-require-vars varrefs requires referenced-macros)
         (let* ([req/tags (map (lambda (x) 
                                 (make-req/tag x 
@@ -799,13 +823,14 @@
         (let ([binding (identifier-binding stx)])
           (and (pair? binding)
                (let ([mod-path (caddr binding)])
-                 (and (module-path-index? mod-path)
-                      (let loop ([mpi mod-path]
-                                 [ph #f])
-                        (let-values ([(main rest) (module-path-index-split mpi)])
-                          (if rest
-                              (loop rest main)
-                              ph))))))))
+                 (if (module-path-index? mod-path)
+                     (let loop ([mpi mod-path]
+                                [ph #f])
+                       (let-values ([(main rest) (module-path-index-split mpi)])
+                         (if rest
+                             (loop rest main)
+                             ph)))
+                     mod-path)))))
       
       ;; annotate-variables : namespace (listof syntax) (listof syntax) -> void
       ;; colors the variables, free are turned unbound color, bound are turned

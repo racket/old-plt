@@ -56,6 +56,7 @@ START_XFORM_SKIP;
 #define l_COPY l_COPYDEST=l_COPYSRC;
 #define l_OKTEST 
 #define l_INTTYPE int
+#define l_DIRECTMALLOC 0
 
 #define l_TYPE float
 #define l_LIST_ITEM_BUNDLE objscheme_bundle_float
@@ -100,7 +101,11 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
   if (!(len + l_EXTRA))
     return NULL;
 
+#if l_DIRECTMALLOC
+  f = (l_TYPE l_POINT *)WITH_VAR_STACK(GC_malloc_atomic(sizeof(l_TYPE l_POINT) * (len + l_EXTRA)));
+#else
   f = WITH_VAR_STACK(new l_NEWATOMIC l_TYPE l_POINT[len + l_EXTRA]);
+#endif
 
   while (!SCHEME_NULLP(l)) {
     if (!SCHEME_LISTP(l)) {
@@ -748,6 +753,7 @@ static int unbundle_symset_Bias(Scheme_Object *v, const char *where) {
 #define l_COPY l_COPYDEST=l_COPYSRC;
 #define l_OKTEST 
 #define l_INTTYPE int
+#define l_DIRECTMALLOC 0
 
 #define l_TYPE long
 #define l_LIST_ITEM_BUNDLE objscheme_bundle_long
@@ -792,7 +798,11 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
   if (!(len + l_EXTRA))
     return NULL;
 
+#if l_DIRECTMALLOC
+  f = (l_TYPE l_POINT *)WITH_VAR_STACK(GC_malloc_atomic(sizeof(l_TYPE l_POINT) * (len + l_EXTRA)));
+#else
   f = WITH_VAR_STACK(new l_NEWATOMIC l_TYPE l_POINT[len + l_EXTRA]);
+#endif
 
   while (!SCHEME_NULLP(l)) {
     if (!SCHEME_LISTP(l)) {
@@ -6213,7 +6223,7 @@ static Scheme_Object *os_wxMediaEditGetFlattenedText(Scheme_Object *obj, int n, 
 
   
   
-  return scheme_make_sized_string(r, _x0, 0);
+  return WITH_VAR_STACK(scheme_make_sized_string(r, _x0, 0));
 }
 
 static Scheme_Object *os_wxMediaEditPutFile(Scheme_Object *obj, int n,  Scheme_Object *p[])

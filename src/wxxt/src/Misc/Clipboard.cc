@@ -4,7 +4,7 @@
  * Author:      Julian Smart and Matthew Flatt
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: Clipboard.cc,v 1.4 1999/11/24 21:20:20 mflatt Exp $
+ * RCS_ID:      $Id: Clipboard.cc,v 1.5 1999/11/28 05:21:34 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -230,29 +230,26 @@ void wxClipboard::SetClipboardString(char *str, long time)
   }
 }
 
-static void wxGetTargets(Widget WXUNUSED(w), XtPointer cbv, Atom *WXUNUSED(sel), Atom *WXUNUSED(type),
+static void wxGetTargets(Widget WXUNUSED(w), XtPointer WXUNUSED(cbv), Atom *WXUNUSED(sel), Atom *WXUNUSED(type),
 			 XtPointer value, unsigned long *len, int *WXUNUSED(format))
 {
-  wxClipboard *cb;
+  wxClipboard *cb = wxTheClipboard;
 
-  cb = (wxClipboard *)cbv;
   if (*len <= 0) {
     cb->receivedTargets = (void *)1; /* To break the waiting loop */
     cb->receivedLength = 0;
   } else {
-    cb = (wxClipboard *)cbv;
     cb->receivedTargets = new Atom[*len];
     memcpy(cb->receivedTargets, value, *len * sizeof(Atom));
     cb->receivedLength = *len;
   }
 }
 
-static void wxGetSelection(Widget WXUNUSED(w), XtPointer cbv, Atom *WXUNUSED(sel), Atom *WXUNUSED(type),
+static void wxGetSelection(Widget WXUNUSED(w), XtPointer WXUNUSED(cbv), Atom *WXUNUSED(sel), Atom *WXUNUSED(type),
 			   XtPointer value, unsigned long *len, int *WXUNUSED(format))
 {
-  wxClipboard *cb;
+  wxClipboard *cb = wxTheClipboard;
 
-  cb = (wxClipboard *)cbv;
   cb->receivedString = new char[*len + 1];
   memcpy(cb->receivedString, value, *len);
   cb->receivedString[*len] = 0;
@@ -273,9 +270,21 @@ char *wxClipboard::GetClipboardString(long time)
 
 extern void wxDispatchEventsUntil(int (*)(void *), void *);
 
-static int CheckReady(void *v)
+static int clipget_in_progress;
+
+static int CheckNotInProgress(void *WXUNUSED(v))
 {
-  return (int)*(void **)v;
+  return !clipget_in_progress;
+}
+
+static int CheckReadyTarget(void *WXUNUSED(v))
+{
+  return !!wxTheClipboard->receivedTargets;
+}
+
+static int CheckReadyString(void *WXUNUSED(v))
+{
+  return !!wxTheClipboard->receivedString;
 }
 
 char *wxClipboard::GetClipboardData(char *format, long *length, long time)
@@ -294,13 +303,22 @@ char *wxClipboard::GetClipboardData(char *format, long *length, long time)
     Atom xa;
     long i;
 
+    /* Need to make sure that only one thread is here at a time. */
+    /* Disbaled for now because we haven't handled thread kills and 
+       escapes. */
+#if 0
+    wxDispatchEventsUntil(CheckNotInProgress, NULL);
+#endif
+
+    clipget_in_progress = 1;
+
     receivedString = NULL;
     receivedTargets = NULL;
 
     XtGetSelectionValue(clipWindow, XA_PRIMARY,
-			xa_targets, wxGetTargets, (XtPointer)this, time);
+			xa_targets, wxGetTargets, (XtPointer)NULL, time);
 
-    wxDispatchEventsUntil(CheckReady, &receivedTargets);
+    wxDispatchEventsUntil(CheckReadyTarget, NULL);
 
     xa = ATOM(format);
 
@@ -314,15 +332,19 @@ char *wxClipboard::GetClipboardData(char *format, long *length, long time)
     if (receivedLength)
       receivedTargets = NULL;
 
-    if (i >= receivedLength)
+    if (i >= receivedLength) {
+      clipget_in_progress = 0;
       return NULL;
+    }
 
     XtGetSelectionValue(clipWindow, XA_PRIMARY,
-			xa, wxGetSelection, (XtPointer)this, 0);
+			xa, wxGetSelection, (XtPointer)NULL, 0);
     
-    wxDispatchEventsUntil(CheckReady, &receivedString);
+    wxDispatchEventsUntil(CheckReadyString, NULL);
 
     *length = receivedLength;
+
+    clipget_in_progress = 0;
 
     return receivedString;
   }

@@ -328,9 +328,10 @@ Scheme_Object *GetTypes(wxClipboardClient *c)
 
   n = WITH_VAR_STACK(c->formats->First());
   for (; n; n = WITH_VAR_STACK(n->Next())) {
-    Scheme_Object *p;
+    Scheme_Object *p, *s;
     
-    p = WITH_VAR_STACK(scheme_make_pair(WITH_VAR_STACK(scheme_make_string((char *)n->Data())), scheme_null));
+    s = WITH_VAR_STACK(scheme_make_string((char *)n->Data()));
+    p = WITH_VAR_STACK(scheme_make_pair(s, scheme_null));
     if (last)
       SCHEME_CDR(last) = p;
     else

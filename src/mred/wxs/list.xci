@@ -24,6 +24,7 @@
 @IFDEFINE l_COPY = POINTWISE : l_COPYDEST.x=l_COPYSRC.x; l_COPYDEST.y=l_COPYSRC.y; : l_COPYDEST=l_COPYSRC;
 @IFDEFINE l_OKTEST = DOOKTEST : { if (!((l_COPYDEST)->Ok())) WITH_VAR_STACK(scheme_arg_mismatch(OKTESTWHERE, "bad bitmap: ", SCHEME_CAR(l))); if (BM_SELECTED(l_COPYDEST)) WITH_VAR_STACK(scheme_arg_mismatch(OKTESTWHERE, "bitmap is currently installed into a bitmap-dc%: ", SCHEME_CAR(l))); }
 @IFDEFINE l_INTTYPE = SIZEISLONG : long : int
+@IFDEFINE l_DIRECTMALLOC = DIRECTMALLOC : 1 : 0
 
 @DEFINE l_TYPE = <TYPE>
 @DEFINE l_LIST_ITEM_BUNDLE = objscheme_bundle_<TYPE>
@@ -76,7 +77,11 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
   if (!(len + l_EXTRA))
     return NULL;
 
+#if l_DIRECTMALLOC
+  f = (l_TYPE l_POINT *)WITH_VAR_STACK(GC_malloc_atomic(sizeof(l_TYPE l_POINT) * (len + l_EXTRA)));
+#else
   f = WITH_VAR_STACK(new l_NEWATOMIC l_TYPE l_POINT[len + l_EXTRA]);
+#endif
 
   while (!SCHEME_NULLP(l)) {
     if (!SCHEME_LISTP(l)) {
@@ -107,3 +112,4 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
 @SET ALLOWNULL = 0
 @SET POINTWISE = 0
 @SET DOOKTEST = 0
+@SET DIRECTMALLOC = 0

@@ -1179,9 +1179,10 @@ void *wxStyleList::NotifyOnChange(wxStyleNotifyFunc f, void *data, int weak)
     rec->data = GC_malloc_weak_box(data, NULL, 0);
   } else {
     void *weak_data;
-    weak_data = GC_malloc_atomic(sizeof(short) + sizeof(short) + sizeof(void *));
-    *(void **)((char *)weak_data + 2 * sizeof(short)) = data;
-    GC_finalization_weak_ptr((void **)weak_data, 0);
+    weak_data = (void *)scheme_box((Scheme_Object *)data);
+    GC_finalization_weak_ptr((void **)weak_data, 
+			     ((void **)&SCHEME_BOX_VAL(weak_data)
+			      - (void **)weak_data));
     rec->data = weak_data;
   }
 #else

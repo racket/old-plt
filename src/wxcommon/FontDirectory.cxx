@@ -379,19 +379,16 @@ void wxSuffixMap::Initialize(const char *resname, const char *devresname,
 	    char **names;
 
 	    for (i = 0, count = 1; name[i + noff]; i++) {
-	      if (name[i + noff] == ',')
+	      if (name[i + noff] == ',') {
 		count++;
+		name[i + noff] = 0;
+	      }
 	    }
 	    
 	    len = i;
 
-	    for (i = 0, count = 1; i < len; i++) {
-	      if (name[i + noff] == ',') {
-		name[i + noff] = 0;
-	      }
-	    }
-
 	    names = new char*[count];
+
 	    {
 	      char *cs;
 	      cs = COPYSTRING_TO_ALIGNED(name, noff);

@@ -20,6 +20,7 @@ extern wxPoint *objscheme_unbundle_wxPoint(Scheme_Object *, const char *, int);
 @SET INDIRECT = 1
 @SET POINTWISE = 1
 @SET NEWATOMIC = 1
+@SET DIRECTMALLOC = 1
 @INCLUDE list.xci
 
 /* The methods are here: */

@@ -449,7 +449,7 @@ static void add_finalizer(void *v, void (*f)(void*,void*), void *data,
   fns_ptr = MALLOC_ONE(Finalizations*);
 
   if (!ext) {
-    fn = MALLOC_ONE(Finalization);
+    fn = MALLOC_ONE_RT(Finalization);
 #ifdef MZTAG_REQUIRED
     fn->type = scheme_rt_finalization;
 #endif
@@ -458,7 +458,7 @@ static void add_finalizer(void *v, void (*f)(void*,void*), void *data,
   } else
     fn = NULL;
 
-  prealloced = MALLOC_ONE(Finalizations); /* may not need this... */
+  prealloced = MALLOC_ONE_RT(Finalizations); /* may not need this... */
 #ifdef MZTAG_REQUIRED
   prealloced->type = scheme_rt_finalizations;
 #endif

@@ -1107,7 +1107,7 @@ wxSnip *ImageSnipClass::Read(wxMediaStreamIn *f)
 
   loadfile = filename;
 
-  if (!*filename && canInline && type) {
+  if (filename && !*filename && canInline && type) {
     /* read inlined image */
 
     long len;

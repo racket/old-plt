@@ -159,13 +159,12 @@ inline void *gc::operator new(size_t size, GCPlacement gcp)
 {
   if (gcp == AtomicGC) 
     return GC_malloc_atomic(size);
-  else {
+
 #if defined(USE_SENORA_GC) || defined(MZ_PRECISE_GC)
-    return GC_cpp_malloc(size);
+  return GC_cpp_malloc(size);
 #else
-    return GC_malloc(size);
+  return GC_malloc(size);
 #endif
-  }
 }
 
 inline void gc::operator delete(void * /*obj*/) 

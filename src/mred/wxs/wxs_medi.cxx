@@ -3583,7 +3583,7 @@ static Scheme_Object *os_wxMediaBufferGetFlattenedText(Scheme_Object *obj, int n
 
   
   
-  return scheme_make_sized_string(r, _x0, 0);
+  return WITH_VAR_STACK(scheme_make_sized_string(r, _x0, 0));
 }
 
 static Scheme_Object *os_wxMediaBufferPutFile(Scheme_Object *obj, int n,  Scheme_Object *p[])

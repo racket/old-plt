@@ -4421,7 +4421,7 @@ static Scheme_Object *os_wxMediaPasteboardGetFlattenedText(Scheme_Object *obj, i
 
   
   
-  return scheme_make_sized_string(r, _x0, 0);
+  return WITH_VAR_STACK(scheme_make_sized_string(r, _x0, 0));
 }
 
 static Scheme_Object *os_wxMediaPasteboardPutFile(Scheme_Object *obj, int n,  Scheme_Object *p[])

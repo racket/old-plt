@@ -255,6 +255,7 @@ extern wxPoint *objscheme_unbundle_wxPoint(Scheme_Object *, const char *, int);
 #define l_COPY l_COPYDEST.x=l_COPYSRC.x; l_COPYDEST.y=l_COPYSRC.y;
 #define l_OKTEST 
 #define l_INTTYPE int
+#define l_DIRECTMALLOC 1
 
 #define l_TYPE wxPoint
 #define l_LIST_ITEM_BUNDLE objscheme_bundle_wxPoint
@@ -299,7 +300,11 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
   if (!(len + l_EXTRA))
     return NULL;
 
+#if l_DIRECTMALLOC
+  f = (l_TYPE l_POINT *)WITH_VAR_STACK(GC_malloc_atomic(sizeof(l_TYPE l_POINT) * (len + l_EXTRA)));
+#else
   f = WITH_VAR_STACK(new l_NEWATOMIC l_TYPE l_POINT[len + l_EXTRA]);
+#endif
 
   while (!SCHEME_NULLP(l)) {
     if (!SCHEME_LISTP(l)) {

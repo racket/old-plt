@@ -1,4 +1,8 @@
 
+/***************************************************************/
+/* This command-line parser is used by both MzScheme and MrEd. */
+/***************************************************************/
+
 #define GDESC "Identifiers and symbols are initially case-sensitive.\n"
 #define SDESC "Set! works on undefined identifiers.\n"
 #define EDESC "Call/cc is replaced with call/ec.\n"

@@ -21,14 +21,14 @@
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\..\..\include"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB"
-				MinimalRebuild="TRUE"
 				ExceptionHandling="TRUE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
 				UsePrecompiledHeader="0"
 				WarningLevel="4"
 				Detect64BitPortabilityProblems="TRUE"
-				DebugInformationFormat="3"/>
+				DebugInformationFormat="3"
+				CompileAs="2"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
 			<Tool
@@ -58,14 +58,14 @@
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\..\..\include"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB"
-				MinimalRebuild="TRUE"
 				ExceptionHandling="TRUE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
 				UsePrecompiledHeader="0"
 				WarningLevel="4"
 				Detect64BitPortabilityProblems="TRUE"
-				DebugInformationFormat="3"/>
+				DebugInformationFormat="3"
+				CompileAs="2"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
 			<Tool
@@ -89,26 +89,29 @@
 			OutputDirectory="Release"
 			IntermediateDirectory="Release"
 			ConfigurationType="4"
-			CharacterSet="2">
+			CharacterSet="2"
+			WholeProgramOptimization="TRUE">
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="2"
-				InlineFunctionExpansion="0"
+				GlobalOptimizations="TRUE"
+				InlineFunctionExpansion="2"
+				FavorSizeOrSpeed="1"
 				OmitFramePointers="FALSE"
 				AdditionalIncludeDirectories="..\..\..\..\include"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB"
-				StringPooling="FALSE"
+				StringPooling="TRUE"
 				RuntimeLibrary="0"
 				BufferSecurityCheck="FALSE"
 				EnableFunctionLevelLinking="FALSE"
 				UsePrecompiledHeader="0"
 				ObjectFile=""
 				ProgramDataBaseFileName=""
-				WarningLevel="3"
-				SuppressStartupBanner="FALSE"
-				Detect64BitPortabilityProblems="FALSE"
+				WarningLevel="4"
+				SuppressStartupBanner="TRUE"
+				Detect64BitPortabilityProblems="TRUE"
 				DebugInformationFormat="0"
-				CompileAs="0"/>
+				CompileAs="2"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
 			<Tool

@@ -47,7 +47,7 @@
 
 (define *use-closing-p-tag?* #t)
 
-(define *tex2page-version* "4p4k")
+(define *tex2page-version* "4p4k3")
 
 (define *tex2page-website*
   "http://www.ccs.neu.edu/~dorai/tex2page/tex2page-doc.html")
@@ -368,7 +368,7 @@
 
 (define number->roman
   (lambda (n upcase?)
-    (unless (and (integer? n) (> n 0))
+    (unless (and (integer? n) (>= n 0))
       (terror 'number->roman "Missing number"))
     (let ((roman-digits
             '((1000 #\m 100)
@@ -381,7 +381,7 @@
           (approp-case (lambda (c) (if upcase? (char-upcase c) c))))
       (let loop ((n n) (dd roman-digits) (s '()))
         (if (null? dd)
-          (list->string (reverse! s))
+          (if (null? s) "0" (list->string (reverse! s)))
           (let* ((d (car dd))
                  (val (car d))
                  (char (approp-case (cadr d)))
@@ -2242,7 +2242,9 @@
         (set! ext-label-table (make-table 'equ string=?))
         (hash-table-put! *external-label-tables* f ext-label-table))
       (when (file-exists? ext-label-file)
-        (fluid-let ((*label-table* ext-label-table)) (load ext-label-file))))))
+        (fluid-let
+          ((*label-table* ext-label-table))
+          (load-tex2page-data-file ext-label-file))))))
 
 (define !external-labels (lambda (f) #f))
 
@@ -2563,7 +2565,7 @@
       (write-bib-aux bibdata)
       (write-bib-aux "}")
       (write-bib-aux #\newline)
-      (write-aux `(!using-external-program 'bibtex))
+      (write-aux `(!using-external-program "bibtex"))
       (cond
        ((file-exists? bbl-file)
         (set! *bibitem-num* 0)
@@ -2668,7 +2670,7 @@
     (write-aux `(!index-page ,*html-page-count*))
     (let ((ind-file
             (string-append *aux-dir/* *jobname* *index-file-suffix* ".ind")))
-      (write-aux `(!using-external-program 'makeindex))
+      (write-aux `(!using-external-program "makeindex"))
       (cond
        ((file-exists? ind-file)
         (bgroup)
@@ -5958,7 +5960,7 @@
 (define call-bibtex-makeindex-if-necessary
   (lambda ()
     (when (and
-           (memv 'bibtex *external-programs*)
+           (member "bibtex" *external-programs*)
            (file-exists?
              (string-append *aux-dir/* *jobname* *bib-aux-file-suffix* ".aux"))
            (not
@@ -5980,7 +5982,7 @@
         (write-log " ... failed; try manually"))
       (write-log #\newline))
     (when (and
-           (memv 'makeindex *external-programs*)
+           (member "makeindex" *external-programs*)
            (file-exists?
              (string-append *aux-dir/* *jobname* *index-file-suffix* ".idx"))
            (not
@@ -6066,14 +6068,16 @@
     (let ((label-file
             (string-append *aux-dir/* *jobname* *label-file-suffix* ".scm")))
       (when (file-exists? label-file)
-        (load label-file)
+        (load-tex2page-data-file label-file)
         (delete-file label-file)))
     (unless (string=? *jobname* "texput")
       (let ((jobname-aux (string-append "texput" *aux-file-suffix* ".scm")))
         (when (file-exists? jobname-aux) (delete-file jobname-aux))))
     (let ((aux-file
             (string-append *aux-dir/* *jobname* *aux-file-suffix* ".scm")))
-      (when (file-exists? aux-file) (load aux-file) (delete-file aux-file))
+      (when (file-exists? aux-file)
+        (load-tex2page-data-file aux-file)
+        (delete-file aux-file))
       (set! *aux-port* (open-output-file aux-file))
       (when (eqv? *tex-format* 'latex)
         (!definitely-latex)
@@ -6200,6 +6204,36 @@
 
 (define !infructuous-calls-to-tex2page
   (lambda (n) (set! *infructuous-calls-to-tex2page* n)))
+
+(define load-tex2page-data-file
+  (lambda (f)
+    (if (file-exists? f)
+      (call-with-input-file
+        f
+        (lambda (i)
+          (let loop ()
+            (let ((e (read i)))
+              (unless (eof-object? e)
+                (apply
+                 (case (car e)
+                   ((!default-title) !default-title)
+                   ((!definitely-latex) !definitely-latex)
+                   ((!external-labels) !external-labels)
+                   ((!html-head) !html-head)
+                   ((!index-page) !index-page)
+                   ((!infructuous-calls-to-tex2page)
+                    !infructuous-calls-to-tex2page)
+                   ((!label) !label)
+                   ((!last-modification-time) !last-modification-time)
+                   ((!last-page-number) !last-page-number)
+                   ((!preferred-title) !preferred-title)
+                   ((!stylesheet) !stylesheet)
+                   ((!toc-entry) !toc-entry)
+                   ((!toc-page) !toc-page)
+                   ((!using-chapters) !using-chapters)
+                   ((!using-external-program) !using-external-program))
+                 (cdr e))
+                (loop)))))))))
 
 (define tex2page-string
   (lambda (s) (call-with-input-string/buffered s (lambda () (generate-html)))))
@@ -6653,13 +6687,10 @@
 (tex-def-prim
   "\\chapter"
   (lambda ()
-    (unless *using-chapters?*
-      (!using-chapters)
-      (write-aux `(!using-chapters))
-      (when (and
-             (eqv? *tex-format* 'latex)
-             (< (get-gcount "\\secnumdepth") -1))
-        (set-gcount! "\\secnumdepth" 2)))
+    (!using-chapters)
+    (write-aux `(!using-chapters))
+    (when (and (eqv? *tex-format* 'latex) (< (get-gcount "\\secnumdepth") -1))
+      (set-gcount! "\\secnumdepth" 2))
     (do-heading 0)))
 
 (tex-def-prim "\\chaptername" (lambda () (emit "Chapter ")))

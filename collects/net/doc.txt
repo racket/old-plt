@@ -991,6 +991,10 @@ PROCEDURES -----------------------------------------------------------
   Copies the specified messages from the currently selected mailbox to
   the specified mailbox.
 
+> (imap-append imap mailbox-string message-string) -> void
+
+  Adds a new message (containing message-string) to the given mailbox
+
 > (imap-mailbox-exists? imap mailbox-string) -> bool
 
   Returns #t if the specified mailbox exists, #f otherwise.

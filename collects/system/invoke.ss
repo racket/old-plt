@@ -38,11 +38,14 @@
 						 "sig.ss")))
 			port)
 	  (when mred:app-sig-location
-	    (pretty-print `(reference (begin-elaboration-time
-				       (build-path plt:home-directory
-						   ,(find-relative-path (normalize-path plt:home-directory)
-									(normalize-path mred:app-sig-location))))
-				      port)))
+	    (pretty-print `(reference
+			    (begin-elaboration-time
+			     (build-path
+			      plt:home-directory
+			      ,(find-relative-path
+				(normalize-path plt:home-directory)
+				(normalize-path mred:app-sig-location)))))
+			  port))
 	  (pretty-print
 	   `(invoke-unit/sig
 	     (compound-unit/sig (import)

@@ -1,2 +1,3 @@
 (define-signature drscheme:syncheck:prims^
-  (beginning intermediate advanced))
+  (initialize-tables
+   beginning intermediate advanced))

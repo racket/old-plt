@@ -79,11 +79,8 @@
        rest
        cdr
        second
-       cadr
        third
-       caddr
        fourth
-       cadddr
        fifth
        sixth
        seventh
@@ -236,11 +233,8 @@
        rest
        cdr
        second
-       cadr
        third
-       caddr
        fourth
-       cadddr
        fifth
        sixth
        seventh
@@ -393,11 +387,8 @@
        rest
        cdr
        second
-       cadr
        third
-       caddr
        fourth
-       cadddr
        fifth
        sixth
        seventh
@@ -477,18 +468,8 @@
        force
        promise?
        make-promise
-       map
-       for-each
-       filter
-       foldr
-       foldl
-       build-list
-       quicksort
-       andmap
-       ormap
        vector
        make-vector
-       build-vector
        vector-ref
        vector-set!
        vector?

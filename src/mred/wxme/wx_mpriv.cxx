@@ -2456,7 +2456,7 @@ void wxMediaEdit::Refresh(float left, float top, float width, float height,
     font = dc->GetFont();
     col = dc->GetTextForeground();
     fg.CopyFrom(col);
-    col dc->GetTextBackground();
+    col = dc->GetTextBackground();
     bg.CopyFrom(col);
 
 #ifndef NO_GET_CLIPPING_REGION

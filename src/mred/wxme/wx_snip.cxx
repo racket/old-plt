@@ -726,12 +726,10 @@ void wxTextSnip::Split(long position, wxSnip **first, wxSnip **second)
   count -= position;
 
   if (count && ((allocated / count) > MAX_WASTE)) {
-    char *old = buffer;
     allocated = count;
     buffer = STRALLOC(allocated + 1);
     memcpy(buffer, text, count + 1);
     text = buffer;
-    STRFREE(old);
   }
 
   *first = snip;
@@ -774,13 +772,10 @@ void wxTextSnip::Insert(char *str, long len, long pos)
     pos = 0;
 
   if (allocated < count + len) {
-    char *oldbuffer = buffer;
-
     allocated = 2 * (count + len);
     buffer = STRALLOC(allocated + 1);
     
     memcpy(buffer, text, count);
-    STRFREE(oldbuffer);
 
     text = buffer;
   } else if (PTRNE(text, buffer)
@@ -1074,7 +1069,7 @@ wxSnip *ImageSnipClass::Read(wxMediaStreamIn *f)
   long type;
   Bool relative, inlined = FALSE;
   float w, h, dx, dy;
-  wxSnipClassList *scl;
+  wxStandardSnipClassList *scl;
   Bool canInline;
 
   scl = wxGetTheSnipClassList();
@@ -1289,13 +1284,13 @@ void wxImageSnip::Write(wxMediaStreamOut *f)
     char *fname;
     long end;
 
-    lenpos = f->Tell()
+    lenpos = f->Tell();
     f->PutFixed(0);
 
     fname = wxGetTempFileName("img", NULL);
 
     bm->SaveFile(fname, writeBm ? wxBITMAP_TYPE_XBM : wxBITMAP_TYPE_XPM, NULL);
-
+    
     fi = fopen(fname, "rb");
     if (fi) {
       while (1) {
@@ -1554,7 +1549,7 @@ wxSnip *MediaSnipClass::Read(wxMediaStreamIn *f)
   Bool border, tightFit = 0;
   int lm, tm, rm, bm, li, ti, ri, bi, type;
   float w, W, h, H;
-  wxSnipClassList *scl;
+  wxStandardSnipClassList *scl;
 
   f->Get(&type);
   f->Get(&border);
@@ -1978,7 +1973,7 @@ wxBufferDataClass *wxBufferDataClassList::FindByMapPosition(short n)
 
   if ((node = unknowns->Find(n))) {
     char buffer2[256], *s;
-    s = node->Data();
+    s = (char *)node->Data();
     sprintf(buffer2, "Unknown snip data class or version: \"%.100s\".", (char *)s);
     wxmeError(buffer2);
   }

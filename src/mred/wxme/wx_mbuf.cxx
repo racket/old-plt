@@ -653,7 +653,7 @@ void *wxMediaFileIOReady = NULL;
 
 Bool wxReadMediaGlobalHeader(wxMediaStreamIn *f)
 {
-  wxSnipClassList *scl;
+  wxStandardSnipClassList *scl;
   wxBufferDataClassList *bdl;
 
   if (wxMediaFileIOReady) {
@@ -676,7 +676,7 @@ Bool wxReadMediaGlobalHeader(wxMediaStreamIn *f)
 
 Bool wxReadMediaGlobalFooter(wxMediaStreamIn *f)
 {
-  wxSnipClassList *scl;
+  wxStandardSnipClassList *scl;
 
   if (wxMediaFileIOReady != (void *)f) {
     wxmeError("File reading not in progress for this stream.");
@@ -694,7 +694,7 @@ Bool wxReadMediaGlobalFooter(wxMediaStreamIn *f)
 
 Bool wxWriteMediaGlobalHeader(wxMediaStreamOut *f)
 {
-  wxSnipClassList *scl;
+  wxStandardSnipClassList *scl;
   wxBufferDataClassList *bdl;
 
   if (wxMediaFileIOReady) {
@@ -712,12 +712,12 @@ Bool wxWriteMediaGlobalHeader(wxMediaStreamOut *f)
   wxmbSetupStyleReadsWrites();
 
   bdl = &wxTheBufferDataClassList;
-  return bdl->.Write(f);
+  return bdl->Write(f);
 }
 
 Bool wxWriteMediaGlobalFooter(wxMediaStreamOut *f)
 {
-  wxSnipClassList *scl;
+  wxStandardSnipClassList *scl;
 
   if (wxMediaFileIOReady != (void *)f) {
     wxmeError("File writing not in progress for this stream.");
@@ -901,9 +901,9 @@ static wxBufferData *ReadBufferData(wxMediaStreamIn *f)
   do {
     f->Get(&extraDataIndex);
     if (extraDataIndex) {
-      wxSnipClassList *scl;
-      scl = &wxTheSnipClassList;
-      dclass = scl->FindByMapPosition(extraDataIndex);
+      wxBufferDataClassList *bdl;
+      bdl = &wxTheBufferDataClassList;
+      dclass = bdl->FindByMapPosition(extraDataIndex);
       
       if (!dclass || !dclass->required)
 	f->Get(&datalen);
@@ -975,7 +975,7 @@ Bool wxMediaBuffer::ReadSnipsFromFile(wxMediaStreamIn *f, Bool overwritestylenam
     if (!f->Ok())
       return FALSE;
     if (len) {
-      wxSnipClassList *scl;
+      wxStandardSnipClassList *scl;
       scl = &wxTheSnipClassList;
       sclass = scl->FindByMapPosition(n);
       if (sclass) {
@@ -1010,7 +1010,7 @@ Bool wxMediaBuffer::ReadSnipsFromFile(wxMediaStreamIn *f, Bool overwritestylenam
   for (i = 0; i < numSnips; i++) {
     f->Get(&n);
     if (n >= 0) {
-      wxSnipClassList *scl;
+      wxStandardSnipClassList *scl;
       scl = &wxTheSnipClassList;
       sclass = scl->FindByMapPosition(n);
     } else

@@ -1095,7 +1095,7 @@ Bool wxMediaPasteboard::Resize(wxSnip *snip, float w, float h)
     if (!dragging) {
       if (!noundomode) {
 	wxResizeSnipRecord *rs;
-	rs = new wxResizeSnipRecord(snip, oldw, oldh, sequenceStreak)
+	rs = new wxResizeSnipRecord(snip, oldw, oldh, sequenceStreak);
 	AddUndo(rs);
       }
       if (sequence)

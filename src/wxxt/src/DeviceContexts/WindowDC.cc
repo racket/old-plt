@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: WindowDC.cc,v 1.30 1999/11/18 16:35:06 mflatt Exp $
+ * $Id: WindowDC.cc,v 1.31 1999/11/18 23:25:14 mflatt Exp $
  *
  * Purpose: device context to draw drawables
  *          (windows and pixmaps, even if pixmaps are covered by wxMemoryDC)
@@ -1449,7 +1449,7 @@ void wxWindowDC::BeginSetPixel()
   }
 
   {
-    XImage img;
+    XImage *img;
     img = XGetImage(DPY, DRAWABLE, 0, 0, w, h, AllPlanes, ZPixmap);
     X->get_pixel_image_cache = img;
   }

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Window.cc,v 1.34 1999/11/18 16:35:08 mflatt Exp $
+ * $Id: Window.cc,v 1.35 1999/11/18 23:25:14 mflatt Exp $
  *
  * Purpose: base class for all windows
  *
@@ -499,8 +499,8 @@ wxCursor *wxWindow::SetCursor(wxCursor *new_cursor)
     cursor = new_cursor;
     if (!user_edit_mode) { /* really indicates busy_cursor */
       Cursor c;
-      c = new_cursor ? GETCURSOR(new_cursor) : None;
-      XtVaSetValues(X->handle, XtNcursor, c NULL);
+      c = (new_cursor ? GETCURSOR(new_cursor) : None);
+      XtVaSetValues(X->handle, XtNcursor, c, NULL);
       if (__type == wxTYPE_LIST_BOX) {
 	/* Yuck. Set cursor for total client area of listbox */
 	XtVaSetValues(XtParent(X->handle), XtNcursor, c, NULL);
@@ -1122,7 +1122,7 @@ void wxWindow::RegisterAll(Widget ww)
 void wxWindow::AddEventHandlers(void)
 {
   wxWindow * win;
-  long mask, extra_mask
+  long mask, extra_mask;
 
   if (!X->frame || !X->handle) // forbid, if no widget associated
     return;
@@ -1168,7 +1168,7 @@ void wxWindow::AddEventHandlers(void)
     win = this;
 
     // for OnPaint (non-xfwfCommonWidget-subclasses)
-    extra_mask = ((win->X->handle, xfwfCommonWidgetClass)
+    extra_mask = (XtIsSubclass(win->X->handle, xfwfCommonWidgetClass)
 		  ? NoEventMask 
 		  : ExposureMask);
 

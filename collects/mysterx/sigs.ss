@@ -112,9 +112,11 @@
    document-objects
    element-insert-html
    element-append-html
+   element-replace-html
+   element-get-html
+   element-get-text
    element-insert-text
    element-append-text
-   element-replace-html
    element-focus	
    element-selection
    element-set-selection!

@@ -103,6 +103,13 @@
 			(format "~a: Expected value in '~a, got ~a" 
 				name vals sym)))
 	       (f elt (symbol->string sym)))]
+	    [html-insertion-maker
+	     (lambda (f)
+	       (lambda (s)
+		 (dynamic-wind
+		     html-wait
+		     (lambda () (f elt s))
+		     html-post)))]
 	    [insert-object-maker 
 	     (lambda (name->html)
 	       (opt-lambda 
@@ -139,30 +146,20 @@
 		       obj)))
 		 html-post)))])
 	   (public
-	    [insert-html
-	     (lambda (s)
-	       (dynamic-wind
-		html-wait
-		(lambda () (mxprims:element-insert-html elt s))
-		html-post))]
+	    [insert-html 
+	     (html-insertion-maker mxprims:element-insert-html)]
 	    [append-html
-	     (lambda (s)
-	       (dynamic-wind
-		html-wait
-		(lambda () (mxprims:element-append-html elt s))
-		html-post))]
+	     (html-insertion-maker mxprims:element-append-html)]
 	    [replace-html
-	     (lambda (s)
-	       (dynamic-wind
-		html-wait
-		(lambda () (mxprims:element-replace-html elt s))
-		html-post))]
+	     (html-insertion-maker mxprims:element-replace-html)]
+	    [get-html
+	     (lambda () (mxprims:element-get-html elt))]
+	    [get-text
+	     (lambda () (mxprims:element-get-text elt))]
 	    [insert-text 
-	     (lambda (s)
-	       (mxprims:element-insert-text elt s))]
+	     (html-insertion-maker mxprims:element-insert-text)]
 	    [append-text
-	     (lambda (s)
-	       (mxprims:element-append-text elt s))]
+	     (html-insertion-maker mxprims:element-append-text)]
 	    [insert-object-from-coclass 
 	     (insert-object-maker coclass->html)]
 	    [append-object-from-coclass 
@@ -1667,7 +1664,14 @@
 		    doc 
 		    (name->html object width height size))
 		   (car (mzlib:last-pair (mxprims:document-objects doc))))
-		 html-post)))])
+		 html-post)))]
+	    [html-insertion-maker
+	     (lambda (f)
+	       (lambda (s)
+		 (dynamic-wind
+		     html-wait
+		     (lambda () (f doc s))
+		     html-post)))])
 	   (public
 	    [find-element
 	     (lambda (tag id . n)
@@ -1690,23 +1694,11 @@
 	     (lambda () 
 	       (mxprims:document-objects doc))]
 	    [insert-html 
-	     (lambda (html-string)
-	       (dynamic-wind
-		html-wait
-		(lambda () (mxprims:document-insert-html doc html-string))
-		html-post))]
+	     (html-insertion-maker mxprims:document-insert-html)]
 	    [append-html 
-	     (lambda (html-string)
-	       (dynamic-wind
-		html-wait
-		(lambda () (mxprims:document-append-html doc html-string))
-		html-post))]
+	     (html-insertion-maker mxprims:document-append-html)]
 	    [replace-html 
-	     (lambda (html-string)
-	       (dynamic-wind
-		html-wait
-		(lambda () (mxprims:document-replace-html doc html-string))
-		html-post))]
+	     (html-insertion-maker mxprims:document-replace-html)]
 	    [insert-object-from-coclass 
 	     (insert-object-maker coclass->html)]
 	    [append-object-from-coclass

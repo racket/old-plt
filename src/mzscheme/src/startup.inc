@@ -2582,7 +2582,7 @@
 "(define(port? x)(or(input-port? x)(output-port? x)))"
 "(define(not-break-exn? x)(not(exn:break? x)))"
 "(define-values(struct:guard make-guard guard? guard-ref guard-set!)"
-"(make-struct-type 'waitable #f 1 0 #f(list(cons prop:waitable 0))(make-inspector) #f '(0)))"
+"(make-struct-type 'waitable #f 1 0 #f(list(cons prop:waitable 0))(current-inspector) #f '(0)))"
 "(define(make-guard-waitable proc)"
 "(unless(and(procedure? proc)"
 "(procedure-arity-includes? proc 0))"

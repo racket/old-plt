@@ -2364,6 +2364,7 @@ static void init_schedule_info(Scheme_Schedule_Info *sinfo, int false_pos_ok)
   sinfo->potentially_false_positive = 0;
   sinfo->current_waiting = NULL;
   sinfo->spin = 0;
+  sinfo->is_poll = 0;
 }
 
 int scheme_can_break(Scheme_Thread *p, Scheme_Config *config)
@@ -3504,6 +3505,7 @@ static int waiting_ready(Scheme_Object *s, Scheme_Schedule_Info *sinfo)
   Scheme_Schedule_Info r_sinfo;
   Waiting *waiting = (Waiting *)s;
   Waitable_Set *waitable_set;
+  int is_poll;
 
   if (waiting->result)
     return 1;
@@ -3514,6 +3516,8 @@ static int waiting_ready(Scheme_Object *s, Scheme_Schedule_Info *sinfo)
      that case. */
 
   waitable_set = waiting->set;
+
+  is_poll = (waiting->timeout == 0.0);
 
   /* Anything ready? */
   for (i = 0; i < waitable_set->argc; i++) {
@@ -3533,6 +3537,7 @@ static int waiting_ready(Scheme_Object *s, Scheme_Schedule_Info *sinfo)
 
       r_sinfo.current_waiting = (Scheme_Object *)waiting;
       r_sinfo.w_i = i;
+      r_sinfo.is_poll = is_poll;
 
       yep = ready(o, &r_sinfo);
 

@@ -188,13 +188,12 @@ scheme_init_type (Scheme_Env *env)
   set_name(scheme_waitable_set_type, "<waitable-set>");
   set_name(scheme_wrapped_waitable_type, "<waitable>");
   set_name(scheme_nack_waitable_type, "<waitable>");
+  set_name(scheme_poll_waitable_type, "<waitable>");
   set_name(scheme_semaphore_repost_type, "<semaphore-peek>");
 
   set_name(scheme_thread_resume_type, "<thread-resume-waitable>");
   set_name(scheme_thread_suspend_type, "<thread-suspend-waitable>");
   set_name(scheme_thread_dead_type, "<thread-dead-waitable>");
-
-  set_name(scheme_reserved_4_type, "<reserved4>");
 
   set_name(_scheme_values_types_, "<resurrected>");
   set_name(_scheme_compiled_values_types_, "<internal>");

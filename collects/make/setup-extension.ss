@@ -86,9 +86,14 @@
 			       (build-path mz-inc-dir name))
 			     '("scheme.h" "schvers.h" "schemef.h" "sconfig.h" "stypes.h")))
 	
-	(define dir (build-path "compiled" "native" (system-library-subpath)))
-	(define file.so (build-path dir (append-extension-suffix (extract-base-filename/c file.c 'pre-install))))
-	(define file.o (build-path dir (append-object-suffix  (extract-base-filename/c file.c 'pre-install))))
+	(define dir (let ([std (build-path "compiled" "native" (system-library-subpath))])
+		      (case (link-variant)
+			[(3m) (build-path std "3m")]
+			[else std])))
+	(define base-file (let-values ([(base name dir?) (split-path (extract-base-filename/c file.c 'pre-install))])
+			    name))
+	(define file.so (build-path dir (append-extension-suffix base-file)))
+	(define file.o (build-path dir (append-object-suffix base-file)))
 
 	(with-new-flags 
 	 current-extension-compiler-flags
@@ -146,23 +151,20 @@
 	       (with-handlers ([(lambda (x) #t) void])
 		 (delete-file x)))
 
+	     (make-directory* dir)
+
 	     (last-chance-k
 	      (lambda ()
 		(make/proc
 		 (list (list file.so 
-			     (list file.o dir)
+			     (list file.o)
 			     (lambda ()
 			       (link-extension #f (list file.o) file.so)))
 		       
 		       (list file.o 
-			     (append (list file.c dir)
+			     (append (list file.c)
 				     headers
 				     extra-depends)
 			     (lambda ()
-			       (compile-extension #f file.c file.o ())))
-		       
-		       (list dir 
-			     null
-			     (lambda ()
-			       (make-directory* dir))))
+			       (compile-extension #f file.c file.o ()))))
 		 #()))))))))))))

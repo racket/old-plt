@@ -179,8 +179,8 @@ executables.
    possibility is '3m. For Mac OS X, the '3m variant is available, and
    the 'script and 'script-3m variants are available for MrEd.
 
-> (available-mred-variants kind) - Returns a list of symbols
+> (available-mred-variants) - Returns a list of symbols
   corresponding to available variants of MrEd.
 
-> (available-mzscheme-variants kind) - Returns a list of symbols
+> (available-mzscheme-variants) - Returns a list of symbols
   corresponding to available variants of MrEd.

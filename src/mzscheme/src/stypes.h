@@ -122,8 +122,7 @@ enum {
   scheme_thread_resume_type,
   scheme_thread_suspend_type,
   scheme_thread_dead_type,
-
-  scheme_reserved_4_type,
+  scheme_poll_waitable_type,
 
 #ifdef MZTAG_REQUIRED
   _scheme_last_normal_type_,

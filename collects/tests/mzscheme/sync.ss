@@ -336,6 +336,32 @@
   (test s object-wait-multiple 0 (make-guard-waitable (lambda () s))))
 
 ;; ----------------------------------------
+;; Poll waitables
+
+(arity-test make-poll-guard-waitable 1 1)
+
+(err/rt-test (make-poll-guard-waitable 10))
+(err/rt-test (make-poll-guard-waitable (lambda () 10)))
+
+(let ([s (make-semaphore-peek (make-semaphore 1))])
+  (test s object-wait-multiple 0 (make-poll-guard-waitable (lambda (poll?)
+							     (test #t values poll?)
+							     s)))
+  (test s object-wait-multiple #f (make-poll-guard-waitable (lambda (poll?)
+							      (test #f values poll?)
+							      s)))
+  (test s object-wait-multiple 0 (waitables->waitable-set
+				  (make-poll-guard-waitable (lambda (poll?)
+							      (test #t values poll?)
+							      s))
+				  (make-semaphore)))
+  (test s object-wait-multiple #f (waitables->waitable-set
+				   (make-poll-guard-waitable (lambda (poll?)
+							       (test #f values poll?)
+							       s))
+				   (make-semaphore))))
+
+;; ----------------------------------------
 ;; Structures as waitables
 
 ;; Bad property value:
@@ -595,7 +621,8 @@
   (check-threads-gcable 'chput (lambda () (object-wait-multiple #f (c (make-channel-put-waitable (make-channel) 10)))))
   (check-threads-gcable 'wrapped (lambda () (object-wait-multiple #f (c (make-wrapped-waitable (make-semaphore) void)))))
   (check-threads-gcable 'guard (lambda () (object-wait-multiple #f (c (make-guard-waitable (lambda () (make-semaphore)))))))
-  (check-threads-gcable 'nack (lambda () (object-wait-multiple #f (c (make-nack-guard-waitable (lambda (nack) (make-semaphore))))))))
+  (check-threads-gcable 'nack (lambda () (object-wait-multiple #f (c (make-nack-guard-waitable (lambda (nack) (make-semaphore)))))))
+  (check-threads-gcable 'poll (lambda () (object-wait-multiple #f (c (make-poll-guard-waitable (lambda (poll?) (make-semaphore))))))))
 (check/combine values)
 (check/combine (lambda (x) (waitables->waitable-set x (make-semaphore))))
 (check/combine (lambda (x) (waitables->waitable-set (make-semaphore) x)))

@@ -318,7 +318,8 @@ typedef struct {
   int potentially_false_positive; /* => returning 1 to swap thread in, but truth may be 0 */
   Scheme_Object *current_waiting;
   int w_i;
-  int spin;
+  short spin;
+  short is_poll;
 } Scheme_Schedule_Info;
 
 void scheme_set_wait_target(Scheme_Schedule_Info *sinfo, Scheme_Object *target, 

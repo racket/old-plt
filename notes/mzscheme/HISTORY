@@ -1,4 +1,21 @@
 
+Version 203.6
+Added synchronous channels
+Added thread-suspend and thread-resume
+Added thread/suspend-to-kill
+Added thread-dead?
+Added thread-suspend-waitable, thread-resume-waitable, 
+ and thread-dead-waitable
+Renamed make-nack-waitable to make-nack-guard-waitable
+ to claify its relation to make-guard-waitable
+Added make-poll-guard-waitable
+Changed unreachable threads to be garbage-collected when
+ blocked on any combination of otherwise unreachable
+ waitables by object-wait-multiple, semaphore-wait, 
+ channel-put, channge-get, or thread-wait; in addition,
+ unreachable suspended threads are garbage-collected
+Added "async-channel.ss" to MzLib
+
 Version 203.5
 Changed make-custom-input-port to drop the initial
  waitable argument; instead, the read and peek
@@ -20,6 +37,7 @@ Changed proc-spec handling in make-struct-type; an integer
  value must be < init-field-k, and overriding is disallowed
  (for consistency with user-defined properties)
 Added prop:waitable
+Added vector-set-performance-stats!
 
 Version 203.4
 Changed handling of top-level and module top-level definitions

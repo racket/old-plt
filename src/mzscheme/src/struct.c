@@ -70,6 +70,7 @@ static Scheme_Object *make_struct_field_mutator(int argc, Scheme_Object *argv[])
 
 static Scheme_Object *wrap_waitable(int argc, Scheme_Object *argv[]);
 static Scheme_Object *nack_waitable(int argc, Scheme_Object *argv[]);
+static Scheme_Object *poll_waitable(int argc, Scheme_Object *argv[]);
 
 static Scheme_Object *struct_p(int argc, Scheme_Object *argv[]);
 static Scheme_Object *struct_type_p(int argc, Scheme_Object *argv[]);
@@ -97,6 +98,7 @@ static int is_waitable_struct(Scheme_Object *);
 
 static int wrapped_waitable_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo);
 static int nack_waitable_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo);
+static int poll_waitable_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo);
 
 #ifdef MZ_PRECISE_GC
 static void register_traversers(void);
@@ -207,6 +209,9 @@ scheme_init_struct (Scheme_Env *env)
   scheme_add_waitable(scheme_nack_waitable_type,
 		      (Scheme_Ready_Fun)nack_waitable_is_ready,
 		      NULL, NULL, 1);
+  scheme_add_waitable(scheme_poll_waitable_type,
+		      (Scheme_Ready_Fun)poll_waitable_is_ready,
+		      NULL, NULL, 1);
 
   /*** basic interface ****/
 
@@ -243,6 +248,11 @@ scheme_init_struct (Scheme_Env *env)
   scheme_add_global_constant("make-nack-guard-waitable",
 			     scheme_make_prim_w_arity(nack_waitable,
 						      "make-nack-guard-waitable",
+						      1, 1),
+			     env);
+  scheme_add_global_constant("make-poll-guard-waitable",
+			     scheme_make_prim_w_arity(poll_waitable,
+						      "make-poll-guard-waitable",
 						      1, 1),
 			     env);
 
@@ -1293,6 +1303,19 @@ static Scheme_Object *nack_waitable(int argc, Scheme_Object *argv[])
   return (Scheme_Object *)nw;
 }
 
+static Scheme_Object *poll_waitable(int argc, Scheme_Object *argv[])
+{
+  Nack_Waitable *nw;
+
+  scheme_check_proc_arity("make-poll-guard-waitable", 1, 0, argc, argv);
+
+  nw = MALLOC_ONE_TAGGED(Nack_Waitable);
+  nw->type = scheme_poll_waitable_type;
+  nw->maker = argv[0];
+
+  return (Scheme_Object *)nw;
+}
+
 static int wrapped_waitable_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo)
 {
   Wrapped_Waitable *ww = (Wrapped_Waitable *)o;
@@ -1306,6 +1329,11 @@ static int nack_waitable_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo)
   Nack_Waitable *nw = (Nack_Waitable *)o;
   Scheme_Object *sema, *a[1], *result;
 
+  if (sinfo->false_positive_ok) {
+    sinfo->potentially_false_positive = 1;
+    return 1;
+  }
+
   sema = scheme_make_sema(0);
 
   /* Install the semaphore immediately, so that it's posted on
@@ -1314,6 +1342,26 @@ static int nack_waitable_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo)
   scheme_set_wait_target(sinfo, o, NULL, sema, 0, 0);
 
   a[0] = sema;
+  result = scheme_apply(nw->maker, 1, a);
+
+  if (scheme_is_waitable(result)) {
+    scheme_set_wait_target(sinfo, result, NULL, NULL, 0, 1);
+    return 0;
+  } else
+    return 1; /* Non-waitable => ready */
+}
+
+static int poll_waitable_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo)
+{
+  Nack_Waitable *nw = (Nack_Waitable *)o;
+  Scheme_Object *a[1], *result;
+
+  if (sinfo->false_positive_ok) {
+    sinfo->potentially_false_positive = 1;
+    return 1;
+  }
+
+  a[0] = (sinfo->is_poll ? scheme_true : scheme_false);
   result = scheme_apply(nw->maker, 1, a);
 
   if (scheme_is_waitable(result)) {
@@ -2237,6 +2285,7 @@ static void register_traversers(void)
 
   GC_REG_TRAV(scheme_wrapped_waitable_type, mark_wrapped_waitable);
   GC_REG_TRAV(scheme_nack_waitable_type, mark_nack_waitable);
+  GC_REG_TRAV(scheme_poll_waitable_type, mark_nack_waitable);
 
   GC_REG_TRAV(scheme_rt_struct_proc_info, mark_struct_proc_info);
 }

@@ -31,14 +31,7 @@ keypad).
 
 Known bugs/limitations:
  - Syntax highlighting (from Check Syntax) is currently minimal.
- - Display of program results is still slightly messy.
  - No good default indentation.
- - Error messages are still messy.
- - Constraints will often not work (if ever).
- - Type unification errors will not always print the right types (e.g. Expected int list list but found int list)
- - Programs may not behave correctly if you use mzscheme built-in functions (cons, list, etc.) as variable name
- - Doesn't give good parsing errors (especially mismatched parens and
-the like).
  - Patten matching does not check to make sure the pattern is
 exhaustive for the type and that there is no overlap.
  - let rec only works for functions and not other recursive
@@ -50,4 +43,5 @@ ints and floats.
 sequence are not unit.
  - It does not check that the same variable isn't bound multiple times
 in a let or match.
- - Exceptions are not correctly raised.
+
+Please submit any poor error messages as bugs so I can make sure I have nice error messages with appropriate syntax highlighting.

@@ -747,7 +747,7 @@
                            0
                            (send (get-definitions-text) last-position)
                            base-style-str)
-	      (check-syntax (get-interactions-text) (get-definitions-text) error-termination)
+              (check-syntax (get-definitions-text) error-termination)
               (send definitions lock locked?)
               (send definitions end-edit-sequence)))
 
@@ -800,8 +800,9 @@
                                                                       
                                                                       
                                                                       
-
-      (define (check-syntax interactions-text definitions-text error-termination)
+      ;; check-syntax : text (syntax -> void) -> void
+      ;; checks the syntax of `definitions-text'
+      (define (check-syntax definitions-text error-termination)
 	(let ([tl-binders null]
 	      [tl-varrefs null]
 	      [tl-requires null]
@@ -812,7 +813,7 @@
 	      [users-namespace #f]
 	      [users-custodian #f]
 	      [err-termination? #f])
-	  (drscheme:eval:expand-program
+          (drscheme:eval:expand-program
            (drscheme:language:make-text/pos definitions-text
                                             0
                                             (send definitions-text last-position))
@@ -856,15 +857,15 @@
                         (set! tl-bound-in-sources (append new-bound-in-sources tl-bound-in-sources))
                         (set! tl-tops (append new-tops tl-tops)))))
                 (loop)])))
-	  (unless err-termination? 
-	    (annotate-complete users-namespace
-			       tl-binders
-			       tl-varrefs
-			       tl-tops
-			       tl-requires
-			       tl-require-for-syntaxes
-			       tl-referenced-macros
-			       tl-bound-in-sources))))
+          (unless err-termination? 
+            (annotate-complete users-namespace
+                               tl-binders
+                               tl-varrefs
+                               tl-tops
+                               tl-requires
+                               tl-require-for-syntaxes
+                               tl-referenced-macros
+                               tl-bound-in-sources))))
 
       
       ;; type req/tag = (make-req/tag syntax sexp boolean)

@@ -37,8 +37,8 @@ extern void free(void *);
 
 static const int mp_bits_per_limb = BITS_PER_MP_LIMB;
 static const int __gmp_0 = 0;
-static int __gmp_junk;
-static int gmp_errno = 0;
+/* static int __gmp_junk; */
+/* static int gmp_errno = 0; */
 
 #define SCHEME_BIGNUM_USE_FUEL(n) scheme_bignum_use_fuel(n)
 extern void scheme_bignum_use_fuel(long n);
@@ -3596,39 +3596,29 @@ mpn_mul_1 (mp_ptr res_ptr, mp_srcptr s1_ptr, mp_size_t s1_size, mp_limb_t s2_lim
    the product, adjusted for carry-out from the addition. */
 
 mp_limb_t
-mpn_addmul_1 (mp_ptr res_ptr, mp_srcptr s1_ptr, mp_size_t s1_size, mp_limb_t s2_limb)
+mpn_addmul_1 (mp_ptr rp, mp_srcptr up, mp_size_t n, mp_limb_t vl)
 {
-  register mp_limb_t cy_limb;
-  register mp_size_t j;
-  register mp_limb_t prod_high, prod_low;
-  register mp_limb_t x;
-
-  SCHEME_BIGNUM_USE_FUEL(s1_size);
-
-  /* The loop counter and index J goes from -SIZE to -1.  This way
-     the loop becomes faster.  */
-  j = -s1_size;
-
-  /* Offset the base pointers to compensate for the negative indices.  */
-  res_ptr -= j;
-  s1_ptr -= j;
-
-  cy_limb = 0;
+  mp_limb_t ul, cl, hpl, lpl, rl;
+ 
+  SCHEME_BIGNUM_USE_FUEL(n);
+ 
+  cl = 0;
   do
     {
-      umul_ppmm (prod_high, prod_low, s1_ptr[j], s2_limb);
-
-      prod_low += cy_limb;
-      cy_limb = (prod_low < cy_limb) + prod_high;
-
-      x = res_ptr[j];
-      prod_low = x + prod_low;
-      cy_limb += (prod_low < x);
-      res_ptr[j] = prod_low;
+      ul = *up++;
+      umul_ppmm (hpl, lpl, ul, vl);
+                                                                                
+      lpl += cl;
+      cl = (lpl < cl) + hpl;
+                                                                                
+      rl = *rp;
+      lpl = rl + lpl;
+      cl += lpl < rl;
+      *rp++ = lpl;
     }
-  while (++j != 0);
-
-  return cy_limb;
+  while (--n != 0);
+                                                                                
+  return cl;
 }
 
 /* mpn_submul_1 -- multiply the S1_SIZE long limb vector pointed to by S1_PTR

@@ -31,6 +31,7 @@ static Scheme_Object *mult (int argc, Scheme_Object *argv[]);
 static Scheme_Object *div_prim (int argc, Scheme_Object *argv[]);
 static Scheme_Object *quotient (int argc, Scheme_Object *argv[]);
 static Scheme_Object *rem_prim (int argc, Scheme_Object *argv[]);
+static Scheme_Object *quotient_remainder (int argc, Scheme_Object *argv[]);
 
 #define zeroi scheme_exact_zero
 
@@ -80,6 +81,12 @@ void scheme_init_numarith(Scheme_Env *env)
 			     scheme_make_folding_prim(rem_prim,
 						      "remainder", 
 						      2, 2, 1),
+			     env);
+  scheme_add_global_constant("quotient/remainder", 
+			     scheme_make_prim_w_arity2(quotient_remainder,
+						       "quotient/remainder", 
+						       2, 2,
+						       2, 2),
 			     env);
   scheme_add_global_constant("modulo", 
 			     scheme_make_folding_prim(scheme_modulo,
@@ -351,7 +358,7 @@ scheme_abs(int argc, Scheme_Object *argv[])
 }
 
 Scheme_Object *
-scheme_bin_quotient (const Scheme_Object *n1, const Scheme_Object *n2)
+do_bin_quotient(const char *name, const Scheme_Object *n1, const Scheme_Object *n2, Scheme_Object **bn_rem)
 {
   Scheme_Object *q;
 
@@ -359,13 +366,13 @@ scheme_bin_quotient (const Scheme_Object *n1, const Scheme_Object *n2)
     Scheme_Object *a[2];
     a[0] = (Scheme_Object *)n1;
     a[1] = (Scheme_Object *)n2;
-    scheme_wrong_type("quotient", "integer", 0, 2, a);
+    scheme_wrong_type(name, "integer", 0, 2, a);
   }
   if (!scheme_is_integer(n2)) {
     Scheme_Object *a[2];
     a[0] = (Scheme_Object *)n1;
     a[1] = (Scheme_Object *)n2;
-    scheme_wrong_type("quotient", "integer", 1, 2, a);
+    scheme_wrong_type(name, "integer", 1, 2, a);
   }
 
   if (SCHEME_COMPLEX_IZIP(n1)) n1 = IZI_REAL_PART(n1);
@@ -373,14 +380,14 @@ scheme_bin_quotient (const Scheme_Object *n1, const Scheme_Object *n2)
 
   if (SCHEME_INTP(n2) && !SCHEME_INT_VAL(n2))
     scheme_raise_exn(MZEXN_APPLICATION_DIVIDE_BY_ZERO, n2,
-		     "quotient: undefined for 0");
+		     "%s: undefined for 0", name);
   if (
 #ifdef MZ_USE_SINGLE_FLOATS
       (SCHEME_FLTP(n2) && (SCHEME_FLT_VAL(n2) == 0.0f)) ||
 #endif
       (SCHEME_DBLP(n2) && (SCHEME_DBL_VAL(n2) == 0.0)))
     scheme_raise_exn(MZEXN_APPLICATION_DIVIDE_BY_ZERO, n2,
-		     "quotient: undefined for 0.0");
+		     "%s: undefined for 0.0", name);
 
   if (SCHEME_INTP(n1) && SCHEME_INTP(n2)) {
     return (scheme_make_integer (SCHEME_INT_VAL(n1) / SCHEME_INT_VAL(n2)));
@@ -432,28 +439,33 @@ scheme_bin_quotient (const Scheme_Object *n1, const Scheme_Object *n2)
   /* I'm pretty sure this isn't needed, but I'm keeping the code just
      in case... 03/19/2000 */
   if (SCHEME_RATIONALP(n1))
-    WRONG_TYPE("quotient", "integer", n1);
+    WRONG_TYPE(name, "integer", n1);
   if (SCHEME_RATIONALP(n2))
-    WRONG_TYPE("quotient", "integer", n2);
+    WRONG_TYPE(name, "integer", n2);
 #endif
   
   n1 = scheme_to_bignum(n1);
   n2 = scheme_to_bignum(n2);
 
-  scheme_bignum_divide(n1, n2, &q, NULL, 1);
+  scheme_bignum_divide(n1, n2, &q, bn_rem, 1);
   return q;
+}
+
+Scheme_Object *
+scheme_bin_quotient (const Scheme_Object *n1, const Scheme_Object *n2)
+{
+  return do_bin_quotient("quotient", n1, n2, NULL);
 }
 
 static Scheme_Object *
 quotient (int argc, Scheme_Object *argv[])
 {
-  return scheme_bin_quotient(argv[0], argv[1]);
+  return do_bin_quotient("quotient", argv[0], argv[1], NULL);
 }
 
 /* Declaration is for FARPROC: */
 static Scheme_Object *
-rem_mod (int argc, Scheme_Object *argv[], char *name, int first_sign)
-    ;
+rem_mod (int argc, Scheme_Object *argv[], char *name, int first_sign);
 
 static Scheme_Object *
 rem_mod (int argc, Scheme_Object *argv[], char *name, int first_sign)
@@ -658,4 +670,19 @@ Scheme_Object *
 scheme_modulo(int argc, Scheme_Object *argv[])
 {
   return rem_mod(argc, argv, "modulo", 0);
+}
+
+
+Scheme_Object *
+quotient_remainder(int argc, Scheme_Object *argv[])
+{
+  Scheme_Object *rem = NULL, *quot, *a[2];
+
+  quot = do_bin_quotient("quotient/remainder", argv[0], argv[1], &rem);
+  if (!rem) {
+    rem = rem_mod(argc, argv, "remainder", 1);
+  }
+  a[0] = quot;
+  a[1] = rem;
+  return scheme_values(2, a);
 }

@@ -100,7 +100,8 @@ Scheme_Object *scheme_rational_normalize(const Scheme_Object *o)
 
   if (SCHEME_INTP(r->denom)) {
     if (SCHEME_INT_VAL(r->denom) < 0) {
-      r->denom = scheme_make_integer_value(-SCHEME_INT_VAL(r->denom));
+      tmpn = scheme_make_integer_value(-SCHEME_INT_VAL(r->denom));
+      r->denom = tmpn;
       negate = 1;
     }
   } else if (!SCHEME_BIGPOS(r->denom)) {
@@ -110,9 +111,10 @@ Scheme_Object *scheme_rational_normalize(const Scheme_Object *o)
   }
 
   if (negate) {
-    if (SCHEME_INTP(r->num))
-      r->num = scheme_make_integer_value(-SCHEME_INT_VAL(r->num));
-    else {
+    if (SCHEME_INTP(r->num)) {
+      tmpn = scheme_make_integer_value(-SCHEME_INT_VAL(r->num));
+      r->num = tmpn;
+    } else {
       tmpn = scheme_bignum_negate(r->num);
       r->num = tmpn;
     }
@@ -239,13 +241,32 @@ Scheme_Object *scheme_rational_add(const Scheme_Object *a, const Scheme_Object *
   Scheme_Rational *ra = (Scheme_Rational *)a;
   Scheme_Rational *rb = (Scheme_Rational *)b;
   Scheme_Object *ac, *bd, *sum, *cd;
+  int no_normalize = 0;
 
-  ac = scheme_bin_mult(ra->num, rb->denom);
+  if (SCHEME_INTP(ra->denom) && (SCHEME_INT_VAL(ra->denom) == 1)) {
+    /* Swap, to take advantage of the next optimization */
+    Scheme_Rational *rx = ra;
+    ra = rb;
+    rb = rx;
+  }
+  if (SCHEME_INTP(rb->denom) && (SCHEME_INT_VAL(rb->denom) == 1)) {
+    /* From Brad Lucier: */
+    /*    (+ p/q n) = (make-rational (+ p (* n q)) q), no normalize */
+    ac = ra->num;
+    cd = ra->denom;
+    no_normalize = 1;
+  } else {
+    ac = scheme_bin_mult(ra->num, rb->denom);
+    cd = scheme_bin_mult(ra->denom, rb->denom);
+  }
+
   bd = scheme_bin_mult(ra->denom, rb->num);
   sum = scheme_bin_plus(ac, bd);
-  cd = scheme_bin_mult(ra->denom, rb->denom);
 
-  return scheme_make_rational(sum, cd);
+  if (no_normalize)
+    return make_rational(sum, cd, 0);
+  else
+    return scheme_make_rational(sum, cd);
 }
 
 Scheme_Object *scheme_rational_subtract(const Scheme_Object *a, const Scheme_Object *b)
@@ -271,12 +292,27 @@ Scheme_Object *scheme_rational_multiply(const Scheme_Object *a, const Scheme_Obj
 {
   Scheme_Rational *ra = (Scheme_Rational *)a;
   Scheme_Rational *rb = (Scheme_Rational *)b;
-  Scheme_Object *ab, *cd;
+  Scheme_Object *gcd_ps, *gcd_rq, *p_, *r_, *q_, *s_;
 
-  ab = scheme_bin_mult(ra->num, rb->num);
-  cd = scheme_bin_mult(ra->denom, rb->denom);
+  /* From Brad Lucier: */
+  /* (* p/q r/s) => (make-rational (* (quotient p (gcd p s))
+                                      (quotient r (gcd r q)))
+                                   (* (quotient q (gcd r q))
+                                      (quotient s (gcd p s)))) */
+  
+  gcd_ps = scheme_bin_gcd(ra->num, rb->denom);
+  gcd_rq = scheme_bin_gcd(rb->num, ra->denom);
 
-  return scheme_make_rational(ab, cd);  
+  p_ = scheme_bin_quotient(ra->num, gcd_ps);
+  r_ = scheme_bin_quotient(rb->num, gcd_rq);
+
+  q_ = scheme_bin_quotient(ra->denom, gcd_rq);
+  s_ = scheme_bin_quotient(rb->denom, gcd_ps);
+
+  p_ = scheme_bin_mult(p_, r_);
+  q_ = scheme_bin_mult(q_, s_);
+
+  return scheme_make_rational(p_, q_);
 }
 
 Scheme_Object *scheme_rational_max(const Scheme_Object *a, const Scheme_Object *b)

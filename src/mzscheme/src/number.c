@@ -82,6 +82,8 @@ static Scheme_Object *real_part (int argc, Scheme_Object *argv[]);
 static Scheme_Object *imag_part (int argc, Scheme_Object *argv[]);
 static Scheme_Object *magnitude (int argc, Scheme_Object *argv[]);
 static Scheme_Object *angle (int argc, Scheme_Object *argv[]);
+static Scheme_Object *int_sqrt (int argc, Scheme_Object *argv[]);
+static Scheme_Object *int_sqrt_rem (int argc, Scheme_Object *argv[]);
 
 static double not_a_number_val;
 
@@ -359,6 +361,17 @@ scheme_init_number (Scheme_Env *env)
 			     scheme_make_folding_prim(scheme_sqrt,
 						      "sqrt",
 						      1, 1, 1),
+			     env);
+  scheme_add_global_constant("integer-sqrt", 
+			     scheme_make_folding_prim(int_sqrt,
+						      "integer-sqrt",
+						      1, 1, 1),
+			     env);
+  scheme_add_global_constant("integer-sqrt/remainder", 
+			     scheme_make_prim_w_arity2(int_sqrt_rem,
+						       "integer-sqrt/remainder",
+						       1, 1,
+						       2, 2),
 			     env);
   scheme_add_global_constant("expt", 
 			     scheme_make_folding_prim(scheme_expt,
@@ -1625,6 +1638,80 @@ Scheme_Object *scheme_sqrt (int argc, Scheme_Object *argv[])
     return scheme_make_complex(zeroi, n);
   else
     return n;
+}
+
+Scheme_Object *do_int_sqrt (const char *name, int argc, Scheme_Object *argv[], int w_rem)
+{
+  Scheme_Object *v = argv[0], *rem = NULL;
+
+  if (!scheme_is_integer(v)) {
+    scheme_wrong_type(name, "integer", 0, argc, argv);
+    return NULL;
+  }
+
+  /* Special case for x+0.0i: */
+  if (SCHEME_COMPLEX_IZIP(v)) {
+    Scheme_Object *r = IZI_REAL_PART(v), *orig = v;
+    v = do_int_sqrt(name, 1, &r, w_rem);
+    if (w_rem) {
+      Scheme_Thread *p = scheme_current_thread;
+      v = p->ku.multiple.array[0];
+      rem = p->ku.multiple.array[1];
+    }
+    
+    if (!SCHEME_COMPLEXP(v))
+      v = scheme_make_complex(v, scheme_complex_imaginary_part(orig));
+
+    if (w_rem && !SCHEME_COMPLEXP(rem))
+      rem = scheme_make_complex(rem, scheme_complex_imaginary_part(orig));
+  } else if (SCHEME_INTP(v) || SCHEME_BIGNUMP(v)) {
+    int imaginary = 0;
+
+    if (SCHEME_TRUEP(scheme_negative_p(1, &v))) {
+      v = scheme_bin_minus(zeroi, v);
+      imaginary = 1;
+    }
+
+    v = scheme_integer_sqrt_rem(v, &rem);
+
+    if (imaginary) {
+      v = scheme_make_complex(zeroi, v);
+      rem = scheme_bin_minus(zeroi, rem);
+    }
+  } else {
+    /* Must be inexact. Compose normal sqrt and floor, which should
+       handle infinities and NAN just fine. */
+    rem = v;
+    v = scheme_sqrt(1, &v);
+    if (SCHEME_COMPLEXP(v)) {
+      v = scheme_complex_imaginary_part(v);
+      v = floor_prim(1, &v);
+      v = scheme_make_complex(scheme_make_integer(0), v);
+    } else
+      v = floor_prim(1, &v);
+    
+    if (w_rem) {
+      rem = scheme_bin_minus(rem, scheme_bin_mult(v, v));
+    }
+  }
+
+  if (w_rem) {
+    Scheme_Object *a[2];
+    a[0] = v;
+    a[1] = rem;
+    return scheme_values(2, a);
+  } else
+    return v;
+}
+
+Scheme_Object *int_sqrt (int argc, Scheme_Object *argv[])
+{
+  return do_int_sqrt("integer-sqrt", argc, argv, 0);
+}
+
+Scheme_Object *int_sqrt_rem (int argc, Scheme_Object *argv[])
+{
+  return do_int_sqrt("integer-sqrt/remainder", argc, argv, 1);
 }
 
 static Scheme_Object *fixnum_expt(int x, int y)

@@ -287,7 +287,7 @@ Scheme_Object *scheme_complex_power(const Scheme_Object *base, const Scheme_Obje
 Scheme_Object *scheme_complex_sqrt(const Scheme_Object *o)
 {
   Scheme_Complex *c = (Scheme_Complex *)o;
-  Scheme_Object *r, *i, *ssq, *srssq, *nrsq, *nr, *ni;
+  Scheme_Object *r, *i, *ssq, *srssq, *nrsq, *prsq, *nr, *ni;
 
   r = c->r;
   i = c->i;
@@ -297,13 +297,24 @@ Scheme_Object *scheme_complex_sqrt(const Scheme_Object *o)
 
   srssq = scheme_sqrt(1, &ssq);
 
+  if (SCHEME_FLOATP(srssq)) {
+    /* We may have lost too much precision, if i << r.  The result is
+       going to be inexact, anyway, so switch to using expt. */
+    Scheme_Object *a[2];
+    a[0] = o;
+    a[1] = scheme_make_double(0.5);
+    return scheme_expt(2, a);
+  }
+
   nrsq = scheme_bin_div(scheme_bin_minus(srssq, r),
 			scheme_make_integer(2));
 
   nr = scheme_sqrt(1, &nrsq);
   
-  ni = scheme_bin_div(i, scheme_bin_mult(nr,
-					 scheme_make_integer(2)));
+  prsq = scheme_bin_div(scheme_bin_plus(srssq, r),
+			scheme_make_integer(2));
+
+  ni = scheme_sqrt(1, &prsq);
 
   /* Choose root with positive real part: */
   if (scheme_bin_lt(ni, zero)) {

@@ -1271,8 +1271,6 @@ static unsigned long fixnum_sqrt(unsigned long n, unsigned long *rem)
   return root;
 }
 
-Scheme_Object *scheme_integer_sqrt_rem(const Scheme_Object *n, Scheme_Object **remainder);
-
 Scheme_Object *scheme_integer_sqrt(const Scheme_Object *n)
 {
   return scheme_integer_sqrt_rem(n, NULL);

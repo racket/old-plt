@@ -330,16 +330,8 @@ static wxFontStruct *wxLoadQueryNearestAAFont(int point_size, int fontid, int fa
       break;
     case wxSMOOTHING_ON:
     case wxSMOOTHING_PARTIAL:
-      aa = 1;
-      break;
     default:
-      if (family == wxMODERN) {
-	if ((point_size > 8) && (point_size < 13))
-	  aa = 0;
-	else
-	  aa = 1;
-      } else
-	aa = 1;
+      aa = 1;
       break;
     }
     

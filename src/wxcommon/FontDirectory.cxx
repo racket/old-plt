@@ -180,17 +180,17 @@ static void AdjustFontDefaults(void)
     
     for (i = 0; font_defaults[i]; i += 2) {
       if (!strcmp(font_defaults[i], "ScreenSystem__")) {
-	font_defaults[i + 1] = " Luxi Sans";
+	font_defaults[i + 1] = " Sans";
       } else if (!strcmp(font_defaults[i], "ScreenDefault__")) {
-	font_defaults[i + 1] = " Luxi Sans";
+	font_defaults[i + 1] = " Sans";
       } else if (!strcmp(font_defaults[i], "ScreenRoman__")) {
-	font_defaults[i + 1] = " Luxi Serif";
+	font_defaults[i + 1] = " Serif";
       } else if (!strcmp(font_defaults[i], "ScreenDecorative__")) {
 	font_defaults[i + 1] = " Nimbus Sans L";
       } else if (!strcmp(font_defaults[i], "ScreenModern__")) {
-	font_defaults[i + 1] = " Luxi Mono";
+	font_defaults[i + 1] = " Monospace";
       } else if (!strcmp(font_defaults[i], "ScreenTeletype__")) {
-	font_defaults[i + 1] = " Luxi Mono";
+	font_defaults[i + 1] = " Monospace";
       } else if (!strcmp(font_defaults[i], "ScreenSwiss__")) {
 	font_defaults[i + 1] = " Nimbus Sans L";
       } else if (!strcmp(font_defaults[i], "ScreenScript__")) {

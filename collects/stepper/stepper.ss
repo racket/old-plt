@@ -2,6 +2,7 @@
 
 (compound-unit/sig 
   (import (core : mzlib:core^)
+          (framework : framework^)
           (print-convert : mzlib:print-convert^)
           (mred : mred^)
           (drscheme : drscheme:export^)
@@ -39,10 +40,6 @@
                       shared)]
         [mred-interfaces : mred-interfaces^
                          (mred-interfaces@)]
-        [framework : framework^
-                   ((require-library "frameworkr.ss" "framework")
-                    core
-                    mred-interfaces)]
         [STEPPER : ()
                  ((require-library-unit/sig "stepperr.ss" "stepper")
                   pretty

@@ -128,18 +128,22 @@
              
              [stepper-start
               (lambda ()
-                (let-values ([(annotated exprs)
-                              (a:annotate text break)])
-                  (set! expr-list exprs)
-                  (parameterize ([current-eventspace user-eventspace])
-                    (queue-callback 
-                     (lambda ()
-                       ((require-library "beginner.ss" "userspce"))
-                       (call-with-current-continuation
-                        (lambda (k)
-                          (current-exception-handler
-                           (make-exception-handler k))
-                          (for-each eval annotated))))))))]
+                (call-with-current-continuation
+                 (lambda (k)
+                   (let-values ([(annotated exprs)
+                                 (parameterize ([current-exception-handler
+                                                 (make-exception-handler k)])
+                                   (a:annotate text break))])
+                     (set! expr-list exprs)
+                     (parameterize ([current-eventspace user-eventspace])
+                       (queue-callback 
+                        (lambda ()
+                          ((require-library "beginner.ss" "userspce"))
+                          (call-with-current-continuation
+                           (lambda (k)
+                             (current-exception-handler
+                              (make-exception-handler k))
+                             (for-each eval annotated))))))))))]
            
 ;                          (d:basis:initialize-parameters
 ;                           (current-custodian)

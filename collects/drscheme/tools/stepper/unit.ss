@@ -25,6 +25,7 @@
                    (invoke-unit/sig
                     (require-library "stepper.ss" "stepper")
                     mzlib:core^
+                    (fw : framework^)
                     mzlib:print-convert^
                     (mred : mred^)
                     (drscheme : drscheme:export^)

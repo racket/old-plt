@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Message.cc,v 1.9 2002/09/03 23:30:07 mflatt Exp $
+ * $Id: Message.cc,v 1.10 2002/09/04 13:24:11 mflatt Exp $
  *
  * Purpose: message panel item
  *
@@ -363,6 +363,15 @@ void wxMessage::SetLabel(char *message)
 
 void wxMessage::SetLabel(wxBitmap *bitmap)
 {
+  {
+    /* Don't reset the label if this is an icon message: */
+    int i;
+    for (i = 0; i < 3; i++) {
+      if (bm_label == icons[i])
+	return;
+    }
+  }
+
   if (bm_label && bitmap && bitmap->Ok() && (bitmap->selectedIntoDC >= 0)
       && (bitmap->GetDepth()==1 || bitmap->GetDepth()==wxDisplayDepth())) {
     Pixmap pm;

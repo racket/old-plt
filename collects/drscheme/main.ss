@@ -24,7 +24,7 @@
      s))
 
   (fw:application:current-app-name "DrScheme")
-  (fw:version:add-spec 'd 7)
+  (fw:version:add-spec 'd 8)
   
   
   ;; add preferences

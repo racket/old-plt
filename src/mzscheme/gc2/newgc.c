@@ -1462,7 +1462,7 @@ inline static int check_preexisting_finalizers(void *p,
 	    if(prev)
 	      prev->next = fnl->next;
 	    else 
-	      FINALIZER_BASE = fnl->next;
+	      owner_table[i]->finalizers = fnl->next;
 	  }
 	  return 1;
 	}

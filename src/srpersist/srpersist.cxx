@@ -4,8 +4,6 @@
 #error Must define ODBCVER when compiling
 #endif
 
-#include "stdafx.h"
-
 #include <limits.h>
 #include <stdio.h>
 #include <string.h>

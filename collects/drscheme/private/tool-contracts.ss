@@ -1454,13 +1454,17 @@
      (default-settings? (any? . -> . boolean?))
      (order-manuals ((listof string?) . -> . (values (listof string?) boolean?)))
      (front-end/complete-program (input-port?
-                                  any?
+                                  (list/p (union false? number?)
+                                          (union false? number?)
+                                          (union false? number?))
                                   any?
                                   drscheme:teachpack:teachpack-cache?
                                   . -> .
                                   (-> any?)))
      (front-end/interaction (input-port?
-                             any?
+                             (list/p (union false? number?)
+                                     (union false? number?)
+                                     (union false? number?))
                              any?
                              drscheme:teachpack:teachpack-cache?
                              . -> .

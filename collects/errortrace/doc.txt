@@ -227,6 +227,7 @@ The export signature contains these names:
 
 > annotate : syntax boolean -> syntax
 > annotate-top : syntax boolean -> syntax
+> make-st-mark : syntax -> syntax
 > st-mark-source : st-mark -> any
 > st-mark-bindings : st-mark -> (listof (list syntax any))
 
@@ -238,27 +239,19 @@ whether the expression is a transformer expression (#t) or a normal
 expression (#f).
 
 The `st-mark-source' and `st-mark-bindings' functions extract
-information from a particular kind of value. The value must be one
-created by an expression that is generated during a use of `with-mark'
-(see below); in particular, it must be the result of an expression
-produced by `with-mark''s second argument. `st-mark-source' extracts
+information from a particular kind of value. The value must
+be created by `make-st-mark'. `st-mark-source' extracts
 the value originally provided to the expresion-maker, and
 `st-mark-bindings' returns local binding information (if available).
 
 The import signature contains these names:
 
-> with-mark : syntax (syntax -> syntax) syntax -> syntax
+> with-mark : syntax syntax -> syntax
 
-  This procedure is called by `annotate' and `annotate-top' to wrap
-  expressions with `with-continuation-mark'. The first argument is the
-  source expression and the thrid argument is the expression to be
-  wrapped.
-
-  The second argument is a function that takes a syntax
-  object representing the source of the expression and
-  builds a new syntax object out of that for use as a
-  continuation-mark value expression. Use `st-mark-source'
-  to extract ... what?
+  This procedure is called by `annotate' and `annotate-top'
+  to wrap expressions with `with-continuation-mark'. The
+  first argument is the source expression and the second
+  argument is the expression to be wrapped.
 
 > test-coverage-enabled : (parameter boolean)
 

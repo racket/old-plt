@@ -18,8 +18,9 @@
                                          register-profile-start
                                          register-profile-done))
   (define-signature stacktrace^ (annotate-top 
-				 annotate 
-				 st-mark-source
+				 annotate  
+                                 make-st-mark
+                                 st-mark-source
 				 st-mark-bindings))
   
   (define o (current-output-port))
@@ -260,11 +261,11 @@
 		  expr]
 		 [else
                   ;; might be undefined/uninitialized
-                  (with-mark expr make-st-mark expr)]))]
+                  (with-mark expr expr)]))]
              
              [(#%top . id)
 	      ;; might be undefined/uninitialized
-              (with-mark expr make-st-mark expr)]
+              (with-mark expr expr)]
              [(#%datum . _)
               ;; no error possible
               expr]
@@ -273,7 +274,6 @@
              [(define-values names rhs)
               top?
               (with-syntax ([marked (with-mark expr
-                                               make-st-mark
                                                (annotate-named
                                                 (syntax-case (syntax names) ()
                                                   [(id)
@@ -291,7 +291,6 @@
              [(define-syntaxes (name ...) rhs)
               top?
               (with-syntax ([marked (with-mark expr
-                                               make-st-mark
                                                (annotate-named
                                                 (let ([l (syntax->list (syntax (name ...)))])
                                                   (and (pair? l)
@@ -352,14 +351,12 @@
              ;; Wrap RHSs and body
              [(let-values ([vars rhs] ...) . body)
               (with-mark expr 
-                         make-st-mark
                          (annotate-let #f trans?
                                        (syntax (vars ...))
                                        (syntax (rhs ...))
                                        (syntax body)))]
              [(letrec-values ([vars rhs] ...) . body)
               (with-mark expr 
-                         make-st-mark
                          (annotate-let #t trans?
                                        (syntax (vars ...))
                                        (syntax (rhs ...))
@@ -372,16 +369,14 @@
                                   (syntax rhs)
                                   trans?)])
                 ;; set! might fail on undefined variable, or too many values:
-                (with-mark expr make-st-mark (syntax/loc expr (set! var rhs))))]
+                (with-mark expr (syntax/loc expr (set! var rhs))))]
              
              ;; Wrap subexpressions only
              [(begin . body)
               (with-mark expr
-                         make-st-mark
                          (annotate-seq trans? expr (syntax begin) (syntax body) annotate))]
              [(begin0 . body)
               (with-mark expr
-                         make-st-mark
                          (annotate-seq trans? expr (syntax begin0) (syntax body) annotate))]
              [(if tst thn els)
               (with-syntax ([w-tst (annotate (syntax tst) trans?)]
@@ -390,20 +385,17 @@
                 
                 (with-mark
                  expr
-                 make-st-mark
                  (syntax/loc expr
                    (if w-tst w-thn w-els))))]
              [(if tst thn)
               (with-syntax ([w-tst (annotate (syntax tst) trans?)]
                             [w-thn (annotate (syntax thn) trans?)])
                 (with-mark 
-                 expr 
-                 make-st-mark 
+                 expr  
                  (syntax/loc expr
                    (if w-tst w-thn))))]
              [(with-continuation-mark . body)
               (with-mark expr
-                         make-st-mark
                          (annotate-seq 
                           trans? expr (syntax with-continuation-mark) (syntax body) annotate))]
              
@@ -413,7 +405,6 @@
                   ;; It's a null:
                   expr
                   (with-mark expr
-                             make-st-mark
                              (annotate-seq trans? expr 
                                            (syntax #%app) (syntax body) 
                                            annotate)))]

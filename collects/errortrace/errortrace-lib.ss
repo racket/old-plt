@@ -83,8 +83,8 @@
     (dynamic-require '(lib "errortrace-key-syntax.ss" "errortrace") 
 		     'errortrace-key-syntax))
 
-  ;; with-mark : stx (any -> stx) stx -> stx
-  (define (with-mark mark make-st-mark expr)
+  ;; with-mark : stx stx -> stx
+  (define (with-mark mark expr)
     (with-syntax ([expr expr]
 		  [loc (make-st-mark mark)]
 		  [et-key dynamic-errortrace-key])

@@ -244,7 +244,7 @@
             (get-htdp-style-delta))
           
           (inherit get-reader set-printing-parameters)
-          (define/override (front-end/complete-program port source settings teachpacks)
+          (define/override (front-end/complete-program port line-col-offset settings teachpacks)
             (let ([state 'init]
                   ;; state : 'init => 'require => 'done
                   [reader (get-reader)])
@@ -254,7 +254,7 @@
                   [(init)
                    (with-syntax ([(body-exp ...) 
                                   (let loop ()
-                                    (let ([result (reader source port (list 1 0 0))])
+                                    (let ([result (reader (object-name port) port line-col-offset)])
                                       (if (eof-object? result)
                                           null
                                           (cons result (loop)))))]
@@ -278,7 +278,6 @@
                            (set! done-already? #t)
                            (current-namespace (module->namespace '#%htdp)))))))]
                   [(done) eof]))))
-
           (super-instantiate ())))
 
       ;; rewrite-module : syntax -> syntax
@@ -507,11 +506,11 @@
                      (send rep highlight-error src start-position end-position))))]
               [else (void)]))))
       
-      ;; with-mark : syntax (any -> syntax) syntax -> syntax
+      ;; with-mark : syntax syntax -> syntax
       ;; a member of stacktrace-imports^
       ;; guarantees that the continuation marks associated with cm-key are
       ;; members of the debug-source type
-      (define (with-mark source-stx make-st-mark expr)
+      (define (with-mark source-stx expr)
         (let ([source (syntax-source source-stx)]
               [start-position (syntax-position source-stx)]
               [span (syntax-span source-stx)])

@@ -756,8 +756,8 @@ Scheme_Object *srp_SQLBindCol(int argc,Scheme_Object **argv) {
     scheme_wrong_type("sql-bind-col","sql_hstmt",0,argc,argv);
   }
 
-  if (isSmallInt(argv[1]) == FALSE) {
-    scheme_wrong_type("sql-bind-col","small-int",1,argc,argv);
+  if (isUnsignedSmallInt(argv[1]) == FALSE) {
+    scheme_wrong_type("sql-bind-col","unsigned-small-int",1,argc,argv);
   }
    
   if (SQL_BUFFERP(argv[2]) == FALSE) {
@@ -1355,10 +1355,6 @@ Scheme_Object *srp_SQLFetchScroll(int argc,Scheme_Object **argv) {
     scheme_wrong_type("sql-fetch-scroll","symbol",1,argc,argv);
   }
 
-  if (SCHEME_INTP(argv[2]) == FALSE) {
-    scheme_wrong_type("sql-fetch-scroll","int",2,argc,argv);
-  }
-
   orientationString = SCHEME_SYM_VAL(argv[1]);
 
   p = namedSmallConstSearch(orientationString,fetchScrolls);
@@ -1367,7 +1363,25 @@ Scheme_Object *srp_SQLFetchScroll(int argc,Scheme_Object **argv) {
     scheme_signal_error("sql-fetch-scroll: invalid orientation: %s",
 			orientationString);
   } 
-  
+
+  if (p->val == SQL_FETCH_ABSOLUTE || p->val == SQL_FETCH_RELATIVE || 
+      p->val == SQL_FETCH_BOOKMARK) {
+    if (argc != 3) {
+      scheme_signal_error("sql-fetch-scroll: given orientation %s "
+			  "requires offset",
+			  orientationString);
+    }
+    if (SCHEME_EXACT_INTEGERP(argv[2]) == FALSE) {
+      scheme_wrong_type("sql-fetch-scroll","int",2,argc,argv);
+      if (scheme_get_int_val(argv[2],&offset) == 0) {
+	scheme_signal_error("sql-fetch-scroll: offset too large");
+      }
+    }
+  }
+  else {
+    offset = 0;
+  }
+
   stmtHandle = SQL_HSTMT_VAL(argv[0]);
   offset = SCHEME_INT_VAL(argv[1]);
 
@@ -1627,19 +1641,16 @@ Scheme_Object *srp_SQLGetCursorName(int argc,Scheme_Object **argv) {
   checkSQLReturn(sr,"sql-get-cursor-name");
 
   return scheme_make_string((const char *)name);
-
 }
 
 Scheme_Object *srp_SQLGetData(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
   SQLHSTMT stmtHandle;
   SQLUSMALLINT colNumber;
-  SQLSMALLINT targetType;
-  char *targetTypeString;
   SQLPOINTER buffer;
-  SQLINTEGER bufferLen;
-  SQLINTEGER actualLen;
-  SRP_NAMED_SMALL_CONSTANT *p;
+  SQLINTEGER bufferlen;
+  SQLSMALLINT buffertype;
+  SQLINTEGER *indicator;
 
   if (SQL_HSTMTP(argv[0]) == FALSE) {
     scheme_wrong_type("sql-get-data","sql-hstmt",0,argc,argv);
@@ -1649,27 +1660,23 @@ Scheme_Object *srp_SQLGetData(int argc,Scheme_Object **argv) {
     scheme_wrong_type("sql-get-data","unsigned-small-int",1,argc,argv);
   }
 
-  if (SCHEME_SYMBOLP(argv[2]) == FALSE) {
-    scheme_wrong_type("sql-get-data","symbol",2,argc,argv);
+  if (SQL_BUFFERP(argv[2]) == FALSE) {
+    scheme_wrong_type("sql-get-data","sql-buffer",2,argc,argv);
   }
 
-  targetTypeString = SCHEME_SYM_VAL(argv[2]);
-
-  p = namedSmallConstSearch(targetTypeString,CDataTypes);
-
-  if (p == NULL) {
-    scheme_signal_error("sql-get-data: invalid C datatype: %s",
-			targetTypeString);
+  if (SQL_INDICATORP(argv[3]) == FALSE) {
+    scheme_wrong_type("sql-get-data","sql-indicator",3,argc,argv);
   }
-
-  targetType = p->val;
 
   stmtHandle = SQL_HSTMT_VAL(argv[0]);
   colNumber = (SQLUSMALLINT)SCHEME_INT_VAL(argv[1]);
   buffer = SQL_BUFFER_VAL(argv[2]);
-  bufferLen = SQL_BUFFER_LEN(argv[2]);
+  bufferlen = SQL_BUFFER_LEN(argv[2]);
+  buffertype = SQL_BUFFER_CTYPE(argv[2]);
 
-  sr = SQLGetData(stmtHandle,colNumber,targetType,buffer,bufferLen,&actualLen);
+  indicator = &SQL_INDICATOR_VAL(argv[3]);
+
+  sr = SQLGetData(stmtHandle,colNumber,buffertype,buffer,bufferlen,indicator);
 
   checkSQLReturn(sr,"sql-get-data");
 
@@ -3444,60 +3451,79 @@ Scheme_Object *srp_SQLColAttributes(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
   SQLHSTMT stmtHandle;
   SQLUSMALLINT colNumber;
-  SQLUSMALLINT fieldDesc;
-  SQLPOINTER buffer;
-  SQLSMALLINT bufferLen;
+  SQLUSMALLINT fieldId;
+  char *fieldIdString;
+  char buff[2048];
+  SQLSMALLINT bufflen;
+  SQLINTEGER numBuffer;
   SQLSMALLINT actualLen;
-  SQLINTEGER numericAttr;
+  SRP_NAMED_TYPED_CONSTANT *p;
 
   if (SQL_HSTMTP(argv[0]) == FALSE) {
     scheme_wrong_type("sql-col-attributes","sql-hstmt",0,argc,argv);
   }
 
-  if (isUnsignedSmallInt(argv[1]) == FALSE) {
-    scheme_wrong_type("sql-col-attributes","unsigned-small-int",1,argc,argv);
+  if (isSmallInt(argv[1]) == FALSE) {
+    scheme_wrong_type("sql-col-attributes","small-int",1,argc,argv);
   }
 
-  if (SCHEME_SYMBOLP(argv[2]) == FALSE &&
-      isUnsignedSmallInt(argv[2]) == FALSE) {
-    scheme_wrong_type("sql-col-attributes","sym or unsigned-small-int",2,argc,argv);
+  if (SCHEME_SYMBOLP(argv[2]) == FALSE) {
+    scheme_wrong_type("sql-col-attributes","symbol",2,argc,argv);
   }
 
-  if (SQL_BUFFERP(argv[3]) == FALSE) {
-    scheme_wrong_type("sql-col-attributes","sql-buffer",3,argc,argv);
+  fieldIdString = SCHEME_SYM_VAL(argv[2]);
+
+  p = namedTypedConstSearch(fieldIdString,colAttributesOld);
+
+  if (p == NULL) {
+    scheme_signal_error("Invalid column attribute: %s",fieldIdString);
   }
-
-  if (SCHEME_SYMBOLP(argv[2])) { 
-    SRP_NAMED_SMALL_CONSTANT *p;      
-    char *fieldDescString; 
-
-    fieldDescString = SCHEME_SYM_VAL(argv[2]);
-
-    p = namedSmallConstSearch(fieldDescString,columnDescriptors);
     
-    if (p == NULL) {
-      scheme_signal_error("sql-col-attributes: invalid field descriptor: %s",
-			  fieldDescString);
-    }
-
-    fieldDesc = p->val;
-  }
-  else {
-    fieldDesc = (SQLUSMALLINT)SCHEME_INT_VAL(argv[2]);
-  }
-
+  fieldId = (SQLUSMALLINT)(p->val);
   stmtHandle = SQL_HSTMT_VAL(argv[0]);
-  colNumber = (SQLUSMALLINT)SCHEME_INT_VAL(argv[1]);
-  buffer = SQL_BUFFER_VAL(argv[2]);
-  bufferLen = (SQLSMALLINT)SQL_BUFFER_LEN(argv[2]);
-  numericAttr = 0;
+  colNumber = (SQLSMALLINT)SCHEME_INT_VAL(argv[1]);
 
-  sr = SQLColAttributes(stmtHandle,colNumber,fieldDesc,
-			buffer,bufferLen,&actualLen,&numericAttr);
+  switch(p->type) {
 
-  checkSQLReturn(sr,"sql-col-attributes");
+  case sqlbool :
 
-  return scheme_make_integer_value(numericAttr);
+    bufflen = SQL_IS_INTEGER;
+    sr = SQLColAttribute(stmtHandle,colNumber,fieldId,
+			 buff,bufflen,&actualLen,&numBuffer);
+    checkSQLReturn(sr,"sql-col-attributes");		       
+    return (numBuffer == SQL_FALSE) ? scheme_false : scheme_true;
+
+  case sqlinteger :
+
+    bufflen = SQL_IS_INTEGER;
+    sr = SQLColAttribute(stmtHandle,colNumber,fieldId,
+			 buff,bufflen,&actualLen,&numBuffer);
+    checkSQLReturn(sr,"sql-col-attributes");		       
+    return scheme_make_integer_value((long)numBuffer);
+
+  case namedinteger :
+
+    bufflen = SQL_IS_INTEGER;
+    sr = SQLColAttribute(stmtHandle,colNumber,fieldId,
+			 buff,bufflen,&actualLen,&numBuffer);
+    checkSQLReturn(sr,"sql-col-attributes");		       
+
+    return scheme_intern_symbol(findIntegerName(fieldIdString,numBuffer,
+						namedColAttrsIntegers,
+						sizeray(namedColAttrsIntegers)));
+
+  case string :
+
+    bufflen = sizeof(buff);
+    sr = SQLColAttribute(stmtHandle,colNumber,fieldId,
+			 buff,bufflen,&actualLen,&numBuffer);
+    checkSQLReturn(sr,"sql-col-attributes");		       
+    return scheme_make_string(buff);
+  }
+
+  scheme_signal_error("sql-col-attributes: invalid attribute type");
+
+  return scheme_void; // keep compiler happy
 } 
 
 Scheme_Object *srp_SQLColumnPrivileges(int argc,Scheme_Object **argv) {
@@ -4212,63 +4238,65 @@ Scheme_Object *srp_SQLSetScrollOptions(int argc,Scheme_Object **argv) {
   SQLUSMALLINT concur;
   char *concurString;
   SQLINTEGER keyset;
-  char *keysetString;
   SQLUSMALLINT rowset;
-  int i;
+  SRP_NAMED_SMALL_CONSTANT *p;
 
   if (SQL_HSTMTP(argv[0]) == FALSE) {
     scheme_wrong_type("sql-set-scroll-options","sql-hstmt",0,argc,argv);
   }
 
-  for (i = 1; i <= 2; i++) {
-    if (SCHEME_SYMBOLP(argv[i]) == FALSE) {
-      scheme_wrong_type("sql-set-scroll-options","symbol",i,argc,argv);
-    }
+  if (SCHEME_SYMBOLP(argv[1]) == FALSE) {
+    scheme_wrong_type("sql-set-scroll-options","symbol",1,argc,argv);
   }
+
+  // deal with argv[2] below
 
   if (isUnsignedSmallInt(argv[3]) == FALSE) {
     scheme_wrong_type("sql-set-scroll-options","unsigned-small-int",3,argc,argv);
   }
 
   concurString = SCHEME_SYM_VAL(argv[1]);
-  keysetString = SCHEME_SYM_VAL(argv[2]);
 
-  if (stricmp(keysetString,"sql-scroll-forward-only") == 0) {
-    keyset = SQL_SCROLL_FORWARD_ONLY;
-  }
-  else if (stricmp(keysetString,"sql-scroll-keyset-driven") == 0) {
-    keyset = SQL_SCROLL_KEYSET_DRIVEN;
-  }
-  else if (stricmp(keysetString,"sql-scroll-dynamic") == 0) {
-    keyset = SQL_SCROLL_DYNAMIC;
-  }
-  else if (stricmp(keysetString,"sql-scroll-static") == 0) {
-    keyset = SQL_SCROLL_STATIC;
-  }
-  else {
-    scheme_signal_error("sql-set-scroll-options: invalid keyset: %s",
-			keysetString);
-  }
+  p = namedSmallConstSearch(concurString,scrollConcurrency);
 
-  if (stricmp(keysetString,"sql-concur-read-only") == 0) {
-    concur = SQL_CONCUR_READ_ONLY;
-  }
-  else if (stricmp(keysetString,"sql-concur-lock") == 0) {
-    concur = SQL_CONCUR_LOCK;
-  }
-  else if (stricmp(keysetString,"sql-concur-rowver") == 0) {
-    concur = SQL_CONCUR_ROWVER;
-  }
-  else if (stricmp(keysetString,"sql-concur-values") == 0) {
-    concur = SQL_CONCUR_VALUES;
-  }
-  else {
+  if (p == NULL) {
     scheme_signal_error("sql-set-scroll-options: invalid concurrency: %s",
 			concurString);
   }
 
+  concur = p->val;
+
+  rowset = (SQLUSMALLINT)SCHEME_INT_VAL(argv[3]);  
+
+  if (SCHEME_SYMBOLP(argv[2])) {
+    char *keysetString;
+    SRP_NAMED_CONSTANT *q;
+
+    keysetString = SCHEME_SYM_VAL(argv[2]);
+    
+    q = namedConstSearch(keysetString,scrollCursor);
+
+    if (q == NULL) {
+      scheme_signal_error("sql-set-scroll-options: invalid keyset: %s",
+			  keysetString);
+    }
+
+    keyset = q->val;
+  }
+  else if (SCHEME_EXACT_INTEGERP(argv[2])) {
+    if (scheme_get_int_val(argv[1],&keyset) == 0) {
+      scheme_signal_error("sql-set-scroll-options: keyset value too large");
+    }
+
+    if (keyset < rowset) {
+      scheme_signal_error("sql-set-scroll-options: keyset smaller than rowset");
+    }
+  }
+  else {
+    scheme_wrong_type("sql-set-scroll-options","symbol or int",2,argc,argv);
+  }
+
   stmtHandle = SQL_HSTMT_VAL(argv[0]);
-  rowset = (SQLUSMALLINT)SCHEME_INT_VAL(argv[3]);
 
   sr = SQLSetScrollOptions(stmtHandle,concur,keyset,rowset);
 
@@ -4299,16 +4327,20 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
   namedBitsDictSort(namedInfoSmallInts);
   namedBitsDictSort(namedInfoIntegers);
   namedBitsDictSort(namedColAttrIntegers);
+  namedBitsDictSort(namedColAttrsIntegers);
   namedBitsDictSort(bitMaskTable);
   namedTypedConstSort(sqlInfo);
   namedTypedConstSort(colAttributes);
+  namedTypedConstSort(colAttributesOld);
   namedConstSort(sqlFunctions);
   namedConstSort(envAttributes);
   namedConstSort(diagFields);
-  namedConstSort(columnDescriptors);
   namedConstSort(fieldDescriptors);
   namedConstSort(settableConnectionAttributes);
   namedConstSort(fetchOrientation);
+  namedConstSort(fetchScrolls);
+  namedConstSort(scrollConcurrency);
+  namedConstSort(scrollCursor);
   namedConstSort(fetchDirections);
   namedConstSort(buffLenTypes);
   namedConstSort(CDataTypes);

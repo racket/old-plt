@@ -160,28 +160,6 @@ SRP_NAMED_SMALL_CONSTANT datetimeIntervalCodes[] = {
   { "sql-code-year-to-month",SQL_CODE_YEAR_TO_MONTH },
 };
 
-SRP_NAMED_SMALL_CONSTANT columnDescriptors[] = {
-  { "sql-column-count",SQL_COLUMN_COUNT },
-  { "sql-column-name",SQL_COLUMN_NAME },
-  { "sql-column-type",SQL_COLUMN_TYPE },
-  { "sql-column-length",SQL_COLUMN_LENGTH },
-  { "sql-column-precision",SQL_COLUMN_PRECISION },
-  { "sql-column-scale",SQL_COLUMN_SCALE },
-  { "sql-column-display-size",SQL_COLUMN_DISPLAY_SIZE },
-  { "sql-column-nullable",SQL_COLUMN_NULLABLE },
-  { "sql-column-unsigned",SQL_COLUMN_UNSIGNED },
-  { "sql-column-money",SQL_COLUMN_MONEY },
-  { "sql-column-updatable",SQL_COLUMN_UPDATABLE },
-  { "sql-column-auto-increment",SQL_COLUMN_AUTO_INCREMENT },
-  { "sql-column-case-sensitive",SQL_COLUMN_CASE_SENSITIVE },
-  { "sql-column-searchable",SQL_COLUMN_SEARCHABLE },
-  { "sql-column-type-name",SQL_COLUMN_TYPE_NAME },
-  { "sql-column-table-name",SQL_COLUMN_TABLE_NAME },
-  { "sql-column-owner-name",SQL_COLUMN_OWNER_NAME },
-  { "sql-column-qualifier-name",SQL_COLUMN_QUALIFIER_NAME },
-  { "sql-column-label",SQL_COLUMN_LABEL },
-};
-
 SRP_NAMED_SMALL_CONSTANT fieldDescriptors[] = {
   
   // header fields
@@ -390,6 +368,8 @@ SRP_NAMED_CONSTANT SQLColDataTypes[] = {
   { "sql-guid", SQL_GUID },
 };
 
+// SQLColAttribute - no 's'
+
 SRP_NAMED_CONSTANT descNullableBits[] = {
   { "sql-nullable", SQL_NULLABLE },
   { "sql-no-nulls", SQL_NO_NULLS },
@@ -408,7 +388,7 @@ SRP_NAMED_CONSTANT descUnnamedBits[] = {
   { "sql-unnamed", SQL_UNNAMED },
 };
 
-SRP_NAMED_CONSTANT descUpdateableBits[] = {
+SRP_NAMED_CONSTANT descUpdatableBits[] = {
   { "sql-attr-readonly", SQL_ATTR_READONLY },
   { "sql-attr-write", SQL_ATTR_WRITE },
   { "sql-attr-readwrite-unknown", SQL_ATTR_READWRITE_UNKNOWN },
@@ -420,7 +400,7 @@ SRP_NAMED_BITS_DICT namedColAttrIntegers[] = {
   { "sql-desc-searchable", descSearchableBits, sizeray(descSearchableBits) },
   { "sql-desc-type", SQLColDataTypes, sizeray(SQLColDataTypes) },
   { "sql-desc-unnamed", descUnnamedBits, sizeray(descUnnamedBits) },
-  { "sql-desc-updateable", descUpdateableBits, sizeray(descUpdateableBits) },
+  { "sql-desc-updatable", descUpdatableBits, sizeray(descUpdatableBits) },
 };
 
 SRP_NAMED_TYPED_CONSTANT colAttributes[] = {
@@ -452,5 +432,53 @@ SRP_NAMED_TYPED_CONSTANT colAttributes[] = {
   { "sql-desc-type-name", SQL_DESC_TYPE_NAME, string },
   { "sql-desc-unnamed", SQL_DESC_UNNAMED, namedinteger },
   { "sql-desc-unsigned", SQL_DESC_UNSIGNED, sqlbool },
-  { "sql-desc-updateable", SQL_DESC_UPDATABLE, namedinteger },
+  { "sql-desc-updatable", SQL_DESC_UPDATABLE, namedinteger },
 };
+
+// SQLColAttributes - with an 's'
+
+SRP_NAMED_BITS_DICT namedColAttrsIntegers[] = {
+  { "sql-column-nullable", descNullableBits, sizeray(descNullableBits) },
+  { "sql-column-searchable", descSearchableBits, sizeray(descSearchableBits) },
+  { "sql-column-type", SQLColDataTypes, sizeray(SQLColDataTypes) },
+  { "sql-column-updatable", descUpdatableBits, sizeray(descUpdatableBits) },
+};
+
+SRP_NAMED_TYPED_CONSTANT colAttributesOld[] = {
+  { "sql-column-count",SQL_COLUMN_COUNT, sqlinteger },
+  { "sql-column-name",SQL_COLUMN_NAME, string },
+  { "sql-column-type",SQL_COLUMN_TYPE, namedinteger },
+  { "sql-column-length",SQL_COLUMN_LENGTH, sqlinteger },
+  { "sql-column-precision",SQL_COLUMN_PRECISION, sqlinteger },
+  { "sql-column-scale",SQL_COLUMN_SCALE, sqlinteger },
+  { "sql-column-display-size",SQL_COLUMN_DISPLAY_SIZE, sqlinteger },
+  { "sql-column-nullable",SQL_COLUMN_NULLABLE, namedinteger },
+  { "sql-column-unsigned",SQL_COLUMN_UNSIGNED, sqlbool },
+  { "sql-column-money",SQL_COLUMN_MONEY, sqlbool },
+  { "sql-column-updatable",SQL_COLUMN_UPDATABLE, namedinteger },
+  { "sql-column-auto-increment",SQL_COLUMN_AUTO_INCREMENT, sqlbool },
+  { "sql-column-case-sensitive",SQL_COLUMN_CASE_SENSITIVE, sqlbool },
+  { "sql-column-searchable",SQL_COLUMN_SEARCHABLE, namedinteger },
+  { "sql-column-type-name",SQL_COLUMN_TYPE_NAME, string },
+  { "sql-column-table-name",SQL_COLUMN_TABLE_NAME, string },
+  { "sql-column-owner-name",SQL_COLUMN_OWNER_NAME, string },
+  { "sql-column-qualifier-name",SQL_COLUMN_QUALIFIER_NAME, string },
+  { "sql-column-label",SQL_COLUMN_LABEL, string },
+};
+
+SRP_NAMED_SMALL_CONSTANT scrollConcurrency[] = {
+  { "sql-concur-read-only", SQL_CONCUR_READ_ONLY },
+  { "sql-concur-lock", SQL_CONCUR_LOCK },
+  { "sql-concur-rowver", SQL_CONCUR_ROWVER },
+  { "sql-concur-values", SQL_CONCUR_VALUES },
+};
+
+SRP_NAMED_CONSTANT scrollCursor[] = {
+  { "sql-scroll-forward-only", SQL_SCROLL_FORWARD_ONLY },
+  { "sql-scroll-keyset-driven", SQL_SCROLL_KEYSET_DRIVEN },
+  { "sql-scroll-dynamic", SQL_SCROLL_DYNAMIC },
+  { "sql-scroll-static", SQL_SCROLL_STATIC },
+};
+
+
+

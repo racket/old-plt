@@ -89,7 +89,12 @@
                                                   (or (regexp-match #rx"\\.java$" x)
                                                       (regexp-match #rx"\\.bjava$" x)
                                                       (regexp-match #rx"\\.ijava$" x)
-                                                      (regexp-match #rx"\\.ajava$" x)))))))
+                                                      (regexp-match #rx"\\.ajava$" x))))))
+                               (lambda (l)
+                                 (and l 
+                                      (pair? l)
+                                      (pair? (cdr l))
+                                      (equal? (cadr l) "ProfessorJ"))))
       
       (define (phase1) (void))
       (define (phase2) 
@@ -319,7 +324,7 @@
           ;;execute-types: type-record 
           (define execute-types (create-type-record))
           
-          (define/public (front-end/complete-program input settings . teachpack-cache)
+          (define/public (front-end/complete-program input settings teachpack-cache)
             (set! execute-types (create-type-record))
             (let-values ([(port name)
                           (let ([text (drscheme:language:text/pos-text input)])
@@ -369,7 +374,7 @@
                                  (set! modules (cdr mods))
                                  syn))))))))))))
           
-          (define/public (front-end/interaction input settings . teachpack-cache)
+          (define/public (front-end/interaction input settings teachpack-cache)
             (let-values ([(port name)
                           (let ([text (drscheme:language:text/pos-text input)])
                             (parse-error-port (lambda ()

@@ -187,9 +187,7 @@
 	    [find-message-item (make-object mred:container:message% find-panel "Find:")])
 	  
 	  (sequence
-	    (send bottom-panel stretchable-in-y #f)
-	    (send find-panel spacing 0)
-	    (send replace-panel spacing 0))
+	    (send bottom-panel stretchable-in-y #f))
 
 	  (private
 	    [allow-return-check-box (make-object mred:container:check-box%
@@ -364,11 +362,9 @@
 	    (public
 	      [make-root-panel
 	       (lambda (% parent)
-		 (let* ([panel% (class-asi mred:container:vertical-panel%
-				  (public
-				    [default-spacing-width 0]
-				    [default-border-width 0]))]
-			[s-root (super-make-root-panel panel% parent)]
+		 (let* ([s-root (super-make-root-panel
+				 mred:container:vertical-panel%
+				 parent)]
 			[root (make-object % s-root)])
 		   (set! super-root s-root)
 		   root))])

@@ -1,6 +1,8 @@
 SYSTEM HISTORY
 --------------
 Version 45:
+- takeover-output is now takeover and release-output is gone.
+  In the next release this should become obsolete
 - there are now two new methods of simple-menu-frame%'s, 
   get-edit and get-canvas. These return the current "main" edit and canvas
   in the frame. They should be used for saving, reverting, etc. If your

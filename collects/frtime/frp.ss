@@ -856,6 +856,23 @@
       (set-signal-value! ret ((signal-thunk ret)))
       ret))
   
+  (define (send-event rcvr val)
+    (! man (make-external-event (list (list rcvr val)))))
+
+  (define (send-synchronous-event rcvr val)
+    (when (man?)
+      (error 'send-synchronous-event "already in frtime engine (would deadlock)"))
+    (! man (make-external-event (list (list rcvr val) (list notifier (self)))))
+    (receive [(? man?) (void)]))
+
+  (define (send-synchronous-events rcvr-val-pairs)
+    (when (man?)
+      (error 'send-synchronous-events "already in frtime engine (would deadlock)"))
+    (unless (ormap list? rcvr-val-pairs) (error "not list"))
+    (unless (ormap signal? (map first rcvr-val-pairs)) (error "not signals"))
+    (! man (make-external-event (cons (list notifier (self)) rcvr-val-pairs)))
+    (receive [(? man?) (void)]))
+
   (define (schedule-alarm ms beh)
     (when (> ms 1073741824)
       (set! ms (- ms 2147483647)))
@@ -863,6 +880,28 @@
         (alarms-enqueue ms beh)
         (! man (make-alarm ms beh))))
   
+  (define-syntax snapshot
+    (syntax-rules ()
+      [(_ (id ...) expr ...)
+       (let ([id (value-now id)] ...)
+         expr ...)]))
+  
+  (define (magic dtime thunk)
+    (let* ([last-time (current-milliseconds)]
+           [ret (let ([myself #f])
+                  (event-producer
+                   (let ([now (current-milliseconds)])
+                     (snapshot (dtime)
+                       (when (cons? the-args)
+                         (set! myself (first the-args)))
+                       (when (>= now (+ last-time dtime))
+                         (emit (thunk))
+                         (set! last-time now))
+                       (schedule-alarm (+ last-time dtime) myself)))
+                   dtime))])
+      (send-event ret ret)
+      ret))
+                   
   (define (make-time-b ms)
     (let ([ret (proc->signal void)])
       (set-signal-thunk! ret
@@ -983,22 +1022,6 @@
   (define (set-cell! ref beh)
     (! man (make-external-event (list (list ((signal-thunk ref) #t) beh)))))
   
-  (define (send-event rcvr val)
-    (! man (make-external-event (list (list rcvr val)))))
-
-  (define (send-synchronous-event rcvr val)
-    (when (man?)
-      (error 'send-synchronous-event "already in frtime engine (would deadlock)"))
-    (! man (make-external-event (list (list rcvr val) (list notifier (self)))))
-    (receive [(? man?) (void)]))
-
-  (define (send-synchronous-events rcvr-val-pairs)
-    (when (man?)
-      (error 'send-synchronous-events "already in frtime engine (would deadlock)"))
-    (unless (ormap list? rcvr-val-pairs) (error "not list"))
-    (unless (ormap signal? (map first rcvr-val-pairs)) (error "not signals"))
-    (! man (make-external-event (cons (list notifier (self)) rcvr-val-pairs)))
-    (receive [(? man?) (void)]))
 
   (define (synchronize)
     (when (man?)

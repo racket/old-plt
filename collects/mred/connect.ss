@@ -94,6 +94,7 @@
 	  (rename [super-set-modified set-modified]
 		  [super-set-filename set-filename])
 	  (public
+	    [canvases null]
             [set-filename
              (opt-lambda (name [temp? #f])
                (super-set-filename name temp?)
@@ -118,7 +119,6 @@
 	    [set-active-canvas
 	     (lambda (new-canvas)
 	       (set! active-canvas new-canvas))]
-	    [canvases null]
 	    [add-canvas
 	     (lambda (new-canvas)
 	       (unless (member new-canvas canvases)

@@ -2334,7 +2334,7 @@ static Scheme_Object *seconds_to_date(int argc, Scheme_Object **argv)
       p[6] = scheme_make_integer(wday);
       p[7] = scheme_make_integer(yday);
       p[8] = dst ? scheme_true : scheme_false;
-      p[9] = scheme_make_integer(timezone);
+      p[9] = scheme_make_integer(tzoffset);
       
       return scheme_make_struct_instance(scheme_date, 10, p);
     }

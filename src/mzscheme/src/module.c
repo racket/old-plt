@@ -389,6 +389,12 @@ static void expstart_module(Scheme_Env *menv, Scheme_Env *env)
 	if (exss[i] == menv->modname)
 	  scheme_add_to_table(m->toplevel, (const char *)exsns[i], scheme_undefined, 0);
       }
+
+      count = menv->num_indirect_exports; /* FIXME: should be var exports */
+      exsns = menv->indirect_exports;
+      for (i = 0; i < count; i++) {
+	scheme_add_to_table(m->toplevel, (const char *)exsns[i], scheme_undefined, 0);
+      }
     }
   }
   
@@ -561,7 +567,7 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
   rn = scheme_make_module_rename(0);
   et_rn = scheme_make_module_rename(1);
 
-  scheme_extend_module_rename(rn, mw, scheme_false, scheme_false);
+  /* scheme_extend_module_rename(rn, mw, scheme_false, scheme_false); */
   menv->rename = rn;
   menv->et_rename = et_rn;
 
@@ -808,6 +814,9 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	  /* Create the bucket, indicating that the name will be defined: */
 	  scheme_add_global_symbol(name, scheme_undefined, env->genv);
 
+	  /* Add a renaming: */
+	  scheme_extend_module_rename(rn, env->genv->modname, name, name);
+
 	  vars = SCHEME_STX_CDR(vars);
 	}
 	
@@ -868,6 +877,9 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	scheme_end_stubborn_change((void *)macro);
 	
 	scheme_add_to_table(env->genv->syntax, (const char *)name, macro, 0);
+
+	/* Add a renaming: */
+	scheme_extend_module_rename(rn, env->genv->modname, name, name);
 
 	if (rec)
 	  e = scheme_compiled_void();

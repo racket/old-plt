@@ -416,30 +416,6 @@ cd ${PLTHOME}/collects/parser-tools
 mzc --auto-dir yacc.ss
 
 
-Efficiency warning:
-
-The parser macro does not expand directly into a lambda, instead it
-looks more like
-(parser ...) -> 
-(let (code to setup tables and such)
-  (lambda (get-token)
-    parser-loop))
-and the code to setup tables is rather slow, so in situations where the
-parser is invoked many times it is by far faster to evaluate the
-code to setup tables exactly once, by putting the parser in an
-appropriate context, such as the right hand part of a define: 
-(define parse (parser ...)).
-
-Doing something like 
-(define parse
-  (lambda (y)
-     (parser ...)))
-can be very useful if the parser actions need to refer to a y that
-might be different on each execution of the parser, but will lead to
-multiple executions of the table setup code.  Consider using a global
-parameter for y instead if efficiency is a concern.
-
-
 _yacc-to-scheme.ss_
 This library provides one function:
 > (trans filename) - reads a C YACC/BISON grammar from filename and

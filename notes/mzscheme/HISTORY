@@ -2,6 +2,20 @@
 >> See MzScheme_300.txt for information on major changes in
    MzScheme 299.X. Minor changes are listed below.
 
+Version 299.22
+Changed characters to range in value up to #x10FFFF instead of
+ #x7FFFFFFF
+Changed locale encoding for Windows to be an extension of UTF-8
+ that can handle misplaced surrogates, #xFFFF, and #xFFFE
+Changed \U to accept up to six digits, instead of eight
+Added \' escape for strings (for compatibility with C & Java)
+Changed regexp-replace* to raise an exception if it matches an
+ empty string
+Renamed udp-send-evt and udp-receive-evt to udp-send-ready-evt
+ and udp-receive-ready-evt
+Added udp-send-evt, udp-send-to-evt, and udp-receive!-evt
+Added tcp-accept-evt
+
 Version 299.21
 Added #<< here strings
 

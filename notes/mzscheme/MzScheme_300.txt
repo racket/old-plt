@@ -113,10 +113,15 @@ in several significant ways:
             thread-dead-waitable       thread-dead-evt
             thread-suspend-waitable    thread-suspend-evt
             thread-resume-waitable     thread-resume-evt
+            udp-receive-waitable       udp-receive-ready-evt
+            udp-send-waitable          udp-send-ready-evt
 
                                        alarm-evt
-                                       read-bytes-avail!-evt
                                        write-bytes-avail-evt
+                                       udp-receive!-evt
+                                       udp-send-to-evt
+                                       udp-send-evt
+                                       ...
 
  * The new `require-for-template' core form serves as a kind of dual
    to `require-for-syntax', and the new `define-for-syntax' and

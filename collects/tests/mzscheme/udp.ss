@@ -88,20 +88,21 @@
 (test #f udp-connected? udp2)
 
 ;; waitables
-(define udp1-s (udp-send-evt udp1))
+(define udp1-s (udp-send-ready-evt udp1))
 (test #t evt? udp1-s)
 (test udp1-s sync udp1-s)
 
-(define udp2-r (udp-receive-evt udp2))
+(define udp2-r (udp-receive-ready-evt udp2))
 (test #t evt? udp2-r)
 (test #f sync/timeout 0.05 udp2-r)
 
-(test (void) udp-send-to udp1 "localhost" 40007 #"here's more")
+(test (void) sync (udp-send-to-evt udp1 "localhost" 40007 #"here's more"))
 (sleep 0.05)
 (test udp2-r sync udp2-r)
 (test udp2-r sync udp2-r)
-(test-values (list 10 #"127.0.0.1" udp1-port) (lambda () (udp-receive!* udp2 us1)))
+(test (list 10 #"127.0.0.1" udp1-port) sync (udp-receive!-evt udp2 us1))
 (test #f sync/timeout 0.05 udp2-r)
+(test #f sync/timeout 0.05 (udp-receive!-evt udp2 us1))
 
 ;; break behavior
 (let ([t (parameterize-break #f
@@ -153,10 +154,12 @@
 (err/rt-test (udp-receive! udp1 (make-bytes 10)) exn:fail:network?)
 (err/rt-test (udp-close udp1) exn:fail:network?)
 
-;; Can stil get waitable after closed:
-(test #t evt? (udp-send-evt udp1))
-(test #t evt? (udp-receive-evt udp1))
-(let ([w (udp-send-evt udp1)])
+;; Can still get waitable after closed:
+(test #t evt? (udp-send-ready-evt udp1))
+(test #t evt? (udp-receive-ready-evt udp1))
+(let ([w (udp-send-ready-evt udp1)])
   (test w sync w))
-(let ([w (udp-receive-evt udp1)])
+(let ([w (udp-receive-ready-evt udp1)])
   (test w sync w))
+(test #t evt? (udp-receive!-evt udp1 us1))
+(test #t evt? (udp-send-to-evt udp1 "localhost" 40007 #"here's more"))

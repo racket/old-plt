@@ -111,7 +111,7 @@
 
 ;; Test escape printing:
 (parameterize ([current-locale #f])
-  (test "\"\\a\\b\\t\\n\\f\\r\\e\\v\\\\\\\"A \\u0005A\\u000FP\\u000FP\u00DDD\u00FF7\\u00011\\U00012345\""
+  (test "\"\\a\\b\\t\\n\\f\\r\\e\\v\\\\\\\"A \\u0005A\\u000FP\\u000FP\u00DDD\u00FF7\\u00011\\U012345\""
 	'output-escapes
 	(let ([p (open-output-string)])
 	  (write "\a\b\t\n\f\r\e\v\\\"\101\40\5A\xFP\xfP\xdDD\3777\0011\U12345" p)
@@ -1221,21 +1221,29 @@
 ;;----------------------------------------------------------------------
 ;; TCP
 
-(let* ([pn 40001]
-       [l (tcp-listen pn 5 #t)])
-  (let-values ([(r1 w1) (tcp-connect "localhost" pn)]
-	       [(r2 w2) (tcp-accept l)])
-    (test #t tcp-port? r1)
-    (test #t tcp-port? r2)
-    (test #t tcp-port? w1)
-    (test #t tcp-port? w2)
-    (fprintf w1 "Hello~n")
-    (test "Hello" read-line r2)
-    (tcp-abandon-port r1)
-    (close-output-port w1)
-    (close-output-port w2)
-    (close-input-port r2))
-  (tcp-close l))
+(let ([do-once
+       (lambda (evt?)
+	 (let* ([pn 40001]
+		[l (tcp-listen pn 5 #t)])
+	   (let-values ([(r1 w1) (tcp-connect "localhost" pn)]
+			[(r2 w2) (if evt?
+				     (apply values (sync (tcp-accept-evt l)))
+				     (tcp-accept l))])
+	     (test #t tcp-port? r1)
+	     (test #t tcp-port? r2)
+	     (test #t tcp-port? w1)
+	     (test #t tcp-port? w2)
+	     (fprintf w1 "Hello~n")
+	     (test "Hello" read-line r2)
+	     (tcp-abandon-port r1)
+	     (close-output-port w1)
+	     (close-output-port w2)
+	     (close-input-port r2))
+	   (when evt?
+	     (test #f sync/timeout 0 (tcp-accept-evt l)))
+	   (tcp-close l)))])
+  (do-once #f)
+  (do-once #t))
 
 (test #f tcp-port? (current-input-port))
 (test #f tcp-port? (current-output-port))
@@ -1270,8 +1278,9 @@
 (err/rt-test (udp-receive! 5 (make-bytes 10)))
 (err/rt-test (udp-receive!* 5 (make-bytes 10)))
 (err/rt-test (udp-receive!/enable-break 5 (make-bytes 10)))
-(err/rt-test (udp-send-waitable 5))
-(err/rt-test (udp-receive-waitable 5))
+(err/rt-test (udp-receive!-evt 5 (make-bytes 10)))
+(err/rt-test (udp-send-ready-evt 5))
+(err/rt-test (udp-receive-ready-evt 5))
 
 (arity-test udp-open-socket 0 0)
 (arity-test udp-close 1 1)
@@ -1286,11 +1295,14 @@
 (arity-test udp-send 2 4)
 (arity-test udp-send* 2 4)
 (arity-test udp-send/enable-break 2 4)
+(arity-test udp-send-to-evt 4 6)
+(arity-test udp-send-evt 2 4)
 (arity-test udp-receive! 2 4)
 (arity-test udp-receive!* 2 4)
 (arity-test udp-receive!/enable-break 2 4)
-(arity-test udp-send-evt 1 1)
-(arity-test udp-receive-evt 1 1)
+(arity-test udp-receive!-evt 2 4)
+(arity-test udp-send-ready-evt 1 1)
+(arity-test udp-receive-ready-evt 1 1)
 
 (SECTION 'file-after-udp)
 

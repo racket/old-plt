@@ -1,5 +1,5 @@
 ;;
-;; $Id: testr.ss,v 1.11 1999/02/04 14:32:41 robby Exp $
+;; $Id: testr.ss,v 1.12 1999/02/04 22:26:24 robby Exp $
 ;;
 ;; (mred:test:run-interval [msec]) is parameterization for the
 ;; interval (in milliseconds) between starting actions.
@@ -489,11 +489,11 @@
 			 [(string=? this-name (send i get-plain-label))
 			  (cond
 			   [(and (null? wanted-names)
-				 (not (is-a? i mred:submenu-item<%>)))
+				 (not (is-a? i mred:menu-item-container<%>)))
 			    i]
 			   [(and (not (null? wanted-names))
-				 (is-a? i mred:submenu-item<%>))
-			    (loop (send (send i get-menu) get-items)
+				 (is-a? i mred:menu-item-container<%>))
+			    (loop (send i get-items)
 				  (car wanted-names)
 				  (cdr wanted-names))]
 			   [else

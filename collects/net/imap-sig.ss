@@ -22,5 +22,6 @@
      imap-create-mailbox
 
      imap-list-child-mailboxes
+     imap-mailbox-flags
      imap-get-hierarchy-delimiter)))
 

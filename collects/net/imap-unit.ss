@@ -363,26 +363,37 @@
 	 [(imap mailbox)
 	  (imap-list-child-mailboxes imap mailbox (imap-get-hierarchy-delimiter imap))]
 	 [(imap mailbox delimiter)
-	  (let* ([r (imap-connection-r imap)]
-		 [w (imap-connection-w imap)]
-		 [mailbox-name (and mailbox (format "~a~a" mailbox delimiter))]
+	  (let* ([mailbox-name (and mailbox (format "~a~a" mailbox delimiter))]
 		 [pattern (if mailbox
 			      (format "~a%" mailbox-name)
-			      "%")]
-		 [sub-folders null])
-	    (check-ok
-	     (imap-send r w (format "LIST \"\" ~a" (str->arg pattern))
-			(lambda (x)
-			  (let ([flags (cadr x)]
-				[name (let ([s (cadddr x)])
-					(if (symbol? s)
-					    (symbol->string s)
-					    s))])
-			    (unless (and mailbox-name
-					 (string=? name mailbox-name))
-			      (set! sub-folders 
-				    (cons 
-				     (list flags name)
-				     sub-folders)))))))
-	    (reverse sub-folders))])))))
+			      "%")])
+          (imap-list-mailboxes imap pattern mailbox-name))]))
+      
+      (define (imap-mailbox-flags imap mailbox)
+        (let ([r (imap-list-mailboxes imap mailbox #f)])
+          (if (= (length r) 1)
+              (caar r)
+              (error 'imap-mailbox-flags "could not get flags for ~s (~a)"
+                     mailbox
+                     (if (null? r) "no matches" "multiple matches")))))
+      
+      (define (imap-list-mailboxes imap pattern except)
+        (let* ([r (imap-connection-r imap)]
+               [w (imap-connection-w imap)]
+               [sub-folders null])
+          (check-ok
+           (imap-send r w (format "LIST \"\" ~a" (str->arg pattern))
+                      (lambda (x)
+                        (let ([flags (cadr x)]
+                              [name (let ([s (cadddr x)])
+                                      (if (symbol? s)
+                                          (symbol->string s)
+                                          s))])
+                          (unless (and except
+                                       (string=? name except))
+                            (set! sub-folders 
+                                  (cons 
+                                   (list flags name)
+                                   sub-folders)))))))
+          (reverse sub-folders))))))
 

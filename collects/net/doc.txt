@@ -1016,6 +1016,11 @@ PROCEDURES -----------------------------------------------------------
   Returns the server-specific string that is used as a separator in
   mailbox path names.
 
+> (imap-mailbox-flags imap mailbox-string)
+  ->list of imap flags
+  
+  Returns a list of imap flags for the given mailbox.
+  
 > (imap-port-number [k])
 
   A parameter that determines the server port number. The initial

@@ -426,6 +426,4 @@
       
       (define (annotate-top . args) 
         (begin
-          (fprintf (current-error-port) "entering annotate-top.\n")
-          (apply annotate-top-level-expr args)
-          (fprintf (current-error-port) "leaving annotate-top.\n"))))))
+          (apply annotate-top-level-expr args))))))

@@ -1,5 +1,5 @@
 ;;
-;; $Id: testr.ss,v 1.13 1999/02/05 21:58:06 robby Exp $
+;; $Id: testr.ss,v 1.16 1999/02/11 20:07:37 robby Exp $
 ;;
 ;; (mred:test:run-interval [msec]) is parameterization for the
 ;; interval (in milliseconds) between starting actions.
@@ -282,6 +282,8 @@
 	   (cond
 	     [(not (send ctrl is-shown?))
 	      (run-error error-tag "control ~s is not shown" ctrl)]
+	     [(not (send ctrl is-enabled?))
+	      (run-error error-tag "control ~s is not enabled" ctrl)]
 	     [(not (in-active-frame? ctrl))
 	      (run-error error-tag "control ~s is not in active frame" ctrl)]
 	     [else
@@ -372,6 +374,8 @@
 		 (run-error key-tag "no focused window")]
 		[(not (send window is-shown?))
 		 (run-error key-tag "focused window is not shown")]
+		[(not (send window is-enabled?))
+		 (run-error key-tag "focused window is not enabled")]
 		[(not (in-active-frame? window))
 		 (run-error key-tag "focused window is not in active frame")]
 		[else
@@ -383,9 +387,15 @@
   (define (send-key-event window event)
     (let loop ([l (ancestor-list window)])
       (cond [(null? l)
-	     (if (ivar-in-class? 'on-char (object-class window))
-		 (send window on-char event)
-		 (run-error key-tag "focused window does not have on-char"))]
+	     (cond
+	      [(ivar-in-class? 'on-char (object-class window))
+	       (send window on-char event)]
+	      [(is-a? window mred:text-field%)
+	       (send (send window get-editor) on-char event)]
+	      [else 
+	       (run-error
+		key-tag
+		"focused window is not a text-field% and does not have on-char")])]
 	    [(send (car l) on-subwindow-char window event) #f]
 	    [else (loop (cdr l))])))
   
@@ -547,6 +557,8 @@
 		 (run-error mouse-tag "no focused window")]
 		[(not (send window is-shown?))
 		 (run-error mouse-tag "focused window is not shown")]
+		[(not (send window is-enabled?))
+		 (run-error mouse-tag "focused window is not enabled")]
 		[(not (in-active-frame? window))
 		 (run-error mouse-tag "focused window is not in active frame")]
 		[else
@@ -682,7 +694,7 @@
 		(send new-window focus)
 		(void))))]))))
   
-  (define (close-frame frame)
-    (when (send frame can-close?)
-      (send frame on-close)
-      (send frame show #f))))
+  (define (close-top-level-window tlw)
+    (when (send tlw can-close?)
+      (send tlw on-close)
+      (send tlw show #f))))

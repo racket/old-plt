@@ -13,7 +13,7 @@
 
    current-get-eventspaces
    
-   close-frame
+   close-top-level-window
    
    button-push
    set-check-box!

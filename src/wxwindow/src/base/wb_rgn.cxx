@@ -51,10 +51,11 @@ void wxRegion::SetRectangle(float x, float y, float width, float height)
 {
   Cleanup();
 
+  float xw = x + width, yh = y + height;
   x = dc->LogicalToDeviceX(x);
   y = dc->LogicalToDeviceY(y);
-  width = dc->LogicalToDeviceXRel(width);
-  height = dc->LogicalToDeviceYRel(height);
+  width = dc->LogicalToDeviceX(xw) - x;
+  height = dc->LogicalToDeviceY(yh) - y;
 
   if (is_ps) {
     ps = new wxPSRgn_Atomic("");
@@ -137,10 +138,11 @@ void wxRegion::SetRoundedRectangle(float x, float y, float width, float height, 
   }
 #endif
 
+  float xw = x + width, yh = y + height;
   x = dc->LogicalToDeviceX(x);
   y = dc->LogicalToDeviceY(y);
-  width = dc->LogicalToDeviceXRel(width);
-  height = dc->LogicalToDeviceYRel(height);
+  width = dc->LogicalToDeviceX(xw) - x;
+  height = dc->LogicalToDeviceY(yh) - y;
 #if defined(wx_msw) || defined(wx_mac)
   int xradius = dc->LogicalToDeviceXRel(radius);
   int yradius = dc->LogicalToDeviceYRel(radius);
@@ -168,10 +170,11 @@ void wxRegion::SetEllipse(float x, float y, float width, float height)
 {
   Cleanup();
 
+  float xw = x + width, yh = y + height;
   x = dc->LogicalToDeviceX(x);
   y = dc->LogicalToDeviceY(y);
-  width = dc->LogicalToDeviceXRel(width);
-  height = dc->LogicalToDeviceYRel(height);
+  width = dc->LogicalToDeviceX(xw) - x;
+  height = dc->LogicalToDeviceY(yh) - y;
 
   if (is_ps) {
     ps = new wxPSRgn_Atomic("");

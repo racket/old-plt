@@ -1,0 +1,1409 @@
+#!/bin/sh
+#|
+exec mzscheme -r "$0" "$0" "$@"
+|#
+
+;; This file will generate ffi-prim.c and compile it to ffi-prim.so
+
+(current-exception-handler
+ (lambda (e)
+ (fprintf (current-error-port) "~a\n" (if (exn? e) (exn-message e) e))
+ (exit 1)))
+(initial-exception-handler (current-exception-handler))
+
+(define file    (vector-ref argv 0))
+(define c-file  (regexp-replace #rx"\\.[^.]*$" file ".c"))
+(define o-file  (regexp-replace #rx"\\.[^.]*$" file ".o"))
+(define so-file (regexp-replace #rx"\\.[^.]*$" file ".so"))
+
+(define current-indentation (make-parameter ""))
+(define space? #f)
+(define (set-indentation n)
+  (current-indentation (make-string n #\space))
+  (set! space? #f))
+
+(define concat string-append)
+(define \\ "newline-tag")
+(define (~ . args)
+  (when space? (display (current-indentation)))
+  (for-each (lambda (x)
+              (if (eq? x \\)
+                (begin (newline) (display (current-indentation)))
+                (display x)))
+            args)
+  (newline)
+  (set! space? #t))
+
+(define (process)
+  (define scheme? #t)
+  (define spc #f)
+  (define (open)
+    (when scheme? (error 'process "unexpected meta-open token"))
+    (display #\") (set! spc #f) (set! scheme? #t))
+  (define (close)
+    (unless scheme? (error 'process "unexpected meta-close token"))
+    (display #\") (set! spc '-) (set! scheme? #f))
+  (define (newln) (if (eq? spc '-) (set! spc #f) (newline)))
+  (define (disp x)
+    (unless (equal? x "")
+      (when (string? spc) (display spc))
+      (if (regexp-match #rx"^ *$" x)
+        (set! spc x)
+        (let ([x (if scheme? x (regexp-replace* #rx"[\\\"]" x "\\\\&"))])
+          (set! spc #f) (display x)))))
+  ;; skip to "---begin"
+  (let loop ()
+    (unless (regexp-match #rx"^ *--- *begin *$" (read-line)) (loop)))
+  ;; convert all to Scheme
+  (close)
+  (let loop ([str (read-line)] (k 0))
+    ;; finish at end, ignore lines that begin with ";//"
+    (cond [(or (eof-object? str)
+               (and (zero? k) (regexp-match #rx"^ *--- *end *$" str)))
+           'done]
+          [(and (zero? k) (regexp-match #rx"^ *;//" str))
+           (loop (read-line) 0)]
+          [(regexp-match-positions #rx"\\\\?({:|:})" str k) =>
+           (lambda (x)
+             (let ([token (substring str (caar x) (cdar x))])
+               (disp (substring str k (caar x)))
+               (cond [(equal? token "{:")
+                      (when (string? spc) (display spc)) (set! spc '-)
+                      (open) (printf "~s\n" `(set-indentation ,(caar x)))]
+                     [(equal? token ":}") (close)]
+                     [else (disp token)])
+               (loop str (cdar x))))]
+          [else (disp (if (zero? k) str (substring str k)))
+                (newln)
+                (loop (read-line) 0)]))
+  (open))
+
+(with-output-to-file c-file
+  (lambda ()
+    (let-values ([(in out) (make-pipe)])
+      (parameterize ([current-output-port out])
+        (thread (lambda ()
+                  (with-input-from-file file process)
+                  (close-output-port out))))
+      (parameterize ([current-input-port in]
+                     [read-case-sensitive #t])
+        (let loop ([x (read)])
+          (unless (eof-object? x)
+            (let ([x (eval x)]) (when (string? x) (display x)))
+            (loop (read)))))))
+  'replace)
+
+;; compile the result
+(require (lib "compile.ss" "dynext") (lib "link.ss" "dynext"))
+(compile-extension #f c-file o-file '("libffi/include"))
+(link-extension #f (list o-file "./libffi/.libs/libffi.a") so-file)
+(delete-file o-file)
+
+;; (require (lib "link.ss" "dynext"))
+;; (require (lib "compiler.ss" "compiler"))
+;; (require (prefix compiler: (lib "option.ss" "compiler")))
+;; (compiler:verbose #t)
+;; (current-standard-link-libraries
+;;  (list* "./libffi/.libs/libffi.a" (current-standard-link-libraries)))
+;; (compile-c-extensions (list c-file) ".")
+
+(exit 0)
+
+---begin
+/* Automatically generated from {:file:} */
+{:
+
+;; User function definition
+(define cfunctions '())
+(define (_cdefine name minargs . maxargs)
+  (define cname
+    (let loop ([name (symbol->string name)]
+               [substs
+                '((#rx"->" "2") (#rx"-" "_") (#rx"\\?$" "_p") (#rx"!$" ""))])
+      (if (null? substs)
+        (concat "FP_" name)
+        (loop (regexp-replace* (caar substs) name (cadar substs))
+              (cdr substs)))))
+  (set! maxargs (if (null? maxargs) minargs (car maxargs)))
+  (set! cfunctions (cons (list name cname minargs maxargs) cfunctions))
+  (~ "#undef MYNAME" \\ "#define MYNAME \""name"\"" \\
+     "static Scheme_Object *"cname"(int argc, Scheme_Object *argv[])"))
+(define-syntax cdefine
+  (syntax-rules ()
+    [(_ name minargs maxargs) (_cdefine `name minargs maxargs)]
+    [(_ name args) (_cdefine `name args args)]))
+
+;; Struct definitions
+(define cstructs '())
+(define (_cdefstruct name slots types)
+  (define cname
+    (regexp-replace* #rx"-" (symbol->string name) "_"))
+  (define mname
+    (list->string
+     (map char-upcase (string->list (regexp-replace* #rx"_" cname "")))))
+  (define predname
+    (string->symbol (concat (symbol->string name)"?")))
+  (~ "/* "name" structure definition */")
+  (~ "static Scheme_Type "cname"_tag;" \\
+     "typedef struct "cname"_struct {" \\
+     "  Scheme_Type type;")
+  (for-each (lambda (s t) (~ "  "t" "s";")) slots types)
+  (~ "} "cname"_struct;" \\
+     "#define SCHEME_"mname"P(x) (SCHEME_TYPE(x)=="cname"_tag)")
+  (_cdefine predname 1)
+  (~ "{ return SCHEME_"mname"P(argv[0]) ? scheme_true : scheme_false; }")
+  (set! cstructs (cons (list* name cname slots) cstructs)))
+(define-syntax cdefstruct
+  (syntax-rules ()
+    [(_ name (slot type) ...)
+     (_cdefstruct `name (list `slot ...) (list type ...))]))
+
+;; Stubborn object allocation
+(define (_cmake-object var type . values)
+  (define cstruct (assq type cstructs))
+  (~ var" = ("(cadr cstruct)"_struct*)scheme_malloc_stubborn(sizeof("
+            (cadr cstruct)"_struct));" \\
+     var"->type = "(cadr cstruct)"_tag;")
+  (for-each (lambda (v f) (~ var"->"f" = ("v");")) values (cddr cstruct))
+  (~ "scheme_end_stubborn_change("var");"))
+(define-syntax cmake-object
+  (syntax-rules () [(_ var type val ...) (_cmake-object var `type val ...)]))
+
+(define symbols '())
+(define-syntax defsymbols
+  (syntax-rules ()
+    [(_ sym ...)
+     (for-each (lambda (s)
+                 (when (memq s symbols)
+                   (error 'defsymbols "symbol ~s already defined" s))
+                 (set! symbols (cons s symbols))
+                 (~ "static Scheme_Object *"s"_sym;"))
+               '(sym ...))]))
+
+:}
+
+#include "escheme.h"
+#ifdef WINDOWS_DYNAMIC_LOAD
+#include <windows.h>
+#else
+#include <dlfcn.h>
+#endif
+#include <ffi.h>
+/* needed for standard integer type names */
+#ifdef WINDOWS_DYNAMIC_LOAD
+#include <wtypes.h>
+typedef INT8   int8_t;  
+typedef UINT8  uint8_t;
+typedef INT16  int16_t;
+typedef UINT16 uint16_t;
+typedef INT32  int32_t;
+typedef UINT32 uint32_t;
+#else
+#include <inttypes.h>
+#endif
+
+/*****************************************************************************/
+/* Library objects */
+
+{:(cdefstruct ffi-lib
+    (handle  "void*")
+    (name    "Scheme_Object*")
+    (objects "Scheme_Hash_Table*")):}
+
+static Scheme_Hash_Table *opened_libs;
+
+/* (ffi-lib filename) -> ffi-lib */
+{:(cdefine ffi-lib 1):}
+{
+  char *name, *fname;
+  void *handle;
+  ffi_lib_struct *lib;
+  if (!(SCHEME_STRINGP(argv[0]) || SCHEME_FALSEP(argv[0])))
+    scheme_wrong_type(MYNAME, "string-or-false", 0, argc, argv);
+  /* leave the filename as given, the system will look for it */
+  /* (`#f' means open the executable) */
+  name = SCHEME_FALSEP(argv[0]) ? "" : SCHEME_STR_VAL(argv[0]);
+  fname = SCHEME_FALSEP(argv[0]) ? NULL : SCHEME_STR_VAL(argv[0]);
+  lib = (ffi_lib_struct*)scheme_hash_get(opened_libs, (Scheme_Object*)name);
+  if (!lib) {
+#ifdef WINDOWS_DYNAMIC_LOAD
+    handle = (fname==NULL) ? LoadLibrary(fname) : GetModuleHandle(NULL);
+    if (handle == NULL) {
+      long err;
+      err = GetLastError();
+      scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
+                       argv[0], scheme_intern_symbol("no-ffi-lib"),
+                       MYNAME": couldn't open %V (%E)", argv[0], err);
+    }
+#else
+    handle = dlopen(fname, RTLD_NOW | RTLD_GLOBAL);
+    if (handle == NULL)
+      scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
+                       argv[0], scheme_intern_symbol("no-ffi-lib"),
+                       MYNAME": couldn't open %V (%s)", argv[0], dlerror());
+#endif
+    {:(cmake-object "lib" ffi-lib
+                    "handle" "argv[0]"
+                    "scheme_make_hash_table(SCHEME_hash_string)"):}
+    scheme_hash_set(opened_libs, (Scheme_Object*)name, (Scheme_Object*)lib);
+    /* no dlclose finalizer - since the hash table always keeps a reference */
+    /* maybe add some explicit unload at some point */
+  }
+  return (Scheme_Object*)lib;
+}
+
+/* (ffi-lib-name ffi-lib) -> string */
+{:(cdefine ffi-lib-name 1):}
+{
+  char *name;
+  if (!SCHEME_FFILIBP(argv[0]))
+    scheme_wrong_type(MYNAME, "ffi-lib", 0, argc, argv);
+  return ((ffi_lib_struct*)argv[0])->name;
+}
+
+/*****************************************************************************/
+/* Pull pointers (mostly functions) out of ffi-lib objects */
+
+{:(cdefstruct ffi-obj
+    (obj  "void*")
+    (name "char*")
+    (lib  "ffi_lib_struct*")):}
+
+/* (ffi-obj objname ffi-lib-or-libname) -> ffi-obj */
+{:(cdefine ffi-obj 2):}
+{
+  ffi_obj_struct *obj;
+  void *dlobj;
+  ffi_lib_struct *lib = NULL;
+  char *dlname;
+  const char *err;
+  if (SCHEME_FFILIBP(argv[1]))
+    lib = (ffi_lib_struct*)argv[1];
+  else if (SCHEME_STRINGP(argv[1]) || SCHEME_FALSEP(argv[1]))
+    lib = (ffi_lib_struct*)(FP_ffi_lib(1,&argv[1]));
+  else
+    scheme_wrong_type(MYNAME, "ffi-lib", 1, argc, argv);
+  if (!SCHEME_STRINGP(argv[0]))
+    scheme_wrong_type(MYNAME, "string", 0, argc, argv);
+  dlname = SCHEME_STR_VAL(argv[0]);
+  obj = (ffi_obj_struct*)scheme_hash_get(lib->objects, (Scheme_Object*)dlname);
+  if (!obj) {
+#ifdef WINDOWS_DYNAMIC_LOAD
+    dlobj = GetProcAddress(lib->handle, dlname);
+    if (!dlobj) {
+      long err;
+      err = GetLastError();
+      scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
+                       argv[0],
+                       scheme_intern_symbol("no-ffi-obj"),
+                       MYNAME": couldn't get \"%s\" from %V (%E)",
+                       dlname, lib->name, err);
+    }
+#else
+    dlobj = dlsym(lib->handle, dlname);
+    if (!dlobj) {
+      err = dlerror();
+      if (err != NULL)
+        scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
+                         argv[0],
+                         scheme_intern_symbol("no-ffi-obj"),
+                         MYNAME": couldn't get \"%s\" from %V (%s)",
+                         dlname, lib->name, err);
+    }
+#endif
+    {:(cmake-object "obj" ffi-obj "dlobj" "dlname" "lib"):}
+    scheme_hash_set(lib->objects, (Scheme_Object*)dlname, (Scheme_Object*)obj);
+  }
+  return (obj == NULL) ? scheme_false : (Scheme_Object*)obj;
+}
+
+/* (ffi-obj-lib ffi-obj) -> ffi-lib */
+{:(cdefine ffi-obj-lib 1):}
+{
+  if (!SCHEME_FFIOBJP(argv[0]))
+    scheme_wrong_type(MYNAME, "ffi-obj", 0, argc, argv);
+  return (Scheme_Object*)(((ffi_obj_struct*)argv[0])->lib);
+}
+
+/* (ffi-obj-name ffi-obj) -> string */
+{:(cdefine ffi-obj-name 1):}
+{
+  if (!SCHEME_FFIOBJP(argv[0]))
+    scheme_wrong_type(MYNAME, "ffi-obj", 0, argc, argv);
+  return scheme_make_string(((ffi_obj_struct*)argv[0])->name);
+}
+
+/*****************************************************************************/
+/* Types */
+
+/* These are not defined in MzScheme because:
+ * - SCHEME_UINT_VAL is not really a simple accessor like other SCHEME_X_VALs
+ * - scheme_make_integer_from_unsigned behaves the same as the signed version
+ */
+#define SCHEME_UINT_VAL(obj) ((unsigned)(SCHEME_INT_VAL(obj)))
+#define scheme_make_integer_from_unsigned(i) \
+  ((Scheme_Object *)((((unsigned long)i) << 1) | 0x1))
+
+#ifndef SIXTY_FOUR_BIT_INTEGERS
+
+/* longs and ints are really the same */
+#define scheme_get_realint_val(x,y) \
+  scheme_get_int_val(x,(long*)(y))
+#define scheme_get_unsigned_realint_val(x,y) \
+  scheme_get_unsigned_int_val(x,(long*)(y))
+#define scheme_make_realinteger_value \
+  scheme_make_integer_value
+#define scheme_make_realinteger_value_from_unsigned \
+  scheme_make_integer_value_from_unsigned
+
+#else
+
+/* Modified versions of stuff from number.c  */
+/* These will make sense in MzScheme when longs are not the same as ints */
+int scheme_get_realint_val(Scheme_Object *o, int *v)
+{
+  if (SCHEME_INTP(o)) {
+    *v = (int)(SCHEME_INT_VAL(o));
+    return 1;
+  } else if (SCHEME_BIGNUMP(o)) {
+    long l;
+    int res = scheme_bignum_get_int_val(o, &l);
+    *v = (int)l;
+    return res;
+  } else
+    return 0;
+}
+int scheme_get_unsigned_realint_val(Scheme_Object *o, unsigned int *v)
+{
+  if (SCHEME_INTP(o)) {
+    int i = (int)(SCHEME_INT_VAL(o));
+    if (i < 0)
+      return 0;
+    *v = i;
+    return 1;
+  } else if (SCHEME_BIGNUMP(o)) {
+    long l;
+    int res = scheme_bignum_get_unsigned_int_val(o, &l);
+    *v = (int)l;
+    return res;
+  } else
+    return 0;
+}
+Scheme_Object *
+scheme_make_realinteger_value(int ri)
+{
+  long i = (long)ri;
+  Scheme_Object *o = scheme_make_integer(i);
+  if (SCHEME_INT_VAL(o) == i)
+    return o;
+  else
+    return scheme_make_bignum(i);
+}
+Scheme_Object *
+scheme_make_realinteger_value_from_unsigned(unsigned int ri)
+{
+  unsigned long i = (unsigned long)ri;
+  Scheme_Object *o = scheme_make_integer(i);
+  if ((SCHEME_INT_VAL(o) >= 0)
+      && ((unsigned long)SCHEME_INT_VAL(o)) == i)
+    return o;
+  else
+    return scheme_make_bignum_from_unsigned(i);
+}
+
+#endif
+
+{:
+;; Types are defined with the `defctype' function.  This looks like:
+;;   (defctype 'type-name
+;;     'prop1 val1
+;;     'prop2 val2
+;;     ...)
+;; The current properties are:
+;;   stype: scheme type symbol
+;;   ftype: type name used by libffi (as ffi_type_X)
+;;          (defaults to stype + "s" prefix for ints)
+;;   ctype: C type, or #f if none (defaults to ftype, with proper massaging)
+;;   macro: if specified as "X", use "SCHEME_XP" and "SCHEME_X_VAL" as the
+;;          defaults for the next two properties
+;;   pred:  name of predicate macro
+;;    (or a function of the value and an FFIAny obj pointer name, which
+;;     produces an expression that tests the value and sets the FFIAny obj
+;;     accordingly.)
+;;   s->c:  name of value extraction macro
+;;    (or #f which means that the predicate already sets the value, or a
+;;     function with the same arguments as above)
+;;   c->s:  name of value construction macro/function
+;;    (or a function of the value that generates the expression)
+
+(define types '())
+
+(define (get-prop type prop)
+  (cadr (assq prop (cdr (assq type types)))))
+
+(define *type-counter* 0)
+
+(define (describe-type stype ftype ctype pred s->c c->s)
+  (set! *type-counter* (add1 *type-counter*))
+  (~ "#define FFI_"stype" ("*type-counter*")" \\
+     "/* Type Name:   "stype \\
+     " * LibFfi type: ffi_type_"ftype \\
+     " * C type:      "(or ctype "-none-") \\
+     " * Predicate:   "(cond [(not pred) "-none-"]
+                             [(string? pred) (concat pred"(<Scheme>)")]
+                             [else (pred "<Scheme>" "aux")]) \\
+     " * Scheme->C:   "(cond
+                        [(not s->c)
+                         (if pred "-none- (set by the predicate)" "-none-")]
+                        [(string? s->c) (concat s->c"(<Scheme>)")]
+                        [else (s->c "<Scheme>" "aux")]) \\
+     " * C->Scheme:   "(cond [(not c->s) "-none-"]
+                             [(string? c->s) (concat c->s"(<C>)")]
+                             [else (c->s "<C>")]) \\
+     " */" \\))
+
+(define (describe-alias from to)
+  (~ "/* Alias type: `"from"'" \\
+     " * Aliased to: `"to"'" \\
+     " */" \\))
+
+(define (make-ctype type args)
+  (define (prop p . default)
+    (let loop ([args args])
+      (cond [(null? args) (and (pair? default) (car default))]
+            [(eq? p (car args))
+             (if (and (pair? (cadr args)) (eq? (caadr args) 'from))
+               (get-prop (cadadr args) p)
+               (cadr args))]
+            [else (loop (cddr args))])))
+  (let* ([stype (symbol->string type)]
+         [ftype (prop 'ftype stype)]
+         [ctype (prop 'ctype
+                      (regexp-replace
+                       #rx"^sint"
+                       (regexp-replace #rx"^(u?int(?:[0-9]+))$" ftype "\\1_t")
+                       "int"))]
+         [ftype (regexp-replace #rx"^(int|char|long)" ftype "s\\1")]
+         [macro (prop 'macro)]
+         [pred  (prop 'pred (and macro (concat "SCHEME_"macro"P")))]
+         [s->c  (prop 's->c (and macro (concat "SCHEME_"macro"_VAL")))]
+         [c->s  (prop 'c->s)])
+    (describe-type stype ftype ctype pred s->c c->s)
+    `(,type (stype ,stype) (ftype ,ftype) (ctype ,ctype)
+      (macro ,macro) (pred ,pred) (s->c ,s->c) (c->s ,c->s))))
+
+(define (defctype name . args)
+  (set! types (append! types (list (make-ctype name args)))))
+
+(define (defaliastype from to)
+  (describe-alias from to)
+  (set! types (append! types (list `(alias ,from ,to)))))
+
+(define-syntax (for-each-type stx)
+  (syntax-case stx ()
+    [(_ body ...)
+     (let* ([all? #f]
+            [body1 (syntax-case #'(body ...) (-all-)
+                     [(-all- b ...) (begin (set! all? #t) #'(begin b ...))]
+                     [else #'(begin body ...)])]
+            [id (lambda (sym) (datum->syntax-object (syntax _) sym))])
+       (with-syntax ([body  body1]
+                     [all   (if all? #'#t #'#f)]
+                     [alias (id 'alias)]
+                     [stype (id 'stype)]
+                     [ctype (id 'ctype)]
+                     [ftype (id 'ftype)]
+                     [macro (id 'macro)]
+                     [pred  (id 'pred)]
+                     [s->c  (id 's->c)]
+                     [c->s  (id 'c->s)])
+         #'(for-each (lambda (t)
+                       (define alias (and (eq? 'alias (car t)) (cdr t)))
+                       (define data (cdr (if alias (assq (caddr t) types) t)))
+                       (define (get sym) (cadr (assq sym data)))
+                       (when (or all (not alias))
+                         (let ([stype (get 'stype)]
+                               [ftype (get 'ftype)]
+                               [ctype (get 'ctype)]
+                               [macro (get 'macro)]
+                               [pred  (get 'pred)]
+                               [s->c  (get 's->c)]
+                               [c->s  (get 'c->s)])
+                           body)))
+                     types)))]))
+
+(define (defctype* name/+ftype ctype pred s->c c->s)
+  (let ([name (if (pair? name/+ftype) (car name/+ftype) name/+ftype)]
+        [ftype (and (pair? name/+ftype) (cadr name/+ftype))])
+    (apply defctype name
+      `(ctype ,ctype
+        ,@(if ftype `(ftype ,ftype) `())
+        pred ,(if (string? pred) (concat "SCHEME_"pred"P")    pred)
+        s->c ,(if (string? s->c) (concat "SCHEME_"s->c"_VAL") s->c)
+        c->s ,(if (string? c->s) (concat "scheme_make_"c->s)  c->s)))))
+
+(~ "/***********************************************************************"\\
+   " * The following are the only primitive types." \\
+   " * The tricky part is figuring out what width-ed types corrspond to what"\\
+   " * internal types.  Matthew says:" \\
+   " *   MzScheme expects to be compiled such that sizeof(int) == 4," \\
+   " *   sizeof(long) == sizeof(void*), sizeof(short) >= 2," \\
+   " *   sizeof(char) == 1, sizeof(float) == 4, and sizeof(double) == 8." \\
+   " *   So, on a 64-bit OS, MzScheme expects only `long' to change." \\
+   " **********************************************************************/"\\
+   )
+
+(~ "/* returns #<void> when used as output type, not for input types. */")
+(defctype 'void
+  'ctype #f 'pred #f 's->c #f 'c->s (lambda (x) "scheme_void"))
+
+;; libffi primitive types
+;;    scheme-name  c-type     SCHEME_?P  SCHEME_?_VAL scheme_make_
+(defctype* 'int8   "int8_t"       "INT"  "INT"        "integer")
+(defctype* 'uint8  "uint8_t"      "INT"  "UINT"       "integer_from_unsigned")
+(~ "/* `byte' is a convenient name for uint8 */")
+(defaliastype 'byte 'uint8)
+(defctype* 'int16  "int16_t"      "INT"  "INT"        "integer")
+(defctype* 'uint16 "uint16_t"     "INT"  "UINT"       "integer_from_unsigned")
+(~ "/* `word' is a convenient name for uint16 */")
+(defaliastype 'word 'uint16)
+
+(~ "/* Treats integers properly: */")
+(defctype* 'int32  "int32_t"
+  (lambda (x aux) (concat "scheme_get_realint_val("x",&"aux")")) #f
+  "realinteger_value")
+(~ "/* Treats integers properly: */")
+(defctype* 'uint32 "unsigned int"
+  (lambda (x aux) (concat "scheme_get_unsigned_realint_val("x",&"aux")")) #f
+  "realinteger_value_from_unsigned")
+
+(~ "/* `int' and `uint' are always synonyms for int32/uint32 (see above) */")
+(defaliastype 'int  'int32)
+(defaliastype 'uint 'uint32)
+
+(~ "/* This is like int32, but always assumes fixnum: */")
+(defctype* '(fixint "int32")   "int32_t"  "INT" "INT"  "integer")
+(~ "/* This is like uint32, but always assumes fixnum: */")
+(defctype* '(ufixint "uint32") "uint32_t" "INT" "UINT" "integer_from_unsigned")
+
+(~ "/* This is what mzscheme defines as long: */" \\
+   "#ifndef SIXTY_FOUR_BIT_INTEGERS" \\
+   "#define ffi_type_smzlong ffi_type_sint32" \\
+   "#define ffi_type_umzlong ffi_type_uint32" \\
+   "#else" \\
+   "#define ffi_type_smzlong ffi_type_sint64" \\
+   "#define ffi_type_umzlong ffi_type_uint64" \\
+   "#endif" \\
+   \\
+   "/* This is what mzscheme defines as long: */")
+(defctype* '(long "smzlong")  "long"
+  (lambda (x aux) (concat "scheme_get_int_val("x",&"aux")")) #f
+  "integer_value")
+(~ "/* This is what mzscheme defines as ulong: */")
+(defctype* '(ulong "umzlong") "unsigned long"
+  (lambda (x aux) (concat "scheme_get_unsigned_int_val("x",&"aux")")) #f
+  "integer_value_from_unsigned")
+
+(~ "/* This is what mzscheme defines as long, assuming fixnums: */")
+(defctype* '(fixnum "smzlong")
+  "long"          "INT" "INT"  "integer")
+(~ "/* This is what mzscheme defines as ulong, assuming fixnums: */")
+(defctype* '(ufixnum "umzlong")
+  "unsigned long" "INT" "UINT" "integer_from_unsigned")
+
+;; Will be implemented in v299
+;; (defctype* 'int64  "int64_t"      ...???...)
+;; (defctype* 'uint64 "uint64_t"     ...???...)
+(defctype* 'float  "float"        "FLT"  "FLT"        "float")
+(defctype* 'double "double"       "DBL"  "DBL"        "double")
+;; Not useful?  not implemented in any case.
+;; (defctype* 'longdouble "long double" ...???...)
+
+(~ "/* Booleans -- implemented as an int which is 1 or 0: */")
+(defctype 'bool
+  'ftype "int"
+  'pred (lambda (x aux) "1")
+  's->c "SCHEME_TRUEP"
+  'c->s (lambda (x) (concat "("x"?scheme_true:scheme_false)")))
+
+(~ "/* Strings -- no copying of C strings is done, #f is NULL." \\
+   " * (note: this is not like char* which is just a pointer) */")
+(defctype 'string
+  'ftype "pointer"
+  'ctype "char*"
+  'pred  (lambda (x aux)
+           (concat "SCHEME_FALSEP("x")||SCHEME_STRINGP("x")"))
+  's->c  (lambda (x aux)
+           (concat "SCHEME_FALSEP("x")?NULL:SCHEME_STR_VAL("x")"))
+  'c->s  (lambda (x)
+           (concat "("x"==NULL)?scheme_false:"
+                   "scheme_make_string_without_copying("x")")))
+
+(~ "/* This is for any C pointer: #f is NULL, ffi-ptr values as well as" \\
+   " * ffi-obj and string values pass their pointer.  When used as a return" \\
+   " * value, either an ffi-ptr object or #f is returned. */")
+(defctype 'pointer
+  'ctype "void*"
+  'macro "FFIANYPTR"
+  'c->s  "scheme_make_ffiptr")
+
+;; This is probably not needed
+;; (~ "/* Used for ffi-callback objects: */")
+;; (defctype 'callback
+;;   'ftype "pointer"
+;;   'ctype "void*"
+;;   'macro "FFICALLBACK"
+;;   's->c  (lambda (x aux) (concat "((ffi_callback_struct*)("x"))->callback"))
+;;   'c->s  (lambda (x) x))
+
+(~ "/* This is used for passing and Scheme_Object* value as is.  Useful for" \\
+   " * functions that know about Scheme_Object*s, like MzScheme's. */")
+(defctype 'scheme
+  'ftype "pointer"
+  'ctype "Scheme_Object*"
+  'pred (lambda (x aux) "1")
+  's->c (lambda (x aux) x)
+  'c->s (lambda (x) x))
+
+(~ "/* Special type, not actually used for anything except to mark points" \\
+   " * that are treated like pointers but not referenced.  Used for" \\
+   " * creating function types. */")
+(defctype 'fmark 'ftype "pointer" 'ctype #f)
+
+:}
+typedef union FFIAny {
+  {:(for-each-type (when ctype (~ ctype" x_"stype";"))):}
+} FFIAny;
+
+{: (set! *type-counter* (add1 *type-counter*))
+   (~ "/* This is a tag that is used to identify user-made struct types. */" \\
+      "#define FFI_struct ("*type-counter*")")
+   (set! *type-counter* #f) ; make sure this is the last one defined
+:}
+
+/*****************************************************************************/
+/* Type objects */
+
+/* This struct is used for both user types and primitive types (including
+ * struct types).  If it is a primitive type then basetype will be NULL, and
+ * scheme_to_c will have the &ffi_type pointer, and c_to_scheme will have an
+ * integer (a label value) for non-struct type. */
+{:(cdefstruct ffi-type
+    (basetype    "Scheme_Object*")
+    (scheme_to_c "Scheme_Object*")
+    (c_to_scheme "Scheme_Object*")):}
+
+#define FFITYPE_BASETYPE(x) (((ffi_type_struct*)(x))->basetype)
+#define FFITYPE_PRIMP(x) (NULL == (FFITYPE_BASETYPE(x)))
+#define FFITYPE_USERP(x) (!(FFITYPE_PRIMP(x)))
+#define FFITYPE_PRIMTYPE(x) ((ffi_type*)(((ffi_type_struct*)(x))->scheme_to_c))
+#define FFITYPE_PRIMLABEL(x) ((int)(((ffi_type_struct*)(x))->c_to_scheme))
+#define FFITYPE_USER_S2C(x) (((ffi_type_struct*)(x))->scheme_to_c)
+#define FFITYPE_USER_C2S(x) (((ffi_type_struct*)(x))->c_to_scheme)
+
+/* Returns #f for primitive types. */
+{:(cdefine ffi-type-basetype 1):}
+{
+  Scheme_Object *base;
+  if (!SCHEME_FFITYPEP(argv[0]))
+    scheme_wrong_type(MYNAME, "ffi-type", 0, argc, argv);
+  base = FFITYPE_BASETYPE(argv[0]);
+  if (NULL == base) return scheme_false;
+  else              return base;
+}
+
+{:(cdefine ffi-type-scheme->c 1):}
+{
+  if (!SCHEME_FFITYPEP(argv[0]))
+    scheme_wrong_type(MYNAME, "ffi-type", 0, argc, argv);
+  return (FFITYPE_PRIMP(argv[0])) ? scheme_false :
+           ((ffi_type_struct*)(argv[0]))->scheme_to_c;
+}
+
+{:(cdefine ffi-type-c->scheme 1):}
+{
+  if (!SCHEME_FFITYPEP(argv[0]))
+    scheme_wrong_type(MYNAME, "ffi-type", 0, argc, argv);
+  return (FFITYPE_PRIMP(argv[0])) ? scheme_false :
+           ((ffi_type_struct*)(argv[0]))->c_to_scheme;
+}
+
+/* Returns a primitive type, or NULL if not a type */
+static Scheme_Object *ffi_base_ctype(Scheme_Object *type)
+{
+  if (!SCHEME_FFITYPEP(type)) return NULL;
+  while (FFITYPE_USERP(type)) type = FFITYPE_BASETYPE(type);
+  return type;
+}
+
+/* Returns the size, 0 for void, -1 if no such type */
+static int ffi_sizeof(Scheme_Object *type)
+{
+  type = ffi_base_ctype(type);
+  if (type == NULL) return -1;
+  switch (FFITYPE_PRIMLABEL(type)) {
+  {:(for-each-type
+      (~ "case FFI_"stype": return "
+         (if ctype (concat "sizeof("ctype");") "0;"))):}
+  /* for structs */
+  default: return FFITYPE_PRIMTYPE(type)->size;
+  }
+}
+
+/* (make-ffi-type basetype scheme->c c->scheme) -> ffi-type */
+/* The scheme->c can throw type errors to check for valid arguments */
+/* a #f means no conversion function, if both are #f -- then just return the */
+/* basetype. */
+{:(cdefine make-ffi-type 3):}
+{
+  ffi_type_struct *type;
+  if (!SCHEME_FFITYPEP(argv[0]))
+    scheme_wrong_type(MYNAME, "C-type", 0, argc, argv);
+  else if (!(SCHEME_FALSEP(argv[1]) || SCHEME_PROCP(argv[1])))
+    scheme_wrong_type(MYNAME, "procedure-or-false", 1, argc, argv);
+  else if (!(SCHEME_FALSEP(argv[2]) || SCHEME_PROCP(argv[2])))
+    scheme_wrong_type(MYNAME, "procedure-or-false", 2, argc, argv);
+  else if (SCHEME_FALSEP(argv[1]) && SCHEME_FALSEP(argv[2]))
+    return argv[0];
+  else {
+    {:(cmake-object "type" ffi-type "argv[0]" "argv[1]" "argv[2]"):}
+    return (Scheme_Object*)type;
+  }
+  return NULL; /* shush the compiler */
+}
+
+/* (make-ffi-struct-type types) -> ffi-type */
+/* This creates a new primitive type that is a struct.  This type can be used
+ * with ffi-ptr objects, except that the contents is used rather than the
+ * pointer value.  Marshaling to lists or whatever should be done in Scheme. */
+{:(cdefine make-ffi-struct-type 1):}
+{
+  Scheme_Object *p, *base;
+  ffi_type **elements;
+  ffi_type *libffi_type, **dummy;
+  ffi_type_struct *type;
+  ffi_cif cif;
+  int i, nargs = scheme_proper_list_length(argv[0]);
+  if (nargs < 0)
+    scheme_wrong_type(MYNAME, "proper list", 0, argc, argv);
+  /* allocate the type elements */
+  elements = scheme_malloc_stubborn((nargs+1) * sizeof(ffi_type*));
+  elements[nargs] = NULL;
+  for (i=0, p=argv[0]; i<nargs; i++, p=SCHEME_CDR(p)) {
+    if (NULL == (base = ffi_base_ctype(SCHEME_CAR(p))))
+      scheme_wrong_type(MYNAME, "list-of-C-types", 0, argc, argv);
+    if (FFITYPE_PRIMLABEL(base) == FFI_void)
+      scheme_wrong_type(MYNAME, "list-of-non-void-C-types", 0, argc, argv);
+    elements[i] = FFITYPE_PRIMTYPE(base);
+  }
+  scheme_end_stubborn_change(elements);
+  /* allocate the new libffi type object */
+  libffi_type = scheme_malloc_stubborn(sizeof(ffi_type));
+  libffi_type->size      = 0;
+  libffi_type->alignment = 0;
+  libffi_type->type      = FFI_TYPE_STRUCT;
+  libffi_type->elements  = elements;
+  /* use ffi_prep_cif to set the size and alignment information */
+  dummy = &libffi_type;
+  if (ffi_prep_cif(&cif, FFI_DEFAULT_ABI, 1, &ffi_type_void, dummy) != FFI_OK)
+    scheme_signal_error("internal error: ffi_prep_cif did not return FFI_OK");
+  scheme_end_stubborn_change(libffi_type);
+  {:(cmake-object "type" ffi-type "NULL"
+                  "(Scheme_Object*)libffi_type"
+                  "(Scheme_Object*)FFI_struct"):}
+  return (Scheme_Object*)type;
+}
+
+/*****************************************************************************/
+/* Pointer objects */
+
+{:(cdefstruct ffi-ptr (ptr "void*")):}
+
+#define SCHEME_FFIANYPTRP(x) \
+  (SCHEME_FALSEP(x)||SCHEME_FFIPTRP(x)||SCHEME_FFIOBJP(x)||SCHEME_STRINGP(x))
+#define SCHEME_FFIANYPTR_VAL(x) \
+  (SCHEME_FALSEP(x)?NULL: \
+    (SCHEME_FFIPTRP(x)?(((ffi_ptr_struct*)x)->ptr): \
+      (SCHEME_FFIOBJP(x)?(((ffi_obj_struct*)x)->obj): \
+       SCHEME_STR_VAL(x))))
+
+/* Not a user-level function */
+static Scheme_Object *ffi_make_ptr(void* p)
+{
+  ffi_ptr_struct *ptr;
+  if (p == NULL) return scheme_false;
+  {:(cmake-object "ptr" ffi-ptr "p"):}
+  return (Scheme_Object*)ptr;
+}
+#define scheme_make_ffiptr(x) \
+  ((x==NULL)?scheme_false:ffi_make_ptr(x))
+
+/*****************************************************************************/
+/* Callback type */
+
+{:(cdefstruct ffi-callback
+    (callback "void*")
+    (proc     "Scheme_Object*")
+    (itypes   "Scheme_Object*")
+    (otype    "Scheme_Object*")):}
+
+/*****************************************************************************/
+/* Scheme<-->C conversions */
+
+static Scheme_Object *ffi_c_to_scheme(Scheme_Object *type, void *src)
+{
+  Scheme_Object *res, *base;
+  if (!SCHEME_FFITYPEP(type))
+    scheme_raise_exn
+      (MZEXN_APPLICATION_TYPE, type, scheme_intern_symbol("C-type"),
+       "C->Scheme: expected C-type, given: %V", type);
+  base = FFITYPE_BASETYPE(type);
+  if (base != NULL) {
+    res = ffi_c_to_scheme(base, src);
+    if (SCHEME_FALSEP(FFITYPE_USER_C2S(type)))
+      return res;
+    else
+      return _scheme_apply(FFITYPE_USER_C2S(type), 1, (Scheme_Object**)(&res));
+  } else if (FFITYPE_PRIMLABEL(type) == FFI_fmark) {
+    return (Scheme_Object*)src;
+  } else switch (FFITYPE_PRIMLABEL(type)) {
+    {:(for-each-type
+        (~ "case FFI_"stype": return "
+           (if ctype
+             (let ([x (concat "(("ctype"*)src)[0]")])
+               (if (string? c->s) (concat c->s"("x")") (c->s x)))
+             "scheme_void")";")):}
+    case FFI_struct: return scheme_make_ffiptr(src); /* !!! */
+    default: scheme_signal_error("corrupt ffi type: %V", type);
+  }
+  return NULL; /* shush the compiler */
+}
+
+/* Usually writes the C object to dst and returns NULL.  When copy_structs is 0
+ * (false) and the type is a struct, then return a pointer to the struct
+ * object (not touching dst). */
+static void* ffi_scheme_to_c(Scheme_Object *type, void *dst,
+                             Scheme_Object *val, int copy_structs)
+{
+  if (!SCHEME_FFITYPEP(type))
+    scheme_raise_exn
+      (MZEXN_APPLICATION_TYPE, type, scheme_intern_symbol("C-type"),
+       "Scheme->C: expected C-type, given: %V", type);
+  while (FFITYPE_USERP(type)) {
+    if (!SCHEME_FALSEP(FFITYPE_USER_S2C(type)))
+      val = _scheme_apply(FFITYPE_USER_S2C(type), 1, (Scheme_Object**)(&val));
+    type = FFITYPE_BASETYPE(type);
+  }
+  if (FFITYPE_PRIMLABEL(type) == FFI_fmark) {
+    if (SCHEME_FFICALLBACKP(val))
+      ((void**)dst)[0] = ((ffi_callback_struct*)val)->callback;
+    else if (SCHEME_FFIPTRP(val))
+      ((void**)dst)[0] = ((void**)dst)[0];
+    else if (SCHEME_FFIOBJP(val))
+      ((void**)dst)[0] = ((ffi_obj_struct*)val)->obj;
+    else /* ((void**)dst)[0] = val; */
+         scheme_raise_exn(MZEXN_APPLICATION_TYPE, type,
+                          scheme_intern_symbol("C-function-value"),
+                          "Scheme->C: expected some function value "
+                          "(callout/callback), given: %V",
+                          type);
+  } else switch (FFITYPE_PRIMLABEL(type)) {
+    {:(for-each-type
+        (define (wrong-type obj type)
+          (concat "scheme_raise_exn(MZEXN_APPLICATION_TYPE, "obj", "
+                  "scheme_intern_symbol(\""type"\"), "
+                  "\"Scheme->C: expected "type", given: %V\", "obj");"))
+        (~ "case FFI_"stype":")
+        (if ctype
+          (let* ([x (concat "((("ctype"*)dst)[0])")]
+                 [f (lambda (p)
+                      (if (string? p) (concat p"(val)") (p "val" x)))])
+            (if s->c
+              (~ "  if ("(f pred)") "x" = ("ctype")("(f s->c)");" \\
+                 "  else "(wrong-type "val" stype))
+              (~ "  if (!("(pred "val" x)")) "(wrong-type "val" stype)))
+            (~ "  return NULL;"))
+          (~ "  "(wrong-type "type" "non-void-C-type")))):}
+    case FFI_struct: /* !!! */
+      if (!SCHEME_FFIANYPTRP(val))
+        scheme_raise_exn(MZEXN_APPLICATION_TYPE, val,
+                         scheme_intern_symbol("pointer"),
+                         "Scheme->C: expected struct pointer, given: %V",
+                         val);
+      if (copy_structs) {
+        memcpy(dst, SCHEME_FFIANYPTR_VAL(val), FFITYPE_PRIMTYPE(type)->size);
+        return NULL;
+      } else {
+        return SCHEME_FFIANYPTR_VAL(val);
+      }
+    default: scheme_signal_error("corrupt ffi type: %V", type);
+  }
+  return NULL; /* shush the compiler */
+}
+
+/*****************************************************************************/
+/* Pointer type user functions */
+
+/* (ffi-sizeof type) -> int, returns 0 for void, error if not a C type */
+{:(cdefine ffi-sizeof 1):}
+{
+  int size = ffi_sizeof(argv[0]);
+  if (size >= 0) return scheme_make_integer(size);
+  else scheme_wrong_type(MYNAME, "C-type", 0, argc, argv);
+  return NULL; /* shush the compiler */
+}
+
+/* (ffi-alignof type) -> int, returns 0 for void, error if not a C type */
+{:(cdefine ffi-alignof 1):}
+{
+  Scheme_Object *type = ffi_base_ctype(argv[0]);
+  if (type == NULL) scheme_wrong_type(MYNAME, "C-type", 0, argc, argv);
+  else return scheme_make_integer(FFITYPE_PRIMTYPE(type)->alignment);
+  return NULL; /* shush the compiler */
+}
+
+{:(defsymbols atomic stubborn uncollectable eternal):}
+
+/* (ffi-malloc num type ffi-ptr flag) -> pointer */
+/* The arguments for this function are:
+ * - num: bytes to allocate, or the number of instances of type when given,
+ * - type: malloc the size of this type (or num instances of it),
+ * - ffi-ptr: a source pointer to copy contents from,
+ * - mode: a symbol for different allocation functions to use - one of
+ *   'atomic, 'stubborn, 'uncollectable, 'eternal
+ * The arguments can be specified in any order at all since they are all
+ * different types, the only requirement is for a size, either a number of
+ * bytes or a type. */
+{:(cdefine ffi-malloc 1 4):}
+{
+  int i, size=0, num=0;
+  void *from = NULL, *res;
+  Scheme_Object *mode = NULL, *a;
+  for (i=0; i<argc; i++) {
+    a = argv[i];
+    if (SCHEME_INTP(a)) {
+      if (num != 0)
+        scheme_signal_error(MYNAME": specifying a second integer size: %V", a);
+      num = SCHEME_INT_VAL(a);
+      if (num <= 0)
+        scheme_wrong_type(MYNAME, "positive-integer", 0, argc, argv);
+    } else if (SCHEME_FFITYPEP(a)) {
+      if (size != 0)
+        scheme_signal_error(MYNAME": specifying a second type: %V", a);
+      size = ffi_sizeof(a);
+      if (size < 0)
+        scheme_wrong_type(MYNAME, "C-type", i, argc, argv);
+      else if (size == 0)
+        scheme_wrong_type(MYNAME, "non-void-C-type", i, argc, argv);
+    } else if (SCHEME_SYMBOLP(a)) {
+      if (mode != NULL)
+        scheme_signal_error(MYNAME": specifying a second mode symbol: %V", a);
+      mode = a;
+    } else if (SCHEME_FFIANYPTRP(a) && !SCHEME_FALSEP(a)) {
+      if (from != NULL)
+        scheme_signal_error(MYNAME": specifying a second source pointer: %V",
+                            a);
+      from = SCHEME_FFIANYPTR_VAL(a);
+    } else {
+      scheme_wrong_type(MYNAME, "ffi-malloc-argument", i, argc, argv);
+    }
+  }
+  if ((num == 0) && (size == 0)) scheme_signal_error(MYNAME": no size given");
+  size = ((size==0) ? 1 : size) * ((num==0) ? 1 : num);
+  if (mode == NULL)                      res = scheme_malloc(size);
+  else if (SAME_OBJ(mode, atomic_sym))   res = scheme_malloc_atomic(size);
+  else if (SAME_OBJ(mode, stubborn_sym)) res = scheme_malloc_stubborn(size);
+  else if (SAME_OBJ(mode, eternal_sym))  res = scheme_malloc_eternal(size);
+  /* else if (SAME_OBJ(mode, uncollectable_sym)) */
+  /*   res = scheme_malloc_uncollectable(size); */
+  else scheme_signal_error(MYNAME": bad allocation mode: %V", mode);
+  if ((from != NULL) && (res != NULL)) memcpy(res, from, size);
+  return scheme_make_ffiptr(res);
+}
+
+/* (ffi-end-stubborn-change ptr) */
+{:(cdefine ffi-end-stubborn-change 1):}
+{
+  void *ptr;
+  if (!SCHEME_FFIANYPTRP(argv[0]))
+    scheme_wrong_type(MYNAME, "ffi-ptr", 0, argc, argv);
+  ptr = SCHEME_FFIANYPTR_VAL(argv[0]);
+  if (ptr == NULL) scheme_wrong_type(MYNAME, "non-null-ptr", 0, argc, argv);
+  scheme_end_stubborn_change(ptr);
+  return scheme_void;
+}
+
+{:(defsymbols abs):}
+
+/* (ptr-ref ffi-ptr type [[abs] n]) -> the object at the given location */
+/* n defaults to 0 which is the only value that should be used with ffi_objs */
+/* if n is given, an 'abs flag can precede it to make n be a byte offset rather
+ * than some multiple of sizeof(type). */
+/* WARNING: there are *NO* checks at all, this is raw C level code. */
+{:(cdefine ptr-ref 2 4):}
+{
+  int size; void *ptr; Scheme_Object *base;
+  if (!SCHEME_FFIANYPTRP(argv[0]))
+    scheme_wrong_type(MYNAME, "ffi-ptr", 0, argc, argv);
+  ptr = SCHEME_FFIANYPTR_VAL(argv[0]);
+  if (ptr == NULL)
+    scheme_wrong_type(MYNAME, "non-null-ptr", 0, argc, argv);
+  if (NULL == (base = ffi_base_ctype(argv[1])))
+    scheme_wrong_type(MYNAME, "C-type", 1, argc, argv);
+  else size = ffi_sizeof(base);
+  if (FFITYPE_PRIMLABEL(base) == FFI_fmark) {
+    if (argc > 2)
+      scheme_signal_error
+        (MYNAME": referencing a special value with extra arguments");
+    else
+      ptr = argv[0];
+  } else if (size < 0) {
+    /* should not happen */
+    scheme_wrong_type(MYNAME, "C-type", 1, argc, argv);
+  } else if (size == 0) {
+    scheme_wrong_type(MYNAME, "non-void-C-type", 1, argc, argv);
+  } else if (argc > 3) {
+    if (!SAME_OBJ(argv[2],abs_sym))
+      scheme_wrong_type(MYNAME, "abs-flag", 2, argc, argv);
+    if (!SCHEME_INTP(argv[3]))
+      scheme_wrong_type(MYNAME, "integer", 3, argc, argv);
+    (char*)ptr += SCHEME_INT_VAL(argv[3]);
+  } else if (argc > 2) {
+    if (!SCHEME_INTP(argv[2]))
+      scheme_wrong_type(MYNAME, "integer", 2, argc, argv);
+    (char*)ptr += size * SCHEME_INT_VAL(argv[2]);
+  }
+  return ffi_c_to_scheme(argv[1], ptr);
+}
+
+/* (ptr-set! ffi-ptr type [[abs] n] value) -> void */
+/* n defaults to 0 which is the only value that should be used with ffi_objs */
+/* if n is given, an 'abs flag can precede it to make n be a byte offset rather
+ * than some multiple of sizeof(type). */
+/* WARNING: there are *NO* checks at all, this is raw C level code. */
+{:(cdefine ptr-set! 3 5):}
+{
+  int size; void *ptr;
+  Scheme_Object *val = argv[argc-1], *base;
+  if (!SCHEME_FFIANYPTRP(argv[0]))
+    scheme_wrong_type(MYNAME, "ffi-ptr", 0, argc, argv);
+  ptr = SCHEME_FFIANYPTR_VAL(argv[0]);
+  if (ptr == NULL)
+    scheme_wrong_type(MYNAME, "non-null-ptr", 0, argc, argv);
+  if (NULL == (base = ffi_base_ctype(argv[1])))
+    scheme_wrong_type(MYNAME, "C-type", 1, argc, argv);
+  else size = ffi_sizeof(base);
+  if (FFITYPE_PRIMLABEL(base) == FFI_fmark) {
+    if (argc > 3) {
+      scheme_signal_error
+        (MYNAME": referencing a special value with extra arguments");
+    } else if (SCHEME_FFIPTRP(argv[0])) {
+      ptr = ((ffi_ptr_struct*)(argv[0]))->ptr;
+    } else if SCHEME_FFIOBJP(argv[0]) {
+      ptr = ((ffi_obj_struct*)(argv[0]))->obj;
+    } else {
+      scheme_signal_error
+        (MYNAME": bad lvalue (NULL or string)");
+    }
+  } else if (size < 0) {
+    /* should not happen */
+    scheme_wrong_type(MYNAME, "C-type", 1, argc, argv);
+  } else if (size == 0) {
+    scheme_wrong_type(MYNAME, "non-void-C-type", 1, argc, argv);
+  } else if (argc > 4) {
+    if (!SAME_OBJ(argv[2],abs_sym))
+      scheme_wrong_type(MYNAME, "abs-flag", 2, argc, argv);
+    if (!SCHEME_INTP(argv[3]))
+      scheme_wrong_type(MYNAME, "integer", 3, argc, argv);
+    (char*)ptr += SCHEME_INT_VAL(argv[3]);
+  } else if (argc > 3) {
+    if (!SCHEME_INTP(argv[2]))
+      scheme_wrong_type(MYNAME, "integer", 2, argc, argv);
+    (char*)ptr += size * SCHEME_INT_VAL(argv[2]);
+  }
+  ffi_scheme_to_c(argv[1], ptr, val, 1);
+  return scheme_void;
+}
+
+/* (ptr-equal? ffi-ptr ffi-ptr) -> boolean */
+{:(cdefine ptr-equal? 2 2):}
+{
+  if (!SCHEME_FFIANYPTRP(argv[0]))
+    scheme_wrong_type(MYNAME, "ffi-ptr", 0, argc, argv);
+  if (!SCHEME_FFIANYPTRP(argv[1]))
+    scheme_wrong_type(MYNAME, "ffi-ptr", 1, argc, argv);
+  return (SAME_OBJ(argv[0],argv[1]) ||
+          (SCHEME_FFIANYPTR_VAL(argv[0]) == SCHEME_FFIANYPTR_VAL(argv[1])))
+         ? scheme_true : scheme_false;
+}
+
+/* (make-sized-byte-string ffi-ptr len) */
+{:(cdefine make-sized-byte-string 2 2):}
+/* Warning: no copying is done so it is possible to share string contents. */
+/* (Should use real byte-strings with new version.) */
+{
+  long len;
+  if (!SCHEME_FFIANYPTRP(argv[0]))
+    scheme_wrong_type(MYNAME, "ffi-ptr", 0, argc, argv);
+  if (!scheme_get_int_val(argv[1],&len))
+    scheme_wrong_type(MYNAME, "integer in a C long range", 1, argc, argv);
+  if (SCHEME_FALSEP(argv[0])) return scheme_false;
+  else return scheme_make_sized_string(SCHEME_FFIANYPTR_VAL(argv[0]), len, 0);
+}
+
+/* internal: apply Scheme finalizer */
+void ffi_scm_finalizer(void *p, void *finalizer)
+{
+  Scheme_Object *f = (Scheme_Object*)finalizer;
+  if (!SCHEME_FALSEP(f)) _scheme_apply(f, 1, (Scheme_Object**)(&p));
+}
+void ffi_ptr_finalizer(void *p, void *finalizer)
+{
+  Scheme_Object *f = (Scheme_Object*)finalizer;
+  Scheme_Object *ptr;
+  if (p == NULL) return;
+  ptr = ffi_make_ptr(p);
+  if (!SCHEME_FALSEP(f)) _scheme_apply(f, 1, (Scheme_Object**)(&ptr));
+  /* don't leave dangling references! */
+  (((ffi_ptr_struct*)ptr)->ptr) = NULL;
+  ptr = NULL;
+}
+
+{:(defsymbols pointer):}
+
+/* (ffi-register-finalizer ptrobj finalizer [scheme]) -> old-finalizer */
+/* The finalizer is called by the primitive finalizer mechanism, make sure */
+/* no references to the object are recreated.  #f means erase existing */
+/* finalizer if any.*/
+/* If two arguments are used, this is used with any Scheme object, and the */
+/* finalizer will be called on it.  If a third argument of 'pointer is used, */
+/* the object must be an ffi-ptr object, the finalizer will be invoked when */
+/* the pointer itself is unreachable, and it will get a new ffi-ptr object */
+/* that points to it.  (Only needed in systems where pointer aliases might */
+/* be created.) */
+{:(cdefine ffi-register-finalizer 2 3):}
+{
+  void *ptr, *old = NULL;
+  int ptrsym = (argc == 3 && argv[2] == pointer_sym);
+  if (ptrsym) {
+    if (!SCHEME_FFIANYPTRP(argv[0]))
+      scheme_wrong_type(MYNAME, "ffi-ptr", 0, argc, argv);
+    ptr = SCHEME_FFIANYPTR_VAL(argv[0]);
+    if (ptr == NULL)
+      scheme_wrong_type(MYNAME, "non-null-ptr", 0, argc, argv);
+  } else {
+    if (argc == 3)
+      scheme_wrong_type(MYNAME, "pointer-mode", 2, argc, argv);
+    ptr = argv[0];
+  }
+  if (!(SCHEME_FALSEP(argv[1]) || SCHEME_PROCP(argv[1])))
+    scheme_wrong_type(MYNAME, "procedure-or-false", 1, argc, argv);
+  scheme_register_finalizer
+    (argv[0], (ptrsym ? ffi_ptr_finalizer : ffi_scm_finalizer),
+     argv[1], NULL, &old);
+  return (old == NULL) ? scheme_false : (Scheme_Object*)old;
+}
+
+/*****************************************************************************/
+/* Calling foreign function objects */
+
+Scheme_Object *ffi_do_call(void *data, int argc, Scheme_Object *argv[])
+/* data := {name, c-function, itypes, otype, cif} */
+{
+  char          *name   = SCHEME_STR_VAL(((Scheme_Object**)data)[0]);
+  void          *c_func = (void*)(((Scheme_Object**)data)[1]);
+  Scheme_Object *itypes = ((Scheme_Object**)data)[2];
+  Scheme_Object *otype  = ((Scheme_Object**)data)[3];
+  Scheme_Object *base;
+  ffi_cif       *cif    = (ffi_cif*)(((Scheme_Object**)data)[4]);
+  int           nargs   = cif->nargs;
+  FFIAny oval, *ival/* !!! ival[nargs] */;
+  void **avalues/* !!! *avalues[nargs] */, *p;
+  int i;
+  ival    = scheme_malloc(nargs*sizeof(FFIAny));
+  avalues = scheme_malloc(nargs*sizeof(void*));
+  /* iterate on input values and types */
+  for (i=0; i<nargs; i++, itypes=SCHEME_CDR(itypes)) {
+    /* convert argv[i] according to current itype */
+    p = ffi_scheme_to_c(SCHEME_CAR(itypes), &(ival[i]), argv[i], 0);
+    /* Establish links from avalues to the actual ivals */
+    avalues[i] = (p == NULL) ? (&(ival[i])) : p;
+  }
+  base = ffi_base_ctype(otype); /* verified below, so cannot be NULL */
+  /* If this is a struct return value, then need to malloc in any case, even if
+   * the size is smaller than FFIAny, because this value will be returned. */
+  p = (FFITYPE_PRIMLABEL(base) == FFI_struct)
+        ? scheme_malloc(FFITYPE_PRIMTYPE(base)->size)
+        : &oval;
+  /* call the function */
+  ffi_call(cif, c_func, p, avalues);
+  if (FFITYPE_PRIMLABEL(base) == FFI_fmark) {
+    /* need to allocate a pointer */
+    return ffi_c_to_scheme(otype, scheme_make_ffiptr(oval.x_pointer));
+  } else {
+    return ffi_c_to_scheme(otype, p);
+  }
+}
+
+/* (ffi-call ffi-obj in-types out-type) -> (in-types -> out-value) */
+/* the real work is done by ffi_do_call above */
+{:(cdefine ffi-call 3 3):}
+{
+  static Scheme_Object *ffi_name_prefix = NULL;
+  Scheme_Object *itypes = argv[1];
+  Scheme_Object *otype  = argv[2];
+  Scheme_Object *obj, **data, *p, *base;
+  ffi_type *rtype, **atypes;
+  ffi_cif *cif;
+  int i, nargs;
+  if (!ffi_name_prefix)
+    ffi_name_prefix = scheme_make_string_without_copying("ffi:");
+  if (!SCHEME_FFIANYPTRP(argv[0]))
+    scheme_wrong_type(MYNAME, "ffi-obj-or-ptr", 0, argc, argv);
+  obj = SCHEME_FFIANYPTR_VAL(argv[0]);
+  if (obj == NULL)
+    scheme_wrong_type(MYNAME, "non-null-ptr", 0, argc, argv);
+  nargs = scheme_proper_list_length(itypes);
+  if (nargs < 0)
+    scheme_wrong_type(MYNAME, "proper list", 1, argc, argv);
+  if (NULL == (base = ffi_base_ctype(otype)))
+    scheme_wrong_type(MYNAME, "C-type", 2, argc, argv);
+  rtype = FFITYPE_PRIMTYPE(base);
+  atypes = scheme_malloc_stubborn(nargs * sizeof(ffi_cif));
+  for (i=0, p=itypes; i<nargs; i++, p=SCHEME_CDR(p)) {
+    if (NULL == (base = ffi_base_ctype(SCHEME_CAR(p))))
+      scheme_wrong_type(MYNAME, "list-of-C-types", 1, argc, argv);
+    if (FFITYPE_PRIMLABEL(base) == FFI_void)
+      scheme_wrong_type(MYNAME, "list-of-non-void-C-types", 1, argc, argv);
+    atypes[i] = FFITYPE_PRIMTYPE(base);
+  }
+  scheme_end_stubborn_change(atypes);
+  cif = scheme_malloc_stubborn(sizeof(ffi_cif));
+  if (ffi_prep_cif(cif, FFI_DEFAULT_ABI, nargs, rtype, atypes) != FFI_OK)
+    scheme_signal_error("internal error: ffi_prep_cif did not return FFI_OK");
+  scheme_end_stubborn_change(cif);
+  data = scheme_malloc_stubborn(5 * sizeof(void*));
+  data[0] = scheme_append_string
+              (ffi_name_prefix,
+               scheme_make_string_without_copying
+                 (SCHEME_FFIOBJP(argv[0]) ?
+                   ((ffi_obj_struct*)(argv[0]))->name : "proc"));
+  data[1] = obj;
+  data[2] = itypes;
+  data[3] = otype;
+  data[4] = (Scheme_Object*)cif;
+  scheme_end_stubborn_change(data);
+  return scheme_make_closed_prim_w_arity
+           (ffi_do_call, (void*)data, SCHEME_STR_VAL(data[0]), nargs, nargs);
+}
+
+/*****************************************************************************/
+/* Scheme callbacks */
+
+void ffi_do_callback(ffi_cif* cif, void* resultp, void** args, void *userdata)
+{
+  ffi_callback_struct *data = (ffi_callback_struct*)userdata;
+  int argc = cif->nargs, i;
+  Scheme_Object **argv/* !!! *argv[argc] */, *p;
+  argv = scheme_malloc(argc*sizeof(Scheme_Object*));
+  for (i=0, p=data->itypes; i<argc; i++, p=SCHEME_CDR(p))
+    argv[i] = ffi_c_to_scheme(SCHEME_CAR(p),args[i]);
+  p = _scheme_apply(data->proc, argc, argv);
+  ffi_scheme_to_c(data->otype, resultp, p, 1);
+}
+
+/* (ffi-callback scheme-proc in-types out-type) -> ffi-callback */
+/* the treatment of in-types and out-types is similar to that in ffi-call */
+/* the real work is done by ffi_do_callback above */
+{:(cdefine ffi-callback 3 3):}
+{
+  ffi_callback_struct *data;
+  Scheme_Object *itypes = argv[1];
+  Scheme_Object *otype = argv[2];
+  Scheme_Object *p, *base;
+  int nargs, i;
+  ffi_type *rtype, **atypes;
+  ffi_cif *cif;
+  ffi_closure *cl;
+  if (!SCHEME_PROCP(argv[0]))
+    scheme_wrong_type(MYNAME, "procedure", 0, argc, argv);
+  nargs = scheme_proper_list_length(itypes);
+  if (nargs < 0)
+    scheme_wrong_type(MYNAME, "proper list", 1, argc, argv);
+  if (NULL == (base = ffi_base_ctype(otype)))
+    scheme_wrong_type(MYNAME, "C-type", 2, argc, argv);
+  rtype = FFITYPE_PRIMTYPE(base);
+  atypes = scheme_malloc_stubborn(nargs * sizeof(ffi_cif));
+  for (i=0, p=itypes; i<nargs; i++, p=SCHEME_CDR(p)) {
+    if (NULL == (base = ffi_base_ctype(SCHEME_CAR(p))))
+      scheme_wrong_type(MYNAME, "list-of-C-types", 1, argc, argv);
+    if (FFITYPE_PRIMLABEL(base) == FFI_void)
+      scheme_wrong_type(MYNAME, "list-of-non-void-C-types", 1, argc, argv);
+    atypes[i] = FFITYPE_PRIMTYPE(base);
+  }
+  scheme_end_stubborn_change(atypes);
+  cif = scheme_malloc_stubborn(sizeof(ffi_cif));
+  if (ffi_prep_cif(cif, FFI_DEFAULT_ABI, nargs, rtype, atypes) != FFI_OK)
+    scheme_signal_error("internal error: ffi_prep_cif did not return FFI_OK");
+  scheme_end_stubborn_change(cif);
+  cl = scheme_malloc_stubborn(sizeof(ffi_closure));
+  {:(cmake-object "data" ffi-callback
+                  "cl" "argv[0]" "argv[1]" "argv[2]"):}
+  if (ffi_prep_closure(cl, cif, &ffi_do_callback, (void*)data) != FFI_OK)
+    scheme_signal_error
+      ("internal error: ffi_prep_closure did not return FFI_OK");
+  scheme_end_stubborn_change(cl);
+  return (Scheme_Object*)data;
+}
+
+/*****************************************************************************/
+/* Initialization */
+
+Scheme_Object *scheme_reload(Scheme_Env *env)
+{
+  Scheme_Env *menv;
+  ffi_type_struct *t;
+  menv = scheme_primitive_module(scheme_intern_symbol("ffi-prim"), env);
+  {:(for-each
+      (lambda (x)
+        (~ "scheme_add_global(\""(car x)"\"," \\
+           "  scheme_make_prim_w_arity("
+                (cadr x)", \""(car x)"\", "(caddr x)", "(cadddr x)"), menv);"))
+      (reverse! cfunctions))
+    (for-each-type -all-
+      (if alias
+        (~ "scheme_add_global(\"_"(car alias)"\", scheme_lookup_global"
+           "(scheme_intern_symbol(\"_"(cadr alias)"\"),menv), "
+           "menv);")
+        (begin (cmake-object "t" ffi-type "NULL"
+                             (format "(Scheme_Object*)(&ffi_type_~a)" ftype)
+                             (format "(Scheme_Object*)FFI_~a" stype))
+               (~ "scheme_add_global(\"_"stype"\", (Scheme_Object*)t, "
+                  "menv);")))):}
+  scheme_finish_primitive_module(menv);
+  return scheme_void;
+}
+
+Scheme_Object *scheme_initialize(Scheme_Env *env)
+{
+  {:(for-each (lambda (x)
+                (~ (cadr x)"_tag = scheme_make_type(\"<"(car x)">\");"))
+              (reverse! cstructs)):}
+  opened_libs = scheme_make_hash_table(SCHEME_hash_string);
+  /* scheme_register_extension_global should change to MZ_REGISTER_STATIC when
+   * the code moves into mzscheme. */
+  scheme_register_extension_global(&opened_libs, sizeof(opened_libs));
+  {:(for-each
+     (lambda (sym)
+       (~ sym"_sym = scheme_intern_symbol(\""sym"\");" \\
+          "scheme_register_extension_global("sym"_sym,sizeof("sym"_sym));"))
+     (reverse! symbols)):}
+  return scheme_reload(env);
+}
+
+Scheme_Object *scheme_module_name()
+{
+  return scheme_intern_symbol("ffi-prim");
+}
+
+/*****************************************************************************/

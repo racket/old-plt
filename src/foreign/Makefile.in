@@ -1,0 +1,7 @@
+# Makefile for all foreign-related libraires
+
+all:
+	$(MAKE) libffi
+
+libffi:
+	cd gcc/libffi; $(MAKE) libffi.la

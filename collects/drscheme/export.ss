@@ -26,7 +26,7 @@
 		(mzlib function@))]
 	[rep : drscheme:rep^
 	     ((require-relative-library-unit/sig "rep.ss")
-	      wx mred mzlib print-convert aries zodiac
+	      wx mred mzlib print-convert zodiac
 	      interface init snip language app basis edit)]
 	[frame : drscheme:frame^
 	       ((require-relative-library-unit/sig "frame.ss")

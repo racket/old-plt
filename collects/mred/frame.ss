@@ -629,12 +629,13 @@
 		    (get-active-embedded-edit
 		     (send searching-frame get-edit-to-search)))]
 		 [search
-		  (opt-lambda ([reset-anchor? #t] [beep? #t])
+		  (opt-lambda ([reset-anchor? #t] [beep? #t] [wrap? #t])
 		    (when searching-frame
 		      (let* ([string (get-text)]
 			     [searching-edit (get-searching-edit)]
 			     [not-found
-			      (lambda ()
+			      (lambda (found-edit)
+				(send found-edit set-position anchor)
 				(when beep?
 				  (wx:bell))
 				#f)]
@@ -653,24 +654,30 @@
 			(let-values ([(found-edit first-pos)
 				      (send searching-edit
 					    find-string-embedded
-					    string 
+					    string
 					    searching-direction
 					    anchor
 					    -1 #t #t #t)])
 			  (cond
 			    [(= -1 first-pos)
-			     (let-values ([(found-edit pos)
-					   (send searching-edit
-						 find-string-embedded
-						 string 
-						 searching-direction
-						 (if (= 1 searching-direction)
-						     0
-						     (send searching-edit last-position)))])
-			       (if (= -1 pos)
-				   (begin (send found-edit set-position anchor)
-					  (not-found))
-				   (found found-edit pos)))]
+			     (if wrap?
+				 (let-values ([(found-edit pos)
+					       (send searching-edit
+						     find-string-embedded
+						     string 
+						     searching-direction
+						     (if (= 1 searching-direction)
+							 0
+							 (send searching-edit last-position)))])
+				   (if (= -1 pos)
+				       (not-found found-edit)
+				       (found found-edit 
+					      ((if (= searching-direction 1)
+						   +
+						   -)
+					       pos
+					       (string-length string)))))
+				 (not-found found-edit))]
 			    [else
 			     (found found-edit first-pos)])))))]
 		 [on-focus
@@ -779,30 +786,32 @@
 				(ivar replacee-edit get-end-position)
 				(ivar replacee-edit get-start-position))]
 			   [done? (if (= 1 searching-direction)
-				      <=
-				      >=)])
+				      (lambda (x) (>= x (send replacee-edit last-position)))
+				      (lambda (x) (<= x 0)))])
 		      (send* replacee-edit 
 			(begin-edit-sequence)
 			(set-position pos))
 		      (when (search)
 			(send replacee-edit set-position pos)
-			(let loop ([last-pos pos])
-			  (search searching-direction #f)
-			  (let ([current-pos (get-pos)])
-			    (if (done? current-pos last-pos)
-				(send replacee-edit set-position last-pos)
-				(begin (replace)
-				       (loop current-pos))))))
+			(let loop ()
+			  (when (send find-edit search #t #f #f)
+			    (replace)
+			    (loop))))
 		      (send replacee-edit end-edit-sequence)))]
 		 [replace
 		  (lambda ()
 		    (let* ([search-text (send find-edit get-text)]
 			   [replacee-edit (get-edit-to-search)]
-			   [replacee (send replacee-edit get-text 
-					   (send replacee-edit get-start-position)
+			   [replacee-start (send replacee-edit get-start-position)]
+			   [new-text (send replace-edit get-text)]
+			   [replacee (send replacee-edit get-text
+					   replacee-start
 					   (send replacee-edit get-end-position))])
 		      (if (string=? replacee search-text)
-			  (begin (send replacee-edit insert (send replace-edit get-text))
+			  (begin (send replacee-edit insert new-text)
+				 (send replacee-edit set-position
+				       replacee-start
+				       (+ replacee-start (string-length new-text)))
 				 #t)
 			  #f)))]
 		 [toggle-search-focus
@@ -863,7 +872,7 @@
 						     (lambda x (replace&search)) "Replace && Search")]
 		 [replace-button (make-object mred:container:button% middle-left-panel (lambda x (replace)) "Replace")]
 		 [replace-all-button (make-object mred:container:button% middle-middle-panel
-						  (lambda x (replace-all)) "Replace All")]
+						  (lambda x (replace-all)) "Replace To End")]
 		 
 		 [dir-radio (make-object mred:container:radio-box% middle-right-panel
 					 (lambda (dir-radio evt)

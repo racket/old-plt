@@ -21,15 +21,6 @@
   (drscheme:get/extend:get-definitions-edit%)
   
 
-  (pretty-print:pretty-print-show-inexactness #t)
-  (print-convert:empty-list-name 'empty)
-  (print-convert:current-print-convert-hook
-   (lambda (expr basic-convert sub-convert)
-     (let ([ans (if (is-a? expr wx:snip%)
-		    expr
-		    (basic-convert expr))])
-       ans)))
-
   '(define (make-basic)
     (send (drscheme:compound-unit:make-compound-unit #f)
 	  create-frame))

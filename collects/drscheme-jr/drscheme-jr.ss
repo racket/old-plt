@@ -406,10 +406,21 @@
 	  (let ([continue? #f]
 		[param
 		 (basis:build-parameterization
-		  void
 		  null
 		  settings:setting
-		  (require-library-unit/sig "userspcr.ss" "userspce"))])
+		  (lambda (in-allow-improper-lists in-eq?-only-compares-symbols parameterization)
+		    (let ([u (compound-unit/sig (import)
+			       (link [params : (allow-improper-lists eq?-only-compares-symbols)
+					     ((unit/sig (allow-improper-lists eq?-only-compares-symbols)
+						(import)
+						(define allow-improper-lists in-allow-improper-lists)
+						(define eq?-only-compares-symbols in-eq?-only-compares-symbols)))]
+				     [U : plt:userspace^ ((require-library-unit/sig "userspcr.ss" "userspce") params)])
+			       (export (open U)))])
+		      (with-parameterization parameterization
+			(lambda ()
+			  (invoke-open-unit/sig u))))))])
+
 	    (with-parameterization param
 	      (lambda ()
 		(mzlib:function:dynamic-disable-break

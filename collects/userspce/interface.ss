@@ -18,7 +18,7 @@
        (case zodiac-phase
 	 [(expander) (make-exn:syntax string object #f)]
 	 [(reader) (make-exn:read string object #f)]
-	 [else (make-exn:user (string-append "unknown-phase: " string) object)]))))
+	 [else (make-exn:user string object)]))))
   
   ;; report-error : symbol -> (+ zodiac:zodiac zodiac:eof zodiac:period) string (listof TST) ->* ALPHA
   ;; escapes

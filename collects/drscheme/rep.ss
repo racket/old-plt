@@ -4,7 +4,6 @@
 	  [mred : mred^]
 	  [mzlib : mzlib:core^]
 	  [print-convert : mzlib:print-convert^]
-	  [aries : plt:aries^]
 	  [zodiac : drscheme:zodiac^]
 	  [zodiac:interface : drscheme:interface^]
 	  [drscheme:init : drscheme:init^]
@@ -100,9 +99,10 @@
 	       get-end-position
 	       set-clickback
 	       set-last-header-position
-	       this-err-write this-err 
-	       this-out
-	       this-in this-result this-result-write
+	       this-err this-err-write 
+	       this-out this-out-write
+	       this-in
+	       this-result this-result-write
 	       output-delta set-output-delta
 	       do-post-eval
 	       insert-prompt
@@ -583,36 +583,73 @@
 	     (set! user-setting (mred:get-preference 'drscheme:settings))
 
 	     (let ([p (basis:build-parameterization
-		       (lambda () '(load (build-path (collection-path "system") "debug.ss")))
 		       (list 'wx)
 		       (mred:get-preference 'drscheme:settings)
-		       (let ([l@
-			      (unit/sig ()
-				(import plt:userspace^)
-				(when library-unit
-				  (with-handlers ([(lambda (x) #t)
-						   (lambda (x)
-						     ((error-display-handler)
-						      (format
-						       "Invalid Library:~n~a"
-						       (if (exn? x) (exn-message x) x))
-						      "Invalid Library"))])
-				    (invoke-open-unit/sig library-unit #f plt:userspace^))))])
-			 (compound-unit/sig (import [params : plt:userspace:params^])
-			   (link [userspace : plt:userspace^ 
-					    ((require-library-unit/sig "gusrspcr.ss" "gusrspce")
-					     params)]
-				 [library : () (l@ userspace)])
-			   (export (open userspace)))))])
+
+		       (lambda (in-allow-improper-lists in-eq?-only-compares-symbols parameterization)
+			 (let ([u
+				(compound-unit/sig (import)
+				  (link [params : (allow-improper-lists eq?-only-compares-symbols)
+						((unit/sig (allow-improper-lists eq?-only-compares-symbols)
+						   (import)
+						   (define allow-improper-lists in-allow-improper-lists)
+						   (define eq?-only-compares-symbols in-eq?-only-compares-symbols)))]
+					[userspace : plt:userspace^ 
+						   ((require-library-unit/sig "gusrspcr.ss" "gusrspce")
+						    params)]
+					[library : () ((unit/sig ()
+							 (import plt:userspace^)
+							 (when library-unit
+							   (with-handlers ([(lambda (x) #t)
+									    (lambda (x)
+									      ((error-display-handler)
+									       (format
+										"Invalid Library:~n~a"
+										(if (exn? x) (exn-message x) x))
+									       "Invalid Library"))])
+							     (invoke-open-unit/sig library-unit #f plt:userspace^))))
+						       userspace)])
+				  (export (open userspace)))])
+			   (with-parameterization parameterization
+			     (lambda ()
+			       (invoke-open-unit/sig u))))))])
 
 	       (mred:debug:printf 'console-threading "built parameterization")
 	       (set! user-custodian ((in-parameterization p current-custodian)))
 	       (with-parameterization p
 		 (lambda ()
+
+		   (unless (basis:setting-use-zodiac? (basis:current-setting))
+		     (require-library "sig.ss" "mred"))
+
 		   (exception-reporting-rep this)
 		   (current-output-port this-out)
 		   (current-error-port this-err)
 		   (current-input-port this-in)
+		   
+		   (global-port-print-handler
+		    (let ([old (global-port-print-handler)])
+		      (lambda (value port)
+			(if (or (eq? port this-result)
+				(eq? port this-out)
+				(eq? port this-err))
+			    (parameterize ([mzlib:pretty-print@:pretty-print-size-hook
+					    (lambda (x _ port) (and (is-a? x wx:snip%) 1))]
+					   [mzlib:pretty-print@:pretty-print-print-hook
+					    (lambda (x _ port)
+					      (evcase port
+						      [this-result (this-result-write x)]
+						      [this-out (this-out-write x)]
+						      [this-err (this-err-write x)]))])
+			      (old value port))
+			    (old value port)))))
+
+		   (print-convert:current-print-convert-hook
+		    (lambda (expr basic-convert sub-convert)
+		      (let ([ans (if (is-a? expr wx:snip%)
+				     expr
+				     (basic-convert expr))])
+			ans)))
 
 		   (current-load
 		    (let ([userspace-load (current-load)])

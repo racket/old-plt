@@ -200,7 +200,7 @@
 	 (process/zodiac
 	  (parameterize ([read-case-sensitive (setting-case-sensitive? setting)])
 	    (zodiac:read port
-			 (zodiac:make-location 0 0 0 filename)
+			 (zodiac:make-location 0 0 0 (path->complete-path filename))
 			 #t 1))
 	  f
 	  annotate?))
@@ -258,7 +258,13 @@
       (let loop ()
 	(let ([next-iteration
 	       (let/ec k
-		 (let ([zodiac-read
+		 (let ([annotate
+			(lambda (term)
+			  (dynamic-wind
+			   (lambda () (zodiac:interface:set-zodiac-phase 'expander))
+			   (lambda () (aries:annotate term))
+			   (lambda () (zodiac:interface:set-zodiac-phase #f))))]
+		       [zodiac-read
 			(parameterize ([read-case-sensitive (setting-case-sensitive? setting)])
 			  (dynamic-wind
 			   (lambda () (zodiac:interface:set-zodiac-phase 'reader))
@@ -268,7 +274,7 @@
 		       (lambda () (cleanup #f))
 		       (let* ([evaluator
 			       (lambda (exp _ macro)
-				 (primitive-eval (aries:annotate exp)))]
+				 (primitive-eval (annotate exp)))]
 			      [user-macro-body-evaluator
 			       (lambda (x . args)
 				 (primitive-eval `(,x ,@(map (lambda (x) `(#%quote ,x)) args))))]
@@ -283,7 +289,7 @@
 						     [elaboration-evaluator: evaluator]))
 				(lambda () (zodiac:interface:set-zodiac-phase #f)))]
 			      [heading-out (if annotate? 
-					       (aries:annotate exp)
+					       (annotate exp)
 					       exp)])
 			 (lambda () (f heading-out loop))))))])
 	  (next-iteration)))))
@@ -337,29 +343,21 @@
 
   ;; drscheme-error-value->string-handler : TST number -> string
   (define (drscheme-error-value->string-handler x n)
-    (let ([setting (current-setting)])
-      (with-parameterization system-parameterization
-	(lambda ()
-	  (let* ([port (open-output-string)]
-		 [error-value
-		  (if (r4rs-style-printing? setting)
-		      x
-		      (mzlib:print-convert:print-convert x))]
-		 [long-string
-		  (begin (mzlib:pretty-print:pretty-print error-value
-							  port
-							  'infinity)
-			 (get-output-string port))])
-	    (if (<= (string-length long-string) n)
-		long-string
-		(let ([short-string (substring long-string 0 n)]
-		      [trim 3])
-		  (unless (<= n trim)
-		    (let loop ([i trim])
-		      (unless (<= i 0)
-			(string-set! short-string (- n i) #\.)
-			(loop (sub1 i)))))
-		  short-string)))))))
+    (let ([port (open-output-string)])
+      (parameterize ([current-output-port port])
+	(drscheme-print/void x))
+      (let ([long-string (get-output-string port)])
+	(close-output-port port)
+	(if (<= (string-length long-string) n)
+	    long-string
+	    (let ([short-string (substring long-string 0 n)]
+		  [trim 3])
+	      (unless (<= n trim)
+		(let loop ([i trim])
+		  (unless (<= i 0)
+		    (string-set! short-string (- n i) #\.)
+		    (loop (sub1 i)))))
+	      short-string)))))
 
   ;; intermediate-values-during-load : (parameter (TST *-> void))
   (define intermediate-values-during-load (make-parameter (lambda x (void))))
@@ -378,36 +376,29 @@
 	   (let ([l (string-length filename)])
 	     (and (<= 3 l)
 		  (string=? ".zo" (substring filename (- l 3) l))))])
-      (cond
-       [zo-file?
-	(let ([load-dir/path
-	       (lambda (f)
-		 (let-values ([(base name must-be-dir?)
-			       (split-path (path->complete-path filename (current-directory)))])
-		   base))])
-	  (parameterize ((current-eval primitive-eval)
 
-			 ;; why set current-load-relative-directory ?
-			 (current-load-relative-directory (load-dir/path filename)))
-	    (primitive-load filename)))]
-       [(setting-use-zodiac? (current-setting))
-	(let* ([process-sexps
-		(let ([last (list (void))])
-		  (lambda (sexp recur)
-		    (cond
-		     [(process-finish? sexp)
-		      last]
-		     [else
-		      (set! last
-			    (call-with-values
-			     (lambda () (syntax-checking-primitive-eval sexp))
-			     (lambda x
-			       (apply (intermediate-values-during-load) x)
-			       x)))
-		      (recur)])))])
-	  (apply values (process-file/zodiac filename process-sexps #t)))]
-       [else
-	(primitive-load filename)])))
+	(cond
+	 [zo-file?
+	  (parameterize ([current-eval primitive-eval])
+	    (primitive-load filename))]
+	 [(setting-use-zodiac? (current-setting))
+	  (let* ([process-sexps
+		  (let ([last (list (void))])
+		    (lambda (sexp recur)
+		      (cond
+		       [(process-finish? sexp)
+			last]
+		       [else
+			(set! last
+			      (call-with-values
+			       (lambda () (syntax-checking-primitive-eval sexp))
+			       (lambda x
+				 (apply (intermediate-values-during-load) x)
+				 x)))
+			(recur)])))])
+	    (apply values (process-file/zodiac filename process-sexps #t)))]
+	 [else
+	  (primitive-load filename)])))
 
     ;; drscheme-eval : sexp ->* TST
     (define (drscheme-eval-handler sexp)
@@ -434,17 +425,23 @@
     (define drscheme-print
       (lambda (v)
 	(unless (void? v)
-	  (let ([value (if (r4rs-style-printing? (current-setting))
-			   v
-			   (mzlib:print-convert:print-convert v))])
-	    (mzlib:pretty-print:pretty-print-handler value)))))
+	  (drscheme-print/void v))))
+
+    ;; drscheme-print/void : TST -> void
+    ;; effect: prints the value, on the screen, attending to the values of the current setting
+    (define drscheme-print/void
+      (lambda (v)
+	(let ([value (if (r4rs-style-printing? (current-setting))
+			 v
+			 (mzlib:print-convert:print-convert v))])
+	  (mzlib:pretty-print:pretty-print-handler value))))
 
 
     ;; build-parameterization : (list-of symbols)
     ;;                          setting
-    ;;                          (unit (import plt:userspace:params^))
+    ;;                          (X Y -> (unit (import) (export ...)))
     ;;                       -> parameterization
-    (define (build-parameterization add-macros namespace-flags setting basis@)
+    (define (build-parameterization namespace-flags setting handle-invokation)
       (let* ([parameterization (make-parameterization)]
 	     [custodian (make-custodian)]
 	     [n (apply make-namespace
@@ -504,7 +501,13 @@
 	    (current-eval drscheme-eval-handler)
 	    (current-load drscheme-load-handler)
 
-	    ;; need to introduce parameter for constructor-style vs r4 style
+	    (mzlib:print-convert:empty-list-name 'empty)
+
+	    (global-port-print-handler
+	     (lambda (value port)
+	       (parameterize ([current-output-port port])
+		 (drscheme-print/void value))))
+
 	    (case (setting-printing setting)
 	      [(constructor-style)
 	       (r4rs-style-printing #f)
@@ -514,7 +517,6 @@
 	       (mzlib:print-convert:constructor-style-printing #f)
 	       (mzlib:print-convert:quasi-read-style-printing #f)]
 	      [(quasi-read-style)
-	       (mzlib:print-convert:whole/fractional-exact-numbers #f)
 	       (r4rs-style-printing #f)
 	       (mzlib:print-convert:constructor-style-printing #f)
 	       (mzlib:print-convert:quasi-read-style-printing #t)]
@@ -529,10 +531,9 @@
 	    (mzlib:print-convert:abbreviate-cons-as-list (setting-abbreviate-cons-as-list? setting))))
 	(with-parameterization parameterization
 	  (lambda ()
-	    (let ([allow-improper-lists zodiac:allow-improper-lists]
-		  [eq?-only-compares-symbols eq?-only-compares-symbols])
-	      (add-macros)
-	      (unless (setting-use-zodiac? setting)
-		(require-library "corem.ss"))
-	      (invoke-open-unit/sig basis@ #f plt:userspace:params^))))
+	    (unless (setting-use-zodiac? setting)
+	      (require-library "corem.ss"))))
+	(handle-invokation zodiac:allow-improper-lists
+			   eq?-only-compares-symbols
+			   parameterization)
 	parameterization)))

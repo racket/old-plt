@@ -1,3 +1,5 @@
+(define argv (vector))
+
 (define mred:startup-application
   (lambda (collection info extra-args init-param)
     (let ([orig-param (current-parameterization)]
@@ -29,11 +31,11 @@
 		(wx:set-afm-path (unbox path-box))))
 	    
 	    (require-library/proc (info 'app-sig-library
-				   (lambda ()
-				     (error 'mred:startup-application
-					    "no app-sig-library in collection info")))
-			     collection)
-	    
+					(lambda ()
+					  (error 'mred:startup-application
+						 "no app-sig-library in collection info")))
+				  collection)
+
 	    (let ([app (require-library/proc (info 'app-unit-library
 					      (lambda ()
 						(error 'mred:startup-application
@@ -41,10 +43,11 @@
 					collection)])
 	      (mred:change-splash-message "Invoking...")
 	      (mred:shutdown-splash)
-	      (let ([argv (list->vector extra-args)])
-		;; the non unitized approach relies on this being invoke-open
-		(invoke-open-unit/sig app #f mred:application-imports^)))
+
+	      ;; use global-defined-value to bang into the toplevel, so that this can
+	      ;; be parsed by zodiac
+	      (set! argv (list->vector extra-args))
+	      (global-defined-value 'argv (list->vector extra-args))
+	      ;; the non unitized approach relies on this being invoke-open
+	      (invoke-open-unit/sig app #f mred:application-imports^))
 	    (mred:close-splash)))))))
-
-
-

@@ -54,7 +54,7 @@
 
      (define odbc-version 3.5)
 
- Valid values of odbc-version are 1.0, 2.0, 3.0, 3.5, and 3.51.
+ The value of odbc-version should be a number between 1.0 and 3.51.
  The version here should be less than or equal to the ODBC version
  used when compiling the SrPersist files.  See README in
  the SrPersist source directory for more details on compilation.
@@ -80,21 +80,8 @@
  on the variable odbc-version.  The possible signatures are 
  `srpersist:odbc-1.0^', `srpersist:odbc-2.0^', `srpersist:odbc-3.0^',
  and `srpersist:odbc-3.5^', which are defined in the file `sigs.ss' 
- in the srpersist collection.  The signature is chosen as 
- follows, in pseudocode:
-
-   (cond
-     [(>= odbc-version 3.5)
-      signature is srpersist:odbc-3.5^]
-     [(>= odbc-version 3.0)
-      signature is srpersist:odbc-3.0^]
-     [(>= odbc-version 2.0)
-      signature is srpersist:odbc-2.0^]
-     [(>= odbc-version 1.0)
-      signature is srpersist:odbc-1.0^]
-     [else fail])
-
- This unit can be invoked or imported into other units as needed.
+ in the srpersist collection.  This unit can be invoked or imported 
+ into other units as needed.
 
  Overview of ODBC
  ----------------

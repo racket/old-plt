@@ -22,9 +22,11 @@ mflatt@cs.utah.edu
 _URL_ posting, _web clients_, _WWW_
 ==========================================================================
 
-Collection: net
-Files: _url.ss_, _url-net.ss_, _url-sig.ss_
-To Load: (require (lib "url.ss" "net"))
+To load directly: (require (lib "url.ss" "net"))
+Module files: _url.ss_ - provides the procedures documented below
+              _url-unit.ss_ - provides unit net:url@
+              _url-sig.ss_ - provides signalture net:url^
+
 
 ABSTRACT -------------------------------------------------------------
 
@@ -64,13 +66,6 @@ TYPES ----------------------------------------------------------------
 
   An impure port is one that still has its MIME headers.  Contrast
   with a pure-port.
-
-> mime-header
-  struct mime-header (name value)
-  name : string
-  value : string
-
-  MIME header.
 
 PROCEDURES -----------------------------------------------------------
 
@@ -154,9 +149,11 @@ PROCEDURES -----------------------------------------------------------
 
   Writes the output of a pure port.  For debugging purposes.
 
-> (purify-port input-port) -> list (mime-headers)
+> (purify-port input-port) -> string
 
-  Purifies a port, returning the MIME headers.
+  Purifies a port, returning the MIME headers. The "head.ss" library
+  provides procedures, such as `extract-field, for manipulating the
+  header.
 
 > (call/input-url url url->port-proc port->void-proc [list-of-strings]) -> void
 
@@ -206,9 +203,11 @@ a unit that imports nothing and exports the names in net:url^.
 _URL viewing_
 ==========================================================================
 
-The _open-url.ss_ module defines one function:
+To load directly: (require (lib "sendurl.ss" "net"))
 
-> (open-url str) - opens the url in a platform-specific manner,
+The _sendurl.ss_ module defines one procedure:
+
+> (send-url str) - opens the url in a platform-specific manner,
   sending a message to the local browser to display the url named
   by `str'.
 
@@ -216,9 +215,10 @@ The _open-url.ss_ module defines one function:
 _CGI_ backends, _WWW_
 ==========================================================================
 
-Collection: net
-Files: _cgi.ss_, _cgic.ss_, _cgir.ss_, _cgis.ss_, _cgiu.ss_
-To Load: (require-library "cgi.ss" "net")
+To load directly: (require (lib "cgi.ss" "net"))
+Module files: _cgi.ss_ - provides the procedures documented below
+              _cgi-unit.ss_ - provides unit net:cgi@
+              _cgi-sig.ss_ - provides signalture net:cgi^
 
 ABSTRACT -------------------------------------------------------------
 
@@ -344,16 +344,18 @@ PROCEDURES -----------------------------------------------------------
 _sending mail_, _sendmail_
 ==========================================================================
 
-Collection: net
-Files: _mail.ss_, _mailr.ss_, _mails.ss_, _mailu.ss_
-To Load: (require-library "mail.ss" "net")
+To load directly: (require (lib "sendmail.ss" "net"))
+Module files: _sendmail.ss_ - provides the procedures documented below
+              _sendmail-unit.ss_ - provides unit net:sendmail@
+              _sendmail-sig.ss_ - provides signalture net:sendmail^
+
 
 ABSTRACT -------------------------------------------------------------
 
-The mail package helps programmers write programs that need to send
-electronic mail messages.  The package assumes the existence of a
+The sendmail package helps programmers write programs that need to
+send electronic mail messages.  The package assumes the existence of a
 conformant sendmail program on the local system; see also the SMTP
-package, below (and use it instead).
+package, below (and, in most cases, use it instead).
 
 TYPES ----------------------------------------------------------------
 
@@ -398,9 +400,10 @@ PROCEDURES -----------------------------------------------------------
 _sending mail_, _SMTP_
 ==========================================================================
 
-Collection: net
-Files: _smtp.ss_, _smtpr.ss_, _smtps.ss_
-To Load: (require-library "smtp.ss" "net")
+To load directly: (require (lib "smtp.ss" "net"))
+Module files: _smtp.ss_ - provides the procedures documented below
+              _smtp-unit.ss_ - provides unit net:smtp@
+              _smtp-sig.ss_ - provides signalture net:smtp^
 
 ABSTRACT -------------------------------------------------------------
 
@@ -454,9 +457,10 @@ PROCEDURES -----------------------------------------------------------
 _NNTP_, _newsgroups_
 ==========================================================================
 
-Collection: net
-Files: _nntp.ss_, _nntpr.ss_, _nntps.ss_, _nntpu.ss_
-To Load: (require-library "nntp.ss" "net")
+To load directly: (require (lib "nntp.ss" "net"))
+Module files: _nntp.ss_ - provides the procedures documented below
+              _nntp-unit.ss_ - provides unit net:nntp@
+              _nntp-sig.ss_ - provides signalture net:nntp^
 
 ABSTRACT -------------------------------------------------------------
 
@@ -575,11 +579,10 @@ PROCEDURES -----------------------------------------------------------
 _POP-3_, _reading mail_
 ==========================================================================
 
-Collection: net
-Files: _pop3.ss_, _pop3r.ss_, _pop3s.ss_, _pop3u.ss_
-To Load: (require-library "pop3.ss" "net")
-
-Note: The pop3.ss invoke-opens the pop3r.ss unit with a "pop3:" prefix.
+To load directly: (require (lib "pop3.ss" "net"))
+Module files: _pop3.ss_ - provides the procedures documented below
+              _pop3-unit.ss_ - provides unit net:pop3@
+              _pop3-sig.ss_ - provides signalture net:pop3^
 
 ABSTRACT -------------------------------------------------------------
 
@@ -755,9 +758,10 @@ EXAMPLE --------------------------------------------------------------
 _IMAP_, _reading mail_
 ==========================================================================
 
-Collection: net
-Files: _imap.ss_, _imapr.ss_, _imaps.ss_
-To Load: (require-library "imap.ss" "net")
+To load directly: (require (lib "imap.ss" "net"))
+Module files: _imap.ss_ - provides the procedures documented below
+              _imap-unit.ss_ - provides unit net:imap@
+              _imap-sig.ss_ - provides signalture net:imap^
 
 ABSTRACT -------------------------------------------------------------
 
@@ -944,12 +948,13 @@ PROCEDURES -----------------------------------------------------------
   value is 143.
 
 ==========================================================================
-_mail headers_
+_mime headers_, _mail headers_, _http headers_
 ==========================================================================
 
-Collection: net
-Files: _head.ss_, _headr.ss_, _heads.ss_
-To Load: (require-library "head.ss" "net")
+To load directly: (require (lib "head.ss" "net"))
+Module files: _head.ss_ - provides the procedures documented below
+              _head-unit.ss_ - provides unit net:head@
+              _head-sig.ss_ - provides signalture net:head^
 
 ABSTRACT -------------------------------------------------------------
 
@@ -1063,13 +1068,15 @@ PROCEDURES -----------------------------------------------------------
 _DNS_, _domain name service_
 ==========================================================================
 
-Collection: net
-Files: _dns.ss_, _dnsr.ss_, _dnss.ss_
-To Load: (require-library "dns.ss" "net")
+To load directly: (require (lib "dns.ss" "net"))
+Module files: _dns.ss_ - provides the procedures documented below
+              _dns-unit.ss_ - provides unit net:dns@
+              _dns-sig.ss_ - provides signalture net:dns^
 
 ABSTRACT -------------------------------------------------------------
 
-Implements a DNS client, based on RFC 1035
+Implements part of a DNS client, based on RFC 1035. The name cache
+does not properly time out entries, however.
 
 PROCEDURES -----------------------------------------------------------
 
@@ -1099,9 +1106,10 @@ PROCEDURES -----------------------------------------------------------
 _Base 64 Encoding_, _base64_
 ==========================================================================
 
-Collection: net
-Files: _base64.ss_, _base64r.ss_, _base64s.ss_
-To Load: (require-library "base64.ss" "net")
+To load directly: (require (lib "base64.ss" "net"))
+Module files: _base64.ss_ - provides the procedures documented below
+              _base64-unit.ss_ - provides unit net:base64@
+              _base64-sig.ss_ - provides signalture net:base64^
 
 ABSTRACT -------------------------------------------------------------
 

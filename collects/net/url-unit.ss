@@ -21,8 +21,8 @@
       
       (define-struct (url-exception struct:exn) ())
       
-  ;; This is commented out; it's here for debugging.
-  ;; It used to be outside the unit.
+      ;; This is commented out; it's here for debugging.
+      ;; It used to be outside the unit.
       
       (quote
        (begin
@@ -43,18 +43,14 @@
                                           args))))
             (raise (make-url-exception s (current-continuation-marks))))))
       
-  ;; scheme : str + #f
-  ;; host : str + #f
-  ;; port : num + #f
-  ;; path : str
-  ;; params : str + #f
-  ;; query : str + #f
-  ;; fragment : str + #f
+      ;; scheme : str + #f
+      ;; host : str + #f
+      ;; port : num + #f
+      ;; path : str
+      ;; params : str + #f
+      ;; query : str + #f
+      ;; fragment : str + #f
       (define-struct url (scheme host port path params query fragment))
-      
-  ;; name : str (all lowercase; not including the colon)
-  ;; value : str (doesn't have the eol delimiter)
-      (define-struct mime-header (name value))
       
       (define url->string 
         (lambda (url)
@@ -66,38 +62,38 @@
                 (query (url-query url))
                 (fragment (url-fragment url)))
             (cond
-              ((and scheme (string=? scheme "file"))
-               (string-append "file:" path))
-              (else
-               (let ((sa string-append))
-                 (sa (if scheme (sa scheme "://") "")
-                     (if host host "")
-                     (if port (sa ":" (number->string port)) "")
-                     ; There used to be a "/" here, but that causes an
-                     ; extra leading slash -- wonder why it ever worked!
-                     path
-                     (if params (sa ";" params) "")
-                     (if query (sa "?" query) "")
-                     (if fragment (sa "#" fragment) ""))))))))
+	     ((and scheme (string=? scheme "file"))
+	      (string-append "file:" path))
+	     (else
+	      (let ((sa string-append))
+		(sa (if scheme (sa scheme "://") "")
+		    (if host host "")
+		    (if port (sa ":" (number->string port)) "")
+					; There used to be a "/" here, but that causes an
+					; extra leading slash -- wonder why it ever worked!
+		    path
+		    (if params (sa ";" params) "")
+		    (if query (sa "?" query) "")
+		    (if fragment (sa "#" fragment) ""))))))))
       
-  ;; url->default-port : url -> num
+      ;; url->default-port : url -> num
       (define url->default-port
         (lambda (url)
           (let ((scheme (url-scheme url)))
             (cond
-              ((not scheme) 80)
-              ((string=? scheme "http") 80)
-              (else
-               (url-error "Scheme ~a not supported" (url-scheme url)))))))
+	     ((not scheme) 80)
+	     ((string=? scheme "http") 80)
+	     (else
+	      (url-error "Scheme ~a not supported" (url-scheme url)))))))
       
-  ;; make-ports : url -> in-port x out-port
+      ;; make-ports : url -> in-port x out-port
       (define make-ports
         (lambda (url)
           (let ((port-number (or (url-port url)
                                  (url->default-port url))))
             (tcp-connect (url-host url) port-number))))
       
-  ;; http://get-impure-port : url [x list (str)] -> in-port
+      ;; http://get-impure-port : url [x list (str)] -> in-port
       (define http://get-impure-port
         (case-lambda 
          [(url) (http://get-impure-port url '())]
@@ -119,48 +115,48 @@
             (close-output-port client->server)
             server->client)]))
       
-  ;; file://get-pure-port : url -> in-port
+      ;; file://get-pure-port : url -> in-port
       (define file://get-pure-port
         (lambda (url)
           (when (url-host url)
             (url-error "Don't know how to get files from remote hosts"))
           (open-input-file (url-path url))))
       
-  ;; get-impure-port : url [x list (str)] -> in-port
+      ;; get-impure-port : url [x list (str)] -> in-port
       (define get-impure-port
         (case-lambda
          [(url) (get-impure-port url '())]
          [(url strings)
           (let ((scheme (url-scheme url)))
             (cond
-              ((not scheme)
-               (url-error "Scheme unspecified in ~a" url))
-              ((string=? scheme "http")
-               (http://get-impure-port url strings))
-              ((string=? scheme "file")
-               (url-error "There are no impure file: ports"))
-              (else
-               (url-error "Scheme ~a unsupported" scheme))))]))
+	     ((not scheme)
+	      (url-error "Scheme unspecified in ~a" url))
+	     ((string=? scheme "http")
+	      (http://get-impure-port url strings))
+	     ((string=? scheme "file")
+	      (url-error "There are no impure file: ports"))
+	     (else
+	      (url-error "Scheme ~a unsupported" scheme))))]))
       
-  ;; get-pure-port : url [x list (str)] -> in-port
+      ;; get-pure-port : url [x list (str)] -> in-port
       (define get-pure-port
         (case-lambda
          [(url) (get-pure-port url '())]
          [(url strings)
           (let ((scheme (url-scheme url)))
             (cond
-              ((not scheme)
-               (url-error "Scheme unspecified in ~a" url))
-              ((string=? scheme "http")
-               (let ((port (http://get-impure-port url strings)))
-                 (purify-port port)
-                 port))
-              ((string=? scheme "file")
-               (file://get-pure-port url))
-              (else
-               (url-error "Scheme ~a unsupported" scheme))))]))
+	     ((not scheme)
+	      (url-error "Scheme unspecified in ~a" url))
+	     ((string=? scheme "http")
+	      (let ((port (http://get-impure-port url strings)))
+		(purify-port port)
+		port))
+	     ((string=? scheme "file")
+	      (file://get-pure-port url))
+	     (else
+	      (url-error "Scheme ~a unsupported" scheme))))]))
       
-  ;; display-pure-port : in-port -> ()
+      ;; display-pure-port : in-port -> ()
       (define display-pure-port
         (lambda (server->client)
           (let loop ()
@@ -177,17 +173,17 @@
                (andmap (lambda (c) (char=? c #\space))
                        (string->list (url-path url))))))
       
-  ;; file://combine-url/relative : fs-path x s/t/r -> fs-path
+      ;; file://combine-url/relative : fs-path x s/t/r -> fs-path
       
       (define file://combine-url/relative 
         (let ((path-segment-regexp (regexp "([^/]*)/(.*)"))
               (translate-dir
                (lambda (s)
                  (cond
-                   [(string=? s "") 'same] ;; handle double slashes
-                   [(string=? s "..") 'up]
-                   [(string=? s ".") 'same]
-                   [else s]))))
+		  [(string=? s "") 'same] ;; handle double slashes
+		  [(string=? s "..") 'up]
+		  [(string=? s ".") 'same]
+		  [else s]))))
           (lambda (index offset)
             (let*-values ([(simple-index) (simplify-path index)]
                           [(base name dir?)
@@ -204,60 +200,60 @@
                    (let loop ((str offset))
                      (let ((m (regexp-match path-segment-regexp str)))
                        (cond
-                         [(not m) str]
-                         [else
-                          (if (string=? "" (caddr m))
-                              (translate-dir (cadr m))
-                              (build-path (translate-dir (cadr m))
-                                          (loop (caddr m))))])))))))))
+			[(not m) str]
+			[else
+			 (if (string=? "" (caddr m))
+			     (translate-dir (cadr m))
+			     (build-path (translate-dir (cadr m))
+					 (loop (caddr m))))])))))))))
       
-  ;; combine-url/relative : url x str -> url
+      ;; combine-url/relative : url x str -> url
       (define combine-url/relative
         (lambda (base string)
           (let ((relative (string->url string)))
             (cond
-              ((empty-url? base)		; Step 1
-               relative)
-              ((empty-url? relative)	; Step 2a
-               base)
-              ((url-scheme relative)	; Step 2b
-               relative)
-              (else				; Step 2c
-               (set-url-scheme! relative (url-scheme base))
-               (cond
-             ;; This case is here because the above tests
-             ;; ensure the relative extension is not really
-             ;; an absolute path itself, so we need not
-             ;; examine its contents further.
-                 ((and (url-scheme base)   ; Interloper step
-                       (string=? (url-scheme base) "file"))
-                  (set-url-path! relative
-                                 (file://combine-url/relative 
-                                  (url-path base)
-                                  (url-path relative)))
-                  relative)
-                 ((url-host relative)	; Step 3
-                  relative)
-                 (else
-                  (set-url-host! relative (url-host base))
-                  (set-url-port! relative (url-port base)) ; Unspecified!
-                  (let ((rel-path (url-path relative)))
-                    (cond
-                      ((and rel-path	; Step 4
-                            (not (string=? "" rel-path))
-                            (char=? #\/ (string-ref rel-path 0)))
-                       relative)
-                      ((or (not rel-path)	; Step 5
-                           (string=? rel-path ""))
-                       (set-url-path! relative (url-path base))
-                       (or (url-params relative)
-                           (set-url-params! relative (url-params base)))
-                       (or (url-query relative)
-                           (set-url-query! relative (url-query base)))
-                       relative)
-                      (else		; Step 6
-                       (merge-and-normalize 
-                        (url-path base) relative)))))))))))
+	     ((empty-url? base)		; Step 1
+	      relative)
+	     ((empty-url? relative)	; Step 2a
+	      base)
+	     ((url-scheme relative)	; Step 2b
+	      relative)
+	     (else				; Step 2c
+	      (set-url-scheme! relative (url-scheme base))
+	      (cond
+	       ;; This case is here because the above tests
+	       ;; ensure the relative extension is not really
+	       ;; an absolute path itself, so we need not
+	       ;; examine its contents further.
+	       ((and (url-scheme base)   ; Interloper step
+		     (string=? (url-scheme base) "file"))
+		(set-url-path! relative
+			       (file://combine-url/relative 
+				(url-path base)
+				(url-path relative)))
+		relative)
+	       ((url-host relative)	; Step 3
+		relative)
+	       (else
+		(set-url-host! relative (url-host base))
+		(set-url-port! relative (url-port base)) ; Unspecified!
+		(let ((rel-path (url-path relative)))
+		  (cond
+		   ((and rel-path	; Step 4
+			 (not (string=? "" rel-path))
+			 (char=? #\/ (string-ref rel-path 0)))
+		    relative)
+		   ((or (not rel-path)	; Step 5
+			(string=? rel-path ""))
+		    (set-url-path! relative (url-path base))
+		    (or (url-params relative)
+			(set-url-params! relative (url-params base)))
+		    (or (url-query relative)
+			(set-url-query! relative (url-query base)))
+		    relative)
+		   (else		; Step 6
+		    (merge-and-normalize 
+		     (url-path base) relative)))))))))))
       
       (define merge-and-normalize
         (lambda (base-path relative-url)
@@ -323,57 +319,40 @@
                                (apply string-append grouped))
                 relative-url)))))
       
-  ;; call/input-url : url x (url -> in-port) x (in-port -> T)
-  ;;                  [x list (str)] -> T
+      ;; call/input-url : url x (url -> in-port) x (in-port -> T)
+      ;;                  [x list (str)] -> T
       (define call/input-url
         (let ((handle-port (lambda (server->client handler)
                              (dynamic-wind (lambda () 'do-nothing)
-                                           (lambda () (handler server->client))
-                                           (lambda () (close-input-port server->client))))))
+				 (lambda () (handler server->client))
+				 (lambda () (close-input-port server->client))))))
           (case-lambda
            ((url getter handler)
             (handle-port (getter url) handler))
            ((url getter handler params)
             (handle-port (getter url params) handler)))))
       
-      (define empty-line?
-        (lambda (chars)
-          (or (null? chars)
-              (and (memv (car chars) '(#\return #\linefeed #\tab #\space))
-                   (empty-line? (cdr chars))))))
-      
-      (define extract-mime-headers-as-char-lists
-        (lambda (port)
-          (let headers-loop ((headers '()))
-            (let char-loop ((header '()))
-              (let ((c (read-char port)))
-                (if (eof-object? c)
-                    (reverse headers)		; CHECK: INCOMPLETE MIME: SERVER BUG
-                    (if (char=? c #\newline)
-                        (if (empty-line? header)
-                            (reverse headers)
-                            (begin
-                              (headers-loop (cons (reverse header) headers))))
-                        (char-loop (cons c header)))))))))
-      
-  ;; purify-port : in-port -> list (mime-header)
+      ;; purify-port : in-port -> header-string
       (define purify-port
         (lambda (port)
-          (let ((headers-as-chars (extract-mime-headers-as-char-lists port)))
-            (let header-loop ((headers headers-as-chars))
-              (if (null? headers)
-                  '()
-                  (let ((header (car headers)))
-                    (let char-loop ((pre '()) (post header))
-                      (if (null? post)
-                          (header-loop (cdr headers))
-                          (if (char=? #\: (car post))
-                              (cons (make-mime-header
-                                     (list->string (reverse pre))
-                                     (list->string post))
-                                    (header-loop (cdr headers)))
-                              (char-loop (cons (char-downcase (car post)) pre)
-                                         (cdr post)))))))))))
+	  (let char-loop ([chars '()][empty-line? #t])
+	    (let ([c (read-char port)])
+	      (if (eof-object? c)
+		  (list->string (reverse chars)) ; INCOMPLETE MIME
+		  (if (char=? c #\return)
+		      ;; Got CR; look for LF:
+		      (let ([c2 (read-char port)])
+			(if (eq? c2 #\newline)
+			    ;; that's a line
+			    (let ([chars (list* c2 c chars)])
+			      (if empty-line?
+				  (list->string (reverse chars))
+				  (char-loop chars #t)))
+			    ;; ERROR: CR without LF
+			    (if (eof-object? c2)
+				(list->string (reverse (cons c chars))) ; INCOMPLETE MIME
+				(char-loop (list* c2 c chars) #f))))
+		      (char-loop (cons c chars) #f)))))))
       
       (define character-set-size 256)
       
@@ -390,7 +369,7 @@
         (lambda (c)
           (vector-ref marker-locations (char->integer c))))
       
-  ;; netscape/string->url : str -> url
+      ;; netscape/string->url : str -> url
       (define netscape/string->url
         (lambda (string)
           (let ((url (string->url string)))
@@ -405,7 +384,7 @@
                                            "http"))
                       url))))))
       
-  ;; string->url : str -> url
+      ;; string->url : str -> url
       (define string->url
         (lambda (string)
           (let loop ((markers ascii-marker-list))
@@ -479,7 +458,7 @@
                                 (substring string fragment-start
                                            fragment-finish))))))))))))
       
-  ;; parse-host/port/path : str x num x num -> (str + #f) + (num + #f) + str
+      ;; parse-host/port/path : str x num x num -> (str + #f) + (num + #f) + str
       (define parse-host/port/path
         (lambda (path begin-point end-point)
           (when (> begin-point end-point)
@@ -495,36 +474,36 @@
                          (first-colon #f)
                          (first-slash #f))
                 (cond
-                  ((>= index end-point)
-               ;; We come here only if the string has not had a /
-               ;; yet.  This can happen in two cases:
-               ;; 1. The input is a relative URL, and the hostname
-               ;;    will not be specified.  In such cases, has-host?
-               ;;    will be false.
-               ;; 2. The input is an absolute URL with a hostname,
-               ;;    and the intended path is "/", but the URL is missing
-               ;;    a "/" at the end.  has-host? must be true.
-                   (let ((host/path (substring path begin-point end-point)))
-                     (if has-host?
-                         (values host/path #f "/")
-                         (values #f #f host/path))))
-                  ((char=? #\: (string-ref path index))
-                   (loop (add1 index) (or first-colon index) first-slash))
-                  ((char=? #\/ (string-ref path index))
-                   (if first-colon
-                       (values
-                        (substring path begin-point first-colon)
-                        (string->number (substring path (add1 first-colon)
-                                                   index))
-                        (substring path index end-point))
-                       (if has-host?
-                           (values
-                            (substring path begin-point index)
-                            #f
-                            (substring path index end-point))
-                           (values
-                            #f
-                            #f
-                            (substring path begin-point end-point)))))
-                  (else
-                   (loop (add1 index) first-colon first-slash)))))))))))
+		 ((>= index end-point)
+		  ;; We come here only if the string has not had a /
+		  ;; yet.  This can happen in two cases:
+		  ;; 1. The input is a relative URL, and the hostname
+		  ;;    will not be specified.  In such cases, has-host?
+		  ;;    will be false.
+		  ;; 2. The input is an absolute URL with a hostname,
+		  ;;    and the intended path is "/", but the URL is missing
+		  ;;    a "/" at the end.  has-host? must be true.
+		  (let ((host/path (substring path begin-point end-point)))
+		    (if has-host?
+			(values host/path #f "/")
+			(values #f #f host/path))))
+		 ((char=? #\: (string-ref path index))
+		  (loop (add1 index) (or first-colon index) first-slash))
+		 ((char=? #\/ (string-ref path index))
+		  (if first-colon
+		      (values
+		       (substring path begin-point first-colon)
+		       (string->number (substring path (add1 first-colon)
+						  index))
+		       (substring path index end-point))
+		      (if has-host?
+			  (values
+			   (substring path begin-point index)
+			   #f
+			   (substring path index end-point))
+			  (values
+			   #f
+			   #f
+			   (substring path begin-point end-point)))))
+		 (else
+		  (loop (add1 index) first-colon first-slash)))))))))))

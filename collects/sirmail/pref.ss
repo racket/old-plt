@@ -7,7 +7,7 @@
 
   (provide get-pref put-pref
 	   show-pref-dialog
-	   create-preferences)
+	   add-preferences-menu-items)
 
   (define (string-or-false? x) (or (not x) (string? x)))
   (define (ip-string? x) (and (string? x)
@@ -59,7 +59,7 @@
   (preferences:set-default 'sirmail:use-extenal-composer? #f boolean?)
   (preferences:set-default 'sirmail:show-urls? #t boolean?)
   (preferences:set-default 'sirmail:show-gc-icon #f boolean?)
-
+  (preferences:set-default 'sirmail:wrap-lines #f boolean?)
 
   (preferences:set-default 'sirmail:aliases-file (build-path (find-system-path 'home-dir) ".sirmail.aliases")
 			   (lambda (x) (or (not x)
@@ -114,7 +114,8 @@
     (in-preferences-eventspace (lambda ()
 				 (preferences:set id val))))
 
-  (define (create-preferences edit-menu)
+  (define (add-preferences-menu-items edit-menu)
+    (make-object separator-menu-item% edit-menu)
     (make-object menu-item% "Preferences" edit-menu
 		 (lambda (x y) (in-preferences-eventspace preferences:show-dialog))))
   
@@ -152,9 +153,12 @@
 			      void
 			      (make-string width-num #\space)))))
     (send t set-value (or (preferences:get pref) ""))
+    (when e
+      (send t enable (send e get-value)))
     (preferences:add-callback pref (lambda (name val)
 				     (when e
-				       (send e set-value val))
+				       (send e set-value val)
+				       (send t enable val))
 				     (when val
 				       (send t set-value val)))))
 	     
@@ -198,10 +202,12 @@
 				 (or (preferences:get pref)
 				     (current-directory))))
       (when e
-	(send e set-value (preferences:get pref)))
+	(send e set-value (preferences:get pref))
+	(send p enable (send e get-value)))
       (preferences:add-callback pref (lambda (name val)
 				       (when e
-					 (send e set-value val))
+					 (send e set-value val)
+					 (send p enable val))
 				       (when val
 					 (send field set-value val))))
       (make-object button% "Set..." p (lambda (b e)
@@ -250,28 +256,17 @@
 						 val)
 				       (send delete enable (pair? (send l get-selections)))))))
 
-  (define (make-user-preferences-panel parent)
+  (define (make-addresses-preferences-panel parent)
     (let ([p (instantiate vertical-panel% (parent))])
-
+      
       (make-text-field "Mail From" p 20 'sirmail:mail-from #f)
-      (make-text-field "Username" p 10 'sirmail:username #f)
-      (make-text-field "IMAP Server" p 20 'sirmail:imap-server #f)
       (make-text-field "SMTP Server" p 20 'sirmail:smtp-server #f)
-
-	
-      (make-file/directory-button #t "Local Directory" p
-				  'sirmail:local-directory
-				  #f)
 
       (make-file/directory-button #t #f p
 				  'sirmail:local-directory
 				  "Save Sent Files")
 
-      p))
 
-  (define (make-addresses-preferences-panel parent)
-    (let ([p (instantiate vertical-panel% (parent))])
-      
       (make-text-field "Default To Domain" p 20 'sirmail:default-to-domain #f)
       (make-file/directory-button #f #f p
 				  'sirmail:aliases-file
@@ -284,6 +279,14 @@
   (define (make-mbox-preferences-panel parent)
     (let ([p (instantiate vertical-panel% (parent))])
       
+      (make-text-field "Username" p 10 'sirmail:username #f)
+      (make-text-field "IMAP Server" p 20 'sirmail:imap-server #f)
+
+	
+      (make-file/directory-button #t "Local Directory" p
+				  'sirmail:local-directory
+				  #f)
+
       (make-text-field "Folder List Root" p 20 'sirmail:root-mailbox-folder #t)
 		       
 
@@ -298,8 +301,7 @@
 
   (in-preferences-eventspace
    (lambda ()
-     (preferences:add-panel "User" make-user-preferences-panel)
-     (preferences:add-panel "Sending" make-addresses-preferences-panel)
      (preferences:add-panel "Reading" make-mbox-preferences-panel)
+     (preferences:add-panel "Sending" make-addresses-preferences-panel)
      (preferences:add-editor-checkbox-panel))))
 

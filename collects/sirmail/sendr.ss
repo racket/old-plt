@@ -176,11 +176,10 @@
 			  (and (send (get-menu-bar) is-enabled?)
 			       (or (not (send message-editor is-modified?))
 				   (eq? 'yes
-					(message-box
+					(confirm-box
 					 "Warning"
 					 "The message is not saved or sent. Close anyway?"
-					 this
-					 '(yes-no))))))]
+					 this)))))]
 		       [on-close
 			(lambda () 
                           (send message-editor on-close)
@@ -256,10 +255,9 @@
 	      (send refocus focus))
 	    w))
 
-	(define-values (smtp-server-to-use smtp-port-to-use)
-	  (parse-server-name (SMTP-SERVER) 25))
-
 	(define (send-msg)
+	  (define-values (smtp-server-to-use smtp-port-to-use)
+	    (parse-server-name (SMTP-SERVER) 25))
           (send-message
            (lf->crlf (send message-editor get-text))
            smtp-server-to-use
@@ -274,7 +272,7 @@
              (send f show #f))
            (lambda ()
              (let loop ()
-               (when (eq? (message-box "Save?" "Save message before killing?" #f '(yes-no))
+               (when (eq? (message-box "Save?" "Save message before killing?" #f '(yes-no caution))
                           'yes)
                  (let ([f (put-file)])
                    (if f
@@ -404,12 +402,13 @@
 			 (send f show #f)))
 		     (if (eq? (system-type) 'windows) #f #\W))
 	(append-editor-operation-menu-items edit-menu #t)
-					; Strip menu key bindings
+	;; Strip menu key bindings
 	(for-each
 	 (lambda (i)
 	   (when (is-a? i selectable-menu-item<%>)
 	     (send i set-shortcut #f)))
 	 (send edit-menu get-items))
+	(add-preferences-menu-items edit-menu)
 
 	(let ([km (send message-editor get-keymap)])
 	  (send km add-function "reflow-paragraph"

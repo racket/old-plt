@@ -12,14 +12,12 @@ SirMail (on the local machine).
 
 ------------------------------------------------------------
 
-Configure SirMail options by visiting Edit | Preferences | Mailbox in
-a mail-reading or mail-sending window. If the current (or default)
+Configure SirMail options by visiting Edit | Preferences in a
+mail-reading or mail-sending window. If the current (or default)
 options do not allow SirMail to start up, you get just the preferences
 dialog, and you must try running again after setting the preferences.
 
-User panel:
-
-  - Mail From: The user's email address.
+Reading panel:
 
   - Username: The username to use when logging into the server.
 
@@ -27,19 +25,35 @@ User panel:
     Use a ":<portno>" suffix on the host name to connect to
     port <portno>.
 
-  - SMTP Server: The SMTP server's host name (outgoing mail).
-    Use a ":<portno>" suffix on the host name to connect to
-    port <portno>.
-
   - Local Directory: The pathname of an existing directory where
     SirMail should store downloaded messages.  Defaults to
      (build-path (find-system-path 'home-dir) "SirMail")
 
-  - Save Sent Files: Check this if you want a copy of messages you
-    sent to be saved in an archive, the set it to a directory where
-    SirMail should save outgoing messages.
+  - Folder List Root: Names a mailbox to use as the root in the mailbox
+    folder list window. If this option is not provided, the reader
+    window will not contain the "Show Folders Window" menu.
+
+  - Auto-File Table File: The file should contain an expression that
+    reads as a value of the shape
+
+      (list-of (list mailbox-name-string 
+                     (list-of (list field-string regexp-string))))
+
+    which specifies where messages should be autofiled based on
+    regular expression matching of various headers in the email. For
+    any email, if it has a header named `field-string' that mathces
+    `regexp-string', it is filed into `mailbox-name-string'.
+
+  - Shown Header Fields: Names header fields to to (in order_ when
+    reading a message.
 
 Sending panel:
+
+  - Mail From: The user's email address.
+
+  - SMTP Server: The SMTP server's host name (outgoing mail).
+    Use a ":<portno>" suffix on the host name to connect to
+    port <portno>.
 
   - Default To Domain: If a destination address that isn't declared as
     an alias doesn't include a domain name, SirMail automatically
@@ -50,6 +64,10 @@ Sending panel:
     address `foo' to foo@your-isp.com.  Setting the Default To
     Domain to `cs.brown.edu' will deliver this to foo@cs.brown.edu
     instead, irrespective of what SMTP server you use.
+
+  - Save Sent Files: Check this if you want a copy of messages you
+    sent to be saved in an archive, the set it to a directory where
+    SirMail should save outgoing messages.
 
   - Aliases File: SirMail uses this file to resolve shortcut mail
     addresses when sending mail. The file should contain an expression
@@ -63,32 +81,11 @@ Sending panel:
 
     Aliases are expanded recursively.
 
- - Self Addresses: Strings naming your email addresses so followups do
+  - Self Addresses: Strings naming your email addresses so followups do
     not go to yourself.
-
-Reading panel:
-
- - Folder List Root: Names a mailbox to use as the root in the mailbox
-   folder list window. If this option is not provided, the reader
-   window will not contain the "Show Folders Window" menu.
-
- - Auto-File Table File: The file should contain an expression that
-   reads as a value of the shape
-
-      (list-of (list mailbox-name-string 
-                     (list-of (list field-string regexp-string))))
-
-   which specifies where messages should be autofiled based on regular
-   expression matching of various headers in the email. For any email,
-   if it has a header named `field-string' that mathces
-   `regexp-string', it is filed into `mailbox-name-string'.
-
- - Shown Header Fields: Names header fields to to (in order_ when
-   reading a message.
 
 
 Internal options that still need preference-panel support:
-
 
   - biff-delay-seconds: (union #f number); when number specifies how long
     between sirmail waits before polling the mailbox. Only polls when

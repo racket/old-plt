@@ -28,7 +28,9 @@
 
      as-background
 
-     make-fixed-width))
+     make-fixed-width
+
+     confirm-box))
 
   (provide sirmail:send^)
   (define-signature sirmail:send^

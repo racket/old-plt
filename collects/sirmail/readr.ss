@@ -56,14 +56,15 @@
 		     (if (exn? x)
 			 (exn-message x)
 			 (format "Strange exception: ~s" x))
-		     main-frame)
+		     main-frame
+		     '(ok stop))
 	(when (not got-started?)
-	  (when (eq? 'yes (message-box "Startup Error"
+	  (when (eq? 'yes (confirm-box "Startup Error"
 				       (string-append
 					"Looks like you didn't even get started. "
 					"Set preferences (so you're ready to try again)?")
 				       #f
-				       '(yes-no)))
+				       '(app)))
 	    (show-pref-dialog))))
         
       (initial-exception-handler
@@ -364,10 +365,9 @@
 		  [warn-size (WARN-DOWNLOAD-SIZE)])
 	      (when (and size warn-size (> size warn-size))
 		(unless (eq? 'yes
-			     (message-box "Large Message"
+			     (confirm-box "Large Message"
 					  (format "The message is ~s bytes.~nReally download?" size)
-					  main-frame
-					  '(yes-no)))
+					  main-frame))
 		  (status "")
 		  (error "Download aborted"))))
 	    (let*-values ([(imap count new next-uid) (connect)])
@@ -558,11 +558,10 @@
 			 (lambda (x)
 			   (show-error x)
 			   (when (eq? 'yes
-				      (message-box
+				      (confirm-box
 				       "Error"
 				       "There was an error disconnecting. Exit anyway?"
-				       main-frame
-				       '(yes-no)))
+				       main-frame))
 			     (exit-sirmail)
 			     (send main-frame show #f)))])
 	  (disconnect)
@@ -843,11 +842,10 @@
 				 (show-error x)
 				 (when (exn:i/o? x)
 				   (when (eq? 'yes
-					      (message-box
+					      (confirm-box
 					       "Error"
 					       (format "There was an communication error.~nClose the connection?")
-					       main-frame
-					       '(yes-no)))
+					       main-frame))
 				     (send disconnected-msg show #t)
 				     (set! initialized? #f)
 				     (force-disconnect))))))])
@@ -1151,11 +1149,10 @@
       (make-object menu-item% "&Delete Marked" msg-menu
         (lambda (i e)
           (when (eq? 'yes
-                     (message-box
+                     (confirm-box
                       "Delete Marked?"
                       "Really delete the marked messages?"
-                      main-frame
-                      '(yes-no)))
+                      main-frame))
             (purge-marked/update-headers))))
       (define move-menu (make-object menu% "&Copy Marked To" msg-menu))
       
@@ -1224,14 +1221,20 @@
                         mime
                         raw))
                 check #t)))
-      (make-object checkable-menu-item% "&Wrap Lines" msg-menu
-        (lambda (item e)
-          (send (send message get-editor) auto-wrap
-                (send item is-checked?))))
+      (define wrap-lines-item
+	(make-object checkable-menu-item% "&Wrap Lines" msg-menu
+		     (lambda (item e)
+		       (put-pref 'sirmail:wrap-lines (send item is-checked?))
+		       (send (send message get-editor) auto-wrap
+			     (send item is-checked?)))))
       (make-object checkable-menu-item% "&View Full Header" msg-menu
         (lambda (i e)
           (set! show-full-headers? (send i is-checked?))
 	  (redisplay-current)))
+
+      (when (get-pref 'sirmail:wrap-lines)
+	(send wrap-lines-item check #t)
+	(send (send message get-editor) auto-wrap #t))
       
       (make-object menu-item% "by Sender" sort-menu (lambda (i e) (sort-by-sender)))
       (make-object menu-item% "by Subject" sort-menu (lambda (i e) (sort-by-subject)))
@@ -1392,9 +1395,7 @@
 	(when ((car (last-pair items)) . is-a? . separator-menu-item%)
 	  (send (car (last-pair items)) delete)))
       
-      (make-object separator-menu-item% edit-menu)
-
-      (create-preferences edit-menu)
+      (add-preferences-menu-items edit-menu)
 
       (define no-status-handler (lambda (x) (status "") (raise x)))
       
@@ -1414,10 +1415,9 @@
 			 void)
 			#t
 			(and (eq? 'yes
-				  (message-box "New Mailbox?"
+				  (confirm-box "New Mailbox?"
 					       (format "The mailbox ~a does not currently exists.~nCreate it?" t)
-					       main-frame
-					       '(yes-no)))
+					       main-frame))
 			     
 			     (as-background
 			      enable-main-frame
@@ -1485,11 +1485,10 @@
       ;; ask-about-queued-messages : -> void
       (define (ask-about-queued-messages)
 	(when (enqueued-messages?)
-	  (let ([answer (message-box
+	  (let ([answer (confirm-box
 			 "SirMail"
 			 "Send Queued Messages?"
-			 #f
-			 '(yes-no))])
+			 #f)])
 	    (when (eq? 'yes answer)
 	      (send-queued-messages)))))
 

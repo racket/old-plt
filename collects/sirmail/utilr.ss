@@ -1,8 +1,9 @@
 
 (module utilr mzscheme
   (require (lib "unitsig.ss")
-	  (lib "class.ss")
-	  (lib "mred-sig.ss" "mred"))
+	   (lib "class.ss")
+	   (lib "mred-sig.ss" "mred")
+	   (lib "etc.ss"))
 
   (require "sirmails.ss")
 
@@ -176,4 +177,23 @@
 		    (send e set-autowrap-bitmap wrap-bm))
 		  (send e set-max-width 80chars))
 		(send c min-width 
-		      (inexact->exact (round (+ 80chars (- w (unbox wbox))))))))))))))
+		      (inexact->exact (round (+ 80chars (- w (unbox wbox)))))))))))
+
+      ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+      (define confirm-box 
+	(opt-lambda (title message [parent #f] [style null])
+	  (if (= 1 (message-box/custom
+		    title
+		    message
+		    "&Yes"
+		    "&No"
+		    #f
+		    parent
+		    (append (if (memq 'app style) null '(caution)) 
+			    '(default=1))
+		    2))
+	      'yes
+	      'no))))))
+

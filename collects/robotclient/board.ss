@@ -283,7 +283,10 @@
 
       (map
        (lambda (r)
-	 (let* ((old-robot (hash-table-get (robot-table) (response-id r)))
+	 (let* ((old-robot (hash-table-get (robot-table) (response-id r) (lambda () #f)))
+                (old-robot (cond
+                             (old-robot old-robot)
+                             (else (make-robot (response-id r) 1 1))))
 		(new-robot
 		 (make-robot
 		  (robot-id old-robot)

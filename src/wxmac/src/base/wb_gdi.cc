@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:     August 1994
- * RCS_ID:      $Id: wb_gdi.cc,v 1.13 1999/09/03 18:19:52 clements Exp $
+ * RCS_ID:      $Id: wb_gdi.cc,v 1.14 1999/09/17 00:42:03 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -1456,6 +1456,16 @@ char *wxFontNameDirectory::GetScreenName(int fontid, int weight, int style)
   return item->screen.map[WCoordinate(weight)][SCoordinate(style)];
 }
 
+void wxFontNameDirectory::SetScreenName(int fontid, int weight, int style, char *s)
+{
+  wxFontNameItem *item = (wxFontNameItem *)table->Get(fontid);
+  
+  if (!item)
+    return NULL;
+
+  item->screen.map[WCoordinate(weight)][SCoordinate(style)] = s;
+}
+
 char *wxFontNameDirectory::GetPostScriptName(int fontid, int weight, int style)
 {
   wxFontNameItem *item = (wxFontNameItem *)table->Get(fontid);
@@ -1466,6 +1476,16 @@ char *wxFontNameDirectory::GetPostScriptName(int fontid, int weight, int style)
   return item->printing.map[WCoordinate(weight)][SCoordinate(style)];
 }
 
+void wxFontNameDirectory::SetPostScriptName(int fontid, int weight, int style, char *s)
+{
+  wxFontNameItem *item = (wxFontNameItem *)table->Get(fontid);
+
+  if (!item)
+    return NULL;
+
+  item->printing.map[WCoordinate(weight)][SCoordinate(style)] = s;
+}
+
 char *wxFontNameDirectory::GetAFMName(int fontid, int weight, int style)
 {
   wxFontNameItem *item = (wxFontNameItem *)table->Get(fontid);
@@ -1474,6 +1494,16 @@ char *wxFontNameDirectory::GetAFMName(int fontid, int weight, int style)
     return NULL;
 
   return item->afm.map[WCoordinate(weight)][SCoordinate(style)];
+}
+
+void wxFontNameDirectory::SetAFMName(int fontid, int weight, int style, char *s)
+{
+  wxFontNameItem *item = (wxFontNameItem *)table->Get(fontid);
+
+  if (!item)
+    return NULL;
+
+  item->afm.map[WCoordinate(weight)][SCoordinate(style)] = s;
 }
 
 char *wxFontNameDirectory::GetFontName(int fontid)

@@ -128,6 +128,10 @@ class wxFontNameDirectory : public wxObject
   char *GetPostScriptName(int fontid, int weight, int style);
   char *GetAFMName(int fontid, int weight, int style);
 
+  void SetScreenName(int fontid, int weight, int style, char *s);
+  void SetPostScriptName(int fontid, int weight, int style, char *s);
+  void SetAFMName(int fontid, int weight, int style, char *s);
+
   void Initialize(int fontid, int family, const char *name);
   int GetNewFontId(void);
   

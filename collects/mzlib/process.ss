@@ -85,7 +85,7 @@
 					   exe args)])      
       (let ([so (streamify-out cout out #t)]
 	    [si (streamify-in cin in #t void)]
-	    [se (streamify-out cerr err #f)]
+	    [se (streamify-out cerr err #t)]
 	    [aport (lambda (x)
 		     (and (port? x) x))])
 	(list (aport so)

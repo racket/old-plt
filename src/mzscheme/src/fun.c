@@ -828,8 +828,10 @@ void *scheme_top_level_do(void *(*k)(void), int eb)
 	overflow->prev = pp->overflow;
 	pp->overflow = overflow;
       
-	memcpy(&overflow->savebuf, &scheme_error_buf, sizeof(mz_jmp_buf));
-	if (scheme_setjmp(scheme_error_buf)) {
+	memcpy(&overflow->savebuf, &pp->error_buf, sizeof(mz_jmp_buf));
+	if (scheme_setjmp(pp->error_buf)) {
+	  /* If we use scheme_overflow_reply here, it crashes on
+	     Sparc. Sometimes. Can anyone tell me why? */
 	  pp->overflow_reply = NULL; /* means "continue the error" */
 	} else {
 	  void *p1, *p2, *p3, *p4;

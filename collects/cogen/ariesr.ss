@@ -136,7 +136,7 @@
 
       (define-struct (undefined struct:exn) (id))
 
-      (define signal-undefined? (make-parameter #f))
+      (define signal-undefined? (make-parameter #t))
 
       (define annotate
 	(lambda (expr)
@@ -190,8 +190,8 @@
 
 	    [(z:if-form? expr)
 	      `(#%if ,(annotate (z:if-form-test expr))
-		 ,(mv-wrap (z:if-form-then expr))
-		 ,(mv-wrap (z:if-form-else expr)))]
+		 ,(annotate (z:if-form-then expr))
+		 ,(annotate (z:if-form-else expr)))]
 
 	    [(z:quote-form? expr)
 	      `(#%quote ,(unparse-read (z:quote-form-expr expr)))]

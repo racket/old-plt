@@ -13,7 +13,7 @@
   (define tool@
     (unit/sig drscheme:tool-exports^
       (import drscheme:tool^)
-      
+            
       (define (phase1) (void))
       (define (phase2) (void))
       
@@ -26,7 +26,7 @@
       (define (tool-mixin super%)
         (class super%
           (inherit get-button-panel)
-          (super-instantiate ())
+          (super-new)
           (let* ([bitmap (make-object bitmap% 
                            (if (<= (get-display-depth) 1)
                                (build-path (collection-path "icons") "bb-sm-bw.bmp")

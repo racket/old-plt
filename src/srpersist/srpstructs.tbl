@@ -1,5 +1,7 @@
 // srpstructs.tbl -- Scheme structures for srpersist
 
+static int structNameCount;
+
 char *numericFields[] = {
   "precision",
   "scale",

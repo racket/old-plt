@@ -2,6 +2,11 @@
 
 #define sizeray(x) (sizeof(x)/sizeof(*x))
 
+#define sql_return(v,info,f) if (info == FALSE) \
+                             { return v; } \
+                             else \
+                             { return raise_info_exn(v,f); }
+
 #define SRP_PRIM_DECL(f) Scheme_Object *f(int,Scheme_Object **)
 
 #define namedConstSearch(s,array) \
@@ -61,9 +66,9 @@ typedef struct _srp_struct_ {
   char *name;
   Scheme_Object ***pStructFuns;
   char **fields;
-  int numFields;
+  int num_fields;
   char **names;
-  int nameCount;
+  int name_count;
 } SRPSTRUCT;
 
 typedef struct _named_constant_ {

@@ -507,7 +507,8 @@
       (define (search-for-docs search-string search-type match-type lucky? docs)
         (let ([fr (or (find-help-desk-frame)
                       (new-help-desk))])
-          (let-values ([(manuals doc.txt?) (send fr order-manuals docs)])
+          (send fr show #t)
+	  (let-values ([(manuals doc.txt?) (send fr order-manuals docs)])
             (send (send (send fr get-hyper-panel) get-canvas) goto-url 
                   (make-results-url search-string
                                     search-type 

@@ -45,12 +45,11 @@ This gives you the following syntactic forms:
    that the variables get-start-pos, get-end-pos, get-lexeme,
    return-without-pos and input-port are also bound in the action
    (hiding any outside binding).
-   > (get-start-pos) returns a position struct for the first character
-      matched
-   > (get-end-pos) returns a position struct for the character after
-      the last character in the match
-   > (get-lexeme) returns the matched string
-   > input-port is the input-port being processed (this is useful for
+   > start-pos - a position struct for the first character matched
+   > end-pos - a position struct for the character after the last
+      character in the match
+   > lexeme - the matched string
+   > input-port - the input-port being processed (this is useful for
       matching input with multiple lexers, see example below)
    > (return-without-pos x) is a function (continuation) that
      immediately returns the value of x from the lexer.  This useful
@@ -96,14 +95,13 @@ a generated parser, but may not be the right choice when using the
 lexer in other situations.
 
 
-Several values are also provided:
+Several values are also provided for manipulating the position structures
+returned by get-start-pos and get-end-pos:
 
-> (get-position input-port) returns a position structure for the next
-   unmatched character in the input-port
-> (position-offset position) the offset of the character in the stream.
-> (position-line position) the line number of the character.
-> (position-col position) the offset of the character in the current line.
-> (position? x) the question associated with a position struct
+> (position-offset position) - the offset of the character in the stream.
+> (position-line position) - the line number of the character.
+> (position-col position) - the offset of the character in the current line.
+> (position? x) - the question associated with a position struct
 
 Each time the scheme code for a lexer is compiled (e.g. when a .ss
 file containing a (lex ...) is loaded/required) the lexer generator is

@@ -24,7 +24,7 @@
                         (let ((action (cadr (syntax->list x))))
                           (datum->syntax-object
                            action
-                           `(lambda (get-start-pos get-end-pos get-lexeme return-without-pos input-port)
+                           `(lambda (start-pos end-pos lexeme return-without-pos input-port)
                               ,action)
                            action)))
                       (syntax->list rules))))
@@ -148,7 +148,7 @@
 	   (no-look (table-no-lookahead table)))
       (string-append
        (format "Scheme_Object* char_in;~n")
-       (format "Scheme_Object* res[2];~n")
+       (format "Scheme_Object* res[3];~n")
        (format "Scheme_Object* peekarg[3];~n")
        (format "int longest_match_length, longest_match_action, length;~n")
        (format "longest_match_action = ~a;~n" start-state)
@@ -168,7 +168,7 @@
                   (format "  longest_match_length = length;~n"))
                  "")
 	     (format "  peekarg[1] = scheme_make_integer(length);~n")
-             (format "  char_in = scheme_apply(___arg2, 3, peekarg);~n")
+             (format "  char_in = _scheme_apply(___arg2, 3, peekarg);~n")
              (format "  length = length + 1;~n")
              (format "  switch ((char_in != scheme_eof) ? (SCHEME_STR_VAL(char_in))[0] : 256)~n  {~n")
 	     
@@ -212,6 +212,13 @@
                                             (vector-ref gotos (cadr trans))))))
                       (loop (cdr cases))))))
                
+	       (let loop ((i 0))
+		 (if (< i (vector-length eof))
+		     (begin
+		       (vector-set! no-looks i (reverse (vector-ref no-looks i)))
+		       (vector-set! gotos i (reverse (vector-ref gotos i)))
+		       (loop (add1 i)))))
+
                (let loop ((goto-state 0))
                  (cond
                    ((< goto-state (vector-length eof))
@@ -243,8 +250,9 @@
            (else "")))
        (format "scheme_lexer_end:~n")
        (format "  res[0] = scheme_make_integer(longest_match_length);~n")
-       (format "  res[1] = scheme_make_integer(longest_match_action);~n")
-       (format "  ___result = scheme_values(2, res);~n")
+       (format "  res[1] = scheme_make_integer(length);~n")
+       (format "  res[2] = scheme_make_integer(longest_match_action);~n")
+       (format "  ___result = scheme_values(3, res);~n")
        )))
   
   )

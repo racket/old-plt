@@ -1137,7 +1137,7 @@ static Scheme_Object *os_wxCanvas_ConstructScheme(Scheme_Object *obj, int n,  Sc
   int x5;
   string x6;
 
-  SETUP_VAR_STACK_REMEMBERED(5);
+  SETUP_VAR_STACK_PRE_REMEMBERED(5);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, realobj);

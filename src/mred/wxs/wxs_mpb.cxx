@@ -3812,7 +3812,7 @@ static Scheme_Object *os_wxMediaPasteboardAddSelected(Scheme_Object *obj, int n,
   if ((n >= 1) && WITH_REMEMBERED_STACK(objscheme_istype_wxSnip(p[0], NULL, 0))) {
     class wxSnip* x0;
 
-    SETUP_VAR_STACK_REMEMBERED(3);
+    SETUP_VAR_STACK_PRE_REMEMBERED(3);
     VAR_STACK_PUSH(0, p);
     VAR_STACK_PUSH(1, obj);
     VAR_STACK_PUSH(2, x0);
@@ -3833,7 +3833,7 @@ static Scheme_Object *os_wxMediaPasteboardAddSelected(Scheme_Object *obj, int n,
     nnfloat x2;
     nnfloat x3;
 
-    SETUP_VAR_STACK_REMEMBERED(2);
+    SETUP_VAR_STACK_PRE_REMEMBERED(2);
     VAR_STACK_PUSH(0, p);
     VAR_STACK_PUSH(1, obj);
 
@@ -3890,7 +3890,7 @@ static Scheme_Object *os_wxMediaPasteboardChangeStyle(Scheme_Object *obj, int n,
     class wxStyleDelta* x0;
     class wxSnip* x1;
 
-    SETUP_VAR_STACK_REMEMBERED(4);
+    SETUP_VAR_STACK_PRE_REMEMBERED(4);
     VAR_STACK_PUSH(0, p);
     VAR_STACK_PUSH(1, obj);
     VAR_STACK_PUSH(2, x0);
@@ -3910,7 +3910,7 @@ static Scheme_Object *os_wxMediaPasteboardChangeStyle(Scheme_Object *obj, int n,
   } else if ((n >= 1) && WITH_REMEMBERED_STACK(objscheme_istype_wxStyleDelta(p[0], NULL, 1))) {
     class wxStyleDelta* x0;
 
-    SETUP_VAR_STACK_REMEMBERED(3);
+    SETUP_VAR_STACK_PRE_REMEMBERED(3);
     VAR_STACK_PUSH(0, p);
     VAR_STACK_PUSH(1, obj);
     VAR_STACK_PUSH(2, x0);
@@ -3929,7 +3929,7 @@ static Scheme_Object *os_wxMediaPasteboardChangeStyle(Scheme_Object *obj, int n,
     class wxStyle* x0;
     class wxSnip* x1;
 
-    SETUP_VAR_STACK_REMEMBERED(4);
+    SETUP_VAR_STACK_PRE_REMEMBERED(4);
     VAR_STACK_PUSH(0, p);
     VAR_STACK_PUSH(1, obj);
     VAR_STACK_PUSH(2, x0);
@@ -4093,7 +4093,7 @@ static Scheme_Object *os_wxMediaPasteboardMove(Scheme_Object *obj, int n,  Schem
     float x1;
     float x2;
 
-    SETUP_VAR_STACK_REMEMBERED(3);
+    SETUP_VAR_STACK_PRE_REMEMBERED(3);
     VAR_STACK_PUSH(0, p);
     VAR_STACK_PUSH(1, obj);
     VAR_STACK_PUSH(2, x0);
@@ -4114,7 +4114,7 @@ static Scheme_Object *os_wxMediaPasteboardMove(Scheme_Object *obj, int n,  Schem
     float x0;
     float x1;
 
-    SETUP_VAR_STACK_REMEMBERED(2);
+    SETUP_VAR_STACK_PRE_REMEMBERED(2);
     VAR_STACK_PUSH(0, p);
     VAR_STACK_PUSH(1, obj);
 
@@ -4267,7 +4267,7 @@ static Scheme_Object *os_wxMediaPasteboardDelete(Scheme_Object *obj, int n,  Sch
   if ((n >= 1) && WITH_REMEMBERED_STACK(objscheme_istype_wxSnip(p[0], NULL, 0))) {
     class wxSnip* x0;
 
-    SETUP_VAR_STACK_REMEMBERED(3);
+    SETUP_VAR_STACK_PRE_REMEMBERED(3);
     VAR_STACK_PUSH(0, p);
     VAR_STACK_PUSH(1, obj);
     VAR_STACK_PUSH(2, x0);
@@ -4284,7 +4284,7 @@ static Scheme_Object *os_wxMediaPasteboardDelete(Scheme_Object *obj, int n,  Sch
     
   } else  {
 
-    SETUP_VAR_STACK_REMEMBERED(2);
+    SETUP_VAR_STACK_PRE_REMEMBERED(2);
     VAR_STACK_PUSH(0, p);
     VAR_STACK_PUSH(1, obj);
 
@@ -4315,7 +4315,7 @@ static Scheme_Object *os_wxMediaPasteboardInsert(Scheme_Object *obj, int n,  Sch
     float x1;
     float x2;
 
-    SETUP_VAR_STACK_REMEMBERED(3);
+    SETUP_VAR_STACK_PRE_REMEMBERED(3);
     VAR_STACK_PUSH(0, p);
     VAR_STACK_PUSH(1, obj);
     VAR_STACK_PUSH(2, x0);
@@ -4338,7 +4338,7 @@ static Scheme_Object *os_wxMediaPasteboardInsert(Scheme_Object *obj, int n,  Sch
     float x2;
     float x3;
 
-    SETUP_VAR_STACK_REMEMBERED(4);
+    SETUP_VAR_STACK_PRE_REMEMBERED(4);
     VAR_STACK_PUSH(0, p);
     VAR_STACK_PUSH(1, obj);
     VAR_STACK_PUSH(2, x0);
@@ -4361,7 +4361,7 @@ static Scheme_Object *os_wxMediaPasteboardInsert(Scheme_Object *obj, int n,  Sch
     class wxSnip* x0;
     class wxSnip* x1;
 
-    SETUP_VAR_STACK_REMEMBERED(4);
+    SETUP_VAR_STACK_PRE_REMEMBERED(4);
     VAR_STACK_PUSH(0, p);
     VAR_STACK_PUSH(1, obj);
     VAR_STACK_PUSH(2, x0);
@@ -4381,7 +4381,7 @@ static Scheme_Object *os_wxMediaPasteboardInsert(Scheme_Object *obj, int n,  Sch
   } else  {
     class wxSnip* x0;
 
-    SETUP_VAR_STACK_REMEMBERED(3);
+    SETUP_VAR_STACK_PRE_REMEMBERED(3);
     VAR_STACK_PUSH(0, p);
     VAR_STACK_PUSH(1, obj);
     VAR_STACK_PUSH(2, x0);
@@ -5822,7 +5822,7 @@ static Scheme_Object *os_wxMediaPasteboard_ConstructScheme(Scheme_Object *obj, i
   os_wxMediaPasteboard *realobj;
   REMEMBER_VAR_STACK();
 
-  SETUP_VAR_STACK_REMEMBERED(3);
+  SETUP_VAR_STACK_PRE_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, realobj);

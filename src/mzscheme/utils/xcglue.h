@@ -157,6 +157,7 @@ typedef float nnfloat;
                                          var[1] = (void *)n
 # define SETUP_VAR_STACK(n)              _SETUP_VAR_STACK(__gc_var_stack__, n, GC_variable_stack)
 # define SETUP_VAR_STACK_REMEMBERED(n)   _SETUP_VAR_STACK(__gc_var_stack__, n, __remembered_vs__)
+# define SETUP_VAR_STACK_PRE_REMEMBERED(n)  _SETUP_VAR_STACK(__gc_var_stack__, n, __remembered_vs__[0])
 # define SETUP_PRE_VAR_STACK(n)          _SETUP_VAR_STACK(__gc_pre_var_stack__, n, GC_variable_stack); \
                                          GC_variable_stack = __gc_pre_var_stack__
 # define VAR_STACK_PUSH(p, var)          __gc_var_stack__[p+2] = &(var)
@@ -174,6 +175,7 @@ typedef float nnfloat;
 #else
 # define SETUP_VAR_STACK(n)              /* empty */
 # define SETUP_VAR_STACK_REMEMBERED(n)   /* empty */
+# define SETUP_VAR_STACK_PRE_REMEMBERED(n) /* empty */
 # define SETUP_PRE_VAR_STACK(n)          /* empty */
 # define VAR_STACK_PUSH(p, var)          /* empty */
 # define VAR_STACK_PUSH_ARRAY(p, var, n) /* empty */

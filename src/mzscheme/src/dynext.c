@@ -103,6 +103,12 @@ static Scheme_Hash_Table *loaded_extensions; /* hash on scheme_initialize pointe
 static Scheme_Hash_Table *fullpath_loaded_extensions; /* hash on full path name */
 #endif
 
+#ifdef MZ_PRECISE_GC 
+# define VERSION_AND_VARIANT VERSION "@2k"
+#else
+# define VERSION_AND_VARIANT VERSION
+#endif
+
 void scheme_init_dynamic_extension(Scheme_Env *env)
 {
   if (scheme_starting_up) {
@@ -189,11 +195,6 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
   void *handle;
   int comppath;
 
-#ifdef MZ_PRECISE_GC
-    scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
-		     "load-extension: not yet supported in MzScheme2k");
-#endif
-
   comppath = scheme_is_complete_path(filename, strlen(filename));
 
   reload_f = NULL;
@@ -253,14 +254,14 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
     }
 
     vers = f(SSI_ARGS);
-    if (!vers || strcmp(vers, VERSION)) {
+    if (!vers || strcmp(vers, VERSION_AND_VARIANT)) {
       /* Copy, because we're going to unload the extension: */
       vers = copy_vers(vers);
       dlclose(dl);
       scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		       scheme_make_string(filename),
-		       "load-extension: bad version %s from \"%s\"",
-		       vers, filename);
+		       "load-extension: bad version %s (not %s) from \"%s\"",
+		       vers, VERSION_AND_VARIANT, filename);
     }
     
     init_f = (Init_Procedure)dlsym(dl, SO_SYMBOL_PREFIX "scheme_initialize");
@@ -303,14 +304,14 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
     }
     
     vers = f(SSI_ARGS);
-    if (!vers || strcmp(vers, VERSION)) {
+    if (!vers || strcmp(vers, VERSION_AND_VARIANT)) {
       /* Copy, because we're going to unload the extension: */
       vers = copy_vers(vers);
       FreeLibrary(dl);
       scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		       scheme_make_string(filename),
-		       "load-extension: bad version %s from \"%s\"",
-		       vers, filename);
+		       "load-extension: bad version %s (not %s) from \"%s\"",
+		       vers, VERSION_AND_VARIANT, filename);
     }
     
     init_f = (Init_Procedure)GetProcAddress(dl,"scheme_initialize");
@@ -345,11 +346,11 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
 	
 	vers = f(SSI_ARGS);
 	
-	if (!vers || strcmp(vers, VERSION))
+	if (!vers || strcmp(vers, VERSION_AND_VARIANT))
 	  scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 			   scheme_make_string(filename),
-			   "load-extension: bad version %s from \"%s\"",
-			   vers, filename);
+			   "load-extension: bad version %s (not %s) from \"%s\"",
+			   vers, VERSION_AND_VARIANT, filename);
 	
 	err = FindSymbol( connID, "\pscheme_initialize", ( Ptr * )&init_f, 0 );
 	if ( err != noErr )
@@ -401,11 +402,11 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
 		       filename, status);
     
     vers = f(SSI_ARGS);
-    if (!vers || strcmp(vers, VERSION))
+    if (!vers || strcmp(vers, VERSION_AND_VARIANT))
       scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		       scheme_make_string(filename),
-		       "load-extension: bad version %s from \"%s\"",
-		       vers, filename);
+		       "load-extension: bad version %s (not %s) from \"%s\"",
+		       vers, VERSION_AND_VARIANT, filename);
 
     status = get_image_symbol(image, "scheme_initialize",
 			      B_SYMBOL_TYPE_TEXT, (void **)&init_f);

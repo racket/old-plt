@@ -21,6 +21,12 @@
 # include "../src/schvers.h"
 #endif
 
+#ifdef MZ_PRECISE_GC
+# define PLAIN_OR_2K "@2k"
+#else
+# define PLAIN_OR_2K ""
+#endif
+
 #ifdef LINK_EXTENSIONS_BY_TABLE
 Scheme_Extension_Table *scheme_extension_table;
 #endif
@@ -45,5 +51,5 @@ char *scheme_initialize_internal(
   scheme_extension_table = table;
 #endif
 
-  return VERSION;
+  return VERSION PLAIN_OR_2K;
 }

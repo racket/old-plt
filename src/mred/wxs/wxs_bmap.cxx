@@ -357,7 +357,7 @@ static Scheme_Object *os_wxBitmap_ConstructScheme(Scheme_Object *obj, int n,  Sc
     int x1;
     Bool x2;
 
-    SETUP_VAR_STACK_REMEMBERED(3);
+    SETUP_VAR_STACK_PRE_REMEMBERED(3);
     VAR_STACK_PUSH(0, p);
     VAR_STACK_PUSH(1, obj);
     VAR_STACK_PUSH(2, realobj);
@@ -386,7 +386,7 @@ static Scheme_Object *os_wxBitmap_ConstructScheme(Scheme_Object *obj, int n,  Sc
     int x1;
     int x2;
 
-    SETUP_VAR_STACK_REMEMBERED(4);
+    SETUP_VAR_STACK_PRE_REMEMBERED(4);
     VAR_STACK_PUSH(0, p);
     VAR_STACK_PUSH(1, obj);
     VAR_STACK_PUSH(2, realobj);
@@ -412,7 +412,7 @@ static Scheme_Object *os_wxBitmap_ConstructScheme(Scheme_Object *obj, int n,  Sc
     pathname x0;
     int x1;
 
-    SETUP_VAR_STACK_REMEMBERED(4);
+    SETUP_VAR_STACK_PRE_REMEMBERED(4);
     VAR_STACK_PUSH(0, p);
     VAR_STACK_PUSH(1, obj);
     VAR_STACK_PUSH(2, realobj);

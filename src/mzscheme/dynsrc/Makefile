@@ -21,6 +21,9 @@ XMAKE = $(MAKE) $(EXPORT)
 dynlib: $(DIRDEPS)
 	$(XMAKE) ../$(LIBDIR)/mzdyn.o
 
+dynlib2k: $(DIRDEPS)
+	$(XMAKE) ../$(LIBDIR)/mzdyn2k.o
+
 dynexample: $(DIRDEPS)
 	$(XMAKE) ../$(OBJDIR)/dynexmpl.so
 
@@ -41,6 +44,11 @@ MZDYNDEP = ../$(LIBDIR)/mzdyn.o ../include/ext.exp ../include/mzscheme.exp
 	cp $(OBJDIR)/mzdyn.o ../$(LIBDIR)/mzdyn.o
 $(OBJDIR)/mzdyn.o: mzdyn.c ../src/schvers.h  $(HEADERS)
 	$(CC) $(CFLAGS) -c mzdyn.c -o $(OBJDIR)/mzdyn.o
+
+../$(LIBDIR)/mzdyn2k.o: $(OBJDIR)/mzdyn2k.o
+	cp $(OBJDIR)/mzdyn2k.o ../$(LIBDIR)/mzdyn2k.o
+$(OBJDIR)/mzdyn2k.o: mzdyn.c ../src/schvers.h  $(HEADERS)
+	$(CC) $(CFLAGS) -DMZ_PRECISE_GC -c mzdyn.c -o $(OBJDIR)/mzdyn2k.o
 
 ../$(OBJDIR)/dynexmpl.so: $(OBJDIR)/dynexmpl.o $(MZDYNDEP)
 	$(DYNLINK) ../$(OBJDIR)/dynexmpl.so $(OBJDIR)/dynexmpl.o

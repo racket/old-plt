@@ -87,6 +87,9 @@ scheme_current_continuation_marks
 scheme_do_eval
 GC_malloc
 GC_malloc_atomic
+GC_malloc_one_tagged
+GC_malloc_atomic_uncollectable
+GC_malloc_array_tagged
 GC_malloc_stubborn
 GC_malloc_uncollectable
 scheme_malloc_eternal

@@ -212,7 +212,7 @@ static Scheme_Object *wxsGlobalwxWriteResource(int n,  Scheme_Object *p[])
     string x2;
     npathname x3;
 
-    SETUP_VAR_STACK_REMEMBERED(5);
+    SETUP_VAR_STACK_PRE_REMEMBERED(5);
     VAR_STACK_PUSH(0, p);
     VAR_STACK_PUSH(1, x0);
     VAR_STACK_PUSH(2, x1);
@@ -241,7 +241,7 @@ static Scheme_Object *wxsGlobalwxWriteResource(int n,  Scheme_Object *p[])
     ExactLong x2;
     npathname x3;
 
-    SETUP_VAR_STACK_REMEMBERED(4);
+    SETUP_VAR_STACK_PRE_REMEMBERED(4);
     VAR_STACK_PUSH(0, p);
     VAR_STACK_PUSH(1, x0);
     VAR_STACK_PUSH(2, x1);
@@ -283,7 +283,7 @@ static Scheme_Object *wxsGlobalwxGetResource(int n,  Scheme_Object *p[])
     npathname x3;
   Scheme_Object *sbox_tmp;
 
-    SETUP_VAR_STACK_REMEMBERED(4);
+    SETUP_VAR_STACK_PRE_REMEMBERED(4);
     VAR_STACK_PUSH(0, p);
     VAR_STACK_PUSH(1, x0);
     VAR_STACK_PUSH(2, x1);
@@ -315,7 +315,7 @@ static Scheme_Object *wxsGlobalwxGetResource(int n,  Scheme_Object *p[])
     npathname x3;
   Scheme_Object *sbox_tmp;
 
-    SETUP_VAR_STACK_REMEMBERED(4);
+    SETUP_VAR_STACK_PRE_REMEMBERED(4);
     VAR_STACK_PUSH(0, p);
     VAR_STACK_PUSH(1, x0);
     VAR_STACK_PUSH(2, x1);

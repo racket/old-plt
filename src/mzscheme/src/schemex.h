@@ -196,12 +196,18 @@ Scheme_Object *(*scheme_do_eval_w_process)(Scheme_Object *obj, int _num_rands, S
 #endif
 /* Allocation */
 #ifndef SCHEME_NO_GC
-#ifndef SCHEME_NO_GC_PROTO
+# ifndef SCHEME_NO_GC_PROTO
 void *(*GC_malloc)(size_t size_in_bytes);
 void *(*GC_malloc_atomic)(size_t size_in_bytes);
+#  ifdef MZ_PRECISE_GC
+void *(*GC_malloc_one_tagged)(size_t size_in_bytes);
+void *(*GC_malloc_atomic_uncollectable)(size_t size_in_bytes);
+void *(*GC_malloc_array_tagged)(size_t size_in_bytes);
+#  else
 void *(*GC_malloc_stubborn)(size_t size_in_bytes);
 void *(*GC_malloc_uncollectable)(size_t size_in_bytes);
-#endif
+#  endif
+# endif
 #endif
 void *(*scheme_malloc_eternal)(size_t n);
 void (*scheme_end_stubborn_change)(void *p);

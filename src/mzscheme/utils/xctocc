@@ -1061,6 +1061,8 @@ sub PrintFunction
 
     # print "#pragma argsused\n";
 
+    $pre_var_stack = "";
+
     if ($iscreator) {
 	print "static Scheme_Object *${newclass}_ConstructScheme(${scheme_args})";
 	print "\n{\n";
@@ -1073,6 +1075,7 @@ sub PrintFunction
 	    print "  SETUP_PRE_VAR_STACK(1);\n";
 	    print "  PRE_VAR_STACK_PUSH(0, obj);\n";
 	}
+	$pre_var_stack = "PRE_";
 	print "  ${newclass} *realobj;\n";
 	print "  REMEMBER_VAR_STACK();\n";
     } else {
@@ -1120,6 +1123,7 @@ sub PrintFunction
 		print "  PRE_VAR_STACK_PUSH(0, p);\n";
 		print "  PRE_VAR_STACK_PUSH(1, obj);\n";
 	    }
+	    $pre_var_stack = "PRE_";
 	}
 	print "  REMEMBER_VAR_STACK();\n";
 
@@ -1141,7 +1145,7 @@ sub PrintFunction
 	    $justonemin{$func} = &CalcNumRequired(1);
 	    $justonemax{$func} = &CalcNumPossible(1);
 	}
-	&PrintSpecificFunction("", $iscreator, !$iscreator, "");
+	&PrintSpecificFunction("", $iscreator, !$iscreator, "", $pre_var_stack);
     } else {
 	print "  ";
 
@@ -1213,7 +1217,7 @@ sub PrintFunction
 	    } else {
 		$casename = " ($casename case)";
 	    }
-	    &PrintSpecificFunction("  ", $iscreator, 0, $casename);
+	    &PrintSpecificFunction("  ", $iscreator, 0, $casename, $pre_var_stack);
 	    print "  } else ";
 	}
 
@@ -1242,7 +1246,7 @@ sub PrintFunction
 	}
 
 	print " {\n";
-	&PrintSpecificFunction("  ", $iscreator, 0, $casename);
+	&PrintSpecificFunction("  ", $iscreator, 0, $casename, $pre_var_stack);
 	print "  }";
 	print "\n\n";
     }
@@ -1333,7 +1337,7 @@ sub PrintCallRealMethod
 
 sub PrintSpecificFunction
 {
-    local($prefix, $iscreator, $just_one, $casename) = @_;
+    local($prefix, $iscreator, $just_one, $casename, $pre_var_stack) = @_;
 
     return if ($hidden);
 
@@ -1405,7 +1409,7 @@ sub PrintSpecificFunction
 	    }
 	}
     }
-    print "\n$prefix  SETUP_VAR_STACK_REMEMBERED($pointercount);\n";
+    print "\n$prefix  SETUP_VAR_STACK_${pre_var_stack}REMEMBERED($pointercount);\n";
     print "$prefix  VAR_STACK_PUSH(0, p);\n";
     if (!$global) {
 	print "$prefix  VAR_STACK_PUSH(1, obj);\n";

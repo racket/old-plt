@@ -1452,6 +1452,10 @@ scheme_get_chars(Scheme_Object *port, long size, char *buffer)
     if (SAME_OBJ(ip->sub_type, file_input_port_type)
 	&& ((Scheme_Input_File *)ip->port_data)->regfile) {
       FILE *f = ((Scheme_Input_File *)ip->port_data)->f;
+#ifdef MZ_PRECISE_GC
+      /* In case page is protected, force removal of protection: */
+      buffer[got] = 0;
+#endif
       got += fread(buffer + got, 1, size, f);
     } else if (SAME_OBJ(ip->sub_type, string_input_port_type)) {
       Scheme_Indexed_String *is;
@@ -2196,6 +2200,10 @@ static int fd_getc(Scheme_Input_Port *port)
       scheme_current_process->ran_some = 1;
     }
 
+#ifdef MZ_PRECISE_GC
+    /* In case page is protected, force removal of protection: */
+    fip->buffer[0] = 0;
+#endif
     bc = read(fip->fd, fip->buffer, MZPORT_FD_BUFFSIZE);
     fip->bufcount = bc;
 
@@ -2203,7 +2211,7 @@ static int fd_getc(Scheme_Input_Port *port)
       fip->bufcount = 0;
       scheme_raise_exn(MZEXN_I_O_PORT_READ,
 		       port,
-		       "error reading from fd port (%d)",
+		       "error reading from file port (%d)",
 		       errno);
     }
 

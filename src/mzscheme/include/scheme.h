@@ -1056,6 +1056,22 @@ extern Scheme_Extension_Table *scheme_extension_table;
 # endif
 #endif
 
+#ifdef MZ_PRECISE_GC
+# define MZ_CWVR(x) (GC_variable_stack = __gc_var_stack__, x)
+# define MZ_DECL_VAR_REG(size) void *__gc_var_stack__[size+2]; \
+                               __gc_var_stack__[0] = GC_variable_stack; \
+                               __gc_var_stack__[1] = (void *)size;
+# define MZ_VAR_REG(x, v) (__gc_var_stack__[x+2] = (void *)&(v))
+# define MZ_ARRAY_VAR_REG(x, v, l) (__gc_var_stack__[x+2] = (void *)0, \
+                                    __gc_var_stack__[x+3] = (void *)&(v), \
+                                    __gc_var_stack__[x+4] = (void *)l)
+#else
+# define MZ_CWVR(x)                x
+# define MZ_DECL_VAR_REG(size)     /* empty */
+# define MZ_VAR_REG(x, v)          /* empty */
+# define MZ_ARRAY_VAR_REG(x, v, l) /* empty */
+#endif
+
 #define SAME_PTR(a, b) ((a) == (b))
 #define NOT_SAME_PTR(a, b) ((a) != (b))
 

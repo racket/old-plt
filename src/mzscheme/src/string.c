@@ -88,7 +88,20 @@ scheme_init_string (Scheme_Env *env)
     zero_length_string = scheme_alloc_string(0, 0); 
 
     REGISTER_SO(platform_path);
-    platform_path = scheme_make_string(SCHEME_PLATFORM_LIBRARY_SUBPATH);
+#ifdef MZ_PRECISE_GC
+# ifdef UNIX_FILE_SYSTEM
+#  define MZ2K_SUBDIR "/2k"
+# else
+#  ifdef DOS_FILE_SYSTEM
+#   define MZ2K_SUBDIR "\\2k"
+#  else
+#   define MZ2K_SUBDIR ":2k"
+#  endif
+# endif
+#else
+# define MZ2K_SUBDIR /* empty */
+#endif
+    platform_path = scheme_make_string(SCHEME_PLATFORM_LIBRARY_SUBPATH MZ2K_SUBDIR);
 
     REGISTER_SO(putenv_str_table);
 

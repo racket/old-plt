@@ -278,6 +278,7 @@ zo:
 2k:
 	$(XMAKE) bin
 	cd gc2; $(XMAKE) all
+	cd dynsrc; $(XMAKE) LIBDIR='$(LIBDIR)' -e dynlib2k
 	cd gc2; $(XMAKE) ../$(MZBUILDDIR)mzscheme2k
 
 depend:

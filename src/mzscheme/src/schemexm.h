@@ -115,12 +115,18 @@
 #define scheme_do_eval_w_process (scheme_extension_table->scheme_do_eval_w_process)
 #endif
 #ifndef SCHEME_NO_GC
-#ifndef SCHEME_NO_GC_PROTO
+# ifndef SCHEME_NO_GC_PROTO
 #define GC_malloc (scheme_extension_table->GC_malloc)
 #define GC_malloc_atomic (scheme_extension_table->GC_malloc_atomic)
+#  ifdef MZ_PRECISE_GC
+#define GC_malloc_one_tagged (scheme_extension_table->GC_malloc_one_tagged)
+#define GC_malloc_atomic_uncollectable (scheme_extension_table->GC_malloc_atomic_uncollectable)
+#define GC_malloc_array_tagged (scheme_extension_table->GC_malloc_array_tagged)
+#  else
 #define GC_malloc_stubborn (scheme_extension_table->GC_malloc_stubborn)
 #define GC_malloc_uncollectable (scheme_extension_table->GC_malloc_uncollectable)
-#endif
+#  endif
+# endif
 #endif
 #define scheme_malloc_eternal (scheme_extension_table->scheme_malloc_eternal)
 #define scheme_end_stubborn_change (scheme_extension_table->scheme_end_stubborn_change)

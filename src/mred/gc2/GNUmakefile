@@ -8,7 +8,7 @@ MZOBJDIR=objects/sys$(MZPLATFORMSUFFIX)
 WXOBJDIR=objects/sys$(MZPLATFORMSUFFIX)
 
 XFORM = ../mzscheme/$(MZBUILDDIR)mzscheme2k -rq ../mzscheme/gc2/xform.ss "gcc -E -I../mzscheme/gc2 $(OPTIONS) $(GUI) $(INC) -I$(WXDIR)/src/XWidgets -I$(WXDIR)/src $(XINCLUDE)"
-XFORMDEP = ../mzscheme/gc2/xform.ss
+XFORMDEP = ../mzscheme/gc2/xform.ss ../mzscheme/gc2/gc2.h
 
 gc2/xsrc/Window.cc: $(WXDIR)/src/Windows/Window.cc $(WXDIR)/src/Windows/$(WXOBJDIR)/Window.o $(XFORMDEP)
 	$(XFORM) $< $@
@@ -186,10 +186,10 @@ gc2/xsrc/xcglue.c: ../mzscheme/utils/xcglue.c wxs/$(OBJDIR)/xcglue.o $(XFORMDEP)
 	$(XFORM) $< $@
 
 
-gc2/xsrc/mred.cc: mred.cxx
+gc2/xsrc/mred.cc: mred.cxx $(XFORMDEP)
 	$(XFORM) $< $@
 
-gc2/xsrc/mredx.cc: mredx.cxx
+gc2/xsrc/mredx.cc: mredx.cxx $(XFORMDEP)
 	$(XFORM) $< $@
 
 gc2/xsrc/wxs_bmap.cc: wxs/wxs_bmap.cxx wxs/$(OBJDIR)/wxs_bmap.o $(XFORMDEP)
@@ -253,7 +253,7 @@ gc2/$(OBJDIR)/%.o: gc2/xsrc/%.cc
 gc2/$(OBJDIR)/%.o: gc2/xsrc/%.c
 	$(CC) -DGC2_JUST_MACROS -include ../mzscheme/gc2/gc2.h -c $(CFLAGS) -o $@ $<
 
-gc2/$(OBJDIR)/wxGC.o: ../wxcommon/wxGC.cxx
+gc2/$(OBJDIR)/wxGC.o: ../wxcommon/wxGC.cxx $(XFORMDEP)
 	$(CXX) -DMZ_PRECISE_GC -I../mzscheme/gc2/ $(CPPFLAGS) -c -o $@ $<
 
 XSRCS = gc2/xsrc/Window.cc \

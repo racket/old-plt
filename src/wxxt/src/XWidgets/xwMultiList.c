@@ -450,8 +450,15 @@ XtWidgetGeometry *parent_idea,*our_idea;
 
 	if (parent_wants_h)
 	  nh = parent_idea->height;
-	else
+	else {
+#if 0
+	  /* MrEd hack: recompute height */
+	  Dimension dnw;
+	  Layout(mlw, !parent_wants_w, !parent_wants_h, &dnw, &nh);
+#else
 	  nh = MultiListHeight(mlw);
+#endif
+	}
 
 	our_idea->request_mode = 0;
 	if (!parent_wants_w && !parent_wants_h) return(XtGeometryYes);
@@ -943,6 +950,7 @@ Dimension *w_ptr,*h_ptr;
 			size_changed = True;
 
 		}
+#if 0
 		{
 		  /* MrEd hack: if the parent (always a scroll win) has more room, use it up */
 		  int max_height;
@@ -953,6 +961,7 @@ Dimension *w_ptr,*h_ptr;
 		    size_changed = True;
 		  }
 		}
+#endif
 		return(size_changed);
 	}
 

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Window.cc,v 1.13 1998/08/10 22:01:34 mflatt Exp $
+ * $Id: Window.cc,v 1.14 1998/09/06 01:54:03 mflatt Exp $
  *
  * Purpose: base class for all windows
  *
@@ -454,8 +454,13 @@ wxCursor *wxWindow::SetCursor(wxCursor *new_cursor)
   
   if (!new_cursor || (new_cursor && new_cursor->Ok())) {
     cursor = new_cursor;
-    if (!wxIsBusy())
+    if (!wxIsBusy()) {
       XtVaSetValues(X->handle, XtNcursor, new_cursor ? GETCURSOR(new_cursor) : None, NULL);
+      if (__type == wxTYPE_LIST_BOX) {
+	/* Yuck. Set cursor for total client area of listbox */
+	XtVaSetValues(XtParent(X->handle), XtNcursor, new_cursor ? GETCURSOR(new_cursor) : None, NULL);
+      }
+    }
   }
   
   return previous;
@@ -1043,7 +1048,7 @@ void wxWindow::AddEventHandlers(void)
 
     win->X->translations_eventmask = XtBuildEventMask(win->X->handle);
     XtInsertEventHandler
-      (win->X->handle,	// handle events for frame widget
+      (win->X->handle,	// handle events for client area widget
        KeyPressMask |	// for OnChar
        ButtonPressMask |	// for OnEvent
        ButtonReleaseMask |
@@ -1058,6 +1063,22 @@ void wxWindow::AddEventHandlers(void)
        (XtEventHandler)wxWindow::WindowEventHandler,
        (XtPointer)saferef, /* MATTHEW */
        XtListHead);
+
+    if (__type == wxTYPE_LIST_BOX) {
+      /* Yuck. Get Mouse-moved events in total client area of listbox */
+      XtInsertEventHandler
+	(XtParent(win->X->handle),
+	 ButtonPressMask |	// for OnEvent
+	 ButtonReleaseMask |
+	 ButtonMotionMask |
+	 PointerMotionMask |
+	 PointerMotionHintMask,
+	 FALSE,
+	 (XtEventHandler)wxWindow::WindowEventHandler,
+	 (XtPointer)saferef, /* MATTHEW */
+	 XtListHead);
+    }
+
     XtInsertEventHandler
       (win->X->frame,	// handle events for frame widget
        EnterWindowMask |

@@ -26,6 +26,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <locale.h>
 
 #include "wx_mpriv.h"
 #include "wx_gcrct.h"
@@ -1038,9 +1039,15 @@ void wxAddMediaEditorFunctions(wxKeymap *tab)
 wxMediaWordbreakMap::wxMediaWordbreakMap()
 {
   int i;
+  char *old;
 
   usage = 0;
   memset(map, 0, sizeof(map));
+
+  /* Use default locale... */
+  old = setlocale(LC_CTYPE, NULL);
+  old = copystring(old);
+  setlocale(LC_CTYPE, "");
 
   for (i = 0; i < 256; i++) {
     if (isalnum(i))
@@ -1048,6 +1055,8 @@ wxMediaWordbreakMap::wxMediaWordbreakMap()
     else if ((i >= 128) || !isspace(i))
       map[i] = wxBREAK_FOR_LINE;
   }
+
+  setlocale(LC_CTYPE, old);
 
   map['-'] -= wxBREAK_FOR_LINE;
 }

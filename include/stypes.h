@@ -131,6 +131,7 @@ enum {
   scheme_string_converter_type,
   scheme_alarm_type,
   scheme_thread_cell_type,
+  scheme_channel_waiter_type,                /* 150 */
 
 #ifdef MZTAG_REQUIRED
   _scheme_last_normal_type_,
@@ -168,7 +169,6 @@ enum {
   scheme_rt_param_data,
   scheme_rt_will,
   scheme_rt_will_registration,
-  scheme_rt_sema_waiter,                /* 150 */
   scheme_rt_struct_proc_info,
   scheme_rt_linker_name,
   scheme_rt_param_map,

@@ -44,8 +44,9 @@
   mzlib:url^)
 
 (define plt-doc-url (string->url "file:///home/bonfield/plt/collects/doc/drscheme/index.html"))
-(define utah-plt-url (string->url "http://www.cs.utah.edu/plt/develop/"))
-(define basics-url (string->url "file:///home/bonfield/testcases/render-html/basic-renderers.html"))
+(define utah-plt-url (string->url "file:///home/bonfield/plt/collects/browser2/utah-plt-doc.html"))
+(define ol-url (string->url "file:///home/bonfield/plt/collects/browser2/test.html"))
+(define basics-url (string->url "file:///home/bonfield/plt/collects/browser2/testcases/render-html/basic-renderers.html"))
 (define a-html (call/input-url utah-plt-url get-pure-port html:read-html))
 (define html-contents (html:html-full-content a-html))  ; head and body
 (define head-contents (map html:html-full-content

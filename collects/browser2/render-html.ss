@@ -1074,11 +1074,11 @@
             a-text
             (lambda ()
               (render-block-element a-text
-                                 (lambda ()
-                                   (for-each (lambda (G5)
-                                               (render-G5 a-text G5))
-                                             listof-G5))))
-           alignment)
+                                    (lambda ()
+                                      (for-each (lambda (G5)
+                                                  (render-G5 a-text G5))
+                                                listof-G5))))
+            alignment)
            (send a-text change-style HeadingSize initpos (send a-text get-start-position))])))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1094,12 +1094,17 @@
           (define HeadingSize (make-object style-delta% 'change-size (vector-ref HeadingSizesVector 1)))]
     (cond [(empty? listof-G5) (void)]
           [else 
-           (for-each (lambda (G5)
-                       (align-paragraph a-text G5 (lambda (x)
-                                                    (render-G5 a-text x)) alignment))
-                     listof-G5)
+           (align-element
+            a-text
+            (lambda ()
+              (render-block-element a-text
+                                    (lambda ()
+                                      (for-each (lambda (G5)
+                                                  (render-G5 a-text G5))
+                                                listof-G5))))
+            alignment)
            (send a-text change-style HeadingSize initpos (send a-text get-start-position))])))
-  
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-h3 : text% h3 -> void
 ; Renders h3 on a-text.  If G5 is sizable text, it will be rendered
@@ -1113,12 +1118,16 @@
           (define HeadingSize (make-object style-delta% 'change-size (vector-ref HeadingSizesVector 2)))]
     (cond [(empty? listof-G5) (void)]
           [else 
-           (for-each (lambda (G5)
-                       (align-paragraph a-text G5 (lambda (x)
-                                                    (render-G5 a-text x)) alignment))
-                     listof-G5)
+                      (align-element
+            a-text
+            (lambda ()
+              (render-block-element a-text
+                                    (lambda ()
+                                      (for-each (lambda (G5)
+                                                  (render-G5 a-text G5))
+                                                listof-G5))))
+            alignment)
            (send a-text change-style HeadingSize initpos (send a-text get-start-position))])))
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-h4 : text% h4 -> void
@@ -1133,10 +1142,15 @@
           (define HeadingSize (make-object style-delta% 'change-size (vector-ref HeadingSizesVector 3)))]
     (cond [(empty? listof-G5) (void)]
           [else 
-           (for-each (lambda (G5)
-                       (align-paragraph a-text G5 (lambda (x)
-                                                    (render-G5 a-text x)) alignment))
-                     listof-G5)
+           (align-element
+            a-text
+            (lambda ()
+              (render-block-element a-text
+                                    (lambda ()
+                                      (for-each (lambda (G5)
+                                                  (render-G5 a-text G5))
+                                                listof-G5))))
+            alignment)
            (send a-text change-style HeadingSize initpos (send a-text get-start-position))])))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1152,10 +1166,15 @@
           (define HeadingSize (make-object style-delta% 'change-size (vector-ref HeadingSizesVector 4)))]
     (cond [(empty? listof-G5) (void)]
           [else 
-           (for-each (lambda (G5)
-                       (align-paragraph a-text G5 (lambda (x)
-                                                    (render-G5 a-text x)) alignment))
-                     listof-G5)
+           (align-element
+            a-text
+            (lambda ()
+              (render-block-element a-text
+                                    (lambda ()
+                                      (for-each (lambda (G5)
+                                                  (render-G5 a-text G5))
+                                                listof-G5))))
+            alignment)
            (send a-text change-style HeadingSize initpos (send a-text get-start-position))])))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1171,10 +1190,15 @@
           (define HeadingSize (make-object style-delta% 'change-size (vector-ref HeadingSizesVector 5)))]
     (cond [(empty? listof-G5) (void)]
           [else 
-           (for-each (lambda (G5)
-                       (align-paragraph a-text G5 (lambda (x)
-                                                    (render-G5 a-text x)) alignment))
-                     listof-G5)
+           (align-element
+            a-text
+            (lambda ()
+              (render-block-element a-text
+                                    (lambda ()
+                                      (for-each (lambda (G5)
+                                                  (render-G5 a-text G5))
+                                                listof-G5))))
+            alignment)
            (send a-text change-style HeadingSize initpos (send a-text get-start-position))])))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1311,12 +1335,12 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-meta : text% meta -> void
 ; Meta information found inside html's HEAD section describes 
-; the contents of the page, but have nothing to do with rendering
+; the contents of the page, but has nothing to do with rendering
 ; on a-text.
 ; ** does not support http-equiv
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-meta a-text a-meta)
-  (show-internal-error-once "render-meta not yet implemented"))
+  (void))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-noframes : text% noframes -> void
@@ -1334,7 +1358,39 @@
 ; render-ol : text% ol -> void
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-ol a-text a-ol)
-  (show-internal-error-once "render-ol not yet implemented"))
+  (local [(define alo-attribs (html:html-element-attributes a-ol))
+          (define alo-LI (filter (lambda (elt) (html:li? elt)) (html:html-full-content a-ol)))
+          (define the-tab (make-object tab-snip%))
+          (define num-elts (length alo-LI))
+          (define start (get-attribute-value alo-attribs 'start "1"))
+
+          ; render-li-with-tab : LI string -> string
+          ; Renders LI on a-text, printing default-value as this item's order in the list.
+          ; Returns the incremented order for the next item in the list.
+          (define (render-li-with-tab a-li default-value)
+            (local [(define attribs (html:html-element-attributes a-li))
+                    (define a-lo-G2 (html:html-full-content a-li))
+                    (define value (get-attribute-value attribs 'value default-value))]
+              (send a-text insert the-tab)
+              (send a-text insert value)
+              (if (empty? a-lo-G2)
+                  (number->string (add1 (string->number value)))
+                  (begin
+                    (render-G2 a-text (first a-lo-G2))
+                    (for-each (lambda (a-G2)
+                                (render-G2 a-text a-G2))
+                              (rest a-lo-G2))
+                    (send a-text insert #\newline)
+                    (number->string (add1 (string->number value)))))))
+          ; helper : (listof LI) string -> void
+          ; Renders the list of LI, using init as the first item's ordering.
+          (define (helper listof-LI init)
+            (cond [(empty? listof-LI) (void)]
+                  [else (helper (rest listof-LI)
+                                (render-li-with-tab (first listof-LI) init))]))]
+    (if (not (zero? num-elts))
+        (helper alo-LI start)
+        (void))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-option : text% option -> void
@@ -1565,7 +1621,12 @@
 ; render-tt : text% tr -> void
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-tt a-text a-tt)
-  (show-internal-error-once "render-tt not yet implemented"))
+  (local [(define alo-G5 (html:html-full-content a-tt))
+          (define init-pos (send a-text get-start-position))]
+    (for-each (lambda (a-G5)
+                (render-G5 a-text a-G5))
+              alo-G5)
+    (changefontface a-text "modern" init-pos (send a-text get-start-position))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-u : text% u -> void

@@ -33,6 +33,10 @@
 ;       row-ext, col-ext are cell-ext.
 (define-struct cell-ext (width height tbody? rowspan colspan row-ext col-ext))
 
+; A td-or-th is either
+; - td
+; - th
+;
 ; A telt is either
 ; - tbody
 ; - tfoot
@@ -199,13 +203,12 @@
 ; generate-naive-structural-matrix : table -> naive-structural-matrix
 ; To produce a naive-structural-matrix which reflects the table's 
 ; contents row by row and cell by cell.  It is the representation of the
-; most basic, elemental parts of the table:  the cell definitions, or TDs.
-; Each TD defined in the table is represented by a listof cell, with one 
-; cell-struct and 0 or more cell-ext for "merged cells" (cells spanning 
-; multiple columns and/or rows).  A table row, or TR, is represented by
-; a listof these cells; the final result, a list of list of cells, 
-; represents the table cell-wise only, with the information gleaned from
-; the TD's in a-table.
+; most basic, elemental parts of the table:  the cell definitions, or
+; td-or-th's.  Each td-or-th defined in the table is represented by a 
+; listof cell, with one cell-struct and 0 or more cell-ext for "merged cells"
+; (cells spanning multiple columns and/or rows).  A table row, or TR, is 
+; represented by a listof these cells; the final result, a list of list of cells, 
+; represents the table as a list of rows.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (generate-naive-structural-matrix a-table)
   (local [(define attributes (html:html-element-attributes a-table))
@@ -313,14 +316,17 @@
           [else (cons a-cell 
                       (expand-cell ext therest))])))
 
-; create-cell : td num boolean boolean -> cell
+; create-cell : (td|th) num boolean boolean -> cell
 ; Creates a cell belonging (or not) to the tbody rowgroup, checking first for cell-ext in the
 ; cell above.
-(define (create-cell a-td cellpadding rules? tbody?)
-  (local [(define td-attribs (html:html-element-attributes a-td))
-          (define rowspan (string->number (get-attribute-value td-attribs 'rowspan "1")))
-          (define colspan (string->number (get-attribute-value td-attribs 'colspan "1")))
-          (define listof-G2 (html:html-full-content a-td))
+(define (create-cell a-td-or-th cellpadding rules? tbody?)
+  (local [(define attribs (html:html-element-attributes a-td-or-th))
+          (define rowspan (string->number (get-attribute-value attribs 'rowspan "1")))
+          (define colspan (string->number (get-attribute-value attribs 'colspan "1")))
+          (define alignment (if (html:td? a-td-or-th)
+                                (get-attribute-value attribs 'align "left")
+                                (get-attribute-value attribs 'align "center")))
+          (define listof-G2 (html:html-full-content a-td-or-th))
           (define (create-col-ext span)
             (cond [(= 1 span) #f]
                   [else (make-cell-ext 0 0 tbody? 1 (sub1 span) #f (create-col-ext (sub1 span)))]))
@@ -333,21 +339,24 @@
           (define initpos (send editor get-start-position))]
     (send editor set-styles-sticky #f)
     (send editor auto-wrap #t)
-    (if tbody?
-        (for-each (lambda (aG2) (render-G2 editor aG2)) listof-G2)
-        (begin
-          (for-each
-           (lambda (aG2)
-             (align-paragraph editor aG2 (lambda (a-G2)
-                                           (render-G2 editor a-G2)) "center")
-             (boldify editor initpos (send editor get-start-position)))
-           listof-G2)
-          (if (zero? (send editor line-length (send editor last-line)))
-              (send editor delete (send editor get-start-position) 'back #f))))
+    (align-element editor
+                   (lambda ()
+                     (for-each
+                      (lambda (a-G2)
+                        (if (block-elt? a-G2)
+                            (render-block-element editor (lambda ()
+                                                           (render-G2 editor a-G2)))
+                            (render-G2 editor a-G2)))
+                      listof-G2))
+                   alignment)
+    (if (html:th? a-td-or-th)
+        (boldify editor initpos (send editor get-start-position)))
+    (if (zero? (send editor line-length (send editor last-line)))
+        (send editor delete (send editor get-start-position) 'back #f))
     (local [(define frame (make-object frame% "" #f 800 800))
             (define text (make-object text%))
             (define editor-canvas (make-object editor-canvas% frame text))
-            (define temp-esnip (make-object editor-snip% editor rules? cellpadding cellpadding cellpadding cellpadding
+            (define temp-esnip (make-object editor-snip% editor #t cellpadding cellpadding cellpadding cellpadding
                                  0 0 0 0 'none 'none 'none 'none))]
       (send frame reflow-container)
       (send text insert temp-esnip)

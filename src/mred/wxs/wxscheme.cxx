@@ -1590,8 +1590,11 @@ static int check_sema(void *s, Scheme_Schedule_Info *sinfo)
   if (!*(void **)s)
     return 1;
   else {
-    if (!scheme_wait_on_waitable(*(Scheme_Object **)s, 1, sinfo))
+    if (!scheme_wait_on_waitable(*(Scheme_Object **)s, 1, sinfo)) {
+      if (sinfo->target == *(Scheme_Object **)s)
+	sinfo->target = NULL;
       return 0;
+    }
     if (!sinfo->potentially_false_positive)
       *(void **)s = NULL;
     return 1;

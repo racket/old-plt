@@ -2840,96 +2840,14 @@ float wxMediaEdit::GetMaxHeight()
 
 /****************************************************************/
 
-Bool wxMediaEdit::LoadFile(char *file, int format, Bool showErrors)
-{
-  Scheme_Object *f;
-  Bool fileerr;
-
-  if (writeLocked || userLocked)
-    return FALSE;
-
-  showErrors = TRUE;
-
-  if (!file || !*file) {
-    if ((file && !*file) || !filename || tempFilename) {
-      char *path;
-      
-      if (filename) {
-	path = PathOnly(filename);
-	if (path)
-	  path = copystring(path);
-      } else
-	path = NULL;
-      
-      file = GetFile(path);
-    } else
-      file = filename;
-  }
-
-  if (!file)
-    return FALSE;
-
-  if (!CanLoadFile(file, format))
-    return FALSE;
-  OnLoadFile(file, format);
-
-  if (scheme_directory_exists(file)) {
-    if (showErrors)
-      wxmeError("load-file in text%: cannot load a directory");
-    return FALSE;
-  }
-
-  f = scheme_open_input_file(file, "load-file in text%");
-
-  wxBeginBusyCursor();
-
-  BeginEditSequence();
-
-  Erase();
-	
-  if (PTRNE(file, filename))
-    SetFilename(file, FALSE);
-
-  if (format == wxMEDIA_FF_SAME)
-    format = fileFormat;
-
-  fileerr = !InsertFile("load-file in text%", f, file, &format, loadoverwritesstyles, showErrors);
-
-  fileFormat = format;
-
-  SetPosition(0, 0);
-
-  EndEditSequence();
-
-  ClearUndos();
-
-  wxEndBusyCursor();
-
-  SetModified(fileerr);
-
-  AfterLoadFile(!fileerr);
-
-  return !fileerr;
-}
-
-Bool wxMediaEdit::InsertFile(char *file, int format, Bool showErrors)
-{
-  Scheme_Object *f;
-
-  if (writeLocked || userLocked)
-    return FALSE;
-
-  f = scheme_open_input_file(file, "insert-file in text%");
-  
-  return InsertFile("insert-file in text%", f, file, &format, FALSE, showErrors);
-}
-
-Bool wxMediaEdit::InsertFile(Scheme_Object *f, int format, Bool showErrors)
+int wxMediaEdit::InsertPort(Scheme_Object *f, int format, Bool replaceStyles)
 {
   if (writeLocked || userLocked)
     return FALSE;
   
-  return InsertFile("insert-file in text%", f, NULL, &format, FALSE, showErrors);
+  InsertFile("insert-file in text%", f, NULL, &format, replaceStyles, TRUE);
+
+  return format;
 }
 
 Bool wxMediaEdit::InsertFile(const char *who, Scheme_Object *f, char *WXUNUSED(file), 
@@ -2948,8 +2866,6 @@ Bool wxMediaEdit::InsertFile(const char *who, Scheme_Object *f, char *WXUNUSED(f
     else
       *format = wxMEDIA_FF_STD;
   }
-
-  BeginEditSequence();
 
   fileerr = FALSE;
 
@@ -3034,15 +2950,11 @@ Bool wxMediaEdit::InsertFile(const char *who, Scheme_Object *f, char *WXUNUSED(f
 
   fileerr = fileerr;
 
-  scheme_close_input_port(f);
-
   if (fileerr && showErrors) {
     char ebuf[256];
     sprintf(ebuf, "%s: error loading the file", who);
     wxmeError(ebuf);
   }
-
-  EndEditSequence();
 
   return !fileerr;
 }

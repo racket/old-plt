@@ -71,10 +71,10 @@ static void *wxbDCToBuffer(wxMediaBuffer *b, float x, float y)
 @SETMARK X = D
 
 // These don't use `pathname' because they expand internally
-@ X "load-file" : bool LoadFile(nstring=NULL,SYM[fileType]=wxMEDIA_FF_GUESS,bool=TRUE);
+// @ X "load-file" : bool LoadFile(nstring=NULL,SYM[fileType]=wxMEDIA_FF_GUESS,bool=TRUE);
 @ X "save-file" : bool SaveFile(nstring=NULL,SYM[fileType]=wxMEDIA_FF_SAME,bool=TRUE);
-@ X "insert-file" : bool InsertFile(string,SYM[fileType]=wxMEDIA_FF_GUESS,bool=TRUE); <> filename
-@ X "insert-file" : bool InsertFile(Scheme_Object[]//ubPort/cPort///push,SYM[fileType]=wxMEDIA_FF_GUESS,bool=TRUE); <> port
+// @ X "insert-file" : bool InsertFile(string,SYM[fileType]=wxMEDIA_FF_GUESS,bool=TRUE); <> filename
+@ X "insert-port" : SYM[fileType] InsertPort(Scheme_Object[]//ubPort/cPort///push,SYM[fileType]=wxMEDIA_FF_GUESS,bool=TRUE); <> port
 
 @ X "get-extent" : void GetExtent(nnfloat?,nnfloat?);
 @ X "get-descent" : float GetDescent(); : : : : XrZERO

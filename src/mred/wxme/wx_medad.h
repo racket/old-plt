@@ -273,10 +273,8 @@ class wxMediaBuffer : public wxObject
   virtual void PrintToDC(wxDC *dc, int page = -1) = 0;
   virtual Bool HasPrintPage(wxDC *dc, int page) = 0;
 
-  virtual Bool LoadFile(char *filename = NULL, int format = wxMEDIA_FF_GUESS, Bool showErrors = TRUE) = 0;
   virtual Bool SaveFile(char *filename = NULL, int format = wxMEDIA_FF_SAME, Bool showErrors = TRUE) = 0;
-  virtual Bool InsertFile(char *filename, int format = wxMEDIA_FF_GUESS, Bool showErrors = TRUE) = 0;
-  virtual Bool InsertFile(Scheme_Object *port, int format = wxMEDIA_FF_GUESS, Bool showErrors = TRUE) = 0;
+  virtual int InsertPort(Scheme_Object *port, int format = wxMEDIA_FF_GUESS, Bool replaceStyles = TRUE) = 0;
 
   char *GetFilename(Bool *temp = NULL);
   virtual void SetFilename(char *, Bool temp = FALSE) = 0;

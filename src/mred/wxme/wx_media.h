@@ -314,10 +314,8 @@ class wxMediaEdit : public wxMediaBuffer
 		long *got = NULL);
   unsigned char GetCharacter(long start);
 
-  Bool LoadFile(char *filename = NULL, int format = wxMEDIA_FF_GUESS, Bool showErrors = TRUE);
   Bool SaveFile(char *filename = NULL, int format = wxMEDIA_FF_SAME, Bool showErrors = TRUE);
-  Bool InsertFile(char *filename, int format = wxMEDIA_FF_GUESS, Bool showErrors = TRUE);
-  Bool InsertFile(Scheme_Object *port, int format = wxMEDIA_FF_GUESS, Bool showErrors = TRUE);
+  int InsertPort(Scheme_Object *port, int format = wxMEDIA_FF_GUESS, Bool replaceStyles = TRUE);
 
   Bool ReadFromFile(wxMediaStreamIn *, long start, Bool overwritestyle = FALSE);
   Bool ReadFromFile(wxMediaStreamIn *, Bool overwritestyle = FALSE);

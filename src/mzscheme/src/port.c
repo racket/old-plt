@@ -2189,7 +2189,7 @@ scheme_do_open_input_file(char *name, int offset, int argc, Scheme_Object *argv[
 #ifdef USE_FD_PORTS
   /* Note: assuming there's no difference between text and binary mode */
   do {
-    fd = open(filename, O_RDONLY);
+    fd = open(filename, O_RDONLY | MZ_NONBLOCKING);
   } while ((fd == -1) && (errno == EINTR));
 
   if (fd == -1) {
@@ -2414,8 +2414,17 @@ scheme_do_open_output_file(char *name, int offset, int argc, Scheme_Object *argv
     flags |= O_EXCL;
 
   do {
-    fd = open(filename, flags, 0666);
+    fd = open(filename, flags | MZ_NONBLOCKING, 0666);
   } while ((fd == -1) && (errno == EINTR));
+
+  if (errno == ENXIO) {
+    /* FIFO with no reader? Try opening in RW mode: */
+    flags -= O_WRONLY;
+    flags |= O_RDWR;
+    do {
+      fd = open(filename, flags | MZ_NONBLOCKING, 0666);
+    } while ((fd == -1) && (errno == EINTR));
+  }
 
   if (fd == -1) {
     if (errno == EISDIR) {

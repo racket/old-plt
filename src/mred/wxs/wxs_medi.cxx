@@ -483,6 +483,8 @@ static Scheme_Object *bundle_symset_bitmapType(int v) {
 // but acutally are implemented with virtual
 
 // These don't use `pathname' because they expand internally
+// @ X "load-file" : bool LoadFile(nstring=NULL,SYM[fileType]=wxMEDIA_FF_GUESS,bool=TRUE);
+// @ X "insert-file" : bool InsertFile(string,SYM[fileType]=wxMEDIA_FF_GUESS,bool=TRUE); <> filename
 
 
 
@@ -3504,71 +3506,37 @@ static Scheme_Object *os_wxMediaBufferGetExtent(int n,  Scheme_Object *p[])
   return scheme_void;
 }
 
-static Scheme_Object *os_wxMediaBufferInsertFile(int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxMediaBufferInsertPort(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  SETUP_PRE_VAR_STACK(1);
-  PRE_VAR_STACK_PUSH(0, p);
   REMEMBER_VAR_STACK();
-  Bool r;
-  objscheme_check_valid(os_wxMediaBuffer_class, "insert-file in editor<%>", n, p);
-  if ((n >= (POFFSET+1)) && WITH_REMEMBERED_STACK(objscheme_istype_string(p[POFFSET+0], NULL))) {
-    string x0 INIT_NULLED_OUT;
-    int x1;
-    Bool x2;
+  int r;
+  objscheme_check_valid(os_wxMediaBuffer_class, "insert-port in editor<%>", n, p);
+  Scheme_Object* x0 INIT_NULLED_OUT;
+  int x1;
+  Bool x2;
 
-    SETUP_VAR_STACK_PRE_REMEMBERED(2);
-    VAR_STACK_PUSH(0, p);
-    VAR_STACK_PUSH(1, x0);
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, x0);
 
-    
-    if ((n < (POFFSET+1)) || (n > (POFFSET+3))) 
-      WITH_VAR_STACK(scheme_wrong_count_m("insert-file in editor<%> (filename case)", POFFSET+1, POFFSET+3, n, p, 1));
-    x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+0], "insert-file in editor<%> (filename case)"));
-    if (n > (POFFSET+1)) {
-      x1 = WITH_VAR_STACK(unbundle_symset_fileType(p[POFFSET+1], "insert-file in editor<%> (filename case)"));
-    } else
-      x1 = wxMEDIA_FF_GUESS;
-    if (n > (POFFSET+2)) {
-      x2 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+2], "insert-file in editor<%> (filename case)"));
-    } else
-      x2 = TRUE;
+  
+  x0 = (SCHEME_INPORTP(p[POFFSET+0]) ? p[POFFSET+0] : (scheme_wrong_type(METHODNAME("editor<%>","insert-file"), "input port", -1, 1, &p[POFFSET+0]), (Scheme_Object *)NULL));
+  if (n > (POFFSET+1)) {
+    x1 = WITH_VAR_STACK(unbundle_symset_fileType(p[POFFSET+1], "insert-port in editor<%>"));
+  } else
+    x1 = wxMEDIA_FF_GUESS;
+  if (n > (POFFSET+2)) {
+    x2 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+2], "insert-port in editor<%>"));
+  } else
+    x2 = TRUE;
 
-    
-    r = WITH_VAR_STACK(((wxMediaBuffer *)((Scheme_Class_Object *)p[0])->primdata)->InsertFile(x0, x1, x2));
+  
+  r = WITH_VAR_STACK(((wxMediaBuffer *)((Scheme_Class_Object *)p[0])->primdata)->InsertPort(x0, x1, x2));
 
-    
-    
-  } else  {
-    Scheme_Object* x0 INIT_NULLED_OUT;
-    int x1;
-    Bool x2;
-
-    SETUP_VAR_STACK_PRE_REMEMBERED(2);
-    VAR_STACK_PUSH(0, p);
-    VAR_STACK_PUSH(1, x0);
-
-    
-    if ((n < (POFFSET+1)) || (n > (POFFSET+3))) 
-      WITH_VAR_STACK(scheme_wrong_count_m("insert-file in editor<%> (port case)", POFFSET+1, POFFSET+3, n, p, 1));
-    x0 = (SCHEME_INPORTP(p[POFFSET+0]) ? p[POFFSET+0] : (scheme_wrong_type(METHODNAME("editor<%>","insert-file"), "input port", -1, 1, &p[POFFSET+0]), (Scheme_Object *)NULL));
-    if (n > (POFFSET+1)) {
-      x1 = WITH_VAR_STACK(unbundle_symset_fileType(p[POFFSET+1], "insert-file in editor<%> (port case)"));
-    } else
-      x1 = wxMEDIA_FF_GUESS;
-    if (n > (POFFSET+2)) {
-      x2 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+2], "insert-file in editor<%> (port case)"));
-    } else
-      x2 = TRUE;
-
-    
-    r = WITH_VAR_STACK(((wxMediaBuffer *)((Scheme_Class_Object *)p[0])->primdata)->InsertFile(x0, x1, x2));
-
-    
-    
-  }
-
-  return (r ? scheme_true : scheme_false);
+  
+  
+  return WITH_REMEMBERED_STACK(bundle_symset_fileType(r));
 }
 
 static Scheme_Object *os_wxMediaBufferSaveFile(int n,  Scheme_Object *p[])
@@ -3601,42 +3569,6 @@ static Scheme_Object *os_wxMediaBufferSaveFile(int n,  Scheme_Object *p[])
 
   
   r = WITH_VAR_STACK(((wxMediaBuffer *)((Scheme_Class_Object *)p[0])->primdata)->SaveFile(x0, x1, x2));
-
-  
-  
-  return (r ? scheme_true : scheme_false);
-}
-
-static Scheme_Object *os_wxMediaBufferLoadFile(int n,  Scheme_Object *p[])
-{
-  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  REMEMBER_VAR_STACK();
-  Bool r;
-  objscheme_check_valid(os_wxMediaBuffer_class, "load-file in editor<%>", n, p);
-  nstring x0 INIT_NULLED_OUT;
-  int x1;
-  Bool x2;
-
-  SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, x0);
-
-  
-  if (n > (POFFSET+0)) {
-    x0 = (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(p[POFFSET+0], "load-file in editor<%>"));
-  } else
-    x0 = NULL;
-  if (n > (POFFSET+1)) {
-    x1 = WITH_VAR_STACK(unbundle_symset_fileType(p[POFFSET+1], "load-file in editor<%>"));
-  } else
-    x1 = wxMEDIA_FF_GUESS;
-  if (n > (POFFSET+2)) {
-    x2 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+2], "load-file in editor<%>"));
-  } else
-    x2 = TRUE;
-
-  
-  r = WITH_VAR_STACK(((wxMediaBuffer *)((Scheme_Class_Object *)p[0])->primdata)->LoadFile(x0, x1, x2));
 
   
   
@@ -5012,7 +4944,7 @@ void objscheme_setup_wxMediaBuffer(Scheme_Env *env)
   wxREGGLOB(os_wxMediaBuffer_class);
   wxREGGLOB(os_wxMediaBuffer_interface);
 
-  os_wxMediaBuffer_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor%", "object%", NULL, 115));
+  os_wxMediaBuffer_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor%", "object%", NULL, 114));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "dc-location-to-editor-location" " method", (Scheme_Method_Prim *)os_wxMediaBufferwxbDCToBuffer, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "editor-location-to-dc-location" " method", (Scheme_Method_Prim *)os_wxMediaBufferwxbBufferToDC, 2, 2));
@@ -5075,9 +5007,8 @@ void objscheme_setup_wxMediaBuffer(Scheme_Env *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "get-space" " method", (Scheme_Method_Prim *)os_wxMediaBufferGetSpace, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "get-descent" " method", (Scheme_Method_Prim *)os_wxMediaBufferGetDescent, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "get-extent" " method", (Scheme_Method_Prim *)os_wxMediaBufferGetExtent, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "insert-file" " method", (Scheme_Method_Prim *)os_wxMediaBufferInsertFile, 1, 3));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "insert-port" " method", (Scheme_Method_Prim *)os_wxMediaBufferInsertPort, 1, 3));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "save-file" " method", (Scheme_Method_Prim *)os_wxMediaBufferSaveFile, 0, 3));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "load-file" " method", (Scheme_Method_Prim *)os_wxMediaBufferLoadFile, 0, 3));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "get-flattened-text" " method", (Scheme_Method_Prim *)os_wxMediaBufferGetFlattenedText, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "put-file" " method", (Scheme_Method_Prim *)os_wxMediaBufferPutFile, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "get-file" " method", (Scheme_Method_Prim *)os_wxMediaBufferGetFile, 1, 1));

@@ -2459,100 +2459,14 @@ void wxMediaPasteboard::SetSnipData(wxSnip *snip, wxBufferData *data)
   }
 }
 
-Bool wxMediaPasteboard::LoadFile(char *file, int WXUNUSED(format), Bool showErrors)
-{
-  Scheme_Object *f;
-  Bool ok;
-
-  if (userLocked || writeLocked)
-    return FALSE;
-
-  showErrors = TRUE;
-
-  if (!file || !*file) {
-    if ((file && !*file) || !filename || tempFilename) {
-      char *path;
-      
-      if (filename) {
-	path = PathOnly(filename);
-	if (path)
-	  path = copystring(path);
-      } else
-	path = NULL;
-      
-      file = GetFile(path);
-    } else
-      file = filename;
-  }
-
-  if (!file)
-    return FALSE;
-
-  if (!CanLoadFile(file, wxMEDIA_FF_STD))
-    return FALSE;
-  OnLoadFile(file, wxMEDIA_FF_STD);
-
-  if (::scheme_directory_exists(file)) {
-    if (showErrors)
-      wxmeError("load-file in pasteboard%: Can't load a directory");
-    AfterLoadFile(FALSE);
-    return FALSE;
-  }
-
-  f = scheme_open_input_file(file, "load-file in pasteboard%");
-  
-  if (!f) {
-    if (showErrors)
-      wxmeError("load-file in pasteboard%: could not open the file");
-    AfterLoadFile(FALSE);
-    return FALSE;
-  }
-
-  wxBeginBusyCursor();
-
-  BeginEditSequence();
-
-  Erase();
-
-  if (PTRNE(file, filename))
-    SetFilename(file, FALSE);
-
-  ok = InsertFile("load-file in pasteboard%", f, file, loadoverwritesstyles, showErrors);
-
-  EndEditSequence();
-
-  ClearUndos();
-
-  wxEndBusyCursor();
-
-  SetModified(!ok);
-
-  AfterLoadFile(ok);
-
-  return ok;
-}
-
-Bool wxMediaPasteboard::InsertFile(char *file, int WXUNUSED(format), Bool showErrors)
-{
-  Scheme_Object *f;
-
-  if (userLocked || writeLocked)
-    return FALSE;
-
-  f = scheme_open_input_file(file, "insert-file in pasteboard%");
-  
-  if (!f)
-    return FALSE;
-
-  return InsertFile("insert-file in pasteboard%", f, file, FALSE, showErrors);
-}
-
-Bool wxMediaPasteboard::InsertFile(Scheme_Object *f, int WXUNUSED(format), Bool showErrors)
+int wxMediaPasteboard::InsertPort(Scheme_Object *f, int WXUNUSED(format), Bool replaceStyles)
 {
   if (userLocked || writeLocked)
     return FALSE;
 
-  return InsertFile("insert-file in pasteboard%", f, NULL, FALSE, showErrors);
+  InsertFile("insert-file in pasteboard%", f, NULL, replaceStyles, TRUE);
+
+  return wxMEDIA_FF_STD;
 }
 
 Bool wxMediaPasteboard::InsertFile(const char *who, Scheme_Object *f, const char *filename, 
@@ -2602,8 +2516,6 @@ Bool wxMediaPasteboard::InsertFile(const char *who, Scheme_Object *f, const char
     } else
       fileerr = TRUE;
   }
-
-  scheme_close_input_port(f);
 
   if (fileerr && showErrors)
     wxmeError("insert-file in pasteboard%: error loading the file");

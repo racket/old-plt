@@ -48,17 +48,18 @@ string=? ; exec ${PLTHOME}/bin/mzscheme -qr $0 "$@"
 
 ; Linker flags
 (case mach-id
-  [(sparc-solaris)
+  [(sparc-solaris i386-solaris)
    (add-flags current-extension-linker-flags
-	      (list* "-ltermcap"
-		     (files "/home/mflatt/proj/readline-2.1/solaris/" ".*\\.o")))]
-  [(i386-solaris)
-   (add-flags current-extension-linker-flags
-	      (list* "-ltermcap"
-		     (files "/home/mflatt/proj/readline-2.1/i386-solaris/" ".*\\.o")))]
+	      (list "-ltermcap"
+		    "-u" "rl_readline_name"
+		    (format "/home/mflatt/proj/readline-2.1/~asolaris/libreadline.a"
+			    (if (eq? mach-id 'i386-solaris)
+				"i386-"
+				""))))]
   [(i386-linux)
    (add-flags current-extension-linker-flags
-	      (files "/home/mflatt/proj/readline-2.1/linux/" ".*\\.o"))]
+	      (list "--whole-archive"
+		    "/home/mflatt/proj/readline-2.1/linux/libreadline.a"))]
   [else (add-flags current-extension-linker-flags (list "-L/usr/local/lib" "-lreadline"))])
 
 (add-flags current-extension-linker-flags (list "-lcurses"))

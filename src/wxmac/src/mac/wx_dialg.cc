@@ -12,11 +12,7 @@
 //-----------------------------------------------------------------------------
 
 static const char sccsid[] = "%W% %G%";
-#if 0
-#ifdef GUSI
-#include "TFileSpec.h"
-#endif
-#endif
+
 #include "wx_dialg.h"
 #include "wx_panel.h"
 #include "wx_utils.h"
@@ -31,6 +27,8 @@ extern "C" {
 #include "nfullpath.h"
 }
 #endif
+
+#include <Navigation.h>
 
 #define wxDIALOG_DEFAULT_X 300
 #define wxDIALOG_DEFAULT_Y 300
@@ -242,11 +240,133 @@ extern "C" {
 };
 
 //= T.P. ==============================================================================
+
+static int navinited = 0;
+
+extern void QueueMrEdEvent(EventRecord *e);
+
+static pascal void EventFilter(NavEventCallbackMessage callBackSelector,
+                               NavCBRecPtr callBackParms, 
+                               void *callBackUD)
+{
+  /* Essentially copied from Inside Macintosh: */
+    switch (callBackSelector)
+    {
+        case kNavCBEvent:
+            QueueMrEdEvent(callBackParms->eventData.event);
+            break;
+    }
+}
+
 char *wxFileSelector(char *message, char *default_path,
                      char *default_filename, char *default_extension,
                      char *wildcard, int flags,
                      wxWindow *parent, int x, int y)
 {	
+  if ((navinited >= 0) && (navinited || NavServicesAvailable())) {
+    if (!navinited) {
+       if (!NavLoad()) {
+         navinited = 1;
+       } else {
+         navinited = -1;
+         return wxFileSelector(message, default_path, default_filename,
+         		       default_extension, wildcard, flags,
+         		       parent, x, y);
+       } 
+    }
+    
+    NavDialogOptions *dialogOptions = new NavDialogOptions;
+    NavGetDefaultDialogOptions(dialogOptions);
+    
+    dialogOptions->dialogOptionFlags ^= kNavAllowPreviews;
+
+    if (default_filename) {
+      int len = strlen(default_filename);
+      if (len > 64) len = 64;     
+      dialogOptions->savedFileName[0] = len;
+      memcpy(dialogOptions->savedFileName + 1, default_filename, len);
+    }
+    
+    if (message) {
+      int len = strlen(message);
+      if (len > 255) len = 255;
+      dialogOptions->message[0] = len;
+      memcpy(dialogOptions->message + 1, message, len);
+    }
+      
+    NavReplyRecord *reply = new NavReplyRecord;
+    AEDesc *startp = NULL;
+    OSErr err;
+    FSSpec fsspec;
+    long type;
+    
+    if (default_path && *default_path) {
+      int len = strlen(default_path);
+      char *s = new char[len + 3];
+      memcpy(s, default_path, len);
+      if (s[len - 1] != ':')
+        s[len++] = ':';
+      s[len] = 0;
+      
+      if (scheme_mac_path_to_spec(s, &fsspec, &type)) {
+        /* Get name of dir: */
+        CInfoPBRec pbrec;
+        pbrec.hFileInfo.ioNamePtr = (unsigned char *)&(fsspec.name);
+	pbrec.hFileInfo.ioVRefNum = fsspec.vRefNum;
+	pbrec.hFileInfo.ioDirID = fsspec.parID;
+	pbrec.hFileInfo.ioFDirIndex = -1;
+	if (!PBGetCatInfo(&pbrec, 0)) {	
+	  fsspec.parID = pbrec.dirInfo.ioDrParID;
+          startp = new AEDesc;
+          if (AECreateDesc(typeFSS, &fsspec, sizeof(fsspec),  startp))
+            startp = NULL;
+         }
+      }
+    }
+    
+    NavEventUPP   eventProc = NewNavEventProc(EventFilter);
+    
+    if ((flags == 0) || (flags & wxOPEN))
+      err = NavChooseFile(startp, reply, dialogOptions,
+                       eventProc,
+                       NULL, NULL, NULL, NULL);
+    else {
+      err = NavPutFile(startp, reply, dialogOptions,
+                       eventProc,
+                       'TEXT',
+                       'MrEd',
+                       NULL);
+      if (!err && reply->validRecord)
+        NavCompleteSave(reply, kNavTranslateInPlace);
+    }
+    
+    DisposeRoutineDescriptor(eventProc);
+    
+    if (!reply->validRecord) {
+      err = 1;
+      NavDisposeReply(reply);
+    }
+      
+    if (startp)
+      AEDisposeDesc(startp);
+      
+    if (!err) {
+        AEKeyword   theKeyword;
+        DescType    actualType;
+        Size        actualSize;
+                        
+        AEGetNthPtr(&(reply->selection), 1,
+                            typeFSS, &theKeyword,
+                             &actualType, &fsspec,
+                             sizeof(fsspec),
+                             &actualSize);
+       
+        NavDisposeReply(reply);
+        
+        return scheme_build_mac_filename(&fsspec, 0);
+     } else 
+       return NULL;
+  } else {
 	StandardFileReply	rep;
 	SFTypeList typeList = { 'TEXT' };
 	char * name;
@@ -291,4 +411,5 @@ char *wxFileSelector(char *message, char *default_path,
 	  return NULL;
 	
 	return scheme_build_mac_filename(&rep.sfFile, 0);
+  }
 }

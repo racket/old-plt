@@ -1,9 +1,12 @@
 ;;
-;; $Id: stprims.ss,v 1.17 1998/01/27 21:54:16 robby Exp $
+;; $Id: stprims.ss,v 1.18 1998/02/12 22:54:59 steck Exp $
 ;;
 ;; Primitives for faking user input.
 ;; Buttons, Keystrokes, Menus, Mice.
 ;;
+
+;; originally by Mark Krentel
+;; modified by Paul Steckler, Robby Findler
 
 (unit/sig mred:test:primitives^
   
@@ -99,6 +102,26 @@
 		"expected either a string or an object of class ~a as input, received: ~a"
 		obj-class b-desc)]))))
 
+;;; CONTROL functions, to be specialized for individual controls 
+
+(define set-control!
+  (lambda (ev-type tag find-ctrl state->int)
+    (lambda (ctrl-input state)
+      (mred:test:run-one
+       (lambda ()
+	 (let ([ctrl (find-ctrl ctrl-input)])
+	   (cond
+	    [(not (send ctrl is-shown?))
+	     (run-error tag "control is not shown")]
+	    [(not (in-active-frame? ctrl))
+	     (run-error tag "control is not in active frame")]
+	    [else
+	     (let ([event (make-object wx:command-event% ev-type)])
+	       (send event set-event-object ctrl)
+	       (send event set-command-int (state->int))
+	       (send ctrl command event)
+	       (void))])))))))
+
   ;;
   ;; BUTTONS are pushed by
   ;; (send <button> command <wx:command-event>)
@@ -107,69 +130,35 @@
   ;; Button must be shown and in active frame.
   ;;
   
-  (define button-tag 'mred:test:button-push)
+(define button-push 
+  (let ([f (set-control! 
+	    wx:const-event-type-button-command 
+	    'mred:test:button-push
+	    (find-object wx:button%)
+	    (lambda () 0))])  ; dummy
+    (lambda (button) (f button null)))) ; null is a dummy
 
-  (define find-button (find-object wx:button%))
-
-  (define make-button-event
-    (lambda (button)
-      (let* ([type   wx:const-event-type-button-command]
-	     [event  (make-object wx:command-event% type)])
-	(send event set-event-object button)
-	event)))
-
-  (define button-push
-    (lambda (button-input)
-      (mred:test:run-one
-       (lambda ()
-	 (let ([button (find-button button-input)])
-	   (cond
-	     [(not (send button is-shown?))
-	      (run-error button-tag "button is not shown")]
-	     [(not (in-active-frame? button))
-	      (run-error button-tag "button is not in active frame")]
-	     [else
-	      (let ([event  (make-button-event button)])
-		(send button command event)
-		(void))]))))))
-  
 ;;; 
-;;; CHECK-BOX functions
+;;; CHECK-BOX 
 ;;;
 
-  (define find-check-box (find-object wx:check-box%))
+(define (set-check-box! cb state) 
+  (let ([f (set-control! 
+	    wx:const-event-type-checkbox-command 
+	    'mred:test:set-check-box!
+	    (find-object wx:check-box%)
+	    (lambda () (if state 1 0)))])
+    (f cb state)))
 
-  (define check-box-tag 'mred:test:check-box-set)
+;;; CHOICE 
 
-  (define make-check-box-event
-    (lambda (check-box)
-      (let* ([type   wx:const-event-type-checkbox-command]
-	     [event  (make-object wx:command-event% type)])
-	(send event set-event-object check-box)
-	event)))
-
-  (define check-box-set
-    (lambda (state) 
-      (lambda (check-box-input)
-	(mred:test:run-one
-	 (lambda ()
-	   (let ([check-box (find-check-box check-box-input)])
-	     (cond
-	      [(not (send check-box is-shown?))
-	       (run-error check-box-tag "check-box is not shown")]
-	      [(not (in-active-frame? check-box))
-	       (run-error check-box-tag "check-box is not in active frame")]
-	      [else
-	       (let ([event (make-check-box-event check-box)])
-		 
-		 ; toggle check-box if not in desired state 
-		 
-		 (unless (eq? (send check-box get-value) state)
-			 (send check-box command event))
-		     (void))])))))))
-  
-  (define check-box-true (check-box-set #t))
-  (define check-box-false (check-box-set #f))
+(define (set-choice! choice str)
+  (let ([f (set-control! 
+	    wx:const-event-type-choice-command 
+	    'mred:test:set-choice!
+	    (find-object wx:choice%)
+	    (lambda () (send choice find-string str)))])
+    (f choice str)))
 
   ;;
   ;; KEYSTROKES 

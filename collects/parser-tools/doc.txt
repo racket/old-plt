@@ -218,7 +218,7 @@ a subset of the R5RS scheme syntax: (and must read an entire file)
       'EOF]))
   
   (define get-string-token
-    (lex
+    (lexer
      [(^ #\" #\\) (cons (car (string->list (get-lexeme)))
 			(get-string-token lex-buf))]
      [(@ #\\ #\\) (cons #\\ (get-string-token lex-buf))]
@@ -256,6 +256,7 @@ lexer:
 Default lex abbrevs
 
 parser:
+Make the parser understand lexer-src-pos.
 Document/improve parser error handling.
 
 both:
@@ -277,6 +278,5 @@ Error check for use of an end token in a production
 Error check the use of error productions
 
 both:
-Automatic position information handling between the lexer and parser
 Code documentation
 Increase runtime speed.

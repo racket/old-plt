@@ -3,71 +3,63 @@
   (require (prefix kernel: (lib "kerncase.ss" "syntax"))
            (lib "contracts.ss")
            "shared.ss"
-           "marks.ss"
-           "breakpoint-token.ss")
+           "marks.ss")
+  
+  (provide/contract [annotate-top-level (-> syntax? syntax?)]
+                    [annotate-expr (-> syntax? syntax?)])
+ 
+  (define (annotate-top-level stx)
+    (top-level-expr-iterator stx))
   
   (define (annotate-expr stx)
     (let ([result-box (box null)])
       ((f-maker null null result-box) stx #t)))
   
-  (define (free-vars stx)
+
+  ;; TEMPLATE FUNCTIONS:
+  ;;  these functions' definitions follow the data definitions presented in the Syntax
+  ;;  chapter of the MzScheme Manual. 
+  
+  (define (top-level-expr-iterator stx)
+    (let ([rebuild
+           (lambda (new-stx) 
+             (rebuild-stx (syntax->list new-stx) stx))])
+      (kernel:kernel-syntax-case stx #f
+        [(module identifier name (#%plain-module-begin . module-level-exprs))
+         (rebuild #`(module identifier name (#%plain-module-begin #,@(map module-level-expr-iterator
+                                                                          (syntax->list #'module-level-exprs)))))]
+        [else-stx
+         (general-top-level-expr-iterator stx)])))
+
+  (define (module-level-expr-iterator stx)
     (kernel:kernel-syntax-case stx #f
-      [(#%top . var)
-       (list #'var)]
-      [var-stx
-       (identifier? stx)
-       (list stx)]
-      [stx
-       null]))
+      [(provide . provide-specs)
+       stx]
+      [else-stx
+       (general-top-level-expr-iterator stx)]))
   
-  (define (arglist-bindings arglist-stx)
-    (syntax-case arglist-stx ()
-      [var
-       (identifier? arglist-stx)
-       (list arglist-stx)]
-      [(var ...)
-       (syntax->list arglist-stx)]
-      [(var . others)
-       (cons #'var (arglist-bindings #'others))]))
-  
-  (define (tail-bound prior newly-bound we-are-tail?)
-    (if we-are-tail?
-        (binding-set-union (list prior newly-bound))
-        null))
-  
-  (define (newly-bound stx)
-    (kernel:kernel-syntax-case stx #f
-      [(lambda arglist . rest)
-       (arglist-bindings #'arglist)]
-      [(case-lambda . clauses)
-       (apply append
-              (map (lambda (clause)
-                     (syntax-case clause ()
-                       [(arglist . rest)
-                        (arglist-bindings #'arglist)]))
-                   (syntax->list #'clauses)))]
-      [(let-values (((var ...) . stuff) ...) . dont-care)
-       (apply append (map syntax->list (syntax->list #'((var ...) ...))))]
-      [(letrec-values (((var ...) . stuff) ...) . dont-care)
-       (apply append (map syntax->list (syntax->list #'((var ...) ...))))]
-      [etc
-       null]))
-        
-        
-  
-  (define (f-maker prior-tail-bound newly-bound-in-parent result-box)
-    (lambda (stx we-are-tail?)
-      (set-box! result-box (append (free-vars stx) (unbox result-box)))
-      (let* ([new-result-box (box null)]
-             [my-tail-bound (tail-bound prior-tail-bound newly-bound-in-parent we-are-tail?)]
-             [new-f (f-maker my-tail-bound (newly-bound stx) new-result-box)]
-             [sub-annotated (expr-iterator new-f stx)] ; recursive call
-             [debug-info (make-debug-info stx my-tail-bound (append (free-vars stx) (unbox result-box)) 'none #f)])
-        #`(with-continuation-mark #,debug-key #,debug-info #,sub-annotated))))
-  
+  (define (general-top-level-expr-iterator stx)
+    (let ([rebuild 
+           (lambda (new-stx) 
+             (rebuild-stx (syntax->list new-stx) stx))])
+      (kernel:kernel-syntax-case stx #f
+        [(define-values (var ...) expr)
+         (rebuild #`(define-values (var ...) #,(annotate-expr #'expr)))]
+        [(define-syntaxes (var ...) expr)
+         stx]
+        [(begin . top-level-exprs)
+         (rebuild #`(begin #,@(map top-level-expr-iterator (syntax->list #'top-level-exprs))))]
+        [(require . require-specs)
+         stx]
+        [(require-for-syntax . require-specs)
+         stx]
+        [else
+         (annotate-expr stx)])))
+    
   (define (expr-iterator fn stx)
-      (let* ([tr-fn (lambda (stx) (fn stx #t))]
-             [nt-fn (lambda (stx) (fn stx #f))]
+      (let* ([tr-fn (lambda (stx) (fn stx 'tail))]
+             [nt-fn (lambda (stx) (fn stx 'non-tail))]
+             [lb-fn (lambda (stx) (fn stx 'lambda-body))]
              [fn-map-begin/0 
               (lambda (stx begin0?)
                 (let* ([bodies (syntax->list stx)]
@@ -86,14 +78,14 @@
               (lambda (clause)
                 (kernel:kernel-syntax-case clause #f
                   [(arglist . bodies)
-                   `(,#'arglist ,@(fn-map-begin #'bodies))]
+                   `(,#'arglist ,@(map lb-fn (syntax->list #'bodies)))]
                    [else
                     (error 'expr-syntax-object-iterator "unexpected (case-)lambda clause: ~a\n" (syntax-object->datum stx))]))]
               [let-values-abstraction
                (lambda (stx)
                  (kernel:kernel-syntax-case stx #f
                    [(kwd ((variable ...) ...) . bodies)
-                    (rebuild #`(kwd ((variable ...) ...) #,@(fn-map-begin #'bodies)))]
+                    (rebuild #`(kwd ((variable ...) ...) #,@(map tr-fn (syntax->list #'bodies))))]
                    [else
                     (error 'expr-syntax-object-iterator "unexpected let(rec) expression: ~a\n" (syntax-object->datum stx))]))]) 
          (kernel:kernel-syntax-case stx #f
@@ -133,43 +125,77 @@
            [else
             (error 'expr-syntax-object-iterator "unknown expr: ~a\n" (syntax-object->datum stx))])))
   
-  (define (top-level-expr-iterator stx)
-    (let ([rebuild
-           (lambda (new-stx) 
-             (rebuild-stx (syntax->list new-stx) stx))])
-      (kernel:kernel-syntax-case #f
-        [(module identifier name (#%plain-module-begin . module-level-exprs))
-         (rebuild #`(module identifier name (#%plain-module-begin #,@(map module-level-expr-iterator
-                                                                          (syntax->list #'module-level-exprs)))))]
-        [else-stx
-         (general-top-level-expr-iterator stx)])))
-
-  (define (module-level-expr-iterator stx)
+  
+  ;; ANNOTATION
+  ;;  These functions encapsulate the domain knowledge needed by the annotater
+  
+  ; free-vars: (syntax? -> (listof syntax?))
+  ;  if this expression is a variable reference, return it in a list. otherwise return null.
+  (define (free-vars stx)
     (kernel:kernel-syntax-case stx #f
-      [(provide . provide-specs)
-       stx]
-      [else-stx
-       (general-top-level-expr-iterator stx)]))
+      [(#%top . var)
+       (list #'var)]
+      [var-stx
+       (identifier? stx)
+       (list stx)]
+      [stx
+       null]))
   
-  (define (general-top-level-expr-iterator stx)
-    (let ([rebuild 
-           (lambda (new-stx) 
-             (rebuild-stx (syntax->list new-stx) stx))])
-      (kernel:kernel-syntax-case stx #f
-        [(define-values (var ...) expr)
-         (rebuild #`(define-values (var ...) #,(annotate-expr #'expr)))]
-        [(define-syntaxes (var ...) expr)
-         stx]
-        [(begin . top-level-exprs)
-         (rebuild #`(begin #,@(map top-level-expr-iterator (syntax->list #'top-level-exprs))))]
-        [(require . require-specs)
-         stx]
-        [(require-for-syntax . require-specs)
-         stx]
-        [else
-         (annotate-expr stx)])))
+  ; arglist-bindings : (syntax? -> (listof syntax?))
+  ;  return a list of the names in the arglist
+  (define (arglist-bindings arglist-stx)
+    (syntax-case arglist-stx ()
+      [var
+       (identifier? arglist-stx)
+       (list arglist-stx)]
+      [(var ...)
+       (syntax->list arglist-stx)]
+      [(var . others)
+       (cons #'var (arglist-bindings #'others))]))
   
+  ; tail-bound : (binding-set? (listof syntax?) symbol -> binding-set?)
+  ;  prior: the variables that were tail-bound in the enclosing expression
+  ;  newly-bound: the variables whose bindings were created in the enclosing expression
+  ;  tailness: 'lambda-body if this expression is the body of a lambda,
+  ;            'tail if this expression is tail wrt the enclosing expression, and
+  ;            'non-tail otherwise
   
-  (provide/contract [annotate (-> syntax? syntax?)])
+  (define (tail-bound prior newly-bound tailness)
+    (case tailness
+      ((lambda-body) 'all)
+      ((tail) (binding-set-union (list prior newly-bound)))
+      ((non-tail) null)
+      (else (error 'tail-bound "unexpected value ~s for tailness argument\n" tailness))))
+  
+  (define (newly-bound stx)
+    (kernel:kernel-syntax-case stx #f
+      [(lambda arglist . rest)
+       (arglist-bindings #'arglist)]
+      [(case-lambda . clauses)
+       (apply append
+              (map (lambda (clause)
+                     (syntax-case clause ()
+                       [(arglist . rest)
+                        (arglist-bindings #'arglist)]))
+                   (syntax->list #'clauses)))]
+      [(let-values (((var ...) . stuff) ...) . dont-care)
+       (apply append (map syntax->list (syntax->list #'((var ...) ...))))]
+      [(letrec-values (((var ...) . stuff) ...) . dont-care)
+       (apply append (map syntax->list (syntax->list #'((var ...) ...))))]
+      [etc
+       null]))
+        
+        
+  
+  (define (f-maker prior-tail-bound newly-bound-in-parent result-box)
+    (lambda (stx we-are-tail?)
+      (set-box! result-box (append (free-vars stx) (unbox result-box)))
+      (let* ([new-result-box (box null)]
+             [my-tail-bound (tail-bound prior-tail-bound newly-bound-in-parent we-are-tail?)]
+             [new-f (f-maker my-tail-bound (newly-bound stx) new-result-box)]
+             [sub-annotated (expr-iterator new-f stx)] ; recursive call
+             [debug-info (make-debug-info stx my-tail-bound (append (free-vars stx) (unbox result-box)) 'none #f)])
+        #`(with-continuation-mark #,debug-key #,debug-info #,sub-annotated))))
+  
   
   )

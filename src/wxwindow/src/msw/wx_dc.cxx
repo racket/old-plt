@@ -1396,7 +1396,8 @@ void wxDC::SetMapMode(int mode)
   if (::GetMapMode(dc) != MM_ANISOTROPIC)
     ::SetMapMode(dc, MM_ANISOTROPIC);
 
-  if (::SetGraphicsMode(dc, GM_ADVANCED) != 0) {
+  if ((__type != wxTYPE_DC_PRINTER)
+      && (::SetGraphicsMode(dc, GM_ADVANCED) != 0)) {
     XFORM xform;
     xform.eM11 = user_scale_x;
     xform.eM21 = 0;

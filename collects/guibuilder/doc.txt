@@ -5,3 +5,6 @@ To run the GUI builder:
 
   (require-library "gb.ss" "guibuilder")
 
+Save yuor files with the extension ".gui" to ensure that they can be
+re-loaded later.
+

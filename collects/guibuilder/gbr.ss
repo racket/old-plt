@@ -597,13 +597,12 @@
       (let ([snipclass
 	     (make-object 
 	      (class mred:snip-class% ()
-		(inherit set-classname set-version)
+		(inherit set-classname set-version reading-version)
 		(override
 		  [read
 		   (lambda (stream)
-		     (let ([o (make-object class%)]
-			   [scl (mred:get-the-snip-class-list)])
-		       (send o read stream (send scl reading-version this))
+		     (let ([o (make-object class%)])
+		       (send o read stream (reading-version stream))
 		       o))])
 		(sequence
 		  (super-init)
@@ -2166,10 +2165,25 @@
 	[do-paste
 	 (lambda (time)
 	   (dynamic-wind
-	    (lambda () (set! pasting? #t))
-	    (lambda () (super-do-paste time))
-	    (lambda () (set! pasting? #f)))
-	   (handle-new-arrivals))])
+	       (lambda () (set! pasting? #t))
+	       (lambda () (super-do-paste time))
+	       (lambda () (set! pasting? #f)))
+	   (let ([a-paste #f])
+	     (for-each-snip
+	      (lambda (s)
+		(unless a-paste
+		  (let ([oi (ivar s original-id)])
+		    (when oi
+		      (set! a-paste s))))))
+	     (handle-new-arrivals)
+	     (when a-paste
+	       (let ([top-paste (let loop ([a-paste a-paste])
+				  (let ([p (send a-paste gb-get-parent)])
+				    (if p
+					(loop p)
+					a-paste)))])
+		 (send main-panel gb-add-child top-paste)
+		 (set-selected top-paste)))))])
       (public
 	[handle-new-arrivals
 	 (lambda ()

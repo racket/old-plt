@@ -53,7 +53,7 @@
 ;; side effect: runs all the tests.
 (define run-tests
   (lambda (name . tests)
-    (apply run-tests/initialize (list* name #f tests))))
+    (apply run-tests/initialize (list* name void tests))))
 
 ;; run-tests/initialize : str x (-> void) x test ... -> void
 ;; side effect: queues a test-group that, is evaluated by running the provided 

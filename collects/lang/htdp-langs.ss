@@ -338,7 +338,7 @@ to the original stdout of DrScheme.
          (language-position
           (list (string-constant how-to-design-programs)
                 (string-constant full-language)))
-         (use-underscore-names? #t)))
+         (use-underscore-names? #f)))
       
       (add-htdp-language
        (instantiate htdp-language% ()
@@ -350,7 +350,7 @@ to the original stdout of DrScheme.
          (sharing-printing #t)
          (abbreviate-cons-as-list #t)
          (allow-sharing? #t)
-         (use-underscore-names? #t)))
+         (use-underscore-names? #f)))
       
       (add-htdp-language
        (instantiate htdp-language% ()
@@ -362,7 +362,7 @@ to the original stdout of DrScheme.
          (sharing-printing #f)
          (abbreviate-cons-as-list #t)
          (allow-sharing? #f)
-         (use-underscore-names? #t)))
+         (use-underscore-names? #f)))
       
       (add-htdp-language
        (instantiate htdp-language% ()

@@ -147,8 +147,8 @@
   ;; and methods.  Also parents and ifaces should contain all super-classes/ifaces
   (define-struct class-record (name modifiers class? fields methods parents ifaces))
 
-  ;; (make-field-record string (list symbol) (list string) type)
-  (define-struct field-record (name modifiers class type))
+  ;; (make-field-record string (list symbol) bool (list string) type)
+  (define-struct field-record (name modifiers init? class type))
   
   ;; (make-method-record string (list symbol) type (list type) (list type) (U bool method-record) string)
   (define-struct method-record (name modifiers rtype atypes throws override class))
@@ -430,6 +430,7 @@
               (lambda (input)
                 (make-field-record (car input)
                                    (cadr input)
+                                   #f
                                    (caddr input)
                                    (parse-type (cadddr input)))))
              (parse-method

@@ -683,13 +683,9 @@
                (methods null))
       (cond
         ((null? members) (values fields methods))
-        ((var-decl? (car members))
+        ((field? (car members))
          (loop (cdr members)
                (cons (process-field (car members) cname type-recs level) fields)
-               methods))
-        ((var-init? (car members))
-         (loop (cdr members)
-               (cons (process-field (var-init-var-decl (car members)) cname type-recs level) fields)
                methods))
         ((method? (car members))
          (loop (cdr members)
@@ -703,10 +699,11 @@
                fields
                methods)))))
   
-  ;; process-field: var-decl (string list) type-records symbol -> field-record
+  ;; process-field: field (string list) type-records symbol -> field-record
   (define (process-field field cname type-recs level)
     (make-field-record (id-string (field-name field)) 
                        (check-field-modifiers level (field-modifiers field)) 
+                       (var-init? field)
                        cname 
                        (type-spec-to-type (field-type field) level type-recs)))
 

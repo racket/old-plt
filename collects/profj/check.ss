@@ -32,13 +32,15 @@
   
   ;;Environment variable properties
   ;;(make-properties bool bool bool bool bool bool)
-  (define-struct properties (local? local-field? other-field? static? final? usable?))
-  (define parameter (make-properties #t #f #f #f #f #t))
-  (define final-parameter (make-properties #t #f #f #f #t #t))
-  (define obj-field (make-properties #f #t #f #f #f #t))
-  (define final-obj-field (make-properties #f #t #f #f #t #t))
-  (define class-field (make-properties #f #t #f #t #f #t))
-  (define final-class-field (make-properties #f #t #f #t #t #t))
+  (define-struct properties (local? field? static? settable? final? usable?))
+  (define parm (make-properties #t #f #f #t #f #t))
+  (define final-parm (make-properties #t #f #f #f #t #t))
+  (define obj-field (make-properties #f #t #f #t #f #t))
+  (define (final-field settable)
+    (make-properties #f #t #f settable #t #t))
+  (define class-field (make-properties #f #t #t #f #t #t))
+  (define (final-class-field settable)
+    (make-properties #f #t #t settable #t #t))
   (define inherited-conflict (make-properties #f #t #f #f #f #f))
   
   ;; add-var-to-env: string type properties env -> env
@@ -143,9 +145,7 @@
     (check-location loc)
     (send type-recs set-location! 'interactions)
     (send type-recs set-class-reqs null)
-    (let ((env (add-var-to-env "this" (make-ref-type "scheme-interactions" null) parameter
-                               (create-field-env (send type-recs get-interactions-fields) empty-env 
-                                                 "scheme-interactions")))
+    (let ((env (create-field-env (send type-recs get-interactions-fields) empty-env "scheme-interactions"))
           (c-class (list "scheme-interactions")))
       (cond
         ((pair? prog)
@@ -174,7 +174,7 @@
     (let ((this-ref (make-ref-type (id-string (header-id (class-def-info class)))
                                    package-name)))
       (check-members (class-def-members class)
-                     (add-var-to-env "this" this-ref parameter empty-env)
+                     (add-var-to-env "this" this-ref parm empty-env)
                      level
                      type-recs 
                      (list (id-string (header-id (class-def-info class))))))
@@ -266,9 +266,9 @@
                          (cond
                            ((and in-env? (not current?)) inherited-conflict)
                            ((and (not static?) (not final?)) obj-field)
-                           ((and (not static?) final?) final-obj-field)
+                           ((and (not static?) final?) (final-field current?))
                            ((and static? (not final?)) class-field)
-                           ((and static? final?) final-class-field))
+                           ((and static? final?) (final-class-field current?)))
                          (create-field-env (cdr fields) env class))))))
   
   ;get-constrcutors: (list method-record) -> (list method-record)
@@ -488,8 +488,8 @@
                          (add-var-to-env (id-string (field-name (car parms)))
                                          (type-spec-to-type (field-type (car parms)) level type-recs)
                                          (if (memq 'final (map modifier-kind (field-modifiers (car parms))))
-                                             final-parameter
-                                             parameter)
+                                             final-parm
+                                             parm)
                                          env)
                          level
                          type-recs))))
@@ -761,13 +761,13 @@
            (in-env? (lookup-var-in-env name env))
            (sym-name (string->symbol name))
            (type (type-spec-to-type (field-type local) level type-recs)))
-      (when (and in-env? (not (properties-local-field? (var-type-properties in-env?))))
+      (when (and in-env? (not (properties-field? (var-type-properties in-env?))))
         (illegal-redefinition (field-name local) (field-src local)))
       (when is-var-init?
         (let ((new-type (check-var-init (var-init-init local) check-e type sym-name type-recs)))
           (unless (assignment-conversion type new-type type-recs)
             (variable-type-error (field-name local) new-type type (var-init-src local)))))
-      (add-var-to-env name type parameter env)))
+      (add-var-to-env name type parm env)))
 
   ;check-try: statement (list catch) (U #f statement) env (statement env -> void) type-records -> void
   (define (check-try body catches finally env check-s type-recs)
@@ -786,10 +786,10 @@
                   (let* ((field (catch-cond catch))
                          (name (id-string (field-name field)))
                          (in-env? (lookup-var-in-env name env)))
-                    (if (and in-env? (not (properties-local-field? (var-type-properties in-env?))))
+                    (if (and in-env? (not (properties-field? (var-type-properties in-env?))))
                         (illegal-redefinition (field-name field) (field-src field))
                         (check-s (catch-body catch)
-                                 (add-var-to-env name (field-type field) parameter env)))))
+                                 (add-var-to-env name (field-type field) parm env)))))
                 catches)
       (when finally (check-s finally env))))
 
@@ -1046,8 +1046,11 @@
                                           (check-sub-expr (assignment-right exp))
                                           (expr-src exp)
                                           ctor?
+                                          #f ; static-init?
+                                          current-class
                                           level
-                                          type-recs))))))
+                                          type-recs
+                                          env))))))
 
   ;;added assignment ops so that error messages will be correct
   ;;check-bin-op: symbol type type src-loc symbol type-records -> type
@@ -1137,6 +1140,7 @@
            (set-field-access-access! acc (make-var-access 
                                           (memq 'static (field-record-modifiers record))
                                           (memq 'final (field-record-modifiers record))
+                                          (field-record-init? record)
                                           (car (field-record-class record))))
            (add-required c-class (car (field-record-class record)) 
                          (cdr (field-record-class record)) type-recs)
@@ -1165,7 +1169,7 @@
                                     (make-field-access 
                                      #f
                                      (car accs)
-                                     (make-var-access #t null (class-record-name (car static-class)))))
+                                     (make-var-access #t #f #f (class-record-name (car static-class)))))
                        (cdr accs))))
                    ((and (eq? level 'advanced) (not first-binding) (> (length acc) 1)
                          (with-handlers ((exn:syntax? (lambda (e) #f))) 
@@ -1215,7 +1219,7 @@
         ((array-type? obj-type)
          (unless (equal? fname "length")
            (field-lookup-error 'array name obj-type src))
-         (make-field-record "length" `() `(array) 'int))
+         (make-field-record "length" `() #f `(array) 'int))
         (else (field-lookup-error 'primitive name obj-type src)))))
   
   ;; build-field-accesses: access (list id) -> field-access
@@ -1558,14 +1562,12 @@
   
   ;; 15.26
   ;; SKIP - doing the check for compound assignment
-  ;check-assignment: symbol expr type type src bool symbol type-records -> type
-  (define (check-assignment op lexpr ltype rtype src constructor? level type-recs)
-    (when (and (eq? level 'beginner) (not constructor?))
+  ;check-assignment: symbol expr type type src bool bool string symbol type-records env -> type
+  (define (check-assignment op lexpr ltype rtype src c-tor? static-init? c-class level type-recs env)
+    (when (and (eq? level 'beginner) (not c-tor?))
       (illegal-assignment src))
-;    (when (access? lexpr)
-;      (when (check-for-final? lexpr)
-;        (unless (constructor-or-static-and-this-class lexpr)
-;          (raise-error))))
+    (when (access? lexpr)
+      (check-final lexpr c-tor? static-init? c-class env))
     (case op
       ((=)
        (if (assignment-conversion ltype rtype type-recs)
@@ -1574,7 +1576,12 @@
       ((+= *= /= %= -= <<= >>= >>>= &= ^= or=)
        (check-bin-op op ltype rtype src level type-recs)
        ltype)))
-  
+
+  ;check-final: expression bool bool string -> void
+  (define (check-final expr ctor? static-init? c-class env)
+    (let ((access (access-name expr)))
+      (void)))
+      
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;Expression Errors
 

@@ -1326,6 +1326,7 @@ void wxApp::DoDefaultAboutItem(void)
 
 void wxPrimDialogSetUp()
 {
+  wxUnhideCursor();
   wxSetCursor(wxSTANDARD_CURSOR);
 }
 

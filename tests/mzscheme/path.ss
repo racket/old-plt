@@ -85,8 +85,15 @@
      (test #t <= (date-minute start) (date-minute time) (date-minute end))
      (test #t <= (date-second start) (date-second time) (date-second end))))
  (list "tmp5"
+       "down"
        (build-path "down" "tmp8")
        (build-path deepdir "tmp7")))
+
+(test #f file-modify-seconds "non-existent-file")
+(map
+ (lambda (f)
+   (test #t number? (file-modify-seconds f)))
+ (filesystem-root-list))
 
 (test #t file-exists? "tmp5")
 (test #t file-exists? (build-path "down" "tmp8"))

@@ -84,7 +84,6 @@ wxSnipClass::wxSnipClass()
   classname = "wxbad";
   version = 0;
   required = 0;
-  mapPosition = -1;
 }
 
 Bool wxSnipClass::ReadHeader(wxMediaStreamIn *)
@@ -92,17 +91,14 @@ Bool wxSnipClass::ReadHeader(wxMediaStreamIn *)
   return TRUE;
 }
 
-void wxSnipClass::ReadDone(void)
-{
-}
-
 Bool wxSnipClass::WriteHeader(wxMediaStreamOut *)
 {
   return TRUE;
 }
 
-void wxSnipClass::WriteDone(void)
+int wxSnipClass::ReadingVersion(wxMediaStreamIn *f)
 {
+  return f->ReadingVersion(this);
 }
 
 /***************************************************************/
@@ -1100,7 +1096,7 @@ wxSnip *ImageSnipClass::Read(wxMediaStreamIn *f)
   Bool canInline;
 
   scl = wxGetTheSnipClassList();
-  canInline = (scl->ReadingVersion(this) > 1);
+  canInline = (f->ReadingVersion(this) > 1);
 
   filename = f->GetString(NULL);
   f->Get(&type);
@@ -1596,7 +1592,7 @@ wxSnip *MediaSnipClass::Read(wxMediaStreamIn *f)
   f->Get(&H);
   
   scl = wxGetTheSnipClassList();
-  if (scl->ReadingVersion(this) > 1)
+  if (f->ReadingVersion(this) > 1)
     f->Get(&tightFit);
   
   if (!type)
@@ -1658,11 +1654,6 @@ short wxSnipClassList::FindPosition(wxSnipClass *sclass)
   return -1;
 }
 
-int wxSnipClassList::ReadingVersion(wxSnipClass *sclass)
-{
-  return sclass->readingVersion;
-}
-
 void wxSnipClassList::Add(wxSnipClass *snipclass)
 {
   if (wxList::Find(snipclass->classname))
@@ -1702,22 +1693,10 @@ wxStandardSnipClassList::wxStandardSnipClassList(void)
   Add(TheImageSnipClass);
 }
 
-void wxStandardSnipClassList::ResetHeaderFlags(int doneMsg)
+void wxStandardSnipClassList::ResetHeaderFlags(wxMediaStream *s)
 {
-  wxNode *node;
-  wxSnipClass *sclass;
-
-  for (node = First(); node; node = node->Next()) {
-    sclass = (wxSnipClass *)node->Data();
-    if (sclass->headerFlag) {
-      if (doneMsg == wxRESET_DONE_WRITE)
-	sclass->WriteDone();
-      else if (doneMsg == wxRESET_DONE_READ)
-	sclass->ReadDone();
-    }
-    sclass->headerFlag = 0;
-    sclass->mapPosition = -1;
-  }
+  s->sl = NULL;
+  s->dl = NULL;
 }
 
 Bool wxStandardSnipClassList::Write(wxMediaStreamOut *f)
@@ -1729,11 +1708,19 @@ Bool wxStandardSnipClassList::Write(wxMediaStreamOut *f)
   f->Put(Number());
 
   for (i = 0, node = First(); node; node = node->Next(), i++) {
+    wxSnipClassLink *sl;
+
     sclass = (wxSnipClass *)node->Data();
     f->Put(sclass->classname);
     f->Put(sclass->version);
     f->Put(sclass->required);
-    sclass->mapPosition = i;
+
+    sl = new wxSnipClassLink;
+    sl->c= sclass;
+    sl->mapPosition = i;
+    sl->headerFlag = 0;
+    sl->next = f->sl;
+    f->sl = sl;
   }
 
   return TRUE;
@@ -1748,6 +1735,7 @@ Bool wxStandardSnipClassList::Read(wxMediaStreamIn *f)
   int version;
   Bool required;
   wxNode *node, *next;
+  wxSnipClassLink *sl;
 
   f->Get(&count);
 
@@ -1765,43 +1753,45 @@ Bool wxStandardSnipClassList::Read(wxMediaStreamIn *f)
     f->Get(&required);
     if (!f->Ok())
       return FALSE;
+
     sclass = Find(buffer);
+
+    sl = new wxSnipClassLink;
+    sl->c = sclass;
+    sl->mapPosition = i;
+    sl->next = f->sl;
+    f->sl = sl;
+
     if (!sclass || (sclass->version < version)) {
       /* unknown class/version; remember name in case it's used */
-      char *copy;
-      copy = copystring(buffer);
-      unknowns->Append(i, (wxObject *)copy);
+      sl->name = copystring(buffer);
     } else {
-      sclass->mapPosition = i /* FindPosition(sclass) */;
-      sclass->readingVersion = version;
+      sl->readingVersion = version;
     }
   }
 
   return TRUE;
 }
 
-wxSnipClass *wxStandardSnipClassList::FindByMapPosition(short n)
+wxSnipClass *wxStandardSnipClassList::FindByMapPosition(wxMediaStream *f, short n)
 {
-  wxNode *node;
-  wxSnipClass *sclass;
+  wxSnipClassLink *sl;
   
   if (n < 0)
     return NULL;
 
-  for (node = First(); node; node = node->Next()) {
-    sclass = (wxSnipClass *)node->Data();
-    if (sclass->mapPosition == n)
-      return sclass;
-  }
+  for (sl = f->sl; sl; sl = sl->next) {
+    if (sl->mapPosition == n) {
+      if (sl->name) {
+	/* Show error and then remove name so it isn't shown again. */
+	char buffer2[256];
+	sprintf(buffer2, "Unknown snip class or version: \"%.100s\".", sl->name);
+	wxmeError(buffer2);
 
-  if ((node = unknowns->Find(n))) {
-    /* Show error and then remove it from the list so it isn't shown again. */
-    char buffer2[256], *s;
-    s = (char *)node->Data();
-    sprintf(buffer2, "Unknown snip class or version: \"%.100s\".", s);
-    wxmeError(buffer2);
-
-    DELETE_OBJ node;
+	sl->name = NULL;
+      }
+      return sl->c;
+    }
   }
 
   return NULL;
@@ -1950,6 +1940,7 @@ Bool wxBufferDataClassList::Write(wxMediaStreamOut *f)
 {
   wxNode *node;
   wxBufferDataClass *sclass;
+  wxDataClassLink *dl;
   short i;
 
   f->Put(Number());
@@ -1957,7 +1948,12 @@ Bool wxBufferDataClassList::Write(wxMediaStreamOut *f)
   for (i = 0, node = First(); node; node = node->Next(), i++) {
     sclass = (wxBufferDataClass *)node->Data();
     f->Put(sclass->classname);
-    sclass->mapPosition = i + 1;
+
+    dl = new wxDataClassLink;
+    dl->d = sclass;
+    dl->mapPosition = i + 1;
+    dl->next = f->dl;
+    f->dl = dl;
   }
 
   return TRUE;
@@ -1968,6 +1964,7 @@ Bool wxBufferDataClassList::Read(wxMediaStreamIn *f)
   int _count, i;
   long _n;
   wxBufferDataClass *sclass;
+  wxDataClassLink *dl;
   char buffer[256];
   
   f->Get(&_count);
@@ -1979,38 +1976,40 @@ Bool wxBufferDataClassList::Read(wxMediaStreamIn *f)
     f->Get((long *)&_n, (char *)buffer);
     if (!f->Ok())
       return FALSE;
+
     sclass = Find(buffer);
+
+    dl = new wxDataClassLink;
+    dl->d = sclass;
+    dl->mapPosition = i + 1;
+    dl->next = f->dl;
+    f->dl = dl;
+
     if (!sclass) {
-      char *copy;
-      copy = copystring(buffer);
-      unknowns->Append(i, (wxObject *)copy);
-    } else {
-      sclass->mapPosition = FindPosition(sclass);
+      dl->name = copystring(buffer);
     }
   }
 
   return TRUE;
 }
 
-wxBufferDataClass *wxBufferDataClassList::FindByMapPosition(short n)
+wxBufferDataClass *wxBufferDataClassList::FindByMapPosition(wxMediaStream *f, short n)
 {
-  wxNode *node;
-  wxBufferDataClass *sclass;
+  wxDataClassLink *dl;
   
   if (n <= 0)
     return NULL;
 
-  for (node = First(); node; node = node->Next()) {
-    sclass = (wxBufferDataClass *)node->Data();
-    if (sclass->mapPosition == n)
-      return sclass;
-  }
-
-  if ((node = unknowns->Find(n))) {
-    char buffer2[256], *s;
-    s = (char *)node->Data();
-    sprintf(buffer2, "Unknown snip data class or version: \"%.100s\".", (char *)s);
-    wxmeError(buffer2);
+  for (dl = f->dl; dl; dl = dl->next) {
+    if (dl->mapPosition == n) {
+      if (dl->name) {
+	char buffer2[256];
+	sprintf(buffer2, "Unknown snip data class or version: \"%.100s\".", dl->name);
+	wxmeError(buffer2);
+	dl->name = NULL;
+      }
+      return dl->d;
+    }
   }
 
   return NULL;

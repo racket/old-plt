@@ -645,104 +645,55 @@ void wxMediaBuffer::SetSnipData(wxSnip *, wxBufferData *)
 
 /**********************************************************************/
 
-void *wxMediaFileIOReady = NULL;
-
 Bool wxReadMediaGlobalHeader(wxMediaStreamIn *f)
 {
-  wxStandardSnipClassList *scl;
-  wxBufferDataClassList *bdl;
-
-  if (wxMediaFileIOReady) {
-    wxmeError("File I/O already in progress for some stream.");
-    return FALSE;
-  }
-
-  wxMediaFileIOReady = (void *)f;
-
-  scl = &wxTheSnipClassList;
-  scl->ResetHeaderFlags();
-  if (!scl->Read(f))
+  f->scl->ResetHeaderFlags(f);
+  if (!f->scl->Read(f))
     return FALSE;
 
-  wxmbSetupStyleReadsWrites();
+  wxmbSetupStyleReadsWrites(f);
 
-  bdl = &wxTheBufferDataClassList;
-  return bdl->Read(f);
+  return f->bdl->Read(f);
 }
 
 Bool wxReadMediaGlobalFooter(wxMediaStreamIn *f)
 {
-  wxStandardSnipClassList *scl;
-
-  if (wxMediaFileIOReady != (void *)f) {
-    wxmeError("File reading not in progress for this stream.");
-    return FALSE;
-  }
-
-  wxmbDoneStyleReadsWrites();
-  scl = &wxTheSnipClassList;
-  scl->ResetHeaderFlags(wxRESET_DONE_READ);
-
-  wxMediaFileIOReady = NULL;
+  wxmbDoneStyleReadsWrites(f);
+  f->scl->ResetHeaderFlags(f);
 
   return TRUE;
 }
 
 Bool wxWriteMediaGlobalHeader(wxMediaStreamOut *f)
 {
-  wxStandardSnipClassList *scl;
-  wxBufferDataClassList *bdl;
-
-  if (wxMediaFileIOReady) {
-    wxmeError("File I/O already in progress for some stream.");
-    return FALSE;
-  }
-
-  wxMediaFileIOReady = (void *)f;
-
-  scl = &wxTheSnipClassList;
-  scl->ResetHeaderFlags();
-  if (!scl->Write(f))
+  f->scl->ResetHeaderFlags(f);
+  if (!f->scl->Write(f))
     return FALSE;
 
-  wxmbSetupStyleReadsWrites();
+  wxmbSetupStyleReadsWrites(f);
 
-  bdl = &wxTheBufferDataClassList;
-  return bdl->Write(f);
+  return f->bdl->Write(f);
 }
 
 Bool wxWriteMediaGlobalFooter(wxMediaStreamOut *f)
 {
-  wxStandardSnipClassList *scl;
-
-  if (wxMediaFileIOReady != (void *)f) {
-    wxmeError("File writing not in progress for this stream.");
-    return FALSE;
-  }
-
-  wxmbDoneStyleReadsWrites();
-  scl = &wxTheSnipClassList;
-  scl->ResetHeaderFlags(wxRESET_DONE_WRITE);
-
-  wxMediaFileIOReady = NULL;
+  wxmbDoneStyleReadsWrites(f);
+  f->scl->ResetHeaderFlags(f);
 
   return TRUE;
 }
 
 /**********************************************************************/
 
-char wxme_current_read_format[MRED_FORMAT_STR_LEN + 1];
-char wxme_current_read_version[MRED_VERSION_STR_LEN + 1];
-
-int wxmeCheckFormatAndVersion(void)
+int wxmeCheckFormatAndVersion(wxMediaStream *s)
 {
-  if (strcmp(wxme_current_read_format, MRED_FORMAT_STR)) {
+  if (strcmp(s->read_format, MRED_FORMAT_STR)) {
     wxmeError("Unknown format number.");
     return 0;
   }
-  if (strcmp(wxme_current_read_version, MRED_VERSION_STR)
-      && strcmp(wxme_current_read_version, "01")
-      && strcmp(wxme_current_read_version, "02")) {
+  if (strcmp(s->read_version, MRED_VERSION_STR)
+      && strcmp(s->read_version, "01")
+      && strcmp(s->read_version, "02")) {
     wxmeError("Unknown version number.");
     return 0;
   }
@@ -899,9 +850,7 @@ static wxBufferData *ReadBufferData(wxMediaStreamIn *f)
   do {
     f->Get(&extraDataIndex);
     if (extraDataIndex) {
-      wxBufferDataClassList *bdl;
-      bdl = &wxTheBufferDataClassList;
-      dclass = bdl->FindByMapPosition(extraDataIndex);
+      dclass = f->bdl->FindByMapPosition(f, extraDataIndex);
       
       if (!dclass || !dclass->required)
 	f->Get(&datalen);
@@ -973,9 +922,7 @@ Bool wxMediaBuffer::ReadSnipsFromFile(wxMediaStreamIn *f, Bool overwritestylenam
     if (!f->Ok())
       return FALSE;
     if (len) {
-      wxStandardSnipClassList *scl;
-      scl = &wxTheSnipClassList;
-      sclass = scl->FindByMapPosition(n);
+      sclass = f->scl->FindByMapPosition(f, n);
       if (sclass) {
 	long start, rcount;
 	start = f->Tell();
@@ -985,7 +932,7 @@ Bool wxMediaBuffer::ReadSnipsFromFile(wxMediaStreamIn *f, Bool overwritestylenam
 	  return FALSE;
 	if (!f->Ok())
 	  return FALSE;
-	sclass->headerFlag = 1;
+	f->SetHeaderFlag(sclass);
 
 	rcount = f->Tell() - start;
 	if (rcount < len) {
@@ -1008,9 +955,7 @@ Bool wxMediaBuffer::ReadSnipsFromFile(wxMediaStreamIn *f, Bool overwritestylenam
   for (i = 0; i < numSnips; i++) {
     f->Get(&n);
     if (n >= 0) {
-      wxStandardSnipClassList *scl;
-      scl = &wxTheSnipClassList;
-      sclass = scl->FindByMapPosition(n);
+      sclass = f->scl->FindByMapPosition(f, n);
     } else
       sclass = NULL; /* -1 => unknown */
     if (!sclass || !sclass->required)
@@ -1027,14 +972,10 @@ Bool wxMediaBuffer::ReadSnipsFromFile(wxMediaStreamIn *f, Bool overwritestylenam
 	if (len >= 0)
 	  f->SetBoundary(len);
 	f->Get(&styleIndex);
-	if (styleIndex < 0 || styleIndex >= styleList->numMappedStyles) {
-	  wxmeError("Bad style index for snip.");
-	  return FALSE;
-	}
 	if ((snip = sclass->Read(f))) {
 	  if (snip->flags & wxSNIP_OWNED)
 	    snip->flags -= wxSNIP_OWNED;
-	  snip->style = styleList->MapIndexToStyle(styleIndex);
+	  snip->style = styleList->MapIndexToStyle(f, styleIndex);
 	  if (!snip->style) {
 	    wxStyle *bs;
 	    bs = styleList->BasicStyle();
@@ -1081,7 +1022,7 @@ Bool wxmbWriteBufferData(wxMediaStreamOut *f, wxBufferData *data)
   long dataPos = 0, dataStart = 0, dataEnd;
   
   while (data) {
-    f->Put(data->dataclass->mapPosition);
+    f->Put((short)f->MapPosition(data->dataclass));
     
     if (!data->dataclass->required) {
       dataStart = f->Tell();
@@ -1144,14 +1085,14 @@ Bool wxmbWriteSnipsToFile(wxMediaStreamOut *f,
     if (!sclass) {
       wxmeError("There's a snip without a class."
 		" Data will be lost.");
-    } else if (!sclass->headerFlag) {
-      f->Put((short)sclass->mapPosition);
+    } else if (!f->GetHeaderFlag(sclass)) {
+      f->Put((short)f->MapPosition(sclass));
       headerStart = f->Tell();
       f->PutFixed(0);
       headerPos = f->Tell();
       if (!sclass->WriteHeader(f))
 	return FALSE;
-      sclass->headerFlag = 1;
+      f->SetHeaderFlag(sclass);
       headerEnd = f->Tell();
       f->JumpTo(headerStart);
       f->PutFixed(headerEnd - headerPos);
@@ -1191,7 +1132,7 @@ Bool wxmbWriteSnipsToFile(wxMediaStreamOut *f,
     sclass = snip->snipclass;
 
     if (sclass)
-      f->Put((short)sclass->mapPosition);
+      f->Put((short)f->MapPosition(sclass));
     else
       f->Put((short)(-1));
 
@@ -1710,11 +1651,11 @@ void wxMediaBuffer::DoBufferPaste(long time, Bool local)
       wxMediaStreamInStringBase *b;
       wxMediaStreamIn *mf;
 
-      strcpy(wxme_current_read_format, MRED_FORMAT_STR);
-      strcpy(wxme_current_read_version, MRED_VERSION_STR);
-
       b = new wxMediaStreamInStringBase(str, len);
       mf = new wxMediaStreamIn(b);
+
+      strcpy(mf->read_format, MRED_FORMAT_STR);
+      strcpy(mf->read_version, MRED_VERSION_STR);
 
       if (wxReadMediaGlobalHeader(mf))
 	if (mf->Ok())
@@ -2313,6 +2254,8 @@ Bool wxStandardSnipAdmin::Recounted(wxSnip *s, Bool redraw_now)
 {
   if (s->GetAdmin() == this)
     return media->Recounted(s, redraw_now);
+  else
+    return FALSE;
 }
 
 void wxStandardSnipAdmin::NeedsUpdate(wxSnip *s, float localx, float localy, 

@@ -39,8 +39,6 @@ static void StandardWordbreak(wxMediaEdit *win, long *start, long *end, int, voi
 
 wxMediaWordbreakMap *wxTheMediaWordbreakMap;
 
-extern void *wxMediaFileIOReady;
-
 #ifdef wx_mac
 extern void wxMediaSetFileCreatorType(char *file, Bool is_binary);
 #endif
@@ -2849,16 +2847,16 @@ Bool wxMediaEdit::InsertFile(FILE *f, char *WXUNUSED(file), int *format, Bool cl
       fseek(f, 0, 0);
       *format = wxMEDIA_FF_TEXT;
     } else {
-      fread((char *)wxme_current_read_format, 1, MRED_FORMAT_STR_LEN, f);
-      fread((char *)wxme_current_read_version, 1, MRED_VERSION_STR_LEN, f);
+      wxMediaStreamInFileBase *b;
+      wxMediaStreamIn *mf;
       
-      if (wxmeCheckFormatAndVersion()) {
-	wxMediaStreamInFileBase *b;
-	wxMediaStreamIn *mf;
-
-	b = new wxMediaStreamInFileBase(f);
-	mf = new wxMediaStreamIn(b);
-
+      b = new wxMediaStreamInFileBase(f);
+      mf = new wxMediaStreamIn(b);
+	
+      fread((char *)mf->read_format, 1, MRED_FORMAT_STR_LEN, f);
+      fread((char *)mf->read_version, 1, MRED_VERSION_STR_LEN, f);
+      
+      if (wxmeCheckFormatAndVersion(mf)) {
 	if (wxReadMediaGlobalHeader(mf)) {
 	  if (mf->Ok())
 	    fileerr = !ReadFromFile(mf, clearStyles);
@@ -3046,11 +3044,6 @@ Bool wxMediaEdit::ReadFromFile(wxMediaStreamIn *f, long start, Bool overwritesty
   if (writeLocked)
     return FALSE;
 
-  if (wxMediaFileIOReady != (void *)f) {
-    wxmeError("File reading has not been initialized for this stream.");
-    return FALSE;
-  }
-
   if (start < 0)
     start = startpos;
 
@@ -3091,11 +3084,6 @@ Bool wxMediaEdit::WriteToFile(wxMediaStreamOut *f, long start, long end)
 
   if (readLocked)
     return FALSE;
-
-  if (wxMediaFileIOReady != (void *)f) {
-    wxmeError("File writing has not been initialized for this stream.");
-    return FALSE;
-  }
 
   if (start < 0)
     start = 0;

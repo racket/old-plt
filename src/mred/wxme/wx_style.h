@@ -185,6 +185,7 @@ class wxStyle : public wxObject
 };
 
 typedef void (*wxStyleNotifyFunc)(wxStyle *which, void *data);
+class wxMediaStream;
 
 class wxStyleList : public wxList /* should be private */
 {
@@ -194,10 +195,6 @@ class wxStyleList : public wxList /* should be private */
   wxStyle *DoNamedStyle(char *name, wxStyle *plainStyle, Bool replace);
 
  public:
-  wxStyle **styleMap; /* internal use only */
-  int numMappedStyles; /* internal use only */
-  int listId; /* internal use only */
-
   wxStyleList();
   ~wxStyleList();
 
@@ -230,7 +227,7 @@ class wxStyleList : public wxList /* should be private */
   int StyleToIndex(wxStyle *);
 
   Bool WriteToFile(class wxMediaStreamOut *f);
-  wxStyle *MapIndexToStyle(int i);
+  wxStyle *MapIndexToStyle(wxMediaStream *f, int i);
 };
 
 extern wxStyleList *wxTheStyleList;
@@ -239,10 +236,12 @@ void wxInitStyles(void);
 
 wxStyleList *wxReadStyleList(class wxMediaStreamIn *f);
 
+class wxMediaStream;
+
 /* Internal use only */
 Bool wxmbWriteStylesToFile(wxStyleList *styleList, class wxMediaStreamOut *f);
 wxStyleList *wxmbReadStylesFromFile(wxStyleList *, class wxMediaStreamIn *f, Bool overwritename);
-void wxmbSetupStyleReadsWrites(void);
-void wxmbDoneStyleReadsWrites(void);
+void wxmbSetupStyleReadsWrites(wxMediaStream *);
+void wxmbDoneStyleReadsWrites(wxMediaStream *);
 
 #endif

@@ -123,9 +123,8 @@ typedef void *(*CAPOFunc)(void*);
 
 @ V "read" : wxSnip^ Read(wxMediaStreamIn!); : : : rNULL
 @ v "read-header" : bool ReadHeader(wxMediaStreamIn!);
-@ v "read-done" : void ReadDone();
 @ v "write-header" : bool WriteHeader(wxMediaStreamOut!);
-@ v "write-done" : void WriteDone();
+@ "reading-version" : int ReadingVersion(wxMediaStreamIn!);
 
 @END
 
@@ -140,7 +139,6 @@ typedef void *(*CAPOFunc)(void*);
 @ "add" : void Add(wxSnipClass!);
 @ "number" : int Number();
 @ "nth" : wxSnipClass^ Nth(nnint);
-@ "reading-version" : int ReadingVersion(wxSnipClass!);
 
 @END
 

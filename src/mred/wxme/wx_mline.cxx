@@ -1163,12 +1163,12 @@ float wxMediaLine::GetLeftLocation(float maxWidth)
     _left = para->leftMargin;
   }
 
-  if (para->alignment != WXPARA_LEFT) {
+  if (para->alignment != (unsigned)WXPARA_LEFT) {
     if (maxWidth > 0) {
       float delta = maxWidth - w;
       if (delta < 0)
 	delta = 0;
-      if (para->alignment == WXPARA_RIGHT)
+      if (para->alignment == (unsigned)WXPARA_RIGHT)
 	_left += delta;
       else
 	_left += (delta / 2);

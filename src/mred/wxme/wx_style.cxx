@@ -910,9 +910,6 @@ void wxStyleList::Clear(void)
   Append(basic);
 
   notifications = new wxList();
-
-  listId = 0;
-  styleMap = NULL;
 }
 
 void wxStyleList::Copy(wxStyleList *other)
@@ -1285,12 +1282,22 @@ Bool wxStyleList::WriteToFile(class wxMediaStreamOut *f)
   return wxmbWriteStylesToFile(this, f);
 }
 
-wxStyle *wxStyleList::MapIndexToStyle(int i)
+wxStyle *wxStyleList::MapIndexToStyle(wxMediaStream *s, int i)
 {
-  if (styleMap && i < numMappedStyles)
-    return styleMap[i];
-  else
-    return basic;
+  wxStyleListLink *ssl;
+
+  for (ssl = s->ssl; ssl; ssl = ssl->next) {
+    if (ssl->styleList == this) {
+      if (ssl->styleMap && i < ssl->numMappedStyles)
+	return ssl->styleMap[i];
+      else
+	return basic;
+    }
+  }
+
+  wxmeError("Bad style index for snip.");
+
+  return basic;
 }
 
 wxStyleList *wxReadStyleList(class wxMediaStreamIn *f)
@@ -1301,35 +1308,14 @@ wxStyleList *wxReadStyleList(class wxMediaStreamIn *f)
   return wxmbReadStylesFromFile(l, f, 0);
 }
 
-static wxList *readStyles = NULL;
-
-void wxmbSetupStyleReadsWrites(void)
+void wxmbSetupStyleReadsWrites(wxMediaStream *s)
 {
-  if (!readStyles) {
-    wxREGGLOB(readStyles);
-  }
-
-  readStyles = new wxList(wxKEY_INTEGER);
+  s->ssl = NULL;
 }
 
-void wxmbDoneStyleReadsWrites(void)
+void wxmbDoneStyleReadsWrites(wxMediaStream *s)
 {
-  wxNode *node;
-  wxStyleList *l;
-
-  for (node = readStyles->First(); node; node = node->Next()) { 
-    l = (wxStyleList *)node->Data();
-    if (l->styleMap) {
-      l->styleMap = NULL;
-    }
-    l->listId = 0;
-  }
-
-  DELETE_OBJ readStyles;
-
-  /* To indicate that the static var is already registered,
-     we "clear" it with 1 instead of 0: */
-  readStyles = (wxList *)1;
+  s->ssl = NULL;
 }
 
 static int FamilyStandardToThis(int v)
@@ -1473,20 +1459,27 @@ wxStyleList *wxmbReadStylesFromFile(wxStyleList *styleList,
   int i, isJoin, listId;
   wxStyleDelta *delta;
   wxStyle *bs;
-  wxNode *node;
+  wxStyleListLink *ssl;
 
   f->Get(&listId);
   
-  if (readStyles)
-    if ((node = readStyles->Find(listId)))
-      return (wxStyleList *)node->Data();
+  for (ssl = f->ssl; ssl; ssl = ssl->next) {
+    if (ssl->listId == listId)
+      return ssl->styleList;
+  }
 
-  f->Get(&styleList->numMappedStyles);
-  styleList->styleMap = new wxStyle*[styleList->numMappedStyles];
+  ssl = new wxStyleListLink;
+  ssl->styleList = styleList;
+  ssl->listId = listId;
+  ssl->next = f->ssl;
+  f->ssl = ssl;
+
+  f->Get(&ssl->numMappedStyles);
+  ssl->styleMap = new wxStyle*[ssl->numMappedStyles];
 
   bs = styleList->BasicStyle();
-  styleList->styleMap[0] = bs;
-  for (i = 1; i < styleList->numMappedStyles; i++) {
+  ssl->styleMap[0] = bs;
+  for (i = 1; i < ssl->numMappedStyles; i++) {
     f->Get(&baseIndex);
 
     if (baseIndex >= i) {
@@ -1504,9 +1497,9 @@ wxStyleList *wxmbReadStylesFromFile(wxStyleList *styleList,
 
       f->Get(&shiftIndex);
 
-      js = styleList->FindOrCreateJoinStyle(styleList->styleMap[baseIndex], 
-					    styleList->styleMap[shiftIndex]);
-      styleList->styleMap[i] = js;
+      js = styleList->FindOrCreateJoinStyle(ssl->styleMap[baseIndex], 
+					    ssl->styleMap[shiftIndex]);
+      ssl->styleMap[i] = js;
     } else {
       delta = new wxStyleDelta;
       
@@ -1537,7 +1530,7 @@ wxStyleList *wxmbReadStylesFromFile(wxStyleList *styleList,
       delta->styleOff = StyleStandardToThis(delta->styleOff);
       f->Get(&delta->underlinedOn);
       f->Get(&delta->underlinedOff);
-      if (WXME_VERSION_ONE() || WXME_VERSION_TWO()) {
+      if (WXME_VERSION_ONE(f) || WXME_VERSION_TWO(f)) {
 	delta->transparentTextBackingOn = FALSE;
 	delta->transparentTextBackingOff = FALSE;
       } else {
@@ -1559,7 +1552,7 @@ wxStyleList *wxmbReadStylesFromFile(wxStyleList *styleList,
       f->Get(&g);
       f->Get(&b);
       delta->backgroundAdd->Set(r, g, b);
-      if (WXME_VERSION_ONE() || WXME_VERSION_TWO()) {
+      if (WXME_VERSION_ONE(f) || WXME_VERSION_TWO(f)) {
 	if (r || g || b)
 	  delta->transparentTextBackingOff = TRUE;
       }
@@ -1571,22 +1564,19 @@ wxStyleList *wxmbReadStylesFromFile(wxStyleList *styleList,
 
       {
 	wxStyle *cs;
-	cs = styleList->FindOrCreateStyle(styleList->styleMap[baseIndex], delta);
-	styleList->styleMap[i] = cs;
+	cs = styleList->FindOrCreateStyle(ssl->styleMap[baseIndex], delta);
+	ssl->styleMap[i] = cs;
       }
     }
 
     if (*name) {
       wxStyle *ns;
       ns = (overwritename 
-	    ? styleList->ReplaceNamedStyle(name, styleList->styleMap[i])
-	    : styleList->NewNamedStyle(name, styleList->styleMap[i]));
-      styleList->styleMap[i] = ns;
+	    ? styleList->ReplaceNamedStyle(name, ssl->styleMap[i])
+	    : styleList->NewNamedStyle(name, ssl->styleMap[i]));
+      ssl->styleMap[i] = ns;
     }
   }
-
-  if (readStyles)
-    readStyles->Append(listId, styleList);
 
   return styleList;
 }
@@ -1598,16 +1588,25 @@ Bool wxmbWriteStylesToFile(wxStyleList *styleList, wxMediaStreamOut *f)
   short r, g, b;
   char *name;
   wxStyleDelta *delta;
+  wxStyleListLink *ssl;
 
-  if (styleList->listId) {
-    f->Put(styleList->listId);
-    return TRUE;
+  for (ssl = f->ssl; ssl; ssl = ssl->next) {
+    if (ssl->styleList == styleList) {
+      f->Put(ssl->listId);
+      return TRUE;
+    }
   }
 
-  lid = readStyles->Number() + 1;
-  styleList->listId = lid;
+  lid = f->styleCount + 1;
+  f->styleCount++;
+
+  ssl = new wxStyleListLink;
+  ssl->styleList = styleList;
+  ssl->listId = lid;
+  ssl->next = f->ssl;
+  f->ssl = ssl;
   
-  f->Put(styleList->listId);
+  f->Put(lid);
 
   count = styleList->Number();
 
@@ -1682,8 +1681,6 @@ Bool wxmbWriteStylesToFile(wxStyleList *styleList, wxMediaStreamOut *f)
       f->Put(AlignThisToStandard(delta->alignmentOff));
     }
   }
-
-  readStyles->Append(styleList->listId, styleList);
 
   return TRUE;
 }

@@ -2970,9 +2970,7 @@ class os_wxSnipClass : public wxSnipClass {
 
   os_wxSnipClass CONSTRUCTOR_ARGS(());
   ~os_wxSnipClass();
-  void WriteDone();
   Bool WriteHeader(class wxMediaStreamOut* x0);
-  void ReadDone();
   Bool ReadHeader(class wxMediaStreamIn* x0);
   class wxSnip* Read(class wxMediaStreamIn* x0);
 #ifdef MZ_PRECISE_GC
@@ -2998,35 +2996,6 @@ CONSTRUCTOR_INIT(: wxSnipClass())
 os_wxSnipClass::~os_wxSnipClass()
 {
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
-}
-
-void os_wxSnipClass::WriteDone()
-{
-  Scheme_Object **p = NULL;
-  Scheme_Object *v;
-  Scheme_Object *method;
-#ifdef MZ_PRECISE_GC
-  os_wxSnipClass *sElF = this;
-#endif
-  static void *mcache = 0;
-
-  SETUP_VAR_STACK(2);
-  VAR_STACK_PUSH(0, method);
-  VAR_STACK_PUSH(1, sElF);
-  SET_VAR_STACK();
-
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxSnipClass_class, "write-done", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
-    SET_VAR_STACK();
-    ASSELF wxSnipClass::WriteDone();
-  } else {
-  
-  
-
-  v = WITH_VAR_STACK(scheme_apply(method, 0, p));
-  
-  
-  }
 }
 
 Bool os_wxSnipClass::WriteHeader(class wxMediaStreamOut* x0)
@@ -3059,35 +3028,6 @@ Bool os_wxSnipClass::WriteHeader(class wxMediaStreamOut* x0)
   
   
   return WITH_VAR_STACK(objscheme_unbundle_bool(v, "write-header in snip-class%"", extracting return value"));
-  }
-}
-
-void os_wxSnipClass::ReadDone()
-{
-  Scheme_Object **p = NULL;
-  Scheme_Object *v;
-  Scheme_Object *method;
-#ifdef MZ_PRECISE_GC
-  os_wxSnipClass *sElF = this;
-#endif
-  static void *mcache = 0;
-
-  SETUP_VAR_STACK(2);
-  VAR_STACK_PUSH(0, method);
-  VAR_STACK_PUSH(1, sElF);
-  SET_VAR_STACK();
-
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxSnipClass_class, "read-done", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
-    SET_VAR_STACK();
-    ASSELF wxSnipClass::ReadDone();
-  } else {
-  
-  
-
-  v = WITH_VAR_STACK(scheme_apply(method, 0, p));
-  
-  
   }
 }
 
@@ -3157,27 +3097,28 @@ class wxSnip* os_wxSnipClass::Read(class wxMediaStreamIn* x0)
   }
 }
 
-static Scheme_Object *os_wxSnipClassWriteDone(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxSnipClassReadingVersion(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
+  int r;
   objscheme_check_valid(obj);
+  class wxMediaStreamIn* x0;
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, obj);
+  VAR_STACK_PUSH(2, x0);
 
   
+  x0 = WITH_VAR_STACK(objscheme_unbundle_wxMediaStreamIn(p[0], "reading-version in snip-class%", 0));
 
   
-  if (((Scheme_Class_Object *)obj)->primflag)
-    WITH_VAR_STACK(((os_wxSnipClass *)((Scheme_Class_Object *)obj)->primdata)->wxSnipClass::WriteDone());
-  else
-    WITH_VAR_STACK(((wxSnipClass *)((Scheme_Class_Object *)obj)->primdata)->WriteDone());
+  r = WITH_VAR_STACK(((wxSnipClass *)((Scheme_Class_Object *)obj)->primdata)->ReadingVersion(x0));
 
   
   
-  return scheme_void;
+  return scheme_make_integer(r);
 }
 
 static Scheme_Object *os_wxSnipClassWriteHeader(Scheme_Object *obj, int n,  Scheme_Object *p[])
@@ -3205,29 +3146,6 @@ static Scheme_Object *os_wxSnipClassWriteHeader(Scheme_Object *obj, int n,  Sche
   
   
   return (r ? scheme_true : scheme_false);
-}
-
-static Scheme_Object *os_wxSnipClassReadDone(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
-  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  REMEMBER_VAR_STACK();
-  objscheme_check_valid(obj);
-
-  SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
-
-  
-
-  
-  if (((Scheme_Class_Object *)obj)->primflag)
-    WITH_VAR_STACK(((os_wxSnipClass *)((Scheme_Class_Object *)obj)->primdata)->wxSnipClass::ReadDone());
-  else
-    WITH_VAR_STACK(((wxSnipClass *)((Scheme_Class_Object *)obj)->primdata)->ReadDone());
-
-  
-  
-  return scheme_void;
 }
 
 static Scheme_Object *os_wxSnipClassReadHeader(Scheme_Object *obj, int n,  Scheme_Object *p[])
@@ -3388,11 +3306,10 @@ void objscheme_setup_wxSnipClass(void *env)
 
   wxREGGLOB(os_wxSnipClass_class);
 
-  os_wxSnipClass_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "snip-class%", "object%", os_wxSnipClass_ConstructScheme, 9));
+  os_wxSnipClass_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "snip-class%", "object%", os_wxSnipClass_ConstructScheme, 8));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipClass_class, "write-done", os_wxSnipClassWriteDone, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipClass_class, "reading-version", os_wxSnipClassReadingVersion, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipClass_class, "write-header", os_wxSnipClassWriteHeader, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipClass_class, "read-done", os_wxSnipClassReadDone, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipClass_class, "read-header", os_wxSnipClassReadHeader, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipClass_class, "read", os_wxSnipClassRead, 1, 1));
 
@@ -3491,30 +3408,6 @@ static Scheme_Object *os_wxSnipClassList_interface;
 os_wxSnipClassList::~os_wxSnipClassList()
 {
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
-}
-
-static Scheme_Object *os_wxSnipClassListReadingVersion(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
-  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  REMEMBER_VAR_STACK();
-  int r;
-  objscheme_check_valid(obj);
-  class wxSnipClass* x0;
-
-  SETUP_VAR_STACK_REMEMBERED(3);
-  VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
-  VAR_STACK_PUSH(2, x0);
-
-  
-  x0 = WITH_VAR_STACK(objscheme_unbundle_wxSnipClass(p[0], "reading-version in snip-class-list<%>", 0));
-
-  
-  r = WITH_VAR_STACK(((wxSnipClassList *)((Scheme_Class_Object *)obj)->primdata)->ReadingVersion(x0));
-
-  
-  
-  return scheme_make_integer(r);
 }
 
 static Scheme_Object *os_wxSnipClassListNth(Scheme_Object *obj, int n,  Scheme_Object *p[])
@@ -3640,9 +3533,8 @@ void objscheme_setup_wxSnipClassList(void *env)
   wxREGGLOB(os_wxSnipClassList_class);
   wxREGGLOB(os_wxSnipClassList_interface);
 
-  os_wxSnipClassList_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "snip-class-list%", "object%", NULL, 6));
+  os_wxSnipClassList_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "snip-class-list%", "object%", NULL, 5));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipClassList_class, "reading-version", os_wxSnipClassListReadingVersion, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipClassList_class, "nth", os_wxSnipClassListNth, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipClassList_class, "number", os_wxSnipClassListNumber, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipClassList_class, "add", os_wxSnipClassListAdd, 1, 1));

@@ -37,16 +37,6 @@ extern WRITE_FUNC;
 
 class wxSnipClass : public wxObject
 {
-  friend class wxStandardSnipClassList;
-  friend class wxSnipClassList;
-  friend class wxMediaBuffer;
-  friend WRITE_FUNC;
-
-  /* Special fields just for wxStandardSnipClassList & wxMediaEdit */
-  Bool headerFlag;
-  short mapPosition;
-  int readingVersion;
-
  public:
   char *classname;
   int version;
@@ -61,10 +51,10 @@ class wxSnipClass : public wxObject
   virtual wxSnip *Read(wxMediaStreamIn *) = 0;
 
   virtual Bool ReadHeader(wxMediaStreamIn *);
-  virtual void ReadDone(void);
 
   virtual Bool WriteHeader(wxMediaStreamOut *);
-  virtual void WriteDone(void);
+
+  int ReadingVersion(wxMediaStreamIn *);
 };
 
 class wxSnipClassList : public /* should be private */ wxList
@@ -95,10 +85,10 @@ class wxStandardSnipClassList : public wxSnipClassList
  public:
   wxStandardSnipClassList(void);
 
-  void ResetHeaderFlags(int doneMsg = wxRESET_NO_MSG);
+  void ResetHeaderFlags(wxMediaStream *s);
   Bool Write(wxMediaStreamOut *f);
   Bool Read(wxMediaStreamIn *f);
-  wxSnipClass *FindByMapPosition(short n);
+  wxSnipClass *FindByMapPosition(wxMediaStream *f, short n);
 };
 
 extern wxStandardSnipClassList *wxMakeTheSnipClassList();
@@ -463,7 +453,6 @@ class wxBufferDataClass : public wxObject
   friend WRITE_FUNC;
   friend Bool wxmbWriteBufferData(wxMediaStreamOut *, wxBufferData *data);
 
-  int mapPosition;
  public:
   char *classname;
   Bool required;
@@ -502,7 +491,7 @@ class wxBufferDataClassList : public /* should be private */ wxList
 
   Bool Write(wxMediaStreamOut *f);
   Bool Read(wxMediaStreamIn *f);
-  wxBufferDataClass *FindByMapPosition(short n);
+  wxBufferDataClass *FindByMapPosition(wxMediaStream *f, short n);
 };
 
 extern wxBufferDataClassList *wxMakeTheBufferDataClassList();

@@ -64,6 +64,7 @@ extern Scheme_Object *objscheme_bundle_wxMediaStreamOut(class wxMediaStreamOut *
 extern Scheme_Object *objscheme_bundle_wxMediaStreamIn(class wxMediaStreamIn *);
 extern Scheme_Object *objscheme_bundle_wxMediaStreamIn(class wxMediaStreamIn *);
 extern class wxSnip *objscheme_unbundle_wxSnip(Scheme_Object *, const char *, int);
+extern class wxMediaStreamIn *objscheme_unbundle_wxMediaStreamIn(Scheme_Object *, const char *, int);
 extern class wxMediaStreamOut *objscheme_unbundle_wxMediaStreamOut(Scheme_Object *, const char *, int);
 extern class wxMediaStreamIn *objscheme_unbundle_wxMediaStreamIn(Scheme_Object *, const char *, int);
 extern class wxMediaStreamIn *objscheme_unbundle_wxMediaStreamIn(Scheme_Object *, const char *, int);
@@ -74,7 +75,6 @@ void objscheme_setup_wxSnipClass(void *env);
 int objscheme_istype_wxSnipClass(Scheme_Object *obj, const char *stop, int nullOK);
 Scheme_Object *objscheme_bundle_wxSnipClass(class wxSnipClass *realobj);
 class wxSnipClass *objscheme_unbundle_wxSnipClass(Scheme_Object *obj, const char *where, int nullOK);
-extern class wxSnipClass *objscheme_unbundle_wxSnipClass(Scheme_Object *, const char *, int);
 extern Scheme_Object *objscheme_bundle_wxSnipClass(class wxSnipClass *);
 extern class wxSnipClass *objscheme_unbundle_wxSnipClass(Scheme_Object *, const char *, int);
 extern class wxSnipClass *objscheme_unbundle_wxSnipClass(Scheme_Object *, const char *, int);

@@ -82,8 +82,6 @@ static wxPen *invisiPen = NULL, *rbPen = NULL;
 
 static wxMediaPasteboard *skipBox = NULL;
 
-extern void *wxMediaFileIOReady;
-
 #ifdef wx_mac
 extern void wxMediaSetFileCreatorType(char *file, Bool is_binary);
 #endif
@@ -2562,16 +2560,16 @@ Bool wxMediaPasteboard::InsertFile(FILE *f, Bool clearStyles, Bool showErrors)
       wxmeError("This is not a MrEd file.");
     fileerr = TRUE;
   } else {
-    fread((char *)wxme_current_read_format, 1, MRED_FORMAT_STR_LEN, f);
-    fread((char *)wxme_current_read_version, 1, MRED_VERSION_STR_LEN, f);
+    wxMediaStreamInFileBase *b;
+    wxMediaStreamIn *mf;
+    
+    b = new wxMediaStreamInFileBase(f);
+    mf = new wxMediaStreamIn(b);
+    
+    fread((char *)mf->read_format, 1, MRED_FORMAT_STR_LEN, f);
+    fread((char *)mf->read_version, 1, MRED_VERSION_STR_LEN, f);
 
-    if (wxmeCheckFormatAndVersion()) {
-      wxMediaStreamInFileBase *b;
-      wxMediaStreamIn *mf;
-
-      b = new wxMediaStreamInFileBase(f);
-      mf = new wxMediaStreamIn(b);
-      
+    if (wxmeCheckFormatAndVersion(mf)) {
       if (wxReadMediaGlobalHeader(mf)) {
 	if (mf->Ok())
 	  fileerr = !ReadFromFile(mf, clearStyles);
@@ -2692,11 +2690,6 @@ Bool wxMediaPasteboard::SaveFile(char *file, int format, Bool showErrors)
 
 Bool wxMediaPasteboard::WriteToFile(wxMediaStreamOut *f)
 {
-  if (wxMediaFileIOReady != (void *)f) {
-    wxmeError("File writing has not been initialized for this stream.");
-    return FALSE;
-  }
-
   if (!DoWriteHeadersFooters(f, TRUE))
     return FALSE;
 
@@ -2713,11 +2706,6 @@ Bool wxMediaPasteboard::ReadFromFile(wxMediaStreamIn *f, Bool overwritestyle)
 {
   if (userLocked || writeLocked)
     return FALSE;
-
-  if (wxMediaFileIOReady != (void *)f) {
-    wxmeError("File reading has not been initialized for this stream.");
-    return FALSE;
-  }
 
   return ReadSnipsFromFile(f, overwritestyle);
 }

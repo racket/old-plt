@@ -7,7 +7,7 @@
 #include "wx_cmdlg.h"
 #endif
 
-#include "wx_medio.h"
+#include "wx_media.h"
 #include <string.h>
 
 static int lsb_first;
@@ -42,6 +42,79 @@ void wxMediaIOCheckLSB(void)
 
   lsb_first = *(char *)&v;
 }
+
+/****************************************************************/
+
+wxMediaStream::wxMediaStream()
+{
+  scl = &wxTheSnipClassList;
+  bdl = &wxTheBufferDataClassList;
+}
+
+wxMediaStream::~wxMediaStream()
+{
+}
+
+int wxMediaStream::ReadingVersion(wxSnipClass *sclass)
+{
+  wxSnipClassLink *asl;
+  
+  for (asl = sl; asl; asl = asl->next) {
+    if (asl->c == sclass)
+      return asl->readingVersion;
+  }
+
+  return 0;
+}
+
+int wxMediaStream::MapPosition(wxSnipClass *c)
+{
+  wxSnipClassLink *asl;
+  
+  for (asl = sl; asl; asl = asl->next) {
+    if (asl->c == c)
+      return asl->mapPosition;
+  }
+
+  return -1;
+}
+
+int wxMediaStream::MapPosition(wxBufferDataClass *d)
+{
+  wxDataClassLink *adl;
+  
+  for (adl = dl; adl; adl = adl->next) {
+    if (adl->d == d)
+      return adl->mapPosition;
+  }
+
+  return -1;
+}
+
+int wxMediaStream::GetHeaderFlag(wxSnipClass *c)
+{
+  wxSnipClassLink *asl;
+  
+  for (asl = sl; asl; asl = asl->next) {
+    if (asl->c == c)
+      return asl->headerFlag;
+  }
+
+  return 0;
+}
+
+void wxMediaStream::SetHeaderFlag(wxSnipClass *c)
+{
+  wxSnipClassLink *asl;
+  
+  for (asl = sl; asl; asl = asl->next) {
+    if (asl->c == c) {
+      asl->headerFlag = 1;
+      return;
+    }
+  }  
+}
+
 
 /****************************************************************/
 
@@ -291,7 +364,7 @@ wxMediaStreamIn *wxMediaStreamIn::GetFixed(long *v)
   if (!lsb_first) {
     f->Read((char *)v, sizeof(long));
   } else {
-    if (WXME_VERSION_ONE())
+    if (WXME_VERSION_ONE(this))
       f->Read((char *)v, sizeof(long));
     else {
       unsigned char bl[4];
@@ -436,7 +509,7 @@ wxMediaStreamIn *wxMediaStreamIn::Get(double *v)
   if (!lsb_first) {
     f->Read((char *)v, sizeof(double));
   } else {
-    if (WXME_VERSION_ONE())
+    if (WXME_VERSION_ONE(this))
       f->Read((char *)v, sizeof(double));
     else {
       char num[sizeof(double)], num2[sizeof(double)];

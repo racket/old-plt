@@ -92,7 +92,82 @@ class wxMediaStreamOutStringBase : public wxMediaStreamOutBase
 
 /*******************************************************************/
 
-class wxMediaStreamIn : public wxObject
+#define MRED_START_STR "WXME"
+#define MRED_START_STR_LEN 4
+#define MRED_FORMAT_STR "01"
+#define MRED_FORMAT_STR_LEN 2
+#define MRED_VERSION_STR "03"
+#define MRED_VERSION_STR_LEN 2
+
+#define WXME_VERSION_ONE(f) (f->read_version[1] == '1')
+#define WXME_VERSION_TWO(f) (f->read_version[1] == '2')
+
+class wxStandardSnipClassList;
+class wxBufferDataClassList;
+class wxSnipClass;
+class wxBufferDataClass;
+class wxStyleList;
+class wxStyle;
+
+class wxSnipClassLink
+{
+ public:
+  wxSnipClass *c;
+  char *name;
+  Bool headerFlag;
+  short mapPosition;
+  int readingVersion;
+  wxSnipClassLink *next;
+};
+
+class wxDataClassLink
+{
+ public:
+  wxBufferDataClass *d;
+  char *name;
+  int mapPosition;
+  wxDataClassLink *next;
+};
+
+class wxStyleListLink
+{
+ public:
+  wxStyleList *styleList;
+  int listId;
+  wxStyle **styleMap;
+  int numMappedStyles;
+
+  wxStyleListLink *next;
+};
+
+class wxMediaStream : public wxObject
+{
+ public:
+  wxStandardSnipClassList *scl;
+  wxBufferDataClassList *bdl;
+  char read_format[MRED_FORMAT_STR_LEN + 1];
+  char read_version[MRED_VERSION_STR_LEN + 1];
+  wxSnipClassLink *sl;
+  wxDataClassLink *dl;
+
+  wxStyleListLink *ssl;
+  int styleCount;
+
+  wxMediaStream();
+  ~wxMediaStream();
+
+  int MapPosition(wxSnipClass *c);
+  int MapPosition(wxBufferDataClass *d);
+
+  int GetHeaderFlag(wxSnipClass *c);
+  void SetHeaderFlag(wxSnipClass *c);
+
+  int ReadingVersion(wxSnipClass *c);
+};
+
+/*******************************************************************/
+
+class wxMediaStreamIn : public wxMediaStream
 {
   wxMediaStreamInBase *f;
   long *boundaries;
@@ -127,7 +202,7 @@ class wxMediaStreamIn : public wxObject
   Bool Ok(void);
 };
 
-class wxMediaStreamOut : public wxObject
+class wxMediaStreamOut : public wxMediaStream
 {
   wxMediaStreamOutBase *f;
   int bad;
@@ -153,19 +228,6 @@ class wxMediaStreamOut : public wxObject
 
   Bool Ok(void);
 };
-
-#define MRED_START_STR "WXME"
-#define MRED_START_STR_LEN 4
-#define MRED_FORMAT_STR "01"
-#define MRED_FORMAT_STR_LEN 2
-#define MRED_VERSION_STR "03"
-#define MRED_VERSION_STR_LEN 2
-
-extern char wxme_current_read_format[MRED_FORMAT_STR_LEN + 1];
-extern char wxme_current_read_version[MRED_VERSION_STR_LEN + 1];
-
-#define WXME_VERSION_ONE() (wxme_current_read_version[1] == '1')
-#define WXME_VERSION_TWO() (wxme_current_read_version[1] == '2')
 
 #endif /* wx_medio */
 

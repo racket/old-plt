@@ -290,14 +290,9 @@
 	       clear-previous-expr-positions
 	       get-end-position
 	       set-clickback
-	       this-err this-err-write 
-	       this-out this-out-write
-	       this-in
-	       this-result this-result-write
-	       output-delta set-output-delta
 	       do-post-eval
 	       insert-prompt
-	       erase prompt-mode?
+ 	       erase prompt-mode?
 	       get-canvas
 	       ready-non-prompt
 	       set-prompt-mode
@@ -706,7 +701,160 @@
 		   (send (get-top-level-window) not-running)))
 	     (semaphore-post running-semaphore))])
 
+      (public
+	[MAX-CACHE-TIME 4000]
+	  [MIN-CACHE-TIME 100]
+	  [CACHE-TIME MIN-CACHE-TIME]
+	  [TIME-FACTOR 10]
+	  [generic-write
+	   (let ([time-of-last-call (current-milliseconds)])
+	     (lambda (transparent-edit? s style-func)
+	       (let ([current-time (current-milliseconds)]
+		     [handle-insertion
+		      (lambda ()
+			(let* ([edit (if transparent-edit?
+					 transparent-edit
+					 this)]
+			       [start (send edit last-position)]
+			       [c-locked? (send edit locked?)])
+			  (send edit lock #f)
+			  (send edit insert
+				(if (is-a? s mred:snip%)
+				    (send s copy)
+				    s))
+			  (let ([end (send edit last-position)])
+			    ;(send edit change-style null start end) ; wx
+			    (send edit set-prompt-position end)
+			    (style-func start end))
+			  (send edit lock c-locked?)))])
+		 
+		 (when prompt-mode?
+		   (insert #\newline)
+		   (set-prompt-mode #f))
+		 (when (and in-evaluation? 
+			    (<= CACHE-TIME (- current-time time-of-last-call)))
+		   (let* ([start (current-milliseconds)]
+			  [_ (end-edit-sequence)]
+			  [_ (when transparent-edit (send transparent-edit end-edit-sequence))]
+			  [end (current-milliseconds)]
+			  [_ (begin-edit-sequence #f)]
+			  [new-cache-time (* TIME-FACTOR (- end start))]
+			  [between
+			   (min (max MIN-CACHE-TIME
+				     new-cache-time)
+				MAX-CACHE-TIME)])
+		     (set! CACHE-TIME between)))
+		 (handle-insertion))))]
+	  [generic-close (lambda () '())]
+	  [flush-console-output
+	   (lambda ()
+	     ;; unimplemented
+	     (void))]
+	  
+	  
+	  [saved-newline? #f]
 
+
+	  [output-delta (make-object mred:style-delta%
+				     'change-weight
+				     'bold)]
+	  [result-delta (make-object mred:style-delta%
+				     'change-weight
+				     'bold)]
+	  [error-delta (make-object mred:style-delta%
+				    'change-style
+				    'slant)]
+
+	  [this-result-write 
+	   (lambda (s)
+	     (parameterize ([mred:current-eventspace drscheme:init:system-eventspace])
+	       (mred:queue-callback
+		(lambda ()
+		  (generic-write #f
+				 s 
+				 (lambda (start end)
+				   (change-style result-delta
+						 start end))))
+		#f)))]
+	  [this-out-write
+	   (lambda (s)
+	     (parameterize ([mred:current-eventspace drscheme:init:system-eventspace])
+	       (mred:queue-callback
+		(lambda ()
+		  (init-transparent-io #f)
+		  (let* ([old-saved-newline? saved-newline?]
+			 [len (and (string? s)
+				   (string-length s))]
+			 [s1 (if (and len
+				      (> len 0)
+				      (char=? (string-ref s (- len 1)) #\newline))
+				 (begin 
+				   (set! saved-newline? #t)
+				   (substring s 0 (- len 1)))
+				 (begin
+				   (set! saved-newline? #f)
+				   s))]
+			 [gw
+			  (lambda (s)
+			    (generic-write
+			     #t
+			     s
+			     (lambda (start end)
+			       (send transparent-edit
+				     change-style output-delta start end))))])
+		    (when old-saved-newline?
+		      (gw (string #\newline)))
+		    (gw s1)))
+		#f)))]
+	  [this-err-write
+	   (lambda (s)
+	     (parameterize ([mred:current-eventspace drscheme:init:system-eventspace])
+	       (mred:queue-callback
+		(lambda ()
+		  (cleanup-transparent-io)
+		  (generic-write this
+				 s
+				 (lambda (start end)
+				   (change-style error-delta 
+						 start end))))
+		#f)))]
+	  
+	  [this-err (make-output-port this-err-write generic-close)]
+	  [this-out (make-output-port this-out-write generic-close)]
+	  [this-in (make-input-port this-in-read this-in-char-ready? generic-close)]
+	  [this-result (make-output-port this-result-write generic-close)]
+	  [set-display/write-handlers
+	   (lambda ()
+	     (for-each
+	      (lambda (port port-out-write)
+		(let ([original-write-handler (port-write-handler port)]
+		      [original-display-handler (port-display-handler port)]
+		      [handler-maker
+		       (lambda (port-handler pretty original)
+			 (port-handler
+			  port
+			  (rec console-pp-handler
+			       (lambda (v p)
+				 (if (or (string? v) 
+					 (char? v)
+					 (number? v)
+					 (symbol? v))
+				     (original v p)
+				     (parameterize ([mzlib:pretty-print:pretty-print-size-hook
+						     (lambda (x _ port) (and (is-a? x mred:snip%) 1))]
+						    [mzlib:pretty-print:pretty-print-print-hook
+						     (lambda (x _ port) (port-out-write x))])
+				       (pretty v p 'infinity)))))))])
+		  (handler-maker port-display-handler 
+				 mzlib:pretty-print:pretty-display 
+				 original-display-handler)
+		  (handler-maker port-write-handler
+				 mzlib:pretty-print:pretty-print
+				 original-write-handler)))
+	      (list this-out this-err this-result)
+	      (list this-out-write this-err-write this-result-write)))])
+      
+      
       (private 
 	[insert-delta
 	 (lambda (s delta)
@@ -1049,18 +1197,7 @@
 	  [orig-stdout (current-output-port)]
 	  [orig-stderr (current-error-port)])
 	(public
-	  
-	  [normal-font 'modern]
-	  [normal-delta #f]
-	  [output-delta (make-object mred:style-delta%
-				     'change-weight
-				     'bold)]
-	  [result-delta (make-object mred:style-delta%
-				     'change-weight
-				     'bold)]
-	  [error-delta (make-object mred:style-delta%
-				    'change-style
-				    'slant)])
+	  [normal-delta #f])
 	
 	(sequence
 	  (let ([mult (send error-delta get-foreground-mult)]
@@ -1224,55 +1361,6 @@
 
 	  
 	(public
-	  [MAX-CACHE-TIME 4000]
-	  [MIN-CACHE-TIME 100]
-	  [CACHE-TIME MIN-CACHE-TIME]
-	  [TIME-FACTOR 10]
-	  [generic-write
-	   (let ([time-of-last-call (current-milliseconds)])
-	     (lambda (transparent-edit? s style-func)
-	       (let ([current-time (current-milliseconds)]
-		     [handle-insertion
-		      (lambda ()
-			(let* ([edit (if transparent-edit?
-					 transparent-edit
-					 this)]
-			       [start (send edit last-position)]
-			       [c-locked? (send edit locked?)])
-			  (send edit lock #f)
-			  (send edit insert
-				(if (is-a? s mred:snip%)
-				    (send s copy)
-				    s))
-			  (let ([end (send edit last-position)])
-			    ;(send edit change-style null start end) ; wx
-			    (send edit set-prompt-position end)
-			    (style-func start end))
-			  (send edit lock c-locked?)))])
-		 
-		 (when prompt-mode?
-		   (insert #\newline)
-		   (set-prompt-mode #f))
-		 (when (<= CACHE-TIME (- current-time time-of-last-call))
-		   (let* ([start (current-milliseconds)]
-			  [_ (end-edit-sequence)]
-			  [_ (when transparent-edit (send transparent-edit end-edit-sequence))]
-			  [end (current-milliseconds)]
-			  [_ (begin-edit-sequence #f)]
-			  [new-cache-time (* TIME-FACTOR (- end start))]
-			  [between
-			   (min (max MIN-CACHE-TIME
-				     new-cache-time)
-				MAX-CACHE-TIME)])
-		     (set! CACHE-TIME between)))
-		 (handle-insertion))))]
-	  [generic-close (lambda () '())]
-	  [flush-console-output
-	   (lambda ()
-	     ;; unimplemented
-	     (void))])
-	
-	(public
 	  [prompt-mode? #f]
 	  [set-prompt-mode (lambda (x) (set! prompt-mode? x))]
 	  [get-prompt (lambda () "> ")]
@@ -1283,62 +1371,7 @@
 	     (if (> pos prompt-position)
 		 prompt-position
 		 0))]
-	  [auto-save? #f]
-	  [saved-newline? #f]
-
-	  [this-result-write 
-	   (lambda (s)
-	     (parameterize ([mred:current-eventspace drscheme:init:system-eventspace])
-	       (mred:queue-callback
-		(lambda ()
-		  (generic-write #f
-				 s 
-				 (lambda (start end)
-				   (change-style result-delta
-						 start end))))
-		#f)))]
-	  [this-out-write
-	   (lambda (s)
-	     (parameterize ([mred:current-eventspace drscheme:init:system-eventspace])
-	       (mred:queue-callback
-		(lambda ()
-		  (init-transparent-io #f)
-		  (let* ([old-saved-newline? saved-newline?]
-			 [len (and (string? s)
-				   (string-length s))]
-			 [s1 (if (and len
-				      (> len 0)
-				      (char=? (string-ref s (- len 1)) #\newline))
-				 (begin 
-				   (set! saved-newline? #t)
-				   (substring s 0 (- len 1)))
-				 (begin
-				   (set! saved-newline? #f)
-				   s))]
-			 [gw
-			  (lambda (s)
-			    (generic-write
-			     #t
-			     s
-			     (lambda (start end)
-			       (send transparent-edit
-				     change-style output-delta start end))))])
-		    (when old-saved-newline?
-		      (gw (string #\newline)))
-		    (gw s1)))
-		#f)))]
-	  [this-err-write
-	   (lambda (s)
-	     (parameterize ([mred:current-eventspace drscheme:init:system-eventspace])
-	       (mred:queue-callback
-		(lambda ()
-		  (cleanup-transparent-io)
-		  (generic-write this
-				 s
-				 (lambda (start end)
-				   (change-style error-delta 
-						 start end))))
-		#f)))])
+	  [auto-save? #f])
 	
 	(public
 	  [io-edit% transparent-io-edit%]
@@ -1405,10 +1438,6 @@
 		  (send transparent-edit fetch-char))
 		#f)))])
 	(public
-	  [set-output-delta
-	   (lambda (delta)
-	     (set! output-delta delta))]
-	  
 	  [previous-expr-pos -1]
 	  [previous-expr-positions null]
 	  [clear-previous-expr-positions
@@ -1650,52 +1679,7 @@
 	  
 	  [initialize-console
 	   (lambda ()
-	     #t)]
-	  [make-this-in
-	   (lambda ()
-	     (make-input-port this-in-read
-			      this-in-char-ready?
-			      generic-close))]
-	  [make-this-out
-	   (lambda ()
-	     (make-output-port this-out-write generic-close))]
-	  [make-this-err
-	   (lambda ()
-	     (make-output-port this-err-write generic-close))]
-	  [this-err (make-this-err)]
-	  [this-out (make-this-out)]
-	  [this-in (make-this-in)]
-	  [this-result (make-output-port this-result-write generic-close)]
-	  [set-display/write-handlers
-	   (lambda ()
-	     (for-each
-	      (lambda (port port-out-write)
-		(let ([original-write-handler (port-write-handler port)]
-		      [original-display-handler (port-display-handler port)]
-		      [handler-maker
-		       (lambda (port-handler pretty original)
-			 (port-handler
-			  port
-			  (rec console-pp-handler
-			       (lambda (v p)
-				 (if (or (string? v) 
-					 (char? v)
-					 (number? v)
-					 (symbol? v))
-				     (original v p)
-				     (parameterize ([mzlib:pretty-print:pretty-print-size-hook
-						     (lambda (x _ port) (and (is-a? x mred:snip%) 1))]
-						    [mzlib:pretty-print:pretty-print-print-hook
-						     (lambda (x _ port) (port-out-write x))])
-				       (pretty v p 'infinity)))))))])
-		  (handler-maker port-display-handler 
-				 mzlib:pretty-print:pretty-display 
-				 original-display-handler)
-		  (handler-maker port-write-handler
-				 mzlib:pretty-print:pretty-print
-				 original-write-handler)))
-	      (list this-out this-err this-result)
-	      (list this-out-write this-err-write this-result-write)))])
+	     #t)])
 	(sequence
 	  (apply super-init args))
 	(sequence

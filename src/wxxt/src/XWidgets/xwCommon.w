@@ -251,7 +251,7 @@ is positive.
 @ Set a few class variables.
 
 	@var compress_motion = True
-	@var compress_exposure = XtExposeCompressMultiple
+	@var compress_exposure = XtExposeCompressMaximal
 	@var compress_enterleave = True
 
         @var Dimension travMode = 1

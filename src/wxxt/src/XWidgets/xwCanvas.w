@@ -1,6 +1,8 @@
 
 
-@class XfwfCanvas s like the |core| widget. It adds only a
+@class XfwfCanvas (XfwfBoard) @file=xwCanvas
+
+@ The Canvas class is like the |core| widget. It adds only a
 handling for the |backing_store| window attribute.
 
 @PUBLIC
@@ -9,6 +11,12 @@ handling for the |backing_store| window attribute.
 widget.
 
 	@var int backingStore = NotUseful
+
+@CLASSVARS
+
+@ Set a few class variables.
+
+	@var compress_exposure = XtExposeCompressMaximal
 
 @METHODS
 

@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994     
- * RCS_ID:      $Id: wx_win.cxx,v 1.25 1999/03/09 19:53:23 mflatt Exp $
+ * RCS_ID:      $Id: wx_win.cxx,v 1.26 1999/03/23 14:58:56 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -3014,15 +3014,28 @@ void wxWindow::DoScroll(wxScrollEvent& event)
 
   if (orient == wxHORIZONTAL) {
     int newPos = wnd->xscroll_position + nScrollInc;
-    ::SetScrollPos(hWnd, SB_HORZ, newPos, TRUE );
-    wnd->xscroll_position = ::GetScrollPos(hWnd, SB_HORZ);
+    ::SetScrollPos(hWnd, SB_HORZ, newPos, TRUE);
+    newPos = ::GetScrollPos(hWnd, SB_HORZ);
+    nScrollInc = newPos - wnd->xscroll_position;
+    wnd->xscroll_position = newPos;
   } else {
     int newPos = wnd->yscroll_position + nScrollInc;
     ::SetScrollPos(hWnd, SB_VERT, newPos, TRUE );
-    wnd->yscroll_position = ::GetScrollPos(hWnd, SB_VERT);
+    newPos = ::GetScrollPos(hWnd, SB_VERT);
+    nScrollInc = newPos - wnd->yscroll_position;
+    wnd->yscroll_position = newPos;
   }
 
-  OnScroll(event);
+  if (!wnd->calcScrolledOffset) {
+    OnScroll(event);
+  } else {
+    if (orient == wxHORIZONTAL)
+      ::ScrollWindow(hWnd, nScrollInc, 0, NULL, NULL);
+    else
+      ::ScrollWindow(hWnd, 0, nScrollInc, NULL, NULL);      
+  
+    InvalidateRect(hWnd, NULL, FALSE);
+  }
 }
 
 
@@ -3147,16 +3160,6 @@ int wxWindow::CalcScrollInc(wxScrollEvent& event)
 
 void wxWindow::OnScroll(wxScrollEvent& event)
 {
-  long orient = event.direction;
-
-  int nScrollInc = CalcScrollInc(event);
-  if (nScrollInc == 0)
-    return;
-
-  wxWnd *wnd = (wxWnd *)handle;
-  HWND hWnd = GetHWND();
-
-  InvalidateRect(hWnd, NULL, FALSE);
 }
 
 void wxWindow::SetScrollPos(int orient, int pos)

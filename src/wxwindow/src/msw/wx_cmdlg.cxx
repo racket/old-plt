@@ -343,7 +343,7 @@ If you put a single wild card, it works as before my modification.
 
   long msw_flags = 0;
 
-  if (flags & wxOVERWRITE_PROMPT)
+  if (flags & wxSAVE)
     msw_flags |= OFN_OVERWRITEPROMPT;
   if (flags & wxHIDE_READONLY)
     msw_flags |= OFN_HIDEREADONLY;

@@ -255,6 +255,26 @@
   (define (doc-collections-changed)
     (set! doc-collection-date #f))
   
+  (define re:url-dir (regexp "^([^/]*)/(.*)$"))
+  (define (combine-path/url-path path url-path)
+    (let loop ([path path]
+               [url-path url-path])
+      (cond
+        [(regexp-match re:url-dir url-path)
+         =>
+         (lambda (m)
+           (let* ([url-dir (cadr m)]
+                  [rest (caddr m)]
+                  [dir
+                   (cond
+                     [(string=? ".." url-dir) 'up]
+                     [(string=? "." url-dir) 'same]
+                     [(string=? "" url-dir) 'same]
+                     [else url-dir])])
+             (loop (build-path path dir)
+                   rest)))]
+        [else (build-path path url-path)])))
+  
   ;; do-search : ((? -> ?)
   ;;              ??
   ;;              boolean
@@ -337,12 +357,12 @@
 					(found "index entries")
 					(add-choice "" name
 						    (list-ref desc 2)
-						    (build-path doc (list-ref desc 0))
+						    (combine-path/url-path doc (list-ref desc 0))
 						    (list-ref desc 1)
 						    ckey)]
 				       [(text)
 					(found "index entries")
- 					(add-choice "" name
+                                        (add-choice "" name
 						    "indexed content"
 						    (apply build-path doc)
 						    desc

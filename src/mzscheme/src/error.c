@@ -1583,14 +1583,14 @@ void scheme_raise_out_of_memory(const char *where, const char *msg, ...)
     s = "";
     slen = 0;
   } else {
-    va_list args;
+    GC_CAN_IGNORE va_list args;
 
     /* Precise GC: Don't allocate before getting hidden args off stack */
     s = prepared_buf;
 
-    va_start(args, msg);
+    HIDE_FROM_XFORM(va_start(args, msg));
     slen = sch_vsprintf(s, prepared_buf_len, msg, args);
-    va_end(args);
+    HIDE_FROM_XFORM(va_end(args));
 
     prepared_buf = init_buf(NULL, &prepared_buf_len);
   }

@@ -48,7 +48,9 @@ extern int scheme_num_copied_stacks;
 void **GC_variable_stack;
 #endif
 
+#ifndef MZ_PRECISE_GC
 extern MZ_DLLIMPORT void GC_register_late_disappearing_link(void **link, void *obj);
+#endif
 
 static int use_registered_statics;
 

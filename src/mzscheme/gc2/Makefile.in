@@ -186,7 +186,7 @@ $(XSRCDIR)/type.c: ../src/type.o $(XFORMDEP)
 $(XSRCDIR)/vector.c: ../src/vector.o $(XFORMDEP)
 	$(XFORM) $(SRCDIR)/vector.c $(XSRCDIR)/vector.c
 $(XSRCDIR)/foreign.c: ../../foreign/foreign.o $(XFORMDEP)
-	$(XFORM)" -I../../foreign/gcc/libffi/include" $(SRCDIR)/../../foreign/foreign.c $(XSRCDIR)/foreign.c
+	$(XFORM)" -I../../foreign/gcc/libffi/include -I${SRCDIR}/../../mzscheme/src" $(SRCDIR)/../../foreign/foreign.c $(XSRCDIR)/foreign.c
 $(XSRCDIR)/main.c: ../main.o $(XFORMDEP)
 	$(XFORM) $(srcdir)/../main.c $(XSRCDIR)/main.c
 

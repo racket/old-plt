@@ -131,7 +131,7 @@
 			    (let ([finalf (splitup-path f)])
 			      (when (mred:change-splash-message (format "Loading ~a..." finalf))
 				(set! mred:splash-counter (add1 mred:splash-counter))
-				(mred:debug:printf 'splash-counter "splash-counter: ~a~n" mred:splash-counter)
+				(mred:debug:printf 'splash-counter "splash-counter: ~a" mred:splash-counter)
 				(when (<= mred:splash-counter mred:splash-max)
 				  (send gauge set-value mred:splash-counter)))
 			      (begin0

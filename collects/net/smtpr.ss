@@ -1,0 +1,85 @@
+
+(unit/sig mzlib:smtp^
+  (import)
+
+  (define ID "localhost")
+  (define TIMEOUT 30)
+
+  (define debug-via-stdio? #f)
+
+  (define crlf (string #\return #\linefeed))
+
+  (define (starts-with? l n)
+    (and (>= (string-length l) (string-length n))
+	 (string=? n (substring l 0 (string-length n)))))
+
+  (define (check-reply r v)
+    (let ([t (let ([t (current-thread)])
+	       (thread
+		(lambda ()
+		  (with-handlers ([void void])
+		    (sleep TIMEOUT)
+		    (break-thread t)))))]
+	  [l (read-line r (if debug-via-stdio?
+			      'linefeed
+			      'return-linefeed))])
+      (break-thread t) ; cancel timeout
+      (if (eof-object? l)
+	  (error 'check-reply "got EOF")
+	  (let ([n (number->string v)])
+	    (unless (starts-with? l n)
+	      (error 'check-reply "expected reply ~a; got: ~a" v l))
+	    (let ([n- (string-append n "-")])
+	      (when (starts-with? l n-)
+		; Multi-line reply. Go again.
+		(check-reply r v)))))))
+
+  (define (protect-line l)
+    ; If it's only dots, add one more
+    (if (or (string=? "" l) (not (char=? #\. (string-ref l 0))))
+	l ; certainly no protection needed
+	; stronger check...
+	(if (andmap (lambda (c) (char=? c #\.)) (string->list l))
+	    (string-append "." l) ; it was all dots
+	    l)))
+
+  (define send-message
+    (case-lambda
+     [(from tos message server) (send-message from tos message server 25)]
+     [(from tos message server port)
+      (when (null? tos)
+	(error 'mysendmail "no recievers"))
+      (let-values ([(r w) (if debug-via-stdio?
+			      (values (current-input-port) (current-output-port))
+			      (tcp-connect server 25))])
+	(with-handlers ([void (lambda (x)
+				(close-input-port r)
+				(close-output-port w)
+				(if (exn:misc:user-break? x)
+				    (error 'send-message "communication timeout")
+				    (raise x)))])
+	  (check-reply r 220)
+	  (fprintf w "HELO ~a~a" ID crlf)
+	  (check-reply r 250)
+	  
+	  (fprintf w "MAIL FROM:<~a>~a" from crlf)
+	  (check-reply r 250)
+	  
+	  (for-each
+	   (lambda (dest)
+	     (fprintf w "RCPT TO:<~a>~a" dest crlf)
+	     (check-reply r 250))
+	   tos)
+	  
+	  (fprintf w "DATA~a" crlf)
+	  (check-reply r 354)
+	  (for-each
+	   (lambda (l)
+	     (fprintf w "~a~a" (protect-line l) crlf))
+	   message)
+	  (fprintf w "~a.~a" crlf crlf)
+	  (check-reply r 250)
+	  (fprintf w "QUIT~a" crlf)
+	  (check-reply r 221)
+	  (close-output-port w)
+	  (close-input-port r)))])))

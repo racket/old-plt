@@ -248,6 +248,10 @@
 				   (unless (= 1 (length l))
 				     (error 'send "bad mail-from configuration: ~a" MAIL-FROM))
 				   (car l))]
+                           [simple-from (let ([l (extract-addresses MAIL-FROM 'address)])
+                                          (unless (= 1 (length l))
+                                            (error 'send "bad mail-from configuration: ~a" MAIL-FROM))
+                                          (car l))]
 			   [subject (extract-field "Subject" header)]
 			   [prop-header (remove-fields '("To" "CC" "BCC" "Subject") header)]
 			   [std-header (standard-message-header from to cc bcc subject)]
@@ -255,6 +259,7 @@
 			   [tos (map cdr (append to* cc* bcc*))]
 			   [enclosures (map (lambda (i) (send i user-data)) 
 					    (send enclosure-list get-items))])
+
 		      (let-values ([(new-header body) (enclose new-header body enclosures)])
 			(when SAVE-SENT
 			  (let* ([chop (lambda (s)
@@ -280,8 +285,8 @@
 			     (break-ok)
 			     (smtp-sending-end-of-message break-bad)
 			     (smtp-send-message smtp-server-to-use
-						from
-						tos
+						simple-from
+                                                tos
 						new-header
 						(split-crlf body)
 						smtp-port-to-use)))

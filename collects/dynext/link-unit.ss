@@ -16,7 +16,24 @@
 
       (define (path-string->string s)
 	(if (string? s) s (path->string s)))
-      
+
+      ;; this will be the part that should replace xxxxxxx's in file names
+      (define filename-version-part
+        (cond [(regexp-match #rx"^([0-9]+(?:p[0-9])?)(?:[.]([0-9]+))?$"
+                             (version))
+               => (lambda (m)
+                    (let ([major (cadr m)] [minor (or (caddr m) #"")])
+                      (string-append major "_"
+                                     (make-string (- (string-length "xxxxxxx")
+                                                     1
+                                                     (string-length major)
+                                                     (string-length minor))
+                                                  #\0)
+                                     minor)))]
+              [else (error 'filename-version-part
+                           "unexpected version string: ~s"
+                           (version))]))
+
       ;; ---- Find a linker for this platform --------------------
 
       (define (get-windows-linker)
@@ -181,19 +198,15 @@
                [filethunk (lambda (f)
                             (lambda ()
 			      (map file (f))))]
-	       [wrap-xxxxxxx (lambda (f)
-                               (lambda ()
-				 (map (lambda (s)
-					(let ([ver (substring (regexp-replace*
-							       "alpha"
-							       (format "~a_000000000" (version))
-							       "a")
-							      0
-							      7)])
-					  (if (file-exists? (file (format s ver)))
-					      (file (format s ver))
-					      (file (format s "xxxxxxx")))))
-				      (f))))])
+	       [wrap-xxxxxxx
+                (lambda (f)
+                  (lambda ()
+                    (map (lambda (s)
+                           (if (file-exists?
+                                (file (format s filename-version-part)))
+                             (file (format s filename-version-part))
+                             (file (format s "xxxxxxx"))))
+                         (f))))])
 	  (cond
 	   [win-gcc? (list (wrap-xxxxxxx (wrap-3m "libmzsch~a~~a.lib"))
 			   (wrap-xxxxxxx (drop-3m "libmzgc~a.lib"))
@@ -208,7 +221,7 @@
 		       (wrap-xxxxxxx (drop-3m "libmzgc~a.lib"))
 		       (mzdyn-maybe (filethunk (wrap-3m "mzdyn~a.exp")))
 		       (mzdyn-maybe (filethunk (wrap-3m "mzdyn~a.obj"))))])))
-      
+
       (define (get-unix/macos-link-libraries)
 	(list (lambda ()
 		(if (current-use-mzdyn)

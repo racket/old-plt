@@ -33,12 +33,10 @@
                          (car type-recs))))
       (cond
         ((and (eq? src 'file) (eq? dest 'file))
-         (input-port (lambda () (open-input-file name)))
          (call-with-input-file name (lambda (port) (compile-to-file port name level))))
         ((eq? dest 'file)
          (compile-to-file port loc level))
         ((eq? src 'file)
-         (input-port (lambda () (open-input-file name)))
          (call-with-input-file 
              name
              (lambda (port) (compile-java-internal port name type-recs #f level))))

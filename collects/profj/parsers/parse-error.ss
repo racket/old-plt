@@ -19,20 +19,16 @@
   ;find-error: symbol -> (-> (U void #t))
   (define (find-error level-set)
     (lambda ()
-      (let ((port ((input-port))))
-        (port-count-lines! port)
-        (level level-set)
-        (let ((getter (lambda () (get-token port))))
-          (parse-program null (getter) 'start getter)))))
+      (level level-set)
+      (let ((getter ((lex-stream))))
+        (parse-program null (getter) 'start getter))))
 
   ;find-method-error: symbol -> (-> (U void #t))
   (define (find-method-error level-set)
     (lambda ()
-      (let ((port ((input-port))))
-        (port-count-lines! port)
-        (level level-set)
-        (let ((getter (lambda () (get-token port))))
-          (parse-members null (getter) 'start getter #f #t)))))
+      (level level-set)
+      (let ((getter ((lex-stream))))
+        (parse-members null (getter) 'start getter #f #t))))
   
   ;find-beginner-error: -> (U void #t)
   (define find-beginner-error (find-error 'beginner))
@@ -42,32 +38,30 @@
   ;find-beginner-error-interaction: -> (U bool or token)
   ;Should not return
   (define (find-beginner-error-interactions)
-    (let ((port ((input-port))))
-      (port-count-lines! port)
-      (let* ((getter (lambda () (get-token port)))
-             (first-tok (getter)))
-        (let ((returned-tok 
-               (case (get-token-name (get-tok first-tok))
-                 ((EOF) #t)
-                 ((if return) (parse-statement null first-tok 'start getter #f #f #f))
-                 ;Taken from Intermediate to allow interaction to say int x = 4;
-                 ((IDENTIFIER)
-                  (let ((next (getter)))
-                    (if (id-token? (get-tok next))
-                        (parse-field first-tok next 'start getter)
-                        (parse-expression first-tok next 'name getter #f #f))))
-                 (else
-                  (if (prim-type? (get-tok first-tok))
-                      (parse-field first-tok (getter) 'start getter)
-                      (parse-expression null first-tok 'start getter #f #f))))))
-          
-          (if (or (and (pair? returned-tok) (eof? (get-tok returned-tok))) (boolean? returned-tok))
-              returned-tok
-              (if (and (pair? returned-tok) (semi-colon? (get-tok returned-tok)))
-                  (parse-error "';' is not allowed here" (get-start returned-tok) (get-end returned-tok))
-                  (parse-error (format "Only 1 statement, expression, or definition is allowed, found extra input ~a"
-                                       (format-out (get-tok returned-tok)))
-                               (get-start returned-tok) (get-end returned-tok))))))))
+    (let* ((getter ((lex-stream)))
+           (first-tok (getter)))
+      (let ((returned-tok 
+             (case (get-token-name (get-tok first-tok))
+               ((EOF) #t)
+               ((if return) (parse-statement null first-tok 'start getter #f #f #f))
+               ;Taken from Intermediate to allow interaction to say int x = 4;
+               ((IDENTIFIER)
+                (let ((next (getter)))
+                  (if (id-token? (get-tok next))
+                      (parse-field first-tok next 'start getter)
+                      (parse-expression first-tok next 'name getter #f #f))))
+               (else
+                (if (prim-type? (get-tok first-tok))
+                    (parse-field first-tok (getter) 'start getter)
+                    (parse-expression null first-tok 'start getter #f #f))))))
+        
+        (if (or (and (pair? returned-tok) (eof? (get-tok returned-tok))) (boolean? returned-tok))
+            returned-tok
+            (if (and (pair? returned-tok) (semi-colon? (get-tok returned-tok)))
+                (parse-error "';' is not allowed here" (get-start returned-tok) (get-end returned-tok))
+                (parse-error (format "Only 1 statement, expression, or definition is allowed, found extra input ~a"
+                                     (format-out (get-tok returned-tok)))
+                             (get-start returned-tok) (get-end returned-tok)))))))
   
   ;find-intermediate-error: -> (U void #t)
   (define find-intermediate-error (find-error 'intermediate))
@@ -78,39 +72,35 @@
   ;find-error-interaction: -> (U bool or token)
   ;Should not return
   (define (find-intermediate-error-interactions)
-    (let ((port ((input-port))))
-      (port-count-lines! port)
-      (let* ((getter (lambda () (get-token port)))
-             (first-tok (getter)))
-        (level 'intermediate)
-        (let ((returned-tok 
-               (case (get-token-name (get-tok first-tok))
-                 ((EOF) #t)
-                 ((if return O_BRACE) (parse-statement null first-tok 'start getter #t #f #f))
-                 ((IDENTIFIER)
-                  (let ((next (getter)))
-                    (if (id-token? (get-tok next))
-                        (parse-statement first-tok next 'local getter #t #f #f)
-                        (parse-expression first-tok next 'name getter #t #f))))
-                 (else
-                  (if (prim-type? (get-tok first-tok))
-                      (parse-statement null first-tok 'start getter #t #f #f)
-                      (parse-expression null first-tok 'start getter #t #f))))))
-          (if (or (and (pair? returned-tok) (eof? (get-tok returned-tok))) (boolean? returned-tok))
-              returned-tok
-              (if (and (pair? returned-tok) (semi-colon? (get-tok returned-tok)))
-                  (parse-error "';' is not allowed here" (get-start returned-tok) (get-end returned-tok))
-                  (parse-error (format "Only 1 statement or expression is allowed, found extra input ~a" 
-                                       (format-out (get-tok returned-tok)))
-                               (get-start returned-tok) (get-end returned-tok))))))))
-  
+    (let* ((getter ((lex-stream)))
+           (first-tok (getter)))
+      (level 'intermediate)
+      (let ((returned-tok 
+             (case (get-token-name (get-tok first-tok))
+               ((EOF) #t)
+               ((if return O_BRACE) (parse-statement null first-tok 'start getter #t #f #f))
+               ((IDENTIFIER)
+                (let ((next (getter)))
+                  (if (id-token? (get-tok next))
+                      (parse-statement first-tok next 'local getter #t #f #f)
+                      (parse-expression first-tok next 'name getter #t #f))))
+               (else
+                (if (prim-type? (get-tok first-tok))
+                    (parse-statement null first-tok 'start getter #t #f #f)
+                    (parse-expression null first-tok 'start getter #t #f))))))
+        (if (or (and (pair? returned-tok) (eof? (get-tok returned-tok))) (boolean? returned-tok))
+            returned-tok
+            (if (and (pair? returned-tok) (semi-colon? (get-tok returned-tok)))
+                (parse-error "';' is not allowed here" (get-start returned-tok) (get-end returned-tok))
+                (parse-error (format "Only 1 statement or expression is allowed, found extra input ~a" 
+                                     (format-out (get-tok returned-tok)))
+                             (get-start returned-tok) (get-end returned-tok)))))))
+
   ;find-advanced-error: -> (U void #t)
   (define (find-advanced-error)
-    (let ((port ((input-port))))
-      (port-count-lines! port)
-      (let ((getter (lambda () (get-token port))))
-        (level 'advanced)
-        (parse-package null (getter) 'start getter))))
+    (let ((getter ((lex-stream))))
+      (level 'advanced)
+      (parse-package null (getter) 'start getter)))
 
   ;find-advanced-error-method: -> void
   (define find-advanced-error-method (find-method-error 'advanced))
@@ -118,32 +108,30 @@
   ;find-error-interaction: -> (U bool or token)
   ;Should not return
   (define (find-advanced-error-interactions)
-    (let ((port ((input-port))))
-      (port-count-lines! port)
-      (let* ((getter (lambda () (get-token port)))
-             (first-tok (getter)))
-        (level 'advanced)
-        (let ((returned-tok 
-               (case (get-token-name (get-tok first-tok))
-                 ((EOF) #t)
-                 ((if return O_BRACE for do while break continue) 
-                  (parse-statement null first-tok 'start getter #t #f #f))
-                 ((IDENTIFIER)
-                  (let ((next (getter)))
-                    (if (id-token? (get-tok next))
-                        (parse-statement first-tok next 'local getter #t #f #f)
-                        (parse-expression first-tok next 'name getter #t #f)))) 
-                 (else 
-                  (if (prim-type? (get-tok first-tok))
-                      (parse-statement null first-tok 'start getter #t #f #f)
-                      (parse-expression null first-tok 'start getter #t #f))))))
-          (if (or (and (pair? returned-tok) (eof? (get-tok returned-tok))) (boolean? returned-tok))
-              returned-tok
-              (if (and (pair? returned-tok) (semi-colon? (get-tok returned-tok)))
-                  (parse-error "';' is not allowed here" (get-start returned-tok) (get-end returned-tok))
-                  (parse-error (format "Only 1 statement or expression is allowed, found extra input ~a"
-                                       (format-out (get-tok returned-tok)))
-                               (get-start returned-tok) (get-end returned-tok))))))))
+    (let* ((getter ((lex-stream)))
+           (first-tok (getter)))
+      (level 'advanced)
+      (let ((returned-tok 
+             (case (get-token-name (get-tok first-tok))
+               ((EOF) #t)
+               ((if return O_BRACE for do while break continue) 
+                (parse-statement null first-tok 'start getter #t #f #f))
+               ((IDENTIFIER)
+                (let ((next (getter)))
+                  (if (id-token? (get-tok next))
+                      (parse-statement first-tok next 'local getter #t #f #f)
+                      (parse-expression first-tok next 'name getter #t #f)))) 
+               (else 
+                (if (prim-type? (get-tok first-tok))
+                    (parse-statement null first-tok 'start getter #t #f #f)
+                    (parse-expression null first-tok 'start getter #t #f))))))
+        (if (or (and (pair? returned-tok) (eof? (get-tok returned-tok))) (boolean? returned-tok))
+            returned-tok
+            (if (and (pair? returned-tok) (semi-colon? (get-tok returned-tok)))
+                (parse-error "';' is not allowed here" (get-start returned-tok) (get-end returned-tok))
+                (parse-error (format "Only 1 statement or expression is allowed, found extra input ~a"
+                                     (format-out (get-tok returned-tok)))
+                             (get-start returned-tok) (get-end returned-tok)))))))
   
   ;;-----------------------------------------------------------------------------------------------------------
   ;;Functions for parsing and reporting errors

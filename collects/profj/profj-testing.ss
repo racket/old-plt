@@ -80,8 +80,7 @@
   ;interact-internal: symbol (list string) (list evalable-value) string type-record -> void
   (define (interact-internal level interacts vals msg type-recs)
     (for-each (lambda (ent val)
-                (input-port (lambda () (open-input-string ent)))
-                (let ((st ((input-port))))
+                (let ((st (open-input-string ent)))
                   (with-handlers 
                       ([exn?
                         (lambda (exn)
@@ -119,7 +118,6 @@
                  (interaction-msgs (cons (format "Test ~a: Exception raised in definition : ~a"
                                                  msg (exn-message exn))
                                          (interaction-msgs))))])
-           (input-port (lambda () (open-input-string defn)))
            (execution? #t)
            (eval-modules (compile-java 'port 'port level #f def-st def-st type-recs))
            (interact-internal level in val msg type-recs))))))
@@ -135,12 +133,10 @@
               (interaction-msgs (cons (format "Test ~a: Exception raised in definition : ~a"
                                               msg (exn-message exn))
                                       (interaction-msgs))))])
-        (input-port (lambda () (open-input-string defn)))
         (execution? #t)
         (eval-modules (compile-java 'port 'port level #f def-st def-st type-recs))
         (let ((vals (map (lambda (ex-val)
                            (let ((st (open-input-string ex-val)))
-                             (input-port (lambda () (open-input-string ex-val)))
                              (eval `(begin (require (lib "class.ss")
                                                     (prefix javaRuntime: (lib "runtime.scm" "profj" "libs" "java")))
                                            ,(compile-interactions st st type-recs level)))))
@@ -159,7 +155,6 @@
                  (execution-errors (add1 (execution-errors)))
                  (execution-msgs (cons
                                   (format "Test ~a : Exception-raised: ~a" msg (exn-message exn)) (execution-msgs))))))])
-        (input-port (lambda () (open-input-string defn)))
         (eval-modules (compile-java 'port 'port level #f st st)))))
   
   ;run-test: symbol string (U string (list string)) (U string (list string)) -> (U (list (list symbol bool string)) (list ...))
@@ -173,10 +168,9 @@
                     (lambda (exn)
                       (list 'interact #f (exn-message exn)))])
                 (let* ((get-val (lambda (v-st v-pe)
-                                  (begin (input-port v-pe)
-                                         (eval `(begin (require (lib "class.ss"))
-                                                       (require (prefix javaRuntime: (lib "runtime.scm" "profj" "libs" "java")))
-                                                       ,(compile-interactions v-st v-st type-recs level))))))
+                                  (eval `(begin (require (lib "class.ss"))
+                                                (require (prefix javaRuntime: (lib "runtime.scm" "profj" "libs" "java")))
+                                                ,(compile-interactions v-st v-st type-recs level)))))
                        (i-st (open-input-string interact))
                        (v-st (open-input-string val))
                        (i-pe (lambda () (open-input-string interact)))
@@ -188,7 +182,6 @@
           ([exn?
             (lambda (exn)
               (list 'defn #f (exn-message exn)))])
-        (input-port (lambda () (open-input-string defn)))
         (execution? #t)
         (eval-modules (compile-java 'port 'port level #f def-st def-st type-recs))
         (cond

@@ -28,9 +28,9 @@
   ;Stores the error function to trigger for parsing
   (define determine-error (make-parameter (lambda () #t)))
   
-  ;Stores a function to get the input port in a non-destructive maner
-  (define input-port (make-parameter (lambda () void)))
-   
+  ;Stores a function which when called will produce (->token) of lexed tokens
+  (define lex-stream (make-parameter (lambda () null)))
+  
   ;Stores whether it is permitted to use Scheme functions and other values
   (define scheme-ok? (make-parameter #f))
   

@@ -224,9 +224,7 @@
                class-name
                (lambda () 
                  (let* ((location (string-append class suffix))
-                        (ast (begin (input-port 
-                                     (lambda () (call-with-input-file file-path (lambda (x) x))))
-                                    (call-with-input-file file-path (lambda (p) (parse p location (unbox new-level)))))))
+                        (ast (call-with-input-file file-path (lambda (p) (parse p location (unbox new-level))))))
                    (send type-recs set-compilation-location location (build-path dir "compiled"))
                    (build-info ast (unbox new-level) type-recs 'not_look_up)
                    (send type-recs get-class-record class-name #f (lambda () 'internal-error "Failed to add record"))

@@ -100,12 +100,12 @@
 
   (define (parse-class-box box box-pos level)
     (let*-values (((old-file-path) (file-path))
-                  ((old-input-port) (input-port))
+                  ((old-lex-stream) (lex-stream))
                   ((parse-func _ __) (class:send (class-case-box box) read-one-special 0 #f #f #f #f))
-                  ((class-ast) (parse-func level old-file-path box-pos input-port)))
+                  ((class-ast) (parse-func level old-file-path box-pos lex-stream)))
       (begin0
         class-ast
-        (input-port old-input-port)
+        (lex-stream old-lex-stream)
         (file-path old-file-path))))
 ;  
 ;  (lambda (level class-loc box-pos input-spec)

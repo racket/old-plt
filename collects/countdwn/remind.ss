@@ -363,6 +363,6 @@
 	    (init-params)
 	    (let loop ()
 	      (update-counters)
-	      (sleep 2)
+	      (sleep 5)
 	      (loop))))]))))
 

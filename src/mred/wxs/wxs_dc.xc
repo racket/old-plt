@@ -144,7 +144,7 @@ static wxColour* dcGetTextForeground(wxDC *dc)
 
 @INCLUDE wxs_dorf.xci
 
-@CREATOR (npathname,bool=TRUE,wxWindow^=NULL); : : /DLGORFRAME[2.METHODNAME("post-script-dc%","initialization")]
+@CREATOR (bool=TRUE)
 
 @END
 
@@ -153,7 +153,7 @@ static wxColour* dcGetTextForeground(wxDC *dc)
 class basePrinterDC : public wxObject
 {
 public:
-  basePrinterDC(char *, char *, char *, Bool = TRUE)
+  basePrinterDC()
   {
     scheme_signal_error("%s", METHODNAME("printer-dc%","initialization")": not supported for X Windows");
   }
@@ -164,12 +164,8 @@ public:
 class basePrinterDC : public wxPrinterDC
 {
 public:
-  basePrinterDC(char *a, char *b, char *c, Bool d = TRUE)
-    : wxPrinterDC(
-#ifndef wx_mac
-		  a, b, c, d
-#endif
-		  )
+  basePrinterDC()
+    : wxPrinterDC( )
   {
   }
 };
@@ -180,7 +176,7 @@ public:
 
 @CLASSID wxTYPE_DC_PRINTER
 
-@CREATOR (nstring,nstring,nstring,bool=TRUE);
+@CREATOR ();
 
 @END
 

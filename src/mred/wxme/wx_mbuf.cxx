@@ -1233,8 +1233,7 @@ public:
 # define WXUNUSED_X(x) x
 #endif
 
-void wxMediaBuffer::Print(char *filename, Bool interactive, Bool fitToPage, 
-			  int WXUNUSED_X(output_mode))
+void wxMediaBuffer::Print(Bool interactive, Bool fitToPage, int WXUNUSED_X(output_mode))
 {
   int ps;
 
@@ -1248,7 +1247,7 @@ void wxMediaBuffer::Print(char *filename, Bool interactive, Bool fitToPage,
     wxDC *dc;
     void *data;
     
-    dc = new wxPostScriptDC(filename, interactive);
+    dc = new wxPostScriptDC(interactive);
 
     if (dc->Ok()) { 
       dc->StartDoc("Printing buffer");

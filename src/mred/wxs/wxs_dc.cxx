@@ -1826,14 +1826,14 @@ class wxMemoryDC *objscheme_unbundle_wxMemoryDC(Scheme_Object *obj, const char *
 class os_wxPostScriptDC : public wxPostScriptDC {
  public:
 
-  os_wxPostScriptDC(Scheme_Object * obj, npathname x0, Bool x1 = TRUE, class wxWindow* x2 = NULL);
+  os_wxPostScriptDC(Scheme_Object * obj, Bool x0 = TRUE);
   ~os_wxPostScriptDC();
 };
 
 Scheme_Object *os_wxPostScriptDC_class;
 
-os_wxPostScriptDC::os_wxPostScriptDC(Scheme_Object * o, npathname x0, Bool x1, class wxWindow* x2)
-: wxPostScriptDC(x0, x1, x2)
+os_wxPostScriptDC::os_wxPostScriptDC(Scheme_Object * o, Bool x0)
+: wxPostScriptDC(x0)
 {
   __gc_external = (void *)o;
   objscheme_backpointer(&__gc_external);
@@ -1849,25 +1849,18 @@ os_wxPostScriptDC::~os_wxPostScriptDC()
 static Scheme_Object *os_wxPostScriptDC_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   os_wxPostScriptDC *realobj;
-  npathname x0;
-  Bool x1;
-  class wxWindow* x2;
+  Bool x0;
 
   
-  if ((n < 1) ||(n > 3)) 
-    scheme_wrong_count("initialization in post-script-dc%", 1, 3, n, p);
-  x0 = (npathname)objscheme_unbundle_nullable_pathname(p[0], "initialization in post-script-dc%");
-  if (n > 1) {
-    x1 = objscheme_unbundle_bool(p[1], "initialization in post-script-dc%");
+  if ((n > 1)) 
+    scheme_wrong_count("initialization in post-script-dc%", 0, 1, n, p);
+  if (n > 0) {
+    x0 = objscheme_unbundle_bool(p[0], "initialization in post-script-dc%");
   } else
-    x1 = TRUE;
-  if (n > 2) {
-    x2 = objscheme_unbundle_wxWindow(p[2], "initialization in post-script-dc%", 1);
-  } else
-    x2 = NULL;
+    x0 = TRUE;
 
-  if (x2 && !wxSubType(((wxObject *)x2)->__type, wxTYPE_FRAME) && !wxSubType(((wxObject *)x2)->__type, wxTYPE_DIALOG_BOX)) scheme_wrong_type(METHODNAME("post-script-dc%","initialization"), "frame or dialog box", 2, n, p);
-  realobj = new os_wxPostScriptDC(obj, x0, x1, x2);
+  
+  realobj = new os_wxPostScriptDC(obj, x0);
   
   
   ((Scheme_Class_Object *)obj)->primdata = realobj;
@@ -1947,7 +1940,7 @@ class wxPostScriptDC *objscheme_unbundle_wxPostScriptDC(Scheme_Object *obj, cons
 class basePrinterDC : public wxObject
 {
 public:
-  basePrinterDC(char *, char *, char *, Bool = TRUE)
+  basePrinterDC()
   {
     scheme_signal_error("%s", METHODNAME("printer-dc%","initialization")": not supported for X Windows");
   }
@@ -1958,12 +1951,8 @@ public:
 class basePrinterDC : public wxPrinterDC
 {
 public:
-  basePrinterDC(char *a, char *b, char *c, Bool d = TRUE)
-    : wxPrinterDC(
-#ifndef wx_mac
-		  a, b, c, d
-#endif
-		  )
+  basePrinterDC()
+    : wxPrinterDC( )
   {
   }
 };
@@ -1976,14 +1965,14 @@ public:
 class os_basePrinterDC : public basePrinterDC {
  public:
 
-  os_basePrinterDC(Scheme_Object * obj, nstring x0, nstring x1, nstring x2, Bool x3 = TRUE);
+  os_basePrinterDC(Scheme_Object * obj);
   ~os_basePrinterDC();
 };
 
 Scheme_Object *os_basePrinterDC_class;
 
-os_basePrinterDC::os_basePrinterDC(Scheme_Object * o, nstring x0, nstring x1, nstring x2, Bool x3)
-: basePrinterDC(x0, x1, x2, x3)
+os_basePrinterDC::os_basePrinterDC(Scheme_Object * o)
+: basePrinterDC()
 {
   __gc_external = (void *)o;
   objscheme_backpointer(&__gc_external);
@@ -1999,24 +1988,13 @@ os_basePrinterDC::~os_basePrinterDC()
 static Scheme_Object *os_basePrinterDC_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   os_basePrinterDC *realobj;
-  nstring x0;
-  nstring x1;
-  nstring x2;
-  Bool x3;
 
   
-  if ((n < 3) ||(n > 4)) 
-    scheme_wrong_count("initialization in printer-dc%", 3, 4, n, p);
-  x0 = (nstring)objscheme_unbundle_nullable_string(p[0], "initialization in printer-dc%");
-  x1 = (nstring)objscheme_unbundle_nullable_string(p[1], "initialization in printer-dc%");
-  x2 = (nstring)objscheme_unbundle_nullable_string(p[2], "initialization in printer-dc%");
-  if (n > 3) {
-    x3 = objscheme_unbundle_bool(p[3], "initialization in printer-dc%");
-  } else
-    x3 = TRUE;
+  if (n != 0) 
+    scheme_wrong_count("initialization in printer-dc%", 0, 0, n, p);
 
   
-  realobj = new os_basePrinterDC(obj, x0, x1, x2, x3);
+  realobj = new os_basePrinterDC(obj);
   
   
   ((Scheme_Class_Object *)obj)->primdata = realobj;

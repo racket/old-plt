@@ -257,8 +257,7 @@ class wxMediaBuffer : public wxObject
   virtual void InvalidateBitmapCache(float x=0.0, float y=0.0,
 				     float w=-1.0, float h=-1.0) = 0;
 
-  void Print(char *filename=NULL, Bool interactive=TRUE, Bool fit=FALSE,
-	     int output_mode = 0);
+  void Print(Bool interactive=TRUE, Bool fit=FALSE, int output_mode = 0);
   virtual void *BeginPrint(wxDC *dc, Bool fit) = 0;
   virtual void EndPrint(wxDC*, void*) = 0;
   virtual void PrintToDC(wxDC *dc, int page = -1) = 0;

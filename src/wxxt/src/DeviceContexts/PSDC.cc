@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: PSDC.cc,v 1.9 1998/09/09 16:02:47 mflatt Exp $
+ * RCS_ID:      $Id: PSDC.cc,v 1.10 1998/09/11 01:25:29 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -281,15 +281,15 @@ IMPLEMENT_DYNAMIC_CLASS(wxPostScriptDC, wxDC)
 
 wxPostScriptDC::wxPostScriptDC (void)
 {
-  Create(NULL, TRUE, NULL);
+  Create(TRUE);
 }
 
-wxPostScriptDC::wxPostScriptDC (char *file, Bool interactive, wxWindow *parent)
+wxPostScriptDC::wxPostScriptDC (Bool interactive)
 {
-  Create(file, interactive, parent);
+  Create(interactive);
 }
 
-Bool wxPostScriptDC::Create(char *file, Bool interactive, wxWindow *parent)
+Bool wxPostScriptDC::Create(Bool interactive)
 {
   if (!pie)
     pie = 2 * asin(1);
@@ -340,10 +340,7 @@ Bool wxPostScriptDC::Create(char *file, Bool interactive, wxWindow *parent)
 
   title = NULL;
 
-  if (file)
-    filename = copystring(file);
-  else
-    filename = NULL;
+  filename = NULL;
 
   pstream = NULL;
 
@@ -353,7 +350,7 @@ Bool wxPostScriptDC::Create(char *file, Bool interactive, wxWindow *parent)
   clipw = -1;
   cliph = -1;
 
-  if ((ok = PrinterDialog(interactive, parent)) == FALSE)
+  if ((ok = PrinterDialog(interactive)) == FALSE)
     return FALSE;
 
   currentRed = 0;
@@ -422,10 +419,10 @@ wxPostScriptDC::~wxPostScriptDC (void)
     delete[]filename;
 }
 
-Bool wxPostScriptDC::PrinterDialog(Bool interactive, wxWindow *parent)
+Bool wxPostScriptDC::PrinterDialog(Bool interactive)
 {
   if (interactive) {
-    ok = XPrinterDialog(parent);
+    ok = XPrinterDialog(NULL);
     if (!ok)
       return FALSE;
   } else
@@ -438,11 +435,7 @@ Bool wxPostScriptDC::PrinterDialog(Bool interactive, wxWindow *parent)
   print_cmd = copystring(wxThePrintSetupData->GetPrinterCommand());
   print_opts = copystring(wxThePrintSetupData->GetPrinterOptions());
 
-  if (!filename && ((mode == PS_PREVIEW) || (mode == PS_PRINTER))) {
-// steve, 05.09.94
-#ifdef VMS
-    wxThePrintSetupData->SetPrinterFile("preview");
-#else
+  if ((mode == PS_PREVIEW) || (mode == PS_PRINTER)) {
     // For PS_PRINTER action this depends on a Unix-style print spooler
     // since the wx_printer_file can be destroyed during a session
     // @@@ TODO: a Windows-style answer for non-Unix
@@ -451,20 +444,16 @@ Bool wxPostScriptDC::PrinterDialog(Bool interactive, wxWindow *parent)
     char tmp[256];
     strcpy (tmp, "/tmp/preview_");
     strcat (tmp, userId);
-    wxThePrintSetupData->SetPrinterFile(tmp);
-#endif
-    char tmp2[256];
-    strcpy(tmp2, wxThePrintSetupData->GetPrinterFile());
-    strcat (tmp2, ".ps");
-    wxThePrintSetupData->SetPrinterFile(tmp2);
-    filename = copystring(tmp2);
-  } else if (!filename && (mode == PS_FILE)) {
-    char *file = wxSaveFileSelector("PostScript", "ps");
+    strcat (tmp, ".ps");
+    filename = copystring(tmp);
+  } else if (mode == PS_FILE) {
+    char *file = interactive ? (char *)NULL : wxThePrintSetupData->GetPrinterFile();
+    if (!file)
+      file = wxSaveFileSelector("PostScript", "ps");
     if (!file) {
       ok = FALSE;
       return FALSE;
     }
-    wxThePrintSetupData->SetPrinterFile(file);
     filename = copystring(file);
     ok = TRUE;
   }
@@ -1997,6 +1986,7 @@ wxPrintSetupData::wxPrintSetupData(void)
     afm_path = NULL;
     paper_name = DEFAULT_PAPER;
     print_colour = TRUE;
+    print_level_2 = TRUE;
     printer_file = NULL;
 }
 

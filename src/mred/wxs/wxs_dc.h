@@ -37,7 +37,6 @@ void objscheme_setup_wxMemoryDC(void *env);
 int objscheme_istype_wxMemoryDC(Scheme_Object *obj, const char *stop, int nullOK);
 Scheme_Object *objscheme_bundle_wxMemoryDC(class wxMemoryDC *realobj);
 class wxMemoryDC *objscheme_unbundle_wxMemoryDC(Scheme_Object *obj, const char *where, int nullOK);
-extern class wxWindow *objscheme_unbundle_wxWindow(Scheme_Object *, const char *, int);
 #endif
 void objscheme_setup_wxPostScriptDC(void *env);
 #ifndef WXS_SETUP_ONLY

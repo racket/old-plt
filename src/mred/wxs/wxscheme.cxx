@@ -1289,7 +1289,7 @@ int wxsGetImageType(char *fn)
 void wxsExecute(char **argv)
 {
   int i, c;
-  Scheme_Object *a[1], *s;
+  Scheme_Object *a[1], *s, *p;
 
   for (i = 0; argv[i]; i++);
 
@@ -1302,7 +1302,13 @@ void wxsExecute(char **argv)
   }
 
   a[0] = s;
-  scheme_apply(execute, 1, a);
+  p = scheme_apply(execute, 1, a);
+
+  /* Close all the ports */
+  scheme_close_input_port(SCHEME_CAR(p));
+  scheme_close_output_port(SCHEME_CADR(p));
+  p = SCHEME_CDR(SCHEME_CDR(SCHEME_CDR(p)));
+  scheme_close_input_port(SCHEME_CAR(p));
 }
 
 static void wxScheme_Install(Scheme_Env *WXUNUSED(env), void *global_env)

@@ -405,59 +405,60 @@ not to forget: teachpakcs
       ;;    (string (union TST exn) -> void) -> string exn -> void
       ;; adds in the bug icon, if there are contexts to display
       (define (teaching-languages-error-display-handler msg exn)
+        (let ([src 
+               (cond
+                 [(exn:syntax? exn) (syntax-source (exn:syntax-expr exn))]
+                 [(exn:read? exn) (exn:read-source exn)]
+                 [(exn? exn) 
+                  (let ([cms (continuation-mark-set->list (exn-continuation-marks exn) cm-key)])
+                    (when (and cms (not (null? cms)))
+                      (let* ([first-cms (st-mark-source (car cms))]
+                             [src (car first-cms)])
+                        src)))]
+                 [else #f])])
+          (when (string? src)
+            (display src (current-error-port))
+            (display ": " (current-error-port))))
+        
+        (if (exn? exn)
+            (display (exn-message exn) (current-error-port))
+            (fprintf (current-error-port) "uncaught exception: ~e" exn))
+        (fprintf (current-error-port) "\n")
+        
         (let ([rep (drscheme:rep:current-rep)])
-          
-          (let ([src 
-                 (cond
-                   [(exn:syntax? exn) (syntax-source (exn:syntax-expr exn))]
-                   [(exn:read? exn) (exn:read-source exn)]
-                   [(exn? exn) 
-                    (let ([cms (continuation-mark-set->list (exn-continuation-marks exn) cm-key)])
-                      (when (and cms (not (null? cms)))
-                        (let* ([first-cms (st-mark-source (car cms))]
-                               [src (car first-cms)])
-                          src)))]
-                   [else #f])])
-            (when (string? src)
-              (display src (current-error-port))
-              (display ": " (current-error-port))))
-          
-          (if (exn? exn)
-              (display (exn-message exn) (current-error-port))
-              (fprintf (current-error-port) "uncaught exception: ~e" exn))
-          (fprintf (current-error-port) "\n")
-          (send rep wait-for-io-to-complete/user)
-          (cond
-            [(exn:syntax? exn) 
-             (let ([obj (exn:syntax-expr exn)])
-               (when (syntax? obj)
-                 (let ([src (syntax-source obj)]
-                       [pos (syntax-position obj)]
-                       [span (syntax-span obj)])
-                   (when (and (is-a? src text:basic<%>)
-                              (number? pos)
-                              (number? span))
-                     (send rep highlight-error src (- pos 1) (+ pos -1 span))))))]
-            [(exn:read? exn) 
-             (let ([src (exn:read-source exn)]
-                   [pos (exn:read-position exn)]
-                   [span (exn:read-span exn)])
-               (when (and (is-a? src text:basic<%>)
-                          (number? pos)
-                          (number? span))
-                 (send rep highlight-error src (- pos 1) (+ pos -1 span))))]
-            [(drscheme:rep:exn:locs? exn)
-             (let ([locs (drscheme:rep:exn:locs-locs exn)])
-               (send rep highlight-errors locs))]
-            [(exn? exn) 
-             (let ([cms (continuation-mark-set->list (exn-continuation-marks exn) cm-key)])
-               (when (and cms (not (null? cms)))
-                 (let* ([first-cms (st-mark-source (car cms))]
-                        [src (car first-cms)]
-                        [start-position (cadr first-cms)]
-                        [end-position (+ start-position (cddr first-cms))])
-                   (send rep highlight-error src start-position end-position))))]
-            [else (void)])))
+          (when rep
+            (send rep wait-for-io-to-complete/user)
+            (cond
+              [(exn:syntax? exn) 
+               (let ([obj (exn:syntax-expr exn)])
+                 (when (syntax? obj)
+                   (let ([src (syntax-source obj)]
+                         [pos (syntax-position obj)]
+                         [span (syntax-span obj)])
+                     (when (and (is-a? src text:basic<%>)
+                                (number? pos)
+                                (number? span))
+                       (send rep highlight-error src (- pos 1) (+ pos -1 span))))))]
+              [(exn:read? exn) 
+               (let ([src (exn:read-source exn)]
+                     [pos (exn:read-position exn)]
+                     [span (exn:read-span exn)])
+                 (when (and (is-a? src text:basic<%>)
+                            (number? pos)
+                            (number? span))
+                   (send rep highlight-error src (- pos 1) (+ pos -1 span))))]
+              [(drscheme:rep:exn:locs? exn)
+               (let ([locs (drscheme:rep:exn:locs-locs exn)])
+                 (send rep highlight-errors locs))]
+              [(exn? exn) 
+               (let ([cms (continuation-mark-set->list (exn-continuation-marks exn) cm-key)])
+                 (when (and cms (not (null? cms)))
+                   (let* ([first-cms (st-mark-source (car cms))]
+                          [src (car first-cms)]
+                          [start-position (cadr first-cms)]
+                          [end-position (+ start-position (cddr first-cms))])
+                     (send rep highlight-error src start-position end-position))))]
+              [else (void)]))))
       
       ;; with-mark : syntax (any -> syntax) syntax -> syntax
       ;; a member of stacktrace-imports^

@@ -75,6 +75,8 @@ wxFrame::wxFrame // Constructor (for frame window)
 	
 	OSErr result;
 
+#if (__powerc)
+
 	if (wxTheApp->MacOS85WindowManagerPresent) {
 			
 		// OS 8.5 window creation enabled
@@ -100,19 +102,9 @@ wxFrame::wxFrame // Constructor (for frame window)
 			}
 		}
 
-#if defined(__powerc)		
 		result = ::CreateNewWindow(windowClass, windowAttributes,
 									&theBoundsRect, (WindowPtr *)&theMacWindow);
 							
-#else
-		// NB: CreateNewWindow must be commented out on pre-8.5 platforms, because
-		// it's not defined.  However, if you just #if it out, you get warnings
-		// because theMacWindow is used w/o being defined. -- JBC
-		
-        wxFatalError("wxFrame constructor: 68k code should not reach this point.");
-        return;
-        theMacWindow = NULL;
-#endif
 									
 		if (result != noErr) {
 			char error[256];
@@ -126,7 +118,7 @@ wxFrame::wxFrame // Constructor (for frame window)
 		SetWRefCon((GrafPtr)theMacWindow, (long)this);
 		
 	} else {
-
+#endif
 		// OS 8.5 not enabled, go with old-style window creation
 		
 		int theProcID;
@@ -141,10 +133,13 @@ wxFrame::wxFrame // Constructor (for frame window)
 		const WindowPtr MoveToFront = WindowPtr(-1L);
 		const Bool HasGoAwayBox = TRUE;
 		long theRefCon = (long)this;
-		CWindowPtr theMacWindow = (CWindowPtr)::NewCWindow(NULL, &theBoundsRect, theWindowTitle,
+		theMacWindow = (CWindowPtr)::NewCWindow(NULL, &theBoundsRect, theWindowTitle,
 						!WindowIsVisible, theProcID, MoveToFront, HasGoAwayBox, theRefCon);
 
+#if (__powerc)
+
 	}
+#endif
 	
 	CheckMemOK(theMacWindow);
 	
@@ -759,7 +754,9 @@ void wxFrame::MacUpdateWindow(void)
  //-----------------------------------------------------------------------------
  void wxFrame::MacDrawGrowIcon(void)
  {
+#if (__powerc)
  	if (! wxTheApp->MacOS85WindowManagerPresent) {
+#endif
 	 	SetCurrentMacDCNoMargin();
 	 	// Save the clipping region
 	 	RgnHandle saveClip = NewRgn();
@@ -785,7 +782,9 @@ void wxFrame::MacUpdateWindow(void)
 	 	::DisposeRgn(saveClip);
 	 	::RGBForeColor(&fore);
 	 	::RGBBackColor(&back);
+#if (__powerc)
 	 }
+#endif
  }
 
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

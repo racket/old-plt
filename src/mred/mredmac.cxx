@@ -770,5 +770,32 @@ void MrEdMacSleep(float secs)
 
 wxWindow *wxLocationToWindow(int x, int y)
 {
+  WindowPtr win;
+  Point pt;
+  wxFrame *frame;
+  
+  pt.v = x;
+  pt.h = y;
+  FindWindow(pt,&win);
+ 
+  if (win == NULL) {
+	return NULL;
+  }
+  
+  frame = (wxFrame *)GetWRefCon(win);  // wish I could verify that this is a wxFrame...
+  
+  /* Mac: some frames really represent dialogs. Any modal frame is
+	 a dialog, so extract its only child. */
+  if (frame->IsModal()) {
+	wxChildNode *node2;
+	wxChildList *cl;
+	cl = frame->GetChildren();
+	node2 = cl->First();
+	if (node2)
+	  return (wxWindow *)node2->Data();
+  } else {
+    return frame;
+  }
+  
   return NULL;
 }

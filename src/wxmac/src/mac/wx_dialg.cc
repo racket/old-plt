@@ -284,6 +284,15 @@ static pascal void EventFilter(NavEventCallbackMessage callBackSelector,
 
 #endif
 
+int log_base_10(int i)
+{
+  if (i < 10) { 
+    return 1;
+  } else {
+    return 1 + log_base_10(i / 10);
+  }
+}
+
 char *wxFileSelector(char *message, char *default_path,
                      char *default_filename, char *default_extension,
                      char *wildcard, int flags,
@@ -353,7 +362,7 @@ char *wxFileSelector(char *message, char *default_path,
     
     NavEventUPP   eventProc = NewNavEventProc(EventFilter);
     
-    if ((flags == 0) || (flags & wxOPEN))
+    if ((flags == 0) || (flags & wxOPEN) || (flags & wxMULTIOPEN))
       err = NavChooseFile(startp, reply, dialogOptions,
                        eventProc,
                        NULL, NULL, NULL, NULL);
@@ -381,16 +390,43 @@ char *wxFileSelector(char *message, char *default_path,
         AEKeyword   theKeyword;
         DescType    actualType;
         Size        actualSize;
-                        
-        AEGetNthPtr(&(reply->selection), 1,
-                            typeFSS, &theKeyword,
-                             &actualType, &fsspec,
-                             sizeof(fsspec),
-                             &actualSize);
+
+    	if (flags & wxMULTIOPEN) {
+    	    long count, index;
+    	    char *aggregate = "";
+    	    char *newpath, *temp;
+    	    
+    	    AECountItems(&(reply->selection),&count);
+    	    
+    	    for (index=1; index<=count; index++) {
+    	    	AEGetNthPtr(&(reply->selection),index,
+    	    		    typeFSS, &theKeyword,
+    	    		    &actualType, &fsspec,
+    	    		    sizeof(fsspec),
+    	    		    &actualSize);
+    	    		    
+		temp = scheme_build_mac_filename(&fsspec, 0);
+		newpath = new WXGC_ATOMIC char[strlen(aggregate) + 
+						       strlen(temp) +
+						       log_base_10(strlen(temp)) + 3];
+		sprintf(newpath,"%s %d %s",aggregate,strlen(temp),temp);
+		aggregate = newpath;
+	    }
+	    
+	    NavDisposeReply(reply);
+	    
+	    return aggregate;
+	} else {
+	    AEGetNthPtr(&(reply->selection), 1,
+                        typeFSS, &theKeyword,
+                        &actualType, &fsspec,
+                        sizeof(fsspec),
+                        &actualSize);
        
-        NavDisposeReply(reply);
+	    NavDisposeReply(reply);
         
-        return scheme_build_mac_filename(&fsspec, 0);
+	    return scheme_build_mac_filename(&fsspec, 0);
+	}
      } else 
        return NULL;
   } else {
@@ -412,7 +448,7 @@ char *wxFileSelector(char *message, char *default_path,
 	}
 	
 			
-	if ((flags == 0) || (flags & wxOPEN))
+	if ((flags == 0) || (flags & wxOPEN) || (flags & wxMULTIOPEN))
 	{	// get file
 		::StandardGetFile( NULL, numTypes, typeList, &rep);	
 	} else
@@ -438,7 +474,16 @@ char *wxFileSelector(char *message, char *default_path,
 	if (!rep.sfGood)
 	  return NULL;
 	
-	return scheme_build_mac_filename(&rep.sfFile, 0);
+	name = scheme_build_mac_filename(&rep.sfFile, 0);
+	
+	if (flags & wxMULTIOPEN) {
+	    char *aggregate = new char[strlen(name) + log_base_10(strlen(name)) + 2];
+	    sprintf(aggregate,"%d %s",strlen(name),name);
+	  
+	    return aggregate;
+	} else {
+	    return name;
+	}
 #ifdef USE_NAVIGATION
   }
 #endif

@@ -815,21 +815,28 @@
 	  (send keymap map-function "]" "balance-parens")
 	  (send keymap map-function "}" "balance-parens")
 
-	  (send keymap map-function "c:up" "up-sexp")
-	  (send keymap map-function "s:c:up" "select-up-sexp")
+	  ;(send keymap map-function "c:up" "up-sexp") ;; paragraph
+	  ;(send keymap map-function "s:c:up" "select-up-sexp")
 
-	  (send keymap map-function "c:down" "down-sexp")
-	  (send keymap map-function "s:c:down" "select-down-sexp")
-
-	  (send keymap map-function "c:right" "forward-sexp")
-	  (send keymap map-function "s:c:right" "select-forward-sexp")
-
-	  (send keymap map-function "c:left" "backward-sexp")
-	  (send keymap map-function "s:c:left" "select-backward-sexp")
+	  ;(send keymap map-function "c:down" "down-sexp") ;; paragraph
+	  ;(send keymap map-function "s:c:down" "select-down-sexp")
 
 	  (let ([map-meta
 		 (lambda (key func)
 		   (mred:keymap:send-map-function-meta keymap key func))])
+
+	    (map-meta "up" "up-sexp")
+	    (map-meta "s:up" "select-up-sexp")
+	    
+	    (map-meta "down" "down-sexp")
+	    (map-meta "s:down" "select-down-sexp")
+	    
+	    (map-meta "right" "forward-sexp")
+	    (map-meta "s:right" "select-forward-sexp")
+	    
+	    (map-meta "left" "backward-sexp")
+	    (map-meta "s:left" "select-backward-sexp")
+	    
 	    (map-meta "return" "do-return")
 	    (map-meta "s:return" "do-return")
 	    (map-meta "s:c:return" "do-return")

@@ -116,7 +116,7 @@ void wxCanvasDC::GetTextExtent(const char* string, float* x, float* y, float* de
 //----------------------------------------------------------------------
 
 #ifdef OS_X
-static int always_use_atsu = 1;
+static int always_use_atsu = 0;
 # define ALWAYS_USE_ATSU always_use_atsu
 #else
 # define ALWAYS_USE_ATSU 0
@@ -173,7 +173,10 @@ void DrawLatin1Text(const char *text, int d, int theStrlen, int bit16, Bool qd_s
     if (theStrlen) {
       int amt;
 
-      amt = theStrlen;
+      if (!qd_spacing || ALWAYS_USE_ATSU)
+	amt = theStrlen;
+      else
+	amt = 1;
 
       (void)DrawMeasLatin1Text(text, d, amt, bit16, 0, 0, 0, 0, 0, again, qd_spacing);
 	  
@@ -259,7 +262,7 @@ void GetLatin1TextWidth(const char *text, int d, int theStrlen,
 	if (theStrlen) {
 	  int amt;
 
-	  amt = theStrlen;
+	  amt = 1;
       
 	  *x += DrawMeasLatin1Text(text, d, amt, bit16,
 				   1, 1, 

@@ -799,19 +799,10 @@ void wxFrame::Paint(void)
       DisposeRgn(rgn);
     }
     wxWindow::Paint();
-    if (cStatusPanel) {
-      int w, h;
-      cStatusPanel->GetSize(&w, &h);
-
-      cStatusPanel->SetCurrentDC();
-      Rect r = { -1, 0, h + 1, w };
-      ::OffsetRect(&r,SetOriginX, SetOriginY);
-      
-      ClipRect(&r); /* hack! */
-      
-      EraseRect(&r);
+#if 0
+    if (cStatusPanel)
       cStatusPanel->Paint();
-    }
+#endif
   }
 }
 

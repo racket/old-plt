@@ -605,8 +605,7 @@
 # define SCHEME_BIG_ENDIAN
 # define USE_MAP_ANON
 
-# define USE_IEEE_FP_PREDS
-# define POW_HANDLES_INF_CORRECTLY
+# define USE_CARBON_FP_PREDS
 # define TRIG_ZERO_NEEDS_SIGN_CHECK
 
 # define UNDERSCORE_DYNLOAD_SYMBOL_PREFIX
@@ -1028,6 +1027,9 @@
 
  /* USE_SCO_IEEE_FP_PREDS uses fpclass() and isnan() to implement tests for
     infinity and not-a-number. */
+
+ /* USE_CARBOM_FP_PREDS uses __isnand() and __isfinited() to implement tests
+    for infinity and not-a-number. */
 
  /* DEFEAT_FP_COMP_OPTIMIZATION avoids a compiler optimization that
     converts (a == a) to TRUE, even if `a' is floating-point. Used

@@ -158,7 +158,11 @@ wxMessage::wxMessage // Constructor (given parentPanel and icon id)
 
   if (msg_icons[iconID - 1]) {
     icon_id = iconID;
+#ifdef OS_X    
     SetClientSize(64, 64);
+#else
+    SetClientSize(32, 32);
+#endif
     if (GetParent()->IsHidden())
       DoShow(FALSE);
     InitInternalGray();
@@ -247,16 +251,11 @@ void wxMessage::SetLabel(wxBitmap *bitmap)
   
   // erase the old
   if (SetCurrentDC()) {
-    int clientWidth, clientHeight;
-    GetClientSize(&clientWidth, &clientHeight);
-    Rect clientRect = {0, 0, clientHeight, clientWidth};
-    OffsetRect(&clientRect,SetOriginX,SetOriginY);
-    ::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&clientRect);
-
-    //FIXME CJC	SetClientSize(sBitmap->GetWidth(), sBitmap->GetHeight());
     sBitmap->DrawMac();
-
     FlushDisplay();
+
+    /* in case paint didn't take, because an update is already in progress: */
+    Refresh(); 
   }
 }
 
@@ -269,6 +268,9 @@ void wxMessage::SetLabel(char* label)
   if (!cHidden) {
     Paint();
     FlushDisplay();
+
+    /* in case paint didn't take, because an update is already in progress: */
+    Refresh();
   }
 }
 

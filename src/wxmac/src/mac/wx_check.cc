@@ -202,8 +202,11 @@ void wxCheckBox::SetValue(Bool value)
     ::SetControlValue(cMacControl, value ? 1 : 0);
   } else {
     bitmapState = !!value;
-    if (!cHidden)
+    if (!cHidden) {
       Paint();
+      /* in case paint didn't take, because an update is already in progress: */
+      Refresh();
+    }
   }
 }
 

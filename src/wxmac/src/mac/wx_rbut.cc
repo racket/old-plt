@@ -202,8 +202,11 @@ void wxRadioButton::SetValue(Bool val)
     ::SetControlValue(cMacControl, val ? 1 : 0);
   } else {
     bitmapState = !!val;
-    if (!cHidden)
+    if (!cHidden) {
       Paint();
+      /* in case paint didn't take, because an update is already in progress: */
+      Refresh();
+    }
   }
 }
 

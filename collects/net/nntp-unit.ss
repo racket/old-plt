@@ -64,6 +64,7 @@
 	      (let-values (((code response)
 			    (get-single-line-response communicator)))
 		(case code
+                  [(201) communicator]
 		  ((200)
 		   communicator)
 		  (else

@@ -38,6 +38,12 @@
 			     (case-lambda
 			      [(n) (#%info-lookup n (lambda () (error 'info.ss "no info for ~a" n)))]
 			      [(n fail)
+			       (unless (and (procedure? fail)
+					    (procedure-arity-includes? fail 0))
+				 (error
+				  'info.ss
+				  "expected second argument to be a procedure that takes no arguments, got: ~e"
+				  fail))
 			       (case n
 				 [(name) name]
 				 ...

@@ -34,6 +34,7 @@
 
 /* globals */
 int scheme_locale_on;
+static char *current_locale_name = "";
 
 /* locals */
 static Scheme_Object *make_string (int argc, Scheme_Object *argv[]);
@@ -69,7 +70,7 @@ static Scheme_Object *sch_putenv(int argc, Scheme_Object *argv[]);
 static Scheme_Object *system_type(int argc, Scheme_Object *argv[]);
 static Scheme_Object *system_library_subpath(int argc, Scheme_Object *argv[]);
 static Scheme_Object *cmdline_args(int argc, Scheme_Object *argv[]);
-static Scheme_Object *locale_enabled(int argc, Scheme_Object *argv[]);
+static Scheme_Object *current_locale(int argc, Scheme_Object *argv[]);
 
 static int mz_strcmp(unsigned char *str1, int l1, unsigned char *str2, int l2, int eq);
 static int mz_strcmp_ci(unsigned char *str1, int l1, unsigned char *str2, int l2, int eq);
@@ -290,9 +291,9 @@ scheme_init_string (Scheme_Env *env)
 						       MZCONFIG_CMDLINE_ARGS), 
 			     env);
 
-  scheme_add_global_constant("locale-enabled", 
-			     scheme_register_parameter(locale_enabled, 
-						       "locale-enabled",
+  scheme_add_global_constant("current-locale", 
+			     scheme_register_parameter(current_locale, 
+						       "current-locale",
 						       MZCONFIG_LOCALE), 
 			     env);
 
@@ -1464,14 +1465,31 @@ static Scheme_Object *cmdline_args(int argc, Scheme_Object *argv[])
 			     -1, ok_cmdline, "vector of strings", 1);
 }
 
-static Scheme_Object *locale_enabled(int argc, Scheme_Object *argv[])
+static Scheme_Object *ok_locale(int argc, Scheme_Object **argv)
+{
+  if (SCHEME_FALSEP(argv[0]))
+    return argv[0];
+  else if (SCHEME_STRINGP(argv[0])) {
+    if (SCHEME_IMMUTABLEP(argv[0]))
+      return argv[0];
+    else {
+      Scheme_Object *str = argv[0];
+      str = scheme_make_immutable_sized_string(SCHEME_STR_VAL(str), SCHEME_STRLEN_VAL(str), 0);
+      return str;
+    }
+  }
+
+  return NULL;
+}
+
+static Scheme_Object *current_locale(int argc, Scheme_Object *argv[])
 {
   Scheme_Object *v;
 
-  v = scheme_param_config("locale-enabled", 
+  v = scheme_param_config("current-locale", 
 			  scheme_make_integer(MZCONFIG_LOCALE), 
 			  argc, argv, 
-			  -1, NULL, NULL, 1);
+			  -1, ok_locale, "#f or string", 1);
 
   scheme_reset_locale();
 
@@ -1481,14 +1499,19 @@ static Scheme_Object *locale_enabled(int argc, Scheme_Object *argv[])
 void scheme_reset_locale(void)
 {
   Scheme_Object *v;
+  const char *name;
   int on;
 
   v = scheme_get_param(scheme_config, MZCONFIG_LOCALE);
   on = SCHEME_TRUEP(v);
+  name = (on ? (SCHEME_STRINGP(v) ? SCHEME_STR_VAL(v) : "") : "C");
 
-  if (on != scheme_locale_on) {
+  if ((on != scheme_locale_on)
+      || !((current_locale_name == name)
+	   && !strcmp(current_locale_name, name))) {
 #ifndef DONT_USE_LOCALE
-    setlocale(LC_CTYPE | LC_COLLATE, on ? "" : "C");
+    if (!setlocale(LC_CTYPE | LC_COLLATE, name))
+      setlocale(LC_CTYPE | LC_COLLATE, "C");
 #endif
     scheme_locale_on = on;
   }

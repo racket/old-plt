@@ -62,9 +62,13 @@
     (init-channel)
     (channel-put *page-channel* page))
   
+  ; : instance -> doesn't
+  (define resume-next-request
+    (gen-resume-next-request void update-channel!))
+  
   ; init-channel : -> void
   (define (init-channel)
-    ((gen-send/suspend uri invoke-id instances void void update-channel!)
+    ((gen-send/suspend uri invoke-id instances void resume-next-request)
      (lambda (url)
        (send-url url *open-new-window*)
        (set! *open-new-window* #f))))
@@ -81,7 +85,7 @@
   
   ; : (str -> page) -> (values Method Url Bindings Bindings)
   (define the-send/suspend
-    (let ((s/s (gen-send/suspend uri invoke-id instances output-page void update-channel!)))
+    (let ((s/s (gen-send/suspend uri invoke-id instances output-page resume-next-request)))
       (lambda (k->page)
         (s/s (lambda (k-url)
                (let ([page (k->page k-url)])
@@ -108,7 +112,7 @@
   
   (thread (lambda ()
             (server-loop (current-custodian)
-                         listener
+                         (lambda () (tcp-accept listener))
                          the-config
                          big-timeout
                          (lambda ()

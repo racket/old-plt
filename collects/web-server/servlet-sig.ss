@@ -13,7 +13,7 @@
      ; for servlet-helpers
      extract-user-pass
      ; for environment:
-     server-loop add-new-instance gen-send/suspend make-config))
+     server-loop add-new-instance gen-send/suspend gen-resume-next-request make-config))
   
   (define-signature servlet^
     (initial-request send/suspend send/finish adjust-timeout!))

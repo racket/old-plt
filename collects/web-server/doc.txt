@@ -331,12 +331,12 @@ They may change at anytime or disappear entirely.
   This creates a new servlet-instance and installs it in the instance-table
   under the name specified by sym.
 
-> gen-send/suspend : url sym instance-table (response -> void) (-> void)
-                     (channel -> void)
+> gen-send/suspend : url sym instance-table (response -> void)
+                     (servlet-instance -> doesn't)
                   -> (str -> response)
                   -> request
   (define (gen-send/suspend uri invoke-id instances output-page
-                            update-time! update-channel!)
+                            resume-next-request!)
     ...)
 
   This produces a function like send/suspend : ((str -> response) -> request),
@@ -344,6 +344,12 @@ They may change at anytime or disappear entirely.
   refer to the servlet, which instances must map invoke-id to.  The
   output-page function is called to send responses to the Web browser
   (remotely via HTTP in the normal server, locally via some other means
-   in the development environment).  gen-send/suspend calls update-time! 
-  (to reset timeouts) upon each Web request.  update-channel! receives the
-  channel used to send responses to the connection thread.
+   in the development environment).  resume-next-request blocks for the
+  the next web request and jumps to the appropriate continuation.
+
+> gen-resume-next-request : (-> void) (channel -> void)
+  (define (gen-resume-next-request update-time! update-channel!) ...)
+
+  update-time! resets timeouts upon each Web request.
+  update-channel! receives the channel used to send responses to the
+  connection thread.

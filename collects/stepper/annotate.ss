@@ -4,7 +4,7 @@
            (prefix s: "model.ss")
            "shared.ss"
 	   (lib "list.ss")
-           "2vals.ss")
+           "my-macros.ss")
 
   (provide
    initial-env-package
@@ -157,7 +157,8 @@
                                  (append advance-warning kept-bindings))]
            [lifter-syms (map get-lifted-sym let-bindings)]
            [quoted-lifter-syms (map (lambda (b) 
-                                      (d->so #f `(syntax-quote ,b))) lifter-syms)]
+                                      (d->so #f `(syntax-quote ,b))) 
+                                    lifter-syms)]
            [let-clauses (map list lifter-syms quoted-lifter-syms)])
       (make-full-mark source label (append var-clauses (if lifting? let-clauses null)))))
   
@@ -203,6 +204,40 @@
                         (else null)))
                 exprs)))
   
+  ;;;;;;;;;;
+  ;;
+  ;; collapse-let-values
+  ;;
+  ;;;;;;;;;;
+  
+  (define (collapse-let-values stx)
+    (syntax-case stx (let-values let*-values)
+      [(_ (outer-binding ...) (let-values (inner-binding ...) . bodies))
+       (collapse-let-values (syntax/loc stx (let*-values (outer-binding ... inner-binding ...) . bodies)))]
+      [else stx]))
+
+  ; test exprs:
+  ;  (andmap (lambda (arg-list)
+  ;            (let* ([stx (car arg-list)]
+  ;                   [elaborated (cadr arg-list)]
+  ;                   [eval-result (caddr arg-list)]
+  ;                   [collapsed (collapse-let-values (expand stx))])
+  ;              (printf "~a~n~a~n~a~n~a~n" (syntax-object->datum collapsed)
+  ;                      elaborated
+  ;                      (eval collapsed)
+  ;                      eval-result)
+  ;              (and (equal? (syntax-object->datum collapsed) elaborated)
+  ;                   (equal? (eval collapsed) eval-result))))
+  ;          (list (list #'(let ([a 3] [b 9]) (+ a b)) '(let-values ([(a) (#%datum . 3)] [(b) (#%datum . 9)]) (#%app (#%top . +) a b)) 12)
+  ;                (list #'(let* ([a 9] [b a] [c b]) c) '(let*-values ([(a) (#%datum . 9)] [(b) a] [(c) b]) c) 9)
+  ;                (list #'(let ([a 3] [b 9]) (let ([b 14]) b)) '(let*-values ([(a) (#%datum . 3)] [(b) (#%datum . 9)] [(b) (#%datum . 14)]) b) 14)))
+  
+  ;;;;;;;;;;
+  ;;
+  ;;  annotate
+  ;;
+  ;;;;;;;;;;
+  
   ; annotate takes 
   ; a) a list of zodiac:read expressions,
   ; b) a list of zodiac:parsed expressions,
@@ -243,21 +278,21 @@
          ; wrap creates the w-c-m expression.
          
          (define (simple-wcm-wrap debug-info expr)
-           (d->so `(with-continuation-mark ,debug-key ,debug-info ,expr)))
+           (d->so #f `(with-continuation-mark ,debug-key ,debug-info ,expr)))
          
          (define (wcm-pre-break-wrap debug-info expr)
            (if break
-               (simple-wcm-wrap debug-info (d->so expr `(begin (,(make-break 'result-break)) ,expr)))
+               (simple-wcm-wrap debug-info (d->so #f `(begin (,(make-break 'result-break)) ,expr)))
                (simple-wcm-wrap debug-info expr)))
          
          (define (break-wrap expr)
            (if break
-               (d->so expr `(begin (,(make-break 'normal-break)) ,expr))
+               (d->so #f `(begin (,(make-break 'normal-break)) ,expr))
                expr))
          
          (define (double-break-wrap expr)
            (if break
-               (d->so expr `(begin (,(make-break 'double-break)) ,expr))
+               (d->so #f `(begin (,(make-break 'double-break)) ,expr))
                expr))
          
          (define (simple-wcm-break-wrap debug-info expr)
@@ -580,7 +615,7 @@
                      [(annotated-then free-varrefs-then) 
                       (tail-recur (syntax then))]
                      [(annotated-else free-varrefs-else) 
-                      (tail-recur (syntax else)]
+                      (tail-recur (syntax else))]
                      [free-varrefs (varref-set-union (list free-varrefs-test 
                                                            free-varrefs-then 
                                                            free-varrefs-else))]
@@ -605,17 +640,59 @@
                         ([bodies (syntax->list (syntax bodies))]
                          [(all-but-last-body last-body-list) 
                           (list-partition bodies (- (length bodies) 1))]
-                         [(last-body) (car last-body-list)]
-                         [(annotated-a free-bindings-a)
-                          (dual-map non-tail-recur all-but-last-body)]
-                         [(annotated-final free-bindings-final)
+                         [last-body (car last-body-list)]
+                         [(annotated-a free-varrefs-a)
+                          (2vals-map non-tail-recur all-but-last-body)]
+                         [(annotated-final free-varrefs-final)
                           (tail-recur last-body)]
-                         [(free-bindings) (varref-set-union (cons free-bindings-final free-bindings-a))]
-                         [(debug-info) (make-debug-info-normal free-bindings)]
-                         [(annotated) `(#%begin ,@(append annotated-a (list annotated-final)))])
+                         [free-varrefs (varref-set-union (cons free-varrefs-final free-varrefs-a))]
+                         [debug-info (make-debug-info-normal free-varrefs)]
+                         [annotated (d->so expr `(begin ,@(append annotated-a (list annotated-final))))])
                        (values (ccond [(or cheap-wrap? ankle-wrap?) (appropriate-wrap annotated free-bindings)]
                                       [foot-wrap? (wcm-wrap debug-info annotated)])
-                               free-bindings)))]
+                               free-varrefs)))]
+               
+              [(begin0 . bodies-stx)
+               (let*-values
+                   ([bodies (syntax->list (syntax bodies-stx))]
+                    [(annotated-first free-varrefss-first)
+                     (result-recur (car bodies))]
+                    [(annotated-bodies free-varref-sets)
+                     (2vals-map non-tail-recur (cdr bodies))]
+                    [free-varrefs (varref-set-union (cons free-varrefs-first free-varref-sets))]
+                    [debug-info (make-debug-info-normal free-varrefs)]
+                    [annotated (d->so expr `(begin0 ,annotated-first ,@annotated-bodies))])
+                 (values (ccond [(or cheap-wrap? ankle-wrap?) (appropriate-wrap annotated free-varrefs)]
+                                [foot-wrap?
+                                 (wcm-wrap debug-info annotated)])
+                         free-bindings))]
+               
+               [(let-values stuff-stx)
+                (let*-2vals ([collapsed (collapse-let-values (syntax (let-values stuff-stx)))]
+                             
+               [(z:let-values-form? expr)
+                (let-abstraction z:let-values-form-vars
+                                 z:let-values-form-vals
+                                 z:let-values-form-body
+                                 '#%let*-values
+                                 (lambda (vals binding-list)
+                                   (for-each utils:check-for-keyword binding-list)
+                                   (for-each mark-never-undefined binding-list))
+                                 (lambda (bindings)
+                                   (build-list (length bindings) 
+                                               (lambda (_) *unevaluated*))))]
+               
+               [(z:letrec-values-form? expr)
+                (let-abstraction z:letrec-values-form-vars
+                                 z:letrec-values-form-vals
+                                 z:letrec-values-form-body
+                                 '#%letrec-values
+                                 (lambda (vals binding-list)
+                                   (when (andmap z:case-lambda-form? vals)
+                                     (for-each mark-never-undefined binding-list))
+                                   (for-each utils:check-for-keyword binding-list))
+                                 (lambda (bindings)
+                                   bindings))]
 	       ; the variable forms 
 	       
                [(z:varref? expr)
@@ -769,45 +846,10 @@
                
                
 
-               [(z:begin0-form? expr)
-                (let*-values
-                    ([(bodies) (z:begin0-form-bodies expr)]
-                     [(annotated-first free-bindings-first)
-                      (result-recur (car bodies))]
-                     [(annotated-bodies free-bindings-lists)
-                      (dual-map non-tail-recur (cdr bodies))]
-                     [(free-bindings) (varref-set-union (cons free-bindings-first free-bindings-lists))]
-                     [(debug-info) (make-debug-info-normal free-bindings)]
-                     [(annotated) `(#%begin0 ,annotated-first ,@annotated-bodies)])
-                  (values (ccond [(or cheap-wrap? ankle-wrap?) (appropriate-wrap annotated free-bindings)]
-                                 [foot-wrap?
-                                  (wcm-wrap debug-info annotated)])
-                          free-bindings))]
+
                
                       
-               [(z:let-values-form? expr)
-                (let-abstraction z:let-values-form-vars
-                                 z:let-values-form-vals
-                                 z:let-values-form-body
-                                 '#%let*-values
-                                 (lambda (vals binding-list)
-                                   (for-each utils:check-for-keyword binding-list)
-                                   (for-each mark-never-undefined binding-list))
-                                 (lambda (bindings)
-                                   (build-list (length bindings) 
-                                               (lambda (_) *unevaluated*))))]
                
-               [(z:letrec-values-form? expr)
-                (let-abstraction z:letrec-values-form-vars
-                                 z:letrec-values-form-vals
-                                 z:letrec-values-form-body
-                                 '#%letrec-values
-                                 (lambda (vals binding-list)
-                                   (when (andmap z:case-lambda-form? vals)
-                                     (for-each mark-never-undefined binding-list))
-                                   (for-each utils:check-for-keyword binding-list))
-                                 (lambda (bindings)
-                                   bindings))]
                
 	       [(z:define-values-form? expr)  
 		(let*-values

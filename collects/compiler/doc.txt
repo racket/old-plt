@@ -352,7 +352,7 @@ Setup PLT attempts to compile and set up any collection that:
    set up with the `compile-subcollections' info.ss field);
    and
 
- * has the `name' and `compile-prefix' info.ss fields.
+ * has the `name' info.ss fields.
 
 Collections meeting this criteria are compiled using the
 `compile-collection-zos' procedure described above. If the -e or

@@ -1,3 +1,9 @@
+(define setup-fprintf
+  (lambda (p s . args)
+    (apply fprintf p (string-append "setup-plt: " s "~n") args)))
+(define setup-printf
+  (lambda (s . args)
+    (apply setup-fprintf (current-output-port) s args)))
 
 (parameterize ([require-library-use-compiled #f])
   (require-library "cmdline.ss"))
@@ -60,9 +66,9 @@
 			     (complete-path? base)
 			     base))))))))
 
-(printf "Setup version is ~a~n" (version))
-(printf "PLT home directory is ~a~n" plthome)
-(printf "Collection Paths are: ~a~n" (current-library-collection-paths))
+(setup-printf "Setup version is ~a" (version))
+(setup-printf "PLT home directory is ~a" plthome)
+(setup-printf "Collection Paths are: ~a" (current-library-collection-paths))
 
 (define (warning s x)
   (printf s
@@ -165,7 +171,7 @@
 		   (let ([d (build-path plthome s)])
 		     (unless (directory-exists? d)
 		       (when (verbose)
-			 (printf "  making directory ~a~n" d))
+			 (setup-printf "  making directory ~a" d))
 		       (make-directory* d)))))]
 	 [(file) (let ([s (apply build-path (read p))])
 		   (unless (relative-path? s)
@@ -179,9 +185,9 @@
 				       (not (file-exists? path))
 				       (open-output-file path))])
 			 (when (and write? (not out))
-			   (printf "Warning: ~a already exists; skipping~n" path))
+			   (setup-printf "Warning: ~a already exists; skipping" path))
 			 (when (and out (or #t (verbose)))
-			   (printf "  unpacking ~a~n" path))
+			   (setup-printf "  unpacking ~a" path))
 			 ; Find starting *
 			 (let loop ()
 			   (let ([c (read-char p)])
@@ -242,7 +248,7 @@
 							   (error "unpacker isn't mzscheme:" n))))])
 	    (unless (and name unpacker)
 	     (error "bad name or unpacker"))
-	    (printf "Unpacking ~a from ~a~n" name archive)
+	    (setup-printf "Unpacking ~a from ~a" name archive)
 	    (let ([u (eval (read p) n)])
 	      (unless (unit? u)
 	        (error "expected a unit, got" u))
@@ -288,7 +294,7 @@
 					     (error "result is not a string:" x))))])
 	     (and
 	      name
-	      (call-info info 'compile-prefix #f void)
+	      ;(call-info info 'compile-prefix #f #t)
 	      (make-cc
 	       collection-p
 	       (apply collection-path collection-p)
@@ -296,7 +302,7 @@
 	       info))))))))
 
 (define (cannot-compile c)
-  (error 'compile-plt "don't know how to compile collection: ~a" 
+  (error 'setup-plt "don't know how to compile collection: ~a" 
 	 (if (= (length c) 1)
 	     (car c)
 	     c)))
@@ -425,7 +431,7 @@
 	  (delete-files-in-directory 
 	   path
 	   (lambda ()
-	     (printf "Deleting files for ~a in ~a~n" (cc-name cc) path))))))
+	     (setup-printf "Deleting files for ~a in ~a" (cc-name cc) path))))))
 
 (when (clean)
   (for-each clean-collection collections-to-compile))
@@ -439,7 +445,9 @@
 (define errors null)
 (define (record-error cc desc go)
   (with-handlers ([void (lambda (x)
-			  (fprintf (current-error-port) "~a~n" (exn-message x))
+			  (if (exn? x)
+			      (fprintf (current-error-port) "~a~n" (exn-message x))
+			      (fprintf (current-error-port) "~s~n" x))
 			  (set! errors (cons (cons cc desc) errors)))])
     (go)))
 
@@ -449,19 +457,16 @@
 	       cc
 	       (format "Making ~a" desc)
 	       (lambda ()
-		 (unless
-		     (control-io-apply 
-		      (lambda (p) (fprintf p "Making ~a for ~a at ~a~n" desc (cc-name cc) (cc-path cc)))
-		      compile-collection 
-		      (cc-collection cc))
-		   (printf "No need to make ~a for ~a at ~a~n" desc (cc-name cc) (cc-path cc))))))
+		 (unless (let ([b (box 1)]) (eq? b ((cc-info cc) 'compile-prefix (lambda () b))))
+		   (unless (control-io-apply 
+			    (lambda (p) (setup-fprintf p "Making ~a for ~a at ~a" desc (cc-name cc) (cc-path cc)))
+			    compile-collection
+			    (cc-collection cc))
+		     (setup-printf "No need to make ~a for ~a at ~a" desc (cc-name cc) (cc-path cc)))))))
 	    collections-to-compile))
 
-(when (make-zo)
- (make-it ".zos" compile-collection-zos))
-
-(when (make-so)
- (make-it "extension" compile-collection-extension))
+(when (make-zo) (make-it ".zos" compile-collection-zos))
+(when (make-so) (make-it "extension" compile-collection-extension))
 
 (when (make-launchers)
   (define (name-list l)
@@ -494,14 +499,14 @@
 			       (lambda (mzll mzln)
 				 (let ([p (mzscheme-program-launcher-path mzln)])
 				   (unless (file-exists? p)
-				     (printf "Installing ~a launcher ~a~n" kind p)
+				     (setup-printf "Installing ~a launcher ~a" kind p)
 				     (install-mzscheme-program-launcher 
 				      mzll
 				      (car (cc-collection cc))
 				      mzln))))
 			       mzlls mzlns)
-			      (printf "Warning: ~a launcher library list ~s doesn't match name list ~s~n"
-				      kind mzlls mzlns))))
+			      (setup-printf "Warning: ~a launcher library list ~s doesn't match name list ~s"
+					    kind mzlls mzlns))))
 		      '("MzScheme" "MrEd")
 		      '(mzscheme-launcher-libraries mred-launcher-libraries)
 		      '(mzscheme-launcher-names mred-launcher-names)
@@ -527,14 +532,14 @@
 		       (t plthome))))))
 	      collections-to-compile)))
 
-(printf "Done setting up~n")
+(setup-printf "Done setting up")
 
 (unless (null? errors)
   (for-each
    (lambda (e)
      (let ([cc (car e)]
 	   [desc (cdr e)])
-       (fprintf (current-error-port) " Error during ~a for ~a (~a)~n"
-		desc (cc-name cc) (cc-path cc))))
+       (setup-fprintf (current-error-port) " Error during ~a for ~a (~a)"
+		      desc (cc-name cc) (cc-path cc))))
    errors)
   (exit -1))

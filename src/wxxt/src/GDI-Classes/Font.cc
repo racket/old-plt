@@ -305,7 +305,7 @@ void *wxFont::GetInternalAAFont(float scale_x, float scale_y, float angle)
   } else
     return NULL;
 #else
-    return GetInternalFont(scale);
+    return GetInternalFont(scale_x, scale_y, angle);
 #endif
 }
 

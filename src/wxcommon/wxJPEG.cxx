@@ -13,14 +13,17 @@ extern "C" {
 
 #ifdef wx_x
 # define WX_QUANTIZE 1
+# define Q_NOT !
 #else
 # define WX_QUANTIZE 0
+# define Q_NOT /* empty */
 #endif
 
 static wxColor *the_color;
 extern void wxmeError(const char *e);
 
-static void draw_scanline(JSAMPROW row, int cols, int rownum, int step, JSAMPARRAY colormap, wxMemoryDC *dc)
+static void draw_scanline(JSAMPROW row, int cols, int rownum, int step, JSAMPARRAY colormap, wxMemoryDC *dc,
+			  int mono)
 {
   int colnum;
 
@@ -31,19 +34,23 @@ static void draw_scanline(JSAMPROW row, int cols, int rownum, int step, JSAMPARR
 
   for (colnum = 0; colnum < cols; colnum++) {
 #if WX_QUANTIZE
-    int v;
-    v = row[colnum];
-    the_color->Set(colormap[0][v], colormap[1][v], colormap[2][v]);
-#else
-    if (step == 1) {
-      if (row[colnum])
-	the_color->Set(0, 0, 0);
-      else
-	the_color->Set(255, 255, 255);
+    if (!mono) {
+      int v;
+      v = row[colnum];
+      the_color->Set(colormap[0][v], colormap[1][v], colormap[2][v]);
     } else {
-      the_color->Set(row[colnum * step], 
-		     row[colnum * step + 1], 
-		     row[colnum * step + 2]);
+#endif
+      if (step == 1) {
+	if (Q_NOT row[colnum])
+	  the_color->Set(0, 0, 0);
+	else
+	  the_color->Set(255, 255, 255);
+      } else {
+	the_color->Set(row[colnum * step], 
+		       row[colnum * step + 1], 
+		       row[colnum * step + 2]);
+      }
+#if WX_QUANTIZE
     }
 #endif
     dc->SetPixel(colnum, rownum, the_color);
@@ -209,7 +216,7 @@ int read_JPEG_file(char * filename, wxBitmap *bm)
     draw_scanline(buffer[0],
 		  cinfo.output_width, cinfo.output_scanline - 1, 
 		  cinfo.output_components, cinfo.colormap,
-		  dc);
+		  dc, cinfo.num_components == 1);
   }
 
   /* Step 7: Finish decompression */

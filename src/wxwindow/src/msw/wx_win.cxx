@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994     
- * RCS_ID:      $Id: wx_win.cxx,v 1.1.1.1 1997/12/22 16:12:02 mflatt Exp $
+ * RCS_ID:      $Id: wx_win.cxx,v 1.2 1998/02/03 18:49:57 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -1740,21 +1740,15 @@ wxWnd::~wxWnd(void)
     ::DeleteObject(background_brush) ;
 #endif
 
-
-
-  wxWindow *p = wx_window->GetParent();
-
-  while (p && !(wxSubType(p->__type, wxTYPE_FRAME)
-
-			  || wxSubType(p->__type, wxTYPE_FRAME)))
-
+  if (wx_window) {
+    wxWindow *p = wx_window->GetParent();
+    while (p && !(wxSubType(p->__type, wxTYPE_FRAME)
+	          || wxSubType(p->__type, wxTYPE_FRAME)))
 	p = p->GetParent();
-
-  if (p)
-
-	if (p->focusWindow == wx_window)
-
-	  p->focusWindow = NULL;
+    if (p)
+      if (p->focusWindow == wx_window)
+	p->focusWindow = NULL;
+  }
 }
 
 HDC wxWnd::GetHDC(void)

@@ -98,7 +98,7 @@
     (if (null? exprs)
         null
         (let*-values ([(annotated new-env)
-                       (annotate:annotate #f (car exprs) env break 'foot-wrap)])
+                       (annotate:annotate (car exprs) env break 'foot-wrap)])
           (cons annotated (loop new-env (cdr exprs)))))))
 
 ; strip-outer-lambda takes off a lambda wrapped around a test expression. For testing purposes,
@@ -123,10 +123,7 @@
           (with-continuation-mark lambda quote-syntax #%datum)
           [(with-continuation-mark 
             key
-            (lambda () 
-              (mark-maker
-               (quote-syntax (#%datum . 3))
-               0))
+            bogus-key
             (begin
               break-proc-1
               (#%datum . 3)))
@@ -453,8 +450,8 @@
                       (begin
                         pre-break-0
                         (begin
-                          (set! var-0 (with-continuation-mark key-1 mark-1 sym-1))
-                          (set! var-1 (with-continuation-mark key-2 mark-2 sym-2))
+                          (set! var-0 (with-continuation-mark key-1 mark-1 (begin break-1 sym-1)))
+                          (set! var-1 (with-continuation-mark key-2 mark-2 (begin break-2 sym-2)))
                           (begin 
                             break-0
                             (with-continuation-mark key-3 mark-3 (sym-3 sym-4)))))))
@@ -462,12 +459,31 @@
                      (test (void) check-mark (syntax mark-0) '(a b arg-temp-0 arg-temp-1) 'all)
                      (test 'arg-temp-0 syntax-e (syntax var-0))
                      (test (void) check-mark (syntax mark-1) '() 'all)
+                     (test 'a syntax-e (syntax sym-1))
                      (test 'arg-temp-1 syntax-e (syntax var-1))
                      (test (void) check-mark (syntax mark-2) '() 'all)
+                     (test 'b syntax-e (syntax sym-2))
                      (test (void) check-mark (syntax mark-3) '(arg-temp-0 arg-temp-1) 'all)
                      (test 'arg-temp-0 syntax-e (syntax sym-3))
                      (test 'arg-temp-1 syntax-e (syntax sym-4)))])))
         
+        ; application with return-wrap
+        (list #'(+ 3 4) 'mzscheme cadr
+              (lambda (stx)
+                (syntax-case stx (let-values with-continuation-mark begin set!)
+                  [(let-values arg-temps
+                     (with-continuation-mark
+                      key-0
+                      mark-0
+                      (begin
+                        (set! var-1 rhs-1)
+                        (set! var-2 rhs-2)
+                        (set! var-3 rhs-3)
+                        (begin
+                          break-0
+                          (with-continuation-mark key-3 mark-3 body)))))
+                   #t])))
+                     
         ; datum
         (list #'3 'mzscheme cadr
               (lambda (stx)
@@ -476,8 +492,7 @@
                     key-0
                     mark-0
                     (#%datum . 3))
-                   (begin
-                     (test (void) check-mark (syntax mark-0) '() 'all))])))
+                   #t])))
         
         ; define-values
         (list #'(define-values (a b) b) 'mzscheme cadr

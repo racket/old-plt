@@ -1,8 +1,7 @@
-(current-library-collection-paths '("/Users/clements/hot/plt/collects"))
 (require (prefix annotate: (lib "annotate.ss" "stepper" "private")))
 (require (prefix kernel: (lib "kerncase.ss" "syntax")))
 (require (prefix reconstruct: (lib "reconstruct.ss" "stepper" "private")))
-(require (lib "highlight-placeholder.ss" "stepper" "private"))
+(require (lib "shared.ss" "stepper" "private"))
 
 (load "/Users/clements/plt/tests/mzscheme/testing.ss")
 
@@ -20,11 +19,12 @@
       map syntax-object->datum (wrap-expand-unwrap (list #'(if 3 4 5)) '(lib "htdp-beginner.ss" "lang")))
 
 (define (make-break num-steps expr action)
-  (let ([counter 0])
+  (let ([counter num-steps])
     (lambda (mark-set key break-kind returned-value-list)
       (if (> counter 0)
           (set! counter (- counter 1))
-          (action (r:reconstruct-current expr mark-list break-kind returned-value-list))))))
+          (let ([mark-list (continuation-mark-set->list mark-set key)])
+            (action (reconstruct:reconstruct-current expr mark-list break-kind returned-value-list)))))))
         
 (define (annotate-expr stx lang num-steps action)
   (let loop ([env annotate:initial-env-package] [exprs (if lang 
@@ -32,13 +32,21 @@
                                                            (list (expand stx)))])
     (if (null? exprs)
         null
-        (let*-values ([break (make-break num-steps stx action)]
+        (let*-values ([(break) (make-break num-steps stx action)]
                       [(annotated new-env)
-                       (annotate:annotate #f (car exprs) env break 'foot-wrap)])
+                       (annotate:annotate (car exprs) env break 'foot-wrap)])
           (cons annotated (loop new-env (cdr exprs)))))))
 
-(define (test-expr stx lang num-steps)
+(define (test-expr stx lang num-steps selector)
   (let/ec k
-    (eval (annotate-expr stx lang num-steps k))))
+    (eval (selector (annotate-expr stx lang num-steps k)))))
 
-(test `(,highlight-placeholder (+ 3 4)) #'(+ 3 4) 'mzscheme 0)
+(test `((,highlight-placeholder) (+)) test-expr #'+ 'mzscheme 0 cadr)
+(test `(((,highlight-placeholder 3 4)) (+)) test-expr #'(+ 3 4) 'mzscheme 0 cadr)
+(test `((,highlight-placeholder) ((+ 3 4))) test-expr #'(+ 3 4) 'mzscheme 1 cadr)
+
+(syntax-object->datum (cadr (annotate-expr #'(+ 3 4) 'mzscheme 0 (lambda (x) x))))
+
+
+
+(report-errs)

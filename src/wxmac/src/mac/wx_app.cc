@@ -459,8 +459,11 @@ void wxApp::doMacMouseLeave(void)
 // mflatt writes:
 // Probably, this should be moved into an abstracted function so that
 //   doMacKeyUp can call the same code.
+// john clements writes:
+// Abstraction performed, 2002-01-29.
 // Note that wxKeyEvent objects have two extra fields: timeStamp and
 //   metaDown. (On the Mac, metaDown is really commandDown.)
+
 static Bool doPreOnChar(wxWindow *in_win, wxWindow *win, wxKeyEvent *evt)
 {
 	wxWindow *p = win->GetParent();
@@ -469,24 +472,26 @@ static Bool doPreOnChar(wxWindow *in_win, wxWindow *win, wxKeyEvent *evt)
 
 short wxMacDisableMods; /* If a modifier key is here, handle it specially */
 
-void wxApp::doMacKeyDown(void)
+void wxApp::doMacKeyUpDown(Bool down)
 {
 
 	wxFrame* theMacWxFrame = findMacWxFrame(::FrontWindow());
 	
-	if (!theMacWxFrame || theMacWxFrame->CanAcceptEvent())
-	  if (cCurrentEvent.modifiers & cmdKey) { // is menu command key equivalent ?
-	    if (cCurrentEvent.what == keyDown) { // ignore autoKey
-			  char key = cCurrentEvent.message & charCodeMask;
-			  long menuResult = MenuKey(key);
-			  if (menuResult) {
-			    if (doMacInMenuBar(menuResult, TRUE))
-			      return;
-			    else
-			      HiliteMenu(0);
-			  }
-		}
-	  }
+	if (down) {
+	  if (!theMacWxFrame || theMacWxFrame->CanAcceptEvent())
+	    if (cCurrentEvent.modifiers & cmdKey) { // is menu command key equivalent ?
+	      if (cCurrentEvent.what == keyDown) { // ignore autoKey
+			char key = cCurrentEvent.message & charCodeMask;
+			long menuResult = MenuKey(key);
+			if (menuResult) {
+			  if (doMacInMenuBar(menuResult, TRUE))
+			    return;
+			  else
+			    HiliteMenu(0);
+			}
+		  }
+	    }
+	}    
   
     if (!theMacWxFrame || !theMacWxFrame->IsEnable())
 		return;	
@@ -507,7 +512,6 @@ void wxApp::doMacKeyDown(void)
       }	
     }
  
-    
     wxKeyEvent *_theKeyEvent = new wxKeyEvent(wxEVENT_TYPE_CHAR);
     wxKeyEvent &theKeyEvent = *_theKeyEvent;
     theKeyEvent.x = cCurrentEvent.where.h;
@@ -578,7 +582,13 @@ void wxApp::doMacKeyDown(void)
 		key = cCurrentEvent.message & charCodeMask;
 	} // end switch
 
-	theKeyEvent.keyCode = key;
+	if (down) {
+	  theKeyEvent.keyCode = key;
+	  theKeyEvent.keyUpCode = WXK_PRESS;
+	} else {
+	  theKeyEvent.keyCode = WXK_RELEASE;
+	  theKeyEvent.keyCode = key;
+	}  
 
 	wxWindow *in_win = theMacWxFrame->GetFocusWindow();
 
@@ -587,15 +597,19 @@ void wxApp::doMacKeyDown(void)
 	    theMacWxFrame->OnChar(&theKeyEvent);
 }
 
-//-----------------------------------------------------------------------------
-void wxApp::doMacAutoKey(void)
+void wxApp::doMacKeyDown(void)
 {
-	doMacKeyDown();
+  doMacKeyUpDown(true);
 }
 
-//-----------------------------------------------------------------------------
 void wxApp::doMacKeyUp(void)
 {
+  doMacKeyUpDown(false);
+}
+
+void wxApp::doMacAutoKey(void)
+{
+	doMacKeyUpDown(true);
 }
 
 //-----------------------------------------------------------------------------

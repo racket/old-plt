@@ -69,6 +69,7 @@ public:
 	void doMacKeyDown();
 	void doMacAutoKey();
 	void doMacKeyUp();
+	void doMacKeyUpDown(Bool down); // abstraction for KeyUp, KeyDown, AutoKey
 	void doMacActivateEvt();
 	void doMacUpdateEvt();
 	void doMacDiskEvt();

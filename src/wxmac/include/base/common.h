@@ -461,7 +461,9 @@ enum _Virtual_keycodes {
  WXK_PAGEDOWN,
  // included for windows compatibility:
  WXK_WHEEL_UP,
- WXK_WHEEL_DOWN
+ WXK_WHEEL_DOWN,
+ WXK_PRESS,
+ WXK_RELEASE
 };
 
 // Colours - see wx_gdi.cc for database

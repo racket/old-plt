@@ -539,8 +539,11 @@ void wxCanvasDC::DrawEllipse(float x, float y, float width, float height)
 		I.e if (this->device != source->device)
 */
 Bool wxCanvasDC::Blit(float xdest, float ydest, float width, float height,
-                wxBitmap *source, float xsrc, float ysrc, int rop, wxColour *c)
+                wxBitmap *source, float xsrc, float ysrc, int rop, wxColour *c,
+                wxBitmap *mask)
 {
+	RgnHandle maskRgn = NULL;
+	
 	if (!Ok() || !source->Ok()) return FALSE;
 
 	SetCurrentDC();
@@ -603,7 +606,15 @@ Bool wxCanvasDC::Blit(float xdest, float ydest, float width, float height,
 		dstbm = GetPortBitMapForCopyBits(theMacGrafPort);
 		srcbm = GetPortBitMapForCopyBits(source->x_pixmap);
 
-		::CopyBits(srcbm, dstbm, &srcr, &destr, mode, NULL);
+		if (mask) {
+			OSErr err;
+			
+			maskRgn = NewRgn();
+			err = BitMapToRegion(maskRgn,GetPortBitMapForCopyBits(mask->x_pixmap));
+			if (err != noErr) return FALSE;
+		}
+			
+		::CopyBits(srcbm, dstbm, &srcr, &destr, mode, maskRgn);
 
 		CalcBoundingBox(xdest, ydest);
 		CalcBoundingBox(xdest + width, ydest + height);

@@ -191,6 +191,7 @@ class wxKeyEvent: public wxEvent
   int x ;
   int y ;
   long keyCode;
+  long keyUpCode;
   Bool controlDown;
   Bool shiftDown;
   Bool altDown;

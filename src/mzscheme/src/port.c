@@ -4633,25 +4633,14 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
       } else {
 	int err;
 
-	/* Restore original SIGCHLD handling: */
-	START_XFORM_SKIP;
-	MZ_SIGSET(SIGCHLD, SIG_DFL);
-	END_XFORM_SKIP;
-
       	err = MSC_IZE(execv)(command, argv);
 
 	/* If we get here it failed; give up */
 
 	if (as_child || !def_exit_on)
 	  _exit(err ? err : 1);
-	else {
-	  /* Back to MzScheme SIGCHLD handling: */
-	  START_XFORM_SKIP;
-	  MZ_SIGSET(SIGCHLD, child_done);
-	  END_XFORM_SKIP;
-
+	else
 	  return scheme_void;
-	}
       }
 
     default: /* parent */

@@ -14,6 +14,8 @@
 
 #include "fafa.h"
 
+extern int wx_no_unicode;
+
 static HMENU emptyMenu;
 
 wxPen *wxStatusGreyPen = NULL;
@@ -44,7 +46,6 @@ Bool wxFrame::Create(wxFrame *Parent, char *title, int x, int y,
                  int width, int height, long style, char *name)
 {
   wxWnd *cparent = NULL;
-  int i;
 
   wxbFrame::Create(Parent, title, x, y, width, height, style, name);
   
@@ -112,8 +113,6 @@ Bool wxFrame::Create(wxFrame *Parent, char *title, int x, int y,
 
 wxFrame::~wxFrame(void)
 {
-  int i;
-
   if (wx_menu_bar)
     DELETE_OBJ wx_menu_bar;
 
@@ -1105,7 +1104,18 @@ void wxMDIFrame::OnMenuSelect(WORD nItem, WORD nFlags, HMENU hSysMenu)
 
 long wxMDIFrame::DefWindowProc(UINT message, WPARAM wParam, LPARAM lParam)
 {
-  return ::DefFrameProc(handle, client_hwnd, message, wParam, lParam);
+  if (wx_no_unicode)
+    return ::DefFrameProc(handle, client_hwnd, message, wParam, lParam);
+  else
+    return ::DefFrameProcW(handle, client_hwnd, message, wParam, lParam);
+}
+
+long wxMDIFrame::Propagate(UINT nMsg, WPARAM wParam, LPARAM lParam)
+{
+  if ((nMsg == WM_SETFOCUS) || (nMsg == WM_SIZE))
+    return DefWindowProc(nMsg, wParam, lParam);
+  else
+    return 0;
 }
 
 BOOL wxMDIFrame::ProcessMessage(MSG* pMsg)
@@ -1141,10 +1151,9 @@ extern wxNonlockingHashTable *wxWinHandleList;
 wxMDIChild::wxMDIChild(wxMDIFrame *parent, wxWindow *wx_win, char *title,
                    int x, int y, int width, int height, long style)
 {
-  MDICREATESTRUCT mcs;
+  int mcs_x, mcs_y, mcs_cx, mcs_cy;
   DWORD msflags = WS_OVERLAPPED;
   HWND o;
-  DWORD Return;
 
   defaultIcon = wxSTD_FRAME_ICON;
   icon = NULL;
@@ -1155,20 +1164,17 @@ wxMDIChild::wxMDIChild(wxMDIFrame *parent, wxWindow *wx_win, char *title,
 
   wxWndHook = this;
 
-  mcs.szClass = wxMDIChildFrameClassName;
-  mcs.szTitle = title;
-  mcs.hOwner = wxhInstance;
-  if (x > -1) mcs.x = x;
-  else mcs.x = CW_USEDEFAULT;
+  if (x > -1) mcs_x = x;
+  else mcs_x = CW_USEDEFAULT;
 
-  if (y > -1) mcs.y = y;
-  else mcs.y = CW_USEDEFAULT;
+  if (y > -1) mcs_y = y;
+  else mcs_y = CW_USEDEFAULT;
 
-  if (width > -1) mcs.cx = width;
-  else mcs.cx = 1;
+  if (width > -1) mcs_cx = width;
+  else mcs_cx = 1;
 
-  if (height > -1) mcs.cy = height;
-  else mcs.cy = 1;
+  if (height > -1) mcs_cy = height;
+  else mcs_cy = 1;
 
   if (!(style & wxNO_RESIZE_BORDER)) {
     msflags |= WS_MINIMIZEBOX;
@@ -1185,21 +1191,20 @@ wxMDIChild::wxMDIChild(wxMDIFrame *parent, wxWindow *wx_win, char *title,
   if (!(style & wxNO_CAPTION))
     msflags |= WS_CAPTION;
 
-  mcs.style = msflags;
-
-  mcs.lParam = 0;
-
   o = (HWND)::SendMessage(parent->client_hwnd, WM_MDIGETACTIVE, 0, 0);
 
   // turn off redrawing in the MDI client window
   SendMessage(parent->client_hwnd, WM_SETREDRAW, FALSE, 0L);
- 
-  Return = SendMessage(parent->client_hwnd,
-		       WM_MDICREATE, 0, (LONG)(LPSTR)&mcs);
   
-  //handle = (HWND)LOWORD(Return);
-  // Must be the DWORRD for WIN32. And in 16 bits, HIWORD=0 (says Microsoft)
-  handle = (HWND)Return;
+  {
+    wchar_t *ws, *ws2;
+    ws = wxWIDE_STRING_COPY(wxMDIChildFrameClassName);
+    ws2 = wxWIDE_STRING(title);
+    handle = CreateMDIWindowW(ws, ws2, msflags,
+			      mcs_x, mcs_y, mcs_cx, mcs_cy, 
+			      parent->client_hwnd,
+			      wxhInstance, 0);
+  }
 
   wxWndHook = NULL;
   wxWinHandleList->Append((long)handle, this);
@@ -1271,8 +1276,19 @@ BOOL wxMDIChild::OnCommand(WORD id, WORD cmd, HWND control)
 
 long wxMDIChild::DefWindowProc(UINT message, UINT wParam, LONG lParam)
 {
-  if (handle)
-    return ::DefMDIChildProc(handle, message, wParam, lParam);
+  if (handle) {
+    if (wx_no_unicode)
+      return ::DefMDIChildProc(handle, message, wParam, lParam);
+    else
+      return ::DefMDIChildProcW(handle, message, wParam, lParam);
+  } else
+    return 0;
+}
+
+long wxMDIChild::Propagate(UINT nMsg, WPARAM wParam, LPARAM lParam)
+{
+  if ((nMsg == WM_SETFOCUS) || (nMsg == WM_MOVE))
+    return DefWindowProc(nMsg, wParam, lParam);
   else
     return 0;
 }
@@ -1322,6 +1338,10 @@ BOOL wxMDIChild::OnMDIActivate(BOOL bActivate, HWND WXUNUSED(one), HWND WXUNUSED
 
   ::SendMessage(cparent->client_hwnd, WM_MDISETMENU,
 		(WPARAM)new_menu,
+		(LPARAM)NULL);
+
+  ::SendMessage(cparent->client_hwnd, WM_MDIACTIVATE,
+		(WPARAM)handle,
 		(LPARAM)NULL);
 
   ::DrawMenuBar(cparent->handle);

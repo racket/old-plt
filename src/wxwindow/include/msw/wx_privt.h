@@ -108,6 +108,7 @@ public:
     virtual BOOL OnMDIActivate(BOOL flag, HWND activate, HWND deactivate);
 
     virtual LONG DefWindowProc(UINT nMsg, WPARAM wParam, LPARAM lParam);
+    virtual LONG Propagate(UINT nMsg, WPARAM wParam, LPARAM lParam);
     virtual BOOL ProcessMessage(MSG* pMsg);
     virtual void DestroyWindow(void);
 
@@ -215,6 +216,7 @@ public:
     BOOL OnCommand(WORD id, WORD cmd, HWND control);
     void OnMenuSelect(WORD, WORD, HMENU);
     long DefWindowProc(UINT message, WPARAM wParam, LPARAM lParam);
+    long Propagate(UINT nMsg, WPARAM wParam, LPARAM lParam);
     BOOL ProcessMessage(MSG *msg);
     BOOL OnEraseBkgnd(HDC pDC);
     BOOL OnDestroy(void);
@@ -234,6 +236,7 @@ public:
     void OnSize(int x, int y, UINT);
     BOOL OnCommand(WORD id, WORD cmd, HWND control);
     long DefWindowProc(UINT message, WPARAM wParam, LPARAM lParam);
+    long Propagate(UINT nMsg, WPARAM wParam, LPARAM lParam);
     BOOL ProcessMessage(MSG *msg);
     void DestroyWindow(void);
 };

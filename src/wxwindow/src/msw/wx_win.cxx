@@ -245,6 +245,7 @@ wxWindow *wxWindow::GetTopLevel()
 void wxWindow::SetFocus(void)
 {
   wxWindow *p;
+  int is_front = 0;
 
   if (!IsShownTree())
     return;
@@ -269,7 +270,7 @@ void wxWindow::SetFocus(void)
       p->focusWindow = this;
       return;
     }
-    p = NULL;
+    is_front = 1;
   }
   
   // If the frame/dialog is not active, just set the focus
@@ -277,7 +278,7 @@ void wxWindow::SetFocus(void)
   if (p) {
     p->focusWindow = this;
     
-    if (GetActiveWindow() == p->GetHWND()) {
+    if (is_front || (GetActiveWindow() == p->GetHWND())) {
       HWND hWnd;
       hWnd = GetHWND();
       if (hWnd) {
@@ -1206,7 +1207,7 @@ static LONG WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, in
       wnd->OnDropFiles(wParam);
       break;
     }
-  case WM_QUERYENDSESSION:
+  case WM_ENDSESSION:
   case WM_CLOSE:
     {
       if (wnd->OnClose()) {
@@ -1243,8 +1244,9 @@ static LONG WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, in
       break;
     }
   }
-
-
+  
+  wnd->Propagate(message, wParam, lParam);
+	
   wx_end_win_event(dialog ? "dialog" : "window", hWnd, message, tramp);
 
   return retval;
@@ -1567,7 +1569,7 @@ BOOL wxWnd::OnActivate(BOOL state, BOOL minimized, HWND WXUNUSED(activate))
     }
 
     wx_window->OnActivate(((state == WA_ACTIVE) 
-					      || (state == WA_CLICKACTIVE)));
+			   || (state == WA_CLICKACTIVE)));
 
     // If this window is an MDI parent, we must also send an OnActivate message
     // to the current child.
@@ -1605,6 +1607,7 @@ BOOL wxWnd::OnKillFocus(HWND WXUNUSED(hwnd))
 {
   if (wx_window) {
     wx_window->OnKillFocus();
+
     return TRUE;
   } else 
     return FALSE;
@@ -1672,6 +1675,12 @@ LONG wxWnd::DefWindowProc(UINT nMsg, WPARAM wParam, LPARAM lParam)
     return ::DefWindowProc(handle, nMsg, wParam, lParam);
   else
     return ::DefWindowProcW(handle, nMsg, wParam, lParam);
+}
+
+LONG wxWnd::Propagate(UINT nMsg, WPARAM wParam, LPARAM lParam)
+{
+  /* Used for MDI */
+  return 0;
 }
 
 BOOL wxWnd::ProcessMessage(MSG* WXUNUSED(pMsg))

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Choice.cc,v 1.12 1999/08/15 16:52:42 mflatt Exp $
+ * $Id: Choice.cc,v 1.13 1999/10/05 13:32:17 mflatt Exp $
  *
  * Purpose: choice panel item
  *
@@ -35,6 +35,8 @@
 #define  Uses_TraversingEnforcerWidget
 #define  Uses_LabelWidget
 #include "widgets.h"
+
+static char *unprotect_amp(char *s);
 
 //-----------------------------------------------------------------------------
 // create and destroy button
@@ -115,15 +117,22 @@ Bool wxChoice::Create(wxPanel *panel, wxFunction function, char *label,
 	Append(choices[i]);
 
     if (width < 0) {
-      float maxw = 0;
+      float maxw = 0, labelw = 0;
       for (int i = 0; i < n; i++) {
 	float w, h;
-	GetTextExtent(choices[i], &w, &h, NULL, NULL, font);
-	if (w > maxw)
-	  maxw = w;
+	GetTextExtent(choices[i], &w, &h, NULL, NULL, label_font);
+	maxw = w;
       }
       
-      width = maxw + 30; /* 30 = space for arrow */
+      if (label && !vert) {
+	float w, h;
+	char *label_stripped;
+	label_stripped = unprotect_amp(label);
+	GetTextExtent(label_stripped, &w, &h, NULL, NULL, font);
+	labelw = w + 2; /* 2 for separation btw label and ctl */
+      }
+
+      width = (int)(maxw + labelw + 32); /* 32 = space for arrow */
     }
 
     panel->PositionItem(this, x, y, width, height);

@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wb_ps.cxx,v 1.17 1999/10/05 16:31:15 mflatt Exp $
+ * RCS_ID:      $Id: PSDC.cc,v 1.27 1999/10/05 17:26:06 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -1618,7 +1618,7 @@ float wxPostScriptDC::GetCharWidth (void)
 }
 
 void wxPostScriptDC::GetTextExtent (const char *string, float *x, float *y,
-				    float *descent, float *externalLeading, wxFont *theFont,
+				    float *descent, float *topSpace, wxFont *theFont,
 				    Bool WXUNUSED(use16))
 {
   wxFont *fontToUse = theFont;
@@ -1641,8 +1641,8 @@ void wxPostScriptDC::GetTextExtent (const char *string, float *x, float *y,
   *y = (float) height;
   if (descent)
     *descent = 0.0;
-  if (externalLeading)
-    *externalLeading = 0.0;
+  if (topSpace)
+    *topSpace = 0.0;
 #else
   // +++++ start of contributed code +++++
   
@@ -1828,10 +1828,8 @@ void wxPostScriptDC::GetTextExtent (const char *string, float *x, float *y,
     }
   }
 
-  // currently no idea how to calculate this!
-  // if (externalLeading) *externalLeading = 0.0;
-  if (externalLeading)
-    *externalLeading = 0.0;
+  if (topSpace)
+    *topSpace = 0.0;
 
   // ----- end of contributed code -----
 #endif

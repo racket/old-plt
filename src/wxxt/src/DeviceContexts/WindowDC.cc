@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: WindowDC.cc,v 1.26 1999/05/17 19:16:12 mflatt Exp $
+ * $Id: WindowDC.cc,v 1.27 1999/09/17 02:20:32 mflatt Exp $
  *
  * Purpose: device context to draw drawables
  *          (windows and pixmaps, even if pixmaps are covered by wxMemoryDC)
@@ -998,7 +998,7 @@ float wxWindowDC::GetCharWidth(void)
 }
 
 void wxWindowDC::GetTextExtent(const char *s, float *_w, float *_h, float *_descent,
-			       float *_ext_leading, wxFont *_font,
+			       float *_topspace, wxFont *_font,
 			       Bool use16bit)
 {
     if (!DRAWABLE) /* MATTHEW: [5] */
@@ -1026,8 +1026,8 @@ void wxWindowDC::GetTextExtent(const char *s, float *_w, float *_h, float *_desc
     *_h = YDEV2LOGREL(ascent + descent);
     if (_descent)
 	*_descent = YDEV2LOGREL(descent);
-    if (_ext_leading)
-	*_ext_leading = 0.0;
+    if (_topspace)
+	*_topspace = 0.0;
 }
 
 void wxWindowDC::SetFont(wxFont *font)

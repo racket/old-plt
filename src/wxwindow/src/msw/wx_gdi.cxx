@@ -18,8 +18,6 @@
 #include "wximgfil.h"
 #include "wximgxbm.h"
 
-#pragma optimize("", off);
-
 // Resource counting
 #if 0
 int pen_count, brush_count, font_count, bitmap_count;

@@ -4,7 +4,9 @@
   (define name "MzCOM")
   (define blurb
     (list
-      "MzCOM is a COM class that makes Scheme available to any COM client.")))
+      "MzCOM is a COM class that makes Scheme available to any COM client."))
+  (define release-version "200alpha1")
+  (define release-iteration "0"))
 
 #|
 (lambda (request failure-thunk)

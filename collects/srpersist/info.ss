@@ -14,27 +14,8 @@
       "invoke-3.5.ss"))
   (define blurb
     (list
-      "SrPersist is an extension for using ODBC databases from Scheme.")))
+      "SrPersist is an extension for using ODBC databases from Scheme."))
 
-#|
-
-(lambda (request failure-thunk)
-  (case request
-    [(name) "SrPersist"]
-    [(compile-prefix) void]
-    [(compile-omit-files) 
-      '("info.ss"
-	"sigs.ss"
-	"invoke-1.0.ss"
-	"invoke-2.0.ss"
-	"invoke-3.0.ss"
-	"invoke-3.5.ss"
-	"srpersist.ss"
-        "srpersistu.ss")]
-    [(blurb)
-     (list
-      "SrPersist is an extension for using ODBC databases from Scheme.")] 
-    [else (failure-thunk)]))
-
-|#
+  (define release-version "200alpha1")
+  (define release-iteration "0"))
 

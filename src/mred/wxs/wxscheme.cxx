@@ -104,8 +104,6 @@ static GC_START_END_PTR orig_collect_end_callback;
 static void collect_start_callback(void);
 static void collect_end_callback(void);
 
-static Scheme_Object *phantom_tool_hook(int c, Scheme_Object **argv);
-
 static void wxScheme_Install(Scheme_Env *global_env);
 
 static Scheme_Object *setup_file_symbol, *init_file_symbol, *x_display_symbol;
@@ -155,8 +153,6 @@ void wxsScheme_setup(Scheme_Env *env)
   GC_collect_start_callback = (GC_START_END_PTR)collect_start_callback;
   orig_collect_end_callback = GC_collect_end_callback;
   GC_collect_end_callback = (GC_START_END_PTR)collect_end_callback;
-
-  scheme_mzlib_info_hook = CAST_SP phantom_tool_hook;
 }
 
 extern "C" {
@@ -2866,5 +2862,22 @@ static Scheme_Object *phantom_tool_hook(int c, Scheme_Object **argv)
     }
 
     return NULL;
+  }
+}
+
+void wxscheme_prepare_hooks(int argc, char **argv)
+{
+  int i;
+  char *s;
+  for (i = 0; i < argc; i++) {
+    s = argv[i];
+    if ((s[0] == 100) && (s[1] == 114)
+	&& (s[2] == 115) && (s[3] == 99)
+	&& (s[4] == 104) && (s[5] == 101)
+	&& (s[6] == 109) && (s[7] == 101)
+	&& !s[8]) {
+      scheme_mzlib_info_hook = CAST_SP phantom_tool_hook;
+      break;
+    }
   }
 }

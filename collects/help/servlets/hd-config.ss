@@ -5,7 +5,8 @@
 	 (lib "etc.ss")
 	 (lib "string-constant.ss" "string-constants")
 	 (lib "xml.ss" "xml")
-	 (lib "url.ss" "net"))
+	 (lib "url.ss" "net")
+         (lib "plt-browser.ss" "help" "private"))
 
 (require "private/util.ss"
 	 "private/hd-css.ss"

@@ -2,7 +2,7 @@
 
   (require (lib "etc.ss"))
 
-  (require "browser.ss"
+  (require "plt-browser.ss"
 	   "server-config.ss"
 	   "external-server.ss"
 	   "internal-server.ss")

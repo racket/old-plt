@@ -1,6 +1,8 @@
 (module main-pane mzscheme
 
-  (require (lib "string-constant.ss" "string-constants"))
+  (require (lib "string-constant.ss" "string-constants")
+	   (lib "plt-browser.ss" "help" "private"))
+
   (require "external.ss"
            "util.ss") 
 

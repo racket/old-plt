@@ -89,7 +89,7 @@
                 (lambda ()
                   (if (null? ast-list)
                       eof
-                      (begin0 (parameterize ([current-runtime-support-context base-importing-stx]
+                      (begin0 (parameterize ([current-runtime-support-context #'here]
                                              [current-toplevel-context base-importing-stx])
                                 (compile-python-ast (car ast-list)))
                               (set! ast-list (cdr ast-list))))))))

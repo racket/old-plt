@@ -200,10 +200,10 @@ headers:
 # Needed for extension compilation when MzScheme headers change
 ../../collects/mzscheme/include/scheme.h: sconfig.h uconfig.h include/escheme.h src/schemef.h \
                                        src/stypes.h src/schemex.h src/schemexm.h src/schexn.h \
-                                       include/ext.exp include/mzscheme.exp include/scheme.h
-	rm -rf ../../collects/mzscheme/include
-	mkdir ../../collects/mzscheme/include
-	cp sconfig.h uconfig.h include/escheme.h src/schemef.h \
+                                       include/ext.exp include/mzscheme.exp include/scheme.h \
+                                       src/schvers.h
+	rm -rf ../../collects/mzscheme/include/*.* # avoid CVS
+	cp sconfig.h uconfig.h include/escheme.h src/schemef.h src/schvers.h \
           src/stypes.h src/schemex.h src/schemexm.h src/schexn.h \
           include/ext.exp include/mzscheme.exp ../../collects/mzscheme/include 
 	perl -ne 's/\/\*III\*\//\#define INCLUDE_WITHOUT_PATHS/; print' \

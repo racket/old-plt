@@ -219,6 +219,12 @@
 
 		    (send message-editor save-file t 'text #t)
 
+		    ; To get rid of the Standard Output window: Set
+		    ; the current output & error ports to something
+		    ; else. Or use `process' instead.  Warning: be sure
+		    ; to test in error circumstances (eg, when the
+		    ; external program can't be found).
+
 		    (system
 		     (case external-composer
 		       [(xemacs)

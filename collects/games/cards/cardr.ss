@@ -679,7 +679,10 @@
 	[animated
 	 (case-lambda 
 	  [() animate?]
-	  [(on?) (set! animate? (and on? #t))])])
+	  [(on?) (set! animate? (and on? #t))])]
+	[on-close
+	 (lambda ()
+	   (mred:exit))])
       (private
 	[add-cards-callback
 	 (lambda (card x y)

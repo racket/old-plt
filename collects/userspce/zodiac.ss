@@ -139,6 +139,8 @@
 	      [quasi-r4rs : zodiac:system^])
       
 
+      (define DEFAULT-VOCABULARY-SYMBOL 'advanced)
+
       (define bad-names null)
 
       ,@(let loop ([other-names non-function-names])
@@ -150,9 +152,9 @@
 					     (symbol->string name)))
 			  (loop (cdr other-names))))]))
 
-      (define current-vocabulary
+      (define current-vocabulary-symbol
 	(make-parameter 
-	 'advanced
+	 DEFAULT-VOCABULARY-SYMBOL
 	 (lambda (x)
 	   (if (member x '(core structured side-effecting advanced))
 	       (begin 
@@ -175,12 +177,12 @@
 					   [(advanced) ,(prefix "quasi-r4rs")])))
 				(loop (cdr other-names))))]))
 		 x)
-	       (error 'current-vocabulary
+	       (error 'current-vocabulary-symbol
 		      "supplied non-vocab symbol: ~a" x)))))
       
       (define make-function
 	(lambda (name core structured side-effecting advanced args)
-	  (let ([vocab (current-vocabulary)])
+	  (let ([vocab (current-vocabulary-symbol)])
 	    '(printf "calling from ~a; ~a~n" vocab name)
 	    (apply (case vocab
 		     [(core) core]
@@ -218,4 +220,4 @@
 	(printf "bad-names~n~a~n" bad-names)
 	(error 'zodiac.ss "found non-procedural names"))
 
-      (current-vocabulary 'advanced))))
+      (current-vocabulary-symbol DEFAULT-VOCABULARY-SYMBOL))))

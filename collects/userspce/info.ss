@@ -3,6 +3,6 @@
     (case what
       [(name) "Userspace"]
       [(compile-prefix) (drs 'compile-prefix failure)]
-      [(compile-omit-files) (list "userspcs.ss" "ricedefs.ss")]
+      [(compile-omit-files) (list "userspcs.ss" "ricedefs.ss" "sig.ss")]
       [(compile-elaboration-zos) (list "sig.ss")]
       [else (failure)])))

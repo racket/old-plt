@@ -111,25 +111,17 @@
 	      [skip-it? #f])
 	  (thread 
 	   (lambda ()
-	     (printf "delay-action (thread): sleeping~n")
 	     (sleep delay-time)
-	     (printf "delay-action (thread): slept~n")
 	     (semaphore-wait semaphore)
-	     (printf "delay-action (thread): checking skip-it? ~a~n" skip-it?)
 	     (unless skip-it?
 	       (set! open? #t)
 	       (open))
-	     (semaphore-post semaphore)
-	     (printf "delay-action (thread): dying~n")))
+	     (semaphore-post semaphore)))
 	  (lambda ()
-	    (printf "delay-action: closing~n")
 	    (semaphore-wait semaphore)
-	    (printf "delay-action: got semaphore~n")
 	    (set! skip-it? #t)
-	    (printf "delay-action: open? ~a~n" open?)
 	    (when open?
 	      (close))
-	    (printf "delay-action: posting semaphore~n")
 	    (semaphore-post semaphore)))))
 
     (define local-busy-cursor
@@ -139,26 +131,19 @@
 		 [cursor-off void])
 	    (dynamic-wind
 	     (lambda ()
-	       (printf "local-busy-cursor.1~n")
 	       (set! cursor-off
 		     (delay-action
 		      delay
 		      (lambda ()
-			(printf "local-busy-cursor turning on~n")
 			(if win
 			    (set! old-cursor (send win set-cursor watch))
 			    (wx:begin-busy-cursor)))
 		      (lambda ()
-			(printf "local-busy-cursor turning off~n")
 			(if win
 			    (send win set-cursor old-cursor)
 			    (wx:end-busy-cursor))))))
-	     (lambda ()
-	       (printf "local-busy-cursor.2~n")
-	       (thunk))
-	     (lambda ()
-	       (printf "local-busy-cursor.3~n")
-	       (cursor-off)))))))
+	     (lambda () (thunk))
+	     (lambda () (cursor-off)))))))
 
     (define get-choice
       (opt-lambda (message true-choice false-choice 

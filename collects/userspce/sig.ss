@@ -34,7 +34,15 @@
   (build-parameterization
    settings
    get-default-setting
+
    error-display/debug-handler
+   current-vocabulary
+   current-setting
+   intermediate-values-during-load
+
+   primitive-eval
+   primitive-load
+   syntax-checking-primitive-eval
 
    process/zodiac
    process/no-zodiac
@@ -78,4 +86,4 @@
 
 (define-signature drscheme:zodiac^
   ((open drscheme:exported-zodiac^)
-   current-vocabulary))
+   current-vocabulary-symbol))

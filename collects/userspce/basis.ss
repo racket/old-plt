@@ -15,11 +15,8 @@
   (define (report-unlocated-error . x) (error 'report-unlocated-error))
 
   (define system-parameterization (current-parameterization))
-  ;; DEBUGGING!
-  (error-escape-handler 
-   (let ([o (error-escape-handler)])
-     (rec system-parameterization-error-escape-handler
-	  (lambda x (apply o x)))))
+  (define primitive-load (current-load))
+  (define primitive-eval (current-eval))
 
   (define eq?-only-compares-symbols (make-parameter #f))
   (define r4rs-style-printing (make-parameter #f))
@@ -38,76 +35,52 @@
 				disallow-untagged-inexact-numbers
 				whole/fractional-exact-numbers
 				printing))
+
+  ;; HACK!
+  (define-values (raw-name raw-vocab-symbol)
+    (if (defined? 'wx@)
+	(values 'MrEd 'mred)
+	(values 'MzScheme 'mzscheme)))
   
   ;; settings : (list-of (list symbol setting))
   (define settings
-    (list (list 'Beginner (make-setting/parse
-			   `((use-zodiac? #t)
-			     (vocabulary-symbol core)
-			     (case-sensitive? #t)
-			     (allow-set!-on-undefined? #f)
-			     (unmatched-cond/case-is-error? #t)
-			     (allow-improper-lists? #f)
-			     (sharing-printing? #f)
-			     (abbreviate-cons-as-list? #f)
-			     (signal-undefined #t)
-			     (signal-not-boolean #t)
-			     (eq?-only-compares-symbols? #t)
-			     (disallow-untagged-inexact-numbers #t)
-			     (whole/fractional-exact-numbers #f)
-			     (printing constructor-style))))
-	  (list 'Intermediate (make-setting/parse
-			       `((use-zodiac? #t)
-				 (vocabulary-symbol structured)
-				 (case-sensitive? #t)
-				 (allow-set!-on-undefined? #f)
-				 (unmatched-cond/case-is-error? #t)
-				 (allow-improper-lists? #f)
-				 (sharing-printing? #f)
-				 (abbreviate-cons-as-list? #t)
-				 (signal-undefined #t)
-				 (signal-not-boolean #t)
-				 (eq?-only-compares-symbols? #t)
-				 (disallow-untagged-inexact-numbers #t)
-				 (whole/fractional-exact-numbers #f)
-				 (printing constructor-style))))
-	  (list 'Advanced (make-setting/parse
-			   `((use-zodiac? #t)
-			     (vocabulary-symbol side-effecting)
-			     (case-sensitive? #t)
-			     (allow-set!-on-undefined? #f)
-			     (unmatched-cond/case-is-error? #t)
-			     (allow-improper-lists? #f)
-			     (sharing-printing? #t)
-			     (abbreviate-cons-as-list? #t)
-			     (signal-undefined #t)
-			     (signal-not-boolean #f)
-			     (eq?-only-compares-symbols? #f)
-			     (disallow-untagged-inexact-numbers #f)
-			     (whole/fractional-exact-numbers #f)
-			     (printing constructor-style))))
-	  (list 'Quasi-R4RS (make-setting/parse
+    (list (vector 'Beginner (make-setting/parse
 			     `((use-zodiac? #t)
-			       (vocabulary-symbol advanced)
+			       (vocabulary-symbol core)
 			       (case-sensitive? #t)
 			       (allow-set!-on-undefined? #f)
 			       (unmatched-cond/case-is-error? #t)
-			       (allow-improper-lists? #t)
+			       (allow-improper-lists? #f)
 			       (sharing-printing? #f)
-			       (abbreviate-cons-as-list? #t)
+			       (abbreviate-cons-as-list? #f)
 			       (signal-undefined #t)
 			       (signal-not-boolean #t)
-			       (eq?-only-compares-symbols? #f)
-			       (disallow-untagged-inexact-numbers #f)
+			       (eq?-only-compares-symbols? #t)
+			       (disallow-untagged-inexact-numbers #t)
 			       (whole/fractional-exact-numbers #f)
-			       (printing r4rs-style))))
-	  (list 'Raw (make-setting/parse
-			     `((use-zodiac? #f)
-			       (vocabulary-symbol raw)
+			       (printing constructor-style))))
+	  (vector 'Intermediate (make-setting/parse
+				 `((use-zodiac? #t)
+				   (vocabulary-symbol structured)
+				   (case-sensitive? #t)
+				   (allow-set!-on-undefined? #f)
+				   (unmatched-cond/case-is-error? #t)
+				   (allow-improper-lists? #f)
+				   (sharing-printing? #f)
+				   (abbreviate-cons-as-list? #t)
+				   (signal-undefined #t)
+				   (signal-not-boolean #t)
+				   (eq?-only-compares-symbols? #t)
+				   (disallow-untagged-inexact-numbers #t)
+				   (whole/fractional-exact-numbers #f)
+				   (printing constructor-style))))
+	  (vector 'Advanced (make-setting/parse
+			     `((use-zodiac? #t)
+			       (vocabulary-symbol side-effecting)
 			       (case-sensitive? #t)
 			       (allow-set!-on-undefined? #f)
 			       (unmatched-cond/case-is-error? #t)
-			       (allow-improper-lists? #t)
+			       (allow-improper-lists? #f)
 			       (sharing-printing? #t)
 			       (abbreviate-cons-as-list? #t)
 			       (signal-undefined #t)
@@ -115,30 +88,60 @@
 			       (eq?-only-compares-symbols? #f)
 			       (disallow-untagged-inexact-numbers #f)
 			       (whole/fractional-exact-numbers #f)
-			       (printing r4rs-style))))))
+			       (printing constructor-style))))
+	  (vector 'R4RS+ (make-setting/parse
+			  `((use-zodiac? #t)
+			    (vocabulary-symbol advanced)
+			    (case-sensitive? #t)
+			    (allow-set!-on-undefined? #f)
+			    (unmatched-cond/case-is-error? #t)
+			    (allow-improper-lists? #t)
+			    (sharing-printing? #f)
+			    (abbreviate-cons-as-list? #t)
+			    (signal-undefined #t)
+			    (signal-not-boolean #t)
+			    (eq?-only-compares-symbols? #f)
+			    (disallow-untagged-inexact-numbers #f)
+			    (whole/fractional-exact-numbers #f)
+			    (printing r4rs-style))))
+	  (vector raw-name (make-setting/parse
+			    `((use-zodiac? #f)
+			      (vocabulary-symbol ,raw-vocab-symbol)
+			      (case-sensitive? #t)
+			      (allow-set!-on-undefined? #f)
+			      (unmatched-cond/case-is-error? #t)
+			      (allow-improper-lists? #t)
+			      (sharing-printing? #t)
+			      (abbreviate-cons-as-list? #t)
+			      (signal-undefined #t)
+			      (signal-not-boolean #f)
+			      (eq?-only-compares-symbols? #f)
+			      (disallow-untagged-inexact-numbers #f)
+			      (whole/fractional-exact-numbers #f)
+			      (printing r4rs-style))))))
 
   ;; level->number : symbol -> int
   (define level->number
     (lambda (x)
-      (case x
-	[(core) 0]
-	[(structured) 1]
-	[(side-effecting) 2]
-	[(advanced) 3]
-	[(raw) 4]
+      (evcase x
+	['core 0]
+	['structured 1]
+	['side-effecting 2]
+	['advanced 3]
+	[raw-vocab-symbol 4]
 	[else (error 'level->number "unexpected level: ~a" x)])))
 
   ;; level-symbols (list-of sym)
-  (define level-symbols (list 'core 'structured 'side-effecting 'advanced 'raw))
+  (define level-symbols (list 'core 'structured 'side-effecting 'advanced raw-vocab-symbol))
 
   ;; level-strings : (list-of string)
-  (define level-strings (list "Beginner" "Intermediate" "Advanced" "Quasi-R4RS" "Raw"))
+  (define level-strings (list "Beginner" "Intermediate" "Advanced" "R4RS+" (symbol->string raw-name)))
 
   ;; find-setting-name : setting -> symbol
   (define (find-setting-name setting)
     (or (ormap (lambda (x)
-		 (if (equal? (mzlib:function:second x) setting)
-		     (mzlib:function:first x)
+		 (if (equal? (vector-ref x 1) setting)
+		     (vector-ref x 0)
 		     #f))
 	       settings)
 	'Custom))
@@ -149,8 +152,7 @@
       (apply make-setting (cdr (vector->list (struct->vector x))))))
   
   ;; get-default-setting : _ -> setting
-  (define (get-default-setting)
-    (copy-setting (mzlib:function:second (car (reverse settings)))))
+  (define (get-default-setting) (copy-setting (vector-ref (mzlib:function:first (reverse settings)) 1)))
 
   ;; r4rs-style-printing? : setting -> boolean
   (define (r4rs-style-printing? setting)
@@ -167,46 +169,56 @@
 	   (error 'current-setting
 		  "must be a setting or #f")))))
 				 
+  ;; current-vocabulary : (parameter (+ #f zodiac:vocabulary))
+  (define current-vocabulary (make-parameter #f))
+
+  ;; syntax-checking-primitive-eval : sexp -> value
+  ;; effect: raises user-exn if expression ill-formed
+  (define (syntax-checking-primitive-eval expr)
+    (primitive-eval
+     (with-handlers ([(lambda (x) #t)
+		      (lambda (x)
+			(error 'internal-syntax-error (exn-message x)))])
+       (expand-defmacro expr))))
+
   (define-struct process-finish (error?))
 
-  ;; process-file/zodiac : setting
-  ;;                       zodiac:vocabulary
-  ;;                       string
-  ;;                       (((+ sexp zodiac:parsed) ( -> void) -> void)
+  ;; process-file/zodiac : string
+  ;;                       (((+ process-finish sexp zodiac:parsed) ( -> void) -> void)
   ;;                       boolean
   ;;                    -> void
-  ;; note: the boolean controls which variant of the union the 3rd arg is passed.
-  (define (process-file/zodiac setting vocab filename f annotate?)
-    (let ([port (open-input-file filename)])
-      (process/zodiac
-       setting
-       vocab
-       (parameterize ([read-case-sensitive (setting-case-sensitive? setting)])
-	 (zodiac:read port
-		      (zodiac:make-location 0 0 0 filename)
-		      #t 1))
-       (lambda (x r)
-	 (when (process-finish? x)
-	   (close-input-port port))
-	 (f x r))
-       annotate?)))
+  ;; note: the boolean controls which variant of the union is passed to the 3rd arg.
+  ;; expects to be called with user's parameterization active
+  (define (process-file/zodiac filename f annotate?)
+    (let ([port (open-input-file filename)]
+	  [setting (current-setting)])
+      (dynamic-wind
+       void
+       (lambda ()
+	 (process/zodiac
+	  (parameterize ([read-case-sensitive (setting-case-sensitive? setting)])
+	    (zodiac:read port
+			 (zodiac:make-location 0 0 0 filename)
+			 #t 1))
+	  f
+	  annotate?))
+       (lambda () (close-input-port port)))))
 
-  ;; process-file/no-zodiac : setting
-  ;;                          string
-  ;;                          (sexp ( -> void) -> void)
+  ;; process-file/no-zodiac : string
+  ;;                          ((+ process-finish sexp zodiac:parsed) ( -> void) -> void)
   ;;                       -> void
-  (define (process-file/no-zodiac setting filename f)
+  ;; expects to be called with user's parameterization active
+  (define (process-file/no-zodiac filename f)
     (call-with-input-file filename
       (lambda (port)
-	(process/no-zodiac setting (lambda () (read port)) f))))
+	(process/no-zodiac (lambda () (read port)) f))))
 
-  ;; process-sexp/no-zodiac : setting
-  ;;                          sexp
-  ;;                          (sexp ( -> void) -> void)
+  ;; process-sexp/no-zodiac : sexp
+  ;;                          ((+ process-finish sexp zodiac:parsed) ( -> void) -> void)
   ;;                       -> void
-  (define (process-sexp/no-zodiac setting sexp f)
-    (process/no-zodiac setting
-		       (let ([first? #t]) 
+  ;; expects to be called with user's parameterization active
+  (define (process-sexp/no-zodiac sexp f)
+    (process/no-zodiac (let ([first? #t]) 
 			 (lambda ()
 			   (if first?
 			       (begin (set! first? #f)
@@ -214,29 +226,31 @@
 			       eof)))
 		       f))
 
-  ;; process-sexp/zodiac : setting
-  ;;                       vocabulary
-  ;;                       sexp
+  ;; process-sexp/zodiac : sexp
   ;;                       zodiac:sexp
-  ;;                       (sexp ( -> void) -> void)
+  ;;                       ((+ process-finish sexp zodiac:parsed) ( -> void) -> void)
+  ;;                       boolean
   ;;                    -> void
-  (define (process-sexp/zodiac setting vocab sexp z f annotate?)
-    (let ([reader
-	   (let ([gone #f])
-	     (lambda ()
-	       (or gone
-		   (begin (set! gone (zodiac:make-eof z))
-			  (zodiac:structurize-syntax sexp z)))))])
-      (process/zodiac setting vocab reader f annotate?)))
+  ;; note: the boolean controls which variant of the union is passed to the 2nd arg.
+  ;; expects to be called with user's parameterization active
+  (define (process-sexp/zodiac sexp z f annotate?)
+    (let* ([reader
+	    (let ([gone #f])
+	      (lambda ()
+		(or gone
+		    (begin (set! gone (zodiac:make-eof z))
+			   (zodiac:structurize-syntax sexp z)))))])
+      (process/zodiac reader f annotate?)))
 
-  ;; process/zodiac : setting
-  ;;                  zodiac:vocabulary
-  ;;                  ( -> zodiac:sexp)
-  ;;                  ((TST + process-finish) ( -> void) -> void)
+  ;; process/zodiac : ( -> zodiac:sexp)
+  ;;                  ((+ process-finish sexp zodiac:parsed) ( -> void) -> void)
   ;;                  boolean
   ;;               -> void
-  (define (process/zodiac setting vocab reader f annotate?)
-    (let ([cleanup
+  ;; expects to be called with user's parameterization active
+  (define (process/zodiac reader f annotate?)
+    (let ([setting (current-setting)]
+	  [vocab (current-vocabulary)]
+	  [cleanup
 	   (lambda (error?)
 	     (f (make-process-finish error?) void))])
       (let loop ()
@@ -250,19 +264,12 @@
 			   (lambda () (zodiac:interface:set-zodiac-phase #f))))])
 		   (if (zodiac:eof? zodiac-read)
 		       (lambda () (cleanup #f))
-		       (let* ([send-scheme (lambda x (error 'send-scheme))]
-			      [wait-on-scheme
-			       (lambda (expr)
-				 (let-values ([(answers error?) (send-scheme expr)])
-				   (if error?
-				       (k (lambda () (cleanup #t)))
-				       (apply values answers))))]
-			      [evaluator
+		       (let* ([evaluator
 			       (lambda (exp _ macro)
-				 (wait-on-scheme (aries:annotate exp)))]
+				 (primitive-eval (aries:annotate exp)))]
 			      [user-macro-body-evaluator
 			       (lambda (x . args)
-				 (wait-on-scheme `(,x ,@(map (lambda (x) `(#%quote ,x)) args))))]
+				 (primitive-eval `(,x ,@(map (lambda (x) `(#%quote ,x)) args))))]
 			      [exp
 			       (dynamic-wind
 				(lambda ()
@@ -282,8 +289,8 @@
 			 (lambda () (f heading-out loop))))))])
 	  (next-iteration)))))
 
-  ;; process/no-zodiac : setting ( -> sexp) ((TST + process-finish) ( -> void) -> void) -> void
-  (define (process/no-zodiac setting reader f)
+  ;; process/no-zodiac : ( -> sexp) ((TST + process-finish) ( -> void) -> void) -> void
+  (define (process/no-zodiac reader f)
     (let loop ()
       (let ([expr (reader)])
 	(if (eof-object? expr)
@@ -299,8 +306,10 @@
   ;; drscheme-exception-handler : exn -> A
   ;; effect: displays the exn-message and escapes
   (define (drscheme-exception-handler exn)
-    ((error-display/debug-handler) (exn-message exn)
-				   (exn-debug-info exn))
+    (let ([dh (error-display/debug-handler)])
+      (if (exn? exn)
+	  (dh (exn-message exn) (exn-debug-info exn))
+	  (dh (format "uncaught exception: ~e" exn) #f)))
     ((error-escape-handler))
     ((error-display-handler) "Exception handler didn't escape"))
 
@@ -334,6 +343,72 @@
 			(loop (sub1 i)))))
 		  short-string)))))))
 
+  ;; intermediate-values-during-load : (parameter (TST *-> void))
+  (define intermediate-values-during-load (parameter (lambda x (void))))
+
+  ;; drscheme-load-handler : string ->* TST
+  ;;   It should call intermediate-values-during-load in all 3 branches.
+  ;;   It only calls it in one, currently.
+  (define (drscheme-load-handler filename)
+    (unless (string? filename)
+      (raise (make-exn:application:arity
+	      (format "drscheme-load-handler: expects argument of type <string>; given: ~e" filename)
+	      ((debug-info-handler))
+	      filename
+	      'string)))
+    (let ([zo-file?
+	   (let ([l (string-length f)])
+	     (and (<= 3 l)
+		  (string=? ".zo" (substring f (- l 3) l))))])
+      (cond
+       [zo-file?
+	(let ([load-dir/path
+	       (lambda (f)
+		 (let-values ([(base name must-be-dir?)
+			       (split-path (path->complete-path f (current-directory)))])
+		   base))])
+	  (parameterize ((current-eval primitive-eval)
+
+			 ;; why set current-load-relative-directory ?
+			 (current-load-relative-directory (load-dir/path f)))
+	    (primitive-load f)))]
+       [(setting-use-zodiac? (current-setting))
+	(let* ([process-sexps
+		(let ([last (list (void))])
+		  (lambda (sexp recur)
+		    (cond
+		     [(process-finish? sexp) last]
+		     [else
+		      (set! last
+			    (call-with-values
+			     (lambda () (syntax-checking-primitive-eval sexp))
+			     (lambda x
+			       (apply (intermediate-values-during-load) x)
+			       x)))
+		      (recur)])))])
+	  (apply values (process-file/zodiac filename process-sexps #t)))]
+       [else (primitive-load filename)])))
+
+  ;; drscheme-eval : sexp ->* TST
+  (define (drscheme-eval-handler sexp)
+    (if (setting-use-zodiac? (current-setting))
+	(let* ([z (or (unbox aries:error-box)
+		      (let ([loc (zodiac:make-location 0 0 0 'eval)])
+			(zodiac:make-zodiac 'mzrice-eval loc loc)))]
+	       [answer (list (void))]
+	       [f
+		(lambda (annotated recur)
+		  (if (process-finish? annotated)
+		      answer
+		      (begin (set! answer
+				   (call-with-values
+				    (lambda () (syntax-checking-primitive-eval annotated))
+				    (lambda x x)))
+			     (recur))))])
+	  (apply values (process-sexp/zodiac sexp z f #t)))
+	(primitive-eval sexp)))
+
+
   ;; build-parameterization : setting
   ;;                          (unit (import plt:userspace:params^))
   ;;                       -> parameterization
@@ -352,9 +427,9 @@
 	  (current-custodian custodian)
 	  (require-library-use-compiled #f)
 	  (error-value->string-handler drscheme-error-value->string-handler)
-	  (debug-info-handler (let ([drs-debug-info
+	  (debug-info-handler (let ([drscheme-debug-info-handler
 				     (lambda () (unbox aries:error-box))])
-				drs-debug-info))
+				drscheme-debug-info-handler))
 	  (current-exception-handler drscheme-exception-handler)
 	  (current-namespace n)
 	  (break-enabled #t)
@@ -364,8 +439,13 @@
 	  (print-struct #t)
 	  (error-print-width 250)
 
+	  ;; ordering of these two is important;
+	  ;; zodiac:current-vocabulary-symbol bangs on zodiac:scheme-vocabulary
 	  (when (setting-use-zodiac? setting)
-	    (zodiac:current-vocabulary (setting-vocabulary-symbol setting)))
+	    (zodiac:current-vocabulary-symbol (setting-vocabulary-symbol setting))
+	    (current-vocabulary (zodiac:create-vocabulary
+				 'scheme-w/user-defined-macros/drscheme
+				 zodiac:scheme-vocabulary)))
 	  
 	  (read-case-sensitive (setting-case-sensitive? setting))
 
@@ -383,7 +463,10 @@
 	  
 	  (compile-allow-set!-undefined (setting-allow-set!-on-undefined? setting))
 	  (compile-allow-cond-fallthrough (not (setting-unmatched-cond/case-is-error? setting)))
-	  
+
+	  (current-eval drscheme-eval-handler)
+	  (current-load drscheme-load-handler)
+
 	  ;; need to introduce parameter for constructor-style vs r4 style
 	  (case (setting-printing setting)
 	    [(constructor-style)
@@ -402,6 +485,7 @@
 	    [else (error 'install-language "found bad setting-printing: ~a~n" 
 			 (setting-printing setting))])
 
+	  (mzlib:pretty-print:pretty-print-show-inexactness (setting-disallow-untagged-inexact-numbers setting))
 	  (mzlib:print-convert:show-sharing (setting-sharing-printing? setting))
 	  (mzlib:print-convert:whole/fractional-exact-numbers (setting-whole/fractional-exact-numbers setting))
 	  (print-graph (setting-sharing-printing? setting))

@@ -26,7 +26,7 @@
     (lambda (type)
       (lambda (z s . args)
 	(let ([string (apply format (if (eq? type 'internal)
-					(string-append "Internal error: "
+					(string-append "report error.Internal error: "
 						       s)
 					s)
 			     args)])

@@ -59,19 +59,18 @@
     
   (define exception-reporting-rep (make-parameter #f))
 
-  (define (process-edit/zodiac setting vocab edit f start end annotate?)
-    (basis:process/zodiac
-     setting
-     vocab
-     (parameterize ([read-case-sensitive (basis:setting-case-sensitive?
-					  setting)])
-       (zodiac:read (mred:read-snips/chars-from-buffer edit start end)
-		    (zodiac:make-location 0 0 start edit)
-		    #t 1))
-     f
-     annotate?))
+  (define (process-edit/zodiac edit f start end annotate?)
+    (let ([setting (basis:current-setting)])
+      (basis:process/zodiac
+       (parameterize ([read-case-sensitive (basis:setting-case-sensitive?
+					    setting)])
+	 (zodiac:read (mred:read-snips/chars-from-buffer edit start end)
+		      (zodiac:make-location 0 0 start edit)
+		      #t 1))
+       f
+       annotate?)))
 
-  (define (process-edit/no-zodiac setting edit f start end)
+  (define (process-edit/no-zodiac edit f start end)
     (let* ([buffer-thunk (mred:read-snips/chars-from-buffer edit start end)]
 	   [snip-string (string->list " 'non-text-snip ")]
 	   [port-thunk (let ([from-snip null])
@@ -86,7 +85,7 @@
 				    (begin0 (car from-snip)
 					    (set! from-snip (cdr from-snip)))))))]
 	   [port (make-input-port port-thunk (lambda () #t) void)])
-      (basis:process/no-zodiac setting (lambda () (read port)) f)))
+      (basis:process/no-zodiac (lambda () (read port)) f)))
 
   (mred:set-preference-default 'drscheme:repl-always-active #f boolean?)
 
@@ -128,19 +127,6 @@
        [super-reset-console reset-console]
        [super-init-transparent-io-do-work init-transparent-io-do-work])
       
-      (private
-	;; syntax-checking-primitive-eval : sexp -> value
-	;; effect: raises user-exn if expression ill-formed
-	[syntax-checking-primitive-eval
-	 (lambda (expr)
-	   (if (basis:setting-use-zodiac? user-setting)
-	       (drscheme:init:primitive-eval
-		(with-handlers ([(lambda (x) #t)
-				 (lambda (x)
-				   (error 'internal-syntax-error (exn-message x)))])
-		  (expand-defmacro expr)))
-	       (drscheme:init:primitive-eval expr)))])
-
       (public
 	[init-transparent-io
 	 (lambda (grab-focus?)
@@ -214,61 +200,23 @@
 	[get-prompt (lambda () "> ")]
 	[user-param #f]
 	[user-setting (mred:get-preference 'drscheme:settings)]
-	[user-vocab 'vocab-not-yet-initialized]
-	[user-custodian (make-custodian)]
-	
-	[userspace-eval
-	 (lambda (sexp)
-	   (with-parameterization drscheme:init:system-parameterization
-	     (lambda ()
-	       (let* ([z (or (unbox aries:error-box)
-			     (let ([loc (zodiac:make-location 0 0 0 'eval)])
-			       (zodiac:make-zodiac 'mzrice-eval loc loc)))]
-		      [answer (list (void))]
-		      [f
-		       (lambda (annotated recur)
-			 (if (basis:process-finish? annotated)
-			     (if (basis:process-finish-error? annotated)
-				 (escape)
-				 answer)
-			     (begin (set! answer
-					  (call-with-values
-					   (lambda () (syntax-checking-primitive-eval annotated))
-					   (lambda x x)))
-				    (recur))))])
-		 (with-parameterization user-param
-		   (lambda ()
-		     (apply values (process-sexp sexp z f #t))))))))]
-	[display-result
-	 (lambda (v)
-	   (unless (void? v)
-	     (let ([v (if (basis:r4rs-style-printing? user-setting)
-			  v
-			  (with-parameterization drscheme:init:system-parameterization
-			    (lambda ()
-			      (print-convert:print-convert v))))])
-	       (parameterize ([mzlib:pretty-print@:pretty-print-size-hook
-			       (lambda (x _ port) (and (is-a? x wx:snip%) 1))]
-			      [mzlib:pretty-print@:pretty-print-print-hook
-			       (lambda (x _ port) (this-result-write x))])
-		 (mzlib:pretty-print@:pretty-print v this-result)))))])
-      (private [no-zodiac-vocab (make-namespace)])
+	[user-custodian (make-custodian)])
       (public
 	[process-edit
 	 (lambda (edit fn start end annotate?)
 	   (if (basis:setting-use-zodiac? user-setting)
-	       (process-edit/zodiac user-setting user-vocab edit fn start end annotate?)
-	       (process-edit/no-zodiac user-setting edit fn start end)))]
+	       (process-edit/zodiac edit fn start end annotate?)
+	       (process-edit/no-zodiac edit fn start end)))]
 	[process-file
 	 (lambda (filename fn annotate?)
 	   (if (basis:setting-use-zodiac? user-setting)
-	       (basis:process-file/zodiac user-setting user-vocab filename fn annotate?)
-	       (basis:process-file/no-zodiac user-setting filename fn)))]
+	       (basis:process-file/zodiac filename fn annotate?)
+	       (basis:process-file/no-zodiac filename fn)))]
 	[process-sexp
 	 (lambda (sexp z fn annotate?)
 	   (if (basis:setting-use-zodiac? user-setting)
-	       (basis:process-sexp/zodiac user-setting user-vocab sexp z fn annotate?)
-	       (basis:process-sexp/no-zodiac user-setting sexp fn)))])
+	       (basis:process-sexp/zodiac sexp z fn annotate?)
+	       (basis:process-sexp/no-zodiac sexp fn)))])
 
       (private
 	[in-evaluation? #f]
@@ -335,6 +283,18 @@
 			 so no evaluation can take place until ~
 			 the next execution.")
 			 "Warning")))))]
+
+	[display-result
+	 (lambda (v)
+	   (unless (void? v)
+	     (let ([v (if (basis:r4rs-style-printing? user-setting)
+			  v
+			  (print-convert:print-convert v))])
+	       (parameterize ([mzlib:pretty-print@:pretty-print-size-hook
+			       (lambda (x _ port) (and (is-a? x wx:snip%) 1))]
+			      [mzlib:pretty-print@:pretty-print-print-hook
+			       (lambda (x _ port) (this-result-write x))])
+		 (mzlib:pretty-print@:pretty-print v this-result)))))]
 	[display-results
 	 (lambda (anss)
 	   (let ([c-locked? locked?])
@@ -425,15 +385,20 @@
 					       (lambda (expr recur)
 						 (mred:debug:printf 'console-threading "process-edit-f: looping~n")
 						 (cond
-						   [(basis:process-finish? expr)
-						    (mred:debug:printf 'console-threading "process-edit-f: posting evaluation-sucessful")
-						    (semaphore-post evaluation-sucessful)]
-						   [else
-						    (let ([answers (call-with-values
-								    (lambda () (syntax-checking-primitive-eval expr))
-								    (lambda x x))])
-						      (display-results answers)
-						      (recur))]))
+						  [(basis:process-finish? expr)
+						   (mred:debug:printf 'console-threading "process-edit-f: posting evaluation-sucessful")
+						   (semaphore-post evaluation-sucessful)]
+						  [else
+						   (let ([answers (call-with-values
+								   (lambda ()
+								     (dynamic-enable-break
+								      (lambda ()
+									(if (basis:setting-use-zodiac? (basis:current-setting))
+									    (basis:syntax-checking-primitive-eval expr)
+									    (basis:primitive-eval expr)))))
+								   (lambda x x))])
+						     (display-results answers)
+						     (recur))]))
 					       start
 					       end
 					       #t))))))
@@ -464,15 +429,6 @@
 		   (break-thread evaluation-thread)
 		   (set! ask-about-kill? #t)]))])
       (public
-	[escape
-	 (lambda ()
-	   (when user-param
-	     (with-parameterization user-param
-	       (lambda ()
-		 ((error-escape-handler)))))
-	   (mred:message-box "error-escape-handler didn't escape"
-			     "Error Escape")
-	   (escape-handler))]
 	[error-escape-k void]
 	[escape-handler
 	 (rec drscheme-error-escape-handler
@@ -505,18 +461,21 @@
 	       (semaphore-callback
 		dummy-s
 		(lambda ()
-		  (set! evaluation-thread (current-thread))
-		  (error-escape-handler escape-handler)
-		  (let loop ()
-		    (semaphore-wait eval-thread-queue-sema)
-		    (semaphore-wait eval-thread-state-sema)
-		    (let ([thunk (car eval-thread-thunks)])
-		      (set! eval-thread-thunks (cdr eval-thread-thunks))
-		      (semaphore-post eval-thread-state-sema)
-		      (with-parameterization drscheme:init:system-parameterization
-			(lambda ()
-			  (thunk))))
-		    (loop)))))
+		  (dynamic-disable-break
+		   (lambda ()
+		     (set! evaluation-thread (current-thread))
+		     (error-escape-handler escape-handler)
+		     (let loop ()
+		       (when (semaphore-try-wait? eval-thread-queue-sema)
+			 (wx:yield eval-thread-queue-sema))
+		       (semaphore-wait eval-thread-state-sema)
+		       (let ([thunk (car eval-thread-thunks)])
+			 (set! eval-thread-thunks (cdr eval-thread-thunks))
+			 (semaphore-post eval-thread-state-sema)
+			 (with-parameterization drscheme:init:system-parameterization
+			   (lambda ()
+			     (thunk))))
+		       (loop))))))
 	     (semaphore-post dummy-s)))])
 
       (public
@@ -536,18 +495,11 @@
 			   (let ([last (list (void))])
 			     (lambda (sexp recur)
 			       (cond
-				[(basis:process-finish? sexp)
-				 (if (basis:process-finish-error? sexp)
-				     (escape)
-				     last)]
+				[(basis:process-finish? sexp) last]
 				[else
 				 (set! last
 				       (call-with-values
-					(lambda ()
-					  (with-handlers ([(lambda (x) #t)
-							   (lambda (exn) 
-							     (report-exception-error exn))])
-					    (syntax-checking-primitive-eval sexp)))
+					(lambda () (basis:syntax-checking-primitive-eval sexp))
 					(lambda x x)))
 				 (recur)])))])
 		     (with-parameterization user-param
@@ -589,6 +541,29 @@
 	     (set! should-collect-garbage? #t)
 	     (lock #f) ;; locked if the thread was killed
 	     ;(drscheme:language:set-use-zodiac)
+
+	     (begin-edit-sequence)
+	     (if (mred:get-preference 'drscheme:keep-interactions-history)
+		 (insert #\newline (last-position) (last-position))
+		 (begin (set-resetting #t)
+			(delete (line-start-position 1) (last-position))
+			(set-prompt-mode #f)
+			(set-resetting #f)))
+	     (set-position (last-position) (last-position))
+	     (insert-delta "Language: " WELCOME-DELTA)
+	     (insert-delta 
+	      (symbol->string
+	       (basis:find-setting-name 
+		(mred:get-preference
+		 'drscheme:settings)))
+	      RED-DELTA)
+	     (insert-delta (format ".~n") WELCOME-DELTA)
+	     (unless (mred:get-preference 'drscheme:keep-interactions-history)
+	       (set-last-header-position (last-position)))
+	     (set! repl-initially-active? #t)
+	     (end-edit-sequence)
+
+
 	     (set! user-setting (mred:get-preference 'drscheme:settings))
 	     (let ([p (basis:build-parameterization
 		       (mred:get-preference 'drscheme:settings)
@@ -617,8 +592,8 @@
 		   (current-output-port this-out)
 		   (current-error-port this-err)
 		   (current-input-port this-in)
-		   (current-load userspace-load)
-		   (current-eval userspace-eval)
+		   ;(current-load userspace-load)
+
 		   (wx:current-eventspace (wx:make-eventspace))
 
 		   (basis:error-display/debug-handler report-located-error)
@@ -687,29 +662,7 @@
 	       (set! user-param p))
 	     
 	     (init-evaluation-thread)
-
-	     (set! user-vocab (zodiac:create-vocabulary
-			       'scheme-w/user-defined-macros/drscheme
-			       zodiac:scheme-vocabulary))
-	     (if (mred:get-preference 'drscheme:keep-interactions-history)
-		 (insert #\newline (last-position) (last-position))
-		 (begin (set-resetting #t)
-			(delete (line-start-position 1) (last-position))
-			(set-prompt-mode #f)
-			(set-resetting #f)))
-	     (set-position (last-position) (last-position))
-	     (insert-delta "Language: " WELCOME-DELTA)
-	     (insert-delta 
-	      (symbol->string
-	       (basis:find-setting-name 
-		(mred:get-preference
-		 'drscheme:settings)))
-	      RED-DELTA)
-	     (insert-delta (format ".~n") WELCOME-DELTA)
-	     (unless (mred:get-preference 'drscheme:keep-interactions-history)
-	       (set-last-header-position (last-position)))
-	     (super-reset-console)
-	     (set! repl-initially-active? #t)))]
+	     (super-reset-console)))]
 	[initialize-console
 	 (lambda ()
 	   (super-initialize-console)

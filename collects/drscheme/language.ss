@@ -33,7 +33,7 @@
   
   (define (language-dialog)
     (letrec*
-	([language-levels (map (compose symbol->string first) basis:settings)]
+	([language-levels (map (lambda (x) (symbol->string (vector-ref x 0))) basis:settings)]
 	 [f (make-object mred:dialog-box% '() "Language" #t)]
 	 [main (make-object mred:vertical-panel% f)]
 	 [language-panel (make-object mred:horizontal-panel% main -1 -1 -1 -1 wx:const-border)]
@@ -74,7 +74,7 @@
 					   (when (< which len)
 					     (mred:set-preference
 					      'drscheme:settings
-					      (basis:copy-setting (second (list-ref basis:settings which)))))))
+					      (basis:copy-setting (vector-ref (list-ref basis:settings which) 1))))))
 				       "Language"
 				       -1 -1 -1 -1
 				       (append language-levels (list "Custom")))]
@@ -230,9 +230,9 @@
 			  (send vocab get-selection))))))]
 	 [reset-choice
 	  (lambda ()
-	    (when (andmap (lambda (setting-name)
-			    (let ([setting (second setting-name)]
-				  [name (first setting-name)])
+	    (when (andmap (lambda (name-setting)
+			    (let ([name (vector-ref name-setting 0)]
+				  [setting (vector-ref name-setting 1)])
 			      (if (compare-setting-to-gui setting)
 				  (begin
 				    (send language-choice set-selection
@@ -284,7 +284,7 @@
       (send printing stretchable-in-x #f)
       (send vocab stretchable-in-x #f)
       (update-to (mred:get-preference 'drscheme:settings))
-      (show-specifics (not (ormap (compose compare-setting-to-gui second) basis:settings)))
+      (show-specifics (not (ormap (lambda (x) (compare-setting-to-gui (vector-ref x 1))) basis:settings)))
       (mred:add-preference-callback 'drscheme:settings 
 				    (lambda (p v) 
 				      (send mred:the-frame-group

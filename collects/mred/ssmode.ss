@@ -205,8 +205,7 @@
 	    [forward-cache (make-object mred:match-cache:match-cache%)])
 	  
 	  (private
-	    [just-once #f]
-	    [suspend-highlight? #f])
+	    [in-highlight-parens? #f])
 	  (public
 	    [on-focus
 	     (lambda (edit on?)
@@ -224,11 +223,10 @@
 		 (highlight-parens edit)))]
 	    [on-edit-sequence
 	     (lambda (edit)
-	       (set! suspend-highlight? #t))]
+	       (void))]
 	    [after-edit-sequence
 	     (lambda (edit)
-	       (set! suspend-highlight? #f)
-	       (when just-once
+	       (unless in-highlight-parens?
 		 (mred:debug:printf 'highlight-range "highlighting from after-edit-sequence")
 		 (highlight-parens edit)))]
 	    [on-insert
@@ -286,67 +284,65 @@
 					gray-level
 					gray-level)])
 	       (opt-lambda (edit [just-clear? #f])
-		 (mred:debug:printf 'highlight-range "highlight-parens; suspend-highlight?: ~a highlight-parens?: ~a just-once: ~a"
-				    suspend-highlight? highlight-parens? just-once)
-		 (if (or (not highlight-parens?)
-			 suspend-highlight?)
-		     (set! just-once #t)
-		     (begin 
-		       (set! just-once #f)
-		       (dynamic-wind
-			(lambda () (send edit begin-edit-sequence))
-			(lambda ()
-			  (clear-old-location)
-			  (set! clear-old-location void)
-			  (unless just-clear?
-			    (let* ([here (send edit get-start-position)]
-				   [there (send edit get-end-position)]
-				   [slash?
-				    (lambda (before after)
-				      (let ([text (send edit get-text before after)])
-					(and (string=? text)
-					     (>= (string-length text) 1)
-					     (char=? #\\ (string-ref text 0)))))]
-				   [is-paren?
-				    (lambda (f)
-				      (lambda (char)
-					(ormap (lambda (x) (char=? char (string-ref (f x) 0)))
-					       mred:scheme-paren:scheme-paren-pairs)))]
-				   [is-left-paren? (is-paren? car)]
-				   [is-right-paren? (is-paren? cdr)])
-			      (when (= here there)
-				(let/ec k
-				  (let-values
-				      ([(left right)
-					(cond
-					 [(is-right-paren? (send edit get-character (sub1 here))) 
-					  (cond
-					   [(slash? (- here 2) (- here 1)) (k (void))]
-					   [(mred:scheme-paren:scheme-backward-match
-					     edit here (get-limit edit here)
-					     backward-cache)
-					    =>
-					    (lambda (end-pos) 
-					      (values end-pos here))]
-					   [else (k (void))])]
-					 [(is-left-paren? (send edit get-character here))
-					  (cond
-					   [(slash? (- here 1) here) (k (void))]
-					   [(mred:scheme-paren:scheme-forward-match
-					     edit here (send edit last-position)
-					     forward-cache)
-					    =>
-					    (lambda (end-pos)
-					      (values here end-pos))]
-					   [else (k (void))])]
-					 [else (k (void))])])
-				    (clear-old-location)
-				    (set! clear-old-location
-					  (send edit highlight-range left right
-						color
-						(mred:icon:get-paren-highlight-bitmap)
-						(= there here left)))))))))
-			(lambda () (send edit end-edit-sequence)))))))]
+		 (when highlight-parens?
+		   (dynamic-wind
+		    (lambda ()
+		      (set! in-highlight-parens? #t)
+		      (send edit begin-edit-sequence))
+		    (lambda ()
+		      (clear-old-location)
+		      (set! clear-old-location void)
+		      (unless just-clear?
+			(let* ([here (send edit get-start-position)]
+			       [there (send edit get-end-position)]
+			       [slash?
+				(lambda (before after)
+				  (let ([text (send edit get-text before after)])
+				    (and (string=? text)
+					 (>= (string-length text) 1)
+					 (char=? #\\ (string-ref text 0)))))]
+			       [is-paren?
+				(lambda (f)
+				  (lambda (char)
+				    (ormap (lambda (x) (char=? char (string-ref (f x) 0)))
+					   mred:scheme-paren:scheme-paren-pairs)))]
+			       [is-left-paren? (is-paren? car)]
+			       [is-right-paren? (is-paren? cdr)])
+			  (when (= here there)
+			    (let/ec k
+			      (let-values
+				  ([(left right)
+				    (cond
+				     [(is-right-paren? (send edit get-character (sub1 here))) 
+				      (cond
+				       [(slash? (- here 2) (- here 1)) (k (void))]
+				       [(mred:scheme-paren:scheme-backward-match
+					 edit here (get-limit edit here)
+					 backward-cache)
+					=>
+					(lambda (end-pos) 
+					  (values end-pos here))]
+				       [else (k (void))])]
+				     [(is-left-paren? (send edit get-character here))
+				      (cond
+				       [(slash? (- here 1) here) (k (void))]
+				       [(mred:scheme-paren:scheme-forward-match
+					 edit here (send edit last-position)
+					 forward-cache)
+					=>
+					(lambda (end-pos)
+					  (values here end-pos))]
+				       [else (k (void))])]
+				     [else (k (void))])])
+				(clear-old-location)
+				(set! clear-old-location
+				      (send edit highlight-range left right
+					    color
+					    (mred:icon:get-paren-highlight-bitmap)
+					    (= there here left)))))))))
+		    (lambda ()
+		      (send edit end-edit-sequence)
+		      (set! in-highlight-parens? #f))))))]
 	    
 	    [get-limit
 	     (lambda (edit pos)

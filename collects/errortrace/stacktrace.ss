@@ -207,8 +207,8 @@
                [(profiled) (if (eq? (stx-info-tailness info) 'lambda-body)
                                (profile-point rebuilt (stx-info-inferred-name info) src trans?)
                                rebuilt)]
-               [(mark-maker) (lambda (label) 
-                               (make-debug-info src my-tail-bound free-here label #f))])
+               [(mark-maker) (lambda (source) 
+                               (make-debug-info source my-tail-bound free-here 'no-label #f))])
             (if (should-be-annotated? info (null? pieces) trans?)
                 (values (with-mark src mark-maker profiled)
                         free-for-parent)

@@ -208,7 +208,7 @@
                                   (list prior-lexically-bound newly-bound-in-parent))]
              [new-f (f-maker my-tail-bound my-lexically-bound new-result-box)]
              [sub-annotated (expr-iterator new-f stx)] ; recursive call
-             [debug-info (make-debug-info stx my-tail-bound my-lexically-bound 
+             [debug-info (make-debug-info #`(quote-syntax #,stx) my-tail-bound my-lexically-bound 
                                           'none #f)])
         #`(with-continuation-mark #,debug-key #,debug-info #,sub-annotated))))
   

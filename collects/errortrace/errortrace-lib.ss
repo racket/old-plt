@@ -69,7 +69,7 @@
   ;; with-mark : syntax? (any? -> syntax?) syntax? -> syntax?
   (define (with-mark src-stx mark-maker expr)
     (with-syntax ([expr expr]
-		  [mark (mark-maker 'no-label)]
+		  [mark (mark-maker src-stx)]
 		  [key key])
       (execute-point
        src-stx

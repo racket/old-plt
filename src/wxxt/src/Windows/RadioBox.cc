@@ -225,8 +225,13 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func, char *label,
 
     label = wxGetCtlLabel(label);
 
-    vert = (panel->GetLabelPosition() == wxVERTICAL);
-
+    if (style & wxVERTICAL_LABEL)
+      vert = 1;
+    else if (style & wxHORIZONTAL_LABEL)
+      vert = 0;
+    else
+      vert = (panel->GetLabelPosition() == wxVERTICAL);
+    
     if ((style & wxVERTICAL) == wxVERTICAL) {
       if (num_rows <= 0)
 	num_rows = num_toggles;

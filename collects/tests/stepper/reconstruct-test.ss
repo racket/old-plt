@@ -237,6 +237,17 @@
                           ((,highlight-placeholder) ((and false true)))
                           ((,highlight-placeholder) (false))))
 
+(test-beginner-sequence "(define a1 true)(define (b1 x) (and a1 true x)) (b1 false)"
+                        `(((,highlight-placeholder) ((b1 false)))
+                          ((,highlight-placeholder) ((and a1 true false)))
+                          (((and ,highlight-placeholder true false)) (a1))
+                          (((and ,highlight-placeholder true false)) (true))
+                          ((,highlight-placeholder) ((and true true false)))
+                          ((,highlight-placeholder) ((and true false)))
+                          ((,highlight-placeholder) ((and true false)))
+                          ((,highlight-placeholder) (false))))
+
+
 (test-beginner-sequence "(define a +) a"
                         `(((,highlight-placeholder) (a))
                           ((,highlight-placeholder) (+))))

@@ -52,6 +52,7 @@
  (bug-report-field-collections "Collections")
  (bug-report-field-human-language "Language humain")
  (bug-report-field-version "Version")
+ (bug-report-synthesized-information "Information Synthétisée")  ;; dialog title
  (bug-report-show-synthesized-info "Montrer l'information synthétisée")
  (bug-report-submit "Soumettre")
  (sending-bug-report "Soumission du formulaire de bogue en cours...")

@@ -598,25 +598,27 @@
 			[dir (build-path (global-defined-value 
 					  'mred:plt-home-directory)
 					 "doc/")])
-		   (when (directory-exists? dir)
-		     (let* ([dirs (directory-list dir)]
-			    [find-title
-			     (lambda (port)
-			       (let loop ([l (read-line port)])
-				 (let ([match (regexp-match reg l)])
-				   (if match
-				       (cadr match)
-				       (loop (read-line port))))))]				 
-			    [add-item
-			     (lambda (local-dir)
-			       (let* ([f (build-path dir local-dir "index.html")])
-				 (when (file-exists? f)
-				   (send help-menu append-item
-					 (call-with-input-file f find-title)
-					 (lambda ()
-					   (mred:handler:edit-file f))))))])
-		       (send mb append help-menu "Help")
-		       (for-each add-item dirs)))
+		   (if (directory-exists? dir)
+		       (let* ([dirs (directory-list dir)]
+			      [find-title
+			       (lambda (port)
+				 (let loop ([l (read-line port)])
+				   (let ([match (regexp-match reg l)])
+				     (if match
+					 (cadr match)
+					 (loop (read-line port))))))]				 
+			      [add-item
+			       (lambda (local-dir)
+				 (let* ([f (build-path dir local-dir "index.htm")])
+				   (if (file-exists? f)
+				       (send help-menu append-item
+					     (call-with-input-file f find-title)
+					     (lambda ()
+					       (mred:handler:edit-file f)))
+				       (mred:debug:printf 'help-menu "couldn't find ~a" f))))])
+			 (send mb append help-menu "Help")
+			 (for-each add-item dirs))
+		       (mred:debug:printf 'help-menu "couldn't find PLTHOME/doc directory"))
 		   mb)))]
 	    [on-close 
 	     (lambda ()

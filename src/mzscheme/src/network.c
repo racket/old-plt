@@ -2990,11 +2990,14 @@ static Scheme_Object *udp_send_it(const char *name, int argc, Scheme_Object *arg
 			 name, udp);
 	return NULL;
       }
-      if (!with_addr && !udp->connected) {
+      if ((!with_addr && !udp->connected)
+	  || (with_addr && udp->connected)) {
 	/* socket is unconnected, maybe disconnected while we slept */
 	scheme_raise_exn(MZEXN_I_O_UDP,
-			 "%s: udp socket is not connected: %V",
-			 name, udp);
+			 "%s: udp socket is%s connected: %V",
+			 name, 
+			 with_addr ? "" : " not",
+			 udp);
 	return NULL;
       }
 

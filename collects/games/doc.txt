@@ -74,6 +74,10 @@ or other games installed as sub-collections of the "games" collection
 
                                               - by Eli
 
+ * Checkers - A simple checkers game (with no AI player) intended
+   as a demonstration use of the gl-board-games library.
+                                             
+					      - by Scott
 
 Implementing new Games
 ----------------------

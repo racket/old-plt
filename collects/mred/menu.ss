@@ -129,7 +129,7 @@
 	       (let ([id (append -1 label menu help)])
 		 (set! submenus (cons (cons id menu) submenus))
 		 (if menu-bar
-		     (send menu set-menubar menu-bar)
+		     (send menu set-menu-bar menu-bar)
 		     (error 'mred:menu% "must set the menubar before adding any submenus"))
 		 id))]
 	    [append-check-set

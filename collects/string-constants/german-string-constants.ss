@@ -1,6 +1,7 @@
 
 (
- 
+
+ ;; bad translation, but useful for testing this translation to have *something* here.
  (is-this-your-native-language
   "German")
  

@@ -1,4 +1,4 @@
-/* $Id: matrix.h,v 1.3 2004/10/26 03:59:54 cozmic Exp $ */
+/* $Id: matrix.h,v 1.4 2005/03/15 23:21:53 eli Exp $ */
 
 /* GNUPLOT - matrix.h */
 
@@ -33,6 +33,8 @@
 
 #ifndef MATRIX_H
 #define MATRIX_H
+
+#include <scheme.h>
 
 
 #ifdef EXT

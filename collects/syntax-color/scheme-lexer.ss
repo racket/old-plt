@@ -81,10 +81,10 @@
                       (@ "\\x" digit16 digit16)
                       (@ "\\" #\newline))]
 
-   [bad-str (@ (: "" "#rx") "\"" 
-             (* (: (^ "\"" "\\")
-                   (@ "\\" any)))
-             (? "\""))]
+   [bad-str (@ (? "#rx") "\"" 
+               (* (: (^ "\"" "\\")
+                     (@ "\\" any)))
+               (? (: "\\" "\"")))]
    [num2 (@ prefix2 complex2)]
    [complex2 (: real2
                 (@ real2 "@" real2)
@@ -203,13 +203,17 @@
    [identifier (@ identifier-start
                 (* (: identifier-escapes identifier-chars)))]
 
-   [bad-id-start (: bad-id-escapes
+   [bad-id-start (: identifier-escapes
                     (^ (: identifier-delims "\\" "|" "#"))
                     (@ "#" (^ "\\" "'" "&" "`" ",")))]
    [bad-id-escapes (: identifier-escapes
                       (@ "|" (* (^ "|"))))]
-   [bad-id (@ bad-id-start
-            (* (: bad-id-escapes identifier-chars)))]
+   [bad-id (: (@ bad-id-start
+                 (* (: identifier-escapes identifier-chars))
+                 (? (: "\\" bad-id-escapes)))
+              "\\"
+              bad-id-escapes)]
+             
   
    [reader-command (: (@ "#" c s) (@ "#" c i))]
    [sharing (: (@ "#" uinteger10 "=")

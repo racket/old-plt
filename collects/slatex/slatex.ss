@@ -6,18 +6,19 @@
   (provide slatex latex pdf-slatex pdf-latex slatex/no-latex)
 
   (define (filename->latex-filename input-file)
-    (cond
-     [(file-exists? input-file) input-file]
-     [(file-exists? (string-append input-file ".tex"))
-      (string-append input-file ".tex")]
-     [else
-      (error 'filename->latex-filename "~e does not exist" input-file)]))
+    (let ([norm (normalize-path input-file)])
+      (cond
+        [(file-exists? norm) input-file]
+        [(file-exists? (string-append norm ".tex"))
+         (string-append input-file ".tex")]
+        [else
+         (error 'filename->latex-filename "~e does not exist" input-file)])))
 
   (define-values (latex pdf-latex)
     (letrec ([meta-latex 
               (lambda (pdf?)
                 (lambda (input-file)
-                  (let ([file (filename->latex-filename (normalize-path input-file))]
+                  (let ([file (filename->latex-filename input-file)]
                         [command-name (if pdf? 
                                           "pdflatex"
                                           "latex")])
@@ -52,7 +53,7 @@
                              (send-event "MACS" "aevt" "odoc" (vector 'file oztex-location)))))
                        (send-event "OTEX" "aevt" "odoc" (vector 'file file))]
                       [(windows unix macosx) ;; is this also okay for beos?
-                       (system (format "~a ~a" command-name file))]
+                       (system* (find-executable-path command-name #f) file)]
                       [else
                        (error 'latex "do not know how to run ~s on ~s" command-name (system-type))]))))])
       (values

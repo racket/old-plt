@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: RadioBox.h,v 1.1 1996/01/10 14:57:23 markus Exp $
+ * $Id: RadioBox.h,v 1.1.1.1 1997/12/22 17:28:58 mflatt Exp $
  *
  * Purpose: radio box panel item
  *
@@ -76,6 +76,7 @@ public:
     virtual char  *GetLabel(void)	{ return wxItem::GetLabel(); }
     virtual void  SetLabel(char *label)	{ wxItem::SetLabel(label); }
     virtual Bool  Show(Bool show)	{ return wxItem::Show(show); }
+    void Command(wxCommandEvent &event);
 private:
 #   ifdef Have_Xt_Types
     static void EventCallback(Widget w, XtPointer clientData, XtPointer ptr);

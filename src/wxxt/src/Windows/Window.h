@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Window.h,v 1.2 1996/01/10 23:47:14 markus Exp $
+ * $Id: Window.h,v 1.1.1.1 1997/12/22 17:28:57 mflatt Exp $
  *
  * Purpose: base class for all windows
  *
@@ -259,6 +259,7 @@ public:
 
     void      ForEach(void (*foreach)(wxWindow *w, void *data), void *data);
 
+
 protected:
     // create and destroy associated device context
     void CreateDC(void);
@@ -312,6 +313,9 @@ protected:
 
     /* For scrolling with explicit control: */ 
     long hs_pos, vs_pos, hs_page, vs_page, hs_width, vs_width;
+
+
+    static void FocusChangeCallback(void *, wxWindow **winp, void *on);
 };
 
 #endif // Window_h

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Slider.h,v 1.1 1996/01/10 14:57:24 markus Exp $
+ * $Id: Slider.h,v 1.1.1.1 1997/12/22 17:28:59 mflatt Exp $
  *
  * Purpose: slider panel item
  *
@@ -47,6 +47,7 @@ public:
     int   GetValue(void) { return value; }
     void  SetButtonColour(wxColour *col);
     void  SetValue(int value);
+    void Command(wxCommandEvent &event);
 private:
 #   ifdef Have_Xt_Types
     static void EventCallback(Widget, XtPointer, XtPointer);

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: RadioBox.cc,v 1.1 1996/01/10 14:57:22 markus Exp $
+ * $Id: RadioBox.cc,v 1.1.1.1 1997/12/22 17:28:57 mflatt Exp $
  *
  * Purpose: radio box panel item
  *
@@ -406,6 +406,12 @@ Bool wxRadioBox::Show(int item, Bool show)
     else      XtUnmapWidget(TOGGLES[item]);
   }
   return FALSE;
+}
+
+void wxRadioBox::Command(wxCommandEvent &event)
+{
+  SetSelection(event.commandInt);
+  ProcessCommand(event);
 }
 
 //-----------------------------------------------------------------------------

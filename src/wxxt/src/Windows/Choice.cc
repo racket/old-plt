@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Choice.cc,v 1.1 1996/01/10 14:57:06 markus Exp $
+ * $Id: Choice.cc,v 1.1.1.1 1997/12/22 17:28:58 mflatt Exp $
  *
  * Purpose: choice panel item
  *
@@ -203,6 +203,13 @@ void wxChoice::SetStringSelection(char *s)
 {
     SetSelection(FindString(s));
 }
+
+void wxChoice::Command(wxCommandEvent &event)
+{
+  SetSelection(event.commandInt);
+  ProcessCommand(event);
+}
+
 
 //-----------------------------------------------------------------------------
 // callback for commandWidgetClass

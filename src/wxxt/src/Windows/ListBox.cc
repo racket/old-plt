@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: ListBox.cc,v 1.1.1.1 1997/12/22 17:28:59 mflatt Exp $
+ * $Id: ListBox.cc,v 1.2 1998/01/30 15:20:32 mflatt Exp $
  *
  * Purpose: list box panel item
  *
@@ -323,6 +323,19 @@ void wxListBox::SetFirstItem(int n)
     Scroll(0, n * row_height);
 }
 
+int wxListBox::GetFirstItem()
+{
+  Dimension row_height;
+  Position y;
+  XtVaGetValues(X->handle, XtNrowHeight, &row_height, XtNy, &y, NULL);
+
+  y = -y;
+  if (y % row_height)
+    return (y / row_height) + 1;
+  else
+    return (y / row_height);
+}
+
 void wxListBox::SetFirstItem(char *s)
 {
     int n;
@@ -445,6 +458,14 @@ void wxListBox::SetString(int n, char *s)
   }
 }
 
+void wxListBox::Command(wxCommandEvent &event)
+{
+  if (event.extraLong)
+    SetSelection(event.commandInt);
+  else
+    Deselect(event.commandInt);
+  ProcessCommand (event);
+}
 
 //-----------------------------------------------------------------------------
 // callback for xfwfMultiListWidgetClass

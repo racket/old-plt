@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Button.cc,v 1.1 1996/01/10 14:57:02 markus Exp $
+ * $Id: Button.cc,v 1.1.1.1 1997/12/22 17:28:57 mflatt Exp $
  *
  * Purpose: button panel item
  *
@@ -208,13 +208,9 @@ char *wxButton::GetLabel(void)
 // do the same as if button was clicked
 //-----------------------------------------------------------------------------
 
-void wxButton::Command(wxCommandEvent &WXUNUSED(event))
+void wxButton::Command(wxCommandEvent &event)
 {
-    wxCommandEvent *ev = new wxCommandEvent(wxEVENT_TYPE_BUTTON_COMMAND);
-
-    ev->eventObject = this;
-
-    ProcessCommand(*ev);
+    ProcessCommand(event);
 }
 
 //-----------------------------------------------------------------------------

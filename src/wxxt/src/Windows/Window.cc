@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Window.cc,v 1.2 1998/01/27 16:38:58 mflatt Exp $
+ * $Id: Window.cc,v 1.3 1998/01/29 15:53:00 mflatt Exp $
  *
  * Purpose: base class for all windows
  *
@@ -52,10 +52,11 @@ extern void wxSetSensitive(Widget, Bool enabled);
 // wxWindow constructor
 //-----------------------------------------------------------------------------
 
-#define ACTIVE_FLAG 0x1
+#define ACTIVE_VIA_POINTER_FLAG 0x1
 #define DISABLED_FLAG 0x2
 #define SHOWN_FLAG 0x4
 #define NO_AUTO_SCROLL_FLAG 0x8
+#define FOCUS_FLAG 0x10
 
 IMPLEMENT_DYNAMIC_CLASS(wxWindow, wxEvtHandler)
 
@@ -766,7 +767,7 @@ void wxWindow::SetFocus(void)
       break;
   
   /* MATTHEW: Is the frame currently active? */
-  if (win && (win->misc_flags & ACTIVE_FLAG)) {
+  if (win && (win->misc_flags & FOCUS_FLAG)) {
     /* MATTHEW: Avoids trying to set focus when it's already there: */
     if (XtIsSubclass(X->frame, xfwfCommonWidgetClass)) {
       Time time = CurrentTime;
@@ -962,18 +963,21 @@ static void FreeSaferef(Widget WXUNUSED(w), wxWindow** winp,
   FREE_SAFEREF((char *)winp);
 }
 
-static void FocusChangeCallback(Widget,
-				wxWindow **winp,
-				XtPointer on)
+void wxWindow::FocusChangeCallback(void*,
+				   wxWindow **winp,
+				   void*on)
 {
   wxWindow *win = *winp;
   if (!win)
     return;
 
-  if (on)
+  if (on) {
+    win->misc_flags |= FOCUS_FLAG;
     win->GetEventHandler()->OnSetFocus();
-  else
+  } else { 
+    win->misc_flags -= (win->misc_flags & FOCUS_FLAG);
     win->GetEventHandler()->OnKillFocus();
+  }
 }
 
 void wxWindow::AddEventHandlers(void)
@@ -1032,7 +1036,6 @@ void wxWindow::AddEventHandlers(void)
        PointerMotionHintMask |
        EnterWindowMask |
        LeaveWindowMask |
-       FocusChangeMask | 	// for OnKillFocus, OnSetFocus
        (XtIsSubclass(win->X->handle, xfwfCommonWidgetClass) ?
 	NoEventMask : ExposureMask), // for OnPaint (non-xfwfCommonWidget-subclasses)
        FALSE,
@@ -1041,6 +1044,8 @@ void wxWindow::AddEventHandlers(void)
        XtListHead);
     XtInsertEventHandler
       (win->X->frame,	// handle events for frame widget
+       EnterWindowMask |
+       LeaveWindowMask |
        FocusChangeMask, 	// for OnKillFocus, OnSetFocus
        FALSE,
        (XtEventHandler)wxWindow::WindowEventHandler,
@@ -1343,8 +1348,23 @@ void wxWindow::WindowEventHandler(Widget w,
 	*continue_to_dispatch_return = FALSE; /* Event was handled by OnEvent */ }
 	break;
     case EnterNotify:
-	Enter = TRUE;
-    case LeaveNotify: {
+      Enter = TRUE;
+    case LeaveNotify: 
+      if (w == win->X->frame) {
+	/* If Focus == PointerRoot, manage activation */
+	if (xev->xcrossing.detail != NotifyInferior) {
+	  Window current;
+	  int old_revert;
+	  XGetInputFocus(XtDisplay(win->X->frame), &current, &old_revert);
+	  if (current == PointerRoot) {
+	    if (Enter)
+	      win->misc_flags |= ACTIVE_VIA_POINTER_FLAG;
+	    else
+	      win->misc_flags -= (win->misc_flags & ACTIVE_VIA_POINTER_FLAG);
+	    win->GetEventHandler()->OnActivate(Enter);
+	  }
+	}
+      } else {
         wxMouseEvent *_wxevent = new wxMouseEvent(Enter 
 						  ? wxEVENT_TYPE_ENTER_WINDOW 
 						  : wxEVENT_TYPE_LEAVE_WINDOW);
@@ -1366,8 +1386,9 @@ void wxWindow::WindowEventHandler(Widget w,
 	if (!win->CallPreOnEvent(win, &wxevent))
 	  win->GetEventHandler()->OnEvent(wxevent);
 	wxevent.eventHandle = NULL; /* MATTHEW: [5] */
-	*continue_to_dispatch_return = FALSE; /* Event was handled by OnEvent */ }
-	break;
+	*continue_to_dispatch_return = FALSE; /* Event was handled by OnEvent */ 
+      }
+      break;
     case MotionNotify: {
 	wxMouseEvent *_wxevent = new wxMouseEvent(wxEVENT_TYPE_MOTION);
 	wxMouseEvent &wxevent = *_wxevent;
@@ -1400,17 +1421,33 @@ void wxWindow::WindowEventHandler(Widget w,
 	break;
       /* MATTHEW : [5] Use focus in/out for OnActivate */
     case FocusIn:
-        if (!(win->misc_flags & ACTIVE_FLAG)) {
-	  win->misc_flags |= ACTIVE_FLAG;
-	  win->GetEventHandler()->OnActivate(TRUE);
-	}
-        break;
+        Enter = TRUE;
     case FocusOut:
-        if (win->misc_flags & ACTIVE_FLAG) {
-	  win->misc_flags -= ACTIVE_FLAG;
-	  win->GetEventHandler()->OnActivate(FALSE);
+      if (xev->xfocus.detail != NotifyInferior) {
+	Window current;
+	if (xev->xfocus.detail == NotifyPointer) {
+	  /* NotifyPointer is meaningful if the focus is PointerRoot
+	     or we're active via the pointer */
+	  if (!Enter && (win->misc_flags & ACTIVE_VIA_POINTER_FLAG)) {
+	    current = PointerRoot;
+	  } else {
+	    int old_revert;
+	    XGetInputFocus(XtDisplay(win->X->frame), &current, &old_revert);
+	  }
+	} else
+	  current = PointerRoot;
+
+	if (current == PointerRoot) {
+	  if (xev->xfocus.detail == NotifyPointer) {
+	    if (Enter)
+	      win->misc_flags |= ACTIVE_VIA_POINTER_FLAG;
+	    else
+	      win->misc_flags -= (win->misc_flags & ACTIVE_VIA_POINTER_FLAG);
+	  }
+	  win->GetEventHandler()->OnActivate(Enter);
 	}
-	break;
+      }
+      break;
     case Expose: // arrives for non-xfwfCommonWidget-subclasses only
 	if (win->dc && win->painting_enabled) { // expose only if DC available
 	    // setup drawable of dc if dc available

@@ -1,11 +1,12 @@
 
- [index entires: _debug_ _debugger_ _debugging_
-                 _profile_ _profiler_ _profiling_ ]
+ [index entries: _debug_ _debugger_ _debugging_
+                 _profile_ _profiler_ _profiling_
+                 _coverage_ ]
 
-_Errortrace_ is a Poor Man's stack-trace-on-exceptions/profiler for
+_Errortrace_ is a stack-trace-on-exceptions/profiler/coverage tool for
  MzScheme.  Errortrace is not a complete debugger, and a real debugger
- in DrScheme is imminent; meanwhile, using errotrace might be better
- than nothing.
+ in DrScheme is expected soon; meanwhile, using errortrace might be
+ better than nothing.
 
 Quick instructions
 ------------------
@@ -14,30 +15,35 @@ Quick instructions
 
   1) Prefix your program with
       (import (lib "errortrace.ss" "errortrace"))
-     or start MzScheme with the -L flag:
-      mzscheme -L errortrace.ss errortrace
+     or start MzScheme with the -M flag:
+      mzscheme -M errortrace
 
   2) When an exception occurs, the exception handler
      prints something like a stack trace, most recent
      contexts first
 
+The errortrace module is odd; don't import it into another
+module. Instead, the errortrace module is meant to be invoked from the
+top-level, so that it can install an evaluation handler, exception
+handler, etc.
+
 Exception Information
 ---------------------
 
-Loading errortrace.ss file sets the eval handler to instrument
-Scheme source code. 
+Invoking the errortrace.ss module sets the eval handler to instrument
+Scheme source code.
 
  NOTE: errortrace has no effect on code loaded as compiled byte code
  (i.e., from a .zo file) or native code (i.e., from a .dll or .so
  file).
 
-Errortrace.ss also sets a debug info handler to record information
-about the context of exceptions, and an exception handler to print out
-information recorded by the debug info handler. The load handler is
-changed to correlate source code with source files.
+The errortrace.ss module also sets a debug info handler to record
+information about the context of exceptions, and an exception handler
+to print out information recorded by the debug info handler. The load
+handler is changed to correlate source code with source files.
 
 Errortrace's instrumentation can be explicitly disabled via the
-`instrumenting-enabled' Boolean parameter. Instrumentation is on by
+`instrumenting-enabled' boolean parameter. Instrumentation is on by
 default. The `instrumenting-enabled' parameter affects only the way
 that source code is compiled, not the way that exception information
 is reported.
@@ -50,7 +56,7 @@ is reported.
 The instrumentation for storing exception information slows most
 programs by a factor of 2 or 3.
 
-Do not load errortrace.ss before writing .zo files. Errortrace
+Do not load errortrace before writing .zo files. Errortrace
 instruments S-expressions with unprintable values; this works fine if
 the instrumented S-expression is passed to the default eval handler,
 but neither the S-expression nor its byte-code form can be marshalled
@@ -76,7 +82,7 @@ Profiling
 ---------
 
 Errortrace's profiling instrumentation is off by default. Enable
-profiling instrumentation with the `profiling-enabled' Boolean
+profiling instrumentation with the `profiling-enabled' boolean
 parameter (but setting `instrumentation-enabled' to #f also disables
 profiling):
 
@@ -101,7 +107,7 @@ Profiling records:
 
  * optionally, information about the procedure call path (something
    like the stack trace) for every call to the procedure. Path
-   information is collected when the `profile-paths-enabled' Boolean
+   information is collected when the `profile-paths-enabled' boolean
    parameter is #t; the default is #f, but setting the parameter to #t
    immediately affects all procedure instrumented for profiling
    information:
@@ -144,6 +150,33 @@ Gets the current profile results and displays them. It optionally
 shows paths information (if it is recorded) and sorts by either time
 or call counts.
 
+Coverage
+--------
+
+Errortrace can track expression execution that is useful for checking
+test coverage (i.e., simple expression coverage). Enable coverage
+checking with the `execute-counts-enabled' boolean parameter (but
+setting `instrumentation-enabled' to #f also disables execute
+counting):
+
+> (execute-counts-enabled) - returns #t if execute-counting
+  instrumentation is enabled, #f otherwise
+> (execute-counts-enabled on?) - enables/disables execute-counting
+  instrumentation
+
+> (get-execute-counts) - returns a list of pairs, one for each
+  instrucmented expression. The first element of the pair is a syntax
+  object (usually containing source location information) for the
+  original expression, and the second element of the pair is the
+  number of times that the expression has been evaluated.
+
+> (annotate-executed-file filename-path) - writes the named file to
+  the current output port, inserting an additional line between each
+  source line to reflect execution counts (as reported by
+  `get-execute-counts'). An expression underlined with "^" has been
+  executed 0 times; an expression underlined with "." has been
+  executed 1 time; and an expression underlined with "," has been
+  executed multiple times.
 
 _Re-using errortrace stack tracing_
 -----------------------------------
@@ -157,21 +190,21 @@ The export signature contains these names:
 > annotate : syntax (listof ???) boolean -> syntax
 > annotate-top : syntax (listof ???) boolean -> syntax
 
-These two functions annotate expressions with errortrace information. 
-annotate-top should be called with a top-level expression and annotate
-should be called with a nested expression (eg, by profile-point).
+These two functions annotate expressions with errortrace information.
+The `annotate-top' function should be called with a top-level
+expression, and `annotate' should be called with a nested expression
+(e.g., by `profile-point').
 
 The import signature contains these names:
 
 > with-mark : syntax syntax -> syntax
 
-  This procedure is called by annotate and annotate-top to wrap expressions
-  with `with-continuation-mark'. The first argument is the source
-  expressions and the second is the expression to be wrapped.
+  This procedure is called by `annotate' and `annotate-top' to wrap
+  expressions with `with-continuation-mark'. The first argument is the
+  source expressions and the second is the expression to be wrapped.
 
 > profile-point : (syntax ?? ?? ?? ?? -> syntax)
 
-  This procedure is called by annotate and annotate-top to wrap
-  expressions with profile collecting information. 
-  Returning the first argument means no profiling information
-  is collected.
+  This procedure is called by `annotate' and `annotate-top' to wrap
+  expressions with profile collecting information.  Returning the
+  first argument means no profiling information is collected.

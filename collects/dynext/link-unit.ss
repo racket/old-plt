@@ -4,7 +4,8 @@
 	   (lib "include.ss")
 	   (lib "process.ss")
 	   (lib "sendevent.ss")
-	   "private/dirs.ss")
+	   "private/dirs.ss"
+           "filename-version.ss")
 
   (require "link-sig.ss")
 

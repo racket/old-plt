@@ -88,6 +88,8 @@ static unsigned int r_start, g_start, b_start;
 
 int wx_alloc_color_is_fast;
 
+Colormap fast_colormap = 0; /* for init, we assume that no valid colormap is 0! */
+
 Status wxAllocColor(Display *d, Colormap cm, XColor *c)
 {
   int i;
@@ -97,6 +99,19 @@ Status wxAllocColor(Display *d, Colormap cm, XColor *c)
   int p, w, o;
   unsigned long pixel;
   Status status;
+
+  /* Check fast path first: */
+  if (cm == fast_colormap) {
+    c->red = n_bits(c->red, r_length);
+    c->green = n_bits(c->green, g_length);
+    c->blue = n_bits(c->blue, b_length);
+
+    c->pixel = ((c->red << r_start)
+		| (c->green << g_start)
+		| (c->blue << b_start));
+
+    return OK;
+  }
 
   /* If we have a weird colormap, essentially give up (no
      deallocation). */
@@ -119,22 +134,14 @@ Status wxAllocColor(Display *d, Colormap cm, XColor *c)
       b_start = mask_start(tc->blue_mask);
 
       wx_alloc_color_is_fast = 1;
+      fast_colormap = wx_default_colormap;
     }
     tc_known = 1;
+
+    /* Try again: */
+    return wxAllocColor(d, cm, c);
   }
   
-  if (tc) {
-    c->red = n_bits(c->red, r_length);
-    c->green = n_bits(c->green, g_length);
-    c->blue = n_bits(c->blue, b_length);
-
-    c->pixel = ((c->red << r_start)
-		| (c->green << g_start)
-		| (c->blue << b_start));
-
-    return OK;
-  }
-
   /* Not TrueColor. Do things the difficult way... */
 
   /* Check for black: */

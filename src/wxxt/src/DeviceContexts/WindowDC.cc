@@ -95,6 +95,11 @@ static int fill_rule[]  = { EvenOddRule, WindingRule };
 
 static Pixmap* hatch_bitmaps = NULL;
 
+#undef GETCOLORMAP
+#define GETCOLORMAP(x) wx_default_colormap
+
+#define wxMINI_SIZE 8
+
 //-----------------------------------------------------------------------------
 // create and destroy wxWindowDC
 //-----------------------------------------------------------------------------
@@ -558,7 +563,7 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
        Use Xrender extension when:
 
          - It's available at compile time and run time
-	 - There's a mask
+	 - There's a mask or scale
 	 - One of:
              * the rop is ignored (because the src is not mono)
              * the rop is wxSOLID (not wxSTIPPLE, which means "opaque")
@@ -571,10 +576,11 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
     
     
     should_xrender= (wxXRenderHere()
-		     && mask
+		     && (mask || (user_scale_x != 1.0) || (user_scale_y != 1.0))
 		     && ((src->GetDepth() > 1)
 			 || ((rop == wxSOLID)
 			     && (!dcolor || (!dcolor->Red() && !dcolor->Green() && !dcolor->Blue())))));
+
 #endif
 
     tx = (int)XLOG2DEV(xdest);
@@ -587,7 +593,7 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
     scaled_height = (int)YLOG2DEV(ydest + h) - ty;
 
     /* Handle scaling by creating a new, temporary bitmap: */
-    if ((scaled_width != (int)w) || (scaled_height != (int)h)) {
+    if (!should_xrender && ((scaled_width != (int)w) || (scaled_height != (int)h))) {
       int retval;
       src = ScaleBitmap(src, scaled_width, scaled_height, xsrc, ysrc, w, h, DPY, &tmp, &retval, 0, 0);
       if (!src)
@@ -669,19 +675,20 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
 	  wxMemoryDC *tmp;
 	  wxColour *c;
 	  int mw, mh, v;
-	  Pixmap bpm;
 
-	  mw = scaled_width;
-	  mh = scaled_height;
+	  mw = mask->GetWidth();
+	  mh = mask->GetHeight();
 	  
 	  bm = new wxBitmap();
 	  bm->Create(mw, mh, 8);
-	  bpm = GETPIXMAP(bm);
 	  
 	  if (bm->Ok()) {
+	    Pixmap bpm;
 	    XImage *img;
 	    int i, j;
 	  
+	    bpm = GETPIXMAP(bm);
+
 	    tmp = new wxMemoryDC(1);
 	    tmp->SelectObject(mask);
 	    
@@ -733,6 +740,27 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
 	XRenderSetPictureClipRegion(wxAPP_DISPLAY, destp, CURRENT_REG);
       }
 
+      if ((scaled_width != (int)w) || (scaled_height != (int)h)) {
+ 	XTransform xform;
+	int ih = (int)h, iw = (int)w;
+
+	xform.matrix[0][0] = scaled_height * iw;
+	xform.matrix[0][1] = 0;
+	xform.matrix[0][2] = 0;
+
+	xform.matrix[1][0] = 0;
+	xform.matrix[1][1] = scaled_width * ih; 
+	xform.matrix[1][2] = 0;
+
+	xform.matrix[2][0] = 0;
+	xform.matrix[2][1] = 0;
+	xform.matrix[2][2] = scaled_width * scaled_height; 
+
+	XRenderSetPictureTransform(wxAPP_DISPLAY, srcp, &xform);
+	if (maskp)
+	  XRenderSetPictureTransform(wxAPP_DISPLAY, maskp, &xform);
+      }
+
       /* This is the actual blit. */
       XRenderComposite(wxAPP_DISPLAY,
 		       (mask || mono_src) ? PictOpOver : PictOpSrc,
@@ -751,8 +779,11 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
 # ifdef WX_OLD_XFT
       XRenderFreePicture(wxAPP_DISPLAY, destp);
       XRenderFreePicture(wxAPP_DISPLAY, srcp);
-      if (!free_bmp)
+      srcp = 0;
+      if (!free_bmp) {
 	XRenderFreePicture(wxAPP_DISPLAY, maskp);
+	maskp = 0;
+      }
 # endif
 
       /* Free temporary data (all modes) */
@@ -762,7 +793,30 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
 # else
 	XftDrawDestroy(maskd);	
 # endif
+	maskp = 0;
 	DELETE_OBJ free_bmp;
+      }
+
+      if ((srcp || maskp) 
+	  && ((scaled_width != (int)w) || (scaled_height != (int)h))) {
+	XTransform xform;
+
+	xform.matrix[0][0] = 1;
+	xform.matrix[0][1] = 0;
+	xform.matrix[0][2] = 0;
+
+	xform.matrix[1][0] = 0;
+	xform.matrix[1][1] = 1;
+	xform.matrix[1][2] = 0;
+
+	xform.matrix[2][0] = 0;
+	xform.matrix[2][1] = 0;
+	xform.matrix[2][2] = 1;
+
+	if (srcp)
+	  XRenderSetPictureTransform(wxAPP_DISPLAY, srcp, &xform);
+	if (maskp)
+	  XRenderSetPictureTransform(wxAPP_DISPLAY, maskp, &xform);
       }
     } else {
 #endif
@@ -2467,12 +2521,7 @@ Bool wxWindowDC::Ok(void)
 Bool wxWindowDC::GetPixel(float x, float y, wxColour * col)
 {
   int i, j;
-  int k;
-  unsigned long pixel;
-  XColor xcol;
-  int get_pixel_cache_pos;
-  XColor *get_pixel_color_cache;
-  Bool get_pixel_cache_full, mini = 1;
+  Bool mini = 1;
   unsigned int w, h;
 
   if (!DRAWABLE)
@@ -2505,6 +2554,8 @@ Bool wxWindowDC::GetPixel(float x, float y, wxColour * col)
     BeginSetPixel(mini, i, j);
 
     if (X->get_pixel_image_cache->depth == 1) {
+      XColor *get_pixel_color_cache;
+      
       get_pixel_color_cache = X->get_pixel_color_cache;
       
       get_pixel_color_cache[0].pixel = 1;
@@ -2521,57 +2572,10 @@ Bool wxWindowDC::GetPixel(float x, float y, wxColour * col)
     }
   }
 
-  get_pixel_cache_pos = X->get_pixel_cache_pos;
-  get_pixel_color_cache = X->get_pixel_color_cache;
-  get_pixel_cache_full = X->get_pixel_cache_full;
-
-  pixel = XGetPixel(X->get_pixel_image_cache, i - X->cache_dx, j - X->cache_dy);
-
-  if (!wx_alloc_color_is_fast
-      || (X->get_pixel_image_cache->depth == 1)) {
-
-    for (k = get_pixel_cache_pos; k--; ) {
-      if (get_pixel_color_cache[k].pixel == pixel) {
-	col->Set(get_pixel_color_cache[k].red,
-		 get_pixel_color_cache[k].green,
-		 get_pixel_color_cache[k].blue);
-	return TRUE;
-      }
-    }
-
-    if (get_pixel_cache_full) {
-      for (k = NUM_GETPIX_CACHE_COLORS; k-- > get_pixel_cache_pos; ) {
-	if (get_pixel_color_cache[k].pixel == pixel) {
-	  col->Set(get_pixel_color_cache[k].red,
-		   get_pixel_color_cache[k].green,
-		   get_pixel_color_cache[k].blue);
-	  return TRUE;
-	}
-      }
-    }
-  }
-  
-  xcol.pixel = pixel;
   {
-    Colormap cm;
-    cm = GETCOLORMAP(current_cmap);
-    wxQueryColor(wxAPP_DISPLAY, cm, &xcol);
-  }
-
-  col->Set(xcol.red >> SHIFT, xcol.green >> SHIFT, xcol.blue >> SHIFT);
-
-  if (!wx_alloc_color_is_fast) {
-    get_pixel_color_cache[get_pixel_cache_pos].pixel = pixel;
-    get_pixel_color_cache[get_pixel_cache_pos].red = xcol.red >> SHIFT;
-    get_pixel_color_cache[get_pixel_cache_pos].green = xcol.green >> SHIFT;
-    get_pixel_color_cache[get_pixel_cache_pos].blue = xcol.blue >> SHIFT;
-    
-    if (++get_pixel_cache_pos >= NUM_GETPIX_CACHE_COLORS) {
-      get_pixel_cache_pos = 0;
-      X->get_pixel_cache_full = TRUE;
-    }
-
-    X->get_pixel_cache_pos = get_pixel_cache_pos;
+    int r, g, b;
+    GetPixelFast(i, j, &r, &g, &b);
+    col->Set(r, g, b);
   }
 
   return TRUE;
@@ -2600,7 +2604,6 @@ void wxWindowDC::BeginSetPixel(int mini, int near_i, int near_j)
        in a large bitmap, we first try to get a small piece
        of the bitmap in "mini" mode. If we need more, then we'll
        jump to "whole-image" mode. */
-#   define wxMINI_SIZE 8
     if (w > wxMINI_SIZE) {
       if (ni < (wxMINI_SIZE / 2))
 	dx = 0;
@@ -2669,14 +2672,8 @@ void wxWindowDC::EndSetPixel()
 void wxWindowDC::SetPixel(float x, float y, wxColour * col)
 {
   int i, j;
-  int w, h, k;
+  int w, h;
   int red, green, blue;
-  XColor xcol;
-  unsigned long pixel;
-  XImage *get_pixel_image_cache;
-  int get_pixel_cache_pos;
-  XColor *get_pixel_color_cache;
-  Bool get_pixel_cache_full;
 
   i = XLOG2DEV(x);
   j = YLOG2DEV(y);
@@ -2708,20 +2705,48 @@ void wxWindowDC::SetPixel(float x, float y, wxColour * col)
   green = col->Green();
   blue = col->Blue();
 
-  get_pixel_image_cache = X->get_pixel_image_cache;
-  get_pixel_cache_pos = X->get_pixel_cache_pos;
-  get_pixel_color_cache = X->get_pixel_color_cache;
-  get_pixel_cache_full = X->get_pixel_cache_full;
-
   X->set_a_pixel = TRUE;
 
-  if (X->get_pixel_image_cache->depth == 1) {
+  SetPixelFast(i - X->cache_dx, j - X->cache_dy, red, green, blue);
+}
+
+Bool wxWindowDC::BeginSetPixelFast(int x, int y, int w, int h)
+{
+  if (BeginGetPixelFast(x, y, w, h)) {
+    X->set_a_pixel = TRUE;
+    return TRUE;
+  } else
+    return FALSE;
+}
+
+void wxWindowDC::EndSetPixelFast()
+{
+}
+
+void wxWindowDC::SetPixelFast(int i, int j, int red, int green, int blue)
+{
+  int k;
+  XColor xcol;
+  unsigned long pixel;
+  XImage *get_pixel_image_cache;
+
+  get_pixel_image_cache = X->get_pixel_image_cache;
+
+  if (get_pixel_image_cache->depth == 1) {
     if ((red == 255) && (green == 255) && (blue == 255))
       pixel = 0;
     else
       pixel = 1;
   } else {
     if (!wx_alloc_color_is_fast) {
+      int get_pixel_cache_pos;
+      XColor *get_pixel_color_cache;
+      Bool get_pixel_cache_full;
+
+      get_pixel_cache_pos = X->get_pixel_cache_pos;
+      get_pixel_color_cache = X->get_pixel_color_cache;
+      get_pixel_cache_full = X->get_pixel_cache_full;
+
       for (k = get_pixel_cache_pos; k--; ) {
 	if ((get_pixel_color_cache[k].red == red)
 	    && (get_pixel_color_cache[k].green == green)
@@ -2756,6 +2781,12 @@ void wxWindowDC::SetPixel(float x, float y, wxColour * col)
     pixel = xcol.pixel;
     
     if (!wx_alloc_color_is_fast) {
+      int get_pixel_cache_pos;
+      XColor *get_pixel_color_cache;
+
+      get_pixel_cache_pos = X->get_pixel_cache_pos;
+      get_pixel_color_cache = X->get_pixel_color_cache;
+
       get_pixel_color_cache[get_pixel_cache_pos].pixel = pixel;
       get_pixel_color_cache[get_pixel_cache_pos].red = red;
       get_pixel_color_cache[get_pixel_cache_pos].green = green;
@@ -2769,12 +2800,97 @@ void wxWindowDC::SetPixel(float x, float y, wxColour * col)
   }
 
  put:
-  pixel = XPutPixel(get_pixel_image_cache, i - X->cache_dx, j - X->cache_dy, pixel);
+  pixel = XPutPixel(get_pixel_image_cache, i, j, pixel);  
 }
 
 void wxWindowDC::DoFreeGetPixelCache(void)
 {
   EndSetPixel();
+}
+
+Bool wxWindowDC::BeginGetPixelFast(int x, int y, int w, int h)
+{
+  if ((x >= 0) && (y >= 0)
+      && ((unsigned int)(x + w) <= X->width)
+      && ((unsigned int)(y + h) <= X->height)) {
+    BeginSetPixel(0, 0, 0);
+    return TRUE;
+  } else
+    return FALSE;
+}
+
+void wxWindowDC::EndGetPixelFast()
+{
+}
+
+void wxWindowDC::GetPixelFast(int i, int j, int *r, int *g, int *b)
+{
+  unsigned long pixel;
+  XColor xcol;
+
+  pixel = XGetPixel(X->get_pixel_image_cache, i, j);
+
+  if (!wx_alloc_color_is_fast
+      || (X->get_pixel_image_cache->depth == 1)) {
+    int get_pixel_cache_pos, k;
+    XColor *get_pixel_color_cache;
+    Bool get_pixel_cache_full;
+    
+    get_pixel_cache_pos = X->get_pixel_cache_pos;
+    get_pixel_color_cache = X->get_pixel_color_cache;
+    get_pixel_cache_full = X->get_pixel_cache_full;
+
+    for (k = get_pixel_cache_pos; k--; ) {
+      if (get_pixel_color_cache[k].pixel == pixel) {
+	*r = get_pixel_color_cache[k].red;
+	*g = get_pixel_color_cache[k].green;
+	*b = get_pixel_color_cache[k].blue;
+	return;
+      }
+    }
+
+    if (get_pixel_cache_full) {
+      for (k = NUM_GETPIX_CACHE_COLORS; k-- > get_pixel_cache_pos; ) {
+	if (get_pixel_color_cache[k].pixel == pixel) {
+	  *r = get_pixel_color_cache[k].red;
+	  *g = get_pixel_color_cache[k].green;
+	  *b = get_pixel_color_cache[k].blue;
+	  return;
+	}
+      }
+    }
+  }
+  
+  xcol.pixel = pixel;
+  {
+    Colormap cm;
+    cm = GETCOLORMAP(current_cmap);
+    wxQueryColor(wxAPP_DISPLAY, cm, &xcol);
+  }
+
+  if (!wx_alloc_color_is_fast) {
+    int get_pixel_cache_pos;
+    XColor *get_pixel_color_cache;
+    
+    get_pixel_cache_pos = X->get_pixel_cache_pos;
+    get_pixel_color_cache = X->get_pixel_color_cache;
+
+    get_pixel_color_cache[get_pixel_cache_pos].pixel = pixel;
+    get_pixel_color_cache[get_pixel_cache_pos].red = xcol.red >> SHIFT;
+    get_pixel_color_cache[get_pixel_cache_pos].green = xcol.green >> SHIFT;
+    get_pixel_color_cache[get_pixel_cache_pos].blue = xcol.blue >> SHIFT;
+    
+    if (++get_pixel_cache_pos >= NUM_GETPIX_CACHE_COLORS) {
+      get_pixel_cache_pos = 0;
+      X->get_pixel_cache_full = TRUE;
+    }
+
+    X->get_pixel_cache_pos = get_pixel_cache_pos;
+  }
+
+  *r = (xcol.red >> SHIFT);
+  *g = (xcol.green >> SHIFT);
+  *b = (xcol.blue >> SHIFT);
 }
 
 

@@ -168,6 +168,14 @@ public:
     void BeginSetPixel(int mini, int near_i, int near_j);
     void EndSetPixel();
     void SetPixel(float x, float y, wxColour *col);
+  
+    Bool BeginSetPixelFast(int x, int y, int w, int h);
+    void EndSetPixelFast();
+    void SetPixelFast(int x, int y, int r, int g, int b);
+
+    Bool BeginGetPixelFast(int x, int y, int w, int h);
+    void EndGetPixelFast();
+    void GetPixelFast(int x, int y, int *r, int *g, int *b);
 
     void FillPrivateColor(wxColour *c);
 

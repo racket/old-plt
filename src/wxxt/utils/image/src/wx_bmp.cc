@@ -469,32 +469,35 @@ static int loadBMP8(FILE *fp, byte *pic8, int w, int h, int comp)
   return rv;
 }  
 
-
+typedef unsigned char uchar;
 
 /*******************************************/
 static int loadBMP24(FILE *fp, byte *pic24, int w, int h)
 {
-  int   i,j,padb;
+  int   i,j,padb,k;
   byte *pp;
-
+  uchar *line;
 
   padb = (4 - ((w*3) % 4)) & 0x03;  /* # of pad bytes to read at EOscanline */
 
+  line = new WXGC_ATOMIC uchar[(w * 3) + padb];
+
   for (i=h-1; i>=0; i--) {
     pp = pic24 + (i * w * 3);
+
+    fread(line, (w * 3) + padb, 1, fp);
+    k = 0;
     
     for (j=0; j<w; j++) {
       int rc, grc, bc;
       /* BMP data is ordered backward: BGR */
-      bc = getc(fp);   /* blue  */
-      grc = getc(fp);   /* green */
-      rc = getc(fp);   /* red   */
+      bc = line[k++];
+      grc = line[k++];
+      rc = line[k++];
       *pp++ = rc;
       *pp++ = grc;
       *pp++ = bc;
     }
-
-    for (j=0; j<padb; j++) { getc(fp); }
 
     if (ferror(fp)) break;
   }

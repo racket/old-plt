@@ -315,22 +315,43 @@ static void dcGetARGBPixels(wxMemoryDC *dc, float x, float y, int w, int h, char
   int i, j, p;
   unsigned char *ss = (unsigned char *)s;
   wxColour *c;
+  float xs, ys, xo, yo;
   SETUP_VAR_STACK(3);
   VAR_STACK_PUSH(0, ss);
   VAR_STACK_PUSH(1, c);
   VAR_STACK_PUSH(2, dc);
 
-  c = new wxColour();
-  
+  dc->GetUserScale(&xs, &ys);
+  dc->GetDeviceOrigin(&xo, &yo);
   p = 0;
 
-  for (j = 0; j < h; j++) {
-    for (i = 0; i < w; i++) {
-      WITH_VAR_STACK(dc->GetPixel(x + i, y + j, c));
-      ss[p++] = 255; /* alpha */
-      ss[p++] = c->Red();
-      ss[p++] = c->Green();
-      ss[p++] = c->Blue();
+  if (xs == 1 && ys == 1 && xo == 1 && yo == 1
+      && WITH_VAR_STACK(dc->BeginGetPixelFast((int)x, (int)y, w, h))) {
+    int xi = (int)x;
+    int yi = (int)y;
+    int r, g, b;
+    for (j = 0; j < h; j++) {
+      for (i = 0; i < w; i++) {
+	WITH_VAR_STACK(dc->GetPixelFast(xi + i, yi + j,
+					&r, &g, &b));
+	ss[p++] = 255; /* alpha */
+        ss[p++] = r;
+	ss[p++] = g;
+	ss[p++] = b;
+      }
+    }
+    WITH_VAR_STACK(dc->EndGetPixelFast());
+  } else {
+    c = new wxColour();
+
+    for (j = 0; j < h; j++) {
+      for (i = 0; i < w; i++) {
+	WITH_VAR_STACK(dc->GetPixel(x + i, y + j, c));
+	ss[p++] = 255; /* alpha */
+	ss[p++] = c->Red();
+	ss[p++] = c->Green();
+	ss[p++] = c->Blue();
+      }
     }
   }
 
@@ -342,20 +363,37 @@ static void dcSetARGBPixels(wxMemoryDC *dc, float x, float y, int w, int h, char
   int i, j, p;
   unsigned char *ss = (unsigned char *)s;
   wxColour *c;
+  float xs, ys, xo, yo;
   SETUP_VAR_STACK(3);
   VAR_STACK_PUSH(0, ss);
   VAR_STACK_PUSH(1, c);
   VAR_STACK_PUSH(2, dc);
 
-  c = new wxColour();
-  
-  p = 0;
+  dc->GetUserScale(&xs, &ys);
+  dc->GetDeviceOrigin(&xo, &yo);
+  p = 0;    
 
-  for (j = 0; j < h; j++) {
-    for (i = 0; i < w; i++) {
-      WITH_VAR_STACK(c->Set(ss[p+1], ss[p+2], ss[p+3]));
-      WITH_VAR_STACK(dc->SetPixel(x + i, y + j, c));
-      p += 4;
+  if (xs == 1 && ys == 1 && xo == 1 && yo == 1
+      && WITH_VAR_STACK(dc->BeginSetPixelFast((int)x, (int)y, w, h))) {
+    int xi = (int)x;
+    int yi = (int)y;
+    for (j = 0; j < h; j++) {
+      for (i = 0; i < w; i++) {
+	WITH_VAR_STACK(dc->SetPixelFast(xi + i, yi + j, 
+					ss[p+1], ss[p+2], ss[p+3]));
+	p += 4;
+      }
+    }
+    WITH_VAR_STACK(dc->EndSetPixelFast());
+  } else {
+    c = new wxColour();
+  
+    for (j = 0; j < h; j++) {
+      for (i = 0; i < w; i++) {
+	WITH_VAR_STACK(c->Set(ss[p+1], ss[p+2], ss[p+3]));
+	WITH_VAR_STACK(dc->SetPixel(x + i, y + j, c));
+	p += 4;
+      }
     }
   }
 

@@ -649,7 +649,7 @@
     (let ((v0 (polygon-mode-table-lookup0 x))
           (v1 (polygon-mode-table-lookup1 y)))
       (cond
-        ((and v0 v1) (polygon-mode v0 v1))
+        ((and v0 v1) (glPolygonMode v0 v1))
         (v0 (raise-type-error 'polygon-mode polygon-mode-syms1 1 x y))
         (else (raise-type-error 'polygon-mode polygon-mode-syms0 0 x y)))))
 

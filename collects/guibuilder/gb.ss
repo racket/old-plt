@@ -6,9 +6,6 @@
 
 (require-library "framework.ss" "framework")
 
-(error-print-width 512)
-(require-library "errortrace.ss" "errortrace")
-
 (invoke-open-unit/sig 
  (require-relative-library "gbr.ss")
  #f

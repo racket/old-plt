@@ -3648,7 +3648,7 @@ Scheme_Object *scm_gluNewQuadric(void *p, int c, Scheme_Object **v) {
   ptr = gluNewQuadric();
   if (ptr) {
     scm_Quadric *q;
-    q = (scm_Quadric *)scheme_malloc(sizeof(scm_Quadric));
+    q = (scm_Quadric *)scheme_malloc_atomic(sizeof(scm_Quadric));
     q->quad = ptr;
     q->so.type = quadric_type;
     scheme_register_finalizer(q, free_quad, NULL, NULL, NULL);

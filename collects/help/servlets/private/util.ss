@@ -80,11 +80,12 @@
 		      `(B "[Bad manual entry: "
 			  ,man "::" ,ndx)))))
 
+  (define hexifiable '(#\: #\?))
   ; string -> string
   (define (hexify-string s)
     (apply string-append 
 	   (map (lambda (c) 
-		  (if (or (char-whitespace? c) (char=? c #\:))
+		  (if (or (char-whitespace? c) (member c hexifiable))
 		      (format "%~X" (char->integer c))
 		      (format "~a" c)))
 		(string->list s))))

@@ -1,4 +1,8 @@
-_graph.ss_
+[][][][][][][][][][][][][][][][][][][][][][][][][][][][][][]
+
+                          _graph.ss_
+
+[][][][][][][][][][][][][][][][][][][][][][][][][][][][][][]
 
 The graph.ss library provides a graph drawing toolkit, built
 out of mred's pasteboard%s.
@@ -84,3 +88,56 @@ when the mouse cursor is not over the snip. The brush is used to
 draw inside the arrow head and the pen is used to draw the
 border of the arrowhead and the line connecting the two
 snips.
+
+
+[][][][][][][][][][][][][][][][][][][][][][][][][][][][][][]
+
+                     _name-message.ss_
+
+[][][][][][][][][][][][][][][][][][][][][][][][][][][][][][]
+
+
+The _name-message%_ class is derived from canvas%. It
+overrides the on-paint and on-event methods to draw the name
+of a file and handle clicks to popup a menu for choosing a
+directory.
+
+> (send a-name-message set-message file-name? msg)
+
+  file-name? : boolean
+  msg : string
+
+If file-name? is #t, msg is treated like a pathname and
+clicks on the name message objects popup a menu that opens a
+get-file dialog.
+
+If file-name is #f, msg is treated as a regular
+string. Clicking on the name message pops up a dialog saying
+that there is no file name until the file is saved.
+      
+
+============================================================
+
+> (calc-button-min-sizes dc string) 
+
+Calculates the minimum width and height of a button label
+(when drawn with draw-button-label). Returns two values: the
+width and height.
+
+============================================================
+
+> (draw-frame-button-label dc label width height inverted)
+
+Draws a button label like the one for the (define ...) and
+filename buttons in the top-left corner of the DrScheme
+
+frame. Use this function to draw similar buttons. The basic
+idea is to create a canvas object whose on-paint method is
+overridden to call this function.  The dc should be canvas's
+dc object, the label should be the string to display on the
+button.  The width and height arguments should be the width
+and height of the button and inverted? should be #t when the
+button is being depressed.
+
+See calc-button-min-sizes for help calculating the min sizes
+of the button.

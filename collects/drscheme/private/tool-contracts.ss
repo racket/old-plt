@@ -589,55 +589,6 @@
 "\\rawscm{\\#f} more often.")
 
 
-                                   
-   ;;;                             
-  ;                                
-  ;                                
- ;;;;;  ; ;;;  ;;;;  ;;; ;    ;;;  
-  ;      ;         ;  ; ; ;  ;   ; 
-  ;      ;      ;;;;  ; ; ;  ;;;;; 
-  ;      ;     ;   ;  ; ; ;  ;     
-  ;      ;     ;   ;  ; ; ;  ;   ; 
- ;;;;   ;;;;    ;;; ;;; ; ;;  ;;;  
-                                   
-                                   
-                                   
-
-(drscheme:frame:draw-button-label
- ((is-a?/c dc<%>) (union false? string?) (>/c 5) (>/c 5) boolean?
-  . -> .
-  void?)
- (dc label width height inverted)
-
-"Draws a button label like the one for the \\gui{(define ...)}"
-"and filename buttons in the top-left corner of the DrScheme"
-"frame. Use this function to draw similar buttons. The basic"
-"idea is to create a \\iscmclass{canvas} object whose"
-"@link canvas on-paint"
-"method is overridden to call this function.  The \\var{dc}"
-"should be canvas's \\iscmintf{dc} object, the \\var{label}"
-"should be the string to display on the button. "
-"The \\var{width} and \\var{height} arguments should be the width and"
-"height of the button and \\var{inverted?} should be"
-"\\rawscm{\\#t} when the button is being depressed."
-""
-"See "
-"@flink drscheme:frame:calc-button-min-sizes"
-"for help calculating the min sizes of the button.")
-
-(drscheme:frame:calc-button-min-sizes
- (->*
-  ((is-a?/c dc<%>) string?)
-  (number? number?))
- (dc label)
-
-"Calculates the minimum width and height of a button label"
-"(when drawn with"
-"@flink drscheme:frame:draw-button-label %"
-")."
-"")
-
-
                                                                       
                            ;                                       ;; 
                 ;         ;                 ;                       ; 

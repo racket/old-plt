@@ -40,7 +40,7 @@ The Games program lets you select one of the following games:
  * _Gin Rummy_ (against the computer) - Put all cards in your hand
    into straight and 3- or 4-of-a-kind sets to win. On each turn, you
    can either draw from the deck or from the discard pile, then you
-   must discard one of your own cards. [The computer players is
+   must discard one of your own cards. [The computer player is
    smart.]
 
                                               - by Matthew
@@ -54,6 +54,18 @@ The Games program lets you select one of the following games:
 
                                               - by Robby
 
+ * _Lights Out_ - A color-toggling game. Click the "Help" button in
+   Lights Out for more details.
+
+                                              - by Robby
+
+ * _Pousse_ - A game similar to tic-tac-toe, but tokens are pushed
+   onto the board and can move other pieces. Click the "Help" button
+   in Pousse for more details. You can install your own player
+   programs. (This game was part of the 1998 ICFP programming
+   contest.)
+
+                                              - by Matthew
+
 You can also implement your own card games by using the "cards"
 sub-collection of the "games" collection.
-

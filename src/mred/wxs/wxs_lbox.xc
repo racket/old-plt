@@ -49,6 +49,7 @@
 @ "find-string" : int FindString(string);
 @ "get-selection" : int GetSelection();
 @ "number" : int Number();
+@ "number-of-visible-items" : int NumberOfVisibleItems();
 
 @MACRO ubArrayBox = NULL
 @MACRO cArrayBox = SCHEME_BOXP({x})

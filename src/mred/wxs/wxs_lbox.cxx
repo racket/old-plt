@@ -491,6 +491,23 @@ static Scheme_Object *os_wxListBoxGetSelections(Scheme_Object *obj, int n,  Sche
 }
 
 #pragma argsused
+static Scheme_Object *os_wxListBoxNumberOfVisibleItems(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  int r;
+  objscheme_check_valid(obj);
+
+  
+
+  
+  r = ((wxListBox *)((Scheme_Class_Object *)obj)->primdata)->NumberOfVisibleItems();
+
+  
+  
+  return scheme_make_integer(r);
+}
+
+#pragma argsused
 static Scheme_Object *os_wxListBoxNumber(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -918,7 +935,7 @@ void objscheme_setup_wxListBox(void *env)
 if (os_wxListBox_class) {
     objscheme_add_global_class(os_wxListBox_class,  "wx:list-box%", env);
 } else {
-  os_wxListBox_class = objscheme_def_prim_class(env, "wx:list-box%", "wx:item%", os_wxListBox_ConstructScheme, 24);
+  os_wxListBox_class = objscheme_def_prim_class(env, "wx:list-box%", "wx:item%", os_wxListBox_ConstructScheme, 25);
 
   scheme_add_method_w_arity(os_wxListBox_class,"get-class-name",objscheme_classname_os_wxListBox, 0, 0);
 
@@ -928,6 +945,7 @@ if (os_wxListBox_class) {
  scheme_add_method(os_wxListBox_class, "set-first-item", os_wxListBoxSetFirstItem);
  scheme_add_method_w_arity(os_wxListBox_class, "set", os_wxListBoxSet, 1, 1);
  scheme_add_method_w_arity(os_wxListBox_class, "get-selections", os_wxListBoxGetSelections, 1, 1);
+ scheme_add_method_w_arity(os_wxListBox_class, "number-of-visible-items", os_wxListBoxNumberOfVisibleItems, 0, 0);
  scheme_add_method_w_arity(os_wxListBox_class, "number", os_wxListBoxNumber, 0, 0);
  scheme_add_method_w_arity(os_wxListBox_class, "get-selection", os_wxListBoxGetSelection, 0, 0);
  scheme_add_method_w_arity(os_wxListBox_class, "find-string", os_wxListBoxFindString, 1, 1);

@@ -49,7 +49,7 @@ typedef long rxpos;
 # define BIGGEST_RXPOS 0x7FFFFFFF
 #endif
 
-#define INDIRECT_TO_PROGRAM
+/* #define INDIRECT_TO_PROGRAM */
 
 typedef struct regexp {
   Scheme_Type type;

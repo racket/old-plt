@@ -1404,7 +1404,19 @@ int mz_locale_strcoll(char *s1, int d1, int l1, char *s2, int d2, int l2, int cv
 int mz_native_strcoll(char *s1, int d1, int l1, char *s2, int d2, int l2, int cvt_case)
      /* The s1 and s2 arguments are really UTF-16. */
 {
+  CFStringRef str1, str2;
+  CFComparisonResult r;
+
+  str1 = CFStringCreateWithBytes(NULL, s1 + (d1 * 2), (l1 * 2), kCFStringEncodingUnicode, FALSE);
+  str2 = CFStringCreateWithBytes(NULL, s2 + (d2 * 2), (l2 * 2), kCFStringEncodingUnicode, FALSE);
   
+  r = CFStringCompare(str1, str2, (kCFCompareLocalized 
+				   | (cvt_case ? kCFCompareCaseInsensitive : 0)));
+  
+  CFRelease(str1);
+  CFRelease(str2);
+
+  return (int)r;
 }
 #endif
 

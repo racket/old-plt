@@ -51,7 +51,7 @@ This gives you the following syntatic forms:
    the first character from the input buffer.
 
 > (lexer-src-pos (re action) ...) like a lexer, but the return of each
-   match is (list action-result start-pos end-pos) instead of simple
+   match is (list action-result start-pos end-pos) instead of simply
    action-result.
    
 > (define-tokens group-name (token-name ...)) which binds group-name

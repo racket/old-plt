@@ -341,7 +341,7 @@
                     (modules null))
                 (lambda ()
 		  (syntax-as-top
-		   (let ((end? (eof-object? (peek-char port))))
+		   (let ((end? (eof-object? (peek-char-or-special port))))
 		     (cond
                       ((and end? (not require?) (null? modules)) eof)
                       ((and end? require?) 
@@ -394,7 +394,7 @@
                              text))])
               (interactions-offset (drscheme:language:text/pos-start input))
               (lambda ()
-                (if (eof-object? (peek-char port))
+                (if (eof-object? (peek-char-or-special port))
                     eof
 		    (syntax-as-top
 		     (compile-interactions port name execute-types level))))))

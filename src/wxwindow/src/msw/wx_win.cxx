@@ -1987,6 +1987,10 @@ wxKeyEvent *wxMakeCharEvent(WORD wParam, LPARAM lParam, Bool isASCII, Bool isRel
     if ((id > 0) && (id < 27) && tempControlDown) {
       id = id + 96;
     }
+    // Map id 28 to ctl+backslash
+    if ((id == 28) && tempControlDown) {
+      id = '\\';
+    }
     
     /* Ignore character created by numpad, since it's
        already handled as WM_KEYDOWN */

@@ -5,7 +5,7 @@
 
     (mred:debug:printf "mred:canvas@")
 
-    (define make-canvas%
+    (define make-editor-canvas%
       (lambda (super%)
 	(class super% (parent [x -1] [y -1] [w -1] [h -1] 
 			      [name ""] [style 0] [spp 100] [m ()])
@@ -100,7 +100,7 @@
 				 (make-initial-edit)
 				 m))))))
 
-    (define canvas% (make-canvas% wx:media-canvas%))
+    (define editor-canvas% (make-editor-canvas% wx:media-canvas%))
 
     (define make-simple-frame-canvas%
       (lambda (super%)
@@ -168,4 +168,4 @@
 	       (sequence
 		 (apply super-init args)))))
 
-    (define simple-frame-canvas% (make-simple-frame-canvas% canvas%))))
+    (define simple-frame-canvas% (make-simple-frame-canvas% editor-canvas%))))

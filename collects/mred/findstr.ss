@@ -13,7 +13,7 @@
 	  (public
 	    [WIDTH 450]
 	    [HEIGHT 100]
-	    [canvas% mred:canvas:canvas%]
+	    [canvas% mred:canvas:editor-canvas%]
 	    [edit% mred:edit:edit%])
 	  (private
 	    [edit (if (null? in-edit)
@@ -211,7 +211,7 @@
 	  (private
 	    [find-canvas
 	     (let ([h (send top-panel get-height)])
-	       (make-object mred:canvas:canvas%
+	       (make-object mred:canvas:editor-canvas%
 			    this 0 h
 			    WIDTH HEIGHT))]
 	    [find-edit (send find-canvas get-media)])
@@ -257,7 +257,7 @@
 	    [replace-canvas
 	     (let ([h (send middle-panel2 get-height)]
 		   [y (send middle-panel2 get-y)])
-	       (make-object mred:canvas:canvas%
+	       (make-object mred:canvas:editor-canvas%
 			    this 0 (+ y h)
 			    WIDTH HEIGHT))]
 	    [replace-edit (send replace-canvas get-media)])
@@ -350,7 +350,7 @@
 		 (lambda args
 		   (apply super-after-delete args)
 		   (search #f))])))]
-	  [media-canvas (make-object mred:canvas:canvas% this 10 10 100 100
+	  [media-canvas (make-object mred:canvas:editor-canvas% this 10 10 100 100
 				     "" (bitwise-ior wx:const-mcanvas-hide-h-scroll
 						     wx:const-mcanvas-hide-v-scroll)
 				     100 search-edit)]

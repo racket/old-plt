@@ -168,7 +168,7 @@
 		 (send (active-canvas) set-home tag)
 		 (send (active-canvas) set-history ())
 		 (send (active-canvas) adjust-stacks-on-follow tag)))))
-    (define hyper-basic-frame% (make-hyper-basic-frame% mred:frame:frame%))
+    (define hyper-basic-frame% (make-hyper-basic-frame% mred:frame:editor-frame%))
 
     (define make-hyper-view-frame%
       (lambda (super%)

@@ -89,9 +89,9 @@
    pasteboard%))
 
 (define-signature mred:canvas^
-  (make-canvas%
+  (make-editor-canvas%
    make-simple-frame-canvas%
-   canvas%
+   editor-canvas%
    simple-frame-canvas%))
 
 (define-signature mred:frame^
@@ -101,13 +101,13 @@
    make-simple-frame%
    make-menu-frame%
    make-pasteboard-frame%
-   make-frame%
+   make-editor-frame%
    make-status-frame%
    empty-frame%
    simple-frame%
    menu-frame%
    simple-menu-frame%
-   frame%
+   editor-frame%
    pasteboard-frame%))
 
 (define-signature mred:group^

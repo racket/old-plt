@@ -22,6 +22,11 @@ performance.
 
 The tool also provides several new primitive functions:
 
+ - postscript : editor-snip string -> void
+
+   generates postscript for the editor-snip and saves it into the filename
+   named by the second argument.
+
  - single-bracket : TST -> snip
 
    produces a snip that looks like its argument, except with square

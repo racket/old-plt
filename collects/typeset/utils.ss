@@ -11,8 +11,51 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;                                                     ;;;
+;;;                   POSTSCRIPT                        ;;;
+;;;                                                     ;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define ps-figure-editor-admin%
+  (class/d editor-admin% (filename)
+    ((override get-dc
+	       get-max-view
+	       get-view
+	       grab-caret
+	       needs-update
+	       refresh-delayed?
+	       resized
+	       scroll-to
+	       update-cursor))
+
+    
+    (define dc
+      (let ([ps-setup (make-object ps-setup%)])
+	(send ps-setup copy-from current-ps-setup)
+	(send ps-setup set-file filename)
+	(parameterize ([current-ps-setup ps-setup])
+	  (make-object postscript-dc% #f))))
+
+    (define (get-dc) dc)
+    (define (get-max-view ) (void))
+    (define (get-view xb yb wb hb full?) (void))))
+      
+
+(define (postscript snip filename)
+  (unless (is-a? snip editor-snip%)
+    (error 'postscript
+	   "expected first argument to be an editor-snip%, got: ~e, other args: ~e"
+	   snip filename))
+  (unless (string? filename)
+    (error 'postscript
+	   "expected second argument to be a string, got: ~e, other args: ~e"
+	   filename
+	   snip))
+  (void))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;                                                     ;;;
 ;;;                    ALIGNMENT                        ;;;
-;;;                                                     ;;;        
+;;;                                                     ;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
   (define (para-align alignment)

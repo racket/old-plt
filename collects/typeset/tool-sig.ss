@@ -10,7 +10,8 @@
    ;(struct pos (x y))
    position
    sup sub
-
+   postscript
+   
    arrow b-arrow g-arrow bg-arrow checked-arrow)) ;; these should move out
 
 (require-library "invoke.ss")

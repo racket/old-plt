@@ -1,3 +1,4 @@
+(require-library "pretty.ss")
 (unit/sig plt:init-namespace^
   (import plt:basis-import^
 	  [init-params : plt:init-params^]
@@ -7,8 +8,8 @@
           [zodiac:interface : drscheme:interface^]
 	  mzlib:function^)
   
-  (define (init-namespace)
-    (teachpack-thunk)
+  (define (init-namespace vocab)
+    (teachpack-thunk vocab)
     (setup-primitives)
     (add-extra-macros)
     (make-keywords))
@@ -83,7 +84,8 @@
   
   (define core-flat@ (require-library-unit/sig "coreflatr.ss"))
   
-  ;; build-single-teachpack-unit : string boolean -> (union #f (cons (-> void) (unit () X)))
+  ;; build-single-teachpack-unit : string boolean -> (union #f (cons `(unit () X)))
+  ;; returns the syntax for a unit with the free variable `vocab' in it.
   (define (build-single-teachpack-unit v)
     (with-handlers
         ([(lambda (x) #t)
@@ -101,32 +103,43 @@
             (let* ([new-unit (if (pair? both-unit)
                                  (car both-unit)
                                  both-unit)]
+                   [signature 
+                    (exploded->flattened (unit-with-signature-exports new-unit))]
                    [macros-unit (if (pair? both-unit)
                                     (cdr both-unit)
-                                    #f)]
-                   [signature 
-                    (exploded->flattened (unit-with-signature-exports new-unit))])
-              (cons
-               (lambda (vocab)
-                 (when macros-unit 
-                   '...))
-               (eval
-                `(unit/sig ()
-                   (import plt:userspace^)
-                   (with-handlers ([(lambda (x) #t)
-                                    (lambda (x)
-                                      (,invalid-teachpack
-                                       (format
-                                        "Invalid Teachpack: ~a~n~a"
-                                        ,v
-                                        (if (exn? x)
-                                            (exn-message x)
-                                            x))))])
-                     (global-define-values/invoke-unit/sig
-                      ,signature
-                      ,new-unit
-                      #f
-                      plt:userspace^))))))
+                                    (unit/sig () (import plt:userspace^)))]
+                   [macros-signature (exploded->flattened (unit-with-signature-exports macros-unit))])
+              `(compound-unit/sig
+                 (import [p : plt:userspace^])
+                 (link [functions 
+                        : ()
+                        ((unit/sig ()
+                           (import plt:userspace^)
+                           (with-handlers ([(lambda (x) #t)
+                                            (lambda (x)
+                                              (,invalid-teachpack
+                                               (format
+                                                "Invalid Teachpack: ~a~n~a"
+                                                ,v
+                                                (if (exn? x)
+                                                    (exn-message x)
+                                                    x))))])
+                             (global-define-values/invoke-unit/sig
+                              ,signature
+                              ,new-unit
+                              #f
+                              plt:userspace^)))
+                         p)]
+                       [macros : ,macros-signature (,macros-unit p)]
+                       [install-macros 
+                        : ()
+                        ((unit/sig ()
+                           (import ,macros-signature)
+                           (printf "adding signatures~n")
+                           ,@(map (lambda (x) `(,extend-vocab vocab ',x ,x)) 
+                                  signature))
+                         macros)])
+                 (export)))
             (begin
               (invalid-teachpack 
                (format "loading Teachpack file does not result in a either a unit/sig or a pair of unit/sigs, got: ~e"
@@ -205,89 +218,91 @@
     (unless (and (list? v)
                  (andmap string? v))
       (error 'build-teachpack-thunk "expected a list of strings, got: ~e" v))
-    (let*-values ([(tagn) 0]
-                  [(bad-teachpacks) null]
-                  [(link-clauses macro-thunks)
-                   (let loop ([teachpack-strings v]
-                              [thunks null]
-                              [link-clauses null])
-                     (cond
-                       [(null? teachpack-strings) (values (reverse link-clauses) thunks)]
-                       [else
-                        (let ([unit-pair (build-single-teachpack-unit (car teachpack-strings))])
-                          (if unit-pair
-                              (begin
-                                (set! tagn (+ tagn 1))
-                                (loop (cdr teachpack-strings)
-                                      (cons (car unit-pair) thunks)
-                                      (cons
-                                       `[,(string->symbol (format "teachpack~a" tagn)) : ()
-                                         (,(cdr unit-pair) userspace)]
-                                       link-clauses)))
-                              (begin
-                                (set! bad-teachpacks (cons (car teachpack-strings) bad-teachpacks))
-                                (loop (cdr teachpack-strings)
-                                      link-clauses))))]))]
-                  [(cu)
-                   (eval
-                    `(compound-unit/sig
-                       (import)
-                       (link
-                        ,@(list*
-                           `[userspace
-                             : plt:userspace^ 
-                             (,(if (defined? 'mred@)
-                                   `(compound-unit/sig
-                                      (import)
-                                      (link [core : mzlib:core-flat^ (,core-flat@)]
-                                            [mred : mred^ (,(global-defined-value 'mred@))]
-                                            [turtles : turtle^ ((require-library "turtler.ss" "graphics")
-                                                                (core : mzlib:function^))]
-                                            [posn : ((struct posn (x y)))
-                                                  ((unit/sig ((struct posn (x y)))
-                                                     (import)
-                                                     (define-struct posn (x y))))])
-                                      (export (open core)
-                                              (open mred)
-                                              (open posn)
-                                              (open turtles)))
-                                   `(compound-unit/sig 
-                                      (import)
-                                      (link [core : mzlib:core-flat^ (,core-flat@)]
-                                            [posn : ((struct posn (x y)))
-                                                  ((unit/sig ((struct posn (x y)))
-                                                     (import)
-                                                     (define-struct posn (x y))))])
-                                      (export (open core)
-                                              (open posn)))))]
-                           `[language-specific-additions
-                             : ()
-                             ((unit/sig ()
-                                (import plt:userspace^)
-                                
-                                (cond
-                                  [(,init-params:beginner-language? (,init-params:current-setting))
-                                   ,@(build-gdvs (signature->symbols plt:beginner-extras^))]
-                                  [(,init-params:intermediate-language? (,init-params:current-setting))
-                                   ,@(build-gdvs (signature->symbols plt:intermediate-extras^))]
-                                  [(or (,init-params:advanced-language? (,init-params:current-setting))
-                                       (,init-params:setting-teaching-primitives-and-syntax?
-                                        (,init-params:current-setting)))
-                                   ,@(build-gdvs (signature->symbols plt:advanced-extras^))]
-                                  [else (void)]))
-                              userspace)]
+    (let* ([tagn 0]
+           [bad-teachpacks null]
+           [link-clauses
+            (let loop ([teachpack-strings v]
+                       [link-clauses null])
+              (cond
+                [(null? teachpack-strings) (reverse link-clauses)]
+                [else
+                 (let ([unit (build-single-teachpack-unit (car teachpack-strings))])
+                   (if unit
+                       (begin
+                         (set! tagn (+ tagn 1))
+                         (loop (cdr teachpack-strings)
+                               (cons
+                                `[,(string->symbol (format "teachpack~a" tagn)) : ()
+                                  (,unit userspace)]
+                                link-clauses)))
+                       (begin
+                         (set! bad-teachpacks (cons (car teachpack-strings) bad-teachpacks))
+                         (loop (cdr teachpack-strings)
+                               link-clauses))))]))]
+           [eeval
+            (lambda (x)
+              ((global-defined-value 'pretty-print) x)
+              (eval x))]
+           [cu
+            (eeval
+             `(lambda (vocab)
+                (compound-unit/sig
+                  (import)
+                  (link
+                   ,@(list*
+                      `[userspace
+                        : plt:userspace^ 
+                        (,(if (defined? 'mred@)
+                              `(compound-unit/sig
+                                 (import)
+                                 (link [core : mzlib:core-flat^ (,core-flat@)]
+                                       [mred : mred^ (,(global-defined-value 'mred@))]
+                                       [turtles : turtle^ ((require-library "turtler.ss" "graphics")
+                                                           (core : mzlib:function^))]
+                                       [posn : ((struct posn (x y)))
+                                             ((unit/sig ((struct posn (x y)))
+                                                (import)
+                                                (define-struct posn (x y))))])
+                                 (export (open core)
+                                         (open mred)
+                                         (open posn)
+                                         (open turtles)))
+                              `(compound-unit/sig 
+                                 (import)
+                                 (link [core : mzlib:core-flat^ (,core-flat@)]
+                                       [posn : ((struct posn (x y)))
+                                             ((unit/sig ((struct posn (x y)))
+                                                (import)
+                                                (define-struct posn (x y))))])
+                                 (export (open core)
+                                         (open posn)))))]
+                      `[language-specific-additions
+                        : ()
+                        ((unit/sig ()
+                           (import plt:userspace^)
                            
-                           link-clauses))
-                       (export)))])
+                           (cond
+                             [(,init-params:beginner-language? (,init-params:current-setting))
+                              ,@(build-gdvs (signature->symbols plt:beginner-extras^))]
+                             [(,init-params:intermediate-language? (,init-params:current-setting))
+                              ,@(build-gdvs (signature->symbols plt:intermediate-extras^))]
+                             [(or (,init-params:advanced-language? (,init-params:current-setting))
+                                  (,init-params:setting-teaching-primitives-and-syntax?
+                                   (,init-params:current-setting)))
+                              ,@(build-gdvs (signature->symbols plt:advanced-extras^))]
+                             [else (void)]))
+                         userspace)]
+                      
+                      link-clauses))
+                  (export))))])
       (values
-       (lambda ()
+       (lambda (vocab)
 	 (with-handlers ([(lambda (x) #t)
 			  (lambda (x)
 			    (invalid-teachpack (exn-message x))
 			    #f)])
 	   (invoke-unit/sig
-	    cu)))
-       (lambda (vocab) (for-each (lambda (x) (x vocab)) macro-thunks))
+	    (cu vocab))))
        bad-teachpacks)))
   
   (define (teachpack-ok? x)
@@ -295,12 +310,10 @@
         #t
         #f))
   
-  (define-values (teachpack-thunk macros-thunk bad-teachpacks) (build-teachpack-thunk null))
+  (define-values (teachpack-thunk bad-teachpacks) (build-teachpack-thunk null))
   (define (teachpack-changed v)
-    (set!-values (teachpack-thunk macros-thunk bad-teachpacks) (build-teachpack-thunk v))
+    (set!-values (teachpack-thunk bad-teachpacks) (build-teachpack-thunk v))
     bad-teachpacks)
-  
-  (define (add-teachpack-macros vocab) (macros-thunk vocab))
   
   (define teachpack-error-display (make-parameter (lambda (x) (display x) (newline))))
   (define (invalid-teachpack str) ((teachpack-error-display) str))

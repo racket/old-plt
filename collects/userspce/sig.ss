@@ -155,7 +155,6 @@
 (define-signature plt:init-namespace^
   (teachpack-error-display
    init-namespace
-   add-teachpack-macros
    bad-teachpacks
    teachpack-ok?
    teachpack-changed))

@@ -728,35 +728,35 @@
       (print-struct (not (eq? 'r4rs-style (setting-printing setting))))
       (read-decimal-as-inexact (not (setting-read-decimal-as-exact? setting)))
       
-      (init-namespace:init-namespace)
-
       (error-print-width 250)
       (current-print drscheme-print)
       
       (current-load-relative-directory #f)
       (current-require-relative-collection #f)
       
-      (when (zodiac-vocabulary? setting)
-        (current-vocabulary
-         (zodiac:create-vocabulary
-          'scheme-w/user-defined-macros/drscheme
-          (case (setting-vocabulary-symbol setting)
-            [(beginner) zodiac:beginner-vocabulary]
-            [(intermediate) zodiac:intermediate-vocabulary]
-            [(advanced) zodiac:advanced-vocabulary]
-            [(mzscheme-debug mred-debug)
-             (if (setting-teaching-primitives-and-syntax? setting)
-                 zodiac:extended-scheme-vocabulary
-                 zodiac:scheme-vocabulary)]
-            [else (error 'init "bad vocabulary spec: ~a ~e"
-                         (setting-vocabulary-symbol setting) setting)])))
-        (zodiac:reset-previous-attribute 
-         #f
-         (eq? (setting-vocabulary-symbol setting)
-              'mred-debug))
-	(zodiac:prepare-current-namespace-for-vocabulary (current-vocabulary)))
-      
-      (init-namespace:add-teachpack-macros (current-vocabulary))
+      ;; sequencing here is subtle
+      (begin
+        (when (zodiac-vocabulary? setting)
+          (current-vocabulary
+           (zodiac:create-vocabulary
+            'scheme-w/user-defined-macros/drscheme
+            (case (setting-vocabulary-symbol setting)
+              [(beginner) zodiac:beginner-vocabulary]
+              [(intermediate) zodiac:intermediate-vocabulary]
+              [(advanced) zodiac:advanced-vocabulary]
+              [(mzscheme-debug mred-debug)
+               (if (setting-teaching-primitives-and-syntax? setting)
+                   zodiac:extended-scheme-vocabulary
+                   zodiac:scheme-vocabulary)]
+              [else (error 'init "bad vocabulary spec: ~a ~e"
+                           (setting-vocabulary-symbol setting) setting)]))))
+        (init-namespace:init-namespace (current-vocabulary))
+        (when (zodiac-vocabulary? setting)
+          (zodiac:reset-previous-attribute 
+           #f
+           (eq? (setting-vocabulary-symbol setting)
+                'mred-debug))
+          (zodiac:prepare-current-namespace-for-vocabulary (current-vocabulary))))
 
       (read-case-sensitive (setting-case-sensitive? setting))
       

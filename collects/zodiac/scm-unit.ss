@@ -1,4 +1,4 @@
-; $Id: scm-unit.ss,v 1.46 1997/08/24 19:31:49 shriram Exp $
+; $Id: scm-unit.ss,v 1.47 1997/09/09 18:05:36 shriram Exp $
 
 (unit/sig zodiac:scheme-units^
   (import zodiac:misc^ (z : zodiac:structures^)
@@ -860,116 +860,118 @@
 
   (define reference-unit-maker
     (lambda (form-name sig?)
-      (add-primitivized-micro-form form-name scheme-vocabulary
-	(let* ((kwd '())
-		(in-pattern `(_ filename))
-		(m&e (pat:make-match&env in-pattern kwd)))
-	  (lambda (expr env attributes vocab)
-	    (cond
-	      ((pat:match-against m&e expr env)
-		=>
-		(lambda (p-env)
-		  (let ((filename (pat:pexpand 'filename p-env kwd)))
-		    (let ((f (expand-expr filename env attributes vocab)))
-		      (if (and (quote-form? f)
-			    (z:string? (quote-form-expr f)))
-			(expand-expr
-			  (structurize-syntax
-			    `(let ((result (#%load/use-compiled
-					     ,(quote-form-expr f))))
-			       (unless (,(if sig?
-					   '#%unit/sig?
-					   '#%unit?)
-					 result)
-				 (#%raise
-				   (,(if sig?
-				       '#%make-exn:unit:signature:non-signed-unit
-				       '#%make-exn:unit:non-unit)
-				     ,(format
-					"~s: result from ~s is not ~aunit"
-					form-name
-					(sexp->raw (quote-form-expr f))
-					(if sig? "signed " ""))
-				     ((debug-info-handler))
-				     result)))
-			       result)
-			    expr)
-			  env attributes vocab)
-			(static-error filename
-			  "Does not yield a filename"))))))
-	      (else
-		(static-error expr "Malformed ~a" form-name))))))))
+      (when (language>=? 'advanced)
+	(add-primitivized-micro-form form-name scheme-vocabulary
+	  (let* ((kwd '())
+		  (in-pattern `(_ filename))
+		  (m&e (pat:make-match&env in-pattern kwd)))
+	    (lambda (expr env attributes vocab)
+	      (cond
+		((pat:match-against m&e expr env)
+		  =>
+		  (lambda (p-env)
+		    (let ((filename (pat:pexpand 'filename p-env kwd)))
+		      (let ((f (expand-expr filename env attributes vocab)))
+			(if (and (quote-form? f)
+			      (z:string? (quote-form-expr f)))
+			  (expand-expr
+			    (structurize-syntax
+			      `(let ((result (#%load/use-compiled
+					       ,(quote-form-expr f))))
+				 (unless (,(if sig?
+					     '#%unit/sig?
+					     '#%unit?)
+					   result)
+				   (#%raise
+				     (,(if sig?
+					 '#%make-exn:unit:signature:non-signed-unit
+					 '#%make-exn:unit:non-unit)
+				       ,(format
+					  "~s: result from ~s is not ~aunit"
+					  form-name
+					  (sexp->raw (quote-form-expr f))
+					  (if sig? "signed " ""))
+				       ((debug-info-handler))
+				       result)))
+				 result)
+			      expr)
+			    env attributes vocab)
+			  (static-error filename
+			    "Does not yield a filename"))))))
+		(else
+		  (static-error expr "Malformed ~a" form-name)))))))))
 
   (reference-unit-maker 'reference-unit #f)
   (reference-unit-maker 'reference-unit/sig #t)
 
   (define reference-library-unit-maker
     (lambda (form-name sig?)
-      (add-primitivized-micro-form form-name scheme-vocabulary
-	(let* ((kwd '())
-		(in-pattern-1 `(_ filename))
-		(in-pattern-2 `(_ filename collection))
-		(m&e-1 (pat:make-match&env in-pattern-1 kwd))
-		(m&e-2 (pat:make-match&env in-pattern-2 kwd)))
-	  (lambda (expr env attributes vocab)
-	    (cond
-	      ((pat:match-against m&e-1 expr env)
-		=>
-		(lambda (p-env)
-		  (expand-expr
-		    (structurize-syntax
-		      (pat:pexpand
-			`(,form-name filename "mzlib")
-			p-env kwd)
-		      expr)
-		    env attributes vocab)))
-	      ((pat:match-against m&e-2 expr env)
-		=>
-		(lambda (p-env)
-		  (let ((filename (pat:pexpand 'filename p-env kwd))
-			 (collection (pat:pexpand 'collection p-env kwd)))
-		    (let ((f (expand-expr filename env attributes vocab))
-			   (c (expand-expr collection env attributes vocab)))
-		      (unless (and (quote-form? f)
-				(z:string? (quote-form-expr f)))
-			(static-error filename
-			  "Does not yield a filename"))
-		      (unless (and (quote-form? c)
-				(z:string? (quote-form-expr c)))
-			(static-error collection
-			  "Does not yield a string"))
-		      (let ((raw-f (z:read-object (quote-form-expr f)))
-			     (raw-c (z:read-object (quote-form-expr c))))
-			(unless (relative-path? raw-f)
-			  (static-error f
-			    "Library path ~s must be a relative path"
-			    raw-f))
-			(expand-expr
-			  (structurize-syntax
-			    `(let ((result (#%require-library
-					     ,(quote-form-expr f)
-					     ,(quote-form-expr c))))
-			       (unless (,(if sig?
-					   '#%unit/sig?
-					   '#%unit?)
-					 result)
-				 (#%raise
-				   (,(if sig?
-				       '#%make-exn:unit:signature:non-signed-unit
-				       '#%make-exn:unit:non-unit)
-				     ,(format
-					"~s: result from ~s in collection ~a not a ~aunit"
-					form-name
-					raw-f
-					raw-c
-					(if sig? "signed " ""))
-				     ((debug-info-handler))
-				     result)))
-			       result)
-			    expr)
-			  env attributes vocab))))))
-	      (else
-		(static-error expr "Malformed ~a" form-name))))))))
+      (when (language>=? 'advanced)
+	(add-primitivized-micro-form form-name scheme-vocabulary
+	  (let* ((kwd '())
+		  (in-pattern-1 `(_ filename))
+		  (in-pattern-2 `(_ filename collection))
+		  (m&e-1 (pat:make-match&env in-pattern-1 kwd))
+		  (m&e-2 (pat:make-match&env in-pattern-2 kwd)))
+	    (lambda (expr env attributes vocab)
+	      (cond
+		((pat:match-against m&e-1 expr env)
+		  =>
+		  (lambda (p-env)
+		    (expand-expr
+		      (structurize-syntax
+			(pat:pexpand
+			  `(,form-name filename "mzlib")
+			  p-env kwd)
+			expr)
+		      env attributes vocab)))
+		((pat:match-against m&e-2 expr env)
+		  =>
+		  (lambda (p-env)
+		    (let ((filename (pat:pexpand 'filename p-env kwd))
+			   (collection (pat:pexpand 'collection p-env kwd)))
+		      (let ((f (expand-expr filename env attributes vocab))
+			     (c (expand-expr collection env attributes vocab)))
+			(unless (and (quote-form? f)
+				  (z:string? (quote-form-expr f)))
+			  (static-error filename
+			    "Does not yield a filename"))
+			(unless (and (quote-form? c)
+				  (z:string? (quote-form-expr c)))
+			  (static-error collection
+			    "Does not yield a string"))
+			(let ((raw-f (z:read-object (quote-form-expr f)))
+			       (raw-c (z:read-object (quote-form-expr c))))
+			  (unless (relative-path? raw-f)
+			    (static-error f
+			      "Library path ~s must be a relative path"
+			      raw-f))
+			  (expand-expr
+			    (structurize-syntax
+			      `(let ((result (#%require-library
+					       ,(quote-form-expr f)
+					       ,(quote-form-expr c))))
+				 (unless (,(if sig?
+					     '#%unit/sig?
+					     '#%unit?)
+					   result)
+				   (#%raise
+				     (,(if sig?
+					 '#%make-exn:unit:signature:non-signed-unit
+					 '#%make-exn:unit:non-unit)
+				       ,(format
+					  "~s: result from ~s in collection ~a not a ~aunit"
+					  form-name
+					  raw-f
+					  raw-c
+					  (if sig? "signed " ""))
+				       ((debug-info-handler))
+				       result)))
+				 result)
+			      expr)
+			    env attributes vocab))))))
+		(else
+		  (static-error expr "Malformed ~a" form-name)))))))))
 
   (reference-library-unit-maker 'reference-library-unit #f)
   (reference-library-unit-maker 'reference-library-unit/sig #t)

@@ -1,4 +1,4 @@
-; $Id$
+; $Id: scm-obj.ss,v 1.31 1997/07/21 15:51:43 shriram Exp $
 
 (unit/sig zodiac:scheme-objects^
   (import zodiac:misc^ (z : zodiac:structures^) (z : zodiac:reader-structs^)
@@ -75,37 +75,38 @@
 
   ; --------------------------------------------------------------------
 
-  (add-primitivized-micro-form 'interface scheme-vocabulary
-    (let* ((kwd '())
-	    (in-pattern `(_
-			   (super-interfaces ...)
-			   variables ...))
-	    (m&e (pat:make-match&env in-pattern kwd)))
-      (lambda (expr env attributes vocab)
-	(cond
-	  ((pat:match-against m&e expr env)
-	    =>
-	    (lambda (p-env)
-	      (let ((super-interfaces
-		      (pat:pexpand '(super-interfaces ...) p-env kwd))
-		     (variables
-		       (pat:pexpand '(variables ...) p-env kwd)))
-		(distinct-valid-syntactic-id/s? variables)
-		(let* ((top-level? (get-top-level-status
-				     attributes))
-			(_ (set-top-level-status attributes))
-			(proc:super-interfaces
-			  (map (lambda (e)
-				 (expand-expr e env
-				   attributes vocab))
-			    super-interfaces)))
-		  (set-top-level-status attributes top-level?)
-		  (create-interface-form
-		    proc:super-interfaces
-		    variables
-		    expr)))))
-	  (else
-	    (static-error expr "Malformed interface"))))))
+  (when (language>=? 'advanced)
+    (add-primitivized-micro-form 'interface scheme-vocabulary
+      (let* ((kwd '())
+	      (in-pattern `(_
+			     (super-interfaces ...)
+			     variables ...))
+	      (m&e (pat:make-match&env in-pattern kwd)))
+	(lambda (expr env attributes vocab)
+	  (cond
+	    ((pat:match-against m&e expr env)
+	      =>
+	      (lambda (p-env)
+		(let ((super-interfaces
+			(pat:pexpand '(super-interfaces ...) p-env kwd))
+		       (variables
+			 (pat:pexpand '(variables ...) p-env kwd)))
+		  (distinct-valid-syntactic-id/s? variables)
+		  (let* ((top-level? (get-top-level-status
+				       attributes))
+			  (_ (set-top-level-status attributes))
+			  (proc:super-interfaces
+			    (map (lambda (e)
+				   (expand-expr e env
+				     attributes vocab))
+			      super-interfaces)))
+		    (set-top-level-status attributes top-level?)
+		    (create-interface-form
+		      proc:super-interfaces
+		      variables
+		      expr)))))
+	    (else
+	      (static-error expr "Malformed interface")))))))
 
   ; ----------------------------------------------------------------------
 
@@ -426,65 +427,67 @@
 
   ; ----------------------------------------------------------------------
 
-  (let* ((kwd '())
-	  (in-pattern `(kwd super args insts ...))
-	  (out-pattern '(class*/names (this super-init)
-			  super () args insts ...))
-	  (m&e (pat:make-match&env in-pattern kwd)))
-    (add-primitivized-micro-form 'class scheme-vocabulary
-      (lambda (expr env attributes vocab)
-	(cond
-	  ((pat:match-against m&e expr env)
-	    =>
-	    (lambda (p-env)
-	      (let* ((kwd-pos (pat:pexpand 'kwd  p-env kwd))
-		      (captured-this
-			(introduce-identifier 'this kwd-pos))
-		      (captured-super-init
-			(introduce-identifier 'super-init kwd-pos))
-		      (new-p-env (pat:extend-penv
-				   'this captured-this
-				   (pat:extend-penv
-				     'super-init
-				     captured-super-init
-				     p-env))))
-		(expand-expr
-		  (structurize-syntax
-		    (pat:pexpand out-pattern new-p-env kwd)
-		    expr '(-1))
-		  env attributes vocab))))
-	  (else
-	    (static-error expr "Malformed class"))))))
+  (when (language>=? 'advanced)
+    (let* ((kwd '())
+	    (in-pattern `(kwd super args insts ...))
+	    (out-pattern '(class*/names (this super-init)
+			    super () args insts ...))
+	    (m&e (pat:make-match&env in-pattern kwd)))
+      (add-primitivized-micro-form 'class scheme-vocabulary
+	(lambda (expr env attributes vocab)
+	  (cond
+	    ((pat:match-against m&e expr env)
+	      =>
+	      (lambda (p-env)
+		(let* ((kwd-pos (pat:pexpand 'kwd  p-env kwd))
+			(captured-this
+			  (introduce-identifier 'this kwd-pos))
+			(captured-super-init
+			  (introduce-identifier 'super-init kwd-pos))
+			(new-p-env (pat:extend-penv
+				     'this captured-this
+				     (pat:extend-penv
+				       'super-init
+				       captured-super-init
+				       p-env))))
+		  (expand-expr
+		    (structurize-syntax
+		      (pat:pexpand out-pattern new-p-env kwd)
+		      expr '(-1))
+		    env attributes vocab))))
+	    (else
+	      (static-error expr "Malformed class")))))))
 
-  (let* ((kwd '())
-	  (in-pattern `(kwd super interfaces args insts ...))
-	  (out-pattern '(class*/names (this super-init)
-			  super interfaces args insts ...))
-	  (m&e (pat:make-match&env in-pattern kwd)))
-    (add-primitivized-micro-form 'class* scheme-vocabulary
-      (lambda (expr env attributes vocab)
-	(cond
-	  ((pat:match-against m&e expr env)
-	    =>
-	    (lambda (p-env)
-	      (let* ((kwd-pos (pat:pexpand 'kwd p-env kwd))
-		      (captured-this
-			(introduce-identifier 'this kwd-pos))
-		      (captured-super-init
-			(introduce-identifier 'super-init kwd-pos))
-		      (new-p-env (pat:extend-penv
-				   'this captured-this
-				   (pat:extend-penv
-				     'super-init
-				     captured-super-init
-				     p-env))))
-		(expand-expr
-		  (structurize-syntax
-		    (pat:pexpand out-pattern new-p-env kwd)
-		    expr '(-1))
-		  env attributes vocab))))
-	  (else
-	    (static-error expr "Malformed class*"))))))
+  (when (language>=? 'advanced)
+    (let* ((kwd '())
+	    (in-pattern `(kwd super interfaces args insts ...))
+	    (out-pattern '(class*/names (this super-init)
+			    super interfaces args insts ...))
+	    (m&e (pat:make-match&env in-pattern kwd)))
+      (add-primitivized-micro-form 'class* scheme-vocabulary
+	(lambda (expr env attributes vocab)
+	  (cond
+	    ((pat:match-against m&e expr env)
+	      =>
+	      (lambda (p-env)
+		(let* ((kwd-pos (pat:pexpand 'kwd p-env kwd))
+			(captured-this
+			  (introduce-identifier 'this kwd-pos))
+			(captured-super-init
+			  (introduce-identifier 'super-init kwd-pos))
+			(new-p-env (pat:extend-penv
+				     'this captured-this
+				     (pat:extend-penv
+				       'super-init
+				       captured-super-init
+				       p-env))))
+		  (expand-expr
+		    (structurize-syntax
+		      (pat:pexpand out-pattern new-p-env kwd)
+		      expr '(-1))
+		    env attributes vocab))))
+	    (else
+	      (static-error expr "Malformed class*")))))))
 
   (define flag-non-supervar
     (lambda (super env)
@@ -493,186 +496,191 @@
 		  (z:symbol-marks super) env))
 	(static-error super "Not a superclass reference"))))
 
-  (let* ((kwd '())
-	  (in-pattern `(kwd (this super-init)
-			 super-expr
-			 (interface ...)
-			 ,paroptarglist-pattern
-			 inst-vars ...))
-	  (m&e (pat:make-match&env in-pattern kwd)))
-    (add-primitivized-micro-form 'class*/names scheme-vocabulary
-      (lambda (expr env attributes vocab)
-	(cond
-	  ((pat:match-against m&e expr env)
-	    =>
-	    (lambda (p-env)
-	      (let ((in:this (pat:pexpand 'this p-env kwd))
-		     (in:superinit (pat:pexpand 'super-init
-				     p-env kwd))
-		     (in:super-expr (pat:pexpand 'super-expr
+  (when (language>=? 'advanced)
+    (let* ((kwd '())
+	    (in-pattern `(kwd (this super-init)
+			   super-expr
+			   (interface ...)
+			   ,paroptarglist-pattern
+			   inst-vars ...))
+	    (m&e (pat:make-match&env in-pattern kwd)))
+      (add-primitivized-micro-form 'class*/names scheme-vocabulary
+	(lambda (expr env attributes vocab)
+	  (cond
+	    ((pat:match-against m&e expr env)
+	      =>
+	      (lambda (p-env)
+		(let ((in:this (pat:pexpand 'this p-env kwd))
+		       (in:superinit (pat:pexpand 'super-init
+				       p-env kwd))
+		       (in:super-expr (pat:pexpand 'super-expr
+					p-env kwd))
+		       (in:interfaces (pat:pexpand '(interface ...)
+					p-env kwd))
+		       (in:initvars (pat:pexpand `,paroptarglist-pattern
 				      p-env kwd))
-		     (in:interfaces (pat:pexpand '(interface ...)
-				      p-env kwd))
-		     (in:initvars (pat:pexpand `,paroptarglist-pattern
-				    p-env kwd))
-		     (in:ivars (pat:pexpand '(inst-vars ...)
-				 p-env kwd)))
-		(valid-syntactic-id? in:this)
-		(valid-syntactic-id? in:superinit)
-		(let* ((top-level? (get-top-level-status
-				     attributes))
-			(_ (set-top-level-status attributes))
-			(proc:superinit
-			  (create-superinit-binding+marks
-			    in:superinit))
-			(proc:super-expr
-			  (expand-expr in:super-expr env
-			    attributes vocab))
-			(proc:interfaces
-			  (map (lambda (e)
-				 (expand-expr e env
-				   attributes vocab))
-			    in:interfaces))
-			(proc:this (create-lexical-binding+marks
-				     in:this))
-			(proc:initvar-info
-			  (expand-expr in:initvars env attributes
-			    paroptarglist-decls-vocab))
-			(proc:ivar-info
-			  (map (lambda (iv-decl)
-				 (expand-expr iv-decl env attributes
-				   ivar-decls-vocab))
-			    in:ivars)))
-		  (let ((proc:initvars
-			  (map paroptarglist-entry-var+marks
-			    (paroptarglist-vars
-			      proc:initvar-info)))
-			 (proc:ivars
-			   (apply append
-			     (map (lambda (i)
-				    (if (ivar-entry? i)
-				      (ivar-entry-bindings i)
-				      '()))
-			       proc:ivar-info))))
-		    (let ((extensions
-			    (cons proc:this
-			      (cons proc:superinit
-				proc:ivars))))
-		      (let* ((new-names (map car extensions))
-			      (parsed-initvars
-				(make-paroptargument-list
-				  proc:initvar-info
-				  env attributes vocab)))
-			(distinct-valid-id/s? (append new-names
-						(map car
-						  proc:initvars)))
-			(extend-env extensions env)
-			(let
-			  ((result
-			     (create-class*/names-form
-			       (car proc:this)
-			       (car proc:superinit)
-			       proc:super-expr
-			       proc:interfaces
-			       parsed-initvars
-			       (let ((expand-exprs
-				       (lambda (exprs)
-					 (map (lambda (expr)
-						(expand-expr expr env
-						  attributes vocab))
-					   exprs))))
-				 (map
-				   (lambda (e)
-				     (cond
-				       ((public-entry? e)
-					 (make-public-clause
-					   (public-entry-exports e)
-					   (map car (ivar-entry-bindings e))
-					   (expand-exprs
-					     (public-entry-exprs e))))
-				       ((private-entry? e)
-					 (make-private-clause
-					   (map car (ivar-entry-bindings e))
-					   (expand-exprs
-					     (private-entry-exprs e))))
-				       ((inherit-entry? e)
-					 (make-inherit-clause
-					   (map car
-					     (ivar-entry-bindings e))
-					   (inherit-entry-imports e)))
-				       ((rename-entry? e)
-					 (make-rename-clause
-					   (map car (ivar-entry-bindings e))
-					   (rename-entry-imports e)))
-				       ((sequence-entry? e)
-					 (make-sequence-clause
-					   (expand-exprs
-					     (sequence-entry-exprs e))))
-				       (else
-					 (internal-error e
-					   "Invalid entry in class*/names maker"))))
-				   proc:ivar-info))
-			       expr)))
-			  (retract-env (append
-					 (map car proc:initvars)
-					 new-names)
-			    env)
-			  (set-top-level-status attributes
-			    top-level?)
-			  result))))))))
-	  (else
-	    (static-error expr "Malformed class*/names"))))))
+		       (in:ivars (pat:pexpand '(inst-vars ...)
+				   p-env kwd)))
+		  (valid-syntactic-id? in:this)
+		  (valid-syntactic-id? in:superinit)
+		  (let* ((top-level? (get-top-level-status
+				       attributes))
+			  (_ (set-top-level-status attributes))
+			  (proc:superinit
+			    (create-superinit-binding+marks
+			      in:superinit))
+			  (proc:super-expr
+			    (expand-expr in:super-expr env
+			      attributes vocab))
+			  (proc:interfaces
+			    (map (lambda (e)
+				   (expand-expr e env
+				     attributes vocab))
+			      in:interfaces))
+			  (proc:this (create-lexical-binding+marks
+				       in:this))
+			  (proc:initvar-info
+			    (expand-expr in:initvars env attributes
+			      paroptarglist-decls-vocab))
+			  (proc:ivar-info
+			    (map (lambda (iv-decl)
+				   (expand-expr iv-decl env attributes
+				     ivar-decls-vocab))
+			      in:ivars)))
+		    (let ((proc:initvars
+			    (map paroptarglist-entry-var+marks
+			      (paroptarglist-vars
+				proc:initvar-info)))
+			   (proc:ivars
+			     (apply append
+			       (map (lambda (i)
+				      (if (ivar-entry? i)
+					(ivar-entry-bindings i)
+					'()))
+				 proc:ivar-info))))
+		      (let ((extensions
+			      (cons proc:this
+				(cons proc:superinit
+				  proc:ivars))))
+			(let* ((new-names (map car extensions))
+				(parsed-initvars
+				  (make-paroptargument-list
+				    proc:initvar-info
+				    env attributes vocab)))
+			  (distinct-valid-id/s? (append new-names
+						  (map car
+						    proc:initvars)))
+			  (extend-env extensions env)
+			  (let
+			    ((result
+			       (create-class*/names-form
+				 (car proc:this)
+				 (car proc:superinit)
+				 proc:super-expr
+				 proc:interfaces
+				 parsed-initvars
+				 (let ((expand-exprs
+					 (lambda (exprs)
+					   (map (lambda (expr)
+						  (expand-expr expr env
+						    attributes vocab))
+					     exprs))))
+				   (map
+				     (lambda (e)
+				       (cond
+					 ((public-entry? e)
+					   (make-public-clause
+					     (public-entry-exports e)
+					     (map car (ivar-entry-bindings e))
+					     (expand-exprs
+					       (public-entry-exprs e))))
+					 ((private-entry? e)
+					   (make-private-clause
+					     (map car (ivar-entry-bindings e))
+					     (expand-exprs
+					       (private-entry-exprs e))))
+					 ((inherit-entry? e)
+					   (make-inherit-clause
+					     (map car
+					       (ivar-entry-bindings e))
+					     (inherit-entry-imports e)))
+					 ((rename-entry? e)
+					   (make-rename-clause
+					     (map car (ivar-entry-bindings e))
+					     (rename-entry-imports e)))
+					 ((sequence-entry? e)
+					   (make-sequence-clause
+					     (expand-exprs
+					       (sequence-entry-exprs e))))
+					 (else
+					   (internal-error e
+					     "Invalid entry in class*/names maker"))))
+				     proc:ivar-info))
+				 expr)))
+			    (retract-env (append
+					   (map car proc:initvars)
+					   new-names)
+			      env)
+			    (set-top-level-status attributes
+			      top-level?)
+			    result))))))))
+	    (else
+	      (static-error expr "Malformed class*/names")))))))
 
   ; ----------------------------------------------------------------------
 
-  (add-primitivized-micro-form 'ivar scheme-vocabulary
-    (let* ((kwd '())
-	    (in-pattern '(_ object name))
-	    (m&e (pat:make-match&env in-pattern kwd)))
-      (lambda (expr env attributes vocab)
-	(cond
-	  ((pat:match-against m&e expr env)
-	    =>
-	    (lambda (p-env)
-	      (let ((object (pat:pexpand 'object p-env kwd))
-		     (name (pat:pexpand 'name p-env kwd)))
-		(valid-syntactic-id? name)
-		(expand-expr
-		  (structurize-syntax
-		    `(#%uq-ivar ,object (quote ,name))
-		    expr)
-		  env attributes vocab))))
-	  (else
-	    (static-error expr "Malformed ivar"))))))
+  (when (language>=? 'advanced)
+    (add-primitivized-micro-form 'ivar scheme-vocabulary
+      (let* ((kwd '())
+	      (in-pattern '(_ object name))
+	      (m&e (pat:make-match&env in-pattern kwd)))
+	(lambda (expr env attributes vocab)
+	  (cond
+	    ((pat:match-against m&e expr env)
+	      =>
+	      (lambda (p-env)
+		(let ((object (pat:pexpand 'object p-env kwd))
+		       (name (pat:pexpand 'name p-env kwd)))
+		  (valid-syntactic-id? name)
+		  (expand-expr
+		    (structurize-syntax
+		      `(#%uq-ivar ,object (quote ,name))
+		      expr)
+		    env attributes vocab))))
+	    (else
+	      (static-error expr "Malformed ivar")))))))
 
-  (add-primitivized-macro-form 'send scheme-vocabulary
-    (let* ((kwd '())
-	    (in-pattern '(_ object name arg ...))
-	    (out-pattern '((ivar object name) arg ...))
-	    (m&e (pat:make-match&env in-pattern kwd)))
-      (lambda (expr env)
-	(or (pat:match-and-rewrite expr m&e out-pattern kwd env)
-	  (static-error expr "Malformed send")))))
+  (when (language>=? 'advanced)
+    (add-primitivized-macro-form 'send scheme-vocabulary
+      (let* ((kwd '())
+	      (in-pattern '(_ object name arg ...))
+	      (out-pattern '((ivar object name) arg ...))
+	      (m&e (pat:make-match&env in-pattern kwd)))
+	(lambda (expr env)
+	  (or (pat:match-and-rewrite expr m&e out-pattern kwd env)
+	    (static-error expr "Malformed send"))))))
 
-  (add-primitivized-macro-form 'send* scheme-vocabulary
-    (let* ((kwd '())
-	    (in-pattern '(_ object (n0 a0 ...) ...))
-	    (m&e (pat:make-match&env in-pattern kwd))
-	    (out-pattern '(begin
-			    (send object n0 a0 ...)
-			    ...)))
-      (lambda (expr env)
-	(or (pat:match-and-rewrite expr m&e out-pattern kwd env)
-	  (static-error expr "Malformed send*")))))
+  (when (language>=? 'advanced)
+    (add-primitivized-macro-form 'send* scheme-vocabulary
+      (let* ((kwd '())
+	      (in-pattern '(_ object (n0 a0 ...) ...))
+	      (m&e (pat:make-match&env in-pattern kwd))
+	      (out-pattern '(begin
+			      (send object n0 a0 ...)
+			      ...)))
+	(lambda (expr env)
+	  (or (pat:match-and-rewrite expr m&e out-pattern kwd env)
+	    (static-error expr "Malformed send*"))))))
 
-  (add-primitivized-macro-form 'make-generic scheme-vocabulary
-    (let* ((kwd '())
-	    (in-pattern '(_ class name))
-	    (m&e (pat:make-match&env in-pattern kwd))
-	    (out-pattern '(#%uq-make-generic class (quote name))))
-      (lambda (expr env)
-	(or (pat:match-and-rewrite expr m&e out-pattern kwd env)
-	  (static-error expr "Malformed make-generic")))))
+  (when (language>=? 'advanced)
+    (add-primitivized-macro-form 'make-generic scheme-vocabulary
+      (let* ((kwd '())
+	      (in-pattern '(_ class name))
+	      (m&e (pat:make-match&env in-pattern kwd))
+	      (out-pattern '(#%uq-make-generic class (quote name))))
+	(lambda (expr env)
+	  (or (pat:match-and-rewrite expr m&e out-pattern kwd env)
+	    (static-error expr "Malformed make-generic"))))))
 
   ; ----------------------------------------------------------------------
 

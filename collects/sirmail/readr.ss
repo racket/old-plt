@@ -85,6 +85,9 @@
       
       ;; We use a lists so they can be easily read and written
       
+      ;; type message = (list ... message attributes, see selectors below ...)
+
+      ;; mailbox : (listof message)
       (define mailbox (with-handlers ([void (lambda (x) null)])
 			(with-input-from-file
 			    (build-path mailbox-dir "mailbox")
@@ -343,54 +346,60 @@
 	(status "Removing old delete flags...")
 	(imap-store imap '- (map message-position mailbox) (list (symbol->imap-flag 'deleted))))
       
+      ;; purge-messages : (listof messages) -> void
+      (define (purge-messages marked)
+        (unless (null? marked)
+          (let-values ([(imap count new next-uid) (connect)])
+            (check-positions imap marked)
+            (remove-delete-flags imap)
+            (status "Deleting marked messages...")
+            (imap-store imap '+ (map message-position marked)
+                        (list (symbol->imap-flag 'deleted)))
+            (imap-expunge imap)
+            (set! mailbox
+                  (filter
+                   (lambda (m) (not (memq m marked)))
+                   mailbox))
+            (let loop ([l mailbox][p 1])
+              (unless (null? l)
+                (set-message-position! (car l) p)
+                (loop (cdr l) (add1 p))))
+            (write-mailbox)
+            (let* ([problems null]
+                   [try-delete
+                    (lambda (f)
+                      (with-handlers ([void 
+                                       (lambda (x)
+                                         (set! problems (cons x problems)))])
+                        (delete-file f)))])
+              (for-each
+               (lambda (m)
+                 (let ([uid (message-uid m)])
+                   (try-delete (build-path mailbox-dir (format "~a" uid)))
+                   (when (message-downloaded? m)
+                     (try-delete (build-path mailbox-dir (format "~abody" uid))))))
+               marked)
+              (unless (null? problems)
+                (message-box "Warning"
+                             (apply
+                              string-append
+                              "There we problems deleting some local files:"
+                              (map
+                               (lambda (x)
+                                 (string-append
+                                  (string #\newline)
+                                  (if (exn? x)
+                                      (exn-message x)
+                                      "<unknown exn>")))))
+                             main-frame))
+              (display-message-count (length mailbox))
+              (status "Messages deleted")))))
+
+      ;; purge-marked : -> void
+      ;; purges the marked mailbox messages.
       (define (purge-marked)
 	(let* ([marked (filter message-marked? mailbox)])
-	  (unless (null? marked)
-	    (let-values ([(imap count new next-uid) (connect)])
-	      (check-positions imap marked)
-	      (remove-delete-flags imap)
-	      (status "Deleting marked messages...")
-	      (imap-store imap '+ (map message-position marked)
-			  (list (symbol->imap-flag 'deleted)))
-	      (imap-expunge imap)
-	      (set! mailbox
-		    (filter
-		     (lambda (m) (not (message-marked? m)))
-		     mailbox))
-	      (let loop ([l mailbox][p 1])
-		(unless (null? l)
-		  (set-message-position! (car l) p)
-		  (loop (cdr l) (add1 p))))
-	      (write-mailbox)
-	      (let* ([problems null]
-		     [try-delete
-		      (lambda (f)
-			(with-handlers ([void 
-					 (lambda (x)
-					   (set! problems (cons x problems)))])
-			  (delete-file f)))])
-		(for-each
-		 (lambda (m)
-		   (let ([uid (message-uid m)])
-		     (try-delete (build-path mailbox-dir (format "~a" uid)))
-		     (when (message-downloaded? m)
-		       (try-delete (build-path mailbox-dir (format "~abody" uid))))))
-		 marked)
-		(unless (null? problems)
-		  (message-box "Warning"
-			       (apply
-				string-append
-				"There we problems deleting some local files:"
-				(map
-				 (lambda (x)
-				   (string-append
-				    (string #\newline)
-				    (if (exn? x)
-					(exn-message x)
-					"<unknown exn>")))))
-			       main-frame))
-		(display-message-count (length mailbox))
-		(status "Messages deleted"))))))
+	  (purge-messages marked)))
       
       
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -591,81 +600,132 @@
               (set-icon icon icon-mask 'both)))))
       
       (define header-list%
-	(class100 hierarchical-list% args
+	(class hierarchical-list%
+
           (inherit get-items show-focus)
-          (private-field
-           [selected #f])
-          (public
-            [mark (lambda (marked?) 
-                    (when selected
-                      (let* ([uid (send selected user-data)]
-                             [m (assoc uid mailbox)]
-                             [flags (message-flags m)])
-                        (unless (eq? (not marked?) 
-                                     (not (memq 'marked flags)))
-                          (set-message-flags! m (if marked?
-                                                    (cons 'marked flags)
-                                                    (remq 'marked flags)))
-                          (write-mailbox)
-                          (apply-style selected 
-                                       (if marked? 
-                                           marked-delta
-                                           unmarked-delta))
-                          (status "~aarked" 
-                                  (if marked? "M" "Unm"))))))]
-            [hit (lambda () (when selected
-                              (on-double-select selected)))]
-            [mark-message (lambda () (mark #t))]
-            [unmark-message (lambda () (mark #f))]
-            [selected-hit? (lambda () (eq? selected current-selected))])
-          (override
-            [on-select
-             (lambda (i) (set! selected i))]
-            [on-double-select
-             (lambda (i)
-               (let ([e (send message get-editor)]
-                     [uid (send i user-data)])
-		 (dynamic-wind
-		     (lambda ()
-		       (send e lock #f)
-		       (send e begin-edit-sequence))
-		     (lambda ()
-		       (send e erase)
-		       (set-current-selected #f)
-		       (let* ([h (get-header uid)]
-			      [small-h (if show-full-headers?
-					   h
-					   (let loop ([l (reverse MESSAGE-FIELDS-TO-SHOW)]
-						      [small-h empty-header])
-					     (if (null? l)
-						 small-h
-						 (let ([v (extract-field (car l) h)])
-						   (if v
-						       (loop (cdr l) (insert-field
-								      (car l)
-								      v
-								      small-h))
-						       (loop (cdr l) small-h))))))])
-			 (send e insert (crlf->lf small-h)
-			       0 'same #f))
-		       (send e insert 
-			     (crlf->lf (as-background 
-					enable-main-frame
-					(lambda (break-bad break-ok) 
-					  (with-handlers ([exn:break? (lambda (x) "<interrupted>")])
-					    (get-body uid)))
-					void))
-			     (send e last-position) 'same #f)
-		       (when SHOW-URLS (hilite-urls e))
-		       ;;(handle-formatting e) ; too slow
-		       (send e set-position 0)
-		       (set-current-selected i))
-		     (lambda ()
-		       (send e end-edit-sequence)
-		       (send e lock #t)))))])
-          (sequence
-            (apply super-init args)
-            (show-focus #t))))
+          (field [selected #f])
+          
+          (define/public (mark marked?)
+            (when selected
+              (let* ([uid (send selected user-data)]
+                     [m (assoc uid mailbox)]
+                     [flags (message-flags m)])
+                (unless (eq? (not marked?) 
+                             (not (memq 'marked flags)))
+                  (set-message-flags! m (if marked?
+                                            (cons 'marked flags)
+                                            (remq 'marked flags)))
+                  (write-mailbox)
+                  (apply-style selected 
+                               (if marked? 
+                                   marked-delta
+                                   unmarked-delta))
+                  (status "~aarked" 
+                          (if marked? "M" "Unm"))))))
+          (define/public (hit)
+            (when selected
+              (on-double-select selected)))
+          
+          (define/public (mark-message)
+            (mark #t))
+          (define/public (unmark-message)
+            (mark #f))
+          (define/public (selected-hit?) (eq? selected current-selected))
+          (define/override (on-select i)
+            (set! selected i))
+
+          (define/override (on-double-select i)
+            (let ([e (send message get-editor)]
+                  [uid (send i user-data)])
+              (dynamic-wind
+               (lambda ()
+                 (send e lock #f)
+                 (send e begin-edit-sequence))
+               (lambda ()
+                 (send e erase)
+                 (set-current-selected #f)
+                 (let* ([h (get-header uid)]
+                        [small-h (if show-full-headers?
+                                     h
+                                     (let loop ([l (reverse MESSAGE-FIELDS-TO-SHOW)]
+                                                [small-h empty-header])
+                                       (if (null? l)
+                                           small-h
+                                           (let ([v (extract-field (car l) h)])
+                                             (if v
+                                                 (loop (cdr l) (insert-field
+                                                                (car l)
+                                                                v
+                                                                small-h))
+                                                 (loop (cdr l) small-h))))))])
+                   (send e insert (crlf->lf small-h)
+                         0 'same #f))
+                 (send e insert 
+                       (crlf->lf (as-background 
+                                  enable-main-frame
+                                  (lambda (break-bad break-ok) 
+                                    (with-handlers ([exn:break? (lambda (x) "<interrupted>")])
+                                      (get-body uid)))
+                                  void))
+                       (send e last-position) 'same #f)
+                 (when SHOW-URLS (hilite-urls e))
+                 ;;(handle-formatting e) ; too slow
+                 (send e set-position 0)
+                 (set-current-selected i))
+               (lambda ()
+                 (send e end-edit-sequence)
+                 (send e lock #t)))))
+
+          (inherit get-editor client->screen)
+          (field (dragging-item #f)
+                 (dragging-title #f)
+                 (last-status #f))
+          (rename [super-on-event on-event])
+          (define/override (on-event evt)
+            (cond
+              [(send evt button-down?)
+               (let ([text (get-editor)])
+                 (when text
+                   (let ([xb (box (send evt get-x))]
+                         [yb (box (send evt get-y))])
+                     (send text global-to-local xb yb)
+                     (let* ([pos (send text find-position (unbox xb) (unbox yb))]
+                            [snip (send text find-snip pos 'after-or-none)]
+                            [item (and (is-a? snip hierarchical-item-snip%)
+                                       (send snip get-item))])
+                       (set! dragging-title "???")
+                       (set! dragging-item item)
+                       (when dragging-item
+                         (let* ([ud (send dragging-item user-data)]
+                                [message (assoc ud mailbox)])
+                           (when message
+                             (let ([title (message-subject message)])
+                               (if ((string-length title) . <= . 20)
+                                   (set! dragging-title title)
+                                   (set! dragging-title
+                                         (string-append (substring title 0 17) "...")))))))))))]
+              [(send evt dragging?)
+               (let-values ([(gx gy) (client->screen (send evt get-x) (send evt get-y))])
+                 (let ([mailbox-name (send-message-to-window gx gy (list gx gy))])
+                   (if (string? mailbox-name)
+                       (status "Move message \"~a\" to ~a" dragging-title mailbox-name)
+                       (status ""))))]
+              [(send evt button-up?)
+               (let-values ([(gx gy) (client->screen (send evt get-x) (send evt get-y))])
+                 (let ([mailbox-name (send-message-to-window gx gy (list gx gy))])
+                   (when (string? mailbox-name)
+                     (let* ([user-data (send dragging-item user-data)]
+                            [item (assoc user-data mailbox)])
+                       (when item
+                         (copy-messages-to (list item) mailbox-name)
+                         (header-changing-action
+                          #f
+                          (lambda ()
+                            (purge-messages (list item)))))))))])
+            (super-on-event evt))
+
+          (super-instantiate ())
+          (show-focus #t)))
       
       (define (header-changing-action downloads? go)
 	(let ([old-mailbox mailbox])
@@ -873,9 +933,12 @@
 	  (send e end-edit-sequence)
 	  i))
       
+      (define last-status #f)
       (define (status . args)
 	(let ([s (apply format args)])
-	  (send f set-status-text s)))
+          (unless (equal? s last-status)
+            (set! last-status s)
+            (send f set-status-text s))))
       
       (define can-poll? #t)
       
@@ -1296,18 +1359,21 @@
       
       (define (copy-marked-to dest-mailbox-name)
 	(let* ([marked (filter message-marked? mailbox)])
-	  (unless (null? marked)
-	    (let-values ([(imap count new next-uid) (connect)])
-	      (check-positions imap marked)
-	      (status (format "Copying marked to ~a..." dest-mailbox-name))
-	      (as-background
-	       enable-main-frame
-	       (lambda (break-bad break-ok)
-		 (status (format "Copying marked to ~a..." dest-mailbox-name))
-		 (with-handlers ([void no-status-handler])
-		   (imap-copy imap (map message-position marked) dest-mailbox-name)))
-	       void)
-	      (status (format "Copied to ~a" dest-mailbox-name))))))
+          (copy-messages-to marked dest-mailbox-name)))
+      
+      (define (copy-messages-to marked dest-mailbox-name)
+        (unless (null? marked)
+          (let-values ([(imap count new next-uid) (connect)])
+            (check-positions imap marked)
+            (status "Copying messages to ~a..." dest-mailbox-name)
+            (as-background
+             enable-main-frame
+             (lambda (break-bad break-ok)
+               (status "Copying messages to ~a..." dest-mailbox-name)
+               (with-handlers ([void no-status-handler])
+                 (imap-copy imap (map message-position marked) dest-mailbox-name)))
+             void)
+            (status "Copied to ~a" dest-mailbox-name))))
       
       (define (auto-file)
 	(as-background
@@ -1321,7 +1387,7 @@
 		     [val-rxs (map string->regexp (map cadr (cadr auto)))])
 		(with-handlers ([void no-status-handler])
 		  (break-ok)
-		  (status (format "Finding ~a messages..." dest-mailbox-name))
+		  (status "Finding ~a messages..." dest-mailbox-name)
 		  (let ([file-msgs 
 			 (filter
 			  (lambda (m)
@@ -1333,7 +1399,7 @@
 					  fields val-rxs))))
 			  mailbox)])
 		    (unless (null? file-msgs)
-		      (status (format "Filing to ~a..." dest-mailbox-name))
+		      (status "Filing to ~a..." dest-mailbox-name)
 		      (break-bad)
 		      (let-values ([(imap count new next-uid) (connect)])
 			(status (format "Filing to ~a..." dest-mailbox-name))

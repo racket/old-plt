@@ -21,7 +21,10 @@
 
   
   (define (python-set-member! obj name value)
-    (hash-table-put! (python-node-dict obj) name value))
+    ;; special case: __class__ is actually the type
+    (if (eq? name '__class__)
+        (set-python-node-type! obj value)
+        (hash-table-put! (python-node-dict obj) name value)))
 
   (define (python-new-object type)
     (make-python-node type (make-hash-table) #t))

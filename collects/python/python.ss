@@ -16,12 +16,12 @@
   
   (define (python-to-scheme path)
     (compile-python (read-python path)))
-
+  
   (define (compile-python ast-list)
-;    (set-context! #'here)
-         (map (lambda (ast)
-                (send ast to-scheme))
-              ast-list))
+    ;    (set-context! #'here)
+    (map (lambda (ast)
+           (send ast to-scheme))
+         ast-list))
   
   (define (compile-python-ast ast)
     (send ast to-scheme))
@@ -31,18 +31,34 @@
   (define parse-python-file read-python)
   
   (define (python path)
-      (let ([m-path ((current-module-name-resolver) '(lib "base.ss" "python") #f #f)]
-            [empty-namespace (make-namespace 'empty)]
-            [n (current-namespace)])
-        (dynamic-require m-path #f)
+    ;; setup initial eval namespace
+    (let ([m-path ((current-module-name-resolver) '(lib "base.ss" "python") #f #f)]
+          [empty-namespace (make-namespace 'empty)]
+          [n (current-namespace)])
+      (dynamic-require m-path #f)
+      ;; eval in new namespace
+      (let ([results (parameterize ([current-namespace empty-namespace])
+                       (namespace-attach-module n m-path)
+                       (namespace-require m-path)
+                       (map eval
+                            (python-to-scheme path)))])
+        ;; copy all new bindings to the first namespace
+        (for-each (lambda (symbol)
+                    (unless (namespace-variable-value symbol #t
+                                                      (lambda () #f))
+                      (with-handlers ([exn? (lambda (exn) #f)])
+                        (namespace-set-variable-value! symbol
+                                                       (parameterize ([current-namespace empty-namespace])
+                                                         (namespace-variable-value symbol))))))
+                  (parameterize ([current-namespace empty-namespace])
+                    (namespace-mapped-symbols)))
+        ;; return the results in a nice format
         (map (lambda (result)
                (if (python-node? result)
                    (py-object%->string result)
                    result))
-             (parameterize ([current-namespace empty-namespace])
-               (namespace-attach-module n m-path)
-               (namespace-require m-path)
-               (map eval
-                    (python-to-scheme path))))))
-    
+             (filter (lambda (r) (not (void? r)))
+                     results)))))
+  
+  
   )

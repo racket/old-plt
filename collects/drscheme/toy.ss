@@ -47,8 +47,8 @@
 
     (for-each (lambda (x y)
 		(printf "checking: ~a against ~a~n" x y))
-	      (list 'mred:make-child-info mred:make-child-info
-		    'zodiac:make-parsed zodiac:make-parsed))
+	      (list 'mred:make-child-info 'zodiac:make-parsed)
+	      (list mred:make-child-info zodiac:make-parsed))
 
     (printf "invoked toy@~n")))
 

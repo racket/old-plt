@@ -87,5 +87,5 @@
   
   ; (define theterm '((lambda (x num) (lambda (y num) (if (= x y) 0 x))) 1))
   (define theterm '((lambda (x num) (lambda (y num) (if (= x y) 0 (lambda (x num) x)))) 1))
-  (gui lang reductions theterm)
+  (traces lang reductions theterm)
   )

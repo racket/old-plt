@@ -88,7 +88,7 @@ there are multiple decompositions for each term.
                 (future-subst (term variable_p) (term v_1) (term state_body)))
      (reduction lang
                 (flet (variable_2 (flet (variable_1 state_1) state_2))
-                      s_3)
+                      state_3)
                 (term (flet (variable_1 state_1) (flet (variable_2 state_2) state_3))))))
   
   (define future-subst
@@ -112,13 +112,13 @@ there are multiple decompositions for each term.
   
   (define (copy-sexp x) (if (pair? x) (cons (copy-sexp (car x)) (copy-sexp (cdr x))) x))
   
-  '(gui lang reductions '(let (x (future (let (y (cons 1 2))
+  '(traces lang reductions '(let (x (future (let (y (cons 1 2))
                                            (let (z (car y))
                                              z))))
                            (let (p (cons 3 4))
                              (let (q (car p))
                                (cons x q)))))
   
-  (gui lang reductions '(let (x (future (let (y 1)
+  (traces lang reductions '(let (x (future (let (y 1)
                                           y)))
                           x)))

@@ -562,6 +562,6 @@
       ((((,wrapbar (--> compile-v1 compile-v2)) (lambda (x) compile-e)) "p") "n")))
   
   
-  (gui lang reductions flat-case pp)
-  ;(gui lang reductions ho-case pp)
+  (traces lang reductions flat-case pp)
+  ;(traces lang reductions ho-case pp)
   )

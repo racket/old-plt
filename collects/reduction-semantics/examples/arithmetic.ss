@@ -41,5 +41,4 @@
                         (sqrt number_1)
                         (sqrt (term number_1)))))
      
-  (gui lang reductions '(- (* (sqrt 36) (/ 1 2)) (+ 1 2))))
-
+  (traces lang reductions '(- (* (sqrt 36) (/ 1 2)) (+ 1 2))))

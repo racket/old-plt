@@ -29,14 +29,22 @@ this tool:
 
   _ho-contracts.ss_: computes the mechanical portions of a
   proof in the Contracts for Higher Order Functions paper
-  (ICFP 2002).
+  (ICFP 2002). Contains a sophisticated example use of an
+  alternative pretty printer.
 
   _macro.ss_: models macro expansion as a reduction semantics.
 
-  _omega.ss_: the call by value lambda calculus and omega.
+  _omega.ss_: the call by value lambda calculus with call/cc.
+  Includes omega and two call/cc-based infinite loops, one of
+  which has an ever-expanding term size and one of which has
+  a bounded term size.
 
   _threads.ss_: shows how non-deterministic choice can be
-  modelled in a reduction semantics.
+  modelled in a reduction semantics. Contains an example use
+  of a simple alternative pretty printer.
+
+  _semaphores.ss_: a simple threaded language with semaphores
+
 
   iswim.ss : see further below.
 
@@ -190,28 +198,36 @@ evaluation contexts and v for values.
 Returns #t if its argument was produced by `language', #f
 otherwise.
 
-
 > (term-let ([id-pat expr] ...) body)           SYNTAX
 
-id-pat ::= id | (id-pat ...)
+Match each given id pattern to the value 
+yielded by evaluating the corresponding expr and binds each
+variable in that match to the appropriate value (described 
+below). These bindings are then accessible to the `term' 
+syntactic form. 
 
-Binds each id to the value yielded by evaluating the
-corresponding expr such that the ids are accessible to the 
-term syntactic form described below. Identifier-patterns 
-indicate the ellipsis-depth of each identifier; 
-every identifier inside an ellipsis must be bound to a 
-list with nested depth at least equal to the 
-ellipsis-depth 
+Identifier-patterns are terms in the following grammar:
+
+id-pat ::= identifier
+         | ([id-pat | id-pat ...]*)
+
+where ... is the literal symbol. If id-pat is an identifier,
+it matches and binds any value. If it is a list, it matches
+only if the value being matched is a list value and only if
+every subpattern recursively matches the corresponding list
+element. There may be up to one ellipsis in any list pattern;
+if one is present, the overall list pattern matches any number
+of duplications of the pattern in front of the ellipsis including
+0.
 
 > (term s-expr)                                 SYNTAX
 
-This form is a dual to patterns for use in building new terms
-or accessing the values introduced by pattern matches. It 
-behaves identically to quasiquote except that names bound by
-`term-let' are implicitly substituted with the values those
-names were bound to, expanding ellipses as in-place sublists
-in the same manner as right-hand sides of syntax-case
-patterns.
+This form is used for construction of new s-expressions in 
+the right-hand sides of reductions. It behaves identically to
+quasiquote except that names bound by `term-let' are
+implicitly substituted with the values those names were bound
+to, expanding ellipses as in-place sublists in the same manner 
+as right-hand sides of syntax-case patterns.
 
 For example,
 
@@ -375,19 +391,19 @@ followed by an ellipsis.  Nested ellipses produce nested lists.
 
 ======================================================================
 
-The _gui.ss_ library provides two functions:
+The _gui.ss_ library provides three functions:
 
-> (gui language reductions expr [pp])
+> (traces language reductions expr [pp])
 
-This function calls gui/multiple with language, reductions
+This function calls traces/multiple with language, reductions
 and (list expr).
 
-> (gui/multiple lang reductions exprs [pp])
+> (traces/multiple lang reductions exprs [pp])
 
-This function calls gui/pred with the predicate
+This function calls traces/pred with the predicate
 (lambda (x) #t)
 
-> (gui/pred lang reductions exprs pred [pp])
+> (traces/pred lang reductions exprs pred [pp])
   lang : language
   reductions : (listof reduction)
   exprs : (listof sexp)
@@ -407,16 +423,21 @@ property. If the function returns #t, the term is displayed
 normally. If it returns #f, the term is displayed with a
 red border.
 
-If the pp function accepts one argument, it must return a
-string which the GUI will use as a representation of the
-given expression for display. If it takes four arguments, it
-renders its first argument into the port (its second
-argument) with width at most given by the number. The final
-argument is the text where the port is connected --
-characters written to the port go to the end of the
-editor. The default pp uses mzlib's pretty-print
-function. See the ho-contracts for an example use of this
-argument.
+If the pp function can take four arguments, it renders its
+first argument into the port (its second argument) with 
+width at most given by the number (its third argument). The
+final argument is the text where the port is connected -- 
+characters written to the port go to the end of the editor.
+If the pp function cannot take four arguments, it is 
+instead invoked with a single argument, the s-expression to
+render, and it must return a string which the GUI will use
+as a representation of the given expression for display.
+
+The default pp uses mzlib's pretty-print function. See 
+threads.ss in the examples directory for an example use 
+of the one-argument form of this argument and 
+ho-contracts.ss in the examples directory for an example 
+use of its four-argument form.
 
 You can save the contents of the window as a postscript file
 from the menus.

@@ -24,7 +24,9 @@
                 (let ([v (variable-not-in (term c_1) 'x)])
                   (replace (term c_1) 
                            (term hole)
-                           (term (arg (lambda (,v) (abort ,(replace (term c_1) (term hole) v_arg))))))))
+                           (term (v_arg (lambda (,v) (abort ,(replace (term c_1) 
+                                                                    (term hole) 
+                                                                    v))))))))
      (reduction lang
                 (in-hole c (abort e_1))
                 (term e_1))
@@ -52,9 +54,9 @@
       (subterm '() x)]))
       
   
-  ;(gui lang reductions '((lambda (x) (x x)) (lambda (x) (x x))))
+  ;(traces lang reductions '((lambda (x) (x x)) (lambda (x) (x x))))
   
-  (gui lang reductions '((call/cc call/cc) (call/cc call/cc)))
-  ;(gui lang reductions '((lambda (x) ((call/cc call/cc) x)) (call/cc call/cc)))
+  ;(traces lang reductions '((call/cc call/cc) (call/cc call/cc)))
+  (traces lang reductions '((lambda (x) ((call/cc call/cc) x)) (call/cc call/cc)))
   
   )

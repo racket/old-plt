@@ -76,6 +76,6 @@
       (subterm '() f)
       (subterm '() x)]))
       
-  (gui/multiple lang reductions
+  (traces/multiple lang reductions
                 (list '(+ 1 (+ 2 (f (lambda (d) (d (d 0))))))
                       '(+ 1 (\# (+ 2 (f (lambda (d) (d (d 0))))))))))

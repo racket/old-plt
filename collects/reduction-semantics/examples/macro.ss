@@ -42,6 +42,6 @@
      (--> (false)
           (term (lambda (x) (lambda (y) y))))))
   
-  (gui lang reductions '((id id) 5))
-  (gui lang reductions '(id 5))
-  (gui lang reductions '(or (false) (true))))
+  (traces lang reductions '((id id) 5))
+  (traces lang reductions '(id 5))
+  (traces lang reductions '(or (false) (true))))

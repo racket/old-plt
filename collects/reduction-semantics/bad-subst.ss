@@ -18,7 +18,7 @@
      (reduction/context lang
                         e-ctxt
                         ((lambda ((name x variable)) (name body e)) (name arg v))
-                        (bad-subst x arg body))))
+                        (bad-subst (term x) (term arg) (term body)))))
   
   (define (bad-subst var arg body)
     (let loop ([body body])

@@ -212,4 +212,4 @@
   ;(define theterm '(((lambda (x) ((x (lambda (x) x)) (x 1)))
   ;                (lambda (x) x))))
   
-  (gui lang reductions theterm))
+  (traces lang reductions theterm))

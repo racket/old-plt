@@ -66,7 +66,7 @@
   (define (make-s b c w) `((,b ((,b (,b ,w)) ,c)) (,b ,b)))
 
   ;; output is saved in ij-basis.ps
-  (gui/multiple lang
+  (traces/multiple lang
                 reductions
                 (list 
                  `((,c* abs1) abs2)
@@ -76,7 +76,7 @@
                  `(((,(make-s 'b 'c 'w) abs1) abs2) abs3)))
   
   ;; s in terms of i and j ( > 18,000 reductions and probably still long way to go)
-  '(gui lang ij-reductions
+  '(traces lang ij-reductions
        (make-s (make-b (make-c c*))
                (make-c c*)
                (make-w (make-b (make-c c*))

@@ -90,7 +90,7 @@
              (equal? (type-check term2) t1)))))
   
   (define (show term)
-    (gui/pred lang reductions (list term) (pred term)))
+    (traces/pred lang reductions (list term) (pred term)))
   
   ;(show '((lambda (x num) x) 1))
   (show '((lambda (x (num -> num)) 1) ((lambda (x (num -> num)) x) (lambda (x num) x))))

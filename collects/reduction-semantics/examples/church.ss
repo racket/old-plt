@@ -53,7 +53,7 @@
      [(? symbol?) (variable)]))
       
   
-  (gui lang reductions
+  (traces lang reductions
        '(let (plus (lambda (m) 
                      (lambda (n) 
                        (lambda (s)

@@ -12,9 +12,9 @@
            (lib "class.ss")
            (lib "list.ss"))
 
-  (provide gui 
-           gui/multiple
-           gui/pred
+  (provide (rename gui traces)
+           (rename gui/multiple traces/multiple)
+           (rename gui/pred traces/pred)
 	   reduction-steps-cutoff initial-font-size initial-char-width)
 
   (preferences:set-default 'plt-reducer:show-bottom #t boolean?)
@@ -440,7 +440,10 @@
            [es (instantiate graph-editor-snip% ()
                  (char-width (initial-char-width))
                  (editor text)
-                 (pp pp)
+                 (pp 
+                  (if (procedure-arity-includes? pp 4)
+                      pp
+                      (lambda (v port w spec) (display (pp v) port))))
                  (expr expr)
                  (bad? bad?))])
       (send text set-autowrap-bitmap #f)

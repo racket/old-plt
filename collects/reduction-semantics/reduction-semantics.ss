@@ -1,4 +1,3 @@
-
 (module reduction-semantics mzscheme
   (require "private/matcher.ss"
            "private/term.ss"

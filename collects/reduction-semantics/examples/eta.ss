@@ -69,4 +69,4 @@
       (subterm '() x)]))
       
   
-  (gui lang reductions '(+ (lambda (x) ((+ 1 2) x)) 1)))
+  (traces lang reductions '(+ (lambda (x) ((+ 1 2) x)) 1)))

@@ -21,11 +21,208 @@
       (define (set-box/f! b v) (when (box? b) (set-box! b v)))
       (define bw? (< (get-display-depth) 3))
 
-      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-      ;;                                                                  ;;
-      ;;                         fraction snip                            ;;
-      ;;                                                                  ;;
-      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      
+                                                               
+                                             ;                 
+                                     ;                         
+                                     ;                         
+ ; ;;;   ;;;  ; ;;;    ;;;   ;;;;   ;;;;;  ;;;   ; ;;;    ;;; ;
+  ;     ;   ;  ;   ;  ;   ;      ;   ;       ;    ;;  ;  ;   ; 
+  ;     ;;;;;  ;   ;  ;;;;;   ;;;;   ;       ;    ;   ;  ;   ; 
+  ;     ;      ;   ;  ;      ;   ;   ;       ;    ;   ;  ;   ; 
+  ;     ;   ;  ;   ;  ;   ;  ;   ;   ;   ;   ;    ;   ;  ;   ; 
+ ;;;;    ;;;   ;;;;    ;;;    ;;; ;   ;;;  ;;;;; ;;;  ;;  ;;;; 
+               ;                                             ; 
+               ;                                             ; 
+              ;;;                                         ;;;  
+
+                                                 
+    ;;                  ;                  ;;;   
+     ;                                       ;   
+     ;                                       ;   
+  ;;;;   ;;;    ;;;   ;;;   ;;; ;   ;;;;     ;   
+ ;   ;  ;   ;  ;   ;    ;    ; ; ;      ;    ;   
+ ;   ;  ;;;;;  ;        ;    ; ; ;   ;;;;    ;   
+ ;   ;  ;      ;        ;    ; ; ;  ;   ;    ;   
+ ;   ;  ;   ;  ;   ;    ;    ; ; ;  ;   ;    ;   
+  ;;; ;  ;;;    ;;;   ;;;;; ;; ; ;;  ;;; ; ;;;;;;
+                                                 
+                                                 
+                                                 
+
+      ;; find-repeat : 0 <= n < 1 -> (values (listof digit) (listof digit))
+      ;; finds the repeating and non-repeating portion of an exact number
+      (define (find-repeat n)
+        (let loop ([n n]
+                   [priors (list)]
+                   [non-repeating-digits (list)])
+          (let* ([d (floor (* n 10))]
+                 [m (- (* n 10) d)])
+            (cond
+              [(zero? m)
+               (values (reverse (cons d non-repeating-digits)) null)]
+              [else
+               (let* ([new-digits (cons d non-repeating-digits)]
+                      [new-priors (cons n priors)]
+                      [rep (extract-repeat m new-priors new-digits)])
+                 (if rep
+                     (values (car rep) (cadr rep))
+                     (loop m
+                           new-priors
+                           new-digits)))]))))
+      
+      ;; extract-repeat : number[0<=n<1] (listof digit) (listof digit) ->
+      ;;                  (union #f (list (listof digit) (listof digit)))
+      (define (extract-repeat m priors non-repeating-digits)
+        (let loop ([priors (reverse priors)]
+                   [digits (reverse non-repeating-digits)]
+                   [digit-front null])
+          (cond
+            [(null? priors) #f]
+            [else
+             (let ([pm (car priors)])
+               (if (= m pm)
+                   (list (reverse digit-front) digits)
+                   (loop (cdr priors)
+                         (cdr digits)
+                         (cons (car digits) digit-front))))])))
+      
+      (define repeat-snip-class%
+        (class snip-class%
+          (define/override (read f)
+            (instantiate repeat-snip% ()
+              [number (string->number (send f get-string))]
+              [whole-digits (send f get-string)]
+              [non-repeat-digits (send f get-string)]
+              [repeat-digits (send f get-string)]))
+          (super-instantiate ())))
+      
+      (define repeat-snipclass (make-object repeat-snip-class%))
+      (send repeat-snipclass set-version 1)
+      (send repeat-snipclass set-classname "drscheme:repeating-decimal")
+      (send (get-the-snip-class-list) add repeat-snipclass)
+      
+      (define repeat-snip%
+        (class* snip% (special<%>)
+          (init-field number whole-digits non-repeat-digits repeat-digits)
+          
+          (define/public (get-number) number)
+          (define/public (get-whole-digits) whole-digits)
+          (define/public (get-non-repeat-digits) non-repeat-digits)
+          (define/public (get-repeat-digits) repeat-digits)
+          
+          (define/public (read-special file line col pos)
+            (values number 1))
+          
+          (define/override (copy)
+            (instantiate repeat-snip% ()
+              [number number]
+              [whole-digits whole-digits]
+              [non-repeat-digits non-repeat-digits]
+              [repeat-digits repeat-digits]))
+          
+          (define/override (write f)
+            (send f put (number->string number))
+            (send f put whole-digits)
+            (send f put non-repeat-digits)
+            (send f put repeat-digits))
+          
+          (inherit get-style)
+          (define/override (get-extent dc x y wb hb descent space lspace rspace)
+            (let ([font (send (get-style) get-font)]
+                  [old-font (send dc get-font)])
+              (send dc set-font font)
+              (let-values ([(w1 h1 d1 a1) (send dc get-text-extent whole-digits font)]
+                           [(w2 h2 d2 a2) (send dc get-text-extent "." font)]
+                           [(w3 h3 d3 a3) (send dc get-text-extent non-repeat-digits font)]
+                           [(w4 h4 d4 a4) (send dc get-text-extent repeat-digits font)])
+                (set-box/f! wb (+ w1 w2 w3 w4))
+                (set-box/f! hb (+ h1 2))
+                (set-box/f! descent d1)
+                (set-box/f! space (+ a1 2))
+                (set-box/f! lspace 0)
+                (set-box/f! rspace 0))
+              (send dc set-font old-font)))
+          
+          (define/override (draw dc x y left top right bottom dx dy draw-caret?)
+            (define (draw-digits digits x)
+              (let-values ([(w h a d) (send dc get-text-extent digits)])
+                (send dc draw-text digits x (+ y 2))
+                (+ x w)))
+            (let* ([whole-end (draw-digits whole-digits x)]
+                   [decimal-end (draw-digits "." whole-end)]
+                   [non-repeat-end (draw-digits non-repeat-digits decimal-end)]
+                   [repeat-end (draw-digits repeat-digits non-repeat-end)])
+              (unless (string=? "" repeat-digits)
+                (send dc draw-line non-repeat-end y (- repeat-end 1) y))))
+          
+          (super-instantiate ())
+          
+          (inherit set-snipclass)
+          (set-snipclass repeat-snipclass)))
+      
+      ;; make-repeating-fraction-snip : number boolean -> snip
+      (define (make-repeating-fraction-snip number e-prefix?)
+        (let* ([whole-part (floor number)]
+               [fraction-part (- number whole-part)])
+          (let-values ([(non-repeating repeating) (find-repeat fraction-part)])
+            (instantiate repeat-snip% ()
+              [number number]
+              [whole-digits (let ([raw (if (zero? whole-part)
+                                           ""
+                                           (format "~a" whole-part))])
+                              (if e-prefix?
+                                  (string-append "#e" raw)
+                                  raw))]
+              [repeat-digits
+               (apply string-append (map number->string repeating))]
+              [non-repeat-digits
+               (apply string-append (map number->string non-repeating))]))))
+
+#|
+
+;;; test code
+
+(define f (make-object frame% "frame" #f 300 150))
+(define t (make-object text%))
+(define ec (make-object editor-canvas% f t))
+(send t insert (make-repeating-fraction-snip 10/7))
+(send f show #t)
+
+(define (test-find-repeat frac digits repeat)
+  (let-values ([(got-digits got-repeat) (find-repeat frac)])
+    (unless (and (equal? got-digits digits)
+                 (equal? got-repeat repeat))
+      (printf "expected ~a -> ~a ~a\n     got ~a -> ~a ~a\n"
+              frac digits repeat
+              frac got-digits got-repeat))))
+
+(test-find-repeat 1/2 '(5) #f)
+(test-find-repeat 1/4 '(2 5) #f)
+(test-find-repeat #e.1234567 '(1 2 3 4 5 6 7) #f)
+(test-find-repeat 1/3 '() '(3))
+(test-find-repeat 1/30 '(0) '(3))
+(test-find-repeat 1/300 '(0 0) '(3))
+(test-find-repeat (+ 1/30000 #e.1234) '(1 2 3 4) '(3))
+(test-find-repeat 1/7 '() '(1 4 2 8 5 7))
+
+|#
+      
+      
+
+                                                        
+   ;;;                                ;                 
+  ;                           ;                         
+  ;                           ;                         
+ ;;;;;  ; ;;;  ;;;;    ;;;   ;;;;;  ;;;     ;;;  ; ;;;  
+  ;      ;         ;  ;   ;   ;       ;    ;   ;  ;;  ; 
+  ;      ;      ;;;;  ;       ;       ;    ;   ;  ;   ; 
+  ;      ;     ;   ;  ;       ;       ;    ;   ;  ;   ; 
+  ;      ;     ;   ;  ;   ;   ;   ;   ;    ;   ;  ;   ; 
+ ;;;;   ;;;;    ;;; ;  ;;;     ;;;  ;;;;;   ;;;  ;;;  ;;
+                                                        
+                                                        
+                                                        
       
       (define whole/part-number-snipclass
         (make-object 

@@ -57,6 +57,7 @@ to the original stdout of DrScheme.
             (drscheme:language:make-simple-settings 
              #t
              'constructor
+             'mixed-fraction
              (get-sharing-printing)
              #t
              #f))
@@ -80,12 +81,17 @@ to the original stdout of DrScheme.
                  (read-accept-dot (get-read-accept-dot)))))
             (super-on-execute settings run-in-user-thread))
           
-          (define (set-printing-parameters thunk)
+          (define (set-printing-parameters settings thunk)
             (parameterize ([pc:booleans-as-true/false #t]
                            [pc:abbreviate-cons-as-list (get-abbreviate-cons-as-list)]
                            [pretty-print-show-inexactness #t]
                            [pretty-print-.-symbol-without-bars #t]
-                           [drscheme:rep:use-number-snip htdp-lang-use-number-snip]
+                           [drscheme:rep:use-number-snip 
+                            (make-htdp-lang-use-number-snip
+                             (eq? 
+                              'mixed-fraction
+                              (drscheme:language:simple-settings-fraction-style
+                               settings)))]
                            [pretty-print-exact-as-decimal #t]
                            [pc:use-named/undefined-handler
                             (lambda (x)
@@ -103,34 +109,38 @@ to the original stdout of DrScheme.
           ;; of this parameter, except those that have finite
           ;; decimal expansions. Those numbers are not printed
           ;; as snips.
-          (define (htdp-lang-use-number-snip x)
-            (let* ([remove-all-factors
-                    (lambda (to-remove n)
-                      (let loop ([n n])
-                        (if (zero? (modulo n to-remove))
-                            (loop (quotient n to-remove))
-                            n)))]
-                   [has-decimal-expansion?
-                    (lambda (x)
-                      (= 1 (remove-all-factors 
-                            2 
-                            (remove-all-factors 
-                             5 
-                             (denominator x)))))])
-              (if (and (number? x)
-                       (exact? x)
-                       (real? x)
-                       (not (integer? x)))
-                  (not (has-decimal-expansion? x))
-                  #f)))
+          (define (make-htdp-lang-use-number-snip mixed-fraction?)
+            (lambda (x)
+              (let* ([remove-all-factors
+                      (lambda (to-remove n)
+                        (let loop ([n n])
+                          (if (zero? (modulo n to-remove))
+                              (loop (quotient n to-remove))
+                              n)))]
+                     [has-decimal-expansion?
+                      (lambda (x)
+                        (= 1 (remove-all-factors 
+                              2 
+                              (remove-all-factors 
+                               5 
+                               (denominator x)))))])
+                (cond
+                  [(and (number? x)
+                        (exact? x)
+                        (real? x)
+                        (not (integer? x)))
+                   (not (has-decimal-expansion? x))]
+                  [else #f]))))
           
           (define/override (render-value/format value settings port put-snip)
             (set-printing-parameters
+             settings
              (lambda ()
                (super-render-value/format value settings port put-snip))))
           
           (define/override (render-value value settings port put-snip)
             (set-printing-parameters
+             settings
              (lambda ()
                (super-render-value value settings port put-snip))))
           
@@ -164,6 +174,12 @@ to the original stdout of DrScheme.
                                      (string-constant write-printing-style))
                                output-panel
                                void)]
+               [fraction-style
+                (make-object radio-box% (string-constant fraction-style)
+                  (list (string-constant use-mixed-fractions)
+                        (string-constant use-repeating-decimals))
+                  output-panel
+                  void)]
                [show-sharing #f]
                [insert-newlines (make-object check-box%
                                   (string-constant use-pretty-printer-label)
@@ -191,6 +207,9 @@ to the original stdout of DrScheme.
                 [(0) 'constructor]
                 [(1) 'quasiquote]
                 [(2) 'write])
+              (case (send fraction-style get-selection)
+                [(0) 'mixed-fraction]
+                [(1) 'repeating-decimal])
               (and allow-sharing-config? (send show-sharing get-value))
               (send insert-newlines get-value)
               #f)]
@@ -201,6 +220,10 @@ to the original stdout of DrScheme.
                      [(constructor) 0]
                      [(quasiquote) 1]
                      [(write) 2]))
+             (send fraction-style set-selection
+                   (case (drscheme:language:simple-settings-fraction-style settings)
+                     [(mixed-fraction) 0]
+                     [(repeating-decimal) 1]))
              (when allow-sharing-config?
                (send show-sharing set-value (drscheme:language:simple-settings-show-sharing settings)))
              (send insert-newlines set-value 

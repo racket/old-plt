@@ -5,6 +5,13 @@ Version 102/8:
    the distinction between 0.0+0i and 0.0+0.0i, and with the notion of
    0.0 as "infinitesimally small". Also, fixed (angle +nan.0).
 
+ * Fixed `regexp' and friends to work on strings (patterns and
+   targets) that contain null characters. (PR 1350)
+
+ * Added `tcp-addresses', which takes a TCP port and returns two
+   strings: the connection's local address and the connection's peer's
+   address.
+
 Version 102/7:
 
  * Fixed interaction of `peek-char' and `file-position' (PR 1318).
@@ -108,6 +115,7 @@ Changed default exit handler to return only results in 0 to 255
 Changed angle on inexact zero (0 for 0.0, pi for -0.0)
 Fixed angle on +nan.0
 Added square to MzLib's function.ss
+Added tcp-addresses
 Inside MzScheme: scheme_basic_env() initializes break-enabled
  to #f instead of #t
 

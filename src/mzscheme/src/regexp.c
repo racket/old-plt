@@ -821,10 +821,10 @@ regexec(regexp *prog, char *string, int stringlen, char **startp, char **endp)
   if (prog->regstart != '\0')
     /* We know what char it must start with. */
     while ((s = l_strchr(s, slen, prog->regstart)) != NULL) {
-      if (regtry(prog, s, stringlen - (s - string), startp, endp))
+	  if (regtry(prog, s, stringlen - (s - string), startp, endp))
 	return(1);
       s++;
-      slen--;
+      slen = stringlen - (s - string);
     }
   else {
     /* We don't -- general case. */

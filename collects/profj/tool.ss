@@ -24,26 +24,20 @@
     (unit/sig drscheme:tool-exports^
       (import drscheme:tool^)
 
-      (define (make-style-delta color bold?)
-        (let ((sd (make-object style-delta%)))
-          (send sd set-delta-foreground color)
-          (when bold?
-              (send sd set-weight-on 'bold))
-          sd))
-  
       (define styles
-        `((keyword ,(make-style-delta "black" #t))
-          (string ,(make-style-delta "green" #f))
-          (literal ,(make-style-delta "green" #f))
-          (comment ,(make-style-delta "lightgray" #f))
-          (error ,(make-style-delta "red" #t))
-          (identifier ,(make-style-delta "blue" #f))
-          (default ,(make-style-delta "black" #f))))
+        `((keyword ,(make-style-delta "black" #t #f #f))
+          (string ,(make-style-delta "green" #f #f #f))
+          (literal ,(make-style-delta "green" #f #f #f))
+          (comment ,(make-style-delta "mediumgray" #f #f #f))
+          (error ,(make-style-delta "red" #t #f #f))
+          (identifier ,(make-style-delta "blue" #f #f #f))
+          (default ,(make-style-delta "black" #f #f #f))))
       
       (add-to-colorer-prefs "Java" styles)
       
       (drscheme:modes:add-mode "Java mode"
                                (new (colorer mode:surrogate-text%)
+				    (port-wrapper (lambda (x) x))
                                     (get-token get-syntax-token)
                                     (prefix "Java"))
                                ;#f

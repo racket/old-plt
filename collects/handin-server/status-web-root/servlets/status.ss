@@ -141,12 +141,20 @@
 		  (all-status-page status)
 		  (download status tag))))))
 
+      (define re:base "^([a-zA-Z]*)([0-9]+)")
+
       (define (all-status-page status)
 	(let ([l (quicksort
 		  (append (directory-list "active")
 			  (with-handlers ([not-break-exn? (lambda (x) null)])
 			    (directory-list "inactive")))
-		  string<?)]
+		  (lambda (a b)
+		    (let ([am (regexp-match re:base a)]
+			  [bm (regexp-match re:base b)])
+		      (if (and am bm
+			       (string=? (cadr am) (cadr bm)))
+			  (< (string->number (caddr am)) (string->number (caddr bm)))
+			  (string<? a b)))))]
 	      [user (get-status status 'user (lambda () "???"))])
 	  (let ([next
 		 (send/suspend

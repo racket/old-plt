@@ -194,15 +194,16 @@ finalization is handled.
 Precise GC
 ----------
 
-MzScheme and MrEd can be compiled to an experimental form that uses
-precise garbage collection (as opposed to "conservation garbage
-collection") on some Unix platforms, including Linux, FreeBSD, and
-Solaris. The precisely-collected forms are called MzScheme PGC and
-MrEd PGC, repsectively.
+MzScheme and MrEd can be compiled to an experimental form that uses a
+mmemory-moving garbage collector with precise tracking of pointers (as
+opposed to "conservation garbage collection") on some Unix platforms,
+including Linux, FreeBSD, and Solaris. The experimental forms are
+called MzScheme3m and MrEd3m, repsectively, where the "3m" stands for
+"moving memory manager".
 
-To build MzScheme PGC and MrEd PGC, run `make pgc'. Building MzScheme
-PGC and MrEd PGC first builds the normal MzScheme and MrEd
-executables, then uses them to build the PGC versions.
+To build MzScheme3m and MrEd3m, run `make 3m'. Building MzScheme3m and
+MrEd3m first builds the normal MzScheme and MrEd executables, then
+uses them to build the 3m versions.
 
 Configuration Options
 ---------------------

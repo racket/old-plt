@@ -90,18 +90,18 @@ scheme_init_string (Scheme_Env *env)
   REGISTER_SO(platform_path);
 #ifdef MZ_PRECISE_GC
 # ifdef UNIX_FILE_SYSTEM
-#  define MZPGC_SUBDIR "/pgc"
+#  define MZ3M_SUBDIR "/3m"
 # else
 #  ifdef DOS_FILE_SYSTEM
-#   define MZPGC_SUBDIR "\\pgc"
+#   define MZ3M_SUBDIR "\\3m"
 #  else
-#   define MZPGC_SUBDIR ":pgc"
+#   define MZ3M_SUBDIR ":3m"
 #  endif
 # endif
 #else
-# define MZPGC_SUBDIR /* empty */
+# define MZ3M_SUBDIR /* empty */
 #endif
-  platform_path = scheme_make_string(SCHEME_PLATFORM_LIBRARY_SUBPATH MZPGC_SUBDIR);
+  platform_path = scheme_make_string(SCHEME_PLATFORM_LIBRARY_SUBPATH MZ3M_SUBDIR);
 
   REGISTER_SO(putenv_str_table);
 
@@ -1149,7 +1149,7 @@ void scheme_do_format(const char *procname, Scheme_Object *port,
   }
 }
 
-char *scheme_format(char *format, int flen, int argc, Scheme_Object **argv, int *rlen)
+char *scheme_format(char *format, int flen, int argc, Scheme_Object **argv, long *rlen)
 {
   Scheme_Object *port;
   port = scheme_make_string_output_port();
@@ -1168,7 +1168,7 @@ format(int argc, Scheme_Object *argv[])
 {
   Scheme_Object *port;
   char *s;
-  int len;
+  long len;
 
   port = scheme_make_string_output_port();
 
@@ -1242,7 +1242,7 @@ char *scheme_banner(void)
   else
     return "Welcome to MzScheme" 
 #ifdef MZ_PRECISE_GC
-      "PGC"
+      "3m"
 #endif      
       " version " MZSCHEME_VERSION VERSION_SUFFIX
       ", Copyright (c) 1995-2001 PLT\n";

@@ -161,7 +161,7 @@ static void do_handled_print(Scheme_Object *obj, Scheme_Object *port,
   
   if (maxl > 0) {
     char *s;
-    int len;
+    long len;
 
     s = scheme_get_sized_string_output(a[1], &len);
     if (len > maxl)

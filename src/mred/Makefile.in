@@ -141,7 +141,7 @@ install:
 	rm -f $(srcdir)/../../.bin/$(INSTALLSYS)/mred
 	cp mred $(srcdir)/../../.bin/$(INSTALLSYS)/mred
 
-pgc:
+3m:
 	$(MAKE) all
-	cd gc2; $(MAKE) pgc
+	cd gc2; $(MAKE) 3m
 

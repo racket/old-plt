@@ -271,6 +271,9 @@ void MrEdMSWSleep(float secs, void *fds)
 
   if (wxCheckMousePosition())
     return;
+
+  if (GetQueueStatus(QS_ALLINPUT))
+    return;
  
   StopSleepThreadTimer();
 

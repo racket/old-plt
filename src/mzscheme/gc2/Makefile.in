@@ -262,11 +262,11 @@ main.o: $(XSRCDIR)/main.c
 gc2.o: $(srcdir)/gc2.c $(srcdir)/copy.c $(srcdir)/compact.c $(srcdir)/gc2.h
 	$(CC) $(CFLAGS) -c $(srcdir)/gc2.c -o gc2.o
 
-../mzscheme-pgc: $(OBJS) ../src/gmp.o
-	$(CC) -o ../mzscheme-pgc $(OBJS) ../src/gmp.o $(LIBS)
+../mzscheme3m: $(OBJS) ../src/gmp.o
+	$(CC) -o ../mzscheme3m $(OBJS) ../src/gmp.o $(LIBS)
 
 clean:
-	/bin/rm -f lex.yy.c ../mzscheme-pgc *.o $(XSRCDIR)/*
+	/bin/rm -f lex.yy.c ../mzscheme3m *.o $(XSRCDIR)/*
 
 #--------------------------------------------------
 

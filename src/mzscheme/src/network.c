@@ -184,7 +184,7 @@ void scheme_init_network(Scheme_Env *env)
   scheme_add_global_constant("tcp-listen", 
 			     scheme_make_prim_w_arity(tcp_listen,
 						      "tcp-listen", 
-						      1, 2),
+						      1, 3),
 			     env);
   scheme_add_global_constant("tcp-close", 
 			     scheme_make_prim_w_arity(tcp_stop,
@@ -1673,6 +1673,7 @@ tcp_listen(int argc, Scheme_Object *argv[])
 {
   unsigned short id, origid;
   int backlog, errid;
+  int reuse = 0;
 #ifdef USE_SOCKETS_TCP
 # ifndef PROTOENT_IS_INT
   struct protoent *proto;
@@ -1681,9 +1682,12 @@ tcp_listen(int argc, Scheme_Object *argv[])
 
   if (!CHECK_PORT_ID(argv[0]))
     scheme_wrong_type("tcp-listen", PORT_ID_TYPE, 0, argc, argv);
-  if (argc > 1)
+  if (argc > 1) {
     if (!SCHEME_INTP(argv[1]) || (SCHEME_INT_VAL(argv[1]) < 1))
       scheme_wrong_type("tcp-listen", "small positive integer", 1, argc, argv);
+  }
+  if (argc > 2)
+    reuse = SCHEME_TRUEP(argv[2]);
     
 #ifdef USE_TCP
   TCP_INIT("tcp-listen");
@@ -1758,6 +1762,11 @@ tcp_listen(int argc, Scheme_Object *argv[])
 #else
       fcntl(s, F_SETFL, MZ_NONBLOCKING);
 #endif
+
+      if (reuse) {
+	setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(int));
+      }
+      
       if (!bind(s, (struct sockaddr *)&tcp_listen_addr, sizeof(tcp_listen_addr))) {
 	if (!listen(s, backlog)) {
 	  listener_t *l;

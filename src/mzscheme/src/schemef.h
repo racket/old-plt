@@ -433,7 +433,7 @@ char *scheme_display_to_string_w_max(Scheme_Object *obj, long *len, long maxl);
 void scheme_debug_print(Scheme_Object *obj);
 void scheme_flush_output(Scheme_Object *port);
 
-char *scheme_format(char *format, int flen, int argc, Scheme_Object **argv, int *rlen);
+char *scheme_format(char *format, int flen, int argc, Scheme_Object **argv, long *rlen);
 void scheme_printf(char *format, int flen, int argc, Scheme_Object **argv);
 
 int scheme_getc(Scheme_Object *port);
@@ -475,7 +475,7 @@ Scheme_Object *scheme_make_string_input_port(const char *str);
 Scheme_Object *scheme_make_sized_string_input_port(const char *str, long len);
 Scheme_Object *scheme_make_string_output_port();
 char *scheme_get_string_output(Scheme_Object *);
-char *scheme_get_sized_string_output(Scheme_Object *, int *len);
+char *scheme_get_sized_string_output(Scheme_Object *, long *len);
 
 void scheme_pipe(Scheme_Object **write, Scheme_Object **read);
 void scheme_pipe_with_limit(Scheme_Object **write, Scheme_Object **read, int maxsize);

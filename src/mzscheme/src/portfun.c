@@ -96,6 +96,8 @@ static Scheme_Object *default_display_handler;
 static Scheme_Object *default_write_handler;
 static Scheme_Object *default_print_handler;
 
+Scheme_Object *scheme_default_global_print_handler;
+
 Scheme_Object *scheme_write_proc, *scheme_display_proc, *scheme_print_proc;
 
 static short drh_cases[4] = { 1, 1, 3, 3};
@@ -460,13 +462,14 @@ void scheme_init_port_fun_config(void)
     scheme_set_param(config, MZCONFIG_LOAD_HANDLER, dlh);
   }
 
-  {
-    Scheme_Object *gpph;
-    gpph = scheme_make_prim_w_arity(sch_default_global_port_print_handler,
-				    "default-global-port-print-handler",
-				    2, 2);
-    scheme_set_param(config, MZCONFIG_PORT_PRINT_HANDLER, gpph);
-  }
+  REGISTER_SO(scheme_default_global_print_handler);
+  scheme_default_global_print_handler 
+    = scheme_make_prim_w_arity(sch_default_global_port_print_handler,
+			       "default-global-port-print-handler",
+			       2, 2);
+  scheme_set_param(config, 
+		   MZCONFIG_PORT_PRINT_HANDLER, 
+		   scheme_default_global_print_handler);
 }
 
 /*========================================================================*/
@@ -611,7 +614,7 @@ scheme_make_string_output_port (void)
 }
 
 char *
-scheme_get_sized_string_output(Scheme_Object *port, int *size)
+scheme_get_sized_string_output(Scheme_Object *port, long *size)
 {
   Scheme_Output_Port *op;
   Scheme_Indexed_String *is;
@@ -1255,7 +1258,7 @@ get_output_string (int argc, Scheme_Object *argv[])
 {
   Scheme_Output_Port *op;
   char *s;
-  int size;
+  long size;
 
   op = (Scheme_Output_Port *)argv[0];
   if (!SCHEME_OUTPORTP(argv[0]) 

@@ -66,6 +66,16 @@ static char *make_require_lib(const char *file, const char *coll)
   return s;
 }
 
+static char *make_require_coll(const char *coll)
+{
+  char *s;
+  
+  s = (char *)malloc(strlen(coll) + 4);
+  strcpy(s, coll);
+  strcat(s, ".ss");
+  return make_require_lib(s, coll);
+}
+
 static char *make_embedded_load(const char *start, const char *end)
 {
   char *s;
@@ -502,6 +512,19 @@ static int run_from_cmd_line(int argc, char *_argv[],
 	  --argc;
 	  is_load[num_enl++] = 0;
 	  break;
+	case 'M':
+	  if (argc < 2) {
+	    PRINTF("%s: Missing collection after %s switch.\n", 
+		   prog, 
+		   real_switch);
+	    goto show_need_help;
+	  }
+	  argv++;
+	  --argc;
+	  se = make_require_coll(argv[0]);
+	  evals_and_loads[num_enl] = se;
+	  is_load[num_enl++] = 0;
+	  break;
 	case 'w':
 	  se = make_require_lib("awk.ss", "mzlib");
 	  evals_and_loads[num_enl] = se;
@@ -681,6 +704,7 @@ static int run_from_cmd_line(int argc, char *_argv[],
 	 "  -T, --Require : Requires all remaining arguments after " PROGRAM " starts.\n"
 	 "  -l <file>, --mzlib <file> : Same as -e '(require (lib \"<file>\"))'.\n"
 	 "  -L <file> <coll> : Same as -e '(require (lib \"<file>\" \"<coll>\"))'.\n"
+	 "  -M <coll> : Same as -e '(require (lib \"<coll>.ss\" \"<coll>\"))'.\n"
 	 "  -r, --script : Script mode: use as last switch for scripts. Same as -fmv-.\n" 
 	 "  -i, --script-cd : Like -r, but also sets the directory. Same as -dmv-.\n"
 # ifndef MZSCHEME_CMD_LINE

@@ -667,7 +667,9 @@ static char *error_write_to_string_w_max(Scheme_Object *v, int len, int *lenout)
 
   o = scheme_get_param(scheme_config, MZCONFIG_ERROR_PRINT_VALUE_HANDLER);
   
-  if (SAME_OBJ(o, def_err_val_proc)
+  if ((SAME_OBJ(o, def_err_val_proc)
+       && SAME_OBJ(scheme_get_param(scheme_config, MZCONFIG_PORT_PRINT_HANDLER),
+		   scheme_default_global_print_handler))
       || (scheme_current_thread->err_val_str_invoked)) {
     long l;
     char *s;
@@ -1431,7 +1433,7 @@ static Scheme_Object *error(int argc, Scheme_Object *argv[])
       SCHEME_SET_STRING_IMMUTABLE(newargs[0]);
     } else {
       char *s, *r;
-      int l, l2;
+      long l, l2;
       Scheme_Object *port;
       port = scheme_make_string_output_port();
 
@@ -1455,7 +1457,7 @@ static Scheme_Object *error(int argc, Scheme_Object *argv[])
     Scheme_Config *config = scheme_config;
     Scheme_Object *strout;
     char *str;
-    int len, i;
+    long len, i;
 
     /* String followed by other values: */
     if (!SCHEME_STRINGP(argv[0]))
@@ -1617,19 +1619,43 @@ def_error_value_string_proc(int argc, Scheme_Object *argv[])
 {
   long origl, len, l;
   char *s;
+  Scheme_Object *pph;
 
   if (!SCHEME_INTP(argv[1]))
     scheme_wrong_type("default-error-value->string-handler", "number", 1, argc, argv);
 
   origl = len = SCHEME_INT_VAL(argv[1]);
 
-  if (len < 3)
-    len = 3;
+  pph = scheme_get_param(scheme_config, MZCONFIG_PORT_PRINT_HANDLER);
+  if (SAME_OBJ(pph, scheme_default_global_print_handler)) {
+    if (len < 3)
+      len = 3;
+    
+    s = scheme_write_to_string_w_max(argv[0], &l, len);
+    
+    if ((origl < 3) && (l > origl))
+      l = origl;
+  } else {
+    Scheme_Object *a[2];
 
-  s = scheme_write_to_string_w_max(argv[0], &l, len);
+    a[0] = argv[0];
+    a[1] = scheme_make_string_output_port();
+    _scheme_apply(pph, 2, a);
+    
+    s = scheme_get_sized_string_output(a[1], &l);
 
-  if ((origl < 3) && (l > origl))
-    l = origl;
+    if (l > origl) {
+      l = origl;
+      if (origl >= 1) {
+	s[origl - 1] = '.';
+	if (origl >= 2) {
+	  s[origl - 2] = '.';
+	  if (origl >= 3)
+	    s[origl - 3] = '.';
+	}
+      }
+    }
+  }
 
   return scheme_make_sized_string(s, l, 0);
 }

@@ -2556,11 +2556,11 @@ extern "C" Scheme_Object *scheme_initialize(Scheme_Env *env);
 #define PROGRAM "MrEd"
 #define PROGRAM_LC "mred"
 #ifdef MZ_PRECISE_GC
-# define MREDPGC "PGC"
+# define MRED3M "3m"
 #else
-# define MREDPGC ""
+# define MRED3M ""
 #endif
-#define BANNER "MrEd" MREDPGC " version " MZSCHEME_VERSION ", Copyright (c) 1995-2001 PLT\n"
+#define BANNER "MrEd" MRED3M " version " MZSCHEME_VERSION ", Copyright (c) 1995-2001 PLT\n"
 
 #ifdef wx_mac
 #define GET_PLTCOLLECTS_VIA_RESOURCES

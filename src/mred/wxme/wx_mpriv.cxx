@@ -234,7 +234,8 @@ void wxMediaFlashTimer::Notify(void)
 /**********************************************************************/
 
 void wxMediaEdit::_ChangeStyle(long start, long end, 
-			       wxStyle *newStyle, wxStyleDelta *delta)
+			       wxStyle *newStyle, wxStyleDelta *delta,
+			       Bool restoreSel)
 {
   wxSnip *gsnip, *startSnip, *endSnip;
   wxStyleChangeRecord *rec;
@@ -294,7 +295,7 @@ void wxMediaEdit::_ChangeStyle(long start, long end,
   }
 
   if (!noundomode)
-    rec = new wxStyleChangeRecord(start, end, delayedStreak || !modified, startpos, endpos);
+    rec = new wxStyleChangeRecord(start, end, delayedStreak || !modified, startpos, endpos, restoreSel);
   else
     rec = NULL;
 
@@ -1425,7 +1426,7 @@ void wxMediaEdit::SetClickbackHilited(wxClickback *click, Bool on)
       
       BeginEditSequence();
       FlashOn(click->start, click->end, FALSE, FALSE, -1);
-      ChangeStyle(click->delta, click->start, click->end);
+      _ChangeStyle(click->start, click->end, NULL, click->delta, 0);
       EndEditSequence();
 
       click->unhilite = intercepted;

@@ -267,7 +267,11 @@ public:
 };
 
 basePrinterDC::basePrinterDC(wxWindow *w) 
-: wxPrinterDC( )
+: wxPrinterDC(
+#ifdef wx_mac
+	      new wxPrintData()
+#endif
+               )
 {
 }
 

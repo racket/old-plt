@@ -539,7 +539,7 @@ class wxMediaEdit : public wxMediaBuffer
   void _SetPosition(Bool setflash, int bias, long start, long end, 
 		    Bool ateol, Bool scroll, int seltype);
 
-  void _ChangeStyle(long start, long end, wxStyle *, wxStyleDelta *);
+  void _ChangeStyle(long start, long end, wxStyle *, wxStyleDelta *, Bool restoreSel = 1);
 
   void MakeOnlySnip(void);
   void SpliceSnip(wxSnip *snip, wxSnip *prev, wxSnip *next);

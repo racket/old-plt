@@ -318,13 +318,14 @@ class StyleChange /* : public wxObject  */
   wxStyle *style;
 };
 
-wxStyleChangeRecord::wxStyleChangeRecord(long startpos, long endpos, Bool cont, long ss, long es)
+wxStyleChangeRecord::wxStyleChangeRecord(long startpos, long endpos, Bool cont, long ss, long es, Bool restoreSel)
 {
   continued = cont;
   start = startpos;
   end = endpos;
   startsel = ss;
   endsel = es;
+  restoreSelection = restoreSel;
 
   changes = new wxcgList();
 }
@@ -372,7 +373,8 @@ Bool wxStyleChangeRecord::Undo(wxMediaBuffer *buffer)
     media->ChangeStyle(change->style, change->start, change->end);
   }
 
-  media->SetPosition(startsel, endsel);
+  if (restoreSelection)
+    media->SetPosition(startsel, endsel);
 
   return continued;
 }

@@ -92,13 +92,13 @@ class wxDeleteSnipRecord : public wxChangeRecord
 class wxStyleChangeRecord : public wxChangeRecord
 {
  private:
-  Bool continued;
+  Bool continued, restoreSelection;
   long start, end;
   long startsel, endsel;
   wxcgList *changes;
 
  public:
-  wxStyleChangeRecord(long start, long end, Bool cont, long startsel, long endsel);
+  wxStyleChangeRecord(long start, long end, Bool cont, long startsel, long endsel, Bool restoreSel = 1);
   ~wxStyleChangeRecord();
 
   void AddStyleChange(long start, long end, wxStyle *style);

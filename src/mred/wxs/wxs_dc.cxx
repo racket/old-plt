@@ -2032,9 +2032,9 @@ public:
 basePrinterDC::basePrinterDC(wxWindow *w) 
 : wxPrinterDC(
 #ifdef wx_mac
-			  new wxPrintData()
+	      new wxPrintData()
 #endif
-			  )
+               )
 {
 }
 

@@ -7,9 +7,9 @@ MrEd are at
   http://www.cs.rice.edu/CS/PLT/packages/mred/
 
 MrEd should compile and execute with little or no modification if you
-have an ANSI C compiler on any platform supported by the conservative
-garbage collector.  Special per-platform instructions are below,
-followed by some general notes on compilation.
+have GNU's make and an ANSI C/C++ compiler on any platform supported
+by the conservative garbage collector.  Special per-platform
+instructions are below, followed by some general notes on compilation.
 
 -Matthew Flatt
  Rice University PLT
@@ -17,7 +17,7 @@ followed by some general notes on compilation.
  http://www.cs.rice.edu/~mflatt/
 
 ========================================================================
- Compiling for X Windows
+ Compiling for Unix/X
 ========================================================================
 
 Compiling MrEd requires `gnumake' (or `gmake' or `make', but it must

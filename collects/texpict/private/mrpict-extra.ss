@@ -20,11 +20,13 @@
       (define show-pict
         (opt-lambda (p [w #f] [h #f])
           (define the-pict p)
+          (define pict-drawer (make-pict-drawer the-pict))
           (define no-redraw? #f)
           (define pict-frame%
             (class frame%
               (define/public (set-pict p)
                 (set! the-pict p)
+                (set! pict-drawer (make-pict-drawer the-pict))
                 (set! no-redraw? #t)
                 (let ([pw (inexact->exact (floor (pict-width the-pict)))]
                       [ph (inexact->exact (floor (pict-height the-pict)))])
@@ -50,7 +52,7 @@
                                         (ph . < . h))
                                    (- (/ h 2) (/ ph 2))
                                    0)])
-                    (draw-pict the-pict dc xo yo)))))
+                      (pict-drawer dc xo yo)))))
               (super-instantiate ())))
           (define f (make-object pict-frame% "MrPict"))
           (define c (make-object pict-canvas% f))

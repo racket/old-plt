@@ -180,10 +180,12 @@
 		   c)))
       
       (define planet-dirs-to-compile 
-        (map (lambda (spec) (apply planet->cc spec))
-             (if (and (null? x-specific-collections) (null? x-specific-planet-dirs))
-                 (get-installed-planet-archives)
-                 x-specific-planet-dirs)))
+        (filter
+         (lambda (x) x)
+         (map (lambda (spec) (apply planet->cc spec))
+              (if (and (null? x-specific-collections) (null? x-specific-planet-dirs))
+                  (get-installed-planet-archives)
+                  x-specific-planet-dirs))))
       
       (define collections-to-compile
 	(quicksort

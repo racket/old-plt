@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Menu.cc,v 1.5 1998/08/08 03:33:04 mflatt Exp $
+ * $Id: Menu.cc,v 1.6 1998/08/14 21:44:41 mflatt Exp $
  *
  * Purpose: simple menu class
  *
@@ -410,7 +410,7 @@ void wxMenu::EventCallback(Widget WXUNUSED(w), XtPointer dclient, XtPointer dcal
     poppedup_menus.DeleteObject(menu);
 
     /* MATTHEW: check item */
-    if (item) {
+    if (item && (item->ID != -1)) {
       if (item->type == MENU_TOGGLE)
 	item->set = (!item->set);
       

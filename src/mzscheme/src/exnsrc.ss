@@ -13,6 +13,10 @@ strings are types/comments.
      -
      (user [] "raised by calling \\scmfirst{error}")
      
+     (variable [id "identifier" "the unbound variable's global identifier"]
+	       "unbound global variable at run-time"
+	       (*keyword [] "attempt to change the binding of a global keyword"))
+
      (application [value "error-specific" "the error-specific inappropriate value"] -
 		  (arity [expected "arity" "the correct procedure arity as returned by \\scmfirst{arity}"]
 			 "application with the wrong number of arguments")
@@ -22,10 +26,6 @@ strings are types/comments.
 		  (divide-by-zero [] "divide by zero; \\scm{application-value} is always zero")
 		  (*continuation [] "attempt to cross a continuation boundary or apply another thread's continuation"))
      
-     (variable [id "identifier" "the unbound variable's global identifier"]
-	       "unbound global variable at run-time"
-	       (*keyword [] "attempt to change the binding of a global keyword"))
-
      (*else [] "fall-through in \\scmfirst{cond} or \\scmfirst{case}")
 
      (*struct [] "the supertype expression in a \\scmfirst{struct} form returned a value that was not a structure type value")

@@ -1,3 +1,8 @@
+(define-macro ccond
+  (lambda clauses
+    `(cond ,@clauses (else (error 'ccond "fell off end of cond expression")))))
+  
+
 (define-signature stepper:cogen-utils^
   (check-for-keyword
    check-for-syntax-or-macro-keyword
@@ -60,7 +65,7 @@
    true-false-printed?
    constructor-style-printing?
    abbreviate-cons-as-list?
-   user-cons? user-vector? user-list?
+   special-function?
    image?
    print-convert))
 
@@ -72,7 +77,7 @@
    get-binding-name
    list-take
    list-partition
-   (struct closure-record (name mark constructor?))
+   (struct closure-record (name mark constructor? lifted-name))
    bogus-binding?
    *unevaluated* 
    no-sexp

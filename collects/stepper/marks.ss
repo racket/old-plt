@@ -46,7 +46,10 @@
       (list source
             label
             (map (lambda (binding)
-                   (list (z:binding-orig-name (mark-binding-binding binding))
+                   (list (let ([lhs (mark-binding-binding binding)])
+                           (if (z:binding? lhs) 
+                               (z:binding-orig-name lhs)
+                               lhs))
                          (mark-binding-value binding)))
                  bindings))))
   

@@ -84,19 +84,20 @@
 		 [main-panel (make-object mred:horizontal-panel% p)]
 		 [make-column
 		  (lambda (string symbol keywords)
-		    (let* ([vert (make-object mred:vertical-panel% main-panel -1 -1 -1 -1 wx:const-border)]
+		    (let* ([vert (make-object mred:vertical-panel% main-panel)]
 			   [_ (make-object mred:message% vert (string-append string "-like Keywords"))]
 			   [box (make-object mred:list-box% vert null "" wx:const-multiple -1 -1 -1 -1 keywords)]
-			   [add-panel (make-object mred:horizontal-panel% vert -1 -1 -1 -1 wx:const-border)]
-			   [delete-panel (make-object mred:horizontal-panel% vert -1 -1 -1 -1 wx:const-border)]
-			   [_ (make-object mred:horizontal-panel% delete-panel)]
-			   [delete-button (make-object mred:button% delete-panel (delete-callback box) "Remove")])
-		      (make-object mred:horizontal-panel% add-panel)
-		      (send (make-object mred:button% add-panel (add-callback string symbol box) "Add")
-			    user-min-width (send delete-button get-width))
-		      (send* add-panel (spacing 0) (border 0))
-		      (send* delete-panel (spacing 0) (border 0))
-		      (send vert spacing 0)))])
+			   [make-button (lambda (callback string)
+					  (let* ([p (make-object mred:horizontal-panel% vert)]
+						 [s (make-object mred:vertical-panel% p)]
+						 [b (make-object mred:button% p callback string)])
+					    (send* p (spacing 1) (border 1) (stretchable-in-y #f))
+					    (send* s (spacing 1) (border 1) (stretchable-in-y #f))
+					    b))]
+			   [add-button (make-button (add-callback string symbol box) "Add")]
+			   [delete-button (make-button (delete-callback box) "Remove")])
+		      (send add-button user-min-width (send delete-button get-width))
+		      (send vert spacing 1)))])
 	 (make-column "Begin" 'begin begin-keywords)
 	 (make-column "Define" 'define begin-keywords)
 	 (make-column "Lambda" 'lambda begin-keywords)

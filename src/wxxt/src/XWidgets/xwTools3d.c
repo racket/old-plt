@@ -441,7 +441,7 @@ ArrowType  arrow_type,		/* LEFT, RIGHT, UP or DOWN arrow */
 Boolean    pushed		/* is radio pushed(in) or released(out) */
 )
 {
-  int x1, y1, x2, y2, dx1, dx2, dy1, dy2, i;
+  int x1, y1, x2, y2, dx1, dx2, dy1, dy2;
 
   switch (arrow_type) {
   case UP:
@@ -464,7 +464,6 @@ Boolean    pushed		/* is radio pushed(in) or released(out) */
 
   switch (arrow_type) {
   case UP:
-    i = height;
     x1 = x;
     x2 = x + width - 1;
     y1 = y2 = y + height;
@@ -473,7 +472,6 @@ Boolean    pushed		/* is radio pushed(in) or released(out) */
     dy1 = dy2 = -1;
     break;
   case DOWN:
-    i = height;
     x1 = x;
     x2 = x + width - 1;
     y1 = y2 = y;
@@ -482,7 +480,6 @@ Boolean    pushed		/* is radio pushed(in) or released(out) */
     dy1 = dy2 = 1;
     break;
   case LEFT:
-    i = width;
     y1 = y;
     y2 = y + height - 1;
     x1 = x2 = x + width;
@@ -492,7 +489,6 @@ Boolean    pushed		/* is radio pushed(in) or released(out) */
     break;
   default:
   case RIGHT:
-    i = width;
     y1 = y;
     y2 = y + height - 1;
     x1 = x2 = x;
@@ -502,12 +498,11 @@ Boolean    pushed		/* is radio pushed(in) or released(out) */
     break;
   }
 
-  while (i) {
+  while ((x2 >= x1) && (y2 >= y1)) {
     XDrawLine(dpy, win, pushed ? inGC : outGC, x1, y1, x2, y2);
     x1 += dx1;
     x2 += dx2;
     y1 += dy1;
     y2 += dy2;
-    i--;
   }
 }

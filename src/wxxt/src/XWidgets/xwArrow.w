@@ -247,6 +247,8 @@ a timeout routine.
       XDrawLine(XtDisplay($), XtWindow($),
 		(on ? $arrowlightgc : $arrowdarkgc),
 		x, y + height - 1, x + width, y + height - 1);
+      width--;
+      height--;
     }
 
     switch ($direction) {

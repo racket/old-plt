@@ -480,6 +480,8 @@ static void  draw_arrow(self,on)Widget self;int  on;
       XDrawLine(XtDisplay(self), XtWindow(self),
 		(on ? ((XfwfArrowWidget)self)->xfwfArrow.arrowlightgc : ((XfwfArrowWidget)self)->xfwfArrow.arrowdarkgc),
 		x, y + height - 1, x + width, y + height - 1);
+      width--;
+      height--;
     }
 
     switch (((XfwfArrowWidget)self)->xfwfArrow.direction) {

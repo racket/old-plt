@@ -91,7 +91,10 @@
                 (set! mailbox-name m))]
             (super-instantiate ()))))
       
-      ;; mailbox-folder = (make-deep-folder string string bool nested-mailbox-folder)
+      ;; mailbox-folder = (make-deep-folder (union #f string)
+      ;;                                    (union #f string)
+      ;;                                    bool
+      ;;                                    nested-mailbox-folder)
       ;; nested-mailbox-folder = 
       ;; (union (make-flat-folder string string bool)
       ;;        (make-deep-folder string string bool (listof mailbox-folder)))
@@ -161,18 +164,22 @@
               root-box
               #f ;; arbitrary
               (let loop ([mailbox-name root-box])
-                (let ([mailbox-name-length (string-length mailbox-name)]
+                (let ([mailbox-name-length (if mailbox-name
+					       (string-length mailbox-name)
+					       0)]
                       [get-child-mailbox-name (lambda (item) (format "~a" (second item)))]
                       [child-mailboxes (imap-list-child-mailboxes imap mailbox-name)])
                   (map (lambda (item)
                          (let* ([child-mailbox-name (get-child-mailbox-name item)]
                                 [child-mailbox-flags (first item)]
                                 [symbols (map imap-flag->symbol child-mailbox-flags)]
-                                [flat-mailbox? (member 'noinferiors symbols)]
+                                [flat-mailbox? (or (member 'noinferiors symbols)
+						   (member 'hasnochildren symbols))]
                                 [selectable? (not (member 'noselect symbols))]
                                 [child-name-length (string-length child-mailbox-name)]
                                 [strip-prefix?
                                  (and (> child-name-length mailbox-name-length)
+				      mailbox-name
                                       (string=? 
                                        (substring child-mailbox-name 0 mailbox-name-length)
                                        mailbox-name))]
@@ -234,11 +241,11 @@
                                (send hl new-list imap-mailbox-mixin)
                                (send hl new-item imap-mailbox-name-mixin))]
                  [text (send new-item get-editor)])
-            (send new-item set-full-mailbox-name (folder-name mbf))
+            (send new-item set-full-mailbox-name (or (folder-name mbf) ""))
             (send new-item set-selectable (folder-selectable? mbf))
             (when deep?
-              (send new-item set-mailbox-name (folder-name mbf)))
-            (send text insert (folder-short-name mbf))
+              (send new-item set-mailbox-name (or (folder-name mbf) "")))
+            (send text insert (or (folder-short-name mbf) ""))
             new-item))
         (send (send top-list get-editor) begin-edit-sequence)
         (for-each (lambda (x) (send top-list delete-item x))

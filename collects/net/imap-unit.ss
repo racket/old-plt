@@ -44,7 +44,10 @@
 	 (list 'noinferiors (string->symbol "\\Noinferiors"))
 	 (list 'noselect (string->symbol "\\Noselect"))
 	 (list 'marked (string->symbol "\\Marked"))
-	 (list 'unmarked (string->symbol "\\Unmarked"))))
+	 (list 'unmarked (string->symbol "\\Unmarked"))
+
+	 (list 'hasnochildren (string->symbol "\\HasNoChildren"))
+	 (list 'haschildren (string->symbol "\\HasChildren"))))
 
       (define (imap-flag->symbol f)
 	(or (ormap (lambda (a) (and (tag-eq? f (cadr a)) (car a)))
@@ -58,7 +61,7 @@
 	      s)))
 
       (define (log-warning . args)
-	;; (apply printf args)
+	;(apply printf args)
 	(void))
       (define log log-warning)
 
@@ -370,7 +373,7 @@
 		 [pattern (if mailbox
 			      (format "~a%" mailbox-name)
 			      "%")])
-          (imap-list-mailboxes imap pattern mailbox-name))]))
+	    (imap-list-mailboxes imap pattern mailbox-name))]))
       
       (define (imap-mailbox-flags imap mailbox)
         (let ([r (imap-list-mailboxes imap mailbox #f)])

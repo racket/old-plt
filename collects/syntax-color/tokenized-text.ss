@@ -1,5 +1,6 @@
 (module tokenized-text mzscheme
   (require (lib "class.ss")
+           (lib "etc.ss")
            (lib "mred.ss" "mred")
            (lib "framework.ss" "framework")
            "token-tree.ss"
@@ -59,9 +60,9 @@
       ;; global state
       (define lock (make-semaphore 1))
       
-      (inherit change-style begin-edit-sequence end-edit-sequence
-               get-style-list in-edit-sequence? get-start-position)
-      
+      (inherit change-style begin-edit-sequence end-edit-sequence highlight-range
+               get-style-list in-edit-sequence? get-start-position get-end-position
+               local-edit-sequence? get-styles-fixed has-focus?)
       (define/public (reset-tokens)
         (set! tokens #f)
         (set! invalid-tokens #f)
@@ -86,7 +87,6 @@
         (when (and invalid-tokens (< invalid-tokens-start current-pos))
           (let ((min-tree (search-min! invalid-tokens null)))
             (send parens remove-token invalid-tokens-start (node-token-length min-tree))
-            (send parens print)
             (set! invalid-tokens (node-right min-tree))
             (set! invalid-tokens-start (+ invalid-tokens-start
                                           (node-token-length min-tree)))
@@ -120,7 +120,6 @@
                               colors)))
               (set! tokens (insert-after! tokens (make-node len data 0 #f #f)))
               (send parens add-token data (- current-pos start-pos len) len)
-              (send parens print)
               (cond
                 ((and invalid-tokens (= invalid-tokens-start current-pos))
                  (set! tokens (insert-after! tokens (search-min! invalid-tokens null)))
@@ -163,7 +162,11 @@
                            (split tokens (- edit-start-pos start-pos))))
                (set! tokens valid-tree)
                (set! invalid-tokens-start (+ change-length invalid-tokens-start))
-               (set! current-pos (+ start-pos tok-start)))))))
+               (set! current-pos (+ start-pos tok-start)))))
+          (unless (local-edit-sequence?)
+            (when (has-focus?)
+              (match-parens)))))
+
 
       (define (colorer-callback)
 	(unless (in-edit-sequence?)
@@ -241,21 +244,82 @@
         (reset-tokens)
         (set! prefix #f)
         (set! get-token #f))
+
+      
+      ;; ----------------------- Match parentheses ----------------------------
+      
+      (define clear-old-locations 'dummy)
+      (set! clear-old-locations void)
+
+      (define mismatch-color (make-object color% "PINK"))
+      (define (get-match-color) (preferences:get 'framework:paren-match-color))
+
+      (define (highlight start end caret-pos error?)
+        (let ([off (highlight-range start end
+                                    (if error? mismatch-color (get-match-color))
+                                    (and (send (icon:get-paren-highlight-bitmap) ok?)
+                                         (icon:get-paren-highlight-bitmap))
+                                    (= caret-pos start))])
+          (set! clear-old-locations
+                (let ([old clear-old-locations])
+                  (lambda ()
+                    (old)
+                    (off))))))
+      
+      (define in-match-parens? #f)
+      (define match-parens
+        (opt-lambda ([just-clear? #f])
+          (unless in-match-parens?
+            (set! in-match-parens? #t)
+            (begin-edit-sequence #f #f)
+            (clear-old-locations)
+            (set! clear-old-locations void)
+            (when (preferences:get 'framework:highlight-parens)
+              (unless just-clear?
+                (let* ((here (get-start-position)))
+                  (when (= here (get-end-position))
+                    (let-values (((start-f end-f error-f) (time (send parens match-forward here)))
+                                 ((start-b end-b error-b) (time (send parens match-backward here))))
+                      (when (and start-f end-f)
+                        (highlight start-f end-f here error-f))
+                      (when (and start-b end-b)
+                        (highlight start-b end-b here error-b)))))))
+            (end-edit-sequence)
+            (set! in-match-parens? #f))))
+          
+      (define/override highlight-parens
+        (lambda x (void)))
+      
+      ;; ------------------------- Callbacks to Override ----------------------
+      
+      (rename (super-on-focus on-focus))
+      (define/override (on-focus on?)
+        (super-on-focus on?)
+        (match-parens (not on?)))
       
       (rename (super-on-change on-change))
       (define/override (on-change)
         (super-on-change)
         (modify))
-      
+
+      (rename [super-after-edit-sequence after-edit-sequence])
+      (define/override (after-edit-sequence)
+        (super-after-edit-sequence)
+        (when (has-focus?)
+          (match-parens)))
+          
       (rename (super-after-set-position after-set-position))
       (define/override (after-set-position)
         (super-after-set-position)
-        (modify)
-        (let ((end (time (send parens match (get-start-position)))))
-          (printf "~a ~a~n" (get-start-position) end)))      
-      (rename (super-on-change-style on-change-style))
-      (define/override (on-change-style a b)
-        (super-on-change-style a b)
+        (modify))
+
+      (rename (super-after-change-style after-change-style))
+      (define/override (after-change-style a b)
+        (super-after-change-style a b)
+        (unless (local-edit-sequence?)
+          (unless (get-styles-fixed)
+            (when (has-focus?)
+              (match-parens))))
         (modify))
 
       (rename (super-on-set-size-constraint on-set-size-constraint))

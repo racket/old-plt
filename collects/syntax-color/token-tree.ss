@@ -95,7 +95,7 @@
   (define (insert-prev! node new-node)
     (set-node-left! node (insert-after! (node-left node) new-node))
     (set-node-left-subtree-length! node (+ (node-token-length new-node) 
-                                           (node-left-subtree-length node)))
+                                           (node-left-subtree-length new-node)))
     node)
   
   (define (insert-next! node new-node)

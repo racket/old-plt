@@ -33,6 +33,7 @@
                 close))
       
       (define/public (add-token type start length)
+        (printf "add ~a ~a ~a~n" type start length)
         (cond
           ((not tree)
            (set! tree (make-node length (cons type length) 0 #f #f)))
@@ -45,20 +46,21 @@
                ((>= start (+ node-start (node-token-length tree)))
                 (set! tree (insert-next! tree (make-node length (cons type length) 0 #f #f))))
                (else
-                (let ((extra-length (- (node-token-length tree)
-                                       (cdr (node-token-data tree)))))
-                  (set-node-token-length! tree (cdr (node-token-data tree)))
-                  (set! tree (insert-next! tree (make-node (+ length extra-length)
+                (let ((old-length (node-token-length tree))
+                      (new-length (- start node-start)))
+                  (set-node-token-length! tree new-length)
+                  (set! tree (insert-next! tree (make-node (+ length (- old-length new-length))
                                                            (cons type length)
                                                            0
                                                            #f
                                                            #f))))))))
           (else
-           (set! tree (search! tree (if (> 0 start) (sub1 start) start)))
-           (set-node-token-length! tree (+ (node-token-length tree) length)))))
+           (set! tree (search! tree (if (> start 0) (sub1 start) start)))
+           (set-node-token-length! tree (+ (node-token-length tree) length))))
+        (print))
       
       (define/public (remove-token start len)
-        (printf "remove ~a ~a~n" start len)
+        (printf "del ~a ~a~n" start len)
         (set! tree (search! tree start))
         (cond
           ((= start 0)
@@ -76,33 +78,37 @@
              (set! tree (search! (remove-root! tree) (sub1 start)))
              (set-node-token-length! tree (+ (node-token-length tree) len))))
           (else
-           (set-node-token-length! tree (- (node-token-length tree) len)))))
+           (set-node-token-length! tree (- (node-token-length tree) len))))
+        (print))
       
-      (define/public (match pos)
+      (define/public (match-forward pos)
         (set! tree (search! tree pos))
         (cond
-          (tree
-           (cond
-             ((and (is-open? (car (node-token-data tree)))
-                   (= (node-left-subtree-length tree) pos))
-              (printf "depth:~a size: ~a~n" (max-depth (node-right tree))
-                      (size (node-right tree) 0))
-              (let/ec ret
-                (match-forward (node-right tree)
-                               (+ (node-left-subtree-length tree) (node-token-length tree))
-                               (list (car (node-token-data tree)))
-                               ret)
-                #f))
-             (else #f)))
-          (else #f)))
-      
+          ((and tree
+                (is-open? (car (node-token-data tree)))
+                (= (node-left-subtree-length tree) pos))
+           (let ((end
+                  (let/ec ret
+                    (do-match-forward (node-right tree)
+                                      (+ (node-left-subtree-length tree) (node-token-length tree))
+                                      (list (car (node-token-data tree)))
+                                      ret)
+                    #f)))
+             (cond
+               (end
+                (values pos end #f))
+               (else
+                (set! tree (search! tree pos))
+                (values pos (+ pos (cdr (node-token-data tree))) #t)))))
+          (else
+           (values #f #f #f))))
         
-      (define/public (match-forward node top-offset stack escape)
+      (define (do-match-forward node top-offset stack escape)
         (cond
           ((not node) stack)
           (else
            (let* ((type (car (node-token-data node)))
-                  (left-stack (match-forward (node-left node) top-offset stack escape))
+                  (left-stack (do-match-forward (node-left node) top-offset stack escape))
                   (new-stack
                    (cond
                      ((is-open? type) (cons type left-stack))
@@ -113,15 +119,15 @@
                   (start (+ top-offset (node-left-subtree-length node))))
              (cond
                ((null? new-stack)
-                (let ((loc (sub1 (+ start (cdr (node-token-data node))))))
+                (let ((loc (+ start (cdr (node-token-data node)))))
                   (set! tree (search! tree loc))
                   (escape loc)))
                (else
-                (match-forward (node-right node) (+ start (node-token-length node)) new-stack escape)))))))
+                (do-match-forward (node-right node) (+ start (node-token-length node)) new-stack escape)))))))
       
       
-      (define/public (match-reverse pos)
-        (void))
+      (define/public (match-backward pos)
+        (values #f #f #f))
       
       (define/public (print)
         (for-each (lambda (x) (display (cons (vector-ref x 0) (car (vector-ref x 2)))))

@@ -1686,6 +1686,7 @@ void scheme_process_block_w_process(float sleep_time, Scheme_Process *p)
 #ifndef MZ_REAL_THREADS
   if (p->running < 0) {
     /* This thread is dead! Give up now. */
+    remove_process(p);
     scheme_swap_process(scheme_first_process);
   }
 
@@ -2019,6 +2020,8 @@ static int do_kill_thread(Scheme_Process *p)
 #else
   if (p->running)
     p->running = -1;
+  if (p == scheme_current_process)
+    kill_self = 1;
 #endif
 
   return kill_self;

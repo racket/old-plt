@@ -752,7 +752,7 @@
 "(#%let/ec k"
 "(#%set! jump k)"
 "(#%let((v((#%current-prompt-read))))"
-"(#%when(#%eof-object? v)(done))"
+"(#%when(#%eof-object? v)(done(#%void)))"
 "(#%call-with-values"
 "(#%lambda()((#%current-eval) v))"
 "(#%lambda results(#%for-each(#%current-print) results)))))"

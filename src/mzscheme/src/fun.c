@@ -854,9 +854,9 @@ static void *apply_k()
   p->ku.k.p2 = NULL;
 
   if (p->ku.k.i2)
-    return (void *)_scheme_apply_wp(rator, num_rands, rands, p);
-  else
     return (void *)_scheme_apply_multi_wp(rator, num_rands, rands, p);
+  else
+    return (void *)_scheme_apply_wp(rator, num_rands, rands, p);
 }
 
 static Scheme_Object *
@@ -2173,7 +2173,7 @@ void scheme_rep()
   if (scheme_setjmp(p->error_buf)) {
     /* done */
   } else
-    scheme_apply(rep, 0, NULL);
+    scheme_apply_multi(rep, 0, NULL);
   memcpy(&p->error_buf, &save, sizeof(mz_jmp_buf));
 }
 

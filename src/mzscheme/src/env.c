@@ -839,7 +839,7 @@ void scheme_check_identifier(const char *formname, Scheme_Object *id,
   if (!SCHEME_SYMBOLP(id))
     scheme_wrong_syntax(formname, form ? id : NULL, 
 			form ? form : id, 
-			"identifier must be a symbol%s", where);
+			"not an identifier%s", where);
   
   if (scheme_no_keywords)
     return;

@@ -2445,7 +2445,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	    if (c2 != c) {
 	      scheme_wrong_return_arity(NULL, c, c2, 
 					(c2 == 1) ? (Scheme_Object **)value : p->ku.multiple.array,
-					"local binding");
+					"lexical binding");
 	      return NULL;
 	    }
 

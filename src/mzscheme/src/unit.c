@@ -240,12 +240,7 @@ static void check_id_list(char *where,
   while (SCHEME_PAIRP(l)) {
     Scheme_Object *id = SCHEME_CAR(l);
 
-    if (!SCHEME_SYMBOLP(id)) {
-      if (!rename_ok)
-	scheme_wrong_syntax(where, 
-			    id, form,
-			    "bad syntax (id must be an identifier)");
-
+    if (rename_ok && !SCHEME_SYMBOLP(id)) {
       if (!SCHEME_PAIRP(id)
 	  || !SCHEME_PAIRP(SCHEME_CDR(id))
 	  || !SCHEME_NULLP(SCHEME_CDDR(id))
@@ -290,10 +285,12 @@ static void check_tagged(char *where,
     } else {
       Scheme_Object *rest;
 
-      if (!SCHEME_PAIRP(tag_set)
-	  || !SCHEME_SYMBOLP(SCHEME_CAR(tag_set)))
+      if (!SCHEME_PAIRP(tag_set))
 	scheme_wrong_syntax(where, tag_set, form,
-			    "bad syntax (tag must be an identifier)");
+			    "bad syntax (not a tagged set)");
+      if (!SCHEME_SYMBOLP(SCHEME_CAR(tag_set)))
+	scheme_wrong_syntax(where, tag_set, form,
+			    "bad syntax (tag is not an identifier)");
       
       tag = SCHEME_CAR(tag_set);
       rest = SCHEME_CDR(tag_set);
@@ -368,19 +365,19 @@ static Scheme_Object *check_params(char *where, Scheme_Object *clause,
   while (SCHEME_PAIRP(l)) {
     Scheme_Object *s = SCHEME_CAR(l);
     if (!SCHEME_SYMBOLP(s))
-      scheme_wrong_syntax(MAKE_UNIT, s, form, 
-			  "bad syntax (parameter not an identifier)");
+      scheme_wrong_syntax(where, s, form, 
+			  "bad syntax (import not an identifier)");
     else if (env)
       scheme_check_identifier(where, s, NULL, env, form);
     
-    scheme_dup_symbol_check(r, where, s, "parameter", form, 0);
+    scheme_dup_symbol_check(r, where, s, "import", form, 0);
     
     l = SCHEME_CDR(l);
   }
   
   if (!SCHEME_NULLP(l)) {
-    scheme_wrong_syntax(MAKE_UNIT, NULL, form, 
-			"bad syntax (" IMPROPER_LIST_FORM " for parameters)");
+    scheme_wrong_syntax(where, NULL, form, 
+			"bad syntax (" IMPROPER_LIST_FORM " for imports)");
   }
 
   return clause;

@@ -1,3 +1,4 @@
+; Originally:
  ;"genwrite.scm" generic write used by pp.scm
  ;;copyright (c) 1991, marc feeley
 
@@ -65,6 +66,7 @@
 ;; unit/s 6/13/96
 ;; size- and print-hook 8/22/96
 ;; real parameters 9/27/96
+;; print-line parameter 8/18/97
 
 (unit/sig
    mzlib:pretty-print^

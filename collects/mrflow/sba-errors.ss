@@ -3,7 +3,6 @@
   (require
    (lib "contracts.ss")
    
-   ;"provide-structs.ss" ; struct contracts
    (prefix cst: "constants.ss")
    (prefix lab: "labels.ss")
    ;"assoc-set-list.ss"
@@ -19,9 +18,6 @@
   ; has to return anyway
   (define-struct error-table (assoc-set))
   
-  ;(provide-struct/contract
-  ; ((struct sba-error (labels gravity message)) lab:label? (symbols 'red 'orange 'green) string?)
-  ; )
   (provide/contract
    (sba-error-gravity (sba-error? . -> . (symbols 'red 'orange 'green)))
    (sba-error-message (sba-error? . -> . string?))

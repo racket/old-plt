@@ -49,10 +49,10 @@ static char *make_import(char *file)
 {
   char *s;
   
-  s = (char *)malloc(strlen(file) + 13);
-  strcpy(s, "(import \"");
+  s = (char *)malloc(strlen(file) + 20);
+  strcpy(s, "(import (file \"");
   strcat(s, file);
-  strcat(s, "\")");
+  strcat(s, "\"))");
   return s;
 }
 

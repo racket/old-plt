@@ -1990,7 +1990,7 @@
 		[(eq? (car s) 'file)
 		 (and (= (length s) 2)
 		      (let ([p (cadr s)])
-			(path->complete-path s (get-dir))))]
+			(path->complete-path p (get-dir))))]
 		[else #f])])
 	  (unless filename
 	    (raise-type-error 

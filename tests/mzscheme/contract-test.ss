@@ -828,7 +828,7 @@
    "pos")
   
   (test/spec-passed/result
-   'object-contract1
+   'object-contract->1
    '(send
      (contract (object-contract (m (integer? . -> . integer?)))
                (new (class object% (define/public (m x) x) (super-new)))
@@ -839,7 +839,7 @@
    1)
   
   (test/spec-failed
-   'object-contract2
+   'object-contract->2
    '(contract (object-contract (m (integer? . -> . integer?)))
               (make-object object%)
               'pos
@@ -847,7 +847,7 @@
    "pos")
   
   (test/spec-failed
-   'object-contract3
+   'object-contract->3
    '(send
      (contract (object-contract (m (integer? . -> . integer?)))
                (make-object (class object% (define/public (m x) x) (super-instantiate ())))
@@ -858,7 +858,7 @@
    "neg")
   
   (test/spec-failed
-   'object-contract4
+   'object-contract->4
    '(send
      (contract (object-contract (m (integer? . -> . integer?)))
                (make-object (class object% (define/public (m x) 'x) (super-instantiate ())))
@@ -869,12 +869,85 @@
    "pos")
   
   (test/spec-failed
-   'object-contract5
+   'object-contract->5
    '(contract (object-contract (m (integer? integer? . -> . integer?)))
               (make-object (class object% (define/public (m x) 'x) (super-instantiate ())))
               'pos
               'neg)
    "pos")
+  
+  (test/spec-failed
+   'object-contract-case->1
+   '(contract (object-contract (m (case-> (boolean? . -> . boolean?)
+                                          (integer? integer? . -> . integer?))))
+              (new object%)
+              'pos
+              'neg)
+   "pos")
+  
+  (test/spec-failed
+   'object-contract-case->2
+   '(contract (object-contract (m (case-> (boolean? . -> . boolean?)
+                                          (integer? integer? . -> . integer?))))
+              (new (class object% (define/public (m x) x) (super-new)))
+              'pos
+              'neg)
+   "pos")
+  
+  (test/spec-failed
+   'object-contract-case->3
+   '(contract (object-contract (m (case-> (boolean? . -> . boolean?)
+                                          (integer? integer? . -> . integer?))))
+              (new (class object% (define/public (m x y) x) (super-new)))
+              'pos
+              'neg)
+   "pos")
+  
+  (test/spec-passed
+   'object-contract-case->4
+   '(contract (object-contract (m (case-> (boolean? . -> . boolean?)
+                                          (integer? integer? . -> . integer?))))
+              (new (class object% 
+                     (define/public m
+                       (case-lambda
+                         [(b) (not b)]
+                         [(x y) (+ x y)]))
+                     (super-new)))
+              'pos
+              'neg))
+  
+  (test/spec-passed/result
+   'object-contract-case->5
+   '(send (contract (object-contract (m (case-> (boolean? . -> . boolean?)
+                                                (integer? integer? . -> . integer?))))
+                    (new (class object% 
+                           (define/public m
+                             (case-lambda
+                               [(b) (not b)]
+                               [(x y) (+ x y)]))
+                           (super-new)))
+                    'pos
+                    'neg)
+          m 
+          #t)
+   #f)
+  
+  (test/spec-passed/result
+   'object-contract-case->6
+   '(send (contract (object-contract (m (case-> (boolean? . -> . boolean?)
+                                                (integer? integer? . -> . integer?))))
+                    (new (class object% 
+                           (define/public m
+                             (case-lambda
+                               [(b) (not b)]
+                               [(x y) (+ x y)]))
+                           (super-new)))
+                    'pos
+                    'neg)
+          m 
+          3
+          4)
+   7)
 
   
 ;                                                                     
@@ -1396,7 +1469,18 @@
   (test-name "(box/p boolean?)" (box/p (flat-contract boolean?)))
   (test-name "the-name" (flat-rec-contract the-name))
 
-  (test-name "(object-contract (m (-> integer? integer?)))" (object-contract (m (-> integer? integer?))))
+  (test-name "(object-contract)" (object-contract))
+  (test-name "(object-contract (field x integer?))" (object-contract (field x integer?)))
+  (test-name "(object-contract (m (-> integer? integer?)))"
+             (object-contract (m (-> integer? integer?))))
+  (test-name "(object-contract (m (-> integer? any)))"
+             (object-contract (m (-> integer? any))))
+  (test-name "(object-contract (m (-> integer? (values integer? integer?))))" 
+             (object-contract (m (-> integer? (values integer? integer?)))))
+  (test-name "(object-contract (m (case-> (-> integer? integer? integer?) (-> integer? (values integer? integer?)))))"
+             (object-contract (m (case-> 
+                                  (-> integer? integer? integer?)
+                                  (-> integer? (values integer? integer?))))))
   
   ))
 (report-errs)

@@ -2123,6 +2123,24 @@ substitutability is checked properly.
       [(_ name obj)
        (raise-syntax-error 'get-field "expected a field name as first argument" stx (syntax name))]))
   
+  (define-syntax (field-bound? stx)
+    (syntax-case stx ()
+      [(_ name obj)
+       (identifier? (syntax name))
+       (syntax (let ([obj-x obj])
+                 (unless (object? obj-x)
+                   (raise-mismatch-error 
+                    'field-bound?
+                    "expected an object, got"
+                    obj-x))
+                 (let* ([cls (object-ref obj-x)]
+                        [field-ht (class-field-ht cls)])
+                   (if (hash-table-get field-ht 'name (lambda () #f))
+                       #t
+                       #f))))]
+      [(_ name obj)
+       (raise-syntax-error 'field-bound? "expected a field name as first argument" stx (syntax name))]))
+  
   (define (find-with-method object name)
     (find-method/who 'with-method object name))
 
@@ -2594,7 +2612,7 @@ substitutability is checked properly.
 	   (rename :interface interface) interface?
 	   object% object?
 	   new make-object instantiate
-           get-field
+           get-field field-bound?
 	   send send/apply send* class-field-accessor class-field-mutator with-method
 	   private* public*  public-final* override* override-final*
 	   define/private define/public define/public-final define/override define/override-final

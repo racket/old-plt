@@ -559,6 +559,11 @@
  (denominator "Denominator")
  (invalid-number "Invalid number: must be an exact, real, non-integral number.")
  (insert-fraction-menu-item-label "Insert Fraction...")
+
+ ;; number snip popup menu
+ (show-decimal-expansion "View decimal expansion")
+ (show-fraction-view "View as fraction")
+ (show-more-decimal-places "Show more decimal places")
  
  ;;; TeachPack messages
  (select-a-teachpack "Select a TeachPack")
@@ -599,6 +604,7 @@
  (use-mixed-fractions "Mixed fractions")
  (use-repeating-decimals "Repeating decimals")
  (decimal-notation-for-rationals "Use decimal notation for rationals")
+
  
  ;;; languages
  (beginning-student "Beginning Student")

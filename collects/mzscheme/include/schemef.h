@@ -63,6 +63,7 @@ extern int *scheme_fuel_counter_ptr;
 Scheme_Object *scheme_make_namespace(int argc, Scheme_Object *argv[]);
 #ifndef NO_SCHEME_THREADS
 Scheme_Object *scheme_thread(Scheme_Object *thunk, Scheme_Config *config);
+Scheme_Object *scheme_thread_w_manager(Scheme_Object *thunk, Scheme_Config *config, Scheme_Manager *mgr);
 void scheme_kill_thread(Scheme_Process *p);
 #endif
 void scheme_break_thread(Scheme_Process *p);

@@ -150,7 +150,7 @@
                  (let* ((suffix (case (unbox new-level) 
                                   ((beginner) ".bjava")
                                   ((intermediate) ".ijava")
-                                  ((advanced ".ajava"))
+                                  ((advanced) ".ajava")
                                   ((full) ".java")))
                         (location (string-append class suffix))
                         (ast (call-with-input-file (string-append file-path suffix) 

@@ -3333,7 +3333,7 @@ int wxHiEventTrampoline(int (*wha_f)(void *), void *wha_data)
        But don't swap until we've juped back in, because the jump-in
        point might be trying to suspend the thread (and that should
        complete before any swap). */
-    scheme_end_atomic();
+    scheme_end_atomic_no_swap();
     het->in_progress = 0;
     het->progress_is_resumed = 1;
     if (!scheme_setjmp(het->progress_base)) {

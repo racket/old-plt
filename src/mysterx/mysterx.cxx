@@ -336,7 +336,7 @@ DOCUMENT_WINDOW_STYLE_OPTION styleOptions[] = {
   { "no-thick-border",WS_THICKFRAME,FALSE },
 };
 
-void scheme_release_com_object(void *comObject,void *pIUnknown) {
+void scheme_release_com_object(void *comObject,void *pIDispatch) {
   ITypeInfo *pEventTypeInfo;
   IConnectionPoint *pIConnectionPoint;
   ISink *pISink;
@@ -359,23 +359,33 @@ void scheme_release_com_object(void *comObject,void *pIUnknown) {
     pISink->Release();
   }
 
+  if (pIDispatch) {
+    ((IDispatch *)pIDispatch)->Release();
+  }
+}
+
+void mx_register_com_object(Scheme_Object *obj,IDispatch *pIDispatch) {
+  scheme_register_finalizer(obj,scheme_release_com_object,pIDispatch,NULL,NULL);
+}
+
+Scheme_Object *mx_com_register_object(int argc,Scheme_Object **argv) {
+  if (MX_COM_OBJP(argv[0]) == FALSE) {
+    scheme_wrong_type("com-register-com-object","com-object",0,argc,argv);
+  }
+
+  mx_register_com_object(argv[0],MX_COM_OBJ_VAL(argv[0]));
+
+  return scheme_void;
+}
+
+void scheme_release_simple_com_object(void *comObject,void *pIUnknown) {
   if (pIUnknown) {
     ((IUnknown *)pIUnknown)->Release();
   }
 }
 
-void mx_register_com_object(Scheme_Object *obj,IUnknown *pIUnknown) {
-  scheme_register_finalizer(obj,scheme_release_com_object,pIUnknown,NULL,NULL);
-}
-
-Scheme_Object *mx_com_register_object(int argc,Scheme_Object **argv) {
-  if (MX_COM_OBJP(argv[0]) == FALSE) {
-    scheme_wrong_type("com-register-object","com-object",0,argc,argv);
-  }
-
-  mx_register_com_object(argv[0],(IUnknown *)MX_COM_OBJ_VAL(argv[0]));
-
-  return scheme_void;
+void mx_register_simple_com_object(Scheme_Object *obj,IUnknown *pIUnknown) {
+  scheme_register_finalizer(obj,scheme_release_simple_com_object,pIUnknown,NULL,NULL);
 }
 
 char *inv_kind_string(INVOKEKIND invKind) {
@@ -526,6 +536,7 @@ Scheme_Object *mx_cocreate_instance(int argc,Scheme_Object **argv) {
   com_object->pIDispatch = pIDispatch;
   com_object->pEventTypeInfo = NULL;
   com_object->pIConnectionPoint = NULL;
+  com_object->pISink = NULL;
   com_object->connectionCookie = (DWORD)0;
   
   mx_register_com_object((Scheme_Object *)com_object,pIDispatch);
@@ -2907,6 +2918,7 @@ Scheme_Object *mx_document_objects(int argc,Scheme_Object **argv) {
     com_object->pIDispatch = pObjectDispatch;
     com_object->pEventTypeInfo = NULL;
     com_object->pIConnectionPoint = NULL;
+    com_object->pISink = NULL;
     com_object->connectionCookie = (DWORD)0;
     
     mx_register_com_object((Scheme_Object *)com_object,pObjectDispatch);

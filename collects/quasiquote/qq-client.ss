@@ -1,4 +1,4 @@
-; Time-stamp: <97/10/25 02:49:41 shriram>
+; Time-stamp: <98/05/08 22:29:05 shriram>
 
 ; * Need to make write-holdings-to-file set permissions appropriately.
 ; * add-{stock,fund} should check if the entry already exists.
@@ -13,10 +13,10 @@
 ;;   <eof>
 ;; where entity = (stock "...") or (fund "...")
 
-(reference-library "match.ss")
-(reference-library "date.ss")
+(require-library "match.ss")
+(require-library "date.ss")
 
-(reference-library "qq.ss" "quasiquote")
+(require-library "qq.ss" "quasiquote")
 
 (define rc-file "~/.qqrc")
 

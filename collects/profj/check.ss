@@ -1166,6 +1166,16 @@
                                      (car accs)
                                      (make-var-access #t null (class-record-name (car static-class)))))
                        (cdr accs))))
+                   ((and (eq? level 'advanced) (not first-binding) (> (length acc) 1)
+                         (with-handlers ((exn:syntax? (lambda (e) #f))) 
+                           (type-exists? first-acc null (id-src (car acc)) 'advanced type-recs)))
+                    (build-field-accesses
+                     (make-access #f
+                                  (expr-src exp)
+                                  (make-field-access #f
+                                                     (cadr acc)
+                                                     (make-var-access #t null first-acc)))
+                     (cddr acc)))
                    ((and first-binding (properties-local? (var-type-properties first-binding)))
                     (build-field-accesses
                      (make-access #f (expr-src exp) (make-local-access (car acc)))

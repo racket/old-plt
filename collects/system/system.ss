@@ -6,6 +6,8 @@
 	  "splash.zo"
 	  "splash.ss"))
 
+(define mred:original-output-port (current-output-port))
+
 ; Remember this directory
 (define mred:system-source-directory (current-directory))
 (constant-name 'mred:system-source-directory)
@@ -96,8 +98,7 @@
 ;; called with the arguments on the command line
 (define mred:initialize
   (let ([files-to-open null]
-	[eval-string
-	 (lambda (s) (eval (open-input-string s)))]
+	[eval-string (lambda (s) (eval (read (open-input-string s))))]
 	[todo null]
 	[no-show-splash? #f])
     (lambda args
@@ -117,7 +118,7 @@
 	(load-system)
 	(current-library-path (normalize-path (current-library-path)))
 	(set! mred:plt-home-directory (normalize-path mred:plt-home-directory))
-	(eval '(constant mred:plt-home-directory))
+	(constant-name 'mred:plt-home-directory)
 	(when (and (eq? wx:platform 'windows))
 	  (let ([hd (getenv "HOMEDRIVE")]
 		[hp (getenv "HOMEPATH")])
@@ -166,11 +167,10 @@
 	   [(string-ci=? "-b" arg) 
 	    (set! no-show-splash? #t)
 	    (apply mred:initialize (cdr args))]
-	   [(string-ci=? "-e" arg) (use-next-arg
-				    (lambda (s)
-				      (set! todo
-					    (cons (list eval-string s)
-						  todo))))]
+	   [(string-ci=? "-e" arg)
+	    (use-next-arg
+	     (lambda (s)
+	       (set! todo (cons (list eval-string s) todo))))]
 	   [(string-ci=? "--" arg) (use-next-arg
 				    (lambda (fn)
 				      (set! files-to-open

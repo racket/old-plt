@@ -1,6 +1,6 @@
 (module installer mzscheme
   (require (lib "process.ss"))
-
+  (provide post-installer)
   (define (post-installer mx-path)
     (define (make-dll-path . more)
       (apply build-path (collection-path "mysterx")
@@ -16,10 +16,7 @@
         (warn "Warning: MysterX binaries not installed\n")]
        [(not winsys-dir)
         (warn "Warning: Can't run REGSVR32 on libraries\n")]
-       [else (parameterize ([current-directory (make-dll-path)]
-                            ;; temp fix: avoid using stdin since this will pop
-                            ;; up the stdio console
-                            [current-input-port (open-input-string "")])
+       [else (parameterize ([current-directory (make-dll-path)])
                (for-each
                 (lambda (dll)
                   (if (system (format "~s /s ~a" ; /s = silent mode
@@ -27,5 +24,4 @@
                                       dll))
                     (printf "MysterX: Registered library ~a\n" dll)
                     (warn "MysterX: Unable to register library ~a\n" dll)))
-                dlls))])))
-  (provide post-installer))
+                dlls))]))))

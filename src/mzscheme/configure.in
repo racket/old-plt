@@ -494,6 +494,7 @@ if test "${enable_gl}" = "yes" ; then
     if test "${GL_NEEDS_PTHREAD}" = "yes" ; then
       AC_CHECK_LIB(GL, glXChooseVisual, GL_PTHREAD="yes", GL_PTHREAD="no", $X_LIBS -lX11 -lXext -pthread)
       if test "${GL_PTHREAD}" = "yes" ; then
+        CFLAGS="$CFLAGS -D_THREAD_SAFE"
         X_EXTRA_LIBS="$X_EXTRA_LIBS -lGL -pthread"
         MZOPTIONS="$MZOPTIONS -DASSUME_FIXED_STACK_SIZE -DFIXED_STACK_SIZE=1048576 -DDONT_ITIMER"
         GC2OPTIONS="$GC2OPTIONS -DNO_GC_SIGNALS"

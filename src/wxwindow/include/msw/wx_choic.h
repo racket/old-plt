@@ -50,4 +50,21 @@ class wxChoice: public wxbChoice
   virtual Bool Show(Bool s);
 };
 
+class wxCombo : public wxChoice
+{
+ public:
+  wxWindow *forCanvas;
+
+  wxCombo(wxWindow *for_canvas,
+	  wxPanel *panel, wxFunction func, char *Title,
+	  int x = -1, int y = -1, int width = -1, int height = -1,
+	  int N = 0, char **Choices = NULL,
+	  long style = 0, char *name = "choice");
+  ~wxCombo(void);
+
+  virtual Bool PreOnEvent(wxWindow *, wxMouseEvent *);
+  virtual Bool PreOnChar(wxWindow *, wxKeyEvent *);
+  virtual wxWindow *PreWindow();
+};
+
 #endif // wx_choich

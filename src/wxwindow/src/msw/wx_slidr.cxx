@@ -427,9 +427,10 @@ void wxSlider::SetSize(int x, int y, int width, int height, int sizeFlags)
   }
 
   if (static_label) {
+    wchar_t wbuf[300];
     wxGetCharSize((HWND)ms_handle, &cxs, &cys, labelFont);
-    GetWindowText(static_label, buf, 300);
-    GetTextExtent(wxStripMenuCodes(buf), &label_width, &cyf, NULL, NULL, labelFont);
+    GetWindowTextW(static_label, wbuf, 300);
+    GetTextExtent(wxStripMenuCodes(wxNARROW_STRING(wbuf)), &label_width, &cyf, NULL, NULL, labelFont);
   }
 
   if ((windowStyle & wxVERTICAL) != wxVERTICAL) {

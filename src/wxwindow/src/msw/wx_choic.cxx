@@ -436,3 +436,36 @@ void wxChoice::ChangeToGray(Bool gray)
   if (static_label)
     ::EnableWindow(static_label, !gray);
 }
+
+/*****************************************************************************/
+
+wxCombo::wxCombo(wxWindow *for_canvas,
+		 wxPanel *panel, wxFunction func, char *Title,
+		 int x, int y, int w, int h,
+		 int N, char **Choices,
+		 long style, char *name) :
+  wxChoice(panel, func, Title, x, y, w, h, N, Choices, style, name)
+{
+  WXGC_IGNORE(this, forCanvas);
+  forCanvas = for_canvas;
+}
+
+wxCombo::~wxCombo(void)
+{
+}
+
+Bool wxCombo::PreOnEvent(wxWindow *win, wxMouseEvent *e)
+{
+  forCanvas->PreOnEvent(win, e);
+  return TRUE;
+}
+
+Bool wxCombo::PreOnChar(wxWindow *win, wxKeyEvent *e)
+{
+  return forCanvas->PreOnChar(win, e);
+}
+
+wxWindow *wxCombo::PreWindow()
+{
+  return forCanvas;
+}

@@ -14,7 +14,7 @@
 
 #include <math.h>
 
-#define COMBO_WIDTH 16
+#define COMBO_WIDTH 18
 
 extern char wxCanvasClassName[];
 extern void RegisterGDIObject(HANDLE x);
@@ -70,12 +70,11 @@ Create (wxWindow * parent, int x, int y, int width, int height, long style,
   msflags |= WS_CLIPSIBLINGS;
 
   if (style & wxCOMBO_SIDE) {
-    comboWnd = CreateWindowExW(cparent, L"wxCOMBOBOX", NULL,
-			       CBS_NOINTEGRALHEIGHT | WS_CHILD 
-			       | WS_GROUP | WS_CLIPSIBLINGS
-			       | ((style & wxINVISIBLE) ? 0 : WS_VISIBLE),
-			       0, 0, 0, 0, cparent->handle, (HMENU)nid,
-			       wxhInstance, NULL);
+    combo = new wxCombo(this,
+			(wxPanel *)parent, NULL, NULL,
+			x, y, width, height,
+			0, NULL,
+			(style & wxINVISIBLE));
   }
 
   wnd = new wxCanvasWnd (cparent, this, 
@@ -114,10 +113,6 @@ Create (wxWindow * parent, int x, int y, int width, int height, long style,
 
 wxCanvas::~wxCanvas (void)
 {
-  if (comboWnd) {
-    ::DestroyWindow(comboWnd);    
-  }
-
   if (wx_dc) {
     wxWnd *wnd = (wxWnd *)handle;
     HDC dc;
@@ -147,18 +142,17 @@ void wxCanvas::SetSize (int x, int y, int w, int h, int sizeFlags)
     h = hh;
 
   if (wnd) {
-    MoveWindow(wnd->handle, x, y, w - (comboWnd ? COMBO_WIDTH : 0), h, TRUE);
-    if (comboWnd)
-      MoveWindow(comboWnd, x, y, w, h, TRUE);
+    MoveWindow(wnd->handle, x, y, w - (combo ? COMBO_WIDTH : 0), h, TRUE);
+    if (combo)
+      combo->SetSize(x, y, w, h);
     OnSize(w, h);
   }
 }
 
 Bool wxCanvas::Show(Bool show)
 {
-  if (comboWnd) {
-    ::ShowWindow(comboWnd, show ? SW_SHOW : SW_HIDE);
-  }
+  if (combo)
+    combo->Show(show);
     
   return wxbCanvas::Show(show);
 }

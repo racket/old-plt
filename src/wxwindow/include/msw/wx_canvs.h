@@ -19,6 +19,8 @@
 class wxCanvas: public wxbCanvas
 {
  public:
+  wxWindow *combo;
+
   wxCanvas(void);
   wxCanvas(wxWindow *parent, int x=-1, int y=-1, int width=-1, int height=-1,
            long style = 0, char *name = "canvas");

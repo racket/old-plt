@@ -1791,7 +1791,7 @@ int wxWnd::OnButton(int x, int y, UINT flags, int evttype, int for_nc)
 
   last_x_pos = event->x; last_y_pos = event->y; last_event = evttype;
   if (wx_window)
-    if (!wx_window->CallPreOnEvent(wx_window, event)) {
+    if (!wx_window->CallPreOnEvent(wx_window->PreWindow(), event)) {
       if (for_nc)
 	return 1;
       else if (!wx_window->IsGray())
@@ -1937,7 +1937,7 @@ int wxWnd::OnMouseMove(int x, int y, UINT flags, int for_nc)
   last_event = wxEVENT_TYPE_MOTION;
   last_x_pos = event->x; last_y_pos = event->y;
   if (wx_window) 
-    if (!wx_window->CallPreOnEvent(wx_window, event)) {
+    if (!wx_window->CallPreOnEvent(wx_window->PreWindow(), event)) {
       if (for_nc)
 	return 1;
       else if (!wx_window->IsGray())
@@ -1968,9 +1968,9 @@ static void wxDoOnMouseEnter(wxWindow *wx_window, int x, int y, UINT flags)
   event->leftDown = (flags & MK_LBUTTON);
   event->middleDown = (flags & MK_MBUTTON);
   event->rightDown = (flags & MK_RBUTTON);
-  event->SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */
+  event->SetTimestamp(last_msg_time);
 
-  if (!wx_window->CallPreOnEvent(wx_window, event))
+  if (!wx_window->CallPreOnEvent(wx_window->PreWindow(), event))
     if (!wx_window->IsGray())
       wx_window->OnEvent(event);
 }
@@ -1995,9 +1995,9 @@ static void wxDoOnMouseLeave(wxWindow *wx_window, int x, int y, UINT flags)
   event->leftDown = (flags & MK_LBUTTON);
   event->middleDown = (flags & MK_MBUTTON);
   event->rightDown = (flags & MK_RBUTTON);
-  event->SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */
+  event->SetTimestamp(last_msg_time);
 
-  if (!wx_window->CallPreOnEvent(wx_window, event))
+  if (!wx_window->CallPreOnEvent(wx_window->PreWindow(), event))
     if (!wx_window->IsGray())
       wx_window->OnEvent(event);
 }
@@ -2129,7 +2129,7 @@ void wxWnd::OnChar(WORD wParam, LPARAM lParam, Bool isASCII, Bool isRelease)
   event = wxMakeCharEvent(wParam, lParam, isASCII, isRelease, handle);
 
   if (event && wx_window) {
-    if (!wx_window->CallPreOnChar(wx_window, event))
+    if (!wx_window->CallPreOnChar(wx_window->PreWindow(), event))
       if (!wx_window->IsGray())
 	wx_window->OnChar(event);
   }
@@ -2827,6 +2827,11 @@ Bool wxWindow::PreOnEvent(wxWindow *, wxMouseEvent *)
 Bool wxWindow::PreOnChar(wxWindow *, wxKeyEvent *)
 {
   return FALSE;
+}
+
+wxWindow *wxWindow::PreWindow()
+{
+  return this;
 }
 
 wxWindow *wxGetActiveWindow(void)

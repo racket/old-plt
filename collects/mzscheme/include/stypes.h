@@ -169,8 +169,6 @@ enum {
   scheme_rt_do_invoke_data,
   scheme_rt_finalization,
   scheme_rt_finalizations,
-  scheme_rt_gc_finalization,
-  scheme_rt_gc_weak_array,
   scheme_process_hop_type,
 #endif
 

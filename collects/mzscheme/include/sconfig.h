@@ -329,7 +329,9 @@ int scheme_solaris_semaphore_try_down(void *);
 
 # define STACK_GROWS_DOWN
 
-# define UNDERSCORE_DYNLOAD_SYMBOL_PREFIX
+# ifdef FREEBSD_VERSION_2x
+#  define UNDERSCORE_DYNLOAD_SYMBOL_PREFIX
+# endif
 
 # define USE_IEEE_FP_PREDS
 # define FREEBSD_CONTROL_387

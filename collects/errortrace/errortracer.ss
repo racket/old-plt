@@ -154,18 +154,28 @@
           (case (car expr)
             [(#%quote) expr]
             [(#%lambda)
-             `(#%lambda ,(cadr expr)
-               ,@(profile-point 
-                  (cddr expr)
-                  name expr env))]
+	     (let ([env (let loop ([v (cadr expr)])
+			  (cond
+			   [(null? v) env]
+			   [(symbol? v) (cons v env)]
+			   [else (cons (car v) (loop (cdr v)))]))])
+	       `(#%lambda ,(cadr expr)
+	            ,@(profile-point 
+		       (cddr expr)
+		       name expr env)))]
             [(#%case-lambda)
              `(#%case-lambda 
                ,@(map (lambda (clause)
-                        `(,(car clause) 
-                          ,@(profile-point
-                             (cdr clause)
-                             name expr env)))
-                      (cdr expr)))]
+			(let ([env (let loop ([v (car clause)])
+				     (cond
+				      [(null? v) env]
+				      [(symbol? v) (cons v env)]
+				      [else (cons (car v) (loop (cdr v)))]))])
+			  `(,(car clause) 
+			    ,@(profile-point
+			       (cdr clause)
+			       name expr env))))
+			(cdr expr)))]
             [(#%let-values #%letrec-values)
              (let* ([vars (apply append (map car (cadr expr)))]
                     [body-env (append vars env)]

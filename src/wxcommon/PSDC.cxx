@@ -80,6 +80,7 @@
 #define RESET_COLOR 0x2
 
 static double pie = 0.0;
+static int complained_afm = 0;
 
 #ifndef WXUNUSED
 # define WXUNUSED(x) x
@@ -1751,8 +1752,14 @@ void wxPostScriptDC::GetTextExtent (const char *string, float *x, float *y,
 
     if (afmFile==NULL) {
       int i;
-      wxDebugMsg("GetTextExtent: can't open AFM file '%s'\n",afmName);
-      wxDebugMsg("               using approximate values\n");
+      if (!complained_afm) {
+	char bfr[256];
+	sprintf(bfr, "Cannot open AFM file for %.150s; guessing font sizes.\n"
+		"(Silently guessing fonts for future AFM failures.)"
+		, name);
+	wxError(bfr, "MrEd Warning");
+	complained_afm = 1;
+      }
       for (i = 0; i < 256; i++) {
 	lastWidths[i] = 500; // an approximate value
       }

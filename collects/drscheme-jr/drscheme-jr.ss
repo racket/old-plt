@@ -2,8 +2,6 @@
 (reference-library "mzlib.ss")
 (reference-library "pretty.ss")
 
-(require-library-use-compiled #f)
-
 (begin-elaboration-time
   (define plt-dir (or (getenv "PLTHOME") "/usr/local/lib/plt")))
 
@@ -265,12 +263,8 @@
 
 (define namespace (make-namespace 'no-constants
 				  (if annotate?
-				    (begin
-				      (printf "hash-percent~n")
-				      'hash-percent-syntax)
-				    (begin
-				      (printf "all~n")
-				      'all-syntax))))
+				      'hash-percent-syntax
+				      'all-syntax)))
 
 (with-parameterization parameterization
   (let ([u@ (unit/sig->unit
@@ -297,3 +291,4 @@
       (current-load mzrice-load) 
       (current-eval mzrice-eval))))
 (current-parameterization parameterization)
+(require-library-use-compiled #f)

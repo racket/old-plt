@@ -21,4 +21,4 @@ Exported by "fresh-tex2page.ss":
 
 runs tex2page in a freshly created namespace with a fresh
 instantiation of tex2page; \eval{} will work properly, threads will
-not collide, and existing namespaces are not polluted.
+not collide, and existing namespaces will not be polluted.

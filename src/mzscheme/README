@@ -76,13 +76,15 @@ To compile parts of MzScheme for embedding or extending:
   * `[mz]make dynexample' compiles the example dynamic
      extension objects/sys/dynexmpl.so; when this is loaded into
      MzScheme, (by using load-extension), it defines a "date" 
-     procedure
+     procedure; mzc must be in the path and dynlib must be
+     made
 
   * `[mz]make oe' compiles a larger example dynamic
      extension objects/sys/oe.so; when this is loaded into
      MzScheme, (by using load-extension), it defines "odd",
      "even", "fib", and "fib2" procedures, and returns
-     two values (#t and #f) when loaded
+     two values (#t and #f) when loaded; mzc must be in the path
+     and dynlib must be made
 
 ------------------------------------------------------------------------
  Compiling for Multiple Unix Platforms

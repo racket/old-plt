@@ -3,7 +3,7 @@
 #
 
 # dynlink is a script that uses the right set of link commands
-DYNLINK = ../../../bin/dynlink
+DYNLINK = mzc --ld 
 
 CFLAGS_NODBG = $(OPT) $(WARN) $(OPTIONS) $(DYNOPTIONS) -I../include
 CFLAGS = $(CFLAGS_NODBG) $(DEBUGFLAGS)
@@ -40,12 +40,12 @@ $(OBJDIR)/mzdyn.o: mzdyn.c ../src/schvers.h  $(HEADERS)
 	$(CC) $(CFLAGS) -c mzdyn.c -o $(OBJDIR)/mzdyn.o
 
 ../$(OBJDIR)/dynexmpl.so: $(OBJDIR)/dynexmpl.o $(MZDYNDEP)
-	$(DYNLINK) $(OBJDIR)/dynexmpl.o -o ../$(OBJDIR)/dynexmpl.so
+	$(DYNLINK) ../$(OBJDIR)/dynexmpl.so $(OBJDIR)/dynexmpl.o
 $(OBJDIR)/dynexmpl.o: dynexmpl.c  $(HEADERS)
 	$(CC) $(CFLAGS) -c dynexmpl.c -o $(OBJDIR)/dynexmpl.o
 
 ../$(OBJDIR)/oe.so: $(OBJDIR)/oe.o  $(MZDYNDEP)
-	$(DYNLINK) $(OBJDIR)/oe.o -o ../$(OBJDIR)/oe.so
+	$(DYNLINK) ../$(OBJDIR)/oe.so $(OBJDIR)/oe.o
 $(OBJDIR)/oe.o: oe.c $(HEADERS)
 	$(CC) $(CFLAGS) -c oe.c -o $(OBJDIR)/oe.o
 

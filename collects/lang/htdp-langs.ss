@@ -244,7 +244,7 @@
             (get-htdp-style-delta))
           
           (inherit get-reader set-printing-parameters)
-          (define/override (front-end/complete-program port line-col-offset settings teachpacks)
+          (define/override (front-end/complete-program port settings teachpacks)
             (let ([state 'init]
                   ;; state : 'init => 'require => 'done
                   [reader (get-reader)])
@@ -254,7 +254,7 @@
                   [(init)
                    (with-syntax ([(body-exp ...) 
                                   (let loop ()
-                                    (let ([result (reader (object-name port) port line-col-offset)])
+                                    (let ([result (reader (object-name port) port)])
                                       (if (eof-object? result)
                                           null
                                           (cons result (loop)))))]

@@ -457,7 +457,6 @@
 			[after #t])
 		   (let loop ([previous-pos pos])
 		     (let ([current-pos (send replacee-edit get-start-position)])
-		       (mred:dv pos current-pos after)
 		       (when (and after
 				  (<= current-pos pos))
 			 (set! after #f))
@@ -478,11 +477,13 @@
 			      #t)
 		       #f)))]
 	      [search
-	       (lambda () 
+	       (lambda (direction)
 		 (send find-edit set-searching-frame this)
 		 (if hidden?
 		     (unhide-search)
-		     (send find-edit search)))])))))
+		     (begin
+		       (set-search-direction direction)
+		       (send find-edit search))))])))))
 
     (define find-string
       (lambda (canvas in-edit x y flags)
@@ -492,8 +493,7 @@
 			  (if (is-a? p wx:frame%)
 			      p
 			      (loop (send p get-parent))))])
-	     (send frame set-search-direction (if (member 'reverse flags)
-						  -1
-						  1))
-	     (send frame search))]
+	     (send frame search (if (member 'reverse flags)
+				    -1
+				    1)))]
 	  [else (make-object find-frame% canvas in-edit x y flags)])))))

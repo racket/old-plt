@@ -1779,9 +1779,10 @@ scheme_resolve_lets(Scheme_Object *form, Resolve_Info *info)
 
   /* We used to try to collapse let_void, here.  But collapsing
      potentially changes the maxiumum stack depth of the expression,
-     since variabls from the body get allocated before the RHSes are
-     executed. Also, this optimization was arbitrary in that it didn't
-     recursively collapse. For both of these reasons, it's now disabled. */
+     since collapsing make variables from the body get allocated
+     before the RHSes are executed. Also, this optimization was
+     arbitrary, in that it didn't recursively collapse. For both of
+     these reasons, it's now disabled. */
 #if 0
   if (!num_rec_procs) {
     if (SAME_TYPE(SCHEME_TYPE(body), scheme_let_void_type)) {

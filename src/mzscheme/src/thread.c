@@ -2722,6 +2722,7 @@ static Scheme_Object *call_as_nested_thread(int argc, Scheme_Object *argv[])
     Scheme_Config *config;
     config = scheme_current_config();
     np->init_config = config;
+    p->config_at_swap = config;
   }
   np->cont_mark_pos = (MZ_MARK_POS_TYPE)1;
   /* others 0ed already by allocation */

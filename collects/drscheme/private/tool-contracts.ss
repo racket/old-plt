@@ -420,11 +420,11 @@
 
 (drscheme:unit:make-bitmap
  (case->
-  (string? . -> . ((is-a?/c area-container<%>) . -> . (is-a?/c bitmap%)))
-  (string? string? . -> . ((is-a?/c area-container<%>) . -> . (is-a?/c bitmap%))))
+  (string? . -> . ((is-a?/c area-container<%>) . -> . (union string? (is-a?/c bitmap%))))
+  (string? string? . -> . ((is-a?/c area-container<%>) . -> . (union string? (is-a?/c bitmap%)))))
 
  ((button-name) (text filename))
-
+ 
 "This function constructs a bitmap for a button label. It is"
 "used for the buttons on the top row of DrScheme's frame."
 ""
@@ -440,7 +440,10 @@
 "specifies the full path to the bitmap"
 ""
 "The \\iscmintf{area-container} argument is used to"
-"find the font for the label")
+"find the font for the label"
+""
+"If the bitmap isn't found, this function returns a string"
+"to be used as the button's label.")
 
 
 

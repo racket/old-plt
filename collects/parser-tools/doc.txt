@@ -4,6 +4,10 @@ This documentation assumes familiarity with lex and yacc style lexer
 and parser generators.
 
 
+CHANGE: The lexer now provides several abbreviations to make Unicode
+processing easier.  See documentation below.
+
+
 CHANGE: The lexer generator uses a new back-end based on derivatives
 (``Derivatives of Regular Expressions'',
  Janusz A. Brzozowski, JACM, Vol 11, No. 4 (October 1964))
@@ -208,6 +212,16 @@ and a parameter for tracking the source file:
 > (file-path string) - sets the parameter file-path, which the lexer
    will use as the source location if it raises a read error.  This
    allows DrScheme to open the file containing the error.
+
+
+The following lex abbreviations are also provided (see 3.4 in the
+mzscheme manual):
+any-string	  any-char	    nothing
+alphabetic	  upper-case	    lower-case
+title-case	  numeric	    symbolic
+punctuation	  graphic	    whitespace
+blank		  hexadecimal	    iso-control
+
 
 Each time the scheme code for a lexer is compiled (e.g. when a .ss
 file containing a (lex ...) is loaded/required) the lexer generator is

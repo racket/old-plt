@@ -66,7 +66,10 @@ INSTALLDEST=/home/scheme/plt
 MRSTATIC = 
 MRSTATIC_STUB =
 
-WXINCDEP = $(WXDIR)/src/Windows/Window.h
+WXINCDEP_wx_xt = $(WXDIR)/src/Windows/Window.h $(WXDIR)/src/Windows/Frame.h \
+                 $(WXDIR)/src/DataStructures/Object.h
+WXINCDEP_wx_mac = 
+WXINCDEP = $(WXINCDEP_@WXVARIANT@)
 
 MZEXTRAEXPORT='GCDIR=$(GCDIRECTORY)'
 
@@ -120,8 +123,7 @@ wx_mac:
 mred.o :  $(srcdir)/mred.cxx $(srcdir)/wxme/wx_media.h $(srcdir)/wxme/wx_medad.h \
           $(srcdir)/wxs/wxscheme.h $(srcdir)/mred.h \
           $(srcdir)/../mzscheme/include/scheme.h $(srcdir)/../mzscheme/src/schvers.h \
-          $(srcdir)/wxs/wxsmred.h $(WXINCDEP) $(WXDIR)/src/Windows/Frame.h \
-          $(WXDIR)/src/DataStructures/Object.h $(srcdir)/../wxcommon/wxGC.h \
+          $(srcdir)/wxs/wxsmred.h $(WXINCDEP) $(srcdir)/../wxcommon/wxGC.h \
           $(srcdir)/../wxcommon/wx_list.h
 	$(CXX) $(CPPFLAGS) $(LOCALFLAGS) -c $(srcdir)/mred.cxx -o mred.o
 
@@ -137,7 +139,7 @@ ee-main:
 	$(MAKE) mred_ee.o
 
 mredx.o : $(srcdir)/mredx.cxx $(srcdir)/../mzscheme/include/scheme.h $(srcdir)/mred.h \
-          $(WXDIR)/src/Windows/Frame.h $(WXDIR)/src/DataStructures/Object.h \
+          $(WXINCDEP) \
           $(srcdir)/../wxcommon/wxGC.h $(srcdir)/../wxcommon/wx_list.h \
           $(srcdir)/../mzscheme/src/stypes.h
 	$(CXX) $(CPPFLAGS) $(LOCALFLAGS) -c $(srcdir)/mredx.cxx -o mredx.o

@@ -74,7 +74,11 @@
 # include <errno.h>
 # ifdef ECHRNG
 /* Solaris */
-#  define SCHEME_PLATFORM_LIBRARY_SUBPATH "sparc-solaris"
+#  if  defined(i386)
+#   define SCHEME_PLATFORM_LIBRARY_SUBPATH "i386-solaris"
+#  else
+#   define SCHEME_PLATFORM_LIBRARY_SUBPATH "sparc-solaris"
+#  endif
 #  define DIRENT_NO_NAMLEN
 #  define NO_USLEEP
 #  define USE_ULIMIT
@@ -467,7 +471,7 @@ int   scheme_sproc_semaphore_try_down(void *);
 
 #endif
 
-  /******* Windows with MS Visual C++ or CYGWIN32 *********/
+  /******** Windows with MS Visual C++ or CYGWIN **********/
   /* See the "windows" directory for more MSVC details.   */
   /* MzScheme is probably no longer Borland-friendly,     */
   /* since it currently relies on one MSVC-style inline   */
@@ -482,7 +486,7 @@ int   scheme_sproc_semaphore_try_down(void *);
   /*   not under Win32s. A Win32s version will also work  */
   /*   under Windows NT.                                  */
 
-#if (defined(__BORLANDC__) || defined(_MSC_VER) || defined(__CYGWIN32__)) \
+#if (defined(__BORLANDC__) || defined(_MSC_VER) || defined(__CYGWIN__)) \
     && (defined(__WIN32__) || defined(WIN32) || defined(_WIN32))
 
 # define SCHEME_PLATFORM_LIBRARY_SUBPATH "win32\\i386"
@@ -502,14 +506,14 @@ int   scheme_sproc_semaphore_try_down(void *);
 #  define NO_READLINK
 #  define MKDIR_NO_MODE_FLAG
 # endif
-# if defined(__CYGWIN32__)
+# if defined(__CYGWIN__)
 #  define USE_GET_CURRENT_DIRECTORY
 #  define USE_WINDOWS_FIND_FIRST
 #  define DIRENT_NO_NAMLEN
 # endif
 
 # define TIME_SYNTAX
-# ifndef __CYGWIN32__
+# ifndef __CYGWIN__
 #   define USE_FTIME
 # endif
 # define GETENV_FUNCTION
@@ -528,6 +532,9 @@ int   scheme_sproc_semaphore_try_down(void *);
 # define NAN_EQUALS_ANYTHING
 # define POW_HANDLES_INF_CORRECTLY
 #endif
+#ifdef __CYGWIN__
+# define USE_DIVIDE_MAKE_INFINITY
+#endif
 
 # define IO_INCLUDE
 # define NO_SLEEP
@@ -540,7 +547,7 @@ int   scheme_sproc_semaphore_try_down(void *);
 # define SIGSET_IS_SIGNAL
 # define SIGSET_NEEDS_REINSTALL
 
-#ifdef __CYGWIN32__
+#ifdef __CYGWIN__
 # define USE_UNIX_SOCKETS_TCP
 # define CANT_SET_SOCKET_BUFSIZE
 # define NO_NEED_FOR_BEGINTHREAD
@@ -964,11 +971,11 @@ int scheme_pthread_semaphore_try_down(void *);
  /* INEXACT_PRINT_DIGITS "<X>" uses <X> as the number of digits to
      use for printing floating-points. Defaults to "14". */
 
- /* USE_INFINITY uses infinity() to get the infinity floating-point
-     constant instead of using HUGE_VAL. */
+ /* USE_INFINITY_FUNC uses infinity() to get the infinity
+     floating-point constant instead of using HUGE_VAL. */
 
- /* USE_DIVIDE_MAKE_INFINITY creates +inf.0 by dvividing by zero instead
-    of using HUGE_VAL. */
+ /* USE_DIVIDE_MAKE_INFINITY creates +inf.0 by dvividing by zero
+    instead of using HUGE_VAL. */
 
  /* USE_IEEE_FP_PREDS uses isinf() and isnan() to implement tests for
     infinity. */
@@ -1052,11 +1059,6 @@ int scheme_pthread_semaphore_try_down(void *);
  /* STACK_SAFETY_MARGIN <X> sets the number of bytes that should be
      available on the stack for "safety" to <X>. Used only if
      DO_STACK_CHECK is used. STACK_SAFETY_MARGIN defaults to 50000. */
-
- /* ERROR_ON_OVERFLOW causes MzScheme to produce an error if the
-     stack is overflowed. Normally, it would copy out the current
-     stack and try to continue the computation. Used only if
-     DO_STACK_CHECK is used. */
 
  /* UNIX_LIMIT_STACK <X> limits stack usage to <X> bytes. This may
      be necessary to avoid GC-setup traversal over too much memory

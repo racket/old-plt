@@ -438,13 +438,9 @@ typedef struct Scheme_Continuation_Jump_State {
 #define scheme_set_param(c, pos, o) (*((c)->configs[pos]) = o)
 #define scheme_get_param(c, pos) (*((c)->configs[pos]))
 
-typedef struct Scheme_Saved_Stack {
-  Scheme_Object **runstack_start;
-  Scheme_Object **runstack;
-  long runstack_size;
-  Scheme_Object **runstack_last_mark;
-  struct Scheme_Saved_Stack *prev;
-} Scheme_Saved_Stack;
+/* Although it's really an integer, it seems beneficial to declare the
+   mark position counter as a poiner, perhaps due to locality effects. */
+#define MZ_MARK_POS_TYPE char*
 
 typedef struct Scheme_Process {
   Scheme_Type type;
@@ -460,10 +456,14 @@ typedef struct Scheme_Process {
   Scheme_Object **runstack;
   Scheme_Object **runstack_start;
   long runstack_size;
-  Scheme_Saved_Stack *runstack_saved;
+  struct Scheme_Saved_Stack *runstack_saved;
   Scheme_Object **runstack_tmp_keep;
 
-  Scheme_Object **cont_mark_chain;
+  MZ_MARK_POS_TYPE cont_mark_pos;
+  struct Scheme_Cont_Mark *cont_mark_stack;
+  struct Scheme_Cont_Mark *cont_mark_stack_start;
+  long cont_mark_stack_size;
+  struct Scheme_Saved_Cont_Mark_Stack *cont_mark_stack_saved;
 
   long engine_weight;
 
@@ -479,9 +479,6 @@ typedef struct Scheme_Process {
   struct Scheme_Dynamic_Wind *dw;
 
   int running;
-#ifdef ERROR_ON_OVERFLOW
-  int stack_overflow;
-#endif
 
   float sleep_time; /* blocker has starting sleep time */
   int block_descriptor;
@@ -490,10 +487,8 @@ typedef struct Scheme_Process {
   void (*block_needs_wakeup)(Scheme_Object *blocker, void *fds);
   int ran_some;
 
-#ifndef ERROR_ON_OVERFLOW
   struct Scheme_Overflow *overflow;
   mz_jmp_buf overflow_buf;
-#endif
 
   struct Scheme_Comp_Env *current_local_env;
 
@@ -520,11 +515,9 @@ typedef struct Scheme_Process {
   char error_invoked;
   char err_val_str_invoked;
 
-#ifndef ERROR_ON_OVERFLOW
   Scheme_Object *(*overflow_k)(void);
   Scheme_Object *overflow_reply;
   Scheme_Jumpup_Buf overflow_cont;
-#endif
 
   Scheme_Object **tail_buffer;
   int tail_buffer_size;
@@ -1017,10 +1010,11 @@ extern Scheme_Extension_Table *scheme_extension_table;
 #endif
 #define SCHEME_BIGNUMP(obj)     SAME_TYPE(SCHEME_TYPE(obj), scheme_bignum_type)
 #define SCHEME_RATIONALP(obj)     SAME_TYPE(SCHEME_TYPE(obj), scheme_rational_type)
-#define SCHEME_COMPLEXP(obj)     SAME_TYPE(SCHEME_TYPE(obj), scheme_complex_type)
+#define SCHEME_COMPLEXP(obj)     (!SCHEME_INTP(obj) && ((_SCHEME_TYPE(obj) >= scheme_complex_izi_type) && (_SCHEME_TYPE(obj) <= scheme_complex_type)))
+#define SCHEME_COMPLEX_IZIP(obj)     (SCHEME_TYPE(obj) == scheme_complex_izi_type)
 #define SCHEME_EXACT_INTEGERP(obj)  (SCHEME_INTP(obj) || (_SCHEME_TYPE(obj) == scheme_bignum_type))
 #define SCHEME_EXACT_REALP(obj)  (SCHEME_INTP(obj) || (_SCHEME_TYPE(obj) == scheme_bignum_type) || (_SCHEME_TYPE(obj) == scheme_rational_type))
-#define SCHEME_REALP(obj)  (SCHEME_INTP(obj) || ((_SCHEME_TYPE(obj) >= scheme_bignum_type) && (_SCHEME_TYPE(obj) <= scheme_double_type)))
+#define SCHEME_REALP(obj)  (SCHEME_INTP(obj) || ((_SCHEME_TYPE(obj) >= scheme_bignum_type) && (_SCHEME_TYPE(obj) <= scheme_complex_izi_type)))
 #define SCHEME_NUMBERP(obj)  (SCHEME_INTP(obj) || ((_SCHEME_TYPE(obj) >= scheme_bignum_type) && (_SCHEME_TYPE(obj) <= scheme_complex_type)))
 #define SCHEME_STRINGP(obj)  SAME_TYPE(SCHEME_TYPE(obj), scheme_string_type)
 #define SCHEME_SYMBOLP(obj)  SAME_TYPE(SCHEME_TYPE(obj), scheme_symbol_type)

@@ -399,6 +399,7 @@ class wxCommandEvent *objscheme_unbundle_wxCommandEvent(Scheme_Object *obj, cons
 
 
 
+
 class os_wxPopupEvent : public wxPopupEvent {
  public:
 
@@ -492,6 +493,7 @@ if (os_wxPopupEvent_class) {
 
   scheme_made_class(os_wxPopupEvent_class);
 
+  objscheme_install_bundler((Objscheme_Bundler)objscheme_bundle_wxPopupEvent, wxTYPE_POPUP_EVENT);
 
 }
 }
@@ -519,7 +521,7 @@ Scheme_Object *objscheme_bundle_wxPopupEvent(class wxPopupEvent *realobj)
 
   if (realobj->__gc_external)
     return (Scheme_Object *)realobj->__gc_external;
-  if ((sobj = objscheme_bundle_by_type(realobj, realobj->__type)))
+  if ((realobj->__type != wxTYPE_POPUP_EVENT) && (sobj = objscheme_bundle_by_type(realobj, realobj->__type)))
     return sobj;
   obj = (Scheme_Class_Object *)scheme_make_uninited_object(os_wxPopupEvent_class);
 

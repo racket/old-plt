@@ -41,6 +41,8 @@
 
 @CREATOR ()
 
+@CLASSID wxTYPE_POPUP_EVENT
+
 @IVAR "menu-id" : int menuId
 
 @END

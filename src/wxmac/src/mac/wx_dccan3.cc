@@ -11,6 +11,7 @@
 #include "common.h"
 #include "wx_dccan.h"
 #include "wx_utils.h"
+#include "scheme.h"
 
 extern CGrafPtr wxMainColormap;
 
@@ -23,9 +24,9 @@ extern "C" {
 static ATSUStyle theATSUstyle, theATSUqdstyle;
 
 static void init_ATSU_style(void);
-static OSStatus atsuSetStyleFromGrafPtr(ATSUStyle iStyle, int smoothing, float angle, float scale_y);
+static OSStatus atsuSetStyleFromGrafPtr(ATSUStyle iStyle, int smoothing, float angle, float scale_y, int qd_spacing);
 static OSStatus atsuSetStyleFromGrafPtrParams( ATSUStyle iStyle, short txFont, short txSize, SInt16 txFace, int smoothing, 
-					       float angle, float scale_y);
+					       float angle, float scale_y, int qd_spacing);
 static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int ucs4,
 				  int just_meas, int given_font, 
 				  short txFont, short txSize, short txFace,
@@ -419,7 +420,7 @@ Bool wxGetUnicodeGlyphAvailable(int c,
   if (c > 0xFFFF)
     return FALSE;
 
-  atsuSetStyleFromGrafPtrParams(theATSUstyle, txFont, txSize, txFace, 1, 0.0, 1.0);
+  atsuSetStyleFromGrafPtrParams(theATSUstyle, txFont, txSize, txFace, 1, 0.0, 1.0, 1);
 
   uc[0] = c;
   ATSUCreateTextLayoutWithTextPtr((UniCharArrayPtr)uc,
@@ -445,7 +446,8 @@ Bool wxGetUnicodeGlyphAvailable(int c,
 }
 
 
-#define QUICK_UBUF_SIZE 256
+#define QUICK_UBUF_SIZE 512
+static UniChar u_buf[QUICK_UBUF_SIZE];
 
 static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int ucs4,
 				  int just_meas, int given_font, 
@@ -458,23 +460,8 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
 {
   ATSUTextLayout layout;
   UniCharCount ulen;
-  UniChar *unicode, u_buf[QUICK_UBUF_SIZE];
+  UniChar *unicode;
   double result = 0;
-  ATSLineLayoutOptions ll_attribs;
-  GC_CAN_IGNORE ATSUAttributeTag  ll_theTags[] = { kATSULineLayoutOptionsTag 
-#ifdef OS_X
-						   , kATSUCGContextTag
-# define lxNUM_TAGS 2
-#else
-# define lxNUM_TAGS 1
-#endif
-  };
-  GC_CAN_IGNORE ByteCount    ll_theSizes[] = { sizeof(ATSLineLayoutOptions) 
-#ifdef OS_X
-					       , sizeof(CGContextRef)
-#endif
-  };
-  ATSUAttributeValuePtr ll_theValues[ lxNUM_TAGS /* = sizeof(ll_theTags) / sizeof(ATSUAttributeTag) */ ];
   int need_convert;
 #define JUSTDELTA(v, s, d) (need_convert ? v : ((v - d) / s))
 #define COORDCONV(v, s, d) (need_convert ? ((v * s) + d) : v)
@@ -500,6 +487,7 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
   if (ucs4) {
     int i, extra;
     unsigned int v;
+    UniCharCount alloc_ulen;
 
     /* Count characters that fall outside UCS-2: */
     for (i = 0, extra = 0; i < theStrlen; i++) {
@@ -508,13 +496,17 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
     }
 
     ulen = theStrlen + extra;
-    if (ulen > QUICK_UBUF_SIZE)
-      unicode = new WXGC_ATOMIC UniChar[ulen];
+    if (qd_spacing)
+      alloc_ulen = (2 * ulen) + 1;
+    else
+      alloc_ulen = ulen;
+    if (alloc_ulen > QUICK_UBUF_SIZE)
+      unicode = new WXGC_ATOMIC UniChar[alloc_ulen];
     else
       unicode = u_buf;
     
     /* UCS-4 -> UTF-16 conversion */
-    for (i = 0, extra = 0; i < theStrlen; i++) {
+    for (i = 0, extra = qd_spacing ? 1 : 0; i < theStrlen; i++) {
       v = ((unsigned int *)text)[d+i];
       if (v > 0xFFFF) {
 	unicode[i+extra] = 0xD8000000 | ((v >> 10) & 0x3FF);
@@ -524,18 +516,51 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
 	unicode[i+extra] = v;
     }
   } else {
+    UniCharCount alloc_ulen;
+
     /* UTF-8 -> UTF-16 conversion */
     ulen = scheme_utf8_decode((unsigned char *)text, d, 
 			      theStrlen, NULL, 0, -1, 
 			      NULL, 1 /*UTF-16*/, '?');
-    if (ulen > QUICK_UBUF_SIZE)
-      unicode = new WXGC_ATOMIC UniChar[ulen];
+    if (qd_spacing)
+      alloc_ulen = (2 * ulen) + 1;
+    else
+      alloc_ulen = ulen;
+    if (alloc_ulen > QUICK_UBUF_SIZE)
+      unicode = new WXGC_ATOMIC UniChar[alloc_ulen];
     else
       unicode = u_buf;
     ulen = scheme_utf8_decode((unsigned char *)text, d, theStrlen, 
-			      (unsigned int *)unicode, 0, -1, 
+			      (unsigned int *)unicode, qd_spacing ? 1 : 0, -1, 
 			      NULL, 1 /*UTF-16*/, '?');
   }
+
+  /* In qd_spacing mode, prevent all sorts of glyph combinations */
+  if (qd_spacing) {
+    unsigned int i, j = 0;
+    /* start with left-to-right override: */
+    ulen++;
+    unicode[0] = 0x202D;
+    /* remove other control characters: */
+    for (i = 1; i < ulen; i++) {
+      if (scheme_iscontrol(unicode[i])) {
+	j++;
+      } else {
+	unicode[i - j] = unicode[i];
+      }
+    }
+    ulen -= j;
+    /* Add ZWNJ to prevent other combinations */
+    /*  I think is this redundant, because other attributes
+	(in t estyle or layout) disable combinations. But just
+	in case... */
+    for (i = ulen; i--; ) {
+      unicode[(2 * i) + 1] = 0x200C;
+      unicode[(2 * i)] = unicode[i];
+    }
+    ulen *= 2;
+  }
+  
 
   if (is_sym == wxSYMBOL) {
     unsigned int i;
@@ -602,10 +627,12 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
   if (!again) {
     if (given_font)
       atsuSetStyleFromGrafPtrParams(style, txFont, txSize, txFace, smoothing, 
-				    angle, (use_cgctx || just_meas) ? 1.0 : scale_y);
+				    angle, (use_cgctx || just_meas) ? 1.0 : scale_y,
+				    qd_spacing);
     else
       atsuSetStyleFromGrafPtr(style, smoothing, angle, 
-			      (use_cgctx || just_meas) ? 1.0 : scale_y);
+			      (use_cgctx || just_meas) ? 1.0 : scale_y,
+			      qd_spacing);
   }
 
   /********************* BEGIN NO-GC RANGE **********************/
@@ -622,6 +649,12 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
 				  &layout);
 
   if (qd_spacing || use_cgctx) {
+    int cnt = 0;
+    GC_CAN_IGNORE ATSUAttributeTag  ll_theTags[2];
+    GC_CAN_IGNORE ByteCount    ll_theSizes[2];
+    ATSUAttributeValuePtr ll_theValues[2];
+    ATSLineLayoutOptions ll_attribs;
+
     if (qd_spacing) {
 #if 1
       /* We write down a literal constant, because the constants aren't
@@ -633,16 +666,22 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
 		    | kATSLineDisableAllLayoutOperations
 		    | kATSLineUseDeviceMetrics);
 #endif
-      ll_theValues[0] = &ll_attribs;
-    } else {
-      ll_theTags[0] = ll_theTags[1];
-      ll_theSizes[0] = ll_theSizes[1];
+      ll_theTags[cnt] = kATSULineLayoutOptionsTag;
+      ll_theSizes[cnt] = sizeof(ATSLineLayoutOptions);
+      ll_theValues[cnt] = &ll_attribs;
+      cnt++;
     }
+
+    if (use_cgctx) {
+      ll_theTags[cnt] = kATSUCGContextTag;
+      ll_theSizes[cnt] = sizeof(CGContextRef);
 #ifdef OS_X
-    ll_theValues[(qd_spacing ? 1 : 0)] = &cgctx;
+      ll_theValues[cnt] =  &cgctx;
 #endif
-    ATSUSetLayoutControls(layout, (lxNUM_TAGS - (use_cgctx ? 0 : 1) - (qd_spacing ? 0 : 1)),
-			  ll_theTags, ll_theSizes, ll_theValues);
+      cnt++;
+    }
+    
+    ATSUSetLayoutControls(layout, cnt, ll_theTags, ll_theSizes, ll_theValues);
   }
 
   ATSUSetTransientFontMatching(layout, TRUE);
@@ -859,7 +898,7 @@ atsuFONDtoFontID( short    iFONDNumber,
 
 static OSStatus
 atsuSetStyleFromGrafPtrParams( ATSUStyle iStyle, short txFont, short txSize, SInt16 txFace, int smoothing, 
-			       float angle, float scale_y)
+			       float angle, float scale_y, int qd_spacing)
 {
  OSStatus status = noErr;
 
@@ -946,7 +985,7 @@ atsuSetStyleFromGrafPtrParams( ATSUStyle iStyle, short txFont, short txSize, SIn
 }
 
 static OSStatus
-atsuSetStyleFromGrafPtr(ATSUStyle iStyle, int smoothing, float angle, float scale_y)
+atsuSetStyleFromGrafPtr(ATSUStyle iStyle, int smoothing, float angle, float scale_y, int qd_spacing)
 {
  short    txFont, txSize;
  SInt16   txFace;
@@ -958,5 +997,5 @@ atsuSetStyleFromGrafPtr(ATSUStyle iStyle, int smoothing, float angle, float scal
  txSize = GetPortTextSize(iGrafPtr);
  txFace = GetPortTextFace(iGrafPtr);
  
- return atsuSetStyleFromGrafPtrParams(iStyle, txFont, txSize, txFace, smoothing, angle, scale_y);
+ return atsuSetStyleFromGrafPtrParams(iStyle, txFont, txSize, txFace, smoothing, angle, scale_y, qd_spacing);
 }

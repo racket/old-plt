@@ -394,8 +394,11 @@ wxCursor *wxMediaEdit::AdjustCursor(wxMouseEvent *event)
   if (customCursor)
     return customCursor;
 
-  pos = FindPosition(x, y, NULL);
-  return FindClickback(pos, y) ? arrow : iBeam;
+  if (x >= 0) {
+    pos = FindPosition(x, y, NULL);
+    return FindClickback(pos, y) ? arrow : iBeam;
+  } else
+    return iBeam;
 }
 
 void wxMediaEdit::OnEvent(wxMouseEvent *event)
@@ -497,7 +500,7 @@ void wxMediaEdit::OnDefaultEvent(wxMouseEvent *event)
 
   if (event->ButtonDown()) {
     tracking = FALSE;
-    if ((click = FindClickback(now, y))) {
+    if ((x >= 0) && (click = FindClickback(now, y))) {
       if (click->callOnDown) {
 	click->f(this, click->start, click->end, click->data);
       } else {
@@ -533,7 +536,10 @@ void wxMediaEdit::OnDefaultEvent(wxMouseEvent *event)
       }
     } else if (tracking) {
       wxClickback *cb;
-      cb = FindClickback(now, y);
+      if (x >= 0)
+	cb = FindClickback(now, y);
+      else
+	cb = NULL;
       SetClickbackHilited(trackClickback, cb == trackClickback);
     }
   } else if (event->ButtonUp()) {

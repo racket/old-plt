@@ -58,12 +58,26 @@ The library _internal-server.ss_ also provides a single
 function named serve that behaves almost the same as the
 above function with the same name.  Instead of accepting
 HTTP requests from network connections, this version of the
-serve function returns another function of type (str ->
-void) This extra function directs the built-in web browser
-to the url specified by the argument string.  It does not
-use any network support from the underlying OS.
+serve function returns another function of type:
 
-> serve : configuration [nat] [str] -> (-> void) (str -> void)
+   (string -> (is-a?/c frame%)) 
+
+This extra function directs the built-in web browser to the
+url specified by the argument string.  It does not use any
+network support from the underlying OS.
+
+In addition, this serve accepts another optional
+argument. This argument is mixed into the frame class
+created by the internal browser. The frame is then
+instantiated with one argument: the url to visit.
+
+> serve : (opt->*
+           (configuration?)
+           ((and/f number? integer? exact? positive?)
+            (union string? false?)
+            (make-mixin-contract frame%))
+           ((-> void?)
+            (string . -> . (is-a?/c frame%))))
 
 Constructing configurations requires another library.
   (require (lib "configuration.ss" "web-server"))

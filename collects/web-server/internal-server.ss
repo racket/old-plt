@@ -1,5 +1,4 @@
 (module internal-server mzscheme
-  (provide serve)
   (require (lib "tcp-redirect.ss" "net")
            (lib "tcp-sig.ss" "net")
            (lib "unitsig.ss")
@@ -14,14 +13,26 @@
            (lib "browser-unit.ss" "browser")
            (lib "web-server-unit.ss" "web-server")
            (lib "configuration-structures.ss" "web-server")
+           (lib "contracts.ss")
            (lib "servlet-sig.ss" "web-server"))
   
-  ; : configuration [nat] [str] -> (-> void)
-  ; to serve web connections on a port without TCP/IP
+  (provide/contract 
+   (serve (opt->*
+           (configuration?)
+           ((and/f number? integer? exact? positive?)
+            (union string? false?)
+            (make-mixin-contract frame%))
+           ((-> void?)
+            (string . -> . (is-a?/c frame%))))))
+  
+  ;; to serve web connections on a port without TCP/IP.
+  ;; rebinds the tcp primitives via the tcp-redirect unit to functions
+  ;; that simulate their behavior without using the network.
   (define serve
     (opt-lambda (configuration
                  [port (configuration-port configuration)]
-                 [only-from-host #f])
+                 [only-from-host #f]
+                 [hyper-frame-mixin (lambda (x) x)])
       (invoke-unit/sig
        (compound-unit/sig
          (import
@@ -55,7 +66,7 @@
 			   (if browser-frame
 			       (begin (send browser-frame show #t)
 				      (send (send (send browser-frame get-hyper-panel) get-canvas) goto-url url-str #f))
-			       (set! browser-frame (open-url url-str)))
+			       (set! browser-frame (make-object (hyper-frame-mixin hyper-frame%) url-str)))
 			   browser-frame)))
                       TCP BROWSER WEB-SERVER)])
          (export))

@@ -21,6 +21,12 @@
   All rights reserved.
 */
 
+/* This file contains the main evaluation loop, in the
+   scheme_do_eval() function. 
+
+   This file also contains the core of the macro-expander and bytecode
+   compiler, which is why it's so big. */
+
 #include "schpriv.h"
 #include "schrunst.h"
 
@@ -1943,11 +1949,6 @@ void *scheme_enlarge_runstack(long size, void *(*k)())
 # define DELAY_THREAD_RUNSTACK_UPDATE 1
 #endif
 
-/* Optimization that's helpful on some platforms for some programs, 
-   but not others */
-#define USE_IF_K 0
-#define USE_LET_K 0
-
 #ifdef MZ_REAL_THREADS
 Scheme_Object *
 scheme_do_eval_w_process(Scheme_Object *obj, int num_rands, Scheme_Object **rands, 
@@ -1966,13 +1967,6 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 #endif
 #ifndef MZ_REAL_THREADS
   Scheme_Process *p = scheme_current_process;
-#endif
-#if USE_IF_K || USE_LET_K
-  Scheme_Object *ek = NULL;
-#if USE_IF_K
-  Scheme_Object *ek2;
-#endif
-  Scheme_Object **kstack;
 #endif
 
 #ifdef DO_STACK_CHECK
@@ -2550,18 +2544,6 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	  Scheme_Branch_Rec *b;
 	  b = (Scheme_Branch_Rec *)obj;
 
-#if USE_IF_K
-	  if (!ek) {
-	    kstack = old_runstack;
-	    old_runstack = RUNSTACK;
-	    ek = b->tbranch;
-	    ek2 = b->fbranch;
-	    obj = b->test;
-
-	    goto eval_top;
-	  }
-#endif
-
 	  UPDATE_THREAD_RSPTR();
 	  obj = NOT_SAME_OBJ(_scheme_eval_compiled_expr_wp(b->test, p), scheme_false)
 	    ? b->tbranch : b->fbranch;
@@ -2582,20 +2564,6 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	  lv = (Scheme_Let_Value *)obj;
 
 	  c = lv->count;
-
-#if USE_LET_K
-	  if (!ek && (c == 1)) {
-	    kstack = old_runstack;
-	    old_runstack = RUNSTACK;
-	    ek = (Scheme_Object *)lv;
-#if USE_IF_K
-	    ek2 = NULL;
-#endif
-	    obj = lv->value;
-
-	    goto eval_top;
-	  }
-#endif
 
 	  i = lv->position;
 	  ab = lv->autobox;
@@ -2790,56 +2758,6 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
   }
 
  returnv:
-
-#if USE_IF_K || USE_LET_K
-  if (ek) {
-    if (SAME_OBJ(v, SCHEME_MULTIPLE_VALUES)) {
-      scheme_wrong_return_arity(NULL, 1, p->ku.multiple.count, 
-				p->ku.multiple.array,
-				NULL);
-      return NULL;
-    }
-     
-    RUNSTACK = old_runstack;
-    RUNSTACK_CHANGED();
-    old_runstack = kstack;
-    
-#if USE_IF_K && USE_LET_K
-    if (ek2) 
-#endif
-#if USE_IF_K
-      { 
-	/* `if' continuation */
-	obj = (SCHEME_FALSEP(v)) ? ek2 : ek;
-      } 
-#endif
-#if USE_IF_K && USE_LET_K
-    else 
-#endif
-#if USE_LET_K
-      {
-	/* `let' continuation */
-	Scheme_Let_Value *lv;
-	int i, ab;
-	
-	lv = (Scheme_Let_Value *)ek;
-	i = lv->position;
-	ab = lv->autobox;
-	
-	if (ab)
-	  SCHEME_ENVBOX_VAL(RUNSTACK[i]) = v;
-	else
-	  RUNSTACK[i] = v;
-	
-	obj = lv->body;
-      }
-#endif
-
-    ek = NULL;
-
-    goto eval_top;
-  }
-#endif
 
   if (SAME_OBJ(v, SCHEME_MULTIPLE_VALUES))
     if (get_value > 0) {

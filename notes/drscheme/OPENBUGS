@@ -1,103 +1,28 @@
-- check syntax doesn't traverse unit or class expressions
 
-- check syntax: identifiers with newlines in them have their arrows
-  start from funny places.
+Check Syntax alpha-renaming does not work with {\tt define-struct}.
 
-- check syntax's alpha renaming does not work for "define-struct".
+Check Syntax treats some primitives as unbound identifiers,
+  notably `first' and `rest'.
 
-- even if breaking is turned off, read will still be breakable. Eg:
-  (dynamic-disable-break (lambda () (read)))
+Check Syntax does not always highlight nested expressions, particular
+  sub-expressions of a `class' or `unit' form.
 
-- the yellow execute warning in the interactions window does not go
-  away if the user undoes their changes to the defintions window.
+The alpha-renaming feature of Check Syntax may miss some
+  identifiers. Check which identifiers will be renamed by moving the
+  mouse cursor over the *binding* occurrance of the variable you want
+  to rename. The arrows point to all known bound occurrances, which
+  are the identifiers that are renamed by alpha renaming.
 
-- backup files don't preserve file permissions
+The alpha-renaming feature of Check Syntax does not work with
+  `define-struct'.
 
-- see also the problem reports, at:
+After breaking a long interaction several times, some of the breaks
+  may carry over to the next interactions.
 
-        http://www.cs.rice.edu/CS/PLT/Bugs/query-pr.shtml
+Even when breaking is turned off, `read' in DrScheme is breakable;
+  e.g., (dynamic-disable-break (lambda () (read)))
 
-  14 Weird Ctl-C behavior in MrEd
-  32 unevaled REP expressions aren't greyed
-  44 URL bug
-  64 mailto: URL not treated okay
-  70 html reference to nonexistant file
-  71 hashed lines after resizing
- 184 docs on referencing files
- 206 two canvas's, with the same edit can interfere with each other
- 211 Network operations seem to block all DrScheme threads, and cannot be interrupted
- 229 esc-% doesn't work anymoe
- 238 opening docs that don't exist in mred web browser
- 242 Loading Unix file on DrScheme on a PC
- 250 Hit break many times -> next expression is broken
- 257 Errors in .zo files are not flagged "nicely"
- 269 error text from a thread is not locked
- 274 DrScheme Save File dialog doesn't do .ss
- 304 bad unit/sig error message
- 324 mouse selection and wide lines in mred
- 349 REPL returns prompt early when calling old continuations
- 361 check syntax is broken
- 391 DrScheme read breaks when thread reports an error
- 406 bad error message for sixlib op
- 409 AIX executables contain stupid paths
- 415 The "print interaction" and "print definitions" are actually printed in very small fonts.
- 418 Documentation Source
- 443 macro vocabulary representation in mz
- 454 mzos uses shutdown object
- 460 syntax highlighting should occur inside unit/sig
- 477 drscheme doesn't break when loading in tight loop
- 481 Macro-expansion exception is wrong DrSchgeme
- 484 display mustn't needlessly be non-tail-recursive!
- 499 auto indenting is funny
- 501 lock bitmap on DrScheme frame is selectable
- 502 Categories in Preferences are confusing
- 503 Interactions and definitions can be disabled
- 511 DrScheme can put you in state without a REPL
- 512 menu keybindings should change automatically according to pref
- 519 Problem in printing documentations.
- 528 call/cc works at Intermediate, but shouldn't
- 529 font problem
- 530 search menu item has bad default action
- 531 read following newline un-puts a newline
- 532 error-message line numbers off by one between files?
- 534 DrScheme: Can't (reference-library "sig.ss" "mred")
- 537 DrScheme on Windows 95: issues
- 539 (require-library "refer.ss") fails in drs
- 546 indentation problem
- 547 spurious black lines show up when balancing parens
- 555 indent all in search box give an internal error
- 562 error of type 2 occurred
- 563 dragging files onto mred broken
- 564 dragging two files to mred app only opens first one
- 565 command line args for mac mred
- 568 mac mred doesn't use macos 8 dialog items
- 577 MrEd -u -- -f does not run programs in the main thread
- 578 mz is a cpu hog on macs
- 581 setting a button label on the mac causes (out of mem) crash
- 599 mac: can't double click to open files while mred starts up
- 601 mac: buttons in dialogs don't show focus
- 606 funny error message for "#if"
- 617 DrSJr stops with user break in midst of MzScheme test suite
- 624 Printed output on HP DeskJet 560C is approx font size 2 or 3
- 626 Search mis-hilights text
- 635 Line Error Reporting when loading files in Win95/NT is off
- 637 cannot print drscheme.ps
- 641 ready-mouse-click no longer works
- 642 on-default-action for dialog box called with null
- 643 641
- 647 Re: 641
- 648 Re: 641
- 649 Meta-P is painfully slow
- 650 multiple tcp-connect failure crash MzScheme
- 651 "Error: Unresolved inheritance operation" ??
- 654 sharing in values incorrectly expressed
- 674 autosave files not checking for failed copy
- 677 check syntax cannot do alpha-renaming of define-struct
- 678 Horizontal scrolling broken after DrScheme window resize
- 681 mred:menu% should have is-enabled? method
- 682 DrScheme Jr non-existent in man pages
- 688 Does JACAL and SLIB work with DrScheme?
- 693 menu's get-label doesn't report keybinding strings under Xt
- 697 (read) sometimes won't Break in DrScheme
- 698 
- 699 Xt wx:canvas-dc% instance invalidated by canvas GC
+The yellow execute warning in the interactions window does not go away
+  if the user undoes all changes to the defintions window.
+
+Backup files don't preserve file permissions.

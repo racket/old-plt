@@ -23,6 +23,9 @@ MzScheme or the default compilation flags.)
  Compiling for Unix (or BeOS or Cygwin)
 ========================================================================
 
+Compile
+-------
+
 Run the `mzmake' script to compile the `mzscheme' executable for the
 following platforms:
 
@@ -57,13 +60,24 @@ To compile the `mzscheme' executable for other Unix platforms:
   [Cygwin note: either use `mzmake', or run `make cygwin-dll-setup'
    before `make bin'.]
 
+Install
+-------
+
 After compiling MzScheme, `[mz]make install' copies the binary and
 libraries into their normal places in the plt tree relative to the
 source directory. (For example, mzscheme is copied to to
-../../.bin/<platform-id>/mzscheme.) After running `[mz]make install',
-run ./install in the plt directory (two directories up from here). At
-that point, plt/bin/setup-plt and plt/bin/mzc will work. If you move
-the plt tree, re-run plt/install.
+../../.bin/<platform-id>/mzscheme for unix, ../../mzscheme.exe for
+Cygwin.)
+
+Unix and BeOS: After running `[mz]make install', run ./install in the
+plt directory (two directories up from here). At this point,
+plt/bin/setup-plt and plt/bin/mzc work. If you move the plt tree,
+re-run plt/install.
+
+Cygwin: At this point, `plt/Setup PLT.exe' and `plt/mzc.exe' work.
+
+Compiling Parts
+---------------
 
 To compile parts of MzScheme for embedding or extending:
 
@@ -114,8 +128,6 @@ placed in the same directory as the main "Makefile".
 To compile with MSVC, read the instructions in "plt\src\worksp\README".
 
 To compile with Cygwin's gcc, follow the Unix instructions above.
-Then, to set up the libraries for buidling extensions (or compiling
-with mzc), go to plt\src\mzscheme\dynsrc and run `gmkmzdyn.bat'.
 
 ========================================================================
  Compiling for MacOS

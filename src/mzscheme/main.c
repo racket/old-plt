@@ -198,7 +198,7 @@ void *mzscheme_stack_start;
 #endif
 
 /* Forward declarations: */
-static void do_scheme_rep(void);
+static void do_scheme_rep(Scheme_Env *);
 static int cont_run(FinishArgs *f);
 int actual_main(int argc, char *argv[]);
 
@@ -340,7 +340,7 @@ static int cont_run(FinishArgs *f)
 /*************************   do_scheme_rep   *****************************/
 /*              Finally, do a read-eval-print-loop                       */
 
-static void do_scheme_rep(void)
+static void do_scheme_rep(Scheme_Env *env)
 {
 #ifndef NO_USER_BREAK_HANDLER
 # ifdef MACINTOSH_EVENTS
@@ -349,7 +349,7 @@ static void do_scheme_rep(void)
 #endif
 
   /* enter read-eval-print loop */
-  scheme_rep();
+  scheme_eval_string("(read-eval-print-loop)", env);
   printf("\n");
 }
 

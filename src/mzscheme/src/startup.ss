@@ -1983,3 +1983,18 @@
 	  collection-path load-library load-relative-library load/use-compiled
 	  simple-return-primitive? port? not-break-exn?
 	  standard-module-name-resolver))
+
+;;----------------------------------------------------------------------
+;; mzscheme: export everything
+
+(module mzscheme .kernel
+  (import .more-scheme)
+  (import .misc)
+  (import .stxcase-scheme)
+  (import .stx)
+
+  (export (all-from .more-scheme)
+	  (all-from .misc)
+	  (all-from .stxcase-scheme)
+	  (all-from .stx)
+	  (all-from .kernel)))

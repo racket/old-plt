@@ -99,7 +99,9 @@ typedef struct {
   Scheme_Env *global_env;
 } FinishArgs;
 
-static int finish_cmd_line_run(FinishArgs *fa, void (*repl)(void))
+typedef void (*Repl_Proc)(Scheme_Env *);
+
+static int finish_cmd_line_run(FinishArgs *fa, Repl_Proc repl)
 {
   volatile int exit_val = 0;
 
@@ -149,7 +151,7 @@ static int finish_cmd_line_run(FinishArgs *fa, void (*repl)(void))
 #ifndef DONT_RUN_REP
   if (!fa->no_rep && !fa->script_mode) {
     /* enter read-eval-print loop */
-    repl();
+    repl(fa->global_env);
     exit_val = 0;
   }
 #endif /* DONT_RUN_REP */

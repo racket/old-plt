@@ -126,10 +126,10 @@ starter: mzstart.exe
 exn:
 	$(MAKE) $(srcdir)/src/schexn.h
 
-CMACRODEST = cmacro.inc
+CSTARTUPDEST = cstartup.inc
 
 cmacro:
-	$(MAKE) $(srcdir)/src/$(CMACRODEST)
+	$(MAKE) $(srcdir)/src/$(CSTARTUPDEST)
 	$(MAKE) $(srcdir)/src/cunitsig.inc
 	$(MAKE) $(srcdir)/src/mzmark.c
 
@@ -158,17 +158,14 @@ $(srcdir)/../../collects/mzscheme/lib/mzdyn.c: $(srcdir)/dynsrc/mzdyn.c
 $(srcdir)/src/schexn.h: $(srcdir)/src/exnsrc.ss $(srcdir)/src/makeexn
 	mzscheme -gqr $(srcdir)/src/makeexn < $(srcdir)/src/exnsrc.ss > $(srcdir)/src/schexn.h
 
-$(srcdir)/src/$(CMACRODEST): $(srcdir)/src/macro.ss $(srcdir)/src/schvers.h
-	mzscheme -gqrna $(srcdir)/src/sstoinc.ss $(CMACROEXTRA) < $(srcdir)/src/macro.ss > $(srcdir)/src/$(CMACRODEST)
-
-$(srcdir)/src/cunitsig.inc: $(srcdir)/src/unitsig.ss $(srcdir)/src/schvers.h
-	mzscheme -gqrna $(srcdir)/src/sstoinc.ss < $(srcdir)/src/unitsig.ss > $(srcdir)/src/cunitsig.inc
+$(srcdir)/src/$(CSTARTUPDEST): $(srcdir)/src/startup.ss $(srcdir)/src/schvers.h
+	mzscheme -gqrna $(srcdir)/src/sstoinc.ss $(CMACROEXTRA) < $(srcdir)/src/startup.ss > $(srcdir)/src/$(CSTARTUPDEST)
 
 $(srcdir)/src/mzmark.c: $(srcdir)/src/mzmarksrc.c $(srcdir)/src/mkmark.ss
 	mzscheme -qr $(srcdir)/src/mkmark.ss < $(srcdir)/src/mzmarksrc.c > $(srcdir)/src/mzmark.c
 
-cmacro.zo:
-	$(MAKE) cmacro CMACROEXTRA='zo' CMACRODEST="../cmacro.zo"
+cstartup.zo:
+	$(MAKE) startup CMACROEXTRA='zo' CSTARTUPDEST="../cstartup.zo"
 
 zo:
 	rm -f ../collects/mzlib/compiled/*.zo

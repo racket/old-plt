@@ -102,9 +102,6 @@ mzobjects: $(OBJS)
 $(srcdir)/startup.inc : $(srcdir)/startup.ss $(srcdir)/sstoinc
 	if [ "$(PERL)" = '' ] ; then touch $(srcdir)/startup.inc ; else $(PERL) $(srcdir)/sstoinc < $(srcdir)/startup.ss > $(srcdir)/startup.inc ; fi
 
-$(srcdir)/unitsig.inc : $(srcdir)/unitsig.ss $(srcdir)/sstoinc
-	if [ "$(PERL)" = '' ] ; then touch $(srcdir)/unitsig.inc ; else $(PERL) $(srcdir)/sstoinc < $(srcdir)/unitsig.ss > $(srcdir)/unitsig.inc ; fi
-
 $(srcdir)/schemex.h : $(srcdir)/schemef.h $(srcdir)/makex
 	if [ "$(PERL)" = '' ] ; then touch $(srcdir)/schemex.h ; else $(PERL) $(srcdir)/makex < $(srcdir)/schemef.h > $(srcdir)/schemex.h ; fi
 
@@ -237,7 +234,7 @@ eval.o: $(srcdir)/schpriv.h $(srcdir)/schexn.h $(SCONFIG) $(srcdir)/../include/s
 file.o: $(srcdir)/schpriv.h $(srcdir)/schexn.h $(SCONFIG) $(srcdir)/../include/scheme.h \
         $(srcdir)/../src/stypes.h $(srcdir)/mzmark.c 
 fun.o: $(srcdir)/schpriv.h $(srcdir)/schexn.h $(SCONFIG) $(srcdir)/../include/scheme.h \
-        $(srcdir)/../src/stypes.h $(srcdir)/mzmark.c  
+        $(srcdir)/../src/stypes.h $(srcdir)/mzmark.c
 hash.o: $(srcdir)/schpriv.h $(srcdir)/schexn.h $(SCONFIG) $(srcdir)/../include/scheme.h \
         $(srcdir)/../src/stypes.h  
 image.o: $(srcdir)/schpriv.h $(srcdir)/schexn.h $(SCONFIG) $(srcdir)/../include/scheme.h \

@@ -1457,6 +1457,8 @@ typedef struct Scheme_Module
   Scheme_Object **export_src_names; /* symbols (original internal names) */
   int num_exports;
   int num_var_exports;              /* non-syntax listed first in exports */
+  int reexport_kernel;              /* if true, extend exports with kernel's */
+
   Scheme_Object **indirect_exports; /* symbols (internal names) */
   int num_indirect_exports;
 
@@ -1478,6 +1480,8 @@ void scheme_check_accessible_in_module(Scheme_Env *env, Scheme_Object *symbol, S
 Scheme_Object *scheme_module_syntax(Scheme_Object *modname, Scheme_Env *env, Scheme_Object *name);
 
 Scheme_Object *scheme_make_modidx(Scheme_Object *path, Scheme_Object *resolved);
+
+extern Scheme_Env *scheme_initial_env;
 
 /*========================================================================*/
 /*                         errors and exceptions                          */

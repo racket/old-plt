@@ -277,7 +277,6 @@ scheme_load_extension
 scheme_register_extension_global
 scheme_get_milliseconds
 scheme_get_process_milliseconds
-scheme_rep
 scheme_banner
 scheme_version
 scheme_check_proc_arity

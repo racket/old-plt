@@ -47,7 +47,8 @@ int scheme_starting_up;
 
 Scheme_Object *scheme_local[MAX_CONST_LOCAL_POS][2];
 
-static Scheme_Env *initial_env;
+Scheme_Env *scheme_initial_env;
+
 static Scheme_Object *kernel_symbol;
 
 /* locals */
@@ -306,8 +307,8 @@ static void make_init_env(void)
   scheme_set_param(scheme_current_process->config, MZCONFIG_ENV, 
 		   (Scheme_Object *)env);
 
-  REGISTER_SO(initial_env);
-  initial_env = env;
+  REGISTER_SO(scheme_initial_env);
+  scheme_initial_env = env;
 
   scheme_defining_primitives = 1;
   set_reference_ids = 1;
@@ -612,7 +613,7 @@ Scheme_Object **scheme_make_builtin_references_table(void)
   scheme_misc_count += sizeof(Scheme_Object *) * (builtin_ref_counter + 1);
 #endif
 
-  ht = initial_env->toplevel;
+  ht = scheme_initial_env->toplevel;
 
   bs = ht->buckets;
 
@@ -631,15 +632,14 @@ Scheme_Hash_Table *scheme_map_constants_to_globals(void)
   Scheme_Bucket **bs;
   long i;
 
-  ht = initial_env->toplevel;
+  ht = scheme_initial_env->toplevel;
   bs = ht->buckets;
 
   result = scheme_hash_table(10, SCHEME_hash_ptr, 0, 0);
 
   for (i = ht->size; i--; ) {
     Scheme_Bucket *b = bs[i];
-    if (b && (((Scheme_Bucket_With_Flags *)b)->flags & GLOB_IS_CONST)
-	&& (((Scheme_Bucket_With_Flags *)b)->flags & GLOB_IS_KEYWORD))
+    if (b && (((Scheme_Bucket_With_Flags *)b)->flags & GLOB_IS_CONST))
       scheme_add_to_table(result, (const char *)b->val, b, 0);
   }
 
@@ -1639,7 +1639,7 @@ static Scheme_Object *read_variable(Scheme_Object *obj)
     varname = SCHEME_CDR(obj);
 
     if (SAME_OBJ(modname, kernel_symbol))
-      return (Scheme_Object *)scheme_global_bucket(varname, initial_env);
+      return (Scheme_Object *)scheme_global_bucket(varname, scheme_initial_env);
     else {
       obj = scheme_alloc_object();
       obj->type = scheme_module_variable_type;

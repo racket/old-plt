@@ -2689,56 +2689,6 @@ scheme_default_prompt_read_handler(int argc, Scheme_Object *argv[])
 
 /****************************************************************/
 
-void scheme_rep()
-{
-  mz_jmp_buf save;
-  Scheme_Process * volatile p;
-
-  p = scheme_current_process;
-
-  memcpy(&save, &p->error_buf, sizeof(mz_jmp_buf));
-  if (scheme_setjmp(p->error_buf)) {
-    /* done */
-  } else {
-    scheme_eval_string_multi("
-  (let* ([eeh #f]
-         [jump #f]
-         [be? #f]
-         [rep-error-escape-handler (lambda () (jump))])
-    (dynamic-wind
-      (lambda () (set! eeh (error-escape-handler))
-                 (set! be? (break-enabled))
-                 (error-escape-handler rep-error-escape-handler)
-                 (break-enabled #f))
-      (lambda ()
-        (call/ec (lambda (done)
-          (let loop ()
-            (call/ec (lambda (k)
-              (dynamic-wind
-                 (lambda ()
-                   (break-enabled be?)
-                   (set! jump k))
-                 (lambda ()
-                   (let ([v ((current-prompt-read))])
-                     (if (eof-object? v) (done (void)))
-                     (call-with-values
-                      (lambda () ((current-eval) v))
-                      (lambda results (for-each (current-print) results)))))
-                 (lambda () 
-                   (set! be? (break-enabled))
-                   (break-enabled #f)
-                   (set! jump #f)))))
-            (loop)))))
-      (lambda () (error-escape-handler eeh)
-                   (break-enabled be?)
-                   (set! jump #f)
-                   (set! eeh #f))))", scheme_get_env(scheme_config));
-  }
-  memcpy(&p->error_buf, &save, sizeof(mz_jmp_buf));
-}
-
-/****************************************************************/
-
 #define BOOL(x) (x ? scheme_true : scheme_false)
 
 static Scheme_Object *write_compiled_closure(Scheme_Object *obj)

@@ -57,7 +57,6 @@ static Scheme_Object *read_module(Scheme_Object *obj);
 
 static Scheme_Object *kernel_symbol;
 static Scheme_Module *kernel;
-static Scheme_Env *kenv;
 
 static Scheme_Object *module_symbol;
 static Scheme_Object *module_begin_symbol;
@@ -164,14 +163,11 @@ void scheme_finish_kernel(Scheme_Env *env)
   Scheme_Object **exs, *w, *rn;
 
   REGISTER_SO(kernel);
-  REGISTER_SO(kenv);
-
-  kenv = env;
 
   kernel = MALLOC_ONE_TAGGED(Scheme_Module);
   kernel->type = scheme_module_type;
   
-  kenv->module = kernel;
+  scheme_initial_env->module = kernel;
 
   kernel->modname = kernel_symbol;
   kernel->imports = scheme_null;
@@ -181,9 +177,9 @@ void scheme_finish_kernel(Scheme_Env *env)
   count = 0;
   for (j = 0; j < 2; j++) {
     if (!j)
-      ht = kenv->toplevel;
+      ht = scheme_initial_env->toplevel;
     else {
-      ht = kenv->syntax;
+      ht = scheme_initial_env->syntax;
       syntax_start = count;
     }
 
@@ -199,9 +195,9 @@ void scheme_finish_kernel(Scheme_Env *env)
   count = 0;
   for (j = 0; j < 2; j++) {
     if (!j)
-      ht = kenv->toplevel;
+      ht = scheme_initial_env->toplevel;
     else
-      ht = kenv->syntax;
+      ht = scheme_initial_env->syntax;
 
     bs = ht->buckets;
     for (i = ht->size; i--; ) {
@@ -217,7 +213,7 @@ void scheme_finish_kernel(Scheme_Env *env)
   kernel->num_exports = count;
   kernel->num_var_exports = syntax_start;
 
-  kenv->running = 1;
+  scheme_initial_env->running = 1;
 
   rn = scheme_make_module_rename(0, 0);
   for (i = kernel->num_exports; i--; ) {
@@ -421,14 +417,14 @@ Scheme_Module *scheme_module_load(Scheme_Object *name, Scheme_Env *env)
 Scheme_Env *scheme_module_access(Scheme_Object *name, Scheme_Env *env)
 {
   if (name == kernel_symbol)
-    return kenv;
+    return scheme_initial_env;
   else
     return scheme_lookup_in_table(env->modules, (const char *)name);
 }
 
 void scheme_check_accessible_in_module(Scheme_Env *env, Scheme_Object *symbol, Scheme_Object *stx)
 {
-  if (env == kenv)
+  if (env == scheme_initial_env)
     return;
 
   if (scheme_lookup_in_table(env->module->accessible, (const char *)symbol))
@@ -447,7 +443,7 @@ void scheme_check_accessible_in_module(Scheme_Env *env, Scheme_Object *symbol, S
 Scheme_Object *scheme_module_syntax(Scheme_Object *modname, Scheme_Env *env, Scheme_Object *name)
 {
   if (modname == kernel_symbol)
-    return scheme_lookup_in_table(kenv->syntax, (char *)name);
+    return scheme_lookup_in_table(scheme_initial_env->syntax, (char *)name);
   else {
     Scheme_Hash_Table *ht;
     Scheme_Object *val;
@@ -819,6 +815,13 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
 				  exs[i], 
 				  exsns[i]);
     }
+
+    if (iim->reexport_kernel) {
+      exs = kernel->exports;
+      for (i = kernel->num_exports; i--; ) {
+	scheme_extend_module_rename(rn, kernel_symbol, exs[i], exs[i]);
+      } 
+    }
   }
   
   if (rec) {
@@ -928,6 +931,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
   Scheme_Object **exs, **exsns, **exss, **exis;
   int excount, exvcount, exicount;
   int num_to_compile;
+  int reexport_kernel;
   Scheme_Compile_Info *recs;
 
   if (!scheme_is_module_env(env))
@@ -978,6 +982,19 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
       SCHEME_VEC_ELS(vec)[2] = exsns[i];
       SCHEME_VEC_ELS(vec)[3] = ((i < numvals) ? scheme_true : scheme_false);
       scheme_add_to_table(imported, (const char *)exs[i], vec, 0);
+    }
+
+    if (iim->reexport_kernel) {
+      exs = kernel->exports;
+      numvals = kernel->num_var_exports;
+      for (i = kernel->num_exports; i--; ) {
+	vec = scheme_make_vector(4, NULL);
+	SCHEME_VEC_ELS(vec)[0] = nmidx;
+	SCHEME_VEC_ELS(vec)[1] = kernel_symbol;
+	SCHEME_VEC_ELS(vec)[2] = exs[i];
+	SCHEME_VEC_ELS(vec)[3] = ((i < numvals) ? scheme_true : scheme_false);
+	scheme_add_to_table(imported, (const char *)exs[i], vec, 0);
+      } 
     }
   }
   rn = env->genv->rename;
@@ -1273,7 +1290,8 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	    /* Check all excclusions are identifiers: */
 	    for (el = exns; SCHEME_STX_PAIRP(el); el = SCHEME_STX_CDR(el)) {
 	      if (!SCHEME_STX_SYMBOLP(SCHEME_STX_CAR(el))) {
-		scheme_wrong_syntax("export", SCHEME_STX_CAR(el), a, "bad syntax (excluded name is not an identifier)");
+		scheme_wrong_syntax("export", SCHEME_STX_CAR(el), a,
+				    "bad syntax (excluded name is not an identifier)");
 	      }
 	    }
 
@@ -1372,6 +1390,8 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
     Scheme_Object *rx;
     Scheme_Bucket **bs, *b;
 
+    reexport_kernel = 0;
+
     /* First, check the sanity of the re-export specifications: */
     for (rx = reexported; !SCHEME_NULLP(rx); rx = SCHEME_CDR(rx)) {
       Scheme_Object *midx = SCHEME_CAR(SCHEME_CAR(rx)), *l, *exns;
@@ -1404,10 +1424,12 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
     for (i = imported->size; i--; ) {
       b = bs[i];
       if (b && b->val) {
-	Scheme_Object *nominal_modidx, *name;
+	Scheme_Object *nominal_modidx, *name, *modidx, *srcname;
 
 	name = (Scheme_Object *)b->key;
 	nominal_modidx = SCHEME_VEC_ELS((Scheme_Object *)b->val)[0];
+	modidx = SCHEME_VEC_ELS((Scheme_Object *)b->val)[1];
+	srcname = SCHEME_VEC_ELS((Scheme_Object *)b->val)[2];
 
 	for (rx = reexported; !SCHEME_NULLP(rx); rx = SCHEME_CDR(rx)) {
 	  if (same_modidx(SCHEME_CAR(SCHEME_CAR(rx)), nominal_modidx)) {
@@ -1429,12 +1451,22 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 		scheme_wrong_syntax("export", name, SCHEME_CAR(ree), "identifier already exported");
 	      
 	      scheme_add_to_table(exported, (const char *)name, name, 0);
+
+	      if (SAME_OBJ(modidx, kernel_symbol) && SAME_OBJ(name, srcname))
+		reexport_kernel++;
 	    }
 	  }
 	}
       }
     }
   }
+
+  /* Re-exporting all of the kernel without prefixing? */
+  if (reexport_kernel) {
+    if (reexport_kernel != kernel->num_exports)
+      reexport_kernel = 0;
+  }
+  /* If reexport_kernel is non-zero, we re-exporting all of it */
 
   /* Compute all exports */
   {
@@ -1448,6 +1480,9 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	count++;
     }
     
+    if (reexport_kernel)
+      count -= kernel->num_exports;
+
     exs = MALLOC_N(Scheme_Object *, count);
     exsns = MALLOC_N(Scheme_Object *, count);
     exss = MALLOC_N(Scheme_Object *, count);
@@ -1471,10 +1506,17 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	} else if ((v = scheme_lookup_in_table(imported, (const char *)name))) {
 	  /* Imported */
 	  if (SCHEME_TRUEP(SCHEME_VEC_ELS(v)[0])) {
-	    exs[count] = (Scheme_Object *)b->key;
-	    exsns[count] = SCHEME_VEC_ELS(v)[2];
-	    exss[count] = SCHEME_VEC_ELS(v)[1];
-	    count++;
+	    /* If this is a kernel re-export, don't export after all. */
+	    if (reexport_kernel
+		&& SAME_OBJ(SCHEME_VEC_ELS(v)[1], kernel_symbol)
+		&& SAME_OBJ((Scheme_Object *)b->key, SCHEME_VEC_ELS(v)[2])) {
+	      /* skip */
+	    } else {
+	      exs[count] = (Scheme_Object *)b->key;
+	      exsns[count] = SCHEME_VEC_ELS(v)[2];
+	      exss[count] = SCHEME_VEC_ELS(v)[1];
+	      count++;
+	    }
 	  }
 	} else {
 	  /* Not defined! */
@@ -1501,10 +1543,17 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	} else if ((v = scheme_lookup_in_table(imported, (const char *)name))) {
 	  /* Imported */
 	  if (SCHEME_FALSEP(SCHEME_VEC_ELS(v)[0])) {
-	    exs[count] = (Scheme_Object *)b->key;
-	    exsns[count] = SCHEME_VEC_ELS(v)[2];
-	    exss[count] = SCHEME_VEC_ELS(v)[1];
-	    count++;
+	    /* If this is a kernel re-export, don't export after all. */
+	    if (reexport_kernel
+		&& SAME_OBJ(SCHEME_VEC_ELS(v)[1], kernel_symbol)
+		&& SAME_OBJ((Scheme_Object *)b->key, SCHEME_VEC_ELS(v)[2])) {
+	      /* skip */
+	    } else {
+	      exs[count] = (Scheme_Object *)b->key;
+	      exsns[count] = SCHEME_VEC_ELS(v)[2];
+	      exss[count] = SCHEME_VEC_ELS(v)[1];
+	      count++;
+	    }
 	  }
 	}
       }
@@ -1579,6 +1628,8 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
     env->genv->module->exports = exs;
     env->genv->module->export_src_names = exsns;
     env->genv->module->export_srcs = exss;
+
+    env->genv->module->reexport_kernel = reexport_kernel;
 
     env->genv->module->indirect_exports = exis;
     env->genv->module->num_indirect_exports = exicount;
@@ -1729,69 +1780,83 @@ Scheme_Object *parse_imports(Scheme_Object *form, Scheme_Object *ll,
 	       && !prefix
 	       && !iname);
 
-    /* Add name to import list, if it's not there: */
-    {
-      Scheme_Object *l, *last = NULL, *p;
-      for (l = imods; !SCHEME_NULLP(l); l = SCHEME_CDR(l)) {
-	if (same_modidx(SCHEME_CAR(l), idx))
-	  break;
-	last = l;
-      }
-      if (SCHEME_NULLP(l)) {
-	p = scheme_make_pair(idx, scheme_null);
-	if (last)
-	  SCHEME_CDR(last) = p;
-	else
-	  imods = p;
-      }
-    }
+    while (1) { /* loop to handle kernel re-exports... */
 
-    exs = m->exports;
-    exsns = m->export_src_names;
-    exss = m->export_srcs;
-    var_count = m->num_var_exports;
-
-    for (j = m->num_exports; j--; ) {
-      Scheme_Object *modidx;
-
-      if (ename) {
-	if (!SAME_OBJ(ename, exs[j]))
-	  continue;  /* we don't want this one. */
-      } else if (exns) {
-	Scheme_Object *l;
-	for (l = exns; SCHEME_STX_PAIRP(l); l = SCHEME_STX_CDR(l)) {
-	  if (SAME_OBJ(SCHEME_STX_VAL(SCHEME_STX_CAR(l)), exs[j]))
+      /* Add name to import list, if it's not there: */
+      {
+	Scheme_Object *l, *last = NULL, *p;
+	for (l = imods; !SCHEME_NULLP(l); l = SCHEME_CDR(l)) {
+	  if (same_modidx(SCHEME_CAR(l), idx))
 	    break;
+	  last = l;
 	}
-	if (!SCHEME_STX_NULLP(l))
-	  continue; /* we don't want this one. */
+	if (SCHEME_NULLP(l)) {
+	  p = scheme_make_pair(idx, scheme_null);
+	  if (last)
+	    SCHEME_CDR(last) = p;
+	  else
+	    imods = p;
+	}
       }
-  
-      modidx = (exss && !SCHEME_FALSEP(exss[j])) ? exss[j] : idx;
       
-      if (!iname)
-	iname = exs[j];
-
-      ck(iname, idx, modidx, exsns[j], (j < var_count), data, i);
-
-      if (!is_kern)
-	scheme_extend_module_rename(rn, modidx, iname, exsns[j]);
-
-      iname = NULL;
+      exs = m->exports;
+      exsns = m->export_src_names;
+      exss = m->export_srcs;
+      var_count = m->num_var_exports;
+      
+      for (j = m->num_exports; j--; ) {
+	Scheme_Object *modidx;
+	
+	if (ename) {
+	  if (!SAME_OBJ(ename, exs[j]))
+	    continue;  /* we don't want this one. */
+	} else if (exns) {
+	  Scheme_Object *l;
+	  for (l = exns; SCHEME_STX_PAIRP(l); l = SCHEME_STX_CDR(l)) {
+	    if (SAME_OBJ(SCHEME_STX_VAL(SCHEME_STX_CAR(l)), exs[j]))
+	      break;
+	  }
+	  if (!SCHEME_STX_NULLP(l))
+	    continue; /* we don't want this one. */
+	}
+	
+	modidx = (exss && !SCHEME_FALSEP(exss[j])) ? exss[j] : idx;
+      
+	if (!iname)
+	  iname = exs[j];
+	
+	ck(iname, idx, modidx, exsns[j], (j < var_count), data, i);
+	
+	if (!is_kern)
+	  scheme_extend_module_rename(rn, modidx, iname, exsns[j]);
+	
+	iname = NULL;
+	
+	if (ename) {
+	  ename = NULL;
+	  break;
+	}
+      }
 
       if (ename) {
-	ename = NULL;
-	break;
+	scheme_wrong_syntax("import", i, form, "no such exported variable");
+	return NULL;
       }
-    }
+      
+      if (is_kern)
+	scheme_extend_module_rename_with_kernel(rn);
 
-    if (ename) {
-      scheme_wrong_syntax("import", i, form, "no such exported variable");
-      return NULL;
+      if (m->reexport_kernel) {
+	idx = kernel_symbol;
+	m = kernel;
+	is_kern = 1;
+	iname = NULL;
+	ename = NULL;
+	exns = NULL;
+	prefix = NULL;
+      } else
+	break;
     }
-
-    if (is_kern)
-      scheme_extend_module_rename_with_kernel(rn);
   }
 
   return imods;
@@ -1996,6 +2061,8 @@ static Scheme_Object *write_module(Scheme_Object *obj)
   }
   l = cons(v, l);
 
+  l = cons(m->reexport_kernel ? scheme_true : scheme_false, l);
+
   l = cons(m->self_modidx, l);
   l = cons(m->modname, l);
 
@@ -2022,6 +2089,9 @@ static Scheme_Object *read_module(Scheme_Object *obj)
   m->self_modidx = SCHEME_CAR(obj);
   obj = SCHEME_CDR(obj);
   SCHEME_PTR2_VAL(m->self_modidx) = m->modname;
+
+  m->reexport_kernel = SCHEME_TRUEP(SCHEME_CAR(obj));
+  obj = SCHEME_CDR(obj);
 
   ie = SCHEME_CAR(obj);
   obj = SCHEME_CDR(obj);

@@ -500,7 +500,6 @@ Scheme_Object *(*scheme_load_extension)(const char *filename, Scheme_Env *env);
 void (*scheme_register_extension_global)(void *ptr, long size);
 long (*scheme_get_milliseconds)(void);
 long (*scheme_get_process_milliseconds)(void);
-void (*scheme_rep)(void);
 char *(*scheme_banner)(void);
 char *(*scheme_version)(void);
 int (*scheme_check_proc_arity)(const char *where, int a,

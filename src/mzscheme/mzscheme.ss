@@ -1554,14 +1554,13 @@
   (export-indirect make-a-promise check-parameter-procedure)
   (export case do delay force promise?
 	  parameterize with-handlers set!-values
-	  let/cc let-struct fluid-let time
-	  (all-from .small-scheme)))
+	  let/cc let-struct fluid-let time))
 
 ;;----------------------------------------------------------------------
 ;; .misc : file utilities, etc. - remaining functions
 
 (module .misc .kernel
-  (import .more-scheme)
+  (import .more-scheme .small-scheme)
   
   (define rationalize
     (letrec ([check (lambda (x) 
@@ -1888,9 +1887,9 @@
   (define (load/use-compiled f) (-core-load/use-compiled f #f))
 
   (define -re:dir (regexp "(.+?)/+(.*)"))
+  (define -module-hash-table-table (make-hash-table-weak)) ; weak map from namespace to module ht
   
-  (define (make-standard-module-name-resolver)
-    (define ht (make-hash-table))
+  (define standard-module-name-resolver
     (lambda (s)
       (let ([filename
 	     (cond
@@ -1939,8 +1938,16 @@
 	(let ([filename (normal-case-path (simplify-path (expand-path filename)))])
 	  (let-values ([(base name dir?) (split-path filename)])
 	    (let ([no-sfx (regexp-replace -re:suffix name "")])
-	      (let ([modname (string->symbol (string-append base no-sfx))])
-		;; unless the module is defined...
+	      (let ([modname (string->symbol (string-append base no-sfx))]
+		    [ht (hash-table-get
+			 -module-hash-table-table
+			 (current-namespace)
+			 (lambda ()
+			   (let ([ht (make-hash-table)])
+			     (hash-table-put! -module-hash-table-table
+					      (current-namespace)
+					      ht))))])
+		;; unless it has been loaded already...
 		(unless (hash-table-get ht modname (lambda () #f))
 		  (hash-table-put! ht modname #t)
 		  (let ([prefix (string->symbol (format "~a." base))])
@@ -1971,21 +1978,30 @@
 	  path-list-string->path-list find-executable-path
 	  collection-path load-library load-relative-library load/use-compiled
 	  simple-return-primitive? port? not-break-exn?
-	  make-standard-module-name-resolver))
+	  standard-module-name-resolver))
+
+;;----------------------------------------------------------------------
+;; mzscheme: export everything
+
+(module mzscheme .kernel
+  (import .more-scheme)
+  (import .misc)
+  (import .stxcase-scheme)
+  (import .stx)
+
+  (export (all-from .more-scheme)
+	  (all-from .misc)
+	  (all-from .stxcase-scheme)
+	  (all-from .stx)
+	  (all-from .kernel)))
 
 ;;----------------------------------------------------------------------
 ;; startup
 
-(import .more-scheme)
-(import .misc)
-(import .stxcase-scheme)
+(import mzscheme)
+(import-for-syntax mzscheme)
 
-(import-for-syntax .more-scheme)
-(import-for-syntax .misc)
-(import-for-syntax .stxcase-scheme)
-(import-for-syntax .stx)
-
-(current-module-name-resolver (make-standard-module-name-resolver))
+(current-module-name-resolver standard-module-name-resolver)
 
 (current-library-collection-paths
  (path-list-string->path-list

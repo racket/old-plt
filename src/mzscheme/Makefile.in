@@ -157,7 +157,7 @@ $(srcdir)/../../collects/mzscheme/lib/mzdyn.c: $(srcdir)/dynsrc/mzdyn.c
 $(srcdir)/src/schexn.h: $(srcdir)/src/exnsrc.ss $(srcdir)/src/makeexn
 	mzscheme -gqr $(srcdir)/src/makeexn < $(srcdir)/src/exnsrc.ss > $(srcdir)/src/schexn.h
 
-$(srcdir)/src/$(CSTARTUPDEST): $(srcdir)/src/startup.ss $(srcdir)/src/schvers.h
+$(srcdir)/src/$(CSTARTUPDEST): $(srcdir)/src/startup.ss $(srcdir)/src/schvers.h $(srcdir)/src/schminc.h
 	mzscheme -qr $(srcdir)/src/sstoinc.ss $(CSTARTUPEXTRA) < $(srcdir)/src/startup.ss > $(srcdir)/src/$(CSTARTUPDEST)
 
 $(srcdir)/src/mzmark.c: $(srcdir)/src/mzmarksrc.c $(srcdir)/src/mkmark.ss

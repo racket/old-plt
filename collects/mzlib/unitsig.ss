@@ -1,17 +1,20 @@
 
-(module signedunit mzscheme
+(module unitsig mzscheme
+  (import "exstruct.ss")
   (import "unit.ss")
-  (import "sigutils.ss")
-  
-  ; Transform time:
-  (define-struct sig (content))
-  
+  (import "sigmatch.ss")
+
+  (import-for-syntax "sigutils.ss")
+  (import-for-syntax "sigmatch.ss")
+
+  (define-struct/export unit/sig (unit imports exports))
+
   (define-syntax define-signature
     (lambda (expr)
       (syntax-case expr ()
 	[(_ name sig)
 	 (identifier? (syntax name))
-	 (let ([sig (get-sig d-s expr (syntax-e (syntax name))
+	 (let ([sig (get-sig 'define-signature expr (syntax-e (syntax name))
 			     (syntax sig))])
 	   (with-syntax ([content (explode-sig sig)])
 	     (syntax (define-syntax name
@@ -33,20 +36,49 @@
       (syntax-case expr ()
 	[(_ sig . rest)
 	 (let ([sig (get-sig 'unit/sig expr #f (syntax sig))])
-	  (let ([a-unit (parse-unit expr (syntax rest) sig)])
+	  (let ([a-unit (parse-unit expr (syntax rest) sig
+				    (list
+				     ;; Need all kernel syntax
+				     (quote-syntax begin)
+				     (quote-syntax define-values)
+				     (quote-syntax define-syntax)
+				     (quote-syntax set!)
+				     (quote-syntax let)
+				     (quote-syntax let-values)
+				     (quote-syntax let*)
+				     (quote-syntax let*-values)
+				     (quote-syntax letrec)
+				     (quote-syntax letrec-values)
+				     (quote-syntax lambda)
+				     (quote-syntax case-lambda)
+				     (quote-syntax if)
+				     (quote-syntax struct)
+				     (quote-syntax quote)
+				     (quote-syntax letrec-syntax)
+				     (quote-syntax with-continuation-mark)
+				     (quote-syntax #%app)
+				     (quote-syntax #%unbound)
+				     (quote-syntax #%datum)
+				     (quote-syntax include))  ;; special to unit/sig
+				    (quote-syntax define-values)
+				    (quote-syntax begin)
+				    (quote-syntax include))])
 	    (check-signature-unit-body sig a-unit (parse-unit-renames a-unit) 'unit/sig expr)
-	    (with-syntax ([imports (flatten-signatures
-				    (parse-unit-imports a-unit))]
-			  [exports (map
-				    (lambda (name)
-				      (list (do-rename name (parse-unit-renames a-unit))
-					    name))
-				    (signature-vars sig))]
+	    (with-syntax ([imports (datum->syntax
+				    (flatten-signatures (parse-unit-imports a-unit))
+				    expr expr)]
+			  [exports (datum->syntax
+				    (map
+				     (lambda (name)
+				       (list (do-rename name (parse-unit-renames a-unit))
+					     name))
+				     (signature-vars sig))
+				    expr expr)]
 			  [body (reverse! (parse-unit-body a-unit))]
 			  [import-sigs (explode-named-sigs (parse-unit-imports a-unit))]
 			  [export-sig (explode-sig sig)])
 	    (syntax
-	     (make-unit-with-signature
+	     (make-unit/sig
 	      (unit
 		(import . imports)
 		(export . exports)
@@ -58,27 +90,67 @@
     (lambda (expr)
       (syntax-case expr ()
 	[(_ . body)
-	 (parse-compound-unit expr (syntax body))])))
+	 (let-values ([(tags
+			exprs
+			exploded-link-imports
+			exploded-link-exports
+			flat-imports
+			link-imports
+			flat-exports
+			exploded-imports
+			exploded-exports)
+		       (parse-compound-unit expr (syntax body))]
+		      [(t) (lambda (l) (datum->syntax l expr (quote-syntax here)))])
+	   (with-syntax ([(tag ...) (t tags)]
+			 [(uexpr ...) (t exprs)]
+			 [(tagx ...) (t (map (lambda (t) (string->symbol (format "u:~a" t))) tags))]
+			 [exploded-link-imports (t exploded-link-imports)]
+			 [exploded-link-exports (t exploded-link-exports)]
+			 [flat-imports (t flat-imports)]
+			 [(link-import ...) (t link-imports)]
+			 [flat-exports (t flat-exports)]
+			 [exploded-imports (t exploded-imports)]
+			 [exploded-exports (t exploded-exports)])
+	     (syntax/loc
+	      expr
+	      (let ([tagx uexpr] ...)
+		(verify-linkage-signature-match
+		 'compound-unit/sig
+		 '(tag ...)
+		 (list tagx ...)
+		 'exploded-link-imports
+		 'exploded-link-exports)
+		;; All checks done. Make the unit:
+		(make-unit/sig
+		 (compound-unit
+		  (import . flat-imports)
+		  (link [tag ((unit/sig-unit tagx)
+			      . link-import)]
+			...)
+		  (export . flat-exports))
+		 'exploded-imports
+		 'exploded-exports)))))])))
 
   (define-syntax invoke-unit/sig
     (lambda (expr)
       (syntax-case expr ()
 	[(_ u sig ...)
-	 (let ([u (syntax u)]
-	       [sigs (parse-invoke-vars 'invoke-unit/sig (syntax (sig ...)) expr)])
-	   (datum->syntax
-	    `(let ([u ,u])
-	       (verify-linkage-signature-match
-		(quote invoke-unit/sig)
-		(quote (invoke))
-		(list u)
-		(quote (#()))
-		(quote (,(explode-named-sigs sigs))))
-	       (invoke-unit (unit-with-signature-unit u)
-			    ,@(flatten-signatures
-			       sigs)))
-	    (quote-syntax here)
-	    expr))])))
+	 (let ([sigs (parse-invoke-vars 'invoke-unit/sig (syntax (sig ...)) expr)])
+	   (with-syntax ([exploded-sigs (datum->syntax (explode-named-sigs sigs) 
+						       expr (quote-syntax here))]
+			 [flat-sigs (datum->syntax (flatten-signatures sigs) 
+						   expr (quote-syntax here))])
+	     (syntax/loc
+	      expr
+	      (let ([unt u])
+		(verify-linkage-signature-match
+		 (quote invoke-unit/sig)
+		 (quote (invoke))
+		 (list unt)
+		 (quote (#()))
+		 (quote (exploded-sigs)))
+		(invoke-unit (unit/sig-unit u)
+			     . flat-sigs)))))])))
   
   (define-syntax unit->unit/sig
     (lambda (expr)
@@ -89,13 +161,15 @@
 			       (get-sig 'unit->unit/sig expr #f sig))
 			     (syntax->list (syntax (im-sig ...))))]
 	       [ex-sig (get-sig 'unit->unit/sig expr #f (syntax ex-sig))])
-	   (datum->syntax
-	    `(make-unit-with-signature
-	      ,e
-	      (quote ,(explode-named-sigs im-sigs))
-	      (quote ,(explode-sig ex-sig)))
-	    (quote-syntax here)
-	    expr))])))
+	   (with-syntax ([exploded-imports (datum->syntax (explode-named-sigs im-sigs)
+							  expr (quote-syntax here))]
+			 [exploded-exports (datum->syntax (explode-sig ex-sig)
+							  expr (quote-syntax here))])
+	     (syntax
+	      (make-unit/sig
+	       e
+	       (quote exploded-imports)
+	      (quote exploded-exports)))))])))
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -105,7 +179,7 @@
       (lambda (who tags units esigs isigs)
 	(for-each
 	 (lambda (u tag)
-	   (unless (unit-with-signature? u)
+	   (unless (unit/sig? u)
 	     (raise
 	      (make-exn
 	       (string->immutable-string
@@ -121,11 +195,11 @@
 	    (format "specified export signature for ~a" tag)
 	    esig
 	    (format "export signature for actual ~a sub-unit" tag)
-	    (unit-with-signature-exports u)))
+	    (unit/sig-exports u)))
 	 units tags esigs)
 	(for-each
 	 (lambda (u tag isig)
-	   (let ([n (length (unit-with-signature-imports u))]
+	   (let ([n (length (unit/sig-imports u))]
 		 [c (length isig)])
 	     (unless (= c n)
 	       (raise
@@ -138,7 +212,7 @@
 	 units tags isigs)
 	(for-each
 	 (lambda (u tag isig)
-	   (let loop ([isig isig][expecteds (unit-with-signature-imports u)][pos 1])
+	   (let loop ([isig isig][expecteds (unit/sig-imports u)][pos 1])
 	     (unless (null? isig)
 	       (let ([expected (car expecteds)]
 		     [provided (car isig)])
@@ -155,133 +229,6 @@
 		  (cdr provided))
 		 (loop (cdr isig) (cdr expecteds) (add1 pos))))))
 	 units tags isigs))))
-
-  (define (hash-sig src-sig table)
-    (and (vector? src-sig)
-	 (andmap
-	  (lambda (s)
-	    (cond
-	     [(symbol? s)
-	      (if (hash-table-get table s (lambda () #f))
-		  #f
-		  (begin
-		    (hash-table-put! table s s)
-		    #t))]
-	     [(and (pair? s) (symbol? (car s)))
-	      (let ([name (car s)])
-		(if (hash-table-get table name (lambda () #f))
-		  #f
-		  (let ([t (make-hash-table)])
-		    (hash-table-put! table name t)
-		    (hash-sig (cdr s) t))))]
-	     [else #f]))
-	  (vector->list src-sig))))
-
-  (define (sig-path-name name path)
-    (let loop ([s (symbol->string name)]
-	       [path path])
-      (if (null? path)
-	  s
-	  (loop (format "~a:~a" s (car path))
-		(cdr path)))))
-
-  (define (check-sig-match table sig path exact? who src-context dest-context)
-    (and (vector? sig)
-	 (andmap
-	  (lambda (s)
-	    (cond
-	     [(symbol? s)
-	      (let ([v (hash-table-get table s
-				       (lambda ()
-					 (raise
-					  (make-exn:unit
-					   (format
-					    "~a: ~a is missing a value name `~a', required by ~a",
-					    who
-					    src-context
-					    (sig-name-path s path)
-					    dest-context)
-					   (current-continuation-marks)))))])
-		(and v
-		     (begin
-		       (unless (symbol? v)
-			 (let ([p (sig-name-path s path)])
-			   (raise
-			    (make-exn:unit
-			     (format
-			      "~a: ~a contains `~a' as a sub-unit name, but ~a contains `~a' as a value name"
-			      who
-			      src-context
-			      p
-			      dest-context
-			      p)
-			     (current-continuation-marks)))))
-		       (hash-table-put! table s #f)
-		       #t)))]
-	     [(and (pair? s) (symbol? (car s)))
-	      (let ([v (hash-table-get table (car s)
-				       (lambda ()
-					 (raise
-					  (make-exn:unit
-					   (format
-					    "~a: ~a is missing a sub-unit name `~a', required by ~a",
-					    who
-					    src-context
-					    (sig-name-path s path)
-					    dest-context)
-					   (current-continuation-marks)))))])
-		(and v
-		     (begin
-		       (unless (hash-table? v)
-			 (let ([p (sig-name-path (car s) path)])
-			   (raise
-			    (make-exn:unit
-			     (format
-			      "~a: ~a contains `~a' as a value name, but ~a contains `~a' as a sub-unit name"
-			      who
-			      src-context
-			      p
-			      dest-context
-			      p)
-			     (current-continuation-marks)))))
-		       (hash-table-put! table (car s) #f)
-		       (chec-sig-match v (cdr s) (cons (car s) path)
-				       exact? who src-context dest-context))))]
-	     [else #f]))
-	  (vector->list sig))
-	 (or (not exact?)
-	     (hash-table-for-each
-	      table
-	      (lambda (k v)
-		(when v
-		  (let ([p (sig-name-path k path)])
-		    (raise
-		     (make-exn:unit
-		      (format
-		       "~a: ~a contains an extra ~a name `~a' that is not required by ~a"
-		       who
-		       src-context
-		       (if (symbol? v) 'value 'sub-unit)
-		       p
-		       dest-context)
-		      (current-continuation-marks)))))))
-	     #t)))
-
-  (define (verify-signature-match who exact? dest-context dest-sig src-context src-sig)
-    (unless (symbol? who)
-      (raise-type-error 'verify-signature-match "symbol" who))
-    (unless (string? dest-context)
-      (raise-type-error 'verify-signature-match "string" dest-context))
-    (unless (string? src-context)
-      (raise-type-error 'verify-signature-match "string" src-context))
-
-    (let ([src-table (make-hash-table)])
-      (unless (hash_sig src-sig, src-table)
-	(raise-type-error 'verify-signature-match "signature" src-sig))
-
-      (unless (check-sig-match src-table dest-sig null
-			       exact? who src-context dest-context)
-	(raise-type-error 'verify-signature-match "signature" dest-sig))))
 
   (export-indirect verify-linkage-signature-match)
 

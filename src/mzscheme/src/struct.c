@@ -97,12 +97,6 @@ static Scheme_Object **ts_names;
 static Scheme_Object **ts_values;
 static int ts_count;
 #endif
-#ifndef NO_UNIT_SYSTEM
-static Scheme_Object *signature;
-static Scheme_Object **us_names;
-static Scheme_Object **us_values;
-static int us_count;
-#endif
 
 static Scheme_Object *struct_symbol;
 
@@ -117,9 +111,6 @@ scheme_init_struct (Scheme_Env *env)
 					 "day", "month", "year",
 					 "week-day", "year-day", "dst?", "time-zone-offset" };
 #endif
-#ifndef NO_UNIT_SYSTEM
-  static const char *unit_fields[3] = { "unit", "imports", "exports" };
-#endif
   
 #ifdef MZ_PRECISE_GC
   register_traversers();
@@ -132,11 +123,6 @@ scheme_init_struct (Scheme_Env *env)
   REGISTER_SO(scheme_date);
   REGISTER_SO(ts_names);
   REGISTER_SO(ts_values);
-#endif
-#ifndef NO_UNIT_SYSTEM
-  REGISTER_SO(signature);
-  REGISTER_SO(us_names);
-  REGISTER_SO(us_values);
 #endif
   
   REGISTER_SO(struct_symbol);
@@ -164,22 +150,10 @@ scheme_init_struct (Scheme_Env *env)
 					  BUILTIN_STRUCT_FLAGS, &ts_count);
 #endif
 
-#ifndef NO_UNIT_SYSTEM
-  signature = scheme_make_struct_type_from_string("unit-with-signature", NULL, 3);
-  us_names 
-    = scheme_make_struct_names_from_array("unit-with-signature",
-					  3, unit_fields,
-					  BUILTIN_STRUCT_FLAGS, &us_count);
-#endif
-
   as_values = scheme_make_struct_values(scheme_arity_at_least, as_names, as_count, 
 					BUILTIN_STRUCT_FLAGS);
 #ifdef TIME_SYNTAX
   ts_values = scheme_make_struct_values(scheme_date, ts_names, ts_count, 
-					BUILTIN_STRUCT_FLAGS);
-#endif
-#ifndef NO_UNIT_SYSTEM
-  us_values = scheme_make_struct_values(signature, us_names, us_count, 
 					BUILTIN_STRUCT_FLAGS);
 #endif
 
@@ -269,13 +243,6 @@ scheme_init_struct (Scheme_Env *env)
   for (i = 0; i < ts_count; i++) {
     scheme_add_global_constant(scheme_symbol_val(ts_names[i]), ts_values[i], 
 			       env);
-  }
-#endif
-
-#ifndef NO_UNIT_SYSTEM
-  for (i = 0; i < us_count; i++) {
-    scheme_add_global_constant(scheme_symbol_val(us_names[i]), us_values[i], 
-			       env);  
   }
 #endif
 }

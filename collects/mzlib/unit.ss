@@ -414,6 +414,14 @@
 		"duplicate import"
 		stx
 		dup)))
+	   ;; Check for duplicate tags
+	   (let ([dup (check-duplicate-identifier tags)])
+	     (when dup
+	       (raise-syntax-error
+		'compound-unit
+		"duplicate tag"
+		stx
+		dup)))
 	   ;; Check referenced imports and tags
 	   (let ([check-linkage-refs (lambda (v)
 				       (syntax-case v ()
@@ -463,7 +471,7 @@
 				[id e]))
 			    (syntax->list (syntax exs)))]))
 		      exports))])
-	       (let ([dup (check-duplicate-identifier exports)])
+	       (let ([dup (check-duplicate-identifier export-names)])
 		 (when dup
 		   (raise-syntax-error
 		    'compound-unit
@@ -543,7 +551,7 @@
 						ht
 						(syntax-e
 						 (syntax-case e ()
-						   [(iid eid) (syntax id)]
+						   [(iid eid) (syntax iid)]
 						   [id e])))])
 				      (with-syntax ([ex-poss ex-poss]
 						    [setup setup]
@@ -600,6 +608,7 @@
 				 (let ([unit-setup ((unit-go constituent))] ...)
 				   (list (vector . export-mapping)
 					 (lambda (ivar ...)
+					   (void) ;; in case there are no units
 					   ((list-ref unit-setup 1) . import-mapping)
 					   ...))))))))))))))))])))
 

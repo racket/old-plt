@@ -1,4 +1,4 @@
-Version 104:
+Version 103-p1:
 
 Added optional index argument to 
  find-element, find-element-by-id-or-name
@@ -15,6 +15,9 @@ Fixed marshalling of BYREF parameters to COM event
  handlers, for several types; added VT_INT and 
  VT_INT | VT_BYREF 
 Added com-add-ref, com-ref-count procedures
+Secondary Windows event loop checks for
+ WM_TIMER messages; some programs were blocking
+ on these when run from DrScheme
 
 Version 103:
 

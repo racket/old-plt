@@ -51,7 +51,7 @@ Scheme_Object *mx_process_win_events(int argc,Scheme_Object **argv) {
   MX_Document_Object *doc;
 
   if (MX_DOCUMENTP(argv[0]) == FALSE) {
-    scheme_wrong_type("block-until-event","mx-document",0,argc,argv) ;
+    scheme_wrong_type("process-win-events","mx-document",0,argc,argv) ;
   }
 
   doc = (MX_Document_Object *)argv[0];

@@ -300,6 +300,24 @@
 			       (format "~a" (exn-message x))))])
        (expand-defmacro expr))))
   
+
+  ;; raw-reader: (parameter (port -> sexp))
+  ;; see help desk for details
+  (define raw-reader (make-parameter read (lambda (x)
+                                            (unless (procedure? x)
+                                              (error 'raw-reader
+                                                     "expected a procedure, got: ~e" x))
+                                            x)))
+  
+  ;; zodiac-reader : (parameter ...)
+  ;; see help desk for details
+  (define zodiac-reader (make-parameter (lambda x (apply zodiac:read x))
+                                        (lambda (x)
+                                          (unless (procedure? x)
+                                            (error 'zodiac-reader
+                                                   "expected a procedure, got: ~e" x))
+                                          x)))
+
   (define-struct process-finish (error?))
   
   ;; process-file/zodiac : string
@@ -315,12 +333,13 @@
        void
        (lambda ()
 	 (process/zodiac
-	  (zodiac:read port
-		       (zodiac:make-location initial-line
-					     initial-column
-					     initial-offset
-					     (path->complete-path filename))
-		       #t 1)
+	  ((zodiac-reader)
+           port
+           (zodiac:make-location initial-line
+                                 initial-column
+                                 initial-offset
+                                 (path->complete-path filename))
+           #t 1)
 	  f
 	  annotate?))
        (lambda () (close-input-port port)))))
@@ -332,7 +351,7 @@
   (define (process-file/no-zodiac filename f)
     (call-with-input-file filename
       (lambda (port)
-	(process/no-zodiac (lambda () (read port)) f))))
+	(process/no-zodiac (lambda () ((raw-reader) port)) f))))
   
   ;; process-sexp/no-zodiac : sexp
   ;;                          ((+ process-finish sexp zodiac:parsed) ( -> void) -> void)
@@ -584,7 +603,7 @@
 	 (call-with-input-file filename
 	   (lambda (port)
 	     (let loop ([last-vals (list (void))])
-	       (let ([r (read port)])
+	       (let ([r ((raw-reader) port)])
 		 (if (eof-object? r)
 		     (apply values last-vals)
 		     (call-with-values

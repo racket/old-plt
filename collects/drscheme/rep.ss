@@ -216,7 +216,6 @@
       (if (basis:zodiac-vocabulary? (basis:current-setting))
 	  (basis:process-sexp/zodiac sexp z fn annotate?)
 	  (basis:process-sexp/no-zodiac sexp fn))))
-  
 
   (define current-backtrace-window #f)
   (define (kill-backtrace-window)

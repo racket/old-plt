@@ -15,7 +15,8 @@
                             (send text paragraph-start-position (send text position-paragraph start))))])
       (basis:process/zodiac
        (parameterize ([read-case-sensitive (basis:setting-case-sensitive? setting)])
-	 (zodiac:read (gui-utils:read-snips/chars-from-text text start end)
+	 ((basis:zodiac-reader)
+          (gui-utils:read-snips/chars-from-text text start end)
 		      (zodiac:make-location init-line
                                             init-col
                                             start
@@ -39,7 +40,7 @@
                                  (begin0 (car from-snip)
                                          (set! from-snip (cdr from-snip)))))))]
 	   [port (make-input-port port-thunk (lambda () #t) void)])
-      (basis:process/no-zodiac (lambda () (read port)) f)))
+      (basis:process/no-zodiac (lambda () ((basis:raw-reader) port)) f)))
   
   (define process-text ; =User=, =Handler=, =No-Breaks=
     (lambda (text fn start end annotate? text-is-file?)

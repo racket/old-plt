@@ -81,6 +81,9 @@
    get-default-setting-name
 
    drscheme-load-handler
+   
+   raw-reader
+   zodiac-reader
 
    zodiac-vocabulary?
    beginner-language?

@@ -63,8 +63,8 @@
      '(1 2 3)
      '(1 . 2)
      #(1 2 3 4 5)
-     (if in-drscheme? 'skip (read (open-input-string "(#0=() . #0#)")))
-     (if in-drscheme? 'skip (read (open-input-string "#1=(1 . #1#)")))
+     (if (defined? 'in-drscheme?) 'skip (read (open-input-string "(#0=() . #0#)")))
+     (if (defined? 'in-drscheme?) 'skip (read (open-input-string "#1=(1 . #1#)")))
      (map box (make #f))
      (make #f))))
 

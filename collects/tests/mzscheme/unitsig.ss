@@ -370,7 +370,7 @@
 			(a@ s@))])
 	(export))))
 
-; Test a path for linking: root is an import
+; Test a path for linking: root is a constituent, interface is restricted
 (test 12
       'import-path
       (invoke-unit/sig
@@ -392,6 +392,30 @@
 					 (a@ s@))])
 			 (export))
 			a@)])
+	(export))))
+
+; Test a path for linking: 
+(test 85
+      'import-path
+      (invoke-unit/sig
+       (compound-unit/sig
+	(import)
+	(link [zodiac : (z)
+		      ((unit/sig (z)
+			 (import (i))
+			 
+			 (define z 1))
+		       ((export* interface) : (i)))]
+	      [export* : ((unit interface : (i extra)))
+		       ((compound-unit/sig
+			 (import)
+			 (link [interface : (i extra)
+					  ((unit/sig (i extra)
+					     (import)
+					     (define i 1)
+					     (define extra 2)
+					     85))])
+			 (export (unit interface))))])
 	(export))))
 
 ; Signature ordering

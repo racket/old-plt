@@ -26,7 +26,16 @@
                      compiled-lang?
                      any?
                      . -> .
-                     (lambda (x) (red? x)))))
+                     (lambda (x) (red? x))))
+
+   (make-bindings ((listof rib?) . -> . bindings?))
+   (bindings-table (bindings? . -> . (listof rib?)))
+   (bindings? (any? . -> . boolean?))
+   
+   (make-rib (symbol? any? . -> . rib?))
+   (rib? (any? . -> . boolean?))
+   (rib-name (rib? . -> . symbol?))
+   (rib-exp (rib? . -> . any?)))
   
   ;; type red = (make-red compiled-pat ((listof (cons sym tst)) -> any)
   (define-struct red (contractum reduct))

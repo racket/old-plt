@@ -25,14 +25,33 @@
   ;; ---------------------------------------------------------------------------
   ;; Deal with a Union of classes 
   
-  ;; VariantClass Super Boolean -> String 
-  (define (variant-draw class super left-connected)
-    (strings->string-as-lines (variant-to-strings class super left-connected)))
+  ;; VariantClasses Super -> (Listof String)
+  (define (variants*-draw variants spr)
+    (flatten-string-matrix (variants*-to-strings variants spr)))
   
-  ;; VariantClass Super Boolean -> String 
+  ;; VariantClasses Super -> (Listof String)
+  ;; turns a list of Variants into a list of strings, one per line 
+  (define (variants*-to-strings variants spr)
+    (let* ([d (apply max (map (lambda (vc) (length (second vc))) variants))])
+      (let loop ([v variants][cnnctd #f])
+        (cond
+          [(null? v) '()]
+          [else (let-values ([(s b) (variant-to-strings (car v) spr cnnctd d)])
+                  (cons s (loop (cdr v) (or cnnctd b))))]))))
+  
+  ;; VariantClass Super Boolean Number -> String 
+  (define (variant-draw class super left-connected depth)
+    (let-values ([(s b) (variant-to-strings class super left-connected depth)])
+      (strings->string-as-lines s)))
+  
+  ;; VariantClass Super Boolean Number ->* String Boolean 
   ;; turns a variant class into a list of strings, 
+  ;; computes whether the class points to super
   ;; with hooks for refinement arrows and for recursive containment arrows
-  (define (variant-to-strings variant super left-connected)
+  ;; with depth :: max number of fields in a variant class of the uion 
+  ;; with left-connected :: whether or not a variant to the left is already rec
+  ;; with super :: the name of the datatype
+  (define (variant-to-strings variant super left-connected depth)
     (let* ([cs
             (class-to-strings (cons (car variant) (cons super (cdr variant))))]
            [head (list (car cs) (cadr cs) (caddr cs))]
@@ -45,28 +64,28 @@
            [STG "--"] ;; (= (string-length CON) (string-length BLK))
            [BLK "  "] ;; (= (string-length CON) (string-length BLK))          
            [LIN " |"] ;; (= (string-length CON) (string-length LIN))
-           [junk (lambda _ (symbol->string (gensym)))])
-      (append
-       (list (string-append (centered "|" (string-length (car cs))) BLK))
-       (map (lambda (line type)
-              (string-append 
-               line 
-               (cond
-                 [(string=? type super) (set! recursion #t) CON]
-                 [recursion LIN]
-                 [else BLK])))
-            cs
-            ;; pad types with junk lines for class header and class bottom
-            (append (map junk head) types (list (junk))))
-       (list
-        (string-append (make-string (string-length (first cs)) #\space)
-                       (if recursion LIN BLK))
-        (if left-connected 
-            (string-append (make-string (string-length (first cs)) #\-)
-                           (if recursion CON STG))
-            (string-append (make-string (string-length (first cs)) #\space)
-                           (if recursion CN2 STG)))
-        ))))
+           [junk (lambda _ (symbol->string (gensym)))]
+           [width (string-length (car cs))]
+           [mkln (lambda (lft ch str) (string-append lft (make-string width ch) str))])
+      (values 
+       (append
+        (list (string-append BLK (centered "|" width) BLK))
+        (map (lambda (line type)
+               (string-append BLK 
+                              line 
+                              (cond
+                                [(string=? type super) (set! recursion #t) CON]
+                                [recursion LIN]
+                                [else BLK])))
+             cs
+             ;; pad types with junk lines for class header and class bottom
+             (append (map junk head) types (list (junk))))
+        (build-list (- depth -1 (length fields)) (lambda _  (mkln BLK #\space (if recursion LIN BLK))))
+        (list
+         (if left-connected
+             (mkln STG #\- (if recursion CON STG))
+             (mkln BLK #\space (if recursion CN2 BLK)))))
+       recursion)))
   
   ;; String Number -> String
   ;; place str in the center of an otherwise blank string
@@ -79,8 +98,6 @@
   (test== (centered "|" 2) "| ")
   (test== (centered "|" 3) " | ")
   
-  (define CONNECTION "")
-  
   ;; ---------------------------------------------------------------------------
   ;; Deal with a single class 
   
@@ -88,7 +105,7 @@
   (define (class-draw class) 
     (strings->string-as-lines (class-to-strings class)))
   
-  ;; Class -> (Listof String)
+  ;; Class -> (cons String (cons String (cons String (Listof String))))
   ;; turns a class into a list of strings that represents the class 
   (define (class-to-strings class)
     (let* ([name    (first class)]
@@ -149,6 +166,11 @@
     (apply string-append (map (lambda (x) (string-append x "\n")) s)))
   
   
+  ;; (Listof (Listof String)) -> (Listof String)
+  ;; contract: (apply = (map length smatrix))
+  ;; this requires Pretty Big, it could be written in Intermediate 
+  (define (flatten-string-matrix smatrix) 
+    (apply map (lambda l (apply string-append l)) smatrix))
   
   (define LEFT  "| ")
   (define LFT+  "+-")
@@ -192,48 +214,61 @@
   
   (define expected-variant1
     (list
-     "     |        "
-     "+----------+  "
-     "| Variant1 |  "
-     "+----------+  "
-     "+----------+  "
-     "              "
-     "              "))
+     "       |        "
+     "  +----------+  "
+     "  | Variant1 |  "
+     "  +----------+  "
+     "  +----------+  "
+     "                "
+     "                "
+     "                "
+     "                "
+     "                "))
   
   (define expected-variant2
     (list
-     "      |        "
-     "+-----------+  "
-     "| Variant2  |  "
-     "+-----------+  "
-     "| int x     |  "
-     "| boolean y |  "
-     "| Super z   |-+"
-     "+-----------+ |"
-     "              |"
-     "              +"))
+     "        |        "
+     "  +-----------+  "
+     "  | Variant2  |  "
+     "  +-----------+  "
+     "  | int x     |  "
+     "  | boolean y |  "
+     "  | Super z   |-+"
+     "  +-----------+ |"
+     "                |"
+     "                +"))
   
   (define expected-variant3
     (list
-     "     |        "
-     "+----------+  "
-     "| Variant3 |  "
-     "+----------+  "
-     "| String x |  "
-     "| Super y  |-+"
-     "| Super z  |-+"
-     "+----------+ |"
-     "             |"
-     "-------------+"))
+     "       |        "
+     "  +----------+  "
+     "  | Variant3 |  "
+     "  +----------+  "
+     "  | String x |  "
+     "  | Super y  |-+"
+     "  | Super z  |-+"
+     "  +----------+ |"
+     "               |"
+     "---------------+"))
   
-  (test== (variant-to-strings vclass1 "Super" #f)
+  (test== (let-values ([(s b) (variant-to-strings vclass1 "Super" #f 3)]) s)
           expected-variant1)
-  (test== (variant-draw vclass1 "Super" #f) 
+  (test== (variant-draw vclass1 "Super" #f 3) 
           (strings->string-as-lines expected-variant1))
-  (test== (variant-draw vclass2 "Super" #f) 
+  (test== (variant-draw vclass2 "Super" #f 3) 
           (strings->string-as-lines expected-variant2))
-  (test== (variant-draw vclass3 "Super" #t) 
+  (test== (variant-draw vclass3 "Super" #t 3) 
           (strings->string-as-lines expected-variant3))
+  
+  
+  (test== (variants*-to-strings (list vclass1 vclass2 vclass3) "Super") 
+          (list expected-variant1 expected-variant2 expected-variant3))
+  
+  (test== (variants*-draw (list vclass1 vclass2 vclass3) "Super") 
+          (flatten-string-matrix
+           (list expected-variant1 expected-variant2 expected-variant3)))
+  
+  (printf "~a~n" (strings->string-as-lines (variants*-draw (list vclass1 vclass2 vclass3) "Super")))
   
   #|  ---------------------------------------------------------------------------
   
@@ -428,11 +463,7 @@
   ;; add lft and rgt to txt 
   (define (pad-lines lft rgt) (lambda (txt) (string-append lft txt rgt)))
   
-  ;; (Listof (Listof String)) -> (Listof String)
-  ;; contract: (apply = (map length smatrix))
-  ;; this requires Pretty Big, it could be written in Intermediate 
-  (define (flatten-string-matrix smatrix) 
-    (apply map (lambda l (apply string-append l)) smatrix))
+  
   
   ;; (Listof String) -> String
   ;; turn the list of strings into a single string, separating lines with newline 

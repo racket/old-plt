@@ -20,7 +20,7 @@ RANLIB = @RANLIB@
 MZSRC = $(srcdir)/src
 
 FOREIGN_DIR = ../foreign
-FOREIGN_OBJ = $(FOREIGN_DIR)/foreign.@LTO@ $(FOREIGN_DIR)/lightning.@LTO@
+FOREIGN_OBJ = $(FOREIGN_DIR)/foreign.@LTO@
 FOREIGN_OBJS = $(FOREIGN_OBJ) $(FOREIGN_DIR)/gcc/libffi/src/*.@LTO@ $(FOREIGN_DIR)/gcc/libffi/src/*/*.@LTO@
 FOREIGN_LIB = $(FOREIGN_OBJ) ../foreign/gcc/libffi/libffi@FOREIGN_CONVENIENCE@.@LTA@
 FOREIGN_OBJSLIB = @FOREIGN_OBJSLIB@

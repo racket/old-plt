@@ -3579,7 +3579,7 @@
   (define braces-then-semi '(typedef struct union enum __extension__))
 
   (define (get-one e comma-sep?)
-    (let loop ([e e][result null][first #f])
+    (let loop ([e e][result null][first #f][second #f])
       (cond
        [(null? e) (values (reverse! result) null)]
        [(pragma? (car e)) 
@@ -3595,7 +3595,8 @@
        [(and (braces? (car e))
 	     (not (memq first '(typedef enum __extension__)))
 	     (or (not (memq first '(static extern const struct union)))
-		 (ormap parens? result)))
+		 (equal? second "C") ; => extern "C" ...
+		 (ormap parens? result))) ; => function prototype
 	(let ([rest (cdr e)])
 	  (if (or (null? rest)
 		  (pragma? (car rest))
@@ -3603,7 +3604,8 @@
 	      (values (reverse! (cons (car e) result)) rest)
 	      (values (reverse! (list* (car rest) (car e) result)) (cdr rest))))]
        [else (loop (cdr e) (cons (car e) result)
-		   (or first (tok-n (car e))))])))
+		   (or first (tok-n (car e)))
+		   (or second (and first (tok-n (car e)))))])))
 
   (define (foldl-statement e comma-sep? f a-init)
     (let loop ([e e][a a-init])

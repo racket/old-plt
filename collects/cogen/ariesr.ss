@@ -78,23 +78,30 @@
 		 (,set-box! ,error-box
 		   ,(z:make-zodiac #f start finish)))))))
 
-      (define check-for-keyword
-	(lambda (id)
-	  (let ((real-id
-		  (cond
-		    ((z:binding? id) (z:binding-orig-name id))
-		    ((z:top-level-varref? id) (z:varref-var id))
-		    ((z:bound-varref? id)
-		      (z:binding-orig-name
-			(z:bound-varref-binding id)))
-		    ((z:symbol? id)
-		      (z:read-object id))
-		    (else
+      (define check-for-keyword/both
+	(lambda (disallow-procedures?)
+	  (lambda (id)
+	    (let ([real-id
+		   (cond
+		     [(z:binding? id) (z:binding-orig-name id)]
+		     [(z:top-level-varref? id) (z:varref-var id)]
+		     [(z:bound-varref? id)
+		      (z:binding-orig-name (z:bound-varref-binding id))]
+		     [(z:symbol? id)
+		      (z:read-object id)]
+		     [else
 		      (z:interface:internal-error id
-			"Given in check-for-keyword")))))
-	    (when (keyword-name? real-id)
-	      (z:interface:static-error id "Invalid use of keyword ~s"
-		real-id)))))
+						  "Given in check-for-keyword")])])
+	      (when (and (keyword-name? real-id)
+			 (or disallow-procedures?
+			     (let ([gdv (global-defined-value real-id)])
+			       (or (syntax? gdv)
+				   (macro? gdv)))))
+		(z:interface:static-error id "Invalid use of keyword ~s"
+					  real-id))))))
+      
+      (define check-for-keyword (check-for-keyword/both #t))
+      (define check-for-keyword/proc (check-for-keyword/both #f))
 
       (define paroptarglist->ilist
 	(lambda (paroptarglist)
@@ -167,7 +174,7 @@
 		   v))]
 
 	    [(z:top-level-varref? expr)
-	     (check-for-keyword expr)
+	     (check-for-keyword/proc expr)
 	     (let ((v (z:varref-var expr)))
 	       (if (signal-undefined)
 		   (wrap expr

@@ -2581,15 +2581,24 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	  }
 
 	  if (num_rands) {
+#ifdef MZ_PRECISE_GC
+	    int evalpos = 1;
+#endif
+
 	    rands = stack;
 	
 	    /* Inline local & global variable lookups for speed */
+#ifdef MZ_PRECISE_GC
+# define GET_NEXT_EVAL evals[evalpos++]	    
+#else
 	    evals++;
+# define GET_NEXT_EVAL *(evals++)
+#endif
 	    args = app->args + 1;
 	    randsp = rands;
 	    for (k = num_rands; k--; ) {
 	      v = *(args++);
-	      switch (*(evals++)) {
+	      switch (GET_NEXT_EVAL) {
 	      case SCHEME_EVAL_CONSTANT:
 		*(randsp++) = v;
 		break;

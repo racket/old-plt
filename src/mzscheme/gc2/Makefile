@@ -93,71 +93,73 @@ objects:
 
 xobjects: $(OBJS)
 
-$(XSRCDIR)/salloc.c: $(SRCDIR)/$(OBJDIR)/salloc.o
+XFORMDEP = gc2.h xform.ss
+
+$(XSRCDIR)/salloc.c: $(SRCDIR)/$(OBJDIR)/salloc.o $(XFORMDEP)
 	$(XFORM) $(SRCDIR)/salloc.c $(XSRCDIR)/salloc.c
-$(XSRCDIR)/bignum.c: $(SRCDIR)/$(OBJDIR)/bignum.o
+$(XSRCDIR)/bignum.c: $(SRCDIR)/$(OBJDIR)/bignum.o $(XFORMDEP)
 	$(XFORM) $(SRCDIR)/bignum.c $(XSRCDIR)/bignum.c
-$(XSRCDIR)/bool.c: $(SRCDIR)/$(OBJDIR)/bool.o
+$(XSRCDIR)/bool.c: $(SRCDIR)/$(OBJDIR)/bool.o $(XFORMDEP)
 	$(XFORM) $(SRCDIR)/bool.c $(XSRCDIR)/bool.c
-$(XSRCDIR)/char.c: $(SRCDIR)/$(OBJDIR)/char.o
+$(XSRCDIR)/char.c: $(SRCDIR)/$(OBJDIR)/char.o $(XFORMDEP)
 	$(XFORM) $(SRCDIR)/char.c $(XSRCDIR)/char.c
-$(XSRCDIR)/complex.c: $(SRCDIR)/$(OBJDIR)/complex.o
+$(XSRCDIR)/complex.c: $(SRCDIR)/$(OBJDIR)/complex.o $(XFORMDEP)
 	$(XFORM) $(SRCDIR)/complex.c $(XSRCDIR)/complex.c
-$(XSRCDIR)/dynext.c: $(SRCDIR)/$(OBJDIR)/dynext.o
+$(XSRCDIR)/dynext.c: $(SRCDIR)/$(OBJDIR)/dynext.o $(XFORMDEP)
 	$(XFORM) $(SRCDIR)/dynext.c $(XSRCDIR)/dynext.c
-$(XSRCDIR)/env.c: $(SRCDIR)/$(OBJDIR)/env.o
+$(XSRCDIR)/env.c: $(SRCDIR)/$(OBJDIR)/env.o $(XFORMDEP)
 	$(XFORM) $(SRCDIR)/env.c $(XSRCDIR)/env.c
-$(XSRCDIR)/error.c: $(SRCDIR)/$(OBJDIR)/error.o
+$(XSRCDIR)/error.c: $(SRCDIR)/$(OBJDIR)/error.o $(XFORMDEP)
 	$(XFORM) $(SRCDIR)/error.c $(XSRCDIR)/error.c
-$(XSRCDIR)/eval.c: $(SRCDIR)/$(OBJDIR)/eval.o
+$(XSRCDIR)/eval.c: $(SRCDIR)/$(OBJDIR)/eval.o $(XFORMDEP)
 	$(XFORM) $(SRCDIR)/eval.c $(XSRCDIR)/eval.c
-$(XSRCDIR)/file.c: $(SRCDIR)/$(OBJDIR)/file.o
+$(XSRCDIR)/file.c: $(SRCDIR)/$(OBJDIR)/file.o $(XFORMDEP)
 	$(XFORM) $(SRCDIR)/file.c $(XSRCDIR)/file.c
-$(XSRCDIR)/fun.c: $(SRCDIR)/$(OBJDIR)/fun.o
+$(XSRCDIR)/fun.c: $(SRCDIR)/$(OBJDIR)/fun.o $(XFORMDEP)
 	$(XFORM) $(SRCDIR)/fun.c $(XSRCDIR)/fun.c
-$(XSRCDIR)/hash.c: $(SRCDIR)/$(OBJDIR)/hash.o
+$(XSRCDIR)/hash.c: $(SRCDIR)/$(OBJDIR)/hash.o $(XFORMDEP)
 	$(XFORM) $(SRCDIR)/hash.c $(XSRCDIR)/hash.c
-$(XSRCDIR)/image.c: $(SRCDIR)/$(OBJDIR)/image.o
+$(XSRCDIR)/image.c: $(SRCDIR)/$(OBJDIR)/image.o $(XFORMDEP)
 	$(XFORM) $(SRCDIR)/image.c $(XSRCDIR)/image.c
-$(XSRCDIR)/list.c: $(SRCDIR)/$(OBJDIR)/list.o
+$(XSRCDIR)/list.c: $(SRCDIR)/$(OBJDIR)/list.o $(XFORMDEP)
 	$(XFORM) $(SRCDIR)/list.c $(XSRCDIR)/list.c
-$(XSRCDIR)/number.c: $(SRCDIR)/$(OBJDIR)/number.o
+$(XSRCDIR)/number.c: $(SRCDIR)/$(OBJDIR)/number.o $(XFORMDEP)
 	$(XFORM) $(SRCDIR)/number.c $(XSRCDIR)/number.c
-$(XSRCDIR)/object.c: $(SRCDIR)/$(OBJDIR)/object.o
+$(XSRCDIR)/object.c: $(SRCDIR)/$(OBJDIR)/object.o $(XFORMDEP)
 	$(XFORM) $(SRCDIR)/object.c $(XSRCDIR)/object.c
-$(XSRCDIR)/port.c: $(SRCDIR)/$(OBJDIR)/port.o
+$(XSRCDIR)/port.c: $(SRCDIR)/$(OBJDIR)/port.o $(XFORMDEP)
 	$(XFORM) $(SRCDIR)/port.c $(XSRCDIR)/port.c
-$(XSRCDIR)/print.c: $(SRCDIR)/$(OBJDIR)/print.o
+$(XSRCDIR)/print.c: $(SRCDIR)/$(OBJDIR)/print.o $(XFORMDEP)
 	$(XFORM) $(SRCDIR)/print.c $(XSRCDIR)/print.c
-$(XSRCDIR)/process.c: $(SRCDIR)/$(OBJDIR)/process.o
+$(XSRCDIR)/process.c: $(SRCDIR)/$(OBJDIR)/process.o $(XFORMDEP)
 	$(XFORM) $(SRCDIR)/process.c $(XSRCDIR)/process.c
-$(XSRCDIR)/promise.c: $(SRCDIR)/$(OBJDIR)/promise.o
+$(XSRCDIR)/promise.c: $(SRCDIR)/$(OBJDIR)/promise.o $(XFORMDEP)
 	$(XFORM) $(SRCDIR)/promise.c $(XSRCDIR)/promise.c
-$(XSRCDIR)/rational.c: $(SRCDIR)/$(OBJDIR)/rational.o
+$(XSRCDIR)/rational.c: $(SRCDIR)/$(OBJDIR)/rational.o $(XFORMDEP)
 	$(XFORM) $(SRCDIR)/rational.c $(XSRCDIR)/rational.c
-$(XSRCDIR)/read.c: $(SRCDIR)/$(OBJDIR)/read.o
+$(XSRCDIR)/read.c: $(SRCDIR)/$(OBJDIR)/read.o $(XFORMDEP)
 	$(XFORM) $(SRCDIR)/read.c $(XSRCDIR)/read.c
-$(XSRCDIR)/regexp.c: $(SRCDIR)/$(OBJDIR)/regexp.o
+$(XSRCDIR)/regexp.c: $(SRCDIR)/$(OBJDIR)/regexp.o $(XFORMDEP)
 	$(XFORM) $(SRCDIR)/regexp.c $(XSRCDIR)/regexp.c
-$(XSRCDIR)/sema.c: $(SRCDIR)/$(OBJDIR)/sema.o
+$(XSRCDIR)/sema.c: $(SRCDIR)/$(OBJDIR)/sema.o $(XFORMDEP)
 	$(XFORM) $(SRCDIR)/sema.c $(XSRCDIR)/sema.c
-$(XSRCDIR)/setjmpup.c: $(SRCDIR)/$(OBJDIR)/setjmpup.o
+$(XSRCDIR)/setjmpup.c: $(SRCDIR)/$(OBJDIR)/setjmpup.o $(XFORMDEP)
 	$(XFORM) $(SRCDIR)/setjmpup.c $(XSRCDIR)/setjmpup.c
-$(XSRCDIR)/string.c: $(SRCDIR)/$(OBJDIR)/string.o
+$(XSRCDIR)/string.c: $(SRCDIR)/$(OBJDIR)/string.o $(XFORMDEP)
 	$(XFORM) $(SRCDIR)/string.c $(XSRCDIR)/string.c -I$(OBJDIR)
-$(XSRCDIR)/struct.c: $(SRCDIR)/$(OBJDIR)/struct.o
+$(XSRCDIR)/struct.c: $(SRCDIR)/$(OBJDIR)/struct.o $(XFORMDEP)
 	$(XFORM) $(SRCDIR)/struct.c $(XSRCDIR)/struct.c
-$(XSRCDIR)/symbol.c: $(SRCDIR)/$(OBJDIR)/symbol.o
+$(XSRCDIR)/symbol.c: $(SRCDIR)/$(OBJDIR)/symbol.o $(XFORMDEP)
 	$(XFORM) $(SRCDIR)/symbol.c $(XSRCDIR)/symbol.c
-$(XSRCDIR)/syntax.c: $(SRCDIR)/$(OBJDIR)/syntax.o
+$(XSRCDIR)/syntax.c: $(SRCDIR)/$(OBJDIR)/syntax.o $(XFORMDEP)
 	$(XFORM) $(SRCDIR)/syntax.c $(XSRCDIR)/syntax.c
-$(XSRCDIR)/type.c: $(SRCDIR)/$(OBJDIR)/type.o
+$(XSRCDIR)/type.c: $(SRCDIR)/$(OBJDIR)/type.o $(XFORMDEP)
 	$(XFORM) $(SRCDIR)/type.c $(XSRCDIR)/type.c
-$(XSRCDIR)/unit.c: $(SRCDIR)/$(OBJDIR)/unit.o
+$(XSRCDIR)/unit.c: $(SRCDIR)/$(OBJDIR)/unit.o $(XFORMDEP)
 	$(XFORM) $(SRCDIR)/unit.c $(XSRCDIR)/unit.c
-$(XSRCDIR)/vector.c: $(SRCDIR)/$(OBJDIR)/vector.o
+$(XSRCDIR)/vector.c: $(SRCDIR)/$(OBJDIR)/vector.o $(XFORMDEP)
 	$(XFORM) $(SRCDIR)/vector.c $(XSRCDIR)/vector.c
-$(XSRCDIR)/main.c: ../$(OBJDIR)/main.o
+$(XSRCDIR)/main.c: ../$(OBJDIR)/main.o $(XFORMDEP)
 	$(XFORM) ../main.c $(XSRCDIR)/main.c
 
 

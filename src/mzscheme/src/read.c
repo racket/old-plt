@@ -1287,12 +1287,12 @@ skip_whitespace_comments(Scheme_Object *port)
 
 #if USE_BUFFERING_CPORT
 typedef struct CPort {
-  unsigned char *s;
+  long pos;
   unsigned char *start;
   long base;
 } CPort;
-#define CP_GETC(cp) ((int)*(cp->s++))
-#define CP_TELL(port) (port->s - port->start + port->base)
+#define CP_GETC(cp) ((int)(cp->start[cp->pos++]))
+#define CP_TELL(port) (port->pos + port->base)
 #else
 typedef Scheme_Object CPort;
 #define CP_GETC(cp) scheme_getc(cp)
@@ -1354,11 +1354,11 @@ static char *read_compact_chars(CPort *port,
     s = (char *)scheme_malloc_atomic(l + 1);
 
 #if USE_BUFFERING_CPORT
-  src = (char *)port->s;
+  src = (char *)port->start + port->pos;
   for (i = 0; i < l; i++) {
     s[i] = src[i];
   }
-  port->s += l;
+  port->pos += l;
 #else
   for (i = 0; i < l; i++) {
     s[i] = CP_GETC(port);
@@ -1420,8 +1420,16 @@ static Scheme_Object *read_compact(CPort *port,
 	len = read_compact_number(port);
 
 #if USE_BUFFERING_CPORT
-	s = (char *)port->s;
-	port->s += len;
+# ifdef MZ_PRECISE_GC
+	if (port->pos & 0x1) {
+	  /* Can't pass unaligned pointer to read_compact_chars */
+	  s = scheme_malloc_atomic(len);
+	  memcpy(s, port->start + port->pos, len);
+	} else
+# endif
+	  s = (char *)port->start + port->pos;
+
+	port->pos += len;
 #else
 	s = read_compact_chars(port, NULL, 0, len);
 #endif
@@ -1895,9 +1903,9 @@ static Scheme_Object *read_compiled(Scheme_Object *port,
 #if USE_BUFFERING_CPORT
   size = read_compact_number_from_port(port);
   cp.start = (unsigned char *)scheme_malloc_atomic(size);
-  cp.s = cp.start;
+  cp.pos = 0;
   cp.base = scheme_tell(port);
-  if ((got = scheme_get_chars(port, size, (char *)cp.s)) != size)
+  if ((got = scheme_get_chars(port, size, (char *)cp.start)) != size)
     scheme_raise_exn(MZEXN_READ,
 		     port,
 		     "read (compiled): bad count: %ld != %ld",

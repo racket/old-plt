@@ -978,8 +978,18 @@ void scheme_do_format(const char *procname, Scheme_Object *port,
 
   for (used = offset, i = start = 0; i < flen; i++) {
     if (format[i] == '~') {
-      if (start < i)
-	scheme_write_string((char *)format + start, i - start, port);
+      if (start < i) {
+	char *s;
+#ifdef MZ_PRECISE_GC
+	/* Can't pass unaligned pointer to scheme_write_string: */
+	if (start & 0x1) {
+	  s = (char *)scheme_malloc_atomic(i - start);
+	  memcpy(s, format + start, i - start);
+	} else
+#endif
+	  s = format + start;
+	scheme_write_string((char *)s, i - start, port);
+      }
       i++;
       if (isspace(format[i])) {
 	/* skip spaces (at most one newline) */
@@ -1074,8 +1084,18 @@ void scheme_do_format(const char *procname, Scheme_Object *port,
 
   SCHEME_USE_FUEL(flen);
 
-  if (start < i)
-    scheme_write_string((char *)format + start, i - start, port);
+  if (start < i) {
+    char *s;
+#ifdef MZ_PRECISE_GC
+    /* Can't pass unaligned pointer to scheme_write_string: */
+    if (start & 0x1) {
+      s = (char *)scheme_malloc_atomic(i - start);
+      memcpy(s, format + start, i - start);
+    } else
+#endif
+      s = format + start;
+    scheme_write_string((char *)s, i - start, port);
+  }
 }
 
 char *scheme_format(char *format, int flen, int argc, Scheme_Object **argv, int *rlen)

@@ -37,7 +37,9 @@
 # define FILL_FACTOR 2
 #endif
 
+#ifndef MZ_PRECISE_GC
 extern void (*GC_custom_finalize)(void);
+#endif
 #ifndef USE_SENORA_GC
 extern int GC_is_marked(void *);
 #endif
@@ -63,6 +65,8 @@ static int gensym_counter;
 typedef int hash_v_t;
 
 extern int scheme_hash_primes[];
+
+#define SYMTAB_LOST_CELL scheme_false
 
 /* Special hashing for symbols: */
 static Scheme_Object *symbol_bucket(Scheme_Hash_Table *table, 
@@ -97,7 +101,7 @@ static Scheme_Object *symbol_bucket(Scheme_Hash_Table *table,
     h2 = -h2;
 
   while ((bucket = table->buckets[h])) {
-    if (SAME_OBJ((Scheme_Object *)bucket, scheme_false)) {
+    if (SAME_OBJ((Scheme_Object *)bucket, SYMTAB_LOST_CELL)) {
       if (naya) {
 	/* We're re-using, so decrement count and it will be
 	   re-incremented. */
@@ -124,7 +128,12 @@ static Scheme_Object *symbol_bucket(Scheme_Hash_Table *table,
     asize = (size_t)newsize * sizeof(Scheme_Bucket *);
     {
       Scheme_Bucket **ba;
-      ba = MALLOC_N_WEAK(Scheme_Bucket *, newsize);
+#ifdef MZ_PRECISE_GC
+      ba = (Scheme_Bucket **)GC_malloc_weak_array(sizeof(Scheme_Bucket *) * newsize,
+						  SYMTAB_LOST_CELL);
+#else
+      ba = MALLOC_N_ATOMIC(Scheme_Bucket *, newsize);
+#endif
       table->buckets = ba;
     }
     table->size = newsize;
@@ -132,7 +141,7 @@ static Scheme_Object *symbol_bucket(Scheme_Hash_Table *table,
 
     table->count = 0;
     for (i = 0; i < oldsize; i++) {
-      if (old[i] && !SAME_OBJ((Scheme_Object *)old[i], scheme_false))
+      if (old[i] && (((Scheme_Object *)old[i]) != SYMTAB_LOST_CELL))
 	symbol_bucket(table, SCHEME_SYM_VAL(old[i]), SCHEME_SYM_LEN(old[i]),
 		      (Scheme_Object *)old[i]);
     }
@@ -147,9 +156,9 @@ static Scheme_Object *symbol_bucket(Scheme_Hash_Table *table,
   return naya;
 }
 
+#ifndef MZ_PRECISE_GC
 static void clean_symbol_table(void)
 {
-#ifndef MZ_PRECISE_GC
   /* Clean the symbol table by removing pointers to collected
      symbols. The correct way to do this is to install a GC
      finalizer on symbol pointers, but that would be expensive. */
@@ -160,17 +169,17 @@ static void clean_symbol_table(void)
     void *b;
     
     while (i--) {
-      if (buckets[i] && !SAME_OBJ(buckets[i], scheme_false)
+      if (buckets[i] && !SAME_OBJ(buckets[i], SYMTAB_LOST_CELL)
 	  && (!(b = GC_base(buckets[i]))
 #ifndef USE_SENORA_GC
 	      || !GC_is_marked(b)
 #endif
 	      ))
-	buckets[i] = scheme_false;
+	buckets[i] = SYMTAB_LOST_CELL;
     }
   }
-#endif
 }
+#endif
 
 /**************************************************************************/
 
@@ -183,7 +192,9 @@ scheme_init_symbol_table ()
     scheme_symbol_table = scheme_hash_table(HASH_TABLE_SIZE, 
 					    SCHEME_hash_ptr, 0, 1);
 
+#ifndef MZ_PRECISE_GC
     GC_custom_finalize = clean_symbol_table;
+#endif
   }
 }
 

@@ -1310,6 +1310,7 @@ void scheme_raise(Scheme_Object *exn)
 void scheme_init_exn(Scheme_Env *env)
 {
   int i, j;
+  Scheme_Object *tmpo, **tmpop;
 
   if (scheme_starting_up) {
 #define _MZEXN_DECL_FIELDS
@@ -1333,8 +1334,10 @@ void scheme_init_exn(Scheme_Env *env)
 #define EXN_FLAGS SCHEME_STRUCT_NO_SET
 
 #define SETUP_STRUCT(id, parent, name, argc, args) \
-    exn_table[id].type = scheme_make_struct_type_from_string(name, parent, argc); \
-    exn_table[id].names = scheme_make_struct_names_from_array(name, argc, args, EXN_FLAGS, &exn_table[id].count);
+    { tmpo = scheme_make_struct_type_from_string(name, parent, argc); \
+      exn_table[id].type = tmpo; \
+      tmpop = scheme_make_struct_names_from_array(name, argc, args, EXN_FLAGS, &exn_table[id].count); \
+      exn_table[id].names = tmpop; }
 
 #define EXNCONS scheme_make_pair
 #define _MZEXN_SETUP

@@ -3275,7 +3275,16 @@ Scheme_Object *scheme_read_number(const char *str, long len,
     memcpy(first, str, has_at);
     first[has_at] = 0;
 
+#ifdef MZ_PRECISE_GC
+    {
+      /* Can't pass mis-aligned pointer to scheme_read_number. */
+      int slen = len - (has_at + 1) + 1;
+      second = (char *)scheme_malloc_atomic(slen);
+      memcpy(second, str + has_at + 1, slen);
+    }
+#else
     second = str + has_at + 1;
+#endif
 
     n2 = scheme_read_number(second, len - has_at - 1,
 			    1, 0,
@@ -3514,7 +3523,20 @@ Scheme_Object *scheme_read_number(const char *str, long len,
     Scheme_Object *args[2];
 
     if (has_expt) {
-      exponent = scheme_read_bignum(str + has_expt + 1, radix);
+      char *substr;
+
+#ifdef MZ_PRECISE_GC
+      {
+	/* Can't pass misaligned pointer to scheme_read_bignum: */
+	int slen = len - (has_expt + 1) + 1;
+	substr = (char *)scheme_malloc_atomic(slen);
+	memcpy(substr, str + has_expt + 1, slen);
+      }
+#else
+      substr = str + has_expt + 1;
+#endif
+
+      exponent = scheme_read_bignum(substr, radix);
       if (SCHEME_FALSEP(exponent)) {
 	if (report)
 	  scheme_raise_exn(MZEXN_READ, complain, 
@@ -3650,10 +3672,25 @@ Scheme_Object *scheme_read_number(const char *str, long len,
     if (SAME_OBJ(n1, scheme_false))
       return scheme_false;
 
-    n2 = scheme_read_number(str + has_slash + 1, len - has_slash - 1,
-			    0, 0, 
-			    radix, 1, next_complain,
-			    div_by_zero);
+    {
+      char *substr;
+
+#ifdef MZ_PRECISE_GC
+      {
+	/* Can't pass misaligned pointer to scheme_read_bignum: */
+	int slen = len - (has_slash + 1) + 1;
+	substr = (char *)scheme_malloc_atomic(slen);
+	memcpy(substr, str + has_slash + 1, slen);
+      }
+#else
+      substr = str + has_slash + 1;
+#endif
+
+      n2 = scheme_read_number(substr, len - has_slash - 1,
+			      0, 0, 
+			      radix, 1, next_complain,
+			      div_by_zero);
+    }
 
     if (SAME_OBJ(n2, scheme_false))
       return scheme_false;

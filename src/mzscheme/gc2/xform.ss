@@ -563,9 +563,9 @@
 			       (let-values ([(_ live-vars)
 					     ;; We're not really interested in the conversion.
 					     ;; We just want to get live vars and
-					     ;;complain about function calls:
+					     ;; complain about function calls:
 					     (convert-function-calls (car el) extra-vars live-vars #t)])
-				 (loop (cdr el) live-vars))))))])
+				 (dloop (cdr el) live-vars))))))])
 	      (values (apply
 		       append
 		       (append

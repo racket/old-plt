@@ -12,7 +12,6 @@ void GC_add_roots(void *start, void *end);
 
 extern void (*GC_collect_start_callback)(void);
 extern void (*GC_collect_end_callback)(void);
-extern void (*GC_custom_finalize)(void);
 extern void (*GC_out_of_memory)(void);
 extern unsigned long (*GC_get_thread_stack_base)(void);
 
@@ -46,8 +45,8 @@ void *GC_malloc_atomic(size_t size_in_bytes);
 void *GC_malloc_atomic_uncollectable(size_t size_in_bytes);
 #define GC_malloc_eternal_tagged GC_malloc_atomic_uncollectable
 
-#define GC_malloc_weak GC_malloc
-#define GC_malloc_one_weak_tagged GC_malloc_one_tagged
+/* Array of weak pointers: */
+void *GC_malloc_weak_array(size_t size_in_bytes, void *replace_val);
 
 void GC_free(void *); /* noop */
 
@@ -83,7 +82,7 @@ void GC_mark_variable_stack(void **var_stack,
 
 extern void *GC_alloc_space, *GC_alloc_top;
 
-#define gcMARK(x) if (((void *)(x) >= GC_alloc_space) && ((void *)(x) <= GC_alloc_top)) x = mark(x)
+#define gcMARK(x) if (!((long)(x) & 0x1) && ((void *)(x) >= GC_alloc_space) && ((void *)(x) <= GC_alloc_top)) x = mark(x)
 #define gcBYTES_TO_WORDS(x) ((x + 3) >> 2)
 
 # ifdef __cplusplus

@@ -155,7 +155,7 @@ get_bucket (Scheme_Hash_Table *table, const char *key, int add, Scheme_Bucket *b
   if (table->weak) {
     while ((bucket = table->buckets[h])) {
       if (bucket->key) {
-	void *hk = *(void **)bucket->key;
+	void *hk = (void *)HT_EXTRACT_WEAK(bucket->key);
 	if (!hk) {
 	  if (add) {
 	    /* Re-use a bucket slot whose key is collected: */

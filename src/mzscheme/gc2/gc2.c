@@ -6,6 +6,8 @@
   Please see the full copyright in the documentation.
 */
 
+/* This implementation is currently hard-wired for 4-byte words */
+
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -26,13 +28,14 @@ typedef short Scheme_Type;
 #include "../src/stypes.h"
 
 #define TIME 0
-#define SEARCH 1
-#define SAFETY 1
-#define MAX_ERRORS 1
+#define SEARCH 0
+#define SAFETY 0
+#define RECYCLE_HEAP 0
+
+#define GROW_FACTOR 2
 
 void (*GC_collect_start_callback)(void);
 void (*GC_collect_end_callback)(void);
-void (*GC_custom_finalize)(void);
 void (*GC_out_of_memory)(void);
 unsigned long (*GC_get_thread_stack_base)(void);
 
@@ -56,6 +59,8 @@ static char *alloc_bitmap;
 static char zero_sized[4];
 
 static GC_Weak_Box *weak_boxes;
+
+static void *park[2];
 
 /******************************************************************************/
 
@@ -183,6 +188,69 @@ void GC_add_roots(void *start, void *end)
 
 /******************************************************************************/
 
+typedef struct GC_Weak_Array {
+  Scheme_Type type;
+  short keyex;
+  long count;
+  void *replace_val;
+  struct GC_Weak_Array *next;
+  void *data[0];
+} GC_Weak_Array;
+
+static GC_Weak_Array *weak_arrays;
+
+static int mark_weak_array(void *p, Mark_Proc mark)
+{
+  GC_Weak_Array *a = (GC_Weak_Array *)p;
+
+  if (mark) {
+    gcMARK(a->replace_val);
+    
+    a->next = weak_arrays;
+    weak_arrays = a;
+  }
+
+  return gcBYTES_TO_WORDS(sizeof(GC_Weak_Array) 
+			  + ((a->count - 1) * sizeof(void *)));
+}
+
+void *GC_malloc_weak_array(size_t size_in_bytes, void *replace_val)
+{
+  GC_Weak_Array *w;
+
+  /* Allcation might trigger GC, so we use park: */
+  park[0] = replace_val;
+
+  w = (GC_Weak_Array *)GC_malloc_one_tagged(size_in_bytes 
+					    + sizeof(GC_Weak_Array) 
+					    - sizeof(void *));
+
+  replace_val = park[0];
+
+  w->type = scheme_rt_gc_weak_array;
+  w->replace_val = replace_val;
+  w->count = (size_in_bytes >> 2);
+  
+  return &(w->data[0]);
+}
+
+static int mark_weak_box(void *p, Mark_Proc mark)
+{
+  if (mark) {
+    GC_Weak_Box *wb = (GC_Weak_Box *)p;
+    
+    gcMARK(wb->secondary_erase);
+    if (wb->val) {
+      wb->next = weak_boxes;
+      weak_boxes = wb;
+    }
+  }
+
+  return gcBYTES_TO_WORDS(sizeof(GC_Weak_Box));
+}
+
+/******************************************************************************/
+
 typedef struct Fnl {
   Scheme_Type type;
   short eager_level;
@@ -193,7 +261,6 @@ typedef struct Fnl {
 } Fnl;
 
 Fnl *fnls, *run_queue, *last_in_queue;
-void *park[2];
 
 static int mark_finalizer(void *p, Mark_Proc mark)
 {
@@ -229,6 +296,13 @@ void GC_register_eager_finalizer(void *p, int level, void (*f)(void *p, void *da
 				 void **olddata)
 {
   Fnl *fnl, *prev;
+
+  if (((long)p & 0x1) || (p < GC_alloc_space) || (p > GC_alloc_top)) {
+    /* Never collected. Don't finalize it. */
+    if (oldf) *oldf = NULL;
+    if (olddata) *olddata = NULL;
+    return;
+  }
 
   fnl = fnls;
   prev = NULL;
@@ -320,21 +394,6 @@ void stop()
   printf("stopped\n");
 }
 
-static int mark_weak_box(void *p, Mark_Proc mark)
-{
-  if (mark) {
-    GC_Weak_Box *wb = (GC_Weak_Box *)p;
-    
-    gcMARK(wb->secondary_erase);
-    if (wb->val) {
-      wb->next = weak_boxes;
-      weak_boxes = wb;
-    }
-  }
-
-  return gcBYTES_TO_WORDS(sizeof(GC_Weak_Box));
-}
-
 static void *mark(void *p)
 {
   long diff = ((char *)p - (char *)GC_alloc_space) >> 2;
@@ -407,8 +466,15 @@ static void *mark(void *p)
 	}
       }
       size++;
-	
+
       new_untagged_low -= size;
+
+#if SAFETY
+      if ((unsigned long)new_untagged_low < (unsigned long)new_tagged_high) {
+	*(int *)0x0 = 1;
+      }
+#endif	
+
       {
 	int i;
 	long *a, *b;
@@ -513,18 +579,20 @@ void gcollect(int needsize)
   /* Check old: */
   long *p, *top;
   void *new_space;
-  long new_size = alloc_size;
+  long new_size;
   void **tagged_mark, **untagged_mark;
   char *bitmap;
   int i, did_fnls;
   long diff, iterations;
   GC_Weak_Box *wb;
+  GC_Weak_Array *wa;
 
   INITTIME();
   PRINTTIME((STDERR, "gc: start: %ld\n", GETTIMEREL()));
 
   if (!initialized) {
     tag_table[scheme_weak_box_type] = mark_weak_box;
+    tag_table[scheme_rt_gc_weak_array] = mark_weak_array;
     tag_table[scheme_rt_gc_finalization] = mark_finalizer;
     GC_add_roots(&fnls, (char *)&fnls + sizeof(fnls) + 1);
     GC_add_roots(&run_queue, (char *)&run_queue + sizeof(run_queue) + 1);
@@ -534,6 +602,7 @@ void gcollect(int needsize)
   }
 
   weak_boxes = NULL;
+  weak_arrays = NULL;
   did_fnls = 0;
 
   if (GC_collect_start_callback)
@@ -541,13 +610,15 @@ void gcollect(int needsize)
 
   sort_and_merge_roots();
 
-  if (new_size < (heap_size * 2)) {
-    if (heap_size < needsize)
-      new_size = needsize * 2;
-    else
-      new_size = heap_size * 2;
-  }
+  new_size = (heap_size * GROW_FACTOR);
+  if (new_size < alloc_size)
+    new_size = alloc_size;
 
+  new_size += needsize;
+
+  /* word-aligned: */
+  new_size = (new_size + 3) & 0xFFFFFFFC;
+  
   if (old_size >= new_size) {
     new_size = old_size;
     new_space = old_space;
@@ -634,44 +705,44 @@ void gcollect(int needsize)
 
   iterations = 0;
 
-  while ((tagged_mark < new_tagged_high)
-	 || (untagged_mark > new_untagged_low)) {
+  while (1) { /* Loop to do finalization */
 
-    iterations++;
-
-    while (tagged_mark < new_tagged_high) {
-      Scheme_Type tag = *(Scheme_Type *)tagged_mark;
-
-      if (tag == SKIP)
-	tagged_mark++;
-      else {
-	long size;
-
+    while ((tagged_mark < new_tagged_high)
+	   || (untagged_mark > new_untagged_low)) {
+      
+      iterations++;
+      
+      while (tagged_mark < new_tagged_high) {
+	Scheme_Type tag = *(Scheme_Type *)tagged_mark;
+	
+	if (tag == SKIP)
+	  tagged_mark++;
+	else {
+	  long size;
+	  
 #if SAFETY
-	if ((tag < 0) || (tag >= _scheme_last_type_) || !tag_table[tag]) {
-	  *(int *)0x0 = 1;
-	}
+	  if ((tag < 0) || (tag >= _scheme_last_type_) || !tag_table[tag]) {
+	    *(int *)0x0 = 1;
+	  }
 #endif
-
-	size = tag_table[tag](tagged_mark, mark);
-
+	  
+	  size = tag_table[tag](tagged_mark, mark);
+	  
 #if SAFETY
-	if (size <= 1) {
-	  *(int *)0x0 = 1;
-	}
+	  if (size <= 1) {
+	    *(int *)0x0 = 1;
+	  }
 #endif
-
-	tagged_mark += size;
-
+	  
+	  tagged_mark += size;
+	  
 #if SAFETY
-	if (tagged_mark < new_space) {
-	  *(int *)0x0 = 1;
-	}
+	  if (tagged_mark < new_space) {
+	    *(int *)0x0 = 1;
+	  }
 #endif
+	}
       }
-    }
-
-    while (1) { /* Loop to do finalization */
 
       while (untagged_mark > new_untagged_low) {
 	void **mp, **started;
@@ -705,65 +776,66 @@ void gcollect(int needsize)
 	}
 	untagged_mark = started;
       }
+    }
       
-      if ((did_fnls == 2) || !fnls) {
-	break;
-      } else {
-	int eager_level = did_fnls + 1;
-	Fnl *f, *prev, *queue;
+    if ((did_fnls == 2) || !fnls) {
+      break;
+    } else {
+      int eager_level = did_fnls + 1;
+      Fnl *f, *prev, *queue;
+      
+      f = fnls;
+      prev = NULL;
+      queue = NULL;
 	
-	f = fnls;
-	prev = NULL;
-	queue = NULL;
-	
-	while (f) {
-	  if (f->eager_level == eager_level) {
-	    void *v;
+      while (f) {
+	if (f->eager_level == eager_level) {
+	  void *v;
 	    
-	    v = GC_resolve(f->p);
-	    if (v == f->p) {
-	      /* Not yet marked. Move finalization to run queue. */
-	      Fnl *next = f->next;
+	  v = GC_resolve(f->p);
+	  if (v == f->p) {
+	    /* Not yet marked. Move finalization to run queue. */
+	    Fnl *next = f->next;
 
-	      if (prev)
-		prev->next = next;
-	      else
-		fnls = next;
+	    if (prev)
+	      prev->next = next;
+	    else
+	      fnls = next;
 	      
-	      f->eager_level = 0; /* indicated queued */
+	    f->eager_level = 0; /* indicated queued */
 	      
-	      f->next = NULL;
-	      if (last_in_queue) {
-		last_in_queue->next = f;
-		last_in_queue = f;
-	      } else {
-		run_queue = last_in_queue = f;
-	      }
-	      if (!queue)
-		queue = f;
-
-	      f = next;
+	    f->next = NULL;
+	    if (last_in_queue) {
+	      last_in_queue->next = f;
+	      last_in_queue = f;
 	    } else {
-	      f->p = v;
-	      prev = f;
-	      f = f->next;
+	      run_queue = last_in_queue = f;
 	    }
+	    if (!queue)
+	      queue = f;
+
+	    f = next;
 	  } else {
+	    f->p = v;
 	    prev = f;
 	    f = f->next;
 	  }
-	}
-	
-	/* Mark items added to run queue: */
-	f = queue;
-	while (f) {
-	  gcMARK(f->p);
+	} else {
+	  prev = f;
 	  f = f->next;
 	}
-	
-	did_fnls++;
       }
+	
+      /* Mark items added to run queue: */
+      f = queue;
+      while (f) {
+	gcMARK(f->p);
+	f = f->next;
+      }
+	
+      did_fnls++;
     }
+
   }
 
   PRINTTIME((STDERR, "gc: mark/copy (%d): %ld\n", iterations, GETTIMEREL()));
@@ -772,28 +844,48 @@ void gcollect(int needsize)
 
   wb = weak_boxes;
   while (wb) {
-    void *v;
-
-    v = GC_resolve(wb->val);
-    if (v == wb->val) {
-      wb->val = NULL;
-      if (wb->secondary_erase) {
-	((GC_Weak_Box *)wb->secondary_erase)->val = NULL;
-      }
-    } else
-      wb->val = v;
+    if (!((long)wb->val & 0x1) && ((void *)wb->val >= GC_alloc_space) && ((void *)wb->val <= GC_alloc_top)) {
+      void *v;
+      v = GC_resolve(wb->val);
+      if (v == wb->val) {
+	wb->val = NULL;
+	if (wb->secondary_erase) {
+	  ((GC_Weak_Box *)wb->secondary_erase)->val = NULL;
+	}
+      } else
+	wb->val = v;
+    } /* else not collectable */
 
     wb = wb->next;
   }
 
+  wa = weak_arrays;
+  while (wa) {
+    int i;
+
+    for (i = wa->count; i--; ) {
+      void *p = wa->data[i];
+      if (!((long)p & 0x1) && (p >= GC_alloc_space) && (p <= GC_alloc_top)) {
+	void *v;    
+	v = GC_resolve(p);
+	if (v == p)
+	  wa->data[i] = wa->replace_val;
+	else
+	  wa->data[i] = v;
+      } /* else not collectable */
+    }
+
+    wa = wa->next;
+  }
+
   /******************************************************/
   
-#if MAX_ERRORS
-  if (alloc_size)
-    free_pages(GC_alloc_space, alloc_size + 4);
-#else
+#if RECYCLE_HEAP
   old_space = GC_alloc_space;
   old_size = alloc_size;
+#else
+  if (alloc_size)
+    free_pages(GC_alloc_space, alloc_size + 4);
 #endif
 
   free(alloc_bitmap);
@@ -840,7 +932,7 @@ void gcollect(int needsize)
 
 void *GC_resolve(void *p)
 {
-  if ((p >= GC_alloc_space) && (p <= GC_alloc_top)) {  
+  if (!((long)p & 0x1) && (p >= GC_alloc_space) && (p <= GC_alloc_top)) {  
     if (p < (void *)tagged_high) {
       Scheme_Type tag = *(Scheme_Type *)p;
 

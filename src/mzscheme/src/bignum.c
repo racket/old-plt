@@ -1164,7 +1164,7 @@ Scheme_Object *scheme_read_bignum(const char *str, int radix)
   Small_Bignum s1, s2;
   Scheme_Object *r;
   int size = 0, read_valid;
-  int len, i, d, negate;
+  int len, i, d, negate, stri = 0;
   bigdig *buffer;
 
   if ((radix < 0) || (radix > 16))
@@ -1177,23 +1177,23 @@ Scheme_Object *scheme_read_bignum(const char *str, int radix)
 
   negate = 0;
   /* Why would we skip spaces? */
-  while (/* isspace(*str) || */ (*str == '+') || (*str == '-')) {
-    if (*str == '-')
+  while (/* isspace(str[stri]) || */ (str[stri] == '+') || (str[stri] == '-')) {
+    if (str[stri] == '-')
       negate = !negate;
-    str++;
+    stri++;
   }
 
-  len = strlen(str);
+  len = strlen(str + stri);
 
   if (radix == 10 && (len < SMALL_NUM_STR_LEN)) {
     /* try simple fixnum read first */
     long fx;
-    if (!*str)
+    if (!str[stri])
       return scheme_false;
-    for (fx = 0; *str; str++) {
-      if (*str < '0' || *str > '9')
+    for (fx = 0; str[stri]; stri++) {
+      if (str[stri] < '0' || str[stri] > '9')
 	return scheme_false;
-      fx = (fx * 10) + (*str - '0');
+      fx = (fx * 10) + (str[stri] - '0');
     }
     if (negate)
        fx = -fx;
@@ -1205,7 +1205,7 @@ Scheme_Object *scheme_read_bignum(const char *str, int radix)
   read_valid = 0;
 
   while (len--) {
-    d = *(str++);
+    d = str[stri++];
     if (d >= '0' && d <= '9')
       d -= '0';
     else if (d >= 'a' && d <= 'z')

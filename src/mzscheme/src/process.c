@@ -831,7 +831,7 @@ static void remove_managed(Scheme_Manager_Reference *mr, Scheme_Object *o,
   }
 
   for (i = m->count; i--; ) {
-    if (m->boxes[i] && SAME_OBJ((*(m->boxes[i])),  o)) {
+    if (m->boxes[i] && SAME_OBJ((xMANAGER_FAM(m->boxes[i])),  o)) {
       MANAGER_FAM(m->boxes[i]) = 0;
       m->boxes[i] = NULL;
       MANAGER_FAM(m->mrefs[i]) = 0;
@@ -2929,8 +2929,8 @@ Scheme_Object *scheme_make_config(Scheme_Config *base)
     while (i--) {
       Scheme_Bucket *b;
       b = bs[i];
-      if (b && b->val && b->key && *(void **)b->key)
-	scheme_add_to_table(config->extensions, *(const char **)b->key, b->val, 0);
+      if (b && b->val && b->key && HT_EXTRACT_WEAK(b->key))
+	scheme_add_to_table(config->extensions, (const char *)HT_EXTRACT_WEAK(b->key), b->val, 0);
     }
   }
 

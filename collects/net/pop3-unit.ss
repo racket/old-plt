@@ -128,17 +128,19 @@
       ;; -- returns number of messages and number of octets.
 
       (define get-mailbox-status
-	(let ((stat-regexp (regexp "([0-9]+) ([0-9]+)")))
-	  (lambda (communicator)
-	    (confirm-transaction-mode communicator
-				      "cannot get mailbox status unless in transaction mode")
-	    (send-to-server communicator "STAT")
-	    (apply values
-		   (map string->number
-			(let-values (((status result)
-				      (get-status-response/match communicator
-								 stat-regexp #f)))
-			  result))))))
+        (lambda (communicator)
+          (confirm-transaction-mode
+           communicator
+           "cannot get mailbox status unless in transaction mode")
+          (send-to-server communicator "STAT")
+          (apply values
+                 (map string->number
+                      (let-values (((status result)
+                                    (get-status-response/match
+                                     communicator
+                                     #rx"([0-9]+) ([0-9]+)"
+                                     #f)))
+                        result)))))
 
       ;; get-message/complete :
       ;; communicator x number -> list (string) x list (string)
@@ -221,7 +223,7 @@
 
       ;; regexp for UIDL responses
 
-      (define uidl-regexp (regexp "([0-9]+) (.*)"))
+      (define uidl-regexp #rx"([0-9]+) (.*)")
 
       ;; get-unique-id/single :
       ;; communicator x number -> string
@@ -292,7 +294,7 @@
       (define send-to-server
 	(lambda (communicator message-template . rest)
 	  (apply fprintf (communicator-sender communicator)
-		 (string-append message-template "~n")
+		 (string-append message-template "\r\n")
 		 rest)))
 
       ;; get-one-line-from-server :
@@ -311,18 +313,16 @@
       ;; parsing, if necessary.
 
       (define get-server-status-response
-	(let ((+ok-regexp (regexp "^\\+OK(.*)"))
-	      (-err-regexp (regexp "^\\-ERR(.*)")))
-	  (lambda (communicator)
-	    (let ((receiver (communicator-receiver communicator)))
-	      (let ((status-line (get-one-line-from-server receiver)))
-		(let ((r (regexp-match +ok-regexp status-line)))
-		  (if r
-		      (values (make-+ok) (cadr r))
-		      (let ((r (regexp-match -err-regexp status-line)))
-			(if r
-			    (values (make--err) (cadr r))
-			    (signal-malformed-response-error communicator))))))))))
+	(lambda (communicator)
+          (let* ((receiver (communicator-receiver communicator))
+                 (status-line (get-one-line-from-server receiver))
+                 (r (regexp-match #rx"^\\+OK(.*)" status-line)))
+            (if r
+              (values (make-+ok) (cadr r))
+              (let ((r (regexp-match #rx"^\\-ERR(.*)" status-line)))
+                (if r
+                  (values (make--err) (cadr r))
+                  (signal-malformed-response-error communicator)))))))
 
       ;; get-status-response/basic :
       ;; communicator -> server-responses

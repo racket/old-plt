@@ -19,7 +19,7 @@
 static Scheme_Object* GetSelectionList(wxListBox *l)
 {
   int c, *v;
-
+  
   c = l->GetSelections(&v);
 
   Scheme_Object *cdr = scheme_null, *obj;

@@ -7,6 +7,13 @@
 
 @INCLUDE wxs.xci
 
+static void menuSelect(wxMenu *m)
+{
+#ifdef wx_msw
+  m->SelectMenu();
+#endif
+}
+
 // @CLASSBASE wxMenuItem "menu-item" : "object"
 // @END
 
@@ -38,6 +45,8 @@
 @ "set-help-string" : void SetHelpString(ExactLong, nstring); : :
 @ "set-label" : void SetLabel(ExactLong, string); : :
 @ "set-title" : void SetTitle(string);
+
+@ m "select" : void menuSelect();
 
 @END
 

@@ -1056,6 +1056,26 @@ static Scheme_Object *wxSchemeGetFrameList(int, Scheme_Object **)
   return MrEdGetFrameList();
 }
 
+static Scheme_Object *wLabelShortcutsVisible(int argc, Scheme_Object **argv)
+{
+  int menu_too;
+
+  if (argc)
+    menu_too = SCHEME_TRUEP(argv[0]);
+  else
+    menu_too = 0;
+
+#ifdef wx_x
+  return menu_too ? scheme_false : scheme_true;
+#endif
+#ifdef wx_msw
+  return scheme_true;
+#endif
+#ifdef wx_mac
+  return scheme_false;
+#endif
+}
+
 #ifdef wx_mac
 extern "C" {
  extern char *scheme_build_mac_filename(FSSpec *spec, int given_dir);
@@ -1461,6 +1481,12 @@ static void wxScheme_Install(Scheme_Env *WXUNUSED(env), void *global_env)
 			   scheme_make_prim_w_arity(wxSchemeUnregisterCollectingBitmap,
 						    "unregister-collecting-blit",
 						    1, 1),
+			   global_env);
+
+  scheme_install_xc_global("shortcut-visible-in-label?",
+			   scheme_make_prim_w_arity(wLabelShortcutsVisible,
+						    "shortcut-visible-in-label?",
+						    0, 1),
 			   global_env);
 
   /* Order is important! Base class must be initialized before derived. */

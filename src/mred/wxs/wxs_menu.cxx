@@ -16,6 +16,13 @@
 
 
 
+static void menuSelect(wxMenu *m)
+{
+#ifdef wx_msw
+  m->SelectMenu();
+#endif
+}
+
 // @CLASSBASE wxMenuItem "menu-item" : "object"
 // @END
 
@@ -57,6 +64,7 @@ static void CB_TOSCHEME(CB_REALCLASS *obj, wxCommandEvent &event);
 
 
 
+
 class os_wxMenu : public wxMenu {
  public:
   Scheme_Object *callback_closure;
@@ -78,6 +86,22 @@ os_wxMenu::os_wxMenu(Scheme_Object * o, nstring x0, wxFunction x1)
 os_wxMenu::~os_wxMenu()
 {
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
+}
+
+#pragma argsused
+static Scheme_Object *os_wxMenumenuSelect(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  objscheme_check_valid(obj);
+
+  
+
+  
+  menuSelect(((wxMenu *)((Scheme_Class_Object *)obj)->primdata));
+
+  
+  
+  return scheme_void;
 }
 
 #pragma argsused
@@ -359,8 +383,9 @@ void objscheme_setup_wxMenu(void *env)
 if (os_wxMenu_class) {
     objscheme_add_global_class(os_wxMenu_class, "menu%", env);
 } else {
-  os_wxMenu_class = objscheme_def_prim_class(env, "menu%", "object%", os_wxMenu_ConstructScheme, 11);
+  os_wxMenu_class = objscheme_def_prim_class(env, "menu%", "object%", os_wxMenu_ConstructScheme, 12);
 
+ scheme_add_method_w_arity(os_wxMenu_class, "select", os_wxMenumenuSelect, 0, 0);
  scheme_add_method_w_arity(os_wxMenu_class, "set-title", os_wxMenuSetTitle, 1, 1);
  scheme_add_method_w_arity(os_wxMenu_class, "set-label", os_wxMenuSetLabel, 2, 2);
  scheme_add_method_w_arity(os_wxMenu_class, "set-help-string", os_wxMenuSetHelpString, 2, 2);

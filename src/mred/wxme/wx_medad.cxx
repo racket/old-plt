@@ -102,7 +102,12 @@ class wxBlinkTimer : public wxTimer
   }
   void Notify(void) {
     wxYield();
-    canvas->BlinkCaret();
+    if (canvas)
+      canvas->BlinkCaret();
+  }
+  void Kill() {
+    canvas = NULL;
+    Stop();
   }
 };
 
@@ -236,6 +241,11 @@ wxMediaCanvas::~wxMediaCanvas()
   if (autoDragger) {
     autoDragger->Kill();
     autoDragger = NULL;
+  }
+
+  if (blinkTimer) {
+    ((wxBlinkTimer *)blinkTimer)->Kill();
+    blinkTimer = NULL;
   }
 
   if (media) {

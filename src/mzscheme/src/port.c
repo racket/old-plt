@@ -2362,8 +2362,9 @@ scheme_ungetc (int ch, Scheme_Object *port)
 
     if (ip->ungotten_count + len >= 24)
       scheme_signal_error("ungetc overflow");
-    memcpy(ip->ungotten + ip->ungotten_count, e, len);
-    ip->ungotten_count += len;
+    while (len) {
+      ip->ungotten[ip->ungotten_count++] = e[--len];
+    }
   } else {
     if (ip->ungotten_count == 24)
       scheme_signal_error("ungetc overflow");

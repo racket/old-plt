@@ -46,12 +46,14 @@
          "<TITLE>Installed Manuals</TITLE>"
          "</head>"
          "<body>"
-         (let ([up-file (build-path (collection-path "doc") "help" "scheme" "doc.html")]
-               [up-icon (build-path (collection-path "doc") "icons" "up.gif")])
-           (format "<a href=\"file:~a\"><img src=\"file:~a\"></a> <a href=\"file:~a\">Up</a>"
-                   up-file
-                   up-icon
-                   up-file))
+	 (if doc-collection-path
+	     (let ([up-file (build-path doc-collection-path "help" "scheme" "doc.html")]
+		   [up-icon (build-path doc-collection-path "icons" "up.gif")])
+	       (format "<a href=\"file:~a\"><img src=\"file:~a\"></a> <a href=\"file:~a\">Up</a>"
+		       up-file
+		       up-icon
+		       up-file))
+	     "")
          "<H1>Installed Manuals</H1>"
          "<UL>"
          (append

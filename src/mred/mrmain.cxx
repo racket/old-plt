@@ -45,8 +45,6 @@ class wxBufferDataClassList;
 #ifdef wx_mac
 extern short wxMacDisableMods;
 extern long wxMediaCreatorId;
-#endif
-#ifdef MACINTOSH_EVENTS
 # include "simpledrop.h"
 #endif
 

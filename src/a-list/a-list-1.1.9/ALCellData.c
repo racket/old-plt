@@ -430,7 +430,7 @@ ALIST_API Boolean ALSearch(const ALData searchData, ALSearchUPP searchProc, ALCe
 	// Unlock the data.
 	HUnlock((Handle)(*hAL)->hData);
 
-#if !defined( TARGET_API_MAC_CARBON ) || ( TARGET_API_MAC_CARBON == 0 )
+#if ALIST_USE_UPPS
 	// Dispose of the standard routine descriptor if necessary.
 	if ( stdSearchUPP != nil )
 		DisposeRoutineDescriptor(stdSearchUPP);

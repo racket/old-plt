@@ -9,6 +9,8 @@
 
   (provide board-panel%)
   
+  (define animate? #t)
+  
   (define black (make-object color% 0 0 0))
   
   (define transparent-pen (make-object pen% "white" 1 'transparent))
@@ -341,13 +343,15 @@
       (define animate-steps 5)
       (define/private (animate f)
         (when f
-          (let loop ([i 1])
-            (unless (> i animate-steps)
-              (let ([continue? (f i (= i animate-steps))])
-                (sleep/yield 0.05)
-                (update #f)
-                (when continue?
-                  (loop (add1 i))))))))
+          (if animate?
+              (let loop ([i 1])
+                (unless (> i animate-steps)
+                  (let ([continue? (f i (= i animate-steps))])
+                    (sleep/yield 0.05)
+                    (update #f)
+                    (when continue?
+                      (loop (add1 i))))))
+              (f animate-steps #t))))
       
       (define/public (apply-queued-actions)
         ;; Forget old activity:

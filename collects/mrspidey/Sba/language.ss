@@ -921,7 +921,9 @@
        (break-thread           (thread -> void))
        (thread-weight          (case->
 				(thread -> num)
-				(thread num -> void)))
+				(thread num -> void)
+				((union (list thread) (list thread num))
+				 *-> (union num void))))
        ;; ---- semaphores
        (make-semaphore         (optional num -> semaphore))
        (semaphore?             (_ -> bool) (predicate semaphore))

@@ -44,6 +44,7 @@
     (string-append
      "Thanks to "
      "Ian Barland, "
+     "Biep Durieux, "
      "Tim Hanson, "
      "Philippe Meunier, "
      "Jens Axel Søgaard, "

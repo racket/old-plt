@@ -922,7 +922,7 @@ inline static void mark_threads(int owner)
 
   for(work = threads; work; work = work->next)
     if(work->owner == owner)
-      gcMARK(work->thread);
+      mark_table[scheme_thread_type](work->thread);
 }
 
 inline static void repair_thread_list(void)

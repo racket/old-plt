@@ -3799,7 +3799,13 @@ find_system_path(int argc, Scheme_Object **argv)
 
     return CURRENT_WD();
   }
-
+  
+#ifdef OS_X
+  if (which == id_pref_dir) {
+    return scheme_make_string(scheme_expand_filename("~/Library/Preferences/", -1, NULL, NULL));
+  }
+#endif 
+    
   {
     /* Everything else is in ~: */
     Scheme_Object *home;
@@ -3807,7 +3813,7 @@ find_system_path(int argc, Scheme_Object **argv)
 
     home = scheme_make_string(scheme_expand_filename("~/", 2, NULL, NULL));
 
-    if ((which == id_pref_dir) || (which == id_init_dir) || (which == id_home_dir))
+    if ((which == id_pref_dir) || (which == id_init_dir) || (which == id_home_dir)) 
       return home;
 
     ends_in_slash = (SCHEME_STR_VAL(home))[SCHEME_STRTAG_VAL(home) - 1] == '/';

@@ -62,6 +62,8 @@ char *ConvertCFStringRef(CFStringRef str)
 
 int main(int argc, char *argv[], char *envp[])
 {
+  InitCursor();
+  
   CFPropertyListRef propertyList = getPropertyList();
   
   CFStringRef execName;
@@ -108,6 +110,17 @@ int main(int argc, char *argv[], char *envp[])
     storedArgs[argc+count+1] = 0;
   }
 
-  // do the jump!
-  execve(executablePath,storedArgs,envp);
+  pid_t pid = fork();
+  
+  if (pid == -1) {
+    fprintf(stderr,"error on fork: %d\n",errno);
+    exit(1);
+  }
+  
+  if (pid == 0) {
+    // do the jump!	
+    execve(executablePath,storedArgs,envp);
+  } 
+  
+  // else exit.
 }

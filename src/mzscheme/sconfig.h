@@ -619,9 +619,12 @@
 # define SCHEME_PLATFORM_LIBRARY_SUBPATH "ppc-macosx"
 
 # include "uconfig.h"
-# undef HAS_STANDARD_IOB
 
+# undef HAS_STANDARD_IOB
 # define HAS_BSD_IOB
+
+# undef SYSTEM_TYPE_NAME
+# define SYSTEM_TYPE_NAME "macosx"
 
 # define STACK_GROWS_DOWN
 # define USE_MAP_ANON
@@ -642,6 +645,10 @@
 # define USE_TM_GMTOFF_FIELD
 
 # define MACINTOSH_EVENTS
+
+# ifndef OS_X
+#  define OS_X 1
+# endif
 
 # define FLAGS_ALREADY_SET
 
@@ -1205,9 +1212,8 @@
  /* MAC_CLASSIC_PROCESS_CONTROL swaps the UNIX process commands for the mac family 
      (use under classic) */
 
- /* NEVER_EVER_SLEEP prevents MrEdMacSleep from ever being called.  This is the
-    (unfortunate) default for Classic. */
-
+ /* OS_X enables OS_X-specific defaults, e.g. the location of the prefs directory */
+ 
  /* MACINTOSH_GIVE_TIME lets background processes run when checking for
      a user break. */
 

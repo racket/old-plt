@@ -352,8 +352,10 @@
                     eof
 		    (syntax-as-top
                      (datum->syntax-object 
-                      #f 
-                      `(parse-java-interactions ,(parse-interactions port name level) ,name)
+                      #f
+                      `(compile-interactions-helper ,(lambda (ast) (compile-interactions-ast ast name level execute-types))
+                                                    ,(parse-interactions port name level))
+                      #;`(parse-java-interactions ,(parse-interactions port name level) ,name)
                       #f))))))
 
           ;process-extras: (list struct) type-record -> (list syntax)
@@ -514,7 +516,7 @@
                    (namespace-attach-module n obj-path)
                    (namespace-attach-module n class-path)
                    (namespace-require obj-path)
-                   ;(namespace-require '(lib "tool.ss" "profj"))
+                   (namespace-require '(lib "tool.ss" "profj"))
                    (namespace-require class-path)
                    (namespace-require '(prefix javaRuntime: (lib "runtime.scm" "profj" "libs" "java"))))))))
           
@@ -791,14 +793,9 @@
   (provide compile-interactions-helper)
   (define-syntax (compile-interactions-helper syn)
     (syntax-case syn ()
-      ((_ ast loc level types)
-       (begin
-       (printf "~a~n" (struct? ((syntax-object->datum (syntax types)))))
-       (compile-interactions-ast (syntax-e (syntax ast))
-                                 (syntax-e (syntax loc)) 
-                                 (syntax-e (syntax level)) 
-                                 ((syntax-object->datum (syntax types)))))))
-  )
+      ((_ comp ast)
+       (namespace-syntax-introduce ((syntax-object->datum (syntax comp))
+                                    (syntax-object->datum (syntax ast)))))))
   
     
   (provide format-java)

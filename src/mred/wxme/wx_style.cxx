@@ -823,8 +823,10 @@ void wxStyle::SetDelta(wxStyleDelta *d)
   if (join_shiftStyle || (styleList && PTREQ(this, styleList->BasicStyle())))
     return;
 
-  nonjoin_delta->Copy(d);
-  Update();
+  if (!nonjoin_delta->Equal(d)) {
+    nonjoin_delta->Copy(d);
+    Update();
+  }
 }
 
 wxStyle *wxStyle::GetShiftStyle()

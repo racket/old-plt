@@ -7,6 +7,7 @@
            ->d*
            case->
 	   opt->
+           (rename -contract? contract?)
            provide/contract)
 
   (require-for-syntax mzscheme
@@ -126,7 +127,7 @@
                     [neg-blame neg-blame-e]
                     [pos-blame pos-blame-e]
                     [src-info src-info-e])
-                (unless (contract-p? a-contract)
+                (unless (-contract? a-contract)
                   (error 'contract "expected a contract as first argument, got: ~e, other args ~e ~e ~e ~e" 
                          a-contract
                          name
@@ -184,9 +185,9 @@
 			    (syntax
 			     (let ([dom-x dom] ...
 				   [rng-x rng])
-			       (unless (contract-p? dom-x)
+			       (unless (-contract? dom-x)
 				 (error '-> "expected contract as argument, got ~e" dom-x)) ...
-				 (unless (contract-p? rng-x)
+				 (unless (-contract? rng-x)
 				   (error '-> "expected contract as argument, got: ~e" rng-x))
 				 body))))]
 		       [->body (syntax (->* (dom-x ...) (rng-x)))])
@@ -220,9 +221,9 @@
                   (syntax
                    (let ([dom-x dom] ...
                          [rng-x rng] ...)
-                     (unless (contract-p? dom-x)
+                     (unless (-contract? dom-x)
                        (error '->* "expected contract as argument, got ~e" dom-x)) ...
-                     (unless (contract-p? rng-x)
+                     (unless (-contract? rng-x)
                        (error '->* "expected contract as argument, got: ~e" rng-x)) ...
                      body))))
               (lambda (stx)
@@ -264,11 +265,11 @@
                    (let ([dom-x dom] ...
                          [dom-rest-x rest]
                          [rng-x rng] ...)
-                     (unless (contract-p? dom-x)
+                     (unless (-contract? dom-x)
                        (error '->* "expected contract for domain position, got ~e" dom-x)) ...
-                     (unless (contract-p? dom-rest-x)
+                     (unless (-contract? dom-rest-x)
                        (error '->* "expected contract for rest position, got ~e" dom-rest-x))
-                     (unless (contract-p? rng-x)
+                     (unless (-contract? rng-x)
                        (error '->* "expected contract for range position, got: ~e" rng-x)) ...
                      body))))
               (lambda (stx)
@@ -315,7 +316,7 @@
                     (syntax
                      (let ([dom-x dom] ...
                            [rng-x rng])
-                       (unless (contract-p? dom-x)
+                       (unless (-contract? dom-x)
                          (error '->d "expected contract as argument, got ~e" dom-x)) ...
                        (unless (and (procedure? rng-x)
                                     (procedure-arity-includes? rng-x arity))
@@ -339,7 +340,7 @@
                     (syntax
                      ((arg-x ...)
                       (let ([rng-contract (rng-x arg-x ...)])
-                        (unless (contract-p? rng-contract)
+                        (unless (-contract? rng-contract)
                           (error '->d "expected range portion to return a contract, got: ~e"
                                  rng-contract))
                         (check-contract 
@@ -362,7 +363,7 @@
                   (syntax
                    (let ([dom-x dom] ...
                          [rng-mk-x rng-mk])
-                     (unless (contract-p? dom-x)
+                     (unless (-contract? dom-x)
                        (error '->*d "expected contract as argument, got ~e" dom-x)) ...
                      (unless (and (procedure? rng-mk-x)
                                   (procedure-arity-includes? rng-mk-x arity))
@@ -420,9 +421,9 @@
                    (let ([dom-x dom] ...
                          [dom-rest-x rest]
                          [rng-mk-x rng-mk])
-                     (unless (contract-p? dom-x)
+                     (unless (-contract? dom-x)
                        (error '->*d "expected contract as argument, got ~e" dom-x)) ...
-                     (unless (contract-p? dom-rest-x)
+                     (unless (-contract? dom-rest-x)
                        (error '->*d "expected contract for rest argument, got ~e" dom-rest-x))
                      (unless (procedure? rng-mk-x)
                        (error '->*d "expected range position to be a procedure that accepts ~a arguments, got: ~e"
@@ -594,10 +595,13 @@
 		  [opt-vs opts] ...)
 	      (case-> (-> cases ...) ...)))))]))
 
-  (define (contract-p? val)
-    (or (contract? val)
-        (and (procedure? val)
-             (procedure-arity-includes? val 1))))
+  (define -contract?
+    (let ([contract?
+           (lambda (val)
+             (or (contract? val)  ;; refers to struct
+                 (and (procedure? val)
+                      (procedure-arity-includes? val 1))))])
+      contract?))
   
   (define (check-contract contract val pos neg src-info)
     (cond
@@ -616,7 +620,7 @@
   (define (union . args)
     (for-each
      (lambda (x) 
-       (unless (contract-p? x)
+       (unless (-contract? x)
          (error 'union "expected procedures of arity 1 or -> contracts, got: ~e" x)))
      args)
     (let-values ([(contracts procs)
@@ -631,7 +635,7 @@
                                   (loop ctcs (cons arg procs) (cdr args))))]))])
       (unless (or (null? contracts)
                   (null? (cdr contracts)))
-        (error 'union "expected at most one contract, got: ~e" args))
+        (error 'union "expected at most one function contract, got: ~e" args))
       (make-contract
        (lambda (val pos neg src-info)
          (cond

@@ -4,9 +4,9 @@
 ;;  output of zodiac elaboration.
 
 (module zodiac-sig mzscheme
-  (import (lib "unitsig.ss"))
+  (require (lib "unitsig.ss"))
   
-  (export zodiac^)
+  (provide zodiac^)
 
   (define-signature  zodiac^
     (;; Syntax -> zodiac compatibility:
@@ -75,8 +75,8 @@
      ;; Thess are new:
      (struct quote-syntax-form (expr))               create-quote-syntax-form
      (struct define-syntax-form (name expr))         create-define-syntax-form
-     (struct module-form (name init-import body))    create-module-form
-     (struct import/export-form ())                  create-import/export-form
+     (struct module-form (name init-require body))   create-module-form
+     (struct require/provide-form ())                create-require/provide-form
 
      ;; args:
      (struct arglist (vars))

@@ -3,12 +3,12 @@
 ;;  output of zodiac elaboration.
 
 (module zodiac-unit mzscheme
-  (import (lib "unitsig.ss"))
-  (import "kerncase.ss")
+  (require (lib "unitsig.ss"))
+  (require "kerncase.ss")
 
-  (import "zodiac-sig.ss")
+  (require "zodiac-sig.ss")
 
-  (export zodiac@)
+  (provide zodiac@)
 
   (define zodiac@
     (unit/sig zodiac^
@@ -250,30 +250,26 @@
 		  (syntax name)
 		  (loop (syntax rhs) null #t))]
 		
-		[(module name init-import . body)
+		[(module name init-require . body)
 		 (make-module-form
 		  stx
 		  (mk-back)
 		  (syntax name)
-		  (syntax init-import)
+		  (syntax init-require)
 		  (map (lambda (x)
 			 (loop x env trans?))
 		       (syntax->list (syntax body))))]
 
-		[(import i)
-		 (make-import/export-form
+		[(require i)
+		 (make-require/provide-form
 		  stx
 		  (mk-back))]
-		[(import-for-syntax i ...)
-		 (make-import/export-form
+		[(require-for-syntax i ...)
+		 (make-require/provide-form
 		  stx
 		  (mk-back))]
-		[(export i ...)
-		 (make-import/export-form
-		  stx
-		  (mk-back))]
-		[(export-indirect i ...)
-		 (make-import/export-form
+		[(provide i ...)
+		 (make-require/provide-form
 		  stx
 		  (mk-back))]
 
@@ -635,13 +631,13 @@
       (define (create-define-syntax-form z name expr)
 	(make-define-syntax-form (zodiac-stx z) name expr))
 
-      (define-struct (module-form struct:parsed) (name init-import body))
-      (define (create-module-form z name init-import body)
-	(make-module-form (zodiac-stx z) name init-import body))
+      (define-struct (module-form struct:parsed) (name init-require body))
+      (define (create-module-form z name init-require body)
+	(make-module-form (zodiac-stx z) name init-require body))
 
-      (define-struct (import/export-form struct:parsed) ())
-      (define (create-import/export-form z)
-	(make-import/export-form (zodiac-stx z)))
+      (define-struct (require/provide-form struct:parsed) ())
+      (define (create-require/provide-form z)
+	(make-require/provide-form (zodiac-stx z)))
 
       (define-struct arglist (vars))
       (define-struct (sym-arglist struct:arglist) ())

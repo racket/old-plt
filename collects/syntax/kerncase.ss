@@ -13,7 +13,7 @@
 				    with-continuation-mark
 				    if #%app
 				    define-values define-syntax
-				    module import export import-for-syntax export-indirect)
+				    module require provide require-for-syntax)
 			       (if trans? module-transformer-identifier=? module-identifier=?)
 			  clause ...))])))
 
@@ -41,5 +41,5 @@
 	    #%unbound
 	    #%datum)))
   
-  (export kernel-syntax-case
+  (provide kernel-syntax-case
 	  kernel-form-identifier-list))

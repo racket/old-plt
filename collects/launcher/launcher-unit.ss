@@ -1,13 +1,13 @@
 
 (module launcher-unit mzscheme
-  (import (lib "unitsig.ss"))
+  (require (lib "unitsig.ss"))
 
-  (import (lib "compile-sig.ss" "dynext"))
-  (import (lib "link-sig.ss" "dynext"))
+  (require (lib "compile-sig.ss" "dynext"))
+  (require (lib "link-sig.ss" "dynext"))
 
-  (import "launcher-sig.ss")
+  (require "launcher-sig.ss")
 
-  (export launcher@)
+  (provide launcher@)
 
   (define launcher@
     (unit/sig launcher-maker^

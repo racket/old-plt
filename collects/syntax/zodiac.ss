@@ -1,11 +1,11 @@
 
 (module zodiac mzscheme
-  (import (lib "unitsig.ss"))
+  (require (lib "unitsig.ss"))
 
-  (import "zodiac-sig.ss")
-  (import "zodiac-unit.ss")
+  (require "zodiac-sig.ss")
+  (require "zodiac-unit.ss")
 
   (define-values/invoke-unit/sig zodiac^
     zodiac@)
 
-  (export-signature-elements zodiac^))
+  (provide-signature-elements zodiac^))

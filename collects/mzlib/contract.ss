@@ -26,7 +26,9 @@ add struct contracts for immutable structs?
            flat-contract?
            flat-contract
            flat-contract-predicate
-           flat-named-contract)
+           flat-named-contract
+           
+           contract-proc)
 
   (require-for-syntax mzscheme
                       "list.ss"
@@ -337,7 +339,7 @@ add struct contracts for immutable structs?
                                  (cdr l2)
                                  (+ i 1)))])))
          
-         ;; extract-struct-info : syntax -> (union #f (list syntax syntax (listof syntax) ...))
+         ;; extract-parent-struct-info : syntax -> (union #f (list syntax syntax (listof syntax) ...))
          (define (extract-parent-struct-info stx)
            (syntax-case stx ()
              [(a b)
@@ -347,7 +349,7 @@ add struct contracts for immutable structs?
                  (raise-syntax-error 'provide/contract
                                      "expected a struct name" 
                                      provide-stx
-                                     (syntax a))))]
+                                     (syntax b))))]
              [a #f]))
          
          ;; build-constructor-contract : syntax (listof syntax) syntax -> syntax
@@ -2913,10 +2915,10 @@ add struct contracts for immutable structs?
                           'type-name
                           v))))))))))]))
   
-  (define cons-immutable/c (*-immutable/c pair? cons (#f car cdr) immutable-cons cons-immutable/c))
-  (define box-immutable/c (*-immutable/c box? box (#f unbox) immutable-box box-immutable/c))
+  (define cons-immutable/c (*-immutable/c pair? cons-immutable (#f car cdr) immutable-cons cons-immutable/c))
+  (define box-immutable/c (*-immutable/c box? box-immutable (#f unbox) immutable-box box-immutable/c))
   (define vector-immutable/c (*-immutable/c vector?
-                                            vector
+                                            vector-immutable
                                             (#t (lambda (v i) (vector-ref v i)))
                                             (lambda (n v) (= n (vector-length v)))
                                             immutable-vector

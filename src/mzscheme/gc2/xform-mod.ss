@@ -480,7 +480,7 @@
   (define recorded-cpp-in
     (and precompiled-header
 	 (open-input-file (change-suffix precompiled-header #".e"))))
-  (define re:boring #rx#"^(()|(# .*)|(#line .*)|(#pragma implementation.*)|(#pragma interface.*))$")
+  (define re:boring #rx#"^(()|(# .*)|(#line .*)|(#pragma implementation.*)|(#pragma interface.*)|(#pragma once))$")
   (define (skip-to-interesting-line p)
     (let ([l (read-bytes-line p 'any)])
       (cond
@@ -825,8 +825,9 @@
 	 scheme_rational_to_double scheme_bignum_to_double
 	 scheme_rational_to_float scheme_bignum_to_float
 	 |GetStdHandle| |__CFStringMakeConstantString|
+	 _vswprintf_c
 
-	  scheme_make_small_bignum scheme_make_small_rational scheme_make_small_complex))
+	 scheme_make_small_bignum scheme_make_small_rational scheme_make_small_complex))
   (define non-functions-table
     (let ([ht (make-hash-table)])
       (for-each (lambda (s)

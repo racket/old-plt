@@ -2,6 +2,7 @@
 
 AUTOMAKE_OPTIONS = foreign no-dependencies subdir-objects
 
+# ELI: removed testsuite
 SUBDIRS = include
 
 EXTRA_DIST = LICENSE ChangeLog.v1 \

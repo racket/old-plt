@@ -278,17 +278,17 @@
           [(< y gy) (clear-path-vert? x (add1 y) gx gy)])))
 
 
-(define-syntax package-away-goal?
-  (syntax-rules ()
-    ((_ n x y plist)
-     (not (null? (filter (lambda (p) (x-away-goal? n x y (package-x p) (package-y p))) plist))))))
-
-(define-syntax home-away-goal?
-  (syntax-rules ()
-    ((_ n x y hlist)
-     (let ([res (not (null? (filter (lambda (h) (x-away-goal? n x y (car h) (cdr h))) hlist)))])
-;       (when res (printf "res: ~a~n" res))
-       res))))
+  (define-syntax package-away-goal?
+    (syntax-rules ()
+      ((_ n x y plist)
+       (not (null? (filter (lambda (p) (x-away-goal? n x y (package-x p) (package-y p))) plist))))))
+  
+  (define-syntax home-away-goal?
+    (syntax-rules ()
+      ((_ n x y hlist)
+       (let ([res (not (null? (filter (lambda (h) (x-away-goal? n x y (car h) (cdr h))) hlist)))])
+         ;       (when res (printf "res: ~a~n" res))
+         res))))
   
 	(define-syntax is-robot?
 	  (syntax-rules ()
@@ -297,6 +297,18 @@
 			 (and (= 1 (get-robot (get-spot board x y)))
                               (not (and (= (search-player-x (player-cur)) x) (= (search-player-y (player-cur)) y))) ))))
 
+  (define (is-robot-within? x y n)
+    (let ([max-y (+ y n)]
+          [max-x (+ x n)])
+      (let loop ([cur-y (- y n)])
+        (if (> cur-y max-y)
+            #f
+            (let loopx ([cur-x (- x n)])
+              (if (> cur-x max-x)
+                  (loop (+ 1 cur-y))
+                  (if (is-robot? (board) x y)
+                      #t
+                      (loopx (+ 1 cur-x)))))))))
 	(define-syntax wall?
 	  (syntax-rules ()
 			((_ board x y)

@@ -38,8 +38,6 @@
 (module heuristics mzscheme
   (provide (all-defined))
   (define step-weight (make-parameter 0.5))
-  (define destination-in-direction-value (make-parameter 0))
-  (define home-in-direction-value (make-parameter 0))
   (define wall-threat-value (make-parameter 0))
   (define water-threat-value (make-parameter -1))
   (define blank-threat-value (make-parameter -1))

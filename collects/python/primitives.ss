@@ -204,6 +204,9 @@
     (void))
   
 
+  (define (py-file%->port pf)
+    (python-get-member pf scheme-port-key #f))
+  
   
   ;; py-is?: python-object python-object -> bool
   ;; determine whether two objects are the same exact thing
@@ -470,12 +473,17 @@
   
   ;; python-index: (union py-list% py-tuple% py-dict%) number -> py-object%
   (define (python-index indexable index)
+;    (python-method-call indexable '__getitem__ (list index)))
     (cond
       [(py-is-a? indexable py-list%) (list-ref (py-list%->list indexable) index)]
       [(py-is-a? indexable py-tuple%) (list-ref (py-tuple%->list indexable) index)]
       [(py-is-a? indexable py-dict%) (error "python-index: dictionaries not yet supported")]
-      [else (error (format "python-index: cannot index into this: ~a"
-                           (py-object%->string indexable)))]))
+      [else (python-method-call indexable '__getitem__
+                                (list (if (number? index)
+                                          (number->py-number% index)
+                                          index)))]))
+       ;(error (format "python-index: cannot index into this: ~a"
+       ;                    (py-object%->string indexable)))]))
   
   
   (define (has-member? class member-name)
@@ -485,7 +493,18 @@
   
 
   
-  
+  ;; py-compatible-exn? py-object% exn:python -> bool
+  ;; determine whether obj (from a try/except clause) matches the thrown exception
+  (define (py-compatible-exn? obj exn)
+    (or (py-is? obj
+         (exn:python-value exn))
+        (and (py-type? obj)
+             (py-is-a? (exn:python-value exn) obj))
+        (and (py-is-a? obj py-tuple%)
+             (ormap (lambda (item)
+                      (py-compatible-exn? item exn))
+                    (py-tuple%->list obj)))))
+
   
   
   ;;(union procedure py-function% py-classmethod% py-static-method%) class instance
@@ -664,7 +683,11 @@
   (python-add-members py-exception%
                       `((__init__ ,(lambda (this . args)
                                      (python-set-member! this 'args
-                                                         (list->py-tuple% args))))))
+                                                         (list->py-tuple% args))))
+                        (__getitem__ ,(py-lambda '__getitem__ (this key)
+                                                 (python-method-call (python-get-member this 'args #f)
+                                                                     '__getitem__
+                                                                     (list key))))))
   
   (define py-none (make-python-node py-none% (make-hash-table) #f))
   

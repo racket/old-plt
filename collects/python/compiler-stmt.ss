@@ -3,14 +3,80 @@
            (lib "list.ss")
            (lib "etc.ss") ; build-list
 	   "compiler.ss"
-	  ; "compiler-expr.ss"
+	   "compiler-expr.ss"
            "compiler-target.ss"
           ; "primitives.ss"
            "runtime-context.ss"
            "empty-context.ss")
 
   (provide (all-defined-except bindings-mixin))
+  
+  ;; unpack: (or symbol (listof symbol)) syntax-object -> sexp
+  (define (unpack tuple var)
+    (cond
+      [(list? tuple) (map (lambda (i)
+                            (unpack (list-ref tuple i)
+                                    `(,(py-so 'python-index) ,var ,i)))
+                          (build-list (length tuple) identity))]
+      [else `[,(send tuple to-scheme) ,var]]))
+  
+  (define (target->parm-tup target)
+    (cond
+      [(is-a? target tidentifier%) (make-object identifier%
+                                     (symbol->string (send target get-symbol))
+                                     (send target get-start-pos)
+                                     (send target get-end-pos))]
+      [(or (is-a? target ttuple%)
+           (is-a? target tlist-display%)) (map target->parm-tup
+                                               (send target get-sub-targets))]
+      [else (error "target->parm-tup invalid target")]))
+  
+  (define (target->parameters target)
+    (make-object parameters%
+      (list (list 'pos (target->parm-tup target)))
+      (send target get-start-pos)
+      (send target get-end-pos)))
+  
+  
+  ;; generate-lambda: parameters% syntax-object (or false bindings-mixin%) -> sexp
+  ;; generate a lambda.  if scope is not #f, its bindings are defined (as void)
+  (define (generate-lambda parms body-so scope)
+    ;; this is where the outer "let" for default values should
+    ;; be placed; I'll do that after I finish the rest of the def/call code.
+    ;; it's bad design anyway...
+    `(opt-lambda ,(send parms to-scheme)
+       (let ,(append (normalize-assoc-list
+                      (flatten1
+                       (map (lambda (tuple)
+                              (unpack tuple
+                                      (send (first-atom tuple) to-scheme)))
+                            (filter list? (send parms get-pos)))))
+                     (if scope
+                         (map (lambda (b)
+                                `[,(send b to-scheme) (void)])
+                              (send scope get-bindings))
+                         empty))
+         ,body-so)))
 
+  ;; generate-py-lambda: symbol parameters% syntax-object (or false bindings-mixin%) -> sexp
+  ;; generate a lambda.  if scope is not #f, its bindings are defined (as void)
+  (define (generate-py-lambda name parms body-so scope)
+    (let ([seq (send parms get-seq)]
+          [dict (send parms get-dict)])
+      `(,(py-so 'procedure->py-function%)
+        ,(generate-lambda parms body-so scope)
+        ',name
+        (list ,@(map (lambda (p)
+                       `',(send (first-atom p) to-scheme))
+                     (send parms get-pos)))
+        (list ,@(map (lambda (k)
+                       `(cons ',(send (car k) to-scheme)
+                              ,(send (cdr k) to-scheme)))
+                     (send parms get-key)))
+        ,(and seq (send seq to-scheme))
+        ,(and dict (send dict to-scheme)))))
+  
+  
   (define statement%
     (class ast-node%
       ;; check-break/cont: (or/f false? (is-a?/c statement%)) ->
@@ -62,10 +128,11 @@
       (inherit ->orig-so)
       (define/override (to-scheme)
         (->orig-so `(,(py-so 'py-if) (,(py-so 'py-not) ,(send expr1 to-scheme))
-                       (error ,(if expr2
-                                   `(format "AssertError: ~a"
-                                           (,(py-so 'py-object%->string) ,(send expr2 to-scheme)))
-                                   "AssertError")))))
+                       (,(py-so 'py-raise) ,(py-so 'py-assert-error%)
+                        ,(if expr2
+                             `(,(py-so 'py-object%->string) ,(send expr2 to-scheme))
+                             #f)
+                        #f))))
       
       (super-instantiate ())))
   
@@ -140,7 +207,7 @@
       ;;daniel
       (inherit ->orig-so)
       (define/override (to-scheme)
-        (let* ([rhs (gensym 'rhs)]
+        (let* ([rhs (datum->syntax-object #f (gensym 'rhs) #f #f)]
                [body (map (lambda (t)
                             (assignment-so t rhs))
                           targets)])
@@ -162,11 +229,38 @@
       ;; expression: expression%
       (init-field op expression)
 
-      (define target (send targ-exp to-target))
+      ;(define target (send targ-exp to-target))
       
       (define/override (set-bindings! enclosing-scope)
-        (send expression set-bindings! enclosing-scope)
-        (send target set-bindings! enclosing-scope))
+        (send expression set-bindings! enclosing-scope))
+       ; (send target set-bindings! enclosing-scope))
+
+      
+      ;;daniel
+      (inherit ->orig-so)
+      (inherit-field start-pos end-pos)
+      (define orig-targ-exp targ-exp)
+      (define/override (to-scheme)
+        (->orig-so (send (make-object assignment%
+                           (list orig-targ-exp)
+                           (make-object binary%
+                             orig-targ-exp
+                             (case op
+                               [(+=) '+]
+                               [(-=) '-]
+                               [(*=) '*]
+                               [(/=) '/]
+                               [(%=) '%]
+                               [(\|=) '\|]
+                               [(^=) '^]
+                               [(<<=) '<<]
+                               [(>>=) '>>]
+                               [(**=) '**]
+                               [(//=) '//])
+                             expression
+                             start-pos end-pos) ; start-pos, end-pos
+                           start-pos end-pos)
+                         to-scheme)))
       
       (super-instantiate ())))
 
@@ -207,11 +301,13 @@
       ;;daniel
       (inherit ->orig-so ->lex-so)
       (define/override (to-scheme)
-        (->orig-so (if to-file?
-                       `(print-to-file blah)
-                       `(,(py-so 'py-print) (list ,@(map (lambda (e)
+        (->orig-so `(,(py-so 'py-print)
+                     ,(if to-file?
+                          (send to-file? to-scheme)
+                          #f)
+                     (list ,@(map (lambda (e)
                                               (send e to-scheme))
-                                            expressions))))))
+                                            expressions)))))
       
       (super-instantiate ())))
   
@@ -263,16 +359,6 @@
       
       (inherit ->orig-so)
       (define/override (to-scheme)
-;        (->orig-so (if type
-;                       (let ([type (send type to-scheme)])
-;                         (if parm
-;                             (let ([parm (send parm to-scheme)])
-;                               (if traceback
-;                                   (let ([traceback (send traceback to-scheme)])
-;                                     `(raise (,(py-so 'py-create) type parm)))
-;                                   `(raise (,(py-so 'py-create) type parm))))
-;                             `(raise (,(py-so 'py-create) type))))
-;                       `(raise (,(py-so 'python-current-exception))))))
         (->orig-so `(,(py-so 'py-raise) ,(and type
                                              (send type to-scheme))
                                         ,(and parm
@@ -338,6 +424,11 @@
 
       (define/override (collect-globals) identifiers)
       
+      ;; doesn't actually _do_ anything at runtime
+      (inherit-field start-pos end-pos)
+      (define/override (to-scheme)
+        (send (make-object pass% start-pos end-pos) to-scheme))
+      
       (super-instantiate ())))
 
   ;; 6.14
@@ -365,6 +456,7 @@
         (map f statements))
       
       (define scope #f)
+      (define/public (get-scope) scope)
       
       (define/override (set-bindings! enclosing-scope)
         (set! scope enclosing-scope)
@@ -476,6 +568,16 @@
         (if else
             (send else check-break/cont enclosing-loop)))
       
+      (inherit ->orig-so)
+      (define/override (to-scheme)
+        (let ([loop (gensym 'loop)])
+          (->orig-so `(let ,loop ()
+                        (,(py-so 'py-if) ,(send test to-scheme)
+                         (begin ,(send body to-scheme)
+                                (,loop))
+                         ,(send else to-scheme))))))
+      
+      
       (super-instantiate ())))
   
   ;; 7.3
@@ -578,6 +680,33 @@
       (define/override (collect-globals)
         (apply append (sub-stmt-map (lambda (s) (send s collect-globals)))))
                        
+      (define exn (gensym 'exn))
+      (inherit ->orig-so)
+      (define/override (to-scheme)
+        (let ([handled `(with-handlers ,(map (lambda (e&t&s)
+                                               `[(lambda (,exn)
+                                                   (and (,(py-so 'exn:python?) ,exn)
+                                                        ,(if (car e&t&s)
+                                                             `(,(py-so 'py-compatible-exn?)
+                                                               ,(send (car e&t&s)
+                                                                      to-scheme)
+                                                               ,exn)
+                                                             #t)))
+                                                 ,(let ([handler-body (send (caddr e&t&s) to-scheme)])
+                                                    `(lambda (,exn)
+                                                       ,(if (cadr e&t&s)
+                                                            `(,(generate-lambda (target->parameters (cadr e&t&s))
+                                                                                handler-body
+                                                                                #f)
+                                                           (,(py-so 'exn:python-value) ,exn))
+                                                         handler-body)))])
+                                             exceptions)
+                          ;; return the result in a list to signal successful try block
+                         (list ,(send body to-scheme)))])
+          (->orig-so (if else
+                           `(if (list? ,handled)
+                                  ,(send else to-scheme))
+                         handled))))
       
       (super-instantiate ())
       (let loop ((e exceptions))
@@ -705,49 +834,41 @@
        (define/override (check-break/cont enclosing-loop)
          (send body check-break/cont #f))
        
-       (define pos (send parms get-pos))
-       (define key (send parms get-key))
-       (define seq (send parms get-seq))
-       (define dict (send parms get-dict))
-       
-       (define (unpack tuple var)
-         (cond
-           [(list? tuple) (map (lambda (i)
-                                 (unpack (list-ref tuple i)
-                                         `(,(py-so 'python-index) ,var ,i)))
-                               (build-list (length tuple) identity))]
-           [else `[,(send tuple to-scheme) ,var]]))
        
        ;;daniel
        (inherit ->orig-so)
        (define/override (to-scheme)
          (->orig-so (let ([proc-name (send name to-scheme)])
                       `(define ,proc-name
-                         (,(py-so 'procedure->py-function%)
-                          ;; this is where the outer "let" for default values should
-                          ;; be placed; I'll do that after I finish the rest of the def/call code.
-                          ;; it's bad design anyway...
-                          (opt-lambda ,(send parms to-scheme)
-                            (let ,(append (normalize-assoc-list
-                                           (flatten1
-                                            (map (lambda (tuple)
-                                                   (unpack tuple
-                                                           (send (first-atom tuple) to-scheme)))
-                                                 (filter list? pos))))
-                                          (map (lambda (b)
-                                                 `[,(send b to-scheme) (void)])
-                                               (send this get-bindings)))
-                              ,(send body to-scheme return-symbol #t)))
-                          ',proc-name
-                          (list ,@(map (lambda (p)
-                                         `',(send (first-atom p) to-scheme))
-                                       pos))
-                          (list ,@(map (lambda (k)
-                                         `(cons ',(send (car k) to-scheme)
-                                                ,(send (cdr k) to-scheme)))
-                                       key))
-                          ,(and seq (send seq to-scheme))
-                          ,(and dict (send dict to-scheme)))))))
+                         ,(generate-py-lambda proc-name
+                                              parms
+                                              (send body to-scheme return-symbol #t)
+                                              this)))))
+;                         (,(py-so 'procedure->py-function%)
+;                          ;; this is where the outer "let" for default values should
+;                          ;; be placed; I'll do that after I finish the rest of the def/call code.
+;                          ;; it's bad design anyway...
+;                          (opt-lambda ,(send parms to-scheme)
+;                            (let ,(append (normalize-assoc-list
+;                                           (flatten1
+;                                            (map (lambda (tuple)
+;                                                   (unpack tuple
+;                                                           (send (first-atom tuple) to-scheme)))
+;                                                 (filter list? pos))))
+;                                          (map (lambda (b)
+;                                                 `[,(send b to-scheme) (void)])
+;                                               (send this get-bindings)))
+;                              ,(send body to-scheme return-symbol #t)))
+;                          ',proc-name
+;                          (list ,@(map (lambda (p)
+;                                         `',(send (first-atom p) to-scheme))
+;                                       pos))
+;                          (list ,@(map (lambda (k)
+;                                         `(cons ',(send (car k) to-scheme)
+;                                                ,(send (cdr k) to-scheme)))
+;                                       key))
+;                          ,(and seq (send seq to-scheme))
+;                          ,(and dict (send dict to-scheme)))))))
        
        (super-instantiate ()))))
     

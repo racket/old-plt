@@ -63,6 +63,10 @@
       (define/public (compile)
         (stx-err "The compiler does not understand this expression"))
       
+      ;;daniel
+      (define/public (get-start-pos) start-pos)
+      (define/public (get-end-pos) end-pos)
+      
       
       ;;daniel
       ;; to-scheme: -> syntax-object?

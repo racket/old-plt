@@ -46,15 +46,17 @@
                          (car (cdr comp-lst))
                          (cdr (cdr comp-lst)))))))
   
-  ;; py-print: (listof X) -> void
-  (define (py-print lst)
-    (for-each (lambda (x)
-                (display (py-string%->string (if (py-is-a? x py-string%)
-                                                 x
-                                                 (py-call py-repr (list x))))) (display #\space))
-              lst)
-    (newline))
-
+  ;; py-print: (or py-file% #f) (listof X) -> void
+  (define (py-print file lst)
+    (parameterize ([current-output-port (if file
+                                            (py-file%->port file)
+                                            (current-output-port))])
+      (for-each (lambda (x)
+                  (display (py-string%->string (if (py-is-a? x py-string%)
+                                                   x
+                                                   (py-call py-repr (list x))))) (display #\space))
+                lst)
+      (newline)))
   
   (define-syntax (build-class-body-entry stx)
       (datum->syntax-object stx

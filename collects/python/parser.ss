@@ -44,38 +44,38 @@
   (define-lex-abbrevs
    (blank (: #\space #\tab #\page))
    (comment (@ #\# (* (^ #\newline))))
-   (letter (: (- #\A #\Z) (- a z)))
+   (letter (: (- #\A #\Z) (- #\a #\z)))
    (digit (- #\0 #\9))
    (decimal-integer (: "0" 
-                       (@ (- "1" "9") (* (digit)))))
+                       (@ (- "1" "9") (* digit))))
    (oct-integer (@ "0" (+ (- "0" "7"))))
-   (hex-integer (@ "0" (: x "X") (+ (: (digit) (- "A" "F") (- "a" "f")))))
-   (float (: (point-float) (exponent-float)))
-   (point-float (: (@ (? (int-part)) (fraction))
-                   (@ (int-part) ".")))
-   (exponent-float (@ (: (int-part) (point-float)) (exponent)))
-   (int-part (+ (digit)))
-   (fraction (@ "." (+ (digit))))
-   (exponent (@ (: e "E") (? (: + -)) (+ (digit))))
-   (string-literal (@ (string-prefix) (: (short-string1)
-                                         (short-string2)
-                                         (long-string1)
-                                         (long-string2))))
-   (string-prefix (@ (? (: u U)) (? (: r R))))
-   (short-string1 (@ "'" (* (short-string-item1)) "'"))
-   (short-string2 (@ #\" (* (short-string-item2)) #\"))
-   (long-string1 (@ "'''" (* (: (long-string-item1)
-                                (@ #\' (long-string-item1))
-                                (@ "''" (long-string-item1))))
+   (hex-integer (@ "0" (: #\x "X") (+ (: digit (- "A" "F") (- "a" "f")))))
+   (float (: point-float exponent-float))
+   (point-float (: (@ (? int-part) fraction)
+                   (@ int-part ".")))
+   (exponent-float (@ (: int-part point-float) exponent))
+   (int-part (+ digit))
+   (fraction (@ "." (+ digit)))
+   (exponent (@ (: #\e "E") (? (: #\+ #\-)) (+ digit)))
+   (string-literal (@ string-prefix (: short-string1
+                                         short-string2
+                                         long-string1
+                                         long-string2)))
+   (string-prefix (@ (? (: #\u #\U)) (? (: #\r #\R))))
+   (short-string1 (@ "'" (* short-string-item1) "'"))
+   (short-string2 (@ #\" (* short-string-item2) #\"))
+   (long-string1 (@ "'''" (* (: long-string-item1
+                                (@ #\' long-string-item1)
+                                (@ "''" long-string-item1)))
                   "'''"))
-   (long-string2 (@ "\"\"\"" (* (: (long-string-item2)
-                                (@ #\" (long-string-item2))
-                                (@ "\"\"" (long-string-item2))))
+   (long-string2 (@ "\"\"\"" (* (: long-string-item2
+                                (@ #\" long-string-item2)
+                                (@ "\"\"" long-string-item2)))
                   "\"\"\""))
-   (short-string-item1 (: (short-string-char1) (escape-seq)))
-   (short-string-item2 (: (short-string-char2) (escape-seq)))
-   (long-string-item1 (: (long-string-char1) (escape-seq)))
-   (long-string-item2 (: (long-string-char2) (escape-seq)))
+   (short-string-item1 (: short-string-char1 escape-seq))
+   (short-string-item2 (: short-string-char2 escape-seq))
+   (long-string-item1 (: long-string-char1 escape-seq))
+   (long-string-item2 (: long-string-char2 escape-seq))
    (short-string-char1 (^ #\\ #\newline #\'))
    (short-string-char2 (^ #\\ #\newline #\"))
    (long-string-char1 (^ #\\ #\'))
@@ -177,7 +177,7 @@
               (lexer-src-pos
 
                ;; 2.1.5, 2.1.6
-               ((@ #\newline (* (@ (* (blank)) (? (comment)) #\newline)))
+               ((@ #\newline (* (@ (* blank) (? comment) #\newline)))
                 (cond
                   ((and (= 0 p-depth) (= 0 sq-depth) (= 0 c-depth))
                    (set! line-start #t)
@@ -186,56 +186,56 @@
                   (else
                    (return-without-pos (lex-token input-port)))))
                ;; 2.1.3
-               ((comment) (return-without-pos (lex-token input-port)))
+               (comment (return-without-pos (lex-token input-port)))
                ;; 2.1.4
                ((@ #\\ #\newline) (return-without-pos (lex-token input-port)))
                ;; 2.1.8
-               ((+ (blank)) (return-without-pos (lex-token input-port)))
+               ((+ blank) (return-without-pos (lex-token input-port)))
                
                ;;2.3.1
-               ((: and       del       for       is        raise    
-                   assert    elif      from      lambda    return   
-                   break     else      global    not       try      
-                   class     except    if        or        while    
-                   continue  exec      import    pass      yield    
-                   def       finally   in        print)
+               ((: "and"       "del"       "for"       "is"        "raise"
+                   "assert"    "elif"      "from"      "lambda"    "return"   
+                   "break"     "else"      "global"    "not"       "try"      
+                   "class"     "except"    "if"        "or"        "while"    
+                   "continue"  "exec"      "import"    "pass"      "yield"    
+                   "def"       "finally"   "in"        "print")
                 (string->symbol lexeme))
                ;; 2.3
-               ((@ (: (letter) _) (* (: (letter) (digit) _)))
+               ((@ (: letter "_") (* (: letter digit "_")))
                 (token-NAME lexeme))
                
                
                ;; 2.4.1
-               ((string-literal) (token-STRING (translate-string lexeme start-pos end-pos)))
+               (string-literal (token-STRING (translate-string lexeme start-pos end-pos)))
                
                ;; 2.4.4
-               ((decimal-integer)
+               (decimal-integer
                 (token-NUMBER (string->number lexeme)))
-               ((oct-integer)
+               (oct-integer
                 (token-NUMBER (string->number lexeme 8)))
-               ((hex-integer)
+               (hex-integer
                 (token-NUMBER (string->number (substring lexeme 2 (string-length lexeme)) 16)))
-               ((@ (decimal-integer) (: l "L"))
+               ((@ decimal-integer (: #\l "L"))
                 (token-NUMBER 
                  (string->number (substring lexeme 0 (sub1 (string-length lexeme))))))
-               ((@ (oct-integer) (: l "L"))
+               ((@ oct-integer (: #\l "L"))
                 (token-NUMBER 
                  (string->number (substring lexeme 0 (sub1 (string-length lexeme))) 8)))
-               ((@ (hex-integer) (: l "L"))
+               ((@ hex-integer (: #\l "L"))
                 (token-NUMBER (string->number (substring lexeme 2 (sub1 (string-length lexeme)))
                                               16)))
                ;; 2.4.5
-               ((float) 
+               (float
                 (token-NUMBER (string->number lexeme)))
                
                ;; 2.4.6
-               ((@ (: (float) (int-part)) (: j "J"))
+               ((@ (: float int-part) (: #\j "J"))
                 (token-NUMBER (* +i (string->number (substring lexeme 0 (sub1 (string-length lexeme)))))))
                
                ;; 2.5
-               ((: +       -       *       **      /       //      %
-                   <<      >>      &       #\|     ^       ~
-                   <       >       <=      >=      ==      !=      <>)
+               ((: #\+       #\-       #\*       "**"      #\/       "//"      #\%
+                   "<<"      ">>"      #\&       #\|       #\^       #\~
+                   #\<       #\>       "<="      ">="      "=="      "!="      "<>")
                 (if (string=? "|" lexeme)
                     '\|
                     (string->symbol lexeme)))
@@ -249,8 +249,8 @@
                ("{" (OBRACE))
                ("}" (CBRACE))
                ((: #\, #\; #\. #\`
-                   :       =       +=      -=      *=      /=      //=     %=
-                   &=      ^=      >>=     <<=     **=)
+                   #\:       #\=       "+="      "-="      "*="      "/="      "//="     "%="
+                   "&="      "^="      ">>="     "<<="     "**=")
                 (string->symbol lexeme))
 
                ((eof)

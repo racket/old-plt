@@ -18,6 +18,7 @@
   (define scheme-list-key (gensym 'list-key))
   (define scheme-procedure-key (gensym 'procedure-key))
   (define scheme-hash-table-key (gensym 'hash-table-key))
+  (define scheme-port-key (gensym 'port-key))
 
   ;; more hidden keys
   (define python-function-pos-ids-key (gensym 'pos))

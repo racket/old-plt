@@ -41,6 +41,10 @@
   ;; exceptions
   (define py-exception% (immutable-type #cs'Exception))
   (define py-type-error% (immutable-type #cs'TypeError py-exception%))
+  (define py-assert-error% (immutable-type #cs'AssertError py-exception%))
+  
+  ;; files
+  (define py-file% (immutable-type 'file))
 
 
   (define (python-add-members node assoc-list)

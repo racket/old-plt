@@ -139,7 +139,7 @@
       ;;daniel
       (inherit ->orig-so ->lex-so)
       (define/override (to-scheme)
-            (->lex-so (get-symbol) empty-context))
+            (->lex-so (get-symbol) #f)) ;empty-context))
       
       (super-instantiate ())))
   
@@ -178,8 +178,7 @@
       ;;daniel
       (inherit ->orig-so)
       (define/override (to-scheme)
-        (->orig-so `(,(py-so 'py-create) ,(py-so 'py-tuple%)
-                                             (list ,@(map (lambda (e)
+        (->orig-so `(,(py-so 'list->py-tuple%) (list ,@(map (lambda (e)
                                                             (send e to-scheme))
                                                           expressions)))))
       
@@ -202,7 +201,7 @@
       ;;daniel
       (inherit ->orig-so)
       (define/override (to-scheme)
-        (->orig-so `(,(py-so 'py-create) ,(py-so 'py-list%)
+        (->orig-so `(,(py-so 'list->py-list%)
                                          (list ,@(map (lambda (e) (send e to-scheme))
                                                       expressions)))))
       
@@ -609,8 +608,8 @@
       ;;daniel
       (inherit ->orig-so)
       (define/override (to-scheme)
-        (->orig-so `(,(py-so 'py-lambda) 'anonymous-function ,(send parms to-scheme)
-                     ,(send body to-scheme))))
+        (->orig-so `(,(py-so 'procedure->py-function%) (lambda ,(send parms to-scheme)
+                                                         ,(send body to-scheme)))))
       
       (define/public (is-global? b) #f)
       

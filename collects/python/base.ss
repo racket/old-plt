@@ -10,8 +10,9 @@
 
   (provide ;(all-from mzscheme)
            ;(all-from (lib "list.ss"))
+           #%top
            opt-lambda
-	   (all-from "primitives.ss")
+	   ;(all-from "primitives.ss")
            (all-from "runtime-support.ss")
            (all-from "built-in.ss")
            (all-from "built-in-exceptions.ss")

@@ -1250,9 +1250,11 @@ Link_Info *scheme_link_info_extend(Link_Info *info, int size, int oldsize, int m
   naya->count = mapc;
   naya->pos = 0;
   naya->anchor_offset = 0;
-  naya->old_pos = MALLOC_N(short, mapc);
-  naya->new_pos = MALLOC_N(short, mapc);
-  naya->flags = MALLOC_N(int, mapc);
+  if (mapc) {
+    naya->old_pos = MALLOC_N(short, mapc);
+    naya->new_pos = MALLOC_N(short, mapc);
+    naya->flags = MALLOC_N(int, mapc);
+  }
 
   naya->can_optimize_constants = info->can_optimize_constants;
 

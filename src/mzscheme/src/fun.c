@@ -1831,7 +1831,7 @@ cc_marks(int argc, Scheme_Object *argv[])
     }
 
     while (s < limit) {
-      if (!*s) {
+      if (*s == (Scheme_Object *)0x2) {
 	s++;
 	if (SAME_OBJ(key, *s)) {
 	  Scheme_Object *pr = scheme_make_pair(s[1], scheme_null);

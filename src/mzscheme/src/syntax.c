@@ -817,16 +817,20 @@ with_cont_mark_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_
   scheme_compile_rec_done_local(rec);
 
   scheme_init_compile_recs(rec, recs, 3);
-  recs[3].value_name = name;
+  recs[2].value_name = name;
 
   key = scheme_compile_expr(key, env, &recs[0]);
   val = scheme_compile_expr(val, env, &recs[1]);
+
+  /* 3 places on the stack for the mark and its support */
+  env = scheme_new_compilation_frame(3, SCHEME_LET_FRAME, env);
+
   expr = scheme_compile_expr(expr, env, &recs[2]);
 
+  recs[2].max_let_depth += 3;
+  
   scheme_merge_compile_recs(rec, recs, 3);
 
-  rec->max_let_depth += 3;
-  
   wcm = MALLOC_ONE_TAGGED(Scheme_With_Continuation_Mark);
   wcm->type = scheme_with_cont_mark_type;
   wcm->key = key;

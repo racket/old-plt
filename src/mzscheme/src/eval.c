@@ -621,6 +621,7 @@ Scheme_Object *scheme_link_expr(Scheme_Object *expr, Link_Info *info)
       Scheme_With_Continuation_Mark *wcm = (Scheme_With_Continuation_Mark *)expr;
       wcm->key = scheme_link_expr(wcm->key, info);
       wcm->val = scheme_link_expr(wcm->val, info);
+      info = scheme_link_info_extend(info, 3, 3, 0);
       wcm->body = scheme_link_expr(wcm->body, info);
       return (Scheme_Object *)wcm;
     }
@@ -1892,6 +1893,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 #endif
 
 #define UPDATE_THREAD_RSPTR_FOR_GC() UPDATE_THREAD_RSPTR()
+#define UPDATE_THREAD_RSPTR_FOR_ERROR() UPDATE_THREAD_RSPTR()
 
   old_runstack = p->runstack;
 
@@ -1912,6 +1914,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
   apply_top:
 
     if (SCHEME_INTP(obj)) {
+      UPDATE_THREAD_RSPTR();
       scheme_wrong_rator(obj, num_rands, rands);
       return NULL; /* doesn't get here */
     }
@@ -1984,6 +1987,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	  int extra, n;
 
 	  if (num_rands < (num_params - 1)) {
+	    UPDATE_THREAD_RSPTR_FOR_ERROR();
 	    scheme_wrong_count(scheme_get_proc_name(obj, NULL, 1), 
 			       num_params - 1, -1,
 			       num_rands, rands);
@@ -2037,11 +2041,13 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	} else {
 	  if (num_rands != num_params) {
 	    if (num_rands < num_params) {
+	      UPDATE_THREAD_RSPTR_FOR_ERROR();
 	      scheme_wrong_count(scheme_get_proc_name(obj, NULL, 1), 
 				 num_params, num_params,
 				 num_rands, rands);
 	      return NULL; /* Doesn't get here */
 	    } else {
+	      UPDATE_THREAD_RSPTR_FOR_ERROR();
 	      scheme_wrong_count(scheme_get_proc_name(obj, NULL, 1), 
 				 num_params, num_params,
 				 num_rands, rands);
@@ -2064,6 +2070,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 #endif
       } else {
 	if (num_rands) {
+	  UPDATE_THREAD_RSPTR_FOR_ERROR();
 	  scheme_wrong_count(scheme_get_proc_name(obj, NULL, 1),
 			     0, 0, num_rands, rands);
 	  return NULL; /* Doesn't get here */
@@ -2143,6 +2150,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	}
       }
       
+      UPDATE_THREAD_RSPTR_FOR_ERROR();
       scheme_wrong_count((char *)seq, -1, -1, num_rands, rands);
 
       return NULL; /* Doesn't get here. */
@@ -2246,6 +2254,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
       MZTHREADELEM(p, jumping_to_continuation) = 1;
       scheme_longjmp(MZTHREADELEM(p, error_buf), 1);
     } else {
+      UPDATE_THREAD_RSPTR_FOR_ERROR();
       scheme_wrong_rator(obj, num_rands, rands);
       return NULL; /* Doesn't get here. */
     }
@@ -2266,6 +2275,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 #define global_lookup(prefix, _obj, tmp)                                \
 	  tmp = (Scheme_Object *)(SCHEME_VAR_BUCKET(_obj))->val;        \
 	  if (!tmp) {                                                   \
+            UPDATE_THREAD_RSPTR_FOR_ERROR();                            \
 	    scheme_unbound_global((Scheme_Object *)                     \
 				  (SCHEME_VAR_BUCKET(_obj))->key);      \
             return NULL;                                                \
@@ -2582,12 +2592,17 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	  Scheme_Object *key, *val;
 	  
 	  UPDATE_THREAD_RSPTR();
-	  key = _scheme_eval_compiled_expr_wp(wcm->key, p);
-	  val = _scheme_eval_compiled_expr_wp(wcm->val, p);
+	  key = wcm->key;
+	  if (SCHEME_TYPE(key) < _scheme_values_types_)
+	    key = _scheme_eval_compiled_expr_wp(wcm->key, p);
+	  val = wcm->val;
+	  if (SCHEME_TYPE(val) < _scheme_values_types_)
+	    val = _scheme_eval_compiled_expr_wp(wcm->val, p);
 
 	  PUSH_RUNSTACK(p, RUNSTACK, 3);
 
-	  RUNSTACK[0] = NULL; /* A NULL embedded in the runstack indicates a continuation mark */
+	  /* 0x2 embedded in the runstack indicates a continuation mark */
+	  RUNSTACK[0] = (Scheme_Object *)0x2;
 	  RUNSTACK[1] = key;
 	  RUNSTACK[2] = val;
 
@@ -2609,7 +2624,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 #ifdef AGRESSIVE_ZERO_FOR_GC
     p->ku.apply.tail_rands = NULL;
 #endif
-    RUNSTACK = old_runstack; /* <<<<<<<<<<<<<< */
+    RUNSTACK = old_runstack;
     goto apply_top;
   }
 

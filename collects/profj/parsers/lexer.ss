@@ -9,6 +9,9 @@
   (require (lib "lex.ss" "parser-tools")
            "../parameters.ss")
 
+  (define-struct test-case (test))
+  (provide (struct test-case (test)))
+  
   (provide Operators Separators EmptyLiterals Keywords java-vals special-toks get-token get-syntax-token)
   
   (define-empty-tokens Operators
@@ -277,17 +280,18 @@
      ;; 3.7
      (Comment (return-without-pos (get-token input-port)))
 
-     ((special) 
+     ((special)
       (cond
         (((interactions-box-test) special) (token-INTERACTIONS_BOX special))
-        ((syntax? special)
-         (syntax-case special ()
-           ((define-values () (values)) (token-TEST_SUITE special))
-           (else (if (and (syntax? special) (pair? (syntax-e special)) 
-                          (symbol? (syntax-e (car (syntax-e special))))
-                          (eq? 'test-case (syntax-e (car (syntax-e special)))))
-                     (token-TEST_SUITE special)
-                     (token-OTHER_SPECIAL special)))))
+        ((test-case? special) (token-TEST_SUITE special))
+        #;        ((syntax? special)
+                   (syntax-case special ()
+                     ((define-values () (values)) (token-TEST_SUITE special))
+                     (else (if (and (syntax? special) (pair? (syntax-e special)) 
+                                    (symbol? (syntax-e (car (syntax-e special))))
+                                    (eq? 'test-case (syntax-e (car (syntax-e special)))))
+                               (token-TEST_SUITE special)
+                               (token-OTHER_SPECIAL special)))))
         (else (token-OTHER_SPECIAL special))))
           
      ;; 3.6

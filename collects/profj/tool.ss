@@ -332,7 +332,14 @@
                           (let ([text (drscheme:language:text/pos-text input)])
                             (input-port (lambda () (open-input-text-editor text 
                                                                            (drscheme:language:text/pos-start input)
-                                                                           (drscheme:language:text/pos-end input))))
+                                                                           (drscheme:language:text/pos-end input)
+                                                                           (lambda (s) 
+                                                                             (if (equal? "test-case-box%"
+                                                                                         (send (send s get-snipclass)
+                                                                                               get-classname))
+                                                                                 (values (make-test-case s) 1)
+                                                                                 (values s 1)))
+                                                                           )))
                             (values ((input-port)) text))])
               (let ((main-mod #f)
                     (require? #f)
@@ -382,7 +389,13 @@
                             (input-port (lambda ()
                                           (open-input-text-editor text 
                                                                   (drscheme:language:text/pos-start input)
-                                                                  (drscheme:language:text/pos-end input))))
+                                                                  (drscheme:language:text/pos-end input)
+                                                                  (lambda (s) 
+                                                                             (if (equal? "test-case-box%"
+                                                                                         (send (send s get-snipclass)
+                                                                                               get-classname))
+                                                                                 (values (make-test-case s) 1)
+                                                                                 (values s 1))))))
                             (values ((input-port)) text))])
               (interactions-offset (drscheme:language:text/pos-start input))
               (lambda ()
@@ -398,7 +411,11 @@
 
           (define/private (process-extras extras)
             (map (lambda (e)
-                   (if (syntax? e) e (datum->syntax-object #f 1 #f)))
+                   (if (test-case? e)
+                       (let-values (((syn throwaway throwaway2)
+                                     (send (test-case-test e) read-one-special 0 #f #f #f #f)))
+                         syn)
+                       (datum->syntax-object #f 1 #f)))
                  extras))
           
           ;find-main-module: (list compilation-unit) -> (U syntax #f)

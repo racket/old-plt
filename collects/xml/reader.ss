@@ -27,6 +27,7 @@
                     (car stack))))
             
             ;make-att-list: (list strings) -> (list attribute)
+            ;This needs to be updated with a structure
             ;; kathyg's type is wrong - ptg
             (define (make-att-list lst)
               (if (null? lst)
@@ -76,11 +77,16 @@
             
             ;; read-document : tokenstream document-> document
             ;; This does not follow the data def - ptg
+            ;; I think it does - kathyg
+            ;; not the one in the XML spec - ptg
             (define (read-document toks document)
               (let ((token (if (not (null? toks))
                                (tokstream-token toks))))
                 (cond
-                  ((null? toks) document)
+                  ((null? toks)
+                   (unless (element? (document-element document))
+                     (raise (make-xml-read:error "XML documents must contain exactly one element" document)))
+                   document)
                   ((and (null? (document-prolog document))
                         (or (pi-tag? token)
                             (doc-tag? token)))
@@ -98,18 +104,29 @@
                                        (cons (make-pi (pi-tag-type token)
                                                       (chars->strings (pi-tag-contents token) #f))
                                              (document-misc document))))))
-                  ((or (begin-tag? token) (empty-tag? token)) 
-                   (let ((ele-stream (build-element toks)))
-                     (if (peek)
-                         (raise (make-xml-read:error 
-                                 (string-append (peek) " tag not closed") ele-stream))
-                         (read-document (tokstream-rest (cadr ele-stream))
-                                        (make-document (document-prolog document)
-                                                       (car ele-stream)
-                                                       null)))))
+                  ((or (begin-tag? token) (empty-tag? token))
+                   (let ((open-pos (if (begin-tag? token) 
+                                       (begin-tag-start token)
+                                       (empty-tag-start token))))
+                     (unless (null? (document-element document))
+                       (raise (make-xml-read:error
+                               (format "XML documents are only permitted to have one element.~n Found second element at position ~s"
+                                     open-pos) token)))
+                     (let ((ele-stream (build-element toks)))
+                       (if (peek)
+                           (raise (make-xml-read:error 
+                                   (format "~s tag at position ~s not closed"
+                                           (peek) open-pos) ele-stream))
+                           (read-document (tokstream-rest (cadr ele-stream))
+                                          (make-document (document-prolog document)
+                                                         (car ele-stream)
+                                                         null))))))
                   (else 
-                   (raise (make-xml-read:error 
-                           "xml document must open with prolog or element" toks))))))
+                   (raise 
+                    (make-xml-read:error 
+                     (format
+                      "xml document must start with processing instruction or element, given ~s"
+                      token) toks))))))
             
             ;walk: (token xmlD (list pi) doctype (list pi) -> xmlD)
             ;      (token xmlD (list pi) doctype (list pi) -> pi)
@@ -141,15 +158,17 @@
                       (else 
                        (raise 
                         (make-xml-read:error 
-                         "PI, DOC, BEGIN, or EMPTY must preceed other tag types"
+                         (format "XML documents should begin with Processing instructions, Doctypes, or Elements. Given token ~s instead" token)
                          token))))))))
             
             ;build-prolog: tokenstream prolog -> (list prolog tokenstream)
             ;; This is wrong.  It doesn't follow the Data type definition for prologs in the xml-spec.
             ;;  -- ptg
+            ;;I disagree - kathy
             (define build-prolog
               (lambda (toks pro)
                 (if (null? toks)
+                    ;;This error message is bad
                     (raise (make-xml-read:error "xml document must have a body" toks))
                     (let ((token (tokstream-token toks)))
                       (cond
@@ -192,8 +211,8 @@
                           token toks pro))
                         ((null? (prolog-dtd pro))
                          ((walk
-                           (lambda (a b c d e) 
-                             (raise (make-xml-read:error "XML declaration must be at top" a)))
+                           (lambda (token b c d e) 
+                             (raise (make-xml-read:error "XML declaration must be first" token)))
                            (lambda (token xml misc __ ___)
                              (make-prolog  xml
                                            (cons 
@@ -209,8 +228,8 @@
                                           __))) token toks pro))
                         (else
                          ((walk
-                           (lambda (a b c d e)
-                             (raise (make-xml-read:error "XML declaration must be at top" a)))
+                           (lambda (token b c d e)
+                             (raise (make-xml-read:error "XML declaration must be first" token)))
                            (lambda (token xml misc dtd misc2)
                              (make-prolog xml misc dtd
                                           (cons 
@@ -219,7 +238,7 @@
                                            misc2)))
                            (lambda (a b c d e) 
                              (raise (make-xml-read:error 
-                                     "Detected illegal second doc declaration" a))))
+                                     "Detected illegal second doctype declaration" a))))
                           token toks pro)))))))
             
             ;build-element: tokstream -> (list element tokstream)
@@ -229,8 +248,10 @@
                         (define element-get
                           (lambda ()
                             (if (null? toks)
-                                (raise (make-xml-read:error "File should not end before end tag"
-                                                            toks))
+                                (raise 
+                                 (make-xml-read:error 
+                                  (format "Input ended unexpectedly before ~s was closed" (peek))
+                                  toks))
                                 (let ((token (tokstream-token toks)))
                                   (cond
                                     ((begin-tag? token)
@@ -252,14 +273,16 @@
                                     (else 
                                      (raise 
                                       (make-xml-read:error 
-                                       "Begin or Empty must come before end tags" token))))))))
+                                       (format "~s should have come after beginning tag" token)
+                                       token))))))))
                         
                         ;; build-contents : -> (listof Contents) x Location
                         (define (build-contents)
                           (get-next)
                           (if (null? toks) 
-                              (raise (make-xml-read:error "File should not end before end tag"
-                                                          toks))
+                              (raise (make-xml-read:error 
+                                      (format "Input unexpectedly ended before ~s was closed"
+                                              (peek)) toks))
                               (let ((token (tokstream-token toks)))
                                 (if (end-tag? token) 
                                     (if (eq? (peek) (end-tag-contents token))
@@ -314,17 +337,19 @@
                                  (look-up-ref (car lst)))
                                 (expand-ref (cdr lst)))))))
             
-            ;; digits->char : String Nat -> Char
-            (define (digits->char digits base)
+            ;; digits->char : String Nat Nat -> Char
+            (define (digits->char digits base ent-pos)
               (let ([num (string->number digits base)])
                 (if num
                     (string (integer->char num))
-                    (raise (make-xml-read:error "Invalid numeric entity" digits)))))
+                    (raise (make-xml-read:error 
+                            (format "Invalid numeric entity at ~s" ent-pos) digits)))))
             
             ;; look-up-ref : Entity-ref -> String
             (define (look-up-ref ent-ref)
               (let* ([ent (list->string (entity-ref-contents ent-ref))]
-                     [ent-sym (string->symbol ent)])
+                     [ent-sym (string->symbol ent)]
+                     [ent-pos (entity-ref-start ent-ref)])
                 (case ent-sym
                   [(lt) "<"]
                   [(gt) ">"]
@@ -337,11 +362,13 @@
                        ((eq? (string-ref ent 0) #\#)
                         (cond
                           [(< len 2)
-                           (raise (make-xml-read:error "Invalid numeric entity &#;" ent))]
+                           (raise 
+                            (make-xml-read:error 
+                             (format "Invalid numeric entity &#; at position ~s" ent-pos) ent))]
                           [(eq? (string-ref ent 1) #\x) 
-                           (digits->char (substring ent 2 len) 16)]
+                           (digits->char (substring ent 2 len) 16 ent-pos)]
                           [else 
-                           (digits->char (substring ent 1 len) 10)]))
+                           (digits->char (substring ent 1 len) 10) ent-pos]))
                        (else ;(make-entity ent-sym) this breaks too many things -ptg yuck
                              "")))]))))
       

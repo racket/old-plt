@@ -26,6 +26,8 @@ Functions
 
 > read-xml : [Input-port] -> Document
        reads in an XML document from the given or current input port
+       XML documents contain exactly one element.  It throws an xml-read:error
+       if there isn't any element or if there are more than one element.
 
 > write-xml : Document [Output-port] -> Void
        writes a document to the given or current output port, currently

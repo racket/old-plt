@@ -12,7 +12,7 @@
          editor-data%
          editor-data-class%
          editor-data-class-list%
-         canvas-dc%
+         pixel-dc<%>
          check-for-break
          clipboard<%>
          clipboard-client%
@@ -39,14 +39,12 @@
          get-resource
          get-the-editor-data-class-list
          get-the-snip-class-list
-         icon%
          image-snip%
          is-busy?
          is-color-display?
          key-event%
          keymap%
          make-eventspace
-         make-meta-file-placeable
          editor-admin%
          editor-set-x-selection-mode
          editor-snip-editor-admin%
@@ -57,9 +55,7 @@
          editor-stream-out-base%
          editor-stream-out-string-base%
          editor-wordbreak-map%
-         memory-dc%
-         meta-file<%>
-         meta-file-dc%
+         bitmap-dc%
          mouse-event%
          mult-color<%>
          pen%
@@ -70,6 +66,7 @@
          ps-setup%
          read-editor-global-footer
          read-editor-global-header
+         region%
          scroll-event%
          set-editor-print-margin
          snip%

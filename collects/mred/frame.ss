@@ -468,10 +468,7 @@
 				(mzlib:function:foldl build-item null dirs)
 				(lambda (x y) (string-ci<? (car x) (car y))))])
 			 (unless (null? item-pairs)
-			   (send mb append help-menu 
-				 (if (= (length item-pairs) 1)
-				     "Manual"
-				     "Manuals")))
+			   (send mb append help-menu "Help"))
 			 (for-each (lambda (x) (apply (ivar help-menu append-item) x))
 				   item-pairs))
 		       (mred:debug:printf 'help-menu "couldn't find PLTHOME/doc directory"))

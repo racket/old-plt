@@ -185,8 +185,8 @@
 				       (open-output-file path))])
 			 (when (and write? (not out))
 			   (printf "Warning: ~a already exists; skipping~n" path))
-			 (when (and out (verbose))
-			    (printf "  unpacking ~a~n" path))
+			 (when (and out (or #t (verbose)))
+			   (printf "  unpacking ~a~n" path))
 			 ; Find starting *
 			 (let loop ()
 			   (let ([c (read-char p)])

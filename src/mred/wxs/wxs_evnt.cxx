@@ -270,7 +270,7 @@ static Scheme_Object *bundle_symset_commandType(int v) {
 }
 
 
-bool CommandEventIsDoubleClick(wxCommandEvent *ce)
+Bool CommandEventIsDoubleClick(wxCommandEvent *ce)
 {
    return (ce->extraLong == 2);
 }

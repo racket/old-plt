@@ -3,17 +3,17 @@
  */
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
-#line 574 "XWidgets/xwScrollWin.w"
+#line 582 "XWidgets/xwScrollWin.w"
 #include <stdio.h>
-#line 575 "XWidgets/xwScrollWin.w"
+#line 583 "XWidgets/xwScrollWin.w"
 #include <xwEnforcer.h>
-#line 576 "XWidgets/xwScrollWin.w"
+#line 584 "XWidgets/xwScrollWin.w"
 #include <xwBoard.h>
-#line 577 "XWidgets/xwScrollWin.w"
+#line 585 "XWidgets/xwScrollWin.w"
 #include <xwVScrollb.h>
-#line 578 "XWidgets/xwScrollWin.w"
+#line 586 "XWidgets/xwScrollWin.w"
 #include <xwHScrollb.h>
-#line 579 "XWidgets/xwScrollWin.w"
+#line 587 "XWidgets/xwScrollWin.w"
 #include <xwscroll.h>
 #include <./xwScrollWinP.h>
 static void _resolve_inheritance(
@@ -679,4 +679,20 @@ void xws_get_scroll_area(self,x,y)Widget self;Dimension * x;Dimension * y;
 #line 568 "XWidgets/xwScrollWin.w"
 {
   XtVaGetValues(((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.board, XtNwidth, x, XtNheight, y, NULL);
+}
+#line 572 "XWidgets/xwScrollWin.w"
+/*ARGSUSED*/
+#if NeedFunctionPrototypes
+#line 572 "XWidgets/xwScrollWin.w"
+void ScrollWinViewableHeight(Widget self,int * boardht)
+#else
+#line 572 "XWidgets/xwScrollWin.w"
+void ScrollWinViewableHeight(self,boardht)Widget self;int * boardht;
+#endif
+#line 573 "XWidgets/xwScrollWin.w"
+{
+  Position boardx, boardy;
+  int boardwd;
+	
+  ((XfwfScrolledWindowWidgetClass)self->core.widget_class)->xfwfCommon_class.compute_inside(self, &boardx, &boardy, &boardwd, boardht);  
 }

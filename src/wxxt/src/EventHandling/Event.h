@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Event.h,v 1.2 1996/01/10 23:47:00 markus Exp $
+ * $Id: Event.h,v 1.1.1.1 1997/12/22 17:28:50 mflatt Exp $
  *
  * Purpose: standard wxWindows event classes
  *
@@ -61,7 +61,7 @@ public:
     inline int  GetSelection() { return commandInt; }
     inline char *GetString() { return commandString; }
     inline Bool Checked() { return (Bool)commandInt; }
-    inline Bool IsSelection() { return (Bool)extraLong; }
+    inline Bool IsSelection() { return (Bool)(extraLong == 1); }
 
     char    *commandString; // String event argument
     int     commandInt;     // Integer event argument

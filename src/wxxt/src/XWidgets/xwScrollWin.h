@@ -20,6 +20,11 @@ void xws_get_scroll_area(
 Widget,Dimension *,Dimension *
 #endif
 );
+void ScrollWinViewableHeight(
+#if NeedFunctionPrototypes
+Widget,int *
+#endif
+);
 #ifndef XtNautoAdjustScrollbars
 #define XtNautoAdjustScrollbars "autoAdjustScrollbars"
 #endif

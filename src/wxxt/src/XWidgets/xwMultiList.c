@@ -259,13 +259,15 @@ static char defaultTranslations[] =
 "	Ctrl <Btn1Down>:			Toggle()\n\
 	Shift <Btn1Down>:			SelectOne()\n\
 	<Btn1Down>:			        Select()\n\
-	Button1 <Btn1Motion>:			Extend()";
+	Button1 <Btn1Motion>:			Extend()\n\
+	<Btn1Up>:				Notify()";
 
 static char extendTranslations[] =
 "	Ctrl <Btn1Down>:			Toggle()\n\
 	Shift <Btn1Down>:			SelectOne()\n\
 	<Btn1Down>:			        SelectOne()\n\
-	Button1 <Btn1Motion>:			Extend()";
+	Button1 <Btn1Motion>:			Extend()\n\
+	<Btn1Up>:				Notify()";
 
 static XtActionsRec actions[] =
 {
@@ -274,6 +276,7 @@ static XtActionsRec actions[] =
 	{"Toggle",				(XtActionProc)Toggle},
 	{"Extend",				(XtActionProc)Extend},
 	{"SelectOne",				(XtActionProc)SelectOne},
+	{"Notify",				(XtActionProc)Notify},
 	{NULL,					(XtActionProc)NULL}
 };
 
@@ -439,14 +442,14 @@ XtWidgetGeometry *parent_idea,*our_idea;
 	parent_wants_h = (parent_idea->request_mode) & CWHeight;
 
 	if (parent_wants_w)
-		nw = parent_idea->width;
-	    else
-		nw = MultiListWidth(mlw);
+	  nw = parent_idea->width;
+	else
+	  nw = MultiListWidth(mlw);
 
 	if (parent_wants_h)
-		nh = parent_idea->height;
-	    else
-		nh = MultiListHeight(mlw);
+	  nh = parent_idea->height;
+	else
+	  nh = MultiListHeight(mlw);
 
 	our_idea->request_mode = 0;
 	if (!parent_wants_w && !parent_wants_h) return(XtGeometryYes);
@@ -457,9 +460,9 @@ XtWidgetGeometry *parent_idea,*our_idea;
 	our_idea->height = nh;
 
 	if (we_changed_size)
-		return(XtGeometryAlmost);
-	    else
-		return(XtGeometryYes);
+	  return(XtGeometryAlmost);
+	else
+	  return(XtGeometryYes);
 } /* End PreferredGeometry */
 
 
@@ -887,6 +890,8 @@ Dimension width,height;
 
  *---------------------------------------------------------------------------*/
 
+extern void ScrollWinViewableHeight(Widget w, int *h);
+
 #if NeedFunctionPrototypes
 static Boolean
 Layout(XfwfMultiListWidget mlw, Boolean w_changeable, Boolean h_changeable,
@@ -934,6 +939,17 @@ Dimension *w_ptr,*h_ptr;
 			*h_ptr = MultiListNumRows(mlw) *
 				MultiListRowHeight(mlw);
 			size_changed = True;
+
+		}
+		{
+		  /* MrEd hack: if the parent (always a scroll win) has more room, use it up */
+		  int max_height;
+		  ScrollWinViewableHeight(XtParent((Widget)mlw), &max_height);
+		  
+		  if (*h_ptr < max_height) {
+		    *h_ptr = max_height;
+		    size_changed = True;
+		  }
 		}
 		return(size_changed);
 	}
@@ -954,6 +970,8 @@ Dimension *w_ptr,*h_ptr;
 				MultiListNumCols(mlw) + 1;
 		*w_ptr = MultiListNumCols(mlw) * MultiListColWidth(mlw);
 		*h_ptr = MultiListNumRows(mlw) * MultiListRowHeight(mlw);
+		
+
 		return(True);
 	}
 
@@ -1271,20 +1289,20 @@ Cardinal *num_params;
 	click_x = event->xbutton.x;
 	click_y = event->xbutton.y;
 	PixelToRowColumn(mlw,click_x,click_y,&row,&column);
-	XfwfMultiListUnhighlightAll(mlw);
 	MultiListMostRecentAct(mlw) = XfwfMultiListActionHighlight;
 	status = RowColumnToItem(mlw,row,column,&item_index);
 	if ((status == False) ||
 	    (!MultiListItemSensitive(MultiListNthItem(mlw,item_index))))
 	{
+	        MultiListMostRecentAct(mlw) = XfwfMultiListActionNothing;
 		MultiListMostRecentItem(mlw) = -1;
 	}
 	    else
 	{
+	        XfwfMultiListUnhighlightAll(mlw);
 		MultiListMostRecentItem(mlw) = item_index;
 		XfwfMultiListHighlightItem(mlw,item_index);
 	}
-        Notify(mlw,event,params,num_params);
 } /* End Select */
 
 
@@ -1306,6 +1324,7 @@ Cardinal *num_params;
 	if ((status == False) ||
 	    (!MultiListItemSensitive(MultiListNthItem(mlw,item_index))))
 	{
+	        MultiListMostRecentAct(mlw) = XfwfMultiListActionNothing;
 		MultiListMostRecentItem(mlw) = -1;
 	}
 	    else
@@ -1313,7 +1332,6 @@ Cardinal *num_params;
 		MultiListMostRecentItem(mlw) = item_index;
 		XfwfMultiListHighlightItem(mlw,item_index);
 	}
-        Notify(mlw,event,params,num_params);
 } /* End Select */
 
 
@@ -1348,9 +1366,11 @@ Cardinal *num_params;
 	MultiListMostRecentAct(mlw) = XfwfMultiListActionUnhighlight;
 	status = RowColumnToItem(mlw,row,column,&item_index);
 	if ((status == True) &&
-	    (MultiListItemSensitive(MultiListNthItem(mlw,item_index))))
+	    (MultiListItemSensitive(MultiListNthItem(mlw,item_index)))) {
 		XfwfMultiListUnhighlightItem(mlw,item_index);
-        Notify(mlw,event,params,num_params);
+	} else {
+	  MultiListMostRecentAct(mlw) = XfwfMultiListActionNothing;
+	}
 } /* End Unselect */
 
 
@@ -1394,7 +1414,7 @@ Cardinal *num_params;
 	if ((status == False) ||
 	    (!MultiListItemSensitive(MultiListNthItem(mlw,item_index))))
 	{
-		MultiListMostRecentAct(mlw) = XfwfMultiListActionHighlight;
+	        MultiListMostRecentAct(mlw) = XfwfMultiListActionNothing;
 		MultiListMostRecentItem(mlw) = -1;
 	}
 	    else
@@ -1403,7 +1423,6 @@ Cardinal *num_params;
 			XfwfMultiListToggleItem(mlw,item_index);
 		MultiListMostRecentItem(mlw) = item_index;
 	}
-        Notify(mlw,event,params,num_params);
 } /* End Toggle */
 
 
@@ -1416,8 +1435,7 @@ Cardinal *num_params;
 
 	The MultiListMostRecentAct(mlw) variable is used to determine
 	if items are to be selected or unselected.  This routine performs
-	select or unselect actions on each item it is called on. If something
-        changes, Notify is called right away.
+	select or unselect actions on each item it is called on.
 
  *---------------------------------------------------------------------------*/
 
@@ -1438,20 +1456,11 @@ Cardinal *num_params;
 	if ((status == True) &&
 	    (MultiListItemSensitive(MultiListNthItem(mlw,item_index))))
 	{
-	  XfwfMultiListItem *item;
-	  item = MultiListNthItem(mlw,item_index);
 	  MultiListMostRecentItem(mlw) = item_index;
-	  if (MultiListMostRecentAct(mlw) == XfwfMultiListActionHighlight) {
-	    if (MultiListItemHighlighted(item) == False) {
-	      XfwfMultiListHighlightItem(mlw,item_index);
-	      Notify(mlw,event,params,num_params);
-	    }
-	  } else {
-	    if (MultiListItemHighlighted(item) == True) {
-	      XfwfMultiListUnhighlightItem(mlw,item_index);
-	      Notify(mlw,event,params,num_params);
-	    }
-	  }
+	  if (MultiListMostRecentAct(mlw) == XfwfMultiListActionHighlight)
+	    XfwfMultiListHighlightItem(mlw,item_index);
+	  else if (MultiListMostRecentAct(mlw) == XfwfMultiListActionUnhighlight)
+	    XfwfMultiListUnhighlightItem(mlw,item_index);
 	}
 } /* End Extend */
 
@@ -1482,6 +1491,9 @@ Cardinal *num_params;
 	String string;
 	int i,byte_count,item_index;
 	XfwfMultiListReturnStruct ret_value;
+
+	if (MultiListMostRecentAct(mlw) == XfwfMultiListActionNothing)
+	  return;
 
 	/* handle double click events using the timestamp of event */
 	if (event->xbutton.time - MultiListLastRelease(mlw)

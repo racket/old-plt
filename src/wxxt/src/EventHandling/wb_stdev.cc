@@ -4,7 +4,7 @@
  * Author:		Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      	$Id: wb_stdev.cc,v 1.1 1996/01/10 23:47:02 markus Exp $
+ * RCS_ID:      	$Id: wb_stdev.cc,v 1.1.1.1 1997/12/22 17:28:50 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -12,26 +12,9 @@
 #pragma implementation "wx_stdev.h"
 #endif
 
-#ifndef wx_xt
-    // wxWindows standard include mechanism
-    /* static const char sccsid[] = "@(#)wb_stdev.cc	1.2 5/9/94"; */
-    // For compilers that support precompilation, includes "wx.h".
-#   include "wx_prec.h"
-#   ifdef __BORLANDC__
-#	pragma hdrstop
-#   endif
-#   ifndef WX_PRECOMP
-#	include "common.h"
-#	include "wx_item.h"
-#	include "wx_utils.h"
-#   endif
-#   include "wx_stdev.h"
-#else // wx_xt
-    // The Xt port uses another include mechanism
 #   define  Uses_wxEvent
 #   define  Uses_wxItem
 #   include "wx.h"
-#endif // #ifndef wx_xt
 
 /*
  * Command events

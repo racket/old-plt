@@ -44,7 +44,7 @@
 @SYM "event-type-scroll-thumbtrack" : wxEVENT_TYPE_SCROLL_THUMBTRACK
 @ENDSYMBOLS
 
-bool CommandEventIsDoubleClick(wxCommandEvent *ce)
+Bool CommandEventIsDoubleClick(wxCommandEvent *ce)
 {
    return (ce->extraLong == 2);
 }

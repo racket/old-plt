@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: ListBox.cc,v 1.5 1998/07/08 22:01:13 mflatt Exp $
+ * $Id: ListBox.cc,v 1.6 1998/07/09 18:09:44 mflatt Exp $
  *
  * Purpose: list box panel item
  *
@@ -110,7 +110,7 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func, char *title,
 	 XtNshadeSurplus,   FALSE,
 	 XtNdefaultColumns, 1,
 	 XtNforceColumns,   TRUE,
-	 XtNmaxSelectable,  (multiple & wxSINGLE) ? 1 : 10000,
+	 XtNmaxSelectable,  (multiple & (wxMULTIPLE | wxEXTENDED)) ? 10000 : 1,
 	 XtNclickExtends,   (Boolean)(multiple & wxEXTENDED),
 	 NULL);
 
@@ -511,19 +511,25 @@ void wxListBox::EventCallback(Widget WXUNUSED(w),
       return; /* MATTHEW */
     }
 
-    event.commandInt    = rs->item;
+    if (lbox->GetWindowStyleFlag() & (wxMULTIPLE | wxEXTENDED)) {
+      event.commandInt    = -1;
+      event.commandString = NULL;
+      event.clientData    = NULL;
+      event.extraLong     = 0;
+    } else {
+      event.commandInt    = rs->item;
+      
+      event.commandString = lbox->GetString(event.commandInt);
+      event.clientData    = lbox->GetClientData(event.commandInt);
 
-    event.commandString = lbox->GetString(event.commandInt);
-    event.clientData    = lbox->GetClientData(event.commandInt);
+      event.extraLong     = (rs->action==XfwfMultiListActionHighlight
+			     || rs->action==XfwfMultiListActionDClick);
 
-    event.extraLong     = (rs->action==XfwfMultiListActionHighlight
-			   || rs->action==XfwfMultiListActionDClick);
+      if (!event.extraLong || event.commandInt <= -1)
+	return; /* it was a bad event */
+    }      
+    
     event.eventObject   = lbox;
 
-    int max_select;
-    XtVaGetValues(lbox->X->handle, XtNmaxSelectable, &max_select, NULL);
-    if (max_select == 1 && (!event.extraLong || event.commandInt <= -1))
-      return;
-    
     lbox->ProcessCommand(event);
 }

@@ -113,7 +113,7 @@ class wxCommandEvent: public wxEvent
   inline virtual Bool Checked() { return (Bool)commandInt; }
 
   // TRUE if the listbox event was a selection.
-  inline virtual Bool IsSelection() { return (Bool)extraLong; }
+  inline virtual Bool IsSelection() { return (Bool)(extraLong == 1); }
 
   Bool ReadEvent(istream&);
   Bool WriteEvent(ostream&);

@@ -72,6 +72,7 @@ public:
 #endif
     // Optional stuff for different bitmaps
     XpmAttributes* xpm;		// for XPM pixmaps
+    void         *account;
 };
 
 class wxCursor_Xintern {
@@ -115,6 +116,7 @@ wxBitmap::wxBitmap(char bits[], int w, int h)
       DELETE_OBJ Xbitmap;
       Xbitmap = NULL;
     }
+    Xbitmap->account = GC_malloc_accounting_shadow(w * h * 4);
 
     WXGC_IGNORE(this, selectedTo);
 }
@@ -175,6 +177,7 @@ wxBitmap::wxBitmap(char **data, wxItem *WXUNUSED(anItem)) // anItem used for MOT
 	// get depth of pixmap
 	XGetGeometry(wxAPP_DISPLAY, Xbitmap->x_pixmap, &wdummy, &sdummy, &sdummy,
 		     &udummy, &udummy, &udummy, &(Xbitmap->depth));
+	Xbitmap->account = GC_malloc_accounting_shadow(Xbitmap->width * Xbitmap->height * 4);
     } else {
 	// create failed: free all memory
 	XpmFreeAttributes(Xbitmap->xpm);
@@ -245,7 +248,7 @@ Bool wxBitmap::Create(int w, int h, int d)
     errorFlagged = 0;
 
     Xbitmap->x_pixmap = XCreatePixmap(wxAPP_DISPLAY, wxAPP_ROOT, w, h, Xbitmap->depth);
-
+    
     XSync(wxAPP_DISPLAY, FALSE);
 
     if (errorFlagged)
@@ -257,6 +260,8 @@ Bool wxBitmap::Create(int w, int h, int d)
       // create failed!
       DELETE_OBJ Xbitmap;
       Xbitmap = NULL;
+    } else {
+      Xbitmap->account = GC_malloc_accounting_shadow((w * h * ((Xbitmap->depth == 1) ? 1 : 32)) >> 3);
     }
 
     return Ok();
@@ -267,6 +272,8 @@ void wxBitmap::Destroy(void)
 {
   if (Xbitmap) {
     XFreePixmap(wxAPP_DISPLAY, Xbitmap->x_pixmap); // free pixmap
+    GC_free_accounting_shadow(Xbitmap->account);
+    Xbitmap->account = NULL;
 # ifdef WX_USE_XRENDER
     if (Xbitmap->picture) {
       wxFreePicture(Xbitmap->picture);
@@ -327,6 +334,7 @@ Bool wxBitmap::LoadFile(char *fname, long flags, wxColour *bg)
       {
 	Xbitmap->type  = __BITMAP_NORMAL;
 	Xbitmap->depth = 1;
+	Xbitmap->account = GC_malloc_accounting_shadow((Xbitmap->width * Xbitmap->height) >> 3);
       } else {
 	DELETE_OBJ Xbitmap;
 	Xbitmap = NULL;
@@ -373,6 +381,7 @@ else if (flags & wxBITMAP_TYPE_XPM) { // XPM file format
       Xbitmap->y_hot  = Xbitmap->xpm->y_hotspot;
       XGetGeometry(wxAPP_DISPLAY, Xbitmap->x_pixmap, &wdummy, &sdummy, &sdummy,
 		   &udummy, &udummy, &udummy, &(Xbitmap->depth));
+      Xbitmap->account = GC_malloc_accounting_shadow(Xbitmap->width * Xbitmap->height * 4);
     } else {
       // read failed: free all memory
       XpmFreeAttributes(Xbitmap->xpm);

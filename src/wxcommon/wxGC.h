@@ -80,6 +80,8 @@ extern void *GC_weak_box_val(void *);
 #define gcOBJ_TO_PTR(x) x
 #define gcPTR_TO_OBJ(x) x
 
+extern void *GC_malloc_accounting_shadow(long a);
+extern void GC_free_accounting_shadow(void *a);
 
 #ifndef START_XFORM_SKIP
 # ifndef MZ_PRECISE_GC

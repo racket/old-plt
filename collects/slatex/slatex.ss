@@ -2,7 +2,8 @@
 (module slatex mzscheme
   (require (lib "file.ss")
 	   (lib "process.ss")
-	   (lib "sendevent.ss"))
+	   (lib "sendevent.ss")
+           "slatex-wrapper.ss")
 
   (provide slatex latex pdf-slatex pdf-latex slatex/no-latex)
 
@@ -74,23 +75,13 @@
        (meta-slatex latex)
        (meta-slatex pdf-latex))))
 
-  (define slatex/no-latex
-    (let ([ns (make-namespace)]
-          [c-ns (current-namespace)])
-      (parameterize ([current-namespace ns])
-        (namespace-transformer-require 'mzscheme)
-        (namespace-require '(lib "defmacro.ss"))
-	(load (build-path (collection-path "slatex") "slatex.scm"))
-	(namespace-set-variable-value! 'slatex::*texinputs* #f)
-	(namespace-set-variable-value! 'slatex::*texinputs-list* #f))
-      (lambda (input-file)
-	(let* ([fixed-file (filename->latex-filename input-file)]
-	       [file (normalize-path fixed-file)])
-	  (let-values ([(base name dir?) (split-path file)])
-	    (parameterize ([current-namespace ns]
-			   [current-directory
-			    (if (string? base)
-				base
-				(current-directory))])
-	      (eval `(slatex::process-main-tex-file ,name)))))))))
+  (define (slatex/no-latex input-file)
+    (let* ([fixed-file (filename->latex-filename input-file)]
+           [file (normalize-path fixed-file)])
+      (let-values ([(base name dir?) (split-path file)])
+        (parameterize ([current-directory
+                        (if (string? base)
+                            base
+                            (current-directory))])
+          (slatex::process-main-tex-file name))))))
 

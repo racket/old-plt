@@ -3,56 +3,88 @@
 ;(c) Dorai Sitaram, 
 ;http://www.ccs.neu.edu/~dorai/scmxlate/scmxlate.html
 
-(define slatex::*slatex-version* "2.4z")
+(define slatex::*slatex-version* "2.4z1")
 
 (define slatex::*operating-system* (if (getenv "COMSPEC") 'windows 'unix))
 
-(define-macro slatex::defenum
-  (lambda z
-    (let loop ((z z) (i 0) (r '()))
-      (if (null? z)
-        `(begin ,@r)
-        (loop
-         (cdr z)
-         (+ i 1)
-         (cons `(define ,(car z) (integer->char ,i)) r))))))
+(define-syntax slatex::defenum
+  (lambda (so)
+    (datum->syntax-object
+      so
+      (let ((so-d (syntax-object->datum so)))
+        (let loop ((z (cdr so-d)) (i 0) (r '()))
+          (if (null? z)
+            `(begin ,@r)
+            (loop
+             (cdr z)
+             (+ i 1)
+             (cons `(define ,(car z) (integer->char ,i)) r))))))))
 
-(define-macro slatex::defrecord
-  (lambda (name . fields)
-    (let loop ((fields fields) (i 0) (r '()))
-      (if (null? fields)
-        `(begin (define ,name (lambda () (make-vector ,i))) ,@r)
-        (loop (cdr fields) (+ i 1) (cons `(define ,(car fields) ,i) r))))))
+(define-syntax slatex::defrecord
+  (lambda (so)
+    (datum->syntax-object
+      so
+      (let ((so-d (syntax-object->datum so)))
+        (let ((name (cadr so-d)) (fields (cddr so-d)))
+          (let loop ((fields fields) (i 0) (r '()))
+            (if (null? fields)
+              `(begin (define ,name (lambda () (make-vector ,i))) ,@r)
+              (loop
+               (cdr fields)
+               (+ i 1)
+               (cons `(define ,(car fields) ,i) r)))))))))
 
-(define-macro slatex::setf
-  (lambda (l r)
-    (if (symbol? l)
-      `(set! ,l ,r)
-      (let ((a (car l)))
-        (if (eq? a 'list-ref)
-          `(set-car! (list-tail ,@(cdr l)) ,r)
-          `(,(cond
-              ((eq? a 'list-ref) 'list-set!)
-              ((eq? a 'string-ref) 'string-set!)
-              ((eq? a 'vector-ref) 'vector-set!)
-              ((eq? a 'slatex::of) 'slatex::the-setter-for-of)
-              (else (slatex::slatex-error "setf is ill-formed" l r)))
-            ,@(cdr l)
-            ,r))))))
+(define-syntax slatex::setf
+  (let ([slatex::slatex-error
+         (lambda (where . what)
+           (display "Error: ")
+           (display where)
+           (newline)
+           (for-each (lambda (v) (write v) (newline)) what)
+           (error "slatex-error"))])
+  (lambda (so)
+    (datum->syntax-object
+      so
+      (let ((so-d (syntax-object->datum so)))
+        (let ((l (cadr so-d)) (r (caddr so-d)))
+          (if (symbol? l)
+            `(set! ,l ,r)
+            (let ((a (car l)))
+              (if (eq? a 'list-ref)
+                `(set-car! (list-tail ,@(cdr l)) ,r)
+                `(,(cond
+                    ((eq? a 'list-ref) 'list-set!)
+                    ((eq? a 'string-ref) 'string-set!)
+                    ((eq? a 'vector-ref) 'vector-set!)
+                    ((eq? a 'slatex::of) 'slatex::the-setter-for-of)
+                    (else (slatex::slatex-error "setf is ill-formed" l r)))
+                  ,@(cdr l)
+                  ,r))))))))))
 
-(define-macro slatex::the-setter-for-of
-  (lambda (r i j . z)
-    (cond
-     ((null? z) `(vector-set! ,r ,i ,j))
-     ((and (eq? i '/) (= (length z) 1)) `(string-set! ,r ,j ,(car z)))
-     (else `(slatex::the-setter-for-of (vector-ref ,r ,i) ,j ,@z)))))
+(define-syntax slatex::the-setter-for-of
+  (lambda (so)
+    (datum->syntax-object
+      so
+      (let ((so-d (syntax-object->datum so)))
+        (let ((r (cadr so-d))
+              (i (caddr so-d))
+              (j (cadddr so-d))
+              (z (cddddr so-d)))
+          (cond
+           ((null? z) `(vector-set! ,r ,i ,j))
+           ((and (eq? i '/) (= (length z) 1)) `(string-set! ,r ,j ,(car z)))
+           (else `(slatex::the-setter-for-of (vector-ref ,r ,i) ,j ,@z))))))))
 
-(define-macro slatex::of
-  (lambda (r i . z)
-    (cond
-     ((null? z) `(vector-ref ,r ,i))
-     ((and (eq? i '/) (= (length z) 1)) `(string-ref ,r ,(car z)))
-     (else `(slatex::of (vector-ref ,r ,i) ,@z)))))
+(define-syntax slatex::of
+  (lambda (so)
+    (datum->syntax-object
+      so
+      (let ((so-d (syntax-object->datum so)))
+        (let ((r (cadr so-d)) (i (caddr so-d)) (z (cdddr so-d)))
+          (cond
+           ((null? z) `(vector-ref ,r ,i))
+           ((and (eq? i '/) (= (length z) 1)) `(string-ref ,r ,(car z)))
+           (else `(slatex::of (vector-ref ,r ,i) ,@z))))))))
 
 (define slatex::ormapcdr
   (lambda (f l)

@@ -4,7 +4,7 @@ CFG=wxutils - Win32 Release
 !MESSAGE No configuration specified. Defaulting to wxutils - Win32 Release.
 !ENDIF 
 
-!IF "$(CFG)" != "wxutils - Win32 Release" && "$(CFG)" != "wxutils - Win32 Debug" && "$(CFG)" != "wxutils - Win32 SGC"
+!IF "$(CFG)" != "wxutils - Win32 Release" && "$(CFG)" != "wxutils - Win32 Debug"
 !MESSAGE Invalid configuration "$(CFG)" specified.
 !MESSAGE You can specify a configuration when running NMAKE
 !MESSAGE by defining the macro CFG on the command line. For example:
@@ -15,7 +15,6 @@ CFG=wxutils - Win32 Release
 !MESSAGE 
 !MESSAGE "wxutils - Win32 Release" (based on "Win32 (x86) Static Library")
 !MESSAGE "wxutils - Win32 Debug" (based on "Win32 (x86) Static Library")
-!MESSAGE "wxutils - Win32 SGC" (based on "Win32 (x86) Static Library")
 !MESSAGE 
 !ERROR An invalid configuration is specified.
 !ENDIF 
@@ -25,6 +24,9 @@ NULL=
 !ELSE 
 NULL=nul
 !ENDIF 
+
+CPP=cl.exe
+RSC=rc.exe
 
 !IF  "$(CFG)" == "wxutils - Win32 Release"
 
@@ -74,40 +76,7 @@ CLEAN :
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
 
-CPP=cl.exe
-CPP_PROJ=/nologo /MT /W3 /Zi /O2 /I "..\..\mzscheme\gc" /I "..\..\wxwindow\include\base" /I "..\..\wxwindow\include\msw" /I ":..\..\wxwindow\src\base" /I "..\..\wxwindow\src\msw" /I "..\..\wxwindow\contrib\wxxpm\libxpm.34b\lib" /I "..\..\wxWindow\contrib\fafa" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__WINDOWS__" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
-
-.c{$(INTDIR)}.obj::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cpp{$(INTDIR)}.obj::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cxx{$(INTDIR)}.obj::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.c{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cpp{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cxx{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-RSC=rc.exe
+CPP_PROJ=/nologo /MD /W3 /Zi /O2 /I "..\..\mzscheme\gc" /I "..\..\wxwindow\include\base" /I "..\..\wxwindow\include\msw" /I ":..\..\wxwindow\src\base" /I "..\..\wxwindow\src\msw" /I "..\..\wxwindow\contrib\wxxpm\libxpm.34b\lib" /I "..\..\wxWindow\contrib\fafa" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__WINDOWS__" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 BSC32=bscmake.exe
 BSC32_FLAGS=/nologo /o"$(OUTDIR)\wxutils.bsc" 
 BSC32_SBRS= \
@@ -186,129 +155,6 @@ CLEAN :
 	-@erase "$(INTDIR)\Simx.obj"
 	-@erase "$(INTDIR)\Static.obj"
 	-@erase "$(INTDIR)\vc60.idb"
-	-@erase "$(INTDIR)\Wrffrdat.obj"
-	-@erase "$(INTDIR)\Wrffri.obj"
-	-@erase "$(INTDIR)\Wrffrp.obj"
-	-@erase "$(INTDIR)\wximgxbm.obj"
-	-@erase "$(INTDIR)\Zyz3d.obj"
-	-@erase "$(INTDIR)\Zyzgauge.obj"
-	-@erase "$(OUTDIR)\wxutils.lib"
-
-"$(OUTDIR)" :
-    if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
-
-CPP=cl.exe
-CPP_PROJ=/nologo /MTd /W3 /Z7 /Od /I "..\..\mzscheme\gc" /I "..\..\wxwindow\include\base" /I "..\..\wxwindow\include\msw" /I ":..\..\wxwindow\src\base" /I "..\..\wxwindow\src\msw" /I "..\..\wxwindow\contrib\wxxpm\libxpm.34b\lib" /I "..\..\wxWindow\contrib\fafa" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__WINDOWS__" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
-
-.c{$(INTDIR)}.obj::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cpp{$(INTDIR)}.obj::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cxx{$(INTDIR)}.obj::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.c{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cpp{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cxx{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-RSC=rc.exe
-BSC32=bscmake.exe
-BSC32_FLAGS=/nologo /o"$(OUTDIR)\wxutils.bsc" 
-BSC32_SBRS= \
-	
-LIB32=link.exe -lib
-LIB32_FLAGS=/nologo /out:"$(OUTDIR)\wxutils.lib" 
-LIB32_OBJS= \
-	"$(INTDIR)\Button.obj" \
-	"$(INTDIR)\Check.obj" \
-	"$(INTDIR)\Cont.obj" \
-	"$(INTDIR)\Crbuffri.obj" \
-	"$(INTDIR)\Crdatfri.obj" \
-	"$(INTDIR)\Create.obj" \
-	"$(INTDIR)\Crifrbuf.obj" \
-	"$(INTDIR)\Crifrdat.obj" \
-	"$(INTDIR)\Data.obj" \
-	"$(INTDIR)\Dialog.obj" \
-	"$(INTDIR)\DIB.obj" \
-	"$(INTDIR)\Draw.obj" \
-	"$(INTDIR)\Dumfafa.obj" \
-	"$(INTDIR)\Fafa.obj" \
-	"$(INTDIR)\Hashtab.obj" \
-	"$(INTDIR)\Misc.obj" \
-	"$(INTDIR)\Parse.obj" \
-	"$(INTDIR)\Rdftodat.obj" \
-	"$(INTDIR)\Rdftoi.obj" \
-	"$(INTDIR)\Rgb.obj" \
-	"$(INTDIR)\Scan.obj" \
-	"$(INTDIR)\Simx.obj" \
-	"$(INTDIR)\Static.obj" \
-	"$(INTDIR)\Wrffrdat.obj" \
-	"$(INTDIR)\Wrffri.obj" \
-	"$(INTDIR)\Wrffrp.obj" \
-	"$(INTDIR)\wximgxbm.obj" \
-	"$(INTDIR)\Zyz3d.obj" \
-	"$(INTDIR)\Zyzgauge.obj"
-
-"$(OUTDIR)\wxutils.lib" : "$(OUTDIR)" $(DEF_FILE) $(LIB32_OBJS)
-    $(LIB32) @<<
-  $(LIB32_FLAGS) $(DEF_FLAGS) $(LIB32_OBJS)
-<<
-
-!ELSEIF  "$(CFG)" == "wxutils - Win32 SGC"
-
-OUTDIR=.\SGC
-INTDIR=.\SGC
-# Begin Custom Macros
-OutDir=.\SGC
-# End Custom Macros
-
-ALL : "$(OUTDIR)\wxutils.lib"
-
-
-CLEAN :
-	-@erase "$(INTDIR)\Button.obj"
-	-@erase "$(INTDIR)\Check.obj"
-	-@erase "$(INTDIR)\Cont.obj"
-	-@erase "$(INTDIR)\Crbuffri.obj"
-	-@erase "$(INTDIR)\Crdatfri.obj"
-	-@erase "$(INTDIR)\Create.obj"
-	-@erase "$(INTDIR)\Crifrbuf.obj"
-	-@erase "$(INTDIR)\Crifrdat.obj"
-	-@erase "$(INTDIR)\Data.obj"
-	-@erase "$(INTDIR)\Dialog.obj"
-	-@erase "$(INTDIR)\DIB.obj"
-	-@erase "$(INTDIR)\Draw.obj"
-	-@erase "$(INTDIR)\Dumfafa.obj"
-	-@erase "$(INTDIR)\Fafa.obj"
-	-@erase "$(INTDIR)\Hashtab.obj"
-	-@erase "$(INTDIR)\Misc.obj"
-	-@erase "$(INTDIR)\Parse.obj"
-	-@erase "$(INTDIR)\Rdftodat.obj"
-	-@erase "$(INTDIR)\Rdftoi.obj"
-	-@erase "$(INTDIR)\Rgb.obj"
-	-@erase "$(INTDIR)\Scan.obj"
-	-@erase "$(INTDIR)\Simx.obj"
-	-@erase "$(INTDIR)\Static.obj"
-	-@erase "$(INTDIR)\vc60.idb"
 	-@erase "$(INTDIR)\vc60.pdb"
 	-@erase "$(INTDIR)\Wrffrdat.obj"
 	-@erase "$(INTDIR)\Wrffri.obj"
@@ -321,40 +167,7 @@ CLEAN :
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
 
-CPP=cl.exe
-CPP_PROJ=/nologo /MTd /W3 /ZI /Od /I "..\..\mzscheme\sgc" /I "..\..\wxwindow\include\base" /I "..\..\wxwindow\include\msw" /I ":..\..\wxwindow\src\base" /I "..\..\wxwindow\src\msw" /I "..\..\wxwindow\contrib\wxxpm\libxpm.34b\lib" /I "..\..\wxWindow\contrib\fafa" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__WINDOWS__" /D "USE_SENORA_GC" /D "USE_WXOBJECT_TRACE_COUNT" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
-
-.c{$(INTDIR)}.obj::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cpp{$(INTDIR)}.obj::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cxx{$(INTDIR)}.obj::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.c{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cpp{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cxx{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-RSC=rc.exe
+CPP_PROJ=/nologo /MD /W3 /Zi /Od /I "..\..\mzscheme\gc" /I "..\..\wxwindow\include\base" /I "..\..\wxwindow\include\msw" /I ":..\..\wxwindow\src\base" /I "..\..\wxwindow\src\msw" /I "..\..\wxwindow\contrib\wxxpm\libxpm.34b\lib" /I "..\..\wxWindow\contrib\fafa" /D "DEBUG" /D "WIN32" /D "_WINDOWS" /D "__WINDOWS__" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 BSC32=bscmake.exe
 BSC32_FLAGS=/nologo /o"$(OUTDIR)\wxutils.bsc" 
 BSC32_SBRS= \
@@ -399,6 +212,36 @@ LIB32_OBJS= \
 
 !ENDIF 
 
+.c{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cpp{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cxx{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.c{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cpp{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cxx{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
 
 !IF "$(NO_EXTERNAL_DEPS)" != "1"
 !IF EXISTS("wxutils.dep")
@@ -409,7 +252,7 @@ LIB32_OBJS= \
 !ENDIF 
 
 
-!IF "$(CFG)" == "wxutils - Win32 Release" || "$(CFG)" == "wxutils - Win32 Debug" || "$(CFG)" == "wxutils - Win32 SGC"
+!IF "$(CFG)" == "wxutils - Win32 Release" || "$(CFG)" == "wxutils - Win32 Debug"
 SOURCE=..\..\Wxwindow\Contrib\Fafa\Button.c
 
 "$(INTDIR)\Button.obj" : $(SOURCE) "$(INTDIR)"

@@ -19,9 +19,6 @@ CFG=mzscheme - Win32 Release
 !MESSAGE 
 !MESSAGE "mzscheme - Win32 Release" (based on "Win32 (x86) Console Application")
 !MESSAGE "mzscheme - Win32 Debug" (based on "Win32 (x86) Console Application")
-!MESSAGE "mzscheme - Win32 SGC" (based on "Win32 (x86) Console Application")
-!MESSAGE "mzscheme - Win32 Threads" (based on "Win32 (x86) Console Application")
-!MESSAGE "mzscheme - Win32 MT DLL" (based on "Win32 (x86) Console Application")
 !MESSAGE 
 
 # Begin Project
@@ -45,7 +42,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /YX /c
-# ADD CPP /nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /YX /FD /c
+# ADD CPP /nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "USE_MSVC_MD_LIBRARY" /YX /FD /c
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
 # ADD RSC /l 0x409 /d "NDEBUG"
 BSC32=bscmake.exe
@@ -53,7 +50,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /machine:I386
-# ADD LINK32 ..\mzsrc\Release\mzsrc.lib ..\gc\Release\gc.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib /nologo /subsystem:console /debug /machine:I386
+# ADD LINK32 ..\libmzgc\Release\libmzgc.lib ..\libmzsch\Release\libmzsch.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib /nologo /subsystem:console /debug /machine:I386 /out:"..\..\..\MzScheme.exe"
 # SUBTRACT LINK32 /pdb:none
 # Begin Special Build Tool
 SOURCE="$(InputPath)"
@@ -63,106 +60,33 @@ PostBuild_Cmds=cd ..\..\mzscheme\dynsrc	mkmzdyn.bat	cd ..\..\worksp\mzscheme
 !ELSEIF  "$(CFG)" == "mzscheme - Win32 Debug"
 
 # PROP BASE Use_MFC 0
-# PROP BASE Use_Debug_Libraries 1
-# PROP BASE Output_Dir ".\Debug"
-# PROP BASE Intermediate_Dir ".\Debug"
-# PROP BASE Target_Dir ""
-# PROP Use_MFC 0
-# PROP Use_Debug_Libraries 1
-# PROP Output_Dir "..\..\..\..\plt"
-# PROP Intermediate_Dir ".\Debug"
-# PROP Ignore_Export_Lib 0
-# PROP Target_Dir ""
-# ADD BASE CPP /nologo /W3 /Gm /GX /Zi /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /YX /c
-# ADD CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I "..\..\mzscheme\include" /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /YX /FD /c
-# ADD BASE RSC /l 0x409 /d "_DEBUG"
-# ADD RSC /l 0x409 /d "_DEBUG"
-BSC32=bscmake.exe
-# ADD BASE BSC32 /nologo
-# ADD BSC32 /nologo
-LINK32=link.exe
-# ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /debug /machine:I386
-# ADD LINK32 ..\mzsrc\Debug\mzsrc.lib ..\gc\Debug\gc.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib /nologo /subsystem:console /debug /machine:I386
-# SUBTRACT LINK32 /pdb:none
-
-!ELSEIF  "$(CFG)" == "mzscheme - Win32 SGC"
-
-# PROP BASE Use_MFC 0
-# PROP BASE Use_Debug_Libraries 1
-# PROP BASE Output_Dir ".\mzscheme"
-# PROP BASE Intermediate_Dir ".\mzscheme"
-# PROP BASE Target_Dir ""
-# PROP Use_MFC 0
-# PROP Use_Debug_Libraries 1
-# PROP Output_Dir "..\..\..\..\plt"
-# PROP Intermediate_Dir ".\SGC"
-# PROP Ignore_Export_Lib 0
-# PROP Target_Dir ""
-# ADD BASE CPP /nologo /W3 /Gm /GX /Zi /Od /I "..\..\mzscheme\include" /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /YX /c
-# ADD CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I "..\..\mzscheme\include" /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D SGC_STD_DEBUGGING=1 /YX /FD /c
-# ADD BASE RSC /l 0x409 /d "_DEBUG"
-# ADD RSC /l 0x409 /d "_DEBUG"
-BSC32=bscmake.exe
-# ADD BASE BSC32 /nologo
-# ADD BSC32 /nologo
-LINK32=link.exe
-# ADD BASE LINK32 ..\mzsrc\Debug\mzsrc.lib ..\gc\Debug\gc.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib /nologo /subsystem:console /debug /machine:I386
-# SUBTRACT BASE LINK32 /pdb:none
-# ADD LINK32 ..\mzsrc\SGC\mzsrc.lib ..\sgc\Debug\sgc.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib /nologo /subsystem:console /incremental:no /debug /machine:I386 /nodefaultlib:"libcd.lib"
-# SUBTRACT LINK32 /pdb:none
-
-!ELSEIF  "$(CFG)" == "mzscheme - Win32 Threads"
-
-# PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 0
-# PROP BASE Output_Dir ".\mzscheme"
-# PROP BASE Intermediate_Dir ".\mzscheme"
-# PROP BASE Target_Dir ""
-# PROP Use_MFC 0
-# PROP Use_Debug_Libraries 0
-# PROP Output_Dir "..\..\..\..\plt"
-# PROP Intermediate_Dir ".\Threads"
-# PROP Ignore_Export_Lib 0
-# PROP Target_Dir ""
-# ADD BASE CPP /nologo /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /YX /c
-# ADD CPP /nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "WIN32_THREADS" /YX /FD /c
-# ADD BASE RSC /l 0x409 /d "NDEBUG"
-# ADD RSC /l 0x409 /d "NDEBUG"
-BSC32=bscmake.exe
-# ADD BASE BSC32 /nologo
-# ADD BSC32 /nologo
-LINK32=link.exe
-# ADD BASE LINK32 ..\mzsrc\Release\mzsrc.lib ..\gc\Release\gc.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib /nologo /subsystem:console /machine:I386
-# SUBTRACT BASE LINK32 /pdb:none /incremental:yes /debug
-# ADD LINK32 ..\mzsrc\Threads\mzsrc.lib ..\gc\Threads\gc.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib /nologo /subsystem:console /debug /machine:I386
-# SUBTRACT LINK32 /pdb:none /incremental:yes
-
-!ELSEIF  "$(CFG)" == "mzscheme - Win32 MT DLL"
-
-# PROP BASE Use_MFC 0
-# PROP BASE Use_Debug_Libraries 0
-# PROP BASE Output_Dir "mzscheme___Win32_MT_DLL"
-# PROP BASE Intermediate_Dir "mzscheme___Win32_MT_DLL"
+# PROP BASE Output_Dir "mzscheme___Win32_Debug"
+# PROP BASE Intermediate_Dir "mzscheme___Win32_Debug"
 # PROP BASE Ignore_Export_Lib 0
 # PROP BASE Target_Dir ""
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 0
-# PROP Output_Dir "MTDLL"
-# PROP Intermediate_Dir "MTDLL"
+# PROP Output_Dir "Debug"
+# PROP Intermediate_Dir "Debug"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /YX /FD /c
-# ADD CPP /nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /D "WIN32" /D "_CONSOLE" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /YX /FD /c
+# ADD BASE CPP /nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "USE_MSVC_MD_LIBRARY" /YX /FD /c
+# ADD CPP /nologo /MT /W3 /GX /Zi /Od /I "..\..\mzscheme\include" /D "WIN32" /D "DEBUG" /D "_CONSOLE" /D "USE_MSVC_MD_LIBRARY" /YX /FD /c
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
 # ADD RSC /l 0x409 /d "NDEBUG"
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32 ..\mzsrc\Release\mzsrc.lib ..\gc\Release\gc.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib /nologo /subsystem:console /debug /machine:I386
+# ADD BASE LINK32 ..\libmzgc\Release\libmzgc.lib ..\libmzsch\Release\libmzsch.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib /nologo /subsystem:console /debug /machine:I386 /out:"..\..\..\MzScheme.exe"
 # SUBTRACT BASE LINK32 /pdb:none
-# ADD LINK32 ..\mzsrc\MTDLL\mzsrc.lib ..\gc\MTDLL\gc.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib /nologo /subsystem:console /debug /machine:I386 /out:"..\..\..\..\plt/MzScheme.exe"
+# ADD LINK32 ..\libmzgc\Release\libmzgc.lib ..\libmzsch\Release\libmzsch.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib /nologo /subsystem:console /debug /machine:I386 /out:"..\..\..\MzScheme.exe"
 # SUBTRACT LINK32 /pdb:none
+# Begin Special Build Tool
+SOURCE="$(InputPath)"
+PostBuild_Cmds=cd ..\..\mzscheme\dynsrc	mkmzdyn.bat	cd ..\..\worksp\mzscheme
+# End Special Build Tool
 
 !ENDIF 
 
@@ -170,9 +94,6 @@ LINK32=link.exe
 
 # Name "mzscheme - Win32 Release"
 # Name "mzscheme - Win32 Debug"
-# Name "mzscheme - Win32 SGC"
-# Name "mzscheme - Win32 Threads"
-# Name "mzscheme - Win32 MT DLL"
 # Begin Group "Source Files"
 
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat;for;f90"

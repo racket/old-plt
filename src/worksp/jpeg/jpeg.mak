@@ -1,7 +1,7 @@
 # Microsoft Developer Studio Generated NMAKE File, Based on jpeg.dsp
 !IF "$(CFG)" == ""
-CFG=jpeg - Win32 Debug
-!MESSAGE No configuration specified. Defaulting to jpeg - Win32 Debug.
+CFG=jpeg - Win32 Release
+!MESSAGE No configuration specified. Defaulting to jpeg - Win32 Release.
 !ENDIF 
 
 !IF "$(CFG)" != "jpeg - Win32 Release" && "$(CFG)" != "jpeg - Win32 Debug"
@@ -9,7 +9,7 @@ CFG=jpeg - Win32 Debug
 !MESSAGE You can specify a configuration when running NMAKE
 !MESSAGE by defining the macro CFG on the command line. For example:
 !MESSAGE 
-!MESSAGE NMAKE /f "jpeg.mak" CFG="jpeg - Win32 Debug"
+!MESSAGE NMAKE /f "jpeg.mak" CFG="jpeg - Win32 Release"
 !MESSAGE 
 !MESSAGE Possible choices for configuration are:
 !MESSAGE 
@@ -25,6 +25,9 @@ NULL=
 NULL=nul
 !ENDIF 
 
+CPP=cl.exe
+RSC=rc.exe
+
 !IF  "$(CFG)" == "jpeg - Win32 Release"
 
 OUTDIR=.\Release
@@ -37,6 +40,7 @@ ALL : "$(OUTDIR)\jpeg.lib"
 
 
 CLEAN :
+	-@erase "$(INTDIR)\cdjpeg.obj"
 	-@erase "$(INTDIR)\jcapimin.obj"
 	-@erase "$(INTDIR)\jcapistd.obj"
 	-@erase "$(INTDIR)\jccoefct.obj"
@@ -84,46 +88,15 @@ CLEAN :
 	-@erase "$(INTDIR)\jquant1.obj"
 	-@erase "$(INTDIR)\jquant2.obj"
 	-@erase "$(INTDIR)\jutils.obj"
+	-@erase "$(INTDIR)\rdswitch.obj"
+	-@erase "$(INTDIR)\transupp.obj"
 	-@erase "$(INTDIR)\vc60.idb"
 	-@erase "$(OUTDIR)\jpeg.lib"
 
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
 
-CPP=cl.exe
-CPP_PROJ=/nologo /MT /W3 /GX /O2 /I "../jpeg" /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /Fp"$(INTDIR)\jpeg.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
-
-.c{$(INTDIR)}.obj::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cpp{$(INTDIR)}.obj::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cxx{$(INTDIR)}.obj::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.c{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cpp{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cxx{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-RSC=rc.exe
+CPP_PROJ=/nologo /MD /W3 /GX /O2 /I "../jpeg" /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /Fp"$(INTDIR)\jpeg.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 BSC32=bscmake.exe
 BSC32_FLAGS=/nologo /o"$(OUTDIR)\jpeg.bsc" 
 BSC32_SBRS= \
@@ -131,6 +104,7 @@ BSC32_SBRS= \
 LIB32=link.exe -lib
 LIB32_FLAGS=/nologo /out:"$(OUTDIR)\jpeg.lib" 
 LIB32_OBJS= \
+	"$(INTDIR)\cdjpeg.obj" \
 	"$(INTDIR)\jcapimin.obj" \
 	"$(INTDIR)\jcapistd.obj" \
 	"$(INTDIR)\jccoefct.obj" \
@@ -177,7 +151,9 @@ LIB32_OBJS= \
 	"$(INTDIR)\jpegtran.obj" \
 	"$(INTDIR)\jquant1.obj" \
 	"$(INTDIR)\jquant2.obj" \
-	"$(INTDIR)\jutils.obj"
+	"$(INTDIR)\jutils.obj" \
+	"$(INTDIR)\rdswitch.obj" \
+	"$(INTDIR)\transupp.obj"
 
 "$(OUTDIR)\jpeg.lib" : "$(OUTDIR)" $(DEF_FILE) $(LIB32_OBJS)
     $(LIB32) @<<
@@ -196,6 +172,7 @@ ALL : "$(OUTDIR)\jpeg.lib"
 
 
 CLEAN :
+	-@erase "$(INTDIR)\cdjpeg.obj"
 	-@erase "$(INTDIR)\jcapimin.obj"
 	-@erase "$(INTDIR)\jcapistd.obj"
 	-@erase "$(INTDIR)\jccoefct.obj"
@@ -243,47 +220,15 @@ CLEAN :
 	-@erase "$(INTDIR)\jquant1.obj"
 	-@erase "$(INTDIR)\jquant2.obj"
 	-@erase "$(INTDIR)\jutils.obj"
+	-@erase "$(INTDIR)\rdswitch.obj"
+	-@erase "$(INTDIR)\transupp.obj"
 	-@erase "$(INTDIR)\vc60.idb"
-	-@erase "$(INTDIR)\vc60.pdb"
 	-@erase "$(OUTDIR)\jpeg.lib"
 
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
 
-CPP=cl.exe
-CPP_PROJ=/nologo /MTd /W3 /Gm /GX /ZI /Od /I "." /I "../jpeg" /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /Fp"$(INTDIR)\jpeg.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
-
-.c{$(INTDIR)}.obj::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cpp{$(INTDIR)}.obj::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cxx{$(INTDIR)}.obj::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.c{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cpp{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cxx{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-RSC=rc.exe
+CPP_PROJ=/nologo /MD /W3 /GX /Od /I "../jpeg" /D "WIN32" /D "DEBUG" /D "_MBCS" /D "_LIB" /Fp"$(INTDIR)\jpeg.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 BSC32=bscmake.exe
 BSC32_FLAGS=/nologo /o"$(OUTDIR)\jpeg.bsc" 
 BSC32_SBRS= \
@@ -291,6 +236,7 @@ BSC32_SBRS= \
 LIB32=link.exe -lib
 LIB32_FLAGS=/nologo /out:"$(OUTDIR)\jpeg.lib" 
 LIB32_OBJS= \
+	"$(INTDIR)\cdjpeg.obj" \
 	"$(INTDIR)\jcapimin.obj" \
 	"$(INTDIR)\jcapistd.obj" \
 	"$(INTDIR)\jccoefct.obj" \
@@ -337,7 +283,9 @@ LIB32_OBJS= \
 	"$(INTDIR)\jpegtran.obj" \
 	"$(INTDIR)\jquant1.obj" \
 	"$(INTDIR)\jquant2.obj" \
-	"$(INTDIR)\jutils.obj"
+	"$(INTDIR)\jutils.obj" \
+	"$(INTDIR)\rdswitch.obj" \
+	"$(INTDIR)\transupp.obj"
 
 "$(OUTDIR)\jpeg.lib" : "$(OUTDIR)" $(DEF_FILE) $(LIB32_OBJS)
     $(LIB32) @<<
@@ -345,6 +293,36 @@ LIB32_OBJS= \
 <<
 
 !ENDIF 
+
+.c{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cpp{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cxx{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.c{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cpp{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cxx{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
 
 
 !IF "$(NO_EXTERNAL_DEPS)" != "1"
@@ -357,6 +335,12 @@ LIB32_OBJS= \
 
 
 !IF "$(CFG)" == "jpeg - Win32 Release" || "$(CFG)" == "jpeg - Win32 Debug"
+SOURCE=..\..\wxcommon\jpeg\cdjpeg.c
+
+"$(INTDIR)\cdjpeg.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
+
+
 SOURCE=..\..\wxcommon\jpeg\jcapimin.c
 
 "$(INTDIR)\jcapimin.obj" : $(SOURCE) "$(INTDIR)"
@@ -636,6 +620,18 @@ SOURCE=..\..\wxcommon\jpeg\jquant2.c
 SOURCE=..\..\wxcommon\jpeg\jutils.c
 
 "$(INTDIR)\jutils.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
+
+
+SOURCE=..\..\wxcommon\jpeg\rdswitch.c
+
+"$(INTDIR)\rdswitch.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
+
+
+SOURCE=..\..\wxcommon\jpeg\transupp.c
+
+"$(INTDIR)\transupp.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) $(SOURCE)
 
 

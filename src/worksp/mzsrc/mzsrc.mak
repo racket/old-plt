@@ -138,6 +138,7 @@ LIB32_OBJS= \
 	"$(INTDIR)\Eval.obj" \
 	"$(INTDIR)\File.obj" \
 	"$(INTDIR)\Fun.obj" \
+	"$(INTDIR)\gmp.obj" \
 	"$(INTDIR)\Hash.obj" \
 	"$(INTDIR)\image.obj" \
 	"$(INTDIR)\List.obj" \
@@ -164,8 +165,7 @@ LIB32_OBJS= \
 	"$(INTDIR)\Syntax.obj" \
 	"$(INTDIR)\thread.obj" \
 	"$(INTDIR)\Type.obj" \
-	"$(INTDIR)\vector.obj" \
-	"$(INTDIR)\gmp.obj"
+	"$(INTDIR)\vector.obj"
 
 "$(OUTDIR)\mzsrc.lib" : "$(OUTDIR)" $(DEF_FILE) $(LIB32_OBJS)
     $(LIB32) @<<
@@ -282,6 +282,7 @@ LIB32_OBJS= \
 	"$(INTDIR)\Eval.obj" \
 	"$(INTDIR)\File.obj" \
 	"$(INTDIR)\Fun.obj" \
+	"$(INTDIR)\gmp.obj" \
 	"$(INTDIR)\Hash.obj" \
 	"$(INTDIR)\image.obj" \
 	"$(INTDIR)\List.obj" \
@@ -308,8 +309,7 @@ LIB32_OBJS= \
 	"$(INTDIR)\Syntax.obj" \
 	"$(INTDIR)\thread.obj" \
 	"$(INTDIR)\Type.obj" \
-	"$(INTDIR)\vector.obj" \
-	"$(INTDIR)\gmp.obj"
+	"$(INTDIR)\vector.obj"
 
 "$(OUTDIR)\mzsrc.lib" : "$(OUTDIR)" $(DEF_FILE) $(LIB32_OBJS)
     $(LIB32) @<<
@@ -426,6 +426,7 @@ LIB32_OBJS= \
 	"$(INTDIR)\Eval.obj" \
 	"$(INTDIR)\File.obj" \
 	"$(INTDIR)\Fun.obj" \
+	"$(INTDIR)\gmp.obj" \
 	"$(INTDIR)\Hash.obj" \
 	"$(INTDIR)\image.obj" \
 	"$(INTDIR)\List.obj" \
@@ -452,8 +453,7 @@ LIB32_OBJS= \
 	"$(INTDIR)\Syntax.obj" \
 	"$(INTDIR)\thread.obj" \
 	"$(INTDIR)\Type.obj" \
-	"$(INTDIR)\vector.obj" \
-	"$(INTDIR)\gmp.obj"
+	"$(INTDIR)\vector.obj"
 
 "$(OUTDIR)\mzsrc.lib" : "$(OUTDIR)" $(DEF_FILE) $(LIB32_OBJS)
     $(LIB32) @<<
@@ -570,6 +570,7 @@ LIB32_OBJS= \
 	"$(INTDIR)\Eval.obj" \
 	"$(INTDIR)\File.obj" \
 	"$(INTDIR)\Fun.obj" \
+	"$(INTDIR)\gmp.obj" \
 	"$(INTDIR)\Hash.obj" \
 	"$(INTDIR)\image.obj" \
 	"$(INTDIR)\List.obj" \
@@ -596,8 +597,7 @@ LIB32_OBJS= \
 	"$(INTDIR)\Syntax.obj" \
 	"$(INTDIR)\thread.obj" \
 	"$(INTDIR)\Type.obj" \
-	"$(INTDIR)\vector.obj" \
-	"$(INTDIR)\gmp.obj"
+	"$(INTDIR)\vector.obj"
 
 "$(OUTDIR)\mzsrc.lib" : "$(OUTDIR)" $(DEF_FILE) $(LIB32_OBJS)
     $(LIB32) @<<
@@ -714,6 +714,7 @@ LIB32_OBJS= \
 	"$(INTDIR)\Eval.obj" \
 	"$(INTDIR)\File.obj" \
 	"$(INTDIR)\Fun.obj" \
+	"$(INTDIR)\gmp.obj" \
 	"$(INTDIR)\Hash.obj" \
 	"$(INTDIR)\image.obj" \
 	"$(INTDIR)\List.obj" \
@@ -740,8 +741,7 @@ LIB32_OBJS= \
 	"$(INTDIR)\Syntax.obj" \
 	"$(INTDIR)\thread.obj" \
 	"$(INTDIR)\Type.obj" \
-	"$(INTDIR)\vector.obj" \
-	"$(INTDIR)\gmp.obj"
+	"$(INTDIR)\vector.obj"
 
 "$(OUTDIR)\mzsrc.lib" : "$(OUTDIR)" $(DEF_FILE) $(LIB32_OBJS)
     $(LIB32) @<<

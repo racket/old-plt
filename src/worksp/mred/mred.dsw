@@ -3,7 +3,7 @@ Microsoft Developer Studio Workspace File, Format Version 6.00
 
 ###############################################################################
 
-Project: "gc"=..\gc\gc.dsp - Package Owner=<4>
+Project: "jpeg"=..\jpeg\jpeg.dsp - Package Owner=<4>
 
 Package=<5>
 {{{
@@ -15,7 +15,52 @@ Package=<4>
 
 ###############################################################################
 
-Project: "jpeg"=..\jpeg\jpeg.dsp - Package Owner=<4>
+Project: "libmred"=..\libmred\libmred.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name jpeg
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wxs
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wxutils
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wxwin
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name libmzgc
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name libmzsch
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wxme
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "libmzgc"=..\libmzgc\libmzgc.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "libmzsch"=..\libmzsch\libmzsch.dsp - Package Owner=<4>
 
 Package=<5>
 {{{
@@ -36,28 +81,13 @@ Package=<5>
 Package=<4>
 {{{
     Begin Project Dependency
-    Project_Dep_Name wxwin
-    End Project Dependency
-    Begin Project Dependency
-    Project_Dep_Name mzsrc
-    End Project Dependency
-    Begin Project Dependency
-    Project_Dep_Name gc
-    End Project Dependency
-    Begin Project Dependency
-    Project_Dep_Name wxs
-    End Project Dependency
-    Begin Project Dependency
-    Project_Dep_Name wxutils
-    End Project Dependency
-    Begin Project Dependency
-    Project_Dep_Name jpeg
+    Project_Dep_Name libmred
     End Project Dependency
 }}}
 
 ###############################################################################
 
-Project: "mzsrc"=..\mzsrc\mzsrc.dsp - Package Owner=<4>
+Project: "wxme"=..\wxme\wxme.dsp - Package Owner=<4>
 
 Package=<5>
 {{{

@@ -4,7 +4,7 @@ CFG=wxs - Win32 Release
 !MESSAGE No configuration specified. Defaulting to wxs - Win32 Release.
 !ENDIF 
 
-!IF "$(CFG)" != "wxs - Win32 Release" && "$(CFG)" != "wxs - Win32 Debug" && "$(CFG)" != "wxs - Win32 SGC"
+!IF "$(CFG)" != "wxs - Win32 Release" && "$(CFG)" != "wxs - Win32 Debug"
 !MESSAGE Invalid configuration "$(CFG)" specified.
 !MESSAGE You can specify a configuration when running NMAKE
 !MESSAGE by defining the macro CFG on the command line. For example:
@@ -15,7 +15,6 @@ CFG=wxs - Win32 Release
 !MESSAGE 
 !MESSAGE "wxs - Win32 Release" (based on "Win32 (x86) Static Library")
 !MESSAGE "wxs - Win32 Debug" (based on "Win32 (x86) Static Library")
-!MESSAGE "wxs - Win32 SGC" (based on "Win32 (x86) Static Library")
 !MESSAGE 
 !ERROR An invalid configuration is specified.
 !ENDIF 
@@ -25,6 +24,9 @@ NULL=
 !ELSE 
 NULL=nul
 !ENDIF 
+
+CPP=cl.exe
+RSC=rc.exe
 
 !IF  "$(CFG)" == "wxs - Win32 Release"
 
@@ -73,40 +75,7 @@ CLEAN :
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
 
-CPP=cl.exe
-CPP_PROJ=/nologo /MT /W3 /Zi /O2 /I "..\..\mzscheme\gc" /I "..\..\wxwindow\include\base" /I "..\..\wxwindow\include\msw" /I "..\..\mzscheme\include" /I "..\..\mred\wxme" /I "..\..\mzscheme\utils" /I "..\..\wxwindow\contrib\fafa" /D "NDEBUG" /D "__STDC__" /D "WIN32" /D "_WINDOWS" /D "__WINDOWS__" /Fp"$(INTDIR)\wxs.pch" /YX"wx.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
-
-.c{$(INTDIR)}.obj::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cpp{$(INTDIR)}.obj::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cxx{$(INTDIR)}.obj::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.c{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cpp{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cxx{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-RSC=rc.exe
+CPP_PROJ=/nologo /MD /W3 /Zi /O2 /I "..\..\mzscheme\gc" /I "..\..\wxwindow\include\base" /I "..\..\wxwindow\include\msw" /I "..\..\mzscheme\include" /I "..\..\mred\wxme" /I "..\..\mzscheme\utils" /I "..\..\wxwindow\contrib\fafa" /D "NDEBUG" /D "__STDC__" /D "WIN32" /D "_WINDOWS" /D "__WINDOWS__" /Fp"$(INTDIR)\wxs.pch" /YX"wx.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 BSC32=bscmake.exe
 BSC32_FLAGS=/nologo /o"$(OUTDIR)\wxs.bsc" 
 BSC32_SBRS= \
@@ -195,162 +164,7 @@ CLEAN :
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
 
-CPP=cl.exe
-CPP_PROJ=/nologo /MTd /W3 /Gm /ZI /Od /I "..\..\mzscheme\gc" /I "..\..\wxwindow\include\base" /I "..\..\wxwindow\include\msw" /I "..\..\mzscheme\include" /I "..\..\mred\wxme" /I "..\..\mzscheme\utils" /I "..\..\wxwindow\contrib\fafa" /D "__DEBUG" /D "__STDC__" /D "WIN32" /D "_WINDOWS" /D "__WINDOWS__" /Fp"$(INTDIR)\wxs.pch" /YX"wx.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
-
-.c{$(INTDIR)}.obj::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cpp{$(INTDIR)}.obj::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cxx{$(INTDIR)}.obj::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.c{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cpp{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cxx{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-RSC=rc.exe
-BSC32=bscmake.exe
-BSC32_FLAGS=/nologo /o"$(OUTDIR)\wxs.bsc" 
-BSC32_SBRS= \
-	
-LIB32=link.exe -lib
-LIB32_FLAGS=/nologo /out:"$(OUTDIR)\wxs.lib" 
-LIB32_OBJS= \
-	"$(INTDIR)\WXS_BMAP.obj" \
-	"$(INTDIR)\WXS_BUTN.obj" \
-	"$(INTDIR)\WXS_CHCE.obj" \
-	"$(INTDIR)\WXS_CKBX.obj" \
-	"$(INTDIR)\WXS_CNVS.obj" \
-	"$(INTDIR)\WXS_DC.obj" \
-	"$(INTDIR)\WXS_EVNT.obj" \
-	"$(INTDIR)\WXS_FRAM.obj" \
-	"$(INTDIR)\WXS_GAGE.obj" \
-	"$(INTDIR)\WXS_GDI.obj" \
-	"$(INTDIR)\WXS_GLOB.obj" \
-	"$(INTDIR)\WXS_ITEM.obj" \
-	"$(INTDIR)\WXS_LBOX.obj" \
-	"$(INTDIR)\WXS_MADM.obj" \
-	"$(INTDIR)\WXS_MEDE.obj" \
-	"$(INTDIR)\WXS_MEDI.obj" \
-	"$(INTDIR)\WXS_MENU.obj" \
-	"$(INTDIR)\WXS_MIO.obj" \
-	"$(INTDIR)\WXS_MISC.obj" \
-	"$(INTDIR)\WXS_MPB.obj" \
-	"$(INTDIR)\WXS_OBJ.obj" \
-	"$(INTDIR)\WXS_PANL.obj" \
-	"$(INTDIR)\WXS_RADO.obj" \
-	"$(INTDIR)\WXS_SLID.obj" \
-	"$(INTDIR)\WXS_SNIP.obj" \
-	"$(INTDIR)\WXS_STYL.obj" \
-	"$(INTDIR)\WXS_WIN.obj" \
-	"$(INTDIR)\WXSCHEME.obj"
-
-"$(OUTDIR)\wxs.lib" : "$(OUTDIR)" $(DEF_FILE) $(LIB32_OBJS)
-    $(LIB32) @<<
-  $(LIB32_FLAGS) $(DEF_FLAGS) $(LIB32_OBJS)
-<<
-
-!ELSEIF  "$(CFG)" == "wxs - Win32 SGC"
-
-OUTDIR=.\SGC
-INTDIR=.\SGC
-# Begin Custom Macros
-OutDir=.\SGC
-# End Custom Macros
-
-ALL : "$(OUTDIR)\wxs.lib"
-
-
-CLEAN :
-	-@erase "$(INTDIR)\vc60.idb"
-	-@erase "$(INTDIR)\vc60.pdb"
-	-@erase "$(INTDIR)\WXS_BMAP.obj"
-	-@erase "$(INTDIR)\WXS_BUTN.obj"
-	-@erase "$(INTDIR)\WXS_CHCE.obj"
-	-@erase "$(INTDIR)\WXS_CKBX.obj"
-	-@erase "$(INTDIR)\WXS_CNVS.obj"
-	-@erase "$(INTDIR)\WXS_DC.obj"
-	-@erase "$(INTDIR)\WXS_EVNT.obj"
-	-@erase "$(INTDIR)\WXS_FRAM.obj"
-	-@erase "$(INTDIR)\WXS_GAGE.obj"
-	-@erase "$(INTDIR)\WXS_GDI.obj"
-	-@erase "$(INTDIR)\WXS_GLOB.obj"
-	-@erase "$(INTDIR)\WXS_ITEM.obj"
-	-@erase "$(INTDIR)\WXS_LBOX.obj"
-	-@erase "$(INTDIR)\WXS_MADM.obj"
-	-@erase "$(INTDIR)\WXS_MEDE.obj"
-	-@erase "$(INTDIR)\WXS_MEDI.obj"
-	-@erase "$(INTDIR)\WXS_MENU.obj"
-	-@erase "$(INTDIR)\WXS_MIO.obj"
-	-@erase "$(INTDIR)\WXS_MISC.obj"
-	-@erase "$(INTDIR)\WXS_MPB.obj"
-	-@erase "$(INTDIR)\WXS_OBJ.obj"
-	-@erase "$(INTDIR)\WXS_PANL.obj"
-	-@erase "$(INTDIR)\WXS_RADO.obj"
-	-@erase "$(INTDIR)\WXS_SLID.obj"
-	-@erase "$(INTDIR)\WXS_SNIP.obj"
-	-@erase "$(INTDIR)\WXS_STYL.obj"
-	-@erase "$(INTDIR)\WXS_WIN.obj"
-	-@erase "$(INTDIR)\WXSCHEME.obj"
-	-@erase "$(OUTDIR)\wxs.lib"
-
-"$(OUTDIR)" :
-    if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
-
-CPP=cl.exe
-CPP_PROJ=/nologo /MTd /W3 /Gm /ZI /Od /I "..\..\mzscheme\sgc" /I "..\..\wxwindow\include\base" /I "..\..\wxwindow\include\msw" /I "..\..\mzscheme\include" /I "..\..\mred\wxme" /I "..\..\mzscheme\utils" /I "..\..\wxwindow\contrib\fafa" /D "__DEBUG" /D "__STDC__" /D "WIN32" /D "_WINDOWS" /D "__WINDOWS__" /D "USE_SENORA_GC" /Fp"$(INTDIR)\wxs.pch" /YX"wx.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
-
-.c{$(INTDIR)}.obj::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cpp{$(INTDIR)}.obj::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cxx{$(INTDIR)}.obj::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.c{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cpp{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cxx{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-RSC=rc.exe
+CPP_PROJ=/nologo /MD /W3 /Zi /Od /I "..\..\mzscheme\gc" /I "..\..\wxwindow\include\base" /I "..\..\wxwindow\include\msw" /I "..\..\mzscheme\include" /I "..\..\mred\wxme" /I "..\..\mzscheme\utils" /I "..\..\wxwindow\contrib\fafa" /D "DEBUG" /D "__STDC__" /D "WIN32" /D "_WINDOWS" /D "__WINDOWS__" /Fp"$(INTDIR)\wxs.pch" /YX"wx.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 BSC32=bscmake.exe
 BSC32_FLAGS=/nologo /o"$(OUTDIR)\wxs.bsc" 
 BSC32_SBRS= \
@@ -393,6 +207,36 @@ LIB32_OBJS= \
 <<
 
 !ENDIF 
+
+.c{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cpp{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cxx{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.c{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cpp{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cxx{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
 
 
 !IF "$(NO_EXTERNAL_DEPS)" != "1"
@@ -404,7 +248,7 @@ LIB32_OBJS= \
 !ENDIF 
 
 
-!IF "$(CFG)" == "wxs - Win32 Release" || "$(CFG)" == "wxs - Win32 Debug" || "$(CFG)" == "wxs - Win32 SGC"
+!IF "$(CFG)" == "wxs - Win32 Release" || "$(CFG)" == "wxs - Win32 Debug"
 SOURCE=..\..\mred\Wxs\WXS_BMAP.cxx
 
 "$(INTDIR)\WXS_BMAP.obj" : $(SOURCE) "$(INTDIR)"

@@ -244,7 +244,7 @@
 				(lambda (expr build-unnamed)
 				  (let ([answer (inferred-name expr)])
 				    (if answer
-					(if (eq? (with-handlers ([(lambda (x) #t)
+					(if (eq? (with-handlers ([not-break-exn?
 								  (lambda (x) #f)])
 						   (global-defined-value answer))
 						 expr)

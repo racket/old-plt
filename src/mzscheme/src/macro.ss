@@ -596,6 +596,15 @@
 
 > kstop fluid-let <
 
+(#%define (check-parameter-procedure p)
+  (#%unless (#%and (#%procedure? p)
+		   (#%procedure-arity-includes? p 0)
+		   (#%procedure-arity-includes? p 1))
+     (#%raise-type-error 'parameterize "procedure (arity 0 and 1)" p))
+  p)
+
+> fstop check-parameter-procedure <
+
 (#%define-macro #%parameterize
     (#%lambda (params . body)
      (#%let ([fail
@@ -620,7 +629,7 @@
                 [pzs (#%map (#%lambda (x) (#%gensym)) params)]
                 [swap (#%gensym 'swap)])
            `(#%let ,(#%append
-		     (#%map list pzs params)
+		     (#%map list pzs (#%map (#%lambda (x) `(#%check-parameter-procedure ,x)) params))
 		     (#%map list saves vals))
 		   (#%let ((,swap 
 			    (#%lambda () ,@(#%map 
@@ -676,6 +685,10 @@
 		    (#%lambda args (#%lambda () (#%apply #%values args)))))))))))))
 
 > kstop with-handlers <
+
+(#%define (not-break-exn? x) (#%not (#%exn:misc:user-break? x)))
+
+> fstop not-break-exn? <
 
 > literal "#ifdef USE_STRUCT_CASE"
 
@@ -869,7 +882,7 @@
 							      (#%if d (#%path->complete-path s d) s))))]
 			      [date>=?
 			       (#%lambda (a bm)
-					 (#%let ([am (#%with-handlers ([#%void (#%lambda (x) #f)])
+					 (#%let ([am (#%with-handlers ([#%not-break-exn? (#%lambda (x) #f)])
 								      (#%file-or-directory-modify-seconds a))])
 						(#%or (#%and (#%not bm) am) (#%and am bm (#%>= am bm)))))])
 			     (#%case-lambda 
@@ -896,7 +909,7 @@
 								   #f))]
 					   [ok-kind? (#%lambda (file)
 							(#%or (#%eq? mode 'all)
-							   (#%with-handlers ([#%void #%void])
+							   (#%with-handlers ([#%not-break-exn? #%void])
 							      (#%let-values ([(p) (#%open-input-file file)])
 							        (#%dynamic-wind
 								 #%void
@@ -911,7 +924,7 @@
 								    (#%regexp-replace re:suffix file ".zo")))]
 					   [so (get-so file)]
 					   [_loader-so (get-so "_loader.ss")]
-					   [path-d (#%with-handlers ([#%void (#%lambda (x) #f)])
+					   [path-d (#%with-handlers ([#%not-break-exn? (#%lambda (x) #f)])
 								    (#%file-or-directory-modify-seconds path))]
 					   [with-dir (#%lambda (t) 
 						      (#%parameterize ([#%current-load-relative-directory 
@@ -1293,7 +1306,7 @@
             (#%lambda (n)
 	     (#%cond
 	      [(#%eq? n 5) (#%let ([n (copy-env (#%append r5 r4))])
-			     (#%with-handlers ([#%void #%void])
+			     (#%with-handlers ([#%not-break-exn? #%void])
 				(#%parameterize ([#%current-namespace n])
 				  (#%global-defined-value
 				   'begin-elaboration-time

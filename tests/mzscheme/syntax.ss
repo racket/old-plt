@@ -61,6 +61,14 @@
 (test-values '(1 2) (lambda () (with-handlers ([void void])
 					      (values 1 2))))
 
+(test #t not-break-exn? 1)
+(test #t not-break-exn? (with-handlers ([void (lambda (x) x)])
+			  (/ 1 0)))
+(test #f not-break-exn? (with-handlers ([void (lambda (x) x)])
+			  (break-thread (current-thread))
+			  (sleep)))
+(arity-test not-break-exn? 1 1)
+
 (SECTION 4 1 2)
 (test '(quote a) 'quote (quote 'a))
 (test '(quote a) 'quote ''a)
@@ -713,6 +721,8 @@
 (syntax-test '(define-values (x . y) 1))
 (syntax-test '(define-values (x) 1 . 2))
 (syntax-test '(define-values (x) 1 2))
+(syntax-test '(define-values (x x) 10))
+(syntax-test '(define-values (x y x) 10))
 
 (syntax-test '((define x 2) 0 1))
 (syntax-test '(+ (define x 2) 1))
@@ -916,6 +926,23 @@
 (error-test '(parameterize ((x . z)) 8) syntaxe?)
 (error-test '(parameterize ((x . 9)) 8) syntaxe?)
 (error-test '(parameterize ((x . 9)) 8) syntaxe?)
+
+(error-test '(parameterize ([10 10]) 8))
+(error-test '(parameterize ([(lambda () 10) 10]) 8))
+(error-test '(parameterize ([(lambda (a) 10) 10]) 8))
+(error-test '(parameterize ([(lambda (a b) 10) 10]) 8))
+
+(test #t procedure? (check-parameter-procedure current-directory))
+(test #t procedure? (check-parameter-procedure (case-lambda
+						[() 0]
+						[(x) 0])))
+(test 'exn 'not-param (with-handlers ([void (lambda (x) 'exn)])
+		    (check-parameter-procedure (lambda () 10))))
+(test 'exn 'not-param (with-handlers ([void (lambda (x) 'exn)])
+			(check-parameter-procedure (lambda (x) 10))))
+(test 'exn 'not-param (with-handlers ([void (lambda (x) 'exn)])
+			(check-parameter-procedure (lambda (x y) 10))))
+(arity-test check-parameter-procedure 1 1)
 
 (SECTION 'time)
 (test 1 'time (time 1))

@@ -22,7 +22,7 @@
 			 (set! heap_len (sub1 heap_len))
 			 (pqdownheap ,tree SMALLEST)))
 (let-macro DEBUG (lambda (x) '(void))
-(let-macro Assert (lambda (x) x)
+(let-macro Assert (lambda (x) '(void))
 (unit/sig mzlib:deflate^
   (import)
 
@@ -2243,10 +2243,10 @@
 	 (dynamic-wind
 	  (lambda () (close-output-port o))
 	  (lambda ()
-	    (let ([name (with-handlers ([void (lambda (x) #f)])
+	    (let ([name (with-handlers ([not-break-exn? (lambda (x) #f)])
 			  (let-values ([(base name dir?) (split-path infile)])
 			    name))]
-		  [timestamp (with-handlers ([void (lambda (x) 0)])
+		  [timestamp (with-handlers ([not-break-exn? (lambda (x) 0)])
 			       (file-or-directory-modify-seconds infile))])
 	      (gzip-through-ports i o name timestamp)))
 	  void)))

@@ -1,8 +1,55 @@
+
+103/1:
+
+ * Windows: Fixed bug in `close-output-port' for TCP ports.
+
+ * Closing a TCP output port always sends an EOF to the other end of
+   the connection, even if the associated input port remains open.
+
+ * Added an optional limit argument to `make-pipe', useful for
+   chaining together stream-processing threads. By default,
+   `make-pipe' still creates pipes with no limit on the number of
+   unread characters that can be written to the pipe.
+
+ * Added "deflate.ss" library to MzLib, providing `gzip', etc. Since
+   it's mostly a blind translation of C code to Scheme, the MzLib
+   version runs about 100 times as slow as regular gzip.
+
+ * Added `not-break-exn?'. This procedure is useful mainly as a
+   predicate in a `with-handlers' expression. In particular, most
+   expressions of the form
+     (with-handlers ([(lambda (x) #t) ..]) ...)
+   should be
+     (with-handlers ([not-break-exn? ..]) ...)
+   instead, to propagate breaks exceptions. This is especially true
+   for library procedures.
+
+ * Fixed `load/use-compiled', `require-library', and many MzLib
+   functions to propagate break exceptions correctly. (Guess how.)
+
+ * Added `check-parameter-procedure' and changed `parameterize' to use
+   it. With this change `parameterize' reports a useful error message
+   when a parameter expression produces a non-procedure or a procedure
+   that does not take 0 and 1 arguments. (PR 1486)
+
+ * Fixed read-write invariance of copiled code, and corrected
+   performance bugs (only worth about 4% on a tight loop). (PR 1157)
+
+--------------------------------------------------
+
 Version 103, ??
 Windows: Fixed bug in close-output-port for TCP ports
 Closing a TCP output port always sends an EOF to the other
  end of the connection, even if the associated input port
  remains open
+Added an optional limit argument to make-pipe
+Added deflate.ss library to MzLib, providing gzip, etc.
+Added `not-break-exn?', useful mainly as a predicate in a
+ with-handlers expressions
+Fixed load/use-compiled, require-library, and many MzLib functions to
+ propagate break exceptions correctly
+Added check-parameter-procedure and changed parameterize
+Fixed bugs in (eval (compile e))
 
 Version 102, June 26, 2000
 Switched to configure-based makefiles (autoconf)

@@ -2126,10 +2126,10 @@ static Scheme_Object *dynamic_wind(int c, Scheme_Object *p[])
 }
  
 Scheme_Object *scheme_dynamic_wind(void (*pre)(void *),
-				   Scheme_Object *(*act)(void *),
+				   Scheme_Object *(* volatile act)(void *),
 				   void (* volatile post)(void *), 
 				   Scheme_Object *(*jmp_handler)(void *),
-				   void *data)
+				   void * volatile data)
 {
   Scheme_Object * volatile v, ** volatile save_values;
   volatile int err;

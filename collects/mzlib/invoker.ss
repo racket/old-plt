@@ -14,7 +14,7 @@
       ; A cheesy way of expanding the saignature: use the compound-unit/sig
       ;  macro implementation. Construct an expression, expand it, and
       ;  then pull the result back apart.
-      (#%with-handlers ([(lambda (x) (not (exn:misc:user-break? x)))
+      (#%with-handlers ([not-break-exn?
 			 (lambda (x) (badsyntax sig "bad signature"))])
 	(let ([expr (local-expand-defmacro `(#%compound-unit/sig
 					     (import)

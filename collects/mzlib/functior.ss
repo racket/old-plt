@@ -91,7 +91,7 @@
     (polymorphic
      (lambda (thunk)
        (let/ec escape
-         (with-handlers ([void (lambda (x) (escape (void)))])
+         (with-handlers ([not-break-exn? (lambda (x) (escape (void)))])
            (thunk))))))
   
   (define remove

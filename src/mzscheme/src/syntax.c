@@ -615,12 +615,19 @@ static void define_values_parse(Scheme_Object *form,
   *var = vars;
 
   while (SCHEME_PAIRP(vars)) {
-    Scheme_Object *name;
+    Scheme_Object *name, *rest;
 
     name = SCHEME_CAR(vars);
     scheme_check_identifier("define-values", name, NULL, env, form);
 
     vars = SCHEME_CDR(vars);
+
+    for (rest = vars; SCHEME_PAIRP(rest); rest = SCHEME_CDR(rest)) {
+      Scheme_Object *param;
+      param = SCHEME_CAR(rest);
+      if (SAME_OBJ(param, name))
+	scheme_wrong_syntax("define-values", name, form, "duplicate argument name");
+    }
   }  
 
   if (!SCHEME_NULLP(vars))

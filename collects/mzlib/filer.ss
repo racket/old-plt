@@ -37,7 +37,7 @@
 					;; Use simplify-path to get rid of ..s, which can
 					;;  allow the path to grow indefinitely in a cycle.
 					;; An exception must mean a cycle of links.
-					(with-handlers ([void
+					(with-handlers ([not-break-exn?
 							 (lambda (x)
 							   (error 'normalize-path "circular reference at ~s" path))])
 					  (simplify-path path))])
@@ -198,10 +198,11 @@
    (define make-temporary-file
      (case-lambda
       [(template)
-       (with-handlers ([void (lambda (x)
-			       (raise-type-error 'make-temporary-file
-						 "format string for 1 argument"
-						 template))])
+       (with-handlers ([not-break-exn?
+			(lambda (x)
+			  (raise-type-error 'make-temporary-file
+					    "format string for 1 argument"
+					    template))])
 	 (format template void))
        (let ([tmpdir (find-system-path 'temp-dir)])
 	 (let loop ([s (current-seconds)][ms (current-milliseconds)])
@@ -222,7 +223,7 @@
      (case-lambda 
       [(name) (find-library name "mzlib")]
       [(name collection . cp)
-       (let ([dir (with-handlers ([void (lambda (exn) #f)])
+       (let ([dir (with-handlers ([not-break-exn? (lambda (exn) #f)])
 		      (apply collection-path collection cp))])
 	 (if dir
 	     (let ([file (build-path dir name)])

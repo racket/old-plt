@@ -1,6 +1,6 @@
-(unless (equal? (version) "100/32")
+(unless (equal? (version) "100/33")
   (error 'mred-interfaces
-         "mred-interfaces.ss and mred-interfacess.ss compiled for version 100/32, not version ~a"
+         "mred-interfaces.ss and mred-interfacess.ss compiled for version 100/33, not version ~a"
          (version)))
 (define-signature
   mred-interfaces^

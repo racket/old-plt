@@ -18,7 +18,7 @@
 	 (queue-callback th)))
 
       ; string (list string (listof string)) (union (listof string) #f) -> void
-      (define (show-ok title captions details)
+      (define (show-ok title captions details ok-thunk)
         (letrec ([frame 
                   (instantiate frame% ()
                     (label title)
@@ -93,7 +93,8 @@
                               (min-width 20)
                               (parent buttons-panel)
                               (callback (lambda (b ev) 
-                                          (send frame show #f))))]
+                                          (send frame show #f)
+					  (ok-thunk))))]
                  [spacer 
 		  (and details
 		       (instantiate message% () 
@@ -114,7 +115,8 @@
        (show-ok title 
 		(list (format (string-constant vc-error-format)
 			      caption))
-		#f))
+		#f
+		void))
 
      (define (make-wait-dialog parent title caption close-fun)
        (let ([dialog 

@@ -10,11 +10,11 @@
     (unit/sig defs^
       (import)
 
-      (define (run-thunk th)
+	(define (run-thunk th)
 	(th))
 
       ; string (list string (listof string)) (union (listof string) #f) -> void
-      (define (show-ok title captions details)
+      (define (show-ok title captions details ok-thunk) ; ok-thunk for gui, ignore here
 	(printf "~a~n" (car captions))
 	(for-each
 	 (lambda (c)
@@ -30,7 +30,8 @@
       (define (show-error-ok title caption)
 	(show-ok title
 		 (list (format (string-constant vc-error-format) caption))
-		 #f))
+		 #f
+		 void))
 
       (define (make-wait-dialog parent title caption close-fun)
 	(list title caption))

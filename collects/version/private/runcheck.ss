@@ -21,6 +21,11 @@
 
       (define sync-sem (make-semaphore 0))
 
+      (define ok-thunk
+	(if sync?
+	    (lambda () (semaphore-post sync-sem))
+	    void))
+
       (define rv-sym 'release-version)
       (define no-info-sym 'no-info-file)
       (define no-release-sym 'no-release-info)
@@ -122,7 +127,8 @@
 			   (lambda () 
 			     (show-ok (string-constant vc-network-timeout)
 				      (list (string-constant vc-cannot-connect))
-				      #f))))
+				      #f
+				      ok-thunk))))
 			(begin
 			  (sleep 1)
 			  (loop (add1 n))))))]
@@ -213,7 +219,8 @@
 		    (string-constant vc-latest-binary-information-format)
 		    latest-binary-version latest-binary-iteration)
 	           (string-append (string-constant vc-updates-available) " " download-url-string))
-		  #f)
+		  #f
+		  ok-thunk)
 	       
 		 ; else offer info for installed packages
 	       
@@ -257,9 +264,8 @@
 				 (string-constant vc-updates-available)
 				 ""
 				 download-url-string))
-			details)))))))
-	(when sync?
-	      (semaphore-post sync-sem)))
+			details)
+		    ok-thunk)))))))
 
       ; exceptions are used to report errors elsewhere
       ; just ignore here

@@ -70,7 +70,7 @@ wxTabChoice::wxTabChoice(wxPanel *panel, wxFunction function, char *label,
 			 int N, char **Choices, int style, wxFont *_font)
  : wxItem (panel, -1, -1, -1, -1, style,  "tab-choice")
 {
-  int i;
+  int i, tch;
   CGrafPtr theMacGrafPort;
   Rect boundsRect = {0, 0, 10, 10};
 
@@ -93,6 +93,8 @@ wxTabChoice::wxTabChoice(wxPanel *panel, wxFunction function, char *label,
 
   focused_button = -1;
 
+  tch = TAB_CONTROL_HEIGHT + (font->GetPointSize() - 13);
+
 #if 0
   /* #^%$^&!!! GetBestControlRect doesn't work for tab widgets.
      And why should it? That would be entriely too helpful. */
@@ -104,7 +106,7 @@ wxTabChoice::wxTabChoice(wxPanel *panel, wxFunction function, char *label,
   cWindowWidth = r.right - r.left;
   cWindowHeight = r.bottom - r.top;
 #else
-  cWindowHeight = TAB_TOP_SPACE + TAB_CONTROL_HEIGHT + TAB_CONTENT_MARGIN + TAB_BOTTOM_EXTRA_MARGIN + 5;
+  cWindowHeight = (TAB_TOP_SPACE + tch + TAB_CONTENT_MARGIN + TAB_BOTTOM_EXTRA_MARGIN + 5);
   cWindowWidth = TAB_TITLE_SPACE + TAB_BASE_SIDE_SPACE;
   for (i = 0; i < N; i++) {
     double x, y;
@@ -120,7 +122,7 @@ wxTabChoice::wxTabChoice(wxPanel *panel, wxFunction function, char *label,
 
   ::SizeControl(cMacControl, 
 		cWindowWidth - (padLeft + padRight), 
-		(style & wxBORDER) ? (cWindowHeight - padBottom) : TAB_CONTROL_HEIGHT);
+		(style & wxBORDER) ? (cWindowHeight - padBottom) : tch);
 
   ::EmbedControl(cMacControl, GetRootControl());
 
@@ -204,8 +206,9 @@ void wxTabChoice::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac platf
       ::SizeControl(cMacControl, clientWidth - (padLeft + padRight), 
 		    ph - (padTop + padBottom));
     } else {
-      ::SizeControl(cMacControl, clientWidth - (padLeft + padRight), 
-		    TAB_CONTROL_HEIGHT);
+      int tch;
+      tch = TAB_CONTROL_HEIGHT + (font->GetPointSize() - 13);
+      ::SizeControl(cMacControl, clientWidth - (padLeft + padRight), tch);
     }
   }
 
@@ -395,7 +398,7 @@ void wxTabChoice::Append(char *s, int new_sel)
   GetWinOrigin(&ox, &oy);
   
   r.top = padTop + ox;
-  r.bottom = r.top + TAB_CONTROL_HEIGHT;
+  r.bottom = r.top + TAB_CONTROL_HEIGHT + (font->GetPointSize() - 13);
   r.left = oy + padLeft;
   r.right = r.left + cWindowWidth - (padLeft + padRight);
 

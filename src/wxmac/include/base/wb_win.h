@@ -110,6 +110,8 @@ class wxbWindow: public wxObject
   virtual wxCursor *SetCursor(wxCursor *cursor) = 0;
   virtual void SetColourMap(wxColourMap *cmap) = 0;
 
+  wxFont *GetFont() { return font; }
+
   virtual double GetCharWidth(void) = 0;
   virtual double GetCharHeight(void) = 0;
   inline virtual void GetTextExtent(const char* string, double* x, double* y, double* descent = NULL,

@@ -1288,26 +1288,36 @@ void wxCanvasDC::DrawTabBase(double x, double y, double w, double h, int state)
   ReleaseCurrentDC();
 }
 
+typedef struct {
+  wxFont *font;
+  char *str;
+} tab_info;
 
 static void draw_tab_label(const Rect *bounds,
 			   ThemeTabStyle style,
 			   ThemeTabDirection direction,
 			   SInt16 depth,
 			   Boolean isColorDev,
-			   UInt32 str)
+			   UInt32 ti)
 {
-  Rect r;
-  r = *bounds;
-  r.top += 2;
-  DrawThemeTextBox((CFStringRef)str, kThemeSystemFont, kThemeStateActive,
-		   0, &r, teJustLeft, NULL);
+  wxFont *font = ((tab_info *)ti)->font;
+  char *str = ((tab_info *)ti)->str;
+  double w, h, d, dy, dx;
+
+  font->GetTextExtent(str, 0, &w, &h, &d, NULL, FALSE);
+
+  dy = ((bounds->bottom - bounds->top - 3) - (h - d)) / 2;
+  dx = ((bounds->right - bounds->left) - w) / 2;
+
+  MoveTo((short)floor(bounds->left + dx), (short)floor(bounds->top + dy + (h - d)));
+  wxDrawUnicodeText(str, 0, -1, 0);
 }
 
 void wxCanvasDC::DrawTab(char *str, double x, double y, double w, double h, int state)
 {
   Rect rb;
-  CFStringRef ttitle;
   Bool focus_ring = 0;
+  tab_info ti;
 
   if (state >= 100) {
     focus_ring = 1;
@@ -1315,6 +1325,8 @@ void wxCanvasDC::DrawTab(char *str, double x, double y, double w, double h, int 
   }
 
   SetCurrentDC();
+
+  wxMacSetCurrentTool(kTextTool);
 
   x += SetOriginX;
   y += SetOriginY;
@@ -1324,11 +1336,10 @@ void wxCanvasDC::DrawTab(char *str, double x, double y, double w, double h, int 
   rb.top = (int)y;
   rb.bottom = (int)(y + h);
 
-  ttitle = wxCFString(str);
+  ti.font = font;
+  ti.str = str;
 
-  DrawThemeTab(&rb, state, kThemeTabNorth, draw_tab_label, (long)ttitle);
-
-  CFRelease(ttitle);
+  DrawThemeTab(&rb, state, kThemeTabNorth, draw_tab_label, (UInt32)&ti);
 
   if (focus_ring) {
     RgnHandle rgn;

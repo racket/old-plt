@@ -243,10 +243,21 @@ void wxSlider::Paint(void)
       sprintf(t,"%d",val);
     }
 
-    str = wxCFString(t);
-    DrawThemeTextBox(str, kThemeSystemFont, kThemeStateActive,
-		     0, &r, teJustCenter, NULL);
-    CFRelease(str);
+    if (font && (font != wxNORMAL_FONT)) {
+      double w, h, d, dx;
+
+      font->GetTextExtent(t, 0, &w, &h, &d, NULL, FALSE);
+      dx = ((r.right - r.left) - w) / 2;
+      
+      MoveTo((short)floor(r.left + dx), (short)floor(r.top + (h - d)));
+
+      wxDrawUnicodeText(t, 0, -1, 0);
+    } else {
+      str = wxCFString(t);
+      DrawThemeTextBox(str, kThemeSystemFont, kThemeStateActive,
+		       0, &r, teJustCenter, NULL);
+      CFRelease(str);
+    }
   }
 	
   wxWindow::Paint();

@@ -128,7 +128,7 @@ wxMessage::wxMessage // Constructor (given parentPanel and bitmap)
       Show(FALSE);
     InitInternalGray();
   } else
-    CreateWxMessage("<bad-image>", font);
+    CreateWxMessage("<bad-image>", _font);
 }
 
 static int icons_ready;
@@ -165,7 +165,7 @@ wxMessage::wxMessage // Constructor (given parentPanel and icon id)
   case wxMSGICON_ERROR:
     break;
   default:
-    CreateWxMessage("<bad-icon>");
+    CreateWxMessage("<bad-icon>", _font);
     return;
   }
 
@@ -188,7 +188,7 @@ wxMessage::wxMessage // Constructor (given parentPanel and icon id)
       Show(FALSE);
     InitInternalGray();
   } else
-    CreateWxMessage("<icon-missing>");
+    CreateWxMessage("<icon-missing>", _font);
 }
 
 
@@ -233,10 +233,6 @@ void wxMessage::CreateWxMessage(char* label, wxFont* theFont) // common construc
 
   clientWidth = 20;
   clientHeight = 14;
-  if (theFont) 
-    font = theFont;
-  if (!font) 
-    font = wxNORMAL_FONT; // WCH: kludge
   if (font) {
     font->GetTextExtent(cMessage, 0, &clientWidth, &clientHeight, NULL, NULL, TRUE);
     if (font->GetStyle() != wxNORMAL)

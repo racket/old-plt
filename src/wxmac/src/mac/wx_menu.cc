@@ -350,6 +350,8 @@ MenuHandle wxMenu::CreateCopy(char *title, Bool doabouthack, MenuHandle toHandle
 
   if (GetMenuWidth(nmh) < requestedWidth)
     SetMenuWidth(nmh, requestedWidth);
+
+  SetMenuFont(nmh, font->GetMacFontNum(), font->GetPointSize());
 	
   return nmh;
 }

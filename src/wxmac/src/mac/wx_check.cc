@@ -90,7 +90,7 @@ void wxCheckBox::Create // Constructor (given parentPanel, label)
   
   wxGetBestControlRect(cMacControl,&r,&baselineOffset,
 		       font, 16, 15,
-		       label, IC_BOX_SIZE);
+		       label, 2 * IC_BOX_SIZE);
   
   cWindowWidth = r.right - r.left + (padLeft + padRight);
   cWindowHeight = r.bottom - r.top + (padTop + padBottom);

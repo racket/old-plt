@@ -23,51 +23,6 @@
 #include "wxRectBorder.h"
 #include "wxTimeScale.h"
 
-#define MEANING_CHARACTER	'0'
-/* 
-   A wxWindows (Macintosh version) wxListBox has these (sub)components:
-   1.  a Title
-   old 2.  a Mac List Manager "control"  ; NOT ANYMORE:
-   2.  an "A List" control
-   3.  Optional Scrollbars (vertical only)
-   4.  BorderBox drawn round the list control but not the title or scrollbar
-
-   These are grouped/managed/defined by:
-   Creating the Mac list box control in the ClientArea
-   Creating a wxBorderArea (The Toolbox list mgr does not draw borders around
-   the control)
-   Creating the wxLabelArea for the title (aka label);
-
-   wxItem protocol needed for showing the wxListBox on a panel:
-   1. A constructor of course thats makes a stab at sizing the Mac list box
-   and groups the items as described above.
-   2  A wxListBox::Paint method that calls LUpdate on the Mac list box
-   and calls OnPaint() - to draw the wxLabelArea and wxBorderArea.
-   3. wxListBox::OnClientAreaDSize is needed to actually resize or reposition
-   the Mac List Box (after the label and bounding box are created).
-
-   The Mac list manager requires certain Mac events:
-   1. Update - call LUpdate which handles the scroll bar and the list control
-   2. MouseDown (but not all mouse events, trust me)
-   3. Activate ???
-
-   mflatt: Anytime the list might redraw itself, call SetCurrentDC() first; this
-   gets the GrafPtr into the proper coordinate system.
-
-   List Manager hints:
-   1. Note that SetRect(...) and Rect x = {...} args are in different order
-   This causes me all kinds of errors and the List Mgr often doesn't
-   display anything if the BoundsRect is wrong!
-
-   To do:
-   1. Compute a cell height based on the font used (currently hardcoded at 12)
-   Also, the font used is different from wxText and RadioButtons.
-   2. Load the list in the constructor if N is non zero
-   3. This could be leaking memory ?
-   */
-
-// FIXME: Catch SetFont and fixup cell size and indent
-
 #define DefItemWidth 50
 #define KSBWidth	15	// number of pixels of a vertical scroll bars' width
 #define VIEW_RECT_OFFSET 3

@@ -26,8 +26,6 @@ class wxbItem: public wxWindow
 {
  public:
 
-    wxFont *font;
- 
     wxbItem(void);
 
     // Constructor (given parentArea)
@@ -51,8 +49,6 @@ class wxbItem: public wxWindow
 
   // Places item in centre of panel - so can't be used BEFORE panel->Fit()
   void Centre(int direction = wxHORIZONTAL);
-
-  wxFont *GetFont() { return font; }
 };
 
 #endif // IN_CPROTO

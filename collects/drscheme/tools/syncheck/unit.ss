@@ -309,6 +309,7 @@
 		     position-location
 		     get-canvas get-frame last-position dc-location-to-buffer-location
 		     find-position begin-edit-sequence end-edit-sequence)
+
 	    (rename
 	      [super-after-insert after-insert]
 	      [super-after-delete after-delete]
@@ -530,7 +531,20 @@
 	     (lambda ()
 	       (send check-syntax-button enable #f)
 	       (super-disable-evaluation))])
-	  (private
+	  (public
+	    [syncheck:clear-highlighting
+	     (lambda ()
+	       (let* ([list (send definitions-edit get-style-list)]
+		      [style (send list find-named-style "Standard")])
+		 (send* definitions-edit
+			(syncheck:clear-arrows)
+			(syncheck:init-arrows))
+		 (if (null? style)
+		     (printf "Warning: couldn't find Standard style~n")
+		     (send definitions-edit
+			   change-style style 0 (send definitions-edit last-position)))))])
+
+	  (public
 	    [button-callback
 	     (lambda ()
 	       (if (ivar interactions-edit user-param)
@@ -582,20 +596,22 @@
 				     (lambda ()
 				       (send definitions-edit begin-edit-sequence))
 				     (lambda ()
-				       (let* ([new-name (format "~a" (string->symbol input-name))]
-					      [sorted (mzlib:function@:quicksort
-						       occurrances
-						       (lambda (x y)
-							 (<= (zodiac:location-offset (zodiac:zodiac-start y))
-							     (zodiac:location-offset (zodiac:zodiac-start x)))))]
-					      [rename-one
-					       (lambda (z)
-						 (begin0
-						  (send definitions-edit insert new-name
-							(zodiac:location-offset (zodiac:zodiac-start z))
-							(add1 (zodiac:location-offset (zodiac:zodiac-finish z))))))])
-					 (for-each rename-one sorted))
-				       (button-callback))
+				       (with-parameterization (ivar interactions-edit user-param)
+					 (lambda ()
+					   (let* ([new-name (format "~a" (string->symbol input-name))]
+						  [sorted (mzlib:function@:quicksort
+							   occurrances
+							   (lambda (x y)
+							     (<= (zodiac:location-offset (zodiac:zodiac-start y))
+								 (zodiac:location-offset (zodiac:zodiac-start x)))))]
+						  [rename-one
+						   (lambda (z)
+						     (begin0
+						      (send definitions-edit insert new-name
+							    (zodiac:location-offset (zodiac:zodiac-start z))
+							    (add1 (zodiac:location-offset (zodiac:zodiac-finish z))))))])
+					     (for-each rename-one sorted))
+					   (button-callback))))
 				     (lambda ()
 				       (send definitions-edit end-edit-sequence))))]
 				 [color-loop
@@ -774,14 +790,7 @@
 			    (lambda ()
 			      ; reset all of the buffer to the default style
 			      ; and clear out arrows
-			      (let* ([list (send definitions-edit get-style-list)]
-				     [style (send list find-named-style "Standard")])
-				(send* definitions-edit
-				       (syncheck:clear-arrows)
-				       (syncheck:init-arrows))
-				(if (null? style)
-				    (printf "Warning: couldn't find Standard style~n")
-				    (change-style style 0 (send definitions-edit last-position))))
+			      (syncheck:clear-highlighting)
 			      
 			      ;; color each exp
 			      (drscheme:rep:process-edit/zodiac
@@ -841,6 +850,7 @@
 			      (send definitions-edit set-styles-fixed #t)
 			      (wx:end-busy-cursor)))))))
 		   (mred:message-box "Cannot check syntax until REPL is active. Click Execute")))])
+
 	  (public
 	    [check-syntax-button
 	     (make-object mred:button% button-panel
@@ -853,8 +863,20 @@
 		    (cons check-syntax-button
 			  (mzlib:function@:remove check-syntax-button l))))))))
       
+    (define (make-syncheck-interactions-edit% super%)
+      (class-asi super%
+	(rename [super-reset-console reset-console])
+	(inherit get-frame)
+	(public
+	  [reset-console
+	   (lambda ()
+	     (send (get-frame) syncheck:clear-highlighting)
+	     (super-reset-console))])))
+
+
       (drscheme:get/extend:extend-definitions-edit% make-graphics:media-edit%)
-      (drscheme:get/extend:extend-unit-frame% make-new-unit-frame%)))
+      (drscheme:get/extend:extend-unit-frame% make-new-unit-frame%)
+      (drscheme:get/extend:extend-interactions-edit% make-syncheck-interactions-edit%)))
 
 (compound-unit/sig
   (import [wx : wx^]

@@ -273,16 +273,18 @@
    (define annotate-named (lambda (name expr env) ((make-annotate #t name) expr env)))
 
    (current-eval
-    (let ([orig (current-eval)])
-      (lambda (e)
-	(if (and (instrumenting-enabled)
-		 (with-handlers ([void (lambda (x) #f)])
-		   (global-defined-value '#%with-continuation-mark)))
-	    (let ([a (annotate-top (expand-defmacro e) null)])
-	      ; (printf "~s~n" a)
-	      (orig a))
-	    ;; The empty namespace, maybe? Don't annotate.
-	    (orig e)))))
+    (let* ([orig (current-eval)]
+	   [errortrace-eval-handler
+	    (lambda (e)
+	      (if (and (instrumenting-enabled)
+		       (with-handlers ([void (lambda (x) #f)])
+			 (global-defined-value '#%with-continuation-mark)))
+		  (let ([a (annotate-top (expand-defmacro e) null)])
+		    ; (printf "~s~n" a)
+		    (orig a))
+		  ;; The empty namespace, maybe? Don't annotate.
+		  (orig e)))])
+      errortrace-eval-handler))
    
    ;; port exn -> void
    ;; effect: prints out the context surrounding the exception

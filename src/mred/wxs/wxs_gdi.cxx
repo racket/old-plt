@@ -2968,6 +2968,7 @@ static Scheme_Object *bundle_symset_fillKind(int v) {
 
 
 
+
   
 
 
@@ -3040,7 +3041,7 @@ static Scheme_Object *os_wxRegionSubtract(Scheme_Object *obj, int n,  Scheme_Obj
   
   x0 = objscheme_unbundle_wxRegion(p[0], "subtract in region%", 0);
 
-  
+  if (x0->GetDC() != ((wxRegion *)((Scheme_Class_Object *)obj)->primdata)->GetDC()) scheme_arg_mismatch(METHODNAME("region<%>","subtract"), "provided region's dc does not match this region's dc: ", p[0]);
   ((wxRegion *)((Scheme_Class_Object *)obj)->primdata)->Subtract(x0);
 
   
@@ -3058,7 +3059,7 @@ static Scheme_Object *os_wxRegionIntersect(Scheme_Object *obj, int n,  Scheme_Ob
   
   x0 = objscheme_unbundle_wxRegion(p[0], "intersect in region%", 0);
 
-  
+  if (x0->GetDC() != ((wxRegion *)((Scheme_Class_Object *)obj)->primdata)->GetDC()) scheme_arg_mismatch(METHODNAME("region<%>","intersect"), "provided region's dc does not match this region's dc: ", p[0]);
   ((wxRegion *)((Scheme_Class_Object *)obj)->primdata)->Intersect(x0);
 
   
@@ -3076,7 +3077,7 @@ static Scheme_Object *os_wxRegionUnion(Scheme_Object *obj, int n,  Scheme_Object
   
   x0 = objscheme_unbundle_wxRegion(p[0], "union in region%", 0);
 
-  
+  if (x0->GetDC() != ((wxRegion *)((Scheme_Class_Object *)obj)->primdata)->GetDC()) scheme_arg_mismatch(METHODNAME("region<%>","union"), "provided region's dc does not match this region's dc: ", p[0]);
   ((wxRegion *)((Scheme_Class_Object *)obj)->primdata)->Union(x0);
 
   

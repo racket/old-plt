@@ -19,6 +19,7 @@
 #ifdef wx_mac
 #include "wx_dcpr.h"
 #endif
+#include "wx_rgn.h"
 
 
 
@@ -272,6 +273,7 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
 
 
 /* The methods are here: */
+
 
 
 
@@ -559,8 +561,8 @@ static Scheme_Object *os_wxDCSetDeviceOrigin(Scheme_Object *obj, int n,  Scheme_
   float x1;
 
   
-  x0 = objscheme_unbundle_float(p[0], "set-device-origin in dc<%>");
-  x1 = objscheme_unbundle_float(p[1], "set-device-origin in dc<%>");
+  x0 = objscheme_unbundle_float(p[0], "set-origin in dc<%>");
+  x1 = objscheme_unbundle_float(p[1], "set-origin in dc<%>");
 
   DO_OK_CHECK(scheme_void)
   ((wxDC *)((Scheme_Class_Object *)obj)->primdata)->SetDeviceOrigin(x0, x1);
@@ -579,8 +581,8 @@ static Scheme_Object *os_wxDCSetUserScale(Scheme_Object *obj, int n,  Scheme_Obj
   nnfloat x1;
 
   
-  x0 = objscheme_unbundle_nonnegative_float(p[0], "set-user-scale in dc<%>");
-  x1 = objscheme_unbundle_nonnegative_float(p[1], "set-user-scale in dc<%>");
+  x0 = objscheme_unbundle_nonnegative_float(p[0], "set-scale in dc<%>");
+  x1 = objscheme_unbundle_nonnegative_float(p[1], "set-scale in dc<%>");
 
   DO_OK_CHECK(scheme_void)
   ((wxDC *)((Scheme_Class_Object *)obj)->primdata)->SetUserScale(x0, x1);
@@ -931,7 +933,7 @@ static Scheme_Object *os_wxDCSetClippingRegion(Scheme_Object *obj, int n,  Schem
   
   x0 = objscheme_unbundle_wxRegion(p[0], "set-clipping-region in dc<%>", 1);
 
-  
+  if (x0 && (x0->GetDC() != ((wxDC *)((Scheme_Class_Object *)obj)->primdata))) scheme_arg_mismatch(METHODNAME("dc<%>","set-clipping-region"), "provided a different dc's region: ", p[0]);
   ((wxDC *)((Scheme_Class_Object *)obj)->primdata)->SetClippingRegion(x0);
 
   
@@ -1057,16 +1059,16 @@ static Scheme_Object *os_wxDCDrawArc(Scheme_Object *obj, int n,  Scheme_Object *
   objscheme_check_valid(obj);
   float x0;
   float x1;
-  float x2;
-  float x3;
+  nnfloat x2;
+  nnfloat x3;
   float x4;
   float x5;
 
   
   x0 = objscheme_unbundle_float(p[0], "draw-arc in dc<%>");
   x1 = objscheme_unbundle_float(p[1], "draw-arc in dc<%>");
-  x2 = objscheme_unbundle_float(p[2], "draw-arc in dc<%>");
-  x3 = objscheme_unbundle_float(p[3], "draw-arc in dc<%>");
+  x2 = objscheme_unbundle_nonnegative_float(p[2], "draw-arc in dc<%>");
+  x3 = objscheme_unbundle_nonnegative_float(p[3], "draw-arc in dc<%>");
   x4 = objscheme_unbundle_float(p[4], "draw-arc in dc<%>");
   x5 = objscheme_unbundle_float(p[5], "draw-arc in dc<%>");
 
@@ -1299,8 +1301,8 @@ if (os_wxDC_class) {
  scheme_add_method_w_arity(os_wxDC_class, "get-brush", os_wxDCGetBrush, 0, 0);
  scheme_add_method_w_arity(os_wxDC_class, "get-background-mode", os_wxDCGetBackgroundMode, 0, 0);
  scheme_add_method_w_arity(os_wxDC_class, "get-background", os_wxDCGetBackground, 0, 0);
- scheme_add_method_w_arity(os_wxDC_class, "set-device-origin", os_wxDCSetDeviceOrigin, 2, 2);
- scheme_add_method_w_arity(os_wxDC_class, "set-user-scale", os_wxDCSetUserScale, 2, 2);
+ scheme_add_method_w_arity(os_wxDC_class, "set-origin", os_wxDCSetDeviceOrigin, 2, 2);
+ scheme_add_method_w_arity(os_wxDC_class, "set-scale", os_wxDCSetUserScale, 2, 2);
  scheme_add_method_w_arity(os_wxDC_class, "set-background-mode", os_wxDCSetBackgroundMode, 1, 1);
  scheme_add_method_w_arity(os_wxDC_class, "try-color", os_wxDCTryColour, 2, 2);
  scheme_add_method_w_arity(os_wxDC_class, "draw-bitmap", os_wxDCDrawBitmap, 3, 5);

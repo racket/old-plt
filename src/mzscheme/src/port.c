@@ -223,6 +223,8 @@ Scheme_Object *(*scheme_make_stderr)(void) = NULL;
 
 int scheme_file_open_count;
 
+int scheme_internal_checking_char;
+
 /* locals */
 #ifdef USE_FD_PORTS
 static Scheme_Object *fd_input_port_type;
@@ -1371,6 +1373,11 @@ scheme_char_ready (Scheme_Object *port)
 
   BEGIN_LOCK_PORT(ip->sema);
 
+  if (scheme_internal_checking_char && ip->closed) {
+    /* never for real threads... */
+    return 1;
+  }
+   
   check_closed("char-ready?", "input", port, ip->closed);
 
   if (ip->ungotten_count)
@@ -1565,7 +1572,7 @@ file_char_ready (Scheme_Input_Port *port)
   fip = (Scheme_Input_File *)port->port_data;
   fp = fip->f;
 
-  if (fip->regfile)
+  if (fip->regfile || port->closed)
     return 1;
 
 #ifdef HAS_STANDARD_IOB  
@@ -1641,6 +1648,12 @@ static int file_getc(Scheme_Input_Port *port)
     scheme_current_process->blocker = NULL;
 #endif
     scheme_current_process->ran_some = 1;
+  }
+
+  if (port->closed) {
+    /* Another thread closed the input port while we were waiting. */
+    /* Call scheme_getc to signal the error */
+    scheme_getc((Scheme_Object *)port);
   }
 
   c = getc(fp);
@@ -3855,6 +3868,12 @@ static int pipe_getc(Scheme_Input_Port *p)
   scheme_current_process->ran_some = 1;
 #endif
 
+  if (p->closed) {
+    /* Another thread closed the input port while we were waiting. */
+    /* Call scheme_getc to signal the error */
+    scheme_getc((Scheme_Object *)p);
+  }
+  
   if (pipe->bufstart == pipe->bufend)
     c = EOF;
   else {

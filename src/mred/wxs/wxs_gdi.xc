@@ -290,6 +290,8 @@ static void *RgnBoundingBox(wxRegion *r)
 
 @INCLUDE wxs_drws.xci
 
+@MACRO CheckRgn[p.who] = if (x<p>->GetDC() != ((wxRegion *)((Scheme_Class_Object *)obj)->primdata)->GetDC()) scheme_arg_mismatch(METHODNAME("region<%>",<who>), "provided region's dc does not match this region's dc: ", p[<p>]);
+
 @CLASSBASE wxRegion "region" : "object"
 
 @CREATOR (wxDC!)
@@ -302,9 +304,9 @@ static void *RgnBoundingBox(wxRegion *r)
 @ "set-polygon" : void SetPolygon(-int,wxPoint!/bList/ubList/cList,float=0,float=0,SYM[fillKind]=wxODDEVEN_RULE); : / methListSet[wxPoint.0.1.0]// : /glueListSet[wxPoint.0.1.0.METHODNAME("region%","set-polygon")]//
 @ "set-arc" : void SetArc(float, float, nnfloat, nnfloat, float, float);
 
-@ "union" : void Union(wxRegion!);
-@ "intersect" : void Intersect(wxRegion!);
-@ "subtract" : void Subtract(wxRegion!);
+@ "union" : void Union(wxRegion!);  : : /CheckRgn[0."union"]
+@ "intersect" : void Intersect(wxRegion!);  : : /CheckRgn[0."intersect"]
+@ "subtract" : void Subtract(wxRegion!);  : : /CheckRgn[0."subtract"]
 
 @MACRO bundleAny = ((Scheme_Object *){x})
  

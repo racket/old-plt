@@ -14,6 +14,7 @@
 #ifdef wx_mac
 #include "wx_dcpr.h"
 #endif
+#include "wx_rgn.h"
 
 @INCLUDE wxs.xci
 
@@ -101,8 +102,8 @@ static bool DrawBitmapRegion(wxDC *dc, wxBitmap *bm, float x, float y, float dx,
 @ Q "try-color" : void TryColour(wxColour!,wxColour!);
 
 @ Q "set-background-mode" : void SetBackgroundMode(SYM[solidity]); :  : /CheckOk
-@ Q "set-user-scale" : void SetUserScale(nnfloat,nnfloat); : : /CheckOk
-@ Q "set-device-origin" : void SetDeviceOrigin(float,float); : : /CheckOk
+@ Q "set-scale" : void SetUserScale(nnfloat,nnfloat); : : /CheckOk
+@ Q "set-origin" : void SetDeviceOrigin(float,float); : : /CheckOk
 
 @ q "get-background" : wxColour! GetBackground();
 @ q "get-background-mode" : SYM[solidity] GetBackgroundMode();

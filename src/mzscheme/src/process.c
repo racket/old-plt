@@ -1722,7 +1722,11 @@ void scheme_process_block_w_process(float sleep_time, Scheme_Process *p)
 	    break;
 	} else if ((next->block_descriptor == PORT_BLOCKED)
 		   || (next->block_descriptor == PIPE_BLOCKED)) {
-	  if (scheme_char_ready(next->blocker))
+	  int ready;
+	  scheme_internal_checking_char = 1;
+	  ready = scheme_char_ready(next->blocker);
+	  scheme_internal_checking_char = 0;
+	  if (ready)
 	    break;
 	} else if (next->block_descriptor == SLEEP_BLOCKED) {
 	  d = (scheme_get_milliseconds() - (long)next->block_start_sleep);

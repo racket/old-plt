@@ -1,9 +1,10 @@
 (unit/sig ()
   (import mzlib:pretty-print^
           mred^
-          [b : userspace:basis^]
+          [d : drscheme:export^]
           [a : stepper:annotate^]
           [r : stepper:reconstruct^])
+  
   
   (lambda (frame)
     (let* ([edit (ivar frame definitions-edit)]
@@ -12,14 +13,19 @@
            [resume-sema (make-semaphore)]
            [break-info #f]
            [expr-list #f]
-           [display-break-info
-            (lambda ()
-              (apply r:reconstruct expr-list break-info))]
+           [finished-stepping #f]
            [break 
             (lambda (mark-list all-defs current-def)
-              (set! break-info (list mark-list all-defs current-def))
-              (semaphore-post break-sema)
-              (semaphore-wait resume-sema))]
+              (when (r:stop-here? mark-list all-defs)
+                (when (r:final-mark-list? mark-list)
+                  (set! finished-stepping #t))
+                (set! break-info (list mark-list all-defs current-def))
+                (semaphore-post break-sema)
+                (semaphore-wait resume-sema)))]
+           [stepper-fetch-step-info
+            (lambda () 
+              (semaphore-wait break-sema)
+              (apply r:reconstruct expr-list break-info))]
            [stepper-start
             (lambda (text)
               (let-values ([(annotated exprs)
@@ -28,15 +34,18 @@
                 (set! break-sema (make-semaphore))
                 (set! resume-sema (make-semaphore))
                 (thread (lambda ()
+;                          (d:basis:initialize-parameters
+;                           (current-custodian)
+;                           null
+;                           (d:basis:find-setting-named "Beginner"))
+                          ((require-library "beginner.ss" "userspce"))
                           (for-each eval annotated)
                           (semaphore-post break-sema)))
-                (semaphore-wait break-sema)
-                (display-break-info)))]
+                (stepper-fetch-step-info)))]
            [stepper-step
             (lambda ()
               (semaphore-post resume-sema)
-              (semaphore-wait break-sema)
-              (display-break-info))])
+              (stepper-fetch-step-info))])
       (letrec ([step-thunk (lambda ()
                              (set! step-thunk stepper-step)
                              (stepper-start text))]
@@ -54,6 +63,7 @@
                
                [history null]
                [view 0]
+               [final-view #f]
                
                [fetch-next-step
                 (lambda ()
@@ -82,26 +92,32 @@
                   (set! view new-view)
                   (send canvas set-editor (list-ref history view))
                   (send previous-button enable (not (zero? view)))
-                  (send home-button enable (not (zero? view))))]
+                  (send home-button enable (not (zero? view)))
+                  (send next-button enable (not (eq? final-view view))))]
+               [update-view/next-step
+                (lambda (new-view)
+                  (fetch-next-step)
+                  (when finished-stepping
+                    (set! final-view new-view))
+                  (update-view new-view))]
                [home
                 (lambda ()
                   (update-view 0))]
                [next
                 (lambda ()
-                  (when (= view (- (length history) 1))
-                    (fetch-next-step))
-                  (update-view (+ view 1)))]
+                  (if (= view (- (length history) 1))
+                      (update-view/next-step (+ view 1))
+                      (update-view (+ view 1))))]
                [previous
                 (lambda ()
                   (update-view (- view 1)))])
-    (send result-delta set-delta-foreground "BLUE")
-    (send output-delta set-delta-foreground "PURPLE")
-    (fetch-next-step)
-    (update-view 0)
-    (send button-panel stretchable-width #f)
-    (send canvas min-width 500)
-    (send canvas min-height 500)
-    (send previous-button enable #f)
-    (send home-button enable #f)
-    (send frame show #t))))
+        (send result-delta set-delta-foreground "BLACK")
+        (send output-delta set-delta-foreground "PURPLE")
+        (update-view/next-step 0)
+        (send button-panel stretchable-width #f)
+        (send canvas min-width 500)
+        (send canvas min-height 500)
+        (send previous-button enable #f)
+        (send home-button enable #f)
+        (send frame show #t))))
   )

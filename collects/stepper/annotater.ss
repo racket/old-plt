@@ -119,8 +119,8 @@
   (define all-defs-list-sym (gensym "all-defs-list-"))
   (define current-def-sym (gensym "current-def-"))
 
-  (define (current-def-setter num)
-    `(#%set! ,current-def-sym ,num))
+  (define (current-def-setter val)
+    `(#%set! ,current-def-sym ,val))
   
   (define (closure-key-maker closure)
     closure)
@@ -298,8 +298,7 @@
                                                        (#%quote ,v)))
                                              ,v)
                                            v)])
-                       ; I'm (temporarily?) removing the break around variables
-                       (values (wcm-wrap debug-info annotated) free-vars)))])
+                       (values (wcm-break-wrap debug-info annotated) free-vars)))])
 	     
              ; find the source expression and associate it with the parsed expression
              

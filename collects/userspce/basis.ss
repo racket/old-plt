@@ -170,10 +170,10 @@
     (set! settings (snoc setting settings)))
 
   ;; find-setting-named : string -> setting
-  ;; effect: raises an exception if no setting named by the symbol exists
+  ;; effect: raises an exception if no setting named by the string exists
   (define (find-setting-named name)
     (unless (string? name)
-      (error 'find-setting-named "expected symbol, got ~e" name))
+      (error 'find-setting-named "expected string, got ~e" name))
     (let loop ([settings settings])
       (cond
 	[(null? settings) (error 'find-setting-named "no setting named ~e" name)]

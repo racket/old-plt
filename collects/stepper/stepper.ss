@@ -41,7 +41,7 @@
                  ((require-library-unit/sig "stepperr.ss" "stepper")
                   pretty
                   mred
-                  (drscheme basis)
+                  drscheme
                   annotate
                   reconstruct)])                   
       (export))

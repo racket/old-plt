@@ -1,8 +1,3 @@
-;(define-signature stepper:stepper^
-;  (stepper-start
-;   stepper-step
-;   stepper-stop))
-
 (define-signature stepper:error^
   (static-error dynamic-error internal-error))
 
@@ -34,6 +29,6 @@
   (annotate))
 
 (define-signature stepper:reconstruct^
-  (reconstruct))
+  (reconstruct final-mark-list? stop-here?))
 
   

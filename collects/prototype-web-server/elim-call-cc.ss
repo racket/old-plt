@@ -82,7 +82,9 @@
   (define (elim-call/cc-from-definition def)
     (syntax-case def ()
       [(define-values (var ...) expr)
-       #`(define-values (var ...) #,(elim-call/cc #'expr))]))  
+       #`(define-values (var ...) #,(elim-call/cc #'expr))]
+      [else
+       (raise-syntax-error #f "elim-call/cc-from-definition dropped through" def)]))
   )
 
 

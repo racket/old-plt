@@ -35,7 +35,6 @@ OBJS =  salloc.o \
 	port.o \
 	portfun.o \
 	print.o \
-	process.o \
         rational.o \
 	read.o \
 	regexp.o \
@@ -46,6 +45,7 @@ OBJS =  salloc.o \
 	stxobj.o \
 	symbol.o \
 	syntax.o \
+	thread.o \
 	type.o \
 	vector.o
 
@@ -73,7 +73,6 @@ SRCS =  $(srcdir)/salloc.c \
 	$(srcdir)/port.c \
 	$(srcdir)/portfun.c \
 	$(srcdir)/print.c \
-	$(srcdir)/process.c \
 	$(srcdir)/rational.c \
 	$(srcdir)/read.c \
 	$(srcdir)/regexp.c \
@@ -84,6 +83,7 @@ SRCS =  $(srcdir)/salloc.c \
 	$(srcdir)/stxobj.c \
 	$(srcdir)/symbol.c \
 	$(srcdir)/syntax.c \
+	$(srcdir)/thread.c \
 	$(srcdir)/type.c \
 	$(srcdir)/vector.c
 
@@ -178,8 +178,6 @@ portfun.o: $(srcdir)/portfun.c
 	$(CC) $(CFLAGS) -c $(srcdir)/portfun.c -o portfun.o
 print.o: $(srcdir)/print.c
 	$(CC) $(CFLAGS) -c $(srcdir)/print.c -o print.o
-process.o: $(srcdir)/process.c
-	$(CC) $(CFLAGS) -c $(srcdir)/process.c -o process.o
 rational.o: $(srcdir)/rational.c $(srcdir)/ratfloat.inc
 	$(CC) $(CFLAGS) -c $(srcdir)/rational.c -o rational.o
 read.o: $(srcdir)/read.c
@@ -200,6 +198,8 @@ symbol.o: $(srcdir)/symbol.c
 	$(CC) $(CFLAGS) -c $(srcdir)/symbol.c -o symbol.o
 syntax.o: $(srcdir)/syntax.c
 	$(CC) $(CFLAGS) -c $(srcdir)/syntax.c -o syntax.o
+thread.o: $(srcdir)/thread.c
+	$(CC) $(CFLAGS) -c $(srcdir)/thread.c -o thread.o
 type.o: $(srcdir)/type.c
 	$(CC) $(CFLAGS) -c $(srcdir)/type.c -o type.o
 vector.o: $(srcdir)/vector.c
@@ -259,7 +259,7 @@ portfun.o: $(srcdir)/schpriv.h $(srcdir)/schexn.h $(SCONFIG) $(srcdir)/../includ
         $(srcdir)/../src/stypes.h $(srcdir)/schfd.h $(srcdir)/mzmark.c
 print.o: $(srcdir)/../include/scheme.h $(srcdir)/../src/stypes.h $(srcdir)/../src/schcpt.h \
           $(srcdir)/schpriv.h $(srcdir)/schexn.h $(SCONFIG)
-process.o: $(srcdir)/schpriv.h $(srcdir)/schexn.h $(SCONFIG) $(srcdir)/../include/scheme.h \
+thread.o: $(srcdir)/schpriv.h $(srcdir)/schexn.h $(SCONFIG) $(srcdir)/../include/scheme.h \
          $(srcdir)/../src/stypes.h  $(srcdir)/schfd.h $(srcdir)/mzmark.c
 rational.o: $(srcdir)/schpriv.h $(srcdir)/schexn.h $(SCONFIG) $(srcdir)/../include/scheme.h \
          $(srcdir)/../src/stypes.h    

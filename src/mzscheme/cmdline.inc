@@ -575,7 +575,7 @@ static int run_from_cmd_line(int argc, char *_argv[],
 # ifdef DOS_FILE_SYSTEM
 #  if !defined(FILES_HAVE_FDS)
 #   if !defined(DETECT_WIN32_CONSOLE_STDIN) || defined(NO_STDIN_THREADS)
-    PRINTF("Warning: read-eval-print-loop or read on stdin or process port may block threads.\n");
+    PRINTF("Warning: read-eval-print-loop or read on a stream port may block threads.\n");
 #   endif
 #  endif
 # endif

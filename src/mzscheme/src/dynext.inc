@@ -1,12 +1,12 @@
-  scheme_extension_table->scheme_current_process_ptr = scheme_current_process_ptr;
+  scheme_extension_table->scheme_current_thread_ptr = scheme_current_thread_ptr;
   scheme_extension_table->scheme_init_jmpup_buf = scheme_init_jmpup_buf;
   scheme_extension_table->scheme_init_jmpup_buf_relative = scheme_init_jmpup_buf_relative;
   scheme_extension_table->scheme_setjmpup_relative = scheme_setjmpup_relative;
   scheme_extension_table->scheme_longjmpup = scheme_longjmpup;
   scheme_extension_table->scheme_spawn = scheme_spawn;
   scheme_extension_table->scheme_thread = scheme_thread;
-  scheme_extension_table->scheme_process_block = scheme_process_block;
-  scheme_extension_table->scheme_swap_process = scheme_swap_process;
+  scheme_extension_table->scheme_thread_block = scheme_thread_block;
+  scheme_extension_table->scheme_swap_thread = scheme_swap_thread;
   scheme_extension_table->scheme_check_threads = scheme_check_threads;
   scheme_extension_table->scheme_wake_up = scheme_wake_up;
   scheme_extension_table->scheme_signal_error = scheme_signal_error;

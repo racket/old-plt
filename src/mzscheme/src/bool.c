@@ -179,7 +179,7 @@ int scheme_eqv (Scheme_Object *obj1, Scheme_Object *obj2)
 
 static Scheme_Object *equal_k(void)
 {
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Thread *p = scheme_current_thread;
   Scheme_Object *v1 = (Scheme_Object *)p->ku.k.p1;
   Scheme_Object *v2 = (Scheme_Object *)p->ku.k.p2;
 

@@ -104,7 +104,7 @@ void *scheme_global_lock;
 int scheme_global_lock_c;
 #endif
 
-static void skip_certain_things(Scheme_Object *o, Scheme_Close_Manager_Client *f, void *data)
+static void skip_certain_things(Scheme_Object *o, Scheme_Close_Custodian_Client *f, void *data)
 {
   if ((o == scheme_orig_stdin_port)
       || (o == scheme_orig_stdout_port)
@@ -120,10 +120,10 @@ Scheme_Env *scheme_basic_env()
 {
   Scheme_Env *env;
 
-  if (scheme_main_process) {
+  if (scheme_main_thread) {
     /* Reset everything: */
     scheme_do_close_managed(NULL, skip_certain_things);
-    scheme_main_process = NULL;
+    scheme_main_thread = NULL;
 
     scheme_reset_finalizations();
     scheme_init_stack_check();
@@ -131,8 +131,8 @@ Scheme_Env *scheme_basic_env()
     scheme_init_setjumpup();
 #endif
 
-    scheme_make_process();
-    scheme_init_error_escape_proc(scheme_current_process);
+    scheme_make_thread();
+    scheme_init_error_escape_proc(scheme_current_thread);
 
     env = scheme_make_empty_env();
     scheme_import_from_original_env(env, 0);
@@ -236,7 +236,7 @@ Scheme_Env *scheme_basic_env()
   printf("pre-process @ %ld\n", scheme_get_process_milliseconds());
 #endif
 
-  scheme_make_process();
+  scheme_make_thread();
 
 #ifdef TIME_STARTUP_PROCESS
   printf("process @ %ld\n", scheme_get_process_milliseconds());
@@ -252,10 +252,10 @@ Scheme_Env *scheme_basic_env()
 
   scheme_add_embedded_builtins(env);
 
-  scheme_set_param(scheme_current_process->config, MZCONFIG_ENV, 
+  scheme_set_param(scheme_current_thread->config, MZCONFIG_ENV, 
 		   (Scheme_Object *)env); 
 
-  scheme_init_error_escape_proc(scheme_current_process);
+  scheme_init_error_escape_proc(scheme_current_thread);
 
   scheme_starting_up = 0;
 
@@ -279,7 +279,7 @@ static void make_init_env(void)
 
   env = make_env(NULL, 0);
 
-  scheme_set_param(scheme_current_process->config, MZCONFIG_ENV, 
+  scheme_set_param(scheme_current_thread->config, MZCONFIG_ENV, 
 		   (Scheme_Object *)env);
 
   REGISTER_SO(scheme_initial_env);
@@ -330,7 +330,7 @@ static void make_init_env(void)
 #ifndef NO_SCHEME_EXNS
   MZTIMEIT(exn, scheme_init_exn(env));
 #endif
-  MZTIMEIT(process, scheme_init_process(env));
+  MZTIMEIT(process, scheme_init_thread(env));
 #ifndef NO_SCHEME_THREADS
   MZTIMEIT(sema, scheme_init_sema(env));
 #endif
@@ -1572,7 +1572,7 @@ local_exp_time_value(int argc, Scheme_Object *argv[])
   Scheme_Object *v, *sym;
   Scheme_Comp_Env *env;
 
-  env = scheme_current_process->current_local_env;
+  env = scheme_current_thread->current_local_env;
   if (!env)
     scheme_raise_exn(MZEXN_MISC, 
 		     "syntax-local-value: not currently transforming");
@@ -1587,7 +1587,8 @@ local_exp_time_value(int argc, Scheme_Object *argv[])
     scheme_check_proc_arity("syntax-local-value", 0, 1, argc, argv);
 
   if (SCHEME_STXP(sym))
-    sym = scheme_add_remove_mark(sym, scheme_current_process->current_local_mark);
+    if (scheme_current_thread->current_local_mark)
+      sym = scheme_add_remove_mark(sym, scheme_current_thread->current_local_mark);
 
   v = scheme_static_distance(sym, env,
 			     (SCHEME_NULL_FOR_UNBOUND
@@ -1618,7 +1619,7 @@ local_exp_time_name(int argc, Scheme_Object *argv[])
 {
   Scheme_Object *sym;
 
-  sym = scheme_current_process->current_local_name;
+  sym = scheme_current_thread->current_local_name;
   if (!sym)
     scheme_raise_exn(MZEXN_MISC, 
 		     "syntax-local-name: not currently transforming");
@@ -1631,7 +1632,7 @@ local_context(int argc, Scheme_Object *argv[])
 {
   Scheme_Comp_Env *env;
 
-  env = scheme_current_process->current_local_env;
+  env = scheme_current_thread->current_local_env;
   if (!env)
     scheme_raise_exn(MZEXN_MISC, 
 		     "syntax-local-context: not currently transforming");

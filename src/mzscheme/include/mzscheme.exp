@@ -10,14 +10,14 @@ scheme_new_param
 scheme_param_config
 scheme_register_parameter
 scheme_get_env
-scheme_current_process
+scheme_current_thread
 scheme_fuel_counter
 scheme_thread
-scheme_thread_w_manager
+scheme_thread_w_custodian
 scheme_kill_thread
 scheme_break_thread
-scheme_process_block
-scheme_swap_process
+scheme_thread_block
+scheme_swap_thread
 scheme_weak_suspend_thread
 scheme_weak_resume_thread
 scheme_block_until
@@ -25,7 +25,7 @@ scheme_in_main_thread
 scheme_tls_allocate
 scheme_tls_set
 scheme_tls_get
-scheme_make_manager
+scheme_make_custodian
 scheme_add_managed
 scheme_remove_managed
 scheme_close_managed

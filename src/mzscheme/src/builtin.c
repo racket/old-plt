@@ -35,7 +35,7 @@
 Scheme_Object *scheme_eval_compiled_sized_string(const char *str, int len, Scheme_Env *env)
 {
   Scheme_Object *port, *expr, *saved;
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Thread *p = scheme_current_thread;
   Scheme_Config *config = p->config;
 
   port = scheme_make_sized_string_input_port(str, len);

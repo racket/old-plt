@@ -154,8 +154,8 @@ void *scheme_solaris_init_threads(void);
 void scheme_solaris_create_thread(void (*f)(void *), void *data, unsigned long *stackend, void **thp);
 void scheme_solaris_exit_thread();
 void scheme_solaris_break_thread(void *th);
-struct Scheme_Process *scheme_solaris_get_current_process();
-void scheme_solaris_set_current_process(struct Scheme_Process *);
+struct Scheme_Thread *scheme_solaris_get_current_thread();
+void scheme_solaris_set_current_thread(struct Scheme_Thread *);
 void *scheme_solaris_make_mutex();
 void scheme_solaris_free_mutex(void *);
 void scheme_solaris_lock_mutex(void *);
@@ -173,8 +173,8 @@ int scheme_solaris_semaphore_try_down(void *);
 #define SCHEME_CREATE_THREAD(f, data, slimit, thp) scheme_solaris_create_thread(f, data, slimit, thp)
 #define SCHEME_EXIT_THREAD() scheme_solaris_exit_thread()
 #define SCHEME_BREAK_THREAD(th) scheme_solaris_break_thread(th)
-#define SCHEME_GET_CURRENT_PROCESS() scheme_solaris_get_current_process()
-#define SCHEME_SET_CURRENT_PROCESS(p) scheme_solaris_set_current_process(p)
+#define SCHEME_GET_CURRENT_PROCESS() scheme_solaris_get_current_thread()
+#define SCHEME_SET_CURRENT_PROCESS(p) scheme_solaris_set_current_thread(p)
 #define SCHEME_MAKE_MUTEX() scheme_solaris_make_mutex()
 #define SCHEME_FREE_MUTEX(m) scheme_solaris_free_mutex(m)
 #define SCHEME_LOCK_MUTEX(m) scheme_solaris_lock_mutex(m)
@@ -473,8 +473,8 @@ void *scheme_sproc_init_threads(void);
 void  scheme_sproc_create_thread(void (*f)(void *), void *data, unsigned long *stackend, void **thp);
 void  scheme_sproc_exit_thread();
 void  scheme_sproc_break_thread(void *);
-struct Scheme_Process *scheme_sproc_get_current_process();
-void  scheme_sproc_set_current_process(struct Scheme_Process *);
+struct Scheme_Thread *scheme_sproc_get_current_thread();
+void  scheme_sproc_set_current_thread(struct Scheme_Thread *);
 void *scheme_sproc_make_mutex();
 void  scheme_sproc_free_mutex(void *);
 void scheme_sproc_lock_mutex(void *);
@@ -492,8 +492,8 @@ int   scheme_sproc_semaphore_try_down(void *);
 #define SCHEME_CREATE_THREAD(f, data, slimit, thp) scheme_sproc_create_thread(f, data, slimit, thp)
 #define SCHEME_EXIT_THREAD() scheme_sproc_exit_thread()
 #define SCHEME_BREAK_THREAD(th) scheme_sproc_break_thread(th)
-#define SCHEME_GET_CURRENT_PROCESS() scheme_sproc_get_current_process()
-#define SCHEME_SET_CURRENT_PROCESS(p) scheme_sproc_set_current_process(p)
+#define SCHEME_GET_CURRENT_PROCESS() scheme_sproc_get_current_thread()
+#define SCHEME_SET_CURRENT_PROCESS(p) scheme_sproc_set_current_thread(p)
 #define SCHEME_MAKE_MUTEX() scheme_sproc_make_mutex()
 #define SCHEME_FREE_MUTEX(m) scheme_sproc_free_mutex(m)
 #define SCHEME_LOCK_MUTEX(m) scheme_sproc_lock_mutex(m)
@@ -708,8 +708,8 @@ void *scheme_win32_init_threads(void);
 void scheme_win32_create_thread(void (*f)(void *), void *data, unsigned long *stackend, void **thp);
 void scheme_win32_exit_thread();
 void scheme_win32_break_thread(void *th);
-struct Scheme_Process *scheme_win32_get_current_process();
-void scheme_win32_set_current_process(struct Scheme_Process *);
+struct Scheme_Thread *scheme_win32_get_current_thread();
+void scheme_win32_set_current_thread(struct Scheme_Thread *);
 void *scheme_win32_make_mutex();
 void scheme_win32_free_mutex(void *s);
 void scheme_win32_lock_mutex(void *);
@@ -727,8 +727,8 @@ int scheme_win32_semaphore_try_down(void *);
 #define SCHEME_CREATE_THREAD(f, data, slimit, thp) scheme_win32_create_thread(f, data, slimit, thp)
 #define SCHEME_BREAK_THREAD(th) scheme_win32_break_thread(th)
 #define SCHEME_EXIT_THREAD() scheme_win32_exit_thread()
-#define SCHEME_GET_CURRENT_PROCESS() scheme_win32_get_current_process()
-#define SCHEME_SET_CURRENT_PROCESS(p) scheme_win32_set_current_process(p)
+#define SCHEME_GET_CURRENT_PROCESS() scheme_win32_get_current_thread()
+#define SCHEME_SET_CURRENT_PROCESS(p) scheme_win32_set_current_thread(p)
 #define SCHEME_MAKE_MUTEX() scheme_win32_make_mutex()
 #define SCHEME_FREE_MUTEX(m) scheme_win32_free_mutex(m)
 #define SCHEME_LOCK_MUTEX(m) scheme_win32_lock_mutex(m)
@@ -923,8 +923,8 @@ void *scheme_pthread_init_threads(void);
 void scheme_pthread_create_thread(void (*f)(void *), void *data, unsigned long *stackend, void **thp);
 void scheme_pthread_exit_thread();
 void scheme_pthread_break_thread(void *th);
-struct Scheme_Process *scheme_pthread_get_current_process();
-void scheme_pthread_set_current_process(struct Scheme_Process *);
+struct Scheme_Thread *scheme_pthread_get_current_thread();
+void scheme_pthread_set_current_thread(struct Scheme_Thread *);
 void *scheme_pthread_make_mutex();
 void scheme_pthread_free_mutex(void *);
 void scheme_pthread_lock_mutex(void *);
@@ -942,8 +942,8 @@ int scheme_pthread_semaphore_try_down(void *);
 #define SCHEME_CREATE_THREAD(f, data, slimit, thp) scheme_pthread_create_thread(f, data, slimit, thp)
 #define SCHEME_EXIT_THREAD() scheme_pthread_exit_thread()
 #define SCHEME_BREAK_THREAD(th) scheme_pthread_break_thread(th)
-#define SCHEME_GET_CURRENT_PROCESS() scheme_pthread_get_current_process()
-#define SCHEME_SET_CURRENT_PROCESS(p) scheme_pthread_set_current_process(p)
+#define SCHEME_GET_CURRENT_PROCESS() scheme_pthread_get_current_thread()
+#define SCHEME_SET_CURRENT_PROCESS(p) scheme_pthread_set_current_thread(p)
 #define SCHEME_MAKE_MUTEX() scheme_pthread_make_mutex()
 #define SCHEME_FREE_MUTEX(m) scheme_pthread_free_mutex(m)
 #define SCHEME_LOCK_MUTEX(m) scheme_pthread_lock_mutex(m)
@@ -1138,7 +1138,7 @@ int scheme_pthread_semaphore_try_down(void *);
     Unix TCP sockets. */
 
   /***********************/
- /* Processes & Signals */
+ /* Threades & Signals */
 /***********************/
 
 /* These are flags about the implementation of system, process, etc. */
@@ -1323,7 +1323,7 @@ int scheme_pthread_semaphore_try_down(void *);
     WINDOWS_DYNAMIC_LOAD implements dynamic extensions under Windows
      (Thanks to Patrick Barta).
     CODEFRAGMENT_DYNAMIC_LOAD implements dynamic extensions with
-     MacOS's Code Fragment Manager (thanks to William Ng).
+     MacOS's Code Fragment Custodian (thanks to William Ng).
     Use only one or none of these. */
 
  /* UNDERSCORE_DYNLOAD_SYMBOL_PREFIX with UNIX_DYNAMIC_LOAD menas that

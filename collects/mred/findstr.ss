@@ -1,3 +1,7 @@
+;- searching in embedded buffers
+;  - use get-focus-snip to find the place to search
+;  - use set-caret-owner to turn on the selection when the text is found
+;  - implement "pop-out" searching
 
 (define mred:find-string@
   (unit/sig mred:find-string^
@@ -301,12 +305,14 @@
 				    (wx:bell))
 				  #f)]
 			       [found
-				(lambda (first-pos)
+				(lambda (edit first-pos)
 				  (let ([last-pos (+ first-pos (* searching-direction 
 								  (string-length string)))])
-				    (send searching-edit set-position
+				    (send* edit 
+				      (set-caret-owner null)
+				      (set-position
 					  (min first-pos last-pos)
-					  (max first-pos last-pos))
+					  (max first-pos last-pos)))
 				    #t))])
 			  (when reset-anchor?
 			    (set! anchor 
@@ -332,9 +338,9 @@
 				 (if (= -1 pos)
 				     (begin (send found-edit set-position anchor)
 					    (not-found))
-				     (found pos)))]
+				     (found found-edit pos)))]
 			      [else
-			       (found first-pos)])))))]
+			       (found found-edit first-pos)])))))]
 		   [after-insert
 		    (lambda args
 		      (apply super-after-insert args)

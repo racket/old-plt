@@ -518,7 +518,8 @@
                                         sql-fd-fetch-bookmark)
  'sql-file-usage                     'sql-file-not-supported, or 
                                      'sql-file-table, or
-                                     'sql-file-catalog
+                                     'sql-file-qualifier, or
+                                     'sql-file-catalog (ODBC 3.0 or greater)
  'sql-getdata-extensions             a list with elements chosen from  
                                       '(sql-gd-any-column
                                         sql-gd-any-order
@@ -534,7 +535,6 @@
                                      'sql-ic-sensitive, or
                                      'sql-ic-mixed
  'sql-identifier-quote-char          string 
- 'sql-integrity                      boolean
  'sql-keywords                       string
  'sql-like-escape-clause             boolean
  'sql-lock-types                     a list with elements chosen from  
@@ -542,7 +542,6 @@
                                         sql-lck-exclusive
                                         sql-lck-unlock)
  'sql-max-binary-literal-len         unsigned integer
- 'sql-max-catalog-name-len           unsigned integer
  'sql-max-char-literal-len           unsigned integer
  'sql-max-column-name-len            unsigned integer
  'sql-max-columns-in-group-by        unsigned integer
@@ -557,7 +556,6 @@
  'sql-max-qualifier-name-len         unsigned integer
  'sql-max-row-size                   unsigned integer 
  'sql-max-row-size-includes-long     boolean
- 'sql-max-schema-name-len            unsigned integer
  'sql-max-statement-len              unsigned integer 
  'sql-max-table-name-len             unsigned integer
  'sql-max-tables-in-select           unsigned integer
@@ -970,12 +968,15 @@
 				    '(sql-is-insert-literals
                                       sql-is-insert-searched
                                       sql-is-select-into)
+ 'sql-integrity                    boolean
  'sql-keyset-cursor-attributes1    same as for 'sql-dynamic-cursor-attributes1
  'sql-keyset-cursor-attributes2    same as for 'sql-dynamic-cursor-attributes2
  'sql-max-async-concurrent-statements unsigned integer
+ 'sql-max-catalog-name-len         unsigned integer
  'sql-max-concurrent-activities    unsigned integer
  'sql-max-driver-connections       unsigned integer
  'sql-max-identifier-len           unsigned integer  
+ 'sql-max-schema-name-len          unsigned integer
  'sql-odbc-interface-conformance   'sql-oic-core, or
                                    'sql-oic-level1, or
                                    'sql-oic-level2 

@@ -204,7 +204,10 @@ SRP_NAMED_TYPED_CONSTANT sqlInfo[] = {
 SRP_NAMED_CONSTANT fileUsageBits[] = {
   { "sql-file-not-supported", SQL_FILE_NOT_SUPPORTED },
   { "sql-file-table", SQL_FILE_TABLE },
+  { "sql-file-qualifier", SQL_FILE_QUALIFIER },
+#if (ODBCVER >= 0x0300)  
   { "sql-file-catalog", SQL_FILE_CATALOG },
+#endif
 };
 
 SRP_NAMED_CONSTANT nullCollationBits[] = {

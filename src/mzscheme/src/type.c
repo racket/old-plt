@@ -154,6 +154,7 @@ scheme_init_type (Scheme_Env *env)
   set_name(scheme_complex_izi_type, "<inexactly-real-number>");
   set_name(scheme_struct_type_type, "<struct-type>");
   set_name(scheme_listener_type, "<tcp-listener>");
+  set_name(scheme_tcp_accept_evt_type, "<tcp-accept-evt>");
   set_name(scheme_namespace_type, "<namespace>");
   set_name(scheme_config_type, "<parameterization>");
   set_name(scheme_will_executor_type, "<will-executor>");
@@ -509,6 +510,8 @@ void scheme_register_traversers(void)
 
   GC_REG_TRAV(scheme_rt_buf_holder, buf_holder);
   GC_REG_TRAV(scheme_rt_pipe, mark_pipe);
+
+  GC_REG_TRAV(scheme_tcp_accept_evt_type, small_object);
 
   GC_REG_TRAV(scheme_special_comment_type, small_object);
 

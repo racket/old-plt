@@ -3131,10 +3131,10 @@ static Scheme_Object *do_udp_send_it(const char *name, Scheme_UDP *udp,
     udp->bound = 1; /* in case it's not bound already, send[to] binds it */
 
     if (dest_addr)
-      x = sendto(udp->s, bstr + start, end - start, 
+      x = sendto(udp->s, bstr XFORM_OK_PLUS start, end - start, 
 		 0, (struct sockaddr *)dest_addr, sizeof(tcp_address));
     else
-      x = send(udp->s, bstr + start, end - start, 0);
+      x = send(udp->s, bstr XFORM_OK_PLUS start, end - start, 0);
 
     if (x == -1) {
       errid = SOCK_ERRNO();
@@ -3345,7 +3345,7 @@ static int do_udp_recv(const char *name, Scheme_UDP *udp, char *bstr, long start
 
     {
       int asize = sizeof(udp_src_addr);
-      x = recvfrom(udp->s, bstr + start, end - start, 0,
+      x = recvfrom(udp->s, bstr XFORM_OK_PLUS start, end - start, 0,
 		   (struct sockaddr *)&udp_src_addr, &asize);
     }
 
@@ -3382,7 +3382,9 @@ static int do_udp_recv(const char *name, Scheme_UDP *udp, char *bstr, long start
     if (udp->previous_from_addr && !strcmp(SCHEME_BYTE_STR_VAL(udp->previous_from_addr), buf)) {
       v[1] = udp->previous_from_addr;
     } else {
-      v[1] = scheme_make_immutable_sized_byte_string(buf, -1, 1);
+      Scheme_Object *vv;
+      vv = scheme_make_immutable_sized_byte_string(buf, -1, 1);
+      v[1] = vv;
       udp->previous_from_addr = v[1];
     }
 

@@ -9,7 +9,7 @@
 
   (define capacity-amount 10000)
   (define print-every-n-generations 1)
-  (define run-n-generations 1)
+  (define run-n-generations 1000)
   (define output-port (current-output-port))
   (define boards '((3 "board1" "packages1" 100)
                    (3 "board2" "packages1" 100)
@@ -107,9 +107,7 @@
     (let ([base-set (apply append (map (lambda (x) (n-copies 2 x)) bestls))])
       (let loop ((ls base-set) (acc '()))
         (cond
-          [(null? (cdr ls)) (let ([foo (length (append bestls acc))])
-			      (printf "Size = ~a~n" foo)
-			      (append bestls acc))]
+          [(null? (cdr ls)) (append bestls acc)]
           [else (loop (cdr ls)
                       (append (map (lambda (x) (breed (car x) (cdr x)))
                                    (map (lambda (x) (cons (car ls) x)) 
@@ -118,7 +116,6 @@
 
   ;; startup-player : gene-seq -> number
   (define (startup-player gene-seq)
-    (flush-output (current-output-port))
     (set-parameter-values! gene-seq)
     (start-client #f #f "localhost" 4000))
   
@@ -129,17 +126,9 @@
       (sleep 3)
       (apply (lambda (stdout stdin procid stderr utility)
 	       (sleep 3)
-	       (printf (string-append "Starting game with players ~s on"
-				      "board ~s with package file ~s~n")
-		       players board-file packages-file)
-	       (flush-output (current-output-port))
 	       (let loop ((ls players) (threads '()))
 		 (cond
-		  [(null? ls) (for-each (lambda (x)
-					  (thread-wait x)
-					  (printf "Returned from thread~n")
-					  (flush-output (current-output-port)))
-					threads)
+		  [(null? ls) (for-each thread-wait threads)
 		              (utility 'kill)
 			      (close-input-port stderr)
 		              (close-input-port stdout)

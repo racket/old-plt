@@ -1002,10 +1002,10 @@ please adhere to these guidelines:
   
  (snips-and-arrows-popup-menu-tack-all-arrows "Tack All Arrows")
  (snips-and-arrows-popup-menu-untack-all-arrows "Untack All Arrows")
- (snips-and-arrows-user-action-disallowed-title "User Insertions and Deletions Currently Disallowed")
- (snips-and-arrows-user-action-disallowed "User insertions and deletions are disallowed in editors that contain tool-inserted snips.  Hide all snips before modifying the content of the editor.")
- (snips-and-arrows-changing-terms-warning-title "Changing terms will be undoable")
- (snips-and-arrows-changing-terms-warning "Changing terms in an editor containing snips cannot be undone.  You can either cancel this action, remove the snips, and try the change again, or you can continue with the change, in which case the change will not be undoable (all others changes made before and afterward will still be undoable though).")
+ (snips-and-arrows-user-action-disallowed-title "User Changes Currently Disallowed")
+ (snips-and-arrows-user-action-disallowed "User changes are disallowed in editors that contain tool-inserted snips.  Hide all snips before modifying the content of the editor.")
+ ;(snips-and-arrows-changing-terms-warning-title "Changing terms will be undoable")
+ ;(snips-and-arrows-changing-terms-warning "Changing terms in an editor containing snips cannot be undone.  You can either cancel this action, remove the snips, and try the change again, or you can continue with the change, in which case the change will not be undoable (all others changes made before and afterward will still be undoable though).")
  (snips-and-arrows-hide-all-snips-in-editor "Hide all snips in editor")
 
  (xml-tool-menu "XML")

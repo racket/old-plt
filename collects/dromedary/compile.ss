@@ -8,9 +8,29 @@
 
      (provide compile-all)
 
+     (define (hash-table-getprintfunc ht key func)
+       (begin
+	 (pretty-print (format "hash-table-get ~a ~a" ht key))
+	 (hash-table-get ht key func)))
+
+     (define (hash-table-getprint ht key)
+       (begin
+	 (pretty-print (format "hash-table-get ~a ~a" ht key))
+	 (hash-table-get ht key)))
+
      (define next-label 0)     
      (define loc #f)
 
+     (define (build-src syn)
+       (if syn
+	   (cond
+	    [(syntax? syn)
+	     (list loc (syntax-line syn) (syntax-column syn) (syntax-position syn) (syntax-span syn))]
+	    [(ast:src? syn)
+	     (list loc (ast:src-line syn) (ast:src-col syn) (ast:src-pos syn) (ast:src-span syn))]
+	    [else (error 'build-src (format "Given ~a" syn))])
+	   #f))
+     
      (define (at expr src)
 	     (datum->syntax-object (current-compile-context) expr
 				   (list loc
@@ -18,7 +38,28 @@
 					 (ast:src-col src)
 					 (ast:src-pos src)
 					 (ast:src-span src))))
+
      (define stx-for-original-property (read-syntax #f (open-input-string "original")))
+     (define create-syntax
+       (lambda (oddness sexpression source)
+	 (datum->syntax-object oddness sexpression source stx-for-original-property)))
+     (define make-syntax
+       (lambda (oddness sexpression source)
+	 (datum->syntax-object oddness sexpression source)))
+
+     (define translate-id
+       (lambda (id src)
+	 (create-syntax #f (build-identifier id) (build-src src))))
+
+     (define build-identifier
+       (lambda (name)
+	 (cond
+	  ((symbol? name) name)
+	  ((string? name) (string->symbol name))
+	  ((procedure? name) name)
+	  (else 
+	   (error 'build-identifier (format "Given ~s" name))
+	   name))))
 
      (define (compile-all stmt location)
        (set! loc location)
@@ -26,6 +67,7 @@
 ;	(datum->syntax-object
 ;	 #f
 	 (let ([result (compile-ml stmt (empty-context))])
+	   (pretty-print "Compile successful")
 	   ;(pretty-print (format "initial progval: ~a" result))
 	   result)))
 ;	 #f)))
@@ -111,7 +153,10 @@
 	      [($ ast:ptyp_any dummy)
 	       any?]
 	      [($ ast:ptyp_constr name ctl)
-	       (hash-table-get <constructors> (unlongident name))]
+	       (let ([res (hash-table-getprintfunc <constructors> (unlongident name) (lambda () #f))])
+		 (if res
+		     res
+		     (pretty-print (format "Not found in constructors: ~a" (unlongident name)))))]
 	      [else
 	       (pretty-print (list "Bad core type" ct))]))
 
@@ -172,7 +217,12 @@
 
 
 	      [($ ast:pexp_ident name)
-	       (datum->syntax-object #f (or (lookup-ident name) (string->symbol (unlongident name))))]
+;	       (datum->syntax-object #f (lookup-ident name))]
+	       (pretty-print (format "Source for ~a is: ~a" (unlongident name) (longident-src name)))
+	       (datum->syntax-object (current-compile-context)
+				     (translate-id
+				      (or (lookup-ident name) (unlongident name))
+				      (longident-src name)))]
 
 	      [($ ast:pexp_function label expr pelist)
 ;; The parser makes only one-variable functions by default which is a pain
@@ -187,8 +237,7 @@
 		     [elseexpc (if (null? elseexp) null (compile-ml elseexp context))])
 		 #`(if #,testc #,ifexpc #,(if (not (null? elseexpc)) elseexpc (make-<unit> #f))))]
 	      [($ ast:pexp_construct name expr bool)
-	       (pretty-print (format "Found construct: ~a" (unlongident name)))
-	       (let ([constr (hash-table-get <constructors> (unlongident name) (lambda () #f))])
+	       (let ([constr (hash-table-getprintfunc <constructors> (unlongident name) (lambda () #f))])
 		 (if constr
 		     (if (null? expr)
 			 (cdr constr)
@@ -204,10 +253,10 @@
 			   #`#,rconstr))))]
 ;	       (cond
 ;		[(and (null? expr) (not bool) 
-;		      (if (hash-table-get <constructors> name (lambda () #f)) #t #f))
-;		 (cdr (hash-table-get <constructors> name))]
-;		[(and (not bool) (if (hash-table-get <constructors> name (lambda () #f)) #t #f))
-;		 (let ([constr (cdr (hash-table-get <constructors> name))]
+;		      (if (hash-table-getprintfunc <constructors> name (lambda () #f)) #t #f))
+;		 (cdr (hash-table-getprintfunc <constructors> name))]
+;		[(and (not bool) (if (hash-table-getprintfunc <constructors> name (lambda () #f)) #t #f))
+;		 (let ([constr (cdr (hash-table-getprintfunc <constructors> name))]
 ;		       [args (compile-exps (ast:pexp_tuple-expression-list (ast:expression-pexp_desc expr)) context)])
 ;		   #`(#,constr #,@args))]
 ;		[else
@@ -251,6 +300,9 @@
 				       #`(+ #,var 1)
 				       #`(- #,var 1))))
 			 (make-<unit> #f))))]
+	      [($ ast:pexp_sequence firstexpr restexpr)
+	       #`(begin #,(compile-ml firstexpr context)
+			#,(compile-ml restexpr context))]
 	      [else
 	       (pretty-print (list "Expression unknown: " desc))]))
 
@@ -276,7 +328,7 @@
      (define (get-varpat pattern)
        (match (ast:pattern-ppat_desc pattern)
 	      [($ ast:ppat_var variable)
-	       (string->symbol (eval variable))]
+	       (translate-id (syntax-object->datum variable) variable)]
 	      [($ ast:ppat_constant const)
 	       (eval const)]
 	      [($ ast:ppat_tuple tlist)
@@ -286,16 +338,16 @@
 	      [($ ast:ppat_any dummy)
 	       #'_]
 	      [($ ast:ppat_construct name pat bool)
-	       (cond [(and (null? pat) (not bool) (if (hash-table-get <constructors> (unlongident name) (lambda () #f)) #t #f))
-		      (let ([cconstr (hash-table-get <constructors> (unlongident name))])
+	       (cond [(and (null? pat) (not bool) (if (hash-table-getprintfunc <constructors> (unlongident name) (lambda () #f)) #t #f))
+		      (let ([cconstr (hash-table-getprint <constructors> (unlongident name))])
 			(if (tconstructor? (car cconstr))
 			    #`($ #,(string->symbol (unlongident name)) #f)
 			    (cdr cconstr)))]
 		     [(not bool)
-		      (let ([constructor (hash-table-get <constructors> (unlongident name) (lambda () #f))])
+		      (let ([constructor (hash-table-getprintfunc <constructors> (unlongident name) (lambda () #f))])
 			(if constructor
 			    ;; Best way I can think of to do this is specail case
-			    (if (equal? (hash-table-get <constructors> (unlongident name)) cons)
+			    (if (equal? (hash-table-getprint <constructors> (unlongident name)) cons)
 				;; The pattern should be a <tuple> of two
 				(if (ast:ppat_tuple? (ast:pattern-ppat_desc pat))
 				    (let ([head (get-varpat (car (ast:ppat_tuple-pattern-list (ast:pattern-ppat_desc pat))))]
@@ -321,11 +373,11 @@
 	       (let ([tests (map compile-test tlist (repeat (length tlist)) (repeat context (length tlist)))])
 	       #`($ <tuple> #,tests))]
 	      [($ ast:ppat_construct name pat bool)
-	       (cond [(and (null? pat) (not bool) (if (hash-table-get <constructors> name (lambda () #f)) #t #f))
-		      (hash-table-get <constructors> name)]
+	       (cond [(and (null? pat) (not bool) (if (hash-table-getprintfunc <constructors> name (lambda () #f)) #t #f))
+		      (hash-table-getprint <constructors> name)]
 		     [(not bool)
 		      ;; Best way I can think of to do this is specail case
-		      (if (equal? (hash-table-get <constructors> name) cons)
+		      (if (equal? (hash-table-getprint <constructors> name) cons)
 			  ;; The pattern should be a <tuple> of two
 			  (if (ast:ppat_tuple? (ast:pattern-ppat_desc pat))
 			      (let ([head (compile-test (car (ast:ppat_tuple-pattern-list (ast:pattern-ppat_desc pat))) context)]
@@ -395,7 +447,10 @@
 	   (let* ([cur-bind (car bindings)])
 	     (if (and (ast:pexp_function? (ast:expression-pexp_desc (cdr cur-bind))) (or (ast:ppat_var? (ast:pattern-ppat_desc (car cur-bind)))
 											 (and (ast:ppat_constraint? (ast:pattern-ppat_desc (car cur-bind))) (ast:ppat_var? (ast:pattern-ppat_desc (ast:ppat_constraint-pat (ast:pattern-ppat_desc (car cur-bind))))))))
-		 #`(#,(if rec #'letrec #'let) ([#,(string->symbol (eval (ast:ppat_var-name (ast:pattern-ppat_desc (car cur-bind))))) #,(compile-ml (cdr cur-bind) context)]) #,(compile-let rec (cdr bindings) finalexpr context))
+		 (let ([name (ast:ppat_var-name (ast:pattern-ppat_desc (car cur-bind)))])
+		   #`(#,(if rec #'letrec #'let) ([#,(translate-id (syntax-object->datum name) name)
+;(string->symbol (eval (ast:ppat_var-name (ast:pattern-ppat_desc (car cur-bind)))))
+						  #,(compile-ml (cdr cur-bind) context)]) #,(compile-let rec (cdr bindings) finalexpr context)))
 		 (if rec
 		     (pretty-print "This kind of expression is not allowed as right-hand side of `let rec'")
 		     (let ([varpat (get-varpat (car cur-bind))]
@@ -434,17 +489,16 @@
        (match uname
 	      [($ ast:lident name)
 
-
-	       (let ([result (hash-table-get built-in-and-user-funcs (eval name) (lambda () #f))])
+	       (let ([result (hash-table-getprintfunc built-in-and-user-funcs (syntax-object->datum name) (lambda () #f))])
 		 (if result
 		     (cdr result)
 		     #f))]
 	      [($ ast:ldot longident name)
 	       (match longident
 		      [($ ast:lident library)
-		       (let ([lib-map (hash-table-get <library-names> (eval library) (lambda () #f))])
+		       (let ([lib-map (hash-table-getprintfunc <library-names> (eval library) (lambda () #f))])
 			 (if lib-map
-			     (let ([function (hash-table-get lib-map (syntax-object->datum name) (lambda () #f))])
+			     (let ([function (hash-table-getprintfunc lib-map (syntax-object->datum name) (lambda () #f))])
 			       (if function
 				   (cdr function)
 				   (begin (pretty-print (list "Error: " (syntax-object->datum name) "not found in" (eval library))) #f)))
@@ -459,8 +513,22 @@
 	  
      (define (unlongident uname)
        (match uname
-	      [($ ast:lident name) (eval name)]
-	      [($ ast:ldot longident name) (format "~a.~a" (unlongident longident) (eval name))]))
+	      [($ ast:lident name) (syntax-object->datum name)]
+	      [($ ast:ldot longident name) (format "~a.~a" (unlongident longident) (syntax-object->datum name))]))
+     
+     (define (longident-src uname)
+       (match uname
+	      [($ ast:lident name) (ast:make-src (syntax-line name)
+						 (syntax-column name)
+						 (syntax-position name)
+						 (syntax-span name))]
+	      [($ ast:ldot longident name)
+	       (let [(fromsrc (longident-src longident))]
+		 (ast:make-src (ast:src-line fromsrc)
+			       (ast:src-col fromsrc)
+			       (ast:src-pos fromsrc)
+			       (- (+ (syntax-position name) (syntax-span name))
+				  (ast:src-pos fromsrc))))]))
      
      (define (ml-primitive? fun primlist)
        (if (null? primlist)

@@ -248,7 +248,7 @@
 	(hash-table-put! built-in-and-user-funcs "@" (cons (make-arrow (list (make-tlist (make-tvar "'a")) (make-tlist (make-tvar "'a"))) (make-tlist (make-tvar "'a"))) append))
 	(hash-table-put! built-in-and-user-funcs "^" (cons (make-arrow (list "string" "string") "string") string-append))
 	(hash-table-put! built-in-and-user-funcs "raise" (cons (make-arrow (list "exception") (make-tvar "'a")) raise))
-	(hash-table-put! built-in-and-user-funcs ":=" (cons (make-arrow (list (make-ref (make-tvar "'a")) (make-tvar "'a")) "unit") <set-box!>))
+	(hash-table-put! built-in-and-user-funcs 'COLONEQUAL (cons (make-arrow (list (make-ref (make-tvar "'a")) (make-tvar "'a")) "unit") <set-box!>))
 	(hash-table-put! built-in-and-user-funcs "ref" (cons (make-arrow (list (make-tvar "'a")) (make-ref (make-tvar "'a"))) box))
 	(hash-table-put! built-in-and-user-funcs "!" (cons (make-arrow (list (make-ref (make-tvar "'a"))) (make-tvar "'a")) unbox))
 	(hash-table-put! built-in-and-user-funcs "print_int" (cons (make-arrow (list "int") "unit") print_int))

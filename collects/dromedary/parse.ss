@@ -428,7 +428,7 @@
     (<seq_expr>
      [(<expr>) (prec SEMI) $1]
      [(<expr> SEMI) $1]
-     [(<expr> SEMI <seq_expr>) (ast:make-expression (ast:make-sequence $1 $3) (build-src 3))])
+     [(<expr> SEMI <seq_expr>) (ast:make-expression (ast:make-pexp_sequence $1 $3) (build-src 3))])
 
     (<labeled_simple_pattern>
      [(QUESTION LPAREN <label_let_pattern> <opt_default> RPAREN)
@@ -515,29 +515,33 @@
      [(<expr> INFIXOP4 <expr>)
       (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident $2)) (build-src 2 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
      [(<expr> PLUS <expr>)
-      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident "+")) (build-src 2 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
+      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident (datum->syntax-object $2 "+" (build-syn-list $2)))) (build-src 2 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
      [(<expr> MINUS <expr>)
-      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident "-")) (build-src 2 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
+      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident (datum->syntax-object $2 "-" (build-syn-list $2)))) (build-src 2 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
      [(<expr> MINUSDOT <expr>)
-      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident "-.")) (build-src 2 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
+      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident (datum->syntax-object $2 "-." (build-syn-list $2)))) (build-src 2 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
      [(<expr> STAR <expr>)
-      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident "*")) (build-src 2 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
+      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident (datum->syntax-object $2 "*" (build-syn-list $2)))) (build-src 2 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
      [(<expr> EQUAL <expr>)
-      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident "=")) (build-src 2 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
+      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident (datum->syntax-object $2 "=" (list #f
+																	      (syntax-line $2)
+																	      (syntax-column $2)
+																	      (syntax-position $2)
+																	      (syntax-span $2))))) (build-src 2 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
      [(<expr> LESS <expr>)
-      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident "<")) (build-src 2 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
+      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident (datum->syntax-object $2 "<" (build-syn-list $2)))) (build-src 2 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
      [(<expr> GREATER <expr>)
-      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident ">")) (build-src 2 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
+      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident (datum->syntax-object $2 ">" (build-syn-list $2)))) (build-src 2 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
      [(<expr> OR <expr>)
-      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident "or")) (build-src 2 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
+      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident (datum->syntax-object $2 "or" (build-syn-list $2)))) (build-src 2 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
      [(<expr> BARBAR <expr>)
-      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident "||")) (build-src 2 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
+      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident (datum->syntax-object $2 "||" (build-syn-list $2)))) (build-src 2 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
      [(<expr> AMPERSAND <expr>)
-      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident "&")) (build-src 2 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
+      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident (datum->syntax-object $2 "&" (build-syn-list $2)))) (build-src 2 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
      [(<expr> AMPERAMPER <expr>)
-      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident "&&")) (build-src 2 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
+      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident (datum->syntax-object $2 "&&" (build-syn-list $2)))) (build-src 2 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
      [(<expr> COLONEQUAL <expr>)
-      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident ":=")) (build-src 2 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
+      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident (datum->syntax-object $2 ":=" (build-syn-list $2)))) (build-src 2 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
      [(<subtractive> <expr>) (prec <prec_unary_minus>)
       (let ([type (ast:expression-pexp_desc $2)])
 	(if (and (ast:pexp_constant? type) (number? (ast:pexp_constant-const type)))
@@ -1014,26 +1018,31 @@
      [(INFIXOP2) $1]
      [(INFIXOP3) $1]
      [(INFIXOP4) $1]
-     [(PLUS) "+"]
-     [(MINUS) "-"]
-     [(MINUSDOT) "-."]
-     [(STAR) "*"]
-     [(EQUAL) "="]
-     [(LESS) "<"]
-     [(GREATER) ">"]
-     [(OR) "or"]
-     [(BARBAR) "||"]
-     [(AMPERSAND) "&"]
-     [(AMPERAMPER) "&&"]
-     [(COLONEQUAL) ":="])
+     [(PLUS) (datum->syntax-object $1 "+" (build-syn-list $1))]
+     [(MINUS) (datum->syntax-object $1 "-" (build-syn-list $1))]
+     [(MINUSDOT) (datum->syntax-object $1 "-." (build-syn-list $1))]
+     [(STAR) (datum->syntax-object $1 "*" (build-syn-list $1))]
+     [(EQUAL) (datum->syntax-object $1 "=" (build-syn-list $1))]
+     [(LESS) (datum->syntax-object $1 "<" (build-syn-list $1))]
+     [(GREATER) (datum->syntax-object $1 ">" (build-syn-list $1))]
+     [(OR) (datum->syntax-object $1 "or" (build-syn-list $1))]
+     [(BARBAR) (datum->syntax-object $1 "||" (build-syn-list $1))]
+     [(AMPERSAND) (datum->syntax-object $1 "&" (build-syn-list $1))]
+     [(AMPERAMPER) (datum->syntax-object $1 "&&" (build-syn-list $1))]
+     [(COLONEQUAL) (datum->syntax-object $1 ":=" (build-syn-list $1))])
 
     (<constr_ident>
      [(UIDENT) $1]
 ;;     [(LBRACKET RBRACKET) "[]"] Commented out
-     [(LPAREN RPAREN) "()"]
-     [(COLONCOLON) "::"]
-     [(FALSE) "false"]
-     [(TRUE) "true"])
+     [(LPAREN RPAREN) (datum->syntax-object $1 "()" (list #f
+							  (syntax-line $1)
+							  (syntax-column $1)
+							  (syntax-position $1)
+							  (- (+ (syntax-position $2) (syntax-span $2))
+							     (syntax-position $1))))]
+     [(COLONCOLON) (datum->syntax-object $1 "::" (build-syn-list $1))]
+     [(FALSE) (datum->syntax-object $1 "false" (build-syn-list $1))]
+     [(TRUE) (datum->syntax-object $1 "true" (build-syn-list $1))])
 
     (<val_longident>
      [(<val_ident>) (ast:make-lident $1)]
@@ -1169,6 +1178,35 @@
 					      (- (position-offset end-pos)
 						 (position-offset start-pos))))))))
   
+ (define (build-syn-list syn)
+   (list #f
+	 (syntax-line syn)
+	 (syntax-column syn)
+	 (syntax-position syn)
+	 (syntax-span syn)))
+
+ (define-syntax build-src-list
+   (syntax-rules ()
+		 ((_ end)
+		  (syntax (build-src-list end end)))
+		 ((_ start end)
+		  (with-syntax ((start-pos (datum->syntax-object
+					    (syntax end)
+					    (string->symbol
+					     (format "$~a-start-pos"
+						     (syntax-object->datum (syntax start))))))
+				(end-pos (datum->syntax-object 
+					  (syntax end)
+					  (string->symbol 
+					   (format "$~a-end-pos"
+						   (syntax-object->datum (syntax end)))))))
+			       (syntax
+				(list #f
+				      (position-line start-pos)
+				      (position-col start-pos)
+				      (position-offset start-pos)
+				      (- (position-offset end-pos)
+					 (position-offset start-pos))))))))
   
   (define (ml-split listtosplit)
       (ml-split-helper listtosplit (list null null)))

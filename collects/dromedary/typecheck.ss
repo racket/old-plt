@@ -44,13 +44,13 @@
 		     (list (car (unconvert-tvars progtype null))))))))
 
 	   (define (typecheck-ml stmt context)
-	     (pretty-print (format "typecheck-ml ~a" stmt))
+;	     (pretty-print (format "typecheck-ml ~a" stmt))
 	     (match stmt
 		    [($ ast:expression desc src)
 		     (typecheck-expr desc context src)]
 		    [(a . b)
-		     (begin (pretty-print "typechecking a list")
-		     (map typecheck-ml stmt (repeat context (length stmt))))]
+;		     (begin (pretty-print "typechecking a list")
+		     (map typecheck-ml stmt (repeat context (length stmt)))]
 ;		     (if (null? b)
 ;			 (let ([v (typecheck-ml a context)])
 ;			   (begin ;(pretty-print (format "typechecking last item of list: ~a" v))
@@ -194,7 +194,11 @@
 		       (if (and (unify "int" initt) (unify "int" testt))
 			   (if (unify "unit" (typecheck-ml body (update (syntax-object->datum var) (cons "int" null) context)))
 			       "unit")))]
-
+		    [($ ast:pexp_sequence firstexpr restexpr)
+		     (let ([firstt (typecheck-ml firstexpr context)]
+			   [restt (typecheck-ml restexpr context)])
+		       ;; Warn if type of firstt is not unit
+		       restt)]
 		    [else
 		     (raise-syntax-error #f (format "Cannot typecheck expression: ~a" desc) (at desc src))]) )
 
@@ -290,6 +294,7 @@
 				   (map (lambda (mapping)
 					  (cons (car mapping) (schema (cdr mapping) context)))
 					(map typecheck-binding bindings (repeat rec (length bindings)) (repeat cprime (length bindings)))))))
+
 		 (let ([ncontexts (map typecheck-binding bindings (repeat rec (length bindings)) (repeat context (length bindings)))])
 		   
 		   (let ([res (foldl union-envs (car ncontexts) (cdr ncontexts))])
@@ -300,7 +305,7 @@
 )))
 
 	   (define (typecheck-binding binding rec context)
-	     ;(pretty-print (format "typecheck-binding ~a ~a ~a" binding rec context))
+	     (pretty-print (format "typecheck-binding"))
 	     (let* ([rpat (if (ast:ppat_constraint? (ast:pattern-ppat_desc (car binding)))
 			      (ast:ppat_constraint-pat (ast:pattern-ppat_desc (car binding)))
 			      (car binding))])
@@ -309,8 +314,10 @@
 			    (ast:ppat_var? (ast:pattern-ppat_desc rpat)))
 		       (let ([te (typecheck-ml (cdr binding) context)]
 			     [tf (car (get-type (syntax-object->datum (ast:ppat_var-name (ast:pattern-ppat_desc rpat))) context))])
-			 (if (unify (get-result tf) (get-result te) (at (cdr binding) (ast:expression-pexp_src (cdr binding))))
+			 (begin (pretty-print (format "te: ~a, tf: ~a" te tf))
+			 (if (unify tf te (at (cdr binding) (ast:expression-pexp_src (cdr binding))))
 			     (cons (syntax-object->datum (ast:ppat_var-name (ast:pattern-ppat_desc rpat))) tf)))
+			 )
 		       (raise-syntax-error #f "This kind of expression is not allowed as right-hand side of 'let rec'" (at (cdr binding) (ast:expression-pexp_src (cdr binding)))))
 		   (begin ;(pretty-print "not rec in typecheck-binding")
 		   (let ([newcont
@@ -340,8 +347,9 @@
 	     
 	       (if (and (same-types? (map car funvarenvs) (map grab-syntax pelist)) (same-types? expts (map at (map cdr pelist) (map ast:expression-pexp_src (map cdr pelist)))))
 ;; Should also be checking that the patterns are exhaustive for t and don't overlap
+		   (begin (pretty-print (format "argument: ~a, result: ~a" (car (car funvarenvs)) (car expts)))
 		   (make-arrow (list (car (car funvarenvs))) (car expts)))))
-
+	     )
 
 	   (define (grab-syntax pe)
 	     (at (car pe) (ast:pattern-ppat_src (car pe))))
@@ -381,7 +389,9 @@
 			       
 			       (make-tlist (typecheck-type (car ctlist) boundlist))]
 			      [(null? ctlist)
-			       fconstructor]
+			       (unlongident name)
+			       ;fconstructor
+			       ]
 			      [else
 			       (raise-syntax-error #f (format "~a takes no arguments but was given ~a" (car constructor)  ctlist) (at asttype (ast:core_type-src asttype)))]) )
 			   (if (not (null? (filter (lambda (bname) (equal? (unlongident name) bname)) boundlist)))
@@ -395,10 +405,11 @@
 		    
 
 	   (define (typecheck-application funt argst funsyn argssyn)
+	     (pretty-print (format "typecheck-application ~a ~a" funt argst))
 	     (if (unify (make-arrow (list (fresh-type-var)) (fresh-type-var)) funt funsyn)
 		 (let ([arglist (get-arglist funt)])
 		   (if (= (length arglist) (length argst))
-		       (if (eval `(and ,@(map unify arglist argst argssyn)))
+		       (if (andmap unify arglist argst argssyn)
 			   (get-result funt))
 		       (if (> (length argst) (length arglist))
 			   (foldl uncurry (if (unify (car (get-arglist funt)) (car argst) (car argssyn))
@@ -463,7 +474,10 @@
 			    [ts (cons t null)])
 		       (cons t (update (syntax-object->datum name) ts (empty-context))))]
 		    [($ ast:ppat_constant const)
-		     (cons (constant-check const) (empty-context))]
+		     (begin (pretty-print (format "const is ~a" const))
+		     (cons (constant-check const) (empty-context))
+		     )
+		     ]
 		    [($ ast:ppat_tuple plist)
 		     (let ([varenvs (map funenv plist)])
 		       (begin ;(pretty-print (format "varenvs from funenv: ~a" varenvs))
@@ -614,12 +628,20 @@
 	       (cons type uvprime)))
 
 	   (define (unify t1 t2 syn)
+	     (pretty-print (format "unify ~a ~a" t1 t2))
 	     (cond
 ;	      [(eq? t1 t2) #t]
 	      [(tvar? t1) (unify-var t2 (tvar-tbox t1) syn)]
 	      [(string? t1)
 	       (cond
-		[(and (string? t2) (equal? t1 t2)) #t]
+		[(string? t2) 
+		 (if (equal? t1 t2) 
+		     #t
+		     (let ([t1c (hash-table-get <constructors> t1 (lambda () #f))]
+			   [t2c (hash-table-get <constructors> t2 (lambda () #f))])
+		       (let ([t1a (if t1c (car t1c) t1)]
+			     [t2a (if t2c (car t2c) t2)])
+			 (equal? t1a t2a))))]
 		[(tvar? t2) (unify-var t1 (tvar-tbox t2) syn)]
 		[else (begin (raise-syntax-error #f (format "Expected ~a but found ~a" t1 t2) syn ) #f)])]
 
@@ -788,7 +810,9 @@
 ;	       (format "<tvar~a>" (- cur-var 1))))
 
 	   (define (constant-check const)
+	     (pretty-print (format "constant-check ~a" const))
 	     (cond
+	      [(syntax? const) (constant-check (syntax-object->datum const))]
 	      [(integer? const) "int"]
 	      [(float? const) "float"]
 	      [(char? const) "char"]

@@ -6,38 +6,46 @@
 
     (mred:debug:printf 'invoke "mred:html@")
 
-    (define NUM-CACHED 5)
-    (define cached (cons (cons "" null) null))
-    (set-cdr! cached
-	      (let loop ([n (sub1 NUM-CACHED)])
-		(if (zero? n)
-		    cached
-		    (cons (cons "" null) (loop (sub1 n))))))
+    (define NUM-CACHED 10)
+    (define cached (make-vector 10 null))
+    (define cached-name (make-vector 10 ""))
+    (define cached-use (make-vector 10 0))
 
     (define cache-image
       (lambda (filename)
 	(if (null? filename)
 	    (make-object wx:image-snip%)
-	    (let loop ([l (cdr cached)])
+	    (let loop ([n 0])
 	      (cond
-	       [(string=? filename (caar l))
-		(send (cdar l) copy)]
-	       [(eq? l cached)
-		(let ([image  (make-object wx:image-snip%
-					   filename
-					   wx:const-bitmap-type-gif)])
-		  (set-car! cached (cons filename image))
-		  (set! cached (cdr cached))
-		  image)]
-	       [else (loop (cdr l))])))))
+	       [(= n NUM-CACHED)
+		;; Look for item to uncache
+		(let ([m (let loop ([n 1][m (vector-ref cached-use 0)])
+			   (if (= n NUM-CACHED)
+			       m
+			       (loop (add1 n) (vector-ref cached-use n))))])
+		  (let loop ([n 0])
+		    (if (= (vector-ref cached-use n) m)
+			(let ([image  (make-object wx:image-snip%
+						   filename
+						   wx:const-bitmap-type-gif)])
+			  (vector-set! cached n image)
+			  (vector-set! cached-name n filename)
+			  (vector-set! cached-use n 0)
+			  image)
+			(loop (add1 n)))))]
+	       [(string=? filename (vector-ref cached-name n))
+		(vector-set! cached-use n (add1 (vector-ref cached-use n)))
+		(send (vector-ref cached n) copy)]
+	       [else (loop (add1 n))])))))
 
     (define html-convert
-      (lambda (b)
+      (lambda (p b)
 	(letrec 
-	    ([begin-edit-sequence (ivar b begin-edit-sequence)]
-	     [end-edit-sequence (ivar b end-edit-sequence)]
+	    ([normal (send (send b get-style-list)
+			   find-named-style
+			   "Standard")]
 	     [get-character (ivar b get-character)]
-	     [find-string (ivar b find-string)]
+	     [set-position (ivar b set-position)]
 	     [insert (ivar b insert)]
 	     [delete (ivar b delete)]
 	     [change-style (ivar b change-style)]
@@ -46,11 +54,13 @@
 	     [make-link-style (ivar b make-link-style)]
 	     [add-tag (ivar b add-tag)]
 	     [get-filename (ivar b get-filename)]
-	     [modified? (ivar b modified?)]
 	     [set-modified (ivar b set-modified)]
-	     [lock (ivar b lock)]
 
-	     [reverse-links (ivar b reverse-links)]
+	     [get-char (lambda () 
+			 (let ([v (read-char p)])
+			   (if (eof-object? v)
+			       #\null
+			       v)))]
 
 	     [base-path (let ([f (get-filename)])
 			  (let-values ([(base name dir?) (split-path f)])
@@ -148,8 +158,10 @@
 					       (href-error s)
 					       "top")
 					     tag)]
-				    [label (let ([m (or (regexp-match re:quote-name s)
-							(regexp-match re:name s))])
+				    [label (let ([m (if file
+							#f
+							(or (regexp-match re:quote-name s)
+							    (regexp-match re:name s)))])
 					     (if m
 						 (cadr m)
 						 #f))])
@@ -171,86 +183,123 @@
 		  (insert #\newline pos)
 		  (add1 (try-newline pos (sub1 count)))]))]
 
+	     [find-string 
+	      (lambda (str pos keep?)
+		(let ([first (string-ref str 0)]
+		      [len (string-length str)])
+		  (let loop ([pos pos][c (get-char)])
+		    (cond
+		     [(char=? #\null c) -1]
+		     [(char-ci=? c first)
+		      (let loop2 ([p 1][chars (list c)])
+			(if (= p len)
+			    pos
+			    (let ([c (get-char)])
+			      (cond
+			       [(char-ci=? c (string-ref str p))
+				(loop2 (add1 p) (cons c chars))]
+			       [else
+				(loop
+				 (if keep?
+				     (let ([s (list->string (reverse! chars))])
+				       (insert s pos)
+				       (+ pos (string-length s)))
+				     pos)
+				 c)]))))]
+		     [else
+		      (loop
+		       (if keep?
+			   (begin
+			     (insert c pos)
+			     (add1 pos))
+			   pos)
+		       (get-char))]))))]
+
 	     ;; Find next "<", translating whitespace, &# along the way
 	     [find-bracket
-	      (lambda (pos dewhite? del-white?)
-		(let find-bracket ([pos pos][del-white? del-white?])
-		  (let ([ch (get-character pos)])
+	      (lambda (start-pos dewhite? del-white?)
+		(let find-bracket ([pos start-pos][del-white? del-white?])
+		  (let ([ch (get-char)])
 		    (cond
-		     [(char=? #\null ch) (values -1 #f)]
+		     [(char=? #\null ch) 
+		      (when (> pos start-pos)
+			    (change-style normal start-pos pos))
+		      (values -1 #f)]
 		     [(and (char-whitespace? ch) dewhite?)
 		      (if del-white?
+			  (find-bracket pos #t)
 			  (begin
-			    (delete (add1 pos))
-			    (find-bracket pos #t))
-			  (begin
-			    (unless (char=? #\space ch)
-				    (insert #\space pos (add1 pos)))
+			    (insert #\space pos)
 			    (find-bracket (add1 pos) #t)))]
-		     [(char=? #\< ch) (values pos del-white?)]
+		     [(char=? #\< ch) 
+		      (when (> pos start-pos)
+			    (change-style normal start-pos pos))
+		      (values pos del-white?)]
 		     [(char=? #\& ch) 
-		      (let ([ch (get-character (add1 pos))]
+		      (let ([ch (get-char)]
 			    [result
-			     (lambda (v end-pos)
-			       (insert v pos (add1 end-pos))
+			     (lambda (v)
+			       (insert v pos)
 			       (find-bracket (+ pos
 						(if (string? v)
 						    (string-length v)
 						    1))
 					     (eqv? #\space v)))])
 			(if (char=? #\# ch)
-			    (let loop ([pos2 (+ 2 pos)][val 0])
-			      (let ([ch (get-character pos2)])
+			    (let loop ([val 0])
+			      (let ([ch (get-char)])
 				(if (char-numeric? ch)
-				    (loop (add1 pos2) (+ (* 10 val) (- (char->integer ch) 48)))
+				    (loop (+ (* 10 val) (- (char->integer ch) 48)))
 				    (result (case val
 					      [160 #\space]
 					      [169 "(c)"]
-					      [else ""])
-					    pos2))))
-			    (let loop ([pos2 (+ 2 pos)][l (list ch)])
-			      (let ([ch (get-character pos2)])
+					      [else ""])))))
+			    (let loop ([l (list ch)])
+			      (let ([ch (get-char)])
 				(if (or (char=? #\null ch) (char=? #\; ch))
 				    (result
 				     (case (string->symbol (list->string (reverse! l)))
 				       [(nbsp) #\space]
 				       [(gt) #\>]
 				       [(lt) #\<]
-				       [else ""])
-				     pos2)
-				    (loop (add1 pos2) (cons ch l)))))))]
-		     [else (find-bracket (add1 pos) #f)]))))]
+				       [else ""]))
+				    (loop (cons ch l)))))))]
+		     [else 
+		      (insert ch pos)
+		      (find-bracket (add1 pos) #f)]))))]
 
-	     ;; Read inside of <>; return (values content-of-string end-position)
+	     ;; Read inside of <>; return content-of-string
 	     [read-bracket
-	      (lambda (pos)
-		(if (char=? (get-character (add1 pos)) #\!)
+	      (lambda ()
+		(let ([first (get-char)])
+		  (if (char=? #\! first)
 		    ;; comment - special parsing
-		    (let ([end (find-string ">" 1 (+ pos 2))])
-		      (if (negative? end)
-			  (begin
-			    (html-error "end-of-file looking for closing angle-bracket")
-			    (values "!" (last-position)))
-			  (values "!" (add1 end))))
+		    (let loop ()
+		      (let ([ch (get-char)])
+			(cond
+			 [(char=? #\null ch)
+			  (html-error "end-of-file looking for closing angle-bracket")
+			  "!"]
+			 [(char=? #\> ch) "!"]
+			 [else (loop)])))
 		    ;; Not a comment - parse with attention to quotes
-		    (let ([done (lambda (name pos)
-				  (values (list->string (reverse! name)) pos))])
-		      (let loop ([pos (add1 pos)][name null][quotes null])
-			(let ([ch (get-character pos)])
-			  (cond
-			   [(char=? #\null ch)
-			    (html-error "end-of-file looking for closing angle-bracket")
-			    (done name pos)]
-			   [(and (null? quotes) (char=? #\> ch)) 
-			    (done name (add1 pos))]
-			   [(char=? #\" ch)
-			    (loop (add1 pos) (cons ch name) 
-				  (if (or (null? quotes) (not (char=? #\" (car quotes))))
-				      (cons #\" quotes)
-				      (cdr quotes)))]
-			   [else
-			    (loop (add1 pos) (cons ch name) quotes)]))))))]
-
+		    (let ([done (lambda (name)
+				  (list->string (reverse! name)))])
+		      (let loop ([ch first][name null][quotes null])
+			(cond
+			 [(char=? #\null ch)
+			  (html-error "end-of-file looking for closing angle-bracket")
+			  (done name)]
+			 [(and (null? quotes) (char=? #\> ch)) 
+			  (done name)]
+			 [(char=? #\" ch)
+			  (loop (get-char) (cons ch name) 
+				(if (or (null? quotes) (not (char=? #\" (car quotes))))
+				    (cons #\" quotes)
+				    (cdr quotes)))]
+			 [else
+			  (loop (get-char) (cons ch name) quotes)]))))))]
+	     
 	     ;; Parse string from inside <> into 
 	     ;; (values html-tag-symbol tag-args-str end-tag?)
 	     [parse-command
@@ -269,52 +318,44 @@
 	     
 	     ;; Given CMD, find </CMD>; remove </CMD> and return position
 	     ;; Translate nested <CMD2> ... </CMD2>
+	     ;; Returns (values end-pos del-white? found-extra-end extra-args)
 	     [find-end
 	      (lambda (tag pos dewhite? del-white? enum-depth)
 		(let-values ([(pos del-white?) (find-bracket pos dewhite? del-white?)])
 			    (if (= pos -1)
 				(begin
 				  (html-error "couldn't find </~a>" tag)
-				  (values (last-position) del-white?))
-				(let-values ([(cmd next-pos) (read-bracket pos)]
-					     [(found-tag args end?) (parse-command cmd)])
-					    (cond
-					     [(not end?)
-					      (delete pos next-pos)
-					      (let-values ([(pos del-white?) 
-							    (translate-command pos dewhite? del-white? enum-depth
-									       found-tag args)])
-							  (find-end tag pos dewhite? del-white? enum-depth))]
-					     [(eq? tag found-tag)
-					      (delete pos next-pos)
-					      (values pos del-white?)]
-					     [else
-					      (html-error "found </~a> looking for </~a>"
-							  found-tag tag)
-					      (values pos del-white?)])))))]
-
-	     ;; Given pos for open bracket, find end and translate contents.
-	     ;; Return (values position-for-continuing-search del-white?)
-	     [translate
-	      (lambda (pos dewhite? del-white? enum-depth)
-		(let-values ([(cmd next-pos) (read-bracket pos)]
-			     [(tag args end?) (parse-command cmd)])
-			    (delete pos next-pos)
-			    (if end? 
-				(begin
-				  (html-error "closing </~a> without opening" tag)
-				  (values pos del-white?))
-				(translate-command pos dewhite? del-white? enum-depth tag args))))]
+				  (values (last-position) del-white? #f #f))
+				(let ([cmd (read-bracket)]
+				      [found-end
+				       (lambda (pos del-white? found-tag args)
+					 (if (eq? tag found-tag)
+					     (values pos del-white? #f #f)
+					     (begin
+					       (html-error "found </~a> looking for </~a>"
+							   found-tag tag)
+					       (values pos del-white? found-tag args))))])
+				  (let-values ([(found-tag args end?) (parse-command cmd)])
+					      (if (not end?)
+						  (let-values ([(pos del-white? found-tag args) 
+								(translate-command pos dewhite? del-white? enum-depth
+										   found-tag args)])
+							      (if found-tag
+								  (found-end pos del-white? found-tag args)
+								  (find-end tag pos dewhite? del-white? enum-depth)))
+						  (found-end pos del-white? found-tag args)))))))]
 
 	     [translate-command
 	      (lambda (pos dewhite? del-white? enum-depth tag args)
 		(cond
 		 [(memq tag atomic-tags)
-		  (let ([break (lambda (newlines)
-				 (insert (make-string enum-depth #\tab) pos)
-				 (values (+ pos enum-depth (try-newline pos newlines)) #t))])
+		  (let* ([atomic-values (lambda (pos del-white?)
+					  (values pos del-white? #f #f))]
+			 [break (lambda (newlines)
+				  (insert (make-string enum-depth #\tab) pos)
+				  (atomic-values (+ pos enum-depth (try-newline pos newlines)) #t))])
 		    (case tag
-		      [(!) (values pos del-white?)]
+		      [(!) (atomic-values pos del-white?)]
 		      [(br)
 		       (break 1)]
 		      [(p hr)
@@ -323,34 +364,28 @@
 		      [(dt) (break 2)]
 		      [(img)
 		       (insert (cache-image (parse-image-source args)) pos)
-		       (values (add1 pos) #f)]
+		       (atomic-values (add1 pos) #f)]
 		      [else 
 		       (html-error "unimplemented (atomic) tag: ~a" tag)
-		       (values pos del-white?)]))]
+		       (atomic-values pos del-white?)]))]
 		 [(memq tag verbatim-tags)
 		  (let* ([str (format "</~a>" tag)]
-			 [end-pos (find-string str 1 pos -1 #t #f)])
+			 [end-pos (find-string str pos #t)])
 		    (values
 		     (if (= -1 end-pos)
 			 (begin
 			   (html-error "verbatim closing tag </~a> not found" tag)
 			   (last-position))
 			 (begin
-			   (delete end-pos (+ end-pos (string-length str)))
 			   (change-style delta:fixed pos end-pos)
 			   end-pos))
-		     #t))]
+		     #t #f #f))]
 		 [(memq tag comment-tags)
 		  (let* ([str (format "</~a>" tag)]
-			 [end-pos (find-string str 1 pos -1 #t #f)]
-			 [use-end
-			  (if (negative? end-pos)
-			      (begin
-				(html-error "verbatim closing tag </~a> not found" tag)
-				(last-position))
-			      end-pos)])
-		    (delete pos (+ use-end (string-length str)))
-		    (values pos del-white?))]
+			 [end-pos (find-string str pos #f)])
+		    (when (negative? end-pos)
+			  (html-error "comment closing tag </~a> not found" tag))
+		    (values pos del-white? #f #f))]
 		 [else
 		  (let ([enum-depth (+ enum-depth
 				       (if (memq tag enum-tags)
@@ -358,22 +393,24 @@
 					   0))]
 			[dewhite? (and dewhite?
 				       (not (memq tag preformatted-tags)))])
-		    (let-values ([(end-pos del-white?) 
+		    (let-values ([(end-pos del-white? extra-tag extra-args) 
 				  (find-end tag pos dewhite? del-white? enum-depth)])
-				(let* ([normal (lambda () (values end-pos del-white?))]
-				       [restart (lambda () (values pos del-white?))]
+				(let* ([result (lambda (pos del-white?)
+						 (values pos del-white? extra-tag extra-args))]
+				       [normal (lambda () (result end-pos del-white?))]
+				       [restart (lambda () (result pos del-white?))]
 				       [heading (lambda (delta)
 						  (insert (string #\newline #\newline) end-pos)
 						  (change-style delta pos end-pos)
-						  (values (+ end-pos 2 (try-newline pos 1)) #t))])
+						  (result (+ end-pos 2 (try-newline pos 1)) #t))])
 				  (case tag
 				    [(head body center) (normal)]
-				    [(title) 
+				    [(title)
 				     (delete pos end-pos)
 				     (restart)]
 				    [(dl ul)
 				     (insert #\newline end-pos)
-				     (values (add1 end-pos) #t)]
+				     (result (add1 end-pos) #t)]
 				    [(b strong)
 				     (change-style delta:bold pos end-pos)
 				     (normal)]
@@ -403,25 +440,29 @@
 						     (normal))]
 				    [else 
 				     (html-error "unimplemented tag: ~s" tag)
-				     (normal)]))))]))])
-	  (let ([m? (modified?)])
-	    (dynamic-wind
-	     (lambda ()
-	       (lock #f)
-	       (begin-edit-sequence #f))
-	     (lambda ()
-	       (add-tag "top" 0)
-	       (let loop ([pos 0][del-white? #t])
-		 (let-values ([(pos del-white?) (find-bracket pos #t del-white?)])
-			     (unless (= pos -1)
-				     (call-with-values
-				      (lambda () (translate pos #t del-white? 0))
-				      loop)))))
-	     (lambda ()
-	       (reverse-links)
-	       (end-edit-sequence)
-	       (lock #t)
-	       (unless m? 
-		       (set-modified #f))))))))))
+				     (normal)]))))]))]
 
+	     ;; Given pos for open bracket, find end and translate contents.
+	     ;; Return (values position-for-continuing-search del-white?)
+	     [translate
+	      (lambda (pos dewhite? del-white? enum-depth)
+		(let-values ([(cmd) (read-bracket)]
+			     [(tag args end?) (parse-command cmd)])
+			    (if end? 
+				(begin
+				  (html-error "closing </~a> without opening" tag)
+				  (values pos del-white?))
+				(let-values ([(end-pos del-white? extra-tag extra-args) 
+					      (translate-command pos dewhite? del-white? enum-depth tag args)])
+					    (when extra-tag
+						  (html-error "closing </~a> without opening" tag))
+					    (values end-pos del-white?)))))])
 
+	     (add-tag "top" 0)
+	     (let loop ([pos 0][del-white? #t])
+	       (let-values ([(pos del-white?) (find-bracket pos #t del-white?)])
+			   (unless (= pos -1)
+				   (call-with-values
+				    (lambda () (translate pos #t del-white? 0))
+				    loop))))
+	     (set-position 0))))))

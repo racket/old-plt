@@ -41,12 +41,14 @@
     
     (define-struct hypertag (name position))
 
+    (define re:html (regexp "\\.htm(l|)$"))
+
     (define make-hyper-edit%
       (lambda (super%)
 	(class super% ([keep-locked? #t] . args)
 	  (inherit get-start-position get-end-position last-position set-position  
-		   begin-edit-sequence end-edit-sequence lock
-		   change-style  get-style-list
+		   begin-edit-sequence end-edit-sequence lock erase clear-undos
+		   change-style  get-style-list set-modified
 		   find-snip get-snip-position line-start-position
 		   get-visible-line-range scroll-to-position position-line
 		   begin-write-header-footer-to-file end-write-header-footer-to-file
@@ -61,8 +63,15 @@
 		  [super-load-file load-file]
 		  [super-read-footer-from-file read-footer-from-file]
 		  [super-write-footers-to-file write-footers-to-file])
+	  (private
+	   [htmling? #f]
+	   [reverse-links
+	    (lambda ()
+	      (set! hyperlinks-list (reverse! hyperlinks-list)))])
+
 	  (public  
 	    [auto-set-wrap? #t]
+	    [autowrap-bitmap null]
 	    [hypertags-list (list (make-hypertag "top" 0))]
 	    [hyperlinks-list ()]
 	    [follow-on-click? #t] ;; when false, someone designing hyper-text
@@ -423,9 +432,6 @@
 		 (if new-links-list
 		     (set! hyperlinks-list new-links-list))
 		 new-links-list))]
-	    [reverse-links
-	     (lambda ()
-	       (set! hyperlinks-list (reverse! hyperlinks-list)))]
 	    
 	    [remove-link    ;; walking links-list twice but it should be short?!
 	     (lambda (pos)
@@ -577,19 +583,41 @@
 			       (not relative?))
 			   filename
 			   (build-path directory filename))])
-		 (if (super-load-file filename format)
-		     (begin (if keep-locked (lock #t))
-			    (update-directory)
-			    (install-clickbacks )
-			    (add-h-link-style)
-			    (when (= (get-file-format) wx:const-media-ff-text)
-				  (mred:html:html-convert this))
-			    (set-file-format wx:const-media-ff-std)
-			    #t)
-		     (begin (set-filename filename)
-			    (set! hypertags-list 
-				  (list (make-hypertag "top" 0)))
-			    #f))))]
+		 (if (if (and (string? filename)
+			      (regexp-match re:html filename)
+			      (file-exists? filename))
+			 (let ([p (open-input-file filename)])
+			   (set! htmling? #t)
+			   (erase)
+			   (clear-undos)
+			   (set-filename filename)
+			   (dynamic-wind
+			    (lambda ()
+			      (begin-edit-sequence #f))
+			    (lambda ()
+			      (mred:html:html-convert p this))
+			    (lambda ()
+			      (end-edit-sequence)
+			      (set! htmling? #f)
+			      (close-input-port p)))
+			   (reverse-links)
+			   (set-modified #f)
+			   (lock #t)
+			   #t)
+			 (super-load-file filename format))
+		     (begin 
+		       (when keep-locked 
+			     (lock #t))
+		       (update-directory)
+		       (install-clickbacks)
+		       (add-h-link-style)
+		       (set-file-format wx:const-media-ff-std)
+		       #t)
+		     (begin 
+		       (set-filename filename)
+		       (set! hypertags-list 
+			     (list (make-hypertag "top" 0)))
+		       #f))))]
 	    [save-file
 	     (opt-lambda ([filename ()][format wx:const-media-ff-same])
 	       (super-save-file filename format)
@@ -661,31 +689,34 @@
 		     (super-set-region-data  start end data))))]
 	    [on-insert
 	     (lambda (start size)
-	       (adjust-lists  start size)
-	       (begin-edit-sequence)
+	       (unless htmling?
+		       (adjust-lists  start size)
+		       (begin-edit-sequence))
 	       #t)]
 	    [after-insert
 	     (lambda (start size)
-	       (let links-loop ([links-left hyperlinks-list])
-		 (if (not (null? links-left))
-		     (let ([curr-end (hyperlink-anchor-end (car links-left))])
-		       (cond
-			 [(> curr-end start)(links-loop (cdr links-left))]
-			 [(< curr-end start) #t]
-			 [else (let*([prev-snip(find-snip(hyperlink-anchor-start
-							  (car links-left))
-							 wx:const-snip-before-or-null)]
-				     [correct-style 
-				      (if (null? prev-snip)
-					  (send (get-style-list) find-named-style
-						"standard")
-					  (send prev-snip get-style))])
-				 (change-style  correct-style start (+ start size)))]
-			 ))))
-	       (end-edit-sequence))]
+	       (unless htmling?
+		       (let links-loop ([links-left hyperlinks-list])
+			 (if (not (null? links-left))
+			     (let ([curr-end (hyperlink-anchor-end (car links-left))])
+			       (cond
+				[(> curr-end start)(links-loop (cdr links-left))]
+				[(< curr-end start) #t]
+				[else (let*([prev-snip(find-snip(hyperlink-anchor-start
+								 (car links-left))
+								wx:const-snip-before-or-null)]
+					    [correct-style 
+					     (if (null? prev-snip)
+						 (send (get-style-list) find-named-style
+						       "standard")
+						 (send prev-snip get-style))])
+					(change-style  correct-style start (+ start size)))]
+				))))
+		       (end-edit-sequence)))]
 	    [on-delete
 	     (lambda (start size)
-	       (adjust-lists  start (- 0 size))
+	       (unless htmling?
+		       (adjust-lists  start (- 0 size)))
 	       #t)])
 	  (sequence
 	    (apply super-init args)

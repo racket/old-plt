@@ -348,11 +348,15 @@
  (wrap-text-item "Replier le texte")
 
  (windows-menu-label "&Fenêtres")
+ (bring-frame-to-front "Amener une fenêtre au premier plan")       ;;; title of dialog
+ (bring-frame-to-front... "Amener une fenêtre au premier plan...") ;;; corresponding title of menu item
+ 
  (show-menu-label "&Montrer")
 
  (help-menu-label "&Aide")
  (about-info "Auteurs et détails concernant ce logiciel.")
- (about-menu-item "A propos de...")
+ (about-menu-item "A propos de ")
+ (about-menu-item-after "...")
 
  ;;; help-desk-specific menus
  (new-help-desk "&Nouvelle Aide")
@@ -410,10 +414,10 @@
  (save-definitions "&Sauvegarder les définitions")
  (print-definitions "&Imprimer les définitions...")
  (about-drscheme "A propos de DrScheme")
- (save-other "Sauvegarder autre format")
+ (save-other "Sauvegarder autre")
  (save-definitions-as-text "Sauvegarder les définitions au format texte...")
  (save-interactions "Sauvegarder les interactions")
- (save-interactions-as "Sauvegarder les interactions au format...")
+ (save-interactions-as "Sauvegarder les interactions...")
  (save-interactions-as-text "Sauvegarder les interactions au format texte...")
  (print-interactions "Imprimer les interactions...")
  
@@ -496,6 +500,7 @@
  (intermediate-student "Etudiant niveau intermédiaire")
  (advanced-student "Etudiant niveau avancé")
  (how-to-design-programs "How to Design Programs") ;; should agree with MIT Press on this one...
+ (r5rs-like-languages "comme R5RS")
  (mred-lang-name "Graphique sans débuggage (MrEd)")
  (mzscheme-lang-name "Textuel sans débuggage (MzScheme)")
  (r5rs-lang-name "R5RS sans débuggage")

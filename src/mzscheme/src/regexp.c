@@ -509,15 +509,17 @@ regpiece(int *flagp)
     regoptail(ret, ret);	/* back */
     regtail(ret, regnode(BRANCH)); /* or */
     regtail(ret, regnode(NOTHING)); /* null. */
-  } else if (op == '*' && !greedy) {
-    /* Emit x* as (|x&), where & means "self". */
-    reginsert(BRANCH, ret);
+  } else if (op == '*') {
+    /* Emit x*? as (|x&), where & means "self". */
+    reginsert(BRANCH, ret);  /* will be next... */
     reginsert(NOTHING, ret);
     reginsert(BRANCH, ret);
-    next = ret + 6; /* how to compute this better? */
+    next = ret + 6;
     regtail(ret, next);
     regoptail(next, regnode(BACK)); /* loop */
     regoptail(next, ret);	/* back. */
+    regtail(next, regnode(BACK));
+    regtail(next, ret + 3);
   } else if (op == '+' && (flags&SIMPLE))
     reginsert(greedy ? PLUS : PLUS2, ret);
   else if (op == '+' && greedy) {
@@ -527,13 +529,15 @@ regpiece(int *flagp)
     regtail(regnode(BACK), ret); /* loop back */
     regtail(next, regnode(BRANCH)); /* or */
     regtail(ret, regnode(NOTHING)); /* null. */
-  } else if (op == '+' && !greedy) {
-    /* Emit x+ as x(|&), where & means "self". */
+  } else if (op == '+') {
+    /* Emit x+? as x(|&), where & means "self". */
     next = regnode(BRANCH);	/* Either */
     regtail(ret, next);
-    regtail(ret, regnode(NOTHING)); /* null */
+    regnode(NOTHING); /* op */
     regtail(next, regnode(BRANCH)); /* or */
     regtail(regnode(BACK), ret); /* loop back. */
+    regtail(next, regnode(BACK));
+    regtail(next, next + 3);
   } else if (op == '?' && greedy) {
     /* Emit x? as (x|) */
     reginsert(BRANCH, ret);	/* Either x */
@@ -541,13 +545,16 @@ regpiece(int *flagp)
     next = regnode(NOTHING);	/* null. */
     regtail(ret, next);
     regoptail(ret, next);
-  } else if (op == '?' && !greedy) {
-    /* Emit x? as (|x) */
-    reginsert(BRANCH, regnode(NOTHING)); /* Either null */
-    regtail(ret, regnode(BRANCH)); /* or */
-    next = ret;	/* x. */
-    regtail(ret, next);
-    regoptail(ret, next);
+  } else if (op == '?') {
+    /* Emit x?? as (|x) */
+    reginsert(BRANCH, ret);  /* will be next... */
+    reginsert(NOTHING, ret);
+    reginsert(BRANCH, ret);
+    regtail(ret, ret + 6);
+    next = regnode(BACK);
+    regtail(ret + 6, next);
+    regoptail(ret + 6, next);
+    regoptail(ret + 6, ret + 3);
   }
   regparse++;
   if (ISMULT(*regparse))

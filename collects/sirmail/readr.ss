@@ -572,7 +572,7 @@
       (define (purge-marked)
 	(let* ([marked (filter message-marked? mailbox)])
 	  (purge-messages marked)))
-
+      
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       ;;  GUI: Message List Tools                                ;;
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -936,6 +936,8 @@
 	      (send disconnected-msg show #t)))
       (send global-keymap add-function "get-new-mail"
 	    (lambda (w e) (get-new-mail)))
+      (send global-keymap add-function "archive-current"
+            (lambda (w e) (send header-list archive-current-message)))
       (send global-keymap add-function "prev-msg"
 	    (lambda (w e) (send header-list select-prev)))
       (send global-keymap add-function "next-msg"
@@ -974,6 +976,7 @@
       
       (send global-keymap map-function ":m" "new-mailer")
       (send global-keymap map-function ":g" "get-new-mail")
+      (send global-keymap map-function ":a" "archive-current")
       (send global-keymap map-function ":i" "disconnect")
       (send global-keymap map-function ":n" "next-msg")
       (send global-keymap map-function ":p" "prev-msg")
@@ -1018,6 +1021,8 @@
             (make-object menu-item% "&Download All" file-menu
               (lambda (i e) (download-all))
               #\l)
+            (make-object menu-item% "Archive Message" file-menu
+              (lambda (i e)  (send header-list archive-current-message)))
             (make-object separator-menu-item% file-menu)
             (make-object menu-item%
               "&Open Folders List"
@@ -1282,6 +1287,24 @@
                                    unmarked-delta))
                   (status "~aarked" 
                           (if marked? "M" "Unm"))))))
+          
+          (define/public (archive-current-message)
+            (when selected
+              (let ([archive-mailbox (ARCHIVE-MAILBOX)])
+                (when archive-mailbox
+                  (let* ([uid (send selected user-data)]
+                         [item (assoc uid mailbox)])
+                    (header-changing-action
+                     #f
+                     (lambda ()
+                       (as-background
+                        enable-main-frame
+                        (lambda (bad-break break-ok)
+                          (with-handlers ([void no-status-handler])
+                            (copy-messages-to (list item) archive-mailbox)
+                            (purge-messages (list item))))
+                        close-frame))))))))
+          
           (define/public (hit)
             (when selected
               (on-double-select selected)))

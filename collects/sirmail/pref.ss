@@ -24,12 +24,15 @@
 
   (define (un/marshall-path pref)
     (preferences:set-un/marshall pref
-				 (lambda (x) (if (path? x)
-						 (path->bytes x)
-						 x))
-				 (lambda (x) (if (bytes? x)
-						 (bytes->path x) 
-						 x))))
+				 (lambda (x) 
+                                   (if (path? x)
+                                       (path->bytes x)
+                                       x))
+				 (lambda (x) 
+                                   (cond
+                                     [(bytes? x) (bytes->path x) ]
+                                     [(not x) x]
+                                     [else 'badvalue]))))
   
   ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;  Preference Definitions                                 ;;
@@ -63,6 +66,8 @@
   (un/marshall-path 'sirmail:sent-directory)
   (preferences:set-default 'sirmail:root-mailbox-folder #f string-or-false?)
 
+  (preferences:set-default 'sirmail:archive-mailbox-folder #f string-or-false?)
+  
   (preferences:set-default 'sirmail:initial-sort 'id
 			   (lambda (x) (memq x '(id date subject from))))
   (preferences:set-default 'sirmail:biff-delay
@@ -83,7 +88,8 @@
   (preferences:set-default 'sirmail:always-happy #f boolean?)
   (preferences:set-default 'sirmail:wrap-lines #f boolean?)
 
-  (preferences:set-default 'sirmail:aliases-file (build-path (find-system-path 'home-dir) ".sirmail.aliases")
+  (preferences:set-default 'sirmail:aliases-file
+                           (build-path (find-system-path 'home-dir) ".sirmail.aliases")
 			   abs-path-or-false?)
   (un/marshall-path 'sirmail:aliases-file)
   (preferences:set-default 'sirmail:auto-file-table-file (build-path (find-system-path 'home-dir) ".sirmail.auto-file")
@@ -268,9 +274,9 @@
 				 ;; For now, just counteract edits:
 				 (lambda (t e)
 				   (send field set-value (path->string (preferences:get pref))))
-				 (path->string
-				  (or (preferences:get pref)
-				      (current-directory)))))
+                      (path->string
+                       (or (preferences:get pref)
+                           (current-directory)))))
       (when e
 	(send e set-value (preferences:get pref))
 	(send p enable (send e get-value)))
@@ -496,6 +502,7 @@
 	(set! cert (make-file/directory-button #f #f sp
 					       'sirmail:server-certificate
 					       "Verify SSL with certificates"))
+        (make-text-field "Archive folder" sp 20 'sirmail:archive-mailbox-folder #t void (lambda (x) x) (lambda (x) x))
 	(make-text-field "Folder list root" sp 20 'sirmail:root-mailbox-folder #t void (lambda (x) x) (lambda (x) x))
 
 	(send cert enable (preferences:get 'sirmail:use-ssl?)))

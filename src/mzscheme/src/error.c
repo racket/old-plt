@@ -260,12 +260,12 @@ static long sch_vsprintf(char *s, long maxlen, const char *msg, va_list args)
 	    long d;
 	    d = ints[ip++];
 	    if (d >= 0) {
-	      sprintf(buf, "%ld.", d);
+	      sprintf(buf, "%ld:", d);
 	      t = buf;
 	      tlen = strlen(t);
 	    } else {
-	      t = buf;
-	      tlen = 0;
+	      t = ":";
+	      tlen = 1;
 	    }
 	  }
 	  break;
@@ -994,6 +994,9 @@ static char *make_srcloc_string(Scheme_Object *form, long *len)
     
     src = ((Scheme_Stx *)form)->srcloc->src;
     if (src && SCHEME_STRINGP(src)) {
+      /* Strip off prefix matching the current directory: */
+      src = scheme_remove_current_directory_prefix(src);
+
       /* Truncate from the front, to get the interesting part of paths: */
       srclen = SCHEME_STRLEN_VAL(src);
       if (srclen > MZERR_MAX_SRC_LEN) {
@@ -1011,7 +1014,7 @@ static char *make_srcloc_string(Scheme_Object *form, long *len)
     
     result = (char *)scheme_malloc_atomic(srclen + 15);
 
-    rlen = scheme_sprintf(result, srclen + 15, " %t:%L%ld", 
+    rlen = scheme_sprintf(result, srclen + 15, "%t:%L%ld: ", 
 			  srcstr, srclen, line, col);
     
     if (len) *len = rlen;
@@ -1209,15 +1212,16 @@ void scheme_wrong_syntax(const char *where,
 
   if (v) {
     if (dv)
-      blen = scheme_sprintf(buffer, blen, "%s: %t at%t: %t in: %t", 
-			    where, s, slen, 
+      blen = scheme_sprintf(buffer, blen, "%t%s: %t at: %t in: %t", 
 			    p, plen, 
+			    where, s, slen, 
 			    dv, dvlen,
 			    v, vlen);
     else
-      blen = scheme_sprintf(buffer, blen, "%s: %t in%t: %t", 
+      blen = scheme_sprintf(buffer, blen, "%t%s: %t in: %t", 
+			    p, plen,
 			    where, s, slen, 
-			    p, plen, v, vlen);
+			    v, vlen);
   } else
     blen = scheme_sprintf(buffer, blen, "%s: %t", where, s, slen);
   

@@ -1511,13 +1511,13 @@ ptr_t GC_build_fl GC_PROTO((struct hblk *h, word sz,
 				/* called by GC_new_hblk, but also	*/
 				/* called explicitly without GC lock.	*/
 
-struct hblk * GC_allochblk GC_PROTO(( \
-	word size_in_words, int kind, unsigned char flags));
+struct hblk * GC_allochblk () /* GC_PROTO(( \
+	word size_in_words, int kind, unsigned char flags)) */ ; 
 				/* Allocate a heap block, inform	*/
 				/* the marker that block is valid	*/
 				/* for objects of indicated size.	*/
 
-ptr_t GC_alloc_large GC_PROTO((word lw, int k, unsigned char flags));
+ptr_t GC_alloc_large () /* GC_PROTO((word lw, int k, unsigned char flags)) */;
 			/* Allocate a large block of size lw words.	*/
 			/* The block is not cleared.			*/
 			/* Flags is 0 or IGNORE_OFF_PAGE.		*/
@@ -1527,7 +1527,7 @@ ptr_t GC_alloc_large GC_PROTO((word lw, int k, unsigned char flags));
 			/* Does not update GC_words_allocd, but does	*/
 			/* other accounting.				*/
 
-ptr_t GC_alloc_large_and_clear GC_PROTO((word lw, int k, unsigned char flags));
+ptr_t GC_alloc_large_and_clear () /* GC_PROTO((word lw, int k, unsigned char flags)) */;
 			/* As above, but clear block if appropriate	*/
 			/* for kind k.					*/
 

@@ -428,8 +428,16 @@
 						  (let ([s (format "000~x" s)])
 						    (substring s (- (string-length s) 4))))
 						(reverse simples))))
-				 (fprintf out "(~a) show\n"
-					  (list->bytes (reverse simples))))
+				 (let ([bytes (list->bytes (reverse simples))])
+				   (if (regexp-match #rx#"^[-a-z A-Z0-9!@#$%^&*_=+,.<>:;'\"`~|/?]*$" bytes)
+				       (fprintf out "(~a) show\n" bytes)
+				       (fprintf out "<~a> show\n" 
+						(apply string-append
+						       (map
+							(lambda (c)
+							  (let ([s (format "0~x" c)])
+							    (substring s (- (string-length s) 2))))
+							(bytes->list bytes)))))))
 			     (when special-font
 			       (fprintf out "grestore~n"))))])
       (let loop ([l l][simples null][special-font-name #f][special-font #f])

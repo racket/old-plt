@@ -114,6 +114,7 @@
  (save "Save")
  (please-choose-either "Please choose either \"~a\" or \"~a\"")
  (close-anyway "Close Anyway")
+ (clear-anyway "Clear Anyway")
 
  (url "URL")
  (url: "URL:")
@@ -370,6 +371,7 @@
 
  (new-info  "Open a new file")
  (new-menu-item "&New")
+ (new-...-menu-item "&New...")
 
  (open-info "Open a file from disk")
  (open-menu-item "&Open...")
@@ -461,6 +463,12 @@
  
  ;;; help-desk-specific menus
  (new-help-desk "New Help Desk")
+
+ ;; open here's new menu item
+ (create-new-window-or-clear-current
+  "Would you like to create a new window, or clear out the current one?")
+ (clear-current "Clear Current")
+ (new-window "New Window")
 
  ;;; exiting and quitting ``are you sure'' dialog
  ;;; (exit is used on windows, quit on macos, in English. Other

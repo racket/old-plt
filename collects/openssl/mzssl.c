@@ -754,7 +754,7 @@ SSL_METHOD *check_encrypt_and_convert(const char *name, int argc, Scheme_Object 
   } else if(!SAME_OBJ(v, scheme_intern_symbol("tls"))) {
     return (c ? TLSv1_client_method() : TLSv1_server_method());
   } else scheme_wrong_type(name, 
-			   "'sslv23, 'sslv2, 'sslv3, or 'tls", 
+			   "'sslv2-or-v3, 'sslv2, 'sslv3, or 'tls", 
 			   pos, argc, argv);
   return NULL; /* unnecessary, but it makes GCC happy */
 }

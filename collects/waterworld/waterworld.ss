@@ -70,6 +70,9 @@
 
   (define *last-game-dir* #f) 
 
+  (define *default-message*
+    "Shift = unsafe (default safe)  Ctrl = assert (default guess)")
+
   (define (make-bitmap s)
     (make-object bitmap% 
 		 (build-path 
@@ -163,7 +166,6 @@
   (define *max-density* 100)
 
   (define *need-to-reset-size* #f)
-  (define *game-over* #f)
 
   ; misc
 
@@ -464,63 +466,66 @@
 		  unsafe-count-consistent?))))]
        [counterexample-prompt
 	(lambda (assignment loc safe?)
-	  (if (= 1
-		 (message-box/custom "WaterWorld"
-				     (fold-string
-				      "There is a counterexample to your claim"
-				      (if teaching-mode?
-					  (format 
-					   "that the tile labeled ~a is ~a."
-					   (vector-ref 
-					    *teaching-mode-labels*
-					    (+ (* (send loc get-row) 
-						  *teaching-board-width*)
-					       (send loc get-column)))
-					   (if safe? "safe" "unsafe"))
-					  (format "that the tile on row ~a, column ~a is ~a."
-						  (add1 (send loc get-row))
-						  (add1 (send loc get-column))
-						  (if safe? "safe" "unsafe")))
-				      ""
-				      "Do you wish to see the counterexample?"
-				      "")
-				     "Yes, show me"  ; button 1
-				     "No, spare me"  ; button 2
-				     #f ; button 3
-				     #f
-				     '(default=1)
-				     2))
-	      (begin
-		(set! current-counterexample assignment)
+	  (let ([mbox-result
+		 (message-box/custom 
+		  "WaterWorld"
+		  (fold-string
+		   "There is a counterexample to your claim"
+		   (if teaching-mode?
+		       (format 
+			"that the tile labeled ~a is ~a."
+			(vector-ref 
+			 *teaching-mode-labels*
+			 (+ (* (send loc get-row) 
+			       *teaching-board-width*)
+			    (send loc get-column)))
+			(if safe? "safe" "unsafe"))
+		       (format "that the tile on row ~a, column ~a is ~a."
+			       (add1 (send loc get-row))
+			       (add1 (send loc get-column))
+			       (if safe? "safe" "unsafe")))
+		   ""
+		   "Do you wish to see the counterexample?"
+		   "")
+		  "Yes, show me"        ; button 1
+		  "No, finish click"    ; button 2
+		  "No, don't click"     ; button 3
+		  #f
+		  '(default=1)
+		  3)])
+	    (case mbox-result
+	      [(1)
+	       (set! current-counterexample assignment)
 		; clear any existing counterexample
-		(board-for-each
-		 (lambda (loc)
-		   (send loc set-in-counterexample-set! #f)))
+	       (board-for-each
+		(lambda (loc)
+		  (send loc set-in-counterexample-set! #f)))
 		; set locations in assignment
-		(for-each
-		 (lambda (assn)
-		   (let ([loc (car assn)])
-		     (send loc set-counterexample-safe! (not (cdr assn)))
-		     (send loc set-in-counterexample-set! #t)))
-		 assignment)
+	       (for-each
+		(lambda (assn)
+		  (let ([loc (car assn)])
+		    (send loc set-counterexample-safe! (not (cdr assn)))
+		    (send loc set-in-counterexample-set! #t)))
+		assignment)
 		; set locations not in assignment
-		(let ([unsafe-needed
-		       (- pirates-left
-			  (num-unsafe-in-assignment assignment))])
-		(board-for-each
-		 (lambda (loc)
-		   (unless (or (assq loc assignment)
-			       (not (send loc get-concealed?)))
-			   (send loc set-in-counterexample-set! #t)
-			   (if (> unsafe-needed 0)
-			       (begin
-				 (send loc set-counterexample-safe! #f)
-				 (set! unsafe-needed (sub1 unsafe-needed)))
-			       (send loc set-counterexample-safe! #t))))))
-		(send canvas set-in-counterexample! #t)
-		(draw)
-		#t) 
-	      #f))] 
+	       (let ([unsafe-needed
+		      (- pirates-left
+			 (num-unsafe-in-assignment assignment))])
+		 (board-for-each
+		  (lambda (loc)
+		    (unless (or (assq loc assignment)
+				(not (send loc get-concealed?)))
+			    (send loc set-in-counterexample-set! #t)
+			    (if (> unsafe-needed 0)
+				(begin
+				  (send loc set-counterexample-safe! #f)
+				  (set! unsafe-needed (sub1 unsafe-needed)))
+				(send loc set-counterexample-safe! #t))))))
+	       (send canvas set-in-counterexample! #t)
+	       (draw)
+	       #t]
+	      [(2) #f]
+	      [(3) #t])))]
        [forced-location?
         ; returns #t if loc is required to be safe?
 	(lambda (loc safe?)
@@ -570,6 +575,14 @@
 			 (loop (add1 count)
 			       (next-assignment cdr-assignment)))))))))])
       (public*
+       [ww-message
+	(lambda (s)
+	  (and canvas
+	       (send canvas ww-message s)))]
+       [reset-ww-message!
+	(lambda ()
+	  (and canvas
+	       (send canvas reset-ww-message!)))]
        [get-num-concealed
 	(lambda () num-concealed)]
        [draw
@@ -646,19 +659,19 @@
        [guess-demerit
 	(lambda (loc safe? thunk)
 	  (thunk)
-	  (message-box "WaterWorld"
-		       (string-append
-			"Aaargh! Yer guessed "
-			(if (eq? safe? (send loc get-safe?))
-			    "right"
-			    "wrong")
-			" when ya ain't of guessed at all!")))]
+	  (ww-message
+	   (string-append
+	    "Aaargh! Yer guessed "
+	    (if (eq? safe? (send loc get-safe?))
+		"right"
+		"wrong")
+	    " when ya ought notta guessed!")))]
        [check-guess
 	(lambda (loc safe? thunk)
 	  (thunk)
 	  (unless (eq? safe? (send loc get-safe?))
-		  (message-box "WaterWorld"
-			       "Yer guess waren't so good, matey!")))]
+		  (ww-message
+		   "Yer guess waren't so good, matey!")))]
        [expose-row-col
 	(lambda (r c safe? assert auto-clicked?)
 	  (let* ([loc (get-location r c)]
@@ -673,7 +686,7 @@
 		     [(forced-location? loc safe?)
 		      (expose-thunk)]
 		     [(forced-location? loc (not safe?))
-		      (counterexample-prompt (list (cons loc (not safe?)))
+		      (counterexample-prompt (list (cons loc safe?))
 					     loc safe?)]
 		     [(in-frontier? loc)
 		      ; if there's any consistent frontier
@@ -698,7 +711,7 @@
 				(let ([b-f (beyond-frontier)])
 				  (if (= (- pirates-left k)
 					 (length b-f))
-					; all beyond frontier unsafe
+				      ; all beyond frontier unsafe
 				      (if safe?
 					  (counterexample-prompt 
 					   (cons 
@@ -838,6 +851,7 @@
 			(loop i)))))
 	  (reset-pirate-counts!)
 	  (clear-counterexample!)
+	  (reset-ww-message!)
 	  (reset-frontier!))]
        [reset-pirate-counts!
 	(lambda () 
@@ -996,8 +1010,10 @@
 	    [canvas #f]
 	    [new-game-panel #f]
 	    [status-panel #f]
+	    [message-panel #f]
 	    [pirates-left-msg #f]
 	    [pirates-ratio-msg #f]
+	    [status-msg #f]
 	    [clear-counterexample-button #f]
 	    [new-game-button #f])
 	   (private*
@@ -1013,7 +1029,6 @@
 		   (send new-game-button focus)))]
 	    [new-game
 	     (lambda ()
-	       (game-over #f)
 	       (if *need-to-reset-size*
 		   (begin
 		     (set! *need-to-reset-size* #f)
@@ -1030,10 +1045,11 @@
 	       (set! current-filename s))]
 	    [reset-bottom-panels!
 	     (lambda ()
-	       (when new-game-panel
-		     (send new-game-panel show #f))
-	       (when status-panel
-		     (send status-panel show #f))
+	       (for-each
+		(lambda (panel)
+		  (when panel
+			(send panel show #f)))
+		(list new-game-panel status-panel message-panel))
 	       (set! new-game-panel 
 		     (instantiate horizontal-panel% ()
 				  (parent this)
@@ -1051,9 +1067,10 @@
 				  (label "Clear counterexample")
 				  (parent new-game-panel)
 				  (enabled #f)
-				  (callback (lambda (b ev) 
-					      (send board 
-						    clear-counterexample!)))))
+				  (callback 
+				   (lambda (b ev) 
+				     (send board 
+					   clear-counterexample!)))))
 	       (set! status-panel 
 		     (instantiate horizontal-panel% ()
 				  (parent this)
@@ -1065,13 +1082,32 @@
 	       (send status-panel stretchable-height #f)
 	       (let ([make-status-vpane 
 		      (lambda ()
-			(let ([vp (make-object vertical-pane% status-panel)])
+			(let ([vp (instantiate vertical-pane% ()
+					       (parent status-panel))])
 			  (send vp set-alignment 'center 'center)
 			  vp))])
 		 (set! pirates-left-msg
-		       (make-object message% "Pirates left: 00000" (make-status-vpane)))
+		       (instantiate message% ()
+				    (label "Pirates left: 00000") 
+				    (parent (make-status-vpane))))
 		 (set! pirates-ratio-msg
-		       (make-object message% "Ratio: 100%" (make-status-vpane)))))]
+		       (instantiate message% () 
+				    (label "Ratio: 100%") 
+				    (parent (make-status-vpane)))))
+	       (set! message-panel 
+		     (instantiate horizontal-panel% ()
+				  (parent this)
+				  (horiz-margin 2)
+				  (vert-margin 2)
+				  (stretchable-height #f)))
+	       (send message-panel stretchable-height #f)
+	       (set! status-msg
+		     (instantiate message% ()
+				  (label *default-message*)
+				  (stretchable-width #t)
+				  (parent
+				   (instantiate vertical-pane% ()
+						(parent message-panel))))))]
 	    [update-status!
 	     (lambda ()
 	       (send pirates-left-msg set-label
@@ -1081,10 +1117,9 @@
 		       (if ratio
 			   (format "Ratio: ~a~a" ratio "%")
 			   ""))))]
-	    [game-over
-	     (lambda (b)
-	       (set! *game-over* b)
-	       (set-label (if b "WW [Game over]" *frame-label*)))]
+	    [ww-message
+	     (lambda (s)
+	       (send status-msg set-label s))]
 	    [update-board-size!
 	     (lambda (rs cs)
 	       (send canvas set-board-size! rs cs)
@@ -1161,7 +1196,6 @@
 		(let ([filename (get-game-filename)])
 		  (when filename
 			(send board load-from-file filename)
-			(game-over #f)
 			(reset-frame!)
 			(send frame set-filename! filename))))]
 	     [open-settings
@@ -1440,6 +1474,12 @@
 		  (,*tile-edge-length* 0)))]
 	      [in-counterexample? #f])
 	     (public*
+	      [ww-message
+	       (lambda (s)
+		 (send frame ww-message s))]
+	      [reset-ww-message!
+	       (lambda ()
+		 (ww-message *default-message*))]
 	      [set-in-counterexample!
 	       (lambda (v)
 		 (set! in-counterexample? v)
@@ -1594,7 +1634,6 @@
 	      [on-event        ; handle a click
 	       (lambda (e)
 		 (when (and (not in-counterexample?)
-			    (not *game-over*)
 			    (send e button-down?))
 		       (let-values
 			([(col row) (x-y->row-column
@@ -1605,11 +1644,14 @@
 				   (>= row 0)
 				   (< row board-height)
 				   (> (send board get-num-concealed) 0))
+			      (reset-ww-message!)
 			      (send frame expose-row-col
 				    row col
 				    (not (send e get-shift-down))
 				    (send e get-control-down))
-			      (send frame update-status!)))))]
+			      (send frame update-status!)
+			      (when (zero? (send board get-num-concealed))
+				    (ww-message "Game over!"))))))]
 	      [on-paint
 	       (lambda () 
 		 (send frame draw-board))])

@@ -974,7 +974,7 @@
        (mk 'define/public (syntax public))
        (mk 'define/override (syntax override)))))
 
-  (define-syntax (declare-local-member-name stx)
+  (define-syntax (define-local-member-name stx)
     (syntax-case stx ()
       [(_ id ...)
        (let ([ids (syntax->list (syntax (id ...)))])
@@ -1411,13 +1411,14 @@
 				   "duplicate name"
 				   stx
 				   dup)))
-	   (with-syntax ([name (datum->syntax-object #f name #f)])
+	   (with-syntax ([name (datum->syntax-object #f name #f)]
+			 [(var ...) (map localize vars)])
 	     (syntax/loc
 	      stx
 	      (compose-interface
 	       'name
 	       (list interface-expr ...)
-	       '(var ...)))))])))
+	       `(var ...)))))])))
 
   (define-struct interface (name supers public-ids class) insp)
 
@@ -2128,7 +2129,7 @@
 	   send send/apply send* class-field-accessor class-field-mutator with-method
 	   private* public* override*
 	   define/private define/public define/override
-	   declare-local-member-name
+	   define-local-member-name
 	   (rename generic/form generic) (rename make-generic/proc make-generic) send-generic
 	   is-a? subclass? implementation? interface-extension?
 	   object-interface

@@ -85,13 +85,17 @@ typedef struct Scheme_Converter {
   Scheme_Custodian_Reference *mref;
 } Scheme_Converter;
 
-/* globals */
+/* locals */
+
+/* These two locale variables are only valid when reset_locale()
+   is called after continuation marks (and hence parameterization)
+   may have changed. Similarly, setlocale() is only up-to-date
+   when reset_locale() has been called. */
 static int locale_on;
 static const mzchar *current_locale_name = (mzchar *)"xxxx\0\0\0\0";
 
 static const char * const STRING_IS_NOT_UTF_8 = "string is not a well-formed UTF-8 encoding: ";
 
-/* locals */
 static Scheme_Object *make_string (int argc, Scheme_Object *argv[]);
 static Scheme_Object *string (int argc, Scheme_Object *argv[]);
 static Scheme_Object *string_p (int argc, Scheme_Object *argv[]);
@@ -1973,6 +1977,8 @@ static Scheme_Object *current_locale(int argc, Scheme_Object *argv[])
 #ifndef DONT_USE_LOCALE
 
 static char *do_convert(iconv_t cd,
+			/* if either from_e or to_e can be NULL, then
+			   reset_locale() must have been called */
 			const char *from_e, const char *to_e, 
 			/* in can be NULL to output just a shift; in that case,
 			   id should be 0, too */
@@ -1993,7 +1999,7 @@ static char *do_convert(iconv_t cd,
 			   -1 for partial input,
 			   -2 for error,
 			   1 for more avail */
-			int *status)
+			int *status)     
 {
   int dip, dop, close_it = 0;
   size_t il, ol, r;
@@ -2122,7 +2128,8 @@ static char *do_convert(iconv_t cd,
 static char *string_to_from_locale(int to_bytes,
 				   char *in, int delta, int len, 
 				   long *olen, int perm)
-     /* Call this function only when iconv is available */
+     /* Call this function only when iconv is available, and only when
+	reset_locale() cah been called */
 {
   Scheme_Object *parts = scheme_null, *one;
   char *c;
@@ -2218,6 +2225,7 @@ static char *locale_recase(int to_up,
 			   /* iolen, in contrast, includes the terminator */
 			   char *out, int od, int iolen,
 			   long *oolen)
+     /* Assumes that reset_locale() has been called */
 {
 #ifdef NO_MBTOWC_FUNCTIONS
   return NULL;
@@ -2303,7 +2311,8 @@ static char *locale_recase(int to_up,
 }
 
 int mz_locale_strcoll(char *s1, int d1, int l1, char *s2, int d2, int l2, int cvt_case)
-     /* The s1 and s2 arguments are actually UCS-4. */
+     /* The s1 and s2 arguments are actually UCS-4.
+        Assumes that reset_locale() has been called. */
 {
   long clen1, clen2, used1, used2, origl1, origl2;
   char *c1, *c2, buf1[MZ_SC_BUF_SIZE], buf2[MZ_SC_BUF_SIZE];
@@ -2968,6 +2977,9 @@ static Scheme_Object *byte_string_open_converter(int argc, Scheme_Object **argv)
   } else {
     if (!iconv_open)
       return scheme_false;
+    
+    if (!*from_e || !*to_e)
+      reset_locale();
 
     if (!*from_e)
       from_e = nl_langinfo(CODESET);

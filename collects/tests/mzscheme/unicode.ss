@@ -764,7 +764,7 @@
 
 ;; 3-char seqs
 (test '("\u1F79") regexp-match #rx"\u1F79" "a\u1F79\u1F79b")
-(test '("\u1F79\u1F79") regexp-match #rx"\u1F79+" "a\u1F79\u001F79b")
+(test '("\u1F79\u1F79") regexp-match #rx"\u1F79+" "a\u1F79\u1F79b")
 
 (test '("\u1F79\uA9\u1F79r") regexp-match #rx"[c-\u1F79]+" "a\u1F79\uA9\u1F79r")
 (test '("d\u1F79\uA9\u1F79r") regexp-match #rx"[c-\u1F79]+" "d\u1F79\uA9\u1F79r")

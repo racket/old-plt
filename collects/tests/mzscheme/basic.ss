@@ -611,7 +611,7 @@
 (test #\A integer->char (char->integer #\A))
 (test #\a integer->char (char->integer #\a))
 (test #\371 integer->char (char->integer #\371))
-(test #\u12345 integer->char (char->integer #\u12345))
+(test #\U12345 integer->char (char->integer #\U12345))
 (arity-test integer->char 1 1)
 (arity-test char->integer 1 1)
 (err/rt-test (integer->char 5.0))
@@ -1034,7 +1034,6 @@
 (err/rt-test (bytes-fill! 'sym 1))
 (err/rt-test (bytes-fill! #"static" 1))
 (err/rt-test (bytes-fill! (bytes-copy #"oops") #\5))
-
 
 (define r (regexp "(-[0-9]*)+"))
 (test '("-12--345" "-345") regexp-match r "a-12--345b")

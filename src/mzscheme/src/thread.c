@@ -581,7 +581,7 @@ void scheme_init_thread(Scheme_Env *env)
 						      "thread-cell-ref", 
 						      1, 1), 
 			     env);
-  scheme_add_global_constant("set-thread-cell!", 
+  scheme_add_global_constant("thread-cell-set!", 
 			     scheme_make_prim_w_arity(thread_cell_set,
 						      "thread-cell-set!", 
 						      2, 2), 

@@ -1864,7 +1864,7 @@
 (test #t symbol? '1+ei)
 (test #t symbol? '|1/0|)
 
-(arity-test string->number 1 3)
+(arity-test string->number 1 2)
 (arity-test number->string 1 2)
 
 (err/rt-test (number->string 'a))

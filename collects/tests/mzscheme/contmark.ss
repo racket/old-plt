@@ -79,7 +79,7 @@
 				      (extract-current-continuation-marks 'x))
 				    'constant)))
 
-;; full continaution, same thread
+;; full continuation, same thread
 (test '(11 10) 'wcm-begin0 
       (let ([k (with-continuation-mark 'x 10
 		 (begin0
@@ -90,7 +90,7 @@
 	 (continuation-marks k)
 	 'x)))
 
-;; full continaution, another thread
+;; full continuation, another thread
 (test '(11 10) 'wcm-begin0 
       (let ([k (with-continuation-mark 'x 10
 		 (begin0
@@ -104,7 +104,7 @@
 	   v)
 	 'x)))
 
-;; escape continaution, same thread
+;; escape continuation, same thread
 (test '(11 10) 'wcm-begin0 
       (let ([m (with-continuation-mark 'x 10
 		 (begin0
@@ -117,22 +117,16 @@
 		  (+ 2 3)))])
 	(continuation-mark-set->list m 'x)))
 
-;; escape continaution, another thread
-(test '(11 10) 'wcm-begin0 
-      (let ([m (with-continuation-mark 'x 10
-		 (begin0
-		  (with-continuation-mark 'x 11
-		    (let/ec k 
-		      (begin0
-		       (with-continuation-mark 'x 12
-			 (let ([v #f])
-			   (thread-wait 
-			    (thread (lambda () 
-				      (set! v (continuation-marks k)))))
-			   v))
-		       (+ 17 7))))
-		  (+ 2 3)))])
-	(continuation-mark-set->list m 'x)))
+;; escape continuation, another thread => not allowed
+(test #f 'wcm-begin0 
+      (with-continuation-mark 'x 10
+	(let/ec k 
+	  (with-continuation-mark 'x 12
+	    (let ([v #f])
+	      (thread-wait 
+	       (thread (lambda () 
+			 (set! v (continuation-marks k)))))
+	      v)))))
 
 ;; escape continuation, dead
 (err/rt-test (continuation-marks (let/ec k k)) exn:application:mismatch?)

@@ -405,9 +405,12 @@ static Scheme_Object *propagate_wraps(Scheme_Object *o,
 
   for (i = len; i--; ) {
     a = SCHEME_VEC_ELS(wl)[i];
-    if (SCHEME_NUMBERP(a))
-      o = scheme_add_remove_mark(o, a);
-    else
+    if (SCHEME_NUMBERP(a)) {
+      if (!i || !SAME_OBJ(a, SCHEME_VEC_ELS(wl)[i - 1]))
+	o = scheme_add_remove_mark(o, a);
+      else
+	i--;
+    } else
       o = scheme_add_rename(o, a);
   }
 

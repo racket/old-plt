@@ -2540,7 +2540,7 @@ do_begin_expand(char *name, Scheme_Object *form_name,
 
   if (SCHEME_STX_NULLP(rest)) {
     if (!zero && scheme_is_toplevel(env))
-      return icons(form_name, scheme_null);
+      return form;
     scheme_wrong_syntax(name, NULL, form, "bad syntax (empty form)");
     return NULL;
   }
@@ -2843,6 +2843,7 @@ do_letmacro(char *where, Scheme_Object *formname,
     a = scheme_add_env_renames(a, env, origenv);
     
     mrec.dont_mark_local_use = 0;
+    mrec.resolve_module_ids = 1;
     mrec.value_name = NULL;
     a = scheme_compile_expr(a, env->genv->exp_env->init, &mrec, 0);
     a = scheme_resolve_expr(a, scheme_resolve_info_create());

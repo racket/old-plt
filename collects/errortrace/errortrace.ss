@@ -107,17 +107,19 @@
   (define (insert-at-tail se sexpr)
     (with-syntax ([expr sexpr]
 		  [e se])
-      (syntax-case sexpr (quote #%datum #%unbound
-				lambda case-lambda
-				let-values letrec-values
-				begin begin0 set! struct
-				with-continuation-mark
-				if #%app)
+      (syntax-case sexpr (quote 
+			  quote-syntax #%datum #%unbound
+			  lambda case-lambda
+			  let-values letrec-values
+			  begin begin0 set! struct
+			  with-continuation-mark
+			  if #%app)
 	;; negligible time to eval
 	[id
 	 (identifier? sexpr)
 	 (syntax (begin e expr))]
 	[(quote _) (syntax (begin e expr))]
+	[(quote-syntax _) (syntax (begin e expr))]
 	[(#%datum . d) (syntax (begin e expr))]
 	[(#%unbound . d) (syntax (begin e expr))]
 
@@ -160,6 +162,8 @@
 		"unrecognized expression form: ~e"
 		(syntax->datum sexpr))])))
   
+  ;; Result doesn't have a `lambda', so it works
+  ;; for case-lambda
   (define (annotate-lambda name expr args body env)
     (let ([env (let loop ([v (syntax args)])
 		 (cond
@@ -171,7 +175,7 @@
 		      body
 		      name expr env)]
 		    [args args])
-	(syntax (lambda args . body)))))
+	(syntax (args . body)))))
 
   (define (annotate-let rec? env varsl rhsl bodyl)
     (let ([varses (syntax->list varsl)]
@@ -205,23 +209,24 @@
 	  (syntax (let ([vars rhs] ...)
 		    body ...))))))
 
-  (define (annotate-seq env who bodyl)
+  (define (annotate-seq env expr who bodyl annotate)
     (with-syntax ([who who]
 		  [bodyl
 		   (map (lambda (b)
 			  (annotate b env))
 			(syntax->list bodyl))])
-      (syntax (who . bodyl))))
+      (syntax/loc expr (who . bodyl))))
   
   (define (make-annotate top? name)
     (lambda (expr env)
-      (syntax-case expr (quote #%datum #%unbound
-			       lambda case-lambda
-			       let-values letrec-values
-			       begin begin0 set! struct
-			       with-continuation-mark
-			       if #%app
-			       define-values define-syntax)
+      (syntax-case expr (quote 
+			 quote-syntax #%datum #%unbound
+			 lambda case-lambda
+			 let-values letrec-values
+			 begin begin0 set! struct
+			 with-continuation-mark
+			 if #%app
+			 define-values define-syntax)
 	[_
 	 (identifier? expr)
 	 (if (stx-bound-memq expr env)
@@ -248,14 +253,13 @@
 					     [_else #f])
 					   (syntax rhs)
 					   env))])
-	   (syntax (define-values names marked)))]
+	   (syntax/loc expr (define-values names marked)))]
 	[(begin . exprs)
 	 top?
-	 (with-syntax ([marked (with-mark expr
-					  (annotate
-					   (syntax exprs)
-					   env))])
-	   (syntax (begin . marked)))]
+	 (annotate-seq
+	  env expr (quote-syntax begin)
+	  (syntax exprs)
+	  annotate-top)]
 	[(define-syntax name rhs)
 	 top?
 	 (with-syntax ([marked (with-mark expr
@@ -263,14 +267,19 @@
 					   (syntax name)
 					   (syntax rhs)
 					   env))])
-	   (syntax (define-syntax name marked)))]
+	   (syntax/loc expr (define-syntax name marked)))]
 	
 	
 	[(quote _)
 	 expr]
+	[(quote-syntax _)
+	 expr]
 
 	[(lambda args . body)
-	 (annotate-lambda name expr (syntax args) (syntax body) env)]
+	 (with-syntax ([cl (annotate-lambda name expr 
+					    (syntax args) (syntax body) 
+					    env)])
+	   (syntax/loc expr (lambda . cl)))]
 	[(case-lambda [args . body] ...)
 	 (with-syntax ([clauses
 			(map
@@ -278,7 +287,7 @@
 			   (annotate-lambda name expr args body env))
 			 (syntax->list (syntax (args ...))) 
 			 (syntax->list (syntax (body ...))))])
-	   (syntax (case-lambda . clauses)))]
+	   (syntax/loc expr (case-lambda . clauses)))]
 	
 	[(let-values ([vars rhs] ...) . body)
 	 (annotate-let #f env
@@ -296,29 +305,34 @@
 			     (syntax var)
 			     (syntax rhs)
 			     env)])
-	   (syntax (set! var rhs)))]
+	   (syntax/loc expr (set! var rhs)))]
 
 	[(begin . body)
-	 (annotate-seq env (syntax begin) (syntax body))]
+	 (annotate-seq env expr (syntax begin) (syntax body) annotate)]
 	[(begin0 . body)
-	 (annotate-seq env (syntax begin0) (syntax body))]
+	 (annotate-seq env expr (syntax begin0) (syntax body) annotate)]
 	[(if . body)
-	 (annotate-seq env (syntax if) (syntax body))]
-	[(#%app . body)
-	 (annotate-seq env (syntax #%app) (syntax body))]
+	 (annotate-seq env expr (syntax if) (syntax body) annotate)]
 	[(with-continuation-mark . body)
-	 (annotate-seq env (syntax with-continuation-mark) (syntax body))]
+	 (annotate-seq env expr (syntax with-continuation-mark) (syntax body) annotate)]
 
-	[(struct (name expr) fields)
-	 (with-syntax ([expr (annotate (syntax expr) env)])
-	   (syntax (struct (name expr) fields)))]
+	[(#%app . body)
+	 (with-mark expr
+		    (annotate-seq env expr 
+				  (syntax #%app) (syntax body) 
+				  annotate))]
+
+	[(struct (name sup) fields)
+	 (with-syntax ([sup (annotate (syntax sup) env)])
+	   (syntax/loc expr (struct (name sup) fields)))]
 	[(struct . _)
 	 ;; no error possile
 	 expr]
 
 	[_else
 	 (error 'errortrace
-		"unrecognized expression form: ~e"
+		"unrecognized expression form~a: ~e"
+		(if top? " at top-level" "")
 		(syntax->datum expr))])))
   
   (define annotate (make-annotate #f #f))
@@ -355,7 +369,7 @@
                     (cleanup (syntax->datum m))
                     (let ([file (syntax-source m)]
 			  [line (syntax-line m)]
-			  [col (syntax-line m)])
+			  [col (syntax-column m)])
 		      (if (and file line col)
 			  (format "~a[~a.~a]"
 				  file line col)

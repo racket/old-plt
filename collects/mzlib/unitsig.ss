@@ -4,7 +4,7 @@
   (import "unit.ss")
   (import "sigmatch.ss")
 
-  (import-for-syntax "sigutils.ss")
+  (import-for-syntax "sigutil.ss")
   (import-for-syntax "sigmatch.ss")
 
   (define-struct/export unit/sig (unit imports exports))

@@ -1,5 +1,5 @@
 
-(module sigutils mzscheme
+(module sigutil mzscheme
   ;; Used by signedunit.ss 
 
   (import "sigmatch.ss")

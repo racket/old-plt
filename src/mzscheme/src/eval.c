@@ -1947,6 +1947,11 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
 
  try_again:
 
+  if (!SCHEME_STX_PAIRP(forms)) {
+    scheme_wrong_syntax("begin", NULL, forms, "bad syntax (" IMPROPER_LIST_FORM ")");
+    return NULL;
+  }
+
   first = SCHEME_STX_CAR(forms);
 
   if (SCHEME_STX_PAIRP(first)) {

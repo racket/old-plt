@@ -469,7 +469,7 @@
     (define make-console-frame%
       (lambda (super%)
 	(class super% ([close-item? #f][mssg welcome-message])
-	  (inherit edit canvas show make-menu on-close)
+	  (inherit active-edit edit canvas show make-menu on-close)
 	  (private 
 	    edit-offset 
 	    other-offset)
@@ -487,7 +487,7 @@
 	     (if close-item?
 		 (lambda ()
 		   (when (on-close)
-		     (send edit release-output)
+		     (send (active-edit) release-output)
 		     (show #f)))
 		 #f)]
 	    [file-menu:between-open-and-save
@@ -499,12 +499,28 @@
 			     (load-file file)))))
 	       (send file-menu append-separator))]
 	    [file-menu:save (lambda ()
-			      (send edit save-file
-				    (send edit get-filename)))]
-	    [file-menu:save-as (lambda () (send edit save-file ""))]
-	    [file-menu:print (lambda () (send edit print '()))]
+			      (send (active-edit) save-file
+				    (send (active-edit) get-filename)))]
+	    [file-menu:save-as (lambda () (send (active-edit) save-file ""))]
+	    [file-menu:print (lambda () (send (active-edit) print '()))])
+
+	  (private
+	    [edit-menu:do  (lambda (const) 
+				    (lambda () 
+				      (send (active-edit) do-edit const)))])
+	  (public
+	    [edit-menu:undo (edit-menu:do wx:const-edit-undo)]
+	    [edit-menu:redo (edit-menu:do wx:const-edit-redo)]
+	    [edit-menu:cut (edit-menu:do wx:const-edit-cut)]
+	    [edit-menu:copy (edit-menu:do wx:const-edit-copy)]
+	    [edit-menu:paste (edit-menu:do wx:const-edit-paste)]
+	    [edit-menu:clear (edit-menu:do wx:const-edit-clear)]
+	    [edit-menu:select-all
+	     (lambda ()
+	       (send (active-edit) set-position
+		     0 (send (active-edit) last-position)))]
 	    [edit-menu:between-select-all-and-preferences
-	     (let ([edit-menu:do  (lambda (const) (lambda () (send edit do-edit const)))])
+	     (let ()
 	       (lambda (edit-menu)
 		 (send edit-menu append-separator)
 		 (send edit-menu append-item "Insert Text Box"

@@ -1412,14 +1412,6 @@ void wxWnd::OnButton(int x, int y, UINT flags, int evttype)
 {
   wxMouseEvent *event = new wxMouseEvent(evttype);
 
-  /*
-  float px = (float)x;
-  float py = (float)y;
-
-  DeviceToLogical(&px, &py);
-
-  CalcUnscrolledPosition((int)px, (int)py, &event->x, &event->y);
-  */
   event->x = x;
   event->y = y;
 
@@ -1551,14 +1543,7 @@ void wxWnd::OnMouseMove(int x, int y, UINT flags)
   }
 
   wxMouseEvent *event = new wxMouseEvent(wxEVENT_TYPE_MOTION);
-  /*
-  float px = (float)x;
-  float py = (float)y;
 
-  DeviceToLogical(&px, &py);
-
-  CalcUnscrolledPosition((int)px, (int)py, &event->x, &event->y);
-  */
   event->x = x;
   event->y = y;
 
@@ -1597,16 +1582,7 @@ void wxWnd::OnMouseEnter(int x, int y, UINT flags)
 static void wxDoOnMouseEnter(wxWindow *wx_window, int x, int y, UINT flags)
 {
   wxMouseEvent *event = new wxMouseEvent(wxEVENT_TYPE_ENTER_WINDOW);
-  /*
-  float px = (float)x;
-  float py = (float)y;
 
-  if (wx_window->handle) {
-    wxWnd *wnd = (wxWnd *)wx_window->handle;
-    wnd->DeviceToLogical(&px, &py);
-    wnd->CalcUnscrolledPosition((int)px, (int)py, &event->x, &event->y);
-  }
-  */
   event->x = x;
   event->y = y;
 
@@ -1631,16 +1607,7 @@ void wxWnd::OnMouseLeave(int x, int y, UINT flags)
 static void wxDoOnMouseLeave(wxWindow *wx_window, int x, int y, UINT flags)
 {
   wxMouseEvent *event = new wxMouseEvent(wxEVENT_TYPE_LEAVE_WINDOW);
-  /*
-  float px = (float)x;
-  float py = (float)y;
 
-  if (wx_window->handle) {
-    wxWnd *wnd = (wxWnd *)wx_window->handle;
-    wnd->DeviceToLogical(&px, &py);
-    wnd->CalcUnscrolledPosition((int)px, (int)py, &event->x, &event->y);
-  }
-  */
   event->x = x;
   event->y = y;
   
@@ -1739,13 +1706,7 @@ void wxWnd::OnChar(WORD wParam, LPARAM lParam, Bool isASCII)
     GetWindowRect(handle,&rect);
     pt.x -= rect.left;
     pt.y -= rect.top;
-    /*
-    float fx,fy;
-    fx = (float)pt.x;
-    fy = (float)pt.y;
-    DeviceToLogical(&fx,&fy);
-    CalcUnscrolledPosition((int)fx,(int)fy,&event->x,&event->y);
-    */
+
     event->x = pt.x;
     event->y = pt.y;
 

@@ -77,10 +77,10 @@ the Unix instructions below, but note the following:
     described below).
 
     Also, make sure that you have libraries and header files for Xft
-    and Cairo if you would like support for font smoothing (Xft) and
-    graphics smoothing (Cairo). These libraries are not distributed
-    with PLT Scheme. The configure process checks automatically
-    whether these libraries are available.
+    and Cairo (v2.0 and up) if you would like support for font
+    smoothing (Xft) and graphics smoothing (Cairo). These libraries
+    are not distributed with PLT Scheme. The configure process checks
+    automatically whether these libraries are available.
 
  1. Run the script `configure' (which is in the same directory as this
     README), usually with a --prefix=TARGETDIR command-line argument

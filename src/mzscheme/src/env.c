@@ -225,7 +225,7 @@ Scheme_Env *scheme_basic_env ()
 #endif
 
   env = scheme_top_level_env();
-  
+
   scheme_init_error_escape_proc(process);
 
   scheme_starting_up = 0;

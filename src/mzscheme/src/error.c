@@ -160,6 +160,7 @@ void scheme_init_error(Scheme_Env *env)
   }
 }
 
+
 #define RAISE_RETURNED "exception handler did not escape"
 
 static void

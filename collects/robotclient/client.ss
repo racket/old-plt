@@ -93,11 +93,19 @@
         ((null? packages) (fix-home!)))
 
       (cond
-       ((is-robot-within? (get-player-x) (get-player-y) 3)
-	(cond
-	 ((or (null? (path)) (null? (cdr (path))))
-	  (compute-baseline-move packages robots)))
-	(path-loc (cadr (path)))
+       ((is-robot-within? (get-player-x) (get-player-y) 3 robots)
+        (with-handlers (((lambda (x)
+                           (eq? 'nowhere-to-go x))
+                         (lambda (x)
+                           (path-loc (cons (get-player-x) (get-player-y))))))
+          (cond
+            ((or (null? (path)) (null? (cdr (path))))
+             (compute-baseline-move packages robots)))
+          (cond
+            ((or (null? (path)) (null? (cdr (path))))
+             (path-loc (cons (get-player-x) (get-player-y))))
+            (else
+             (path-loc (cadr (path))))))
         (compute-move-ff packages robots out))
        (else
 	(with-handlers (((lambda (x)

@@ -2533,7 +2533,8 @@
 ;; #%misc : file utilities, etc. - remaining functions
 
 (module #%misc #%kernel
-  (require #%more-scheme #%small-scheme)
+  (require #%more-scheme #%small-scheme #%memtrace)
+  (require-for-syntax #%kernel #%stx #%stxcase-scheme)
   
   (define rationalize
     (letrec ([check (lambda (x) 
@@ -2698,6 +2699,26 @@
 	    (let ([p (path->complete-path program)])
 	      (and (file-exists? p) (found-exec p)))))))
 
+  ;; ------------------------------ Memtrace ------------------------------
+  
+  (define-syntax memory-trace-lambda
+     (lambda (x)
+       (syntax-case x ()
+ 	[(_ args body ...)
+ 	 (with-syntax ([contmark (datum->syntax-object x (gensym))]
+ 		       [func (datum->syntax-object x (gensym))]
+ 		       [newmark (datum->syntax-object x (gensym))])
+ 	   (syntax
+	     (let ([contmark #f])
+ 	       (let ([func (lambda args
+ 			     (let ([newmark (unioned-memtrace-tracking-value
+ 					      contmark)])
+ 			       (with-continuation-mark
+ 				 memory-trace-continuation-mark newmark
+ 				 body ...)))])
+ 		 (set! contmark (new-memtrace-tracking-function func))
+ 		 func))))])))
+  
   ;; ------------------------------ Collections ------------------------------
 
   (define (-check-relpath who s)
@@ -3087,7 +3108,7 @@
 
   (provide rationalize 
 	   read-eval-print-loop
-	   load/cd
+	   load/cd memory-trace-lambda
 	   load-relative load-relative-extension
 	   path-list-string->path-list find-executable-path
 	   collection-path load/use-compiled current-load/use-compiled

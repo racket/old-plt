@@ -214,6 +214,8 @@ static void prepare_this_thread_for_GC(Scheme_Thread *t);
 
 static Scheme_Object *custodian_require_mem(int argc, Scheme_Object *args[]);
 static Scheme_Object *custodian_limit_mem(int argc, Scheme_Object *args[]);
+static Scheme_Object *new_tracking_fun(int argc, Scheme_Object *args[]);
+static Scheme_Object *union_tracking_val(int argc, Scheme_Object *args[]);
 
 static Scheme_Object *collect_garbage(int argc, Scheme_Object *args[]);
 static Scheme_Object *current_memory_use(int argc, Scheme_Object *args[]);
@@ -282,6 +284,7 @@ static int dead_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo);
 static Scheme_Object *current_stats(int argc, Scheme_Object *args[]);
 
 static Scheme_Object **config_map;
+Scheme_Object *mtrace_cmark_key = NULL;
 
 typedef struct {
   MZTAG_IF_REQUIRED
@@ -601,6 +604,27 @@ void scheme_init_thread(Scheme_Env *env)
   initial_symbol = scheme_intern_symbol("initial");
 }
 
+void scheme_init_memtrace(Scheme_Env *env)
+{
+  Scheme_Object *v;
+  Scheme_Env *newenv;
+
+
+  v = scheme_intern_symbol("#%memtrace");
+  newenv = scheme_primitive_module(v, env);
+    
+  mtrace_cmark_key = scheme_make_symbol("memory-trace-continuation-mark");
+  scheme_add_global("memory-trace-continuation-mark", mtrace_cmark_key, 
+		    newenv);
+  v = scheme_make_prim_w_arity(new_tracking_fun, 
+			       "new-memtrace-tracking-function", 1, 1);
+  scheme_add_global("new-memtrace-tracking-function", v, newenv);
+  v = scheme_make_prim_w_arity(union_tracking_val, 
+			       "unioned-memtrace-tracking-value", 1, 1);
+  scheme_add_global("unioned-memtrace-tracking-value", v, newenv);
+  scheme_finish_primitive_module(newenv);
+}
+
 static Scheme_Object *collect_garbage(int c, Scheme_Object *p[])
 {
   scheme_collect_garbage();
@@ -610,17 +634,23 @@ static Scheme_Object *collect_garbage(int c, Scheme_Object *p[])
 
 static Scheme_Object *current_memory_use(int argc, Scheme_Object *args[])
 {
-  Scheme_Object *cust = NULL;
+  Scheme_Object *arg = NULL;
   long retval = 0;
 
   if (argc) {
-    if (NOT_SAME_TYPE(SCHEME_TYPE(args[0]), scheme_custodian_type))
-      scheme_wrong_type("current-memory-use", "custodian", 0, argc, args);
-    cust = args[0];
+    if(SAME_TYPE(SCHEME_TYPE(args[0]), scheme_custodian_type)) {
+      arg = args[0];
+    } else if(SCHEME_PROCP(args[0])) {
+      arg = args[0];
+    } else {
+      scheme_wrong_type("current-memory-use", 
+			"custodian or memory-trace-function", 
+			0, argc, args);
+    }
   }
 
 #ifdef MZ_PRECISE_GC
-  retval = GC_get_memory_use(cust);
+  retval = GC_get_memory_use(arg);
 #else
   retval = GC_get_memory_use();
 #endif
@@ -691,6 +721,28 @@ static Scheme_Object *custodian_limit_mem(int argc, Scheme_Object *args[])
   scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
 		   "custodian-limit-memory: not supported");
   return NULL; /* doesn't get here */
+}
+
+static Scheme_Object *new_tracking_fun(int argc, Scheme_Object *args[])
+{
+  int retval = 0;
+
+#ifdef MZ_PRECISE_GC
+  retval = mtrace_new_id(args[0]);
+#endif
+
+  return scheme_make_integer(retval);
+}
+
+static Scheme_Object *union_tracking_val(int argc, Scheme_Object *args[])
+{
+  int retval = 0;
+
+#ifdef MZ_PRECISE_GC
+  retval = mtrace_union_current_with(SCHEME_INT_VAL(args[0]));
+#endif
+
+  return scheme_make_integer(retval);
 }
 
 static void ensure_custodian_space(Scheme_Custodian *m, int k)

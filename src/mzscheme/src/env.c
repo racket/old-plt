@@ -298,6 +298,7 @@ Scheme_Env *scheme_basic_env()
 
   scheme_set_param(scheme_current_thread->config, MZCONFIG_ENV, 
 		   (Scheme_Object *)env); 
+  scheme_init_memtrace(env);
 
   scheme_add_embedded_builtins(env);
 
@@ -308,7 +309,6 @@ Scheme_Env *scheme_basic_env()
   scheme_starting_up = 0;
 
   scheme_init_getenv();
-
 #ifdef TIME_STARTUP_PROCESS
   printf("done @ %ld\n#endif\n", scheme_get_process_milliseconds());
 #endif

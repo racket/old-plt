@@ -19,6 +19,7 @@
 #endif
 
 #include "msgprint.c"
+#define inline /* */
 
 /*****************************************************************************/
 /* Collector selection. Change the definitions of these to set or unset the  */
@@ -71,6 +72,7 @@
 #define USEFUL_ADDR_BITS ((8 << LOG_WORD_SIZE) - LOG_PAGE_SIZE)
 #define ADDR_BITS(x) (NUM(x) >> LOG_PAGE_SIZE)
 #define WORD_SIZE (1 << LOG_WORD_SIZE)
+#define WORD_BITS (8 * WORD_SIZE)
 #define PAGE_SIZE (1 << LOG_PAGE_SIZE)
 #define INCGEN(g) ((g == 2) ? 2 : (g + 1))
 
@@ -151,10 +153,152 @@ inline static void free_used_pages(size_t len)
 #endif
 
 /*****************************************************************************/
+/* Memory Tracing, Part 1                                                    */
+/*****************************************************************************/
+#define MTRACE_FIELD_SIZE (WORD_BITS - (1 + 3 + 1 + 1 + 1 + LOG_PAGE_SIZE))
+
+#ifdef NEWGC_MEMORY_TRACE
+
+#define MTRACE_DATA_SIZE (1 << MTRACE_FIELD_SIZE)
+#define MTRACE_ID_SIZE 64
+
+struct mtrace_keyval {
+  Scheme_Object *func;
+  u_int64_t id;
+  unsigned long mem_usage;
+};
+
+static struct mtrace_keyval *mtrace_table[MTRACE_DATA_SIZE];
+static int mtrace_id_usage[MTRACE_ID_SIZE];
+extern Scheme_Object *mtrace_cmark_key;
+static int track_mtrace_info = 0;
+
+int mtrace_new_id(void *f)
+{
+  u_int64_t newid = 0;
+  int i;
+
+  for(i = 0; i < MTRACE_ID_SIZE; i++)
+    if(!mtrace_id_usage[i]) {
+      mtrace_id_usage[i] = 1;
+      track_mtrace_info = 1;
+      newid = (1 << i);
+      break;
+    }
+
+  if(i != MTRACE_ID_SIZE) {
+    for(i = 1; i < MTRACE_DATA_SIZE; i++)
+      if(!mtrace_table[i]) {
+	struct mtrace_keyval *work = malloc(sizeof(struct mtrace_keyval));
+	work->func = f;
+	work->id = newid;
+	work->mem_usage = 0;
+	mtrace_table[i] = work;
+	return i;
+      }
+  }
+  fprintf(stderr, 
+	  "No space left for new memory-trace information. Ignoring.\n");
+  return -1;
+}
+
+inline static int current_mtrace_mark(size_t size)
+{
+  if(track_mtrace_info) {
+    /* this stuff is pulled from fun.c, around line 2310 (continuation_mark) */
+    Scheme_Thread *p = scheme_current_thread;
+    Scheme_Cont *cont = NULL;
+    long findpos = (long)MZ_CONT_MARK_STACK;
+
+    while(findpos--) {
+      Scheme_Cont_Mark *find;
+      long pos;
+
+      if(cont) {
+        find = cont->cont_mark_stack_copied;
+        pos = findpos;
+      } else {
+        Scheme_Cont_Mark *seg;
+        seg = 
+          p->cont_mark_stack_segments[findpos >> SCHEME_LOG_MARK_SEGMENT_SIZE];
+        pos = findpos & SCHEME_MARK_SEGMENT_MASK;
+        find = seg;
+      }
+
+      if(find[pos].cached_chain) break; else {
+        if(find[pos].key == mtrace_cmark_key) {
+	  int val = SCHEME_INT_VAL(find[pos].val);
+/* 	  printf("val = %i\n", val); */
+	  mtrace_table[val]->mem_usage += size;
+	  return val;
+	}
+      }
+    }
+    return 0;
+  } else return 0;
+}
+
+int mtrace_union_current_with(int newval)
+{
+  u_int64_t newid;
+  int i, curval;
+
+  curval = current_mtrace_mark(0);
+  if(curval == 0) {
+/*     printf("union returning3 %i\n", newval); */
+    return newval;
+  }
+
+  newid = mtrace_table[newval]->id | mtrace_table[curval]->id;
+  for(i = 1; i < MTRACE_DATA_SIZE; i++)
+    if(mtrace_table[i] && (mtrace_table[i]->id == newid)) {
+/*       printf("union returning %i\n", i); */
+      return i;
+    }
+  for(i = 1; i < MTRACE_DATA_SIZE; i++)
+    if(!mtrace_table[i]) {
+      struct mtrace_keyval *work = malloc(sizeof(struct mtrace_keyval));
+      work->func = NULL;
+      work->id = newid;
+      work->mem_usage = 0;
+      mtrace_table[i] = work;
+/*       printf("union returning2 %i\n", i); */
+      return i;
+    }
+  fprintf(stderr, 
+	  "No space left for union information. Using second function.\n");
+  return curval;
+  
+}
+#endif
+
+
+#ifndef NEWGC_MEMORY_TRACE
+int mtrace_new_id(void *f)
+{
+  return 0;
+}
+
+int mtrace_union_current_with(int newval)
+{
+  return 0;
+}
+#endif
+
+#ifdef NEWGC_MEMORY_TRACE
+# define SET_MTRACE_INFO(info, size) info->tracefun = current_mtrace_mark(size)
+# define DO_MTRACE_MARKS() gcMARK(mtrace_cmark_key)
+#else
+# define SET_MTRACE_INFO(info, size) /* */
+# define DO_MTRACE_MARKS() /* */
+#endif
+
+/*****************************************************************************/
 /* Allocation                                                                */
 /*****************************************************************************/
 
 struct objhead {
+  unsigned int tracefun : MTRACE_FIELD_SIZE;
   unsigned int clean_heap : 1;
   unsigned int type : 3;
   unsigned int debug_mark : 1;
@@ -244,6 +388,7 @@ static void *allocate_big(size_t sizeb, int type)
   bpage->next = pages[0][PAGE_BIG];
   if(bpage->next) bpage->next->prev = bpage;
   pages[0][PAGE_BIG] = bpage;
+  SET_MTRACE_INFO(((struct objhead *)(NUM(bpage) + HEADER_SIZEB)), sizeb);
 
   pagemap_add(bpage);
   return (void*)(NUM(bpage) + HEADER_SIZEB + WORD_SIZE);
@@ -268,6 +413,7 @@ inline static void *allocate(size_t sizeb, int type)
       info = (struct objhead *)retval;
       info->type = type;
       info->size = sizew;
+      SET_MTRACE_INFO(info, gcWORDS_TO_BYTES(sizew));
       return PTR(NUM(retval) + WORD_SIZE);
     } else return allocate_big(sizeb, type);
   } else return zero_sized;
@@ -296,6 +442,7 @@ inline static void reset_nursery(void)
   pagemap_add((struct mpage *)gen0_alloc_region);
   ((struct mpage *)gen0_alloc_region)->big_page = 0;
   gen0_alloc_current = gen0_alloc_region + HEADER_SIZEW;
+  flush_freed_pages();
 }
 
 inline static int marked(void *p)
@@ -305,6 +452,118 @@ inline static int marked(void *p)
   if(page->generation > gc_top) return 1;
   return ((struct objhead *)(NUM(p) - WORD_SIZE))->mark;
 }
+
+
+/*****************************************************************************/
+/* Internal Debugging Routines                                               */
+/*****************************************************************************/
+
+#ifdef NEWGC_MEMORY_TRACE
+
+inline static void potential_id_free(u_int64_t id)
+{
+  int i = 0, count = 0;
+
+  while(i < MTRACE_ID_SIZE) {
+    u_int64_t work = (id >> i);
+
+    if(work & 0x1) count++;
+    i++;
+  }
+
+  if(count == 1) {
+    for(i = 0; id != 1; i++, id = id >> 1) {}
+    mtrace_id_usage[i] = 0;
+  }
+}
+
+inline static void repair_mtrace_table()
+{
+  gcFIXUP(mtrace_cmark_key);
+  if(track_mtrace_info) {
+    int i;
+
+    for(i = 0; i < MTRACE_DATA_SIZE; i++)
+      if(mtrace_table[i]) {
+	
+	if(mtrace_table[i]->func && marked(mtrace_table[i]->func)) {
+	  gcFIXUP(mtrace_table[i]->func);
+	} else if(mtrace_table[i]->func) {
+	  mtrace_table[i]->func = NULL;
+	}
+/* 	printf("mtrace_table[i]->usage = %li\n", mtrace_table[i]->mem_usage);*/
+	if(!mtrace_table[i]->func && !mtrace_table[i]->mem_usage) {
+	  potential_id_free(mtrace_table[i]->id);
+	  free(mtrace_table[i]);
+	  mtrace_table[i] = NULL;
+	}
+      }
+  }
+}
+
+inline static long mtrace_get_usage(void *f)
+{
+  if(track_mtrace_info) {
+    u_int64_t id = 0;
+    int i;
+
+    for(i = 0; i < MTRACE_DATA_SIZE; i++)
+      if(mtrace_table[i] && (mtrace_table[i]->func == f)) {
+/* 	printf("Found function (%i)\n", i); */
+	id = mtrace_table[i]->id;
+	break;
+      }
+    
+    if(i != MTRACE_DATA_SIZE) {
+      long retval = 0;
+      
+      for(i = 0; i < MTRACE_DATA_SIZE; i++)
+	if(mtrace_table[i] && (mtrace_table[i]->id & id)) {
+/* 	  printf("Adding %li\n", mtrace_table[i]->mem_usage); */
+	  retval += mtrace_table[i]->mem_usage;
+	}
+/*       printf("Returning retval\n"); */
+      return retval;
+    }
+  }
+  
+  return 0;
+}
+
+inline static void post_process_dead_page(struct mpage *page)
+{
+  if(track_mtrace_info) {
+    if(page->big_page) {
+      struct objhead *info = (struct objhead *)(NUM(page) + HEADER_SIZEB);
+
+      if(info->tracefun)
+	mtrace_table[info->tracefun]->mem_usage -= page->size;
+    } else {
+      void **start = PPTR(NUM(page) + HEADER_SIZEB);
+      void **end = PPTR(NUM(page) + page->size);
+
+      while(start < end) {
+	struct objhead *info = (struct objhead *)start;
+
+	if(info->tracefun && !info->mark) 
+	  mtrace_table[info->tracefun]->mem_usage -= 
+	    gcWORDS_TO_BYTES(info->size);
+	start += info->size;
+      }
+    }
+  } 
+}
+#endif
+
+#ifdef NEWGC_MEMORY_TRACE
+# define GET_MTRACE_USAGE(f) mtrace_get_usage(f)
+# define REPAIR_MTRACE_TABLE() repair_mtrace_table()
+# define POST_PROCESS_DEAD_PAGE(page) post_process_dead_page(page);
+#else
+# define GET_MTRACE_USAGE(f) 0
+# define REPAIR_MTRACE_TABLE() /* */
+# define POST_PROCESS_DEAD_PAGE(page) /* */
+#endif
 
 /*****************************************************************************/
 /* Internal Debugging Routines                                               */
@@ -988,7 +1247,7 @@ void GC_register_thread(void *t, void *c)
 /*****************************************************************************/
 /* Internal Stack Routines                                                   */
 /*****************************************************************************/
-#if defined(NEWGC_BTC_ACCOUNT) || defined(NEWGC_MEMORY_TRACE)
+#if defined(NEWGC_BTC_ACCOUNT) || defined(NEWGC_HEAP_DEBUGGING)
 #define STACKLET_SIZE (32 * 1024)
 #define NULL 0
 
@@ -1360,29 +1619,6 @@ inline static void run_account_hooks()
 
 #endif
 
-long GC_get_memory_use(void *custodian) 
-{
-  unsigned long retval = 0;
-
-  if(custodian ) {
-#ifdef NEWGC_BTC_ACCOUNT
-    retval = custodian_get_memory(custodian);
-#endif
-  } else {
-    struct mpage *page;
-    unsigned short i, j;
-
-    retval += ((unsigned long)gen0_alloc_current) - 
-              ((unsigned long)gen0_alloc_region);
-    for(i = 0; i < GENERATIONS; i++)
-      for(j = 0; j < PAGE_TYPES; j++)
-	for(page = pages[i][j]; page; page = page->next)
-	  retval += page->size;
-  }
-
-  return retval;
-}
-
 #ifdef NEWGC_BTC_ACCOUNT
 # define REPAIR_OWNER_TABLE() repair_owner_table()
 # define DO_BTC_ACCOUNTING() btc_account()
@@ -1391,6 +1627,7 @@ long GC_get_memory_use(void *custodian)
 # define ADD_ACCOUNT_HOOK(t,c1,c2,b) { add_account_hook(t, c1, c2, b); return 1; }
 # define REPAIR_ACCOUNT_HOOKS() repair_account_hooks()
 # define RUN_ACCOUNT_HOOKS() run_account_hooks()
+# define GET_CUSTODIAN_USAGE(cust) custodian_get_memory(cust)
 #else
 # define REPAIR_OWNER_TABLE() /* */
 # define DO_BTC_ACCOUNTING() /* */
@@ -1399,6 +1636,7 @@ long GC_get_memory_use(void *custodian)
 # define ADD_ACCOUNT_HOOK(a,b,c,d) return 0
 # define REPAIR_ACCOUNT_HOOKS() /* */
 # define RUN_ACCOUNT_HOOKS() /* */
+# define GET_CUSTODIAN_USAGE(cust) 0
 #endif */
 
 int GC_set_account_hook(int type, void *c1, unsigned long b, void *c2)
@@ -1499,6 +1737,32 @@ void GC_register_traversers(short tag, Size_Proc size, Mark_Proc mark,
 {
   mark_table[tag] = atomic ? (Mark_Proc)PAGE_ATOMIC : mark;
   fixup_table[tag] = fixup;
+}
+
+long GC_get_memory_use(void *o) 
+{
+  Scheme_Object *arg = (Scheme_Object*)o;
+  unsigned long retval = 0;
+
+  if(arg) {
+    if(SCHEME_PROCP(arg)) {
+      retval = GET_MTRACE_USAGE(arg);
+    } else if(SAME_TYPE(SCHEME_TYPE(arg), scheme_custodian_type)) {
+      retval = GET_CUSTODIAN_USAGE(arg);
+    }
+  } else {
+    struct mpage *page;
+    unsigned short i, j;
+
+    retval += ((unsigned long)gen0_alloc_current) - 
+              ((unsigned long)gen0_alloc_region);
+    for(i = 0; i < GENERATIONS; i++)
+      for(j = 0; j < PAGE_TYPES; j++)
+	for(page = pages[i][j]; page; page = page->next)
+	  retval += page->size;
+  }
+
+  return retval;
 }
 
 /*****************************************************************************/
@@ -1892,6 +2156,7 @@ static void repair_heap(void)
 	struct mpage *temp = work;
 	work = work->next;
 	pagemap_remove(temp);
+	POST_PROCESS_DEAD_PAGE(temp);
 	free_pages(temp, temp->big_page ? temp->size : PAGE_SIZE);
       }
       from_pages[i][j] = NULL;
@@ -1933,6 +2198,7 @@ static void garbage_collect(int force_full)
   mark_weak_finalizers();
   mark_roots();
   mark_immobiles();
+  DO_MTRACE_MARKS();
   GC_mark_variable_stack(GC_variable_stack, 0, gc_stack_base);
 
   propagate_marks();
@@ -1953,6 +2219,7 @@ static void garbage_collect(int force_full)
   repair_immobiles();
   GC_fixup_variable_stack(GC_variable_stack, 0, gc_stack_base);
   REPAIR_OWNER_TABLE(); REPAIR_THREAD_LIST(); REPAIR_ACCOUNT_HOOKS();
+  REPAIR_MTRACE_TABLE();
   reset_weak_boxes(); reset_weak_arrays();
   repair_heap();
 

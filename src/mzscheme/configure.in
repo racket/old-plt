@@ -34,7 +34,6 @@ AC_ARG_ENABLE(dynlib, [  --enable-dynlib         same as --enable-shared])
 AC_ARG_ENABLE(sgc, [  --enable-sgc            use Senora GC instead of the Boehm GC])
 AC_ARG_ENABLE(sgcdebug, [  --enable-sgcdebug       use Senora GC for debugging])
 AC_ARG_ENABLE(account, [  --enable-account        3m: use memory-accounting GC])
-AC_ARG_ENABLE(paccount, [  --enable-paccount       3m: use precise memory-accounting GC])
 AC_ARG_ENABLE(memtrace, [  --enable-memtrace       3m: allow memory tracing accounting]) 
 
 AC_ARG_ENABLE(float, [  --enable-float          include support for single-precision floats])
@@ -499,14 +498,12 @@ fi
 
 AC_MSG_RESULT($inline) 
 
-if test "${enable_paccount}" = "yes" ; then
-  GC2OPTIONS="$GC2OPTIONS -DNEWGC_PRECISE_ACCOUNT"
-elif test "${enable_account}" = "yes" ; then
+if test "${enable_account}" = "yes" ; then
   GC2OPTIONS="$GC2OPTIONS -DNEWGC_BTC_ACCOUNT"
 fi
 
 if test "${enable_memtrace}" = "yes" ; then
-  GC2OPTIONS="$GC2OPTIONS -DNEWGC_MANUAL_ACCOUNT"
+  GC2OPTIONS="$GC2OPTIONS -DNEWGC_MEMORY_TRACE"
 fi
 
 ############## Solaris grunge ################

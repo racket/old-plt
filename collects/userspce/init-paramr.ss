@@ -545,6 +545,8 @@
                  [debugs (if (continuation-mark-set? marks)
 			     (aries:extract-zodiac-locations marks)
 			     null)])
+            (printf "about to invoke dh with list: ~a~n" debugs)
+            (printf "oh, and by the way, the message is: ~a~n" (exn-message exn))
 	    (dh (format "~a" (exn-message exn)) debugs exn))
 	  (dh (format "uncaught exception: ~e" exn) null #f)))
     ((error-escape-handler))
@@ -629,9 +631,8 @@
   (define (drscheme-eval-handler sexp)
     (if (and (use-zodiac?)
 	     (not (compiled-expression? sexp)))
-        (let* ([z (let ([continuation-stack (continuation-mark-set->list
-                                             (current-continuation-marks)
-                                             aries:w-c-m-key)])
+        (let* ([z (let ([continuation-stack (aries:extract-zodiac-locations
+                                             (current-continuation-marks))])
                     (if (null? continuation-stack)
                         (let ([loc (zodiac:make-location 
                                     initial-line

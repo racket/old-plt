@@ -42,13 +42,16 @@
   
   ; triple-map (('a -> (values 'b 'c 'd)) ('a list)) -> (values ('b list) ('c list) ('d list))
   
-  (define (dual-map f . lsts)
-    (if (null? (car lsts))
-        (values null null null)
-        (let*-values 
-            ([(a b) (apply f (map car lsts))]
-             [(a-rest b-rest) (apply triple-
-  
+  (define (triple-map f . lsts)
+    (letrec ([inr (lambda lsts
+                    (if (null? (car lsts))
+                        (values null null null)
+                        (let*-values
+                            ([(a b c) (apply f (map car lsts))]
+                             [(a-rest b-rest c-rest) (apply inr (map cdr lsts))])
+                          (values (cons a a-rest) (cons b b-rest) (cons c c-rest)))))])
+      (apply inr lsts)))
+
   ; a BINDING is either a z:binding or a slot-box
   
   ; binding-set-union takes some lists of bindings where no element appears twice in one list, and 
@@ -71,7 +74,7 @@
   
   (define (binding-set-remove a-set b-set) ; removes a from b
     (cond [(eq? a-set 'all) null]
-          [(eq? b-set 'all) (e:internal-error "tried to remove finite set from 'all")]
+          [(eq? b-set 'all) (e:internal-error a-set "tried to remove finite set of bindings from 'all")]
           [else (remq* a-set b-set)]))
       
   (define never-undefined? never-undefined-getter)
@@ -110,13 +113,16 @@
   ; debug-info)
   ;(((union z:parsed z:location) (union (list-of BINDING) 'all) (list-of BINDING) symbol) -> debug-info)
      
-  (define (make-debug-info source tail-bound free-bindings advance-warning label)
+  (define (make-debug-info source tail-bound free-bindings advance-warning label lifting?)
     (let* ([kept-bindings (if (eq? tail-bound 'all)
                               free-bindings
                               (binding-set-intersect tail-bound
                                                      free-bindings))]
            [var-clauses (map (lambda (x) 
-                               (let ([var (get-binding-name x)])
+                               (let ([var (ccond [(z:binding? x) (get-binding-name x)]
+                                                 [(box? x) (if (null? (unbox x))
+                                                               (e:internal-error x "empty slot in make-debug-info")
+                                                               (z:varref-var (car (unbox x))))])])
                                  (list var x)))
                              kept-bindings)]
            [let-bindings (filter (lambda (x) (and (not (z:lambda-binding? x))
@@ -126,13 +132,15 @@
            [lifter-gensyms (map get-lifted-gensym let-bindings)]
            [quoted-lifter-gensyms (map (lambda (b) `(#%quote ,b)) lifter-gensyms)]
            [let-clauses (map list lifter-gensyms quoted-lifter-gensyms)])
-      (make-full-mark source label (append var-clauses let-clauses))))
+      (make-full-mark source label (append var-clauses (if lifting? let-clauses null)))))
   
   ; cheap-wrap for non-debugging annotation
   
   (define cheap-wrap
     (lambda (zodiac body)
-      (let ([start (z:zodiac-start zodiac)]
+      (let ([_ (when (not (z:zodiac? zodiac))
+                 (printf "uh oh, about to fail in cheap-wrap.~n"))]
+            [start (z:zodiac-start zodiac)]
 	    [finish (z:zodiac-finish zodiac)])
 	`(#%with-continuation-mark (#%quote ,debug-key)
 	  ,(make-cheap-mark (z:make-zodiac #f start finish))
@@ -228,7 +236,9 @@
 ;              (#%apply #%values result-values))))
 
          (define (find-read-expr expr)
-           (let ([offset (z:location-offset (z:zodiac-start expr))])
+           (let ([_ (when (not (z:zodiac? expr))
+                      (printf "uh oh, about to fail in find-read-expr.~n"))]
+                 [offset (z:location-offset (z:zodiac-start expr))])
              (let search-exprs ([exprs red-exprs])
                (let* ([later-exprs (filter 
                                     (lambda (expr) 
@@ -307,9 +317,9 @@
                   [cheap-wrap-recur (lambda (expr) (let-values ([(ann _) (tail-recur expr)]) ann))]
                   [no-enclosing-recur (lambda (expr) (annotate/inner expr 'all #f #f #t #f))]
                   [make-debug-info-normal (lambda (free-bindings)
-                                            (make-debug-info expr tail-bound free-bindings null 'none))]
+                                            (make-debug-info expr tail-bound free-bindings null 'none foot-wrap?))]
                   [make-debug-info-app (lambda (tail-bound free-bindings label)
-                                         (make-debug-info expr tail-bound free-bindings null label))]
+                                         (make-debug-info expr tail-bound free-bindings null label foot-wrap?))]
                   [wcm-wrap (if pre-break?
                                 wcm-pre-break-wrap
                                 simple-wcm-wrap)]
@@ -601,7 +611,8 @@
                                                              (binding-set-union tail-bound dummy-binding-list)
                                                              (binding-set-union free-bindings dummy-binding-list)
                                                              binding-list ; advance warning
-                                                             'let-body)
+                                                             'let-body
+                                                             foot-wrap?)
                                             middle-begin)]
                                  [whole-thing
                                   `(#%let-values ,outer-dummy-initialization ,wrapped-begin)])
@@ -656,7 +667,8 @@
                                                              (binding-set-union tail-bound binding-list)
                                                              (binding-set-union free-bindings-inner binding-list)
                                                              null ; advance warning
-                                                             'let-body)
+                                                             'let-body
+                                                             foot-wrap?)
                                             middle-begin)]
                                  [whole-thing
                                   `(#%letrec-values ,outer-initialization ,wrapped-begin)])
@@ -991,6 +1003,7 @@
 (let* ([annotated-exprs (map (lambda (expr)
                                      (annotate/top-level expr))
                                    parsed-exprs)])
+  (printf "annotated: ~n~a~n" (car annotated-exprs))
   (values annotated-exprs struct-proc-names))))
   
 )

@@ -867,8 +867,8 @@ Optional Features:
   --enable-dynlib         same as --enable-shared
   --enable-sgc            use Senora GC instead of the Boehm GC
   --enable-sgcdebug       use Senora GC for debugging
-  --enable-account        3m: use memory-accounting GC
-  --enable-memtrace       3m: allow memory tracing accounting
+  --enable-account        3m: use memory-accounting GC (enabled by default)
+  --enable-compact        3m: use compact GC (no accounting)
   --enable-float          include support for single-precision floats
   --enable-floatinstead   compile to use single-precision by default
   --enable-oskit          compile OSKit-based MzScheme kernel
@@ -1364,10 +1364,12 @@ fi;
 if test "${enable_account+set}" = set; then
   enableval="$enable_account"
 
+else
+  enable_account=yes
 fi;
-# Check whether --enable-memtrace or --disable-memtrace was given.
-if test "${enable_memtrace+set}" = set; then
-  enableval="$enable_memtrace"
+# Check whether --enable-compact or --disable-compact was given.
+if test "${enable_compact+set}" = set; then
+  enableval="$enable_compact"
 
 fi;
 
@@ -5014,6 +5016,12 @@ fi
 
 echo "$as_me:$LINENO: result: $inline" >&5
 echo "${ECHO_T}$inline" >&6
+
+if test "${enable_compact}" = "yes" ; then
+  GC2OPTIONS="$GC2OPTIONS -DUSE_COMPACT_3M_GC"
+  enable_account=no
+  enable_memtrace=no
+fi
 
 if test "${enable_account}" = "yes" ; then
   GC2OPTIONS="$GC2OPTIONS -DNEWGC_BTC_ACCOUNT"

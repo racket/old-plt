@@ -1,4 +1,6 @@
 
+(use-compiled-file-kinds 'none)
+
 (require (lib "restart.ss")
 	 (lib "process.ss"))
 
@@ -6,7 +8,7 @@
   (fprintf (current-error-port) "~a~n" s)
   (system s))
 
-(define accounting-gc? #f)
+(define accounting-gc? #t)
 (define opt-flags "/O2")
 (define re:only #f)
 

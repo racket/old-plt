@@ -5,6 +5,7 @@
    (require (lib "class.ss")
 	    (lib "class100.ss")
 	    (lib "kerncase.ss" "syntax")
+	    (lib "primitives.ss" "syntax")
 	    (lib "etc.ss")
 	    (lib "list.ss"))
 
@@ -19,22 +20,7 @@
 
    ;; The following primitives either invoke functions, or
    ;;  install functions that can be used later.
-   (define non-valueable-prims
-     '(apply map for-each andmap ormap make-promise
-	     dynamic-wind thread call-in-nested-thread
-	     make-object call-with-values time-apply
-	     call-with-output-file call-with-input-file
-	     with-output-to-file with-input-from-file
-	     exit-handler current-eval current-exception-handler
-	     current-prompt-read current-load
-	     call-with-escape-continuation call-with-current-continuation
-	     current-print port-display-handler port-write-handler
-	     port-print-handler global-port-print-handler
-	     error-display-handler error-escape-handler
-	     port-read-handler error-value->string-handler
-	     call/ec call/cc hash-table-get
-	     hash-table-map hash-table-for-each make-input-port make-output-port
-	     current-module-name-resolver))
+   (define (non-valueable-prims) (procedure-calling-prims))
 
    (define-struct context (need indef))
    ;; need = #f => don't need  the value
@@ -548,7 +534,7 @@
 		       (and (rator . is-a? . global%)
 			    (send rator is-kernel?)
 			    (not (memq (send rator orig-name)
-				       non-valueable-prims))
+				       (non-valueable-prims)))
 			    (super-valueable?)))]
 
 	 [get-result-arity (lambda ()

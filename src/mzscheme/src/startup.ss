@@ -2263,15 +2263,6 @@
 
   ;; -------------------------------------------------------------------------
 
-  (define (simple-return-primitive? v)
-    (unless (primitive? v) (raise-type-error 'simple-return-primitive? "primitive-procedure" v))
-    (not (memq (object-name v) '(call-with-values apply 
-				  error
-				  call-with-current-continuation
-				  hash-table-get
-				  write-image-to-file
-				  syntax-local-value))))
-
   (define (port? x) (or (input-port? x) (output-port? x)))
 
   (define (not-break-exn? x) (not (exn:break? x)))
@@ -2347,7 +2338,7 @@
 	   load-relative load-relative-extension
 	   path-list-string->path-list find-executable-path
 	   collection-path load/use-compiled
-	   simple-return-primitive? port? not-break-exn?
+	   port? not-break-exn?
 	   find-library-collection-paths
 	   interaction-environment scheme-report-environment null-environment
 	   standard-module-name-resolver))

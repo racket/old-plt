@@ -305,7 +305,7 @@
 
       (define errors null)
       (define (record-error cc desc go)
-	(with-handlers ([(lambda (x) (not (exn:misc:user-break? x)))
+	(with-handlers ([not-break-exn?
 			 (lambda (x)
 			   (if (exn? x)
 			       (begin

@@ -6,7 +6,8 @@
   (require (lib "unitsig.ss")
 	   (lib "list.ss"))
 
-  (require (lib "zodiac-sig.ss" "syntax"))
+  (require (lib "zodiac-sig.ss" "syntax")
+	   (lib "primitives.ss" "syntax"))
 
   (require "sig.ss")
   (require "../sig.ss")
@@ -1421,12 +1422,14 @@
 		(emit "_scheme_~a("
 		      (let ([v (global-defined-value* (vm:apply-prim ast))])
 			(cond
-			 [(and (primitive-closure? v) (simple-return-primitive? v))
+			 [(and (primitive-closure? v) 
+			       (not (memq (object-name) v (internal-tail-chain-prims))))
 			  (if (or (vm:apply-multi? ast)
 				  (primitive-result-arity v))
 			      "direct_apply_closed_primitive_multi"
 			      "direct_apply_closed_primitive")]
-			 [(and (primitive? v) (simple-return-primitive? v))
+			 [(and (primitive? v)
+			       (not (memq (object-name v) (internal-tail-chain-prims))))
 			  (if (or (vm:apply-multi? ast)
 				  (primitive-result-arity v))
 			      "direct_apply_primitive_multi"

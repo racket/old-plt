@@ -14,7 +14,8 @@
 	  (lib "list.ss")
 	  (lib "etc.ss"))
 
-  (require (lib "zodiac-sig.ss" "syntax"))
+  (require (lib "zodiac-sig.ss" "syntax")
+	   (lib "primitives.ss" "syntax"))
 
   (require "sig.ss")
   (require "../sig.ss")
@@ -120,7 +121,7 @@
 	;;  there's no harm in calling them directly when
 	;;  they're in a tail position. We avoid he overhead of
 	;;  a tail call this way.
-	(and prim (simple-return-primitive? (dynamic-require 'mzscheme prim))))
+	(and prim (not (memq prim (internal-tail-chain-prims)))))
 
       ;; vm-phase takes 2 arguments:
       ;; 1) an s-expression to be transformed

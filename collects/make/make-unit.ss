@@ -124,7 +124,7 @@
 						   (format " just because (reason: ~a date: ~a)" 
 							   reason date))])
 						""))
-				    (with-handlers ([(lambda (x) (not (exn:misc:user-break? x)))
+				    (with-handlers ([not-break-exn?
 						     (lambda (exn)
 						       (raise (make-exn:make 
 							       (format "make: Failed to make ~a; ~a"

@@ -3,13 +3,15 @@
   (require "spidey.ss")
 
   (provide consumer-thread
-	  merge-input
 	  with-semaphore
 	  semaphore-wait-multiple
 	  
 	  dynamic-disable-break
 	  dynamic-enable-break
-	  make-single-threader)
+	  make-single-threader
+
+	  merge-input
+	  copy-port)
 
   #|
   t accepts a function, f, and creates a thread. It returns the thread and a
@@ -64,51 +66,6 @@
 	   (set! front-state (cons new-state front-state))
 	   (semaphore-post protect)
 	   (semaphore-post sema))))]))
-
-
-  (define (merge-input a b)
-    (or (input-port? a)
-	(raise-type-error 'merge-input "input-port" a))
-    (or (input-port? b)
-	(raise-type-error 'merge-input "input-port" b))
-    (let-values ([(rd wt) (make-pipe)])
-		(let* ([copy1-sema (make-semaphore 500)]
-		       [copy2-sema (make-semaphore 500)]
-		       [ready1-sema (make-semaphore)]
-		       [ready2-sema (make-semaphore)]
-		       [check-first? #t]
-		       [close-sema (make-semaphore)]
-		       [mk-copy (lambda (from to copy-sema ready-sema)
-				  (lambda ()
-				    (let loop ()
-				      (semaphore-wait copy-sema)
-				      (let ([c (read-char from)])
-					(unless (eof-object? c)
-						(semaphore-post ready-sema)
-						(write-char c to)
-						(loop))))
-				    (semaphore-post close-sema)))])
-		  (thread (mk-copy a wt copy1-sema ready1-sema)) 
-		  (thread (mk-copy b wt copy2-sema ready2-sema))
-		  (thread (lambda () 
-			    (semaphore-wait close-sema)		 
-			    (semaphore-wait close-sema)
-			    (close-output-port wt)))
-		  (make-input-port
-		   (lambda () (let ([c (read-char rd)])
-				(unless (eof-object? c)
-					(if (and check-first? (semaphore-try-wait? ready1-sema))
-					    (semaphore-post copy1-sema)
-					    (if (not (semaphore-try-wait? ready2-sema))
-						; check-first? must be #f
-						(if (semaphore-try-wait? ready1-sema)
-						    (semaphore-post copy1-sema)
-						    (error 'join "internal error: char from nowhere!"))
-						(semaphore-post copy2-sema)))
-					(set! check-first? (not check-first?)))
-				c))
-		   (lambda () (char-ready? rd))
-		   (lambda () (close-input-port rd))))))
 
   (define with-semaphore
     (lambda (s f)
@@ -196,5 +153,42 @@
 	    (lambda () (semaphore-wait sema))
 	    thunk
 	    (lambda () (semaphore-post sema))))))))
+
+  (define (copy-port src dest)
+    (let ([s (make-string 4096)])
+      (let loop ()
+	(let ([c (read-string-avail! s src)])
+	  (unless (eof-object? c)
+	    (let loop ([start 0])
+	      (unless (= start c)
+		(let ([c2 (write-string-avail s dest start c)])
+		  (loop (+ start c2)))))
+	    (loop))))))
+
+  (define merge-input
+    (case-lambda
+     [(a b) (merge-input a b #f)]
+     [(a b limit)
+      (or (input-port? a)
+	  (raise-type-error 'merge-input "input-port" a))
+      (or (input-port? b)
+	  (raise-type-error 'merge-input "input-port" b))
+      (or (not limit)
+	  (and (number? limit) (positive? limit) (exact? limit) (integer? limit))
+	  (raise-type-error 'merge-input "positive exact integer or #f" limit))
+      (let-values ([(rd wt) (make-pipe limit)]
+		   [(other-done?) #f]
+		   [(sema) (make-semaphore)])
+	(let ([copy
+	       (lambda (from)
+		 (copy-port from wt)
+		 (semaphore-wait sema)
+		 (if other-done?
+		     (close-output-port wt)
+		     (set! other-done? #t))
+		 (semaphore-post sema))])
+	  (copy a)
+	  (copy b)
+	  rd))]))
    
    )

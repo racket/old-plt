@@ -163,7 +163,7 @@ scheme_init_type (Scheme_Env *env)
   set_name(scheme_module_type, "<module-code>");
   set_name(scheme_module_index_type, "<module-path-index>");
 
-  set_name(scheme_reserved_3_type, "<reserved3>");
+  set_name(scheme_subprocess_type, "<subprocess>");
 
   set_name(_scheme_values_types_, "<resurrected>");
   set_name(_scheme_compiled_values_types_, "<internal>");
@@ -413,8 +413,6 @@ void scheme_register_traversers(void)
   GC_REG_TRAV(scheme_stx_type, stx_val);
   GC_REG_TRAV(scheme_module_type, module_val);
   GC_REG_TRAV(scheme_module_index_type, modidx_val);
-
-  GC_REG_TRAV(scheme_reserved_3_type, bad_trav);
 }
 
 END_XFORM_SKIP;

@@ -141,6 +141,12 @@ typedef struct System_Child {
 } System_Child;
 #endif
 
+typedef struct Scheme_Subprocess {
+  Scheme_Type type;
+  MZ_HASH_KEY_EX
+  void *handle;
+} Scheme_Subprocess;
+
 #ifdef USE_FD_PORTS
 # include <fcntl.h>
 # include <sys/stat.h>
@@ -221,14 +227,9 @@ static int flush_fd(Scheme_Output_Port *op,
 static void flush_if_output_fds(Scheme_Object *o, Scheme_Close_Custodian_Client *f, void *data);
 #endif
 
-static Scheme_Object *sch_process(int c, Scheme_Object *args[]);
-static Scheme_Object *sch_process_ports(int c, Scheme_Object *args[]);
-static Scheme_Object *sch_system(int c, Scheme_Object *args[]);
-static Scheme_Object *sch_execute(int c, Scheme_Object *args[]);
-static Scheme_Object *sch_process_star(int c, Scheme_Object *args[]);
-static Scheme_Object *sch_process_star_ports(int c, Scheme_Object *args[]);
-static Scheme_Object *sch_system_star(int c, Scheme_Object *args[]);
-static Scheme_Object *sch_execute_star(int c, Scheme_Object *args[]);
+static Scheme_Object *subprocess(int c, Scheme_Object *args[]);
+static Scheme_Object *subprocess_status(int c, Scheme_Object *args[]);
+static Scheme_Object *subprocess_wait(int c, Scheme_Object *args[]);
 static Scheme_Object *sch_send_event(int c, Scheme_Object *args[]);
 
 Scheme_Object *
@@ -463,46 +464,23 @@ scheme_init_port (Scheme_Env *env)
 
   scheme_init_port_config();
 
-  scheme_add_global_constant("process", 
-			     scheme_make_prim_w_arity(sch_process, 
-						      "process", 
+  scheme_add_global_constant("subprocess", 
+			     scheme_make_prim_w_arity2(subprocess, 
+						       "subprocess", 
+						       4, -1,
+						       5, 5), 
+			     env);
+  scheme_add_global_constant("subprocess-status", 
+			     scheme_make_prim_w_arity(subprocess_status, 
+						      "subprocess-status", 
 						      1, 1), 
 			     env);
-  scheme_add_global_constant("process/ports", 
-			     scheme_make_prim_w_arity(sch_process_ports,
-						      "process/ports",
-						      4, 4), 
+  scheme_add_global_constant("subprocess-wait", 
+			     scheme_make_prim_w_arity(subprocess_wait, 
+						      "subprocess-wait", 
+						      1, 1),
 			     env);
-  scheme_add_global_constant("system", 
-			     scheme_make_prim_w_arity(sch_system,
-						      "system", 
-						      1, 1), 
-			     env);
-  scheme_add_global_constant("execute", 
-			     scheme_make_prim_w_arity(sch_execute, 
-						      "execute", 
-						      1, 1), 
-			     env);
-  scheme_add_global_constant("process*", 
-			     scheme_make_prim_w_arity(sch_process_star,
-						      "process*",
-						      1, -1), 
-			     env);
-  scheme_add_global_constant("process*/ports", 
-			     scheme_make_prim_w_arity(sch_process_star_ports,
-						      "process*/ports",
-						      4, -1), 
-			     env);
-  scheme_add_global_constant("system*", 
-			     scheme_make_prim_w_arity(sch_system_star,
-						      "system*",
-						      1, -1), 
-			     env);
-  scheme_add_global_constant("execute*", 
-			     scheme_make_prim_w_arity(sch_execute_star,
-						      "execute*", 
-						      1, -1), 
-			     env);
+
   scheme_add_global_constant("send-event", 
 			     scheme_make_prim_w_arity(sch_send_event,
 						      "send-event", 
@@ -4224,6 +4202,8 @@ static void flush_if_output_fds(Scheme_Object *o, Scheme_Close_Custodian_Client 
 
 /* Unix, Windows, and BeOS support --- sadly, all mixed together */
 
+#define MZ_FAILURE_STATUS -1
+
 #ifdef PROCESS_FUNCTION
 
 # define USE_CREATE_PIPE
@@ -4300,14 +4280,11 @@ static void child_done(int ingored)
     } while ((result == -1) && (errno == EINTR));
     
     if (result > 0) {
-      if (WIFEXITED(status)) {
-	if (WEXITSTATUS(status))
-	  status = 0;
-	else
-	  status = 1;
-      } else
-	status = 0;
-
+      if (WIFEXITED(status))
+	status = WEXITSTATUS(status);
+      else
+	status = MZ_FAILURE_STATUS;
+    
       prev = NULL;
       for (sc = scheme_system_children; sc; prev = sc, sc = sc->next) {
 	if (sc->id == result) {
@@ -4416,59 +4393,85 @@ static void subp_needs_wakeup(Scheme_Object *sci, void *fds)
 #endif
 }
 
-static Scheme_Object *get_process_status(void *sci, int argc, Scheme_Object **argv)
+#endif
+
+static Scheme_Object *subprocess_status(int argc, Scheme_Object **argv)
 {
-  if (SAME_OBJ(argv[0], scheme_intern_symbol("status"))) {
+  Scheme_Subprocess *sp = (Scheme_Subprocess *)argv[0];
+
+  if (!SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_subprocess_type))
+    scheme_wrong_type("subprocess-status", "subprocess", 0, argc, argv);
+
+#if defined(PROCESS_FUNCTION) && !defined(MACINTOSH_EVENTS)
+  { 
+    int going = 0, status = MZ_FAILURE_STATUS;
+
 #if defined(UNIX_PROCESSES)
-    System_Child *sc = (System_Child *)sci;
+    System_Child *sc = (System_Child *)sp->handle;
     
-    if (sc->done) {
-      if (sc->status)
-	return scheme_intern_symbol("done-ok");
-      else
-	return scheme_intern_symbol("done-error");	
-    } else
-      return scheme_intern_symbol("running");
+    if (sc->done)
+      status = sc->status;
+    else
+      going = 1;
 #else
 # ifdef WINDOWS_PROCESSES
     DWORD w;
-    if (!sci)
-      return scheme_intern_symbol("done-error");
-    
-    if (GetExitCodeProcess((HANDLE)sci, &w)) {
-      if (w == STILL_ACTIVE)
-	return scheme_intern_symbol("running");
-      else if (w)
-	return scheme_intern_symbol("done-error");
-      else
-	return scheme_intern_symbol("done-ok");
+    if (sp->handle) {
+      if (GetExitCodeProcess((HANDLE)sp->handle, &w)) {
+	if (w == STILL_ACTIVE)
+	  going = 1;
+	else
+	  status = w;
+      }
     }
 # endif
 # ifdef BEOS_PROCESSES
-    BeOSProcess *p = (BeOSProcess *)sci;
-    if (!p)
-      return scheme_intern_symbol("done-error");
-    if (p->done) {
-      if (!p->result)
-	return scheme_intern_symbol("done-ok");
+    BeOSProcess *p = (BeOSProcess *)sp->handle;
+    if (p) {
+      if (p->done)
+	status = p->result;
       else
-	return scheme_intern_symbol("done-error");
-    } else
-      return scheme_intern_symbol("running");
+	going = 1;
+    }
 # endif
-    return scheme_intern_symbol("unknown");
 #endif
-  } else if (SAME_OBJ(argv[0], scheme_intern_symbol("wait"))) {
-#ifdef MZ_REAL_THREADS
-    scheme_wait_sema(((System_Child *)sci)->sema, 0);
+
+    if (going)
+      return scheme_intern_symbol("running");
+    else
+      return scheme_make_integer_value(status);
+  }
 #else
-    scheme_block_until(subp_done, subp_needs_wakeup, sci, (float)0.0);
+  scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
+		   "%s: not supported on this platform",
+		   "subprocess-status");
 #endif
-  } else
-    scheme_wrong_type("control-process", "'status or 'wait", 0, argc, argv);
-  return scheme_void;
 }
+
+
+static Scheme_Object *subprocess_wait(int argc, Scheme_Object **argv)
+{
+  if (!SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_subprocess_type))
+    scheme_wrong_type("subprocess-wait", "subprocess", 0, argc, argv);
+
+#if defined(PROCESS_FUNCTION) && !defined(MACINTOSH_EVENTS)
+  {
+    Scheme_Subprocess *sp = (Scheme_Subprocess *)argv[0];
+
+# ifdef MZ_REAL_THREADS
+    scheme_wait_sema(((System_Child *)sp->handle)->sema, 0);
+# else
+    scheme_block_until(subp_done, subp_needs_wakeup, sp->handle, (float)0.0);
+# endif
+
+    return scheme_void;
+  }
+#else
+  scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
+		   "%s: not supported on this platform",
+		   "subprocess-wait");
 #endif
+}
 
 /*********** Windows: command-line construction *************/
 
@@ -4525,7 +4528,7 @@ static char *cmdline_protect(char *s)
   return s;
 }
 
-static long mz_spawnv(int type, char *command, const char * const *argv, int *pid)
+static long mz_spawnv(char *command, const char * const *argv, int *pid)
 {
   int i, l, len = 0;
   char *cmdline;
@@ -4556,7 +4559,9 @@ static long mz_spawnv(int type, char *command, const char * const *argv, int *pi
   startup.hStdError = (HANDLE)_get_osfhandle(2);
 
   if (CreateProcess(command, cmdline, NULL, NULL, 1, 0, NULL, NULL, &startup, &info)) {
+    CloseHandle(info.hThread);
     *pid = info.dwProcessId;
+    /* FIXME: process handle never gets closed */
     return (long)info.hProcess;
   } else
     return -1;
@@ -4579,7 +4584,7 @@ static status_t wait_process(void *_p)
   if (wait_for_thread(p->t, &r) == B_NO_ERROR)
     p->result = r;
   else
-    p->result = -1;
+    p->result = MZ_FAILURE_STATUS;
 
   p->done = 1;
 
@@ -4595,7 +4600,7 @@ static void delete_done_sem(void *_p)
     delete_sem(p->done_sem);
 }
 
-static long mz_spawnv(int type, char *command, const char *  const *argv, int *pid)
+static long mz_spawnv(char *command, const char *  const *argv, int *pid)
 {
   BeOSProcess *p = MALLOC_ONE_RT(BeOSProcess);
   sigset_t sigs;
@@ -4641,159 +4646,152 @@ static long mz_spawnv(int type, char *command, const char *  const *argv, int *p
 
 /*********** All: The main system/process/execute function *************/
 
-static Scheme_Object *process(int c, Scheme_Object *args[], 
-			      char *name, int shell, int synchonous, 
-			      int as_child, int ports)
+static Scheme_Object *subprocess(int c, Scheme_Object *args[])
+     /* subprocess(out, in, err, exe, args...) */
 {
-#ifdef PROCESS_FUNCTION
+  const char *name = "subprocess";
+#if defined(PROCESS_FUNCTION) && !defined(MACINTOSH_EVENTS)
   char *command;
   int to_subprocess[2], from_subprocess[2], err_subprocess[2];
   int i, pid;
-  int def_exit_on;
   char **argv;
-  Scheme_Object *in, *out, *subpid, *err, *thunk;
+  Scheme_Object *in, *out, *subpid, *err;
 #if defined(UNIX_PROCESSES)
   System_Child *sc;
 #else
   void *sc = 0;
 #endif
-  int offset;
   Scheme_Object *inport;
   Scheme_Object *outport;
   Scheme_Object *errport;
+  Scheme_Object *a[5];
+  Scheme_Subprocess *subproc;
 #if defined(WINDOWS_PROCESSES) || defined(BEOS_PROCESSES)
   int spawn_status;
+#endif
 
-  /* Don't know how to do these, yet */
-  if (shell && (!as_child || !synchonous)) {
-    scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
-		     "%s: not supported on this platform",
-		     name);
+  /*--------------------------------------------*/
+  /* Sort out ports (create later if necessary) */
+  /*--------------------------------------------*/
+
+  if (SCHEME_TRUEP(args[0])) {
+    outport = args[0];
+    if (SCHEME_OUTPORTP(outport) && SCHEME_TRUEP(scheme_file_stream_port_p(1, &outport))) {
+#ifdef PROCESS_FUNCTION
+      Scheme_Output_Port *op = (Scheme_Output_Port *)outport;
+
+      if (SAME_OBJ(op->sub_type, file_output_port_type))
+	from_subprocess[1] = MSC_IZE(fileno)(((Scheme_Output_File *)op->port_data)->f);
+# ifdef USE_FD_PORTS
+      else if (SAME_OBJ(op->sub_type, fd_output_port_type))
+	from_subprocess[1] = ((Scheme_FD *)op->port_data)->fd;
+# endif
+#endif
+    } else
+      scheme_wrong_type(name, "file-stream-output-port", 0, c, args);
+  } else
+    outport = NULL;
+
+  if (SCHEME_TRUEP(args[1])) {
+    inport = args[1];
+    if (SCHEME_INPORTP(inport) && SCHEME_TRUEP(scheme_file_stream_port_p(1, &inport))) {
+#ifdef PROCESS_FUNCTION
+      Scheme_Input_Port *ip = (Scheme_Input_Port *)inport;
+
+      if (SAME_OBJ(ip->sub_type, file_input_port_type))
+	to_subprocess[0] = MSC_IZE(fileno)(((Scheme_Input_File *)ip->port_data)->f);
+# ifdef USE_FD_PORTS
+      else if (SAME_OBJ(ip->sub_type, fd_input_port_type))
+	to_subprocess[0] = ((Scheme_FD *)ip->port_data)->fd;
+# endif
+#endif
+    } else
+      scheme_wrong_type(name, "file-stream-input-port", 1, c, args);
+  } else
+    inport = NULL;
+
+  if (SCHEME_TRUEP(args[2])) {
+    errport = args[2];
+    if (SCHEME_OUTPORTP(errport) && SCHEME_TRUEP(scheme_file_stream_port_p(1, &errport))) {
+#ifdef PROCESS_FUNCTION
+      Scheme_Output_Port *op = (Scheme_Output_Port *)errport;
+
+      if (SAME_OBJ(op->sub_type, file_output_port_type))
+	err_subprocess[1] = MSC_IZE(fileno)(((Scheme_Output_File *)op->port_data)->f);
+# ifdef USE_FD_PORTS
+      else if (SAME_OBJ(op->sub_type, fd_output_port_type))
+	err_subprocess[1] = ((Scheme_FD *)op->port_data)->fd;
+# endif
+#endif
+    } else
+      scheme_wrong_type(name, "file-stream-output-port", 2, c, args);
+  } else
+    errport = NULL;
+
+  if (!SCHEME_STRINGP(args[3]) || scheme_string_has_null(args[3]))
+    scheme_wrong_type(name, STRING_W_NO_NULLS, 3, c, args);
+
+  /*--------------------------------------*/
+  /*          Sort out arguments          */
+  /*--------------------------------------*/
+
+  argv = MALLOC_N(char *, c - 3 + 1);
+  {
+    char *ef;
+    ef = scheme_expand_filename(SCHEME_STR_VAL(args[3]),
+				SCHEME_STRTAG_VAL(args[3]),
+				(char *)name, NULL);
+    argv[0] = ef;
   }
-#endif
-
-  if (ports) {
-    if (SCHEME_TRUEP(args[0])) {
-      outport = args[0];
-      if (SCHEME_OUTPORTP(outport) && SCHEME_TRUEP(scheme_file_stream_port_p(1, &outport))) {
-#ifdef PROCESS_FUNCTION
-	Scheme_Output_Port *op = (Scheme_Output_Port *)outport;
-
-	if (SAME_OBJ(op->sub_type, file_output_port_type))
-	  from_subprocess[1] = MSC_IZE(fileno)(((Scheme_Output_File *)op->port_data)->f);
-# ifdef USE_FD_PORTS
-	else if (SAME_OBJ(op->sub_type, fd_output_port_type))
-	  from_subprocess[1] = ((Scheme_FD *)op->port_data)->fd;
-# endif
-#endif
-      } else
-	scheme_wrong_type(name, "file-stream-output-port", 0, c, args);
-    } else
-      outport = NULL;
-
-    if (SCHEME_TRUEP(args[1])) {
-      inport = args[1];
-      if (SCHEME_INPORTP(inport) && SCHEME_TRUEP(scheme_file_stream_port_p(1, &inport))) {
-#ifdef PROCESS_FUNCTION
-	Scheme_Input_Port *ip = (Scheme_Input_Port *)inport;
-
-	if (SAME_OBJ(ip->sub_type, file_input_port_type))
-	  to_subprocess[0] = MSC_IZE(fileno)(((Scheme_Input_File *)ip->port_data)->f);
-# ifdef USE_FD_PORTS
-	else if (SAME_OBJ(ip->sub_type, fd_input_port_type))
-	  to_subprocess[0] = ((Scheme_FD *)ip->port_data)->fd;
-# endif
-#endif
-      } else
-	scheme_wrong_type(name, "file-stream-input-port", 1, c, args);
-    } else
-      inport = NULL;
-
-    if (SCHEME_TRUEP(args[2])) {
-      errport = args[2];
-      if (SCHEME_OUTPORTP(errport) && SCHEME_TRUEP(scheme_file_stream_port_p(1, &errport))) {
-#ifdef PROCESS_FUNCTION
-	Scheme_Output_Port *op = (Scheme_Output_Port *)errport;
-
-	if (SAME_OBJ(op->sub_type, file_output_port_type))
-	  err_subprocess[1] = MSC_IZE(fileno)(((Scheme_Output_File *)op->port_data)->f);
-# ifdef USE_FD_PORTS
-	else if (SAME_OBJ(op->sub_type, fd_output_port_type))
-	  err_subprocess[1] = ((Scheme_FD *)op->port_data)->fd;
-# endif
-#endif
-      } else
-	scheme_wrong_type(name, "file-stream-output-port", 2, c, args);
-    } else
-      errport = NULL;
-
-    offset = 3;
-  } else {
-    offset = 0;
-    inport = outport = errport = NULL;
+  {
+    /* This is for Windows: */
+    char *np;
+    int nplen;
+    nplen = strlen(argv[0]);
+    np = scheme_normal_path_case(argv[0], &nplen);
+    argv[0] = np;
   }
-
-  if (!SCHEME_STRINGP(args[offset]) || scheme_string_has_null(args[offset]))
-    scheme_wrong_type(name, STRING_W_NO_NULLS, offset, c, args);
-
-  if (shell) {
-    argv = NULL;
-    command = SCHEME_STR_VAL(args[offset]);
-  } else  {
-    argv = MALLOC_N(char *, c - offset + 1);
-    {
-      char *ef;
-      ef = scheme_expand_filename(SCHEME_STR_VAL(args[offset]),
-				  SCHEME_STRTAG_VAL(args[offset]),
-				  name, NULL);
-      argv[0] = ef;
-    }
-    {
-      /* This is for Windows: */
-      char *np;
-      int nplen;
-      nplen = strlen(argv[0]);
-      np = scheme_normal_path_case(argv[0], &nplen);
-      argv[0] = np;
-    }
     
-    for (i = 1 + offset; i < c; i++) { 
-      if (!SCHEME_STRINGP(args[i]) || scheme_string_has_null(args[i]))
-	scheme_wrong_type(name, STRING_W_NO_NULLS, i, c, args);
-      argv[i - offset] = SCHEME_STR_VAL(args[i]);
-    }
-    argv[c - offset] = NULL;
-
-    command = argv[0];
+  for (i = 4; i < c; i++) { 
+    if (!SCHEME_STRINGP(args[i]) || scheme_string_has_null(args[i]))
+      scheme_wrong_type(name, STRING_W_NO_NULLS, i, c, args);
+    argv[i - 3] = SCHEME_STR_VAL(args[i]);
   }
+  argv[c - 3] = NULL;
 
-  def_exit_on = SAME_OBJ(scheme_def_exit_proc,
-			 scheme_get_param(scheme_config, MZCONFIG_EXIT_HANDLER));
-  
-  if (!synchonous) {
-    if (!inport && PIPE_FUNC(to_subprocess _EXTRA_PIPE_ARGS))
-      scheme_raise_exn(MZEXN_MISC, "%s: pipe failed (%e)", name, errno);
-    if (!outport && PIPE_FUNC(from_subprocess _EXTRA_PIPE_ARGS)) {
-      if (!inport) {
-	MSC_IZE(close)(to_subprocess[0]);
-	MSC_IZE(close)(to_subprocess[1]);
-      }
-      scheme_raise_exn(MZEXN_MISC, "%s: pipe failed (%e)", name, errno);
+  command = argv[0];
+
+  /*--------------------------------------*/
+  /*          Create needed pipes         */
+  /*--------------------------------------*/
+
+  if (!inport && PIPE_FUNC(to_subprocess _EXTRA_PIPE_ARGS))
+    scheme_raise_exn(MZEXN_MISC, "%s: pipe failed (%e)", name, errno);
+  if (!outport && PIPE_FUNC(from_subprocess _EXTRA_PIPE_ARGS)) {
+    if (!inport) {
+      MSC_IZE(close)(to_subprocess[0]);
+      MSC_IZE(close)(to_subprocess[1]);
     }
-    if (!errport && PIPE_FUNC(err_subprocess _EXTRA_PIPE_ARGS)) {
-      if (!inport) {
-	MSC_IZE(close)(to_subprocess[0]);
-	MSC_IZE(close)(to_subprocess[1]);
-      }
-      if (!outport) {
-	MSC_IZE(close)(from_subprocess[0]);
-	MSC_IZE(close)(from_subprocess[1]);
-      }
-      scheme_raise_exn(MZEXN_MISC, "%s: pipe failed (%e)", name, errno);
+    scheme_raise_exn(MZEXN_MISC, "%s: pipe failed (%e)", name, errno);
+  }
+  if (!errport && PIPE_FUNC(err_subprocess _EXTRA_PIPE_ARGS)) {
+    if (!inport) {
+      MSC_IZE(close)(to_subprocess[0]);
+      MSC_IZE(close)(to_subprocess[1]);
     }
+    if (!outport) {
+      MSC_IZE(close)(from_subprocess[0]);
+      MSC_IZE(close)(from_subprocess[1]);
+    }
+    scheme_raise_exn(MZEXN_MISC, "%s: pipe failed (%e)", name, errno);
   }
 
 #if defined(WINDOWS_PROCESSES) || defined(BEOS_PROCESSES)
+
+  /*--------------------------------------*/
+  /*        Execute: Windows/BeOS         */
+  /*--------------------------------------*/
+
 # if defined(BEOS_PROCESSES)
   fflush(NULL);
 # else
@@ -4803,43 +4801,21 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
   fflush(stderr);
 # endif
 
-  if (shell) {
-    /* Set real CWD - and hope no other thread changes it! */
-    scheme_os_setcwd(SCHEME_STR_VAL(scheme_get_param(scheme_config, 
-						     MZCONFIG_CURRENT_DIRECTORY)),
-		     0);
-
-    spawn_status = system(command);
-  } else {
-    int type;
+  {
     int save0, save1, save2;
 
-#ifdef BEOS_PROCESSES
-# define _P_NOWAIT 0
-# define _P_OVERLAY 1
-#endif
-
-    if (!synchonous)
-      type = _P_NOWAIT;
-    else if (!as_child && def_exit_on)
-      type = _P_OVERLAY;
-    else 
-      type = _P_NOWAIT; /* We'll implement waiting ourselves */
-
-    if (!synchonous) {
-      /* Save stdin and stdout */
-      save0 = MSC_IZE(dup)(0);
-      save1 = MSC_IZE(dup)(1);
-      save2 = MSC_IZE(dup)(2);
-
-      /* Copy pipe descriptors to stdin and stdout */
-      MSC_IZE(dup2)(to_subprocess[0], 0);
-      MSC_IZE(dup2)(from_subprocess[1], 1);
-      MSC_IZE(dup2)(err_subprocess[1], 2);
-    }
+    /* Save stdin and stdout */
+    save0 = MSC_IZE(dup)(0);
+    save1 = MSC_IZE(dup)(1);
+    save2 = MSC_IZE(dup)(2);
+    
+    /* Copy pipe descriptors to stdin and stdout */
+    MSC_IZE(dup2)(to_subprocess[0], 0);
+    MSC_IZE(dup2)(from_subprocess[1], 1);
+    MSC_IZE(dup2)(err_subprocess[1], 2);
 
     /* protect spaces, etc. in the arguments: */
-    for (i = 0; i < (c - offset); i++) {
+    for (i = 0; i < (c - 3); i++) {
       char *cla;
       cla = cmdline_protect(argv[i]);
       argv[i] = cla;
@@ -4850,50 +4826,24 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
 						     MZCONFIG_CURRENT_DIRECTORY)),
 		     0);
 
-    spawn_status = mz_spawnv(type, command, (const char * const *)argv, &pid);
+    spawn_status = mz_spawnv(command, (const char * const *)argv, &pid);
 
-    if (!synchonous) {
-      /* Restore stdin and stdout */
-      MSC_IZE(dup2)(save0, 0);
-      MSC_IZE(dup2)(save1, 1);
-      MSC_IZE(dup2)(save2, 2);
-
-      if (spawn_status != -1)
-        sc = (void *)spawn_status;
-    } else if ((spawn_status != -1) && as_child) {
-      sc = (void *)spawn_status;
-
-      scheme_block_until(subp_done, subp_needs_wakeup, (void *)sc, (float)0.0);
-
-#ifdef WINDOWS_PROCESSES
-      {
-	DWORD w;
-	if (GetExitCodeProcess((HANDLE)sc, &w))
-	  spawn_status = w;
-	else
-	  spawn_status = -1;
-      }
-#endif
-#ifdef BEOS_PROCESSES
-      spawn_status = (((BeOSProcess *)sc)->result ? -1 : 0);
-#endif
-
-      pid = 0;
-    }
-  }
-
-  if (!as_child) {
+    /* Restore stdin and stdout */
+    MSC_IZE(dup2)(save0, 0);
+    MSC_IZE(dup2)(save1, 1);
+    MSC_IZE(dup2)(save2, 2);
+    
     if (spawn_status != -1)
-      scheme_do_exit(0, NULL);
-    else
-      return scheme_void;
+      sc = (void *)spawn_status;
   }
-#else
-  /* Unix version: */
-  if (synchonous)
-    scheme_flush_orig_outputs();
 
-  if (as_child || !def_exit_on) {
+#else
+
+  /*--------------------------------------*/
+  /*            Execute: Unix             */
+  /*--------------------------------------*/
+
+  {
     init_sigchld();
 
     sc = MALLOC_ONE_RT(System_Child);
@@ -4948,9 +4898,6 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
 
     scheme_block_child_signals(0);
     WAIT_CHILD_UNLOCK();
-  } else {
-    sc = NULL;
-    pid = 0;
   }
 
   switch (pid)
@@ -4974,7 +4921,7 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
 
     case 0: /* child */
 
-      if (!synchonous) {
+      {
 	/* Copy pipe descriptors to stdin and stdout */
 	MSC_IZE(dup2)(to_subprocess[0], 0);
 	MSC_IZE(dup2)(from_subprocess[1], 1);
@@ -5009,12 +4956,6 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
 	  } while ((cr == -1) && (errno == EINTR));
 	}
 #endif	   
-      } else {
-#ifdef USE_FD_PORTS
-	/* Reset stdout and stderr to original flags: */
-	fcntl(1, F_SETFL, 0);
-	fcntl(2, F_SETFL, 0);
-#endif
       }
       
       /* Set real CWD */
@@ -5022,19 +4963,7 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
 
       /* Exec new process */      
 
-      if (shell) {
-	int v;
-
-	v = system(command);
-
-	if (!(v & 0xFF))
-	  v = v >> 8;
-
-	if (as_child || !def_exit_on || !v)
-	  _exit(v);
-	else
-	  return scheme_void;
-      } else {
+      {
 	int err;
 
 	/* Reset ignored signals: */
@@ -5061,10 +4990,7 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
 #endif
 	END_XFORM_SKIP;
 
-	if (as_child || !def_exit_on)
-	  _exit(err ? err : 1);
-	else
-	  return scheme_void;
+	return scheme_void;
       }
 
     default: /* parent */
@@ -5073,168 +4999,119 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
     }
 #endif
 
-  /* Close unneeded descriptors */
+  /*--------------------------------------*/
+  /*      Close unneeded descriptors      */
+  /*--------------------------------------*/
 
-  if (!synchonous) {
-    if (!inport) {
-      MSC_IZE(close)(to_subprocess[0]);
-      out = NULL;
-      scheme_file_open_count += 1;
-    } else
-      out = scheme_false;
-    if (!outport) {
-      MSC_IZE(close)(from_subprocess[1]);
-      in = NULL;
-      scheme_file_open_count += 1;
-    } else
-      in = scheme_false;
-    if (!errport) {
-      MSC_IZE(close)(err_subprocess[1]);
-      err = NULL;
-      scheme_file_open_count += 1;
-    } else
-      err = scheme_false;
+  if (!inport) {
+    MSC_IZE(close)(to_subprocess[0]);
+    out = NULL;
+    scheme_file_open_count += 1;
+  } else
+    out = scheme_false;
+  if (!outport) {
+    MSC_IZE(close)(from_subprocess[1]);
+    in = NULL;
+    scheme_file_open_count += 1;
+  } else
+    in = scheme_false;
+  if (!errport) {
+    MSC_IZE(close)(err_subprocess[1]);
+    err = NULL;
+    scheme_file_open_count += 1;
+  } else
+    err = scheme_false;
+
+  /*--------------------------------------*/
+  /*        Create new port objects       */
+  /*--------------------------------------*/
 
 #ifdef USE_FD_PORTS
-    in = (in ? in : make_fd_input_port(from_subprocess[0], "subprocess-stdout", 0));
-    out = (out ? out : make_fd_output_port(to_subprocess[1], 0));
-    err = (err ? err : make_fd_input_port(err_subprocess[0], "subprocess-stderr", 0));
+  in = (in ? in : make_fd_input_port(from_subprocess[0], "subprocess-stdout", 0));
+  out = (out ? out : make_fd_output_port(to_subprocess[1], 0));
+  err = (err ? err : make_fd_input_port(err_subprocess[0], "subprocess-stderr", 0));
 #else
-    in = (in ? in : make_tested_file_input_port(MSC_IZE(fdopen)(from_subprocess[0], "r"), "subprocess-stdout", 1));
-    out = (out ? out : make_tested_file_output_port(MSC_IZE(fdopen)(to_subprocess[1], "w"), 1));
-    err = (err ? err : make_tested_file_input_port(MSC_IZE(fdopen)(err_subprocess[0], "r"), "subprocess-stderr", 1));
+  in = (in ? in : make_tested_file_input_port(MSC_IZE(fdopen)(from_subprocess[0], "r"), "subprocess-stdout", 1));
+  out = (out ? out : make_tested_file_output_port(MSC_IZE(fdopen)(to_subprocess[1], "w"), 1));
+  err = (err ? err : make_tested_file_input_port(MSC_IZE(fdopen)(err_subprocess[0], "r"), "subprocess-stderr", 1));
 #endif
 
-    subpid = scheme_make_integer_value(pid);
-    thunk = scheme_make_closed_prim_w_arity(get_process_status,
-					    sc, "control-process",
-					    1, 1);
+  /*--------------------------------------*/
+  /*          Return result info          */
+  /*--------------------------------------*/
+
+  subpid = scheme_make_integer_value(pid);
+  subproc = MALLOC_ONE_TAGGED(Scheme_Subprocess);
+  subproc->type = scheme_subprocess_type;
+  subproc->handle = (void *)sc;
 
 #define cons scheme_make_pair
 
-    return cons(in,
-		cons(out,
-		     cons(subpid, 
-			  cons(err, 
-			       cons(thunk,
-				    scheme_null)))));
-  } else {
-    int status;
+  a[0] = (Scheme_Object *)subproc;
+  a[1] = in;
+  a[2] = out;
+  a[3] = err;
+  a[4] = subpid;
 
-#if defined(WINDOWS_PROCESSES) || defined(BEOS_PROCESSES)
-    status = spawn_status;
+  return scheme_values(5, a);
+
 #else
-#if defined(UNIX_PROCESSES)
-    if (!as_child) {
-      /* exec Sucess => (exit) */
-      /* exec Failure => (void) */
-      /* But how do we know whether it succeeded? */
-      scheme_do_exit(0, NULL);
-      status = 0; /* Doesn't get here */
-    } else {
-#ifdef MZ_REAL_THREADS
-      scheme_wait_sema(sc->sema, 0);
-#else
-      scheme_block_until(subp_done, NULL, (void *)sc, 0);
-#endif
-      status = !sc->status;
+# ifdef MACINTOSH_EVENTS
+
+  /*--------------------------------------*/
+  /*            Macintosh hacks           */
+  /*--------------------------------------*/
+
+  {
+    int i;
+    Scheme_Object *a[5];
+    Scheme_Subprocess *subproc;
+
+    for (i = 0; i < 3; i++) {
+      if (!SCHEME_FALSEP(args[i]))
+	scheme_arg_mismatch(name, 
+			    "non-#f port argument not allowed on this platform: ", 
+			    args[i]);
     }
-#else
-    -->> Configuration error <<--
-#endif
-#endif
 
-    return status ? scheme_false : scheme_true;
+    if (argc > 4) {
+      if (argc == 5) {
+	if (!SCHEME_STRINGP(args[3]) || scheme_string_has_null(args[3]))
+	  scheme_wrong_type(name, STRING_W_NO_NULLS, 3, c, args);
+	if (!strcmp(SCHEME_STR_VAL(argv[3]), "by-id"))
+	  scheme_arg_mismatch(name, 
+			      "in five-argument mode on this platform, the 4th argument must be \"by-id\": ", 
+			      args[3]);
+	
+	i = scheme_mac_start_app(name, 1, args[4]);
+      } else
+	scheme_arg_mismatch(name,
+			    "extra arguments after the application id are "
+			    "not allowed on this platform: ",
+			    args[5]);
+    } else
+      i = scheme_mac_start_app(name, 0, args[3]);
+
+    subproc = MALLOC_ONE_TAGGED(Scheme_Subprocess);
+    subproc->type = scheme_subprocess_type;
+
+    a[0] = (Scheme_Object *)subproc;
+    a[1] = scheme_false;
+    a[2] = scheme_false;
+    a[3] = scheme_false;
+    a[4] = scheme_make_integer_value(0);
   }
 
-#else
+# else
+  /*--------------------------------------*/
+  /*  Subprocess functionality disabled   */
+  /*--------------------------------------*/
+
   scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
 		   "%s: not supported on this platform",
 		   name);
   return NULL;
-#endif
-}
-
-/************** Scheme interface  **************/
-/* Mostly, call process() with the right flags */
-
-static Scheme_Object *sch_process_star(int c, Scheme_Object *args[])
-{
-  return process(c, args, "process*", 0, 0, 1, 0);
-}
-
-static Scheme_Object *sch_process_star_ports(int c, Scheme_Object *args[])
-{
-  return process(c, args, "process*/ports", 0, 0, 1, 1);
-}
-
-static Scheme_Object *sch_system_star(int c, Scheme_Object *args[])
-{
-#ifdef MACINTOSH_EVENTS
-  if (c != 1) {
-    scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
-		     "system*: extra arguments after the application pathname are "
-		     "not supported for this platform");
-    return NULL;
-  }
-
-  return (scheme_mac_start_app("system*", 0, args[0])
-	  ? scheme_true
-	  : scheme_false);
-#else
-  return process(c, args, "system*", 0, 1, 1, 0);
-#endif
-}
-
-static Scheme_Object *sch_execute_star(int c, Scheme_Object *args[])
-{
-#ifdef MACINTOSH_EVENTS
-  if (c != 1) {
-    scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
-		     "execute*: extra arguments after the application pathname are "
-		     "not supported for this platform");
-    return NULL;
-  }
-
-  if (scheme_mac_start_app("execute*", 0, args[0]))
-    scheme_do_exit(0, NULL);
-
-  return scheme_void;
-#else
-  return process(c, args, "execute*", 0, 1, 0, 0);
-#endif
-}
-
-static Scheme_Object *sch_process(int c, Scheme_Object *args[])
-{
-  return process(c, args, "process", 1, 0, 1, 0);
-}
-
-static Scheme_Object *sch_process_ports(int c, Scheme_Object *args[])
-{
-  return process(c, args, "process/ports", 1, 0, 1, 1);
-}
-
-static Scheme_Object *sch_system(int c, Scheme_Object *args[])
-{
-#ifdef MACINTOSH_EVENTS
-  return (scheme_mac_start_app("system", 1, args[0])
-	  ? scheme_true
-	  : scheme_false);
-#else
-  return process(c, args, "system", 1, 1, 1, 0);
-#endif
-}
-
-static Scheme_Object *sch_execute(int c, Scheme_Object *args[])
-{
-#ifdef MACINTOSH_EVENTS
-  if (scheme_mac_start_app("execute", 1, args[0]))
-    scheme_do_exit(0, NULL);
-
-  return scheme_void;
-#else
-  return process(c, args, "execute", 1, 1, 0, 0);
+# endif
 #endif
 }
 
@@ -5896,6 +5773,8 @@ static void register_traversers(void)
 #ifdef USE_OSKIT_CONSOLE
   GC_REG_TRAV(scheme_rt_oskit_console_input, mark_oskit_console_input);
 #endif
+
+  GC_REG_TRAV(scheme_subprocess_type, mark_subprocess);
 }
 
 END_XFORM_SKIP;

@@ -2319,6 +2319,30 @@ int mark_oskit_console_input_FIXUP(void *p) {
 
 #endif
 
+int mark_subprocess_SIZE(void *p) {
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Subprocess));
+}
+
+int mark_subprocess_MARK(void *p) {
+#ifndef WINDOWS_PROCESSES
+  Scheme_Subprocess *sp = (Scheme_Subprocess *)p;
+  gcMARK(sp->handle);
+#endif
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Subprocess));
+}
+
+int mark_subprocess_FIXUP(void *p) {
+#ifndef WINDOWS_PROCESSES
+  Scheme_Subprocess *sp = (Scheme_Subprocess *)p;
+  gcFIXUP(sp->handle);
+#endif
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Subprocess));
+}
+
+
 #endif  /* PORT */
 
 /**********************************************************************/

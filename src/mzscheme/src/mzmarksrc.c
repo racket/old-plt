@@ -1014,6 +1014,16 @@ mark_oskit_console_input {
 }
 #endif
 
+mark_subprocess {
+ mark:
+#ifndef WINDOWS_PROCESSES
+  Scheme_Subprocess *sp = (Scheme_Subprocess *)p;
+  gcMARK(sp->handle);
+#endif
+ size:
+  gcBYTES_TO_WORDS(sizeof(Scheme_Subprocess));
+}
+
 END port;
 
 /**********************************************************************/

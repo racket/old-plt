@@ -1948,11 +1948,15 @@ datum_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Object
   return form;
 }
 
-static void check_top(char *when, Scheme_Object *form, Scheme_Comp_Env *env)
+static Scheme_Object *check_top(char *when, Scheme_Object *form, Scheme_Comp_Env *env)
 {
   Scheme_Object *c;
 
-  c = SCHEME_STX_CDR(form);
+  if (taking_shortcut) {
+    c = form;
+    taking_shortcut = 0;
+  } else
+    c = SCHEME_STX_CDR(form);
 
   if (!SCHEME_STX_SYMBOLP(c))
     scheme_wrong_syntax("#%top", NULL, form, NULL);
@@ -1974,6 +1978,8 @@ static void check_top(char *when, Scheme_Object *form, Scheme_Comp_Env *env)
 			   ? "unbound variable in module (transformer environment)"
 			   : "unbound variable in module"));
   }
+
+  return c;
 }
 
 static Scheme_Object *
@@ -1981,14 +1987,7 @@ top_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, 
 {
   Scheme_Object *c;
 
-  if (taking_shortcut) {
-    c = form;
-    taking_shortcut = 0;
-  } else {
-    check_top("compile", form, env);
-
-    c = SCHEME_STX_CDR(form);
-  }
+  c= check_top("compile", form, env);
 
   if (env->genv->module && !rec[drec].resolve_module_ids) {
     /* Self-reference in a module; need to remember the modidx */

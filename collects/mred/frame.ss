@@ -1184,6 +1184,6 @@
     (define info-file-frame% (make-file-frame% info-frame%))
 
     (define pasteboard-frame% (make-pasteboard-frame% simple-menu-frame%))
-    (define pasteboard-file-frame% (make-pasteboard-file-frame%
+    (define pasteboard-info-file-frame% (make-pasteboard-file-frame%
 				    (make-file-frame%
 				     pasteboard-frame%))))

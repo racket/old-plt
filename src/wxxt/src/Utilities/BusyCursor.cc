@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: BusyCursor.cc,v 1.1.1.1 1997/12/22 17:28:56 mflatt Exp $
+ * $Id: BusyCursor.cc,v 1.2 1998/04/11 13:57:30 mflatt Exp $
  *
  * Purpose: busy cursor
  *
@@ -35,7 +35,7 @@
 extern int wxGetBusyState();
 extern void wxSetBusyState(int);
 
-static void wxXSetNoCursor(wxWindow *win, wxCursor *cursor)
+void wxXSetNoCursor(wxWindow *win, wxCursor *cursor)
 {
   Cursor c;
 

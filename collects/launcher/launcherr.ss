@@ -14,11 +14,12 @@
 			     base))))))))
   
   (define (install-template dest kind mz mr)
+    (define src (build-path (collection-path "launcher")
+                             (if (eq? kind 'mzscheme) mz mr)))
     (delete-file dest)
-    (unless (copy-file (build-path (collection-path "launcher") 
-				   (if (eq? kind 'mzscheme) mz mr))
-		       dest)
-      (error 'make-launcher "Couldn't copy template to destination: ~a" dest)))
+    (unless (copy-file src dest)
+      (error 'make-launcher "Couldn't copy template: ~a to destination: ~a" 
+              src dest)))
   
   (define (string-append/spaces f flags)
     (if (null? flags)
@@ -245,7 +246,7 @@
 	  (close-output-port p)))))
   
   (define (make-macos-launcher kind flags dest)
-    (install-template dest kind "MzStarter" "MrStarter")
+    (install-template dest kind "GoMz" "GoMr")
     (let ([p (open-output-file dest 'truncate)])
       (display (str-list->sh-str flags) p)
       (close-output-port p)))

@@ -458,7 +458,8 @@ static int parse_numerical(const char *address, unsigned long *addr)
   }
      
   if (p == 3) {
-    n[p] = v;
+    vs[p] = v;
+    n[p] = (unsigned char)v;
     p++;
   }
      

@@ -13,6 +13,11 @@
   (define snip@
     (unit/sig drscheme:snip^
       (import)
+      
+      (define special<%>
+        (interface ()
+          read-special))
+      
       (define (set-box/f! b v) (when (box? b) (set-box! b v)))
       
       (define body-pen (send the-pen-list find-or-create-pen "BLACK" 0 'solid))
@@ -212,9 +217,13 @@
       (send (get-the-snip-class-list) add whole/part-number-snipclass)
       
       (define whole/part-number-snip%
-        (class100* snip% (gui-utils:text-snip<%>) (_number . args)
+        (class100* snip% (special<%>) (_number . args)
 	  (private-field
            [number _number])
+          (public
+            [read-special
+             (lambda ()
+               (values number 1))])
           (override
             [get-text
              (case-lambda
@@ -226,10 +235,7 @@
                                     (if (or (string=? "" wholes)
                                             (string=? "-" wholes))
                                         (format "~a~a/~a" wholes nums dens)
-                                        (format "~a ~a/~a" wholes nums dens)))]
-            [get-string
-             (lambda ()
-               (format " ~a " number))])
+                                        (format "~a ~a/~a" wholes nums dens)))])
           (private-field
            [wholes (cond
                      [(= (floor number) 0) ""]

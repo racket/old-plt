@@ -95,13 +95,11 @@ static XtResource MenuResources[] =
     /* margins around the menu items */
     {XtNhMargin, XtCHMargin, XtRDimension, sizeof(Dimension),
         offset(menu.hmargin), XtRImmediate, (XtPointer)1},
-    {XtNvMargin, XtCVMargin, XtRDimension, sizeof(Dimension),
-        offset(menu.vmargin), XtRImmediate, (XtPointer)2},
-    {XtNspacing, XtCSpacing, XtRDimension, sizeof(Dimension),
-        offset(menu.spacing), XtRImmediate, (XtPointer)4},
 
     {XtNhorizontal, XtCHorizontal, XtRBoolean, sizeof(Boolean),
 	offset(menu.horizontal), XtRImmediate, (XtPointer) True},
+    {XtNforChoice, XtCForChoice, XtRBoolean, sizeof(Boolean),
+	offset(menu.forChoice), XtRImmediate, (XtPointer) False},
 
 
     /* menu structure */
@@ -119,6 +117,11 @@ static XtResource MenuResources[] =
         offset(menu.on_no_select), XtRCallback, (XtPointer)NULL},
 };
 #undef offset
+
+#define VMARGIN 2
+#define ISPACING 4
+#define CHOICE_LEFT 12
+#define CHOICE_RIGHT 2
 
 static void    MenuClassInitialize();
 static void    MenuDestroy();
@@ -745,10 +748,13 @@ char *ResourcedText(MenuWidget mw, menu_item *item, Subresource type)
 static void MenuTextSize(MenuWidget mw, menu_item *item, Boolean in_menubar,
 			 unsigned *l, unsigned *m, unsigned *r, unsigned *h)
 {
-    *h = mw->menu.font->ascent + mw->menu.font->descent
-	 + 2*mw->menu.vmargin + 2*mw->menu.shadow_width;
-    *l =
-    *r = mw->menu.hmargin + mw->menu.shadow_width;
+    *h = (mw->menu.font->ascent + mw->menu.font->descent
+	  + 2*VMARGIN + 2*mw->menu.shadow_width);
+    *l = *r = mw->menu.hmargin + mw->menu.shadow_width;
+    if (mw->menu.forChoice) {
+      *l += CHOICE_LEFT;
+      *r += CHOICE_RIGHT;
+    }
     *m = StringWidth(mw, ResourcedText(mw, item, SUBRESOURCE_LABEL));
 }
 
@@ -758,14 +764,14 @@ static void MenuButtonSize(MenuWidget mw, menu_item *item, Boolean in_menubar,
     MenuTextSize(mw, item, in_menubar, l, m, r, h);
     if (!in_menubar && item->key_binding)
 	*r += StringWidth(mw, ResourcedText(mw, item, SUBRESOURCE_KEY)) 
-	      + (3 * mw->menu.spacing);
+	      + (3 * ISPACING);
 }
 
 static void MenuToggleSize(MenuWidget mw, menu_item *item, Boolean in_menubar,
 			   unsigned *l, unsigned *m, unsigned *r, unsigned *h)
 {
     MenuButtonSize(mw, item, in_menubar, l, m, r, h);
-    *l += mw->menu.indicator_size + mw->menu.spacing;
+    *l += mw->menu.indicator_size + ISPACING;
 }
 
 static void MenuCascadeSize(MenuWidget mw, menu_item *item, Boolean in_menubar,
@@ -773,7 +779,7 @@ static void MenuCascadeSize(MenuWidget mw, menu_item *item, Boolean in_menubar,
 {
     MenuTextSize(mw, item, in_menubar, l, m, r, h);
     if (!in_menubar)
-	*r += mw->menu.indicator_size + mw->menu.spacing;
+	*r += mw->menu.indicator_size + ISPACING;
 }
 
 static void MenuPushrightSize(MenuWidget mw,menu_item *item,Boolean in_menubar,
@@ -846,7 +852,7 @@ static void ComputeMenuSize(MenuWidget mw, menu_state *ms)
     if (!max_height && in_menubar) {
       /* For menu bar: make it at least as tall as with an item */
       max_height = mw->menu.font->ascent + mw->menu.font->descent
-	+ 2*mw->menu.vmargin + 2*mw->menu.shadow_width;      
+	+ 2*VMARGIN + 2*mw->menu.shadow_width;      
     }
     ms->w       = max_left_width + max_label_width + max_right_width
 	          + 2*mw->menu.shadow_width;
@@ -877,7 +883,7 @@ static void DrawTextItem(MenuWidget mw, menu_state *ms, menu_item *item,
 
     if (in_menubar) {
 	if (item->type == MENU_TOGGLE || item->type == MENU_RADIO) {
-	    extra_x = mw->menu.indicator_size + mw->menu.spacing;
+	    extra_x = mw->menu.indicator_size + ISPACING;
 	}
     }
     if ((label=ResourcedText(mw, item, SUBRESOURCE_LABEL)))
@@ -885,7 +891,7 @@ static void DrawTextItem(MenuWidget mw, menu_state *ms, menu_item *item,
 		     item->enabled || item->type==MENU_TEXT ?
 		     mw->menu.normal_GC : mw->menu.inactive_GC,
 		     x+ms->wLeft+extra_x,
-		     y+mw->menu.shadow_width+mw->menu.vmargin+mw->menu.font->ascent,
+		     y+mw->menu.shadow_width+VMARGIN+mw->menu.font->ascent,
 		     label, strlen(label), NULL, mw->menu.font, 0);
     if (item->enabled && item->type!=MENU_TEXT)
 	Xaw3dDrawRectangle(
@@ -912,8 +918,8 @@ static void DrawButtonItem(MenuWidget mw, menu_state *ms, menu_item *item,
     && (key=ResourcedText(mw, item, SUBRESOURCE_KEY)))
       XfwfDrawString(XtDisplay(mw), ms->win,
 		     item->enabled ? mw->menu.normal_GC : mw->menu.inactive_GC,
-		     x+ms->wLeft+ms->wMiddle+(3 * mw->menu.spacing),
-		     y+mw->menu.shadow_width+mw->menu.vmargin+mw->menu.font->ascent,
+		     x+ms->wLeft+ms->wMiddle+(3 * ISPACING),
+		     y+mw->menu.shadow_width+VMARGIN+mw->menu.font->ascent,
 		     key, strlen(key), NULL, mw->menu.font, 0);
 }
 
@@ -929,7 +935,7 @@ static void DrawRadioItem(MenuWidget mw, menu_state *ms, menu_item *item,
 	mw->menu.erase_GC,
 	item->enabled ? mw->menu.normal_GC : mw->menu.inactive_GC,
 	x+mw->menu.shadow_width+mw->menu.hmargin,
-	y+mw->menu.shadow_width+mw->menu.vmargin
+	y+mw->menu.shadow_width+VMARGIN
 	+(mw->menu.font->ascent
 	  +mw->menu.font->descent
 	  -mw->menu.indicator_size)/2,
@@ -947,7 +953,7 @@ static void DrawToggleItem(MenuWidget mw, menu_state *ms, menu_item *item,
       int h, h2, h4, h34;
 
       x += mw->menu.shadow_width + mw->menu.hmargin;
-      y += (mw->menu.shadow_width + mw->menu.vmargin
+      y += (mw->menu.shadow_width + VMARGIN
 	    + (mw->menu.font->ascent
 	       + mw->menu.font->descent
 	       - mw->menu.indicator_size)/2) + 1;
@@ -983,7 +989,7 @@ static void DrawCascadeItem(MenuWidget mw, menu_state *ms, menu_item *item,
 	    -(3*mw->menu.shadow_width
 	      +mw->menu.hmargin
 	      +mw->menu.indicator_size),
-	    y+mw->menu.shadow_width+mw->menu.vmargin
+	    y+mw->menu.shadow_width+VMARGIN
 	    +(mw->menu.font->ascent
 	      +mw->menu.font->descent
 	      -mw->menu.indicator_size)/2,

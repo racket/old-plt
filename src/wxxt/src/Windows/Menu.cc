@@ -118,6 +118,8 @@ extern "C" {
   extern void wxRemoveGrab(Widget);
 };
 
+int wxPopupForChoice;
+
 Bool wxMenu::PopupMenu(Widget in_w, int root_x, int root_y)
 {
     Widget wgt;
@@ -125,6 +127,9 @@ Bool wxMenu::PopupMenu(Widget in_w, int root_x, int root_y)
     int rx, ry;
     XEvent xevent;
     String a[1];
+    Bool forChoice = wxPopupForChoice;
+
+    wxPopupForChoice = 0;
 
     if (X)
       return FALSE;
@@ -137,13 +142,16 @@ Bool wxMenu::PopupMenu(Widget in_w, int root_x, int root_y)
 
     X = new wxMenu_Widgets;
     X->shell = XtVaCreatePopupShell
-	("popup", overrideShellWidgetClass, in_w, NULL);
+	("popup", overrideShellWidgetClass, in_w, 
+	 XtNborderWidth, forChoice ? 0 : 1,
+	 NULL);
     wgt = XtVaCreateManagedWidget
 	("menu", menuWidgetClass, X->shell,
 	 XtNmenu,       top,
 	 XtNfont,       font->GetInternalFont(),
 	 XtNforeground, wxBLACK_PIXEL,
 	 XtNbackground, wxGREY_PIXEL,
+	 XtNforChoice,  forChoice,
 	 NULL);
     X->menu = wgt;
     XtRealizeWidget(X->shell);

@@ -43,14 +43,13 @@ SOFTWARE.
  foreground          Foreground         Pixel           XtDefaultForeground
  hMargin             HMargin            Dimension       1
  horizontal          Horizontal         Boolean         True
+ forChoice           ForChoice          Boolean         False
  menu                Menu               Pointer         NULL
  onNewItem           Callback           XtCallbackList  NULL
  onSelect            Callback           XtCallbackList  NULL
- spacing             Spacing            Dimension       4
  indicatorPixel      IndicatorPixel     Pixel           dynamic
  indicatorContrast   IndicatorContrast  Int             85%
  indicatorSize       IndicatorSize      Dimension       dynamic
- vMargin             VMargin            Dimension       2
 
  * Resources extracted from ThreeD
 
@@ -67,6 +66,8 @@ SOFTWARE.
 #define XtCHMargin              "HMargin"
 #define XtNhorizontal           "horizontal"
 #define XtCHorizontal           "Horizontal"
+#define XtNforChoice            "forChoice"
+#define XtCForChoice            "ForChoice"
 #define XtNmenu                 "menu"
 #define XtCMenu                 "Menu"
 #define XtNrefresh              "refresh"
@@ -74,10 +75,6 @@ SOFTWARE.
 #define XtNonNewItem            "onNewItem"
 #define XtNonSelect             "onSelect"
 #define XtNonNoSelect           "onNoSelect"
-#define XtNspacing              "spacing"
-#define XtCSpacing              "Spacing"
-#define XtNvMargin              "vMargin"
-#define XtCVMargin              "hMargin"
 
 #define XtNindicatorPixel       "indicatorPixel"
 #define XtCIndicatorPixel       "IndicatorPixel"

@@ -308,6 +308,8 @@ void wxChoice::Command(wxCommandEvent *event)
 // callback for commandWidgetClass
 //-----------------------------------------------------------------------------
 
+extern int wxPopupForChoice;
+
 void wxChoice::EventCallback(Widget WXUNUSED(w),
 			     XtPointer clientData, XtPointer WXUNUSED(ptr))
 {
@@ -322,7 +324,8 @@ void wxChoice::EventCallback(Widget WXUNUSED(w),
     // popup menu below "button"
     XtVaGetValues(choice->X->handle, XtNheight, &hh, NULL);
 
-    choice->PopupMenu(choice->choice_menu, 0, (int)hh);
+    wxPopupForChoice = 1;
+    choice->PopupMenu(choice->choice_menu, 2, (int)hh - 2);
 
 #ifdef MZ_PRECISE_GC
     XFORM_RESET_VAR_STACK;

@@ -55,9 +55,8 @@ typedef struct _MenuPart {
     Pixel	    foreground;	    /* foreground drawing */
     XFontStruct     *font;
     Boolean         horizontal;
+    Boolean         forChoice;      /* Means extra left and right space */
     Dimension	    hmargin;	    /* margins around menu items */
-    Dimension	    vmargin;
-    Dimension	    spacing;
     Dimension	    indicator_size; /* data for toggle, radio and cascade */
     Pixel           indicator_pixel;
     Pixmap          indicator_pxmap;

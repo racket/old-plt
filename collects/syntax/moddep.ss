@@ -154,17 +154,23 @@
 
   (define re:dir (regexp "(.+?)/+(.*)"))
 
+  (define (force-relto relto dir?)
+    (cond
+     [(string? relto)
+      (if dir?
+	  (let-values ([(base n d?) (split-path relto)])
+	    base)
+	  relto)]
+     [(not dir?)
+      (error 'resolve-module-path-index "can't resolve \"self\" with just a relative directory")]
+     [(procedure? relto) (relto)]
+     [else
+      (current-directory)]))
+
   (define resolve-module-path
     ;; relto should be a complete path, #f, or procedure that returns a complete path
     (lambda (s relto)
-      (let ([get-dir (lambda ()
-		       (cond
-			[(string? relto)
-			 (let-values ([(base n d?) (split-path relto)])
-			   base)]
-			[(procedure? relto) (relto)]
-			[else
-			 (current-directory)]))])
+      (let ([get-dir (lambda () (force-relto relto #t))])
 	(cond
 	 [(string? s)
 	  ;; Parse Unix-style relative path string
@@ -199,7 +205,7 @@
     (let-values ([(path base) (module-path-index-split mpi)])
       (if path
 	  (resolve-module-path path (resolve-possible-module-path-index base relto))
-	  relto)))
+	  (force-relto relto #f))))
 
   (define (resolve-possible-module-path-index base relto)
     (cond

@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.206 2000/05/28 03:47:31 shriram Exp $
+; $Id: scm-main.ss,v 1.207 2000/05/30 19:53:38 shriram Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -430,8 +430,8 @@
 		  vars)
 		(make-internal-definition vars val))))
 	  (else
-	    (static-error expr
-	      "internal definition" 'kwd:define
+	    (static-error
+	      "internal definition" 'kwd:define expr
 	      "malformed definition"))))))
 
   (add-primitivized-micro-form 'begin internal-define-vocab-delta

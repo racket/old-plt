@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.132 1997/09/19 02:20:21 shriram Exp shriram $
+; $Id: scm-main.ss,v 1.133 1997/09/19 17:08:31 shriram Exp shriram $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -716,6 +716,20 @@
 	  (ds-core
 	    (lambda (expr env attributes vocab names struct-expr)
 	      (cons names struct-expr)))))))
+
+  (when (language>=? 'structured)
+    (let* ((kwd '())
+	    (in-pattern '(_ (type-spec fields ...)))
+	    (out-pattern '(define-struct type-spec (fields ...)))
+	    (m&e (pat:make-match&env in-pattern kwd)))
+      (add-primitivized-macro-form 'define-structure scheme-vocabulary
+	(lambda (expr env)
+	  (or (pat:match-and-rewrite expr m&e out-pattern kwd env)
+	    (static-error expr "Malformed define-structure"))))
+      (add-primitivized-macro-form 'define-structure local-extract-vocab
+	(lambda (expr env)
+	  (or (pat:match-and-rewrite expr m&e out-pattern kwd env)
+	    (static-error expr "Malformed define-structure"))))))
 
   (when (language>=? 'structured)
     (let* ((kwd '())

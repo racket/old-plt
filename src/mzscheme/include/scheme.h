@@ -88,6 +88,10 @@ typedef long FILE;
 # define _LINUX_TYPES_H  /* Blocks types.h */
 #endif
 
+#ifdef OS_X
+# include "carbon-precomp"
+#endif
+
 #ifndef SCHEME_DIRECT_EMBEDDED
 # define SCHEME_DIRECT_EMBEDDED 1
 #endif

@@ -274,6 +274,14 @@ case $OS in
       enable_sgc=yes
     fi
     ;;
+  Darwin)
+    if test "$CC" = "mwccppc"; then
+      CFLAGS="-gccinc $CFLAGS -ext o -g -O2"
+      AR="libtool"
+      ARFLAGS="-o"
+      LIBS="$LIBS -framework Carbon"
+    fi
+    ;;
   *)
     ;;
 esac

@@ -629,8 +629,7 @@
 
   /************** Mac OS X  ****************/
 
-# if defined(__APPLE__) && defined(__ppc__) && (defined(OS_X) || !defined(__MWERKS__))
-  /* hard to believe we can't do better */
+# if defined(__APPLE__) && defined(__ppc__) && defined(__MACH__)
 
 # define SCHEME_PLATFORM_LIBRARY_SUBPATH "ppc-macosx"
 

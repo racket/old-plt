@@ -39,7 +39,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="Unicows.lib WSock32.lib"
+				AdditionalDependencies="Unicows.lib WSock32.lib User32.lib Advapi32.lib"
 				OutputFile="..\..\..\$(ProjectName).exe"
 				ProgramDatabaseFile="..\..\..\$(ProjectName).pdb"
 				LinkIncremental="1"
@@ -89,7 +89,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="Unicows.lib WSock32.lib"
+				AdditionalDependencies="Unicows.lib WSock32.lib User32.lib Advapi32.lib"
 				OutputFile="..\..\..\$(ProjectName).exe"
 				ProgramDatabaseFile="..\..\..\$(ProjectName).pdb"
 				SuppressStartupBanner="TRUE"

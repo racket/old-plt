@@ -185,9 +185,6 @@
 			<File
 				RelativePath="..\..\mred\Wxs\WXS_WIN.cxx">
 			</File>
-			<File
-				RelativePath="..\..\wxwindow\src\msw\wx_dc.cxx">
-			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"

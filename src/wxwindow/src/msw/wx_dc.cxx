@@ -107,6 +107,8 @@ wxDC::wxDC(void)
   device_origin_y = 0;
   user_scale_x = 1.0;
   user_scale_y = 1.0;
+  logical_scale_x = 1.0;
+  logical_scale_y = 1.0;
   mapping_mode = wxPIXELS_MAP;
   scaling_mode = wxWX_SCALE;
   title = NULL;

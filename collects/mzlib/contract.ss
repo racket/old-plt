@@ -28,6 +28,7 @@ add struct contracts for immutable structs?
            contract-name
            flat-contract?
            flat-contract
+           flat-contract-predicate
            flat-named-contract)
 
   (require-for-syntax mzscheme

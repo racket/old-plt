@@ -192,7 +192,7 @@
       ;;  Decoding `from' names                                  ;;
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-      (define re:iso (regexp "=[?]iso-8859-1[?]Q[?](.*)[?]="))
+      (define re:iso (regexp "=[?]iso-8859-1[?][qQ][?](.*)[?]="))
       (define (parse-iso-8859-1 s)
 	(and s
 	     (let ([m (regexp-match re:iso s)])

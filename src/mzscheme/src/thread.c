@@ -1389,6 +1389,7 @@ void scheme_swap_thread(Scheme_Thread *new_thread)
 #endif
   if (!swap_no_setjmp && SETJMP(scheme_current_thread)) {
     /* We're back! */
+    /* (see also initial swap in in start_child() */
 #ifdef RUNSTACK_IS_GLOBAL
     MZ_RUNSTACK = scheme_current_thread->runstack;
     MZ_RUNSTACK_START = scheme_current_thread->runstack_start;
@@ -1524,12 +1525,24 @@ static void start_child(Scheme_Thread * volatile child,
 			Scheme_Object * volatile child_eval)
 {
   if (SETJMP(child)) {
+    /* Initial swap in: */
 #ifdef RUNSTACK_IS_GLOBAL
     MZ_RUNSTACK = scheme_current_thread->runstack;
     MZ_RUNSTACK_START = scheme_current_thread->runstack_start;
     MZ_CONT_MARK_STACK = scheme_current_thread->cont_mark_stack;
     MZ_CONT_MARK_POS = scheme_current_thread->cont_mark_pos;
 #endif
+    scheme_gmp_tls_unload(scheme_current_thread->gmp_tls);
+    {
+      Scheme_Object *l, *o;
+      Scheme_Closure_Func f;
+      for (l = thread_swap_callbacks; SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {
+	o = SCHEME_CAR(l);
+	f = SCHEME_CLOS_FUNC(o);
+	o = SCHEME_CLOS_DATA(o);
+	f(o);
+      }
+    }
 
     RESETJMP(child);
 

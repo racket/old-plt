@@ -4666,7 +4666,6 @@ void scheme_gmp_tls_unload(long *s)
   current_total_allocation = (unsigned long)s[0];
   max_total_allocation = (unsigned long)s[1];
   current = (tmp_stack *)s[2];
-  
 }
 #else
 

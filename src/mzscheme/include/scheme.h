@@ -764,7 +764,7 @@ typedef struct Scheme_Thread {
   int user_tls_size;
 
   /* save thread-specific GMP state: */
-  long gmp_tls[3];
+  long gmp_tls[6];
 
   struct Scheme_Thread_Custodian_Hop *mr_hop;
   Scheme_Custodian_Reference *mref;

@@ -80,6 +80,9 @@ Bool wxGauge::Create(wxPanel *panel, char *label,
 
   SetSize(x, y, width, height, wxSIZE_AUTO);
 
+  if (static_label)
+    BringWindowToTop(static_label);
+
   if (!(style & wxINVISIBLE)) {
     ShowWindow(wx_button, SW_SHOW);
     if (static_label)

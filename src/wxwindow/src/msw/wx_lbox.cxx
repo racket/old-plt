@@ -84,11 +84,11 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func,
   DWORD wstyle;
   // Windows sense of MULTIPLE & EXTENDED is backwards from ours.
   if (multiple == wxEXTENDED)
-    wstyle = WS_VSCROLL | WS_BORDER | LBS_MULTIPLESEL | LBS_NOTIFY | WS_TABSTOP;
+    wstyle = WS_VSCROLL | WS_BORDER | LBS_MULTIPLESEL | LBS_NOTIFY;
   else if (multiple == wxMULTIPLE)
-    wstyle = WS_VSCROLL | WS_BORDER | LBS_EXTENDEDSEL | LBS_NOTIFY | WS_TABSTOP ;
+    wstyle = WS_VSCROLL | WS_BORDER | LBS_EXTENDEDSEL | LBS_NOTIFY;
   else
-    wstyle = WS_VSCROLL | WS_BORDER | LBS_NOTIFY | WS_TABSTOP;
+    wstyle = WS_VSCROLL | WS_BORDER | LBS_NOTIFY;
   if ((Multiple&wxALWAYS_SB) || (style & wxALWAYS_SB))
     wstyle |= LBS_DISABLENOSCROLL ;
   if (style & wxHSCROLL)
@@ -126,6 +126,10 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func,
   ReleaseDC((HWND)ms_handle,the_dc) ;
 
   SetSize(x, y, width, height);
+
+  if (static_label)
+    BringWindowToTop(static_label);
+  BringWindowToTop(wx_list);
 
   if (!(style & wxINVISIBLE)) {
     if (static_label)
@@ -415,10 +419,9 @@ void wxListBox::SetSize(int x, int y, int width, int height, int sizeFlags)
   if (control_width <= 0)
     control_width = DEFAULT_ITEM_WIDTH;
 
-  //  wxDebugMsg("About to set the listbox height to %d", (int)control_height);
   MoveWindow((HWND)ms_handle, (int)control_x, (int)control_y,
 	     (int)control_width, (int)control_height, TRUE);
-  
+
   OnSize(width, height);
 }
 
@@ -585,9 +588,14 @@ Bool wxListBox::Show(Bool show)
     cshow = SW_HIDE;
 
   ShowWindow(wnd, cshow);
+  if (show)
+    BringWindowToTop(wnd);
 
-  if (static_label)
-	ShowWindow(static_label, cshow);
+  if (static_label) {
+    ShowWindow(static_label, cshow);
+    if (show)
+      BringWindowToTop(static_label);
+  }
 
   return TRUE;
 }

@@ -254,6 +254,9 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func,
   panel->AdvanceCursor(this);
   Callback(func);
 
+  if (style & HAS_LABEL)
+    BringWindowToTop((HWND)ms_handle);
+
   if (_style & wxINVISIBLE)
     Show(FALSE);
 

@@ -630,7 +630,7 @@ Bool wxWindow::Show(Bool show)
   else
     cshow = SW_HIDE;
   ShowWindow(hWnd, (BOOL)cshow);
-  if (show)
+  if (show && (__type != wxTYPE_GROUP_BOX) && (__type != wxTYPE_TAB_CHOICE))
     BringWindowToTop(hWnd);
 
   {

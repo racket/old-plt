@@ -17,6 +17,8 @@ wxGroupBox::wxGroupBox(wxPanel *panel, char *Title, long _style):
 {
   int x = 0, y = 0, width, height;
 
+  __type = wxTYPE_GROUP_BOX;
+
   panel->AddChild(this);
   wxWinType = wxTYPE_HWND;
 
@@ -31,7 +33,7 @@ wxGroupBox::wxGroupBox(wxPanel *panel, char *Title, long _style):
   HWND the_handle = cparent->handle;
 
   ms_handle = wxwmCreateWindowEx(0, GROUP_CLASS, the_label,
-				 GROUP_FLAGS 
+				 GROUP_FLAGS
 				 | ((_style & wxINVISIBLE) ? 0 : WS_VISIBLE),
 				 0, 0, 0, 0,
 				 cparent->handle, (HMENU)NewId(this),
@@ -63,6 +65,8 @@ wxGroupBox::wxGroupBox(wxPanel *panel, char *Title, long _style):
 
   SetSize(x, y, width, height);
   panel->AdvanceCursor(this);
+
+  BringWindowToTop((HWND)ms_handle);
 
   if (_style & wxINVISIBLE)
     Show(FALSE);

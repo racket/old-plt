@@ -120,6 +120,10 @@ Bool wxChoice::Create(wxPanel *panel, wxFunction func, char *Title,
 
   SetSelection(0);
 
+  if (static_label)
+    BringWindowToTop(static_label);
+  BringWindowToTop(wx_combo);
+
   if (style & wxINVISIBLE)
     Show(FALSE);
 

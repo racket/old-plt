@@ -150,6 +150,11 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
   panel->AdvanceCursor(this);
   Callback(func);
 
+  if (static_label)
+    BringWindowToTop(static_label);
+  if (edit_value)
+    BringWindowToTop(edit_value);
+
   if (style & wxINVISIBLE)
     Show(FALSE);
 

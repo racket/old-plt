@@ -751,6 +751,9 @@
 (syntax-test #'(letrec () (define x 2)))
 (syntax-test #'(lambda () (define x 2)))
 (syntax-test #'(lambda () (void (define x 2)) 1))
+(syntax-test #'(cond [(< 2 3) (define x 2)] [else 5]))
+(syntax-test #'(cond [else (define x 2)]))
+(syntax-test #'(cond [else (define x 2) 0]))
 
 ;; No good way to test in mzc:
 (error-test #'(define x (values)) exn:application:arity?)

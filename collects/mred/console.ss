@@ -262,48 +262,56 @@
 	    [timer-writes 0])
 	  (public
 	    [generic-write
-	     (lambda (s style-func)
-	       (mzlib:function:dynamic-delay-break
-		(lambda ()
-		  (semaphore-wait timer-sema)
-		  (if timer-on
-		      (begin
-			(set! timer-writes (add1 timer-writes))
-			(when (> timer-writes CACHE-WRITE-COUNT)
-			  (end-edit-sequence)
-			  (begin-edit-sequence #f)
-			  (set! timer-writes 0)))
-		      (begin
-			(set! timer-writes 0)
-			(let ([on-box (box #t)])
-			  (begin-edit-sequence #f)
-			  (set! timer-on on-box)
-			  (thread 
-			   (lambda ()
-			     (dynamic-wind
-			      void
-			      (lambda ()
-				(sleep CACHE-TIME))
-			      (lambda ()
-				(semaphore-wait timer-sema)
-				(when (unbox on-box)
-				  (end-edit-sequence)
-				  (set! timer-on #f))
-				(semaphore-post timer-sema))))))))
-		  (semaphore-post timer-sema)
-		  (begin-edit-sequence #f)
-		  (set-position (last-position))
-		  (when (and prompt-mode? autoprompting?)
-		    (insert #\newline))
-		  (let ((start (last-position)))
-		    (insert (if (is-a? s wx:snip%)
-				(send s copy)
-				s))
-		    (let ((end (last-position)))
-		      (change-style () start end)
-		      (style-func start end)))
-		  (end-edit-sequence)
-		  (set-prompt-mode #f))))]
+	     (let ([first-time? #t])
+	       (lambda (s style-func)
+		 (let ([handle-insertion
+			(lambda ()
+			  (let ((start (last-position)))
+			    (insert (if (is-a? s wx:snip%)
+					(send s copy)
+					s))
+			    (let ((end (last-position)))
+			      (change-style () start end)
+			      (style-func start end))))])
+		 (if first-time?
+		     (begin
+		       (set! first-time? #f)
+		       (handle-insertion))
+		     (mzlib:function:dynamic-delay-break
+		      (lambda ()
+			(semaphore-wait timer-sema)
+			(if timer-on
+			    (begin
+			      (set! timer-writes (add1 timer-writes))
+			      (when (> timer-writes CACHE-WRITE-COUNT)
+				(end-edit-sequence)
+				(begin-edit-sequence #f)
+				(set! timer-writes 0)))
+			    (begin
+			      (set! timer-writes 0)
+			      (let ([on-box (box #t)])
+				(begin-edit-sequence #f)
+				(set! timer-on on-box)
+				(thread 
+				 (lambda ()
+				   (dynamic-wind
+				    void
+				    (lambda ()
+				      (sleep CACHE-TIME))
+				    (lambda ()
+				      (semaphore-wait timer-sema)
+				      (when (unbox on-box)
+					(end-edit-sequence)
+					(set! timer-on #f))
+				      (semaphore-post timer-sema))))))))
+			(semaphore-post timer-sema)
+			(begin-edit-sequence #f)
+			(set-position (last-position))
+			(when (and prompt-mode? autoprompting?)
+			  (insert #\newline))
+			(handle-insertion)
+			(end-edit-sequence)
+			(set-prompt-mode #f)))))))]
 	    [generic-close (lambda () '())]
 	    [flush-console-output
 	     (lambda ()

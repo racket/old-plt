@@ -569,39 +569,53 @@
                              [free-varrefs (varref-set-union free-varrefs-cases)])
                   (outer-lambda-abstraction annotated-case-lambda free-varrefs))]
                
+               ; for if's, we assume that the "test" is a varref, and thus the if does not
+               ; need to be rewritten to move the non-tail part outside of the source break
+               ; (this is true in beginner, intermediate, & advanced)
+               
                [(if test then else)
 		(let*-2vals
                     ([(annotated-test free-varrefs-test) 
-                      (non-tail-recur (z:if-form-test expr))]
+                      (non-tail-recur (syntax test))]
                      [(annotated-then free-varrefs-then) 
-                      (tail-recur (z:if-form-then expr))]
+                      (tail-recur (syntax then))]
                      [(annotated-else free-varrefs-else) 
-                      (tail-recur (z:if-form-else expr))]
+                      (tail-recur (syntax else)]
                      [free-varrefs (varref-set-union (list free-varrefs-test 
                                                            free-varrefs-then 
                                                            free-varrefs-else))]
                      [annotated-if
                       (d->so expr `(if ,annotated-test ,annotated-then ,annotated-else))])
-                  (if (or cheap-wrap? (and ankle-wrap?
-                                           test-is-varref?
-                                           (memq 'no-temps-for-varrefs wrap-opts)))
-                      (let ([annotated (if (utils:signal-not-boolean)
-                                           `(#%let ((,if-temp-sym ,annotated-test)) ,annotated-2)
-                                           `(#%if ,annotated-test ,annotated-then ,annotated-else))])
-                        (values (appropriate-wrap annotated free-varrefs) free-varrefs))
-                      (let* ([annotated `(#%begin
-                                          (#%set! ,if-temp-sym ,annotated-test)
-                                          ,(break-wrap annotated-2))]
-                             [debug-info (make-debug-info-app (binding-set-union (list tail-bound (list if-temp)))
-                                                              (varref-set-union (list free-varrefs (list if-temp)))
-                                                              'none)]
-                             [wcm-wrapped (wcm-wrap debug-info annotated)]
-                             [outer-annotated `(#%let ((,if-temp-sym ,*unevaluated*)) ,wcm-wrapped)])
-                        (values outer-annotated free-varrefs))))]  
-                
+                  (2vals
+                   (if foot-wrap?
+                       (wcm-wrap (make-debug-info-normal free-varrefs) annotated-if)
+                       (appropriate-wrap annotated-if free-varrefs))
+                   free-varrefs))]
                
-               
-
+               [(begin . bodies-stx)
+                (if top-level? 
+                    (let*-2vals
+                        ([(annotated-bodies free-varref-sets)
+                          (2vals-map (lambda (expr)
+                                       (top-level-annotate/inner expr)) 
+                                     (syntax->list (syntax bodies-stx)))])
+                      (2vals (d->so expr `(begin ,@annotated-bodies))
+                             (varref-set-union free-varref-sets)))
+                    (let*-2vals 
+                        ([bodies (syntax->list (syntax bodies))]
+                         [(all-but-last-body last-body-list) 
+                          (list-partition bodies (- (length bodies) 1))]
+                         [(last-body) (car last-body-list)]
+                         [(annotated-a free-bindings-a)
+                          (dual-map non-tail-recur all-but-last-body)]
+                         [(annotated-final free-bindings-final)
+                          (tail-recur last-body)]
+                         [(free-bindings) (varref-set-union (cons free-bindings-final free-bindings-a))]
+                         [(debug-info) (make-debug-info-normal free-bindings)]
+                         [(annotated) `(#%begin ,@(append annotated-a (list annotated-final)))])
+                       (values (ccond [(or cheap-wrap? ankle-wrap?) (appropriate-wrap annotated free-bindings)]
+                                      [foot-wrap? (wcm-wrap debug-info annotated)])
+                               free-bindings)))]
 	       ; the variable forms 
 	       
                [(z:varref? expr)
@@ -753,31 +767,7 @@
                               (wcm-wrap (make-debug-info-normal null) annotated))
                           null))]
                
-               [(z:begin-form? expr)
-                (if top-level? 
-                    (let*-values
-                     ([(bodies) (z:begin-form-bodies expr)]
-                      [(annotated-bodies free-bindings)
-                       (dual-map (lambda (expr)
-                                   (top-level-annotate/inner expr)) 
-                                 bodies)])
-                       (values `(#%begin ,@annotated-bodies)
-                               (varref-set-union free-bindings)))
-                    (let*-values 
-                        ([(bodies) (z:begin-form-bodies expr)]
-                         [(all-but-last-body last-body-list) 
-                          (list-partition bodies (- (length bodies) 1))]
-                         [(last-body) (car last-body-list)]
-                         [(annotated-a free-bindings-a)
-                          (dual-map non-tail-recur all-but-last-body)]
-                         [(annotated-final free-bindings-final)
-                          (tail-recur last-body)]
-                         [(free-bindings) (varref-set-union (cons free-bindings-final free-bindings-a))]
-                         [(debug-info) (make-debug-info-normal free-bindings)]
-                         [(annotated) `(#%begin ,@(append annotated-a (list annotated-final)))])
-                       (values (ccond [(or cheap-wrap? ankle-wrap?) (appropriate-wrap annotated free-bindings)]
-                                      [foot-wrap? (wcm-wrap debug-info annotated)])
-                               free-bindings)))]
+               
 
                [(z:begin0-form? expr)
                 (let*-values

@@ -9,7 +9,8 @@
 	   opt->
            opt->*
            (rename -contract? contract?)
-           provide/contract)
+           provide/contract
+           define/contract)
 
   (require-for-syntax mzscheme
                       (lib "list.ss")
@@ -17,7 +18,73 @@
                       (lib "stx.ss" "syntax"))
   
   (require (lib "class.ss"))
+  (require (lib "contract-helpers.scm" "mzlib" "private"))
   
+  ;; (define/contract id contract expr)
+  ;; defines `id' with `contract'; initially binding
+  ;; it to the result of `expr'.  These variables may not be set!'d.
+  (define-syntax (define/contract define-stx)
+    (syntax-case define-stx ()
+      [(_ name contract-expr expr)
+       (identifier? (syntax name))
+       (with-syntax ([pos-blame-stx (datum->syntax-object define-stx 'here)]
+                     [contract-id (datum->syntax-object define-stx 'ACK-define/contract-contract-id)]
+                     [id (datum->syntax-object define-stx 'ACK-define/contract-id)])
+         (syntax 
+          (begin
+            (define contract-id contract-expr)
+            (define-syntax name
+              (make-set!-transformer
+               (lambda (stx)
+                 
+                 ;; build-src-loc-string : syntax -> string
+                 (define (build-src-loc-string/unk stx)
+                   (let ([source (syntax-source stx)]
+                         [line (syntax-line stx)]
+                         [col (syntax-column stx)]
+                         [pos (syntax-position stx)])
+                     (cond
+                       [(and (string? source) line col)
+                        (format "~a: ~a.~a" source line col)]
+                       [(and line col)
+                        (format "~a.~a" line col)]
+                       [(and (string? source) pos)
+                        (format "~a: ~a" source pos)]
+                       [pos
+                        (format "~a" pos)]
+                       [else "<<unknown>>"])))
+                 
+                 (with-syntax ([neg-blame-str (build-src-loc-string/unk stx)])
+                   (syntax-case stx ()
+                     [(set! _ arg) 
+                      (raise-syntax-error 'define/contract
+                                          "cannot set! a define/contract variable" 
+                                          stx 
+                                          (syntax _))]
+                     [(_ arg (... ...))
+                      (syntax 
+                       ((-contract contract-id
+                                   id
+                                   (syntax-object->datum (quote-syntax _))
+                                   (string->symbol neg-blame-str)
+                                   (quote-syntax _))
+                        arg
+                        (... ...)))]
+                     [_
+                      (identifier? (syntax _))
+                      (syntax 
+                       (-contract contract-id
+                                  id  
+                                  (syntax-object->datum (quote-syntax _)) 
+                                  (string->symbol neg-blame-str)
+                                  (quote-syntax _)))])))))
+            (define id (let ([name expr]) name))  ;; let for procedure naming
+            )))]
+      [(_ name contract-expr expr)
+       (raise-syntax-error 'define/contract "expected identifier in first position"
+                           define-stx
+                           (syntax name))]))
+      
   ;; (provide/contract (id expr) ...)
   ;; provides each `id' with the contract `expr'.
   (define-syntax (provide/contract provide-stx)
@@ -60,7 +127,7 @@
                    (syntax-case stx (set!)
                      [(set! _ body) (raise-syntax-error
                                      #f 
-                                     "cannot mutate provide/contract identifier"
+                                     "cannot set! provide/contract identifier"
                                      stx
                                      (syntax _))]
                      [(_ arg (... ...))
@@ -100,25 +167,12 @@
 		provide-stx
 		clause)]))
 	(syntax->list (syntax (clauses ...))))]))
-  
+
   ;; raise-contract-error : (union syntax #f) symbol symbol string args ... -> alpha
   ;; doesn't return
   (define (raise-contract-error src-info to-blame other-party fmt . args)
     (let ([blame-src (if (syntax? src-info)
-			 (let ([source (syntax-source src-info)]
-			       [line (syntax-line src-info)]
-			       [col (syntax-column src-info)]
-			       [pos (syntax-position src-info)])
-			   (cond
-			      [(and (string? source) line col)
-			       (format "~a: ~a.~a: " source line col)]
-			      [(and line col)
-			       (format "~a.~a: " line col)]
-			      [(and (string? source) pos)
-			       (format "~a: ~a: " source pos)]
-			      [pos
-			       (format "~a: " pos)]
-			      [else ""]))
+			 (string-append (build-src-loc-string src-info) ": ")
 			 "")]
 	  [specific-blame
 	   (let ([datum (syntax-object->datum src-info)])

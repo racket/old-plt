@@ -3,8 +3,6 @@
   (require "file.ss")
   (provide compile-file)
   
-  (define -re:suffix (regexp "\\...?.?$"))
-
   ;; (require (lib "src2src.ss" "compiler"))
 
   (define compile-file
@@ -18,10 +16,7 @@
 		     "compiled")])
 	  (unless (directory-exists? cdir)
 	    (make-directory cdir))
-	  (compile-file src (build-path cdir
-					(regexp-replace 
-					 -re:suffix name
-					 ".zo")))))]
+	  (compile-file src (build-path cdir (path-replace-suffix name #".zo")))))]
      [(src dest) (compile-file src dest values)]
      [(src dest filter)
       (let ([in (open-input-file src)])

@@ -275,13 +275,19 @@
       ;; deviation - disallow ]]> "for compatability" with SGML, sec 2.4 XML spec 
       (define (lex-pcdata in)
 	(let ([start (file-position in)])
-	  (let ([s (regexp-match #rx"^[^&<]*" in)])
+	  ;; The following regexp match must use bytes, not chars, because
+	  ;; `in' might not be a well-formed UTF-8 sequence. If it isn't,
+	  ;; and it goes wrong with the first byte sequence, then a char-based
+	  ;; pattern would match 0 characters. Meanwhile, the caller of this function
+	  ;; expects characters to be read.
+	  (let ([s (regexp-match #rx#"^[^&<]*" in)])
 	    (make-pcdata start
 			 (file-position in)
 			 (bytes->string/utf-8
 			  (if (trim-whitespace)
-			      (regexp-replace* #rx"[ \t\v\r\n]+" (car s) "")
-			      (car s)))))))
+			      (regexp-replace* #rx#"[ \t\v\r\n]+" (car s) #"")
+			      (car s))
+			  #\?)))))
 #|
       ;; Original slow version:
       (define (lex-pcdata in)

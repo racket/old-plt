@@ -113,8 +113,13 @@
       (TypeDeclaration
        [(ClassDeclaration) $1]
        [(INTERACTIONS_BOX) $1]
-       [(CLASS_BOX) 
-        (car (package-defs ((class:send (class-case-box $1) read-one-special  0 #f #f #f #f) 'beginner)))]
+       [(CLASS_BOX)
+        (let ((old-input-port (input-port))
+              (parse-port-list (class:send (class-case-box $1) read-one-special 0 #f #f #f #f)))
+          (input-port (car parse-port-list))
+          (begin0
+            (car ((cadr parse-port-list) 'beginner))
+            (input-port old-input-port)))]
        [(TEST_SUITE) $1]
        [(SEMI_COLON) #f])
       

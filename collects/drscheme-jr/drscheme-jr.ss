@@ -84,7 +84,7 @@
 	 "print values using input syntax")
    (list "--print-list"
 	 print-with-list
-	 "\"list\" in --print-convert output")
+	 "`list' in --print-convert output")
    (list "--print-sharing"
 	 print-graph
 	 "show sharing in values")))

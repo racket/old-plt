@@ -110,11 +110,7 @@ typedef void (*MrEd_Run_From_Cmd_Line_Proc)(int argc, char **argv, Scheme_Env *(
 MRED_EXTERN MrEd_Finish_Cmd_Line_Run_Proc mred_finish_cmd_line_run;
 MRED_EXTERN MrEd_Run_From_Cmd_Line_Proc mred_run_from_cmd_line;
 
-#ifdef INCLUDE_WITHOUT_PATHS
-# include "schvers.h"
-#else
 # include "../mzscheme/src/schvers.h"
-#endif
 
 #ifdef MZ_PRECISE_GC
 # define MRED3M "3m"

@@ -81,17 +81,10 @@
 
 #define INTERRUPT_CHECK_ON 0
 
-#ifdef INCLUDE_WITHOUT_PATHS
-# include "wxscheme.h"
-# include "wxsmred.h"
-# include "wxs_fram.h"
-# include "wxs_obj.h"
-#else
 # include "wxs/wxscheme.h"
 # include "wxs/wxsmred.h"
 # include "wxs/wxs_fram.h"
 # include "wxs/wxs_obj.h"
-#endif
 
 #ifndef WINDOW_STDIO
 /* Removing "|| defined(wx_msw)" below uses the Windows console.

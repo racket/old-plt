@@ -35,11 +35,7 @@
 #define SCHEME_NO_GC_PROTO
 
 /* Irix SPROCS needs to load some files first, so find out if we're SPROCS. */
-#ifdef INCLUDE_WITHOUT_PATHS
-# include "sconfig.h"
-#else
 # include "../sconfig.h"
-#endif
 
 #ifdef MZ_USE_IRIX_SPROCS
 /* Don't include anything else before this */

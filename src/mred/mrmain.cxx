@@ -32,13 +32,8 @@
 class wxStandardSnipClassList;
 class wxBufferDataClassList;
 
-#ifdef INCLUDE_WITHOUT_PATHS
-# include "wxscheme.h"
-# include "wxsmred.h"
-#else
 # include "wxs/wxscheme.h"
 # include "wxs/wxsmred.h"
-#endif
 
 #include "mred.h"
 
@@ -117,11 +112,7 @@ static char *pltcollects_from_resource;
 #define CMDLINE_STDIO_FLAG
 #define VERSION_YIELD_FLAG
 
-#ifdef INCLUDE_WITHOUT_PATHS
-# include "cmdline.inc"
-#else
 # include "../mzscheme/cmdline.inc"
-#endif
 
 #ifdef wx_mac
 void Drop_Runtime(char **argv, int argc)

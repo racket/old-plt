@@ -35,7 +35,7 @@ typedef void (*GCCleanUpFunc)(void* obj, void* clientData);
 
 extern "C" {
   void objscheme_mark_external_invalid(void *);
-};
+}
 void GC_cleanup(void *obj, void *ignored);
 
 #include "gc.h"

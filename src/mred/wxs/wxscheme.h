@@ -1,9 +1,5 @@
 
-#ifdef INCLUDE_WITHOUT_PATHS
-# include "xcglue.h"
-#else 
 # include "../../mzscheme/utils/xcglue.h"
-#endif
 
 void wxsScheme_setup(Scheme_Env *env);
 

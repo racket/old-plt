@@ -26,17 +26,9 @@
    configuration conclusions and a few extra macros based on those
    settings. */
 
-#ifdef INCLUDE_WITHOUT_PATHS
-# include "sconfig.h"
-#else
 # include "../sconfig.h"
-#endif
 
-#ifdef INCLUDE_WITHOUT_PATHS
-# include "schvers.h"
-#else
 # include "../src/schvers.h"
-#endif
 
 #if defined(__MWERKS__)
 # ifdef MZSCHEME_USES_NEAR_GLOBALS
@@ -219,11 +211,7 @@ typedef struct Scheme_Vector {
 
 
 /* This file defines all the built-in types */
-#ifdef INCLUDE_WITHOUT_PATHS
-# include "stypes.h"
-#else
 # include "../src/stypes.h"
-#endif
 
 
 #define SAME_PTR(a, b) ((a) == (b))
@@ -875,11 +863,7 @@ typedef struct Scheme_Output_Port
 /*========================================================================*/
 
 /* This file includes the MZEXN constants */
-#ifdef INCLUDE_WITHOUT_PATHS
-# include "schexn.h"
-#else
 # include "../src/schexn.h"
-#endif
 
 /*========================================================================*/
 /*                               modules                                  */
@@ -1040,11 +1024,7 @@ void *scheme_malloc(size_t size);
 #endif
 
 #ifdef MZ_PRECISE_GC
-# ifdef INCLUDE_WITHOUT_PATHS
-#  include "gc2.h"
-# else
 #  include "../gc2/gc2.h"
-# endif
 # define scheme_malloc_tagged GC_malloc_one_tagged
 # define scheme_malloc_array_tagged GC_malloc_array_tagged
 # define scheme_malloc_atomic_tagged GC_malloc_atomic_tagged
@@ -1194,39 +1174,23 @@ MZ_EXTERN void scheme_end_atomic(void);
 #if SCHEME_DIRECT_EMBEDDED
 
 /* All functions & global constants prototyped here */
-#ifdef INCLUDE_WITHOUT_PATHS
-# include "schemef.h"
-#else
 # include "../src/schemef.h"
-#endif
 
 #else
 
 #ifdef LINK_EXTENSIONS_BY_TABLE
 /* Constants and function prototypes as function pointers in a struct: */
-# ifdef INCLUDE_WITHOUT_PATHS
-#  include "schemex.h"
-# else
 #  include "../src/schemex.h"
-# endif
 
 extern Scheme_Extension_Table *scheme_extension_table;
 
 /* Macro mapping names to record access */
-# ifdef INCLUDE_WITHOUT_PATHS
-#  include "schemexm.h"
-# else
 #  include "../src/schemexm.h"
-# endif
 
 #else
 
 /* Not LINK_EXTENSIONS_BY_TABLE */
-# ifdef INCLUDE_WITHOUT_PATHS
-#  include "schemef.h"
-# else
 #  include "../src/schemef.h"
-# endif
 
 #endif
 

@@ -149,6 +149,7 @@ make_class(PyObject **klass, PyObject *base,
     PyObject *str = NULL;
     int status = -1;
 
+assert(dict != NULL);
     if (!dict)
 	return -1;
 
@@ -159,6 +160,12 @@ make_class(PyObject **klass, PyObject *base,
     if (docstr) {
 	if (!(str = PyString_FromString(docstr)))
 	    goto finally;
+assert(dict != NULL);
+assert(dict->ob_type != NULL);
+assert(PyDict_Check(dict));
+assert(str != NULL);
+assert(str->ob_type != NULL);
+assert(PyString_Check(str));
 	if (PyDict_SetItemString(dict, "__doc__", str))
 	    goto finally;
     }

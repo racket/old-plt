@@ -70,7 +70,7 @@ PyList_New(int size)
 {
 	PyListObject *op;
 	size_t nbytes;
-        printf("LISTOBJECT.C: PyList_New: size = %d\n", size);
+        PRINTF("LISTOBJECT.C: PyList_New: size = %d\n", size);
 	if (size < 0) {
 		PyErr_BadInternalCall();
 		return NULL;

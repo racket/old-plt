@@ -794,12 +794,14 @@ int
 PyType_IsSubtype(PyTypeObject *a, PyTypeObject *b)
 {
 	PyObject *mro;
+	assert(a != NULL);
 
 	if (!(a->tp_flags & Py_TPFLAGS_HAVE_CLASS))
 		return b == a || b == &PyBaseObject_Type;
 
 	mro = a->tp_mro;
 	if (mro != NULL) {
+	//assert(*mro);
 		/* Deal with multiple inheritance without recursion
 		   by walking the MRO tuple */
 		int i, n;
@@ -1583,6 +1585,7 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 		tmptype = tmp->ob_type;
 		if (tmptype == &PyClass_Type)
 			continue; /* Special case classic classes */
+		assert(winner != NULL);
 		if (PyType_IsSubtype(winner, tmptype))
 			continue;
 		if (PyType_IsSubtype(tmptype, winner)) {
@@ -3203,6 +3206,13 @@ SPY_INIT_SCHEME_HEADER(type);
 			PyDict_SetItemString(type->tp_dict, "__doc__", doc);
 			Py_DECREF(doc);
 		} else {
+assert(type != NULL);
+assert(type->tp_dict != NULL);
+assert(type->tp_dict->ob_type != NULL);
+assert(PyDict_Check(type->tp_dict));
+assert(Py_None != NULL);
+assert(Py_None->ob_type != NULL);
+assert(SCHEME_STRUCTP((Scheme_Object*) Py_None));
 			PyDict_SetItemString(type->tp_dict,
 					     "__doc__", Py_None);
 		}

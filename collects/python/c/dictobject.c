@@ -483,11 +483,15 @@ PyDict_GetItem(PyObject *op, PyObject *key)
 {
 	long hash;
 	dictobject *mp = (dictobject *)op;
-	printf("PyDict_GetItem: ENTERED\n");
+	PRINTF("PyDict_GetItem: ENTERED\n");
+	assert(key != NULL);
+	assert(key->ob_type != NULL);
+	assert(op != NULL);
+	assert(op->ob_type != NULL);
 	if (!PyDict_Check(op)) {
 		return NULL;
 	}
-	printf("PyDict_GetItem: I'm a dictionary\n");
+	PRINTF("PyDict_GetItem: I'm a dictionary\n");
 	if (!PyString_CheckExact(key) ||
 	    (hash = ((PyStringObject *) key)->ob_shash) == -1)
 	{
@@ -701,6 +705,7 @@ dict_dealloc(register dictobject *mp)
 {
 	register dictentry *ep;
 	int fill = mp->ma_fill;
+assert(mp != spy_stringobject_interned());
  	PyObject_GC_UnTrack(mp);
 	Py_TRASHCAN_SAFE_BEGIN(mp)
 	for (ep = mp->ma_table; fill > 0; ep++) {
@@ -1961,20 +1966,34 @@ PyDict_GetItemString(PyObject *v, const char *key)
 	kv = PyString_FromString(key);
 	if (kv == NULL)
 		return NULL;
-    printf("PyDict_GetItemString: key is not null\n");
+    PRINTF("PyDict_GetItemString: key is not null\n");
 	rv = PyDict_GetItem(v, kv);
 	Py_DECREF(kv);
 	return rv;
 }
+
+PyObject* spy_stringobject_interned();
 
 int
 PyDict_SetItemString(PyObject *v, const char *key, PyObject *item)
 {
 	PyObject *kv;
 	int err;
+assert(v != NULL);
+assert(key != NULL);
+assert(item != NULL);
+assert(v->ob_type != NULL);
+assert(item->ob_type != NULL);
 	kv = PyString_FromString(key);
 	if (kv == NULL)
 		return -1;
+assert(PyString_Check(kv));
+assert(spy_is__stringobject_module_initialized());
+assert(spy_stringobject_interned() != NULL);
+assert((spy_stringobject_interned())->ob_type != NULL);
+assert(SCHEME_STRUCTP((Scheme_Object*)spy_stringobject_interned()));
+assert(PyDict_Check(spy_stringobject_interned()));
+
 	PyString_InternInPlace(&kv); /* XXX Should we really? */
 	err = PyDict_SetItem(v, kv, item);
 	Py_DECREF(kv);

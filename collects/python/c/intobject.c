@@ -99,12 +99,12 @@ PyObject *
 PyInt_FromLong(long ival)
 {
 	register PyIntObject *v;
-        printf("PyInt_FromLong: entry\n");
+        PRINTF("PyInt_FromLong: entry\n");
 #if NSMALLNEGINTS + NSMALLPOSINTS > 0
 	if (-NSMALLNEGINTS <= ival && ival < NSMALLPOSINTS) {
 		v = small_ints[ival + NSMALLNEGINTS];
     // added by Daniel
-    printf("PyInt_FromLong: check the small int %d at index %d\n", ival, ival + NSMALLNEGINTS);
+    PRINTF("PyInt_FromLong: check the small int %d at index %d\n", ival, ival + NSMALLNEGINTS);
     PyNumber_Check(v);
 		Py_INCREF(v);
 #ifdef COUNT_ALLOCS
@@ -113,14 +113,14 @@ PyInt_FromLong(long ival)
 		else
 			quick_neg_int_allocs++;
 #endif
-                printf("PyInt_FromLong: exit point 1 (v is at %x)\n", v);
+                PRINTF("PyInt_FromLong: exit point 1 (v is at %x)\n", v);
 		return (PyObject *) v;
 	}
 #endif
 	if (free_list == NULL) {
 		if ((free_list = fill_free_list()) == NULL)
                         {
-                        printf("PyInt_FromLong: exit point 2 (returning null)\n");
+                        PRINTF("PyInt_FromLong: exit point 2 (returning null)\n");
 			return NULL;
                         }
 	}
@@ -129,7 +129,7 @@ PyInt_FromLong(long ival)
 	free_list = (PyIntObject *)v->ob_type;
 	PyObject_INIT(v, &PyInt_Type);
 	v->ob_ival = ival;
-        printf("PyInt_FromLong: exit point 3 (v is at %x)\n", v);
+        PRINTF("PyInt_FromLong: exit point 3 (v is at %x)\n", v);
 	return (PyObject *) v;
 }
 

@@ -23,7 +23,8 @@ static PyStringObject *nullstring;
    Another way to look at this is that to say that the actual reference 
    count of a string is:  s->ob_refcnt + (s->ob_sstate?2:0)
 */
-static PyObject *interned;
+// added "= NULL" -- daniel
+static PyObject *interned = NULL;
 
 
 /*
@@ -504,6 +505,8 @@ string_dealloc(PyObject *op)
 		case SSTATE_INTERNED_MORTAL:
 			/* revive dead object temporarily for DelItem */
 			op->ob_refcnt = 3;
+assert(interned != NULL);
+assert(interned->ob_type != NULL);
 			if (PyDict_DelItem(interned, op) != 0)
 				Py_FatalError(
 					"deletion of interned string failed");
@@ -4098,6 +4101,27 @@ PyString_Format(PyObject *format, PyObject *args)
 	return NULL;
 }
 
+static int __stringobject_module_initialized = 0;
+
+void spy_init_PyString()
+{
+assert(__stringobject_module_initialized == 0);
+assert(interned == NULL);
+interned = PyDict_New();
+SPY_INIT_SCHEME_HEADER(interned);
+scheme_register_extension_global((void*) interned, sizeof(PyDictObject));
+scheme_register_extension_global((void*) &interned, sizeof(PyDictObject));
+assert(interned != NULL);
+assert(interned->ob_type != NULL);
+assert(SCHEME_STRUCTP((Scheme_Object*)interned));
+assert(PyDict_Check(interned));
+__stringobject_module_initialized = 1;
+}
+
+PyObject* spy_stringobject_interned() { return interned; }
+
+int spy_is__stringobject_module_initialized() {return __stringobject_module_initialized;}
+
 void
 PyString_InternInPlace(PyObject **p)
 {
@@ -4111,11 +4135,24 @@ PyString_InternInPlace(PyObject **p)
 		interned = PyDict_New();
 		if (interned == NULL) {
 fprintf(stderr, "SPY ERROR: COULD NOT CREATE INTERNED STRINGS TABLE!\n");
-KABOOM();
+assert(0);
 			PyErr_Clear(); /* Don't leave an exception */
 			return;
 		}
+assert(interned != NULL);
+assert(interned->ob_type != NULL);
+assert(PyDict_Check(interned));
 	}
+assert(__stringobject_module_initialized);
+assert(interned != NULL);
+assert(interned->ob_type != NULL);
+assert(SCHEME_STRUCTP((Scheme_Object*)interned));
+assert(PyDict_Check(interned));
+assert(s != NULL);
+assert(s->ob_type != NULL);
+assert(SCHEME_STRUCTP((Scheme_Object*)s));
+//assert(SPY_NODEP((PyObject*) s));
+assert(PyString_Check(s));
 	if ((t = PyDict_GetItem(interned, (PyObject *)s)) != NULL) {
 		Py_INCREF(t);
 		Py_DECREF(*p);
@@ -4188,6 +4225,7 @@ void _Py_ReleaseInternedStrings(void)
 	PyStringObject *s;
 	int i, n;
 
+assert((interned == NULL) || PyDict_Check(interned));
 	if (interned == NULL || !PyDict_Check(interned))
 		return;
 	keys = PyDict_Keys(interned);
@@ -4224,4 +4262,5 @@ void _Py_ReleaseInternedStrings(void)
 	PyDict_Clear(interned);
 	Py_DECREF(interned);
 	interned = NULL;
+assert(interned == NULL);
 }

@@ -13,9 +13,24 @@ static PyObject *class_lookup(PyClassObject *, PyObject *,
 			      PyClassObject **);
 static PyObject *instance_getattr1(PyInstanceObject *, PyObject *);
 static PyObject *instance_getattr2(PyInstanceObject *, PyObject *);
+// added "= NULL" --daniel
+static PyObject *getattrstr = NULL, *setattrstr = NULL, *delattrstr = NULL;
 
-static PyObject *getattrstr, *setattrstr, *delattrstr;
 
+static int __classobject_module_initialized = 0;
+
+void spy_init_ClassObject()
+{
+assert(__classobject_module_initialized == 0);
+getattrstr = PyString_InternFromString("__getattr__");
+setattrstr = PyString_InternFromString("__setattr__");
+delattrstr = PyString_InternFromString("__delattr__");
+assert(SCHEME_STRUCTP((Scheme_Object*)getattrstr));
+assert(PyString_Check(getattrstr));
+assert(PyString_Check(setattrstr));
+assert(PyString_Check(delattrstr));
+__classobject_module_initialized = 1;
+}
 
 PyObject *
 PyClass_New(PyObject *bases, PyObject *dict, PyObject *name)
@@ -109,6 +124,14 @@ PyClass_New(PyObject *bases, PyObject *dict, PyObject *name)
 		setattrstr = PyString_InternFromString("__setattr__");
 		delattrstr = PyString_InternFromString("__delattr__");
 	}
+assert(op != NULL);
+assert(op->cl_name != NULL);
+assert(op->ob_type != NULL);
+assert(op->cl_name->ob_type != NULL);
+assert(__classobject_module_initialized);
+assert(getattrstr != NULL);
+assert(getattrstr->ob_type != NULL);
+assert(PyString_Check(getattrstr));
 	op->cl_getattr = class_lookup(op, getattrstr, &dummy);
 	op->cl_setattr = class_lookup(op, setattrstr, &dummy);
 	op->cl_delattr = class_lookup(op, delattrstr, &dummy);
@@ -186,7 +209,14 @@ static PyObject *
 class_lookup(PyClassObject *cp, PyObject *name, PyClassObject **pclass)
 {
 	int i, n;
-	PyObject *value = PyDict_GetItem(cp->cl_dict, name);
+	PyObject *value;
+assert(cp != NULL);
+assert(name != NULL);
+assert(cp->ob_type != NULL);
+assert(cp->cl_dict != NULL);
+assert(cp->cl_dict->ob_type != NULL);
+assert(name->ob_type != NULL);
+	value = PyDict_GetItem(cp->cl_dict, name);
 	if (value != NULL) {
 		*pclass = cp;
 		return value;

@@ -67,7 +67,7 @@ struct _typeobject;
 		int ob_size;
 
 //#define PyObject_HEAD_INIT(type) 0, MZ_HASH_KEY_EX_INIT 0, {0, 0, 0},
-#define PyObject_HEAD_INIT(type) 0, MZ_HASH_KEY_EX_INIT 0, 0, 0, 0,
+#define PyObject_HEAD_INIT(type) 0, MZ_HASH_KEY_EX_INIT 0, type, scheme_true, 0,
 
 typedef struct dScheme_Structure
 {
@@ -137,12 +137,20 @@ static int _____spy___zero___ = 0x0;
     (((PyObject*) obj)->stype = SPY_GLOBALS_PYTHON_NODE()), /* PYTHON-NODE */ \
     (obj) )
 
-static __inline PyObject* SPY_INIT_OBJ(PyObject* obj, PYTYPEOBJECT* type) {
+static __inline__ PyObject* SPY_INIT_OBJ(PyObject* obj, PYTYPEOBJECT* type) {
   SPY_INIT_SCHEME_HEADER(obj);
   PY_SET_TYPE(obj, type);
   SPY_SET_MUTABLE(obj, scheme_true);
   return obj;
 }
+
+static __inline__ PyObject* SPY_INIT_GLOBAL_impl(PyObject* obj, int size) {
+  SPY_INIT_SCHEME_HEADER(obj);
+  scheme_register_extension_global((void*) obj, size);
+  return obj;
+}
+
+#define SPY_INIT_GLOBAL(global) SPY_INIT_GLOBAL_impl(&global, sizeof(global))
 
 #if 0  // what if obj is some expression??
 #define SPY_INIT_OBJ(obj, type) \
@@ -244,14 +252,17 @@ void Py_FatalError (const char * message);
 
 
 //#define PyMem_Malloc(count) (scheme_malloc_eternal(count))
-static __inline void* PyMem_Malloc(int count) {
+static __inline__ void* PyMem_Malloc(int count) {
+  PyObject* ptr = (PyObject*) scheme_malloc_eternal(count);
+  assert(ptr != NULL);
   if (count >= sizeof(PyObject))
      {
-     PyObject* ptr = (PyObject*) scheme_malloc(count);
      return SPY_INIT_SCHEME_HEADER(ptr);
      }
   else
-     return scheme_malloc(count);
+     {
+     return ptr;
+     }
 }
 //#define PyMem_Malloc(count) (scheme_malloc(count))
 #define PyMem_MALLOC(count) PyMem_Malloc(count)
@@ -595,12 +606,15 @@ PyObject* spy_init_obj(PyObject* obj, PyTypeObject* py_type);
 #undef assert
 #define assert(b) if (!(b)) {KABOOM_SEGFAULT();}
 
-#define DEBUG_SPY
+//#define DEBUG_SPY
 
 #ifdef DEBUG_SPY
  #define PRINTF(fmt, args...) printf(fmt, ##args)
 #else
  #define PRINTF(fmt, args...)
 #endif
+
+#undef NULL
+#define NULL 0
 
 #endif

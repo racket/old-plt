@@ -42,7 +42,7 @@ PyTuple_New(register int size)
 #ifdef COUNT_ALLOCS
 		tuple_zero_allocs++;
 #endif
-printf("PyTuple_New: returning free_tuples[0]\n");
+PRINTF("PyTuple_New: returning free_tuples[0]\n");
 		return (PyObject *) op;
 	}
 	if (0 < size && size < MAXSAVESIZE &&
@@ -72,7 +72,7 @@ printf("PyTuple_New: returning free_tuples[0]\n");
 			return PyErr_NoMemory();
 		}
 		op = PyObject_GC_NewVar(PyTupleObject, &PyTuple_Type, size);
-printf("PyTuple_New: NewVar returned 0x%x\n", op);
+PRINTF("PyTuple_New: NewVar returned 0x%x\n", op);
 
 		if (op == NULL)
 			return NULL;
@@ -86,7 +86,7 @@ printf("PyTuple_New: NewVar returned 0x%x\n", op);
 	}
 #endif
 	_PyObject_GC_TRACK(op);
-printf("PyTuple_New: returning normally 0x%x\n", op);
+PRINTF("PyTuple_New: returning normally 0x%x\n", op);
 assert(PyTuple_Check(op));
 	return (PyObject *) op;
 }

@@ -23,6 +23,7 @@ int Py_DivisionWarningFlag;
  * exist only in a Py_TRACE_REFS build.
  */
 static PyObject refchain = {&refchain, &refchain};
+SPY_INIT_GLOBAL(&refchain);
 
 /* Insert op at the front of the list of all objects.  If force is true,
  * op is added even if _ob_prev and _ob_next are non-NULL already.  If
@@ -1441,7 +1442,7 @@ assert(tp != NULL);
 	dictoffset = tp->tp_dictoffset;
 	if (dictoffset != 0) {
 PRINTF("PyObject_GenericGetAttr: using a dict offset?!?! oh no!\n");
-assert(0);
+//assert(0);
 		PyObject *dict;
 		if (dictoffset < 0) {
 			int tsize;

@@ -10,29 +10,29 @@ PyObject *
 PyFunction_New(PyObject *codez, PyObject *globals)
 {
         PyFunctionObject *op;
-printf("PyFunction_New: entry\n");
+PRINTF("PyFunction_New: entry\n");
 assert(codez != NULL);
 ((PyCodeObject *)codez)->co_consts = PyTuple_New(0);
-printf("PyFunction_New: 1: code not null\n");
+PRINTF("PyFunction_New: 1: code not null\n");
 assert(((PyCodeObject *)codez)->co_consts != NULL);
-printf("PyFunction_New: 1: consts not null\n");
+PRINTF("PyFunction_New: 1: consts not null\n");
 assert(PyTuple_Check(((PyCodeObject *)codez)->co_consts));
-printf("PyFunction_New: 1: consts tuple\n");
+PRINTF("PyFunction_New: 1: consts tuple\n");
 	op = PyObject_GC_New(PyFunctionObject,
 					    &PyFunction_Type);
-printf("PyFunction_New: allocated memory\n");
+PRINTF("PyFunction_New: allocated memory\n");
 assert(codez != NULL);
-printf("PyFunction_New: 2: code not null\n");
+PRINTF("PyFunction_New: 2: code not null\n");
 assert(((PyCodeObject *)codez)->co_consts != NULL);
-printf("PyFunction_New: 2: consts not null\n");
+PRINTF("PyFunction_New: 2: consts not null\n");
 assert(PyTuple_Check(((PyCodeObject *)codez)->co_consts));
-printf("PyFunction_New: 2: consts tuple\n");
+PRINTF("PyFunction_New: 2: consts tuple\n");
 	if (op != NULL) {
         PyObject* code = codez;
 		PyObject *doc;
 		PyObject *consts;
 		PyObject *module;
-printf("PyFunction_New: op != NULL\n");
+PRINTF("PyFunction_New: op != NULL\n");
 		op->func_weakreflist = NULL;
 		Py_INCREF(code);
 		op->func_code = code;
@@ -43,7 +43,7 @@ printf("PyFunction_New: op != NULL\n");
 		op->func_defaults = NULL; /* No default arguments */
 		op->func_closure = NULL;
 		consts = ((PyCodeObject *)code)->co_consts;
-printf("PyFunction_New: checking consts\n");
+PRINTF("PyFunction_New: checking consts\n");
 {
 PyCodeObject* pco = (PyCodeObject*) code;
 assert(PyCode_Check(pco));
@@ -53,20 +53,20 @@ assert(PyTuple_Check(((PyCodeObject *)code)->co_consts));
 assert(PyTuple_Check(consts));
 }
 		if (PyTuple_Size(consts) >= 1) {
-printf("PyFunction_New: len(consts) >= 1 \n");
+PRINTF("PyFunction_New: len(consts) >= 1 \n");
 			doc = PyTuple_GetItem(consts, 0);
 			if (!PyString_Check(doc) && !PyUnicode_Check(doc))
 				doc = Py_None;
 		}
 		else  {
-printf("PyFunction_New: len(consts) < 1\n");
+PRINTF("PyFunction_New: len(consts) < 1\n");
 			doc = Py_None; }
 		Py_INCREF(doc);
 		op->func_doc = doc;
 		op->func_dict = NULL;
 		op->func_module = NULL;
 
-printf("PyFunction_New: checking globals\n");
+PRINTF("PyFunction_New: checking globals\n");
 		/* __module__: If module name is in globals, use it.
 		   Otherwise, use None.
 		*/
@@ -78,12 +78,12 @@ printf("PyFunction_New: checking globals\n");
 	}
 	else
                 {
-                printf("PyFunction_New: could not create function object, aborting\n");
+                PRINTF("PyFunction_New: could not create function object, aborting\n");
 		return NULL;
                 }
-printf("PyFunction_New: tracking\n");
+PRINTF("PyFunction_New: tracking\n");
 	_PyObject_GC_TRACK(op);
-printf("PyFunction_New: returning\n");
+PRINTF("PyFunction_New: returning\n");
 	return (PyObject *)op;
 }
 

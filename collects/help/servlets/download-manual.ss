@@ -21,7 +21,6 @@
      (let* ([tmp-directory 	
 	     (with-handlers	
 	      ([void (lambda _ 
-		       (semaphore-post refresh-semaphore)
 		       (send/finish (no-download-dir-page)))])
 	      (find/create-temporary-docs-dir))]
 	    [bindings (request-bindings initial-request)]

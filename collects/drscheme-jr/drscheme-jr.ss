@@ -1,5 +1,7 @@
 (define plt-dir (or (getenv "PLTHOME") "/usr/local/lib/plt"))
 
+;; get stdin character positions right.
+
 ;; be sure to update the mzlib shell script if this changes
 ;; can I add flags to mzscheme?
 (define use-print-convert?
@@ -46,7 +48,7 @@
 		   [(zodiac:zodiac? z) (build (zodiac:zodiac-start z) (zodiac:zodiac-finish z))]
 		   [(zodiac:eof? z) (build (zodiac:eof-location z) (zodiac:eof-location z))]
 		   [(zodiac:period? z) (build (zodiac:period-location z) (zodiac:period-location z))]
-		   [else msg])])
+		   [else (format "~a: ~a" z msg)])])
 	    (if type
 		(printf "~a: ~a~n" type pos-msg)
 		(printf "~a~n" pos-msg))

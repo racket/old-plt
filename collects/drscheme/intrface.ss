@@ -50,7 +50,7 @@
 	     [(zodiac:zodiac? z) (dispatch-report type string (zodiac:zodiac-start z) (zodiac:zodiac-finish z))]
 	     [(zodiac:eof? z) (dispatch-report type string (zodiac:eof-location z) (zodiac:eof-location z))]
 	     [(zodiac:period? z) (dispatch-report type string (zodiac:period-location z) (zodiac:period-location z))]
-	     [else (mred:message-box string "Error")])
+	     [else (mred:message-box (format "~a: ~a" z string) "Error")])
 	    (printf "report-error: cannot escape: ~a~n" string)))))
 
     (define static-error (report-error 'static))

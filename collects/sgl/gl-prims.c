@@ -4912,10 +4912,13 @@ static const struct scm_prim scm_prim[] = {
 
 	{ "gluGetString", scm_gluGetString, 1, 1},
 	{ "gluScaleImage", scm_gluScaleImage, 9, 9},
+# if _MSC_VER < 1300
+#else
 	{ "gluBuild1DMipmaps", scm_gluBuild1DMipmaps, 6, 6},
 	{ "gluBuild2DMipmaps", scm_gluBuild2DMipmaps, 7, 7},
 	{ "gluBuild1DMipmapLevels", scm_gluBuild1DMipmapLevels, 9, 9},
 	{ "gluBuild2DMipmapLevels", scm_gluBuild2DMipmapLevels, 10, 10},
+#endif
 	{ "gluOrtho2D", scm_gluOrtho2D, 4, 4},
 	{ "gluPerspective", scm_gluPerspective, 4, 4},
 	{ "gluLookAt", scm_gluLookAt, 9, 9},

@@ -258,8 +258,7 @@
       
       (define-struct graphic (pos* locs->thunks draw-fn click-fn))
       (define-struct arrow (start-pos-left start-pos-right end-pos-left end-pos-right
-                                           start-x start-y end-x end-y
-                                           id-name same-ids))
+                                           start-x start-y end-x end-y))
       
       (define tacked-brush (send the-brush-list find-or-create-brush "BLUE" 'solid))
       (define untacked-brush (send the-brush-list find-or-create-brush "WHITE" 'solid))
@@ -271,7 +270,7 @@
           syncheck:clear-arrows
           syncheck:add-menu
           syncheck:add-arrow))
-      
+
       (define make-graphics-text%
         (lambda (super%)
           (let* ([cursor-arrow (make-object cursor% 'arrow)])
@@ -287,7 +286,7 @@
                [super-on-paint on-paint]
                [super-on-local-event on-local-event])
               
-              ;; (union #f (vector (union (-> (union #f menu)) (listof arrow))))
+              ;; (union #f (vector (union (listof (-> (union #f menu) arrow)))))
               (define arrow-vector #f)
               
               (field (tacked-hash-table (make-hash-table)))
@@ -321,27 +320,22 @@
                   (invalidate-bitmap-cache)))
               (define/public (syncheck:add-menu start-pos end-pos make-menu)
                 (when (and (<= 0 start-pos end-pos (last-position)))
-                  (let loop ([p start-pos])
-                    (when (<= p end-pos)
-                      (vector-set! arrow-vector p make-menu)
-                      (loop (+ p 1))))))
+                  (add-to-range start-pos end-pos make-menu)))
               (define/public (syncheck:add-arrow start-pos-left start-pos-right
-                                                 end-pos-left end-pos-right
-                                                 id-name same-names)
+                                                 end-pos-left end-pos-right)
                 (let* ([arrow (make-arrow start-pos-left start-pos-right
                                           end-pos-left end-pos-right
-                                          0 0 0 0
-                                          id-name 
-                                          same-names)]
-                       [add-to-range
-                        (lambda (start end)
-                          (let loop ([p start])
-                            (when (<= p end)
-                              (let ([r (vector-ref arrow-vector p)])
-                                (vector-set! arrow-vector p (cons arrow (if (list? r) r null))))
-                              (loop (add1 p)))))])
-                  (add-to-range start-pos-left start-pos-right)
-                  (add-to-range end-pos-left end-pos-right)))
+                                          0 0 0 0)])
+                  (add-to-range start-pos-left start-pos-right arrow)
+                  (add-to-range end-pos-left end-pos-right arrow)))
+
+              (define (add-to-range start end to-add)
+                (let loop ([p start])
+                  (when (<= p end)
+                    (let ([r (vector-ref arrow-vector p)])
+                      (vector-set! arrow-vector p (cons to-add r)))
+                    (loop (add1 p)))))
+
               (inherit get-top-level-window)
               (override after-delete)
               (define (after-delete start len)
@@ -358,9 +352,11 @@
                 (when arrow-vector
                   (let loop ([n (vector-length arrow-vector)])
                     (unless (zero? n)
-                      (let ([ele (vector-ref arrow-vector (- n 1))])
-                        (when (pair? ele)
-                          (for-each update-poss ele)))
+                      (let ([eles (vector-ref arrow-vector (- n 1))])
+                        (for-each (lambda (ele)
+                                    (when (arrow? ele)
+                                      (update-poss ele)))
+                                  eles))
                       (loop (- n 1))))
                   (invalidate-bitmap-cache)))
               
@@ -386,9 +382,11 @@
                                            (when v 
                                              (draw-arrow2 arrow))))
                     (send dc set-brush untacked-brush)
-                    (let ([ele (vector-ref arrow-vector cursor-location)])
-                      (when (pair? ele)
-                        (for-each draw-arrow2 ele)))
+                    (let ([eles (vector-ref arrow-vector cursor-location)])
+                      (for-each (lambda (ele) 
+                                  (when (arrow? ele)
+                                    (draw-arrow2 ele)))
+                                eles))
                     (send dc set-brush old-brush)
                     (send dc set-pen old-pen))))
               
@@ -398,52 +396,65 @@
                                        (send event get-y))]
                               [(x y) (dc-location-to-editor-location
                                       event-x event-y)])
-                  (find-position x y)))
+                  (let* ([on-it? (box #f)]
+                         [pos (find-position x y #f on-it?)])
+                    (and (unbox on-it?)
+                         pos))))
               
-              (override on-local-event)
-              (define (on-local-event event)
+              (define/override (on-local-event event)
                 (if arrow-vector
                     (cond
-                      [(send event moving?)
+                      [(send event leaving?)
+                       (when cursor-location
+                         (set! cursor-location #f)
+                         (invalidate-bitmap-cache))
+                       (super-on-local-event event)]
+                      [(or (send event moving?)
+                           (send event entering?))
                        (let ([pos (get-pos event)])
-                         (unless (and cursor-location
-                                      (= pos cursor-location))
-                           (let ([old-pos pos])
-                             (set! cursor-location pos)
-                             (let ([ele (vector-ref arrow-vector cursor-location)])
-                               (when (pair? ele)
-                                 (for-each update-poss ele)))
-                             (invalidate-bitmap-cache))))]
-                      [(send event button-down? 'right)
-                       (let* ([pos (get-pos event)]
-                              [arrows (vector-ref arrow-vector pos)])
                          (cond
-                           [(null? arrows)
-                            (super-on-local-event event)]
+                           [pos
+                            (unless (and cursor-location
+                                         (= pos cursor-location))
+                              (set! cursor-location pos)
+                              (let ([eles (vector-ref arrow-vector cursor-location)])
+                                (for-each (lambda (ele)
+                                            (when (arrow? ele)
+                                              (update-poss ele)))
+                                          eles))
+                              (invalidate-bitmap-cache))]
                            [else
-                            (let ([menu 
-                                   (cond
-                                     [(procedure? arrows) (arrows)]
-                                     [else
-                                      (let* ([menu (make-object popup-menu% #f)])
-                                        (make-object menu-item%
-                                          "Tack/Untack Arrow"
-                                          menu
-                                          (lambda (item evt) (tack/untack-callback arrows)))
-                                        (make-object menu-item%
-                                          "Jump"
-                                          menu
-                                          (lambda (item evt) (jump-callback pos arrows)))
-                                        (make-object menu-item%
-                                          "Rename"
-                                          menu
-                                          (lambda (item evt) (rename-callback arrows)))
-                                        menu)])])
-                              (if menu
-                                  (send (get-canvas) popup-menu menu
-                                        (+ 1 (inexact->exact (floor (send event get-x))))
-                                        (+ 1 (inexact->exact (floor (send event get-y)))))
-                                  (super-on-local-event event)))]))]
+                            (when cursor-location
+                              (set! cursor-location #f)
+                              (invalidate-bitmap-cache))]))
+                       (super-on-local-event event)]
+                      [(or (send event button-down? 'right)
+                           (and (send event button-down? 'left)
+                                (send event get-control-down)))
+                       (let* ([pos (get-pos event)])
+                         (if pos
+                             (let ([vec-ents (vector-ref arrow-vector pos)])
+                               (cond
+                                 [(null? vec-ents)
+                                  (super-on-local-event event)]
+                                 [else
+                                  (let ([menu (make-object popup-menu% #f)]
+                                        [arrows (filter arrow? vec-ents)]
+                                        [add-menus (filter procedure? vec-ents)])
+                                    (unless (null? arrows)
+                                      (make-object menu-item%
+                                        "Tack/Untack Arrow"
+                                        menu
+                                        (lambda (item evt) (tack/untack-callback arrows)))
+                                      (make-object menu-item%
+                                        "Jump"
+                                        menu
+                                        (lambda (item evt) (jump-callback pos arrows))))
+                                    (for-each (lambda (f) (f menu)) add-menus)
+                                    (send (get-canvas) popup-menu menu
+                                          (+ 1 (inexact->exact (floor (send event get-x))))
+                                          (+ 1 (inexact->exact (floor (send event get-y))))))]))
+                             (super-on-local-event event)))]
                       [else (super-on-local-event event)])
                     (super-on-local-event event)))
 
@@ -460,46 +471,6 @@
                                           (lambda () #f)))))
                  arrows)
                 (invalidate-bitmap-cache))
-              
-              ;; rename-callback : (listof arrow) -> void
-              ;; callback for the rename popup menu item
-              (define (rename-callback arrows)
-                (unless (null? arrows)
-                  (let* ([arrow (car arrows)]
-                         [id-name (arrow-id-name arrow)])
-                    (cond
-                      [id-name
-                       (let ([new-id 
-                              (fw:keymap:call/text-keymap-initializer
-                               (lambda ()
-                                 (get-text-from-user
-                                  "Rename Identifier"
-                                  (format "Rename ~a to:" id-name)
-                                  #f
-                                  (format "~a" id-name))))])
-                         (when new-id
-                           (let ([to-be-renamed (quicksort 
-                                                 (arrow-same-ids arrow)
-                                                 (lambda (x y) 
-                                                   ((syntax-position x) . >= . (syntax-position y))))])
-                             (unless (null? to-be-renamed)
-                               (let ([first-one-source (syntax-source (car to-be-renamed))])
-                                 (when (is-a? first-one-source text%)
-                                   (send first-one-source begin-edit-sequence)
-                                   (for-each (lambda (stx) 
-                                               (let ([source (syntax-source stx)])
-                                                 (when (is-a? source text%)
-                                                   (let* ([start (- (syntax-position stx) 1)]
-                                                          [end (+ start (syntax-span stx))])
-                                                     (send source delete start end #f)
-                                                     (send source insert new-id start start #f)))))
-                                             to-be-renamed)
-                                   (invalidate-bitmap-cache)
-                                   (send (get-top-level-window) syncheck:button-callback)
-                                   (send first-one-source end-edit-sequence)))))))]
-                      [else 
-                       (message-box "DrScheme - Check Syntax"
-                                    "Cannot rename variables from imported modules.")]))))
               
               ;; jump-callback : (listof arrow) -> void
               ;; callback for the jump popup menu item
@@ -549,12 +520,14 @@
           
           (define/public (syncheck:clear-highlighting)
             (hide-error-report)
+            (send (get-definitions-text) begin-edit-sequence #f)
             (send (get-definitions-text) syncheck:clear-arrows)
             (let* ([list (send (get-definitions-text) get-style-list)]
                    [style (send list find-named-style "Standard")])
               (when style
                 (send (get-definitions-text) change-style
-                      style 0 (send (get-definitions-text) last-position)))))
+                      style 0 (send (get-definitions-text) last-position))))
+            (send (get-definitions-text) end-edit-sequence))
           
           (field
            [report-error-parent-panel 'uninitialized-report-error-parent-panel]
@@ -682,7 +655,7 @@
           
           (public syncheck:button-callback)
           (define (syncheck:button-callback)
-            (send (get-definitions-text) begin-edit-sequence)
+            (send (get-definitions-text) begin-edit-sequence #f)
             (clear-annotations)
             (send (get-definitions-text) syncheck:init-arrows)            
             (color-range (get-definitions-text)
@@ -702,19 +675,19 @@
                                                            last-position))
                     (fw:preferences:get
                      (drscheme:language-configuration:get-settings-preferences-symbol))
-                    (lambda (err? sexp run-in-evaluation-thread loop)
+                    (lambda (err? sexp run-in-expansion-thread loop)
                       (unless users-namespace
-                        (set! users-namespace (run-in-evaluation-thread current-namespace)))
+                        (set! users-namespace (run-in-expansion-thread current-namespace)))
                       (if err?
                           (begin
                             (set! err-termination? #t)
                             (report-error (car sexp) (cdr sexp)))
                           (let-values ([(new-binders new-varrefs new-tops
                                          requires referenced-macros)
-                                        (annotate-basic sexp)])
+                                        (annotate-basic sexp run-in-expansion-thread)])
                             (set! binders (append new-binders binders))
                             (set! varrefs (append (if requires
-                                                      (annotate-requires 
+                                                      (annotate-require-vars 
                                                        new-varrefs
                                                        requires
                                                        referenced-macros)
@@ -749,14 +722,14 @@
        ;; type req/tag = (make-req/tag syntax sexp boolean)
       (define-struct req/tag (req-stx req-sexp used?))
       
-      ;; annotate-requires : (listof syntax) (listof syntax) (listof syntax[original])
-      ;;                     -> (listof syntax)
+      ;; annotate-require-vars : (listof syntax) (listof syntax) (listof syntax[original])
+      ;;                         -> (listof syntax)
       ;; returns the sublist of `varrefs' that did not come from module imports.
       ;; effect: colors all require-bound ids from `tops' and draws arrow for them. 
-      (define (annotate-requires varrefs requires referenced-macros)
+      (define (annotate-require-vars varrefs requires referenced-macros)
         (let* ([req/tags (map (lambda (x) 
                                 (make-req/tag x 
-                                              (cadr (syntax-object->datum x))
+                                              (syntax-object->datum x)
                                               #f))
                               requires)]
                [reduced-varrefs
@@ -764,7 +737,7 @@
                   (cond
                     [(null? varrefs) null]
                     [else (let ([varref (car varrefs)])
-                            (if (annotate-require/varref req/tags varref)
+                            (if (annotate-require-var req/tags varref)
                                 (loop (cdr varrefs))
                                 (cons varref (loop (cdr varrefs)))))]))])
           (for-each (annotate-macro req/tags) referenced-macros)
@@ -777,7 +750,7 @@
           (let ([mod-req-path (get-module-req-path stx)])
             (for-each (lambda (req/tag)
                         (when (equal? (req/tag-req-sexp req/tag) mod-req-path)
-                          (connect-syntaxes (req/tag-req-stx req/tag) varref stx)
+                          (connect-syntaxes (req/tag-req-stx req/tag) stx )
                           (set-req/tag-used?! req/tag #t)))
                       req/tags))))
 
@@ -786,11 +759,11 @@
         (unless (req/tag-used? req/tag)
           (color (req/tag-req-stx req/tag) unbound-variable-style-str)))
       
-      ;; annotate-require/varref : (listof req/tags) syntax -> boolean
+      ;; annotate-require-var : (listof req/tags) syntax -> boolean
       ;; returns #t if `varref' comes from a module import
       ;; effect: colors `varref' and adds binding structure arrows,
       ;;         if it is a require-bound ids,
-      (define (annotate-require/varref req/tags varref)
+      (define (annotate-require-var req/tags varref)
         (let ([id-mod-path (get-module-req-path varref)])
           (and id-mod-path
                (let ([req/tag/f (memf (lambda (x) (equal? (req/tag-req-sexp x) id-mod-path))
@@ -801,7 +774,7 @@
                         (when (syntax-original? varref)
                           (color varref bound-variable-style-str)
                           (when (syntax-original? (req/tag-req-stx req/tag))
-                            (connect-syntaxes (req/tag-req-stx req/tag) varref #f #f)))
+                            (connect-syntaxes (req/tag-req-stx req/tag) varref)))
                         #t))))))
       
       ;; get-module-req-path : syntax -> (union #f require-sexp)
@@ -810,21 +783,37 @@
           (and (pair? binding)
                (let ([mod-path (car binding)])
                  (and (module-path-index? mod-path)
-                      (let-values ([(main rest) (module-path-index-split mod-path)])
-                        main))))))
+                      (let loop ([mpi mod-path]
+                                 [ph #f])
+                        (let-values ([(main rest) (module-path-index-split mpi)])
+                          (if rest
+                              (loop rest main)
+                              ph))))))))
       
       ;; annotate-variables : namespace (listof syntax) (listof syntax) -> void
       ;; colors the variables, free are turned unbound color, bound are turned
       ;; bound color and all binders are turned bound color.
       (define (annotate-variables users-namespace binders varrefs tops)
-        (for-each (lambda (binder) 
-                    (when (syntax-original? binder)
-                      (color binder bound-variable-style-str)))
+        (for-each (annotate-binder binders varrefs tops) 
                   binders)
         (for-each (annotate-varref handle-no-binders/lexical binders varrefs)
                   varrefs)
-        (for-each (annotate-varref (handle-no-binders/top users-namespace) binders varrefs)
+        (for-each (annotate-varref (handle-no-binders/top users-namespace) binders tops)
                   tops))
+      
+      ;; annotate-binder : (listof syntax) (listof syntax) (listof syntax) -> syntax -> void
+      ;; annotates a variable in a binding position
+      (define (annotate-binder binders varrefs tops)
+        (lambda (binder)
+          (when (syntax-original? binder)
+            (let ([same-as-binder?
+                   (lambda (x) (module-identifier=? x binder))])
+              (make-rename-menu 
+               binder 
+               (append (filter same-as-binder? binders)
+                       (filter same-as-binder? varrefs)
+                       (filter same-as-binder? tops))))
+            (color binder bound-variable-style-str))))
       
       ;; annotate-varref : (syntax -> void) (listof syntax) (listof syntax) -> syntax -> void
       ;; annotates a variable reference with either green or red,
@@ -836,20 +825,18 @@
             (let* ([same-as-varref? (lambda (x) (module-identifier=? x varref))]
                    [binders (filter same-as-varref? all-binders)]
                    [same-names (append binders (filter same-as-varref? all-varrefs))])
+              (make-rename-menu varref same-names)
               (cond
                 [(null? binders) (handle-no-binders varref)]
                 [else
                  (for-each 
                   (lambda (binder) 
                     (when (syntax-original? binder)
-                      (connect-syntaxes binder
-                                        varref
-                                        (syntax-object->datum binder)
-                                        same-names)))
+                      (connect-syntaxes binder varref)))
                   binders)
                  (color varref bound-variable-style-str)])))))
       
-          ;; handle-no-binders/top : top-level-info -> syntax[original] -> void
+      ;; handle-no-binders/top : top-level-info -> syntax[original] -> void
       (define (handle-no-binders/top users-namespace)
         (lambda (varref)
           (let ([defined-in-users-namespace?
@@ -865,12 +852,10 @@
       (define (handle-no-binders/lexical varref)
         (color varref unbound-variable-style-str))
       
-      ;; connect-syntaxes : syntax[original] syntax[original]
-      ;;                    (union #f symbol) (union #f (listof syntax))
-      ;;                    -> void
-      ;; adds an arrow from `from' to `to'. 
+      ;; connect-syntaxes : syntax[original] syntax[original] -> void
+      ;; adds an arrow from `from' to `to', unless they have the same source loc. 
       ;; Passes `rename-name' and `rename-same-stxs' to syncheck:add-arrow
-      (define (connect-syntaxes from to rename-name rename-same-stxs)
+      (define (connect-syntaxes from to)
         (let* ([from-source (syntax-source from)]
                [from-pos-left (- (syntax-position from) 1)]
                [from-pos-right (+ from-pos-left (syntax-span from))]
@@ -879,11 +864,10 @@
                [to-pos-right (+ to-pos-left (syntax-span to))])
           (when (and (eq? from-source to-source)
                      (is-a? from-source syncheck-text<%>))
-            (send from-source syncheck:add-arrow
-                  from-pos-left from-pos-right
-                  to-pos-left to-pos-right
-                  rename-name
-                  rename-same-stxs))))
+            (unless (= from-pos-left to-pos-left)
+              (send from-source syncheck:add-arrow
+                    from-pos-left from-pos-right
+                    to-pos-left to-pos-right)))))
       
       ;; annotate-basic : syntax -> (values (listof syntax)
       ;;                                    (listof syntax)
@@ -897,7 +881,7 @@
       ;; is those that occur in #%top's. The next value is #f if there was
       ;; no module, or all of the require expressions if there was one.
       ;; the last is the list of all original macro references.
-      (define (annotate-basic sexp)
+      (define (annotate-basic sexp run-in-expansion-thread)
         (let ([binders null]
               [varrefs null]
               [tops null]
@@ -1015,9 +999,12 @@
                  (for-each loop (syntax->list (syntax (bodies ...)))))]
               
               ; top level or module top level only:
-              [(require require-spec)
+              [(require require-specs ...)
                (begin
-                 (set! requires (cons sexp requires))
+                 (let ([new-specs (map trim-require-prefix
+                                       (syntax->list (syntax (require-specs ...))))])
+                   (for-each (annotate-require-open run-in-expansion-thread) new-specs)
+                   (set! requires (append new-specs requires)))
                  (annotate-raw-keyword sexp))]
               [(require-for-syntax require-spec)
                (begin
@@ -1029,21 +1016,69 @@
                  (annotate-raw-keyword sexp))]
               
               [_
+               identifier?
+               (set! varrefs (cons sexp varrefs))]
+              [_
                (begin
-                 (cond
-                   [(identifier? sexp)
-                    (set! varrefs (cons sexp varrefs))]
-                   [else 
 ;;                        (printf "unknown stx: ~e (datum: ~e) (source: ~e)~n"
 ;;                                 sexp
 ;;                                 (and (syntax? sexp)
 ;;                                      (syntax-object->datum sexp))
 ;;                                 (and (syntax? sexp)
 ;;                                      (syntax-source sexp)))
-                    (void)
-                    ]))]))
+                    (void))]))
           (values binders varrefs tops (and has-module? requires) referenced-macros)))
       
+      ;; annotate-require-open : ((-> void) -> stx -> void)
+      (define (annotate-require-open run-in-expansion-thread)
+        (lambda (require-spec)
+          (when (syntax-original? require-spec)
+            (let ([source (syntax-source require-spec)])
+              (when (is-a? source syncheck-text<%>)
+                (let* ([start (- (syntax-position require-spec) 1)]
+                       [end (+ start (syntax-span require-spec))]
+                       [datum (syntax-object->datum require-spec)]
+                       [sym 
+                        (and (not (symbol? datum))
+                             (run-in-expansion-thread
+                              (lambda ()
+                                ((current-module-name-resolver)
+                                 (syntax-object->datum require-spec)
+                                 #f 
+                                 #f))))]
+                       [file (and (symbol? sym)
+                                  (module-name-sym->filename sym))])
+                  (when file
+                    (send source syncheck:add-menu start end 
+                          (make-require-open-menu file)))))))))
+      
+      ;; make-require-open-menu : string[filename] -> menu -> void
+      (define (make-require-open-menu file)
+        (lambda (menu)
+          (let-values ([(base name dir?) (split-path file)])
+            (instantiate menu-item% ()
+              (label (format "Open ~a" name))
+              (parent menu)
+              (callback (lambda (x y) (fw:handler:edit-file file))))
+            (void))))
+      
+      ;; possible-suffixes : (listof string)
+      ;; these are the suffixes that are checked for the reverse 
+      ;; module-path mapping.
+      (define possible-suffixes '(".ss" ".scm" ""))
+      
+      ;; module-name-sym->filename : symbol -> (union #f string)
+      (define (module-name-sym->filename sym)
+        (let ([str (symbol->string sym)])
+          (and ((string-length str) . > . 1)
+               (char=? (string-ref str 0) #\,)
+               (let ([fn (substring str 1 (string-length str))])
+                 (ormap (lambda (x)
+                          (let ([test (string-append fn x)])
+                            (and (file-exists? test)
+                                 test)))
+                        possible-suffixes)))))
+
       ;; get-referenced-macros : sexp -> syntax[original]
       (define (get-referenced-macros sexp)
         (let ([origin (syntax-property sexp 'origin)])
@@ -1057,6 +1092,19 @@
                                         stxs)]
                   [else stxs]))
               null)))
+      
+       ;; trim-require-prefix : syntax -> syntax
+      (define (trim-require-prefix require-spec)
+        (let loop ([stx require-spec])
+          (syntax-case stx (prefix all-except rename)
+            [(prefix identifier module-name) (loop (syntax module-name))]
+            [(all-except module-name identifer ...)
+             (loop (syntax module-name))]
+            [(rename module-name local-identifer exported-identifer)
+             (loop (syntax module-name))]
+            [_ stx])))
+      
+      
 
           ;; combine-binders : syntax (listof syntax) -> (listof syntax)
           ;; transforms an argument list into a bunch of symbols/symbols and puts 
@@ -1122,13 +1170,61 @@
                   [span (syntax-span stx)])
               (color-range source pos (+ pos span) style-name)))))
       
-          ;; color-range : text start finish style-name 
-          ;; colors a range in the text based on `style-name'
+      ;; color-range : text start finish style-name 
+      ;; colors a range in the text based on `style-name'
       (define (color-range source start finish style-name)
         (let ([style (send (send source get-style-list)
                            find-named-style
                            style-name)])
           (send source change-style style start finish)))
+      
+      ;; make-rename-menu : stx[original] (listof syntax) -> void
+      (define (make-rename-menu stx same-names)
+        (let ([source (syntax-source stx)])
+          (when (is-a? source syncheck-text<%>)
+            (let* ([name-to-offer (format "~a" (syntax-object->datum stx))]
+                   [start (- (syntax-position stx) 1)]
+                   [fin (+ start (syntax-span stx))])
+              (send source syncheck:add-menu
+                    start fin
+                    (lambda (menu)
+                      (instantiate menu-item% ()
+                        (parent menu)
+                        (label (format "Rename ~a" name-to-offer))
+                        (callback
+                         (lambda (x y)
+                           (rename-callback name-to-offer same-names))))))))))
+
+      ;; rename-callback : string (listof syntax) -> void
+      ;; callback for the rename popup menu item
+      (define (rename-callback name-to-offer same-names)
+        (let ([new-id 
+               (fw:keymap:call/text-keymap-initializer
+                (lambda ()
+                  (get-text-from-user
+                   "Rename Identifier"
+                   (format "Rename ~a to:" name-to-offer)
+                   #f
+                   name-to-offer)))])
+          (when new-id
+            (let ([to-be-renamed (quicksort 
+                                  (filter syntax-original? same-names)
+                                  (lambda (x y) 
+                                    ((syntax-position x) . >= . (syntax-position y))))])
+              (unless (null? to-be-renamed)
+                (let ([first-one-source (syntax-source (car to-be-renamed))])
+                  (when (is-a? first-one-source text%)
+                    (send first-one-source begin-edit-sequence)
+                    (for-each (lambda (stx) 
+                                (let ([source (syntax-source stx)])
+                                  (when (is-a? source text%)
+                                    (let* ([start (- (syntax-position stx) 1)]
+                                           [end (+ start (syntax-span stx))])
+                                      (send source delete start end #f)
+                                      (send source insert new-id start start #f)))))
+                              to-be-renamed)
+                    (send first-one-source invalidate-bitmap-cache)
+                    (send first-one-source end-edit-sequence))))))))
       
       (drscheme:get/extend:extend-definitions-text make-graphics-text%)
       (drscheme:get/extend:extend-unit-frame make-new-unit-frame% #f))))

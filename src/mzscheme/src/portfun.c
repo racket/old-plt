@@ -3320,7 +3320,7 @@ static Scheme_Object *default_load(int argc, Scheme_Object *argv[])
   port = scheme_do_open_input_file("default-load-handler", 0, 1, argv);
 
   /* Turn on line/column counting, unless it's a .zo file: */
-  if (SCHEME_BYTE_STRINGP(argv[0])) {
+  if (SCHEME_PATHP(argv[0])) {
     long len;
 
     len = SCHEME_BYTE_STRLEN_VAL(argv[0]);

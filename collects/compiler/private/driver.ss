@@ -543,8 +543,8 @@
 			  (when (compiler:internal-error-msg? message)
 			    (printf 
 			     (string-append
-			      " please report the bug at http://www.cs.rice.edu/CS/PLT/Bugs/~n"
-			      "  (or, as a last resort, send mail to plt-bugs@cs.rice.edu)~n"
+			      " please report the bug using Help Desk~n"
+			      "  or http://bugs.plt-scheme.org/~n"
 			      "  and include a transcript in verbose mode~n")))))
 		      
 		      msgs)

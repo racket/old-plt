@@ -104,7 +104,8 @@
 				 (symbol->string s))))))
 
       (define (vm->c:emit-symbol-length-list! port comma c-comment?)
-	(vm->c:emit-list! port comma c-comment? (const:get-symbol-table) (const:get-symbol-counter) (lambda (s) (string-length (symbol->string s)))))
+	(vm->c:emit-list! port comma c-comment? (const:get-symbol-table) (const:get-symbol-counter) 
+			  (lambda (s) (string-length (symbol->string s)))))
 
       (define (vm->c:emit-symbol-declarations! port)
 	(unless (zero? (const:get-symbol-counter))
@@ -206,7 +207,7 @@
 	       (let ([id (syntax-string-id ss)]
 		     [symbols (vm->c:SYMBOLS-name)])
 		 (fprintf port "  SS[~a] = scheme_load_compiled_stx_string(SYNTAX_STRING_~a, ~a);~n"
-			  id id (string-length (syntax-string-str ss)))
+			  id id (bytes-length (syntax-string-str ss)))
 		 ;; Reset uninterned symbols:
 		 (let loop ([uposes (syntax-string-uposes ss)][i (syntax-string-ustart ss)])
 		   (unless (null? uposes)
@@ -1008,16 +1009,20 @@
 
       (define vm->c:convert-char
 	(lambda (char)
-	  (cond 
-	   [(char=? char #\tab) "\\t"]
-	   [(char=? char #\newline) "\\n"]
-	   [(char=? char #\return) "\\r"]
-	   [(char=? char #\space) " "]
-	   [(or (char-alphabetic? char) (char-numeric? char)) (string char)]
-	   [else (let ([text (number->string (char->integer char) 8)])
-		   (string-append "\\"
-				  (make-string (- 3 (string-length text)) #\0)
-				  text))])))
+	  (if ((char->integer char) . > . 127)
+	      (char->integer char)
+	      (format
+	       "'~a'"
+	       (cond 
+		[(char=? char #\tab) "\\t"]
+		[(char=? char #\newline) "\\n"]
+		[(char=? char #\return) "\\r"]
+		[(char=? char #\space) " "]
+		[(or (char-alphabetic? char) (char-numeric? char)) (string char)]
+		[else (let ([text (number->string (char->integer char) 8)])
+			(string-append "\\"
+				       (make-string (- 3 (string-length text)) #\0)
+				       text))])))))
 
       (define vm->c:convert-special-constant
 	(lambda (ast)
@@ -1617,7 +1622,7 @@
 		    (emit-expr "scheme_make_integer(~a)" (zodiac:zread-object tast))]
 		   
 		   [(char? (zodiac:zread-object tast))
-		    (emit-expr "scheme_make_character('~a')"
+		    (emit-expr "scheme_make_character(~a)"
 			       (vm->c:convert-char
 				(zodiac:zread-object tast)))]
 		   
@@ -1670,7 +1675,7 @@
 		       [(integer? num)
 			(if (vm:fixnum? num) 
 			    (emit-expr "scheme_make_integer(~a)" num)
-			    (emit-expr "scheme_read_bignum(\"~a\", 0, 10)" num))]
+			    (emit-expr "scheme_read_bignum_bytes(\"~a\", 0, 10)" num))]
 					; rational numbers
 		       [else
 			(emit-expr "scheme_make_rational(")

@@ -90,6 +90,7 @@
 	   s
 	   (lambda ()
 	     (begin0
+	      const:string-counter
 	      (hash-table-put! table s const:string-counter)
 	      (set! const:string-counter (add1 const:string-counter)))))))
 
@@ -286,7 +287,8 @@
 			     (or (syntax->list p)
 				 (and (vector? (syntax-e p))
 				      (vector->list (syntax-e p)))
-				 (and (regexp? (syntax-e p))
+				 (and (or (regexp? (syntax-e p))
+					  (byte-regexp? (syntax-e p)))
 				      (list (datum->syntax-object #f (object-name (syntax-e p)))))
 				 (let loop ([p p])
 				   (cond
@@ -340,7 +342,8 @@
 		   (bytes? datum)
 		   (symbol? datum)
 		   (boolean? datum)
-		   (regexp? datum)))
+		   (regexp? datum)
+		   (byte-regexp? datum)))
 	  #t]
 	 [else #f]))
 	 
@@ -433,7 +436,8 @@
 	    (construct-vector-constant ast 'vector known-immutable?)]
 	   
 	   ;; regexp
-	   [(regexp? (zodiac:zread-object ast))
+	   [(or (regexp? (zodiac:zread-object ast))
+		(byte-regexp? (zodiac:zread-object ast)))
 	    (construct-vector-constant ast 'regexp #t)]
 	   
 	   ;; comes from module paths in analyze:

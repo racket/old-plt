@@ -273,6 +273,7 @@
 #define scheme_bignum_to_string (scheme_extension_table->scheme_bignum_to_string)
 #define scheme_bignum_to_allocated_string (scheme_extension_table->scheme_bignum_to_allocated_string)
 #define scheme_read_bignum (scheme_extension_table->scheme_read_bignum)
+#define scheme_read_bignum_bytes (scheme_extension_table->scheme_read_bignum_bytes)
 #define scheme_bignum_normalize (scheme_extension_table->scheme_bignum_normalize)
 #define scheme_make_rational (scheme_extension_table->scheme_make_rational)
 #define scheme_rational_to_double (scheme_extension_table->scheme_rational_to_double)

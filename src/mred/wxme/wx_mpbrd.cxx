@@ -1788,6 +1788,16 @@ void wxMediaPasteboard::Update(float x, float y, float w, float h)
 {
   float r, b;
 
+  if (delayedscrollsnip && !sequence) {
+    wxSnip *s = delayedscrollsnip;
+    delayedscrollsnip = NULL;
+    if (ScrollTo(s, 
+		 delayedscrollX, delayedscrollY, 
+		 delayedscrollW, delayedscrollH, 
+		 TRUE, delayedscrollbias))
+      return;
+  }
+
   r = x + w;
   b = y + h;
 
@@ -1923,7 +1933,7 @@ void wxMediaPasteboard::UpdateAll()
 
 void wxMediaPasteboard::UpdateNeeded()
 {
-  if (updateNonemtpy)
+  if (updateNonemtpy || delayedscrollsnip)
     Update(updateLeft, updateTop, 0, 0);
 }
 
@@ -1973,13 +1983,33 @@ void wxMediaPasteboard::GetExtent(float *w, float *h)
 }
 
 Bool wxMediaPasteboard::ScrollTo(wxSnip *snip, 
-				 float WXUNUSED(localx), float WXUNUSED(localy), 
-				 float WXUNUSED(w), float WXUNUSED(h), 
-				 Bool refresh, int WXUNUSED(bias))
+				 float localx, float localy, 
+				 float w, float h, 
+				 Bool refresh, int bias)
 {
-  if (refresh)
-    UpdateSnip(snip);
-  return FALSE;
+  if (sequence) {
+    delayedscrollsnip = snip;
+    delayedscrollX = localx;
+    delayedscrollY = localy;
+    delayedscrollW = w;
+    delayedscrollH = h;
+  } else if (admin) {
+    float x, y;
+
+    GetSnipLocation(snip, &x, &y);
+
+    if (admin->ScrollTo(x + localx, y + localy, w, h, refresh, bias)) {
+      if (!refresh) {
+	updateTop = 0;
+	updateLeft = 0;
+	updateBottom = -1;
+	updateRight = -1;
+	updateNonemtpy = TRUE;
+      }
+      return TRUE;
+    } else
+      return FALSE;
+  }
 }
 
 void wxMediaPasteboard::SetCaretOwner(wxSnip *snip, int dist)

@@ -216,6 +216,10 @@ class wxMediaPasteboard : public wxMediaBuffer
 
   int sequence;
 
+  int delayedscrollbias;
+  wxSnip *delayedscrollsnip;
+  float delayedscrollX, delayedscrollY, delayedscrollW, delayedscrollH;
+
   Bool sequenceStreak;
 
   Bool changed;

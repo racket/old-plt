@@ -358,7 +358,9 @@
     [(_ (quote something))
      #'(slib:require (quote something))]
     [(_ req ...)
-     #'(mz:require req ...)]))
+     (if (eq? 'top-level (syntax-local-context))
+	 #'(mz:require req ...)
+	 #'(slib:require req ...))]))
 
 ;; The rest are from:
 

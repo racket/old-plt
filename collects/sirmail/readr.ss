@@ -344,9 +344,15 @@
 				  (map (lambda (i) (+ i p))
 				       (enumerate (- count p))))
 				(enumerate count))]
-		 [data (imap-get-messages imap 
-					  positions
-					  '(uid))]
+		 [data (with-handlers ([void (lambda (exn)
+						     (force-disconnect/status)
+						     (raise exn))])
+			 (break-ok)
+			 (begin0
+			  (imap-get-messages imap 
+					     positions
+					     '(uid))
+			  (break-bad)))]
 		 [uids (map car data)]
 		 [curr-uids (map car mailbox)]
 		 [deleted (if continue?

@@ -4,6 +4,8 @@
 
 (require (lib "async-channel.ss"))
 
+(SECTION 'async-channel)
+
 (arity-test make-async-channel 0 1)
 (err/rt-test (make-async-channel 0) exn?)
 (err/rt-test (make-async-channel 1.0) exn?)

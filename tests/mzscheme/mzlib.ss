@@ -6,6 +6,8 @@
 
 (load-relative "async-channel.ss")
 
+(load-relative "restart.ss")
+
 (load-relative "function.ss")
 
 (load-relative "string.ss")

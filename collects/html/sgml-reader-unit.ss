@@ -5,6 +5,7 @@
 (module sgml-reader-unit mzscheme
   (require (lib "unitsig.ss")
 	   (lib "list.ss")
+	   (lib "string.ss")
 	   "sgml-reader-sig.ss"
 	   (lib "sig.ss" "xml" "private"))
 
@@ -269,9 +270,19 @@
 	    (when (and (not (eof-object? c)) (char-whitespace? c))
 	      (read-char in)
 	      (loop)))))
-      
+
       ;; lex-pcdata : Input-port -> Pcdata
       ;; deviation - disallow ]]> "for compatability" with SGML, sec 2.4 XML spec 
+      (define (lex-pcdata in)
+	(let ([start (file-position in)])
+	  (let ([s (regexp-match #rx"^[^&<]*" in)])
+	    (make-pcdata start
+			 (file-position in)
+			 (if (trim-whitespace)
+			     (regexp-replace* #rx"[ \t\v\r\n]+" (car s) "")
+			     (car s))))))
+#|
+      ;; Original slow version:
       (define (lex-pcdata in)
 	(let ([start (file-position in)]
 	      [data (let loop ([c (read-char in)])
@@ -289,17 +300,31 @@
 	  (make-pcdata start
 		       (file-position in)
 		       (list->string data))))
-      
+  |#
+  
+
       ;; lex-name : Input-port -> Symbol
       (define (lex-name in)
-	(string->symbol
-	 (list->string
-	  (let lex-rest ()
-	    (cond
-	     [(name-char? (peek-char in))
-	      (cons (char-downcase (read-char in)) (lex-rest))]
-	     [else null])))))
-      
+	(let ([s (car (regexp-match #rx"^[a-zA-Z_:0-9&.-]*" in))])
+	  (string->symbol
+	   ;; Common case: string is already lowercased
+	   (if (regexp-match-positions #rx"[A-Z]" s)
+	       (begin
+		 (string-lowercase! s)
+		 s)
+	       s))))
+#|
+      (define (lex-name in)
+        (string->symbol
+         (list->string
+          (let lex-rest ()
+            (cond
+             [(name-char? (peek-char in))
+              (cons (char-downcase (read-char in)) (lex-rest))]
+             [else null])))))
+|#
+
+    
       ;; skip-dtd : Input-port -> Void
       (define (skip-dtd in)
 	(let skip ()

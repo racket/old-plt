@@ -3,9 +3,9 @@
 
 (SECTION 'pconvert)
 
-(require (lib "unit.ss"))
-(require (lib "class.ss"))
-(require (lib "pconvert.ss"))
+(require (lib "unit.ss")
+         (lib "class.ss")
+         (lib "pconvert.ss"))
 
 (constructor-style-printing #t)
 (quasi-read-style-printing #f)
@@ -178,11 +178,7 @@
      (make-same-test (regexp "1") '(regexp "1"))
      (make-same-test (module-path-index-join #f #f) '(module-path-index-join false false))
      (make-same-test (lambda () 0) '(lambda () ...))
-     
-     (make-same-test #'(lambda (x) x) '#'(lambda (x) x))
-     
-     (make-same-test #'a '#'a)
-     
+
      (make-same-test xl 'xl)
      (make-same-test (letrec ([xl (lambda () 1)]) xl) '(lambda () ...))
      (make-same-test (letrec ([xl-ID-BETTER-NOT-BE-DEFINED (lambda () 1)]) 
@@ -356,7 +352,7 @@
   (test-shared (delay 1) '(delay ...))
   (test-shared (class object% ()) '(class ...))
   (test-shared (unit (import) (export)) '(unit ...))
-  (test-shared (make-object (class object% (super-instantiate ()))) '(make-object (class ...) ...))
+  (test-shared (new (class object% (super-new))) '(instantiate (class ...) ...))
   
   (test-shared "abc" "abc")
   (test-shared (list 1 2 3) '(list 1 2 3))

@@ -125,6 +125,10 @@
                          (not (regexp? expr))
                          (not (procedure? expr))
                          (not (promise? expr))
+                         (not (object? expr))
+                         (not (unit? expr))
+                         (not (port? expr))
+                         (not (class? expr))
                          (object-name expr))
                     'atomic]
                    [(box? expr) 
@@ -143,7 +147,7 @@
                    [(vector? expr) 
                     (unless (build-sub expr)
                       (for-each build (vector->list expr)))]
-                   [(struct? expr) 
+                   [(struct? expr)
                     (unless (build-sub expr)
                       (for-each build (vector->list (struct->vector expr))))]
                    [else (build-sub expr)]))
@@ -356,7 +360,7 @@
                                 (build-named 
                                  expr
                                  (lambda () '(class ...)))]
-                               [(object? expr) `(make-object
+                               [(object? expr) `(instantiate
                                                     ,(build-named 
                                                       (object-interface expr)
                                                       (lambda () '(class ...)))
@@ -368,15 +372,10 @@
                                               (lambda () 
                                                 '(unit ...)))]
                                [(struct? expr)
-                                (let ([name (symbol->string
-                                             (vector-ref (struct->vector expr) 0))])
-                                  `(,(string->symbol
-                                      (string-append
-                                       "make-" (substring name
-                                                          (string-length "struct:")
-                                                          (string-length name))))
-                                    ,@(map recur (cdr (vector->list
-                                                       (struct->vector expr))))))]
+                                `(,(string->symbol
+                                    (string-append
+                                     "make-" (symbol->string (object-name expr))))
+                                  ,@(map recur (cdr (vector->list (struct->vector expr)))))]
                                [(and (number? expr) (exact? expr))
                                 (let-values ([(whole frac whole-i frac-i) (get-whole/frac expr)])
                                   (cond

@@ -4,6 +4,7 @@ $list = 1 if ($assign);
 $list = 1 if ($setupassign);
 $list = 1 if ($exports);
 $list = 1 if ($winex);
+$list = 1 if ($gwinex);
 
 while (<>) {
     chop;
@@ -66,23 +67,23 @@ $suspend = 0;
 %nonprocs = ();
 
 print "#!\n" if $exports;
-print "EXPORTS\n" if $winex;
+print "EXPORTS\n" if ($winex || $gwinex);
 
 if ($list) {
     foreach $f (@exported) {
 	if (substr($f, 0, 1) eq '#') {
-	    if ($exports || $winex) {
+	    if ($exports || $winex || $gwinex) {
 		if ($f =~ /#ifdef MZ_REAL_THREADS/) {
 		    $suspend = 1;
 		}
 		if ($f =~ /#ifndef MZ_REAL_THREADS/) {
 		    $elsesuspend = 1;
 		}
-		if ($f =~ MZ_USE_SINGLE_FLOATS) {
+		if ($f =~ /#ifdef MZ_USE_SINGLE_FLOATS/) {
 		    $suspend = 1;
 		}
-		if ($f =~ LINK_EXTENSIONS_BY_TABLE) {
-		    $suspend = 1;
+		if ($f =~ /#ifndef LINK_EXTENSIONS_BY_TABLE/) {
+		    $elsesuspend = 1;
 		}
 		if ($f =~ /#else/) {
 		    $suspend = 0;
@@ -102,7 +103,7 @@ if ($list) {
 		print "  $f = table->$f;\n";
 	    } elsif ($exports) {
 		print "$f\n" unless $suspend;
-	    } elsif ($winex) {
+	    } elsif ($winex || $gwinex) {
 		$data = "";
 		if (($f =~ /scheme_current_process/)
 		    || ($f =~ /scheme_fuel_counter/)
@@ -113,7 +114,9 @@ if ($list) {
 		    || ($f =~ /scheme_void/)
 		    || ($f =~ /scheme_undefined/)
 		    || ($f =~ /scheme_null/)) {
-		    $data = " DATA";
+		    if (!$gwinex) {
+			$data = " DATA";
+		    }
 		}
 		print " $f$data\n" unless $suspend;
 	    } else {

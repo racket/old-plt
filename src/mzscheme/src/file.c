@@ -885,7 +885,7 @@ static int check_dos_slashslash_drive(const char *next, int len,
 #endif
 
 #ifdef DOS_FILE_SYSTEM
-static char *get_drive_part(char *wds, int wdlen)
+static char *get_drive_part(const char *wds, int wdlen)
 {
   int dend;
   char *naya;
@@ -1003,7 +1003,7 @@ static char *do_expand_filename(char* filename, int ilen, char *errorin,
 
     /* Clean up the name, removing mulitple // and
        adding "/" after "c:" if necessary */
-    if (isalpha(filename[0])
+    if (isalpha(((unsigned char)filename[0]))
 	&& (filename[1] == ':') && !IS_A_SEP(filename[2]))
       fixit = -1;
     else {
@@ -1158,7 +1158,10 @@ int scheme_file_exists(char *filename)
 # define FIND_FAILED(h) (h == INVALID_HANDLE_VALUE)
 # define _A_RDONLY FILE_ATTRIBUTE_READONLY
 # define GET_FF_ATTRIBS(fd) (fd.dwFileAttributes)
-# define GET_FF_MODDATE(fd) (fd.ftLastWriteTime)
+# define GET_FF_MODDATE(fd) convert_date(&fd.ftLastWriteTime)
+static time_t convert_date(const FILETIME *t) {
+  return 0;
+}
 #endif
 
 #ifdef DOS_FILE_SYSTEM
@@ -1490,7 +1493,7 @@ Scheme_Object *scheme_build_pathname(int argc, Scheme_Object **argv)
 	  rel = 0;
 	  is_drive = check_dos_slashslash_drive(next, len, NULL, 1);
 	} else if ((len >= 2) 
-		   && isalpha(next[0])
+		   && isalpha(((unsigned char)next[0]))
 		   && (next[1] == ':')) {
 	  int j;
 	  rel = 0;
@@ -1636,7 +1639,7 @@ Scheme_Object *scheme_split_pathname(const char *path, int len, Scheme_Object **
       allow_double_before = 1;
     else
       drive_end = 0;
-  } else if ((len > 1) && isalpha(s[0]) && (s[1] == ':'))
+  } else if ((len > 1) && isalpha(((unsigned char)s[0])) && (s[1] == ':'))
     drive_end = 2;
   else
     drive_end = 0;
@@ -1829,7 +1832,7 @@ int scheme_is_relative_path(const char *s, long len)
 #ifdef DOS_FILE_SYSTEM
   if (IS_A_SEP(s[0])
       || ((len >= 2) 
-	  && isalpha(s[0])
+	  && isalpha(((unsigned char)s[0]))
 	  && (s[1] == ':')))
     return 0;
   else
@@ -1858,7 +1861,7 @@ int scheme_is_complete_path(const char *s, long len)
       else
 	return 0;
     } else if ((len >= 2) 
-	       && isalpha(s[0])
+	       && isalpha(((unsigned char)s[0]))
 	       && (s[1] == ':')) {
       return 1;
     } else

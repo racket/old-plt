@@ -21,6 +21,17 @@
 #ifdef WINDOWS_DYNAMIC_LOAD
 # if SCHEME_DIRECT_EMBEDDED
 #  define NONPROC /* empty */
+# elif defined(__CYGWIN32__)
+#  define NONPROC /* empty */
+#  define MZSCHEME_IMP(name) __imp_##name
+#  define MZSCHEME_GLOBALS_H(name) (*MZSCHEME_IMP(name))
+#  define scheme_current_process MZSCHEME_GLOBALS_H(scheme_current_process)
+#  define scheme_fuel_counter MZSCHEME_GLOBALS_H(scheme_fuel_counter)
+#  define scheme_null MZSCHEME_GLOBALS_H(scheme_null)
+#  define scheme_true MZSCHEME_GLOBALS_H(scheme_true)
+#  define scheme_false MZSCHEME_GLOBALS_H(scheme_false)
+#  define scheme_void MZSCHEME_GLOBALS_H(scheme_void)
+#  define scheme_undefined MZSCHEME_GLOBALS_H(scheme_undefined)
 # else
 #  define NONPROC __declspec(dllimport)
 # endif

@@ -37,6 +37,10 @@ Functions
        the column number and o is the number of characters
        from the beginning of the file.
 
+       Any non-characters other than eof read from the input-port will
+       appear in the document content.  Such special values may only appear
+       where XML content may.
+
 > write-xml : Document [Output-port] -> Void
        writes a document to the given or current output port, currently
        ignoring everything except the document's root element.

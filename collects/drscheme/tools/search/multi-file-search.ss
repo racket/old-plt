@@ -1,13 +1,11 @@
 (require-library "framework.ss" "framework")
 
-;; search-results-frame : (union #f (instance frame%))
-;; The search results frame. There is only ever one.
-(define search-results-frame #f)
-
 ;; multi-file-search : -> void
 ;; opens a dialog to configure the search and initiates the search
 (define (multi-file-search)
-  (configure-search))
+  (let ([search-info  (configure-search)])
+    (when search-info
+      (open-search-window search-info))))
 
 ;; search-type = (make-search-type string make-searcher (listof (cons string boolean)))
 ;; the param strings are the labels for checkboxes
@@ -19,15 +17,17 @@
 ;; this returns the function that does the actual searching
 ;; it takes the search parameters and the search string
 
-;; searcher = (string -> ...)
+;; searcher = (string (string int int int -> void) -> void)
 ;; this performs a single search.
-;; the input is the filename to be searched
+;; the first argument is the filename to be searched
+;; the second argument is called for each match.
+;;     the arguments are: line-string line-number col-number match-length
 
 ;; search-info = (make-search-info searcher (-> (union #f string)))
 ;; this is the info from the user to do a particular search
 ;; do-single-search runs the search in a particular file
 ;; filenames is a thunk that returns the next filename, or #f
-(define-struct search-info (do-single-search filenames))
+(define-struct search-info (searcher get-filenames))
 
 ;; search-types : (listof search-type)
 (define search-types
@@ -44,8 +44,8 @@
 (preferences:set-default 'drscheme:multi-file-search:recur? #t boolean?)
 (preferences:set-default 'drscheme:multi-file-search:filter? #f boolean?)
 (preferences:set-default 'drscheme:multi-file-search:filter-string "" string?)
-(preferences:set-default 'drscheme:multi-file-search:directory "" string?)
-(preferences:set-default 'drscheme:multi-file-search:search-string "" string?)
+(preferences:set-default 'drscheme:multi-file-search:directory "Seesen:tmp:" string?)
+(preferences:set-default 'drscheme:multi-file-search:search-string "test" string?)
 (preferences:set-default 'drscheme:multi-file-search:search-type
                          0 
                          (lambda (x) 
@@ -72,6 +72,104 @@
                                           (= 2 (length x))
                                           (= 1 (apply + x)))))
 
+(preferences:set-default 'drscheme:multi-file-search:frame-size '(300 . 400) 
+                         (lambda (x) (and (cons? x)
+                                          (number? (car x))
+                                          (number? (cdr x)))))
+
+;; open-search-window : search-info -> void
+;; thread: eventspace main thread
+;; opens a window and creates the thread that does the search
+(define (open-search-window search-info)
+  (define frame (make-object search-size-frame% "Search"))
+  (define panel (make-object saved-vertical-resizable% frame))
+  (define button-panel (make-object horizontal-panel% frame))
+  (define stop-button (make-object button% "Stop Search" button-panel (lambda (x y) (stop-callback))))
+  
+  (define zoom-text (make-object text%))
+  (define results-text (make-object results-text% zoom-text))
+  (define results-ec (make-object editor-canvas% panel results-text))
+  (define zoom-ec (make-object editor-canvas% panel zoom-text))
+  
+  (define (stop-callback)
+    (break-thread thd)
+    (send stop-button enable #f))
+  
+  (define thd
+    (thread
+     (lambda ()
+       (do-search search-info results-text)
+       (queue-callback
+        (lambda ()
+          (send stop-button enable #f))))))
+  
+  (send panel set-percentages (preferences:get 'drscheme:multi-file-search:percentages))
+  (send button-panel set-alignment 'right 'center)
+  (send button-panel stretchable-height #f)
+  (send frame show #t))
+
+;; do-search : search-info text -> void
+;; thread: searching thread
+;; called in a new thread that may be broken (to indicate a stop)
+(define (do-search search-info results-text)
+  (let ([searcher (search-info-searcher search-info)]
+        [get-filenames (search-info-get-filenames search-info)])
+    (let loop ()
+      (let ([filename (get-filenames)])
+        (when filename
+          (searcher filename 
+                    (lambda (line-string line-number col-number match-length)
+                      (send results-text add-match filename line-string line-number col-number match-length)))
+          (loop))))))
+
+;; results-text% : derived from text%
+;; init args: zoom-text
+;;   zoom-text : (instance-of text%)
+;; public-methods:
+;;   add-match : string int in tint int -> void
+;;   adds a match to the text
+(define results-text%
+  (class text% (zoom-text)
+    (inherit insert)
+    (private
+      [widest-filename #f]
+      [indent-all-lines
+       (lambda (offset)
+         (void))])
+    (public
+      [add-match
+       (lambda (filename line-string line-number col-number match-length)
+         (let ([len (widest-filename)])
+           (unless widest-filename
+             (set! widest-filename len))
+           (if (<= len widest-filename)
+               (insert (make-string (lambda (i) #\space) (- widest-filename len)))
+               (begin
+                 (indent-all-lines (- len widest-filename))
+                 (set! widest-filename len))))
+         (insert filename)
+         (insert ": ")
+         (insert line-string)
+         (insert #\newline))])
+    (sequence (super-init))))
+    
+;; this frame is just like a regular frame except that it
+;; remembers the frame size in the preferences
+;; thread: eventspace main thread
+(define search-size-frame%
+  (class frame% (name)
+    (override
+      [on-size
+       (lambda (w h)
+         (preferences:set 'drscheme:multi-file-search:frame-size (cons w h)))])
+    (sequence
+      (let ([size (preferences:get 'drscheme:multi-file-search:frame-size)])
+        (super-init name #f (car size) (cdr size))))))
+
+
+;; this vertical-resizable class just remembers the percentage between the
+;; two panels
+;; thread: eventspace main thread
 (define saved-vertical-resizable%
   (class panel:vertical-resizable% args
     (inherit get-percentages)
@@ -84,19 +182,8 @@
          (super-on-percentage-change))])
     (sequence (apply super-init args))))
 
-;; do-search : search-info -> void
-;; opens a window and creates the thread that does the search
-(define (do-search search-info)
-  (define frame (make-object frame% "Search" #f 450))
-  (define panel (make-object saved-vertical-resizable% frame))
-  (define results-text (make-object text%))
-  (define results-ec (make-object editor-canvas% panel results-text))
-  (define zoom-text (make-object text%))
-  (define zoom-ec (make-object editor-canvas% panel zoom-text))
-  
-  (send panel set-percentages (preferences:get 'drscheme:multi-file-search:percentages)))
-
 ;; configure-search : -> (union #f search-info)
+;; thread: eventspace main thread
 ;; configures the search
 (define (configure-search)
   (define dialog (make-object dialog% "Configure search" #f 500 #f #f #f '(resize-border)))
@@ -245,6 +332,7 @@
     (get-files))))
 
 ;; build-recursive-file-list : string -> (-> (union string #f))
+;; thread: first application: eventspace main thread, second applications: searching thread
 (define (build-recursive-file-list dir)
   (letrec ([touched (make-hash-table)]
            [next-thunk (lambda () (process-dir dir (lambda () #f)))]
@@ -285,6 +373,7 @@
     (lambda () (next-thunk))))
 
 ;; build-flat-file-list : string -> (-> (union string #f))
+;; thread: first application: eventspace main thread, second applications: searching thread
 (define (build-flat-file-list dir)
   (let ([contents (map (lambda (x) (build-path dir x)) (directory-contents dir))])
     (lambda ()
@@ -295,11 +384,25 @@
             (set! contents (cdr contents)))))))
 
 ;; exact-match-searcher : make-searcher
+;; thread: searching thread
 (define (exact-match-searcher params key)
-  (lambda (filename)
-    (void)))
+  (let ([case-sensitive? (car params)])
+    (lambda (filename add-entry)
+      (let ([text (make-object text%)])
+        (send text load-file filename)
+        (let loop ([pos 0])
+          (let ([found (send text find-string key 'forward pos 'eof #t case-sensitive?)])
+            (when found
+              (let ([line-string "line string"]
+                    [line-number 0]
+                    [col-number 0]
+                    [match-length 0])
+                (add-entry line-string line-number col-number match-length)
+                (loop (+ found 1))))))))))
+
 
 ;; regexp-match-searcher : make-searcher
+;; thread: searching thread
 (define (regexp-match-searcher parmas key)
   (lambda (filename)
     (void)))
@@ -308,4 +411,4 @@
 ;; stub for soon to come mred primitive
 (define (get-directory) "")
 
-;(multi-file-search)
+(multi-file-search)

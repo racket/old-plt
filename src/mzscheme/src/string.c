@@ -1793,6 +1793,33 @@ int scheme_any_string_has_null(Scheme_Object *o)
   }
 }
 
+#ifdef DOS_FILE_SYSTEM
+# include <windows.h>
+static char *mzGETENV(char *s)
+{
+  int sz, got;
+  char *res;
+
+  sz = GetEnvironmentVariable(s, NULL, 0);
+  if (!sz)
+    return NULL;
+  res = scheme_malloc_atomic(sz);
+  got = GetEnvironmentVariable(s, res, sz);
+  if (got < sz)
+    res[got] = 0;
+  return res;
+}
+
+static int mzPUTENV(char *var, char *val, char *together)
+{
+  return SetEnvironmentVariable(var, val);
+}
+
+#else
+# define mzGETENV getenv
+# define mzPUTENV(var, val, s) MSC_IZE(putenv)(s)
+#endif
+
 static Scheme_Object *sch_getenv(int argc, Scheme_Object *argv[])
 {
   char *s;
@@ -1805,7 +1832,7 @@ static Scheme_Object *sch_getenv(int argc, Scheme_Object *argv[])
   bs = scheme_char_string_to_byte_string_locale(argv[0]);
 
 #ifdef GETENV_FUNCTION
-  s = getenv(SCHEME_BYTE_STR_VAL(bs));
+  s = mzGETENV(SCHEME_BYTE_STR_VAL(bs));
 #else
   if (putenv_str_table) {
     s = (char *)scheme_hash_get(putenv_str_table, (Scheme_Object *)SCHEME_BYTE_STR_VAL(argv[0]));
@@ -1872,7 +1899,7 @@ static Scheme_Object *sch_putenv(int argc, Scheme_Object *argv[])
   scheme_hash_set(putenv_str_table, (Scheme_Object *)var, (Scheme_Object *)s);
 
 #ifdef GETENV_FUNCTION
-  return MSC_IZE(putenv)(s) ? scheme_false : scheme_true;
+  return mzPUTENV(var, val, s) ? scheme_false : scheme_true;
 #else
   return scheme_true;
 #endif

@@ -4897,6 +4897,8 @@ case $OS in
     MZBINTARGET=cygwin-bin
     MZINSTALLTARGET=cygwin-install
     EXTRALIBS="$LIBS gmzwin.exp"
+    MZOPTIONS="$MZOPTIONS -DGC_DLL"
+    CGCOPTIONS="$CGCOPTIONS -DGC_BUILD -DUSE_MSVC_MD_LIBRARY -DMD_LIB_MAIN"
     ;;
   BeOS)
     if test "${enable_sgcdebug}" = "yes" ; then

@@ -116,7 +116,7 @@ wxBitmap::wxBitmap(char bits[], int w, int h)
       DELETE_OBJ Xbitmap;
       Xbitmap = NULL;
     }
-    Xbitmap->account = GC_malloc_accounting_shadow(w * h * 4);
+    Xbitmap->account = GC_malloc_accounting_shadow((w * h) >> 3);
 
     WXGC_IGNORE(this, selectedTo);
 }

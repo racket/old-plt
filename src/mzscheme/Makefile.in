@@ -38,9 +38,10 @@ normal-bin:
 	$(MAKE) mzscheme 
 
 cygwin-bin:
-	$(MAKE) cygwin-dll-setup
 	$(MAKE) starter
-	$(MAKE) normal-bin
+	$(MAKE) dynlib
+	$(MAKE) mzlibrary
+	$(MAKE) mzscheme.exe
 
 oskit: 
 	$(MAKE) mzlibrary
@@ -103,8 +104,25 @@ libmzscheme.@LIBSFX@: src/*.@LTO@ @FOREIGN_OBJS_IF_USED@
 sproc.@LTO@: @GCDIR@/sproc.@LTO@
 	cp @GCDIR@/sproc.@LTO@ sproc.@LTO@
 
+# Unix ----------------------------------------
+
 mzscheme@NOT_OSX@: libmzscheme.@LIBSFX@ libmzgc.@LIBSFX@ main.@LTO@ $(SPECIALIZINGOBJECTS)
 	@MZLINKER@ -o mzscheme main.@LTO@ $(SPECIALIZINGOBJECTS) libmzscheme.@LIBSFX@ libmzgc.@LIBSFX@ @LDFLAGS@ @LIBS@
+
+# Cygwin ----------------------------------------
+
+libmzgcxxxxxxx.dll : libmzgc.a
+	gcc -mdll -o libmzgcxxxxxxx.dll -Wl,--whole-archive libmzgc.a -Wl,--no-whole-archive
+	dlltool --dllname libmzgcxxxxxxx.dll --output-lib libmzgcdll.a libmzgc.a
+
+libmzschxxxxxxx.dll: libmzscheme.a libmzgcdll.a
+	gcc -mdll -o libmzschxxxxxxx.dll -Wl,--whole-archive libmzscheme.a -Wl,--no-whole-archive libmzgcdll.a
+	dlltool --dllname libmzschxxxxxxx.dll --output-lib libmzschdll.a libmzscheme.a
+
+mzscheme.exe: main.o libmzgcxxxxxxx.dll libmzschxxxxxxx.dll
+	gcc -o mzscheme.exe main.o libmzschdll.a libmzgcdll.a
+
+# Mac OS ----------------------------------------
 
 @INCLUDEDEP@ @srcdir@/../mac/version.mak
 
@@ -121,7 +139,8 @@ $(MZFW): libmzscheme.@LIBSFX@ libmzgc.@LIBSFX@ $(SPECIALIZINGOBJECTS)
 mzscheme@OSX@: $(MZFW) main.@LTO@
 	$(CC) -o mzscheme main.@LTO@ -F. -framework PLT_MzScheme
 
-# OSKit-based MzScheme
+# OSKit ----------------------------------------
+
 mzscheme.multiboot : libmzscheme.@LIBSFX@ libmzgc.@LIBSFX@ main.@LTO@
 	$(LD) -Ttext 100000 $(LDFLAGS) @OSKHOME@/lib/oskit/multiboot.@LTO@ \
 		-o mzscheme.multiboot main.@LTO@ -L. -lmzscheme -lgc \
@@ -131,6 +150,8 @@ mzscheme.multiboot : libmzscheme.@LIBSFX@ libmzgc.@LIBSFX@ main.@LTO@
                 -loskit_dev -loskit_com \
                 -loskit_kern -loskit_freebsd_c -loskit_c \
 		@OSKHOME@/lib/oskit/crtn.@LTO@
+
+# ----------------------------------------
 
 main.@LTO@: $(srcdir)/main.c $(srcdir)/include/scheme.h $(srcdir)/sconfig.h $(srcdir)/src/stypes.h $(srcdir)/cmdline.inc $(srcdir)/oskglue.inc
 	$(CC) @CFLAGS@ @COMPFLAGS@ @PREFLAGS@ @PROFFLAGS@ @OPTIONS@ @MZOPTIONS@ -I$(srcdir)/include -c $(srcdir)/main.c -o main.@LTO@
@@ -235,8 +256,9 @@ install:
 	$(MAKE) @MZINSTALLTARGET@
 
 install-3m-basic:
-	cd ..; cp mzscheme/mzscheme3m $(prefix)/bin/mzscheme3m
-	cd ..; cp mzscheme/mzdyn3m.o $(prefix)/lib/mzdyn3m.o
+	cd ..; $(ICP) mzscheme/mzscheme3m $(prefix)/bin/mzscheme3m
+	cd ..; $(ICP) mzscheme/mzdyn3m.o $(prefix)/lib/mzdyn3m.o
+	cd ..; $(ICP) mzscheme/libmzscheme3m.@LIBSFX@ $(LIBIDIR)/libmzscheme3m.@LIBSFX@
 
 install-3m@NOT_OSX@:
 	$(MAKE) install-3m-basic
@@ -290,11 +312,11 @@ WBUILDINFO=$(WLIBIDIR)/buildinfo
 cygwin-install:
 	cd ..; rm -f $(prefix)/mzscheme.exe
 	cd ..; cp mzscheme/mzscheme.exe $(prefix)/mzscheme.exe
+	cd ..; cp mzscheme/libmzschxxxxxxx.dll $(prefix)/libmzschxxxxxxx.dll
+	cd ..; cp mzscheme/libmzgcxxxxxxx.dll $(prefix)/libmzgcxxxxxxx.dll
 	cd dynsrc; $(MAKE) cygwin-install
 	cd ..; $(ICP) mzscheme/mzstart.exe `(cd $(prefix); pwd)`/collects/launcher/mzstart.exe
 	cd ..; if [ ! -d $(WLIBIDIR) ] ; then mkdir $(WLIBIDIR) ; fi
-	cd ..; $(ICP) mzscheme/libmzgc.@LIBSFX@ $(WLIBIDIR)/libmzgc.@LIBSFX@
-	cd ..; $(ICP) mzscheme/libmzscheme.@LIBSFX@ $(WLIBIDIR)/libmzscheme.@LIBSFX@
 	cd ..; echo 'CC=gcc' > $(WBUILDINFO)
 	cd ..; echo 'CFLAGS=@CFLAGS@ @OPTIONS@' >> $(WBUILDINFO)
 	cd ..; echo 'LIBS=@LIBS@' >> $(WBUILDINFO)

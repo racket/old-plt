@@ -348,9 +348,11 @@ wxColourDatabase::~wxColourDatabase (void)
 wxColour *wxColourDatabase::FindColour(const char *colour)
 {
   wxNode *node;
-  XColor xcolor;
   wxColour *col;
+#if 0
+  XColor xcolor;
   Colormap cm;
+#endif
 
   // Force capital so lc matches as in X
   char uc_colour[256];
@@ -375,6 +377,7 @@ wxColour *wxColourDatabase::FindColour(const char *colour)
 #include "../../../wxcommon/DBColors.inc"
   }
 
+#if 0
   // use wxAPP_DISPLAY and wxAPP_COLOURMAP as default
   cm = GETCOLORMAP(wxAPP_COLOURMAP);
   if (XParseColor(wxAPP_DISPLAY, cm, colour, &xcolor)) {
@@ -386,9 +389,11 @@ wxColour *wxColourDatabase::FindColour(const char *colour)
 			       (unsigned char)(xcolor.blue >> SHIFT));
       col->Lock(1);
     }
-  } else {
-    col = (wxColour *)aux->Get(colour);
-  }
+  } else 
+#endif
+    {
+      col = (wxColour *)aux->Get(colour);
+    }
 
   if (col)
     Append(colour, col);

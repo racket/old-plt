@@ -270,8 +270,15 @@ install:
 	$(MAKE) all
 	cd gc2; $(MAKE) 3m
 
+install-no-lib3m:
+	echo "no dynamic libs"
+
+install-lib3m:
+	cd ..; $(ICP) mred/libmred3m.@LIBSFX@ `(cd $(prefix); pwd)`/lib/
+
 install-3m_wx_xt:
-	cd ..; cp mred/mred3m $(prefix)/bin/
+	cd ..; $(ICP) mred/mred3m $(prefix)/bin/
+	$(MAKE) @MRLIBINSTALL@3m
 
 install-3m_wx_mac:
 	rm -f $(MRFWDIR)/Versions/$(FWVERSION)_3m/PLT_MrEd

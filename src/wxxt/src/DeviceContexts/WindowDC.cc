@@ -2097,6 +2097,9 @@ void wxWindowDC::GetTextExtent(const char *orig_s, float *_w, float *_h, float *
   float w, h;
   unsigned *s;
 
+  if (!DRAWABLE) // ensure that a drawable has been associated
+    return;
+
   font_to_use = _font ? _font : current_font;
   if (!font_to_use) {
     wxError("set a font before calling GetTextExtent", "wxWindowDC");

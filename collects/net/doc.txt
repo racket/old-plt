@@ -1125,6 +1125,9 @@ ABSTRACT -------------------------------------------------------------
 Implements part of a DNS client, based on RFC 1035. The name cache
 does not properly time out entries, however.
 
+Thanks to Eduardo Cavazos and Jason Crowe for repairs and
+improvements.
+
 PROCEDURES -----------------------------------------------------------
 
 > (dns-get-address nameserver-string address-string) -> address-string
@@ -1136,6 +1139,11 @@ PROCEDURES -----------------------------------------------------------
   The query record sent to the DNS server includes the "recursive"
   bit, but `dns-get-address' also implements a recursive search itself
   in case the server does not provide this optional feature.
+
+> (dns-get-name nameserver-string address-string) -> address-string
+
+  Consults the specified nameserver (normally a numerical address like
+  "128.42.1.30") to obtain a name for the given numerical address.
 
 > (dns-get-mail-exchanger nameserver-string address-string) -> address-string
 

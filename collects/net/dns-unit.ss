@@ -1,6 +1,7 @@
 
 (module dns-unit mzscheme
-  (require (lib "unitsig.ss"))
+  (require (lib "unitsig.ss")
+	   (lib "list.ss"))
 
   (require "dns-sig.ss")
 
@@ -249,54 +250,89 @@
 			    (not (member ns tried))
 			    (loop ns (cons ns tried)))))))))
 
-      (define (dns-get-address nameserver addr)
-	(or (try-forwarding
-	     (lambda (nameserver)
-	       (let-values ([(auth? qds ans nss ars reply) (dns-query/cache nameserver addr 'a 'in)])
-		 (values (and (positive? (length ans))
-			      (let ([s (rr-data (car ans))])
-				(ip->string s)))
-			 ars auth?)))
-	     nameserver)
-	    (error 'dns-get-address "bad address")))
+  (define ip->in-addr.arpa
+    (lambda (ip)
+      (let ((result (regexp-match "([0-9]+)\\.([0-9]+)\\.([0-9]+)\\.([0-9]+)" ip)))
+        (format "~a.~a.~a.~a.in-addr.arpa"
+                (list-ref result 4)
+                (list-ref result 3)
+                (list-ref result 2)
+                (list-ref result 1)))))
+  
+  (define get-ptr-list-from-ans
+    (lambda (ans)
+      (filter (lambda (ans-entry)
+		(eq? (list-ref ans-entry 1) 'ptr))
+	      ans)))
+  
+  (define dns-get-name 
+    (lambda (nameserver ip)
+      (or (try-forwarding
+           (lambda (nameserver)
+             (let-values ([(auth? qds ans nss ars reply)
+                           (dns-query/cache nameserver (ip->in-addr.arpa ip) 'ptr 'in)])
+               (values (and (positive? (length (get-ptr-list-from-ans ans)))
+                            (let ([s (rr-data (car (get-ptr-list-from-ans ans)))])
+                              (let-values (((name null) (parse-name s reply)))
+                                name)))
+                       ars auth?)))
+           nameserver)
+          (error 'dns-get-name "bad ip address"))))
+  
+  (define get-a-list-from-ans
+    (lambda (ans)
+      (filter (lambda (ans-entry)
+                (eq? (list-ref ans-entry 1) 'a))
+              ans)))
+  
+  (define (dns-get-address nameserver addr)
+    (or (try-forwarding
+	 (lambda (nameserver)
+	   (let-values ([(auth? qds ans nss ars reply) (dns-query/cache nameserver addr 'a 'in)])
+	     (values (and (positive? (length (get-a-list-from-ans ans)))
+			  (let ([s (rr-data (car (get-a-list-from-ans ans)))])
+			    (ip->string s)))
+		     ars auth?)))
+	 nameserver)
+	(error 'dns-get-address "bad address")))
 
-      (define (dns-get-mail-exchanger nameserver addr)
-	(or (try-forwarding
-	     (lambda (nameserver)
-	       (let-values ([(auth? qds ans nss ars reply) (dns-query/cache nameserver addr 'mx 'in)])
-		 (values (let loop ([ans ans][best-pref +inf.0][exchanger #f])
-			   (cond
-			    [(null? ans) (or exchanger
-					     ;; Does 'soa mean that the input address is fine?
-					     (and (ormap
-						   (lambda (ns) (eq? (rr-type ns) 'soa))
-						   nss)
-						  addr))]
-			    [else
-			     (let ([d (rr-data (car ans))])
-			       (let ([pref (octet-pair->number (car d) (cadr d))])
-				 (if (< pref best-pref)
-				     (let-values ([(name start) (parse-name (cddr d) reply)])
-				       (loop (cdr ans) pref name))
-				     (loop (cdr ans) best-pref exchanger))))]))
-			 ars auth?)))
-	     nameserver)
-	    (error 'dns-get-mail-exchanger "bad address")))
+  (define (dns-get-mail-exchanger nameserver addr)
+    (or (try-forwarding
+	 (lambda (nameserver)
+	   (let-values ([(auth? qds ans nss ars reply) (dns-query/cache nameserver addr 'mx 'in)])
+	     (values (let loop ([ans ans][best-pref +inf.0][exchanger #f])
+		       (cond
+			[(null? ans) (or exchanger
+					 ;; Does 'soa mean that the input address is fine?
+					 (and (ormap
+					       (lambda (ns) (eq? (rr-type ns) 'soa))
+					       nss)
+					      addr))]
+			[else
+			 (let ([d (rr-data (car ans))])
+			   (let ([pref (octet-pair->number (car d) (cadr d))])
+			     (if (< pref best-pref)
+				 (let-values ([(name start) (parse-name (cddr d) reply)])
+				   (loop (cdr ans) pref name))
+				 (loop (cdr ans) best-pref exchanger))))]))
+		     ars auth?)))
+	 nameserver)
+	(error 'dns-get-mail-exchanger "bad address")))
 
-      (define (dns-find-nameserver)
-	(case (system-type)
-	  [(unix macosx) 
-	   (with-handlers ([void (lambda (x) #f)])
-	      (with-input-from-file "/etc/resolv.conf"
-		(lambda ()
-		  (let loop ()
-		    (let ([l (read-line)])
-		      (or (and (string? l)
-			       (let ([m (regexp-match 
-					 (format "nameserver[ ~a]+([0-9]+[.][0-9]+[.][0-9]+[.][0-9]+)" #\tab)
-					 l)])
-				 (and m (cadr m))))
-			  (and (not (eof-object? l))
-			       (loop))))))))]
-	  [else #f])))))
+  (define (dns-find-nameserver)
+    (case (system-type)
+      [(unix macosx) 
+       (with-handlers ([void (lambda (x) #f)])
+	 (with-input-from-file "/etc/resolv.conf"
+	   (lambda ()
+	     (let loop ()
+	       (let ([l (read-line)])
+		 (or (and (string? l)
+			  (let ([m (regexp-match 
+				    (format "nameserver[ ~a]+([0-9]+[.][0-9]+[.][0-9]+[.][0-9]+)" #\tab)
+				    l)])
+			    (and m (cadr m))))
+		     (and (not (eof-object? l))
+			  (loop))))))))]
+      [else #f])))))
 

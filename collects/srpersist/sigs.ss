@@ -4,99 +4,99 @@
 
   ; utility
 
-  (sql-make-length
-   sql-read-length
-   sql-make-indicator
-   sql-read-indicator
-   sql-set-indicator
-   sql-read-row-status
-   sql-read-op-parms
-   sql-make-buffer
-   sql-read-buffer
-   sql-write-buffer
+  (make-length
+   read-length
+   make-indicator
+   read-indicator
+   set-indicator
+   read-row-status
+   read-op-parms
+   make-buffer
+   read-buffer
+   write-buffer
 
    ; ODBC procedures 
 
-   sql-alloc-connect
-   sql-alloc-env
-   sql-alloc-handle
-   sql-alloc-stmt
-   sql-bind-col
-   sql-bind-param
-   sql-cancel
-   sql-close-cursor
-   sql-col-attribute
-   sql-columns
-   sql-connect
-   sql-copy-desc
-   sql-data-sources
-   sql-describe-col
-   sql-disconnect
-   sql-end-tran
-   sql-error
-   sql-exec-direct
-   sql-execute
-   sql-fetch
-   sql-fetch-scroll
-   sql-free-connect
-   sql-free-env
-   sql-free-handle
-   sql-free-stmt
-   sql-get-connect-attr
-   sql-get-connect-option
-   sql-get-cursor-name
-   sql-get-data
-   sql-get-desc-field
-   sql-get-desc-rec
-   sql-get-diag-field
-   sql-get-diag-rec
-   sql-get-env-attr
-   sql-get-functions
-   sql-get-info
-   sql-get-stmt-attr
-   sql-get-stmt-option
-   sql-get-type-info
-   sql-num-result-cols
-   sql-param-data
-   sql-prepare
-   sql-put-data
-   sql-row-count
-   sql-set-connect-attr
-   sql-set-connect-option
-   sql-set-cursor-name
-   sql-set-desc-field
-   sql-set-desc-rec
-   sql-set-env-attr
-   sql-set-param
-   sql-set-stmt-attr
-   sql-set-stmt-option
-   sql-special-columns
-   sql-statistics
-   sql-tables
-   sql-transact
-   sql-driver-connect
-   sql-browse-connect
-   sql-col-attributes
-   sql-column-privileges
-   sql-describe-param
-   sql-extended-fetch
-   sql-foreign-keys
-   sql-more-results
-   sql-native-sql
-   sql-num-params
-   sql-param-options
-   sql-primary-keys
-   sql-procedure-columns
-   sql-procedures
-   sql-set-pos
-   sql-table-privileges
-   sql-drivers
-   sql-bind-parameter
-   sql-set-scroll-options
+   alloc-connect
+   alloc-env
+   alloc-handle
+   alloc-stmt
+   bind-col
+   bind-param
+   cancel
+   close-cursor
+   col-attribute
+   columns
+   connect
+   copy-desc
+   data-sources
+   describe-col
+   disconnect
+   end-tran
+   error
+   exec-direct
+   execute
+   fetch
+   fetch-scroll
+   free-connect
+   free-env
+   free-handle
+   free-stmt
+   get-connect-attr
+   get-connect-option
+   get-cursor-name
+   get-data
+   get-desc-field
+   get-desc-rec
+   get-diag-field
+   get-diag-rec
+   get-env-attr
+   get-functions
+   get-info
+   get-stmt-attr
+   get-stmt-option
+   get-type-info
+   num-result-cols
+   param-data
+   prepare
+   put-data
+   row-count
+   set-connect-attr
+   set-connect-option
+   set-cursor-name
+   set-desc-field
+   set-desc-rec
+   set-env-attr
+   set-param
+   set-stmt-attr
+   set-stmt-option
+   special-columns
+   statistics
+   tables
+   transact
+   driver-connect
+   browse-connect
+   col-attributes
+   column-privileges
+   describe-param
+   extended-fetch
+   foreign-keys
+   more-results
+   native-sql
+   num-params
+   param-options
+   primary-keys
+   procedure-columns
+   procedures
+   set-pos
+   table-privileges
+   drivers
+   bind-parameter
+   set-scroll-options
 
    ; implementation of ODBC macro
 
-   sql-len-binary-attr
+   len-binary-attr
 
    ; structures
 
@@ -269,4 +269,31 @@
    sql-minute-to-second-interval-minute
    set-sql-minute-to-second-interval-minute!
    sql-minute-to-second-interval-second
-   set-sql-minute-to-second-interval-second!))
+   set-sql-minute-to-second-interval-second!
+
+   ; exceptions
+
+   struct:exn-with-info
+   make-exn-with-info
+   exn-with-info?
+   exn-with-info-val
+   set-exn-with-info-val!
+   struct:exn-no-data
+   make-exn-no-data
+   exn-no-data?
+   struct:exn-invalid-handle
+   make-exn-invalid-handle
+   exn-invalid-handle?
+   struct:exn-error
+   make-exn-error
+   exn-error?
+   struct:exn-need-data
+   make-exn-need-data
+   exn-need-data?
+   struct:exn-still-executing
+   make-exn-still-executing
+   exn-still-executing?))
+
+
+
+

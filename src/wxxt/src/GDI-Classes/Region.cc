@@ -273,7 +273,7 @@ void wxRegion::SetPolygon(int n, wxPoint points[], float xoffset, float yoffset,
     return;
 
   POINT *cpoints = new POINT[n];
-  FPoint *fpoints = (is_ps ? new FPoint[n] : NULL);
+  FPoint *fpoints = (is_ps ? new FPoint[n] : (FPoint *)NULL);
   int i;
   for (i = 0; i < n; i++) {
     cpoints[i].x = dc->LogicalToDeviceX(points[i].x + xoffset);

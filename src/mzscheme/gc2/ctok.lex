@@ -63,6 +63,7 @@ L?\"(\\.|[^\\"])*\"     { count(); string(); }
 ("{"|"<%")              { count(); start(); }
 ("}"|"%>")              { count(); end('{'); }
 ","                     { count(); xsymbol(); }
+"::"                    { count(); symbol(); }
 ":"                     { count(); symbol(); }
 "="                     { count(); symbol(); }
 "("                     { count(); start(); }

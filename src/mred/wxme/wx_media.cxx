@@ -1232,9 +1232,11 @@ void wxMediaEdit::_Insert(wxSnip *isnip, long strlen, char *str,
 	  isnip->line->lastSnip = isnip;
 	  gsnip->line->snip = gsnip;
 	  
-	  for (cSnip = isnip->line->snip; PTRNE(cSnip, isnip); 
-	       cSnip = cSnip->next)
+	  for (cSnip = isnip->line->snip;
+	       PTRNE(cSnip, isnip); 
+	       cSnip = cSnip->next) {
 	    cSnip->line = isnip->line;
+	  }
 	  
 	  gsnip->line->CalcLineLength();
 	  gsnip->line->MarkRecalculate();
@@ -1378,9 +1380,11 @@ void wxMediaEdit::_Insert(wxSnip *isnip, long strlen, char *str,
 	    snip->line->snip = oldLine->snip;
 	    
 	    /* Retarget snips moved to new line: */
-	    for (cSnip = snip->line->snip; PTRNE(cSnip, snip);
-		 cSnip = cSnip->next)
+	    for (cSnip = snip->line->snip; 
+		 PTRNE(cSnip, snip);
+		 cSnip = cSnip->next) {
 	      cSnip->line = snip->line;
+	    }
 
 	    oldLine->snip = snip->next;
 
@@ -1692,8 +1696,9 @@ void wxMediaEdit::_Delete(long start, long end, Bool withUndo, Bool scrollOk)
   if (line) {
     /* Fix line references from possibly moved snips: */
     next = line->lastSnip->next;
-    for (snip = line->snip; PTRNE(snip, next); snip = snip->next)
+    for (snip = line->snip; PTRNE(snip, next); snip = snip->next) {
       snip->line = line;
+    }
     
     line->CalcLineLength();
     line->MarkRecalculate();
@@ -1833,6 +1838,7 @@ void wxMediaEdit::DoCopy(long startp, long endp, long time, Bool extend)
   wxSnip *start, *end;
   wxSnip *asnip, *snip;
   wxStyleList *sl;
+  Bool wl, fl;
 
   if (startp < 0)
     startp = 0;
@@ -1850,7 +1856,8 @@ void wxMediaEdit::DoCopy(long startp, long endp, long time, Bool extend)
   start = FindSnip(startp, +1);
   end = FindSnip(endp, +2);
 
-  Bool wl = writeLocked, fl = flowLocked;
+  wl = writeLocked;
+  fl = flowLocked;
   writeLocked = TRUE;
   flowLocked = TRUE;
 
@@ -1912,6 +1919,8 @@ void wxMediaEdit::DoPaste(long start, long time)
 
 void wxMediaEdit::Paste(long time, long start, long end)
 {
+  int savePrevPaste;
+
   if (end < 0)
     end = (start < 0) ? endpos : start;
   if (start < 0)
@@ -1928,7 +1937,7 @@ void wxMediaEdit::Paste(long time, long start, long end)
 
   DoPaste(start, time);
 
-  int savePrevPaste = prevPasteStart;
+  savePrevPaste = prevPasteStart;
 
   EndEditSequence();
 
@@ -2027,9 +2036,10 @@ void wxMediaEdit::Kill(long time, long start, long end)
       
       SetPosition(startpos, newend);
       text = GetText(startpos, endpos);
-      for (i = endpos - startpos; i--; )
+      for (i = endpos - startpos; i--; ) {
 	if (!isspace(text[i]))
 	  break;
+      }
       
       if (i < 0) {
 	/* Line has all spaces: move one more */
@@ -2060,6 +2070,8 @@ void wxMediaEdit::SelectAll(void)
 
 void wxMediaEdit::SplitSnip(long pos)
 {
+  Bool wl;
+
   if (flowLocked)
     return;
 
@@ -2068,7 +2080,7 @@ void wxMediaEdit::SplitSnip(long pos)
   if (pos >= len)
     return;
 
-  Bool wl = writeLocked;
+  wl = writeLocked;
 
   writeLocked = TRUE;
   flowLocked = TRUE;
@@ -2090,6 +2102,7 @@ char *wxMediaEdit::GetText(long start, long end, Bool flatt, Bool forceCR, long 
   long count, sPos, p, num, offset, total;
   long alloc;
   char *s, *t, *old;
+  Bool wl, fl;
 
   if (readLocked) {
     if (got)
@@ -2127,7 +2140,8 @@ char *wxMediaEdit::GetText(long start, long end, Bool flatt, Bool forceCR, long 
     return s;
   }
 
-  Bool wl = writeLocked, fl = flowLocked;
+  wl = writeLocked;
+  fl = flowLocked;
   writeLocked = TRUE;
   flowLocked = TRUE;
 
@@ -2356,14 +2370,16 @@ void StandardWordbreak(wxMediaEdit *win, long *startp, long *endp,
     }
     if (reason != wxBREAK_FOR_SELECTION) {
       if (!phase2_complete) {
-	while (start && !nonbreak(text[start]))
+	while (start && !nonbreak(text[start])) {
 	  --start;
+	}
 	if (nonbreak(text[start]))
 	  phase2_complete = 1;
       }
     }
-    while (start && nonbreak(text[start]))
+    while (start && nonbreak(text[start])) {
       --start;
+    }
     if ((start < pstart) && !nonbreak(text[start]))
       start++;
 
@@ -2410,13 +2426,15 @@ void StandardWordbreak(wxMediaEdit *win, long *startp, long *endp,
   try_end_again:
 
     if (!phase1_complete) {
-      while ((end < tend) && !nonbreak(text[end]))
+      while ((end < tend) && !nonbreak(text[end])) {
 	end++;
+      }
       if (end < tend)
 	phase1_complete = 1;
     }
-    while ((end < tend) && nonbreak(text[end]))
+    while ((end < tend) && nonbreak(text[end])) {
       end++;
+    }
 
     if ((end == tend) && (tend != lend)) {
       delete[] text;
@@ -2611,6 +2629,8 @@ float wxMediaEdit::GetMaxHeight()
 
 Bool wxMediaEdit::LoadFile(char *file, int format, Bool showErrors)
 {
+  FILE *f;
+
   if (writeLocked)
     return FALSE;
 
@@ -2646,7 +2666,7 @@ Bool wxMediaEdit::LoadFile(char *file, int format, Bool showErrors)
     return FALSE;
   }
 
-  FILE *f = fopen(wxmeExpandFilename(file), "rb");
+  f = fopen(wxmeExpandFilename(file), "rb");
   
   if (!f) {
     if (showErrors)
@@ -2687,10 +2707,12 @@ Bool wxMediaEdit::LoadFile(char *file, int format, Bool showErrors)
 
 Bool wxMediaEdit::InsertFile(char *file, int format, Bool showErrors)
 {
+  FILE *f;
+
   if (writeLocked)
     return FALSE;
 
-  FILE *f = fopen(wxmeExpandFilename(file), "rb");
+  f = fopen(wxmeExpandFilename(file), "rb");
   
   if (!f)
     return FALSE;
@@ -2703,6 +2725,7 @@ Bool wxMediaEdit::InsertFile(FILE *f, char *WXUNUSED(file), int& format, Bool cl
   long n;
   const int BUF_SIZE = 1000;
   char buffer[BUF_SIZE];
+  Bool fileerr;
 
   if (format == wxMEDIA_FF_GUESS) {
     n = fread((char *)buffer, 1, MRED_START_STR_LEN, f);
@@ -2731,7 +2754,7 @@ Bool wxMediaEdit::InsertFile(FILE *f, char *WXUNUSED(file), int& format, Bool cl
 
   BeginEditSequence();
 
-  Bool fileerr = FALSE;
+  fileerr = FALSE;
 
   if (format == wxMEDIA_FF_STD) {
     n = fread((char *)buffer, 1, MRED_START_STR_LEN, f);
@@ -2811,10 +2834,10 @@ Bool wxMediaEdit::InsertFile(FILE *f, char *WXUNUSED(file), int& format, Bool cl
 
 Bool wxMediaEdit::SaveFile(char *file, int format, Bool showErrors)
 {
+  Bool no_set_filename, fileerr;
+
   if (readLocked)
     return FALSE;
-
-  Bool no_set_filename;
 
   if (!file || !*file) {
     if ((file && !*file) || !filename || tempFilename) {
@@ -2875,7 +2898,7 @@ Bool wxMediaEdit::SaveFile(char *file, int format, Bool showErrors)
   wxMediaSetFileCreatorType(file, is_binary);
 #endif
 
-  Bool fileerr = FALSE;
+  fileerr = FALSE;
 
   if (format == wxMEDIA_FF_TEXT || format == wxMEDIA_FF_TEXT_FORCE_CR) {
     char *s = GetText(-1, -1, TRUE, format == wxMEDIA_FF_TEXT_FORCE_CR);
@@ -3025,19 +3048,22 @@ void wxMediaEdit::SetFileFormat(int format)
 void wxMediaEdit::SetFilename(char *name, Bool temp)
 {
   wxSnip *snip;
+  Bool wl, fl;
 
   if (filename)
     delete[] filename;
   filename = name ? copystring(name) : (char *)NULL;
   tempFilename = temp;
 
-  Bool wl = writeLocked, fl = flowLocked;
+  wl = writeLocked;
+  fl = flowLocked;
   writeLocked = TRUE;
   flowLocked = TRUE;
 
-  for (snip = snips; snip; snip = snip->next)
+  for (snip = snips; snip; snip = snip->next) {
     if (snip->flags & wxSNIP_USES_BUFFER_PATH)
       snip->SetAdmin(snipAdmin);
+  }
 
   writeLocked = wl;
   flowLocked = fl;
@@ -3104,6 +3130,7 @@ long wxMediaEdit::_FindPositionInSnip(wxDC *dc, float X, float Y,
 				      float *how_close)
 {
   long offset, range, i;
+  Bool wl, fl;
 
   if (readLocked)
     return 0;
@@ -3114,7 +3141,8 @@ long wxMediaEdit::_FindPositionInSnip(wxDC *dc, float X, float Y,
     return 0;
   }
 
-  Bool wl = writeLocked, fl = flowLocked;
+  wl = writeLocked;
+  fl = flowLocked;
   writeLocked = TRUE;
   flowLocked = TRUE;
 
@@ -3236,6 +3264,7 @@ void wxMediaEdit::PositionLocation(long start, float *x, float *y,
   wxMediaLine *line;
   wxSnip *snip;
   wxDC *dc;
+  Bool wl, fl;
 
   if (!CheckRecalc(TRUE, FALSE))
     return;
@@ -3291,7 +3320,8 @@ void wxMediaEdit::PositionLocation(long start, float *x, float *y,
 
   dc = NULL;
 
-  Bool wl = writeLocked, fl = flowLocked;
+  wl = writeLocked;
+  fl = flowLocked;
   writeLocked = TRUE;
   flowLocked = TRUE;
 
@@ -3458,11 +3488,11 @@ long wxMediaEdit::LineLength(long i)
 
 long wxMediaEdit::PositionParagraph(long i, Bool WXUNUSED(eol))
 {
-  if (!CheckRecalc(maxWidth > 0, FALSE, TRUE))
-    return 0;
-
   wxMediaLine *l;
   int delta = 0;
+
+  if (!CheckRecalc(maxWidth > 0, FALSE, TRUE))
+    return 0;
 
   if (i < 0)
     i = 0;
@@ -3479,10 +3509,10 @@ long wxMediaEdit::PositionParagraph(long i, Bool WXUNUSED(eol))
 
 long wxMediaEdit::ParagraphStartPosition(long i, Bool visibleOnly)
 {
+  wxMediaLine *l;
+
   if (!CheckRecalc(maxWidth > 0, FALSE, TRUE))
     return 0;
-
-  wxMediaLine *l;
 
   if (i < 0)
     i = 0;
@@ -3493,8 +3523,9 @@ long wxMediaEdit::ParagraphStartPosition(long i, Bool visibleOnly)
       return len;
     else {
       l = lastLine;
-      while (l->prev && !l->StartsParagraph())
+      while (l->prev && !l->StartsParagraph()) {
 	l = l->prev;
+      }
     }
   }
   
@@ -3506,19 +3537,20 @@ long wxMediaEdit::ParagraphStartPosition(long i, Bool visibleOnly)
 
 long wxMediaEdit::ParagraphEndPosition(long i, Bool visibleOnly)
 {
-  if (!CheckRecalc(maxWidth > 0, FALSE, TRUE))
-    return 0;
-
   wxMediaLine *l;
   long p;
+
+  if (!CheckRecalc(maxWidth > 0, FALSE, TRUE))
+    return 0;
 
   if (i < 0)
     i = 0;
 
   l = lineRoot->FindParagraph(i);
   if (l) {
-    while (l->next && !l->next->StartsParagraph())
+    while (l->next && !l->next->StartsParagraph()) {
       l = l->next;
+    }
   } else {
     if (extraLine)
       return len;
@@ -3569,18 +3601,19 @@ long wxMediaEdit::ParagraphStartLine(long i)
 
 long wxMediaEdit::ParagraphEndLine(long i)
 {
+  wxMediaLine *l;
+
   if (!CheckRecalc(maxWidth > 0, FALSE, TRUE))
     return 0;
-
-  wxMediaLine *l;
 
   if (i < 0)
     i = 0;
 
   l = lineRoot->FindParagraph(i);
   if (l) {
-    while (l->next && !l->next->StartsParagraph())
+    while (l->next && !l->next->StartsParagraph()) {
       l = l->next;
+    }
   } else
     return LastLine();
 
@@ -3634,15 +3667,17 @@ float wxMediaEdit::GetSpace(void)
 
 float wxMediaEdit::ScrollLineLocation(long scroll)
 {
+  wxMediaLine *line;
+  long p;
+  float y;
+  long total;
+
   if (readLocked)
     return 0;
 
   CheckRecalc(TRUE, FALSE);
   
-  wxMediaLine *line;
-  long p;
-  float y;
-  long total = lastLine->GetScroll() + lastLine->numscrolls;
+  total = lastLine->GetScroll() + lastLine->numscrolls;
 
   if (scroll == total) {
     if (extraLine)
@@ -3674,14 +3709,14 @@ long wxMediaEdit::NumScrollLines()
 
 long wxMediaEdit::FindScrollLine(float p)
 {
+  wxMediaLine *line;
+  float y;
+  long s;
+
   if (readLocked)
     return 0;
 
   CheckRecalc(TRUE, FALSE);
-
-  wxMediaLine *line;
-  float y;
-  long s;
 
   if (extraLine && (p >= totalHeight - extraLineH))
     return NumScrollLines() - 1;
@@ -3729,12 +3764,14 @@ long *wxMediaEdit::FindStringAll(char *str, long *cnt, int direction,
 
 long wxMediaEdit::FindNewline(int direction, long start, long end)
 {
-  long para = PositionParagraph(start, direction < 0 ? TRUE : FALSE);
+  long para, pos;
+
+  para = PositionParagraph(start, direction < 0 ? TRUE : FALSE);
 
   if (direction > 0)
     para++;
 
-  long pos = ParagraphStartPosition(para);
+  pos = ParagraphStartPosition(para);
 
   if (direction > 0) {
     if (pos > end)
@@ -3827,6 +3864,9 @@ void wxMediaEdit::SetStyleList(wxStyleList *newList)
 
 void wxMediaEdit::StyleHasChanged(wxStyle *style)
 {
+  wxSnip *snip;
+  Bool wl, fl;
+
   if (readLocked)
     return;
 
@@ -3835,9 +3875,8 @@ void wxMediaEdit::StyleHasChanged(wxStyle *style)
     return;
   }
   
-  wxSnip *snip;
-  
-  Bool wl = writeLocked, fl = flowLocked;
+  wl = writeLocked;
+  fl = flowLocked;
   writeLocked = TRUE;
   flowLocked = TRUE;
 

@@ -7,7 +7,7 @@ LOCALFLAGS =
 
 WXSCFLAGS = $(XINCLUDE) $(INC) $(OPTIONS) $(GUI) $(WARN) $(OPT) $(DEBUGFLAGS)
 
-WXSCHEMEHEADERS = wxscheme.h ../../mzscheme/src/stypes.h ../../mzscheme/include/scheme.h
+WXSCHEMEHEADERS = wxscheme.h ../../mzscheme/src/stypes.h ../../mzscheme/include/scheme.h $(WXDIR)/src/DataStructures/Object.h $(WXDIR)/src/DataStructures/wx_list.h
 MEDIAHEADERS = ../wxme/wx_media.h ../wxme/wx_medad.h ../wxme/wx_snip.h
 WINDOWHEADERS = $(WXDIR)/src/Windows/Window.h
 MAINDCHEADERS = $(WXDIR)/src/DeviceContexts/DC.h

@@ -115,11 +115,8 @@ class wxStyle : public wxObject
 
   wxStyle *baseStyle;
 
-  Bool joinStyle;
-  union {
-    wxStyle *shiftStyle;
-    wxStyleDelta *delta;
-  } u;
+  wxStyle *join_shiftStyle;
+  wxStyleDelta *nonjoin_delta;
 
   /* cache computation: */
   Bool transText;

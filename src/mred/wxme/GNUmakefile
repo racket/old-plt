@@ -18,7 +18,8 @@ OBJECTS = $(OBJDIR)/wx_style.o $(OBJDIR)/wx_keym.o $(OBJDIR)/wx_mbuf.o \
 
 ALLHEADERS = wx_ptreq.h wx_mtype.h
 HEADERS = wx_media.h wx_medad.h wx_cgrec.h wx_medio.h wx_style.h \
-          $(ALLHEADERS) $(WXDIR)/src/Windows/Window.h $(WXDIR)/src/DeviceContexts/DC.h
+          $(ALLHEADERS) $(WXDIR)/src/Windows/Window.h $(WXDIR)/src/DeviceContexts/DC.h \
+          $(WXDIR)/src/DataStructures/Object.h $(WXDIR)/src/DataStructures/wx_list.h
 
 # Used only when bundling a distribution
 HIDEDIR = /home/mflatt/mredhide

@@ -96,7 +96,8 @@ wx:
 	cd $(WXDIR)/src/x; $(MAKE) WXDIR='$(WXDIR)' -f makefile.unx
 
 $(OBJDIR)/mred.o : mred.cxx wxme/wx_media.h wxme/wx_medad.h wxs/wxscheme.h ../mzscheme/cmdline.inc mred.h \
-                   ../mzscheme/include/scheme.h ../mzscheme/src/schvers.h $(WXINCDEP)  $(WXDIR)/src/Windows/Frame.h
+                   ../mzscheme/include/scheme.h ../mzscheme/src/schvers.h $(WXINCDEP) $(WXDIR)/src/Windows/Frame.h \
+                   $(WXDIR)/src/DataStructures/Object.h $(WXDIR)/src/DataStructures/wx_list.h
 	$(CXX) $(CPPFLAGS) $(LOCALFLAGS) -c mred.cxx -o $(OBJDIR)/mred.o
 
 $(OBJDIR)/mred_ee.o : $(OBJDIR)/mred.o
@@ -105,7 +106,8 @@ $(OBJDIR)/mred_ee.o : $(OBJDIR)/mred.o
 ee-main:
 	$(OBJDIR)/mred_ee.o
 
-$(OBJDIR)/mredx.o : mredx.cxx ../mzscheme/include/scheme.h mred.h $(WXDIR)/src/Windows/Frame.h
+$(OBJDIR)/mredx.o : mredx.cxx ../mzscheme/include/scheme.h mred.h $(WXDIR)/src/Windows/Frame.h \
+                    $(WXDIR)/src/DataStructures/Object.h $(WXDIR)/src/DataStructures/wx_list.h
 	$(CXX) $(CPPFLAGS) $(LOCALFLAGS) -c mredx.cxx -o $(OBJDIR)/mredx.o
 
 $(OBJDIR)/dl_stub.o: misc/dl_stub.c
@@ -150,7 +152,7 @@ XFORM = gcc -E $(INC) $(XINCLUDE)
 CTOK = | ../mzscheme/gc2/ctok > 
 
 TEST_BEGIN = cd gc2; mzscheme -r ../../mzscheme/gc2/xform.ss \\\#f
-TEST_END = \\\#f
+TEST_END = tmp
 
 $(GC2DIR)/wx_media: wxme/$(OBJDIR)/wx_media.o
 	$(XFORM) wxme/wx_media.cxx $(CTOK) $(GC2DIR)/wx_media
@@ -166,6 +168,6 @@ test_deps: $(GC2DIR)/wx_media $(GC2DIR)/wx_mpriv $(GC2DIR)/Window
 test:
 	$(MAKE)
 	$(MAKE) test_deps
-	$(TEST_BEGIN) Window $(TEST_END)
 	$(TEST_BEGIN) wx_media $(TEST_END)
+	$(TEST_BEGIN) Window $(TEST_END)
 	$(TEST_BEGIN) wx_mpriv $(TEST_END)

@@ -4,7 +4,7 @@
  * Author:		Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:	$Id: wb_list.cc,v 1.3 1998/02/07 13:43:59 mflatt Exp $
+ * RCS_ID:	$Id: wb_list.cc,v 1.4 1999/11/04 17:25:32 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -49,7 +49,8 @@ wxNode::wxNode (wxList *, wxNode * last_one, wxNode * next_one,
   data = object;
   previous = last_one;
   next = next_one;
-  key.string = NULL;
+  integer_key = 0;
+  string_key = NULL;
 
   if (previous)
     previous->next = this;
@@ -65,7 +66,7 @@ wxNode::wxNode (wxList *, wxNode * last_one, wxNode * next_one,
   data = object;
   previous = last_one;
   next = next_one;
-  key.integer = the_key;
+  integer_key = the_key;
 
   if (previous)
     previous->next = this;
@@ -80,7 +81,7 @@ wxNode::wxNode (wxList *, wxNode * last_one, wxNode * next_one,
   data = object;
   previous = last_one;
   next = next_one;
-  key.string = copystring (the_key);
+  string_key = copystring(the_key);
 
   if (previous)
     previous->next = this;
@@ -99,9 +100,6 @@ void wxNode::Kill(wxList *list)
   if (list && list->destroy_data)
     delete data;
 #endif
-
-  if (list && list->key_type == wxKEY_STRING && key.string)
-    delete[]key.string;
 
   // Make next node point back to the previous node from here
   if (next)
@@ -215,7 +213,7 @@ wxNode *wxList::Find (long key)
   wxNode *current = First();
   while (current)
   {
-    if (current->key.integer == key)
+    if (current->integer_key == key)
       return current;
     current = current->Next();
   }
@@ -228,12 +226,12 @@ wxNode *wxList::Find (const char *key)
   wxNode *current = First();
   while (current)
   {
-      if (!current->key.string)
+      if (!current->string_key)
 	{
 	  wxFatalError ("wxList: string key not present, probably did not Append correctly!");
 	  break;
 	}
-      if (strcmp (current->key.string, key) == 0)
+      if (strcmp (current->string_key, key) == 0)
 	return current;
       current = current->Next();
   }

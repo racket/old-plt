@@ -41,11 +41,8 @@ class wxNode
 
  public:
   // Optional key stuff
-  union
-  {
-    long integer;
-    char *string;
-  } key;
+  long integer_key;
+  char *string_key;
 
   wxNode(wxList *the_list = NULL, wxNode *last_one = NULL, wxNode *next_one = NULL, wxObject *object = NULL);
   wxNode(wxList *the_list, wxNode *last_one, wxNode *next_one,

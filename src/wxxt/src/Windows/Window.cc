@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Window.cc,v 1.30 1999/08/28 16:14:50 mflatt Exp $
+ * $Id: Window.cc,v 1.31 1999/11/04 17:25:39 mflatt Exp $
  *
  * Purpose: base class for all windows
  *
@@ -154,13 +154,14 @@ void wxWindow::AddChild(wxWindow *child)
 
 void wxWindow::DestroyChildren(void)
 {
-    wxChildNode *node;
-    while ( (node=children->First()) != NULL ) {
-	wxWindow *child = (wxWindow*)(node->Data());
-	if (child) {
-	    delete child;
-	}
+  wxChildNode *node;
+  while ( (node=children->First()) != NULL ) {
+    wxWindow *child;
+    child = (wxWindow*)(node->Data());
+    if (child) {
+      delete child;
     }
+  }
 }
 
 void wxWindow::RemoveChild(wxWindow *child)
@@ -174,12 +175,13 @@ void wxWindow::RemoveChild(wxWindow *child)
 
 char *wxWindow::GetLabel(void)
 {
-    if (!X->frame) // forbid, if no widget associated
-	return NULL;
+  char *label = NULL;
 
-    char *label = NULL; /* MATTHEW: [5] */
-    XtVaGetValues(X->frame, XtNlabel, &label, NULL);
-    return label;
+  if (!X->frame) // forbid, if no widget associated
+    return NULL;
+  
+  XtVaGetValues(X->frame, XtNlabel, &label, NULL);
+  return label;
 }
 
 char *wxWindow::GetName(void)
@@ -192,31 +194,35 @@ char *wxWindow::GetName(void)
 
 char *wxWindow::GetTitle(void)
 {
-    if (!X->frame) // forbid, if no widget associated
-	return NULL;
-
-    char *title = NULL; /* MATTHEW: [5] */
-    XtVaGetValues(X->frame, XtNtitle, &title, NULL);
-    return title;
+  char *title = NULL;
+  
+  if (!X->frame) // forbid, if no widget associated
+    return NULL;
+  
+  XtVaGetValues(X->frame, XtNtitle, &title, NULL);
+  return title;
 }
 
 void wxWindow::SetLabel(char *label)
 {
-    if (!X->frame) // forbid, if no widget associated
-	return;
+  char *oldlabel = NULL;
 
-    char *oldlabel = NULL;
-    XtVaGetValues(X->frame, XtNlabel, &oldlabel, NULL);
-    if (oldlabel) {
-      label = wxGetCtlLabel(label);
-      XtVaSetValues(X->frame, XtNlabel, label, NULL);
-    }
+  if (!X->frame) // forbid, if no widget associated
+    return;
+
+  XtVaGetValues(X->frame, XtNlabel, &oldlabel, NULL);
+  if (oldlabel) {
+    label = wxGetCtlLabel(label);
+    XtVaSetValues(X->frame, XtNlabel, label, NULL);
+  }
 }
 
 void wxWindow::SetName(char *name)
 {
-    // overwrite quark computed on widget creation
-    X->handle->core.xrm_name = XrmStringToName((name != NULL) ? name : "");
+  // overwrite quark computed on widget creation
+  XrmQuark q;
+  q = XrmStringToName((name != NULL) ? name : "");
+  X->handle->core.xrm_name = q;
 }
 
 void wxWindow::SetTitle(char *title)
@@ -269,10 +275,10 @@ void wxWindow::Centre(int direction)
 
 void wxWindow::ClientToScreen(int *x, int *y)
 {
-    if (!X->handle) // forbid, if no widget associated
-	return;
+  if (!X->handle) // forbid, if no widget associated
+    return;
 
-#if 1
+  {
     Display *dpy  = XtDisplay(X->handle);
     Screen  *scn  = XtScreen(X->handle);
     Window  root  = RootWindowOfScreen(scn);
@@ -281,22 +287,20 @@ void wxWindow::ClientToScreen(int *x, int *y)
     int xx = *x;
     int yy = *y;
     XTranslateCoordinates(dpy, win, root, xx, yy, x, y, &child);
-#else
-    short int root_x, root_y;
-    XtTranslateCoords(X->handle, *x, *y, &root_x, &root_y);
-    *x = root_x; *y = root_y;
-#endif
+  }
 }
 
 void wxWindow::Configure(int x, int y, int width, int height)
 {
+    Arg    args[4];
+    int    i = 0;
+    int _xoff = 0, _yoff = 0;
+    Position cx, cy;
+    Dimension cw, ch;
+
     if (!X->frame) // forbid, if no widget associated
 	return;
 
-    Arg    args[4];
-    int    i = 0;
-
-    int _xoff = 0, _yoff = 0;
     if (!wxSubType(__type, wxTYPE_FRAME) && parent) {
 	_xoff = parent->xoff;
 	_yoff = parent->yoff;
@@ -314,9 +318,6 @@ void wxWindow::Configure(int x, int y, int width, int height)
       misc_flags |= REPORT_ZERO_HEIGHT_FLAG;
     } else
       misc_flags -= (misc_flags & REPORT_ZERO_HEIGHT_FLAG);
-
-    Position cx, cy;
-    Dimension cw, ch;
 
     XtVaGetValues(X->frame, XtNx, &cx, XtNy, &cy, XtNwidth, &cw, XtNheight, &ch, NULL);
 
@@ -337,26 +338,28 @@ void wxWindow::Configure(int x, int y, int width, int height)
 
 void wxWindow::GetPosition(int *x, int *y)
 {
+    int _xoff = 0, _yoff = 0;
+    Position xx, yy;
+
     if (!X->frame) // forbid, if no widget associated
 	return;
 
-    int _xoff = 0, _yoff = 0;
     if (!wxSubType(__type, wxTYPE_FRAME) && parent) {
 	_xoff = parent->xoff;
 	_yoff = parent->yoff;
     }
 
-    Position xx, yy;
     XtVaGetValues(X->frame, XtNx, &xx, XtNy, &yy, NULL);
     *x = (int)xx - _xoff; *y = (int)yy - _yoff;
 }
 
 void wxWindow::GetSize(int *width, int *height)
 {
+    Dimension ww, hh;
+
     if (!X->frame) // forbid, if no widget associated
 	return;
 
-    Dimension ww, hh;
     XtVaGetValues(X->frame, XtNwidth, &ww, XtNheight, &hh, NULL);
     *width = ww; *height = hh;
 
@@ -369,10 +372,11 @@ void wxWindow::GetSize(int *width, int *height)
 /* MATTHEW: Client size is different from size */
 void wxWindow::GetClientSize(int *width, int *height)
 {
+    Dimension dww, dhh, fw, fh;
+    int ww, hh;
+
     if (!X->handle) // forbid, if no widget associated
 	return;
-
-    Dimension dww, dhh, fw, fh;
 
     XtVaGetValues(X->handle, XtNwidth, &dww, XtNheight, &dhh, NULL);
     if (X->scroll && !(misc_flags & NO_AUTO_SCROLL_FLAG)) {
@@ -398,7 +402,6 @@ void wxWindow::GetClientSize(int *width, int *height)
     if (fh < dhh)
       dhh = 0;
 
-    int ww, hh;
     ww = (int)dww;
     hh = (int)dhh;
 
@@ -420,9 +423,10 @@ void wxWindow::GetClientSize(int *width, int *height)
 
 void wxWindow::ScreenToClient(int *x, int *y)
 {
-    if (!X->handle) // forbid, if no widget associated
-	return;
-
+  if (!X->handle) // forbid, if no widget associated
+    return;
+    
+  {
     Display *dpy  = XtDisplay(X->handle);
     Screen  *scn  = XtScreen(X->handle);
     Window  root  = RootWindowOfScreen(scn);
@@ -431,6 +435,7 @@ void wxWindow::ScreenToClient(int *x, int *y)
     int xx = *x;
     int yy = *y;
     XTranslateCoordinates(dpy, root, win, xx, yy, x, y, &child);
+  }
 }
 
 void wxWindow::SetSize(int x, int y, int width, int height, int WXUNUSED(flags))
@@ -451,22 +456,22 @@ void wxWindow::SetSize(int x, int y, int width, int height, int WXUNUSED(flags))
 
 void wxWindow::ChangeColours(void)
 {
-    if (X->frame) {
-	if (bg)
-	    XtVaSetValues(X->frame, XtNbackground,
-			  bg->GetPixel(cmap), NULL);
-	if (fg)
-	    XtVaSetValues(X->frame, XtNforeground,
-			  fg->GetPixel(cmap), NULL);
-    }
-    if (X->handle) {
-	if (bg)
-	    XtVaSetValues(X->handle, XtNbackground,
-			  bg->GetPixel(cmap), NULL);
-	if (fg)
-	    XtVaSetValues(X->handle, XtNforeground,
-			  fg->GetPixel(cmap), NULL);
-    }
+  if (X->frame) {
+    if (bg)
+      XtVaSetValues(X->frame, XtNbackground,
+		    bg->GetPixel(cmap), NULL);
+    if (fg)
+      XtVaSetValues(X->frame, XtNforeground,
+		    fg->GetPixel(cmap), NULL);
+  }
+  if (X->handle) {
+    if (bg)
+      XtVaSetValues(X->handle, XtNbackground,
+		    bg->GetPixel(cmap), NULL);
+    if (fg)
+      XtVaSetValues(X->handle, XtNforeground,
+		    fg->GetPixel(cmap), NULL);
+  }
 }
 
 // merged with DC-method: float wxWindow::GetCharHeight(void)
@@ -615,10 +620,13 @@ void wxWindow::Scroll(int x_pos, int y_pos)
 
 void wxWindow::SetScrollArea(int gwd, int ght)
 {
+    Dimension d;
+    int wd, ht; 
+    Position p, x, y;
+
     if ((gwd <= 0 && ght <= 0) || !X->scroll)
 	return; // don't want to resize or window not scrollable
 
-    Dimension d; int wd, ht; Position p, x, y;
     // position of scrollable window
     XtVaGetValues(X->handle, XtNx, &x, XtNy, &y, NULL);
     // size of viewport
@@ -704,14 +712,9 @@ void wxWindow::CaptureMouse(void)
 
 void wxWindow::ChangeToGray(Bool gray)
 {
-#if 0
-  if (!wxSubType(__type, wxTYPE_FRAME))
-    XtSetSensitive(X->handle, !gray);
-#else
   if (XtIsSubclass(X->handle, xfwfLabelWidgetClass)
       || XtIsSubclass(X->handle, xfwfMultiListWidgetClass))
     XtVaSetValues(X->handle, XtNdrawgray, (Boolean)gray, NULL);
-#endif
 
   if (XtIsSubclass(X->frame, xfwfEnforcerWidgetClass))
     XtVaSetValues(X->frame, XtNdrawgray, (Boolean)gray, NULL);
@@ -763,11 +766,11 @@ void wxWindow::InternalEnable(Bool enable, Bool gray)
 
 void wxWindow::Enable(Bool enable)
 {
+  Bool orig_enabled = !(misc_flags & DISABLED_FLAG);
+
   if (!X->frame || !X->handle) // forbid, if no widget associated
     return;
   
-  Bool orig_enabled = !(misc_flags & DISABLED_FLAG);
-
   if (orig_enabled == !!enable)
     return;
 
@@ -786,12 +789,12 @@ void wxWindow::Enable(Bool enable)
 
 Bool wxWindow::PopupMenu(wxMenu *menu, float x, float y)
 {
-  if (!X->frame || !X->handle) // forbid, if no widget associated
-    return FALSE;
-
   int dev_x = (int)x;
   int dev_y = (int)y;
   
+  if (!X->frame || !X->handle) // forbid, if no widget associated
+    return FALSE;
+
   ClientToScreen(&dev_x, &dev_y);
   menu->PopupMenu(X->frame, dev_x, dev_y);
   return TRUE;
@@ -804,11 +807,11 @@ void wxWindow::GetRefreshSize(int *w, int *h)
 
 void wxWindow::Refresh(void)
 {
-    if (!X->handle) // forbid, if no widget associated
-	return;
-
     XExposeEvent  dummyEvent;
     int           width, height;
+
+    if (!X->handle) // forbid, if no widget associated
+	return;
 
     GetRefreshSize(&width, &height);
 
@@ -839,6 +842,8 @@ void wxWindow::ReleaseMouse(void)
 
 void wxWindow::SetFocus(void)
 {
+  wxWindow *win;
+
   if (!X->frame) // forbid, if no widget associated
     return;
 
@@ -850,10 +855,11 @@ void wxWindow::SetFocus(void)
     return;
 
   // search for the frame of this widget
-  wxWindow *win = this;
-  for (/*wxWindow *win = this*/; win; win = win->parent)
+  win = this;
+  for (/*wxWindow *win = this*/; win; win = win->parent) {
     if (wxSubType(win->__type, wxTYPE_FRAME))
       break;
+  }
   
 #if 0
   /* MATTHEW: Is the frame currently active? */
@@ -977,22 +983,24 @@ void wxWindow::OnCommand(wxWindow& win, wxCommandEvent& event)
 
 void wxWindow::OnEvent(wxMouseEvent& wxevent)
 {
-    XEvent    *xev = (XEvent*)wxevent.eventHandle; // X event
-    if (!xev) return; /* MATTHEW: [5] */
+  EventMask  mask;
+  XEvent    *xev = (XEvent*)wxevent.eventHandle; // X event
 
-    EventMask mask = _XtConvertTypeToMask(xev->xany.type); // eventmask of event
+  if (!xev) return;
 
-    // adapt converted mask (Xt error????)
-    if (mask & ButtonMotionMask)
-	mask |= Button1MotionMask | Button2MotionMask | Button3MotionMask |
-		Button4MotionMask | Button5MotionMask;
-    // check if widget has translations and if this event is selected by the widget
-    if (X->handle->core.tm.translations && (X->translations_eventmask & mask)) {
-	// no translation of wxMouseEvents to XEvents as for OnChar
-	// --- may be added on request ---
-	// call Widget methods to handle this event
-	_XtTranslateEvent(X->handle, xev);
-    }
+  mask = _XtConvertTypeToMask(xev->xany.type); // eventmask of event
+
+  // adapt converted mask (Xt error????)
+  if (mask & ButtonMotionMask)
+    mask |= Button1MotionMask | Button2MotionMask | Button3MotionMask |
+      Button4MotionMask | Button5MotionMask;
+  // check if widget has translations and if this event is selected by the widget
+  if (X->handle->core.tm.translations && (X->translations_eventmask & mask)) {
+    // no translation of wxMouseEvents to XEvents as for OnChar
+    // --- may be added on request ---
+    // call Widget methods to handle this event
+    _XtTranslateEvent(X->handle, xev);
+  }
 }
 
 Bool wxWindow::PreOnChar(wxWindow *, wxKeyEvent *)
@@ -1202,12 +1210,13 @@ void wxWindow::ExposeEventHandler(Widget     WXUNUSED(w),
 				  wxWindow** winp,
 				  XtPointer  p_XfwfExposeInfo)
 {
-  /* MATTHEW: */
+  XfwfExposeInfo *einfo;
   wxWindow *win = *winp;
+
   if (!win)
     return;
 
-    XfwfExposeInfo *einfo = (XfwfExposeInfo*)p_XfwfExposeInfo;
+    einfo = (XfwfExposeInfo*)p_XfwfExposeInfo;
 
     if (win->painting_enabled) { // painting is allowed
 	if (win->dc) {
@@ -1310,16 +1319,15 @@ void wxWindow::ScrollEventHandler(Widget    WXUNUSED(w),
 				  wxWindow  **winp,
 				  XtPointer p_XfwfScrollInfo)
 {
-  /* MATTHEW: */
-  wxWindow *win = *winp;
-  if (!win)
-    return;
-
   XfwfScrollInfo *sinfo = (XfwfScrollInfo*)p_XfwfScrollInfo;
   
   wxScrollEvent *_wxevent = new wxScrollEvent();
   wxScrollEvent &wxevent = *_wxevent;
   
+  wxWindow *win = *winp;
+  if (!win)
+    return;
+
   if (win->misc_flags & NO_AUTO_SCROLL_FLAG) {
     int dir;
     switch (sinfo->reason) {
@@ -1415,20 +1423,20 @@ void wxWindow::WindowEventHandler(Widget w,
 				  XEvent *xev,
 				  Boolean *continue_to_dispatch_return)
 {
-  /* MATTHEW: */
+  Bool subWin;
   wxWindow *win = *winp;
+  Bool Enter=FALSE, Press=FALSE;
+
   if (!win) {
     *continue_to_dispatch_return = FALSE;
     return;
   }
 
-  Bool Enter=FALSE, Press=FALSE;
-  Bool subWin = (w != win->X->handle) && (w != win->X->frame);
+  subWin = (w != win->X->handle) && (w != win->X->frame);
 
     switch (xev->xany.type) {
     case KeyPress: {
-	wxKeyEvent *_wxevent = new wxKeyEvent(wxEVENT_TYPE_CHAR);
-	wxKeyEvent &wxevent = *_wxevent;
+	wxKeyEvent *wxevent = new wxKeyEvent(wxEVENT_TYPE_CHAR);
 
 	KeySym	   keysym;
 	(void)XLookupString(&(xev->xkey), NULL, 0, &keysym, NULL);
@@ -1439,17 +1447,17 @@ void wxWindow::WindowEventHandler(Widget w,
 	  win->misc_flags -= LAST_WAS_ALT_DOWN_FLAG;
 
 	// set wxWindows event structure
-	wxevent.eventHandle	= (char*)xev;
-	wxevent.keyCode		= CharCodeXToWX(keysym);
-	wxevent.x		= xev->xkey.x;
-	wxevent.y		= xev->xkey.y;
-	wxevent.altDown		= /* xev->xkey.state & Mod3Mask */ FALSE;
-	wxevent.controlDown	= xev->xkey.state & ControlMask;
-	wxevent.metaDown	= xev->xkey.state & Mod1Mask;
-	wxevent.shiftDown	= xev->xkey.state & ShiftMask;
-	wxevent.timeStamp       = xev->xkey.time; /* MATTHEW */
+	wxevent->eventHandle	= (char*)xev;
+	wxevent->keyCode	= CharCodeXToWX(keysym);
+	wxevent->x		= xev->xkey.x;
+	wxevent->y		= xev->xkey.y;
+	wxevent->altDown	= /* xev->xkey.state & Mod3Mask */ FALSE;
+	wxevent->controlDown	= xev->xkey.state & ControlMask;
+	wxevent->metaDown	= xev->xkey.state & Mod1Mask;
+	wxevent->shiftDown	= xev->xkey.state & ShiftMask;
+	wxevent->timeStamp      = xev->xkey.time; /* MATTHEW */
 	*continue_to_dispatch_return = FALSE;
-	if (!win->CallPreOnChar(win, &wxevent)) {
+	if (!win->CallPreOnChar(win, wxevent)) {
 	  /* hack: ignore SubWin for a choice item key event: */
 	  if (subWin && (win->__type == wxTYPE_CHOICE))
 	    subWin = 0;
@@ -1457,18 +1465,19 @@ void wxWindow::WindowEventHandler(Widget w,
 	  if (subWin)
 	    *continue_to_dispatch_return = TRUE;
 	  else
-	    win->GetEventHandler()->OnChar(wxevent);
+	    win->GetEventHandler()->OnChar(*wxevent);
 	}
-	wxevent.eventHandle = NULL; /* MATTHEW: [5] */
+	wxevent->eventHandle = NULL; /* MATTHEW: [5] */
         /* Event was handled by OnFunctionKey and/or OnChar */ }
 	break;
     case KeyRelease:
         {
+	  KeySym	   keysym;
+
 	  *continue_to_dispatch_return = FALSE;
 	  if (win->misc_flags & LAST_WAS_ALT_DOWN_FLAG) {
 	    win->misc_flags -= LAST_WAS_ALT_DOWN_FLAG;
 
-	    KeySym	   keysym;
 	    (void)XLookupString(&(xev->xkey), NULL, 0, &keysym, NULL);
 	    if (wxIsAlt(keysym)) {
 	      /* Find frame. */
@@ -1492,23 +1501,22 @@ void wxWindow::WindowEventHandler(Widget w,
       if (win->misc_flags & LAST_WAS_ALT_DOWN_FLAG)
 	win->misc_flags -= LAST_WAS_ALT_DOWN_FLAG;
       {
-        wxMouseEvent *_wxevent = new wxMouseEvent;
-	wxMouseEvent &wxevent = *_wxevent;
+        wxMouseEvent *wxevent = new wxMouseEvent;
 
 	switch (xev->xbutton.button) {
-	case Button1: wxevent.eventType = wxEVENT_TYPE_LEFT;   break;
-	case Button2: wxevent.eventType = wxEVENT_TYPE_MIDDLE; break;
-	case Button3: wxevent.eventType = wxEVENT_TYPE_RIGHT;  break;
+	case Button1: wxevent->eventType = wxEVENT_TYPE_LEFT;   break;
+	case Button2: wxevent->eventType = wxEVENT_TYPE_MIDDLE; break;
+	case Button3: wxevent->eventType = wxEVENT_TYPE_RIGHT;  break;
 	}
 	if (Press) {
 	  // button is down
-	  wxevent.eventType |= wxEVENT_TYPE_DOWN;
+	  wxevent->eventType |= wxEVENT_TYPE_DOWN;
 	  if (win->allow_dclicks) { // doubleclick handling wanted?
 	    if (xev->xbutton.button == win->X->last_clickbutton
 		&&  (xev->xbutton.time - win->X->last_clicktime
 		     <= (unsigned int)XtGetMultiClickTime(wxAPP_DISPLAY))) {
 	      // double click has arrived
-	      wxevent.eventType |= wxEVENT_TYPE_DOUBLE;
+	      wxevent->eventType |= wxEVENT_TYPE_DOUBLE;
 	      win->X->last_clicktime = 0; 
 	    } else {
 	      // single click has arrived
@@ -1518,22 +1526,22 @@ void wxWindow::WindowEventHandler(Widget w,
 	  }
 	}
 	// set wxWindows event structure
-	wxevent.eventHandle	= (char*)xev;
-	wxevent.x		= xev->xbutton.x;
-	wxevent.y		= xev->xbutton.y;
-	wxevent.altDown		= /* xev->xbutton.state & Mod3Mask */ FALSE;
-	wxevent.controlDown	= xev->xbutton.state & ControlMask;
-	wxevent.metaDown	= xev->xbutton.state & Mod1Mask;
-	wxevent.shiftDown	= xev->xbutton.state & ShiftMask;
-	wxevent.leftDown	= ((wxevent.eventType == wxEVENT_TYPE_LEFT_DOWN)
+	wxevent->eventHandle	= (char*)xev;
+	wxevent->x		= xev->xbutton.x;
+	wxevent->y		= xev->xbutton.y;
+	wxevent->altDown		= /* xev->xbutton.state & Mod3Mask */ FALSE;
+	wxevent->controlDown	= xev->xbutton.state & ControlMask;
+	wxevent->metaDown	= xev->xbutton.state & Mod1Mask;
+	wxevent->shiftDown	= xev->xbutton.state & ShiftMask;
+	wxevent->leftDown	= ((wxevent->eventType == wxEVENT_TYPE_LEFT_DOWN)
 				   || (xev->xbutton.state & Button1Mask));
-	wxevent.middleDown	= ((wxevent.eventType == wxEVENT_TYPE_MIDDLE_DOWN)
+	wxevent->middleDown	= ((wxevent->eventType == wxEVENT_TYPE_MIDDLE_DOWN)
 				   || (xev->xbutton.state & Button2Mask));
-	wxevent.rightDown	= ((wxevent.eventType == wxEVENT_TYPE_RIGHT_DOWN)
+	wxevent->rightDown	= ((wxevent->eventType == wxEVENT_TYPE_RIGHT_DOWN)
 				   || (xev->xbutton.state & Button3Mask));
-	wxevent.timeStamp       = xev->xbutton.time; /* MATTHEW */
+	wxevent->timeStamp       = xev->xbutton.time; /* MATTHEW */
 	*continue_to_dispatch_return = FALSE;
-	if (!win->CallPreOnEvent(win, &wxevent)) {
+	if (!win->CallPreOnEvent(win, wxevent)) {
 	  if (subWin) {
 	    *continue_to_dispatch_return = TRUE;
 	  } else {
@@ -1541,10 +1549,10 @@ void wxWindow::WindowEventHandler(Widget w,
 		&& !wxSubType(win->__type, wxTYPE_MENU_BAR)
 		&& !wxSubType(win->__type, wxTYPE_PANEL))
 	      win->SetFocus();
-	    win->GetEventHandler()->OnEvent(wxevent);
+	    win->GetEventHandler()->OnEvent(*wxevent);
 	  }
 	}
-	wxevent.eventHandle = NULL; /* MATTHEW: [5] */
+	wxevent->eventHandle = NULL; /* MATTHEW: [5] */
         }
 	break;
     case EnterNotify:
@@ -1567,32 +1575,30 @@ void wxWindow::WindowEventHandler(Widget w,
 	  }
 	}
       } else {
-        wxMouseEvent *_wxevent = new wxMouseEvent(Enter 
-						  ? wxEVENT_TYPE_ENTER_WINDOW 
-						  : wxEVENT_TYPE_LEAVE_WINDOW);
-	wxMouseEvent &wxevent = *_wxevent;
+        wxMouseEvent *wxevent = new wxMouseEvent(Enter 
+						 ? wxEVENT_TYPE_ENTER_WINDOW 
+						 : wxEVENT_TYPE_LEAVE_WINDOW);
 
 	// set wxWindows event structure
-	wxevent.eventHandle	= (char*)xev;
-	wxevent.x		= xev->xcrossing.x;
-	wxevent.y		= xev->xcrossing.y;
-	wxevent.altDown		= /* xev->xcrossing.state & Mod3Mask */ FALSE;
-	wxevent.controlDown	= xev->xcrossing.state & ControlMask;
-	wxevent.metaDown	= xev->xcrossing.state & Mod1Mask;
-	wxevent.shiftDown	= xev->xcrossing.state & ShiftMask;
-	wxevent.leftDown	= xev->xcrossing.state & Button1Mask;
-	wxevent.middleDown	= xev->xcrossing.state & Button2Mask;
-	wxevent.rightDown	= xev->xcrossing.state & Button3Mask;
-	wxevent.timeStamp       = xev->xbutton.time; /* MATTHEW */
+	wxevent->eventHandle	= (char*)xev;
+	wxevent->x		= xev->xcrossing.x;
+	wxevent->y		= xev->xcrossing.y;
+	wxevent->altDown		= /* xev->xcrossing.state & Mod3Mask */ FALSE;
+	wxevent->controlDown	= xev->xcrossing.state & ControlMask;
+	wxevent->metaDown	= xev->xcrossing.state & Mod1Mask;
+	wxevent->shiftDown	= xev->xcrossing.state & ShiftMask;
+	wxevent->leftDown	= xev->xcrossing.state & Button1Mask;
+	wxevent->middleDown	= xev->xcrossing.state & Button2Mask;
+	wxevent->rightDown	= xev->xcrossing.state & Button3Mask;
+	wxevent->timeStamp       = xev->xbutton.time; /* MATTHEW */
 	*continue_to_dispatch_return = FALSE; /* Event was handled by OnEvent */ 
-	if (!win->CallPreOnEvent(win, &wxevent))
-	  win->GetEventHandler()->OnEvent(wxevent);
-	wxevent.eventHandle = NULL; /* MATTHEW: [5] */
+	if (!win->CallPreOnEvent(win, wxevent))
+	  win->GetEventHandler()->OnEvent(*wxevent);
+	wxevent->eventHandle = NULL; /* MATTHEW: [5] */
       }
       break;
     case MotionNotify: {
-	wxMouseEvent *_wxevent = new wxMouseEvent(wxEVENT_TYPE_MOTION);
-	wxMouseEvent &wxevent = *_wxevent;
+	wxMouseEvent *wxevent = new wxMouseEvent(wxEVENT_TYPE_MOTION);
 
 	if (xev->xmotion.is_hint == NotifyHint) {
 	    // hints need a XQueryPointer
@@ -1603,25 +1609,25 @@ void wxWindow::WindowEventHandler(Widget w,
 			  &(xev->xmotion.state));
 	}
 	// set wxWindows event structure
-	wxevent.eventHandle	= (char*)xev;
-	wxevent.x		= xev->xmotion.x;
-	wxevent.y		= xev->xmotion.y;
-	wxevent.altDown		= /* xev->xmotion.state & Mod3Mask */ FALSE;
-	wxevent.controlDown	= xev->xmotion.state & ControlMask;
-	wxevent.metaDown	= xev->xmotion.state & Mod1Mask;
-	wxevent.shiftDown	= xev->xmotion.state & ShiftMask;
-	wxevent.leftDown	= xev->xmotion.state & Button1Mask;
-	wxevent.middleDown	= xev->xmotion.state & Button2Mask;
-	wxevent.rightDown	= xev->xmotion.state & Button3Mask;
-	wxevent.timeStamp       = xev->xbutton.time; /* MATTHEW */
+	wxevent->eventHandle	= (char*)xev;
+	wxevent->x		= xev->xmotion.x;
+	wxevent->y		= xev->xmotion.y;
+	wxevent->altDown		= /* xev->xmotion.state & Mod3Mask */ FALSE;
+	wxevent->controlDown	= xev->xmotion.state & ControlMask;
+	wxevent->metaDown	= xev->xmotion.state & Mod1Mask;
+	wxevent->shiftDown	= xev->xmotion.state & ShiftMask;
+	wxevent->leftDown	= xev->xmotion.state & Button1Mask;
+	wxevent->middleDown	= xev->xmotion.state & Button2Mask;
+	wxevent->rightDown	= xev->xmotion.state & Button3Mask;
+	wxevent->timeStamp       = xev->xbutton.time; /* MATTHEW */
 	*continue_to_dispatch_return = FALSE; /* Event was handled by OnEvent */
-	if (!win->CallPreOnEvent(win, &wxevent)) {
+	if (!win->CallPreOnEvent(win, wxevent)) {
 	  if (subWin)
 	    *continue_to_dispatch_return = TRUE;
 	  else
-	    win->GetEventHandler()->OnEvent(wxevent);
+	    win->GetEventHandler()->OnEvent(*wxevent);
 	}
-	wxevent.eventHandle = NULL; /* MATTHEW: [5] */
+	wxevent->eventHandle = NULL; /* MATTHEW: [5] */
       }
 	break;
       /* MATTHEW : [5] Use focus in/out for OnActivate */
@@ -1715,12 +1721,13 @@ void wxWindow::GetTextExtent(const char *s, float *w, float *h, float *descent,
 			     float *ext_leading, wxFont *theFont,
 			     Bool use16bit)
 {
+    int direction, ascent, descent2;
+    XCharStruct overall;
+
     if (dc) {
       dc->GetTextExtent(s, w, h, descent, ext_leading, theFont, use16bit);
       return;
     }
-
-    int direction, ascent, descent2; XCharStruct overall;
 
     if (!theFont) theFont = font;
     XTextExtents((XFontStruct*)theFont->GetInternalFont(), s, strlen(s),

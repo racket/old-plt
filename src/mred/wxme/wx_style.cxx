@@ -509,15 +509,13 @@ wxStyle::wxStyle()
   WXGC_IGNORE(baseStyle);
   WXGC_IGNORE(textMetricDC);
 #endif
-
-  joinStyle = FALSE;
 }
 
 wxStyle::~wxStyle()
 {
   styleList = NULL;
-  if (!joinStyle)
-    delete u.delta;
+  nonjoin_delta = NULL;
+  join_shiftStyle = NULL;
 }
 
 void wxStyle::Update(wxStyle *basic, wxStyle *target, 
@@ -547,19 +545,19 @@ void wxStyle::Update(wxStyle *basic, wxStyle *target,
   if (!target)
     target = this;
 
-  if (joinStyle) {
+  if (join_shiftStyle) {
     if (styleList)
-      if (!PTREQ(u.shiftStyle, styleList->BasicStyle()))
-	u.shiftStyle->Update(base, target, FALSE, topLevel);
+      if (!PTREQ(join_shiftStyle, styleList->BasicStyle()))
+	join_shiftStyle->Update(base, target, FALSE, topLevel);
     return;
   }
 
-  size = (int)(u.delta->sizeMult * base->font->GetPointSize());
-  size += u.delta->sizeAdd;
+  size = (int)(nonjoin_delta->sizeMult * base->font->GetPointSize());
+  size += nonjoin_delta->sizeAdd;
   if (size <= 0)
     size = 1;
 
-  if (!u.delta->face && u.delta->family == wxBASE) {
+  if (!nonjoin_delta->face && nonjoin_delta->family == wxBASE) {
 #ifndef NO_GENERAL_FONTS
     fontid = base->font->GetFontId();
 #else
@@ -567,42 +565,42 @@ void wxStyle::Update(wxStyle *basic, wxStyle *target,
 #endif
   }
 #ifndef NO_GENERAL_FONTS
-  else if (u.delta->face)
-    fontid = FONT_DIRECTORY.FindOrCreateFontId(u.delta->face, 
-					       u.delta->family);
+  else if (nonjoin_delta->face)
+    fontid = FONT_DIRECTORY.FindOrCreateFontId(nonjoin_delta->face, 
+					       nonjoin_delta->family);
 #endif
   else
-    fontid = u.delta->family;
+    fontid = nonjoin_delta->family;
 
   style = base->font->GetStyle();
-  match = (style == u.delta->styleOff);
+  match = (style == nonjoin_delta->styleOff);
   if (match)
     style = wxNORMAL;
-  if (!match || (match && u.delta->styleOn != u.delta->styleOff))
-    if (u.delta->styleOn != wxBASE)
-      style = u.delta->styleOn;
+  if (!match || (match && nonjoin_delta->styleOn != nonjoin_delta->styleOff))
+    if (nonjoin_delta->styleOn != wxBASE)
+      style = nonjoin_delta->styleOn;
 
   weight = base->font->GetWeight();
-  match = (weight == u.delta->weightOff);
+  match = (weight == nonjoin_delta->weightOff);
   if (match)
     weight = wxNORMAL;
-  if (!match || (match && u.delta->weightOn != u.delta->weightOff))
-    if (u.delta->weightOn != wxBASE)
-      weight = u.delta->weightOn;
+  if (!match || (match && nonjoin_delta->weightOn != nonjoin_delta->weightOff))
+    if (nonjoin_delta->weightOn != wxBASE)
+      weight = nonjoin_delta->weightOn;
 
   target->alignment = base->alignment;
-  match = (target->alignment == u.delta->alignmentOff);
+  match = (target->alignment == nonjoin_delta->alignmentOff);
   if (match)
     target->alignment = wxALIGN_BOTTOM;
-  if (!match || (match && u.delta->alignmentOn != u.delta->alignmentOff))
-    if (u.delta->alignmentOn != wxBASE)
-      target->alignment = u.delta->alignmentOn;
+  if (!match || (match && nonjoin_delta->alignmentOn != nonjoin_delta->alignmentOff))
+    if (nonjoin_delta->alignmentOn != wxBASE)
+      target->alignment = nonjoin_delta->alignmentOn;
 
-  if (u.delta->underlinedOff && u.delta->underlinedOn)
+  if (nonjoin_delta->underlinedOff && nonjoin_delta->underlinedOn)
     underlined = !base->font->GetUnderlined();
-  else if (u.delta->underlinedOff)
+  else if (nonjoin_delta->underlinedOff)
     underlined = FALSE;
-  else if (u.delta->underlinedOn)
+  else if (nonjoin_delta->underlinedOn)
     underlined = TRUE;
   else
     underlined = base->font->GetUnderlined();
@@ -612,26 +610,26 @@ void wxStyle::Update(wxStyle *basic, wxStyle *target,
 
   target->textMetricDC = NULL;
 
-  if (u.delta->transparentTextBackingOff && u.delta->transparentTextBackingOn)
+  if (nonjoin_delta->transparentTextBackingOff && nonjoin_delta->transparentTextBackingOn)
     transText = !base->transText;
-  else if (u.delta->transparentTextBackingOff)
+  else if (nonjoin_delta->transparentTextBackingOff)
     transText = FALSE;
-  else if (u.delta->transparentTextBackingOn)
+  else if (nonjoin_delta->transparentTextBackingOn)
     transText = TRUE;
   else
     transText = base->transText;
   
   base->foreground.Get(&r, &g, &b);
-  u.delta->foregroundMult->Get(&rm, &gm, &bm);
-  u.delta->foregroundAdd->Get(&rp, &gp, &bp);
+  nonjoin_delta->foregroundMult->Get(&rm, &gm, &bm);
+  nonjoin_delta->foregroundAdd->Get(&rp, &gp, &bp);
   r = ColourNum(r * rm + rp);
   g = ColourNum(g * gm + gp);
   b = ColourNum(b * bm + bp);
   target->foreground.Set(r, g, b);
 
   base->background.Get(&r, &g, &b);
-  u.delta->backgroundMult->Get(&rm, &gm, &bm);
-  u.delta->backgroundAdd->Get(&rp, &gp, &bp);
+  nonjoin_delta->backgroundMult->Get(&rm, &gm, &bm);
+  nonjoin_delta->backgroundAdd->Get(&rp, &gp, &bp);
   r = ColourNum(r * rm + rp);
   g = ColourNum(g * gm + gp);
   b = ColourNum(b * bm + bp);
@@ -717,30 +715,30 @@ int wxStyle::GetAlignment()
 
 Bool wxStyle::IsJoin()
 {
-  return joinStyle;
+  return !!join_shiftStyle;
 }
 
 void wxStyle::GetDelta(wxStyleDelta &d)
 {
-  if (joinStyle)
+  if (join_shiftStyle)
     d.SetDelta(wxCHANGE_NOTHING);
   else
-    d.Copy(u.delta);
+    d.Copy(nonjoin_delta);
 }
 
 void wxStyle::SetDelta(wxStyleDelta &d)
 {
-  if (joinStyle || (styleList && PTREQ(this, styleList->BasicStyle())))
+  if (join_shiftStyle || (styleList && PTREQ(this, styleList->BasicStyle())))
     return;
 
-  u.delta->Copy(&d);
+  nonjoin_delta->Copy(&d);
   Update();
 }
 
 wxStyle *wxStyle::GetShiftStyle()
 {
-  if (joinStyle)
-    return u.shiftStyle;
+  if (join_shiftStyle)
+    return join_shiftStyle;
   else if (styleList)
     return styleList->BasicStyle();
   else
@@ -749,22 +747,22 @@ wxStyle *wxStyle::GetShiftStyle()
 
 void wxStyle::SetShiftStyle(wxStyle *style)
 {
-  if (!joinStyle || !styleList || (styleList->StyleToIndex(style) < 0))
+  if (!join_shiftStyle || !styleList || (styleList->StyleToIndex(style) < 0))
     return;
 
   if (styleList->CheckForLoop(this, style))
     return;
 
-  if (u.shiftStyle)
-    u.shiftStyle->children.DeleteObject(this);
+  if (join_shiftStyle)
+    join_shiftStyle->children.DeleteObject(this);
   style->children.Append(this);
 
-  u.shiftStyle = style;
+  join_shiftStyle = style;
   styleList->StyleHasNewChild(style, this);
 
   Update();
 
-  u.shiftStyle = style;
+  join_shiftStyle = style;
   Update();
 }
 
@@ -902,8 +900,8 @@ void wxStyleList::Clear(void)
   basic->name = "Basic";
   basic->baseStyle = NULL;
 
-  basic->u.delta = new wxStyleDelta;
-  basic->u.delta->SetDelta(wxCHANGE_NORMAL);
+  basic->nonjoin_delta = new wxStyleDelta;
+  basic->nonjoin_delta->SetDelta(wxCHANGE_NORMAL);
 
   basic->font = wxTheFontList->FindOrCreateFont(defaultSize, wxDEFAULT,
 						wxNORMAL, wxNORMAL);
@@ -956,8 +954,8 @@ wxStyle *wxStyleList::FindOrCreateStyle(wxStyle *baseStyle,
 
   /* Collapse the delta: */
   delta.Copy(deltain);
-  while (!baseStyle->name && !baseStyle->joinStyle) {
-    if (!delta.Collapse(*baseStyle->u.delta))
+  while (!baseStyle->name && !baseStyle->join_shiftStyle) {
+    if (!delta.Collapse(*baseStyle->nonjoin_delta))
       break;
     baseStyle = baseStyle->baseStyle;
   }
@@ -965,9 +963,9 @@ wxStyle *wxStyleList::FindOrCreateStyle(wxStyle *baseStyle,
   for (node = First(); node; node = node->Next()) {
     style = (wxStyle *)node->Data();
     if (!style->name
-	&& !style->joinStyle
+	&& !style->join_shiftStyle
 	&& PTREQ(style->baseStyle, baseStyle)
-	&& delta.Equal(*style->u.delta))
+	&& delta.Equal(*style->nonjoin_delta))
       return style;
   }
 
@@ -977,8 +975,8 @@ wxStyle *wxStyleList::FindOrCreateStyle(wxStyle *baseStyle,
 
   style->name = NULL;
 
-  style->u.delta = new wxStyleDelta;
-  style->u.delta->Copy(&delta);
+  style->nonjoin_delta = new wxStyleDelta;
+  style->nonjoin_delta->Copy(&delta);
 
   style->baseStyle = baseStyle;
   baseStyle->children.Append(style);
@@ -1004,9 +1002,9 @@ wxStyle *wxStyleList::FindOrCreateJoinStyle(wxStyle *baseStyle,
   for (node = First(); node; node = node->Next()) {
     style = (wxStyle *)node->Data();
     if (!style->name
-	&& style->joinStyle
+	&& style->join_shiftStyle
 	&& PTREQ(style->baseStyle, baseStyle)
-	&& PTREQ(style->u.shiftStyle, shiftStyle))
+	&& PTREQ(style->join_shiftStyle, shiftStyle))
       return style;
   }
 
@@ -1016,10 +1014,8 @@ wxStyle *wxStyleList::FindOrCreateJoinStyle(wxStyle *baseStyle,
 
   style->name = NULL;
 
-  style->joinStyle = TRUE;
-
-  // WXGC_IGNORE(style->u.shiftStyle);
-  style->u.shiftStyle = shiftStyle;
+  // WXGC_IGNORE(style->join_shiftStyle);
+  style->join_shiftStyle = shiftStyle;
   shiftStyle->children.Append(style);
 
   style->baseStyle = baseStyle;
@@ -1074,18 +1070,17 @@ wxStyle *wxStyleList::DoNamedStyle(char *name, wxStyle *plainStyle, Bool replac)
       return basic;
 
     style->baseStyle->children.DeleteObject(style);
-    if (style->joinStyle)
-      style->u.shiftStyle->children.DeleteObject(style);
+    if (style->join_shiftStyle)
+      style->join_shiftStyle->children.DeleteObject(style);
   }
 
-  if (plainStyle->joinStyle) {
-    style->joinStyle = TRUE;
-    style->u.shiftStyle = plainStyle->u.shiftStyle;
-    style->u.shiftStyle->children.Append(style);
+  if (plainStyle->join_shiftStyle) {
+    style->join_shiftStyle = plainStyle->join_shiftStyle;
+    style->join_shiftStyle->children.Append(style);
   } else {
-    style->u.delta = new wxStyleDelta;
+    style->nonjoin_delta = new wxStyleDelta;
     if (PTRNE(plainStyle, basic))
-      style->u.delta->Copy(plainStyle->u.delta);
+      style->nonjoin_delta->Copy(plainStyle->nonjoin_delta);
   }
 
   if (PTREQ(plainStyle, basic))
@@ -1130,13 +1125,13 @@ wxStyle *wxStyleList::Convert(wxStyle *style)
   else
     base = Convert(style->baseStyle);
 
-  if (style->joinStyle) {
+  if (style->join_shiftStyle) {
     wxStyle *shift;
 
-    shift = Convert(style->u.shiftStyle);
+    shift = Convert(style->join_shiftStyle);
     newstyle = FindOrCreateJoinStyle(base, shift);
   } else
-    newstyle = FindOrCreateStyle(base, style->u.delta);
+    newstyle = FindOrCreateStyle(base, style->nonjoin_delta);
 
   if (style->name)
     return NewNamedStyle(style->name, newstyle);
@@ -1212,10 +1207,10 @@ Bool wxStyleList::CheckForLoop(wxStyle *s, wxStyle *p)
   if (!p->baseStyle)
     return FALSE;
 
-  if (p->joinStyle) {
+  if (p->join_shiftStyle) {
     if (CheckForLoop(s, p->baseStyle))
       return TRUE;
-    return CheckForLoop(s, p->u.shiftStyle);
+    return CheckForLoop(s, p->join_shiftStyle);
   } else
     return CheckForLoop(s, p->baseStyle);
 }

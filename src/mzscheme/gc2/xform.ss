@@ -3,6 +3,8 @@
 ;;  No calls of the form (f)(...)
 ;;  For arrays, records, and non-pointers, pass by address only
 ;;  No gc-triggering code in .h files
+;;  No instance vars declared as function pointers without a typedef
+;;    for the func ptr type
 
 (define cmd-line (vector->list argv))
 
@@ -41,14 +43,14 @@
    (lambda ()
      (close-output-port (current-output-port))
      (current-output-port (current-error-port))
-     (when file-out
+     '(when file-out
        (delete-file file-out))
      (eh))))
 
 (define exit-with-error? #f)
 
 (define (log-error format . args)
-  (fprintf (current-error-port) "xform ERROR: ")
+  (fprintf (current-error-port) "Error ")
   (apply fprintf (current-error-port) format args)
   (newline (current-error-port))
   (set! exit-with-error? #t))
@@ -78,6 +80,10 @@
 (define-struct live-var-info (maxlive vars new-vars num-calls))
 
 (define-struct prototype (type pointer? pointer?-determined?))
+
+(define-struct c++-class (parent prototyped))
+
+(define c++-classes null)
 
 (define e (let ([source #f])
 	    (letrec ([translate
@@ -233,7 +239,7 @@
 			  (let push-var ([full-name (caar l)][vtype (cdar l)][n n])
 			    (cond
 			     [(union-type? vtype)
-			      (log-error "Can't push union onto mark stack: ~a." full-name)
+			      (log-error "[UNION]: Can't push union onto mark stack: ~a." full-name)
 			      (printf "PUSHUNION(~a, ~a), " full-name n)
 			      (add1 n)]
 			     [(array-type? vtype)
@@ -289,6 +295,8 @@
     null]
    [skipping?
     e]
+   [(access-modifier? e)
+    (list* (car e) (cadr e) (top-level (cddr e) where))]
    [(prototype? e) 
     (let ([name (register-proto-information e)])
       (when label? (printf "/* PROTO ~a */~n" name)))
@@ -297,13 +305,22 @@
     (when label? (printf "/* TYPEDEF */~n"))
     (check-pointer-type e)
     e]
-   [(struct? e)
+   [(struct-decl? e)
     (if (braces? (caddr e))
 	(begin
 	  (register-struct e)
 	  (when label? (printf "/* STRUCT ~a */~n" (tok-n (cadr e)))))
 	(when label? (printf "/* STRUCT DECL */~n")))
     e]
+   [(class-decl? e)
+    (if (or (braces? (caddr e))
+	    (eq? ': (tok-n (caddr e))))
+	(begin
+	  (when label? (printf "/* CLASS ~a */~n" (tok-n (cadr e))))
+	  (register-class e))
+	(begin
+	  (when label? (printf "/* CLASS DECL */~n"))
+	  e))]
    [(function? e)
     (let ([name (register-proto-information e)])
       (when label? (printf "/* FUNCTION ~a */~n" name)))
@@ -313,14 +330,26 @@
 	(convert-function e))]
    [(var-decl? e)
     (when label? (printf "/* VAR */~n"))
+    (let ([vars (get-pointer-vars e "TOPVAR" #f)])
+      vars)
     e]
 
    [(and (>= (length e) 3)
 	 (eq? (tok-n (car e)) 'extern)
-	 (equal? (tok-n (cadr e)) "C"))
-    ;; FIXME: skip
-    e]
-
+	 (equal? (tok-n (cadr e)) "C")
+	 (braces? (caddr e)))
+    (list* (car e)
+	   (cadr e)
+	   (let ([body-v (caddr e)])
+	     (make-braces
+	      (tok-n body-v)
+	      (tok-line body-v)
+	      (tok-col body-v)
+	      (tok-file body-v)
+	      (seq-close body-v)
+	      (process-top-level (seq-in body-v))))
+	   (cdddr e))]
+   
    [else (print-struct #t)
 	 (error 'xform "unknown form: ~s" e)]))
 
@@ -331,6 +360,10 @@
 (define (end-skip? e)
   (and (pair? e)
        (eq? END_XFORM_SKIP (tok-n (car e)))))
+
+(define (access-modifier? e)
+  (and (memq (tok-n (car e)) '(public private protected))
+       (eq? (tok-n (cadr e)) ':)))
 
 (define (prototype? e)
   (let ([l (length e)])
@@ -346,8 +379,11 @@
 (define (typedef? e)
   (eq? 'typedef (tok-n (car e))))
 
-(define (struct? e)
+(define (struct-decl? e)
   (memq (tok-n (car e)) '(struct enum)))
+
+(define (class-decl? e)
+  (memq (tok-n (car e)) '(class)))
 
 (define (function? e)
   (let ([l (length e)])
@@ -366,19 +402,20 @@
     (and (> l 2)
 	 (eq? semi (tok-n (list-ref e (sub1 l)))))))
 
-(define prototyped null)
+(define prototyped (make-parameter null))
 
 (define (register-proto-information e)
   (let loop ([e e][type null])
     (if (parens? (cadr e))
 	(let ([name (tok-n (car e))]
 	      [type (let loop ([t (reverse type)])
-		      (if (memq (tok-n (car t)) '(extern static))
+		      (if (and (pair? t)
+			       (memq (tok-n (car t)) '(extern static)))
 			  (loop (cdr t))
 			  t))])
-	  (unless (assq name prototyped)
-	    (set! prototyped (cons (cons name (make-prototype type #f #f))
-				   prototyped)))
+	  (unless (assq name (prototyped))
+	    (prototyped (cons (cons name (make-prototype type #f #f))
+			      (prototyped))))
 	  name)
 	(loop (cdr e) (cons (car e) type)))))
 
@@ -395,13 +432,16 @@
     (prototype-pointer? proto)))
 
 (define pointer-types '())
+(define non-pointer-types '(int char long unsigned ulong uint void))
 (define struct-defs '())
 
 (define (check-pointer-type e)
-  (let ([vars (get-pointer-vars (cdr e) "PTRDEF" #t)])
-    (set! pointer-types (append vars pointer-types))))
+  (let-values ([(pointers non-pointers)
+		(get-vars (cdr e) "PTRDEF" #t)])
+    (set! pointer-types (append pointers pointer-types))
+    (set! non-pointer-types (append non-pointers non-pointer-types))))
 
-(define (get-pointer-vars e comment union-ok?)
+(define (get-vars e comment union-ok?)
   (let* ([e (filter (lambda (x) (not (eq? 'volatile (tok-n x)))) e)]
 	 [base (tok-n (car e))]
 	 [base-is-ptr?
@@ -416,9 +456,9 @@
 			 (eq? base 'union))
 		     1
 		     0)])
-    (let loop ([l (- (length e) 2)][array-size #f][results null])
+    (let loop ([l (- (length e) 2)][array-size #f][pointers null][non-pointers null])
       (if (<= l minpos)
-	  results
+	  (values pointers non-pointers)
 	  ;; Look back for "=" before comma:
 	  (let ([skip (let loop ([l (sub1 l)])
 			(cond
@@ -430,7 +470,7 @@
 			 [else (loop (sub1 l))]))])
 	    (if skip
 		;; Skip assignment RHS:
-		(loop skip #f results)
+		(loop skip #f pointers non-pointers)
 		;; Not assignment RHS:
 		(let ([v (list-ref e l)])
 		  (cond
@@ -444,16 +484,16 @@
 			      (if (null? inner)
 				  'pointer
 				  (tok-n (car inner))))
-			    results)]
+			    pointers non-pointers)]
 		     [(braces? v)
 		      ;; No more variable declarations
-		      results]
+		      (values pointers non-pointers)]
 		     [else
 		      ;; End of function ptr
 		      ;; (and we don't care about func ptrs)
-		      results])]
+		      (values pointers non-pointers)])]
 		   [(memq (tok-n v) '(|,| *))
-		    (loop (sub1 l) #f results)]
+		    (loop (sub1 l) #f pointers non-pointers)]
 		   [else (let* ([name (tok-n v)]
 				[pointer? (or (eq? 'pointer array-size)
 					      (eq? '* (tok-n (list-ref e (sub1 l)))))]
@@ -465,8 +505,8 @@
 				[struct-array? (and base-struct (not pointer?) (number? array-size))])
 			   (when (and struct-array?
 				      (> array-size 5))
-			     (log-error "Large array of structures at ~a in line ~a in ~a."
-					name (tok-line v) (tok-file v)))
+			     (log-error "[SIZE] ~a in ~a: Large array of structures at ~a."
+					(tok-line v) (tok-file v) name))
 			   (when (and (not union-ok?)
 				      (not pointer?)
 				      (or union?
@@ -480,8 +520,8 @@
 							       (has-union? (struct-type-struct v)))))
 						    v))))))
 			     (fprintf (current-error-port)
-				      "Warning: can't handle union or record with union. ~a in line ~a in ~a.~n"
-				      name (tok-line v) (tok-file v)))
+				      "Warning [UNION] ~a in ~a: can't handle union or record with union, ~a.~n"
+				      (tok-line v) (tok-file v) name))
 			   (if (and (or pointer?
 					base-is-ptr?
 					base-struct
@@ -517,8 +557,18 @@
 						     (make-union-type)]
 						    [else
 						     (make-vtype)]))
-					     results)))
-			       (loop (sub1 l) #f results)))]))))))))
+					     pointers)
+				       non-pointers))
+			       (begin
+				 (when label?
+				   (printf "/* NP ~a: ~a */~n" 
+					   comment name))
+				 (loop (sub1 l) #f pointers (cons name non-pointers)))))]))))))))
+
+(define (get-pointer-vars e comment union-ok?)
+  (let-values ([(pointers non-pointers)
+		(get-vars e comment union-ok?)])
+    pointers))
 
 (define (register-struct e)
   (let ([body (seq-in (if (braces? (cadr e))
@@ -546,6 +596,40 @@
     (lambda (sube l)
       (cons sube l))
     null)))
+
+(define (register-class e)
+  (let ([name (tok-n (car e))]
+	[body-pos (if (eq? ': (tok-n (caddr e)))
+		      (if (memq (tok-n (cadddr e)) '(public private))
+			  5
+			  4)
+		      2)])
+    (unless (braces? (list-ref e body-pos))
+      (error 'xform "Confused by form of class declaration at line ~a in ~a"
+	     (tok-line (car e))
+	     (tok-file (car e))))
+    (let ([cl (make-c++-class (if (> body-pos 2)
+				  (tok-n (list-ref e (sub1 body-pos)))
+				  #f)
+			      null)]
+	  [pt (prototyped)])
+      (set! c++-classes (cons cl c++-classes))
+      (prototyped null)
+      (let* ([body-v (list-ref e body-pos)]
+	     [body-e (process-top-level (seq-in body-v))])
+	(set-c++-class-prototyped! cl (prototyped))
+	(prototyped pt)
+	(let loop ([e e][p body-pos])
+	  (if (zero? p)
+	      (cons (make-braces
+		     (tok-n body-v)
+		     (tok-line body-v)
+		     (tok-col body-v)
+		     (tok-file body-v)
+		     (seq-close body-v)
+		     body-e)
+		    (cdr e))
+	      (cons (car e) (loop (cdr e) (sub1 p)))))))))
 
 (define (convert-function e)
   (let*-values ([(body-v len) (let* ([len (sub1 (length e))]
@@ -594,9 +678,9 @@
 	       [vars (begin
 		       (ormap (lambda (var)
 				(when (assq (car var) extra-vars)
-				  (log-error "Pointerful variable ~a shadowed in decls at line ~a in ~a"
-					     (car var)
-					     (tok-line (caar decls)) (tok-file (caar decls)))))
+				  (log-error "[SHADOW] ~a in ~a: Pointerful variable ~a shadowed in decls."
+					     (tok-line (caar decls)) (tok-file (caar decls))
+					     (car var))))
 			      
 			      local-vars)
 		       (append extra-vars local-vars))])
@@ -630,6 +714,9 @@
 							       (cdr body))])
 				(values (if end? rest (cons (car body) rest)) live-vars)))]
 			   [else
+			    (when (body-var-decl? (car body))
+			      (log-error "[DECL] ~a in ~a: Variable declaration not at the beginning of a block."
+					 (tok-line (caar body)) (tok-file (caar body))))
 			    (let*-values ([(rest live-vars) (loop (cdr body))]
 					  [(e live-vars)
 					   (convert-function-calls (car body)
@@ -672,6 +759,11 @@
 					  (live-var-info-vars live-vars)
 					  (live-var-info-new-vars live-vars)
 					  (live-var-info-num-calls live-vars)))))))))
+
+(define (body-var-decl? e)
+  (and (pair? e)
+       (or (memq (tok-n (car e)) non-pointer-types)
+	   (assq (tok-n (car e)) pointer-types))))
 
 (define (looks-like-call? e-)
   ;; e- is a reversed expression
@@ -740,7 +832,7 @@
 			  [call-args (cdr call-form)]
 			  [p-m (and must-convert?
 				    call-func
-				    (assq (tok-n call-func) prototyped))])
+				    (assq (tok-n call-func) (prototyped)))])
 		     (if p-m
 			 (let ([new-var (gensym '__funcarg)])
 			   (loop (cdr el)
@@ -826,7 +918,7 @@
 	     (when (and complain-not-in
 			(or (not (pair? complain-not-in))
 			    (not (memq args complain-not-in))))
-	       (log-error "Bad place for function call, line ~a in ~a, starting tok is ~s."
+	       (log-error "[CALL] ~a in ~a: Bad place for function call, starting tok is ~s."
 			  (tok-line (car func)) (tok-file (car func))
 			  (tok-n (car func))))
 	     ;; Lift out function calls as arguments. (Can re-order code.
@@ -947,7 +1039,7 @@
 					  (memq (tok-n (caddr assignee)) '(if while for until))))))
 		       (not (eq? 'exn_table (tok-n (car (last-pair e-))))))
 	      (fprintf (current-error-port)
-		       "Warning [ASSIGN]: suspicious assignment with a function call, line ~a in ~a, LHS ends ~s.~n"
+		       "Warning [ASSIGN] ~a in ~a: suspicious assignment with a function call, LHS ends ~s.~n"
 		       (tok-line (car e-)) (tok-file (car e-))
 		       (tok-n (cadr e-))))))
 	(loop (cdr e-) (cons (car e-) result) live-vars)]
@@ -1048,7 +1140,7 @@
 	       [(while)
 		(not (or (eq? semi (tok-n (cadr result)))
 			 (braces? (cadr result))))]))
-	(log-error "while/do/for with body not in braces. Line ~a in ~a."
+	(log-error "[LOOP] ~a in ~a: while/do/for with body not in braces."
 		   (tok-line (car e-)) (tok-file (car e-)))
 	(loop (cdr e-) (cons (car e-) result) live-vars)]
        [else (loop (cdr e-) (cons (car e-) result) live-vars)]))))
@@ -1131,6 +1223,15 @@
 	  (loop e (f sube a))))))
 
 ; (print-it e 0 #t) (exit)
+
+(define (process-top-level e)
+  (foldl-statement
+   e
+   #f
+   (lambda (sube l)
+     (let* ([sube (top-level sube ".h")])
+       (append l sube)))
+   null))
 
 (foldl-statement
  e

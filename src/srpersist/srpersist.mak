@@ -9,7 +9,7 @@ ODBCVER=0x0351
 ODBC_LIBS=odbc32.lib odbccp32.lib 
 
 # change for your installation
-MZC="C:\Program Files\PLT\mzc"
+MZC="D:\PLT\mzc"
 
 all : srpmain.dll
 

@@ -325,8 +325,9 @@
 		 ([val sub-exprs (cons (z:app-fun expr) (z:app-args expr))]
 		  [val arg-temps (build-list (length sub-exprs) get-arg-varref)]
                   [val arg-temp-syms (map z:varref-var arg-temps)] 
-		  [val let-clauses (map (lambda (sym) `(,sym (#%quote ,*unevaluated*))) arg-temp-syms)]
-		  [val pile-of-values
+                  [val let-clauses (list arg-temp-syms 
+                                         (map (lambda (x) `(#%quote ,*unevaluated*)) arg-temps))]
+                  [val pile-of-values
 		       (map (lambda (expr) 
 			      (let-values ([(annotated free) (non-tail-recur expr)])
 				(list annotated free)))
@@ -349,7 +350,7 @@
                                                        (var-set-union free-vars arg-temps)
                                                        'not-yet-called)]
 		  [val let-body (wcm-wrap debug-info `(#%begin ,@set!-list ,final-app))]
-                  [val let-exp `(#%let ,let-clauses ,let-body)])
+                  [val let-exp `(#%let-values ,let-clauses ,let-body)])
 		 (values let-exp free-vars))]
 	       
 	       [(z:struct-form? expr)

@@ -23,7 +23,8 @@
               (drscheme:get/extend : drscheme:get/extend^)
               (drscheme:language-configuration : drscheme:language-configuration/internal^)
 	      (drscheme:language : drscheme:language^)
-              (drscheme:teachpack : drscheme:teachpack^))
+              (drscheme:teachpack : drscheme:teachpack^)
+              [drscheme:module-language : drscheme:module-language^])
       
       (finder:default-extension "scm")
       (application:current-app-name (string-constant drscheme))
@@ -267,8 +268,7 @@
                        drscheme:language:simple-module-based-language%)))
                   ()
                   (module module)
-                  (language-position position)
-                  (teachpack-names null)))])
+                  (language-position position)))])
 	(drscheme:language-configuration:add-language
 	 (make-simple '(lib "full-mred.ss" "lang")
                       (list (string-constant r5rs-like-languages)
@@ -281,6 +281,8 @@
 	 (make-simple '(lib "r5rs.ss" "lang")
                       (list (string-constant r5rs-like-languages)
                             (string-constant r5rs-lang-name)))))
+      
+      (drscheme:module-language:add-module-language)
       
   ;; add a handler to open .plt files.
       (handler:insert-format-handler 

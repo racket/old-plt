@@ -6560,10 +6560,11 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
     TCPiopb *pb;
     Scheme_Tcp *data;
     int errNo;
-    struct hostInfo dest_host;
+    struct hostInfo *dest_host;
     Scheme_Object *v[2];
     
-    if ((errNo = tcp_addr(address, &dest_host))) {
+    dest_host = MALLOC_ONE(struct hostInfo);
+    if ((errNo = tcp_addr(address, dest_host))) {
       errpart = 1;
       errmsg = " host not found";
       goto tcp_error;
@@ -6582,7 +6583,7 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
     pb->csParam.open.ulpTimeoutValue = 60 /* seconds */;
     pb->csParam.open.ulpTimeoutAction = 1 /* 1:abort 0:report */;
     pb->csParam.open.commandTimeoutValue = 0;
-    pb->csParam.open.remoteHost = dest_host.addr[0];
+    pb->csParam.open.remoteHost = dest_host->addr[0];
     pb->csParam.open.remotePort = id;
     pb->csParam.open.localHost = 0;
     pb->csParam.open.localPort = 0;

@@ -314,6 +314,15 @@
 		      [delta-h (- (get-height) client-height)]
 		      [horizontal? (positive? (bitwise-and style
 						wx:const-horizontal))])
+		  (mred:debug:printf 'min-size
+		    "entering gauge set-min-size; args ~s ~s"
+		    range style)
+		  (mred:debug:printf 'min-size
+		    "client size: ~s x ~s"
+		    client-width client-height)
+		  (mred:debug:printf 'min-size
+		    "actual size: ~s x ~s"
+		    (get-width) (get-height))
 		  (set! min-width (if horizontal?
 				      (+ (* range pixels-per-value)
 					 delta-w)
@@ -338,12 +347,14 @@
 				     style)
 			     args))
 		    args)])
-	    (mred:debug:printf 'container "Args to gauge: ~s" new-args)
+	    (mred:debug:printf 'min-size "Args to gauge: ~s" new-args)
 	    (apply super-init new-args)
 	    (apply (lambda (parent lable range x y w h style . args)
 		     (set-min-sizes range style)
 		     (if (positive? (bitwise-and style
 				      wx:const-horizontal))
+			 ; see slider% for discussion of why force-redraw
+			 ; is unnecessary here.
 			 (begin
 			   (stretchable-in-x? #t)
 			   (stretchable-in-y? #f))
@@ -376,12 +387,13 @@
       (make-item% wx:radio-box% #f #f standard-make-default-size))
     
     (define slider%
-      (class (make-item% wx:slider% #t #f list) args
+      (class (make-item% wx:slider% #f #f list) args
 	(inherit
 	  min-width
 	  min-height
 	  stretchable-in-x?
 	  stretchable-in-y?
+	  get-client-size
 	  get-width
 	  get-height)
 	(private
@@ -394,7 +406,6 @@
 	  
 	  ; sets minimum sizes based on constructor args
 	  ; input: min-val/max-val: range of values slider can assume
-	  ;        width: width of slider as given in constructor
 	  ;        style: style of slider as passed to constructor
 	  ; returns: nothing
 	  ; effects: sets the major dimension of the slider to be
@@ -403,22 +414,33 @@
 	  ;          sets the minor dimension of the slider to be the
 	  ;            default minor dimension of the slider.
 	  [set-min-size
-	    (lambda (min-val max-val width style)
-	      (let ([full-width (get-width)]
-		    [full-height (get-height)]
-		    [range (add1 (- max-val min-val))]
-		    [horizontal? (positive? (bitwise-and style
-					      wx:const-horizontal))])
-		(set! min-width
-		  (if horizontal?
-		      (+ (* range pixels-per-value)
-			 (- full-width width))
-		      full-width))
-		(set! min-height
-		  (if horizontal?
-		      full-height
-		      (+ (* range pixels-per-value)
-			 (- full-height width))))))])
+	    (lambda (min-val max-val style)
+	      (let-values ([(client-w client-h)
+			    (get-two-int-results get-client-size)])
+		(let ([full-width (get-width)]
+		      [full-height (get-height)]
+		      [range (add1 (- max-val min-val))]
+		      [horizontal? (positive? (bitwise-and style
+						wx:const-horizontal))])
+		  (mred:debug:printf 'min-size
+		    "Entering slider's set-min-size; args ~s ~s ~s"
+		    min-val max-val style)
+		  (mred:debug:printf 'min-size
+		    "Client size: ~s x ~s"
+		    client-w client-h)
+		  (mred:debug:printf 'min-size
+		    "Full size: ~s x ~s"
+		    full-width full-height)
+		  (set! min-width
+		    (if horizontal?
+			(+ (* range pixels-per-value)
+			   (- full-width client-w))
+			full-width))
+		  (set! min-height
+		    (if horizontal?
+			full-height
+			(+ (* range pixels-per-value)
+			   (- full-height client-h)))))))])
 	
 	(sequence
 	  (apply super-init
@@ -437,7 +459,10 @@
 		     [x const-default-posn]
 		     [y const-default-posn]
 		     [style wx:const-horizontal] . args)
-		   (set-min-size min max width style)
+		   (set-min-size min max style)
+		   ; the stretchability adjustments reset the parent's
+		   ; child-info cache for us, so (unlike canvas) we don't
+		   ; have to force a redraw.
 		   (if (positive? (bitwise-and style wx:const-horizontal))
 		       (begin
 			 (stretchable-in-x? #t)
@@ -446,17 +471,6 @@
 			 (stretchable-in-x? #f)
 			 (stretchable-in-y? #t))))
 	    args))))
-    
-    (define text-window%
-      (make-item% wx:text-window% #t #t
-		  (opt-lambda (parent
-			       [x const-default-posn]
-			       [y const-default-posn]
-			       [w const-default-size]
-			       [h const-default-size] . args)
-		    (append (list parent x y const-default-size
-				  const-default-size)
-			    args))))
     
     (define text%;; for now
       (make-item% wx:text% #t #f
@@ -495,6 +509,7 @@
 	  args
 	  
 	  (inherit
+	    force-redraw
 	    get-client-size
 	    get-height
 	    get-width
@@ -513,30 +528,44 @@
 	    ;   possible size of the canvas (defined to be that size which
 	    ;   results in the client area of the canvas being 5 x 5).
 	    [find-min-size
-	      (let-values ([(width height)
-			    (get-two-int-results get-client-size)])
-		(lambda ()
+	      (lambda ()
+		(let-values ([(width height)
+			      (get-two-int-results get-client-size)])
+		  (mred:debug:printf 'media-canvas
+		    "Entering find-min-size.  client size: ~s x ~s"
+		    width height)
+		  (mred:debug:printf 'media-canvas
+		    "Full size: ~s x ~s" (get-width) (get-height))
 		  (let* ([delta-x (- (get-width) width)]
 			 [delta-y (- (get-height) height)])
 		    (set! min-height (+ smallest-client-size delta-y))
-		    (set! min-width (+ smallest-client-size delta-x)))))])
+		    (set! min-width (+ smallest-client-size delta-x))
+		    ; we have to invalidate the parent's child-info cache
+		    ; because we got added to it before we computed our
+		    ; minimum size.
+		    (force-redraw))))])
 	  (sequence
 	    (apply super-init args)
 	    (find-min-size)))))
     
     (define canvas% (make-canvas% wx:canvas%))
     (define media-canvas% (make-canvas% wx:media-canvas%))		    
-    
-    ; define an intermediate panel, which we immediately override.  This
-    ; shouldn't ever be used.
-    (define intermediate-panel%
-      (make-item% wx:panel% #t #t list))
+    (define text-window% (make-canvas% wx:text-window%))
+;      (make-item% wx:text-window% #t #t
+;		  (opt-lambda (parent
+;			       [x const-default-posn]
+;			       [y const-default-posn]
+;			       [w const-default-size]
+;			       [h const-default-size] . args)
+;		    (append (list parent x y const-default-size
+;				  const-default-size)
+;			    args))))
     
     ; panel%: a class with all the functionality of a wx:panel%
     ; that can hold items and reposition them as necessary.  Note that a
     ; panel can contain other panels.
     (define panel%
-      (class intermediate-panel% args
+      (class-asi (make-item% wx:panel% #t #t list)
 	(inherit
 	  object-ID
 	  get-width
@@ -553,30 +582,8 @@
 	  
 	  ; list of child-info structs corresponding to the children.  (#f
 	  ;  if no longer valid.)
-	  [children-info null]
+	  [children-info null])
 	  
-	  ; make-full-frame: ensures that when a panel is being placed into
-	  ; a frame, it is sized to fill the entire frame.  Necessary to
-	  ; ensure that the frame's initial size as seen by the user is as
-	  ; expected.
-	  ; input: a list containing the parameters to panel%'s
-	  ;   constructor.
-	  ; returns: a list with the args modified so that the panel fills
-	  ;   the entire frame.
-	  [make-full-frame
-	   (opt-lambda (parent
-			[x const-default-posn]
-			[y const-default-posn]
-			[w const-default-size]
-			[h const-default-size] . args)
-	     (if (or (is-a? parent frame%)
-		     (is-a? parent dialog-box%))
-		 (append
-		  (list parent 0 0 (send parent get-width)
-			(send parent get-height))
-		  args)
-		 (append (list parent x y w h) args)))])
-	
 	(public
 	  
 	  ; list of panel's contents.
@@ -677,8 +684,16 @@
 				      (child-info-y-min
 				       curr-info)))))))])
 	     (lambda ()
-	       (gms-helper (get-children-info)
-			   const-default-spacing const-default-spacing)))]
+	       (let-values ([(client-w client-h)
+			     (get-two-int-results get-client-size)])
+		 (let ([min-client-size
+			 (gms-helper (get-children-info)
+			   const-default-spacing const-default-spacing)]
+		       [delta-w (- (get-width) client-w)]
+		       [delta-h (- (get-height) client-h)])
+		   (list (+ delta-w (car min-client-size))
+		         (+ delta-h (cadr min-client-size)))))))]
+		     
 	  
 	  ; on-size: called when the container is resized (usu by its
           ;   parent) 
@@ -740,12 +755,13 @@
 			 (let ([curr-child (car children)])
 			   (apply
 			     (ivar curr-child set-size)
-			     (car placement-info)))))])
+			     (car placement-info))
+			   (redraw-helper
+			     (cdr children)
+			     (cdr placement-info)))))])
 	     (lambda (width height)
 	       (redraw-helper children
-		 (place-children (get-children-info) width height))))])
-	(sequence
-	  (apply super-init (apply make-full-frame args)))))
+		 (place-children (get-children-info) width height))))])))
     
     (define make-top-container%
       (lambda (base%)
@@ -774,6 +790,11 @@
 	    ;            mred:panel%, calls error; panel not updated.
 	    [insert-panel
 	      (lambda (new-panel)
+		(mred:debug:printf 'container
+		  "Entering insert-panel, object ~s" object-ID)
+		(mred:debug:printf 'container
+		  "Argument: ~s; ID ~s" new-panel
+		  (ivar new-panel object-ID))
 		(unless (is-a? new-panel panel%)
 		  (error 'insert-panel
 		    "Expected a mred:panel% descendant; got ~s"
@@ -782,8 +803,14 @@
 		(send panel set-size 0 0 (get-width) (get-height))
 		(force-redraw))]
 	    
+	    [get-panel
+	      (lambda ()
+		panel)]
+
 	    [force-redraw
 	      (lambda ()
+		(mred:debug:printf 'container
+		  "Entering force-redraw; object ~s" object-ID)
 		(on-size (get-width) (get-height)))]
 	    
 	    ; on-size: ensures that size of frame matches size of content
@@ -878,8 +905,6 @@
     (define frame% (make-top-container% wx:frame%))
     (define dialog-box% (make-top-container% wx:dialog-box%))
     
-
-
     ; make-get-size: creates a function which returns the minimum possible
     ;   size for a horizontal-panel% or vertical-panel% object.
     ; input: container: a pointer to the panel% descendant upon
@@ -892,9 +917,9 @@
     ;          the gap between adjacent objects and objects and the edge
     ;          of the panel.
     ; returns: a thunk which returns the minimum possible size of the
-    ;   panel as a list of two elements: (min-x min-y).
+    ;   entire panel as a list of two elements: (min-x min-y).
     (define make-get-size
-      (lambda (this compute-x compute-y)
+      (lambda (container compute-x compute-y)
 	(letrec ([gms-help
 		   (lambda (kid-info x-accum y-accum)
 		     (if (null? kid-info)
@@ -904,8 +929,17 @@
 			   (compute-x x-accum kid-info)
 			   (compute-y y-accum kid-info))))])
 	  (lambda ()
-	    (let ([border (send this border)])
-	      (gms-help (send this get-children-info) border border))))))
+	    (let-values ([(client-w client-h)
+			  (get-two-int-results
+			    (ivar container get-client-size))])
+	      (let* ([border (send container border)]
+		     [min-client-size
+		       (gms-help (send container get-children-info)
+			 border border)]
+		     [delta-w (- (send container get-width) client-w)]
+		     [delta-h (- (send container get-height) client-h)])
+		(list (+ delta-w (car min-client-size))
+		      (+ delta-h (cadr min-client-size)))))))))
     
     ; make-h-v-redraw: creates place-children functions for
     ; horizontal-panel% or vertical-panel% classes.
@@ -927,8 +961,8 @@
     ;        spacing: the size of the gaps between adjacent objects and
     ;          objects and the edge of the panel.
     ; returns: a function which takes the children info, the width and the
-    ;   height of the panel and returns a list which contains posn&size
-    ;   info for each child. 
+    ;   height of the panel's client and returns a list which contains
+    ;   posn&size info for each child. 
     (define make-place-children
       (lambda (container child-major-size
 		child-major-stretch
@@ -936,7 +970,7 @@
 		child-minor-stretch
 		major-dim minor-dim
 		get-x-info get-y-info)
-	(lambda (width height)
+	(lambda (kid-info width height)
 	  (letrec ([count-stretchable
 		     (lambda (kid-info)
 		       (if (null? kid-info)
@@ -947,11 +981,16 @@
 				 (count-stretchable (cdr kid-info))))))])
 	    (let* ([spacing (send container spacing)]
 		   [border (send container border)]
-		   [kid-info (send container get-children-info)]
+		   [full-w (send container get-width)]
+		   [full-h (send container get-height)]
+		   [delta-list (list
+				 (- full-w width)
+				 (- full-h height))]
 		   [num-stretchable (count-stretchable kid-info)]
 		   [extra-space (- (major-dim width height)
-				   (apply major-dim
-				     (send container get-min-size)))]
+				   (- (apply major-dim
+					(send container get-min-size))
+				      (apply major-dim delta-list)))]
 		   [extra-per-stretchable (if (zero? num-stretchable)
 					      0
 					      (inexact->exact
@@ -1109,13 +1148,16 @@
     ; one at a time.  The size of the panel is the smallest size possible
     ; for displaying each of the panel's children.
     (define single-panel%
-      (class-asi panel%
+      (class panel% args
 	
 	(inherit
+	  object-ID
+	  children
 	  force-redraw)
 	
 	(rename
-	  [super-add add-child])
+	  [super-add add-child]
+	  [super-delete delete-child])
 	
 	(public
 	  
@@ -1128,6 +1170,17 @@
 	   (lambda (new-child)
 	     (super-add new-child #f))]
 
+	  ; if the child is active, make the next child active (null if
+	  ; child was last in list)
+	  [delete-child
+	    (lambda (child)
+	      (when (eq? child (active-child))
+		(let ([rest-of-list (cdr (memq child children))])
+		  (active-child (if (null? rest-of-list)
+				    null
+				    (car rest-of-list)))))
+	      (super-delete child))]
+		  
 	  [active-child
 	   (case-lambda
 	    [() active]
@@ -1139,17 +1192,22 @@
 
 	  [get-min-size
 	    (make-get-size
+	      this
 	      (lambda (x-accum kid-info)
 		(max x-accum (+ (* 2 (border))
-			       (child-info-x-min (car kid-info)))))
+				(child-info-x-min (car kid-info)))))
 	      (lambda (y-accum kid-info)
 		(max y-accum (+ (* 2 (border))
-			       (child-info-y-min (car kid-info))))))]
+				(child-info-y-min (car kid-info))))))]
 
 	  ; only place the active child.
 	  [place-children
 	    (lambda (children-info width height)
+	      (mred:debug:printf 'container
+		"Entering place-children; object ~s" object-ID)
 	      (unless (null? active)
+		(mred:debug:printf 'container
+		  "Placing active child")
 		(let* ([active-info (send active get-info)]
 		       [x-stretch (child-info-x-stretch active-info)]
 		       [x-min (child-info-x-min active-info)]
@@ -1167,12 +1225,20 @@
 		       [y-size (if y-stretch
 				   (- height (* 2 (border)))
 				   y-min)])
-		  (list (x-posn y-posn x-size y-size)))))]
+		  (list x-posn y-posn x-size y-size))))]
 
 	  [redraw
 	    (lambda (width height)
+	      (mred:debug:printf 'container
+		"Entering redraw; object ~s" object-ID)
 	      (unless (null? active)
 		(apply
 		  (ivar active set-size)
 		  ; we don't really care about the children info...
-		  (place-children null width height))))])))))
+		  (place-children null width height))))])
+	(sequence
+	  (mred:debug:printf 'container
+	    "About to call single-panel's super-init")
+	  (mred:debug:printf 'container
+	    "Function: ~s  Args: ~s" super-init args)
+	  (apply super-init args))))))

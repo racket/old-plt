@@ -5,13 +5,13 @@
 
 <p>The teachpack <code>gui.ss</code> provides the following operations: 
 <menu>
-<li> <code>show-window : -> true</code> 
+<li> <code>show-window : window -> true</code> 
      <br>to show the window 
 
-<li> <code>hide-window : -> true</code> 
+<li> <code>hide-window : window -> true</code> 
      <br>to hide the window
 
-<li> <code>create-window : (listof (listof gui-item)) -> true</code> 
+<li> <code>create-window : (listof (listof gui-item)) -> window</code> 
      <br>to add gui-items to a window and to show the window
      <br>each list of gui-items defines one row of gui items in the window
 

@@ -217,6 +217,8 @@
 
 	     ;; ----- Sort body into different categories -----
 	     (let ([extract (lambda (kws l out-cons)
+			      ;; returns two lists: expressions that start with an identifier in `kws',
+			      ;; and expressions that don't
 			      (let loop ([l l])
 				(if (null? l)
 				    (values null null)
@@ -311,12 +313,32 @@
 		 
 		 ;; ----- Extract method definitions; check that they look like procs -----
 		 ;;  Optionally transform them, can expand even if not transforming.
-		 (let* ([local-public-normal-names (map car (append publics overrides))]
+		 (let* ([field-names (map
+				      (lambda (i)
+					(if (identifier? i)
+					    i
+					    (stx-car i)))
+				      (append plain-fields plain-init-fields))]
+			[inherit-field-names inherit-fields]
+			[plain-init-names (map
+					   (lambda (i)
+					     (if (identifier? i)
+						 i
+						 (stx-car i)))
+					   plain-inits)]
+			[inherit-names (map car inherits)]
+			[rename-names (map car renames)]
+			[local-public-normal-names (map car (append publics overrides))]
 			[local-public-names (append (map car (append public-finals override-finals))
 						    local-public-normal-names)]
 			[local-method-names (append (map car privates) local-public-names)]
 			[expand-stop-names (append
 					    local-method-names
+					    field-names
+					    inherit-field-names
+					    plain-init-names
+					    inherit-names
+					    rename-names
 					    (list 
 					     this-id
 					     super-instantiate-id
@@ -326,8 +348,8 @@
 			[add-method-property (lambda (l)
 					       (syntax-property l 'method-arity-error #t))]
 			[proc-shape (lambda (name expr xform?)
-				      ;; expands an expression so we can check whether
-				      ;; it has the right form
+				      ;; expands an expression enough that we can check whether
+				      ;; it has the right form; must use local syntax definitions
 				      (define (expand expr locals)
 					(local-expand
 					 expr
@@ -453,11 +475,14 @@
 					       (loop (expand stx locals) #f name locals)
 					       (bad "bad form for method definition" stx))])))])
 		   ;; Do the extraction:
-		   (let-values ([(methods private-methods exprs)
-				 (let loop ([exprs exprs][ms null][pms null][es null])
+		   (let-values ([(methods          ; (listof (cons id stx))
+				  private-methods  ; (listof (cons id stx))
+				  exprs            ; (listof stx)
+				  stx-defines)     ; (listof (cons (listof id) stx))
+				 (let loop ([exprs exprs][ms null][pms null][es null][sd null])
 				   (if (null? exprs)
-				       (values (reverse! ms) (reverse! pms) (reverse! es))
-				       (syntax-case (car exprs) (define-values)
+				       (values (reverse! ms) (reverse! pms) (reverse! es) (reverse! sd))
+				       (syntax-case (car exprs) (define-values define-syntaxes)
 					 [(define-values (id ...) expr)
 					  (let ([ids (syntax->list (syntax (id ...)))])
 					    ;; Check form:
@@ -486,16 +511,26 @@
 							  (if public?
 							      pms
 							      (cons (cons (car ids) expr) pms))
-							  es)))
+							  es
+							  sd)))
 						;; Non-method defn:
-						(loop (cdr exprs) ms pms (cons (car exprs) es))))]
+						(loop (cdr exprs) ms pms (cons (car exprs) es) sd)))]
 					 [(define-values . _)
 					  (bad "ill-formed definition" (car exprs))]
+					 [(define-syntaxes (id ...) expr)
+					  (let ([ids (syntax->list (syntax (id ...)))])
+					    (for-each (lambda (id) (unless (identifier? id)
+								     (bad "syntax name is not an identifier" id)))
+						      ids)
+					    (loop (cdr exprs) ms pms es (cons (cons ids (car exprs)) sd)))]
+					 [(define-syntaxes . _)
+					  (bad "ill-formed syntax definition" (car exprs))]
 					 [_else
-					  (loop (cdr exprs) ms pms (cons (car exprs) es))])))])
+					  (loop (cdr exprs) ms pms (cons (car exprs) es) sd)])))])
 		     
 		     ;; ---- Extract all defined names, including field accessors and mutators ---
-		     (let ([defined-method-names (append (map car methods)
+		     (let ([defined-syntax-names (apply append (map car stx-defines))]
+			   [defined-method-names (append (map car methods)
 							 (map car private-methods))]
 			   [private-field-names (let loop ([l exprs])
 						  (if (null? l)
@@ -505,19 +540,6 @@
 							 (append (syntax->list (syntax (id ...)))
 								 (loop (cdr l)))]
 							[_else (loop (cdr l))])))]
-			   [field-names (map
-					 (lambda (i)
-					   (if (identifier? i)
-					       i
-					       (stx-car i)))
-					 (append plain-fields plain-init-fields))]
-			   [inherit-field-names inherit-fields]
-			   [plain-init-names (map
-					      (lambda (i)
-						(if (identifier? i)
-						    i
-						    (stx-car i)))
-					      plain-inits)]
 			   [init-mode (cond
 				       [(null? init-rest-decls) 'normal]
 				       [(stx-null? (stx-cdr (car init-rest-decls))) 'stop]
@@ -525,13 +547,14 @@
 
 		       ;; -- Look for duplicates --
 		       (let ([dup (check-duplicate-identifier
-				   (append defined-method-names
+				   (append defined-syntax-names
+					   defined-method-names
 					   private-field-names
 					   field-names
 					   inherit-field-names
 					   plain-init-names
-					   (map car inherits)
-					   (map car renames)
+					   inherit-names
+					   rename-names
 					   (list this-id super-instantiate-id super-make-object-id)))])
 			 (when dup
 			   (bad "duplicate declared identifier" dup)))
@@ -542,19 +565,31 @@
 			   (bad "duplicate declared identifier" dup)))
 		       
 		       ;; -- Check that private/public/override are defined --
-		       (let ([ht (make-hash-table)])
+		       (let ([ht (make-hash-table)]
+			     [stx-ht (make-hash-table)])
 			 (for-each
 			  (lambda (defined-name)
 			    (let ([l (hash-table-get ht (syntax-e defined-name) (lambda () null))])
 			      (hash-table-put! ht (syntax-e defined-name) (cons defined-name l))))
 			  defined-method-names)
 			 (for-each
+			  (lambda (defined-name)
+			    (let ([l (hash-table-get stx-ht (syntax-e defined-name) (lambda () null))])
+			      (hash-table-put! stx-ht (syntax-e defined-name) (cons defined-name l))))
+			  defined-syntax-names)
+			 (for-each
 			  (lambda (pubovr-name)
 			    (let ([l (hash-table-get ht (syntax-e pubovr-name) (lambda () null))])
 			      (unless (ormap (lambda (i) (bound-identifier=? i pubovr-name)) l)
-				(bad 
-				 "method declared but not defined"
-				 pubovr-name))))
+				;; Either undefined or defined as syntax:
+				(let ([stx-l (hash-table-get stx-ht (syntax-e pubovr-name) (lambda () null))])
+				  (if (ormap (lambda (i) (bound-identifier=? i pubovr-name)) stx-l)
+				      (bad 
+				       "method declared but defined as syntax"
+				       pubovr-name)
+				      (bad 
+				       "method declared but not defined"
+				       pubovr-name))))))
 			  local-method-names))
 		       
 		       ;; ---- Convert expressions ----
@@ -760,8 +795,9 @@
 					     [the-finder the-finder]
 					     [super-instantiate-id super-instantiate-id]
 					     [super-make-object-id super-make-object-id]
-					     [name class-name])
-
+					     [name class-name]
+					     [(stx-def ...) (map cdr stx-defines)])
+				 
 				 (syntax
 				  (let ([superclass super-expression]
 					[interfaces (list interface-expr ...)])
@@ -789,30 +825,31 @@
 							     rename-temp ...
 							     method-accessor ...) ; public, override, inherit
 				       (letrec-syntaxes+values mappings ()
-					   (letrec ([private-temp private-method]
-						    ...
-						    [public-final-temp public-final-method]
-						    ...
-						    [override-final-temp override-final-method]
-						    ...)
-					     (values
-					      (list public-final-temp ... . public-methods)
-					      (list override-final-temp ... . override-methods)
-					      ;; Initialization
-					      (lambda (the-obj super-id init-args)
-						(fluid-let-syntax ([the-finder (quote-syntax the-obj)])
-						  (letrec-syntax ([super-instantiate-id
-								   (lambda (stx)
-								     (syntax-case stx () 
-								       [(_ (arg (... ...)) (kw kwarg) (... ...))
-									(syntax (-instantiate super-id _ #f (list arg (... ...)) (kw kwarg) (... ...)))]))])
-						    (let ([super-make-object-id
-							   (lambda args
-							     (super-id #f args null))])
-						      (let ([plain-init-name undefined]
-							    ...)
-							(void) ; in case the body is empty
-							. exprs)))))))))
+					 stx-def ...
+					 (letrec ([private-temp private-method]
+						  ...
+						  [public-final-temp public-final-method]
+						  ...
+						  [override-final-temp override-final-method]
+						  ...)
+					   (values
+					    (list public-final-temp ... . public-methods)
+					    (list override-final-temp ... . override-methods)
+					    ;; Initialization
+					    (lambda (the-obj super-id init-args)
+					      (fluid-let-syntax ([the-finder (quote-syntax the-obj)])
+						(letrec-syntax ([super-instantiate-id
+								 (lambda (stx)
+								   (syntax-case stx () 
+								     [(_ (arg (... ...)) (kw kwarg) (... ...))
+								      (syntax (-instantiate super-id _ #f (list arg (... ...)) (kw kwarg) (... ...)))]))])
+						  (let ([super-make-object-id
+							 (lambda args
+							   (super-id #f args null))])
+						    (let ([plain-init-name undefined]
+							  ...)
+						      (void) ; in case the body is empty
+						      . exprs)))))))))
 				     ;; Not primitive:
 				     #f)))))))))))))))])))
 

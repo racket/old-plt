@@ -7,7 +7,7 @@
        [tab ""])
    (let ([mk-chain
 	  (lambda (load)
-	    (lambda (filename)
+	    (lambda (filename expected-module)
 	      (fprintf ep
 		       "~aloading ~a at ~a~n" 
 		       tab filename (current-process-milliseconds))
@@ -18,10 +18,10 @@
 		  (lambda () 
 		    (if (regexp-match "_loader" filename)
 			(let ([f (load filename)])
-			  (lambda (sym)
+			  (lambda (sym expected-module)
 			    (fprintf ep
 				     "~atrying ~a's ~a~n" tab filename sym)
-			    (let ([loader (f sym)])
+			    (let ([loader (f sym expected-module)])
 			      (and loader
 				   (lambda ()
 				     (fprintf ep
@@ -38,7 +38,7 @@
 						 "~adone ~a's ~a at ~a~n"
 						 tab filename sym
 						 (current-process-milliseconds)))))))))
-			(load filename)))
+			(load filename expected-module)))
 		  (lambda () (set! tab s))))
 	       (fprintf ep
 			"~adone ~a at ~a~n"

@@ -4,20 +4,26 @@
 (module unit mzscheme
   (require-for-syntax (lib "kerncase.ss" "syntax")
 		      (lib "stx.ss" "syntax")
+		      "list.ss"
 		      "private/unitidmap.ss")
 
-  (define undefined (letrec ([x x]) x))
+  ;; ----------------------------------------------------------------------
+  ;; Structures and helpers
+
+  (define undefined (letrec ([x x]) x)) ; initial value
 
   (define insp (current-inspector)) ; for named structures
 
-  (define-struct unit (num-imports exports go))
-  (define-struct (exn:unit struct:exn) ())
+  (define-struct unit (num-imports exports go)) ; unit value
+  (define-struct (exn:unit struct:exn) ()) ; run-time exception
 
+  ;; For units with inferred names, generate a struct that prints using the name:
   (define (make-naming-constructor type name)
     (let-values ([(struct: make- ? -accessor -mutator)
 		  (make-struct-type name type 0 0 #f null insp)])
       make-))
 
+  ;; Make a unt value (call by the macro expansion of `unit')
   (define (make-a-unit name num-imports exports go)
     ((if name 
 	 (make-naming-constructor 
@@ -25,6 +31,9 @@
 	  (string->symbol (format "unit:~a" name)))
 	 make-unit)
      num-imports exports go))
+
+  ;; ----------------------------------------------------------------------
+  ;; The `unit' syntactic form
 
   (define-syntax unit
     (lambda (stx)
@@ -112,39 +121,52 @@
 				 [else (list defn-or-expr)]))
 			     expanded))))])
 	       (let ([all-expanded (expand-all (syntax->list (syntax (defn&expr ...))))])
-		 ;; Get all the defined names
-		 (let ([all-defined-names
-			(apply
-			 append
-			 (map
-			  (lambda (defn-or-expr)
-			    (syntax-case defn-or-expr (define-values define-syntax)
-			      [(define-values (id ...) expr)
-			       (let ([l (syntax->list (syntax (id ...)))])
-				 (for-each (lambda (i)
-					     (unless (identifier? i)
-					       (raise-syntax-error
-						'unit
-						"not an identifier in definition"
-						stx
-						i)))
-					   l)
-				 l)]
-			      [(define-values . l)
-			       (raise-syntax-error
-				'unit
-				"bad definition form"
-				stx
-				defn-or-expr)]
-			      [(define-syntax . l)
-			       (raise-syntax-error
-				'unit
-				"misplaced syntax definition"
-				stx
-				defn-or-expr)]
-			      [else null]))
-			  all-expanded))])
-		   ;; Check that all defined names are distinct:
+		 ;; Get all the defined names, sorting out variable definitions
+		 ;; from syntax definitions.
+		 (let* ([definition?
+			  (lambda (id)
+			    (or (module-identifier=? id (quote-syntax define-values))
+				(module-identifier=? id (quote-syntax define-syntaxes))))]
+			[all-defined-names/kinds
+			 (apply
+			  append
+			  (map
+			   (lambda (defn-or-expr)
+			     (syntax-case defn-or-expr (define-values define-syntaxes)
+			       [(dv (id ...) expr)
+				(definition? (syntax dv))
+				(let ([l (syntax->list (syntax (id ...)))])
+				  (for-each (lambda (i)
+					      (unless (identifier? i)
+						(raise-syntax-error
+						 'unit
+						 "not an identifier in definition"
+						 stx
+						 i)))
+					    l)
+				  (let ([key (if (module-identifier=? (syntax dv) (quote-syntax define-syntaxes))
+						 'stx
+						 'val)])
+				    (map (lambda (id) (cons key id)) l)))]
+			       [(define-values . l)
+				(raise-syntax-error
+				 'unit
+				 "bad definition form"
+				 stx
+				 defn-or-expr)]
+			       [(define-syntaxes . l)
+				(raise-syntax-error
+				 'unit
+				 "bad syntax definition form"
+				 stx
+				 defn-or-expr)]
+			       [else null]))
+			   all-expanded))]
+			[all-defined-names (map cdr all-defined-names/kinds)]
+			[all-defined-val-names (map cdr 
+						    (filter (lambda (i) (eq? (car i) 'val))
+							    all-defined-names/kinds))])
+		   ;; Check that all defined names (var + stx) are distinct:
 		   (let ([name (check-duplicate-identifier
 				(append imported-names all-defined-names))])
 		     (when name
@@ -153,22 +175,34 @@
 			"variable imported and/or defined twice"
 			stx
 			name)))
-		   ;; Check that all exported names are defined:
-		   (let ([ht (make-hash-table)])
+		   ;; Check that all exported names are defined (as var):
+		   (let ([ht (make-hash-table)]
+			 [stx-ht (make-hash-table)])
 		     (for-each
-		      (lambda (name)
-			(let ([l (hash-table-get ht (syntax-e name) (lambda () null))])
-			  (hash-table-put! ht (syntax-e name) (cons name l))))
-		      all-defined-names)
+		      (lambda (kind+name)
+			(let ([name (cdr kind+name)])
+			  (let ([l (hash-table-get ht (syntax-e name) (lambda () null))])
+			    (hash-table-put! (if (eq? (car kind+name) 'val) ht stx-ht)
+					     (syntax-e name) 
+					     (cons name l)))))
+		      all-defined-names/kinds)
 		     (for-each 
 		      (lambda (n)
 			(let ([v (hash-table-get ht (syntax-e n) (lambda () null))])
 			  (unless (ormap (lambda (i) (bound-identifier=? i n)) v)
-			    (raise-syntax-error
-			     'unit
-			     "exported variable is not defined"
-			     stx
-			     n))))
+			    ;; Either not defined, or defined as syntax:
+			    (let ([stx-v (hash-table-get stx-ht (syntax-e n) (lambda () null))])
+			      (if (ormap (lambda (i) (bound-identifier=? i n)) stx-v)
+				  (raise-syntax-error
+				   'unit
+				   "cannot export syntax from a unit"
+				   stx
+				   n)
+				  (raise-syntax-error
+				   'unit
+				   "exported variable is not defined"
+				   stx
+				   n))))))
 		      exported-names))
 
 		   ;; Compute defined but not exported:
@@ -179,7 +213,7 @@
 			  (hash-table-put! ht (syntax-e name) (cons name l))))
 		      exported-names)
 		     (let ([internal-names
-			    (let loop ([l all-defined-names])
+			    (let loop ([l all-defined-val-names])
 			      (cond
 			       [(null? l) null]
 			       [(let ([v (hash-table-get ht (syntax-e (car l)) (lambda () null))])
@@ -196,55 +230,64 @@
 			 ;; because set! on exported variables is not allowed.
 			 (with-syntax ([(defn&expr ...) 
 					(let ([elocs (syntax->list (syntax (eloc ...)))])
-					  (map (lambda (defn-or-expr)
-						 (syntax-case defn-or-expr (define-values)
-						   [(define-values ids expr)
-						    (let* ([ids (syntax->list (syntax ids))])
-						      (if (null? ids)
-							  (syntax/loc defn-or-expr (set!-values ids expr))
-							  (let ([do-one
-								 (lambda (id tmp name)
-								   (let loop ([evars exported-names]
-									      [elocs elocs])
-								     (cond
-								      [(null? evars)
-								       ;; not an exported id
-								       (with-syntax ([id id][tmp tmp])
-									 (syntax/loc
-									  defn-or-expr
-									  (set! id tmp)))]
-								      [(bound-identifier=? (car evars) id)
-								       ;; set! exported id:
-								       (with-syntax 
-									   ([loc (car elocs)]
-									    [tmp 
-									     (if name
-										 (with-syntax 
-										     ([tmp tmp]
-										      [name name])
-										   (syntax 
-										    (let ([name tmp])
-										      name)))
-										 tmp)])
-									 (syntax/loc
-									  defn-or-expr
-									  (set-box! loc tmp)))]
-								      [else (loop (cdr evars) 
-										  (cdr elocs))])))])
-							    (if (null? (cdr ids))
-								(do-one (car ids) (syntax expr) (car ids))
-								(let ([tmps (generate-temporaries ids)])
-								  (with-syntax ([(tmp ...) tmps]
-										[(set ...)
-										 (map (lambda (id tmp)
-											(do-one id tmp #f))
-										      ids tmps)])
-								    (syntax/loc
-								     defn-or-expr
-								     (let-values ([(tmp ...) expr])
-								       set ...))))))))]
-						   [else defn-or-expr]))
-					       all-expanded))])
+					  (filter
+					   values
+					   (map (lambda (defn-or-expr)
+						  (syntax-case defn-or-expr (define-values define-syntaxes)
+						    [(define-values ids expr)
+						     (let* ([ids (syntax->list (syntax ids))])
+						       (if (null? ids)
+							   (syntax/loc defn-or-expr (set!-values ids expr))
+							   (let ([do-one
+								  (lambda (id tmp name)
+								    (let loop ([evars exported-names]
+									       [elocs elocs])
+								      (cond
+								       [(null? evars)
+									;; not an exported id
+									(with-syntax ([id id][tmp tmp])
+									  (syntax/loc
+									      defn-or-expr
+									      (set! id tmp)))]
+								       [(bound-identifier=? (car evars) id)
+									;; set! exported id:
+									(with-syntax 
+									    ([loc (car elocs)]
+									     [tmp 
+									      (if name
+										  (with-syntax 
+										      ([tmp tmp]
+										       [name name])
+										    (syntax 
+										     (let ([name tmp])
+										       name)))
+										  tmp)])
+									  (syntax/loc defn-or-expr
+									      (set-box! loc tmp)))]
+								       [else (loop (cdr evars) 
+										   (cdr elocs))])))])
+							     (if (null? (cdr ids))
+								 (do-one (car ids) (syntax expr) (car ids))
+								 (let ([tmps (generate-temporaries ids)])
+								   (with-syntax ([(tmp ...) tmps]
+										 [(set ...)
+										  (map (lambda (id tmp)
+											 (do-one id tmp #f))
+										       ids tmps)])
+								     (syntax/loc defn-or-expr
+									 (let-values ([(tmp ...) expr])
+									   set ...))))))))]
+						    [(define-syntaxes . l) #f]
+						    [else defn-or-expr]))
+						all-expanded)))]
+				       [(stx-defn ...) 
+					(filter
+					 values
+					 (map (lambda (defn-or-expr)
+						(syntax-case defn-or-expr (define-syntaxes)
+						  [(define-syntaxes . l) defn-or-expr]
+						  [else #f]))
+					      all-expanded))])
 			   ;; Build up set! redirection chain:
 			   (with-syntax ([redirections
 					  (let ([varlocs 
@@ -276,8 +319,12 @@
 					  (lambda (iloc ...)
 					    (let ([intname undefined] ...)
 					      (letrec-syntaxes+values redirections ()
+						stx-defn ...
 						(void) ; in case the body would be empty
 						defn&expr ...))))))))))))))))))])))
+
+  ;; ----------------------------------------------------------------------
+  ;; check-expected-interface: used by the expansion of `compound-unit'
   
   (define (check-expected-interface tag unit num-imports exports)
     (unless (unit? unit)
@@ -307,6 +354,9 @@
 		i]
 	       [else (loop (cdr l) (add1 i))])))
 	  exports)))
+
+  ;; ----------------------------------------------------------------------
+  ;; The `compound-unit' syntactic form
 
   (define-syntax compound-unit
     (lambda (stx)
@@ -656,6 +706,9 @@
 						      (append . import-mapping))
 					       ...))))))))))))))))))])))
 
+  ;; ----------------------------------------------------------------------
+  ;; check-unit: used by the expansion of `invoke-unit'
+  
   (define (check-unit u n)
     (unless (unit? u)
       (raise
@@ -669,6 +722,9 @@
 		n (unit-num-imports u))
 	(current-continuation-marks)))))
 
+  ;; ----------------------------------------------------------------------
+  ;; The `invoke-unit' syntactic form
+  
   (define-syntax invoke-unit
     (lambda (stx)
       (syntax-case stx (import export)
@@ -687,81 +743,79 @@
 		  ((list-ref ((unit-go u)) 1)
 		   bx ...))))))])))
 
-  (define-syntax do-define-values/invoke-unit
-    (lambda (stx)
-      (syntax-case stx ()
-	[(_ global? exports unite prefix imports orig)
-	 (let* ([badsyntax (lambda (s why)
-			     (raise-syntax-error
-			      (if (syntax-e (syntax global?))
-				  'namespace-variable-bind/invoke-unit
-				  'define-values/invoke-unit)
-			      (format "bad syntax (~a)" why)
-			      (syntax orig)
-			      s))]
-		[symcheck (lambda (s)
-			    (or (identifier? s)
-				(badsyntax s "not an identifier")))])
-	   (unless (stx-list? (syntax exports))
-	     (badsyntax (syntax exports) "not a sequence of identifiers"))
-	   (for-each symcheck (syntax->list (syntax exports)))
-	   (unless (or (not (syntax-e (syntax prefix)))
-		       (identifier? (syntax prefix)))
-	     (badsyntax (syntax prefix) "prefix is not an identifier"))
-	   (for-each symcheck (syntax->list (syntax imports)))
-	   
-	   (with-syntax ([(tagged-export ...) 
-			  (if (syntax-e (syntax prefix))
-			      (let ([prefix (string-append
-					     (symbol->string 
-					      (syntax-e (syntax prefix)))
-					     ":")])
-				(map (lambda (s)
-				       (datum->syntax-object
-					s
-					(string->symbol
-					 (string-append
-					  prefix
-					  (symbol->string (syntax-e s))))
-					s))
-				     (syntax->list (syntax exports))))
-			      (syntax exports))]
-			 [extract-unit (syntax (unit
-						 (import . exports)
-						 (export)
-						 (values . exports)))])
-	     (with-syntax ([invoke-unit (syntax (invoke-unit
-						 (compound-unit
-						  (import . imports)
-						  (link [unit-to-invoke (unite . imports)]
-							[export-extractor 
-							 (extract-unit (unit-to-invoke . exports))])
-						  (export))
-						 . imports))])
-	       (if (syntax-e (syntax global?))
-		   (syntax (let-values ([(tagged-export ...) invoke-unit])
-			     (namespace-variable-binding 'tagged-export tagged-export)
-			     ...
-			     (void)))
-		   (syntax (define-values (tagged-export ...) invoke-unit))))))])))
-    
-  (define-syntax define-values/invoke-unit
-    (lambda (stx)
-      (with-syntax ([orig stx])
-	(syntax-case stx ()
-	  [(_ exports unit name . imports) 
-	   (syntax (do-define-values/invoke-unit #f exports unit name imports orig))]
-	  [(_ exports unit) 
-	   (syntax (do-define-values/invoke-unit #f exports unit #f () orig))]))))
-  
-  (define-syntax namespace-variable-bind/invoke-unit
-    (lambda (stx)
-      (with-syntax ([orig stx])
-	(syntax-case stx ()
-	  [(_ exports unit name . imports) 
-	   (syntax (do-define-values/invoke-unit #t exports unit name imports orig))]
-	  [(_ exports unit) 
-	   (syntax (do-define-values/invoke-unit #t exports unit #f () orig))]))))
+  (define-syntaxes (define-values/invoke-unit
+		     namespace-variable-bind/invoke-unit)
+    (let ([mk
+	   (lambda (global?)
+	     (lambda (stx)
+	       (syntax-case stx ()
+		 [(_ exports unite . prefix+imports)
+		  (let* ([badsyntax (lambda (s why)
+				      (raise-syntax-error
+				       (if global?
+					   'namespace-variable-bind/invoke-unit
+					   'define-values/invoke-unit)
+				       (format "bad syntax (~a)" why)
+				       stx
+				       s))]
+			 [symcheck (lambda (s)
+				     (or (identifier? s)
+					 (badsyntax s "not an identifier")))])
+		    (unless (stx-list? (syntax exports))
+		      (badsyntax (syntax exports) "not a sequence of identifiers"))
+		    (for-each symcheck (syntax->list (syntax exports)))
+		    (let ([prefix (if (stx-null? (syntax prefix+imports))
+				      #f
+				      (stx-car (syntax prefix+imports)))])
+		      (unless (or (not prefix)
+				  (not (syntax-e prefix))
+				  (identifier? prefix))
+			(badsyntax prefix "prefix is not an identifier"))
+		      (for-each symcheck (let ([v (syntax prefix+imports)])
+					   (cond
+					    [(stx-null? v) null]
+					    [(stx-list? v) (cdr (syntax->list v))]
+					    [else
+					     (badsyntax (syntax prefix+imports) "illegal use of `.'")])))
+		      (with-syntax ([(tagged-export ...) 
+				     (if (and prefix (syntax-e prefix))
+					 (let ([prefix (string-append
+							(symbol->string 
+							 (syntax-e prefix))
+						      ":")])
+					   (map (lambda (s)
+						  (datum->syntax-object
+						   s
+						   (string->symbol
+						    (string-append
+						     prefix
+						     (symbol->string (syntax-e s))))
+						   s))
+						(syntax->list (syntax exports))))
+					 (syntax exports))]
+				    [extract-unit (syntax (unit
+							    (import . exports)
+							    (export)
+							    (values . exports)))])
+			(with-syntax ([invoke-unit (with-syntax ([(x . imports)
+								  (if prefix
+								      (syntax prefix+imports)
+								      `(#f))])
+						     (syntax (invoke-unit
+							      (compound-unit
+							       (import . imports)
+							       (link [unit-to-invoke (unite . imports)]
+								     [export-extractor 
+								      (extract-unit (unit-to-invoke . exports))])
+							       (export))
+							      . imports)))])
+			  (if global?
+			      (syntax (let-values ([(tagged-export ...) invoke-unit])
+					(namespace-variable-binding 'tagged-export tagged-export)
+					...
+					(void)))
+			      (syntax (define-values (tagged-export ...) invoke-unit)))))))])))])
+      (values (mk #f) (mk #t))))
   
   (provide unit compound-unit invoke-unit unit?
 	  exn:unit? struct:exn:unit make-exn:unit

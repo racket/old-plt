@@ -52,6 +52,11 @@ TYPES ----------------------------------------------------------------
   there is one, separates it from the rest of the path.  For non-"file"
   schemes, the path is a URL path as defined in the standard.
 
+> url/user
+
+  Extends `url' with a `user' field, which is non-#f when the URL
+  contains a user attached to the host.
+
 > pure-port
 
   A pure port is one from which the MIME headers have been removed, so
@@ -69,12 +74,16 @@ PROCEDURES -----------------------------------------------------------
   This procedure, which used to be provided by this library, is no
   longer supported.
 
-> (string->url string) -> url
+> (string->url string) -> url/user
 
   Turns a string into a URL.  If the string represents a URL with
   scheme "file", the portion of the string past "file:" must respond
   to either absolute-path? or relative-path?.  It is then inserted
   verbatim into the url structure.
+
+  If the string contains encoded characters of the for "%xx" (for hex
+  digits "x"), they are *not* decoded in the resulting url structure.
+  See `url-decode-some-parts' for help decoding.
 
 > (combine-url/relative url string) -> url
 
@@ -133,6 +142,16 @@ PROCEDURES -----------------------------------------------------------
   they might be intended as part of a file path). For a scheme other
   than "file:", if no slash appears after host, then "/" is reported
   as the path.
+
+> (decode-some-url-parts url) -> url
+
+  Applies `uri-decode' to the `scheme', `host', `port', `path', and
+  `fragment' parts of the input URL, and assembles the decoded and
+  remaining parts into a new URL.
+
+  The `params' and `query' parts are not decoded because they are not
+  fully parsed (e.g., a "%xx" encoding might have been used to avoid
+  generating a parameter delimitter).
 
 > (get-pure-port url [list-of-strings]) -> input-port
 
@@ -1966,7 +1985,7 @@ PROCEDURES -----------------------------------------------------------
   Encode a string using the URI encoding rules
 
 > (uri-decode string)
-  : String -> cookie
+  : String -> String
 
   Decode a string encoded using the URI encoding rules
 

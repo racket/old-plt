@@ -13,6 +13,7 @@
   (require (lib "file.ss")
            (lib "unitsig.ss")
 	   (lib "thread.ss")
+	   "uri-codec.ss"
            "url-sig.ss"
            "tcp-sig.ss")
   (provide url@)
@@ -493,6 +494,22 @@
 					 (get-str 4  0 1) ; user
 					 ))
 			(url-error "Invalid URL string: ~e" str))))))))
+	
+      (define (decode-some-url-parts url)
+	(let ([uri-decode/maybe
+	       (lambda (f)
+		 (and f (uri-decode f)))])
+	  (make-url/user (uri-decode/maybe (url-scheme url))
+			 (uri-decode/maybe (url-host url))
+			 (uri-decode/maybe (url-port url))
+			 (uri-decode/maybe (url-path url))
+			 (url-params url)
+			 (url-query url)
+			 (uri-decode/maybe (url-fragment url))
+			 (if (url/user? url)
+			     (uri-decode/maybe (url/user-user url))
+			     #f))))
+
 #|
       Old version. See PR 6152 for information on its replacement.
 

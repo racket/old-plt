@@ -14,6 +14,7 @@
      netscape/string->url		;; (string -> url)
      string->url			;; str -> url
      url->string
+     decode-some-url-parts              ;; url -> url
      call/input-url			;; url x (url -> in-port) x
 					;; (in-port -> T)
 					;; [x list (str)] -> T

@@ -5,7 +5,8 @@
 	   (lib "inflate.ss")
 	   (lib "file.ss")
 	   (lib "unit.ss")
-	   (lib "base64.ss" "net"))
+	   (lib "base64.ss" "net")
+	   (lib "getinfo.ss" "setup"))
 
   ;; Returns a port and a kill thunk
   (define (port64gz->port p64gz)
@@ -43,8 +44,11 @@
       (let ([kind (read p)])
 	(unless (eof-object? kind)
 	  (case kind
-	    [(dir) (let ([s (apply build-path (read p))])
-		     (unless (relative-path? s)
+	    [(dir) (let ([s (let ([v (read p)])
+			      (if (null? v)
+				  'same
+				  (apply build-path v)))])
+		     (unless (or (eq? s 'same) (relative-path? s))
 		       (error "expected a directory name relative path string, got" s))
 		     (when (filter 'dir s plthome)
 		       (let ([d (build-path plthome s)])
@@ -109,7 +113,8 @@
 	(mk-default)))
 
   (define unpack 
-    (opt-lambda (archive [plthome (current-directory)] [print-status (lambda (x) (printf "~a~n" x))])
+    (opt-lambda (archive [plthome (current-directory)] [print-status (lambda (x) (printf "~a~n" x))]
+			 [get-target-directory (lambda () (current-directory))])
       (let*-values ([(p64gz) (open-input-file archive)]
 		    [(p kill) (port64gz->port p64gz)])
 	(dynamic-wind
@@ -136,18 +141,82 @@
 		      [unpacker (call-info info 'unpacker (lambda () #f)
 					   (lambda (n) 
 					     (unless (eq? n 'mzscheme)
-					       (error "unpacker isn't mzscheme:" n))))])
-		  (unless (and name unpacker)
-		    (error "bad name or unpacker"))
-		  (print-status
-		   (format "Unpacking ~a from ~a" name archive))
-		  (let ([u (eval (read p) n)])
-		    (unless (eval `(unit? ,u) n)
-		      (error "expected a unit, got" u))
-		    (let ([plthome plthome]
-			  [unmztar (lambda (filter)
-				     (unmztar p filter plthome print-status))])
-		      (eval `(invoke-unit ,u ,plthome ,unmztar) n))))))
+					       (error "unpacker isn't mzscheme:" n))))]
+		      [target-dir (let ([rel? (call-info info 'plt-relative? (lambda () #f) values)])
+				    (if rel?
+					plthome
+					(get-target-directory)))])
+		  ;; Stop if no target directory:
+		  (when target-dir
+
+		    ;; Check declared dependencies
+		    (call-info info 'requires (lambda () null)
+			       (lambda (l) 
+				 (define (bad)
+				   (error "`requires' info is corrupt:" l))
+				 (unless (list? l) (bad))
+				 ;; Check each dependency:
+				 (for-each
+				  (lambda (d)
+				    (unless (and (list? d) (= 2 (length d)))
+				      (bad))
+				    (let ([coll-path (car d)]
+					  [version (cadr d)])
+				      (unless (and (pair? coll-path)
+						   (list? coll-path)
+						   (andmap string? coll-path)
+						   (list? version)
+						   (andmap number? version))
+					(bad))
+				      (with-handlers ([not-break-exn?
+						       (lambda (x)
+							 (error "cannot install; missing required collection"
+								coll-path))])
+					(apply collection-path coll-path))
+				      (let ([inst-version 
+					     (with-handlers ([not-break-exn? (lambda (x) null)])
+					       (let ([info (get-info coll-path)])
+						 (info 'version (lambda () null))))])
+					(let loop ([v version][iv inst-version])
+					  (unless (null? v)
+					    (when (or (null? iv)
+						      (not (= (car v) (car iv))))
+					      (error (format "cannot install; version ~a of collection ~s is required, but version ~a is installed"
+							     version coll-path 
+							     (if (null? inst-version)
+								 '<unknown>
+								 inst-version))))
+					    (loop (cdr v) (cdr iv)))))))
+				  l)))
+
+		    ;; Check for conflicts:
+		    (call-info info 'conflicts (lambda () null)
+			       (lambda (l) 
+				 (define (bad)
+				   (error "`conflicts' info is corrupt:" l))
+				 (unless (list? l) (bad))
+				 (for-each
+				  (lambda (coll-path)
+				    (unless (and (pair? coll-path)
+						 (list? coll-path)
+						 (andmap string? coll-path))
+				      (bad))
+				    (when (with-handlers ([not-break-exn? (lambda (x) #f)])
+					    (apply collection-path coll-path))
+				      (error "cannot install; conflict with installed collection"
+					     coll-path)))
+				  l)))
+
+		    (unless (and name unpacker)
+		      (error "bad name or unpacker"))
+		    (print-status
+		     (format "Unpacking ~a from ~a" name archive))
+		    (let ([u (eval (read p) n)])
+		      (unless (eval `(unit? ,u) n)
+			(error "expected a unit, got" u))
+		      (let ([unmztar (lambda (filter)
+				       (unmztar p filter target-dir print-status))])
+			(eval `(invoke-unit ,u ,target-dir ,unmztar) n)))))))
 	    (lambda ()
 	      (kill)
 	      (close-input-port p64gz))))))

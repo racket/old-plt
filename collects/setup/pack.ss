@@ -1,23 +1,21 @@
-
 ;; Utilities for creating a .plt package
 (module pack mzscheme
   (require (lib "deflate.ss")
            (lib "base64.ss" "net")
-           (lib "process.ss"))
+           (lib "process.ss")
+	   (lib "etc.ss"))
 
   (provide pack mztar std-filter)
   
   (define pack
-    (case-lambda
-     [(dest name paths collections)
-      (pack dest name paths collections std-filter #t 'file)]
-     [(dest name paths collections filter)
-      (pack dest name paths collections filter #t 'file)]
-     [(dest name paths collections filter encode?)
-      (pack dest name paths collections filter encode? 'file)]
-     [(dest name paths collections filter encode? file-mode)
-      (pack dest name paths collections filter encode? file-mode #f)]
-     [(dest name paths collections filter encode? file-mode unpack-unit)
+    (opt-lambda (dest name paths collections
+		      [filter std-filter]
+		      [encode? #t]
+		      [file-mode 'file]
+		      [unpack-unit #f]
+		      [plt-relative? #t]
+		      [requires null]
+		      [conflicts null])
       (let*-values ([(file) (open-output-file dest 'truncate/replace)]
                     [(fileout thd)
                      (if encode?
@@ -90,7 +88,10 @@
          `(lambda (request failure)
             (case request
               [(name) ,name]
-              [(unpacker) 'mzscheme]))
+              [(unpacker) 'mzscheme]
+	      [(requires) ',requires]
+	      [(conflicts) ',conflicts]
+	      [(plt-relative?) ,plt-relative?]))
          fileout)
         (newline fileout)
         (write
@@ -107,23 +108,27 @@
            (mztar path fileout filter file-mode))
          paths)
         (close-output-port fileout)
-        (thread-wait thd))]))
+        (thread-wait thd))))
   
   (define (mztar path output filter file-mode)
     (define (path->list p)
-      (let-values ([(base name dir?) (split-path p)])
-	(if (string? base)
-	    (append (path->list base) (list name))
-	    (list name))))
+      (if (eq? p 'same)
+	  null
+	  (let-values ([(base name dir?) (split-path p)])
+	    (if (string? base)
+		(append (path->list base) (list name))
+		(list name)))))
     (define-values (init-dir init-files)
       (if (file-exists? path)
           (let-values ([(base name dir?) (split-path path)])
-            (values base (list name)))
+            (values (if (eq? base 'relative) 'same base) (list name)))
           (values path #f)))
     
     (let loop ([dir init-dir][dpath (path->list init-dir)][files init-files])
-      (printf "MzTarring ~a~a...~n" dir
-              (if files (car files) ""))
+      (printf "MzTarring ~a...~n" 
+	      (if files
+		  (build-path dir (car files))
+		  dir))
       (fprintf output "~s~n~s~n" 'dir dpath)
       (for-each
        (lambda (f)

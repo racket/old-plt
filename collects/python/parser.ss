@@ -4,7 +4,11 @@
            (lib "readerr.ss" "syntax")
            (lib "class.ss")
            (lib "contracts.ss")
-           "compiler.ss")
+	   "compiler.ss"
+           "compiler-expr.ss"
+           "compiler-stmt.ss"
+           "compiler-target.ss")
+           
   
   (provide/contract
    (build-ast (input-port? . -> . (listof (is-a?/c ast-node%))))

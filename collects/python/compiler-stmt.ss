@@ -1,8 +1,9 @@
 (module compiler-stmt mzscheme
   (require (lib "class.ss")
-	   "compiler.ss")
+	   "compiler.ss"
+	   "compiler-expr.ss")
 
-  (provide-all-defined-except bindings-mixin)
+  (provide (all-defined-except bindings-mixin))
 
   (define statement%
     (class ast-node%

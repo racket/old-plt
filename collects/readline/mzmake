@@ -37,6 +37,9 @@ string=? ; exec ${PLTHOME}/bin/mzscheme -qr $0 "$@"
 	   (file-exists? "/usr/lib/libreadline.so"))
       (set! mach-id 'i386-linux/readline))
 
+(define readline-in-/usr/local/gnu?
+  (directory-exists? "/usr/local/gnu/include/readline"))
+
 ; Compiler flags
 (case mach-id
   [(sparc-solaris i386-solaris i386-linux)
@@ -44,7 +47,10 @@ string=? ; exec ${PLTHOME}/bin/mzscheme -qr $0 "$@"
 	      (list "-I/home/mflatt/proj/readline-2.1"))]
   [(rs6k-aix)
    (add-flags current-extension-compiler-flags
-	      (list "-DNEEDS_SELECT_H"))]
+	      (cons "-DNEEDS_SELECT_H"
+		    (if readline-in-/usr/local/gnu?
+			(list "-I/usr/local/gnu/include")
+			null)))]
   [else (void)])
 
 ; Linker flags
@@ -61,7 +67,14 @@ string=? ; exec ${PLTHOME}/bin/mzscheme -qr $0 "$@"
    (add-flags current-extension-linker-flags
 	      (list "--whole-archive"
 		    "/home/mflatt/proj/readline-2.1/linux/libreadline.a"))]
-  [else (add-flags current-extension-linker-flags (list "-L/usr/local/lib" "-lreadline"))])
+  [else (add-flags current-extension-linker-flags 
+		   (list (if readline-in-/usr/local/gnu?
+			     "-L/usr/local/gnu/lib"
+			     "-L/usr/local/lib")
+			 "-lreadline"))
+	(when (eq? mach-id 'rs6k-aix)
+	      (add-flags current-extension-linker-flags 
+			 (list "-lc")))])
 
 (add-flags current-extension-linker-flags (list "-lcurses"))
 

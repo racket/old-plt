@@ -61,7 +61,8 @@
 			   define-some do opt-lambda send*
 			   local catch
 			   unit unit/sig compound-unit/sig 
-			   with-handlers
+			   with-handlers with-parameterization
+			   parameterize
 			   call-with-input-file with-input-from-file
 			   with-input-from-port call-with-output-file
 			   with-output-to-file with-output-to-port))

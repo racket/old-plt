@@ -141,7 +141,7 @@
         `(begin
            (void)
            ,@(map (lambda (ce)
-                    `(namespace-require ,(cache-entry-require-spec ce)))
+                    `(namespace-require ',(cache-entry-require-spec ce)))
                   (teachpack-cache-tps cache))))
       
       ;; launcher-modules-to-embed : teachpack-cache -> (listof module-spec)

@@ -2,7 +2,7 @@
 ;;
 ;; reduction-tests.ss
 ;; Richard Cobbe
-;; $Id: reduction-tests.ss,v 1.14 2004/06/03 19:34:39 cobbe Exp $
+;; $Id: reduction-tests.ss,v 1.1 2004/07/27 22:41:35 cobbe Exp $
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -16,66 +16,35 @@
            "parser.ss"
            "store.ss")
 
-  (require/expose "reduction.ss" (aj-subst aj-syntax
-                                           texpr->rexpr
-                                           make-instance
-                                           get-acq-field
-                                           aj-reductions))
+  (require/expose "reduction.ss" ())
 
   (define test-program-src
-    '((class numerics object ()
-        ([int i]
-         [bool b])
-        (contain) (acquire)
+    '((class numerics object ([int i] [bool b])
         (int factorial ([int n])
              (if (zero? n) 1 (* n (send this factorial (- n 1))))))
-      (class container object ()
-        ()
-        (contain [blist l]
-                 [dag-node node])
-        (acquire))
       (class base object ()
-        () (contain) (acquire)
         (int f () 3))
       (class derived base ()
-        () (contain) (acquire)
         (int f () (+ (super f) 1)))
-      (class blist object (container bcons)
-        () (contain) (acquire)
+      (class blist object
         (int length () -1)
         (bool andmap () false))
-      (class bempty blist (container bcons)
-        () (contain) (acquire)
+      (class bempty blist
         (int length () 0)
         (bool andmap () true))
-      (class bcons blist (container bcons)
-        ([bool value])
-        (contain [blist next])
-        (acquire)
+      (class bcons blist
+        ([bool value] [blist next])
         (int length () (+ 1 (send (ivar this next) length)))
         (bool andmap () (if (ivar this value)
                             (send (ivar this next) andmap)
                             false)))
-      (class dag-node object (container dag-node)
+      (class dag-node object
+        ([dag-node left] [dag-node right]))
+      (class statics object
         ()
-        (contain [dag-node left]
-                 [dag-node right])
-        (acquire))
-      (class statics object ()
-        ()
-        (contain)
-        (acquire)
         (blist get-list ()
                (let c (new container (new bempty) null)
                  (ivar c l))))
-      (class acq-container object ()
-        ([int field])
-        (contain [acq-contained c])
-        (acquire))
-      (class acq-contained object (acq-container)
-        ()
-        (contain)
-        (acquire [int field]))
       null))
 
   (define test-program (elab-program (parse-program test-program-src)))
@@ -84,55 +53,55 @@
    (make-test-suite "AJava Reduction Tests"
 
      (make-test-case "constant/variable substitution"
-       (assert-equal? (aj-subst 'x 3 '(send y x x null true false 4 this))
+       (assert-equal? (cj-subst 'x 3 '(send y x x null true false 4 this))
                       '(send y x 3 null true false 4 this)))
 
      (make-test-case "substitution: ctor"
-       (assert-equal? (aj-subst 'c 'null '(new c c (ivar c x)))
+       (assert-equal? (cj-subst 'c 'null '(new c c (ivar c x)))
                       '(new c null (ivar null x))))
 
      (make-test-case "substitution: ivar"
-       (assert-equal? (aj-subst 'x 3 '(ivar (send x fd) x))
+       (assert-equal? (cj-subst 'x 3 '(ivar (send x fd) x))
                       '(ivar (send 3 fd) x)))
 
      (make-test-case "substitution: send"
-       (assert-equal? (foldl aj-subst '(send a b c (ivar d y) e null 3)
+       (assert-equal? (foldl cj-subst '(send a b c (ivar d y) e null 3)
                              '(a b c d e)
                              '(6 7 8 9 10))
                       '(send 6 b 8 (ivar 9 y) 10 null 3)))
 
      (make-test-case "substitution: super"
-       (assert-equal? (foldl aj-subst
+       (assert-equal? (foldl cj-subst
                              '(super a b c d (ivar e field) f null 3)
                              '(a b c d e f)
                              '(11 12 13 14 15 16))
                       '(super 11 b c 14 (ivar 15 field) 16 null 3)))
 
      (make-test-case "substitution: cast"
-       (assert-equal? (aj-subst 'x 42 '(cast x (ivar x fd)))
+       (assert-equal? (cj-subst 'x 42 '(cast x (ivar x fd)))
                       '(cast x (ivar 42 fd))))
 
      (make-test-case "substitution: let (not bound var)"
-       (assert-equal? (aj-subst 'x 42 '(let y (ivar x z)
+       (assert-equal? (cj-subst 'x 42 '(let y (ivar x z)
                                          (new a x y z)))
                       '(let y (ivar 42 z) (new a 42 y z))))
 
      (make-test-case "substitution: let bound var"
-       (assert-equal? (aj-subst 'x 42 '(let x (ivar x foo)
+       (assert-equal? (cj-subst 'x 42 '(let x (ivar x foo)
                                          (new a x y z)))
                       '(let x (ivar 42 foo)
                          (new a x y z))))
 
      (make-test-case "substitution: binary prim"
-       (assert-equal? (aj-subst 'x 42 '(+ (ivar x size) (ivar y size)))
+       (assert-equal? (cj-subst 'x 42 '(+ (ivar x size) (ivar y size)))
                       '(+ (ivar 42 size) (ivar y size))))
 
      (make-test-case "substitution: unary prim"
-       (assert-equal? (aj-subst 'x 42 '(null? (ivar x parent)))
+       (assert-equal? (cj-subst 'x 42 '(null? (ivar x parent)))
                       '(null? (ivar 42 parent))))
 
      (make-test-case "substitution: if"
-       (assert-equal? (aj-subst 'x 42 '(if (ivar x flag)
+       (assert-equal? (cj-subst 'x 42 '(if (ivar x flag)
                                            (ivar x this)
                                            (ivar x that)))
                       '(if (ivar 42 flag)

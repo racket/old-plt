@@ -2,7 +2,7 @@
 ;;
 ;; reduction.ss
 ;; Richard Cobbe
-;; $Id: reduction.ss,v 1.2 2004/08/24 20:36:07 cobbe Exp $
+;; $Id: reduction.ss,v 1.3 2004/08/31 19:49:03 cobbe Exp $
 ;;
 ;; Contains the definition of ClassicJava for PLT Redex
 ;;
@@ -12,6 +12,7 @@
 
   (require (lib "reduction-semantics.ss" "reduction-semantics")
            (lib "subst.ss" "reduction-semantics")
+           (lib "contract.ss")
            (lib "list.ss")
            (lib "etc.ss")
            (lib "plt-match.ss")
@@ -49,7 +50,7 @@
                                    null Object true false)]
 
               [class-name Object id]
-              [binop + - * == and or]
+              [binop + - * ==]
               [unop not null? zero?]
 
               [value null
@@ -68,6 +69,8 @@
                     (let id expr expr)
                     (binop expr expr)
                     (unop expr)
+                    (and expr expr)
+                    (or expr expr)
                     (if expr expr expr)]
 
               [store any]
@@ -84,25 +87,32 @@
                        (let id context expr)
                        (binop context expr)
                        (binop value context)
+                       (and context expr)
+                       (or context expr)
                        (unop context)
                        (if context expr expr)]))
 
   ;; Can't use #t or #f as literals in the language because the PLT Redex
   ;; pattern matcher can't deal with booleans.
 
+  ;; x -> Boolean
   (define cj-id? (language->predicate cj-lang 'id))
+  (define cj-value? (language->predicate cj-lang 'value))
+  (define cj-expr? (language->predicate cj-lang 'expr))
 
+  ;; Boolean -> Value
   (define bool->rexp
     (lambda (b)
       (if b 'true 'false)))
 
+  ;; Value -> Boolean
   (define rexp->bool
     (lambda (r)
       (cond
        [(eq? r 'true) #t]
        [(eq? r 'false) #f])))
 
-  ;; delta-1 :: Unary-Prim Value -> Value
+  ;; Unary-Prim Value -> Value
   ;; implements unary primitives
   (define delta-1
     (lambda (rator rand)
@@ -111,7 +121,7 @@
         [(zero?) (bool->rexp (= rand 0))]
         [(not) (bool->rexp (not (rexp->bool rand)))])))
 
-  ;; delta-2 :: Unary-Prim Value Value -> Value
+  ;; Binary-Prim Value Value -> Value
   ;; implements binary primitives
   (define delta-2
     (lambda (op r1 r2)
@@ -119,11 +129,10 @@
         [(+) (+ r1 r2)]
         [(-) (- r1 r2)]
         [(*) (* r1 r2)]
-        [(==) (bool->rexp (= r1 r2))]
-        [(and) (bool->rexp (and (rexp->bool r1) (rexp->bool r2)))]
-        [(or) (bool->rexp (or (rexp->bool r1) (rexp->bool r2)))])))
+        [(==) (bool->rexp (= r1 r2))])))
 
-  ;; subst-args :: Tagged-Expr (Listof Value) (Listof ID) -> RExpr
+  ;; Tagged-Expr (Listof Value) (Listof ID) -> RExpr
+  ;; replaces free ids with vals in expr.
   (define subst-args
     (lambda (expr vals ids)
       (foldl cj-subst (texpr->rexpr expr) ids vals)))
@@ -182,7 +191,7 @@
       (subterm '() e2)
       (subterm '() e3)]))
 
-  ;; texpr->rexpr :: Tagged-Expr -> Reduction-Expr
+  ;; Tagged-Expr -> Reduction-Expr
   ;; Converts a tagged expression AST into a reduction-expr that the reduction
   ;; rules can parse.
   (define texpr->rexpr
@@ -387,6 +396,32 @@
              ,(replace (term context_) (term hole)
                        (delta-2 (term unop_) (term value_1) (term value_2)))))]
 
+     ;; [and-true]
+     [reduction
+      cj-lang
+      (program_ store_ (inhole context_ (and true expr_)))
+      (term (program_ store_
+                      ,(replace (term context_) (term hole) (term expr_))))]
+
+     ;; [and-false]
+     [reduction
+      cj-lang
+      (program_ store_ (inhole context_ (and false expr_)))
+      (term (program_ store_ ,(replace (term context_) (term hole) false)))]
+
+     ;; [or-true]
+     [reduction
+      cj-lang
+      (program_ store_ (inhole context_ (or true expr_)))
+      (term (program_ store_ ,(replace (term context_) (term hole) true)))]
+
+     ;; [or-false]
+     [reduction
+      cj-lang
+      (program_ store_ (inhole (context_ (or false expr_))))
+      (term (program_ store_
+                      ,(replace (term context_) (term hole) (term expr_))))]
+
      ;; [if-true]
      [reduction
       cj-lang
@@ -403,7 +438,8 @@
              store_
              ,(replace (term context_) (term hole) (term expr_2))))]))
 
-  ;; create-instance :: Program Class-Name -> Instance
+  ;; Program Class-Name -> Instance
+  ;; creates an instance with sane initial values for all fields
   (define create-instance
     (lambda (p cn)
       (let* ([ctype (make-class-type cn)]
@@ -420,7 +456,8 @@
                                        [else 'null])))
                         fields)))))
 
-  ;; get-field-val :: Instance Class-Name Field-Name -> Value
+  ;; Instance Class-Name Field-Name -> Value
+  ;; looks up field value within instance
   (define get-field-val
     (lambda (inst class fd)
       (let ([c (make-class-type class)])
@@ -433,7 +470,8 @@
                     (ivar-value ivar)
                     (loop (cdr ivars)))))))))
 
-  ;; update-field :: Instance Class-Name Field-Name Value -> Instance
+  ;; Instance Class-Name Field-Name Value -> Instance
+  ;; updates field value in instance
   (define update-field
     (lambda (inst class fd rhs)
       (let ([c (make-class-type class)])
@@ -450,4 +488,23 @@
                                       rhs)
                            (cdr ivars))
                      (cons (car ivars)
-                           (loop (cdr ivars))))))))))))
+                           (loop (cdr ivars)))))))))))
+
+  (provide/contract [cj-lang compiled-lang?]
+                    [struct ivar ([class class-type?]
+                                  [name field-name?]
+                                  [value cj-value?])]
+                    [struct instance ([class class-type?]
+                                      [fields (listof ivar?)])]
+
+                    [cj-id? predicate?]
+                    [cj-value? predicate?]
+                    [cj-expr? predicate?]
+                    [subst-args (-> tagged-expr? (listof cj-value?)
+                                    (listof cj-id?) cj-expr?)]
+                    [cj-subst (-> cj-id? cj-expr? cj-expr?)]
+                    [texpr->rexpr (-> tagged-expr? cj-expr?)]
+                    [cj-reductions (listof red?)]
+
+
+  )

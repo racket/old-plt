@@ -1,8 +1,8 @@
 Version 104:
 
 Fixed/added types of list*, make-custodian, read-string, read-string-avail!,
- read-string-avail!/enable-break, read-lin, functions related to continuation
- marks
+ read-string-avail!/enable-break, read-line, functions related to 
+ continuation marks, regexp-match, regexp-match-positions
 
 Version 103:
 

@@ -1,4 +1,4 @@
-;; $Id: gears.ss,v 1.2 2003/06/19 00:13:31 sowens Exp $
+;; $Id: gears.ss,v 1.3 2003/06/20 20:04:26 sowens Exp $
 ;;
 ;; This is a version of the venerable "gears" demo for PLT Scheme 200 using
 ;; Scott Owens' SGL OpenGL bindings.  It was ported from "glxgears.c" 1.3 from
@@ -38,7 +38,8 @@
          (lib "math.ss")
          (prefix gl- (lib "sgl.ss" "sgl"))
          (lib "gl-vectors.ss" "sgl"))
-
+         
+         
 (define controls? #t)
 
 (define gears-canvas%

@@ -1,3 +1,36 @@
+glPixelMap
+glDeleteTextures
+glGenTextures
+glAreTexturesResident
+glGenQueries
+glGetBooleanv
+glGetIntegerv
+glGetFloatv
+glGetDoublev
+glGetClipPlane
+glGetLight
+glGetMaterial
+glGetTexEnv
+glGetTexGen
+glGetTexParameter
+glGetTexLevelParameter
+glGetPixelMap
+glGetMap
+glGetBufferParameter
+glGetConvolutionParameter
+glGetHistogramParameter
+glGetMinmaxParameter
+glGetString
+glGetQuery
+glDeleteQueries
+glGetQueryObject
+gluPickMatrix
+gluProject
+gluUnProject
+gluUnProject4
+gluErrorString
+glSelectBuffer
+glFeedbackBuffer
 
 _GL_/_OpenGL_ bindings for PLT Scheme
 

@@ -1,6 +1,6 @@
 ;; sgl -- An OpenGL extension of MzScheme
 ;;
-;; Copyright (C) 2003 Scott Owens <sowens@cs.utah.edu>
+;; Copyright (C) 2003-2005 Scott Owens <sowens@cs.utah.edu>
 ;;
 ;; This  library is  free  software; you  can  redistribute it  and/or
 ;; modify it under the terms  of the GNU Lesser General Public License
@@ -18,29 +18,12 @@
            "gl.ss")
   
   
-  (define-syntax-set (multi-type multi-type-v make-enum-table make-inv-enum-table)
+  (define-syntax-set (multi-arg multi-type-v)
     
     (define (iota n)
       (cond
         ((= 0 n) null)
         (else (cons n (iota (sub1 n))))))
-    
-    (define (make-name base num type num?)
-      (datum->syntax-object base (string->symbol (format "~a~a~a"
-                                                         (syntax-e base)
-                                                         (if num? num "")
-                                                         type))
-        base base))
-    
-    (define (get-possible-types ts)
-      (combine-str
-       (map (lambda (t)
-              (case t
-                ((i s b) "exact integer")
-                ((ui us ub) "non-negative exact integer")
-                ((f d) "real number")
-                (else (error (format "error: ~a" t)))))
-            ts)))
     
     (define (get-possible-types-v ts)
       (combine-str
@@ -56,7 +39,7 @@
                 ((fv) "gl-float-vector")
                 (else (error (format "~a" t)))))
             ts)))
-    
+
     (define (combine-str strs)
       (cond
         ((null? strs) "")
@@ -65,862 +48,860 @@
         (else
          (string-append (car strs) ", " (combine-str (cdr strs))))))
         
-    (define (multi-type/proc stx)
+    (define (multi-arg/proc stx)
       (syntax-case stx ()
-        ((_ name gl-name num-args types num?)
-         (let ((num-args (syntax-object->datum #'num-args))
-               (types (syntax-object->datum #'types)))
-           #`(define name
-               (case-lambda
-                 #,@(map (lambda (num-arg)
-                           (let ((arg-list (generate-temporaries (iota num-arg))))
-                             #`(#,arg-list
-                                (cond
-                                  #,@(map (lambda (type)
-                                            #`(#,(cond
-                                                   ((memq type '(i s b))
-                                                    #`(and 
-                                                       #,@(apply append 
-                                                                 (map
-                                                                  (lambda (arg)
-                                                                    (list  
-                                                                     #`(real? #,arg)
-                                                                     #`(exact? #,arg)
-                                                                     #`(integer? #,arg)))
-                                                                  arg-list))))
-                                                   ((memq type '(ui us ub))
-                                                    #`(and 
-                                                       #,@(apply append 
-                                                                 (map
-                                                                  (lambda (arg)
-                                                                    (list  
-                                                                     #`(real? #,arg)
-                                                                     #`(exact? #,arg)
-                                                                     #`(integer? #,arg)
-                                                                     #`(>= #,arg 0)))
-                                                                  arg-list))))
-                                                   ((memq type '(d f))
-                                                    #`(and
-                                                       #,@(map (lambda (arg)
-                                                                 #`(real? #,arg))
-                                                               arg-list))))
-                                                (#,(make-name #'gl-name num-arg type
-                                                              (syntax-e #'num?))
-                                                  #,@arg-list)))
-                                          types)
-                                  (else (raise-type-error 'name
-                                                          #,(get-possible-types types)
-                                                          (list #,@arg-list)))))))
-                         num-args)))))))
-  (define (multi-type-v/proc stx)
+        ((_ name gl-name ((pre-arg-name pre-arg) ...) (num-arg ...))
+         (let ((build-clause
+                (lambda (num-arg)
+                  (with-syntax (((arg ...)
+                                 (generate-temporaries (iota num-arg)))
+                                (gl-name
+                                 (datum->syntax-object
+                                  #'gl-name
+                                  (string->symbol
+                                   (format "~a~ad"
+                                           (syntax-object->datum #'gl-name)
+                                           num-arg))
+                                  #'gl-name
+                                  #'gl-name)))
+                    #`((pre-arg-name ... arg ...)
+                       (cond
+                         ((and (real? arg) ...)
+                          (gl-name pre-arg ... arg ...))
+                         (else (raise-type-error 'name
+                                                 "real numbers"
+                                                 (list arg ...)))))))))
+           (with-syntax (((clauses ...)
+                          (map build-clause
+                               (syntax-object->datum  #'(num-arg ...)))))
+             #`(define name
+                 (case-lambda clauses ...)))))))
+    
+    (define (multi-type-v/proc stx)
       (syntax-case stx ()
-        ((_ name gl-name lengths types num?)
-         (let ((lengths (syntax-object->datum #'lengths))
-               (types (syntax-object->datum #'types)))
-           #`(define (name x)
-               (cond
-                 #,@(map (lambda (type)
-                           #`((#,(case type
-                                   ((dv) #'gl-double-vector?)
-                                   ((fv) #'gl-float-vector?)
-                                   ((iv) #'gl-int-vector?)
-                                   ((sv) #'gl-short-vector?)
-                                   ((bv) #'gl-byte-vector?)
-                                   ((uiv) #'gl-uint-vector?)
-                                   ((usv) #'gl-ushort-vector?)
-                                   ((ubv) #'gl-ubyte-vector?))
-                                x)
-                              (let ((len (#,(case type
-                                              ((dv) #'gl-double-vector-length)
-                                              ((fv) #'gl-float-vector-length)
-                                              ((iv) #'gl-int-vector-length)
-                                              ((sv) #'gl-short-vector-length)
-                                              ((bv) #'gl-byte-vector-length)
-                                              ((uiv) #'gl-uint-vector-length)
-                                              ((usv) #'gl-ushort-vector-length)
-                                              ((ubv) #'gl-ubyte-vector-length))
-                                           x)))
-                                (case len
-                                  #,@(map (lambda (length)
-                                            #`((#,length)
-                                               (#,(make-name #'gl-name length type
-                                                             (syntax-e #'num?))
-                                                 x)))
-                                          lengths)))))
-                         types)
-                 (else
-                  (raise-type-error 'name #,(get-possible-types-v types) x))))))))
+        ((_ name gl-name ((pre-arg-name pre-arg ) ...)
+            (length ...) (type ...) num? )
+         (with-syntax ((arg (car (generate-temporaries (list #'name)))))
+           (let* ((num? (syntax-object->datum #'num?))
+                  (lengths (syntax-object->datum #'(length ...)))
+                  (build-clause
+                   (lambda (type)
+                     (with-syntax ((pred?
+                                   (case type
+                                     ((dv) #'gl-double-vector?)
+                                     ((fv) #'gl-float-vector?)
+                                     ((iv) #'gl-int-vector?)
+                                     ((sv) #'gl-short-vector?)
+                                     ((bv) #'gl-byte-vector?)
+                                     ((uiv) #'gl-uint-vector?)
+                                     ((usv) #'gl-ushort-vector?)
+                                     ((ubv) #'gl-ubyte-vector?)))
+                                   ((clause ...)
+                                    (map 
+                                     (lambda (length)
+                                       (with-syntax ((name 
+                                                      (datum->syntax-object
+                                                       #'gl-name
+                                                       (string->symbol
+                                                        (format "~a~a~a"
+                                                                (syntax-object->datum #'gl-name)
+                                                                (if num? length "")
+                                                                type))
+                                                       #'gl-name
+                                                       #'gl-name)))
+                                         #`((#,length) (name pre-arg ... arg))))
+                                     lengths)))
+                       #`((pred? arg)
+                          (case (gl-vector-length arg)
+                            clause ...
+                            (else (error
+                                   'name
+                                   "expects vector with length in ~a: given vector has length ~a" 
+                                   '(length ...)
+                                   (gl-vector-length arg))))))))
+                  (types (syntax-object->datum #'(type ...))))
+             (with-syntax (((clause ...) (map build-clause types)))
+               #`(define (name pre-arg-name ... arg)
+                   (cond
+                     clause ...
+                     (else
+                      (raise-type-error 'name 
+                                        #,(get-possible-types-v types)
+                                        arg)))))))))))
   
-    (define gl-regex2 (regexp "(^GLU\\-)|(^GL\\-)"))
-    (define _-regex (regexp "_"))
+  (define-for-syntax gl-regex2 (regexp "(^GLU\\-)|(^GL\\-)"))
+  (define-for-syntax _-regex (regexp "_"))
     
-    (define (string-downcase s)
-      (list->string (map char-downcase (string->list s))))
-    
-    (define (translate-cname name)
-      (string->symbol
-       (string-downcase
-        (regexp-replace* gl-regex2
-                         (regexp-replace* _-regex
-                                          (symbol->string name)
-                                          "-")
-                         ""))))
-    
-    (define (make-enum-table/proc stx)
-      (syntax-case stx ()
-        ((_ consts ...)
-         (let* ((consts (syntax->list #'(consts ...)))
-                (syms (map translate-cname (map syntax-e consts))))
-           (quasisyntax/loc stx
+  (define-for-syntax (string-downcase s)
+    (list->string (map char-downcase (string->list s))))
+  
+  (define-for-syntax (translate-cname name)
+    (string->symbol
+     (string-downcase
+      (regexp-replace* gl-regex2
+                       (regexp-replace* _-regex
+                                        (symbol->string name)
+                                        "-")
+                       ""))))
+  
+  (define-syntax (make-enum-table stx)
+    (syntax-case stx ()
+      ((_ name const ...)
+       (with-syntax (((sym ...)
+                      (map translate-cname
+                           (syntax-object->datum #'(const ...)))))
+         (quasisyntax/loc stx
+           (define name
              (let ((ht (make-hash-table)))
                (for-each (lambda (key value)
                            (hash-table-put! ht key value))
-                         '#,syms (list #,@consts))
-               (values
-                (lambda (enum-sym)
-                  (hash-table-get ht enum-sym (lambda () #f)))
-                (format "symbol in ~a" '#,syms))))))))
-    
-    (define (make-inv-enum-table/proc stx)
-      (syntax-case stx ()
-        ((_ consts ...)
-         (let* ((consts (syntax->list #'(consts ...)))
-                (syms (map translate-cname (map syntax-e consts))))
-           (quasisyntax/loc stx
+                         '(sym ...) (list const ...))
+               (lambda (enum-sym name)
+                 (let ((v (hash-table-get ht enum-sym (lambda () #f))))
+                   (unless v
+                     (raise-type-error name
+                                       (format "symbol in ~a" '(sym ...))
+                                       enum-sym))
+                   v)))))))))
+  
+  (define-syntax (make-inv-enum-table stx)
+    (syntax-case stx ()
+      ((_ name const ...)
+       (with-syntax (((sym ...)
+                      (map translate-cname
+                           (syntax-object->datum #'(const ...)))))
+         (quasisyntax/loc stx
+           (define name
              (let ((ht (make-hash-table)))
                (for-each (lambda (key value)
                            (hash-table-put! ht key value))
-                         (list #,@consts) '#,syms)
+                         (list const ...) '(sym ...))
                (lambda (enum-val)
-                 (hash-table-get ht enum-val (lambda () #f)))))))))
-    )
+                 (hash-table-get ht enum-val (lambda () #f))))))))))
+    
+  (define check-length
+    (case-lambda
+      ((name v desired-length sym)
+       (unless (= desired-length (gl-vector-length v))
+         (error name "expects vector of length ~a for ~a: argument vector has length ~a"
+                desired-length sym (gl-vector-length v))))
+      ((name v desired-length)
+       (unless (= desired-length (gl-vector-length v))
+         (error name "expects vector of length: argument vector has length ~a"
+                desired-length (gl-vector-length v))))))
+
+  ;; 2.5
+  (provide get-error)
+  (make-inv-enum-table get-error-table
+                       GL_NO_ERROR 
+                       GL_INVALID_ENUM
+                       GL_INVALID_VALUE
+                       GL_INVALID_OPERATION
+                       GL_STACK_OVERFLOW
+                       GL_STACK_UNDERFLOW
+                       GL_OUT_OF_MEMORY)
+  (define (get-error)
+    (get-error-table (glGetError)))
+
+  ;; 2.6.1
+  (provide (rename gl-begin begin) (rename glEnd end))
+  (make-enum-table begin-table
+                   GL_LINES
+                   GL_LINE_LOOP
+                   GL_LINE_STRIP
+                   GL_POINTS
+                   GL_POLYGON
+                   GL_QUADS
+                   GL_QUAD_STRIP
+                   GL_TRIANGLES
+                   GL_TRIANGLE_FAN
+                   GL_TRIANGLE_STRIP)
+  (define (gl-begin enum)
+    (glBegin (begin-table enum 'begin)))
   
-  (provide (rename gl-begin begin)
-           
-           (rename glEnd end)
-           (rename glEdgeFlag edge-flag)
-           (rename glEdgeFlagv edge-flag-v)
-           (rename glDepthRange depth-range)
-           (rename glViewport viewport)
+  ;; 2.6.2
+  (provide (rename glEdgeFlag edge-flag))
+
+  ;; 2.7
+  (provide vertex vertex-v
+           tex-coord tex-coord-v
+           multi-tex-coord multi-tex-coord-v
+           (rename glNormal3d normal) normal-v
+           color color-v
+           (rename glSecondaryColor3d secondary-color) secondary-color-v
+           (rename glIndexd index) index-v)
+
+  (multi-arg vertex glVertex () (2 3 4))
+  (multi-type-v vertex-v glVertex () (2 3 4) (dv iv fv sv) #t)
+  (multi-arg tex-coord glTexCoord () (1 2 3 4))
+  (multi-type-v tex-coord-v glTexCoord () (1 2 3 4) (dv iv fv sv) #t)
+  (make-enum-table multi-tex-coord-table
+                   GL_TEXTURE0 GL_TEXTURE1 GL_TEXTURE2 GL_TEXTURE3 GL_TEXTURE4
+                   GL_TEXTURE5 GL_TEXTURE6 GL_TEXTURE7 GL_TEXTURE8 GL_TEXTURE9
+                   GL_TEXTURE10 GL_TEXTURE11 GL_TEXTURE12 GL_TEXTURE13
+                   GL_TEXTURE14 GL_TEXTURE15 GL_TEXTURE16 GL_TEXTURE17
+                   GL_TEXTURE18 GL_TEXTURE19 GL_TEXTURE20 GL_TEXTURE21
+                   GL_TEXTURE22 GL_TEXTURE23 GL_TEXTURE24 GL_TEXTURE25
+                   GL_TEXTURE26 GL_TEXTURE27 GL_TEXTURE28 GL_TEXTURE29
+                   GL_TEXTURE30 GL_TEXTURE31)
+  (multi-arg multi-tex-coord glMultiTexCoord
+             ((e (multi-tex-coord-table e 'multi-tex-coord)))
+             (1 2 3 4))
+  (multi-type-v multi-tex-coord-v glMultiTexCoord
+                ((e (multi-tex-coord-table e 'multi-tex-coord)))
+                (1 2 3 4)
+                (sv iv fv dv)
+                #t)
+  (multi-type-v normal-v glNormal () (3) (dv iv fv sv bv) #t)
+  (multi-arg color glColor () (3 4))
+  (multi-type-v color-v glColor () (3 4) (dv iv uiv fv ubv bv usv sv) #t)
+  (multi-type-v secondary-color-v glSecondaryColor () (3) (bv sv iv fv dv ubv usv uiv) #t)
+  (multi-type-v index-v glIndex () (1) (dv iv fv sv ubv) #f)
+
+  ;; 2.8, 2.9 not implemented
+
+  ;; 2.10
+  (provide (rename glRectd rect) rect-v)
+  (multi-type-v rect-v glRect () (4) (dv iv fv sv) #f)
+  
+  ;; 2.11.1
+  (provide (rename glDepthRange depth-range) (rename glViewport viewport))
+  
+  ;; 2.11.2
+  (provide matrix-mode load-matrix mult-matrix
+           load-transpose-matrix mult-transpose-matrix
            (rename glLoadIdentity load-identity)
            (rename glRotated rotate)
            (rename glTranslated translate)
            (rename glScaled scale)
            (rename glFrustum frustum)
            (rename glOrtho ortho)
+           active-texture
            (rename glPushMatrix push-matrix)
-           (rename glPopMatrix pop-matrix)
-           (rename glPointSize point-size)
-           (rename glLineWidth line-width)
-           (rename glLineStipple line-stipple)
-           (rename glPolygonStipple polygon-stipple)
-           (rename glPolygonOffset polygon-offset)
-           (rename glPixelZoom pixel-zoom)
-           (rename glBitmap bitmap)
-           (rename glDeleteTextures delete-textures)
-           (rename glGenTextures gen-textures)
-           (rename glAreTexturesResident are-textures-resident)
-           (rename glPrioritizeTextures prioritize-textures)
-           (rename glScissor scissor)
-           (rename glIndexMask index-mask)
+           (rename glPopMatrix pop-matrix))
+  
+  (make-enum-table matrix-mode-table
+                   GL_MODELVIEW GL_PROJECTION GL_TEXTURE GL_COLOR)
+  (define (matrix-mode x)
+    (glMatrixMode (matrix-mode-table x 'matrix-mode)))
+  (define-values (glLoadMatrixfv glLoadMatrixdv glMultMatrixfv glMultMatrixdv
+                  glLoadTransposeMatrixfv glLoadTransposeMatrixdv
+                  glMultTransposeMatrixfv glMultTransposeMatrixdv)
+    (values glLoadMatrixf glLoadMatrixd glMultMatrixf glMultMatrixd
+            glLoadTransposeMatrixf glLoadTransposeMatrixd
+            glMultTransposeMatrixf glMultTransposeMatrixd))
+  (multi-type-v load-matrix glLoadMatrix () (16) (fv dv) #f)
+  (multi-type-v mult-matrix glMultMatrix () (16) (fv dv) #f)
+  (multi-type-v load-transpose-matrix glLoadTransposeMatrix () (16) (fv dv) #f)
+  (multi-type-v mult-transpose-matrix glMultTransposeMatrix () (16) (fv dv) #f)
+  
+  (define (active-texture texture)
+    (glActiveTexture (multi-tex-coord-table texture 'active-texture texture)))
+
+  ;; 2.11.3
+  (provide enable disable)
+  (make-enum-table enable-table
+		   GL_VERTEX_ARRAY GL_NORMAL_ARRAY GL_FOG_COORD_ARRAY
+		   GL_COLOR_ARRAY GL_SECONDARY_COLOR_ARRAY GL_INDEX_ARRAY
+		   GL_TEXTURE_COORD_ARRAY GL_EDGE_FLAG_ARRAY
+                   GL_NORMALIZE GL_RESCALE_NORMAL 
+                   GL_CLIP_PLANE0 GL_CLIP_PLANE1 GL_CLIP_PLANE2 GL_CLIP_PLANE3
+                   GL_CLIP_PLANE4 GL_CLIP_PLANE5
+                   GL_FOG GL_COLOR_SUM
+                   GL_LIGHTING GL_COLOR_MATERIAL
+                   GL_LIGHT0 GL_LIGHT1 GL_LIGHT2 GL_LIGHT3 GL_LIGHT4
+                   GL_LIGHT5 GL_LIGHT6 GL_LIGHT7
+                   GL_POINT_SMOOTH GL_LINE_SMOOTH GL_LINE_STIPPLE GL_CULL_FACE
+                   GL_POLYGON_SMOOTH GL_POLYGON_OFFSET_POINT
+		   GL_POLYGON_OFFSET_LINE GL_POLYGON_OFFSET_FILL
+                   GL_POLYGON_STIPPLE
+		   GL_MULTISAMPLE GL_SAMPLE_ALPHA_TO_COVERAGE
+		   GL_SAMPLE_ALPHA_TO_ONE GL_SAMPLE_COVERAGE
+                   GL_TEXTURE_1D GL_TEXTURE_2D GL_TEXTURE_3D
+		   GL_TEXTURE_CUBE_MAP
+                   GL_TEXTURE_GEN_S GL_TEXTURE_GEN_T
+		   GL_TEXTURE_GEN_R GL_TEXTURE_GEN_Q
+                   GL_SCISSOR_TEST GL_ALPHA_TEST GL_STENCIL_TEST
+                   GL_DEPTH_TEST GL_BLEND GL_DITHER
+                   GL_INDEX_LOGIC_OP GL_LOGIC_OP GL_COLOR_LOGIC_OP
+		   GL_COLOR_TABLE GL_POST_CONVOLUTION_COLOR_TABLE
+		   GL_POST_COLOR_MATRIX_COLOR_TABLE
+		   GL_CONVOLUTION_1D GL_CONVOLUTION_2D GL_SEPARABLE_2D
+		   GL_HISTOGRAM GL_MINMAX
+                   GL_MAP1_VERTEX_3 GL_MAP1_VERTEX_4 GL_MAP1_INDEX
+                   GL_MAP1_COLOR_4 GL_MAP1_NORMAL
+                   GL_MAP1_TEXTURE_COORD_1 GL_MAP1_TEXTURE_COORD_2
+                   GL_MAP1_TEXTURE_COORD_3 GL_MAP1_TEXTURE_COORD_4
+                   GL_MAP2_VERTEX_3 GL_MAP2_VERTEX_4 GL_MAP2_INDEX
+                   GL_MAP2_COLOR_4 GL_MAP2_NORMAL
+                   GL_MAP2_TEXTURE_COORD_1 GL_MAP2_TEXTURE_COORD_2
+                   GL_MAP2_TEXTURE_COORD_3 GL_MAP2_TEXTURE_COORD_4
+                   GL_AUTO_NORMAL)
+  (define (enable x)
+    (glEnable (enable-table x 'enable)))
+  (define (disable x)
+    (glDisable (enable-table x 'disable)))
+
+  ;; 2.11.4
+  (provide tex-gen tex-gen-v)
+  (make-enum-table tex-gen-coord-table GL_S GL_T GL_R GL_Q)
+  (make-enum-table tex-gen-pname-table
+                   GL_TEXTURE_GEN_MODE GL_OBJECT_PLANE GL_EYE_PLANE)
+  (make-enum-table tex-gen-param-table
+                   GL_OBJECT_LINEAR GL_EYE_LINEAR GL_SPHERE_MAP
+                   GL_REFLECTION_MAP GL_NORMAL_MAP)
+  (define (tex-gen c p n)
+    (let ((cv (tex-gen-coord-table c 'tex-gen))
+          (pv (tex-gen-pname-table p 'tex-gen)))
+      (unless (= pv GL_TEXTURE_GEN_MODE)
+        (error 'tex-gen "does not accept ~a, use tex-gen-v instead" p))
+      (glTexGeni cv pv (tex-gen-param-table n 'tex-gen))))
+  (define (tex-gen-v c p v)
+    (let ((cv (tex-gen-coord-table c 'tex-gen-v))
+          (pv (tex-gen-pname-table p 'tex-gen-v)))
+      (when (= pv GL_TEXTURE_GEN_MODE)
+        (error 'tex-gen-v "does not accept ~a, use tex-gen instead" p))
+      (let ((f (cond
+                 ((gl-int-vector? v) glTexGeniv)
+                 ((gl-float-vector? v) glTexGenfv)
+                 ((gl-double-vector? v) glTexGendv)
+                 (else
+                  (raise-type-error 'tex-gen-v
+                                    "gl-int-vector, gl-float-vector, or gl-double-vector"
+                                    2 c p v)))))
+        (check-length 'tex-gen-v v 4)
+        (f cv pv v))))
+  
+  ;; 2.12
+  (provide clip-plane)
+  (make-enum-table clip-plane-table
+                   GL_CLIP_PLANE0 GL_CLIP_PLANE1 GL_CLIP_PLANE2
+                   GL_CLIP_PLANE3 GL_CLIP_PLANE4 GL_CLIP_PLANE5)
+  (define (clip-plane p eqn)
+    (let ((v (clip-plane-table p 'clip-plane)))
+      (unless (gl-double-vector? eqn)
+        (raise-type-error 'clip-plane "gl-double-vector" 1 p eqn))
+      (check-length 'clip-plane eqn 4)
+      (glClipPlane v eqn)))
+  
+  ;; 2.13
+  (provide raster-pos raster-pos-v
+           window-pos window-pos-v)
+  (multi-arg raster-pos glRasterPos () (2 3 4))
+  (multi-type-v raster-pos-v glRasterPos () (2 3 4) (dv iv fv sv) #t)
+  (multi-arg window-pos glWindowPos () (2 3))
+  (multi-type-v window-pos-v glWindowPos () (2 3) (dv iv fv sv) #t)
+ 
+  ;; 2.14.1
+  (provide front-face)
+  (make-enum-table front-face-table GL_CCW GL_CW)
+  (define (front-face x)
+    (glFrontFace (front-face-table x 'front-face)))
+
+  ;; 2.14.2
+  (provide material material-v light light-v light-model light-model-v)
+  (make-enum-table face-table GL_FRONT GL_BACK GL_FRONT_AND_BACK)
+  (make-enum-table material-pname-table
+                   GL_AMBIENT GL_DIFFUSE GL_AMBIENT_AND_DIFFUSE 
+                   GL_SPECULAR GL_EMISSION GL_SHININESS GL_COLOR_INDEXES)
+  
+  (define (get-f v iv fv name a1 a2)
+    (cond
+      ((gl-int-vector? v) iv)
+      ((gl-float-vector? v) fv)
+      (else
+       (raise-type-error name
+                         "gl-int-vector or gl-float-vector"
+                         2 a1 a2 v))))
+  (define (do-f n v0 v1 i f name a0 a1)
+    (unless (real? n)
+      (raise-type-error name "real number" 2 a0 a1 n))
+    (cond
+      ((and (exact? n) (integer? n))
+       (i v0 v1 n))
+      ((exact? n)
+       (f v0 v1 (exact->inexact n)))
+      (else
+       (f v0 v1 n))))
+  
+  (define (material face pname param)
+    (let ((v0 (face-table face 'material))
+          (v1 (material-pname-table pname 'material)))
+      (unless (= v1 GL_SHININESS)
+        (error 'material "does not accept ~a, use material-v instead" pname))
+      (do-f param v0 v1 glMateriali glMaterialf 'material face pname)))
+    
+  (define (material-v face pname params)
+    (let ((v0 (face-table face 'material-v))
+          (v1 (material-pname-table pname 'material-v))
+          (f (get-f params glMaterialiv glMaterialfv 'material-v face pname)))
+      (cond
+        ((= GL_SHININESS v1)
+         (check-length 'material-v params 1 pname))
+        ((= GL_COLOR_INDEXES v1)
+         (check-length 'material-v params 3 pname))
+        (else
+         (check-length 'material-v params 4 pname)))
+      (f v0 v1 params)))
+  
+  (make-enum-table light-light-table
+                   GL_LIGHT0 GL_LIGHT1 GL_LIGHT2 GL_LIGHT3
+                   GL_LIGHT4 GL_LIGHT5 GL_LIGHT6 GL_LIGHT7)
+  (make-enum-table light-pname-table
+                   GL_AMBIENT GL_DIFFUSE GL_SPECULAR GL_POSITION
+                   GL_SPOT_DIRECTION
+                   GL_SPOT_EXPONENT GL_SPOT_CUTOFF
+                   GL_CONSTANT_ATTENUATION GL_LINEAR_ATTENUATION
+                   GL_QUADRATIC_ATTENUATION)
+  (define (light light pname param)
+    (let ((v0 (light-light-table light 'light))
+          (v1 (light-pname-table pname 'light)))
+      (unless (memv v1 `(,GL_SPOT_EXPONENT ,GL_SPOT_CUTOFF
+                         ,GL_CONSTANT_ATTENUATION ,GL_LINEAR_ATTENUATION
+                         ,GL_QUADRATIC_ATTENUATION))
+        (error 'light "does not accept ~a, use light-v instead" pname))
+      (do-f param v0 v1 glLighti glLightf 'light light pname)))
+            
+  (define (light-v light pname params)
+    (let ((v0 (light-light-table light 'light-v))
+          (v1 (light-pname-table pname 'light-v))
+          (f (get-f params glLightiv glLightfv 'light-v light pname)))
+      (cond
+        ((= GL_SPOT_DIRECTION v1)
+         (check-length 'light-v params 3 pname))
+        ((memv v1 `(,GL_AMBIENT ,GL_DIFFUSE ,GL_SPECULAR ,GL_POSITION))
+         (check-length 'light-v params 4 pname))
+        (else
+         (check-length 'light-v params 1 pname)))
+      (f v0 v1 params)))
+      
+  (make-enum-table light-model-table
+                   GL_LIGHT_MODEL_AMBIENT
+                   GL_LIGHT_MODEL_COLOR_CONTROL
+                   GL_LIGHT_MODEL_LOCAL_VIEWER
+                   GL_LIGHT_MODEL_TWO_SIDE)
+  
+  (define (light-model pname param)
+    (let ((v (light-model-table pname 'light-model)))
+      (when (= GL_LIGHT_MODEL_AMBIENT v)
+        (error 'light-model "does not accept ~a, use light-model-v instead" pname))
+      (unless (real? param)
+        (raise-type-error 'light-model "real number" 1 pname param))
+      (cond
+        ((and (exact? param) (integer? param))
+         (glLightModeliv v param))
+        ((exact? param)
+         (glLightModelfv v (exact->inexact param)))
+        (else
+         (glLightModelfv v param)))))
+      
+  (define (light-model-v pname params)
+    (let ((v (light-model-table pname 'light-model-v))
+          (f (cond
+               ((gl-int-vector? params) glLightModeliv)
+               ((gl-float-vector? params) glLightModelfv)
+               (else
+                (raise-type-error 'light-model-v
+                                  "gl-int-vector or gl-float-vector"
+                                  1 pname params)))))
+      (cond
+        ((= GL_LIGHT_MODEL_AMBIENT v)
+         (check-length 'light-model-v 4 pname))
+        (else 
+         (check-length 'light-model-v 1 pname)))
+      (f v params)))
+      
+  ;; 2.14.3
+  (provide color-material)
+  (make-enum-table color-material-mode-table
+                   GL_EMISSION GL_AMBIENT GL_DIFFUSE
+                   GL_SPECULAR GL_AMBIENT_AND_DIFFUSE)
+  (define (color-material x y)
+    (glColorMaterial (face-table x 'color-material)
+                     (color-material-mode-table y 'color-material)))
+  
+  ;; 2.14.7
+  (provide shade-model)
+  (make-enum-table shade-model-table GL_FLAT GL_SMOOTH)
+  (define (shade-model x)
+    (glShadeModel (shade-model-table x 'shade-model)))
+
+  ;; 3.3 
+  (provide (rename glPointSize point-size)
+           ;; point-parameter
+           ;; point-parameter-v
+           )
+  
+  ;; 3.4
+  (provide (rename glLineWidth line-width))
+  
+  ;; 3.4.2
+  (provide (rename glLineStipple line-stipple))
+  
+  ;; 3.5.1
+  (provide cull-face)  
+  (define (cull-face x)
+    (glCullFace (face-table x)))
+
+  ;; 3.5.2
+  ;; polygon-stipple
+
+  ;;3.5.4
+  (provide polygon-mode)
+  (make-enum-table polygon-mode-mode-table GL_POINT GL_LINE GL_FILL)
+  (define (polygon-mode x y)
+    (glPolygonMode (face-table x 'polygon-mode)
+                   (polygon-mode-mode-table y 'polygon-mode)))
+
+  ;; 3.5.5
+  (provide (rename glPolygonOffset polygon-offset))
+  
+  ;; 3.6.1
+  (provide pixel-store)
+  (make-enum-table pixel-store-table 
+                   GL_UNPACK_SWAP_BYTES GL_UNPACK_LSB_FIRST
+                   GL_UNPACK_ROW_LENGTH GL_UNPACK_SKIP_ROWS
+                   GL_UNPACK_SKIP_PIXELS GL_UNPACK_ALIGNMENT
+                   GL_UNPACK_IMAGE_HEIGHT GL_UNPACK_SKIP_IMAGES)
+  (define (pixel-store pname param)
+    (let ((v (pixel-store-table pname 'pixel-store)))
+      (unless (real? param)
+        (raise-type-error 'pixel-store
+                          "real number"
+                          1 pname param))
+      (cond
+        ((and (exact? param) (integer? param))
+         (glPixelStorei v param))
+        ((exact? param)
+         (glPixelStoref v (exact->inexact param)))
+        (else
+         (glPixelStoref v param)))))
+  
+  ;; 3.6.3, 3.6.4, 3.6.5, 3.7, 3.8, 3.10 not implemented
+  
+  ;; 4.1.2
+  (provide (rename glScissor scissor))
+  
+  ;; 4.1.3
+  (provide (rename glSampleCoverage sample-coverage))
+  
+  ;; 4.1.4
+  (provide alpha-func)
+  (make-enum-table func-table
+                   GL_NEVER GL_ALWAYS GL_LESS GL_LEQUAL GL_EQUAL
+                   GL_GEQUAL GL_GREATER GL_NOTEQUAL)
+  (define (alpha-func func ref)
+    (glAlphaFunc (func-table func 'alpha-func) ref))
+  
+  ;; 4.1.5
+  (provide stencil-func stencil-op)
+  (define (stencil-func func ref mask)
+    (glStencilFunc (func-table func 'stencil-func) ref mask))
+
+  (make-enum-table stencil-op-table
+                   GL_KEEP GL_ZERO GL_REPLACE GL_INCR GL_DECR GL_INVERT
+                   GL_INCR_WRAP GL_DECR_WRAP)
+  (define (stencil-op sfail dpfail dppass)
+    (glStencilOp (stencil-op-table sfail 'stencil-op)
+                 (stencil-op-table dpfail 'stencil-op)
+                 (stencil-op-table dppass 'stencil-op)))
+                 
+  ;; 4.1.6
+  (provide depth-func)
+  (define (depth-func func)
+    (glDepthFunc (func-table func 'depth-func)))
+
+  ;; 4.1.7
+  (provide begin-query end-query
+           (rename glGenQueries gen-queries)
+           (rename glDeleteQueries delete-queries))
+  (make-enum-table query-table GL_SAMPLES_PASSED)
+  (define (begin-query target id)
+    (glBeginQuery (query-table target 'begin-query) id))
+  (define (end-query target)
+    (glEndQuery (query-table target 'end-query)))
+                      
+  ;; 4.1.8, 4.1.10, 4.2.1 not implemented
+
+  ;; 4.2.2
+  (provide (rename glIndexMask index-mask)
            (rename glColorMask color-mask)
            (rename glDepthMask depth-mask)
-           (rename glStencilMask stencil-mask)
+           (rename glStencilMask stencil-mask))
+  
+  ;; 4.2.3
+  (provide clear
            (rename glClearColor clear-color)
            (rename glClearIndex clear-index)
            (rename glClearDepth clear-depth)
            (rename glClearStencil clear-stencil)
-           (rename glClearAccum clear-accum)
-           (rename glInitNames init-names)
+           (rename glClearAccum clear-accum))
+  (make-enum-table clear-table
+                   GL_ACCUM_BUFFER_BIT GL_COLOR_BUFFER_BIT
+                   GL_DEPTH_BUFFER_BIT GL_STENCIL_BUFFER_BIT)
+  (define clear
+    (lambda x
+      (glClear (apply bitwise-ior (map (lambda (x)
+                                         (clear-table x 'clear))
+                                       x)))))
+
+  ;; 4.2.4
+  (provide accum)
+  (make-enum-table accum-table
+                   GL_ACCUM GL_MULT GL_RETURN GL_MULT GL_ADD)
+  (define (accum op value)
+    (glAccum (accum-table op 'accum) value))
+
+  ;; 4.3.2 not implemented
+
+  ;; 4.3.3
+  (provide copy-pixels)
+  (make-enum-table copy-pixels-table
+                   GL_COLOR GL_STENCIL GL_DEPTH)
+  (define (copy-pixels a b c d e)
+    (glCopyPixels a b c d (copy-pixels-table e 'copy-pixels)))
+
+  ;; 5.1
+  (provide ;map1 map2
+           eval-coord eval-coord-v map-grid eval-mesh eval-point)
+  (multi-arg eval-coord glEvalCoord () (1 2))
+  (multi-type-v eval-coord-v glEvalCoord () (1 2) (dv fv) #t)
+  (define map-grid
+    (case-lambda
+      ((n a b) (glMapGrid1d n a b))
+      ((m a b n c d) (glMapGrid2d m a b n c d))))
+  (make-enum-table eval-mesh-table GL_POINT GL_LINE)
+  (define eval-mesh
+    (case-lambda
+      ((e a b) (glEvalMesh1 (eval-mesh-table e 'eval-mesh) a b))
+      ((e a b c d) (glEvalMesh2 (eval-mesh-table e 'eval-mesh) a b c d))))
+  (define eval-point
+    (case-lambda 
+      ((x) (glEvalPoint1 x))
+      ((x y) (glEvalPoint2 x y))))
+
+  ;; 5.2
+  (provide (rename glInitNames init-names)
            (rename glPopName pop-name)
            (rename glPushName push-name)
            (rename glLoadName load-name)
-           (rename glPassThrough pass-through)
+           render-mode
+           select-buffer->gl-uint-vector)
+  (make-enum-table render-mode-table GL_RENDER GL_SELECT GL_FEEDBACK)
+  (define (render-mode x)
+    (glRenderMode (render-mode-table x 'render-mode)))
+
+  ;; 5.3
+  (provide feedback-buffer->gl-float-vector
+           (rename glPassThrough pass-through))
+  
+  ;; 5.4
+  (provide new-list
            (rename glEndList end-list)
            (rename glCallList call-list)
+           ;call-lists
            (rename glListBase list-base)
-           (rename glIsList is-list)
-           (rename glDeleteLists delete-lists)
-           (rename glFlush flush)
-           (rename glFinish finish)
-           (rename glIsTexture is-texture)
-           (rename glPopAttrib pop-attrib)
-           (rename glPopClientAttrib pop-client-attrib)
            (rename glGenLists gen-lists)
-           (rename gluOrtho2D ortho-2d)
+           (rename glIsList is-list)
+           (rename glDeleteLists delete-lists))
+  (make-enum-table new-list-table GL_COMPILE GL_COMPILE_AND_EXECUTE)
+  (define (new-list n mode)
+    (glNewList n (new-list-table mode 'new-list)))
+
+  ;; 5.5
+  (provide (rename glFlush flush)
+           (rename glFinish finish))
+  
+  ;; 5.6
+  (provide hint)
+  (make-enum-table hint-target-table
+                   GL_PERSPECTIVE_CORRECTION_HINT GL_POINT_SMOOTH_HINT
+                   GL_LINE_SMOOTH_HINT GL_POLYGON_SMOOTH_HINT GL_FOG_HINT
+                   GL_GENERATE_MIPMAP_HINT GL_TEXTURE_COMPRESSION_HINT)
+  (make-enum-table hint-hint-table GL_FASTEST GL_NICEST GL_DONT_CARE)
+  (define (hint target hint)
+    (glHint (hint-target-table target 'hint)
+            (hint-hint-table hint 'hint)))
+
+  ;; 6.1.1
+  (provide ;glGetBooleanv glGetIntegerv glGetFloatv glGetDoublev
+           is-enabled)
+  (define (is-enabled e)
+    (glIsEnabled (enable-table e 'is-enabled)))
+
+  ;; 6.1.3, 6.1.4, 6.1.5, 6.1.7, 6.1.8, 6.1.9, 6.1.10 not implemented
+
+  ;; 6.1.11
+  (provide ;get-pointer-v
+           get-string)
+  
+  (make-enum-table get-string-table
+                   GL_VENDOR GL_RENDERER GL_VERSION GL_EXTENSIONS)
+  (define (get-string x)
+    (glGetString (get-string-table x 'get-string)))
+
+  ;; 6.1.12
+  (provide (rename glIsQuery is-query)
+           ;get-query get-query-object
+           )
+  
+  ;; 6.1.13
+  (provide (rename glIsBuffer is-buffer)
+           ; get-buffer-sub-data get-buffer-pointer-v
+           )
+  
+  ;; 6.1.14
+  (provide ;push-attrib push-client-attrib
+           (rename glPopAttrib pop-attrib)
+           (rename glPopClientAttrib pop-client-attrib))
+  
+
+  ;; 2
+  (provide u-get-string
+           (rename gluCheckExtension check-extension))
+  (make-enum-table u-get-string-table GLU_VERSION GLU_EXTENSIONS)
+  (define (u-get-string x)
+    (gluGetString (u-get-string-table x 'u-get-string)))
+
+  ;; 3 not implemented
+
+  ;; 4.1
+  (provide (rename gluOrtho2D ortho-2d)
            (rename gluPerspective perspective)
            (rename gluLookAt look-at)
-           (rename gluPickMatrix pick-matrix)
-           (rename gluNewQuadric new-quadric)
+           pick-matrix)
+  (define (pick-matrix a b c d v)
+    (unless (gl-int-vector? v)
+      (raise-type-error 'pick-matrix
+                        "gl-int-vector"
+                        4 a b c d v))
+    (check-length 'pick-matrix v 4)
+    (gluPickMatrix a b c d v))
+           
+  ;; 4.2
+  (provide project un-project un-project4)
+  (define (project a b c d e f)
+    (unless (gl-double-vector? d)
+      (raise-type-error 'project
+                        "gl-double-vector"
+                        3 a b c d e f))
+    (unless (gl-double-vector? e)
+      (raise-type-error 'project
+                        "gl-double-vector"
+                        4 a b c d e f))
+    (unless (gl-int-vector? f)
+      (raise-type-error 'project
+                        "gl-double-vector"
+                        5 a b c d e f))
+    (check-length 'project d 16)
+    (check-length 'project e 16)
+    (check-length 'project f 4)
+    (gluProject a b c d e f))
+
+  (define (un-project a b c d e f)
+    (unless (gl-double-vector? d)
+      (raise-type-error 'un-project
+                        "gl-double-vector"
+                        3 a b c d e f))
+    (unless (gl-double-vector? e)
+      (raise-type-error 'un-project
+                        "gl-double-vector"
+                        4 a b c d e f))
+    (unless (gl-int-vector? f)
+      (raise-type-error 'un-project
+                        "gl-double-vector"
+                        5 a b c d e f))
+    (check-length 'un-project d 16)
+    (check-length 'un-project e 16)
+    (check-length 'un-project f 4)
+    (gluUnProject a b c d e f))
+
+  (define (un-project4 a b c d e f g h i)
+    (unless (gl-double-vector? e)
+      (raise-type-error 'un-project
+                        "gl-double-vector"
+                        4 a b c d e f g h i))
+    (unless (gl-double-vector? f)
+      (raise-type-error 'un-project
+                        "gl-double-vector"
+                        5 a b c d e f g h i))
+    (unless (gl-int-vector? g)
+      (raise-type-error 'un-project
+                        "gl-double-vector"
+                        6 a b c d e f g h i))
+    (check-length 'un-project4 e 16)
+    (check-length 'un-project4 f 16)
+    (check-length 'un-project4 g 4)
+    (gluUnProject4 a b c d e f g h i))
+  
+  ;; 5 not implemented
+  
+  ;; 6.1
+  (provide (rename gluNewQuadric new-quadric))
+  
+  ;; 6.2 not implemented
+  
+  ;; 6.3
+  (provide quadric-normals 
            (rename gluQuadricTexture quadric-texture)
-           (rename gluCylinder cylinder)
+           quadric-orientation quadric-draw-style)
+  
+  (make-enum-table quadric-normals-table GLU_NONE GLU_FLAT GLU_SMOOTH)
+  (define (quadric-normals q e)
+    (gluQuadricNormals q (quadric-normals-table e 'quadric-normals)))
+    
+  (make-enum-table quadric-orientation-table GLU_INSIDE GLU_OUTSIDE)
+  (define (quadric-orientation q e)
+    (gluQuadricOrientation q (quadric-orientation-table e 'quadric-normals)))
+    
+  (make-enum-table quadric-draw-style-table
+                   GLU_POINT GLU_LINE GLU_SILHOUETTE GLU_FILL)
+  (define (quadric-draw-style q e)
+    (gluQuadricDrawStyle q (quadric-draw-style-table e 'quadric-draw-style)))
+  
+  ;; 6.4
+  (provide (rename gluCylinder cylinder)
            (rename gluDisk disk)
            (rename gluSphere sphere)
-           (rename gluPartialDisk partial-disk)
-           (rename gluUnProject un-project)
+           (rename gluPartialDisk partial-disk))
+
+  ;; 7 not implemented
+  
+  ;; 8
+  (provide ;error-string
            )
-
-  (define get-error-table
-    (make-inv-enum-table GL_NO_ERROR 
-                         GL_INVALID_ENUM
-                         GL_INVALID_VALUE
-                         GL_INVALID_OPERATION
-                         GL_STACK_OVERFLOW
-                         GL_STACK_UNDERFLOW
-                         GL_OUT_OF_MEMORY))
-  (provide get-error)
-  (define (get-error)
-    (get-error-table (glGetError)))
-
-  (define-values (begin-table-lookup begin-table-syms)
-    (make-enum-table GL_LINES
-                     GL_LINE_LOOP
-                     GL_LINE_STRIP
-                     GL_POINTS
-                     GL_POLYGON
-                     GL_QUADS
-                     GL_QUAD_STRIP
-                     GL_TRIANGLES
-                     GL_TRIANGLE_FAN
-                     GL_TRIANGLE_STRIP))
-  (define (gl-begin enum)
-    (let ((v (begin-table-lookup enum)))
-      (if v
-          (glBegin v)
-          (raise-type-error 'begin begin-table-syms 0 enum))))
   
-  (provide vertex vertex-v)
-  (multi-type vertex glVertex (2 3 4) (i d) #t)
-  (multi-type-v vertex-v glVertex (2 3 4) (dv iv fv sv) #t)
-
-  (provide tex-coord tex-coord-v)
-  (multi-type tex-coord glTexCoord (1 2 3 4) (i d) #t)
-  (multi-type-v tex-coord-v glTexCoord (1 2 3 4) (dv iv fv sv) #t)
-
-  ;;(provide multi-tex-coord multi-tex-coord-v)
-  (define-values (multi-tex-coord-table-lookup multi-tex-coord-syms)
-    (make-enum-table GL_TEXTURE0
-                     GL_TEXTURE1
-                     GL_TEXTURE2
-                     GL_TEXTURE3
-                     GL_TEXTURE4
-                     GL_TEXTURE5
-                     GL_TEXTURE6
-                     GL_TEXTURE7
-                     GL_TEXTURE8
-                     GL_TEXTURE9
-                     GL_TEXTURE10
-                     GL_TEXTURE11
-                     GL_TEXTURE12
-                     GL_TEXTURE13
-                     GL_TEXTURE14
-                     GL_TEXTURE15
-                     GL_TEXTURE16
-                     GL_TEXTURE17
-                     GL_TEXTURE18
-                     GL_TEXTURE19
-                     GL_TEXTURE20
-                     GL_TEXTURE21
-                     GL_TEXTURE22
-                     GL_TEXTURE23
-                     GL_TEXTURE24
-                     GL_TEXTURE25
-                     GL_TEXTURE26
-                     GL_TEXTURE27
-                     GL_TEXTURE28
-                     GL_TEXTURE29
-                     GL_TEXTURE30
-                     GL_TEXTURE31))
-
+  ;; Utils
   
-  ;; UNIMPLEMENTED
-  (define multi-tex-coord void)
-  (define multi-tex-coord-v void)
-  
-  (provide normal normal-v)
-  (multi-type normal glNormal (3) (i d) #t)
-  (multi-type-v normal-v glNormal (3) (dv iv fv sv bv) #t)
-
-  (provide color color-v)
-  (multi-type color glColor (3 4) (i d) #t)
-  (multi-type-v color-v glColor (3 4) (dv iv uiv fv ubv bv usv sv) #t)
-  
-  (provide index index-v)
-  (multi-type index glIndex (1) (i d) #f)
-  (multi-type-v index-v glIndex (1) (dv iv fv sv ubv) #f)
-
-  (define-values (enable-client-state/disable-client-state-table-lookup
-                  enable-client-state/disable-client-state-syms)
-    (make-enum-table GL_EDGE_FLAG_ARRAY
-                     GL_TEXTURE_COORD_ARRAY
-                     GL_COLOR_ARRAY
-                     GL_INDEX_ARRAY
-                     GL_NORMAL_ARRAY
-                     GL_VERTEX_ARRAY))
-  (provide enable-client-state)
-  (define (enable-client-state x)
-    (let ((v (enable-client-state/disable-client-state-table-lookup x)))
-      (if v
-          (glEnableClientState v)
-          (raise-type-error 'enable-client-state enable-client-state/disable-client-state-syms 0 x))))
-  (provide disable-client-state)
-  (define (disable-client-state x)
-    (let ((v (enable-client-state/disable-client-state-table-lookup x)))
-      (if v
-          (glDisableClientState v)
-          (raise-type-error 'disable-client-state enable-client-state/disable-client-state-syms 0 x))))
-
-  (provide client-active-texture)
-  (define (client-active-texture texture)
-    (let ((v0 (multi-tex-coord-table-lookup texture)))
-      (if v0
-          (glClientActiveTexture v0)
-          (raise-type-error 'client-active-texture multi-tex-coord-syms 0 texture))))
-  
-  (provide rect rect-v)
-  (multi-type rect glRect (4) (d i f s) #f)
-  (multi-type-v rect-v glRect (4) (dv iv fv sv) #f)
-  
-  (define-values (matrix-mode-table-lookup matrix-mode-syms)
-    (make-enum-table GL_MODELVIEW GL_PROJECTION GL_TEXTURE))
-  (provide matrix-mode)
-  (define (matrix-mode x)
-    (let ((v (matrix-mode-table-lookup x)))
-      (if v
-          (glMatrixMode v)
-          (raise-type-error 'matrix-mode matrix-mode-syms 0 x))))
-  (provide load-matrix)
-  (define (load-matrix x)
-    (cond
-      ((gl-double-vector? x) (glLoadMatrixd x))
-      ((gl-float-vector? x) (glLoadMatrixf x))
-      (else (raise-type-error 'load-matrix "gl-double-vector, or gl-float-vector" x))))
-  (provide mult-matrix)
-  (define (mult-matrix x)
-    (cond
-      ((gl-double-vector? x) (glMultMatrixd x))
-      ((gl-float-vector? x) (glMultMatrixf x))
-      (else (raise-type-error 'mult-matrix "gl-double-vector or gl-float-vector" x))))
-  
-  (provide load-transpose-matrix mult-transpose-matrix)
-  (define (load-transpose-matrix x)
-    (cond
-      ((gl-double-vector? x) (glLoadTransposeMatrixd x))
-      ((gl-float-vector? x) (glLoadTransposeMatrixf x))
-      (else (raise-type-error 'load-transpose-matrix "gl-double-vector or gl-float-vector" 0 x))))
-  (define (mult-transpose-matrix x)
-    (cond
-      ((gl-double-vector? x) (glMultTransposeMatrixd x))
-      ((gl-float-vector? x) (glMultTransposeMatrixf x))
-      (else (raise-type-error 'mult-transpose-matrix "gl-double-vector or gl-float-vector" 0 x))))
-  
-  (provide active-texture)
-  
-  (define (active-texture texture)
-    (let ((v (multi-tex-coord-table-lookup texture)))
-      (if v
-          (glActiveTexture v)
-          (raise-syntax-error 'active-texture multi-tex-coord-syms v 0))))
-
-  ;;(provide tex-gen tex-gen-v)
-  (define-values (tex-gen-coord-table-lookup tex-gen-coord-syms)
-    (make-enum-table GL_S GL_T GL_R GL_Q))
-  (define-values (tex-gen-pname-table-lookup tex-gen-pname-syms)
-    (make-enum-table GL_TEXTURE_GEN_MODE
-                     GL_OBJECT_PLANE
-                     GL_EYE_PLANE))
-  ;; UNIMPLEMENTED
-  (define tex-gen void)
-  (define tex-gen-v void)
-  
-
-  (define-values (clip-plane-table-lookup clip-plane-syms)
-    (make-enum-table GL_CLIP_PLANE0
-                     GL_CLIP_PLANE1
-                     GL_CLIP_PLANE2
-                     GL_CLIP_PLANE3
-                     GL_CLIP_PLANE4
-                     GL_CLIP_PLANE5))
-  (provide clip-plane)
-  (define (clip-plane x y)
-    (let ((v (clip-plane-table-lookup x)))
-      (if v
-          (glClipPlane v y)
-          (raise-type-error 'clip-plane clip-plane-syms 0 x y))))
-  
-  (provide raster-pos raster-pos-v)
-  (multi-type raster-pos glRasterPos (2 3 4) (i d) #t)
-  (multi-type-v raster-pos-v glRasterPos (2 3 4) (dv iv fv sv) #t)
-  
-  (define-values (front-face-table-lookup front-face-syms)
-    (make-enum-table GL_CCW GL_CW))
-  (provide front-face)
-  (define (front-face x)
-    (let ((v (front-face-table-lookup x)))
-      (if v
-          (glFrontFace v)
-          (raise-type-error 'front-face front-face-syms 0 x))))
-
-  (provide material material-v)
-  (define-values (material-face-table-lookup material-face-syms)
-    (make-enum-table GL_FRONT
-                     GL_BACK
-                     GL_FRONT_AND_BACK))
-  (define-values (material-pname-table-lookup material-pname-syms)
-    (make-enum-table GL_SHININESS))
-  
-  (define (material face pname num)
-    (let ((v0 (material-face-table-lookup face))
-          (v1 (material-pname-table-lookup pname)))
-      (cond
-        ((and v0 v1)
-         (cond
-           ((and (real? num) (exact? num) (integer? num))
-            (glMateriali v0 v1 num))
-           ((real? num)
-            (glMaterialf v0 v1 num))
-           (else
-            (raise-type-error 'material "exact integer or real number" 2 face pname num))))
-        (v0 (raise-type-error 'material material-pname-syms 1 face pname num))
-        (else (raise-type-error 'material material-face-syms 0 material pname num)))))
-    
-  (define-values (material-v-pname-table-lookup material-v-pname-syms)
-    (make-enum-table GL_SHININESS
-                     GL_COLOR_INDEXES
-                     GL_EMISSION
-                     GL_SPECULAR
-                     GL_DIFFUSE
-                     GL_AMBIENT
-                     GL_AMBIENT_AND_DIFFUSE))
-  
-  (define (material-v face pname num-v)
-    (let ((v0 (material-face-table-lookup face))
-          (v1 (material-v-pname-table-lookup pname)))
-      (cond
-        ((and v0 v1)
-         (cond
-           ((gl-int-vector? num-v) (glMaterialiv v0 v1 num-v))
-           ((gl-float-vector? num-v) (glMaterialfv v0 v1 num-v))
-           (else
-            (raise-type-error 'material-v "gl-int-vector or gl-float-vector" 2 face pname num-v))))
-        (v0 (raise-type-error 'material-v material-v-pname-syms 1 light pname num-v))
-        (else (raise-type-error 'material-v material-face-syms 0 material pname num-v)))))
-  
-  
-  
-  (provide light light-v)
-  (define-values (light-light-table-lookup light-light-syms)
-    (make-enum-table GL_LIGHT0
-                     GL_LIGHT1
-                     GL_LIGHT2
-                     GL_LIGHT3
-                     GL_LIGHT4
-                     GL_LIGHT5
-                     GL_LIGHT6
-                     GL_LIGHT7))
-  (define-values (light-pname-table-lookup light-pname-syms)
-    (make-enum-table GL_SPOT_EXPONENT
-                     GL_SPOT_CUTOFF
-                     GL_CONSTANT_ATTENUATION
-                     GL_LINEAR_ATTENUATION
-                     GL_QUADRATIC_ATTENUATION))
-  (define (light light pname num)
-    (let ((v0 (light-light-table-lookup light))
-          (v1 (light-pname-table-lookup pname)))
-      (cond
-        ((and v0 v1)
-         (cond
-           ((and (real? num) (exact? num) (integer? num))
-            (glLighti v0 v1 num))
-           ((real? num)
-            (glLightf v0 v1 num))
-           (else
-            (raise-type-error 'light "exact integer or real number" 2 light pname num))))
-        (v0 (raise-type-error 'light light-pname-syms 1 light pname num))
-        (else (raise-type-error 'light light-light-syms 0 light pname num)))))
-           
-  (define-values (light-v-pname-table-lookup light-v-pname-syms)
-    (make-enum-table GL_SPOT_EXPONENT
-                     GL_SPOT_CUTOFF
-                     GL_CONSTANT_ATTENUATION
-                     GL_LINEAR_ATTENUATION
-                     GL_QUADRATIC_ATTENUATION
-                     GL_SPOT_DIRECTION
-                     GL_POSITION
-                     GL_SPECULAR
-                     GL_DIFFUSE
-                     GL_AMBIENT))
-  (define (light-v light pname num-v)
-    (let ((v0 (light-light-table-lookup light))
-          (v1 (light-v-pname-table-lookup pname)))
-      (cond
-        ((and v0 v1)
-         (cond
-           ((gl-int-vector? num-v) (glLightiv v0 v1 num-v))
-           ((gl-float-vector? num-v) (glLightfv v0 v1 num-v))
-           (else
-            (raise-type-error 'light-v "gl-int-vector or gl-float-vector" 2 light pname num-v))))
-        (v0 (raise-type-error 'light-v light-pname-syms 1 light pname num-v))
-        (else (raise-type-error 'light-v light-light-syms 0 light pname num-v)))))
-      
-      
-  (provide light-model light-model-v)
-  (define-values (light-model-table-lookup light-model-syms)
-    (make-enum-table GL_LIGHT_MODEL_COLOR_CONTROL
-                     GL_LIGHT_MODEL_LOCAL_VIEWER
-                     GL_LIGHT_MODEL_TWO_SIDE))
-
-  (define-values (light-model-v-table-lookup light-model-v-syms)
-    (make-enum-table GL_LIGHT_MODEL_AMBIENT
-                     GL_LIGHT_MODEL_COLOR_CONTROL
-                     GL_LIGHT_MODEL_LOCAL_VIEWER
-                     GL_LIGHT_MODEL_TWO_SIDE))
-
-  (define (light-model pname num)
-      (let ((v (light-model-table-lookup pname)))
-        (if v
-            (cond
-              ((and (real? num) (exact? num) (integer? num))
-               (glLightModeli v num))
-              ((real? num)
-               (glLightModelf v num))
-              (else
-               (raise-type-error 'light-model "exact integer or real number" 1 pname num)))
-            (raise-type-error 'light-model light-model-syms 0 pname num))))
-
-  (define (light-model-v pname num-v)
-      (let ((v (light-model-v-table-lookup pname)))
-        (if v
-            (cond
-              ((gl-int-vector? num-v)
-               (glLightModeliv v num-v))
-              ((gl-float-vector? num-v)
-               (glLightModelfv v num-v))
-              (else
-               (raise-type-error 'light-model-v "gl-int-vector or gl-float-vector" 1 pname num-v)))
-            (raise-type-error 'light-model-v light-model-syms 0 pname num-v))))
-  
-  (define-values (color-material-table-lookup0 color-material-syms0)
-    (make-enum-table GL_FRONT
-                     GL_BACK
-                     GL_FRONT_AND_BACK))
-  (define-values (color-material-table-lookup1 color-material-syms1)
-    (make-enum-table GL_EMISSION
-                     GL_AMBIENT
-                     GL_DIFFUSE
-                     GL_SPECULAR
-                     GL_AMBIENT_AND_DIFFUSE))
-  (provide color-material)
-  (define (color-material x y)
-    (let ((v0 (color-material-table-lookup0 x))
-          (v1 (color-material-table-lookup1 y)))
-      (cond
-        ((and v0 v1) (glColorMaterial v0 v1))
-        (v0 (raise-type-error 'color-material color-material-syms1 1 x y))
-        (else (raise-type-error 'color-material color-material-syms0 0 x y)))))
-  
-  (define-values (shade-model-table-lookup shade-model-syms)
-    (make-enum-table GL_FLAT GL_SMOOTH))
-  (provide shade-model)
-  (define (shade-model x)
-    (let ((v (shade-model-table-lookup x)))
-      (if v
-          (glShadeModel v)
-          (raise-type-error 'shade-model shade-model-syms 0 x))))
-
-  (define-values (cull-face-table-lookup cull-face-syms)
-    (make-enum-table GL_FRONT GL_BACK GL_FRONT_AND_BACK))
-  (provide cull-face)
-  (define (cull-face x)
-    (let ((v (cull-face-table-lookup x)))
-      (if v
-          (glCullFace v)
-          (raise-type-error 'cull-face cull-face-syms 0 x))))
-  (define-values (polygon-mode-table-lookup0 polygon-mode-syms0)
-    (make-enum-table GL_FRONT
-                     GL_BACK
-                     GL_FRONT_AND_BACK))
-  (define-values (polygon-mode-table-lookup1 polygon-mode-syms1)
-    (make-enum-table GL_POINT
-                     GL_LINE
-                     GL_FILL))
-  (provide polygon-mode)
-  (define (polygon-mode x y)
-    (let ((v0 (polygon-mode-table-lookup0 x))
-          (v1 (polygon-mode-table-lookup1 y)))
-      (cond
-        ((and v0 v1) (glPolygonMode v0 v1))
-        (v0 (raise-type-error 'polygon-mode polygon-mode-syms1 1 x y))
-        (else (raise-type-error 'polygon-mode polygon-mode-syms0 0 x y)))))
-
-  ;; pixel-store
-  ;; pixel-transfer
-  ;; pixel-map
-  ;; color-table 1.2
-  ;; color-table-parameter 1.2
-  ;; copy-color-table 1.2
-  ;; color-sub-table 1.2
-  ;; copy-color-sub-table 1.2
-  ;; convolution-filter-2D 1.2
-  ;; convolution-filter-1D 1.2
-  ;; separable-filter-2D 1.2
-  ;; copy-convolution-filter-2D 1.2
-  ;; copy-convolution-filter-1D 1.2
-  ;; histogram 1.2
-  ;; minmax 1.2
-  ;; draw-pixels
-  ;; convolution-parameter 1.2
-  ;; tex-image-3D 1.2
-  ;; tex-image-2D
-  ;; tex-image-1D
-  ;; copy-tex-image-2D
-  ;; copy-tex-image-1D
-  ;; tex-sub-image-3D 1.2
-  ;; tex-sub-image-2D
-  ;; tex-sub-image-1D
-  ;; copy-tex-sub-image-3D 1.2
-  ;; copy-tex-sub-image-2D
-  ;; copy-tex-sub-image-1D
-  ;; tex-parameter
-  ;; bind-texture
-  ;; tex-env
-  ;; fog
-  ;; sample-coverage 1.3
-  ;; alpha-func
-  ;; stencil-func
-  ;; stencil-op
-  ;; depth-func
-  ;; blend-color 1.2
-  ;; blend-equation 1.2
-  ;; blend-func
-  ;; logic-op
-  ;; draw-buffer
-  
-  (define-values (clear-table-lookup clear-syms)
-    (make-enum-table GL_ACCUM_BUFFER_BIT
-                     GL_COLOR_BUFFER_BIT
-                     GL_DEPTH_BUFFER_BIT
-                     GL_STENCIL_BUFFER_BIT))
-  (provide clear)
-  (define clear
-    (lambda x
-      (glClear
-       (let loop ((vals x)
-                  (i 0))
-         (cond
-           ((null? vals) 0)
-           (else
-            (let ((v (clear-table-lookup (car vals))))
-              (if v
-                  (bitwise-ior v (loop (cdr vals) (add1 i)))
-                  (apply raise-type-error (list* 'clear clear-syms i x))))))))))
-  
-  ;; accum
-  ;; read-pixels
-  ;; copy-pixels
-  ;; map
-  
-  (provide eval-coord eval-coord-v)
-  (multi-type eval-coord glEvalCoord (1 2) (d) #t)
-  (multi-type-v eval-coord-v glEvalCoord (1 2) (dv fv) #t)
-  
-  ;; map-grid
-  ;; eval-mesh
-  ;; eval-point
-
-  (define-values (render-mode-table render-mode-syms)
-    (make-enum-table GL_RENDER GL_SELECT GL_FEEDBACK))
-  (provide render-mode)
-  (define (render-mode x)
-    (let ((v (render-mode-table x)))
-      (if v
-          (glRenderMode v)
-          (raise-type-error 'render-mode render-mode-syms 0 x))))
-  ;; feedback-buffer
-
-  (provide new-list)
-  (define-values (new-list-table-lookup new-list-syms)
-    (make-enum-table GL_COMPILE GL_COMPILE_AND_EXECUTE))
-  
-  (define (new-list n mode)
-    (let ((v (new-list-table-lookup mode)))
-      (if v
-          (glNewList n v)
-          (raise-type-error 'new-list new-list-syms 1 n mode))))
-
-           
-  ;; call-lists
-  ;; hint
-  ;; push-attrib
-  ;; push-client-attrib
-  
-  (define-values (enable/disable-table-lookup enable/disable-syms)
-    (make-enum-table GL_NORMALIZE
-                     GL_TEXTURE_GEN_S
-                     GL_TEXTURE_GEN_T
-                     GL_TEXTURE_GEN_R
-                     GL_TEXTURE_GEN_Q
-                     GL_CLIP_PLANE0
-                     GL_CLIP_PLANE1
-                     GL_CLIP_PLANE2
-                     GL_CLIP_PLANE3
-                     GL_CLIP_PLANE4
-                     GL_CLIP_PLANE5
-                     GL_LIGHTING
-                     GL_LIGHT0
-                     GL_LIGHT1
-                     GL_LIGHT2
-                     GL_LIGHT3
-                     GL_LIGHT4
-                     GL_LIGHT5
-                     GL_LIGHT6
-                     GL_LIGHT7
-                     GL_COLOR_MATERIAL
-                     GL_POINT_SMOOTH
-                     GL_LINE_SMOOTH
-                     GL_LINE_STIPPLE
-                     GL_POLYGON_SMOOTH
-                     GL_CULL_FACE
-                     GL_POLYGON_STIPPLE
-                     GL_POLYGON_OFFSET_POINT
-                     GL_POLYGON_OFFSET_LINE
-                     GL_POLYGON_OFFSET_FILL
-                     GL_TEXTURE_1D
-                     GL_TEXTURE_2D
-                     GL_FOG
-                     GL_SCISSOR_TEST
-                     GL_ALPHA_TEST
-                     GL_STENCIL_TEST
-                     GL_DEPTH_TEST
-                     GL_BLEND
-                     GL_DITHER
-                     GL_INDEX_LOGIC_OP
-                     GL_LOGIC_OP
-                     GL_COLOR_LOGIC_OP
-                     GL_MAP1_VERTEX_3
-                     GL_MAP1_VERTEX_4
-                     GL_MAP1_INDEX
-                     GL_MAP1_COLOR_4
-                     GL_MAP1_NORMAL
-                     GL_MAP1_TEXTURE_COORD_1
-                     GL_MAP1_TEXTURE_COORD_2
-                     GL_MAP1_TEXTURE_COORD_3
-                     GL_MAP1_TEXTURE_COORD_4
-                     GL_MAP2_VERTEX_3
-                     GL_MAP2_VERTEX_4
-                     GL_MAP2_INDEX
-                     GL_MAP2_COLOR_4
-                     GL_MAP2_NORMAL
-                     GL_MAP2_TEXTURE_COORD_1
-                     GL_MAP2_TEXTURE_COORD_2
-                     GL_MAP2_TEXTURE_COORD_3
-                     GL_MAP2_TEXTURE_COORD_4
-                     GL_AUTO_NORMAL))
-  (provide enable)
-  (define (enable x)
-    (let ((v (enable/disable-table-lookup x)))
-      (if v
-          (glEnable v)
-          (raise-type-error 'enable enable/disable-syms 0 x))))
-  (provide disable)
-  (define (disable x)
-    (let ((v (enable/disable-table-lookup x)))
-      (if v
-          (glDisable v)
-          (raise-type-error 'disable enable/disable-syms 0 x))))
-  
-  ;; is-enabled
-  ;; get-clip-plane
-  ;; get-light
-  ;; get-material
-  ;; get-polygon-stipple
-  ;; get-color-table-parameter 1.2
-  ;; get-convolution-parameter 1.2
-  ;; reset-histogram
-  ;; get-histogram-parameter
-  ;; reset-minmax
-  ;; get-minmax-parameter
-
-  (define-values (get-string-table-lookup get-string-syms)
-    (make-enum-table GL_VENDOR
-                     GL_RENDERER
-                     GL_VERSION
-                     GL_EXTENSIONS))
-  (provide get-string)
-  (define (get-string x)
-    (let ((v (get-string-table-lookup x)))
-      (if v
-          (glGetString v)
-          (raise-type-error 'get-string get-string-syms 0 x))))
-
-  (define-values (u-get-string-table-lookup u-get-string-syms)
-    (make-enum-table GLU_VERSION GLU_EXTENSIONS))
-  (provide u-get-string)
-  (define (u-get-string x)
-    (let ((v (u-get-string-table-lookup x)))
-      (if v
-          (gluGetString v)
-          (raise-type-error 'u-get-string u-get-string-syms 0 x))))
-
-  ;; scale-image
-  ;; build-1D-mipmaps
-  ;; build-2D-mipmaps
-
-  
-  (define-values (quadric-normals-table-lookup quadric-normals-syms)
-    (make-enum-table GLU_NONE GLU_FLAT GLU_SMOOTH))
-  (provide quadric-normals)
-  (define (quadric-normals q e)
-    (let ((v (quadric-normals-table-lookup e)))
-      (if v
-          (gluQuadricNormals q v)
-          (raise-type-error 'quadric-normals quadric-normals-syms 1 q e))))
-    
-  (define-values (quadric-orientation-table-lookup quadric-orientation-syms)
-    (make-enum-table GLU_INSIDE GLU_OUTSIDE))
-  (provide quadric-orientation)
-  (define (quadric-orientation q e)
-    (let ((v (quadric-orientation-table-lookup e)))
-      (if v
-          (gluQuadricOrientation q v)
-          (raise-type-error 'quadric-orientation quadric-orientation-syms 1 q e))))
-    
-  (define-values (quadric-draw-style-table-lookup quadric-draw-style-syms)
-    (make-enum-table GLU_POINT GLU_LINE GLU_SILHOUETTE GLU_FILL))
-  (provide quadric-draw-style)
-  (define (quadric-draw-style q e)
-    (let ((v (quadric-draw-style-table-lookup e)))
-      (if v
-          (gluQuadricDrawStyle q v)
-          (raise-type-error 'quadric-draw-style quadric-draw-style-syms 1 q e))))
-  
-  
+  (provide process-selection (struct selection-record (min-z max-z stack)))
   ;; A selection-record is
   ;; (make-selection-record number number (listof positive-int))
   (define-struct selection-record (min-z max-z stack))  
 
   ;; process-selection : gl-uint-vector int -> (listof selection-record)
   (define (process-selection v hits)
+    (unless (gl-uint-vector? v)
+      (raise-type-error 'process-selection
+                        "gl-uint-vector"
+                        0 v hits))
     (let ((index 0))
       (let loop ((hit 0))
         (cond
           ((>= hit hits) null)
           (else
-           (let ((stack-size (gl-uint-vector-ref v index)))
+           (let ((stack-size (gl-vector-ref v index)))
              (cons (make-selection-record 
-                    (gl-uint-vector-ref v (add1 index))
-                    (gl-uint-vector-ref v (+ index 2))
+                    (gl-vector-ref v (add1 index))
+                    (gl-vector-ref v (+ index 2))
                     (begin
                       (set! index (+ 3 index))
                       (let loop ((j 0))
                         (cond
                           ((< j stack-size)
-                           (cons (gl-uint-vector-ref v index)
+                           (cons (gl-vector-ref v index)
                                  (begin
                                    (set! index (add1 index))
                                    (loop (add1 j)))))
                           (else null)))))
                    (loop (add1 hit)))))))))
-  (provide process-selection (struct selection-record (min-z max-z stack)))
-    
-  ) 
+  )

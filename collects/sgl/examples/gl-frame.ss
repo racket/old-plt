@@ -21,7 +21,7 @@
   (define gl-init 
     (lambda ()
       (glShadeModel GL_SMOOTH)
-      (glClearColor 0 0 0 0.5)
+      (glClearColor 0.0 0.0 0.0 0.5)
       (glClearDepth 1)
       (glEnable GL_DEPTH_TEST)
       (glDepthFunc GL_LEQUAL)
@@ -94,7 +94,7 @@
   (define (gl-handlekey key)
     (recursive-handle-key *key-mappings* (send key get-key-code)))
   
-  ;; Make a 640 × 480 frame
+  ;; Make a 640 ? 480 frame
 (define make-frame 
   (lambda ()
     (instantiate frame% () 
@@ -146,8 +146,7 @@
   
   (define init-textures
     (lambda (count)
-      (set! *textures* (vector->gl-uint-vector (make-vector count)))
-      (glGenTextures count *textures*)))
+      (set! *textures* (glGenTextures count))))
   
   (define image->gl-vector
     (lambda (file)
@@ -155,7 +154,7 @@
              (bmp  (make-object bitmap% file 'unknown #f))
              (dc (instantiate bitmap-dc% (bmp)))
              (pixels (* (send bmp get-width) (send bmp get-height)))
-             (vec (make-vector (* pixels 3)))
+             (vec (make-gl-ubyte-vector (* pixels 3)))
              (data (make-bytes (* pixels 4)))
              (i 0)
              )
@@ -165,20 +164,20 @@
               (lambda ()
                 (if (< i pixels)
                     (begin
-                      (vector-set! vec (* i  3) 
-                                   (bytes-ref data (+ (* i 4) 1)))
-                      (vector-set! vec (+ (* i 3) 1) 
-                                   (bytes-ref data (+ (* i 4) 2)))
-                      (vector-set! vec (+ (* i 3) 2) 
-                                   (bytes-ref data (+ (* i 4) 3)))
+                      (gl-vector-set! vec (* i  3) 
+                                      (bytes-ref data (+ (* i 4) 1)))
+                      (gl-vector-set! vec (+ (* i 3) 1) 
+                                      (bytes-ref data (+ (* i 4) 2)))
+                      (gl-vector-set! vec (+ (* i 3) 2) 
+                                      (bytes-ref data (+ (* i 4) 3)))
                       (set! i (+ i 1))
                       (loop))))])
           (loop))
-        (list (send bmp get-width) (send bmp get-height) (vector->gl-ubyte-vector vec)))))
+        (list (send bmp get-width) (send bmp get-height) vec))))
   
   (define gl-load-texture
     (lambda (image-vector width height min-filter mag-filter ix)
-      (glBindTexture GL_TEXTURE_2D (gl-uint-vector-ref *textures* ix))
+      (glBindTexture GL_TEXTURE_2D (gl-vector-ref *textures* ix))
       (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MIN_FILTER min-filter)
       (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MAG_FILTER mag-filter)
       (if (or (= min-filter GL_LINEAR_MIPMAP_NEAREST)
@@ -189,7 +188,7 @@
   
   (define get-texture
     (lambda (ix)
-      (gl-uint-vector-ref *textures* ix)))
+      (gl-vector-ref *textures* ix)))
 )
 
 

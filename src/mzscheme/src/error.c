@@ -286,7 +286,7 @@ scheme_signal_error (char *msg, ...)
     strcat(buffer, " [during expansion]");
 
   if (scheme_starting_up) {
-    scheme_console_printf("%s", buffer);
+    scheme_console_printf("%s\n", buffer);
     exit(0);
   }
 

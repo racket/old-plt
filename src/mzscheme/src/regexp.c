@@ -372,10 +372,10 @@ reg(int paren, int *flagp)
 
   /* Check for proper termination. */
   if (paren && *regparse++ != ')') {
-    FAIL("unclosed (");
+    FAIL("missing closing parenthesis in pattern");
   } else if (!paren && *regparse != '\0') {
     if (*regparse == ')') {
-      FAIL("extra )");
+      FAIL("extra closing parenthesis in pattern");
     } else
       FAIL("junk on end");	/* "Can't happen". */
     /* NOTREACHED */
@@ -446,7 +446,7 @@ regpiece(int *flagp)
   }
 
   if (!(flags&HASWIDTH) && op != '?')
-    FAIL("*+ operand could be empty");
+    FAIL("* or + operand could be empty");
   *flagp = (op != '+') ? (WORST|SPSTART) : (WORST|HASWIDTH);
 
   if (op == '*' && (flags&SIMPLE))
@@ -477,7 +477,7 @@ regpiece(int *flagp)
   }
   regparse++;
   if (ISMULT(*regparse))
-    FAIL("nested *?+");
+    FAIL("nested *, ?, or + in pattern");
 
   return(ret);
 }
@@ -529,7 +529,7 @@ regatom(int *flagp)
 		xclass = UCHARAT(regparse-2)+1;
 		classend = UCHARAT(regparse);
 		if (xclass > classend+1)
-		  FAIL("invalid [] range");
+		  FAIL("invalid range within square brackets in pattern");
 		for (; xclass <= classend; xclass++) {
 		  regc(xclass);
 		}
@@ -540,7 +540,7 @@ regatom(int *flagp)
 	  }
 	  regc('\0');
 	  if (*regparse != ']')
-	    FAIL("unmatched []");
+	    FAIL("missing closing square bracket in pattern");
 	  regparse++;
 	  *flagp |= HASWIDTH|SIMPLE;
 	}
@@ -559,11 +559,11 @@ regatom(int *flagp)
 	case '?':
 	case '+':
 	case '*':
-	  FAIL("?+* follows nothing");
+	  FAIL("?, +, or * follows nothing in pattern");
 	  break;
 	case '\\':
 	  if (*regparse == '\0')
-	    FAIL("trailing \\");
+	    FAIL("trailing backslash in pattern");
 	  ret = regnode(EXACTLY);
 	  regc(*regparse++);
 	  regc('\0');

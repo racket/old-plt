@@ -2032,13 +2032,19 @@ static void fixup_tagged_array_mpage(void **p, MPage *page)
     p += size;
     size--;
 
-    tag = *(Type_Tag *)mp;
+#if ALIGN_DOUBLES
+    if (size) {
+#endif
+      tag = *(Type_Tag *)mp;
 
-    traverse = fixup_table[tag];
-    elem_size = traverse(mp);
-    mp += elem_size;
-    for (i = elem_size; i < size; i += elem_size, mp += elem_size)
-      traverse(mp);
+      traverse = fixup_table[tag];
+      elem_size = traverse(mp);
+      mp += elem_size;
+      for (i = elem_size; i < size; i += elem_size, mp += elem_size)
+	traverse(mp);
+#if ALIGN_DOUBLES
+    }
+#endif
   }
 }
 

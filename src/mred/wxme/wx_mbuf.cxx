@@ -318,12 +318,13 @@ Bool wxMediaBuffer::DoSetCaretOwner(wxSnip *snip, int dist)
   visCaret = ownCaret || ShowsGhostCaret();
 
   if (!snip || !(snip->flags & wxSNIP_HANDLES_EVENTS)) {
-    if (caretSnip) {
-      caretSnip->OwnCaret(FALSE);
+    wxSnip *oldCaret = caretSnip;  
+    caretSnip = NULL;
+    if (oldCaret) {
+      oldCaret->OwnCaret(FALSE);
       if (visCaret)
 	refresh = TRUE;
     }
-    caretSnip = NULL;
 #if ALLOW_X_STYLE_SELECTION
     wxMediaXSelectionAllowed = this;
 #endif

@@ -98,6 +98,9 @@
                    (and (string? name) (string=? name "servlet2.ss"))))
                tps))
       
+      ; exn:unknown-language = (make-exn:unknown-language str mark-set str)
+      (define-struct (exn:unknown-language exn) (lang))
+      
       ; language-prefs -> s-expr
       ; to find the module to require for the language
       (define (find-language-require lang-prefs)
@@ -107,7 +110,10 @@
           (hash-table-get
            language-table (string->symbol lang-name)
            (lambda ()
-             (error 'create-servlet "Unsupported servlet language: ~e" lang-name)))))
+             (raise (make-exn:unknown-language
+                     (format "Unsupported servlet language: ~e" lang-name)
+                     (current-continuation-marks)
+                     lang-name))))))
       
       (define language-table
         (let ([table (make-hash-table)])
@@ -194,19 +200,26 @@
                   (parent scheme-menu)
                   (callback
                    (lambda (me event)
-                     (let* ([lang-prefs
-                             (preferences:get
-                              (drscheme:language-configuration:get-settings-preferences-symbol))]
-                            [program (read-program lang-prefs (get-definitions-text))]
-                            [teachpacks (drscheme:teachpack:teachpack-cache-filenames (preferences:get 'drscheme:teachpacks))]
-                            ; FIX - use file name as default file name
-                            [file-name (put-file (string-constant create-servlet) this
-                                                 (build-path (collection-path "web-server")
-                                                             "default-web-root" "servlets")
-                                                 #f ".ss")]
-                            [wrapped (wrap (find-language-require lang-prefs) teachpacks program)])
-                       (when file-name
-                         (call-with-output-file file-name
-                           (lambda (out)
-                             (for-each (lambda (x) (write x out)) wrapped))
-                           'truncate)))))))))))))))
+                     (with-handlers ([exn:unknown-language?
+                                      (lambda (exn)
+                                        (message-box (string-constant create-executable-menu-item-label)
+                                                     (format (string-constant create-servlet-unsupported-language)
+                                                             (exn:unknown-language-lang exn))
+                                                     #f
+                                                     '(ok stop)))])
+                       (let* ([lang-prefs
+                               (preferences:get
+                                (drscheme:language-configuration:get-settings-preferences-symbol))]
+                              [program (read-program lang-prefs (get-definitions-text))]
+                              [teachpacks (drscheme:teachpack:teachpack-cache-filenames (preferences:get 'drscheme:teachpacks))]
+                              [wrapped (wrap (find-language-require lang-prefs) teachpacks program)]
+                              ; FIX - use file name as default file name
+                              [file-name (put-file (string-constant create-servlet) this
+                                                   (build-path (collection-path "web-server")
+                                                               "default-web-root" "servlets")
+                                                   #f ".ss")])
+                         (when file-name
+                           (call-with-output-file file-name
+                             (lambda (out)
+                               (for-each (lambda (x) (write x out)) wrapped))
+                             'truncate))))))))))))))))

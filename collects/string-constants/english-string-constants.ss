@@ -772,6 +772,10 @@ please adhere to these guidelines:
   "WARNING: the directory:\n\n  ~a\n\nwill be replaced. Proceed?")
  
  (create-servlet "Create Servlet...")
+
+ ; the ~a is a language such as "module" or "algol60"
+ (create-servlet-unsupported-language
+  "Create Servlet does not work with the ~a language.")
   
  ;;; buttons
  (execute-button-label "Execute") 

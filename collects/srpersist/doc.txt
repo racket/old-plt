@@ -503,6 +503,49 @@ _SrPersist_
  to the value `val'.  See `get-stmt-option' for options and 
  their possible values. 
 
+ Descriptors
+ -----------
+
+ > (get-desc-rec hdesc recnum)
+
+ ODBC 3.0.
+
+ Given a descriptor handle `hdesc' and record number 
+ `recnum', a positive exact integer, returns a list 
+ of values pertaining to the descriptor record.  The first
+ element of that list is a string, the name of the parameter or column 
+ associated with the descriptor record; the second element
+ is a symbol indicating a concise SQL data type (see SQL Data
+ Types, below); the third element is a symbol that indicates an 
+ interval subtype for the types 'sql-datetime or 'sql-interval, 
+ otherwise 'no-subtype; the fourth element is an exact integer 
+ indicating the byte length of the parameter or column; the fifth 
+ element is an exact integer indicating the number of digits of 
+ precision for the parameter or column (only relevant for numeric data 
+ types); the sixth element is an exact integer indicating the number of
+ digits to the right of the decimal point used for data in the
+ column or parameter; while the seventh element is one of 
+ 'sql-no-nulls, 'sql-nullable, or 'sql-nullable-unknown, indicating
+ whether the parameter or column may have NULL values.
+
+ > (set-desc-rec hdesc recnum type subtype length precision scale buff len ind)
+
+ ODBC 3.0.
+
+ For the descriptor record denoted by the descriptor handle `hdesc' and
+ positive exact integer `recnum', sets its associated information.
+ `type' is a symbol indicating a concise SQL or C data type (see SQL Data
+ Types, below); `subtype' is a symbol indicating a subtype for the types 
+ 'sql-datetime or 'sql-interval, or it may be 'no-subtype; 
+ `len' is an sql-length (see Lengths, below), which should be
+ initialized to the desired length of the column or parameter 
+ associated with the descriptor record; `ind' is an sql-indicator
+ (see Indicators, below).
+
+get-desc-field
+set-desc-field
+  
+
  Cursors
  -------
 
@@ -881,5 +924,7 @@ _SrPersist_
    'sql-delete-by-bookmark   deletes rows identified by a bookmark
    'sql-fetch-by-bookmark    retrieves rows identified by a bookmark
 
-
+ The details of using `bulk-operations' are complex, and 
+ are outside the scope of this documentation.  See an 
+ ODBC reference for information on using this procedure.
 

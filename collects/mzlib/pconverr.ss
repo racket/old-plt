@@ -182,24 +182,41 @@
 			     (f)]))]
 		       [constructor-style
 			(let* ([get-class
-				(lambda (n)
+				(lambda (n actual)
 				  (lambda (expr)
-				    (let* ([str (format "~a" expr)]
-					   [sub (substring
-						 str n
-						 (- (string-length str) 1))]
-					   [symbol (string->symbol sub)])
-				      symbol)))]
-			       [get-class-from-class (get-class 8)]
-			       [get-class-from-object (get-class 9)]
+				    (let* ([str (format "~a" expr)])
+				      (and (not (string=? str actual))
+					   (let* ([sub (substring
+							str n
+							(- (string-length str) 1))]
+						  [symbol (string->symbol sub)])
+					     symbol)))))]
+			       [get-class-from-class (get-class 8 "#<class>")]
+			       [get-class-from-object (get-class 9 "#<object>")]
 			       [build-class-expr
 				(lambda (symbol actual-class)
-				  (let ([matches?
-					 (with-handlers ([void (lambda (x) #f)])
-					   (eq? (eval symbol) actual-class))])
-				    (if matches?
-					symbol
-					`(class ,symbol ...))))])
+				  (if symbol
+				      (let ([matches?
+					     (with-handlers ([void (lambda (x) #f)])
+					       (eq? (eval symbol) actual-class))])
+					(if matches?
+					    symbol
+					    `(class ,symbol ...)))
+				      '(class ...)))]
+			       [build-named
+				(lambda (build-unnamed string-name beginning-offset)
+				  (let ([str (format "~a" expr)])
+				    (if (string=? str string-name)
+					(build-unnamed)
+					(let ([answer (string->symbol (substring str
+										 beginning-offset
+										 (- (string-length str) 1)))])
+					  (if (eq? (with-handlers ([(lambda (x) #t)
+								    (lambda (x) #f)])
+						     (global-defined-value answer))
+						   expr)
+					      answer
+					      (build-unnamed))))))])
 			  (lambda ()
 			    (cond
 			      [(hooks@:before-test? expr) (hooks@:before-convert expr recur)]
@@ -221,13 +238,19 @@
 			      [(string? expr) expr]
 			      [(primitive? expr) (string->symbol (primitive-name expr))]
 			      [(procedure? expr)
-			       (let ([arity (arity expr)])
-				 (if (list? arity)
-				     (cons 'case-lambda (make-lambda-helper arity))
-				     (list 'lambda (make-lambda-helper arity) '...)))]
+			       (build-named (lambda ()
+					      (let ([arity (arity expr)])
+						(if (list? arity)
+						    (cons 'case-lambda (make-lambda-helper arity))
+						    (list 'lambda (make-lambda-helper arity) '...))))
+					    "#<procedure>"
+					    12)]
 			      [(regexp? expr)
 			       '(regexp ...)]
-			      [(class? expr) (build-class-expr (get-class-from-class expr) expr)]
+			      [(class? expr) 
+			       (build-named (lambda () (build-class-expr (get-class-from-class expr) expr))
+					    "#<class>"
+					    7)]
 			      [(object? expr) `(make-object ,(build-class-expr (get-class-from-object expr)
 									       (object-class expr))
 							    ...)]
@@ -243,6 +266,11 @@
 							    (string-length name))))
 				       (map recur (cdr (vector->list
 							(struct->vector expr))))))]
+			      [(unit? expr) (build-named (lambda () 
+							   (printf "hi~n")
+							   expr)
+							 "#<unit>"
+							 6)]
 			      [else (hooks@:print-convert-hook
 				     expr recur)])))])
 		    (let ([es (convert-share-info-expand-shared? csi)])

@@ -208,22 +208,32 @@
 		 ,@(map annotate (z:begin0-form-bodies expr)))]
 
 	    [(z:let-values-form? expr)
-	      (let ((bindings
-		      (map (lambda (vars val)
-			     (map check-for-keyword vars)
+	     (let ([bindings
+		    (map (lambda (vars val)
+			   (map check-for-keyword vars)
+			   (let ([name (and (= 1 (length vars))
+					    (z:binding-orig-name (car vars)))])
 			     `(,(map z:binding-var vars)
-				,(mv-wrap val)))
-			(z:let-values-form-vars expr)
-			(z:let-values-form-vals expr))))
-		`(#%let-values ,bindings
-		   ,(annotate (z:let-values-form-body expr))))]
+			       ,(if name
+				    `(#%let ([,name ,(mv-wrap val)])
+				      ,name)
+				    (mv-wrap val)))))
+			 (z:let-values-form-vars expr)
+			 (z:let-values-form-vals expr))])
+	       `(#%let-values ,bindings
+		 ,(annotate (z:let-values-form-body expr))))]
 
 	    [(z:letrec*-values-form? expr)
 	      (let ((bindings
 		      (map (lambda (vars val)
 			     (map check-for-keyword vars)
-			     `(,(map z:binding-var vars)
-				,(mv-wrap val)))
+			     (let ([name (and (= 1 (length vars))
+					      (z:binding-orig-name (car vars)))])
+			       `(,(map z:binding-var vars)
+				 ,(if name
+				      `(#%let ([,name ,(mv-wrap val)])
+					,name)
+				      (mv-wrap val)))))
 			(z:letrec*-values-form-vars expr)
 			(z:letrec*-values-form-vals expr))))
 		`(#%letrec*-values ,bindings

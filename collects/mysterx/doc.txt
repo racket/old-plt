@@ -101,36 +101,26 @@ _MysterX_
 
   Navigates the browser to the URL given by `url', a string.
   Any DHTML changes to the page associated with the URL 
-  are not shown.
+  are not shown.  Returns a string that is the actual URL 
+  navigated to.
 
 > go-back :: (send an-mx-browser go-back)
 
   Navigates the browser back to a URL within its history list.
   Any DHTML changes to the page associated with the URL 
-  are not shown.
+  are not shown.  Returns a string that is the actual URL 
+  navigated to.
 
 > go-forward :: (send an-mx-browser go-forward)
 
   Navigates the browser forward to a URL within its history list.  
   Any DHTML changes to the page associated with the URL are 
-  not shown.
+  not shown.  Returns a string that is the actual URL 
+  navigated to.
 
 > current-url :: (send an-mx-browser current-url)
 
   Returns a string indicating the currently displayed URL. 
-
-> register-navigate-handler :: (send an-mx-browser register-navigate-handler f)
-
-  Registers an handler `f', a procedure that
-  takes a string, that is called when the 
-  browser completes navigating to a URL.
-  The string passed to the handler contains the
-  new URL.
-
-> unregister-navigate-handler :: (send an-mx-browser unregister-navigate-handler)
-
-  Removes the navigate handler registered for 
-  the browser, if any.
 
 > register-event-handler :: (send an-mx-browser register-event-handler an-mx-element f)
 

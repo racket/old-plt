@@ -75,9 +75,8 @@
    navigate
    go-back
    go-forward
-   current-url
    register-navigate-handler
-   unregister-navigate-handler
+   current-url
    current-document	
    document?
    document-insert-html

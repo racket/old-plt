@@ -1489,11 +1489,27 @@
 	    [thread-sem (make-semaphore 1)]   ; protects *handler-threads*
 	    [thread-wait (lambda () (semaphore-wait thread-sem))]
 	    [thread-post (lambda () (semaphore-post thread-sem))]
+	    [navigate-sem (make-semaphore 0)]
+	    [navigate-mutex (make-semaphore 1)]
+	    [navigate-url #f]
 	    [handler-sem (make-semaphore 1)]  ; protects *handler-table* and its contained hash tables
 	    [handler-wait (lambda () (semaphore-wait handler-sem))]
 	    [handler-post (lambda () (semaphore-post handler-sem))]
 	    [handler-table (make-hash-table)]
 	    [handler-thread #f]
+	    [make-navigator 
+	     (lambda (navigate-fun name)
+	       (lambda url
+		 (let ([actual-url #f])
+		   (semaphore-wait navigate-mutex)
+		   (if (apply navigate-fun (cons browser url))
+		       (begin
+			 (semaphore-wait navigate-sem)
+			 (set! actual-url navigate-url))
+		       (begin (semaphore-post navigate-mutex)
+			      (error name "Error navigating browser")))
+                   (semaphore-post navigate-mutex)
+		   actual-url)))]
 	    [block-until-event 
 	     (lambda () (mxprims:block-until-event browser))]
 	    [make-event-key 
@@ -1510,14 +1526,11 @@
 	     (lambda (b) 
 	       (mxprims:browser-show browser b))]
 	    [navigate
-	     (lambda (url)
-	       (mxprims:navigate browser url))]
+	     (make-navigator mxprims:navigate 'navigate)]
 	    [go-back
-	     (lambda ()
-	       (mxprims:go-back browser))]
+	     (make-navigator mxprims:go-back 'go-back)]
 	    [go-forward
-	     (lambda ()
-	       (mxprims:go-forward browser))]
+	     (make-navigator mxprims:go-forward 'go-forward)]
 	    [current-url
 	     (lambda ()
 	       (mxprims:current-url browser))]
@@ -1525,15 +1538,6 @@
 	     (lambda () 
 	       (make-object mx-document% 
 			    (mxprims:current-document browser)))]
-	    [register-navigate-handler
-	     (lambda (f)
-	       (mxprims:register-navigate-handler
-		browser
-		(lambda (_ boxed-url)
-		  (f (unbox boxed-url)))))]
-	    [unregister-navigate-handler
-	     (lambda ()
-	       (mxprims:unregister-navigate-handler browser))] 
 	    [register-event-handler
 	     (lambda (elt fn)
 	       (dynamic-wind
@@ -1597,7 +1601,12 @@
 		thread-post))])
 
 	   (sequence 
-	     (super-init))))  
+	     (super-init)
+	     (mxprims:register-navigate-handler
+	      browser
+	      (lambda (_ boxed-url)
+		(set! navigate-url (unbox boxed-url))
+		(semaphore-post navigate-sem)))))) 
 
   (define mx-document%	
     (class object% (doc)

@@ -9,8 +9,11 @@
   (define *frame-label* "WaterWorld")
 
   (define *prefs-file* 
-	(build-path (collection-path "waterworld") "ww-prefs.ss"))
-  
+	(let*-values 
+	 ([(sys-prefs-file) (find-system-path 'pref-file)]
+	  [(prefs-dir nm mbd) (split-path sys-prefs-file)])
+	 (build-path prefs-dir ".ww-prefs.ss")))
+
   (define (get-ww-pref sym default)
     (get-preference sym (lambda () default) #t *prefs-file*))
 
@@ -64,6 +67,8 @@
   (define *current-density* (get-ww-pref 'ww:density *default-density*))
   (define *current-tile-size* (get-ww-pref 'ww:tile-size *default-tile-size*))
   (define *current-autoclick* (get-ww-pref 'ww:autoclick *default-autoclick*))
+
+  (define *last-game-dir* #f) 
 
   (define (make-bitmap s)
     (make-object bitmap% 
@@ -594,13 +599,21 @@
 		 (set! frame new-frame)))]
 	    [get-game-filename
 	     (lambda ()
-	       (get-file "WaterWorld game files"
-			 this
-			 (build-path (collection-path "waterworld") "games")
-			 #f
-			 "ss"
-			 '()
-			 '(("Scheme files" "*.ss"))))]
+	       (let ([fn (get-file 
+			  "WaterWorld game files"
+			  this
+			  (or *last-game-dir*
+			      (build-path (collection-path "waterworld") 
+					  "games"))
+			  #f
+			  "ss"
+			  '()
+			  '(("Scheme files" "*.ss")))])
+		 (when fn
+		       (let-values 
+			([(base n d) (split-path fn)])
+			(set! *last-game-dir* base)))
+		 fn))]
 	    [save-game
 	     (lambda () 
 	       (if current-filename
@@ -1052,8 +1065,4 @@
   
   (send frame new-game)
   (send frame show #t))
-
-
-
-
 

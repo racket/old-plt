@@ -23,7 +23,50 @@
 
       (drscheme:modes:add-mode "Java mode"
                                #f
-                               (lambda (text prompt-position) #t)
+                               (lambda (text prompt-position) 
+                                 (let ((is-if? #f)
+                                       (open-parens 0)
+                                       (open-braces 0)
+                                       (open-curlies 0)
+                                       (number-semi-colons 0))
+                                   (let loop ((index 1) (char (send text get-character prompt-position)))
+                                     (unless (eq? char #\nul)
+                                       (printf "~s~n" char)
+                                       (cond 
+                                         ((and (= index 1) 
+                                               (eq? char #\i) 
+                                               (eq? (send text get-character (add1 prompt-position)) #\f))
+                                          (set! is-if? #t)
+                                          (loop 2 (send text get-character (+ 2 prompt-position))))
+                                         ((eq? char #\()
+                                          (set! open-parens (add1 open-parens))
+                                          (loop (add1 index) (send text get-character (+ index prompt-position))))
+                                         ((eq? char #\))
+                                          (set! open-parens (sub1 open-parens))
+                                          (loop (add1 index) (send text get-character (+ index prompt-position))))
+                                         ((eq? char #\{)
+                                          (set! open-curlies (add1 open-curlies))
+                                          (loop (add1 index) (send text get-character (+ index prompt-position))))
+                                         ((eq? char #\})
+                                          (set! open-curlies (sub1 open-curlies))
+                                          (loop (add1 index) (send text get-character (+ index prompt-position))))
+                                         ((eq? char #\[)
+                                          (set! open-braces (add1 open-braces))
+                                          (loop (add1 index) (send text get-character (+ index prompt-position))))
+                                         ((eq? char #\])
+                                          (set! open-braces (sub1 open-braces))
+                                          (loop (add1 index) (send text get-character (+ index prompt-position))))
+                                         ((eq? char #\;)
+                                          (set! number-semi-colons (add1 number-semi-colons))
+                                          (loop (add1 index) (send text get-character (+ index prompt-position)))))))
+                                   (printf "is-if? ~a : open-parens ~a : number-semi-colons ~a~n"
+                                           is-if? open-parens number-semi-colons)
+                                   (if (or (not (= open-parens 0))
+                                           (not (= open-braces 0))
+                                           (not (= open-curlies 0))
+                                           (and is-if? (not (= number-semi-colons 2))))
+                                       #f
+                                       #t)))
                                (lambda (x) (and x
                                                 (not 
                                                  (boolean?

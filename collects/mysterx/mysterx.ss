@@ -6,7 +6,7 @@
 (load-extension "mysterx.dll")
 
 (define mx-element%
-  (class null (dhtml-element)
+  (class object% (dhtml-element)
 
 	 (private
 	  [elt dhtml-element])
@@ -560,10 +560,12 @@
 	     (element-z-index elt))]
 	  [set-z-index!
 	   (lambda (s)
-	     (element-set-z-index! elt s))])))
+	     (element-set-z-index! elt s))])
+
+	(sequence (super-init))))
 
 (define mx-event%
-  (class null (dhtml-event)
+  (class object% (dhtml-event)
 
 	 (private
 	  [event dhtml-event])
@@ -593,10 +595,13 @@
 	  [to-tag (lambda () (event-to-tag event))]
 	  [to-id (lambda () (event-to-id event))]
 	  [x (lambda () (event-x event))]
-	  [y (lambda () (event-y event))])))
+	  [y (lambda () (event-y event))])
+
+	(sequence (super-init))))
+
 
 (define mx-document%
-  (class null 
+  (class object%
 
 	 ((label "MysterX")
 	  (width 'default)
@@ -698,7 +703,9 @@
 	     (when handler-thread
 		   (kill-thread handler-thread))
 	     (set! handler-thread #f)
-	     (semaphore-post thread-sem))])))
+	     (semaphore-post thread-sem))])
+
+	(sequence (super-init))))
 
        
        

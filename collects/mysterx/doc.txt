@@ -22,11 +22,12 @@ component presentation and event handling.
 
 > (make-object mx-document% label width height x y style-list)
 
-  Creates an instance of a MysterX document.  `label' is a string for the document 
-  caption, with default "MysterX".  `width', `height', `x', and `y' give the size and 
-  placement of the document on the desktop, with defaults provided by Windows if omitted.
-  `style-list' may contain any of the symbols 'iconize, 'maximize, 'no-caption,
-  'no-system-menu, and 'no-thick-border.
+  Creates an instance of a MysterX document.  `label' is a string for the 
+  document caption, with default "MysterX".  `width', `height', `x', and 
+  `y' give the size and placement of the document on the desktop, 
+  with defaults provided by Windows if omitted.  `style-list' may contain 
+  any of the symbols 'iconize, 'maximize, 'no-caption, 'no-system-menu, 
+  and 'no-thick-border.
 
   Methods
   -------
@@ -52,15 +53,12 @@ component presentation and event handling.
   Returns a list of COM objects, including ActiveX controls, that occur in the
   document.  The order of the objects is the same as in the document.
 
-> (send an-mx-document register-event-handler tag id f)
+> (send an-mx-document register-event-handler an-mx-element f)
 
-  Registers an event handler `f', a procedure of one argument, for an 
-  HTML element in the document.  `tag' is a symbol denoting the HTML tag 
-  for the element, and `id' is a symbol denoting the identifier for the element.  
-  When an event occurs in the document matching `tag' and `id', the procedure `f' 
-  is applied to the event.
+  Registers an event handler `f', a procedure of one argument, for the 
+  HTML element `an-mx-element'. 
   
-> (send an-mx-document unregister-event-handler tag id)
+> (send an-mx-document unregister-event-handler an-mx-element)
 
   Unregisters an event handler for an HTML element in the document.
 
@@ -80,8 +78,8 @@ component presentation and event handling.
 
 > (send an-mx-document insert-object coclass)
 
-  Inserts a COM object with class `coclass' at the beginning of the document.  An 
-  instance of <com-object> is returned.
+  Inserts a COM object with class `coclass' at the beginning of the 
+  document.  An instance of <com-object> is returned.
 
 > (send an-mx-document find-element tag id)
 
@@ -199,8 +197,8 @@ the ITypeInfo interface.
 
 > (get-property a-com-object property-name)
 
-  `a-com-object' is a <com-object>, and `property-name' is a string.  Returns the value of
-  the requested property.
+  `a-com-object' is a <com-object>, and `property-name' is a string.  
+  Returns the value of the requested property.
 
 > (set-properties a-com-object)
 
@@ -209,13 +207,14 @@ the ITypeInfo interface.
 
 > (set-property-type a-com-object property-name)
 
-  `a-com-object' is a <com-object>, and `property-name' is a string.  Returns a list of symbols indicating
-  the type of the specified property.
+  `a-com-object' is a <com-object>, and `property-name' is a string.  
+  Returns a list of symbols indicating the type of the specified property.
 
 > (set-property! a-com-object property-name val)
 
   `a-com-object' is a <com-object>, `property-name' is a string, and 
-  `val' is a value of suitable type.  Sets the value of the specified property.
+  `val' is a value of suitable type.  Sets the value of the specified 
+  property.
 
   MysterX types
   -------------
@@ -225,8 +224,8 @@ the ITypeInfo interface.
 
 > boolean
 
-  A boolean.  When a boolean is required in argument position, MysterX will interpret 
-  #f as false, and any other value as true.
+  A boolean.  When a boolean is required in argument position, MysterX 
+  will interpret #f as false, and any other value as true.
 
 > short-int
 

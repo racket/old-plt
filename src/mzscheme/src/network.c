@@ -1612,7 +1612,6 @@ static long tcp_get_string(Scheme_Input_Port *port,
   
   if (data->b.bufmax == -1) {
     scheme_raise_exn(MZEXN_FAIL_NETWORK,
-		     port,
 		     "tcp-read: error reading (%e)",
 		     errid);
     return 0;
@@ -1853,7 +1852,6 @@ static long tcp_write_string(Scheme_Output_Port *port,
 
   if (errid)
     scheme_raise_exn(MZEXN_FAIL_NETWORK,
-		     port,
 		     "tcp-write: error writing (%e)",
 		     errid);
 

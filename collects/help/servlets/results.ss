@@ -204,8 +204,8 @@
 
   (define (goto-lucky-entry ekey label src path page-label key)
     (let* ([href (if (html-entry? path)
-		     (make-html-href page-label path ekey)
-		     (make-text-href page-label path ekey))])
+		     (make-html-href page-label path)
+		     (make-text-href page-label path))])
       ; can use refresh here, instead of Javscript here - no semicolon in URL
       (send/finish 
        `(HTML

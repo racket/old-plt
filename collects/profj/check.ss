@@ -1675,14 +1675,14 @@
       
       (when (null? methods)
         (let* ((rec (if exp-type 
-                              (send type-recs get-class-record exp-type)
-                              (if static? (send type-recs get-class-record c-class) this)))
+                        (send type-recs get-class-record exp-type)
+                        (if static? (send type-recs get-class-record c-class) this)))
                (class? (member (id-string name) (send type-recs get-class-env)))
                (field? (cond
                          ((array-type? exp-type) (equal? (id-string name) "length"))
                          ((null? rec) 
                           (member (id-string name) (map field-record-name (send type-recs get-interactions-fields))))
-                         (else (member (id-string name) (get-field-records rec)))))
+                         (else (member (id-string name) (map field-record-name (get-field-records rec))))))
                (sub-kind (if class? 'class-name (if field? 'field-name 'not-found))))
         (cond 
           ((eq? exp-type 'super) (no-method-error 'super sub-kind exp-type name src))

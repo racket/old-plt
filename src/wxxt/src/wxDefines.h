@@ -430,6 +430,7 @@ enum {
 #define wxAT_MOST_ONE			0x00004000
 #define wxFLAT				0x00008000
 #define wxPROCESS_ENTER_TO_PANEL	0x00010000
+#define wxGL_CONTEXT                    0x02000000
 
 #define wxALIGN_CENTRE		0
 #define wxALIGN_LEFT		1

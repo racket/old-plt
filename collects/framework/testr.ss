@@ -1,5 +1,5 @@
 ;;
-;; $Id: testr.ss,v 1.16 1999/02/11 20:07:37 robby Exp $
+;; $Id: testr.ss,v 1.17 1999/02/15 22:18:00 robby Exp $
 ;;
 ;; (mred:test:run-interval [msec]) is parameterization for the
 ;; interval (in milliseconds) between starting actions.
@@ -144,32 +144,45 @@
   ;; 
   
   (define run-one
-    (lambda (thunk)
-      (let ([sem  (make-semaphore 0)])
-	(letrec
-	    ([start
-	      (lambda ()
-		(mred:yield)  ;; flush out real events.
-		(install-timer (run-interval) return)
-		(unless (is-exn?)
-		  (begin-action)
-		  (pass-errors-out thunk)
-		  (end-action)))]
-	     
-	     [pass-errors-out
-	      (lambda (thunk)
-		(parameterize
-		    ([current-exception-handler
-		      (lambda (exn)
-			(end-action-with-error exn)
-			((error-escape-handler)))])
-		  (thunk)))]
-	     
-	     [return (lambda () (semaphore-post sem))])
-	  
-	  (install-timer 0 start)
-	  (semaphore-wait sem)
-	  (reraise-error)))))
+    (let ([yield-semaphore (make-semaphore 0)]
+	  [thread-semaphore (make-semaphore 0)])
+      (thread
+       (rec loop
+	    (lambda ()
+	      (semaphore-wait thread-semaphore)
+	      (sleep)
+	      (semaphore-post yield-semaphore)
+	      (loop))))
+      (lambda (thunk)
+	(let ([sem  (make-semaphore 0)])
+	  (letrec
+	      ([start
+		(lambda ()
+
+		  ;; guarantee (probably) that some events are handled
+		  (semaphore-post thread-semaphore) 
+		  (mred:yield yield-semaphore)
+
+		  (install-timer (run-interval) return)
+		  (unless (is-exn?)
+		    (begin-action)
+		    (pass-errors-out thunk)
+		    (end-action)))]
+	       
+	       [pass-errors-out
+		(lambda (thunk)
+		  (parameterize
+		      ([current-exception-handler
+			(lambda (exn)
+			  (end-action-with-error exn)
+			  ((error-escape-handler)))])
+		    (thunk)))]
+	       
+	       [return (lambda () (semaphore-post sem))])
+	    
+	    (install-timer 0 start)
+	    (semaphore-wait sem)
+	    (reraise-error))))))
 
   (define current-get-eventspaces
     (make-parameter (lambda () (list (mred:current-eventspace)))))
@@ -693,6 +706,7 @@
 		  (send-mouse-event new-window enter))
 		(send new-window focus)
 		(void))))]))))
+
   
   (define (close-top-level-window tlw)
     (when (send tlw can-close?)

@@ -1,5 +1,7 @@
+(require-library "macro.ss")
+
 (require-library "grepl.ss" "drscheme")
-(require-library "rrequire.ss" "drscheme")
+(require-library "rload.ss" "drscheme")
 (require-library "errortrace.ss" "errortrace")
 
 (error-print-width 80)
@@ -19,8 +21,7 @@
   (parameterize ([current-custodian drscheme-custodian])
     (set! drscheme-eventspace (make-eventspace))
     (parameterize ([current-eventspace drscheme-eventspace])
-      (start-drscheme)))
-  (send loading-message set-label ""))
+      (start-drscheme))))
 
 (define start-drscheme-expression '(T))
 

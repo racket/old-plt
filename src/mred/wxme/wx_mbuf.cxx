@@ -94,7 +94,7 @@ extern Scheme_Object *objscheme_bundle_wxMediaBuffer(wxMediaBuffer*);
 /******************************************************************/
 
 #ifndef EACH_BUFFER_OWN_OFFSCREEN
-static bcounter = 0;
+static int bcounter = 0;
 #endif
 
 wxMediaBuffer::wxMediaBuffer()

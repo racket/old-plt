@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Frame.h,v 1.4 1999/01/06 15:03:56 mflatt Exp $
+ * $Id: Frame.h,v 1.5 1999/07/07 19:54:35 mflatt Exp $
  *
  * Purpose: base class for all frames
  *
@@ -88,6 +88,7 @@ protected:
     wxMessage  **status;
     int        num_status;
     wxBitmap   *frame_icon;
+    wxBitmap   *frame_mask;
     Bool       being_destroyed;
     long       last_shown_time;
 };

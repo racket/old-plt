@@ -96,7 +96,7 @@ wx:
 	cd $(WXDIR)/src/x; $(MAKE) WXDIR='$(WXDIR)' -f makefile.unx
 
 $(OBJDIR)/mred.o : mred.cxx wxme/wx_media.h wxme/wx_medad.h wxs/wxscheme.h ../mzscheme/cmdline.inc mred.h \
-                   ../mzscheme/include/scheme.h ../mzscheme/src/schvers.h $(WXINCDEP)
+                   ../mzscheme/include/scheme.h ../mzscheme/src/schvers.h $(WXINCDEP)  $(WXDIR)/src/Windows/Frame.h
 	$(CXX) $(CPPFLAGS) $(LOCALFLAGS) -c mred.cxx -o $(OBJDIR)/mred.o
 
 $(OBJDIR)/mred_ee.o : $(OBJDIR)/mred.o
@@ -105,7 +105,7 @@ $(OBJDIR)/mred_ee.o : $(OBJDIR)/mred.o
 ee-main:
 	$(OBJDIR)/mred_ee.o
 
-$(OBJDIR)/mredx.o : mredx.cxx ../mzscheme/include/scheme.h mred.h
+$(OBJDIR)/mredx.o : mredx.cxx ../mzscheme/include/scheme.h mred.h $(WXDIR)/src/Windows/Frame.h
 	$(CXX) $(CPPFLAGS) $(LOCALFLAGS) -c mredx.cxx -o $(OBJDIR)/mredx.o
 
 $(OBJDIR)/dl_stub.o: misc/dl_stub.c

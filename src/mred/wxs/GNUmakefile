@@ -178,7 +178,7 @@ $(OBJDIR)/wxs_dc.o : wxs_dc.cxx $(WXSCHEMEHEADERS)
 	$(WXSCC) wxs_dc.cxx -o $(OBJDIR)/wxs_dc.o
 $(OBJDIR)/wxs_evnt.o : wxs_evnt.cxx $(WXSCHEMEHEADERS)
 	$(WXSCC) wxs_evnt.cxx -o $(OBJDIR)/wxs_evnt.o
-$(OBJDIR)/wxs_fram.o : wxs_fram.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS)
+$(OBJDIR)/wxs_fram.o : wxs_fram.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS) $(WXDIR)/src/Windows/Frame.h
 	$(WXSCC) wxs_fram.cxx -o $(OBJDIR)/wxs_fram.o
 $(OBJDIR)/wxs_gage.o : wxs_gage.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS)
 	$(WXSCC) wxs_gage.cxx -o $(OBJDIR)/wxs_gage.o

@@ -5119,6 +5119,7 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
       
       /* Clear already-queued PROF signal, if any: */
       START_XFORM_SKIP;
+      sigemptyset(&sigs);
       while (!sigpending(&sigs)) {
 	if (sigismember(&sigs, SIGPROF)) {
 	  sigprocmask(SIG_SETMASK, NULL, &sigs);

@@ -1245,6 +1245,10 @@ Scheme_Object *scheme_modidx_shift(Scheme_Object *modidx,
 	SCHEME_VEC_ELS(global_shift_cache)[i] = modidx;
 	SCHEME_VEC_ELS(global_shift_cache)[i+1] = smodidx;
       } else {
+	/* May have GCed: */
+	if (cvec && !sbm->shift_cache)
+	  sbm->shift_cache = cvec;
+
 	if (i >= c) {
 	  /* Grow cache vector */
 	  Scheme_Object *naya;

@@ -70,13 +70,13 @@ Fixup_Proc fixup_table[_num_tags_];
 
 #define STARTING_PLACE ((void **)0)
 
-typedef unsigned short offset_t;
+typedef unsigned short OffsetTy;
 
 typedef struct MPage {
   unsigned short type;
   short compact_boundary;
   union {
-    offset_t *offsets;
+    OffsetTy *offsets;
     long size;
   } u;
   union {
@@ -87,7 +87,7 @@ typedef struct MPage {
   struct MPage *next, *prev;
   short age, refs_age, compact_to_age;
 
-  offset_t gray_start, gray_end;
+  OffsetTy gray_start, gray_end;
   struct MPage *gray_next;
 } MPage;
 
@@ -123,7 +123,7 @@ void **tagged_array_low = STARTING_PLACE, **tagged_array_high = STARTING_PLACE;
 #define MAP_SHIFT LOG_MPAGE_SIZE
 
 #define LOG_OPAGE_SIZE (LOG_MPAGE_SIZE - 2)
-#define OPAGE_SIZE (sizeof(offset_t) << LOG_OPAGE_SIZE)
+#define OPAGE_SIZE (sizeof(OffsetTy) << LOG_OPAGE_SIZE)
 
 #define BIGBLOCK_MIN_SIZE (1 << 12)
 
@@ -874,7 +874,7 @@ int is_marked(void *p)
 	return 1;
       else {
 	long offset = ((long)p & MPAGE_MASK) >> 2;
-	offset_t v;
+	OffsetTy v;
 	
 	v = page->u.offsets[offset];
 	offset -= (v & OFFSET_MASK);
@@ -898,7 +898,7 @@ static void **prev_var_stack;
 
 static void init_tagged_mpage(void **p, MPage *page)
 {
-  offset_t offset = 0, *offsets;
+  OffsetTy offset = 0, *offsets;
   void **top;
 
   page->type = (page->type & TYPE_MASK);
@@ -961,7 +961,7 @@ static long the_size;
 
 static void init_untagged_mpage(void **p, MPage *page)
 {
-  offset_t offset = 0, *offsets;
+  OffsetTy offset = 0, *offsets;
   void **top;
 
   page->type = (page->type & TYPE_MASK);
@@ -1138,7 +1138,7 @@ void GC_mark(void *p)
 	}
       } else {
 	long offset;
-	offset_t v;
+	OffsetTy v;
 	
 	/* Check for lazy initialization: */
 	if (!(type & MTYPE_INITED)) {
@@ -1206,7 +1206,7 @@ void GC_mark(void *p)
 
 static void propagate_tagged_mpage(void **bottom, MPage *page)
 {
-  offset_t offset, *offsets;
+  OffsetTy offset, *offsets;
   void **p, **graybottom;
 
   offsets = page->u.offsets;
@@ -1231,7 +1231,7 @@ static void propagate_tagged_mpage(void **bottom, MPage *page)
     graybottom = bottom + page->gray_start;
 
     while (p > graybottom) {
-      offset_t v;
+      OffsetTy v;
       
       v = offsets[offset] & OFFSET_MASK;
       
@@ -1321,7 +1321,7 @@ static void propagate_tagged_whole_mpage(void **p, MPage *page)
 
 static void propagate_array_mpage(void **bottom, MPage *page)
 {
-  offset_t offset = 0, *offsets;
+  OffsetTy offset = 0, *offsets;
   void **p;
 
   offset = page->gray_end + 1;
@@ -1330,7 +1330,7 @@ static void propagate_array_mpage(void **bottom, MPage *page)
   offsets = page->u.offsets;
 
   while (p > bottom) {
-    offset_t v;
+    OffsetTy v;
     
     v = offsets[offset] & OFFSET_MASK;
 
@@ -1382,7 +1382,7 @@ static void propagate_array_whole_mpage(void **p, MPage *page)
 
 static void propagate_tagged_array_mpage(void **bottom, MPage *page)
 {
-  offset_t offset = 0, *offsets;
+  OffsetTy offset = 0, *offsets;
   void **p;
 
   offset = page->gray_end + 1;
@@ -1391,7 +1391,7 @@ static void propagate_tagged_array_mpage(void **bottom, MPage *page)
   offsets = page->u.offsets;
 
   while (p > bottom) {
-    offset_t v;
+    OffsetTy v;
     
     v = offsets[offset] & OFFSET_MASK;
 
@@ -1569,8 +1569,8 @@ static void propagate_all_mpages()
 static void **tagged_compact_to, **atomic_compact_to;
 static void **array_compact_to, **tagged_array_compact_to;
 
-static offset_t tagged_compact_to_offset, atomic_compact_to_offset;
-static offset_t array_compact_to_offset, tagged_array_compact_to_offset;
+static OffsetTy tagged_compact_to_offset, atomic_compact_to_offset;
+static OffsetTy array_compact_to_offset, tagged_array_compact_to_offset;
 
 static MPage *tagged_compact_page, *atomic_compact_page;
 static MPage *array_compact_page, *tagged_array_compact_page;
@@ -1578,7 +1578,7 @@ static MPage *array_compact_page, *tagged_array_compact_page;
 static void compact_tagged_mpage(void **p, MPage *page)
 {
   int to_near = 0, set_age = 0;
-  offset_t offset, zoffset, *offsets, dest_offset, dest_start_offset;
+  OffsetTy offset, zoffset, *offsets, dest_offset, dest_start_offset;
   void **dest, **startp;
   void **top;
 
@@ -1589,7 +1589,7 @@ static void compact_tagged_mpage(void **p, MPage *page)
   /* First, we zap object sizes into the offsets array */
   zoffset = MPAGE_WORDS - page->skip_end;
   while (zoffset) {
-    offset_t zs = zoffset;
+    OffsetTy zs = zoffset;
 
     /* Move to start: */
     zoffset -= offsets[zoffset - 1] + 1;
@@ -1693,7 +1693,7 @@ static void compact_tagged_mpage(void **p, MPage *page)
 static void compact_untagged_mpage(void **p, MPage *page)
 {
   int to_near = 0, set_age = 0;
-  offset_t offset = 0, *offsets, dest_offset;
+  OffsetTy offset = 0, *offsets, dest_offset;
   void **dest, **startp, **top;
 
   offsets = page->u.offsets;
@@ -1734,7 +1734,7 @@ static void compact_untagged_mpage(void **p, MPage *page)
 
 #if ALIGN_DOUBLES
       long alignment;
-      if (!(size & 0x1) && !(dest_offset & 0x1))
+      if ((size & 0x1) && !(dest_offset & 0x1))
 	alignment = 1;
       else
 	alignment = 0;
@@ -1892,7 +1892,7 @@ void *GC_fixup(void *p)
 
       if (!(page->type & (MTYPE_OLD | MTYPE_BIGBLOCK))) {
 	long offset = ((long)p & MPAGE_MASK) >> 2;
-	offset_t v;
+	OffsetTy v;
 	void *r;
 	
 	v = page->u.offsets[offset] & OFFSET_MASK;
@@ -2222,32 +2222,33 @@ static void designate_modified(void *p)
 
 /* Linux signal handler: */
 #if defined(linux)
-#include <signal.h>
+# include <signal.h>
 void fault_handler(int sn, struct sigcontext sc)
 {
   designate_modified((void *)sc.cr2);
   signal(SIGSEGV, (void (*)(int))fault_handler);
 }
-#define NEED_SIGSEGV
+# define NEED_SIGSEGV
 #endif
 
 /* FreeBSD signal handler: */
 #if defined(__FreeBSD__)
-#include <signal.h>
+# include <signal.h>
 void fault_handler(int sn, int code, struct sigcontext *sc, char *addr)
 {
   designate_modified(addr);
 }
-#define NEED_SIGBUS
+# define NEED_SIGBUS
 #endif
 
 /* Solaris signal handler: */
 #if defined(sun)
+# include <signal.h>
 void fault_handler(int sn, struct siginfo *si, void *ctx)
 {
   designate_modified(si->si_addr);
 }
-#define NEED_SIGSEGV
+# define NEED_SIGACTION
 #endif
 
 /**********************************************************************/
@@ -2479,6 +2480,15 @@ static void gcollect(int full)
 #endif
 #ifdef NEED_SIGBUS
     signal(SIGBUS, (void (*)(int))fault_handler);
+#endif
+#ifdef NEED_SIGACTION
+    {
+      struct sigaction act, oact;
+      act.sa_sigaction = fault_handler;
+      sigemptyset(&act.sa_mask);
+      act.sa_flags = SA_SIGINFO;
+      sigaction(SIGSEGV, &act, &oact);
+    }
 #endif
   }
 
@@ -2919,7 +2929,7 @@ static void new_page(mtype_t mtype, void ***low, void ***high)
   map = get_page_rec(p, mtype);
 
   map->type = (mtype | MTYPE_MODIFIED);
-  map->u.offsets = (offset_t *)malloc_pages(OPAGE_SIZE, 0);
+  map->u.offsets = (OffsetTy *)malloc_pages(OPAGE_SIZE, 0);
   map->block_start = p;
   map->age = 0;
   map->refs_age = 0;
@@ -3061,7 +3071,7 @@ static void *malloc_untagged(size_t size_in_bytes, mtype_t mtype, void ***low, v
 	new_page(mtype, low, high);
 	return malloc_untagged(size_in_words << 2, mtype, low, high);
       }
-      ((Type_Tag *)*low)[0] = SKIP;
+      (*low)[0] = 0;
       *low += 1;
     }
   }

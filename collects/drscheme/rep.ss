@@ -140,18 +140,18 @@
 	       set-resetting
 	       position-line
 	       set-position
-	       get-frame
 	       begin-edit-sequence
 	       end-edit-sequence
 	       reset-pretty-print-width
-	       scroll-to-position)
+	       scroll-to-position
+	       get-top-level-window)
       (rename
        [super-init-transparent-io init-transparent-io]
        [super-initialize-console initialize-console]
        [super-reset-console reset-console]
        [super-init-transparent-io-do-work init-transparent-io-do-work])
       
-      (public
+      (override
 	[init-transparent-io
 	 (lambda (grab-focus?)
 	   (begin-edit-sequence)
@@ -185,7 +185,7 @@
 	       (report-unlocated-error message)))]
 	[report-unlocated-error
 	 (lambda (message)
-	   (let* ([frame (get-frame)]
+	   (let* ([frame (get-top-level-window)]
 		  [interactions-edit (ivar frame interactions-edit)])
 	     (send frame ensure-interactions-shown)
 	     (let ([locked? (ivar interactions-edit locked?)])
@@ -214,10 +214,11 @@
 			 #f (sub1 (send file last-position)) -1)
 		   (send file scroll-to-position start #f finish))
 	       (send file end-edit-sequence)
-	       (send (send file get-canvas) set-focus))))])
+	       (send (send file get-canvas) set-focus))))]
+	[on-set-media void])
+      (override
+	[get-prompt (lambda () "> ")])
       (public
-	[on-set-media void]
-	[get-prompt (lambda () "> ")]
 	[user-param #f]
 	[user-setting (fw:preferences:get 'drscheme:settings)]
 	[user-custodian (make-custodian)])
@@ -253,7 +254,8 @@
 		     start start)
 	     (let ([end (last-position)])
 	       (change-style WARNING-STYLE-DELTA start end)))
-	   (end-edit-sequence))]
+	   (end-edit-sequence))])
+      (override
 	[do-eval
 	 (let ([count 0])
 	   (lambda (start end)
@@ -261,7 +263,7 @@
 	     (when (<= 5 count)
 	       (collect-garbage)
 	       (set! count 0))
-	     (let* ([frame (get-frame)]
+	     (let* ([frame (get-top-level-window)]
 		    [definitions-edit (ivar frame definitions-edit)]
 		    [already-warned? (ivar definitions-edit already-warned?)]
 		    [needs-execution? (ivar definitions-edit needs-execution?)])
@@ -271,12 +273,13 @@
 			 needs-execution?)
 		 (send definitions-edit already-warned)
 		 (insert-warning)))
-	     (do-many-buffer-evals this start end)))]
+	     (do-many-buffer-evals this start end)))])
+      (public
 	[cleanup-evaluation
 	 (lambda (thread-to-watch)
 	   (mred:end-busy-cursor)
 	   (cleanup-transparent-io)
-	   (send (get-frame) enable-evaluation)
+	   (send (get-top-level-window) enable-evaluation)
 	   (begin-edit-sequence)	     
 	   (set-caret-owner #f 'display)
 
@@ -293,19 +296,20 @@
 			 "Warning"
 			 (format "The evaluation thread is no longer running, ~
 			 so no evaluation can take place until ~
-			 the next execution."))))))]
-
-	[display-result
-	 (lambda (v)
-	   (unless (void? v)
-	     (let ([v (if (basis:r4rs-style-printing? user-setting)
-			  v
-			  (print-convert:print-convert v))])
-	       (parameterize ([mzlib:pretty-print:pretty-print-size-hook
-			       (lambda (x _ port) (and (is-a? x mred:snip%) 1))]
-			      [mzlib:pretty-print:pretty-print-print-hook
-			       (lambda (x _ port) (this-result-write x))])
-		 (mzlib:pretty-print:pretty-print v this-result)))))]
+			 the next execution."))))))])
+      (override
+       [display-result
+	  (lambda (v)
+	    (unless (void? v)
+	      (let ([v (if (basis:r4rs-style-printing? user-setting)
+			   v
+			   (print-convert:print-convert v))])
+		(parameterize ([mzlib:pretty-print:pretty-print-size-hook
+				(lambda (x _ port) (and (is-a? x mred:snip%) 1))]
+			       [mzlib:pretty-print:pretty-print-print-hook
+				(lambda (x _ port) (this-result-write x))])
+		  (mzlib:pretty-print:pretty-print v this-result)))))])
+      (public
 	[display-results
 	 (lambda (anss)
 	   (let ([c-locked? locked?])
@@ -322,7 +326,7 @@
 	[do-many-buffer-evals
 	 (lambda (edit start end)
 	   (unless in-evaluation?
-	     (send (get-frame) disable-evaluation)
+	     (send (get-top-level-window) disable-evaluation)
 	     (reset-break-state)
 	     (cleanup-transparent-io)
 	     (reset-pretty-print-width)
@@ -360,10 +364,10 @@
       (private
 	[shutdown-user-custodian
 	 (lambda ()
-	   (let* ([frame (get-frame)]
+	   (let* ([frame (get-top-level-window)]
 		  [interactions-edit (ivar frame interactions-edit)])
 	     (set! in-evaluation? #f)
-	     (send (get-frame) not-running)
+	     (send (get-top-level-window) not-running)
 
 	     ;; this thread is created to run the actual shutdown, in
 	     ;; case the custodian is going to shutdown the current
@@ -496,7 +500,7 @@
 		     (basis:bottom-escape-handler escape-handler))
 
 		   (set! yield-count 0)
-		   (send (get-frame) not-running)
+		   (send (get-top-level-window) not-running)
 		   (set! evaluation-thread (current-thread))
 		   (let loop ()
 		     (unless (semaphore-try-wait? eval-thread-queue-sema)
@@ -535,10 +539,10 @@
 		     evaluation-running)
 		 (unless running-on?
 		   (set! running-on? #t)
-		   (send (get-frame) running))
+		   (send (get-top-level-window) running))
 		 (when running-on?
 		   (set! running-on? #f)
-		   (send (get-frame) not-running)))
+		   (send (get-top-level-window) not-running)))
 	     (semaphore-post running-semaphore))])
 
 
@@ -550,14 +554,16 @@
 	     (let ([after (last-position)])
 	       (change-style delta before after)
 	       (values before after))))])
+      (override
+	[takeover void])
       (public
-	[takeover void]
 	[shutting-down? #f]
 	[shutdown 
 	 (lambda ()
 	   (set! shutting-down? #t)
 	   (shutdown-user-custodian))]
-	[repl-initially-active? #f] 
+	[repl-initially-active? #f])
+      (override
 	[reset-console
 	 (let ([first-dir (current-directory)])
 	   (lambda ()
@@ -724,9 +730,9 @@
 
 		   (let ([directory
 			  (let/ec k
-			    (unless (get-frame)
+			    (unless (get-top-level-window)
 			      (k first-dir))
-			    (let*-values ([(filename) (send (ivar (get-frame) definitions-edit)
+			    (let*-values ([(filename) (send (ivar (get-top-level-window) definitions-edit)
 							    get-filename)]
 					  [(normalized) (if (string? filename)
 							    (mzlib:file:normalize-path filename)
@@ -746,7 +752,7 @@
 		   ;; parameterization
 		   (let* ([user-eventspace #f]
 			  [primitive-dispatch-handler (mred:event-dispatch-handler)]
-			  [frame (get-frame)]
+			  [frame (get-top-level-window)]
 			  [running-flag-on? #f]
 			  [event-semaphore (make-semaphore 0)]
 
@@ -1896,7 +1902,8 @@
 					    mzlib:pretty-print:pretty-print
 					    original-write-handler)))
 			 (list this-out this-err this-result)
-			 (list this-out-write this-err-write this-result-write)))]
+			 (list this-out-write this-err-write this-result-write)))])
+	(public
 	  [takeover
 	   (lambda ()
 	       
@@ -1920,8 +1927,6 @@
 	  (takeover)
 	  (set-display/write-handlers)))))
   
-  (define console-edit% (make-console-edit% fw:text:backup-autosave%))
-
   (define make-transparent-io-edit%
     (lambda (super%)
       (class super% args
@@ -2045,7 +2050,8 @@
 		      ((with-handlers ([exn:misc:user-break?
 					(lambda (x) void)])
 		        (mzlib:thread:dynamic-enable-break (lambda () (mred:yield wait-for-sexp)))
-			loop))])))))]
+			loop))])))))])
+	(override
 	  [takeover void]
 	  [get-prompt (lambda () "")])
 	(override
@@ -2056,7 +2062,7 @@
 	       (change-style input-delta start (+ start len))
 	       (set-resetting old-r))
 	     (super-on-insert start len))])
-	(public
+	(override
 	  [do-eval
 	   (lambda (start end)
 	     (do-pre-eval)
@@ -2078,9 +2084,11 @@
 	(sequence
 	  (apply super-init args)))))
   
+  (define console-edit% (make-console-edit% fw:scheme:text%))
+
   (define transparent-io-edit% 
     (make-transparent-io-edit%
      (make-console-edit%
       fw:text:searching%)))
   
-  (define edit% (make-edit% fw:scheme:text%)))
+  (define edit% (make-edit% console-edit%)))

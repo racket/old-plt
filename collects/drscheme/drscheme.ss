@@ -4,6 +4,154 @@
 (define value-ht (make-hash-table))
 (define mods-ht (make-hash-table))
 
+(define (graphical-read-eval-print-loop)
+  ;; The REPL buffer class
+  (define esq:text%
+    (class text% ()
+      (inherit insert last-position get-text erase change-style clear-undos
+	       begin-edit-sequence end-edit-sequence get-start-position)
+      (rename [super-on-char on-char])
+      (private [prompt-pos 0] [locked? #f])
+      (override
+	[can-insert? (lambda (start end) (and (>= start prompt-pos) (not locked?)))]
+	[can-delete? (lambda (start end) (and (>= start prompt-pos) (not locked?)))]
+	[on-char (lambda (c)
+		   (super-on-char c)
+		   (when (and (memq (send c get-key-code) '(#\return #\newline #\003))
+			      (not locked?))
+		     (set! locked? #t)
+		     (evaluate (get-text prompt-pos (last-position)))))])
+      (private
+	[plain-style (make-object style-delta% 'change-normal)])
+      (public
+	[new-prompt (lambda ()
+		      (output "> " #f)
+		      (set! prompt-pos (last-position))
+		      (set! locked? #f)
+		      (clear-undos))]
+	[output (lambda (str style-delta)
+		  (let ([l? locked?])
+		    (set! locked? #f)
+		    (begin-edit-sequence)
+		    (let ([pos (get-start-position)])
+		      (insert str)
+		      (change-style (or style-delta plain-style) pos (get-start-position)))
+		    (end-edit-sequence)
+		    (set! locked? l?)))]
+	[reset (lambda ()
+		 (set! locked? #f)
+		 (set! prompt-pos 0)
+		 (erase)
+		 (new-prompt))])
+      (sequence 
+	(super-init)
+	(let ([s (last-position)])
+	  (insert (format "Welcome to MrEd version ~a." (version)))
+	  (let ([e (last-position)])
+	    (insert #\newline)
+	    (change-style (send (make-object style-delta% 'change-bold) set-delta-foreground "BLUE") s e)))
+	(output (format "Copyright (c) 1995-98 PLT (Matthew Flatt and Robby Findler)~n") #f)
+	(insert "This is a simple window for evaluating MrEd Scheme expressions.") (insert #\newline)
+	(let ([s (last-position)])
+	  (insert "Quit now and run DrScheme to get a better window.")
+	  (let ([e (last-position)])
+	    (insert #\newline)
+	    (change-style
+	     (send (make-object style-delta% 'change-style 'slant) set-delta-foreground "RED")
+	     s e)))
+	(insert "The current input port always returns eof.") (insert #\newline)
+	(new-prompt))))
+
+  ;; GUI creation
+  (define frame (make-object (class frame% args
+			       (inherit accept-drop-files)
+			       (override
+				 [on-close (lambda () 
+					     (custodian-shutdown-all user-custodian)
+					     (semaphore-post waiting))]
+				 [on-drop-file (lambda (f) (evaluate (format "(load ~s)" f)))])
+			       (sequence (apply super-init args) (accept-drop-files #t)))
+			     "MrEd REPL" #f 500 400))
+  (define repl-buffer (make-object esq:text%))
+  (define repl-display-canvas (make-object editor-canvas% frame))
+
+  ;; User space initialization
+  (define user-custodian (make-custodian))
+  
+  (define user-eventspace
+    (parameterize ([current-custodian user-custodian])
+      (make-eventspace)))
+  (define user-parameterization (eventspace-parameterization user-eventspace))
+  
+  (define make-user-output-port
+    (let ([semaphore (make-semaphore 1)])
+      (lambda (style-delta)
+	(make-output-port (lambda (s)
+			    (semaphore-wait semaphore)
+			    (send repl-buffer output s style-delta)
+			    (semaphore-post semaphore))
+			  (lambda () 'nothing-to-do)))))
+
+  (define user-output-port (make-user-output-port
+			    (send (make-object style-delta%)
+				  set-delta-foreground "PURPLE")))
+  (define user-error-port (make-user-output-port
+			    (send (make-object style-delta% 'change-style 'slant)
+				  set-delta-foreground "RED")))
+  (define user-value-port (make-user-output-port
+			   (send (make-object style-delta% 'change-bold)
+				 set-delta-foreground "BLUE")))
+  
+  
+  ;; Evaluation and resetting
+  
+  (define (evaluate expr-str)
+    (parameterize ([current-eventspace user-eventspace])
+      (queue-callback
+       (lambda ()
+	 (current-parameterization user-parameterization)
+	 (dynamic-wind
+	  void
+	  (lambda () 
+	    (call-with-values
+	     (lambda () (eval (read (open-input-string expr-str))))
+	     (lambda results
+	       (for-each 
+		(lambda (v) (print v user-value-port) (newline))
+		results))))
+	  (lambda ()
+	    (send repl-buffer new-prompt)))))))
+
+  (define waiting (make-semaphore 0))
+
+  (let ([mb (make-object menu-bar% frame)])
+    (let ([m (make-object menu% "&File" mb)])
+      (make-object menu-item% "Load File..." m (lambda (i e) (let ([f (get-file)]) (and f (evaluate (format "(load ~s)" f))))))
+      (make-object menu-item% 
+		   (if (eq? (system-type) 'windows)
+		       "E&xit"
+		       "&Quit")
+		   m (lambda (i e) (send frame on-close) (send frame show #f)) #\q))
+    (let ([m (make-object menu% "&Edit" mb)])
+      (append-editor-operation-menu-items m #f)))
+
+  ;; Just a few extra key bindings:
+  (install-standard-text-bindings repl-buffer)
+  (send repl-buffer auto-wrap #t)
+
+  ;; Go
+  ((in-parameterization user-parameterization current-output-port) user-output-port)
+  ((in-parameterization user-parameterization current-error-port) user-error-port)
+  ((in-parameterization user-parameterization current-input-port) (make-input-port (lambda () eof) void void))
+  ((in-parameterization user-parameterization current-custodian) user-custodian)
+  ((in-parameterization user-parameterization current-will-executor) (make-will-executor))
+  (send repl-display-canvas set-editor repl-buffer)
+  (send frame show #t)
+
+  (send repl-display-canvas focus)
+
+  (yield waiting))
+
 (current-load
  (let ([ol (current-load)])
    (lambda (fn)
@@ -12,16 +160,14 @@
      (let ([sym (string->symbol fn)])
        (dynamic-wind
 	(lambda ()
-	  (hash-table-put! file-ht sym null)
 	  (for-each (lambda (stack-fn)
-		      (hash-table-put! file-ht stack-fn (cons fn (hash-table-get file-ht stack-fn))))
+		      (let ([old (hash-table-get file-ht stack-fn (lambda () null))])
+			(unless (member fn old)
+			  (hash-table-put! file-ht stack-fn (cons fn old)))))
 		    file-stack)
 	  (hash-table-put! mods-ht sym (file-or-directory-modify-seconds fn))
 	  (set! file-stack (cons sym file-stack)))
-	(lambda ()
-	  (let ([res (ol fn)])
-	    (hash-table-put! value-ht sym res)
-	    res))
+	(lambda () (ol fn))
 	(lambda ()
 	  (set! file-stack (cdr file-stack))))))))
 
@@ -29,6 +175,7 @@
   (lambda (filename)
     (unless (file-exists? filename)
       (error 'check-require/proc "file does not exist: ~a~n" filename))
+
     (let* ([sym (string->symbol filename)]
 	   [load/save
 	    (lambda (filename reason)
@@ -42,10 +189,15 @@
 		(hash-table-get ht value (lambda () (k #f)))
 		#t))])
       (if (hash-table-maps? value-ht sym)
-	  (let ([secs (hash-table-get mods-ht sym)])
-	    (if (ormap (lambda (fn) (< secs (file-or-directory-modify-seconds fn)))
-		       (cons filename (hash-table-get file-ht sym)))
-		(load/save filename "cached version expired")
+	  (let* ([secs (hash-table-get mods-ht sym)]
+		 [reason (ormap (lambda (fn)
+				  (if (< (hash-table-get mods-ht (string->symbol fn))
+					 (file-or-directory-modify-seconds fn))
+				      fn
+				      #f))
+				(cons filename (hash-table-get file-ht sym (lambda () null))))])
+	    (if reason
+		(load/save filename (format "~a was modified" reason))
 		(hash-table-get value-ht sym)))
 	  (load/save filename "never before loaded")))))
 
@@ -73,6 +225,9 @@
 	     f)))))))
 
 (define debug? #t)
+
+(define (T)
+  (invoke-open-unit/sig (require-library "link.ss" "drscheme") #f (program argv)))
 
 (define start-drscheme-expression
   '(let-values ([(change-splash-message shutdown-splash close-splash)

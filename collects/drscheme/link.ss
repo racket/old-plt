@@ -1,21 +1,21 @@
 (compound-unit/sig (import [I : (program argv)])
   (link [mred : mred-interfaces^ (mred-interfaces@)]
-	[mzlib : mzlib:core^ ((require-library-unit/sig "corer.ss"))]
+	[mzlib : mzlib:core^ ((require-library "corer.ss"))]
 	[init : drscheme:init^ ((require-relative-library "init.ss") mred)]
 	[framework : framework^ ((require-library "frameworkr.ss" "framework") mzlib mred)]
 	[print-convert : mzlib:print-convert^
-		       ((require-library-unit/sig "pconverr.ss")
+		       ((require-library "pconverr.ss")
 			(mzlib string)
 			(mzlib function))]
 	[face : drscheme:face^ ((require-relative-library "face.ss") mred)]
 	[prefs : drscheme:prefs^ ((require-relative-library "prefs.ss") mred framework)]
-	[aries : plt:aries^ ((require-library-unit/sig "ariesr.ss" "cogen")
+	[aries : plt:aries^ ((require-library "ariesr.ss" "cogen")
 			     zodiac
 			     (interface : zodiac:interface^))]
 	[interface : drscheme:interface^
-		   ((require-library-unit/sig "interface.ss" "userspce") zodiac)]
+		   ((require-library "interface.ss" "userspce") zodiac)]
 	[zodiac : zodiac:system^
-		  ((require-library-unit/sig "link.ss" "zodiac")
+		  ((require-library "link.ss" "zodiac")
 		   (interface : zodiac:interface^)
 		   (mzlib pretty-print)
 		   (mzlib file))]

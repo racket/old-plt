@@ -12,12 +12,12 @@
   (define <%> (interface ()))
 
   (define -mixin
-    (mixin (fw:frame:standard-menus%) (<%>) (unit)
-      (rename [super-make-root-panel make-root-panel]
-	      [super-make-menu-bar make-menu-bar])
-      (inherit panel get-edit save-as info-panel)
+    (mixin (fw:frame:info<%>) (<%>) (unit)
+      (rename [super-make-root-area-container make-root-area-container])
+      (inherit get-info-panel)
+      (public
+       [root-panel #f])
       (override
-
        [help-menu:after-about
 	(lambda (help-menu)
 	  (make-object mred:menu-item%
@@ -35,28 +35,17 @@
 		    (lambda ()
 		      (mred:message-box "Help Desk"
 					"Cannot load help desk. info.ss format changed")))))))))]
-       
-       
-
-       [root-panel #f]
-       [make-root-panel
+       [make-root-area-container
 	(lambda (% parent)
-	  (let* ([s-root (super-make-root-panel mred:vertical-panel% parent)]
+	  (let* ([s-root (super-make-root-area-container mred:vertical-panel% parent)]
 		 [root (make-object % s-root)])
 	    (set! root-panel s-root)
 	    root))])
       
-      (inherit make-menu)
       (public
 	[show-menu #f]
 	
-	[update-shown (lambda () (void))]
-	[make-menu-bar
-	 (lambda ()
-	   (let ([mb (super-make-menu-bar)])
-	     (set! show-menu (make-menu))
-	     (send mb append show-menu "&View")
-	     mb))])
+	[update-shown (lambda () (void))])
       
       (private
 	[get-bitmap/string
@@ -80,7 +69,7 @@
 	     (set! currently-running? #f)
 	     (send running-message set-label sleepy-bitmap)))])
       
-      (public
+      (override
 	;[file-menu:new-string "Unit"]
 	[file-menu:new
 	 (lambda ()
@@ -94,10 +83,12 @@
 	[file-menu:open (lambda () (fw:handler:open-file) #t)]
 	[help-menu:about (lambda () (drscheme:app:about-drscheme))])
       
+      (inherit get-menu% get-menu-bar)
       (sequence 
-	(super-init (send unit get-name)))
+	(super-init (send unit get-name))
+	(set! show-menu (make-object (get-menu%) "Show" (get-menu-bar))))
       
       (private
 	[running-message
-	 (make-object mred:message% info-panel sleepy-bitmap)]))))
+	 (make-object mred:message% (get-info-panel) sleepy-bitmap)]))))
 

@@ -16,7 +16,7 @@
 						   (import)
 						   (define in-mzscheme? #f)))]
 	[basis : userspace:basis^
-	       ((require-library-unit/sig "basis.ss" "userspce")
+	       ((require-library "basis.ss" "userspce")
 		basis-import
 		zodiac
 		interface

@@ -45,19 +45,22 @@
   
   (define-lex-abbrevs 
     [digit (- "0" "9")]
+    [pos-digit (- "1" "9")]
     [number-sequence (+ digit)]
     [number-with-point (@ number-sequence "." number-sequence)]
     [unsigned-number (: number-sequence number-with-point)]
-    [signed-number (@ "-" unsigned-number)]
-    [number (: unsigned-number signed-number)]
+    [number unsigned-number]
+    [pos-int (@ pos-digit number-sequence)]
     [letter (: (- "a" "z") (- "A" "Z"))]
+    [letter-to-V (: (- "a" "v") (- "A" "V"))]
+    [letter-to-I (: (- "a" "i") (- "A" "I"))]
     [alphanum_ (: digit letter "_")]
     [alphanum (: letter digit)]
-    [cell-letter-sequence (@ letter (? letter))]
-    [cell-number-sequence (: digit (@ digit digit)
-                             (@ digit digit digit)
-                             (@ digit digit digit digit))]
-    [cell-reference (@ (? "$") cell-letter-sequence cell-number-sequence)]
+    [cell-letter-sequence (: letter (@ letter-to-I letter-to-V))]
+    [cell-number-sequence (: pos-digit (@ pos-digit digit)
+                             (@ pos-digit digit digit)
+                             (@ pos-digit digit digit digit))]
+    [cell-reference (@ (? "$") cell-letter-sequence (? "$") cell-number-sequence)]
     [whitespace (: #\space #\tab #\newline #\return)]
     [add-op (: "+" "-")]
     [mult-op (: "*" "/")]
@@ -75,7 +78,10 @@
 	)]
     [identifier (: (@ (* letter) (* alphanum_) "_" (* alphanum_))
                    (@ (* alphanum) letter)
-                   (@ letter letter letter (* alphanum)))])
+                   (@ letter letter letter (* alphanum))
+                   (@ (: (- "j" "z") (- "J" "Z")) letter digit)
+                   (@ (: "i" "I") (: (- "w" "z") (- "W" "Z")) digit)
+                   (@ letter "0"))])
   
   (define xl-lex
     (lexer
@@ -93,7 +99,11 @@
      [bool-op
       (token-BOOL-OP (string->symbol lexeme))]
      [cell-reference
-      (token-CELL-REF (string->symbol (string-downcase lexeme)))]
+      (token-CELL-REF 
+       (string->symbol 
+        (list->string
+         (filter (lambda (c) (not (equal? c #\$)))
+                 (string->list (string-downcase lexeme))))))]
      [identifier (token-IDENTIFIER lexeme)]
      [tbl-begin (token-TBL-BEGIN lexeme)]
      [":" (token-RANGE-SEP)]
@@ -120,7 +130,9 @@
               (left MULT-OP)
               (left EXP-OP)
               (left BOOL-OP)
-              (left NEG))
+              (left NEG)
+              (right LPAREN)
+              (left RPAREN))
      
        (grammar
         
@@ -147,6 +159,7 @@
            (gensym)
            (formula-dependencies $3)
            $3)]
+         [(LPAREN expr RPAREN) $2]
          [(expr ADD-OP expr) 
           (make-binary-op 
            (gensym)
@@ -176,10 +189,15 @@
            $2
            $1 $3)]
          [(ADD-OP expr) (prec NEG)
-          (make-unary-op 
-           (gensym)
-           (formula-dependencies $2)
-           $1 $2)]
+          (cond [(xl-number? $2) 
+                 (make-xl-number (formula-name $2) 
+                                 null 
+                                 (- 0 (xl-number-val $2)))]
+                [else
+                 (make-unary-op 
+                  (gensym)
+                  (formula-dependencies $2)
+                  $1 $2)])]
          [(IDENTIFIER LPAREN RPAREN)
           (make-application
            (gensym)

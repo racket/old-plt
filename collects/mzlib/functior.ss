@@ -180,7 +180,7 @@
    
    (define first (polymorphic (lambda (x) 
 				(unless (pair? x)
-					(raise-type-error 'first "list" x))
+					(raise-type-error 'first "non-empty list" x))
 				(car x))))
    (define second (polymorphic cadr))
    (define third (polymorphic caddr))
@@ -192,7 +192,7 @@
 
    (define rest (polymorphic (lambda (x) 
 			       (unless (pair? x)
-				       (raise-type-error 'rest "list" x))
+				       (raise-type-error 'rest "non-empty list" x))
 			       (cdr x))))
    
    (define  build-string

@@ -166,7 +166,9 @@
 (define sElF (string->symbol "sElF"))
 (define NULL_ (string->symbol "0"))
 (define gcMark (string->symbol "gcMark"))
+(define gcFixup (string->symbol "gcFixup"))
 (define gcMARK_TYPED (string->symbol "gcMARK_TYPED"))
+(define gcFIXUP_TYPED (string->symbol "gcFIXUP_TYPED"))
 (define Mark_Proc (string->symbol "Mark_Proc"))
 (define gcBYTES_TO_WORDS (string->symbol "gcBYTES_TO_WORDS"))
 (define GC_cpp_delete (string->symbol "GC_cpp_delete"))
@@ -898,28 +900,35 @@
 			    ;; Don't add to gc or to a class that has it
 			    null
 
-			    ;; Add gcMARK method:
-			    (list
-			     (make-tok 'public #f #f)
-			     (make-tok ': #f #f)
-			     ;; gcMARK method:
-			     (make-tok 'void #f #f)
-			     (make-tok gcMark #f #f)
-			     (make-parens
-			      "(" #f #f ")"
-			      (seq (make-tok Mark_Proc #f #f)
-				   (make-tok 'mark #f #f)))
-			     (make-braces
-			      "{" #f #f "}"
-			      (list->seq
-			       (make-mark-body (or super 'gc)
-					       (c++-class-top-vars cl)
-					       (car e)))))))))
+			    ;; Add gcMark and gcFixup methods:
+			    (let ([mk-proc
+				   (lambda (name marker)
+				     (list
+				      (make-tok 'void #f #f)
+				      (make-tok name #f #f)
+				      (make-parens
+				       "(" #f #f ")"
+				       (seq))
+				      (make-braces
+				       "{" #f #f "}"
+				       (list->seq
+					(make-mark-body name marker
+							(or super 'gc)
+							(c++-class-top-vars cl)
+							(car e))))))])
+			      (append
+			       (list
+				(make-tok 'public #f #f)
+				(make-tok ': #f #f))
+			       ;; gcMark method:
+			       (mk-proc gcMark gcMARK_TYPED)
+			       ;; gcFixup method:
+			       (mk-proc gcFixup gcFIXUP_TYPED)))))))
 		     (cdr e)))
 	      
 	      (cons (car e) (loop (cdr e) (sub1 p)))))))))
 
-(define (make-mark-body super vars where-v)
+(define (make-mark-body name marker super vars where-v)
   (let ([pointers (append
 		   (filter (lambda (x)
 			     (not (non-pointer-type? (cdr x))))
@@ -928,35 +937,27 @@
      (list
       (make-tok super #f #f)
       (make-tok ':: #f #f)
-      (make-tok gcMark #f #f)
+      (make-tok name #f #f)
       (make-parens
        "(" #f #f ")"
-       (seq (make-tok 'mark #f #f)))
+       (seq))
       (make-tok semi #f #f))
      (if (null? pointers)
 	 null
-	 (list
-	  (make-tok 'if #f #f)
-	  (make-parens
-	   "(" #f #f ")"
-	   (seq (make-tok 'mark #f #f)))
-	  (make-braces
-	   "{" #f #f "}"
-	   (list->seq
-	    (apply
-	     append
-	     (map (lambda (x)
-		    (list
-		     (make-tok gcMARK_TYPED #f #f)
-		     (make-parens
-		      "(" #f #f ")"
-		      (list->seq
-		       (append
-			(type->decl (cdr x) where-v)
-			(list (make-tok '|,| #f #f)
-			      (make-tok (car x) #f #f)))))
-		     (make-tok semi #f #f)))
-		  pointers)))))))))
+	 (apply
+	  append
+	  (map (lambda (x)
+		 (list
+		  (make-tok marker #f #f)
+		  (make-parens
+		   "(" #f #f ")"
+		   (list->seq
+		    (append
+		     (type->decl (cdr x) where-v)
+		     (list (make-tok '|,| #f #f)
+			   (make-tok (car x) #f #f)))))
+		  (make-tok semi #f #f)))
+	       pointers))))))
 
 (define (find-c++-class class-name report-err?)
   (and class-name

@@ -350,6 +350,7 @@ extern void *GC_alloc_space, *GC_alloc_top;
                       && ((unsigned long)(x) >= (unsigned long)GC_alloc_space) \
                       && ((unsigned long)(x) <= (unsigned long)GC_alloc_top)) \
                     GC_mark(x)
+#define gcMARK_TYPED(t, x) gcMARK(x)
 #define gcFIXUP_TYPED(t, x) if (!((long)(x) & 0x1) \
                                && ((unsigned long)(x) >= (unsigned long)GC_alloc_space) \
                                && ((unsigned long)(x) <= (unsigned long)GC_alloc_top)) \

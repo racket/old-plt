@@ -87,8 +87,6 @@ wxColour::wxColour(wxColour *col)
 wxColour::wxColour(const char *col)
 : wxObject(COLOR_CLEANUP)
 {
-    wxColour *the_colour;
-
     __type = wxTYPE_COLOUR;
 
     locked = 0;

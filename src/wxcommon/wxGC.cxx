@@ -158,30 +158,60 @@ int GC_is_wx_object(void *v)
 
 #ifdef MZ_PRECISE_GC
 
-void gc::gcMark(Mark_Proc /* mark */)
+void gc::gcMark()
 {
 }
 
-void gc_cleanup::gcMark(Mark_Proc mark)
+void gc::gcFixup()
 {
-  if (mark) {
-    gcMARK(__gc_external);
-  }
+}
+
+void gc_cleanup::gcMark()
+{
+  gcMARK(__gc_external);
+}
+
+void gc_cleanup::gcFixup()
+{
+  gcFIXUP(__gc_external);
 }
 
 #include "scheme.h"
 
-static int mark_cpp_object(void *p, Mark_Proc mark)
+static int size_cpp_object(void *p)
+{
+  short size = ((short *)p)[1];
+  return size + 1;
+}
+
+static int mark_cpp_object(void *p)
 {
   short size = ((short *)p)[1];
   gc *obj = (gc *)gcPTR_TO_OBJ(p);
 
-  obj->gcMark(mark);
+  obj->gcMark();
 
   return size + 1;
 }
 
-static int mark_cpp_array_object(void *p, Mark_Proc mark)
+static int fixup_cpp_object(void *p)
+{
+  short size = ((short *)p)[1];
+  gc *obj = (gc *)gcPTR_TO_OBJ(p);
+
+  obj->gcFixup();
+
+  return size + 1;
+}
+
+static int size_cpp_array_object(void *p);
+{
+  short orig_size = ((short *)p)[1];
+
+  return orig_size + 1;
+}
+
+static int do_cpp_array_object(void *p, int fixup)
 {
   short size, orig_size = ((short *)p)[1];
   void **pp = (void **)gcPTR_TO_OBJ(p);
@@ -196,7 +226,10 @@ static int mark_cpp_array_object(void *p, Mark_Proc mark)
 
   while (size > 0) {
     obj = (gc *)pp;
-    obj->gcMark(mark);
+    if (fixup)
+      obj->gcFixup();
+    else
+      obj->gcMark();
 
     pp += s;
     size -= s;
@@ -205,7 +238,17 @@ static int mark_cpp_array_object(void *p, Mark_Proc mark)
   return orig_size + 1;
 }
 
-static int mark_preallocated_object(void *p, Mark_Proc /* mark */)
+static int mark_cpp_array_object(void *p)
+{
+  return do_cpp_array_object(void *p, 0)
+}
+
+static int mark_cpp_array_object(void *p)
+{
+  return do_cpp_array_object(void *p, 1)
+}
+
+static int size_preallocated_object(void *p)
 {
   short size = ((short *)p)[1];
   
@@ -217,9 +260,18 @@ static int is_initialized;
 static void initize(void)
 {
   /* Initialize: */
-  GC_register_traverser(scheme_rt_cpp_object, mark_cpp_object);
-  GC_register_traverser(scheme_rt_cpp_array_object, mark_cpp_array_object);
-  GC_register_traverser(scheme_rt_preallocated_object, mark_preallocated_object);
+  GC_register_traversers(scheme_rt_cpp_object, 
+			 size_cpp_object,
+			 mark_cpp_object,
+			 fixup_cpp_object);
+  GC_register_traversers(scheme_rt_cpp_array_object,
+			 size_cpp_array_object,
+			 mark_cpp_array_object,
+			 fixup_cpp_array_object);
+  GC_register_traversers(scheme_rt_preallocated_object,
+			 size_preallocated_object,
+			 size_preallocated_object,
+			 size_preallocated_object);
   
   is_initialized = 1;
 }

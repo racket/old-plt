@@ -88,7 +88,8 @@ public:
 
 #ifdef MZ_PRECISE_GC
   /* Overridden in each subclass: */
-  virtual void gcMark(Mark_Proc mp);
+  virtual void gcMark();
+  virtual void gcFixup();
 #endif
 };
 
@@ -103,7 +104,8 @@ public:
   void install_cleanup();  
 
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mp);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 

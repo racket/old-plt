@@ -2115,6 +2115,7 @@ Scheme_Object *mx_all_coclasses(int argc,Scheme_Object **argv) {
 Scheme_Object *mx_com_object_eq(int argc,Scheme_Object **argv) {
   IUnknown *pIUnknown1,*pIUnknown2;
   IDispatch *pIDispatch1,*pIDispatch2;
+  Scheme_Object *retval;
 
   for (int i = 0; i < 2; i++) {
     if (MX_COM_OBJP(argv[i]) == FALSE) {
@@ -2125,10 +2126,17 @@ Scheme_Object *mx_com_object_eq(int argc,Scheme_Object **argv) {
   pIDispatch1 = MX_COM_OBJ_VAL(argv[0]);
   pIDispatch2 = MX_COM_OBJ_VAL(argv[1]);
 
+  // these should never fail
+
   pIDispatch1->QueryInterface(IID_IUnknown,(void **)&pIUnknown1);
   pIDispatch2->QueryInterface(IID_IUnknown,(void **)&pIUnknown2);
 
-  return (pIUnknown1 == pIUnknown2) ? scheme_true : scheme_false;
+  retval = (pIUnknown1 == pIUnknown2) ? scheme_true : scheme_false;
+
+  pIUnknown1->Release();
+  pIUnknown2->Release();
+
+  return retval;
 }
 
 Scheme_Object *mx_document_objects(int argc,Scheme_Object **argv) {

@@ -357,7 +357,15 @@
                                               (cond
                                                 [(null? datum) null]
                                                 [(self-quoting? datum) datum]
-                                                [(pair? datum) (improper-map loop datum)]
+                                                [(pair? datum)
+                                                 (let ([lst (syntax->list expr)])
+                                                   (cond
+                                                     [(and lst
+                                                           (= (length lst) 2)
+                                                           (symbol? (syntax-e (car lst))))
+                                                      (list (syntax-e (car lst))
+                                                            (loop (cadr lst)))]
+                                                     [else (improper-map loop datum)]))]
                                                 [else 
                                                  (let ([name (make-syntax-name)])
                                                    (set! names (cons name names))

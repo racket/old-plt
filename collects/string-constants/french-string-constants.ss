@@ -684,4 +684,14 @@
  (insert-large-letters... "Inserer de grandes lettres...")
  (large-semicolon-letters "Grandes lettres en points-virgules")
  (text-to-insert "Texte à inserer")
+
+ (module-browser-filename-format "Nom de fichier complet: ~a (~a lignes)")
+ (module-browser-font-size-gauge-label "Taille de la police")
+ (module-browser-progress-label "Avancement du navigateur de modules")
+ (module-browser-adding-file "Ajout du fichier: ~a...")
+ (module-browser-laying-out-graph-label "Tracer le graph")
+ (module-browser-open-file-format "Ouvrir ~a")
+ (module-browser "Navigateur de modules") ;; frame title
+ (module-browser... "Navigateur de modules...") ;; menu item title
+ 
  )

@@ -1,7 +1,8 @@
 (reference-library "macro.ss")
-(reference-library "prettys.ss")
+(reference-library "mzlib.ss")
+(reference-library "pretty.ss")
 
-(begin-expansion-time
+(begin-elaboration-time
   (define plt-dir (or (getenv "PLTHOME") "/usr/local/lib/plt")))
 
 (define annotate? (not (equal? (getenv "MZRICESKIPARIES") "yes")))
@@ -42,9 +43,6 @@
 
 (when use-print-convert?
   (reference-library "pconver.ss"))
-
-(reference-library "mzlib.ss")
-(reference-library "pretty.ss")
 
 (reference-library (begin-elaboration-time
 		     (build-path plt-dir "lib" "require.ss")))

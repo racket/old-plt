@@ -4,6 +4,8 @@
 (define (show-pict p)
   (define s (make-semaphore))
 
+  (define scale 1)
+
   (define f (make-object (class frame% ()
 			   (override
 			     [on-close
@@ -15,8 +17,9 @@
 			   (override
 			     [on-paint
 			      (lambda ()
-				(draw-pict p (send this get-dc)
-					   0 0))])
+				(let ([dc (send this get-dc)])
+				  (send dc set-scale scale scale)
+				  (draw-pict p dc 0 0)))])
 			   (sequence (super-init f)))))
 
   (define mb (make-object menu-bar% f))
@@ -25,14 +28,14 @@
 
   (define scale-menu (make-object menu% "Scale" mb))
   (define (add-scale s)
-    (make-object checkable-menu-item% (format "~a~n" s)
+    (make-object checkable-menu-item% (format "~a" s)
 		 scale-menu (lambda (i e)
 			      (for-each
 			       (lambda (i) (send i check #f))
 			       (send scale-menu get-items))
 			      (send i check #t)
 			      (let ([dc (send c get-dc)])
-				(send dc set-scale s s)
+				(set! scale s)
 				(send dc clear)
 				(send c on-paint)))))
   (add-scale 1/4)

@@ -113,7 +113,7 @@
       (set-pict-children! b null)
       b))
 
-  (define (raise p n)
+  (define (lift p n)
     (let ([dh (- (max 0 (- n (pict-descent p))))])
       (make-pict (pict-draw p)
 		 (pict-width p) (+ dh (pict-height p))

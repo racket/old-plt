@@ -1,3 +1,114 @@
+(drscheme:eval:set-basic-parameters
+ ((listof (is-a?/c snip-class%)) . -> . void?)
+ (snipclasses)
+ "sets the parameters that are shared between the repl's"
+ "initialization and \\iscmprocedure{expand-program}")
+
+(drscheme:eval:get-snip-classes
+ (-> (listof (is-a?/c snip-class%)))
+ ()
+ "Returns a list of all of the snipclasses in the current eventspace")
+
+(drscheme:eval:expand-program
+ ((union port? drscheme:language:text/pos?)
+  drscheme:language-configuration:language-settings?
+  (boolean?
+   (union eof-object? syntax? (cons/p string? any?))
+   ((-> any?) . -> . any?)
+   (-> void?)
+   . -> .
+   void?)
+  . -> .
+  void?)
+ (input language-settings iter)
+
+"Use this method to expand the contents of the definitions"
+"window for use with external program processing tools."
+""
+"This method creates a custodian and an eventspace (on the"
+"new custodian) to expand the user's program. It does not"
+"kill this custodian, but it can safely be shutdown (with"
+"\\MzLink{mz:custodians}{custodian-shutdown-all}) after the"
+"expansion is finished."
+""
+"It initializes the"
+"user's eventspace's main thread with several parameters:"
+"\\begin{itemize}"
+"\\item \\rawscm{current-custodian} is set to a new custodian."
+"\\item \\rawscm{current-namespace} has been set to a newly"
+"  created empty namespace. This namespace has the following modules "
+"  copied (with \\MzLink{mz:namespace-utilities}{\\rawscm{namespace-attach-module}})"
+"  from DrScheme's original namespace:"
+"  \\begin{itemize}"
+"  \\item \\rawscm{'mzscheme}"
+"  \\item \\rawscm{'(lib \"mred.ss\" \"mred\")}"
+"  \\end{itemize}"
+""
+"\\item "
+"  \\MzLink{mz:p:break-enabled}{\\rawscm{break-enabled}}"
+"  is \\rawscm{\\#t}"
+"\\item"
+"  \\MzLink{mz:p:read-curly-brace-as-paren}{\\rawscm{read-curly-brace-as-paren}}"
+"  is \\rawscm{\\#t},"
+"\\item"
+"  \\MzLink{mz:p:read-square-bracket-as-paren}{\\rawscm{read-square-bracket-as-paren}}"
+"  is \\rawscm{\\#t},"
+"\\item The \\MzLink{mz:p:current-load}{current-load} parameter"
+"  is set to a procedure that calls the language's"
+"  \\rawscm{front-end} method, instead of just using"
+"  \\rawscm{read}. "
+"\\item The snip-class-list, returned by"
+"@flink get-the-snip-class-list"
+"is initialized with all of the snipclasses in DrScheme's eventspace's snip-class-list."
+""
+"\\end{itemize}"
+""
+"The \\var{language-settings} argument is the current"
+"language and its settings. See"
+"@flink drscheme:language-configuration:make-language-settings"
+"for details on that structure."
+""
+"If the program is associated with a DrScheme"
+"frame, get the frame's language settings from the"
+"@ilink drscheme:unit:definitions-text get-next-settings"
+"method of "
+"@ilink drscheme:unit:definitions-text %"
+".  Also, the most recently chosen language in"
+"the language dialog is saved via the framework's"
+"preferences. Apply"
+"@flink preferences:get"
+"to"
+"@flink drscheme:language-configuration:get-settings-preferences-symbol"
+"for that \\var{language-settings}."
+""
+"The \\var{input} argument specifies the source of the program."
+""
+"The \\var{iter} argument is called for each expression in the"
+"expanded program and once more with eof, unless an error is"
+"raised during expansion.  Once an error is raised, it is"
+"called with the error and never again. Additionally,"
+"\\rawscm{eval-compile-time-part-of-top-level} is called after"
+"the program is expanded, but before \\var{iter} is called."
+""
+"The first argument to \\var{iter} is a boolean indicating if"
+"an exception was raised. If the first argument is"
+"\\rawscm{\\#f}, the second argument is the expanded program"
+"(syntax) or eof. If the first argument is \\rawscm{\\#t}, the"
+"second argument is the \\rawscm{cons} pair of information"
+"indicating a syntax error has occurred.  The cons pair"
+"contains the arguments that were passed to the"
+"\\MzLink{mz:p:error-display-handler}{\\rawscm{error-display-handler}}."
+"The third argument to \\var{iter} accepts a thunk and calls"
+"that thunk on the main thread of the user's eventspace (and"
+"it returns the result of calling that thunk). Use it to"
+"extract information about the user's parameter settings or"
+"namespace. The last argument to \\var{iter} is a thunk that"
+"continues expanding the rest of the contents of the"
+"definitions window. If the first argument to \\var{iter} was"
+"\\rawscm{\\#t} this argument is just the primitive"
+"\\rawscm{void}.")
+
+
 
                                    
     ;;        ;;                   

@@ -812,51 +812,50 @@
 	      [users-namespace #f]
 	      [users-custodian #f]
 	      [err-termination? #f])
-	  (send interactions-text
-		expand-program
-		(drscheme:language:make-text/pos definitions-text
-						 0
-						 (send definitions-text last-position))
-		(send definitions-text get-next-settings)
-		(lambda (err? sexp run-in-expansion-thread loop)
-		  (unless users-namespace
-		    (set! users-custodian (run-in-expansion-thread current-custodian))
-		    (set! users-namespace (run-in-expansion-thread current-namespace)))
-		  (cond
-		    [err?
-		     (set! err-termination? #t)
-		     (error-termination sexp)]
-		    [(eof-object? sexp)
-		     (custodian-shutdown-all users-custodian)]
-		    [else
-		     (let-values ([(new-binders
-				    new-varrefs
-				    new-tops
-				    new-requires
-				    new-require-for-syntaxes
-				    new-referenced-macros
-				    new-bound-in-sources
-				    has-module?)
-				   (annotate-basic sexp run-in-expansion-thread)])
-
-		       (if has-module?
-			   (annotate-complete users-namespace
-					      new-binders
-					      new-varrefs
-					      new-tops
-					      new-requires
-					      new-require-for-syntaxes
-					      new-referenced-macros
-					      new-bound-in-sources)
-			   (begin
-			     (set! tl-binders (append new-binders tl-binders))
-			     (set! tl-varrefs (append new-varrefs tl-varrefs))
-			     (set! tl-requires (append new-requires tl-requires))
-			     (set! tl-require-for-syntaxes (append new-require-for-syntaxes tl-require-for-syntaxes))
-			     (set! tl-referenced-macros (append new-referenced-macros tl-referenced-macros))
-			     (set! tl-bound-in-sources (append new-bound-in-sources tl-bound-in-sources))
-			     (set! tl-tops (append new-tops tl-tops)))))
-		     (loop)])))
+	  (drscheme:eval:expand-program
+           (drscheme:language:make-text/pos definitions-text
+                                            0
+                                            (send definitions-text last-position))
+           (send definitions-text get-next-settings)
+           (lambda (err? sexp run-in-expansion-thread loop)
+             (unless users-namespace
+               (set! users-custodian (run-in-expansion-thread current-custodian))
+               (set! users-namespace (run-in-expansion-thread current-namespace)))
+             (cond
+               [err?
+                (set! err-termination? #t)
+                (error-termination sexp)]
+               [(eof-object? sexp)
+                (custodian-shutdown-all users-custodian)]
+               [else
+                (let-values ([(new-binders
+                               new-varrefs
+                               new-tops
+                               new-requires
+                               new-require-for-syntaxes
+                               new-referenced-macros
+                               new-bound-in-sources
+                               has-module?)
+                              (annotate-basic sexp run-in-expansion-thread)])
+                  
+                  (if has-module?
+                      (annotate-complete users-namespace
+                                         new-binders
+                                         new-varrefs
+                                         new-tops
+                                         new-requires
+                                         new-require-for-syntaxes
+                                         new-referenced-macros
+                                         new-bound-in-sources)
+                      (begin
+                        (set! tl-binders (append new-binders tl-binders))
+                        (set! tl-varrefs (append new-varrefs tl-varrefs))
+                        (set! tl-requires (append new-requires tl-requires))
+                        (set! tl-require-for-syntaxes (append new-require-for-syntaxes tl-require-for-syntaxes))
+                        (set! tl-referenced-macros (append new-referenced-macros tl-referenced-macros))
+                        (set! tl-bound-in-sources (append new-bound-in-sources tl-bound-in-sources))
+                        (set! tl-tops (append new-tops tl-tops)))))
+                (loop)])))
 	  (unless err-termination? 
 	    (annotate-complete users-namespace
 			       tl-binders

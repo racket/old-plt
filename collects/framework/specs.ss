@@ -504,7 +504,7 @@
            false? any? 
            union symbols
            subclass?/c implementation?/c is-a?/c
-           listof vectorof
+           listof vectorof cons/p
 	   mixin-contract make-mixin-contract/<%> make-mixin-contract/%)
   
   (define-syntax (name stx)
@@ -567,10 +567,16 @@
                  (andmap p v)))))
   
   (define (vectorof p)
-    (name vectorof 
+    (name vectorof
           (lambda (v)
             (and (vector? v)
                  (andmap p (vector->list v))))))
+
+  (define (cons/p hdp tlp)
+    (lambda (x)
+      (and (pair? x)
+	   (hdp (car x))
+	   (tlp (cdr x)))))
 
   (define mixin-contract
     (class?

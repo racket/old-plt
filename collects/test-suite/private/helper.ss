@@ -46,7 +46,7 @@ saving doesn't work right -- need a snipclass for helper%
           ;; execute ((is-a?/c expand-program%) ((union (id-s?/c snip%) false?) . -> . void?) . -> . void?)
           ;; execute the test case
           (define/public (execute expander continue) ; =drscheme-eventspace=
-            (send expander expand-text/multiple prg-text
+            (send expander eval-text/multiple prg-text
                   (lambda () ; =drscheme-eventspace=
                     (let ([next-case (next)])
                       (if next-case

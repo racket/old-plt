@@ -378,19 +378,23 @@ to the original stdout of DrScheme.
       (define current-test-coverage-info (make-parameter #f))
       
       (define (initialize-test-coverage-point key expr)
-        (unless (current-test-coverage-info)
+	(unless (current-test-coverage-info)
 	  (let ([ht (make-hash-table)])
 	    (current-test-coverage-info ht)
-	    (send (drscheme:rep:current-rep) set-test-coverage-info
-                  ht
-                  (let ([s (make-object style-delta%)])
-                    (send s set-delta-foreground "black")
-                    s)
-                  (let ([s (make-object style-delta%)])
-                    (send s set-delta-foreground "firebrick")
-                    s)
-                  #f)))
-        (hash-table-put! (current-test-coverage-info) key (list #f expr)))
+	    (let ([rep (drscheme:rep:current-rep)])
+	      (when rep
+		(send rep set-test-coverage-info
+		      ht
+		      (let ([s (make-object style-delta%)])
+			(send s set-delta-foreground "black")
+			s)
+		      (let ([s (make-object style-delta%)])
+			(send s set-delta-foreground "firebrick")
+			s)
+		      #f)))))
+	(hash-table-put! (current-test-coverage-info)
+			 key
+			 (list #f expr)))
       
       (define (test-covered key)
         (let ([v (hash-table-get (current-test-coverage-info) key)])

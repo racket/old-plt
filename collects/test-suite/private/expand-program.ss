@@ -10,6 +10,9 @@
   
   (provide expand-program@)
   
+  (define oport (current-output-port))
+  (define (oprintf . args) (apply fprintf oport args))
+  
   (define expand-program@
     (unit/sig expand-program^
       (import drscheme:tool^)
@@ -75,13 +78,41 @@
                         (custodian-shutdown-all user-custodian)))
                   (custodian-shutdown-all user-custodian))))
           
-          ;; expand-text ((is-a?/c text%) (any? . -> . void?) . -> . void?)
+          ;; eval-text ((is-a?/c text%) (any? . -> . void?) . -> . void?)
           ;; evaluate the text box and call the function with it's value
-          (define/public (expand-text text next) ; =drscheme-eventspace=
+          (define/public (eval-text text next) ; =drscheme-eventspace=
+            (eval-text/any text next eval (void)))
+          
+          ;; eval-text/values/ports ((is-a?/c text%) 
+          ;;                         ((listof any?) . -> . void?)
+          ;;                         (union port #f)
+          ;;                         (union port #f)
+          ;;                         ->
+          ;;                         void?)
+          (define/public (eval-text/values/ports text next out err)
+            (eval-text/any
+             text
+             next
+             (lambda (object)
+               (call-with-values
+                (lambda ()
+                  (parameterize ([current-output-port out]
+                                 [current-error-port err])
+                    (eval object)))
+                (lambda x x)))
+             (list (void))))
+          
+          ;; eval-text/any ((is-a?/c text%) 
+          ;;                (any? . -> . void?)
+          ;;                (syntax? . -> . any?)
+          ;;                . -> .
+          ;;                void?)
+          ;; evaluate the text box and call the function with the values of the box
+          (define/public (eval-text/any text next do-eval blank) ; =drscheme-eventspace=
             (expand-program
              (drscheme:language:make-text/pos
               text 0 (send text last-position))
-             (let ([value (void)]
+             (let ([value blank]
                    [first-expr? true])
                (lambda (object continue) ; =user-eventspace=
                  (cond
@@ -92,7 +123,7 @@
                    [(syntax? object)
                     (if first-expr?
                         (begin
-                          (set! value (eval object))
+                          (set! value (do-eval object))
                           (set! first-expr? false)
                           (continue))
                         (error-handler
@@ -102,9 +133,9 @@
                    [else (error 'eval-text "Error")])))
              #f))
           
-          ;; expand-text ((is-a?/c text%) (any? . -> . void?) . -> . void?)
+          ;; eval-text/multiple ((is-a?/c text%) (any? . -> . void?) . -> . void?)
           ;; evaluate the text box and call the function with it's value
-          (define/public (expand-text/multiple text next) ; =drscheme-eventspace=
+          (define/public (eval-text/multiple text next) ; =drscheme-eventspace=
             (expand-program
              (drscheme:language:make-text/pos
               text 0 (send text last-position))
@@ -129,36 +160,7 @@
                  (queue-to-drscheme
                   (lambda () ; =drscheme-eventspace=
                     (next value)))))))
-          
-          ;; eval-syntax/values (syntax? (any? . -> . void?) . -> . void?)
-          ;; evaluate the syntax in the users eventspace, expecting multiple values
-          ;; also accepts two ports
-          (define/public (eval-syntax/values syntax-object next) ; =drscheme-eventspace=
-            (queue-to-user
-             (lambda () ; =user-eventspace=
-               (call-with-values
-                (lambda () (eval syntax-object))
-                (lambda values
-                  (queue-to-drscheme
-                   (lambda () ; =drscheme-eventspace=
-                     (next values))))))))
-          
-          ;; eval-syntax/values/ports (syntax? (any? . -> . void?) output-port? output-port? . -> . void?)
-          ;; evaluate the syntax in the users eventspace, expecting multiple values
-          ;; and setting the std error and std output ports
-          (define/public (eval-syntax/values/ports syntax-object next out-port err-port) ; =drscheme-eventspace=
-            (queue-to-user
-             (lambda () ; =user-eventspace=
-               (call-with-values
-                (lambda () 
-                  (parameterize ([current-output-port out-port]
-                                 [current-error-port err-port])
-                    (eval syntax-object)))
-                (lambda values
-                  (queue-to-drscheme
-                   (lambda () ; =drscheme-eventspace=
-                     (next values))))))))
-          
+
           ;; get-language (-> language?)
           ;; the language being used by the execution
           (define/public (get-language)

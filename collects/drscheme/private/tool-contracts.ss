@@ -706,12 +706,15 @@
  "windows. Also binds f5 to Execute and f1 to Help Desk.")
 
 (drscheme:rep:current-rep
-  (-> (is-a?/c drscheme:rep:text%))
+  (-> (union false? (is-a?/c drscheme:rep:text%)))
   ()
 
 "This is a parameter whose value should not be set by tools."
 "It is initialized to the repl that controls this evaluation"
-"in the user's thread")
+"in the user's thread."
+""
+"It only returns \\scheme|#f| if the program not running"
+"in the context of a repl (eg, the test suite window).")
 
 (drscheme:rep:which-number-snip
  (case->

@@ -1,7 +1,7 @@
 (module mztext mzscheme
 
 (require (lib "string.ss")
-         (lib "pp-utils.ss" "preprocessor"))
+         (all-except (lib "pp-utils.ss" "preprocessor") stdin))
 (provide (all-from (lib "pp-utils.ss" "preprocessor")))
 
 ;;=============================================================================
@@ -85,11 +85,40 @@
                  (loop 0 (+ n so-far) (cdr ports)))]))))
   (define (close)
     (for-each (lambda (p) (when (input-port? p) (close-input-port p))) ports))
-  (values (make-custom-input-port read! peek! close) add!))
+  (let ([p (make-custom-input-port read! peek! close)])
+    (port->adder-op p 'set! add!)
+    p))
 
 (provide add-to-input)
-(define current-add-to-input (make-parameter #f))
-(define (add-to-input . args) (apply (current-add-to-input) args))
+(define (add-to-input . args)
+  (apply port->adder-op (stdin) 'add args))
+
+(define port->adder-op
+  (let ([table (make-hash-table 'weak)])
+    (lambda (port msg . args)
+      (case msg
+        [(add) (apply (hash-table-get table port
+                        (lambda ()
+                          (error 'add-to-input
+                                 "current input is not a composite port")))
+                      args)]
+        [(set!) (apply hash-table-put! table port args)]
+        [(get?) (hash-table-get table port (lambda () #f))]
+        [else (error 'port->adder-op "unknown message: ~e" msg)]))))
+
+;; Define stdin as a parameter that takes care of changing its argument to a
+;; newly generated composite-input-port if needed, and also propagate changes
+;; to current-input-port.
+(provide stdin)
+(define stdin
+  (make-parameter (current-input-port)
+    (lambda (newport)
+      (let ([p (if (port->adder-op newport 'get?)
+                 newport
+                 (apply make-composite-input
+                        (if (list? newport) newport (list newport))))])
+        (current-input-port p)
+        p))))
 
 ;;=============================================================================
 ;; Dispatching
@@ -213,7 +242,8 @@
 (provide get-arg*)
 (define (get-arg*)
   (let ([buf (open-output-string)])
-    (parameterize ([stdout buf] [stdin (open-input-string (get-arg))]) (run))
+    (parameterize ([stdout buf] [stdin (open-input-string (get-arg))])
+      (run) (flush-output buf))
     (get-output-string buf)))
 
 ;;=============================================================================
@@ -294,8 +324,7 @@
 (define (preprocess . files)
   (initialize)
   (unless (null? files)
-    (let-values ([(input add-port) (make-composite-input)])
-      (parameterize ([stdin input] [current-add-to-input add-port])
-        (apply include files)))))
+    (parameterize ([stdin '()])
+      (apply include files))))
 
 )

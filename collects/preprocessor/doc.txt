@@ -561,7 +561,8 @@ Input and "output":
   used to plant handlers that happen when reading beyond a specific
   point (for example, this is how the directory is changed to the
   processed file to allow relative includes).  Other simple values are
-  converted to strings using `format' but this might change.
+  converted to strings using `format' but this might change.  (See also
+  `stdin' below.)
 
 > paren-pairs
 
@@ -658,6 +659,13 @@ Invoking the preprocessor:
 Miscellaneous:
 
 > stdin
+
+  This is a parameter that behaves like `current-input-port', but when
+  set to a new non-composite input port, it will create a composite port
+  from it, and use it.  The change is propagated to current-input-port,
+  so this parameter should be used instead if you expect `add-to-input'
+  to work.
+
 > stdout
 > stderr
 > cd

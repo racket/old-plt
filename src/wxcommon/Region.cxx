@@ -274,7 +274,7 @@ void wxRegion::SetEllipse(float x, float y, float width, float height)
 	p[4 * x_extent - i - 1 - 2 * is_odd].y = (int)floor(y + dy);
       }
     }
-    rgn = XPolygonRegion(p, 4 * x_extent, WindingRule);
+    rgn = XPolygonRegion(p, (4 * x_extent) - (2 * is_odd) - 1, WindingRule);
   }
 #endif
 }
@@ -383,14 +383,14 @@ void wxRegion::SetArc(float x, float y, float w, float h, float start, float end
   cx = x + w/2;
   cy = y + h/2;
 
-  a[0].x = (w / 2) * cos(end) + cx;
-  a[0].y = (h / 2) * (-sin(end)) + cy;
+  a[0].x = ((w+2) / 2) * cos(end) + cx;
+  a[0].y = ((h+2) / 2) * (-sin(end)) + cy;
 
   a[1].x = cx;
   a[1].y = cy;
 
-  a[2].x = (w / 2) * cos(start) + cx;
-  a[2].y = (h / 2) * (-sin(start)) + cy;
+  a[2].x = ((w+2) / 2) * cos(start) + cx;
+  a[2].y = ((h+2) / 2) * (-sin(start)) + cy;
 
   n = 3;
 
@@ -399,12 +399,12 @@ void wxRegion::SetArc(float x, float y, float w, float h, float start, float end
   if (!saw_end && (end > start) && (end < (pi / 2)))
     saw_end = 1;
   if (saw_start && !closed) {
-    a[n].x = x + w;
-    a[n++].y = y;
+    a[n].x = x + w + 2;
+    a[n++].y = y - 2;
   }
   if (saw_start && !saw_end) {
     a[n].x = cx;
-    a[n++].y = y;
+    a[n++].y = y - 2;
   } else
     closed = saw_start;
 
@@ -413,11 +413,11 @@ void wxRegion::SetArc(float x, float y, float w, float h, float start, float end
   if (!saw_end && (end > start) && (end < pi))
     saw_end = 1;
   if (saw_start && !closed) {
-    a[n].x = x;
-    a[n++].y = y;
+    a[n].x = x - 2;
+    a[n++].y = y - 2;
   }
   if (saw_start && !saw_end) {
-    a[n].x = x;
+    a[n].x = x - 2;
     a[n++].y = cy;
   } else
     closed = saw_start;
@@ -427,12 +427,12 @@ void wxRegion::SetArc(float x, float y, float w, float h, float start, float end
   if (!saw_end && (end > start) && (end < (1.5 * pi)))
     saw_end = 1;
   if (saw_start && !closed) {
-    a[n].x = x;
-    a[n++].y = y + h;
+    a[n].x = x - 2;
+    a[n++].y = y + h + 2;
   }
   if (saw_start && !saw_end) {
     a[n].x = cx;
-    a[n++].y = y + h;
+    a[n++].y = y + h + 2;
   } else
     closed = saw_start;
 
@@ -440,11 +440,11 @@ void wxRegion::SetArc(float x, float y, float w, float h, float start, float end
   saw_end = (end > start);
   
   if (saw_start && !closed) {
-    a[n].x = x + w;
-    a[n++].y = y + h;
+    a[n].x = x + w + 2;
+    a[n++].y = y + h + 2;
   }
   if (saw_start && !saw_end) {
-    a[n].x = x + w;
+    a[n].x = x + w + 2;
     a[n++].y = cy;    
   } else
     closed = saw_start;
@@ -452,23 +452,23 @@ void wxRegion::SetArc(float x, float y, float w, float h, float start, float end
   if (!saw_end && (end < (pi / 2)))
     saw_end = 1;
   if (saw_start && !closed) {
-    a[n].x = x + w;
-    a[n++].y = y;
+    a[n].x = x + w + 2;
+    a[n++].y = y - 2;
   }
   if (saw_start && !saw_end) {
     a[n].x = cx;
-    a[n++].y = y;    
+    a[n++].y = y - 2; 
   } else
     closed = saw_start;
   
   if (!saw_end && (end < pi))
     saw_end = 1;
   if (saw_start && !closed) {
-    a[n].x = x;
-    a[n++].y = y;
+    a[n].x = x - 2;
+    a[n++].y = y - 2;
   }
   if (saw_start && !saw_end) {
-    a[n].x = x;
+    a[n].x = x - 2;
     a[n++].y = cy;    
   } else
     closed = saw_start;
@@ -476,18 +476,18 @@ void wxRegion::SetArc(float x, float y, float w, float h, float start, float end
   if (!saw_end && (end < (1.5 * pi)))
     saw_end = 1;
   if (saw_start && !closed) {
-    a[n].x = x;
-    a[n++].y = y + h;
+    a[n].x = x - 2;
+    a[n++].y = y + h + 2;
   } 
   if (saw_start && !saw_end) {
     a[n].x = cx;
-    a[n++].y = y + h;
+    a[n++].y = y + h + 2;
   } else
     closed = saw_start;
 
   if (!closed) {
-    a[n].x = x + w;
-    a[n++].y = y + h;
+    a[n].x = x + w + 2;
+    a[n++].y = y + h + 2;
   }
 
   r->SetPolygon(n, a);

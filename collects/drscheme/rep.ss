@@ -217,6 +217,7 @@
   (define (make-text% super%)
     (class super% args
       (inherit insert change-style
+	       set-styles-sticky
 	       clear-undos set-caret-owner
 	       clear-previous-expr-positions
 	       get-end-position
@@ -779,7 +780,7 @@
 		 (send file set-position start finish))
 	     (send file scroll-to-position start #f finish)
 	     (send file end-edit-sequence)
-	     (send (send file get-canvas) focus)))]
+	     (send file set-caret-owner #f 'global)))]
 
 	[report-error ; =Kernel=, =Handler=
 	 (lambda (start-location end-location type input-string exn)
@@ -840,6 +841,7 @@
 	[user-setting (fw:preferences:get 'drscheme:settings)]
 	[user-custodian (make-custodian)]
 	[user-eventspace #f]
+	[user-namespace #f]
 	[user-thread #f])
       (private
 	[in-evaluation? #f] ; a heursitic for making the Break button send a break
@@ -1071,7 +1073,7 @@
 	   (set! eval-thread-state-sema (make-semaphore 1))
 	   (set! eval-thread-queue-sema (make-semaphore 0))
 
-	   (let ([thread-set (make-semaphore)]
+	   (let ([init-thread-complete (make-semaphore 0)]
 		 [goahead (make-semaphore)]
 		 [o (current-output-port)])
 	     (parameterize ([mred:current-eventspace user-eventspace])
@@ -1080,9 +1082,10 @@
 		  ; No user code has been evaluated yet, so we're in the clear...
 		  (break-enabled #f)
 		  (set! user-thread (current-thread))
-		  (semaphore-post thread-set)
 
 		  (initialize-parameters)
+
+		  (set! user-namespace (current-namespace))
 
 		  (let ([drscheme-error-escape-handler
 			 (lambda ()
@@ -1091,6 +1094,10 @@
 		    (basis:bottom-escape-handler drscheme-error-escape-handler))
 
 		  (update-running #f)
+
+		  ;; let init-thread procedure return,
+		  ;; now that parameters (and user-namespace) are set
+		  (semaphore-post init-thread-complete)
 
 		  ; We're about to start running user code.
 
@@ -1112,7 +1119,7 @@
 		      ;   protections.
 		      (thunk))
 		    (loop)))))
-	     (semaphore-wait thread-set)
+	     (semaphore-wait init-thread-complete)
 	     ; Start killed-thread
 	     (initialize-killed-thread)
 	     ; Let user expressions go...
@@ -1373,7 +1380,8 @@
 	   (reset-console))])
       (sequence
 	(set-display/write-handlers)
-	(apply super-init args))))
+	(apply super-init args)
+	(set-styles-sticky #f))))
 
   (define make-console-text%
     (lambda (super%)
@@ -1385,7 +1393,6 @@
 		 begin-edit-sequence
 		 end-edit-sequence
 		 run-after-edit-sequence
-		 set-styles-fixed
 		 change-style split-snip
 		 scroll-to-position locked? lock
 		 last-position get-start-position get-end-position

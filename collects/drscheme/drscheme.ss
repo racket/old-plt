@@ -1,3 +1,4 @@
+(require-library "errortrace.ss" "errortrace")
 (define graphical-debug? (getenv "GRAPHICAL_DEBUG"))
 (define textual-debug? #f)
 

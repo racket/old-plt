@@ -129,6 +129,9 @@ WXVARIANT="wx_xt"
 MROPTIONS=
 INCLUDEDEP="#"
 
+ZLIB_A="../wxcommon/zlib/libz.a"
+ZLIB_INC="-I../zlib"
+
 ###### OSKit stuff #######
 
 if test "${enable_oskit}" = "yes" ; then
@@ -346,6 +349,10 @@ case $OS in
   Darwin)
 
     CFLAGS="$CFLAGS -DOS_X"
+
+    # zlib comes with the OS
+    ZLIB_A=""
+    ZLIB_INC=""
 
     gcc_vers_three=`${CC} -v 2>&1 | grep "version 3[.]"`
     if test "$gcc_vers_three" = "" ; then
@@ -623,6 +630,9 @@ AC_SUBST(MAKE_FINISH)
 AC_SUBST(WXPRECOMP)
 AC_SUBST(USE_WXPRECOMP)
 AC_SUBST(INCLUDEDEP)
+
+AC_SUBST(ZLIB_A)
+AC_SUBST(ZLIB_INC)
 
 AC_SUBST(OSKHOME)
 AC_SUBST(EXTRA_OSK_LIBS)

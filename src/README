@@ -125,15 +125,18 @@ Mac OS Classic (PowerPC only):
     described below).
 
  1. Run the script `configure' (which is in the same directory as this
-    README), usually with a --prefix=TARGETDIR command-line argument,
-    and optionally with --enable-dynlib.
+    README), usually with a --prefix=TARGETDIR command-line argument
+    (where TARGETDIR is an absolute path), and optionally with
+    --enable-dynlib.
 
     For example, if you want to install into /usr/local/plt using
     dynamic libraries, then run
 
-        configure --prefix=/usr/local/plt --enable-dynlib
+        [here]configure --prefix=/usr/local/plt --enable-dynlib
 
-    The TARGETDIR must be an absolute path.
+    where "[here]" is the directory path containing the `configure'
+    script (possibly unnecessary, or possibly just "./", depending on
+    your shell and PATH setting.)
 
     If the --prefix flag is omitted, the binaries are built for an
     in-place installation (i.e., the plt directory containing this
@@ -146,8 +149,9 @@ Mac OS Classic (PowerPC only):
     executables (independent of --prefix). This build directory does
     not have to be in the plt/ tree, even for an "in-place" build, as
     long as you use GNU make when building MrEd. It's ok to run
-    `configure' from its own directory, but it's usually better to
-    pick a separate build directory that is otherwise empty.
+    `configure' from its own directory (as in the example above), but
+    it's often better to pick a separate build directory that is
+    otherwise empty.
 
     The --enable-dynlib flag works only when `configure' is called
     using an absolute path, or when an absolute path is provided with
@@ -159,7 +163,7 @@ Mac OS Classic (PowerPC only):
     variables. For example, to select the SGI compilers for Irix
     instead of gcc, run configure as
 
-         env CC=cc CXX=CC configure
+         env CC=cc CXX=CC [here]configure
 
     For cross compilation, set the compiler variables to a compiler
     for the target platform compiler, but also set CC_FOR_BUILD to a

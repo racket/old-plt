@@ -76,7 +76,6 @@
 	    (drscheme:basis:add-basis n)
 	    p))))
 
-
     (define make-edit%
       (lambda (super%)
 	(class super% args
@@ -94,7 +93,12 @@
 		   erase prompt-mode?
 		   get-canvas
 		   ready-non-prompt autoprompting?
+		   set-prompt-mode
+		   delete
+		   get-text
+		   reset-console-start-position
 		   last-position
+		   set-resetting
 		   position-line
 		   set-position
 		   get-frame
@@ -389,6 +393,11 @@
 							 [(base _1 _2) (split-path normalized)])
 					     base)))))
 			       p))
+		 (unless (mred:get-preference 'drscheme:keep-interactions-history)
+		   (set-resetting #t)
+		   (delete reset-console-start-position (last-position))
+		   (set-prompt-mode #f)				   
+		   (set-resetting #f))
 		 (super-reset-console)))]
 	    [initialize-console
 	     (lambda ()

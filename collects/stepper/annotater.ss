@@ -311,10 +311,11 @@
 	 
 	 (define (annotate/inner expr tail-bound pre-break? top-level? must-mark? procedure-name-info)
 	   
-	   (let* ([tail-recur (lambda (expr) (annotate/inner expr tail-bound #t #f #f #f))]
+	   (let* ([tail-recur (lambda (expr) (annotate/inner expr tail-bound #t #f #f procedure-name-info))]
                   [define-values-recur (lambda (expr name) 
                                          (annotate/inner expr tail-bound #f #f must-mark? name))]
                   [non-tail-recur (lambda (expr) (annotate/inner expr null #f #f #f #f))]
+                  [result-recur (lambda (expr) (annotate/inner expr null #f #f #f procedure-name-info))]
                   [let-rhs-recur (lambda (tail-bound)
                                    (lambda (expr bindings dyn-index-syms)
                                      (let* ([proc-name-info 
@@ -327,7 +328,7 @@
                   ; note: no pre-break for the body of a let; it's handled by the break for the
                   ; let itself.
                   [let-body-recur (lambda (expr bindings) 
-                                    (annotate/inner expr (binding-set-union tail-bound bindings) #f #f #t #f))]
+                                    (annotate/inner expr (binding-set-union tail-bound bindings) #f #f #t procedure-name-info))]
                   [cheap-wrap-recur (lambda (expr) (let-values ([(ann _) (tail-recur expr)]) ann))]
                   [no-enclosing-recur (lambda (expr) (annotate/inner expr 'all #f #f #t #f))]
                   [make-debug-info-normal (lambda (free-bindings)
@@ -534,15 +535,17 @@
                [(z:begin0-form? expr)
                 (let*-values
                     ([(bodies) (z:begin0-form-bodies expr)]
-                       [(annotated-bodies free-bindings-lists)
-                        (dual-map non-tail-recur bodies)]
-                       [(free-bindings) (apply binding-set-union free-bindings-lists)]
-                       [(debug-info) (make-debug-info-normal free-bindings)]
-                       [(annotated) `(#%begin0 ,@annotated-bodies)])
-                   (values (ccond [(or cheap-wrap? ankle-wrap?) (appropriate-wrap annotated free-bindings)]
-                                  [foot-wrap?
-                                   (wcm-wrap debug-info annotated)])
-                           free-bindings))]
+                     [(annotated-first free-bindings-first)
+                      (result-recur (car bodies))]
+                     [(annotated-bodies free-bindings-lists)
+                      (dual-map non-tail-recur (cdr bodies))]
+                     [(free-bindings) (apply binding-set-union free-bindings-first free-bindings-lists)]
+                     [(debug-info) (make-debug-info-normal free-bindings)]
+                     [(annotated) `(#%begin0 ,annotated-first ,@annotated-bodies)])
+                  (values (ccond [(or cheap-wrap? ankle-wrap?) (appropriate-wrap annotated free-bindings)]
+                                 [foot-wrap?
+                                  (wcm-wrap debug-info annotated)])
+                          free-bindings))]
                
                ; gott in himmel! this transformation is complicated.  Just for the record,
                ; here's a sample transformation:
@@ -655,8 +658,7 @@
                      [(annotated-vals free-bindings-vals)
                       (dual-map (let-rhs-recur letrec-tail-bound) vals binding-sets lifted-gensym-sets)]
                      [(annotated-body free-bindings-body)
-                      (let-body-recur (z:letrec-values-form-body expr) 
-                                      binding-list)]
+                      (let-body-recur (z:letrec-values-form-body expr) binding-list)]
                      [(free-bindings-inner) (apply binding-set-union free-bindings-body free-bindings-vals)]
                      [(free-bindings-outer) (remq* binding-list free-bindings-inner)])
                   (ccond [(or cheap-wrap? ankle-wrap?)
@@ -805,7 +807,7 @@
                      [(annotated-val free-bindings-val)
                       (non-tail-recur (z:with-continuation-mark-form-val expr))]
                      [(annotated-body free-bindings-body)
-                      (non-tail-recur (z:with-continuation-mark-form-body expr))]
+                      (result-recur (z:with-continuation-mark-form-body expr))]
                      [(free-bindings) (binding-set-union free-bindings-key free-bindings-val free-bindings-body)]
                      [(debug-info) (make-debug-info-normal free-bindings)]
                      [(annotated) `(#%with-continuation-mark

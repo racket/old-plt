@@ -88,10 +88,6 @@ typedef long FILE;
 # define _LINUX_TYPES_H  /* Blocks types.h */
 #endif
 
-#ifdef OS_X
-# include "carbon-precomp"
-#endif
-
 #ifndef SCHEME_DIRECT_EMBEDDED
 # define SCHEME_DIRECT_EMBEDDED 1
 #endif
@@ -139,6 +135,19 @@ typedef jmpbuf jmp_buf[1];
 
 #define MZ_EXTERN extern MZ_DLLSPEC
 
+/* PPC Linux plays a slimy trick: it defines strcpy() as a macro that
+   uses __extension__. This breaks the 3m xform. */
+#if defined(MZ_PRECISE_GC) && defined(strcpy)
+START_XFORM_SKIP;
+static inline void _mzstrcpy(char *a, const char *b)
+{
+  strcpy(a, b);
+}
+END_XFORM_SKIP;
+# undef strcpy
+# define strcpy _mzstrcpy
+#endif
+
 #ifdef __cplusplus
 extern "C" 
 {
@@ -179,10 +188,11 @@ typedef struct Scheme_Object
       struct { void *ptr; int pint; } ptr_int_val;
       struct { void *ptr; long pint; } ptr_long_val;
       struct { struct Scheme_Object *car, *cdr; } pair_val;
-      struct { struct Scheme_Env *env; struct Scheme_Object *code; } closure_val;
       struct { short len; short *vec; } svector_val;
     } u;
 } Scheme_Object;
+
+typedef struct Scheme_Object *(*Scheme_Closure_Func)(struct Scheme_Object *);
 
 /* Scheme_Small_Object is used for several types of MzScheme values: */
 typedef struct {
@@ -220,7 +230,7 @@ typedef struct Scheme_Symbol {
 
 typedef struct Scheme_Vector {
   Scheme_Type type;
-  MZ_HASH_KEY_EX
+  short keyex; /* 1 in low bit indicates immutable */
   int size;
   Scheme_Object *els[1];
 } Scheme_Vector;
@@ -483,8 +493,8 @@ typedef struct {
 #define SCHEME_PRIM(obj)     (((Scheme_Primitive_Proc *)(obj))->prim_val)
 #define SCHEME_CLSD_PRIM(obj) (((Scheme_Closed_Primitive_Proc *)(obj))->prim_val)
 #define SCHEME_CLSD_PRIM_DATA(obj) (((Scheme_Closed_Primitive_Proc *)(obj))->data)
-#define SCHEME_CLOS_ENV(obj) ((obj)->u.closure_val.env)
-#define SCHEME_CLOS_CODE(obj) ((obj)->u.closure_val.code)
+#define SCHEME_CLOS_FUNC(obj) ((Scheme_Closure_Func)SCHEME_CAR(obj))
+#define SCHEME_CLOS_DATA(obj) SCHEME_CDR(obj)
 
 /*========================================================================*/
 /*                      hash tables and environments                      */
@@ -811,6 +821,8 @@ enum {
   MZCONFIG_ERROR_PRINT_SRCLOC,
 
   MZCONFIG_CMDLINE_ARGS,
+
+  MZCONFIG_LOCALE,
 
   __MZCONFIG_BUILTIN_COUNT__
 };

@@ -1049,8 +1049,15 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
     /* Try syntax table: */
     if (modname)
       val = scheme_module_syntax(modname, home_env ? home_env : env->genv, SCHEME_STX_SYM(symbol));
-    else
-      val = scheme_lookup_in_table(genv->syntax, (char *)SCHEME_STX_SYM(symbol));
+    else {
+      /* Only try syntax table if there's not an explicit (later)
+	 variable mapping: */
+      if (genv->shadowed_syntax 
+	  && scheme_lookup_in_table(genv->shadowed_syntax, (char *)SCHEME_STX_SYM(symbol)))
+	val = NULL;
+      else
+	val = scheme_lookup_in_table(genv->syntax, (char *)SCHEME_STX_SYM(symbol));
+    }
 
     if (val)
       return val;
@@ -1097,6 +1104,32 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
     return NULL;
   }
   return val;
+}
+
+void scheme_shadow(Scheme_Env *env, Scheme_Object *n, int stxtoo)
+{
+  if (SCHEME_FALSEP(env->modname)) {
+    if (env->rename)
+      scheme_remove_module_rename(env->rename, n);
+
+    if (stxtoo) {
+      if (!env->shadowed_syntax) {
+	Scheme_Hash_Table *ht;
+	ht = scheme_hash_table(7, SCHEME_hash_ptr, 0, 0);
+	env->shadowed_syntax = ht;
+      }
+	
+      scheme_add_to_table(env->shadowed_syntax, (const char *)n, scheme_true, 0);
+    } else {
+      if (env->shadowed_syntax) {
+	Scheme_Bucket *b;
+
+	b = scheme_bucket_or_null_from_table(env->shadowed_syntax, (const char *)n, 0);
+	if (b)
+	  b->val = NULL;
+      }
+    }
+  }
 }
 
 void scheme_env_make_closure_map(Scheme_Comp_Env *env, short *_size, short **_map)

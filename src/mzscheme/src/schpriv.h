@@ -415,6 +415,8 @@ Scheme_Object *scheme_flatten_syntax_list(Scheme_Object *lst, int *islist);
 
 void scheme_extend_module_rename(Scheme_Object *rn, Scheme_Object *modname, 
 				 Scheme_Object *locname, Scheme_Object *exname);
+void scheme_remove_module_rename(Scheme_Object *mrn,
+				 Scheme_Object *localname);
 void scheme_append_module_rename(Scheme_Object *src, Scheme_Object *dest);
 
 int scheme_stx_free_eq(Scheme_Object *a, Scheme_Object *b, long phase);
@@ -1428,6 +1430,8 @@ void scheme_defmacro_parse(Scheme_Object *form,
 void scheme_define_values_parse(Scheme_Object *form, 
 				Scheme_Object **var, Scheme_Object **val,
 				Scheme_Comp_Env *env);
+
+void scheme_shadow(Scheme_Env *env, Scheme_Object *n, int stxtoo);
 
 /*========================================================================*/
 /*                              modules                                   */

@@ -265,6 +265,16 @@ void scheme_extend_module_rename(Scheme_Object *mrn,
 		      scheme_make_pair(modname, exname), 0);
 }
 
+void scheme_remove_module_rename(Scheme_Object *mrn,
+				 Scheme_Object *localname)
+{
+  Scheme_Bucket *b;
+
+  b = scheme_bucket_or_null_from_table((Scheme_Hash_Table *)mrn, (const char *)localname, 0);
+  if (b)
+    b->val = NULL;
+}
+
 void scheme_append_module_rename(Scheme_Object *src, Scheme_Object *dest)
 {
   Scheme_Hash_Table *ht, *hts;

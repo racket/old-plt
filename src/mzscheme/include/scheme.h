@@ -502,6 +502,8 @@ typedef struct Scheme_Env
   struct Scheme_Env *exp_env;
   Scheme_Hash_Table *module_syntax; /* modname -> syntax table */
 
+  Scheme_Hash_Table *shadowed_syntax; /* top level only */
+
   /* Built by module-begin, per-declaration: */
   Scheme_Object *et_imports; /* list of module names */
   Scheme_Object *imports; /* list of module names */

@@ -40,8 +40,8 @@ wxLabelArea::wxLabelArea
 		float fLabelWidth, fLabelHeight, fDescent, fExternalLeading;
 		labelFont->GetTextExtent(labelText, &fLabelWidth, &fLabelHeight,
 								&fDescent, &fExternalLeading);
-		labelWidth = fLabelWidth;
-		labelHeight = fLabelHeight;
+		labelWidth = (int)fLabelWidth;
+		labelHeight = (int)fLabelHeight;
 	}
 
 	if ((int)cDirection & Direction::wxTop)

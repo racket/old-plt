@@ -165,8 +165,8 @@ void wxRegion::SetRoundedRectangle(float x, float y, float width, float height, 
   width = dc->FLogicalToDeviceX(xw) - x;
   height = dc->FLogicalToDeviceY(yh) - y;
 #if defined(wx_msw) || defined(wx_mac)
-  int xradius = dc->FLogicalToDeviceXRel(radius);
-  int yradius = dc->FLogicalToDeviceYRel(radius);
+  int xradius = (int)(dc->FLogicalToDeviceXRel(radius));
+  int yradius = (int)(dc->FLogicalToDeviceYRel(radius));
 #endif
 
   ix = (int)floor(x);

@@ -133,7 +133,6 @@ wxCheckBox::wxCheckBox // Constructor (given parentPanel, label)
 	Callback(function);
 	
 	SetCurrentMacDC();
-	CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
 	Rect bounds = {0, 0, buttonBitmap->GetHeight(), buttonBitmap->GetWidth()};
 	cWindowHeight = bounds.bottom;
 	cWindowWidth = bounds.right + IC_BOX_SIZE + IC_X_SPACE;

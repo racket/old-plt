@@ -1047,8 +1047,8 @@ static void SendEnterLeaveEvent(wxWindow *target, int eventtype, wxWindow *evtsr
 	    theMouseEvent->metaDown = evt->metaDown;
 	    theMouseEvent->timeStamp = evt->timeStamp;
 	    
-	    int clientHitX = evt->x;
-	    int clientHitY = evt->y;
+	    int clientHitX = (int)(evt->x);
+	    int clientHitY = (int)(evt->y);
 	    evtsrc->ClientToScreen(&clientHitX, &clientHitY);
 	    target->ScreenToClient(&clientHitX, &clientHitY);
 	    theMouseEvent->x = clientHitX;
@@ -1066,8 +1066,8 @@ static void QueueLeaveEvent(wxWindow *target, wxWindow *evtsrc, wxMouseEvent *ev
 {
    EventRecord e;
    
-   int clientHitX = evt->x;
-   int clientHitY = evt->y;
+   int clientHitX = (int)(evt->x);
+   int clientHitY = (int)(evt->y);
    evtsrc->ClientToScreen(&clientHitX, &clientHitY);
    target->ScreenToClient(&clientHitX, &clientHitY);
    e.message = (long)target;
@@ -1160,8 +1160,8 @@ Bool wxWindow::SeekMouseEventArea(wxMouseEvent *mouseEvent)
 	if (!IsEnable())
 		return FALSE;
 
-	int hitX = mouseEvent->x - cWindowX; // window c.s.
-	int hitY = mouseEvent->y - cWindowY; // window c.s.
+	int hitX = (int)(mouseEvent->x - cWindowX); // window c.s.
+	int hitY = (int)(mouseEvent->y - cWindowY); // window c.s.
 
 	int capThis = (wxWindow::gMouseWindow == this);
 	wxArea* hitArea = NULL;
@@ -1206,8 +1206,8 @@ Bool wxWindow::SeekMouseEventArea(wxMouseEvent *mouseEvent)
 				if (capThis || (hitArea == ClientArea() && CanAcceptEvent()))
 				{
 					result = TRUE; // WCH: should this be before this if statement
-					int clientHitX = areaMouseEvent->x;
-					int clientHitY = areaMouseEvent->y;
+					int clientHitX = (int)(areaMouseEvent->x);
+					int clientHitY = (int)(areaMouseEvent->y);
 					ClientToLogical(&clientHitX, &clientHitY); // mouseWindow logical c.s.
 					areaMouseEvent->x = clientHitX; // mouseWindow logical c.s.
 					areaMouseEvent->y = clientHitY; // mouseWindow logical c.s.
@@ -1242,8 +1242,8 @@ Bool wxWindow::SeekMouseEventArea(wxMouseEvent *mouseEvent)
 	if (!result && (__type == wxTYPE_FRAME || __type == wxTYPE_DIALOG_BOX)) {
 	  wxMouseEvent *areaMouseEvent = new wxMouseEvent(0);
 	  *areaMouseEvent = *mouseEvent;
-	  int clientHitX = areaMouseEvent->x;
-	  int clientHitY = areaMouseEvent->y;
+	  int clientHitX = (int)(areaMouseEvent->x);
+	  int clientHitY = (int)(areaMouseEvent->y);
 	  ClientToLogical(&clientHitX, &clientHitY); // mouseWindow logical c.s.
 	  areaMouseEvent->x = clientHitX; // mouseWindow logical c.s.
 	  areaMouseEvent->y = clientHitY; // mouseWindow logical c.s.
@@ -1641,7 +1641,7 @@ Bool wxWindow::PopupMenu(wxMenu *menu, float x, float y)
 
   ::InsertMenu(m, -1);
   ::CalcMenuSize(m);
-  Point pos = {y, x};
+  Point pos = {(short)y, (short)x};
   LocalToGlobal(&pos);
   long sel = ::PopUpMenuSelect(m, pos.v, pos.h, 0);
 

@@ -31,7 +31,7 @@
 		};
 		00F450DF00EC642C7F000001 = {
 			isa = PBXLibraryReference;
-			path = WXMAC;
+			path = libwxmac.a;
 			refType = 3;
 		};
 		00F450E000EC642C7F000001 = {
@@ -45,13 +45,14 @@
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				HEADER_SEARCH_PATHS = "/Users/clements/plt/src/wxmac/include/base /Users/clements/plt/src/wxmac/include/mac /Users/clements/plt/src/wxmac/utils/image/src /Users/clements/plt/src/mzscheme/include /Users/clements/plt/src/mzscheme/gc/include /Users/clements/plt/src/a-list/c-headers /Users/clements/plt/src/wxcommon /Users/clements/plt/src/wxmac/contrib/wxxpm/libxpm.34b/lib /Developer/Headers/FlatCarbon";
+				INSTALL_PATH = "/Users/clements/plt/src/mac/proj-builder";
 				LIBRARY_STYLE = STATIC;
 				OPTIMIZATION_CFLAGS = "";
 				OTHER_CFLAGS = "-DOS_X -include /Users/clements/plt/src/mac/mred/wxGWin.pch";
 				OTHER_LDFLAGS = "";
 				OTHER_LIBTOOL_FLAGS = "";
 				OTHER_REZFLAGS = "";
-				PRODUCT_NAME = WXMAC;
+				PRODUCT_NAME = libwxmac.a;
 				REZ_EXECUTABLE = YES;
 				SECTORDER_FLAGS = "";
 				WARNING_CFLAGS = "-Wmost -Wno-four-char-constants -Wno-unknown-pragmas";
@@ -62,7 +63,7 @@
 			);
 			isa = PBXLibraryTarget;
 			name = WXMAC;
-			productInstallPath = /usr/local/lib;
+			productInstallPath = "/Users/clements/plt/src/mac/proj-builder";
 			productName = WXMAC;
 			productReference = 00F450DF00EC642C7F000001;
 			shouldUseHeadermap = 0;
@@ -199,7 +200,6 @@
 			);
 			isa = PBXLibraryTarget;
 			name = "A-LIST";
-			productInstallPath = /usr/local/lib;
 			productName = "A-LIST";
 			productReference = 00F450E500EC649B7F000001;
 			shouldUseHeadermap = 0;
@@ -457,18 +457,6 @@
 		};
 		00F4511200EC681A7F000001 = {
 			fileRef = 00F4510300EC681A7F000001;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
-		00F4511300EC74C17F000001 = {
-			isa = PBXFileReference;
-			name = "A-LIST";
-			path = "build/A-LIST";
-			refType = 4;
-		};
-		00F4511400EC74C17F000001 = {
-			fileRef = 00F4511300EC74C17F000001;
 			isa = PBXBuildFile;
 			settings = {
 			};
@@ -961,7 +949,7 @@
 		};
 		0366420C00EBD39D7F000001 = {
 			isa = PBXLibraryReference;
-			path = WXS;
+			path = libwxs.a;
 			refType = 3;
 		};
 		0366420D00EBD39D7F000001 = {
@@ -975,14 +963,14 @@
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				HEADER_SEARCH_PATHS = "/Users/clements/plt/src/wxmac/include/base /Users/clements/plt/src/wxmac/include/mac /Users/clements/plt/src/mred/wxme /Users/clements/plt/src/mzscheme /Users/clements/plt/src/mzscheme/src /Users/clements/plt/src/mzscheme/include /Users/clements/plt/src/mzscheme/utils /Users/clements/plt/src/mzscheme/gc/include /Users/clements/plt/src/a-list/c-headers /Users/clements/plt/src/wxcommon /Developer/Headers/FlatCarbon";
-				INSTALL_PATH = "";
+				INSTALL_PATH = "/Users/clements/plt/src/mac/proj-builder";
 				LIBRARY_STYLE = STATIC;
 				OPTIMIZATION_CFLAGS = "";
 				OTHER_CFLAGS = "-DOS_X -include /Users/clements/plt/src/mac/mred/wxspre.pch";
 				OTHER_LDFLAGS = "";
 				OTHER_LIBTOOL_FLAGS = "";
 				OTHER_REZFLAGS = "";
-				PRODUCT_NAME = WXS;
+				PRODUCT_NAME = libwxs.a;
 				REZ_EXECUTABLE = YES;
 				SECTORDER_FLAGS = "";
 				WARNING_CFLAGS = "-Wmost -Wno-four-char-constants -Wno-unknown-pragmas";
@@ -993,7 +981,7 @@
 			);
 			isa = PBXLibraryTarget;
 			name = WXS;
-			productInstallPath = "";
+			productInstallPath = "/Users/clements/plt/src/mac/proj-builder";
 			productName = WXS;
 			productReference = 0366420C00EBD39D7F000001;
 			shouldUseHeadermap = 0;
@@ -1480,6 +1468,42 @@
 		};
 		0867D6ACFE840B52C02AAC07 = {
 			fileRef = 0867D6AAFE840B52C02AAC07;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		0CBB185200FBA5A97F000001 = {
+			isa = PBXFileReference;
+			name = libalist.a;
+			path = build/libalist.a;
+			refType = 4;
+		};
+		0CBB185300FBA5A97F000001 = {
+			isa = PBXFileReference;
+			name = libwxmac.a;
+			path = build/libwxmac.a;
+			refType = 4;
+		};
+		0CBB185400FBA5A97F000001 = {
+			isa = PBXFileReference;
+			name = libwxs.a;
+			path = build/libwxs.a;
+			refType = 4;
+		};
+		0CBB185500FBA5A97F000001 = {
+			fileRef = 0CBB185200FBA5A97F000001;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		0CBB185600FBA5A97F000001 = {
+			fileRef = 0CBB185300FBA5A97F000001;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		0CBB185700FBA5A97F000001 = {
+			fileRef = 0CBB185400FBA5A97F000001;
 			isa = PBXBuildFile;
 			settings = {
 			};
@@ -2283,18 +2307,6 @@
 			settings = {
 			};
 		};
-		1D95027400FAEDBD7F000001 = {
-			isa = PBXFileReference;
-			name = wxmac.a;
-			path = /Users/clements/wxmac.a;
-			refType = 0;
-		};
-		1D95027500FAEDBD7F000001 = {
-			fileRef = 1D95027400FAEDBD7F000001;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
 		20286C28FDCF999611CA2CEA = {
 			buildStyles = (
 				05952DFCFFF02D1B11CA0E50,
@@ -2319,6 +2331,9 @@
 				20286C32FDCF999611CA2CEA,
 				195DF8C9FE9D4F0611CA2CBB,
 				00E9FFD100B278517F000001,
+				0CBB185200FBA5A97F000001,
+				0CBB185300FBA5A97F000001,
+				0CBB185400FBA5A97F000001,
 			);
 			isa = PBXGroup;
 			name = MrEd;
@@ -2334,8 +2349,6 @@
 				0E7DA8C000ED23787F000001,
 				03172A9800BAB1697F000001,
 				03172A8F00BAB02E7F000001,
-				00F4511300EC74C17F000001,
-				1D95027400FAEDBD7F000001,
 			);
 			isa = PBXGroup;
 			name = Sources;
@@ -2388,7 +2401,7 @@
 				FRAMEWORK_SEARCH_PATHS = "";
 				HEADER_SEARCH_PATHS = "/Users/clements/plt/src/wxmac/include/base /Users/clements/plt/src/wxmac/include/mac /Users/clements/plt/src/wxcommon /Users/clements/plt/src/wxcommon/jpeg /Users/clements/plt/src/mzscheme/include /Users/clements/plt/src/mzscheme/gc /Users/clements/plt/src/mzscheme/src /Users/clements/plt/src/mzscheme/utils /Users/clements/plt/src/mzscheme /Users/clements/plt/src/mred/wxme /Users/clements/plt/src/mred/wxs /Users/clements/plt/src/mac/mzscheme /Users/clements/plt/src/mac/mred /Developer/Headers/FlatCarbon";
 				INSTALL_PATH = "$(HOME)/Applications";
-				LIBRARY_SEARCH_PATHS = "/Users/clements/plt/src/mzscheme /Users/clements/plt/src/wxcommon/jpeg /Users/clements";
+				LIBRARY_SEARCH_PATHS = "/Users/clements/plt/src/mzscheme /Users/clements/plt/src/wxcommon/jpeg /Users/clements /Users/clements/plt/src/mac/proj-builder/MrEd/build";
 				OTHER_CFLAGS = "-include /Users/clements/plt/src/mac/mred/MrEdSetupOSX.h";
 				OTHER_LDFLAGS = "";
 				OTHER_REZFLAGS = "";
@@ -2445,7 +2458,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				0867D6ACFE840B52C02AAC07,
-				00F4511400EC74C17F000001,
 				1D95027200FA93997F000001,
 				1D95027300FA93997F000001,
 			);
@@ -2494,7 +2506,9 @@
 				00E9FFD300B278517F000001,
 				00F450F300EC676F7F000001,
 				1D95026E00F6259E7F000001,
-				1D95027500FAEDBD7F000001,
+				0CBB185500FBA5A97F000001,
+				0CBB185600FBA5A97F000001,
+				0CBB185700FBA5A97F000001,
 			);
 			isa = PBXFrameworksBuildPhase;
 			name = "Frameworks & Libraries";

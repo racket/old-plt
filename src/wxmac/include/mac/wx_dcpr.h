@@ -29,7 +29,7 @@ class wxPrinterDC: public wxCanvasDC
   wxPrinterDC(wxWindow *w = NULL);
   wxPrinterDC(THPrint); // Create a DC corresponding to a canvas
 
-  Create(THPrint);
+  void Create(THPrint);
 
   ~wxPrinterDC(void);
 

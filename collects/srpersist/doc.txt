@@ -49,39 +49,21 @@
  Loading
  -------
 
- Before actually loading SrPersist, you need to define the global variable 
- odbc-version.  For example:
+ To load SrPersist, use
 
-     (define odbc-version 3.5)
+   (require (lib "invoke-n.m.ss" "srpersist"))
 
- The value of odbc-version should be a number between 1.0 and 3.51.
- The version here should be less than or equal to the ODBC version
- used when compiling the SrPersist files.  See README in
- the SrPersist source directory for more details on compilation.
- For the precompiled Windows binary, use 3.51 for odbc-version.
+ where n.m is one of 1.0, 2.0, 3.0, or 3.5, indicating an
+ ODBC version.  The version used to invoke SrPersist should 
+ be less than or equal to the ODBC version used when compiling 
+ the SrPersist files.  See README in the SrPersist source directory 
+ for more details on compilation.
 
  For Windows, if you get errors when loading, your Windows installation 
  may be missing certain ODBC libraries.  Look for ODBC Data Sources 
  in Windows Control Panel.  If that application is missing, download 
  and install the Microsoft Data Access Components from 
  http://www.microsoft.com/data/.  The download is about 6.5 Mb.
-
- There are two ways to load SrPersist.  The first is to treat
- it as a library:  
-
-  (require-library "srpersist.ss" "srpersist")
-
- makes available the procedures listed here.  The other way
- to load SrPersist uses a signed unit: 
-
-  (require-library "srpersistu.ss" "srpersist")
-
- binds `srpersist@' to the unit, with a signature that depends 
- on the variable odbc-version.  The possible signatures are 
- `srpersist:odbc-1.0^', `srpersist:odbc-2.0^', `srpersist:odbc-3.0^',
- and `srpersist:odbc-3.5^', which are defined in the file `sigs.ss' 
- in the srpersist collection.  This unit can be invoked or imported 
- into other units as needed.
 
  Overview of ODBC
  ----------------
@@ -1309,7 +1291,7 @@
  an SQL statement has been compiled for a statement handle, 
  `sql-execute' can be called as many times as desired using that handle.
  
-> (execute hstmt)
+> (sql-execute hstmt)
 
  ODBC 1.0.
 

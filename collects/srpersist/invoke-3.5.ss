@@ -1,4 +1,8 @@
-(define-values/invoke-unit/sig
-  srpersist:odbc-3.5^
-  srpersist@)
+(module invoke-3.5 mzscheme
+  (require (lib "unitsig.ss"))
+  (require (lib "private/sigs.ss" "srpersist"))
+  (require (lib "private/srpmain.ss" "srpersist"))
+  (provide-signature-elements srpersist:odbc-3.5^))
 
+
+   	

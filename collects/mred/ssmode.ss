@@ -287,6 +287,7 @@
 	       (lambda (edit key)
 		 (let* ([get-text (ivar edit get-text)]
 			[code (send key get-key-code)]
+			[give-up (lambda () (send edit insert (integer->char code)))]
 			[here (send edit get-start-position)] 
 			[limit (get-limit edit here)]
 			[check-one
@@ -311,11 +312,13 @@
 			 (cond
 			   [end-pos
 			    (let ([right-paren-string (get-right-paren end-pos)])
-			      (send* edit 
-				(insert right-paren-string)
-				(flash-on (- end-pos (string-length right-paren-string)) end-pos)))]
-			   [else (send edit insert (integer->char code))]))
-		       (send edit insert (integer->char code)))
+			      (if right-paren-string
+				  (send* edit 
+					 (insert right-paren-string)
+					 (flash-on (- end-pos (string-length right-paren-string)) end-pos))
+				  (give-up)))]
+			   [else (give-up)]))
+		       (give-up))
 		   #t)))]
 	    [tabify-on-return?
 	     (lambda ()

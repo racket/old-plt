@@ -8,14 +8,10 @@
 #endif
 
 #ifdef USE_ACCT_3M_GC
-# define NEWGC_ACCNT
 # include "newgc.c"
 #endif
 
 #ifdef USE_PRECISE_ACCT_3M_GC
-# define NEWGC_ACCNT
-# define NEWGC_USE_HEADER
-# define NEWGC_PRECISE
 # include "newgc.c"
 #endif
 

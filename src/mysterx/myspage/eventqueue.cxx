@@ -16,11 +16,11 @@
 /////////////////////////////////////////////////////////////////////////////
 // CEventQueue
 
-CEventQueue::CEventQueue(void) { 
+CEventQueue::CEventQueue(void) {
 
     queueLength = 0;
     readerNdx = writerNdx = 0;
-    
+
     readSem = CreateSemaphore(NULL,0,LONG_MAX,NULL);  // using MAXQUEUELENGTH doesn't work
     mutex = CreateSemaphore(NULL,1,1,NULL);
 
@@ -29,7 +29,7 @@ CEventQueue::CEventQueue(void) {
     }
 }
 
-CEventQueue::~CEventQueue(void) { 
+CEventQueue::~CEventQueue(void) {
     if (readSem) {
       CloseHandle(readSem);
     }
@@ -42,12 +42,12 @@ CEventQueue::~CEventQueue(void) {
 STDMETHODIMP CEventQueue::QueueEvent(IEvent *pEvent) {
   BOOL signalReader;
 
-  WaitForSingleObject(mutex,INFINITE); 
+  WaitForSingleObject(mutex,INFINITE);
 
   if (queueLength < MAXQUEUELENGTH) {
     queueLength++;
     signalReader = TRUE;
-  } 
+  }
   else {
     readerNdx = ++readerNdx % MAXQUEUELENGTH;
     signalReader = FALSE;
@@ -70,7 +70,7 @@ STDMETHODIMP CEventQueue::QueueEvent(IEvent *pEvent) {
 STDMETHODIMP CEventQueue::GetEvent(IEvent **ppEvent) {
   *ppEvent = NULL;
 
-  WaitForSingleObject(readSem,INFINITE); 
+  WaitForSingleObject(readSem,INFINITE);
 
   WaitForSingleObject(mutex,INFINITE);
 
@@ -83,26 +83,19 @@ STDMETHODIMP CEventQueue::GetEvent(IEvent **ppEvent) {
 
   return S_OK;
 }
- 
+
 STDMETHODIMP CEventQueue::get_EventAvailable(VARIANT_BOOL *pVal) {
   WaitForSingleObject(mutex,INFINITE);
-  
-  *pVal = (queueLength == 0) ? 0 : -1; 
+
+  *pVal = (queueLength == 0) ? 0 : -1;
 
   ReleaseSemaphore(mutex,1,NULL);
 
   return S_OK;
 }
 
-STDMETHODIMP CEventQueue::GetReaderSemaphore(int *pReadSem) {
-  *pReadSem = (int)readSem;
+STDMETHODIMP CEventQueue::GetReaderSemaphore(HANDLE *pReadSem) {
+  *pReadSem = readSem;
 
   return S_OK;
 }
-
-STDMETHODIMP CEventQueue::set_extension_table(int p) {
-  scheme_extension_table = (Scheme_Extension_Table *)p;
-  return S_OK;
-}
-
-

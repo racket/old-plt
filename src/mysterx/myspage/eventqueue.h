@@ -11,7 +11,7 @@ void failureBox(const char *s);
 
 /////////////////////////////////////////////////////////////////////////////
 // CEventQueue
-class ATL_NO_VTABLE CEventQueue : 
+class ATL_NO_VTABLE CEventQueue :
 	public CComObjectRootEx<CComSingleThreadModel>,
 	public CComCoClass<CEventQueue, &CLSID_EventQueue>,
 	public IDispatchImpl<IEventQueue, &IID_IEventQueue, &LIBID_MYSPAGELib>
@@ -22,7 +22,6 @@ private:
   int readerNdx,writerNdx;
   int queueLength;
   IEvent *theQueue[MAXQUEUELENGTH];
-  Scheme_Extension_Table *scheme_extension_table;
 
 public:
   CEventQueue(void);
@@ -42,12 +41,7 @@ public:
 	  STDMETHOD(get_EventAvailable)(VARIANT_BOOL *pVal);
 	  STDMETHOD(QueueEvent)(IEvent *pEvent);
 	  STDMETHOD(GetEvent)(IEvent **ppEvent);
-	  STDMETHOD(GetReaderSemaphore)(int *);
-	  STDMETHOD(set_extension_table)(int);
+	  STDMETHOD(GetReaderSemaphore)(HANDLE *);
 };
 
 #endif //__EVENTQUEUE_H_
-
-
-
-

@@ -498,8 +498,8 @@
 	     ;; Return (values position-for-continuing-search del-white?)
 	     [translate
 	      (lambda (pos dewhite? del-white? enum-depth)
-		(let-values ([(cmd) (read-bracket)]
-			     [(tag args end?) (parse-command cmd)])
+		(let-values ([(cmd) (read-bracket)])
+		  (let-values ([(tag args end?) (parse-command cmd)])
 			    (if end? 
 				(begin
 				  (html-error "closing </~a> without opening" tag)
@@ -508,7 +508,7 @@
 					      (translate-command pos dewhite? del-white? enum-depth tag args)])
 					    (when extra-tag
 						  (html-error "closing </~a> without opening" tag))
-					    (values end-pos del-white?)))))])
+					    (values end-pos del-white?))))))])
 
 	     (add-tag "top" 0)
 	     (let loop ([pos 0][del-white? #t])

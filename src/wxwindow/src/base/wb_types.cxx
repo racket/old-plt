@@ -39,6 +39,7 @@ void wxInitStandardTypes(void)
   wxAllTypes->AddType(wxTYPE_RADIO_BOX,   wxTYPE_ITEM,                       "radio box");
   wxAllTypes->AddType(wxTYPE_GROUP_BOX,   wxTYPE_ITEM,                       "group box");
   wxAllTypes->AddType(wxTYPE_GAUGE,       wxTYPE_ITEM,                       "gauge");
+  wxAllTypes->AddType(wxTYPE_TAB_CHOICE,  wxTYPE_ITEM,                       "tab-choice");
 
   wxAllTypes->AddType(wxTYPE_EVENT,       wxTYPE_ANY,                        "event");
   wxAllTypes->AddType(wxTYPE_MOUSE_EVENT, wxTYPE_EVENT,                      "mouse event");

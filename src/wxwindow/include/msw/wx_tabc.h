@@ -23,6 +23,9 @@ class wxTabChoice : public wxItem
   void  SetSelection(int n);
   void  Enable(Bool enable);
 
+  void Append(char *s);
+  void Delete(int i);
+
   void SetSize(int x, int y, int width, int height, int sizeFlags = wxSIZE_AUTO);
 
   BOOL MSWCommand(UINT param, WORD id);

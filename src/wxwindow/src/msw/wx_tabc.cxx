@@ -12,12 +12,15 @@
 
 #include <commctrl.h>
 
-BOOL wxTabChoice::MSWCommand(UINT WXUNUSED(param), WORD WXUNUSED(id))
+BOOL wxTabChoice::MSWCommand(UINT param, WORD WXUNUSED(id))
 {
-  wxCommandEvent *event;
-  event = new wxCommandEvent(wxEVENT_TYPE_TAB_CHOICE_COMMAND);
-  ProcessCommand(event);
-  return TRUE;
+  if (param == 64985 /* (UINT)TCN_SELCHANGE  ? */) {
+    wxCommandEvent *event;
+    event = new wxCommandEvent(wxEVENT_TYPE_TAB_CHOICE_COMMAND);
+    ProcessCommand(event);
+    return TRUE;
+  } else
+    return FALSE;
 }
 
 
@@ -29,6 +32,8 @@ wxTabChoice::wxTabChoice(wxPanel *panel, wxFunction func, char *label,
   wxWnd *cparent = NULL;
   TCITEM tie;
   INITCOMMONCONTROLSEX icex;
+
+  __type = wxTYPE_TAB_CHOICE;
 
   icex.dwSize = sizeof(INITCOMMONCONTROLSEX);
   icex.dwICC  = ICC_TAB_CLASSES;
@@ -66,7 +71,7 @@ wxTabChoice::wxTabChoice(wxPanel *panel, wxFunction func, char *label,
   hwndTab = CreateWindow(WC_TABCONTROL, "", 
 			 WS_CHILD | WS_CLIPSIBLINGS,
 			 0, 0, width, height,
-			 cparent->handle, NULL, wxhInstance, NULL);
+			 cparent->handle, (HMENU)windows_id, wxhInstance, NULL);
  
   // Add tabs for each day of the week. 
   tie.mask = TCIF_TEXT;
@@ -103,15 +108,21 @@ wxTabChoice::~wxTabChoice()
   
 }
 
-int wxTabChoice::GetSelection(void) { 
-  return 0;
+int wxTabChoice::GetSelection(void) {
+  return TabCtrl_GetCurSel((HWND)ms_handle);
 }
+
 int wxTabChoice::Number(void) { 
-  return 0;
+  return TabCtrl_GetItemCount((HWND)ms_handle);
 }
+
 void wxTabChoice::SetSelection(int n) { 
+  if ((n >= 0) && (n < Number()))
+    TabCtrl_SetCurSel((HWND)ms_handle, n);
 }
+
 void wxTabChoice::Enable(Bool enable) { 
+  wxItem::Enable(enable);
 }
 
 void wxTabChoice::SetSize(int x, int y, int width, int height, int WXUNUSED(sizeFlags))
@@ -137,4 +148,19 @@ void wxTabChoice::SetSize(int x, int y, int width, int height, int WXUNUSED(size
   MoveWindow((HWND)ms_handle, x, y, width, height, TRUE);
 
   OnSize(width, height);
+}
+
+void wxTabChoice::Append(char *s)
+{
+  TCITEM tie;
+
+  tie.mask = TCIF_TEXT;
+  tie.pszText = s;
+  TabCtrl_InsertItem((HWND)ms_handle, Number(), &tie);
+}
+
+void wxTabChoice::Delete(int i)
+{
+  if ((i >= 0) && (i < Number()))
+    TabCtrl_DeleteItem((HWND)ms_handle, i);
 }

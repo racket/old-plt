@@ -42,6 +42,7 @@
 #define wxTYPE_GAUGE           20
 #define wxTYPE_SCROLL_BAR      21
 #define wxTYPE_VIRT_LIST_BOX   22
+#define wxTYPE_TAB_CHOICE      23
 
 #define wxTYPE_EVENT           25
 #define wxTYPE_DC              26

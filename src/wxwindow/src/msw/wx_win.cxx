@@ -914,6 +914,16 @@ LONG WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, int dialo
 	break;
       }
     }
+  case WM_NOTIFY:
+    {
+      NMHDR *nm = (NMHDR *)lParam;
+      WORD cmd = nm->code;
+      if (!wnd->OnCommand(LOWORD(wParam), cmd, nm->hwndFrom))
+	retval = wnd->DefWindowProc(message, wParam, lParam);
+      else if (dialog) 
+	retval = 0;
+    }
+    break;
   case WM_SYSKEYDOWN:
     if ((wParam == VK_MENU) || (wParam == VK_F4)) { /* F4 is close */
       retval = wnd->DefWindowProc(message, wParam, lParam);
@@ -1438,9 +1448,9 @@ BOOL wxSubWnd::OnCommand(WORD id, WORD cmd, HWND WXUNUSED(control))
   }
 
   wxWindow *item = wx_window->FindItem(id);
-  if (item)
+  if (item) {
     return item->MSWCommand(cmd, id);
-  else
+  } else
     return FALSE;
 }
 

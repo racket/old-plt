@@ -39,11 +39,7 @@
 # endif
 #endif
 
-#ifdef SMALL_HASH_TABLES
-#define FILL_FACTOR 1.30
-#else
-#define FILL_FACTOR 2
-#endif
+#define FILL_FACTOR 1.4
 
 #define MIN_HTABLE_SIZE 7
 

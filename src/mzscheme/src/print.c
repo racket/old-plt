@@ -1263,43 +1263,52 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
     }
   else if ((compact || pp->print_hash_table) && SCHEME_HASHTP(obj))
     {
-      if (compact && !pp->print_hash_table) {
-	closed = print(scheme_protect_quote(obj), notdisplay, compact, ht, symtab, rnht, pp);
+      Scheme_Hash_Table *t;
+      Scheme_Object **keys, **vals, *val;
+      int i, size, did_one = 0;
+      
+      if (compact) {
+	print_compact(pp, CPT_HASH_TABLE);
+	if (scheme_is_hash_table_equal(obj))
+	  print_compact_number(pp, 1);
+	else
+	  print_compact_number(pp, 0);
       } else {
-	if (compact) {
-	  print_escaped(pp, notdisplay, obj, ht);
-	} else {
-	  Scheme_Hash_Table *t;
-	  Scheme_Object **keys, **vals, *val;
-	  int i, size, did_one = 0;
+	print_utf8_string(pp, "#hash", 0, 5);
+	if (!scheme_is_hash_table_equal(obj))
+	  print_utf8_string(pp, "eq", 0, 2);
+	print_utf8_string(pp, "(", 0, 1);
+      }
 
-	  print_utf8_string(pp, "#hash", 0, 5);
-	  if (!scheme_is_hash_table_equal(obj))
-	    print_utf8_string(pp, "eq", 0, 2);
-	  print_utf8_string(pp, "(", 0, 1);
+      t = (Scheme_Hash_Table *)obj;
+      if (compact)
+	print_compact_number(pp, t->count);
 
-	  t = (Scheme_Hash_Table *)obj;
-	  keys = t->keys;
-	  vals = t->vals;
-	  size = t->size;
-	  for (i = 0; i < size; i++) {
-	    if (vals[i]) {
-	      if (did_one)
-		print_utf8_string(pp, " ", 0, 1);
-	      print_utf8_string(pp, "(", 0, 1);
-	      val = vals[i];
-	      print(keys[i], notdisplay, compact, ht, symtab, rnht, pp);
-	      print_utf8_string(pp, " . ", 0, 3);
-	      print(val, notdisplay, compact, ht, symtab, rnht, pp);
-	      print_utf8_string(pp, ")", 0, 1);
-	      did_one = 1;
-	    }
+      keys = t->keys;
+      vals = t->vals;
+      size = t->size;
+      for (i = 0; i < size; i++) {
+	if (vals[i]) {
+	  if (!compact) {
+	    if (did_one)
+	      print_utf8_string(pp, " ", 0, 1);
+	    print_utf8_string(pp, "(", 0, 1);
 	  }
-	  print_utf8_string(pp, ")", 0, 1);
-
-	  closed = 1;
+	  val = vals[i];
+	  print(keys[i], notdisplay, compact, ht, symtab, rnht, pp);
+	  if (!compact)
+	    print_utf8_string(pp, " . ", 0, 3);
+	  print(val, notdisplay, compact, ht, symtab, rnht, pp);
+	  if (!compact)
+	    print_utf8_string(pp, ")", 0, 1);
+	  did_one = 1;
 	}
       }
+
+      if (!compact)
+	print_utf8_string(pp, ")", 0, 1);
+      
+      closed = 1;
     }
   else if (SAME_OBJ(obj, scheme_true))
     {

@@ -3317,6 +3317,28 @@ static Scheme_Object *read_compact(CPort *port, int use_stack)
 	v = vec;
       }
       break;
+    case CPT_HASH_TABLE:
+      {
+	Scheme_Hash_Table *t;
+	int eq, len;
+
+	eq = read_compact_number(port);
+	if (eq)
+	  t = scheme_make_hash_table(SCHEME_hash_ptr);
+	else
+	  t = scheme_make_hash_table_equal();
+	len = read_compact_number(port);
+	
+	while (len--) {
+	  Scheme_Object *k, *v;
+	  k = read_compact(port, 0);
+	  v = read_compact(port, 0);
+	  scheme_hash_set(t, k, v);
+	}
+
+	v = (Scheme_Object *)t;
+      }
+      break;
     case CPT_STX:
     case CPT_GSTX:
       {

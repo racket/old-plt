@@ -920,33 +920,40 @@ static void count_managed(Scheme_Custodian *m, int *c, int *a, int *u, int *t,
 #endif
 
 #if defined(MZ_PRECISE_GC)
-/* Change to 1 to get tracing: */
-# define MZ_PRECISE_GC_TRACE 0
+# ifdef COMPACT_BACKTRACE_GC
+#  define MZ_PRECISE_GC_TRACE 1
+# else
+#  define MZ_PRECISE_GC_TRACE 0
+# endif
 #else
 # define MZ_PRECISE_GC_TRACE 0
 #endif
 
 #if MZ_PRECISE_GC_TRACE
 extern int GC_trace_for_tag;
+extern int GC_path_length_limit;
 #endif
 
 #if defined(USE_TAGGED_ALLOCATION) || MZ_PRECISE_GC_TRACE
+
 # ifdef MZ_PRECISE_GC
 START_XFORM_SKIP;
-# endif
-# if defined(MZ_PRECISE_GC) && defined(DOS_FILE_SYSTEM)
-extern int GC_is_tagged(void *p)  
+extern int GC_is_tagged(void *p);
+#  ifdef DOS_FILE_SYSTEM
 extern void gc_fprintf(int ignored, const char *c, ...);
-#  define object_console_printf gc_fprintf
-# else
-#  define object_console_printf fprintf
+#   define object_console_printf gc_fprintf
+#  endif
 # endif
+
+#ifndef object_console_printf
+# define object_console_printf fprintf
+#endif
 
 extern int (*scheme_check_print_is_obj)(Scheme_Object *o);
 static int check_home(Scheme_Object *o)
 {
 #ifdef MZ_PRECISE_GC
-  return GC_is_tagged(o);
+  return (SCHEME_INTP(o) || GC_is_tagged(o));
 #else
   /* GC_set(o) */
   return 1;
@@ -1018,7 +1025,8 @@ void scheme_print_tagged_value(const char *prefix,
       t2[len + 1 + len2 + 1] = 0;
       len += len2;
       type = t2;
-    } else if (!scheme_strncmp(type, "#<hash-table:", 13)) {
+    } else if (!scheme_strncmp(type, "#<hash-table>", 13)
+	       || !scheme_strncmp(type, "#<hash-table:", 13)) {
       char buffer[256];
       char *t2;
       int len2;
@@ -1067,9 +1075,9 @@ void scheme_print_tagged_value(const char *prefix,
 
   scheme_check_print_is_obj = NULL;
 }
-#ifdef MZ_PRECISE_GC
+# ifdef MZ_PRECISE_GC
 END_XFORM_SKIP;
-#endif
+# endif
 #endif
 
 Scheme_Object *scheme_dump_gc_stats(int c, Scheme_Object *p[])
@@ -1309,6 +1317,10 @@ Scheme_Object *scheme_dump_gc_stats(int c, Scheme_Object *p[])
   } else if (SCHEME_INTP(p[0])) {
     GC_trace_for_tag = SCHEME_INT_VAL(p[0]);
   }
+  if ((c > 1) && SCHEME_INTP(p[1]))
+    GC_path_length_limit = SCHEME_INT_VAL(p[1]);
+  else
+    GC_path_length_limit = 1000;
 #endif
 
   GC_dump();
@@ -1380,6 +1392,16 @@ Scheme_Object *scheme_dump_gc_stats(int c, Scheme_Object *p[])
     }
   }
 #endif
+
+# if MZ_PRECISE_GC_TRACE
+  scheme_console_printf("Begin Help\n");
+  scheme_console_printf(" (dump-memory-stats sym) - prints paths to instances of type named by sym.\n");
+  scheme_console_printf("   Example: (dump-memory-stats '<pair>)\n");
+  scheme_console_printf(" (dump-memory-stats num) - prints paths to objects with tag num.\n");
+  scheme_console_printf(" (dump-memory-stats -num) - prints paths to objects of size num.\n");
+  scheme_console_printf(" (dump-memory-stats sym/num len) - limits path to size len.\n");
+  scheme_console_printf("End Help\n");
+# endif
 
   scheme_console_printf("End Dump\n");
 

@@ -101,6 +101,11 @@ typedef short Type_Tag;
 #define RECORD_MARK_SRC 0
 #define KEEP_BACKPOINTERS 0
 
+#ifdef COMPACT_BACKTRACE_GC
+# undef KEEP_BACKPOINTERS
+# define KEEP_BACKPOINTERS 1
+#endif
+
 #if TIME
 # include <sys/time.h>
 # include <sys/resource.h>
@@ -4377,8 +4382,9 @@ unsigned long GC_get_stack_base(void)
 static long dump_info_array[BIGBLOCK_MIN_SIZE];
 
 #if KEEP_BACKPOINTERS
-# define MAX_FOUND_OBJECTS 50
+# define MAX_FOUND_OBJECTS 500
 int GC_trace_for_tag = 57;
+int GC_path_length_limit = 1000;
 static int found_object_count;
 static void *found_objects[MAX_FOUND_OBJECTS];
 #endif
@@ -4762,7 +4768,7 @@ void GC_dump(void)
   GCPRINT(GCOUTF, "Begin Trace\n");
   for (i = 0; i < found_object_count; i++) {
     void *p;
-    int limit = 1000;
+    int limit = GC_path_length_limit;
     p = found_objects[i];
     p = print_out_pointer("==* ", p);
     while (p && limit) {

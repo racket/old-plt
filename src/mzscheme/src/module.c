@@ -1310,11 +1310,12 @@ static Scheme_Object *module_to_namespace(int argc, Scheme_Object *argv[])
   if (!menv->rename) {
     if (menv->module->rn_stx) {
       Scheme_Object *v, *rn;
+      Scheme_Module *m = menv->module;
 
-      if (SAME_OBJ(scheme_true, menv->module->rn_stx)) {
+      if (SAME_OBJ(scheme_true, m->rn_stx)) {
 	/* Reconstruct renames based on defns and requires */
 	int i;
-	Scheme_Module *m = menv->module, *im;
+	Scheme_Module *im;
 	Scheme_Object *l, *idx;
 	Scheme_Hash_Table *mn_ht;
 
@@ -1355,6 +1356,15 @@ static Scheme_Object *module_to_namespace(int argc, Scheme_Object *argv[])
 	
 	rn = scheme_rename_to_stx(rn);
 	menv->module->rn_stx = rn;
+      } else if (SCHEME_PAIRP(m->rn_stx)) {
+	/* Delayed shift: */
+	Scheme_Object *rn_stx, *rn, *midx;
+	rn_stx = SCHEME_CAR(m->rn_stx);
+	midx = SCHEME_CDR(m->rn_stx);
+	rn = scheme_stx_to_rename(rn_stx);
+	rn = scheme_stx_shift_rename(rn, midx, m->self_modidx);
+	rn_stx = scheme_rename_to_stx(rn);
+	m->rn_stx = rn_stx;
       }
 
       v = scheme_stx_to_rename(menv->module->rn_stx);
@@ -1369,7 +1379,9 @@ static Scheme_Object *module_to_namespace(int argc, Scheme_Object *argv[])
   scheme_prepare_exp_env(menv);
 
   if (!menv->exp_env->rename) {
-    if (menv->module->et_rn_stx) {
+    Scheme_Module *m = menv->module;
+
+    if (m->et_rn_stx) {
       Scheme_Object *v, *rn;
 
       if (SAME_OBJ(scheme_true, menv->module->et_rn_stx)) {
@@ -1397,7 +1409,16 @@ static Scheme_Object *module_to_namespace(int argc, Scheme_Object *argv[])
 	}
 
 	rn = scheme_rename_to_stx(rn);
-	menv->module->et_rn_stx = rn;
+	m->et_rn_stx = rn;
+      } else if (SCHEME_PAIRP(m->et_rn_stx)) {
+	/* Delayed shift: */
+	Scheme_Object *et_rn_stx, *rn, *midx;
+	et_rn_stx = SCHEME_CAR(m->et_rn_stx);
+	midx = SCHEME_CDR(m->et_rn_stx);
+	rn = scheme_stx_to_rename(et_rn_stx);
+	rn = scheme_stx_shift_rename(rn, midx, m->self_modidx);
+	et_rn_stx = scheme_rename_to_stx(rn);
+	m->et_rn_stx = et_rn_stx;
       }
 
       v = scheme_stx_to_rename(menv->module->et_rn_stx);
@@ -2727,18 +2748,16 @@ module_execute(Scheme_Object *data)
 	m->self_modidx = nmidx;
 
 	if (m->rn_stx && !SAME_OBJ(scheme_true, m->rn_stx)) {
-	  Scheme_Object *rn_stx, *rn;
-	  rn = scheme_stx_to_rename(m->rn_stx);
-	  rn = scheme_stx_shift_rename(rn, (Scheme_Object *)midx, nmidx);
-	  rn_stx = scheme_rename_to_stx(rn);
-	  m->rn_stx = rn_stx;
+	  /* Delay the shift: */
+	  Scheme_Object *v;
+	  v = scheme_make_pair(m->rn_stx, (Scheme_Object *)midx);
+	  m->rn_stx = v;
 	}
 	if (m->et_rn_stx && !SAME_OBJ(scheme_true, m->et_rn_stx)) {
-	  Scheme_Object *et_rn_stx, *rn;
-	  rn = scheme_stx_to_rename(m->et_rn_stx);
-	  rn = scheme_stx_shift_rename(rn, (Scheme_Object *)midx, nmidx);
-	  et_rn_stx = scheme_rename_to_stx(rn);
-	  m->et_rn_stx = et_rn_stx;
+	  /* Delay the shift: */
+	  Scheme_Object *v;
+	  v = scheme_make_pair(m->et_rn_stx, (Scheme_Object *)midx);
+	  m->et_rn_stx = v;
 	}
       }
     }

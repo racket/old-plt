@@ -8,15 +8,19 @@
   (export awk match:start match:end match:substring regexp-exec)
 
   (define awk
-    (lambda (get-next-record user-fields . rest)
-      (let*-values ([(counter rest) (if (and (pair? rest) (symbol? (car rest)))
+    (lambda (get-next-record . rest)
+      (let*-values ([(user-fields rest) (values (car rest) (cdr rest))]
+		    [(counter rest) (if (and (pair? rest) (symbol? (car rest)))
 					(values (car rest) (cdr rest))
 					(values (gensym) rest))]
-		    [(user-state-var-decls) (car rest)]
+		    [(user-state-var-decls rest) (values (car rest) (cdr rest))]
+		    [(continue rest) (if (and (pair? rest) (symbol? (car rest)))
+					 (values (car rest) (cdr rest))
+					 (values (gensym) rest))]
 		    [(user-state-vars) (map car user-state-var-decls)]
 		    [(local-user-state-vars) (map gensym user-state-vars)]
 		    [(first) (car user-fields)]
-		    [(clauses) (cdr rest)]
+		    [(clauses) rest]
 		    [(loop) (gensym)]
 		    [(remainder) (gensym)]
 		    [(extras) (gensym)]
@@ -24,6 +28,7 @@
 		    [(else-ready?) (gensym)]
 		    [(orig-on?) (gensym)]
 		    [(post-on-on?) (gensym)]
+		    [(escape) (gensym)]
 		    [(initvars) null])
          (letrec ([get-after-clauses
 		   (lambda ()
@@ -138,7 +143,13 @@
 			    (begin
 			      ,@(get-after-clauses))
 			    (let ([,else-ready? #t])
-			      ,@testing-clauses
+			      (let/ec ,escape
+				(let ([,continue
+				       (lambda ,(append local-user-state-vars extras)
+					 (set!-values ,user-state-vars 
+						      (values ,@local-user-state-vars))
+					 (,escape))])
+				  ,@testing-clauses))
 			      (,loop (add1 ,counter)))))))))))))
 
   (define-struct match (s a))

@@ -7,9 +7,6 @@ CHANGE: Tokens defined with define-empty-tokens no longer have $n bound in
 the action.
 
 _lex.ss_
-NOTE: the lex-buf is gone since input ports in mzscheme have added the 
-functionality that the lex-buf used to provide.
-
 A regular expression is one of the following
 character                          match the given character
 symbol                             match the sequence of chars in the symbol
@@ -130,6 +127,10 @@ the generated lex tables.  If mzscheme is able to compile extensions
 cd ${PLTHOME}/collects/parser-tools
 mzc --auto-dir lex.ss
 
+NOTE: Since the lexer gets its source information from the port, use
+port-count-lines! to enable the tracking of line and column information.
+Otherwise the line and column information will return #f.
+
 See the combined lexer/parser example below.
 
 
@@ -147,7 +148,9 @@ This module provides the following syntactic form:
      filename must be a string.
 
   > (yacc-output filename) OPTIONAL causes the parser generator to
-     write a grammar file in the syntax of YACC/Bison.
+     write a grammar file in the syntax of YACC/Bison.  The file might
+     not be a valid YACC file because the scheme grammar can use
+     symbols that are invalid in C.
 
   > (suppress) OPTIONAL causes the parser generator not to report
      shift/reduce or reduce/reduce conflicts.
@@ -181,7 +184,7 @@ This module provides the following syntactic form:
      would be specified for a parser that parses entire files and a
      NEWLINE token for a parser that parses entire lines individually.
 
-  > (precs ((assoc token-name ...) ...)) OPTIONAL precedence
+  > (precs (assoc token-name ...) ...) OPTIONAL precedence
      declarations to resolve shift/reduce and reduce/reduce conflicts
      as in YACC/BISON.  assoc must be one of left, right or nonassoc.
      States with multiple shift/reduce or reduce/reduce conflicts or
@@ -246,7 +249,7 @@ looks more like
 (let (code to setup tables and such)
   (lambda (get-token)
     parser-loop))
-and the code to setup tables is kinda slow, so in situations where the
+and the code to setup tables is rather slow, so in situations where the
 parser is invoked many times it is by far faster to evaluate the
 code to setup tables exactly once, by putting the parser in an
 appropriate context, such as the right hand part of a define: 
@@ -260,6 +263,17 @@ multiple executions of the table setup code.  Consider using a global
 parameter for y instead if efficiency is a concern.  The same concerns
 hold for a lexer to a lesser extend since the setup code is much
 smaller
+
+
+_yacc-to-scheme.ss_
+This library provides one function:
+> (trans filename) - reads a C YACC/BISON grammar from filename and
+   produces an s-expression that represents a scheme parser for use
+   with the yacc.ss module.
+This library is intended to assist in the manual conversion of
+grammars for use with yacc.ss and not as a fully automatic conversion
+tool.  It is not entirely robust.  For example, if the C actions in
+the original grammar have nested blocks the tool will fail.
 
 
 
@@ -286,7 +300,7 @@ parser:
 2) Fisher-Burke error recovery.  Automatically figure out a "good"
    token to insert when an error is encountered.
 3) Possibly change the $1 style to something like SML/NJ YACC uses.
-   The SML/NJ YACC refers to the Nth occurance of grammar symbol name
+   The SML/NJ YACC refers to the Nth occurence of grammar symbol name
    in a production RHS as nameN.
 4) LALR table compression.  Would reduce the runtime memory
    requirements of parsers.

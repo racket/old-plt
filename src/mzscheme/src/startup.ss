@@ -2233,8 +2233,7 @@
 	       (raise-syntax-error
 		#f
 		"illegal outside of quasisyntax"
-		stx
-		#f))])
+		stx))])
       (values f f)))
 
   (-define (check-splicing-list l ctx)

@@ -86,6 +86,7 @@ static void register_traversers(void);
 static int includes_mark(Scheme_Object *wraps, Scheme_Object *mark);
 static void add_all_marks(Scheme_Object *wraps, Scheme_Hash_Table *marks);
 static struct Scheme_Cert *cons_cert(Scheme_Object *mark, Scheme_Object *modidx, Scheme_Object *insp, struct Scheme_Cert *next_cert);
+static void phase_shift_certs(Scheme_Object *o, Scheme_Object *owner_wraps, int len);
 
 #define CONS scheme_make_pair
 #define ICONS scheme_make_immutable_pair
@@ -1057,6 +1058,9 @@ Scheme_Object *scheme_add_rename(Scheme_Object *o, Scheme_Object *rename)
   if (graph)
     STX_KEY(stx) |= STX_GRAPH_FLAG;
 
+  if (stx->certs)
+    phase_shift_certs((Scheme_Object *)stx, stx->wraps, 1);
+  
   return (Scheme_Object *)stx;
 }
 
@@ -1099,9 +1103,9 @@ Scheme_Object *scheme_stx_phase_shift(Scheme_Object *stx, long shift,
   Scheme_Object *ps;
 
   ps = scheme_stx_phase_shift_as_rename(shift, old_midx, new_midx);
-  if (ps) {
-    return scheme_add_rename(stx, ps);
-  } else
+  if (ps)
+    return scheme_add_rename(stx, ps);  
+  else
     return stx;
 }
 
@@ -1116,12 +1120,13 @@ static void phase_shift_certs(Scheme_Object *o, Scheme_Object *owner_wraps, int 
 	modidx-shifting) elements. */
 {
   Scheme_Object *l, *a, *modidx_shift_to = NULL, *modidx_shift_from = NULL, *vec, *src, *dest;
-  int i, j;
+  int i, j, cnt;
 
   for (i = 0, l = owner_wraps; i < len; i++, l = SCHEME_CDR(l)) {
     a = SCHEME_CAR(l);
     if (SAME_TYPE(SCHEME_TYPE(a), scheme_wrap_chunk_type)) {
-      for (j = ((Wrap_Chunk *)a)->len; j--; ) {
+      cnt = ((Wrap_Chunk *)a)->len;
+      for (j = 0; j < cnt; j++) {
 	if (SCHEME_BOXP(((Wrap_Chunk *)a)->a[j])) {
 	  vec = SCHEME_BOX_VAL(((Wrap_Chunk *)a)->a[j]);
 	  src = SCHEME_VEC_ELS(vec)[1];

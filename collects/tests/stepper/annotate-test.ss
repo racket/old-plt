@@ -292,30 +292,32 @@
         ; if
         (list #'(lambda (a b c d) (if (a b) (a c) (a d))) 'mzscheme cadr
               (lambda (stx)
-                (syntax-case (strip-outer-lambda stx) (with-continuation-mark if let-values begin)
+                (syntax-case (strip-outer-lambda stx) (with-continuation-mark if let-values begin let)
                   [(with-continuation-mark
                     debug-key_1
                     debug-mark-1
                     (begin
                       pre-break-1
-                      (begin
-                        break-0
-                        (if (let-values temp-bindings
-                              (with-continuation-mark
-                               debug-key_2
-                               debug-mark-test
-                               . test-clauses))
-                            (let-values temp-bindings_2
-                              (with-continuation-mark
-                               debug-key_3
-                               debug-mark-then
-                               . then-clauses))
-                            (let-values temp-bindings-3
-                              (with-continuation-mark
-                               debug-key-4
-                               debug-mark-else
-                               . else-clauses))))))
+                      (let ([test-0 (let-values temp-bindings
+                                      (with-continuation-mark
+                                       debug-key_2
+                                       debug-mark-test
+                                       . test-clauses))])
+                        (begin (break-0)
+                               (if test-1
+                                   (let-values temp-bindings_2
+                                     (with-continuation-mark
+                                      debug-key_3
+                                      debug-mark-then
+                                      . then-clauses))
+                                   (let-values temp-bindings-3
+                                     (with-continuation-mark
+                                      debug-key-4
+                                      debug-mark-else
+                                      . else-clauses)))))))
                    (begin
+                     (test 'test-var syntax-e (syntax test-0))
+                     (test 'test-var syntax-e (syntax test-1))
                      (test (void) check-mark (syntax debug-mark-1) '(a b c d) '())
                      (test (void) check-mark (syntax debug-mark-test) '() '(a b c d))
                      (test (void) check-mark (syntax debug-mark-then) '(a c) '(b d))

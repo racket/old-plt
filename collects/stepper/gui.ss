@@ -11,7 +11,7 @@
             (stepper:stepper-start
              (program->string struct-program)))
           (stepper:stepper-step)))))
-
+  
   ;; view : (-> A) -> (void)
   (define (view thunk)
     (letrec ([frame (make-object frame% "Stepper")]

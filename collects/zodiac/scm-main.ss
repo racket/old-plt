@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.121 1997/08/14 17:44:10 shriram Exp $
+; $Id: scm-main.ss,v 1.122 1997/08/14 18:19:11 shriram Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -1653,7 +1653,7 @@
     (lambda (expr env)
       (static-error expr "Unquote-splicing outside quasiquote")))
 
-  (include "qq.ss")
+  (include "quasi.ss")
 
 ;  (include "shared.ss")
 

@@ -24,7 +24,7 @@
   (draw-bezier-lines #t)
   (current-tex-sizer
    (lambda (s)
-     (let-values ([(str f) (parse-string s (send dc get-font))])
+     (let-values ([(s f) (parse-string s (send dc get-font))])
        (let-values ([(w h d a) (send dc get-text-extent s f)])
 	 (list w (- h d) d))))))
 

@@ -59,12 +59,20 @@
 		     children)) ; list of child records
 (define-struct child (pict dx dy))
 
+(define (quotient* a b)
+  (if (integer? a)
+      (quotient a b)
+      (/ a b)))
+
 (define blank 
   (case-lambda
    [() (blank 0 0 0)]
    [(s) (blank s s)]
    [(w h) (blank w h 0)]
    [(w a d) (make-pict `(picture ,w ,(+ a d)) w (+ a d) a d null)]))
+
+(define (prog-picture f w a d)
+  (make-pict `(prog ,f) w (+ a d) a d null))
 
 (define (extend-pict box dx dy dw da dd draw)
   (let ([w (pict-width box)]
@@ -118,7 +126,7 @@
 		find-rtl
 		find-rbl)
   (let ([lb (lambda (x w d a) x)]
-	[c (lambda (x w d a) (+ x (quotient w 2)))]
+	[c (lambda (x w d a) (+ x (quotient* w 2)))]
 	[rt (lambda (x w d a) (+ x w))]
 	[tline (lambda (x w d a) (+ x (- w a)))]
 	[bline (lambda (x w d a) (+ x d))]
@@ -350,15 +358,15 @@
   (dash-frame box (max (pict-width box) (pict-height box))))
 
 (define (dash-line width height rotate seg)
-  (let ([vpos (quotient height 2)])
+  (let ([vpos (quotient* height 2)])
     (make-pict
      `(picture
        ,@(rotate width height)
        ,@(if (>= seg width)
 	     `((put ,@(rotate 0 vpos) (line ,@(rotate 1 0) ,width)))
 	     (let* ([remain (remainder width (* 2 seg))]
-		    [count (quotient width (* 2 seg))]
-		    [lremain (quotient remain 2)]
+		    [count (quotient* width (* 2 seg))]
+		    [lremain (quotient* remain 2)]
 		    [rremain (- remain lremain)])
 	   `((put ,@(rotate 0 vpos) (line ,@(rotate 1 0) ,lremain))
 	     ,@(let loop ([count count][pos lremain])
@@ -400,7 +408,7 @@
      `(picture
        ,w ,h
        (put 0 0 ,(pict-draw box))
-       (put ,(quotient w 2) ,(quotient h 2) (oval "" ,w ,h))))))
+       (put ,(quotient* w 2) ,(quotient* h 2) (oval "" ,w ,h))))))
 
 (define (oval/radius box r)
   (let* ([w (pict-width box)]
@@ -423,7 +431,7 @@
        (put ,0 ,r (line 0 1 ,lh))))))
 
 (define (big-circle d)
-  (let ([r (quotient d 2)])
+  (let ([r (quotient* d 2)])
     (picture
      d d
      `((curve 0 ,r ,r 0 0 0)
@@ -505,9 +513,9 @@
 			zero zero 
 			fv sv)
      (make-append-boxes 2max + 
-			(lambda (fw fh rw rh sep . a) (quotient (- (max fw rw) fw) 2))
+			(lambda (fw fh rw rh sep . a) (quotient* (- (max fw rw) fw) 2))
 			(lambda (fw fh rw rh sep . a) (+ sep rh))
-			(lambda (fw fh rw rh sep . a) (quotient (- (max fw rw) rw) 2))
+			(lambda (fw fh rw rh sep . a) (quotient* (- (max fw rw) rw) 2))
 			zero 
 			fv sv)
      (make-append-boxes 2max + 
@@ -524,9 +532,9 @@
 			max2 min2)
      (make-append-boxes + 2max
 			zero
-			(lambda (fw fh rw rh sep . a) (quotient (- (max fh rh) fh) 2))
+			(lambda (fw fh rw rh sep . a) (quotient* (- (max fh rh) fh) 2))
 			(lambda (fw fh rw rh sep . a) (+ sep fw))
-			(lambda (fw fh rw rh sep . a) (quotient (- (max fh rh) rh) 2))
+			(lambda (fw fh rw rh sep . a) (quotient* (- (max fh rh) rh) 2))
 			min2 max2)
      (make-append-boxes + 2max 
 			zero zero
@@ -590,7 +598,7 @@
 	[rt (lambda (m v . rest) (- m v))]
 	[tline (lambda (m v md d mac) mac)]
 	[bline (lambda (m v md d mac) (- md d))]
-	[c (lambda (m v . rest) (quotient (- m v) 2))])
+	[c (lambda (m v . rest) (quotient* (- m v) 2))])
     (values
      (make-superimpose lb rt norm)
      (make-superimpose lb lb norm)
@@ -711,7 +719,7 @@
        (put 0 ,title-y ,(pict-draw title))
        ,@(if (null? fields)
 	     '()
-	     `((put 0 ,(- totalheight (pict-height title) (quotient linespace 2))
+	     `((put 0 ,(- totalheight (pict-height title) (quotient* linespace 2))
 		    (line 1 0 ,totalwidth))))
        ,@(map (lambda (f p) `(put 0 ,p ,(pict-draw f)))
 	      fields field-ys))
@@ -803,7 +811,7 @@
 			 [c (if (procedure? (draw-bezier-lines))
 				((draw-bezier-lines) (get-len))
 				#f)])
-		    `((qbezier ,c ,x1 ,y1 ,(quotient (+ x1 x2) 2) ,(quotient (+ y1 y2) 2) ,x2 ,y2)))
+		    `((qbezier ,c ,x1 ,y1 ,(quotient* (+ x1 x2) 2) ,(quotient* (+ y1 y2) 2) ,x2 ,y2)))
 		  (let ([xd (- x2 x1)])
 		    `((put ,x1 ,y1 (line ,(if (negative? xd) -1 1) 0 ,(abs xd))))))
 	      (let-values ([(s l) (find-slope (- x2 x1) (- y2 y1) 
@@ -1011,7 +1019,7 @@
 	     (list 'frame (optimize (cadr s)))]
 	    [(colorbox)
 	     (list 'colorbox (cadr s) (optimize (caddr s)))]
-	    [(line vector circle circle* make-box oval) s]
+	    [(line vector circle circle* make-box oval prog) s]
 	    [else (error 'optimize "bad tag: ~s" tag)])))))
 
 (define (fixup-top s)
@@ -1068,6 +1076,8 @@
 	    [(make-box)
 	     (format "\\makebox(~a, ~a)[~a]{~a}"
 		     (cadr s) (caddr s) (cadddr s) (car (cddddr s)))]
+	    [(prog)
+	     (error 'pict->string "cannot handle prog pict")]
 	    [else (error 'pict->string "bad tag: ~s" tag)])))))
 
 (define (pict->commands s)
@@ -1102,6 +1112,8 @@
 	     `((oval ,(caddr s) ,(cadddr s) ,(cadr s)))]
 	    [(make-box)
 	     `((make-box ,(cadr s) ,(caddr s) ,(cadddr s) ,(car (cddddr s))))]
+	    [(prog)
+	     `((prog ,(cadr s)))]
 	    [else (error 'pict->commands "bad tag: ~s" tag)])))))
 
 )

@@ -112,6 +112,8 @@
 
    cons-picture ; pict command-list -> pict
 
+   prog-picture ; (dx dy -> void) -> pict
+
    pict->string
 
    pict->commands

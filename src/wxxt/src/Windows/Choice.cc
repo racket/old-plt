@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Choice.cc,v 1.5 1998/08/08 03:33:04 mflatt Exp $
+ * $Id: Choice.cc,v 1.6 1998/10/10 15:27:57 mflatt Exp $
  *
  * Purpose: choice panel item
  *
@@ -129,6 +129,13 @@ Bool wxChoice::Create(wxPanel *panel, wxFunction function, char *label,
 			 (XtPointer)saferef,
 			 XtListHead);
 
+    XtInsertEventHandler(X->frame,
+			 KeyPressMask, // for PreOnChar
+			 FALSE,
+			 (XtEventHandler)wxWindow::WindowEventHandler,
+			 (XtPointer)saferef,
+			 XtListHead);
+
     return TRUE;
 }
 
@@ -235,6 +242,8 @@ void wxChoice::EventCallback(Widget WXUNUSED(w),
 			     XtPointer clientData, XtPointer WXUNUSED(ptr))
 {
     wxChoice *choice = (wxChoice*)clientData;
+
+    choice->SetFocus();
 
     choice->choice_menu->SetClientData((char*)choice);
     choice->choice_menu->SetFont(choice->font);

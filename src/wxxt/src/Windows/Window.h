@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Window.h,v 1.4 1998/08/08 03:33:07 mflatt Exp $
+ * $Id: Window.h,v 1.5 1998/09/06 01:54:04 mflatt Exp $
  *
  * Purpose: base class for all windows
  *
@@ -171,6 +171,7 @@ public:
 
     void      ForEach(void (*foreach)(wxWindow *w, void *data), void *data);
 
+    Bool GetsFocus(void) { return TRUE; }
 
 protected:
     // create and destroy associated device context

@@ -70,6 +70,11 @@ Boolean  get_scaled_color(
 Widget,float ,Pixel ,Pixel *
 #endif
 );
+Boolean  has_focus_now(
+#if NeedFunctionPrototypes
+Widget
+#endif
+);
 #ifndef XtNtraversalOn
 #define XtNtraversalOn "traversalOn"
 #endif

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: EvtHandler.cc,v 1.1.1.1 1997/12/22 17:28:50 mflatt Exp $
+ * $Id: EvtHandler.cc,v 1.2 1998/09/06 01:43:29 mflatt Exp $
  *
  * Purpose: base event handler of windows etc.
  *
@@ -75,6 +75,9 @@ static key_equiv key_translation[] = {
 #endif
     { XK_Clear,		WXK_CLEAR },
     { XK_Tab,		WXK_TAB },
+#ifdef XK_ISO_Left_Tab
+    { XK_ISO_Left_Tab,  WXK_TAB },
+#endif
     { XK_numbersign,	'#' },
     { XK_Return,	WXK_RETURN },
     { ' ',		WXK_SPACE }, // necessary because of >XK_KP_Space = ' '<

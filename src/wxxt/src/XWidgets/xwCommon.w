@@ -2,7 +2,7 @@
 # Bert Bos <bert@let.rug.nl>
 # Version 1.2 for FWF V4.0
 #
-# $Id: xwCommon.w,v 1.3 1998/01/31 01:16:34 mflatt Exp $
+# $Id: xwCommon.w,v 1.4 1998/02/07 13:43:59 mflatt Exp $
 
 @class XfwfCommon (Composite)  @file=xwCommon
 
@@ -1173,6 +1173,11 @@ highlight border with.
   reset = (reset % CACHE_SIZE);
 
   return TRUE;
+}
+
+@proc Boolean has_focus_now($)
+{
+  return $traversal_focus;
 }
 
 @IMPORTS

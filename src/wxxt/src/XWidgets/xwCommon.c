@@ -3,21 +3,21 @@
  */
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
-#line 1180 "XWidgets/xwCommon.w"
-#include <stdio.h>
-#line 1181 "XWidgets/xwCommon.w"
-#include <ctype.h>
-#line 1182 "XWidgets/xwCommon.w"
-#include <X11/Xmu/Converters.h>
-#line 1183 "XWidgets/xwCommon.w"
-#include <X11/Xmu/CharSet.h>
-#line 1184 "XWidgets/xwCommon.w"
-#include <X11/Shell.h>
 #line 1185 "XWidgets/xwCommon.w"
-#include <X11/keysym.h>
+#include <stdio.h>
 #line 1186 "XWidgets/xwCommon.w"
-#include "wxAllocColor.h"
+#include <ctype.h>
 #line 1187 "XWidgets/xwCommon.w"
+#include <X11/Xmu/Converters.h>
+#line 1188 "XWidgets/xwCommon.w"
+#include <X11/Xmu/CharSet.h>
+#line 1189 "XWidgets/xwCommon.w"
+#include <X11/Shell.h>
+#line 1190 "XWidgets/xwCommon.w"
+#include <X11/keysym.h>
+#line 1191 "XWidgets/xwCommon.w"
+#include "wxAllocColor.h"
+#line 1192 "XWidgets/xwCommon.w"
 #include "wxAllocColor.c"
 #include <./xwCommonP.h>
 #define focus_detail(detail) (detail ==NotifyAncestor ?"NotifyAncestor":detail ==NotifyVirtual ?"NotifyVirtual":detail ==NotifyInferior ?"NotifyInferior":detail ==NotifyNonlinear ?"NotifyNonlinear":detail ==NotifyNonlinearVirtual ?"NotifyNonlinearVirtual":detail ==NotifyPointer ?"NotifyPointer":detail ==NotifyPointerRoot ?"NotifyPointerRoot":detail ==NotifyDetailNone ?"NotifyDetailNone":"???")
@@ -1340,4 +1340,17 @@ Boolean  get_scaled_color(self,scale,base,result)Widget self;float  scale;Pixel 
   reset = (reset % CACHE_SIZE);
 
   return TRUE;
+}
+#line 1178 "XWidgets/xwCommon.w"
+/*ARGSUSED*/
+#if NeedFunctionPrototypes
+#line 1178 "XWidgets/xwCommon.w"
+Boolean  has_focus_now(Widget self)
+#else
+#line 1178 "XWidgets/xwCommon.w"
+Boolean  has_focus_now(self)Widget self;
+#endif
+#line 1179 "XWidgets/xwCommon.w"
+{
+  return ((XfwfCommonWidget)self)->xfwfCommon.traversal_focus;
 }

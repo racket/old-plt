@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: RadioBox.cc,v 1.6 1998/08/08 03:33:05 mflatt Exp $
+ * $Id: RadioBox.cc,v 1.7 1998/09/06 01:54:03 mflatt Exp $
  *
  * Purpose: radio box panel item
  *
@@ -29,6 +29,7 @@
 
 #define  Uses_XtIntrinsic
 #define  Uses_wxRadioBox
+#define  Uses_wxTypeTree
 #include "wx.h"
 #define  Uses_EnforcerWidget
 #define  Uses_GroupWidget
@@ -462,11 +463,47 @@ void wxRadioBox::ChangeColours(void)
 // callbacks for xfwfGroupWidgetClass
 //-----------------------------------------------------------------------------
 
-void wxRadioBox::EventCallback(Widget WXUNUSED(w),
-			       XtPointer dclient, XtPointer WXUNUSED(dcall))
+void wxRadioBox::SetSelectedButtonFocus()
+{
+  ButtonFocus(GetSelection());
+}
+
+void wxRadioBox::EventCallback(Widget WXUNUSED(w), XtPointer dclient, XtPointer WXUNUSED(dcall))
 {
     wxRadioBox     *radioBox = (wxRadioBox*)dclient;
     wxCommandEvent *event = new wxCommandEvent(wxEVENT_TYPE_RADIOBOX_COMMAND);
 
+    radioBox->SetSelectedButtonFocus();
+
     radioBox->ProcessCommand(*event);
+}
+
+extern "C" Boolean has_focus_now(Widget w);
+
+int wxRadioBox::ButtonFocus(int which)
+{
+  if (which > num_toggles) return -1;
+
+  if (which > -1) {
+    // Set the focus on the just-clicked button
+    // find frame of this widget
+    wxWindow *win = this;
+    for (/*wxWindow *win = this*/; win; win = win->GetParent())
+      if (wxSubType(win->__type, wxTYPE_FRAME))
+	break;
+    
+    if (win) {
+      XtSetKeyboardFocus(win->GetHandle()->frame, (Widget)TOGGLES[which]);
+    }
+
+    return -1;
+  } else {
+    int i;
+    for (i = num_toggles; i--; ) {
+      Widget w = (Widget)TOGGLES[i];
+      if (has_focus_now(w))
+	return i;
+    }
+    return -1;
+  }
 }

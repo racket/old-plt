@@ -190,6 +190,11 @@
   (cs-mouse-over-variable-import "la variable ~s est importée de ~s")
   (cs-mouse-over-syntax-import "la macro ~s est importée de ~s")
   
+  (cs-lexical-variable "variable lexicale")
+  (cs-lexical-syntax "syntaxe lexicale")
+  (cs-imported-variable "variable importée")
+  (cs-imported-syntax "syntaxe importée")
+
   ;;; info bar at botttom of drscheme frame
   (collect-button-label "Ramassage") ; de miettes
   (read-only "Lecture seulement")
@@ -236,6 +241,15 @@
   (mode-submenu-label "Modes")
   (scheme-mode "Mode scheme")
   (text-mode "Mode texte")
+ 
+  (scheme-mode-color-symbol "Symbole")
+  (scheme-mode-color-keyword "Mot réservé")
+  (scheme-mode-color-comment "Commentaire")
+  (scheme-mode-color-string "Chaîne de caractères")
+  (scheme-mode-color-constant "Constante")
+  (scheme-mode-color-parenthesis "Parenthèses")
+  (scheme-mode-color-error "Erreur")
+  (scheme-mode-color-other "Autre")
  
   (url "URL")
   (url: "URL :")
@@ -322,6 +336,13 @@
   (plt:hd:external-link-in-help "URLs externes dans l'Aide")
   (plt:hd:use-homebrew-browser "Utiliser le navigateur de l'Aide pour les URLs externes")
   (plt:hd:new-help-desk "&Nouvelle Aide")
+  (plt:hd:teaching-manuals "Manuels pour étudiants")
+  (plt:hd:professional-manuals "Manuels pour professionnels")
+  (plt:hd:all-manuals "Tous les manuels")
+
+  ;; in the Help Desk language dialog, title on the right.
+  (plt:hd:manual-search-ordering "Ordre de recherche dans les manuels")
+
   
   ; help desk htty proxy
   (http-proxy "Proxy HTTP")
@@ -421,6 +442,7 @@
   (default-fonts "Polices par défaut")
   (paren-match-color "Couleur de surlignage des parenthèses") ; in prefs dialog
   (choose-color "Sélectionnez une couleur") ; in prefs dialog
+  (online-coloring-active "Colorier la syntaxe interactivement")
   
   ; title of the color choosing dialog
   (choose-paren-highlight-color "Sélectionnez une couleur pour surligner les parenthèses")
@@ -995,11 +1017,11 @@
   (kill? "Tuer ?")
   
   ;;; version checker
-  ;; vc-check-prompt is gone, I'm leaving this comment to make it easier to generate
-  ;; vc-wizard-check-prompt which is similar, only it is used as part of the initial
-  ;; wizard dialog.  Note that vc-wizard-check-prompt can (should) have newlines so
+  ;; the next two are used in the initial wizard dialog.
+  ;; Note that vc-wizard-check-prompt can (should) have newlines so
   ;; it will not make the dialog too wide.
-  ;; (vc-check-prompt "Regarder sur Internet pour d'éventuelles mises à jour des logiciels PLT ?")
+  (vc-wizard-check-prompt "Regarder sur Internet pour d'éventuelles mises à jour des logiciels PLT ?")
+  (vc-wizard-check-button "Regarder !")
   (vc-update-check "Vérification des mises à jour")
   (vc-please-wait "Veuillez patienter")
   (vc-connecting-version-server "Connexion au server de version de PLT en cours")
@@ -1134,4 +1156,36 @@
   (ml-cp-remove "Enlever")
   (ml-cp-raise "Monter")
   (ml-cp-lower "Descendre")
+
+  ;; Profj
+  (profj-java "Java")
+  (profj-java-mode "mode Java")
+  (profj-java-mode-color-keyword "mot réservé")
+  (profj-java-mode-color-string "chaîne de caractères")
+  (profj-java-mode-color-literal "valeur litérale")
+  (profj-java-mode-color-comment "commentaire")
+  (profj-java-mode-color-error "erreur")
+  (profj-java-mode-color-identifier "identificateur") ; l'académie française ne reconnaît pas ce mot
+  (profj-java-mode-color-default "valeur par défaut")
+  
+  ;; The Test Suite Tool
+  ;; Errors
+  (test-case-empty-error "Test vide")
+  (test-case-too-many-expressions-error "Expressions trop nombreuses dans un test.")
+  (test-case-not-at-top-level "Test n'est pas au premier niveau")
+  ;; Dr. Scheme window menu items
+  (test-case-insert "Insérer un test")
+  (test-case-disable-all "Invalider tous les tests")
+  (test-case-enable-all "Revalider tous les tests")
+  ;; NOTE: The following three string constants are labels of the test-case fields. The width
+  ;;       of the field is determined by the length of the longest of the following three words.
+  ;;       if the words are too long the test case will take up too much horizontal room and
+  ;;       not look very good.
+  ;; This string is the label of the expression that is being tested in a test case.
+  (test-case-to-test "À tester")
+  ;; This string is the label of the expression that is the expected value of the to-test expression.
+  (test-case-expected "Attendu")
+  ;; This string is the label of the actual result of the to test expression.
+  (test-case-actual "Reçu")
+  
   )

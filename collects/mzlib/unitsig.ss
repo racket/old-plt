@@ -279,21 +279,21 @@
 				 [stx-decls (if (syntax-e (syntax global?))
 						null
 						(make-struct-stx-decls ex-sig #f #f (syntax signame) #f))])
-		     (syntax
-		      (begin
-			(dv/iu
-			 ex-flattened
-			 (let ([unit-var unite])
-			   (verify-linkage-signature-match
-			    'formname
-			    '(invoke)
-			    (list unit-var)
-			    '(ex-exploded)
-			    '(im-explodeds))
-			   (signed-unit-unit unit-var))
-			 prefix
-			 . im-flattened)
-			. stx-decls))))))))])))
+		     (syntax/loc stx
+		       (begin
+			 (dv/iu
+			  ex-flattened
+			  (let ([unit-var unite])
+			    (verify-linkage-signature-match
+			     'formname
+			     '(invoke)
+			     (list unit-var)
+			     '(ex-exploded)
+			     '(im-explodeds))
+			    (signed-unit-unit unit-var))
+			  prefix
+			  . im-flattened)
+			 . stx-decls))))))))])))
   
   (define-syntax define-values/invoke-unit/sig
     (lambda (stx)
@@ -319,9 +319,10 @@
 	(syntax-case stx ()
 	  [(_ signame)
 	   (let ([sig (get-sig 'provide-signature-elements stx #f (syntax signame))])
-	     (let ([flattened (flatten-signature #f sig)])
+	     (let ([flattened (flatten-signature #f sig)]
+		   [structs (map struct-def-name (signature-structs sig))])
 	       (with-syntax ([flattened (map (lambda (x) (datum->syntax-object (syntax signame) x #f))
-					     flattened)])
+					     (append flattened structs))])
 		 (syntax/loc stx
 		   (provide . flattened)))))]))))
   

@@ -1115,10 +1115,12 @@
 	   verify-struct-shape
 
 	   signature-vars
+	   signature-structs
 	   do-rename
 	   get-sig
 	   explode-sig
 	   explode-named-sigs
 	   check-signature-unit-body
 	   flatten-signature
-	   flatten-signatures))
+	   flatten-signatures
+	   struct-def-name))

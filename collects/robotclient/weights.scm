@@ -43,6 +43,7 @@
 ;(define max-bid-const (make-parameter 10))
 (define max-bid (make-parameter 0))
 (define player-cur (make-parameter #f))
+  
 
   (define-struct search-player (x y id money capacity packages))
   
@@ -99,49 +100,42 @@
                                        (let ([dist (+ (abs (- x (car (path-loc)))) (abs (- y (cdr (path-loc)))))])
                                          (if (< dist (path-squares))
                                              (if (path-geometric)
-                                                 (* (path-value) (expt (home-faloff) dist))
+                                                 (* (path-value) (expt (path-falloff) dist))
                                                  (+ (path-value) (let ([arith (* (- (path-falloff)) dist)])
                                                                    (if (> (abs arith) (path-value))
                                                                        (- (path-value))
                                                                        arith))))
                                              0))
                                            
-;                                       (if (null? (search-player-packages (player-cur)))
-;					          0
-;                                                  (let loop ([dist 0]
-;                                                             [counter 0])
-;                                                    (cond [(<= (dest-squares) dist) counter]
-;                                                          [else (let ([toadd (if (package-away-goal? dist x y (search-player-packages (player-cur)))
-;										 (if (dest-geometric)
-;										     (* (destination-value) (expt (dest-falloff) dist))
-;										     (+ (destination-value) (let ([arith (* (- (dest-falloff)) dist)])
-;													      (if (> (abs arith) (destination-value))
-;														  (- (destination-value))
-;														  arith))))
-;                                                                                0)])
-;                                                                  (loop (+ 1 dist) (+ counter toadd)))])))
-;                                       
-;                                       (if (null? (search-player-packages (player-cur)))
-;                                           (let loop ([dist 0]
-;                                                      [counter 0])
-;                                             (cond [(<= (home-squares) dist) counter]
-;                                                   [else (let ([toadd (if (home-away-goal? dist x y (home-list))
-;									  (if (home-geometric)
-;									      (* (home-value) (expt (home-falloff) dist))
-;									      (+ (home-value) (let ([arith (* (- (home-falloff)) dist)])
-;												(if (> (abs arith) (home-value))
-;												    (- (home-value))
-;												    arith))))
-;                                                                          0)])
-;                                                           (loop (+ 1 dist) (+ counter toadd)))]))
-;                                           0))])
-;				(* (destination-value) (destination? x y (search-player-packages (player-cur))))
-;				(* (one-destination-value) (one-away-destination? (board) x y (search-player-packages (player-cur))))
-;				(* (two-destination-value) (two-away-destination? (board) x y (search-player-packages (player-cur))))
-;				(* (three-destination-value) (three-away-destination? (board) x y (search-player-packages (player-cur))))
-;				(* (one-home-value) (one-away-base? (board) x y) no-packages)
-;				(* (two-home-value) (two-away-base? (board) x y) no-packages)
-;;				(* (three-home-value) (three-away-base? (board) x y) no-packages))])
+                                       (if (null? (search-player-packages (player-cur)))
+					          0
+                                                  (let loop ([dist 0]
+                                                             [counter 0])
+                                                    (cond [(<= (dest-squares) dist) counter]
+                                                          [else (let ([toadd (if (package-away-goal? dist x y (search-player-packages (player-cur)))
+										 (if (dest-geometric)
+										     (* (destination-value) (expt (dest-falloff) dist))
+										     (+ (destination-value) (let ([arith (* (- (dest-falloff)) dist)])
+													      (if (> (abs arith) (destination-value))
+														  (- (destination-value))
+														  arith))))
+                                                                                0)])
+                                                                  (loop (+ 1 dist) (+ counter toadd)))])))
+                                       
+                                       (if (null? (search-player-packages (player-cur)))
+                                           (let loop ([dist 0]
+                                                      [counter 0])
+                                             (cond [(<= (home-squares) dist) counter]
+                                                   [else (let ([toadd (if (home-away-goal? dist x y (home-list))
+									  (if (home-geometric)
+									      (* (home-value) (expt (home-falloff) dist))
+									      (+ (home-value) (let ([arith (* (- (home-falloff)) dist)])
+												(if (> (abs arith) (home-value))
+												    (- (home-value))
+												    arith))))
+                                                                          0)])
+                                                           (loop (+ 1 dist) (+ counter toadd)))]))
+                                           0))])
 			       (begin
 				 (set-weight (inexact->exact (round new-weight)) (get-spot (board) x y))
 				 (set-valid (get-spot (board) x y))
@@ -242,7 +236,47 @@
   (define-syntax x-away-goal?
     (syntax-rules ()
       ((_ n x y gx gy)
-       (= n (+ (abs (- x gx)) (abs (- y gy)))))))
+       (and (= n (+ (abs (- x gx)) (abs (- y gy))))
+            (no-barriers? x y gx gy)))))
+  
+  (define-syntax no-barriers?
+    (syntax-rules ()
+      ((_ x y gx gy)
+       (and (clear-path-horiz? x y gx gy) (clear-path-vert? x y gx gy)))))
+  
+  (define (create-path-horiz x y gx gy)
+    (cond
+      [(= x gx) (cond
+                  [(= y gy) null]
+                  [(> y gy) (cons (cons x (sub1 y)) (create-path-horiz x (sub1 y) gx gy))]
+                  [(< y gy) (cons (cons x (add1 y)) (create-path-horiz x (add1 y) gx gy))])]
+      [(> x gx) (cons (cons (sub1 x) y) (create-path-horiz (sub1 x) y gx gy))]
+      [(< x gx) (cons (cons (add1 x) y) (create-path-horiz (add1 x) y gx gy))]))
+
+  (define (clear-path-horiz? x y gx gy)
+    (if (or (wall? (board) x y)
+            (water? (board) x y))
+        #f
+        (cond
+          [(= x gx) (cond
+                      [(= y gy) #t]
+                      [(> y gy) (clear-path-horiz? x (sub1 y) gx gy)]
+                      [(< y gy) (clear-path-horiz? x (add1 y) gx gy)])]
+          [(> x gx) (clear-path-horiz? (sub1 x) y gx gy)]
+          [(< x gx) (clear-path-horiz? (add1 x) y gx gy)])))
+  
+  (define (clear-path-vert? x y gx gy)
+    (if (or (wall? (board) x y)
+            (water? (board) x y))
+        #f
+        (cond
+          [(= y gy) (cond
+                      [(= x gx) #t]
+                      [(> x gx) (clear-path-vert? (sub1 x) y gx gy)]
+                      [(< x gx) (clear-path-vert? (add1 x) y gx gy)])]
+          [(> y gy) (clear-path-vert? x (sub1 y) gx gy)]
+          [(< y gy) (clear-path-vert? x (add1 y) gx gy)])))
+
 
 (define-syntax package-away-goal?
   (syntax-rules ()

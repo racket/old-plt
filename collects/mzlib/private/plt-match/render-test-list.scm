@@ -114,6 +114,11 @@
                    ae
                    let-bound
                    sf bv kf ks))))))
+
+      ;(pt
+      ; (stx-? regexp? (syntax pt))
+      ; (render-test-list (syntax/loc p (regex pt)) ae stx))
+
       ((quote _)
        (list
         (make-reg-test

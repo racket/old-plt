@@ -225,10 +225,11 @@
           ((_ exp clause ...)
            (quasisyntax/loc 
             stx 
-            (let ((x exp)) #,(gen-match (syntax x)
-                                        '()
-                                        (syntax (clause ...))
-                                        stx)))))))
+            (let ((x exp))
+              #,(gen-match (syntax x)
+                           '()
+                           (syntax (clause ...))
+                           stx)))))))
 
     (define match-lambda/proc 
       (lambda (stx)

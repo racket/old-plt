@@ -124,7 +124,6 @@
     (include "update-binding-counts.scm")
     (include "match-util.scm")
     (include "tag-negate-tests.scm")
-
     ;;!(function unreachable
     ;;          (form (unreachable plist match-expr) -> void)
     ;;          (contract (list syntax-object) -> void)
@@ -179,6 +178,9 @@
     ;; match-failure function.
     (define gen-help
       (opt-lambda (exp tsf patlist stx opt [success-func #f])
+        (when
+            (stx-null? patlist)
+          (match:syntax-err stx "null clause list"))
         (let* ((marked-clauses (mark-patlist patlist))
                (compiled-match
                 (quasisyntax/loc stx

@@ -156,7 +156,7 @@ file.o: $(srcdir)/file.c
 	$(CC) $(CFLAGS) -c $(srcdir)/file.c -o file.o
 fun.o: $(srcdir)/fun.c
 	$(CC) $(CFLAGS) -c $(srcdir)/fun.c -o fun.o
-gmp.o: $(srcdir)/gmp/gmp.c
+gmp.o: $(srcdir)/gmp/gmp.c $(srcdir)/gmp/gmplonglong.h
 	$(CC) $(CFLAGS) -c $(srcdir)/gmp/gmp.c -o gmp.o
 hash.o: $(srcdir)/hash.c
 	$(CC) $(CFLAGS) -c $(srcdir)/hash.c -o hash.o

@@ -65,10 +65,10 @@ Scheme_Process *scheme_get_current_process();
 #else
 #ifndef LINK_EXTENSIONS_BY_TABLE
 extern Scheme_Process *scheme_current_process;
-extern int scheme_fuel_counter;
+extern volatile int scheme_fuel_counter;
 #else
 extern Scheme_Process **scheme_current_process_ptr;
-extern int *scheme_fuel_counter_ptr;
+extern volatile int *scheme_fuel_counter_ptr;
 #endif
 #endif
 
@@ -256,9 +256,11 @@ char *scheme_strdup_eternal(const char *str);
 
 void *scheme_malloc_fail_ok(void *(*f)(size_t), size_t);
 
+#ifndef MZ_PRECISE_GC
 void scheme_weak_reference(void **p);
 void scheme_weak_reference_indirect(void **p, void *v);
 void scheme_unweak_reference(void **p);
+#endif
 void scheme_add_finalizer(void *p, void (*f)(void *p, void *data), void *data);
 void scheme_add_finalizer_once(void *p, void (*f)(void *p, void *data), void *data);
 void scheme_add_scheme_finalizer(void *p, void (*f)(void *p, void *data), void *data);

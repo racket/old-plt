@@ -60,6 +60,15 @@
 # define MZ_USE_SINGLE_FLOATS
 #endif
 
+#ifdef MZ_REAL_THREADS
+# undef USE_ITIMER
+# undef USE_WIN32_THREAD_TIMER
+#endif
+
+#if defined(USE_ITIMER) || defined(USE_WIN32_THREAD_TIMER)
+# define FUEL_AUTODECEREMENTS
+#endif
+
 #ifdef MZ_PRECISE_GC
 # define MZ_HASH_KEY_EX  short keyex;
 #else
@@ -649,7 +658,7 @@ typedef struct Scheme_Process {
 
 #ifdef MZ_REAL_THREADS
   Scheme_Object *done_sema;
-  long fuel_counter;
+  volatile long fuel_counter;
 # define scheme_fuel_counter (scheme_current_process->fuel_counter)
 # define scheme_stack_boundary ((unsigned long)scheme_current_process->stack_end)
 #endif
@@ -984,16 +993,22 @@ typedef void Scheme_Instance_Init_Proc(Scheme_Object **init_boxes,
 #   define scheme_fuel_counter (*scheme_fuel_counter_ptr)
 #  endif
 # else
-extern int scheme_fuel_counter;
+extern volatile int scheme_fuel_counter;
 # endif
+#endif
+
+#ifdef FUEL_AUTODECEREMENTS
+# define DECREMENT_FUEL(f, p) (f)
+#else
+# define DECREMENT_FUEL(f, p) (f -= (p))
 #endif
 
 #ifdef MZ_REAL_THREADS
 # define _scheme_check_for_break_wp(penalty, p) \
-   { if (((p)->fuel_counter -= penalty) <= 0) scheme_process_block_w_process(0, p); }
+   { if (DECREMENT_FUEL((p)->fuel_counter, penalty) <= 0) scheme_process_block_w_process(0, p); }
 #else
 # define _scheme_check_for_break_wp(penalty, p) \
-   { if ((scheme_fuel_counter -= penalty) <= 0) scheme_process_block_w_process(0, p); }
+   { if (DECREMENT_FUEL(scheme_fuel_counter, penalty) <= 0) scheme_process_block_w_process(0, p); }
 #endif
 #define _scheme_check_for_break(penalty) _scheme_check_for_break_wp(penalty, scheme_current_process)
 

@@ -648,6 +648,7 @@ int   scheme_sproc_semaphore_try_down(void *);
 # define NO_SLEEP
 # define WINDOWS_PROCESSES
 # define DETECT_WIN32_CONSOLE_STDIN
+# define USE_WIN32_THREAD_TIMER
 #endif
 
 # define SIGSET_IS_SIGNAL
@@ -1115,6 +1116,10 @@ int scheme_pthread_semaphore_try_down(void *);
     sigset() to install the signal handler. */
 
  /* WINDOWS_PROCESSES implements the process functions for Windows. */
+
+ /* USE_ITIMER uses setitimer() to implement thread pre-emption (for
+    MzScheme-implemented threads). Define MZ_THREAD_QUANTUM_USEC to
+    set the base time in usec allocated to each thread. */
 
  /* SIGSET_IS_SIGNAL uses signal() in place of sigset() for Unix. This 
     flag is often paired with SIGSET_NEEDS_REINSTALL for traditional

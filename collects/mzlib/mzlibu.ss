@@ -9,6 +9,7 @@
 (require-library "pconveru.ss")
 (require-library "dateu.ss")
 (require-library "inflateu.ss")
+(require-library "deflateu.ss")
 (require-library "cmdlineu.ss")
 (require-library "restartu.ss")
 (require-library "transcru.ss")

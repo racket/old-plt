@@ -9,6 +9,7 @@
 	 [date : mzlib:date^ ((require-library-unit/sig "dater.ss")
 			       (core function))]
 	 [inflate : mzlib:inflate^ ((require-library-unit/sig "inflater.ss"))]
+	 [deflate : mzlib:deflate^ ((require-library-unit/sig "deflater.ss"))]
 	 [command-line : mzlib:command-line^ ((require-library-unit/sig "cmdliner.ss"))]
 	 [restart : mzlib:restart^ ((require-library-unit/sig "restartr.ss")
 				     command-line)]
@@ -18,6 +19,7 @@
 	   (unit convert)
 	   (unit date)
 	   (unit inflate)
+	   (unit deflate)
 	   (unit command-line)
 	   (unit restart)
 	   (unit transcript)))

@@ -5,6 +5,7 @@
   
   (define make-print-checking (make-parameter #t))
   (define make-print-dep-no-line (make-parameter #t))
+  (define make-print-reasons (make-parameter #t))
 
   ;(define-type line (list (union string (list-of string)) (list-of string) thunk))
   ;(define-type spec (list-of line))
@@ -84,7 +85,9 @@
 
 		  (if line
 		      (let ([deps (cadr line)])
-			(for-each (lambda (d) (make-file d (string-append " " indent))) deps)
+			(for-each (let ([new-indent (string-append " " indent)])
+				    (lambda (d) (make-file d new-indent)))
+				  deps)
 			(let ([reason
 			       (or (not date)
 				   (ormap (lambda (dep)
@@ -98,9 +101,18 @@
 			    (let ([l (cddr line)])
 			      (unless (null? l)
 				(set! made (cons s made))
-				(printf "make: ~amaking ~a~n"
+				(printf "make: ~amaking ~a~a~n"
 					(if (make-print-checking) indent "")
-					s)
+					s
+					(if (make-print-reasons)
+					    (cond
+					      [(not date)
+					       (string-append " because " s " does not exist")]
+					      [(string? reason)
+					       (string-append " because " reason " changed")]
+					      [else
+					       (string-append (format " just because (reason: ~a date: ~a)" reason date))])
+					    ""))
 				(with-handlers ([(lambda (x) (not (exn:misc:user-break? x)))
 						 (lambda (exn)
 						   (raise (make-exn:make (format "make: Failed to make ~a; ~a"

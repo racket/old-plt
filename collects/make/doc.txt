@@ -48,6 +48,16 @@ printouts. If the parameter's value is #f, it only prints when it is making
 a target. Otherwise, it prints when it is checking the dependancies of a
 target. Defaultly #t.
 
+make.ss also provides `make-print-dep-no-line', a parameter that controls it's
+printouts. If the parameter's value is #f make will only print
+"checking..." lines for dependancies that have a corresponding make line. 
+Defaultly #f.
+
+make.ss also provides `make-print-reasons', a parameter that controls it's
+printouts. If the parameter's value is #t make will only print
+the reason for each dependancy that fires.
+Defaultly #t.
+
 collection.ss
 -------------
 

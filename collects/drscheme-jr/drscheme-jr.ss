@@ -104,9 +104,7 @@
       (define check-syntax-level (if (null? args)
 				     'advanced
 				     (string->symbol (car args))))
-      (define allow-improper-lists? (eq? 'advanced check-syntax-level))
-      (printf "Language: ~a~nImproper lists: ~a~n"
-	      check-syntax-level allow-improper-lists?))))
+      (define allow-improper-lists? (eq? 'advanced check-syntax-level)))))
 
 (define z@
   (compound-unit/sig
@@ -121,7 +119,11 @@
 	    (unit aries))))
 
 
+
 (invoke-open-unit/sig z@ #f)
+
+(printf "Language: ~a~nImproper lists: ~a~n"
+	params:check-syntax-level params:allow-improper-lists?)
 
 (define system-parameterization (current-parameterization))
 
@@ -251,19 +253,14 @@
 (define namespace (make-namespace 'no-constants
 				  (if annotate?
 				      'hash-percent-syntax
-				      'all-syntax)
-				  (if params:unmatched-cond/case-is-error?
-				      'no-auto-else
-				      'auto-else)
-				  (if params:allow-set!-on-undefined?
-				      'set!-undefined
-				      'no-set!-undefined)))
+				      'all-syntax)))
+
 (with-parameterization parameterization
   (let ([u@ (unit/sig->unit
 	     (compound-unit/sig
 	       (import)
 	       (link
-		[params : plt:parameters^ (plt:mzscheme-parameters@)]
+		[params : plt:parameters^ (parameters@)]
 		[userspace : plt:userspace^ (plt:userspace@ params)])
 	       (export (open userspace))))])
     (lambda ()

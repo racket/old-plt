@@ -123,27 +123,26 @@
   
   ;import-class: string (list string) (list string) location type-records symbol bool-> void
   (define (import-class class path dir loc type-recs level add-to-env)
-    (let* ((path (apply build-path dir))
-           (jinfo (string-append (build-path path "compiled" class ".jinfo")))
-           (java (string-append (build-path path class) ".java")))
-      (cond
-        ((send type-recs get-class-record (cons class path) (lambda () #f)) void)
-        ((file-exists? jinfo)
-         (send type-recs add-class-record (read-record jinfo))
-         (send type-recs add-require-syntax (cons class path) 
-               (build-require-syntax class path dir #f)))
-        ((file-exists? java)
-         (send type-recs add-to-records 
-               (cons class path)
-               (lambda () 
-                 (let* ((location (string-append class ".java"))
-                        (ast (call-with-input-file java (lambda (p) (parse p location level)))))
-                   (send type-recs set-compilation-location location (build-path path "compiled"))
-                   (build-info ast level type-recs 'not_look_up))))
-         (send type-recs add-require-syntax (cons class path) (build-require-syntax class path dir #t)))
-        (else (raise-error (cons class path) file-not-found)))
-      (when add-to-env (send type-recs add-to-env class path loc))
-      (send type-recs add-class-req (cons class path) (not add-to-env) loc)))
+    (cond
+      ((send type-recs get-class-record (cons class path) (lambda () #f)) void)
+      ((file-exists? (string-append (build-path (apply build-path dir) "compiled" class) ".jinfo"))
+       (send type-recs add-class-record (read-record (string-append (build-path (apply build-path dir) "compiled" class) ".jinfo")))
+       (send type-recs add-require-syntax (cons class path) (build-require-syntax class path dir #f)))
+      ((file-exists? (string-append (build-path (apply build-path dir) class) ".java"))
+       (send type-recs add-to-records 
+             (cons class path)
+             (lambda () 
+               (let* ((location (string-append class ".java"))
+                      (ast (call-with-input-file (string-append (build-path (apply build-path dir) class) ".java")
+                             (lambda (p) (parse p location level)))))
+                 (send type-recs set-compilation-location location (build-path (apply build-path dir) "compiled"))
+                 (build-info ast level type-recs 'not_look_up)
+                 (send type-recs get-class-record (cons class path) (lambda () 'internal-error "Failed to add record"))
+                 )))
+       (send type-recs add-require-syntax (cons class path) (build-require-syntax class path dir #t)))
+      (else (raise-error (cons class path) file-not-found)))
+    (when add-to-env (send type-recs add-to-env class path loc))
+    (send type-recs add-class-req (cons class path) (not add-to-env) loc))
   
   ;add-my-package: type-records (list string) (list defs) loc symbol-> void
   (define (add-my-package type-recs package defs loc level)
@@ -315,7 +314,7 @@
                      (and (class-fully-implemented? super-record (header-extends info) 
                                                     iface-records (header-implements info)
                                                     m level)
-                          (no-abstract-methods m members)))
+                          (no-abstract-methods m members type-recs)))
                    
                    (valid-inherited-methods? (cons super-record iface-records)
                                              (append (if (null? (header-extends info))
@@ -689,16 +688,16 @@
                 (and (not (null? mods))
                      (or (and (eq? first (modifier-kind (car mods)))
                               (memq second (map modifier-kind (cdr mods)))
-                              (raise-error (car mods) error))
+                              (raise-error (car mods) (error)))
                          (and (eq? second (modifier-kind (car mods)))
                               (memq first (map modifier-kind (cdr mods)))
-                              (raise-error (car mods) error))
+                              (raise-error (car mods) (error)))
                          (tester (cdr mods)))))))
       tester))
   
-  (define final-and-abstract? (make-not-two 'final 'abstract final-and-abstract))
-  (define volatile-and-final? (make-not-two 'volatile 'final final-and-volatile))  
-  (define native-and-fp? (make-not-two 'native 'strictfp native-and-fp))
+  (define final-and-abstract? (make-not-two 'final 'abstract (lambda () final-and-abstract)))
+  (define volatile-and-final? (make-not-two 'volatile 'final (lambda () final-and-volatile)))  
+  (define native-and-fp? (make-not-two 'native 'strictfp (lambda () native-and-fp)))
     
   ;duplicate-mods?: (list modifier) -> bool
   (define (duplicate-mods? mods)

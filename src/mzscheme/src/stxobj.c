@@ -1464,6 +1464,11 @@ static Scheme_Object *resolve_env(Scheme_Object *a, long phase,
 	  if (SCHEME_SYMBOLP(renamed))
 	    same= 1;
 	  else {
+	    /* We use mark barriers in the comparison, but
+	       that may turn out to have been a bad idea, if
+	       the rename target itself was never renamed before.
+	       But we make up for a bad guess with another check
+	       below. */
 	    WRAP_POS w2;
 	    WRAP_POS_INIT(w2, ((Scheme_Stx *)renamed)->wraps);
 	    same = same_marks(&w2, &wraps, 0, 0);
@@ -1484,16 +1489,28 @@ static Scheme_Object *resolve_env(Scheme_Object *a, long phase,
 		other_env = resolve_env(renamed, 0, 0, NULL);
 		SCHEME_VEC_ELS(rename)[2+c+ri] = other_env;
 	      }
+
+	      if (SCHEME_FALSEP(other_env)) {
+		/* The rename target itself was never renamed, so
+		   mark barriers don't count. The same_marks check
+		   may have used mark barriers when it shouldn't,
+		   so double-check. */
+		WRAP_POS w2;
+		WRAP_POS_INIT(w2, ((Scheme_Stx *)renamed)->wraps);
+		same = same_marks(&w2, &wraps, 1, 1);
+	      }
 	    }
 	    
-	    /* If it turns out that we're going to return
-	       other_env, then return envname instead. */
-	    if (stack_pos < QUICK_STACK_SIZE) {
-	      rename_stack[stack_pos++] = envname;
-	      rename_stack[stack_pos++] = other_env;
-	    } else {
-	      o_rename_stack = CONS(CONS(other_env, envname),
-				    o_rename_stack);
+	    if (same) { /* (could have changed since last test) */
+	      /* If it turns out that we're going to return
+		 other_env, then return envname instead. */
+	      if (stack_pos < QUICK_STACK_SIZE) {
+		rename_stack[stack_pos++] = envname;
+		rename_stack[stack_pos++] = other_env;
+	      } else {
+		o_rename_stack = CONS(CONS(other_env, envname),
+				      o_rename_stack);
+	      }
 	    }
 
 	    break;
@@ -1711,8 +1728,7 @@ int scheme_stx_env_bound_eq(Scheme_Object *a, Scheme_Object *b, Scheme_Object *u
   if (!SAME_OBJ(ae, be))
     return 0;
 
-  /* Same marks? (If not lexically bound, ignore
-     mark barriers. */
+  /* Same marks? (If not lexically bound, ignore mark barriers.) */
   if (!uid) {
     WRAP_POS aw;
     WRAP_POS bw;
@@ -2025,30 +2041,40 @@ static void simplify_lex_renames(Scheme_Object *wraps, Scheme_Hash_Table *lex_ca
 		SCHEME_VEC_ELS(v)[2+vsize+i] = other_env;
 	      }
 
-	      WRAP_POS_COPY(w3, prev);
-	      for (; !WRAP_POS_END_P(w3); WRAP_POS_INC(w3)) {
-		vp = WRAP_POS_FIRST(w3);
-		if (SCHEME_VECTORP(vp)) {
-		  psize = (SCHEME_VEC_SIZE(vp) - 2) / 2;
-		  for (j = 0; j < psize; j++) {
-		    if (SAME_OBJ(SCHEME_VEC_ELS(vp)[2+j], name)) {
-		      if (SAME_OBJ(SCHEME_VEC_ELS(vp)[2+psize+j], other_env)) {
-			ok = SCHEME_VEC_ELS(v)[0];
-		      } else {
-			ok = NULL; 
-			/* Or should ok be 
-			     SCHEME_VEC_ELS(vp)[2+psize+j]
-			   which is the value from prev? */
-		      }
-		      break;
-		    }
-		  }
-		  if (j < psize)
-		    break;
+	      if (SCHEME_FALSEP(other_env)) {
+		/* Double-check marks ignoring barrieris. */
+		if (!same_marks(&w2, &w, 1, 1)) {
+		  other_env = NULL;
 		}
 	      }
-	      if (WRAP_POS_END_P(w3) && SCHEME_FALSEP(other_env))
-		ok = SCHEME_VEC_ELS(v)[0];
+	      
+	      if (other_env) {
+		WRAP_POS_COPY(w3, prev);
+		for (; !WRAP_POS_END_P(w3); WRAP_POS_INC(w3)) {
+		  vp = WRAP_POS_FIRST(w3);
+		  if (SCHEME_VECTORP(vp)) {
+		    psize = (SCHEME_VEC_SIZE(vp) - 2) / 2;
+		    for (j = 0; j < psize; j++) {
+		      if (SAME_OBJ(SCHEME_VEC_ELS(vp)[2+j], name)) {
+			if (SAME_OBJ(SCHEME_VEC_ELS(vp)[2+psize+j], other_env)) {
+			  ok = SCHEME_VEC_ELS(v)[0];
+			} else {
+			  ok = NULL; 
+			  /* Or should ok be 
+			     SCHEME_VEC_ELS(vp)[2+psize+j]
+			     which is the value from prev? */
+			}
+			break;
+		      }
+		    }
+		    if (j < psize)
+		      break;
+		  }
+		}
+		if (WRAP_POS_END_P(w3) && SCHEME_FALSEP(other_env))
+		  ok = SCHEME_VEC_ELS(v)[0];
+	      } else
+		ok = NULL;
 	    } else
 	      ok = SCHEME_VEC_ELS(v)[0];
 

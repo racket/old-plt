@@ -1571,9 +1571,16 @@ void scheme_unbound_global(Scheme_Bucket *b)
   Scheme_Object *name = (Scheme_Object *)b->key;
 
   if (((Scheme_Bucket_With_Home *)b)->home->module) {
+    const char *errmsg;
+    
+    if (SCHEME_TRUEP(scheme_get_param(scheme_config, MZCONFIG_ERROR_PRINT_SRCLOC)))
+      errmsg = "reference to an identifier before its definition: %S in module: %S";
+    else
+      errmsg = "reference to an identifier before its definition: %S";
+
     scheme_raise_exn(MZEXN_VARIABLE,
 		     name,
-		     "reference to uninitialized module identifier: %S in module: %S",
+		     errmsg,
 		     name,
 		     ((Scheme_Bucket_With_Home *)b)->home->module->modname);
   } else {

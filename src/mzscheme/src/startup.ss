@@ -1487,9 +1487,7 @@
 				 (lambda ()
 				   (if (exn:break? exn)
 				       (raise exn)
-				       (raise-syntax-error
-					'(syntax syntax mzscheme)
-					"incompatible ellipsis match counts for template"
+				       (ellipsis-count-error
 					(quote ,p)
 					;; This is a trick to minimize the syntax structure we keep:
 					(quote-syntax ,(datum->syntax-object #f '... p)))))))))
@@ -1725,6 +1723,13 @@
   (require #%stx #%small-scheme)
   (require-for-syntax #%stx #%small-scheme #%sc #%kernel)
 
+  (define (ellipsis-count-error sexp sloc)
+    (raise-syntax-error
+     '(syntax syntax mzscheme)
+     "incompatible ellipsis match counts for template"
+     sexp
+     sloc))
+
   (define-syntax syntax-case**
     (lambda (x)
       (define l (and (stx-list? x) (cdr (stx->list x))))
@@ -1735,10 +1740,11 @@
 	 "bad form"
 	 x))
       (let ([who (car l)]
-	    [expr (cadr l)]
-	    [kws (caddr l)]
-	    [lit-comp (cadddr l)]
-	    [clauses (cddddr l)])
+	    [arg-is-stx? (cadr l)]
+	    [expr (caddr l)]
+	    [kws (cadddr l)]
+	    [lit-comp (cadddr (cdr l))]
+	    [clauses (cddddr (cdr l))])
 	(unless (stx-list? kws)
 	  (raise-syntax-error
 	   #f
@@ -1787,13 +1793,15 @@
 					 (quote-syntax module-identifier=?)))])
 	    (datum->syntax-object
 	     (quote-syntax here)
-	     (list (quote-syntax let) (list (list arg (list (quote-syntax datum->syntax-object)
+	     (list (quote-syntax let) (list (list arg (if (syntax-e arg-is-stx?)
+							  expr
+							  (list (quote-syntax datum->syntax-object)
 							    (list
 							     (quote-syntax quote-syntax)
 							     (datum->syntax-object
 							      expr
 							      'here))
-							    expr)))
+							    expr))))
 		   (let loop ([patterns patterns]
 			      [fenders fenders]
 			      [unflat-pattern-varss pattern-varss]
@@ -1828,28 +1836,36 @@
 			   (let* ([do-try-next (if (car fenders)
 						   (list (quote-syntax try-next))
 						   rest)]
+				  [mtch (make-match&env
+					 who
+					 pattern
+					 pattern
+					 (stx->list kws)
+					 (not lit-comp-is-mod?))]
+				  [cant-fail? (if lit-comp-is-mod?
+						  (equal? mtch '(lambda (e) e))
+						  (equal? mtch '(lambda (e module-identifier=?) e)))]
 				  [m
 				   ;; Do match, bind result to rslt:
 				   (list (quote-syntax let)
 					 (list 
 					  (list rslt
-						(list* (datum->syntax-object
-							(quote-syntax here)
-							(make-match&env
-							 who
-							 pattern
-							 pattern
-							 (stx->list kws)
-							 (not lit-comp-is-mod?))
-							pattern)
-						       arg
-						       (if lit-comp-is-mod?
-							   null
-							   (list lit-comp)))))
+						(if cant-fail?
+						    arg
+						    (list* (datum->syntax-object
+							    (quote-syntax here)
+							    mtch
+							    pattern)
+							   arg
+							   (if lit-comp-is-mod?
+							       null
+							       (list lit-comp))))))
 					 ;; If match succeeded...
 					 (list 
 					  (quote-syntax if)
-					  rslt
+					  (if cant-fail?
+					      #t
+					      rslt)
 					  ;; Extract each name binding into a temp variable:
 					  (list
 					   (quote-syntax let) 
@@ -2021,23 +2037,23 @@
   ;; Regular syntax-case
   (define-syntax syntax-case*
     (lambda (stx)
-      (syntax-case** #f stx () module-identifier=?
+      (syntax-case** #f #t stx () module-identifier=?
 	[(_ stxe kl id=? clause ...)
-	 (syntax (syntax-case** _ stxe kl id=? clause ...))])))
+	 (syntax (syntax-case** _ #f stxe kl id=? clause ...))])))
 
   ;; Regular syntax-case
   (define-syntax syntax-case
     (lambda (stx)
-      (syntax-case** #f stx () module-identifier=?
+      (syntax-case** #f #t stx () module-identifier=?
 	[(_ stxe kl clause ...)
-	 (syntax (syntax-case** _ stxe kl module-identifier=? clause ...))])))
+	 (syntax (syntax-case** _ #f stxe kl module-identifier=? clause ...))])))
 
   ;; Like syntax, but also takes a syntax object
   ;; that supplies a source location for the
   ;; resulting syntax object.
   (define-syntax syntax/loc
     (lambda (stx)
-      (syntax-case** #f stx () module-identifier=?
+      (syntax-case** #f #t stx () module-identifier=?
 	[(_ loc pattern)
 	 (syntax (let ([stx (syntax pattern)])
 		   (datum->syntax-object
@@ -2051,8 +2067,14 @@
 ;; with-syntax, generate-temporaries
 
 (module #%with-stx #%kernel
-  (require #%stx #%stxloc #%small-scheme)
+  (require #%stx #%stxloc #%small-scheme #%stxcase)
   (require-for-syntax #%kernel #%stxcase #%stxloc #%sc #%qq-and-or #%cond)
+
+  (define (with-syntax-fail stx)
+    (raise-syntax-error
+     '(with-syntax with-syntax mzscheme)
+     "binding match failed"
+     stx))
 
   ;; Partly from Dybvig
   (define-syntax with-syntax
@@ -2085,12 +2107,10 @@
 		    (cond
 		     [(null? tmps)
 		      (syntax (begin e1 e2 ...))]
-		     [else `(syntax-case ,(car tmps) ()
+		     [else `(syntax-case** #f #t ,(car tmps) () eq?
 			      [,(car outs) ,(loop (cdr tmps)
 						  (cdr outs))]
-			      [_else (raise-syntax-error
-				      '(with-syntax with-syntax mzscheme)
-				      "binding match failed"
+			      [_else (with-syntax-fail
 				      ;; Minimize the syntax structure we keep:
 				      (quote-syntax ,(datum->syntax-object 
 						      #f 
@@ -2194,7 +2214,7 @@
   ;; From Dybvig, mostly:
   (define-syntax syntax-rules
     (lambda (x)
-      (syntax-case** syntax-rules x () module-identifier=?
+      (syntax-case** syntax-rules #t x () module-identifier=?
 	((_ (k ...) ((keyword . pattern) template) ...)
 	 (andmap identifier? (syntax->list (syntax (k ...))))
 	 (with-syntax (((dummy ...)

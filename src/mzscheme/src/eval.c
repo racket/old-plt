@@ -4357,7 +4357,7 @@ local_expand(int argc, Scheme_Object **argv)
     
     i = SCHEME_CAR(l);
     if (!SCHEME_STX_SYMBOLP(i)) {
-      scheme_wrong_type("local-expand", "list of identifier syntax", 1, argc, argv);
+      scheme_wrong_type("local-expand", "list of identifier syntax", 2, argc, argv);
       return NULL;
     }
     
@@ -4365,7 +4365,7 @@ local_expand(int argc, Scheme_Object **argv)
       scheme_set_local_syntax(pos++, i, stop_expander, env);
   }
   if (!SCHEME_NULLP(l)) {
-    scheme_wrong_type("local-expand", "list of identifier syntax", 1, argc, argv);
+    scheme_wrong_type("local-expand", "list of identifier syntax", 2, argc, argv);
     return NULL;
   }
 

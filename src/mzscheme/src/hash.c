@@ -137,9 +137,11 @@ get_bucket (Scheme_Hash_Table *table, const char *key, int add, Scheme_Bucket *b
       if (bucket->key) {
 	void *hk = *(void **)bucket->key;
 	if (!hk) {
-	  /* Re-use a bucket slot whose key is collected: */
-	  /* DON'T increment counter overall... */
-	  --table->count;
+	  if (add) {
+	    /* Re-use a bucket slot whose key is collected: */
+	    /* DON'T increment counter overall... */
+	    --table->count;
+	  }
 	  break;
 	} else if (SAME_PTR(hk, key))
 	  return bucket;

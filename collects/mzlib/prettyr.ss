@@ -151,8 +151,10 @@
 				  print-graph? print-struct? depth
 				  (lambda (o display?)
 				    (size-hook o display? port))
-				  (min (sub1 width)
-				       (pretty-print-indentation)))
+				  (if (number? width)
+				      (min (sub1 width)
+					   (pretty-print-indentation))
+				      (pretty-print-indentation)))
 		   (void))
 		  ([obj port width print-graph? print-struct? depth size-hook] 
 		   (pretty-print obj port width print-graph? print-struct? depth 

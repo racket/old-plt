@@ -23,7 +23,10 @@ either be a string or a vector of strings.
 To make a target, make* is first called on each of the target's
 dependencies. If a target is not in the spec and it exists, then the
 target is considered made. If a target is older than any of its
-dependencies, the corresponding COMMAND-THUNK is invoked.
+dependencies, the corresponding COMMAND-THUNK is invoked. The
+COMMAND-THUNK is optional; a MAKE-LINE without a COMMAND-THUNK is
+useful as a target for making a number of other targets (the
+dependencies).
 
 `make*' does not specially capture any exception, so an exception
 raised by a COMMAND-THUNK will terminate the make.

@@ -14,8 +14,8 @@
 			(or (pair? spec) (form-error "specification is an empty list" spec))
 			(andmap
 			 (lambda (line)
-			   (and (or (and (list? line) (= (length line) 3))
-				    (form-error "list is not a list with 3 parts" line))
+			   (and (or (and (list? line) (<= 2 (length line) 3))
+				    (form-error "list is not a list with 2 or 3 parts" line))
 				(or (string? (car line))
 				    (form-error "line does not start with a string" line))
 				(let ([name (car line)])
@@ -25,7 +25,8 @@
 						(or (string? dep)
 						    (form-error "dependency item is not a string" dep name)))
 					      (cadr line)))
-				  (or (and (procedure? (caddr line))
+				  (or (null? (cddr line))
+				      (and (procedure? (caddr line))
 					   (procedure-arity-includes? (caddr line) 0))
 				      (line-error "command part of line is not a thunk" (caddr line) name)))))
 			 spec))
@@ -48,8 +49,10 @@
 						 (ormap (lambda (dep) (and (file-exists? dep)
 									   (> (file-modify-seconds dep) date))) 
 							deps))
-					     (printf "~amaking ~a~n" indent s)
-					     ((caddr line))))
+					     (let ([l (cddr line)])
+					       (unless (null? l)
+						  (printf "~amaking ~a~n" indent s)
+						  ((car l))))))
 				     (unless date
 					     (error 'make "don't know how to make ~a" s)))))])
 		     (cond

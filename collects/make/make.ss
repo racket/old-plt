@@ -9,8 +9,8 @@
 		       (or (pair? spec) (form-error "empty specification"))
 		       (andmap
 			(lambda (line)
-			  (and (or (and (list? line) (>= (length line) 3))
-				   (form-error "clause does not have at least 3 parts" line))
+			  (and (or (and (list? line) (>= (length line) 2))
+				   (form-error "clause does not have at least 2 parts" line))
 			       (let ([name (car line)])
 				 (or (list? (cadr line))
 				     (line-error "second part of clause is not a sequence" (cadr line))))))
@@ -18,8 +18,11 @@
 		  `(make* (list ,@(map (lambda (line)
 					 `(list ,(car line)
 						(list ,@(cadr line))
-						(lambda ()
-						  ,@(cddr line))))
+						,@(let ([l (cddr line)])
+						    (if (null? l)
+							null
+							`((lambda ()
+							    ,@l))))))
 				       spec))
 			  ,argv)))])
     (case-lambda

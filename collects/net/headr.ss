@@ -149,10 +149,10 @@
     (if (or (not s) (regexp-match re:all-blank s))
 	null
 	(let loop ([prefix ""][s s])
-	  ; Which comes first - a quite or a comma?
+	  ; Which comes first - a quote or a comma?
 	  (let ([mq (regexp-match-positions "\"[^\"]*\"" s)]
 		[mc (regexp-match-positions "," s)])
-	    (if (and mq mc (< (caar mc) (cdar mq)))
+	    (if (and mq mc (< (caar mq) (caar mc) (cdar mq)))
 		; Quote contains a comma
 		(loop (string-append 
 		       prefix 

@@ -18,6 +18,11 @@
 (test "1/2+3/4i" pp-string 1/2+3/4i)
 (test "0.333" pp-string #i0.333)
 (test "2.0+1.0i" pp-string #i2+1i)
+(test "'a" pp-string ''a)
+(test "`a" pp-string '`a)
+(test ",a" pp-string ',a)
+(test ",@a" pp-string ',@a)
+(test "#'a" pp-string '#'a)
 
 (parameterize ([pretty-print-exact-as-decimal #t])
   (test "10" pp-string 10)

@@ -8,6 +8,7 @@
 (module test-servlets mzscheme
   (require (lib "contract.ss")
            (lib "test.ss" "schemeunit")
+           (lib "url.ss" "net")
            "assertions.ss"
            )
 
@@ -30,7 +31,7 @@
 
   (define test3-output "blah blah plain text")
 
-  (define test4-output
+  (define test4-output 
     (string-append
       "<html><head><title>Title</title></head><body><h1>Title</h1><p>ab</p>"
       "<p>seed</p></body></html>"))
@@ -49,6 +50,8 @@
   (define test8-output (string-append (path->string
                                         (build-path web-root "servlets"))
                                       "abseed"))
+
+  (define add-output "<title>The Answer</title><p>6</p>")
 
   (define test-servlets
     (make-test-suite
@@ -143,7 +146,7 @@
       (make-test-case
         "Implicit send/back"
         (let ((stop-server (start-server)))
-          (let* ((p1 (get-pure-port
+          (let* ((p1 (get-pure-port 
                        (string->url
                          (format "http://~a:~a/servlets/add.ss"
                                  THE-IP THE-PORT))))
@@ -156,19 +159,119 @@
                  (m2 (regexp-match #rx"action=\"([^\"]*)\"" p2))
                  (p3 (sync/timeout
                        5
-                       (post-impure-port
+                       (post-pure-port
                          (string->url
                            (format "http://~a:~a~a" THE-IP THE-PORT (cadr m2)))
                          #"number=2"
                          null))))
-            (printf "p3 = ~s~n" p3)
             (if p3
               (begin0
-                (begin
-                  (purify-port p3)
-                  (equal? (read-string 100 p3) add-output))
+                (equal? (read-string 100 p3) add-output)
                 (stop-server))
               (begin (stop-server) (fail))))))
+
+      ;; A servlet that exits
+      (make-test-case
+        "A servlet that exits"
+        (let ((stop-server (start-server)))
+          (string=?
+            (read-line
+              (get-pure-port
+                (string->url
+                  (format "http://~a:~a/servlets/exit.ss"
+                          THE-IP THE-PORT))))
+            "success")
+          (or
+            (string=?
+              (read-line
+                (get-pure-port
+                  (string->url
+                    (format "http://~a:~a/servlets/exit.ss"
+                            THE-IP THE-PORT))))
+              "monkey")
+            (begin
+              (stop-server)
+              (fail)))))
+
+      ;; Predict continuation URLs
+      (make-test-case
+        "Predictable continuation URLs"
+        (let ((stop-server (start-server)))
+          (let* ((p1 (get-pure-port
+                       (string->url
+                         (format "http://~a:~a/servlets/add.ss"
+                                 THE-IP THE-PORT))))
+                 (m1 (regexp-match #rx"action=\"([^\"]*)\"" p1)))
+            (stop-server)
+            (or
+              (regexp-match #rx"/servlets;id[0-9]*\\*0/add.ss"
+                            (bytes->string/utf-8 (cadr m1)))
+              (fail)))))
+
+      ;; Make sure timeouts don't kill connections
+      (make-test-case
+        "Timeouts that kill connections"
+        (let ((stop-server (start-server)))
+          (let* ((p1 (get-pure-port
+                       (string->url
+                         (format "http://~a:~a/servlets/timeout-bug.ss"
+                                 THE-IP THE-PORT))))
+                 (m1 (regexp-match #rx"href=\"([^\"]*)\"" p1))
+                 (p2 (get-pure-port
+                       (string->url
+                         (format "http://~a:~a~a"
+                                 THE-IP THE-PORT (cadr m1))))))
+            (stop-server)
+            (or (and (eof-object? p2) (fail)) #t))))
+
+      ;; Exceptions can be repeated
+      (make-test-case
+        "Exceptions can be raised repeatedly"
+        (let ((stop-server (start-server)))
+          (let* ((p1 (get-pure-port
+                       (string->url
+                         (format "http://~a:~a/servlets/error.ss"
+                                 THE-IP THE-PORT))))
+                 (m1 (regexp-match #rx"href=\"([^\"]*)\"" p1))
+                 (p2 (sync/timeout/enable-break
+                       5
+                       (get-impure-port
+                         (string->url
+                           (format "http://~a:~a~a"
+                                   THE-IP THE-PORT (cadr m1))))))
+                 (p3 (sync/timeout/enable-break
+                       5
+                       (get-impure-port
+                         (string->url
+                           (format
+                             "http://~a:~a~a"
+                             THE-IP THE-PORT (cadr m1)))))))
+            (stop-server)
+            (or (and p2 p3
+                     (begin
+                       (purify-port p3)
+                       (purify-port p2)
+                       (input-port-equal? p2 p3)))
+                (fail)))))
+
+      ;; call-with-input-file is a problem
+      (make-test-case
+        "call-with-input-file"
+        (let ((stop-server (start-server)))
+          (let* ((p1 (get-pure-port
+                       (string->url
+                         (format "http://~a:~a/servlets/call-with-input-file.ss"
+                                 THE-IP THE-PORT))))
+                 (m1 (regexp-match #rx"href=\"([^\"]*)\"" p1))
+                 (p2 (sync/timeout/enable-break
+                       5
+                       (get-impure-port
+                         (string->url
+                           (format "http://~a:~a~a"
+                                   THE-IP THE-PORT (cadr m1)))))))
+            (stop-server)
+            (or p2 (fail)))))
+
 
       ))
 

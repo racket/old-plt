@@ -5,7 +5,6 @@
 
   (require "framework-sig.ss"
 	   "private/sig.ss"
-           
            "private/comment-box.ss"
            "private/application.ss"
 	   "private/version.ss"
@@ -15,6 +14,8 @@
 	   "private/menu.ss"
 	   "private/preferences.ss"
 	   "private/autosave.ss"
+           "private/color.ss"
+           "private/color-prefs.ss"
 	   "private/handler.ss" 
 	   "private/keymap.ss"
 	   "private/match-cache.ss"
@@ -63,6 +64,8 @@
 	    [pasteboard : framework:pasteboard^ (pasteboard@ mred editor)]
 	    [text : framework:text^
 		  (text@ mred icon editor preferences keymap color-model frame scheme)]
+            [color : framework:color^ (color@ preferences icon mode text)]
+            [color-prefs : framework:color-prefs^ (color-prefs@ preferences editor)]      
             [comment-box : framework:comment-box^
                          (comment-box@ text scheme keymap)]
 	    [finder : framework:finder^ (finder@ mred preferences keymap)]
@@ -79,7 +82,7 @@
 
 	    [scheme : framework:scheme^ 
 		    (scheme@ mred preferences match-cache paren scheme-paren 
-                           icon keymap text editor frame comment-box mode)]
+                           icon keymap text editor frame comment-box mode color color-prefs)]
 	    [main : framework:main^ (main@ mred preferences exit group handler editor)])
       (export
        (unit menu)
@@ -100,6 +103,8 @@
        (unit editor)
        (unit pasteboard)
        (unit text)
+       (unit color)
+       (unit color-prefs)
        (unit comment-box)
        (unit finder)
        (unit group)

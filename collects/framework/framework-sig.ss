@@ -28,6 +28,8 @@
      [unit panel : framework:panel-class^]
      [unit menu : framework:menu-class^]
      [unit frame : framework:frame-class^]
+     [unit color : framework:color-class^]
+     [unit color-prefs : framework:color-prefs-class^]
      [unit scheme : framework:scheme-class^]
      [unit comment-box : framework:comment-box-class^]
      (unit mode : framework:mode-class^)
@@ -57,6 +59,8 @@
      [unit panel : framework:panel^]
      [unit menu : framework:menu^]
      [unit frame : framework:frame^]
+     [unit color : framework:color^]
+     [unit color-prefs : framework:color-prefs^]
      [unit scheme : framework:scheme^]
      [unit comment-box : framework:comment-box^]
      (unit mode : framework:mode^)

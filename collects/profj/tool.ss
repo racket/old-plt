@@ -7,8 +7,6 @@
            (lib "unitsig.ss")
            (lib "class.ss")
 	   (lib "string-constant.ss" "string-constants")
-           (lib "colorer-prefs.ss" "syntax-color")
-           (lib "colorer.ss" "syntax-color")
            (lib "Object.ss" "profj" "libs" "java" "lang")
            (lib "array.ss" "profj" "libs" "java" "lang")
            (lib "String.ss" "profj" "libs" "java" "lang")
@@ -25,18 +23,18 @@
       (import drscheme:tool^)
 
       (define styles
-        `((keyword ,(make-style-delta "black" #f #f #f))
-          (string ,(make-style-delta "darkgreen" #f #f #f))
-          (literal ,(make-style-delta "darkgreen" #f #f #f))
-          (comment ,(make-style-delta "dimgray" #f #f #f))
-          (error ,(make-style-delta "red" #f #f #f))
-          (identifier ,(make-style-delta "darkblue" #f #f #f))
-          (default ,(make-style-delta "darkgray" #f #f #f))))
+        `((keyword ,(color-prefs:make-style-delta "black" #f #f #f))
+          (string ,(color-prefs:make-style-delta "darkgreen" #f #f #f))
+          (literal ,(color-prefs:make-style-delta "darkgreen" #f #f #f))
+          (comment ,(color-prefs:make-style-delta "dimgray" #f #f #f))
+          (error ,(color-prefs:make-style-delta "red" #f #f #f))
+          (identifier ,(color-prefs:make-style-delta "darkblue" #f #f #f))
+          (default ,(color-prefs:make-style-delta "darkgray" #f #f #f))))
       
-      (add-to-colorer-prefs "Java" styles)
+      (color-prefs:add "Java" styles)
       
       (drscheme:modes:add-mode "Java mode"
-                               (new (colorer mode:surrogate-text%)
+                               (new color:text-mode%
                                     (matches (list (list '|{| '|}|)
                                                    (list '|(| '|)|)
                                                    (list '|[| '|]|)))

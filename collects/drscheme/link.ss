@@ -31,30 +31,6 @@
 			 zodiac:system^
 			 plt:parameters^)))))
 
-(define drscheme@
-  (compound-unit/sig
-    (import [mred : mred^]
-	    [mzlib : mzlib:core^]
-	    [zodiac : zodiac:system^]
-	    [interface : zodiac:interface^]
-	    [print-convert : mzlib:print-convert^]
-	    [params : plt:parameters^])
-    (link [setup : drscheme:setup^ (drscheme:setup@ mred mzlib)]
-	  [tool : drscheme:tool^ 
-	    (drscheme:tool@ mred mzlib print-convert zodiac (project : drscheme:export^) params)]
-	  [spawn : drscheme:spawn^ (drscheme:spawn@ mred mzlib print-convert params aries zodiac)]
-	  [edit : drscheme:edit^ (drscheme:edit@ mred print-convert spawn)]
-	  [frame : drscheme:frame^
-	    (drscheme:frame@ mred mzlib setup project tool)]
-	  [aries : drscheme:aries^ (drscheme:aries@ mred mzlib print-convert zodiac interface edit frame)]
-	  [project : drscheme:project^ (drscheme:project@ mred mzlib aries edit spawn)])
-    (export (open setup)
-	    (open tool)
-	    (open spawn)
-	    (open frame)
-	    (open aries)
-	    (open project))))
-
 (define mred:make-invokable-unit
   (lambda ()
     (unit/sig->unit
@@ -64,15 +40,29 @@
 	     [print-convert : mzlib:print-convert^
                (mzlib:print-convert@ (mzlib string@) (mzlib function@) hooks)]
 	     [trigger : mzlib:trigger^ (mzlib:trigger@)]
-	     [mred : mred^ 
-	       (mred@ mzlib trigger (drscheme : mred:application^))]
+	     [mred : mred^ (mred@ mzlib trigger (project : mred:application^))]
 	     [interface : zodiac:interface^ (drscheme:zodiac-interface@ zodiac mred)]
 	     [params : plt:parameters^ (drscheme:parameters@ mred)]
 	     [zodiac : zodiac:system^ (zodiac:system@ interface params)]
-	     [drscheme : drscheme^
-	       (drscheme@ mred mzlib zodiac interface print-convert params)])
+	     [aries : plt:aries^ (plt:aries@ zodiac interface (spawn : plt:aries:predicates^))]
+	     [setup : drscheme:setup^ (drscheme:setup@ mred mzlib)]
+	     [tool : drscheme:tool^ 
+		   (drscheme:tool@ mred mzlib print-convert zodiac (project : drscheme:export^) params)]
+	     [spawn : drscheme:spawn^
+		    (drscheme:spawn@ mred mzlib print-convert
+				     params aries zodiac
+				     interface)]
+	     [edit : drscheme:edit^ (drscheme:edit@ mred print-convert spawn)]
+	     [frame : drscheme:frame^
+		    (drscheme:frame@ mred mzlib setup project tool)]
+	     [project : drscheme:project^ (drscheme:project@ mred mzlib frame edit spawn)])
        (export (open mred)
 	       (open mzlib)
 	       (open print-convert)
-	       (open drscheme)
+	       (open setup)
+	       (open tool)
+	       (open spawn)
+	       (open frame)
+	       (open aries)
+	       (open project)
 	       (open zodiac))))))

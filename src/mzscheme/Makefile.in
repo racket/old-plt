@@ -223,7 +223,7 @@ cygwin-install:
 	cp libgc.a $(WLIBIDIR)/libgc.a
 	cp libmzscheme.a $(WLIBIDIR)/libmzscheme.a
 	echo 'CC=gcc' > $(WBUILDINFO)
-	echo 'CFLAGS=-g -O2 -Wall ' >> $(WBUILDINFO)
+	echo 'CFLAGS=@CFLAGS@ @OPTIONS@' >> $(WBUILDINFO)
 	echo 'LIBS=-lm  -lm  gmzwin.exp' >> $(WBUILDINFO)
 
 config:

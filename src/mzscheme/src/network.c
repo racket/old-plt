@@ -1758,7 +1758,7 @@ tcp_listen(int argc, Scheme_Object *argv[])
 #else
       fcntl(s, F_SETFL, MZ_NONBLOCKING);
 #endif
-      if (!bind(s, (struct sockaddr *)&tcp_listen_addr, sizeof(tcp_listen_addr)))
+      if (!bind(s, (struct sockaddr *)&tcp_listen_addr, sizeof(tcp_listen_addr))) {
 	if (!listen(s, backlog)) {
 	  listener_t *l;
 
@@ -1780,11 +1780,13 @@ tcp_listen(int argc, Scheme_Object *argv[])
 
 	  return (Scheme_Object *)l;
 	}
+      }
 
       errid = SOCK_ERRNO();
 
       closesocket(s);
-    }
+    } else
+      errid = SOCK_ERRNO();
   }
 # ifndef PROTOENT_IS_INT
   else {

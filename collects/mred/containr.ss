@@ -43,12 +43,6 @@
     
     (mred:debug:printf 'invoke "mred:container@")
     
-    ; redo printfs so we don't have to deal with the symbol stuff all the
-    ; time.
-    (define printf 
-      (lambda args
-	(apply mred:debug:printf (cons 'container args))))
-    
     ; this constant is used by several MrEd primitives to signify the default
     ; size of an object.
     (define const-default-size -1)
@@ -179,12 +173,13 @@
 	    ; intended to be called by item's parent upon resize.
 	    [get-info
 	      (lambda ()
-		(printf "Entering get-info; object ~s" object-ID)
+		(mred:debug:printf 'startup
+		  "Entering get-info; object ~s" object-ID)
 		(let* ([min-size (get-min-size)]
 		       [result (make-child-info default-x default-y
 				 (car min-size) (cadr min-size)
 				 (stretchable-in-x?) (stretchable-in-y?))])
-		  (printf "Result: ~s" result)
+		  (mred:debug:printf 'startup "Result: ~s" result)
 		  result))]
 	    
 	    ; force-redraw: unconditionally trigger redraw.
@@ -195,7 +190,8 @@
 	    ;   invalid.
 	    [force-redraw
 	      (lambda ()
-		(printf "Entering force-redraw; object ~s" object-ID)
+		(mred:debug:printf 'startup
+		  "Entering force-redraw; object ~s" object-ID)
 		(let ([parent (get-parent)])
 		  (unless (null? parent)
 		    (send parent force-redraw))))]
@@ -206,8 +202,10 @@
 	    ; returns: a list containing the minimum width & height.
 	    [get-min-size
 	      (lambda ()
-		(printf "get-min-size; object ~s;  " object-ID)
-		(printf "Result:  ~s" (list min-width min-height))
+		(mred:debug:printf 'startup "get-min-size; object ~s;  "
+		  object-ID)
+		(mred:debug:printf 'startup "Result:  ~s"
+		  (list min-width min-height))
 		(list min-width min-height))])
 	  (sequence
 	    (apply super-init (apply make-default-size args))
@@ -343,7 +341,29 @@
 	  
 	  ; list of child-info structs corresponding to the children.  (#f
 	  ;  if no longer valid.)
-	  [children-info null])
+	  [children-info null]
+
+	  ; make-full-frame: ensures that when a panel is being placed into
+	  ; a frame, it is sized to fill the entire frame.  Necessary to
+	  ; ensure that the frame's initial size as seen by the user is as
+	  ; expected.
+	  ; input: a list containing the parameters to panel%'s
+	  ;   constructor.
+	  ; returns: a list with the args modified so that the panel fills
+	  ;   the entire frame.
+	  [make-full-frame
+	    (opt-lambda (parent
+			  [x const-default-posn]
+			  [y const-default-posn]
+			  [w const-default-size]
+			  [h const-default-size] . args)
+	      (if (or (is-a? parent frame%)
+		      (is-a? parent dialog-box%))
+		  (append
+		    (list parent 0 0 (send parent get-width)
+		      (send parent get-height))
+		    args)
+		  (append (list parent x y w h) args)))])
 	
 	(public
 	  
@@ -359,11 +379,20 @@
 	  ; effects: sets children to list returned by adder-function
 	  ;          forces redraw of window.
 	  [add-child
-	    (opt-lambda (new-child adder-function [show? #t])
+	    (opt-lambda (new-child [show? #t])
 	      (unless (memq new-child children)
-		(set! children (adder-function new-child children))
 		(send new-child show show?)
-		(force-redraw)))]
+		(mred:debug:printf 'system "Arity of add-at-end: ~s"
+		  (arity add-at-end))
+		(let ([function (add-at-end new-child)])
+		  (mred:debug:printf 'system "Arity of adder function ~s"
+		    (arity function))
+		  (change-children function))))]
+	  
+	  [change-children
+	    (lambda (f)
+	      (set! children (f children))
+	      (force-redraw))]
 	  
 	  ; delete-child: removes a child from the panel.
 	  ; input: child: child to delete.
@@ -372,7 +401,8 @@
 	  [delete-child
 	    (lambda (child)
 	      (send child show #f)
-	      (add-child child mzlib:function:remq))]
+	      (change-children (lambda (child-list)
+				 (mzlib:function:remq child child-list))))]
 	  
 	  ; get-children-info: returns children info list, recomputing it
 	  ;   if needed.
@@ -381,9 +411,10 @@
 	  ; effects: upon exit, children-info is eq? to result.
 	  [get-children-info
 	    (lambda ()
-	      (printf "Entering get-children-info; object ~s" object-ID)
+	      (mred:debug:printf 'startup
+		"Entering get-children-info; object ~s" object-ID)
 	      (unless children-info
-		(printf "Recomputing children info")
+		(mred:debug:printf 'startup "Recomputing children info")
 		(set! children-info (map (lambda (child)
 					   (send child get-info))
 				      children)))
@@ -396,7 +427,8 @@
 	  ;   itself and all of its children.
 	  [force-redraw
 	    (lambda ()
-	      (printf "Entering force-redraw; object ~s" object-ID)
+	      (mred:debug:printf 'startup
+		"Entering force-redraw; object ~s" object-ID)
 	      (set! children-info #f)
 	      (set! curr-width #f)
 	      (let ([parent (get-parent)])
@@ -440,18 +472,22 @@
 	  ; effects: causes children to redraw themselves.
 	  [on-size
 	    (lambda (new-width new-height)
-	      (printf "Entering on-size; object ID ~s;  " object-ID)
-	      (printf "New size: ~s x ~s" new-width new-height)
+	      (mred:debug:printf 'startup
+		"Entering on-size; object ID ~s;  " object-ID)
+	      (mred:debug:printf 'startup
+		"New size: ~s x ~s" new-width new-height)
 	      (let-values ([(client-width client-height)
 			    (get-two-int-results get-client-size)])
-		(printf "Client size: ~s x ~s" client-width client-height)
+		(mred:debug:printf 'startup
+		  "Client size: ~s x ~s" client-width client-height)
 		(unless (and (number? curr-width)
 			  (number? curr-height)
 			  (= client-width curr-width)
 			  (= client-height curr-height))
 		  (set! curr-width client-width)
 		  (set! curr-height client-height)
-		  (printf "On-size is forcing a redraw.")
+		  (mred:debug:printf 'startup
+		    "On-size is forcing a redraw.")
 		  (redraw client-width client-height))))]
 	  
 	  ; redraw: redraws panel and all children
@@ -474,7 +510,7 @@
 	      (lambda (width height)
 		(redraw-helper children (get-children-info))))])
 	(sequence
-	  (apply super-init args))))
+	  (apply super-init (apply make-full-frame args)))))
     
     (define make-top-container%
       (lambda (base%)
@@ -503,11 +539,12 @@
 	    ;            mred:panel%, calls error; panel not updated.
 	    [insert-panel
 	      (lambda (new-panel)
-		(if (is-a? new-panel panel%)
-		    (set! panel new-panel)
-		    (error 'insert-panel
-		      "Expected a mred:panel% descendant; got ~s"
-		      new-panel)))]
+		(unless (is-a? new-panel panel%)
+		  (error 'insert-panel
+		    "Expected a mred:panel% descendant; got ~s"
+		    new-panel))
+		(set! panel new-panel)
+		(send panel set-size 0 0 (get-width) (get-height)))]
 	    
 	    [force-redraw
 	      (lambda ()
@@ -524,7 +561,8 @@
 	    ;            independantly.
 	    [on-size
 	      (lambda (new-width new-height)
-		(printf "FRAME: Entered frame's on-size; args ~s ~s"
+		(mred:debug:printf 'startup
+		  "FRAME: Entered frame's on-size; args ~s ~s"
 		  new-width new-height)
 		(unless (null? panel)
 		  (let ([p-x (box 0)]
@@ -574,11 +612,14 @@
 			   ; quantities.
 			   [f-width (+ new-w delta-w)]
 			   [f-height (+ new-h delta-h)])
-		      (printf "FRAME: panel client ~s x ~s"
+		      (mred:debug:printf 'startup
+			"FRAME: panel client ~s x ~s"
 			p-client-width p-client-height)
-		      (printf "FRAME: size differences: ~s, ~s"
+		      (mred:debug:printf 'startup
+			"FRAME: size differences: ~s, ~s"
 			delta-w delta-h)
-		      (printf "FRAME: New size: ~s x ~s"
+		      (mred:debug:printf 'startup
+			"FRAME: New size: ~s x ~s"
 			new-w new-h)
 		      (send panel set-size const-default-posn
 			const-default-posn
@@ -586,10 +627,12 @@
 			(+ (- f-height delta-h) p-delta-h))
 		      (unless (and (= new-width f-width)
 				(= new-height f-height))
-			(printf "FRAME: Resizing to ~s x ~s" f-width f-height)
+			(mred:debug:printf 'startup
+			  "FRAME: Resizing to ~s x ~s" f-width f-height)
 			(set-size const-default-posn const-default-posn
 			  f-width f-height)))))
-		(printf "FRAME: Leaving onsize at the end."))])
+		(mred:debug:printf 'startup
+		  "FRAME: Leaving onsize at the end."))])
 	  (sequence
 	    (apply super-init args)
 	    (set! object-ID counter)
@@ -597,8 +640,7 @@
       
     (define frame% (make-top-container% wx:frame%))
     (define dialog-box% (make-top-container% wx:dialog-box%))
-    
-    
+
     ; make-get-size: creates a function which returns the minimum possible
     ;   size for a horizontal-panel% or vertical-panel% object.
     ; input: container: a pointer to the panel% descendant upon
@@ -619,15 +661,17 @@
 		   (lambda (kid-info x-accum y-accum)
 		     (if (null? kid-info)
 			 (begin
-			   (printf "Result: ~s" (list x-accum y-accum))
+			   (mred:debug:printf 'startup "Result: ~s"
+			     (list x-accum y-accum))
 			   (list x-accum y-accum))
 			 (let ([curr-info (car kid-info)])
 			   (gs-help (cdr kid-info)
 			     (compute-x x-accum spacing curr-info)
 			     (compute-y y-accum spacing curr-info)))))])
 	  (lambda ()
-	    (printf "Entering get-min-size; object ~s" (ivar container
-							 object-ID))
+	    (mred:debug:printf 'startup
+	      "Entering get-min-size; object ~s" (ivar container
+						   object-ID))
 	    (gs-help (send container get-children-info)
 	      spacing spacing)))))
     
@@ -753,14 +797,16 @@
 		       (lambda (kid-info) (get-info kid-info 0)))])
 	      (let ([major-info (get-major-info kid-info)]
 		    [minor-info (get-minor-info kid-info)])
-		(printf "Inside redraw; object ~s;  "
+		(mred:debug:printf 'startup "Inside redraw; object ~s;  "
 		  (ivar container object-ID))
-		(printf "Arguments: ~s ~s" width height)
-		(printf "# stretchable: ~s;  Extra space: ~s;  "
+		(mred:debug:printf 'startup "Arguments: ~s ~s" width height)
+		(mred:debug:printf 'startup
+		  "# stretchable: ~s;  Extra space: ~s;  "
 		  num-stretchable extra-space)
-		(printf "space / stretchable: ~sMajor Info: ~s"
+		(mred:debug:printf 'startup
+		  "space / stretchable: ~s Major Info: ~s"
 		  extra-per-stretchable major-info)
-		(printf "minor info: ~s" minor-info)
+		(mred:debug:printf 'startup "minor info: ~s" minor-info)
 		(move-children (ivar container children)
 		  (get-h-info major-info minor-info)
 		  (get-v-info major-info minor-info))))))))
@@ -783,7 +829,7 @@
 		     (child-info-y-min curr-info)))))]
 	  [redraw
 	    (make-h-v-redraw this
-	      child-info-x-min
+ 	      child-info-x-min
 	      child-info-x-stretch
 	      child-info-y-min
 	      child-info-y-stretch
@@ -816,8 +862,9 @@
 	      (lambda (major minor) major))])))
       
     (define add-at-end
-      (lambda (object list-of-kids)
-	(append list-of-kids (list object))))
+      (lambda (object)
+	(lambda (list-of-kids)
+	  (append list-of-kids (list object)))))
       
     ; implement a panel which can hold multiple objects but only displays
     ; one at a time.  The size of the panel is the smallest size possible
@@ -838,14 +885,14 @@
 	  [active null]
 	    
 	  [add-child
-	    (lambda (new-child adder-function)
-	      (super-add new-child adder-function #f))]
+	    (lambda (new-child)
+	      (super-add new-child #f))]
 	  [active-child
 	    (case-lambda
 	      [() active]
 	      [(new-child)
 	       (unless (memq new-child children)
-		 (add-child new-child add-at-end))
+		 (add-child new-child))
 	       (unless (null? active)
 		 (send active show #f))
 	       (unless (null? new-child)

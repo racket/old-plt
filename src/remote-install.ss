@@ -137,10 +137,12 @@ string=? ; exec "$PLTHOME/bin/mzscheme" -qr $0 "$@"
     (lambda (pr)
       (let ([cmd
              (format "scp -C -r ~a~a ~a~a"
-                     (if from-remote-host (format "~a:" from-remote-host) "")
-                     (build-path src-rel (pr-from pr))
+                     (if from-remote-host
+			 (format "~a:" from-remote-host)
+			 "")
+                     (path->string (build-path src-rel (pr-from pr)))
                      (if to-remote-host (format "~a:" to-remote-host) "")
-                     (build-path dest-rel (pr-to pr)))])
+                     (path->string (build-path dest-rel (pr-to pr))))])
         (printf "~a\n" cmd)
         (system cmd))))
   

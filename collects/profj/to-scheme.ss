@@ -779,7 +779,7 @@
     (let* ((internal-error (lambda () (error 'override "Internal Error class or it's parent not in class record table")))
            (class-record (send type-recs get-class-record 
                                (make-ref-type (class-name)
-                                              (send type-recs lookup-path (class-name) internal-error))
+                                              (send type-recs lookup-path (class-name) (lambda () null)))
                                #f
                                internal-error))
            (parent-record (send type-recs get-class-record  (car (class-record-parents class-record)) #f internal-error)))
@@ -1320,13 +1320,11 @@
             (make-syntax #f `void (build-src src))
             (make-syntax #f `(begin ,@(translate statements)) (build-src src))))))
   
-  ;Converted
   ;translate-break: (U id #f) src -> syntax
-  (define translate-break
-    (lambda (id src)
-      (if (not id)
-          (make-syntax #f `(break-k void) (build-src src))
-          (make-syntax #f `(,(translate-id (string-append (id-string id "-k")) (id-src id)) void) (build-src src)))))
+  (define (translate-break id src)
+    (if (not id)
+        (make-syntax #f `(break-k (void)) (build-src src))
+        (make-syntax #f `(,(translate-id (string-append (id-string id "-k")) (id-src id)) void) (build-src src))))
   
   ;Converted
   ;translate-continue: (U string #f) src -> syntax

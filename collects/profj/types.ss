@@ -403,6 +403,7 @@
   (define (is-interface? t type-recs)
     (not (class-record-class? (get-record (send type-recs get-class-record t) type-recs))))
   
+  ;;Is c1 a subclass of c2?
   ;; is-subclass?: (U type (list string) 'string) ref-type type-records -> boolean
   (define (is-subclass? c1 c2 type-recs)
     (let ((cr (get-record (send type-recs get-class-record c1) type-recs)))

@@ -1323,9 +1323,9 @@
                (fname (id-string (field-access-field acc)))
                (src (id-src (field-access-field acc)))
                (record null))
-           (if obj
-               (set! record (field-lookup fname (check-sub-expr obj) obj src level type-recs))
-               (set! record 
+           (set! record 
+                 (if obj
+                     (field-lookup fname (check-sub-expr obj) obj src level type-recs)
                      (let* ((name (var-access-class (field-access-access acc)))
                             (class-rec (get-record (send type-recs get-class-record 
                                                          (if (pair? name) name (list name))
@@ -1341,34 +1341,47 @@
                                                                  (string->symbol fname)
                                                                  (make-ref-type (if (pair? name) (car name) name) null)
                                                                  src)))))))
+           (let* ((field-class (if (null? (cdr (field-record-class record))) 
+                                   (cons (car (field-record-class record))
+                                         (send type-recs lookup-path (car (field-record-class record)) (lambda () null)))
+                                   (field-record-class record)))
+                  (mods (field-record-modifiers record))
+                  (public? (memq 'public mods))
+                  (private? (memq 'private mods))
+                  (protected? (memq 'protected mods)))
 
-           (when (and (eq? level 'beginner)
-                      (eq? (car c-class) (car (field-record-class record))))
-             (when (or (not obj) (and (special-name? obj) (not (expr-src obj))))
-               (beginner-field-access-error (string->symbol fname) src)))
+             (when (and (eq? level 'beginner)
+                        (eq? (car c-class) (car field-class))
+                        (or (not obj) (and (special-name? obj) (not (expr-src obj)))))
+               (beginner-field-access-error (string->symbol fname) src))
            
-           (set-field-access-access! acc (make-var-access 
-                                          (memq 'static (field-record-modifiers record))
-                                          (memq 'final (field-record-modifiers record))
-                                          (field-record-init? record)
-                                          (cond
-                                            ((memq 'private (field-record-modifiers record)) 'private)
-                                            ((memq 'public (field-record-modifiers record)) 'public)
-                                            ((memq 'protected (field-record-modifiers record)) 'protected)
-                                            (else 'package))
-                                          (car (field-record-class record))))
-           (add-required c-class 
-                         (car (field-record-class record))
-                         (if (null? (cdr (field-record-class record)))
-                             (send type-recs lookup-path (car (field-record-class record))
-                                   (lambda () null))
-                             (cdr (field-record-class record)))
-                         type-recs)
-           (unless (eq? level 'full)
-             (when (is-field-restricted? fname (field-record-class record))
-               (restricted-field-access-err (field-access-field acc) 
-                                        (field-record-class record) src)))
-           (field-record-type record)))
+             (when (and private? (not (equal? c-class field-class)))
+               (illegal-field-access 'private (string->symbol fname) level (car field-class) src))
+           
+             (when (and protected? (not (or (equal? c-class field-class)
+                                            (is-subclass? c-class (make-ref-type (car field-class) (cdr field-class)) type-recs)
+                                            (package-members? c-class field-class))))
+               (illegal-field-access 'protected (string->symbol fname) level (car field-class) src))
+                          
+             (when (and (not private?) (not protected?) (not public?) (not (package-members? c-class field-class)))
+               (illegal-field-access 'package (string->symbol fname) level (car field-class) src))
+           
+             
+             (set-field-access-access! acc (make-var-access (memq 'static mods)
+                                                            (memq 'final mods)
+                                                            (field-record-init? record)
+                                                            (cond
+                                                              (private? 'private)
+                                                              (public? 'public)
+                                                              (protected? 'protected)
+                                                              (else 'package))
+                                                            (car field-class)))
+             (add-required c-class (car field-class) (cdr field-class) type-recs)
+
+             (unless (eq? level 'full)
+               (when (is-field-restricted? fname field-class)
+                 (restricted-field-access-err (field-access-field acc) field-class src)))
+             (field-record-type record))))
         ((local-access? acc) 
          (let ((var (lookup-var-in-env (id-string (local-access-name acc)) env)))
            (if (properties-usable? (var-type-properties var))
@@ -1448,6 +1461,10 @@
            (set-access-name! exp new-acc)
            (check-sub-expr exp))))))
   
+  ;package-members? (list string) (list string) -> bool
+  (define (package-members? class1 class2)
+    (equal? (cdr class1) (cdr class2)))
+  
   ;; field-lookup: string type expression src symbol type-records -> field-record
   (define (field-lookup fname obj-type obj src level type-recs)
     (let ((obj-src (expr-src obj))
@@ -1467,7 +1484,7 @@
         ((array-type? obj-type)
          (unless (equal? fname "length")
            (field-lookup-error 'array name obj-type src))
-         (make-field-record "length" `() #f `(array) 'int))
+         (make-field-record "length" `(public) #f `(array) 'int))
         (else (field-lookup-error 'primitive name obj-type obj-src)))))
   
   ;; build-field-accesses: access (list id) -> field-access
@@ -1542,7 +1559,6 @@
       (set-specified-this-var! exp (var-type-var var))
       (var-type-type var)))
     
-  ;;Skipping package access constraints
   ;; 15.12
   ;check-call: call (list type) (expr->type) (list string) symbol env type-records bool bool-> type
   (define (check-call call args check-sub c-class level env type-recs ctor? static? interact?)
@@ -1693,15 +1709,19 @@
           (non-static-called-error name c-class src level))
                 
         (when (and (memq 'protected mods) (reference-type? exp-type) 
-                   (not (is-eq-subclass? this exp-type)))
-          (call-access-error 'pro name exp-type src))
+                   (or (not (is-eq-subclass? this exp-type))
+                       (not (package-members? (cdr c-class) (ref-type-path exp-type)))))
+          (call-access-error 'pro level name exp-type src))
         (when (and (memq 'private mods)
                    (reference-type? exp-type)
                    (if static?
                        (not (and (equal? (ref-type-class/iface exp-type) (car c-class))
                                  (equal? (ref-type-path exp-type) (cdr c-class))))
                        (not (eq? this (send type-recs get-class-record exp-type)))))
-          (call-access-error 'pri name exp-type src))
+          (call-access-error 'pri level name exp-type src))
+        (when (and (not (memq 'private mods)) (not (memq 'public mods)) (not (memq 'protected mods))
+                   (package-members? (cdr c-class) (ref-type-path exp-type)))
+          (call-access-error 'pac level name exp-type src))
         (when (eq? level 'full)
           (for-each (lambda (thrown)
                       (unless (lookup-exn thrown env type-recs level)
@@ -1734,9 +1754,6 @@
                   (method-arg-error 'type (list arg) (cons atype atypes) name exp-type src)))
               args atypes))
   
-      
-  
-  ;;Skip package access controls
   ;; 15.9
   ;;check-class-alloc: expr name (list type) src type-records (list string) env symbol bool-> type
   (define (check-class-alloc exp name/def args src type-recs c-class env level static?)
@@ -1745,7 +1762,7 @@
                          (make-name (def-name name/def) null (id-src (def-name name/def))))
                   name/def))
            (type (name->type name/def c-class (name-src name) level type-recs))
-           (class-record (send type-recs get-class-record type))
+           (class-record (get-record (send type-recs get-class-record type) type-recs))
            (methods (get-method-records (ref-type-class/iface type) class-record)))
       (unless (or (equal? (ref-type-class/iface type) (car c-class))
                   (inner-alloc? exp))
@@ -1773,9 +1790,13 @@
                         (ctor-throws-error (ref-type-class/iface thrown) type src)))
                     (method-record-throws const)))
         (when (and (memq 'private mods) (not (eq? class-record this)))
-          (class-access-error 'pri type src))
-        (when (and (memq 'protected mods) (not (is-eq-subclass? this type)))
-          (class-access-error 'pro type src))
+          (class-access-error 'pri level type src))
+        (when (and (memq 'protected mods) (or (not (is-eq-subclass? this type)) 
+                                              (package-members? (cdr c-class) (ref-type-path type))))
+          (class-access-error 'pro level type src))
+        (when (and (not (memq 'private mods)) (not (memq 'protected mods)) (not (memq 'public mods))
+                   (package-members? (cdr c-class) (ref-type-path type)))
+          (class-access-error 'pac level type src))
         ((if (class-alloc? exp) set-class-alloc-ctor-record! set-inner-alloc-ctor-record!)exp const)
         type)))
   
@@ -2103,6 +2124,20 @@
      (format "field ~a from the current class accessed as a variable. fields should be accessed with 'this'" name)
      name src))
   
+  ;illegal-field-access: symbol symbol symbol string src -> void
+  (define (illegal-field-access kind field level class src)
+    (raise-error
+     field
+     (if (or (eq? kind 'private) (memq level '(beginner intermediate)))
+         (format "field ~a not found for object with type ~a" field class)
+         (case kind
+           ((protected) 
+            (format "field ~a of class ~a can only be accessed by ~a, subclasses of ~a, or fellow package members"
+                    field class class class))
+           ((package) (format "field ~a of class ~a can only be accessed by ~a and fellow package members of ~a" 
+                       field class class class))))
+     field src))
+  
   ;restricted-field-access: id (list string) src -> void
   (define (restricted-field-access-err field class src)
     (let ((n (id->ext-name field)))
@@ -2320,15 +2355,16 @@
       (substring out 0 (- (string-length out) 5))))                                                         
   
   ;call-access-error: symbol id type src -> void
-  (define (call-access-error kind name exp src)
+  (define (call-access-error kind level name exp src)
     (let ((n (id->ext-name name))
           (t (get-call-type exp)))
     (raise-error n
-                 (case kind
-                   ((abs) (format "Abstract methods may not be called. ~a from ~a is abstract"
-                                  n t))
-                   ((pro) (format "Protected method ~a from ~a may not be called here" n t))
-                   ((pri) (format "Private method ~a from ~a may not be called here" n t)))
+                 (if (memq level '(beginner abstract))
+                     (format "~a does not contain a method named ~a" t n)
+                     (case kind
+                       ((pro) (format "method ~a from ~a may only be called by ~a, a subclass, or package member of ~a" n t t t))
+                       ((pri) (format "~a does not contain a method named ~a" t n))
+                       ((pac) (format "method ~a from ~a may only be called by ~a or a package member of ~a" n t t))))
                  n src)))
 
   ;call-arg-error: symbol id (list type) type src -> void
@@ -2413,14 +2449,17 @@
        n src)))
   
   ;class-access-error: symbol type src -> void
-  (define (class-access-error kind name src)
+  (define (class-access-error kind level name src)
     (let ((n (type->ext-name name)))
       (raise-error n
                    (case kind
-                     ((pro) (format "This constructor for ~a may only be used by ~a and its subclasses"
+                     ((pro) (format "This constructor for ~a may only be used by ~a and its subclasses~a"
+                                    n n (if (memq level '(beginner intermediate)) "" " and package members")))
+                     ((pri) (format "This constructor for ~a may only be used by ~a"
                                     n n))
-                   ((pri) (format "This constructor for ~a may only be used by ~a"
-                                  n n)))
+                     ((pac) (format "This constructor for ~a may~a"
+                                    n (if (memq level '(beginner intermediate))
+                                          "not be used" (format " only be used by ~a and package members" n)))))
                  n src)))
 
   ;ctor-throws-error: string type src -> void

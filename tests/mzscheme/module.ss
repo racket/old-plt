@@ -1,5 +1,5 @@
 
-(load-relative "testing.ss")
+(load-relative "loadtest.ss")
 
 (SECTION 'module)
 

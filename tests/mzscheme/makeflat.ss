@@ -42,23 +42,34 @@
   (case-lambda
    [(expr) (error-test expr #f)]
    [(expr exn?)
-    (unless (eq? exn? exn:syntax?)
+    (unless (or (eq? exn? exn:syntax?)
+		(syntax-case expr (define define-values)
+		  [(define . _) #t]
+		  [(define-values . _) #t]
+		  [_else #f]))
       (let ([dexpr (syntax-object->datum expr)])
 	(flat-pp 
 	 `(thunk-error-test (lambda () ,dexpr)
-			    (quote ,dexpr)
+			    (quote-syntax ,dexpr)
 			    ,@(if exn?
-				  (list (inferred-name exn?))
+				  (list (object-name exn?))
 				  null)))))]))
 
-(define building-flat-tests #t)
+(define building-flat-tests? #t)
 
 (dynamic-wind
  (lambda () 
    (current-eval
     (lambda (e)
-      (unless (or (and (pair? e)
-		       (memq (car e) '(load load-relative error-test)))
+      (unless (or (syntax-case* e (load load-relative error-test unless) (lambda (a b)
+									   (eq? (syntax-e a) (syntax-e b)))
+		    [(load . _) #t]
+		    [(load-relative . _) #t]
+		    [(error-test . _) #t]
+		    [(unless _ (load-relative s)) (string? (syntax-e (syntax s))) #t]
+		    [else #f])
+		  (compiled-expression? e)
+		  (and (syntax? e) (compiled-expression? (syntax-e e)))
 		  (not (eq? (current-namespace) old-namespace))
 		  ;; Skip test use of `eval' on unprintable value:
 		  (and (pair? e) (pair? (cdr e))

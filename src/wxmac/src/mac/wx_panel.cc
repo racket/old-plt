@@ -95,11 +95,10 @@ void wxPanel::CreateWxPanel(int x, int y, int w, int h) // common constructor in
         SetCurrentMacDCNoMargin();
         Rect cRect;
         Str255 embeddingTitle = "\pebmedding title";
-        SetRect(&cRect,x,y,x+w,y+h);
+        SetRect(&cRect,0,0,w,h);
         OffsetRect(&cRect,SetOriginX,SetOriginY);
         cEmbeddingControl = ::NewControl(GetWindowFromPort(cMacDC->macGrafPort()),&cRect,embeddingTitle,TRUE,
                                             kControlSupportsEmbedding,0,0,kControlUserPaneProc,NULL);
-
                                             
 	if (cStyle & wxBORDER) 
 	  cPanelBorder = new wxBorderArea(this, 1, Direction::wxAll, 1);
@@ -249,8 +248,6 @@ void wxPanel::AdvanceCursor(wxWindow* item)
 
 void wxPanel::DoSetSize(int x, int y, int width, int height)
 {
-        wxWindow::DoSetSize(x,y,width,height);
-/*        
  	if (x==-1) 
  		x= cWindowX;
  	if (y==-1) 
@@ -265,19 +262,16 @@ void wxPanel::DoSetSize(int x, int y, int width, int height)
 	Bool widthIsChanged = (width != cWindowWidth);
 	Bool heightIsChanged = (height != cWindowHeight);
 
+        wxWindow::DoSetSize(x,y,width,height);
+
 	if (!cHidden && (xIsChanged || yIsChanged || widthIsChanged || heightIsChanged))
 	{
                 SetCurrentMacDCNoMargin();
                 MacSetBackground();
-                ::MoveControl(cEmbeddingControl,x+SetOriginX,y+SetOriginY);
+                ::MoveControl(cEmbeddingControl,SetOriginX,SetOriginY);
                 ::SizeControl(cEmbeddingControl,width,height);
 	}
 
-    if (xIsChanged) cWindowX = x;
-    if (yIsChanged) cWindowY = y;
-    if (widthIsChanged) cWindowWidth = width;
-    if (heightIsChanged) cWindowHeight = height;
-*/
 }
 
 

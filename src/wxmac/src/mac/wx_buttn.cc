@@ -575,15 +575,6 @@ void wxButton::ChangeToGray(Bool gray)
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 //-----------------------------------------------------------------------------
-void wxButton::SetSize(int x, int y, int width, int height, int flags = wxSIZE_AUTO)
-{
-  fprintf(stderr,"SetSize called for wxButton\n");
-  
-  wxWindow::SetSize(x,y,width,height,flags);
-}
-
-
-//-----------------------------------------------------------------------------
 void wxButton::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac platform only
 {
 	SetCurrentDC();

@@ -236,6 +236,11 @@ Create (wxPanel * panel, wxFunction func, char *Title,
 			 (height == -1 ? 0 : height), (x == -1 ? 0 : x), (y == -1 ? 0 : y));
 	}
 	SetSelection(0);
+
+        // Embed the control, if possible
+        if (parentPanel->cEmbeddingControl && cMacControl) {
+            ::EmbedControl(cMacControl,parentPanel->cEmbeddingControl);
+        }
 	//DrawChoice(TRUE);
 
 #ifdef OS_X

@@ -101,7 +101,10 @@ void wxCheckBox::Create // Constructor (given parentPanel, label)
         cWindowHeight = r.bottom - r.top + (2 * PAD_Y);
         
         ::SizeControl(cMacControl,r.right-r.left,r.bottom-r.top);
-        ::ShowControl(cMacControl);
+        if (parentPanel->cEmbeddingControl) {
+            ::EmbedControl(cMacControl,parentPanel->cEmbeddingControl);
+        }
+
 #else
 
 	if (width <= 0 || height <= 0)

@@ -112,6 +112,13 @@ wxGauge::wxGauge(wxPanel *panel, char *label, int _range, int x, int y,
 		
 	if (GetParent()->IsHidden())
 		DoShow(FALSE);
+                
+/*      // UNCOMMENT this when this becomes a native control.
+        // Embed the control, if possible
+        if (parentPanel->cEmbeddingControl && cMacControl) {
+            ::EmbedControl(cMacControl,parentPanel->cEmbeddingControl);
+        }
+*/                
 }
 
 // ------------ Destructor ----------------------------------------

@@ -2,7 +2,7 @@
 ;;
 ;; program.ss
 ;; Richard Cobbe
-;; $Id: program.ss,v 1.1 2004/07/27 22:41:36 cobbe Exp $
+;; $Id: program.ss,v 1.2 2004/08/10 15:57:43 cobbe Exp $
 ;;
 ;; This module defines functions that act on the class inheritance tree.
 ;;
@@ -23,31 +23,35 @@
                     [type<=? (-> program? type? type? boolean?)]
                     [type-lub (-> program? type? type? (union type? false?))])
 
+  ;; find-first :: (x -> Boolean) (Listof x) -> (Union x #f)
+  ;; finds first element in list which satisfies predicate; #f if none.
+  (define find-first
+    (lambda (p l)
+      (recur loop ([l l])
+        (cond
+         [(null? l) #f]
+         [(p (car l)) (car l)]
+         [else (loop (cdr l))]))))
+
+  ;; find-slot :: (Class -> (Listof x)) (x -> y) -> Class y -> (Union x #f)
+  ;; searches within slots produced by class-slots to find a slot whose name
+  ;; (given by slot-name) matches n.  Returns #f if no match found.
+  (define find-slot
+    (lambda (class-slots slot-name)
+      (lambda (c n)
+        (let ([target? (lambda (slot) (eq? n (slot-name slot)))])
+          (recur class-loop ([c c])
+            (and c
+                 (or (find-first target? (class-slots c))
+                     (class-loop (class-superclass c)))))))))
+
   ;; find-method :: Class Method-Name -> (Union Method #f)
   ;; finds the named method in the specified class; #f if doesn't exist
-  (define find-method
-    (lambda (c m)
-      (recur class-loop ([c c])
-        (if (not c)
-            #f
-            (recur method-loop ([ms (class-methods c)])
-              (cond
-               [(null? ms) (class-loop (class-superclass c))]
-               [(eq? m (method-name (car ms))) (car ms)]
-               [else (method-loop (cdr ms))]))))))
+  (define find-method (find-slot class-methods method-name))
 
   ;; find-field :: Class Field-Name -> (Union Field #f)
   ;; finds the named field in the specified class; #f if doesn't exist
-  (define find-field
-    (lambda (c f)
-      (recur class-loop ([c c])
-        (if (not c)
-            #f
-            (recur field-loop ([fs (class-fields c)])
-              (cond
-               [(null? fs) (class-loop (class-superclass c))]
-               [(eq? f (field-name (car fs))) (car fs)]
-               [else (field-loop (cdr fs))]))))))
+  (define find-field (find-slot class-fields field-name))
 
   ;; find-class :: Program Class-Name -> Class
   ;; Looks up the specified class in the program.

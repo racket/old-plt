@@ -383,7 +383,8 @@
 	(define-syntax wall-escape?
 	  (syntax-rules ()
 			((_ board x y p)
-			 (if (and (pinned? board (search-player-x (player-cur)) (search-player-y (player-cur)) 2)
+			 (if (and 
+                              (pinned? board (search-player-x (player-cur)) (search-player-y (player-cur)) 2)
 				  (or (not (is-robot? board x y )) (not (wall? board (+ x (- x (search-player-x (player-cur)))) (+ y (- y (search-player-y (player-cur))))))))
 			     1
 			     0))))
@@ -403,7 +404,12 @@
 			((_ board x y p)
 
                            
-			 (if (and (pinned? board (search-player-x (player-cur)) (search-player-y (player-cur)) 1)
+			 (if (and 
+                              (if (pinned? board (search-player-x (player-cur)) (search-player-y (player-cur)) 1)
+                                  (begin
+                                    (printf "Pinned on a water escape")
+                                    #t)
+                                  #f)
 				  (or (not (is-robot? board x y )) (not (wall? board (+ x (- x (search-player-x (player-cur)))) (+ y (- y (search-player-y (player-cur))))))))
 			     1
 			     0))))

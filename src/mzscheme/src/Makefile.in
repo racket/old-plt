@@ -258,12 +258,13 @@ port.o: $(srcdir)/schpriv.h $(srcdir)/schexn.h $(SCONFIG) $(srcdir)/../include/s
 portfun.o: $(srcdir)/schpriv.h $(srcdir)/schexn.h $(SCONFIG) $(srcdir)/../include/scheme.h \
         $(srcdir)/../src/stypes.h $(srcdir)/schfd.h $(srcdir)/mzmark.c
 print.o: $(srcdir)/../include/scheme.h $(srcdir)/../src/stypes.h $(srcdir)/../src/schcpt.h \
-          $(srcdir)/schpriv.h $(srcdir)/schexn.h $(SCONFIG)
+          $(srcdir)/schpriv.h $(srcdir)/schexn.h $(srcdir)/schvers.h $(SCONFIG)
 thread.o: $(srcdir)/schpriv.h $(srcdir)/schexn.h $(SCONFIG) $(srcdir)/../include/scheme.h \
          $(srcdir)/../src/stypes.h  $(srcdir)/schfd.h $(srcdir)/mzmark.c
 rational.o: $(srcdir)/schpriv.h $(srcdir)/schexn.h $(SCONFIG) $(srcdir)/../include/scheme.h \
          $(srcdir)/../src/stypes.h    
-read.o: $(srcdir)/schpriv.h $(srcdir)/schexn.h $(SCONFIG) $(srcdir)/../include/scheme.h $(srcdir)/../src/schcpt.h \
+read.o: $(srcdir)/schpriv.h $(srcdir)/schexn.h $(SCONFIG) $(srcdir)/../include/scheme.h \
+        $(srcdir)/../src/schcpt.h $(srcdir)/schvers.h \
         $(srcdir)/../src/stypes.h  
 regexp.o:  $(srcdir)/schpriv.h $(srcdir)/schexn.h $(SCONFIG) $(srcdir)/../include/scheme.h \
         $(srcdir)/../src/stypes.h $(srcdir)/mzmark.c

@@ -102,6 +102,7 @@ wxMenuBar::~wxMenuBar(void)
   if (last_installed_bar == this) {
     wxPrepareMenuDraw();
     ::ClearMenuBar();
+    wxDoneMenuDraw();
     last_installed_bar = NULL;
   }
 
@@ -115,15 +116,25 @@ wxMenuBar::~wxMenuBar(void)
   }
 }
 
+static GDHandle mb_dev_handle = 0;
+static CGrafPtr mb_grafptr = NULL;
+
 void wxPrepareMenuDraw(void)
 {
+  GetGWorld(&mb_grafptr, &mb_dev_handle);
   SetPort(wxGetGrafPtr());
+}
+
+void wxDoneMenuDraw(void)
+{
+  SetGWorld(mb_grafptr, mb_dev_handle);
 }
 
 static void wxInvalMenuBar(void)
 {
   wxPrepareMenuDraw();
   ::DrawMenuBar();
+  wxDoneMenuDraw();
 }
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -189,6 +189,7 @@ void wxApp::doMacPreEvent()
       }
     }
     ::InvalMenuBar();
+    wxDoneMenuDraw();
     wxSetCursor(wxSTANDARD_CURSOR);
     noWinMode = TRUE;
   } else if (w && noWinMode)
@@ -321,6 +322,7 @@ void wxApp::doMacMouseDown(void)
 
 	wxPrepareMenuDraw();
 	menuResult = MenuSelect(cCurrentEvent.where);
+	wxDoneMenuDraw();
 	doMacInMenuBar(menuResult, FALSE);
       }
       break;
@@ -562,12 +564,14 @@ void wxApp::doMacKeyUpDown(Bool down)
 	  long menuResult;
 	  wxPrepareMenuDraw();
 	  menuResult = MenuEvent(&cCurrentEvent);
+	  wxDoneMenuDraw();
 	  if (menuResult) {
 	    if (doMacInMenuBar(menuResult, TRUE))
 	      return;
 	    else {
 	      wxPrepareMenuDraw();
 	      HiliteMenu(0);
+	      wxDoneMenuDraw();
 	    }
 	  }
 	}
@@ -841,6 +845,7 @@ static void UnhiliteMenu()
 {
   wxPrepareMenuDraw();
   HiliteMenu(0);
+  wxDoneMenuDraw();
 }
 
 Bool wxApp::doMacInMenuBar(long menuResult, Bool externOnly)

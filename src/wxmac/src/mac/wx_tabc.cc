@@ -22,7 +22,7 @@
 #define TAB_TITLE_SPACE 20
 #define TAB_PANE_OVERLAP 7
 
-static void userPaneDrawFunction(ControlRef controlRef, SInt16 thePart);
+static pascal void userPaneDrawFunction(ControlRef controlRef, SInt16 thePart);
 static ControlUserPaneDrawUPP userPaneDrawFunctionUPP = NewControlUserPaneDrawUPP(userPaneDrawFunction); 
 
 static ControlHandle MakeTabs(CGrafPtr theMacGrafPort, int N, char **Choices, Rect *boundsRect)

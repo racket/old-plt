@@ -610,13 +610,12 @@
 			  [w-box (box 0.0)]
 			  [h-box (box 0.0)])
 		      (send (send top-buffer get-admin) get-view x-box y-box w-box h-box)
-		      (let* ([y (add1 (unbox y-box))]
-			     [line (send top-buffer find-scroll-line y)]
-			     [top (send top-buffer scroll-line-location (+ line dir))])
-			(printf "y: ~a line: ~a top: ~a~n" y line top)
+		      (let ([y (if (negative? dir)
+				   (- (unbox y-box) 2)
+				   (+ (unbox y-box) (unbox h-box) 1))])
 			(send (send top-buffer get-admin) scroll-to
-			      (unbox x-box) top (unbox w-box) (- (unbox h-box) 10)
-			      'start)))))]
+			      (unbox x-box) y
+			      (unbox w-box) 1)))))]
 	[page (lambda (dir)
 		(send top-buffer move-position dir #f 'page))]
 	[selectable? #t]

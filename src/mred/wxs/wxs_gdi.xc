@@ -298,7 +298,7 @@ static inline int Identity(wxFontNameDirectory *, int v)
 @ "initialize" : void Initialize(int,int,string);
 
 @ "get-font-id" : int GetFontId(string);
-@ "get-font-name" : nstring GetFontName(int);
+@ "get-face-name" : nstring GetFontName(int);
 @ "get-family" : SYM[family] GetFamily(int);
 
 @ "find-or-create-font-id" : int FindOrCreateFontId(cstring,SYM[family]);

@@ -3157,7 +3157,7 @@ static Scheme_Object *os_wxFontNameDirectoryGetFontName(Scheme_Object *obj, int 
   int x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "get-font-name in font-name-directory%");
+  x0 = objscheme_unbundle_integer(p[0], "get-face-name in font-name-directory%");
 
   
   r = ((wxFontNameDirectory *)((Scheme_Class_Object *)obj)->primdata)->GetFontName(x0);
@@ -3304,7 +3304,7 @@ if (os_wxFontNameDirectory_class) {
  scheme_add_method_w_arity(os_wxFontNameDirectory_class, "find-family-default-font-id", os_wxFontNameDirectoryIdentity, 1, 1);
  scheme_add_method_w_arity(os_wxFontNameDirectory_class, "find-or-create-font-id", os_wxFontNameDirectoryFindOrCreateFontId, 2, 2);
  scheme_add_method_w_arity(os_wxFontNameDirectory_class, "get-family", os_wxFontNameDirectoryGetFamily, 1, 1);
- scheme_add_method_w_arity(os_wxFontNameDirectory_class, "get-font-name", os_wxFontNameDirectoryGetFontName, 1, 1);
+ scheme_add_method_w_arity(os_wxFontNameDirectory_class, "get-face-name", os_wxFontNameDirectoryGetFontName, 1, 1);
  scheme_add_method_w_arity(os_wxFontNameDirectory_class, "get-font-id", os_wxFontNameDirectoryGetFontId, 1, 1);
  scheme_add_method_w_arity(os_wxFontNameDirectory_class, "initialize", os_wxFontNameDirectoryInitialize, 3, 3);
  scheme_add_method_w_arity(os_wxFontNameDirectory_class, "get-new-font-id", os_wxFontNameDirectoryGetNewFontId, 0, 0);

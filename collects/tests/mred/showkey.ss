@@ -1,15 +1,20 @@
+
+(require-library "macro.ss")
+
 (let ([c%
-       (class-asi mred:canvas%
-	 (public
+       (class-asi canvas%
+	 (override
 	   [on-char
 	    (lambda (ev)
 	      (printf "code: ~a  meta: ~a alt: ~a  shift: ~a~n" 
-		      (send ev get-key-code)
+		      (let ([v (send ev get-key-code)])
+			(if (symbol? v)
+			    v
+			    (char->integer v)))
 		      (send ev get-control-down)
 		      (send ev get-alt-down)
 		      (send ev get-shift-down)))]))])
-  (define f (make-object mred:frame% null "tests" 0 0 100 100))
-  (define p (make-object mred:vertical-panel% f))
-  (define c (make-object c% p))
+  (define f (make-object frame% "tests" #f 100 100))
+  (define c (make-object c% f))
   (send f show #t))
 

@@ -827,10 +827,7 @@ class wxScrollEvent *objscheme_unbundle_wxScrollEvent(Scheme_Object *obj, const 
 
 static Scheme_Object *keyCode_WXK_ESCAPE_sym = NULL;
 static Scheme_Object *keyCode_WXK_START_sym = NULL;
-static Scheme_Object *keyCode_WXK_LBUTTON_sym = NULL;
-static Scheme_Object *keyCode_WXK_RBUTTON_sym = NULL;
 static Scheme_Object *keyCode_WXK_CANCEL_sym = NULL;
-static Scheme_Object *keyCode_WXK_MBUTTON_sym = NULL;
 static Scheme_Object *keyCode_WXK_CLEAR_sym = NULL;
 static Scheme_Object *keyCode_WXK_SHIFT_sym = NULL;
 static Scheme_Object *keyCode_WXK_CONTROL_sym = NULL;
@@ -861,6 +858,7 @@ static Scheme_Object *keyCode_WXK_NUMPAD6_sym = NULL;
 static Scheme_Object *keyCode_WXK_NUMPAD7_sym = NULL;
 static Scheme_Object *keyCode_WXK_NUMPAD8_sym = NULL;
 static Scheme_Object *keyCode_WXK_NUMPAD9_sym = NULL;
+static Scheme_Object *keyCode_3_sym = NULL;
 static Scheme_Object *keyCode_WXK_MULTIPLY_sym = NULL;
 static Scheme_Object *keyCode_WXK_ADD_sym = NULL;
 static Scheme_Object *keyCode_WXK_SEPARATOR_sym = NULL;
@@ -897,10 +895,7 @@ static Scheme_Object *keyCode_WXK_SCROLL_sym = NULL;
 static void init_symset_keyCode(void) {
   keyCode_WXK_ESCAPE_sym = scheme_intern_symbol("escape");
   keyCode_WXK_START_sym = scheme_intern_symbol("start");
-  keyCode_WXK_LBUTTON_sym = scheme_intern_symbol("lbutton");
-  keyCode_WXK_RBUTTON_sym = scheme_intern_symbol("rbutton");
   keyCode_WXK_CANCEL_sym = scheme_intern_symbol("cancel");
-  keyCode_WXK_MBUTTON_sym = scheme_intern_symbol("mbutton");
   keyCode_WXK_CLEAR_sym = scheme_intern_symbol("clear");
   keyCode_WXK_SHIFT_sym = scheme_intern_symbol("shift");
   keyCode_WXK_CONTROL_sym = scheme_intern_symbol("control");
@@ -931,6 +926,7 @@ static void init_symset_keyCode(void) {
   keyCode_WXK_NUMPAD7_sym = scheme_intern_symbol("numpad7");
   keyCode_WXK_NUMPAD8_sym = scheme_intern_symbol("numpad8");
   keyCode_WXK_NUMPAD9_sym = scheme_intern_symbol("numpad9");
+  keyCode_3_sym = scheme_intern_symbol("numpad-enter");
   keyCode_WXK_MULTIPLY_sym = scheme_intern_symbol("multiply");
   keyCode_WXK_ADD_sym = scheme_intern_symbol("add");
   keyCode_WXK_SEPARATOR_sym = scheme_intern_symbol("separator");
@@ -971,10 +967,7 @@ static int unbundle_symset_keyCode(Scheme_Object *v, const char *where) {
   else if (SCHEME_CHARP(v)) { return SCHEME_CHAR_VAL(v); }
   else if (v == keyCode_WXK_ESCAPE_sym) { return WXK_ESCAPE; }
   else if (v == keyCode_WXK_START_sym) { return WXK_START; }
-  else if (v == keyCode_WXK_LBUTTON_sym) { return WXK_LBUTTON; }
-  else if (v == keyCode_WXK_RBUTTON_sym) { return WXK_RBUTTON; }
   else if (v == keyCode_WXK_CANCEL_sym) { return WXK_CANCEL; }
-  else if (v == keyCode_WXK_MBUTTON_sym) { return WXK_MBUTTON; }
   else if (v == keyCode_WXK_CLEAR_sym) { return WXK_CLEAR; }
   else if (v == keyCode_WXK_SHIFT_sym) { return WXK_SHIFT; }
   else if (v == keyCode_WXK_CONTROL_sym) { return WXK_CONTROL; }
@@ -1005,6 +998,7 @@ static int unbundle_symset_keyCode(Scheme_Object *v, const char *where) {
   else if (v == keyCode_WXK_NUMPAD7_sym) { return WXK_NUMPAD7; }
   else if (v == keyCode_WXK_NUMPAD8_sym) { return WXK_NUMPAD8; }
   else if (v == keyCode_WXK_NUMPAD9_sym) { return WXK_NUMPAD9; }
+  else if (v == keyCode_3_sym) { return 3; }
   else if (v == keyCode_WXK_MULTIPLY_sym) { return WXK_MULTIPLY; }
   else if (v == keyCode_WXK_ADD_sym) { return WXK_ADD; }
   else if (v == keyCode_WXK_SEPARATOR_sym) { return WXK_SEPARATOR; }
@@ -1047,10 +1041,7 @@ static int istype_symset_keyCode(Scheme_Object *v, const char *where) {
   else if (SCHEME_CHARP(v)) { return 1; }
   else if (v == keyCode_WXK_ESCAPE_sym) { return 1; }
   else if (v == keyCode_WXK_START_sym) { return 1; }
-  else if (v == keyCode_WXK_LBUTTON_sym) { return 1; }
-  else if (v == keyCode_WXK_RBUTTON_sym) { return 1; }
   else if (v == keyCode_WXK_CANCEL_sym) { return 1; }
-  else if (v == keyCode_WXK_MBUTTON_sym) { return 1; }
   else if (v == keyCode_WXK_CLEAR_sym) { return 1; }
   else if (v == keyCode_WXK_SHIFT_sym) { return 1; }
   else if (v == keyCode_WXK_CONTROL_sym) { return 1; }
@@ -1081,6 +1072,7 @@ static int istype_symset_keyCode(Scheme_Object *v, const char *where) {
   else if (v == keyCode_WXK_NUMPAD7_sym) { return 1; }
   else if (v == keyCode_WXK_NUMPAD8_sym) { return 1; }
   else if (v == keyCode_WXK_NUMPAD9_sym) { return 1; }
+  else if (v == keyCode_3_sym) { return 1; }
   else if (v == keyCode_WXK_MULTIPLY_sym) { return 1; }
   else if (v == keyCode_WXK_ADD_sym) { return 1; }
   else if (v == keyCode_WXK_SEPARATOR_sym) { return 1; }
@@ -1122,10 +1114,7 @@ static Scheme_Object *bundle_symset_keyCode(int v) {
   switch (v) {
   case WXK_ESCAPE: return keyCode_WXK_ESCAPE_sym;
   case WXK_START: return keyCode_WXK_START_sym;
-  case WXK_LBUTTON: return keyCode_WXK_LBUTTON_sym;
-  case WXK_RBUTTON: return keyCode_WXK_RBUTTON_sym;
   case WXK_CANCEL: return keyCode_WXK_CANCEL_sym;
-  case WXK_MBUTTON: return keyCode_WXK_MBUTTON_sym;
   case WXK_CLEAR: return keyCode_WXK_CLEAR_sym;
   case WXK_SHIFT: return keyCode_WXK_SHIFT_sym;
   case WXK_CONTROL: return keyCode_WXK_CONTROL_sym;
@@ -1156,6 +1145,7 @@ static Scheme_Object *bundle_symset_keyCode(int v) {
   case WXK_NUMPAD7: return keyCode_WXK_NUMPAD7_sym;
   case WXK_NUMPAD8: return keyCode_WXK_NUMPAD8_sym;
   case WXK_NUMPAD9: return keyCode_WXK_NUMPAD9_sym;
+  case 3: return keyCode_3_sym;
   case WXK_MULTIPLY: return keyCode_WXK_MULTIPLY_sym;
   case WXK_ADD: return keyCode_WXK_ADD_sym;
   case WXK_SEPARATOR: return keyCode_WXK_SEPARATOR_sym;

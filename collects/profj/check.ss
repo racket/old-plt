@@ -1135,7 +1135,7 @@
                                       type-recs)))
         ((access? exp)
          (set-expr-type exp
-                        (check-access exp check-sub-expr env level type-recs current-class interactions?)))
+                        (check-access exp check-sub-expr env level type-recs current-class interactions? static?)))
         ((special-name? exp)
          (set-expr-type exp (check-special-name exp env static? interactions?)))
         ((specified-this? exp)
@@ -1314,8 +1314,8 @@
       ((or (eq? 'long t1) (eq? 'long t2)) 'long)
       (else 'int)))
 
-  ;;check-access: expression (expr -> type) env symbol type-records (list string) interactions? -> type
-  (define (check-access exp check-sub-expr env level type-recs c-class interactions?)
+  ;;check-access: expression (expr -> type) env symbol type-records (list string) bool bool -> type
+  (define (check-access exp check-sub-expr env level type-recs c-class interactions? static?)
     (let ((acc (access-name exp)))
       (cond
         ((field-access? acc)
@@ -1406,12 +1406,14 @@
                      (cdr acc)))
                    (first-binding
                     (let* ((encl-depth (lookup-containing-class-depth (id-string (car acc)) env))
-                           (encl-type (unless interactions?
+                           (encl-type (unless (or interactions? static?)
                                         (if (= encl-depth 0) 
                                             (var-type-type (lookup-var-in-env "this" env))
                                             (var-type-type (lookup-var-in-env (format "encl-this-~a" encl-depth) env)))))
-                           (encl-class (unless interactions?
-                                         (cons (ref-type-class/iface encl-type) (ref-type-path encl-type)))))
+                           (encl-class (if static?
+                                           c-class
+                                           (unless interactions?
+                                             (cons (ref-type-class/iface encl-type) (ref-type-path encl-type))))))
                       (if (properties-static? (var-type-properties first-binding))
                           (build-field-accesses
                            (make-access #f (expr-src exp)

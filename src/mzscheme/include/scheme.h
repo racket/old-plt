@@ -1268,6 +1268,7 @@ MZ_EXTERN void scheme_register_static(void *ptr, long size);
 
 MZ_EXTERN void scheme_start_atomic(void);
 MZ_EXTERN void scheme_end_atomic(void);
+MZ_EXTERN void scheme_end_atomic_no_swap(void);
 
 MZ_EXTERN void scheme_immediate_exit(int status);
 

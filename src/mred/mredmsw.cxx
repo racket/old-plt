@@ -124,8 +124,10 @@ void StopSleepThreadTimer(void)
 static void StartSleepThreadTimer(void)
 {
   StopSleepThreadTimer();
+#if 0
   if (sleep_thread_enabled)
     sleep_thread_timer_id = SetTimer(0, NULL, 100, LetOtherThreadsRun);
+#endif
 }
 
 void MrEdEnableSleepCallback(Bool on)
@@ -231,6 +233,11 @@ static LPARAM need_trampoline_lparam;
 static WNDPROC need_trampoline_proc;
 int wx_trampolining;
 
+#define wxLOG_EVENTS 0
+#if wxLOG_EVENTS
+FILE *log;
+#endif
+
 void MrEdDispatchEvent(MSG *msg)
 {
   if (msg->message == WM_MRED_LEAVE) {
@@ -317,6 +324,7 @@ int wxEventTrampoline(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
   case WM_SYSCHAR:
   case WM_CHAR:
   case WM_INITMENU:
+  case WM_DROPFILES:
     tramp = 1;
     *res = 1;
     break;
@@ -346,11 +354,6 @@ int wxEventTrampoline(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
   } else
     return 0;
 }
-
-#define wxLOG_EVENTS 0
-#if wxLOG_EVENTS
-FILE *log;
-#endif
 
 int wx_start_win_event(const char *who, HWND hWnd, UINT message, int tramp)
 {
@@ -385,6 +388,7 @@ int wx_start_win_event(const char *who, HWND hWnd, UINT message, int tramp)
     case WM_SYSCHAR:
     case WM_CHAR:
     case WM_INITMENU:
+    case WM_DROPFILES:
 #if wxLOG_EVENTS
       fprintf(log, " CAN'T HANDLE!)\n");
       fflush(log);
@@ -413,7 +417,7 @@ void wx_end_win_event(const char *who, HWND hWnd, UINT message, int tramp)
 #endif
 
   if (!tramp)
-    scheme_end_atomic();
+    scheme_end_atomic_no_swap();
 }
 
 int MrEdCheckForBreak(void)

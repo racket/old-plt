@@ -1371,7 +1371,6 @@ int scheme_in_main_thread(void)
   return !scheme_current_thread->next;
 }
 
-
 void scheme_swap_thread(Scheme_Thread *new_thread)
 {
   scheme_zero_unneeded_rands(scheme_current_thread);
@@ -2230,7 +2229,8 @@ void scheme_thread_block(float sleep_time)
 
   if (p->running & MZTHREAD_KILLED) {
     /* This thread is dead! Give up now. */
-    exit_or_escape(p);
+    if (!do_atomic)
+      exit_or_escape(p);
   }
 
   /* Check scheduled_kills early and often. */
@@ -2380,7 +2380,8 @@ void scheme_thread_block(float sleep_time)
       /* The thread needs to clean up. It will block immediately to die. */
       return;
     } else {
-      exit_or_escape(p);
+      if (!do_atomic)
+	exit_or_escape(p);
     }
   }
 
@@ -2474,9 +2475,14 @@ void scheme_start_atomic(void)
   do_atomic++;
 }
 
-void scheme_end_atomic(void)
+void scheme_end_atomic_no_swap(void)
 {
   --do_atomic;
+}
+
+void scheme_end_atomic(void)
+{
+  scheme_end_atomic_no_swap();
   if (!do_atomic && missed_context_switch) {
     scheme_thread_block(0.0);
     scheme_current_thread->ran_some = 1;    

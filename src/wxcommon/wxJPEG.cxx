@@ -48,10 +48,7 @@ static void draw_scanline(JSAMPROW row, int cols, int rownum, int step, JSAMPARR
     } else {
 #endif
       if (step == 1) {
-	if (Q_NOT row[colnum])
-	  the_color->Set(0, 0, 0);
-	else
-	  the_color->Set(255, 255, 255);
+	the_color->Set(row[colnum], row[colnum], row[colnum]);
       } else {
 	the_color->Set(row[colnum * step], 
 		       row[colnum * step + 1], 

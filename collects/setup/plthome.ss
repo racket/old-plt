@@ -25,7 +25,10 @@
   (define plthome/ (regexp-replace "/?$" plthome "/"))
   (define plthome/-len (string-length plthome/))
   (define (maybe-cdr-op f)
-    (lambda (x) (if (pair? x) (cons (car x) (f (cdr x))) (f x))))
+    (lambda (x)
+      (if (and (pair? x) (not (eq? 'plthome (car x))))
+        (cons (car x) (f (cdr x)))
+        (f x))))
   (define plthome-ify
     (maybe-cdr-op
      (lambda (path)

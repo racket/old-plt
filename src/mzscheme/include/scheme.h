@@ -1305,7 +1305,7 @@ extern Scheme_Extension_Table *scheme_extension_table;
 #endif
 
 #ifdef __cplusplus
-};
+}
 #endif
 
 #if defined(__MWERKS__)

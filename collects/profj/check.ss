@@ -993,9 +993,8 @@
       (label
        (unless (lookup-label (id-string label) env)
          (illegal-label 'break (id-string label) (id-src label))))
-      ((or (not in-loop?) (not in-switch?))
-       (break-error src level))))
-
+      ((not (or in-loop? in-switch?)) (break-error src level))))
+  
   ;check-continue: (U id #f) src env bool -> void
   (define (check-continue label src env in-loop?)
     (cond
@@ -1098,7 +1097,7 @@
                  kind src))
                  
   ;break-error: src -> void
-  (define (break-error level src)
+  (define (break-error src level)
     (raise-error 'break (if (eq? level 'full) 
                             "break must be in either a loop or a switch"
                             "break must be in a loop")

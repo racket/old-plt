@@ -1282,6 +1282,7 @@
   ;Intermediate - addition of parameter id-ok?
   ;parse-statement: token token symbol (->token) bool bool bool-> token
   (define (parse-statement pre cur-tok state getter id-ok? ctor? super-seen?)
+;    (printf "parse-statement state: ~a pre: ~a cur-tok: ~a~n" state pre cur-tok)
     (let* ((tok (get-tok cur-tok))
            (kind (get-token-name tok))
            (out (output-format tok))
@@ -1526,10 +1527,15 @@
                 ((comma? n-tok) (parse-statement next (getter) 'local-list getter #t ctor? super-seen?))
                 ((teaching-assignment-operator? n-tok)
                  (let ((assign-exp (getter)))
-                   (if (eof? (get-tok assign-exp))
-                       (parse-error (format "Expected an expression to bind to ~a" (token-value tok)) start end)
-                       (parse-statement next (parse-expression null assign-exp 'start getter #f) 
-                                        'local-init-end getter #t ctor? super-seen?))))
+                   (cond
+                     ((eof? (get-tok assign-exp))
+                      (parse-error (format "Expected an expression to bind to ~a" (token-value tok)) start end))
+                     ((and (advanced?) (o-brace? (get-tok assign-exp)))
+                      (parse-statement next (parse-array-init assign-exp (getter) 'start getter) 'local-init-end getter #t ctor?
+                                       super-seen?))
+                     (else
+                      (parse-statement next (parse-expression null assign-exp 'start getter #f) 
+                                       'local-init-end getter #t ctor? super-seen?)))))
                 ((id-token? n-tok)
                  (parse-error (format "Variables must be separated by commas, ~a not allowed" n-out) start ne))
                 (else (parse-error (format "Expected ';' or more variables, found ~a" n-out) start ne)))))
@@ -1603,7 +1609,7 @@
         ((do-while)
          (case kind
            ((EOF) (parse-error "Expected 'while' and condition for 'do'" ps pe))
-           ((while) 
+           ((while)
             (let* ((next (getter))
                    (next-tok (get-tok next)))
               (cond
@@ -1611,13 +1617,13 @@
                  (parse-error "Expected a condition beginning with '(' for 'while' portion of 'do'" ps end))
                 ((o-paren? next-tok)
                  (let* ((afterO (getter))
-                       (afterO-tok (get-tok afterO)))
+                        (afterO-tok (get-tok afterO)))
                    (cond
                      ((eof? afterO-tok) 
                       (parse-error "Expected a condition expression after '('" (get-start next) (get-end next)))
                      ((c-paren? afterO-tok) (getter))
                      (else
-                      (parse-statement afterO (parse-expression null (getter) 'start getter #f) 'do-while-close
+                      (parse-statement afterO (parse-expression null afterO 'start getter #f) 'do-while-close
                                        getter id-ok? ctor? super-seen?)))))
                 (else
                  (parse-error 
@@ -1629,7 +1635,14 @@
         ((do-while-close)
          (case kind
            ((EOF) (parse-error "Expected ')' to close condition of 'do'" ps pe))
-           ((C_PAREN) (getter))
+           ((C_PAREN) 
+            (let ((next (getter)))
+              (cond
+                ((eof? (get-tok next)) (parse-error "Expected ';' to close 'do'" ps end))
+                ((semi-colon? (get-tok next)) (getter))
+                (else 
+                 (parse-error (format "Expected ';' to end 'do'. Found ~a which is not allowed" (output-format (get-tok next))
+                                      (get-start next) (get-end next)))))))
            (else
             (parse-error (format "Expected ')' to close condition of 'do'. Found ~a which is not allowed" out) ps end))))                  
         ;Advanced

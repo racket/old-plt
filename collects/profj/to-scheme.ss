@@ -1142,39 +1142,35 @@
         (make-syntax #f expr #f)
         (make-syntax #f `(return-k ,expr) (build-src src))))
   
-  ;Converted
   ;translate-while: syntax syntax src -> syntax
-  (define translate-while
-    (lambda (cond body src)
-      (make-syntax #f `(let/ec break-k
-                         (let loop ()
+  (define (translate-while cond body src)
+    (make-syntax #f `(let/ec break-k
+                       (let loop ((dummy #f))
+                         (let/ec continue-k
                            (when ,cond
                              ,body
-                             (loop))))
-                   (build-src src))))
+                             (loop #f)))))
+                 (build-src src)))
   
-  ;Converted
   ;translate-do: syntax syntax src -> syntax
-  (define translate-do
-    (lambda (body cond src)
-      (make-syntax #f `(begin ,body
-                              (let/ec break-k
-                                (let loop ()
-                                  (when ,cond
-                                    ,body
-                                    (loop)))))
-                   (build-src src))))
+  (define (translate-do body cond src)
+    (make-syntax #f `(let/ec break-k
+                       (let loop ((dummy #f))
+                         (let/ec continue-k
+                           ,body
+                           (when ,cond (loop #f)))))
+                   (build-src src)))
   
-  ;Converted
   ;translate-for: (U (list statement) (list field)) syntax (list syntax) syntax src type-records-> syntax
-  (define translate-for
-    (lambda (init cond incr body src type-recs)
-      (let ((loop `(let/ec break-k
-                     (let loop ()
-                       (when ,cond
+  (define (translate-for init cond incr body src type-recs)
+    (let ((loop `(let/ec break-k
+                   (let loop ((continue? #f))
+                     (let/ec continue-k
+                       (when continue? ,@incr)
+                       (when ,cond 
                          ,body
                          ,@incr
-                         (loop)))))
+                         (loop #f))))))
             (source (build-src src)))
         (if (and (pair? init) (field? (car init)))
             (make-syntax #f `(letrec (,@(map (lambda (var)
@@ -1191,19 +1187,23 @@
             (make-syntax #f `(begin
                                ,@(map (lambda (s) (translate-statement s type-recs)) init)
                                ,loop)
-                         source)))))
+                         source))))
   
   ;Converted
   ;initialize-array: (list (U expression array-init)) type-spec-> syntax
   (define (initialize-array inits type)
     (cond
-      ((null? inits) (error 'initialize-array "Given empty list"))
-      ;Note This has the wrong type for recursive cases! must fix PROBLEM! Still PROBLEM!
+      ((null? inits) 
+       (make-syntax #f `(make-java-array ,(translate-type-spec type) 0 null) #f))
+;       (error 'initialize-array "Given empty list"))
       ((array-init? (car inits))
        (make-syntax #f
                     `(make-java-array ,(translate-type-spec type)
                                       0
-                                      (reverse (list ,@(map (lambda (a) (initialize-array (array-init-vals a) type))
+                                      (reverse (list ,@(map (lambda (a) (initialize-array (array-init-vals a)
+                                                                                          (make-type-spec (type-spec-name type)
+                                                                                                          (sub1 (type-spec-dim type))
+                                                                                                          (type-spec-src type))))
                                                             inits))))
                     (build-src (array-init-src (car inits)))))
       (else
@@ -1330,13 +1330,12 @@
   
   ;Converted
   ;translate-continue: (U string #f) src -> syntax
-  (define translate-continue
-    (lambda (id src)
-      (if (not id)
-          (make-syntax #f `(break-k (loop)) (build-src src))
-          (make-syntax #f `(,(translate-id (string-append (id-string id) "-k") (id-src id)) 
-                            (,(build-identifier (string-append (id-string id) "-continue"))))
-                       (build-src src)))))
+  (define (translate-continue id src)
+    (if (not id)
+        (make-syntax #f `(continue-k (loop #t)) (build-src src))
+        (make-syntax #f `(,(translate-id (string-append (id-string id) "-k") (id-src id)) 
+                          (,(build-identifier (string-append (id-string id) "-continue"))))
+                     (build-src src))))
   
   ;translate-label: id syntax src -> syntax
   ;NOTE: probably does not have correct behavior

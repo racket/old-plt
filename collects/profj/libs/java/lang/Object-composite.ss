@@ -125,9 +125,9 @@
         (if (<= (runtime-type-dim rt) 1)
             (if (symbol? (runtime-type-type rt))
                 (case (runtime-type-type rt)
-                  ((byte short int long) (not (inexact? val)))
+                  ((byte short int long) (and (number? val) (not (inexact? val))))
                   ((char) (char? val))
-                  ((float double) (inexact? val)))
+                  ((float double) (and (number? val) (inexact? val))))
                 (is-a? val (runtime-type-type rt)))
             (and
              (is-a? val java-array)

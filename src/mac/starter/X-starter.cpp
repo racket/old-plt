@@ -79,7 +79,6 @@ int main(int argc, char *argv[], char *envp[])
   }
   
   executablePath = ConvertCFStringRef(execName);
-  fprintf(stderr,"executable path: %s\n",executablePath);
 
   if (CFDictionaryContainsKey((CFDictionaryRef)propertyList,(const void *)CFSTR("stored arguments"))) {
     storedArgsArray = (CFArrayRef)CFDictionaryGetValue((CFDictionaryRef)propertyList,(CFSTR("stored arguments")));

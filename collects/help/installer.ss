@@ -1,12 +1,12 @@
 (module installer mzscheme
-  (provide post-installer)
+  (provide installer)
   
   (require (lib "match.ss")
 	   (lib "file.ss")
 	   (lib "list.ss")
            "servlets/private/util.ss")
 
-  (define post-installer
+  (define installer
     (lambda (path)   
       (create-index-file)))
   

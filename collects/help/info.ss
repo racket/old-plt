@@ -14,4 +14,4 @@
     "Mr: (require (lib \"help-desk.ss\" \"help\"))")
   (define mred-launcher-libraries (list "help.ss"))
   (define mred-launcher-names (list "Help Desk"))
-  (define post-install-collection "installer.ss"))
+  (define install-collection "installer.ss"))

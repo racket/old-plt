@@ -17,10 +17,10 @@
  (close "Fermer") ;; as in, close an open window
 
  ;;; bug report form
- (cancel-bug-report? "Annuler la soumission du bug ?")
+ (cancel-bug-report? "Annuler la soumission du formulaire de bogue ?")
  (are-you-sure-cancel-bug-report?
-  "Etes-vous certain de vouloir annuler la soumission de ce bug ?")
- (bug-report-form "Formulaire de soumission de bug")
+  "Etes-vous certain de vouloir annuler la soumission de ce formulaire de bogue ?")
+ (bug-report-form "Formulaire de soumission de bogue")
  (bug-report-field-name "Nom")
  (bug-report-field-email "Email")
  (bug-report-field-summary "Résumé du problème")
@@ -29,7 +29,7 @@
  (bug-report-field-priority "Priorité")
  (bug-report-field-description "Description")
  (bug-report-field-reproduce1 "Etapes à suivre pour")
- (bug-report-field-reproduce2 "reproduire le bug")
+ (bug-report-field-reproduce2 "reproduire le bogue")
  (bug-report-field-environment "Environnement")
  (bug-report-field-tools "Outils")
  (bug-report-field-docs-installed "Documentations installées")
@@ -41,12 +41,12 @@
  (bug-report-show-synthesized-info "Montrer l'information synthétisée")
  (bug-report-hide-synthesized-info "Cacher l'information synthétisée")
  (bug-report-submit "Soumettre")
- (sending-bug-report "Soumission du formulaire de bug en cours...")
- (error-sending-bug-report "Erreur durant la soumission du formulaire de bug.")
- (error-sending-bug-report-expln "Une erreur s'est produite pendant la soumission de votre formulaire de bug. Si votre connexion Internet fonctionne correctement, veuillez visiter:\n\n    http://www.cs.rice.edu/CS/PLT/Bugs/\n\net soumettre votre bug en utilisant notre formulaire web en ligne. Je suis vraiment profondément désolé pour toutes vos difficultés.\n\nLe message d'erreur est:\n~a")
- (bug-report-sent "Le bug a été correctement soumis.")
+ (sending-bug-report "Soumission du formulaire de bogue en cours...")
+ (error-sending-bug-report "Erreur durant la soumission du formulaire de bogue.")
+ (error-sending-bug-report-expln "Une erreur s'est produite pendant la soumission de votre formulaire de bogue. Si votre connexion Internet fonctionne correctement, veuillez visiter:\n\n    http://www.cs.rice.edu/CS/PLT/Bugs/\n\net soumettre votre bogue en utilisant notre formulaire web en ligne. Je suis vraiment profondément désolé pour toutes vos difficultés.\n\nLe message d'erreur est:\n~a")
+ (bug-report-sent "Le bogue a été correctement soumis.")
  (bug-report-sent-detail "Merci pour votre soumission. Vous devriez recevoir une confirmation de votre soumission par email d'ici 30 minutes. Si vous ne recevez pas cette confirmation, veuillez envoyer un email à scheme@cs.rice.edu.")
- (illegal-bug-report "Formulaire de soumission de bug incomplet.")
+ (illegal-bug-report "Formulaire de soumission de bogue incomplet.")
  (pls-fill-in-field "Merci de compléter le champ \"~a\".")
  (malformed-email-address "Adresse email malformée.")
 
@@ -66,13 +66,13 @@
  (cs-name-duplication-error "Le nouveau nom que vous avez choisi, ~s, est en conflit avec un autre nom préexistant dans le même contexte.")
  
  ;;; info bar at botttom of drscheme frame
- (collect-button-label "RdM") ; ramassage de miettes "Ramassage" ?
- (read-only "L") ; "Lecture seulement"
- (read/write "L/E") ; "Lecture/écriture"
+ (collect-button-label "Ramassage") ; de miettes
+ (read-only "Lecture seulement")
+ (read/write "Lecture/écriture")
  (auto-extend-selection "Autosélection") ; "Sélection auto-étendable" ?
  (overwrite "Correction") ; vs Insertion ? surimpression ?
  (running "en cours")
- (not-running "attente") ; "en attente" ; pause ?
+ (not-running "en attente") ; "en attente" ; pause ?
  
  ;;; misc
  (welcome-to-something "Bienvenue dans ~a.")
@@ -500,10 +500,10 @@
  (intermediate-student "Etudiant niveau intermédiaire")
  (advanced-student "Etudiant niveau avancé")
  (how-to-design-programs "How to Design Programs") ;; should agree with MIT Press on this one...
- (r5rs-like-languages "comme R5RS")
- (mred-lang-name "Graphique sans débuggage (MrEd)")
- (mzscheme-lang-name "Textuel sans débuggage (MzScheme)")
- (r5rs-lang-name "R5RS sans débuggage")
+ (r5rs-like-languages "R5RS et languages semblabes")
+ (mred-lang-name "Graphique sans débogage (MrEd)")
+ (mzscheme-lang-name "Textuel sans débogage (MzScheme)")
+ (r5rs-lang-name "R5RS sans débogage")
  (unknown-debug-frame "[inconnu]")
  
  ;;; debug language

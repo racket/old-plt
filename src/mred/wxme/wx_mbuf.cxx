@@ -468,8 +468,10 @@ Bool wxMediaBuffer::ReadyOffscreen(float width, float height)
   if (!offscreenInUse && (height > bmHeight || width > bmWidth)) {
     wxBitmap *oldbm = bitmap;
 
-    bmWidth = ROUND(width);
-    bmHeight = ROUND(height);
+    if (height > bmHeight)
+      bmHeight = ROUND(height) + 1;
+    if (width > bmWidth)
+      bmWidth = ROUND(width) + 1;
 
     bitmap = new wxBitmap(bmWidth, bmHeight);
 

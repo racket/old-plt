@@ -1828,7 +1828,7 @@ void wxMediaEdit::Redraw(wxDC *dc, float starty, float endy,
     outlinePen = wxThePenList->FindOrCreatePen("BLACK", 0, wxTRANSPARENT);
     if (!caretPen)
       caretPen = wxThePenList->FindOrCreatePen("BLACK", 1, wxXOR);
-    outlineBrush = wxTheBrushList->FindOrCreateBrush("BLACK", wxSOLID);
+    outlineBrush = wxTheBrushList->FindOrCreateBrush("BLACK", wxXOR);
 #if ALLOW_X_STYLE_SELECTION
     outlineNonownerBrush = new wxBrush();
     outlineNonownerBrush->SetColour("BLACK");

@@ -230,6 +230,16 @@ void wxPrintData::EnableHelp(Bool flag)
 {
 }
 
+wxPrintData *wxPrintData::copy(void)
+{
+  wxPrintData *pd;
+
+  pd = new wxPrintData();
+  PMCopyPageFormat(cPageFormat, pd->cPageFormat);
+  PMCopyPrintSettings(cPrintSettings, pd->cPrintSettings);
+  return pd;
+}
+
 /*
  * Printer
  */

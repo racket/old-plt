@@ -70,14 +70,9 @@ class wxPrintDialog;
 class wxPrintData: public wxObject
 {
  public:
-  // macintosh
-#ifdef WX_CARBON  
   PMPrintSession cPrintSession;
   PMPrintSettings cPrintSettings;
   PMPageFormat cPageFormat;
-#else
-  THPrint macPrData;
-#endif
 
   wxPrintData(void);
   ~wxPrintData(void);
@@ -104,6 +99,8 @@ class wxPrintData: public wxObject
   void EnableSelection(Bool);
   void EnablePageNumbers(Bool);
   void EnableHelp(Bool);
+
+  wxPrintData *copy();
 };
 
 /*

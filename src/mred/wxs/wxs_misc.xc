@@ -152,6 +152,8 @@ void check_ps_mode(int v, Scheme_Object *p)
 
 @MACRO checkPSMode[cn] = WITH_VAR_STACK(check_ps_mode(x<cn>, p[POFFSET+<cn>]));
 
+@INCLUDE wxs_dorf.xci
+
 @CLASSBASE wxPrintSetupData "ps-setup" : "object"
 
 @CREATOR ()
@@ -184,6 +186,9 @@ void check_ps_mode(int v, Scheme_Object *p)
 @ "set-margin" : void SetMargin(nndouble,nndouble);
 
 @ "copy-from" : void copy(wxPrintSetupData!);
+
+@ "can-show-native?" : bool CanShowNative();
+@ "show-native" : void ShowNative(wxWindow^=NULL); : : /DLGORFRAME[0.METHODNAME("ps-setup","show-native")]
 
 @END
 

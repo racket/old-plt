@@ -57,6 +57,10 @@
 # include "wx_check.h"
 # include "wx_messg.h"
 
+#ifdef wx_mac
+# include "wx_print.h"
+#endif
+
 #endif
 #endif
 
@@ -2243,6 +2247,33 @@ void wxPrintSetupData::copy(wxPrintSetupData* data)
   SetPrinterTranslation(x, y);
   data->GetPrinterScaling(&x, &y);
   SetPrinterScaling(x, y);
+
+#ifdef wx_mac
+  if (data->native) {
+    wxPrintData *n;
+    n = data->native->copy();
+    native = n;
+  }
+#endif
+}
+
+Bool wxPrintSetupData::CanShowNative()
+{
+#ifdef wx_mac
+  return TRUE;
+#else
+  return FALSE;
+#endif
+}
+
+void wxPrintSetupData::ShowNative(wxWindow *parent)
+{
+#ifdef wx_mac
+  wxPrintDialog *d;
+  d = new wxPrintDialog(parent, native);
+  d->UseIt();
+  DELETE_OBJ d;
+#endif
 }
 
 //-----------------------------------------------------------------------------

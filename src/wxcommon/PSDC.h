@@ -32,6 +32,9 @@ class ofstream;
 
 class wxMemoryDC;
 class wxPath;
+#ifdef wx_mac
+class wxPrintData;
+#endif
 
 #if USE_POSTSCRIPT
 
@@ -250,6 +253,9 @@ public:
     void GetMargin(double *x, double *y)
         { *x = ps_margin_h; *y = ps_margin_v; }
 
+    Bool CanShowNative();
+    void ShowNative(wxWindow *parent);
+
 private:
     friend class wxPostScriptDC;
 
@@ -269,6 +275,10 @@ private:
     Bool   print_level_2;
     long   emargin_h, emargin_v;
     double  ps_margin_h, ps_margin_v;
+#ifdef wx_mac
+ public:
+    wxPrintData *native;
+#endif
 };
 
 extern wxPrintSetupData *wxGetThePrintSetupData();

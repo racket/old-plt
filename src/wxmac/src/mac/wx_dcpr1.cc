@@ -11,6 +11,7 @@
 #include "wx_utils.h"
 #include "wx_mac_utils.h"
 #include "wx_area.h"
+#include "wx_dcps.h"
 
 //-----------------------------------------------------------------------------
 // Default constructor
@@ -26,7 +27,12 @@ wxPrinterDC::wxPrinterDC(wxPrintData *printData) : wxCanvasDC()
   __type = wxTYPE_DC_PRINTER;
 
   if (!printData) {
-    printData = new wxPrintData();
+    wxPrintSetupData *ps;
+    ps = wxGetThePrintSetupData()
+    if (ps->native)
+      printData = ps->native->copy();
+    else
+      printData = new wxPrintData();
   }
 
   cPrintData = printData;

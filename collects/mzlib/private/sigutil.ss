@@ -2,6 +2,8 @@
 (module sigutil mzscheme
   ;; Used by signedunit.ss 
 
+  (require (lib "stx.ss" "syntax"))
+
   (require "sigmatch.ss")
   (require "../exstruct.ss")
   (require "../unit.ss")

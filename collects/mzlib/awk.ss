@@ -1,5 +1,6 @@
 
 (module awk mzscheme
+  (require-for-syntax (lib "stx.ss" "syntax"))
 
   (provide awk match:start match:end match:substring regexp-exec)
 

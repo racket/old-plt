@@ -2,7 +2,7 @@
 ;; Object system, same as MzScheme version 103 and earlier
 
 (module class mzscheme
-  (require-for-syntax mzscheme)
+  (require-for-syntax (lib "stx.ss""syntax"))
 
   (define-struct obj (class slots))
   (define-struct class (name

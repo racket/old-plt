@@ -3,7 +3,8 @@
 
 (module unit mzscheme
   (require-for-syntax (lib "kerncase.ss" "syntax")
-		     "private/unitidmap.ss")
+		      (lib "stx.ss" "syntax")
+		      "private/unitidmap.ss")
 
   (define undefined (letrec ([x x]) x))
 

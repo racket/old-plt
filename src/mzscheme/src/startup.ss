@@ -2177,7 +2177,7 @@
   (provide (all-from #%more-scheme)
 	   (all-from #%misc)
 	   (all-from #%stxcase-scheme)
-	   (all-from #%stx)
+	   identifier? ;; from #%stx
 	   (all-from-except #%kernel #%module-begin)
 	   (rename mzscheme-in-stx-module-begin #%module-begin)
 	   (rename #%module-begin #%plain-module-begin)))

@@ -9,7 +9,9 @@
     (when mred:splash-frame
       (send mred:splash-frame show #f)
       (set! mred:splash-frame #f)
-      (set! mred:splash-message #f))))
+      (set! mred:splash-message #f)
+      (mred:debug:printf 'splash "splash; expected count: ~a actual count: ~a"
+			 mred:splash-max mred:splash-counter))))
 
 (define-values (mred:no-more-splash-messages mred:open-splash)
   ;; thanks for this binding Richard!!
@@ -115,10 +117,10 @@
 		       (current-load
 			(let ([old-load (current-load)])
 			  (lambda (f)
-			    (when (mred:change-splash-message (format "Loading ~a..." f))
-			      (set! mred:splash-counter (add1 mred:splash-counter))
-			      (when (<= mred:splash-counter mred:splash-max)
-				(send gauge set-value mred:splash-counter)))
+			    (set! mred:splash-counter (add1 mred:splash-counter))
+			    (when (and (mred:change-splash-message (format "Loading ~a..." f))
+				       (<= mred:splash-counter mred:splash-max))
+			      (send gauge set-value mred:splash-counter))
 			    (old-load f)))))))
 		 (begin (printf "WARNING: bad bitmap ~s" filename)
 			(mred:no-more-splash-messages))))

@@ -14,14 +14,20 @@
       
       (define language<%>
 	(interface ()
-	  front-end
+	  marshall-settings
+          unmarshall-settings
+          default-settings
+          front-end
 	  config-panel
 	  on-execute
           get-language-position))
       
       (define module-based-language<%>
 	(interface ()
-	  get-module
+	  marshall-settings
+          unmarshall-settings
+          default-settings
+          get-module
 	  config-panel
 	  on-execute
           get-language-position))
@@ -45,10 +51,14 @@
 	(class* object% (module-based-language<%>)
 	  (init-field simple-module-based-language)
 	  (public get-module config-panel on-execute get-language-position)
+          (define (marshall-settings settings) settings)
+          (define (unmarshall-settings printable) printable)
+          (define (default-settings) 'no-settings)
           (define (get-module)
             (send simple-module-based-language get-module))
           (define (config-panel parent)
-            (build-simple-module-based-language-settings parent))
+            (lambda ()
+              (default-settings)))
           (define (on-execute setting run-in-user-thread)
             (initialize-module-based-language setting (get-module) run-in-user-thread))
 	  (define (get-language-position)
@@ -61,6 +71,10 @@
 	(class* object% (language<%>)
 	  (init-field module-based-language)
 	  (public front-end config-panel on-execute get-language-position)
+          (define (marshall-settings settings)
+            (send module-based-language marshall-settings settings))
+          (define (unmarshall-settings printable)
+            (send module-based-language unmarshall-settings printable))
           (define (front-end input settings)
             (lambda ()
               '...))
@@ -71,63 +85,6 @@
 	  (define (get-language-position)
 	    (send module-based-language get-language-position))
 	  (super-instantiate ())))
-      
-      ;; build-simple-module-based-language-settings : ((instanceof panel<%>) -> (-> setting))
-      ;; constrcts the standard settings panel
-      (define (build-simple-module-based-language-settings parent)
-        (let* ([make-sub-panel
-                (lambda (name panel)
-                  (let* ([p (make-object vertical-pane% panel)]
-                         [message (make-object message% name p)])
-                    (make-object vertical-panel% parent '(border))))]
-               [input-syntax-panel (make-sub-panel (string-constant input-syntax) parent)]
-               [output-syntax-panel (make-sub-panel (string-constant output-syntax) parent)]
-               [right-align
-                (opt-lambda (mo panel)
-                  (let* ([hp (make-object horizontal-pane% panel)])
-                    (begin0
-                      (mo hp)
-                      (make-object horizontal-pane% hp))))]
-               [make-check-box
-                (lambda (name panel)
-                  (right-align
-                   (lambda (hp)
-                     (make-object check-box% name hp void))
-                   panel))]
-               [case-sensitive? (make-check-box (string-constant case-sensitive?-label)
-						input-syntax-panel)]
-               
-               [printer-number->symbol
-                (lambda (which)
-                  (case which
-                    [(0) 'constructor-style]
-                    [(1) 'quasi-style]
-                    [(2) 'r4rs-style]
-                    [else 'constructor-style]))]
-               
-               [printing
-                (right-align
-                 (lambda (main)
-                   (make-object radio-box%
-                     (string-constant output-style-label)
-                     (list (string-constant constructor-printing-style)
-                           (string-constant quasiquote-printing-style)
-                           (string-constant write-printing-style))
-                     main
-                     void))
-                 output-syntax-panel)]
-               
-               [sharing-printing?
-                (make-check-box (string-constant sharing-printing?-label) output-syntax-panel)]
-               [whole/fractional-exact-numbers
-                (make-check-box (string-constant whole/fractional-exact-numbers-label) output-syntax-panel)]
-               [booleans-as-true/false
-                (make-check-box (string-constant booleans-as-true/false-label) output-syntax-panel)]
-               [use-pretty-printer?
-                (make-check-box (string-constant use-pretty-printer?-label) output-syntax-panel)])
-        
-        (lambda ()
-          'dummy-settings)))
       
       (define (initialize-module-based-language setting module-spec run-in-user-thread)
       ;; must call the resolver before setting the namespace

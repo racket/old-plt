@@ -15,14 +15,14 @@
 				    mred basis (mzlib function@)
 				    print-convert)]
 			 [zodiac : zodiac:system^ ((reference-unit/sig (begin-elaboration-time
-								    (build-path 'up
+								    (build-path plt:home-directory
 										"zodiac"
 										"link.ss")))
 						   (interface : zodiac:interface^)
 						   (language : plt:parameters^)
 						   (mzlib pretty-print@))]
 			 [aries : plt:aries^ ((reference-unit/sig (begin-elaboration-time
-								   (build-path 'up
+								   (build-path plt:home-directory
 									       "lib"
 									       "ariesu.ss")))
 					      zodiac

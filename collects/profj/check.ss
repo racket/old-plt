@@ -1041,6 +1041,7 @@
         ((assignment? exp)
          (set-expr-type exp
                         (check-assignment (assignment-op exp)
+                                          (assignment-left exp)
                                           (check-sub-expr (assignment-left exp))
                                           (check-sub-expr (assignment-right exp))
                                           (expr-src exp)
@@ -1292,16 +1293,30 @@
            (exp-type #f)
            (handle-call-error 
             (lambda (exn)
-              (unless (or (access? expr) (not (eq? level 'full))) (raise exn))
-              (let ((record (car (find-static-class 
-                                  (append (access-name expr) (list name))
-                                  level
-                                  type-recs))))
-                (set-call-expr! call #f)
-                (unless (equal? (class-record-name record) c-class)
-                  (send type-recs add-req (make-req (car (class-record-name record))
-                                                    (cdr (class-record-name record)))))
-                (get-method-records name record))))
+              (unless (or (access? expr) (not (eq? level 'full)) (not (eq? level 'advanced))) (raise exn))
+              (if (eq? level 'full)
+                  (let ((record (car (find-static-class 
+                                      (append (access-name expr) (list name))
+                                      level
+                                      type-recs))))
+                    (set-call-expr! call #f)
+                    (unless (equal? (class-record-name record) c-class)
+                      (send type-recs add-req (make-req (car (class-record-name record))
+                                                        (cdr (class-record-name record)))))
+                    (get-method-records name record))
+                  (if (and (= (length (access-name expr) 1))
+                           (with-handlers ((exn:syntax? (lambda (exn) #f)))
+                             (type-exists? (id-string (car (access-name expr)))
+                                           null
+                                           (id-src (car (access-name expr)))
+                                           'advanced
+                                           type-recs)))
+                      (let ((record (send type-recs get-class-record (list (id-string (car access-name expr))))))
+                        (set-call-expr! call #f)
+                        (unless (equal? (class-record-name record) c-class)
+                          (send type-recs add-req (make-req (car (class-record-name record)) null)))
+                        (get-method-records name record))
+                      (raise exn)))))
            (methods 
             (cond 
               ((special-name? name)
@@ -1542,12 +1557,15 @@
          (instanceof-error 'not-ref type exp-type src)))))
   
   ;; 15.26
-  ;; SKIP - worrying about final - doing the check for compound assignment
-  ;check-assignment: symbol type type src bool symbol type-records -> type
-  (define (check-assignment op ltype rtype src constructor? level type-recs)
-    (when (eq? level 'beginner)
-      (unless constructor?
-        (illegal-assignment src)))
+  ;; SKIP - doing the check for compound assignment
+  ;check-assignment: symbol expr type type src bool symbol type-records -> type
+  (define (check-assignment op lexpr ltype rtype src constructor? level type-recs)
+    (when (and (eq? level 'beginner) (not constructor?))
+      (illegal-assignment src))
+;    (when (access? lexpr)
+;      (when (check-for-final? lexpr)
+;        (unless (constructor-or-static-and-this-class lexpr)
+;          (raise-error))))
     (case op
       ((=)
        (if (assignment-conversion ltype rtype type-recs)

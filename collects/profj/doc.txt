@@ -14,7 +14,7 @@ Below is a list of known bugs. If you encounter a bug that is not listed here,
 please send e-mail directly to me at kathyg@cs.utah.edu 
 After known bugs the different language levels are outlined
 
-_Known Bugs as of May 21, 2003
+_Known Bugs as of May 27, 2003
 
 switch statement: Does not work. Programs that contain this statement won't
  even compile
@@ -40,9 +40,6 @@ Methods may have dead code
 Changing final variables will pass the type checker, but might cause errors
  from mzscheme identifier not found, and can sometimes be done.
  - All language levels
-
-Advanced cannot use static fields and methods, except statics of its own class
- - Advanced language level only
 
 Parse errors report a general location for the parse error, but nothing 
  specific

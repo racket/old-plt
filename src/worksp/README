@@ -67,6 +67,18 @@ and mzscheme.exe) by running
 add -n to the end of the above command.)
 
 ----------------------------------------------------------------------
+Embedding MzScheme
+----------------------------------------------------------------------
+
+The libraries
+    plt\src\worksp\mzsrc\Release\mzsrc.lib
+    plt\src\worksp\gc\Release\gc.lib
+which are created by the mzsrc and gc projects, correspond to the
+libmzscheme.a and libgc.a libraries under Unix. See the "Inside PLT
+MzScheme" manual for more information about using these libraries
+to embed MzScheme in another application.
+
+----------------------------------------------------------------------
 Project Configurations
 ----------------------------------------------------------------------
 

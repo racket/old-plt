@@ -128,7 +128,7 @@
                             (insert-into col y graph-pb new-snips)
                             (send graph-pb end-edit-sequence)
                             (send status-message set-label
-                                  (format "found ~a reduction steps..." (count-snips))))))])
+                                  (format "found ~a terms..." (count-snips))))))])
                  (loop (cdr snips)
                        (append new-frontier new-snips)
                        new-y))]))))
@@ -160,10 +160,10 @@
               (cond
                 [(null? frontier)
                  (send status-message set-label 
-                    (format "found ~a reduction steps" (count-snips)))]
+                    (format "found ~a terms" (count-snips)))]
                 [else
                  (send status-message set-label 
-                    (format "found ~a reduction steps (possibly more to find)" (count-snips)))
+                    (format "found ~a terms (possibly more to find)" (count-snips)))
                  (send reduce-button enable #t)]))))))
       
       ;; do-some-reductions : -> void

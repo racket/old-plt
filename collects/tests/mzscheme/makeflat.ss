@@ -1,12 +1,12 @@
 
-(with-handlers ([not-break-exn?
+(with-handlers ([exn:fail:contract:variable?
 		 (lambda (exn)
 		   (namespace-set-variable-value!
 		    'flat-load
 		    "mz.ss"))])
   (namespace-variable-value 'flat-load))
 
-(with-handlers ([not-break-exn?
+(with-handlers ([exn:fail:contract:variable?
 		 (lambda (exn)
 		   (namespace-set-variable-value!
 		    'lines-per-file
@@ -43,7 +43,7 @@
   (case-lambda
    [(expr) (error-test expr #f)]
    [(expr exn?)
-    (unless (or (eq? exn? exn:syntax?)
+    (unless (or (eq? exn? exn:fail:syntax?)
 		(syntax-case expr (define define-values define-syntax define-syntaxes)
 		  [(define . _) #t]
 		  [(define-values . _) #t]

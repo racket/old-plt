@@ -20,7 +20,7 @@
 	[(_ name sig)
 	 (identifier? (syntax name))
 	 (let ([sig (get-sig 'define-signature expr (syntax-e (syntax name))
-			     (syntax sig))])
+			     (syntax sig) #f)])
 	   (with-syntax ([content (explode-sig sig #f)])
 	     (syntax (define-syntax name
 		       (make-sig (quote content))))))])))
@@ -31,7 +31,7 @@
 	[(_ name sig . body)
 	 (identifier? (syntax name))
 	 (let ([sig (get-sig 'let-signature expr (syntax-e (syntax name))
-			     (syntax sig))])
+			     (syntax sig) #f)])
 	   (with-syntax ([content (explode-sig sig #f)])
 	     (syntax (letrec-syntax ([name (make-sig (quote content))])
 		       . body))))])))
@@ -40,7 +40,7 @@
     (lambda (expr)
       (syntax-case expr ()
 	[(_ sig . rest)
-	 (let ([sig (get-sig 'unit/sig expr #f (syntax sig))])
+	 (let ([sig (get-sig 'unit/sig expr #f (syntax sig) #f)])
 	  (let ([a-unit (parse-unit expr (syntax rest) sig
 				    (kernel-form-identifier-list (quote-syntax here))
 				    (quote-syntax define-values)
@@ -48,7 +48,7 @@
 	    (check-signature-unit-body sig a-unit (parsed-unit-renames a-unit) 'unit/sig expr)
 	    (with-syntax ([imports (datum->syntax-object
 				    expr
-				    (flatten-signatures (parsed-unit-imports a-unit))
+				    (flatten-signatures (parsed-unit-imports a-unit) 'must-have-ctx)
 				    expr)]
 			  [exports (datum->syntax-object
 				    expr
@@ -132,7 +132,7 @@
 					 expr)]
 			 [flat-sigs (datum->syntax-object
 				     expr
-				     (flatten-signatures sigs) 
+				     (flatten-signatures sigs #f) 
 				     expr)])
 	     (syntax/loc
 	      expr
@@ -151,9 +151,9 @@
       (syntax-case expr ()
 	[(_ e (im-sig ...) ex-sig)
 	 (let ([im-sigs (map (lambda (sig)
-			       (get-sig 'unit->unit/sig expr #f sig))
+			       (get-sig 'unit->unit/sig expr #f sig #f))
 			     (syntax->list (syntax (im-sig ...))))]
-	       [ex-sig (get-sig 'unit->unit/sig expr #f (syntax ex-sig))])
+	       [ex-sig (get-sig 'unit->unit/sig expr #f (syntax ex-sig) #f)])
 	   (with-syntax ([exploded-imports (datum->syntax-object
 					    expr
 					    (explode-named-sigs im-sigs #f)
@@ -232,7 +232,7 @@
       (syntax-case stx ()
 	[(_ name)
 	 (identifier? (syntax name))
-	 (let ([sig (get-sig 'signature->symbols stx #f (syntax name))])
+	 (let ([sig (get-sig 'signature->symbols stx #f (syntax name) #f)])
 	   (with-syntax ([e (let cleanup ([p (explode-sig sig #f)])
 			      ;; Strip struct info:
 			      (list->vector 
@@ -260,18 +260,18 @@
 	   (unless (or (not (syntax-e (syntax prefix)))
 		       (identifier? (syntax prefix)))
 	     (badsyntax (syntax prefix) "prefix is not an identifier"))
-	   (let ([ex-sig (get-sig formname (syntax orig) #f (syntax signame))])
+	   (let ([ex-sig (get-sig formname (syntax orig) #f (syntax signame) (syntax signame))])
 	     (let ([ex-exploded (explode-sig ex-sig #f)]
-		   [ex-flattened (flatten-signature #f ex-sig)])
+		   [ex-flattened (flatten-signature #f ex-sig #'signame)])
 	       (let ([im-sigs
 		      (parse-invoke-vars formname (syntax imports) (syntax orig))])
 		 (let ([im-explodeds (explode-named-sigs im-sigs #f)]
-		       [im-flattened (flatten-signatures im-sigs)]
+		       [im-flattened (flatten-signatures im-sigs #f)]
 		       [d->s (lambda (x) (datum->syntax-object (syntax orig) x (syntax orig)))])
 		   (with-syntax ([dv/iu (if (syntax-e (syntax global?))
 					    (quote-syntax namespace-variable-bind/invoke-unit)
 					    (quote-syntax define-values/invoke-unit))]
-				 [ex-flattened (d->s ex-flattened)]
+				 [ex-flattened ex-flattened]
 				 [ex-exploded (d->s ex-exploded)]
 				 [im-explodeds (d->s im-explodeds)]
 				 [im-flattened (d->s im-flattened)]
@@ -318,8 +318,8 @@
       (with-syntax ([orig stx])
 	(syntax-case stx ()
 	  [(_ signame)
-	   (let ([sig (get-sig 'provide-signature-elements stx #f (syntax signame))])
-	     (let ([flattened (flatten-signature #f sig)]
+	   (let ([sig (get-sig 'provide-signature-elements stx #f (syntax signame) (syntax signame))])
+	     (let ([flattened (flatten-signature #f sig (syntax signame))]
 		   [structs (map struct-def-name (signature-structs sig))])
 	       (with-syntax ([flattened (map (lambda (x) (datum->syntax-object (syntax signame) x #f))
 					     (append flattened structs))])

@@ -14,6 +14,7 @@
   (define-struct signature (name      ; sym
 			    src       ; sym
 			    elems     ; list of syms and signatures
+			    ctxs      ; list of stx
 			    structs)) ; list of struct-infos
   (define-struct parsed-unit (imports renames vars stxes body stx-checks))
 
@@ -54,40 +55,46 @@
 		    what)))
 
   (define rename-signature
-    (lambda (sig name)
+    (lambda (sig name main-ctx)
       (make-signature name 
 		      (signature-src sig) 
 		      (signature-elems sig)
+		      (if main-ctx
+			  (map (lambda (ctx) (or ctx main-ctx)) (signature-ctxs sig))
+			  (signature-ctxs sig))
 		      (signature-structs sig))))
 
   (define intern-signature
     (lambda (name desc)
-      (make-signature
-       name
-       name
-       (map
-	(lambda (elem)
-	  (cond
-	   [(symbol? elem) elem]
-	   [(and (pair? elem) (symbol? (car elem)))
-	    (intern-signature (car elem) (cdr elem))]
-	   [else (error "intern failed")]))
-	(vector->list (car desc)))
-       (map
-	(lambda (elem)
-	  (make-struct-def (vector-ref elem 0)
-			    (vector-ref elem 1)
-			    (cddr (vector->list elem))))
-	(vector->list (cdr desc))))))
+      (let ([elems (vector->list (car desc))])
+	(make-signature
+	 name
+	 name
+	 (map
+	  (lambda (elem)
+	    (cond
+	     [(symbol? elem) elem]
+	     [(and (pair? elem) (symbol? (car elem)))
+	      (intern-signature (car elem) (cdr elem))]
+	     [else (error "intern failed")]))
+	  elems)
+	 (map (lambda (elem) #f) elems)
+	 (map
+	  (lambda (elem)
+	    (make-struct-def (vector-ref elem 0)
+			     (vector-ref elem 1)
+			     (cddr (vector->list elem))))
+	  (vector->list (cdr desc)))))))
 
   (define get-sig
-    (lambda (who expr name sigid)
+    (lambda (who expr name sigid main-ctx)
       (if (not (identifier? sigid))
 	  (parse-signature who expr 
 			   (if name
 			       name
 			       inline-sig-name)
-			   sigid)
+			   sigid
+			   main-ctx)
 	  (let ([v (syntax-local-value sigid (lambda () #f))])
 	    (unless v
 	      (undef-sig-error who expr sigid))
@@ -97,7 +104,7 @@
 	      (set-sigdef-interned! v (intern-signature (syntax-e sigid) (sigdef-content v))))
 	    (let ([s (sigdef-interned v)])
 	      (if name
-		  (rename-signature s (stx->sym name))
+		  (rename-signature s (stx->sym name) (and main-ctx sigid))
 		  s))))))
 
   (define check-unique
@@ -112,11 +119,11 @@
 	  (error-k dup)))))
 
   (define parse-signature
-    (lambda (who expr name body)
-      (let-values ([(elems struct-defs)
-		    (let loop ([body body][accum null][struct-accum null])
+    (lambda (who expr name body main-ctx)
+      (let-values ([(elems ctxs struct-defs)
+		    (let loop ([body body][accum null][ctx-accum null][struct-accum null])
 		      (syntax-case body ()
-			[() (values (reverse! accum) (reverse! struct-accum))]
+			[() (values (reverse! accum) (reverse! ctx-accum) (reverse! struct-accum))]
 			[(something . rest)
 			 (syntax-case (syntax something) ()
 			   [:
@@ -129,6 +136,7 @@
 			    (loop
 			     (syntax rest)
 			     (cons (syntax id) accum)
+			     (cons (syntax id) ctx-accum)
 			     struct-accum)]
 			   [(struct name (field ...) omission ...)
 			    (literal? struct)
@@ -193,16 +201,20 @@
 						     omit-names)
 					      (filter (cdr names))]
 					     [else (cons (car names) (filter (cdr names)))]))])
-				  (loop (syntax rest)
-					(append
-					 (if (null? omit-names)
-					     names 
-					     (filter names))
-					 accum)
-					(cons (make-struct-def (syntax-e name) 
-								(and super-name (syntax-e super-name))
-								names)
-					      struct-accum)))))]
+				  (let ([elems (if (null? omit-names)
+						   names 
+						   (filter names))])
+				    (loop (syntax rest)
+					  (append
+					   elems
+					   accum)
+					  (append
+					   (map (lambda (elem) name) elems)
+					   ctx-accum)
+					  (cons (make-struct-def (syntax-e name) 
+								 (and super-name (syntax-e super-name))
+								 names)
+						struct-accum))))))]
 			   [(struct . _)
 			    (literal? struct)
 			    (syntax-error #f expr
@@ -211,9 +223,10 @@
 			   [(unit name : sig) 
 			    (and (literal? unit)
 				 (identifier? (syntax name)))
-			    (let ([s (get-sig who expr (syntax name) (syntax sig))])
+			    (let ([s (get-sig who expr (syntax name) (syntax sig) (and main-ctx (syntax sig)))])
 			      (loop (syntax rest)
 				    (cons s accum)
+				    (cons (syntax name) ctx-accum)
 				    struct-accum))]
 			   [(unit . _)
 			    (literal? unit)
@@ -222,9 +235,15 @@
 					  (syntax something))]
 			   [(open sig)
 			    (literal? open)
-			    (let ([s (get-sig who expr #f (syntax sig))])
+			    (let ([s (get-sig who expr #f (syntax sig) (and main-ctx (syntax sig)))])
 			      (loop (syntax rest)
 				    (append (signature-elems s) accum)
+				    (append
+				     (map (lambda (e ctx)
+					    (or ctx (syntax sig)))
+					  (signature-elems s)
+					  (signature-ctxs s))
+				     ctx-accum)
 				    (append (signature-structs s) struct-accum)))]
 			   [(open . _)
 			    (literal? open)
@@ -247,15 +266,20 @@
 			(syntax-error #f expr
 				      "duplicate name in signature"
 				      name)))
-	(make-signature (stx->sym name)
-			(stx->sym name)
-			(sort-signature-elems
-			 (map (lambda (id)
-				(if (identifier? id)
-				    (syntax-e id)
-				    id))
-			      elems))
-			struct-defs))))
+	(let ([sorted (sort-signature-elems (map cons 
+						 (map (lambda (id)
+							(if (identifier? id)
+							    (syntax-e id)
+							    id))
+						      elems)
+						 (if main-ctx
+						     (map (lambda (ctx) (or ctx main-ctx)) ctxs)
+						     (map (lambda (id) #f) ctxs))))])
+	  (make-signature (stx->sym name)
+			  (stx->sym name)
+			  (map car sorted)
+			  (map cdr sorted)
+			  struct-defs)))))
 
   (define (intern-vector intern-box v)
     (if (and intern-box
@@ -311,30 +335,37 @@
     (lambda (elems)
       (map car
 	   (quicksort (map
-		       (lambda (i)
-			 (cons i (symbol->string (if (symbol? i) i (signature-name i)))))
+		       (lambda (ip)
+			 (let ([i (car ip)])
+			   (cons ip (symbol->string (if (symbol? i) 
+							i 
+							(signature-name i))))))
 		       elems)
 		      ;; Less-than; put subs at front
 		      (lambda (a b)
-			(if (symbol? (car a))
-			    (if (symbol? (car b))
+			(if (symbol? (caar a))
+			    (if (symbol? (caar b))
 				(string<? (cdr a) (cdr b))
 				#f)
-			    (if (symbol? (car b))
+			    (if (symbol? (caar b))
 				#t
 				(string<? (cdr a) (cdr b)))))))))
   
   (define flatten-signature
-    (lambda (id sig)
+    (lambda (id sig main-ctx)
       (apply
        append
        (map
-	(lambda (elem)
+	(lambda (elem ctx)
 	  (if (symbol? elem)
-	      (list
-	       (if id
-		   (string->symbol (string-append id ":" (symbol->string elem)))
-		   elem))
+	      (let ([sym
+		     (if id
+			 (string->symbol (string-append id ":" (symbol->string elem)))
+			 elem)])
+		(list
+		 (if main-ctx
+		     (datum->syntax-object (or ctx main-ctx) sym)
+		     sym)))
 	      (flatten-signature (let* ([n (signature-name elem)]
 					[s (if n
 					       (symbol->string n)
@@ -342,17 +373,19 @@
 				   (if (and id s)
 				       (string-append id ":" s)
 				       (or id s)))
-				 elem)))
-	(signature-elems sig)))))
+				 elem
+				 (or ctx main-ctx))))
+	(signature-elems sig)
+	(signature-ctxs sig)))))
 
   (define flatten-signatures
-    (lambda (sigs)
+    (lambda (sigs main-ctx)
       (apply append (map (lambda (s) 
 			   (let* ([name (signature-name s)]
 				  [id (if name
 					  (symbol->string name)
 					  #f)])
-			     (flatten-signature id s)))
+			     (flatten-signature id s main-ctx)))
 			 sigs))))
 
   (define signature-parts
@@ -513,7 +546,7 @@
 			       (signature-src sig)))))))
 
   (define parse-imports
-    (lambda (who untagged-legal? really-import? expr clause)
+    (lambda (who untagged-legal? really-import? expr clause keep-ctx?)
       (let ([bad
 	     (lambda (why . rest)
 	       (apply
@@ -532,14 +565,14 @@
 	       [id 
 		(and (identifier? (syntax id))
 		     untagged-legal?)
-		(rename-signature (get-sig who expr #f item) #f)]
+		(rename-signature (get-sig who expr #f item (and keep-ctx? (syntax id))) #f (syntax id))]
 	       [(id : sig)
 		(and (identifier? (syntax id))
 		     (literal? :))
-		(get-sig who expr (syntax id) (syntax sig))]
+		(get-sig who expr (syntax id) (syntax sig) (and keep-ctx? (syntax sig)))]
 	       [any
 		untagged-legal?
-		(rename-signature (get-sig who expr #f item) #f)]
+		(rename-signature (get-sig who expr #f item (and keep-ctx? (syntax any))) #f (syntax any))]
 	       [_else
 		(bad "" item)]))
 	   clause)))))
@@ -554,9 +587,9 @@
 		     (eq? 'import (syntax-e (stx-car (car body)))))
 	  (syntax-error #f expr 
 			"expected `import' clause"))
-	(let* ([imports (parse-imports 'unit/sig #t #t expr (stx-cdr (car body)))]
-	       [imported-names (flatten-signatures imports)]
-	       [exported-names (flatten-signature #f sig)]
+	(let* ([imports (parse-imports 'unit/sig #t #t expr (stx-cdr (car body)) #t)]
+	       [imported-names (flatten-signatures imports #f)]
+	       [exported-names (flatten-signature #f sig #f)]
 	       [body (cdr body)])
 	  (let-values ([(renames body)
 			(if (and (stx-pair? body)
@@ -689,7 +722,7 @@
 	  (link . links)
 	  (export . exports))
 	 (and (literal? import) (literal? link) (literal? export))
-	 (let* ([imports (parse-imports 'compound-unit/sig #f #t expr (syntax imports))])
+	 (let* ([imports (parse-imports 'compound-unit/sig #f #t expr (syntax imports) #f)])
 	   (let ([link-list (syntax->list (syntax links))])
 	     (unless link-list
 	       (syntax-error #f expr 
@@ -710,7 +743,7 @@
 			     (unless (identifier? (syntax tag))
 			       (bad ": link tag is not an identifier" line))
 			     (make-link (syntax-e (syntax tag))
-					(get-sig 'compound-unit/sig (syntax expr) #f (syntax sig))
+					(get-sig 'compound-unit/sig (syntax expr) #f (syntax sig) #f)
 					(syntax expr)
 					(syntax->list (syntax (linkage ...)))))]
 			  [(tag . x)
@@ -829,7 +862,8 @@
 					 (values (list (syntax name))
 						 (get-sig 'compound-unit/sig expr
 							  #f
-							  (syntax sig)))]
+							  (syntax sig)
+							  #f))]
 					[((elem ...) : sig)
 					 (and (andmap (lambda (s)
 							(and (identifier? s)
@@ -839,7 +873,8 @@
 					 (values (syntax (elem ...))
 						 (get-sig 'compound-unit/sig expr
 							  #f
-							  (syntax sig)))]
+							  (syntax sig)
+							  #f))]
 					[(elem1 elem ...)
 					 (andmap (lambda (s)
 						   (and (identifier? s)
@@ -909,10 +944,10 @@
 					    var))))
 				    (lambda (base last id sig)
 				      (make-sig-explode-pair
-				       (rename-signature sig last)
+				       (rename-signature sig last #f)
 				       (if base
-					   (list (cons base (flatten-signature id sig)))
-					   (flatten-signature id sig))))))
+					   (list (cons base (flatten-signature id sig #f)))
+					   (flatten-signature id sig #f))))))
 		    (link-links link))))
 		links)
 	       (let ([export-list (syntax->list (syntax exports))])
@@ -930,7 +965,7 @@
 				     (and (literal? :)
 					  (upath? (syntax name))
 					  (or (identifier? (syntax sig))
-					      (parse-signature 'compound-unit/sig expr #f (syntax sig))))
+					      (parse-signature 'compound-unit/sig expr #f (syntax sig) #f)))
 				     #t]
 				    [_else
 				     (upath? p)]))]
@@ -959,8 +994,8 @@
 						      (cons base 
 							    (map
 							     list
-							     (flatten-signature name sig)
-							     (flatten-signature #f sig))))
+							     (flatten-signature name sig #f)
+							     (flatten-signature #f sig #f))))
 						     (syntax-error 
 						      #f expr 
 						      "cannot export imported variables"
@@ -1028,8 +1063,9 @@
 							     sig
 							     (if (stx-null? exname)
 								 last
-								 (syntax-e (stx-car exname)))))
-						      (let ([flat (flatten-signature name sig)])
+								 (syntax-e (stx-car exname)))
+							     #f))
+						      (let ([flat (flatten-signature name sig #f)])
 							(cons base 
 							      (map
 							       list
@@ -1039,7 +1075,8 @@
 								 (if (stx-null? exname)
 								     last
 								     (syntax-e (stx-car exname))))
-								sig)))))
+								sig
+								#f)))))
 						     (syntax-error 
 						      #f expr 
 						      "cannot export imported variables"
@@ -1072,7 +1109,7 @@
 				     (explode-named-sig (sig-explode-pair-sigpart sep) interned-vectors))
 				   (link-links link)))
 			    links)
-			   (flatten-signatures imports)
+			   (flatten-signatures imports #f)
 			   (map (lambda (link)
 				  (apply
 				   append
@@ -1083,13 +1120,15 @@
 			   (map sig-explode-pair-exploded exports)
 			   (explode-named-sigs imports interned-vectors)
 			   (explode-sig
-			    (make-signature
-			     'dummy
-			     'dummy
-			     (apply
-			      append
-			      (map sig-explode-pair-sigpart exports))
-			     null)
+			    (let ([elems (apply
+					  append
+					  (map sig-explode-pair-sigpart exports))])
+			      (make-signature
+			       'dummy
+			       'dummy
+			       elems
+			       (map (lambda (x) #f) elems)
+			       null))
 			    interned-vectors)
 			   interned-vectors))))))]
 	[_else (raise-syntax-error 
@@ -1099,7 +1138,7 @@
   
   (define parse-invoke-vars
     (lambda (who rest expr)
-      (parse-imports who #t #f expr rest)))
+      (parse-imports who #t #f expr rest #f)))
 
   ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

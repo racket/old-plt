@@ -588,6 +588,98 @@
 	   (import) 
 	   (define foo 120)))
 	(eval 'foo)))
+
+;; -- Macro interaction ----------------------------------------
+
+(define-syntax let-values/invoke-unit/sig
+  (syntax-rules ()
+    [(_ (sig unit) exp ...)
+     (let ()
+       (define-values/invoke-unit/sig sig unit)
+       (let () exp ...))]))
+
+(define-signature b (y z))
+(define-signature a (x (open b)))
+(define-signature c (x (unit i : b)))
+
+(define u@ (unit/sig a
+	     (import)
+	     (define x 1)
+	     (define y 2)
+	     (define z 3)))
+
+(test '(1 2 3) 'macro-unitsig
+      (let-values/invoke-unit/sig ((x y z) u@) (list x y z)))
+(test '(1 2 3) 'macro-unitsig
+      (let-values/invoke-unit/sig ((x (open b)) u@) (list x y z)))
+
+(define-syntax goo
+  (syntax-rules ()
+    [(_ id body)
+     (let-values/invoke-unit/sig ((x id) u@) body)]))
+
+(test '(0 2 0) 'macro-unitsig
+      (let ([x 0][y 0][z 0])
+	(goo y (list x y z))))
+
+(test '(0 2 3) 'macro-unitsig
+      (let ([x 0][y 0][z 0])
+	(goo (open b) (list x y z))))
+
+(define-syntax goow
+  (syntax-rules ()
+    [(_ sid body)
+     (let-values/invoke-unit/sig ((x (open sid)) u@) body)]))
+
+(test '(0 2 3) 'macro-unitsig
+      (let ([x 0][y 0][z 0])
+	(goow b (list x y z))))
+
+(define t@ (compound-unit/sig
+	    (import)
+	    (link [u1 : a (u@)]
+		  [u2 : b (u@)])
+	    (export (open u1) (unit u2 i))))
+
+(test '(1 2 3) 'macro-unitsig
+      (let-values/invoke-unit/sig (c t@) (list x i:y i:z)))
+
+(define-syntax moo
+  (syntax-rules ()
+    [(_ id body)
+     (let-values/invoke-unit/sig ((x id) t@) body)]))
+
+(test '(0 2 3) 'macro-unitsig
+      (let ([x 0][i:y 0][i:z 0])
+	(moo (unit i : b) (list x i:y i:z))))
+
+(define-syntax moow
+  (syntax-rules ()
+    [(_ id body)
+     (let-values/invoke-unit/sig ((x (unit i : id)) t@) body)]))
+
+(test '(0 2 3) 'macro-unitsig
+      (let ([x 0][i:y 0][i:z 0])
+	(moow b (list x i:y i:z))))
+
+(test '(0 2 3) 'macro-unitsig
+      (let ([x 0][i:y 0][i:z 0])
+	(moow (y z) (list x i:y i:z))))
+
+(test '(0 0 3) 'macro-unitsig
+      (let ([x 0][i:y 0][i:z 0])
+	(moow (z) (list x i:y i:z))))
+
+(define-syntax moot
+  (syntax-rules ()
+    [(_ id body)
+     (let-values/invoke-unit/sig ((id (unit i : b)) t@) body)]))
+
+(test '(1 0 0) 'macro-unitsig
+      (let ([x 0][i:y 0][i:z 0])
+	(moot x (list x i:y i:z))))
+
+;; --------------------------------------------------
 	
 (report-errs)
 

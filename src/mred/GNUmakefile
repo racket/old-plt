@@ -161,4 +161,8 @@ xform:
 	# $(XFORM) wxme/wx_mpriv.cxx gc2/wx_mpriv.cc
 	# $(XFORM) wxme/wx_snip.cxx gc2/wx_snip.cc
 	# $(XFORM) wxme/wx_msnip.cxx gc2/wx_msnip.cc
-	$(XFORM) wxme/wx_mbuf.cxx gc2/wx_mbuf.cc
+	# $(XFORM) wxme/wx_mbuf.cxx gc2/wx_mbuf.cc
+	# $(XFORM) wxme/wx_mpbrd.cxx gc2/wx_mpbrd.cc
+	# $(XFORM) wxme/wx_keym.cxx gc2/wx_keym.cc
+	# $(XFORM) wxme/wx_medio.cxx gc2/wx_medio.cc
+	$(XFORM) wxme/wx_style.cxx gc2/wx_style.cc

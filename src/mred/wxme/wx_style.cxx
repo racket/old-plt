@@ -228,15 +228,14 @@ wxStyleDelta *wxStyleDelta::SetDelta(int changeCommand, int param)
 
 wxStyleDelta *wxStyleDelta::SetDeltaFace(char *name)
 {
+  int id;
+
   if (face)
     delete[] face;
   face = copystring(name);
-#ifdef NO_GENERAL_FONTS
-  family = wxBASE;
-#else
-  int id = FONT_DIRECTORY.FindOrCreateFontId(name, wxDEFAULT);
+  id = FONT_DIRECTORY.FindOrCreateFontId(name, wxDEFAULT);
   family = FONT_DIRECTORY.GetFamily(id);
-#endif
+
   return this;
 }
 
@@ -371,8 +370,11 @@ Bool wxStyleDelta::Collapse(wxStyleDelta *deltaIn)
 
   if (family == wxBASE && !face) {
     family = deltaIn->family;
-    if (deltaIn->face)
-      face = copystring(deltaIn->face);
+    if (deltaIn->face) {
+      char *str;
+      str = copystring(deltaIn->face);
+      face = str;
+    }
   }
 
   if (styleOn == wxBASE && styleOff == wxBASE) {
@@ -560,17 +562,10 @@ void wxStyle::Update(wxStyle *basic, wxStyle *target,
     size = 1;
 
   if (!nonjoin_delta->face && nonjoin_delta->family == wxBASE) {
-#ifndef NO_GENERAL_FONTS
     fontid = base->font->GetFontId();
-#else
-    fontid = base->font->GetFamily();
-#endif
-  }
-#ifndef NO_GENERAL_FONTS
-  else if (nonjoin_delta->face)
+  } else if (nonjoin_delta->face)
     fontid = FONT_DIRECTORY.FindOrCreateFontId(nonjoin_delta->face, 
 					       nonjoin_delta->family);
-#endif
   else
     fontid = nonjoin_delta->family;
 
@@ -641,8 +636,9 @@ void wxStyle::Update(wxStyle *basic, wxStyle *target,
   target->brush = wxTheBrushList->FindOrCreateBrush(&background, wxSOLID);
 
   if (propogate)
-    for (node = children.First(); node; node = node->Next())
+    for (node = children.First(); node; node = node->Next()) {
       ((wxStyle *)node->Data())->Update(NULL, NULL, TRUE, FALSE);
+    }
 
   if (styleList) {
     styleList->StyleWasChanged(target);
@@ -663,11 +659,7 @@ int wxStyle::GetFamily()
 
 char *wxStyle::GetFace()
 {
-#ifndef NO_GENERAL_FONTS
   return font->GetFaceString();
-#else
-  return font->GetFamilyString();
-#endif
 }
 
 wxFont *wxStyle::GetFont()
@@ -1157,6 +1149,7 @@ extern "C" void scheme_weak_reference(void **p);
 long wxStyleList::NotifyOnChange(wxStyleNotifyFunc f, void *data, int weak)
 {
   NotificationRec *rec, *orec;
+  wxNode *node;
 
   if (weak)
     rec = new WXGC_ATOMIC NotificationRec;
@@ -1172,7 +1165,6 @@ long wxStyleList::NotifyOnChange(wxStyleNotifyFunc f, void *data, int weak)
   rec->id = scheme_make_symbol("notify-change-key");
 
   /* Look for dropped weak entries to replace: */
-  wxNode *node;
   for (node = notifications->First(); node; node = node->Next()) {
     orec = (NotificationRec *)node->Data();
     if (!orec->data) {
@@ -1245,7 +1237,8 @@ wxStyle *wxStyleList::IndexToStyle(int i)
 {
   wxNode *node;
 
-  for (node = First(); i && node; i--, node = node->Next());
+  for (node = First(); i && node; i--, node = node->Next()) {
+  }
 
   if (node)
     return (wxStyle *)node->Data();
@@ -1260,7 +1253,8 @@ int wxStyleList::StyleToIndex(wxStyle *s)
 
   for (node = First(); 
        node && PTRNE((wxStyle *)node->Data(), s); 
-       i++, node = node->Next());
+       i++, node = node->Next()) {
+  }
 
   if (node)
     return i;
@@ -1466,6 +1460,7 @@ wxStyleList *wxmbReadStylesFromFile(wxStyleList *styleList,
   short r, g, b;
   int i, isJoin, listId;
   wxStyleDelta delta;
+  wxStyle *bs;
   wxNode *node;
 
   f->Get(&listId);
@@ -1477,7 +1472,8 @@ wxStyleList *wxmbReadStylesFromFile(wxStyleList *styleList,
   f->Get(&styleList->numMappedStyles);
   styleList->styleMap = new wxStyle*[styleList->numMappedStyles];
 
-  styleList->styleMap[0] = styleList->BasicStyle();
+  bs = styleList->BasicStyle();
+  styleList->styleMap[0] = bs;
   for (i = 1; i < styleList->numMappedStyles; i++) {
     f->Get(&baseIndex);
 
@@ -1492,11 +1488,13 @@ wxStyleList *wxmbReadStylesFromFile(wxStyleList *styleList,
     f->Get(&isJoin);
 
     if (isJoin) {
+      wxStyle *js;
+
       f->Get(&shiftIndex);
 
-      styleList->styleMap[i] = 
-	styleList->FindOrCreateJoinStyle(styleList->styleMap[baseIndex], 
-					 styleList->styleMap[shiftIndex]);
+      js = styleList->FindOrCreateJoinStyle(styleList->styleMap[baseIndex], 
+					    styleList->styleMap[shiftIndex]);
+      styleList->styleMap[i] = js;
     } else {
       f->Get(&delta.family);
       delta.family = FamilyStandardToThis(delta.family);
@@ -1504,9 +1502,11 @@ wxStyleList *wxmbReadStylesFromFile(wxStyleList *styleList,
       nameSize = MAX_STYLE_NAME;
       f->Get((long *)&nameSize, (char *)face);
       
-      if (*face)
-	delta.face = copystring(face);
-      else
+      if (*face) {
+	char *str;
+	str = copystring(face);
+	delta.face = str;
+      } else
 	delta.face = NULL;
 
       // printf("%d %s\n", delta.family, delta.face ? delta.face : "NULL");
@@ -1555,15 +1555,20 @@ wxStyleList *wxmbReadStylesFromFile(wxStyleList *styleList,
       f->Get(&delta.alignmentOff);
       delta.alignmentOff = AlignStandardToThis(delta.alignmentOff);
 
-      styleList->styleMap[i] = 
-	styleList->FindOrCreateStyle(styleList->styleMap[baseIndex], &delta);
+      {
+	wxStyle *cs;
+	cs = styleList->FindOrCreateStyle(styleList->styleMap[baseIndex], &delta);
+	styleList->styleMap[i] = cs;
+      }
     }
 
-    if (*name)
-      styleList->styleMap[i] = 
-	(overwritename 
-	 ? styleList->ReplaceNamedStyle(name, styleList->styleMap[i])
-	 : styleList->NewNamedStyle(name, styleList->styleMap[i]));
+    if (*name) {
+      wxStyle *ns;
+      ns = (overwritename 
+	    ? styleList->ReplaceNamedStyle(name, styleList->styleMap[i])
+	    : styleList->NewNamedStyle(name, styleList->styleMap[i]));
+      styleList->styleMap[i] = ns;
+    }
   }
 
   if (readStyles)
@@ -1574,7 +1579,7 @@ wxStyleList *wxmbReadStylesFromFile(wxStyleList *styleList,
 
 Bool wxmbWriteStylesToFile(wxStyleList *styleList, wxMediaStreamOut *f)
 {
-  int i, count;
+  int i, count, lid;
   wxStyle *style;
   short r, g, b;
   char *name;
@@ -1585,8 +1590,9 @@ Bool wxmbWriteStylesToFile(wxStyleList *styleList, wxMediaStreamOut *f)
     return TRUE;
   }
 
-  styleList->listId = readStyles->Number() + 1;
-
+  lid = readStyles->Number() + 1;
+  styleList->listId = lid;
+  
   f->Put(styleList->listId);
 
   count = styleList->Number();
@@ -1596,18 +1602,29 @@ Bool wxmbWriteStylesToFile(wxStyleList *styleList, wxMediaStreamOut *f)
   // Basic style is implied
 
   for (i = 1; i < count; i++) {
+    int idx;
+    wxStyle *bs;
+    
     style = styleList->IndexToStyle(i);
 
-    f->Put(styleList->StyleToIndex(style->GetBaseStyle()));
-    if ((name = style->GetName()))
+    bs = style->GetBaseStyle();
+    idx = styleList->StyleToIndex(bs);
+    f->Put(idx);
+    name = style->GetName();
+    if (name)
       f->Put(name);
     else
       f->Put("");
 
     if (style->IsJoin()) {
+      int idx;
+      wxStyle *ss;
+
       f->Put(1);
 
-      f->Put(styleList->StyleToIndex(style->GetShiftStyle()));
+      ss = style->GetShiftStyle();
+      idx = styleList->StyleToIndex(ss);
+      f->Put(idx);
     } else {
       style->GetDelta(&delta);
       

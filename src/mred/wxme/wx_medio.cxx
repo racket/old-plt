@@ -445,8 +445,9 @@ wxMediaStreamIn *wxMediaStreamIn::Get(double *v)
       int i, j;
       
       f->Read((char *)num, sizeof(double));
-      for (i = 0, j = sizeof(double); i < (int)sizeof(double); )
+      for (i = 0, j = sizeof(double); i < (int)sizeof(double); ) {
 	num2[i++] = num[--j];
+      }
       
       memcpy((char *)v, num2, sizeof(double));
     }
@@ -633,8 +634,9 @@ wxMediaStreamOut* wxMediaStreamOut::Put(double v)
     int i, j;
     
     memcpy(num2, (char *)&v, sizeof(double));
-    for (i = 0, j = sizeof(double); i < (int)sizeof(double); )
+    for (i = 0, j = sizeof(double); i < (int)sizeof(double); ) {
       num[i++] = num2[--j];
+    }
     
     f->Write((char *)num, sizeof(double));
   }

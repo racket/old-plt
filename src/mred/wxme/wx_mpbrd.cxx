@@ -44,7 +44,8 @@ int wxmeGetDoubleClickThreshold();
   
 static wxSnipLocation *DoXSnipLoc(wxList *snipLocationList, wxSnip *s)
 {
-  wxNode *n = snipLocationList->Find((long)s);
+  wxNode *n;
+  n = snipLocationList->Find((long)s);
   if (n)
     return (wxSnipLocation *)n->Data();
   else
@@ -670,7 +671,8 @@ void wxMediaPasteboard::AddSelected(float x, float y, float w, float h)
   BeginEditSequence();
 
   for (s = snips; s; s = s->next) {
-    wxSnipLocation *loc = SnipLoc(s);
+    wxSnipLocation *loc;
+    loc = SnipLoc(s);
     if (loc
 	&& !loc->selected
 	&& (loc->x <= r)
@@ -690,8 +692,9 @@ void wxMediaPasteboard::SelectAll(void)
 
   BeginEditSequence();
 
-  for (s = snips; s; s = s->next)
+  for (s = snips; s; s = s->next) {
     AddSelected(s);
+  }
   
   EndEditSequence();
 }
@@ -702,8 +705,9 @@ void wxMediaPasteboard::NoSelected()
 
   BeginEditSequence();
 
-  for (s = snips; s; s = s->next)
+  for (s = snips; s; s = s->next) {
     RemoveSelected(s);
+  }
   
   EndEditSequence();
 }
@@ -738,7 +742,8 @@ void wxMediaPasteboard::Insert(wxSnip *snip, wxSnip *before, float x, float y)
     snip = new wxImageSnip();
   }
 
-  for (search = snips; search && (search != before); search = search->next);
+  for (search = snips; search && (search != before); search = search->next) {
+  }
   
   snip->next = search;
   if (snip->next) {
@@ -773,8 +778,11 @@ void wxMediaPasteboard::Insert(wxSnip *snip, wxSnip *before, float x, float y)
 
   SnipSetAdmin(snip, snipAdmin);
 
-  if (!noundomode)
-    AddUndo(new wxInsertSnipRecord(snip, sequenceStreak));
+  if (!noundomode) {
+    wxInsertSnipRecord *is;
+    is = new wxInsertSnipRecord(snip, sequenceStreak);
+    AddUndo(is);
+  }
   if (sequence)
     sequenceStreak = TRUE;
 
@@ -1085,8 +1093,11 @@ Bool wxMediaPasteboard::Resize(wxSnip *snip, float w, float h)
     rv = FALSE;
   else {
     if (!dragging) {
-      if (!noundomode)
-	AddUndo(new wxResizeSnipRecord(snip, oldw, oldh, sequenceStreak));
+      if (!noundomode) {
+	wxResizeSnipRecord *rs;
+	rs = new wxResizeSnipRecord(snip, oldw, oldh, sequenceStreak)
+	AddUndo(rs);
+      }
       if (sequence)
 	sequenceStreak = TRUE;
     }
@@ -1349,7 +1360,8 @@ wxSnip *wxMediaPasteboard::SnipSetAdmin(wxSnip *snip, wxSnipAdmin *a)
       snip->wxSnip::SetAdmin(NULL);
     } else if (a) {
       /* Snip didn't accept membership into this buffer. Give up on it. */
-      wxSnip *naya = new wxSnip();
+      wxSnip *naya;
+      naya = new wxSnip();
       naya->prev = snip->prev;
       naya->next = snip->next;
       if (naya->prev)
@@ -2287,8 +2299,9 @@ void wxMediaPasteboard::DoPaste(long time)
     Move(dx, dy);
   } else {
     /* Just select them: */
-    for (snip = snips; PTRNE(snip, start); snip = snip->next)
+    for (snip = snips; PTRNE(snip, start); snip = snip->next) {
       AddSelected(snip);
+    }
   }
 }
 
@@ -2398,6 +2411,9 @@ void wxMediaPasteboard::SetSnipData(wxSnip *snip, wxBufferData *data)
 
 Bool wxMediaPasteboard::LoadFile(char *file, int WXUNUSED(format), Bool showErrors)
 {
+  FILE *f;
+  Bool ok;
+
   if (userLocked || writeLocked)
     return FALSE;
 
@@ -2434,7 +2450,11 @@ Bool wxMediaPasteboard::LoadFile(char *file, int WXUNUSED(format), Bool showErro
     return FALSE;
   }
 
-  FILE *f = fopen(wxmeExpandFilename(file), "rb");
+  {
+    const char *fn;
+    fn = wxmeExpandFilename(file);
+    f = fopen(fn, "rb");
+  }
   
   if (!f) {
     if (showErrors)
@@ -2452,7 +2472,7 @@ Bool wxMediaPasteboard::LoadFile(char *file, int WXUNUSED(format), Bool showErro
   if (PTRNE(file, filename))
     SetFilename(file, FALSE);
 
-  Bool ok = InsertFile(f, loadoverwritesstyles, showErrors);
+  ok = InsertFile(f, loadoverwritesstyles, showErrors);
 
   EndEditSequence();
 
@@ -2469,10 +2489,14 @@ Bool wxMediaPasteboard::LoadFile(char *file, int WXUNUSED(format), Bool showErro
 
 Bool wxMediaPasteboard::InsertFile(char *file, int WXUNUSED(format), Bool showErrors)
 {
+  FILE *f;
+  const char *fn;
+
   if (userLocked || writeLocked)
     return FALSE;
 
-  FILE *f = fopen(wxmeExpandFilename(file), "rb");
+  fn = wxmeExpandFilename(file);
+  f = fopen(fn, "rb");
   
   if (!f)
     return FALSE;
@@ -2482,12 +2506,12 @@ Bool wxMediaPasteboard::InsertFile(char *file, int WXUNUSED(format), Bool showEr
 
 Bool wxMediaPasteboard::InsertFile(FILE *f, Bool clearStyles, Bool showErrors)
 {
-  if (userLocked || writeLocked)
-    return FALSE;
-
   int n;
   char buffer[MRED_START_STR_LEN + 1];
   Bool fileerr;
+
+  if (userLocked || writeLocked)
+    return FALSE;
 
   n = fread((char *)buffer, 1, MRED_START_STR_LEN, f);
   buffer[MRED_START_STR_LEN] = 0;
@@ -2534,6 +2558,12 @@ Bool wxMediaPasteboard::InsertFile(FILE *f, Bool clearStyles, Bool showErrors)
 
 Bool wxMediaPasteboard::SaveFile(char *file, int format, Bool showErrors)
 {
+  FILE *f;
+  Bool fileerr;
+  Bool no_set_filename;
+  wxMediaStreamOutFileBase *b;
+  wxMediaStreamOut *mf;
+
   if (!file || !*file) {
     if ((file && !*file) || !filename || tempFilename) {
       char *path, *pfile;
@@ -2564,15 +2594,18 @@ Bool wxMediaPasteboard::SaveFile(char *file, int format, Bool showErrors)
   if (format != wxMEDIA_FF_COPY)
     format = wxMEDIA_FF_STD;
 
-  Bool no_set_filename = (format == wxMEDIA_FF_COPY);
+  no_set_filename = (format == wxMEDIA_FF_COPY);
 
   if (!CanSaveFile(file, wxMEDIA_FF_STD))
     return FALSE;
   OnSaveFile(file, wxMEDIA_FF_STD);
   
-  FILE *f = fopen(wxmeExpandFilename(file), "wb");
-  Bool fileerr;
-
+  {
+    const char *fn;
+    fn = wxmeExpandFilename(file);
+    f = fopen(fn, "wb");
+  }
+  
   if (!f) {
     if (showErrors)
       wxmeError("Couldn't write the file.");
@@ -2589,9 +2622,6 @@ Bool wxMediaPasteboard::SaveFile(char *file, int format, Bool showErrors)
   fwrite(MRED_START_STR, 1, MRED_START_STR_LEN, f);
   fwrite(MRED_FORMAT_STR, 1, MRED_FORMAT_STR_LEN, f);
   fwrite(MRED_VERSION_STR, 1, MRED_VERSION_STR_LEN, f);    
-
-  wxMediaStreamOutFileBase *b;
-  wxMediaStreamOut *mf;
 
   b = new wxMediaStreamOutFileBase(f);
   mf = new wxMediaStreamOut(b);
@@ -2671,10 +2701,11 @@ void wxMediaPasteboard::SetFilename(char *name, Bool temp)
   filename = copystring(name);
   tempFilename = temp;
 
-  for (snip = snips; snip; snip = snip->next)
+  for (snip = snips; snip; snip = snip->next) {
     if (snip->flags & wxSNIP_USES_BUFFER_PATH)
       /* Just a notification */
       snip->SetAdmin(snipAdmin);
+  }
 }
 
 /************************************************************************/

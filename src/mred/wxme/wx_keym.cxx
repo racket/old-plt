@@ -130,8 +130,9 @@ void wxKeymap::Reset(void)
 
   prefix = NULL;
 
-  for (i = 0; i < chainCount; i++)
+  for (i = 0; i < chainCount; i++) {
     chainTo[i]->Reset();  
+  }
 }
 
 void wxKeymap::BreakSequence(void)
@@ -153,8 +154,9 @@ void wxKeymap::BreakSequence(void)
     f(data);
   }
 
-  for (i = 0; i < chainCount; i++)
+  for (i = 0; i < chainCount; i++) {
     chainTo[i]->BreakSequence();
+  }
 }
 
 void wxKeymap::SetBreakSequenceCallback(wxBreakSequenceFunction f, 
@@ -214,10 +216,13 @@ wxKeycode *wxKeymap::FindKey(long code,
 }
 
 
-static struct {
+typedef struct {
   char *str;
   long code;
-} keylist[] = { { "leftbutton" , WXK_MOUSE_LEFT },
+} Keybind;
+
+static Keybind keylist[] 
+            = { { "leftbutton" , WXK_MOUSE_LEFT },
 		{ "rightbutton" , WXK_MOUSE_RIGHT },
 		{ "middlebutton" , WXK_MOUSE_MIDDLE },
 		{ "leftbuttondouble" , WXK_MOUSE_LEFT_DOUBLE },
@@ -335,9 +340,10 @@ wxKeycode *wxKeymap::MapFunction(long code, int shift, int ctrl,
       if (shift < 0)
 	strcat(modbuf, "~s:");
 
-      for (i = 0; keylist[i].str; i++)
+      for (i = 0; keylist[i].str; i++) {
 	if (keylist[i].code == code)
 	  keystr = keylist[i].str;
+      }
 
       if (keystr)
 	sprintf(buffer, "keymap: \"%s%s\" ", modbuf, keystr);
@@ -387,15 +393,19 @@ wxKeycode *wxKeymap::MapFunction(long code, int shift, int ctrl,
 
   newkey->isprefix = (type == wxKEY_PREFIX);
 
-  if (!keys)
-    keys = new wxHashTable(wxKEY_INTEGER, 25);
+  if (!keys) {
+    wxHashTable *ht;
+    ht = new wxHashTable(wxKEY_INTEGER, 25);
+    keys = ht;
+  }
 
   key = (wxKeycode *)keys->Get(code);
   if (!key)
     keys->Put(code, (wxObject *)newkey);
   else {
-    while (key->next)
+    while (key->next) {
       key = key->next;
+    }
     key->next = newkey;
   }
 
@@ -420,11 +430,12 @@ static long GetCode(unsigned char **keyseqp)
   code = 0;
   if (buffer[1]) {
     buffer[0] = tolower(buffer[0]);
-    for (i = 0; keylist[i].str; i++)
+    for (i = 0; keylist[i].str; i++) {
       if (!strcmp((char *)buffer, keylist[i].str)) {
 	code = keylist[i].code;
 	break;
       }
+    }
   } else
     code = first;
 
@@ -525,9 +536,12 @@ void wxKeymap::MapFunction(char *keys, char *fname)
       new_key = new wxKeycode*[num_new_keys];
 
       for (i = 0, j = 0; i < num_keys; i++) {
-	new_key[j++] = MapFunction(code, shift, ctrl, alt, meta, fname, key[i], 
-				   *keyseq ? wxKEY_PREFIX : wxKEY_FINAL);
+	wxKeycode *mf;
+	mf = MapFunction(code, shift, ctrl, alt, meta, fname, key[i], 
+			 *keyseq ? wxKEY_PREFIX : wxKEY_FINAL);
+	new_key[j++] = mf;
       }
+
       
       num_keys = num_new_keys;
       key = new_key;
@@ -612,12 +626,14 @@ void wxKeymap::RemoveGrabKeyFunction(void)
 
 Bool wxKeymap::HandleKeyEvent(UNKNOWN_OBJ media, wxKeyEvent *event)
 {
+  int score;
+
   if (event->keyCode == WXK_SHIFT
       || event->keyCode == WXK_CONTROL
       || !event->keyCode)
     return TRUE;
 
-  int score = GetBestScore(event);
+  score = GetBestScore(event);
 
   return ChainHandleKeyEvent(media, event, NULL, NULL, 0, score) ? TRUE : FALSE;
 }
@@ -654,6 +670,7 @@ int wxKeymap::ChainHandleKeyEvent(UNKNOWN_OBJ media, wxKeyEvent *event,
 				  int try_state, int score)
 {
   char *fname;
+  int result;
 
   lastTime = event->timeStamp;
   lastButton = 0;
@@ -664,7 +681,8 @@ int wxKeymap::ChainHandleKeyEvent(UNKNOWN_OBJ media, wxKeyEvent *event,
   }
 
   if (!prefix && (try_state >= 0)) {
-    int r = OtherHandleKeyEvent(media, event, grab, grabData, 1, score);
+    int r;
+    r = OtherHandleKeyEvent(media, event, grab, grabData, 1, score);
     
     if (r > 0)
       return r;
@@ -691,7 +709,8 @@ int wxKeymap::ChainHandleKeyEvent(UNKNOWN_OBJ media, wxKeyEvent *event,
     } else {
       if (prefix) {
 	/* Just found prefix; try others */
-	int r = OtherHandleKeyEvent(media, event, grab, grabData, try_state, score);
+	int r;
+	r = OtherHandleKeyEvent(media, event, grab, grabData, try_state, score);
 	if (r > 0)
 	  return r;
 	return -1;
@@ -699,7 +718,7 @@ int wxKeymap::ChainHandleKeyEvent(UNKNOWN_OBJ media, wxKeyEvent *event,
     }
   }
 
-  int result = OtherHandleKeyEvent(media, event, grab, grabData, try_state, score);
+  result = OtherHandleKeyEvent(media, event, grab, grabData, try_state, score);
 
   if (!result && grabKeyFunction)
     if (grabKeyFunction(NULL, this, media, event, grabKeyData))
@@ -730,7 +749,8 @@ void wxKeymap::RemoveGrabMouseFunction(void)
 
 Bool wxKeymap::HandleMouseEvent(UNKNOWN_OBJ media, wxMouseEvent *event)
 {
-  int score = GetBestScore(event);
+  int score;
+  score = GetBestScore(event);
 
   return ChainHandleMouseEvent(media, event, NULL, NULL, 0, score) ? TRUE : FALSE;
 }
@@ -788,6 +808,7 @@ int wxKeymap::ChainHandleMouseEvent(UNKNOWN_OBJ media, wxMouseEvent *event,
 {
   long code, origCode, lastCode;
   char *fname;
+  int result;
 
   if (grabMouseFunction) {
     grab = grabMouseFunction;
@@ -795,7 +816,8 @@ int wxKeymap::ChainHandleMouseEvent(UNKNOWN_OBJ media, wxMouseEvent *event,
   }
 
   if (!prefix && (try_state >= 0)) {
-    int r = OtherHandleMouseEvent(media, event, grab, grabData, 1, score);
+    int r;
+    r = OtherHandleMouseEvent(media, event, grab, grabData, 1, score);
     
     if (r > 0)
       return r;
@@ -866,7 +888,8 @@ int wxKeymap::ChainHandleMouseEvent(UNKNOWN_OBJ media, wxMouseEvent *event,
 	return CallFunction(fname, media, event) 
 	  ? 1 : 0;
       } else {
-	int r = OtherHandleMouseEvent(media, event, grab, grabData, try_state, score);
+	int r;
+	r = OtherHandleMouseEvent(media, event, grab, grabData, try_state, score);
 
 	if (r > 0)
 	  return r;
@@ -876,8 +899,8 @@ int wxKeymap::ChainHandleMouseEvent(UNKNOWN_OBJ media, wxMouseEvent *event,
     lastCode = code;
     code = origCode;
   } while (lastCode != origCode);
-
-  int result = OtherHandleMouseEvent(media, event, grab, grabData, try_state, score);
+  
+  result = OtherHandleMouseEvent(media, event, grab, grabData, try_state, score);
 
   if (!result && grabMouseFunction)
     if (grabMouseFunction(NULL, this, media, event, grabMouseData))
@@ -890,8 +913,11 @@ void wxKeymap::AddFunction(char *name, wxKMFunction func, void *data)
 {
   wxKMFunc *f;
 
-  if (!functions)
-    functions = new wxHashTable(wxKEY_STRING, 50);
+  if (!functions) {
+    wxHashTable *ht;
+    ht = new wxHashTable(wxKEY_STRING, 50);
+    functions = ht;
+  }
 
   f = new wxKMFunc(name, func, data);
   if (functions->Get(f->name))
@@ -915,9 +941,10 @@ Bool wxKeymap::CallFunction(char *name, UNKNOWN_OBJ media, wxEvent *event,
   if (try_chained) {
     int i;
 
-    for (i = 0; i < chainCount; i++)
+    for (i = 0; i < chainCount; i++) {
       if (chainTo[i]->CallFunction(name, media, event, TRUE))
 	return TRUE;
+    }
   } else {
     char buffer[256];
     sprintf(buffer, "keymap: no function \"%.150s\"", name);
@@ -954,10 +981,11 @@ Bool wxKeymap::CycleCheck(wxKeymap *km)
 {
   int i;
 
-  for (i = 0; i < chainCount; i++)
+  for (i = 0; i < chainCount; i++) {
     if (PTREQ(km, chainTo[i]) || chainTo[i]->CycleCheck(km))
       return TRUE;
-  
+  }
+
   return FALSE;
 }
 
@@ -988,9 +1016,10 @@ void wxKeymap::RemoveChainedKeymap(wxKeymap *km)
 {
   int i;
 
-  for (i = 0; i < chainCount; i++)
+  for (i = 0; i < chainCount; i++) {
     if (PTREQ(km, chainTo[i]))
       break;
+  }
   
   if (i >= chainCount)
     return;

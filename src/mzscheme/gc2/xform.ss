@@ -1321,6 +1321,8 @@
 			[(func rest-)
 			 (let loop ([e- (cdr e-)])
 			   (cond
+			    [(null? e-)
+			     (values null null)]
 			    [(null? (cdr e-))
 			     (values e- null)]
 			    [(parens? (car e-))

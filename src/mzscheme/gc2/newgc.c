@@ -2571,7 +2571,8 @@ static void garbage_collect(int force_full)
   clean_up_heap();
   reset_nursery();
   do_btc_accounting();
-  protect_old_pages();
+  if (generations_available)
+    protect_old_pages();
   flush_freed_pages();
 
   /* new we do want the allocator freaking if we go over half */

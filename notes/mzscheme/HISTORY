@@ -7,6 +7,13 @@ Changed permissive UTF-8 decoding to include a "?" for every
  ill-formed byte (instead of just those with high bits)
 Changed {read,peek}-bytes-avail!{,*,/enable-break} to produce
  a special-reading procedure when a stream contains specials
+Changed random to accept 0 arguments to generate a random real
+ number, and added pseudo-random-generator->vector and
+ vector->pseudo-random-generator; these are compatible
+ with the SRFI-27 reference implementation
+Added syntax-property-symbol-keys
+Added make-pipe-with-specials to MzLib's "port.ss"; procedures
+ like copy-port now also handle specials
 
 Version 299.17
 In a syntax template, when an identifier has more ellipses

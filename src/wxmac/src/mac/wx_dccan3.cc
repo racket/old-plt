@@ -521,9 +521,10 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
     for (i = 0, extra = qd_spacing ? 1 : 0; i < theStrlen; i++) {
       v = ((unsigned int *)text)[d+i];
       if (v > 0xFFFF) {
-	unicode[i+extra] = 0xD8000000 | ((v >> 10) & 0x3FF);
+	v -= 0x10000;
+	unicode[i+extra] = 0xD800 | ((v >> 10) & 0x3FF);
 	extra++;
-	unicode[i+extra] = 0xDC000000 | (v & 0x3FF);
+	unicode[i+extra] = 0xDC00 | (v & 0x3FF);
       } else
 	unicode[i+extra] = v;
     }

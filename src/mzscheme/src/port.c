@@ -2930,6 +2930,13 @@ static int tested_file_getc(Scheme_Input_Port *p)
     scheme_current_process->ran_some = 1;
   }
 
+  /* Might get closed while we were waiting: */
+  if (p->closed) {
+    /* Call scheme_getc to signal the error */
+    scheme_getc((Scheme_Object *)p);
+    return 0; /* doesn't get here */
+  }
+
   if (tip->ready) {
     int c;
     ACQUIRE_MUTEX(tip->lock_mutex);

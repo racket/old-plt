@@ -323,7 +323,7 @@
 
     (add-list-micro c-unit-link-import-vocab
       (let* ((kwd '())
-	      (in-pattern '(tag id0 id1 ...))
+	      (in-pattern '(tag id ...))
 	      (m&e (pat:make-match&env in-pattern kwd)))
 	(lambda (expr env attributes vocab)
 	  (cond
@@ -331,7 +331,7 @@
 	      =>
 	      (lambda (p-env)
 		(let ((tag (pat:pexpand 'tag p-env kwd))
-		       (ids (pat:pexpand '(id0 id1 ...) p-env kwd)))
+		       (ids (pat:pexpand '(id ...) p-env kwd)))
 		  (map (lambda (id) (cons tag id)) ids))))
 	    (else
 	      (static-error expr "Invalid link syntax"))))))

@@ -76,7 +76,8 @@
     (car 
       (get-attribute attributes cu/s-attr
 	(lambda ()
-	  (internal-error "Unable to find compound-unit/sig attribute"))))))
+	  (internal-error attributes
+	    "Unable to find compound-unit/sig attribute"))))))
 
 (define cu/s-tag-table-put
   (lambda (maker)
@@ -142,17 +143,66 @@
 	  (lambda (p-env)
 	    (let ((base (pat:pexpand 'base p-env kwd))
 		   (fields (pat:pexpand '(field ...) p-env kwd))
-		   (omits (pat:pexpand '(omit ...) p-env kwd)))
+		   (in:omits (pat:pexpand '(omit ...) p-env kwd)))
 	      (valid-syntactic-id? base)
 	      (valid-syntactic-id/s? fields)
-	      (unless (null? omits)
-		(internal-error expr
-		  "Omission specifications not yet handled"))
-	      (map make-name-element
-		(map z:read-object
-		  (generate-struct-names base fields expr))))))
+	      (let ((omit-names
+		      (map (lambda (o)
+			     (expand-expr o env attributes
+			       signature-struct-omission-checker-vocab))
+			in:omits)))
+		(let ((generated-names
+			(map z:read-object
+			  (generate-struct-names base fields expr
+			    (memq '-selectors omit-names)
+			    (memq '-setters omit-names)))))
+		  (let loop ((omits omit-names))
+		    (unless (null? omits)
+		      (let ((first (car omits)))
+			(when (z:symbol? first)
+			  (unless (memq (z:read-object first) generated-names)
+			    (static-error first
+			      "Name not generated; illegal to omit")))
+			(loop (cdr omits)))))
+		  (let ((real-omits
+			  (let loop ((omits omit-names))
+			    (if (null? omits) '()
+			      (if (symbol? (car omits))
+				(loop (cdr omits))
+				(cons (z:read-object (car omits))
+				  (loop (cdr omits))))))))
+		    (let loop ((names generated-names))
+		      (if (null? names) '()
+			(if (memq (car names) real-omits)
+			  (loop (cdr names))
+			  (cons (make-name-element (car names))
+			    (loop (cdr names))))))))))))
 	(else
 	  (static-error expr "Malformed struct clause"))))))
+
+(define signature-struct-omission-checker-vocab (make-vocabulary))
+
+(add-sym-micro signature-struct-omission-checker-vocab
+  (lambda (expr env attributes vocab)
+    (let ((raw-expr (z:read-object expr)))
+      (unless (memq raw-expr '(-selectors -setters))
+	(static-error expr "Invalid omission specifier"))
+      raw-expr)))
+
+(add-micro-form '- signature-struct-omission-checker-vocab
+  (let* ((kwd '(-))
+	  (in-pattern '(- var))
+	  (m&e (pat:make-match&env in-pattern kwd)))
+    (lambda (expr env attributes vocab)
+      (cond
+	((pat:match-against m&e expr env)
+	  =>
+	  (lambda (p-env)
+	    (let ((var (pat:pexpand 'var p-env kwd)))
+	      (valid-syntactic-id? var)
+	      (structurize-syntax (z:read-object var) expr))))
+	(else
+	  (static-error expr "Malformed omission specifier"))))))
 
 (add-micro-form 'open sig-element-vocab
   (let* ((kwd '(open))
@@ -1143,7 +1193,19 @@
 	  (lambda (p-env)
 	    (let ((unit-path (pat:pexpand 'unit-path p-env kwd))
 		   (variable (pat:pexpand 'variable p-env kwd)))
-	      (internal-error expr "Unsupported"))))
+	      (valid-syntactic-id? variable)
+	      (let ((tag+prefix
+		      (expand-expr unit-path env attributes
+			cu/s-unit-path-tag+build-prefix-vocab))
+		     (final-sig
+		       (expand-expr unit-path env attributes
+			 cu/s-unit-path-extract-final-sig-vocab)))
+		(cons (car tag+prefix)
+		  (map list
+		    (convert-to-prim-format (signature-elements final-sig)
+		      (cdr tag+prefix))
+		    (convert-to-prim-format (signature-elements final-sig)
+		      (z:read-object variable))))))))
 	(else
 	  (static-error expr "Malformed unit export"))))))
 
@@ -1215,7 +1277,14 @@
 	  (lambda (p-env)
 	    (let ((unit-path (pat:pexpand 'unit-path p-env kwd))
 		   (variable (pat:pexpand 'variable p-env kwd)))
-	      (internal-error expr "Unsupported"))))
+	      (let ((tag
+		      (expand-expr unit-path env attributes
+			cu/s-unit-path-tag-vocab))
+		     (final-sig
+		       (expand-expr unit-path env attributes
+			 cu/s-unit-path-extract-final-sig-vocab)))
+		(list (cons (z:read-object variable)
+			(signature-exploded final-sig)))))))
 	(else
 	  (static-error expr "Malformed unit export"))))))
 
@@ -1342,7 +1411,10 @@
 	  (lambda (p-env)
 	    (let ((in:id (pat:pexpand 'id p-env kwd))
 		   (in:sig (pat:pexpand 'sig p-env kwd)))
-	      (internal-error expr "Not implemented yet"))))
+	      (valid-syntactic-id? in:id)
+	      (cons (z:read-object in:id)
+		(signature-exploded
+		  (expand-expr in:sig env attributes sig-vocab))))))
 	(else
 	  (cons immediate-signature-name
 	    (signature-exploded
@@ -1366,7 +1438,10 @@
 	  (lambda (p-env)
 	    (let ((in:id (pat:pexpand 'id p-env kwd))
 		   (in:sig (pat:pexpand 'sig p-env kwd)))
-	      (internal-error expr "Not implemented yet"))))
+	      (convert-to-prim-format
+		(signature-elements
+		  (expand-expr in:sig env attributes sig-vocab))
+		(z:read-object in:id)))))
 	(else
 	  (convert-to-prim-format
 	    (signature-elements

@@ -562,7 +562,8 @@
 	(struct-handler '#%struct)))
 
     (define generate-struct-names
-      (lambda (type fields source)
+      (opt-lambda (type fields source
+		    (omit-selectors? #f) (omit-setters? #f))
 	(let ((name (lambda parts
 		      (structurize-syntax
 			(apply symbol-append parts)
@@ -577,8 +578,13 @@
 		  (name type "?")
 		  (apply append
 		    (map (lambda (field)
-			   (list (name type "-" field)
-			     (name "set-" type "-" field "!")))
+			   (append
+			     (if omit-selectors?
+			       '()
+			       (list (name type "-" field)))
+			     (if omit-setters?
+			       '()
+			       (list (name "set-" type "-" field "!")))))
 		      fields)))))))))
 
     (when (language>=? 'structured)

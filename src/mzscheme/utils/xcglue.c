@@ -1076,7 +1076,10 @@ char *objscheme_unbundle_epathname(Scheme_Object *obj, const char *where)
 char *objscheme_unbundle_xpathname(Scheme_Object *obj, const char *where)
 {
   (void)objscheme_istype_xpathname(obj, where);
-  return objscheme_unbundle_pathname(obj, NULL);
+  if (!SCHEME_PATHP(obj))
+    obj = scheme_char_string_to_path(obj);
+
+  return SCHEME_PATH_VAL(obj);
 }
 
 char *objscheme_unbundle_write_pathname(Scheme_Object *obj, const char *where)
@@ -1147,9 +1150,15 @@ char *objscheme_unbundle_nullable_pathname(Scheme_Object *obj, const char *where
 
 char *objscheme_unbundle_nullable_xpathname(Scheme_Object *obj, const char *where)
 {
-  if (SCHEME_TRUEP(obj))
-    (void)objscheme_istype_xpathname(obj, where);
-  return objscheme_unbundle_nullable_pathname(obj, NULL);
+  if (XC_SCHEME_NULLP(obj))
+    return NULL;
+  else if (SCHEME_PATHP(obj) || SCHEME_CHAR_STRINGP(obj))
+    return objscheme_unbundle_xpathname(obj, NULL);
+  else  if (where) {
+    scheme_wrong_type(where, "path, string, or " XC_NULL_STR, -1, 0, &obj);
+    return NULL;
+  } else
+    return NULL;
 }
 
 char *objscheme_unbundle_nullable_epathname(Scheme_Object *obj, const char *where)

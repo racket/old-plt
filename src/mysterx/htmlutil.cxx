@@ -200,6 +200,8 @@ Scheme_Object *mx_element_focus(int argc,Scheme_Object **argv) {
 
   pIHTMLElement2->focus();
 
+  pIHTMLElement2->Release();
+
   // to HERE 
 
   return scheme_void;

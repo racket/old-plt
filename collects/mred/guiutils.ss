@@ -276,6 +276,42 @@
 	   (lambda ()
 	     (void))))))
     
+    (define get-single-choice
+      (opt-lambda (message caption choices 
+			   [parent null]
+			   [x -1] 
+			   [y -1]
+			   [centre #t]
+			   [width 150]
+			   [height 250])
+	(let* ([frame (make-object mred:container:dialog-box% parent caption 
+				   #t x y width height)]
+	       [panel (make-object mred:container:vertical-panel% frame)]
+	       [msg (make-object mred:container:message% panel message)]
+	       [list-box (make-object mred:container:list-box% panel null null wx:const-single
+				      -1 -1 -1 -1 choices)]
+	       [button-panel (make-object mred:container:horizontal-panel% panel)]
+	       [ok? #t]
+	       [_ (make-object mred:container:horizontal-panel% button-panel)]
+	       [ok (make-object mred:container:button% button-panel 
+				(lambda (button evt)
+				  (set! ok? #t)
+				  (send frame show #f))
+				"Ok")]
+	       [cancel (make-object mred:container:button% button-panel 
+				    (lambda (button evt)
+				      (set! ok? #f)
+				      (send frame show #f))
+				    "Cancel")])
+	  (when centre
+	    (send frame center wx:const-both))
+	  (send button-panel stretchable-in-y #f)
+	  (send ok user-min-width (send cancel user-min-width))
+	  (send frame show #t)
+	  (if ok?
+	      (send list-box get-string-selection)
+	      null))))
+
     ; For use with wx:set-print-paper-name
     (define print-paper-names
       (list

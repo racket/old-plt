@@ -5,4 +5,4 @@
      "Countdown keeps track of the minute and second of approaching or past events. "))
 
   (define mred-launcher-libraries (list "run.ss"))
-  (define mred-launcher-names "Countdown"))
+  (define mred-launcher-names (list "Countdown")))

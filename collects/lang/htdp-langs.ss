@@ -43,6 +43,7 @@
           (define (on-execute settings run-in-user-thread)
             (run-in-user-thread
              (lambda ()
+	       (error-print-source-location #f)
                (read-decimal-as-inexact #f)
                (read-dot-as-symbol #t)))
             (super-on-execute settings run-in-user-thread))

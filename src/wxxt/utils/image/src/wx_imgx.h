@@ -48,13 +48,6 @@
 #include <math.h>
 #include <ctype.h>
 #include <string.h>
-/* MATTHEW */
-#if defined(__FreeBSD__) || defined(linux) /* maybe just later Linux? */
-#include <errno.h>
-#else
-extern int   errno;             /* this SHOULD be in errno.h */
-extern char *sys_errlist[];     /* this SHOULD be in errno.h */
-#endif
 
 #if !defined(__convexc__) && !defined(VMS) /* Convex doesn't have <memory.h> */
 #include <memory.h>             /* for 'memset()' prototype */

@@ -1566,13 +1566,7 @@ _scheme_internal_read(Scheme_Object *port, Scheme_Object *stxsrc, int crc, int h
 
   ht = MALLOC_N(Scheme_Hash_Table *, 1);
   do {
-    if (params.honu_mode) {
-      long line, col, pos;
-      scheme_tell_all(port, &line, &col, &pos);
-      v = read_list(port, stxsrc, line, col, pos, EOF, mz_shape_cons, 0, ht, scheme_null, &params);
-    } else {
-      v = read_inner(port, stxsrc, ht, scheme_null, &params, RETURN_FOR_HASH_COMMENT);
-    }
+    v = read_inner(port, stxsrc, ht, scheme_null, &params, RETURN_FOR_HASH_COMMENT);
 
     if (*ht) {
       /* Resolve placeholders: */

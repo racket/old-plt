@@ -133,6 +133,27 @@
 	"cannot use superclass initialization form in a method"
 	stx))))
 
+  (define (make-with-method-map set!-stx id-stx method-stx method-obj-stx)
+    (make-set!-transformer
+     (lambda (stx)
+       (syntax-case stx ()
+	 [(set! id expr)
+	  (module-identifier=? (syntax set!) set!-stx)
+	  (raise-syntax-error 'with-method "cannot mutate method" stx)]
+	 [(id . args)
+	  (datum->syntax-object 
+	   set!-stx
+	   (make-method-apply
+	    method-stx
+	    method-obj-stx
+	    (syntax args))
+	   stx)]
+	 [_else
+	  (raise-syntax-error 
+	   'with-method 
+	   "misuse of method (not in application)" 
+	   stx)]))))
+
   (define (flatten-args orig-args)
     (let loop ([args orig-args][accum null])
       (cond
@@ -144,6 +165,8 @@
 
   (provide make-this-map make-field-map make-method-map 
 	   make-direct-method-map make-rename-map
-	   init-error-map super-error-map flatten-args))
+	   init-error-map super-error-map 
+	   make-with-method-map
+	   flatten-args))
 
     

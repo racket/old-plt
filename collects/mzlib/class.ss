@@ -1553,18 +1553,20 @@
 		       (send o meth . args)
 		       ...))])))
     
-  (define (find-method object name)
+  (define (find-method/who who object name)
     (unless (object? object)
-      (obj-error 'send "target is not an object: ~e for method: ~a"
+      (obj-error who "target is not an object: ~e for method: ~a"
 		 object name))
     (let* ([c (object-ref object)]
 	   [pos (hash-table-get (class-method-ht c) name (lambda () #f))])
       (if pos
 	  (vector-ref (class-methods c) pos)
-	  (obj-error 'send "no such method: ~a~a"
+	  (obj-error who "no such method: ~a~a"
 		     name
 		     (for-class (class-name c))))))
 
+  (define (find-method object name)
+    (find-method/who 'send object name))
 
   (define (class-field-X who which cwhich class name)
     (unless (class? class)
@@ -1590,37 +1592,43 @@
 
   (define-struct generic (applicable))
 
-  (define (make-generic/proc class name)
-    (unless (or (class? class) (interface? class))
-      (raise-type-error 'make-generic "class or interface" class))
-    (unless (symbol? name)
-      (raise-type-error 'make-generic "symbol" name))
-    (make-generic
-     (if (interface? class)
-	 (let ([intf class])
-	   (unless (method-in-interface? name intf)
-	     (obj-error 'make-generic "no such method: ~a~a"
-			name
-			(for-intf (interface-name intf))))
-	   (lambda (obj)
-	     (unless (is-a? obj intf)
-	       (raise-type-error 
-		(symbol->string (format "generic:~a~a" name (for-intf (interface-name intf))))
-		(format "instance~a" (for-intf (interface-name intf)))
-		obj))
-	     (find-method obj name)))
-	 (let ([pos (hash-table-get (class-method-ht class) name
-				    (lambda ()
-				      (obj-error 'make-generic "no such method: ~a~a"
-						name
-						(for-class (class-name class)))))])
-	   (lambda (obj)
-	     (unless ((class-object? class) obj)
-	       (raise-type-error 
-		(symbol->string (format "generic:~a~a" name (for-class (class-name class))))
-		(format "instance~a" (for-class (class-name class)))
-		obj))
-	     (vector-ref (class-methods (object-ref obj)) pos))))))
+  ;; Internally, make-generic comes from the struct def.
+  ;; Externally, make-generic is the following procedure.
+  ;; The extra `let' gives it the right name.
+  (define make-generic/proc
+    (let ([make-generic
+	   (lambda (class name)
+	     (unless (or (class? class) (interface? class))
+	       (raise-type-error 'make-generic "class or interface" class))
+	     (unless (symbol? name)
+	       (raise-type-error 'make-generic "symbol" name))
+	     (make-generic
+	      (if (interface? class)
+		  (let ([intf class])
+		    (unless (method-in-interface? name intf)
+		      (obj-error 'make-generic "no such method: ~a~a"
+				 name
+				 (for-intf (interface-name intf))))
+		    (lambda (obj)
+		      (unless (is-a? obj intf)
+			(raise-type-error 
+			 (symbol->string (format "generic:~a~a" name (for-intf (interface-name intf))))
+			 (format "instance~a" (for-intf (interface-name intf)))
+			 obj))
+		      (find-method obj name)))
+		  (let ([pos (hash-table-get (class-method-ht class) name
+					     (lambda ()
+					       (obj-error 'make-generic "no such method: ~a~a"
+							  name
+							  (for-class (class-name class)))))])
+		    (lambda (obj)
+		      (unless ((class-object? class) obj)
+			(raise-type-error 
+			 (symbol->string (format "generic:~a~a" name (for-class (class-name class))))
+			 (format "instance~a" (for-class (class-name class)))
+			 obj))
+		      (vector-ref (class-methods (object-ref obj)) pos))))))])
+      make-generic))
 
   (define-syntax send-generic
     (lambda (stx)
@@ -1632,7 +1640,73 @@
 	     (with-syntax ([args (flatten-args (syntax args))])
 	       (syntax (let ([this obj])
 			 (apply ((generic-applicable generic) this) this . args)))))])))
-	      
+
+  (define (find-with-method object name)
+    (find-method/who 'with-method object name))
+
+  (define-syntax with-methods
+    (lambda (stx)
+      (syntax-case stx ()
+	[(_ ([id (obj-expr name)] ...) body0 body1 ...)
+	 (let ([ids (syntax->list (syntax (id ...)))]
+	       [names (syntax->list (syntax (id ...)))])
+	   (for-each (lambda (id name)
+		       (unless (identifier? id)
+			 (raise-syntax-error 'with-methods
+					     "not an identifier for binding"
+					     stx
+					     id))
+		       (unless (identifier? name)
+			 (raise-syntax-error 'with-methods
+					     "not an identifier for method name"
+					     stx
+					     name)))
+		     ids names)
+	   (with-syntax ([(method ...) (generate-temporaries ids)]
+			 [(method-obj ...) (generate-temporaries ids)])
+	     (syntax (let-values ([(method method-obj)
+				   (let ([obj obj-expr])
+				     (values (find-with-method obj 'name) obj))]
+				  ...)
+		       (letrec-syntaxes ([(id) (make-with-method-map
+						(quote-syntax set!)
+						(quote-syntax id)
+						(quote-syntax method)
+						(quote-syntax method-obj))]
+					 ...)
+			 body0 body1 ...)))))]
+	;; Error cases:
+	[(_ (clause ...) . body)
+	 (begin
+	   (for-each (lambda (clause)
+		       (syntax-case clause ()
+			 [(id (obj-expr name))
+			  (and (identifier? (syntax id))
+			       (identifier? (syntax name)))
+			  'ok]
+			 [_else
+			  (raise-syntax-error 
+			   'with-methods
+			   "binding clause is not of the form (identifier (object-expr method-identifier))"
+			   stx
+			   clause)]))
+		     (syntax->list (syntax (clause ...))))
+	   ;; If we get here, the body must be bad
+	   (if (stx-null? (syntax body))
+	       (raise-syntax-error 
+		'with-methods
+		"empty body"
+		stx)
+	       (raise-syntax-error 
+		'with-methods
+		"bad syntax (illegal use of `.')"
+		stx)))]
+	[(_ x . rest)
+	 (raise-syntax-error 
+	  'with-methods
+	  "not a binding sequence"
+	  stx
+	  (syntax x))])))
 
   ;;--------------------------------------------------------------------
   ;;  class, interface, and object properties
@@ -1794,7 +1868,7 @@
 	   interface interface?
 	   object% object?
 	   make-object instantiate
-	   send send* make-class-field-accessor make-class-field-mutator
+	   send send* make-class-field-accessor make-class-field-mutator with-methods
 	   (rename make-generic/proc make-generic) send-generic
 	   is-a? subclass? implementation? interface-extension?
 	   object-interface

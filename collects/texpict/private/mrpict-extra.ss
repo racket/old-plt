@@ -160,129 +160,121 @@
 
       (define (render dc h+top l dx dy)
 	(define b&w? #f)
+	
+	(with-methods ([draw-line (dc draw-line)]
+		       [draw-spline (dc draw-spline)]
+		       [draw-ellipse (dc draw-ellipse)]
+		       [get-pen (dc get-pen)]
+		       [get-brush (dc get-brush)]
+		       [get-text-foreground (dc get-text-foreground)]
+		       [set-pen (dc set-pen)]
+		       [set-brush (dc set-brush)]
+		       [set-text-foreground (dc set-text-foreground)]
+		       [find-or-create-pen (the-pen-list find-or-create-pen)]
+		       [find-or-create-brush (the-brush-list find-or-create-brush)])
 
-	(define draw-line (make-generic dc<%> 'draw-line))
-	(define draw-spline (make-generic dc<%> 'draw-spline))
-	(define get-pen (make-generic dc<%> 'get-pen))
-	(define get-brush (make-generic dc<%> 'get-brush))
-	(define get-text-foreground (make-generic dc<%> 'get-text-foreground))
-	(define set-pen (make-generic dc<%> 'set-pen))
-	(define set-brush (make-generic dc<%> 'set-brush))
-	(define set-text-foreground (make-generic dc<%> 'set-text-foreground))
-	(define find-or-create-pen (make-generic pen-list% 'find-or-create-pen))
-	(define find-or-create-brush (make-generic brush-list% 'find-or-create-brush))
-
-	(send-generic dc set-brush (send-generic the-brush-list find-or-create-brush "black" 'solid))
-
-	(let loop ([dx dx][dy dy][l l])
-	  (unless (null? l)
-	    (let ([x (car l)])
-	      (if (string? x)
-		  (error 'draw-pict "how did a string get here?: ~s" x)
-		  (case (car x)
-		    [(offset) (loop (+ dx (cadr x))
-				    (+ dy (caddr x))
-				    (cadddr x))]
-		    [(line vector)
-		     (let ([xs (cadr x)]
-			   [ys (caddr x)]
-			   [len (cadddr x)])
-		       (let ([mx (if len (abs (if (zero? xs) ys xs)) 1)]
-			     [len (or len 1)])
-			 (send-generic dc
-				       draw-line 
-				       dx (- h+top dy)
-				       (+ dx (* (/ xs mx) len)) (- h+top (+ dy (* (/ ys mx) len))))))]
-		    [(circle circle*)
-		     (let ([size (cadr x)])
-		       (send dc draw-ellipse 
-			     (- dx (/ size 2)) (- h+top dy (/ size 2))
-			     size size))]
-		    [(oval)
-		     (let ([b (send-generic dc get-brush)]
-			   [rx (- dx (/ (cadr x) 2))]
-			   [ry (- h+top dy (/ (caddr x) 2))])
-		       (send-generic dc set-brush 
-				     (send-generic the-brush-list find-or-create-brush "BLACK" 'transparent))
-		       (let ([part (cadddr x)]
-			     [cr (send dc get-clipping-region)]
-			     [set-rect (lambda (l t r b)
-					 (let ([cr (make-object region% dc)])
-					   (send cr set-rectangle
-						 (+ rx (* l (cadr x)))
-						 (+ ry (* t (caddr x)))
-						 (* (- r l) (cadr x))
-						 (* (- b t) (caddr x)))
-					   cr))])
-			 (send dc set-clipping-region
-			       (cond
-				[(string=? part "[l]")
-				 (set-rect 0 0 0.5 1.0)]
-				[(string=? part "[tl]")
-				 (set-rect 0 0 0.5 0.5)]
-				[(string=? part "[tr]")
-				 (set-rect 0.5 0 1.0 0.5)]
-				[(string=? part "[r]")
-				 (set-rect 0.5 0 1.0 1.0)]
-				[(string=? part "[bl]")
-				 (set-rect 0 0.5 0.5 1.0)]
-				[(string=? part "[br]")
-				 (set-rect 0.5 0.5 1.0 1.0)]
-				[else cr]))
-			 (send dc draw-rounded-rectangle
-			       rx ry
-			       (cadr x) (caddr x)
-			       (if (string=? part "") -0.2 -0.5))
-			 (send dc set-clipping-region cr)
-			 (send-generic dc set-brush b)))]
-		    [(bezier)
-		     (send-generic dc draw-spline 
-				   (+ dx (list-ref x 1))
-				   (- h+top (+ dy (list-ref x 2)))
-				   (+ dx (list-ref x 3))
-				   (- h+top (+ dy (list-ref x 4)))
-				   (+ dx (list-ref x 5))
-				   (- h+top (+ dy (list-ref x 6))))]
-		    [(with-color)
-		     (if b&w?
-			 (loop dx dy (caddr x))
-			 (let ([p (send-generic dc get-pen)]
-			       [b (send-generic dc get-brush)]
-			       [fg (send-generic dc get-text-foreground)])
-			   (let* ([requested-color (if (is-a? (cadr x) color%)
-						       (cadr x)
-						       (send the-color-database find-color (cadr x)))]
-				  [color (or requested-color 
-					     (send the-color-database find-color "BLACK"))])
-			     (unless requested-color
-			       (fprintf (current-error-port)
-					"WARNING: couldn't find color: ~s~n" (cadr x)))
-			     (send-generic dc set-pen (send-generic the-pen-list find-or-create-pen 
-								    color (send p get-width) 'solid))
-			     (send-generic dc set-brush (send-generic the-brush-list find-or-create-brush
-								      color 'solid))
-			     (send-generic dc set-text-foreground color))
+	  (set-brush (find-or-create-brush "black" 'solid))
+	  
+	  (let loop ([dx dx][dy dy][l l])
+	    (unless (null? l)
+	      (let ([x (car l)])
+		(if (string? x)
+		    (error 'draw-pict "how did a string get here?: ~s" x)
+		    (case (car x)
+		      [(offset) (loop (+ dx (cadr x))
+				      (+ dy (caddr x))
+				      (cadddr x))]
+		      [(line vector)
+		       (let ([xs (cadr x)]
+			     [ys (caddr x)]
+			     [len (cadddr x)])
+			 (let ([mx (if len (abs (if (zero? xs) ys xs)) 1)]
+			       [len (or len 1)])
+			   (draw-line dx (- h+top dy)
+				      (+ dx (* (/ xs mx) len)) (- h+top (+ dy (* (/ ys mx) len))))))]
+		      [(circle circle*)
+		       (let ([size (cadr x)])
+			 (draw-ellipse (- dx (/ size 2)) (- h+top dy (/ size 2))
+				       size size))]
+		      [(oval)
+		       (let ([b (get-brush)]
+			     [rx (- dx (/ (cadr x) 2))]
+			     [ry (- h+top dy (/ (caddr x) 2))])
+			 (set-brush (find-or-create-brush "BLACK" 'transparent))
+			 (let ([part (cadddr x)]
+			       [cr (send dc get-clipping-region)]
+			       [set-rect (lambda (l t r b)
+					   (let ([cr (make-object region% dc)])
+					     (send cr set-rectangle
+						   (+ rx (* l (cadr x)))
+						   (+ ry (* t (caddr x)))
+						   (* (- r l) (cadr x))
+						   (* (- b t) (caddr x)))
+					     cr))])
+			   (send dc set-clipping-region
+				 (cond
+				  [(string=? part "[l]")
+				   (set-rect 0 0 0.5 1.0)]
+				  [(string=? part "[tl]")
+				   (set-rect 0 0 0.5 0.5)]
+				  [(string=? part "[tr]")
+				   (set-rect 0.5 0 1.0 0.5)]
+				  [(string=? part "[r]")
+				   (set-rect 0.5 0 1.0 1.0)]
+				  [(string=? part "[bl]")
+				   (set-rect 0 0.5 0.5 1.0)]
+				  [(string=? part "[br]")
+				   (set-rect 0.5 0.5 1.0 1.0)]
+				  [else cr]))
+			   (send dc draw-rounded-rectangle
+				 rx ry
+				 (cadr x) (caddr x)
+				 (if (string=? part "") -0.2 -0.5))
+			   (send dc set-clipping-region cr)
+			   (set-brush b)))]
+		      [(bezier)
+		       (draw-spline (+ dx (list-ref x 1))
+				    (- h+top (+ dy (list-ref x 2)))
+				    (+ dx (list-ref x 3))
+				    (- h+top (+ dy (list-ref x 4)))
+				    (+ dx (list-ref x 5))
+				    (- h+top (+ dy (list-ref x 6))))]
+		      [(with-color)
+		       (if b&w?
 			   (loop dx dy (caddr x))
-			   (send-generic dc set-pen p)
-			   (send-generic dc set-brush b)
-			   (send-generic dc set-text-foreground fg)))]
-		    [(with-thickness)
-		     (let ([p (send-generic dc get-pen)])
-		       (send-generic dc set-pen 
-				     (send-generic the-pen-list
-						   find-or-create-pen (send p get-color) 
-						   (if (number? (cadr x))
-						       (cadr x)
-						       (if (eq? (cadr x) 'thicklines)
-							   1
-							   0))
-						   'solid))
-		       (loop dx dy (caddr x))
-		       (send-generic dc set-pen p))]
-		    [(prog)
-		     ((cadr x) dc dx (- h+top dy (caddr x)))]
-		    [else (error 'render "unknown command: ~a~n" x)])))
-	    (loop dx dy (cdr l)))))
+			   (let ([p (get-pen)]
+				 [b (get-brush)]
+				 [fg (get-text-foreground)])
+			     (let* ([requested-color (if (is-a? (cadr x) color%)
+							 (cadr x)
+							 (send the-color-database find-color (cadr x)))]
+				    [color (or requested-color 
+					       (send the-color-database find-color "BLACK"))])
+			       (unless requested-color
+				 (fprintf (current-error-port)
+					  "WARNING: couldn't find color: ~s~n" (cadr x)))
+			       (set-pen (find-or-create-pen color (send p get-width) 'solid))
+			       (set-brush (find-or-create-brush color 'solid))
+			       (set-text-foreground color))
+			     (loop dx dy (caddr x))
+			     (set-pen p)
+			     (set-brush b)
+			     (set-text-foreground fg)))]
+		      [(with-thickness)
+		       (let ([p (get-pen)])
+			 (set-pen (find-or-create-pen (send p get-color) 
+						      (if (number? (cadr x))
+							  (cadr x)
+							  (if (eq? (cadr x) 'thicklines)
+							      1
+							      0))
+						      'solid))
+			 (loop dx dy (caddr x))
+			 (set-pen p))]
+		      [(prog)
+		       ((cadr x) dc dx (- h+top dy (caddr x)))]
+		      [else (error 'render "unknown command: ~a~n" x)])))
+	      (loop dx dy (cdr l))))))
 
       (define (make-pict-drawer p)
 	(let ([cmds (pict->command-list p)])

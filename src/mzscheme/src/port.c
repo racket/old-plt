@@ -5105,8 +5105,10 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
     } else {
 #ifdef USE_ITIMER
       /* Turn off the timer. */
+      /* SIGPROF is masked at this point due to
+	 block_child_signals() */
       struct itimerval t, old;
-      sigset_t sigs, old_sigs;
+      sigset_t sigs;
   
       t.it_value.tv_sec = 0;
       t.it_value.tv_usec = 0;
@@ -5117,17 +5119,14 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
       
       /* Clear already-queued PROF signal, if any: */
       START_XFORM_SKIP;
-      sigfillset(&sigs);
-      sigprocmask(SIG_SETMASK, &sigs, &old_sigs);
       while (!sigpending(&sigs)) {
 	if (sigismember(&sigs, SIGPROF)) {
-	  sigfillset(&sigs);
-	  sigdelset(&sigs, SIGPROF);	  
+	  sigprocmask(SIG_SETMASK, NULL, &sigs);
+	  sigdelset(&sigs, SIGPROF);
 	  sigsuspend(&sigs);
 	} else
 	  break;
       }
-      sigprocmask(SIG_SETMASK, &old_sigs, NULL);
       END_XFORM_SKIP;
 #endif
     }

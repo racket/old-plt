@@ -33,10 +33,12 @@
                ((drscheme:unit:get-program-editor-mixin)
                 scheme:text%))))
       
+      ;; The test case box that is inserted into the drscheme frame
       (define test-case-box%
         (class* (decorated-editor-snip-mixin editor-snip%) (readable-snip<%>)
           (inherit get-admin)
           
+          ;; A text that will uncollapse the test case when it is highlighted for an error
           (define error-alert-text%
             (class test-case:program-editor%
               (define/override highlight-range
@@ -60,9 +62,11 @@
                                     'disabled)))])
           
           #;(any? (union integer? false?) (union integer? false?) (union integer? false?) . -> . any?)
+          ;; Called by the execution to get a syntax object that represents this box.
           (define/public read-special
             (opt-lambda (source (line false) (column false) (position false))
               #;((is-a?/c text%) . -> . syntax-object?)
+              ;; Creates a single syntax object out of the text or raises read-error
               (define (text->syntax-object text)
                 (match (text->syntax-objects text)
                   [() (raise-read-error (string-constant test-case-empty-error)
@@ -81,15 +85,13 @@
                                 [update-stx (lambda (x) (update x))]
                                 [set-actuals-stx set-actuals])
                     (syntax/loc (datum->syntax-object
-                                 false
-                                 'ignored
-                                 (list source line column position 1))
+                                 false 'ignored (list source line column position 1))
                       (test-case equal? to-test-stx exp-stx update-stx set-actuals-stx)))
                   (syntax-property #'(define-values () (values)) 
                                    'stepper-skip-completely
                                    #t))))
           
-          ;; (boolean? . -> . void?)
+          #;(boolean? . -> . void?)
           ;; sets the test case to the proper result bassed on if it was correct
           (define/public (update pass?)
             (send result update (if pass? 'pass 'fail)))
@@ -118,6 +120,7 @@
                          (reset)
                          (send result update 'disabled)))))
           
+          #;(-> void)
           ;; tells the test-box to take the caret
           (define/public (take-caret)
             (send pb set-caret-owner
@@ -136,6 +139,8 @@
           ;;;;;;;;;;
           ;; Saving and Copying
           
+          #;(-> (is-a?/c test-case-box%))
+          ;; Called by drscheme to copy and paste this test-case
           (define/override (copy)
             (let ([new-to-test (new test-case:program-editor%)]
                   [new-expected (new test-case:program-editor%)])
@@ -148,6 +153,8 @@
                    (to-test new-to-test)
                    (expected new-expected))))
           
+          #;((is-a?/c editor-stream-out%) . -> . void)
+          ;; Writes this test case box to the given file.
           (define/override (write f)
             (send to-test write-to-file f)
             (send expected write-to-file f)
@@ -180,12 +187,16 @@
           ;    the-menu))
           ;(define/override (get-position) 'top-right)
 
+          #;(boolean? . -> . void)
+          ;; Shows or hides the actual box
           (define (show-actual show?)
             (set! actual-show? show?)
             (send show-actual-button set-state
                   (boolean->show-actual-btn-state show?))
             (send actual-pane show show?))
           
+          #;(boolean? . -> . void)
+          ;; Toggles the test-case between a collapsed minimal state and one with entry boxes.
           (define (collapse bool)
             (set! collapsed? bool)
             (send collapse-button set-state
@@ -195,11 +206,18 @@
             (send right show (not bool))
             (send pb lock-alignment false))
             
+          #;(boolean? . -> . (symbols 'on 'off))
+          ;; converts a boolean to the value expected by the collapse button
           (define (boolean->collapse-btn-state bool)
             (if bool 'on 'off))
           
+          #;(boolean? . -> . (symbols 'on 'off))
+          ;; converts a boolean to the value expected by the show actual button
           (define (boolean->show-actual-btn-state bool)
             (if bool 'off 'on))
+          
+          ;;;;;;;;;;
+          ;; Box layout
           
           (field
            [pb (new aligned-pasteboard%)]
@@ -219,20 +237,18 @@
            [collapse-button
             (new turn-button-snip%
                  (state (boolean->collapse-btn-state collapsed?))
-                 (turn-off
-                  (lambda (b e) (collapse true)))
-                 (turn-on
-                  (lambda (b e) (collapse false))))]
+                 (turn-off (lambda (b e) (collapse true)))
+                 (turn-on (lambda (b e) (collapse false))))]
            [show-actual-button
             (new turn-button-snip%
                  (state (boolean->show-actual-btn-state actual-show?))
-                 (turn-off
-                  (lambda (b e) (show-actual false)))
-                 (turn-on
-                  (lambda (b e) (show-actual true))))])
+                 (turn-off (lambda (b e) (show-actual false)))
+                 (turn-on (lambda (b e) (show-actual true))))])
           
           (super-new (editor pb))
           
+          #;((is-a?/c alignment<%>) string? (is-a?/c text%) . -> . (is-a?/c alignment<%>))
+          ;; Inserts a label and a text field into the given alignment
           (define (labeled-field alignment label text)
             ;; I string-append here to give space after the label
             ;; They look a lot better without something right after them.
@@ -281,6 +297,7 @@
       ;;;;;;;;;;
       ;; Snip class
       
+      ;; A snip-class for the test case box
       (define test-case-box-snipclass%
         (class snip-class%
           (define/override (read f)
@@ -336,9 +353,13 @@
       (super-new)
       (update status)))
   
+  #;(string? . -> . string?)
+  ;; A path to the icon given a file name
   (define (icon str)
     (build-path (collection-path "icons") str))
   
+  #;(string? . -> . string?)
+  ;; A path to the icon in the test-suite given a file name
   (define (test-icon str)
     (build-path (collection-path "test-suite") "private" "icons" str))
   

@@ -20,35 +20,50 @@
     (unit/sig menu-extentions^;drscheme:tool-exports^
       (import drscheme:tool^ test-case-box^)
       
+      ;; This delay is set up because reset-highlighting is called immediately
+      ;; after execution where I don't want the test-cases to be cleared.
+      ;; STATUS: It appears that the problem this flag was created to fix has been
+      ;; fixed and is now delaying unecessarily. I have commented out the place where
+      ;; it is set to true, effectively turning off the feature. I'll remove the code
+      ;; if no bugs creap in after sufficient usage.
       (define delay? false)
+      
+      ;; This flag ensures that the test case boxes are only reset when the need
+      ;; to be, which is only once after each execution of the program.
       (define needs-reset? false)
       
       ;; Adds the test suite tool menu to the Dr. Scheme frame
       ;; Updates the needs-reset? when the the program is executed
-      (define (test-case-mixin %)
-        (class %
+      (define test-case-mixin
+        (mixin (drscheme:unit:frame<%> top-level-window<%> (class->interface frame%)) ()
           (inherit get-definitions-text get-edit-target-object get-menu-bar
                    get-special-menu)
           
+          #;(-> void)
+          ;; Called when the program is executed
+          ;; Overriden to rest the test-cases.
           (define/override (execute-callback)
             (send (get-definitions-text) for-each-test-case
                   (lambda (case) (send case reset)))
             (super execute-callback)
-            (set! needs-reset? true)
-            (set! delay? true))
+            ;(set! delay? true)
+            (set! needs-reset? true))
           
-          ;; enable all of the test-cases
+          #;(boolean . -> . void)
+          ;; Enable or disable all of the test-cases
           (define (enable enable?)
             (send (get-definitions-text) for-each-test-case
                   (lambda (case) (send case enable enable?))))
           
-          ;; this function is copied from the drscheme/private/unit.ss file
+          #;((is-a?/c menu-item%) . -> . void)
+          ;; NOTE: This function is COPIED from the drscheme/private/unit.ss file
           (define (has-editor-on-demand menu-item)
             (let ([edit (get-edit-target-object)])
               (send menu-item enable (and edit (is-a? edit editor<%>)))))
           
           (super-new)
           
+          ;; Create the new menu items.
           (field
            [test-cases-enabled? true]
            [insert-menu-item
@@ -85,38 +100,25 @@
       ;; the appropriate
       ;; STATUS: It's better to override reset-highlighting but this after-insert/delete works
       ;; for now.
-      ;(define clear-results-mixin
-      ;  (mixin (drscheme:rep:text<%>) ()
-      (define (clear-results-mixin %)
-        (class %
+      (define clear-results-mixin
+        (mixin (editor<%>) ()
           (inherit find-first-snip)
-          
-          ;(rename [super-after-insert after-insert])
-          ;(define/override (after-insert start len)
-          ;  (super-after-insert start len)
-          ;  (reset-test-case-boxes))
-          
-          ;(rename [super-after-delete after-delete])
-          ;(define/override (after-delete start len)
-          ;  (super-after-delete start len)
-          ;  (reset-test-case-boxes))
 
-          (define/public delay-reset
-            (case-lambda
-              [() delay?]
-              [(v) (set! delay? v)]))
+          ;#;(case-> (-> boolean?) (boolean? . -> . void))
+          ;;; Get or set the delay-reset field
+          ;(define/public delay-reset
+          ;  (case-lambda
+          ;    [() delay?]
+          ;    [(v) (set! delay? v)]))
           
-          #;(rename [super-set-modified set-modified])
-          #;(define/override (set-modified b)
-            (super set-modified b)
-            (when b (reset-test-case-boxes)))
-          
+          #;(-> void)
           ;; set all of the test-case-boxes in the definitions text to an unevaluated state
           (define/public (reset-test-case-boxes)
             (when needs-reset?
               (set! needs-reset? false)
               (for-each-test-case (lambda (snip) (send snip reset)))))
           
+          #;(((is-a?/c test-case-box%) . -> . void) . -> . void)
           ;; executes the given function on each test-case-box
           (define/public (for-each-test-case f)
             (for-each-snip
@@ -129,23 +131,33 @@
       
       (drscheme:get/extend:extend-definitions-text clear-results-mixin)
 
+      ;; Require the test-case macro into every new namespace when a program is run.
       (define require-macro-mixin
         (mixin ((class->interface drscheme:rep:text%)) ()
           (inherit get-user-namespace get-canvas)
           
+          #;((is-a?/c area<%>) . -> . (is-a?/c frame%))
+          ;; The frame containing the given area
           (define (find-frame area)
             (let ([parent (send area get-parent)])
               (if parent
                   (find-frame parent)
                   area)))
           
+          #;(-> void)
+          ;; Called to indicate that the program annotations should be cleared.
+          ;; Overriden to reset test case boxes
           (define/override (reset-highlighting)
             (super reset-highlighting)
             (let ([text (send (find-frame (get-canvas)) get-definitions-text)])
-              (if (send text delay-reset)
-                  (send text delay-reset false)
-                  (send text reset-test-case-boxes)))) 
+              ;(if (send text delay-reset)
+              ;    (send text delay-reset false)
+              ;    (send text reset-test-case-boxes)))) 
+              (send text reset-test-case-boxes)))
           
+          #;(-> void)
+          ;; Called when the program is execute to reset the rep:text
+          ;; Overriden to require the test case macro into any program that is executed.
           (define/override (reset-console)
             (super reset-console)
             (parameterize ([current-namespace (get-user-namespace)])

@@ -10,7 +10,7 @@
 (let* ([drs-frame (wait-for-drscheme-frame)] 
        [interactions-edit (ivar drs-frame interactions-edit)]
        [execute-button (ivar drs-frame execute-button)]
-       [get-int-pos (lambda () (get-start-of-last-line interactions-edit))]
+       [get-int-pos (lambda () (get-text-pos interactions-edit))]
        [check-check-syntax ; type in term, call check-syntax
 	(lambda (str expected)
 	  (clear-definitions drs-frame)

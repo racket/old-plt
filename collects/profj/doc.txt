@@ -6,21 +6,20 @@ language levels, and known bugs. If a bug is listed in known bugs,
 please do not report it, it will be fixed at some point. Otherwise,
 please for now, report bugs directly to me at kathyg@cs.utah.eud
 
-Changed:
+Changed: As of Feb 20, 2003
 Statements now work in the interactions window
+
+local variables now (should) work in the interactions window
 
 The teaching languages no longer allow assignment to be an expression
 
 Some type checking is completed. 
   These items should be checked with good error messages:
      Class inheritance and method headers, as well as some field naming
-     Binary expressions
-     Assignment (except for final restrictions)
-     Unary expressions
-     Pre and Post expressions
-     Casts and instanceof
-     Array access expressions
-
+     All expressions 
+        Static method calls, and field use
+	assignment to a final
+	Pre/Post increment/decrement to a final
 
 General Information:
 

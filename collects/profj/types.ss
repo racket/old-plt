@@ -206,8 +206,9 @@
         (hash-table-put! records key thunk))
 
       ;; get-class-record: (U type (list string) 'string) ( -> 'a) -> (U class-record procedure)
-      (define/public (get-class-record ctype fail)        
-        (let ((key (cond
+      (define/public (get-class-record ctype . fail) 
+        (let ((fail (if (null? fail) (lambda () #f) (car fail)))
+              (key (cond
                      ((eq? ctype 'string) `("String" "java" "lang"))
                      ((ref-type? ctype) (cons (ref-type-class/iface ctype) (ref-type-path ctype)))
                      (else ctype))))
@@ -385,38 +386,31 @@
          (add1 (number-assign-conversions (cdr site-args) (cdr method-args) type-recs)))
         (else (number-assign-conversions (cdr site-args) (cdr method-args) type-recs)))))
   
-  ;; resolve-overloading: (list method-record) (list type) (-> 'a) -> method-record
-  (define (resolve-overloading methods arg-types fail type-recs)
-    (let ((methods (filter
-                    (lambda (mr)
-                      (= (length arg-types) (length (method-record-atypes mr))))
-                    methods)))
+  ;; resolve-overloading: (list method-record) (list type) (-> 'a) (-> 'a) (-> 'a) type-records-> method-record
+  (define (resolve-overloading methods arg-types arg-count-fail method-conflict-fail  no-method-fail type-recs)
+    (let* ((a (length arg-types))
+           (m-atypes method-record-atypes)
+           (a-convert? (lambda (t1 t2) (assignment-conversion t1 t2 type-recs)))
+           (methods (filter (lambda (mr) (= a (length (m-atypes mr)))) methods))
+           (methods-same (filter (lambda (mr) (andmap type=? (m-atypes mr) arg-types))
+                                 methods))
+           (assignable (filter (lambda (mr)
+                                 (andmap a-convert? (m-atypes mr) arg-types))
+                               methods))
+           (assignable-count (sort 
+                              (map (lambda (mr)
+                                     (list (number-assign-conversions arg-types (m-atypes mr) type-recs)
+                                           mr))
+                                   assignable))))           
       (cond
-        ((null? methods) (fail))
-        (else
-         (let ((methods-same (filter (lambda (mr)
-                                       (andmap type=? (method-record-atypes mr) arg-types))
-                                     methods)))
-           (cond
-             ((= 1 (length methods-same)) (car methods-same))
-             ((> (length methods-same) 1) (fail))
-             (else
-              ;Switched order of assignment conversion arguments, I think this is right but not 100% certain. PROBLEM
-              (let ((assign-conversion-to (filter (lambda (mr)
-                                                    (andmap (lambda (t1 t2)
-                                                              (assignment-conversion t1 t2 type-recs))
-                                                            (method-record-atypes mr)
-                                                            arg-types))
-                                                  methods)))
-                (if (null? assign-conversion-to)
-                    (fail)
-                    ;Warning: doesn't check to make certain that if there are two or more equally likely method choices that an error
-                    ;should be given
-                    (cadr (car (sort (map (lambda (mr) (list (number-assign-conversions arg-types (method-record-atypes mr) type-recs)
-                                                             mr))
-                                          assign-conversion-to)))))))))))))
-                     
-              
+        ((null? methods) (arg-count-fail))
+        ((= 1 (length methods-same)) (car methods-same))
+        ((> (length methods-same) 1) (method-conflict-fail))
+        ((null? assignable) (no-method-fail))
+        ((= 1 (length assignable)) (car assignable))
+        ((= (car (car assignable-count))
+            (car (cadr assignable-count))) (method-conflict-fail))
+        (else (car assignable)))))
       
   ;; read-records: string -> class-record
   (define (read-record filename)

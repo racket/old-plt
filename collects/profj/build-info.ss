@@ -90,9 +90,12 @@
   ;build-interactions-info: ast location type-records -> void
   (define (build-interactions-info prog level loc type-recs)
     (build-info-location loc)
-    (when (field? prog)
-      (send type-recs add-interaction-field 
-            (process-field prog '("scheme-interactions") type-recs level))))
+    (if (list? prog)
+        (for-each (lambda (f) (build-interactions-info f level loc type-recs))
+                  prog)
+        (when (field? prog)
+          (send type-recs add-interactions-field 
+                (process-field prog '("scheme-interactions") type-recs level)))))
   
   ;add-to-queue: (list definition) -> void
   (define (add-to-queue defs)

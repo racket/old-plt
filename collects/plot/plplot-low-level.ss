@@ -1,6 +1,5 @@
 (module plplot-low-level mzscheme
   (require 
-   (lib "4.ss" "srfi")
    (lib "cffi.ss" "compiler"))
   
   (c-declare "#include \"plplot.h\"")

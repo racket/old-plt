@@ -1,209 +1,133 @@
-(module pre-installer mzscheme
-  (require 
-   (lib "list.ss")
-   (lib "process.ss")
-   (lib "etc.ss")
-   (lib "file.ss"))
- 
-  (define (copy-files-in-dir from to re)
-    (for-each 
-     (lambda (f)
-       (when
-         (and 
-           (file-exists? (build-path from f))
-           (regexp-match re f)
-           (not (regexp-match #rx"[.]o$" f))
-	   (not (regexp-match #rx"[.]a$" f))
-           (not (regexp-match #rx"~$" f))
-           (not (regexp-match #rx"[.]plt$" f))
-           (not (regexp-match #rx"^#.*#$" f))
-           (not (regexp-match #rx"^[.]#" f)))
-          (copy-file (build-path from f) (build-path to f))))
-     (directory-list from)))
+(module installer mzscheme
+  (require (lib "make.ss" "make")
+           (lib "setup-extension.ss" "make")
+           (lib "file.ss" "dynext")
+           (lib "compile.ss" "dynext")
+           (lib "link.ss" "dynext")
+           (lib "compiler.ss" "compiler")
+           (lib "option.ss" "compiler")
+           (lib "file.ss")
+           (lib "list.ss"))
   
-  (define (pre-installer plthome)      
-    (let ([dir (build-path (collection-path "plot")
-                           "precompiled"
-                           "native"
-                           (system-library-subpath #f))])
-	(if (directory-exists? dir) ; just copy things over
-            (let ((compiled-dir (build-path
-                                 (collection-path "plot")
-                                 "compiled"
-                                 "native"
-                                 (system-library-subpath #f))))
-              (unless (directory-exists? compiled-dir)
-                (make-directory* compiled-dir))
-              (copy-files-in-dir dir compiled-dir #rx"."))
-            (build))))
+  ;(verbose)
+  ; compile-extension
   
   
-  ;(provide build)
+  (define dir (build-path "compiled" "native" (system-library-subpath)))
   
-  ; should where the file is
-  (define here (this-expression-source-directory) )
+  (if (not (directory-exists? dir))
+      (make-directory* dir))
   
-  (define ext-dir
-    (build-path here "compiled" "native" (system-library-subpath)))
+  (define (get-precompiled-path file.so)
+    (printf "~a~n" file.so)
+    (let*-values (((path name _) (split-path file.so))
+                  ((path d1 _) (split-path path))
+                  ((path d2 _) (split-path path))
+                  ((path c _) (split-path path)))
+      (build-path (cond
+                    ((eq? 'relative path) 'same)
+                    (else path))
+                  "precompiled" d2 d1 name)))
   
-  (define (build)
-    (begin
-      (make-directory* ext-dir)
-      (build-plot)
-      (build-fit)))
-
-  (define base-system
-    (cond [(or 
-            (eqv? 'unix (system-type))
-            (eqv? 'macosx (system-type)))
-           'unix]
-          [(eqv? 'windows (system-type))
-           'windows]
-          [else
-           (error "Build is not supported on this platform")]))
   
-  (define alt 
-    (opt-lambda (winval unval [sys base-system])
-      (if (eq? 'windows sys)
-          winval
-          unval)))
+  (define (do-copy file.so)
+    (let ([pre-compiled (get-precompiled-path file.so)])
+      (and (file-exists? pre-compiled)
+           (begin
+             (printf "  Copying ~a~n       to ~a~n" pre-compiled file.so)
+             (when (file-exists? file.so) 
+               (delete-file file.so))
+             (copy-file pre-compiled file.so)))))
   
-
   
-  ; command line flags: / for windows, - for unix
-  (define flag (alt "/" "-"))
+  (define final-so-file
+    (lambda (file-name)
+      (build-path dir (append-extension-suffix file-name))))
   
-  ; object code extention
-  (define o-ext (alt "obj" "o"))
+  (verbose #t)
   
-  ; mzc executable
-  ; can be changed to allow for users not having it in path.. not sure why though..
-  (define mzc (alt "mzc.exe" "mzc"))
-  
-  (define (filename file)
-    (let-values (((base name must-be-dir?) (split-path file)))
-      name))
-  
-  ; find files of a certain type
-  ; file-regexp is the match
-  ; exclude is a list of regexps to exclude
-  (define find-grep-filter
-    (opt-lambda (path file-regexp (excludes empty))
-      (filter-all 
-       (find-files
-        (lambda (f) 
-          (regexp-match file-regexp 
-                        (filename f))) ; match only on the filename, not the full the string
+  (define make-ext
+    (lambda (scheme-file c-file-names src-dir)
+      (let* ((c-files (map (lambda (f) (build-path src-dir f))c-file-names))
+             (final-so
+              (final-so-file scheme-file))
+             (objects
+              (map append-object-suffix c-files))
+             (scheme-file-with-ext (string-append scheme-file ".ss")))
         
-        path)
-       excludes)))
+        (make/proc
+         (apply list  ; make lines     
+                (list final-so  ; target
+                      objects ; depends
+                      (lambda () ; link them together
+                        (link-extension 
+                         #f
+                         objects
+                         final-so)))
+                (list (append-c-suffix (build-path src-dir scheme-file))
+                      (list scheme-file-with-ext)
+                      (lambda ()
+                        ((compile-extensions-to-c #f) (list scheme-file-with-ext) src-dir)))
+                (map
+                 (lambda (file)
+                   (list (append-object-suffix file)
+                         (list (append-c-suffix file))
+                         (lambda ()
+                           (compile-c-extension-parts (list (append-c-suffix file)) src-dir))))                   
+                 c-files))
+         final-so))))
   
-  ; filers the list with all regexps
-  (define (filter-all f-list r-list)
-    (cond
-      [(empty? r-list) f-list]
-      [else
-       (filter-all 
-        (filter
-         (lambda (file) (not (regexp-match (car r-list) (filename file)))) 
-         f-list)
-        (cdr r-list))]))
+  (provide
+   pre-installer)
   
-  ; copy a list of files to a given directory
-  (define (copy-files lof dest)
-    (for-each
-     (lambda (file)      
-       ; (if (file-exists? (build-path dest (filename file)))
-       ;    null
-       (copy-file file (build-path dest (filename file))))
-     lof))
-  
-  (define (ldf-flags files)
-    (foldl (lambda (file c) (string-append "++ldf " file " " c)) "" files))
-  
-  (define (build-plot)
-    (let* 
-        ([tmp-dir (build-path here "src" "tmp")]
-         [wxdir                                         
-            (simplify-path 
-             (build-path 
-              (collection-path "mzlib" )
-              'up
-              'up
-              "src"
-              "wxcommon"))]
-           [zlibfiles  (let 
-                           ((zlib-path 
-                             (cond 
-                               [(directory-exists? (build-path here "src" "zlib"))   (build-path here "src" "zlib")]
-                               [(directory-exists? (build-path wxdir "zlib")) (build-path wxdir "zlib")]
-                               [else (error "Could not locate zlib src files")])))
-                         (find-grep-filter 
-                          zlib-path 
-                          "\\.[h|c]$" 
-                          '("example.c" "maketree.c" "minigzip.c")))]
-           [pngfiles (let
-                         ((pngfiles-path
-                           (cond
-                             [(directory-exists? (build-path here "src" "png"))   (build-path here "src" "png")]
-                             [(directory-exists? (build-path wxdir "libpng")) (build-path wxdir "libpng")]
-                             [else (error "Could not locate png src files")])))
-                       (find-grep-filter pngfiles-path "\\.[h|c]$" '("example\\.c" "pngtest\\.c")))]
-           [gdfiles 
-            (find-grep-filter (build-path here "src" "gd") "\\.[h|c]$" '("gd_wbmp.c" "gdft\\.c"))]
-           [plplotfiles 
-            (find-grep-filter (build-path here "src" "plplot") "^pl.*\\.c$|\\.h|^mem\\.c|^gd_drv\\.c|pdfutils\\.c")])      
-      (make-directory* tmp-dir)
-      (copy-files (append 
-                   zlibfiles 
-                   pngfiles
-                   gdfiles
-                   plplotfiles)                          
-                  (build-path here "src" "tmp"))      
-      (let* 
-          ((c-files (find-grep-filter tmp-dir "\\.c$"))
-           (c-files-string 
-            (foldl (lambda (s c) (string-append c " " s)) "" c-files)))        
-        (system 
-         (string-append 
-          mzc 
-          " -d " tmp-dir 
-          " "
-          "++ccf " flag "DHAVE_LIBPNG " 
-          "++ccf " flag "DPLD_png " 
-          "++ccf " flag "DPLD_mem "
-          "++ccf " flag "I" tmp-dir " "
-          "--cc " c-files-string))
-        (let
-            ((obj-files
-              (find-grep-filter tmp-dir (string-append "\\." o-ext "$"))))      
-          (system (format "~a -d ~a ++ccf ~a ~a  ~a" 
-                          mzc
-                          ext-dir 
-                          (string-append flag "I" (build-path here "src" "tmp"))
-                          (ldf-flags obj-files)
-                          (build-path here "plplot-low-level.ss")))        
-          (delete-directory/files tmp-dir)))))
+  (define (pre-installer plthome)
+    (let*
+        [(fit-src-dir
+          (build-path "src" "fit"))
+         (fit-scheme-file 
+          "fit-low-level")
+         (fit-c-files
+          `(,fit-scheme-file "fit" "matrix"))]
+      (unless 
+          (do-copy (final-so-file fit-scheme-file))
+        (make-ext fit-scheme-file fit-c-files fit-src-dir)))
+    
+    (let
+        [(plot-scheme-file  "plplot-low-level")]
+      (unless
+          (do-copy (final-so-file plot-scheme-file))
+        (parameterize 
+            [(current-extension-compiler-flags
+              (append
+               (current-extension-compiler-flags)
+               (case (system-type)
+                 ((windows) '("/DHAVE_LIBPNG" "/DPLD_png"))
+                 (else '("-DHAVE_LIBPNG" "-DPLD_png")))))]
+          (let*
+              [(plot-src-dir 
+                (build-path "src" "tmp"))
+               (plot-c-files               
+                (map
+                 (lambda (f)
+                   (regexp-replace
+                    #rx".c$"
+                    f
+                    ""))           
+                 (filter
+                  (lambda (f)
+                    (and                      
+                     (regexp-match
+                      #rx".c$"
+                      f)
+                     (not 
+                      (regexp-match
+                       plot-scheme-file
+                       f))))
+                  (directory-list  plot-src-dir))))]
+            (make-ext plot-scheme-file plot-c-files plot-src-dir))))))
   
   
-  ; build the FIT module
-  (define (build-fit)      
-    (let* ((fit-dir (build-path here "src" "fit"))
-           (fit-files (find-grep-filter fit-dir "\\.c$")))      
-      (system (format "~a -d ~a --cc ~a"
-                      mzc
-                      fit-dir
-                      (foldl (lambda (s c) (string-append s " " c)) "" fit-files) ))
-      (let ((fit-objs (find-grep-filter fit-dir (string-append "\\." o-ext "$"))))
-        (system (format "~a -d ~a ~a ++ccf ~a~a~a ~a"
-                        mzc
-                        ext-dir
-                        (ldf-flags fit-objs)
-                        flag
-                        "I"
-                        fit-dir
-                        (build-path here "fit-low-level.ss")
-                        ))
-        (for-each delete-file fit-objs))))
-                 
-  (provide pre-installer build-plot build-fit))
+  
+  
+  
+  )

@@ -640,7 +640,7 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
       } else
 	di = 1;
       
-      ((wxKey *)SCHEME_BYTE_STR_VAL(table_key))->code = uc;
+      ((wxKey *)SCHEME_BYTE_STR_VAL(table_key))->code = wc;
       val = scheme_hash_get(width_table, table_key);
       if (!val) {
 	val = scheme_hash_get(old_width_table, table_key);
@@ -1014,10 +1014,10 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
     old = pre_scheme();
 
     for (j = 0; j < (int)ulen; j += dj) {
-      wc = unicode[i];
+      wc = unicode[j];
       if ((wc & 0xF800) == 0xD800) {
 	/* Yuck. Re-un-parse UTF-16... */
-	wc = ((wc & 0x3FF) << 10) + (unicode[i+1] & 0x3FF);
+	wc = ((wc & 0x3FF) << 10) + (unicode[j+1] & 0x3FF);
 	dj = 2;
       } else
 	dj = 1;

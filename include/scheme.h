@@ -118,13 +118,10 @@ typedef jmpbuf jmp_buf[1];
 
 #define GC_MIGHT_USE_REGISTERED_STATICS
 
-#ifdef OS_X
-# ifdef MACINTOSH_EVENTS
+#ifdef MACINTOSH_EVENTS
 /* We avoid #including the Carbon headers because we only
    need a few abstract struct types: */
 typedef struct FSSpec mzFSSpec;
-typedef struct EventRecord mzEventRecord;
-# endif
 #endif
 
 /* Set up MZ_EXTERN for DLL build */
@@ -1224,9 +1221,6 @@ void scheme_restore_nonmain_thread(void);
 #endif
 #ifdef MAC_FILE_SYSTEM
 extern long scheme_creator_id;
-#endif
-#ifdef MACINTOSH_EVENTS 
-extern void (*scheme_handle_aewait_event)(mzEventRecord *e);
 #endif
 
 MZ_EXTERN Scheme_Object *(*scheme_make_stdin)(void);

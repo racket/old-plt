@@ -230,6 +230,8 @@ in several significant ways:
  * Removed constant and keyword attributes of global variables, since
    they are not needed with the module system.
 
+ * Moved `send-event' to both MrEd and MzLib's "sendevent.ss".
+
 MzLib changes:
 
  * "functio.ss" was split into "list.ss" and "etc.ss".
@@ -266,6 +268,8 @@ Inside MzScheme:
  * scheme_add_global_constant(), etc. are gone, since globals have no
    constant or keyword attributes; use scheme_add_global(),
    etc. instead.
+
+ * Many port-related functions were changed.
 
 
 For information about minor changes, see HISTORY.

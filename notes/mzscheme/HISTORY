@@ -46,7 +46,7 @@ Default for pconvert.ss's whole/fractional-exact-numbers parameter
 Load handler or load extension handler now takes two arguments
  instead of one: the filename and the expected module name
 Renamed "2k" to "3m" (for "moving memory manager")
-Upgraded to gc 6.0alpha9
+Upgraded to gc 6.1alpha2
 Inside MzScheme: changed type of third argument for
  scheme_block_until() from void* to Scheme_Object*
 Inside MzScheme: added scheme_add_waitable() and

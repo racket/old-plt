@@ -62,9 +62,17 @@ static void dangerdanger(int)
 
 static void yield_indefinitely()
 {
+#ifdef MZ_PRECISE_GC
+  void *dummy;
+#endif
+
   if (!scheme_setjmp(scheme_error_buf)) {
     mred_wait_eventspace();
   }
+
+#ifdef MZ_PRECISE_GC
+  dummy = NULL; /* makes xform think that dummy is live, so we get a __gc_var_stack__ */
+#endif
 }
 
 #ifndef DONT_LOAD_INIT_FILE

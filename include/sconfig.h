@@ -614,8 +614,6 @@
 
 # define USE_TM_GMTOFF_FIELD
 
-# define MACINTOSH_EVENTS
-
 # ifndef OS_X
 #  define OS_X 1
 # endif
@@ -626,7 +624,8 @@
 
   /************ Macintosh with CodeWarrior (not OS X) *************/
 
-#if defined(__MWERKS__) && !defined(__BEOS__) && !defined(__palmos__) && !defined(OS_X)
+#if ((defined(__MWERKS__) && !defined(__BEOS__) && !defined(__palmos__) && !defined(OS_X))  \
+     || defined(MPW_C) || defined(MPW_CPLUS))
 
 # if defined(__POWERPC__)
 #  define SCHEME_PLATFORM_LIBRARY_SUBPATH "ppc-mac"
@@ -676,18 +675,22 @@
 # define TIME_TYPE_IS_UNSIGNED
 
 # define NO_SYS_INCLUDE_SUBDIR
+# define NO_SLEEP
 # define NO_USLEEP
-# define UNISTD_INCLUDE
+# define NO_STAT_PROC
 # define DONT_IGNORE_PIPE_SIGNAL
 
 # define POW_HANDLES_INF_CORRECTLY
 # define TRIG_ZERO_NEEDS_SIGN_CHECK
 
-# define USE_MAC_TCP
+/* # define USE_MAC_TCP */
 
 # define SIGSET_IS_SIGNAL
 
 # define MACROMAN_CHAR_SET
+# ifdef MPW_C
+#  define NO_INLINE_KEYWORD
+# endif
 
 # define FLAGS_ALREADY_SET
 
@@ -1184,23 +1187,24 @@
  /*   Macintosh Standalone    */
 /*****************************/
 
- /* MACINTOSH_EVENTS enables apple event sending/receiving on the Mac. */
+ /* MACINTOSH_EVENTS enables specific support for Mac Classic */
  
  /* MAC_MZ_GUI_ENABLED activates the windowed I/O code (use under classic) 
      (should maybe use MACINTOSH_SIOUX instead?) */
 
- /* MAC_CLASSIC_PROCESS_CONTROL swaps the UNIX process commands for the mac family 
-     (use under classic) */
+ /* MAC_CLASSIC_PROCESS_CONTROL swaps the UNIX process commands for the 
+    mac family (use under classic) */
 
- /* OS_X enables OS_X-specific defaults, e.g. the location of the prefs directory */
+ /* OS_X enables specific support for Mac OS X, e.g. the location of the
+    prefs directory */
  
  /* MACINTOSH_GIVE_TIME lets background processes run when checking for
-     a user break. */
+     a user break */
 
  /* MACINTOSH_SIOUX interfaces with Metrowerks's SIOUX library */
 
- /* MACINTOSH_SET_STACK sets the stack to be 1/4 of the heap. This should
-     be used for 68k machines, where the stack is not user-configurable. */
+ /* MACINTOSH_SET_STACK sets the stack to be 1/4 of the heap; this should
+     be used for 68k machines, where the stack is not user-configurable */
 
   /***********************/
  /*    Miscellaneous    */

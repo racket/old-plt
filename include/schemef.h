@@ -29,7 +29,7 @@
 
 MZ_EXTERN void scheme_init_jmpup_buf(Scheme_Jumpup_Buf *b);
 MZ_EXTERN int scheme_setjmpup_relative(Scheme_Jumpup_Buf *b, void *base, 
-				       void *start, Scheme_Jumpup_Buf *cont);
+				       void * volatile start, Scheme_Jumpup_Buf *cont);
 MZ_EXTERN void scheme_longjmpup(Scheme_Jumpup_Buf *b);
 MZ_EXTERN void scheme_reset_jmpup_buf(Scheme_Jumpup_Buf *b);
 
@@ -145,10 +145,10 @@ MZ_EXTERN void scheme_wrong_return_arity(const char *where,
 MZ_EXTERN void scheme_unbound_global(Scheme_Bucket *b);
 
 MZ_EXTERN Scheme_Object *scheme_dynamic_wind(void (*pre)(void *),
-					     Scheme_Object *(*act)(void *),
-					     void (*post)(void *), 
+					     Scheme_Object *(* volatile act)(void *),
+					     void (* volatile post)(void *), 
 					     Scheme_Object *(*jmp_handler)(void *),
-					     void *data);
+					     void * volatile data);
 
 /*========================================================================*/
 /*                                 types                                  */

@@ -59,7 +59,7 @@ Bool wxMessage::Create(wxPanel *panel, char *label, int x, int y, long style, ch
     cparent = (wxWnd *)(panel->handle);
 
   HWND static_item = wxwmCreateWindowEx(0, "wxSTATIC", label,
-					STATIC_FLAGS,
+					STATIC_FLAGS | WS_CLIPSIBLINGS,
 					0, 0, 0, 0, cparent->handle, (HMENU)NewId(this),
 					wxhInstance, NULL);
 #if CTL3D
@@ -109,7 +109,7 @@ Bool wxMessage::Create(wxPanel *panel, wxBitmap *image, int x, int y, long style
 
   HWND static_item = wxwmCreateWindowEx(0, FafaStat, NULL,
 					FS_BITMAP | FS_X2 | FS_Y2 | WS_CHILD 
-					| WS_VISIBLE | WS_GROUP,
+					| WS_VISIBLE | WS_GROUP | WS_CLIPSIBLINGS,
 					0, 0, 0, 0, cparent->handle, (HMENU)NewId(this),
 					wxhInstance, NULL);
   if (image) {

@@ -72,7 +72,7 @@ Bool wxGauge::Create(wxPanel *panel, char *label,
   // If label exists, create a static control for it.
   if (label) {
     static_label = wxwmCreateWindowEx(0, STATIC_CLASS, label,
-				      STATIC_FLAGS,
+				      STATIC_FLAGS | WS_CLIPSIBLINGS,
 				      0, 0, 0, 0, cparent->handle, (HMENU)NewId(this),
 				      wxhInstance, NULL);
 #if CTL3D
@@ -88,7 +88,7 @@ Bool wxGauge::Create(wxPanel *panel, char *label,
 
   windows_id = (int)NewId(this);
   
-  long msFlags = WS_CHILD | WS_VISIBLE | WS_TABSTOP;
+  long msFlags = WS_CHILD | WS_VISIBLE | WS_TABSTOP | WS_CLIPSIBLINGS;
 
   HWND wx_button =
     wxwmCreateWindowEx(0, "zYzGauge", label, msFlags,

@@ -76,7 +76,7 @@ Bool wxScrollBar::Create(wxPanel *panel, wxFunction func,
      DWORD _direction = direction == wxHORIZONTAL ?
                         SBS_HORZ: SBS_VERT;
 	 HWND scroll_bar = wxwmCreateWindowEx(0, "SCROLLBAR", "scrollbar",
-                         _direction | WS_CHILD | WS_VISIBLE,
+                         _direction | WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS,
                          0, 0, 0, 0, cparent->handle, (HMENU)windows_id,
                          wxhInstance, NULL);
 #if CTL3D

@@ -719,11 +719,19 @@ static Scheme_Object *wxSchemeGetFontList(int, Scheme_Object **)
     s = names[i++];
 #endif
 #ifdef wx_mac
-    if (i >= count)
+    if (i == count) {
+      s = "systemfont";
+      l = strlen(s);
+    } else if (i == count + 1) {
+      s = "applicationfont";
+      l = strlen(s);
+    } else if (i > count)
       break;
-    GetMenuItemText(fmenu, ++i, buffer);
-    l = buffer[0];
-    s = PtoCstr(buffer);
+    else {
+      GetMenuItemText(fmenu, ++i, buffer);
+      l = buffer[0];
+      s = PtoCstr(buffer);
+    }
 #endif
 #ifdef wx_msw
     if (i >= data.count)

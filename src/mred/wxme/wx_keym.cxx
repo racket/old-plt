@@ -400,12 +400,12 @@ wxKeycode *wxKeymap::MapFunction(long code, int shift, int ctrl,
   return newkey;
 }
 
-static long GetCode(char **keyseqp)
+static long GetCode(unsigned char **keyseqp)
 {
   char *keyseq = *keyseqp;
   long i, code;
 #define MAX_BUF 256
-  char buffer[MAX_BUF], first;
+  unsigned char buffer[MAX_BUF], first;
 
   first = buffer[0] = *(keyseq++);
   for (i = 1; *keyseq && (*keyseq != ';'); i++) {
@@ -419,7 +419,7 @@ static long GetCode(char **keyseqp)
   if (buffer[1]) {
     buffer[0] = tolower(buffer[0]);
     for (i = 0; keylist[i].str; i++)
-      if (!strcmp(buffer, keylist[i].str)) {
+      if (!strcmp((char *)buffer, keylist[i].str)) {
 	code = keylist[i].code;
 	break;
       }
@@ -503,7 +503,7 @@ void wxKeymap::MapFunction(char *keys, char *fname)
 	keyseq += 2;
       } else {
       do_char:
-	code = GetCode(&keyseq);
+	code = GetCode((unsigned char **)&keyseq);
 	if (!code) {
 	  errstr = "bad keyname";
 	  goto key_error;

@@ -81,7 +81,7 @@ Bool wxCheckBox::Create(wxPanel *panel, wxFunction func, char *Title,
   checkWidth = -1 ;
   checkHeight = -1 ;
   HWND wx_button = wxwmCreateWindowEx(0, CHECK_CLASS, Title,
-                    CHECK_FLAGS,
+                    CHECK_FLAGS | WS_CLIPSIBLINGS,
                     0, 0, 0, 0, cparent->handle, (HMENU)windows_id,
                     wxhInstance, NULL);
 #if CTL3D
@@ -151,7 +151,7 @@ Bool wxCheckBox::Create(wxPanel *panel, wxFunction func, wxBitmap *bitmap,
   width += FB_MARGIN ;
   height += FB_MARGIN ;
   HWND wx_button = wxwmCreateWindowEx(0, FafaChck, "toggle",
-                    BITCHECK_FLAGS,
+                    BITCHECK_FLAGS | WS_CLIPSIBLINGS,
                     0, 0, 0, 0, cparent->handle, (HMENU)windows_id,
                     wxhInstance, NULL);
       SetBitmapDimensionEx(bitmap->ms_bitmap,
@@ -167,7 +167,7 @@ Bool wxCheckBox::Create(wxPanel *panel, wxFunction func, wxBitmap *bitmap,
   checkWidth = -1 ;
   checkHeight = -1 ;
   HWND wx_button = wxwmCreateWindowEx(0, CHECK_CLASS, "toggle",
-                    CHECK_FLAGS,
+                    CHECK_FLAGS | WS_CLIPSIBLINGS,
                     0, 0, 0, 0, cparent->handle, (HMENU)windows_id,
                     wxhInstance, NULL);
 #if CTL3D

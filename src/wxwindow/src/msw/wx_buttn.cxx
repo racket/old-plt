@@ -87,7 +87,7 @@ Bool wxButton::Create(wxPanel *panel, wxFunction Function, char *label,
   HWND wx_button =
     wxwmCreateWindowEx(0, "wxBUTTON", label, 
 		       BS_PUSHBUTTON | WS_TABSTOP | WS_CHILD
-		       | ((style & 1) ? WS_BORDER : 0),
+		       | ((style & 1) ? WS_BORDER : 0) | WS_CLIPSIBLINGS,
 		       0, 0, 0, 0, cparent->handle, (HMENU)windows_id,
 		       wxhInstance, NULL);
 
@@ -155,7 +155,7 @@ Bool wxButton::Create(wxPanel *panel, wxFunction Function, wxBitmap *bitmap,
   height+= FB_MARGIN ;
 
   HWND wx_button =
-    wxwmCreateWindowEx(0, FafaButt, "?", FB_BITMAP | WS_TABSTOP | WS_CHILD,
+    wxwmCreateWindowEx(0, FafaButt, "?", FB_BITMAP | WS_TABSTOP | WS_CHILD | WS_CLIPSIBLINGS,
 		       0, 0, 0, 0, cparent->handle, (HMENU)windows_id,
 		       wxhInstance, NULL);
   SetBitmapDimensionEx(bitmap->ms_bitmap,
@@ -168,7 +168,7 @@ Bool wxButton::Create(wxPanel *panel, wxFunction Function, wxBitmap *bitmap,
 #else
   HWND wx_button =
     wxwmCreateWindowEx(0, "wxBUTTON", "not implemented", 
-		       BS_PUSHBUTTON | WS_TABSTOP | WS_CHILD,
+		       BS_PUSHBUTTON | WS_TABSTOP | WS_CHILD | WS_CLIPSIBLINGS,
 		       0, 0, 0, 0, cparent->handle, (HMENU)windows_id,
 		       wxhInstance, NULL);
 #if CTL3D

@@ -322,7 +322,12 @@ void MrEdMSWSleep(float secs, void *fds)
       scheme_forget_thread(thread_memory);
       CloseHandle(th2);
     }
-  } else {
+  } else if (wxTheApp->keep_going) {
+#if 1
+    MsgWaitForMultipleObjects(0, NULL, FALSE, 
+			      secs ? msecs : INFINITE,
+			      QS_ALLINPUT);
+#else
     UINT id;
     
     if (secs)
@@ -330,11 +335,11 @@ void MrEdMSWSleep(float secs, void *fds)
     else
       id = 0;
   
-    if (wxTheApp->keep_going)
-      WaitMessage();
+    WaitMessage();
 
-    if (secs)
+    if (id)
       KillTimer(NULL, id);
+#endif
   }
 
   StartSleepThreadTimer();

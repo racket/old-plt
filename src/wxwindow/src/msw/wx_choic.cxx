@@ -111,7 +111,7 @@ Bool wxChoice::Create(wxPanel *panel, wxFunction func, char *Title,
 
   if (Title) {
     static_label = wxwmCreateWindowEx(0, STATIC_CLASS, the_label,
-				      STATIC_FLAGS,
+				      STATIC_FLAGS | WS_CLIPSIBLINGS,
 				      0, 0, 0, 0, cparent->handle, (HMENU)NewId(this),
 				      wxhInstance, NULL);
 #if CTL3D
@@ -129,7 +129,7 @@ Bool wxChoice::Create(wxPanel *panel, wxFunction func, char *Title,
 
   HWND wx_combo = wxwmCreateWindowEx(0, "wxCOMBOBOX", NULL,
 				     WS_CHILD | CBS_DROPDOWNLIST | WS_HSCROLL | WS_VSCROLL
-				     | WS_BORDER | WS_TABSTOP | WS_VISIBLE,
+				     | WS_BORDER | WS_TABSTOP | WS_VISIBLE | WS_CLIPSIBLINGS,
 				     0, 0, 0, 0, cparent->handle, (HMENU)windows_id,
 				     wxhInstance, NULL);
 #if CTL3D

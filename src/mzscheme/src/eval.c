@@ -2025,14 +2025,26 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
 {
   Scheme_Object *first;
   Scheme_Compile_Info recs[2];
+  int skip = 0;
 
   if (rec)
     scheme_default_compile_rec(rec, drec);
 
   if (SCHEME_STX_NULLP(forms)) {
-    if (rec)
+    if (rec) {
       scheme_compile_rec_done_local(rec, drec);
-    return scheme_null;
+      return scheme_null;
+    } else
+      return forms;
+  }
+
+  if (SCHEME_STX_PAIRP(forms)) {
+    Scheme_Object *rest;
+    rest = SCHEME_STX_CDR(forms);
+    if (SCHEME_STX_NULLP(rest)) {
+      /* One expression can't be an internal definition. */
+      skip = 1;
+    }
   }
 
  try_again:
@@ -2044,7 +2056,7 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
 
   first = SCHEME_STX_CAR(forms);
 
-  {
+  if (!skip) {
     Scheme_Object *gval, *result;
     int more = 1;
 

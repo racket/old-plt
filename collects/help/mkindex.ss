@@ -7,11 +7,11 @@
   (require (lib "list.ss"))
 
   (define servlet-dir (build-path (collection-path "help") "servlets"))
-  (define dest-dir (build-path (collection-path "doc") "help"))
+  (define dest-dir (build-path (collection-path "help") 'up "doc" "help"))
 
   (define old-curr-dir (current-directory))
   (unless (directory-exists? dest-dir)
-	  (make-directory dest-dir))
+	  (make-directory* dest-dir))
   (current-directory dest-dir)
 
   (define index-file "hdindex")

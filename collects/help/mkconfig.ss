@@ -16,7 +16,8 @@
 
   (define (build-config-exp)
     (let* ([help-path (collection-path "help")]
-	   [doc-path (collection-path "doc")]
+	   [doc-path (normalize-path 
+			(build-path help-path 'up "doc"))]
 	   [file-root (normalize-path 
 		       (build-path doc-path 'up))]
 	   [host-root (build-path help-path "web-root")]

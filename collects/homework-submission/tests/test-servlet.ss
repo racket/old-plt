@@ -312,8 +312,8 @@ exec mzscheme -r "$0" "$@"
               (list (hyperlink->k-url "The Test Course") '())
               (list (hyperlink->k-url "Assignments") '())
               (list form->k-url
-                    (list (cons 'file "/etc/passwd")
-                          (cons 'enctype "multipart/form-data")))
+                    (list (cons 'file "/etc/passwd"))
+                    (list (cons 'enctype #"multipart/form-data")))
               (list (hyperlink->k-url "Logout") '()))
         (login-page)))
 

@@ -2088,8 +2088,8 @@
     (let ([n (make-namespace 'empty)]
 	  [orig (current-namespace)])
       (parameterize ([current-namespace n])
-	(namespace-transfer-module orig 'r5rs)
-	(namespace-require 'r5rs)
+	(namespace-transfer-module orig '#%r5rs)
+	(namespace-require '#%r5rs)
 	(namespace-transformer-require '(rename mzscheme syntax-rules syntax-rules))
 	(unless stx-only?
 	  (for-each
@@ -2185,7 +2185,7 @@
 ;;----------------------------------------------------------------------
 ;; r5rs syntax (used by null-environment and scheme-report-environment)
 
-(module r5rs mzscheme
+(module #%r5rs mzscheme
   (provide quasiquote unquote unquote-splicing 
 	   if let and or cond case define delay do
 	   letrec let* begin lambda quote set!

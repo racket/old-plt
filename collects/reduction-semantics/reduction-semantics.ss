@@ -1,6 +1,7 @@
 
 (module reduction-semantics mzscheme
   (require "private/matcher.ss"
+           "private/term.ss"
            (lib "contract.ss")
            (lib "etc.ss"))
   (require-for-syntax (lib "list.ss"))
@@ -9,7 +10,10 @@
            reduction/context
            language
            replace
-	   compiled-lang? red?)
+	   compiled-lang?
+           red?
+           term
+           term-let)
   
   (provide/contract
    (language->predicate (compiled-lang? symbol? . -> . (any? . -> . boolean?)))
@@ -65,41 +69,43 @@
     (define (reduction/context/proc stx)
       (syntax-case stx ()
         [(_ lang-exp ctxt pattern bodies ...)
-         (let ([names (extract-names (syntax pattern))])
+         (let-values ([(names names/ellipses) (extract-names (syntax pattern))])
 	   (when (null? (syntax->list (syntax (bodies ...))))
 	     (raise-syntax-error #f "missing result expression" stx))
            (with-syntax ([(names ...) names]
+                         [(names/ellipses ...) names/ellipses]
                          [holeg (datum->syntax-object stx (gensym 'hole))]
                          [side-condition-rewritten (rewrite-side-conditions (syntax pattern))])
              (syntax 
               (build-red lang-exp
                          `(in-hole* holeg (name context ctxt) side-condition-rewritten)
                          (lambda (bindings)
-                           (let ([holeg (lookup-binding bindings 'holeg)]
-                                 [context (lookup-binding bindings 'context)]
-                                 [names (lookup-binding bindings 'names)] ...)
-                             (replace
-                              context
-                              holeg
-                              (begin
-                                (void)
-                                bodies ...))))))))]))
+                           (term-let ([holeg (lookup-binding bindings 'holeg)]
+                                      [context (lookup-binding bindings 'context)]
+                                      [names/ellipses (lookup-binding bindings 'names)] ...)
+                                     (replace
+                                      (term context)
+                                      (term holeg)
+                                      (begin
+                                        (void)
+                                        bodies ...))))))))]))
     
     ;; (reduction lang pattern expression ...)
     (define (reduction/proc stx)
       (syntax-case stx ()
         [(_ lang-exp pattern bodies ...)
-         (let ([names (extract-names (syntax pattern))])
+         (let-values ([(names names/ellipses) (extract-names (syntax pattern))])
 	   (when (null? (syntax->list (syntax (bodies ...))))
 	     (raise-syntax-error #f "missing result expression" stx))
-           (with-syntax ([(name ...) names]
+           (with-syntax ([(name-ellipses ...) names/ellipses]
+                         [(name ...) names]
                          [hole (datum->syntax-object stx 'hole)]
                          [side-condition-rewritten (rewrite-side-conditions (syntax pattern))])
              (syntax 
               (build-red lang-exp
                          `side-condition-rewritten
                          (lambda (bindings)
-                           (let ([name (lookup-binding bindings 'name)] ...)
+                           (term-let ([name-ellipses (lookup-binding bindings 'name)] ...)
                              bodies ...))))))]))
     
     (define (language/proc stx)
@@ -130,48 +136,80 @@
       (let loop ([term orig-stx])
         (syntax-case term (side-condition)
           [(side-condition pat exp)
-           (with-syntax ([(names ...) (extract-names (syntax pat))])
-             (syntax/loc term
-               (side-condition
-                pat
-                ,(lambda (bindings)
-                   (let ([names (lookup-binding bindings 'names)] ...)
-                     exp)))))]
+           (let-values ([(names names/ellipses) (extract-names (syntax pat))])
+             (with-syntax ([(name ...) names]
+                           [(name/ellipses ...) names/ellipses])
+               (syntax/loc term
+                 (side-condition
+                  pat
+                  ,(lambda (bindings)
+                     (term-let ([name/ellipses (lookup-binding bindings 'name)] ...)
+                               exp))))))]
           [(terms ...)
            (map loop (syntax->list (syntax (terms ...))))]
           [else term])))
+
+    (define-struct id/depth (id depth))
     
+    ;; extract-names : syntax -> (values (listof syntax) (listof syntax[x | (x ...) | ((x ...) ...) | ...]))
     (define (extract-names orig-stx)
-      (let ([dups
-             (let loop ([stx orig-stx]
-                        [names null])
-               (syntax-case stx (name in-hole* in-hole)
-                 [(name sym pat)
-                  (identifier? (syntax sym))
-                  (loop (syntax pat) (cons (syntax sym) names))]
-                 [(in-hole* sym pat1 pat2)
-                  (identifier? (syntax sym))
-                  (loop (syntax pat1)
-                        (loop (syntax pat2)
-                              (cons (syntax sym) names)))]
-                 [(in-hole pat1 pat2)
-                  (loop (syntax pat1)
-                        (loop (syntax pat2)
-                              (cons (datum->syntax-object stx 'hole)
-                                    names)))]
-                 [(pat ...)
-                  (let i-loop ([pats (syntax->list (syntax (pat ...)))]
-                               [names names])
-                    (cond
-                      [(null? pats) names]
-                      [else (i-loop (cdr pats) (loop (car pats) names))]))]
-                 [x
-                  (and (identifier? (syntax x))
-                       (has-underscore? (syntax x)))
-                  (cons (syntax x) names)]
-                 [else names]))])
-        (filter-duplicates dups)))
+      (let* ([dups
+              (let loop ([stx orig-stx]
+                         [names null]
+                         [depth 0])
+                (syntax-case stx (name in-hole* in-hole side-condition)
+                  [(name sym pat)
+                   (identifier? (syntax sym))
+                   (loop (syntax pat) 
+                         (cons (make-id/depth (syntax sym) depth) names)
+                         depth)]
+                  [(in-hole* sym pat1 pat2)
+                   (identifier? (syntax sym))
+                   (loop (syntax pat1)
+                         (loop (syntax pat2)
+                               (cons (make-id/depth (syntax sym) depth) names))
+                         depth)]
+                  [(in-hole pat1 pat2)
+                   (loop (syntax pat1)
+                         (loop (syntax pat2)
+                               (cons (make-id/depth (datum->syntax-object stx 'hole) depth)
+                                     names)
+                               depth)
+                         depth)]
+                  [(side-condition pat e)
+                   (loop (syntax pat) names depth)]
+                  [(pat ...)
+                   (let i-loop ([pats (syntax->list (syntax (pat ...)))]
+                                [names names])
+                     (cond
+                       [(null? pats) names]
+                       [else 
+                        (if (or (null? (cdr pats))
+                                (not (identifier? (cadr pats)))
+                                (not (module-identifier=? (quote-syntax ...)
+                                                          (cadr pats))))
+                            (i-loop (cdr pats)
+                                    (loop (car pats) names depth))
+                            (i-loop (cdr pats)
+                                    (loop (car pats) names (+ depth 1))))]))]
+                  [x
+                   (and (identifier? (syntax x))
+                        (has-underscore? (syntax x)))
+                   (cons (make-id/depth (syntax x) depth) names)]
+                  [else names]))]
+             [no-dups (filter-duplicates dups)])
+        (values (map id/depth-id no-dups)
+                (map build-dots no-dups))))
     
+    ;; build-dots : id/depth -> syntax[x | (x ...) | ((x ...) ...) | ...]
+    (define (build-dots id/depth)
+      (let loop ([depth (id/depth-depth id/depth)])
+        (cond
+          [(zero? depth) (id/depth-id id/depth)]
+          [else (with-syntax ([rest (loop (- depth 1))]
+                              [dots (quote-syntax ...)])
+                  (syntax (rest dots)))])))
+
     (define (has-underscore? x)
       (memq #\_ (string->list (symbol->string (syntax-e x)))))
     
@@ -182,7 +220,17 @@
           [else 
            (cons
             (car dups)
-            (filter (lambda (x) (not (module-identifier=? x (car dups))))
+            (filter (lambda (x) 
+                      (let ([same-id? (module-identifier=? (id/depth-id x)
+                                                           (id/depth-id (car dups)))])
+                        (when same-id?
+                          (unless (equal? (id/depth-depth x)
+                                          (id/depth-depth (car dups)))
+                            (error 'reduction "found the same binder, ~s, at different depths, ~a and ~a"
+                                   (syntax-object->datum (id/depth-id x))
+                                   (id/depth-depth x)
+                                   (id/depth-depth (car dups)))))
+                        (not same-id?)))
                     (loop (cdr dups))))]))))
   
   (define (language->predicate lang id)

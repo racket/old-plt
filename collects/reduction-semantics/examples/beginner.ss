@@ -10,9 +10,9 @@ reflects the (broken) spec).
 |#
 
 (module beginner mzscheme
-  (require (lib "reduction-semantics.ss" "reduction-semantics")
-	   (lib "gui.ss" "reduction-semantics")
-           (lib "subst.ss" "reduction-semantics")
+  (require "../reduction-semantics.ss"
+	   "../gui.ss"
+           "../subst.ss"
            (lib "match.ss"))
 
   (provide run-tests)
@@ -87,7 +87,7 @@ reflects the (broken) spec).
      (boolean true
               false)
      
-     (maker (side-condition (name v variable) (maker? v)))
+     (maker (side-condition variable_1 (maker? (term variable_1))))
      
      (x (side-condition
          (name 
@@ -104,7 +104,7 @@ reflects the (broken) spec).
                            true
                            false
                            quote))
-         (not (prim-op? x))))))
+         (not (prim-op? (term x)))))))
   
   (define beg-e-subst 
     (subst
@@ -141,91 +141,90 @@ reflects the (broken) spec).
      
      ((and true ... false e ...) . --> . 'false)
      ((and true ...) . --> . 'true)
-     ((side-condition (and true ... (name v v) e ...)
-                      (and (not (eq? v 'true))
-                           (not (eq? v 'false))))
+     ((side-condition (and true ... v_1 e ...)
+                      (and (not (eq? (term v_1) 'true))
+                           (not (eq? (term v_1) 'false))))
       . e--> .
       "and: question result is not true or false")
-     
      ((or false ... true e ...) . --> . 'true)
      ((or false ...) . --> . 'false)
-     ((side-condition (or false ... (name v v) e ...)
-                      (and (not (eq? v 'true))
-                           (not (eq? v 'false))))
+     ((side-condition (or false ... v_1 e ...)
+                      (and (not (eq? (term v_1) 'true))
+                           (not (eq? (term v_1) 'false))))
       . e--> .
       "or: question result is not true or false")
      
-     ((if true (name e1 e) (name e2 e)) . --> . e1)
-     ((if false (name e1 e) (name e2 e)) . --> . e2)
-     ((side-condition (if (name v v) e e)
-                      (and (not (eq? v 'false))
-                           (not (eq? v 'true))))
+     ((if true e_1 e_2) . --> . (term e_1))
+     ((if false e_1 e_2) . --> . (term e_2))
+     ((side-condition (if v_1 e e)
+                      (and (not (eq? (term v_1) 'false))
+                           (not (eq? (term v_1) 'true))))
       . e--> .
       "if: question result is not true or false")
      
      
-     ((cond (false e) ... (true (name e e)) (e e) ...) . --> . e)
-     ((cond (false e) ... (true (name e e)) (e e) ... (else e)) . --> . e)
-     ((cond (false e) ... (else (name e e))) . --> . e)
+     ((cond (false e) ... (true e_1) (e e) ...) . --> . (term e_1))
+     ((cond (false e) ... (true e_1) (e e) ... (else e)) . --> . (term e_1))
+     ((cond (false e) ... (else e_1)) . --> . (term e_1))
      ((cond (false e) ...) . e--> . "cond: all question results were false")
      
      ((side-condition
-       (cond (false e) ... ((name v v) e) (e e) ...)
-       (and (not (eq? v 'false))
-            (not (eq? v 'true))
-            (not (eq? v 'else))))
+       (cond (false e) ... (v_1 e) (e e) ...)
+       (and (not (eq? (term v_1) 'false))
+            (not (eq? (term v_1) 'true))
+            (not (eq? (term v_1) 'else))))
       . e--> .
       "cond: question result is not true or false")
      
      ((side-condition
-       (cond (false e) ... ((name v v) e) (e e) ... (else e))
-       (and (not (eq? v 'false))
-            (not (eq? v 'true))
-            (not (eq? v 'else))))
+       (cond (false e) ... (v_1 e) (e e) ... (else e))
+       (and (not (eq? (term v_1) 'false))
+            (not (eq? (term v_1) 'true))
+            (not (eq? (term v_1) 'else))))
       . e--> .
       "cond: question result is not true or false")
      
 
      ((empty? empty) . --> . 'true)
-     ((side-condition (empty? (name v v))
-                      (not (eq? v 'empty)))
+     ((side-condition (empty? v_1)
+                      (not (eq? (term v_1) 'empty)))
       . --> . 
       'false)
      ((empty?) . e--> . "empty?: expects one argument")
      ((empty? v v v ...) . e--> . "empty?: expects one argument")
  
-     ((side-condition (cons v (name v v))
-                      (and (not (eq? v 'empty))
-                           (not (and (pair? v)
-                                     (eq? (car v) 'cons)))))
+     ((side-condition (cons v v_1)
+                      (and (not (eq? (term v_1) 'empty))
+                           (not (and (pair? (term v_1))
+                                     (eq? (car (term v_1)) 'cons)))))
       . e--> .
       "cons: second argument must be of type <list>")
      
-     ((first (cons (name v v) list-value)) . --> . v)
+     ((first (cons v_1 list-value)) . --> . (term v_1))
      ((first) . e--> . "first: expects one argument")
      ((first v v v ...) . e--> . "first: expects one argument")
-     ((side-condition (first (name v v))
-                      (not (and (pair? v) 
-                                (eq? (car v) 'cons))))
+     ((side-condition (first v_1)
+                      (not (and (pair? (term v_1)) 
+                                (eq? (car (term v_1)) 'cons))))
       . e--> .
       "first: expects argument of type <pair>")
      
-     ((rest (cons v (name list-value list-value))) . --> . list-value)
+     ((rest (cons v list-value_1)) . --> . (term list-value_1))
      ((rest v v v ...) . e--> . "rest: expects one argument")
      ((rest) . e--> . "rest: expects one argument")
      
-     ((side-condition (rest (name v v))
-                      (not (and (pair? v) 
-                                (eq? (car v) 'cons))))
+     ((side-condition (rest v_1)
+                      (not (and (pair? (term v_1)) 
+                                (eq? (car (term v_1)) 'cons))))
       . e--> .
       "rest: expects argument of type <pair>")
      
-     ((symbol=? '(name x x) '(name y x)) . --> . (if (eq? x y) 'true 'false))
-     ((side-condition (symbol=? (name v1 v) (name v2 v))
-                      (or (not (and (pair? v1)
-                                    (eq? (car v1) 'quote)))
-                          (not (and (pair? v2)
-                                    (eq? (car v2) 'quote)))))
+     ((symbol=? 'x_1 'x_2) . --> . (if (eq? (term x_1) (term x_2)) 'true 'false))
+     ((side-condition (symbol=? v_1 v_2)
+                      (or (not (and (pair? (term v_1))
+                                    (eq? (car (term v_1)) 'quote)))
+                          (not (and (pair? (term v_2))
+                                    (eq? (car (term v_2)) 'quote)))))
       . e--> .
       "symbol=?: expects argument of type <symbol>")
      ((symbol=?)
@@ -235,22 +234,22 @@ reflects the (broken) spec).
       . e--> .
       "procedure symbol=?: expects 2 arguments")
      
-     ((+ (name n number) ...) . --> . (apply + n))
-     ((side-condition (+ (name arg v) ...)
-                      (ormap (lambda (arg) (not (number? arg))) arg))
+     ((+ number_1 ...) . --> . (apply + (term (number_1 ...))))
+     ((side-condition (+ v_arg ...)
+                      (ormap (lambda (arg) (not (number? arg))) (term (v_arg ...))))
       . e--> .
       "+: expects type <number>")
      
-     ((side-condition (/ (name n number) (name ns number) ...)
-                      (andmap (lambda (ns) (not (zero? ns))) ns))
+     ((side-condition (/ number_1 number_2s ...)
+                      (andmap (lambda (number_2) (not (zero? number_2))) (term (number_2s ...))))
       . --> .
-      (apply / (cons n ns)))
-     ((side-condition (/ (name n number) (name ns number) ...)
-                      (ormap (lambda (ns) (zero? ns)) ns))
+      (apply / (term (number_1 number_2s ...))))
+     ((side-condition (/ number_1 number_2s ...)
+                      (ormap (lambda (number_2) (zero? number_2)) (term (number_2s ...))))
       . e--> . 
       "/: division by zero")
-     ((side-condition (/ (name arg v) ...)
-                      (ormap (lambda (arg) (not (number? arg))) arg))
+     ((side-condition (/ v_arg ...)
+                      (ormap (lambda (arg) (not (number? arg))) (term (v_arg ...))))
       . e--> .
       "/: expects type <number>")
      
@@ -259,53 +258,62 @@ reflects the (broken) spec).
       lang
       (side-condition
        ((name before d/e-v) ...
-        (in-hole d/e-ctxt ((name f x) v ...))
+        (in-hole d/e-ctxt (x_f v ...))
         d/e ...)
-       (and (not (prim-op? f))
-            (not (defined? f before))))
-      (format "reference to undefined identifier: ~a" f))
+       (and (not (prim-op? (term x_f)))
+            (not (defined? (term x_f) (term (before ...))))))
+      (format "reference to undefined identifier: ~a" (term x_f)))
      
      ;; procedure application as lambda
      (reduction
       lang
       ((name before d/e-v) ...
-       (define (name f x) (lambda ((name var x) ...) (name body e)))
+       (name defn (define x_f (lambda (x_var ...) e_body)))
        (name middle d/e-v) ...
-       (in-hole (name ctxt d/e-ctxt) ((name f x) (name arg v) ...))
+       (in-hole d/e-ctxt_1 (x_f v_arg ...))
        (name after d/e) ...)
-      `(,@before
-        (define ,f (lambda (,@var) ,body))
-        ,@middle
-        ,(replace ctxt hole (multi-subst var arg body))
-        ,@after))
+      (term 
+       (before ...
+        defn
+        middle ...
+        ,(replace (term d/e-ctxt_1) 
+                  (term hole)
+                  (multi-subst (term (x_var ...)) (term (v_arg ...)) (term e_body)))
+        after ...)))
      
      ;; define-style procedure application
      (reduction
       lang
       ((name before d/e-v) ...
-       (define ((name f x) (name var x) ...) (name body e))
+       (name defn (define (x_f x_var ...) e_body))
        (name middle d/e-v) ...
        (in-hole (name ctxt d/e-ctxt) ((name f x) (name arg v) ...))
        (name after d/e) ...)
-      `(,@before
-        (define (,f ,@var) ,body)
-        ,@middle
-        ,(replace ctxt hole (multi-subst var arg body))
-        ,@after))
+      (term
+       (before ...
+        defn
+        middle ...
+        ,(replace (term ctxt) 
+                  (term hole)
+                  (multi-subst (term (x_var ...))
+                               (term (arg ...))
+                               (term e_body)))
+        after ...)))
      
      ;; reference to non-procedure define:
      (reduction
       lang
       ((name before d/e-v) ...
-       (define (name a x) (name val v))
+       (name defn (define (name a x) (name val v)))
        (name middle d/e-v) ...
        (in-hole (name ctxt d/e-ctxt) (name a x))
        (name after d/e) ...)
-      `(,@before
-        (define ,a ,val)
-        ,@middle
-        ,(replace ctxt hole val)
-        ,@after))
+      (term 
+       (before ...
+        defn
+        middle ...
+        ,(replace (term ctxt) (term hole) (term val))
+        after ...)))
      
      ;; unbound reference to top-level id in hole:
      (reduction
@@ -314,31 +322,30 @@ reflects the (broken) spec).
        ((name before d/e-v) ...
         (in-hole d/e-ctxt (name a x))
         d/e ...)
-       (and (not (prim-op? a))
-            (not (defined? a before))))
-      (format "reference to undefined identifier: ~a" a))
+       (and (not (prim-op? (term a)))
+            (not (defined? (term a) (term (before ...))))))
+      (format "reference to undefined identifier: ~a" (term a)))
      
      ;; reference to procedure-bound var in hole:
      (reduction
       lang
-      ((name before d/e-v) ...
+      (d/e-v ...
        (define ((name f x) (name var x) ...) (name body e))
-       (name middle d/e-v) ...
+       d/e-v ...
        (in-hole d/e-ctxt (name f x))
-       (name after d/e) ...)
-      (format "~a is a procedure, so it must be applied to arguments" f))
+       d/e ...)
+      (format "~a is a procedure, so it must be applied to arguments" (term f)))
      
      ;; reference to non-procedure-bound-var in application
      (reduction
       lang
-      ((name before d/e-v) ...
+      (d/e-v ...
        (define (name a x) (name val v))
-       (name middle d/e-v) ...
+       d/e-v ...
        (in-hole d/e-ctxt ((name a x) v ...))
-       (name after d/e) ...)
-      (format "procedure application: expected procedure, given: ~a" val))
+       d/e ...)
+      (format "procedure application: expected procedure, given: ~a" (term val)))
      
-    
      ((struct? ((name maker maker) v ...)) . --> . 'true)
      ((struct? non-struct-value) . --> . 'false)
      
@@ -351,15 +358,14 @@ reflects the (broken) spec).
         (name middle d/e-v) ...
         (in-hole (name ctxt d/e-ctxt) ((name predicate x) ((name maker maker) v ...)))
         (name after d/e) ...)
-       (and (maker-name-match? struct maker)
-            (predicate-name-match? struct predicate)))
-      `(,@before
-        (define-struct ,struct (,@field))
-        ,@middle
-        ,(replace ctxt hole 'true)
-        ,@after))
-     
-     
+       (and (maker-name-match? (term struct) (term maker))
+            (predicate-name-match? (term struct) (term predicate))))
+      (term
+       (before ...
+        (define-struct struct (field ...))
+        middle ...
+        ,(replace (term ctxt) (term hole) 'true)
+        after ...)))
      
      ;; struct predicate fail to another struct
      (reduction
@@ -370,13 +376,14 @@ reflects the (broken) spec).
         (name middle d/e-v) ...
         (in-hole (name ctxt d/e-ctxt) ((name predicate x) ((name maker maker) v ...)))
         (name after d/e) ...)
-       (and (not (maker-name-match? struct maker))
-            (predicate-name-match? struct predicate)))
-      `(,@before
-        (define-struct ,struct (,@field))
-        ,@middle
-        ,(replace ctxt hole 'false)
-        ,@after))
+       (and (not (maker-name-match? (term struct) (term maker)))
+            (predicate-name-match? (term struct) (term predicate))))
+      (term 
+       (before ...
+        (define-struct struct (field ...))
+        middle ...
+        ,(replace (term ctxt) (term hole) 'false)
+        after ...)))
      
      ;; struct predicate fail to another value
      (reduction
@@ -387,12 +394,13 @@ reflects the (broken) spec).
         (name middle d/e-v) ...
         (in-hole (name ctxt d/e-ctxt) ((name predicate x) non-struct-value))
         (name after d/e) ...)
-       (predicate-name-match? struct predicate))
-      `(,@before
-        (define-struct ,struct (,@field))
-        ,@middle
-        ,(replace ctxt hole 'false)
-        ,@after))
+       (predicate-name-match? (term struct) (term predicate)))
+      (term 
+       (before ...
+        (define-struct struct (field ...))
+        middle ...
+        ,(replace (term ctxt) (term hole) 'false)
+        after ...)))
      
      ;; misapplied selector 1
      (reduction
@@ -404,9 +412,9 @@ reflects the (broken) spec).
         d/e-v ...
         (in-hole d/e-ctxt ((name selector x) ((name maker maker) (name arg v) ...)))
         d/e ...)
-       (and (not (maker-name-match? struct maker))
-            (selector-name-match? struct field selector)))
-      (format "~a: expects argument of matching struct" selector))
+       (and (not (maker-name-match? (term struct) (term maker)))
+            (selector-name-match? (term struct) (term (field ...)) (term selector))))
+      (format "~a: expects argument of matching struct" (term selector)))
      
      ;; misapplied selector 2
      (reduction
@@ -418,8 +426,8 @@ reflects the (broken) spec).
         d/e-v ...
         (in-hole d/e-ctxt ((name selector x) non-struct-value))
         d/e ...)
-       (selector-name-match? struct field selector))
-      (format "~a: expects argument of matching struct" selector))
+       (selector-name-match? (term struct) (term (field ...)) (term selector)))
+      (format "~a: expects argument of matching struct" (term selector)))
      
      ;; well-applied selector
      (reduction
@@ -430,13 +438,19 @@ reflects the (broken) spec).
         (name middle d/e-v) ...
         (in-hole (name ctxt d/e-ctxt) ((name selector x) ((name maker maker) (name arg v) ...)))
         (name after d/e) ...)
-       (and (maker-name-match? struct maker)
-            (selector-name-match? struct field selector)))
-      `(,@before
-        (define-struct ,struct (,@field))
-        ,@middle
-        ,(replace ctxt hole (list-ref arg (struct-index struct field selector)))
-        ,@after))))
+       (and (maker-name-match? (term struct) (term maker))
+            (selector-name-match? (term struct) (term (field ...)) (term selector))))
+      (term 
+       (before ...
+        (define-struct struct (field ...))
+        middle ...
+        ,(replace (term ctxt) 
+                  (term hole) 
+                  (list-ref (term (arg ...)) 
+                            (struct-index (term struct) 
+                                          (term (field ...))
+                                          (term selector))))
+        after ...)))))
 
   (define (defined? f befores)
     (ormap

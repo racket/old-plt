@@ -307,7 +307,7 @@ abstract out the `hole and `(hole name) patterns.
                                (hash-table-map ht make-rib))))))
   
   
-  (define underscore-allowed '(any number string))
+  (define underscore-allowed '(any number string variable))
 
   (define (compile-pattern clang pattern) (compile-pattern/cross? clang pattern #t))
   

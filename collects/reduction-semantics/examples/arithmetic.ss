@@ -21,30 +21,25 @@
   (define reductions
     (list
      (reduction lang
-                (in-hole (name c e-ctxt) 
-                         (+ (name n1 number)
-                            (name n2 number)))
-                (replace c hole (+ n1 n2)))
+                (in-hole e-ctxt_1
+                         (+ number_1 number_2))
+                (replace (term e-ctxt_1) (term hole) (+ (term number_1) (term number_2))))
      (reduction/context lang
                         e-ctxt
-                        (- (name n1 number)
-                           (name n2 number))
-                        (- n1 n2))
+                        (- number_1 number_2)
+                        (- (term number_1) (term number_2)))
      (reduction/context lang
                         e-ctxt
-                        (* (name n1 number)
-                           (name n2 number))
-                        (* n1 n2))
+                        (* number_1 number_2)
+                        (* (term number_1) (term number_2)))
      (reduction/context lang
                         e-ctxt
-                        (/ (name n1 number)
-                           (name n2 number))
-                        (/ n1 n2))
+                        (/ number_1 number_2)
+                        (/ (term number_1) (term number_2)))
      (reduction/context lang
                         e-ctxt
-                        (sqrt (name n number))
-                        (sqrt n))))
+                        (sqrt number_1)
+                        (sqrt (term number_1)))))
      
-  
   (gui lang reductions '(- (* (sqrt 36) (/ 1 2)) (+ 1 2))))
 

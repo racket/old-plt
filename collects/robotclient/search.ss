@@ -167,10 +167,37 @@
                          ((w) (< (package-x pack) x))))
                      (packages-held)))))
   
+  (define (home-in-direction? x y dir)
+    (and (not (null? (home-list)))
+         (ormap (lambda (x) x)
+                (map (lambda (home)
+                       (case dir
+                         ((n) (> (cdr home) y))
+                         ((s) (< (cdr home) y))
+                         ((e) (> (car home) x))
+                         ((w) (< (car home) x))))
+                     (home-list)))))
+
+  (define (home-dir? x y dir)
+    (and (not (null? (home-list)))
+         (let ((home (nearest-home x y)))
+           (case dir
+             ((n) (> (cdr home) y))
+             ((s) (< (cdr home) y))
+             ((e) (> (car home) x))
+             ((w) (< (car home) x))))))
+  
+  (define (nearest-home x y)
+    (car (car (quicksort (map (lambda (home)
+                                (cons (dist x y home) home))
+                              (home-list))
+                         (lambda (l r) (< (car l) (car r)))))))
+  
   (define (direction-weight dir weight x y)
-    (if (destination-in-direction? x y dir)
-        (+ weight (destination-in-direction-value))
-        weight))
+    (cond
+      ((destination-in-direction? x y dir) (+ weight (destination-in-direction-value)))
+      ((home-dir? x y dir) (+ weight (home-in-direction-value)))
+      (else weight)))
   
   (define (compute-move packages robots)
     (queue-head null)

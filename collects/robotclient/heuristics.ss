@@ -39,6 +39,7 @@
   (provide (all-defined))
   (define step-weight (make-parameter -.5))
   (define destination-in-direction-value (make-parameter 250))
+  (define home-in-direction-value (make-parameter 150))
   (define wall-threat-value (make-parameter -10))
   (define water-threat-value (make-parameter -100))
   (define blank-threat-value (make-parameter -1))

@@ -3327,6 +3327,8 @@ static status_t mz_thread_status;
 static sem_id got_started;
 #endif
 
+static int used_tested_io; /* triggers agressive exit strategy */
+
 static int tested_file_char_ready(Scheme_Input_Port *p)
 {
   Tested_Input_File *tip;
@@ -3339,6 +3341,7 @@ static int tested_file_char_ready(Scheme_Input_Port *p)
   if (!tip->trying) {
     tip->trying = TIF_BUFFER;
     RELEASE_SEMAPHORE(tip->try_sema);
+    used_tested_io = 1;
   }
 
   return 0;
@@ -3901,6 +3904,7 @@ tested_file_write_string(char *str, long dd, long llen, Scheme_Output_Port *port
 
       top->working = 1;
       RELEASE_SEMAPHORE(top->sema);
+      used_tested_io = 1;
     }
 
     /* Need to block; remember that we're holding a lock. */
@@ -4074,7 +4078,8 @@ static void flush_each_output_file(Scheme_Object *o, Scheme_Close_Custodian_Clie
 
 void force_exit(void)
 {
-  _exit(scheme_exiting_result);
+  if (used_tested_io)
+    _exit(scheme_exiting_result);
 }
 
 #endif

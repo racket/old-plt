@@ -685,7 +685,7 @@ static int run_from_cmd_line(int argc, char *_argv[],
 
 #ifndef DONT_PARSE_COMMAND_LINE
  show_help:
-  PRINTF("%s"
+  prog =("%s"
 # ifndef MZSCHEME_CMD_LINE
 #  ifdef wx_x
 	 " X switches (must precede all other flags):\n"
@@ -776,8 +776,9 @@ static int run_from_cmd_line(int argc, char *_argv[],
 	 " the startup file name is added to the end of this command line.\n"
 # endif
 	 "For general information about " PROGRAM ", see:\n"
-	 "  http://www.cs.rice.edu/CS/PLT/packages/" PROGRAM_LC "/\n"
-         , BANNER);
+	 "  http://www.plt-scheme.org/software/" PROGRAM_LC "/\n"
+	 );
+  PRINTF(prog, BANNER);
   return 0;
  bad_switch:
   PRINTF("%s: Bad switch %s.\n", prog, real_switch);

@@ -30,7 +30,6 @@
 				 "expected a subclass of wx:media-canvas%, got: ~a"
 				 x)))))  
 
-  ;; change me to drscheme:unit:frame%
   (define current-frame%
     (make-parameter 
      drscheme:unit:frame%

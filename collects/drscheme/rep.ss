@@ -196,6 +196,7 @@
 	  [on-set-media void]
 	  [get-prompt (lambda () "> ")]
 	  [param #f]
+	  [vocab #f]
 	  [user-custodian (make-custodian)]
 	  
 	  [userspace-eval
@@ -272,6 +273,7 @@
 				     zodiac:scheme-expand/nal
 				     zodiac:scheme-expand
 				     (expression: zodiac-read)
+				     (vocabulary: vocab)
 				     (parameterization: 
 				      ;(make-parameterization system-parameterization)
 				      param
@@ -527,6 +529,9 @@
 	       (collect-garbage)
 	       (lock #f) ;; locked if the thread was killed
 	       (init-evaluation-thread)
+	       (set! vocab (zodiac:create-vocabulary
+			    'scheme-w/user-defined-macros/drscheme
+			    zodiac:scheme-vocabulary))
 	       (let ([p (build-parameterization user-custodian this)])
 		 (with-parameterization p
 		   (lambda ()

@@ -249,7 +249,7 @@
 	(set! initialized? #t)
 	(set! new-messages? #f)
 	(set! current-next-uid next-uid)
-	(show-new-mail-msg))
+	(hide-new-mail-msg))
 
       ;; Syncs `mailbox' with the server
       (define (update-local)

@@ -4,8 +4,7 @@
 
 (load-relative "basic.ss")
 (load-relative "read.ss")
-'(unless (defined? 'building-flat-tests)
-  (load-relative "macro.ss"))
+(load-relative "macro.ss")
 (load-relative "syntax.ss")
 (load-relative "number.ss")
 (load-relative "object.ss")

@@ -148,6 +148,17 @@
       [(expr exn?)
        (thunk-error-test (lambda () (eval expr)) expr exn?)])))
 
+(define-syntax err/rt-test
+  (lambda (stx)
+    (syntax-case stx ()
+      [(_ e exn?)
+       (syntax
+	(thunk-error-test (lambda () e) (quote-syntax e) exn?))]
+      [(_ e)
+       (syntax
+	(err/rt-test e exn:application:type?))])))
+  
+
 (define (syntax-test expr)
   (error-test expr exn:syntax?)
   (error-test (datum->syntax `(if #f ,expr) expr expr) exn:syntax?))

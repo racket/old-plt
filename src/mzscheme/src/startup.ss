@@ -510,6 +510,8 @@
 			   fields))))))])
 	  (or (pair? body)
 	      (syntax-error "empty declaration"))
+	  (or (stx-list? body)
+	      (syntax-error "illegal use of `.'"))
 	  (or (= 2 (length body))
 	      (syntax-error "wrong number of parts"))
 	  (or (identifier? (car body))

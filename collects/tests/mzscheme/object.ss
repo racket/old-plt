@@ -4,6 +4,8 @@
 (if (not (defined? 'SECTION))
     (load-relative "testing.ss"))
 
+(import (lib "class.ss"))
+
 (SECTION 'OBJECT)
 
 (define (test-class* cl* renames)

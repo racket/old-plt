@@ -43,12 +43,12 @@
 	    (test #f member (car l) (cdr l))
 	    (loop (cdr l)))))))
 
-(error-test '(will-register we we we))
-(error-test '(will-register we we (lambda () 10)))
-(error-test '(will-register 5 we (lambda (s) 10)))
+(err/rt-test (will-register we we we))
+(err/rt-test (will-register we we (lambda () 10)))
+(err/rt-test (will-register 5 we (lambda (s) 10)))
 
-(error-test '(will-execute "bad"))
-(error-test '(will-try-execute "bad"))
+(err/rt-test (will-execute "bad"))
+(err/rt-test (will-try-execute "bad"))
 
 (arity-test make-will-executor 0 0)
 (arity-test will-executor? 1 1)

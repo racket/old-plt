@@ -4,6 +4,7 @@
 
 (import (lib "unit.ss"))
 (import (lib "unitsig.ss"))
+(import (lib "include.ss"))
 
 (SECTION 'unit/sig)
 
@@ -132,7 +133,7 @@
 	(export))))
 
 (define-signature not-defined^ (not-defined))
-(error-test #'(invoke-unit/sig (unit/sig () (import not-defined^) 10) not-defined^) exn:unit?)
+(error-test #'(invoke-unit/sig (unit/sig () (import not-defined^) 10) not-defined^) exn:variable?)
 
 (test #t unit/sig? (unit/sig a (import)))
 (test #t unit/sig? (unit/sig b (import) (define x 1) (define y 2)))
@@ -265,7 +266,7 @@
    (import)
 
    (define x 5)
-   (define-struct a (b c))
+   (define-struct (a (current-inspector)) (b c))
    (define v (make-a 5 6))
    (define (y v) (a? v))))
 
@@ -465,32 +466,32 @@
 ; Exporting a name twice:
 
 (syntax-test
- '(compound-unit/sig
-   (import)
-   (link [A : (a) ((unit/sig (a) (import) (define a 1)))])
-   (export (var (A a)) (open A))))
+ #'(compound-unit/sig
+    (import)
+    (link [A : (a) ((unit/sig (a) (import) (define a 1)))])
+    (export (var (A a)) (open A))))
 
 (syntax-test
- '(compound-unit/sig
-   (import)
-   (link [A : (a) ((unit/sig (a) (import) (define a 1)))]
-	 [B : (b) ((unit/sig (b) (import) (define b 2)))])
-   (export (unit A x) (unit B x))))
+ #'(compound-unit/sig
+    (import)
+    (link [A : (a) ((unit/sig (a) (import) (define a 1)))]
+	  [B : (b) ((unit/sig (b) (import) (define b 2)))])
+    (export (unit A x) (unit B x))))
 
 (syntax-test
- '(compound-unit/sig
-   (import)
-   (link [A : (a) ((unit/sig (a) (import) (define a 1)))]
-	 [B : (b) ((unit/sig (b) (import) (define b 2)))])
-   (export (unit A) (unit B A))))
+ #'(compound-unit/sig
+    (import)
+    (link [A : (a) ((unit/sig (a) (import) (define a 1)))]
+	  [B : (b) ((unit/sig (b) (import) (define b 2)))])
+    (export (unit A) (unit B A))))
 
-; Can't shadow syntax/macros in unit
-(syntax-test '(unit/sig ()
-	       (import) 
-	       (define define 10)))
-(syntax-test '(unit/sig ()
-	       (import) 
-	       (define lambda 11)))
+; Can shadow syntax/macros in unit
+(test #t unit/sig? (unit/sig ()
+		     (import) 
+		     (define define 10)))
+(test #t unit/sig? (unit/sig ()
+		     (import) 
+		     (define lambda 11)))
 
 ; Shadowing ok if it's in the export list:
 (test #t unit/sig? (unit/sig (define-values)
@@ -515,9 +516,9 @@
 
 ; Not ok if defining an imported name, but error should be about
 ; redefining an imported name. (This behavior is not actually tested.)
-(syntax-test '(unit/sig ()
-	       (import (define-values))
-	       (define define-values 17)))
+(syntax-test #'(unit/sig ()
+		 (import (define-values))
+		 (define define-values 17)))
 
 (test #t unit/sig? (unit/sig ()
 		     (import (define-values))

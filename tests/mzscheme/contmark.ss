@@ -3,6 +3,8 @@
 (if (not (defined? 'SECTION))
     (load-relative "testing.ss"))
 
+(import (lib "unit.ss"))
+
 (SECTION 'continuation-marks)
 
 (define (extract-current-continuation-marks key)
@@ -206,7 +208,7 @@
 (arity-test continuation-mark-set->list 2 2)
 (arity-test continuation-mark-set? 1 1)
 
-(error-test '(continuation-mark-set->list 5 1))
+(err/rt-test (continuation-mark-set->list 5 1))
 
 (test #f continuation-mark-set? 5)
 (test #t continuation-mark-set? (current-continuation-marks))

@@ -11,8 +11,8 @@
 (test #t thread? t)
 
 (arity-test thread 1 1)
-(error-test '(thread 5) type?)
-(error-test '(thread (lambda (x) 8)) type?)
+(err/rt-test (thread 5) type?)
+(err/rt-test (thread (lambda (x) 8)) type?)
 (arity-test thread? 1 1)
 
 ; Should be able to make an arbitrarily deep chain of custodians
@@ -77,8 +77,8 @@
 	 (set! kept-going? #t))))))
   (test #f 'kept-going-after-shutdown? kept-going?))
 
-(error-test `(parameterize ([current-custodian cm]) (kill-thread (current-thread)))
-	    exn:misc?)
+(err/rt-test (parameterize ([current-custodian cm]) (kill-thread (current-thread)))
+	     exn:misc?)
 
 (test #t custodian? cm)
 (test #f custodian? 1)
@@ -87,29 +87,29 @@
 (arity-test custodian-shutdown-all 1 1)
 
 (arity-test make-custodian 0 1)
-(error-test '(make-custodian 0))
+(err/rt-test (make-custodian 0))
 
 (test (void) kill-thread t)
 (arity-test kill-thread 1 1)
-(error-test '(kill-thread 5) type?)
+(err/rt-test (kill-thread 5) type?)
 
 (test #t thread-running? (current-thread))
 (arity-test thread-running? 1 1)
-(error-test '(thread-running? 5) type?)
+(err/rt-test (thread-running? 5) type?)
 
 (arity-test sleep 0 1)
-(error-test '(sleep 'a) type?)
-(error-test '(sleep 1+3i) type?)
+(err/rt-test (sleep 'a) type?)
+(err/rt-test (sleep 1+3i) type?)
 
 (define s (make-semaphore 1))
 
 (test #t semaphore? s)
 
 (arity-test make-semaphore 0 1)
-(error-test '(make-semaphore "a") type?)
-(error-test '(make-semaphore -1) type?)
-(error-test '(make-semaphore 1.0) type?)
-(error-test '(make-semaphore (expt 2 64)) exn:application:mismatch?)
+(err/rt-test (make-semaphore "a") type?)
+(err/rt-test (make-semaphore -1) type?)
+(err/rt-test (make-semaphore 1.0) type?)
+(err/rt-test (make-semaphore (expt 2 64)) exn:application:mismatch?)
 (arity-test semaphore? 1 1)
 
 (define test-block
@@ -276,9 +276,9 @@
 ;; Nested threads
 (test 5 call-in-nested-thread (lambda () 5))
 
-(error-test '(call-in-nested-thread (lambda () (kill-thread (current-thread)))) exn:thread?)
-(error-test '(call-in-nested-thread (lambda () ((error-escape-handler)))) exn:thread?)
-(error-test '(call-in-nested-thread (lambda () (raise (box 5)))) box?)
+(err/rt-test (call-in-nested-thread (lambda () (kill-thread (current-thread)))) exn:thread?)
+(err/rt-test (call-in-nested-thread (lambda () ((error-escape-handler)))) exn:thread?)
+(err/rt-test (call-in-nested-thread (lambda () (raise (box 5)))) box?)
 
 (define c1 (make-custodian))
 (define c2 (make-custodian))
@@ -365,14 +365,14 @@
 	  (sleep)
 	  'not-void)))
 
-(error-test '(let/cc k (call-in-nested-thread (lambda () (k)))) exn:application:continuation?)
-(error-test '(let/ec k (call-in-nested-thread (lambda () (k)))) exn:application:continuation?)
-(error-test '((call-in-nested-thread (lambda () (let/cc k k)))) exn:application:continuation?)
-(error-test '((call-in-nested-thread (lambda () (let/ec k k)))) exn:application:continuation?)
+(err/rt-test (let/cc k (call-in-nested-thread (lambda () (k)))) exn:application:continuation?)
+(err/rt-test (let/ec k (call-in-nested-thread (lambda () (k)))) exn:application:continuation?)
+(err/rt-test ((call-in-nested-thread (lambda () (let/cc k k)))) exn:application:continuation?)
+(err/rt-test ((call-in-nested-thread (lambda () (let/ec k k)))) exn:application:continuation?)
 
-(error-test '(call-in-nested-thread 5))
-(error-test '(call-in-nested-thread (lambda (x) 10)))
-(error-test '(call-in-nested-thread (lambda () 10) 5))
+(err/rt-test (call-in-nested-thread 5))
+(err/rt-test (call-in-nested-thread (lambda (x) 10)))
+(err/rt-test (call-in-nested-thread (lambda () 10) 5))
 
 (arity-test call-in-nested-thread 1 2)
 

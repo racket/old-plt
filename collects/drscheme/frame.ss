@@ -73,7 +73,7 @@
 	       mb))])
 
 	(public
-	  [file-menu:new-stringg "Unit"]
+	  [file-menu:new-string "Unit"]
 	  [file-menu:between-save-and-print
 	   (lambda (file-menu)
 	     (send* file-menu 
@@ -86,7 +86,7 @@
 	       f))]
 	  [file-menu:between-new-and-open
 	   (lambda (file-menu)
-	     '(send file-menu append-item "New Compound Unit"
+	     (send file-menu append-item "New Compound Unit"
 		   (lambda ()
 		     (make-object drscheme:compound-unit:frame% #f #f))))]
 	  [file-menu:open (lambda () (mred:open-file) #t)]

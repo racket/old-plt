@@ -413,15 +413,16 @@ is-button? ~a  leaving? ~a  moving?~a~n"
 	       (send mb append add-menu "Add")
 	       (send add-menu append-item "Unit..."
 		     (lambda ()
-		       (let ([name (wx:get-text-from-user "Name of unit" "New Unit")])
-			 (unless (null? name)
+		       (let ([name (mred:get-text-from-user "Name of unit"
+							    "New Unit")])
+			 (when name
 			   (send (get-edit) insert 
 				 (make-object drscheme:unit:snip% name #f))))))
 	       (send add-menu append-item "Compound Unit..."
 		     (lambda ()
-		       (let ([name (wx:get-text-from-user "Name of compound unit"
-							  "New Compound Unit")])
-			 (unless (null? name)
+		       (let ([name (mred:get-text-from-user "Name of compound unit"
+							    "New Compound Unit")])
+			 (when name
 			   (send (get-edit) insert 
 				 (make-object snip% name #f))))))
 	       mb))])

@@ -1,6 +1,13 @@
 (letrec* ([old-handler (current-load)]
 	  [offset-string "  "]
-	  [indent-string ""])
+	  [error-offset "## "]
+	  [non-error-offset "   "]
+	  [indent-string ""]
+	  [iprintf
+	   (lambda (fmt . args)
+	     (apply printf
+		    (string-append non-error-offset indent-string fmt)
+		    args))])
   (current-load (lambda (f)
 		  (let* ([file (if (relative-path? f)
 				   (build-path (current-directory) f)
@@ -13,23 +20,16 @@
 					    (and (> len 6)
 						 (string=? (substring x (- len 6) len) "macros")))])
 			      (when ans
-				(printf "~afilname; skip: ~a~n" indent-string x))
+				(iprintf "Skip; filename: ~a~n" x))
 			      ans))]
-			 [explode-path
-			  (lambda (filename)
-			    (let loop ([filename filename])
-			      (let-values ([(base ele _) (split-path filename)])
-				(if (string? base)
-				    (cons ele (loop base))
-				    (list ele)))))]
 			 [mzlib?
-			  (lambda (x)
-			    (let ([explode (explode-path x)])
-			      (and (>= (length explode) 3)
-				   (string=? (cadr explode) "mzlib")
-				   (string=? (caddr explode) "collects")
-				   (printf "~amzlib; skip: ~a~n" indent-string x))))])
-		    (printf "~aLoading ~a...~n" indent-string file)
+			  (let ([mzlib-path (collection-path "mzlib")])
+			    (lambda (input)
+			      (let*-values ([(base1 fn1 dir1) (split-path input)]
+					    [(base2 fn2 dir2) (split-path base1)])
+				(and (string=? "mzlib" fn2)
+				     (iprintf "Skip; mzlib: ~a~n" input)))))])
+		    (iprintf "Loading ~a...~n" file)
 		    (let* ([indent
 			    (lambda ()
 			      (set! indent-string (string-append offset-string indent-string)))]
@@ -56,7 +56,8 @@
 			    (lambda (e) 
 			      (delete-file zo)
 			      ((error-display-handler)
-			       (string-append indent-string
+			       (string-append error-offset
+					      indent-string
 					      (exn-message e)))
 			      #f)])
 		      (when (and (not (link? basename))
@@ -65,12 +66,11 @@
 				     (<= (file-modify-seconds zo)
 					 (file-modify-seconds file)))
 				 (not (mzlib? file)))
-			(printf "~aCompiling ~a...~n" indent-string file)
+			(iprintf "Compiling ~a...~n" file)
 			(indent)
-			(with-handlers ((void error-handler))
-				       (compile-file file zo '(preserve-constructions))
-				       #t)
+			(with-handlers ([(lambda (x) #t) error-handler])
+			  (compile-file file zo '(preserve-constructions)))
 			(outdent)
-			(printf "~aCompiled ~a.~n" indent-string file))
-		      (printf "~aLoaded ~a.~n" indent-string file)
+			(iprintf "Compiled ~a.~n" file))
+		      (iprintf "Loaded ~a.~n" file)
 		      (apply values answer))))))

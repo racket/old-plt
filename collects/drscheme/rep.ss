@@ -143,12 +143,8 @@
 				     (car back-state)
 				     (set! back-state (cdr back-state))
 				     (semaphore-post protect))))])
-			(dynamic-wind
-			 void
-			 (lambda () 
-			   (apply f local-state))
-			 (lambda ()
-			   (loop)))))])
+			(apply f local-state)
+			(loop)))])
             (lambda ()
               (init)
               (loop))))
@@ -167,6 +163,8 @@
            (semaphore-post protect)
            (semaphore-post sema))))]))
   
+  (mred:set-preference-default 'drscheme:repl-active-after-execution #t boolean?)
+
   (define make-edit%
     (lambda (super%)
       (class super% args
@@ -458,62 +456,69 @@
 		     (set! should-collect-garbage? #f)
 		     (collect-garbage))
 		   (reset-break-state)
-		   (let ([evaluation-sucessful (make-semaphore 0)]
-			 [cleanup-semaphore (make-semaphore 1)])
-		     (letrec ([thread-grace 
-			       (thread
-				(lambda ()
-				  (semaphore-wait evaluation-sucessful)
-				  (mred:debug:printf
-				   'console-threading
-				   "thread-grace passed.1")
-				  (when (semaphore-try-wait? cleanup-semaphore)
-				    (mred:debug:printf
-				     'console-threading
-				     "thread-grace passed.2")
-				    (cleanup-evaluation)
-				    (parameterize ([current-custodian drscheme:init:system-custodian])
-				      (kill-thread thread-kill)))
-				  (mred:debug:printf
-				   'console-threading
-				   "thread-grace terminating (thread-kill running? ~s)"
-				   (thread-running? thread-kill))))]
-			      [thread-kill 
-			       (thread 
-				(lambda ()
-				  (thread-wait evaluation-thread)
-				  (mred:debug:printf
-				   'console-threading
-				   "thread-kill passed.1")
-				  (when (semaphore-try-wait? cleanup-semaphore)
-				    (mred:debug:printf
-				     'console-threading
-				     "thread-kill passed.2")
-				    (cleanup-evaluation)
-				    (parameterize ([current-custodian drscheme:init:system-custodian])
-				      (kill-thread thread-grace)))
-				  (mred:debug:printf
-				   'console-threading
-				   "thread-kill terminating (thread-grace running? ~s)"
-				   (thread-running? thread-grace))))])
-		       (void))
+		   (let ([evaluation-sucessful 'not-yet-evaluation-sucessful]
+			 [cleanup-semaphore 'not-yet-cleanup-semaphore]
+			 [thread-grace 'not-yet-thread-grace]
+			 [thread-kill 'not-yet-thread-kill])
 		     (run-in-evaluation-thread
 		      (lambda ()
-			(process-edit/zodiac edit
-					     (lambda (expr recur)
-					       (cond
-						 [(process/zodiac-finish? expr)
-						  (semaphore-post evaluation-sucessful)]
-						 [else
-						  (let-values ([(answers error?) (send-scheme expr)])
-						    (display-results answers)
-						    (if error?
-							(semaphore-post
-							 evaluation-sucessful)
-							(recur)))]))
-					     start
-					     end
-					     #t)))))))])
+			(dynamic-wind
+			 (lambda ()
+			   (set! evaluation-sucessful  (make-semaphore 0))
+			   (set! cleanup-semaphore (make-semaphore 1))
+			   (set! thread-grace
+				 (thread
+				  (lambda ()
+				    (semaphore-wait evaluation-sucessful)
+				    (mred:debug:printf
+				     'console-threading
+				     "thread-grace passed.1")
+				    (when (semaphore-try-wait? cleanup-semaphore)
+				      (mred:debug:printf
+				       'console-threading
+				       "thread-grace passed.2")
+				      (cleanup-evaluation)
+				      (parameterize ([current-custodian drscheme:init:system-custodian])
+					(kill-thread thread-kill)))
+				    (mred:debug:printf
+				     'console-threading
+				     "thread-grace terminating (thread-kill running? ~s)"
+				     (thread-running? thread-kill)))))
+			   (set! thread-kill
+				 (thread 
+				  (lambda ()
+				    (thread-wait evaluation-thread)
+				    (mred:debug:printf
+				     'console-threading
+				     "thread-kill passed.1")
+				    (when (semaphore-try-wait? cleanup-semaphore)
+				      (mred:debug:printf
+				       'console-threading
+				       "thread-kill passed.2")
+				      (cleanup-evaluation)
+				      (parameterize ([current-custodian drscheme:init:system-custodian])
+					(kill-thread thread-grace)))
+				    (mred:debug:printf
+				     'console-threading
+				     "thread-kill terminating (thread-grace running? ~s)"
+				     (thread-running? thread-grace))))))
+			 (lambda ()
+			   (process-edit/zodiac edit
+						(lambda (expr recur)
+						  (cond
+						    [(process/zodiac-finish? expr)
+						     (semaphore-post evaluation-sucessful)]
+						    [else
+						     (let-values ([(answers error?) (send-scheme expr)])
+						       (display-results answers)
+						       (if error?
+							   (semaphore-post
+							    evaluation-sucessful)
+							   (recur)))]))
+						start
+						end
+						#t))
+			 (lambda () (void)))))))))])
 	(public
 	  [reset-break-state (lambda () (set! ask-about-kill? #f))]
 	  [break-semaphore (make-semaphore 1)]
@@ -567,31 +572,32 @@
 	     (error-escape-k (list (void)) #t))]
 	  [send-scheme 
 	   (lambda (expr)
-	     (dynamic-wind
-	      (lambda () (current-directory current-thread-directory))
-	      (lambda ()
-		(let/ec k
+	     (let/ec k
+	       (dynamic-wind
+		(lambda () 
+		  (current-directory current-thread-directory)
 		  (set! error-escape-k k)
+		  (set! exception-handler
+			(lambda (exn)
+			  (with-parameterization drscheme:init:system-parameterization
+			    (lambda ()
+			      (report-exception-error exn this)))
+			  ((error-escape-handler))
+			  (with-parameterization drscheme:init:system-parameterization
+			    (lambda ()
+			      (mred:message-box "error-escape-handler didn't escape"
+						"Error Escape")))
+			  (k (list (void)) #t))))
+		(lambda ()
 		  (call-with-values
 		   (lambda ()
-		     (set! exception-handler
-			   (lambda (exn)
-			     (with-parameterization drscheme:init:system-parameterization
-			       (lambda ()
-				 (report-exception-error exn this)))
-			     ((error-escape-handler))
-			     (with-parameterization drscheme:init:system-parameterization
-			       (lambda ()
-				 (mred:message-box "error-escape-handler didn't escape"
-						   "Error Escape")))
-			     (k (list (void)) #t)))
 		     (with-parameterization user-param
 		       (lambda ()
 			 (drscheme:init:primitive-eval expr))))
 		   (lambda anss
-		     (values anss #f)))))
-	      (lambda () 
-		(set! current-thread-directory (current-directory)))))])
+		     (values anss #f))))
+		(lambda () 
+		  (set! current-thread-directory (current-directory))))))])
 	(public
 	  [evaluation-thread #f]
 	  [run-in-evaluation-thread void]
@@ -744,10 +750,11 @@
 				CLICK-DELTA)))
 	     (set-last-header-position (get-end-position))
 
-	     ; this begin needs to be changed to make
-	     ; the rep functional at frame creation time
-	     (begin (lock #t)
-		    '(reset-console)))])
+	     (if (mred:get-preference 'drscheme:repl-active-after-execution)
+		 (begin 
+		   (insert-delta "Execute has not been clicked." WARNING-STYLE-DELTA)
+		   (lock #t))
+		 (reset-console)))])
 	
 	(sequence
 	  (mred:debug:printf 'super-init "before drscheme:rep:edit")

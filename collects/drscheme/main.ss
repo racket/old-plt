@@ -5,7 +5,7 @@
 	  [drscheme:compound-unit : drscheme:compound-unit^]
 	  [drscheme:parameters : drscheme:parameters^])
   
-  '(mred:add-version-spec 'd 3)
+  (mred:add-version-spec 'd 1)
   
   (print-convert:current-print-convert-hook
    (lambda (expr basic-convert sub-convert)

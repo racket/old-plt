@@ -143,6 +143,7 @@
        z z z (make-empty-box)
        (case text
 	 [(void) (zodiac:make-void z z z text)]
+	 [(null) (zodiac:make-list z z z null null null)]
 	 [(undefined) (zodiac:make-undefined z z z text)]
 	 [else (compiler:internal-error 'make-special-constant "bad type")])))))
  

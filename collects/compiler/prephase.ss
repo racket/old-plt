@@ -340,6 +340,9 @@
 	     [(#%void) (if (null? args)
 			   (prephase-it (zodiac:make-special-constant 'void))
 			   #f)]
+	     [(#%list) (if (null? args)
+			   (prephase-it (zodiac:make-special-constant 'null))
+			   #f)]
 	     [(#%+ #%-) (when (and (= 2 (length args))
 				   (zodiac:quote-form? (cadr args))
 				   (= 1 (zodiac:read-object (zodiac:quote-form-expr (cadr args)))))

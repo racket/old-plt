@@ -41,6 +41,8 @@
       (let* ([argc=? (lambda (x) (= x argc))]
 	     [special-bool (case prim
 			     [(#%eq?) "MZC_EQP"]
+			     [(#%eqv?) "MZC_EQVP"]
+			     [(#%equal?) "MZC_EQUALP"]
 			     [(#%null?) "MZC_NULLP"]
 			     [(#%pair?) "MZC_PAIRP"]
 			     [(#%not) "MZC_NOTP"]
@@ -62,6 +64,11 @@
 	    (prim-k special-bool #t)
 	    (let ([special (case prim
 			     [(#%cons) "MZC_CONS"]
+			     [(#%list) (cond
+					[(argc=? 1) "MZC_LIST1"]
+					[(argc=? 2) "MZC_LIST2"]
+					[else #f])]
+			     [(#%append) (and (argc=? 2) "MZC_APPEND")]
 			     [(#%car) "MZC_CAR"]
 			     [(#%cdr) "MZC_CDR"]
 			     [(#%vector-ref) "MZC_VECTOR_REF"]

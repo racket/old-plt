@@ -120,6 +120,8 @@ static Scheme_Object * c_struct_imp(int multiok, Scheme_Object * super, int n_fi
 }
 
 #define MZC_EQP(ltp, av, bv) (SAME_OBJ(av, bv))
+#define MZC_EQVP(ltp, av, bv) scheme_eqv(av, bv)
+#define MZC_EQUALP(ltp, av, bv) scheme_equal(av, bv)
 #define MZC_NOTP(p, av) (SCHEME_FALSEP(av))
 #define MZC_NULLP(p, av) (SCHEME_NULLP(av))
 #define MZC_PAIRP(p, av) (SCHEME_PAIRP(av))
@@ -132,6 +134,9 @@ static Scheme_Object * c_struct_imp(int multiok, Scheme_Object * super, int n_fi
 #define MZC_CHARP(p, av) (SCHEME_CHARP(av))
 
 #define MZC_CONS(p, av, bv) scheme_make_pair(av, bv)
+#define MZC_LIST1(p, av) scheme_make_pair(av, scheme_null)
+#define MZC_LIST2(p, av, bv) scheme_make_pair(av, scheme_make_pair(bv, scheme_null))
+#define MZC_APPEND(p, av, bv) scheme_append(av, bv)
 
 #define MZC_CAR(p, av) (SCHEME_PAIRP(av) ? SCHEME_CAR(av) : (arg[0] = av, _scheme_direct_apply_primitive(p, 1, arg)))
 #define MZC_CDR(p, av) (SCHEME_PAIRP(av) ? SCHEME_CDR(av) : (arg[0] = av, _scheme_direct_apply_primitive(p, 1, arg)))

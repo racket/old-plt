@@ -1,9 +1,7 @@
 ;; sigs.ss for mysterx collection
 
 (define-signature mysterx:mysterx^
-  (mx-element%
-   mx-event%
-   mx-document%
+  (mx-document%
    com-invoke
    com-set-property!
    com-get-property

@@ -36,6 +36,7 @@ static Scheme_Object *dynamic_require(int argc, Scheme_Object *argv[]);
 static Scheme_Object *dynamic_require_for_syntax(int argc, Scheme_Object *argv[]);
 static Scheme_Object *namespace_require(int argc, Scheme_Object *argv[]);
 static Scheme_Object *namespace_trans_require(int argc, Scheme_Object *argv[]);
+static Scheme_Object *namespace_require_copy(int argc, Scheme_Object *argv[]);
 static Scheme_Object *namespace_attach_module(int argc, Scheme_Object *argv[]);
 static Scheme_Object *module_compiled_p(int argc, Scheme_Object *argv[]);
 static Scheme_Object *module_compiled_name(int argc, Scheme_Object *argv[]);
@@ -130,7 +131,7 @@ static Scheme_Object *parse_requires(Scheme_Object *form,
 				     Scheme_Object *rn,
 				     Check_Func ck, void *data,
 				     int start, Scheme_Object *redef_modname,
-				     int unpack_kern);
+				     int unpack_kern, int copy_vars);
 static void start_module(Scheme_Module *m, Scheme_Env *env, int restart, Scheme_Object *syntax_idx, int delay_exptime);
 static void expstart_module(Scheme_Module *m, Scheme_Env *env, int restart, Scheme_Object *syntax_idx, int delay_exptime);
 static void finish_expstart_module(Scheme_Env *menv, Scheme_Env *env);
@@ -240,7 +241,7 @@ void scheme_init_module(Scheme_Env *env)
 						      2, 2),
 			     env);
   scheme_add_global_constant("namespace-require/copy",
-			     scheme_make_prim_w_arity(namespace_require,
+			     scheme_make_prim_w_arity(namespace_require_copy,
 						      "namespace-require/copy",
 						      1, 1),
 			     env);
@@ -717,9 +718,12 @@ static Scheme_Object *_dynamic_require(int argc, Scheme_Object *argv[],
     }
   }
 
-  if (SCHEME_VOIDP(name))
+  if (SCHEME_VOIDP(name)) {
     expstart_module(m, env, 0, modidx, 0);
-  else
+    menv = scheme_module_access(m->modname, env);
+    if (menv->lazy_syntax)
+      finish_expstart_module(menv, env);
+  } else
     start_module(m, env, 0, modidx, 1);
 
   if (SCHEME_SYMBOLP(name)) {
@@ -743,7 +747,7 @@ static Scheme_Object *dynamic_require_for_syntax(int argc, Scheme_Object *argv[]
   return _dynamic_require(argc, argv, scheme_get_env(scheme_config), 0, 1, 0, 1, -1);
 }
 
-static Scheme_Object *do_namespace_require(int argc, Scheme_Object *argv[], int for_exp)
+static Scheme_Object *do_namespace_require(int argc, Scheme_Object *argv[], int for_exp, int copy)
 {
   Scheme_Object *form, *rn, *brn;
   Scheme_Env *env;
@@ -761,7 +765,7 @@ static Scheme_Object *do_namespace_require(int argc, Scheme_Object *argv[], int 
   rn = scheme_make_module_rename(for_exp, 1);
 
   (void)parse_requires(form, scheme_false, env, rn, 
-		       NULL, NULL, 1, NULL, 1);
+		       NULL, NULL, 1, NULL, 1, copy);
 
   brn = env->rename;
   if (!brn) {
@@ -776,12 +780,17 @@ static Scheme_Object *do_namespace_require(int argc, Scheme_Object *argv[], int 
 
 static Scheme_Object *namespace_require(int argc, Scheme_Object *argv[])
 {
-  return do_namespace_require(argc, argv, 0);
+  return do_namespace_require(argc, argv, 0, 0);
 }
 
 static Scheme_Object *namespace_trans_require(int argc, Scheme_Object *argv[])
 {
-  return do_namespace_require(argc, argv, 1);
+  return do_namespace_require(argc, argv, 1, 0);
+}
+
+static Scheme_Object *namespace_require_copy(int argc, Scheme_Object *argv[])
+{
+  return do_namespace_require(argc, argv, 0, 1);
 }
 
 static void pre_post_force(void *_v)
@@ -1358,13 +1367,16 @@ Scheme_Object *scheme_module_syntax(Scheme_Object *modname, Scheme_Env *env, Sch
 
 void scheme_module_force_lazy(Scheme_Env *env, int previous)
 {
+  Scheme_Object *modchain;
   Scheme_Hash_Table *mht;
   int mi;
 
+  modchain = env->modchain;
+
   if (previous)
-    mht = MODCHAIN_TABLE(SCHEME_VEC_ELS(env->modchain)[2]);
-  else
-    mht = MODCHAIN_TABLE(env->modchain);
+    modchain = SCHEME_VEC_ELS(modchain)[2];
+    
+  mht = MODCHAIN_TABLE(modchain);
   
   for (mi = mht->size; mi--; ) {
     if (mht->vals[mi]) {
@@ -1382,6 +1394,8 @@ static void expstart_module(Scheme_Module *m, Scheme_Env *env, int restart,
 {
   Scheme_Env *menv;
   Scheme_Object *l;
+
+  delay_exptime = 1;
 
   if (SAME_OBJ(m, kernel))
     return;
@@ -1445,7 +1459,7 @@ static void expstart_module(Scheme_Module *m, Scheme_Env *env, int restart,
   }
 
   if (m->prim_et_body || !SCHEME_NULLP(m->et_body) || !SCHEME_NULLP(m->et_requires)) {
-    if (delay_exptime || (1 || m->et_functional)) {  /* <<<<<<<<<<<<<<<  1 || */
+    if (delay_exptime || m->et_functional) {
       /* Set lazy-syntax flag. */
       menv->lazy_syntax = 1;
     } else
@@ -1782,19 +1796,17 @@ module_execute(Scheme_Object *data)
   scheme_hash_set(env->module_registry, m->modname, (Scheme_Object *)m);
 
   /* Compute whether the module is obviously functional (as opposed to imperative): */
-  if (scheme_starting_up) {
+  if (check_functional_imports(m->requires, env, 0)
+      && check_functional_body(m->body, 0))
     m->functional = 1;
+  if (check_functional_imports(m->requires, env, 1)
+      && check_functional_imports(m->et_requires, env, 0)
+      && check_functional_imports(m->et_requires, env, 1)
+      && check_functional_body(m->et_body, 1))
     m->et_functional = 1;
-  } else {
-    if (check_functional_imports(m->requires, env, 0)
-	&& check_functional_body(m->body, 0))
-      m->functional = 1;
-    if (check_functional_imports(m->requires, env, 1)
-	&& check_functional_imports(m->et_requires, env, 0)
-	&& check_functional_imports(m->et_requires, env, 1)
-	&& check_functional_body(m->et_body, 1))
-      m->et_functional = 1;
-  }
+
+  /* printf("%s: %d\n", SCHEME_SYM_VAL(m->modname), m->functional);
+     printf("%s et: %d\n", SCHEME_SYM_VAL(m->modname), m->et_functional); */
 
   /* Replaced an already-running or already-syntaxing module? */
   menv = (Scheme_Env *)scheme_hash_get(MODCHAIN_TABLE(env->modchain), m->modname);
@@ -2559,8 +2571,8 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	  mrec.resolve_module_ids = 0;
 	  mrec.value_name = NULL;
 
+	  scheme_prepare_exp_env(env->genv);
 	  if (!eenv) {
-	    scheme_prepare_exp_env(env->genv);
 	    eenv = scheme_no_defines(env->genv->exp_env->init);
 	  }
 
@@ -2601,7 +2613,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	  /* Add requires to renaming: */
 	  imods = parse_requires(e, self_modidx, env->genv, 
 				 rn, check_require_name, tables, 0,
-				 redef_modname, 0);
+				 redef_modname, 0, 0);
 	
 	  /* Add required modules to requires list: */
 	  for (; !SCHEME_NULLP(imods); imods = SCHEME_CDR(imods)) {
@@ -2632,7 +2644,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	  /* Add requires to renaming: */
 	  imods = parse_requires(e, self_modidx, env->genv->exp_env,
 				 et_rn, check_require_name, et_tables, 1,
-				 redef_modname, 0);
+				 redef_modname, 0, 0);
 
 	  /* Add required modules to et_requires list: */
 	  for (; !SCHEME_NULLP(imods); imods = SCHEME_CDR(imods)) {
@@ -3308,6 +3320,7 @@ void qsort_provides(Scheme_Object **exs, Scheme_Object **exsns, Scheme_Object **
     qsort_provides(exs, exsns, exss, 0, j + 1, 0);
     qsort_provides(exs, exsns, exss, j + 1, count - j - 1, 0);
   } else {
+    j = start;
     while (count > 1) {
       j = start;
       pivot = exs[j];
@@ -3358,7 +3371,7 @@ Scheme_Object *parse_requires(Scheme_Object *form,
 			      Scheme_Object *rn,
 			      Check_Func ck, void *data,
 			      int start, Scheme_Object *redef_modname,
-			      int unpack_kern) 
+			      int unpack_kern, int copy_vars) 
 {
   Scheme_Object *ll = form;
   Scheme_Module *m;
@@ -3569,9 +3582,7 @@ Scheme_Object *parse_requires(Scheme_Object *form,
 	  ck(iname, idx, modidx, exsns[j], (j < var_count), data, i, form);
 	
 	if (!is_kern) {
-	  if (scheme_starting_up && start && (j < var_count) && !env->module && !env->phase) {
-	    /* Kindof a hack: during start-up, we remap import of variables to
-	       value copy. */
+	  if (copy_vars && start && (j < var_count) && !env->module && !env->phase) {
 	    Scheme_Env *menv;
 	    Scheme_Object *val;
 	    menv = scheme_module_access(modidx, env);
@@ -3667,7 +3678,7 @@ top_level_require_execute(Scheme_Object *data)
 
   (void)parse_requires(form, scheme_false, env, rn, 
 		       check_dup_require, ht, 1, NULL,
-		       !env->module);
+		       !env->module, 0);
 
   brn = env->rename;
   if (!brn) {
@@ -3719,7 +3730,7 @@ static Scheme_Object *do_require(Scheme_Object *form, Scheme_Comp_Env *env,
 
   (void)parse_requires(form, scheme_false, genv, rn, 
 		       check_dup_require, ht, 0, 
-		       NULL, 0);
+		       NULL, 0, 0);
 
   if (rec) {
     scheme_compile_rec_done_local(rec, drec);

@@ -5,10 +5,7 @@
 ;; syntax and "primitives" that are not implemented in the kernel.
 
 ;; Replace the content of this file to get a different set of initial
-;; module definitions and initial imports. The top-level `require'
-;; works in a special way for this file: for each variable
-;; (non-syntax) import, it copies the binding to a fresh top-level
-;; variable.
+;; module definitions, initial imports, and initial variable bindings.
 
 ;; When using makefiles, `make startup' in [the build directory for]
 ;; plt/src/mzscheme creates plt/src/mzscheme/src/cstartup.inc. Note
@@ -2748,9 +2745,10 @@
 ;;----------------------------------------------------------------------
 ;; init namespace
 
+(require (rename mzscheme namespace-require/copy namespace-require/copy))
+
 (begin
-  ;; Special start-up require copies bindings to top-level
-  (require mzscheme)
+  (namespace-require/copy 'mzscheme)
   (require-for-syntax mzscheme))
 
 (current-module-name-resolver standard-module-name-resolver)

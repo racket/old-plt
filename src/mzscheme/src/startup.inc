@@ -2383,8 +2383,11 @@
 " #%app #%datum #%top))"
 );
   EVAL_ONE_STR(
+"(require(rename mzscheme namespace-require/copy namespace-require/copy))"
+);
+  EVAL_ONE_STR(
 "(begin"
-"(require mzscheme)"
+"(namespace-require/copy 'mzscheme)"
 "(require-for-syntax mzscheme))"
 );
   EVAL_ONE_STR(

@@ -2060,7 +2060,7 @@ static Scheme_Object *
 do_let_expand(Scheme_Object *form, Scheme_Comp_Env *origenv, int depth, Scheme_Object *boundname,
 	      const char *formname, int letrec, int multi, int letstar, Scheme_Comp_Env *env_already)
 {
-  int named;
+  int named, partial;
   Scheme_Object *vars, *body, *first, *last, *name, *v, *vs, *vlist;
   Scheme_Comp_Env *use_env, *env;
   DupCheckRecord r;
@@ -2133,6 +2133,24 @@ do_let_expand(Scheme_Object *form, Scheme_Comp_Env *origenv, int depth, Scheme_O
 
   /* Note: no more letstar handling needed after this point */
 
+  /* Check whether this is a partial expansion terminating in the
+     `-values' form. If so, don't recursively expand here and don't
+     introduce syntactic renamings (i.e., act like a non-primitive
+     macro). */
+  if (!multi) {
+    v = (letrec 
+	 ? letrec_values_symbol 
+	 : let_values_symbol) ;
+    v = scheme_datum_to_syntax(v, scheme_false, scheme_sys_wraps(origenv), 0, 0);
+    v = scheme_lookup_binding(v, origenv,
+			      SCHEME_NULL_FOR_UNBOUND
+			      + SCHEME_APP_POS + SCHEME_ENV_CONSTANTS_OK
+			      + SCHEME_DONT_MARK_USE);
+    first = scheme_get_stop_expander();
+    partial = SAME_OBJ(first, v);
+  } else
+    partial = 0;
+
   scheme_begin_dup_symbol_check(&r, origenv);
 
   vlist = scheme_null;
@@ -2181,6 +2199,8 @@ do_let_expand(Scheme_Object *form, Scheme_Comp_Env *origenv, int depth, Scheme_O
   use_env = origenv;
   if (env_already)
     env = env_already;
+  else if (partial)
+    env = origenv;
   else
     env = scheme_add_compilation_frame(vlist, origenv, 0);
 
@@ -2196,15 +2216,18 @@ do_let_expand(Scheme_Object *form, Scheme_Comp_Env *origenv, int depth, Scheme_O
     /* Make sure names gets their own renames: */
     name = SCHEME_STX_CAR(v);
     if (!multi) {
-      name = scheme_add_env_renames(name, env, origenv);
+      if (!partial)
+	name = scheme_add_env_renames(name, env, origenv);
       name = icons(name, scheme_null);
     } else {
-      name = scheme_add_env_renames(name, env, origenv);
+      if (!partial)
+	name = scheme_add_env_renames(name, env, origenv);
     }
 
     rhs = SCHEME_STX_CDR(v);
     rhs = SCHEME_STX_CAR(rhs);
-    rhs = scheme_add_env_renames(rhs, use_env, origenv);
+    if (!partial)
+      rhs = scheme_add_env_renames(rhs, use_env, origenv);
     
     if (SCHEME_STX_PAIRP(name) && SCHEME_STX_NULLP(SCHEME_STX_CDR(name))) {
       rhs_name = SCHEME_STX_CAR(name);
@@ -2212,7 +2235,10 @@ do_let_expand(Scheme_Object *form, Scheme_Comp_Env *origenv, int depth, Scheme_O
       rhs_name = name;
     }
 
-    v = scheme_expand_expr(rhs, use_env, depth, rhs_name);
+    if (partial)
+      v = rhs;
+    else
+      v = scheme_expand_expr(rhs, use_env, depth, rhs_name);
 
     v = icons(icons(name, icons(v, scheme_null)), scheme_null);
 
@@ -2233,8 +2259,10 @@ do_let_expand(Scheme_Object *form, Scheme_Comp_Env *origenv, int depth, Scheme_O
     first = scheme_null;
 
   body = scheme_datum_to_syntax(body, form, form, 0, 0);
-  body = scheme_add_env_renames(body, env, origenv);
-  body = scheme_expand_block(body, env, depth, boundname);
+  if (!partial) {
+    body = scheme_add_env_renames(body, env, origenv);
+    body = scheme_expand_block(body, env, depth, boundname);
+  }
 
   if (multi)
     v = SCHEME_STX_CAR(form);
@@ -3132,7 +3160,7 @@ do_letrec_syntaxes(const char *where, int normal,
       if ((depth >= 0) || (depth == -2)) {
 	Scheme_Object *formname;
 	formname = SCHEME_STX_CAR(forms);
-	v = icons(formname, icons(bindings, v));
+	v = icons(formname, icons(bindings, icons(var_bindings, v)));
       } else if (SCHEME_STX_NULLP(SCHEME_STX_CDR(v)))
 	v = SCHEME_STX_CAR(v);
       else
@@ -3142,7 +3170,7 @@ do_letrec_syntaxes(const char *where, int normal,
 				 0, 1);
     }
   } else {
-    /* Construct letrec-value expression: */
+    /* Construct letrec-values expression: */
     v = icons(letrec_values_symbol, icons(var_bindings, body));
     v = scheme_datum_to_syntax(v, forms, scheme_sys_wraps(origenv), 0, ! ((depth >= 0) || (depth == -2)));
     

@@ -917,34 +917,38 @@ static Scheme_Object *propagate_wraps(Scheme_Object *o,
 	  count++;
       }
 
-      wc = MALLOC_WRAP_CHUNK(count);
-      wc->type = scheme_wrap_chunk_type;
-      wc->len = count;
-
-      j = 0;
-      for (i = 0, l = owner_wraps; i < len; i++, l = SCHEME_CDR(l)) {
-	a = SCHEME_CAR(l);
-	if (SAME_TYPE(SCHEME_TYPE(a), scheme_wrap_chunk_type)) {
-	  int k, cl = ((Wrap_Chunk *)a)->len;
-	  for (k = 0; k < cl; k++) {
-	    wc->a[j++] = ((Wrap_Chunk *)a)->a[k];
-	  }
-	}  else if (SCHEME_NUMBERP(a)) {
-	  if ((i >= len) || !SAME_OBJ(a, SCHEME_CADR(l)))
+      if (!count) {
+	ml = scheme_null; /* everything disappeared! */
+      } else {
+	wc = MALLOC_WRAP_CHUNK(count);
+	wc->type = scheme_wrap_chunk_type;
+	wc->len = count;
+	
+	j = 0;
+	for (i = 0, l = owner_wraps; i < len; i++, l = SCHEME_CDR(l)) {
+	  a = SCHEME_CAR(l);
+	  if (SAME_TYPE(SCHEME_TYPE(a), scheme_wrap_chunk_type)) {
+	    int k, cl = ((Wrap_Chunk *)a)->len;
+	    for (k = 0; k < cl; k++) {
+	      wc->a[j++] = ((Wrap_Chunk *)a)->a[k];
+	    }
+	  }  else if (SCHEME_NUMBERP(a)) {
+	    if ((i >= len) || !SAME_OBJ(a, SCHEME_CADR(l)))
+	      wc->a[j++] = a;
+	    else {
+	      /* Cancelled marks */
+	      i++;
+	      l= SCHEME_CDR(l);
+	    }
+	  } else
 	    wc->a[j++] = a;
-	  else {
-	    /* Cancelled marks */
-	    i++;
-	    l= SCHEME_CDR(l);
-	  }
-	} else
-	  wc->a[j++] = a;
-      }
+	}
 
-      if (count == 1) /* in case mark removal left only one */
-	ml = wc->a[0];
-      else
-	ml = (Scheme_Object *)wc;
+	if (count == 1) /* in case mark removal left only one */
+	  ml = wc->a[0];
+	else
+	  ml = (Scheme_Object *)wc;
+      }
     } else
       ml = SCHEME_CAR(owner_wraps);
 
@@ -953,6 +957,8 @@ static Scheme_Object *propagate_wraps(Scheme_Object *o,
 
   if (SCHEME_NUMBERP(ml))
     return scheme_add_remove_mark(o, ml);
+  else if (SCHEME_NULLP(ml))
+    return o;
   else
     return scheme_add_rename(o, ml);
 }
@@ -2041,16 +2047,19 @@ static Scheme_Object *wraps_to_datum(Scheme_Object *w_in,
   }
 
   if (just_simplify) {
-    /* Convert to a chunk: */
-    Wrap_Chunk *wc;
-    int i;
-    wc = MALLOC_WRAP_CHUNK(stack_size);
-    wc->type = scheme_wrap_chunk_type;
-    wc->len = stack_size;
-    for (i = stack_size; i--; stack = SCHEME_CDR(stack)) {
-      wc->a[i] = SCHEME_CAR(stack);
-    }
-    stack = CONS((Scheme_Object *)wc, scheme_null);
+    if (stack_size) {
+      /* Convert to a chunk: */
+      Wrap_Chunk *wc;
+      int i;
+      wc = MALLOC_WRAP_CHUNK(stack_size);
+      wc->type = scheme_wrap_chunk_type;
+      wc->len = stack_size;
+      for (i = stack_size; i--; stack = SCHEME_CDR(stack)) {
+	wc->a[i] = SCHEME_CAR(stack);
+      }
+      stack = CONS((Scheme_Object *)wc, scheme_null);
+    } else
+      stack= scheme_null;
   }
 
   /* Double-check for equivalent list in table (after simplificiation): */

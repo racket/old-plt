@@ -9,23 +9,37 @@
 (define (multi-file-search)
   (configure-search))
 
-;; search-type = (make-search-type string searcher (listof string))
-;; searcher = ((listof boolean) -> ...)
-(define-struct search-type (label searcher params))
+;; search-type = (make-search-type string make-searcher (listof (cons string boolean)))
+;; the param strings are the labels for checkboxes
+;; the param booleans are the default values for the checkboxes
+;; these are the available searches
+(define-struct search-type (label make-searcher params))
+
+;; make-searcher = ((listof boolean) string -> searcher)
+;; this returns the function that does the actual searching
+;; it takes the search parameters and the search string
+
+;; searcher = (string -> ...)
+;; this performs a single search.
+;; the input is the filename to be searched
+
+;; search-info = (make-search-info searcher (listof string))
+;; this is the info from the user to do a particular search
+(define-struct search-info (do-single-search filenames))
 
 ;; search-types : (listof search-type)
 (define search-types
   (list (make-search-type
          "String match (handles files with graphics)"
-         (lambda (info) (exact-match-searcher info))
-         (list "Case sensitive"))
+         (lambda (info search-string) (exact-match-searcher info search-string))
+         (list (cons "Case sensitive" #f)))
         (make-search-type
          "Regular Expression (only raw text files)"
-         (lambda (info) (regexp-searcher info))
+         (lambda (info search-string) (regexp-searcher info search-string))
          (list))))
 
 ;; preferences initialization
-(preferences:set-default 'drscheme:multi-file-search:recur? #f boolean?)
+(preferences:set-default 'drscheme:multi-file-search:recur? #t boolean?)
 (preferences:set-default 'drscheme:multi-file-search:filter? #f boolean?)
 (preferences:set-default 'drscheme:multi-file-search:filter-string "" string?)
 (preferences:set-default 'drscheme:multi-file-search:directory "" string?)
@@ -38,26 +52,34 @@
                                 (integer? x)
                                 (<= 0 x)
                                 (< x (length search-types)))))
-(preferences:set-default 'drscheme:multi-file-search:search-check-boxes 
-                         null
-                         (lambda (x) (and (list? x) (andmap (lambda (x) (and (list? x) (andmap number? x))) x))))
 
-;; configure-search : -> searcher
+;; drscheme:mult-file-search:search-check-boxes : (listof (listof boolean))
+(preferences:set-default 'drscheme:multi-file-search:search-check-boxes 
+                         (map (lambda (x) (map cdr (search-type-params x)))
+                              search-types)
+                         (lambda (x) 
+                           (and (list? x)
+                                (andmap (lambda (x)
+                                          (and (list? x)
+                                               (andmap boolean? x)))
+                                        x))))
+
+;; configure-search : -> (union #f search-info)
 ;; configures the search
 (define (configure-search)
-  (define dialog (make-object dialog% "Configure search" #f #f #f #f #f '(resize-border)))
+  (define dialog (make-object dialog% "Configure search" #f 500 #f #f #f '(resize-border)))
   (define outer-files-panel (make-object vertical-panel% dialog '(border)))
+  (define outer-method-panel (make-object vertical-panel% dialog '(border)))
+  (define button-panel (make-object horizontal-panel% dialog))
   (define files-label (make-object message% "Files" outer-files-panel))
   (define files-inset-outer-panel (make-object horizontal-panel% outer-files-panel))
   (define files-inset-panel (make-object horizontal-panel% files-inset-outer-panel))
   (define files-panel (make-object vertical-panel% files-inset-outer-panel))
-  (define outer-method-panel (make-object vertical-panel% dialog '(border)))
-  (define method-label (make-object message% "Search Method" outer-method-panel))
+  (define method-label (make-object message% "Search" outer-method-panel))
   (define method-inset-outer-panel (make-object horizontal-panel% outer-method-panel))
   (define method-inset-panel (make-object horizontal-panel% method-inset-outer-panel))
   (define method-panel (make-object vertical-panel% method-inset-outer-panel))
-  (define spacer (make-object grow-box-spacer-pane% dialog))
-  
+    
   (define dir-panel (make-object horizontal-panel% files-panel))
   (define dir-field (make-object text-field% "Dir" dir-panel void))
   (define dir-button (make-object button% "Browse..." dir-panel (lambda (x y) (dir-button-callback))))
@@ -71,11 +93,51 @@
   (define filter-text-field (make-object text-field% #f filter-panel 
                               (lambda (x y) (filter-text-field-callback))))
   
-  (define (dir-button-callback) 
-    (let ([d (get-directory)])
-      (when (and d
-                 (directory-exists? d))
-        (send dir-field set-value d))))
+  (define methods-choice (make-object choice% #f (map search-type-label search-types) method-panel 
+                           (lambda (x y) (methods-choice-callback))))
+  (define search-text-field (make-object text-field% "Search string" method-panel
+                              (lambda (x y) (search-text-field-callback))))
+  (define active-method-panel (make-object panel:single% method-panel))
+  (define methods-check-boxess
+    (map
+     (lambda (search-type prefs-settings)
+       (let ([p (make-object vertical-panel% active-method-panel)])
+         (send p set-alignment 'left 'center)
+         (map (lambda (flag-pair prefs-setting)
+                (let ([cb (make-object check-box% (car flag-pair) p (lambda (evt chk) (method-callback chk)))])
+                  (send cb set-value prefs-setting)
+                  cb))
+              (search-type-params search-type)
+              prefs-settings)))
+     search-types
+     (preferences:get 'drscheme:multi-file-search:search-check-boxes)))
+  
+  (define ok-button (make-object button% "OK" button-panel (lambda (x y) (ok-button-callback)) '(border)))
+  (define cancel-button (make-object button% "Cancel" button-panel (lambda (x y) (cancel-button-callback))))
+  (define spacer (make-object grow-box-spacer-pane% button-panel))
+  
+  (define (ok-button-callback)
+    (if (directory-exists? (send dir-field get-value))
+        (begin (set! ok? #t)
+               (send dialog show #f))
+        (message-box "DrScheme - Multi File Search"
+                     (format "~a is not a directory" (send dir-field get-value)))))
+  (define (cancel-button-callback)
+    (send dialog show #f))
+  
+  (define (method-callback chk)
+    (preferences:set
+     'drscheme:multi-file-search:search-check-boxes
+     (let loop ([methods-check-boxess methods-check-boxess])
+       (cond
+         [(null? methods-check-boxess) null]
+         [else
+          (cons
+           (let loop ([methods-check-boxes (car methods-check-boxess)])
+             (cond
+               [(null? methods-check-boxes) null]
+               [else (cons (send (car methods-check-boxes) get-values)
+                           (loop (cdr methods-check-boxes)))])))]))))
   
   (define (filter-check-box-callback) 
     (preferences:set 'drscheme:multi-file-search:filter? (send filter-check-box get-value))
@@ -85,24 +147,55 @@
  
   (define (recur-check-box-callback)
     (preferences:set 'drscheme:multi-file-search:recur? (send recur-check-box get-value)))
-  (define methods-choice (make-object choice% #f (map search-type-label search-types) method-panel 
-                           (lambda (x y) (methods-choice-callback))))
-  (define search-string (make-object text-field% "Search string" method-panel void))
-  (define active-method-panel (make-object panel:single% method-panel))
-  (define methods-check-boxess
-    (map
-     (lambda (search-type)
-       (let ([p (make-object vertical-panel% active-method-panel)])
-         (send p set-alignment 'left 'center)
-         (map (lambda (flag-name) (make-object check-box% flag-name p void))
-              (search-type-params search-type))))
-     search-types))
-  
   (define (methods-choice-callback)
+    (preferences:set 'drscheme:multi-file-search:search-type (send methods-choice get-selection)) 
     (send active-method-panel active-child
           (list-ref (send active-method-panel get-children)
                     (send methods-choice get-selection))))
+  (define (search-text-field-callback)
+    (preferences:set 'drscheme:multi-file-search:search-string (send search-text-field get-value)))
+  (define (dir-callback)
+    (preferences:set 'drscheme:multi-file-search:directory-string (send dir-field get-value)))
+  (define (dir-button-callback) 
+    (let ([d (get-directory)])
+      (when (and d
+                 (directory-exists? d))
+        (preferences:set 'drscheme:multi-file-search:directory-string d)
+        (send dir-field set-value d))))
+  
+  (define (get-files)
+    (let ([dir (send dir-field get-value)])
+      (and (directory-exists? dir)
+           (if (send recur-check-box get-value)
+               (filter file-exists? (map (lambda (x) (build-path dir x)) (directory-list dir)))
+               (letrec ([touched (make-hash-table)]
+                        [process-dir
+                         ;; string[dirname] -> (listof string[filename])
+                         (lambda (dir)
+                           (hash-table-get
+                            touched
+                            (string->symbol dir)
+                            (lambda ()
+                              (hash-table-put! touched (string->symbol dir) null)
+                              (process-dir-contents (map (lambda (x) (build-path dir x))
+                                                         (directory-list dir))))))]
+                        [process-dir-contents
+                         (lambda (contents)
+                           (cond
+                             [(null? contents) null]
+                             [else 
+                              (let ([file/dir (car contents)])
+                                (cond
+                                  [(file-exists? file/dir)
+                                   (cons file/dir (process-dir-contents (cdr contents)))]
+                                  [(directory-exists? file/dir)
+                                   (append (process-dir file/dir) (process-dir-contents (cdr contents)))]
+                                  [else (process-dir-contents (cdr contents))]))]))])
+                 (process-dir dir))))))
 
+  (define ok? #f)
+  
+  (send button-panel set-alignment 'right 'center)
   (send dir-panel stretchable-height #f)
   (send outer-files-panel stretchable-height #f)
   (send outer-files-panel set-alignment 'left 'center)
@@ -112,6 +205,9 @@
 
   (send recur-check-box set-value (preferences:get 'drscheme:multi-file-search:recur?))
   (send filter-check-box set-value (preferences:get 'drscheme:multi-file-search:filter?))
+  (send search-text-field set-value (preferences:get 'drscheme:multi-file-search:search-string))
+  (send filter-text-field set-value (preferences:get 'drscheme:multi-file-search:filter-string))
+  (send dir-field set-value (preferences:get 'drscheme:multi-file-search:directory))
   
   (send outer-method-panel stretchable-height #f)
   (send outer-method-panel set-alignment 'left 'center)
@@ -119,7 +215,31 @@
   (send method-inset-panel stretchable-width #f)
   (send method-panel set-alignment 'left 'center)
   (send filter-panel stretchable-height #f)
-  (send dialog show #t))
   
+  (send search-text-field focus)
+  (send dialog show #t)
+  
+  (and
+   ok?
+   (make-search-info
+    ((search-type-make-searcher (list-ref search-types (send methods-choice get-selection)))
+     (map (lambda (cb) (send cb get-value))
+          (send (send active-method-panel active-child) get-children))
+     (send search-text-field get-value))
+    (get-files))))
+    
+;; exact-match-searcher : make-searcher
+(define (exact-match-searcher params key)
+  (lambda (filename)
+    (void)))
+
+;; regexp-match-searcher : make-searcher
+(define (regexp-match-searcher parmas key)
+  (lambda (filename)
+    (void)))
+  
+;; -> string
+;; stub for soon to come mred primitive
+(define (get-directory) "")
 
 (multi-file-search)

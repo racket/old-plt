@@ -34,7 +34,7 @@ LDFLAGS = $(XLIB)
 
 XPMDIR = $(srcdir)/../contrib/wxxpm/libxpm.34b/lib
 
-WXMAC_CXXFLAGS = $(CXXFLAGS) -MMD -I$(XPMDIR) -I$(PLTSRCDIR)/a-list/c-headers/ -I$(srcdir)/../utils/image/src
+WXMAC_CXXFLAGS = $(CXXFLAGS) -MMD -DWX_CARBON -I$(XPMDIR) -I$(PLTSRCDIR)/a-list/c-headers/ -I$(srcdir)/../utils/image/src
 
 
 OBJS = \

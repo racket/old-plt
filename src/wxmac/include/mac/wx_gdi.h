@@ -10,7 +10,7 @@
 #ifndef wx_gdih
 #define wx_gdih
 
-#ifndef OS_X
+#ifndef WX_CARBON
 #include <QDOffscreen.h>
 #endif
 

@@ -42,7 +42,7 @@
 #include "windows.h"			/* MS windows GDI types */
 #endif
 #if  defined(FOR_MAC) 
-#ifdef OS_X
+#ifdef WX_CARBON
 # include <Carbon/Carbon.h>
 #else
 # include <QDOffscreen.h>

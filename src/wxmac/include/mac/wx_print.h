@@ -45,7 +45,7 @@
 #include "wx_choic.h"
 
 #ifdef wx_mac
-#ifndef OS_X
+#ifndef WX_CARBON
 #include <Printing.h>
 #endif
 #endif
@@ -70,7 +70,7 @@ class wxPrintData: public wxObject
 {
  public:
   // macintosh
-#ifdef OS_X  
+#ifdef WX_CARBON  
   PMPrintSession cPrintSession;
   PMPrintSettings cPrintSettings;
   PMPageFormat cPageFormat;
@@ -104,7 +104,7 @@ class wxPrintData: public wxObject
   void EnablePageNumbers(Bool);
   void EnableHelp(Bool);
 
-#ifndef OS_X
+#ifndef WX_CARBON
   void operator=(const wxPrintData& data);
 #endif
 };
@@ -155,7 +155,7 @@ class wxPrinter: public wxObject
 
   virtual Bool Print(wxWindow *parent, wxPrintout *printout, Bool prompt = TRUE);
   virtual Bool PrintDialog(wxWindow *parent);
-#ifndef OS_X  
+#ifndef WX_CARBON  
   virtual wxWindow *CreateAbortWindow(wxWindow *parent, wxPrintout *printout);
 #endif  
   virtual Bool Setup(wxWindow *parent);

@@ -70,7 +70,7 @@ extern FILE *popen();
 #endif
 
 #else  /* defined(SYSV) || defined(SVR4) */
-# ifndef OS_X
+# ifndef WX_CARBON
 #  include <strings.h>
 # endif
 #endif

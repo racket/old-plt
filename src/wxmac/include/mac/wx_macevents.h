@@ -2,7 +2,7 @@
  */
  
 
-#if 0 //#ifdef OS_X
+#if 0 //#ifdef WX_CARBON
 extern OSErr QueueMrEdCarbonEvent(EventRef e);
 
 extern UInt32 kEventClassMrEd;

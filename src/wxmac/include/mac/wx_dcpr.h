@@ -24,7 +24,7 @@ class wxPrinterDC: public wxCanvasDC
  public:
 
   wxPrintData *cPrintData;
-#ifdef OS_X
+#ifdef WX_CARBON
   PMPrintContext cPrintContext;
 #else
   TPPrPort prPort;

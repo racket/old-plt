@@ -11,7 +11,7 @@
 #define wx_mainh
 
 #include "wb_main.h"
-#ifndef OS_X
+#ifndef WX_CARBON
 # include <Events.h>
 #endif
 #ifdef IN_CPROTO

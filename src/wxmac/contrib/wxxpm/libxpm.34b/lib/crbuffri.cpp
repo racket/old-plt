@@ -39,7 +39,7 @@
 #if defined(SYSV) || defined(SVR4)
 #include <string.h>
 #else
-# ifndef OS_X
+# ifndef WX_CARBON
 #  include <strings.h>
 # endif
 #endif

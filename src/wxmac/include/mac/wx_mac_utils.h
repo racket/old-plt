@@ -11,7 +11,7 @@
 #define wx_mac_utilsh
 
 #include "wxMacObj.h"
-#ifndef OS_X
+#ifndef WX_CARBON
 # include <Strings.h>
 # include <QuickDraw.h>
 #endif

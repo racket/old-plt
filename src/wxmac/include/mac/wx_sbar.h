@@ -11,7 +11,7 @@
 #define wx_sbarh
 
 #include "wx_win.h"
-#ifndef OS_X
+#ifndef WX_CARBON
 # include <Controls.h>
 #endif
 

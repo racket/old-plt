@@ -14,7 +14,7 @@
 
 #include "wb_choic.h"
 #include "wxLabelArea.h"
-#ifndef OS_X
+#ifndef WX_CARBON
 # include <Controls.h>
 # include <Menus.h>
 #endif

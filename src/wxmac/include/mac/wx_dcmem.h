@@ -14,7 +14,7 @@
 #define wx_dcmemh
 
 #include "wb_dcmem.h"
-#ifndef OS_X
+#ifndef WX_CARBON
 #include <QDOffscreen.h>
 #endif
 

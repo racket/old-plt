@@ -15,7 +15,7 @@
 //#include "wx_screen.h"
 #include "wxDirection.h"
 #include "wxScrollData.h"
-#if defined(OS_X)
+#if defined(WX_CARBON)
 #include <Carbon/Carbon.h>
 #else
 #	include <Menus.h>

@@ -12,7 +12,7 @@
 #ifndef wxb_commonh
 #define wxb_commonh
 
-#ifdef OS_X
+#ifdef WX_CARBON
 # include <Carbon/Carbon.h>
 #else
 # include <QuickDraw.h>
@@ -37,7 +37,7 @@ extern void *wxOutOfMemory();
 #endif
 #if defined(wx_xview) || defined(wx_motif)
 # define wx_x
-#elif defined(applec) || defined(__MWERKS__) || defined(OS_X)
+#elif defined(applec) || defined(__MWERKS__) || defined(WX_CARBON)
 	// the Mac test must come before the MS-Windows test because __WINDOWS__
 	// is defined whenever the Apple <Windows.h> file is included
 #	ifndef wx_mac

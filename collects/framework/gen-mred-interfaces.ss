@@ -50,7 +50,7 @@ string=? ; exec mred -magqvf $0
 
 (define (add-let-prefix sym)
   (string->symbol
-   (string-append "mred-interfaces.ss-"
+   (string-append "$$"
 		  (symbol->string sym))))
 
 (define (build-interface class-name)

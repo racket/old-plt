@@ -212,7 +212,7 @@
               brush%
               bitmap-dc%
               bitmap%)
-            ((letrec ((mred-interfaces.ss-vertical-panel<%>
+            ((letrec (($$vertical-panel<%>
                         (interface
                           ()
                           on-drop-file
@@ -267,7 +267,7 @@
                           on-subwindow-event
                           client->screen
                           screen->client))
-                      (mred-interfaces.ss-vertical-pane<%>
+                      ($$vertical-pane<%>
                         (interface
                           ()
                           get-parent
@@ -289,9 +289,8 @@
                           container-size
                           place-children
                           delete-child))
-                      (mred-interfaces.ss-timer<%>
-                        (interface () interval notify start stop))
-                      (mred-interfaces.ss-text-field<%>
+                      ($$timer<%> (interface () interval notify start stop))
+                      ($$text-field<%>
                         (interface
                           ()
                           on-drop-file
@@ -333,7 +332,7 @@
                           on-subwindow-event
                           client->screen
                           screen->client))
-                      (mred-interfaces.ss-text<%>
+                      ($$text<%>
                         (interface
                           ()
                           cut
@@ -533,7 +532,7 @@
                           set-active-canvas
                           remove-canvas
                           get-max-view-size))
-                      (mred-interfaces.ss-tab-snip<%>
+                      ($$tab-snip<%>
                         (interface
                           ()
                           write
@@ -572,7 +571,7 @@
                           draw
                           split
                           merge-with))
-                      (mred-interfaces.ss-style-list<%>
+                      ($$style-list<%>
                         (interface
                           ()
                           number
@@ -589,7 +588,7 @@
                           forget-notification
                           find-or-create-style
                           find-or-create-join-style))
-                      (mred-interfaces.ss-style-delta<%>
+                      ($$style-delta<%>
                         (interface
                           ()
                           equal?
@@ -631,7 +630,7 @@
                           get-transparent-text-backing-off
                           set-transparent-text-backing-on
                           get-transparent-text-backing-on))
-                      (mred-interfaces.ss-string-snip<%>
+                      ($$string-snip<%>
                         (interface
                           ()
                           write
@@ -670,7 +669,7 @@
                           draw
                           split
                           merge-with))
-                      (mred-interfaces.ss-snip-class<%>
+                      ($$snip-class<%>
                         (interface
                           ()
                           read
@@ -682,7 +681,7 @@
                           set-classname
                           get-classname
                           write-header))
-                      (mred-interfaces.ss-snip-admin<%>
+                      ($$snip-admin<%>
                         (interface
                           ()
                           get-dc
@@ -696,7 +695,7 @@
                           get-view
                           recounted
                           update-cursor))
-                      (mred-interfaces.ss-snip<%>
+                      ($$snip<%>
                         (interface
                           ()
                           write
@@ -733,7 +732,7 @@
                           draw
                           split
                           merge-with))
-                      (mred-interfaces.ss-slider<%>
+                      ($$slider<%>
                         (interface
                           ()
                           on-drop-file
@@ -774,9 +773,9 @@
                           on-subwindow-event
                           client->screen
                           screen->client))
-                      (mred-interfaces.ss-separator-menu-item<%>
+                      ($$separator-menu-item<%>
                         (interface () get-parent delete is-deleted? restore))
-                      (mred-interfaces.ss-scroll-event<%>
+                      ($$scroll-event<%>
                         (interface
                           ()
                           get-position
@@ -787,7 +786,7 @@
                           get-event-type
                           set-time-stamp
                           get-time-stamp))
-                      (mred-interfaces.ss-region<%>
+                      ($$region<%>
                         (interface
                           ()
                           get-dc
@@ -801,7 +800,7 @@
                           set-rectangle
                           get-bounding-box
                           set-rounded-rectangle))
-                      (mred-interfaces.ss-radio-box<%>
+                      ($$radio-box<%>
                         (interface
                           ()
                           on-drop-file
@@ -845,7 +844,7 @@
                           on-subwindow-event
                           client->screen
                           screen->client))
-                      (mred-interfaces.ss-ps-setup<%>
+                      ($$ps-setup<%>
                         (interface
                           ()
                           copy-from
@@ -871,7 +870,7 @@
                           set-translation
                           set-paper-name
                           set-afm-path))
-                      (mred-interfaces.ss-printer-dc<%>
+                      ($$printer-dc<%>
                         (interface
                           ()
                           ok?
@@ -916,7 +915,7 @@
                           get-background-mode
                           get-text-background
                           get-text-foreground))
-                      (mred-interfaces.ss-post-script-dc<%>
+                      ($$post-script-dc<%>
                         (interface
                           ()
                           ok?
@@ -961,13 +960,10 @@
                           get-background-mode
                           get-text-background
                           get-text-foreground))
-                      (mred-interfaces.ss-popup-menu<%>
-                        (interface () get-items))
-                      (mred-interfaces.ss-point<%>
-                        (interface () set-y set-x get-x get-y))
-                      (mred-interfaces.ss-pen-list<%>
-                        (interface () find-or-create-pen))
-                      (mred-interfaces.ss-pen<%>
+                      ($$popup-menu<%> (interface () get-items))
+                      ($$point<%> (interface () set-y set-x get-x get-y))
+                      ($$pen-list<%> (interface () find-or-create-pen))
+                      ($$pen<%>
                         (interface
                           ()
                           set-width
@@ -982,7 +978,7 @@
                           get-style
                           set-style
                           get-width))
-                      (mred-interfaces.ss-pasteboard<%>
+                      ($$pasteboard<%>
                         (interface
                           ()
                           cut
@@ -1155,7 +1151,7 @@
                           set-active-canvas
                           remove-canvas
                           get-max-view-size))
-                      (mred-interfaces.ss-panel<%>
+                      ($$panel<%>
                         (interface
                           ()
                           on-drop-file
@@ -1210,7 +1206,7 @@
                           on-subwindow-event
                           client->screen
                           screen->client))
-                      (mred-interfaces.ss-pane<%>
+                      ($$pane<%>
                         (interface
                           ()
                           get-parent
@@ -1232,7 +1228,7 @@
                           container-size
                           place-children
                           delete-child))
-                      (mred-interfaces.ss-mouse-event<%>
+                      ($$mouse-event<%>
                         (interface
                           ()
                           set-y
@@ -1264,7 +1260,7 @@
                           get-event-type
                           set-time-stamp
                           get-time-stamp))
-                      (mred-interfaces.ss-message<%>
+                      ($$message<%>
                         (interface
                           ()
                           on-drop-file
@@ -1303,11 +1299,10 @@
                           on-subwindow-event
                           client->screen
                           screen->client))
-                      (mred-interfaces.ss-menu-bar<%>
+                      ($$menu-bar<%>
                         (interface () enable is-enabled? get-frame get-items))
-                      (mred-interfaces.ss-menu<%>
-                        (interface () get-item get-items))
-                      (mred-interfaces.ss-list-box<%>
+                      ($$menu<%> (interface () get-item get-items))
+                      ($$list-box<%>
                         (interface
                           ()
                           set
@@ -1366,7 +1361,7 @@
                           on-subwindow-event
                           client->screen
                           screen->client))
-                      (mred-interfaces.ss-keymap<%>
+                      ($$keymap<%>
                         (interface
                           ()
                           get-double-click-interval
@@ -1387,7 +1382,7 @@
                           call-function
                           set-error-callback
                           chain-to-keymap))
-                      (mred-interfaces.ss-key-event<%>
+                      ($$key-event<%>
                         (interface
                           ()
                           set-y
@@ -1406,7 +1401,7 @@
                           get-key-code
                           set-time-stamp
                           get-time-stamp))
-                      (mred-interfaces.ss-image-snip<%>
+                      ($$image-snip<%>
                         (interface
                           ()
                           write
@@ -1448,7 +1443,7 @@
                           draw
                           split
                           merge-with))
-                      (mred-interfaces.ss-horizontal-panel<%>
+                      ($$horizontal-panel<%>
                         (interface
                           ()
                           on-drop-file
@@ -1503,7 +1498,7 @@
                           on-subwindow-event
                           client->screen
                           screen->client))
-                      (mred-interfaces.ss-horizontal-pane<%>
+                      ($$horizontal-pane<%>
                         (interface
                           ()
                           get-parent
@@ -1525,7 +1520,7 @@
                           container-size
                           place-children
                           delete-child))
-                      (mred-interfaces.ss-gauge<%>
+                      ($$gauge<%>
                         (interface
                           ()
                           on-drop-file
@@ -1568,7 +1563,7 @@
                           on-subwindow-event
                           client->screen
                           screen->client))
-                      (mred-interfaces.ss-frame<%>
+                      ($$frame<%>
                         (interface
                           ()
                           on-drop-file
@@ -1644,9 +1639,8 @@
                           get-focus-window
                           get-focus-object
                           on-menu-char))
-                      (mred-interfaces.ss-font-list<%>
-                        (interface () find-or-create-font))
-                      (mred-interfaces.ss-font<%>
+                      ($$font-list<%> (interface () find-or-create-font))
+                      ($$font<%>
                         (interface
                           ()
                           get-family
@@ -1656,21 +1650,20 @@
                           get-style
                           get-point-size
                           get-underlined))
-                      (mred-interfaces.ss-event<%>
-                        (interface () set-time-stamp get-time-stamp))
-                      (mred-interfaces.ss-editor-wordbreak-map<%>
+                      ($$event<%> (interface () set-time-stamp get-time-stamp))
+                      ($$editor-wordbreak-map<%>
                         (interface () set-map get-map))
-                      (mred-interfaces.ss-editor-stream-out-string-base<%>
+                      ($$editor-stream-out-string-base<%>
                         (interface () write get-string tell seek bad?))
-                      (mred-interfaces.ss-editor-stream-out-base<%>
+                      ($$editor-stream-out-base<%>
                         (interface () write tell seek bad?))
-                      (mred-interfaces.ss-editor-stream-out<%>
+                      ($$editor-stream-out<%>
                         (interface () put << ok? put-fixed jump-to tell))
-                      (mred-interfaces.ss-editor-stream-in-string-base<%>
+                      ($$editor-stream-in-string-base<%>
                         (interface () read tell seek skip bad?))
-                      (mred-interfaces.ss-editor-stream-in-base<%>
+                      ($$editor-stream-in-base<%>
                         (interface () read tell seek skip bad?))
-                      (mred-interfaces.ss-editor-stream-in<%>
+                      ($$editor-stream-in<%>
                         (interface
                           ()
                           get
@@ -1685,7 +1678,7 @@
                           skip
                           set-boundary
                           remove-boundary))
-                      (mred-interfaces.ss-editor-snip<%>
+                      ($$editor-snip<%>
                         (interface
                           ()
                           write
@@ -1738,11 +1731,11 @@
                           split
                           merge-with
                           border-visible?))
-                      (mred-interfaces.ss-editor-data-class-list<%>
+                      ($$editor-data-class-list<%>
                         (interface () add nth number find find-position))
-                      (mred-interfaces.ss-editor-data-class<%>
+                      ($$editor-data-class<%>
                         (interface () read set-classname get-classname))
-                      (mred-interfaces.ss-editor-data<%>
+                      ($$editor-data<%>
                         (interface
                           ()
                           write
@@ -1750,7 +1743,7 @@
                           set-next
                           set-dataclass
                           get-dataclass))
-                      (mred-interfaces.ss-editor-canvas<%>
+                      ($$editor-canvas<%>
                         (interface
                           ()
                           on-drop-file
@@ -1805,7 +1798,7 @@
                           on-subwindow-event
                           client->screen
                           screen->client))
-                      (mred-interfaces.ss-editor-admin<%>
+                      ($$editor-admin<%>
                         (interface
                           ()
                           get-dc
@@ -1817,7 +1810,7 @@
                           get-view
                           get-max-view
                           update-cursor))
-                      (mred-interfaces.ss-dialog<%>
+                      ($$dialog<%>
                         (interface
                           ()
                           on-drop-file
@@ -1884,24 +1877,24 @@
                           get-eventspace
                           get-focus-window
                           get-focus-object))
-                      (mred-interfaces.ss-cursor<%> (interface () ok?))
-                      (mred-interfaces.ss-control-event<%>
+                      ($$cursor<%> (interface () ok?))
+                      ($$control-event<%>
                         (interface
                           ()
                           set-event-type
                           get-event-type
                           set-time-stamp
                           get-time-stamp))
-                      (mred-interfaces.ss-color<%>
+                      ($$color<%>
                         (interface () ok? set red copy-from green blue))
-                      (mred-interfaces.ss-clipboard-client<%>
+                      ($$clipboard-client<%>
                         (interface
                           ()
                           get-data
                           add-type
                           get-types
                           being-replaced))
-                      (mred-interfaces.ss-choice<%>
+                      ($$choice<%>
                         (interface
                           ()
                           append
@@ -1949,7 +1942,7 @@
                           on-subwindow-event
                           client->screen
                           screen->client))
-                      (mred-interfaces.ss-checkable-menu-item<%>
+                      ($$checkable-menu-item<%>
                         (interface
                           ()
                           command
@@ -1970,7 +1963,7 @@
                           get-shortcut
                           restore
                           is-checked?))
-                      (mred-interfaces.ss-check-box<%>
+                      ($$check-box<%>
                         (interface
                           ()
                           on-drop-file
@@ -2011,7 +2004,7 @@
                           on-subwindow-event
                           client->screen
                           screen->client))
-                      (mred-interfaces.ss-button<%>
+                      ($$button<%>
                         (interface
                           ()
                           on-drop-file
@@ -2050,9 +2043,8 @@
                           on-subwindow-event
                           client->screen
                           screen->client))
-                      (mred-interfaces.ss-brush-list<%>
-                        (interface () find-or-create-brush))
-                      (mred-interfaces.ss-brush<%>
+                      ($$brush-list<%> (interface () find-or-create-brush))
+                      ($$brush<%>
                         (interface
                           ()
                           get-color
@@ -2061,7 +2053,7 @@
                           set-stipple
                           get-style
                           set-style))
-                      (mred-interfaces.ss-bitmap-dc<%>
+                      ($$bitmap-dc<%>
                         (interface
                           ()
                           ok?
@@ -2110,7 +2102,7 @@
                           get-background-mode
                           get-text-background
                           get-text-foreground))
-                      (mred-interfaces.ss-bitmap<%>
+                      ($$bitmap<%>
                         (interface
                           ()
                           ok?
@@ -2120,427 +2112,414 @@
                           save-file
                           get-height
                           get-width))
-                      (mred-interfaces.ss-vertical-panel%
+                      ($$vertical-panel%
                         (class*
                           vertical-panel%
-                          (mred-interfaces.ss-panel<%>
-                            mred-interfaces.ss-vertical-panel<%>)
-                          args
-                          (sequence (apply super-init args))))
-                      (mred-interfaces.ss-vertical-pane%
+                          ($$panel<%> $$vertical-panel<%>)
+                          (parent [style '(border)])
+                          (sequence (super-init parent '(border)))))
+                      ($$vertical-pane%
                         (class*
                           vertical-pane%
-                          (mred-interfaces.ss-pane<%>
-                            mred-interfaces.ss-vertical-pane<%>)
+                          ($$pane<%> $$vertical-pane<%>)
                           args
                           (sequence (apply super-init args))))
-                      (mred-interfaces.ss-timer%
+                      ($$timer%
                         (class*
                           timer%
-                          (mred-interfaces.ss-timer<%>)
+                          ($$timer<%>)
                           args
                           (sequence (apply super-init args))))
-                      (mred-interfaces.ss-text-field%
+                      ($$text-field%
                         (class*
                           text-field%
-                          (mred-interfaces.ss-text-field<%>)
+                          ($$text-field<%>)
                           args
                           (sequence (apply super-init args))))
-                      (mred-interfaces.ss-text%
+                      ($$text%
                         (class*
                           text%
-                          (mred-interfaces.ss-text<%>)
+                          ($$text<%>)
                           args
                           (sequence (apply super-init args))))
-                      (mred-interfaces.ss-tab-snip%
+                      ($$tab-snip%
                         (class*
                           tab-snip%
-                          (mred-interfaces.ss-snip<%>
-                            mred-interfaces.ss-string-snip<%>
-                            mred-interfaces.ss-tab-snip<%>)
+                          ($$snip<%> $$string-snip<%> $$tab-snip<%>)
                           args
                           (sequence (apply super-init args))))
-                      (mred-interfaces.ss-style-list%
+                      ($$style-list%
                         (class*
                           style-list%
-                          (mred-interfaces.ss-style-list<%>)
+                          ($$style-list<%>)
                           args
                           (sequence (apply super-init args))))
-                      (mred-interfaces.ss-style-delta%
+                      ($$style-delta%
                         (class*
                           style-delta%
-                          (mred-interfaces.ss-style-delta<%>)
+                          ($$style-delta<%>)
                           args
                           (sequence (apply super-init args))))
-                      (mred-interfaces.ss-string-snip%
+                      ($$string-snip%
                         (class*
                           string-snip%
-                          (mred-interfaces.ss-snip<%>
-                            mred-interfaces.ss-string-snip<%>)
+                          ($$snip<%> $$string-snip<%>)
                           args
                           (sequence (apply super-init args))))
-                      (mred-interfaces.ss-snip-class%
+                      ($$snip-class%
                         (class*
                           snip-class%
-                          (mred-interfaces.ss-snip-class<%>)
+                          ($$snip-class<%>)
                           args
                           (sequence (apply super-init args))))
-                      (mred-interfaces.ss-snip-admin%
+                      ($$snip-admin%
                         (class*
                           snip-admin%
-                          (mred-interfaces.ss-snip-admin<%>)
+                          ($$snip-admin<%>)
                           args
                           (sequence (apply super-init args))))
-                      (mred-interfaces.ss-snip%
+                      ($$snip%
                         (class*
                           snip%
-                          (mred-interfaces.ss-snip<%>)
+                          ($$snip<%>)
                           args
                           (sequence (apply super-init args))))
-                      (mred-interfaces.ss-slider%
+                      ($$slider%
                         (class*
                           slider%
-                          (mred-interfaces.ss-slider<%>)
+                          ($$slider<%>)
                           args
                           (sequence (apply super-init args))))
-                      (mred-interfaces.ss-separator-menu-item%
+                      ($$separator-menu-item%
                         (class*
                           separator-menu-item%
-                          (mred-interfaces.ss-separator-menu-item<%>)
+                          ($$separator-menu-item<%>)
                           args
                           (sequence (apply super-init args))))
-                      (mred-interfaces.ss-scroll-event%
+                      ($$scroll-event%
                         (class*
                           scroll-event%
-                          (mred-interfaces.ss-event<%>
-                            mred-interfaces.ss-scroll-event<%>)
+                          ($$event<%> $$scroll-event<%>)
                           args
                           (sequence (apply super-init args))))
-                      (mred-interfaces.ss-region%
+                      ($$region%
                         (class*
                           region%
-                          (mred-interfaces.ss-region<%>)
+                          ($$region<%>)
                           args
                           (sequence (apply super-init args))))
-                      (mred-interfaces.ss-radio-box%
+                      ($$radio-box%
                         (class*
                           radio-box%
-                          (mred-interfaces.ss-radio-box<%>)
+                          ($$radio-box<%>)
                           args
                           (sequence (apply super-init args))))
-                      (mred-interfaces.ss-ps-setup%
+                      ($$ps-setup%
                         (class*
                           ps-setup%
-                          (mred-interfaces.ss-ps-setup<%>)
+                          ($$ps-setup<%>)
                           args
                           (sequence (apply super-init args))))
-                      (mred-interfaces.ss-printer-dc%
+                      ($$printer-dc%
                         (class*
                           printer-dc%
-                          (mred-interfaces.ss-printer-dc<%>)
+                          ($$printer-dc<%>)
                           args
                           (sequence (apply super-init args))))
-                      (mred-interfaces.ss-post-script-dc%
+                      ($$post-script-dc%
                         (class*
                           post-script-dc%
-                          (mred-interfaces.ss-post-script-dc<%>)
+                          ($$post-script-dc<%>)
                           args
                           (sequence (apply super-init args))))
-                      (mred-interfaces.ss-popup-menu%
+                      ($$popup-menu%
                         (class*
                           popup-menu%
-                          (mred-interfaces.ss-popup-menu<%>)
+                          ($$popup-menu<%>)
                           args
                           (sequence (apply super-init args))))
-                      (mred-interfaces.ss-point%
+                      ($$point%
                         (class*
                           point%
-                          (mred-interfaces.ss-point<%>)
+                          ($$point<%>)
                           args
                           (sequence (apply super-init args))))
-                      (mred-interfaces.ss-pen-list%
+                      ($$pen-list%
                         (class*
                           pen-list%
-                          (mred-interfaces.ss-pen-list<%>)
+                          ($$pen-list<%>)
                           args
                           (sequence (apply super-init args))))
-                      (mred-interfaces.ss-pen%
+                      ($$pen%
                         (class*
                           pen%
-                          (mred-interfaces.ss-pen<%>)
+                          ($$pen<%>)
                           args
                           (sequence (apply super-init args))))
-                      (mred-interfaces.ss-pasteboard%
+                      ($$pasteboard%
                         (class*
                           pasteboard%
-                          (mred-interfaces.ss-pasteboard<%>)
+                          ($$pasteboard<%>)
                           args
                           (sequence (apply super-init args))))
-                      (mred-interfaces.ss-panel%
+                      ($$panel%
                         (class*
                           panel%
-                          (mred-interfaces.ss-panel<%>)
+                          ($$panel<%>)
                           args
                           (sequence (apply super-init args))))
-                      (mred-interfaces.ss-pane%
+                      ($$pane%
                         (class*
                           pane%
-                          (mred-interfaces.ss-pane<%>)
+                          ($$pane<%>)
                           args
                           (sequence (apply super-init args))))
-                      (mred-interfaces.ss-mouse-event%
+                      ($$mouse-event%
                         (class*
                           mouse-event%
-                          (mred-interfaces.ss-event<%>
-                            mred-interfaces.ss-mouse-event<%>)
+                          ($$event<%> $$mouse-event<%>)
                           args
                           (sequence (apply super-init args))))
-                      (mred-interfaces.ss-message%
+                      ($$message%
                         (class*
                           message%
-                          (mred-interfaces.ss-message<%>)
+                          ($$message<%>)
                           args
                           (sequence (apply super-init args))))
-                      (mred-interfaces.ss-menu-bar%
+                      ($$menu-bar%
                         (class*
                           menu-bar%
-                          (mred-interfaces.ss-menu-bar<%>)
+                          ($$menu-bar<%>)
                           args
                           (sequence (apply super-init args))))
-                      (mred-interfaces.ss-menu%
+                      ($$menu%
                         (class*
                           menu%
-                          (mred-interfaces.ss-menu<%>)
+                          ($$menu<%>)
                           args
                           (sequence (apply super-init args))))
-                      (mred-interfaces.ss-list-box%
+                      ($$list-box%
                         (class*
                           list-box%
-                          (mred-interfaces.ss-list-box<%>)
+                          ($$list-box<%>)
                           args
                           (sequence (apply super-init args))))
-                      (mred-interfaces.ss-keymap%
+                      ($$keymap%
                         (class*
                           keymap%
-                          (mred-interfaces.ss-keymap<%>)
+                          ($$keymap<%>)
                           args
                           (sequence (apply super-init args))))
-                      (mred-interfaces.ss-key-event%
+                      ($$key-event%
                         (class*
                           key-event%
-                          (mred-interfaces.ss-event<%>
-                            mred-interfaces.ss-key-event<%>)
+                          ($$event<%> $$key-event<%>)
                           args
                           (sequence (apply super-init args))))
-                      (mred-interfaces.ss-image-snip%
+                      ($$image-snip%
                         (class*
                           image-snip%
-                          (mred-interfaces.ss-image-snip<%>
-                            mred-interfaces.ss-snip<%>)
+                          ($$image-snip<%> $$snip<%>)
                           args
                           (sequence (apply super-init args))))
-                      (mred-interfaces.ss-horizontal-panel%
+                      ($$horizontal-panel%
                         (class*
                           horizontal-panel%
-                          (mred-interfaces.ss-horizontal-panel<%>
-                            mred-interfaces.ss-panel<%>)
-                          args
-                          (sequence (apply super-init args))))
-                      (mred-interfaces.ss-horizontal-pane%
+                          ($$horizontal-panel<%> $$panel<%>)
+                          (parent [style '(border)])
+                          (sequence (super-init parent '(border)))))
+                      ($$horizontal-pane%
                         (class*
                           horizontal-pane%
-                          (mred-interfaces.ss-horizontal-pane<%>
-                            mred-interfaces.ss-pane<%>)
+                          ($$horizontal-pane<%> $$pane<%>)
                           args
                           (sequence (apply super-init args))))
-                      (mred-interfaces.ss-gauge%
+                      ($$gauge%
                         (class*
                           gauge%
-                          (mred-interfaces.ss-gauge<%>)
+                          ($$gauge<%>)
                           args
                           (sequence (apply super-init args))))
-                      (mred-interfaces.ss-frame%
+                      ($$frame%
                         (class*
                           frame%
-                          (mred-interfaces.ss-frame<%>)
+                          ($$frame<%>)
                           args
                           (sequence (apply super-init args))))
-                      (mred-interfaces.ss-font-list%
+                      ($$font-list%
                         (class*
                           font-list%
-                          (mred-interfaces.ss-font-list<%>)
+                          ($$font-list<%>)
                           args
                           (sequence (apply super-init args))))
-                      (mred-interfaces.ss-font%
+                      ($$font%
                         (class*
                           font%
-                          (mred-interfaces.ss-font<%>)
+                          ($$font<%>)
                           args
                           (sequence (apply super-init args))))
-                      (mred-interfaces.ss-event%
+                      ($$event%
                         (class*
                           event%
-                          (mred-interfaces.ss-event<%>)
+                          ($$event<%>)
                           args
                           (sequence (apply super-init args))))
-                      (mred-interfaces.ss-editor-wordbreak-map%
+                      ($$editor-wordbreak-map%
                         (class*
                           editor-wordbreak-map%
-                          (mred-interfaces.ss-editor-wordbreak-map<%>)
+                          ($$editor-wordbreak-map<%>)
                           args
                           (sequence (apply super-init args))))
-                      (mred-interfaces.ss-editor-stream-out-string-base%
+                      ($$editor-stream-out-string-base%
                         (class*
                           editor-stream-out-string-base%
-                          (mred-interfaces.ss-editor-stream-out-base<%>
-                            mred-interfaces.ss-editor-stream-out-string-base<%>)
+                          ($$editor-stream-out-base<%>
+                            $$editor-stream-out-string-base<%>)
                           args
                           (sequence (apply super-init args))))
-                      (mred-interfaces.ss-editor-stream-out-base%
+                      ($$editor-stream-out-base%
                         (class*
                           editor-stream-out-base%
-                          (mred-interfaces.ss-editor-stream-out-base<%>)
+                          ($$editor-stream-out-base<%>)
                           args
                           (sequence (apply super-init args))))
-                      (mred-interfaces.ss-editor-stream-out%
+                      ($$editor-stream-out%
                         (class*
                           editor-stream-out%
-                          (mred-interfaces.ss-editor-stream-out<%>)
+                          ($$editor-stream-out<%>)
                           args
                           (sequence (apply super-init args))))
-                      (mred-interfaces.ss-editor-stream-in-string-base%
+                      ($$editor-stream-in-string-base%
                         (class*
                           editor-stream-in-string-base%
-                          (mred-interfaces.ss-editor-stream-in-base<%>
-                            mred-interfaces.ss-editor-stream-in-string-base<%>)
+                          ($$editor-stream-in-base<%>
+                            $$editor-stream-in-string-base<%>)
                           args
                           (sequence (apply super-init args))))
-                      (mred-interfaces.ss-editor-stream-in-base%
+                      ($$editor-stream-in-base%
                         (class*
                           editor-stream-in-base%
-                          (mred-interfaces.ss-editor-stream-in-base<%>)
+                          ($$editor-stream-in-base<%>)
                           args
                           (sequence (apply super-init args))))
-                      (mred-interfaces.ss-editor-stream-in%
+                      ($$editor-stream-in%
                         (class*
                           editor-stream-in%
-                          (mred-interfaces.ss-editor-stream-in<%>)
+                          ($$editor-stream-in<%>)
                           args
                           (sequence (apply super-init args))))
-                      (mred-interfaces.ss-editor-snip%
+                      ($$editor-snip%
                         (class*
                           editor-snip%
-                          (mred-interfaces.ss-editor-snip<%>
-                            mred-interfaces.ss-snip<%>)
+                          ($$editor-snip<%> $$snip<%>)
                           args
                           (sequence (apply super-init args))))
-                      (mred-interfaces.ss-editor-data-class-list%
+                      ($$editor-data-class-list%
                         (class*
                           editor-data-class-list%
-                          (mred-interfaces.ss-editor-data-class-list<%>)
+                          ($$editor-data-class-list<%>)
                           args
                           (sequence (apply super-init args))))
-                      (mred-interfaces.ss-editor-data-class%
+                      ($$editor-data-class%
                         (class*
                           editor-data-class%
-                          (mred-interfaces.ss-editor-data-class<%>)
+                          ($$editor-data-class<%>)
                           args
                           (sequence (apply super-init args))))
-                      (mred-interfaces.ss-editor-data%
+                      ($$editor-data%
                         (class*
                           editor-data%
-                          (mred-interfaces.ss-editor-data<%>)
+                          ($$editor-data<%>)
                           args
                           (sequence (apply super-init args))))
-                      (mred-interfaces.ss-editor-canvas%
+                      ($$editor-canvas%
                         (class*
                           editor-canvas%
-                          (mred-interfaces.ss-editor-canvas<%>)
+                          ($$editor-canvas<%>)
                           args
                           (sequence (apply super-init args))))
-                      (mred-interfaces.ss-editor-admin%
+                      ($$editor-admin%
                         (class*
                           editor-admin%
-                          (mred-interfaces.ss-editor-admin<%>)
+                          ($$editor-admin<%>)
                           args
                           (sequence (apply super-init args))))
-                      (mred-interfaces.ss-dialog%
+                      ($$dialog%
                         (class*
                           dialog%
-                          (mred-interfaces.ss-dialog<%>)
+                          ($$dialog<%>)
                           args
                           (sequence (apply super-init args))))
-                      (mred-interfaces.ss-cursor%
+                      ($$cursor%
                         (class*
                           cursor%
-                          (mred-interfaces.ss-cursor<%>)
+                          ($$cursor<%>)
                           args
                           (sequence (apply super-init args))))
-                      (mred-interfaces.ss-control-event%
+                      ($$control-event%
                         (class*
                           control-event%
-                          (mred-interfaces.ss-control-event<%>
-                            mred-interfaces.ss-event<%>)
+                          ($$control-event<%> $$event<%>)
                           args
                           (sequence (apply super-init args))))
-                      (mred-interfaces.ss-color%
+                      ($$color%
                         (class*
                           color%
-                          (mred-interfaces.ss-color<%>)
+                          ($$color<%>)
                           args
                           (sequence (apply super-init args))))
-                      (mred-interfaces.ss-clipboard-client%
+                      ($$clipboard-client%
                         (class*
                           clipboard-client%
-                          (mred-interfaces.ss-clipboard-client<%>)
+                          ($$clipboard-client<%>)
                           args
                           (sequence (apply super-init args))))
-                      (mred-interfaces.ss-choice%
+                      ($$choice%
                         (class*
                           choice%
-                          (mred-interfaces.ss-choice<%>)
+                          ($$choice<%>)
                           args
                           (sequence (apply super-init args))))
-                      (mred-interfaces.ss-checkable-menu-item%
+                      ($$checkable-menu-item%
                         (class*
                           checkable-menu-item%
-                          (mred-interfaces.ss-checkable-menu-item<%>)
+                          ($$checkable-menu-item<%>)
                           args
                           (sequence (apply super-init args))))
-                      (mred-interfaces.ss-check-box%
+                      ($$check-box%
                         (class*
                           check-box%
-                          (mred-interfaces.ss-check-box<%>)
+                          ($$check-box<%>)
                           args
                           (sequence (apply super-init args))))
-                      (mred-interfaces.ss-button%
+                      ($$button%
                         (class*
                           button%
-                          (mred-interfaces.ss-button<%>)
+                          ($$button<%>)
                           args
                           (sequence (apply super-init args))))
-                      (mred-interfaces.ss-brush-list%
+                      ($$brush-list%
                         (class*
                           brush-list%
-                          (mred-interfaces.ss-brush-list<%>)
+                          ($$brush-list<%>)
                           args
                           (sequence (apply super-init args))))
-                      (mred-interfaces.ss-brush%
+                      ($$brush%
                         (class*
                           brush%
-                          (mred-interfaces.ss-brush<%>)
+                          ($$brush<%>)
                           args
                           (sequence (apply super-init args))))
-                      (mred-interfaces.ss-bitmap-dc%
+                      ($$bitmap-dc%
                         (class*
                           bitmap-dc%
-                          (mred-interfaces.ss-bitmap-dc<%>)
+                          ($$bitmap-dc<%>)
                           args
                           (sequence (apply super-init args))))
-                      (mred-interfaces.ss-bitmap%
+                      ($$bitmap%
                         (class*
                           bitmap%
-                          (mred-interfaces.ss-bitmap<%>)
+                          ($$bitmap<%>)
                           args
                           (sequence (apply super-init args)))))
                (unit/sig
@@ -2681,171 +2660,146 @@
                    bitmap-dc%
                    bitmap%)
                  (import)
-                 (define vertical-panel<%>
-                   mred-interfaces.ss-vertical-panel<%>)
-                 (define vertical-pane<%> mred-interfaces.ss-vertical-pane<%>)
-                 (define timer<%> mred-interfaces.ss-timer<%>)
-                 (define text-field<%> mred-interfaces.ss-text-field<%>)
-                 (define text<%> mred-interfaces.ss-text<%>)
-                 (define tab-snip<%> mred-interfaces.ss-tab-snip<%>)
-                 (define style-list<%> mred-interfaces.ss-style-list<%>)
-                 (define style-delta<%> mred-interfaces.ss-style-delta<%>)
-                 (define string-snip<%> mred-interfaces.ss-string-snip<%>)
-                 (define snip-class<%> mred-interfaces.ss-snip-class<%>)
-                 (define snip-admin<%> mred-interfaces.ss-snip-admin<%>)
-                 (define snip<%> mred-interfaces.ss-snip<%>)
-                 (define slider<%> mred-interfaces.ss-slider<%>)
-                 (define separator-menu-item<%>
-                   mred-interfaces.ss-separator-menu-item<%>)
-                 (define scroll-event<%> mred-interfaces.ss-scroll-event<%>)
-                 (define region<%> mred-interfaces.ss-region<%>)
-                 (define radio-box<%> mred-interfaces.ss-radio-box<%>)
-                 (define ps-setup<%> mred-interfaces.ss-ps-setup<%>)
-                 (define printer-dc<%> mred-interfaces.ss-printer-dc<%>)
-                 (define post-script-dc<%>
-                   mred-interfaces.ss-post-script-dc<%>)
-                 (define popup-menu<%> mred-interfaces.ss-popup-menu<%>)
-                 (define point<%> mred-interfaces.ss-point<%>)
-                 (define pen-list<%> mred-interfaces.ss-pen-list<%>)
-                 (define pen<%> mred-interfaces.ss-pen<%>)
-                 (define pasteboard<%> mred-interfaces.ss-pasteboard<%>)
-                 (define panel<%> mred-interfaces.ss-panel<%>)
-                 (define pane<%> mred-interfaces.ss-pane<%>)
-                 (define mouse-event<%> mred-interfaces.ss-mouse-event<%>)
-                 (define message<%> mred-interfaces.ss-message<%>)
-                 (define menu-bar<%> mred-interfaces.ss-menu-bar<%>)
-                 (define menu<%> mred-interfaces.ss-menu<%>)
-                 (define list-box<%> mred-interfaces.ss-list-box<%>)
-                 (define keymap<%> mred-interfaces.ss-keymap<%>)
-                 (define key-event<%> mred-interfaces.ss-key-event<%>)
-                 (define image-snip<%> mred-interfaces.ss-image-snip<%>)
-                 (define horizontal-panel<%>
-                   mred-interfaces.ss-horizontal-panel<%>)
-                 (define horizontal-pane<%>
-                   mred-interfaces.ss-horizontal-pane<%>)
-                 (define gauge<%> mred-interfaces.ss-gauge<%>)
-                 (define frame<%> mred-interfaces.ss-frame<%>)
-                 (define font-list<%> mred-interfaces.ss-font-list<%>)
-                 (define font<%> mred-interfaces.ss-font<%>)
-                 (define event<%> mred-interfaces.ss-event<%>)
-                 (define editor-wordbreak-map<%>
-                   mred-interfaces.ss-editor-wordbreak-map<%>)
+                 (define vertical-panel<%> $$vertical-panel<%>)
+                 (define vertical-pane<%> $$vertical-pane<%>)
+                 (define timer<%> $$timer<%>)
+                 (define text-field<%> $$text-field<%>)
+                 (define text<%> $$text<%>)
+                 (define tab-snip<%> $$tab-snip<%>)
+                 (define style-list<%> $$style-list<%>)
+                 (define style-delta<%> $$style-delta<%>)
+                 (define string-snip<%> $$string-snip<%>)
+                 (define snip-class<%> $$snip-class<%>)
+                 (define snip-admin<%> $$snip-admin<%>)
+                 (define snip<%> $$snip<%>)
+                 (define slider<%> $$slider<%>)
+                 (define separator-menu-item<%> $$separator-menu-item<%>)
+                 (define scroll-event<%> $$scroll-event<%>)
+                 (define region<%> $$region<%>)
+                 (define radio-box<%> $$radio-box<%>)
+                 (define ps-setup<%> $$ps-setup<%>)
+                 (define printer-dc<%> $$printer-dc<%>)
+                 (define post-script-dc<%> $$post-script-dc<%>)
+                 (define popup-menu<%> $$popup-menu<%>)
+                 (define point<%> $$point<%>)
+                 (define pen-list<%> $$pen-list<%>)
+                 (define pen<%> $$pen<%>)
+                 (define pasteboard<%> $$pasteboard<%>)
+                 (define panel<%> $$panel<%>)
+                 (define pane<%> $$pane<%>)
+                 (define mouse-event<%> $$mouse-event<%>)
+                 (define message<%> $$message<%>)
+                 (define menu-bar<%> $$menu-bar<%>)
+                 (define menu<%> $$menu<%>)
+                 (define list-box<%> $$list-box<%>)
+                 (define keymap<%> $$keymap<%>)
+                 (define key-event<%> $$key-event<%>)
+                 (define image-snip<%> $$image-snip<%>)
+                 (define horizontal-panel<%> $$horizontal-panel<%>)
+                 (define horizontal-pane<%> $$horizontal-pane<%>)
+                 (define gauge<%> $$gauge<%>)
+                 (define frame<%> $$frame<%>)
+                 (define font-list<%> $$font-list<%>)
+                 (define font<%> $$font<%>)
+                 (define event<%> $$event<%>)
+                 (define editor-wordbreak-map<%> $$editor-wordbreak-map<%>)
                  (define editor-stream-out-string-base<%>
-                   mred-interfaces.ss-editor-stream-out-string-base<%>)
-                 (define editor-stream-out-base<%>
-                   mred-interfaces.ss-editor-stream-out-base<%>)
-                 (define editor-stream-out<%>
-                   mred-interfaces.ss-editor-stream-out<%>)
+                   $$editor-stream-out-string-base<%>)
+                 (define editor-stream-out-base<%> $$editor-stream-out-base<%>)
+                 (define editor-stream-out<%> $$editor-stream-out<%>)
                  (define editor-stream-in-string-base<%>
-                   mred-interfaces.ss-editor-stream-in-string-base<%>)
-                 (define editor-stream-in-base<%>
-                   mred-interfaces.ss-editor-stream-in-base<%>)
-                 (define editor-stream-in<%>
-                   mred-interfaces.ss-editor-stream-in<%>)
-                 (define editor-snip<%> mred-interfaces.ss-editor-snip<%>)
-                 (define editor-data-class-list<%>
-                   mred-interfaces.ss-editor-data-class-list<%>)
-                 (define editor-data-class<%>
-                   mred-interfaces.ss-editor-data-class<%>)
-                 (define editor-data<%> mred-interfaces.ss-editor-data<%>)
-                 (define editor-canvas<%> mred-interfaces.ss-editor-canvas<%>)
-                 (define editor-admin<%> mred-interfaces.ss-editor-admin<%>)
-                 (define dialog<%> mred-interfaces.ss-dialog<%>)
-                 (define cursor<%> mred-interfaces.ss-cursor<%>)
-                 (define control-event<%> mred-interfaces.ss-control-event<%>)
-                 (define color<%> mred-interfaces.ss-color<%>)
-                 (define clipboard-client<%>
-                   mred-interfaces.ss-clipboard-client<%>)
-                 (define choice<%> mred-interfaces.ss-choice<%>)
-                 (define checkable-menu-item<%>
-                   mred-interfaces.ss-checkable-menu-item<%>)
-                 (define check-box<%> mred-interfaces.ss-check-box<%>)
-                 (define button<%> mred-interfaces.ss-button<%>)
-                 (define brush-list<%> mred-interfaces.ss-brush-list<%>)
-                 (define brush<%> mred-interfaces.ss-brush<%>)
-                 (define bitmap-dc<%> mred-interfaces.ss-bitmap-dc<%>)
-                 (define bitmap<%> mred-interfaces.ss-bitmap<%>)
-                 (define vertical-panel% mred-interfaces.ss-vertical-panel%)
-                 (define vertical-pane% mred-interfaces.ss-vertical-pane%)
-                 (define timer% mred-interfaces.ss-timer%)
-                 (define text-field% mred-interfaces.ss-text-field%)
-                 (define text% mred-interfaces.ss-text%)
-                 (define tab-snip% mred-interfaces.ss-tab-snip%)
-                 (define style-list% mred-interfaces.ss-style-list%)
-                 (define style-delta% mred-interfaces.ss-style-delta%)
-                 (define string-snip% mred-interfaces.ss-string-snip%)
-                 (define snip-class% mred-interfaces.ss-snip-class%)
-                 (define snip-admin% mred-interfaces.ss-snip-admin%)
-                 (define snip% mred-interfaces.ss-snip%)
-                 (define slider% mred-interfaces.ss-slider%)
-                 (define separator-menu-item%
-                   mred-interfaces.ss-separator-menu-item%)
-                 (define scroll-event% mred-interfaces.ss-scroll-event%)
-                 (define region% mred-interfaces.ss-region%)
-                 (define radio-box% mred-interfaces.ss-radio-box%)
-                 (define ps-setup% mred-interfaces.ss-ps-setup%)
-                 (define printer-dc% mred-interfaces.ss-printer-dc%)
-                 (define post-script-dc% mred-interfaces.ss-post-script-dc%)
-                 (define popup-menu% mred-interfaces.ss-popup-menu%)
-                 (define point% mred-interfaces.ss-point%)
-                 (define pen-list% mred-interfaces.ss-pen-list%)
-                 (define pen% mred-interfaces.ss-pen%)
-                 (define pasteboard% mred-interfaces.ss-pasteboard%)
-                 (define panel% mred-interfaces.ss-panel%)
-                 (define pane% mred-interfaces.ss-pane%)
-                 (define mouse-event% mred-interfaces.ss-mouse-event%)
-                 (define message% mred-interfaces.ss-message%)
-                 (define menu-bar% mred-interfaces.ss-menu-bar%)
-                 (define menu% mred-interfaces.ss-menu%)
-                 (define list-box% mred-interfaces.ss-list-box%)
-                 (define keymap% mred-interfaces.ss-keymap%)
-                 (define key-event% mred-interfaces.ss-key-event%)
-                 (define image-snip% mred-interfaces.ss-image-snip%)
-                 (define horizontal-panel%
-                   mred-interfaces.ss-horizontal-panel%)
-                 (define horizontal-pane% mred-interfaces.ss-horizontal-pane%)
-                 (define gauge% mred-interfaces.ss-gauge%)
-                 (define frame% mred-interfaces.ss-frame%)
-                 (define font-list% mred-interfaces.ss-font-list%)
-                 (define font% mred-interfaces.ss-font%)
-                 (define event% mred-interfaces.ss-event%)
-                 (define editor-wordbreak-map%
-                   mred-interfaces.ss-editor-wordbreak-map%)
+                   $$editor-stream-in-string-base<%>)
+                 (define editor-stream-in-base<%> $$editor-stream-in-base<%>)
+                 (define editor-stream-in<%> $$editor-stream-in<%>)
+                 (define editor-snip<%> $$editor-snip<%>)
+                 (define editor-data-class-list<%> $$editor-data-class-list<%>)
+                 (define editor-data-class<%> $$editor-data-class<%>)
+                 (define editor-data<%> $$editor-data<%>)
+                 (define editor-canvas<%> $$editor-canvas<%>)
+                 (define editor-admin<%> $$editor-admin<%>)
+                 (define dialog<%> $$dialog<%>)
+                 (define cursor<%> $$cursor<%>)
+                 (define control-event<%> $$control-event<%>)
+                 (define color<%> $$color<%>)
+                 (define clipboard-client<%> $$clipboard-client<%>)
+                 (define choice<%> $$choice<%>)
+                 (define checkable-menu-item<%> $$checkable-menu-item<%>)
+                 (define check-box<%> $$check-box<%>)
+                 (define button<%> $$button<%>)
+                 (define brush-list<%> $$brush-list<%>)
+                 (define brush<%> $$brush<%>)
+                 (define bitmap-dc<%> $$bitmap-dc<%>)
+                 (define bitmap<%> $$bitmap<%>)
+                 (define vertical-panel% $$vertical-panel%)
+                 (define vertical-pane% $$vertical-pane%)
+                 (define timer% $$timer%)
+                 (define text-field% $$text-field%)
+                 (define text% $$text%)
+                 (define tab-snip% $$tab-snip%)
+                 (define style-list% $$style-list%)
+                 (define style-delta% $$style-delta%)
+                 (define string-snip% $$string-snip%)
+                 (define snip-class% $$snip-class%)
+                 (define snip-admin% $$snip-admin%)
+                 (define snip% $$snip%)
+                 (define slider% $$slider%)
+                 (define separator-menu-item% $$separator-menu-item%)
+                 (define scroll-event% $$scroll-event%)
+                 (define region% $$region%)
+                 (define radio-box% $$radio-box%)
+                 (define ps-setup% $$ps-setup%)
+                 (define printer-dc% $$printer-dc%)
+                 (define post-script-dc% $$post-script-dc%)
+                 (define popup-menu% $$popup-menu%)
+                 (define point% $$point%)
+                 (define pen-list% $$pen-list%)
+                 (define pen% $$pen%)
+                 (define pasteboard% $$pasteboard%)
+                 (define panel% $$panel%)
+                 (define pane% $$pane%)
+                 (define mouse-event% $$mouse-event%)
+                 (define message% $$message%)
+                 (define menu-bar% $$menu-bar%)
+                 (define menu% $$menu%)
+                 (define list-box% $$list-box%)
+                 (define keymap% $$keymap%)
+                 (define key-event% $$key-event%)
+                 (define image-snip% $$image-snip%)
+                 (define horizontal-panel% $$horizontal-panel%)
+                 (define horizontal-pane% $$horizontal-pane%)
+                 (define gauge% $$gauge%)
+                 (define frame% $$frame%)
+                 (define font-list% $$font-list%)
+                 (define font% $$font%)
+                 (define event% $$event%)
+                 (define editor-wordbreak-map% $$editor-wordbreak-map%)
                  (define editor-stream-out-string-base%
-                   mred-interfaces.ss-editor-stream-out-string-base%)
-                 (define editor-stream-out-base%
-                   mred-interfaces.ss-editor-stream-out-base%)
-                 (define editor-stream-out%
-                   mred-interfaces.ss-editor-stream-out%)
+                   $$editor-stream-out-string-base%)
+                 (define editor-stream-out-base% $$editor-stream-out-base%)
+                 (define editor-stream-out% $$editor-stream-out%)
                  (define editor-stream-in-string-base%
-                   mred-interfaces.ss-editor-stream-in-string-base%)
-                 (define editor-stream-in-base%
-                   mred-interfaces.ss-editor-stream-in-base%)
-                 (define editor-stream-in%
-                   mred-interfaces.ss-editor-stream-in%)
-                 (define editor-snip% mred-interfaces.ss-editor-snip%)
-                 (define editor-data-class-list%
-                   mred-interfaces.ss-editor-data-class-list%)
-                 (define editor-data-class%
-                   mred-interfaces.ss-editor-data-class%)
-                 (define editor-data% mred-interfaces.ss-editor-data%)
-                 (define editor-canvas% mred-interfaces.ss-editor-canvas%)
-                 (define editor-admin% mred-interfaces.ss-editor-admin%)
-                 (define dialog% mred-interfaces.ss-dialog%)
-                 (define cursor% mred-interfaces.ss-cursor%)
-                 (define control-event% mred-interfaces.ss-control-event%)
-                 (define color% mred-interfaces.ss-color%)
-                 (define clipboard-client%
-                   mred-interfaces.ss-clipboard-client%)
-                 (define choice% mred-interfaces.ss-choice%)
-                 (define checkable-menu-item%
-                   mred-interfaces.ss-checkable-menu-item%)
-                 (define check-box% mred-interfaces.ss-check-box%)
-                 (define button% mred-interfaces.ss-button%)
-                 (define brush-list% mred-interfaces.ss-brush-list%)
-                 (define brush% mred-interfaces.ss-brush%)
-                 (define bitmap-dc% mred-interfaces.ss-bitmap-dc%)
-                 (define bitmap% mred-interfaces.ss-bitmap%))))))
+                   $$editor-stream-in-string-base%)
+                 (define editor-stream-in-base% $$editor-stream-in-base%)
+                 (define editor-stream-in% $$editor-stream-in%)
+                 (define editor-snip% $$editor-snip%)
+                 (define editor-data-class-list% $$editor-data-class-list%)
+                 (define editor-data-class% $$editor-data-class%)
+                 (define editor-data% $$editor-data%)
+                 (define editor-canvas% $$editor-canvas%)
+                 (define editor-admin% $$editor-admin%)
+                 (define dialog% $$dialog%)
+                 (define cursor% $$cursor%)
+                 (define control-event% $$control-event%)
+                 (define color% $$color%)
+                 (define clipboard-client% $$clipboard-client%)
+                 (define choice% $$choice%)
+                 (define checkable-menu-item% $$checkable-menu-item%)
+                 (define check-box% $$check-box%)
+                 (define button% $$button%)
+                 (define brush-list% $$brush-list%)
+                 (define brush% $$brush%)
+                 (define bitmap-dc% $$bitmap-dc%)
+                 (define bitmap% $$bitmap%))))))
     (export (open
              (mred :
                    (yield write-resource

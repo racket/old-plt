@@ -212,7 +212,7 @@
                               (string-append base suffix)
                               (string-append base " " special suffix)))
                           "&New"
-                          file-menu:new-string
+                          (file-menu:new-string)
                           "")
                          (get-file-menu)
                          file-menu:new
@@ -227,7 +227,7 @@
                               (string-append base suffix)
                               (string-append base " " special suffix)))
                           "&Open"
-                          file-menu:open-string
+                          (file-menu:open-string)
                           "...")
                          (get-file-menu)
                          file-menu:open
@@ -242,7 +242,7 @@
                               (string-append base suffix)
                               (string-append base " " special suffix)))
                           "&Revert"
-                          file-menu:revert-string
+                          (file-menu:revert-string)
                           "")
                          (get-file-menu)
                          file-menu:revert
@@ -257,11 +257,11 @@
                               (string-append base suffix)
                               (string-append base " " special suffix)))
                           "&Save"
-                          file-menu:save-string
+                          (file-menu:save-string)
                           "")
                          (get-file-menu)
                          file-menu:save
-                         "s"
+                         #\s
                          (file-menu:save-help-string)))))
          (public (file-menu:save-as-menu
                   (and file-menu:save-as
@@ -271,7 +271,7 @@
                               (string-append base suffix)
                               (string-append base " " special suffix)))
                           "Save"
-                          file-menu:save-as-string
+                          (file-menu:save-as-string)
                           " &As...")
                          (get-file-menu)
                          file-menu:save-as
@@ -286,11 +286,11 @@
                               (string-append base suffix)
                               (string-append base " " special suffix)))
                           "&Print"
-                          file-menu:print-string
+                          (file-menu:print-string)
                           "...")
                          (get-file-menu)
                          file-menu:print
-                         "p"
+                         #\p
                          (file-menu:print-help-string)))))
          (sequence (file-menu:between-print-and-close (get-file-menu)))
          (public (file-menu:close-menu
@@ -301,7 +301,7 @@
                               (string-append base suffix)
                               (string-append base " " special suffix)))
                           "&Close"
-                          file-menu:close-string
+                          (file-menu:close-string)
                           "")
                          (get-file-menu)
                          file-menu:close
@@ -316,7 +316,7 @@
                               (string-append base suffix)
                               (string-append base " " special suffix)))
                           (if (eq? (system-type) 'windows) "E&xit" "Quit")
-                          file-menu:quit-string
+                          (file-menu:quit-string)
                           "")
                          (get-file-menu)
                          file-menu:quit
@@ -331,7 +331,7 @@
                               (string-append base suffix)
                               (string-append base " " special suffix)))
                           "&Undo"
-                          edit-menu:undo-string
+                          (edit-menu:undo-string)
                           "")
                          (get-edit-menu)
                          edit-menu:undo
@@ -345,7 +345,7 @@
                               (string-append base suffix)
                               (string-append base " " special suffix)))
                           "&Redo"
-                          edit-menu:redo-string
+                          (edit-menu:redo-string)
                           "")
                          (get-edit-menu)
                          edit-menu:redo
@@ -360,7 +360,7 @@
                               (string-append base suffix)
                               (string-append base " " special suffix)))
                           "Cu&t"
-                          edit-menu:cut-string
+                          (edit-menu:cut-string)
                           "")
                          (get-edit-menu)
                          edit-menu:cut
@@ -375,7 +375,7 @@
                               (string-append base suffix)
                               (string-append base " " special suffix)))
                           "&Copy"
-                          edit-menu:copy-string
+                          (edit-menu:copy-string)
                           "")
                          (get-edit-menu)
                          edit-menu:copy
@@ -390,7 +390,7 @@
                               (string-append base suffix)
                               (string-append base " " special suffix)))
                           "&Paste"
-                          edit-menu:paste-string
+                          (edit-menu:paste-string)
                           "")
                          (get-edit-menu)
                          edit-menu:paste
@@ -405,7 +405,7 @@
                               (string-append base suffix)
                               (string-append base " " special suffix)))
                           (if (eq? (system-type) 'macos) "Clear" "&Delete")
-                          edit-menu:clear-string
+                          (edit-menu:clear-string)
                           "")
                          (get-edit-menu)
                          edit-menu:clear
@@ -420,7 +420,7 @@
                               (string-append base suffix)
                               (string-append base " " special suffix)))
                           "Select A&ll"
-                          edit-menu:select-all-string
+                          (edit-menu:select-all-string)
                           "")
                          (get-edit-menu)
                          edit-menu:select-all
@@ -435,7 +435,7 @@
                               (string-append base suffix)
                               (string-append base " " special suffix)))
                           "Find"
-                          edit-menu:find-string
+                          (edit-menu:find-string)
                           "")
                          (get-edit-menu)
                          edit-menu:find
@@ -450,7 +450,7 @@
                               (string-append base suffix)
                               (string-append base " " special suffix)))
                           "Preferences..."
-                          edit-menu:preferences-string
+                          (edit-menu:preferences-string)
                           "")
                          (get-edit-menu)
                          edit-menu:preferences
@@ -465,7 +465,7 @@
                               (string-append base suffix)
                               (string-append base " " special suffix)))
                           "About "
-                          help-menu:about-string
+                          (help-menu:about-string)
                           "...")
                          (get-help-menu)
                          help-menu:about

@@ -6,14 +6,13 @@
   (shifted-key-list
    get-shifted-key-list))
 
-(define-signature framework:test:run^
+(define-signature framework:test^
   (run-interval
    number-pending-actions
    reraise-error
-   run-one))
+   run-one
 
-(define-signature framework:test:primitives^
-  (current-eventspaces
+   current-eventspaces
 
    button-push
    set-check-box!
@@ -22,7 +21,3 @@
    menu-select
    mouse-click
    new-window))
-
-(define-signature framework:test^
-  ((open framework:test:run^)
-   (open framework:test:primitives^)))

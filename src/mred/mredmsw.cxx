@@ -56,9 +56,12 @@ public:
   void *progress_base_addr;
   mz_jmp_buf progress_base;
   Scheme_Jumpup_Buf progress_cont;
+  int timer_on;
+  UINT timer_id;
 };
 static void het_run_some(void);
 
+static void CALLBACK HETRunSome(HWND hwnd, UINT uMsg, UINT idEvent, DWORD dwTime);
 static Scheme_Object *call_wnd_proc(void *data, int argc, Scheme_Object **argv);
 
 # define WM_MRED_LEAVE (WM_USER + 0x111)
@@ -393,7 +396,16 @@ int wx_start_win_event(const char *who, HWND hWnd, UINT message, WPARAM wParam, 
 	  thunk = scheme_make_closed_prim(call_wnd_proc, (Scheme_Object *)msg);
 	  MrEdQueueInEventspace(MrEdGetContext(NULL), thunk);
 	}
+	if (het->timer_on) {
+	  het->timer_on = 0;
+	  KillTimer(NULL, het->timer_id);
+	}
 	het_run_some();
+	if (het->in_progress && !het->timer_on) {
+	  /* Make a timer event so that we get more time... */
+	  het->timer_on = 1;
+	  het->timer_id = SetTimer(0, NULL, 100, HETRunSome);
+	}
 	return 0;
       default:
 	/* anything else is ok, because it doesn't call Scheme */
@@ -469,7 +481,15 @@ void wx_end_win_event(const char *who, HWND hWnd, UINT message, int tramp)
 
 
   if (!tramp && ((message == WM_VSCROLL) || (message == WM_HSCROLL))) {
-    het_run_some();
+    HiEventTramp *het = (HiEventTramp *)scheme_get_param(scheme_config, mred_het_param);
+    if (het) {
+      het_run_some();
+      if (het->in_progress && !het->timer_on) {
+	/* Make a timer event so that we get more time... */
+	het->timer_on = 1;
+	het->timer_id = SetTimer(0, NULL, 100, HETRunSome);
+      }
+    }
   }
 }
 
@@ -481,6 +501,23 @@ static Scheme_Object *call_wnd_proc(void *data, int argc, Scheme_Object **argv)
   wxWndProc(msg->hwnd, msg->message, msg->wParam, msg->lParam);
 
   return scheme_void;
+}
+
+static void CALLBACK HETRunSome(HWND hwnd, UINT uMsg, UINT idEvent, DWORD dwTime)
+{
+  HiEventTramp *het = (HiEventTramp *)scheme_get_param(scheme_config, mred_het_param);
+
+  if (het) {
+    if (het->timer_on) {
+      het->timer_on = 0;
+      KillTimer(NULL, het->timer_id);
+    }
+    het_run_some();
+    if (het->in_progress) {
+      het->timer_on = 1;
+      het->timer_id = SetTimer(0, NULL, 100, HETRunSome);
+    }
+  }
 }
 
 /***************************************************************************/
@@ -523,6 +560,11 @@ int wxHiEventTrampoline(int (*f)(void *), void *data)
   scheme_init_jmpup_buf(&het->progress_cont);
 
   scheme_dynamic_wind(pre_het, act_het, post_het, NULL, het);
+
+  if (het->timer_on) {
+    het->timer_on = 0;
+    KillTimer(NULL, het->timer_id);
+  }
 
   if (het->in_progress) {
     /* we have leftover work; jump and finish it (non-atomically) */

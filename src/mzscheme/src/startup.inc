@@ -2264,7 +2264,7 @@
 "(with-continuation-mark"
 " parameterization-key"
 "(extend-parameterization"
-"(continuation-mark-set-first(current-continuation-marks) parameterization-key)"
+"(continuation-mark-set-first #f parameterization-key)"
 " p/v ...)"
 "(let()"
 " expr1"

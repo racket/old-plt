@@ -770,9 +770,7 @@ typedef struct Scheme_Thread {
   void *stack_start, *stack_end;
   Scheme_Jumpup_Buf jmpup_buf;
 
-  void *cc_start;
   long *cc_ok;
-  long *ec_ok;
   struct Scheme_Dynamic_Wind *dw;
 
   int running;
@@ -794,6 +792,7 @@ typedef struct Scheme_Thread {
   short overflow_set;
   struct Scheme_Overflow *overflow;
   mz_jmp_buf overflow_buf;
+  void *o_start;
 
   struct Scheme_Comp_Env *current_local_env;
   Scheme_Object *current_local_mark;

@@ -353,8 +353,7 @@ escaping_cont_proc {
  mark:
   Scheme_Escaping_Cont *c = (Scheme_Escaping_Cont *)p;
 
-  gcMARK(c->home);
-  gcMARK(c->ok);
+  gcMARK(c->mark_key);
   gcMARK(c->f);
 
   MARK_cjs(&c->cjs);
@@ -549,7 +548,6 @@ thread_val {
   MARK_jmpup(&pr->jmpup_buf);
   
   gcMARK(pr->cc_ok);
-  gcMARK(pr->ec_ok);
   gcMARK(pr->dw);
   
   gcMARK(pr->nester);

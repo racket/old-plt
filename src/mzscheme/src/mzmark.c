@@ -946,8 +946,7 @@ int escaping_cont_proc_SIZE(void *p) {
 int escaping_cont_proc_MARK(void *p) {
   Scheme_Escaping_Cont *c = (Scheme_Escaping_Cont *)p;
 
-  gcMARK(c->home);
-  gcMARK(c->ok);
+  gcMARK(c->mark_key);
   gcMARK(c->f);
 
   MARK_cjs(&c->cjs);
@@ -959,8 +958,7 @@ int escaping_cont_proc_MARK(void *p) {
 int escaping_cont_proc_FIXUP(void *p) {
   Scheme_Escaping_Cont *c = (Scheme_Escaping_Cont *)p;
 
-  gcFIXUP(c->home);
-  gcFIXUP(c->ok);
+  gcFIXUP(c->mark_key);
   gcFIXUP(c->f);
 
   FIXUP_cjs(&c->cjs);
@@ -1428,7 +1426,6 @@ int thread_val_MARK(void *p) {
   MARK_jmpup(&pr->jmpup_buf);
   
   gcMARK(pr->cc_ok);
-  gcMARK(pr->ec_ok);
   gcMARK(pr->dw);
   
   gcMARK(pr->nester);
@@ -1516,7 +1513,6 @@ int thread_val_FIXUP(void *p) {
   FIXUP_jmpup(&pr->jmpup_buf);
   
   gcFIXUP(pr->cc_ok);
-  gcFIXUP(pr->ec_ok);
   gcFIXUP(pr->dw);
   
   gcFIXUP(pr->nester);

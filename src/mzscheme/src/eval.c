@@ -449,7 +449,7 @@ scheme_handle_stack_overflow(Scheme_Object *(*k)(void))
 
   scheme_init_jmpup_buf(&overflow->cont);
   scheme_zero_unneeded_rands(scheme_current_thread); /* for GC */
-  if (scheme_setjmpup(&overflow->cont, overflow, scheme_current_thread->cc_start)) {
+  if (scheme_setjmpup(&overflow->cont, overflow, scheme_current_thread->o_start)) {
     if (!overflow->captured) /* reset if not captured in a continuation */
       scheme_reset_jmpup_buf(&overflow->cont);
     if (!scheme_overflow_reply) {
@@ -3260,25 +3260,14 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	p->cjs.num_vals = 1;
       }
 
-      if (!SCHEME_CONT_HOME(obj)) {
+      UPDATE_THREAD_RSPTR();
+      if (!scheme_escape_continuation_ok(obj)) {
 	UPDATE_THREAD_RSPTR_FOR_ERROR();
 	scheme_raise_exn(MZEXN_APPLICATION_CONTINUATION,
 			 obj,
 			 "continuation application: attempt to jump into an escape continuation");
       }
-      if (NOT_SAME_OBJ(SCHEME_CONT_HOME(obj), p)) {
-	UPDATE_THREAD_RSPTR_FOR_ERROR();
-	scheme_raise_exn(MZEXN_APPLICATION_CONTINUATION,
-			 obj,
-			 "continuation application: attempted to apply foreign escape continuation"
-			 " (created in another thread)");
-      }
-      if (SCHEME_CONT_OK(obj) && !*SCHEME_CONT_OK(obj)) {
-	UPDATE_THREAD_RSPTR_FOR_ERROR();
-	scheme_raise_exn(MZEXN_APPLICATION_CONTINUATION,
-			 obj,
-			 "continuation application: attempted to cross an escape continuation boundary");
-      }
+      
       p->cjs.u.val = value;
       p->cjs.jumping_to_continuation = (Scheme_Escaping_Cont *)obj;
       scheme_longjmp(MZTHREADELEM(p, error_buf), 1);

@@ -2682,7 +2682,7 @@ static Scheme_Object *call_as_nested_thread(int argc, Scheme_Object *argv[])
   np->tail_buffer_size = p->tail_buffer_size;
 
   np->overflow_set = p->overflow_set;
-  np->cc_start = p->cc_start;
+  np->o_start = p->o_start;
   memcpy(&np->overflow_buf, &p->overflow_buf, sizeof(mz_jmp_buf));
 
   /* In case it's not yet set in the main thread... */

@@ -861,8 +861,6 @@ void *top_level_do(void *(*k)(void), int eb, void *sj_start)
   void *v;
   long * volatile old_cc_ok;
   long * volatile cc_ok;
-  long * volatile old_ec_ok;
-  void * volatile old_cc_start;
   volatile long save_list_stack_pos;
   mz_jmp_buf save, oversave;
   Scheme_Stack_State envss;
@@ -878,8 +876,6 @@ void *top_level_do(void *(*k)(void), int eb, void *sj_start)
     scheme_wake_up();
 
   old_cc_ok = p->cc_ok;
-  old_ec_ok = p->ec_ok;
-  old_cc_start = p->cc_start;
 
   if (eb) {
     if (top_next_use_thread_cc_ok) {
@@ -898,15 +894,6 @@ void *top_level_do(void *(*k)(void), int eb, void *sj_start)
     *cc_ok = 1;
   } else
     cc_ok = NULL;
-
-  if (eb > 1) {
-    long *ec_ok;
-    if (old_ec_ok)
-      *old_ec_ok = 0;
-    ec_ok = (long *)scheme_malloc_atomic(sizeof(long));
-    p->ec_ok = ec_ok;
-    *p->ec_ok = 1;
-  }
 
 #ifdef MZ_PRECISE_GC
   if (scheme_get_external_stack_val)
@@ -938,8 +925,8 @@ void *top_level_do(void *(*k)(void), int eb, void *sj_start)
      amount of space. */
   set_overflow = !p->overflow_set;
   if (set_overflow) {
+    p->o_start = sj_start;
     p->overflow_set = 1;
-    p->cc_start = sj_start;
     memcpy(&oversave, &p->overflow_buf, sizeof(mz_jmp_buf));
     if (scheme_setjmp(p->overflow_buf)) {
       while (1) {
@@ -1010,11 +997,7 @@ void *top_level_do(void *(*k)(void), int eb, void *sj_start)
       *cc_ok = 0;
     if (old_cc_ok)
       *old_cc_ok = 1;
-    if (old_ec_ok)
-      *old_ec_ok = 1;
     p->cc_ok = old_cc_ok;
-    p->ec_ok = old_ec_ok;
-    p->cc_start = old_cc_start;
     if (set_overflow) {
       memcpy(&p->overflow_buf, &oversave, sizeof(mz_jmp_buf));
       p->overflow_set = 0;
@@ -1045,10 +1028,6 @@ void *top_level_do(void *(*k)(void), int eb, void *sj_start)
   if (old_cc_ok)
     *old_cc_ok = 1;
   p->cc_ok = old_cc_ok;
-  if (old_ec_ok)
-    *old_ec_ok = 1;
-  p->ec_ok = old_ec_ok;
-  p->cc_start = old_cc_start;
 
   if (scheme_active_but_sleeping)
     scheme_wake_up();
@@ -2089,16 +2068,6 @@ static void copy_cjs(Scheme_Continuation_Jump_State *a, Scheme_Continuation_Jump
   a->is_kill = b->is_kill;
 }
 
-static void pre_call_ec(void *ec)
-{
-  SCHEME_CONT_HOME(ec) = scheme_current_thread;
-}
-
-static void post_call_ec(void *ec)
-{
-  SCHEME_CONT_HOME(ec) = NULL;
-}
-
 static Scheme_Object *do_call_ec(void *ec)
 {
   Scheme_Object *p[1], *f;
@@ -2132,22 +2101,42 @@ scheme_call_ec (int argc, Scheme_Object *argv[])
 {
   Scheme_Escaping_Cont *cont;
   Scheme_Thread *p = scheme_current_thread;
+  Scheme_Object *v, *mark_key;
+  Scheme_Cont_Frame_Data cframe;
 
   scheme_check_proc_arity("call-with-escaping-continuation", 1,
 			  0, argc, argv);
 
+  mark_key = scheme_make_pair(scheme_false, scheme_false);
+
   cont = MALLOC_ONE_TAGGED(Scheme_Escaping_Cont);
   cont->type = scheme_escaping_cont_type;
-  cont->home = p;
-  cont->ok = p->ec_ok;
   cont->f = argv[0];
   cont->suspend_break = p->suspend_break;
   copy_cjs(&cont->cjs, &p->cjs);
   cont->cont_mark_stack = MZ_CONT_MARK_STACK;
   cont->cont_mark_pos = MZ_CONT_MARK_POS;
+  cont->mark_key = mark_key;
 
-  return scheme_dynamic_wind(pre_call_ec, do_call_ec, post_call_ec,
-			     handle_call_ec, (void *)cont);
+  scheme_push_continuation_frame(&cframe);
+  scheme_set_cont_mark(mark_key, scheme_true);
+
+  v = scheme_dynamic_wind(NULL, do_call_ec, NULL,
+			  handle_call_ec, (void *)cont);
+
+  scheme_pop_continuation_frame(&cframe);
+
+  return v;
+}
+
+int scheme_escape_continuation_ok(Scheme_Object *ec)
+{
+  Scheme_Escaping_Cont *cont = (Scheme_Escaping_Cont *)ec;
+
+  if (scheme_extract_one_cc_mark(NULL, cont->mark_key))
+    return 1;
+  else
+    return 0;
 }
 
 #define TOTAL_STACK_SIZE (sizeof(Scheme_Object*) * SCHEME_STACK_SIZE)
@@ -2339,11 +2328,13 @@ call_cc (int argc, Scheme_Object *argv[])
   cont->runstack_owner = p->runstack_owner;
   cont->cont_mark_stack_owner = p->cont_mark_stack_owner;
 
+  cont->stack_start = p->stack_start;
+
   memcpy(&cont->savebuf, &p->error_buf, sizeof(mz_jmp_buf));
 
   scheme_zero_unneeded_rands(p);
 
-  if (scheme_setjmpup(&cont->buf, cont, p->cc_start)) {
+  if (scheme_setjmpup(&cont->buf, cont, p->stack_start)) {
     /* We arrive here when the continuation is applied */
     Scheme_Object *result = cont->value;
     cont->value = NULL;
@@ -2352,6 +2343,8 @@ call_cc (int argc, Scheme_Object *argv[])
     p->current_local_env = cont->current_local_env;
 
     memcpy(&p->error_buf, &cont->savebuf, sizeof(mz_jmp_buf));
+
+    p->stack_start = cont->stack_start;
 
     /* For dynamic-winds after the "common" intersection
        (see eval.c), execute the pre thunks. Make a list
@@ -2392,8 +2385,10 @@ call_cc (int argc, Scheme_Object *argv[])
     if (p->runstack_owner && (*p->runstack_owner != p)) {
       Scheme_Thread *op;
       op = *p->runstack_owner;
-      saved = copy_out_runstack(op);
-      op->runstack_swapped = saved;
+      if (op) {
+	saved = copy_out_runstack(op);
+	op->runstack_swapped = saved;
+      }
       *p->runstack_owner = p;
     }
 
@@ -2406,8 +2401,10 @@ call_cc (int argc, Scheme_Object *argv[])
     if (p->cont_mark_stack_owner) {
       Scheme_Thread *op;
       op = *p->cont_mark_stack_owner;
-      msaved = copy_out_mark_stack(op);
-      op->cont_mark_stack_swapped = msaved;
+      if (op) {
+	msaved = copy_out_mark_stack(op);
+	op->cont_mark_stack_swapped = msaved;
+      }
       *p->cont_mark_stack_owner = p;
     }
 
@@ -2443,8 +2440,10 @@ void scheme_takeover_stacks(Scheme_Thread *p)
     Scheme_Thread *op;
     Scheme_Saved_Stack *swapped;
     op = *p->runstack_owner;
-    swapped = copy_out_runstack(op);
-    op->runstack_swapped = swapped;
+    if (op) {
+      swapped = copy_out_runstack(op);
+      op->runstack_swapped = swapped;
+    }
     *(p->runstack_owner) = p;
     copy_in_runstack(p, p->runstack_swapped);
     p->runstack_swapped = NULL;
@@ -2454,8 +2453,10 @@ void scheme_takeover_stacks(Scheme_Thread *p)
     Scheme_Thread *op;
     Scheme_Cont_Mark *swapped;
     op = *p->cont_mark_stack_owner;
-    swapped = copy_out_mark_stack(op);
-    op->cont_mark_stack_swapped = swapped;
+    if (op) {
+      swapped = copy_out_mark_stack(op);
+      op->cont_mark_stack_swapped = swapped;
+    }
     *(p->cont_mark_stack_owner) = p;
     copy_in_mark_stack(p, p->cont_mark_stack_swapped);
     p->cont_mark_stack_swapped = NULL;
@@ -2556,13 +2557,13 @@ cont_marks(int argc, Scheme_Object *argv[])
     scheme_wrong_type("continuation-marks", "continuation", 1, argc, argv);
 
   if (SCHEME_ECONTP(argv[0])) {
-    if (!SCHEME_CONT_HOME(argv[0])) {
+    if (1) { /* FIX ME */
       scheme_arg_mismatch("continuation-marks",
 			  "escape continuation no long applicable: ",
 			  argv[0]);
     }
 
-    return continuation_marks(SCHEME_CONT_HOME(argv[0]), NULL, argv[0], 0);
+    return continuation_marks(/* FIXME */ NULL, NULL, argv[0], 0);
   } else
     return continuation_marks(NULL, argv[0], NULL, 0);
 }
@@ -2670,10 +2671,11 @@ extract_one_cc_mark(int argc, Scheme_Object *argv[])
 {
   Scheme_Object *r;
 
-  if (!SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_cont_mark_set_type))
-    scheme_wrong_type("continuation-mark-set-first", "continuation-mark-set", 0, argc, argv);
+  if (SCHEME_TRUEP(argv[0])
+      && !SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_cont_mark_set_type))
+    scheme_wrong_type("continuation-mark-set-first", "continuation-mark-set or #f", 0, argc, argv);
   
-  r = scheme_extract_one_cc_mark(argv[0], argv[1]);
+  r = scheme_extract_one_cc_mark(SCHEME_TRUEP(argv[0]) ? argv[0] : NULL, argv[1]);
   if (!r) {
     if (argc > 2)
       r = argv[2];

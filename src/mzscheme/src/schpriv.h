@@ -835,6 +835,7 @@ typedef struct Scheme_Cont {
   Scheme_Thread **runstack_owner;
   Scheme_Cont_Mark *cont_mark_stack_copied;
   Scheme_Thread **cont_mark_stack_owner;
+  void *stack_start;
   struct Scheme_Overflow *save_overflow;
   struct Scheme_Comp_Env *current_local_env;
   mz_jmp_buf savebuf; /* save old error buffer here */
@@ -844,17 +845,16 @@ typedef struct Scheme_Escaping_Cont {
   Scheme_Type type;
   MZ_HASH_KEY_EX
   Scheme_Continuation_Jump_State cjs;
-  Scheme_Thread *home;
-  long *ok;
+  Scheme_Object *mark_key;
   Scheme_Object *f;
   int suspend_break;
   MZ_MARK_STACK_TYPE cont_mark_stack; /* for `continuation-marks' */
   MZ_MARK_POS_TYPE cont_mark_pos; /* for `continuation-marks' */
 } Scheme_Escaping_Cont;
 
-#define SCHEME_CONT_HOME(obj)  (((Scheme_Escaping_Cont *)(obj))->home)
-#define SCHEME_CONT_OK(obj)  (((Scheme_Escaping_Cont *)(obj))->ok)
 #define SCHEME_CONT_F(obj) (((Scheme_Escaping_Cont *)(obj))->f)
+
+int scheme_escape_continuation_ok(Scheme_Object *);
 
 #define scheme_save_env_stack_w_thread(ss, p) \
     (ss.runstack = MZ_RUNSTACK, ss.runstack_start = MZ_RUNSTACK_START, \

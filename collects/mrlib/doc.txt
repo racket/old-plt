@@ -8,52 +8,64 @@ The graph.ss library provides a graph drawing toolkit, built
 out of mred's pasteboard%s.
 
 In provides four exports: graph-snip<%>, graph-snip-mixin,
-graph-pasteboard-mixin, and add-links.
+graph-pasteboard<%>, graph-pasteboard-mixin, and add-links.
 
 ============================================================
 
-The _graph-pasteboard-mixin_ does not add any methods to
-pasteboard%. It overrides many methods to draw lines between
-graph-snip<%>s that it contains.
+The _graph-pasteboard<%>_ interface has one method:
+
+> (send a-graph-pasteboard<%> on-mouse-over-snips a-los)
+  a-los : (listof snip%)
+
+This method is called when the mouse passes over any snips
+in the editor. It is only called when the list of snips
+under the editor changes (ie, if the mouse moves, but
+remains over the same list of snips, the method is not
+called). Also, this method is called with the empty list if
+the mouse leaves the pasteboard.
+
+The _graph-pasteboard-mixin_ overrides many methods to draw
+lines between graph-snip<%>s that it contains and
+implements the graph-pasteboard<%> interface.
 
 ============================================================
 
 The _graph-snip<%>_ interface has these methods:
 
-> (send a graph-snip<%> get-children) - returns a list of
+> (send a-graph-snip<%> get-children) - returns a list of
    snips that implement graph-snip<%>. Each of these snips
    will have a line drawn from it, pointing at this snip.
 
-> (send a graph-snip<%> add-child (is-a?/c graph-snip<%>)) -
+> (send a-graph-snip<%> add-child (is-a?/c graph-snip<%>)) -
   adds a child of this snip. Instead of calling this method,
   consider using the add-child function provided from this
   library. 
 
-> (send a graph-snip<%> remove-child (is-a?/c graph-snip<%>)) - 
+> (send a-graph-snip<%> remove-child (is-a?/c graph-snip<%>)) - 
   removes a child snip from this snip. Be sure to remove this
   snip as a parent from the argument, too.
   
 
-> (send a graph-snip<%> get-parents) - returns a list of
+> (send a-graph-snip<%> get-parents) - returns a list of
   snips that implement graph-snip<%>. Each of these
   snips will have a line drawn to it, starting from this
   snip. 
 
-> (send a graph-snip<%> add-parent (is-a?/c graph-snip<%>))
-> (send a graph-snip<%> add-parent (is-a?/c graph-snip<%>)
+> (send a-graph-snip<%> add-parent (is-a?/c graph-snip<%>))
+> (send a-graph-snip<%> add-parent (is-a?/c graph-snip<%>)
                                    (union false? (is-a?/c pen%))
                                    (union false? (is-a?/c pen%))
                                    (union false? (is-a?/c brush%))
                                    (union false? (is-a?/c brush%)))
   adds a parent of this snip. Instead of calling this method,
-  consider using the add-child function provided from this
+  consider using the add-links function provided from this
   library. 
 
-> (send a graph-snip<%> remove-parent)
+> (send a-graph-snip<%> remove-parent)
   removes a parent snip from this snip. Be sure to remove this
   snip as a child from the argument, too.
 
-> (send a graph-snip<%> get-parent-links) - this method is
+> (send a-graph-snip<%> get-parent-links) - this method is
   only used internally. It returns a list of opaque
   structures that contain information about the parent snips
   and what color the links between them should be.

@@ -2,6 +2,42 @@
 See MzScheme_200.txt for information on major changes in MzScheme
  199.x. Minor changes are listed below.
 
+Version 199.11:
+
+ * Changed string constants to support all ANSI C escapes, such as \n,
+   both on input and on output from `write'.  Implemented by Eli
+   Barzilay.
+
+ * Added an optional argument to `read-syntax' for setting the source
+   location offset.
+
+ * Changed `datum->syntax-object' to allow a literal location
+   specification as the last argument, instead of a syntax object
+   whose location is copied.
+
+ * Added an optional argument to `system-type'. If it's not false (the
+   default), the result is a string that contains details about the
+   operating system and the current machine (in a platform-specific
+   format).
+
+ * Added `file-stream-buffer' to control the buffering of data in
+   file-stream ports. The buffer modes are standard: 'none, 'line, and
+   'block. Under Unix, the default mode for the original error port is
+   now 'none instead of 'line.
+
+ * Fixed port line counting to treat CRLF as terminating a single line
+   (on all platforms), instead of counting the CR and LF separately.
+   Consequently, the source location information in error messages is
+   more useful under Windows.
+
+ * Fixed `file-stream-port?' for Windows.
+
+ * Fixed `system' in the "process.ss" MzLib library when the current
+   input, output, or error port is not a file-stream port.
+
+   The two preceding bug fixes effectively cancel each other;
+   `system' still doesn't work in Windows at the moment.
+
 Version 199.7:
 
  * Added an "infix" conversion in the reader; input of the form
@@ -32,10 +68,10 @@ Version 103.5:
  * Fixed a memory bug in the run-time support for mzc-compiled code.
 
  * Added syntax objects and `read-syntax', in preparation for hygienic
-   macros. (Not yet documented.)
+   macros.
 
  * Added `port-count-lines!', which enables line-couting for a port.
-   Will be useful for `read-syntax'. (Not yet documented.)
+   Will be useful for `read-syntax'.
 
 Version 103.4:
 
@@ -87,6 +123,7 @@ Renamed arity to procedure-arity
 Replaced primitive-name and inferred-name with object-name
 Added an "infix" conversion in the reader, triggered by a pair of dots
  between a pair of parens
+Changed string constants to support ANSI C escapes (e.g., \n)
 Fixed leaks (file descriptors, etc.) that could happen with
  thread kills
 Fixed memory bug in the run-time support for mzc-compiled code

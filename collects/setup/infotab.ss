@@ -55,6 +55,7 @@
 	   #%app #%datum #%top
 	   define quote
 	   list cons car cdr quasiquote unquote unquote-splicing
+	   list* append reverse
 	   build-path collection-path))
 
 

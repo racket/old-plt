@@ -334,6 +334,9 @@
 (define g1 (make-generic c1 x))
 (test 1 g1 o1)
 (test 1 g1 o2)
+(arity-test g1 1 1)
+
+(error-test '(make-generic c1 www)  exn:object:class-ivar?)
 
 (define g2 (make-generic c2 x))
 (test 1 g2 o2)
@@ -341,7 +344,10 @@
 (define g0 (make-generic i0.1 x))
 (test 1 g0 o1)
 (test 1 g0 o2)
+(arity-test g0 1 1)
 (test 'hi g0 (make-object (class* () (i0.1) () (public [x 'hi][y 'bye]))))
+
+(error-test '(make-generic i0.1 www) exn:object:interface-ivar?)
 
 (error-test '(g2 o1) exn:object:generic?)
 (error-test '(g0 o3) exn:object:generic?)

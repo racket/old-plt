@@ -1,0 +1,601 @@
+;; A kind of lambda-lifting
+;; (c) 19978 PLT, Rice University
+
+;; Finds liftable procedures, sets their `liftable' field, and
+;;  replaces lexical variables for liftable procedures with
+;;  globals variables. This transformation can be applied
+;;  anytime (and multiple times) after analyze.ss and before
+;;  closure.ss.
+;; Liftable lambdas are procedures whose free variables include only
+;;  lexical variables bound to known-lifted procedures, primitive
+;;  globals, and statics. (No namespace-sentsitive globals and no
+;;  per-load statics.) Per-load liftable lambdas are lifted to per-load
+;;  allocation; per-load liftable lambdas can have other per-load
+;;  liftable lambdas and values in their closure.
+
+;; TODO: get rid of let{rec}-bound variables that are useless
+;;  because they are bound to lifted procedures.
+
+;;; Annotatitons: ----------------------------------------------
+;;    lambda - sets `liftable' in the procedure-code structure
+;;; ------------------------------------------------------------
+
+(unit/sig compiler:lift^
+  (import (compiler:option : compiler:option^)
+	  compiler:library^
+	  compiler:cstructs^
+	  (zodiac : zodiac:system^)
+	  compiler:zlayer^
+	  compiler:analyze^
+	  compiler:top-level^
+	  compiler:const^
+	  compiler:closure^
+	  compiler:driver^
+	  mzlib:function^)
+
+  (define lifting-allowed? #t)
+
+  (define procedures null)
+
+  ;; find-all-procedures!
+  (define find-all-procedures!
+    (letrec ([find!
+	      (lambda (ast)
+		(cond
+		 ;;-----------------------------------------------------------------
+		 ;; CONSTANTS (A-VALUES)
+		 [(zodiac:quote-form? ast) (void)]
+			
+		 ;;-----------------------------------------------------------------
+		 ;; VARIABLE REFERENCES (A-VALUES)
+		 ;;
+		 [(zodiac:bound-varref? ast) (void)]
+
+		 [(zodiac:top-level-varref? ast) (void)]
+						
+		 ;;--------------------------------------------------------------------
+		 ;; LAMBDA EXPRESSIONS
+		 ;;
+		 [(zodiac:case-lambda-form? ast)
+		  (set! procedures (cons ast procedures))
+		  (for-each find! (zodiac:case-lambda-form-bodies ast))]
+		
+		 ;;--------------------------------------------------------------
+		 ;; LET EXPRESSIONS
+		 [(zodiac:let-values-form? ast)
+		  (find! (car (zodiac:let-values-form-vals ast)))
+		  (find! (zodiac:let-values-form-body ast))]
+
+		 ;;-----------------------------------------------------------------
+		 ;; LETREC EXPRESSIONS
+		 ;;
+		 [(zodiac:letrec*-values-form? ast)
+		  (for-each find! (zodiac:letrec*-values-form-vals ast))
+		  (find! (zodiac:letrec*-values-form-body ast))]
+		 
+		 ;;-----------------------------------------------------
+		 ;; IF EXPRESSIONS
+		 ;;
+		 ;;  analyze the 3 branches.
+		 ;;
+		 [(zodiac:if-form? ast)
+		  (find! (zodiac:if-form-test ast))
+		  (find! (zodiac:if-form-then ast))
+		  (find! (zodiac:if-form-else ast))]
+
+		 ;;--------------------------------------------------------
+		 ;; BEGIN EXPRESSIONS
+		 ;;
+		 ;; analyze the branches
+		 [(zodiac:begin-form? ast)
+		  (for-each find! (zodiac:begin-form-bodies ast))]
+		
+		 ;;--------------------------------------------------------
+		 ;; BEGIN0 EXPRESSIONS
+		 ;;
+		 ;; analyze the branches
+		 [(zodiac:begin0-form? ast)
+		  (find! (zodiac:begin0-form-first ast))
+		  (find! (zodiac:begin0-form-rest ast))]
+		
+		 ;;--------------------------------------------------------
+		 ;; SET! EXPRESSIONS
+		 ;;
+		 ;; we analyze the target, which will register it as being
+		 ;; mutable or used, as necessary.  Then we analyze the value.
+		 ;;
+		 [(zodiac:set!-form? ast)
+		  (find! (zodiac:set!-form-val ast))]
+		 
+		 ;;---------------------------------------------------------
+		 ;; DEFINE EXPRESSIONS
+		 ;;
+		 [(zodiac:define-values-form? ast)
+		  (find! (zodiac:define-values-form-val ast))]
+		
+		 ;;-------------------------------------------------------------------
+		 ;; APPLICATIONS
+		 ;;  analyze all the parts, and note whether the rator is
+		 ;;  a primitive;
+		 ;;  if this is a call to a primitive, check the arity.
+		 ;;
+		 [(zodiac:app? ast)
+		  (find! (zodiac:app-fun ast))
+		  (for-each find! (zodiac:app-args ast))]
+		
+		 ;;-------------------------------------------------------------------
+		 ;; STRUCT
+		 ;;
+		 ;; nothing much to do except analyze the super position
+		 ;;
+		 [(zodiac:struct-form? ast)
+		  (let ([super (zodiac:struct-form-super ast)])
+		    (when super
+		      (find! (zodiac:struct-form-super ast))))]
+
+		 ;;--------------------------------------------------------------------
+		 ;; UNIT
+		 ;;
+		 [(zodiac:unit-form? ast)
+		  (find! (car (zodiac:unit-form-clauses ast)))]
+
+		 ;;-------------------------------------------------------------------
+		 ;; COMPOUND UNIT
+		 ;;
+		 ;; nothing much to do except analyze the contituent exprs
+		 ;;
+		 [(zodiac:compound-unit-form? ast)
+		  (for-each (lambda (link) (find! (cadr link)))
+			    (zodiac:compound-unit-form-links ast))]
+
+		 ;;-----------------------------------------------------------
+		 ;; INVOKE
+		 ;;
+		 [(zodiac:invoke-form? ast)
+		  (find! (zodiac:invoke-form-unit ast))]
+		 
+		 ;;-----------------------------------------------------------
+		 ;; CLASS
+		 ;;
+		 [(zodiac:class*/names-form? ast)
+		  (find! (zodiac:class*/names-form-super-expr ast))
+		  (for-each find! (zodiac:class*/names-form-interfaces ast))
+		  (find! (car (zodiac:sequence-clause-exprs 
+			       (car (zodiac:class*/names-form-inst-clauses ast)))))
+		  (class-init-defaults-map!
+		   ast
+		   (lambda (var ast) (find! ast) ast))]
+		 
+		 ;;-------------------------------------------------------------------
+		 ;; INTERFACE
+		 ;;
+		 ;; nothing much to do except analyze the super exprs
+		 ;;
+		 [(zodiac:interface-form? ast)
+		  (for-each find! (zodiac:interface-form-super-exprs ast))]
+		 
+		 [else (compiler:internal-error
+			ast
+			(format "unsupported syntactic form (~a)"
+				(if (struct? ast)
+				    (vector-ref (struct->vector ast) 0)
+				    ast)))]))])
+      
+      (lambda (ast)
+	(set! procedures null)
+	(find! ast))))
+
+  ;; Recursively determines the `liftable' field in the procedure
+  ;; record; if the given procedure's `liftable' field remains
+  ;; 'unknown-liftable, it should be changed to #t because it's part
+  ;; of a cycle of liftable procedures. (Setting the flag to #t is
+  ;; not structly necessary, but it's a good optimization since we'll
+  ;; eventually check the whole set.)
+  (define (get-liftable! lambda)
+    (let ([code (get-annotation lambda)])
+      (if (eq? (procedure-code-liftable code) 'unknown-liftable)
+	  (if lifting-allowed?
+	      ;; Liftable only if there are no free (non-pls) global vars
+	      (begin
+		;; Mark this one in case we encounter a cycle:
+		(set-procedure-code-liftable! code 'cycle)
+		;; Check each free variable
+		(let ([r (let loop ([l (set->list (code-free-vars code))]
+				    [pls? (not (set-empty? (code-global-vars code)))]
+				    [cycle? #f])
+			   (if (null? l)
+			       ;; It's liftable, assuming the cycle is resolved
+			       (cond
+				[(and pls? cycle?) 'pls-cycle]
+				[cycle? 'cycle]
+				[pls? 'pls]
+				[else 'static])
+				
+			       (let ([v (extract-varref-known-val (car l))])
+				 (if (zodiac:case-lambda-form? v)
+				     (let ([vl (get-liftable! v)])
+				       (if vl
+					   (loop (cdr l)
+						 (or pls? (eq? vl 'pls) (eq? vl 'pls-cycle))
+						 (or cycle? (eq? vl 'cycle) (eq? vl 'pls-cycle)))
+					   #f))
+				     #f))))])
+		  (cond
+		   [(not r) (set-procedure-code-liftable! code #f) 
+			    #f]
+		   [(or (eq? r 'cycle) (eq? r 'pls-cycle))
+		    (set-procedure-code-liftable! code 'unknown-liftable) 
+		    r]
+		   [(eq? r 'pls) (set-procedure-code-liftable! code 'pls) 
+				 'pls]
+		   [else (set-procedure-code-liftable! code 'static) 
+			 'static])))
+	      (begin
+		(set-procedure-code-liftable! code #f)
+		#f))
+	  (procedure-code-liftable code))))
+
+  (define (set-liftable! lambda)
+    (let ([v (get-liftable! lambda)])
+      (when v
+	(let ([pls? (or (eq? v 'pls) (eq? v 'pls-cycle))])
+	  (when (compiler:option:verbose)
+	    (compiler:warning lambda (format "found static procedure~a"
+					     (if pls? " (per-load)" ""))))
+	  (compiler:add-lifted-lambda! lambda pls?)))))
+
+  ;; lift-lambdas! uses the `liftable' procedure annotation with known-value
+  ;;  analysis to replace lexical variables referencing known liftable
+  ;;  procedures with top-level-varrefs referencing the lifted
+  ;;  procedure
+  ;; Since per-load lifting rarranges global variable sets, we
+  ;;  recompute them.
+  ;; Returns (cons ast global-var-set)
+  (define lift-lambdas!
+    (letrec ([lift!
+	      (lambda (ast code)
+		(when (compiler:option:debug)
+		  (zodiac:print-start! debug:port ast)
+		  (newline debug:port))
+		
+		(cond
+		
+		 ;;-----------------------------------------------------------------
+		 ;; CONSTANTS (A-VALUES)
+		 [(zodiac:quote-form? ast) ast]
+			
+		 ;;-----------------------------------------------------------------
+		 ;; VARIABLE REFERENCES (A-VALUES)
+		 ;;
+		 [(zodiac:bound-varref? ast)
+		  (let ([v (extract-varref-known-val ast)])
+
+		    (if (zodiac:case-lambda-form? v)
+
+			(let ([lifted (procedure-code-liftable (get-annotation v))])
+			  (if lifted
+			      
+			      ;; The procedure was lifted
+			      (begin
+				(when code
+				  (remove-code-free-vars! code (make-singleton-set 
+								(zodiac:bound-varref-binding ast))))
+				(when (top-level-varref/bind-from-lift-pls? lifted)
+				  (add-global! const:the-per-load-statics-table))
+				lifted)
+			      
+			      ;; No change
+			      ast))
+
+			;; No change
+			ast))]
+		 
+		 [(zodiac:top-level-varref? ast)
+
+		  (cond
+		   [(varref:has-attribute? ast varref:primitive)
+		    (void)]
+		   [(varref:has-attribute? ast varref:per-load-static)
+		    (add-global! const:the-per-load-statics-table)]
+		   [(varref:has-attribute? ast varref:static)
+		    (void)]
+		   [else (add-global! (zodiac:varref-var ast))])
+		  
+		  ast]
+		 
+		 ;;--------------------------------------------------------------------
+		 ;; LAMBDA EXPRESSIONS
+		 ;;    analyze the bodies, and set binding info for the binding vars
+		 ;;
+		 [(zodiac:case-lambda-form? ast)
+		  (let ([code (get-annotation ast)]
+			[save-globals globals])
+		    ;; We're recomputing globals...
+		    (set-code-global-vars! code empty-set)
+
+		    (zodiac:set-case-lambda-form-bodies! 
+		     ast 
+		     (map (lambda (b ccode)
+			    (set! globals empty-set)
+			    ;; Analyze case
+			    (let ([b (lift! b ccode)])
+			      ;; Set and merge globals
+			      (set-code-global-vars! ccode globals)
+			      (set-code-global-vars! code
+						     (set-union globals
+								(code-global-vars code)))
+
+			      b))
+			  (zodiac:case-lambda-form-bodies ast)
+			  (procedure-code-case-codes code)))
+		 
+		    ;; If it was lifted, return the new static varref
+		    (let ([lifted (procedure-code-liftable code)])
+		      (cond
+		       [(not lifted) 
+			(set! globals (set-union save-globals (code-global-vars code)))
+			ast]
+		       [(top-level-varref/bind-from-lift-pls? lifted)
+			(set! globals (set-union-singleton 
+				       save-globals
+				       const:the-per-load-statics-table))
+			lifted]
+		       [else
+			(set! globals save-globals)
+			lifted])))]
+		 
+		 ;;--------------------------------------------------------------
+		 ;; LET EXPRESSIONS
+		 ;;    Several values may be bound at once.  In this case, 'known'
+		 ;;    analysis is not done here.
+		 ;;
+		 ;;    in let, variables are assumed to be
+		 ;;    immutable and known; we store this information
+		 ;;    in the binding structure in the compiler:bound structure..
+		 ;;
+		 [(zodiac:let-values-form? ast)
+		  (let* ([val (lift! (car (zodiac:let-values-form-vals ast)) code)])
+		    (set-car! (zodiac:let-values-form-vals ast) val)
+		    
+		    ; lift in body expressions
+		    (let ([body (lift! (zodiac:let-values-form-body ast) code)])
+		      (zodiac:set-let-values-form-body! ast body)))
+		  
+		  ast]
+
+		 ;;-----------------------------------------------------------------
+		 ;; LETREC EXPRESSIONS
+		 ;;
+		 [(zodiac:letrec*-values-form? ast)
+		  
+		  (let* ([varses (zodiac:letrec*-values-form-vars ast)]
+			 [vals (zodiac:letrec*-values-form-vals ast)])
+		 
+		    (zodiac:set-letrec*-values-form-vals! 
+		     ast 
+		     (map (lambda (val) (lift! val code)) vals))
+		    
+		    (zodiac:set-letrec*-values-form-body!
+		     ast
+		     (lift! (zodiac:letrec*-values-form-body ast) code))
+		    
+		    ast)]
+		 
+		 ;;-----------------------------------------------------
+		 ;; IF EXPRESSIONS
+		 ;;
+		 ;;  analyze the 3 branches.
+		 ;;
+		 [(zodiac:if-form? ast)
+		  (zodiac:set-if-form-test! ast (lift! (zodiac:if-form-test ast) code))
+		  (let ([then (lift! (zodiac:if-form-then ast) code)]
+			[else (lift! (zodiac:if-form-else ast) code)])
+		    (zodiac:set-if-form-then! ast then)
+		    (zodiac:set-if-form-else! ast else)
+		   
+		    ast)]
+		
+		 ;;--------------------------------------------------------
+		 ;; BEGIN EXPRESSIONS
+		 ;;
+		 [(zodiac:begin-form? ast)
+		  
+		  (zodiac:set-begin-form-bodies!
+		   ast
+		   (map (lambda (b) (lift! b code))
+			(zodiac:begin-form-bodies ast)))
+		  
+		  ast]
+		 
+		
+		 ;;--------------------------------------------------------
+		 ;; BEGIN0 EXPRESSIONS
+		 ;;
+		 ;; analyze the branches
+		 [(zodiac:begin0-form? ast)
+		  (zodiac:set-begin0-form-first! ast (lift! (zodiac:begin0-form-first ast) code))
+		  (zodiac:set-begin0-form-rest! ast (lift! (zodiac:begin0-form-rest ast) code))
+
+		  ast]
+		
+		 ;;--------------------------------------------------------
+		 ;; SET! EXPRESSIONS
+		 ;;
+		 ;; we analyze the target, which will register it as being
+		 ;; mutable or used, as necessary.  Then we analyze the value.
+		 ;;
+		 [(zodiac:set!-form? ast)
+
+		  ;; Possibly a top-level-varref; put it in the global-var set
+		  (lift! (zodiac:set!-form-var ast) code)
+
+		  (zodiac:set-set!-form-val! 
+		   ast 
+		   (lift! (zodiac:set!-form-val ast) code))
+		 
+		  ast]
+		 
+		 ;;---------------------------------------------------------
+		 ;; DEFINE EXPRESSIONS
+		 ;;
+		 [(zodiac:define-values-form? ast)
+		  
+		  ;; Top-level-varrefs; put them in the global-var set
+		  (for-each (lambda (v) (lift! v code)) (zodiac:define-values-form-vars ast))
+
+		  (zodiac:set-define-values-form-val! 
+		   ast
+		   (lift! (zodiac:define-values-form-val ast) code))
+		  
+		  ast]
+		
+		 ;;-------------------------------------------------------------------
+		 ;; APPLICATIONS
+		 ;;  analyze all the parts, and note whether the rator is
+		 ;;  a primitive;
+		 ;;  if this is a call to a primitive, check the arity.
+		 ;;
+		 [(zodiac:app? ast)
+		  
+		  (let* ([fun (lift! (zodiac:app-fun ast) code)]
+			 [args (map (lambda (arg) (lift! arg code))
+				    (zodiac:app-args ast))])
+		    (zodiac:set-app-fun! ast fun)
+		    (zodiac:set-app-args! ast args))
+
+		  ast]
+		
+		 ;;-------------------------------------------------------------------
+		 ;; STRUCT
+		 ;;
+		 ;; nothing much to do except analyze the super position
+		 ;;
+		 [(zodiac:struct-form? ast)
+		  (let ([super (zodiac:struct-form-super ast)])
+		    (when super
+		      (zodiac:set-struct-form-super! ast (lift! super code))))
+		  
+		  ast]
+
+		 ;;--------------------------------------------------------------------
+		 ;; UNIT
+		 ;;
+		 [(zodiac:unit-form? ast)
+		  
+		  (let* ([code (get-annotation ast)]
+			 [body (car (zodiac:unit-form-clauses ast))]
+			 [save-globals globals])
+		    (set! globals empty-set)
+
+		    (let ([body (lift! body code)])
+		      (set-car! (zodiac:unit-form-clauses ast) body))
+		    
+		    (set-code-global-vars! code globals)
+		    (set! globals (set-union globals save-globals)))
+
+		  ast]
+
+		 ;;-------------------------------------------------------------------
+		 ;; COMPOUND UNIT
+		 ;;
+		 ;; nothing much to do except analyze the contituent exprs
+		 ;;
+		 [(zodiac:compound-unit-form? ast)
+		  
+		  (for-each (lambda (link)
+			      (set-car! (cdr link)
+					(lift! (cadr link) code)))
+			    (zodiac:compound-unit-form-links ast))
+		  
+		  ast]
+
+		 ;;-----------------------------------------------------------
+		 ;; INVOKE
+		 ;;
+		 [(zodiac:invoke-form? ast)
+		  (zodiac:set-invoke-form-unit!
+		   ast 
+		   (lift! (zodiac:invoke-form-unit ast) code))
+		  
+		  ;; Might include top-level-varrefs; put them in the global-var set
+		  (for-each (lambda (v) (lift! v code)) (zodiac:invoke-form-variables ast))
+
+		  ast]
+		 
+		 ;;-----------------------------------------------------------
+		 ;; CLASS
+		 ;;
+		 [(zodiac:class*/names-form? ast)
+
+		  ; Analyze super-expr & interfaces
+		  (zodiac:set-class*/names-form-super-expr! 
+		   ast 
+		   (lift! (zodiac:class*/names-form-super-expr ast) code))
+		  (zodiac:set-class*/names-form-interfaces! 
+		   ast
+		   (map (lambda (i) (lift! i code))
+			(zodiac:class*/names-form-interfaces ast)))
+		    
+		  (let* ([code (get-annotation ast)]
+			 [save-globals globals])
+
+		    (set! globals empty-set)
+
+		    ; Now body
+		    (let ([l (zodiac:sequence-clause-exprs
+			      (car (zodiac:class*/names-form-inst-clauses ast)))])
+		      (set-car! l (lift! (car l) code)))
+		    
+		    ; Now analyze init arg defaults
+		    (class-init-defaults-map!
+		     ast
+		     (lambda (var ast) (lift! ast code)))
+
+		    (set-code-global-vars! code globals)
+		    (set! globals (set-union save-globals globals)))
+		  
+		  ast]
+		 
+		 ;;-------------------------------------------------------------------
+		 ;; INTERFACE
+		 ;;
+		 ;; nothing much to do except analyze the super exprs
+		 ;;
+		 [(zodiac:interface-form? ast)
+		  (zodiac:set-interface-form-super-exprs!
+		   ast
+		   (map (lambda (expr) (lift! expr code))
+			(zodiac:interface-form-super-exprs ast)))
+
+		  ast]
+		
+		 [else (compiler:internal-error
+			ast
+			(format "unsupported syntactic form (~a)"
+				(if (struct? ast)
+				    (vector-ref (struct->vector ast) 0)
+				    ast)))]))]
+	     [globals empty-set]
+	     [add-global! (lambda (v) (set! globals (set-union-singleton globals v)))])
+			  	
+      (lambda (ast)
+	;; Find all the procedures
+	(find-all-procedures! ast)
+
+	;; If we marked it as unliftable before, mark it as unknown
+	;;  now because we'll check again:
+	(for-each
+	 (lambda (l)
+	   (let ([c (get-annotation l)])
+	     (unless (procedure-code-liftable c)
+	       (set-procedure-code-liftable! c 'unknown-liftable))))
+	 procedures)
+
+	;; Set liftable flags
+	(for-each set-liftable! procedures)
+
+	(set! globals empty-set)
+	(let ([ast (lift! ast #f)])
+	  (cons ast globals)))))
+
+)

@@ -107,7 +107,7 @@ Bool wxPrintDialog::Create(wxWindow *p, wxPrintData *data)
 
 #ifdef wx_msw
   if (WINDOWS_PRINTING)
-    ((PRINTDLG *)printData.printData)->hwndOwner=p ? p->GetHWND() : (HANDLE)NULL;
+    ((PRINTDLG *)printData.printData)->hwndOwner=p ? p->GetHWND() : (HWND)NULL;
 #endif
   return TRUE;
 }
@@ -188,7 +188,7 @@ wxPrintData::wxPrintData(void)
   
     pd->Flags=PD_RETURNDC | PD_NOSELECTION | PD_NOPAGENUMS;
     pd->lStructSize = sizeof( PRINTDLG );
-    pd->hwndOwner=(HANDLE)NULL;
+    pd->hwndOwner=(HWND)NULL;
     pd->hDevMode=(HANDLE)NULL;
     pd->hDevNames=(HANDLE)NULL;
     pd->nFromPage=0;
@@ -894,7 +894,7 @@ Bool wxPrinter::Print(wxWindow *parent, wxPrintout *printout, Bool prompt)
 #ifdef wx_msw
   wxWindow *win = CreateAbortWindow(parent, printout);
   wxYield();
-  ::SetAbortProc(dc->cdc, lpAbortProc);
+  ::SetAbortProc(dc->cdc, (ABORTPROC)lpAbortProc);
   
   if (!win)
   {

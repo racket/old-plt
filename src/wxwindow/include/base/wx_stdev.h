@@ -104,7 +104,7 @@ class wxPopupEvent: public wxCommandEvent
 class wxScrollEvent: public wxEvent
 {
  public:
-  wxScrolEvent();
+  wxScrollEvent();
   int pos;
   int moveType;
   int direction;

@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_canvs.cxx,v 1.1.1.1 1997/12/22 16:12:00 mflatt Exp $
+ * RCS_ID:      $Id: wx_canvs.cxx,v 1.2 1998/07/18 01:16:15 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -79,7 +79,7 @@ Create (wxWindow * parent, int x, int y, int width, int height, long style,
 	  msflags |= WS_VSCROLL;
 
   wxCanvasWnd *wnd = new wxCanvasWnd (cparent, this, x, y, width, height, msflags);
-  wnd->SetBackgroundBrush(GetStockObject(WHITE_BRUSH), FALSE);
+  wnd->SetBackgroundBrush((HBRUSH)GetStockObject(WHITE_BRUSH), FALSE);
   wnd->background_colour = RGB(255, 255, 255);
 #if DEBUG > 1
   wxDebugMsg ("wxCanvas::Create: stock white background_brush is %X\n", wnd->background_brush);

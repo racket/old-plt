@@ -696,11 +696,13 @@ BOOL NEAR PASCAL MakeBitmapAndPalette(HDC hDC, HANDLE hDIB,
     lpInfo = (LPBITMAPINFOHEADER) GlobalLock(hDIB);
     if (hPalette = MakeDIBPalette(lpInfo))
     {
+
 #if USE_THE_PALETTE
 	// Need to realize palette for converting DIB to bitmap.
 	hOldPal = SelectPalette(hDC, hPalette, TRUE);
 	RealizePalette(hDC);
 #endif
+
 
 	lpBits = (LPSTR)lpInfo + (WORD)lpInfo->biSize + 
 		(WORD)lpInfo->biClrUsed * sizeof(RGBQUAD);
@@ -708,9 +710,11 @@ BOOL NEAR PASCAL MakeBitmapAndPalette(HDC hDC, HANDLE hDIB,
 				(LPBITMAPINFO)lpInfo, DIB_RGB_COLORS);
 
 #if USE_THE_PALETTE
+
 	SelectPalette(hDC, hOldPal, TRUE);
 	RealizePalette(hDC);
 #endif
+
 
 	if (!hBitmap)
 	    DeleteObject(hPalette);
@@ -778,7 +782,7 @@ HPALETTE PASCAL NEAR MakeDIBPalette(LPBITMAPINFOHEADER lpInfo)
     ** some good color choices.
     */
     else
-	return(GetStockObject(DEFAULT_PALETTE));
+	return((HPALETTE)GetStockObject(DEFAULT_PALETTE));
 }
 
 Bool wxLoadIntoBitmap(char *filename, wxBitmap *bitmap, wxColourMap **pal)

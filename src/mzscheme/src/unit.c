@@ -1668,6 +1668,8 @@ typedef struct {
   Scheme_Object *defname;
 } CompoundLinkedData;
 
+/* HERE */
+
 static int find_exported(int unit_index,
 			 Scheme_Object *id,
 			 
@@ -2226,6 +2228,10 @@ static void *sub_debug(CompoundLinkedData *data,
   return sub_debug_request;
 }
 
+#ifdef _MSC_VER
+# pragma optimize("", off)
+#endif
+
 static Scheme_Object *do_compound_unit(Scheme_Object **boxes_in, Scheme_Object **anchors_in,
 				       Scheme_Unit *m, void *debug_request)
 {
@@ -2331,6 +2337,9 @@ static Scheme_Object *do_compound_unit(Scheme_Object **boxes_in, Scheme_Object *
   return v;
 }
 
+#ifdef _MSC_VER
+# pragma optimize("", on)
+#endif
 
 static Scheme_Object *unit_p(int argc, Scheme_Object *argv[])
 {

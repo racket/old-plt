@@ -53,7 +53,7 @@ wxRadioItemProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
   if (!wxDoItemPres(i->item, hWnd, message, wParam, lParam, &r))
     return r;
 
-  return CallWindowProc(i->old, hWnd, message, wParam, lParam);
+  return CallWindowProc((WNDPROC)i->old, hWnd, message, wParam, lParam);
 }
 
 static FARPROC wxGenericRIProc;
@@ -188,11 +188,11 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func,
 #if CTL3D
   Ctl3dSubclassCtl(ms_handle);
 #endif
-  HDC the_dc = GetWindowDC(ms_handle) ;
+  HDC the_dc = GetWindowDC((HWND)ms_handle) ;
   if (labelFont && labelFont->GetInternalFont(the_dc))
-    SendMessage(ms_handle,WM_SETFONT,
+    SendMessage((HWND)ms_handle,WM_SETFONT,
                 (WPARAM)labelFont->GetInternalFont(the_dc),0L);
-  ReleaseDC(ms_handle,the_dc) ;
+  ReleaseDC((HWND)ms_handle,the_dc) ;
 
   the_handle = cparent->handle;
 
@@ -308,11 +308,11 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func,
 				 0, 0, 0, 0,
 				 cparent->handle,(HMENU)NewId(),wxhInstance,NULL) ;
 
-  HDC the_dc = GetWindowDC(ms_handle) ;
+  HDC the_dc = GetWindowDC((HWND)ms_handle) ;
   if (labelFont && labelFont->GetInternalFont(the_dc))
-	 SendMessage(ms_handle,WM_SETFONT,
+	 SendMessage((HWND)ms_handle,WM_SETFONT,
 					 (WPARAM)labelFont->GetInternalFont(the_dc),0L);
-  ReleaseDC(ms_handle,the_dc) ;
+  ReleaseDC((HWND)ms_handle,the_dc) ;
   the_handle = cparent->handle;
 
   // Subclass again for purposes of dialog editing mode
@@ -460,7 +460,7 @@ wxRadioBox::~wxRadioBox(void)
   if (radioHeight)
     delete[] radioHeight ;
   if (ms_handle)
-    wxwmDestroyWindow(ms_handle) ;
+    wxwmDestroyWindow((HWND)ms_handle) ;
   ms_handle = NULL ;
 
 }
@@ -649,7 +649,7 @@ void wxRadioBox::SetSize(int x, int y, int width, int height, int WXUNUSED(sizeF
   float label_height = 0;
 
   if (style & HAS_LABEL) {
-    GetWindowText(ms_handle, buf, 300);
+    GetWindowText((HWND)ms_handle, buf, 300);
     GetTextExtent(wxStripMenuCodes(buf), &label_width, &label_height, NULL, NULL, labelFont);
     int char_width, ignored;
     wxGetCharSize(wnd, &char_width, &ignored, labelFont);
@@ -701,7 +701,7 @@ void wxRadioBox::SetSize(int x, int y, int width, int height, int WXUNUSED(sizeF
     if (totWidth < label_width)
       totWidth = label_width;
 
-    MoveWindow(ms_handle, x_offset, y_offset, totWidth, totHeight, TRUE);
+    MoveWindow((HWND)ms_handle, x_offset, y_offset, totWidth, totHeight, TRUE);
 
     x_offset += cx1;
     y_offset += label_height + maxHeight/4;
@@ -753,11 +753,11 @@ void wxRadioBox::GetSize(int *width, int *height)
     wxFindMaxSize(static_label, &rect);
 
   if (ms_handle)
-    wxFindMaxSize(ms_handle, &rect);
+    wxFindMaxSize((HWND)ms_handle, &rect);
 
   int i;
   for (i = 0; i < no_items; i++)
-    wxFindMaxSize(radioButtons[i], &rect);
+    wxFindMaxSize((HWND)radioButtons[i], &rect);
 
   *width = rect.right - rect.left;
   *height = rect.bottom - rect.top;
@@ -777,7 +777,7 @@ void wxRadioBox::GetPosition(int *x, int *y)
     wxFindMaxSize(static_label, &rect);
 
   if (ms_handle)
-    wxFindMaxSize(ms_handle, &rect);
+    wxFindMaxSize((HWND)ms_handle, &rect);
 
   // Since we now have the absolute screen coords,
   // if there's a parent we must subtract its top left corner
@@ -801,7 +801,7 @@ char *wxRadioBox::GetLabel(void)
     return wxBuffer;
   } else if (ms_handle) {
 
-    if (!GetWindowText(ms_handle, wxBuffer, 300))
+    if (!GetWindowText((HWND)ms_handle, wxBuffer, 300))
 
       return NULL;
 
@@ -835,8 +835,8 @@ void wxRadioBox::SetLabel(char *label)
                TRUE);
     SetWindowText(static_label, label);
   } else if (ms_handle) {
-    if (GetWindowText(ms_handle, wxBuffer, 300))
-      SetWindowText(ms_handle, label);
+    if (GetWindowText((HWND)ms_handle, wxBuffer, 300))
+      SetWindowText((HWND)ms_handle, label);
   }
 }
 
@@ -861,7 +861,7 @@ Bool wxRadioBox::Show(Bool show)
 
   
 
-  ShowWindow(ms_handle, cshow);
+  ShowWindow((HWND)ms_handle, cshow);
   
 
   if (static_label)

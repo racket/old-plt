@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_frame.cxx,v 1.2 1998/04/11 21:59:25 mflatt Exp $
+ * RCS_ID:      $Id: wx_frame.cxx,v 1.3 1998/08/09 20:55:21 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -662,7 +662,7 @@ BOOL wxStatusWnd::OnPaint()
     LineTo(cdc, wxTHICK_LINE_BORDER, wxTHICK_LINE_BORDER);
     LineTo(cdc, width-wxTHICK_LINE_BORDER, wxTHICK_LINE_BORDER);
 #else
-    HBRUSH old_brush = ::SelectObject(cdc,brushFace) ;
+    HBRUSH old_brush = (HBRUSH)::SelectObject(cdc,brushFace) ;
 
     // Draw border
     // Have grey background, plus 3-d border -
@@ -671,7 +671,7 @@ BOOL wxStatusWnd::OnPaint()
     // white.
 
     // Right and bottom white lines
-    HPEN old_pen = ::SelectObject(cdc,penLight) ;
+    HPEN old_pen = (HPEN)::SelectObject(cdc,penLight) ;
     MoveToEx(cdc, width-wxTHICK_LINE_BORDER,
                   wxTHICK_LINE_BORDER, NULL);
     LineTo(cdc, width-wxTHICK_LINE_BORDER,
@@ -902,7 +902,7 @@ void wxFrameWnd::OnMenuSelect(WORD nItem, WORD nFlags, HMENU hSysMenu)
 BOOL wxFrameWnd::ProcessMessage(MSG* pMsg)
 {
   if (accelerator_table != NULL &&
-          ::TranslateAccelerator(handle, accelerator_table, pMsg))
+          ::TranslateAccelerator(handle, (HACCEL)accelerator_table, pMsg))
     return TRUE;
 	
   return FALSE;
@@ -1119,7 +1119,7 @@ BOOL wxMDIFrame::ProcessMessage(MSG* pMsg)
      return TRUE;
 	
   if (accelerator_table != NULL &&
-          ::TranslateAccelerator(handle, accelerator_table, pMsg))
+          ::TranslateAccelerator(handle, (HACCEL)accelerator_table, pMsg))
     return TRUE;
 	
   if (pMsg->message == WM_KEYDOWN || pMsg->message == WM_SYSKEYDOWN)
@@ -1179,7 +1179,7 @@ wxMDIChild::wxMDIChild(wxMDIFrame *parent, wxWindow *wx_win, char *title,
   }
   if (!(style & wxNO_THICK_FRAME))
     msflags |= WS_THICKFRAME;
-  if ((!style & wxNO_SYSTEM_MENU))
+  if (!(style & wxNO_SYSTEM_MENU))
     msflags |= WS_SYSMENU;
   if (style & wxMINIMIZE)
     msflags |= WS_MINIMIZE;
@@ -1298,7 +1298,7 @@ BOOL wxMDIChild::ProcessMessage(MSG *msg)
   {
     wxFrame *parent = (wxFrame *)wx_window->GetParent();
     HWND parent_hwnd = parent->GetHWND();
-    return ::TranslateAccelerator(parent_hwnd, accelerator_table, msg);
+    return ::TranslateAccelerator(parent_hwnd, (HACCEL)accelerator_table, msg);
   }
   return FALSE;
 }

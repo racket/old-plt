@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_item.cxx,v 1.4 1998/04/11 21:59:25 mflatt Exp $
+ * RCS_ID:      $Id: wx_item.cxx,v 1.5 1998/08/09 20:55:22 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -372,7 +372,7 @@ int wxDoItemPres(wxItem *item, HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 	  POINT pt;
 	  GetCursorPos(&pt);
 	  RECT rect;
-	  GetWindowRect(item->handle,&rect);
+	  GetWindowRect((HWND)item->handle,&rect);
 	  pt.x -= rect.left;
 	  pt.y -= rect.top;
 	  event.x = pt.x;
@@ -403,7 +403,7 @@ LONG APIENTRY _EXPORT
   if (!wxDoItemPres(item, hWnd, message, wParam, lParam, &r))
     return r;
 
-  return CallWindowProc(item->oldWndProc, hWnd, message, wParam, lParam);
+  return CallWindowProc((WNDPROC)item->oldWndProc, hWnd, message, wParam, lParam);
 }
 
 wxItem *wxFindControlFromHandle(HWND hWnd)

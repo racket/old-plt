@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994     
- * RCS_ID:      $Id: wx_win.cxx,v 1.10 1998/07/23 15:59:46 mflatt Exp $
+ * RCS_ID:      $Id: wx_win.cxx,v 1.11 1998/08/09 20:55:24 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -612,7 +612,7 @@ void wxWindow::GetTextExtent(const char *string, float *x, float *y,
   HFONT fnt = 0; 
   HFONT was = 0;
   if (fontToUse && (fnt=fontToUse->GetInternalFont(dc))) 
-    was = SelectObject(dc,fnt) ; 
+    was = (HFONT)SelectObject(dc,fnt) ; 
 
   else {
 
@@ -620,7 +620,7 @@ void wxWindow::GetTextExtent(const char *string, float *x, float *y,
 
 	if (fnt)
 
-	 was = SelectObject(dc, fnt);
+	 was = (HFONT)SelectObject(dc, fnt);
 
   }
 
@@ -1918,7 +1918,7 @@ BOOL wxWnd::OnKillFocus(HWND WXUNUSED(hwnd))
 
 void wxWnd::OnDropFiles(WPARAM wParam)
 {
-  HANDLE hFilesInfo = (HANDLE)wParam;
+  HDROP hFilesInfo = (HDROP)wParam;
   POINT dropPoint;
   DragQueryPoint(hFilesInfo, (LPPOINT) &dropPoint);
 
@@ -3023,7 +3023,7 @@ void wxGetCharSize(HWND wnd, int *x, int *y,wxFont *the_font)
 #if DEBUG > 1
 	 wxDebugMsg("wxGetCharSize: Selecting HFONT %X\n", fnt);
 #endif
-    was = SelectObject(dc,fnt) ;
+    was = (HFONT)SelectObject(dc,fnt) ;
   }
   GetTextMetrics(dc, &tm);
   if (the_font && fnt && was)
@@ -3611,7 +3611,7 @@ wxWindow *wxGetActiveWindow(void)
   return NULL;
 }
 
-#if USE_KEYBOARD_HOOK
+#if 0 && USE_KEYBOARD_HOOK
 // Windows keyboard hook. Allows interception of e.g. F1, ESCAPE
 // in active frames and dialogs, regardless of where the focus is.
 static HHOOK wxTheKeyboardHook = 0;

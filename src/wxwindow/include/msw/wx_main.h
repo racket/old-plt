@@ -57,7 +57,7 @@ class wxApp: public wxbApp
   virtual Bool OnCharHook(wxKeyEvent& event);
 };
 
-extern HANDLE wxhInstance;
+extern HINSTANCE wxhInstance;
 
 #endif // IN_CPROTO
 #endif

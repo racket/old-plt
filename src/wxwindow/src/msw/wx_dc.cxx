@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_dc.cxx,v 1.5 1998/07/17 03:49:04 mflatt Exp $
+ * RCS_ID:      $Id: wx_dc.cxx,v 1.6 1998/08/09 20:55:21 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -751,7 +751,7 @@ void wxDC::DrawRectangle(float x, float y, float width, float height)
     HPEN orig_pen = NULL;
     
     if (do_pen || !current_pen)
-      orig_pen = ::SelectObject(dc, ::GetStockObject(NULL_PEN));
+      orig_pen = (HPEN)::SelectObject(dc, ::GetStockObject(NULL_PEN));
     
     (void)Rectangle(dc, XLOG2DEV(x1), YLOG2DEV(y1),
 		    XLOG2DEV(x2) + 1, YLOG2DEV(y2) + 1);
@@ -763,7 +763,7 @@ void wxDC::DrawRectangle(float x, float y, float width, float height)
     HBRUSH orig_brush = NULL;
     
     if (do_brush || !current_brush)
-      orig_brush = ::SelectObject(dc, ::GetStockObject(NULL_BRUSH));
+      orig_brush = (HBRUSH)::SelectObject(dc, ::GetStockObject(NULL_BRUSH));
     
     (void)Rectangle(dc, XLOG2DEV(x1), YLOG2DEV(y1),
 		    XLOG2DEV(x2), YLOG2DEV(y2));
@@ -914,7 +914,7 @@ void wxDC::SetFont(wxFont *the_font)
 #if DEBUG > 1
     wxDebugMsg("wxDC::SetFont: Selecting HFONT %X\n", font->cfont);
 #endif
-    HFONT f = ::SelectObject(dc, font->cfont);
+    HFONT f = (HFONT)::SelectObject(dc, font->cfont);
     if (!old_font)
       old_font = f;
   }
@@ -994,7 +994,7 @@ void wxDC::DrawText(const char *text, float x, float y, Bool use16bit)
 #if DEBUG > 1
     wxDebugMsg("wxDC::DrawText: Selecting HFONT %X\n", font->cfont);
 #endif
-    HFONT f = ::SelectObject(dc, font->cfont);
+    HFONT f = (HFONT)::SelectObject(dc, font->cfont);
     if (!old_font)
       old_font = f;
   }
@@ -1042,7 +1042,7 @@ void wxDC::SetBackground(wxBrush *brush)
     wxCanvasWnd *wnd = (wxCanvasWnd *)canvas->handle;
     //wnd->background_brush = brush->cbrush;
     HBRUSH br = (brush->GetStyle()==wxTRANSPARENT) ?
-                            GetStockObject(NULL_BRUSH) : brush->cbrush;
+                  (HBRUSH)GetStockObject(NULL_BRUSH) : brush->cbrush;
     // Remember we don't want to delete this brush when we change the
     // background again or delete the window.
     wnd->SetBackgroundBrush(br, FALSE);
@@ -1828,7 +1828,7 @@ void wxMemoryDC::SelectObject(wxBitmap *bitmap)
 #if DEBUG > 1
   wxDebugMsg("wxMemoryDC::SelectObject: Selecting HBITMAP %X\n", bitmap->ms_bitmap);
 #endif
-  HBITMAP bm = ::SelectObject(cdc, bitmap->ms_bitmap);
+  HBITMAP bm = (HBITMAP)::SelectObject(cdc, bitmap->ms_bitmap);
 
   if (bm == ERROR)
   {

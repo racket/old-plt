@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_gdi.cxx,v 1.3 1998/06/23 17:36:43 mflatt Exp $
+ * RCS_ID:      $Id: wx_gdi.cxx,v 1.4 1998/07/04 02:57:33 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -477,10 +477,10 @@ HPEN wxPen::SelectPen(HDC dc)
   HPEN prev_pen;
 
   if (cpen && style!=wxTRANSPARENT)
-    prev_pen = ::SelectObject(dc,cpen);
+    prev_pen = (HPEN)::SelectObject(dc,cpen);
   else {
-    HPEN nullPen = ::GetStockObject(NULL_PEN);
-    prev_pen = ::SelectObject(dc , nullPen);
+    HPEN nullPen = (HPEN)::GetStockObject(NULL_PEN);
+    prev_pen = (HPEN)::SelectObject(dc , nullPen);
   }
   
   return prev_pen;
@@ -636,10 +636,10 @@ HBRUSH wxBrush::SelectBrush(HDC dc)
   HBRUSH prev_brush;
 
   if (cbrush && style!=wxTRANSPARENT) {
-    prev_brush = ::SelectObject(dc, cbrush);
+    prev_brush = (HBRUSH)::SelectObject(dc, cbrush);
   } else {
-    HBRUSH nullBrush = ::GetStockObject(NULL_BRUSH);
-    prev_brush = ::SelectObject(dc, nullBrush);
+    HBRUSH nullBrush = (HBRUSH)::GetStockObject(NULL_BRUSH);
+    prev_brush = (HBRUSH)::SelectObject(dc, nullBrush);
   }
 
   return prev_brush;
@@ -717,7 +717,7 @@ Bool wxIcon::LoadFile(char *icon_file, long flags)
   if ((flags & wxBITMAP_TYPE_ICO_RESOURCE)
       || (flags & wxBITMAP_TYPE_ICO)) {
     if (flags & wxBITMAP_TYPE_ICO)
-      ms_icon = LoadImage(wxhInstance, icon_file, IMAGE_ICON, 0, 0, LR_DEFAULTCOLOR);
+      ms_icon = (HICON)LoadImage(wxhInstance, icon_file, IMAGE_ICON, 0, 0, LR_DEFAULTCOLOR);
     else
       ms_icon = LoadIcon(wxhInstance, icon_file);
     if (ms_icon) 

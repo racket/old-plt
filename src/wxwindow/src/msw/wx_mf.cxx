@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_mf.cc,v 1.1 1994/08/14 21:59:17 edz Exp $
+ * RCS_ID:      $Id: wx_mf.cxx,v 1.1.1.1 1997/12/22 16:12:00 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -53,7 +53,7 @@ wxMetaFile::wxMetaFile(char *file)
 wxMetaFile::~wxMetaFile(void)
 {
   if (metafile)
-    { DeleteMetaFile(metafile); metafile = NULL; }
+    { DeleteMetaFile((HMETAFILE)metafile); metafile = NULL; }
 }
 
 Bool wxMetaFile::SetClipboard(int width, int height)
@@ -66,7 +66,7 @@ Bool wxMetaFile::SetClipboard(int width, int height)
 // ABOVE MOD (TEXT->ANISOTROPIC) YET TO BE TESTED BY JACS.
   mf->xExt = width;
   mf->yExt = height;
-  mf->hMF = metafile;
+  mf->hMF = (HMETAFILE)metafile;
   GlobalUnlock(data);
   metafile = NULL;
 
@@ -98,7 +98,7 @@ Bool wxMetaFile::Play(wxDC *dc)
     hDC = GetDC(wnd->handle);
 
   if (hDC && metafile)
-    PlayMetaFile(hDC, metafile);
+    PlayMetaFile(hDC, (HMETAFILE)metafile);
   if (!dc->cdc)
     ReleaseDC(wnd->handle, hDC);
 

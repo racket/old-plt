@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_main.cxx,v 1.1.1.1 1997/12/22 16:11:59 mflatt Exp $
+ * RCS_ID:      $Id: wx_main.cxx,v 1.2 1998/04/11 21:59:25 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -62,7 +62,7 @@
 
 wxWindow *wxDefaultParent = NULL;
 
-HANDLE wxhInstance = 0;
+HINSTANCE wxhInstance = 0;
 
 #if !WXGARBAGE_COLLECTION_ON /* MATTHEW: GC */
 extern wxList *wxWinHandleList;
@@ -71,7 +71,7 @@ extern wxNonlockingHashTable *wxWinHandleList;
 #endif
 extern FARPROC wxGenericControlSubClassProc;
 
-#ifdef USE_KEYBOARD_HOOK
+#ifdef _____USE_KEYBOARD_HOOK
 extern void wxSetKeyboardHook(Bool doIt);
 #endif
 
@@ -192,7 +192,7 @@ static void EnablePenAppHooks (Bool hook)
 #endif	/* ! Windows-NT */
 }
 
-void RegisterNoCursor(HANDLE hInstance, char *src, char *dest)
+void RegisterNoCursor(HINSTANCE hInstance, char *src, char *dest)
 {
   WNDCLASSEX c;
 
@@ -205,7 +205,7 @@ void RegisterNoCursor(HANDLE hInstance, char *src, char *dest)
     wxFatalError("Can't register cursorless class");
 }
 
-void wxInitialize(HANDLE hInstance)
+void wxInitialize(HINSTANCE hInstance)
 {
   wxCommonInit();
 
@@ -331,7 +331,7 @@ void wxInitialize(HANDLE hInstance)
   // So, respect the behavior!
   wndclass2.hbrBackground = (HBRUSH)(COLOR_BTNFACE+1) ;
 #else
-  wndclass2.hbrBackground = GetStockObject( LTGRAY_BRUSH );
+  wndclass2.hbrBackground = (HBRUSH)GetStockObject( LTGRAY_BRUSH );
 #endif
   wndclass2.lpszMenuName  = NULL;
 #ifdef _MULTIPLE_INSTANCES
@@ -399,7 +399,7 @@ void wxInitialize(HANDLE hInstance)
   wxWinHandleList = new wxNonlockingHashTable();
 #endif
 
-#ifdef USE_KEYBOARD_HOOK
+#ifdef ____USE_KEYBOARD_HOOK
   wxSetKeyboardHook(TRUE);
 #endif
 }
@@ -416,7 +416,7 @@ void wxCleanUp(void)
   GC_gcollect();
 #endif
 
-#ifdef USE_KEYBOARD_HOOK
+#ifdef _____USE_KEYBOARD_HOOK
   wxSetKeyboardHook(FALSE);
 #endif
   wxCommonCleanUp();
@@ -475,76 +475,192 @@ void wxCleanUp(void)
 
 extern void wxInitUserResource(char *s);
 
-static int retValue = 0;
-
-static int parse_command_line(int count, char **command, 
-							  char *buf, int maxargs)
-{
-    char *parse, *created, *write;
-	int findquote = 0;
-    
-    parse = created = write = buf;
-	while (*parse) {
-      while (*parse && isspace(*parse)) parse++;
-
-	  while (*parse && (!isspace(*parse) || findquote))	{
-        if (*parse== '"') {
-		  findquote = !findquote;
-	    } else if (*parse== '\\') {
-		  char *next;
-		  for (next = parse; *next == '\\'; next++);
-		  if (*next == '"') {
-		    /* Special handling: */
-			int count = (next - parse), i;
-			for (i = 1; i < count; i += 2)
-				*(write++) = '\\';
-			parse += (count - 1);
-			if (count & 0x1) {
-			  *(write++) = '\"';
-			  parse++;
-			}
-		  }	else
-			*(write++) = *parse;
-	    } else
-		  *(write++) = *parse;
-		parse++;
-	  }
-	  if (*parse)
-		  parse++;
-	  *(write++) = 0;
-	  
-	  if (*created)	{
-        command[count++] = created;
-		if (count == maxargs)
-			return count;
-	  }
-      created = write;
-	}
-
-	return count;
+static int retValue = 0;
+
+
+
+
+
+static int parse_command_line(int count, char **command, 
+
+
+							  char *buf, int maxargs)
+
+
+{
+
+
+    char *parse, *created, *write;
+
+
+	int findquote = 0;
+
+
+    
+
+
+    parse = created = write = buf;
+
+
+	while (*parse) {
+
+
+      while (*parse && isspace(*parse)) parse++;
+
+
+
+
+
+	  while (*parse && (!isspace(*parse) || findquote))	{
+
+
+        if (*parse== '"') {
+
+
+		  findquote = !findquote;
+
+
+	    } else if (*parse== '\\') {
+
+
+		  char *next;
+
+
+		  for (next = parse; *next == '\\'; next++);
+
+
+		  if (*next == '"') {
+
+
+		    /* Special handling: */
+
+
+			int count = (next - parse), i;
+
+
+			for (i = 1; i < count; i += 2)
+
+
+				*(write++) = '\\';
+
+
+			parse += (count - 1);
+
+
+			if (count & 0x1) {
+
+
+			  *(write++) = '\"';
+
+
+			  parse++;
+
+
+			}
+
+
+		  }	else
+
+
+			*(write++) = *parse;
+
+
+	    } else
+
+
+		  *(write++) = *parse;
+
+
+		parse++;
+
+
+	  }
+
+
+	  if (*parse)
+
+
+		  parse++;
+
+
+	  *(write++) = 0;
+
+
+	  
+
+
+	  if (*created)	{
+
+
+        command[count++] = created;
+
+
+		if (count == maxargs)
+
+
+			return count;
+
+
+	  }
+
+
+      created = write;
+
+
+	}
+
+
+
+
+
+	return count;
+
+
 }
-
-#ifdef USE_SENORA_GC
-extern "C" void GC_set_stack_base(void *);
-#endif
+
+
+
+#ifdef USE_SENORA_GC
+
+
+extern "C" void GC_set_stack_base(void *);
+
+
+#endif
+
+
 
 #ifdef __WATCOMC__
 //***It's really principal for Watcom that WinMain should be PASCAL,
 //***not FAR PASCAL!!   D.Chubraev
-extern "C" int PASCAL WinMain(HANDLE hInstance, HANDLE WXUNUSED(hPrevInstance), LPSTR m_lpCmdLine,
+extern "C" int PASCAL WinMain(HINSTANCEhInstance, HINSTANCE WXUNUSED(hPrevInstance), LPSTR m_lpCmdLine,
 						  int nCmdShow )
 #else
-extern "C" int APIENTRY WinMain(HANDLE hInstance, HANDLE WXUNUSED(hPrevInstance), LPSTR m_lpCmdLine,
+extern "C" int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE WXUNUSED(hPrevInstance), LPSTR m_lpCmdLine,
 						  int nCmdShow )
 #endif
 {
-#ifdef USE_SENORA_GC
-  {
-    int dummy;
-    GC_set_stack_base(&dummy);
-  }
-#endif
-
+#ifdef USE_SENORA_GC
+
+
+  {
+
+
+    int dummy;
+
+
+    GC_set_stack_base(&dummy);
+
+
+  }
+
+
+#endif
+
+
+
+
+
   wxhInstance = hInstance;
 
   wxInitialize(hInstance);

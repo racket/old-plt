@@ -22,7 +22,7 @@
 
 #include "schpriv.h"
 
-/* Got this working for MSVC non-optimized. I'm too lazy to get it
+/* Got this working for MSVC unoptimized. I'm too lazy to get it
    right with optimization. */
 #pragma optimize("", off)
 
@@ -30,8 +30,8 @@ int scheme_setjmp(mz_jmp_buf b)
 {
   __asm {
 	mov ECX, [EBP+4] ; return address
-	mov EAX, [EBP+8]
-	mov EDX, [EBP] ; old EBP
+	mov EAX, [EBP+8] ; b: jmpbuf
+	mov EDX, [EBP]   ; old EBP
 	mov [EAX], EDX
 	mov [EAX+4], EBX
 	mov [EAX+8], EDI
@@ -46,10 +46,10 @@ int scheme_setjmp(mz_jmp_buf b)
 void scheme_longjmp(mz_jmp_buf b, int v)
 {
   __asm {
-	mov EAX, [EBP+12] ; return value
-	mov ECX, [EBP+8] ; jmp_buf
-	mov ESP, [ECX+16]
-	mov EBP, [ECX] ; old EBP
+	mov EAX, [EBP+12] ; v: return value
+	mov ECX, [EBP+8]  ; b: jmp_buf
+	mov ESP, [ECX+16] ; restore old stack pointer
+	mov EBP, [ECX]    ; old EBP
 	mov [ESP+12], EBP
 	mov EBP, ESP
 	add EBP, 12

@@ -6,6 +6,9 @@
  * Copyright:   (c) 1995-98, Matthew Flatt
  */
 
+#define WINDOW_STDIO 0
+#define WCONSOLE_STDIO 1
+
 /* wx_xt: */
 #define Uses_XtIntrinsic
 #define Uses_XtIntrinsicP
@@ -1295,12 +1298,12 @@ static void MrEdSchemeMessages(char *msg, ...)
 
 #if REDIRECT_STDIO || WINDOW_STDIO || WCONSOLE_STDIO
 
-int stdin_getc(Scheme_Input_Port*)
+static int stdin_getc(Scheme_Input_Port*)
 {
   return EOF;
 }
 
-int stdin_char_ready(Scheme_Input_Port*)
+static int stdin_char_ready(Scheme_Input_Port*)
 {
   return TRUE;
 }
@@ -1315,7 +1318,7 @@ static Scheme_Object *MrEdMakeStdIn(void)
 						 NULL, NULL, 0);
 }
 
-void stdout_write(char *s, long l, Scheme_Output_Port*)
+static void stdout_write(char *s, long l, Scheme_Output_Port*)
 {
 #if WINDOW_STDIO || WCONSOLE_STDIO
   MrEdSchemeMessages(NULL, s, l);
@@ -1339,7 +1342,7 @@ static Scheme_Object *MrEdMakeStdOut(void)
 						  NULL, 0);
 }
 
-void stderr_write(char *s, long l, Scheme_Output_Port*)
+static void stderr_write(char *s, long l, Scheme_Output_Port*)
 {
 #if WINDOW_STDIO || WCONSOLE_STDIO
   MrEdSchemeMessages(NULL, s, l);

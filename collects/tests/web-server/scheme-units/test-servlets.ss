@@ -275,6 +275,22 @@
             (or p2 (fail)))))
 
 
+      ;; Threads started from the servlet must persist across connections
+      (make-test-case
+        "Thread started from the servlet persists across connections"
+        (let ((stop-server (start-server)))
+          (let* ((p1 (get-pure-port
+                       (string->url
+                         (format "http://~a:~a/servlets/thread-across-connections.ss"
+                                 THE-IP THE-PORT))))
+                 (m1 (regexp-match #rx"action=\"([^\"]*)\"" p1))
+                 (p2 (get-pure-port
+                       (string->url
+                         (format "http://~a:~a~a"
+                                 THE-IP THE-PORT (cadr m1))))))
+            (stop-server)
+            (or (regexp-match #rx"<p>Okay</p>" p2) (fail)))))
+
       ))
 
   )

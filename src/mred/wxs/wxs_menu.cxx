@@ -919,7 +919,10 @@ START_XFORM_SKIP;
 wxsMenuItem* wxsIdToMenuItem(ExactLong id)
 {
 #ifdef MZ_PRECISE_GC
-  return (wxsMenuItem *)gcPTR_TO_OBJ(GC_weak_box_val(*(void **)id));
+  if (!id)
+    return NULL;
+  else
+    return (wxsMenuItem *)gcPTR_TO_OBJ(GC_weak_box_val(*(void **)id));
 #else
   return (wxsMenuItem *)id;
 #endif

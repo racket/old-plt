@@ -624,7 +624,7 @@ scheme_init_port (Scheme_Env *env)
 
     scheme_set_param(config, MZCONFIG_INPUT_PORT,
 		     scheme_orig_stdin_port);
-    scheme_orig_stderr_port = (scheme_make_stdout
+    scheme_orig_stdout_port = (scheme_make_stdout
 			       ? scheme_make_stdout()
 #ifdef USE_FD_PORTS
 			       : make_fd_output_port(1, 0)
@@ -633,8 +633,8 @@ scheme_init_port (Scheme_Env *env)
 #endif
 			       );
     scheme_set_param(config, MZCONFIG_OUTPUT_PORT,
-		     scheme_orig_stderr_port);
-    scheme_orig_stdout_port = (scheme_make_stderr
+		     scheme_orig_stdout_port);
+    scheme_orig_stderr_port = (scheme_make_stderr
 			       ? scheme_make_stderr()
 #ifdef USE_FD_PORTS
 			       : make_fd_output_port(2, 0)
@@ -643,7 +643,7 @@ scheme_init_port (Scheme_Env *env)
 #endif
 			       );
     scheme_set_param(config, MZCONFIG_ERROR_PORT,
-		     scheme_orig_stdout_port);
+		     scheme_orig_stderr_port);
 #ifdef USE_FD_PORTS
     atexit(flush_all_output_fds);
 #endif
@@ -3264,7 +3264,7 @@ static void flush_tested(Scheme_Output_Port *port);
 static void
 tested_file_write_string(char *str, long dd, long llen, Scheme_Output_Port *port)
 {
-  long len = llen;
+  long len = llen, d = dd;
   Tested_Output_File *top;
   mz_jmp_buf savebuf;
 
@@ -3294,9 +3294,9 @@ tested_file_write_string(char *str, long dd, long llen, Scheme_Output_Port *port
 	n = len;
 	if (n > TIF_BUFFER)
 	  n = TIF_BUFFER;
-	memcpy(top->c, str + dd, n);
+	memcpy(top->c, str + d, n);
 	top->ccount = n;
-	dd += n;
+	d += n;
 	len -= n;
       }
 
@@ -3337,7 +3337,7 @@ tested_file_write_string(char *str, long dd, long llen, Scheme_Output_Port *port
 
   if (llen > 0) { 
     while (llen--) {
-      if (str[dd] == '\n' || str[dd] == '\r') {
+      if ((str[dd] == '\n') || (str[dd] == '\r')) {
 	flush_tested(port);
 	break;
       }

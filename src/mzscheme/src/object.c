@@ -3568,9 +3568,11 @@ Scheme_Object *scheme_make_object(Scheme_Object *sclass,
 
 static Scheme_Object *CreateObject(int argc, Scheme_Object *argv[])
 {
+# define QARGV_CNT 10
   Scheme_Object *classname;
   Scheme_Class *sclass;
   Internal_Object *obj;
+  Scheme_Object **nargv, *qargv[QARGV_CNT];
 
   classname = argv[0];
 
@@ -3585,7 +3587,14 @@ static Scheme_Object *CreateObject(int argc, Scheme_Object *argv[])
 		     CLASS_STAR ": can't create objects from the class %S",
 		     sclass->defname);
   
-  obj = (Internal_Object *)make_object(sclass, argc  - 1, argv + 1);
+  if (argc - 1 <= QARGV_CNT)
+    nargv = qargv;
+  else
+    nargv = MALLOC_N(Scheme_Object *, argc - 1);
+
+  memcpy(nargv, argv + 1, (argc - 1) * sizeof(Scheme_Object *));
+
+  obj = (Internal_Object *)make_object(sclass, argc  - 1, nargv);
   
   return (Scheme_Object *)&obj->o;
 }

@@ -921,7 +921,7 @@ static void count_managed(Scheme_Custodian *m, int *c, int *a, int *u, int *t,
 
 #if defined(MZ_PRECISE_GC)
 /* Change to 1 to get tracing: */
-# define MZ_PRECISE_GC_TRACE 0
+# define MZ_PRECISE_GC_TRACE 1
 #else
 # define MZ_PRECISE_GC_TRACE 0
 #endif
@@ -935,11 +935,24 @@ extern int GC_trace_for_tag;
 START_XFORM_SKIP;
 # endif
 # if defined(MZ_PRECISE_GC) && defined(DOS_FILE_SYSTEM)
+extern int GC_is_tagged(void *p)  
 extern void gc_fprintf(int ignored, const char *c, ...);
 #  define object_console_printf gc_fprintf
 # else
 #  define object_console_printf fprintf
 # endif
+
+extern int (*scheme_check_print_is_obj)(Scheme_Object *o);
+static int check_home(Scheme_Object *o)
+{
+#ifdef MZ_PRECISE_GC
+  return GC_is_tagged(o);
+#else
+  /* GC_set(o) */
+  return 1;
+#endif
+}
+
 void scheme_print_tagged_value(const char *prefix, 
 			       void *v, int xtagged, unsigned long diff, int max_w,
 			       const char *suffix)
@@ -949,6 +962,8 @@ void scheme_print_tagged_value(const char *prefix,
   
   sep = "";
   
+  scheme_check_print_is_obj = check_home;
+
   if (!xtagged) {
     type = scheme_write_to_string_w_max((Scheme_Object *)v, &len, max_w);
     if (!scheme_strncmp(type, "#<thread", 8)) {
@@ -1049,6 +1064,8 @@ void scheme_print_tagged_value(const char *prefix,
 			diff ? "+" : "",
 			diff ? diffstr : "",
 			suffix);
+
+  scheme_check_print_is_obj = NULL;
 }
 #ifdef MZ_PRECISE_GC
 END_XFORM_SKIP;
@@ -1289,6 +1306,8 @@ Scheme_Object *scheme_dump_gc_stats(int c, Scheme_Object *p[])
 	break;
       }
     }
+  } else if (SCHEME_INTP(p[0])) {
+    GC_trace_for_tag = SCHEME_INT_VAL(p[0]);
   }
 #endif
 

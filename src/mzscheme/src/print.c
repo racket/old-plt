@@ -30,6 +30,8 @@
 # include <malloc.h>
 #endif
 
+int (*scheme_check_print_is_obj)(Scheme_Object *o);
+
 /* Flag for debugging compiled code in printed form: */
 #define NO_COMPACT 0
 
@@ -1066,6 +1068,11 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
     }
   }
 #endif
+
+  if (scheme_check_print_is_obj && !scheme_check_print_is_obj(obj)) {
+    print_utf8_string(pp, "#<" "???" ">", 0, 6);
+    return 1;
+  }
 
   /* Built-in functions, exception types, eof, prop:waitable, ... */
   if (compact && (SCHEME_PROCP(obj) 

@@ -4,6 +4,9 @@ This documentation assumes familiarity with lex and yacc style lexer
 and parser generators.
 
 _lex.ss_
+NOTE: the lex-buf is gone since input ports in mzscheme have added the 
+functionality that the lex-buf used to provide.
+
 A regular expression is one of the following
 character                          match the given character
 symbol                             match the sequence of chars in the symbol
@@ -107,6 +110,13 @@ file containing a (lex ...) is loaded/required) the lexer generator is
 run.  To avoid this overhead place the lexer into a module and compile
 the module to a .zo with 'mzc --zo --auto-dir filename'.  This should
 create a .zo file in the 'compiled' subdirectory.
+
+Compiling the lex.ss file to an extension can produce a good speedup
+in generated lexers since the lex.ss file contains the interpreter for
+the generated lex tables.  If mzscheme is able to compile extensions
+(a c compiler must be available) run the commands:
+cd ${PLTHOME}/collects/parser-tools
+mzc --auto-dir lex.ss
 
 See the combined lexer/parser example below.
 

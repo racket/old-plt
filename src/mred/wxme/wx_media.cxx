@@ -2198,11 +2198,11 @@ void wxMediaEdit::Kill(long time, long start, long end)
     newend = ParagraphEndPosition(PositionParagraph(endpos, posateol));
 
     if (startpos == newend)
-      SetPosition(startpos, startpos + 1);
+      SetPosition(startpos, startpos + 1, FALSE, TRUE, wxLOCAL_SELECT);
     else {
       long i;
       
-      SetPosition(startpos, newend);
+      SetPosition(startpos, newend, FALSE, TRUE, wxLOCAL_SELECT);
       text = GetText(startpos, endpos);
       for (i = endpos - startpos; i--; ) {
 	if (!isspace(text[i]))
@@ -2211,7 +2211,7 @@ void wxMediaEdit::Kill(long time, long start, long end)
       
       if (i < 0) {
 	/* Line has all spaces: move one more */
-	SetPosition(startpos, endpos + 1);
+	SetPosition(startpos, endpos + 1, FALSE, TRUE, wxLOCAL_SELECT);
       }
     }
     start = startpos;

@@ -93,14 +93,13 @@ typedef enum _mouse_button_ {
 		uuid(FED3418D-9505-11D2-B55E-0060089002FE),
 		dual,
 		helpstring("IEventQueue Interface"),
-		pointer_default(unique),
-                local
+		pointer_default(unique)
 	]
 	interface IEventQueue : IDispatch
 	{
 		[id(1), helpstring("method GetEvent")] HRESULT GetEvent(IEvent **);
 		[id(2), helpstring("method QueueEvent")] HRESULT QueueEvent(IEvent *);
-		[id(3), helpstring("method GetReaderSemaphore")] HRESULT GetReaderSemaphore(HANDLE *);
+		[id(3), helpstring("method GetReaderSemaphore")] HRESULT GetReaderSemaphore(long *);
                 [id(4), helpstring("method set_extension_table")] HRESULT set_extension_table(int);
 
 		[propget, id(5), helpstring("property EventAvailable")] HRESULT EventAvailable([out, retval] VARIANT_BOOL *pVal);

@@ -94,9 +94,9 @@ STDMETHODIMP CEventQueue::get_EventAvailable(VARIANT_BOOL *pVal) {
   return S_OK;
 }
 
-STDMETHODIMP CEventQueue::GetReaderSemaphore (HANDLE* pReadSem)
+STDMETHODIMP CEventQueue::GetReaderSemaphore (long * pReadSem)
 {
-  *pReadSem = readSem;
+  * ((HANDLE *)pReadSem) = readSem;
 
   return S_OK;
 }

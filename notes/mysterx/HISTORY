@@ -1,9 +1,11 @@
 Version 102:
 
 added Scheme-syntax property getters and 
- setters for HTML elements
+ setters for HTML elements - old string versions
+ are available as 'native' methods
 removed getter and setter for whitespace
- property, since not implemented by IE4/5
+ and word-spacing properties, since not 
+ implemented by IE4/5 for Windows
 
 Version 101:
 

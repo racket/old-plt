@@ -2900,10 +2900,10 @@
                                    (cond
                                      [(= eou-pos (send e last-position)) eou-pos]
                                      [(char-whitespace? (send e get-character eou-pos))
-				      ;; Back up past ., ,, >, and ):
+				      ;; Back up past ., ,, >, ", and ):
 				      (let loop ([eou-pos eou-pos])
 					(if (memq (send e get-character (sub1 eou-pos))
-						  '(#\. #\, #\> #\)))
+						  '(#\" #\. #\, #\> #\)))
 					    (loop (sub1 eou-pos))
 					    eou-pos))]
                                      [else (loop (+ eou-pos 1))]))])

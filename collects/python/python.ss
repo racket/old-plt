@@ -10,8 +10,8 @@
            "python-import.ss"
            ;"base.ss"
            )
-  
-  
+
+
   (provide python load-ps
            ;read-python
            ;python-to-scheme
@@ -21,19 +21,19 @@
            ;parse-python-file
            render-python-value
            render-python-value/format)
-  
+
   (define (convert-value value)
    ; (py-object%->string value))
     (namespace-require '(lib "primitives.ss" "python"))
     ((namespace-variable-value 'py-object%->string) value))
    ; ((dynamic-require '(lib "primitives.ss" "python") 'py-object%->string) value))
-  
+
   (define (none? py-value)
     ((dynamic-require '(lib "primitives.ss" "python") 'py-none?) py-value))
-  
+
   (define (render-python-value/format value port port-write)
     (render-python-value value port port-write))
-  
+
   (define (render-python-value value port port-write)
     (unless (none? value)
       (let ([to-render (if (python-node? value)
@@ -45,15 +45,17 @@
         (if #f ;port-write
             (port-write to-render)
             (display to-render port)))))
-  
+
   (define pns (make-python-namespace))
-  
+
+  (python-name-namespace! pns '__main__)
+
   (define (load-ps)
     (parameterize ([current-namespace pns])
       (load-extension (build-path (this-expression-source-directory)
                                   "c" "stringobject.so")))
     (copy-namespace-bindings pns (current-namespace) #f #f))
-    
+
   (define (python path)
     (let ([results (eval-python&copy (python-to-scheme path) pns)])
       ;(let ([port (current-output-port)])
@@ -61,8 +63,8 @@
       ;              (render-python-value value port printf))
       ;            results))
       (map convert-value results)))
-        
-                     
+
+
 ;  (define (python path)
 ;    ;; setup initial eval namespace
 ;    (let ([m-path ((current-module-name-resolver) '"base.ss" #f #f)]
@@ -92,12 +94,12 @@
 ;                   result))
 ;             (filter (lambda (r) (not (void? r)))
 ;                     results)))))
-  
+
 
 
 
  ; (require "compiler-stmt.ss")
-  
+
 ;  (define ast (fifth (read-python "mini.py")))
 ;  (define suite ((class-field-accessor function-definition% body) ast))
 ;  (define statements ((class-field-accessor suite% statements) suite))
@@ -106,14 +108,14 @@
 ;  (define scope1 (send x1 get-scope))
 ;  (define scope1-globals (send scope1 get-global-table))
 ;  (define scope1-bindings (send scope1 get-bindings))
-  
+
 ;(define g (fourth statements))
 ;  (define g-suite ((class-field-accessor function-definition% body) g))
 ;(define g-statements ((class-field-accessor suite% statements) g-suite))
 ; (define b (car g-statements))
 ; (define b-scope (send b get-scope))
 ; (define b-bindings (send b-scope get-bindings)  )
-  
+
 ;  (let* ([ast-l (read-python "mini.py")]
 ;         [ax (first ast-l)]
 ;         [bx (second ast-l)]
@@ -131,7 +133,7 @@
 ;    (eq? (first (send ax get-targs)) (first (send ax get-targs)))
 ;    (eq? (send ascope binding-tid btarg)
 ;         atarg))
-  
+
 ;  (require (lib "etc.ss")
 ;           "primitives.ss"
 ;           "runtime-support.ss"
@@ -139,5 +141,5 @@
 ;  (current-directory "tests/functions")
 ;  (define astl (python-to-scheme "dict_args.py"))
 ;  (define astle (map syntax-object->datum astl))
-  
+
   )

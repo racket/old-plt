@@ -15,13 +15,14 @@
            module-path->string
            toggle-python-use-cache-namespace!
            set-python-cache-namespace!
+           python-name-namespace!
            )
-  
+
   (define (dynamic-python-to-scheme)
 ;    (dynamic-require '(lib "compile-python.ss" "python") 'python-to-scheme))
     ;(my-dynamic-require (current-namespace) '(lib "compile-python.ss" "python"))
     (namespace-variable-value 'python-to-scheme))
-  
+
   ; python-import-from-module: (listof (list symbol (U symbol false))) symbol ... ->
   ; import a subset of a python module's definitions into the current namespace
   (define (python-import-from-module bindings id . rest)
@@ -29,9 +30,9 @@
                       (make-python-namespace)
                       bindings)
     (void))
-  
-  
-  
+
+
+
   ; python-load-module: (listof symbol) [(listof symbol)] -> (values namespace symbol string)
   (define python-load-module
     (opt-lambda (id-list [parent-id-list null])
@@ -41,17 +42,17 @@
         (let ([module (or (*lookup-loaded-module* path)
                           (let* ([absolute-id-list (reverse (cons (car id-list)
                                                                   (reverse parent-id-list)))]
-                                 [ns (make-python-namespace)])
-                            (let ([module (make-loaded-module ns
-                                                              (string->symbol
+                                 [name #cs(string->symbol
                                                                (foldr (lambda (a b)
                                                                         (if (string=? b "")
                                                                             a
                                                                             (string-append a "." b)))
                                                                       ""
                                                                       (map symbol->string
-                                                                           absolute-id-list)))
-                                                          path)])
+                                                                           absolute-id-list)))]
+                                 [ns (make-python-namespace name)])
+                            (let ([module (make-loaded-module ns name path)])
+			     (python-name-namespace! ns (loaded-module-name module))
                               (*add-loaded-module* module)
                             (eval-python (parse-module (module-path->string path)) ns)
                               ;;;; now that we loaded the "a" part of "a.b.c.d", load "b" inside "a", and so on
@@ -74,6 +75,13 @@
       (values (loaded-module-namespace module)
               (loaded-module-name module)
               (module-path->string (loaded-module-path module)))))))
+
+
+  (define (python-name-namespace! ns name)
+    (parameterize ([current-namespace ns])
+       (eval (datum->syntax-object (eval '(current-toplevel-context))
+                                   `(namespace-set-variable-value! '__name__ ,((eval 'symbol->py-string%) name))))))
+
 
 ;  (require (lib "date.ss"))
   ; parse-module: string -> (listof ast-node%)
@@ -120,7 +128,7 @@
         (unless file-path
           (error (format "Python module ~a does not exist." relative-path)))
         (make-module-path (string->symbol (normalize-path file-path))))))
-  
+
   (define copy-namespace-bindings
     (opt-lambda (from to [bindings #f] [prefix #f])
 ;      (printf "namespace bindings: ~a~n" bindings)
@@ -149,7 +157,7 @@
                                   (assq sym bindings))
                                 symbols)
                         symbols))))))
-  
+
   ; eval-python: (listof syntax-object) namespace -> (listof python-node)
   (define (eval-python s-obj-list namespace)
     (filter (lambda (result)
@@ -157,7 +165,7 @@
             (parameterize ([current-namespace namespace])
               (map eval
                    s-obj-list))))
-  
+
    ; make-python-namespace: [bool] -> namespace
   ; returns an initialized python namespace (empty namespace + python base)
   (define make-python-namespace
@@ -172,7 +180,7 @@
 ;        (set-python-cache-namespace! p-n))
       (init-python-namespace p-n)
       p-n)))
-  
+
   ; init-python-namespace: ((-> void) -> void)
   ;                        (string value -> void)
   ;                        ((U syntax-object sxp) -> (U value values))
@@ -188,9 +196,9 @@
   ;    (parameterize ([current-namespace python-namespace])
   ;      (namespace-set-variable-value! '#%top top)))
     )
-  
+
   (define outside (current-namespace))
-  
+
   (define (my-dynamic-require dest-namespace spec)
     ;(parameterize ([current-namespace dest-namespace])
     ;  (namespace-require spec)))
@@ -228,23 +236,23 @@
         (namespace-require spec)
         )))
 
-  
+
   (define cache-namespace #f)
   (define use-cache-namespace? #t)
-  
+
   (define (get-cache-namespace)
     (unless cache-namespace
       (set-python-cache-namespace! (current-namespace)))
     (if use-cache-namespace?
         cache-namespace
         (current-namespace)))
-  
+
   (define (set-python-cache-namespace! ns)
     (set! cache-namespace ns))
-  
+
   (define (toggle-python-use-cache-namespace! use?)
     (set! use-cache-namespace? use?))
-  
+
   (define (lookup-cached-mzscheme-module spec)
     (parameterize ([current-namespace (get-cache-namespace)])
       (namespace-require spec)
@@ -262,32 +270,32 @@
 
   ; a loaded-module is:
   ;  (make-loaded-module namespace symbol module-path)
-  
+
   (define-struct loaded-module (namespace name path))
-  
+
   ; a module-path is:
   ;  (make-module-path sym-path)
   ; where sym-path is a complete path symbol
-  
+
   (define-struct module-path (value))
-  
+
   (define (module-path->string mp)
     (symbol->string (module-path-value mp)))
-  
+
   (define (module-path-dir-string mp)
     (let-values ([(base name dir?) (split-path (module-path->string mp))])
       (cond
         [(eq? 'relative base) (current-directory)]
         [(not base) "/"]
         [else base])))
-  
+
   (define *loaded-modules* (make-parameter null))
-     
+
   ; *add-loaded-module*: loaded-module -> void
   ; add a module to the internal list of pre-loaded modules
   (define (*add-loaded-module* module)
     (*loaded-modules* (cons module (*loaded-modules*))))
-     
+
   ; *lookup-loaded-module*: module-path -> (U false loaded-module)
   ; retrieves the module specified by a module path, or signals failure by returning false
   (define (*lookup-loaded-module* path)
@@ -295,10 +303,10 @@
              (and (eq? (module-path-value path) (module-path-value (loaded-module-path module)))
                   module))
            (*loaded-modules*)))
-  
+
   (define current-python-library-paths (make-parameter (list (build-path (collection-path "python")
                                                                          "libs"))))
-  
+
   (define (list-head list items)
     (reverse (list-tail (reverse list)
                         (- (length list) items))))

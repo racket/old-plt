@@ -172,28 +172,31 @@
     (define sk-bitmap #f)
     
     (define hd-editor-mixin
-      (let ([sk-bday? (lambda () #t)])
       (mixin (editor<%>) ()
         (define show-sk? #t)
 
-        (inherit invalidate-bitmap-cache)
         (rename [super-on-event on-event])
         (define/override (on-event evt)
           (cond
             [(and show-sk? 
                   (sk-bday?)
                   (send evt button-down? 'right))
-             (let ([menu (new popup-menu%)])
-               (new menu-item% 
-                    (parent menu)
-                    (label (string-constant happy-birthday-shriram))
-                    (callback (lambda (x y)
-                                (set! show-sk? #f)
-                                (invalidate-bitmap-cache))))
-               (let ([admin (get-admin)])
-                 (send admin popup-menu menu
-                       (send evt get-x)
-                       (send evt get-y))))]
+             (let ([admin (get-admin)])
+               (let ([menu (new popup-menu%)])
+                 (new menu-item% 
+                      (parent menu)
+                      (label (string-constant happy-birthday-shriram))
+                      (callback (lambda (x y)
+                                  (set! show-sk? #f)
+                                  (let ([wb (box 0)]
+                                        [hb (box 0)]
+                                        [xb (box 0)]
+                                        [yb (box 0)])
+                                    (send admin get-view xb yb wb hb)
+                                    (send admin needs-update (unbox xb) (unbox yb) (unbox wb) (unbox hb))))))
+                 (send (get-canvas) popup-menu menu
+                       (+ (send evt get-x) 1)
+                       (+ (send evt get-y) 1))))]
             [else (super-on-event evt)]))
              
         
@@ -235,7 +238,7 @@
         (define/override (close-browser-status-line top-level-window) 
           (send  top-level-window change-status-to-search))
         
-        (super-instantiate ()))))
+        (super-instantiate ())))
     
     (lambda (%)
       (class %
@@ -544,7 +547,7 @@
                        ;; Might be called twice!
                        (preferences:set 'drscheme:help-desk:last-url-string s)
                        (send d show #f))])
-          (with-handlers ([exn:fail?
+          (with-handlers ([not-break-exn?
                            (lambda (x)
                              (message-box (string-constant bad-url) 
                                           (format (string-constant bad-url:this)

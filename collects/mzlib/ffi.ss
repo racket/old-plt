@@ -9,8 +9,9 @@
          cpointer? ptr-ref ptr-set! ptr-equal?
          make-ffi-type make-ffi-struct-type ffi-register-finalizer
          make-sized-byte-string)
-(provide _void _int8 _uint8 _byte _int16 _uint16 _word _int32 _uint32 _int
-         _uint _fixint _ufixint _long _ulong _fixnum _ufixnum _float _double
+(provide _void _int8 _uint8 _int16 _uint16 _int32 _uint32 _int64 _uint64
+         _byte _word _int _uint _fixint _ufixint _long _ulong _fixnum _ufixnum
+         _float _double
          _bool _pointer _scheme)
 
 (provide define*)
@@ -574,8 +575,8 @@
              (define* (list->TAG l)
                (make-TAG (list->cblock l type) (length l))))))]))
 
-(make-srfi-4 s8 _int8)
-(make-srfi-4 u8 _uint8)
+(make-srfi-4 s8  _int8)
+(make-srfi-4 u8  _uint8)
 (make-srfi-4 s16 _int16)
 (make-srfi-4 u16 _uint16)
 (make-srfi-4 s32 _int32)

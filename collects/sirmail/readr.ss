@@ -100,6 +100,7 @@
        (lambda (x)
 	 (show-error x)
 	 ((error-escape-handler))))
+
       (current-exception-handler
        (initial-exception-handler))
 

@@ -96,8 +96,8 @@
       ;;                                    bool
       ;;                                    nested-mailbox-folder)
       ;; nested-mailbox-folder = 
-      ;; (union (make-flat-folder string string bool)
-      ;;        (make-deep-folder string string bool (listof mailbox-folder)))
+      ;; (union (make-flat-folder bytes (union #f string) bool)
+      ;;        (make-deep-folder bytes (union #f string) bool (listof mailbox-folder)))
       (define-struct folder (name short-name selectable?))
       (define-struct (deep-folder folder) (children))
       (define-struct (flat-folder folder) ())
@@ -130,25 +130,39 @@
       
       ;; read-mailbox-folder : -> mailbox-folder
       (define (read-mailbox-folder)
-        (if (file-exists? mailbox-cache-file)
-            (let ([raw-datum (call-with-input-file mailbox-cache-file read 'text)])
-              (let loop ([rd raw-datum])
-                (cond
-                  [(= 2 (length rd)) (make-flat-folder (car rd) (cadr rd) #t)]
-                  [(= 3 (length rd))
-                   (make-deep-folder (car rd)
-                                     (cadr rd)
-                                     #f
-                                     (map loop (caddr rd)))]
-                  [(= 4 (length rd))
-                   (make-deep-folder (car rd)
-                                     (cadr rd)
-                                     (caddr rd)
-                                     (map loop (cadddr rd)))])))
-            (make-deep-folder (ROOT-MAILBOX-FOR-LIST)
-                              (ROOT-MAILBOX-FOR-LIST)
-                              #f ;; arbitrary
-                              null)))
+        (let ([default
+               (make-deep-folder (ROOT-MAILBOX-FOR-LIST)
+                                 (ROOT-MAILBOX-FOR-LIST)
+                                 #f ;; arbitrary
+                                 null)])
+          (if (file-exists? mailbox-cache-file)
+              (let/ec k
+                (let ([raw-datum (call-with-input-file mailbox-cache-file read 'text)])
+                  (let loop ([rd raw-datum])
+                    (cond
+                      [(and (= 2 (length rd))
+                            (or (not (car rd)) (bytes? (car rd)))
+                            (or (not (car rd)) (string? (cadr rd))))
+                       (make-flat-folder (car rd) (cadr rd) #t)]
+                      [(and (= 3 (length rd))
+                            (or (not (car rd)) (bytes? (car rd)))
+                            (or (not (car rd)) (string? (cadr rd)))
+                            (list? (caddr rd)))
+                       (make-deep-folder (car rd)
+                                         (cadr rd)
+                                         #f
+                                         (map loop (caddr rd)))]
+                      [(and (= 4 (length rd))
+                            (or (not (car rd)) (bytes? (car rd)))
+                            (or (not (cadr rd)) (string? (cadr rd)))
+                            (boolean? (caddr rd))
+                            (list? (cadddr rd)))
+                       (make-deep-folder (car rd)
+                                         (cadr rd)
+                                         (caddr rd)
+                                         (map loop (cadddr rd)))]
+                      [else (k default)]))))
+              default)))
 
       
       ;; fetch-mailboxes : -> (union #f mailbox-folder)
@@ -160,14 +174,14 @@
            (let-values ([(imap msg-count recent-count) (imap-open-connection)]
                         [(root-box) (ROOT-MAILBOX-FOR-LIST)])
              (make-deep-folder
-              root-box
+              (and root-box (string->bytes/utf-8 root-box))
               root-box
               #f ;; arbitrary
               (let loop ([mailbox-name root-box])
                 (let ([mailbox-name-length (if mailbox-name
-					       (string-length mailbox-name)
+					       (bytes-length mailbox-name)
 					       0)]
-                      [get-child-mailbox-name (lambda (item) (format "~a" (second item)))]
+                      [get-child-mailbox-name (lambda (item) (second item))]
                       [child-mailboxes (imap-list-child-mailboxes imap mailbox-name)])
                   (map (lambda (item)
                          (let* ([child-mailbox-name (get-child-mailbox-name item)]
@@ -176,20 +190,21 @@
                                 [flat-mailbox? (or (member 'noinferiors symbols)
 						   (member 'hasnochildren symbols))]
                                 [selectable? (not (member 'noselect symbols))]
-                                [child-name-length (string-length child-mailbox-name)]
+                                [child-name-length (bytes-length child-mailbox-name)]
                                 [strip-prefix?
                                  (and (> child-name-length mailbox-name-length)
 				      mailbox-name
-                                      (string=? 
-                                       (substring child-mailbox-name 0 mailbox-name-length)
+                                      (bytes=?
+                                       (subbytes child-mailbox-name 0 mailbox-name-length)
                                        mailbox-name))]
                                 [short-name
-                                 (if strip-prefix?
-                                     (substring child-mailbox-name
+                                 (bytes->string/utf-8
+                                  (if strip-prefix?
+                                      (subbytes child-mailbox-name
                                                 ;; strip separator (thus add1)
                                                 (add1 mailbox-name-length)
                                                 child-name-length)
-                                     child-mailbox-name)])
+                                      child-mailbox-name))])
                            (if flat-mailbox?
                                (make-flat-folder child-mailbox-name short-name #t)
                                (make-deep-folder 
@@ -200,8 +215,8 @@
                        (quicksort
                         child-mailboxes
                         (lambda (x y)
-                          (string<=? (get-child-mailbox-name x)
-                                     (get-child-mailbox-name y))))))))))))
+                          (string<=? (bytes->string/utf-8 (get-child-mailbox-name x))
+                                     (bytes->string/utf-8 (get-child-mailbox-name y)))))))))))))
          
       (define imap-mailbox-mixin
         (compose 
@@ -230,7 +245,7 @@
                 (let ([mail-box (send i get-full-mailbox-name)])
                   (send frame set-status-text (format "Opening ~a" mail-box))
                   (setup-mailboxes-file mail-box)
-                  (open-mailbox mail-box)))
+                  (open-mailbox (bytes->string/utf-8 mail-box))))
               (super-on-double-select i)))
           (super-instantiate ())))
       
@@ -241,10 +256,10 @@
                                (send hl new-list imap-mailbox-mixin)
                                (send hl new-item imap-mailbox-name-mixin))]
                  [text (send new-item get-editor)])
-            (send new-item set-full-mailbox-name (or (folder-name mbf) ""))
+            (send new-item set-full-mailbox-name (or (folder-name mbf) #""))
             (send new-item set-selectable (folder-selectable? mbf))
             (when deep?
-              (send new-item set-mailbox-name (or (folder-name mbf) "")))
+              (send new-item set-mailbox-name (or (folder-name mbf) #"")))
             (send text insert (or (folder-short-name mbf) ""))
             new-item))
         (send (send top-list get-editor) begin-edit-sequence)
@@ -257,7 +272,7 @@
 			(when (deep-folder? mbf)
 			  (for-each (lambda (child) (loop new-item child))
 				    (deep-folder-children mbf))))))
-		  (cons (make-flat-folder mailbox-name mailbox-name #t)
+		  (cons (make-flat-folder (string->bytes/utf-8 mailbox-name) mailbox-name #t)
 			(deep-folder-children orig-mbf)))
         (send (send top-list get-editor) end-edit-sequence))
       
@@ -323,7 +338,8 @@
                           [stretchable-height #f]))
       
       (define re:setup-mailboxes (regexp "^([^/]*)/(.*)$"))
-      (define (setup-mailboxes-file mailbox-name)
+      (define (setup-mailboxes-file bytes-mailbox-name)
+        (define mailbox-name (bytes->string/utf-8 bytes-mailbox-name))
         (define mailboxes-file (build-path (LOCAL-DIR) "mailboxes"))
         (define mailboxes
           (with-handlers ([exn:fail? (lambda (x) '(("Inbox" #"inbox")))])
@@ -365,7 +381,7 @@
                 (with-output-to-file (build-path (LOCAL-DIR) "mailboxes")
                   (lambda () (write
                               (append mailboxes
-                                      (list (list mailbox-name 
+                                      (list (list mailbox-name
 						  (path->bytes mailbox-dir))))))
                   'truncate))))))
       
@@ -447,7 +463,7 @@
       (send frame create-status-line)
       (send top-list set-mailbox-name (ROOT-MAILBOX-FOR-LIST))
       (update-gui (read-mailbox-folder))
-      
+
       (initial-exception-handler
          (lambda (x)
            (show-error x frame)

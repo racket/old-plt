@@ -167,10 +167,11 @@
 		(log-warning "warning: unexpected response for ~a: ~a" id l)
 		(loop)])))))
 
-      ;; str->arg is still not quite right.  It should use {n}crnl prefixes.
-      (define (str->arg s)
+      ;; str/bytes->arg is still not quite right.  It should use {n}crnl prefixes.
+      (define (str/bytes->arg s)
 	(if (or (regexp-match #rx#"[ *]" s)
-		(string=? s ""))
+                (equal? s "")
+		(equal? s #""))
 	    (format "\"~a\"" s)
 	    s))
 
@@ -192,8 +193,8 @@
 	  
 	  (check-ok (imap-send r w "NOOP" void))
 	  (let ([reply (imap-send r w (format "LOGIN ~a ~a" 
-					(str->arg username) 
-					(str->arg password)) 
+					(str/bytes->arg username) 
+					(str/bytes->arg password)) 
 			 void)])
 	    (if (and (pair? reply) (tag-eq? 'NO (car reply)))
 		(error 'imap-connect "username or password rejected by server: ~s" reply)
@@ -216,10 +217,10 @@
 	  (imap-connect* r w username password inbox)))
       
       (define (imap-reselect imap inbox)
-        (imap-selectish-command imap (format "SELECT ~a" (str->arg inbox))))
+        (imap-selectish-command imap (format "SELECT ~a" (str/bytes->arg inbox))))
 	
       (define (imap-examine imap inbox)
-	(imap-selectish-command imap (format "EXAMINE ~a" (str->arg inbox))))
+	(imap-selectish-command imap (format "EXAMINE ~a" (str/bytes->arg inbox))))
 
       ;; returns (values #f #f) if no change since last check
       (define (imap-noop imap)
@@ -250,7 +251,7 @@
 	(let ([r (imap-connection-r imap)]
 	      [w (imap-connection-w imap)])
 	  (let ([results null])
-	    (check-ok (imap-send r w (format "STATUS ~a ~a" (str->arg inbox) flags)
+	    (check-ok (imap-send r w (format "STATUS ~a ~a" (str/bytes->arg inbox) flags)
 				 (lambda (i)
 				   (when (and (list? i) (= 3 (length i))
 					      (tag-eq? (car i) 'STATUS))
@@ -341,7 +342,7 @@
 	   (imap-send r w
 		      (format "COPY ~a ~a"
 			      (splice msgs ",")
-			      (str->arg dest-mailbox))
+			      (str/bytes->arg dest-mailbox))
 		      void))))
       
       (define (imap-append imap dest-mailbox msg)
@@ -366,7 +367,7 @@
 	      [w (imap-connection-w imap)]
 	      [exists? #f])
 	  (check-ok (imap-send r w 
-			       (format "LIST \"\" ~s" (str->arg mailbox))
+			       (format "LIST \"\" ~s" (str/bytes->arg mailbox))
 			       (lambda (i)
 				 (when (and (pair? i)
 					    (tag-eq? (car i) 'LIST))
@@ -378,7 +379,7 @@
 	      [w (imap-connection-w imap)])
 	  (check-ok 
 	   (imap-send r w 
-		      (format "CREATE ~a" (str->arg mailbox))
+		      (format "CREATE ~a" (str/bytes->arg mailbox))
 		      void))))
       
       (define (imap-get-hierarchy-delimiter imap)
@@ -394,12 +395,13 @@
       (define imap-list-child-mailboxes 
 	(case-lambda
 	 [(imap mailbox)
-	  (imap-list-child-mailboxes imap mailbox (imap-get-hierarchy-delimiter imap))]
-	 [(imap mailbox delimiter)
-	  (let* ([mailbox-name (and mailbox (format "~a~a" mailbox delimiter))]
+	  (imap-list-child-mailboxes imap mailbox #f)]
+	 [(imap mailbox raw-delimiter)
+	  (let* ([delimiter (or raw-delimiter (imap-get-hierarchy-delimiter imap))]
+                 [mailbox-name (and mailbox (bytes-append mailbox delimiter))]
 		 [pattern (if mailbox
-			      (format "~a%" mailbox-name)
-			      "%")])
+			      (bytes-append mailbox-name #"%")
+			      #"%")])
 	    (imap-list-mailboxes imap pattern mailbox-name))]))
       
       (define (imap-mailbox-flags imap mailbox)
@@ -415,15 +417,12 @@
                [w (imap-connection-w imap)]
                [sub-folders null])
           (check-ok
-           (imap-send r w (format "LIST \"\" ~a" (str->arg pattern))
+           (imap-send r w (format "LIST \"\" ~a" (str/bytes->arg pattern))
                       (lambda (x)
                         (let ([flags (cadr x)]
-                              [name (let ([s (cadddr x)])
-                                      (if (symbol? s)
-                                          (symbol->string s)
-                                          s))])
+                              [name (cadddr x)])
                           (unless (and except
-                                       (string=? name except))
+                                       (bytes=? name except))
                             (set! sub-folders 
                                   (cons 
                                    (list flags name)

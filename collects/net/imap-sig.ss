@@ -6,6 +6,7 @@
   (provide net:imap^)
   (define-signature net:imap^
     (imap-port-number
+     imap-connection?
 
      imap-connect imap-connect*
      imap-disconnect

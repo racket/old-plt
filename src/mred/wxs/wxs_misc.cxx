@@ -956,6 +956,19 @@ static Scheme_Object *bundle_symset_psOrientation(int v) {
 }
 
 
+#ifdef wx_xt
+void check_ps_mode(int, Scheme_Object *) {}
+#else
+void check_ps_mode(int v, Scheme_Object *p)
+{
+  if ((v == PS_PREVIEW) || (v == PS_PRINTER)) {
+    scheme_arg_mismatch(METHODNAME("ps-setup%","set-mode"), 
+	"only file mode is allowed for this platform, given: ",
+	p);
+  }
+}
+#endif
+
 
 
 
@@ -1216,7 +1229,7 @@ static Scheme_Object *os_wxPrintSetupDataSetPrinterMode(Scheme_Object *obj, int 
   
   x0 = WITH_VAR_STACK(unbundle_symset_psMode(p[0], "set-mode in ps-setup%"));
 
-  
+  WITH_VAR_STACK(check_ps_mode(x0, p[0]));
   WITH_VAR_STACK(((wxPrintSetupData *)((Scheme_Class_Object *)obj)->primdata)->SetPrinterMode(x0));
 
   

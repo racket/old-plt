@@ -111,6 +111,20 @@ Scheme_Object *GetTypes(wxClipboardClient *c)
 @SYM "landscape" : PS_LANDSCAPE
 @ENDSYMBOLS
 
+#ifdef wx_xt
+void check_ps_mode(int, Scheme_Object *) {}
+#else
+void check_ps_mode(int v, Scheme_Object *p)
+{
+  if ((v == PS_PREVIEW) || (v == PS_PRINTER)) {
+    scheme_arg_mismatch(METHODNAME("ps-setup%","set-mode"), 
+	"only file mode is allowed for this platform, given: ",
+	p);
+  }
+}
+#endif
+
+@MACRO checkPSMode[cn] = WITH_VAR_STACK(check_ps_mode(x<cn>, p[<cn>]));
 
 @CLASSBASE wxPrintSetupData "ps-setup" : "object"
 
@@ -132,7 +146,7 @@ Scheme_Object *GetTypes(wxClipboardClient *c)
 @ "set-command" : void SetPrinterCommand(string);
 @ "set-file" : void SetPrinterFile(npathname);
 @ "set-preview-command" : void SetPrintPreviewCommand(string); 
-@ "set-mode" : void SetPrinterMode(SYM[psMode]);
+@ "set-mode" : void SetPrinterMode(SYM[psMode]); : : /checkPSMode[0]
 @ "set-orientation" : void SetPrinterOrientation(SYM[psOrientation]);
 @ "set-options" : void SetPrinterOptions(string);
 @ "set-scaling" : void SetPrinterScaling(nnfloat,nnfloat);

@@ -3992,11 +3992,7 @@ void wxMediaEdit::SetStyleList(wxStyleList *newList)
   count = styleList->Number();
   if (count) {
     wxStyle *i2s;
-#ifdef MZ_PRECISE_GC
-    smap = (wxStyle **)GC_malloc(sizeof(wxStyle*) * count);
-#else
     smap = new wxStyle*[count];
-#endif
     i2s = newList->IndexToStyle(0); /* base style maps to base style */
     smap[0] = i2s;
     for (index = 1; index < count; index++) {

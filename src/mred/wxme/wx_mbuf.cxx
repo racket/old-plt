@@ -74,12 +74,7 @@ class wxMediaXClipboardClient : public wxClipboardClient
 static wxMediaXClipboardClient *TheMediaXClipboardClient;
 #endif
 
-typedef wxChangeRecord *wxChangeRecordPtr;
-#ifdef MZ_PRECISE_GC
-# define MALLOC_CRP(n) (wxChangeRecordPtr *)GC_malloc(sizeof(void*) * n)
-#else
-# define MALLOC_CRP(n) new wxChangeRecordPtr[n]
-#endif
+# define MALLOC_CRP(n) new wxChangeRecord*[n]
 
 // xformer doesn't handle static member variable declarations
 #ifdef MZ_PRECISE_GC
@@ -114,7 +109,7 @@ static int bcounter = 0;
 wxMediaBuffer::wxMediaBuffer()
  : wxObject(WXGC_NO_CLEANUP)
 {
-  wxChangeRecordPtr *crpa;
+  wxChangeRecord **crpa;
 
   map = new wxKeymap();
   // AddBufferFunctions(map);

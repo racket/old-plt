@@ -976,8 +976,6 @@ Bool wxKeymap::CycleCheck(wxKeymap *km)
   return FALSE;
 }
 
-typedef wxKeymap *wxKeymapPtr;
-
 void wxKeymap::ChainToKeymap(wxKeymap *km, Bool prefix)
 {
   wxKeymap **old;
@@ -986,15 +984,7 @@ void wxKeymap::ChainToKeymap(wxKeymap *km, Bool prefix)
     return;
 
   old = chainTo;
-#ifdef MZ_PRECISE_GC
-  {
-    wxKeymap **kma;
-    kma = (wxKeymap **)GC_malloc(sizeof(wxKeymap*) * (chainCount + 1));
-    chainTo = kma;
-  }
-#else
-  chainTo = new wxKeymapPtr[chainCount + 1];
-#endif
+  chainTo = new wxKeymap*[chainCount + 1];
 
   memcpy(chainTo + (prefix ? 1 : 0), old, chainCount * sizeof(wxKeymap *));
   chainTo[prefix ? 0 : chainCount] = km;

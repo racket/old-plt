@@ -103,6 +103,7 @@
         (let ((c (compute-baseline-move packages robots)))
           (cond
             ((symbol? c)
+	     (path-loc (cons (get-player-x) (get-player-y)))
              (compute-move-ff packages robots out))
             (else
              (printf "baseline~n")

@@ -1,7 +1,7 @@
 
  (unit
   (import)
-  (export make-require-unit make-require)
+  (export (make-require-unit require-unit) (make-require require-file))
   
   (define make-require-unit
    ; require-unit, etc.
@@ -70,6 +70,4 @@
 		      'require-relative-library/proc
 		      'require-library/proc)
 		  '#%load/use-compiled) 
-	     ,@names))))))
-
-  (values make-require-unit make-require))
+	     ,@names)))))))

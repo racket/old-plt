@@ -1,4 +1,4 @@
-; $Id: scm-obj.ss,v 1.37 1998/08/20 15:17:17 mflatt Exp $
+; $Id: scm-obj.ss,v 1.38 1998/11/04 19:52:54 mflatt Exp $
 
 (unit/sig zodiac:scheme-objects^
   (import zodiac:misc^ (z : zodiac:structures^) (z : zodiac:reader-structs^)
@@ -738,7 +738,7 @@
 	    (static-error expr "Malformed send*")))))
 
   (add-primitivized-macro-form 'send* full-vocabulary send*-macro)
-  (add-on-demand-form 'macro 'send* scheme-vocabulary send*-macro)
+  (add-on-demand-form 'macro 'send* common-vocabulary send*-macro)
 
   (define make-generic-macro
       (let* ((kwd '())

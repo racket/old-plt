@@ -4,7 +4,8 @@
     `(#%begin-elaboration-time ,@body)))
 
 (begin-elaboration-time
- (define-values (require-unit require-file) (invoke-unit (require-library "referf.ss"))))
+ (invoke-open-unit
+  (require-library "referf.ss")))
 
 (define-macro require-library-unit/sig (require-unit #t #t #f #t 'require-library-unit/sig))
 (define-macro require-library-unit (require-unit #t #t #f #f 'require-library-unit))

@@ -2,29 +2,29 @@
  (import)
  (link
   [referf 
-   : (make-require-unit make-require)
+   : (require-unit require-file)
    ((unit->unit/sig (require-relative-library "referf.ss") 
 		    () 
-		    (make-require-unit make-require)))]
+		    (require-unit require-file)))]
   [compile 
    : mzlib:compile^
    ((unit/sig mzlib:compile^
-    (import (make-require-unit make-require))
+    (import (r : (require-unit require-file)))
 
    (define identity (lambda (x n) x))
 
    ; top-level begin-elaboration-time => begin-expansion-time
    ; nested begin-elaboration-time => begin
    ; require-XXX => usual expansion w/o string check
-   (define -require-library-unit/sig (make-require-unit #f #t #f #t 'require-library-unit/sig))
-   (define -require-library-unit (make-require-unit #f #t #f #f 'require-library-unit))
-   (define -require-relative-library-unit/sig (make-require-unit #f #t #t #t 'require-relative-library-unit/sig))
-   (define -require-relative-library-unit (make-require-unit #f #t #t #f 'require-relative-library-unit))
-   (define -require-unit/sig (make-require-unit #f #f #f #t 'require-unit/sig))
-   (define -require-unit (make-require-unit #f #f #f #f 'require-unit))
-   (define -require-file (make-require #f #f #f))
-   (define -require-library (make-require #f #t #f))
-   (define -require-relative-library (make-require #f #t #t))
+   (define -require-library-unit/sig (r:require-unit #f #t #f #t 'require-library-unit/sig))
+   (define -require-library-unit (r:require-unit #f #t #f #f 'require-library-unit))
+   (define -require-relative-library-unit/sig (r:require-unit #f #t #t #t 'require-relative-library-unit/sig))
+   (define -require-relative-library-unit (r:require-unit #f #t #t #f 'require-relative-library-unit))
+   (define -require-unit/sig (r:require-unit #f #f #f #t 'require-unit/sig))
+   (define -require-unit (r:require-unit #f #f #f #f 'require-unit))
+   (define -require-file (r:require-file #f #f #f))
+   (define -require-library (r:require-file #f #t #f))
+   (define -require-relative-library (r:require-file #f #t #t))
    (define make--begin-elaboration-time
      (lambda (do?)
        (lambda body

@@ -1,4 +1,4 @@
-; $Id: scm-hanc.ss,v 1.54 1998/11/03 23:55:47 mflatt Exp $
+; $Id: scm-hanc.ss,v 1.55 1998/11/04 19:52:54 mflatt Exp $
 
 (define-struct signature-element (source))
 (define-struct (name-element struct:signature-element) (name))
@@ -602,7 +602,7 @@
 	    (static-error expr "Malformed signature->symbols"))))))
 
 (add-primitivized-micro-form 'signature->symbols full-vocabulary signature->symbols-micro)
-(add-on-demand-form 'micro 'signature->symbols scheme-vocabulary signature->symbols-micro)
+(add-on-demand-form 'micro 'signature->symbols common-vocabulary signature->symbols-micro)
 
 (define define-signature-micro
     (let* ((kwd '())

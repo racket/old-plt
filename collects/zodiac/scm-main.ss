@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.160 1998/11/04 21:09:24 mflatt Exp $
+; $Id: scm-main.ss,v 1.161 1998/11/04 21:10:47 mflatt Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -663,7 +663,11 @@
 	      (static-error expr "Malformed local"))))))
 
   (add-primitivized-micro-form 'local intermediate-vocabulary (make-local-micro #f nobegin-local-extract-vocab))
+  (add-on-demand-form 'micro 'local intermediate-vocabulary (make-local-micro #f nobegin-local-extract-vocab))
+
   (add-primitivized-micro-form 'local advanced-vocabulary (make-local-micro #t full-local-extract-vocab))
+  (add-on-demand-form 'micro 'local advanced-vocabulary (make-local-micro #t full-local-extract-vocab))
+
   (add-on-demand-form 'micro 'local scheme-vocabulary (make-local-micro #t full-local-extract-vocab))
 
   (define (make-define-forms begin?)
@@ -1481,7 +1485,7 @@
 		  (static-error expr "Malformed evcase"))))))))
 
   (add-primitivized-macro-form 'evcase advanced-vocabulary evcase-macro)
-  (add-on-demand-form 'macro 'evcase scheme-vocabulary evcase-macro)
+  (add-on-demand-form 'macro 'evcase common-vocabulary evcase-macro)
 
   (define when-macro
       (let* ((kwd '())
@@ -1878,7 +1882,7 @@
 	    (static-error expr "Malformed require-file"))))))
 
   (add-primitivized-micro-form 'require-file beginner-vocabulary require-file-macro)
-  (add-on-demand-form 'macro 'require-file scheme-vocabulary require-file-macro)
+  (add-on-demand-form 'macro 'require-file common-vocabulary require-file-macro)
 
   (define require-library-micro
     (let* ((kwd '())

@@ -261,11 +261,11 @@
       (values 'other (string->symbol lexeme) (position-offset start-pos) (position-offset end-pos))]
      [identifier (values 'symbol lexeme (position-offset start-pos) (position-offset end-pos))]
      [(special)
-      (ret 'white-space start-pos end-pos)]
+      (ret 'no-color start-pos end-pos)]
      [(special-comment)
-      (ret 'white-space start-pos end-pos)]
+      (ret 'comment start-pos end-pos)]
      [(special-error)
-      (ret 'white-space start-pos end-pos)]
+      (ret 'no-color start-pos end-pos)]
      [(eof) (values 'eof #f #f #f)]
      [(: bad-char bad-str bad-id) (ret 'error start-pos end-pos)]
      [any (extend-error start-pos end-pos input-port)]))

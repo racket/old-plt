@@ -19,20 +19,20 @@
                   (hash-table-put! close-matches-table (cadr x) (car x)))
                 matches)
       
-      (define (is-open? x)
+      (define/private (is-open? x)
         (hash-table-get open-matches-table x (lambda () #f)))
       
-      (define (is-close? x)
+      (define/private (is-close? x)
         (hash-table-get close-matches-table x (lambda () #f)))
       
-      (define (matches? open close)
+      (define/private (matches? open close)
         (equal? (hash-table-get open-matches-table open (lambda () #f))
                 close))
 
       (define tree (new token-tree%))
       (define invalid-tree (new token-tree%))
       
-      (define (split tree pos)
+      (define/private (split tree pos)
         (send tree search! pos)
         (let ((token-start (send tree get-root-start-position)))
           (cond
@@ -160,7 +160,7 @@
                d
                (is-close? (car d)))))
       
-      (define (do-match-forward node top-offset stack escape)
+      (define/private (do-match-forward node top-offset stack escape)
         (cond
           ((not node) stack)
           (else
@@ -181,7 +181,7 @@
                (else
                 (do-match-forward (node-right node) (+ start (node-token-length node)) new-stack escape)))))))
       
-      (define (do-match-backward node top-offset stack escape)
+      (define/private (do-match-backward node top-offset stack escape)
         (cond
           ((not node) stack)
           (else

@@ -84,10 +84,11 @@
 	 (mred:horizontal-panel p #t #t
 	   (list 
 	    (vertical-panel #t #t (let ([msg (message "Begin-like Keywords")]
-					[box (list-box null "" wx:const-multiple -1 -1 -1 -1 begin-keywords)])
-				    (list msg box
-					  (button (add-callback "Begin" 'begin box) "Add")
-					  (button (delete-callback box) "Delete"))))
+					[box (list-box null "" wx:const-multiple -1 -1 -1 -1 begin-keywords)]
+					[add (button (add-callback "Begin" 'begin box) "Add")]
+					[delete (button (delete-callback box) "Delete")])
+				    (send add user-min-width (send delete user-min-width))
+				    (list msg box add delete)))
 	    (vertical-panel #t #t (let ([msg (message "Define-like Keywords")]
 					[box (list-box null "" wx:const-multiple -1 -1 -1 -1 define-keywords)])
 				    (list msg box

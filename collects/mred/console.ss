@@ -104,12 +104,14 @@
 	       
 	
 	  (sequence
-	    '(let ([mult (make-object wx:mult-colour%)]
-		   [add (make-object wx:add-colour%)])
-	      (send mult set 1 0 0)
-	      (send add set 255 0 0)
-	      (send error-delta set-foreground-add add)
-	      (send error-delta set-foreground-mult mult)))
+	    (let ([mult (send error-delta get-foreground-mult)]
+		  [add (send error-delta get-foreground-add)])
+	      (send mult set 0 0 0)
+	      (send add set 255 0 0))
+	    (let ([mult (send display-delta get-foreground-mult)]
+		  [add (send display-delta get-foreground-add)])
+	      (send mult set 0 0 0)
+	      (send add set 0 0 175)))
 
 	       (rename
 		[super-on-insert on-insert]

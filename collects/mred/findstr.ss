@@ -12,9 +12,8 @@
       (lambda (super%) 
 	(class super% (canvas [in-edit ()] [x -1] [y -1] [flags ()])
 	  (inherit set-size show center make-modal
-		   capture-mouse release-mouse)
+		   capture-mouse release-mouse panel)
 	  (public
-	    [WIDTH 450]
 	    [HEIGHT 100]
 	    [canvas% mred:canvas:editor-canvas%]
 	    [edit% mred:edit:edit%])
@@ -24,7 +23,7 @@
 		      in-edit)]
 	    [allow-carriage-returns #f]
 	    [use-capture? (eq? wx:platform 'unix)])
-	  
+
 	  (public
 	    [finder-keymap
 	     (lambda (edit)
@@ -78,13 +77,10 @@
 	    
 	    [show-replace-panel
 	     (lambda (on?)
-	       (if on?
-		   (begin
-		     (send find-button show #f)
-		     (set-size -1 -1 WIDTH long-height))
-		   (begin
-		     (send find-button show #t)
-		     (set-size -1 -1 WIDTH short-height))))]
+	       (send panel change-children 
+		     (lambda (l) (if on? 
+				     (list find-panel replace-panel bottom-panel)
+				     (list find-panel bottom-panel)))))]
 	    
 	    [on-replace-check
 	     (lambda (button event)
@@ -133,9 +129,6 @@
 			       (f next (+ next (string-length text)))
 			       (bell)))
 			 (bell)))))]
-	    
-	    
-	    
 	    [on-find
 	     (lambda args
 	       (do-find (lambda (start end)
@@ -176,121 +169,87 @@
 				    (do-find repl-&-find (lambda () #t))))])
 		      (do-find repl-&-find (lambda () #t)))))
 		(lambda ()
-		  (send edit end-edit-sequence))))]
-	    
-	    [on-size
-	     (lambda (w h)
-	       (set! WIDTH w)
-	       (send top-panel set-size -1 -1 w -1)
-	       (send find-canvas set-size -1 -1 w HEIGHT)
-	       (send middle-panel set-size -1 -1 w -1)
-	       (send middle-panel2 set-size -1 -1 w -1)
-	       (send replace-canvas set-size -1 -1 w HEIGHT)
-	       (send bottom-panel set-size -1 -1 w -1))])
+		  (send edit end-edit-sequence))))])
 	  (sequence
 	    (super-init () "Find String" x y))
 	  
 	  (private
-	    [top-panel (make-object wx:panel% this)]
-	    [find-message-item (make-object wx:message% top-panel "Find:")]
-	    [allow-return-check-box (make-object wx:check-box%
-						 top-panel on-return-check
-						 "Carriage Returns in Search")]
-	    [done-button (make-object wx:button%
-				      top-panel on-done
-				      "Done")])
-	  (sequence
-	    (let ([y (send done-button get-y)]
-		  [w (send done-button get-width)]
-		  [h (send done-button get-height)])
-	      (send done-button set-size
-		    (- WIDTH w 20) y
-		    w h))
-	    
-	    (send top-panel fit))
+	    [find-panel (make-object mred:container:vertical-panel% panel)]
+	    [replace-panel (make-object mred:container:vertical-panel% panel)]
+	    [bottom-panel (make-object mred:container:horizontal-panel% panel)]
+	    [find-message-item (make-object mred:container:message% find-panel "Find:")])
 	  
+	  (sequence
+	    (send bottom-panel stretchable-in-y? #f)
+	    (send find-panel spacing 0)
+	    (send replace-panel spacing 0))
+
 	  (private
-	    [find-canvas
-	     (let ([h (send top-panel get-height)])
-	       (make-object mred:canvas:editor-canvas%
-			    this 0 h
-			    WIDTH HEIGHT))]
+	    [allow-return-check-box (make-object mred:container:check-box%
+						 bottom-panel on-return-check
+						 "Carriage Returns in Search")])
+	  (sequence
+	    (make-object mred:container:vertical-panel% bottom-panel))
+	  (private
+	    [done-button (make-object mred:container:button%
+				      bottom-panel on-done "OK")])
+	  (private
+	    [find-canvas (make-object mred:canvas:editor-canvas% find-panel)]
 	    [find-edit (send find-canvas get-media)])
 	  (sequence
+	    (send find-canvas user-min-height HEIGHT)
 	    (finder-keymap find-edit))
 	  (private
-	    [middle-panel
-	     (let ([h (send find-canvas get-height)]
-		   [y (send find-canvas get-y)])
-	       (make-object wx:panel% this
-			    0 (+ y h)))]
-	    [find-button (make-object wx:button%
+	    [middle-panel (make-object mred:container:horizontal-panel% find-panel)])
+	    
+	  (sequence 
+	    (send middle-panel stretchable-in-y? #f)
+	    (make-object mred:container:horizontal-panel% middle-panel))
+	  
+	  (private
+	    [find-button (make-object mred:container:button%
 				      middle-panel on-find
 				      "Find")]
-	    [backwards-check-box (make-object wx:check-box%
+	    [backwards-check-box (make-object mred:container:check-box%
 					      middle-panel on-backwards-check
 					      "Reverse")]
-	    [wrap-check-box (make-object wx:check-box%
+	    [wrap-check-box (make-object mred:container:check-box%
 					 middle-panel on-wrap-check
 					 "Wraparound")]
-	    [ignore-case-check-box (make-object wx:check-box%
+	    [ignore-case-check-box (make-object mred:container:check-box%
 						middle-panel on-ignore-case-check
 						"Ignore Case")]
-	    [replace-check-box (make-object wx:check-box%
+	    [replace-check-box (make-object mred:container:check-box%
 					    middle-panel on-replace-check
 					    "Replace...")])
-	  (sequence
-	    (send middle-panel new-line)
-	    (send middle-panel fit))
 	  (private
-	    [short-height
-	     (let ([h (send middle-panel get-height)]
-		   [y (send middle-panel get-y)])
-	       (+ h y))]
-	    [middle-panel2 (make-object wx:panel% this
-					0 short-height)]
-	    [replace-message-item (make-object wx:message% middle-panel2 
-					       "Replace:")])
-	  (sequence
-	    (send middle-panel2 new-line)
-	    (send middle-panel2 fit))
-	  (private
-	    [replace-canvas
-	     (let ([h (send middle-panel2 get-height)]
-		   [y (send middle-panel2 get-y)])
-	       (make-object mred:canvas:editor-canvas%
-			    this 0 (+ y h)
-			    WIDTH HEIGHT))]
+	    [replace-message-item (make-object mred:container:message% replace-panel "Replace:")]
+	    [replace-canvas (make-object mred:canvas:editor-canvas% replace-panel)]
 	    [replace-edit (send replace-canvas get-media)])
 	  (sequence
+	    (send replace-canvas user-min-height HEIGHT)
 	    (finder-keymap replace-edit))
 	  (private
-	    [bottom-panel
-	     (let ([h (send replace-canvas get-height)]
-		   [y (send replace-canvas get-y)])
-	       (make-object wx:panel% this
-			    0 (+ y h)))]
-	    [find-button-2 (make-object wx:button%
-					bottom-panel on-find
+	    [replace-button-panel (make-object mred:container:horizontal-panel% replace-panel)])
+
+	  (sequence 
+	    (make-object mred:container:vertical-panel% replace-button-panel)
+	    (send replace-button-panel stretchable-in-y? #f))
+
+	  (private
+	    [find-button-2 (make-object mred:container:button%
+					replace-button-panel on-find
 					"Find")]
-	    [replace-button (make-object wx:button%
-					 bottom-panel on-replace
+	    [replace-button (make-object mred:container:button%
+					 replace-button-panel on-replace
 					 "Replace")]
-	    [replace-and-find-button (make-object wx:button%
-						  bottom-panel on-replace-and-find
+	    [replace-and-find-button (make-object mred:container:button%
+						  replace-button-panel on-replace-and-find
 						  "Replace and Find Again")]
-	    [replace-all-button (make-object wx:button%
-					     bottom-panel on-replace-all
+	    [replace-all-button (make-object mred:container:button%
+					     replace-button-panel on-replace-all
 					     "Replace All")])
 	  (sequence
-	    (send bottom-panel new-line)
-	    (send bottom-panel fit))
-	  (private
-	    [long-height (+ (send bottom-panel get-height)
-			    (send bottom-panel get-y))])
-	  (sequence
-	    (set-size WIDTH short-height)
-	    
 	    (if (member 'replace flags)
 		(begin
 		  (send replace-check-box set-value #t)

@@ -225,10 +225,11 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
     init_f = (Scheme_Object*(*)(Scheme_Env*))dlsym(dl, SO_SYMBOL_PREFIX "scheme_initialize");
     reload_f = (Scheme_Object*(*)(Scheme_Env*))dlsym(dl, SO_SYMBOL_PREFIX "scheme_reload");
     
-    if (!init_f)
+    if (!init_f || !reload_f)
       scheme_raise_exn(MZEXN_MISC_DYNAMIC_EXTENSION_INITIALIZE,
 		       scheme_make_string(filename),
-		       "load-extension: no initializer in \"%s\" (%s)", 
+		       "load-extension: no %s in \"%s\" (%s)",
+		       init_f ? "scheme_reload" : "scheme_initialize",
 		       filename, dlerror());
 #endif
 #if defined(WINDOWS_DYNAMIC_LOAD)
@@ -262,10 +263,11 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
     init_f = (Scheme_Object*(*)(Scheme_Env*))GetProcAddress(dl,"scheme_initialize");
     reload_f = (Scheme_Object*(*)(Scheme_Env*))GetProcAddress(dl,"scheme_reload");
     
-    if (init_f == NULL)
+    if (!init_f || !reload_f)
       scheme_raise_exn(MZEXN_MISC_DYNAMIC_EXTENSION_INITIALIZE,
 		       scheme_make_string(filename),
-		       "load-extension: no initializer in \"%s\"", 
+		       "load-extension: no %s in \"%s\"", 
+		       init_f ? "scheme_reload" : "scheme_initialize",
 		       filename);
 #endif
 #if defined(CODEFRAGMENT_DYNAMIC_LOAD)
@@ -294,16 +296,22 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
 			   vers, filename);
 	
 	err = FindSymbol( connID, "\pscheme_initialize", ( Ptr * )&init_f, 0 );
-		
+	if ( err != noErr )
+	  init_f = NULL;
+	else {
+	  err = FindSymbol( connID, "\pscheme_reload", ( Ptr * )&reload_f, 0 );
+	  if ( err != noErr )
+	    reload_f = NULL;
+	}
+
 	if ( err != noErr )
 	  scheme_raise_exn(MZEXN_MISC_DYNAMIC_EXTENSION_INITIALIZE,
 			   scheme_make_string(filename),
-			   "load-extension: no initializer in \"%s\"", 
+			   "load-extension: no %s in \"%s\"", 
+			   init_f ? "scheme_reload" : "scheme_initialize",
 			   filename);
 	
-	err = FindSymbol( connID, "\pscheme_initialize", ( Ptr * )&reload_f, 0 );
-	if ( err != noErr )
-	  reload_f = NULL;
+
       }
     else
       scheme_raise_exn(MZEXN_MISC_DYNAMIC_EXTENSION_OPEN,

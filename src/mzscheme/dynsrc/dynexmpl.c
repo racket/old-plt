@@ -23,9 +23,14 @@ static Scheme_Object *sch_date(int argc, Scheme_Object **argv)
   return scheme_make_string(str);
 }
 
-Scheme_Object *scheme_initialize(Scheme_Env *env)
+Scheme_Object *scheme_reload(Scheme_Env *env)
 {
   scheme_add_global("date", scheme_make_prim(sch_date), env);
 
   return scheme_void;
+}
+
+Scheme_Object *scheme_initialize(Scheme_Env *env)
+{
+  return scheme_reload(env);
 }

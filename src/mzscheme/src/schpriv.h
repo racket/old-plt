@@ -1002,8 +1002,6 @@ Scheme_Object *scheme_get_file_directory(const char *filename);
 
 char *scheme_normal_path_case(char *s, int len);
 
-Scheme_Object *scheme_thread_w_manager(Scheme_Object *thunk, Scheme_Config *config, Scheme_Manager *mgr);
-
 #ifdef WIN32_THREADS
 void *scheme_win32_get_break_semaphore(void *th);
 #endif

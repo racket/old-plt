@@ -25,6 +25,7 @@
 #endif
 
 extern Scheme_Object *scheme_initialize(Scheme_Env *global_env);
+extern Scheme_Object *scheme_reload(Scheme_Env *global_env);
 
 #ifdef CODEFRAGMENT_DYNAMIC_LOAD
 #pragma export off

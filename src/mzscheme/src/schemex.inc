@@ -26,6 +26,7 @@
   scheme_extension_table->scheme_make_namespace = scheme_make_namespace;
 #ifndef NO_SCHEME_THREADS
   scheme_extension_table->scheme_thread = scheme_thread;
+  scheme_extension_table->scheme_thread_w_manager = scheme_thread_w_manager;
   scheme_extension_table->scheme_kill_thread = scheme_kill_thread;
 #endif
   scheme_extension_table->scheme_break_thread = scheme_break_thread;

@@ -1168,7 +1168,7 @@ scheme_get_chars(Scheme_Object *port, long size, char *buffer)
       l = size;
     
     i = ip->ungotten_count;
-    s = ip->ungotten;
+    s = (char *)ip->ungotten;
     while (l--)
       buffer[got++] = s[--i];
     
@@ -1266,7 +1266,7 @@ scheme_ungetc (int ch, Scheme_Object *port)
   check_closed("#<primitive:peek-port-char>", "input", port, ip->closed);
 
   if (ip->ungotten_count == ip->ungotten_allocated) {
-    char *old;
+    unsigned char *old;
     int oldc;
 
     old = ip->ungotten;

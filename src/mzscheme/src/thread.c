@@ -3151,6 +3151,7 @@ static Scheme_Config *make_initial_config(void)
 				   0, 0);
     scheme_set_param(config, MZCONFIG_PROMPT_READ_HANDLER, prh);
   }
+  scheme_set_param(config, MZCONFIG_PORT_COUNT_LINES, scheme_false);
 
   {
     Scheme_Object *lh;

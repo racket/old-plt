@@ -1458,18 +1458,19 @@ static void bangboxenv_validate(Scheme_Object *data, Mz_CPort *port,
 static Scheme_Object *
 bangboxvalue_execute(Scheme_Object *data)
 {
-  int pos;
+  int pos, cnt;
   Scheme_Object *val;
 
   pos = SCHEME_INT_VAL(SCHEME_CAR(data));
-
+  data = SCHEME_CDR(data);
+  cnt = SCHEME_INT_VAL(SCHEME_CAR(data));
   data = SCHEME_CDR(data);
   
   val = _scheme_eval_linked_expr_multi(data);
 
   if (SAME_OBJ(val, SCHEME_MULTIPLE_VALUES)) {
     Scheme_Thread *p = scheme_current_thread;
-    if (pos < p->ku.multiple.count) {
+    if (cnt == p->ku.multiple.count) {
       Scheme_Object **naya, **a;
       int i;
 
@@ -1487,7 +1488,7 @@ bangboxvalue_execute(Scheme_Object *data)
 
       p->ku.multiple.array = naya;
     }
-  } else if (!pos)
+  } else if (cnt == 1)
     val = scheme_make_envunbox(val);
 
   return val;
@@ -1497,10 +1498,12 @@ static void bangboxvalue_validate(Scheme_Object *data, Mz_CPort *port,
 				  char *stack, int depth, int delta, int num_toplevels)
 {
   if (!SCHEME_PAIRP(data)
-      || (SCHEME_INT_VAL(SCHEME_CAR(data)) < 0))
+      || !SCHEME_PAIRP(SCHEME_CDR(data))
+      || (SCHEME_INT_VAL(SCHEME_CADR(data)) < 0)
+      || (SCHEME_INT_VAL(SCHEME_CADR(data)) <= SCHEME_INT_VAL(SCHEME_CAR(data))))
     scheme_ill_formed_code(port);
-      
-  scheme_validate_expr(port, SCHEME_CDR(data), stack, depth, delta, num_toplevels);
+  
+  scheme_validate_expr(port, SCHEME_CDR(SCHEME_CDR(data)), stack, depth, delta, num_toplevels);
 }
 
 /**********************************************************************/
@@ -1727,7 +1730,8 @@ scheme_resolve_lets(Scheme_Object *form, Resolve_Info *info)
 	  /* See bangboxval... */
 	  sl = scheme_make_syntax_resolved(BOXVAL_EXPD, 
 					   cons(scheme_make_integer(j),
-						lv->value));
+						cons(scheme_make_integer(lv->count),
+						     lv->value)));
 	  lv->value = sl;
 	}
       }

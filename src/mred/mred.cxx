@@ -2111,7 +2111,8 @@ static void MrEdSchemeMessages(char *msg, ...)
 
 static void MrEdSchemeMessagesOutput(char *s, long l)
 {
-  MrEdSchemeMessages(NULL, s, 0, l);
+  if (l)
+    MrEdSchemeMessages(NULL, s, 0, l);
 }
 #endif
 
@@ -2214,7 +2215,8 @@ static Scheme_Object *MrEdMakeStdIn(void)
 static long stdout_write(Scheme_Output_Port*, const char *s, long d, long l, int rarely_block)
 {
 #if WINDOW_STDIO || WCONSOLE_STDIO
-  MrEdSchemeMessages(NULL, s, d, l);
+  if (l)
+    MrEdSchemeMessages(NULL, s, d, l);
 #else
   static FILE *out = NULL;
 
@@ -2239,7 +2241,8 @@ static Scheme_Object *MrEdMakeStdOut(void)
 static long stderr_write(Scheme_Output_Port*, const char *s, long d, long l, int rarely_block)
 {
 #if WINDOW_STDIO || WCONSOLE_STDIO
-  MrEdSchemeMessages(NULL, s, d, l);
+  if (l)
+    MrEdSchemeMessages(NULL, s, d, l);
 #else
   if (!mrerr)
     mrerr = fopen("mrstderr.txt", "w");

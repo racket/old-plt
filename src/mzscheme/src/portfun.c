@@ -84,6 +84,7 @@ static Scheme_Object *port_display_handler(int, Scheme_Object **args);
 static Scheme_Object *port_write_handler(int, Scheme_Object **args);
 static Scheme_Object *port_print_handler(int, Scheme_Object **args);
 static Scheme_Object *global_port_print_handler(int, Scheme_Object **args);
+static Scheme_Object *global_port_count_lines(int, Scheme_Object **args);
 static Scheme_Object *port_count_lines(int, Scheme_Object **args);
 static Scheme_Object *port_next_location(int, Scheme_Object **args);
 
@@ -515,6 +516,11 @@ scheme_init_port_fun(Scheme_Env *env)
 						       "port-next-location", 
 						       1, 1, 
 						       3, 3),
+			     env);
+  scheme_add_global_constant("port-count-lines-enabled",
+			     scheme_register_parameter(global_port_count_lines,
+						       "port-count-lines-enabled",
+						       MZCONFIG_PORT_COUNT_LINES),
 			     env);
 }
 
@@ -2781,6 +2787,13 @@ static Scheme_Object *port_count_lines(int argc, Scheme_Object *argv[])
   scheme_count_lines(argv[0]);
 
   return scheme_void;
+}
+
+static Scheme_Object *global_port_count_lines(int argc, Scheme_Object **argv)
+{
+  return scheme_param_config("port-count-lines-enabled", 
+			     scheme_make_integer(MZCONFIG_PORT_COUNT_LINES), 
+			     argc, argv, -1, NULL, NULL, 1);
 }
 
 static Scheme_Object *port_next_location(int argc, Scheme_Object *argv[])

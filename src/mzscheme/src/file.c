@@ -4175,11 +4175,40 @@ static int appl_name_to_spec(char *name, int find_path, Scheme_Object *o, FSSpec
   if (find_path) {
     HVolumeParam volPB;
     HIOParam paramPB;
+    GetVolParmsInfoBuffer volinfo;
     DTPBRec rec;
     Str255 nm;
     short vrefnum;
     long junk;
     long creator = check_four(name, 0, 1, &o);
+
+    /* try current volume: */
+    scheme_os_setcwd(SCHEME_STR_VAL(scheme_get_param(scheme_config, 
+						     MZCONFIG_CURRENT_DIRECTORY)),
+		     0);
+    if (HGetVol(nm, &vrefnum, &junk) == noErr) {
+      rec.ioNamePtr = NULL;
+      rec.ioVRefNum = vrefnum;
+      
+      if (PBDTGetPath(&rec)) {
+	rec.ioIndex = 0;
+	rec.ioNamePtr = nm;
+	rec.ioFileCreator = creator;
+
+	if (PBDTGetAPPL(&rec, 0)) {
+	  memcpy(spec->name, nm, 32);
+	  spec->vRefNum = vrefnum;
+	  spec->parID = rec.ioAPPLParID;
+	  
+	  return 1;
+	}
+      }
+    }
+
+    volPB.ioNamePtr = NULL;
+    paramPB.ioNamePtr = NULL;
+    paramPB.ioBuffer = (Ptr)&volinfo;
+    paramPB.ioReqCount = sizeof(volinfo);
 
     /* Loop over all volumes: */
     for (volPB.ioVolIndex = 1; PBHGetVInfoSync ((HParmBlkPtr)&volPB) == noErr; volPB.ioVolIndex++) {

@@ -1116,6 +1116,10 @@ Bool wxBitmap::SaveFile(char *name, int type, wxColourMap *cmap)
     SetGWorld(saveport, savegw);
 
     isok = (errorStatus == XpmSuccess);
+  } else if (type & wxBITMAP_TYPE_JPEG) {
+    isok = write_JPEG_file(name, this, 75);
+  } else if (type & wxBITMAP_TYPE_PNG) {
+    isok = wx_write_png(name, this);
   }
   
   return isok;

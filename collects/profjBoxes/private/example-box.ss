@@ -11,28 +11,31 @@
    (lib "tool.ss" "drscheme")
    (lib "framework.ss" "framework")
    (lib "parser.ss" "profj")
+   (lib "readerr.ss" "syntax")
    "box-helpers.ss")
   
-  (provide example-box@
-           example-box^)
+  (provide example-box@ example-box^)
   
   ;; This is wrong but it's a good enough prototype
   (define re:java-id (regexp "[A-Za-z_]+"))
   (define min-field-width 50)
-
+  
   (define-signature example-box^ (example-box%))
- 
   (define example-box@
     (unit/sig example-box^
       (import drscheme:tool^)
       
+      ;; A readable-snip<%> of an examples box to allow GUI contruction of data examples.
       (define example-box%
         (class* editor-snip% (readable-snip<%>)
+          (inherit set-snipclass)
+          
+          (init [examples-to-copy #f])
           
           #;(any? (union integer? false?) (union integer? false?) (union integer? false?)
                   . -> .
                   any?)
-          
+          ;; Called to get the syntax object representing this box
           (define/public read-special
             (opt-lambda (source (line false) (column false) (position false))
               #;(((is-a?/c text%))
@@ -45,19 +48,23 @@
               ;; it differently if it's a class name vs. field name.
               (define (text->java-id atext)
                 (let ([str (send atext get-text)])
-                  (match-let ([((m-start . m-end))
-                               (regexp-match-positions
-                                re:java-id str 0 false)])
-                    (datum->syntax-object
-                     false
-                     (string->symbol (substring str m-start m-end))
-                     (list atext
-                           1
-                           m-start
-                           (add1 m-start)
-                           (- m-end m-start))))))
-              ;(lambda (level class-loc box-pos input-spec)
-              (let ([level 'beginner] [class-loc #f] [box-pos #f] [input-spec #f])
+                  (match (regexp-match-positions re:java-id str 0 false)
+                    [((m-start . m-end))
+                     (datum->syntax-object
+                      false
+                      (string->symbol (substring str m-start m-end))
+                      (list atext
+                            1
+                            m-start
+                            (add1 m-start)
+                            (- m-end m-start)))]
+                    ;; STATUS: Here I need to provide for a better form of
+                    ;; highlighting using the GUI because there won't always
+                    ;; be text in the box to highlight.
+                    [else (raise-read-error
+                           "Malformed Java ID"
+                           atext 1 1 1 (send atext last-position))])))
+              (let ([level 'beginner])
                 #`(begin #,@(send examples map-children
                                   (lambda (example)
                                     (with-syntax ([name (text->java-id
@@ -69,61 +76,195 @@
                                                           level)])
                                       #'(define name value))))))))
           
+          #;(-> void?)
+          ;; Gives this box the cursor focus
+          (define/public (take-caret)
+            (let ([first-box (send (send examples get-first-child) get-type)])
+              (send pb set-caret-owner
+                    (send (send first-box get-admin) get-snip)
+                    'display)))
+          
+          ;;;;;;;;;;
+          ;; Saving and copying
+          
+          #;((is-a?/c editor-stream-out%) . -> . void?)
+          ;; Writes the examples box to file
+          (define/override (write f)
+            (send examples write f))
+          
+          #;((is-a?/c editor-stream-in%) . -> . void?)
+          ;; Reads the examples state in from an editor-stream
+          (define/public (read-from-file f)
+            (send examples read-from-file f))
+          
+          #;(-> (is-a?/c test-case-box%))
+          ;; Makes a copy of this example box.
+          (define/override (copy)
+            (new example-box% (examples-to-copy examples)))
+          
+          (field [pb (new aligned-pasteboard%)])
+          (send pb lock-alignment true)
           (field
-           [pb (new aligned-pasteboard%)]
            [main (new vertical-alignment% (parent pb))]
            [header (new horizontal-alignment% (parent main))]
            [icon (new snip-wrapper% (parent header) (snip (make-object image-snip%)))])
-           (new embedded-message% (parent header) (label "Examples"))
+          (new embedded-message% (parent header) (label "Examples"))
           (field
-           [examples (new examples-field% (parent main))]
+           [examples (new examples-field%
+                          (parent main)
+                          (copy-constructor examples-to-copy))]
            [button-bar (new horizontal-alignment% (parent main))]
            [add-button (new embedded-text-button%
                             (parent button-bar)
                             (label "Add new example")
                             (callback (lambda (b e) (send examples add-new))))])
-          
           (super-new (editor pb))
-          (send examples add-new)))
+          (unless examples-to-copy
+            (send examples add-new))
+          (send pb lock-alignment false)
+          (set-snipclass sc)))
+      
+      (define example-box-snipclass%
+        (class snip-class%
+          #;((is-a?/c file-stream-in%) . -> . (is-a?/c example-box%))
+          ;; Produces an example box from the given file stream
+          (define/override (read f)
+            (let ([box (new example-box%)])
+              (send box read-from-file f)
+              box))
+          (super-new)))
+      
+      (define sc (new example-box-snipclass%))
+      (send sc set-classname "example-box%")
+      (send sc set-version 1)
+      (send (get-the-snip-class-list) add sc)
   
+      ;; A vertical table of the examples. Used to layout and provide a way to access the examples.
       (define examples-field%
         (class vertical-alignment%
-          (inherit-field head)
-          (define/public (map-chidlren f)
+          (inherit-field head tail)
+          (init [copy-constructor #f])
+          
+          #;(-> (is-a?/c example%))
+          ;; The first example in the example field
+          (define/public (get-first-child)
+            (send head next))
+          
+          #;(((is-a?/c example%) . -> . any?) . -> . (listof any?))
+          ;; A list of the results of applying f to each example in the examples field.
+          (define/public (map-children f)
             (send head map-to-list f))
+          
+          #;(((is-a?/c example%) . -> . void?) . -> . void?)
+          ;; For eaches over the children
+          (define/public (for-each-child f)
+            (send head for-each f))
+          
+          #;((is-a?/c editor-stream-out%) . -> . void?)
+          ;; Write the examples to file
+          (define/public (write f)
+            (let ([num-examples (length (map-children void))])
+              (send f put num-examples)
+              (for-each-child (lambda (c) (send c write f)))))
+          
+          #;((is-a?/c editor-stream-in%) . -> . void?)
+          ;; Reads the examples field's state in from the stream
+          (define/public (read-from-file f)
+            ;; Delete all examples
+            (send head for-each (lambda (c) (send c show false)))
+            (send head next tail)
+            (send tail prev head)
+            ;; Read in all the examples to the file.
+            (let* ([num-examples (box 0)])
+              (send f get num-examples)
+              (let loop ([n (unbox num-examples)])
+                (unless (zero? n)
+                  (let ([example (new example% (parent this))])
+                    (send example read-from-file f)
+                    (link example)
+                    (loop (sub1 n)))))))
+          
+          #;(-> void?)
+          ;; Adds a new example to the examples field.
           (define/public (add-new)
-            (let* ([example (new example% (parent this))]
-                   [previous (send example prev)])
+            (link-and-focus (new example% (parent this))))
+          
+          #;((is-a?/c example%) . -> . (is-a?/c example%))
+          ;; Adds a new example that is a copy of the given example
+          (define (add-new-copy example-to-copy)
+            (link-and-focus
+             (new example%
+                  (parent this)
+                  (copy-constructor example-to-copy))))
+              
+          #;((is-a?/c example%) . -> . void?)
+          ;; Links a newly inserted example into the tabbing order and gives it focus
+          (define (link-and-focus example)
+            (link example)
+            (focus example))
+            
+          #;((is-a?/c example%) . -> . void?)
+          ;; Link the new example into the tabbing order
+          (define (link example)
+            (let ([previous (send example prev)])
               (when (is-a? previous example%)
                 (set-tabbing (send previous get-value)
                              (send example get-type)))
               (set-tabbing (send example get-type)
                            (send example get-name)
                            (send example get-value))
-              (send (send example get-value) set-ahead (lambda () (add-new))) ; eta
-              (send (send example get-type) set-caret-owner false 'global)))
-               
-          (super-new)))
+              (send (send example get-value) set-ahead (lambda () (add-new)))))
+          
+          #;((is-a?/c example%) . -> . void?)
+          ;; Give the new example keyboard focus
+          (define (focus example)
+            (send (send example get-type) set-caret-owner false 'global))
+          
+          (super-new)
+          (when copy-constructor
+            (send copy-constructor for-each-child add-new-copy))
+          ))
       
+      ;; An example layed out in a horizontal manner. Allows access to the pieces of an example.
       (define example%
         (class horizontal-alignment%
           (inherit get-parent get-pasteboard)
           
-          (define program-editor%
-            (tabbable-text-mixin 
-             ((drscheme:unit:get-program-editor-mixin)
-              scheme:text%)))
+          (init (copy-constructor #f))
           
           (field
-           [type (new (single-line-text-mixin program-editor%))]
-           [name (new (single-line-text-mixin program-editor%))]
-           [value (new program-editor%)])
+           [type (new (get-single-line-editor))]
+           [name (new (get-single-line-editor))]
+           [value (new (get-program-editor))])
           
           (define/public (get-type) type)
           (define/public (get-name) name)
           (define/public (get-value) value)
           
+          #;((is-a?/c editor-stream-out%) . -> . void?)
+          ;; Write the example to file
+          (define/public (write f)
+            (send type write-to-file f)
+            (send name write-to-file f)
+            (send value write-to-file f))
+          
+          #;((is-a?/c editor-stream-out%) . -> . void?)
+          ;; Read the state of the example in from file
+          (define/public (read-from-file f)
+            (send type read-from-file f)
+            (send name read-from-file f)
+            (send value read-from-file f))
+          
           (super-new)
+          
+          (when copy-constructor
+            (let ([old-type (send copy-constructor get-type)]
+                  [old-name (send copy-constructor get-name)]
+                  [old-value (send copy-constructor get-value)])
+              (send old-type copy-self-to type)
+              (send old-name copy-self-to name)
+              (send old-value copy-self-to value)))
+          
           (send (get-pasteboard) lock-alignment true)
           (new snip-wrapper%
                (parent this)
@@ -149,5 +290,17 @@
                (callback (lambda (b e) (send (get-parent) delete-child this))))
           (send (get-pasteboard) lock-alignment false)
           ))
+      
+      #;(-> (is-a?/c text%))
+      ;; A program editor with tabbing
+      (define (get-program-editor)
+        (tabbable-text-mixin
+         ((drscheme:unit:get-program-editor-mixin)
+          scheme:text%)))
+
+       #;(-> (is-a?/c text%))
+       ;; A Single lined program editor
+       (define (get-single-line-editor)
+         (single-line-text-mixin (get-program-editor)))
       ))
   )

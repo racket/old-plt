@@ -26,7 +26,7 @@
       
       (define interactions-box%
         (class* editor-snip% (readable-snip<%>)
-          
+                    
           #;(any? (union integer? false?) (union integer? false?) (union integer? false?) . -> . any?)
           (define/public read-special
             (opt-lambda (index source (line false) (column false) (position false))

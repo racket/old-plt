@@ -42,9 +42,11 @@
 #include "windows.h"			/* MS windows GDI types */
 #endif
 #if  defined(FOR_MAC) 
-#ifndef OS_X
-#include <QDOffscreen.h>
-#include <QuickDraw.h>
+#ifdef OS_X
+# include <Carbon/Carbon.h>
+#else
+# include <QDOffscreen.h>
+# include <QuickDraw.h>
 #endif
 /*
  * minimal portability layer between ansi and KR C

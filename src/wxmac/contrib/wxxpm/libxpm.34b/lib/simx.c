@@ -38,12 +38,16 @@
 #include "xpm34.h"
 #include "xpm34p.h"			/* for XpmMalloc */
 #ifdef FOR_MAC
-#  include <stdlib.h>
+# include <stdlib.h>
+# ifdef OS_X
+#  include <Carbon/Carbon.h>
+# else 
 #  include <Memory.h>
-#  ifdef __cplusplus
+# endif
+# ifdef __cplusplus
      extern  int xpmGetRGBfromName(char *inname, int *r, int *g, int *b);
-#  endif
-#  define RGB(r, g, b) (((r << 16) | (g << 8) | b) & 0xFFFFFF)
+# endif
+# define RGB(r, g, b) (((r << 16) | (g << 8) | b) & 0xFFFFFF)
 #endif
 /*
  * On DOS size_t is only 2 bytes, thus malloc(size_t s) can only malloc
@@ -273,14 +277,14 @@ XCreateImage(Display *d, Visual *v,
 	/* Looks like we need to build a offscreen GWorld to draw the Picture in */
 	GDHandle savegw;
 	CGrafPtr saveport;
-	Rect bounds = {0, 0, height, width};
-	GetGWorld(&saveport, &savegw);
 	QDErr err;
 	GWorldPtr	newGWorld;
+	Rect bounds = {0, 0, height, width};
+	GetGWorld(&saveport, &savegw);
 	err = NewGWorld(&newGWorld, 0, &bounds, NULL, NULL, noNewDevice);
 	if (!err) {
   	  SetGWorld(newGWorld, 0);
-	  ::EraseRect(&bounds);
+	  EraseRect(&bounds);
 	  img->bitmap = newGWorld;	
 	  SetGWorld(saveport, savegw);
 	} else {
@@ -315,7 +319,7 @@ XDestroyImage(XImage *img)
 	/* I don't believe this is called in wx_mac
 	   What we should do here is destroy the GWorld
 	*/
-		::DisposeGWorld(img->bitmap);
+		DisposeGWorld(img->bitmap);
 #else
 		DeleteObject(img->bitmap);	/* check return ??? */
 #endif

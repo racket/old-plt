@@ -54,6 +54,9 @@
 #ifdef USE_MAC_FILE_TOOLBOX
 # include <Files.h>
 #endif
+#if defined(MACINTOSH_EVENTS) && defined(OS_X)
+# include <Carbon/Carbon.h>
+#endif
 #ifdef UNIX_FILE_SYSTEM
 # include <fcntl.h>
 # include <grp.h>
@@ -4649,8 +4652,9 @@ static void wait_for_reply(AppleEvent *ae, AppleEvent *reply)
 }
 
 int scheme_mac_send_event(char *name, int argc, Scheme_Object **argv, 
-			  Scheme_Object **result, OSErr *err, char **stage)
+			  Scheme_Object **result, int *err, char **stage)
 {
+  OSErr oerr;
   AEEventClass classid;
   AEEventID eventid;
   AppleEvent *ae = NULL, *reply = NULL;
@@ -4665,24 +4669,28 @@ int scheme_mac_send_event(char *name, int argc, Scheme_Object **argv,
   eventid = check_four(name, 2, argc, argv);
 
   target = MALLOC_ONE_ATOMIC(AEAddressDesc);
-  *err = AECreateDesc(typeApplSignature, &dst, sizeof(long), target);
-  if (*err) {
+  oerr = AECreateDesc(typeApplSignature, &dst, sizeof(long), target);
+  if (oerr) {
+    *err = (int)oerr;
     *stage = "application not found: ";
     goto fail;
   }
     
   ae = MALLOC_ONE_ATOMIC(AppleEvent);
-  *err = AECreateAppleEvent(classid, eventid, target, kAutoGenerateReturnID, 
+  oerr = AECreateAppleEvent(classid, eventid, target, kAutoGenerateReturnID, 
                             kAnyTransactionID, ae);
-  if (*err) {
+  if (oerr) {
+    *err = (int)oerr;
     *stage = "cannot create event: ";
     ae = NULL;    
     goto fail;
   }
   
   if ((argc > 3) && !SCHEME_VOIDP(argv[3])) {
-    if (!ae_marshall(ae, NULL, 0, argv[3], name, err, stage))
+    if (!ae_marshall(ae, NULL, 0, argv[3], name, &oerr, stage)) {
+      *err = (int)oerr;
       goto fail;
+    }
   }
   
   if (argc > 4) {
@@ -4700,8 +4708,10 @@ int scheme_mac_send_event(char *name, int argc, Scheme_Object **argv,
       k = SCHEME_CAR(a);
       v = SCHEME_CADR(a);
       kw = check_four(name, 0, 1, &k);
-      if (!ae_marshall(ae, NULL, kw, v, name, err, stage))
+      if (!ae_marshall(ae, NULL, kw, v, name, &oerr, stage)) {
+	*err = (int)oerr;
         goto fail;
+      }
       l = SCHEME_CDR(l);
     }
     if (!SCHEME_NULLP(l))
@@ -4709,8 +4719,9 @@ int scheme_mac_send_event(char *name, int argc, Scheme_Object **argv,
   }
   
   reply = MALLOC_ONE_ATOMIC(AppleEvent);
-  *err = AESend(ae, reply, kAEQueueReply | kAECanInteract, kAENormalPriority, kNoTimeOut, NULL, NULL);
-  if (*err) {
+  oerr = AESend(ae, reply, kAEQueueReply | kAECanInteract, kAENormalPriority, kNoTimeOut, NULL, NULL);
+  if (oerr) {
+    *err = (int)oerr;
     *stage = "send failed: ";
     reply = NULL;
     goto fail;
@@ -4734,15 +4745,17 @@ int scheme_mac_send_event(char *name, int argc, Scheme_Object **argv,
   }
   if (!AEGetParamPtr(reply, keyErrorNumber, typeLongInteger, &rtype, &ret, sizeof(long), &sz)
       && ret) {
-    *err = ret;
+    *err = (int)ret;
     
     *stage = "application replied with error: ";
     goto fail;
   }
   
-  *result = ae_unmarshall(reply, NULL, 0, err, stage, NULL);
-  if (!*result)
+  *result = ae_unmarshall(reply, NULL, 0, &oerr, stage, NULL);
+  if (!*result) {
+    *err = (int)oerr;
     goto fail;
+  }
   
 succeed:
   retval = 1;

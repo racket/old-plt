@@ -16,7 +16,8 @@
     for the current process).
 */
 static int last_was_front;
-
+#else
+# define last_was_front 1
 #endif
 
 #include "wx_main.h"
@@ -27,9 +28,9 @@ static int last_was_front;
 #include "mred.h"
 
 #ifndef OS_X
- #include <Events.h>
- #include <Processes.h>
- #include <Sound.h>
+# include <Events.h>
+# include <Processes.h>
+# include <Sound.h>
 #endif
 
 #define FG_SLEEP_TIME 0
@@ -40,13 +41,17 @@ static long resume_ticks;
 
 static int dispatched = 1;
 
-#if 1 // #ifndef OS_X
+#if defined(OS_X) && 0
+# define USE_OS_X_EVENTHANDLER
+#endif
+
+#ifndef USE_OS_X_EVENTHANDLER
 static int QueueTransferredEvent(EventRecord *e);
 #endif
 
 void MrEdInitFirstContext(MrEdContext *)
 {
-#if 0 // #ifdef OS_X
+#ifdef USE_OS_X_EVENTHANDLER
   // result ignored:
   InstallAEventHandler();
   
@@ -113,12 +118,12 @@ static wxFrame *wxWindowPtrToFrame(WindowPtr w, MrEdContext *c)
  * handle the event yourself? I believe it does.
  */
  
-#if 0 //#ifdef OS_X
+#ifdef USE_OS_X_EVENTHANDLER
 
 UInt32 kEventClassMrEd = 'MrEd';
 UInt32 kEventMrEdLeave = 'LEEV';
 
-UInt32 typeWxWindowPtr = FOUR_CHAR_CODE('WinP'), /* wxWindow * */
+UInt32 typeWxWindowPtr = FOUR_CHAR_CODE('WinP'); /* wxWindow * */
 
 static EventQueueRef mainQueue = NULL;
 
@@ -316,7 +321,7 @@ int MrEdGetNextEvent(int check_only, int current_only,
 {
   /* Search for an event. Handle clicks in non-frontmost windows
      immediately. */
-#if 1// #ifndef OS_X
+#ifndef USE_OS_X_EVENTHANDLER
   MrQueueElem *osq, *next;
   MrQueueElem *q;
 #else
@@ -334,8 +339,8 @@ int MrEdGetNextEvent(int check_only, int current_only,
     event = &ebuf;
   
   c = current_only ? MrEdGetContext() : NULL;
-  
-#if 0 // #ifdef OS_X
+
+#ifdef USE_OS_X_EVENTHANDLER  
   eventFinderClosure.c = c;
 #endif
     
@@ -351,7 +356,7 @@ int MrEdGetNextEvent(int check_only, int current_only,
     if (!StillDown())
       kill_context = 1;
 
-#if 0 // #ifdef OS_X
+#ifndef USE_OS_X_EVENTHANDLER  
   // just to give the event manager a little time:
   EventRecord ignored;
   WaitNextEvent(0, // no events
@@ -385,7 +390,7 @@ int MrEdGetNextEvent(int check_only, int current_only,
        TEToScrap();
      }
 
-#if 1 // #ifndef OS_X
+#ifndef USE_OS_X_EVENTHANDLER  
 	 /* for OS_X, activate events are automatically generated for the frontmost
 	  * window in an application when that application comes to the front.
 	  */
@@ -418,7 +423,7 @@ int MrEdGetNextEvent(int check_only, int current_only,
 #endif
   
   /* First, service leave events: */
-#if 0 // #ifdef OS_X
+#ifdef USE_OS_X_EVENTHANDLER
 
   eventFinderClosure.eventClass = kEventClassMrEd;
   eventFinderClosure.eventKind = kEventMrEdLeave;
@@ -817,7 +822,7 @@ void MrEdMacSleep(float secs)
   
   EventRecord e;
   
-#if 1
+#ifndef USE_OS_X_EVENTHANDLER
   /* This is right only if there is no TCP blocking */
   RgnHandle rgn;
   rgn = ::NewRgn();

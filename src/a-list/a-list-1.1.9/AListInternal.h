@@ -17,8 +17,10 @@
 #ifndef __CONTROLS__
 	#include <Controls.h>
 #endif
+#ifndef __CONTROL_DEFINITIONS__
 #if defined( UNIVERSAL_INTERFACES_VERSION ) && ( UNIVERSAL_INTERFACES_VERSION >= 0x0330 )
 	#include <ControlDefinitions.h>
+#endif
 #endif
 #ifndef __DRAG__
 	#include <Drag.h>

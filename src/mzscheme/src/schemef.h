@@ -503,8 +503,8 @@ MZ_EXTERN Scheme_Object *scheme_split_pathname(const char *path, int len, Scheme
 MZ_EXTERN Scheme_Object *scheme_build_pathname(int argc, Scheme_Object **argv);
 
 #ifdef MACINTOSH_EVENTS
-MZ_EXTERN char *scheme_mac_spec_to_path(FSSpec *spec);
-MZ_EXTERN int scheme_mac_path_to_spec(const char *filename, FSSpec *spec);
+MZ_EXTERN char *scheme_mac_spec_to_path(mzFSSpec *spec);
+MZ_EXTERN int scheme_mac_path_to_spec(const char *filename, mzFSSpec *spec);
 #endif
 
 MZ_EXTERN void *scheme_alloc_fdset_array(int count, int permanent);

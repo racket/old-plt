@@ -23,7 +23,9 @@
 
 #define INTERLACEMASK 0x40
 
-#include <palettes.h>
+#ifndef OS_X
+# include <palettes.h>
+#endif
 
 //void MacFixupPixelData(unsigned char *, int );
 void CreateOffScreenPixMap (CGrafPtr *,wxGIF *gif);

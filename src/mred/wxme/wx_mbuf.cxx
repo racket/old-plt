@@ -2404,7 +2404,9 @@ Bool wxStandardSnipAdmin::PopupMenu(void *m, wxSnip *snip, float x, float y)
 
 #ifdef wx_mac
 
-#include <Files.h>
+#ifndef OS_X
+# include <Files.h>
+#endif
 
 long wxMediaCreatorId = 'WXME';
 

@@ -11,7 +11,9 @@
 #define wx_mainh
 
 #include "wb_main.h"
-#include <Events.h>
+#ifndef OS_X
+# include <Events.h>
+#endif
 #ifdef IN_CPROTO
 typedef       void* wxApp;
 #else

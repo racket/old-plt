@@ -415,8 +415,8 @@ char *(*scheme_getdrive)(void);
 Scheme_Object *(*scheme_split_pathname)(const char *path, int len, Scheme_Object **base, int *isdir);
 Scheme_Object *(*scheme_build_pathname)(int argc, Scheme_Object **argv);
 #ifdef MACINTOSH_EVENTS
-char *(*scheme_mac_spec_to_path)(FSSpec *spec);
-int (*scheme_mac_path_to_spec)(const char *filename, FSSpec *spec);
+char *(*scheme_mac_spec_to_path)(mzFSSpec *spec);
+int (*scheme_mac_path_to_spec)(const char *filename, mzFSSpec *spec);
 #endif
 void *(*scheme_alloc_fdset_array)(int count, int permanent);
 void *(*scheme_init_fdset_array)(void *fdarray, int count);

@@ -70,7 +70,9 @@
 
 #ifdef wx_mac
 # include <unistd.h>
-# include <Events.h>
+# ifndef OS_X
+#  include <Events.h>
+# endif
 #endif
 
 #if defined(wx_x) || defined(wx_msw)

@@ -14,7 +14,9 @@
 #define wx_dcmemh
 
 #include "wb_dcmem.h"
+#ifndef OS_X
 #include <QDOffscreen.h>
+#endif
 
 #ifdef IN_CPROTO
 typedef       void    *wxMemoryDC ;

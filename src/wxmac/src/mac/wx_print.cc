@@ -20,7 +20,12 @@
 #include <tagobj.h>
 #endif
 
-#include <FixMath.h>
+#ifndef OS_X
+# include <FixMath.h>
+#endif
+#ifdef OS_X
+# include <ApplicationServices/ApplicationServices.h>
+#endif
 
 #include "common.h"
 
@@ -92,13 +97,13 @@ Bool wxPrintDialog::UseIt(void)
 
   if (cShowSetupDialog) {
 #ifdef OS_X
-    PMPrintDialog(printData->cPrintSettings,printData->cPageFormat,&prtJob);
+    PMSessionPrintDialog(printData->cPrintSession,printData->cPrintSettings,printData->cPageFormat,&prtJob);
 #else
     prtJob = PrJobDialog(printData->macPrData);
 #endif
   } else {
 #ifdef OS_X
-    PMPageSetupDialog(printData->cPageFormat,&prtJob);
+    PMSessionPageSetupDialog(printData->cPrintSession,printData->cPageFormat,&prtJob);
 #else
     prtJob = PrStlDialog(printData->macPrData);
 #endif
@@ -114,22 +119,22 @@ Bool wxPrintDialog::UseIt(void)
 wxPrintData::wxPrintData(void)
 {
 #ifdef OS_X
-  if (PMNewPrintSettings(&cPrintSettings) != noErr)
+  if (PMCreatePrintSettings(&cPrintSettings) != noErr)
     return;
     
-  if (PMDefaultPrintSettings(cPrintSettings) != noErr) {
-    PMDisposePrintSettings(cPrintSettings);
+  if (PMSessionDefaultPrintSettings(cPrintSession, cPrintSettings) != noErr) {
+    PMRelease(cPrintSettings);
     return;
   }
   
-  if (PMNewPageFormat(&cPageFormat) != noErr) {
-    PMDisposePrintSettings(cPrintSettings);
+  if (PMCreatePageFormat(&cPageFormat) != noErr) {
+    PMRelease(cPrintSettings);
     return;
   }
   
-  if (PMDefaultPageFormat(cPageFormat) != noErr) {
-    PMDisposePrintSettings(cPrintSettings);
-    PMDisposePageFormat(cPageFormat);
+  if (PMSessionDefaultPageFormat(cPrintSession, cPageFormat) != noErr) {
+    PMRelease(cPrintSettings);
+    PMRelease(cPageFormat);
     return;
   }
 
@@ -147,10 +152,10 @@ wxPrintData::~wxPrintData(void)
 {
 #ifdef OS_X
   if (cPrintSettings)
-    PMDisposePrintSettings(cPrintSettings);
+    PMRelease(cPrintSettings);
 
   if (cPageFormat)
-    PMDisposePageFormat(cPageFormat);
+    PMRelease(cPageFormat);
 #else
   if (macPrData)
     DisposeHandle((Handle)macPrData);
@@ -342,12 +347,13 @@ Bool wxPrinter::Print(wxWindow *parent, wxPrintout *printout, Bool prompt)
   if (!printout)
     return FALSE;
 
+  printData = new wxPrintData();
+
 #ifdef OS_X
-  PMBegin();
+  PMCreateSession(&printData->cPrintSession);
 #else
   PrOpen();
 #endif
-  printData = new wxPrintData();
 
   printout->SetIsPreview(FALSE);
   printout->OnPreparePrinting();
@@ -459,7 +465,7 @@ Bool wxPrinter::Print(wxWindow *parent, wxPrintout *printout, Bool prompt)
 #endif
 
 #ifdef OS_X
-  PMSetIdleProc(printIdleUPP);
+  PMSessionSetIdleProc(printData->cPrintSession, printIdleUPP);
 #else
   (**printData->macPrData).prJob.pIdleProc = printIdleUPP;
 #endif
@@ -517,13 +523,14 @@ Bool wxPrinter::Print(wxWindow *parent, wxPrintout *printout, Bool prompt)
   //wxEndBusyCursor();
 
   delete dc;
-  delete printData;
   
 #ifdef OS_X
-  PMEnd();
+  PMRelease(printData->cPrintSession);
 #else
   PrClose();
 #endif
+
+  delete printData;
 
   return TRUE;
 }

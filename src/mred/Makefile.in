@@ -6,12 +6,13 @@ WXDIR = $(srcdir)/../wxxt
 
 PLTSRCDIR = $(srcdir)/..
 
+
 ###########################
 #      Common Macros      #
 ###########################
 CC = @CC@
 CXX = @CXX@
-LINKER = @MREDLINKER@
+LINKER = $(CXX)
 PERL = @PERL@
 RANLIB = @RANLIB@
 AR = @AR@
@@ -23,20 +24,36 @@ XLIB = @X_LIBS@
 LDLIBS = @X_PRE_LIBS@ -lXaw -lXmu -lXt -lX11 -lXext @X_EXTRA_LIBS@ @LIBS@
 GCDIRECTORY = @GCDIR@
 WBUILD = @WBUILD@
+WXVARIANT =  @WXVARIANT@
 
-WXINC = $(PLTSRCDIR)/wxxt/src/AIAI-include -I$(PLTSRCDIR)/wxxt/src
-NOGCINC = -I$(WXINC) -I$(PLTSRCDIR)/mred/wxme/ -I$(PLTSRCDIR)/mzscheme/include/
+WXINC_wx_xt = -I$(PLTSRCDIR)/wxxt/src/AIAI-include -I$(PLTSRCDIR)/wxxt/src
+WXINC_wx_mac = -I$(PLTSRCDIR)/wxmac/include/base -I$(PLTSRCDIR)/wxmac/include/mac -I$(PLTSRCDIR)/wxcommon -I$(PLTSRCDIR)/a-list/c-headers/
+
+WXINC = $(WXINC_@WXVARIANT@)
+NOGCINC = $(WXINC) -I$(PLTSRCDIR)/mred/wxme/ -I$(PLTSRCDIR)/mzscheme/include/
 INC = -I$(PLTSRCDIR)/mzscheme/$(GCDIRECTORY) $(NOGCINC)
-CXXFLAGS = $(XINCLUDE) $(INC) $(OPTIONS) -Dwx_xt $(COMPFLAGS)
+CXXFLAGS = $(XINCLUDE) $(INC) $(OPTIONS) -D$(WXVARIANT) $(COMPFLAGS)
 CPPFLAGS = $(CXXFLAGS)
-CFLAGS = $(XINCLUDE) $(INC) $(OPTIONS) -Dwx_xt $(COMPFLAGS)
+CFLAGS = $(XINCLUDE) $(INC) $(OPTIONS) -D$(WXVARIANT) $(COMPFLAGS)
 LDFLAGS = $(XLIB)
 ###########################
 
-MREDLDFLAGS = $(LDFLAGS)
-WXLIBSNORM = mred.o mredx.o wxGC.o wxJPEG.o wxs/libwxscheme.a wxme/libwxme.a ../wxxt/src/libwx_xt.a ../wxxt/contrib/xpm/lib/libXpm.a ../wxxt/utils/image/src/libimage_xt.a ../wxcommon/jpeg/libjpeg.a
+EXTRALDFLAGS_wx_xt =
+EXTRALDFLAGS_wx_mac = -framework QuickTime
+MREDLDFLAGS = $(LDFLAGS) $(EXTRALDFLAGS_@WXVARIANT@)
+WXLIBS_wx_xt = ../wxxt/src/libwx_xt.a ../wxxt/contrib/xpm/lib/libXpm.a ../wxxt/utils/image/src/libimage_xt.a 
+MREDX_wx_xt = mredx.o
+WXLIBS_wx_mac = ../wxmac/src/libwxmac.a
+MREDX_wx_mac = mredmac.o simpledrop.o
+WXLIBSNORM = mred.o $(MREDX_@WXVARIANT@) wxGC.o wxJPEG.o wxs/libwxscheme.a wxme/libwxme.a $(WXLIBS_@WXVARIANT@) ../wxcommon/jpeg/libjpeg.a
 WXLIBSDYN = libmred.@LIBSFX@
-MREDLDLIBS = ../mzscheme/libmzscheme.@LIBSFX@ ../mzscheme/libmzgc.@LIBSFX@ $(@WXLIBS@) $(LDLIBS)
+GUILIBS_wx_xt = $(LDLIBS)
+GUILIBS_wx_mac = @LIBS@
+MREDLDLIBS = ../mzscheme/libmzscheme.@LIBSFX@ ../mzscheme/libmzgc.@LIBSFX@ $(@WXLIBS@) $(GUILIBS_@WXVARIANT@)
+
+LOCALFLAGS_wx_xt =
+LOCALFLAGS_wx_mac = -I$(srcdir)/../mac/mzscheme
+LOCALFLAGS = $(LOCALFLAGS_@WXVARIANT@)
 
 MREDOBJECTS = mrmain.o
 
@@ -54,7 +71,7 @@ WXINCDEP = $(WXDIR)/src/Windows/Window.h
 MZEXTRAEXPORT='GCDIR=$(GCDIRECTORY)'
 
 all:
-	$(MAKE) wx
+	$(MAKE) @WXVARIANT@
 	cd wxs; $(MAKE)
 	cd wxme; $(MAKE)
 	$(MAKE) mred
@@ -80,8 +97,11 @@ solaris-static:
 linux-static:
 	$(MAKE) mred MRSTATIC=--static LDNONSTATICLIBS='-ldl'
 
-wx:
+wx_xt:
 	cd ../wxxt/src/x; $(MAKE)
+
+wx_mac:
+	cd ../wxmac/src; $(MAKE)
 
 mred.o :  $(srcdir)/mred.cxx $(srcdir)/wxme/wx_media.h $(srcdir)/wxme/wx_medad.h \
           $(srcdir)/wxs/wxscheme.h $(srcdir)/mred.h \
@@ -112,11 +132,23 @@ wxGC.o : $(srcdir)/../wxcommon/wxGC.cxx $(srcdir)/../wxcommon/wxGC.h \
          $(srcdir)/../mzscheme/src/stypes.h
 	$(CXX) $(CPPFLAGS) $(LOCALFLAGS) -c $(srcdir)/../wxcommon/wxGC.cxx -o wxGC.o
 
+mredmac.o : $(srcdir)/mredmac.cxx $(srcdir)/../mzscheme/include/scheme.h $(srcdir)/mred.h \
+          $(srcdir)/../wxcommon/wxGC.h $(srcdir)/../wxcommon/wx_list.h \
+          $(srcdir)/../mzscheme/src/stypes.h
+	$(CXX) $(CPPFLAGS) $(LOCALFLAGS) -c $(srcdir)/mredmac.cxx -o mredmac.o
+
+wxGC.o : $(srcdir)/../wxcommon/wxGC.cxx $(srcdir)/../wxcommon/wxGC.h \
+         $(srcdir)/../mzscheme/src/stypes.h
+	$(CXX) $(CPPFLAGS) $(LOCALFLAGS) -c $(srcdir)/../wxcommon/wxGC.cxx -o wxGC.o
+
 wxJPEG.o : $(srcdir)/../wxcommon/wxJPEG.cxx $(srcdir)/../wxcommon/wxGC.h
 	$(CXX) $(CPPFLAGS) $(LOCALFLAGS) -I../wxcommon/jpeg -I$(srcdir)/../wxcommon/jpeg -c $(srcdir)/../wxcommon/wxJPEG.cxx -o wxJPEG.o
 
 dl_stub.o: $(srcdir)/misc/dl_stub.c
 	$(CC) $(CPPFLAGS) $(LOCALFLAGS) -c $(srcdir)/misc/dl_stub.c -o dl_stub.o
+
+simpledrop.o : $(srcdir)/../mac/mzscheme/simpledrop.cpp
+	$(CXX) $(CPPFLAGS) $(LOCALFLAGS) -o simpledrop.o -c $(srcdir)/../mac/mzscheme/simpledrop.cpp
 
 sgilinkhack.o:
 	$(CXX) $(CPPFLAGS) $(LOCALFLAGS) -c $(srcdir)/misc/sgilinkhack.cxx -o sgilinkhack.o

@@ -31,14 +31,6 @@ cygwin-bin:
 	$(MAKE) starter
 	$(MAKE) normal-bin
 
-macosx-mw-bin:
-	$(MAKE) include/macosxpre
-	$(MAKE) normal-bin
-
-macosx-cc-bin:
-	$(MAKE) include/macosxpre.p
-	$(MAKE) normal-bin
-
 oskit: 
 	$(MAKE) mzlibrary
 	$(MAKE) mzscheme.multiboot
@@ -125,12 +117,6 @@ mzstart.exe: $(srcdir)/dynsrc/start.c
 	$(CC) @CFLAGS@ -o mzstart.exe $(srcdir)/dynsrc/start.c
 
 starter: mzstart.exe
-
-include/macosxpre: include/macosxpre.h
-	mwccppc -gccinc -D__CF_USE_FRAMEWORK_INCLUDES__ -precompile include/macosxpre include/macosxpre.h
-
-include/macosxpre.p : include/macosxpre.h
-	cc -precomp include/macosxpre.h -o include/macosxpre.p
 
 exn:
 	$(MAKE) $(srcdir)/src/schexn.h

@@ -57,7 +57,6 @@
 
 #if defined(FOR_MAC)
 #include "simx.h"
-extern int strcasecmp(char *s1, char *s2);
 #endif
 #if !defined(FOR_MSW) && !defined(FOR_MAC)
 				/* normal part first, MSW part at
@@ -208,9 +207,10 @@ xpmGetRgbName(xpmRgbName rgbn[], int rgbn_max, int red, int green, int blue)
 }
 
 #ifdef FOR_MAC
-#ifdef __cplusplus
+# ifndef OS_X
+#  ifdef __cplusplus
 char *strdup(char * in);
-#endif
+# endif
 char *strdup(char * in)
 {
 	int i = strlen(in);
@@ -218,6 +218,7 @@ char *strdup(char * in)
 	memcpy(newstr, in, i+1);
 	return newstr;
 }
+# endif
 #endif
 
 /* used in XParseColor in simx.c */

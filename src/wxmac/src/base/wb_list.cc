@@ -1,4 +1,4 @@
 
 /* Moved to common */
 
-#include "::::wxcommon:wb_list.cxx"
+#include "wb_list.cxx"

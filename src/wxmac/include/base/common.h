@@ -12,12 +12,22 @@
 #ifndef wxb_commonh
 #define wxb_commonh
 
-#ifndef OS_X
-#include <QuickDraw.h>
+#ifdef OS_X
+# include <Carbon/Carbon.h>
+#else
+# include <QuickDraw.h>
 #endif
+
+#define macintosh
+#undef GUSI
+#define DEBUG_NEW 0
 
 #include "wx_setup.h"
 #include "wx_ver.h"
+
+#define WXUNUSED(x) /* empty */
+#define CheckMemOK(v) (v ? 0 : wxOutOfMemory())
+extern void *wxOutOfMemory();
 
 //////////////////////////////////////////////////////////////////////////////////
 // Currently Only MS-Windows/NT, XView and Motif are supported

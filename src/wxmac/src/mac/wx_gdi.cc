@@ -14,16 +14,16 @@ static const char sccsid[] = "%W% %G%";
 #include "wx_gdi.h"
 #include "wx_dcmem.h"
 #ifndef OS_X
-  #include <Strings.h>
-  #include <Resources.h>
-  #include <QDOffscreen.h>
+# include <Strings.h>
+# include <Resources.h>
+# include <QDOffscreen.h>
 #endif
 #if USE_XPM_IN_MAC
-#define FOR_MAC
-#include "xpm34.h"
+# define FOR_MAC
+# include "xpm34.h"
 #endif
 #if USE_IMAGE_LOADING_IN_MAC
-#include "wx_image.h"
+# include "wx_image.h"
 #endif
 
 CGrafPtr gMacFontGrafPort = NULL; // mac platform only

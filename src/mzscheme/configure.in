@@ -159,7 +159,11 @@ else
 fi
 
 if test "${enable_mred}" = "yes" ; then
-  AC_PATH_XTRA
+  if test "${enable_quartz}" = "yes" ; then
+   :
+  else
+   AC_PATH_XTRA
+  fi
 
   MAKE_MRED=mr
   MAKE_MRED3M=mr3m
@@ -298,25 +302,15 @@ case $OS in
   Darwin)
 
     CFLAGS="$CFLAGS -DOS_X"
-    if test `basename "$CC"` = "mwccppc"; then
-      # mwccppc doesn't produce files that 'ar' can handle:
-      AR="libtool"
-      ARFLAGS="-o"
-      MZBINTARGET=macosx-mw-bin
-      CFLAGS="-gccinc -ext o $CFLAGS"
-    else
-      MZBINTARGET=macosx-cc-bin
-    fi
 
     # NB: This assumes that dlcompat is installed.
     CFLAGS="$CFLAGS -I/sw/include/ "
 
+    LIBS="/sw/lib/libdl.a -framework Carbon $LIBS"
     if test "${enable_quartz}" = "yes" ; then
-      # don't use X Libraries: 
-      LIBS="/sw/lib/libdl.a -framework Carbon"
+      :
     else
       CFLAGS="$CFLAGS -DXONX "
-      LIBS="/sw/lib/libdl.a $LIBS"
     fi
     ;;
   *)
@@ -366,23 +360,6 @@ if test "$inline" = "no" ; then
   MZOPTIONS="$MZOPTIONS -DNO_INLINE_KEYWORD"
 fi
 
-case $OS in
-  Darwin)
-    case `basename "$CC"` in
-      mwccppc)
-        MZOPTIONS="$MZOPTIONS -include \$(MZSRC)/macosxpre"
-      ;;
-      cc)
-      ;;
-      *)
-        echo "unrecognized compiler: $CC"
-      ;;
-    esac
-    ;;
-  *)
-    ;;
-esac
-
 AC_MSG_RESULT($inline) 
 
 if test "${enable_paccount}" = "yes" ; then
@@ -394,20 +371,12 @@ fi
 ############## C++ grunge ################
 
 MROPTIONS=
+WXVARIANT="wx_xt"
 
 if test "${enable_quartz}" = "yes" ; then
-  case `basename "$CXX"` in
-    mwccppc)  
-      MROPTIONS="$MROPTIONS -include carbon-precomp"
-    ;;
-    c++)
-      MROPTIONS="$MROPTIONS -include carbon-precomp.p"
-    ;;
-    *)
-      echo "unrecognized compiler: $CC"
-    ;;
-  esac
-else
+  MROPTIONS="$MROPTIONS -cpp-precomp -fpascal-strings"
+  WXVARIANT="wx_mac"
+fi
 
 if test "${enable_mred}" = "yes" ; then
   CXXFLAGS="$CXXFLAGS $X_CFLAGS"
@@ -452,18 +421,6 @@ if test "${enable_mred}" = "yes" ; then
     MROPTIONS="$MROPTIONS -DNO_XKB_LIB_PRESENT"
   fi
   AC_MSG_RESULT($xkbavail)
-fi
-
-case $OS in
-  Darwin)
-    if test `basename "$CC"` = "mwccppc"; then
-      MROPTIONS="$MROPTIONS -include carbon-precomp"
-    fi
-    ;;
-  *)
-    ;;
-esac
-
 fi
 
 ############## drop optimization flags ################
@@ -563,6 +520,7 @@ AC_SUBST(EXTRA_GMP_OBJ)
 AC_SUBST(MREDLINKER)
 AC_SUBST(LIBSFX)
 AC_SUBST(WXLIBS)
+AC_SUBST(WXVARIANT)
 AC_SUBST(ICP)
 AC_SUBST(MRLIBINSTALL)
 AC_SUBST(LIBFINISH)
@@ -595,23 +553,31 @@ makefiles="Makefile
 subbuilds= 
 
 if test "${enable_mred}" = "yes" ; then
-  mk_needed_dir wxxt
-  mk_needed_dir wxxt/utils
-  mk_needed_dir wxxt/utils/image
-  mk_needed_dir wxxt/contrib
-  mk_needed_dir wxxt/contrib/xpm
+  if test "${enable_quartz}" = "yes" ; then
+    mk_needed_dir wxmac
+    mk_needed_dir wxmac/src
+  else
+    mk_needed_dir wxxt
+    mk_needed_dir wxxt/utils
+    mk_needed_dir wxxt/utils/image
+    mk_needed_dir wxxt/contrib
+    mk_needed_dir wxxt/contrib/xpm
+  fi
   mk_needed_dir wxcommon
 
   makefiles="$makefiles
              mred/Makefile
                mred/wxs/Makefile mred/wxme/Makefile
-               mred/gc2/Makefile
-             wxxt/src/Makefile wxxt/src/x/Makefile
-               wxxt/utils/image/src/Makefile
-               wxxt/contrib/xpm/lib/Makefile"
+               mred/gc2/Makefile"
 
   if test "${enable_quartz}" = "yes" ; then
-    makefiles="$makefiles wxmac/wxs/Makefile"
+    makefiles="$makefiles
+               wxmac/src/Makefile"
+  else
+    makefiles="$makefiles
+               wxxt/src/Makefile wxxt/src/x/Makefile
+                 wxxt/utils/image/src/Makefile
+                 wxxt/contrib/xpm/lib/Makefile"
   fi
 
   subbuilds="$subbuilds wxcommon/jpeg"

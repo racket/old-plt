@@ -22,10 +22,6 @@
 #endif
 #endif
 
-#ifdef wx_mac
-#include <QuickDraw.h>
-#endif
-
 // Standard cursors
 typedef enum {
  wxCURSOR_ARROW =  1,

@@ -158,6 +158,9 @@ private:
 	virtual void AddWhiteRgn(RgnHandle rgn);
 
 	Bool WantsFocus();
+
+	void CanvasSwapBuffers(void);
+	void ThisContextCurrent(void);
 };
 
 #endif // IN_CPROTO

@@ -21,7 +21,9 @@
 	#include <ToolUtils.h>
 #endif
 
-#include <Drag.h>
+#ifndef __DRAG__
+# include <Drag.h>
+#endif
 
 // Include the DragManagerAdditions only if we're using an old version of the Universal Interfaces.
 #ifdef __MWERKS__

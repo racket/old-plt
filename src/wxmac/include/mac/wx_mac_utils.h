@@ -12,9 +12,9 @@
 
 #include "wxMacObj.h"
 #ifndef OS_X
-#include <Strings.h>
+# include <Strings.h>
+# include <QuickDraw.h>
 #endif
-#include <QuickDraw.h>
 
 class wxMacString: public wxMacObject
 {

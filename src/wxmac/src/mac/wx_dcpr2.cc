@@ -13,16 +13,19 @@ static const char sccsid[] = "%W% %G%";
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <Quickdraw.h>
-#include <Printing.h>
+#ifndef OS_X
+# include <Quickdraw.h>
+# include <Printing.h>
+#endif
 #include "wx_dcpr.h"
 #include "wx_dccan.h"
 #include "wx_utils.h"
 #include "wx_canvs.h"
 #include "wx_privt.h"
 
-#include <QDOffScreen.h>
-
+#ifndef OS_X
+# include <QDOffScreen.h>
+#endif
 
 class wxCanvasDC;
 

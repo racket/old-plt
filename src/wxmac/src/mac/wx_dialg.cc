@@ -35,7 +35,9 @@ extern "C" {
 # define USE_NAVIGATION
 
 #ifdef USE_NAVIGATION
-# include <Navigation.h>
+# ifndef OS_X
+#  include <Navigation.h>
+# endif
 #endif
 
 #define wxDIALOG_DEFAULT_X 300

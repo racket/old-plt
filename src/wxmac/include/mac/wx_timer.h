@@ -20,7 +20,7 @@
 
 #include "common.h"
 #include "wb_timer.h"
-#include <types.h>
+/* #include <types.h> */
 #ifdef IN_CPROTO
 typedef       void    *wxTimer ;
 #else

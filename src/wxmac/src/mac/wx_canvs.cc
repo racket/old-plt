@@ -650,3 +650,11 @@ void wxCanvas::OnPaint(void)
 {
 	/* Do nothing */
 }
+
+void wxCanvas::CanvasSwapBuffers(void)
+{
+}
+
+void wxCanvas::ThisContextCurrent(void)
+{
+}

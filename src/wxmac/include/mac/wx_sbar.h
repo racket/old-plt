@@ -11,7 +11,9 @@
 #define wx_sbarh
 
 #include "wx_win.h"
-#include <Controls.h>
+#ifndef OS_X
+# include <Controls.h>
+#endif
 
 #ifdef IN_CPROTO
 typedef       void* wxScrollBar ;

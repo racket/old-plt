@@ -105,7 +105,7 @@ public:
 
 
 // Iterators
-  Bool ItOK () { return (0 <= ItCount && ItCount < Height); }
+  Bool ItOK () { return (ItCount < Height); }
   void reset ();
   void upset ();
   Bool ItNext ();

@@ -14,8 +14,10 @@
 
 #include "wb_choic.h"
 #include "wxLabelArea.h"
-#include <Controls.h>
-#include <Menus.h>
+#ifndef OS_X
+# include <Controls.h>
+# include <Menus.h>
+#endif
 
 #ifdef IN_CPROTO
 typedef       void    *wxChoice ;

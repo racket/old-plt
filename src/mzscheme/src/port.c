@@ -5366,13 +5366,13 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
 static Scheme_Object *sch_send_event(int c, Scheme_Object *args[])
 {
 #ifdef MACINTOSH_EVENTS
-  OSErr err;
+  int err;
   char *stage = "";
   Scheme_Object *result;
   if (scheme_mac_send_event("send-event", c, args, &result, &err, &stage))
     return result;
   else
-    scheme_raise_exn(MZEXN_MISC, "send-event: failed (%s%e)", stage, (int)err);
+    scheme_raise_exn(MZEXN_MISC, "send-event: failed (%s%e)", stage, err);
 #else
   scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
 		   "send-event: not supported on this platform");

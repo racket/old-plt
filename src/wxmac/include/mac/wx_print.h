@@ -71,6 +71,7 @@ class wxPrintData: public wxObject
  public:
   // macintosh
 #ifdef OS_X  
+  PMPrintSession cPrintSession;
   PMPrintSettings cPrintSettings;
   PMPageFormat cPageFormat;
 #else

@@ -37,12 +37,12 @@ wxPrinterDC::wxPrinterDC(wxPrintData *printData) : wxCanvasDC()
     cPrintData = printData;
 
 #ifdef OS_X
-    if (PMBeginDocument(cPrintData->cPrintSettings,cPrintData->cPageFormat,&cPrintContext) != noErr) {
+    if (PMSessionBeginDocument(cPrintData->cPrintSession, cPrintData->cPrintSettings,cPrintData->cPageFormat) != noErr) {
       ok = false;
       return;
     }  
     
-    if (PMGetGrafPtr(cPrintContext, &theGrafPtr) != noErr) {
+    if (PMSessionGetGraphicsContext(cPrintData->cPrintSession, NULL, (void **)&theGrafPtr) != noErr) {
       ok = false;
       return;
     }
@@ -134,7 +134,7 @@ wxPrinterDC::~wxPrinterDC(void)
 {
   if (ok) {
 #ifdef OS_X
-    PMEndDocument(cPrintContext);
+    PMSessionEndDocument(cPrintData->cPrintSession);
 #else    
     PrCloseDoc(prPort);
 #endif
@@ -155,7 +155,9 @@ void wxPrinterDC::StartPage(void)
 {
 #ifdef OS_X
     if (cPrintContext)
-        PMBeginPage(cPrintContext,NULL);
+        PMSessionBeginPage(cPrintData->cPrintSession,
+			   cPrintData->cPageFormat,
+			   NULL);
 #else
   if (prPort)
     PrOpenPage(prPort, 0); 
@@ -167,7 +169,7 @@ void wxPrinterDC::EndPage(void)
 {
 #ifdef OS_X
     if (cPrintContext)
-        PMEndPage(cPrintContext);
+        PMSessionEndPage(cPrintData->cPrintSession);
 #else
   if (prPort)
     PrClosePage(prPort);

@@ -21,6 +21,7 @@
    if-temp
    struct-flag
    get-arg-symbol
+   top-level-exp-gensym-source
    expr-read
    set-expr-read!
    flatten-take

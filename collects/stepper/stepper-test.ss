@@ -98,9 +98,15 @@
     (define test-list (make-my-cons 13
                                     (make-my-cons
                                      'foo
-                                     null?)))
+                                     ())))
     (define result (last-elt test-list))
     (+ 3 4)))
+
+(define mixed-defs-and-exps-program
+  '((define a 3)
+    (+ 4 3)
+    (define b (+ 20 3))
+    3))
 
 (define (program->string program)
   (apply string-append

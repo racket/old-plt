@@ -21,7 +21,7 @@
     (let-values ([(annotated exprs)
                   (a:annotate text break)])
       (set! expr-list exprs)
-      ;annotated
+      annotated
       (thread (lambda ()
                 (for-each eval annotated)
                 (semaphore-post break-sema)))

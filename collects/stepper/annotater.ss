@@ -116,7 +116,7 @@
            null
            a
            b))
-    
+      
   (define all-defs-list-sym (gensym "all-defs-list-"))
   (define current-def-sym (gensym "current-def-"))
 
@@ -129,6 +129,11 @@
   ; debug-key: this key will be used as a key for the continuation marks.
   
   (define debug-key (gensym "debug-key-"))
+
+  ; make-debug-info builds the thunk which will be the mark at runtime.  It contains 
+  ; a source expression (in the parsed zodiac format) and a set of varref/value pairs.
+  ; the varref contains a name and a boolean indicating whether the binding is 
+  ; top-level.  
   
   (define (make-debug-info source tail-bound top-env free-vars label)
     (let* ([top-level-varrefs (filter z:top-level-varref? free-vars)]
@@ -240,14 +245,16 @@
   
          (define parsed-exprs (map z:scheme-expand exprs-read))  
   
+         ; find-defined-vars extracts a list of what variables an expression
+         ; defines.  In the case of a top-level expression which does not
+         ; introduce bindings, it lists the temporary variable which will
+         ; be introduced to hold that binding.
+         
          (define (find-defined-vars expr)
            (cond [(z:define-values-form? expr)
-                  (let ([raw-expr (read->raw (find-read-expr expr))])
-                    (if (eq? (car raw-expr) 'define-struct)
-                        (list (cons struct-flag raw-expr))
-                        (map z:varref-var (z:define-values-form-vars expr))))]
-                 [else
-                  null]))
+                  (map z:varref-var (z:define-values-form-vars expr))]
+                 [else 
+                  (list (top-level-exp-gensym-source expr))]))
          
          (define (top-defs exprs)
            (map find-defined-vars exprs))
@@ -260,14 +267,6 @@
 	 
 	 (define (annotate/inner expr tail-bound top-env)
 	   
-           
-           ; make-debug-info builds the thunk which will be the mark at runtime.  It contains 
-           ; a source expression (in the parsed zodiac format) and a set of varref/value pairs.
-           ; the varref contains a name and a boolean indicating whether the binding is 
-           ; top-level.  
-           
-           ; make-debug-info : ((list-of varref) bool z:zodiac (list-of varref) -> sexp)
-           
            
 	   
            ; translate-varref: (bool bool -> sexp (listof varref))
@@ -460,27 +459,39 @@
 		(print-struct #t)
 		(e:internal-error
 		 expr
-		 (format "stepper:annotate/inner: unknown object to annotate, ~a~n" expr))]))))
+		 (format "stepper:annotate/inner: unknown object to annotate, ~a~n" expr))])))
+         
+         (define (annotate/top-level expr top-env)
+           (let-values ([(annotated dont-care)
+                         (annotate/inner expr 'all top-env)])
+             (cond [(z:define-values-form? expr)
+                    annotated]
+                   [else
+                    `(#%define-values ,(list (top-level-exp-gensym-source expr)) ,annotated)]))))
          
          ; body of local
          
-         (let* ([defined-top-vars (top-defs parsed-exprs)]
-                [top-env-vars (build-list (length defined-top-vars)
-                                          (lambda (n) (flatten-take n defined-top-vars)))]
-                [top-env-varrefs (map (lambda (env) (map (lambda (var) (create-bogus-top-level-varref var)) env))
-                                      top-env-vars)]
-                [annotated-exprs (map (lambda (expr top-env) 
-                                        (let-values ([(annotated dont-care)
-                                                      (annotate/inner expr 'all top-env)])
-                                          annotated)) 
-                                      parsed-exprs
-                                      top-env-varrefs)]
-                [top-vars-annotation `((#%define-values (,all-defs-list-sym ,current-def-sym)
-                                        (values (#%quote ,defined-top-vars) #f)))]
-                [current-def-setters (build-list (length parsed-exprs) current-def-setter)]
-                [top-annotated-exprs (interlace current-def-setters annotated-exprs)])
+      (let* ([defined-top-vars (top-defs parsed-exprs)]
+             [top-env-vars (apply append defined-top-vars)]
+             [top-env-varrefs (map create-bogus-top-level-varref top-env-vars)]
+             [annotated-exprs (map (lambda (expr)
+                                     (annotate/top-level expr top-env-varrefs))
+                                   parsed-exprs)]
+             [top-vars-annotation `((#%define-values (,all-defs-list-sym ,current-def-sym)
+                                     (values (#%quote ,defined-top-vars) #f)))]
+             [current-def-setters (build-list (length parsed-exprs) current-def-setter)]
+             [top-annotated-exprs (interlace current-def-setters annotated-exprs)]
+             [final-current-def-setter (current-def-setter (length parsed-exprs))]
+             [final-break-exp (wcm-break-wrap (make-debug-info #f 
+                                                               'all 
+                                                               (map create-bogus-top-level-varref
+                                                                    (apply append defined-top-vars))
+                                                               ()
+                                                               'final) 
+                                              'ignored-symbol)])
            
-           (values (append top-vars-annotation top-annotated-exprs)
+           (values (append top-vars-annotation top-annotated-exprs (list final-current-def-setter
+                                                                         final-break-exp))
                    parsed-exprs))))
 	 
   )

@@ -447,6 +447,7 @@
       (StatementWithoutTrailingSubstatement
        [(Block) $1]
        [(EmptyStatement) $1]
+       [(Assignment SEMI_COLON) $1]
        [(ExpressionStatement) $1]
        [(DoStatement) $1]
        [(BreakStatement) $1]
@@ -460,7 +461,6 @@
        [(StatementExpression SEMI_COLON) $1])
       
       (StatementExpression
-       [(Assignment) $1]
        [(PreIncrementExpression) $1]
        [(PreDecrementExpression) $1]
        [(PostIncrementExpression) $1]
@@ -747,8 +747,7 @@
 	(make-cond-expression #f (build-src 5) $1 $3 $5 (build-src 2 2))])
       
       (AssignmentExpression
-       [(ConditionalExpression) $1]
-       [(Assignment) $1])
+       [(ConditionalExpression) $1])
       
       (Assignment
        [(LeftHandSide AssignmentOperator AssignmentExpression)

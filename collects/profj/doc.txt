@@ -9,8 +9,18 @@ please for now, report bugs directly to me at kathyg@cs.utah.eud
 Changed:
 Statements now work in the interactions window
 
-Some type checking is completed. Class inheritance and method headers,
-as well as some field naming is now checked.
+The teaching languages no longer allow assignment to be an expression
+
+Some type checking is completed. 
+  These items should be checked with good error messages:
+     Class inheritance and method headers, as well as some field naming
+     Binary expressions
+     Assignment (except for final restrictions)
+     Unary expressions
+     Pre and Post expressions
+     Casts and instanceof
+     Array access expressions
+
 
 General Information:
 

@@ -183,6 +183,12 @@
   
   (define (translate-interactions prog type-recs)
     (cond 
+      ((pair? prog)
+       (make-syntax #f 
+                    `(begin ,@(map (lambda (f)
+                                     (translate-interactions f type-recs))
+                                   prog))
+                    #f))       
       ((field? prog) 
        (translate-field `(private)
                         (field-type prog)

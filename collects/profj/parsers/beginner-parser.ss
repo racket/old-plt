@@ -241,6 +241,7 @@
       
       (StatementWithoutTrailingSubstatement
        [(EmptyStatement) $1]
+       [(Assignment SEMI_COLON) $1]
        [(ExpressionStatement) $1]
        [(ReturnStatement) $1])
       
@@ -251,7 +252,6 @@
        [(StatementExpression SEMI_COLON) $1])
       
       (StatementExpression
-       [(Assignment) $1]
        [(MethodInvocation) $1]
        [(ClassInstanceCreationExpression) $1])
       
@@ -392,8 +392,7 @@
        [(ConditionalOrExpression) $1])
       
       (AssignmentExpression
-       [(ConditionalExpression) $1]
-       [(Assignment) $1])
+       [(ConditionalExpression) $1])
       
       (Assignment
        [(LeftHandSide AssignmentOperator AssignmentExpression)

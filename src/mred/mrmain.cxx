@@ -105,7 +105,11 @@ extern "C" Scheme_Object *scheme_initialize(Scheme_Env *env);
 # ifdef wx_msw
 #  define INIT_FILENAME "%%HOMEDIRVE%%\\%%HOMEPATH%%\\mredrc.ss"
 # else
-#  define INIT_FILENAME "PREFERENCES:mredrc.ss"
+#  ifdef OS_X
+#   define INIT_FILENAME "~/.mredrc"
+#  else
+#   define INIT_FILENAME "PREFERENCES:mredrc.ss"
+#  endif
 # endif
 #endif
 #define GET_INIT_FILENAME get_init_filename

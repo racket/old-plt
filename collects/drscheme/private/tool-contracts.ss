@@ -108,7 +108,8 @@
 "\\rawscm{void}."
 ""
 "See also"
-"@flink drscheme:eval:expand-program/multiple.")
+"@flink drscheme:eval:expand-program/multiple %"
+".")
 
 (drscheme:eval:expand-program/multiple
  (drscheme:language-configuration:language-settings?
@@ -456,9 +457,11 @@
 
 (drscheme:rep:insert-error-in-text
  ((is-a?/c text%) (is-a?/c drscheme:rep:text<%>) string? exn? (union false? (and/f string? directory-exists?)) . -> . void?)
- (text msg exn dir)
+ (text rep-text msg exn dir)
  "Formats and inserts the error message described by"
  "\\var{msg} and \\var{exn} into the text% object \\var{text}."
+ "The \\var{rep-text} argument is used to trigger the actual"
+ "highlighting."
  "The \\var{msg} and \\var{exn} arguments are expected to"
  "come from the"
  "\\MzLink{mz:p:error-print-source-location}{\\scheme|error-display-handler|},"

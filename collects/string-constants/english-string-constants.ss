@@ -107,7 +107,7 @@
  (goto-position "Goto Position")
  (no-full-name-since-not-saved
   "The file does not have a full name because it has not yet been saved.")
- (cannot-open-because-dne "Cannot open ~a because it does not exist")
+ (cannot-open-because-dne "Cannot open ~a because it does not exist.")
  (interactions-out-of-sync
   "WARNING: Interactions window is out of sync with the definitions window. Click Execute.")
  (file-is-not-saved "The file \"~a\" is not saved.")

@@ -34,7 +34,7 @@
 |#
 
     (define legal-formats
-      (list 'american 'chinese 'german 'indian 'irish 'julian))
+      (list 'american 'chinese 'german 'indian 'irish 'julian 'international-date-format))
 
     (define date-display-format 
       (make-parameter 'american
@@ -126,6 +126,10 @@
 		   (values (list (julian/scalinger->string
 				   (date->julian/scalinger date)))
 		           (list ", " hour24 ":" minute ":" second))]
+                  [(international-date-format)
+                   (values
+                    (list year "-" (add-zero (date-month date)) "-" (add-zero (date-day date)))
+                    (list " " hour24 ":" minute ":" second))]
 		  [else (error 'date->string "unknown date-display-format: ~s"
 			       (date-display-format))])])
 	    (apply string-append (if time?

@@ -403,16 +403,19 @@
 		s))
 
           (define/private (process-extras extras)
-            (map (lambda (e)
-                   (let-values (((syn throwaway throwaway2)
-                                 (if (test-case? e)
-                                     (send (test-case-test e) read-one-special 0 #f #f #f #f)
-                                     (begin 
-                                       (send (interact-case-box e) set-level level)
-                                       (send (interact-case-box e) set-records execute-types)
-                                       (send (interact-case-box e) read-one-special 0 #f #f #f #f)))))
-                     syn))
-                 extras))
+            (cond
+              ((null? extras) null)
+              ((test-case? (car extras))
+               (cons 
+                (let-values (((syn t t2) (send (test-case-test (car extras)) read-one-special 0 #f #f #f #f))) syn)
+                (process-extras (cdr extras))))
+              ((interact-case? (car extras))
+               (send (interact-case-box (car extras)) set-level level)
+               (send (interact-case-box (car extras)) set-records execute-types)
+               (send (interact-case-box (car extras)) set-ret-kind #t)
+               (append 
+                (let-values (((syn-list t t2) (send (interact-case-box (car extras)) read-one-special 0 #f #f #f #f))) syn-list)
+                (process-extras (cdr extras))))))
           
           ;find-main-module: (list compilation-unit) -> (U syntax #f)
           (define (find-main-module mod-lists)
@@ -650,8 +653,10 @@
           (define/override (get-mesg) "Convert to comment")
           (define level 'full)
           (define type-recs (create-type-record))
+          (define ret-list? #f)
           (define/public (set-level l) (set! level l))
           (define/public (set-records tr) (set! type-recs tr))
+          (define/public (set-ret-kind k) (set! ret-list? k)) 
           (define-struct input-length (start-pos end-pos))
           (define/public (read-one-special index source line column position)
             (let* ((ed (get-editor))
@@ -665,19 +670,20 @@
                        (set! inputs-list (cons (make-input-length start offset) inputs-list))
                        (outer-loop (read-char-or-special port) (add1 offset)))
                       (else (inner-loop (read-char-or-special port) (add1 offset)))))))
-              (values (datum->syntax-object #f 
-                                            `(begin ,@(map 
-                                                       (lambda (input-len)
-                                                         (input-port 
-                                                          (lambda () 
-                                                            (open-input-text-editor ed 
-                                                                                    (input-length-start-pos input-len)
-                                                                                    (input-length-end-pos input-len)
-                                                                                    (editor-filter #t))))
-                                                         (interactions-offset (input-length-start-pos input-len))
-                                                         (compile-interactions ((input-port)) ed type-recs level))
-                                                       (reverse inputs-list)))
-                                            #f) 1 #t)))
+              (let ((syntax-list (map 
+                                  (lambda (input-len)
+                                    (input-port 
+                                     (lambda () 
+                                       (open-input-text-editor ed 
+                                                               (input-length-start-pos input-len)
+                                                               (input-length-end-pos input-len)
+                                                               (editor-filter #t))))
+                                    (interactions-offset (input-length-start-pos input-len))
+                                    (compile-interactions ((input-port)) ed type-recs level))
+                                  (reverse inputs-list))))
+                (if ret-list?
+                    (values syntax-list 1 #t)
+                    (values (datum->syntax-object #f `(begin ,@syntax-list) #f) 1 #t)))))
           (super-instantiate ())
           (inherit set-snipclass get-editor)
           (set-snipclass snipclass-interactions)

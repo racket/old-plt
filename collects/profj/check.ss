@@ -1571,8 +1571,8 @@
   (define (check-assignment op lexpr ltype rtype src c-tor? static-init? c-class level type-recs env)
     (when (and (eq? level 'beginner) (not c-tor?))
       (illegal-assignment src))
-    ;(when (access? lexpr)
-    ;  (check-final lexpr c-tor? static-init? c-class env))
+    (when (access? lexpr)
+      (check-final lexpr c-tor? static-init? c-class env))
     (case op
       ((=)
        (if (assignment-conversion ltype rtype type-recs)
@@ -1584,31 +1584,47 @@
 
   ;check-final: expression bool bool string -> void
   (define (check-final expr ctor? static-init? c-class env)
-    (let ((access (access-name expr)))
+    (let ((access (access-name expr))
+          (class (car c-class)))
       (cond
         ((local-access? access)
-         (let ((properties (var-type-properties (lookup-var-in-env (id-string (local-access-name access))))))
+         (let* ((name (local-access-name access))
+                (properties (var-type-properties (lookup-var-in-env (id-string name) env)))
+                (settable? (properties-settable? properties))
+                (static? (properties-static? properties)))
            (when (properties-final? properties)
-             (when (properties-local? properties)
-               (error))
+             (when (properties-local? properties) (assign-final-error 'local name class))
              (cond
-               ((and ctor? (properties-settable? properties) (not (properties-static? properties))) 'fine)
-               ((and ctor? (properties-settable? properties) (properties-static? properties)) (error 'static-set-in-ctor))
-               ((and ctor? (not (properties-settable? properties))) (error 'cannot-set-in-ctor))
-               ((and static-init? (properties-settable? properties)) 'fine)
-               ((and static-init? (not (properties-settable? properties))) (error 'cannot-set-in-static-init))
-               (else (error 'cannot-set))))))
+               ((and ctor? settable? (not static?)) (void))
+               ((and ctor? settable? static?) (assign-final-error 'static-in-ctor name class))
+               ((and ctor? (not settable?)) (assign-final-error 'cannot-set-ctor name class))
+               ((and static-init? settable?) (void))
+               ((and static-init? (not settable?)) (assign-final-error 'cannot-set-static name class))
+               (else (assign-final-error (if static? 'static 'field) name class))))))
         ((field-access? access)
-         (when (var-access-final? (field-access-access access))
-           (if (and obj-is-this field-is-current not-var-access-init)
-               (cond
-                 ((and ctor? (not is-var-access-static)) 'fine)
-                 ((and ctor? (is-var-access-static)) (error 'static-set-in-ctor))
-                 ((and static-init? (is-var-access-static)) 'fine)
-                 (else (error 'cannot-set)))
-               (error 'cannot-set)))))))
+         (let* ((name (field-access-field access))
+                (obj (field-access-object access))
+                (v-acc (field-access-access access))
+                (init? (var-access-init? v-acc))
+                (static? (var-access-static? v-acc)))
+           (when (var-access-final? v-acc)
+             (if (and (or (this-expr? obj) (and static-init? (not obj))) 
+                      (equal? (var-access-class v-acc) class))
+                 (cond
+                   ((and ctor? (not init?) (not static?)) (void))
+                   ((and ctor? (not init?) static?) (assign-final-error 'static-in-ctor name class))
+                   ((and ctor? init? static?) (assign-final-error 'static-ctor-already-set name class))
+                   ((and ctor? init? (not static?)) (assign-final-error 'field-already-set name class))
+                   ((and static-init? (not init?)) (void))
+                   ((and static-init? init?) (assign-final-error 'static-already-set name class))
+                   (else (assign-final-error (if static? 'static 'field) name class)))
+                 (assign-final-error (if static? 'static 'field) name class))))))))
   
-  (define-values (obj-is-this field-is-current not-var-access-init is-var-access-static) (null null null null))
+  ;this-expr: expr -> bool
+  (define (this-expr? expr)
+    (and (special-name? expr)
+         (equal? "this" (special-name-name expr))))
+  
       
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;Expression Errors
@@ -1999,6 +2015,29 @@
     (format "~a requires that the right hand type be equivalent to or a subtype of ~a: given ~a" 
             op ltype rtype))
 
+  ;assign-final-error: symbol id string -> void
+  (define (assign-final-error kind name class)
+    (let* ((n (id->ext-name name))
+           (already-set 
+            (lambda (static?) (format "final~afield ~a has already been set" (if static? " static " " ") n)))
+           (in-ctor
+            (lambda (static?) (format "final~afield ~a may not be set in ~a's constructor" 
+                                      (if static? " static " " ") n class))))
+      (raise-error n
+                   (case kind
+                     ((local) (format "final parameter ~a may not be set" n))
+                     ((static-in-ctor) (in-ctor #t))
+                     ((cannot-set-ctor) (in-ctor #f))
+                     ((cannot-set-static) (format "final field ~a may not be set in ~a's static initialization" n class))
+                     ((static-ctor-already-set) 
+                      (format "~a. Further, it may not be set in ~a's constructor" (already-set #t) class))
+                     ((static-already-set) (already-set #t))
+                     ((field-already-set) (already-set #f))
+                     ((static) (format "final field ~a may only be set in the containing class's static initialization" n))
+                     ((field) (format "final field ~a may only be set in the containing class's constructor" n)))                     
+                   n (id-src name))))
+
+  
   ;implicit import error
   ;class-lookup-error: string src -> void
   (define (class-lookup-error class src)

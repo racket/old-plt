@@ -2,13 +2,12 @@
 (module general-parsing mzscheme
   
   (require (lib "lex.ss" "parser-tools"))
-  
-  (require "../ast.ss")
-  (require "../parameters.ss")
+  (require "../ast.ss" "../parameters.ss" "lexer.ss")
   
   (provide (all-defined))
 
-  ;;Methods used by all parsers
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ;;Methods used by all generated parsers
   (define-syntax (build-src stx)
     (syntax-case stx ()
       ((_ end)
@@ -80,4 +79,112 @@
         (build-field-decl mods type (var-init-var-decl decl))
         (var-init-init decl)
         (var-init-src decl)))))
-)
+
+  
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ;;Token Accessors and Queries for error-messaging parsers
+  
+  (define-syntax define-sym-token?
+    (syntax-rules ()
+                  [(_ name check)
+                   (define (name token) (and (symbol? token) (eq? token check)))]))
+  
+  (define-syntax define-token?
+    (syntax-rules ()
+                  [(_ name check)
+                   (define (name token) (and (token? token) (eq? (token-name token) check)))]))
+ 
+  ;Special
+  (define-sym-token? eof? 'EOF)
+  
+  ;Modifiers
+  (define-sym-token? abstract? 'abstract)
+  (define-sym-token? native? 'native)
+  (define-sym-token? private? 'private)
+  (define-sym-token? protected? 'protected)
+  (define-sym-token? public? 'public)
+  (define-sym-token? static? 'static)
+  (define-sym-token? strictfp? 'strictfp)
+  (define-sym-token? transient? 'transient)
+  (define-sym-token? volatile? 'volatile)
+  (define (modifier-token? token)
+    (and (symbol? token) (memq token `(abstract native private protected public static strictfp transient volatile))))
+  
+  ;Literals
+  (define (literal-token? token)
+    (or (empty-literal? token) (full-literal? token)))
+  (define (empty-literal? token)
+    (and (symbol? token) (memq token `(NULL_LIT TRUE_LIT FALSE_LIT))))
+  (define (full-literal? token)
+    (and (token? token) (memq (token-name token) `(STRING_LIT CHAR_LIT INTEGER_LIT LONG_LIT FLOAT_LIT DOUBLE_LIT))))
+  
+  ;Primitive types
+  (define (prim-type? token)
+    (and (symbol? token) (memq token `(boolean byte char double float int long short))))
+  
+  ;Operators
+  (define (bin-operator? token)
+    (and (symbol? token) (memq token `(PIPE OR > < == <= >= != && + - * / & ^ % << >> >>>))))
+  (define (teaching-unary-operator? token)
+    (and (symbol? token) (memq token `(! ~))))
+  (define (unary-operator? token)
+    (and (symbol? token) (memq token `(! ~ ++ --))))
+  (define (teaching-assignment-operator? token)
+    (and (symbol? token) (eq? token '=)))
+  (define (assignment-operator? token)
+    (and (symbol? token) (memq token `(= += -= *= /= &= ^= %= <<= >>= >>>=))))
+  
+  ;Separators
+  (define-sym-token? o-paren? 'O_PAREN)
+  (define-sym-token? c-paren? 'C_PAREN)
+  (define-sym-token? o-brace? 'O_BRACE)
+  (define-sym-token? c-brace? 'C_BRACE)
+  (define-sym-token? o-bracket? 'O_BRACKET)
+  (define-sym-token? c-bracket? 'C_BRACKET)
+  (define-sym-token? semi-colon? 'SEMI_COLON)
+  (define-sym-token? dot? 'PERIOD)
+  (define-sym-token? comma? 'COMMA)
+  
+  ;top-level keywords
+  (define-sym-token? package-token? 'package)
+  (define-sym-token? import-token? 'import)
+  
+  ;Definition keywords
+  (define-sym-token? class? 'class)
+  (define-sym-token? extends? 'extends)
+  (define-sym-token? implements? 'implements)
+  (define-sym-token? interface? 'interface)
+  
+  ;Method keywords
+  (define-sym-token? const? 'const)
+  (define-sym-token? throws-token? 'throws)
+  (define-sym-token? void-token? 'void)
+  
+  ;Statement keywords
+  (define-sym-token? break-token? 'break)
+  (define-sym-token? case-token? 'case)
+  (define-sym-token? catch-token? 'catch)
+  (define-sym-token? continue-token? 'continue)
+  (define-sym-token? defualt? 'default)
+  (define-sym-token? do-token? 'do)
+  (define-sym-token? else? 'else)
+  (define-sym-token? finally? 'finally)
+  (define-sym-token? for-token? 'for)
+  (define-sym-token? goto? 'goto); Ask Scott about this.
+  (define-sym-token? if-token? 'if)
+  (define-sym-token? return-token? 'return)
+  (define-sym-token? switch-token? 'switch)
+  (define-sym-token? synchronized-token? 'synchronized)
+  (define-sym-token? throw-token? 'throw)
+  (define-sym-token? try-token? 'try)
+  (define-sym-token? while-token? 'while)
+
+  ;Expression tokens
+  (define-sym-token? instanceof-token? 'instanceof)
+  (define-sym-token? new-token? 'new)
+  (define-sym-token? super? 'super)
+  (define-sym-token? this? 'this)
+  (define-sym-token? cond? '?)
+  (define-token? id-token? 'IDENTIFIER)
+  
+  )

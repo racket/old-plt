@@ -249,15 +249,19 @@ void wxCanvasDC::DrawLine(double x1, double y1, double x2, double y2)
 
   if (anti_alias) {
     CGContextRef cg;
+    double pw;
 
     SetCurrentDC(TRUE);
     cg = GetCG();
 
     CGContextSaveGState(cg);
 
+    pw = current_pen->GetWidthF();
+
     if ((anti_alias == 2)
 	&& (user_scale_x == 1.0)
-	&& (user_scale_y == 1.0)) {
+	&& (user_scale_y == 1.0)
+	&& (pw <= 1.0)) {
       x1 += 0.5;
       y1 += 0.5;
       x2 += 0.5;
@@ -839,12 +843,24 @@ void wxCanvasDC::DrawRectangle(double x, double y, double width, double height)
   if (!Ok() || !cMacDC) return;
 
   if (anti_alias) {
+    double pw;
     CGContextRef cg;
 
     SetCurrentDC(TRUE);
     cg = GetCG();
 
     CGContextSaveGState(cg);
+
+    pw = current_pen->GetWidthF();
+    if ((anti_alias == 2)
+	&& (user_scale_x == 1.0)
+	&& (user_scale_y == 1.0)
+	&& (pw <= 1.0)) {
+      x += 0.5;
+      y += 0.5;
+      width -= 1.0;
+      height -= 1.0;
+    }
 
     if (current_brush && current_brush->GetStyle() != wxTRANSPARENT) {
       wxMacSetCurrentTool(kBrushTool);
@@ -857,15 +873,6 @@ void wxCanvasDC::DrawRectangle(double x, double y, double width, double height)
     }
 
     if (current_pen && current_pen->GetStyle() != wxTRANSPARENT) {
-      if ((anti_alias == 2)
-	  && (user_scale_x == 1.0)
-	  && (user_scale_y == 1.0)) {
-	x += 0.5;
-	y += 0.5;
-	width -= 1.0;
-	height -= 1.0;
-      }
-
       wxMacSetCurrentTool(kPenTool);
       CGContextMoveToPoint(cg, x, y);
       CGContextAddLineToPoint(cg, x + width, y);

@@ -42,13 +42,13 @@
      ;;    read ; used to have (object)
      ;; The sub-tree has been cut off; inspect
      ;;  the stx object, instead.
-     read?
+     (struct read ())
 
      ;; elaborator structs:
      (struct parsed (back))
 
      (struct varref (var))
-     (struct top-level-varref (slot)) create-top-level-varref
+     (struct top-level-varref (module slot)) create-top-level-varref ; added module
      (struct bound-varref (binding))   create-bound-varref
 
      (struct binding (var orig-name))  create-binding

@@ -4,7 +4,7 @@
 
 (module errortrace mzscheme
   (import (lib "kerncase.ss" "syntax"))
-  (import (lib "list.ss"))
+  (import (lib "list.ss") (lib "pretty.ss"))
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;; Profiling run-time support
@@ -369,7 +369,11 @@
    (let* ([orig (current-eval)]
           [errortrace-eval-handler
            (lambda (e)
-	     (let ([a (annotate-top (expand e) null #f)])
+	     (let* ([a (if (compiled-expression? (if (syntax? e) 
+						     (syntax-e e) 
+						     e))
+			   e
+			   (annotate-top (expand e) null #f))])
 	       (orig a)))])
      errortrace-eval-handler))
   

@@ -13,7 +13,7 @@
   (define zodiac@
     (unit/sig zodiac^
       (import)
-
+      
       (define (stx-bound-assq ssym l)
 	(ormap (lambda (p)
 		 (and (bound-identifier=? ssym (car p))
@@ -120,28 +120,28 @@
 	  [(_ ([vars rhs] ...) . body)
 	   (let* ([varses (syntax->list (syntax (vars ...)))]
 		  [rhses (syntax->list (syntax (rhs ...)))]
-		  [z:varses (apply
-			     append
-			     (map (lambda (vars)
-				    (map (lambda (var)
-					   (make-binding
-					    stx
-					    (mk-back)
-					    (gensym)
-					    (syntax-e var)))
-					 (syntax->list vars)))
-				  varses))]
-		  [body-env (apply
-			     append
-			     (map (lambda (z:vars vars)
-				    (map (lambda (z:var var)
-					   (cons
-					    var
-					    z:var))
-					 z:vars
-					 (syntax->list vars)))
-				  z:varses
-				  varses))])
+		  [z:varses (map (lambda (vars)
+				   (map (lambda (var)
+					  (make-binding
+					   stx
+					   (mk-back)
+					   (gensym (syntax-e var))
+					   (syntax-e var)))
+					(syntax->list vars)))
+				 varses)]
+		  [body-env (append
+			     (apply
+			      append
+			      (map (lambda (z:vars vars)
+				     (map (lambda (z:var var)
+					    (cons
+					     var
+					     z:var))
+					  z:vars
+					  (syntax->list vars)))
+				   z:varses
+				   varses))
+			     env)])
 	     (mk-let
 	      stx
 	      (mk-back)
@@ -149,7 +149,7 @@
 	      (map (lambda (rhs)
 		     (loop rhs (if rec? body-env env)))
 		   rhses)
-	      (loop (syntax body) body-env)))]))
+	      (loop (syntax (begin . body)) body-env)))]))
       
       (define (args-s->z env args)
 	(let-values ([(maker ids)
@@ -160,8 +160,8 @@
 				 (list (syntax id)))]
 			[(id ...)
 			 (values make-list-arglist (syntax->list args))]
-			[_else (let loop ([args args])
-				 (values make-ilist-arglist
+			[_else (values make-ilist-arglist
+				       (let loop ([args args])
 					 (syntax-case args ()
 					   [id (identifier? args) (list args)]
 					   [(id . rest)
@@ -171,7 +171,7 @@
 			(make-binding
 			 id
 			 (mk-back)
-			 (gensym)
+			 (gensym (syntax-e id))
 			 (syntax-e id)))
 		      ids)])
 	    (values
@@ -180,7 +180,7 @@
 
       (define (syntax->zodiac stx)
 	(define slot-table (make-hash-table))
-	
+
 	(if (eof-object? stx)
 	    stx
 	    (let loop ([stx stx][env null][trans? #f])
@@ -193,15 +193,21 @@
 		       (make-bound-varref
 			stx
 			(mk-back)
-			(syntax-e stx)
+			(binding-var (cdr a))
 			(cdr a))
 		       ;; Top-level (or module) reference:
-		       (make-top-level-varref
-			stx
-			(mk-back)
-			(syntax-e stx)
-			(get-slot stx slot-table))))]
-		
+		       (let ([b ((if trans?
+				     identifier-transformer-binding
+				     identifier-binding)
+				 stx)])
+			 (make-top-level-varref
+			  stx
+			  (mk-back)
+			  (if (pair? b)
+			       (cdr b)
+			       (syntax-e stx))
+			  (and (pair? b) (car b))
+			  (get-slot stx slot-table)))))]
 
 		[(#%unbound . id)
 		 ;; Top-level (or module) reference:
@@ -209,6 +215,7 @@
 		  stx
 		  (mk-back)
 		  (syntax-e (syntax id))
+		  #f
 		  (get-slot (syntax id) slot-table))]
 
 		[(#%datum . val)
@@ -224,11 +231,15 @@
 		  stx
 		  (mk-back)
 		  (map (lambda (stx)
-			 (make-top-level-varref
-			  stx
-			  (mk-back)
-			  (syntax-e stx)
-			  (get-slot stx slot-table)))
+			 (let ([b (identifier-binding stx)])
+			   (make-top-level-varref
+			    stx
+			    (mk-back)
+			    (if (pair? b)
+				(cdr b)
+				(syntax-e stx))
+			    (and (pair? b) (car b))
+			    (get-slot stx slot-table))))
 		       (syntax->list (syntax names)))
 		  (loop (syntax rhs) null #f))]
 		
@@ -336,6 +347,14 @@
 			 (loop x env trans?))
 		       (syntax->list (syntax exprs))))]
 
+		[(if test then)
+		 (make-if-form
+		  stx
+		  (mk-back)
+		  (loop (syntax test) env trans?)
+		  (loop (syntax then) env trans?)
+		  (loop (syntax (#%app void)) env trans?))]
+
 		[(if test then else)
 		 (make-if-form
 		  stx
@@ -352,6 +371,11 @@
 		  (loop (syntax v) env trans?)
 		  (loop (syntax body) env trans?))]
 
+		[(#%app)
+		 (make-quote-form
+		  (syntax/loc stx ())
+		  (mk-back)
+		  (make-read (quote-syntax ())))]
 		[(#%app func arg ...)
 		 (make-app
 		  stx
@@ -508,13 +532,13 @@
       (define (zodiac-finish z) z)
 
       (define (location-line z)
-	(syntax-line (zodiac-stx z)))
+	(and (zodiac-stx z) (syntax-line (zodiac-stx z))))
       
       (define (location-column z)
-	(syntax-column (zodiac-stx z)))
+	(and (zodiac-stx z) (syntax-column (zodiac-stx z))))
 
       (define (location-file z)
-	(syntax-source (zodiac-stx z)))
+	(and (zodiac-stx z) (syntax-source (zodiac-stx z))))
 
       (define (read-object z)
 	(syntax-e (zodiac-stx z)))
@@ -533,9 +557,9 @@
 
       (define-struct (varref struct:parsed) (var))
 
-      (define-struct (top-level-varref struct:varref) (slot))
-      (define (create-top-level-varref z var slot)
-	(make-top-level-varref (zodiac-stx z) var slot))
+      (define-struct (top-level-varref struct:varref) (module slot))
+      (define (create-top-level-varref z var module slot)
+	(make-top-level-varref (zodiac-stx z) var module slot))
 
       (define-struct (bound-varref struct:varref) (binding))
       (define (create-bound-varref z var binding)

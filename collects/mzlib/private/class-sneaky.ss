@@ -1340,7 +1340,7 @@
 		   [method-names (append (reverse public-names) super-method-ids)]
 		   [field-names (append public-field-names super-field-ids)]
 		   [super-interfaces (cons (class-self-interface super) interfaces)]
-		   [i (interface-make name super-interfaces method-names #f)]
+		   [i (interface-make name super-interfaces #f method-names #f)]
 		   [methods (if no-method-changes?
 				(class-methods super)
 				(make-vector method-width))]
@@ -1374,6 +1374,7 @@
 				   (if (vector-ref (class-meth-flags c) n)
 				       (vector-ref (class-methods c) n)
 				       #f)))])
+	      (setup-all-implemented! i)
 	      (vector-set! (class-supers c) (add1 (class-pos super)) c)
 
 	      ;; --- Make the new object struct ---
@@ -1527,11 +1528,12 @@
 	       `(var ...)))))])))
 
   (define-struct interface 
-                 (name         ; symbol
-                  supers       ; (listof interface)
-                  public-ids   ; (listof symbol) (in any order?!?)
-                  class)       ; (union #f class) -- means that anything implementing
-                               ; this interface must be derived from this class
+                 (name            ; symbol
+                  supers          ; (listof interface)
+		  all-implemented ; hash-table: interface -> #t
+                  public-ids      ; (listof symbol) (in any order?!?)
+                  class)          ; (union #f class) -- means that anything implementing
+                                  ; this interface must be derived from this class
                  insp)
 
   (define (compose-interface name supers vars)
@@ -1578,7 +1580,22 @@
 	    (interface-public-ids super)))
 	 supers)
 	;; Done
-	(interface-make name supers (hash-table-map ht (lambda (k v) k)) class))))
+	(let ([i (interface-make name supers #f (hash-table-map ht (lambda (k v) k)) class)])
+	  (setup-all-implemented! i)
+	  i))))
+
+  ;; setup-all-implemented! : interface -> void
+  ;;  Creates the hash table for all implemented interfaces
+  (define (setup-all-implemented! i)
+    (let ([ht (make-hash-table)])
+      (hash-table-put! ht i #t)
+      (for-each (lambda (si)
+		  (hash-table-for-each
+		   (interface-all-implemented si)
+		   (lambda (k v)
+		     (hash-table-put! ht k #t))))
+		(interface-supers i))
+      (set-interface-all-implemented! i ht)))
 
   (define (get-implement-requirement interfaces where for)
     (let loop ([class #f]
@@ -1609,7 +1626,8 @@
       make-))
   
   (define object<%> ((make-naming-constructor struct:interface 'interface:object%)
-		     'object% null null #f))
+		     'object% null #f null #f))
+  (setup-all-implemented! object<%>)
   (define object% ((make-naming-constructor struct:class 'class:object%)
 		   'object%
 		   0 (vector #f) 
@@ -2212,9 +2230,7 @@
     (unless (interface? i)
       (raise-type-error 'interface-extension? "interface" 1 v i))
     (and (interface? i)
-	 (let loop ([v v])
-	   (or (eq? v i)
-	       (ormap loop (interface-supers v))))))
+	 (hash-table-get (interface-all-implemented v) i (lambda () #f))))
   
   (define (method-in-interface? s i)
     (unless (symbol? s)

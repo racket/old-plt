@@ -35,8 +35,17 @@ LDFLAGS = $(XLIB)
 ###########################
 
 LOCALFLAGS_wx_xt =
-LOCALFLAGS_wx_mac = -MMD -DWX_CARBON
+LOCALFLAGS_wx_mac = -DWX_CARBON
 LOCALFLAGS = $(LOCALFLAGS_@WXVARIANT@)
+
+CXXDEPFLAGS_wx_xt =
+CXXDEPFLAGS_wx_mac = -MMD
+CXXDEPFLAGS = $(LOCALFLAGS_@WXVARIANT@)
+
+# For some reason, gcc 3.1 for Mac OS X doesn't like -MMD; we use -MM
+CDEPFLAGS_wx_xt =
+CDEPFLAGS_wx_mac = -MM
+CDEPFLAGS = $(LOCALFLAGS_@WXVARIANT@)
 
 WXSCFLAGS = $(CFLAGS)
 
@@ -201,13 +210,13 @@ $(srcdir)/wxs_styl.cxx : $(srcdir)/wxs_styl.xc  $(XCDEPEND)
 $(srcdir)/wxs_win.cxx : $(srcdir)/wxs_win.xc $(srcdir)/wxs_win.xci $(XCDEPEND)
 	if [ "$(PERL)" = '' ] ; then touch $(srcdir)/wxs_win.cxx ; else $(XCTOCXX) $(srcdir)/wxs_win.xc ; fi
 
-WXSCC = $(CXX) $(WXSCFLAGS) $(LOCALFLAGS) -c
+WXSCC = $(CXX) $(WXSCFLAGS) $(CXXDEPFLAGS) $(LOCALFLAGS) -c
 
 wxscheme.o : $(srcdir)/wxscheme.cxx $(WXSCHEMEHEADERS) $(MEDIAHEADERS) $(DCHEADERS) $(srcdir)/wxsmred.h
 	$(WXSCC) $(srcdir)/wxscheme.cxx -o wxscheme.o 
 
 xcglue.o : $(srcdir)/../../mzscheme/utils/xcglue.c $(srcdir)/../../mzscheme/utils/xcglue.h $(WXSCHEMEHEADERS)
-	$(CC) $(WXSCFLAGS) $(LOCALFLAGS) -c $(srcdir)/../../mzscheme/utils/xcglue.c -o xcglue.o
+	$(CC) $(WXSCFLAGS) $(CDEPFLAGS) $(LOCALFLAGS) -c $(srcdir)/../../mzscheme/utils/xcglue.c -o xcglue.o
 
 wxs_bmap.o : $(srcdir)/wxs_bmap.cxx $(WXSCHEMEHEADERS)
 	$(WXSCC) $(srcdir)/wxs_bmap.cxx -o wxs_bmap.o

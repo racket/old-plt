@@ -4,27 +4,33 @@ Check Syntax separates four classes of identifiers:
 
   - bound by a macro whose definition is in this file
      
-     Found in origin fields; identifier-binding
-     returns #f for these
+     Found in origin fields except those that are module-identifier=? 
+     to a 'disappeared-use variable that is 'bound-as-variable
+
+     identifier-binding returns #f for these
   
   - bound by a macro whose definition comes from `require'
 
-     Found in origin fields; identifier-binding
-     identifies the incoming module
-  
+     Found in origin fields except those that are module-identifier=? 
+     to a 'disappeared-use variable that is 'bound-as-variable
+
+     identifier-binding identifies the incoming module
+
   - regular variable whose definition is in this file
   
     variables in fully expanded text where
     identifier-binding returns #f
-  
+
+    also found in origin fields when they are module-identifier=? 
+    to a 'disappeared-use variable that is 'bound-as-variable
+
   - regular variable whose definition comes from `require'
 
     variables in fully expanded text where
     identifier-binding identifies the input module.
-    
- In addition, the syntax properties 'disappeared-binding
- and 'disappeared-use specify additional members of the 
- 3rd category.
+
+    also found in origin fields when they are module-identifier=? 
+    to a 'disappeared-use variable that is 'bound-as-variable
 
  Variables inside #%top are treated specially. 
  If the namespace has a binding for them, they are colored bound color.
@@ -1323,8 +1329,8 @@ Check Syntax separates four classes of identifiers:
             (let ([loop (lambda (sexp) (level-loop sexp high-level?))]
                   [collect-general-info
                    (lambda (stx)
-                     (add-macrefs stx (if high-level? high-macrefs macrefs))
-                     (add-disappeared-bindings stx binders mac-binders (if high-level? high-macrefs macrefs))
+                     (add-origins stx disappeared-refs)
+                     (add-disappeared-bindings stx binders mac-binders disappeared-refs)
                      (add-disappeared-uses stx disappeared-refs))])
               (collect-general-info sexp)
               (syntax-case* sexp (lambda case-lambda if begin begin0 let-values letrec-values set!
@@ -1512,7 +1518,7 @@ Check Syntax separates four classes of identifiers:
           (add-tail-ht-links tail-ht)))
 
       ;; add-disappeared-bindings : syntax id-set id-set -> void
-      (define (add-disappeared-bindings stx binders mac-binders macrefs-id-set)
+      (define (add-disappeared-bindings stx binders mac-binders disappaeared-uses)
         (let ([prop (syntax-property stx 'disappeared-binding)])
           (when prop
             (let loop ([prop prop])
@@ -1521,7 +1527,7 @@ Check Syntax separates four classes of identifiers:
                  (loop (car prop))
                  (loop (cdr prop))]
                 [(identifier? prop)
-                 (add-macrefs prop macrefs-id-set)
+                 (add-origins prop disappaeared-uses)
                  (if (syntax-property prop 'bind-as-variable)
                      (add-id binders prop)
                      (add-id mac-binders prop))])))))
@@ -1892,8 +1898,8 @@ Check Syntax separates four classes of identifiers:
                                  test)))
                         possible-suffixes)))))
 
-      ;; add-macrefs : sexp id-set -> void
-      (define (add-macrefs sexp id-set)
+      ;; add-origins : sexp id-set -> void
+      (define (add-origins sexp id-set)
         (let ([origin (syntax-property sexp 'origin)])
           (when origin
             (let loop ([ct origin])

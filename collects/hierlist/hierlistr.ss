@@ -217,7 +217,9 @@
 	      [(null? l) (error 'hierarchical-list-compound-item::delete-item "item not found: ~a" i)]
 	      [(eq? (send (car l) get-item) i)
 	       (set! children (append (reverse others) (cdr l)))
-	       (delete (sub1 (line-start-position pos)) (line-end-position pos))]
+	       (let ([s (line-start-position pos)]
+		     [e (line-end-position pos)])
+		 (delete (if (zero? s) s (sub1 s)) (if (zero? s) (add1 e) e)))]
 	      [else (loop (add1 pos) (cdr l) (cons (car l) others))])))]
 	[on-default-char void]
 	[on-default-event void])

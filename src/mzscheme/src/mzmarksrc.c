@@ -650,12 +650,12 @@ modidx_val {
  mark:
   Scheme_Modidx *modidx = (Scheme_Modidx *)p;
 
-  gcMARK(m->path);
-  gcMARK(m->base);
-  gcMARK(m->resolved);
-  gcMARK(m->shift_cache);
+  gcMARK(modidx->path);
+  gcMARK(modidx->base);
+  gcMARK(modidx->resolved);
+  gcMARK(modidx->shift_cache);
  size:
-  gcBYTES_TO_WORDS(sizeof(Scheme_Module));
+  gcBYTES_TO_WORDS(sizeof(Scheme_Modidx));
 }
 
 END type;

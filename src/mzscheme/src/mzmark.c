@@ -1528,29 +1528,29 @@ int module_val_FIXUP(void *p) {
 
 int modidx_val_SIZE(void *p) {
   return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Module));
+  gcBYTES_TO_WORDS(sizeof(Scheme_Modidx));
 }
 
 int modidx_val_MARK(void *p) {
   Scheme_Modidx *modidx = (Scheme_Modidx *)p;
 
-  gcMARK(m->path);
-  gcMARK(m->base);
-  gcMARK(m->resolved);
-  gcMARK(m->shift_cache);
+  gcMARK(modidx->path);
+  gcMARK(modidx->base);
+  gcMARK(modidx->resolved);
+  gcMARK(modidx->shift_cache);
   return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Module));
+  gcBYTES_TO_WORDS(sizeof(Scheme_Modidx));
 }
 
 int modidx_val_FIXUP(void *p) {
   Scheme_Modidx *modidx = (Scheme_Modidx *)p;
 
-  gcFIXUP(m->path);
-  gcFIXUP(m->base);
-  gcFIXUP(m->resolved);
-  gcFIXUP(m->shift_cache);
+  gcFIXUP(modidx->path);
+  gcFIXUP(modidx->base);
+  gcFIXUP(modidx->resolved);
+  gcFIXUP(modidx->shift_cache);
   return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Module));
+  gcBYTES_TO_WORDS(sizeof(Scheme_Modidx));
 }
 
 

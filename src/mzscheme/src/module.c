@@ -508,8 +508,9 @@ Scheme_Object *scheme_modidx_shift(Scheme_Object *modidx,
 	int j;
 
 	naya = scheme_make_vector(c + 10, NULL);
-	for (j = 0; j < c; j++)
+	for (j = 0; j < c; j++) {
 	  SCHEME_VEC_ELS(naya)[j] = SCHEME_VEC_ELS(old)[j];
+	}
 	sbm->shift_cache = naya;
       }
 

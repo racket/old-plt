@@ -50,6 +50,7 @@
   (define-struct search-player (x y id money capacity packages))
   
 	(define (update-robots robot-list p)
+          (printf "robot-list given: ~a~n" robot-list)
           (robots robot-list)
           (player-cur p)
           )
@@ -284,9 +285,10 @@
 	(define-syntax is-robot?
 	  (syntax-rules ()
 			((_ board x y)
-                         
+                         (begin
+                           (printf "Robot-list used: ~a~n")
 			 (and (not (null (filter (lambda (rob) (= x (robot-x rob)) (= y (robot-y rob))) (robots))))
-                              (not (and (= (search-player-x (player-cur)) x) (= (search-player-y (player-cur)) y))) ))))
+                              (not (and (= (search-player-x (player-cur)) x) (= (search-player-y (player-cur)) y))) )))))
 
   
   (define (is-robot-within? x y n robots)

@@ -324,6 +324,7 @@ System_Child *scheme_system_children;
 
 static Scheme_Object *input_port_p (int, Scheme_Object *[]);
 static Scheme_Object *output_port_p (int, Scheme_Object *[]);
+static Scheme_Object *file_stream_port_p (int, Scheme_Object *[]);
 static Scheme_Object *current_input_port (int, Scheme_Object *[]);
 static Scheme_Object *current_output_port (int, Scheme_Object *[]);
 static Scheme_Object *current_error_port (int, Scheme_Object *[]);
@@ -342,6 +343,7 @@ static Scheme_Object *read_char (int, Scheme_Object *[]);
 static Scheme_Object *read_line (int, Scheme_Object *[]);
 static Scheme_Object *read_string (int, Scheme_Object *[]);
 static Scheme_Object *read_string_bang (int, Scheme_Object *[]);
+static Scheme_Object *write_string_avail(int argc, Scheme_Object *argv[]);
 static Scheme_Object *peek_char (int, Scheme_Object *[]);
 static Scheme_Object *eof_object_p (int, Scheme_Object *[]);
 static Scheme_Object *char_ready_p (int, Scheme_Object *[]);
@@ -391,6 +393,8 @@ static Scheme_Object *tcp_accept_ready(int argc, Scheme_Object *argv[]);
 static Scheme_Object *tcp_accept(int argc, Scheme_Object *argv[]);
 static Scheme_Object *tcp_listener_p(int argc, Scheme_Object *argv[]);
 static Scheme_Object *tcp_addresses(int argc, Scheme_Object *argv[]);
+
+static int tcp_write_nb_string(char *s, long len, long offset, int rarely_block, Scheme_Output_Port *port);
 #endif
 
 static Scheme_Object *sch_default_read_handler(int argc, Scheme_Object *argv[]);
@@ -707,6 +711,12 @@ scheme_init_port (Scheme_Env *env)
 						      1, 1, 1), 
 			     env);
   
+  scheme_add_global_constant("file-stream-port?", 
+			     scheme_make_folding_prim(file_stream_port_p, 
+						      "file-stream-port?", 
+						      1, 1, 1), 
+			     env);
+  
   scheme_add_global_constant("current-input-port", 
 			     scheme_register_parameter(current_input_port,
 						       "current-input-port",
@@ -813,10 +823,15 @@ scheme_init_port (Scheme_Env *env)
 						      "read-string", 
 						      1, 2), 
 			     env);
-  scheme_add_global_constant("read-string!", 
+  scheme_add_global_constant("read-string-avail!", 
 			     scheme_make_prim_w_arity(read_string_bang, 
-						      "read-string!", 
+						      "read-string-avail!", 
 						      1, 4), 
+			     env);
+  scheme_add_global_constant("write-string-avail", 
+			     scheme_make_prim_w_arity(write_string_avail, 
+						      "write-string-avail", 
+						      1, 4),
 			     env);
   scheme_add_global_constant("peek-char", 
 			     scheme_make_prim_w_arity(peek_char, 
@@ -1470,17 +1485,22 @@ scheme_getc (Scheme_Object *port)
 }
 
 long 
-scheme_get_chars(Scheme_Object *port, long size, char *buffer)
+scheme_get_chars(Scheme_Object *port, long size, char *buffer, int offset)
 {
   Scheme_Input_Port *ip;
   long got = 0, i, c;
   long orig_size;
   int only_avail;
-  int use_getc = 0;
+  int use_getc;
+
+  /* If size is negative, that means get up to -size characters,
+     blocking only if necessary to get at least one. */
 
   if (size < 0) {
     only_avail = 1;
     size = -size;
+  } else if (!size) {
+    return 0;
   } else {
     only_avail = 0;
   }
@@ -1506,12 +1526,13 @@ scheme_get_chars(Scheme_Object *port, long size, char *buffer)
     s = (unsigned char *)ip->ungotten;
     size -= l;
     while (l--) {
-      buffer[got++] = s[--i];
+      buffer[offset + got++] = s[--i];
     }
     
     ip->ungotten_count = i;
   }
 
+  use_getc = 0;
   if (size) {
     if (SAME_OBJ(ip->sub_type, file_input_port_type)
 	&& ((Scheme_Input_File *)ip->port_data)->regfile) {
@@ -1519,9 +1540,9 @@ scheme_get_chars(Scheme_Object *port, long size, char *buffer)
 #ifdef MZ_PRECISE_GC
       /* In case page is protected, force removal of protection. */
       /* (But it really should be atomic, and thus never protected.) */
-      buffer[got] = 0;
+      buffer[offset + got] = 0;
 #endif
-      got += fread(buffer + got, 1, size, f);
+      got += fread(buffer + offset + got, 1, size, f);
     } else if (SAME_OBJ(ip->sub_type, string_input_port_type)) {
       Scheme_Indexed_String *is;
       long l;
@@ -1533,22 +1554,39 @@ scheme_get_chars(Scheme_Object *port, long size, char *buffer)
       else
 	l = (is->size - is->index);
       
-      memcpy(buffer + got, is->string + is->index, l);
+      memcpy(buffer + offset + got, is->string + is->index, l);
       is->index += l;
       
       got += l;
+    } else if (SAME_OBJ(ip->sub_type, user_input_port_type)) {
+      if (only_avail) {
+	/* We don't try to implement an efficient `read-string-avail!' on
+	   user ports. Instead, we set the size to 1, and use good ole
+	   `read-string' if a char is still needed. */
+	if (got > 0) {
+	  orig_size = got; /* pretend it's what they asked for */
+	} else {
+	  size = 1;
+	  only_avail = 0;
+	  use_getc = 1;
+	}
+      }
+      use_getc = 1;
     } else {
       /* use getc: */
       use_getc = 1;
     }
   }
 
-  /* read-string-avail! on a generic port? */
+  /*******************************************/
+  /* `read-string-avail!' on a generic port? */
+  /*******************************************/
   if (use_getc && only_avail) {
-    /* Get more characters the semi-hard way:. */
+    /* Get more characters the semi-hard way. */
     /* The call to getc can only block/escape if we haven't gotten any
        characters yet. So we can still use direct calls, the fast
        position adjust, etc. */
+    /* We have special fast paths for fd and TCP ports. */
     int c;
     Getc_Fun f = ip->getc_fun;
     Char_Ready_Fun cr = ip->char_ready_fun;
@@ -1591,7 +1629,7 @@ scheme_get_chars(Scheme_Object *port, long size, char *buffer)
 	     ? size
 	     : fip->bufcount);
 	  
-	memcpy(buffer + got, fip->buffer + fip->buffpos, n);
+	memcpy(buffer + offset + got, fip->buffer + fip->buffpos, n);
 	fip->buffpos += n;
 	fip->bufcount -= n;
 	got += n;
@@ -1607,7 +1645,7 @@ scheme_get_chars(Scheme_Object *port, long size, char *buffer)
 	     ? size
 	     : n);
 	  
-	memcpy(buffer + got, data->buffer + data->bufpos, n);
+	memcpy(buffer + offset + got, data->buffer + data->bufpos, n);
 	data->bufpos += n;
 	got += n;
 	size -= n;
@@ -1616,7 +1654,7 @@ scheme_get_chars(Scheme_Object *port, long size, char *buffer)
 	{
 	  c = f(ip);
 	  if (c != EOF) {
-	    buffer[got++] = c;
+	    buffer[offset + got++] = c;
 	    --size;
 	  } else
 	    break;
@@ -1627,10 +1665,12 @@ scheme_get_chars(Scheme_Object *port, long size, char *buffer)
     use_getc = 0;
   }
   
-  /* Adjust position information for chars got so far: */
+  /****************************************************/
+  /* Adjust position information for chars got so far */
+  /****************************************************/
   ip->position += got;
   for (i = got, c = 0; i--; c++) {
-    if (buffer[i] == '\n' || buffer[i] == '\r') {
+    if (buffer[offset + i] == '\n' || buffer[offset + i] == '\r') {
       break;
     }
   }
@@ -1638,14 +1678,21 @@ scheme_get_chars(Scheme_Object *port, long size, char *buffer)
     int n = 0;
     ip->charsSinceNewline = c + 1;
     while (i--) {
-      if (buffer[i] == '\n' || buffer[i] == '\r')
+      if (buffer[offset + i] == '\n' || buffer[offset + i] == '\r')
 	n++;
     }
     ip->lineNumber += n;
   } else
     ip->charsSinceNewline += c;
 
-  /* read-string on a generic port? */
+  if (!use_getc 
+      && (got < orig_size) 
+      && (!only_avail || !got))
+    ip->eoffound = 1;
+
+  /************************************/
+  /* `read-string' on a generic port? */
+  /************************************/
   if (use_getc) {
     /* Get more characters the hard way: */
     int c;
@@ -1653,14 +1700,11 @@ scheme_get_chars(Scheme_Object *port, long size, char *buffer)
     while (size--) {
       c = scheme_getc((Scheme_Object *)ip);
       if (c != EOF)
-	buffer[got++] = c;
+	buffer[offset + got++] = c;
       else
 	break;
     }
   }
-
-  if ((got < orig_size) && (!only_avail || !got))
-    ip->eoffound = 1;
 
   END_LOCK_PORT(ip->sema);
 
@@ -3166,19 +3210,7 @@ user_getc (Scheme_Input_Port *port)
 
   fun = ((Scheme_Object **) port->port_data)[0];
 
-  if (scheme_return_eof_for_error()) {
-    mz_jmp_buf savebuf;
-    memcpy(&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf));
-    if (!scheme_setjmp(scheme_error_buf)) {
-      val = _scheme_apply(fun, 0, NULL);
-    } else {
-      scheme_clear_escape();
-      val = scheme_eof;
-    }
-    memcpy(&scheme_error_buf, &savebuf, sizeof(mz_jmp_buf));
-  } else {
-    val = _scheme_apply(fun, 0, NULL);
-  }
+  val = _scheme_apply(fun, 0, NULL);
 
   if (SCHEME_EOFP(val))
     return EOF;
@@ -3262,7 +3294,12 @@ file_write_string(char *str, long len, Scheme_Output_Port *port)
 
   while (len--) {
     if (*str == '\n' || *str == '\r') {
-      fflush(fp);
+      if (fflush(fp)) {
+	scheme_raise_exn(MZEXN_I_O_PORT_WRITE,
+			 port,
+			 "error flushing file port (%d)",
+			 errno);
+      }
       break;
     }
     str++;
@@ -3374,15 +3411,16 @@ static void release_flushing_lock(Scheme_Process *p)
   fop->flushing = 0;
 }
 
-static void flush_fd(Scheme_Output_Port *op, char * volatile bufstr, volatile int buflen)
+static int flush_fd(Scheme_Output_Port *op, 
+		    char * volatile bufstr, volatile int buflen, 
+		    volatile int offset, int immediate_only)
 {
   Scheme_FD * volatile fop = (Scheme_FD *)op->port_data;
-  volatile int offset = 0;
 
   if (fop->flushing) {
     if (force_port_closed) {
       /* Give up */
-      return;
+      return 0;
     }
     wait_until_fd_flushed(op);
   }
@@ -3396,7 +3434,8 @@ static void flush_fd(Scheme_Output_Port *op, char * volatile bufstr, volatile in
     fop->flushing = 1;
     fop->bufcount = 0;
     /* If write is interrupted, we drop chars on the floor.
-       Not ideal, but we'll go with it for now. */
+       Not ideal, but we'll go with it for now.
+       Note that write_string_avail supports break-reliable output. */
 
     while (1) {
       long len;
@@ -3411,7 +3450,7 @@ static void flush_fd(Scheme_Output_Port *op, char * volatile bufstr, volatile in
       if (len < 0) {
 	if (force_port_closed) {
 	  /* Don't signal exn or wait. Just give up. */
-	  return;
+	  return 0;
 	} else if (errsaved == EAGAIN) {
 	  /* Need to block; messy because we're holding a lock. */
 	  mz_jmp_buf savebuf;
@@ -3438,16 +3477,17 @@ static void flush_fd(Scheme_Output_Port *op, char * volatile bufstr, volatile in
 			   op,
 			   "error writing to stream port (%d)",
 			   errno);
-	  return;
+	  return 0;
 	}
-      } else if (len + offset == buflen)
-	break;
-      else
+      } else if ((len + offset == buflen) || immediate_only) {
+	fop->flushing = 0;
+	return len;
+      } else
 	offset += len;
     }
-
-    fop->flushing = 0;
   }
+
+  return 0;
 }
 
 static void
@@ -3470,19 +3510,19 @@ fd_write_string(char *str, long len, Scheme_Output_Port *port)
     fop->bufcount += len;
   } else {
     if (fop->bufcount)
-      flush_fd(port, NULL, 0);
+      flush_fd(port, NULL, 0, 0, 0);
     if (len <= MZPORT_FD_BUFFSIZE) {
       memcpy(fop->buffer, str, len);
       fop->bufcount = len;
     } else {
-      flush_fd(port, str, len);
+      flush_fd(port, str, len, 0, 0);
       return; /* Don't check for flush */
     }
   }
 
   while (len--) {
     if (*str == '\n' || *str == '\r') {
-      flush_fd(port, NULL, 0);
+      flush_fd(port, NULL, 0, 0, 0);
       break;
     }
     str++;
@@ -3495,7 +3535,7 @@ fd_close_output(Scheme_Output_Port *port)
   Scheme_FD *fop = (Scheme_FD *)port->port_data;
 
   if (fop->bufcount)
-    flush_fd(port, NULL, 0);
+    flush_fd(port, NULL, 0, 0, 0);
 
   if (fop->flushing && !force_port_closed)
     wait_until_fd_flushed(port);
@@ -3575,6 +3615,36 @@ static Scheme_Object *
 output_port_p (int argc, Scheme_Object *argv[])
 {
   return (SCHEME_OUTPORTP(argv[0]) ? scheme_true : scheme_false);
+}
+
+static Scheme_Object *
+file_stream_port_p (int argc, Scheme_Object *argv[])
+{
+  Scheme_Object *p = argv[0];
+
+  if (SCHEME_INPORTP(p)) {
+    Scheme_Input_Port *ip = (Scheme_Input_Port *)p;
+
+    if (SAME_OBJ(ip->sub_type, file_input_port_type))
+      return scheme_true;
+#ifdef USE_FD_PORTS
+    else if (SAME_OBJ(ip->sub_type, fd_input_port_type))
+      return scheme_true;
+#endif
+  } else if (SCHEME_OUTPORTP(p)) {
+    Scheme_Output_Port *op = (Scheme_Output_Port *)p;
+
+    if (SAME_OBJ(op->sub_type, file_output_port_type))
+      return scheme_true;
+#ifdef USE_FD_PORTS
+    else if (SAME_OBJ(op->sub_type, fd_output_port_type))
+      return scheme_true;
+#endif    
+  } else {
+    scheme_wrong_type("file-stream-port?", "port", 0, argc, argv);
+  }
+
+  return scheme_false;
 }
 
 #define CURRENT_INPUT_PORT(config) scheme_get_param(config, MZCONFIG_INPUT_PORT)
@@ -4084,7 +4154,7 @@ static void flush_orig_outputs(void)
   op = (Scheme_Output_Port *)scheme_orig_stdout_port;
 #ifdef USE_FD_PORTS
   if (SAME_OBJ(op->sub_type, fd_output_port_type))
-    flush_fd(op, NULL, 0);
+    flush_fd(op, NULL, 0, 0, 0);
   else
 #endif
     if (SAME_OBJ(op->sub_type, file_output_port_type))
@@ -4093,7 +4163,7 @@ static void flush_orig_outputs(void)
   op = (Scheme_Output_Port *)scheme_orig_stderr_port;
 #ifdef USE_FD_PORTS
   if (SAME_OBJ(op->sub_type, fd_output_port_type))
-    flush_fd(op, NULL, 0);
+    flush_fd(op, NULL, 0, 0, 0);
   else
 #endif
     if (SAME_OBJ(op->sub_type, file_output_port_type))
@@ -4304,7 +4374,7 @@ read_string(int argc, Scheme_Object *argv[])
 
   str = scheme_alloc_string(size, 0);
 
-  got = scheme_get_chars(port, size, SCHEME_STR_VAL(str));
+  got = scheme_get_chars(port, size, SCHEME_STR_VAL(str), 0);
 
   if (!got)
     return scheme_eof;
@@ -4324,14 +4394,14 @@ read_string_bang(int argc, Scheme_Object *argv[])
   long size, start, finish, got;
 
   if (!SCHEME_MUTABLE_STRINGP(argv[0])) {
-    scheme_wrong_type("read-string!", "mutable-string", 0, argc, argv);
+    scheme_wrong_type("read-string-avail!", "mutable-string", 0, argc, argv);
     return NULL;
   } else
     str = argv[0];
   if ((argc > 1) && !SCHEME_INPORTP(argv[1]))
-    scheme_wrong_type("read-string!", "input-port", 1, argc, argv);
+    scheme_wrong_type("read-string-avail!", "input-port", 1, argc, argv);
   
-  scheme_get_substring_indices("read-string!", str, 
+  scheme_get_substring_indices("read-string-avail!", str, 
 			       argc, argv,
 			       2, 3, &start, &finish);
 
@@ -4348,12 +4418,78 @@ read_string_bang(int argc, Scheme_Object *argv[])
   if (!size)
     return scheme_make_integer(0);
 
-  got = scheme_get_chars(port, -size, SCHEME_STR_VAL(str) + start);
+  got = scheme_get_chars(port, -size, SCHEME_STR_VAL(str), start);
 
   if (!got)
     return scheme_eof;
 
   return scheme_make_integer(got);
+}
+
+static Scheme_Object *
+write_string_avail(int argc, Scheme_Object *argv[])
+{
+  Scheme_Object *port, *str;
+  long size, start, finish, putten;
+  Scheme_Output_Port *op;
+
+  if (!SCHEME_STRINGP(argv[0])) {
+    scheme_wrong_type("write-string-avail", "string", 0, argc, argv);
+    return NULL;
+  } else
+    str = argv[0];
+  if ((argc > 1) && !SCHEME_OUTPORTP(argv[1]))
+    scheme_wrong_type("write-string-avail", "output-port", 1, argc, argv);
+  
+  scheme_get_substring_indices("write-string-avail", str, 
+			       argc, argv,
+			       2, 3, &start, &finish);
+
+  size = finish - start;
+
+  if (argc > 1)
+    port = argv[1];
+  else
+    port = CURRENT_OUTPUT_PORT(scheme_config);
+
+  op = (Scheme_Output_Port *)port;
+
+  check_closed("write-string-avail", "output", port, op->closed);
+  
+  scheme_flush_output(port);
+
+  if (!size)
+    return scheme_make_integer(0);
+
+  if (SAME_OBJ(op->sub_type, tcp_output_port_type)) {
+    /* TCP ports */
+    putten = tcp_write_nb_string(SCHEME_STR_VAL(str), size, start, 1, op);
+#ifdef USE_FD_PORTS
+  } else if (SAME_OBJ(op->sub_type, fd_output_port_type)) {
+    /* fd ports */
+    putten = flush_fd(op, SCHEME_STR_VAL(str), size + start, start, 1);
+#endif
+  } else if (SAME_OBJ(op->sub_type, file_output_port_type)) {
+    /* FILE ports */
+    putten = 0;
+  } else {
+    /* General case; use scheme_write_string */
+    putten = size;
+    if (start & 0x1) {
+      /* For precise GC, write first char, then we
+	 can offset the string pointer. */
+      char str2[1];
+      str2[1] = SCHEME_STR_VAL(str)[start];
+      scheme_write_string(str2, 1, port);
+      size--;
+      start++;
+    }
+    if (size) {
+      scheme_write_string(SCHEME_STR_VAL(str) + start, size, port);
+    }
+  }
+
+  return scheme_make_integer(putten);
 }
 
 static Scheme_Object *
@@ -4969,7 +5105,7 @@ transcript_off(int argc, Scheme_Object *argv[])
 }
 
 static Scheme_Object *
-_flush_output(int argc, Scheme_Object *argv[])
+flush_output(int argc, Scheme_Object *argv[])
 {
   Scheme_Output_Port *op;
 
@@ -4981,20 +5117,20 @@ _flush_output(int argc, Scheme_Object *argv[])
   else
     op = (Scheme_Output_Port *)CURRENT_OUTPUT_PORT(scheme_config);
 
-  if (SAME_OBJ(op->sub_type, file_output_port_type))
-    fflush (((Scheme_Output_File *)op->port_data)->f);
+  if (SAME_OBJ(op->sub_type, file_output_port_type)) {
+    if (fflush(((Scheme_Output_File *)op->port_data)->f)) {
+      scheme_raise_exn(MZEXN_I_O_PORT_WRITE,
+		       op,
+		       "error flushing file port (%d)",
+		       errno);
+    }
+  }
 #ifdef USE_FD_PORTS
   if (SAME_OBJ(op->sub_type, fd_output_port_type))
-    flush_fd(op, NULL, 0);
+    flush_fd(op, NULL, 0, 0, 0);
 #endif
 
   return (scheme_void);
-}
-
-static Scheme_Object *
-flush_output (int argc, Scheme_Object *argv[])
-{
-  return _flush_output(argc, argv);
 }
 
 static Scheme_Object *
@@ -5002,7 +5138,10 @@ file_position(int argc, Scheme_Object *argv[])
 {
   FILE *f;
   Scheme_Indexed_String *is;
-  int fd, had_fd;
+  int fd;
+#ifdef USE_FD_PORTS
+  int had_fd;
+#endif
   int wis;
 
   if (!SCHEME_OUTPORTP(argv[0]) && !SCHEME_INPORTP(argv[0]))
@@ -5026,7 +5165,9 @@ file_position(int argc, Scheme_Object *argv[])
   is = NULL;
   wis = 0;
   fd = 0;
+#ifdef USE_FD_PORTS
   had_fd = 0;
+#endif
 
   if (SCHEME_OUTPORTP(argv[0])) {
     Scheme_Output_Port *op;
@@ -5034,9 +5175,11 @@ file_position(int argc, Scheme_Object *argv[])
     op = (Scheme_Output_Port *)argv[0];
     if (SAME_OBJ(op->sub_type, file_output_port_type))
       f = ((Scheme_Output_File *)op->port_data)->f;
+#ifdef USE_FD_PORTS
     else if (SAME_OBJ(op->sub_type, fd_output_port_type)) {
       fd = ((Scheme_FD *)op->port_data)->fd;
       had_fd = 1;
+#endif
     } else if (SAME_OBJ(op->sub_type, string_output_port_type)) {
       is = (Scheme_Indexed_String *)op->port_data;
       wis = 1;
@@ -5048,16 +5191,22 @@ file_position(int argc, Scheme_Object *argv[])
     ip = (Scheme_Input_Port *)argv[0];
     if (SAME_OBJ(ip->sub_type, file_input_port_type))
       f = ((Scheme_Input_File *)ip->port_data)->f;
+#ifdef USE_FD_PORTS
     else if (SAME_OBJ(ip->sub_type, fd_input_port_type)) {
       fd = ((Scheme_FD *)ip->port_data)->fd;
       had_fd = 1;
+#endif
     } else if (SAME_OBJ(ip->sub_type, string_input_port_type))
       is = (Scheme_Indexed_String *)ip->port_data;
     else if (argc < 2)
       return scheme_make_integer(scheme_tell(argv[0]));
   }
 
-  if (!f && !is && !had_fd)
+  if (!f
+#ifdef USE_FD_PORTS
+      && !had_fd
+#endif
+      && !is)
     scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
 		     argv[0],
 		     "file-position: setting position allowed for file-stream and string ports only;"
@@ -5082,11 +5231,12 @@ file_position(int argc, Scheme_Object *argv[])
 			 "file-position: position change failed on file (%d)",
 			 errno);
       }
+#ifdef USE_FD_PORTS
     } else if (had_fd) {
       long n = SCHEME_INT_VAL(argv[1]);
 
       if (SCHEME_OUTPORTP(argv[0])) {
-	flush_fd((Scheme_Output_Port *)argv[0], NULL, 0);
+	flush_fd((Scheme_Output_Port *)argv[0], NULL, 0, 0, 0);
       }
 
       if (lseek(fd, n, 0) < 0) {
@@ -5096,6 +5246,7 @@ file_position(int argc, Scheme_Object *argv[])
 			 "file-position: position change failed on stream (%d)",
 			 errno);
       }
+#endif
     } else {
       if (wis) {
 	if (is->index > is->u.hot)
@@ -5136,9 +5287,10 @@ file_position(int argc, Scheme_Object *argv[])
     return scheme_void;
   } else {
     long p;
-    if (f)
+    if (f) {
       p = ftell(f);
-    else if (had_fd) {
+#ifdef USE_FD_PORTS
+    } else if (had_fd) {
       p = lseek(fd, 0, 1);
       if (p < 0) {
 	if (SCHEME_INPORTP(argv[0])) {
@@ -5151,6 +5303,7 @@ file_position(int argc, Scheme_Object *argv[])
 	  p += ((Scheme_FD *)((Scheme_Output_Port *)argv[0])->port_data)->bufcount;
 	}
       }
+#endif
     } else if (wis)
       p = is->index;
     else {
@@ -5174,7 +5327,7 @@ file_position(int argc, Scheme_Object *argv[])
 
 void scheme_flush_output(Scheme_Object *port)
 {
-  (void)_flush_output(1, &port);
+  (void)flush_output(1, &port);
 }
 
 /*========================================================================*/
@@ -7180,23 +7333,26 @@ static void tcp_close_input(Scheme_Input_Port *port)
 static void tcp_write_string(char *s, long len, Scheme_Output_Port *port);
 static void tcp_close_output(Scheme_Output_Port *port);
 
-static void tcp_write_string(char *s, long len, Scheme_Output_Port *port)
+static int tcp_write_nb_string(char *s, long len, long offset, int rarely_block, Scheme_Output_Port *port)
 {
+  /* TCP writes aren't buffered at all right now. */
+  /* If rarely_block is nonzero, it means only write as much as
+     can be flushed immediately, blocking only if nothing
+     can be written. */
+
   Scheme_Tcp *data;
   int errid, would_block = 0;
-#ifdef USE_SOCKETS_TCP
   int sent;
-#endif
 
   if (!len)
-    return;
+    return 0;
 
   data = (Scheme_Tcp *)port->port_data;
 
  top:
 
 #ifdef USE_SOCKETS_TCP
-  if ((sent = send(data->tcp, s, len, 0)) != len) {
+  if ((sent = send(data->tcp, s + offset, len, 0)) != len) {
 #ifdef USE_WINSOCK_TCP
     errid = WSAGetLastError();
 # define SEND_BAD_MSG_SIZE(e) (e == WSAEMSGSIZE)
@@ -7214,14 +7370,20 @@ static void tcp_write_string(char *s, long len, Scheme_Output_Port *port)
     || (errid == EINPROGRESS) || (errid == EALREADY))
 #endif
     if (sent > 0) {
-      /* Some data was sent. Recur to handle the rest */
-      tcp_write_string(s + sent, len - sent, port);
+      /* Some data was sent. Return, or recur to handle the rest. */
+      if (rarely_block)
+	return sent;
+      else
+	tcp_write_nb_string(s, len - sent, offset + sent, rarely_block, port);
       errid = 0;
     } else if ((len > 1) && SEND_BAD_MSG_SIZE(errid)) {
       /* split the message and try again: */
       int half = (len / 2);
-      tcp_write_string(s, half, port);
-      tcp_write_string(s + half, len - half, port);
+      sent = tcp_write_nb_string(s, half, offset, rarely_block, port);
+      if (rarely_block)
+	return sent;
+      sent = tcp_write_nb_string(s, len - half, offset + half, 0, port);
+      sent += half;
       errid = 0;
     } else if (SEND_WOULD_BLOCK(errid)) {
       errid = 0;
@@ -7292,7 +7454,7 @@ static void tcp_write_string(char *s, long len, Scheme_Output_Port *port)
       e = wd->e;
 
       e[0].ptr = (Ptr)scheme_malloc_atomic(len);
-      memcpy(e[0].ptr, s, len);
+      memcpy(e[0].ptr, s + offset, len);
       e[0].length = len;
       e[1].ptr = NULL;
       e[1].length = 0;
@@ -7312,8 +7474,11 @@ static void tcp_write_string(char *s, long len, Scheme_Output_Port *port)
     } else if (!errid) {
       if (bytes) {
       	/* Do partial write: */
-        tcp_write_string(s, bytes, port);
-        tcp_write_string(s + bytes, len - bytes, port);
+        sent = tcp_write_nb_string(s, bytes, offset, rarely_block, port);
+	if (rarely_block)
+	  return sent;
+        sent = tcp_write_nb_string(s, len - bytes, offset + bytes, 0, port);
+	sent += bytes;
       } else
         would_block = 1;
     }
@@ -7335,6 +7500,13 @@ static void tcp_write_string(char *s, long len, Scheme_Output_Port *port)
 		     port,
 		     "tcp-write: error writing (%d)",
 		     errid);
+
+  return sent;
+}
+
+static void tcp_write_string(char *s, long len, Scheme_Output_Port *port)
+{
+  tcp_write_nb_string(s, len, 0, 0, port);
 }
 
 static void tcp_close_output(Scheme_Output_Port *port)

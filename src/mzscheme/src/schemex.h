@@ -349,7 +349,7 @@ void (*scheme_ungetc)(int ch, Scheme_Object *port);
 int (*scheme_char_ready)(Scheme_Object *port);
 int (*scheme_peekc_is_ungetc)(Scheme_Object *port);
 void (*scheme_need_wakeup)(Scheme_Object *port, void *fds);
-long (*scheme_get_chars)(Scheme_Object *port, long size, char *buffer);
+long (*scheme_get_chars)(Scheme_Object *port, long size, char *buffer, int offset);
 long (*scheme_tell)(Scheme_Object *port);
 long (*scheme_output_tell)(Scheme_Object *port);
 long (*scheme_tell_line)(Scheme_Object *port);

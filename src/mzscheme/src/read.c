@@ -1930,7 +1930,7 @@ static Scheme_Object *read_compiled(Scheme_Object *port,
   cp.start = (unsigned char *)scheme_malloc_atomic(size);
   cp.pos = 0;
   cp.base = scheme_tell(port);
-  if ((got = scheme_get_chars(port, size, (char *)cp.start)) != size)
+  if ((got = scheme_get_chars(port, size, (char *)cp.start, 0)) != size)
     scheme_raise_exn(MZEXN_READ,
 		     port,
 		     "read (compiled): bad count: %ld != %ld",

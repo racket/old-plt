@@ -1,7 +1,7 @@
 
 Errortrace is a poor man's stack-trace-on-exceptions/profiler for
  MzScheme.  Errortrace is not a complete debugger, and a real debugger
- in DrScheme is eminent; meanwhile, errotrace might be better than
+ in DrScheme is imminent; meanwhile, errotrace might be better than
  nothing.
 
 Quick instructions

@@ -130,6 +130,7 @@ HRESULT CDHTMLPage::AtAnyEvent(void) {
       return S_OK;
     }
 
+
     pEvent = NULL;
 
     hr = CoCreateInstance(CLSID_Event,NULL,CLSCTX_ALL,IID_IEvent,(void **)&pEvent);

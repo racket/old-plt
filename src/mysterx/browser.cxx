@@ -176,6 +176,8 @@ Scheme_Object *mx_make_browser(int argc,Scheme_Object **argv) {
     codedComError("make-browser: Can't get IWebBrowser2 interface",hr);
   }
 
+  // setup HTML event queue
+
   pIStream = NULL;
   pIDHTMLPage->marshalEventQueueToStream(&pIStream);
   
@@ -246,9 +248,9 @@ Scheme_Object *mx_make_browser(int argc,Scheme_Object **argv) {
   browser->pISink = pISink;
   browser->pIEventQueue = pIEventQueue;
 
-  scheme_add_managed((Scheme_Custodian *)scheme_get_param(scheme_config,MZCONFIG_CUSTODIAN),
+  scheme_add_managed((Scheme_Manager *)scheme_get_param(scheme_config,MZCONFIG_MANAGER),
 		     (Scheme_Object *)browser,
-		     (Scheme_Close_Custodian_Client *)scheme_release_browser,
+		     (Scheme_Close_Manager_Client *)scheme_release_browser,
 		     (void *)TRUE,0);
 
   scheme_register_finalizer(browser,scheme_release_browser,NULL,NULL,NULL);
@@ -410,9 +412,9 @@ Scheme_Object *mx_current_document(int argc,Scheme_Object **argv) {
   doc->type = mx_document_type;
   doc->pIHTMLDocument2 = pIHTMLDocument2;
 
-  scheme_add_managed((Scheme_Custodian *)scheme_get_param(scheme_config,MZCONFIG_CUSTODIAN),
+  scheme_add_managed((Scheme_Manager *)scheme_get_param(scheme_config,MZCONFIG_MANAGER),
 		     (Scheme_Object *)doc,
-		     (Scheme_Close_Custodian_Client *)scheme_release_document,
+		     (Scheme_Close_Manager_Client *)scheme_release_document,
 		     NULL,0);
 
   scheme_register_finalizer(doc,scheme_release_document,NULL,NULL,NULL);

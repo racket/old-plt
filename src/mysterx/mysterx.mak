@@ -26,12 +26,12 @@ LINK32_LIBS= \
 	mysc\mysc.lib 
 
 LINK32_OBJS= \
-	mysterx.obj array.obj comtypes.obj htmlevent.obj htmlutil.obj \
+        mysterx.obj array.obj comtypes.obj htmlevent.obj htmlutil.obj \
         browser.obj
 
 mxmain.dll : $(DEF_FILE) $(LINK32_OBJS) mysc\mysc.lib
-	@ -255 $(LINK32) -v --ld mxmain.dll ++ldf /NODEFAULTLIB:LIBC $(LINK32_OBJS) $(LINK32_LIBS) 
-	copy mxmain.dll ..\..\collects\mysterx\private\compiled\native\win32\i386
+	$(LINK32) --ld mxmain.dll $(LINK32_OBJS) $(LINK32_LIBS)
+	copy mxmain.dll ..\..\collects\mysterx\dlls
 	
 comtypes.obj : comtypes.cxx mysterx.h stdafx.h
 

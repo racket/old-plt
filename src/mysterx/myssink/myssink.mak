@@ -19,8 +19,8 @@ all : myssink.tlb myssink.dll myssink.h myssink_i.c
 
 myssink.dll : $(DEF_FILE) $(LINK32_OBJS) ..\mysc\mysc.lib
 	$(LINK32) $(LINK32_FLAGS) $(LINK32_OBJS)
-	copy myssink.dll ..\..\..\collects\mysterx\private\compiled\native\win32\i386
-	$(REGSVR32) /s ..\..\..\collects\mysterx\private\compiled\native\win32\i386\myssink.dll
+	copy myssink.dll ..\..\..\collects\mysterx\dlls
+	$(REGSVR32) /s ..\..\..\collects\mysterx\dlls\myssink.dll
 
 clean :
 	-@erase comtypes.obj

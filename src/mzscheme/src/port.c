@@ -3172,7 +3172,6 @@ scheme_file_position(int argc, Scheme_Object *argv[])
       pos = ((Scheme_Input_Port *)argv[0])->position;
       if (pos < 0) {
 	scheme_raise_exn(MZEXN_FAIL,
-			 ip,
 			 "the port's current position is not known: %v",
 			 ip);
       }

@@ -39,12 +39,7 @@
 	     (set! library-unit #f)))))
     
     (define add-basis
-      (let ([plt:userspace@ (reference-unit/sig
-				(begin-elaboration-time 
-				 (normalize-path
-				  (build-path mred:constants:plt-home-directory
-					      "lib"
-					      "gusrspcu.ss"))))])
+      (let ([plt:userspace@ (reference-library-unit/sig "gusrspcu.ss" "userspce")])
 	(lambda (n)
 	  (let* ([l@
 		  (unit/sig ()

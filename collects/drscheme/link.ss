@@ -14,17 +14,14 @@
 		  ((reference-unit/sig "language.ss")
 		   mred basis (mzlib function@)
 		   print-convert)]
-	[zodiac : zodiac:system^ ((reference-unit/sig (begin-elaboration-time
+	[zodiac : zodiac:system^ ((reference-unit/sig (begin-construction-time
 						       (build-path plt:home-directory
 								   "zodiac"
 								   "link.ss")))
 				  (interface : zodiac:interface^)
 				  (language : plt:parameters^)
 				  (mzlib pretty-print@))]
-	[aries : plt:aries^ ((reference-unit/sig (begin-elaboration-time
-						  (build-path plt:home-directory
-							      "lib"
-							      "ariesu.ss")))
+	[aries : plt:aries^ ((reference-library-unit/sig "ariesu.ss" "cogen")
 			     zodiac
 			     (interface : zodiac:interface^))]
 	[edit : drscheme:edit^ ((reference-unit/sig "edit.ss") mred aries zodiac)]
@@ -35,7 +32,7 @@
 	      mred mzlib print-convert aries zodiac
 	      interface snip language app basis edit)]
 	[export : drscheme:export^ ((reference-unit/sig "export.ss")
-				    mred mzlib
+				    mred mzlib app
 				    basis edit language rep setup
 				    zodiac)]
 	[tool : () 

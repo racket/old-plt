@@ -1,5 +1,6 @@
 (compound-unit/sig (import [mred : mred^]
 			   [mzlib : mzlib:core^]
+			   [app : drscheme:app^]
 			   [basis : drscheme:basis^]
 			   [edit : drscheme:edit^]
 			   [language : drscheme:language^]
@@ -12,7 +13,7 @@
 		setup unit compound-unit zodiac)]
 	[unit : drscheme:unit^
 	  ((reference-unit/sig "unit.ss")
-	   mred mzlib setup compound-unit frame edit rep
+	   mred mzlib app setup compound-unit frame edit rep
 	   language parameters)]
 	[compound-unit : drscheme:compound-unit^
 	  ((reference-unit/sig "cunit.ss")

@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.180 1999/03/24 00:09:21 mflatt Exp $
+; $Id: scm-main.ss,v 1.181 1999/04/07 22:38:03 mflatt Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -1543,10 +1543,8 @@
     (add-primitivized-macro-form 'let/cc scheme-vocabulary (rewriter '#%call/cc 'let/cc "let/cc"))
 
     (add-primitivized-macro-form 'let/ec advanced-vocabulary (rewriter '#%call/ec 'let/ec "let/ec"))
-    (add-primitivized-macro-form 'let/ec scheme-vocabulary (rewriter '#%call/ec 'let/ec "let/ec"))
-
-    (add-primitivized-macro-form 'letcc scheme-vocabulary (rewriter '#%call/cc 'letcc "letcc")))
-
+    (add-primitivized-macro-form 'let/ec scheme-vocabulary (rewriter '#%call/ec 'let/ec "let/ec")))
+  
   (define do-macro
       (let* ((in-kwd '())
 	      (in-pattern `(_ (var-init-step ...)

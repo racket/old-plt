@@ -36,6 +36,7 @@
 				   (public
 				     [search-for-help
 				      (lambda (text type mode)
+					(send (send search-text get-editor) erase)
 					(run-search text 
 						    (case type
 						      [(keyword) 0]

@@ -18,6 +18,7 @@
 #endif
 #endif
 
+/* For testing and debugging: */
 #define TYPESAFE 0
 
 extern void wxmeError(const char *e);

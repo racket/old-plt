@@ -2938,6 +2938,8 @@ Bool wxMediaEdit::WriteToFile(wxMediaStreamOut &f, long start, long end)
     
   startSnip = FindSnip(start, +1);
   endSnip = FindSnip(end, +2);
+  if (!snips->count)
+    startSnip = endSnip = NULL;
 
   if (!DoWriteHeadersFooters(f, TRUE))
     return FALSE;

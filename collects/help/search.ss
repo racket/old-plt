@@ -226,6 +226,7 @@
 				  (build-path doc (list-ref v 2))
 				  (list-ref v 3) ; label
 				  ckey))])
+
 	   (unless regexp?
 	     (for-each
 	      (lambda (v)

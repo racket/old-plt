@@ -5020,7 +5020,7 @@ static long spawnv(int type, char *command, const char *  const *argv)
 
   for (i = 0; argv[i]; i++);
 
-  p->t = load_image(i, (char **)argv, NULL /* environ */);
+  p->t = load_image(i, (char **)argv, NULL environ);
   
   if (p->t <= 0)
     return -1;

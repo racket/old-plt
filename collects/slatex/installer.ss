@@ -8,7 +8,11 @@
 	(let ([slatex-code-directory (build-path (collection-path "slatex") "slatex-code")]
 	      [compiled-directory (build-path (collection-path "slatex") "compiled")])
 	  (parameterize ([current-namespace (make-namespace)]
-			 [current-output-port (make-output-port void void)]
+			 [current-output-port (make-custom-output-port 
+					       #f 
+					       (lambda (s start end flush?) (- end start)) 
+					       void
+					       void)]
 			 [current-directory slatex-code-directory])
 	    (load (build-path slatex-code-directory "slaconfg.scm")))
 	  (unless (directory-exists? compiled-directory)

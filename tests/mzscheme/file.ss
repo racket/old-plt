@@ -635,6 +635,13 @@
 ;;------------------------------------------------------------
 ;; peek-string and variants:
 
+(let ([p (open-input-string "Hello World!")])
+  (test "World!" peek-string 6 6 p)
+  (test "World!" peek-string 7 6 p)
+  (test "He" read-string 2 p)
+  (test "rld!" peek-string 7 6 p)
+  (test eof peek-string 7 600 p))
+
 (define (test-a-port p go sync)
   (let* ([s (string #\1 #\2 #\3)]
 	 [reset-s! (lambda ()

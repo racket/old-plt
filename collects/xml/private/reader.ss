@@ -361,17 +361,19 @@
         (let ([line 1]
               [char 0]
               [offset 0])
-          (values (make-input-port
-                   (lambda ()
+          (values (make-custom-input-port
+		   in
+                   (lambda (s)
                      (set! char (add1 char))
                      (set! offset (add1 offset))
                      (let ([c (read-char in)])
                        (when (equal? c #\newline)
                          (set! line (+ line 1))
                          (set! char 0))
-                       c))
-                   (lambda () (char-ready? in))
-                   (lambda () (peek-char in)))
+                       (string-set! s 0 c)
+		       1))
+		   #f
+		   void)
                   (lambda () (make-location line char offset)))))
       
       ;; lex-error : Input-port String (-> Location) TST* -> alpha

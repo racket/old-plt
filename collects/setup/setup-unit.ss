@@ -182,9 +182,10 @@
 	      (let* ([oop (current-output-port)]
 		     [printed? #f]
 		     [on? #f]
-		     [op (make-output-port 
-			  (lambda (s)
-			    (let loop ([s s])
+		     [op (make-custom-output-port 
+			  #f
+			  (lambda (s start end flush?)
+			    (let loop ([s (substring s start end)])
 			      (if on?
 				  (let ([m (regexp-match-positions (string #\newline) s)])
 				    (if m
@@ -206,7 +207,9 @@
 				      (set! on? #t)
 				      (when (verbose)
 					(display "  " oop)) ; indentation 
-				      (loop (substring s (caar m) (string-length s))))))))
+				      (loop (substring s (caar m) (string-length s)))))))
+			    (- end start))
+			  void
 			  void)])
 		(parameterize ([current-output-port op])
 		  (apply f args)

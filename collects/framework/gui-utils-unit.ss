@@ -258,19 +258,32 @@
       
       (define open-input-buffer
         (lambda (buffer)
-          (let ([pos 0])
-            (make-input-port
-             (lambda ()
-               (let ([c (send buffer get-character pos)])
-                 (if (char=? c #\null)
-                     eof
-                     (begin
-                       (set! pos (add1 pos))
-                       c))))
-             (lambda ()
-               #t)
-             (lambda ()
-               (void))))))
+          (let ([pos 0]
+		[lock (make-semaphore 1)])
+            (make-custom-input-port
+	     lock
+             (lambda (s)
+	       (if (semaphore-try-wait? lock)
+		   (dynamic-wind
+		       void
+		       (lambda ()
+			 (let* ([len (send buffer last-position)]
+				[count (min (string-length s)
+					    (- len pos))])
+			   (if (zero? count)
+			       eof
+			       (let ([got (send buffer get-text pos (+ pos count))])
+				 (let loop ([count count])
+				   (unless (zero? count)
+				     (let ([count (sub1 count)])
+				       (string-set! s count (string-ref got count))
+				       (loop (sub1 count)))))
+				 (set! pos (+ pos count))
+				 count))))
+		       (lambda () (semaphore-post lock)))
+		   0))
+	     #f
+	     void))))
       
       (define repeated-keystroke-timeout 300)
       (define alphabetic-list-box%

@@ -419,11 +419,11 @@
   (test 'a syntax-e (cadr v))
   (test 'b syntax-e (caddr v))
   (test 1 syntax-line (car v))
-  (test 2 syntax-column (car v))
+  (test 1 syntax-column (car v))
   (test 1 syntax-line (cadr v))
-  (test 7 syntax-column (cadr v))
+  (test 6 syntax-column (cadr v))
   (test 1 syntax-line (caddr v))
-  (test 9 syntax-column (caddr v)))
+  (test 8 syntax-column (caddr v)))
 
 ;; Without specials, with newlines:
 (let* ([p (make-p `("(list\n"
@@ -440,11 +440,11 @@
   (test 'a syntax-e (cadr v))
   (test 'b syntax-e (caddr v))
   (test 1 syntax-line (car v))
-  (test 2 syntax-column (car v))
+  (test 1 syntax-column (car v))
   (test 2 syntax-line (cadr v))
-  (test 1 syntax-column (cadr v))
+  (test 0 syntax-column (cadr v))
   (test 3 syntax-line (caddr v))
-  (test 1 syntax-column (caddr v)))
+  (test 0 syntax-column (caddr v)))
   
 ;; Simple read:
 (let* ([p (make-p `("(list "
@@ -456,7 +456,7 @@
 		  (lambda (w l c p)
 		    (test #f 'no-place w)
 		    (test 1 'no-place l)
-		    (test p 'no-place c)
+		    (test (and p (sub1 p)) 'no-place c)
 		    (test #f not (memq p '(7 15)))))]
        [_ (port-count-lines! p)]
        [v (read p)])
@@ -474,7 +474,7 @@
 		  (lambda (w l c p)
 		    (test l 'no-place l)
 		    (test #f 'no-place w)
-		    (test 1 'no-place c)
+		    (test 0 'no-place c)
 		    (test #f not (memq p '(7 15)))
 		    (test #f not (memq l '(2 3)))))]
        [_ (port-count-lines! p)]
@@ -493,7 +493,7 @@
 		  (lambda (w l c p)
 		    (test 'dk 'dk-place w)
 		    (test 8 'no-place l)
-		    (test p + c 630)
+		    (test p + c 631)
 		    (test #f not (memq p '(707 715)))))]
        [_ (port-count-lines! p)]
        [v (read-syntax 'dk p '(7 70 700))]
@@ -625,14 +625,14 @@
   (port-count-lines! p)
   (let ([v (read-syntax 'ok p (list 70 700 7000))])
     (test 71 syntax-line v)
-    (test 702 syntax-column v)
+    (test 701 syntax-column v)
     (test 7002 syntax-position v)))
 
 (let ([p (open-input-string " \n a ")])
   (port-count-lines! p)
   (let ([v (read-syntax 'ok p (list 70 700 7000))])
     (test 72 syntax-line v)
-    (test 2 syntax-column v)
+    (test 1 syntax-column v)
     (test 7004 syntax-position v)))
 
 ;; Check exception record:
@@ -650,7 +650,7 @@
 	     (read-syntax 'ok p (list 70 700 7000)))])
     (test 'ok exn:read-source x)
     (test 71 exn:read-line x)
-    (test 702 exn:read-column x)
+    (test 701 exn:read-column x)
     (test 7002 exn:read-position x)))
     
 

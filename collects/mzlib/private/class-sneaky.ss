@@ -1211,11 +1211,11 @@ substitutability is checked properly.
 
                         init           ; initializer
                                        ; :   object
-                                       ;     (object class (box boolean) by-pos-args named-args boolean -> void) // always continue-make-super?
+                                       ;     (object class (box boolean) leftover-args new-by-pos-args new-named-args -> void) // always continue-make-super?
                                        ;     class
                                        ;     (box boolean)
-                                       ;     leftovers??
-                                       ;     named-args/named-args
+                                       ;     leftover-args
+                                       ;     named-args
                                        ;  -> void
                         
 			no-super-init?); #t => no super-init needed
@@ -1590,7 +1590,13 @@ substitutability is checked properly.
 	       (list interface-expr ...)
 	       `(var ...)))))])))
 
-  (define-struct interface (name supers public-ids class) insp)
+  (define-struct interface 
+                 (name         ; symbol
+                  supers       ; (listof interface)
+                  public-ids   ; (listof symbol) (in any order?!?)
+                  class)       ; (union #f class) -- means that anything implementing
+                               ; this interface must be derived from this class
+                 insp)
 
   (define (compose-interface name supers vars)
     (for-each
@@ -1656,7 +1662,7 @@ substitutability is checked properly.
 		"conflicting class implementation requirements in superinterfaces~a"
 		for)])
 	     (cdr supers))))))
-
+  
   ;;--------------------------------------------------------------------
   ;;  object%
   ;;--------------------------------------------------------------------
@@ -2390,9 +2396,9 @@ substitutability is checked properly.
   (define-values (wrapper-object-wrapped struct:wrapper-object)
     (let-values ([(struct:wrapper-object wrapper-object? make-wrapper-object ref set!)
                   (make-struct-type 'raw-wrapper-object
-                                    #f;'struct:object
-                                    1
-                                    0)])
+                                    #f
+                                    0
+                                    1)])
       (values (lambda (v) (ref v 0))
               struct:wrapper-object)))
   
@@ -2404,34 +2410,46 @@ substitutability is checked properly.
   
   ;; make-wrapper-class :   symbol
   ;;                        (listof symbol)
-  ;;                        (listof contract)
-  ;;                        (listof procedure)
+  ;;                        (listof (selector -> method-func-spec[object args -> result]))
   ;;                        (listof symbol)
-  ;;                        (listof contract)
-  ;;                     -> contract first args ...
-  ;;                     -> any
-  ;;                     -> any
-  (define (make-wrapper-class class-name method-ids method-ctcs methods field-ids field-ctcs)
+  ;;                     -> class
+  ;; the resulting class is the "proxy" class for the contracted version of an
+  ;; object with contracts on the method-ids. 
+  
+  ;; Overall, objects of this class have one field for the original object,
+  ;; one field per method in the contract and one field per field in the contract.
+  ;; Each of the methods (passed in) just accesses the initial (method) fields
+  ;; (which contain procedures) and calls them and returns their results.
+  ;; Those fields do not show up from outside of this file, via the usual
+  ;; field accessors. In addition, the class has one field per field that
+  ;; will contain the contracted versions of the input fields.
+  ;; The class accepts one initialization argument per method and
+  ;; one init arg per field (in that order) using the make-object style
+  ;; initialization.
+  (define (make-wrapper-class class-name method-ids methods field-ids)
     (let* ([supers (vector object% #f)]
            [method-ht (make-hash-table)]
+           [method-count (length method-ids)]
+           [methods-vec (make-vector method-count #f)]
+           
            [field-ht (make-hash-table)]
-           [self-interface '???]
-           [methods-vec (list->vector methods)]
+           [field-count (length field-ids)]
+           
            [cls
             (make-class class-name
                         1
                         supers
-                        self-interface
+                        'bogus-self-interface
                         void ;nothing can be inspected
                         
-                        (vector-length methods-vec)
+                        method-count
                         method-ht
                         (reverse method-ids)
                         
                         methods-vec
                         (list->vector (map (lambda (x) 'final) method-ids))
                         
-                        (length field-ctcs)
+                        (+ 1 field-count method-count)
                         field-ht
                         field-ids
                         
@@ -2444,13 +2462,13 @@ substitutability is checked properly.
                         #f ;; only by position arguments
                         'normal ; init-mode - ??
                         
-                        (lambda x (printf "init args: ~s\n" x))
-                        #t)])
+                        #f ; init
+                        #f)])
       (let-values ([(struct:object make-object object? field-ref field-set!)
                     (make-struct-type 'wrapper-object
-                                      #f
-                                      (length field-ids)
+                                      struct:wrapper-object
                                       0
+                                      (+ (length field-ids) (length method-ids))
                                       undefined
                                       (list (cons prop:object cls))
                                       insp)])
@@ -2459,21 +2477,53 @@ substitutability is checked properly.
         (set-class-make-object! cls make-object)
         (set-class-field-ref! cls field-ref)
         (set-class-field-set!! cls field-set!)
+
+        (let ([init
+               (lambda (o continue-make-super c inited? named-args leftover-args)
+                 ;; leftover args will contain:
+                 ;; the original object,
+                 ;; all of the contract-ized versions of the methods,
+                 ;; and all of the contract-ized versions of the fields
+                 ;; just fill them into `o'.
+                 (let loop ([leftover-args leftover-args]
+                            [i 0])
+                   (unless (null? leftover-args)
+                     (field-set! o i (car leftover-args))
+                     (loop (cdr leftover-args)
+                           (+ i 1))))
+                 (continue-make-super o c inited? '() '() '()))])
+          (set-class-init! cls init))
+        
+        ;; fill in the methods vector
+        (let loop ([i 0]
+                   [methods methods])
+          (when (< i method-count)
+            (vector-set! methods-vec i ((car methods) field-ref))
+            (loop (- i 1))))
+        
+        ;; fill in the methods-ht
         (let loop ([i 0]
                    [method-ids method-ids])
-          (when (< i (vector-length methods-vec))
+          (when (< i method-count)
             (hash-table-put! method-ht (car method-ids) i)
             (loop (+ i 1)
                   (cdr method-ids))))
-        (let ([n (length field-ids)])
-          (let loop ([i 0]
-                     [field-ids field-ids])
-            (when (< i n)
-              (hash-table-put! method-ht (car field-ids) (cons cls i))
-              (loop (+ i 1)
-                    (cdr field-ids)))))
+        
+        ;; fill in the fields-ht
+        (let loop ([i 0]
+                   [field-ids field-ids])
+          (when (< i field-count)
+            (hash-table-put! field-ht (car field-ids) (+ i 1 method-count))
+            (loop (+ i 1)
+                  (cdr field-ids))))
+        
+        ;; fill in the supers vector
         (vector-set! supers 1 cls)
+        
         cls)))
+  
+  (define (create-proxy cls o . methods)
+    o)
   
   ;;--------------------------------------------------------------------
   ;;  misc utils

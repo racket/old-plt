@@ -804,8 +804,8 @@ XWOBJS = ../../wxxt/src/XWidgets/xwArrow.o \
 
 xform: $(XSRCS) xcglue.c
 
-../mred2k: $(XOBJS) $(MZOBJS) $(XWOBJS)
-	$(LINKER) $(MREDLDFLAGS) -o ../mred2k $(XOBJS) $(MZOBJS) $(XWOBJS) -lXpm -L../../wxcommon/jpeg -ljpeg $(LDLIBS)
+../mred2k: $(XOBJS) $(MZOBJS) $(XWOBJS) ../../mzscheme/src/gmp.o
+	$(LINKER) $(MREDLDFLAGS) -o ../mred2k $(XOBJS) $(MZOBJS) $(XWOBJS) ../../mzscheme/src/gmp.o -lXpm -L../../wxcommon/jpeg -ljpeg $(LDLIBS)
 
 xsrc:
 	mkdir xsrc

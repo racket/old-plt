@@ -96,10 +96,10 @@ static char *check_script_runner(char *prog)
 
 	  i += 7;
 	  j -= i;
-	  lang = (char *)malloc(j + 40);
-	  memcpy(lang, "(require (lib \"", 15);
-	  memcpy(lang + 15, prog + i, j);
-	  memcpy(lang + 15 + j, ".ss\" \"script-lang\"))", 24); /* gets null term */
+	  lang = (char *)malloc(j + 55);
+	  memcpy(lang, "(require (lib \"init.ss\" \"script-lang\" \"", 39);
+	  memcpy(lang + 39, prog + i, j);
+	  memcpy(lang + 39 + j, "\"))", 4); /* gets null term */
 
 	  return lang;
 	}
@@ -185,11 +185,15 @@ static char *make_embedded_load(const char *start, const char *end)
 }
 #endif
 
+#define mzcmd_EVAL 0
+#define mzcmd_LOAD 1
+#define mzcmd_MAIN 2
+
 typedef struct {
 #ifndef DONT_PARSE_COMMAND_LINE
   char **evals_and_loads;
-  int *is_load, num_enl;
-  Scheme_Object *runner_args;
+  int *eval_kind, num_enl;
+  Scheme_Object *main_args;
 #endif  
 #ifndef DONT_LOAD_INIT_FILE
   int no_init_file;
@@ -226,27 +230,29 @@ static int finish_cmd_line_run(FinishArgs *fa, Repl_Proc repl)
   {
     volatile int i;
     for (i = 0; i < fa->num_enl; i++) {
-      if (fa->is_load[i]) {
+      if (fa->eval_kind[i] == mzcmd_LOAD) {
 	if (!scheme_load(fa->evals_and_loads[i])) {
 	  exit_val = 1;
 	  break;
 	}
-      } else if (!scheme_setjmp(scheme_error_buf))
-	scheme_eval_string_all(fa->evals_and_loads[i], fa->global_env, 0);
-      else {
-	exit_val = 1;
-	break;
+      } else if (fa->eval_kind[i] == mzcmd_EVAL) {
+	if (!scheme_setjmp(scheme_error_buf))
+	  scheme_eval_string_all(fa->evals_and_loads[i], fa->global_env, 0);
+	else {
+	  exit_val = 1;
+	  break;
+	}
+      } else if (fa->eval_kind[i] == mzcmd_MAIN) {
+	if (!exit_val) {
+	  if (!scheme_setjmp(scheme_error_buf)) {
+	    Scheme_Object *a[1], *m;
+	    
+	    m = scheme_eval_string("main", fa->global_env);
+	    a[0] = scheme_vector_to_list(fa->main_args);
+	    (void)scheme_apply(m, 1, a);
+	  }
+	}
       }
-    }
-  }
-
-  if (fa->runner_args && !exit_val) {
-    if (!scheme_setjmp(scheme_error_buf)) {
-      Scheme_Object *a[1], *m;
-
-      m = scheme_eval_string("main", fa->global_env);
-      a[0] = scheme_vector_to_list(fa->runner_args);
-      (void)scheme_apply(m, 1, a);
     }
   }
 #endif /* DONT_PARSE_COMMAND_LINE */
@@ -337,7 +343,7 @@ static int run_from_cmd_line(int argc, char *_argv[],
   int i;
 #ifndef DONT_PARSE_COMMAND_LINE
   char **evals_and_loads, *real_switch = NULL, *runner;
-  int *is_load, num_enl;
+  int *eval_kind, num_enl;
   int no_more_switches = 0;
   int mute_banner = 0;
   int no_argv = 0;
@@ -420,7 +426,7 @@ static int run_from_cmd_line(int argc, char *_argv[],
   }
 
   evals_and_loads = (char **)malloc(sizeof(char *) * argc);
-  is_load = (int *)malloc(sizeof(int) * argc);
+  eval_kind = (int *)malloc(sizeof(int) * argc);
   num_enl = 0;
 
 #ifndef DONT_PARSE_COMMAND_LINE
@@ -433,10 +439,11 @@ static int run_from_cmd_line(int argc, char *_argv[],
     }
 
     evals_and_loads[0] = runner;
-    is_load[0] = 0;
+    eval_kind[0] = mzcmd_EVAL;
     evals_and_loads[1] = argv[0];
-    is_load[1] = 1;
-    num_enl = 2;
+    eval_kind[1] = mzcmd_LOAD;
+    eval_kind[2] = mzcmd_MAIN;
+    num_enl = 3;
     script_mode = 1;
     no_more_switches = 1;
     no_init_file = 1;
@@ -477,6 +484,8 @@ static int run_from_cmd_line(int argc, char *_argv[],
       argv[0] = "-i";
     else if (!strcmp("--require-script", argv[0]))
       argv[0] = "-u";
+    else if (!strcmp("--main", argv[0]))
+      argv[0] = "-I";
     else if (!strcmp("--no-lib-path", argv[0]))
       argv[0] = "-x";
     else if (!strcmp("--version", argv[0]))
@@ -537,7 +546,7 @@ static int run_from_cmd_line(int argc, char *_argv[],
 	  argv++;
 	  --argc;
 	  evals_and_loads[num_enl] = argv[0];
-	  is_load[num_enl++] = 0;
+	  eval_kind[num_enl++] = mzcmd_EVAL;
 	  break;
 	case 'x':
 	  no_lib_path = 1;
@@ -554,7 +563,7 @@ static int run_from_cmd_line(int argc, char *_argv[],
 	  argv++;
 	  --argc;
 	  evals_and_loads[num_enl] = argv[0];
-	  is_load[num_enl++] = 1;
+	  eval_kind[num_enl++] = mzcmd_LOAD;
 	  break;
 	case 'i':
 	  script_mode = 1;
@@ -569,7 +578,7 @@ static int run_from_cmd_line(int argc, char *_argv[],
 	  --argc;
 	  se = make_load_cd(argv[0]);
 	  evals_and_loads[num_enl] = se;
-	  is_load[num_enl++] = 0;
+	  eval_kind[num_enl++] = mzcmd_EVAL;
 	  break;
 	case 'u':
 	  script_mode = 1;
@@ -584,14 +593,14 @@ static int run_from_cmd_line(int argc, char *_argv[],
 	  --argc;
 	  se = make_require(argv[0]);
 	  evals_and_loads[num_enl] = se;
-	  is_load[num_enl++] = 0;
+	  eval_kind[num_enl++] = mzcmd_EVAL;
 	  break;
 	case 'F':
 	  while (argc > 1) {
 	    argv++;
 	    --argc;
 	    evals_and_loads[num_enl] = argv[0];
-	    is_load[num_enl++] = 1;
+	    eval_kind[num_enl++] = mzcmd_LOAD;
 	  }
 	  break;
 	case 'D':
@@ -600,7 +609,7 @@ static int run_from_cmd_line(int argc, char *_argv[],
 	    --argc;
 	    se = make_load_cd(argv[0]);
 	    evals_and_loads[num_enl] = se;
-	    is_load[num_enl++] = 0;
+	    eval_kind[num_enl++] = mzcmd_EVAL;
 	  }
 	  break;
 	case 'T':
@@ -609,7 +618,7 @@ static int run_from_cmd_line(int argc, char *_argv[],
 	    --argc;
 	    se = make_require(argv[0]);
 	    evals_and_loads[num_enl] = se;
-	    is_load[num_enl++] = 0;
+	    eval_kind[num_enl++] = mzcmd_EVAL;
 	  }
 	  break;
 	case 'l':
@@ -622,7 +631,7 @@ static int run_from_cmd_line(int argc, char *_argv[],
 	  --argc;
 	  se = make_require_lib(argv[0], "mzlib");
 	  evals_and_loads[num_enl] = se;
-	  is_load[num_enl++] = 0;
+	  eval_kind[num_enl++] = mzcmd_EVAL;
 	  break;
 	case 'L':
 	  if (argc < 3) {
@@ -638,7 +647,7 @@ static int run_from_cmd_line(int argc, char *_argv[],
 	  evals_and_loads[num_enl] = se;
 	  argv++;
 	  --argc;
-	  is_load[num_enl++] = 0;
+	  eval_kind[num_enl++] = mzcmd_EVAL;
 	  break;
 	case 'M':
 	  if (argc < 2) {
@@ -651,12 +660,12 @@ static int run_from_cmd_line(int argc, char *_argv[],
 	  --argc;
 	  se = make_require_coll(argv[0]);
 	  evals_and_loads[num_enl] = se;
-	  is_load[num_enl++] = 0;
+	  eval_kind[num_enl++] = mzcmd_EVAL;
 	  break;
 	case 'w':
 	  se = make_require_lib("awk.ss", "mzlib");
 	  evals_and_loads[num_enl] = se;
-	  is_load[num_enl++] = 0;
+	  eval_kind[num_enl++] = mzcmd_EVAL;
 	  break;
 	case 'k':
 	  if (argc < 3) {
@@ -672,7 +681,10 @@ static int run_from_cmd_line(int argc, char *_argv[],
 	  evals_and_loads[num_enl] = se;
 	  argv++;
 	  --argc;
-	  is_load[num_enl++] = 0;
+	  eval_kind[num_enl++] = mzcmd_EVAL;
+	  break;
+	case 'C':
+	  eval_kind[num_enl++] = mzcmd_MAIN;
 	  break;
 	case 'A':
 	  no_argv = 1;
@@ -707,7 +719,7 @@ static int run_from_cmd_line(int argc, char *_argv[],
 	case 'z': /* ^^^ fallthrough ^^^ */
 	  no_rep = 1;
 	  evals_and_loads[num_enl] = "(read-eval-print-loop)";
-	  is_load[num_enl++] = 0;
+	  eval_kind[num_enl++] = mzcmd_EVAL;
 	  break;
 #endif
 #if defined(_IBMR2)
@@ -797,9 +809,9 @@ static int run_from_cmd_line(int argc, char *_argv[],
   fa = (FinishArgs *)scheme_malloc(sizeof(FinishArgs));
 #ifndef DONT_PARSE_COMMAND_LINE
   fa->evals_and_loads = evals_and_loads;
-  fa->is_load = is_load;
+  fa->eval_kind = eval_kind;
   fa->num_enl = num_enl;
-  fa->runner_args = (runner ? sch_argv : NULL);
+  fa->main_args = sch_argv;
 #endif  
 #ifndef DONT_LOAD_INIT_FILE
   fa->no_init_file = no_init_file;
@@ -851,10 +863,11 @@ static int run_from_cmd_line(int argc, char *_argv[],
 # endif
 	 "  -w, --awk : Same as -l awk.ss.\n"
 	 "  -k <n> <m> : Load executable-embedded code from file offset <n> to <m>.\n"
+	 "  -C, --main : Call `main' with a list of arg strings, if no prior errors.\n"
 	 " Initialization switches:\n"
-         "  -x, --no-lib-path : Does not try to set current-library-collection-paths.\n"
-	 "  -q, --no-init-file : Does not try to load " INIT_FILENAME ".\n"
-	 "  -A : Does not define argv and program.\n"
+         "  -x, --no-lib-path : Skips trying to set current-library-collection-paths.\n"
+	 "  -q, --no-init-file : Skips trying to load " INIT_FILENAME ".\n"
+	 "  -A : Skips defining `argv' and `program'.\n"
 	 " Language setting switches:\n"
 	 "  -g, --case-sens : " GDESC
 	 "  -s, --set-undef : " SDESC
@@ -911,6 +924,12 @@ static int run_from_cmd_line(int argc, char *_argv[],
 	 " of the line is used as command line arguments. Unless #!! is used,\n"
 	 " the startup file name is added to the end of this command line.\n"
 # endif
+	 "If the executable name has the form scheme-<dialect>, then the command\n"
+	 " line is effectively prefixed with:\n"
+	 "    -qAerC '(require (lib \"init.ss\" \"script-lang\" \"<dialect>\"))'\n"
+	 " so that the first actual command-line argument is the name of a file\n"
+	 " to load; the file should define `main', which is called with the\n"
+	 " remaining arguments in a list.\n"
 	 "For general information about " PROGRAM ", see:\n"
 	 "  http://www.plt-scheme.org/software/" PROGRAM_LC "/\n"
 	 );

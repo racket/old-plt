@@ -6,6 +6,7 @@ moved .DLL's to compiled/native/win32/i386
 Extra Windows processing loop handles only 
   WM_USER events, fixing various problems 
   running MysterX under DrScheme
+Renamed mysterx.dll to mxmain.dll
 
 100, August 17, 1999
 

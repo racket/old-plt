@@ -103,10 +103,13 @@
   (define setup-plt (mzscheme-program-launcher-path "Setup PLT"))
 
   (define (run-setup-plt tmp-dir doc-name)
-    (parameterize
-     ([current-output-port progress-output-port]
-      [current-error-port progress-output-port])
-     (system* setup-plt (make-local-doc-filename tmp-dir doc-name))))
+    (let ([dummy-port (open-input-string "")])
+      ; dummy-port prevents MrEd stdio window 
+      (parameterize
+       ([current-output-port progress-output-port]
+	[current-error-port progress-output-port]
+	[current-input-port dummy-port])
+       (system* setup-plt (make-local-doc-filename tmp-dir doc-name)))))
 
   (define progress-input-port #f)
   (define progress-output-port #f)

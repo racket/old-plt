@@ -1,17 +1,3 @@
-;;;;;;;;;;;;
-;; Design ;;
-;;;;;;;;;;;;
-
-Will "Insert Test Case" eventually move to the "Special" menu?
-Perhaps "Enable Test Cases" goes in the "Scheme" menu?
-
-Is it possible to make the Test Suite menu just have a single word?
-It's confusing to look at with a space in the middle. Perhaps "Test"
-
-Probably the "Enable Test Cases" should not be a checkable menu item,
-but should change it's label between "Enable All Test Cases" and
-"Disable All Test Cases".
-
 ;;;;;;;;;;
 ;; Todo ;;
 ;;;;;;;;;;
@@ -23,24 +9,35 @@ errorboxes: future
 Need to have boxes that handle errors.
 
 output:
-need to handle output (side effect) of test calls
+need to handle output (side effect) of test calls. Maybe not.
 
 stepper: future
 allow easy addition of break points and stepping of the testcases.
 
 language-pref: future
 Make a language level preference to execute or not execute the test cases.
-Maybe just do it in debug mode?
+Maybe just do it in debug mode? Actually, probablly just have a preference
+to remember wether or not they have enabled or disabled test cases by
+default.
 
 disable: future
 add a button to disable a test case.
 
+error-no-stop:
+when a test cases raises exception don't stop at all even it is not expected
+just make it fail or even flag it as raising an error. This could be a
+preference really.
+
+project:
+want to be able to run a lot of test-suites from the command line. Also sould
+have a digest of number of tests failed or succeed at the end of a run.
+
+scheme-unit:
+integrate with scheme unit
+
 ;;;;;;;;;;
 ;; Bugs ;;
 ;;;;;;;;;;
-
-string-constants:
-I need to use the string constants
 
 namespace: robby
 Adding the test-case macro to the top-level require makes test-cases in
@@ -54,10 +51,6 @@ appears in the second text box.
 mouse-off: important, robby
 If you mouse down on a button snip and move the mouse off, the button
 stays depressed.
-
-keys-presses: important
-If you press control-z or control-y in the test-cases you can undo some of
-the inserts and even see some of the snip handles when stuff gets uninserted
 
 This may be the same as what you describe below, but when I type this:
 (let loop () (loop)) into a test case window and then type more close

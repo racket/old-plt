@@ -1,5 +1,8 @@
 (module test-case mzscheme
+  
   (provide test-case)
+  
+  (require-for-syntax (lib "string-constant.ss" "string-constants"))
   
   (define-syntax (test-case stx)
     (syntax-case stx ()
@@ -13,5 +16,5 @@
                              (andmap equal? to-test-values exp-values)))
                 (set-actuals to-test-values)
                 (values)))]
-         [else (raise-syntax-error #f "Test case box not at top level"
+         [else (raise-syntax-error #f (string-constant test-case-not-at-top-level)
                                    (syntax/loc stx (test-case to-test-stx exp-stx)))])])))

@@ -13,6 +13,7 @@
    (lib "aligned-pasteboard.ss" "mrlib")
    (lib "framework.ss" "framework")
    (lib "readerr.ss" "syntax")
+   (lib "string-constant.ss" "string-constants")
    (lib "snip-lib.ss" "mrlib" "private" "aligned-pasteboard")
    "fixed-width-label-snip.ss"
    "grey-editor.ss"
@@ -53,10 +54,11 @@
                                            empty)
                                     (cons stx (read-all-syntax)))))])
                     (match (read-all-syntax)
-                      [() (raise-read-error "Empty test case" source line #f position 1)]
+                      [() (raise-read-error (string-constant test-case-empty-error)
+                                            source line #f position 1)]
                       [(stx) stx]
                       [(stx next rest-stx ...)
-                       (raise-read-error "Too many expressions in a test case."
+                       (raise-read-error (string-constant test-case-too-many-expressions-error)
                                          text
                                          (syntax-line next)
                                          (syntax-column next)
@@ -167,6 +169,7 @@
           ;;;;;;;;;;
           ;; Layout
           
+          ;STATUS: BEFORE USING THIS CODE REWRITE IT TO USE STRING CONSTANTS
           ;(define/override (get-corner-bitmap)
           ;  (make-object bitmap% (icon "scheme-box.jpg")))
           ;(define/override (get-color) "purple")
@@ -223,9 +226,9 @@
                         (status (if enabled? 'unknown 'disabled)))]
            [actual (new actual-text%)]
            [top-line (make-top-line turn-button comment result)]
-           [to-test-line (make-line "To test" to-test)]
-           [exp-line (make-line "Expected" expected)]
-           [act-line (make-line "Actual" actual
+           [to-test-line (make-line (string-constant test-case-to-test) to-test)]
+           [exp-line (make-line (string-constant test-case-expected) expected)]
+           [act-line (make-line (string-constant test-case-actual) actual
                                 (grey-editor-snip-mixin editor-snip%))])
           
           (set-tabbing comment to-test expected)
@@ -321,7 +324,8 @@
                      (min-width 100)
                      (editor comment))
                 false)
-        (insert result-snip false))
+        (insert result-snip false)
+        (lock true))
       (new aligned-editor-snip%
            (with-border? false)
            (stretchable-height false)
@@ -337,7 +341,8 @@
       (let ([pb (new horizontal-pasteboard%)])
         (send* pb
           (insert (field-label str) false)
-          (insert (text-field text snipclass) false))
+          (insert (text-field text snipclass) false)
+          (lock true))
         (new aligned-editor-snip%
              (with-border? false)
              (top-margin 0)
@@ -386,7 +391,9 @@
   ;; a snip to label a text case field
   ;; STATUS: This code breaks single point of control for the names of the text fields.
   (define (field-label str)
-    (new (fixed-width-label-snip '("To test" "Expected" "Actual"))
+    (new (fixed-width-label-snip (list (string-constant test-case-to-test)
+                                       (string-constant test-case-expected)
+                                       (string-constant test-case-actual)))
          (label str)
          (top-margin 0)
          (bottom-margin 0)

@@ -1,7 +1,8 @@
 2003/12/18
+  * Fixed the bug where fixed width lables didn't fit in their extents.
   * Made the test-box take the caret when inserted.
-  * Made error reporting for out of context test-cases highlight the box
-  * Made tabbing work
+  * Made error reporting for out of context test-cases highlight the box.
+  * Made tabbing work.
 
 2003/12/16
   * Made the aligned-pasteboards work

@@ -35,7 +35,7 @@ Here's an example content for .sirmail:
   (biff-delay-seconds 60)
   (self-addresses ("mflatt@cs.utah.edu" "mflatt@cs.rice.edu" "mflatt@rice.edu"))
   (aliases (("robby" "robby@rice.edu")
-            ("plt-design" "plt-design@cs.rice.edu")))
+            ("plt-scheme" "plt-scheme@flux.cs.utah.edu")))
   (aliases-file "~/.sirmail.aliases"))
 
 The required configuration parameters are:

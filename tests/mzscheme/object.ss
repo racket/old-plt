@@ -94,6 +94,12 @@
 (test (void) 'fv (send blue-fish die))
 (test 'black color-fish-color blue-fish)
 
+(let ([exn (with-handlers ([not-break-exn? (lambda (exn) exn)])
+	     (send red-fish get-size 10))])
+  (test #t exn:application:arity? exn)
+  (test 1 exn:application-value exn)
+  (test 0 exn:application:arity-expected exn))
+
 (define picky-fish%
   (class fish%
     (override grow)
@@ -179,14 +185,28 @@
 		 [(last-name first-name) ;; intentionally backwards to test scope
 		  (format "~a ~a, a.k.a.: ~a"
 			  last-name first-name
-			  nicknames)])])
+			  nicknames)]
+		 [(a b c d . rest) 'never-get-here])])
 	loop))
+
+    (define/public useless-method (case-lambda))
 
     (super-instantiate () (size 12))))
 
 (define rest-fish (make-object rest-arg-fish% "Gil" "Finn" "Slick"))
 
 (test "Gil Finn, a.k.a.: (Slick)" 'osf (send rest-fish greeting))
+
+(let ([exn (with-handlers ([not-break-exn? (lambda (exn) exn)])
+	     (send rest-fish greeting 1 2 3))])
+  (test #t exn:application:arity? exn)
+  (test 3 exn:application-value exn)
+  (test (list 0 2 (make-arity-at-least 4)) exn:application:arity-expected exn))
+(let ([exn (with-handlers ([not-break-exn? (lambda (exn) exn)])
+	     (send rest-fish useless-method 3))])
+  (test #t exn:application:arity? exn)
+  (test 1 exn:application-value exn)
+  (test null exn:application:arity-expected exn))
 
 ;; Missing last-name:
 (err/rt-test (instantiate rest-arg-fish% () (-first-name "Gil") (-nicknames null)) 

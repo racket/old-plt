@@ -1466,13 +1466,13 @@ static Scheme_Object *make_offset(Scheme_Object *delta, Scheme_Object *src)
   col = SCHEME_CAR(delta);
   pos = SCHEME_CADR(delta);
 
-  /* FIXME: what do we do with offsets that are too large? */
+  /* Offsets are too large => lost track */
   if (SCHEME_BIGNUMP(line))
-    line = scheme_make_integer(0);
+    line = scheme_make_integer(-1);
   if (SCHEME_BIGNUMP(col))
-    col = scheme_make_integer(0);
+    col = scheme_make_integer(-1);
   if (SCHEME_BIGNUMP(pos))
-    pos = scheme_make_integer(0);
+    pos = scheme_make_integer(-1);
 
   o = MALLOC_ONE_TAGGED(Scheme_Stx_Offset);
   o->type = scheme_stx_offset_type;

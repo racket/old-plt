@@ -103,6 +103,8 @@ static Scheme_Comp_Env *top_next_env;
 static Scheme_Object *top_next_mark;
 static Scheme_Object *top_next_name;
 
+static Scheme_Object *is_method_symbol;
+
 typedef void (*DW_PrePost_Proc)(void *);
 
 #define CONS(a,b) scheme_make_pair(a,b)
@@ -317,6 +319,9 @@ scheme_init_fun (Scheme_Env *env)
 			     write_compiled_closure);
   scheme_install_type_reader(scheme_unclosed_procedure_type,
 			     read_compiled_closure);
+
+  REGISTER_SO(is_method_symbol);
+  is_method_symbol = scheme_intern_symbol("method-arity-error");
 }
 
 Scheme_Object *
@@ -470,6 +475,19 @@ Scheme_Object *
 scheme_make_closed_prim(Scheme_Closed_Prim *fun, void *data)
 {
   return scheme_make_closed_prim_w_everything(fun, data, NULL, 0, -1, 0, 1, 1);
+}
+
+void scheme_prim_is_method(Scheme_Object *o)
+{
+  if (SCHEME_CLSD_PRIMP(o))
+    ((Scheme_Closed_Primitive_Proc *)o)->flags |= SCHEME_PRIM_IS_METHOD;
+  else
+    ((Scheme_Primitive_Proc *)o)->flags |= SCHEME_PRIM_IS_METHOD;
+}
+
+int scheme_has_method_property(Scheme_Object *code)
+{
+  return SCHEME_TRUEP(scheme_stx_property(code, is_method_symbol, NULL));
 }
 
 Scheme_Object *
@@ -686,6 +704,8 @@ scheme_make_closure_compilation(Scheme_Comp_Env *env, Scheme_Object *code,
     data->flags |= CLOS_HAS_REST;
     data->num_params++;
   }
+  if (scheme_has_method_property(code))
+    data->flags |= CLOS_IS_METHOD;
 
   forms = SCHEME_STX_CDR(code);
   forms = SCHEME_STX_CDR(forms);
@@ -1225,12 +1245,19 @@ const char *scheme_get_proc_name(Scheme_Object *p, int *len, int for_error)
   } else if (type == scheme_cont_type || type == scheme_escaping_cont_type) {
     return NULL;
   } else if (type == scheme_case_closure_type) {
-    Scheme_Case_Lambda *seq;
+    Scheme_Object *n;
 
-    seq = (Scheme_Case_Lambda *)p;
-    if (seq->name) {
-      *len = SCHEME_SYM_LEN(seq->name);
-      s = scheme_symbol_val(seq->name);
+    n = ((Scheme_Case_Lambda *)p)->name;
+    if (n) {
+      if (SCHEME_BOXP(n)) {
+	/* See note in schpriv.h about the IS_METHOD hack */
+	n = SCHEME_BOX_VAL(n);
+	if (SCHEME_FALSEP(n))
+	  return NULL;
+      }
+
+      *len = SCHEME_SYM_LEN(n);
+      s = scheme_symbol_val(n);
     } else
       return NULL;
   } else {

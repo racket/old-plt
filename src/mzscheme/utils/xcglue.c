@@ -339,6 +339,7 @@ void scheme_add_method_w_arity(Scheme_Object *c, const char *name,
   sclass = (Scheme_Class *)c;
 
   s = scheme_make_prim_w_arity(f, name, mina + 1, (maxa < 0) ? -1 : (maxa + 1));
+  scheme_prim_is_method(s);
 
   sclass->methods[sclass->num_installed] = s;
 

@@ -620,23 +620,13 @@ typedef struct {
 
 typedef struct {
   Scheme_Type type;
+  MZ_HASH_KEY_EX
   short count;
-  Scheme_Object *name;
+  Scheme_Object *name; /* see note below */
   Scheme_Object *array[1];
 } Scheme_Case_Lambda;
-
-typedef struct Scheme_Promise {
-  Scheme_Type type;
-  MZ_HASH_KEY_EX
-  char forced;
-  char is_expr;
-  Scheme_Object *val;
-  int multi_count;
-  Scheme_Object **multi_array;
-#ifdef MZ_REAL_THREADS
-  Scheme_Object *sema;
-#endif
-} Scheme_Promise;
+/* If count is not 0, then check array[0] for CLOS_IS_METHOD.
+   Otherwise, name is a boxed symbol (or #f) to indicate a method. */
 
 Scheme_Object *
 scheme_make_prim_w_everything(Scheme_Prim *fun, int eternal,
@@ -1212,6 +1202,7 @@ typedef struct Scheme_Comp_Env
 #define CLOS_MUST_ALLOC 2
 #define CLOS_ONLY_LOCALS 4
 #define CLOS_FOLDABLE 8
+#define CLOS_IS_METHOD 16
 
 typedef struct Scheme_Compile_Info
 {
@@ -1257,6 +1248,8 @@ typedef struct Scheme_Closure_Compilation_Data
   Scheme_Object *code;
   Scheme_Object *name;
 } Scheme_Closure_Compilation_Data;
+
+int scheme_has_method_property(Scheme_Object *code);
 
 typedef struct {
   Scheme_Type type;

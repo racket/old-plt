@@ -54,6 +54,7 @@
   scheme_extension_table->scheme_warning = scheme_warning;
   scheme_extension_table->scheme_raise = scheme_raise;
   scheme_extension_table->scheme_wrong_count = scheme_wrong_count;
+  scheme_extension_table->scheme_wrong_count_m = scheme_wrong_count_m;
   scheme_extension_table->scheme_case_lambda_wrong_count = scheme_case_lambda_wrong_count;
   scheme_extension_table->scheme_wrong_type = scheme_wrong_type;
   scheme_extension_table->scheme_arg_mismatch = scheme_arg_mismatch;
@@ -165,6 +166,7 @@
   scheme_extension_table->scheme_make_noneternal_prim_w_arity = scheme_make_noneternal_prim_w_arity;
   scheme_extension_table->scheme_make_closed_prim_w_arity = scheme_make_closed_prim_w_arity;
   scheme_extension_table->scheme_make_folding_closed_prim = scheme_make_folding_closed_prim;
+  scheme_extension_table->scheme_prim_is_method = scheme_prim_is_method;
   scheme_extension_table->scheme_make_pair = scheme_make_pair;
   scheme_extension_table->scheme_make_immutable_pair = scheme_make_immutable_pair;
   scheme_extension_table->scheme_make_string = scheme_make_string;

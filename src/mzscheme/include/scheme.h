@@ -386,6 +386,7 @@ typedef struct Scheme_Vector {
 #define SCHEME_PRIM_IS_MULTI_RESULT 256
 #define SCHEME_PRIM_IS_GENERIC 512
 #define SCHEME_PRIM_IS_USER_PARAMETER 1024
+#define SCHEME_PRIM_IS_METHOD 2048
 
 typedef struct Scheme_Object *
 (Scheme_Prim)(int argc, struct Scheme_Object *argv[]);

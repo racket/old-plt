@@ -36,6 +36,7 @@ scheme_raise_exn
 scheme_warning
 scheme_raise
 scheme_wrong_count
+scheme_wrong_count_m
 scheme_case_lambda_wrong_count
 scheme_wrong_type
 scheme_arg_mismatch
@@ -124,6 +125,7 @@ scheme_make_folding_prim
 scheme_make_noneternal_prim_w_arity
 scheme_make_closed_prim_w_arity
 scheme_make_folding_closed_prim
+scheme_prim_is_method
 scheme_make_pair
 scheme_make_immutable_pair
 scheme_make_string

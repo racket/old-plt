@@ -388,14 +388,25 @@ Scheme_Object *scheme_make_stx_w_offset(Scheme_Object *val,
   if (SAME_TYPE(SCHEME_TYPE(src), scheme_stx_offset_type)) {
     Scheme_Stx_Offset *o = (Scheme_Stx_Offset *)src;
 
-    if (pos >= 0)
-      pos += o->pos;
-    if (col >= 0) {
+    if (pos >= 0) {
+      if (o->pos < 0)
+	pos = -1;
+      else
+	pos += o->pos;
+    }
+    if ((col >= 0) && (o->col >= 0)) {
       if (line == 1)
 	col += o->col;
-    }
-    if (line >= 0)
+    } else
+      col = -1;
+    if ((line >= 0) && (o->line >= 0))
       line += o->line;
+    else
+      line = -1;
+
+    if (pos < 0) line = -1;
+    if (line < 0) col = -1;
+    if (col < 0) line = -1;
 
     src = o->src;
   }
@@ -2719,6 +2730,13 @@ static int nonneg_exact_or_false_p(Scheme_Object *o)
   return SCHEME_FALSEP(o) || scheme_nonneg_exact_p(o);
 }
 
+static int pos_exact_or_false_p(Scheme_Object *o)
+{
+  return (SCHEME_FALSEP(o)
+	  || (SCHEME_INTP(o) && (SCHEME_INT_VAL(o) > 0))
+	  || (SCHEME_BIGNUMP(o) && SCHEME_BIGPOS(o)));
+}
+
 static Scheme_Object *datum_to_syntax(int argc, Scheme_Object **argv)
 {
   Scheme_Object *src = scheme_false;
@@ -2734,73 +2752,42 @@ static Scheme_Object *datum_to_syntax(int argc, Scheme_Object **argv)
 
     if (!SCHEME_FALSEP(src) 
 	&& !SCHEME_STXP(src)
-	&& !(((ll == 4) || (ll == 5))
-	     && nonneg_exact_or_false_p(SCHEME_CADR(src))
-	     && nonneg_exact_or_false_p(SCHEME_CADR(SCHEME_CDR(src)))
-	     && nonneg_exact_or_false_p(SCHEME_CADR(SCHEME_CDR(SCHEME_CDR(src))))
-	     && ((ll == 4)
-		 || nonneg_exact_or_false_p(SCHEME_CADR(SCHEME_CDR(SCHEME_CDR(SCHEME_CDR(src)))))))
-	&& !(((ll == 2) || (ll == 3))
-	     && nonneg_exact_or_false_p(SCHEME_CADR(src))
-	     && ((ll == 2)
-		 || nonneg_exact_or_false_p(SCHEME_CADR(SCHEME_CDR(src))))))
+	&& !((ll == 5)
+	     && pos_exact_or_false_p(SCHEME_CADR(src))
+	     && pos_exact_or_false_p(SCHEME_CADR(SCHEME_CDR(src)))
+	     && pos_exact_or_false_p(SCHEME_CADR(SCHEME_CDR(SCHEME_CDR(src))))
+	     && nonneg_exact_or_false_p(SCHEME_CADR(SCHEME_CDR(SCHEME_CDR(SCHEME_CDR(src)))))))
       scheme_wrong_type("datum->syntax-object", "syntax, source location list, or #f", 2, argc, argv);
 
-    if (ll >= 4) {
+    if (ll == 5) {
       /* line--column--pos--span format */
       Scheme_Object *line, *col, *pos, *span;
       line = SCHEME_CADR(src);
       col = SCHEME_CADR(SCHEME_CDR(src));
       pos = SCHEME_CADR(SCHEME_CDR(SCHEME_CDR(src)));
-      if (ll == 5)
-	span = SCHEME_CADR(SCHEME_CDR(SCHEME_CDR(SCHEME_CDR(src))));
-      else
-	span = NULL;
+      span = SCHEME_CADR(SCHEME_CDR(SCHEME_CDR(SCHEME_CDR(src))));
       src = SCHEME_CAR(src);
       
-      /* FIXME: what to do with too-large positions? */
-      if (SCHEME_BIGNUMP(line))
-	line = scheme_make_integer(0);
-      if (SCHEME_BIGNUMP(col))
-	col = scheme_make_integer(0);
-      if (SCHEME_BIGNUMP(pos))
-	pos = scheme_make_integer(0);
-      if (span && SCHEME_BIGNUMP(span))
-	span = scheme_make_integer(0);
-
       if (SCHEME_FALSEP(line) != SCHEME_FALSEP(col))
 	scheme_arg_mismatch("datum->syntax-object", 
 			    "line and column positions must both be numbers or #f in: ", 
 			    argv[2]);
 
+      /* Too-large positions go to unknown */
+      if (SCHEME_BIGNUMP(line) || SCHEME_BIGNUMP(col)) {
+	line = scheme_make_integer(-1);
+	col = scheme_make_integer(-1);
+      }
+      if (SCHEME_BIGNUMP(pos))
+	pos = scheme_make_integer(-1);
+      if (span && SCHEME_BIGNUMP(span))
+	span = scheme_make_integer(-1);
+
       src = scheme_make_stx_w_offset(scheme_false,
 				     SCHEME_FALSEP(line) ? -1 : SCHEME_INT_VAL(line),
 				     SCHEME_FALSEP(col) ? -1 : SCHEME_INT_VAL(col),
 				     SCHEME_FALSEP(pos) ? -1 : SCHEME_INT_VAL(pos),
-				     span ? SCHEME_INT_VAL(span) : -1,
-				     src,
-				     NULL);
-    } else if (ll >= 2) {
-      /* position--span format */
-      Scheme_Object *pos, *span;
-      pos = SCHEME_CADR(src);
-      if (ll == 3) 
-	span = SCHEME_CADR(SCHEME_CDR(src));
-      else
-	span = NULL;
-      src = SCHEME_CAR(src);
-
-      /* FIXME: what to do with too-large positions? */
-      if (SCHEME_BIGNUMP(pos))
-	pos = scheme_make_integer(0);
-      if (span && SCHEME_BIGNUMP(span))
-	span = scheme_make_integer(0);
-
-      src = scheme_make_stx_w_offset(scheme_false,
-				     -1,
-				     -1,
-				     SCHEME_FALSEP(pos) ? -1 : SCHEME_INT_VAL(pos),
-				     span ? SCHEME_INT_VAL(span) : -1,
+				     SCHEME_FALSEP(span) ? -1 : SCHEME_INT_VAL(span),
 				     src,
 				     NULL);
     }

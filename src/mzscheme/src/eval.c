@@ -2672,8 +2672,9 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 
       if (num_rands < prim->mina 
 	  || (num_rands > prim->maxa && prim->maxa >= 0)) {
-	scheme_wrong_count(prim->name, prim->mina, prim->maxa, 
-			   num_rands, rands);
+	scheme_wrong_count_m(prim->name, prim->mina, prim->maxa,
+			     num_rands, rands,
+			     prim->flags & SCHEME_PRIM_IS_METHOD);
 	return NULL; /* Shouldn't get here */
       }
 
@@ -2717,9 +2718,10 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 
 	  if (num_rands < (num_params - 1)) {
 	    UPDATE_THREAD_RSPTR_FOR_ERROR();
-	    scheme_wrong_count(scheme_get_proc_name(obj, NULL, 1), 
-			       num_params - 1, -1,
-			       num_rands, rands);
+	    scheme_wrong_count_m(scheme_get_proc_name(obj, NULL, 1), 
+				 num_params - 1, -1,
+				 num_rands, rands,
+				 data->flags & CLOS_IS_METHOD);
 	    return NULL; /* Doesn't get here */
 	  }
 
@@ -2776,19 +2778,12 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	  }
 	} else {
 	  if (num_rands != num_params) {
-	    if (num_rands < num_params) {
-	      UPDATE_THREAD_RSPTR_FOR_ERROR();
-	      scheme_wrong_count(scheme_get_proc_name(obj, NULL, 1), 
+	    UPDATE_THREAD_RSPTR_FOR_ERROR();
+	    scheme_wrong_count_m(scheme_get_proc_name(obj, NULL, 1), 
 				 num_params, num_params,
-				 num_rands, rands);
-	      return NULL; /* Doesn't get here */
-	    } else {
-	      UPDATE_THREAD_RSPTR_FOR_ERROR();
-	      scheme_wrong_count(scheme_get_proc_name(obj, NULL, 1), 
-				 num_params, num_params,
-				 num_rands, rands);
-	      return NULL; /* Doesn't get here */
-	    }
+				 num_rands, rands,
+				 data->flags & CLOS_IS_METHOD);
+	    return NULL; /* Doesn't get here */
 	  }
 	
 	  stack = RUNSTACK = old_runstack - num_params;
@@ -2859,8 +2854,9 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
       
       if (num_rands < prim->mina 
 	  || (num_rands > prim->maxa && prim->maxa >= 0)) {
-	scheme_wrong_count(prim->name, prim->mina, prim->maxa, 
-			   num_rands, rands);
+	scheme_wrong_count_m(prim->name, prim->mina, prim->maxa, 
+			     num_rands, rands,
+			     prim->flags & SCHEME_PRIM_IS_METHOD);
 	return NULL; /* Shouldn't get here */
       }
       

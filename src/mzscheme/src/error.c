@@ -706,9 +706,10 @@ static char *error_write_to_string_w_max(Scheme_Object *v, int len, int *lenout)
 static char *make_arity_expect_string(const char *name, int namelen,
 				      int minc, int maxc, 
 				      int argc, Scheme_Object **argv,
-				      long *_len)
+				      long *_len, int is_method)
 {
   long len, pos, slen;
+  int xargc, xminc, xmaxc;
   char *s;
 
   s = init_buf(&len, &slen);
@@ -716,6 +717,10 @@ static char *make_arity_expect_string(const char *name, int namelen,
   if (!name)
     name = "#<procedure>";
   
+  xargc = argc - (is_method ? 1 : 0);
+  xminc = minc - (is_method ? 1 : 0);
+  xmaxc = maxc - (is_method ? 1 : 0);
+
   if (minc < 0) {
     const char *n;
     int nlen;
@@ -733,29 +738,29 @@ static char *make_arity_expect_string(const char *name, int namelen,
 
     pos = scheme_sprintf(s, slen, "%t: no clause matching %d argument%s",
 			 n, nlen,
-			 argc, argc == 1 ? "" : "s");
+			 xargc, xargc == 1 ? "" : "s");
   } else if (!maxc)
     pos = scheme_sprintf(s, slen, "%t: expects no arguments, given %d",
-			 name, namelen, argc);
+			 name, namelen, xargc);
   else if (maxc < 0)
     pos = scheme_sprintf(s, slen, "%t: expects at least %d argument%s, given %d",
-			 name, namelen, minc, (minc == 1) ? "" : "s", argc);
+			 name, namelen, xminc, (xminc == 1) ? "" : "s", xargc);
   else if (minc == maxc)
     pos = scheme_sprintf(s, slen, "%t: expects %d argument%s, given %d",
-			 name, namelen, minc, (minc == 1) ? "" : "s", argc);
+			 name, namelen, xminc, (xminc == 1) ? "" : "s", xargc);
   else
     pos = scheme_sprintf(s, slen, "%t: expects %d to %d arguments, given %d",
-			 name, namelen, minc, maxc, argc);
+			 name, namelen, xminc, xmaxc, xargc);
 
-  if (argc && argv) {
-    len /= argc;
-    if ((argc < 50) && (len >= 3)) {
+  if (xargc && argv) {
+    len /= xargc;
+    if ((xargc < 50) && (len >= 3)) {
       int i;
       
       strcpy(s + pos, ":");
       pos++;
       
-      for (i = 0; i < argc; i++) {
+      for (i = (is_method ? 1 : 0); i < argc; i++) {
 	int l;
 	char *o;
 	o = error_write_to_string_w_max(argv[i], len, &l);
@@ -773,24 +778,64 @@ static char *make_arity_expect_string(const char *name, int namelen,
   return s;
 }
 
-void scheme_wrong_count(const char *name, int minc, int maxc, int argc,
-			Scheme_Object **argv)
+void scheme_wrong_count_m(const char *name, int minc, int maxc, 
+			  int argc, Scheme_Object **argv, int is_method)
 {
   Scheme_Object *arity; 
-  Scheme_Object *v = scheme_make_integer(argc);
+  Scheme_Object *v;
   char *s;
   long len;
 
-  s = make_arity_expect_string(name, -1, minc, maxc, argc, argv, &len);
+  /* minc = 1 -> name is really a case-lambda proc */
+
+  if (minc == -1) {
+    /* Check for is_method in case-lambda */
+    Scheme_Case_Lambda *cl = (Scheme_Case_Lambda *)name;
+    if (cl->count) {
+      Scheme_Closure_Compilation_Data *data;
+      data = (Scheme_Closure_Compilation_Data *)SCHEME_COMPILED_CLOS_CODE(cl->array[0]);
+      if (data->flags & CLOS_IS_METHOD)
+	is_method = 1;
+    } else if (cl->name && SCHEME_BOXP(cl->name)) {
+      /* See note in schpriv.h about the IS_METHOD hack */
+      is_method = 1;
+    }
+  }
+
+  v = scheme_make_integer(argc - (is_method ? 1 : 0));
+
+  s = make_arity_expect_string(name, -1, minc, maxc, argc, argv, &len, is_method);
 
   if (minc >= 0)
-    arity = scheme_make_arity((short)minc, (short)maxc);
-  else if (minc == -1)
+    arity = scheme_make_arity((short)(minc - (is_method ? 1 : 0)), (short)(maxc - (is_method ? 1 : 0)));
+  else if (minc == -1) {
     arity = scheme_arity((Scheme_Object *)name);
-  else
+    if (is_method) {
+      /* Post-process the arity. It must be a list. We can mutate it. */
+      Scheme_Object *l = arity, *a, *b;
+      while (!SCHEME_NULLP(l)) {
+	a = SCHEME_CAR(l);
+	if (SCHEME_INTP(a))
+	  SCHEME_CAR(l) = scheme_make_integer(SCHEME_INT_VAL(a) - 1);
+	else {
+	  /* arity-at-least: */
+	  b = ((Scheme_Structure *)a)->slots[0];
+	  b = scheme_make_integer(SCHEME_INT_VAL(b) - 1);
+	  ((Scheme_Structure *)a)->slots[0] = b;
+	}
+	l = SCHEME_CDR(l);
+      }
+    }
+  } else
     arity = scheme_false; /* BUG! if this happens */
 
   scheme_raise_exn(MZEXN_APPLICATION_ARITY, v, arity, "%t", s, len);
+}
+
+void scheme_wrong_count(const char *name, int minc, int maxc, int argc,
+			Scheme_Object **argv)
+{
+  scheme_wrong_count_m(name, minc, maxc, argc, argv, 0);
 }
 
 void scheme_case_lambda_wrong_count(const char *name, 
@@ -818,7 +863,7 @@ void scheme_case_lambda_wrong_count(const char *name,
   }
   va_end(args);
 
-  s = make_arity_expect_string(name, -1, -2, 0, argc, argv, &len);
+  s = make_arity_expect_string(name, -1, -2, 0, argc, argv, &len, 0);
 
   scheme_raise_exn(MZEXN_APPLICATION_ARITY, scheme_make_integer(argc), 
 		   arity, "%t", s, len);
@@ -856,7 +901,7 @@ char *scheme_make_arity_expect_string(Scheme_Object *proc,
     name = scheme_get_proc_name(proc, &namelen, 1);
   }
 
-  return make_arity_expect_string(name, namelen, mina, maxa, argc, argv, _slen);
+  return make_arity_expect_string(name, namelen, mina, maxa, argc, argv, _slen, 0);
 }
 
 char *scheme_make_args_string(char *s, int which, int argc, Scheme_Object **argv, long *_olen)
@@ -1051,14 +1096,17 @@ void scheme_read_err(Scheme_Object *port,
   show_loc = SCHEME_TRUEP(scheme_get_param(scheme_config, MZCONFIG_ERROR_PRINT_SRCLOC));
   
   if (stxsrc) {
-    stxsrc = scheme_make_stx_w_offset(scheme_false, line, col, pos, span, stxsrc, STX_SRCTAG);
+    Scheme_Object *xsrc;
 
-    line = ((Scheme_Stx *)stxsrc)->srcloc->line;
-    col = ((Scheme_Stx *)stxsrc)->srcloc->col;
-    pos = ((Scheme_Stx *)stxsrc)->srcloc->pos;
+    xsrc = scheme_make_stx_w_offset(scheme_false, line, col, pos, span, stxsrc, STX_SRCTAG);
+
+    stxsrc = ((Scheme_Stx *)xsrc)->srcloc->src;
+    line = ((Scheme_Stx *)xsrc)->srcloc->line;
+    col = ((Scheme_Stx *)xsrc)->srcloc->col;
+    pos = ((Scheme_Stx *)xsrc)->srcloc->pos;
 
     if (show_loc)
-      fn = make_srcloc_string(((Scheme_Stx *)stxsrc)->srcloc, &fnlen);
+      fn = make_srcloc_string(((Scheme_Stx *)xsrc)->srcloc, &fnlen);
     else
       fn = NULL;
   } else

@@ -923,7 +923,7 @@ sub DoPrintClass
 	print ";\n";
 	print "  REMEMBER_VAR_STACK();\n\n";
 	print "  objscheme_check_valid(${newclass}_class, $longgetname, n, p);\n";
-	print "  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count($longgetname, POFFSET, POFFSET, n, p));\n";
+	print "  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count_m($longgetname, POFFSET, POFFSET, n, p, 1));\n";
 	print "  cobj = (Scheme_Class_Object *)p[0];\n";
 	print "  if (cobj->primflag)\n";
 	print "    v = ";
@@ -946,7 +946,7 @@ sub DoPrintClass
 	    print ";\n";
 	    print "  SETUP_VAR_STACK(1);\n  VAR_STACK_PUSH(0, cobj);\n\n";
 	    print "  WITH_VAR_STACK(objscheme_check_valid(${newclass}_class, $longsetname, n, p));\n";
-	    print "  if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count($longsetname, POFFSET+1, POFFSET+1, n, p));\n\n";
+	    print "  if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count_m($longsetname, POFFSET+1, POFFSET+1, n, p, 1));\n\n";
 	    print "  v = ";
 	    &PrintUnbundleVar("p[POFFSET]", $ivartype);
 	    print ";\n  ";
@@ -1985,10 +1985,16 @@ sub PrintSpecificFunction
 	}
 	print ") \n";
 	
-	print "$prefix    WITH_VAR_STACK(scheme_wrong_count(";
+	print "$prefix    WITH_VAR_STACK(scheme_wrong_count_m(";
 	print "\"${aname}${casename}\"";
 	
-	print ", $POFFSET+${minimumok}, $POFFSET+${possible}, n, p));\n";
+	print ", $POFFSET+${minimumok}, $POFFSET+${possible}, n, p, ";
+	if ($global) {
+	    print "1";
+	} else {
+	    print "0";
+	}
+	print "));\n";
     }
 
     &PrintUnbundles($prefix, "\"${aname}${casename}\"");

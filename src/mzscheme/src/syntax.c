@@ -1244,6 +1244,7 @@ case_lambda_syntax (Scheme_Object *form, Scheme_Comp_Env *env,
     name = scheme_source_to_name(orig_form);
   
   if (SCHEME_STX_NULLP(form)) {
+    /* Case where there are no cases... */
     form = (Scheme_Object *)scheme_malloc_tagged(sizeof(Scheme_Case_Lambda)
 						 - sizeof(Scheme_Object*));
 
@@ -1253,6 +1254,14 @@ case_lambda_syntax (Scheme_Object *form, Scheme_Comp_Env *env,
 
     scheme_compile_rec_done_local(rec, drec);
     scheme_default_compile_rec(rec, drec);
+
+    if (scheme_has_method_property(orig_form)) {
+      /* See note in schpriv.h about the IS_METHOD hack */
+      if (!name)
+	name = scheme_false;
+      name = scheme_box(name);
+      ((Scheme_Case_Lambda *)form)->name = name;
+    }
 
     return scheme_make_syntax_compiled(CASE_LAMBDA_EXPD, form);
   }
@@ -1319,6 +1328,12 @@ case_lambda_syntax (Scheme_Object *form, Scheme_Comp_Env *env,
   }
 
   scheme_merge_compile_recs(rec, drec, recs, count);
+
+  if (scheme_has_method_property(orig_form)) {
+    Scheme_Closure_Compilation_Data *data;
+    data = (Scheme_Closure_Compilation_Data *)cl->array[0];
+    data->flags |= CLOS_IS_METHOD;
+  }
 
   return scheme_make_syntax_compiled(CASE_LAMBDA_EXPD, (Scheme_Object *)cl);
 }

@@ -3347,7 +3347,7 @@ int mark_waitable_set_SIZE(void *p) {
 }
 
 int mark_waitable_set_MARK(void *p) {
-  Waitable_Set *w = (Waiting *)p;
+  Waitable_Set *w = (Waitable_Set *)p;
  
   gcMARK(w->ws);
   gcMARK(w->argv);
@@ -3359,7 +3359,7 @@ int mark_waitable_set_MARK(void *p) {
 }
 
 int mark_waitable_set_FIXUP(void *p) {
-  Waitable_Set *w = (Waiting *)p;
+  Waitable_Set *w = (Waitable_Set *)p;
  
   gcFIXUP(w->ws);
   gcFIXUP(w->argv);

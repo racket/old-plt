@@ -1672,9 +1672,11 @@ compile_expand_macro_app(Scheme_Object *name, Scheme_Object *macro,
 
   if (SAME_TYPE(SCHEME_TYPE(xformer), scheme_set_macro_type)) {
     /* scheme_apply_macro unwraps it */
-  } else if (!scheme_check_proc_arity(NULL, 1, 0, -1, &xformer)) {
-    scheme_wrong_syntax(NULL, NULL, form, "illegal use of syntax");
-    return NULL;
+  } else {
+    if (!scheme_check_proc_arity(NULL, 1, 0, -1, &xformer)) {
+      scheme_wrong_syntax(NULL, NULL, form, "illegal use of syntax");
+      return NULL;
+    }
   }
 
   if (rec)

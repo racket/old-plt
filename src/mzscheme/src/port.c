@@ -1777,10 +1777,11 @@ Scheme_Object *scheme_get_special(Scheme_Object *port,
       scheme_wrong_type(who, 
 			"exact non-negative integer", 1, 
 			-scheme_multiple_count, scheme_multiple_array);
-    else
+    else {
       scheme_wrong_type(who, 
 			"exact non-negative integer", -1, 
 			-1, &pd);
+    }
     return NULL;
   }
 

@@ -417,7 +417,11 @@ int scheme_wait_semas(int n, Scheme_Object **o, int just_try)
 
 int scheme_wait_sema(Scheme_Object *o, int just_try)
 {
-  return scheme_wait_semas(1, &o, just_try);
+  Scheme_Object *a[1];
+
+  a[0] = o;
+
+  return scheme_wait_semas(1, a, just_try);
 }
 
 static Scheme_Object *block_sema_p(int n, Scheme_Object **p)

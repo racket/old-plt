@@ -1928,14 +1928,15 @@ static Scheme_Object *_make_struct_type(Scheme_Object *basesym, const char *base
     n = struct_type->num_slots;
     if (parent_type)
       n -= parent_type->num_slots;
-    ims = (char *)scheme_malloc_atomic(n+2);
+    ims = (char *)scheme_malloc_atomic(n);
     memset(ims, 0, n);
 
     if (SCHEME_INTP(struct_type->proc_attr)) {
       p = SCHEME_INT_VAL(struct_type->proc_attr);
       if (parent_type)
 	p -= parent_type->num_slots;
-      ims[p] = 1;
+      if (p >= 0)
+	ims[p] = 1;
     }
 
     for (l = immutable_pos_list; SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {

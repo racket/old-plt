@@ -1329,7 +1329,7 @@ mark_waiting {
 
 mark_waitable_set {
  mark:
-  Waitable_Set *w = (Waiting *)p;
+  Waitable_Set *w = (Waitable_Set *)p;
  
   gcMARK(w->ws);
   gcMARK(w->argv);

@@ -3144,8 +3144,11 @@ static Scheme_Object *waitable_set_ready(Waitable_Set *waitable_set, Scheme_Sche
 	  /* Not ready, and it won't be ready until target is
 	     ready. Assert: !waitable_set->ts[i]. */
 	  waitable_set->ts[i] = r_sinfo.target;
-	  if (!SCHEME_WAITSETP(r_sinfo.target))
-	    waitable_set->tws[i] = find_waitable(r_sinfo.target);
+	  if (!SCHEME_WAITSETP(r_sinfo.target)) {
+	    Waitable *ww;
+	    ww = find_waitable(r_sinfo.target);
+	    waitable_set->tws[i] = ww;
+	  }
 	  break;
 	} else {
 	  if (r_sinfo.spin)
@@ -4342,7 +4345,7 @@ static void register_traversers(void)
   GC_REG_TRAV(scheme_will_executor_type, mark_will_executor_val);
   GC_REG_TRAV(scheme_custodian_type, mark_custodian_val);
   GC_REG_TRAV(scheme_thread_hop_type, mark_thread_hop);
-  GC_REG_TRAV(scheme_waitable_set_type, mark_wait_set);
+  GC_REG_TRAV(scheme_waitable_set_type, mark_waitable_set);
 
   GC_REG_TRAV(scheme_rt_namespace_option, mark_namespace_option);
   GC_REG_TRAV(scheme_rt_param_data, mark_param_data);

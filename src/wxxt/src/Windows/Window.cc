@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Window.cc,v 1.15 1998/09/08 15:07:58 mflatt Exp $
+ * $Id: Window.cc,v 1.16 1998/09/20 21:48:50 mflatt Exp $
  *
  * Purpose: base class for all windows
  *
@@ -1110,7 +1110,7 @@ void wxWindow::ExposeEventHandler(Widget     WXUNUSED(w),
 	if (win->dc) {
 	    if (!(win->dc->ok)) { // setup drawable of dc on first expose
 		win->dc->X->draw_window = win->dc->X->drawable = XtWindow(win->X->handle);
-		win->dc->SetBackground(win->dc->current_background_color);
+		win->dc->SetBackground(&win->dc->current_background_color);
 		win->dc->Clear();
 		win->dc->ok = TRUE;
 	    }
@@ -1512,7 +1512,7 @@ void wxWindow::WindowEventHandler(Widget w,
 	    // setup drawable of dc if dc available
 	    if (!(win->dc->ok)) { // first expose call
 		win->dc->X->draw_window = win->dc->X->drawable = XtWindow(win->X->handle);
-		win->dc->SetBackground(win->dc->current_background_color);
+		win->dc->SetBackground(&win->dc->current_background_color);
 		win->dc->Clear();
 		win->dc->ok = TRUE;
 	    }

@@ -908,40 +908,39 @@ static Scheme_Object *os_wxDCSetBackground(Scheme_Object *obj, int n,  Scheme_Ob
 static Scheme_Object *os_wxDCGetClippingRegion(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  class wxRegion* r;
   objscheme_check_valid(obj);
-  float _x0;
-  float* x0 = &_x0;
-  float _x1;
-  float* x1 = &_x1;
-  float _x2;
-  float* x2 = &_x2;
-  float _x3;
-  float* x3 = &_x3;
 
   
-      *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "get-clipping-region in dc<%>"), "get-clipping-region in dc<%>"", extracting boxed argument");
-      *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "get-clipping-region in dc<%>"), "get-clipping-region in dc<%>"", extracting boxed argument");
-      *x2 = objscheme_unbundle_float(objscheme_unbox(p[2], "get-clipping-region in dc<%>"), "get-clipping-region in dc<%>"", extracting boxed argument");
-      *x3 = objscheme_unbundle_float(objscheme_unbox(p[3], "get-clipping-region in dc<%>"), "get-clipping-region in dc<%>"", extracting boxed argument");
 
   
-  ((wxDC *)((Scheme_Class_Object *)obj)->primdata)->GetClippingRegion(x0, x1, x2, x3);
+  r = ((wxDC *)((Scheme_Class_Object *)obj)->primdata)->GetClippingRegion();
 
   
-  if (n > 0)
-    objscheme_set_box(p[0], scheme_make_double(_x0));
-  if (n > 1)
-    objscheme_set_box(p[1], scheme_make_double(_x1));
-  if (n > 2)
-    objscheme_set_box(p[2], scheme_make_double(_x2));
-  if (n > 3)
-    objscheme_set_box(p[3], scheme_make_double(_x3));
+  
+  return objscheme_bundle_wxRegion(r);
+}
+
+#pragma argsused
+static Scheme_Object *os_wxDCSetClippingRegion(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  objscheme_check_valid(obj);
+  class wxRegion* x0;
+
+  
+  x0 = objscheme_unbundle_wxRegion(p[0], "set-clipping-region in dc<%>", 1);
+
+  
+  ((wxDC *)((Scheme_Class_Object *)obj)->primdata)->SetClippingRegion(x0);
+
+  
   
   return scheme_void;
 }
 
 #pragma argsused
-static Scheme_Object *os_wxDCSetClippingRegion(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxDCSetClippingRect(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   objscheme_check_valid(obj);
@@ -951,29 +950,13 @@ static Scheme_Object *os_wxDCSetClippingRegion(Scheme_Object *obj, int n,  Schem
   nnfloat x3;
 
   
-  x0 = objscheme_unbundle_float(p[0], "set-clipping-region in dc<%>");
-  x1 = objscheme_unbundle_float(p[1], "set-clipping-region in dc<%>");
-  x2 = objscheme_unbundle_nonnegative_float(p[2], "set-clipping-region in dc<%>");
-  x3 = objscheme_unbundle_nonnegative_float(p[3], "set-clipping-region in dc<%>");
+  x0 = objscheme_unbundle_float(p[0], "set-clipping-rect in dc<%>");
+  x1 = objscheme_unbundle_float(p[1], "set-clipping-rect in dc<%>");
+  x2 = objscheme_unbundle_nonnegative_float(p[2], "set-clipping-rect in dc<%>");
+  x3 = objscheme_unbundle_nonnegative_float(p[3], "set-clipping-rect in dc<%>");
 
   DO_OK_CHECK(scheme_void)if (x2 < 0) x2 = 0;if (x3 < 0) x3 = 0;
-  ((wxDC *)((Scheme_Class_Object *)obj)->primdata)->SetClippingRegion(x0, x1, x2, x3);
-
-  
-  
-  return scheme_void;
-}
-
-#pragma argsused
-static Scheme_Object *os_wxDCDestroyClippingRegion(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  objscheme_check_valid(obj);
-
-  
-
-  DO_OK_CHECK(scheme_void)
-  ((wxDC *)((Scheme_Class_Object *)obj)->primdata)->DestroyClippingRegion();
+  ((wxDC *)((Scheme_Class_Object *)obj)->primdata)->SetClippingRect(x0, x1, x2, x3);
 
   
   
@@ -1331,9 +1314,9 @@ if (os_wxDC_class) {
  scheme_add_method_w_arity(os_wxDC_class, "set-font", os_wxDCSetFont, 1, 1);
  scheme_add_method_w_arity(os_wxDC_class, "set-brush", os_wxDCSetBrush, 1, 1);
  scheme_add_method_w_arity(os_wxDC_class, "set-background", os_wxDCSetBackground, 1, 1);
- scheme_add_method_w_arity(os_wxDC_class, "get-clipping-region", os_wxDCGetClippingRegion, 4, 4);
- scheme_add_method_w_arity(os_wxDC_class, "set-clipping-region", os_wxDCSetClippingRegion, 4, 4);
- scheme_add_method_w_arity(os_wxDC_class, "destroy-clipping-region", os_wxDCDestroyClippingRegion, 0, 0);
+ scheme_add_method_w_arity(os_wxDC_class, "get-clipping-region", os_wxDCGetClippingRegion, 0, 0);
+ scheme_add_method_w_arity(os_wxDC_class, "set-clipping-region", os_wxDCSetClippingRegion, 1, 1);
+ scheme_add_method_w_arity(os_wxDC_class, "set-clipping-rect", os_wxDCSetClippingRect, 4, 4);
  scheme_add_method_w_arity(os_wxDC_class, "draw-polygon", os_wxDCDrawPolygon, 1, 4);
  scheme_add_method_w_arity(os_wxDC_class, "draw-lines", os_wxDCDrawLines, 1, 3);
  scheme_add_method_w_arity(os_wxDC_class, "draw-ellipse", os_wxDCDrawEllipse, 4, 4);

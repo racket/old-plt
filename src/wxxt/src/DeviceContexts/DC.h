@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: DC.h,v 1.3 1998/09/18 22:08:54 mflatt Exp $
+ * $Id: DC.h,v 1.4 1998/09/20 21:48:46 mflatt Exp $
  *
  * Purpose: basic device context
  *
@@ -71,6 +71,7 @@ class wxColourMap;
 class wxFont;
 class wxList;
 class wxPen;
+class wxRegion;
 
 class wxDC : public wxObject {
 DECLARE_DYNAMIC_CLASS(wxDC)
@@ -84,9 +85,7 @@ public:
     virtual Bool  CanDrawBitmap(void) = 0;
     virtual void  Clear(void) = 0;
     virtual void  CrossHair(float x, float y) = 0;
-    virtual void  DestroyClippingRegion(void) = 0;
-    virtual void  DrawArc(float x1, float y1, float x2, float y2,
-			  float xc, float yc) = 0;
+    virtual void  DrawArc(float x, float y, float w, float h, float start, float end) = 0;
     virtual void  DrawEllipse(float x, float y, float w, float h) = 0;
     virtual void  DrawLine(float x1, float y1, float x2, float y2) = 0;
     virtual void  DrawLines(int n, wxPoint pts[],
@@ -117,9 +116,9 @@ public:
 			       int xoff=0, int yoff=0) = 0;
     virtual void  SetBackground(wxColour *c) = 0;
     virtual void  SetBrush(wxBrush *brush) = 0;
-    virtual void  SetClippingRegion(float x, float y, float w, float h) = 0;
-    /* MATTHEW: */
-    virtual void  GetClippingRegion(float *x, float *y, float *w, float *h) = 0;
+    virtual void  SetClippingRect(float x, float y, float w, float h) = 0;
+    virtual void  SetClippingRegion(wxRegion *r) = 0;
+    virtual wxRegion *GetClippingRegion() = 0;
     virtual void  SetColourMap(wxColourMap *cmap) = 0;
     virtual void  SetFont(wxFont *font) = 0;
     virtual void  SetPen(wxPen *pen) = 0;
@@ -141,13 +140,13 @@ public:
     void BeginDrawing(void)
 	{}
     float DeviceToLogicalX(int x)
-	{ return float( int( (float(x) + origin_x) / scale_x + 0.5) ); }
+	{ return XDEV2LOG(x); }
     float DeviceToLogicalXRel(int x)
-	{ return float( int( float(x) / scale_x + 0.5) ); }
+	{ return XDEV2LOGREL(x); }
     float DeviceToLogicalY(int y)
-	{ return float( int( (float(y) + origin_y) / scale_y + 0.5) ); }
+	{ return YDEV2LOG(y); }
     float DeviceToLogicalYRel(int y)
-	{ return float( int( float(y) / scale_y + 0.5) ); }
+	{ return YDEV2LOGREL(y); }
 #if USE_SPLINES
     void  DrawSpline(int n, wxPoint pts[]);
     void  DrawSpline(wxList *pts);
@@ -157,7 +156,7 @@ public:
 	{}
     wxColour *GetBackground(void)
 	{ wxColour *c = new wxColour();
-          *c = *current_background_color;
+          *c = current_background_color;
 	  return c; }
     wxBrush *GetBrush(void)
 	{ return current_brush; }
@@ -184,13 +183,13 @@ public:
     wxColour& GetTextForeground(void)
 	{ return current_text_fg; }
     int LogicalToDeviceX(float x)
-	{ return int( (float(x) - origin_x) * scale_x + 0.5); }
+	{ return XLOG2DEV(x); }
     int LogicalToDeviceXRel(float x)
-	{ return int(float(x) * scale_x + 0.5); }
+	{ return XLOG2DEVREL(x); }
     int LogicalToDeviceY(float y)
-	{ return int( (float(y) - origin_y) * scale_y + 0.5); }
+	{ return YLOG2DEV(y); }
     int LogicalToDeviceYRel(float y)
-	{ return int(float(y) * scale_y + 0.5); }
+	{ return YLOG2DEVREL(y); }
     float MaxX(void)
 	{ return max_x; }
     float MaxY(void)
@@ -228,7 +227,7 @@ protected:
     float logical_scale_x, logical_scale_y, user_scale_x, user_scale_y;
     float max_x, max_y, min_x, min_y;
     // Tools for drawing
-    wxColour*     current_background_color;
+    wxColour     current_background_color;
     wxBrush*     current_brush;
     wxColourMap* current_cmap;
     wxFont*      current_font;
@@ -238,6 +237,7 @@ protected:
     wxColour     current_text_bg;
     int		 current_text_bgmode;
     wxColour     current_text_fg;
+    wxRegion     *clipping;
     // utilities for internal use
     void  CalcBoundingBox(float x, float y);
     void  ComputeScaleAndOrigin(void);

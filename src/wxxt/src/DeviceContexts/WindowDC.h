@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: WindowDC.h,v 1.2 1998/09/18 22:08:57 mflatt Exp $
+ * $Id: WindowDC.h,v 1.3 1998/09/20 21:48:49 mflatt Exp $
  *
  * Purpose: device context to draw drawables
  *          (windows and pixmaps, even if pixmaps are covered by wxMemoryDC)
@@ -103,7 +103,6 @@ public:
     Bool  CanDrawBitmap(void) { return TRUE; }
     void  Clear(void);
     void  CrossHair(float x, float y);
-    void  DestroyClippingRegion(void);
     void  DrawArc(float x1, float y1, float x2, float y2, float xc, float yc);
     void  DrawEllipse(float x, float y, float w, float h);
     void  DrawLine(float x1, float y1, float x2, float y2);
@@ -132,9 +131,9 @@ public:
     void  IntDrawLines(int n, wxIntPoint pts[], int xoff=0, int yoff=0);
     void  SetBackground(wxColour *c);
     void  SetBrush(wxBrush *brush);
-    void  SetClippingRegion(float x, float y, float w, float h);
-    /* MATTHEW: */
-    void  GetClippingRegion(float *x, float *y, float *w, float *h);
+    void  SetClippingRect(float x, float y, float w, float h);
+    void  SetClippingRegion(wxRegion*);
+    wxRegion* GetClippingRegion();
     void  SetColourMap(wxColourMap *cmap);
     void  SetFont(wxFont *font);
     void  SetPen(wxPen *pen);
@@ -142,7 +141,6 @@ public:
     void  SetTextForeground(wxColour *col);
     // methods unique to wxWindowDC
     void  SetCanvasClipping(void);
-    void  GetClippingBox(float *x, float *y, float *w, float *h);
 
     virtual void GetSize(float *w, float *h);
 

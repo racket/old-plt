@@ -15,7 +15,7 @@ include make$(MZPLATFORMSUFFIX).env
 #
 # Motif Release 1.2
 #
-#   $RCSfile: Imake.tmpl,v $ $Revision: 1.4.2.5 $ $Date: 1992/04/03 19:45:35 $
+#   $RCSfile: Makefile,v $ $Revision: 1.1 $ $Date: 1997/12/22 17:35:44 $
 
 # -------------------------------------------------------------------------
 # Makefile generated from "Imake.tmpl" and </tmp/IIf.a07519>
@@ -46,7 +46,7 @@ include make$(MZPLATFORMSUFFIX).env
 #
 # Motif Release 1.2.2
 #
-#   $RCSfile: sun.cf,v $ $Revision: 1.5.4.4 $ $Date: 92/12/03 21:03:23 $
+#   $RCSfile: Makefile,v $ $Revision: 1.1 $ $Date: 1997/12/22 17:35:44 $
 # platform:  $XConsortium: sun.cf,v 1.72.1.1 92/03/18 13:13:37 rws Exp $
 
 # operating system:  SunOS 4.1.3
@@ -290,7 +290,7 @@ PICFLAGS = -pic
 # -------------------------------------------------------------------------
 # start of Imakefile
 
-# $Id: Imakefile,v 1.4 1996/01/11 15:10:13 markus Exp $
+# $Id: Makefile,v 1.1 1997/12/22 17:35:44 mflatt Exp $
 
         WXSTRING=DataStructures/$(OBJDIR)/wxstring.o
 
@@ -742,7 +742,17 @@ $(WXLIBDIR)/lib$(LIBNAME).a: $(OBJS)
 	$(RANLIB) $@
 
 clean::
-	echo Unimplemented
+	rm -f Application/$(OBJDIR)/*.o
+	rm -f DataStructures/$(OBJDIR)/*.o
+	rm -f DeviceContexts/$(OBJDIR)/*.o
+	rm -f Dialogs/$(OBJDIR)/*.o
+	rm -f EventHandling/$(OBJDIR)/*.o
+	rm -f GDI-Classes/$(OBJDIR)/*.o
+	rm -f IPC-Classes/$(OBJDIR)/*.o
+	rm -f Misc/$(OBJDIR)/*.o
+	rm -f Utilities/$(OBJDIR)/*.o
+	rm -f Windows/$(OBJDIR)/*.o
+	rm -f XWidgets/$(OBJDIR)/*.o
 
 #------------------------------------------------------------------------------
 # additional rules
@@ -991,12 +1001,13 @@ GDI-Classes/$(OBJDIR)/FontDirectory.o:\
 	GDI-Classes/FontDirectory.cc DataStructures/Object.h \
 	DataStructures/wx_list.h GDI-Classes/FontDirectory.h
 
-GDI-Classes/Pen+$(OBJDIR)/Brush.o:\
+GDI-Classes/$(OBJDIR)/Pen+Brush.o:\
 	GDI-Classes/Pen+Brush.cc \
 	DataStructures/Object.h DataStructures/wx_list.h \
-	GDI-Classes/Colour.h GDI-Classes/Pen+Brush.h
+	GDI-Classes/Colour.h GDI-Classes/Pen+Brush.h \
+        GDI-Classes/Region.h GDI-Classes/Region.cc
 
-HighLevel/wb_$(OBJDIR)/form.o:\
+HighLevel/$(OBJDIR)/wb_form.o:\
 	HighLevel/wb_form.cc DataStructures/Object.h \
 	DataStructures/wx_list.h DataStructures/wx_hash.h \
 	EventHandling/wx_sysev.h EventHandling/wx_stdev.h EventHandling/EvtHandler.h \

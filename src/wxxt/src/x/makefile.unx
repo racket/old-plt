@@ -52,6 +52,9 @@ all: $(IMAGELIBDIR) $(IMAGEOBJMAINDIR) $(IMAGEOBJDIR) \
 	cd ../../contrib/xpm/lib/; xmkmf; $(MAKE)  WXDIR='$(WXDIR)' libXpm.a CC='$(XPMCC)'
 	mv $(XPMBASEDIR)/libXpm.a $(XPMLIBDIR)
 
+clean:
+	cd ..; $(MAKE) WXDIR='$(WXDIR)' clean
+
 $(XPMOBJMAINDIR):
 	mkdir $(XPMOBJMAINDIR)
 $(XPMOBJDIR):

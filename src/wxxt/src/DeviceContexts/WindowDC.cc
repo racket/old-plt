@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: WindowDC.cc,v 1.6 1998/09/18 22:08:56 mflatt Exp $
+ * $Id: WindowDC.cc,v 1.7 1998/09/20 21:48:48 mflatt Exp $
  *
  * Purpose: device context to draw drawables
  *          (windows and pixmaps, even if pixmaps are covered by wxMemoryDC)
@@ -32,6 +32,8 @@
 #define  Uses_wxWindowDC
 #define  Uses_wxList
 #include "wx.h"
+
+#include "wx_rgn.h"
 
 #include <math.h>
 #include <string.h>
@@ -119,7 +121,7 @@ wxWindowDC::wxWindowDC(void) : wxDC()
 						 verti_width, verti_height);
     }
 
-    current_background_color = wxWHITE;
+    current_background_color = *wxWHITE;
     current_brush = wxTRANSPARENT_BRUSH;
     current_brush->Lock(1);
     current_pen = wxBLACK_PEN;
@@ -158,7 +160,7 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
 
     Bool retval = FALSE;
     wxPen *savePen;
-    wxColor *saveBack;
+    wxColor saveBack;
 
     savePen = current_pen;
     saveBack = current_background_color;
@@ -196,7 +198,7 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
     }
 
     SetPen(savePen);
-    SetBackground(saveBack);
+    SetBackground(&saveBack);
 
     return retval; // someting wrong with the drawables
 }
@@ -246,8 +248,7 @@ void wxWindowDC::CrossHair(float x, float y)
     XDrawLine(DPY, DRAWABLE, PEN_GC, xx, 0, xx, (int)h);
 }
 
-void wxWindowDC::DrawArc(float x1, float y1, float x2, float y2,
-			 float xc, float yc)
+void wxWindowDC::DrawArc(float x, float y, float w, float h, float start, float end)
 {
     if (!DRAWABLE) // ensure that a drawable has been associated
 	return;
@@ -255,45 +256,24 @@ void wxWindowDC::DrawArc(float x1, float y1, float x2, float y2,
     /* MATTHEW: [5] Implement GetPixel */
     FreeGetPixelCache();
     
-    int xx1 = XLOG2DEV(x1); int yy1 = XLOG2DEV(y1);
-    int xx2 = XLOG2DEV(x2); int yy2 = XLOG2DEV(y2);
-    int xxc = XLOG2DEV(xc); int yyc = XLOG2DEV(yc);
-    double dx1 = xx1 - xxc; double dy1 = yy1 - yyc;
-    // double dx2 = xx1 - xxc; double dy2 = yy1 - yyc;
-    double radius1 = sqrt(dx1*dx1+dy1*dy1);
-    // double radius2 = sqrt(dx2*dx2+dy2*dy2);
-    int    r      = (int)radius1;
+    int xx = XLOG2DEV(x); int yy = XLOG2DEV(y);
+    int ww = XLOG2DEVREL(w); int hh = XLOG2DEVREL(h);
     double degrees1, degrees2;
-
-    if (xx1 == xx2 && yy1 == yy2) {
-	degrees1 = 0.0;
-	degrees2 = 360.0;
-    } else if (radius1 == 0.0) {
-	degrees1 = degrees2 = 0.0;
-    } else {
-	degrees1 = (xx1 - xxc == 0) ?
-	    (yy1 - yyc < 0) ? 90.0 : -90.0 :
-	    -atan2(double(yy1-yyc), double(xx1-xxc)) * RAD2DEG;
-	degrees2 = (xx2 - xxc == 0) ?
-	    (yy2 - yyc < 0) ? 90.0 : -90.0 :
-	    -atan2(double(yy2-yyc), double(xx2-xxc)) * RAD2DEG;
-    }
+    degrees1 = start * RAD2DEG;
+    degrees2 = end * RAD2DEG;
     int alpha1 = int(degrees1 * 64.0);
     int alpha2 = int((degrees2 - degrees1) * 64.0);
     while (alpha2 <= 0)
-	alpha2 += 360*64;
+      alpha2 += 360*64;
     while (alpha1 > 360*64)
-	alpha1 -= 360*64;
-
-    int width = r;
-    int height = r;
-
+      alpha1 -= 360*64;
+    
     if (current_brush && current_brush->GetStyle() != wxTRANSPARENT)
-	XFillArc(DPY,DRAWABLE,BRUSH_GC,xxc-width,yyc-height,2*width,2*height,alpha1,alpha2);
+	XFillArc(DPY,DRAWABLE,BRUSH_GC,xx,yy,ww,hh,alpha1,alpha2);
     if (current_pen && current_pen->GetStyle() != wxTRANSPARENT)
-	XDrawArc(DPY,DRAWABLE,PEN_GC,xxc-width,yyc-height,2*width,2*height,alpha1,alpha2);
-    CalcBoundingBox(x1, y1);
-    CalcBoundingBox(x2, y2);
+	XDrawArc(DPY,DRAWABLE,PEN_GC,xx,yy,ww,hh,alpha1,alpha2);
+    CalcBoundingBox(x, y);
+    CalcBoundingBox(x + w, y + h);
 }
 
 void wxWindowDC::DrawEllipse(float x, float y, float w, float h)
@@ -561,10 +541,9 @@ void wxWindowDC::SetBackground(wxColour *c)
     if (!DRAWABLE) /* MATTHEW: [5] */
 	return;
 
-    current_background_color = new wxColour;
-    *current_background_color = *c;
+    current_background_color = *c;
 
-    unsigned long pixel = current_background_color->GetPixel(current_cmap, IS_COLOR, 0);
+    unsigned long pixel = current_background_color.GetPixel(current_cmap, IS_COLOR, 0);
 
     if (DRAW_WINDOW)
 	XSetWindowBackground(DPY, DRAW_WINDOW, pixel);
@@ -917,48 +896,27 @@ void wxWindowDC::SetTextBackground(wxColour *col)
 // clipping region
 //-----------------------------------------------------------------------------
 
-void wxWindowDC::SetClippingRegion(float x, float y, float w, float h)
+void wxWindowDC::SetClippingRect(float x, float y, float w, float h)
 {
-    XRectangle r;
+  wxRegion *r = new wxRegion(this);
+  r->SetRectangle(x, y, w, h);
 
-    if (w < 0)
-      w = 0;
-    if (h < 0)
-      h = 0;
-
-    if (USER_REG)
-      XDestroyRegion(USER_REG);
-    USER_REG = XCreateRegion();
-    r.x      = XLOG2DEV(x);
-    r.y      = XLOG2DEV(y);
-    r.width  = XLOG2DEVREL(w);
-    r.height = XLOG2DEVREL(h);
-    XUnionRectWithRegion(&r, USER_REG, USER_REG);
-    SetCanvasClipping();
+  SetClippingRegion(r);
 }
 
-/* MATTHEW: */
-void wxWindowDC:: GetClippingRegion(float *x, float *y, float *w, float *h)
+void wxWindowDC::SetClippingRegion(wxRegion *r)
 {
-  if (USER_REG) {
-    XRectangle r;
-    XClipBox(USER_REG, &r);
-    *x = XDEV2LOG(r.x);
-    *y = YDEV2LOG(r.y);
-    *w = XDEV2LOGREL(r.width);
-    *h = YDEV2LOGREL(r.height);
-  } else {
-    *x = *y = 0;
-    *w = *h = -1;
-  }
-}
-
-void wxWindowDC::DestroyClippingRegion(void)
-{
-    if (USER_REG)
-      XDestroyRegion(USER_REG);
+  clipping = r;
+  if (r)
+    USER_REG = r->rgn;
+  else
     USER_REG = NULL;
-    SetCanvasClipping();
+  SetCanvasClipping();
+}
+
+wxRegion *wxWindowDC:: GetClippingRegion()
+{
+  return clipping;
 }
 
 void wxWindowDC::GetSize(float *w, float *h)
@@ -1016,7 +974,7 @@ void wxWindowDC::Initialize(wxWindowDC_Xinit* init)
     SetTextForeground(&c);
     c = current_text_bg;
     SetTextBackground(&c);
-    SetBackground(current_background_color); 
+    SetBackground(&current_background_color); 
     SetBrush(current_brush);
     SetPen(current_pen);
 
@@ -1040,7 +998,6 @@ void wxWindowDC::Destroy(void)
     PEN_GC = BRUSH_GC = TEXT_GC = BG_GC = NULL;
 
     if (CURRENT_REG) XDestroyRegion(CURRENT_REG);
-    if (USER_REG) XDestroyRegion(USER_REG);
     if (EXPOSE_REG) XDestroyRegion(EXPOSE_REG);
     CURRENT_REG = USER_REG = EXPOSE_REG = NULL;
 }
@@ -1067,20 +1024,6 @@ void wxWindowDC::SetCanvasClipping(void)
 	XSetClipMask(DPY, BRUSH_GC, None);
 	XSetClipMask(DPY, BG_GC, None);
 	XSetClipMask(DPY, TEXT_GC, None);
-    }
-}
-
-void wxWindowDC::GetClippingBox(float *x, float *y, float *w, float *h)
-{
-    if (CURRENT_REG) {
-	XRectangle r;
-	XClipBox(CURRENT_REG, &r);
-	*x = XDEV2LOG(r.x);
-	*y = YDEV2LOG(r.y);
-	*w = XDEV2LOGREL(r.width);
-	*h = YDEV2LOGREL(r.height);
-    } else {
-	*x = *y = *w = *h = 0.0;
     }
 }
 

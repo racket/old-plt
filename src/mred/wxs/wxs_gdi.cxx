@@ -12,6 +12,7 @@
 #ifdef wx_xt
 # include "wx_dc.h"
 #endif
+#include "wx_rgn.h"
 
 
 
@@ -2828,6 +2829,511 @@ class wxCursor *objscheme_unbundle_wxCursor(Scheme_Object *obj, const char *wher
     return (os_wxCursor *)o->primdata;
   else
     return (wxCursor *)o->primdata;
+}
+
+
+static void *RgnBoundingBox(wxRegion *r)
+{
+  float x, y, w, h;
+  Scheme_Object *a[4];
+  r->BoundingBox(&x, &y, &w, &h);
+  a[0] = scheme_make_double(x);
+  a[1] = scheme_make_double(y);
+  a[2] = scheme_make_double(w);
+  a[3] = scheme_make_double(h);
+  return scheme_values(4, a);
+}
+
+#undef l_ADDRESS
+#undef l_DEREF
+#undef l_TEST
+#undef l_POINT
+#undef l_TYPE
+#undef l_LIST_ITEM_BUNDLE
+#undef l_LIST_ITEM_UNBUNDLE
+#undef l_MAKE_LIST
+#undef l_MAKE_ARRAY
+#undef l_EXTRA
+#undef l_TERMINATE
+#undef l_COPY
+#undef l_OKTEST
+#undef l_INTTYPE
+
+#define l_ADDRESS &
+#define l_DEREF *
+#define l_NULLOK 0
+#define l_TEST , l_NULLOK
+#define l_POINT 
+#define l_EXTRA 0
+#define l_TERMINATE 
+#define l_COPY l_COPYDEST.x=l_COPYSRC.x; l_COPYDEST.y=l_COPYSRC.y;
+#define l_OKTEST 
+#define l_INTTYPE int
+
+#define l_TYPE wxPoint
+#define l_LIST_ITEM_BUNDLE objscheme_bundle_wxPoint
+#define l_LIST_ITEM_UNBUNDLE objscheme_unbundle_wxPoint
+#define l_MAKE_LIST __MakewxPointList
+#define l_MAKE_ARRAY __MakewxPointArray
+
+
+
+
+
+static Scheme_Object *l_MAKE_LIST(l_TYPE l_POINT *f, l_INTTYPE c)
+{
+  Scheme_Object *cdr = scheme_null, *obj;
+
+  while (c--) {
+    obj = l_LIST_ITEM_BUNDLE(l_ADDRESS f[c]);
+    cdr = scheme_make_pair(obj, cdr);
+  }
+  
+  return cdr;
+}
+
+static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
+{
+  Scheme_Object *orig_l = l;
+  int i = 0;
+  long len;
+
+  len = scheme_proper_list_length(l);
+  if (len < 0) scheme_wrong_type(who, "proper-list", -1, 0, &l);
+  if (c) *c = len;
+
+  if (!(len + l_EXTRA))
+    return NULL;
+
+  l_TYPE l_POINT *f = new l_TYPE l_POINT[len + l_EXTRA];
+
+  while (!SCHEME_NULLP(l)) {
+    if (!SCHEME_LISTP(l))
+     scheme_arg_mismatch(who, "expected a proper list: ", orig_l);
+
+#define l_COPYDEST f[i]
+#define l_COPYSRC (l_DEREF l_LIST_ITEM_UNBUNDLE(SCHEME_CAR(l), who l_TEST))
+
+    l_COPY
+
+    l_OKTEST
+
+    i++;
+
+    l = SCHEME_CDR(l);
+  }
+  l_TERMINATE
+
+  return f;
+}
+
+
+
+static Scheme_Object *fillKind_wxODDEVEN_RULE_sym = NULL;
+static Scheme_Object *fillKind_wxWINDING_RULE_sym = NULL;
+
+static void init_symset_fillKind(void) {
+  fillKind_wxODDEVEN_RULE_sym = scheme_intern_symbol("odd-even");
+  fillKind_wxWINDING_RULE_sym = scheme_intern_symbol("winding");
+}
+
+static int unbundle_symset_fillKind(Scheme_Object *v, const char *where) {
+  if (!fillKind_wxWINDING_RULE_sym) init_symset_fillKind();
+  if (0) { }
+  else if (v == fillKind_wxODDEVEN_RULE_sym) { return wxODDEVEN_RULE; }
+  else if (v == fillKind_wxWINDING_RULE_sym) { return wxWINDING_RULE; }
+  if (where) scheme_wrong_type(where, "fillKind symbol", -1, 0, &v);
+  return 0;
+}
+
+static int istype_symset_fillKind(Scheme_Object *v, const char *where) {
+  if (!fillKind_wxWINDING_RULE_sym) init_symset_fillKind();
+  if (0) { }
+  else if (v == fillKind_wxODDEVEN_RULE_sym) { return 1; }
+  else if (v == fillKind_wxWINDING_RULE_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "fillKind symbol", -1, 0, &v);
+  return 0;
+}
+
+static Scheme_Object *bundle_symset_fillKind(int v) {
+  if (!fillKind_wxWINDING_RULE_sym) init_symset_fillKind();
+  switch (v) {
+  case wxODDEVEN_RULE: return fillKind_wxODDEVEN_RULE_sym;
+  case wxWINDING_RULE: return fillKind_wxWINDING_RULE_sym;
+  default: return NULL;
+  }
+}
+
+
+
+
+
+  
+
+
+ 
+
+
+class os_wxRegion : public wxRegion {
+ public:
+
+  os_wxRegion(Scheme_Object * obj, class wxDC* x0);
+  ~os_wxRegion();
+};
+
+Scheme_Object *os_wxRegion_class;
+
+os_wxRegion::os_wxRegion(Scheme_Object * o, class wxDC* x0)
+: wxRegion(x0)
+{
+  __gc_external = (void *)o;
+  objscheme_backpointer(&__gc_external);
+  objscheme_note_creation(o);
+}
+
+os_wxRegion::~os_wxRegion()
+{
+    objscheme_destroy(this, (Scheme_Object *)__gc_external);
+}
+
+#pragma argsused
+static Scheme_Object *os_wxRegionEmpty(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  Bool r;
+  objscheme_check_valid(obj);
+
+  
+
+  
+  r = ((wxRegion *)((Scheme_Class_Object *)obj)->primdata)->Empty();
+
+  
+  
+  return (r ? scheme_true : scheme_false);
+}
+
+#pragma argsused
+static Scheme_Object *os_wxRegionRgnBoundingBox(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  void* r;
+  objscheme_check_valid(obj);
+
+  
+
+  
+  r = RgnBoundingBox(((wxRegion *)((Scheme_Class_Object *)obj)->primdata));
+
+  
+  
+  return ((Scheme_Object *)r);
+}
+
+#pragma argsused
+static Scheme_Object *os_wxRegionSubtract(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  objscheme_check_valid(obj);
+  class wxRegion* x0;
+
+  
+  x0 = objscheme_unbundle_wxRegion(p[0], "subtract in region%", 0);
+
+  
+  ((wxRegion *)((Scheme_Class_Object *)obj)->primdata)->Subtract(x0);
+
+  
+  
+  return scheme_void;
+}
+
+#pragma argsused
+static Scheme_Object *os_wxRegionIntersect(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  objscheme_check_valid(obj);
+  class wxRegion* x0;
+
+  
+  x0 = objscheme_unbundle_wxRegion(p[0], "intersect in region%", 0);
+
+  
+  ((wxRegion *)((Scheme_Class_Object *)obj)->primdata)->Intersect(x0);
+
+  
+  
+  return scheme_void;
+}
+
+#pragma argsused
+static Scheme_Object *os_wxRegionUnion(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  objscheme_check_valid(obj);
+  class wxRegion* x0;
+
+  
+  x0 = objscheme_unbundle_wxRegion(p[0], "union in region%", 0);
+
+  
+  ((wxRegion *)((Scheme_Class_Object *)obj)->primdata)->Union(x0);
+
+  
+  
+  return scheme_void;
+}
+
+#pragma argsused
+static Scheme_Object *os_wxRegionSetArc(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  objscheme_check_valid(obj);
+  float x0;
+  float x1;
+  nnfloat x2;
+  nnfloat x3;
+  float x4;
+  float x5;
+
+  
+  x0 = objscheme_unbundle_float(p[0], "set-arc in region%");
+  x1 = objscheme_unbundle_float(p[1], "set-arc in region%");
+  x2 = objscheme_unbundle_nonnegative_float(p[2], "set-arc in region%");
+  x3 = objscheme_unbundle_nonnegative_float(p[3], "set-arc in region%");
+  x4 = objscheme_unbundle_float(p[4], "set-arc in region%");
+  x5 = objscheme_unbundle_float(p[5], "set-arc in region%");
+
+  
+  ((wxRegion *)((Scheme_Class_Object *)obj)->primdata)->SetArc(x0, x1, x2, x3, x4, x5);
+
+  
+  
+  return scheme_void;
+}
+
+#pragma argsused
+static Scheme_Object *os_wxRegionSetPolygon(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  objscheme_check_valid(obj);
+  int x0;
+  class wxPoint* x1;
+  float x2;
+  float x3;
+  int x4;
+
+  
+  x1 = NULL;
+  if (n > 1) {
+    x2 = objscheme_unbundle_float(p[1], "set-polygon in region%");
+  } else
+    x2 = 0;
+  if (n > 2) {
+    x3 = objscheme_unbundle_float(p[2], "set-polygon in region%");
+  } else
+    x3 = 0;
+  if (n > 3) {
+    x4 = unbundle_symset_fillKind(p[3], "set-polygon in region%");
+  } else
+    x4 = wxODDEVEN_RULE;
+
+  x1 = __MakewxPointArray((0 < n) ? p[0] : scheme_null, &x0, METHODNAME("region%","set-polygon"));
+  ((wxRegion *)((Scheme_Class_Object *)obj)->primdata)->SetPolygon(x0, x1, x2, x3, x4);
+
+  
+  
+  return scheme_void;
+}
+
+#pragma argsused
+static Scheme_Object *os_wxRegionSetEllipse(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  objscheme_check_valid(obj);
+  float x0;
+  float x1;
+  nnfloat x2;
+  nnfloat x3;
+
+  
+  x0 = objscheme_unbundle_float(p[0], "set-ellipse in region%");
+  x1 = objscheme_unbundle_float(p[1], "set-ellipse in region%");
+  x2 = objscheme_unbundle_nonnegative_float(p[2], "set-ellipse in region%");
+  x3 = objscheme_unbundle_nonnegative_float(p[3], "set-ellipse in region%");
+
+  
+  ((wxRegion *)((Scheme_Class_Object *)obj)->primdata)->SetEllipse(x0, x1, x2, x3);
+
+  
+  
+  return scheme_void;
+}
+
+#pragma argsused
+static Scheme_Object *os_wxRegionSetRoundedRectangle(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  objscheme_check_valid(obj);
+  float x0;
+  float x1;
+  nnfloat x2;
+  nnfloat x3;
+  float x4;
+
+  
+  x0 = objscheme_unbundle_float(p[0], "set-round-rectangle in region%");
+  x1 = objscheme_unbundle_float(p[1], "set-round-rectangle in region%");
+  x2 = objscheme_unbundle_nonnegative_float(p[2], "set-round-rectangle in region%");
+  x3 = objscheme_unbundle_nonnegative_float(p[3], "set-round-rectangle in region%");
+  if (n > 4) {
+    x4 = objscheme_unbundle_float(p[4], "set-round-rectangle in region%");
+  } else
+    x4 = 20.0;
+
+  
+  ((wxRegion *)((Scheme_Class_Object *)obj)->primdata)->SetRoundedRectangle(x0, x1, x2, x3, x4);
+
+  
+  
+  return scheme_void;
+}
+
+#pragma argsused
+static Scheme_Object *os_wxRegionSetRectangle(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  objscheme_check_valid(obj);
+  float x0;
+  float x1;
+  nnfloat x2;
+  nnfloat x3;
+
+  
+  x0 = objscheme_unbundle_float(p[0], "set-rectangle in region%");
+  x1 = objscheme_unbundle_float(p[1], "set-rectangle in region%");
+  x2 = objscheme_unbundle_nonnegative_float(p[2], "set-rectangle in region%");
+  x3 = objscheme_unbundle_nonnegative_float(p[3], "set-rectangle in region%");
+
+  
+  ((wxRegion *)((Scheme_Class_Object *)obj)->primdata)->SetRectangle(x0, x1, x2, x3);
+
+  
+  
+  return scheme_void;
+}
+
+#pragma argsused
+static Scheme_Object *os_wxRegionGetDC(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  class wxDC* r;
+  objscheme_check_valid(obj);
+
+  
+
+  
+  r = ((wxRegion *)((Scheme_Class_Object *)obj)->primdata)->GetDC();
+
+  
+  
+  return objscheme_bundle_wxDC(r);
+}
+
+#pragma argsused
+static Scheme_Object *os_wxRegion_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+  os_wxRegion *realobj;
+  class wxDC* x0;
+
+  
+  if (n != 1) 
+    scheme_wrong_count("initialization in region%", 1, 1, n, p);
+  x0 = objscheme_unbundle_wxDC(p[0], "initialization in region%", 0);
+
+  
+  realobj = new os_wxRegion(obj, x0);
+  
+  
+  ((Scheme_Class_Object *)obj)->primdata = realobj;
+  objscheme_register_primpointer(&((Scheme_Class_Object *)obj)->primdata);
+  ((Scheme_Class_Object *)obj)->primflag = 1;
+  return obj;
+}
+
+void objscheme_setup_wxRegion(void *env)
+{
+if (os_wxRegion_class) {
+    objscheme_add_global_class(os_wxRegion_class, "region%", env);
+} else {
+  os_wxRegion_class = objscheme_def_prim_class(env, "region%", "object%", os_wxRegion_ConstructScheme, 11);
+
+ scheme_add_method_w_arity(os_wxRegion_class, "is-empty?", os_wxRegionEmpty, 0, 0);
+ scheme_add_method_w_arity(os_wxRegion_class, "get-bounding-box", os_wxRegionRgnBoundingBox, 0, 0);
+ scheme_add_method_w_arity(os_wxRegion_class, "subtract", os_wxRegionSubtract, 1, 1);
+ scheme_add_method_w_arity(os_wxRegion_class, "intersect", os_wxRegionIntersect, 1, 1);
+ scheme_add_method_w_arity(os_wxRegion_class, "union", os_wxRegionUnion, 1, 1);
+ scheme_add_method_w_arity(os_wxRegion_class, "set-arc", os_wxRegionSetArc, 6, 6);
+ scheme_add_method_w_arity(os_wxRegion_class, "set-polygon", os_wxRegionSetPolygon, 1, 4);
+ scheme_add_method_w_arity(os_wxRegion_class, "set-ellipse", os_wxRegionSetEllipse, 4, 4);
+ scheme_add_method_w_arity(os_wxRegion_class, "set-round-rectangle", os_wxRegionSetRoundedRectangle, 4, 5);
+ scheme_add_method_w_arity(os_wxRegion_class, "set-rectangle", os_wxRegionSetRectangle, 4, 4);
+ scheme_add_method_w_arity(os_wxRegion_class, "get-dc", os_wxRegionGetDC, 0, 0);
+
+
+  scheme_made_class(os_wxRegion_class);
+
+
+}
+}
+
+int objscheme_istype_wxRegion(Scheme_Object *obj, const char *stop, int nullOK)
+{
+  if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
+  if (SAME_TYPE(SCHEME_TYPE(obj), scheme_object_type)
+      && scheme_is_subclass(((Scheme_Class_Object *)obj)->sclass,          os_wxRegion_class))
+    return 1;
+  else {
+    if (!stop)
+       return 0;
+    scheme_wrong_type(stop, nullOK ? "region% object or " XC_NULL_STR: "region% object", -1, 0, &obj);
+    return 0;
+  }
+}
+
+Scheme_Object *objscheme_bundle_wxRegion(class wxRegion *realobj)
+{
+  Scheme_Class_Object *obj;
+  Scheme_Object *sobj;
+
+  if (!realobj) return XC_SCHEME_NULL;
+
+  if (realobj->__gc_external)
+    return (Scheme_Object *)realobj->__gc_external;
+  if ((sobj = objscheme_bundle_by_type(realobj, realobj->__type)))
+    return sobj;
+  obj = (Scheme_Class_Object *)scheme_make_uninited_object(os_wxRegion_class);
+
+  obj->primdata = realobj;
+  objscheme_register_primpointer(&obj->primdata);
+  obj->primflag = 0;
+
+  realobj->__gc_external = (void *)obj;
+  objscheme_backpointer(&realobj->__gc_external);
+  return (Scheme_Object *)obj;
+}
+
+class wxRegion *objscheme_unbundle_wxRegion(Scheme_Object *obj, const char *where, int nullOK)
+{
+  if (nullOK && XC_SCHEME_NULLP(obj)) return NULL;
+
+  (void)objscheme_istype_wxRegion(obj, where, nullOK);
+  Scheme_Class_Object *o = (Scheme_Class_Object *)obj;
+  objscheme_check_valid(obj);
+  if (o->primflag)
+    return (os_wxRegion *)o->primdata;
+  else
+    return (wxRegion *)o->primdata;
 }
 
 

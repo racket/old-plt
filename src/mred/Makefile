@@ -112,10 +112,14 @@ depend:
 
 TILDES=*~ ../collects/mrdemo/*~ demo/turtles/*~ demo/morph/*~ system/*~ collects/mred/*~ tests/*~ misc/*~ windows/*~ ../*~
 
-clean:
+clean-mred:
+	cd $(WXDIR)/src/x; $(MAKE) WXDIR='$(WXDIR)' -f makefile.unx clean
 	rm -rf objects/*/*.o $(TILDES) core
 	cd wxme; $(MAKE) clean
 	cd wxs; $(MAKE) clean
+
+clean:
+	$(MAKE) clean-mred
 	cd ../mzscheme; $(MAKE) clean
 
 install:

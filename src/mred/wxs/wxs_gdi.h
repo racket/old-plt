@@ -87,6 +87,17 @@ void objscheme_setup_wxCursor(void *env);
 int objscheme_istype_wxCursor(Scheme_Object *obj, const char *stop, int nullOK);
 Scheme_Object *objscheme_bundle_wxCursor(class wxCursor *realobj);
 class wxCursor *objscheme_unbundle_wxCursor(Scheme_Object *obj, const char *where, int nullOK);
+extern class wxRegion *objscheme_unbundle_wxRegion(Scheme_Object *, const char *, int);
+extern class wxRegion *objscheme_unbundle_wxRegion(Scheme_Object *, const char *, int);
+extern class wxRegion *objscheme_unbundle_wxRegion(Scheme_Object *, const char *, int);
+extern Scheme_Object *objscheme_bundle_wxDC(class wxDC *);
+extern class wxDC *objscheme_unbundle_wxDC(Scheme_Object *, const char *, int);
+#endif
+void objscheme_setup_wxRegion(void *env);
+#ifndef WXS_SETUP_ONLY
+int objscheme_istype_wxRegion(Scheme_Object *obj, const char *stop, int nullOK);
+Scheme_Object *objscheme_bundle_wxRegion(class wxRegion *realobj);
+class wxRegion *objscheme_unbundle_wxRegion(Scheme_Object *obj, const char *where, int nullOK);
 #endif
 void objscheme_setup_wxFontNameDirectory(void *env);
 #ifndef WXS_SETUP_ONLY

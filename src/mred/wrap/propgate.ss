@@ -65,6 +65,7 @@
  ps-setup%
  read-editor-global-footer
  read-editor-global-header
+ region%
  scroll-event%
  set-editor-print-margin
  snip%

@@ -7,6 +7,7 @@
 #ifdef wx_xt
 # include "wx_dc.h"
 #endif
+#include "wx_rgn.h"
 
 @INCLUDE wxs.xci
 
@@ -267,6 +268,49 @@
 @CREATOR (SYM[cursor]); <> cursor id
 
 @ "ok?" : bool Ok();
+
+@END
+
+static void *RgnBoundingBox(wxRegion *r)
+{
+  float x, y, w, h;
+  Scheme_Object *a[4];
+  r->BoundingBox(&x, &y, &w, &h);
+  a[0] = scheme_make_double(x);
+  a[1] = scheme_make_double(y);
+  a[2] = scheme_make_double(w);
+  a[3] = scheme_make_double(h);
+  return scheme_values(4, a);
+}
+
+@SET TYPE = wxPoint
+@SET INDIRECT = 1
+@SET POINTWISE = 1
+@INCLUDE list.xci
+
+@INCLUDE wxs_drws.xci
+
+@CLASSBASE wxRegion "region" : "object"
+
+@CREATOR (wxDC!)
+
+@ "get-dc" : wxDC! GetDC()
+  
+@ "set-rectangle" : void SetRectangle(float, float, nnfloat, nnfloat);
+@ "set-round-rectangle" : void SetRoundedRectangle(float, float, nnfloat, nnfloat, float=20.0);
+@ "set-ellipse" : void SetEllipse(float, float, nnfloat, nnfloat);
+@ "set-polygon" : void SetPolygon(-int,wxPoint!/bList/ubList/cList,float=0,float=0,SYM[fillKind]=wxODDEVEN_RULE); : / methListSet[wxPoint.0.1.0]// : /glueListSet[wxPoint.0.1.0.METHODNAME("region%","set-polygon")]//
+@ "set-arc" : void SetArc(float, float, nnfloat, nnfloat, float, float);
+
+@ "union" : void Union(wxRegion!);
+@ "intersect" : void Intersect(wxRegion!);
+@ "subtract" : void Subtract(wxRegion!);
+
+@MACRO bundleAny = ((Scheme_Object *){x})
+ 
+@ m "get-bounding-box" : void*/bundleAny RgnBoundingBox();
+
+@ "is-empty?" : bool Empty();
 
 @END
 

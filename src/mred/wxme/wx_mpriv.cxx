@@ -2371,18 +2371,15 @@ void wxMediaEdit::Refresh(float left, float top, float width, float height,
 #endif
 
 #ifndef NO_GET_CLIPPING_REGION
-    float cx, cy, cw, ch;
-    dc->GetClippingRegion(&cx, &cy, &cw, &ch);
-    dc->SetClippingRegion(left - x, top - y, width, height);
+    wxRegion *rgn;
+    rgn = dc->GetClippingRegion();
+    dc->SetClippingRect(left - x, top - y, width, height);
 #endif
 
     Redraw(dc, top, bottom, left, right, -y, -x, show_caret, show_xsel);
 
 #ifndef NO_GET_CLIPPING_REGION
-    if (cw < 0)
-      dc->DestroyClippingRegion();
-    else
-      dc->SetClippingRegion(cx, cy, cw, ch);
+    dc->SetClippingRegion(rgn);
 #endif
 
     dc->SetBrush(brush);

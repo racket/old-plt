@@ -1620,18 +1620,15 @@ void wxMediaPasteboard::Refresh(float localx, float localy, float w, float h,
 #endif
 
 #ifndef NO_GET_CLIPPING_REGION
-    float cx, cy, cw, ch;
-    dc->GetClippingRegion(&cx, &cy, &cw, &ch);
-    dc->SetClippingRegion(localx - dx, localy - dy, w, h);
+    wxRegion *rgn;
+    rgn = dc->GetClippingRegion();
+    dc->SetClippingRect(localx - dx, localy - dy, w, h);
 #endif
 
     Draw(dc, -dx, -dy, localx, localy, w, h, show_caret);
 
 #ifndef NO_GET_CLIPPING_REGION
-    if (cw < 0)
-      dc->DestroyClippingRegion();
-    else
-      dc->SetClippingRegion(cx, cy, cw, ch);
+    dc->SetClippingRegion(rgn);
 #endif
 
     dc->SetBrush(brush);

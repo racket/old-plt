@@ -259,7 +259,7 @@
   (drscheme:debug:show-error-and-highlight
    (string? 
     (union any/c exn?) 
-    ((listof srcloc?) (union false/c (listof (list text% number number))) -> any)
+    (-> (listof srcloc?) (union false/c (listof (list/c (is-a?/c text%) number? number?))) any)
     . -> . 
     any)
    (msg exn highlight-errors)

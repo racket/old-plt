@@ -12,5 +12,5 @@
   (define compile-omit-files '("mxdemo.ss"))
   ;; (define install-collection "installer.ss")
   (define post-install-collection "installer.ss")
-  (define release-version "207")
+  (define release-version "208")
   (define release-iteration "0"))

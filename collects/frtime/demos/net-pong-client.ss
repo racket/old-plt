@@ -5,18 +5,18 @@
            (lib "erl.ss" "frtime"))
   
   (provide (all-defined)
-           (all-from-except (lib "erl.ss" "frtime")))
+           (all-from (lib "erl.ss" "frtime")))
   
-  (define master (new-cell (make-tid 1178 'frp-man)))
+  (define server (new-cell (make-tid 1178 'frtime-heart)))
   
   (define pos1
     (let* ([paddle-radius 20]
            [paddle1-pos (make-posn (clip (posn-x mouse-pos) 30 170) (clip (posn-y mouse-pos) 30 370))]
-           [dummy (bind 'paddle1-pos ((changes paddle1-pos) . ==> . (lambda (p) (list (posn-x p) (posn-y p)))))]
+           [_ (bind 'paddle1-pos ((changes paddle1-pos) . ==> . (lambda (p) (list (posn-x p) (posn-y p)))))]
            [pong (switch (left-clicks
                           . ==> .
-                          (lambda (dummy)
-                            (hold (remote-reg (value-now master) 'pong)
+                          (lambda (_)
+                            (hold (remote-reg (value-now server) 'pong)
                                   (list 300 300 100 100 0 0))))
                          (list 300 300 100 100 0 0))]
            [paddle2-pos (make-posn (first pong) (second pong))]

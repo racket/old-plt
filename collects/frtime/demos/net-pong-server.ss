@@ -6,9 +6,10 @@
    (lib "list.ss" "frtime")
    (all-except (lib "match.ss") match))
   
-  (provide (all-defined))
+  (provide (all-defined)
+           (all-from (lib "erl.ss" "frtime")))
   
-  (define slave (new-cell (make-tid 1179 'frp-man)))
+  (define client (new-cell (make-tid 1179 'frtime-heart)))
   
   (define pos1
     (let ([paddle-radius 20]
@@ -16,9 +17,9 @@
           [neg-y (lambda (v) (make-posn (posn-x v) (- (posn-y v))))]
           [paddle2-pos (make-posn (clip (posn-x mouse-pos) 230 370) (clip (posn-y mouse-pos) 30 370))]
           [paddle1-pos (switch (left-clicks . ==> .
-                                            (lambda (dummy)
+                                            (lambda (_)
                                               (hold ((remote-reg
-                                                      (value-now slave)
+                                                      (value-now client)
                                                       'paddle1-pos)
                                                      . ==> .
                                                      (lambda (l) (make-posn (first l) (second l))))

@@ -214,7 +214,7 @@
     (let ([cache (make-weak-box #f)])
       (lambda ()
         (cond
-          [(weak-box-value cache) => identity]
+          [(weak-box-value cache)]
           [else (let ([result (thunk)])
                   (set! cache (make-weak-box result))
                   result)]))))
@@ -292,8 +292,7 @@
           [_ (void)])
         (! man (make-unreg inf sup))))
   
-  ;(define-struct *undefined* ())
-  (define undefined ;(make-*undefined*))
+  (define undefined
     (string->uninterned-symbol "<undefined>"))
   (define (undefined? x)
     (eq? x undefined))
@@ -741,7 +740,7 @@
   ;; the manager of all signals and event streams
   (define man
     (spawn/name
-     'frp-man
+     'frtime-heart
      (let ([named-providers (make-hash-table)]
            [cur-beh #f])
        (let outer ()

@@ -1,7 +1,7 @@
 (module pizza (lib "frtime.ss" "frtime")
   
   (require (lib "gui.ss" "frtime"))
-  (provide (all-defined-except))
+  (provide (all-defined))
   
   (define kinds (list "New York" "Chicago" "California" "Hawaii"))
   (define sizes (list "small" "medium" "large" "Texas"))
@@ -19,9 +19,9 @@
     (make-button "Confirm"))
   
   (make-message
-   (hold (snapshot-map-e
-          (lambda (_ c k s)
-            (string-append c " ordered a "
-                           (list-ref sizes s) " "
-                           (list-ref kinds k) " pizza."))
-          button-event customer kind size))))
+   (hold (button-event
+          . -=> .
+          (snapshot (customer kind size)
+            (string-append customer " ordered a "
+                           (list-ref sizes size) " "
+                           (list-ref kinds kind) " pizza."))))))

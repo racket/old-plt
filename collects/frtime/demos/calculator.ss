@@ -1,14 +1,13 @@
 (module calculator (lib "frtime.ss" "frtime")
   
-  (require (lib "gui.ss" "frtime")
-           (lifted (lib "etc.ss") identity))
+  (require (lib "gui.ss" "frtime"))
   
   (define op-names (list "+" "-" "*" "/"))
   (define ops (list + - * /))
   
   (define (str->num s)
     (cond
-      [(string->number s) => identity]
+      [(string->number s)]
       [else 0]))
   
   (define x
@@ -23,4 +22,4 @@
   (make-message
    (format "Result = ~a" ((list-ref ops op) x y)))
   
-  (provide (all-defined-except)))
+  (provide (all-defined)))

@@ -4,7 +4,7 @@
   ;;        |  (list* Symbol (listof Attribute-srep) (listof Xexpr))
   ;;        |  (cons Symbol (listof Xexpr))
   ;;        |  Symbol
-  ;;        |  Number
+  ;;        |  Nat
   ;;        |  Comment
   ;;        |  Processing-instruction
   ;; Attribute-srep ::= (list Symbol String)
@@ -45,22 +45,27 @@
   
   ;; srep->attribute : Attribute-srep -> Attribute
   (define (srep->attribute a)
+    (unless (and (pair? a) (pair? (cdr a)) (null? (cddr a)) (symbol? (car a)) (string? (cadr a)))
+      (error 'srep->attribute "expected (cons Symbol String) given ~a" a))
     (make-attribute 'scheme 'scheme (car a) (cadr a)))
   
   ;; xexpr->xml : Xexpr -> Content
   (define (xexpr->xml x)
     (cond
       [(pair? x)
-       (let ([f (lambda (atts body-sel)
+       (let ([f (lambda (atts body)
+                  (unless (list? body)
+                    (error 'xexpr->xml "expected a list of xexprs a the body in ~a" x))
                   (make-element 'scheme 'scheme (car x)
                                 atts
-                                (map xexpr->xml (body-sel x))))])
+                                (map xexpr->xml body)))])
          (if (and (pair? (cdr x)) (or (null? (cadr x)) (and (pair? (cadr x)) (pair? (caadr x)))))
-             (f (map srep->attribute (cadr x)) cddr)
-             (f null cdr)))]
+             (f (map srep->attribute (cadr x)) (cddr x))
+             (f null (cdr x))))]
       [(string? x) (make-pcdata 'scheme 'scheme x)]
-      [(or (symbol? x) (integer? x)) (make-entity 'scheme 'scheme x)]
-      [else x]))
+      [(or (symbol? x) (and (integer? x) (>= x 0))) (make-entity 'scheme 'scheme x)]
+      [(or (comment? x) (pi? x)) x]
+      [else (error 'xexpr->xml "malformed xexpr ~a" x)]))
   
   ;; xexpr->string : Xexpression -> String
   (define (xexpr->string xexpr)

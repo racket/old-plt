@@ -323,7 +323,7 @@
         (list->string
          (let/ec out
            (let loop ([matched 0] [out out])
-             (let* ([c (read-char in)]
+             (let* ([c (non-eof read-char in)]
                     [matched (fall-back matched c)])
                (cond
                  [(= matched len) (out null)]

@@ -16,7 +16,7 @@ Element:
               a name
               attributes
               contents including sub-elements
-Xexpression:
+Xexpr:
        S-expression representations of XML data.
 
 The end of this document has more details.
@@ -79,7 +79,7 @@ Parameters
 
 > xexpr-drop-empty-attributes : Bool
        Default: #f
-       It's easier to write functionsn processing Xexpressions, if they always
+       It's easier to write functions processing Xexpressions, if they always
        have a list of attributes.  On the other hand, it's less cumbersome to
        write Xexpresssions by hand without empty lists of attributes
        everywhere.  Normally xml->xexpr leaves in empty attribute lists.

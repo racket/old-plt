@@ -362,7 +362,6 @@ add struct contracts for immutable structs?
          ;; builds a begin expression for the entire contract and provide
          ;; the first syntax object is used for source locations
          (define (code-for-one-id stx id ctrct user-rename-id)
-           (printf "code-for-one-id ~s\n" (syntax-object->datum id))
            (with-syntax ([id-rename (a:mangle-id provide-stx "provide/contract-id" id)]
                          [contract-id (a:mangle-id provide-stx "provide/contract-contract-id" id)]
                          [pos-module-source (a:mangle-id provide-stx "provide/contract-pos-module-source" id)]

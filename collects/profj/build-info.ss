@@ -320,7 +320,8 @@
                                              (append (if (null? (header-extends info))
                                                          (make-name (make-id "Object" #f) null #f)
                                                          (header-extends info))
-                                                     (header-implements info)))
+                                                     (header-implements info))
+                                             level)
                    
                    (check-current-methods (cons super-record iface-records)
                                           m
@@ -388,7 +389,7 @@
                    
                    (valid-field-names? f members type-recs)
                    (valid-method-sigs? m members level type-recs)
-                   (valid-inherited-methods? super-records (header-extends info))
+                   (valid-inherited-methods? super-records (header-extends info) level)
                    (check-current-methods super-records m members level type-recs)
                    
                    (let ((record
@@ -477,17 +478,19 @@
                                    (method-record-atypes (car methods))))))
              (method-member? method (cdr methods) level))))                              
   
-  (define (valid-inherited-methods? records extends)
+  (define (valid-inherited-methods? records extends level)
     (or (null? records)
         (and (check-inherited-method (class-record-methods (car records))
                                      (cdr records)
-                                     (car extends))
-             (valid-inherited-methods? (cdr records) (cdr extends)))))
+                                     (car extends)
+                                     level)
+             (valid-inherited-methods? (cdr records) (cdr extends) level))))
   
   (define (check-inherited-method methods records from level)
     (or (null? methods)
         (and (method-conflicts? (car methods) 
-                                (apply append (map class-record-methods records)))
+                                (apply append (map class-record-methods records))
+                                level)
              (raise-error (list from (car methods)) 'inherited-method-conflict))
         (check-inherited-method (cdr methods) records from level)))
   

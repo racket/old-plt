@@ -94,6 +94,9 @@ MA 02111-1307, USA.
 #define HAVE_ALLOCA
 #endif
 
+/* PLT Scheme: we turn off alloca to avoid stack-overflow issues. */
+#undef HAVE_ALLOCA
+
 #if ! defined (HAVE_ALLOCA) || USE_STACK_ALLOC
 struct tmp_stack
 {

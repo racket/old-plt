@@ -40,6 +40,10 @@ static const int __gmp_0 = 0;
 static int __gmp_junk;
 static int gmp_errno = 0;
 
+/* FIXME: when a thread dies or escapes during bignum_use_fuel(), the
+   allocator should be reset accordingly. Otherwise, we leak when
+   alloca is not available. */
+
 #define SCHEME_BIGNUM_USE_FUEL(n) scheme_bignum_use_fuel(n)
 extern void scheme_bignum_use_fuel(long n);
 
@@ -4641,6 +4645,38 @@ __gmp_tmp_free (mark)
       FREE (tmp, (char *) tmp->end - (char *) tmp);
     }
   current->alloc_point = mark->alloc_point;
+}
+
+void scheme_gmp_tls_init(long *s) 
+{
+  s[0] = 0;
+  s[1] = (long)&xxx;
+}
+
+void scheme_gmp_tls_load(long *s) 
+{
+  s[0] = (long)current_total_allocation;
+  s[1] = (long)current;
+}
+
+void scheme_gmp_tls_unload(long *s)
+{
+  current_total_allocation = (unsigned long)s[0];
+  current = (tmp_stack *)s[1];
+  
+}
+#else
+
+void scheme_gmp_tls_init(long *s) 
+{
+}
+
+void scheme_gmp_tls_load(long *s) 
+{
+}
+
+void scheme_gmp_tls_unload(long *s)
+{
 }
 
 #endif

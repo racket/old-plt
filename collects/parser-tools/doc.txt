@@ -8,9 +8,9 @@ symbol                             match the sequence of chars in the symbol
 string                             match its sequence of characters
 (eof)				   match end of file
 (symbol)                           expand the lex abbreviation named symbol
-(* re)                             match 0 or more occurances of re
-(+ re)                             match 1 or more occurances of re
-(? re)                             match 0 or 1 occurance of re
+(* re)                             match 0 or more occurrences of re
+(+ re)                             match 1 or more occurrences of re
+(? re)                             match 0 or 1 occurrence of re
 (: re ...1)                        match one of the listed re (alternation)
 (@ re ...)                         match each re in succession (concatenation)
 (- char char)                      match any character between two (inclusive)
@@ -20,7 +20,7 @@ string                             match its sequence of characters
 (the null concatenation `(@) means epsilon)
 
 To use the _lexer generator_ you must (require (lib "lex.ss" "parser-tools")).
-This gives you the following syntatic forms:
+This gives you the following syntactic forms:
 
 > (define-lex-abbrev name re) which associates a regular expression
    with name to be used in other regular expressions with the (symbol)
@@ -33,7 +33,7 @@ This gives you the following syntatic forms:
 > (lexer (re action) ...) expands into a function that takes a lex-buf,
    matches the re's against the buffer and returns the result of
    executing the corresponding action.  Each action is scheme code
-   that has the same scope as its lexer defintion, except that the
+   that has the same scope as its lexer definition, except that the
    variables get-start-pos, get-end-pos, get-lexeme and lex-buf are
    also bound in the action (hiding any outside binding).
    > (get-start-pos) returns a position struct for the first character 
@@ -159,7 +159,7 @@ This module provides the following syntactic forms:
      expression is a semantic action which will be evaluated when the
      input is found to match its corresponding production.  Each
      action is scheme code that has the same scope as its parser's
-     defintion, except that the variables $1, ..., $n are bound in the
+     definition, except that the variables $1, ..., $n are bound in the
      expression and may hide outside bindings of $1, ... $n.  $x is
      bound to the result of the action for the $xth grammar symbol on
      the right of the production, if that grammar symbol is a
@@ -167,7 +167,7 @@ This module provides the following syntactic forms:
      symbol is a terminal.  Here n is the number of grammar-symbols on
      the right of the production.  If the src-pos option is present in
      the parser, variables $1-start-pos, ..., $n-start-pos and
-     $1-end-pos, ..., $n-end-pos are also availible and refer to the
+     $1-end-pos, ..., $n-end-pos are also available and refer to the
      position structure corresponding to the start and end of the
      corresponding grammar-symbol.  All of the productions for a given
      non-terminal must be grouped with it, i.e. No non-terminal may
@@ -274,7 +274,7 @@ TODO:
 lexer:
 
 parser:
-Document/improve parser error handling.
+Error productions don't work in src-pos parsers.
 
 both:
 debugging

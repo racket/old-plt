@@ -133,7 +133,7 @@ The scheme-plot library uses a Non-Linear Least Squares fit algorithm
 To fit a particular function to a curve:
 \begin{enumerate}
 \item Set up the independent and dependent variable data. The first item in each vector is the 
-independant var, the second is the result. The last item must is the weight of the error - we can leave 
+independent var, the second is the result. The last item must is the weight of the error - we can leave 
 it as 1 since all the items weigh the same.
 \begin{schemedisplay}
 
@@ -146,7 +146,7 @@ it as 1 since all the items weigh the same.
 \end{schemedisplay}
 
 \item Set up the function to be fitted using fit. This particular function
-         looks like a line. The independant variables must come before the parameters.
+         looks like a line. The independent variables must come before the parameters.
 \begin{schemedisplay}
 
 (define fit-fun 
@@ -349,7 +349,7 @@ surface-options are:
 The 2d and 3d plot-items can be created in several ways. The first is by using the built-in constructors with your own data. 
 
 
-\scheme{points} will draw points on a graph given a list. of vectors specifying their location. Sym changes the appearence of the points (either 'circle or 'square).
+\scheme{points} will draw points on a graph given a list. of vectors specifying their location. Sym changes the appearance of the points (either 'circle or 'square).
 
 
 \scheme{line} will draw a line specified in either functional, ie. y=f(x), or  parametric mode, x,y = f(t) . If the function is parametric, the line-option \scheme{mode} must be set to \scheme{parametric}. \scheme{t-min} and \scheme{t-max} set the parameter when in parametric mode. \scheme{mapping} can be set to \scheme{'radial}.
@@ -399,7 +399,7 @@ Functions:
 The \scheme{fit} form attempts to fit a a \scheme{fittable-function} to the data that is given.The \scheme{guess-list}should be set of parameters and values. The more accurate  your initial guesses are, the more likely the fit is to succeed. If there are no good values for the guesses, leave them as 1
 
 
-\scheme{fit-result-final-params} returns an assosiative list of the parameters specified  in fit
+\scheme{fit-result-final-params} returns an associative list of the parameters specified  in fit
  and their values. Note that the values may not be correct if the fit failed to converge. 
 For a visual test use \scheme{fit-result-function} to get the function with the parameters 
 in place and plot it along with the original data.
@@ -407,7 +407,7 @@ in place and plot it along with the original data.
 \subsection{Misc Functions}
 
 
-The plot library comes with a few useful miscilanious functions
+The plot library comes with a few useful miscellaneous functions
 
 
 \begin{schemedisplay}
@@ -471,7 +471,7 @@ Plots a list of vectors. Each vector is a list of two scheme \scheme{vector}s.
 \scheme{plot-points : (listof vector) number ->void}
 
 
-Plots points using a specified charater. ** provide character map **
+Plots points using a specified character. ** provide character map **
 
 
 \item 

@@ -66,12 +66,14 @@
   (define (touch path)
     (close-output-port (open-output-file path 'append)))
 
-  (define (compilation-failure path zo-name date-path)
+  (define (compilation-failure path zo-name date-path reason)
     (with-handlers ((not-break-exn? void))
       (delete-file zo-name))
     (let ([fail-path (bytes->path
 		      (bytes-append (get-compilation-path path) #".fail"))])
-      (close-output-port (open-output-file fail-path 'truncate/replace)))
+      (let ([p (open-output-file fail-path 'truncate/replace)])
+	(display reason p)
+	(close-output-port p)))
     ((trace) (format "~afailure" (indent))))
 
   (define (compile-zo path)
@@ -86,7 +88,8 @@
           (with-handlers ([exn:get-module-code?
                            (lambda (ex)
                              (compilation-failure
-                              path zo-name (exn:get-module-code-path ex)))])
+                              path zo-name (exn:get-module-code-path ex)
+			      (exn-message ex)))])
             (let* ([param
                     ;; Avoid using cm while loading cm-ctime:
                     (parameterize ([use-compiled-file-kinds 'none])
@@ -103,7 +106,7 @@
                 (make-directory code-dir))
               (let ((out (open-output-file zo-name 'replace)))
                 (with-handlers ((exn:application:type?
-                                 (lambda (ex) (compilation-failure path zo-name #f))))
+                                 (lambda (ex) (compilation-failure path zo-name #f (exn-message ex)))))
                   (dynamic-wind
                     void
                     (lambda () (write code out))

@@ -5,6 +5,8 @@
            (lib "process.ss")
 	   (lib "list.ss")
 	   (lib "etc.ss")
+	   (lib "thread.ss")
+	   (lib "file.ss")
 	   (lib "getinfo.ss" "setup"))
 
   (provide pack mztar std-filter pack-collections)
@@ -34,46 +36,31 @@
                                     (let ([p (process* gzip "-c")])
                                       (if (eq? 'running ((list-ref p 4) 'status))
                                           (begin
-					  ;; Use gzip process.
-					  ;; Errors to error port:
+					    ;; Use gzip process.
+					    ;; Errors to error port:
                                             (thread 
                                              (lambda ()
-                                               (dynamic-wind
-                                                void
-                                                (lambda ()
-                                                  (let loop ()
-                                                    (let ([r (read-line (cadddr p))])
-                                                      (unless (eof-object? r)
-                                                        (fprintf (current-error-port)
-                                                                 "~a~n" r)
-                                                        (loop)))))
-                                                (lambda ()
-                                                  (close-input-port (cadddr p))))))
-					  ;; Copy input to gzip:
+					       (dynamic-wind
+						void
+						(lambda ()
+						  (copy-port (cadddr p) (current-error-port)))
+						(lambda ()
+						  (close-input-port (cadddr p))))))
+					    ;; Copy input to gzip:
                                             (thread
                                              (lambda ()
-                                               (let ([s (make-string 4096)])
-                                                 (dynamic-wind
-                                                  void
-                                                  (lambda ()
-                                                    (let loop ()
-                                                      (let ([n (read-string-avail! s gz-out)])
-                                                        (unless (eof-object? n)
-                                                          (display (substring s 0 n) (cadr p))
-                                                          (loop)))))
-                                                  (lambda ()
-                                                    (close-input-port gz-out)
-                                                    (close-output-port (cadr p)))))))
-					  ;; Copy input to b64:
+					       (dynamic-wind
+						void
+						(lambda ()
+						  (copy-port gz-out (cadr p)))
+						(lambda ()
+						  (close-input-port gz-out)
+						  (close-output-port (cadr p))))))
+					    ;; Copy input to b64:
                                             (dynamic-wind
                                              void
                                              (lambda ()
-                                               (let ([s (make-string 4096)])
-                                                 (let loop ()
-                                                   (let ([n (read-string-avail! s (car p))])
-                                                     (unless (eof-object? n)
-                                                       (display (substring s 0 n) b64-in)
-                                                       (loop))))))
+					       (copy-port (car p) b64-in))
                                              (lambda ()
                                                (close-input-port (car p))
                                                (close-output-port b64-in))))
@@ -152,16 +139,9 @@
                               [else file-mode])
                             (append dpath (list f))
                             len)
-                   (with-input-from-file p
-                     (lambda ()
-                       (let ([s (make-string 4096)])
-                         (let loop ()
-                           (let ([n (read-string-avail! s)])
-                             (unless (eof-object? n)
-                               (if (= n 4096)
-                                   (display s output)
-                                   (display (substring s 0 n) output))
-                               (loop))))))))))))
+                   (call-with-input-file* p
+                     (lambda (p)
+		       (copy-port p output))))))))
        (or files (directory-list dir)))))
   
   (define (std-filter path)

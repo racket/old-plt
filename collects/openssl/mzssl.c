@@ -103,6 +103,7 @@ static Scheme_Type sslplt_type;
 
 #ifndef MZ_PRECISE_GC
 # define GC_CAN_IGNORE /* empty */
+# define XFORM_OK_PLUS +
 #endif
 
 /* create_ register_sslplt: called when a new sslplt structure needs to be 
@@ -395,7 +396,9 @@ long ssl_do_get_string(Scheme_Input_Port *port, char *buffer, long offset,
       *stuck_why = 3;
     } else {
       /* read the data. maybe. hopefully. please. */
-      status = SSL_read(ssl->ssl, buffer+offset+bytes_read, size-bytes_read);
+      status = SSL_read(ssl->ssl, 
+			buffer XFORM_OK_PLUS offset XFORM_OK_PLUS bytes_read, 
+			size-bytes_read);
       
       if(status < 1) {
 	/* see what kind of error this was */
@@ -573,7 +576,6 @@ long write_string(Scheme_Output_Port *port, const char *buffer, long offset,
   int err = 0;
   int status = 0;
   long out_size;
-  long wrote_bytes = 0;
 
   /* make sure people aren't trying to do something sneaky */
   if (ssl->close_out) {
@@ -581,10 +583,9 @@ long write_string(Scheme_Output_Port *port, const char *buffer, long offset,
     goto write_error;
   }
 
-  /* this is all very complicated due to rarely_block being three valued */
   if (ssl->ob_used) {
     if (rarely_block == 2)
-      return 0;
+      return size ? 0 : -1; /* return -1 if this was a flush request */
     /* Wait until it's writable */
     scheme_block_until((Scheme_Ready_Fun)sslout_char_ready, 
 		       (Scheme_Needs_Wakeup_Fun)sslout_need_wakeup,
@@ -592,6 +593,9 @@ long write_string(Scheme_Output_Port *port, const char *buffer, long offset,
   }
 
   /* We get here only when !ssl->ob_used. */
+
+  if (!size) /* this was a flush request, and we've flushed */
+    return 0;
 
   /* could have been closed by another thread */
   if (ssl->close_out) {
@@ -603,7 +607,7 @@ long write_string(Scheme_Output_Port *port, const char *buffer, long offset,
      obuffer, in case the write must be continued (in which case
      SSL_write insists on getting the same arguments that it received
      last time). */
-  out_size = size-wrote_bytes;
+  out_size = size;
   if (out_size > OBUFFER_SIZE)
     out_size = OBUFFER_SIZE;
   memcpy(ssl->obuffer, buffer + offset, out_size);
@@ -782,8 +786,8 @@ static Scheme_Output_Port *make_sslout_port(SSL *ssl, struct sslplt *data)
    Or scream bloody murder if it wasn't a string. */
 char *check_host_and_convert(const char *name, int argc, Scheme_Object *argv[], int pos)
 {
-  if(SCHEME_STRINGP(argv[pos]) )
-    return SCHEME_STR_VAL(argv[pos]); 
+  if (SCHEME_CHAR_STRINGP(argv[pos]))
+    return SCHEME_BYTE_STR_VAL(scheme_char_string_to_byte_string(argv[pos]));
   
   scheme_wrong_type(name, "string", pos, argc, argv);
   return NULL; /* unnecessary, but it makes GCC happy */
@@ -1100,8 +1104,8 @@ static Scheme_Object *ssl_connect(int argc, Scheme_Object *argv[])
  clean_up_and_die:
   if (sock != INVALID_SOCKET) closesocket(sock);
   scheme_raise_exn(MZEXN_I_O_TCP, 
-		   "ssl-connect: connection to %s, port %d failed (%Z)",
-		   SCHEME_STR_VAL(argv[0]), SCHEME_INT_VAL(argv[1]), 
+		   "ssl-connect: connection to %T, port %d failed (%Z)",
+		   argv[0], SCHEME_INT_VAL(argv[1]), 
 		   err, errstr);
   
   /* not strictly necessary, but it makes our C compiler happy */
@@ -1317,7 +1321,7 @@ ctx_load_file(const char *name, int mode, int client_ok, int argc, Scheme_Object
 		      (client_ok ? "ssl-listener or ssl-client-context" : "ssl-listener"),
 		      0, argc, argv);
 
-  if (!SCHEME_STRINGP(argv[1]))
+  if (!SCHEME_PATHP(argv[1]))
     scheme_wrong_type(name, "string", 1, argc, argv);
 
   if (mode == mzssl_RSA_KEY) {
@@ -1328,11 +1332,10 @@ ctx_load_file(const char *name, int mode, int client_ok, int argc, Scheme_Object
 	format = SSL_FILETYPE_ASN1;
   }
   
-  filename = scheme_expand_filename(SCHEME_STR_VAL(argv[1]),
-				    SCHEME_STRTAG_VAL(argv[1]),
-				    name,
-				    NULL,
-				    SCHEME_GUARD_FILE_READ);
+  filename = scheme_expand_string_filename(argv[1],
+					   name,
+					   NULL,
+					   SCHEME_GUARD_FILE_READ);
 
   if (SAME_TYPE(SCHEME_TYPE(argv[0]), ssl_listener_type))
     ctx = ((listener_t *)(argv[0]))->ctx;
@@ -1606,11 +1609,11 @@ static Scheme_Object *ssl_addresses(int argc, Scheme_Object *argv[])
 
   b = (unsigned char *)&here_a;
   sprintf(sa, "%d.%d.%d.%d", b[0], b[1], b[2], b[3]);
-  result[0] = scheme_make_string(sa);
+  result[0] = scheme_make_utf8_string(sa);
 
   b = (unsigned char *)&there_a;
   sprintf(sa, "%d.%d.%d.%d", b[0], b[1], b[2], b[3]);
-  result[1] = scheme_make_string(sa);
+  result[1] = scheme_make_utf8_string(sa);
 
   return scheme_values(2, result);
 }

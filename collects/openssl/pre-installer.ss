@@ -63,10 +63,11 @@
 			      (list->vector 
 			       (list
 				"-qr"
-				(build-path 'up 'up "src" "mzscheme" "gc2" "xform.ss")
+				(path->string
+				 (build-path 'up 'up "src" "mzscheme" "gc2" "xform.ss"))
 				(let* ([inc (build-path 'up 'up "include")]
 				       [fix-path (lambda (s)
-						   (regexp-replace* " " s "\" \""))]
+						   (regexp-replace* " " (path->string s) "\" \""))]
 				       [extras (cond ((getenv "PLT_EXTENSION_LIB_PATHS") =>
 						      (lambda (ext)
 							(apply string-append
@@ -86,9 +87,15 @@
 					      (fix-path
 					       (build-path (collection-path "openssl") "openssl" "include"))
 					      extras)
-				      (format "gcc -E -DOS_X -I~a~a" (fix-path inc) extras)))
+				      (format "gcc -E ~a-I~a~a" 
+					      (if (eq? 'macosx (system-type))
+						  "-DOS_X "
+						  "")
+					      (fix-path inc) 
+					      extras)))
 				"mzssl.c"
-				(build-path 3m-dir "mzssl.c")))
+				(path->string 
+				 (build-path 3m-dir "mzssl.c"))))
 			      void))
 	  (parameterize ([link-variant '3m])
 	    (with-new-flags current-extension-compiler-flags

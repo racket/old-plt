@@ -7,12 +7,15 @@
 
   (provide slatex latex pdf-slatex pdf-latex slatex/no-latex)
 
+  (define (add-suffix p s)
+    (bytes->path (bytes-append (path->bytes p) s)))
+
   (define (filename->latex-filename input-file)
     (let ([norm (normalize-path input-file)])
       (cond
         [(file-exists? norm) input-file]
-        [(file-exists? (string-append norm ".tex"))
-         (string-append input-file ".tex")]
+        [(file-exists? (add-suffix norm #".tex"))
+	 (add-suffix input-file #".tex")]
         [else
          (error 'filename->latex-filename "~e does not exist" input-file)])))
 
@@ -86,5 +89,5 @@
                         (if (string? base)
                             base
                             (current-directory))])
-          (slatex::process-main-tex-file name))))))
+          (slatex::process-main-tex-file (path->string name)))))))
 

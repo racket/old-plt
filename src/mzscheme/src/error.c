@@ -1682,7 +1682,7 @@ static Scheme_Object *error(int argc, Scheme_Object *argv[])
 static Scheme_Object *raise_syntax_error(int argc, Scheme_Object *argv[])
 {
   const char *who;
-  Scheme_Object *sl = NULL;
+  Scheme_Object *sl = NULL, *str;
 
   if (scheme_proper_list_length(argv[0]) == 3) {
     if (SCHEME_SYMBOLP(SCHEME_CAR(argv[0]))) {
@@ -1713,10 +1713,17 @@ static Scheme_Object *raise_syntax_error(int argc, Scheme_Object *argv[])
 
   syntax_sl = sl; /* back-door argument to scheme_wrong_syntax */
 
+  str = argv[1];
+  if (SCHEME_MUTABLEP(str)) {
+    str = scheme_make_immutable_sized_char_string(SCHEME_CHAR_STR_VAL(str), 
+						  SCHEME_CHAR_STRLEN_VAL(str), 
+						  1);
+  }
+
   scheme_wrong_syntax(who,
 		      (argc > 3) ? argv[3] : NULL,
 		      (argc > 2) ? argv[2] : NULL,
-		      "%T", argv[1]);
+		      "%T", str);
 
   return NULL;
 }

@@ -32,6 +32,22 @@
 			   (k inside))
 			 (k (lambda () 0)))))))
 
+(test 0 'deep-recursion-resume/escape/thread
+      (let ([v #f])
+	(thread-wait
+	 (thread 
+	  (lambda ()
+	    (set! v 
+		  ((let/ec k
+		     (nontail-loop proc-depth
+				   (lambda (v)
+				     (let/cc inside
+				       (k (lambda () 
+					    (thread-wait (thread inside))
+					    0)))
+				     (k (lambda () 0))))))))))
+	v))
+
 (test (- proc-depth) 'deep-recursion-resume
       ((lambda (x) (if (procedure? x) (x) x))
        (let/ec k

@@ -378,12 +378,12 @@ scheme_init_struct (Scheme_Env *env)
 
   scheme_add_global_constant("make-special-comment", 
 			     scheme_make_prim_w_arity(make_special_comment,
-						      "make-sepcial-comment",
+						      "make-special-comment",
 						      1, 1),
 			     env);
   scheme_add_global_constant("special-comment-width", 
 			     scheme_make_prim_w_arity(special_comment_width,
-						      "sepcial-comment-width",
+						      "special-comment-width",
 						      1, 1),
 			     env);
   scheme_add_global_constant("special-comment?", 

@@ -413,7 +413,7 @@
   (test eval eval-syntax #'eval)
   (test #t 
 	'eval-syntax
-	(with-handlers ([exn:syntax? (lambda (x) #t)])
+	(with-handlers ([exn:fail:syntax? (lambda (x) #t)])
 	  (eval-syntax (datum->syntax-object #f 'eval))))
 
   (test eval (current-eval) 'eval)
@@ -421,7 +421,7 @@
   (test eval (current-eval) #'eval)
   (test #t 
 	'current-eval-syntax
-	(with-handlers ([exn:syntax? (lambda (x) #t)])
+	(with-handlers ([exn:fail:syntax? (lambda (x) #t)])
 	  ((current-eval) (datum->syntax-object #f 'eval))))
 
   (test eval 'compile (eval (compile 'eval)))
@@ -434,7 +434,7 @@
   (test eval 'compile (eval (compile-syntax #'eval)))
   (test #t 
 	'compile-syntax
-	(with-handlers ([exn:syntax? (lambda (x) #t)])
+	(with-handlers ([exn:fail:syntax? (lambda (x) #t)])
 	  (compile-syntax (datum->syntax-object #f 'eval))))
 
   (test eval 'expand (eval (expand 'eval)))
@@ -447,7 +447,7 @@
   (test eval 'expand (eval (expand-syntax #'eval)))
   (test #t 
 	'expand-syntax
-	(with-handlers ([exn:syntax? (lambda (x) #t)])
+	(with-handlers ([exn:fail:syntax? (lambda (x) #t)])
 	  (expand-syntax (datum->syntax-object #f 'eval))))
 
   (test eval 'expand-once (eval (expand-once 'eval)))
@@ -460,7 +460,7 @@
   (test eval 'expand-once (eval (expand-syntax-once #'eval)))
   (test #t 
 	'expand-syntax-once
-	(with-handlers ([exn:syntax? (lambda (x) #t)])
+	(with-handlers ([exn:fail:syntax? (lambda (x) #t)])
 	  (expand-syntax-once (datum->syntax-object #f 'eval))))
 
   (test eval 'expand-to-top-form (eval (expand-to-top-form 'eval)))

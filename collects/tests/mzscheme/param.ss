@@ -18,7 +18,7 @@
 	  (error 'check-string "strings didn't match: ~s vs. ~s"
 		 s s2)))))
 
-(define exn:check-string? exn:user?)
+(define exn:check-string? exn:fail?)
 
 (define called-break? #f)
 
@@ -82,29 +82,29 @@
 		      '(if (eq? (read (open-input-string "HELLO")) (quote hello))
 			   (void) 
 			   (error (quote hello)))
-		      exn:user?
+		      exn:fail?
 		      #f)
 		(list read-square-bracket-as-paren
 		      (list #t #f)
 		      '(when (symbol? (read (open-input-string "[4]")))
 			     (error 'read))
-		      exn:user?
+		      exn:fail?
 		      #f)
 		(list read-curly-brace-as-paren
 		      (list #t #f)
 		      '(when (symbol? (read (open-input-string "{4}")))
 			     (error 'read))
-		      exn:user?
+		      exn:fail?
 		      #f)
 		(list read-accept-box
 		      (list #t #f)
 		      '(read (open-input-string "#&5"))
-		      exn:read?
+		      exn:fail:read?
 		      #f)
 		(list read-accept-graph
 		      (list #t #f)
 		      '(read (open-input-string "#0=(1 . #0#)"))
-		      exn:read?
+		      exn:fail:read?
 		      #f)
 		(list read-accept-compiled
 		      (list #t #f)
@@ -113,27 +113,27 @@
 			  void
 			  (lambda () (void (read p)))
 			  (lambda () (close-input-port p))))
-		      exn:read?
+		      exn:fail:read?
 		      #f)
 		(list read-accept-bar-quote
 		      (list #t #f)
 		      '(let ([p (open-input-string "|hello #$ there| x")])
 			 (read p)
 			 (read p))
-		      exn:read?
+		      exn:fail:read?
 		      #f)
 		(list read-accept-dot
 		      (list #t #f)
 		      '(let ([p (open-input-string "(1 . 2)")])
 			 (read p))
-		      exn:read?
+		      exn:fail:read?
 		      #f)
 		(list read-accept-quasiquote
 		      (list #t #f)
 		      '(let ([p (open-input-string "`1")])
 			 (read p)
 			 (read p))
-		      exn:read?
+		      exn:fail:read?
 		      #f)
 		(list read-decimal-as-inexact
 		      (list #f #t)
@@ -166,7 +166,7 @@
 		      (list (make-custom-input-port (lambda (s) (bytes-set! s 0 (char->integer #\x)) 1) #f void)
 			    (make-custom-input-port (lambda (s) (error 'bad)) #f void))
 		      '(read-char)
-		      exn:user?
+		      exn:fail?
 		      '("bad string"))
 		(list current-output-port
 		      (list (current-output-port)
@@ -175,7 +175,7 @@
 			 (set! erroring-set? #t) 
 			 (display 5) 
 			 (set! erroring-set? #f))
-		      exn:user?
+		      exn:fail?
 		      '("bad string"))
 
 #|
@@ -187,32 +187,32 @@
 			 (set! erroring-set? #t) 
 			 ((error-display-handler) "hello")
 			 (set! erroring-set? #f))
-		      exn:user?
+		      exn:fail?
 		      "bad setting")
 |#
 		
 		(list compile-allow-set!-undefined
 		      (list #t #f)
 		      '(eval `(set! ,(gensym) 9))
-		      exn:variable?
+		      exn:fail:contract:variable?
 		      #f)
 
 		(list current-namespace
 		      (list (make-namespace)
 			    (make-namespace 'empty))
 		      '(begin 0)
-		      exn:syntax?
+		      exn:fail:syntax?
 		      '("bad setting"))
 
 		(list error-print-width
 		      (list 10 50)
 		      '(when (< 10 (error-print-width)) (error 'print-width))
-		      exn:user?
+		      exn:fail?
 		      '("bad setting"))
 		(list error-value->string-handler
 		      (list (error-value->string-handler) (lambda (x w) (error 'converter)))
 		      '(format "~e" 10)
-		      exn:user?
+		      exn:fail?
 		      (list "bad setting" zero-arg-proc one-arg-proc three-arg-proc))
 
 		(list break-enabled
@@ -226,7 +226,7 @@
 			     (set! cont? #t))))
 			 (when cont?
 			   (error 'break-enabled)))
-		      exn:user?
+		      exn:fail?
 		      #f)
 
 		(list current-print
@@ -241,7 +241,7 @@
 			   (printf "**~a**~n" s)
 			   (unless (char=? #\5 (string-ref s 2))
 				   (error "print:" s))))
-		      exn:user?
+		      exn:fail?
 		      (list "bad setting" zero-arg-proc two-arg-proc))
 
 		(list current-prompt-read
@@ -261,13 +261,13 @@
 			   (unless (and (char=? #\> (string-ref s 0))
 					(not (char=? #\h (string-ref s 0))))
 				   (error 'prompt))))
-		      exn:user?
+		      exn:fail?
 		      (list "bad setting" one-arg-proc two-arg-proc))
 
 		(list current-load
 		      (list (current-load) (lambda (f e) (error "This won't do it")))
 		      '(load "tmp5")
-		      exn:user?
+		      exn:fail?
 		      (list "bad setting" zero-arg-proc one-arg-proc))
 		(list current-eval	
 		      (list (current-eval) erroring-eval)
@@ -275,18 +275,18 @@
 			 (set! erroring-set? #t) 
 			 (eval 5)
 			 (set! erroring-set? #f))
-		      exn:user?
+		      exn:fail?
 		      (list "bad setting" zero-arg-proc two-arg-proc))
 
 		(list current-load-relative-directory
 		      (list (current-load-relative-directory) 
 			    (build-path (current-load-relative-directory) 'up))
 		      '(load-relative "loadable.ss")
-		      exn:i/o:filesystem?
+		      exn:fail:filesystem?
 		      (append (list 0)
 			      (map
 			       (lambda (t)
-				 (make-bad-test t exn:i/o:filesystem?))
+				 (make-bad-test t exn:fail:contract?))
 			       (list
 				"definitely a bad path"
 				(string #\a #\nul #\b)
@@ -300,7 +300,7 @@
 			 (print "hi" s)
 			 (unless (char=? #\" (string-ref (get-output-string s) 0))
 				 (error 'global-port-print-handler)))
-		      exn:user?
+		      exn:fail?
 		      (list "bad setting" zero-arg-proc one-arg-proc three-arg-proc))
 
 		(list current-custodian
@@ -314,20 +314,20 @@
 		(list exit-handler
 		      (list void (lambda (x) (error 'exit-handler)))
 		      '(exit)
-		      exn:user?
+		      exn:fail?
 		      (list "bad setting" zero-arg-proc two-arg-proc))
 
 		(list test-param1
 		      (list 'one 'bad-one)
 		      '(when (eq? (test-param1) 'bad-one)
 			     (error 'bad-one))
-		      exn:user?
+		      exn:fail?
 		      #f)
 		(list test-param2
 		      (list 'two 'bad-two)
 		      '(when (eq? (test-param2) 'bad-two)
 			     (error 'bad-two))
-		      exn:user?
+		      exn:fail?
 		      '("bad string"))))
 
 (for-each

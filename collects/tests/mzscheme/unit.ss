@@ -72,7 +72,7 @@
 		  (U b))])
 	(export))))
 
-(error-test #'(invoke-unit (unit (import not-defined) (export) 10) not-defined) exn:variable?)
+(error-test #'(invoke-unit (unit (import not-defined) (export) 10) not-defined) exn:fail:contract:variable?)
 
 (test #t unit? (unit (import) (export)))
 (test #t unit? (unit (import) (export) 5))

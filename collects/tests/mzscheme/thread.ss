@@ -213,7 +213,7 @@
 (err/rt-test (make-semaphore "a") type?)
 (err/rt-test (make-semaphore -1) type?)
 (err/rt-test (make-semaphore 1.0) type?)
-(err/rt-test (make-semaphore (expt 2 64)) exn:application:mismatch?)
+(err/rt-test (make-semaphore (expt 2 64)) exn:fail?)
 (arity-test semaphore? 1 1)
 
 (define test-block
@@ -401,6 +401,9 @@
 ;; Nested threads
 (test 5 call-in-nested-thread (lambda () 5))
 
+(define (exn:thread? e)
+  (and (exn:fail? e) (not (exn:fail:contract? e))))
+
 (err/rt-test (call-in-nested-thread (lambda () (kill-thread (current-thread)))) exn:thread?)
 (err/rt-test (call-in-nested-thread (lambda () ((error-escape-handler)))) exn:thread?)
 (err/rt-test (call-in-nested-thread (lambda () (raise (box 5)))) box?)
@@ -475,7 +478,7 @@
 (test #t exn:thread? (chain (lambda (t1 get-c) (kill-thread (current-thread)))))
 (test-stream '(os ms mpre is mpost))
 
-(test #t exn:application? (chain 'wrong))
+(test #t exn:fail:contract? (chain 'wrong))
 (test-stream '(os ms mpre is iother mpost))
 
 (test #t exn:break? (chain (let ([t (current-thread)]) (lambda (t1 get-c) (break-thread t)))))
@@ -498,10 +501,10 @@
 	  (sleep)
 	  'not-void)))
 
-(err/rt-test (let/cc k (call-in-nested-thread (lambda () (k)))) exn:application:continuation?)
-(err/rt-test (let/ec k (call-in-nested-thread (lambda () (k)))) exn:application:continuation?)
-(err/rt-test ((call-in-nested-thread (lambda () (let/cc k k)))) exn:application:continuation?)
-(err/rt-test ((call-in-nested-thread (lambda () (let/ec k k)))) exn:application:continuation?)
+(err/rt-test (let/cc k (call-in-nested-thread (lambda () (k)))) exn:fail:contract:continuation?)
+(err/rt-test (let/ec k (call-in-nested-thread (lambda () (k)))) exn:fail:contract:continuation?)
+(err/rt-test ((call-in-nested-thread (lambda () (let/cc k k)))) exn:fail:contract:continuation?)
+(err/rt-test ((call-in-nested-thread (lambda () (let/ec k k)))) exn:fail:contract:continuation?)
 
 (err/rt-test (call-in-nested-thread 5))
 (err/rt-test (call-in-nested-thread (lambda (x) 10)))

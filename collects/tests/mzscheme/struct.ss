@@ -16,7 +16,7 @@
   (test #f struct-type-property? 5)
   (let-values ([(type make pred sel set) (make-struct-type 'a #f 2 1 'un (list (cons prop:p 87)) (make-inspector insp1))]
 	       [(typex makex predx selx setx) (make-struct-type 'ax #f 0 5 #f null (make-inspector insp2))])
-    (arity-test make-struct-type 4 9)
+    (arity-test make-struct-type 4 10)
     (test 5 primitive-result-arity make-struct-type)
     (test #t struct-type? type)
     (test #t procedure? make)
@@ -110,7 +110,7 @@
 														     ;; this guard will fail!
 														     (/ 1 v)))])
 									 p)
-								       0))) exn:application:divide-by-zero?)
+								       0))) exn:fail:contract:divide-by-zero?)
 	    
 	    (test #t p3? btype)
 	    (test #t p3? btypex)
@@ -231,16 +231,16 @@
 	(err/rt-test (bad11 1) exn:application:arity?)
 
 	(test '("p:") regexp-match "p:"
-	      (with-handlers ([not-break-exn? exn-message])
+	      (with-handlers ([exn:fail? exn-message])
 		(bad1)))
 	(test '("q:") regexp-match "q:"
-	      (with-handlers ([not-break-exn? exn-message])
+	      (with-handlers ([exn:fail? exn-message])
 		(bad2)))
 	(test '("r:") regexp-match "r:"
-	      (with-handlers ([not-break-exn? exn-message])
+	      (with-handlers ([exn:fail? exn-message])
 		(bad3)))
 	(test '("p:") regexp-match "p:"
-	      (with-handlers ([not-break-exn? exn-message])
+	      (with-handlers ([exn:fail? exn-message])
 		(bad11))))
 
       (let* ([cons1 (make cons)]
@@ -278,16 +278,16 @@
 	(test 1-2-value cons11 1 2)
 
 	(test #f not (regexp-match (re "p:")
-				   (with-handlers ([not-break-exn? exn-message])
+				   (with-handlers ([exn:fail? exn-message])
 				     (cons1))))
 	(test #f not (regexp-match (re "q:")
-				   (with-handlers ([not-break-exn? exn-message])
+				   (with-handlers ([exn:fail? exn-message])
 				     (cons2))))
 	(test #f not (regexp-match (re "r:")
-				   (with-handlers ([not-break-exn? exn-message])
+				   (with-handlers ([exn:fail? exn-message])
 				     (cons3))))
 	(test #f not (regexp-match (re "p:")
-				   (with-handlers ([not-break-exn? exn-message])
+				   (with-handlers ([exn:fail? exn-message])
 				     (cons11)))))
       
       'done))

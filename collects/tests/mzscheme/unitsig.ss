@@ -132,7 +132,7 @@
 	(export))))
 
 (define-signature not-defined^ (not-defined))
-(error-test #'(invoke-unit/sig (unit/sig () (import not-defined^) 10) not-defined^) exn:variable?)
+(error-test #'(invoke-unit/sig (unit/sig () (import not-defined^) 10) not-defined^) exn:fail:contract:variable?)
 
 (test #t unit/sig? (unit/sig a (import)))
 (test #t unit/sig? (unit/sig b (import) (define x 1) (define y 2)))

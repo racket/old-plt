@@ -11,20 +11,20 @@
 (test #f udp-connected? udp1)
 
 ;; not bound:
-(err/rt-test (udp-receive! udp1 us1) exn:i/o:udp?)
-(err/rt-test (udp-receive!* udp1 us1) exn:i/o:udp?)
-(err/rt-test (udp-receive!/enable-break udp1 us1) exn:i/o:udp?)
+(err/rt-test (udp-receive! udp1 us1) exn:fail:network?)
+(err/rt-test (udp-receive!* udp1 us1) exn:fail:network?)
+(err/rt-test (udp-receive!/enable-break udp1 us1) exn:fail:network?)
 ;; not connected:
-(err/rt-test (udp-send udp1 us1) exn:i/o:udp?)
-(err/rt-test (udp-send* udp1 us1) exn:i/o:udp?)
-(err/rt-test (udp-send/enable-break udp1 us1) exn:i/o:udp?)
+(err/rt-test (udp-send udp1 us1) exn:fail:network?)
+(err/rt-test (udp-send* udp1 us1) exn:fail:network?)
+(err/rt-test (udp-send/enable-break udp1 us1) exn:fail:network?)
 
 (test (void) udp-send-to udp1 "localhost" 45678 #"knock knock")
 (sleep 0.05)
 (test-values '(#f #f #f) (lambda () 
 			   ;; The send above might cause an error on the next
 			   ;;  action, so we try up to 2 times:
-			   (with-handlers ([not-break-exn?
+			   (with-handlers ([exn:fail?
 					    (lambda (x)
 					      (udp-receive!* udp1 us1))])
 			     (udp-receive!* udp1 us1))))
@@ -33,7 +33,7 @@
 (test #f udp-connected? udp1)
 
 ;; still not connected:
-(err/rt-test (udp-send udp1 us1) exn:i/o:udp?)
+(err/rt-test (udp-send udp1 us1) exn:fail:network?)
 
 (define udp2 (udp-open-socket))
 (test (void) udp-bind! udp2 #f 40007)
@@ -64,7 +64,7 @@
 
 (define (flush-udp-errors udp)
   (let loop ()
-    (with-handlers ([not-break-exn?
+    (with-handlers ([exn:fail?
 		     (lambda (x) (loop))])
        (udp-receive!* udp1 us1))))
 
@@ -75,7 +75,7 @@
 (sleep 0.05)
 (flush-udp-errors udp1)
 (test-values '(#f #f #f) (lambda () (udp-receive!* udp2 us1)))
-(err/rt-test (udp-send-to udp1 "localhost" 40007 #"not ok -- currently connected") exn:i/o:udp?)
+(err/rt-test (udp-send-to udp1 "localhost" 40007 #"not ok -- currently connected") exn:fail:network?)
 (test #t udp-send* udp1 #"lots of stuff")
 (sleep 0.05)
 (flush-udp-errors udp1)
@@ -146,12 +146,12 @@
 (test (void) udp-close udp2)
 
 ;; udp1 is now closed...
-(err/rt-test (udp-bind! udp1 "localhost" 40008) exn:i/o:udp?)
-(err/rt-test (udp-connect! udp1 "localhost" 40007) exn:i/o:udp?)
-(err/rt-test (udp-send-to udp1 "localhost" 40000 #"hello") exn:i/o:udp?)
-(err/rt-test (udp-send udp1 #"hello") exn:i/o:udp?)
-(err/rt-test (udp-receive! udp1 (make-bytes 10)) exn:i/o:udp?)
-(err/rt-test (udp-close udp1) exn:i/o:udp?)
+(err/rt-test (udp-bind! udp1 "localhost" 40008) exn:fail:network?)
+(err/rt-test (udp-connect! udp1 "localhost" 40007) exn:fail:network?)
+(err/rt-test (udp-send-to udp1 "localhost" 40000 #"hello") exn:fail:network?)
+(err/rt-test (udp-send udp1 #"hello") exn:fail:network?)
+(err/rt-test (udp-receive! udp1 (make-bytes 10)) exn:fail:network?)
+(err/rt-test (udp-close udp1) exn:fail:network?)
 
 ;; Can stil get waitable after closed:
 (test #t object-waitable? (udp->send-waitable udp1))

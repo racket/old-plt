@@ -98,40 +98,14 @@ transcript.
 (define exn-table
   (list (cons exn? (cons exn-message string?))
 	(cons exn? (cons exn-continuation-marks continuation-mark-set?))
-	(cons exn:syntax? (cons exn:syntax-expr (lambda (x) (or (eq? x #f) (syntax? x)))))
-	(cons exn:syntax? (cons exn:syntax-form (lambda (x) (or (not x) (symbol? x)))))
-	(cons exn:syntax? (cons exn:syntax-module (lambda (x) (or (eq? x #f) (symbol? x) (module-path-index? x)))))
-	(cons exn:variable? (cons exn:variable-id symbol?))
-	(cons exn:application:arity? (cons exn:application-value integer?))
-	(cons exn:application:arity? (cons exn:application:arity-expected
-					   (lambda (a)
-					     (or (integer? a)
-						 (and (arity-at-least? a)
-						      (integer? (arity-at-least-value a)))
-						 (and (list? a)
-						      (andmap
-						       (lambda (a)
-							 (or (integer? a)
-							     (and (arity-at-least? a)
-								  (integer? 
-								   (arity-at-least-value a)))))
-						       a))))))
-	(cons exn:application:type? (cons exn:application:type-expected symbol?))
+	(cons exn:fail:contract:variable? (cons exn:fail:contract:variable-id symbol?))
+	(cons exn:fail:syntax? (cons exn:fail:syntax-expr (lambda (x) (or (eq? x #f) (syntax? x)))))
 	
-	(cons exn:read? (cons exn:read-line (lambda (x) (if x (pos-exact? x) #t))))
-	(cons exn:read? (cons exn:read-column (lambda (x) (if x (pos-exact? x) #t))))
-	(cons exn:read? (cons exn:read-position (lambda (x) (if x (pos-exact? x) #t))))
-	(cons exn:read? (cons exn:read-span (lambda (x) (if x (nonneg-exact? x) #t))))
+	(cons exn:fail:read? (cons exn:fail:read-srclocs (lambda (x) (if x (andmap srcloc? x) #t))))))
 
-	(cons exn:i/o:port? (cons exn:i/o:port-port (lambda (x) (or (input-port? x) (output-port? x)))))
-	(cons exn:i/o:port:read? (cons exn:i/o:port-port input-port?))
-	(cons exn:i/o:port:write? (cons exn:i/o:port-port output-port?))
-	(cons exn:i/o:filesystem? (cons exn:i/o:filesystem-pathname path?))
-	(cons exn:i/o:filesystem? (cons exn:i/o:filesystem-detail (lambda (x)
-								    (memq x '(#f
-									      ill-formed-path
-									      already-exists
-									      wrong-version)))))))
+(define exn:application:mismatch? exn:fail:contract?)
+(define exn:application:type? exn:fail:contract?)
+(define exn:application:arity? exn:fail:contract:arity?)
 
 (define mz-test-syntax-errors-allowed? #t)
 
@@ -155,7 +129,7 @@ transcript.
 			 (when (and exn? (not (exn? e)))
 			       (printf " WRONG EXN TYPE: ~s " e)
 			       (record-error (list e 'exn-type expr)))
-			 (when (and (exn:syntax? e)
+			 (when (and (exn:fail:syntax? e)
 				    (not mz-test-syntax-errors-allowed?))
 			       (printf " LATE SYNTAX EXN: ~s " e)
 			       (record-error (list e 'exn-late expr)))
@@ -216,9 +190,9 @@ transcript.
 (define no-extra-if-tests? #f)
 
 (define (syntax-test expr)
-  (error-test expr exn:syntax?)
+  (error-test expr exn:fail:syntax?)
   (unless no-extra-if-tests?
-    (error-test (datum->syntax-object expr `(if #f ,expr) expr) exn:syntax?)))
+    (error-test (datum->syntax-object expr `(if #f ,expr) expr) exn:fail:syntax?)))
 
 (define arity-test 
   (case-lambda
@@ -248,9 +222,7 @@ transcript.
 	     [make-ok?
 	      (lambda (v)
 		(lambda (e)
-		  (and (exn:application:arity? e)
-		       (= (exn:application-value e) v)
-		       (aok? (exn:application:arity-expected e)))))]
+		  (exn:application:arity? e)))]
 	     [do-test
 	      (lambda (f args check?)
 		(set! number-of-error-tests (add1 number-of-error-tests))
@@ -319,7 +291,7 @@ transcript.
 
 (define type? exn:application:type?)
 (define arity? exn:application:arity?)
-(define syntaxe? exn:syntax?)
+(define syntaxe? exn:fail:syntax?)
 
 (define non-z void)
 

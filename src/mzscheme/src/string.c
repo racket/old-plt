@@ -1949,7 +1949,7 @@ static Scheme_Object *ok_locale(int argc, Scheme_Object **argv)
       return argv[0];
     else {
       Scheme_Object *str = argv[0];
-      str = scheme_make_immutable_sized_char_string(SCHEME_CHAR_STR_VAL(str), SCHEME_CHAR_STRLEN_VAL(str), 0);
+      str = scheme_make_immutable_sized_char_string(SCHEME_CHAR_STR_VAL(str), SCHEME_CHAR_STRLEN_VAL(str), 1);
       return str;
     }
   }

@@ -782,8 +782,8 @@
 
 
 ;; Regexps that shouldn't parse:
-(err/rt-test (regexp "[a--b\u1F78]") exn:misc?)
-(err/rt-test (regexp "[a-b-c\u1F78]") exn:misc?)
+(err/rt-test (regexp "[a--b\u1F78]") exn:fail?)
+(err/rt-test (regexp "[a-b-c\u1F78]") exn:fail?)
 
 ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

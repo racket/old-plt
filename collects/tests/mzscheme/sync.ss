@@ -355,7 +355,7 @@
 								     (make-semaphore)))
 					 (make-nack-guard-waitable (lambda (nack)
 								     (/ 1 0))))
-		   exn:application:divide-by-zero?)
+		   exn:fail:contract:divide-by-zero?)
       (if v
 	  (test #t nack-try-wait? v)
 	  (loop)))
@@ -367,7 +367,7 @@
 					 (make-nack-guard-waitable (lambda (nack) 
 								     (set! v nack)
 								     (make-semaphore))))
-		   exn:application:divide-by-zero?)
+		   exn:fail:contract:divide-by-zero?)
       (if v
 	  (begin
 	    (set! v #f)

@@ -647,8 +647,8 @@
 (err/rt-test (make-string 5.0 #\b))
 (err/rt-test (make-string 5.2 #\a))
 (err/rt-test (make-string -5 #\f))
-(err/rt-test (make-string 500000000000000 #\f) exn:misc:out-of-memory?) ;; bignum on 32-bit machines
-(err/rt-test (make-string 50000000000000000000 #\f) exn:misc:out-of-memory?)  ;; bignum on 64-bit machines
+(err/rt-test (make-string 500000000000000 #\f) exn:fail:out-of-memory?) ;; bignum on 32-bit machines
+(err/rt-test (make-string 50000000000000000000 #\f) exn:fail:out-of-memory?)  ;; bignum on 64-bit machines
 
 
 (define f (make-string 3 #\*))
@@ -951,8 +951,8 @@
 (err/rt-test (make-bytes 5.0 98))
 (err/rt-test (make-bytes 5.2 97))
 (err/rt-test (make-bytes -5 98))
-(err/rt-test (make-bytes 500000000000000 #\f) exn:misc:out-of-memory?) ;; bignum on 32-bit machines
-(err/rt-test (make-bytes 50000000000000000000 #\f) exn:misc:out-of-memory?)  ;; bignum on 64-bit machines
+(err/rt-test (make-bytes 500000000000000 #\f) exn:fail:out-of-memory?) ;; bignum on 32-bit machines
+(err/rt-test (make-bytes 50000000000000000000 #\f) exn:fail:out-of-memory?)  ;; bignum on 64-bit machines
 
 
 (define f (make-bytes 3 (char->integer #\*)))
@@ -1212,8 +1212,8 @@
 (test '((1 . 10)) regexp-match-positions #rx"1(?:ak*)*2" "01akakkak23")
 
 ;; Regexps that shouldn't work:
-(err/rt-test (regexp "[a--b]") exn:misc?)
-(err/rt-test (regexp "[a-b-c]") exn:misc?)
+(err/rt-test (regexp "[a--b]") exn:fail?)
+(err/rt-test (regexp "[a-b-c]") exn:fail?)
 
 ;; A good test of unicode-friendly ".":
 (test '("load-extension: couldn't open \\\" (%s)\"") 
@@ -1261,7 +1261,7 @@
 (err/rt-test (make-vector 1.0 'a))
 (err/rt-test (make-vector 10.2 'a))
 (err/rt-test (make-vector -1 'a))
-(err/rt-test (make-vector 1000000000000000000000 'a) exn:misc:out-of-memory?)
+(err/rt-test (make-vector 1000000000000000000000 'a) exn:fail:out-of-memory?)
 (arity-test vector-set! 3 3)
 (err/rt-test (vector-set! #() 0 'x) exn:application:mismatch?)
 (err/rt-test (vector-set! #(1 2 3) -1 'x))

@@ -241,7 +241,6 @@ Fisher-Burke error recovery
 Possibly change the $1 style to something like SML/NJ YACC uses
 LALR table compression
 Error checking for useless productions
-Error check for use of an end token in a production
 Error check the use of error productions
 
 both:

@@ -116,7 +116,6 @@ static Scheme_Object *compile(int argc, Scheme_Object *argv[]);
 static Scheme_Object *compiled_p(int argc, Scheme_Object *argv[]);
 static Scheme_Object *expand(int argc, Scheme_Object **argv);
 static Scheme_Object *local_expand(int argc, Scheme_Object **argv);
-static Scheme_Object *local_expand_body_expression(int argc, Scheme_Object **argv);
 static Scheme_Object *expand_once(int argc, Scheme_Object **argv);
 static Scheme_Object *enable_break(int, Scheme_Object *[]);
 static Scheme_Object *current_eval(int argc, Scheme_Object *[]);
@@ -257,25 +256,19 @@ scheme_init_eval (Scheme_Env *env)
 						      "compiled-expression?", 
 						      1, 1), 
 			     env);
-  scheme_add_global_constant("expand-defmacro", 
+  scheme_add_global_constant("expand", 
 			     scheme_make_prim_w_arity(expand, 
-						      "expand-defmacro",
+						      "expand",
 						      1, 1), 
 			     env);
-  scheme_add_global_constant("local-expand-defmacro", 
+  scheme_add_global_constant("local-expand", 
 			     scheme_make_prim_w_arity(local_expand, 
-						      "local-expand-defmacro",
-						      1, 2), 
+						      "local-expand",
+						      2, 2), 
 			     env);
-  scheme_add_global_constant("local-expand-body-expression", 
-			     scheme_make_prim_w_arity2(local_expand_body_expression, 
-						       "local-expand-body-expression",
-						       1, 2,
-						       2, 2), 
-			     env);
-  scheme_add_global_constant("expand-defmacro-once", 
+  scheme_add_global_constant("expand-once", 
 			     scheme_make_prim_w_arity(expand_once, 
-						      "expand-defmacro-once", 
+						      "expand-once", 
 						      1, 1), 
 			     env);
   scheme_add_global_constant("break-enabled", 
@@ -3188,7 +3181,7 @@ static Scheme_Comp_Env *local_expand_extend_env(Scheme_Object *locals,
   Scheme_Object *l;
   
   for (l = locals; SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {
-    if (!SCHEME_SYMBOLP(SCHEME_CAR(l)))
+    if (!SCHEME_STX_SYMBOLP(SCHEME_CAR(l)))
       return NULL;
   }
   if (!SCHEME_NULLP(l))
@@ -3206,11 +3199,11 @@ local_expand(int argc, Scheme_Object **argv)
   if (env && (argc > 1)) {
     env = local_expand_extend_env(argv[1], env);
     if (!env)
-      scheme_wrong_type("local-expand-defmacro", "list of symbols", 1, argc, argv);
+      scheme_wrong_type("local-expand", "list of symbols", 1, argc, argv);
   }
   if (!env)
     scheme_raise_exn(MZEXN_MISC,
-		     "local-expand-defmacro: illegal at run-time");
+		     "local-defmacro: illegal at run-time");
 
   return _expand(argv[0], env, -1, 0);
 }

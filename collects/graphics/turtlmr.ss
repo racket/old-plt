@@ -5,11 +5,19 @@
   (define turtles:window #f)
   (define turtles:shown? #f)
 
+  (define pi 3.141592653589793)
+  (define pi/2 (/ pi 2))
+
   (define icon-pen (send mred:the-pen-list find-or-create-pen "SALMON" 1 'xor))
+  (define icon-brush (send mred:the-brush-list find-or-create-brush "SALMON" 'xor))
+  (define blank-pen (send mred:the-pen-list find-or-create-pen "BLACK" 1 'transparent))
   (define w-pen (send mred:the-pen-list find-or-create-pen "white" 1 'solid))
   (define b-pen (send mred:the-pen-list find-or-create-pen "black" 1 'solid))
   
   (define show-turtle-icons? #t)
+
+  ;; turtle-style : (union 'triangle 'line 'empty)
+  (define turtle-style 'triangle)
 
   (define plot-window%
     (class mred:frame% (name width height)
@@ -17,24 +25,53 @@
       (public 
 	[bitmap (make-object mred:bitmap% width height #t)])
       (private
-	[memory-dc (make-object mred:bitmap-dc%)])
+	[memory-dc (make-object mred:bitmap-dc%)]
+	[pl (make-object mred:point% 0 0)]
+	[pr (make-object mred:point% 0 0)]
+	[ph (make-object mred:point% 0 0)]
+	[points (list pl pr ph)])
       (public
 	[flip-icons
 	 (lambda ()
-	   (flatten (lambda (x) x))
-	   (let ([dc (send canvas get-dc)])
-	     (send dc set-pen icon-pen)
-	     (for-each (lambda (turtle)
-			 (let ([x (turtle-x turtle)]
-			       [y (turtle-y turtle)]
-			       [theta (turtle-angle turtle)]
-			       [size 2])
-			   (send dc draw-line
-				 x y
-				 (+ x (* size (cos theta)))
-				 (+ y (* size (sin theta))))))
-		       turtles-state)
-	     (send dc set-pen b-pen)))]
+	   (case turtle-style
+	     [(triangle line)
+	      (flatten (lambda (x) x))
+	      (let* ([dc (send canvas get-dc)]
+		     [proc
+		      (if (eq? turtle-style 'line)
+			  (lambda (turtle)
+			    (let ([x (turtle-x turtle)]
+				  [y (turtle-y turtle)]
+				  [theta (turtle-angle turtle)]
+				  [size 2])
+			      (send dc draw-line
+				    x y
+				    (+ x (* size (cos theta)))
+				    (+ y (* size (sin theta))))))
+			  (lambda (turtle)
+			    (let* ([x (turtle-x turtle)]
+				   [y (turtle-y turtle)]
+				   [theta (turtle-angle turtle)]
+				   [long-size 20]
+				   [short-size 10]
+				   [l-theta (+ theta pi/2)]
+				   [r-theta (- theta pi/2)])
+			      (send ph set-x (+ x (* long-size (cos theta))))
+			      (send ph set-y (+ y (* long-size (sin theta))))
+			      (send pl set-x (+ x (* short-size (cos l-theta))))
+			      (send pl set-y (+ y (* short-size (sin l-theta))))
+			      (send pr set-x (+ x (* short-size (cos r-theta))))
+			      (send pr set-y (+ y (* short-size (sin r-theta))))
+			      (send dc draw-polygon points))))])
+		(if (eq? turtle-style 'line)
+		    (send dc set-pen icon-pen)
+		    (begin
+		      (send dc set-pen blank-pen)
+		      (send dc set-brush icon-brush)))
+		(for-each proc turtles-state)
+		(send dc set-pen b-pen))]
+	     [else
+	      (void)]))]
 	[canvas% 
 	 (class mred:canvas% args
 	   (inherit get-dc)
@@ -291,7 +328,7 @@
   
   (define turn
     (lambda (c)
-      (turn/radians (* (/ c 360) 2 3.141592653589793))))
+      (turn/radians (* (/ c 360) 2 pi))))
   
   (define move-offset
     (lambda (x y)

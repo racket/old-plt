@@ -343,3 +343,16 @@
 		    (turn/radians (sign d))
 		    (fernd (- n 1) sign)))])
 	(fernd n +)))))
+
+(define (gapped-lines)
+  (local [(define gaps 5)
+	  (define lines 3)]
+    (tprompt
+     (turn/radians (/ pi 2))
+     (spaced-turtles lines)
+     (turn/radians (- (/ pi 2)))
+     (draw (* 4 (expt 2 gaps))))
+    (tprompt
+     (spaced-turtles gaps)
+     (turn/radians (/ pi 2))
+     (erase (* 4 (expt 2 lines))))))

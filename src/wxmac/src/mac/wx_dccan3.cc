@@ -24,6 +24,10 @@ static double DrawMeasLatin1Text(const char *text, int d, int theStrlen, int bit
 				 int again, int qd_spacing, int smoothing,
 				 float angle);
 
+#ifndef FloatToFixed
+# define FloatToFixed(a) ((Fixed)((float) (a) * fixed1)) 
+#endif
+
 //-----------------------------------------------------------------------------
 void wxCanvasDC::DrawText(const char* text, float x, float y, Bool use16, int d, float angle)
 {
@@ -38,8 +42,9 @@ void wxCanvasDC::DrawText(const char* text, float x, float y, Bool use16, int d,
   wxMacSetCurrentTool(kTextTool);
 
   ::GetFontInfo(&fontInfo);
-  start.h = XLOG2DEV(x);
-  start.v = YLOG2DEV(y) + fontInfo.ascent; /* ascent is already scaled */
+  /* ascent is already scaled */
+  start.h = XLOG2DEV(x) + (int)(fontInfo.ascent * sin(angle));
+  start.v = YLOG2DEV(y) + (int)(fontInfo.ascent * cos(angle));
   MoveTo(start.h + SetOriginX, start.v + SetOriginY); // move pen to start drawing text
 
   DrawLatin1Text(text, d, -1, use16, TRUE, font->GetEffectiveSmoothing(user_scale_y), angle);
@@ -411,6 +416,18 @@ static double DrawMeasLatin1Text(const char *text, int d, int theStrlen, int bit
 			  ll_theTags, ll_theSizes, ll_theValues);
   }
 
+  if (angle != 0.0) {
+    GC_CAN_IGNORE ATSUAttributeTag  r_theTags[] = { kATSULineRotationTag };
+    GC_CAN_IGNORE ByteCount    r_theSizes[] = { sizeof(Fixed) };
+    ATSUAttributeValuePtr r_theValues[1];
+    Fixed deg_angle;
+
+    deg_angle = FloatToFixed(angle * 180 / 3.14159);
+    r_theValues[0] = &deg_angle;
+    ATSUSetLayoutControls(layout, 1, r_theTags, r_theSizes, r_theValues); 
+  }
+
+
   {
     ATSTrapezoid bounds;
     ItemCount actual;
@@ -548,7 +565,7 @@ atsuSetStyleFromGrafPtrParams( ATSUStyle iStyle, short txFont, short txSize, SIn
 {
  OSStatus status = noErr;
 
-#define xNUM_TAGS 10
+#define xNUM_TAGS 9
  
  GC_CAN_IGNORE ATSUAttributeTag  theTags[] = { kATSUFontTag,
 					       kATSUSizeTag,
@@ -558,8 +575,7 @@ atsuSetStyleFromGrafPtrParams( ATSUStyle iStyle, short txFont, short txSize, SIn
 					       kATSUQDCondensedTag,
 					       kATSUQDExtendedTag,
 					       kATSUColorTag,
-					       kATSUStyleRenderingOptionsTag,
-					       kATSUFontMatrixTag
+					       kATSUStyleRenderingOptionsTag
                                                };
  GC_CAN_IGNORE ByteCount    theSizes[] = { sizeof(ATSUFontID),
 					   sizeof(Fixed),
@@ -569,8 +585,7 @@ atsuSetStyleFromGrafPtrParams( ATSUStyle iStyle, short txFont, short txSize, SIn
 					   sizeof(Boolean),
 					   sizeof(Boolean),
 					   sizeof(RGBColor),
-					   sizeof(ATSStyleRenderingOptions),
-                                           sizeof(CGAffineTransform)
+					   sizeof(ATSStyleRenderingOptions)
                                            };
  ATSUAttributeValuePtr theValues[ xNUM_TAGS /* = sizeof(theTags) / sizeof(ATSUAttributeTag) */ ];
  int tag_count;
@@ -581,7 +596,6 @@ atsuSetStyleFromGrafPtrParams( ATSUStyle iStyle, short txFont, short txSize, SIn
  Boolean    isBold, isItalic, isUnderline, isCondensed, isExtended;
  SInt16    intrinsicStyle;
  ATSStyleRenderingOptions options = kATSStyleNoOptions;
- CGAffineTransform matrix;
  
  status = atsuFONDtoFontID( txFont, txFace, &atsuFont, &intrinsicStyle );
  apple_require( status == noErr, EXIT );
@@ -625,12 +639,6 @@ atsuSetStyleFromGrafPtrParams( ATSUStyle iStyle, short txFont, short txSize, SIn
  theValues[8] = &options;
 
  tag_count = xNUM_TAGS;
- if (angle == 0.0) {
-   --tag_count;
- } else {
-   matrix = CGAffineTransformMakeRotation(angle);
-   theValues[9] = &matrix;
- }
 
  status = ATSUSetAttributes( iStyle, tag_count, theTags, theSizes, theValues );
 

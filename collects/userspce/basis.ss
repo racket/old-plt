@@ -22,13 +22,13 @@
   (define (report-error . x) (error 'report-error))
   (define (report-unlocated-error . x) (error 'report-unlocated-error))
 
-  (define system-parameterization (current-parameterization))
   (define primitive-load (current-load))
   (define primitive-eval (current-eval))
 
   (define r4rs-style-printing (make-parameter #f))
   
-  (define this-program (with-handlers ([void "mzscheme"]) (global-defined-value 'program)))
+  (define this-program (with-handlers ([void (lambda (x) "mzscheme")])
+			 (global-defined-value 'program)))
 
   (define-struct/parse setting (vocabulary-symbol
 				case-sensitive?
@@ -76,7 +76,7 @@
 				   (allow-improper-lists? #f)
 				   (allow-reader-quasiquote? #f)
 				   (sharing-printing? #f)
-				   (abbreviate-cons-as-list? #f)
+				   (abbreviate-cons-as-list? #t)
 				   (signal-undefined #t)
 				   (signal-not-boolean #t)
 				   (eq?-only-compares-symbols? #t)
@@ -106,7 +106,7 @@
 			       (define-argv? #f))))
 	  (vector 'MzScheme (make-setting/parse
 			     `((vocabulary-symbol mzscheme)
-			       (case-sensitive? #t)
+			       (case-sensitive? #f)
 			       (allow-set!-on-undefined? #f)
 			       (unmatched-cond/case-is-error? #f)
 			       (allow-improper-lists? #t)
@@ -124,7 +124,7 @@
 			       (define-argv? #t))))
 	  (vector '|MzScheme Debug| (make-setting/parse
 				     `((vocabulary-symbol mzscheme-debug)
-				       (case-sensitive? #t)
+				       (case-sensitive? #f)
 				       (allow-set!-on-undefined? #f)
 				       (unmatched-cond/case-is-error? #f)
 				       (allow-improper-lists? #t)
@@ -239,7 +239,7 @@
   ;;                       boolean
   ;;                    -> void
   ;; note: the boolean controls which variant of the union is passed to the 3rd arg.
-  ;; expects to be called with user's parameterization active
+  ;; expects to be called with user's parameter settings active
   (define (process-file/zodiac filename f annotate?)
     (let ([port (open-input-file filename 'text)]
 	  [setting (current-setting)])
@@ -260,7 +260,7 @@
   ;; process-file/no-zodiac : string
   ;;                          ((+ process-finish sexp zodiac:parsed) ( -> void) -> void)
   ;;                       -> void
-  ;; expects to be called with user's parameterization active
+  ;; expects to be called with user's parameter settings active
   (define (process-file/no-zodiac filename f)
     (call-with-input-file filename
       (lambda (port)
@@ -269,7 +269,7 @@
   ;; process-sexp/no-zodiac : sexp
   ;;                          ((+ process-finish sexp zodiac:parsed) ( -> void) -> void)
   ;;                       -> void
-  ;; expects to be called with user's parameterization active
+  ;; expects to be called with user's parameter settings active
   (define (process-sexp/no-zodiac sexp f)
     (process/no-zodiac (let ([first? #t]) 
 			 (lambda ()
@@ -285,7 +285,7 @@
   ;;                       boolean
   ;;                    -> void
   ;; note: the boolean controls which variant of the union is passed to the 2nd arg.
-  ;; expects to be called with user's parameterization active
+  ;; expects to be called with user's parameter settings active
   (define (process-sexp/zodiac sexp z f annotate?)
     (let* ([reader
 	    (let ([gone #f])
@@ -299,7 +299,7 @@
   ;;                  ((+ process-finish sexp zodiac:parsed) ( -> void) -> void)
   ;;                  boolean
   ;;               -> void
-  ;; expects to be called with user's parameterization active
+  ;; expects to be called with user's parameter settings active
   (define (process/zodiac reader f annotate?)
     (let ([setting (current-setting)]
 	  [vocab (current-vocabulary)]
@@ -505,7 +505,6 @@
     ;; initialize-parameters : custodian
     ;;                         (list-of symbols)
     ;;                         setting
-    ;;                         (X Y Z -> void)
     ;;                       -> void
     ;; effect: sets the parameters for drscheme and drscheme-jr
     (define (initialize-parameters custodian namespace-flags setting)

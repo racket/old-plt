@@ -538,6 +538,8 @@ scheme_make_linked_closure(Scheme_Process *p,
 
 #ifdef MZ_PRECISE_GC
   closure->closure_size = i;
+#else
+  closure->zero_sized = !i;
 #endif
 
   if (!close || !i)
@@ -627,11 +629,10 @@ scheme_link_closure_compilation(Scheme_Object *_data, Link_Info *info)
     }
   }
 
-  if ((SCHEME_TYPE(data->code) > _scheme_compiled_values_types_)
-      || (SCHEME_TYPE(data->code) == scheme_quote_compilation_type))
+  if (SCHEME_TYPE(data->code) > _scheme_compiled_values_types_)
     data->flags |= CLOS_FOLDABLE;
 
-  if (!data->closure_size && info->can_optimize_constants)
+  if (!data->closure_size)
     /* If only global frame is needed, go ahead and finialize closure */
     return scheme_make_linked_closure(NULL, (Scheme_Object *)data, 0);
   else
@@ -2696,7 +2697,7 @@ static Scheme_Object *write_compiled_closure(Scheme_Object *obj)
 			CONS(data->name ? data->name : scheme_null,
 			     CONS(scheme_make_svector(data->closure_size,
 						      data->closure_map),
-				  data->code)))));
+				  scheme_protect_quote(data->code))))));
 }
 
 static Scheme_Object *read_compiled_closure(Scheme_Object *obj)

@@ -133,7 +133,7 @@ scheme_init_struct (Scheme_Env *env)
 
     REGISTER_SO(struct_symbol);
 
-    scheme_register_syntax("k", struct_execute);
+    scheme_register_syntax("k", struct_execute, 1);
 
     struct_symbol = scheme_intern_symbol("#%struct");
 
@@ -867,18 +867,7 @@ do_struct_syntax (Scheme_Object *forms, Scheme_Comp_Env *env,
 
   if (in_rec) {
     info->num_fields = count;
-
-    if (in_rec[drec].can_optimize_constants) {
-      Scheme_Object **sa;
-      int c;
-      sa = scheme_make_struct_names(info->name,
-				    info->fields,
-				    0, 
-				    &c);
-      info->count = c;
-      info->memo_names = sa;
-    } else
-      info->memo_names = NULL;
+    info->memo_names = NULL;
 
     return scheme_make_syntax_compile(struct_link, (Scheme_Object *)info);
   } else {
@@ -1006,7 +995,7 @@ static Scheme_Object *write_struct_info(Scheme_Object *obj)
   return cons(scheme_make_integer(info->count),
 	      cons(scheme_make_integer(info->num_fields),
 		   cons(info->name, 
-			cons(info->parent_type_expr,
+			cons(scheme_protect_quote(info->parent_type_expr),
 			     info->fields))));
 }
 

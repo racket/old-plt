@@ -2344,12 +2344,15 @@ static Scheme_Object *unit_p(int argc, Scheme_Object *argv[])
 /* Marshalling                                                        */
 /**********************************************************************/
 
-static Scheme_Object *array_to_list(Scheme_Object **a, int c, Scheme_Object *base)
+static Scheme_Object *array_to_list(Scheme_Object **a, int c, Scheme_Object *base, int pq)
 {
-  Scheme_Object *l = base;
+  Scheme_Object *l = base, *v;
 
   while (c--) {
-    l = cons(a[c], l);
+    v = a[c];
+    if (pq)
+      v = scheme_protect_quote(v);
+    l = cons(v, l);
   }
   
   return l;
@@ -2386,7 +2389,8 @@ static Scheme_Object *write_compiled_unit(Scheme_Object *o)
 		   cons(m->data,
 			array_to_list(m->exports,
 				      m->num_exports,
-				      scheme_false))));
+				      scheme_false,
+				      0))));
 }
 
 static Scheme_Object *read_compiled_unit(Scheme_Object *o)
@@ -2446,13 +2450,13 @@ static Scheme_Object *write_body_data(Scheme_Object *o)
 			     l)));
 	}
 
-	l = cons(body->u.def.expr,
+	l = cons(scheme_protect_quote(body->u.def.expr),
 		 cons(scheme_make_integer(body->u.def.count),
 		      l));
       }
       break;
     case mm_body_seq:
-      l = cons(body->u.seq.expr, l);
+      l = cons(scheme_protect_quote(body->u.seq.expr), l);
       break;
     }
     
@@ -2566,9 +2570,9 @@ static Scheme_Object *write_compound_data(Scheme_Object *o)
 	       cons(data->exports[i].ext_id, exs));
   }
 
-  subs = array_to_list(data->subunit_exprs, data->num_subunits, scheme_null);
+  subs = array_to_list(data->subunit_exprs, data->num_subunits, scheme_null, 1);
 
-  tags = array_to_list(data->tags, data->num_subunits, scheme_null);
+  tags = array_to_list(data->tags, data->num_subunits, scheme_null, 0);
 
   counts = scheme_null;
   for (i = data->num_subunits; i--; ) {
@@ -2718,9 +2722,11 @@ static Scheme_Object *write_invoke_data(Scheme_Object *o)
   return cons(scheme_make_integer(data->num_exports),
 	      cons(scheme_make_svector(data->num_local_exports,
 				       data->anchor_positions),
-		   cons(data->expr, array_to_list(data->exports,
-						  data->num_exports,
-						  scheme_null))));
+		   cons(scheme_protect_quote(data->expr), 
+			array_to_list(data->exports,
+				      data->num_exports,
+				      scheme_null,
+				      0))));
 }
 
 
@@ -3035,9 +3041,9 @@ void scheme_init_unit(Scheme_Env *env)
     compound_unit_symbol = scheme_intern_symbol("#%compound-unit");
     invoke_unit_symbol = scheme_intern_symbol("#%invoke-unit");
 
-    scheme_register_syntax("m", CloseUnit);
-    scheme_register_syntax("cm", CloseCompoundUnit);
-    scheme_register_syntax("im", InvokeUnit);
+    scheme_register_syntax("m", CloseUnit, 1);
+    scheme_register_syntax("cm", CloseCompoundUnit, 1);
+    scheme_register_syntax("im", InvokeUnit, 1);
 
     scheme_install_type_writer(scheme_compiled_unit_type, write_compiled_unit);
     scheme_install_type_reader(scheme_compiled_unit_type, read_compiled_unit);

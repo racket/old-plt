@@ -61,7 +61,7 @@ void scheme_init_objclass(Scheme_Env *env)
     inh_symbol = scheme_intern_symbol("inherit");
     ren_symbol = scheme_intern_symbol("rename");
 
-    scheme_register_syntax("dc", DefineClass_Execute);
+    scheme_register_syntax("dc", DefineClass_Execute, 1);
 
     scheme_install_type_writer(scheme_class_data_type, write_Class_Data);
     scheme_install_type_reader(scheme_class_data_type, read_Class_Data);
@@ -420,7 +420,7 @@ static void CompileItemList(Scheme_Object *form,
 
     if (!alias && !classvar->u.value) {
       Scheme_Object *cv;
-      cv = scheme_compiled_void(rec[drec].can_optimize_constants);
+      cv = scheme_compiled_void();
       classvar->u.value = cv;
     }
 
@@ -1371,7 +1371,7 @@ static Scheme_Object *CV_Bundle(ClassVariable *cvar)
     if (isref(cvar))
       f = cvar->u.source.name;
     else
-      f = cvar->u.value;
+      f = scheme_protect_quote(cvar->u.value);
     l = cons(_IVAR_EXT_NAME(cvar),
 	     cons(scheme_make_integer(cvar->vartype),
 		  cons(f, l)));
@@ -1422,11 +1422,11 @@ static Scheme_Object *write_Class_Data(Scheme_Object *obj)
   data = (Class_Data *)obj;
   
   for (i = 0; i < data->num_interfaces; i++) {
-    l = cons(data->interface_exprs[i], l);
+    l = cons(scheme_protect_quote(data->interface_exprs[i]), l);
   }
 
   return cons(CV_Bundle(data->ivars),
-	      cons(data->super_expr,
+	      cons(scheme_protect_quote(data->super_expr),
 		   cons(data->super_init_name,
 			cons(scheme_make_integer(data->num_args),
 			     cons(scheme_make_integer(data->num_required_args),

@@ -778,7 +778,7 @@ static Scheme_Object *write_Interface_Data(Scheme_Object *obj)
   data = (Interface_Data *)obj;
   
   for (i = 0; i < data->num_supers; i++) {
-    l = cons(data->super_exprs[i], l);
+    l = cons(scheme_protect_quote(data->super_exprs[i]), l);
   }
 
   /* The names were alreadyed sort by pointer value. We re-sort by
@@ -2544,7 +2544,7 @@ void scheme_init_object(Scheme_Env *env)
 
     interface_symbol = scheme_intern_symbol("#%interface");
 
-    scheme_register_syntax("if", Interface_Execute);
+    scheme_register_syntax("if", Interface_Execute, 1);
 
     scheme_install_type_writer(scheme_interface_data_type, write_Interface_Data);
     scheme_install_type_reader(scheme_interface_data_type, read_Interface_Data);

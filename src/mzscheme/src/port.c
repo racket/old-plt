@@ -2493,7 +2493,7 @@ fd_char_ready (Scheme_Input_Port *port)
 
   fip = (Scheme_FD *)port->port_data;
 
-  if (fip->regfile)
+  if (fip->regfile || port->closed)
     return 1;
 
   if (fip->bufcount)
@@ -2555,6 +2555,12 @@ static int fd_getc(Scheme_Input_Port *port)
       scheme_current_process->block_descriptor = NOT_BLOCKED;
       scheme_current_process->blocker = NULL;
       scheme_current_process->ran_some = 1;
+    }
+
+    if (port->closed) {
+      /* Another thread closed the input port while we were waiting. */
+      /* Call scheme_getc to signal the error */
+      scheme_getc((Scheme_Object *)port);
     }
 
     bc = read(fip->fd, fip->buffer, MZPORT_FD_BUFFSIZE);
@@ -2678,6 +2684,9 @@ osk_char_ready (Scheme_Input_Port *port)
   osk_console_input *osk, *orig;
   int k;
 
+  if (port->closed)
+    return 1;
+
   osk = orig = (osk_console_input *)port->port_data;
 
   while (osk->ready) {
@@ -2749,6 +2758,12 @@ static int osk_getc(Scheme_Input_Port *port)
     scheme_current_process->block_descriptor = NOT_BLOCKED;
     scheme_current_process->blocker = NULL;
     scheme_current_process->ran_some = 1;
+  }
+
+  if (port->closed) {
+    /* Another thread closed the input port while we were waiting. */
+    /* Call scheme_getc to signal the error */
+    scheme_getc((Scheme_Object *)port);
   }
 
   osk = (osk_console_input *)port->port_data;

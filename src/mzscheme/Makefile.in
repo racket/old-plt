@@ -123,7 +123,7 @@ testext.o: testext.c
 	$(CC) $(MAIN_CFLAGS) -I/home/scheme/plt/compiler/ -c testext.c -o testext.o
 
 mzstart.exe: $(srcdir)/dynsrc/start.c
-	$(CC) -o mzstart.exe $(srcdir)/dynsrc/start.c
+	$(CC) @CFLAGS@ -o mzstart.exe $(srcdir)/dynsrc/start.c
 
 starter: mzstart.exe
 

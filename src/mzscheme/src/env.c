@@ -842,7 +842,7 @@ Scheme_Object **scheme_make_builtin_references_table(void)
   scheme_misc_count += sizeof(Scheme_Object *) * (builtin_ref_counter + 1);
 #endif
 
-  ht = get_globals(scheme_get_env(scheme_config));
+  ht = get_globals(initial_env);
 
   bs = ht->buckets;
 
@@ -853,6 +853,27 @@ Scheme_Object **scheme_make_builtin_references_table(void)
   }
 
   return t;
+}
+
+Scheme_Hash_Table *scheme_map_constants_to_globals(void)
+{
+  Scheme_Hash_Table *ht, *result;
+  Scheme_Bucket **bs;
+  long i;
+
+  ht = get_globals(initial_env);
+  bs = ht->buckets;
+
+  result = scheme_hash_table(10, SCHEME_hash_ptr, 0, 0);
+
+  for (i = ht->size; i--; ) {
+    Scheme_Bucket *b = bs[i];
+    if (b && (((Scheme_Bucket_With_Const_Flag *)b)->flags & GLOB_IS_CONST)
+	&& (((Scheme_Bucket_With_Const_Flag *)b)->flags & GLOB_IS_KEYWORD))
+      scheme_add_to_table(result, (const char *)b->val, b, 0);
+  }
+
+  return result;
 }
 
 void scheme_check_identifier(const char *formname, Scheme_Object *id, 
@@ -1276,7 +1297,7 @@ int *scheme_env_get_flags(Scheme_Comp_Env *frame, int start, int count)
   return v;
 }
 
-Link_Info *scheme_link_info_create(int can_opt)
+Link_Info *scheme_link_info_create()
 {
   Link_Info *naya;
 
@@ -1286,7 +1307,6 @@ Link_Info *scheme_link_info_create(int can_opt)
 #endif
   naya->count = 0;
   naya->next = NULL;
-  naya->can_optimize_constants = can_opt;
 
   return naya;
 }
@@ -1326,8 +1346,6 @@ Link_Info *scheme_link_info_extend(Link_Info *info, int size, int oldsize, int m
       naya->flags[i] = 0;
     }
   }
-
-  naya->can_optimize_constants = info->can_optimize_constants;
 
   return naya;
 }

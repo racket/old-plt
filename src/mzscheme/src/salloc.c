@@ -1234,12 +1234,6 @@ long scheme_count_memory(Scheme_Object *root, Scheme_Hash_Table *ht)
 #endif
     }
     break;
-  case  scheme_quote_compilation_type:
-    s = sizeof(Scheme_Small_Object);
-#if FORCE_KNOWN_SUBPARTS
-    e = COUNT(SCHEME_PTR_VAL(root));
-#endif
-    break;
   case scheme_char_type:
     s = sizeof(Scheme_Small_Object);
     break;

@@ -1995,7 +1995,7 @@ static Scheme_Object *read_compiled(Scheme_Object *port,
   local_vector_memory_size = 0;
   local_vector_memory_count = 0;
 
-  result = read_marshalled(scheme_runnable_compilation_type, rp, ht CURRENTPROCARG);
+  result = read_marshalled(scheme_compilation_top_type, rp, ht CURRENTPROCARG);
 
   local_vector_memory = NULL;
 

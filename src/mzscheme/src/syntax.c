@@ -138,6 +138,7 @@ typedef struct {
   MZTAG_IF_REQUIRED
   Scheme_Object *sym;
   Scheme_Syntax_Registered *f;
+  int protect_after;
 } Linker_Name;
 
 static int num_link_names = 0, link_names_size = 0;
@@ -231,18 +232,18 @@ scheme_init_syntax (Scheme_Env *env)
     let_id_macro_symbol = scheme_intern_symbol("#%let-id-macro");
     let_expansion_time_symbol = scheme_intern_symbol("#%let-expansion-time");
 
-    scheme_register_syntax("d", define_values_execute);
-    scheme_register_syntax("!", set_execute);
-    scheme_register_syntax("dm", defmacro_execute);
-    scheme_register_syntax("di", def_id_macro_execute);
-    scheme_register_syntax("dn", def_exp_time_execute);
-    scheme_register_syntax("cl", case_lambda_execute);
-    scheme_register_syntax("v", void_execute);
-    scheme_register_syntax("e", empty_cond_execute);
-    scheme_register_syntax("0", begin0_execute);
+    scheme_register_syntax("d", define_values_execute, 1);
+    scheme_register_syntax("!", set_execute, 2);
+    scheme_register_syntax("dm", defmacro_execute, 1);
+    scheme_register_syntax("di", def_id_macro_execute, 1);
+    scheme_register_syntax("dn", def_exp_time_execute, 1);
+    scheme_register_syntax("cl", case_lambda_execute, 1);
+    scheme_register_syntax("v", void_execute, 1);
+    scheme_register_syntax("e", empty_cond_execute, 1);
+    scheme_register_syntax("0", begin0_execute, 1);
 
-    scheme_register_syntax("be", scheme_bangboxenv_execute);
-    scheme_register_syntax("b", bangboxvalue_execute);
+    scheme_register_syntax("be", scheme_bangboxenv_execute, 1);
+    scheme_register_syntax("b", bangboxvalue_execute, 1);
 
     scheme_install_type_writer(scheme_let_value_type, write_let_value);
     scheme_install_type_reader(scheme_let_value_type, read_let_value);
@@ -255,8 +256,8 @@ scheme_init_syntax (Scheme_Env *env)
     scheme_install_type_writer(scheme_case_lambda_sequence_type, write_case_lambda);
     scheme_install_type_reader(scheme_case_lambda_sequence_type, read_case_lambda);
 
-    scheme_install_type_writer(scheme_writeable_compilation_type, write_top);
-    scheme_install_type_reader(scheme_runnable_compilation_type, read_top);
+    scheme_install_type_writer(scheme_compilation_top_type, write_top);
+    scheme_install_type_reader(scheme_compilation_top_type, read_top);
 
     scheme_define_values_syntax = scheme_make_compiled_syntax(define_values_syntax, 
 							      define_values_expand);
@@ -690,15 +691,7 @@ quote_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *re
   
   v = SCHEME_CAR(SCHEME_CDR(form));
 
-  if (rec[drec].can_optimize_constants)
-    return v;
-  else {
-    Scheme_Object *q;
-    q = scheme_alloc_small_object();
-    q->type = scheme_quote_compilation_type;
-    SCHEME_PTR_VAL(q) = v;
-    return q;
-  }
+  return v;
 }
 
 static Scheme_Object *
@@ -730,7 +723,7 @@ if_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, 
   if (len == 4)
     elsep = SCHEME_CAR(SCHEME_CDR(SCHEME_CDR(SCHEME_CDR(form))));
   else
-    elsep = scheme_compiled_void(rec[drec].can_optimize_constants);
+    elsep = scheme_compiled_void();
 
   scheme_init_compile_recs(rec, drec, recs, 3);
   recs[1].value_name = name;
@@ -739,9 +732,6 @@ if_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, 
   env = scheme_no_defines(env);
 
   test = scheme_compile_expr(test, env, recs, 0);
-
-  if (SAME_TYPE(SCHEME_TYPE(test), scheme_quote_compilation_type))
-    test = SCHEME_PTR_VAL(test);
 
   if (SCHEME_TYPE(test) > _scheme_compiled_values_types_) {
     Scheme_Object *comp, *exp;
@@ -898,7 +888,7 @@ set_link(Scheme_Object *data, Link_Info *link)
     Scheme_Object *cv;
     int flags, li;
 
-    cv = scheme_compiled_void(link->can_optimize_constants);
+    cv = scheme_compiled_void();
 
     lv = MALLOC_ONE_TAGGED(Scheme_Let_Value);
     lv->type = scheme_let_value_type;
@@ -941,9 +931,7 @@ set_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec,
   var = scheme_static_distance(name, env, 
 			       SCHEME_SETTING 
 			       + SCHEME_GLOB_ALWAYS_REFERENCE
-			       + (rec[drec].can_optimize_constants 
-				  ? SCHEME_ELIM_CONST 
-				  : 0)
+			       + SCHEME_ELIM_CONST 
 			       + (rec[drec].dont_mark_local_use 
 				  ? SCHEME_DONT_MARK_USE 
 				  : 0));
@@ -956,7 +944,7 @@ set_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec,
 	|| SAME_TYPE(SCHEME_TYPE(var), scheme_local_unbox_type)) {
       /* local */
       if (SCHEME_LOCAL_POS(var) == SCHEME_LOCAL_POS(val))
-	return scheme_compiled_void(rec[drec].can_optimize_constants);
+	return scheme_compiled_void();
     } else {
       /* global; can't do anything b/c var might be undefined or constant */
     }
@@ -1978,17 +1966,14 @@ Scheme_Object *scheme_compile_sequence(Scheme_Object *forms,
     } else {
       Scheme_Object *body;
       body = scheme_compile_block(forms, env, rec, drec);
-      return scheme_make_sequence_compilation(body, rec[drec].can_optimize_constants, 1);
+      return scheme_make_sequence_compilation(body, 1, 1);
     }
   }
 }
 
-Scheme_Object *scheme_compiled_void(int can_be_value)
+Scheme_Object *scheme_compiled_void()
 {
-  if (can_be_value)
-    return scheme_void;
-  else
-    return scheme_compiled_void_code;
+  return scheme_void;
 }
 
 static Scheme_Object *
@@ -2050,7 +2035,7 @@ do_begin_syntax (char *name,
   
   if (SCHEME_NULLP(forms)) {
     if (!zero && scheme_is_toplevel(env))
-      return scheme_compiled_void(rec[drec].can_optimize_constants);
+      return scheme_compiled_void();
     scheme_wrong_syntax(name, NULL, form, "bad syntax (empty form)");
     return NULL;
   }
@@ -2088,8 +2073,7 @@ do_begin_syntax (char *name,
     /* Top level */
     body = scheme_compile_list(forms, env, rec, drec);
 
-  forms = scheme_make_sequence_compilation(body, rec[drec].can_optimize_constants, 
-					   zero ? -1 : 1);
+  forms = scheme_make_sequence_compilation(body, 1, zero ? -1 : 1);
 
   if (!zero || (NOT_SAME_TYPE(SCHEME_TYPE(forms), scheme_begin0_sequence_type)))
     return forms;
@@ -2448,7 +2432,7 @@ do_letmacro(char *where, Scheme_Object *formname,
 
   if (rec) {
     v = scheme_compile_block(body, env, rec, drec);
-    v = scheme_make_sequence_compilation(v, rec[drec].can_optimize_constants, 1);
+    v = scheme_make_sequence_compilation(v, 1, 1);
   } else {
     v = scheme_expand_block(body, env, depth);
     if (depth >= 0)
@@ -2519,7 +2503,8 @@ static Scheme_Object *void_execute(Scheme_Object *expr)
 /*********************************************************************/
 
 void scheme_register_syntax(const char *name, 
-			    Scheme_Syntax_Registered *f)
+			    Scheme_Syntax_Registered *f,
+			    int protect_after)
 {
   Scheme_Object *s;
 
@@ -2542,16 +2527,19 @@ void scheme_register_syntax(const char *name,
   s = scheme_intern_symbol(name);
   linker_names[num_link_names].sym = s;
   linker_names[num_link_names].f = f;
+  linker_names[num_link_names].protect_after = protect_after;
   num_link_names++;
 }
 
-Scheme_Object *scheme_find_linker_name(Scheme_Syntax_Registered *f)
+Scheme_Object *scheme_find_linker_name(Scheme_Syntax_Registered *f, int *protect_after)
 {
   int i;
 
   for (i = 0; i < num_link_names; i++) {
-    if (SAME_PTR(linker_names[i].f, f))
+    if (SAME_PTR(linker_names[i].f, f)) {
+      *protect_after = linker_names[i].protect_after;
       return linker_names[i].sym;
+    }
   }
 
   return NULL;
@@ -2580,7 +2568,8 @@ static Scheme_Object *write_let_value(Scheme_Object *obj)
   return cons(scheme_make_integer(lv->count),
 	      cons(scheme_make_integer(lv->position),
 		   cons(lv->autobox ? scheme_true : scheme_false,
-			cons(lv->value, lv->body))));
+			cons(scheme_protect_quote(lv->value), 
+			     scheme_protect_quote(lv->body)))));
 }
 
 static Scheme_Object *read_let_value(Scheme_Object *obj)
@@ -2612,7 +2601,7 @@ static Scheme_Object *write_let_void(Scheme_Object *obj)
 
   return cons(scheme_make_integer(lv->count), 
 	      cons(lv->autobox ? scheme_true : scheme_false,
-		   lv->body));
+		   scheme_protect_quote(lv->body)));
 }
 
 static Scheme_Object *read_let_void(Scheme_Object *obj)
@@ -2638,7 +2627,7 @@ static Scheme_Object *write_let_one(Scheme_Object *obj)
  
   lo = (Scheme_Let_One *)obj;
 
-  return cons(lo->value, lo->body);
+  return cons(lo->value, scheme_protect_quote(lo->body));
 }
 
 static Scheme_Object *read_let_one(Scheme_Object *obj)
@@ -2666,11 +2655,11 @@ static Scheme_Object *write_letrec(Scheme_Object *obj)
   int i = lr->count;
   
   while (i--) {
-    l = cons(lr->procs[i], l);
+    l = cons(scheme_protect_quote(lr->procs[i]), l);
   }
 
   return cons(scheme_make_integer(lr->count), 
-	      cons(lr->body, l));
+	      cons(scheme_protect_quote(lr->body), l));
 }
 
 static Scheme_Object *read_letrec(Scheme_Object *obj)
@@ -2704,7 +2693,7 @@ static Scheme_Object *write_top(Scheme_Object *obj)
   Scheme_Compilation_Top *top = (Scheme_Compilation_Top *)obj;
 
   return cons(scheme_make_integer(top->max_let_depth),
-	      top->code);
+	      scheme_protect_quote(top->code));
 }
 
 static Scheme_Object *read_top(Scheme_Object *obj)
@@ -2712,7 +2701,7 @@ static Scheme_Object *read_top(Scheme_Object *obj)
   Scheme_Compilation_Top *top;
 
   top = MALLOC_ONE_TAGGED(Scheme_Compilation_Top);
-  top->type = scheme_runnable_compilation_type;
+  top->type = scheme_compilation_top_type;
   top->max_let_depth = SCHEME_INT_VAL(SCHEME_CAR(obj));
   top->code = SCHEME_CDR(obj);
 

@@ -1025,7 +1025,6 @@ typedef struct Scheme_Compile_Info
 {
   MZTAG_IF_REQUIRED
   int max_let_depth;
-  char can_optimize_constants;
   char keep_unit_debug_info;
   char dont_mark_local_use;
   Scheme_Object *value_name;
@@ -1034,7 +1033,6 @@ typedef struct Scheme_Compile_Info
 typedef struct Link_Info
 {
   MZTAG_IF_REQUIRED
-  int can_optimize_constants;
   int size, oldsize, count, pos, anchor_offset;
   short *old_pos;
   short *new_pos;
@@ -1076,6 +1074,8 @@ typedef struct {
 #ifdef MZ_PRECISE_GC
   MZ_HASH_KEY_EX
   int closure_size;
+#else
+  short zero_sized;
 #endif
   Scheme_Object *code;
   Scheme_Object *vals[1];
@@ -1135,12 +1135,15 @@ Scheme_Object *scheme_make_linked_closure(Scheme_Process *p,
 
 #define scheme_add_good_binding(i,v,f) (f->values[i] = v)
 
-Scheme_Object *scheme_compiled_void(int can_be_value);
+Scheme_Object *scheme_compiled_void();
+extern Scheme_Object *scheme_compiled_void_code; /* used by print */
 
 /* Linking */
-void scheme_register_syntax(const char *name, Scheme_Syntax_Registered *f);
-Scheme_Object *scheme_find_linker_name(Scheme_Syntax_Registered *f);
+void scheme_register_syntax(const char *name, Scheme_Syntax_Registered *f, int protect_after);
+Scheme_Object *scheme_find_linker_name(Scheme_Syntax_Registered *f, int *protect_after);
 Scheme_Syntax_Registered *scheme_find_linker(Scheme_Object *sym);
+
+Scheme_Object *scheme_protect_quote(Scheme_Object *expr);
 
 Scheme_Object *scheme_make_syntax_link(Scheme_Syntax_Executer *prim,
 				       Scheme_Object *data);
@@ -1154,7 +1157,7 @@ int scheme_is_compiled_procedure(Scheme_Object *o, int can_be_closed);
 
 Scheme_Object *scheme_link_lets(Scheme_Object *form, Link_Info *info);
 
-Link_Info *scheme_link_info_create(int can_opt);
+Link_Info *scheme_link_info_create();
 Link_Info *scheme_link_info_extend(Link_Info *info, int size, int oldsize, int mapcount);
 void scheme_link_info_add_mapping(Link_Info *info, int oldp, int newp, int flags);
 void scheme_link_info_set_anchor_offset(Link_Info *info, int offset);
@@ -1230,6 +1233,7 @@ int *scheme_env_get_flags(Scheme_Comp_Env *frame, int start, int count);
 #define SCHEME_DONT_MARK_USE 128
 
 Scheme_Env *scheme_min_env(Scheme_Comp_Env *);
+Scheme_Hash_Table *scheme_map_constants_to_globals(void);
 
 Scheme_Object *scheme_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
 				  int depth);

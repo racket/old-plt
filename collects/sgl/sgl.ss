@@ -235,7 +235,6 @@
            (rename glPopName pop-name)
            (rename glPushName push-name)
            (rename glLoadName load-name)
-           (rename glSelectBuffer select-buffer)
            (rename glPassThrough pass-through)
            (rename glEndList end-list)
            (rename glCallList call-list)

@@ -227,7 +227,6 @@
   (r p glScaled)
   (r p glScalef)
   (r p glScissor)
-  (r p glSelectBuffer)
   (r p glShadeModel)
   (r p glStencilFunc)
   (r p glStencilMask)

@@ -13,7 +13,7 @@
  * MERCHANTABILITY or  FITNESS FOR A  PARTICULAR PURPOSE. See  the GNU
  * Lesser General Public License for more details.
  *
- * Modifications Copyright (C) 2003 by Scott Owens <sowens@cs.utah.edu>
+ * Modifications Copyright (C) 2003-2005 by Scott Owens <sowens@cs.utah.edu>
  *
  */
 
@@ -245,6 +245,20 @@ static Scheme_Object *scm_CompressedTexSubImage1D(void *p,
 }
 
 #endif /* GL_VERSION_1_3 */
+
+/*---------------------------------------------------------------------------*/
+/* 5.2. Selection                                                            */
+
+static Scheme_Object *scm_SelectBuffer(void *p, int c, Scheme_Object **v)
+{
+        GLsizei n = arg_GLsizei(0);
+
+        glSelectBuffer(n, arg_GLuintv(1, n));
+        return scheme_void;
+}
+
+
+
 
 /*---------------------------------------------------------------------------*/
 /* 6.1. Querying GL State						     */
@@ -517,6 +531,7 @@ static const struct scm_prim scm_prim[] = {
 	{ "glDrawArrays",		scm_DrawArrays,			3, 3 },
 	{ "glDrawElements",		scm_DrawElements,		4, 4 },
 	{ "glInterleavedArrays",	scm_InterleavedArrays,		3, 3 },
+        { "glSelectBuffer",             scm_SelectBuffer,               2, 2 },
 	{ "glGetBooleanv",		scm_GetBooleanv,		2, 2 },
 	{ "glGetDoublev",		scm_GetDoublev,			2, 2 },
 	{ "glGetFloatv",		scm_GetFloatv,			2, 2 },

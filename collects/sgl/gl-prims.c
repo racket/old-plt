@@ -13,7 +13,7 @@
  * MERCHANTABILITY or  FITNESS FOR A  PARTICULAR PURPOSE. See  the GNU
  * Lesser General Public License for more details.
  *
- * Modifications Copyright (C) 2004-2005 by Scott Owens <sowens@cs.utah.edu>
+ * Modifications Copyright (C) 2003-2005 by Scott Owens <sowens@cs.utah.edu>
  * GLU additions Copyright (C) 2004 by Brendan Burns of U. Mass.
  *
  */
@@ -3117,14 +3117,6 @@ static Scheme_Object *scm_RenderMode(void *p, int c, Scheme_Object **v)
 	return scheme_make_integer(glRenderMode(arg_GLenum(0)));
 }
 
-static Scheme_Object *scm_SelectBuffer(void *p, int c, Scheme_Object **v)
-{
-	GLsizei n = arg_GLsizei(0);
-
-	glSelectBuffer(n, arg_GLuintv(1, n));
-	return scheme_void;
-}
-
 /*---------------------------------------------------------------------------*/
 /* 5.3. Feedback							     */
 
@@ -4811,7 +4803,6 @@ static const struct scm_prim scm_prim[] = {
 	{ "glScaled",			scm_Scaled,			3, 3 },
 	{ "glScalef",			scm_Scalef,			3, 3 },
 	{ "glScissor",			scm_Scissor,			4, 4 },
-	{ "glSelectBuffer",		scm_SelectBuffer,		2, 2 },
 	{ "glShadeModel",		scm_ShadeModel,			1, 1 },
 	{ "glStencilFunc",		scm_StencilFunc,		3, 3 },
 	{ "glStencilMask",		scm_StencilMask,		1, 1 },

@@ -14,6 +14,7 @@
   (r p glDrawArrays)
   (r p glDrawElements)
   (r p glInterleavedArrays)
+  (r p glSelectBuffer)
   (r p glGetBooleanv)
   (r p glGetDoublev)
   (r p glGetFloatv)

@@ -1,7 +1,9 @@
 SYSTEM HISTORY
 --------------
 Version 49:
-- mred:make-invokable-unit now must return a unit/sig, not a unit.
+- if your application is unititized, then you need to change the
+  startup procedure. See the application startup section in the
+  toolbox manual.
 
 Version 47:
 - find-string-embedded of mred:edit% is just like find-string except it

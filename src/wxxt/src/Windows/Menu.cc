@@ -170,6 +170,9 @@ Bool wxMenu::PopupMenu(Widget in_w, int root_x, int root_y)
 	("menu", menuWidgetClass, X->shell,
 	 XtNmenu,       top,
 	 XtNfont,       font->GetInternalFont(),
+#ifdef WX_USE_XFT
+	 XtNmenuXftFont, font->GetInternalAAFont(),
+#endif
 	 XtNforeground, wxBLACK_PIXEL,
 	 XtNbackground, wxGREY_PIXEL,
 	 XtNforChoice,  forChoice,

@@ -59,11 +59,14 @@ public:
     Display      *dpy;
     Screen       *scn;
     Drawable     drawable;
+#ifdef WX_USE_XRENDER
+    long picture; /* If WX_USE_XFT, picture is actually an XftDraw* */
+#endif
     Window       draw_window;
     unsigned int width, height, depth;
     wxWindow     *owner;
 
-    /* MATTHEW: [5] Implement GetPixel */
+    /* Implement GetPixel */
     XImage *get_pixel_image_cache;
     int get_pixel_cache_pos;
     XColor *get_pixel_color_cache;
@@ -86,6 +89,14 @@ public:
 #define HEIGHT		(X->height)
 #define DEPTH		(X->depth)
 #define CMAP            GETCOLORMAP(current_cmap)
+# ifdef WX_USE_XFT
+#  define XFTDRAW         ((XftDraw *)X->picture)
+#  define TO_PICTURE(x)   XftDrawPicture((XftDraw *)x)
+#  define PICTURE         TO_PICTURE(XFTDRAW)
+# else
+#  define TO_PICTURE(x)   ((Picture)x)
+#  define PICTURE         ((Picture)X->picture)
+# endif
 #else // not implementation but use!
 class wxWindowDC_Xinit;
 class wxWindowDC_Xintern;
@@ -144,21 +155,22 @@ public:
 
     virtual void GetSize(float *w, float *h);
 
-    /* MATTHEW */
     void TryColour(wxColour *src, wxColour *dest);
 
-    /* MATTHEW: [5] */
     Bool GetPixel(float x, float y, wxColour *col);
 
-    /* MATTHEW: [6] */
     void BeginSetPixel();
     void EndSetPixel();
     void SetPixel(float x, float y, wxColour *col);
 
     void FillPrivateColor(wxColour *c);
 
-    /* MATTHEW: */
     virtual Bool Ok(void);
+
+#ifdef WX_USE_XRENDER
+    virtual void InitPicture();
+#endif
+
 protected:
     friend class wxWindow;
     friend class wxPostScriptDC;
@@ -171,5 +183,13 @@ protected:
 
     wxWindowDC_Xintern* X;
 };
+
+#ifdef WX_USE_XRENDER
+# ifdef Have_X_Types
+extern int wxXRenderHere(void);
+extern long wxMakePicture(Drawable d, int color); // returns Picture or XftDraw*
+extern void wxFreePicture(long);
+# endif
+#endif
 
 #endif // WindowDC_hh

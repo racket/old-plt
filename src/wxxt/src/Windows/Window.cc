@@ -48,6 +48,9 @@
 #include "widgets.h"
 
 #include <X11/keysym.h> // needed for IsFunctionKey, etc.
+#ifdef WX_USE_XFT
+# include <X11/Xft/Xft.h>
+#endif
 
 extern void wxSetSensitive(Widget, Bool enabled);
 
@@ -2018,6 +2021,24 @@ void wxWindow::GetTextExtent(const char *s, float *w, float *h, float *descent,
     }
 
     if (!theFont) theFont = font;
+
+#ifdef WX_USE_XFT
+    {
+      XftFont *xfont;
+
+      xfont = (XftFont *)theFont->GetInternalAAFont();
+      if (xfont) {
+	XGlyphInfo goverall;
+	XftTextExtents8(wxAPP_DISPLAY, xfont, (FcChar8 *)s, strlen(s), &goverall);
+	*w = (float)(goverall.width);
+	*h = (float)(xfont->ascent + xfont->descent);
+	if (descent) *descent = (float)xfont->descent;
+	if (ext_leading) *ext_leading = 0.0;
+	return;
+      }
+    }
+#endif
+
     ifont = theFont->GetInternalFont();
     XTextExtents((XFontStruct *)ifont, s, strlen(s),
 		 &direction, &ascent, &descent2, &overall);

@@ -125,6 +125,9 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func, char *label,
 			   XtNbackground,  wxGREY_PIXEL,
 			   XtNforeground,  wxBLACK_PIXEL,
 			   XtNfont,        label_font->GetInternalFont(),
+#ifdef WX_USE_XFT
+			   XtNxfont,       label_font->GetInternalAAFont(),
+#endif
 			   XtNframeType,   (style & wxFLAT) ? XfwfChiseled : XfwfSunken,
 			   XtNframeWidth,  0,
 			   XtNshrinkToFit, (width < 0 || height < 0),
@@ -158,6 +161,9 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func, char *label,
 				      XtNbackground,    wxGREY_PIXEL,
 				      XtNforeground,    wxBLACK_PIXEL,
 				      XtNfont,          font->GetInternalFont(),
+#ifdef WX_USE_XFT
+				      XtNxfont,         font->GetInternalAAFont(),
+#endif
 				      XtNshrinkToFit,   TRUE,
 				      NULL);
 	((Widget*)toggles)[i] = wgt;
@@ -241,6 +247,9 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func, char *label,
 			   XtNbackground,  wxGREY_PIXEL,
 			   XtNforeground,  wxBLACK_PIXEL,
 			   XtNfont,        label_font->GetInternalFont(),
+#ifdef WX_USE_XFT
+			   XtNxfont,       label_font->GetInternalAAFont(),
+#endif
 			   XtNframeType,   (style & wxFLAT) ? XfwfChiseled : XfwfSunken,
 			   XtNframeWidth,  0, /* MATTHEW: no frame */
 			   XtNshrinkToFit, TRUE,
@@ -301,6 +310,9 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func, char *label,
 				      XtNbackground,    wxGREY_PIXEL,
 				      XtNforeground,    wxBLACK_PIXEL,
 				      XtNfont,          font->GetInternalFont(),
+#ifdef WX_USE_XFT
+				      XtNxfont,         font->GetInternalAAFont(),
+#endif
 				      XtNshrinkToFit,   TRUE,
 				      NULL);
 	((Widget*)toggles)[i] = wgt;

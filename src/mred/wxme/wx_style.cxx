@@ -55,10 +55,19 @@ extern int wxGetPreference(const char *, int *);
 
 wxStyleList *wxTheStyleList;
 
+#ifdef WX_USE_XFT
+extern int wxXRenderHere(void);
+#endif
+
 void wxInitStyles(void)
 {
   if (wxTheStyleList)
     return;
+
+#ifdef WX_USE_XFT
+  if (wxXRenderHere())
+    defaultSize = 10;
+#endif
 
   wxGetPreference("default-font-size", &defaultSize);
 

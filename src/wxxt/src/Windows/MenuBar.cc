@@ -99,6 +99,9 @@ Bool wxMenuBar::Create(wxPanel *panel)
 	 XtNforeground,  wxBLACK_PIXEL,
 	 XtNhMargin,     4,
 	 XtNfont,        font->GetInternalFont(),
+#ifdef WX_USE_XFT
+	 XtNmenuXftFont, font->GetInternalAAFont(),
+#endif
 	 XtNmenu,        top,
 	 XtNcursor,      None,
 	 NULL);

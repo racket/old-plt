@@ -86,6 +86,9 @@ Bool wxChoice::Create(wxPanel *panel, wxFunction function, char *label,
 	 XtNbackground,  wxGREY_PIXEL,
 	 XtNforeground,  wxBLACK_PIXEL,
 	 XtNfont,        label_font->GetInternalFont(),
+#ifdef WX_USE_XFT
+	 XtNxfont,       label_font->GetInternalAAFont(),
+#endif
 	 XtNshrinkToFit, TRUE,
 	 NULL);
     if (!(style & wxINVISIBLE))
@@ -98,6 +101,9 @@ Bool wxChoice::Create(wxPanel *panel, wxFunction function, char *label,
 	 XtNbackground,  wxGREY_PIXEL,
 	 XtNforeground,  wxBLACK_PIXEL,
 	 XtNfont,        font->GetInternalFont(),
+#ifdef WX_USE_XFT
+	 XtNxfont,       font->GetInternalAAFont(),
+#endif
 	 XtNframeWidth,  2,
 	 XtNalignment,   XfwfLeft,
 	 XtNleftMargin,  16,

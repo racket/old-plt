@@ -109,6 +109,9 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func, char *title,
 	 XtNbackground,  wxGREY_PIXEL,
 	 XtNforeground,  wxBLACK_PIXEL,
 	 XtNfont,        label_font->GetInternalFont(),
+#ifdef WX_USE_XFT
+	 XtNxfont,       label_font->GetInternalAAFont(),
+#endif
 	 NULL);
     if (!(style & wxINVISIBLE))
       XtManageChild(wgt);
@@ -128,6 +131,9 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func, char *title,
 	 XtNbackground,     wxGREY_PIXEL,
 	 XtNforeground,     wxBLACK_PIXEL,
 	 XtNfont,           font->GetInternalFont(),
+#ifdef WX_USE_XFT
+	 XtNmlXftFont,          font->GetInternalAAFont(),
+#endif
 	 XtNborderWidth,    0,
 	 XtNshadeSurplus,   FALSE,
 	 XtNdefaultColumns, 1,

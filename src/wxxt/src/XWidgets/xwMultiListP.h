@@ -103,6 +103,9 @@ typedef struct
 	int			longest;
 	int			nitems;
 	XFontStruct		*font;
+#ifdef WX_USE_XFT
+	XftFont	                *xft_font;
+#endif
 	String			*list;
 	Boolean			*sensitive_array;
 	XtCallbackList  	callback;
@@ -172,6 +175,11 @@ typedef struct _XfwfMultiListRec
 #define	MultiListLongest(w)		(InstanceMultiList(w)->longest)
 #define	MultiListNumItems(w)		(InstanceMultiList(w)->nitems)
 #define	MultiListFont(w)		(InstanceMultiList(w)->font)
+#ifdef WX_USE_XFT
+# define MultiListXftFont(w)		(InstanceMultiList(w)->xft_font)
+#else
+# define MultiListXftFont(w)		NULL
+#endif
 #define	MultiListList(w)		(InstanceMultiList(w)->list)
 #define	MultiListSensitiveArray(w)	(InstanceMultiList(w)->sensitive_array)
 #define	MultiListCallback(w)		(InstanceMultiList(w)->callback)

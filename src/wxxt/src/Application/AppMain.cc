@@ -35,6 +35,10 @@
 #include "wx.h"
 #include "widgets.h" // for X11/StringDefs.h
 
+#ifdef WX_USE_XFT
+# include <X11/Xft/Xft.h>
+#endif
+
 #ifndef NO_XKB_LIB_PRESENT
 # include <X11/XKBlib.h>
 #endif
@@ -190,6 +194,10 @@ int wxEntry(int argc, char *argv[])
   
   wxTheApp->argc = argc;
   wxTheApp->argv = argv;
+
+#ifdef WX_USE_XFT
+  XftInitFtLibrary();
+#endif
   
   // initialize global data
   wxCommonInit();
@@ -206,6 +214,7 @@ int wxEntry(int argc, char *argv[])
 void wxCommonInit(void)
 {
     Bool supported;
+    int fsize;
   
     wxAPP_DISPLAY   = XtDisplay(wxAPP_TOPLEVEL);
     wxAPP_SCREEN    = XtScreen(wxAPP_TOPLEVEL);
@@ -245,16 +254,22 @@ void wxCommonInit(void)
     wxREGGLOB(wxTheFontList);
     wxTheFontList = DEBUG_NEW wxFontList();
 
+#ifdef WX_USE_XFT
+    fsize = 10;
+#else
+    fsize = 12;
+#endif    
+
     wxREGGLOB(wxNORMAL_FONT);
-    wxNORMAL_FONT = DEBUG_NEW wxFont (12, wxMODERN, wxNORMAL, wxNORMAL);
+    wxNORMAL_FONT = DEBUG_NEW wxFont (fsize, wxMODERN, wxNORMAL, wxNORMAL);
     wxREGGLOB(wxSMALL_FONT);
     wxSMALL_FONT = DEBUG_NEW wxFont (10, wxSWISS, wxNORMAL, wxNORMAL);
     wxREGGLOB(wxITALIC_FONT);
-    wxITALIC_FONT = DEBUG_NEW wxFont (12, wxROMAN, wxITALIC, wxNORMAL);
+    wxITALIC_FONT = DEBUG_NEW wxFont (fsize, wxROMAN, wxITALIC, wxNORMAL);
     wxREGGLOB(wxSWISS_FONT);
-    wxSWISS_FONT = DEBUG_NEW wxFont (12, wxSWISS, wxNORMAL, wxNORMAL);
+    wxSWISS_FONT = DEBUG_NEW wxFont (fsize, wxSWISS, wxNORMAL, wxNORMAL);
     wxREGGLOB(wxSYSTEM_FONT);
-    wxSYSTEM_FONT = DEBUG_NEW wxFont (12, wxSYSTEM, wxNORMAL, wxNORMAL);
+    wxSYSTEM_FONT = DEBUG_NEW wxFont (fsize, wxSYSTEM, wxNORMAL, wxNORMAL);
 
     wxREGGLOB(wxRED_PEN);
     wxRED_PEN = DEBUG_NEW wxPen ("RED", 0, wxSOLID);

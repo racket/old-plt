@@ -80,6 +80,9 @@ Bool wxCheckBox::Create(wxPanel *panel, wxFunction function, char *label,
 	 XtNbackground,  wxGREY_PIXEL,
 	 XtNforeground,  wxBLACK_PIXEL,
 	 XtNfont,        label_font->GetInternalFont(),
+#ifdef WX_USE_XFT
+	 XtNxfont,       label_font->GetInternalAAFont(),
+#endif
 	 XtNshrinkToFit, (width < 0 || height < 0),
 	 NULL);
     if (!(style & wxINVISIBLE))
@@ -92,6 +95,9 @@ Bool wxCheckBox::Create(wxPanel *panel, wxFunction function, char *label,
 	 XtNbackground,  wxGREY_PIXEL,
 	 XtNforeground,  wxBLACK_PIXEL,
 	 XtNfont,        font->GetInternalFont(),
+#ifdef WX_USE_XFT
+	 XtNxfont,       font->GetInternalAAFont(),
+#endif
 	 XtNshrinkToFit, (width < 0 || height < 0),
 	 XtNhighlightThickness, 0, XtNtraversalOn, FALSE,
 	 NULL);

@@ -27,6 +27,7 @@ typedef struct {
 Boolean  shrinkToFit;
 String  label;
 XFontStruct * font;
+void * xfont;
 Pixel  foreground;
 Alignment  alignment;
 Widget  propagateTarget;

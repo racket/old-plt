@@ -51,6 +51,10 @@ wxMemoryDC::~wxMemoryDC(void)
     selected->selectedTo = NULL;
     selected = NULL;
   }
+
+#ifdef WX_USE_XRENDER
+  X->picture = 0;
+#endif
 }
 
 #define FreeGetPixelCache() if (X->get_pixel_image_cache) DoFreeGetPixelCache()
@@ -103,10 +107,22 @@ void wxMemoryDC::SelectObject(wxBitmap *bitmap)
 	}
     } else {
 	DRAWABLE = 0;
+#ifdef WX_USE_XRENDER
+	X->picture = 0;
+#endif
 	WIDTH = HEIGHT = 0;
 	selected = NULL;
     }
 }
+
+#ifdef WX_USE_XRENDER
+void wxMemoryDC::InitPicture()
+{
+  long p;
+  p = selected->GetPicture();
+  X->picture = p;
+}
+#endif
 
 wxBitmap *wxMemoryDC::GetObject()
 {

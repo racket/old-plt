@@ -58,6 +58,9 @@ typedef struct _MenuPart {
     int             bot_shadow_contrast;
     Pixel	    foreground;	    /* foreground drawing */
     XFontStruct     *font;
+#ifdef WX_USE_XFT
+    XftFont         *xft_font;
+#endif
     Boolean         horizontal;
     Boolean         forChoice;      /* Means extra left and right space */
     Dimension	    hmargin;	    /* margins around menu items */

@@ -61,6 +61,9 @@ public:
     unsigned int width, height, depth;	// dimensions of bitmap
     int          x_hot, y_hot;		// hotspot of bitmap
     Pixmap       x_pixmap;		// the displayable pixmap
+#ifdef WX_USE_XRENDER
+    long      picture;
+#endif
     // Optional stuff for different bitmaps
     XpmAttributes* xpm;		// for XPM pixmaps
 };
@@ -274,26 +277,31 @@ Bool wxBitmap::Create(int w, int h, int d)
 // destroy bitmap
 void wxBitmap::Destroy(void)
 {
-    if (Xbitmap) {
-	XFreePixmap(wxAPP_DISPLAY, Xbitmap->x_pixmap); // free pixmap
-	switch (Xbitmap->type) { // free type specific data
-	case __BITMAP_XPM:
-	  {
-	    // free XPM data
-	    Colormap cm;
-	    cm = *((Colormap*)(cmap->GetHandle()));
-	    XFreeColors(wxAPP_DISPLAY, cm, Xbitmap->xpm->pixels, Xbitmap->xpm->npixels, 0);
-	    XpmFreeAttributes(Xbitmap->xpm);
-	    DELETE_VAL Xbitmap->xpm;
-	  }
-	  break;
-	default:
-	  break; // no other formats so far
-	}
-	DELETE_OBJ Xbitmap;
+  if (Xbitmap) {
+    XFreePixmap(wxAPP_DISPLAY, Xbitmap->x_pixmap); // free pixmap
+# ifdef WX_USE_XRENDER
+    if (Xbitmap->picture)
+      wxFreePicture(Xbitmap->picture);
+# endif
+    
+    switch (Xbitmap->type) { // free type specific data
+    case __BITMAP_XPM:
+      {
+	// free XPM data
+	Colormap cm;
+	cm = *((Colormap*)(cmap->GetHandle()));
+	XFreeColors(wxAPP_DISPLAY, cm, Xbitmap->xpm->pixels, Xbitmap->xpm->npixels, 0);
+	XpmFreeAttributes(Xbitmap->xpm);
+	DELETE_VAL Xbitmap->xpm;
+      }
+      break;
+    default:
+      break; // no other formats so far
     }
-    // contains no pixmap
-    Xbitmap = NULL;
+    DELETE_OBJ Xbitmap;
+  }
+  // contains no pixmap
+  Xbitmap = NULL;
 }
 
 extern int wxsGetImageType(char *);
@@ -521,8 +529,24 @@ void  wxBitmap::GetHotSpot(int *x, int *y)
     if (Xbitmap) { *x = Xbitmap->x_hot; *y = Xbitmap->y_hot; }
     else         { *x = *y = 0; }
 }
-void* wxBitmap::GetHandle(void) { return (Xbitmap ? &(Xbitmap->x_pixmap) : NULL); }
 
+void* wxBitmap::GetHandle(void) {
+  return (Xbitmap ? &(Xbitmap->x_pixmap) : NULL);
+}
+
+#ifdef WX_USE_XRENDER
+long wxBitmap::GetPicture(void) { 
+  if (Xbitmap) {
+    if (!Xbitmap->picture) {
+      long p;
+      p = wxMakePicture(Xbitmap->x_pixmap, Xbitmap->depth != 1);
+      Xbitmap->picture = p;
+    }
+    return Xbitmap->picture;
+  } else
+    return 0;
+}
+#endif
 
 //-----------------------------------------------------------------------------
 // wxCursor

@@ -286,6 +286,9 @@ Bool wxMessage::Create(wxPanel *panel,
 	 XtNbackground,  wxGREY_PIXEL,
 	 XtNforeground,  wxBLACK_PIXEL,
 	 XtNfont,        label_font->GetInternalFont(),
+#ifdef WX_USE_XFT
+	 XtNxfont,       label_font->GetInternalAAFont(),
+#endif
 	 XtNshrinkToFit, TRUE,
 	 XtNhighlightThickness, 0, XtNtraversalOn, FALSE,
 	 NULL);
@@ -309,6 +312,9 @@ Bool wxMessage::Create(wxPanel *panel,
 	 XtNbackground,  wxGREY_PIXEL,
 	 XtNforeground,  wxBLACK_PIXEL,
 	 XtNfont,        label_font->GetInternalFont(),
+#ifdef WX_USE_XFT
+	 XtNxfont,       label_font->GetInternalAAFont(),
+#endif
 	 XtNalignment,   wxALIGN_LEFT,
 	 XtNshrinkToFit, TRUE,
 	 XtNhighlightThickness, 0,

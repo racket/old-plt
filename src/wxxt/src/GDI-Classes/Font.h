@@ -31,6 +31,12 @@
 
 extern char *wx_font_spec[];
 
+#ifdef WX_USE_XFT
+# define wxFontStruct XftFont
+#else
+# define wxFontStruct XFontStruct
+#endif
+
 class wxFont : public wxObject {
 public:
     wxFont(void);
@@ -39,6 +45,8 @@ public:
     wxFont(int PointSize, const char *Face, int Family, int Style, int Weight, 
 	   Bool underlined = FALSE, int smoothing = wxSMOOTHING_DEFAULT);
     ~wxFont(void);
+
+    void InitFont(void);
 
     int   GetPointSize(void)     { return point_size; }
     int   GetFamily(void)        { return family; }
@@ -53,8 +61,12 @@ public:
     int   GetSmoothing(void)     { return smoothing; }
 
     void  *GetInternalFont(float scale = 1.0); // return type XFontStruct*
+    void  *GetInternalAAFont(float scale = 1.0); // return type wxFontStruct*
 private:
     wxList *scaled_xfonts;
+#ifdef WX_USE_XFT
+    wxList *scaled_xft_fonts;
+#endif
     short  point_size;
     short  family, style, weight;
     Bool   underlined;

@@ -60,6 +60,8 @@ static char *no_quotes(char *s);
   struct { int i; char *s; time_t t; } finfo;
 }
 
+%token_table
+
 %token <finfo> ACTIONS
 %token <finfo> CLASS
 %token <finfo> CLASSVARS

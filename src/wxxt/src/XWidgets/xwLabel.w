@@ -35,6 +35,10 @@ within the label.
 
 	@var <FontStruct> XFontStruct *font = <String> XtDefaultFont
 
+@ The |xfont| resource overrides font with an Xft font, if available.
+
+	@var <void> void* xfont = <Pointer> NULL
+
 @ Instead of a label a |pixmap| may be displayed if |label| is NULL.
 
 	@var Pixmap pixmap = 0
@@ -184,7 +188,8 @@ updated.
 	if ($label != NULL) need_count = True;
     }
 
-    if ($font != $old$font) {
+    if (($font != $old$font)
+	|| ($xfont != $old$xfont)) {
 	make_gc($);
 	if ($label != NULL) need_count = True;
     }
@@ -268,22 +273,28 @@ within the frame. If necessary, the text is clipped. The routine ends
 by calling the |expose| method from the superclass, which is
 responsible for drawing the frame.
 
-@def draw_line(dpy, win, from, to) =
+@def draw_line(dpy, win, from, to, reg) =
     do {
-	w1 = XfwfTextWidth($font, $label + from, to - from, $tabs);
+	w1 = XfwfTextWidth(dpy, $font, (wxExtFont)$xfont, $label + from, to - from, $tabs);
 	if ($alignment & XfwfLeft)
 	    x = rect.x;
 	else if ($alignment & XfwfRight)
 	    x = rect.x + rect.width - w1;
 	else
 	    x = rect.x + (rect.width - w1)/2;
-	if (w1)
-	    XfwfDrawImageString(dpy, win, 
-				(((!$sensitive || $drawgray) && wx_enough_colors(XtScreen($))) 
-				 ? $graygc 
-				 : $gc), 
-				x, y, $label + from,
-				to - from, $tabs, $font);
+	if (w1) {
+	  int grayed;
+	  grayed = ((!$sensitive || $drawgray) && wx_enough_colors(XtScreen($)));
+	  XfwfDrawImageString(dpy, win, 
+			      ($xfont
+			       ? $gc
+			       : (grayed
+				  ? $graygc 
+				  : $gc)), 
+			      x, y, $label + from,
+			      to - from, $tabs, $font,
+			      (wxExtFont)$xfont, !grayed, reg);
+	}
     } while (0)
 
 @proc _expose
@@ -314,21 +325,23 @@ responsible for drawing the frame.
 	XSetRegion(XtDisplay($), $gc, reg);
     }
     if ($label != NULL) {
-	baseline = $font->ascent + $font->descent;
+        int ascent;
+	ascent = wx_ASCENT($font, ((wxExtFont)$xfont));
+	baseline = ascent + wx_DESCENT($font, ((wxExtFont)$xfont));
 	if ($alignment & XfwfTop)
-	    y = rect.y + $font->ascent;
+	    y = rect.y + ascent;
 	else if ($alignment & XfwfBottom)
-	    y = rect.y + rect.height - $nlines * baseline + $font->ascent;
+	    y = rect.y + rect.height - $nlines * baseline + ascent;
 	else
-	    y = rect.y + (rect.height - $nlines * baseline)/2 + $font->ascent;
+	    y = rect.y + (rect.height - $nlines * baseline)/2 + ascent;
 	for (i = 0, j = 0; $label[i]; i++) {
 	    if ($label[i] == '\n') {
-		draw_line(XtDisplay($), XtWindow($), j, i);
+		draw_line(XtDisplay($), XtWindow($), j, i, reg);
 		j = i + 1;
 		y += baseline;
 	    }
 	}
-	draw_line(XtDisplay($), XtWindow($), j, i);
+	draw_line(XtDisplay($), XtWindow($), j, i, reg);
     } else if ($pixmap != 0) {
 	Dimension width = $label_width - $leftMargin - $rightMargin;
 	Dimension height = $label_height - $topMargin - $bottomMargin;
@@ -378,14 +391,22 @@ text.
 
 @proc make_gc($)
 {
-    XtGCMask mask;
+    XtGCMask mask, fnt = 0;
     XGCValues values;
 
     if ($gc != NULL) XtReleaseGC($, $gc);
     values.background = $background_pixel;
-    values.foreground = $foreground;
-    values.font = $font->fid;
-    mask = GCFont | GCBackground | GCForeground;
+    if (!$xfont) {
+      values.foreground = $foreground;
+      values.font = $font->fid;
+      fnt = GCFont;
+    } else {
+      if ($pixmap)
+	values.foreground = $foreground;
+      else
+	values.foreground = values.background;
+    }
+    mask = fnt | GCBackground | GCForeground;
     $gc = XtGetGC($, mask, &values);
 }
 
@@ -412,8 +433,11 @@ the text.
       values.background = $background_pixel;
       $darker_color($, $background_pixel, &color);
       values.foreground = color;
-      values.font = $font->fid;
-      mask = GCFont | GCBackground | GCForeground;
+      mask = GCBackground | GCForeground;
+      if ($font) {
+	values.font = $font->fid;
+	mask |= GCFont;
+      }
     }
  
     $graygc = XtGetGC($, mask, &values);
@@ -433,14 +457,14 @@ private variables |nlines|, |label_width| and |label_height|.
 	for (p = $label, $nlines = 1, s = $label; *s; s++) {
 	    if (*s == '\n') {
 		$nlines++;
-		w = XfwfTextWidth($font, p, s - p, $tabs);
+		w = XfwfTextWidth(XtDisplay($), $font, (wxExtFont)$xfont, p, s - p, $tabs);
 		p = s + 1;
 		if (w > $label_width) $label_width = w;
 	    }
 	}
-	w = XfwfTextWidth($font, p, s - p, $tabs);
+	w = XfwfTextWidth(XtDisplay($), $font, (wxExtFont)$xfont, p, s - p, $tabs);
 	if (w > $label_width) $label_width = w;
-	$label_height = $nlines * ($font->ascent + $font->descent);
+	$label_height = $nlines * (wx_ASCENT($font, ((wxExtFont)$xfont)) + wx_DESCENT($font, ((wxExtFont)$xfont)));
     } else if ($pixmap) {
 	Window        root;
 	int           x, y;

@@ -36,6 +36,9 @@
 #ifdef WX_USE_XRENDER
 # include <X11/Xcms.h>
 # include <X11/extensions/Xrender.h>
+# ifdef WX_USE_XFT
+#  include <X11/Xft/Xft.h>
+# endif
 #endif
 
 #define  UseXtRegions
@@ -139,6 +142,10 @@ wxWindowDC::~wxWindowDC(void)
     if (current_pen) current_pen->Lock(-1);
     if (current_brush) current_brush->Lock(-1);
     if (clipping) --clipping->locked;
+
+#ifdef WX_USE_XRENDER
+    wxFreePicture(X->picture);
+#endif
 
     Destroy();
 }
@@ -440,7 +447,97 @@ static wxBitmap *IntersectBitmapRegion(GC agc, Region user_reg, Region expose_re
 
 #ifdef WX_USE_XRENDER
 static int xrender_here = -1;
+
+int wxXRenderHere(void)
+{
+  if (xrender_here < 0) {
+    /* Check whether Xrender is present at run time */
+    int event_base, error_base;
+    if (XRenderQueryExtension(wxAPP_DISPLAY, &event_base, &error_base) &&
+	(XRenderFindVisualFormat (wxAPP_DISPLAY, DefaultVisual(wxAPP_DISPLAY, 
+							       DefaultScreen(wxAPP_DISPLAY))) != 0)) {
+      xrender_here = 1;
+    } else
+      xrender_here = 0;
+  }
+
+  return xrender_here;
+}
+
+#ifndef WX_USE_XFT
 static XRenderPictFormat *format, *mask_format, *alpha_format;
+#endif
+
+long wxMakePicture(Drawable d, int color)
+{
+#ifdef WX_USE_XFT
+  if (color) {
+    Visual *visual;
+    Colormap cm;
+
+    cm = DefaultColormapOfScreen(wxAPP_SCREEN);
+
+    visual = XcmsVisualOfCCC(XcmsCCCOfColormap(wxAPP_DISPLAY, cm));
+    
+    return (long)XftDrawCreate(wxAPP_DISPLAY, d, visual, cm);
+  } else 
+    return (long)XftDrawCreateBitmap(wxAPP_DISPLAY, d);
+#else
+  /* Create format records, if not done already: */
+  if (!format) {
+    Visual *visual;
+    XRenderPictFormat pf;
+    
+    visual = XcmsVisualOfCCC(XcmsCCCOfColormap(wxAPP_DISPLAY,
+					       DefaultColormapOfScreen(wxAPP_SCREEN)));
+    format = XRenderFindVisualFormat(wxAPP_DISPLAY, visual);
+    
+    pf.type = PictTypeDirect;
+    pf.depth = 1;
+    pf.direct.alpha = 0;
+    pf.direct.alphaMask = 1;
+    mask_format = XRenderFindFormat (wxAPP_DISPLAY,
+				     (PictFormatType|PictFormatDepth|PictFormatAlpha|PictFormatAlphaMask),
+				     &pf,
+				     0);
+
+    pf.type = PictTypeDirect;
+    pf.depth = 8;
+    pf.direct.alpha = 0;
+    pf.direct.alphaMask = 0xFF;
+    alpha_format = XRenderFindFormat (wxAPP_DISPLAY,
+				      (PictFormatType|PictFormatDepth|PictFormatAlpha|PictFormatAlphaMask),
+				      &pf,
+				      0);
+  }
+  
+  return (long)XRenderCreatePicture(wxAPP_DISPLAY,
+				    DRAWABLE,
+				    color ? format : mask_format,
+				    0,
+				    NULL);
+#endif
+}
+
+void wxWindowDC::InitPicture() {
+  if (!X->picture) {
+    unsigned long p;
+    p = wxMakePicture(DRAWABLE, Colour);
+    X->picture = p;
+  }
+}
+
+void wxFreePicture(long p) {
+# ifdef WX_USE_XFT
+  if (p) {
+    XftDrawDestroy((XftDraw *)p);
+  }
+# else
+  if (p) {
+    XRenderFreePicture(wxAPP_DISPLAY, (Picture)p);
+  }
+# endif
+}
 #endif
 
 Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
@@ -476,7 +573,6 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
 
          - It's available at compile time and run time
 	 - There's a mask
-	 - The destination (this DC) is non-monochrome
 	 - One of:
              * the rop is ignored (because the src is not mono)
              * the rop is wxSOLID (not wxSTIPPLE, which means "opaque")
@@ -486,20 +582,10 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
 
       Under other circumstances, it doesn't work right. */
     
-    if (xrender_here < 0) {
-      /* Check whether Xrender is present at run time */
-      int event_base, error_base;
-      if (XRenderQueryExtension(wxAPP_DISPLAY, &event_base, &error_base) &&
-	  (XRenderFindVisualFormat (wxAPP_DISPLAY, DefaultVisual(wxAPP_DISPLAY, 
-								 DefaultScreen(wxAPP_DISPLAY))) != 0)) {
-	xrender_here = 1;
-      } else
-	xrender_here = 0;
-    }
     
-    should_xrender= (xrender_here
+    
+    should_xrender= (wxXRenderHere()
 		     && mask
-		     && Colour
 		     && ((src->GetDepth() > 1)
 			 || ((rop == wxSOLID)
 			     && (!dcolor || (!dcolor->Red() && !dcolor->Green() && !dcolor->Blue())))));
@@ -536,64 +622,30 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
       Picture destp, srcp, maskp;
       wxBitmap *free_bmp = NULL;
       int mono_src;
+# ifdef WX_USE_XFT
+      XftDraw *maskd = NULL;
+# endif
 
       mono_src = (src->GetDepth() == 1);
 
-      /* Create format records, if not done already: */
-      if (!format) {
-	Visual *visual;
-	XRenderPictFormat pf;
-
-	visual = XcmsVisualOfCCC(XcmsCCCOfColormap(wxAPP_DISPLAY,
-						   DefaultColormapOfScreen(wxAPP_SCREEN)));
-	format = XRenderFindVisualFormat(wxAPP_DISPLAY, visual);
-	
-	pf.type = PictTypeDirect;
-	pf.depth = 1;
-	pf.direct.alpha = 0;
-	pf.direct.alphaMask = 1;
-	mask_format = XRenderFindFormat (wxAPP_DISPLAY,
-					 (PictFormatType|PictFormatDepth|PictFormatAlpha|PictFormatAlphaMask),
-					 &pf,
-					 0);
-
-	pf.type = PictTypeDirect;
-	pf.depth = 8;
-	pf.direct.alpha = 0;
-	pf.direct.alphaMask = 0xFF;
-	alpha_format = XRenderFindFormat (wxAPP_DISPLAY,
-					  (PictFormatType|PictFormatDepth|PictFormatAlpha|PictFormatAlphaMask),
-					  &pf,
-					  0);
-      }
-      
       /* Create an Xrender picture for each X pixmap: */
-      destp = XRenderCreatePicture(wxAPP_DISPLAY,
-				   DRAWABLE,
-				   Colour ? format : mask_format,
-				   0,
-				   NULL);
+      if (!PICTURE)
+	InitPicture();
+      destp = PICTURE;
+
       {
-	Pixmap spm;
-	spm = GETPIXMAP(src);
-	srcp = XRenderCreatePicture(wxAPP_DISPLAY,
-				    spm,
-				    mono_src ? mask_format : format,
-				    0,
-				    NULL);
+	long p;
+	p = src->GetPicture();
+	srcp = TO_PICTURE(p);
       }
 
       /* Mask case is more difficult if it's not 1 bit: */
       if (mask) {
 	if (mono_src) {
 	  /* Easy: */
-	  Pixmap mpm;
-	  mpm = GETPIXMAP(mask);
-	  maskp = XRenderCreatePicture(wxAPP_DISPLAY,
-				       mpm,
-				       mask_format,
-				       0,
-				       NULL);
+	  long p;
+	  p = mask->GetPicture();
+	  maskp = TO_PICTURE(p);
 	} else {
 	  /* Difficult. Need to create an 8-bit alpha (grayscale)
 	     pixmap by reading pixels of the mask pixmap. Note that we
@@ -640,11 +692,18 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
 	      XFreeGC(DPY, agc);
 	    }
 
+# ifdef WX_USE_XFT
+	    maskd = XftDrawCreateAlpha(wxAPP_DISPLAY,
+				       bpm,
+				       8);
+	    maskp = TO_PICTURE(maskd);
+# else
 	    maskp = XRenderCreatePicture(wxAPP_DISPLAY,
 					 bpm,
 					 alpha_format,
 					 0,
 					 NULL);
+# endif
 	    
 	    free_bmp = bm;
 	  } else
@@ -673,13 +732,14 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
       retval = 1; /* or so we assume */
 
       /* Free temporary data */
-      XRenderFreePicture(wxAPP_DISPLAY, destp);
-      XRenderFreePicture(wxAPP_DISPLAY, srcp);
-      if (maskp)
+      if (free_bmp) {
+# ifdef WX_USE_XFT
+	XftDrawDestroy(maskd);	
+# else
 	XRenderFreePicture(wxAPP_DISPLAY, maskp);
-
-      if (free_bmp)
+# endif
 	DELETE_OBJ free_bmp;
+      }
     } else {
 #endif
       /* Non-Xrender mode... */
@@ -1568,77 +1628,146 @@ static int str16len(const char *s)
 
 void wxWindowDC::DrawText(char *text, float x, float y, Bool use16bit, int dt)
 {
-    XFontStruct *fontinfo;
-    int         direction;
-    int         ascent, descent, cx, cy;
-    int         dev_x;
-    int         dev_y;
-    int         textlen;
-    XCharStruct overall;
+  XFontStruct *fontinfo;
+#ifdef WX_USE_XFT
+  wxFontStruct *xfontinfo;
+#endif
+  int         ascent, descent, cx, cy;
+  int         dev_x;
+  int         dev_y;
+  int         textlen;
 
-    if (!DRAWABLE) // ensure that a drawable has been associated
-	return;
+  if (!DRAWABLE) // ensure that a drawable has been associated
+    return;
 
-    if (!current_font) // a font must be associated for drawing
-	return;
+  if (!current_font) // a font must be associated for drawing
+    return;
 
-    fontinfo = (XFontStruct*)current_font->GetInternalFont(scale_x);
-    dev_x = XLOG2DEV(x);
-    dev_y = YLOG2DEV(y);
-    textlen = use16bit ? str16len((char *)((XChar2b *)text + dt)) : strlen(text + dt);
+#ifdef WX_USE_XFT
+  InitPicture();
+  xfontinfo = (wxFontStruct*)current_font->GetInternalAAFont(scale_x);
+  if (xfontinfo)
+    fontinfo = NULL;
+  else
+#endif
+    fontinfo = (XFontStruct *)current_font->GetInternalFont(scale_x);
+
+  dev_x = XLOG2DEV(x);
+  dev_y = YLOG2DEV(y);
+  textlen = use16bit ? str16len((char *)((XChar2b *)text + dt)) : strlen(text + dt);
+
+# ifdef WX_USE_XFT
+  if (xfontinfo) {
+    XGlyphInfo overall;
+    if (use16bit)
+      XftTextExtents16(DPY, xfontinfo, (FcChar16 *)(text + dt), textlen, &overall);
+    else
+      XftTextExtents8(DPY, xfontinfo, (FcChar8 *)(text + dt), textlen, &overall);
+    ascent = xfontinfo->ascent;
+    descent = xfontinfo->descent;
+    cx = overall.xOff;
+  } else
+#endif
+    {
+      int direction;
+      XCharStruct overall;
+      
+      if (use16bit)
+	(void)XTextExtents16(fontinfo, (XChar2b *)text + dt, textlen, &direction, 
+			     &ascent, &descent, &overall);
+      else
+	(void)XTextExtents(fontinfo, text + dt, textlen, &direction, &ascent, &descent,
+			   &overall);
+      cx = overall.width;
+    }
+
+  cy = ascent + descent;
+#ifdef WX_USE_XFT
+  if (xfontinfo) {
+    XftColor col;
+    col.pixel = current_text_fg->GetPixel();
+    col.color.red = current_text_fg->Red();
+    col.color.red = (col.color.red << 8) | col.color.red;
+    col.color.green = current_text_fg->Green();
+    col.color.green = (col.color.green << 8) | col.color.green;
+    col.color.blue = current_text_fg->Blue();
+    col.color.blue = (col.color.blue << 8) | col.color.blue;
+    col.color.alpha = 0xFFFF;
+
+    if (CURRENT_REG)
+      XftDrawSetClip(XFTDRAW, CURRENT_REG);
+
+    if (current_text_bgmode == wxSOLID) {
+      /* For B & W target, XftDrawRect doesn't seem to work right. */
+      if (Colour) {
+	XftColor bg;
+	bg.pixel = current_text_bg->GetPixel();
+	bg.color.red = current_text_bg->Red();
+	bg.color.red = (bg.color.red << 8) | bg.color.red;
+	bg.color.green = current_text_bg->Green();
+	bg.color.green = (bg.color.green << 8) | bg.color.green;
+	bg.color.blue = current_text_bg->Blue();
+	bg.color.blue = (bg.color.blue << 8) | bg.color.blue;
+	bg.color.alpha = 0xFFFF;
+	XftDrawRect(XFTDRAW, &bg, dev_x, dev_y, cx, xfontinfo->ascent + xfontinfo->descent);
+      } else {
+	unsigned long pixel;
+	pixel = current_text_fg->GetPixel(current_cmap, IS_COLOR, 0);
+	XSetForeground(DPY, TEXT_GC, pixel);
+	XFillRectangle(DPY, DRAWABLE, TEXT_GC, dev_x, dev_y, cx, xfontinfo->ascent + xfontinfo->descent);
+	pixel = current_text_fg->GetPixel(current_cmap, IS_COLOR, 1);
+	XSetForeground(DPY, TEXT_GC, pixel);
+      }
+    }
 
     if (use16bit)
-      (void)XTextExtents16(fontinfo, (XChar2b *)text + dt, textlen, &direction, 
-			   &ascent, &descent, &overall);
+      XftDrawString16(XFTDRAW, &col, xfontinfo, dev_x, dev_y+ascent, (FcChar16 *)(text + dt), textlen);
     else
-      (void)XTextExtents(fontinfo, text + dt, textlen, &direction, &ascent, &descent,
-			 &overall);
+      XftDrawString8(XFTDRAW, &col, xfontinfo, dev_x, dev_y+ascent, (FcChar8 *)(text + dt), textlen);
 
-    cx = overall.width;
-    cy = ascent + descent;
-    if (current_text_bgmode == wxSOLID) {
-      if (use16bit)
-	XDrawImageString16(DPY, DRAWABLE, TEXT_GC, dev_x, dev_y+ascent, (XChar2b *)text + dt, textlen);
-      else
-	XDrawImageString(DPY, DRAWABLE, TEXT_GC, dev_x, dev_y+ascent, text + dt, textlen);
-    } else {
-      if (use16bit)
-	XDrawString16(DPY, DRAWABLE, TEXT_GC, dev_x, dev_y+ascent, (XChar2b *)text + dt, textlen);
-      else
-	XDrawString(DPY, DRAWABLE, TEXT_GC, dev_x, dev_y+ascent, text + dt, textlen);
+    if (CURRENT_REG)
+      XftDrawSetClip(XFTDRAW, None);
+  } else
+#endif
+    {
+      if (current_text_bgmode == wxSOLID) {
+	if (use16bit)
+	  XDrawImageString16(DPY, DRAWABLE, TEXT_GC, dev_x, dev_y+ascent, (XChar2b *)text + dt, textlen);
+	else
+	  XDrawImageString(DPY, DRAWABLE, TEXT_GC, dev_x, dev_y+ascent, text + dt, textlen);
+      } else {
+	if (use16bit)
+	  XDrawString16(DPY, DRAWABLE, TEXT_GC, dev_x, dev_y+ascent, (XChar2b *)text + dt, textlen);
+	else
+	  XDrawString(DPY, DRAWABLE, TEXT_GC, dev_x, dev_y+ascent, text + dt, textlen);
+      }
     }
-    CalcBoundingBox(x, y);
-    CalcBoundingBox(x+XDEV2LOG(cx), y+YDEV2LOG(cy));
+  CalcBoundingBox(x, y);
+  CalcBoundingBox(x+XDEV2LOG(cx), y+YDEV2LOG(cy));
 }
 
 float wxWindowDC::GetCharHeight(void)
 {
-    int         direction, ascent, descent;
-    XCharStruct overall;
-    XFontStruct *xfs;
+  float w, h, descent, topspace;
 
-    if (!current_font) // no font
-	return YDEV2LOGREL(12);
+  if (!current_font) // no font
+    return YDEV2LOGREL(12);
 
-    xfs = (XFontStruct*)current_font->GetInternalFont(scale_x);
-    XTextExtents (xfs, "x", 1,
-		  &direction, &ascent, &descent, &overall);
-    return YDEV2LOGREL(ascent + descent);
+  GetTextExtent("x", &w, &h, &descent, &topspace, current_font, 0, 0);
+
+  return h;
 }
 
 float wxWindowDC::GetCharWidth(void)
 {
-    int         direction, ascent, descent;
-    XCharStruct overall;
-    XFontStruct *xfs;
+  float w, h, descent, topspace;
 
-    if (!current_font)
-	return XDEV2LOGREL(16);
+  if (!current_font) // no font
+    return YDEV2LOGREL(12);
 
-    xfs = (XFontStruct*)current_font->GetInternalFont(scale_x);
-    XTextExtents (xfs, "x", 1,
-		  &direction, &ascent, &descent, &overall);
-    return XDEV2LOGREL(overall.width);
+  GetTextExtent("x", &w, &h, &descent, &topspace, current_font, 0, 0);
+
+  return w;
 }
 
 void wxWindowDC::GetTextExtent(const char *s, float *_w, float *_h, float *_descent,
@@ -1646,45 +1775,70 @@ void wxWindowDC::GetTextExtent(const char *s, float *_w, float *_h, float *_desc
 			       Bool use16bit, int dt)
 {
   wxFont *font_to_use;
-  int         direction, ascent, descent;
-  XCharStruct overall;
+  int         ascent, descent;
   XFontStruct *fontinfo;
+#ifdef WX_USE_XFT
+  wxFontStruct *xfontinfo;
+#endif
   float w, h;
 
-    font_to_use = _font ? _font : current_font;
-    if (!font_to_use) {
-	wxError("set a font before calling GetTextExtent", "wxWindowDC");
-	*_w = *_h = -1.0;
-	return;
-    }
+  font_to_use = _font ? _font : current_font;
+  if (!font_to_use) {
+    wxError("set a font before calling GetTextExtent", "wxWindowDC");
+    *_w = *_h = -1.0;
+    return;
+  }
 
+#ifdef WX_USE_XFT
+  xfontinfo = (wxFontStruct*)font_to_use->GetInternalAAFont(scale_x);
+  if (xfontinfo)
+    fontinfo = NULL;
+  else
+#endif
     fontinfo = (XFontStruct*)font_to_use->GetInternalFont(scale_x);
 
+# ifdef WX_USE_XFT
+  if (xfontinfo) {
+    XGlyphInfo overall;
     if (use16bit)
-      XTextExtents16(fontinfo, (XChar2b *)s + dt, str16len(s + dt),
-		     &direction, &ascent, &descent, &overall);
+      XftTextExtents16(DPY, xfontinfo, (FcChar16 *)(s + dt), str16len(s + dt), &overall);
     else
-      XTextExtents(fontinfo, s + dt, strlen(s + dt),
-		   &direction, &ascent, &descent, &overall);
+      XftTextExtents8(DPY, xfontinfo, (FcChar8 *)(s + dt), strlen(s + dt), &overall);
+    ascent = xfontinfo->ascent;
+    descent = xfontinfo->descent;
+    w = XDEV2LOGREL(overall.xOff);
+  } else
+#endif
+    {
+      int direction;
+      XCharStruct overall;
 
-    w = XDEV2LOGREL(overall.width);
-    *_w = w;
-    h = YDEV2LOGREL(ascent + descent);
-    *_h = h;
-    if (_descent) {
-      float d;
-      d = YDEV2LOGREL(descent);
-      *_descent = d;
+      if (use16bit)
+	XTextExtents16(fontinfo, (XChar2b *)s + dt, str16len(s + dt),
+		       &direction, &ascent, &descent, &overall);
+      else
+	XTextExtents(fontinfo, s + dt, strlen(s + dt),
+		     &direction, &ascent, &descent, &overall);
+      w = XDEV2LOGREL(overall.width);
     }
-    if (_topspace)
-      *_topspace = 0.0;
+
+  *_w = w;
+  h = YDEV2LOGREL(ascent + descent);
+  *_h = h;
+  if (_descent) {
+    float d;
+    d = YDEV2LOGREL(descent);
+    *_descent = d;
+  }
+  if (_topspace)
+    *_topspace = 0.0;
 }
 
 void wxWindowDC::SetFont(wxFont *font)
 {
     XFontStruct *xfs;
 
-    if (!DRAWABLE) /* MATTHEW: [5] */
+    if (!DRAWABLE)
 	return;
 
     if (!(current_font = font)) // nothing to do without a font
@@ -1698,7 +1852,7 @@ void wxWindowDC::SetTextForeground(wxColour *col)
 {
     unsigned long pixel;
 
-    if (!DRAWABLE) /* MATTHEW: [5] */
+    if (!DRAWABLE)
 	return;
 
     if (!col)
@@ -1718,8 +1872,8 @@ void wxWindowDC::SetTextBackground(wxColour *col)
 
     if (!col)
       return;
-    if (col != current_text_bg);
-    current_text_bg->CopyFrom(col);
+    if (col != current_text_bg)
+      current_text_bg->CopyFrom(col);
     pixel = current_text_bg->GetPixel(current_cmap, IS_COLOR, 0);
     XSetBackground(DPY, TEXT_GC, pixel);
 }
@@ -1798,18 +1952,22 @@ void wxWindowDC::Initialize(wxWindowDC_Xinit* init)
     DPY = init->dpy; SCN = init->scn;
 
     if (init->drawable) {
-	Window wdummy; int sdummy; unsigned int udummy;
-	 // I have a specified drawable -> get width, height, and depth
-	GC_drawable = DRAWABLE = init->drawable;
-	XGetGeometry(DPY, DRAWABLE, &wdummy, &sdummy, &sdummy,
-		     &WIDTH, &HEIGHT, &udummy, &DEPTH);
+      Window wdummy; int sdummy; unsigned int udummy;
+      // I have a specified drawable -> get width, height, and depth
+      GC_drawable = DRAWABLE = init->drawable;
+      XGetGeometry(DPY, DRAWABLE, &wdummy, &sdummy, &sdummy,
+		   &WIDTH, &HEIGHT, &udummy, &DEPTH);
     } else {
-	GC_drawable = wxAPP_ROOT; // defaults to root
-	DEPTH = wxDisplayDepth(); // depth is display depth
+      GC_drawable = wxAPP_ROOT; // defaults to root
+      DEPTH = wxDisplayDepth(); // depth is display depth
     }
     Colour = (DEPTH != 1); // accept everything else than depth one as colour display
 
     X->owner = init->owner;
+
+#ifdef WX_USE_XRENDER
+    X->picture = 0;
+#endif
 
     WXGC_IGNORE(X, X->owner);
 

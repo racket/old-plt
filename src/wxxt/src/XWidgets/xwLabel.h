@@ -35,6 +35,16 @@ _XFUNCPROTOBEGIN
 #define XtRFontStruct "FontStruct"
 #endif
 
+#ifndef XtNxfont
+#define XtNxfont "xfont"
+#endif
+#ifndef XtCXFont
+#define XtCXFont "XFont"
+#endif
+#ifndef XtRvoid
+#define XtRvoid "void"
+#endif
+
 #ifndef XtNpixmap
 #define XtNpixmap "pixmap"
 #endif

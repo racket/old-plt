@@ -58,6 +58,10 @@
 #include <stdlib.h>
 #include <ctype.h>
 
+#ifdef WX_USE_XFT
+#include <X11/Xft/Xft.h>
+#endif
+
 #ifdef wx_mac
 # ifdef WX_CARBON
 #  ifdef OS_X
@@ -811,16 +815,11 @@ static Scheme_Object *wxSchemeGetFontList(int, Scheme_Object **)
   Scheme_Object *first = scheme_null, *last = NULL;
 
 #ifdef wx_x
-#ifdef wx_xt
-#define __DISPLAY wxAPP_DISPLAY
-#else
-#define __DISPLAY wxGetDisplay()
-#endif
   int count, i = 0;
   char **xnames, **names;
   int last_pos = -1, last_len = 0;
 
-  xnames = XListFonts(__DISPLAY, "*", 50000, &count);
+  xnames = XListFonts(wxAPP_DISPLAY, "*", 50000, &count);
 
   names = new char* [count];
   for (i = 0; i < count; i++) {
@@ -929,6 +928,32 @@ static Scheme_Object *wxSchemeGetFontList(int, Scheme_Object **)
 #endif
 #ifdef wx_mac
   FMDisposeFontFamilyIterator(&iterator);
+#endif
+
+  /* But wait --- there's more! At least under X when Xft is enabled.
+     In that case, we want the Xft names, too, and we put them on the
+     front. */
+#ifdef WX_USE_XFT
+  {
+    FcFontSet *fs;
+    int i, len;
+    char *s, *copy;
+
+    fs = XftListFonts(wxAPP_DISPLAY, DefaultScreen(wxAPP_DISPLAY), NULL, XFT_FAMILY, NULL);
+
+    for (i = 0; i < fs->nfont; i++) {
+      s = (char *)FcNameUnparse(fs->fonts[i]);
+      /* Add a space at the fton to indicate "Xft" */
+      len = strlen(s);
+      copy = new WXGC_ATOMIC char[len + 2];
+      memcpy(copy + 1, s, len + 1);
+      copy[0] = ' ';
+      first = scheme_make_pair(scheme_make_sized_string(copy, len + 1, 0), first);
+      free(s);
+    }
+
+    FcFontSetDestroy(fs);
+  }
 #endif
 
   return first;

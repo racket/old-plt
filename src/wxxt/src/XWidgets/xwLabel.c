@@ -63,14 +63,22 @@ static void make_gc(Widget self)
 static void make_gc(self)Widget self;
 #endif
 {
-    XtGCMask mask;
+    XtGCMask mask, fnt = 0;
     XGCValues values;
 
     if (((XfwfLabelWidget)self)->xfwfLabel.gc != NULL) XtReleaseGC(self, ((XfwfLabelWidget)self)->xfwfLabel.gc);
     values.background = ((XfwfLabelWidget)self)->core.background_pixel;
-    values.foreground = ((XfwfLabelWidget)self)->xfwfLabel.foreground;
-    values.font = ((XfwfLabelWidget)self)->xfwfLabel.font->fid;
-    mask = GCFont | GCBackground | GCForeground;
+    if (!((XfwfLabelWidget)self)->xfwfLabel.xfont) {
+      values.foreground = ((XfwfLabelWidget)self)->xfwfLabel.foreground;
+      values.font = ((XfwfLabelWidget)self)->xfwfLabel.font->fid;
+      fnt = GCFont;
+    } else {
+      if (((XfwfLabelWidget)self)->xfwfLabel.pixmap)
+	values.foreground = ((XfwfLabelWidget)self)->xfwfLabel.foreground;
+      else
+	values.foreground = values.background;
+    }
+    mask = fnt | GCBackground | GCForeground;
     ((XfwfLabelWidget)self)->xfwfLabel.gc = XtGetGC(self, mask, &values);
 }
 /*ARGSUSED*/
@@ -97,8 +105,11 @@ static void make_graygc(self)Widget self;
       values.background = ((XfwfLabelWidget)self)->core.background_pixel;
       ((XfwfLabelWidgetClass)self->core.widget_class)->xfwfCommon_class.darker_color(self, ((XfwfLabelWidget)self)->core.background_pixel, &color);
       values.foreground = color;
-      values.font = ((XfwfLabelWidget)self)->xfwfLabel.font->fid;
-      mask = GCFont | GCBackground | GCForeground;
+      mask = GCBackground | GCForeground;
+      if (((XfwfLabelWidget)self)->xfwfLabel.font) {
+	values.font = ((XfwfLabelWidget)self)->xfwfLabel.font->fid;
+	mask |= GCFont;
+      }
     }
  
     ((XfwfLabelWidget)self)->xfwfLabel.graygc = XtGetGC(self, mask, &values);
@@ -119,14 +130,14 @@ static void count_lines(self)Widget self;
 	for (p = ((XfwfLabelWidget)self)->xfwfLabel.label, ((XfwfLabelWidget)self)->xfwfLabel.nlines = 1, s = ((XfwfLabelWidget)self)->xfwfLabel.label; *s; s++) {
 	    if (*s == '\n') {
 		((XfwfLabelWidget)self)->xfwfLabel.nlines++;
-		w = XfwfTextWidth(((XfwfLabelWidget)self)->xfwfLabel.font, p, s - p, ((XfwfLabelWidget)self)->xfwfLabel.tabs);
+		w = XfwfTextWidth(XtDisplay(self), ((XfwfLabelWidget)self)->xfwfLabel.font, (wxExtFont)((XfwfLabelWidget)self)->xfwfLabel.xfont, p, s - p, ((XfwfLabelWidget)self)->xfwfLabel.tabs);
 		p = s + 1;
 		if (w > ((XfwfLabelWidget)self)->xfwfLabel.label_width) ((XfwfLabelWidget)self)->xfwfLabel.label_width = w;
 	    }
 	}
-	w = XfwfTextWidth(((XfwfLabelWidget)self)->xfwfLabel.font, p, s - p, ((XfwfLabelWidget)self)->xfwfLabel.tabs);
+	w = XfwfTextWidth(XtDisplay(self), ((XfwfLabelWidget)self)->xfwfLabel.font, (wxExtFont)((XfwfLabelWidget)self)->xfwfLabel.xfont, p, s - p, ((XfwfLabelWidget)self)->xfwfLabel.tabs);
 	if (w > ((XfwfLabelWidget)self)->xfwfLabel.label_width) ((XfwfLabelWidget)self)->xfwfLabel.label_width = w;
-	((XfwfLabelWidget)self)->xfwfLabel.label_height = ((XfwfLabelWidget)self)->xfwfLabel.nlines * (((XfwfLabelWidget)self)->xfwfLabel.font->ascent + ((XfwfLabelWidget)self)->xfwfLabel.font->descent);
+	((XfwfLabelWidget)self)->xfwfLabel.label_height = ((XfwfLabelWidget)self)->xfwfLabel.nlines * (wx_ASCENT(((XfwfLabelWidget)self)->xfwfLabel.font, ((wxExtFont)((XfwfLabelWidget)self)->xfwfLabel.xfont)) + wx_DESCENT(((XfwfLabelWidget)self)->xfwfLabel.font, ((wxExtFont)((XfwfLabelWidget)self)->xfwfLabel.xfont)));
     } else if (((XfwfLabelWidget)self)->xfwfLabel.pixmap) {
 	Window        root;
 	int           x, y;
@@ -146,6 +157,7 @@ static XtResource resources[] = {
 {XtNlabel,XtCLabel,XtRString,sizeof(((XfwfLabelRec*)NULL)->xfwfLabel.label),XtOffsetOf(XfwfLabelRec,xfwfLabel.label),XtRImmediate,(XtPointer)NULL },
 {XtNtablist,XtCTablist,XtRString,sizeof(((XfwfLabelRec*)NULL)->xfwfLabel.tablist),XtOffsetOf(XfwfLabelRec,xfwfLabel.tablist),XtRImmediate,(XtPointer)NULL },
 {XtNfont,XtCFont,XtRFontStruct,sizeof(((XfwfLabelRec*)NULL)->xfwfLabel.font),XtOffsetOf(XfwfLabelRec,xfwfLabel.font),XtRString,(XtPointer)XtDefaultFont },
+{XtNxfont,XtCXFont,XtRvoid,sizeof(((XfwfLabelRec*)NULL)->xfwfLabel.xfont),XtOffsetOf(XfwfLabelRec,xfwfLabel.xfont),XtRPointer,(XtPointer)NULL },
 {XtNpixmap,XtCPixmap,XtRPixmap,sizeof(((XfwfLabelRec*)NULL)->xfwfLabel.pixmap),XtOffsetOf(XfwfLabelRec,xfwfLabel.pixmap),XtRImmediate,(XtPointer)0 },
 {XtNforeground,XtCForeground,XtRPixel,sizeof(((XfwfLabelRec*)NULL)->xfwfLabel.foreground),XtOffsetOf(XfwfLabelRec,xfwfLabel.foreground),XtRString,(XtPointer)XtDefaultForeground },
 {XtNalignment,XtCAlignment,XtRAlignment,sizeof(((XfwfLabelRec*)NULL)->xfwfLabel.alignment),XtOffsetOf(XfwfLabelRec,xfwfLabel.alignment),XtRImmediate,(XtPointer)0 },
@@ -174,7 +186,7 @@ XfwfLabelClassRec xfwfLabelClassRec = {
 /* actions      	*/  NULL,
 /* num_actions  	*/  0,
 /* resources    	*/  resources,
-/* num_resources 	*/  15,
+/* num_resources 	*/  16,
 /* xrm_class    	*/  NULLQUARK,
 /* compres_motion 	*/  True ,
 /* compress_exposure 	*/  XtExposeCompressMultiple ,
@@ -285,7 +297,8 @@ static Boolean  set_values(old,request,self,args,num_args)Widget  old;Widget  re
 	if (((XfwfLabelWidget)self)->xfwfLabel.label != NULL) need_count = True;
     }
 
-    if (((XfwfLabelWidget)self)->xfwfLabel.font != ((XfwfLabelWidget)old)->xfwfLabel.font) {
+    if ((((XfwfLabelWidget)self)->xfwfLabel.font != ((XfwfLabelWidget)old)->xfwfLabel.font)
+	|| (((XfwfLabelWidget)self)->xfwfLabel.xfont != ((XfwfLabelWidget)old)->xfwfLabel.xfont)) {
 	make_gc(self);
 	if (((XfwfLabelWidget)self)->xfwfLabel.label != NULL) need_count = True;
     }
@@ -370,21 +383,27 @@ static void realize(self,mask,attributes)Widget self;XtValueMask * mask;XSetWind
   make_gc(self);
   /* make_graygc($); - now on demand */
 }
-#define draw_line(dpy, win, from, to) do {\
-	w1 = XfwfTextWidth(((XfwfLabelWidget)self)->xfwfLabel.font, ((XfwfLabelWidget)self)->xfwfLabel.label + from, to - from, ((XfwfLabelWidget)self)->xfwfLabel.tabs);\
+#define draw_line(dpy, win, from, to, reg) do {\
+	w1 = XfwfTextWidth(dpy, ((XfwfLabelWidget)self)->xfwfLabel.font, (wxExtFont)((XfwfLabelWidget)self)->xfwfLabel.xfont, ((XfwfLabelWidget)self)->xfwfLabel.label + from, to - from, ((XfwfLabelWidget)self)->xfwfLabel.tabs);\
 	if (((XfwfLabelWidget)self)->xfwfLabel.alignment & XfwfLeft)\
 	    x = rect.x;\
 	else if (((XfwfLabelWidget)self)->xfwfLabel.alignment & XfwfRight)\
 	    x = rect.x + rect.width - w1;\
 	else\
 	    x = rect.x + (rect.width - w1)/2;\
-	if (w1)\
-	    XfwfDrawImageString(dpy, win, \
-				(((!((XfwfLabelWidget)self)->core.sensitive || ((XfwfLabelWidget)self)->xfwfLabel.drawgray) && wx_enough_colors(XtScreen(self))) \
-				 ? ((XfwfLabelWidget)self)->xfwfLabel.graygc \
-				 : ((XfwfLabelWidget)self)->xfwfLabel.gc), \
-				x, y, ((XfwfLabelWidget)self)->xfwfLabel.label + from,\
-				to - from, ((XfwfLabelWidget)self)->xfwfLabel.tabs, ((XfwfLabelWidget)self)->xfwfLabel.font);\
+	if (w1) {\
+	  int grayed;\
+	  grayed = ((!((XfwfLabelWidget)self)->core.sensitive || ((XfwfLabelWidget)self)->xfwfLabel.drawgray) && wx_enough_colors(XtScreen(self)));\
+	  XfwfDrawImageString(dpy, win, \
+			      (((XfwfLabelWidget)self)->xfwfLabel.xfont\
+			       ? ((XfwfLabelWidget)self)->xfwfLabel.gc\
+			       : (grayed\
+				  ? ((XfwfLabelWidget)self)->xfwfLabel.graygc \
+				  : ((XfwfLabelWidget)self)->xfwfLabel.gc)), \
+			      x, y, ((XfwfLabelWidget)self)->xfwfLabel.label + from,\
+			      to - from, ((XfwfLabelWidget)self)->xfwfLabel.tabs, ((XfwfLabelWidget)self)->xfwfLabel.font,\
+			      (wxExtFont)((XfwfLabelWidget)self)->xfwfLabel.xfont, !grayed, reg);\
+	}\
     }while (0 )
 
 
@@ -421,21 +440,23 @@ static void _expose(self,event,region)Widget self;XEvent * event;Region  region;
 	XSetRegion(XtDisplay(self), ((XfwfLabelWidget)self)->xfwfLabel.gc, reg);
     }
     if (((XfwfLabelWidget)self)->xfwfLabel.label != NULL) {
-	baseline = ((XfwfLabelWidget)self)->xfwfLabel.font->ascent + ((XfwfLabelWidget)self)->xfwfLabel.font->descent;
+        int ascent;
+	ascent = wx_ASCENT(((XfwfLabelWidget)self)->xfwfLabel.font, ((wxExtFont)((XfwfLabelWidget)self)->xfwfLabel.xfont));
+	baseline = ascent + wx_DESCENT(((XfwfLabelWidget)self)->xfwfLabel.font, ((wxExtFont)((XfwfLabelWidget)self)->xfwfLabel.xfont));
 	if (((XfwfLabelWidget)self)->xfwfLabel.alignment & XfwfTop)
-	    y = rect.y + ((XfwfLabelWidget)self)->xfwfLabel.font->ascent;
+	    y = rect.y + ascent;
 	else if (((XfwfLabelWidget)self)->xfwfLabel.alignment & XfwfBottom)
-	    y = rect.y + rect.height - ((XfwfLabelWidget)self)->xfwfLabel.nlines * baseline + ((XfwfLabelWidget)self)->xfwfLabel.font->ascent;
+	    y = rect.y + rect.height - ((XfwfLabelWidget)self)->xfwfLabel.nlines * baseline + ascent;
 	else
-	    y = rect.y + (rect.height - ((XfwfLabelWidget)self)->xfwfLabel.nlines * baseline)/2 + ((XfwfLabelWidget)self)->xfwfLabel.font->ascent;
+	    y = rect.y + (rect.height - ((XfwfLabelWidget)self)->xfwfLabel.nlines * baseline)/2 + ascent;
 	for (i = 0, j = 0; ((XfwfLabelWidget)self)->xfwfLabel.label[i]; i++) {
 	    if (((XfwfLabelWidget)self)->xfwfLabel.label[i] == '\n') {
-		draw_line(XtDisplay(self), XtWindow(self), j, i);
+		draw_line(XtDisplay(self), XtWindow(self), j, i, reg);
 		j = i + 1;
 		y += baseline;
 	    }
 	}
-	draw_line(XtDisplay(self), XtWindow(self), j, i);
+	draw_line(XtDisplay(self), XtWindow(self), j, i, reg);
     } else if (((XfwfLabelWidget)self)->xfwfLabel.pixmap != 0) {
 	Dimension width = ((XfwfLabelWidget)self)->xfwfLabel.label_width - ((XfwfLabelWidget)self)->xfwfLabel.leftMargin - ((XfwfLabelWidget)self)->xfwfLabel.rightMargin;
 	Dimension height = ((XfwfLabelWidget)self)->xfwfLabel.label_height - ((XfwfLabelWidget)self)->xfwfLabel.topMargin - ((XfwfLabelWidget)self)->xfwfLabel.bottomMargin;

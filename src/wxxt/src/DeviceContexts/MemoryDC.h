@@ -41,8 +41,11 @@ public:
     void SelectObject(wxBitmap *bitmap);
     wxBitmap* GetObject();
 
+#ifdef WX_USE_XRENDER
+    virtual void InitPicture();
+#endif
+
 private:
-    /* MATTHEW: [4] */
     wxBitmap *selected; /* Need to keep pointer or it will be GC'ed */
     Bool read_only;
 };

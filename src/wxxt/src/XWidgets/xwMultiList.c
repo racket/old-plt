@@ -79,9 +79,15 @@ extern void XawInitializeWidgetSet();
 
 #define	SUPERCLASS	&(simpleClassRec)
 
-#define	FontAscent(f)	((f)->max_bounds.ascent)
-#define	FontDescent(f)	((f)->max_bounds.descent)
-#define	FontH(f)	(FontAscent(f) + FontDescent(f) + 2)
+#ifdef WX_USE_XFT
+# define	FontAscent(f, xf)	(xf ? (xf)->ascent : (f)->max_bounds.ascent)
+# define	FontDescent(f, xf)	(xf ? (xf)->descent : (f)->max_bounds.descent)
+#else
+# define	FontAscent(f, xf)	((f)->max_bounds.ascent)
+# define	FontDescent(f, xf)	((f)->max_bounds.descent)
+#endif
+
+#define	FontH(f, xf)	(FontAscent(f, xf) + FontDescent(f, xf) + 2)
 #define	FontW(f,s,w)	(XfwfTextWidth(f,s,strlen(s), MultiListTabs(w)) + 1)
 #define	FontMaxCharW(f)	((f)->max_bounds.rbearing-(f)->min_bounds.lbearing+1)
 
@@ -212,6 +218,10 @@ static XtResource resources[] =
 	    MultiListFieldOffset(nitems), XtRImmediate, (caddr_t)0},
 	{XtNfont,  XtCFont, XtRFontStruct, sizeof(XFontStruct *),
 	    MultiListFieldOffset(font),XtRString, "XtDefaultFont"},
+#ifdef WX_USE_XFT
+	{XtNmlXftFont,  XtCMLXftFont, XtRPointer, sizeof(void*),
+         MultiListFieldOffset(xft_font),XtRPointer, (XtPointer)0},
+#endif
 	{XtNlist, XtCList, XtRPointer, sizeof(char **),
 	    MultiListFieldOffset(list), XtRString, NULL},
 	{XtNsensitiveArray, XtCList, XtRPointer, sizeof(Boolean *),
@@ -491,7 +501,8 @@ XfwfMultiListWidget cpl,rpl,npl;
 	    (MultiListBG(cpl) != MultiListBG(npl)) ||
 	    (MultiListHighlightFG(cpl) != MultiListHighlightFG(npl)) ||
 	    (MultiListHighlightBG(cpl) != MultiListHighlightBG(npl)) ||
-	    (MultiListFont(cpl) != MultiListFont(npl)))
+	    (MultiListFont(cpl) != MultiListFont(npl)) ||
+	    (MultiListXftFont(cpl) != MultiListXftFont(npl)))
 	{
 		XtDestroyGC(MultiListEraseGC(cpl));
 		XtDestroyGC(MultiListDrawGC(cpl));
@@ -540,7 +551,8 @@ XfwfMultiListWidget cpl,rpl,npl;
 	    (MultiListDefaultCols(cpl) != MultiListDefaultCols(npl)) ||
 	    ((MultiListForceCols(cpl) != MultiListForceCols(npl)) &&
 	     (MultiListNumCols(cpl) != MultiListNumCols(npl))) ||
-	    (MultiListFont(cpl) != MultiListFont(npl)))
+	    (MultiListFont(cpl) != MultiListFont(npl)) ||
+	    (MultiListXftFont(cpl) != MultiListXftFont(npl)))
 	{
 		recalc = True;
 		redraw = True;
@@ -705,10 +717,13 @@ XfwfMultiListWidget mlw;
 	XGCValues values;
 	unsigned int attribs;
 
-	attribs = GCForeground | GCBackground | GCFont;
+	attribs = GCForeground | GCBackground;
 	values.foreground = MultiListFG(mlw);
 	values.background = MultiListBG(mlw);
-	values.font = MultiListFont(mlw)->fid;
+	if (MultiListFont(mlw)) {
+	  values.font = MultiListFont(mlw)->fid;
+	  attribs |= GCFont;
+	}
 	MultiListDrawGC(mlw) = XtGetGC((Widget)mlw,attribs,&values);
 
 	values.foreground = MultiListBG(mlw);
@@ -794,66 +809,71 @@ static void RedrawRowColumn(mlw,row,column)
 XfwfMultiListWidget mlw;
 int row,column;
 {
-	GC bg_gc=0,fg_gc=0;
-	XfwfMultiListItem *item=NULL;
-	int ul_x,ul_y,str_x,str_y,w,h,item_index,has_item,text_h;
+  GC bg_gc=0,fg_gc=0;
+  XfwfMultiListItem *item=NULL;
+  int ul_x,ul_y,str_x,str_y,w,h,item_index,has_item,text_h;
+  int xmode;
+	
+  if (!XtIsRealized((Widget)mlw)) return;
+  has_item = RowColumnToItem(mlw,row,column,&item_index);
+  RowColumnToPixels(mlw,row,column,&ul_x,&ul_y,&w,&h);
 
-	if (!XtIsRealized((Widget)mlw)) return;
-	has_item = RowColumnToItem(mlw,row,column,&item_index);
-	RowColumnToPixels(mlw,row,column,&ul_x,&ul_y,&w,&h);
-
-	if (has_item == False)					/* No Item */
+  if (has_item == False)	/* No Item */
+    {
+      if (MultiListShadeSurplus(mlw))
+	bg_gc = MultiListGrayGC(mlw);
+      else
+	bg_gc = MultiListEraseGC(mlw);
+      xmode = 1;
+    } else {
+      item = MultiListNthItem(mlw,item_index);
+      if ((!MultiListSensitive(mlw)) ||
+	  (MultiListDrawGray(mlw)) ||
+	  (!MultiListItemSensitive(item))) /* Insensitive */
 	{
-		if (MultiListShadeSurplus(mlw))
-			bg_gc = MultiListGrayGC(mlw);
-		    else
-			bg_gc = MultiListEraseGC(mlw);
+	  xmode = 0;
+	  if (MultiListItemHighlighted(item)) /* Selected */
+	    {
+	      bg_gc = MultiListGrayGC(mlw);
+	      fg_gc = MultiListEraseGC(mlw);
+	    }
+	  else			/* !Selected */
+	    {
+	      bg_gc = MultiListEraseGC(mlw);
+	      fg_gc = MultiListGrayGC(mlw);
+	    }
 	}
-	    else
+      else			/* Sensitive */
 	{
-		item = MultiListNthItem(mlw,item_index);
-		if ((!MultiListSensitive(mlw)) ||
-                    (MultiListDrawGray(mlw)) ||
-		    (!MultiListItemSensitive(item)))	/* Insensitive */
-		{
-		        if (MultiListItemHighlighted(item))	/* Selected */
-			{
-				bg_gc = MultiListGrayGC(mlw);
-				fg_gc = MultiListEraseGC(mlw);
-			}
-			    else				/* !Selected */
-			{
-				bg_gc = MultiListEraseGC(mlw);
-				fg_gc = MultiListGrayGC(mlw);
-			}
-		}
-		    else				/* Sensitive */
-		{
-		        if (MultiListItemHighlighted(item))	/* Selected */
-			{
-				bg_gc = MultiListHighlightBackGC(mlw);
-				fg_gc = MultiListHighlightForeGC(mlw);
-			}
-			    else				/* !Selected */
-			{
-				bg_gc = MultiListEraseGC(mlw);
-				fg_gc = MultiListDrawGC(mlw);
-			}
-		}
+	  if (MultiListItemHighlighted(item)) /* Selected */
+	    {
+	      xmode = -1;
+	      bg_gc = MultiListHighlightBackGC(mlw);
+	      fg_gc = MultiListHighlightForeGC(mlw);
+	    }
+	  else			/* !Selected */
+	    {
+	      xmode = 1;
+	      bg_gc = MultiListEraseGC(mlw);
+	      fg_gc = MultiListDrawGC(mlw);
+	    }
 	}
-	XFillRectangle(XtDisplay(mlw),XtWindow(mlw),bg_gc,ul_x,ul_y,w,h);
-	if (has_item == True)
-	{
-		text_h = min(FontH(MultiListFont(mlw)) +
-			     (int)MultiListRowSpace(mlw),(int)MultiListRowHeight(mlw));
-		str_x = ul_x + MultiListColumnSpace(mlw) / 2;
-		str_y = ul_y + FontAscent(MultiListFont(mlw)) +
-			((int)MultiListRowHeight(mlw) - text_h) / 2;
-		XfwfDrawString(XtDisplay(mlw),XtWindow(mlw),fg_gc,
-			       str_x,str_y,MultiListItemString(item),
-			       strlen(MultiListItemString(item)),
-			       MultiListTabs(mlw), NULL, 0);
-	}
+    }
+  XFillRectangle(XtDisplay(mlw),XtWindow(mlw),bg_gc,ul_x,ul_y,w,h);
+  if (has_item == True) {
+    text_h = min(FontH(MultiListFont(mlw), MultiListXftFont(mlw)) +
+		 (int)MultiListRowSpace(mlw),(int)MultiListRowHeight(mlw));
+    str_x = ul_x + MultiListColumnSpace(mlw) / 2;
+    str_y = ul_y + FontAscent(MultiListFont(mlw), MultiListXftFont(mlw)) +
+      ((int)MultiListRowHeight(mlw) - text_h) / 2;
+    XfwfDrawString(XtDisplay(mlw),XtWindow(mlw),
+		   (MultiListXftFont(mlw) ? NULL : fg_gc),
+		   str_x,str_y,MultiListItemString(item),
+		   strlen(MultiListItemString(item)),
+		   MultiListTabs(mlw), NULL, 
+		   MultiListXftFont(mlw), xmode,
+		   0, NULL);
+  }
 } /* End RedrawRowColumn */
 	
 /*===========================================================================*
@@ -1553,7 +1573,7 @@ Boolean *sensitivity_array;
 	MultiListNumRows(mlw) = nitems;
 
 	MultiListColWidth(mlw) = MultiListWidth(mlw);
-        MultiListRowHeight(mlw) = FontH(MultiListFont(mlw));
+        MultiListRowHeight(mlw) = FontH(MultiListFont(mlw), MultiListXftFont(mlw));
 
 	if (MultiListNumItems(mlw) == 0) {
 	    MultiListList(mlw) = NULL;

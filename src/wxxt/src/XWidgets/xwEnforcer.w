@@ -36,6 +36,10 @@ string in a single font.
 
 	@var <FontStruct> XFontStruct *font = <String> XtDefaultFont
 
+@ The |xfont| resource overrides font with an Xft font, if available.
+
+	@var <void> void* xfont = <Pointer> NULL
+
 @ The foreground color is the color used to draw the text.
 
 	@var Pixel foreground = <String> XtDefaultForeground
@@ -132,12 +136,12 @@ or |foreground|.
 	  $label = XtNewString($label);
 	need_redraw = True;
     }
-    if ($font != $old$font || $foreground != $old$foreground) {
+    if ($font != $old$font || $xfont != $old$xfont || $foreground != $old$foreground) {
 	if ($textgc) make_textgc($);
 	if ($label != NULL)
 	    need_redraw = True;
     }
-    if ($label != $old$label || $font != $old$font)
+    if ($label != $old$label || $font != $old$font || $xfont != $old$xfont)
 	compute_label_size($);
 
     /* adjust board abs variables */
@@ -176,23 +180,26 @@ the label to it.
 	if ($drawgray && !$graygc)
 	  make_graygc($);
 
-	agc = (($drawgray && wx_enough_colors(XtScreen($))) ? $graygc : $textgc);
+	if ($xfont)
+	  agc = $textgc;
+	else
+	  agc = (($drawgray && wx_enough_colors(XtScreen($))) ? $graygc : $textgc);
 
 	switch ($alignment) {
 	case XfwfTop:
 	  XfwfDrawImageString(XtDisplay($), XtWindow($), agc,
-			      x, $font->ascent,
-			      $label, strlen($label), NULL, $font);
+			      x, wx_ASCENT($font, ((wxExtFont)$xfont)),
+			      $label, strlen($label), NULL, $font, $xfont, !$drawgray, NULL);
 	  break;
 	case XfwfTopLeft:
 	  XfwfDrawImageString(XtDisplay($), XtWindow($), agc,
-			      0, y+$font->ascent,
-			      $label, strlen($label), NULL, $font);
+			      0, y+wx_ASCENT($font, ((wxExtFont)$xfont)),
+			      $label, strlen($label), NULL, $font, $xfont, !$drawgray, NULL);
 	  break;
 	case XfwfLeft:
 	  XfwfDrawImageString(XtDisplay($), XtWindow($), agc,
-			      0, y+(h-$labelHeight)/2+$font->ascent,
-			      $label, strlen($label), NULL, $font);
+			      0, y+(h-$labelHeight)/2+wx_ASCENT($font, ((wxExtFont)$xfont)),
+			      $label, strlen($label), NULL, $font, $xfont, !$drawgray, NULL);
 	  break;
 	}
 
@@ -414,15 +421,11 @@ label.
 
 @proc compute_label_size($)
 {
-    int direction, ascent, descent;
-    XCharStruct overall;
-
     if ($label) {
 	int len = strlen($label);
-	XTextExtents($font, $label, len,
-		     &direction, &ascent, &descent, &overall);
-	$labelWidth  = XfwfTextWidth($font, $label, len, NULL);
-	$labelHeight = ascent + descent;
+	$labelWidth  = XfwfTextWidth(XtDisplay($), $font, $xfont, $label, len, NULL);
+	$labelHeight = (wx_ASCENT($font, ((wxExtFont)$xfont))
+			+ wx_DESCENT($font, ((wxExtFont)$xfont)));
     } else {
 	$labelWidth = $labelHeight = 0;
     }
@@ -437,9 +440,13 @@ label.
 
     if ($textgc != NULL) XtReleaseGC($, $textgc);
     values.background = $background_pixel;
-    values.foreground = $foreground;
-    values.font = $font->fid;
-    mask = GCFont | GCBackground | GCForeground;
+    mask = GCBackground | GCForeground;
+    if (!$xfont) {
+      values.foreground = $foreground;
+      values.font = $font->fid;
+      mask |= GCFont;
+    } else 
+      values.foreground = values.background;
     $textgc = XtGetGC($, mask, &values);
 }
 
@@ -462,8 +469,11 @@ label.
       values.background = $background_pixel;
       $darker_color($, $background_pixel, &color);
       values.foreground = color;
-      values.font = $font->fid;
-      mask = GCFont | GCBackground | GCForeground;
+      mask = GCBackground | GCForeground;
+      if ($font) {
+	values.font = $font->fid;
+	mask |= GCFont;
+      }
     }
  
     $graygc = XtGetGC($, mask, &values);

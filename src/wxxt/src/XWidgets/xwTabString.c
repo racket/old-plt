@@ -5,7 +5,63 @@
 #include <stdlib.h>
 #include <X11/Intrinsic.h>
 #include <X11/StringDefs.h>
+#ifdef WX_USE_XFT
+# include <X11/Xcms.h>
+# include <X11/Xft/Xft.h>
+#endif
 #include "xwTabString.h"
+
+#ifdef WX_USE_XFT
+int wxXftTextWidth(Display *dpy, XftFont *fontinfo, char *p, int len)
+{
+  XGlyphInfo overall;
+
+  XftTextExtents8(dpy, fontinfo, p, len, &overall);
+
+  return overall.xOff;
+}
+#endif
+
+static void xdoDraw(display, drawable, gc, x, y, string, length, image
+#ifdef WX_USE_XFT
+		    , xfont, draw, col
+#endif
+		    )
+     Display *display;
+     Drawable drawable;
+     GC gc;
+     int x;
+     int y;
+     String string;
+     int length;
+#ifdef WX_USE_XFT
+     wxExtFont xfont;
+     XftDraw *draw;
+     XftColor *col;
+#endif
+{
+#ifdef WX_USE_XFT
+  if (xfont) {
+    if (gc) {
+      XFillRectangle(display, drawable, gc, x, y - xfont->ascent,
+		     wxXftTextWidth(display, xfont, string, length),
+		     xfont->ascent + xfont->descent);
+    }
+    XftDrawString8(draw, col, xfont, x, y, string, length);
+  } else 
+#endif
+    {
+    if (image)
+      XDrawImageString(display, drawable, gc, x, y, string, length);
+    else
+      XDrawString(display, drawable, gc, x, y, string, length);
+  }
+}
+#ifdef WX_USE_XFT
+# define doDraw xdoDraw
+#else
+# define doDraw(dpy, d, gc, x, y, s, len, i, xf, dw, c) xdoDraw(dpy, d, gc, x, y, s, len, i)
+#endif
 
 /*
  *	Like DrawImageString, except it takes an additional  "tabs"
@@ -15,7 +71,7 @@
  *	counterpart.
  */
 static void
-doDrawImageString(display, drawable, gc, x, y, string, length, tabs, font, line, draw)
+doDrawImageString(display, drawable, gc, x, y, string, length, tabs, font, xfont, line, image, xon, clip)
      Display *display;
      Drawable drawable;
      GC gc;
@@ -25,15 +81,55 @@ doDrawImageString(display, drawable, gc, x, y, string, length, tabs, font, line,
      int length;
      int *tabs;
      XFontStruct *font;
+     wxExtFont xfont;
      int line;
-     void (*draw)();
+     int image;
+     int xon;
+     Region clip;
 {
   register char	*p, *ep, *ap;
   register int	tx, tab;
-  
+#ifdef WX_USE_XFT
+  XftColor col;
+  XftDraw *draw;
+#endif
+
   if (!length)
     return;
 
+#ifdef WX_USE_XFT
+  if (xfont) {
+    Visual *visual;
+    Colormap cm;
+
+    cm = DefaultColormapOfScreen(DefaultScreenOfDisplay(display));
+    visual = XcmsVisualOfCCC(XcmsCCCOfColormap(display, cm));
+    
+    draw = XftDrawCreate(display, drawable, visual, cm);
+    if (clip)
+      XftDrawSetClip(draw, clip);
+
+    if (xon < 0) {
+      col.pixel = 0;
+      col.color.red = 0xFFFF;
+      col.color.green = 0xFFFF;
+      col.color.blue = 0xFFFF;
+    } else if (xon) {
+      col.pixel = 0;
+      col.color.red = 0;
+      col.color.green = 0;
+      col.color.blue = 0;
+    } else {
+      col.pixel = 0;
+      col.color.red = 0xA0A0;
+      col.color.green = 0xA0A0;
+      col.color.blue = 0xA0A0;
+    }
+    col.color.alpha = 0xFFFF;
+  } else
+    draw = NULL;
+#endif
+  
   tab = tx = 0;
   for (p = string; length; )
     {
@@ -54,36 +150,50 @@ doDrawImageString(display, drawable, gc, x, y, string, length, tabs, font, line,
       }
 
       if (ep) {
-	draw(display, drawable, gc, x+tx, y, p, ep - p);
+	doDraw(display, drawable, gc, x+tx, y, p, ep - p, image, xfont, draw, &col);
 	tx = tabs[tab++];
 	length -= ep - p + 1;
 	p = ep + 1;
       } else if (ap) {
-	draw(display, drawable, gc, x+tx, y, p, ap - p);
-	tx += XTextWidth(font, p, ap - p);
+	doDraw(display, drawable, gc, x+tx, y, p, ap - p, image, xfont, draw, &col);
+#ifdef WX_USE_XFT	
+	if (xfont) 
+	  tx += wxXftTextWidth(display, xfont, p, ap - p);
+	else
+#endif
+	  tx += XTextWidth(font, p, ap - p);
 	length -= ap - p + 1;
 	p = ap + 1;
 	if (length) {
 	  /* Underline next */
-	  XCharStruct overall;
-	  int dir, ascent, descent;
-	  draw(display, drawable, gc, x+tx, y, p, 1);
-	  XTextExtents(font, p, 1, &dir, &ascent, &descent, &overall);
+	  int ww;
+#ifdef WX_USE_XFT	
+	  if (xfont) 
+	    ww = wxXftTextWidth(display, xfont, p, 1);
+	  else
+#endif
+	    ww = XTextWidth(font, p, 1);
+	  doDraw(display, drawable, gc, x+tx, y, p, 1, image, xfont, draw, &col);
 	  if (line && (*p != '&'))
-	    XDrawLine(display, drawable, gc, x+tx, y+1, x+tx+overall.width, y+1);
+	    XDrawLine(display, drawable, gc, x+tx, y+1, x+tx+ww, y+1);
 	  length -= 1;
+	  tx += ww;
 	  p += 1;
-	  tx += overall.width;
 	}
       } else {
-	draw(display, drawable, gc, x+tx, y, p, length);
+	doDraw(display, drawable, gc, x+tx, y, p, length, image, xfont, draw, &col);
 	break;
       }
     }
+
+#ifdef WX_USE_XFT
+  if (draw)
+    XftDrawDestroy(draw);
+#endif
 }
 
 void
-XfwfDrawImageString(display, drawable, gc, x, y, string, length, tabs, fnt)
+XfwfDrawImageString(display, drawable, gc, x, y, string, length, tabs, fnt, xfnt, xon, clip)
      Display *display;
      Drawable drawable;
      GC gc;
@@ -93,12 +203,15 @@ XfwfDrawImageString(display, drawable, gc, x, y, string, length, tabs, fnt)
      int length;
      int *tabs;
      XFontStruct *fnt;
+     wxExtFont xfnt;
+     int xon;
+     Region clip;
 {
-  doDrawImageString(display, drawable, gc, x, y, string, length, tabs, fnt, 1, XDrawImageString);
+  doDrawImageString(display, drawable, gc, x, y, string, length, tabs, fnt, xfnt, 1, 1, xon, clip);
 }
 
 void
-XfwfDrawString(display, drawable, gc, x, y, string, length, tabs, fnt, line)
+XfwfDrawString(display, drawable, gc, x, y, string, length, tabs, fnt, xfnt, xon, line, clip)
      Display *display;
      Drawable drawable;
      GC gc;
@@ -108,9 +221,12 @@ XfwfDrawString(display, drawable, gc, x, y, string, length, tabs, fnt, line)
      int length;
      int *tabs;
      XFontStruct *fnt;
+     wxExtFont xfnt;
      int line;
+     int xon;
+     Region clip;
 {
-  doDrawImageString(display, drawable, gc, x, y, string, length, tabs, fnt, line, XDrawString);
+  doDrawImageString(display, drawable, gc, x, y, string, length, tabs, fnt, xfnt, line, 0, xon, clip);
 }
 
 /*
@@ -153,8 +269,10 @@ char *tablist;
  *	counterpart.
  */
 int
-XfwfTextWidth(font, str, length, tabs)
+XfwfTextWidth(display, font, xfont, str, length, tabs)
+     Display *display;
      XFontStruct *font;
+     wxExtFont xfont;
      String str;
      int length;
      int *tabs;
@@ -202,7 +320,12 @@ XfwfTextWidth(font, str, length, tabs)
       length -= ep - p + 1;
       p = ep + 1;
     } else {
-      rc = XTextWidth(font, p, length);
+#ifdef WX_USE_XFT
+      if (xfont)
+	rc = wxXftTextWidth(display, xfont, p, length);
+      else
+#endif
+	rc = XTextWidth(font, p, length);
       if (c)
 	XtFree(c);
       if (rc < 0) return rc; else return rc + tx;

@@ -54,6 +54,9 @@
 #define _MULTILIST_H_
 
 #include <X11/Xaw/Simple.h>
+#ifdef WX_USE_XFT
+# include <X11/Xft/Xft.h>
+#endif
 
 /*---------------------------------------------------------------------------*
 
@@ -169,6 +172,9 @@
                     S T R I N G    D E F I N I T I O N S
 
  *---------------------------------------------------------------------------*/
+
+#define XtCMLXftFont          "XftFont"
+#define XtNmlXftFont          "xftFont"
 
 #define XtCList			"List"
 #define XtCSpacing		"Spacing"

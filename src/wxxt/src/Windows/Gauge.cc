@@ -87,6 +87,9 @@ Bool wxGauge::Create(wxPanel *panel, char *label, int _range,
 	 XtNbackground,  wxGREY_PIXEL,
 	 XtNforeground,  wxBLACK_PIXEL,
 	 XtNfont,        label_font->GetInternalFont(),
+#ifdef WX_USE_XFT
+	 XtNxfont,       label_font->GetInternalAAFont(),
+#endif
 	 XtNtraversalOn, FALSE,
 	 XtNframeType,   XfwfSunken,
 	 XtNframeWidth,  2,

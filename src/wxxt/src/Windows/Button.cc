@@ -75,6 +75,9 @@ Bool wxButton::Create(wxPanel *panel, wxFunction function, char *label,
 	 XtNbackground,  wxGREY_PIXEL,
 	 XtNforeground,  wxBLACK_PIXEL,
 	 XtNfont,        label_font->GetInternalFont(),
+#ifdef WX_USE_XFT
+	 XtNxfont,       label_font->GetInternalAAFont(),
+#endif
 	 XtNshrinkToFit, (width < 0 || height < 0),
 	 XtNframeWidth,  (style & wxBORDER) ? 2 : 0,
 	 XtNframeType,   XfwfSunken,
@@ -89,6 +92,9 @@ Bool wxButton::Create(wxPanel *panel, wxFunction function, char *label,
 	 XtNbackground,  wxGREY_PIXEL,
 	 XtNforeground,  wxBLACK_PIXEL,
 	 XtNfont,        font->GetInternalFont(),
+#ifdef WX_USE_XFT
+	 XtNxfont,       font->GetInternalAAFont(),
+#endif
 	 XtNshrinkToFit, (width < 0 || height < 0),
 	 XtNhighlightThickness, 0,
 	 XtNtraversalOn, FALSE,

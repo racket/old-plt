@@ -108,8 +108,8 @@ char *font_defaults[] = {
 #endif
 
 #ifdef wx_msw
-  "ScreenSystem__", "Tahoma/MS Sans Serif",
-  "ScreenDefault__", "MS/Microsoft Sans Serif",
+  "ScreenSystem__", "MS Sans Serif", /* maybe changed by Adjust */ 
+  "ScreenDefault__", "MS Sans Serif", /* maybe changed by Adjust */ 
   "ScreenRoman__", "Times New Roman",
   "ScreenDecorative__", "Arial",
   "ScreenModern__", "Courier New",
@@ -141,6 +141,82 @@ char *font_defaults[] = {
 
   NULL
 };
+
+#ifdef wx_msw
+static int CALLBACK check_font_here(ENUMLOGFONTEX *lpelfe, NEWTEXTMETRICEX *lpntme,
+				       DWORD FontType, LPARAM lParam)
+{
+  *(int *)lParam = 1;
+  return 0;
+}
+
+int check_avail(char *name)
+{
+  int present;
+  LOGFONT lf;
+  HDC dc;
+  
+  lf.lfCharSet = DEFAULT_CHARSET;
+  strcpy(lf.lfFaceName, name);
+  lf.lfPitchAndFamily = 0;
+  dc = GetDC(NULL);
+  EnumFontFamiliesEx(dc, &lf, (FONTENUMPROC)check_font_here, (LPARAM)&present, 0);
+  ReleaseDC(NULL, dc);
+
+  return present;
+}
+#endif
+
+#ifdef WX_USE_XFT
+extern int wxXRenderHere(void);
+#endif
+
+static void AdjustFontDefaults(void)
+{
+#ifdef wx_xt
+  if (wxXRenderHere()) {
+    int i;  
+    
+    for (i = 0; font_defaults[i]; i += 2) {
+      if (!strcmp(font_defaults[i], "ScreenSystem__")) {
+	font_defaults[i + 1] = " Luxi Sans";
+      } else if (!strcmp(font_defaults[i], "ScreenDefault__")) {
+	font_defaults[i + 1] = " Luxi Sans";
+      } else if (!strcmp(font_defaults[i], "ScreenRoman__")) {
+	font_defaults[i + 1] = " Luxi Serif";
+      } else if (!strcmp(font_defaults[i], "ScreenDecorative__")) {
+	font_defaults[i + 1] = " Luxi Sans";
+      } else if (!strcmp(font_defaults[i], "ScreenModern__")) {
+	font_defaults[i + 1] = " Luxi Mono";
+      } else if (!strcmp(font_defaults[i], "ScreenTeletype__")) {
+	font_defaults[i + 1] = " Luxi Mono";
+      } else if (!strcmp(font_defaults[i], "ScreenSwiss__")) {
+	font_defaults[i + 1] = " Luxi Sans";
+      } else if (!strcmp(font_defaults[i], "ScreenScript__")) {
+	font_defaults[i + 1] = " URW Chancery L";
+      }
+    }
+  }
+#endif
+#ifdef wx_msw
+  int i;
+
+  for (i = 0; font_defaults[i]; i += 2) {
+    if (!strcmp(font_defaults[i], "ScreenDefault__")) {
+      /* We'd prefer to use "Microsoft Sans Serif", instead,
+	 in XP, because that's an outline font. */
+      if (check_avail("Microsoft Sans Serif")) {
+	font_defaults[i + 1] = "Microsoft Sans Serif";
+      }
+    } else if (!strcmp(font_defaults[i], "ScreenSystem__")) {
+      /* 2000 and XP use Tahoma by default for controls */
+      static int known = 0, present = 0;
+      if (check_avail("Tahoma")) {
+	font_defaults[i+1] = "Tahoma";
+      }
+    }
+#endif
+}
 
 wxFontNameDirectory *wxTheFontNameDirectory;
 
@@ -264,31 +340,6 @@ int wxGetPreference(const char *name, char *res, long len);
 
 static char pref_buf[1024];
 
-#ifdef wx_msw
-static int CALLBACK check_font_here(ENUMLOGFONTEX *lpelfe, NEWTEXTMETRICEX *lpntme,
-				       DWORD FontType, LPARAM lParam)
-{
-  *(int *)lParam = 1;
-  return 0;
-}
-
-int check_avail(char *name)
-{
-  int present;
-  LOGFONT lf;
-  HDC dc;
-  
-  lf.lfCharSet = DEFAULT_CHARSET;
-  strcpy(lf.lfFaceName, name);
-  lf.lfPitchAndFamily = 0;
-  dc = GetDC(NULL);
-  EnumFontFamiliesEx(dc, &lf, (FONTENUMPROC)check_font_here, (LPARAM)&present, 0);
-  ReleaseDC(NULL, dc);
-
-  return present;
-}
-#endif
-
 static void SearchResource(const char *prefix, const char **names, int count, char **v)
 {
   int k, i, j;
@@ -323,31 +374,6 @@ static void SearchResource(const char *prefix, const char **names, int count, ch
 	}
 	defaults += 2;
       }
-#ifdef wx_msw
-      if (internal && !strcmp(internal, "MS/Microsoft Sans Serif")) {
-	/* We'd prefer to use "Microsoft Sans Serif", instead,
-	   in XP, because that's an outline font. */
-	static int known = 0, present = 0;
-	if (!known) {
-	  present = check_avail("Microsoft Sans Serif");
-	}
-	if (present)
-	  internal = "Microsoft Sans Serif";
-	else
-	  internal = "MS Sans Serif";
-      }
-      if (internal && !strcmp(internal, "Tahoma/MS Sans Serif")) {
-	/* 2000 and XP use Tahoma by default for controls */
-	static int known = 0, present = 0;
-	if (!known) {
-	  present = check_avail("Tahoma");
-	}
-	if (present)
-	  internal = "Tahoma";
-	else
-	  internal = "MS Sans Serif";
-      }
-#endif
     }
   }
 
@@ -360,6 +386,8 @@ static void SearchResource(const char *prefix, const char **names, int count, ch
 
 void wxInitializeFontNameDirectory(void)
 {
+  AdjustFontDefaults();
+
   wxREGGLOB(wxTheFontNameDirectory);
   wxTheFontNameDirectory = new wxFontNameDirectory;
   wxTheFontNameDirectory->Initialize(wxSYSTEM, wxSYSTEM, "System");

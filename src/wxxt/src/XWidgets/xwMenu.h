@@ -26,6 +26,9 @@ SOFTWARE.
 
 #include <X11/Xmu/Converters.h>
 #include <X11/Core.h>
+#ifdef WX_USE_XFT
+# include <X11/Xft/Xft.h>
+#endif
 
 /****************************************************************
  *
@@ -61,6 +64,9 @@ SOFTWARE.
  bottomShadowContrast BottomShadowContrast Int          60%
 
 */
+
+#define XtCMenuXftFont          "XftFont"
+#define XtNmenuXftFont          "xftFont"
 
 #define XtNhMargin              "hMargin"
 #define XtCHMargin              "HMargin"

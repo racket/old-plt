@@ -56,6 +56,10 @@ static XtResource MenuResources[] =
     /* font */
     {XtNfont,  XtCFont, XtRFontStruct, sizeof(XFontStruct *),
         offset(menu.font),XtRString, "XtDefaultFont"},
+#ifdef WX_USE_XFT
+    {XtNmenuXftFont,  XtCMenuXftFont, XtRPointer, sizeof(void*),
+        offset(menu.xft_font),XtRPointer, (XtPointer)0},
+#endif
 
     /* border and shadow width */
     {XtNborderWidth, XtCBorderWidth, XtRDimension, sizeof(Dimension),
@@ -235,8 +239,8 @@ static void MenuInitialize(request, new, args, num_args)
     CreateShadowGCs(mw);
 
     if (!mw->menu.indicator_size
-    ||  mw->menu.indicator_size>mw->menu.font->ascent)
-	mw->menu.indicator_size=mw->menu.font->ascent;
+	||  mw->menu.indicator_size > wx_ASCENT(mw->menu.font, mw->menu.xft_font))
+      mw->menu.indicator_size = wx_ASCENT(mw->menu.font, mw->menu.xft_font);
 
     mw->menu.popped_up       = FALSE;
     mw->menu.state           = (menu_state*)XtMalloc(sizeof(menu_state));
@@ -366,6 +370,9 @@ static Boolean MenuSetValues(gcurrent, grequest, gnew)
     if (CHANGED_bg_
 	|| CHANGED(be_nice_to_cmap)
 	|| CHANGED(foreground) || CHANGED(font)
+#ifdef WX_USE_XFT
+	|| CHANGED(xft_font)
+#endif
 	|| CHANGED(indicator_pixel)  || CHANGED(indicator_contrast)) {
 	ReleaseGCs(new);
 	CreateGCs(new);
@@ -616,23 +623,27 @@ static void CreateGCs(MenuWidget mw)
     Screen     *scr = XtScreen((Widget)mw);
     Window     win  = RootWindowOfScreen(DefaultScreenOfDisplay(dpy));
     XGCValues  xgcv;
+    int        gcf_flag = 0;
 
 #   include <X11/bitmaps/gray>
     mw->menu.stipple_pxmap = XCreatePixmapFromBitmapData(dpy, win,
 				 gray_bits, gray_width, gray_height, 1, 0, 1);
 
-    xgcv.font       = mw->menu.font->fid;
+    if (mw->menu.font) {
+      xgcv.font = mw->menu.font->fid;
+      gcf_flag = GCFont;
+    }
 
     xgcv.foreground = mw->core.background_pixel;
     xgcv.background = mw->menu.foreground;
     mw->menu.erase_GC = XtGetGC((Widget)mw,
-				GCFont|GCForeground|GCBackground,
+				gcf_flag|GCForeground|GCBackground,
 				&xgcv);
 
     xgcv.foreground = mw->menu.foreground;
     xgcv.background = mw->core.background_pixel;
     mw->menu.normal_GC = XtGetGC((Widget)mw,
-				 GCFont|GCForeground|GCBackground,
+				 gcf_flag|GCForeground|GCBackground,
 				 &xgcv);
     
     if (wx_enough_colors(scr)) {
@@ -640,13 +651,13 @@ static void CreateGCs(MenuWidget mw)
       get_scaled_color((Widget)mw, 0.6, xgcv.background, &r);
       xgcv.foreground = r;
       mw->menu.inactive_GC = XtGetGC((Widget)mw,
-				     GCFont|GCForeground|GCBackground,
+				     gcf_flag|GCForeground|GCBackground,
 				     &xgcv);
     } else {
       xgcv.fill_style = FillStippled;
       xgcv.stipple    = mw->menu.stipple_pxmap;
       mw->menu.inactive_GC = XtGetGC((Widget)mw,
-				     GCFont|GCForeground|GCBackground|
+				     gcf_flag|GCForeground|GCBackground|
 				     GCFillStyle|GCStipple,
 				     &xgcv);
     }
@@ -727,7 +738,9 @@ static void ReleaseShadowGCs(MenuWidget mw)
 
 static unsigned StringWidth(MenuWidget mw, char *s)
 {
-    return XfwfTextWidth(mw->menu.font, s, strlen(s), NULL);
+    return XfwfTextWidth(XtDisplay(mw),
+			 mw->menu.font, wxEXT_FONT(mw->menu.xft_font), 
+			 s, strlen(s), NULL);
 }
 
 static void GetResourceName(char *in, char *out)
@@ -782,14 +795,15 @@ char *ResourcedText(MenuWidget mw, menu_item *item, Subresource type)
 static void MenuTextSize(MenuWidget mw, menu_item *item, Boolean in_menubar,
 			 unsigned *l, unsigned *m, unsigned *r, unsigned *h)
 {
-    *h = (mw->menu.font->ascent + mw->menu.font->descent
-	  + 2*VMARGIN + 2*mw->menu.shadow_width);
-    *l = *r = mw->menu.hmargin + mw->menu.shadow_width;
-    if (mw->menu.forChoice) {
-      *l += CHOICE_LEFT;
-      *r += CHOICE_RIGHT;
-    }
-    *m = StringWidth(mw, ResourcedText(mw, item, SUBRESOURCE_LABEL));
+  *h = (wx_ASCENT(mw->menu.font, mw->menu.xft_font) 
+	+ wx_DESCENT(mw->menu.font, mw->menu.xft_font)
+	+ 2*VMARGIN + 2*mw->menu.shadow_width);
+  *l = *r = mw->menu.hmargin + mw->menu.shadow_width;
+  if (mw->menu.forChoice) {
+    *l += CHOICE_LEFT;
+    *r += CHOICE_RIGHT;
+  }
+  *m = StringWidth(mw, ResourcedText(mw, item, SUBRESOURCE_LABEL));
 }
 
 static void MenuButtonSize(MenuWidget mw, menu_item *item, Boolean in_menubar,
@@ -904,8 +918,9 @@ static void ComputeMenuSize(MenuWidget mw, menu_state *ms)
 
     if (!max_height && in_menubar) {
       /* For menu bar: make it at least as tall as with an item */
-      max_height = mw->menu.font->ascent + mw->menu.font->descent
-	+ 2*VMARGIN + 2*mw->menu.shadow_width;      
+      max_height = (wx_ASCENT(mw->menu.font, mw->menu.xft_font) 
+		    + wx_DESCENT(mw->menu.font, mw->menu.xft_font)
+		    + 2*VMARGIN + 2*mw->menu.shadow_width);
     }
     ms->w       = max_left_width + max_label_width + max_right_width
 	          + 2*mw->menu.shadow_width;
@@ -939,14 +954,20 @@ static void DrawTextItem(MenuWidget mw, menu_state *ms, menu_item *item,
 	    extra_x = mw->menu.indicator_size + ISPACING;
 	}
     }
-    if ((label=ResourcedText(mw, item, SUBRESOURCE_LABEL)))
+    if ((label=ResourcedText(mw, item, SUBRESOURCE_LABEL))) {
       XfwfDrawString(XtDisplay(mw), ms->win,
-		     ((item->enabled || item->type==MENU_TEXT) 
-		      ? mw->menu.normal_GC 
-		      : mw->menu.inactive_GC),
+		     (wxEXT_FONT(mw->menu.xft_font)
+		      ? mw->menu.erase_GC 
+		      : ((item->enabled || item->type==MENU_TEXT) 
+			 ? mw->menu.normal_GC 
+			 : mw->menu.inactive_GC)),
 		     x+ms->wLeft+extra_x,
-		     y+mw->menu.shadow_width+VMARGIN+mw->menu.font->ascent,
-		     label, strlen(label), NULL, mw->menu.font, 0);
+		     y+mw->menu.shadow_width+VMARGIN+wx_ASCENT(mw->menu.font,
+							       mw->menu.xft_font),
+		     label, strlen(label), NULL,
+		     mw->menu.font, wxEXT_FONT(mw->menu.xft_font), 
+		     (item->enabled || item->type==MENU_TEXT), 0, NULL);
+    }
     if (item->enabled && item->type!=MENU_TEXT)
 	Xaw3dDrawRectangle(
 	    XtDisplay((Widget)mw), ms->win,
@@ -971,29 +992,36 @@ static void DrawButtonItem(MenuWidget mw, menu_state *ms, menu_item *item,
     if ((!mw->menu.horizontal || ms->prev)
     && (key=ResourcedText(mw, item, SUBRESOURCE_KEY)))
       XfwfDrawString(XtDisplay(mw), ms->win,
-		     item->enabled ? mw->menu.normal_GC : mw->menu.inactive_GC,
+		     (wxEXT_FONT(mw->menu.xft_font)
+		      ? mw->menu.erase_GC 
+		      : (item->enabled ? mw->menu.normal_GC : mw->menu.inactive_GC)),
 		     x+ms->wLeft+ms->wMiddle+(3 * ISPACING),
-		     y+mw->menu.shadow_width+VMARGIN+mw->menu.font->ascent,
-		     key, strlen(key), NULL, mw->menu.font, 0);
+		     y+mw->menu.shadow_width+VMARGIN+wx_ASCENT(mw->menu.font,
+							       mw->menu.xft_font),
+		     key, strlen(key), NULL, mw->menu.font, 
+		     wxEXT_FONT(mw->menu.xft_font),
+		     item->enabled, 0, NULL);
 }
 
 static void DrawRadioItem(MenuWidget mw, menu_state *ms, menu_item *item,
 			  unsigned x, unsigned y)
 {
     DrawButtonItem(mw, ms, item, x, y);
-    Xaw3dDrawRadio(
-	XtDisplay((Widget)mw), ms->win,
-	mw->menu.top_shadow_GC,
-	mw->menu.bot_shadow_GC,
-	mw->menu.indicator_GC,
-	mw->menu.erase_GC,
-	item->enabled ? mw->menu.normal_GC : mw->menu.inactive_GC,
-	x+mw->menu.shadow_width+mw->menu.hmargin,
-	y+mw->menu.shadow_width+VMARGIN
-	+(mw->menu.font->ascent
-	  +mw->menu.font->descent
-	  -mw->menu.indicator_size)/2,
-	mw->menu.indicator_size, mw->menu.shadow_width, item->set);
+    Xaw3dDrawRadio(XtDisplay((Widget)mw), ms->win,
+		   mw->menu.top_shadow_GC,
+		   mw->menu.bot_shadow_GC,
+		   mw->menu.indicator_GC,
+		   mw->menu.erase_GC,
+		   item->enabled ? mw->menu.normal_GC : mw->menu.inactive_GC,
+		   x+mw->menu.shadow_width+mw->menu.hmargin,
+		   y+mw->menu.shadow_width+VMARGIN
+		   +(wx_ASCENT(mw->menu.font,
+			       mw->menu.xft_font)
+		     +wx_DESCENT(mw->menu.font,
+				 mw->menu.xft_font)
+		     -mw->menu.indicator_size)/2,
+		   mw->menu.indicator_size, mw->menu.shadow_width, 
+		   item->set);
 }
 
 static void DrawToggleItem(MenuWidget mw, menu_state *ms, menu_item *item,
@@ -1008,8 +1036,10 @@ static void DrawToggleItem(MenuWidget mw, menu_state *ms, menu_item *item,
 
       x += mw->menu.shadow_width + mw->menu.hmargin;
       y += (mw->menu.shadow_width + VMARGIN
-	    + (mw->menu.font->ascent
-	       + mw->menu.font->descent
+	    + (wx_ASCENT(mw->menu.font,
+			 mw->menu.xft_font)
+	       + wx_DESCENT(mw->menu.font,
+			   mw->menu.xft_font)
 	       - mw->menu.indicator_size)/2) + 1;
       h = mw->menu.indicator_size - 2;
       h2 = h / 2;
@@ -1044,9 +1074,11 @@ static void DrawCascadeItem(MenuWidget mw, menu_state *ms, menu_item *item,
 	      +mw->menu.hmargin
 	      +mw->menu.indicator_size),
 	    y+mw->menu.shadow_width+VMARGIN
-	    +(mw->menu.font->ascent
-	      +mw->menu.font->descent
-	      -mw->menu.indicator_size)/2,
+		       +(wx_ASCENT(mw->menu.font,
+			 mw->menu.xft_font)
+			 + wx_DESCENT(mw->menu.font,
+				      mw->menu.xft_font)
+			 - mw->menu.indicator_size)/2,
 	    mw->menu.indicator_size, mw->menu.shadow_width, 
 	    RIGHT, item->enabled && ms->selected==item);
 }

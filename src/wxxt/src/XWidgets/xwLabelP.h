@@ -33,6 +33,7 @@ typedef struct {
 String  label;
 String  tablist;
 XFontStruct * font;
+void * xfont;
 Pixmap  pixmap;
 Pixel  foreground;
 Alignment  alignment;

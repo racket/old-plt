@@ -3,13 +3,9 @@
  */
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
-#line 443 "XWidgets/xwGroup.w"
 #include <stdio.h>
-#line 444 "XWidgets/xwGroup.w"
 #include <X11/Xmu/Converters.h>
-#line 445 "XWidgets/xwGroup.w"
 #include <X11/Xmu/CharSet.h>
-#line 446 "XWidgets/xwGroup.w"
 #include <xwToggle.h>
 #include <./xwGroupP.h>
 static void _resolve_inheritance(
@@ -17,67 +13,56 @@ static void _resolve_inheritance(
 WidgetClass
 #endif
 );
-#line 149 "XWidgets/xwGroup.w"
 static void class_initialize(
 #if NeedFunctionPrototypes
 void
 #endif
 );
-#line 160 "XWidgets/xwGroup.w"
 static void initialize(
 #if NeedFunctionPrototypes
 Widget ,Widget,ArgList ,Cardinal *
 #endif
 );
-#line 174 "XWidgets/xwGroup.w"
 static void destroy(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 184 "XWidgets/xwGroup.w"
 static Boolean  set_values(
 #if NeedFunctionPrototypes
 Widget ,Widget ,Widget,ArgList ,Cardinal *
 #endif
 );
-#line 211 "XWidgets/xwGroup.w"
 static void _expose(
 #if NeedFunctionPrototypes
 Widget,XEvent *,Region 
 #endif
 );
-#line 243 "XWidgets/xwGroup.w"
 static void insert_child(
 #if NeedFunctionPrototypes
 Widget 
 #endif
 );
-#line 270 "XWidgets/xwGroup.w"
 static void make_textgc(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 288 "XWidgets/xwGroup.w"
 static void on_cb(
 #if NeedFunctionPrototypes
 Widget ,XtPointer ,XtPointer 
 #endif
 );
-#line 321 "XWidgets/xwGroup.w"
 static void off_cb(
 #if NeedFunctionPrototypes
 Widget ,XtPointer ,XtPointer 
 #endif
 );
-#line 347 "XWidgets/xwGroup.w"
 static void set_toggles(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 372 "XWidgets/xwGroup.w"
 #define done(type, value) do {\
       if (to->addr != NULL) {\
 	  if (to->size < sizeof(type)) {\
@@ -95,28 +80,22 @@ Widget
   }while (0 )
 
 
-#line 389 "XWidgets/xwGroup.w"
 static Boolean  cvtStringToSelectionType(
 #if NeedFunctionPrototypes
 Display *,XrmValuePtr ,Cardinal *,XrmValuePtr ,XrmValuePtr ,XtPointer *
 #endif
 );
-#line 421 "XWidgets/xwGroup.w"
 static Boolean  cvtSelectionTypeToString(
 #if NeedFunctionPrototypes
 Display *,XrmValuePtr ,Cardinal *,XrmValuePtr ,XrmValuePtr ,XtPointer *
 #endif
 );
-#line 270 "XWidgets/xwGroup.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 270 "XWidgets/xwGroup.w"
 static void make_textgc(Widget self)
 #else
-#line 270 "XWidgets/xwGroup.w"
 static void make_textgc(self)Widget self;
 #endif
-#line 271 "XWidgets/xwGroup.w"
 {
     XtGCMask mask;
     XGCValues values;
@@ -128,16 +107,12 @@ static void make_textgc(self)Widget self;
     mask = GCFont | GCBackground | GCForeground;
     ((XfwfGroupWidget)self)->xfwfGroup.textgc = XtGetGC(self, mask, &values);
 }
-#line 288 "XWidgets/xwGroup.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 288 "XWidgets/xwGroup.w"
 static void on_cb(Widget  toggle,XtPointer  client_data,XtPointer  call_data)
 #else
-#line 288 "XWidgets/xwGroup.w"
 static void on_cb(toggle,client_data,call_data)Widget  toggle;XtPointer  client_data;XtPointer  call_data;
 #endif
-#line 289 "XWidgets/xwGroup.w"
 {
     Widget self = XtParent(toggle);
     Cardinal toggle_ord = (Cardinal) client_data;
@@ -164,16 +139,12 @@ static void on_cb(toggle,client_data,call_data)Widget  toggle;XtPointer  client_
     }
     XtCallCallbackList(self, ((XfwfGroupWidget)self)->xfwfGroup.activate, (XtPointer) ((XfwfGroupWidget)self)->xfwfGroup.selection);
 }
-#line 321 "XWidgets/xwGroup.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 321 "XWidgets/xwGroup.w"
 static void off_cb(Widget  toggle,XtPointer  client_data,XtPointer  call_data)
 #else
-#line 321 "XWidgets/xwGroup.w"
 static void off_cb(toggle,client_data,call_data)Widget  toggle;XtPointer  client_data;XtPointer  call_data;
 #endif
-#line 322 "XWidgets/xwGroup.w"
 {
     Widget self = XtParent(toggle);
     Cardinal toggle_ord = (Cardinal) client_data;
@@ -193,16 +164,12 @@ static void off_cb(toggle,client_data,call_data)Widget  toggle;XtPointer  client
     }
     XtCallCallbackList(self, ((XfwfGroupWidget)self)->xfwfGroup.activate, (XtPointer) ((XfwfGroupWidget)self)->xfwfGroup.selection);
 }
-#line 347 "XWidgets/xwGroup.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 347 "XWidgets/xwGroup.w"
 static void set_toggles(Widget self)
 #else
-#line 347 "XWidgets/xwGroup.w"
 static void set_toggles(self)Widget self;
 #endif
-#line 348 "XWidgets/xwGroup.w"
 {
     Cardinal i, t;
 
@@ -223,16 +190,12 @@ static void set_toggles(self)Widget self;
 	    t++;
 	}
 }
-#line 389 "XWidgets/xwGroup.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 389 "XWidgets/xwGroup.w"
 static Boolean  cvtStringToSelectionType(Display * display,XrmValuePtr  args,Cardinal * num_args,XrmValuePtr  from,XrmValuePtr  to,XtPointer * converter_data)
 #else
-#line 389 "XWidgets/xwGroup.w"
 static Boolean  cvtStringToSelectionType(display,args,num_args,from,to,converter_data)Display * display;XrmValuePtr  args;Cardinal * num_args;XrmValuePtr  from;XrmValuePtr  to;XtPointer * converter_data;
 #endif
-#line 390 "XWidgets/xwGroup.w"
 {
     String s = (String) from->addr;
 
@@ -259,16 +222,12 @@ static Boolean  cvtStringToSelectionType(display,args,num_args,from,to,converter
     XtDisplayStringConversionWarning(display, s, XtRSelectionType);
     done(SelectionType, XfwfSingleSelection);
 }
-#line 421 "XWidgets/xwGroup.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 421 "XWidgets/xwGroup.w"
 static Boolean  cvtSelectionTypeToString(Display * display,XrmValuePtr  args,Cardinal * num_args,XrmValuePtr  from,XrmValuePtr  to,XtPointer * converter_data)
 #else
-#line 421 "XWidgets/xwGroup.w"
 static Boolean  cvtSelectionTypeToString(display,args,num_args,from,to,converter_data)Display * display;XrmValuePtr  args;Cardinal * num_args;XrmValuePtr  from;XrmValuePtr  to;XtPointer * converter_data;
 #endif
-#line 422 "XWidgets/xwGroup.w"
 {
     char s[30];
 
@@ -289,21 +248,13 @@ static Boolean  cvtSelectionTypeToString(display,args,num_args,from,to,converter
 }
 
 static XtResource resources[] = {
-#line 72 "XWidgets/xwGroup.w"
 {XtNlabel,XtCLabel,XtRString,sizeof(((XfwfGroupRec*)NULL)->xfwfGroup.label),XtOffsetOf(XfwfGroupRec,xfwfGroup.label),XtRImmediate,(XtPointer)NULL },
-#line 76 "XWidgets/xwGroup.w"
 {XtNfont,XtCFont,XtRFontStruct,sizeof(((XfwfGroupRec*)NULL)->xfwfGroup.font),XtOffsetOf(XfwfGroupRec,xfwfGroup.font),XtRString,(XtPointer)XtDefaultFont },
-#line 80 "XWidgets/xwGroup.w"
 {XtNforeground,XtCForeground,XtRPixel,sizeof(((XfwfGroupRec*)NULL)->xfwfGroup.foreground),XtOffsetOf(XfwfGroupRec,xfwfGroup.foreground),XtRString,(XtPointer)XtDefaultForeground },
-#line 90 "XWidgets/xwGroup.w"
 {XtNselectionStyle,XtCSelectionStyle,XtRSelectionType,sizeof(((XfwfGroupRec*)NULL)->xfwfGroup.selectionStyle),XtOffsetOf(XfwfGroupRec,xfwfGroup.selectionStyle),XtRImmediate,(XtPointer)XfwfSingleSelection },
-#line 102 "XWidgets/xwGroup.w"
 {XtNselection,XtCSelection,XtRLong,sizeof(((XfwfGroupRec*)NULL)->xfwfGroup.selection),XtOffsetOf(XfwfGroupRec,xfwfGroup.selection),XtRImmediate,(XtPointer)0 },
-#line 110 "XWidgets/xwGroup.w"
 {XtNactivate,XtCActivate,XtRCallback,sizeof(((XfwfGroupRec*)NULL)->xfwfGroup.activate),XtOffsetOf(XfwfGroupRec,xfwfGroup.activate),XtRImmediate,(XtPointer)NULL },
-#line 117 "XWidgets/xwGroup.w"
 {XtNframeType,XtCFrameType,XtRFrameType,sizeof(((XfwfGroupRec*)NULL)->xfwfFrame.frameType),XtOffsetOf(XfwfGroupRec,xfwfFrame.frameType),XtRImmediate,(XtPointer)XfwfChiseled },
-#line 123 "XWidgets/xwGroup.w"
 {XtNinnerOffset,XtCInnerOffset,XtRDimension,sizeof(((XfwfGroupRec*)NULL)->xfwfFrame.innerOffset),XtOffsetOf(XfwfGroupRec,xfwfFrame.innerOffset),XtRImmediate,(XtPointer)0 },
 };
 
@@ -395,16 +346,12 @@ WidgetClass class;
   if (class == xfwfGroupWidgetClass) return;
   super = (XfwfGroupWidgetClass)class->core_class.superclass;
 }
-#line 149 "XWidgets/xwGroup.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 149 "XWidgets/xwGroup.w"
 static void class_initialize(void)
 #else
-#line 149 "XWidgets/xwGroup.w"
 static void class_initialize()
 #endif
-#line 150 "XWidgets/xwGroup.w"
 {
     XtAddConverter(XtRString, XtRLong, XmuCvtStringToLong, NULL, 0);
     XtSetTypeConverter(XtRString, XtRSelectionType, cvtStringToSelectionType,
@@ -412,16 +359,12 @@ static void class_initialize()
     XtSetTypeConverter(XtRSelectionType, XtRString, cvtSelectionTypeToString,
 		       NULL, 0, XtCacheNone, NULL);
 }
-#line 160 "XWidgets/xwGroup.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 160 "XWidgets/xwGroup.w"
 static void initialize(Widget  request,Widget self,ArgList  args,Cardinal * num_args)
 #else
-#line 160 "XWidgets/xwGroup.w"
 static void initialize(request,self,args,num_args)Widget  request;Widget self;ArgList  args;Cardinal * num_args;
 #endif
-#line 161 "XWidgets/xwGroup.w"
 {
     ((XfwfGroupWidget)self)->xfwfGroup.toggle_ord = 0;
     ((XfwfGroupWidget)self)->xfwfGroup.textgc = NULL;
@@ -434,29 +377,21 @@ static void initialize(request,self,args,num_args)Widget  request;Widget self;Ar
 	((XfwfGroupWidget)self)->xfwfGroup.selection = 0;
     }
 }
-#line 174 "XWidgets/xwGroup.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 174 "XWidgets/xwGroup.w"
 static void destroy(Widget self)
 #else
-#line 174 "XWidgets/xwGroup.w"
 static void destroy(self)Widget self;
 #endif
-#line 175 "XWidgets/xwGroup.w"
 {
    if (((XfwfGroupWidget)self)->xfwfGroup.textgc) XtReleaseGC(self, ((XfwfGroupWidget)self)->xfwfGroup.textgc); ((XfwfGroupWidget)self)->xfwfGroup.textgc = NULL;
 }
-#line 184 "XWidgets/xwGroup.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 184 "XWidgets/xwGroup.w"
 static Boolean  set_values(Widget  old,Widget  request,Widget self,ArgList  args,Cardinal * num_args)
 #else
-#line 184 "XWidgets/xwGroup.w"
 static Boolean  set_values(old,request,self,args,num_args)Widget  old;Widget  request;Widget self;ArgList  args;Cardinal * num_args;
 #endif
-#line 185 "XWidgets/xwGroup.w"
 {
     Boolean need_redraw = False;
 
@@ -478,16 +413,12 @@ static Boolean  set_values(old,request,self,args,num_args)Widget  old;Widget  re
 
     return need_redraw;
 }
-#line 211 "XWidgets/xwGroup.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 211 "XWidgets/xwGroup.w"
 static void _expose(Widget self,XEvent * event,Region  region)
 #else
-#line 211 "XWidgets/xwGroup.w"
 static void _expose(self,event,region)Widget self;XEvent * event;Region  region;
 #endif
-#line 212 "XWidgets/xwGroup.w"
 {
     int w, h;
     Position x, y;
@@ -503,13 +434,10 @@ static void _expose(self,event,region)Widget self;XEvent * event;Region  region;
 
    
 }
-#line 243 "XWidgets/xwGroup.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 174 "XWidgets/xwGroup.w"
 static void insert_child(Widget  child)
 #else
-#line 174 "XWidgets/xwGroup.w"
 static void insert_child(child)Widget  child;
 #endif
 { Widget self = XtParent(child); {
@@ -534,4 +462,3 @@ static void insert_child(child)Widget  child;
     }
 }
 }
-#line 129 "XWidgets/xwGroup.w"

@@ -70,6 +70,9 @@ public:
     // X representation
     virtual Bool  Ok(void) { return (Xbitmap != NULL); }
     virtual void* GetHandle(void); // return type Pixmap*
+#ifdef WX_USE_XRENDER
+    long GetPicture(void); // return type Picture or XftDraw*
+#endif
 
   void SetMask(wxBitmap *bm) { loaded_mask = bm; }
   wxBitmap *GetMask() { return loaded_mask; }

@@ -89,6 +89,9 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label,
 	 XtNbackground,  wxGREY_PIXEL,
 	 XtNforeground,  wxBLACK_PIXEL,
 	 XtNfont,        label_font->GetInternalFont(),
+#ifdef WX_USE_XFT
+	 XtNxfont,       label_font->GetInternalAAFont(),
+#endif
 	 XtNframeType,   XfwfSunken,
 	 XtNframeWidth,  2,
 	 XtNshrinkToFit, TRUE,
@@ -116,6 +119,9 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label,
 	 XtNforeground,    wxBLACK_PIXEL,
 	 XtNthumbColor,    wxGREY_PIXEL,
 	 XtNfont,          font->GetInternalFont(),
+#ifdef WX_USE_XFT
+	 XtNxfont,         font->GetInternalAAFont(),
+#endif
 	 XtNwidth,         style & wxVERTICAL ? ((int)swidth) : length,
 	 XtNheight,        style & wxVERTICAL ? length : ((int)sheight),
 	 XtNframeType,     XfwfRaised,

@@ -608,7 +608,7 @@ enum wxRelationship {
 #define wxColor			wxColour
 #define wxColorMap		wxColourMap
 #define wxMainColormap		wxMainColourmap
-
+ 
 // Macro to cut down on compiler warnings.
 #if REMOVE_UNUSED_ARG
 # define WXUNUSED(identifier) /* identifier */

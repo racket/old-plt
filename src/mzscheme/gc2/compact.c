@@ -4081,7 +4081,7 @@ static void *malloc_untagged(size_t size_in_bytes, mtype_t mtype, MSet *set)
     /* Make sure memory is 8-aligned */
     if (!((long)set->low & 0x4)) {
       if (set->low == set->high) {
-	new_page(mtype, set);
+	new_page(mtype, 0, set);
 	return malloc_untagged(size_in_words << 2, mtype, set);
       }
       (set->low)[0] = 0;

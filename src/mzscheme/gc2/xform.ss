@@ -73,6 +73,7 @@
 (define-struct (parens struct:seq) ())
 (define-struct (brackets struct:seq) ())
 (define-struct (braces struct:seq) ())
+(define-struct (callstage-parens struct:parens) ())
 (define-struct (creation-parens struct:parens) ())
 (define-struct (call struct:tok) (func args live tag))
 (define-struct (block-push struct:tok) (vars tag super-tag))
@@ -228,6 +229,7 @@
   ;; Header:
   (printf "#define FUNCCALL(setup, x) (setup, x)~n")
   (printf "#define FUNCCALL_EMPTY(x) FUNCCALL(GC_variable_stack = __gc_var_stack__[0], x)~n")
+  (printf "#define FUNCCALL_AGAIN(x) FUNCCALL(GC_variable_stack = __gc_var_stack__, x)~n")
   (printf "#define PREPARE_VAR_STACK(size) void *__gc_var_stack__[size+2]; __gc_var_stack__[0] = GC_variable_stack;~n")
   (printf "#define SETUP(x) (GC_variable_stack = __gc_var_stack__, __gc_var_stack__[1] = (void *)x)~n")
   (printf "#define PUSH(v, x) (__gc_var_stack__[x+2] = (void *)&(v))~n")
@@ -236,6 +238,9 @@
   (printf "#define NULLED_OUT 0~n")
   (printf "#define NULL_OUT_ARRAY(a) memset(a, 0, sizeof(a))~n")
   (printf "#define GC_CAN_IGNORE /**/~n")
+  ;; In case a conversion is unnecessary where we have this annotation:
+  (printf "#define START_XFORM_SKIP /**/~n")
+  (printf "#define END_XFORM_SKIP /**/~n")
   (printf "~n")
   
   ;; C++ cupport:
@@ -461,8 +466,8 @@
 		  (get-variable-size (cdr x)))
 		vars)))
 
-(define (print-it e indent semi-newlines?)
-  (let loop ([e e][prev #f])
+(define (print-it e indent semi-newlines? ordered?)
+  (let loop ([e e][prev #f][prevs null])
     (unless (null? e)
       (let ([v (car e)])
 	(cond
@@ -476,7 +481,8 @@
 	    (print-it (seq->list (seq-in v)) subindent
 		      (not (and (parens? v)
 				prev
-				(memq (tok-n prev) '(for)))))
+				(memq (tok-n prev) '(for))))
+		      (or (braces? v) (callstage-parens? v)))
 	    (when (and next-indent (= next-indent subindent))
 	      (set! next-indent indent)))
 	  (display/indent #f (seq-close v))
@@ -499,18 +505,23 @@
 	 [(call? v)
 	  (if (null? (call-live v))
 	      (display/indent v "FUNCCALL_EMPTY(")
-	      (begin
-		(display/indent v (format "FUNCCALL(SETUP_~a(" 
-					  (call-tag v)))
-		(if show-info?
-		    (begin
-		      (display/indent v (format "(SETUP(~a)" 
-						(total-push-size (call-live v))))
-		      (push-vars (call-live v) "" ", ")
-		      (display/indent v ")"))
-		    (display/indent v "_"))
-		(display/indent v "), ")))
-	  (print-it (append (call-func v) (list (call-args v))) indent #f)
+	      (if (and ordered? (prev-was-funcall? prevs))
+		  ;; Do fast version
+		  (begin
+		    (display/indent v "FUNCCALL_AGAIN("))
+		  ;; Do general version
+		  (begin
+		    (display/indent v (format "FUNCCALL(SETUP_~a(" 
+					      (call-tag v)))
+		    (if show-info?
+			(begin
+			  (display/indent v (format "(SETUP(~a)" 
+						    (total-push-size (call-live v))))
+			  (push-vars (call-live v) "" ", ")
+			  (display/indent v ")"))
+			(display/indent v "_"))
+		    (display/indent v "), "))))
+	  (print-it (append (call-func v) (list (call-args v))) indent #f #f)
 	  (display/indent v ")")]
 	 [(block-push? v)
 	  (let ([size (total-push-size (block-push-vars v))]
@@ -549,8 +560,41 @@
 	  (when (and (eq? semi (tok-n v))
 		     semi-newlines?)
 	    (newline/indent indent))])
-	(loop (cdr e) v)))))
+	(loop (cdr e) v (cons v prevs))))))
 
+
+(define (prev-was-funcall? prevs)
+  (letrec ([acall? (lambda (v)
+		    (or (call? v)
+			;; Maybe nested seq
+			(and (parens? v)
+			     (let ([p (reverse (seq->list (seq-in v)))])
+			       (and (pair? p)
+				    (call? (car p))
+				    (callseq-prev? (cdr p)))))))]
+	   [callseq-prev? (lambda (prevs)
+			    (and (pair? prevs) (pair? (cdr prevs))
+				 (eq? '|,| (tok-n (car prevs)))
+				 (acall? (cadr prevs))))])
+    (or
+     ;; Stmt (call or assign=call) sequence
+     (let loop ([prevs prevs][semis 0])
+       (cond
+	[(and (pair? prevs) 
+	      (eq? semi (tok-n (car prevs))))
+	 (or (= semis 1)
+	     (and (pair? (cdr prevs))
+		  (acall? (cadr prevs))
+		  (loop (cddr prevs) (add1 semis))))]
+	[(and (pair? prevs) (pair? (cdr prevs)) (pair? (cddr prevs))
+	      (eq? '= (tok-n (car prevs)))
+	      (symbol? (tok-n (cadr prevs)))
+	      (eq? semi (tok-n (caddr prevs))))
+	 (loop (cddr prevs) semis)]
+	[else #f]))
+     ;; Eval sequence
+     (callseq-prev? prevs))))
+   
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; "Parsing"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1419,7 +1463,7 @@
 		   (not (and function-name
 			     (eq? class-name function-name)))
 		   (null? (live-var-info-new-vars live-vars))
-		   (zero? (live-var-info-maxlive live-vars))
+		   (zero? (live-var-info-maxpush live-vars))
 		   (<= (live-var-info-num-calls live-vars) 1))
 	      ;; No conversion necessary
 	      (list->seq
@@ -2232,11 +2276,16 @@
 					  live-vars))))])
 	       ;; Put everything back together. Lifted out calls go into a sequence
 	       ;;  before the main function call.
-	       (let ([pushed-vars (if (and (null? (cdr func))
-					   (memq (tok-n (car func)) non-returning-functions))
-				      ;; non-returning -> don't need to push vars
-				      null
-				      (live-var-info-vars orig-live-vars))])
+	       (let* ([non-returning? (or (and (null? (cdr func))
+					       (memq (tok-n (car func)) non-returning-functions))
+					  (and (pair? rest-)
+					       (eq? 'return (tok-n (car rest-)))))]
+		      [pushed-vars (cond
+				    [non-returning?
+				     ;; non-returning -> don't need to push vars
+				     null]
+				    [else
+				     (live-var-info-vars orig-live-vars)])])
 		 (loop rest-
 		       (let ([call (if (and (null? (cdr func))
 					    (memq (tok-n (car func)) non-gcing-functions))
@@ -2254,7 +2303,7 @@
 					(live-var-info-tag orig-live-vars)))])
 			 (cons (if (null? setups)
 				   call
-				   (make-parens
+				   (make-callstage-parens
 				    "(" #f #f ")"
 				    (list->seq
 				     (append
@@ -2640,7 +2689,7 @@
      (let* ([where (or (tok-file (car sube))
 		       where)]
 	    [sube (top-level sube where #t)])
-       (print-it sube 0 #t)
+       (print-it sube 0 #t #f)
        where))
    #f))
 

@@ -452,10 +452,6 @@ Bool wxPrinter::Print(wxWindow *parent, wxPrintout *printout, Bool prompt)
     delete dc;
 	return FALSE;
   }
-  if (! abortWindow_registered) {
-    wxREGGLOB(abortWindow);
-    abortWindow_registered = TRUE;
-  }
   abortWindow = win;
   abortWindow->Show(TRUE);
  // wxYield();

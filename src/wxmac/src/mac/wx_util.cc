@@ -88,6 +88,7 @@ char *wxGetTempFileName (const char *prefix, char *dest)
     const Str255 fileName = "\p";
     
     if (FindFolder(kOnSystemDisk, 'temp', kCreateFolder, &vRefNum, &dirID) == noErr) {
+      wxREGGLOB(temp_folder);
       FSMakeFSSpec(vRefNum,dirID,fileName,&spec);
 	  temp_folder = scheme_mac_spec_to_path(&spec);
     }
@@ -233,14 +234,12 @@ wxNode *SectionMember (wxList *list, const char *s, int length)
 wxList *GetStringList(FILE *fd);
 int WriteStringList(FILE *fd, wxList *sList);
 
-static char *wxResourceFile;
 static wxList *rmain;
 
 void wxInitResources(char *s);
 
 void wxInitResources(char *s)
 {
-   wxResourceFile = s;
    
    FILE *fd;
    

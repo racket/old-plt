@@ -86,6 +86,14 @@ wxMenuBar::wxMenuBar // Constructor (given parentPanel, label)
 
 static wxMenuBar *last_installed_bar;
 
+void wxRegisterLastInstalledBar();
+
+void wxRegisterLastInstalledBar()
+{
+	wxREGGLOB(last_installed_bar);
+}
+
+
 //-----------------------------------------------------------------------------
 wxMenuBar::~wxMenuBar(void)
 {

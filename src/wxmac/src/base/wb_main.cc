@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wb_main.cc,v 1.4 1999/11/22 17:23:15 mflatt Exp $
+ * RCS_ID:      $Id: wb_main.cc,v 1.5 2001/10/17 21:17:33 clements Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -78,6 +78,7 @@ void wxRegisterAbortWindow();
 void wxRegisterEntered();
 void wxRegisterOldFrontWindow();
 void wxRegisterCurCursor();
+void wxRegisterLastInstalledBar();
 
 
 void wxCommonInit(void)
@@ -98,6 +99,7 @@ void wxCommonInit(void)
   wxRegisterEntered();
   wxRegisterOldFrontWindow();
   wxRegisterCurCursor();
+  wxRegisterLastInstalledBar();
 }
 
 void wxCommonCleanUp(void)

@@ -232,6 +232,10 @@
 		 (lambda (m i) (launch-help-win))
 		 #\N)
     (make-object separator-menu-item% file)
+    (make-object menu-item% "Print" file
+		 (lambda (m i) (send (send results get-editor) print))
+		 #\P)
+    (make-object separator-menu-item% file)
     (make-object menu-item% "Quit" file (lambda (i e) (exit-help) (send f show #f)) #\Q))
 
   (send f show #t)
@@ -484,13 +488,27 @@
 	  [else (list c)]))
        (string->list s)))))
 
+  (define re:splitter (regexp "^ *([^ ]+)(.*)"))
+  (define (split-words s)
+    (let ([m (regexp-match re:splitter s)])
+      (if m
+	  (cons (cadr m)
+		(split-words (caddr m)))
+	  null)))
+
   (define (start-search)
     (let* ([given-find (send search-text get-value)]
-	   [find (let ([s given-find])
-		   (case (send exact get-selection)
-		     [(0) s]
-		     [(1) (regexp (non-regexp s))] ; substring (not regexp) match
-		     [else (regexp s)]))]
+	   [tried-find given-find]
+	   [finds (let ([s given-find])
+		    (case (send exact get-selection)
+		      ; 0 = exact
+		      [(0) (list s)]
+		      ; 1 = space-delimitted substring (not regexp) match
+		      [(1) (let ([wl (split-words s)])
+			     (set! tried-find wl)
+			     (map regexp (map non-regexp wl)))]
+		      ; 2 = regexp
+		      [else (list (regexp s))]))]
 	   [search-level (send where get-selection)]
 	   [regexp? (= 2 (send exact get-selection))]
 	   [exact? (= 0 (send exact get-selection))]
@@ -560,10 +578,10 @@
 		     (when (string=? given-find (car v))
 		       (add-key-choice v)))
 		   keys))
-		(unless exact?
+		(unless (or exact? (null? finds))
 		  (for-each
 		   (lambda (v)
-		     (when (regexp-match find (car v))
+		     (when (andmap (lambda (find) (regexp-match find (car v))) finds)
 		       (unless (and (not regexp?) (string=? given-find (car v)))
 			 (add-key-choice v))))
 		   keys)))
@@ -596,15 +614,15 @@
 			 (when (string=? given-find (car v))
 			   (add-index-choice (car v) (cdr v))))
 		       index))
-		    (unless exact?
+		    (unless (or exact? (null? finds))
 		      (for-each
 		       (lambda (v)
-			 (when (regexp-match find (car v))
+			 (when (andmap (lambda (find) (regexp-match find (car v))) finds)
 			   (unless (and (not regexp?) (string=? given-find (car v)))
 			     (add-index-choice (car v) (cdr v)))))
 		       index)))))
 	      ;; Content Search
-	      (unless (or (< search-level 2) exact?)
+	      (unless (or (< search-level 2) exact? (null? finds))
 		(let ([files (case doc-kind
 			       [(html) (with-handlers ([not-break? (lambda (x) null)]) (directory-list doc))]
 			       [(text) (list "doc.txt")]
@@ -620,7 +638,7 @@
 			     (let ([pos (file-position (current-input-port))]
 				   [r (read-line)])
 			       (unless (eof-object? r)
-				 (let ([m (regexp-match find r)])
+				 (let ([m (andmap (lambda (find) (regexp-match find r)) finds)])
 				   (when m
 				     (found "text")
 				     (add-choice (car m)
@@ -643,7 +661,19 @@
 	      (when (eq? cycle-key ckey)
 		(when (zero? (send editor last-position))
 		  (send editor lock #f)
-		  (send editor insert (format "Found nothing for \"~a\"." given-find))
+		  (send editor insert
+			(cond
+			 [(string? tried-find)
+			  (format "Found nothing for \"~a\"." tried-find)]
+			 [(null? tried-find)
+			  (format "No words to find.")]
+			 [else 
+			  (format "Found nothing for ~a."
+				  (let loop ([wl tried-find])
+				    (if (null? (cdr wl))
+					(format "\"~a\"" (car wl))
+					(format "\"~a\" and ~a" (car wl)
+						(loop (cdr wl))))))]))
 		  (send editor lock #t))))
 	    #f))
 	 (semaphore-wait break-sema)) ; turn off breaks...

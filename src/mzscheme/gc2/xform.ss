@@ -115,6 +115,8 @@
 (define-struct (block-push tok) (vars tag super-tag))
 (define-struct (note tok) (s))
 
+(define-struct pragma (s))
+
 ;; For very long lists, it's worth the effort to use a vector instead
 ;;   of a list to save space:
 (define (seq->list s) (if (vector? s) (vector->list s) s))
@@ -198,12 +200,12 @@
 (define recorded-cpp-in
   (and precompiled-header
        (open-input-file (change-suffix precompiled-header ".e"))))
+(define re:boring (regexp "^(()|(# .*)|(#pragma implementation.*))$"))
 (define (skip-to-interesting-line p)
   (let ([l (read-line p 'any)])
     (cond
      [(eof-object? l) l]
-     [(string=? l "") (skip-to-interesting-line p)]
-     [(eq? #\# (string-ref l 0)) (skip-to-interesting-line p)]
+     [(regexp-match-positions re:boring l) (skip-to-interesting-line p)]
      [else l])))
 
 (when recorded-cpp-in
@@ -227,7 +229,7 @@
 		(let loop ()
 		  (let ([l (read-line (car cpp-process))])
 		    (unless (eof-object? l)
-		      (unless (or (string=? l "") (eq? #\# (string-ref l 0)))
+		      (unless (regexp-match-positions re:boring l)
 			(display l recorded-cpp-out)
 			(newline  recorded-cpp-out))
 		      (display l local-ctok-write)
@@ -257,7 +259,7 @@
 		   load-extension)
 	       ctok)])
        (parameterize ([current-input-port local-ctok-read])
-	 (set! e-raw (car (invoke-unit u make-triple make-seq))))))))
+	 (set! e-raw (car (invoke-unit u make-triple make-seq make-pragma))))))))
 
 ((list-ref cpp-process 4) 'wait)
 (thread-wait cpp-error-thread)
@@ -602,6 +604,8 @@
     (unless (null? e)
       (let ([v (car e)])
 	(cond
+	 [(pragma? v)
+	  (printf "\n#pragma ~a\n\n" (pragma-s v))]
 	 [(seq? v)
 	  (display/indent v (tok-n v))
 	  (let ([subindent (if (braces? v)
@@ -736,6 +740,9 @@
 
 (define (top-level e where can-drop-vars?)
   (cond
+   [(pragma? (car e))
+    (list (car e))]
+
    [(end-skip? e)
     (set! skipping? #f)
     null]
@@ -2853,6 +2860,10 @@
   (let loop ([e e][result null][first #f])
     (cond
      [(null? e) (values (reverse! result) null)]
+     [(pragma? (car e)) 
+      (unless (null? result)
+	(error 'pragma "unexpected pragma: ~a" (pragma-s (car e))))
+      (values (list (car e)) (cdr e))]
      [(eq? semi (tok-n (car e)))
       (values (reverse! (cons (car e) result)) (cdr e))]
      [(and (eq? '|,| (tok-n (car e))) comma-sep?)
@@ -2861,6 +2872,7 @@
 	   (not (memq first '(typedef struct union enum))))
       (let ([rest (cdr e)])
 	(if (or (null? rest)
+		(pragma? (car rest))
 		(not (eq? semi (tok-n (car rest)))))
 	    (values (reverse! (cons (car e) result)) rest)
 	    (values (reverse! (list* (car rest) (car e) result)) (cdr rest))))]
@@ -2868,10 +2880,11 @@
 
 (define (foldl-statement e comma-sep? f a-init)
   (let loop ([e e][a a-init])
-    (if (null? e)
-	a
-	(let-values ([(sube e) (get-one e comma-sep?)])
-	  (loop e (f sube a))))))
+    (cond
+     [(null? e)	a]
+     [else
+      (let-values ([(sube e) (get-one e comma-sep?)])
+	(loop e (f sube a)))])))
 
 ; (print-it e 0 #t) (exit)
 
@@ -2892,8 +2905,10 @@
    e
    #f
    (lambda (sube where)
-     (let* ([where (or (tok-file (car sube))
-		       where)]
+     (let* ([where (if (pragma? (car sube))
+		       where
+		       (or (tok-file (car sube))
+			   where))]
 	    [sube (top-level sube where #t)])
        (print-it sube 0 #t #f)
        where))

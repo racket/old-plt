@@ -14,7 +14,7 @@
 ;; The token patterns are based on a standard C .lex description.
 
 (unit
-  (import make-element make-seq-element)
+  (import make-element make-seq-element make-pragma)
   (export)
 
   (define (trans pattern)
@@ -60,12 +60,17 @@
 
   (define re:line (regexp (format "^#[^~a~a]* ([0-9]+) \"([^\"]*)\"" 
 				  #\newline #\return)))
+  (define re:pragma (regexp "^#pragma ([^\r\n]*)"))
+
   (define (cpp s p)
     (let ([m (regexp-match re:line s p)])
       (when m
 	(set! source-line (string->number (cadr m)))
 	(set! source-file (caddr m))))
-    (line-comment s p))
+    (let ([pragma (regexp-match re:pragma s p)])
+      (if pragma
+	  (values (make-pragma (cadr pragma)) (line-comment s p))
+	  (values #f (line-comment s p)))))
 
   (define (result s)
     (make-element
@@ -116,10 +121,6 @@
   (define E (format "[Ee][+-]?~a+" D))
   (define FS "(f|F|l|L)")
   (define IS "(u|U|l|L)*")
-
-  (define comments
-    (translations
-     "#" cpp))
 
   (define symbol-complex (trans (seq L (arbno (alt L D)))))
 
@@ -234,7 +235,10 @@
 	       [(char-whitespace? char)
 		(loop (add1 p) result)]
 	       [(eq? char '#\#) ;; We assume only #-based preprocessor left
-		(loop (cpp s p) result)]
+		(let-values ([(pragma p) (cpp s p)])
+		  (if pragma
+		      (loop p (cons pragma result))
+		      (loop p result)))]
 	       [else
 		(let ([simple (let ([sl (vector-ref simple-table (char->integer char))])
 				(and sl

@@ -982,10 +982,12 @@
       (override
        [reset-console
 	(lambda ()
-	  (send (get-top-level-window) syncheck:clear-highlighting)
+	  (when (get-top-level-window)
+	    (send (get-top-level-window) syncheck:clear-highlighting))
 	  (super-reset-console)
-	  (send (get-top-level-window) syncheck:enable-checking
-		(drscheme:basis:zodiac-vocabulary? user-setting)))])))
+	  (when (get-top-level-window)
+	    (send (get-top-level-window) syncheck:enable-checking
+		  (drscheme:basis:zodiac-vocabulary? user-setting))))])))
   
   
   (drscheme:get/extend:extend-definitions-text make-graphics-text%)

@@ -285,9 +285,10 @@
          (rename [super-on-insert on-insert]
                  [super-on-delete on-delete]
                  [super-initialize-console initialize-console]
-                 [super-reset-console reset-console])
+                 [super-reset-console reset-console]
+                 [super-on-close on-close])
          
-         (override on-insert on-delete)
+         (override on-insert on-delete on-close)
          
          (override get-prompt eval-busy? do-eval
                    initialize-console
@@ -1134,7 +1135,7 @@
         [define cleanup-semaphore 'not-yet-cleanup-semaphore]
         [define thread-grace 'not-yet-thread-grace]
         [define thread-kill 'not-yet-thread-kill]
-        
+
         [define thread-killed 'not-yet-thread-killed]
         [define initialize-killed-thread ; =Kernel=
           (lambda ()
@@ -1250,9 +1251,17 @@
               (semaphore-post goahead)))]
         
         [define shutting-down? #f]
+
+	[define (on-close)
+	  (shutdown)
+	  (super-on-close)]
+
         [define shutdown ; =Kernel=, =Handler=
           (lambda ()
             (set! shutting-down? #t)
+	    (when (thread? thread-killed)
+	      (kill-thread thread-killed)
+	      (set! thread-killed #f))
             (shutdown-user-custodian))]
         
         [define update-running ; =User=, =Handler=, =No-Breaks=

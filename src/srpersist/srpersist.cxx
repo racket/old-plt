@@ -47,6 +47,7 @@ typedef short unsigned int WCHAR;
 #endif
 
 #include "escheme.h"
+#include "schvers.h"
 
 #include "srptypes.h"
 #include "srpbuffer.h"
@@ -1755,6 +1756,21 @@ char *sqlReturnToString(SQLRETURN sr) {
   otherwise, sql_return returns the return value 
 
 */
+
+/* version info */
+
+Scheme_Object *srp_version(int argc,Scheme_Object **argv) {
+  return scheme_make_string(SRP_VERSION);
+}
+
+Scheme_Object *srp_odbc_version(int argc,Scheme_Object **argv) {
+  char buff[15];
+  int version;
+  sprintf(buff,"%X",ODBCVER);
+  version = atoi(buff);
+  sprintf(buff,"%.2f",version/100.0);
+  return scheme_make_string(buff);
+}
 
 /* Functions in SQL.H */
 

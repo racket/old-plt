@@ -2,6 +2,11 @@
 
 static SRP_PRIM srpPrims[] = {
 
+  // version info
+
+  { srp_version,"srp-version",0,0 },  
+  { srp_odbc_version,"compiled-odbc-version",0,0 },  
+
   // utility procedures
 
 #if ODBCVER >= 0x0300

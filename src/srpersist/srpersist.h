@@ -1,5 +1,8 @@
 /* srpersist.h */
 
+#define SRP_PATCH_LEVEL ""
+#define SRP_VERSION VERSION
+
 #define sizeray(x) (sizeof(x)/sizeof(*x))
 
 #define sql_return(v,retcode,f) if (retcode == success) \
@@ -217,6 +220,10 @@ Scheme_Object *readUBigIntBuffer(unsigned _int64 *buffer,long);
 void writeUBigIntBuffer(unsigned _int64 *buffer,Scheme_Object *);
 #endif
 
+/* version info */
+
+SRP_PRIM_DECL(srp_version);
+SRP_PRIM_DECL(srp_odbc_version);
 
 /* utilities */
 

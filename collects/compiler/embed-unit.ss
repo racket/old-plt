@@ -388,7 +388,64 @@
 			      ;; Let default handler try:
 			      (orig name rel-to stx))))))))))
 
-      ;; The main function (see doc.txt).
+      ;; Write a module bundle that can be loaded with 'load' (do not embed it
+      ;; into an executable). The bundle is written to the current output port.
+      (define (write-module-bundle verbose? modules literal-files literal-expression)
+	(let* ([module-paths (map cadr modules)]
+	       [files (map
+		       (lambda (mp)
+			 (let ([f (resolve-module-path mp #f)])
+			   (unless f
+				   (error 'write-module-bundle "bad module path: ~e" mp))
+			   (normalize f)))
+		       module-paths)]
+	       [collapsed-mps (map
+			       (lambda (mp)
+				 (collapse-module-path mp "."))
+			       module-paths)]
+	       [prefix-mapping (map (lambda (f m)
+				      (cons f (let ([p (car m)])
+						(cond
+						 [(symbol? p) (symbol->string p)]
+						 [(eq? p #t) (generate-prefix)]
+						 [(not p) ""]
+						 [else (error
+							'write-module-bundle
+							"bad prefix: ~e"
+							p)]))))
+				    files modules)]
+	       ;; Each element is created with `make-mod'.
+	       ;; As we descend the module tree, we append to the front after
+	       ;; loasing imports, so the list in the right order.
+	       [codes (box null)])
+	  (for-each (lambda (f mp) (get-code f mp codes prefix-mapping verbose?))
+		    files
+		    collapsed-mps)
+	  ;; Install a module name resolver that redirects
+	  ;; to the embedded modules
+	  (write (make-module-name-resolver (unbox codes)))
+	  (let ([l (unbox codes)])
+	    (for-each
+	     (lambda (nc)
+	       (when verbose?
+		 (fprintf (current-error-port) "Writing module from ~s~n" (mod-file nc)))
+	       (write `(current-module-name-prefix ',(string->symbol (mod-prefix nc))))
+	       (write (mod-code nc)))
+	     l))
+	  (write '(current-module-name-prefix #f))
+	  (newline)
+	  (for-each (lambda (f)
+		      (when verbose?
+			(fprintf (current-error-port) "Copying from ~s~n" f))
+		      (call-with-input-file*
+		       f
+		       (lambda (i)
+			 (copy-port i (current-output-port)))))
+				 literal-files)
+	  (when literal-expression
+		(write literal-expression))))
+
+      ;; Use `write-module-bundle', but figure out how to put it into an executable
       (define make-embedding-executable
 	(opt-lambda (dest mred? verbose? 
 			  modules 
@@ -406,36 +463,6 @@
 	  (unless (or long-cmdline?
 		      ((apply + (length cmdline) (map string-length cmdline)) . < . 50))
 	    (error 'make-embedding-executable "command line too long"))
-	  (let* ([module-paths (map cadr modules)]
-		 [files (map
-			 (lambda (mp)
-			   (let ([f (resolve-module-path mp #f)])
-			     (unless f
-			       (error 'make-embedding-executable "bad module path: ~e" mp))
-			     (normalize f)))
-			 module-paths)]
-		 [collapsed-mps (map
-				 (lambda (mp)
-				   (collapse-module-path mp "."))
-				 module-paths)]
-		 [prefix-mapping (map (lambda (f m)
-					(cons f (let ([p (car m)])
-						  (cond
-						   [(symbol? p) (symbol->string p)]
-						   [(eq? p #t) (generate-prefix)]
-						   [(not p) ""]
-						   [else (error
-							  'make-embedding-executable
-							  "bad prefix: ~e"
-							  p)]))))
-				      files modules)]
-		 ;; Each element is created with `make-mod'.
-		 ;; As we descend the module tree, we append to the front after
-		 ;; loasing imports, so the list in the right order.
-		 [codes (box null)])
-	    (for-each (lambda (f mp) (get-code f mp codes prefix-mapping verbose?)) 
-		      files
-		      collapsed-mps)
 	    (let ([exe (find-exe mred? variant)])
 	      (when verbose?
 		(fprintf (current-error-port) "Copying to ~s~n" dest))
@@ -457,33 +484,10 @@
 					      (delete-file dest)))
 					(raise x))])
 		  (let ([start (file-size dest-exe)])
-		    (call-with-output-file* 
-		     dest-exe
-		     (lambda (o)
-		       ;; Install a module name resolver that redirects
-		       ;; to the embedded modules
-		       (write (make-module-name-resolver (unbox codes)) o)
-		       (let ([l (unbox codes)])
-			 (for-each
-			  (lambda (nc)
-			    (when verbose?
-			      (fprintf (current-error-port) "Writing module from ~s~n" (mod-file nc)))
-			    (write `(current-module-name-prefix ',(string->symbol (mod-prefix nc))) o)
-			    (write (mod-code nc) o))
-			  l))
-		       (write '(current-module-name-prefix #f) o)
-		       (newline o)
-		       (for-each (lambda (f)
-				   (when verbose?
-				     (fprintf (current-error-port) "Copying from ~s~n" f))
-				   (call-with-input-file*
-				    f
-				    (lambda (i)
-				      (copy-port i o))))
-				 literal-files)
-		       (when literal-expression
-			 (write literal-expression o)))
-		     'append)
+		    (with-output-to-file dest-exe
+		      (lambda ()
+			(write-module-bundle verbose? modules literal-files literal-expression))
+		      'append)
 		    (let ([end (file-size dest-exe)])
 		      (when verbose?
 			(fprintf (current-error-port) "Setting command line~n"))
@@ -533,4 +537,4 @@
 				(let ([m (and (eq? 'windows (system-type))
 					      (assq 'ico aux))])
 				  (when m
-				    (install-icon dest-exe (cdr m)))))))))))))))))))
+				    (install-icon dest-exe (cdr m))))))))))))))))))

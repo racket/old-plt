@@ -358,6 +358,19 @@ The _embed.ss_ library provides a function to embed Scheme code into a
 copy of MzScheme or MrEd, thus creating a _stand-alone_ Scheme
 executable.
 
+Embedding walks the module dependency graph to find all modules needed
+by some initial set of top-level modules, compiling them if needed,
+and combining them into a "module bundle". In addition to the module
+code, the bundle extends the module name resolver, so that modules can
+be `require'd with their original names, and they will be retrieved
+from the bundle instead of the filesystem.
+
+The `make-embedding-executable' function combines the bundle with an
+executable (MzScheme or MrEd). The `write-module-bundle' function
+prints the bundle to the current output port, instead; this stream can
+be `load'ed directly by a running program, as long as the
+`read-accept-compiled' parameter is true.
+
 The _embedr-unit.ss_ library provides a signed unit, _compiler:embed@_
 that imports nothing and exports the functions below. The
 _embedr-sig.ss_ library provides the signature, _compiler:embed^_.
@@ -471,6 +484,17 @@ _embedr-sig.ss_ library provides the signature, _compiler:embed^_.
    binary to use for embedding. The default is 'normal, and typically
    the only other possibility is '3m. See `current-launcher-variant'
    in the "launcher" collection for more information.
+
+
+> (write-module-bundle verbose? mod-list literal-file-list literal-sexpr)
+  - Like `make-embedding-executable', but the module bundle is written
+  to the current output port instead of being embedded into an
+  executable.  The output of this function can be `read' to load and
+  instantiate `mod-list' and its dependencies, adjust the module name
+  resolver to find the newly loaded modules, evaluate the forms
+  included from `literal-file-list', and finally evaluate
+  `literal-sexpr'. The `read-accept-compiled' parameter must be true
+  to read the stream.
 
 
 > (embedding-executable-is-directory? mred?) - Returns #t if

@@ -1,7 +1,8 @@
 
 (module link-unit mzscheme
-  (require (lib "unitsig.ss"))
-  (require (lib "include.ss"))
+  (require (lib "unitsig.ss")
+	   (lib "include.ss")
+	   (lib "process.ss"))
 
   (require "link-sig.ss")
 

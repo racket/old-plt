@@ -22,7 +22,7 @@
       (else (error "don't know what shell to use for ~e." (system-type)))))
 
   (define (if-stream-out p)
-    (if (file-stream-port? p)
+    (if (or (not p) (file-stream-port? p))
 	p
 	(if (output-port? p)
 	    #f
@@ -32,7 +32,7 @@
 	     p))))
 	
   (define (if-stream-in p)
-    (if (file-stream-port? p)
+    (if (or (not p) (file-stream-port? p))
 	p
 	(if (input-port? p)
 	    #f
@@ -92,21 +92,28 @@
 
   ;; Note: these always use current ports
   (define (system* exe . args)
-    (let ([cout (current-output-port)]
-	  [cin (current-input-port)]
-	  [cerr (current-error-port)])
-      (let-values ([(subp out in err pid)
-		    (apply
-		     subprocess
-		     (if-stream-out cout)
-		     (if-stream-in cin)
-		     (if-stream-out cerr)
-		     exe args)])
-	(streamify-out cout out)
-	(streamify-in cin in)
-	(streamify-out cerr err)
-	(subprocess-wait subp)
-	(zero? (subprocess-status subp)))))
+    (if (eq? (system-type) 'macos)
+	(begin
+	  (unless (null? args)
+	    (raise-mismatch-error 'system* "command-line arguments not supported for MacOS" args))
+	  (subprocess #f #f #f exe))
+	(let ([cout (current-output-port)]
+	      [cin (current-input-port)]
+	      [cerr (current-error-port)])
+	  (let-values ([(subp out in err pid)
+			(apply
+			 subprocess
+			 (if-stream-out cout)
+			 (if-stream-in cin)
+			 (if-stream-out cerr)
+			 exe args)])
+	    (streamify-out cout out)
+	    (streamify-in cin in)
+	    (streamify-out cerr err)
+	    (subprocess-wait subp)
+	    (zero? (subprocess-status subp))))))
 
   (define (system str)
-    (apply system* (append (shell-path/args) (list str)))))
+    (if (eq? (system-type) 'macos)
+	(subprocess #f #f #f "by id" str)
+	(apply system* (append (shell-path/args) (list str))))))

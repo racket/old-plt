@@ -394,13 +394,13 @@ static void (*orig_exit)(int);
 void mred_clean_up_gdi_objects(void)
 {
   int i;
-  Scheme_Bucket *b;
 
   for (i = 0; i < gdi_objects->size; i++) {
-    b = gdi_objects->buckets[i];
-    if (b && b->val) {
-      DeleteObject((HANDLE)b->key);
-      b->val = NULL;
+    if (gdi_objects->vals[i]) {
+      Scheme_Object *key;
+      key = gdi_objects->keys[i];
+      scheme_hash_set(gdi_objects, key, NULL);
+      DeleteObject((HANDLE)key);
     }
   }
 }
@@ -417,19 +417,19 @@ void RegisterGDIObject(HANDLE x)
 {
   if (!gdi_objects) {
     wxREGGLOB(gdi_objects);
-    gdi_objects = scheme_hash_table(7, SCHEME_hash_ptr);
+    gdi_objects = scheme_make_hash_table(SCHEME_hash_ptr);
     orig_exit = scheme_exit;
     scheme_exit = clean_up_and_exit;
   }
 
   if (x)
-    scheme_add_to_table(gdi_objects, (const char *)x, (void *)x, 0);
+    scheme_hash_set(gdi_objects, (Scheme_Object *)x, scheme_true);
 }
 
 void DeleteRegisteredGDIObject(HANDLE x)
 {
   /* Removes from hash table: */
-  scheme_change_in_table(gdi_objects, (const char *)x, NULL);
+  scheme_hash_set(gdi_objects, (Scheme_Object *)x, NULL);
   
   DeleteObject(x);
 }

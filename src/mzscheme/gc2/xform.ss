@@ -74,7 +74,8 @@
 (define source-is-c++? (regexp-match "([.]cc$)|([.]cxx$)" file-in))
 
 (require (lib "unit.ss")
-	 (lib "list.ss"))
+	 (lib "list.ss")
+	 (lib "process.ss"))
 
 ;(require-library "errortrace.ss" "errortrace")
 (error-print-width 100)

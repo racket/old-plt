@@ -457,7 +457,7 @@
         (if (and (pair? dir) (eq? 'plthome (car dir)))
           (with-syntax ([d dir])
             (syntax (un-plthome-ify 'd)))
-          (with-syntax ([d (path->bytes dir)])
+          (with-syntax ([d (if (bytes? dir) dir (path->bytes dir))])
             (syntax (bytes->path d)))))]))
 
  ;; This is a macro-generating macro that wants to expand

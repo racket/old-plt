@@ -55,8 +55,8 @@
 
   ;; plthome-ify : path-or-bytes -> datum-containing-bytes-or-path
   (define (plthome-ify* path)
-    (let* ([path (cond [(bytes?  path) path]
-                       [(path?   path) (path->bytes   path)]
+    (let* ([path (cond [(bytes? path) path]
+                       [(path?  path) (path->bytes path)]
                        [else (error 'plthome-ify
                                     "expecting a byte-string, got ~e" path)])]
            [path* (simplify-path* path)])

@@ -14,9 +14,10 @@
 
     (define do-help
       (lambda ()
-	(mred:open-hyper-view (mzlib:file@:build-absolute-path 
-			       mred:plt-home-directory
-			       "drscheme" "help" "index.htx"))))
+	(mred:open-hyper-view (build-path mred:plt-directory
+					  "doc"
+					  "drscheme"
+					  "index.htm"))))
     
     (define scheme-project-member-frame%
       (class mred:editor-frame% ([filename #f]

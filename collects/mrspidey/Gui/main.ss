@@ -197,6 +197,7 @@
                (message-box
                 "Error"
                 (format "File ~s is not loaded" (file-name-from-path file))
+		#f
                 '(ok)))))]
 
       ;; ------------------------------

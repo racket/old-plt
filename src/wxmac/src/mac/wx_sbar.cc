@@ -342,6 +342,8 @@ void wxScrollBar::SetScrollData // adjust scrollBar to match scroll data setting
 {
   // if (this == iniatorWindow) return;
 
+  SetCurrentDC();
+
   Bool horizontal = cStyle & wxHSCROLL;
 
   wxWhatScrollData sizeScrollData =

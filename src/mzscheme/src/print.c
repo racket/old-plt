@@ -430,9 +430,8 @@ print_to_string(Scheme_Object *obj, long *len, int write,
   Scheme_Hash_Table *ht;
   char *ca;
 
-  ca = (char *)scheme_malloc_atomic(p->print_allocated);
-
   p->print_allocated = 50;
+  ca = (char *)scheme_malloc_atomic(p->print_allocated);
   p->print_buffer = ca;
   p->print_position = 0;
   p->print_maxlen = maxl;

@@ -84,7 +84,7 @@ void wxCheckBox::Create // Constructor (given parentPanel, label)
 		if (height <= 0) cWindowHeight = (int)fLabelHeight;
 	}
 
-#if 0
+#ifdef OS_X
 	SetCurrentMacDC();
 	CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
 	Rect boundsRect = {0, 0, cWindowHeight, cWindowWidth};
@@ -96,7 +96,7 @@ void wxCheckBox::Create // Constructor (given parentPanel, label)
 	const short maxValue = 1;
 	short refCon = 0;
 	cMacControl = ::NewControl(GetWindowFromPort(theMacGrafPort), &boundsRect, theMacLabel(),
-			drawNow, offValue, minValue, maxValue, checkBoxProc + useWFont, refCon);
+			drawNow, offValue, minValue, maxValue, checkBoxProc, refCon);
 	CheckMemOK(cMacControl);
 #else
 	labelString = label;
@@ -108,7 +108,7 @@ void wxCheckBox::Create // Constructor (given parentPanel, label)
 }
 
 //-----------------------------------------------------------------------------
-wxCheckBox::wxCheckBox // Constructor (given parentPanel, label)
+wxCheckBox::wxCheckBox // Constructor (given parentPanel, bitmap)
 	(
 		wxPanel*	parentPanel,
 		wxFunction	function,
@@ -237,8 +237,10 @@ void wxCheckBox::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac platfo
 	  
 	SetCurrentDC();
 
+#ifndef OS_X
 	Bool hideToPreventFlicker = (IsControlVisible(cMacControl) && (dX || dY) && (dW || dH));
 	if (hideToPreventFlicker) ::HideControl(cMacControl);
+#endif
 
 	if (dW || dH)
 	{
@@ -254,7 +256,9 @@ void wxCheckBox::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac platfo
 		::MoveControl(cMacControl,SetOriginX,SetOriginY);
 	}
 
+#ifndef OS_X
 	if (hideToPreventFlicker) ::ShowControl(cMacControl);
+#endif
 
 	if (!cHidden && (dW || dH || dX || dY))
 	{
@@ -295,10 +299,10 @@ void wxCheckBox::Paint(void)
 	SetCurrentDC();
 	Rect r = { 0, 0, cWindowHeight, cWindowWidth};
         OffsetRect(&r,SetOriginX,SetOriginY);
-	::EraseRect(&r);
 	if (cMacControl)
 	  ::Draw1Control(cMacControl);
 	else {
+          ::EraseRect(&r);
 	  if (buttonBitmap) {
 		int btop = (cWindowHeight - buttonBitmap->GetHeight()) / 2;
 		buttonBitmap->DrawMac(IC_BOX_SIZE + IC_X_SPACE, btop);

@@ -74,11 +74,20 @@
 #define SetBounds(rect, top, left, bottom, right) ::SetRect(rect, left, top, right, bottom)
 #define VSLOP 3
 #define HSLOP 4
+#ifdef OS_X
+#define MSPACEX 18
+#define MSPACEY 2
+#define PAD_Y 4
+#define PAD_X 2
+#define FONT_WIDTH_FUDGE 1.2
+#define TRIANGLE_BOX_WIDTH 21
+#else
 #define MSPACEX 4
 #define MSPACEY 1
 #define TRIANGLE_WIDTH 10
+#define TRIANGLE_RIGHT_SPACE 5
+#endif
 #define TRIANGLE_HEIGHT 5
-#define TRANGLE_RIGHT_SPACE 5
 #define Checkem	TRUE;		// adds code to do checkmarks to selected item
 
 
@@ -178,9 +187,32 @@ Create (wxPanel * panel, wxFunction func, char *Title,
 	}
 	no_strings = N;
 	maxdflth += MSPACEY*2;			// extra pixels on top & bottom
+#ifdef OS_X
+
+        // First, create the control with a bogus rectangle;
+        OSErr err;
+        Rect r = {0,0,0,0};
+        err = ::CreatePopupButtonControl(GetWindowFromPort(cMacDC->macGrafPort()),&r,NULL,-12345,
+                                         FALSE,0,0,normal,&cMacControl);
+        err = ::SetControlData(cMacControl,kControlNoPart,kControlPopupButtonOwnedMenuRefTag,sizeof(MenuRef),(void *)(&hDynMenu));
+        ::SetControlMinimum(cMacControl,1);
+        ::SetControlMaximum(cMacControl,no_strings);
+    
+        // Now, find the "best" size
+        Rect r = {0,0,0,0};
+        SInt16 baselineOffset; // ignored
+        err = ::GetBestControlSize(cMacControl,&r,&baselineOffset);
+        fprintf(stderr,"l: %d t: %d r: %d b: %d",r.left,r.top,r.right,r.bottom);
+
+        maxdflth = r.right - r.left + (PAD_Y * 2);
+        
+        maxdfltw *= FONT_WIDTH_FUDGE;
+        maxdfltw += (int)(TRIANGLE_BOX_WIDTH + MSPACEX + 2*PAD_X);
+#else        
 	char checkm[] = {18, 0};
 	GetTextExtent(checkm, &fWidth, &fHeight, &fDescent, &fLeading, valueFont);
-	maxdfltw += (int)(fWidth + TRIANGLE_WIDTH + TRANGLE_RIGHT_SPACE + MSPACEX);
+	maxdfltw += (int)(fWidth + TRIANGLE_WIDTH + TRIANGLE_RIGHT_SPACE + MSPACEX);
+#endif        
 	// compute the Rects that contain everything.
 	// note valuebase and labelbase are changed from font descents
 	// to number of pixels to substract from the rect bottom.
@@ -213,16 +245,6 @@ Create (wxPanel * panel, wxFunction func, char *Title,
 	SetSelection(0);
 	//DrawChoice(TRUE);
 
-#ifdef OS_X
-        OSErr err;
-        Rect r = ValueRect;
-        ::OffsetRect(&r,SetOriginX,SetOriginY);
-        err = ::CreatePopupButtonControl(GetWindowFromPort(cMacDC->macGrafPort()),&r,NULL,-12345,
-                                         FALSE,0,0,normal,&cMacControl);
-        err = ::SetControlData(cMacControl,kControlNoPart,kControlPopupButtonOwnedMenuRefTag,sizeof(MenuRef),(void *)(&hDynMenu));
-        ::SetControlMinimum(cMacControl,1);
-        ::SetControlMaximum(cMacControl,no_strings);
-#endif
         
 	if (GetParent()->IsHidden())
 		DoShow(FALSE);
@@ -251,14 +273,22 @@ void wxChoice::ReCalcRect(void) {
 		// attempt to size control by width of largest string
 		::GetMenuItemText(hDynMenu, n+1, temp);
 		temp[temp[0]+1] = '\0';
-		GetTextExtent((char *)&temp[1], &fWidth, &fHeight, &fDescent, &fLeading, valueFont);
+		GetTextExtent((char *)&temp[1], &fWidth, &fHeight, &fDescent, &fLeading, buttonFont);
 		w = (int)fWidth;
 		h = (int)fHeight;
 		maxdfltw = max(w, maxdfltw);
 		maxdflth = max(h, maxdflth);
 	}
-	maxdflth += VSLOP*2;			// extra pixels top and bottom
-	maxdfltw += HSLOP*2;			// extra pixels on each side
+	maxdflth += MSPACEY*2;			// extra pixels on top & bottom
+#ifdef OS_X
+        maxdflth += PAD_Y*2; // pad necessary for aqua
+        maxdfltw *= FONT_WIDTH_FUDGE;
+        maxdfltw += (int)(TRIANGLE_BOX_WIDTH + MSPACEX + 2*PAD_X);
+#else        
+	char checkm[] = {18, 0};
+	GetTextExtent(checkm, &fWidth, &fHeight, &fDescent, &fLeading, valueFont);
+	maxdfltw += (int)(fWidth + TRIANGLE_WIDTH + TRIANGLE_RIGHT_SPACE + MSPACEX);
+#endif        
 	// compute the Rects that contain everything.
 	// note valuebase and labelbase are changed from font descents
 	// to number of pixels to substract from the rect bottom.
@@ -425,7 +455,7 @@ void wxChoice::OnClientAreaDSize(int dW, int dH, int dX, int dY)
 #ifdef OS_X
         if (dW || dH || dX || dY) {
             Rect r = ValueRect;
-            ::OffsetRect(&r,SetOriginX,SetOriginY);
+            ::OffsetRect(&r,SetOriginX + PAD_X,SetOriginY + PAD_Y);
             ::MoveControl(cMacControl,r.left,r.top);
         }
 #endif                 
@@ -564,11 +594,13 @@ void wxChoice::SetSelection (int n)
 	if ((n < 0) || (n >= no_strings))
 	  return;
 
-#ifndef OS_X	
-#ifdef Checkem
+#ifdef OS_X
+        ::SetControlValue(cMacControl,selection+1);
+#else
+# ifdef Checkem
 	::CheckMenuItem(hDynMenu, selection+1, FALSE);
 	::CheckMenuItem(hDynMenu, n+1, TRUE);
-#endif
+# endif
 #endif
 	selection = n;
 #ifndef OS_X        

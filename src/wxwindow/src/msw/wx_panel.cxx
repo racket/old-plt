@@ -11,8 +11,6 @@
 
 #include "wx.h"
 
-#include "wx_dcpan.h"
-
 extern char wxPanelClassName[];
 
 class wxPanelWnd : public wxSubWnd

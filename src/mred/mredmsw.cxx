@@ -52,14 +52,6 @@ void MrEdDestroyContext(MrEdFinalizedContext *)
 {
 }
 
-void wxCreatedWindow(wxWindow *w)
-{
-}
-
-void wxDestroyedWindow(void *context, wxWindow *w)
-{
-}
-
 void MrEdSyncCurrentDir(void)
 {
   scheme_os_setcwd(SCHEME_STR_VAL(scheme_get_param(scheme_config, 

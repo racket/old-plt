@@ -9,9 +9,6 @@
 #include "wx_dccan.h"
 #include "wx_dcmem.h"
 #include "wx_dcps.h"
-#ifndef wx_mac
-#include "wx_dcpan.h"
-#endif
 #ifdef wx_msw
 #include "wx_mf.h"
 #endif

@@ -51,8 +51,8 @@ Bool wxMessage::Create(wxPanel *panel, char *label, wxBitmap *image, int x, int 
 			 image->GetWidth(),
 			 image->GetHeight(),
 			 NULL);
-    SendMessage((HWND)static_item,WM_CHANGEBITMAP,
-                  (WPARAM)0xFFFF/*((image->GetHeight()<<8)+image->GetWidth())*/,
+    SendMessage((HWND)static_item, WM_CHANGEBITMAP,
+                  (WPARAM)0xFFFF,
                   (LPARAM)image->ms_bitmap);
   } else {
     static_item = wxwmCreateWindowEx(0, "wxSTATIC", label,
@@ -75,7 +75,7 @@ Bool wxMessage::Create(wxPanel *panel, char *label, wxBitmap *image, int x, int 
 
   panel->GetValidPosition(&x, &y);
 
-  SetSize(x, y, -1, -1);
+  SetSize(x, y, image ? image->GetWidth() : -1, image ? image->GetHeight() : -1);
   panel->AdvanceCursor(this);
   return TRUE;
 }

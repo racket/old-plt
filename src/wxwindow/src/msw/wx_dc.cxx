@@ -1724,17 +1724,3 @@ void wxMemoryDC::GetSize(float *width, float *height)
   *width = selected_bitmap->GetWidth();
   *height = selected_bitmap->GetHeight();
 }
-
-// Create a DC representing the whole screen
-
-wxScreenDC::wxScreenDC(void)
-{
-  __type = wxTYPE_DC_CANVAS; // ?
-  cdc = wxwmGetDC(NULL);
-}
-
-wxScreenDC::~wxScreenDC(void)
-{
-  wxwmReleaseDC(NULL, cdc);
-}
-

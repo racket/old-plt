@@ -92,7 +92,7 @@ wxPathOnly(char *path)
   if (path && *path) {
     char *buf;
     
-    buf = copystrng(path);
+    buf = copystring(path);
 
     int l = strlen(path);
     Bool done = FALSE;

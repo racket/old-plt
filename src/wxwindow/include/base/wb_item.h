@@ -14,7 +14,6 @@
 
 #include "common.h"
 #include "wx_panel.h"
-#include "wx_dcpan.h"
 #include "wx_stdev.h"
 
 class wxFont;

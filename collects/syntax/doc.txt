@@ -1,0 +1,173 @@
+
+Syntax Utilities
+----------------
+
+The libraries of the "syntax" collection provide utilities for
+manipulating expressions and inspecting modules.
+
+======================================================================
+_stx.ss_: deconstructing syntax objects
+======================================================================
+
+> (stx-null? v) - returns #t if `v' is either the empty list or a
+  syntax object representing the empty list (i.e., `syntax-e' on the
+  syntax object returns the empty list).
+
+> (stx-pair? v) - returns #t if `v' is either a pair or a syntax
+  object representing a pair. See also the definition of "syntax pair"
+  in the MzScheme manual.
+
+> (stx-list? v) - returns #t if `v' is a list, or if it is a sequence
+  of pairs leading to a syntax object such that `syntax->list' (from
+  MzScheme) would produce a list.
+
+> (stx->list stx-list) - produces a list by flatting out a trailing
+  syntax object using `syntax->list'. The `stx-list' argument must be
+  a value for which `stx-list?' would return #t.
+
+> (stx-car v) - takes the car of a "syntax pair". See the definition
+  of "syntax pair" in the MzScheme manual.
+
+> (stx-cdr v) - takes the cdr of a "syntax pair". See the definition
+  of "syntax pair" in the MzScheme manual.
+
+> (module-or-top-identifier=? a-id b-id) - returns #t if `a-id' and
+  `b-id' are module-identifier=?, or if `a-id' and `b-id' have the
+  same name (as extracted by `syntax-e') and `a-id' has no binding
+  other than at the top level.
+
+  This procedure is useful in conjunction with `syntax-case*' to match
+  procedure names that are normally bound by MzScheme. For example,
+  the `include' macro uses this procedure to recognize `build-path';
+  using `module-identifier=?'  would not work well outside of
+  `module', since the top-level `build-path' is a distinct variable
+  from the MzScheme export (though it's bound to the same procedure,
+  initially).
+
+======================================================================
+_kerncase.ss_: matching fully-expanded expressions
+======================================================================
+
+> (kernel-syntax-case stx-expr trans?-expr clause ...) - a syntactic
+  form like `syntax-case*', except that the literals are built-in as
+  the names of the primitive MzScheme forms. The `trans?-expr' boolean
+  expression replaces the comparision procedure, and instead selects
+  simply between normal-phase comparisions or transformer-phase
+  comparisions. The `clause's are the same as in `syntax-case*'.
+
+> (kernel-form-identifier-list syntax) - returns a list of identifiers
+  for the names of the primitive MzScheme forms for expressions, with
+  the lexical context of `syntax'. This function is useful for
+  generating a list of stopping points to provide to
+  `syntax-local-expand'.
+
+======================================================================
+_struct.ss_: generating the same names as `define-struct'
+======================================================================
+
+> (build-struct-names name-id field-ids omit-sel? omit-set?) -
+  generates the names bound by `define-struct' given an identifier for
+  the struct type name and a list of identifiers for the field
+  names. The result is a list of identifiers:
+
+      struct:`name-id'
+      make-`name-id'
+      `name-id'?
+      `name-id'-`field'       ; for each `field' in `field-ids'
+      set-`name-id'-`field'!  ; (getter and setter names alternate)
+      ...
+
+  If `omit-sel?' is true, then the selector names are omitted from the
+  result list. If `omit-set?' is true, then the setter names are
+  omitted from the result list.
+
+======================================================================
+_docprovide.ss_: attaching documentation to exports
+======================================================================
+
+> (provide-and-document doc-label-id doc-row ...) - a form that
+  exports names and records documentation information.  The
+  `doc-label-id' identifier is used as a key for accessing the
+  documentation through `lookup-documentation'.  The actual
+  documentation is organized into "rows", each with a section title.
+
+  A `row' has one of the following forms
+
+   (section-string (name type-datum doc-string ...) ...)
+
+     Creates a documentation section whose title is `section-string',
+     and provides/documents each `name. The `type-datum' is arbitrary,
+     for use by clients that call `lookup-documentation'. The
+     `doc-string's are also arbitrary documentation information,
+     usually concatenated by clients.
+
+     A `name' is either an identifier or a renaming sequence
+     `(local-name-id extenal-name-id)'.
+
+     Multiple `row's with the same section name will be merged in the
+     documentation output. The final order of sections matches the
+     order of the first mention of each section.
+  
+   (all-from prefix-id module-path doc-label-id)
+   (all-from-except prefix-id module-path doc-label-id id ...)
+
+     where `all-from' and `all-from-except' are keywords. Merges
+     documentation and provisions from the specified module into the
+     current one; the `prefix-id' is used to prefix the imports into
+     the current module (so they can be re-exported). If `id's are
+     provided, the specified `id's are not re-exported and their
+     documentation is not merged.  
+
+> (lookup-documentation module-path-v label-sym) - returns
+  documentation for the specified module and label. The
+  `module-path-v' argument is a quoted module path, like the argument
+  to MzScheme's `dynamic-require'. The `label-sym' identifies a set of
+  documentation using the symbol as a label identifier in
+  `provide-and-document'.
+
+======================================================================
+_moddep.ss_: inspecting modules and module dependencies
+======================================================================
+
+Interpretations of module paths in this library mimic that of the
+default module path resolver in MzScheme (which means that the library
+is limited, but certainly useful as no other module path resolvers
+currently exist).
+
+> (get-module-code module-path-v) - returns a compiled expression for
+  the declaration of the module specified by `module-path-v', where
+  `module-path-v' is a quoted module path as for MzScheme's
+  `dynamic-require' using the default module path resolver.
+
+> (resolve-module-path module-path-v rel-to-path-string-or-#f) -
+  resolves a module path to filename string. The module path is
+  resolved relative to `rel-to-path-string-or-#f' if it is not #f.
+
+> (resolve-module-path-index module-path-index rel-to-path-string-or-#f)
+  - like `resolve-module-path' but the input is a module path index
+  (see the MzScheme manual for details); in this case, the
+  `rel-to-path-string-or-#f' base is used where the module path index
+  contains the "self" index.
+
+> (collapse-module-path module-path-v rel-to-module-path-v) - returns
+  a "simplified" module path by combining `module-path-v' with
+  `rel-to-module-path', where the latter must have the form '(lib
+  <relative-path> <collection>), or '(file <path>).
+
+> (collapse-module-path-index module-path-index rel-to-module-path-v)
+  - like `collapse-module-path', but the input is a module path index
+  (see the MzScheme manual for details); in this case, the
+  `rel-to-module-path-v' base is used where the module path index
+  contains the "self" index.
+
+> (show-import-tree module-path-v) - a debugging aid that prints the
+  import hierarchy starting from a given module path.
+
+======================================================================
+_zodiac.ss_, _zodiac-unit.ss_, and _zodiac-sig.ss_: compatibility
+  layer for software that used to use Zodiac
+======================================================================
+
+The interface is similar to Zodiac --- enough to be useful for porting
+--- but different in many ways. See "zodiac-sig.ss" for details. New
+software should not use this compatibility layer.

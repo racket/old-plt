@@ -121,7 +121,7 @@ wxColourMap *wxGIF::getColorMap()
   return GetColourMap();
 }
 
-BOOL wxGIF::ReadHeader( FILE *fp)
+BOOL wxGIF::ReadHeader(FILE *fp)
 {
   unsigned char tstA[256];
   unsigned char *rgbTable, single;
@@ -161,21 +161,28 @@ BOOL wxGIF::ReadHeader( FILE *fp)
   }
 
   single = 0;
+  transparent_index = -1;
   while (1) {
     fread((char *)&single, 1, 1, fp);
     if (single == 0x21) { /* extension */
-      fread(&single,1,1,fp); /* function */
+      fread(&eid,1,1,fp); /* function */
       while (1) {
-        fread(&single,1,1,fp); /* block size */
-	if (single)
-          fread((char*)&tstA[0],single,1,fp);
-	else
+	fread(&single,1,1,fp); /* block size */
+	if (single) {
+	  fread((char*)&tstA[0],single,1,fp);
+	  if ((eid == 0xF9) && (single == 4)) {
+	    /* Transparent color index? */
+	    if (tstA[0] & 0x1) {
+	      transparent_index = tstA[3];
+	    }
+	  }
+	} else
 	  break;
       }
     } else
       break;
   }
-  
+      
   fread((char*)&tstA[0],9,1,fp);
   index = 0;
   image.sep = single;
@@ -634,21 +641,37 @@ CTabHandle XlateColorMap(wxGIF *gif)
 //wxBitmap *wxLoadBitmap(char *filename, wxColourMap **colourmap);
 
 
-Bool wxLoadGifIntoBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal)
+Bool wxLoadGifIntoBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal, int withMask)
 {
   
-  CGrafPtr  colorPort;
+  CGrafPtr  colorPort, maskPort;
 
   wxGIF *gifImage  = new wxGIF(fileName);
   if (gifImage && gifImage->GetRawImage() != 0) {
-    CreateOffScreenPixMap(&colorPort, gifImage);
+    if (!withMask)
+      gifImage->transparent_color = -1;
+
+    CreateOffScreenPixMap(&colorPort, &maskPort, gifImage);
+
     if (colorPort) {
       bm->x_pixmap = colorPort;
-      //  bm->pixmap = colorPort->portPixMap;
       bm->SetWidth(gifImage->GetWidth());
       bm->SetHeight(gifImage->GetHeight());
       bm->SetDepth(gifImage->GetDeep());
       bm->SetOk(TRUE);
+
+      if (maskPort) {
+	wxBitmap *mask;
+	mask = new wxBitmap();
+	mask->x_pixmap = colorPort;
+	mask->SetWidth(gifImage->GetWidth());
+	mask->SetHeight(gifImage->GetHeight());
+	mask->SetDepth(gifImage->GetDeep());
+	mask->SetOk(TRUE);
+
+	bm->SetMask(mask);
+      }
+
       delete gifImage;
       return TRUE;
     } 
@@ -659,35 +682,65 @@ Bool wxLoadGifIntoBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal)
 }
 
 
-void CreateOffScreenPixMap (CGrafPtr *cport, wxGIF *gif)
+void CreateOffScreenPixMap (CGrafPtr *cport, CGrafPtr *mask, wxGIF *gif)
 {
   int width = gif->GetWidth(), height = gif->GetHeight();
   Rect bounds = { 0, 0, height, width };
   GDHandle savegw;
   CGrafPtr saveport;
-  GetGWorld(&saveport, &savegw);
   QDErr err;
   GWorldPtr	newGWorld;
+  RGBColor	cpix;
+  int i, j;
+  unsigned char *buf;
+
+
+  GetGWorld(&saveport, &savegw);
   err = NewGWorld(&newGWorld, 32, &bounds, NULL, NULL, 0);
   if (err) {
     *cport = 0;
-    return;
-  }
-  LockPixels(GetGWorldPixMap(newGWorld));
-  SetGWorld(newGWorld, 0);
+  } else {
+    LockPixels(GetGWorldPixMap(newGWorld));
+    SetGWorld(newGWorld, 0);
 
-  RGBColor	cpix;
-  int i, j;
-  unsigned char *buf = (unsigned char *)gif->GetRawImage();
-  for (i = 0; i < height; i++) {
-    for (j = 0; j < width; j++, buf++) {
-      int v = *buf;
-      cpix.red = 256 *gif->red[v];
-      cpix.green = 256 *gif->green[v];
-      cpix.blue = 256 *gif->blue[v];
-      ::SetCPixel(j, i, &cpix);
+    buf = (unsigned char *)gif->GetRawImage();
+    for (i = 0; i < height; i++) {
+      for (j = 0; j < width; j++, buf++) {
+	int v = *buf;
+	cpix.red = 256 *gif->red[v];
+	cpix.green = 256 *gif->green[v];
+	cpix.blue = 256 *gif->blue[v];
+	::SetCPixel(j, i, &cpix);
+      }
     }
+    *cport = newGWorld;
   }
+
+  if (gif->transparent_index >= 0) {
+    int transparent_index = gif->transparent_index;
+
+    err = NewGWorld(&newGWorld, 1, &bounds, NULL, NULL, 0);
+    if (err) {
+      *mask = 0;
+    } else {
+      LockPixels(GetGWorldPixMap(newGWorld));
+      SetGWorld(newGWorld, 0);
+      
+      buf = (unsigned char *)gif->GetRawImage();
+      for (i = 0; i < height; i++) {
+	for (j = 0; j < width; j++, buf++) {
+	  int v = *buf;
+	  if (v == transparent_index)
+	    cpix.red = cpix.blue = cpix.green = 255 << 8;
+	  else
+	    cpix.red = cpix.blue = cpix.green = 0;
+	  ::SetCPixel(j, i, &cpix);
+	}
+      }
+      *mask = newGWorld;
+    }
+  } else
+    *mask = 0;
+
   SetGWorld(saveport, savegw);
-  *cport = newGWorld;
 }

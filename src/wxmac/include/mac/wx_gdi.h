@@ -100,6 +100,7 @@ class wxBitmap: public wxObject
   Bool freePixmap;
   class wxMemoryDC *selectedInto; // mflatt
   Bool selectedIntoDC;
+  wxBitmap *mask;
 
   wxBitmap(void) ;
   wxBitmap(char bits[], int width, int height);
@@ -130,6 +131,9 @@ class wxBitmap: public wxObject
   void SetColourMap(wxColourMap *cmap);
   wxColourMap* GetColourMap(void);
 
+
+  inline void SetMask(wxBitmap *newmask) { mask = newmask; }
+  inline wxBitmap *GetMask(void) { return mask; }
 
   // Some Mac extensions ---- should only be used inside wxWindows, Please.
   void DrawMac(void);

@@ -1125,10 +1125,14 @@ extern int wxsGetImageType(char *fn);
 
 Bool wxBitmap::LoadFile(char *bitmap_file, long flags)  
 {
+  Bool getMask;
+
   if (selectedIntoDC)
     return FALSE;
 
-  if (!flags)
+  getMask = !!(flags & wxBITMAP_TYPE_MASK);
+
+  if (!flags || (flags == wxBITMAP_TYPE_MASK))
     flags = wxsGetImageType(bitmap_file);
 
   /* Nevermind the palette */
@@ -1266,9 +1270,9 @@ Bool wxBitmap::LoadFile(char *bitmap_file, long flags)
   {
     Bool success = FALSE;
     if (flags & wxBITMAP_DISCARD_COLOURMAP)
-      success = wxLoadGifIntoBitmap(bitmap_file, this);
+      success = wxLoadGifIntoBitmap(bitmap_file, this, NULL, getMask);
     else
-      success = wxLoadGifIntoBitmap(bitmap_file, this, NULL);
+      success = wxLoadGifIntoBitmap(bitmap_file, this, NULL, getMask);
   }
   else if (flags & wxBITMAP_TYPE_JPEG)
   {

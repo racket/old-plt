@@ -270,10 +270,12 @@ class wxbBrush: public wxObject
 #define wxBITMAP_TYPE_TIF               0x1000
 #define wxBITMAP_TYPE_GIF               0x2000
 #ifdef wx_mac
-#define wxBITMAP_TYPE_PICT				0x4000
-#define wxBITMAP_TYPE_PICT_RESOURCE		0x8000
+#define wxBITMAP_TYPE_PICT              0x4000
+#define wxBITMAP_TYPE_PICT_RESOURCE     0x8000
 #define wxBITMAP_TYPE_ANY               0x10000
-#define wxBITMAP_TYPE_JPEG				0X20000
+#define wxBITMAP_TYPE_JPEG              0X20000
+
+#define wxBITMAP_TYPE_MASK              0X40000
 
 #define wxBITMAP_TYPE_RESOURCE wxBITMAP_TYPE_PICT_RESOURCE
 #else

@@ -129,10 +129,10 @@ wxColourMap *wxGIF::getColorMap()
 }
 
 
-BOOL wxGIF::ReadHeader( FILE *fp)
+BOOL wxGIF::ReadHeader(FILE *fp)
 {
   unsigned char tstA[256];
-  unsigned char *rgbTable, single;
+  unsigned char *rgbTable, single, eid;
   ushort widlow, widhigh, hgtlow, hgthi, i;
   
   fread((char*)&tstA[0],13,1,fp);
@@ -169,15 +169,22 @@ BOOL wxGIF::ReadHeader( FILE *fp)
   }
 
   single = 0;
+  transparent_index = -1;
   while (1) {
     fread((char *)&single, 1, 1, fp);
     if (single == 0x21) { /* extension */
-      fread(&single,1,1,fp); /* function */
+      fread(&eid,1,1,fp); /* function */
       while (1) {
-        fread(&single,1,1,fp); /* block size */
-	if (single)
-          fread((char*)&tstA[0],single,1,fp);
-	else
+	fread(&single,1,1,fp); /* block size */
+	if (single) {
+	  fread((char*)&tstA[0],single,1,fp);
+	  if ((eid == 0xF9) && (single == 4)) {
+	    /* Transparent color index? */
+	    if (tstA[0] & 0x1) {
+	      transparent_index = tstA[3];
+	    }
+	  }
+	} else
 	  break;
       }
     } else
@@ -609,7 +616,7 @@ BOOL wxGIF::SetColourMap(ushort n, byte *r, byte *g, byte *b)
   return TRUE;
 }
 
-Bool wxLoadGifIntoBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal)
+Bool wxLoadGifIntoBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal, int getMask)
 {
  
   if (pal) *pal = NULL;
@@ -661,6 +668,32 @@ Bool wxLoadGifIntoBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal)
 	      cref = RGB(red[v], green[v], blue[v]);
 	      SetPixelV(hdc, i, j, cref);
 	    }
+	  }
+	}
+
+	/* Make mask if requested and if there was a transparent
+           index: */
+	if (getMask && (gifImage->transparent_index >= 0)) {
+	  wxBitmap *mbm;
+	  int transparent_index = gifImage->transparent_index;
+
+	  mbm = new wxBitmap(w, h, 1);
+	  if (mbm->Ok()) {
+	    mem = new wxMemoryDC();
+	    mem->SelectObject(bm);
+	    hdc = mem->cdc;
+	    for (j = 0; j < h; j++) {
+	      for (i = 0; i < w; i++, data++) {
+		int v = *data;
+		if (v == transparent_index) {
+		  cref = RGB(255, 255, 255);
+		} else {
+		  cref = RGB(0, 0, 0);
+		}
+		SetPixelV(hdc, i, j, cref);
+	      }
+	    } 
+	    bm->SetMask(mbm);
 	  }
 	}
 	  

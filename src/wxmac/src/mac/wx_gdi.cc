@@ -811,8 +811,6 @@ static void FreeGWorld(GWorldPtr x_pixmap)
 
 //------------------ BitMaps ------------------------------------------
 /*
-   on the Mac, the wxBitMap needs to be a structure that will allow
-   us to redraw. Externally a wxBitmap is a picture (file or resource).
    Internally, its an offscreen GWorld (and its pixmap).
    */
 wxBitmap::wxBitmap(void)
@@ -1008,16 +1006,21 @@ extern int wxsGetImageType(char *);
    */
 Bool wxBitmap::LoadFile(char *name, long flags)
 {
+  wxColourMap *colourmap;
+  Bool getMask;
+
   if (selectedIntoDC) return FALSE;
   
   if (x_pixmap) {
     FreeGWorld(x_pixmap);
     x_pixmap = NULL;
   }
-  wxColourMap *colourmap;
+
   ok = FALSE;
 
-  if (!flags)
+  getMask = !!(flags & wxBITMAP_TYPE_MASK);
+
+  if (!flags || (flags == wxBITMAP_TYPE_MASK))
     flags = wxsGetImageType(name);
 
   if (flags & wxBITMAP_TYPE_XPM) {
@@ -1045,7 +1048,7 @@ Bool wxBitmap::LoadFile(char *name, long flags)
   }
 
   if (flags & wxBITMAP_TYPE_GIF) {
-    ok = wxLoadGifIntoBitmap(name, this, &colourmap);
+    ok = wxLoadGifIntoBitmap(name, this, &colourmap, getMask);
     if (ok) SetDepth(wxDisplayDepth());
   } else if (flags & wxBITMAP_TYPE_PICT) {
     ok = wxLoadPICTIntoBitmap(name, this, &colourmap);

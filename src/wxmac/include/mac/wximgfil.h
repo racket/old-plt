@@ -74,6 +74,8 @@ public:
   uchar buf[GIFBUFTAM];
   ushort bad_code_count;
 
+  int transparent_index;
+
   char * lpbi;  		//  Image data from msw
   Ptr GetRawImage();
   char * RawImage;  		//  Image data
@@ -143,7 +145,7 @@ ushort get_next_code();
 ushort decoder(ushort linewidth);
 };
 
-Bool wxLoadGifIntoBitmap(char *, wxBitmap *, wxColourMap ** = NULL);
+Bool wxLoadGifIntoBitmap(char *, wxBitmap *, wxColourMap ** = NULL, int withMask = 0);
 Bool wxLoadPICTIntoBitmap(char *, wxBitmap *, wxColourMap ** = NULL);
 Bool wxLoadXPMIntoBitmap(char *, wxBitmap *, wxColourMap ** = NULL);
 Bool wxLoadXBMIntoBitmap(char *, wxBitmap *, wxColourMap ** = NULL);

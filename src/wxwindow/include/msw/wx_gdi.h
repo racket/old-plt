@@ -103,6 +103,7 @@ class wxBitmap: public wxObject
   int numColors;
   wxColourMap *bitmapColourMap;
  public:
+  wxBitmap *mask;
   HBITMAP ms_bitmap;
   wxDC *selectedInto; // So bitmap knows whether it's been selected into
                       // a device context (for error checking)
@@ -139,6 +140,8 @@ class wxBitmap: public wxObject
   inline void SetOk(Bool isOk) { ok = isOk; }
   inline wxColourMap *GetColourMap(void) { return bitmapColourMap; }
   inline void SetColourMap(wxColourMap *cmap) { bitmapColourMap = cmap; }
+  inline void SetMask(wxBitmap *newmask) { mask = newmask; }
+  inline wxBitmap *GetMask(void) { return mask; }
 };
 
 // Cursor

@@ -36,7 +36,9 @@
 		   (export* unit)
 		   aries drzodiac
 		   (export* basis)
-		   (mzlib function@) print-convert)]
+		   (mzlib function@) 
+		   (mzlib file@)
+		   print-convert)]
 	[tool : () 
 	      ((require-relative-library "tool.ss")
 	       wx mred mzlib print-convert 

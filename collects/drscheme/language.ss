@@ -7,6 +7,7 @@
 	  [zodiac : drscheme:zodiac^]
 	  [basis : userspace:basis^]
 	  mzlib:function^
+	  mzlib:file^
 	  mzlib:print-convert^)
   
   (mred:debug:printf 'invoke "drscheme:language@")
@@ -313,6 +314,45 @@
       (send f show #t)
       f))
   
+  (define library-directory%
+    (class null ()
+	   (private [the-dir #f])
+	   (public
+	    [set! (lambda (s)
+		    (set! the-dir s))]
+	    [get (lambda () the-dir)]
+	    [set-to-default 
+	     (lambda ()
+	       (let ([home-dir (getenv "PLTHOME")])
+		 (if home-dir
+		     (set! the-dir
+			   (build-path (getenv "PLTHOME") "lib"))
+		     (set! the-dir
+			   ()))))])
+	   (sequence
+	     (set-to-default))))
+
+  ; object to remember last library directory
+  
+  (define *library-directory*
+    (make-object 
+     (class null ()
+
+	    (private 
+	     [the-dir #f]
+	     [set-to-default 
+	      (lambda ()
+		(set! the-dir
+		      (build-path (getenv "PLTHOME") "lib")))])
+	    (public
+	     [get (lambda () the-dir)]
+	     [set-from-file!
+	      (lambda (file) 
+		(set! the-dir (path-only file)))])
+
+	    (sequence
+	      (set-to-default)))))
+
   (define (fill-language-menu language-menu)
     (send* language-menu 
 	   (append-item "Configure Language..." language-dialog)
@@ -320,12 +360,27 @@
 	   (append-item "Set Library To..."
 			(lambda ()
 			  (let ([lib-file (mred:get-file 
-					   () 
-					   "Select a Library" 
+					   (send *library-directory* get) 
+					   "Select a library" 
 					   ".*\\.ss$")])
 			    (when lib-file
 			      (mred:set-preference
-			       'drscheme:library-file lib-file)))))
+			       'drscheme:library-file lib-file)
+			      (send *library-directory*
+				    set-from-file! lib-file)))))
 	   (append-item "Clear Library"
 			(lambda ()
 			  (mred:set-preference 'drscheme:library-file #f))))))
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -40,8 +40,8 @@
               (rename [super-highlight-range highlight-range])
               (define/override highlight-range
                 (opt-lambda (start end color (bitmap false) (caret-space false) (priority 'low))
-                  (super-highlight-range  start end color bitmap caret-space priority)
-                  (when collapsed? (collapse false))))
+                  (when collapsed? (collapse false))
+                  (super-highlight-range start end color bitmap caret-space priority)))
               (super-new)))
           
           (init-field

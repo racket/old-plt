@@ -217,8 +217,13 @@ class C:
   \end{itemize}
 %----------------------------------------
 \jhead{Translations: Classes: Solution}
-    Spy emulates Python objects
-\\
+
+\begin{lstlisting}
+class C:
+  def meth(this, x):
+    return this.y + x
+\end{lstlisting}
+
 \lstset{language=Lisp, morekeywords={lambda, opt-lambda}, emph={rest}}
 \begin{lstlisting}
 ; a PyObject is a:

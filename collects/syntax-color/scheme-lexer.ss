@@ -212,9 +212,10 @@
    [sharing (: (@ "#" uinteger10 "=")
                (@ "#" uinteger10 "#"))])
   
-  (define (ret a b c)
-    (values a #f (position-offset b) (position-offset c)))
-  
+  (define (ret lexeme type paren start-pos end-pos)
+    (values lexeme type paren (position-offset start-pos) (position-offset end-pos)))
+
+
   (define get-next-comment
     (lexer
      ["#|" (values 1 end-pos)]
@@ -231,43 +232,43 @@
   (define (read-nested-comment num-opens start-pos input)
     (let-values (((diff end) (get-next-comment input)))
       (cond
-        ((eq? 'eof diff) (ret 'error start-pos end))
+        ((eq? 'eof diff) (ret "" 'error #f start-pos end))
         (else
          (let ((next-num-opens (+ diff num-opens)))
            (cond
-             ((= 0 next-num-opens) (ret 'comment start-pos end))
+             ((= 0 next-num-opens) (ret "" 'comment #f start-pos end))
              (else (read-nested-comment next-num-opens start-pos input))))))))
   
   (define scheme-lexer
     (lexer
-     [(+ whitespace) (ret 'white-space start-pos end-pos)]
+     [(+ whitespace) (ret lexeme 'white-space #f start-pos end-pos)]
      [(: "#t" "#f" "#T" "#F" num2 num8 num10 num16 character)
-      (ret 'constant start-pos end-pos)]
-     [str (ret 'string start-pos end-pos)]
+      (ret lexeme 'constant #f start-pos end-pos)]
+     [str (ret lexeme 'string #f start-pos end-pos)]
      [(: "#;" line-comment) 
-      (ret 'comment start-pos end-pos)]
+      (ret lexeme 'comment #f start-pos end-pos)]
      ["#|" (read-nested-comment 1 start-pos input-port)]
      [(@ (: "" "#hash" "#hasheq" (@ "#" (* digit10))) "(")
-      (values 'parenthesis '|(| (position-offset start-pos) (position-offset end-pos))]
+      (values lexeme 'parenthesis '|(| (position-offset start-pos) (position-offset end-pos))]
      [(@ (: "" "#hash" "#hasheq" (@ "#" (* digit10))) "[")
-      (values 'parenthesis '|[| (position-offset start-pos) (position-offset end-pos))]
+      (values lexeme 'parenthesis '|[| (position-offset start-pos) (position-offset end-pos))]
      [(@ (: "" "#hash" "#hasheq" (@ "#" (* digit10))) "{")
-      (values 'parenthesis '|{| (position-offset start-pos) (position-offset end-pos))]
+      (values lexeme 'parenthesis '|{| (position-offset start-pos) (position-offset end-pos))]
      [(: ")" "]" "}")
-      (values 'parenthesis (string->symbol lexeme) (position-offset start-pos) (position-offset end-pos))]
+      (values lexeme 'parenthesis (string->symbol lexeme) (position-offset start-pos) (position-offset end-pos))]
      [(: "'" "`" "#'" "#`" "#&")
-      (values 'constant (string->symbol lexeme) (position-offset start-pos) (position-offset end-pos))]
+      (values lexeme 'constant #f (position-offset start-pos) (position-offset end-pos))]
      [(: script sharing reader-command "." "," ",@" "#," "#,@")
-      (values 'other (string->symbol lexeme) (position-offset start-pos) (position-offset end-pos))]
-     [identifier (values 'symbol lexeme (position-offset start-pos) (position-offset end-pos))]
+      (values lexeme 'other #f (position-offset start-pos) (position-offset end-pos))]
+     [identifier (values lexeme 'symbol #f (position-offset start-pos) (position-offset end-pos))]
      [(special)
-      (ret 'no-color start-pos end-pos)]
+      (ret "" 'no-color #f start-pos end-pos)]
      [(special-comment)
-      (ret 'comment start-pos end-pos)]
+      (ret "" 'comment #f start-pos end-pos)]
      [(special-error)
-      (ret 'no-color start-pos end-pos)]
-     [(eof) (values 'eof #f #f #f)]
-     [(: bad-char bad-str bad-id) (ret 'error start-pos end-pos)]
+      (ret "" 'no-color #f start-pos end-pos)]
+     [(eof) (values lexeme 'eof #f #f #f)]
+     [(: bad-char bad-str bad-id) (ret lexeme 'error #f start-pos end-pos)]
      [any (extend-error start-pos end-pos input-port)]))
   
   (define (extend-error start end in)
@@ -275,8 +276,8 @@
               `(special #\newline #\return #\tab #\space #\vtab
                  #\" #\, #\' #\` #\( #\) #\[ #\] #\{ #\} #\;
                  ,eof))
-        (ret 'error start end)
-        (ret 'error start (get-chunk in))))
+        (ret "" 'error #f start end)
+        (ret "" 'error #f start (get-chunk in))))
   
   (define get-chunk
     (lexer

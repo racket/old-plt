@@ -169,6 +169,14 @@
 							   #\G))
 					 (make-object separator-menu-item% menu))]
 
+				      [help-menu:about-string (lambda () "Help Desk")]
+				      [help-menu:about (lambda (i e)
+							 (message-box "About Help Desk"
+								      (format "Help Desk is a complete source of ~
+                                                                       information about PLT software, including DrScheme, ~
+                                                                       MzScheme, and MrEd.~n~n~
+                                                                       Content: Copyright (c) 1995-99 PLT~n~
+                                                                       GUI: Copyright (c) 1999 PLT (Matthew Flatt)")))]
 				      [help-menu:after-about
 				       (lambda (menu)
 					 (make-object menu-item% "Help" menu

@@ -873,7 +873,7 @@ int scheme_alias_tracking_val(void *val1, void *val2)
   return 1;
 }
 
-unsigned long get_tracking_val_memory(void *val)
+unsigned long scheme_get_tracking_val_memory(void *val)
 {
   int i, j, man_owner = -1;
   unsigned long total_memuse = 0;
@@ -909,10 +909,33 @@ unsigned long get_tracking_val_memory(void *val)
 inline static int get_current_manual_owner(void)
 {
   if(track_manual_owner_info) {
-    Scheme_Cont_Mark_Chain *chain;
-    chain = ((Scheme_Cont_Mark_Set*)scheme_current_continuation_marks())->chain;
-    for(; chain && (chain->key != man_account_key); chain = chain->next) { }
-    return chain ? SCHEME_INT_VAL(chain->val) : 0;
+    /* this stuff is pulled from fun.c, around line 2310 (continuation_mark) */
+    Scheme_Thread *p = scheme_current_thread;
+    Scheme_Cont *cont = NULL;
+    Scheme_Cont_Mark_Set *set;
+    long findpos = (long)MZ_CONT_MARK_STACK;
+    long cmpos = (long)MZ_CONT_MARK_POS;
+
+    while(findpos--) {
+      Scheme_Cont_Mark *find;
+      long pos;
+
+      if(cont) {
+	find = cont->cont_mark_stack_copied;
+	pos = findpos;
+      } else {
+	Scheme_Cont_Mark *seg;
+	seg = p->cont_mark_stack_segments[findpos >> SCHEME_LOG_MARK_SEGMENT_SIZE];
+	pos = findpos & SCHEME_MARK_SEGMENT_MASK;
+	find = seg;
+      }
+
+      if(find[pos].cached_chain) break; else {
+	if(find[pos].key == man_account_key)
+	  return SCHEME_INT_VAL(find[pos].val);
+      }
+    }
+    return 0;
   } else return 0;
 }
 #endif
@@ -1206,14 +1229,10 @@ long GC_get_memory_use(void *custodian)
 {
   unsigned long retval = 0;
 
-  if(custodian && SCHEME_CUSTODIANP((Scheme_Object*)custodian)) {
+  if(custodian ) {
 #if defined(NEWGC_PRECISE_ACCOUNT) || defined(NEWGC_BTC_ACCOUNT)
     retval = custodian_get_memory(custodian, 0);
 #endif
-  } else if(custodian && SCHEME_PROCP((Scheme_Object*)custodian)) {
-#if defined(NEWGC_MANUAL_ACCOUNT)
-    retval = get_tracking_val_memory(custodian);
-#endif    
   } else {
     struct mpage *page;
     unsigned short i, j;

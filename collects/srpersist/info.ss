@@ -18,9 +18,5 @@
         "srpersistu.ss")]
     [(blurb)
      (list
-      "SrPersist is an extension for using ODBC databases. " 
-      "See the "
-      `(a ((href ,(format "file:~a" (build-path (collection-path "srpersist") "doc.txt"))))
-      "doc.txt")
-      " file for more information.")]
+      "SrPersist is an extension for using ODBC databases from Scheme.")] 
     [else (failure-thunk)]))

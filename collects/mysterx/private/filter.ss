@@ -217,7 +217,7 @@
   (define (filter->string filter options)
     (unless (filter? filter)
 	    (error 
-	     (format "Expect filter (element of '~a), got ~a" 
+	     (format "Expected filter (element of '~a), got ~a" 
 		     *filters* filter)))
     (for-each
      (lambda (opt)

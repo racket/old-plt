@@ -391,7 +391,7 @@ void scheme_release_com_object(void *comObject,void *pIDispatch) {
   pEventTypeInfo = MX_COM_OBJ_EVENTTYPEINFO(comObject);
   pIConnectionPoint = MX_COM_OBJ_CONNECTIONPOINT(comObject);
   pISink = MX_COM_OBJ_EVENTSINK(comObject);
-  
+
   if (pITypeInfo) {
     pITypeInfo->Release();
   }
@@ -3818,7 +3818,7 @@ Scheme_Object *mx_document_show(int argc,Scheme_Object **argv) {
 static BOOL win_event_available(void *) {
   MSG msg;
 
-  return PeekMessage(&msg,NULL,0,0,PM_NOREMOVE);
+  return PeekMessage(&msg,NULL,0x400,0x400,PM_NOREMOVE);
 }
 
 static void win_event_sem_fun(MX_Document_Object *doc,void *fds) {
@@ -3842,7 +3842,7 @@ Scheme_Object *mx_process_win_events(int argc,Scheme_Object **argv) {
   		     (void (*)(Scheme_Object *,void *))win_event_sem_fun,
   		     NULL,0.0F);
 
-  while (PeekMessage(&msg,NULL,0,0,PM_REMOVE)) {
+  while (PeekMessage(&msg,NULL,0x400,0x400,PM_REMOVE)) {
     TranslateMessage(&msg);
     DispatchMessage(&msg);
   }
@@ -3923,7 +3923,7 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
   initEventNames();
   
   initMysSinkTable();
-  
+
   puts("MysterX extension for MzScheme, "
        "Copyright (c) 1999 Rice PLT (Paul Steckler)");
   

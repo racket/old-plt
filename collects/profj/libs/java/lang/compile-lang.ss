@@ -37,6 +37,7 @@
       (move-file-in path "Object.jinfo")
       (move-file-in path "String.jinfo")
       (move-file-in path "Throwable.jinfo")
+      (move-file-in path "Comparable.jinfo")
       (for-each (lambda (file)
                   (let ((fp (build-path path "compiled" file)))
                     (when (file-exists? fp)
@@ -48,7 +49,8 @@
                            (equal? "jinfo" (filename-extension file))
                            (not (equal? file "Object.jinfo"))
                            (not (equal? file "String.jinfo"))
-                           (not (equal? file "Throwable.jinfo"))))
+                           (not (equal? file "Throwable.jinfo"))
+                           (not (equal? file "Comparable.jinfo"))))
                         (directory-list (build-path path "compiled"))))
       ))
   

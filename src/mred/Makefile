@@ -3,10 +3,13 @@
 ifdef PLTWXDIR
  WXDIR=$(shell pwd)/../$(PLTWXDIR)
 else
- WXDIR=$(shell pwd)/../wxxt
+ WXDIR=$(shell pwd)/../$(shell if [ -d ../wxxt ] ; then echo wxxt ; else echo wxwindow ; fi)
 endif
 
 include $(WXDIR)/src/make$(MZPLATFORMSUFFIX)$(MREDMAKEFILESUFFIX).env
+
+# system name for installation
+INSTALLSYS = `../../bin/archsys`
 
 OBJDIR=objects/sys$(MZPLATFORMSUFFIX)$(GUISUFFIX)
 LIBDIR=lib/sys$(MZPLATFORMSUFFIX)
@@ -112,80 +115,8 @@ clean:
 	cd wxs; $(MAKE) clean
 	cd ../mzscheme; $(MAKE) clean
 
-exile:
-	rm -rf $(TILDES) core
-	mkdir $(HIDEDIR)/mred_objects
-	mv objects .bin $(HIDEDIR)/mred_objects
-	mv mred.exe $(HIDEDIR)/mred_objects
-	cd ../mzscheme; $(MAKE) exile
-	cd wxs; $(MAKE) HIDEDIR='$(HIDEDIR)' exile
-	cd wxme; $(MAKE) HIDEDIR='$(HIDEDIR)' exile
-	rm tests/RCS
-	rm ../collects/icons
-	rm ../collects/make/RCS
-
-repatriate:
-	mv $(HIDEDIR)/mred_objects/objects .
-	mv $(HIDEDIR)/mred_objects/.bin .
-	mv $(HIDEDIR)/mred_objects/mred.exe .
-	rmdir $(HIDEDIR)/mred_objects
-	cd ../mzscheme; $(MAKE) repatriate
-	cd wxs; $(MAKE) HIDEDIR='$(HIDEDIR)' repatriate
-	cd wxme; $(MAKE) HIDEDIR='$(HIDEDIR)' repatriate
-
-bundle:
-	# $(MAKE) exile
-	rm -rf mred
-	$(MAKE) bundle-wxme
-	$(MAKE) bundle-mzscheme
-	$(MAKE) bundle-self
-
-bundle-wxme:
-	tar -cf wxmedia.tar wxme
-	mv wxmedia.tar ../
-	cd ..; gzip wxmedia.tar
-	cd ..; mv wxmedia.tar.gz $(FTPDIR)/wxmedia/
-	rm -f $(FTPDIR)/wxmedia/wxmedia.zip
-	zip -r $(FTPDIR)/wxmedia/wxmedia.zip wxme
-
-bundle-mzscheme:
-	cd ..; tar -cf mzscheme.src.tar mzscheme
-	cd ..; gzip mzscheme.src.tar
-	cd ..; mv mzscheme.src.tar.gz $(FTPDIR)/mzscheme/
-	rm -f $(FTPDIR)/mzscheme/mzsrc.zip
-	cd ..; zip -r $(FTPDIR)/mzscheme/mzsrc.zip mzscheme
-
-bundle-self:
-	cd ..; tar -cf mred.src.tar mred
-	cd ..; gzip mred.src.tar
-	cd ..; mv mred.src.tar.gz $(FTPDIR)/mred/
-	rm -f $(FTPDIR)/mred/mredsrc.zip
-	cd ..; zip -r $(FTPDIR)/mred/mredsrc.zip mred
-
 install:
-	# cd system; rm -rf *~ core
-	# cd system/hyper; rm -rf *~ core
-	# cp -r system $(INSTALLDEST)/system
-	cp MrEd.ad $(INSTALLDEST)/notes/mred/MrEd.ad
-	cp LICENSE COPYING.LIB HISTORY FONTS mred.txt fonts12.mre fontsall.mre openbugs \
-            $(INSTALLDEST)/notes/mred
-	cp mred.sh $(INSTALLDEST)/bin/mred
-	cp mred.ini $(INSTALLDEST)/notes/mred/mred.ini
-	cp mred.fnt $(INSTALLDEST)/notes/mred/mred.fnt
-	cd tests; ci -l -mrelease *.ss README
-	cd $(INSTALLDEST)/tests/mred; co RCS/*
-	$(MAKE) install-demo
-
-install-demo:
-	cd ../collects/mrdemo; rm -f *~
-	rm -rf $(INSTALLDEST)/collects/mrdemo/*
-	cp -r ../collects/mrdemo/* $(INSTALLDEST)/collects/mrdemo
-
-asia:
-	rdist -m asia
-
-hk:
-	rdist -m hk
-
-stan:
-	rdist -m stan
+	if [ ! -d ../../.bin ] ; then mkdir ../../.bin ; fi
+	if [ ! -d ../../.bin/$(INSTALLSYS) ] ; then mkdir ../../.bin/$(INSTALLSYS) ; fi
+	rm -f ../../.bin/$(INSTALLSYS)/mred
+	cp $(MRED) ../../.bin/$(INSTALLSYS)/mred

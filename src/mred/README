@@ -1,31 +1,15 @@
 
-This is MrEd for X Windows, Microsoft Windows, and MacOS. MrEd is
-described for new users in `mred.txt'. Old users should consult the
-HISTORY file for information about changes in this version.
+This is source code distribution for MrEd. Please see the file
+plt/LICENSE for license information.
 
-Please see the file LICENSE for license information.
-
-Documentation and up-to-date information about MrEd are at
+Compiled binaries, documentation, and up-to-date information about
+MrEd are at
   http://www.cs.rice.edu/CS/PLT/packages/mred/
 
-Please report bugs using
-  http://www.cs.rice.edu/CS/PLT/Bugs/
-or (as a last resort) send mail to
-  plt-bugs@cs.rice.edu
-
-For more details on compiling and/or running MrEd, read `mred.txt' in
-this directory. For Win32 compilation, you will also need to consult
-the directory `windows'. Additional files for MacOS compilation are
-bundled with the MacOS version of MrEd's wxWindows.
-
-The following are miscellaneous files in this directory:
-   FONTS - Describes low-level font configuration
-   MrEd.ad - Some X resources
-   mred.ini - Some Windows resources
-   mred.fnt - Some MacOS "resources"
-   fonts12.mre - A MrEd-readable file showing 12-point fonts
-   fontsall.mre  - A MrEd-readable file showing lots of fonts
-   openbugs - known mred bugs
+MrEd should compile and execute with little or no modification if you
+have an ANSI C compiler on any platform supported by the conservative
+garbage collector.  Special per-platform instructions are below,
+followed by some general notes on compilation.
 
 -Matthew Flatt and Robby Findler
  Rice University PLT
@@ -33,3 +17,73 @@ The following are miscellaneous files in this directory:
  http://www.cs.rice.edu/~mflatt/
  robby@cs.rice.edu
  http://www.cs.rice.edu/~robby/
+
+========================================================================
+ Compiling for X Windows
+========================================================================
+
+Compiling MrEd requires `gnumake' (or `gmake' or `make', but it must
+be GNU's `make') and around 20-30 MB of disk space.
+
+Compile MzScheme first. See plt/src/mzscheme/README.
+
+If you are compiling the Motif version of MrEd, the file
+plt/src/wxwindow/src/make.env will need to be edited as described
+below. If you are compiling the non-Motif version (a.k.a. "Xt"), edit
+plt/src/wxxt/src/make.env.
+
+In src/make.env, some of the variables may need to be changed:
+
+   * Set the program names, such as the C compiler
+
+   * Set OPTIONS:
+        * -DWXME_FOR_MRED must be preserved
+        * -DWX_NORMALIZED_PS_FONTS=1 must be ketp for Motif
+        * Add -DWXME_LSB_FIRST=1 if the target machine represents
+          integers with the least-significant byte in the lowest memory
+          address. For example, this flag is needed for Intel machines,
+          but not Sparc machines. MrEd will display a warning at startup
+          if the flag value is incorrectly chosen.
+        * Add -DOPERATOR_NEW_ARRAY if the C++ compiler uses separate new
+          and new[] operators. For example, this flag is needed for gcc
+          version 2.6.3, but not for version 2.5.8.
+        * Add -DWXS_CANT_ASSIGN_STRUCTURES if the C++ compiler does not
+          allow an assignment to copy structures. A compile-time error
+          will occur if the flag is needed but not provided.
+
+   * Probably the XLIB and/or XINCLUDE directory lists must be adjusted.
+
+   * Perhaps some other flags should be changed for your local 
+     configuration.
+
+Once all of the setup files are ready, go to plt/src/mred and run
+`gnumake wx'. (Did you get a Makefile error? In that case, are you
+using GNU's make?) `gnumake wx' compiles everything in
+plt/src/wxwindow or plt/src/wxxt. When that completes, run `gnumake'
+to compile MrEd.
+
+After MrEd is built, run `gnumake install' to install the binary
+into the plt/ hierarchy.
+
+========================================================================
+ Compiling for Windows
+========================================================================
+
+Read the instructions in "plt/src/worksp/README".
+
+========================================================================
+ Compiling for MacOS
+========================================================================
+
+Unpack the Compactor archive "plt/src/cw.cpt" to "plt/src/cw" and then
+see "plt/src/cw/ABOUT MZSCHEME".
+
+========================================================================
+ Bug Reports
+========================================================================
+
+Please report bugs using
+  http://www.cs.rice.edu/CS/PLT/Bugs/
+or (as a last resort) send mail to
+  plt-bugs@cs.rice.edu
+

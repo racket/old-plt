@@ -442,6 +442,16 @@ static int find_mac_file(const char *filename, FSSpec *spec, int finddir, int fi
 			 long *filedate, int *flags, 
 			 long *type, unsigned long *size,
 			 FInfo *finfo) 
+/* finddir:   0 => don't care if dir is found (but set *wasdir)
+              1 => must find a dir
+   findfile:  0 => don't care if file is found (but unset *wasdir)
+              1 => must find a file
+             -1 => must find a link
+             -2 => must find a file or link
+
+   filedate, flags, type, size, and finfo are only filled in
+   when findfile >= 0 (and when they're non-null)
+ */
 {
   WDPBRec  wdrec;
   CInfoPBRec pbrec;
@@ -533,9 +543,6 @@ static int find_mac_file(const char *filename, FSSpec *spec, int finddir, int fi
 	if (PBGetCatInfo(&pbrec, 0))
 	  return 0;	
 	find_dir_id = pbrec.dirInfo.ioDrParID;
-#ifdef MAC_STUPID_STAT
-	if (dealiased) *dealiased = 1;
-#endif
 	if (!next) {
 	  if (findfile)
 	    return 0;
@@ -564,6 +571,8 @@ static int find_mac_file(const char *filename, FSSpec *spec, int finddir, int fi
 	  if (!(pbrec.hFileInfo.ioFlAttrib & 0x10)) {
 	    ResolveAliasFile(spec, 1, &isFolder, &wasAlias);
 	    if (!next && (findfile < 0)) {
+	      if (findfile == -2)
+		return 1;
 	      return wasAlias ? 1 : 0;
 	    }
 	    if (wasAlias && dealiased)
@@ -601,8 +610,8 @@ static int find_mac_file(const char *filename, FSSpec *spec, int finddir, int fi
 	    if (size)
 	      *size = (pbrec.hFileInfo.ioFlLgLen
 		       + pbrec.hFileInfo.ioFlRLgLen);
-		if (finfo)
-		  memcpy(finfo, &pbrec.hFileInfo.ioFlFndrInfo, sizeof(FInfo));
+	    if (finfo)
+	      memcpy(finfo, &pbrec.hFileInfo.ioFlFndrInfo, sizeof(FInfo));
 	  } else {
 	    if (findfile && !next)
 	      return 0;
@@ -1162,6 +1171,25 @@ static Scheme_Object *delete_file(int argc, Scheme_Object **argv)
   if (!SCHEME_STRINGP(argv[0]))
     scheme_wrong_type("delete-file", "string", 0, argc, argv);
 
+#ifdef USE_MAC_FILE_TOOLBOX
+  {
+    FSSpec spec;
+    char *file;
+    
+    file = SCHEME_STR_VAL(argv[0]);
+    if (has_null(file, SCHEME_STRTAG_VAL(argv[0])))
+      raise_null_error("delete-file", argv[0], "");
+    
+    if (!find_mac_file(file, &spec, 0, -2, NULL, NULL, NULL, NULL, NULL, NULL, NULL))
+      return scheme_false;
+
+    if (FSpDelete(&spec))
+      return scheme_false;
+    else
+      return scheme_true;
+  }
+#endif
+
   if (!MSC_IZE(unlink)(scheme_expand_filename(SCHEME_STR_VAL(argv[0]),
 					      SCHEME_STRTAG_VAL(argv[0]),
 					      "delete-file",
@@ -1203,7 +1231,7 @@ static Scheme_Object *rename_file(int argc, Scheme_Object **argv)
 #endif
 
 #ifdef USE_MAC_FILE_TOOLBOX
-  if (find_mac_file(src, &srcspec, 0, 0, NULL, &swas_dir, NULL, NULL, NULL, NULL, NULL)) {
+  if (find_mac_file(src, &srcspec, 0, -2, NULL, &swas_dir, NULL, NULL, NULL, NULL, NULL)) {
     if (find_mac_file(dest, &destspec, 0, 0, NULL, &dwas_dir, NULL, NULL, NULL, NULL, NULL)) {
       /* Directory already exists or different volumes => failure */
       if (!dwas_dir && (srcspec.vRefNum == destspec.vRefNum)) {

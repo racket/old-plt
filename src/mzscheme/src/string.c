@@ -1003,7 +1003,7 @@ char *scheme_version(void)
 char *scheme_banner(void)
 {
   return "Welcome to MzScheme version " VERSION VERSION_SUFFIX
-    ", Copyright (c) 1995-97 PLT (Matthew Flatt)\n";
+    ", Copyright (c) 1995-98 PLT (Matthew Flatt)\n";
 }
 
 int scheme_string_has_null(Scheme_Object *o)

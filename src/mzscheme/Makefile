@@ -1,7 +1,7 @@
 #
 # Makefile for mzscheme
 #
-# 'make' or 'make bin' - makes mzscheme
+# 'make' or 'make bin' - makes mzscheme and mzdyn.o
 # 'make mzschemelib' - make libmzscheme.a and libgc.a
 # 'make mzschemelib++' - make libmzscheme.a and libgc.a with C++ GC tools
 # 'make libguile' - make libguile.a
@@ -63,6 +63,9 @@ MZSCHEME = $(MZBUILDDIR)mzscheme
 # Change to sproc-extra-lib for Irix sprocs
 GCLIBMAKEEXTRA = no-extra-lib
 
+# system name for installation
+INSTALLSYS = `../../bin/archsys`
+
 ################################################################################
 
 # Destination for support files installation (Probably PLT only)
@@ -78,6 +81,7 @@ XMAKE = $(MAKE) $(EXPORT)
 
 bin: 
 	$(XMAKE) g-c
+	$(XMAKE) dynlib
 	./ifaix $(XMAKE) rs6kbin
 	./ifnotaix $(XMAKE) xbin
 
@@ -224,16 +228,9 @@ depend:
 	cd src; $(XMAKE) -e depend 
 	cd dynsrc; $(XMAKE) -e depend 
 
-tmpclean:
-	/bin/rm -rf tmp[123456789] tests/tmp[123456789] tests/sub[123]
-
-tests-clean:
-	$(XMAKE) tmpclean
-	/bin/rm -f tests/*~
-
 clean:
-	$(XMAKE) tmpclean
-	$(XMAKE) tests-clean
+	/bin/rm -rf tmp[123456789] tests/tmp[123456789] tests/sub[123]
+	/bin/rm -f tests/*~
 	/bin/rm -f objects/*/*.o *~ Makefile.bak utils/*~ include/*~ ../collects/mzlib/*~ core
 	/bin/rm -f aixdlfcn/dlfcn.o aixdlfcn/libdl.a 
 	cd gc; $(XMAKE) clean
@@ -243,87 +240,19 @@ clean:
 	cd aixdlfcn; $(XMAKE) clean
 	cd guile; $(XMAKE) clean
 
-# exile & repatriate for my development process
-
-HIDEDIR = /home/mflatt/mredhide
-
-exile: lib objects gc/objects sgc/objects
-	mkdir $(HIDEDIR)/mzscheme_lib
-	mv lib $(HIDEDIR)/mzscheme_lib
-	mkdir $(HIDEDIR)/mzscheme_main_objects
-	mv objects $(HIDEDIR)/mzscheme_main_objects
-	mv .bin $(HIDEDIR)/mzscheme_main_objects
-	mkdir $(HIDEDIR)/mzscheme_objects
-	mv src/objects $(HIDEDIR)/mzscheme_objects
-	mkdir $(HIDEDIR)/gc_objects
-	mv gc/objects $(HIDEDIR)/gc_objects	
-	mkdir $(HIDEDIR)/sgc_objects
-	mv sgc/objects $(HIDEDIR)/sgc_objects	
-	mkdir $(HIDEDIR)/guile_objects
-	mv guile/objects $(HIDEDIR)/guile_objects	
-	mkdir $(HIDEDIR)/dynsrc_objects
-	mv dynsrc/objects $(HIDEDIR)/dynsrc_objects	
-	mkdir $(HIDEDIR)/mzscheme_collects
-	mv ../collects/mzscheme/lib $(HIDEDIR)/mzscheme_collects
-	$(XMAKE) clean
-	/bin/rm -f aixdlfcn/dlfcn.o aixdlfcn/libdl.a 
-	/bin/rm -f $(LIBDIR)/* mzscheme withwin.so dynexmpl.so oe.so
-	/bin/rm ../collects/mzlib/RCS
-	/bin/rm tests/RCS
-
-repatriate:
-	mv $(HIDEDIR)/mzscheme_lib/lib .
-	rmdir $(HIDEDIR)/mzscheme_lib
-	mv $(HIDEDIR)/mzscheme_main_objects/objects .
-	mv $(HIDEDIR)/mzscheme_main_objects/.bin .
-	rmdir $(HIDEDIR)/mzscheme_main_objects
-	mv $(HIDEDIR)/mzscheme_objects/objects src
-	rmdir $(HIDEDIR)/mzscheme_objects
-	mv $(HIDEDIR)/gc_objects/objects gc
-	rmdir $(HIDEDIR)/gc_objects
-	mv $(HIDEDIR)/sgc_objects/objects sgc
-	rmdir $(HIDEDIR)/sgc_objects
-	mv $(HIDEDIR)/guile_objects/objects guile
-	rmdir $(HIDEDIR)/guile_objects
-	mv $(HIDEDIR)/dynsrc_objects/objects dynsrc
-	rmdir $(HIDEDIR)/dynsrc_objects
-	mv $(HIDEDIR)/mzscheme_collects/lib ../collects/mzscheme/lib
-	rmdir $(HIDEDIR)/mzscheme_collects
-
-# Doesn't install binaries, only support files:
-install:
-	rm -rf ../collects/mzlib/*~
-	@echo --- README, etc. ---
-	cp README SCRIPTS HISTORY COPYING.LIB mzscheme.init openbugs $(INSTALLDEST)/notes/mzscheme
-	@echo --- tests ---
-	cd tests; echo 'for file in *.ss ; do if [ "`rlog -R -Lmflatt $$file`" != "" ] ; then ci -l -mrelease $$file ; fi ; done' | sh -t 
-	cd tests; ci -l -mrelease README
-	cd $(INSTALLDEST)/tests/mzscheme; co RCS/*
-	$(XMAKE) install-mzlib	
-	$(XMAKE) install-scripts
-	$(XMAKE) install-dynext
-	$(XMAKE) install-headers
-
-install-mzlib:
-	@echo --- mzlib ---
-	cd ../collects/mzlib; echo 'for file in *.ss ; do if [ "`rlog -R -Lmflatt $$file`" != "" ] ; then ci -l -mrelease $$file ; fi ; done' | sh -t
-	cd $(INSTALLDEST)/collects/mzlib; /home/scheme/Executables/update
-	rm -f $(INSTALLDEST)/collects/mzlib/compiled/*.zo
-	cp ../collects/mzlib/compiled/*.zo $(INSTALLDEST)/collects/mzlib/compiled 
-	touch $(INSTALLDEST)/collects/mzlib/compiled/*.zo
-
-install-scripts:
-	@echo --- script ---
-	cp mzscheme.sh $(INSTALLDEST)/bin/mzscheme
-	cp dynsrc/dynlink $(INSTALLDEST)/bin/dynlink
-
-install-dynext:
-	@echo --- script ---
-	rm -rf $(INSTALLDEST)/collects/mzscheme/dynext/*
-	cp ../collects/mzscheme/dynext/* $(INSTALLDEST)/collects/mzscheme/dynext
-
+# Needed for extension compilation when MzScheme headers change
 install-headers:
 	$(XMAKE) headers
 	@echo --- headers ---
 	rm -rf $(INSTALLDEST)/collects/mzscheme/include/*
 	cp ../collects/mzscheme/include/* $(INSTALLDEST)/collects/mzscheme/include
+
+install:
+	if [ ! -d ../../.bin ] ; then mkdir ../../.bin ; fi
+	if [ ! -d ../../.bin/$(INSTALLSYS) ] ; then mkdir ../../.bin/$(INSTALLSYS) ; fi
+	rm -f ../../.bin/$(INSTALLSYS)/mzscheme
+	cp $(MZSCHEME) ../../.bin/$(INSTALLSYS)/mzscheme
+	if [ ! -d ../../collects/mzscheme/lib/$(INSTALLSYS) ] ; then mkdir ../../collects/mzscheme/lib/$(INSTALLSYS) ; fi
+	cp $(LIBDIR)/mzdyn.o ../../collects/mzscheme/lib/$(INSTALLSYS)/mzdyn.o
+	cp $(LIBDIR)/libgc.a ../../collects/mzscheme/lib/$(INSTALLSYS)/libgc.a
+	cp $(LIBDIR)/libmzscheme.a ../../collects/mzscheme/lib/$(INSTALLSYS)/libmzscheme.a

@@ -257,7 +257,7 @@ int actual_main(int argc, char *argv[])
 
 #ifdef MACINTOSH_SIOUX
   {
-  	int argc2;
+    int argc2;
     char **argv2;
     argc2 = ccommand(&argv2);
     if (argc2 > 1) {

@@ -1,5 +1,8 @@
 #!/bin/sh
 
+# This script helps manage the internal distribution process at Rice.
+# Please ignore it.
+
 RDIST=rdist
 
 if [ "-r" = "$1" ] ; then

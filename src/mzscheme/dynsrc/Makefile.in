@@ -53,6 +53,7 @@ cygwin-install:
 	gcc -c -O2 -I$(srcdir)/../include $(srcdir)/mzdyn.c
 	gcc -c $(srcdir)/init.cc
 	gcc -c $(srcdir)/fixup.c
+	cp $(srcdir)/mzdyn.def .
 	dlltool --def mzdyn.def --output-exp mzdyn.exp
 	cd ../..; if [ ! -d $(ILIBDIR) ] ; then mkdir $(ILIBDIR) ; fi
 	cd ../..; if [ ! -d $(ILIBDIR)/gcc ] ; then mkdir $(ILIBDIR)/gcc ; fi

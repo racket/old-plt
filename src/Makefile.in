@@ -36,7 +36,7 @@ srcdir = @srcdir@
 prefix = @prefix@
 
 copy-finish:
-	cd $(prefix); ./install
+	if [ @MZINSTALLTARGET@ = "normal-install" ] ; then cd $(prefix); ./install ; fi
 
 inplace-finish:
 	if [ ! -d $(srcdir)/CVS ] ; then cd $(prefix); ./install ; fi
@@ -45,10 +45,10 @@ inplace-finish:
 copytree:
 	if [ ! -d $(prefix) ] ; then mkdir $(prefix) ; fi
 	cp -r $(srcdir)/../collects $(prefix)/collects
-	cp -r $(srcdir)/../bin $(prefix)/bin
+	if [ @MZINSTALLTARGET@ = "normal-install" ] ; then cp -r $(srcdir)/../bin $(prefix)/bin ; fi
 	cp -r $(srcdir)/../lib $(prefix)/lib
 	cp -r $(srcdir)/../include $(prefix)/include
 	cp -r $(srcdir)/../notes $(prefix)/notes
 	cp -r $(srcdir)/../man $(prefix)/man
 	if [ -d $(srcdir)/../teachpack ] ; then  cp -r $(srcdir)/../teachpack $(prefix)/teachpack ; fi
-	cp -r $(srcdir)/../install $(prefix)/install
+	if [ @MZINSTALLTARGET@ = "normal-install" ] ; then cp -r $(srcdir)/../install $(prefix)/install ; fi

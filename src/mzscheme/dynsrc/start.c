@@ -9,6 +9,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <process.h>
+#include <ctype.h>
 
 #ifndef MRSTART
 # ifndef MZSTART
@@ -278,9 +279,7 @@ int main(int argc_in, char **argv_in)
 
   p = getenv("PLTHOME");
   if (p == NULL || strcmp(p,exedir)) {
-    char plthome[1024];
-    sprintf(plthome,"PLTHOME=%s",exedir);
-    _putenv(plthome);
+    SetEnvironmentVariable("PLTHOME", exedir);
   }
   
   for (i = 0; i < sizeof(si); i++)

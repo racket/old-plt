@@ -1453,13 +1453,13 @@ Scheme_Object *mx_do_get_method_type(int argc,Scheme_Object **argv,
   
   case INVOKE_FUNC :
 
-    // if final parameter is marked as retval, use its type, else void
+    // if final parameter is marked as retval, use its type
 
     if (lastParamIsRetval) {
       returnType = elemDescToSchemeType(&pFuncDesc->lprgelemdescParam[numActualParams-1],TRUE,FALSE);
     }
     else {
-      returnType = scheme_intern_symbol("void");
+      returnType = elemDescToSchemeType(&pFuncDesc->elemdescFunc,TRUE,FALSE);
     }
 
     break;
@@ -1478,7 +1478,7 @@ Scheme_Object *mx_do_get_method_type(int argc,Scheme_Object **argv,
     if (pTypeDesc->descKind == funcDesc) {
 
       if (pFuncDesc->cParams == 0) {
-	returnType = scheme_intern_symbol("void");
+	returnType = elemDescToSchemeType(&pFuncDesc->elemdescFunc,TRUE,FALSE);
       }
       else {
 	returnType = elemDescToSchemeType(&pFuncDesc->lprgelemdescParam[numActualParams],TRUE,FALSE);

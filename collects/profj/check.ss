@@ -972,7 +972,7 @@
          (set-expr-type exp
                         (check-access exp check-sub-expr env level type-recs current-class interactions?)))
         ((special-name? exp)
-         (set-expr-type exp (check-special-name exp env static? #f))) ;last bool is interactions. PROBLEM
+         (set-expr-type exp (check-special-name exp env static? interactions?)))
         ((call? exp)
          (set-expr-type exp (check-call exp
                                         (map check-sub-expr (call-args exp))

@@ -13,19 +13,13 @@
 	   (let* ([e (mred:make-eventspace)]
 		  [f (parameterize ([mred:current-eventspace e])
 		       (mred:begin-busy-cursor)
-		       (make-object mred:dialog% "Spidey"))]
+		       (make-object mred:frame% "Spidey"))]
 		  [p (make-object mred:vertical-panel% f)]
 		  [m (make-object mred:message% "Please wait, loading the Analysis." p)])
 	     (send p stretchable-height #f)
 	     (send p stretchable-width #f)
-	     (thread (lambda () (send f show #t)))
+	     (send f show #t)
 	     (parameterize ([mred:current-eventspace e])
-	       (mred:flush-display) (mred:yield)
-	       (mred:flush-display) (mred:yield)
-	       (mred:flush-display) (mred:yield)
-	       (mred:flush-display) (mred:yield)
-	       (mred:flush-display) (mred:yield)
-	       (mred:flush-display) (mred:yield)
 	       (mred:flush-display) (mred:yield))
 	     (require-library "drspidey.ss" "mrspidey")
 	     (send f show #f)

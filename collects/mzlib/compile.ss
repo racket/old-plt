@@ -3,7 +3,7 @@
   (require "file.ss")
   (provide compile-file)
   
-  (define -re:suffix (regexp "\\..?.?.?$"))
+  (define -re:suffix (regexp "\\...?.?$"))
 
   (define compile-file
     (case-lambda

@@ -176,7 +176,7 @@ void wxCheckBox::SetLabel(char* label)
   if (buttonBitmap)
     return;
     
-  labelString = label ? copystring(label) : NULL;
+  labelString = label ? copystring(wxItemStripLabel(label)) : NULL;
 
   if (label && cMacControl)
   {

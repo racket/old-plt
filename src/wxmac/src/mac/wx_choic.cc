@@ -566,10 +566,14 @@ void wxChoice::SetLabel(char *label)
 	if (sTitle) {
 		delete[] (char *)sTitle;
 	}
+	label = wxItemStripLabel(label);
 	int n = strlen(label);
 	sTitle = (StringPtr)new char[n+1];
 	sTitle[0] = n;
 	memcpy(&sTitle[1], label, n);
+	
+	SetCurrentDC();
+	EraseRect(&TitleRect);
 	Paint();
 }
 

@@ -204,7 +204,7 @@ void wxMessage::SetLabel(char* label)
 {
 	if (sBitmap) return;
     if (cMessage) delete [] cMessage;
-	cMessage = macCopyString0(label);
+	cMessage = macCopyString0(wxItemStripLabel(label));
 	if (!cHidden) {
 #if 0
 		SetCurrentDC();

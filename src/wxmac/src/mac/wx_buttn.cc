@@ -245,7 +245,7 @@ void wxButton::SetLabel(char* label)
   if (label)
   {
 	SetCurrentDC();
-  	wxMacString1 theMacString1 = label;
+  	wxMacString1 theMacString1 = wxItemStripLabel(label);
   	if (cMacControl)
   	  ::SetControlTitle(cMacControl, theMacString1());
   }

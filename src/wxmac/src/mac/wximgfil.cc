@@ -693,7 +693,7 @@ Bool wxLoadGifIntoBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal, int wi
 	mask->x_pixmap = maskPort;
 	mask->SetWidth(gifImage->GetWidth());
 	mask->SetHeight(gifImage->GetHeight());
-	mask->SetDepth(gifImage->GetDeep());
+	mask->SetDepth(1);
 	mask->SetOk(TRUE);
 
 	bm->SetMask(mask);
@@ -740,9 +740,9 @@ void CreateOffScreenPixMap (CGrafPtr *cport, CGrafPtr *mask, wxGIF *gif)
     for (i = 0; i < height; i++) {
       for (j = 0; j < width; j++, buf++) {
 	int v = ri[buf];
-	cpix.red = 256 *gif->red[v];
-	cpix.green = 256 *gif->green[v];
-	cpix.blue = 256 *gif->blue[v];
+	cpix.red = gif->red[v] << 8;
+	cpix.green = gif->green[v] << 8;
+	cpix.blue = gif->blue[v] << 8;
 	::SetCPixel(j, i, &cpix);
       }
     }
@@ -766,7 +766,7 @@ void CreateOffScreenPixMap (CGrafPtr *cport, CGrafPtr *mask, wxGIF *gif)
 	for (j = 0; j < width; j++, buf++) {
 	  int v = ri[buf];
 	  if (v == transparent_index)
-	    cpix.red = cpix.blue = cpix.green = 255 << 8;
+	    cpix.red = cpix.blue = cpix.green = 0xffff;
 	  else
 	    cpix.red = cpix.blue = cpix.green = 0;
 	  ::SetCPixel(j, i, &cpix);

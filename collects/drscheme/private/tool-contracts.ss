@@ -471,12 +471,20 @@
  "Clears the current error highlighting.")
 
 (drscheme:rep:insert-error-in-text
- ((is-a?/c text%) (union false? (is-a?/c drscheme:rep:text<%>)) string? exn? (union false? (and/f string? directory-exists?)) . -> . void?)
+ ((is-a?/c text%)
+  (union false? (is-a?/c drscheme:rep:text<%>))
+  string?
+  exn?
+  (union false? (and/f string? directory-exists?))
+  . -> .
+  void?)
  (text rep-text msg exn dir)
  "Formats and inserts the error message described by"
  "\\var{msg} and \\var{exn} into the text% object \\var{text}."
+ ""
  "The \\var{rep-text} argument is used to trigger the actual"
- "highlighting. If it is \\scheme{#f}, no highlighting occurs."
+ "highlighting."
+ ""
  "The \\var{msg} and \\var{exn} arguments are expected to"
  "come from the"
  "\\MzLink{mz:p:error-print-source-location}{\\scheme|error-display-handler|},"
@@ -487,7 +495,42 @@
  "The \\var{user-dir} argument is the current directory of"
  "the program where the error occurred. If it is a string,"
  "it is used to shorten the path the file where the error"
- "occurred.")
+ "occurred."
+ ""
+ "See also"
+ "@flink drscheme:rep:insert-error-in-text/highlight-errors %"
+ ".")
+
+(drscheme:rep:insert-error-in-text/highlight-errors
+ ((is-a?/c text%)
+  ((listof (list/p (is-a?/c text%) number? number?)) . -> . void?)
+  string?
+  exn?
+  (union false? (and/f string? directory-exists?))
+  . -> . 
+  void?)
+ (text highlight-errors msg exn dir)
+ "Formats and inserts the error message described by"
+ "\\var{msg} and \\var{exn} into the text% object \\var{text}."
+ ""
+ "The \\var{highlight-errors} argument is used to highlight the"
+ "source location of the error."
+ ""
+ "The \\var{msg} and \\var{exn} arguments are expected to"
+ "come from the"
+ "\\MzLink{mz:p:error-print-source-location}{\\scheme|error-display-handler|},"
+ "when the"
+ "\\MzLink{mz:p:error-print-source-location}{\\scheme|error-print-source-location|}"
+ "parameter is set to \\scheme|#f|."
+ ""
+ "The \\var{user-dir} argument is the current directory of"
+ "the program where the error occurred. If it is a string,"
+ "it is used to shorten the path the file where the error"
+ "occurred."
+ ""
+ "See also"
+ "@flink drscheme:rep:insert-error-in-text %"
+ ".")
  
 (drscheme:rep:exn:locs?
  (any? . -> . boolean?)

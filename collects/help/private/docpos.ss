@@ -8,6 +8,7 @@
     [(beginning) -20]
       [(beginning-abbr) -19]
       [(intermediate) -17]
+      [(intermediate-lambda) -16]
       [(advanced) -15]
 
       [(r5rs) -10]

@@ -1,10 +1,4 @@
 
-ifdef PLTWXDIR
- WXDIR=../../$(PLTWXDIR)
-else
- WXDIR=../../wxwindow
-endif
-
 include $(WXDIR)/src/make$(MZPLATFORMSUFFIX).env
 
 LOCALFLAGS = 

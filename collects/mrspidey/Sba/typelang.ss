@@ -708,6 +708,12 @@
 					    (Tvar-containment? Tvar-t Tvar)))
 					#f)])
 				  global-tdef-env))
+			       (and (eq? a 'empty)
+				    (lambda (AV)
+				      (let ([Tvar-t (mk-Tvar 'in-type?)])
+					(new-AV! Tvar-t AV)
+					(Tvar-containment? Tvar-t
+							   (mk-tvar-empty)))))
 			       (unbound a))])
 		   (fn AV))]
 		[('lambda arg res)

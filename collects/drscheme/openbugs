@@ -8,3 +8,5 @@
 
 - This expression actually defines x:
   (define x (eval '(begin)))
+
+- check syntax doesn't traverse unit or class expressions

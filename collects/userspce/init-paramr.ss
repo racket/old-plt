@@ -1,9 +1,11 @@
+(module init-paramr mzscheme
+  (require (lib "pretty.ss")
+	   (lib "list.ss")
+	   (lib "pconvert.ss")
+	   (lib "thread.ss"))
+
 (unit/sig plt:init-params^
-  (import [import : plt:basis-import^]
-	  [init-namespace : plt:init-namespace^]
-	  [zodiac : zodiac:system^]
-	  [zodiac:interface : drscheme:interface^]
-	  [aries : plt:aries^]
+  (import [aries : plt:aries^]
 	  [mzlib:print-convert : mzlib:print-convert^]
 	  [mzlib:pretty-print : mzlib:pretty-print^]
 	  [mzlib:function : mzlib:function^]
@@ -31,19 +33,24 @@
   (define-struct/parse setting (key
 				name
 				language-defining-module
+
+				read-decimal-as-exact?
 				case-sensitive?
 				allow-reader-quasiquote?
+				disallow-untagged-inexact-numbers
+
+				whole/fractional-exact-numbers
+
+				printing
+				use-pretty-printer?
 				sharing-printing?
 				abbreviate-cons-as-list?
-				disallow-untagged-inexact-numbers
 				print-tagged-inexact-numbers
-				whole/fractional-exact-numbers
                                 print-booleans-as-true/false
-				printing
 				print-exact-as-decimal?
-				read-decimal-as-exact?
-				define-argv?
-				use-pretty-printer?))
+				print-.-symbols-without-bars
+				
+				define-argv?))
   
   ;; settings : (list-of setting)
   (define settings
@@ -63,6 +70,7 @@
 	     (print-exact-as-decimal? #t)
 	     (read-decimal-as-exact? #t)
 	     (define-argv? #f)
+	     (print-.-symbols-without-bars #t)
 	     (use-pretty-printer? #t)))
 	  (make-setting/parse
 	   `((key intermediate)
@@ -79,6 +87,7 @@
              (printing constructor-style)
 	     (print-exact-as-decimal? #t)
 	     (read-decimal-as-exact? #t)
+	     (print-.-symbols-without-bars #f)
 	     (define-argv? #f)
 	     (use-pretty-printer? #t)))
 	  (make-setting/parse
@@ -96,6 +105,7 @@
              (printing constructor-style)
 	     (print-exact-as-decimal? #t)
 	     (read-decimal-as-exact? #t)
+	     (print-.-symbols-without-bars #f)
 	     (define-argv? #f)
 	     (use-pretty-printer? #t)))
 	  (make-setting/parse
@@ -113,6 +123,7 @@
              (printing r4rs-style)
 	     (print-exact-as-decimal? #f)
 	     (read-decimal-as-exact? #f)
+	     (print-.-symbols-without-bars #f)
 	     (define-argv? #t)
 	     (use-pretty-printer? #t)))
 	  (make-setting/parse
@@ -130,6 +141,7 @@
              (printing r4rs-style)
 	     (print-exact-as-decimal? #f)
 	     (read-decimal-as-exact? #f)
+	     (print-.-symbols-without-bars #f)
 	     (define-argv? #t)
 	     (use-pretty-printer? #t)))))
   
@@ -217,13 +229,6 @@
 	   (error 'current-setting
 		  "must be a setting or #f")))))
   
-  ;; current-vocabulary : (parameter (+ #f zodiac:vocabulary))
-  (define current-vocabulary (make-parameter #f))
-  
-  ;; current-zodiac-namespace : (parameter (+ #f namespace))
-  ;; If an unfriendly namespace is installed, drscheme-eval uses primitive-eval
-  (define current-zodiac-namespace (make-parameter #f))
-  
   ;; syntax-checking-primitive-eval : sexp -> value
   ;; effect: raises user-exn if expression ill-formed
   (define (syntax-checking-primitive-eval expr)
@@ -243,177 +248,32 @@
                                                      "expected a procedure, got: ~e" x))
                                             x)))
   
-  ;; zodiac-reader : (parameter ...)
-  ;; see help desk for details
-  (define zodiac-reader (make-parameter (lambda x (apply zodiac:read x))
-                                        (lambda (x)
-                                          (unless (procedure? x)
-                                            (error 'zodiac-reader
-                                                   "expected a procedure, got: ~e" x))
-                                          x)))
-
   (define-struct process-finish (error?))
   
-  ;; process-file/zodiac : string
-  ;;                       (((+ process-finish sexp zodiac:parsed) ( -> void) -> void)
-  ;;                       boolean
-  ;;                    -> void
-  ;; note: the boolean controls which variant of the union is passed to the 3rd arg.
+  ;; process-file : string
+  ;;                ((+ process-finish sexp) ( -> void) -> void)
+  ;;                -> void
   ;; expects to be called with user's parameter settings active
-  (define (process-file/zodiac filename f annotate?)
-    (let ([port (open-input-file filename 'text)]
-	  [setting (current-setting)])
-      (dynamic-wind
-       void
-       (lambda ()
-	 (process/zodiac
-	  ((zodiac-reader)
-           port
-           (zodiac:make-location initial-line
-                                 initial-column
-                                 initial-offset
-                                 (path->complete-path filename))
-           #t 1)
-	  f
-	  annotate?))
-       (lambda () (close-input-port port)))))
-  
-  ;; process-file/no-zodiac : string
-  ;;                          ((+ process-finish sexp zodiac:parsed) ( -> void) -> void)
-  ;;                       -> void
-  ;; expects to be called with user's parameter settings active
-  (define (process-file/no-zodiac filename f)
+  (define (process-file filename f)
     (call-with-input-file filename
       (lambda (port)
-	(process/no-zodiac (lambda () ((raw-reader) port)) f))))
+	(process (lambda () ((raw-reader) port)) f))))
   
-  ;; process-sexp/no-zodiac : sexp
-  ;;                          ((+ process-finish sexp zodiac:parsed) ( -> void) -> void)
-  ;;                       -> void
+  ;; process-sexp : sexp
+  ;;                ((+ process-finish sexp) ( -> void) -> void)
+  ;;                -> void
   ;; expects to be called with user's parameter settings active
-  (define (process-sexp/no-zodiac sexp f)
-    (process/no-zodiac (let ([first? #t]) 
-			 (lambda ()
-			   (if first?
-			       (begin (set! first? #f)
-				      sexp)
-			       eof)))
-		       f))
+  (define (process-sexp sexp f)
+    (process (let ([first? #t]) 
+	       (lambda ()
+		 (if first?
+		     (begin (set! first? #f)
+			    sexp)
+		     eof)))
+	     f))
   
-  ;; process-sexp/zodiac : sexp
-  ;;                       zodiac:sexp
-  ;;                       ((+ process-finish sexp zodiac:parsed) ( -> void) -> void)
-  ;;                       boolean
-  ;;                    -> void
-  ;; note: the boolean controls which variant of the union is passed to the 2nd arg.
-  ;; expects to be called with user's parameter settings active
-  (define (process-sexp/zodiac sexp z f annotate?)
-    (let* ([reader
-	    (let ([gone #f])
-	      (lambda ()
-		(or gone
-		    (begin (set! gone (zodiac:make-eof z))
-			   (zodiac:structurize-syntax sexp z)))))])
-      (process/zodiac reader f annotate?)))
-  
-  ;; process/zodiac : ( -> zodiac:sexp)
-  ;;                  ((+ process-finish sexp zodiac:parsed) ( -> void) -> void)
-  ;;                  boolean
-  ;;               -> void
-  ;; expects to be called with user's parameter settings active
-  (define (process/zodiac reader f annotate?)
-    (let ([setting (current-setting)]
-	  [vocab (current-vocabulary)]
-	  [cleanup
-	   (lambda (error?)
-	     (f (make-process-finish error?) void))])
-      (let loop ()
-	(let ([next-iteration
-	       (let/ec k
-		 (let ([annotate
-			(lambda (term read-expr)
-			  (dynamic-wind
-			   (lambda () (zodiac:interface:set-zodiac-phase 'expander))
-			   (lambda ()
-			     (mzlib:thread:dynamic-enable-break
-			      (lambda ()
-				(aries:annotate term read-expr 'any))))
-			   (lambda () (zodiac:interface:set-zodiac-phase #f))))]
-		       ; Always read with zodiac
-		       [zodiac-read
-			(dynamic-wind
-			 (lambda () (zodiac:interface:set-zodiac-phase 'reader))
-			 (lambda ()
-			   (mzlib:thread:dynamic-enable-break
-			    (lambda ()
-			      (reader))))
-			 (lambda () (zodiac:interface:set-zodiac-phase #f)))]
-		       ; Sometimes, we throw away source information and
-		       ;  expand with MzScheme
-		       [use-z-exp? (use-zodiac?)])
-		   (if (zodiac:eof? zodiac-read)
-		       (lambda () (cleanup #f))
-		       (let* ([evaluator
-			       (lambda (exp _ macro)
-				 (primitive-eval (annotate exp #f)))]
-			      [user-macro-body-evaluator
-			       (lambda (x . args)
-				 (primitive-eval `(,x ,@(map (lambda (x) `(#%quote ,x)) args))))]
-			      [exp
-			       (if use-z-exp?
-				   (dynamic-wind
-				    (lambda () (zodiac:interface:set-zodiac-phase 'expander))
-				    (lambda () (parameterize ([zodiac:user-macro-body-evaluator user-macro-body-evaluator]
-							      [zodiac:elaboration-evaluator evaluator])
-						 (mzlib:thread:dynamic-enable-break
-						  (lambda ()
-						    (zodiac:scheme-expand
-						     zodiac-read
-						     'previous
-						     vocab)))))
-				    (lambda () (zodiac:interface:set-zodiac-phase #f)))
-
-				   ;; call expand-defmacro here so errors
-				   ;; are raised at the right time.
-				   (expand-defmacro (zodiac:sexp->raw zodiac-read)))]
-			      [heading-out (if (and annotate? use-z-exp?)
-					       (annotate exp zodiac-read)
-					       exp)])
-			 (lambda () (f heading-out loop))))))])
-	  (next-iteration)))))
-
-  (define (use-zodiac?)
-    (and (zodiac-vocabulary? (current-setting))
-	 (or (eq? (current-namespace) (current-zodiac-namespace))
-	     (friendly-current-namespace?))))
-
-  ;; friendly-current-namespace? : -> bool
-  ;;  Determines whether the namespace has enough keywords to
-  ;;  support elaboration and debugging. Caches the result.
-  (define friendly-current-namespace?
-    (let ([cache (make-hash-table-weak)])
-      (lambda ()
-	(let ([ns (current-namespace)])
-	  (hash-table-get
-	   cache ns
-	   (lambda ()
-	     (let ([kwds (parameterize ([current-namespace (current-zodiac-namespace)])
-			   (let ([l (make-global-value-list)])
-			     (mzlib:function:filter
-			      (lambda (p) (keyword-name? (car p)))
-			      l)))])
-	       (let ([friendly?
-		      (with-handlers ([void (lambda (x) #f)])
-			(andmap
-			 (lambda (n)
-			   (and (keyword-name? (car n))
-				(eq? (global-defined-value (car n)) (cdr n))))
-			 kwds))])
-		 (hash-table-put! cache ns friendly?)
-		 friendly?))))))))
-  
-  ;; process/no-zodiac : ( -> sexp) ((+ sexp process-finish) ( -> void) -> void) -> void
-  (define (process/no-zodiac reader f)
+  ;; process : ( -> sexp) ((+ sexp process-finish) ( -> void) -> void) -> void
+  (define (process reader f)
     (let loop ()
       (let ([expr (reader)])
 	(if (eof-object? expr)
@@ -421,13 +281,13 @@
 	    (f expr loop)))))
   
   (define format-source-loc 
-    (case-lambda
      [(start-location end-location)
       (format-source-loc start-location end-location #t)]
      [(start-location end-location start-at-one?)
       (format-source-loc start-location end-location start-at-one? #t)]
      [(start-location end-location start-at-one? lines-and-columns?)
-      (let ([file (zodiac:location-file start-location)])
+      (error 'format-source-location "not yet implementd")
+      '(let ([file (zodiac:location-file start-location)])
         (if lines-and-columns?
             (let ([offset (if start-at-one? 0 -1)])
               (format "~a: ~a.~a-~a.~a: "
@@ -443,20 +303,18 @@
                       (+ 1 offset (zodiac:location-offset end-location))))))]))
                          
   
-  ;; (parameter (string (list zodiac:zodiac) exn -> void))
+  ;; (parameter (string (union #f syntax) exn -> void))
   (define error-display/debug-handler
     (make-parameter
      (lambda (msg debugs exn)
-       ((error-display-handler) 
-	(let ([debug (and debugs (pair? debugs) (car debugs))])
-	  (if (zodiac:zodiac? debug)
-	      (string-append (format-source-loc (zodiac:zodiac-start debug)
-						(zodiac:zodiac-finish debug))
-			     msg)
-	      msg))))))
+       ((error-display-handler) msg)
+       (if (syntax? debug)
+	   (string-append (format-source-loc syntax syntax)
+			  msg)
+	   msg))))
   
   ;; bottom-escape-handler : (parameter ( -> A))
-  ;; escapes
+  ;; must escape
   (define bottom-escape-handler (make-parameter void))
   
   ;; drscheme-exception-handler : exn -> A
@@ -466,10 +324,10 @@
       (if (exn? exn)
 	  (let* ([marks (exn-continuation-marks exn)]
                  [debugs (if (continuation-mark-set? marks)
-			     (aries:extract-zodiac-locations marks)
+			     (aries:extract-locations marks)
 			     null)])
-	    (dh (format "~a" (exn-message exn)) debugs exn))
-	  (dh (format "uncaught exception: ~e" exn) null #f)))
+	    (dh (format "~a" (exn-message exn)) (and (pair? debugs) (car debugs)) exn))
+	  (dh (format "uncaught exception: ~e" exn) #f #f)))
     ((error-escape-handler))
     ((error-display-handler) "Exception handler did not escape")
     ((bottom-escape-handler)))
@@ -493,16 +351,9 @@
 		    (loop (sub1 i)))))
 	      short-string)))))
   
-  ;; intermediate-values-during-load : (parameter (TST *-> void))
-  ;; probably obsolete
-  (define intermediate-values-during-load (make-parameter (lambda x (void))))
-  
   (define re:zo (regexp "[.][zZ][oO]$"))
 
   ;; drscheme-load-handler : string ->* TST
-  ;; - sets the intermeidate-values-during-load parameter before evaluating
-  ;;   the expressions in the file to guarantee that the parameter is only
-  ;;   set for the "outermost" load expression.
   (define (drscheme-load-handler filename)
     (unless (string? filename)
       (raise (make-exn:application:arity
@@ -510,29 +361,10 @@
 	      (current-continuation-marks)
 	      filename
 	      'string)))
-    (let ([zo-file? (regexp-match re:zo filename)]
-	  [zodiac? (use-zodiac?)])
+    (let ([zo-file? (regexp-match re:zo filename)])
       (cond
         [zo-file?
 	 (primitive-load filename)]
-        [zodiac?
-         (let* ([process-sexps
-                 (let ([last (list (void))])
-                   (lambda (sexp recur)
-                     (cond
-		       [(process-finish? sexp)
-			last]
-		       [else
-			(set! last
-			      (call-with-values
-			       (lambda ()
-				 (parameterize ([intermediate-values-during-load void])
-				   (syntax-checking-primitive-eval sexp)))
-			       (lambda x
-				 (apply (intermediate-values-during-load) x)
-				 x)))
-			(recur)])))])
-           (apply values (process-file/zodiac filename process-sexps #t)))]
         [else
          (let ([has-hash-bang?
                 (call-with-input-file filename
@@ -550,39 +382,9 @@
                        (apply values last-vals)
                        (call-with-values
                         (lambda ()
-                          (parameterize ([intermediate-values-during-load void])
-                            (eval r)))
+			  (eval r))
                         (lambda x
-                          (apply (intermediate-values-during-load) x)
                           (loop x)))))))))])))
-  
-  ;; drscheme-eval : sexp ->* TST
-  (define (drscheme-eval-handler sexp)
-    (if (and (use-zodiac?)
-	     (not (compiled-expression? sexp)))
-        (let* ([z (let ([continuation-stack (aries:extract-zodiac-locations
-                                             (current-continuation-marks))])
-                    (if (null? continuation-stack)
-                        (let ([loc (zodiac:make-location 
-                                    initial-line
-                                    initial-column
-                                    initial-offset
-                                    'eval)])
-                          (zodiac:make-zodiac 'mzrice-eval loc loc))
-                        (car continuation-stack)))]
-               [answer (list (void))]
-               [f
-                (lambda (annotated recur)
-                  (if (process-finish? annotated)
-                      answer
-                      (begin (set! answer
-                                   (call-with-values
-                                    (lambda () (syntax-checking-primitive-eval annotated))
-                                    (lambda x x)))
-                             (recur))))])
-          (apply values (process-sexp/zodiac sexp z f #t)))
-        (primitive-eval sexp)))
-  
   
   ;; drscheme-print : TST -> void
   ;; effect: prints the value, on the screen, attending to the values of the current setting
@@ -626,8 +428,6 @@
   (define (initialize-parameters custodian setting)
     (let ([namespace (make-namespace 'empty)])
       
-      (when (zodiac-vocabulary? setting)
-        (use-compiled-file-kinds 'non-elaboration))
       (current-setting setting)
       (compile-allow-set!-undefined #f)
       (compile-allow-cond-fallthrough #f)
@@ -653,11 +453,6 @@
 
       (read-case-sensitive (setting-case-sensitive? setting))
       
-      ;; Allow ` , and ,@ ? - FIXME!
-      (zodiac:allow-reader-quasiquote (setting-allow-reader-quasiquote? setting))
-      (zodiac:disallow-untagged-inexact-numbers (setting-disallow-untagged-inexact-numbers setting))
-            
-      (current-eval drscheme-eval-handler)
       (current-load drscheme-load-handler)
       
       (when (setting-define-argv? setting)
@@ -688,8 +483,7 @@
        (setting-print-tagged-inexact-numbers setting))
       (mzlib:print-convert:show-sharing (setting-sharing-printing? setting))
       (mzlib:pretty-print:pretty-print-.-symbol-without-bars
-       (and (zodiac-vocabulary? setting)
-	    (not (setting-allow-improper-lists? setting))))
+       (setting-print-.-symbols-without-bars setting))
 
       ;; use the fractional snips instead.
       (mzlib:print-convert:whole/fractional-exact-numbers #f)

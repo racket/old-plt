@@ -1,3 +1,5 @@
+(module init-namespacer mzscheme
+  (require (
 
 (unit/sig plt:init-namespace^
   (import plt:basis-import^
@@ -15,42 +17,6 @@
 
     (add-extra-macros)
     (make-keywords))
-  
-  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  ;;;                                               ;;;
-  ;;;                 Extra Macros                  ;;;
-  ;;;                                               ;;;
-  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  
-  
-  (define extra-macros
-    (let ([names '(local
-		      split
-		    split*
-		    tprompt
-		    nand
-		    recur
-		    rec
-		    evcase
-		    reference-file
-		    polymorphic
-		    mrspidey:control 
-		    ;;type:
-		    :
-		    define-type
-		    define-constructor)]
-	  [namespace (make-namespace)])
-      (parameterize ([current-namespace namespace])
-	(require-library "macro.ss")
-	(require-library "spidey.ss")
-	(require-library "refer.ss")
-	(require-library "tmacro.ss" "graphics")
-	(map (lambda (x) (list x (global-defined-value x)))
-	     names))))
-  
-  (define (add-extra-macros)
-    (when (init-params:setting-teaching-primitives-and-syntax? (init-params:current-setting))
-      (for-each (lambda (x) (apply global-defined-value x)) extra-macros)))
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;;                                               ;;;

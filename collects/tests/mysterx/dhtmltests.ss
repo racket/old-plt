@@ -1,20 +1,28 @@
 ;;; dhtmltests.ss -- DHTML tests for MysterX
 
-(require-library "mysterx.ss" "mysterx")
+(require (lib "class.ss"))
+
+; set inspector so structures can be compared
+(define insp (current-inspector))
+(current-inspector (make-inspector))
+
+(require (lib "mysterx.ss" "mysterx"))
+
+(current-inspector insp)
 
 (define wb (make-object mx-browser% "DHTML tests" 300 300 
 			'default 'default '(maximize)))
 
 (define doc (send wb current-document))
 
-(send doc insert-html "<P id=text>This is some text</P>")
+(send doc insert-html "<P id=\"text\">This is some text</P>")
 
 (define txt (send doc find-element "P" "text"))
 
 (define (test-prop getter setter expected)
   (printf "Checking ~a~n" getter)
-  ((ivar/proc txt setter) expected)
-  (let ([got ((ivar/proc txt getter))])
+  (send-generic txt (make-generic mx-element% setter) expected)
+  (let ([got (send-generic txt (make-generic mx-element% getter))])
     (unless (equal? got expected)
 	    (printf "~a: Expected ~a, got ~a~n" 
 		    getter expected got))))
@@ -120,14 +128,18 @@
 
 ; filter test
 
-(define filter-spec
-  '(glow (strength 99) (enabled #t) (color "#ff00ff")))
+(define flt 'glow)
+(define opt1 '(strength 99))
+(define opt2 '(enabled #t))
+(define opt3 '(color "#ff00ff"))
 
-(apply (ivar/proc txt 'set-filter!) filter-spec)
+(define filter-spec (list flt opt1 opt2 opt3))
+
+(send-generic txt (make-generic mx-element% 'set-filter!) 
+	      flt opt1 opt2 opt3)
 
 (let ([result (send txt filter)]) 
   (if (equal? result filter-spec)
       (printf "Checking filter~n")
       (error (format "filter test: Expected ~a, got ~a~n"
 		     filter-spec result))))
-

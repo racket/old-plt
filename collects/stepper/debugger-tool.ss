@@ -1,4 +1,4 @@
-(module stepper-tool mzscheme
+(module debugger-tool mzscheme
   (require (lib "contracts.ss")
            (lib "tool.ss" "drscheme")
            (lib "mred.ss" "mred")  
@@ -9,10 +9,8 @@
            (lib "list.ss")
            (prefix model: "private/model.ss")
 	   "private/my-macros.ss"
-           (prefix x: "private/mred-extensions.ss")
            "private/shared.ss"
-           "private/model-settings.ss"
-           (lib "pconvert.ss")
+           (prefix x: "private/mred-extensions.ss")
            (lib "string-constant.ss" "string-constants"))
 
   (provide tool@)
@@ -52,8 +50,8 @@
           
           ;; WARNING BOXES:
           
-          (define program-changed-warning-str (string-constant debugger-program-has-changed))
-          (define window-closed-warning-str (string-constant debugger-program-window-closed))
+          (define program-changed-warning-str (string-constant stepper-program-has-changed))
+          (define window-closed-warning-str (string-constant stepper-program-window-closed))
 
           (define warning-message-visible-already #f)
           (define (add-warning-message warning-str)
@@ -104,10 +102,12 @@
             
             ; build gui object:
             
-            ((define (next)
+            ((define continue-semaphore #f)
+             
+             (define (next)
                (send next-button enable #f)
                (if (send s-frame get-can-step)
-                   (update-view/next-step (+ view 1))
+                   (semaphore-post continue-semaphore)
                    (begin
                      (message-box "Stepper"
                                   (string-append
@@ -121,22 +121,61 @@
              (define next-button (make-object button% "Next >>" button-panel (lambda (_1 _2) (next))))
                 
              (define canvas (instantiate editor-canvas% () (parent (send s-frame get-area-container))))
-             (define text (instantiate text%))
-             (send canvas set-editor text)
-                
-             (define continue-semaphore #f)
-                
-             (define (update-view/next-step new-view)
-               (semaphore-post continue-semaphore))
+             (define text (instantiate frame:text:basic% ()))
                 
              (define (print-current-view item evt)
                (send (send canvas get-editor) print))
                 
+             (define (line-append . strings)
+               (apply string-append (map (lx (format "---\n~e\n" _)) strings)))
+
              ; receive-result takes a result from the model and renders it on-screen
-             ; : (string semaphore -> void)
+             ; : (step-result semaphore -> void)
              (define (receive-result result continue-user-computation-semaphore)
                (set! continue-semaphore continue-user-computation-semaphore)
-               (send text insert (string-append "Result:\n" result "\n") (send text last-position) 'same #t))
+               (let ([step-text
+                      (cond [(before-after-result? result) 
+                             (line-append
+                              'before-after-result
+                              (before-after-result-finished-exprs result)
+                              (before-after-result-exp result)
+                              (before-after-result-redex result)
+                              (before-after-result-post-exp result)
+                              (before-after-result-reduct result)
+                              #f
+                              (before-after-result-after-exprs result))]
+                            [(before-error-result? result)
+                             (line-append
+                              'before-error-result
+                              (before-error-result-finished-exprs result)
+                              (before-error-result-exp result)
+                              (before-error-result-redex result)
+                              null
+                              null
+                              (before-error-result-err-msg result)
+                              (before-error-result-after-exprs result))]
+                            [(error-result? result)
+                             (line-append
+                              'error-result
+                              (error-result-finished-exprs result)
+                              null
+                              null
+                              null
+                              null
+                              (error-result-err-msg result)
+                              null)]
+                            [(finished-result? result)
+                             (line-append
+                              'finished-result
+                              (finished-result-finished-exprs result)
+                              null
+                              null
+                              null
+                              null
+                              #f
+                              null)])])
+                 (send text insert (string-append "Result:\n" step-text) (send text last-position) 'same #t)))
+                
                 
              ; need to capture the custodian as the thread starts up:
              (define (program-expander-prime init iter)
@@ -145,6 +184,8 @@
                                    (apply init args))
                                  iter)))
           
+          
+          (send canvas set-editor text)
           (send s-frame set-printing-proc print-current-view)
           (send button-panel stretchable-width #f)
           (send button-panel stretchable-height #f)
@@ -220,71 +261,51 @@
               (debugger-bitmap this)
               (get-button-panel)
               (lambda (button evt)
-                (if stepper-frame
-                    (send stepper-frame show #t)
-                    (set! stepper-frame (view-controller-go this program-expander))))))
+                (if debugger-frame
+                    (send debugger-frame show #t)
+                    (set! debugger-frame (view-controller-go this program-expander))))))
           
           (rename [super-enable-evaluation enable-evaluation])
           (define/override (enable-evaluation)
-            (send stepper-button enable #t)
+            (send debugger-button enable #t)
             (super-enable-evaluation))
           
           (rename [super-disable-evaluation disable-evaluation])
           (define/override (disable-evaluation)
-            (send stepper-button enable #f)
+            (send debugger-button enable #f)
             (super-disable-evaluation))
           
           (define/override (on-close)
-            (when stepper-frame
-              (send stepper-frame original-program-gone))
+            (when debugger-frame
+              (send debugger-frame original-program-gone))
             (super-on-close))
           
           (send (get-button-panel) change-children
-                (lx (cons stepper-button (remq stepper-button _))))))
+                (lx (cons debugger-button (remq debugger-button _))))))
       
 
-      (define (stepper-definitions-text-mixin %)
+      (define (debugger-definitions-text-mixin %)
         (class %
           
           (inherit get-top-level-window)
-          (define/private (notify-stepper-frame-of-change)
+          (define/private (notify-debugger-frame-of-change)
             (let ([win (get-top-level-window)])
-              (when (is-a? win stepper-unit-frame<%>) ;; should only be #f when win is #f.
-                (let ([stepper-window (send win get-stepper-frame)])
-                  (when stepper-window
-                    (send stepper-window original-program-changed))))))
+              (when (is-a? win debugger-unit-frame<%>) ;; should only be #f when win is #f.
+                (let ([debugger-window (send win get-debugger-frame)])
+                  (when debugger-window
+                    (send debugger-window original-program-changed))))))
           
           (rename [super-on-insert on-insert])
           (define/override (on-insert x y)
             (super-on-insert x y)
-            (notify-stepper-frame-of-change))
+            (notify-debugger-frame-of-change))
           
           (rename [super-on-delete on-delete])
           (define/override (on-delete x y)
             (super-on-delete x y)
-            (notify-stepper-frame-of-change))
+            (notify-debugger-frame-of-change))
           
           (super-instantiate ())))
       
-      ;; COPIED FROM drscheme/private/language.ss
-      ;; simple-module-based-language-convert-value : TST settings -> TST
-      (define (simple-module-based-language-convert-value value simple-settings)
-	(case (drscheme:language:simple-settings-printing-style simple-settings)
-	  [(write) value]
-	  [(constructor)
-	   (parameterize ([constructor-style-printing #t]
-			  [show-sharing (drscheme:language:simple-settings-show-sharing simple-settings)])
-			 (stepper-print-convert value))]
-	  [(quasiquote)
-	   (parameterize ([constructor-style-printing #f]
-			  [show-sharing (drscheme:language:simple-settings-show-sharing simple-settings)])
-			 (stepper-print-convert value))]))
-      
-      ;; set-print-settings ; settings ( -> TST) -> TST
-      (define (set-print-settings language simple-settings thunk)
-        (unless (method-in-interface? 'set-printing-parameters (object-interface language))
-          (error 'stepper-tool "language object does not contain set-printing-parameters method"))
-        (send language set-printing-parameters simple-settings thunk))
-      
-      (drscheme:get/extend:extend-unit-frame stepper-unit-frame-mixin)
-      (drscheme:get/extend:extend-definitions-text stepper-definitions-text-mixin))))
+      (drscheme:get/extend:extend-unit-frame debugger-unit-frame-mixin)
+      (drscheme:get/extend:extend-definitions-text debugger-definitions-text-mixin))))

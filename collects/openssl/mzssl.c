@@ -471,15 +471,7 @@ static void sslin_need_wakeup(Scheme_Input_Port *port, void *fds)
     /* Need wakeup now! */
     scheme_cancel_sleep();
   } else {
-    if (stuck_why == 1) {
-      /* waiting for read */
-      fds2 = MZ_GET_FDSET(fds, 0);
-      MZ_FD_SET(rfd, (fd_set *)fds2);
-    } else {
-      /* waiting for write */
-      fds2 = MZ_GET_FDSET(fds, 1);
-      MZ_FD_SET(rfd, (fd_set *)fds2);
-    }
+    socket_add_fds(rfd, fds, (stuck_why == 2));
   }
 }
 

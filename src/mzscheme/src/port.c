@@ -255,10 +255,6 @@ Scheme_Object *scheme_orig_stdout_port;
 Scheme_Object *scheme_orig_stderr_port;
 Scheme_Object *scheme_orig_stdin_port;
 Scheme_Object *scheme_write_proc, *scheme_display_proc, *scheme_print_proc;
-#ifdef USE_FD_PORTS
-static int orig_stdout_fd_flags;
-static int orig_stderr_fd_flags;
-#endif
 
 Scheme_Object *(*scheme_make_stdin)(void) = NULL;
 Scheme_Object *(*scheme_make_stdout)(void) = NULL;
@@ -403,6 +399,9 @@ OS_SEMAPHORE_TYPE scheme_break_semaphore;
 #ifdef USE_FD_PORTS
 static Scheme_Object *make_fd_input_port(int fd, const char *filename);
 static Scheme_Object *make_fd_output_port(int fd);
+# ifdef NEED_RESET_STDOUT_BLOCKING
+static void reset_stdout_blocking_mode(void);
+# endif
 #endif
 #ifdef USE_OSKIT_CONSOLE
 static Scheme_Object *make_oskit_console_input_port();
@@ -586,6 +585,12 @@ scheme_init_port (Scheme_Env *env)
 			       );
     scheme_set_param(config, MZCONFIG_ERROR_PORT,
 		     scheme_orig_stdout_port);
+
+#ifdef USE_FD_PORTS
+# ifdef NEED_RESET_STDOUT_BLOCKING
+    atexit(reset_stdout_blocking_mode);
+# endif
+#endif
 
     {
       Scheme_Object *dlh;
@@ -3160,7 +3165,6 @@ Scheme_Object *
 make_fd_output_port(int fd)
 {
   Scheme_FD *fop;
-  int old_flags;
 
   fop = MALLOC_ONE_RT(Scheme_FD);
 #ifdef MZTAG_REQUIRED
@@ -3171,23 +3175,7 @@ make_fd_output_port(int fd)
   fop->bufcount = 0;
 
   /* Make output non-blocking: */
-  old_flags = fcntl(fd, F_GETFL, 0);
-  fcntl(fd, F_SETFL, old_flags | FD_NONBLOCKING);
-
-  if (old_flags & FD_NONBLOCKING)
-    printf("Already non-blocking: %d\n", fd);
-
-  /* Rememebr original flags, in case we spawn a synchronous child: */
-  switch (fd) {
-  case 1:
-    orig_stdout_fd_flags = old_flags;
-    break;
-  case 2:
-    orig_stderr_fd_flags = old_flags;
-    break;
-  default:
-    break;
-  }
+  fcntl(fd, F_SETFL, FD_NONBLOCKING);
 
   return (Scheme_Object *)scheme_make_output_port(fd_output_port_type,
 						  fop,
@@ -3195,6 +3183,14 @@ make_fd_output_port(int fd)
 						  fd_close_output,
 						  1);
 }
+
+# ifdef NEED_RESET_STDOUT_BLOCKING
+void reset_stdout_blocking_mode(void)
+{
+  fcntl(1, F_SETFL, FD_NONBLOCKING);
+  fcntl(2, F_SETFL, FD_NONBLOCKING);
+}
+# endif
 #endif
 
 /* user output ports */
@@ -5587,11 +5583,8 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
       } else {
 #ifdef USE_FD_PORTS
 	/* Reset stdout and stderr to original flags: */
-	fcntl(1, F_SETFL, orig_stdout_fd_flags);
-	fcntl(2, F_SETFL, orig_stderr_fd_flags);
-	printf("Resetting %x %x, %x %x\n",
-	       orig_stdout_fd_flags, fcntl(1, F_GETFL, 0),
-	       orig_stderr_fd_flags, fcntl(2, F_GETFL, 0));
+	fcntl(1, F_SETFL, 0);
+	fcntl(2, F_SETFL, 0);
 #endif
       }
       
@@ -5613,8 +5606,8 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
 	else {
 #ifdef USE_FD_PORTS
 	  /* stdut and stderr back to non-blocking: */
-	  fcntl(1, F_SETFL, orig_stdout_fd_flags | FD_NONBLOCKING);
-	  fcntl(2, F_SETFL, orig_stderr_fd_flags | FD_NONBLOCKING);
+	  fcntl(1, F_SETFL, FD_NONBLOCKING);
+	  fcntl(2, F_SETFL, FD_NONBLOCKING);
 #endif
 	  return scheme_void;
 	}
@@ -5630,8 +5623,8 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
 	else {
 #ifdef USE_FD_PORTS
 	  /* stdut and stderr back to non-blocking: */
-	  fcntl(1, F_SETFL, orig_stdout_fd_flags | FD_NONBLOCKING);
-	  fcntl(2, F_SETFL, orig_stderr_fd_flags | FD_NONBLOCKING);
+	  fcntl(1, F_SETFL, FD_NONBLOCKING);
+	  fcntl(2, F_SETFL, FD_NONBLOCKING);
 #endif
 	  return scheme_void;
 	}

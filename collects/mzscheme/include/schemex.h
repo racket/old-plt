@@ -234,8 +234,7 @@ void (*scheme_collect_garbage)(void);
 /*========================================================================*/
 /*                             hash tables                                */
 /*========================================================================*/
-Scheme_Hash_Table *(*scheme_hash_table)(int size, int type, 
-				      int w_const, int forever);
+Scheme_Hash_Table *(*scheme_hash_table)(int size_hint, int type);
 void (*scheme_add_to_table)(Scheme_Hash_Table *table, const char *key, void *val, int);
 void (*scheme_change_in_table)(Scheme_Hash_Table *table, const char *key, void *new_val);
 void *(*scheme_lookup_in_table)(Scheme_Hash_Table *table, const char *key);

@@ -80,10 +80,10 @@ enum {
   scheme_custodian_type,
   scheme_random_state_type,
   scheme_regexp_type,
+  scheme_bucket_type,
 
   /* These reserved types will let us add types
      without forcing recompilation of compiled MzScheme code */
-  scheme_reserved_1_type,
   scheme_reserved_2_type,  /* 70 */
   scheme_reserved_3_type,
 

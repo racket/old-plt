@@ -1308,6 +1308,7 @@ static Scheme_Object *
 byte_string_utf8_index(int argc, Scheme_Object *argv[])
 {
   long istart, ifinish, pos = -1, opos, ipos;
+  int result;
   char *chars;
 
   if (!SCHEME_BYTE_STRINGP(argv[0]))
@@ -1330,11 +1331,13 @@ byte_string_utf8_index(int argc, Scheme_Object *argv[])
 			       2, 3,
 			       &istart, &ifinish);
   
-  opos = scheme_utf8_decode((unsigned char *)chars, istart, ifinish,
-			   NULL, 0, pos,
-			   &ipos, 0, 0);
-
-  if ((opos < 0) || (ipos == ifinish))
+  result = utf8_decode_x((unsigned char *)chars, istart, ifinish,
+			 NULL, 0, pos,
+			 &ipos, &opos,
+			 0, 0, 0, 0);
+  
+  if (((result < 0) && (result != -3))
+      || ((ipos == ifinish) && (opos <= pos)))
     return scheme_false;
   else
     return scheme_make_integer(ipos);
@@ -3528,7 +3531,7 @@ static int utf8_decode_x(const unsigned char *s, int start, int end,
   if (jpos)
     *jpos = j;
 
-  if ((i < end) && (j < dend))
+  if (i < end)
     return failmode;
 
   return j;

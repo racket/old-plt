@@ -15,34 +15,35 @@
 
 #include "mysterx.h"
 
-Scheme_Object * SafeArrayRowToVector(SAFEARRAY *arr,int row,int dim,UINT type) {
+Scheme_Object * SafeArrayRowToVector(SAFEARRAY *arr,
+				     int row,int dim,UINT type) {
   Scheme_Object *vec, *temp;
   long size, high, low;
-  int i;
   long lDimension[2];
+  int i;
     
-  if (dim == 1)
+  if (dim == 1) {
     lDimension[1] = row;
-  else
+  }
+  else {
     lDimension[0] = row;
+  }
+
   SafeArrayGetLBound(arr, dim, &low);
   SafeArrayGetUBound(arr, dim, &high);
   size = high - low + 1;
   
-  vec = (Scheme_Object *)scheme_malloc_fail_ok(scheme_malloc_tagged,
-					       sizeof(Scheme_Vector) 
-					       + (size ) *
-					       sizeof(Scheme_Object *));
-  
-  vec->type = scheme_vector_type;
-  SCHEME_VEC_SIZE(vec) = size;
+  vec = scheme_make_vector(size,scheme_void);
+
   for (i = low; i <= high; i++) {
-    if (dim == 1)
+    if (dim == 1) {
       lDimension[0] = i;
-    else
+    }
+    else {
       lDimension[1] = i;
+    }
     temp = SafeArrayElement(arr, lDimension, type);
-    SCHEME_VEC_ELS(vec)[i- low] = temp;
+    SCHEME_VEC_ELS(vec)[i - low] = temp;
   }
 
   return vec;
@@ -61,24 +62,20 @@ Scheme_Object *safeArrayToVector(SAFEARRAY *arr,UINT type) {
     SafeArrayGetUBound(arr, 1, &high);
     size = high - low + 1;
     
-    vec = (Scheme_Object *)scheme_malloc_fail_ok(
-						 scheme_malloc_tagged,
-						 sizeof(Scheme_Vector) 
-						 + (size ) *
-						 sizeof(Scheme_Object *));
-    vec->type = scheme_vector_type;
-    SCHEME_VEC_SIZE(vec) = size;
+    vec = scheme_make_vector(size,scheme_void);
     for (i = low; i <= high; i++) {
-      SCHEME_VEC_ELS(vec)[i- low] =  SafeArrayRowToVector( arr, i, 2, type);
+      SCHEME_VEC_ELS(vec)[i - low] = SafeArrayRowToVector(arr,i,2,type);
     }
   }
   else if (dims == 1) {
-    vec = SafeArrayRowToVector( arr, 1, 1, type);
+    vec = SafeArrayRowToVector(arr,1,1,type);
   }
+
   return vec;
 }
 
-Scheme_Object *SafeArrayElement(SAFEARRAY * arr, long *lDimension, UINT type) {
+Scheme_Object *SafeArrayElement(SAFEARRAY *arr,long *lDimension, 
+				UINT type) {
   
   switch(type) {
     
@@ -98,8 +95,9 @@ Scheme_Object *SafeArrayElement(SAFEARRAY * arr, long *lDimension, UINT type) {
     return scheme_make_integer(iarg);
     
   case VT_I4 | VT_ARRAY :
-    SafeArrayGetElement(arr, lDimension, &iarg);
-    return scheme_make_integer(iarg);
+    long larg;
+    SafeArrayGetElement(arr, lDimension, &larg);
+    return scheme_make_integer_value(larg);
     
   case VT_R4 | VT_ARRAY :
     
@@ -123,10 +121,9 @@ Scheme_Object *SafeArrayElement(SAFEARRAY * arr, long *lDimension, UINT type) {
     return BSTRToSchemeString((unsigned short *)barg);
     
   case VT_VARIANT | VT_ARRAY :
-    VARIANT * var;
-    var = new VARIANT;
-    SafeArrayGetElement(arr, lDimension, var);
-    return variantToSchemeObject(var);
+    VARIANT var;
+    SafeArrayGetElement(arr, lDimension, &var);
+    return variantToSchemeObject(&var);
     
   default :
     
@@ -138,23 +135,25 @@ Scheme_Object *SafeArrayElement(SAFEARRAY * arr, long *lDimension, UINT type) {
   return NULL;
 }
 
-SAFEARRAY * mx_vectorToSafeArray(Scheme_Object * vec) {
-  
+SAFEARRAY * mx_vectorToSafeArray(Scheme_Object *vec) {
+  VARIANT varTemp;
+  Scheme_Object *schTemp;
+  SAFEARRAY *arr;
   long lDimension[2];
-  int dims = 1;
-  if (SCHEME_VECTORP(vec) == FALSE)
+  long size;
+  int dims;
+
+  if (SCHEME_VECTORP(vec) == FALSE) {
     scheme_signal_error("Invalid type for safe array");
-  long size = SCHEME_VEC_SIZE(vec);
-	
-  VARIANT *pVariant = new VARIANT;
-  VARIANT *varTemp = new VARIANT;
-  Scheme_Object * schTemp;
-  SAFEARRAYBOUND * aDim;
-  SAFEARRAY * arr;
+  }
+
+  dims = 1;
+  size = SCHEME_VEC_SIZE(vec);
+
   if ((SCHEME_VECTORP(SCHEME_VEC_ELS(vec)[0]))) { //2D vector
     dims = size;
     size = SCHEME_VEC_SIZE(SCHEME_VEC_ELS(vec)[0]);
-    aDim = new SAFEARRAYBOUND[2];
+    SAFEARRAYBOUND aDim[2];
     aDim[0].lLbound = 0; 
     aDim[0].cElements = dims;
     aDim[1].lLbound = 0; 
@@ -164,28 +163,27 @@ SAFEARRAY * mx_vectorToSafeArray(Scheme_Object * vec) {
     for (int i = 0; i < dims; i++) {
       for (int j = 0; j < size; j++) {
 	schTemp = SCHEME_VEC_ELS(SCHEME_VEC_ELS(vec)[i])[j];
-	
-	marshallSchemeValueToVariant(schTemp,varTemp);
-	
+	marshallSchemeValueToVariant(schTemp,&varTemp);
 	lDimension[0] = i;
 	lDimension[1] = j;
-	SafeArrayPutElement(arr, lDimension, varTemp);
+	SafeArrayPutElement(arr, lDimension, &varTemp);
       }
     }
   }
   else {
-    aDim = new SAFEARRAYBOUND[1];
+    SAFEARRAYBOUND aDim[1];
     aDim[0].lLbound = 0; 
     aDim[0].cElements = size;
     arr = SafeArrayCreate(VT_VARIANT,1,aDim);
     
     SafeArrayLock(arr);
+
     for (int i = 0; i < size; i++) {
       schTemp = SCHEME_VEC_ELS(vec)[i];
-      
-      marshallSchemeValueToVariant(schTemp, varTemp);
-      ((VARIANT *)arr->pvData)[i] =  *varTemp;
+      marshallSchemeValueToVariant(schTemp, &varTemp);
+      ((VARIANT *)arr->pvData)[i] = varTemp;
     }
+
     SafeArrayUnlock(arr);
   }
 

@@ -184,15 +184,19 @@
                  ((,highlight-placeholder) (9))))
 
 (syntax-case (car (namespace-rewrite-expr (list '(or true false true)) beginner-namespace)) (let-values if)
-  [(let-values ([or-part-0 true-0]) (if or-part-1 or-part-2 rest))
+  [(let-values ([(or-part-0) true-0]) (if or-part-1 or-part-2 rest))
    (begin
      (test 'or-part syntax-e (syntax or-part-0))
      (test 'let-bound syntax-property (syntax or-part-0) 'stepper-binding-type)
      (test 'or-part syntax-e (syntax or-part-1))
      (test 'let-bound syntax-property (syntax or-part-1) 'stepper-binding-type))])
 
+(test-beginner-sequence (list '(or true 4))
+                        `(((3) (3))
+                          ((3) (3))))
+
 (test-beginner-sequence (list '(or true false true))
-               `((((or ,highlight-placeholder false true)) (true))
+                        `((((or ,highlight-placeholder false true)) (true))
                  (((or ,highlight-placeholder false true)) (true))
                  ((,highlight-placeholder) ((or true false true)))
                  ((,highlight-placeholder) ((or false true)))

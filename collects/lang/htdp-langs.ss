@@ -302,32 +302,22 @@
       
       ;; rewrite-bodies : (listof syntax) -> syntax
       (define (rewrite-bodies bodies)
-        (let loop ([bodies bodies]
-                   [ids null])
+        (let loop ([bodies bodies])
           (cond
-            [(null? bodies) 
-             (list
-              (with-syntax ([(ids ...) ids])
-                (syntax (provide ids ...))))]
+            [(null? bodies) null]
             [else
              (let ([body (car bodies)])
                (syntax-case body (require define-values define-syntaxes require-for-syntax provide)
                  [(define-values (new-vars ...) e)
-                  (cons body (loop (cdr bodies)
-                                   (append
-                                    ids 
-                                    (filter-ids (syntax (new-vars ...))))))]
+                  (cons body (loop (cdr bodies)))]
                  [(define-syntaxes (new-vars ...) e)
-                  (cons body (loop (cdr bodies)
-                                   (append
-                                    ids 
-                                    (filter-ids (syntax (new-vars ...))))))]
+                  (cons body (loop (cdr bodies)))]
                  [(require specs ...)
-                  (cons body (loop (cdr bodies) ids))]
+                  (cons body (loop (cdr bodies)))]
                  [(require-for-syntax specs ...)
-                  (cons body (loop (cdr bodies) ids))]
+                  (cons body (loop (cdr bodies)))]
                  [(provide specs ...)
-                  (loop (cdr bodies) ids)]
+                  (loop (cdr bodies))]
                  [else 
                   (let ([new-exp
                          (with-syntax ([body body]
@@ -340,10 +330,10 @@
                             (call-with-values
                              (lambda () body)
                              print-results)))])
-                    (cons new-exp (loop (cdr bodies) ids)))]))])))
+                    (cons new-exp (loop (cdr bodies))))]))])))
       
-      ;; filter-ids : syntax[list] -> listof syntax
-      (define (filter-ids ids)
+      ;; filter/hide-ids : syntax[list] -> listof syntax
+      (define (filter/hide-ids ids)
         ;; When a `define-values' or `define-syntax' declaration
         ;; is macro-generated, if the defined name also originates
         ;; from a macro, then the name is hidden to anything

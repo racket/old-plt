@@ -19,9 +19,11 @@
 	      mred^)
       
       ;; teachpacks
-      (define thnks (mzlib:function:filter 
-                     (lambda (x) x)
-                     (map drscheme:teachpack:build-teachpack-thunk teachpacks)))
+      (define thnk/langs
+        (mzlib:function:filter 
+         (lambda (x) x)
+         (map drscheme:teachpack:build-teachpack-thunk teachpacks)))
+      (define thnks (map cadr thnk/langs))
       
       (define show-banner? #f)
       (define repl? #f)

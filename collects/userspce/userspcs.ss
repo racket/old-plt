@@ -2,7 +2,11 @@
 (require-relative-library "ricedefs.ss")
 (require-library "sig.ss" "mred")
 
-(define-signature plt:userspace^
+(define-signature plt:mz-userspace^
+  ((open mzlib:core-flat^)))
+
+(define-signature plt:mr-userspace^
   ((open mred^)
    (open mzlib:core-flat^)))
 
+(define-signature plt:userspace^ plt:mr-userspace^)

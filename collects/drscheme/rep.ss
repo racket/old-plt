@@ -67,6 +67,7 @@
     (set-delta-background "YELLOW"))
   
   (define invoke-teachpack void)
+  (define teachpack-has-mred? #f)
   
   (fw:preferences:set-default 'drscheme:teachpack-file
                               null
@@ -78,7 +79,8 @@
    'drscheme:teachpack-file
    (lambda (p v)
      (let loop ([teachpacks v]
-		[thunk void])
+		[thunk void]
+                [has-mred? #f])
        (cond
          [(null? teachpacks)
           (set! invoke-teachpack thunk)]
@@ -88,7 +90,9 @@
                 (loop (cdr teachpacks)
                       (lambda ()
                         (thunk)
-                        (this-thunk)))
+                        ((cadr this-thunk)))
+                      (or (eq? 'mr (car this-thunk))
+                          has-mred?))
                 #f))]))))
   
   (define current-rep-text (make-parameter #f))

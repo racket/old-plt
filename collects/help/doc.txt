@@ -16,11 +16,29 @@ The start-help-desk.ss file contains one unit that imports:
   mred^
   framework^
 
-and exports _help:start-help-desk^_, a signature with one definition:
-_start-help-desk_. This function, when invoked, dynamically loads the help
-desk implementation, caches it, creates and returns a help-desk frame. The
-frame it returns is the result of invoking new-help-frame with the same
-startup-url that the stand-alone help desk provides.
+and exports _help:start-help-desk^_, a signature with three definitions:
+_help-desk_, and _open-url_.  These functions, when
+invoked, dynamically load the help desk implementation, cache it, and
+create and returns a help-desk frame. The frame they returns is the result
+of invoking new-help-frame with the same startup-url that the stand-alone
+help desk provides.
+
+> (help-desk)
+
+This just creates a help-desk frame open to the first page of the
+documentation.
+
+> (help-desk key lucky?)
+
+This creates a help-desk frame and immediately performs a keyword and
+indext exact-match search for key. If lucky? is #f, a normal search is
+performed, otherwise a lucky search is performed. lucky? defaults to #t.
+
+> (open-url url)
+
+Opens a new help desk window and opens `url' in it.
+
+-------------------------------------------------------------
 
 The _helpr.ss_ library provides the Help Desk as a unit with
 the following imports:
@@ -60,6 +78,11 @@ The frame returned by `new-help-frame' provides two extra methods:
 
 > search-for-help :: (send a-help-frame search-for-help string type mode)
     - simulates a user-initiated search in the window, where `string'
+    is the search input, `type' is 'keyword, 'keyword+index, or 'all,
+    and `mode' is 'exact, 'contains, or 'regexp.
+
+> search-for-help/lucky :: (send a-help-frame search-for-help/lucky string type mode)
+    - simulates a user-initiated lucky search in the window, where `string'
     is the search input, `type' is 'keyword, 'keyword+index, or 'all,
     and `mode' is 'exact, 'contains, or 'regexp.
 

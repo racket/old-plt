@@ -104,26 +104,33 @@
 			  (class framework:frame:standard-menus% args
 			    (inherit get-edit-target-object)
 			    (rename [super-on-subwindow-char on-subwindow-char])
+			    (private
+			      [search-for-help/mumble
+			       (lambda (search-func)
+				 (lambda (text type mode)
+				   (send (send search-text get-editor) erase)
+				   (do-lucky-search
+				    text 
+				    (case type
+				      [(keyword) 0]
+				      [(keyword+index) 1]
+				      [(all) 2]
+				      [else (raise-type-error 'search-for-help
+							      "'keyword, 'keyword-index, or 'all"
+							      type)])
+				    (case mode
+				      [(exact) 0]
+				      [(contains) 1]
+				      [(regexp) 2]
+				      [else (raise-type-error 'search-for-help
+							      "'exact, 'contains, or 'regexp"
+							      mode)]))))])
 			    (public
+			      [search-for-help/lucky
+			       (search-for-help/mumble do-lucky-search)]
 			      [search-for-help
 			       (lambda (text type mode)
-				 (send (send search-text get-editor) erase)
-				 (do-lucky-search
-				  text 
-				  (case type
-				    [(keyword) 0]
-				    [(keyword+index) 1]
-				    [(all) 2]
-				    [else (raise-type-error 'search-for-help
-							    "'keyword, 'keyword-index, or 'all"
-							    type)])
-				  (case mode
-				    [(exact) 0]
-				    [(contains) 1]
-				    [(regexp) 2]
-				    [else (raise-type-error 'search-for-help
-							    "'exact, 'contains, or 'regexp"
-							    mode)])))]
+				 (search-for-help/mumble run-search))]
 
 			      [goto-url (lambda (url) (send results goto-url url #f))])
 			    

@@ -48,13 +48,16 @@
       (load-help-desk)
       (set! help-desk-frame (new-help-frame startup-url))
       (end-busy-cursor)]
-     [(key)
+     [(key) (help-desk key #t)]
+     [(key lucky?)
       (let ([turn-cursor-off? (not help-desk-frame)])
         (if help-desk-frame
             (send help-desk-frame show #t)
             (begin (begin-busy-cursor)
                    (help-desk)))
-        (send help-desk-frame search-for-help key 'keyword+index 'exact)
+	(if lucky?
+	    (send help-desk-frame search-for-help/lucky key 'keyword+index 'exact)
+	    (send help-desk-frame search-for-help key 'keyword+index 'exact))
         (when turn-cursor-off?
           (end-busy-cursor)))])))
 

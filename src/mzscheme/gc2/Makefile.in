@@ -265,7 +265,8 @@ main.o: $(XSRCDIR)/main.c
 	$(CC) $(CFLAGS) -c $(XSRCDIR)/main.c -o main.o
 
 gc2.o: $(srcdir)/gc2.c $(srcdir)/newgc.c $(srcdir)/compact.c $(srcdir)/newgc.c $(srcdir)/gc2.h \
-       $(srcdir)/vm_osx.c $(srcdir)/vm_mmap.c $(srcdir)/vm_osk.c $(srcdir)/alloc_cache.c $(srcdir)/my_qsort.c
+       $(srcdir)/vm_osx.c $(srcdir)/vm_mmap.c $(srcdir)/vm_osk.c $(srcdir)/alloc_cache.c $(srcdir)/my_qsort.c \
+       $(srcdir)/../include/scheme.h $(srcdir)/../src/schpriv.h
 	$(CC) $(CFLAGS) -c $(srcdir)/gc2.c -o gc2.o
 
 

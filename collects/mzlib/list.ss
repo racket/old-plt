@@ -257,14 +257,17 @@
        (unless (and (procedure? f)
                     (procedure-arity-includes? f 1))
          (raise-type-error 'filter "procedure (arity 1)" f))
-       (let loop ([l list])
+       ;; We use the reverse! trick because it's too easy to
+       ;;  overflow the internal stack using natural recursion.
+       ;; It's too bad that our Scheme system is so bad, but
+       ;;  until someone fixes it...
+       (let loop ([l list][result null])
          (cond
-	   [(null? l) null]
+	   [(null? l) (reverse! result)]
 	   [(pair? l)
-	    (let* ([keep? (f (car l))])
-	      (if keep?
-		  (cons (car l) (loop (cdr l)))
-		  (loop (cdr l))))]
+	    (loop (cdr l) (if (f (car l))
+			      (cons (car l) result)
+			      result))]
 	   [else (raise-mismatch-error
 		  'filter
 		  "expects a proper list: "

@@ -201,6 +201,12 @@ scheme_init_type (Scheme_Env *env)
   set_name(scheme_thread_suspend_type, "<thread-suspend-waitable>");
   set_name(scheme_thread_dead_type, "<thread-dead-waitable>");
 
+  set_name(scheme_thread_set_type, "<thread-set>");
+
+  set_name(scheme_reserved1_type, "<reserved1>");
+  set_name(scheme_reserved2_type, "<reserved2>");
+  set_name(scheme_reserved3_type, "<reserved3>");
+
   set_name(_scheme_values_types_, "<resurrected>");
   set_name(_scheme_compiled_values_types_, "<internal>");
 }

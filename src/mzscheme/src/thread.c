@@ -145,7 +145,14 @@ Scheme_Thread *scheme_main_thread = NULL;
 Scheme_Thread *scheme_first_thread = NULL;
 
 typedef struct Scheme_Thread_Set {
-  struct Scheme_Thread_Set *
+  Scheme_Type type;
+  MZ_HASH_KEY_EX
+  struct Scheme_Thread_Set *parent;
+  Scheme_Object *first;
+  Scheme_Object *next;
+  Scheme_Object *prev;
+  Scheme_Object *search_start;
+  Scheme_Object *current;
 } Scheme_Thread_Set;
 
 Scheme_Thread_Set *thread_set_top;
@@ -265,6 +272,10 @@ static Scheme_Object *make_parameter(int argc, Scheme_Object *args[]);
 static Scheme_Object *make_security_guard(int argc, Scheme_Object *argv[]);
 static Scheme_Object *security_guard_p(int argc, Scheme_Object *argv[]);
 static Scheme_Object *current_security_guard(int argc, Scheme_Object *argv[]);
+
+static Scheme_Object *make_thread_set(int argc, Scheme_Object *argv[]);
+static Scheme_Object *thread_set_p(int argc, Scheme_Object *argv[]);
+static Scheme_Object *current_thread_set(int argc, Scheme_Object *argv[]);
 
 static void adjust_custodian_family(void *pr, void *ignored);
 
@@ -511,6 +522,22 @@ void scheme_init_thread(Scheme_Env *env)
 			     scheme_register_parameter(current_security_guard,
 						       "current-security-guard",
 						       MZCONFIG_SECURITY_GUARD),
+			     env);
+
+  scheme_add_global_constant("thread-set?", 
+			     scheme_make_prim_w_arity(thread_set_p,
+						      "thread-set?", 
+						      1, 1), 
+			     env);
+  scheme_add_global_constant("make-thread-set", 
+			     scheme_make_prim_w_arity(make_thread_set,
+						      "make-thread-set", 
+						      0, 1), 
+			     env);
+  scheme_add_global_constant("current-thread-set", 
+			     scheme_register_parameter(current_thread_set,
+						       "current-thread-set",
+						       MZCONFIG_THREAD_SET),
 			     env);
 
   scheme_add_global_constant("parameter?", 
@@ -1437,11 +1464,147 @@ static void check_current_custodian_allows(const char *who,
 }
 
 /*========================================================================*/
+/*                             thread sets                                */
+/*========================================================================*/
+
+#define TSET_IL /* */
+#ifndef NO_INLINE_KEYWORD
+# ifndef DONT_INLINE_NZERO_TEST
+#  undef TSET_IL
+#  define TSET_IL MSC_IZE(inline)
+# endif
+#endif
+
+static Scheme_Thread_Set *create_thread_set(Scheme_Thread_Set *parent)
+{
+  Scheme_Thread_Set *t_set;
+
+  t_set = MALLOC_ONE_TAGGED(Scheme_Thread_Set);
+  t_set->type = scheme_thread_set_type;
+
+  t_set->parent = parent;
+
+  /* Everything in t_set is zeroed */
+
+  return t_set;
+}
+
+static Scheme_Object *make_thread_set(int argc, Scheme_Object *argv[])
+{
+  Scheme_Thread_Set *parent;
+
+  if (argc) {
+    if (!(SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_thread_set_type)))
+      scheme_wrong_type("make-thread-set", "thread-set", 0, argc, argv);
+    parent = (Scheme_Thread_Set *)argv[0];
+  } else
+    parent = (Scheme_Thread_Set *)scheme_get_param(scheme_config, MZCONFIG_THREAD_SET);
+
+  return (Scheme_Object *)create_thread_set(parent);
+}
+
+static Scheme_Object *thread_set_p(int argc, Scheme_Object *argv[])
+{
+  return ((SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_thread_set_type)) 
+	  ? scheme_true 
+	  : scheme_false);
+}
+
+static Scheme_Object *current_thread_set(int argc, Scheme_Object *argv[])
+{
+  return scheme_param_config("current-thread-set", 
+			     scheme_make_integer(MZCONFIG_THREAD_SET),
+			     argc, argv,
+			     -1, thread_set_p, "thread-set", 0);
+}
+
+static TSET_IL void set_t_set_next(Scheme_Object *o, Scheme_Object *n)
+{
+  if (SCHEME_THREADP(o))
+    ((Scheme_Thread *)o)->t_set_next = n;
+  else
+    ((Scheme_Thread_Set *)o)->next = n;
+}
+
+static TSET_IL void set_t_set_prev(Scheme_Object *o, Scheme_Object *n)
+{
+  if (SCHEME_THREADP(o))
+    ((Scheme_Thread *)o)->t_set_prev = n;
+  else
+    ((Scheme_Thread_Set *)o)->prev = n;
+}
+
+static TSET_IL Scheme_Object *get_t_set_next(Scheme_Object *o)
+{
+  if (SCHEME_THREADP(o))
+    return ((Scheme_Thread *)o)->t_set_next;
+  else
+    return ((Scheme_Thread_Set *)o)->next;
+}
+
+static TSET_IL Scheme_Object *get_t_set_prev(Scheme_Object *o)
+{
+  if (SCHEME_THREADP(o))
+    return ((Scheme_Thread *)o)->t_set_prev;
+  else
+    return ((Scheme_Thread_Set *)o)->prev;
+}
+
+static void schedule_in_set(Scheme_Object *s, Scheme_Thread_Set *t_set)
+{
+  while (1) {
+    set_t_set_next(s, t_set->first);
+    if (t_set->first)
+      set_t_set_prev(t_set->first, s);
+    t_set->first = s;
+    if (t_set->current)
+      break;
+
+    t_set->current = s;
+
+    s = (Scheme_Object *)t_set;
+    t_set = t_set->parent;
+  }
+}
+
+static void unschedule_in_set(Scheme_Object *s, Scheme_Thread_Set *t_set)
+{
+  Scheme_Object *prev;
+  Scheme_Object *next;
+
+  while (1) {
+    prev = get_t_set_prev(s);
+    next = get_t_set_next(s);
+
+    if (!prev)
+      t_set->first = next;
+    else
+      set_t_set_next(prev, next);
+    if (next)
+      set_t_set_prev(next, prev);
+    set_t_set_prev(s, NULL);
+    set_t_set_next(s, NULL);
+    
+    if (t_set->current == s) {
+      if (next)
+	t_set->current = next;
+      else
+	t_set->current = t_set->first;
+    }
+    
+    if (t_set->current)
+      break;
+    
+    s = (Scheme_Object *)t_set;
+    t_set = t_set->parent;
+  }
+}
+
+/*========================================================================*/
 /*                      thread record creation                            */
 /*========================================================================*/
 
-static Scheme_Thread *make_thread(Scheme_Thread *after, Scheme_Config *config, 
-				    Scheme_Custodian *mgr)
+static Scheme_Thread *make_thread(Scheme_Config *config, Scheme_Custodian *mgr)
 {
   Scheme_Thread *process;
   int prefix = 0;
@@ -1501,6 +1664,19 @@ static Scheme_Thread *make_thread(Scheme_Thread *after, Scheme_Config *config,
   } else
     process->config = config;
 
+  if (!mgr)
+    mgr = (Scheme_Custodian *)scheme_get_param(config, MZCONFIG_CUSTODIAN);
+  
+  process->t_set_parent = (Scheme_Thread_Set *)scheme_get_param(config, MZCONFIG_THREAD_SET);
+  
+  if (SAME_OBJ(process, scheme_first_thread)) {
+    REGISTER_SO(thread_set_top);
+    thread_set_top = process->t_set_parent;
+    thread_set_top->first = (Scheme_Object *)process;
+    thread_set_top->current = (Scheme_Object *)process;
+  } else
+    schedule_in_set((Scheme_Object *)process, process->t_set_parent);
+    
   scheme_init_jmpup_buf(&process->jmpup_buf);
 
   process->running = MZTHREAD_RUNNING;
@@ -1533,17 +1709,10 @@ static Scheme_Thread *make_thread(Scheme_Thread *after, Scheme_Config *config,
   scheme_gmp_tls_init(process->gmp_tls);
 
   if (prefix) {
-    if (after) {
-      process->prev = after;
-      process->next = after->next;
-      process->next->prev = process;
-      process->prev->next = process;
-    } else {
-      process->next = scheme_first_thread;
-      process->prev = NULL;
-      process->next->prev = process;
-      scheme_first_thread = process;
-    }
+    process->next = scheme_first_thread;
+    process->prev = NULL;
+    process->next->prev = process;
+    scheme_first_thread = process;
   }
 
   {
@@ -1605,10 +1774,7 @@ static Scheme_Thread *make_thread(Scheme_Thread *after, Scheme_Config *config,
       hop->p = wp;
     }
 
-    mref = scheme_add_managed(mgr
-			      ? mgr
-			      : (Scheme_Custodian *)scheme_get_param(scheme_config, MZCONFIG_CUSTODIAN),
-			      (Scheme_Object *)hop, NULL, NULL, 0);
+    mref = scheme_add_managed(mgr, (Scheme_Object *)hop, NULL, NULL, 0);
     process->mref = mref;
 
 #ifndef MZ_PRECISE_GC
@@ -1622,7 +1788,7 @@ static Scheme_Thread *make_thread(Scheme_Thread *after, Scheme_Config *config,
 Scheme_Thread *scheme_make_thread()
 {
   /* Makes the initial process. */
-  return make_thread(NULL, NULL, NULL);
+  return make_thread(NULL, NULL);
 }
 
 static void scheme_check_tail_buffer_size(Scheme_Thread *p)
@@ -1738,19 +1904,46 @@ void scheme_swap_thread(Scheme_Thread *new_thread)
     scheme_current_thread->cont_mark_pos = MZ_CONT_MARK_POS;
 #endif
     scheme_current_thread = new_thread;
+
+    /* Fixup current pointers in thread sets */
+    {
+      Scheme_Thread_Set *t_set = new_thread->t_set_parent;
+      t_set->current = (Scheme_Object *)new_thread;
+      while (t_set->parent) {
+	t_set->parent->current = (Scheme_Object *)t_set;
+	t_set = t_set->parent;
+      }
+    }
+
     LONGJMP(scheme_current_thread);
   }
 }
 
-static void select_thread(Scheme_Thread *start_thread)
+static void select_thread()
 {
-  Scheme_Thread *new_thread = start_thread;
+  Scheme_Thread *new_thread;
+  Scheme_Object *o;
+  Scheme_Thread_Set *t_set;
 
+  /* Try to pick a next thread to avoid DOS attacks
+     through whatever kinds of things call select_thread() */
+  o = (Scheme_Object *)thread_set_top;
+  while (!SCHEME_THREADP(o)) {
+    t_set = (Scheme_Thread_Set *)o;
+    o = get_t_set_next(t_set->current);
+    if (!o)
+      o = t_set->first;
+  }
+  /* It's possible that o won't work out. So o is a suggestion for the
+     new thread, but the loop below will pick a definitely suitable
+     thread. */
+  
+  new_thread = (Scheme_Thread *)o;
   do {
     if (!new_thread)
       new_thread = scheme_first_thread;
     
-    /* Can't swap in processes with a nestee: */
+    /* Can't swap in a thread with a nestee: */
     while (new_thread 
 	   && (new_thread->nestee
 	       || (new_thread->running & MZTHREAD_SUSPENDED)
@@ -1759,7 +1952,7 @@ static void select_thread(Scheme_Thread *start_thread)
       new_thread = new_thread->next;
     }
 
-    if (!new_thread && !start_thread) {
+    if (!new_thread && !o) {
       /* The main thread must be blocked on a nestee, and everything
 	 else is suspended. But we have to go somewhere.  Weakly
 	 resume the main thread's innermost nestee. If it's
@@ -1778,8 +1971,8 @@ static void select_thread(Scheme_Thread *start_thread)
 	scheme_weak_resume_thread(new_thread);
       }
       break;
-    } 
-    start_thread = NULL;
+    }
+    o = NULL;
   } while (!new_thread);
 
   scheme_swap_thread(new_thread);
@@ -1827,6 +2020,8 @@ static void remove_thread(Scheme_Thread *r)
   }
   r->next = r->prev = NULL;
 
+  unschedule_in_set((Scheme_Object *)r, r->t_set_parent);
+  
 #ifdef RUNSTACK_IS_GLOBAL
   if (r == scheme_current_thread) {
     r->runstack = MZ_RUNSTACK;
@@ -1928,7 +2123,7 @@ static void start_child(Scheme_Thread * volatile child,
       have_activity = 0;
     }
 
-    select_thread(NULL);
+    select_thread();
 
     /* Shouldn't get here! */
     scheme_signal_error("bad process switch");
@@ -1948,7 +2143,7 @@ static Scheme_Object *make_subprocess(Scheme_Object *child_thunk,
   
   scheme_ensure_stack_start(scheme_current_thread, child_start);
   
-  child = make_thread(NULL, config, mgr);
+  child = make_thread(config, mgr);
 
   /* Use child_thunk name, if any, for the thread name: */
   {
@@ -2289,6 +2484,9 @@ static Scheme_Object *call_as_nested_thread(int argc, Scheme_Object *argv[])
   scheme_first_thread->prev = np;
   scheme_first_thread = np;
 
+  np->t_set_parent = p->t_set_parent;
+  schedule_in_set((Scheme_Object *)np, np->t_set_parent);
+
   {
     Scheme_Config *nconfig;
     nconfig = (Scheme_Config *)scheme_make_config(p->config);
@@ -2372,6 +2570,8 @@ static Scheme_Object *call_as_nested_thread(int argc, Scheme_Object *argv[])
 
   np->next = NULL;
   np->prev = NULL;
+
+  unschedule_in_set((Scheme_Object *)np, np->t_set_parent);
 
   np->running = 0;
 
@@ -2691,7 +2891,7 @@ static void exit_or_escape(Scheme_Thread *p)
   }
 
   remove_thread(p);
-  select_thread(NULL);
+  select_thread();
 }
 
 void scheme_break_thread(Scheme_Thread *p)
@@ -2732,6 +2932,8 @@ void scheme_thread_block(float sleep_time)
 {
   double start, d;
   Scheme_Thread *next, *p = scheme_current_thread;
+  Scheme_Object *next_in_set;
+  Scheme_Thread_Set *t_set;
   Scheme_Config *config = p->config;
 
   if (p->running & MZTHREAD_KILLED) {
@@ -2745,7 +2947,7 @@ void scheme_thread_block(float sleep_time)
     wait_until_suspend_ok();
     if (!p->next) {
       /* Suspending the main thread... */
-      select_thread(NULL);
+      select_thread();
     } else
       scheme_weak_suspend_thread(p);
   }
@@ -2784,14 +2986,41 @@ void scheme_thread_block(float sleep_time)
     /* Find the next process. Skip processes that are definitely
        blocked. */
     
-    next = p;
+    /* Start from the root */
+    next_in_set = (Scheme_Object *)thread_set_top;
+    t_set = NULL; /* this will get set at the beginning of the loop */
+    
+    /* Each thread may or may not be available. If it's not available,
+       we search thread by thread to find something that is available. */
     while (1) {
-      next = next->next ? next->next : scheme_first_thread;
+      /* next_in_set is the thread or set to try... */
+
+      /* While it's a set, go down into the set, choosing the next
+	 item after the set's current. For each set, remember where we
+	 started searching for something to run, so we'll know when
+	 we've tried everything in the set. */
+      while (!SCHEME_THREADP(next_in_set)) {
+	t_set = (Scheme_Thread_Set *)next_in_set;
+	next_in_set = get_t_set_next(t_set->current);
+	if (!next_in_set)
+	  next_in_set = t_set->first;
+	t_set->current = next_in_set;
+	t_set->search_start = next_in_set;
+      }
+
+      /* Now `t_set' is the set we're trying, and `next' will be the
+         thread to try: */
+      next = (Scheme_Thread *)next_in_set;
+      
+      /* If we get back to the current thread, then
+	 no other thread was ready. */
       if (SAME_PTR(next, p)) {
 	next = NULL;
 	break;
       }
-      
+
+      /* Check whether `next' is ready... */
+
       if (next->nestee) {
 	/* Blocked on nestee */
       } else if (next->running & MZTHREAD_USER_SUSPENDED) {
@@ -2829,10 +3058,64 @@ void scheme_thread_block(float sleep_time)
 	} else
 	  break;
       }
+
+      /* Look for the next thread/set in this set */
+      if (next->t_set_next)
+	next_in_set = next->t_set_next;
+      else
+	next_in_set = t_set->first;
+
+      /* If we run out of things to try in this set,
+	 go up to find the next set. */
+      if (SAME_OBJ(next_in_set, t_set->search_start)) {
+	/* Loop to go up past exhausted sets, clearing search_start
+	   from each exhausted set. */
+	while (1) {
+	  t_set->search_start = NULL;
+	  t_set = t_set->parent;
+
+	  if (t_set) {
+	    next_in_set = get_t_set_next(t_set->current);
+	    if (!next_in_set)
+	      next_in_set = t_set->first;
+
+	    if (SAME_OBJ(next_in_set, t_set->search_start)) {
+	      t_set->search_start = NULL;
+	      /* continue going up */
+	    } else {
+	      t_set->current = next_in_set;
+	      break;
+	    }
+	  } else
+	    break;
+	}
+	
+	if (!t_set) {
+	  /* We ran out of things to try. If we
+	     start again with the top, we should
+	     land back at p. */
+	  next = NULL;
+	  break;
+	}
+      } else {
+	/* Set current... */
+	t_set->current = next_in_set;
+      } 
+      /* As we go back to the top of the loop, we'll check whether
+	 next_in_set is a thread or set, etc. */
     }
   } else
     next = NULL;
   
+  if (next) {
+    /* Clear out search_start fields */
+    t_set = next->t_set_parent;
+    while (t_set) {
+      t_set->search_start = NULL;
+      t_set = t_set->parent;
+    }
+  }
+
   if ((sleep_time > 0.0) && (p->block_descriptor == NOT_BLOCKED)) {
     p->block_descriptor = SLEEP_BLOCKED;
     p->block_start_sleep = start;
@@ -3033,8 +3316,6 @@ static void wait_until_suspend_ok()
 
 void scheme_weak_suspend_thread(Scheme_Thread *r)
 {
-  Scheme_Thread *swap_to = r->next;
-
   if (r->running & MZTHREAD_SUSPENDED)
     return;
 
@@ -3051,16 +3332,14 @@ void scheme_weak_suspend_thread(Scheme_Thread *r)
   }
 
   r->next = r->prev = NULL;
+  unschedule_in_set((Scheme_Object *)r, r->t_set_parent);
 
   r->running |= MZTHREAD_SUSPENDED;
 
   prepare_this_thread_for_GC(r);
 
   if (r == scheme_current_thread) {
-    /* NOTE: swap_to might not be a good choice, because it
-       might be blocked. If it's a bad choice, we waste
-       time swapping in swap_to. Too bad. */
-    select_thread(swap_to);
+    select_thread();
 
     /* Killed while suspended? */
     if ((r->running & MZTHREAD_KILLED) && !(r->running & MZTHREAD_NEED_KILL_CLEANUP))
@@ -3078,6 +3357,7 @@ void scheme_weak_resume_thread(Scheme_Thread *r)
       scheme_first_thread = r;
       r->next->prev = r;
       r->ran_some = 1;
+      schedule_in_set((Scheme_Object *)r, r->t_set_parent);
       scheme_check_tail_buffer_size(r);
     }
   }
@@ -4440,6 +4720,12 @@ static Scheme_Config *make_initial_config(void)
     scheme_set_param(config, MZCONFIG_SECURITY_GUARD, (Scheme_Object *)sg);
   }
 
+  {
+    Scheme_Thread_Set *t_set;
+    t_set = create_thread_set(NULL);
+    scheme_set_param(config, MZCONFIG_THREAD_SET, (Scheme_Object *)t_set);
+  }
+
   config->use_count = NULL;
   config->extensions = NULL;
 
@@ -5274,6 +5560,7 @@ static void register_traversers(void)
   GC_REG_TRAV(scheme_custodian_type, mark_custodian_val);
   GC_REG_TRAV(scheme_thread_hop_type, mark_thread_hop);
   GC_REG_TRAV(scheme_waitable_set_type, mark_waitable_set);
+  GC_REG_TRAV(scheme_thread_set_type, mark_thread_set);
 
   GC_REG_TRAV(scheme_rt_namespace_option, mark_namespace_option);
   GC_REG_TRAV(scheme_rt_param_data, mark_param_data);

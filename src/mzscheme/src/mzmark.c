@@ -1374,7 +1374,11 @@ int thread_val_MARK(void *p) {
   
   gcMARK(pr->next);
   gcMARK(pr->prev);
-  
+
+  gcMARK(pr->t_set_parent);
+  gcMARK(pr->t_set_next);
+  gcMARK(pr->t_set_prev);
+
   MARK_cjs(&pr->cjs);
 
   gcMARK(pr->config);
@@ -1451,7 +1455,11 @@ int thread_val_FIXUP(void *p) {
   
   gcFIXUP(pr->next);
   gcFIXUP(pr->prev);
-  
+
+  gcFIXUP(pr->t_set_parent);
+  gcFIXUP(pr->t_set_next);
+  gcFIXUP(pr->t_set_prev);
+
   FIXUP_cjs(&pr->cjs);
 
   gcFIXUP(pr->config);
@@ -3251,7 +3259,7 @@ int mark_custodian_val_MARK(void *p) {
   gcMARK(m->mrefs);
   gcMARK(m->closers);
   gcMARK(m->data);
-  
+
   gcMARK(m->parent);
   gcMARK(m->sibling);
   gcMARK(m->children);
@@ -3270,7 +3278,7 @@ int mark_custodian_val_FIXUP(void *p) {
   gcFIXUP(m->mrefs);
   gcFIXUP(m->closers);
   gcFIXUP(m->data);
-  
+
   gcFIXUP(m->parent);
   gcFIXUP(m->sibling);
   gcFIXUP(m->children);
@@ -3522,6 +3530,44 @@ int mark_waitable_set_FIXUP(void *p) {
 
 #define mark_waitable_set_IS_ATOMIC 0
 #define mark_waitable_set_IS_CONST_SIZE 1
+
+
+int mark_thread_set_SIZE(void *p) {
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Thread_Set));
+}
+
+int mark_thread_set_MARK(void *p) {
+  Scheme_Thread_Set *ts = (Scheme_Thread_Set *)p;
+ 
+  gcMARK(ts->parent);
+  gcMARK(ts->first);
+  gcMARK(ts->next);
+  gcMARK(ts->prev);
+  gcMARK(ts->search_start);
+  gcMARK(ts->current);
+
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Thread_Set));
+}
+
+int mark_thread_set_FIXUP(void *p) {
+  Scheme_Thread_Set *ts = (Scheme_Thread_Set *)p;
+ 
+  gcFIXUP(ts->parent);
+  gcFIXUP(ts->first);
+  gcFIXUP(ts->next);
+  gcFIXUP(ts->prev);
+  gcFIXUP(ts->search_start);
+  gcFIXUP(ts->current);
+
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Thread_Set));
+}
+
+#define mark_thread_set_IS_ATOMIC 0
+#define mark_thread_set_IS_CONST_SIZE 1
+
 
 
 #endif  /* THREAD */

@@ -512,7 +512,11 @@ thread_val {
   
   gcMARK(pr->next);
   gcMARK(pr->prev);
-  
+
+  gcMARK(pr->t_set_parent);
+  gcMARK(pr->t_set_next);
+  gcMARK(pr->t_set_prev);
+
   MARK_cjs(&pr->cjs);
 
   gcMARK(pr->config);
@@ -1298,7 +1302,7 @@ mark_custodian_val {
   gcMARK(m->mrefs);
   gcMARK(m->closers);
   gcMARK(m->data);
-  
+
   gcMARK(m->parent);
   gcMARK(m->sibling);
   gcMARK(m->children);
@@ -1400,6 +1404,22 @@ mark_waitable_set {
  size:
   gcBYTES_TO_WORDS(sizeof(Waitable_Set));
 }
+
+mark_thread_set {
+ mark:
+  Scheme_Thread_Set *ts = (Scheme_Thread_Set *)p;
+ 
+  gcMARK(ts->parent);
+  gcMARK(ts->first);
+  gcMARK(ts->next);
+  gcMARK(ts->prev);
+  gcMARK(ts->search_start);
+  gcMARK(ts->current);
+
+ size:
+  gcBYTES_TO_WORDS(sizeof(Scheme_Thread_Set));
+}
+
 
 END thread;
 

@@ -696,7 +696,10 @@ typedef struct Scheme_Thread {
 
   struct Scheme_Thread *next;
   struct Scheme_Thread *prev;
-  struct Scheme_Thread_Set *t_set;
+
+  struct Scheme_Thread_Set *t_set_parent;
+  Scheme_Object *t_set_next;
+  Scheme_Object *t_set_prev;
 
   mz_jmp_buf error_buf;
   Scheme_Continuation_Jump_State cjs;
@@ -938,6 +941,8 @@ enum {
   MZCONFIG_PORT_COUNT_LINES,
 
   MZCONFIG_SCHEDULER_RANDOM_STATE,
+
+  MZCONFIG_THREAD_SET,
 
   __MZCONFIG_BUILTIN_COUNT__
 };

@@ -81,8 +81,6 @@ EXPORTS
  scheme_eval_multi
  scheme_eval_compiled
  scheme_eval_compiled_multi
- _scheme_eval_compiled
- _scheme_eval_compiled_multi
  scheme_apply
  scheme_apply_multi
  scheme_apply_eb
@@ -91,10 +89,6 @@ EXPORTS
  scheme_eval_string
  scheme_eval_string_multi
  scheme_eval_string_all
- _scheme_apply_known_closed_prim
- _scheme_apply_known_closed_prim_multi
- _scheme_apply_closed_prim
- _scheme_apply_closed_prim_multi
  scheme_values
  scheme_check_one_value
  scheme_tail_apply
@@ -114,10 +108,6 @@ EXPORTS
  scheme_load_compiled_stx_string
  scheme_compiled_stx_symbol
  scheme_eval_compiled_sized_string
- GC_malloc
- GC_malloc_atomic
- GC_malloc_stubborn
- GC_malloc_uncollectable
  scheme_malloc_eternal
  scheme_end_stubborn_change
  scheme_calloc

@@ -58,6 +58,8 @@ cygwin-install:
 	gcc -c $(srcdir)/fixup.c
 	cp $(srcdir)/mzdyn.def mzdynx.def
 	dlltool --def mzdynx.def --output-exp mzdyn.exp
+	dlltool --def ../include/mzwin.def --output-exp libmzschxxxxxxx.lib --dllname libmzschxxxxxxx.dll
+	dlltool --def ../include/gmzwin.def --output-exp libmzgcxxxxxxx.lib --dllname libmzgcxxxxxxx.dll
 	cd ../..; if [ ! -d $(ILIBDIR) ] ; then mkdir $(ILIBDIR) ; fi
 	cd ../..; if [ ! -d $(ILIBDIR)/gcc ] ; then mkdir $(ILIBDIR)/gcc ; fi
 	cd ../..; cp mzscheme/dynsrc/mzdynx.def $(ILIBDIR)/gcc/mzdyn.def
@@ -65,6 +67,8 @@ cygwin-install:
 	cd ../..; cp mzscheme/dynsrc/mzdyn.o $(ILIBDIR)/gcc
 	cd ../..; cp mzscheme/dynsrc/init.o $(ILIBDIR)/gcc
 	cd ../..; cp mzscheme/dynsrc/fixup.o $(ILIBDIR)/gcc
+	cd ../..; cp mzscheme/dynsrc/libmzschxxxxxxx.lib $(ILIBDIR)/gcc
+	cd ../..; cp mzscheme/dynsrc/libmzgcxxxxxxx.lib $(ILIBDIR)/gcc
 
 clean:
 	/bin/rm -f *.o Makefile.bak

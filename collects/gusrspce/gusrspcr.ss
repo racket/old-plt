@@ -1,8 +1,3 @@
-;; this file expects mred@ to be defined at the toplevel and be the result of
-;; (reference-unit/sig (build-path (getenv "PLTHOME") "mred" "system" "link.ss"))
-;; [ roughly ]
-;; if mred@ is not defined, it will re-load the library
-
   (compound-unit/sig
     (import [params : plt:parameters^])
     (link [core : mzlib:core^ ((reference-library-unit/sig "corer.ss"))]
@@ -17,17 +12,11 @@
 			    '() "dummy console" -1 -1 100 100))
 			 (send console show #t)
 			 (define eval-string void)))]
-	  [mred : mred^ ((with-handlers ([void
-					  (lambda (exn)
-					    (reference-unit/sig
-					     (begin-elaboration-time
-					      (normalize-path
-					       (build-path 'up "mred" "system" "link.ss")))))])
-			   mred@) 
+	  [mred : mred^ ((reference-library-unit/sig "link.ss" "mred")
 			 core trigger appliction)]
 	  [rice : ricedefs^ ((reference-unit/sig "ricedefu.ss"))]
-	  [graphics : graphics^ ((reference-unit/sig "graphicu.ss"))]
-	  [turtle : turtle^ ((reference-unit/sig "turtleu.ss")
+	  [graphics : graphics^ ((reference-library-unit/sig "graphicu.ss" "graphics"))]
+	  [turtle : turtle^ ((reference-library-unit/sig "turtleu.ss" "graphics")
 			     (core function@))])
     (export (open (core pretty-print@))
 	    (open (core file@))

@@ -20,7 +20,8 @@
 								   "link.ss")))
 				  (interface : zodiac:interface^)
 				  (language : plt:parameters^)
-				  (mzlib pretty-print@))]
+				  (mzlib pretty-print@)
+				  (mzlib file@))]
 	[aries : plt:aries^ ((reference-library-unit/sig "ariesu.ss" "cogen")
 			     zodiac
 			     (interface : zodiac:interface^))]

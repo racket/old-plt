@@ -5,8 +5,6 @@
     
     (mred:debug:printf 'invoke "drscheme:basis@")
 
-    (define load-recent (global-defined-value 'load-recent))
-
     (define library-unit #f)
     
     (define level->number

@@ -2473,7 +2473,7 @@ static void post_dyn_wind(void *d)
   p->suspend_break = s;
 }
 
-static Scheme_Object *dynamic_wind(int c, Scheme_Object *p[])
+static Scheme_Object *dynamic_wind(int c, Scheme_Object *argv[])
 {
   Dyn_Wind *dw;
   Scheme_Object *v;
@@ -2483,9 +2483,9 @@ static Scheme_Object *dynamic_wind(int c, Scheme_Object *p[])
   dw->type = scheme_rt_dyn_wind_info;
 #endif
 
-  dw->pre = p[0];
-  dw->act = p[1];
-  dw->post = p[2];
+  dw->pre = argv[0];
+  dw->act = argv[1];
+  dw->post = argv[2];
 
   v = scheme_dynamic_wind(pre_dyn_wind, do_dyn_wind, post_dyn_wind, NULL,
 			  (void *)dw);

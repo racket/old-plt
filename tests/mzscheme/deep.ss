@@ -86,16 +86,19 @@
 (define (equal?-forever l1 l2 deep?)
   (let ([t (thread (lambda () 
 		     (equal? l1 l2) ; runs forever; could run out of memory
-		     (set! going? #f)))])
+		     (set! going? #f)))]
+	[v1 (make-vector 6)]
+	[v2 (make-vector 6)])
     (if deep?
 	(begin
 	  (sleep)
-	  (let ([v (current-performance-stats)])
-	    (let loop ()
-	      (sleep)
-	      (unless (> (vector-ref (current-performance-stats) 2)
-			 (+ (vector-ref v 2) 2))
-		(loop)))))
+	  (vector-set-performance-stats! v1)
+	  (let loop ()
+	    (sleep)
+	    (vector-set-performance-stats! v2)
+	    (unless (> (vector-ref v2 5)
+		       (+ (vector-ref v1 5) 2))
+	      (loop))))
 	(sleep 0.3))
     (kill-thread t)
     going?))

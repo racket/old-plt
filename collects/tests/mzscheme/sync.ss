@@ -75,14 +75,21 @@
   (test #f object-wait-multiple 0 always-stuck)
   (test #f object-wait-multiple SYNC-SLEEP-DELAY always-stuck))
 
+;; Check whether something that takes at least SYNC-SLEEP-DELAY
+;;  seconds in fact takes that roughyl much CPU time. We
+;;  expect non-busy-wait takes to take a very small fraction
+;;  of the time.
 ;; This test only works well if there are no other
 ;;  threads running and the underlying OS is not loaded.
 (define (check-busy-wait go busy?)
   (collect-garbage) ; reduces false-positives in detecting busy wait
-  (let ([msecs (current-process-milliseconds)])
+  (let ([msecs (current-process-milliseconds)]
+	[real-msecs (current-milliseconds)])
     (go)
-    (test busy? 'is-busy-wait (> (/ (abs (- (current-process-milliseconds) msecs)) 1000.0)
-				 (/ SYNC-SLEEP-DELAY 2)))))
+    (let ([took (/ (abs (- (current-process-milliseconds) msecs)) 1000.0)]
+	  [real-took (/ (abs (- (current-milliseconds) real-msecs)) 1000.0)]
+	  [boundary (/ SYNC-SLEEP-DELAY 6)])
+      (test busy? (lambda (a b c d) (> b c)) 'busy-wait? took boundary real-took))))
 
 (define (test-good-waitable wrap-sema)
   (let* ([sema (make-semaphore)]

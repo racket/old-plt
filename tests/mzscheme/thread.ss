@@ -239,7 +239,6 @@
 				(set! nl? #t)
 				(thread (lambda ()
 					  (sleep 0.4)
-					  (make-waitable-set nl-sema)
 					  (semaphore-post nl-sema)))
 				(set! c (add1 c))
 				(semaphore-wait nl-sema)

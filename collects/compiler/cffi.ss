@@ -8,7 +8,8 @@
 
 (module cffi mzscheme
   (require (lib "stx.ss" "syntax"))
-  (require-for-syntax (lib "name.ss" "syntax"))
+  (require-for-syntax (lib "name.ss" "syntax")
+                      (lib "path-spec.ss" "syntax"))
 
   (define-syntax c-lambda
     (let ([re:fname (regexp "^[a-zA-Z_0-9]+$")]
@@ -284,7 +285,7 @@
   
   (define-syntax (c-declare stx)
     (unless (memq (syntax-local-context) '(top-level module))
-      (raise-syntax-error 'c-declare "only allowed at the top-level or a module top-level" stx))
+      (raise-syntax-error #f "only allowed at the top-level or a module top-level" stx))
     (syntax-case stx ()
       [(_ str)
        (let ([decl (syntax str)])
@@ -295,6 +296,28 @@
 				"declaration not compiled by mzc: ~e"
 				str))])
 	   (syntax-property stx-out 'mzc-cffi 'c-declare)))]))
-  
+
+
+  (define-syntax (c-include stx)
+    (unless (memq (syntax-local-context) '(top-level module))
+      (raise-syntax-error #f "only allowed at the top-level or a module top-level" stx))
+    (syntax-case stx () 
+      [(_ path)
+       (let ([pathname (resolve-path-spec #'path #'path stx #'build-path)])
+         (let ([str
+                (with-handlers ([not-break-exn?
+                                 (lambda (x)
+                                   (raise-syntax-error
+                                    #f
+                                    (format "error reading file ~e: ~a"
+                                            pathname
+                                            (if (exn? x)
+                                                (exn-message x)
+                                                x))))])
+                  (with-input-from-file pathname
+                    (lambda () (read-string (file-size pathname)))))])
+           (quasisyntax/loc stx (c-declare #,str))))]))
+      
   (provide c-lambda
-	   c-declare))
+	   c-declare
+           c-include))

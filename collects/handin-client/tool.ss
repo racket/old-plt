@@ -46,7 +46,7 @@
 		     (collection-path this-collection)
 		     "server-cert.pem")))
 
-  (define handin-frame% 
+  (define handin-frame%
     (class dialog%
       (inherit show is-shown?)
       (super-new [label "Handin"])
@@ -75,7 +75,7 @@
 			      [parent this]
 			      [callback void]
 			      [stretchable-width #t]))
-      
+
       (define button-panel (new horizontal-pane%
 				[parent this]
 				[stretchable-height #f]))
@@ -104,7 +104,7 @@
 						get-string
 						(send assignment get-selection))
 					  content
-					  (lambda () 
+					  (lambda ()
 					    (semaphore-wait commit-lock)
 					    (send status set-label "Comitting...")
 					    (set! committing? #t)
@@ -115,7 +115,7 @@
 					      (send abort-commit-dialog show #f))
 					    (send status set-label "Handin sucessful.")
 					    (set! committing? #f)
-					    (send cancel set-label "Close"))))))))]
+					    (done-interface))))))))]
 		      [style '(border)]))
 
       (define ok-can-enable? #f)
@@ -160,37 +160,52 @@
 	(send username enable #f)
 	(send passwd enable #f)
 	(send assignment enable #f))
+      (define (enable-interface)
+	(send ok enable #t)
+	(send username enable #t)
+	(send passwd enable #t)
+	(send assignment enable #t)
+        (send passwd focus))
+      (define (done-interface)
+        (send cancel set-label "Close")
+        (send cancel focus))
 
       (define (report-error tag exn)
 	(queue-callback
 	 (lambda ()
-	   (custodian-shutdown-all comm-cust)
-	   (send status set-label tag)
-	   (disable-interface)
-	   (when (is-shown?)
-	     (message-box
-	      "Server Error"
-	      (if (exn? exn)
-		  (let ([s (exn-message exn)])
-		    (if (string? s)
-			s
-			(format "~e" s))))
-	      this)))))
+	   (let* ([msg (if (exn? exn)
+                         (let ([s (exn-message exn)])
+                           (if (string? s)
+                             s
+                             (format "~e" s)))
+                         (format "~e" exn))]
+                  [retry? (regexp-match #rx"bad username or password for" msg)])
+             (custodian-shutdown-all comm-cust)
+             (disable-interface)
+             (send status set-label tag)
+             (when (is-shown?)
+               (message-box "Server Error" msg this)
+               (if retry?
+                 (begin (init-comm) (semaphore-post go-sema) (enable-interface))
+                 (done-interface)))))))
 
-      (define go-sema (make-semaphore))
-      (define commit-lock (make-semaphore 1))
+      (define go-sema #f)
+      (define commit-lock #f)
       (define committing? #f)
 
       (define connection #f)
 
-      (define comm-cust (make-custodian))
-      (define comm-thread
+      (define comm-cust #f)
+      (define (init-comm)
+        (set! go-sema (make-semaphore 1))
+        (set! commit-lock (make-semaphore 1))
+        (set! comm-cust (make-custodian))
 	(parameterize ([current-custodian comm-cust])
 	  (thread (lambda ()
 		    (let/ec escape
 		      (with-handlers ([void
 				       (lambda (exn)
-					 (report-error 
+					 (report-error
 					  "Connection failed."
 					  exn)
 					 (escape))])
@@ -211,11 +226,12 @@
       (define/override (on-close)
 	(custodian-shutdown-all comm-cust)
 	(super-on-close))
-      
+
       (send ok enable #f)
       (send assignment enable #f)
 
-      (semaphore-post go-sema)
+      (init-comm)
+      (send passwd focus)
       (show #t)))
 
   (define (manage-handin-account)
@@ -261,7 +277,7 @@
 	      [callback (lambda (t e) (activate-ok))]
 	      [style '(single password)]
 	      [stretchable-width #t]))
-       
+
        (define (non-empty? t)
 	 (not (string=? "" (send t get-value))))
 
@@ -276,7 +292,7 @@
 				 [alignment '(center center)]))
        (define old-username (mk-txt "Username:" old-user-box activate-change))
        (send old-username set-value (remembered-user))
-       
+
        (define old-passwd (mk-passwd "Old:" old-user-box activate-change))
        (define new-passwd (mk-passwd "New:" old-user-box activate-change))
        (define confirm-passwd (mk-passwd "New again:" old-user-box activate-change))
@@ -356,7 +372,7 @@
        (define/override (on-close)
 	 (custodian-shutdown-all comm-cust)
 	 (super-on-close))
-      
+
        (define button-panel (new horizontal-pane%
 				 [parent this]
 				 [stretchable-height #f]))
@@ -397,6 +413,7 @@
 	     (thread
 	      (lambda ()
 		(with-handlers ([void (lambda (exn)
+                                        (send tabs enable #t)
 					(report-error
 					 "Update failed."
 					 exn))])

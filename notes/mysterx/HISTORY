@@ -7,6 +7,8 @@ Added conversions com-scode->number,
  date->com-date
 Added predicates com-scode?, com-currency?,
  com-date?
+Removed 'no-caption option for mx-browser%,
+ until we can make it work
 
 Version 102-p1:
 

@@ -1259,6 +1259,12 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
 			    "bad syntax (" IMPROPER_LIST_FORM ")");
 
       forms = scheme_append(content, SCHEME_CDR(forms));
+
+      if (SCHEME_NULLP(forms)) {
+	scheme_wrong_syntax("begin", NULL, first, 
+			    "bad syntax (empty form)");
+      }
+
       goto try_again;
     } else if (SAME_OBJ(gval, scheme_define_values_syntax)) {
       /* Turn defines into a letrec-values: */

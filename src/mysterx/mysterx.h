@@ -198,37 +198,54 @@ typedef struct _managed_obj_ {
 #define MX_COM_OBJ_CLSID(o) (((MX_COM_Object *)o)->clsId)
 #define MX_COM_OBJ_EVENTTYPEINFO(o) (((MX_COM_Object *)o)->pEventTypeInfo)
 #define MX_COM_OBJ_EVENTSINK(o) (((MX_COM_Object *)o)->pISink)
+#define GUARANTEE_COM_OBJ(fname, argnum) GUARANTEE_TYPE (fname, argnum, MX_COM_OBJP, "com-object")
 
 #define MX_COM_TYPEP(o) TYPE_PRED(o,mx_com_type_type)
 #define MX_COM_TYPE_VAL(o) (((MX_COM_Type *)o)->pITypeInfo)
+#define GUARANTEE_COM_TYPE(fname, argnum) GUARANTEE_TYPE (fname, argnum, MX_COM_TYPEP, "com-type")
+
+#define MX_COM_OBJ_OR_TYPE(o) (MX_COM_OBJP(o) || MX_COM_TYPEP(o))
+#define GUARANTEE_COM_OBJ_OR_TYPE(fname, argnum) \
+    GUARANTEE_TYPE (fname, argnum, MX_COM_OBJ_OR_TYPE, "com-object or com-type")
 
 #define MX_DOCUMENTP(o) TYPE_PRED(o,mx_document_type)
 #define MX_DOCUMENT_VAL(o) (((MX_Document_Object *)o)->pIHTMLDocument2)
+#define GUARANTEE_DOCUMENT(fname, argnum) GUARANTEE_TYPE (fname, argnum, MX_DOCUMENTP, "mx-document")
 
 #define MX_BROWSERP(o) TYPE_PRED(o,mx_browser_type)
 #define MX_BROWSER_VAL(o) (((MX_Browser_Object *)o)->pIWebBrowser2)
 #define MX_BROWSER_EVENTQUEUE(o) (((MX_Browser_Object *)o)->pIEventQueue)
 #define MX_BROWSER_SINK(o) (((MX_Browser_Object *)o)->pISink)
 #define MX_BROWSER_HWND(o) (((MX_Browser_Object *)o)->hwnd)
+#define GUARANTEE_BROWSER(fname, argnum) GUARANTEE_TYPE (fname, argnum, MX_BROWSERP, "mx-browser")
 
 #define MX_ELEMENTP(o) TYPE_PRED(o,mx_element_type)
 #define MX_ELEMENT_VALIDITY(o) (((MX_Element *)o)->valid)
 #define MX_ELEMENT_VAL(o) (((MX_Element *)o)->pIHTMLElement)
+#define GUARANTEE_ELEMENT(fname, argnum) GUARANTEE_TYPE (fname, argnum, MX_ELEMENTP, "mx-element")
 
 #define MX_EVENTP(o) TYPE_PRED(o,mx_event_type)
 #define MX_EVENT_VAL(o) (((MX_Event *)o)->pEvent)
+#define GUARANTEE_EVENT(fname, argnum) GUARANTEE_TYPE (fname, argnum, MX_EVENTP, "mx-event")
 
 #define MX_CYP(o) TYPE_PRED(o,mx_com_cy_type)
 #define MX_CY_VAL(o) (((MX_COM_Data_Object *)o)->cy)
+#define GUARANTEE_CY(fname, argnum) GUARANTEE_TYPE (fname, argnum, MX_CYP, "mx-currency")
 
 #define MX_DATEP(o) TYPE_PRED(o,mx_com_date_type)
 #define MX_DATE_VAL(o) (((MX_COM_Data_Object *)o)->date)
+#define GUARANTEE_DATE(fname, argnum) GUARANTEE_TYPE (fname, argnum, MX_DATEP, "mx-date")
 
 #define MX_SCODEP(o) TYPE_PRED(o,mx_com_scode_type)
 #define MX_SCODE_VAL(o) (((MX_COM_Data_Object *)o)->scode)
+#define GUARANTEE_SCODE(fname, argnum) GUARANTEE_TYPE (fname, argnum, MX_SCODEP, "mx-scode")
 
 #define MX_IUNKNOWNP(o) TYPE_PRED(o,mx_com_iunknown_type)
 #define MX_IUNKNOWN_VAL(o) (((MX_COM_Data_Object *)o)->pIUnknown)
+#define GUARANTEE_IUNKNOWN(fname, argnum) GUARANTEE_TYPE (fname, argnum, MX_SCODEP, "mx-iunknown")
+
+#define SCHEME_NONNEGATIVE(thing) (SCHEME_INTP(thing) && SCHEME_INT_VAL(thing) >= 0)
+#define GUARANTEE_NONNEGATIVE(fname, argnum) GUARANTEE_TYPE (fname, argnum, SCHEME_NONNEGATIVE, "non-negative integer")
 
 extern const CLSID emptyClsId;
 
@@ -634,27 +651,28 @@ extern unsigned long browserCount;
   __asm { \
     mov al,v \
   } \
-  pusharg(eax);
+  pusharg(eax)
 
 /* for two-byte values */
 #define pushShort(v)  \
   __asm { \
     mov ax,v \
   } \
-  pusharg(eax);
+  pusharg(eax)
 
 /* for 8-byte values */
-#define pushWords(v) \
+#define pushWords(v) do \
       { ULONG loWord = (*(ULONG *)(&v)) & 0xFFFFFFFF; \
         ULONG hiWord = (ULONG)((*(ULONGLONG *)(&v)) >> 32);  \
         pusharg(hiWord); \
         pusharg(loWord); \
-      }
+      } while (0)
 
 // push right to left
 // i indexes argv's, j indexes COM type info
 #define pushSuppliedArgs(pFuncDesc,numParamsPassed,argc,argv, \
                          argVas,vaPtr,va,i,j,lcidIndex,buff) \
+  do { \
   /* j is index into COM type descriptions */ \
   j = argc - 3; \
   if (lcidIndex != NO_LCID && lcidIndex <= j + 1) { \
@@ -692,11 +710,12 @@ extern unsigned long browserCount;
     } \
     va = *vaPtr; \
     pushOneArg(va,buff); \
-  }
+  }; } while (0)
 
 // push right to left
 #define pushOptArgs(pFuncDesc,numParamsPassed,numOptParams, \
                     optArgVas,vaPtr,va,argc,i,j,lcidIndex,buff) \
+  do { \
   if (numOptParams > 0) { \
     /* i is index into param type descriptions */ \
     i = numParamsPassed - 1; \
@@ -732,18 +751,19 @@ extern unsigned long browserCount;
       va = *vaPtr; \
       pushOneArg(va,buff); \
     } \
-  }
+      }; } while (0)
 
 /* VARIANT is 16 bytes */
-#define pushVariant(va) { \
+#define pushVariant(va) do {\
   ULONGLONG loDword,hiDword; \
   loDword = *(ULONGLONG *)&va; \
   hiDword = *((ULONGLONG *)&va + 1); \
   pushWords(hiDword); \
   pushWords(loDword); \
-}
+} while (0)
 
 #define pushOneArg(va,buff) \
+  do {\
     switch(va.vt) { \
     case VT_I8 : \
       pushWords(va.llVal); \
@@ -875,4 +895,6 @@ extern unsigned long browserCount;
       break; \
    default : \
       sprintf(buff,"Can't push argument with VARIANT tag = %X",va.vt); \
-      scheme_signal_error(buff); }
+      scheme_signal_error(buff); }; } while (0)
+
+

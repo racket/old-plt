@@ -19,7 +19,7 @@
 		  ((reference-unit/sig "language.ss")
 		   wx mred 
 		   basis
-		   (export unit)
+		   (export* unit)
 		   aries drzodiac
 		   (mzlib function@) print-convert)]
 	[interface : drscheme:interface^
@@ -38,7 +38,7 @@
 				mred aries drzodiac)]
 	[setup : drscheme:setup^ ((reference-unit/sig "setup.ss") wx mred mzlib)]
 	[snip : drscheme:snip^ ((reference-unit/sig "snip.ss") wx mred)]
-	[export : drscheme:export^ ((reference-unit/sig "export.ss")
+	[export* : drscheme:export^ ((reference-unit/sig "export.ss")
 				    wx mred mzlib print-convert app
 				    basis edit language setup snip
 				    init interface face
@@ -47,7 +47,7 @@
 	      ((reference-unit/sig "tool.ss")
 	       wx mred mzlib print-convert 
 	       drzodiac
-	       export)]
+	       export*)]
 	[app : drscheme:app^ ((reference-unit/sig "app.ss")
 			      wx
 			      mred
@@ -57,9 +57,9 @@
 				mred
 				(mzlib pretty-print@)
 				print-convert
-				(export unit)
-				(export compound-unit)
-				(export get/extend))])
+				(export* unit)
+				(export* compound-unit)
+				(export* get/extend))])
   (export (unit init)
 	  (unit mzlib)
 	  (unit mred)
@@ -73,7 +73,7 @@
 	  (unit edit drscheme:edit)
 	  (unit setup drscheme:setup)
 	  (unit snip drscheme:snip)
-	  (unit export drscheme:export)
+	  (unit export* drscheme:export)
 	  (unit tool drscheme:tool)
 	  (unit app drscheme:app)
 	  (unit main drscheme:main)

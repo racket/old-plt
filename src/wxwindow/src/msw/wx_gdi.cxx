@@ -190,8 +190,8 @@ static int CALLBACK glyph_exists(ENUMLOGFONTW FAR* lpelf,
       DWORD *usb;
       int x;
       usb = ((NEWTEXTMETRICEXW *)lpntm)->ntmFontSig.fsUsb;
-      x = get_bitfield(c); /* in wx_bitfield.inc */
-      if (!(usb[x >> 5] & (1 << (x & 0x31))))
+      x = get_bitfield(gfd->c); /* in wx_bitfield.inc */
+      if (!(usb[x >> 5] & (1 << (x & 0x1F))))
 	ok = 0;
     }
 

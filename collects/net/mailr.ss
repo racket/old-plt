@@ -72,6 +72,7 @@
 	    (write-recipient-header "To" to-recipients)
 	    (write-recipient-header "CC" cc-recipients))
 	  (fprintf writer "Subject: ~a~n" subject)
+	  (fprintf writer "X-Mailer: MzScheme: see www.cs.rice.edu/CS/PLT/~n")
 	  (for-each (lambda (s)
 		      (display s writer)
 		      (newline writer))

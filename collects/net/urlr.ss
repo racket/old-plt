@@ -134,8 +134,9 @@
 	  (for-each (lambda (s)
 		      (display s client->server)
 		      (newline client->server))
-	    (cons (format "GET ~a HTTP/1.0" access-string)
-	      strings)))
+	    (cons (format "GET ~a HTTP/1.1" access-string)
+	      (cons (format "Host: ~a" (url-host url))
+		strings))))
 	(newline client->server)
 	(close-output-port client->server)
 	server->client)))
@@ -322,8 +323,8 @@
 	      (apply string-append grouped))
 	    relative-url)))))
 
-  ;; call/input-url : url x (url -> in-port) x (in-port -> ())
-  ;;                  [x list (str)] -> ()
+  ;; call/input-url : url x (url -> in-port) x (in-port -> T)
+  ;;                  [x list (str)] -> T
   (define call/input-url
     (let ((handle-port (lambda (server->client handler)
 			 (dynamic-wind (lambda () 'do-nothing)

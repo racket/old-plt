@@ -3,6 +3,7 @@
 
 (define-signature mzlib:url^
   ((struct url (scheme host port path params query fragment))
+   (struct mime-header (name value))
    unixpath->path
    get-pure-port			; url [x list (str)] -> in-port
    get-impure-port			; url [x list (str)] -> in-port
@@ -12,6 +13,6 @@
    string->url				; str -> url
    url->string
    call/input-url			; url x (url -> in-port) x
-					; (in-port -> ())
-					; [x list (str)] -> ()
+					; (in-port -> T)
+					; [x list (str)] -> T
    combine-url/relative))		; url x str -> url

@@ -24,8 +24,9 @@
   ;; query-chars->string :
   ;; list (char) -> string
 
-  ;; -- The input is the characters post-processed as per Web specs:
-  ;; spaces are turned into +es and lots of things are turned into %XX,
+  ;; -- The input is the characters post-processed as per Web specs, which
+  ;; is as follows:
+  ;; spaces are turned into "+"es and lots of things are turned into %XX,
   ;; where XX are hex digits, eg, %E7 for ~.  The output is a regular
   ;; Scheme string with all the characters converted back.
 
@@ -288,8 +289,7 @@
 		     (if (symbol? field-name)
 		       (symbol->string field-name)
 		       field-name)
-		     "'")
-		   ,(string-append "where only one was expected in <p>")
+		     "' where only one was expected in <p>")
 		   ,@(bindings-as-html bindings)))))))))
 
   ;; get-cgi-method :

@@ -1,10 +1,12 @@
 
+;; #%ized so it can be loaded in the "R5RS" namespace
+
 ; For shadowing (during compile):
-(let ([define-values/invoke-unit void]
-      [define-values/invoke-unit/sig void]
-      [global-define-values/invoke-unit void]
-      [global-define-values/invoke-unit/sig void])
-  (unit
+(let ([define-values/invoke-unit #%void]
+      [define-values/invoke-unit/sig #%void]
+      [global-define-values/invoke-unit #%void]
+      [global-define-values/invoke-unit/sig #%void])
+  (#%unit
     (import)
     (export)
 
@@ -12,8 +14,8 @@
       ; A cheesy way of expanding the saignature: use the compound-unit/sig
       ;  macro implementation. Construct an expression, expand it, and
       ;  then pull the result back apart.
-      (with-handlers ([(lambda (x) (not (exn:misc:user-break? x)))
-		       (lambda (x) (badsyntax sig "bad signature"))])
+      (#%with-handlers ([(lambda (x) (not (exn:misc:user-break? x)))
+			 (lambda (x) (badsyntax sig "bad signature"))])
 	(let ([expr (local-expand-defmacro `(#%compound-unit/sig
 					     (import)
 					     (link [A : ,sig (0)]
@@ -40,12 +42,12 @@
 	    (values exploded flattened)))))
 
     (define (extract-named-signature sig badsyntax)
-      (let-values ([(prefix sig) (if (and (list? sig)
-					  (= 3 (length sig))
-					  (eq? (cadr sig) ':))
-				     (values (car sig) (caddr sig))
-				     (values #f sig))])
-	(let-values ([(exploded flattened) (extract-signature sig badsyntax)])
+      (#%let-values ([(prefix sig) (if (and (list? sig)
+					    (= 3 (length sig))
+					    (eq? (cadr sig) ':))
+				       (values (car sig) (caddr sig))
+				       (values #f sig))])
+	(#%let-values ([(exploded flattened) (extract-signature sig badsyntax)])
 	  (if prefix
 	      (values (cons prefix exploded)
 		      (let ([p (string-append (symbol->string prefix) ":")])
@@ -73,11 +75,11 @@
 	     [symcheck (lambda (s)
 			 (or (symbol? s)
 			     (badsyntax s "not an identifier")))])
-	(unless (list? exports)
+	(#%unless (list? exports)
 	  (badsyntax exports "not a sequence of identifiers"))
 	(for-each symcheck exports)
-	(when prefix
-	  (unless (symbol? prefix)
+	(#%when prefix
+	  (#%unless (symbol? prefix)
 	    (badsyntax prefix "prefix is not an identifier")))
 	(for-each symcheck imports)
 	
@@ -114,12 +116,12 @@
 	      `(#%define-values ,tagged-exports ,invoke-unit)))))
     
     (define define-values/invoke-unit
-      (case-lambda 
+      (#%case-lambda 
        [(exports unit name . imports) (do-define-values/invoke-unit #f exports unit name imports)]
        [(exports unit) (do-define-values/invoke-unit #f exports unit #f null)]))
     
     (define global-define-values/invoke-unit
-      (case-lambda 
+      (#%case-lambda 
        [(exports unit name . imports) (do-define-values/invoke-unit #t exports unit name imports)]
        [(exports unit) (do-define-values/invoke-unit #t exports unit #f null)]))
     
@@ -135,13 +137,13 @@
 			     ,signame ,unit ,prefix ,@imports)
 			   s))]
 	     [unit-var (gensym)])
-	(let-values ([(ex-exploded ex-flattened) (extract-signature signame badsyntax)]
-		     [(im-explodeds im-flatteneds)
-		      (let loop ([l imports][el null][fl null])
-			(if (null? l)
-			    (values (reverse! el) (reverse! fl))
-			    (let-values ([(e f) (extract-named-signature (car l) badsyntax)])
-			      (loop (cdr l) (cons e el) (cons f fl)))))])
+	(#%let-values ([(ex-exploded ex-flattened) (extract-signature signame badsyntax)]
+		       [(im-explodeds im-flatteneds)
+			(let loop ([l imports][el null][fl null])
+			  (if (null? l)
+			      (values (reverse! el) (reverse! fl))
+			      (#%let-values ([(e f) (extract-named-signature (car l) badsyntax)])
+				(loop (cdr l) (cons e el) (cons f fl)))))])
 	  `(,(if global?
 		 'global-define-values/invoke-unit 
 		 'define-values/invoke-unit)
@@ -161,14 +163,14 @@
 	    ,@(apply append im-flatteneds)))))
     
     (define define-values/invoke-unit/sig
-      (case-lambda 
+      (#%case-lambda 
        [(signame unit prefix . imports)
 	(do-define-values/invoke-unit/sig #f signame unit prefix imports)]
        [(signame unit)
 	(do-define-values/invoke-unit/sig #f signame unit #f null)]))
 
     (define global-define-values/invoke-unit/sig
-      (case-lambda 
+      (#%case-lambda 
        [(signame unit prefix . imports)
 	(do-define-values/invoke-unit/sig #t signame unit prefix imports)]
        [(signame unit)

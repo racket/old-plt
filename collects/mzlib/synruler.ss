@@ -2,7 +2,9 @@
 ; then Shriram Krishnamurthi
 ; then Matthew Flatt
 
-(unit
+;; #%ized so it can be loaded in the "R5RS" namespace
+
+(#%unit
   (import)
   (export define-syntax
 	  -:sr:tag
@@ -409,8 +411,8 @@
 				(let ([tagged-out-pattern+alist
 				       (-:sr:tag
 					',out-pattern
-					(append! (-:sr:flatten ',in-pattern)
-						 keywords) '())])
+					(#%append! (-:sr:flatten ',in-pattern)
+						   keywords) '())])
 				  (-:sr:untag
 				   (-:sr:expand-pattern
 				    (car tagged-out-pattern+alist)
@@ -420,10 +422,10 @@
 				   (cdr tagged-out-pattern+alist)
 				   '())))))
 			  clauses)
-		       (else (error ',macro-name "no matching clause: ~s"
-				    ',clauses)))))))))
+		       (else (#%error ',macro-name "no matching clause: ~s"
+				      ',clauses)))))))))
 
   (define define-syntax
     (lambda (macro-name syn-rules)
       (let ([expander (make-expander 'define-syntax macro-name syn-rules)])
-	`(define-macro ,macro-name ,expander)))))
+	`(#%define-macro ,macro-name ,expander)))))

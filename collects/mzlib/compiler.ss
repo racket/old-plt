@@ -118,10 +118,8 @@
 				keep-constr?
 				also-keep-constr?)
 			       (current-namespace))
-			     (make-compile-namespace
-			      (if (built-in-name 'wx:frame%) ; HACK!!!
-				  '(wx)
-				  null)
+			     (make-compile-namespace 
+			      null
 			      keep-elab?
 			      also-keep-elab?
 			      keep-constr?

@@ -1,0 +1,212 @@
+
+(require-library "compile.ss" "mzscheme" "dynext")
+(require-library "link.ss" "mzscheme" "dynext")
+(require-library "file.ss" "mzscheme" "dynext")
+
+(require-library "functio.ss")
+(require-library "library.ss" "compiler")
+
+(define multi-linker:verbose (make-parameter #f))
+
+(define (link-multi-file-extension
+	 linker-prefix
+	 files
+	 dest-dir)
+
+  (define _loader.c (append-c-suffix "_loader"))
+  (define _loader.o (append-object-suffix "_loader"))
+  (define _loader.so (append-extension-suffix "_loader"))
+	
+  (define __ (printf "\"~a\":~n" (build-path dest-dir _loader.c)))
+
+  (define all-names
+    (map
+     (lambda (file)
+       (let*-values ([(base name dir?) (split-path file)])
+	   (let ([o (extract-base-filename/o name)]
+		 [kp (extract-base-filename/kp name)])
+	     (cond
+	      [o (list 'o file o)]
+	      [kp (cons 'kp file)]
+	      [else (error 'mzld "file is not a compiled object for constant pool file: ~a"
+			   file)]))))
+     files))
+
+  (define-values (o-files ; just .o files
+		  names ; just .o names
+		  kps) ; just .kp files
+    (let loop ([l all-names][ofs null][os null][kps null])
+      (if (null? l)
+	  (values (reverse ofs) (reverse os) (reverse kps))
+	  (if (eq? (caar l) 'o)
+	      (loop (cdr l) (cons (cadar l) ofs) (cons (caddar l) os) kps)
+	      (loop (cdr l) ofs os (cons (cdar l) kps))))))
+
+  (define suffixes
+    (let ([linker-prefix (compiler:clean-string linker-prefix)])
+      (map
+       (lambda (name)
+	 (string-append linker-prefix "_" (compiler:clean-string name)))
+       names)))
+
+  (define symbol-table (make-hash-table))
+  (define (add-symbol s spos pos)
+    (let ([v (hash-table-get symbol-table s (lambda () null))])
+      (hash-table-put! symbol-table s
+		       (cons (list spos pos) v))))
+  
+  ; Read in symbol info
+  (define kp-suffixes/counts
+    (let loop ([kps kps][kpos 0])
+      (if (null? kps)
+	  null
+	  (let-values ([(suffix count)
+			(call-with-input-file (car kps)
+			  (lambda (in)
+			    (let ([info (read in)])
+			      (let ([suffix (car info)]
+				    [symbols (cdadr info)])
+				(let loop ([l symbols][p 0])
+				  (unless (null? l)
+					  (add-symbol (string->symbol (car l)) kpos p)
+					  (loop (cdr l) (add1 p))))
+				(values suffix (length symbols))))))])
+	    (let ([rest (loop (cdr kps) 
+			      (if (zero? count)
+				  kpos
+				  (add1 kpos)))])
+	      (if (zero? count)
+		  rest
+		  (cons (cons suffix count) rest)))))))
+
+  ; Compile content of symbol table into dispatching information
+  (define symbols (hash-table-map symbol-table (lambda (key info) key)))
+  (define symbol-dispatches
+    (apply
+     append
+     (hash-table-map 
+      symbol-table
+      (lambda (key info)
+	(cons (length info)
+	      (apply append info))))))
+
+  (with-output-to-file
+     (build-path dest-dir _loader.c)
+    (lambda ()
+      (printf "#include \"linked.h\"~n~n")
+      
+      (for-each
+       (lambda (suffix)
+	 (printf "extern Scheme_Object * scheme_setup~a(Scheme_Env *e);~n" suffix)
+	 (printf "extern Scheme_Object * scheme_reload~a(Scheme_Env *e);~n" suffix))
+       suffixes)
+      (for-each
+       (lambda (kp-suffix/count)
+	 (let ([suffix (car kp-suffix/count)]
+	       [count (cdr kp-suffix/count)])
+	   (printf "extern Scheme_Object * SYMBOLS~a[~a];~n" 
+		   suffix count)))
+       kp-suffixes/counts)
+      
+      (printf "~nstatic struct {~n")
+      (for-each
+       (lambda (suffix)
+	 (printf "  Scheme_Object * ~a_symbol;~n" suffix))
+       suffixes)
+      (printf "} syms;~n~n")
+
+      
+      (unless (null? symbols)
+        (printf "static const char *SYMBOL_STRS[~a] = {~n" (length symbols))
+        (for-each
+	 (lambda (s)
+	   (printf "  ~s,~n" (symbol->string s)))
+	 symbols)
+        (printf "}; /* end of SYMBOL_STRS */~n~n")
+      
+	(printf "static const int SYMBOL_DISPATCHES[~a] = {~n  " (length symbol-dispatches))
+	(let loop ([l symbol-dispatches][line 0])
+	  (unless (null? l)
+	    (if (= line 20)
+		(begin
+		  (printf "~n  ")
+		  (loop l 0))
+		(begin
+		  (printf "~a, " (car l))
+		  (loop (cdr l) (add1 line))))))
+	(printf "~n}; /* end of SYMBOL_DISPATCHES */~n~n")
+
+	(printf "static setup_pooled_symbols(void) {~n  Scheme_Object * * symbol_tables[~a];~n  int i, j;~n"
+		(length kp-suffixes/counts))
+	(let loop ([l kp-suffixes/counts][p 0])
+	  (unless (null? l)
+	     (printf "  symbol_tables[~a] = SYMBOLS~a;~n  scheme_register_extension_global(&SYMBOLS~a, sizeof(SYMBOLS~a));~n"
+		     p (caar l)
+		     (caar l) (caar l))
+	     (loop (cdr l) (add1 p))))
+	(printf "  for (i = j = 0; i < ~a; i++) {~n" (length symbols))
+	(printf "    Scheme_Object * s = scheme_intern_symbol(SYMBOL_STRS[i]);~n")
+	(printf "    int c = SYMBOL_DISPATCHES[j++];~n")
+	(printf "    int k;~n")
+	(printf "    for (k = c; k--; j += 2)~n")
+	(printf "      symbol_tables[SYMBOL_DISPATCHES[j]][SYMBOL_DISPATCHES[j+1]] = s;~n")
+	(printf "  }~n")
+	(printf "}~n~n"))
+
+      (printf "static Scheme_Object * loader_dispatch(void *v, int argc, Scheme_Object * * argv) {~n")
+      (printf "  Scheme_Env * env = ((Scheme_Env *)scheme_get_param(scheme_current_process->config, MZCONFIG_ENV));~n")
+      (printf "  return ((Scheme_Object *(*)(Scheme_Env *))v)(env);~n}~n~n")
+      
+      (printf "static Scheme_Object * loader(int argc, Scheme_Object * * argv) {~n")
+      (printf "  Scheme_Object * name = argv[0];~n")
+      (for-each
+       (lambda (suffix)
+	 (printf "  if (name == syms.~a_symbol) return scheme_make_closed_prim_w_arity(loader_dispatch, LOCAL_PROC(scheme_reload~a), \"_loader-dispatch\", 0, 0);~n"
+		 suffix suffix))
+       suffixes)
+      (printf "  return scheme_false;~n}~n~n")
+      
+      (printf "Scheme_Object * scheme_reload(Scheme_Env * env) {~n")
+      (printf "  return scheme_make_prim_w_arity(loader, \"_loader\", 1, 1);~n}~n~n")
+      
+      (printf "Scheme_Object * scheme_initialize(Scheme_Env * env) {~n")
+      (unless (null? symbols)
+	(printf "  setup_pooled_symbols();~n"))
+      (for-each
+       (lambda (suffix)
+	 ; (printf "  printf(\"~a is %lx\\n\", scheme_setup~a);~n" suffix suffix)
+	 (printf "  LOCAL_PROC(scheme_setup~a)(env);~n" suffix))
+       suffixes)
+      (printf "  scheme_register_extension_global(&syms, sizeof(syms));~n")
+      (for-each
+       (lambda (suffix name)
+	 (printf "  syms.~a_symbol = scheme_intern_symbol(~s);~n" suffix name))
+       suffixes names)
+      (printf "  return scheme_reload(env);~n}~n"))
+    'truncate)
+  
+  (let ([tmp-dir (let ([d (getenv "PLTLDTMPDIR")])
+		   (and d (directory-exists? d) d))])
+    
+    (compile-extension (not (multi-linker:verbose))
+		       (build-path dest-dir _loader.c)
+		       (build-path dest-dir _loader.o)
+		       (list (collection-path "compiler")))
+    
+    (delete-file (build-path dest-dir _loader.c))
+    
+    (link-extension (not (multi-linker:verbose))
+		    (cons (build-path dest-dir _loader.o) o-files) 
+		    (build-path (if tmp-dir
+				    tmp-dir
+				    dest-dir)
+				_loader.so))    
+    (when tmp-dir
+	  (copy-file (build-path tmp-dir _loader.so)
+		     (build-path dest-dir _loader.so))
+	  (delete-file (build-path tmp-dir _loader.so)))
+
+    (delete-file (build-path dest-dir _loader.o))
+
+    (printf " [output to \"~a\"]~n" (build-path dest-dir _loader.so))))
+

@@ -21,7 +21,9 @@
     (define primitive-eval (current-eval))
 
     (define system-parameterization (current-parameterization))
-    (parameterization-branch-handler (lambda () system-parameterization))
+    (parameterization-branch-handler
+     (lambda () 
+       (make-parameterization system-parameterization)))
 
     (error-display-handler
      (lambda (msg)
@@ -34,16 +36,16 @@
 
     (define build-parameterization
       (let ([orig-eventspace (wx:current-eventspace)])
-	(lambda (custodian)
+	(lambda (user-custodian)
 	  (let* ([p (make-parameterization system-parameterization)]
-		 [bottom-eventspace (parameterize ([current-custodian custodian])
+		 [bottom-eventspace (parameterize ([current-custodian user-custodian])
 				      (wx:make-eventspace p))]
 		 [n (make-namespace 'no-constants 'wx 'hash-percent-syntax)])
 	    (with-parameterization p
 	      (lambda ()
 		(parameterization-branch-handler
 		 (lambda ()
-		   p))
+		   (make-parameterization p)))
 		(require-library-use-compiled #f)
 		(error-value->string-handler
 		 (lambda (x n)
@@ -152,7 +154,8 @@
 	    [on-set-media void]
 	    [get-prompt (lambda () "> ")]
 	    [param #f]
-	    [custodian (make-custodian)]
+	    [user-custodian (make-custodian)]
+	    [interactions-custodian (make-custodian)]
 
 	    [userspace-eval
 	     (lambda (sexp)
@@ -278,19 +281,21 @@
 		     (let ([evaluation-sucessful (make-semaphore 0)]
 			   [grace/kill-semaphore (make-semaphore 1)])
 		       (letrec ([thread-grace 
-				 (thread
-				  (lambda ()
-				    (semaphore-wait evaluation-sucessful)
-				    (semaphore-wait grace/kill-semaphore)
-				    (break-thread thread-kill)
-				    (cleanup-evaluation)))]
+				 (parameterize ([current-custodian interactions-custodian])
+				   (thread
+				    (lambda ()
+				      (semaphore-wait evaluation-sucessful)
+				      (semaphore-wait grace/kill-semaphore)
+				      (break-thread thread-kill)
+				      (cleanup-evaluation))))]
 				[thread-kill 
-				 (thread 
-				  (lambda ()
-				    (thread-wait evaluation-thread)
-				    (semaphore-wait grace/kill-semaphore)
-				    (break-thread thread-grace)
-				    (cleanup-evaluation)))])
+				 (parameterize ([current-custodian interactions-custodian])
+				   (thread 
+				    (lambda ()
+				      (thread-wait evaluation-thread)
+				      (semaphore-wait grace/kill-semaphore)
+				      (break-thread thread-grace)
+				      (cleanup-evaluation))))])
 			 (void))
 		       (ready-non-prompt)
 		       (wx:begin-busy-cursor)
@@ -363,7 +368,7 @@
 	    [current-thread-directory (current-directory)]
 	    [init-evaluation-thread
 	     (lambda ()
-	       (parameterize ([current-custodian custodian])
+	       (parameterize ([current-custodian user-custodian])
 		 (let-values 
 		     ([(evaluation-thread2 send-scheme2)
 		       (mzlib:thread@:consumer-thread
@@ -435,15 +440,14 @@
 	    [reset-console
 	     (let ([first-dir (current-directory)])
 	       (lambda ()
-		 (printf "shutting down custodian~n")
-		 (custodian-shutdown-all custodian)
-		 (printf "shut down custodian~n")
+		 (custodian-shutdown-all interactions-custodian)
+		 (custodian-shutdown-all user-custodian)
 		 (lock #f) ;; locked if the thread was killed
 		 (init-evaluation-thread)
-		 (let ([p (build-parameterization custodian)])
+		 (let ([p (build-parameterization user-custodian)])
 		   (with-parameterization p
 		     (lambda ()
-		       (current-custodian custodian)
+		       (current-custodian user-custodian)
 		       (current-output-port this-out)
 		       (current-error-port this-err)
 		       (current-input-port this-in)

@@ -257,6 +257,6 @@ void GC_fixup_variable_stack(void **var_stack,
 #define gcBYTES_TO_WORDS(x) ((x + 3) >> 2)
 #define gcWORDS_TO_BYTES(x) (x << 2)
 
-/* #define GC_INTERIORABLES_NEVER_MOVE 1 */
+#define GC_INTERIORABLES_NEVER_MOVE 1
 
 #endif /* __mzscheme_gc_2__ */

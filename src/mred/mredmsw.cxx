@@ -233,6 +233,26 @@ void MrEdDispatchEvent(MSG *msg)
   }
 }
 
+int MrEdCheckForBreak(void)
+{
+  HWND w = GetActiveWindow();
+
+  if (MrEdGetContext() != GetContext(w))
+    return 0;
+
+  SHORT hit = (SHORT)0x8000;
+  SHORT hitnow = (SHORT)0x0001;
+  SHORT c = GetAsyncKeyState('C');
+#if BREAKING_REQUIRES_SHIFT
+  SHORT shift = GetAsyncKeyState(VK_SHIFT);
+#else
+  SHORT shift = hit;
+#endif
+  SHORT control = GetAsyncKeyState(VK_CONTROL);
+  
+  return ((c & hit) && (c & hitnow) && (control & hit) && (shift & hit));
+}
+
 static long signal_fddone(void *fds)
 {
   win_extended_fd_set *r = (win_extended_fd_set *)fds;

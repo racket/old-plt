@@ -1452,8 +1452,7 @@
 		       (let* ([fun (zodiac:app-fun a)]
 			      [fun-phi (get-phi fun)]
 			      [rands (zodiac:app-args a)]
-			      [rands-len (length rands)]
-			      [found-case #f])
+			      [rands-len (length rands)])
 			 
 			 (for-each
 

@@ -28,9 +28,12 @@
 		(BASE ZODIAC)
 		(BASE ZLAYER)
 		(BASE DRIVER))]
+  [FILE-READ : mrspidey:file-read^
+	     ((require-relative-library-unit/sig "mrspideyf.ss"))]
   [MRSPIDEY : mrspidey:sba^
 	    ((require-library-unit/sig "sba.ss" "mrspidey")
 	     INTERACTION
+	     FILE-READ
 	     (FUNCTION : mrspidey:mzlib:function^)
 	     PRETTY-PRINT 
 	     FILE
@@ -42,5 +45,6 @@
 	   MRSPIDEY
 	   (BASE LIBRARY))])
  (export (open ((BASE DRIVER) : compiler:inner^))))
+
 
 

@@ -206,26 +206,6 @@
                      `(let ([,result null])
                         ,(send for to-scheme (send expr to-scheme) result)
                         (,(py-so 'list->py-list%) ,result)))))
-;        (->orig-so
-;         (let* ([targ (send for get-targ)]
-;                [scheme-targ (send targ to-scheme)]
-;                [scheme-vals (send (send for get-vals) to-scheme)]
-;                [scheme-expr (send expr to-scheme)])
-;           (cond
-;             [(is-a? targ tidentifier%)
-;              `(map (lambda (,scheme-targ)
-;                      ,scheme-expr)
-;                    ,scheme-vals)]
-;             [(is-a? targ ttuple%)
-;              (let ([tuple-name (gensym)])
-;                `(,(py-so 'list->py-list%)
-;                  (map (lambda (,tuple-name) 
-;                         ;; the cdr eats the "list" part of "`(list x y)"
-;                         (apply (lambda ,(cdr (syntax-e scheme-targ))
-;                                  ,scheme-expr)
-;                                (,(py-so 'py-tuple%->list) ,tuple-name)))
-;                       (,(py-so 'py-list%->list) ,scheme-vals))))]
-;             [else (raise "not implemented yet")]))))
       
       (super-instantiate ())))
   
@@ -256,15 +236,24 @@
       ;;daniel
       (inherit ->orig-so)
       (define/override (to-scheme expr-so result)
-        (->orig-so `(for-each (lambda (,(send targ to-scheme))
-                                ,(if iter
-                                     (send iter to-scheme expr-so result)
-                                     `(set! ,result (append ,result (cons ,expr-so null)))))
-                              (,(py-so 'py-sequence%->list) ,(send vals to-scheme)))))
-      ;        (->orig-so (let ([targ (send targ-exp to-scheme)])
-      ;                     `(map (lambda (,targ)
-      ;                             (f ,targ))
-      ;                           ,(send vals to-scheme)))))
+        (let ([body (if iter
+                        (send iter to-scheme expr-so result)
+                        `(set! ,result (append ,result (cons ,expr-so null))))])
+        (->orig-so `(for-each (cond
+                                [(is-a? targ tidentifier%)
+                                 `(lambda (,(send targ to-scheme))
+                                    ,body)]
+                                [(or (is-a? targ ttuple%)
+                                     (is-a? targ tlist-display%))
+                                 (let ([item (gensym 'item)])
+                                   `(lambda (,item)
+                                      (apply 
+                                       (lambda (,@(map (lambda (t) (send t to-scheme))
+                                                       (send targ get-sub-targets)))
+                                         ,body)
+                                       ,item)))]
+                                [else (error "bad target for a list comprehension")])
+                              (,(py-so 'py-sequence%->list) ,(send vals to-scheme))))))
       
       
       (super-instantiate ())))

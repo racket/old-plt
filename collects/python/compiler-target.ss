@@ -46,11 +46,11 @@
       ;;daniel
       (define/public (get-sub-targets) sub-targets)
       
-      ;;daniel
-      (inherit ->orig-so)
-      (define/override (to-scheme)
-        (->orig-so `(list ,@(map (lambda (t) (send t to-scheme))
-                                 sub-targets))))
+;      ;;daniel
+;      (inherit ->orig-so)
+;      (define/override (to-scheme)
+;        (->orig-so `(list ,@(map (lambda (t) (send t to-scheme))
+;                                 sub-targets))))
       
       (super-instantiate ())))
   

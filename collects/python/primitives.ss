@@ -596,7 +596,10 @@
                       `((__init__ ,(py-lambda '__init__ (this v)
                                               (python-set-member! this
                                                                   scheme-list-key
-                                                                  v)))))
+                                                                  v)))
+                        (__getitem__ ,(py-lambda '__getitem__ (this i)
+                                                 (list-ref (py-list%->list this)
+                                                           (py-number%->number i))))))
   
   (python-add-members py-dict%
                       `((__init__ ,(py-lambda '__init__ (this v)

@@ -1,5 +1,6 @@
 (module built-in mzscheme
-  (require "primitives.ss")
+  (require "primitives.ss"
+           (lib "etc.ss"))
   (provide object
            staticmethod
            classmethod
@@ -8,7 +9,11 @@
            StringType
            None
            NoneType
-           type)
+           type
+           ;; built-in functions
+           range
+           len
+           (rename sqrt py-sqrt))
   
   (define object py-object%)
   (define staticmethod py-static-method%)
@@ -19,4 +24,15 @@
   (define NoneType py-none%)
   (define type py-type%)
   (define classmethod py-classmethod%)
+  
+  (define (range i)
+    (list->py-list%
+     (build-list (py-number%->number i) number->py-number%)))
+  
+  (define (len l)
+    (number->py-number% (length (py-list%->list l))))
+  
+  (define (py-sqrt n)
+    (number->py-number% (sqrt (py-number%->number))))
+  
   )

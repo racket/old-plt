@@ -164,12 +164,6 @@
                 ((com com-list) (cons $1 $2))))))
        
   
-  (define (read-num-list in)
-    (let loop ((next (read in)))
-      (cond
-        ((or (eof-object? next) (eq? '^ next)) null)
-        (else (cons next (loop (read in)))))))
-  
   (define (read-response in)
     (let* ((t (regexp-replace* "#" (read-line in) " ^ "))
            (s (open-input-string t)))
@@ -180,8 +174,7 @@
                            (let ((i (read s)))
                              (cond
                                ((memq i `(^ X Y N S E W P D)) i)
-                               ((number? i)
-                                (token-NUM i))
+                               ((number? i) (token-NUM i))
                                (else 'EOF))))))))
           
   (define (read-initial-response! in gui?)
@@ -206,15 +199,6 @@
 	 (board-width) (board-height) (board) robots)))
       (robot-indexes (remove-dups (map robot-id robots)))))
     
-  (define (find-dead alive all)
-    (cond
-      ((null? alive) all)
-      ((= (car alive) (car all))
-       (find-dead (cdr alive) (cdr all)))
-      (else
-       (cons (car all)
-             (find-dead alive (cdr all))))))
-  
   (define (remove-dups loi)
     (let loop ((l (mergesort loi >))
                (r null))
@@ -225,6 +209,18 @@
         (else
          (loop (cdr l) (cons (car l) r))))))
           
+  (define (find-dead alive all)
+    (cond
+      ((null? alive) all)
+      ((null? all) null)
+      ((= (car alive) (car all))
+       (find-dead (cdr alive) (cdr all)))
+      ((< (car alive) (car all))
+       (find-dead (cdr alive) all))
+      (else
+       (cons (car all)
+             (find-dead alive (cdr all))))))
+  
   
   (define (read-response! set-score packages in gui?)
     (let* ((responses (read-response in))

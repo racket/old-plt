@@ -602,14 +602,14 @@ Scheme_Object *srp_read_buffer(int argc,Scheme_Object **argv) {
   case SQL_C_BIT :
     return readBitBuffer((unsigned char *)buffer,numElts);
   case SQL_C_SBIGINT :
-    return readSBigIntBuffer((_int64 *)buffer,numElts);
+    return readBigIntBuffer((_int64 *)buffer,numElts);
   case SQL_C_UBIGINT :
     return readUBigIntBuffer((unsigned _int64 *)buffer,numElts);
   case SQL_C_STINYINT :
   case SQL_C_TINYINT :
-    return readTinyIntBuffer((char *)buffer,numElts);
+    return readTinyBuffer((char *)buffer,numElts);
   case SQL_C_UTINYINT :
-    return readUTinyIntBuffer((unsigned char *)buffer,numElts);
+    return readUTinyBuffer((unsigned char *)buffer,numElts);
   case SQL_C_GUID :
     return readGuidBuffer((SQLGUID *)buffer,numElts);
   }
@@ -711,16 +711,19 @@ BOOL checkIsPredList(Scheme_Object *o,BOOL (*p)(Scheme_Object *),long numElts) {
   return TRUE;
 }
 
+typedef unsigned long *(*INTERVAL_FIELD_ACCESSOR)(SQL_INTERVAL_STRUCT *); 
+
 void writeIntervalToBuff(void *buffer,Scheme_Object *currList,long numElts,
 			 SQLINTERVAL intervalType,
-			 unsigned long *(*fieldFromInterval)(SQL_INTERVAL_STRUCT *),
+			 short numFields,
 			 Scheme_Object *signProc,
-			 Scheme_Object *intProc) {
+			 Scheme_Object **intProc,
+			 INTERVAL_FIELD_ACCESSOR *fieldFromInterval) {
   Scheme_Object *currVal;
   Scheme_Object *currSign,*currInt;
   char *signStr;
   SQL_INTERVAL_STRUCT *pInterval;
-  int i;
+  long i,j;
 
   checkIsPredList(currList,schemeIntervalIntegerP,numElts);
 
@@ -731,7 +734,6 @@ void writeIntervalToBuff(void *buffer,Scheme_Object *currList,long numElts,
     pInterval = (SQL_INTERVAL_STRUCT *)buffer + i;
 
     currSign = scheme_apply(signProc,1,&currVal);
-    currInt = scheme_apply(intProc,1,&currVal);
 
     pInterval->interval_type = intervalType;
 
@@ -739,10 +741,15 @@ void writeIntervalToBuff(void *buffer,Scheme_Object *currList,long numElts,
     pInterval->interval_sign = 
       (*signStr == '+') ? SQL_FALSE : SQL_TRUE;
 
-    /* this depends on sizeof(long) == sizeof(int) */
+    for (j = 0; j < numFields; j++) {
 
-    if (scheme_get_unsigned_int_val(currInt,fieldFromInterval(pInterval)) == 0) {
-      scheme_signal_error("sql-write-buffer: interval too big");
+      currInt = scheme_apply(intProc[j],1,&currVal);
+
+      /* this depends on sizeof(long) == sizeof(int) */
+
+      if (scheme_get_unsigned_int_val(currInt,fieldFromInterval[j](pInterval)) == 0) {
+	scheme_signal_error("sql-write-buffer: interval too big");
+      }
     }
 
     currList = SCHEME_CDR(currList);
@@ -780,6 +787,8 @@ Scheme_Object *srp_write_buffer(int argc,Scheme_Object **argv) {
   long numElts;
   long longVal;
   unsigned long uLongVal;
+  Scheme_Object *accessors[5];
+  INTERVAL_FIELD_ACCESSOR fields[5];
   SQL_NUMERIC_STRUCT *pNumeric;
   SQL_DATE_STRUCT *pDate;
   SQL_TIME_STRUCT *pTime;
@@ -803,7 +812,7 @@ Scheme_Object *srp_write_buffer(int argc,Scheme_Object **argv) {
   case SQL_C_CHAR :
 
     if (SCHEME_STRINGP(argv[1]) == FALSE) {
-      scheme_wrong_type("sql-write-buffer","string",2,argc,argv);
+      scheme_wrong_type("sql-write-buffer","string",1,argc,argv);
     }
 
     if (SCHEME_STRLEN_VAL(argv[1]) >= numElts) {
@@ -846,6 +855,27 @@ Scheme_Object *srp_write_buffer(int argc,Scheme_Object **argv) {
     writeUShortBuffer((unsigned short *)buffer,argv[1]); 
 
     break;
+
+  case SQL_C_STINYINT :
+  case SQL_C_TINYINT :
+
+    checkIsPredList(argv[1],schemeIntP,numElts);
+    writeTinyBuffer((char *)buffer,argv[1]); 
+
+  case SQL_C_UTINYINT :
+
+    checkIsPredList(argv[1],schemeIntP,numElts);
+    writeUTinyBuffer((unsigned char *)buffer,argv[1]); 
+
+  case SQL_C_SBIGINT :
+
+    checkIsPredList(argv[1],schemeExactIntegerP,numElts);
+    writeBigIntBuffer((_int64 *)buffer,argv[1]); 
+
+  case SQL_C_UBIGINT :
+
+    checkIsPredList(argv[1],schemeExactIntegerP,numElts);
+    writeUBigIntBuffer((unsigned _int64 *)buffer,argv[1]); 
 
   case SQL_C_FLOAT :
 
@@ -899,64 +929,201 @@ Scheme_Object *srp_write_buffer(int argc,Scheme_Object **argv) {
 
     break;
 
-  case SQL_C_INTERVAL_YEAR :
+  case SQL_C_BIT :
 
-    writeIntervalToBuff(buffer,argv[1],numElts,SQL_IS_YEAR,getIntervalYear,
-			YEAR_INTERVAL_SIGN,YEAR_INTERVAL_YEAR);
+    if (SCHEME_STRINGP(argv[1]) == FALSE) {
+      scheme_wrong_type("sql-write-buffer","string",1,argc,argv);
+    }
+
+    writeBitBuffer((char *)buffer,argv[1]); 
 
     break;
 
-    /*
+  case SQL_C_BINARY :
+    // SQL_C_VARBOOKMARK is the same
+
+    if (SCHEME_STRINGP(argv[1]) == FALSE) {
+      scheme_wrong_type("sql-write-buffer","string",1,argc,argv);
+    }
+
+    writeBinaryBuffer((char *)buffer,argv[1]); 
+
+    break;
+
+  case SQL_C_INTERVAL_YEAR :
+
+    accessors[0] = YEAR_INTERVAL_YEAR;
+    fields[0] = getIntervalYear;
+
+    writeIntervalToBuff(buffer,argv[1],numElts,SQL_IS_YEAR,
+			1,YEAR_INTERVAL_SIGN,
+			accessors,fields);
+
+    break;
 
   case SQL_C_INTERVAL_MONTH :
 
-    writeIntervalToBuff(buffer,argv[2],numElts,SQL_IS_MONTH,getIntervalMonth);
+    accessors[0] = MONTH_INTERVAL_MONTH;
+    fields[0] = getIntervalMonth;
+
+    writeIntervalToBuff(buffer,argv[1],numElts,SQL_IS_MONTH,
+			1,MONTH_INTERVAL_SIGN,
+			accessors,fields);
 
     break;
 
   case SQL_C_INTERVAL_DAY :
 
-    writeIntervalToBuff(buffer,argv[2],numElts,SQL_IS_DAY,getIntervalDay);
+    accessors[0] = DAY_INTERVAL_DAY;
+    fields[0] = getIntervalDay;
+
+    writeIntervalToBuff(buffer,argv[1],numElts,SQL_IS_DAY,
+			1,DAY_INTERVAL_SIGN,
+			accessors,fields);
 
     break;
 
   case SQL_C_INTERVAL_HOUR :
 
-    writeIntervalToBuff(buffer,argv[2],numElts,SQL_IS_HOUR,getIntervalHour);
+    accessors[0] = HOUR_INTERVAL_HOUR;
+    fields[0] = getIntervalHour;
+
+    writeIntervalToBuff(buffer,argv[1],numElts,SQL_IS_HOUR,
+			1,HOUR_INTERVAL_SIGN,
+			accessors,fields);
 
     break;
 
   case SQL_C_INTERVAL_MINUTE :
 
-    writeIntervalToBuff(buffer,argv[2],numElts,SQL_IS_MINUTE,getIntervalMinute);
+    accessors[0] = MINUTE_INTERVAL_MINUTE;
+    fields[0] = getIntervalMinute;
+
+    writeIntervalToBuff(buffer,argv[1],numElts,SQL_IS_MINUTE,
+			1,MINUTE_INTERVAL_SIGN,
+			accessors,fields);
 
     break;
 
   case SQL_C_INTERVAL_SECOND :
 
-    writeIntervalToBuff(buffer,argv[2],numElts,SQL_IS_SECOND,getIntervalSecond);
+    accessors[0] = SECOND_INTERVAL_SECOND;
+    fields[0] = getIntervalSecond;
+
+    writeIntervalToBuff(buffer,argv[1],numElts,SQL_IS_SECOND,
+			1,SECOND_INTERVAL_SIGN,
+			accessors,fields);
 
     break;
 
   case SQL_C_INTERVAL_YEAR_TO_MONTH :
 
-    // these are like others, except have more members 
+    accessors[0] = YEAR_TO_MONTH_INTERVAL_YEAR;
+    accessors[1] = YEAR_TO_MONTH_INTERVAL_MONTH;
+
+    fields[0] = getIntervalYear;
+    fields[1] = getIntervalMonth;
+
+    writeIntervalToBuff(buffer,argv[1],numElts,SQL_IS_YEAR_TO_MONTH,
+			2,YEAR_TO_MONTH_INTERVAL_SIGN,
+			accessors,fields);
+
+    break;
+
 
   case SQL_C_INTERVAL_DAY_TO_HOUR :
+
+    accessors[0] = DAY_TO_HOUR_INTERVAL_DAY;
+    accessors[1] = DAY_TO_HOUR_INTERVAL_HOUR;
+
+    fields[0] = getIntervalDay;
+    fields[1] = getIntervalHour;
+
+    writeIntervalToBuff(buffer,argv[1],numElts,SQL_IS_DAY_TO_HOUR,
+			2,DAY_TO_HOUR_INTERVAL_SIGN,
+			accessors,fields);
+
+    break;
+
+
   case SQL_C_INTERVAL_DAY_TO_MINUTE :
+
+    accessors[0] = DAY_TO_MINUTE_INTERVAL_DAY;
+    accessors[1] = DAY_TO_MINUTE_INTERVAL_HOUR;
+    accessors[2] = DAY_TO_MINUTE_INTERVAL_MINUTE;
+
+    fields[0] = getIntervalDay;
+    fields[1] = getIntervalHour;
+    fields[2] = getIntervalMinute;
+
+    writeIntervalToBuff(buffer,argv[1],numElts,SQL_IS_DAY_TO_MINUTE,
+			3,DAY_TO_MINUTE_INTERVAL_SIGN,
+			accessors,fields);
+			
+    break;
+
   case SQL_C_INTERVAL_DAY_TO_SECOND :
+
+    accessors[0] = DAY_TO_SECOND_INTERVAL_DAY;
+    accessors[1] = DAY_TO_SECOND_INTERVAL_HOUR;
+    accessors[2] = DAY_TO_SECOND_INTERVAL_MINUTE;
+    accessors[3] = DAY_TO_SECOND_INTERVAL_SECOND;
+
+    fields[0] = getIntervalDay;
+    fields[1] = getIntervalHour;
+    fields[2] = getIntervalMinute;
+    fields[3] = getIntervalSecond;
+
+    writeIntervalToBuff(buffer,argv[1],numElts,SQL_IS_DAY_TO_SECOND,
+			4,DAY_TO_SECOND_INTERVAL_SIGN,
+			accessors,fields);
+
+			
   case SQL_C_INTERVAL_HOUR_TO_MINUTE :
+
+    accessors[0] = HOUR_TO_MINUTE_INTERVAL_HOUR;
+    accessors[1] = HOUR_TO_MINUTE_INTERVAL_MINUTE;
+
+    fields[0] = getIntervalHour;
+    fields[1] = getIntervalMinute;
+
+    writeIntervalToBuff(buffer,argv[1],numElts,SQL_IS_HOUR_TO_MINUTE,
+			2,HOUR_TO_MINUTE_INTERVAL_SIGN,
+			accessors,fields);
+
+    break;
+
+
   case SQL_C_INTERVAL_HOUR_TO_SECOND :
+
+    accessors[0] = HOUR_TO_SECOND_INTERVAL_HOUR;
+    accessors[1] = HOUR_TO_SECOND_INTERVAL_MINUTE;
+    accessors[2] = HOUR_TO_SECOND_INTERVAL_SECOND;
+
+    fields[0] = getIntervalHour;
+    fields[1] = getIntervalMinute;
+    fields[2] = getIntervalSecond;
+
+    writeIntervalToBuff(buffer,argv[1],numElts,SQL_IS_HOUR_TO_SECOND,
+			3,HOUR_TO_SECOND_INTERVAL_SIGN,
+			accessors,fields);
+
+    break;
+
   case SQL_C_INTERVAL_MINUTE_TO_SECOND :
-  case SQL_C_BINARY :
-    // SQL_C_VARBOOKMARK is the same
-  case SQL_C_BIT :
-  case SQL_C_SBIGINT :
-  case SQL_C_UBIGINT :
-  case SQL_C_STINYINT :
-  case SQL_C_TINYINT :
-  case SQL_C_UTINYINT :
-    */
+
+    accessors[0] = MINUTE_TO_SECOND_INTERVAL_MINUTE;
+    accessors[1] = MINUTE_TO_SECOND_INTERVAL_SECOND;
+
+    fields[0] = getIntervalMinute;
+    fields[1] = getIntervalSecond;
+
+    writeIntervalToBuff(buffer,argv[1],numElts,SQL_IS_MINUTE_TO_SECOND,
+			2,MINUTE_TO_SECOND_INTERVAL_SIGN,
+			accessors,fields);
+
+    break;
+
   }
 
   return scheme_void;

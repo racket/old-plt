@@ -153,13 +153,17 @@ Scheme_Object *readIntervalHourMinuteBuffer(SQL_INTERVAL_STRUCT *buffer,long);
 Scheme_Object *readIntervalHourSecondBuffer(SQL_INTERVAL_STRUCT *buffer,long);
 Scheme_Object *readIntervalMinuteSecondBuffer(SQL_INTERVAL_STRUCT *buffer,long);
 Scheme_Object *readBinaryBuffer(char *buffer,long);
+void writeBinaryBuffer(char *buffer,Scheme_Object *);
 Scheme_Object *readBitBuffer(unsigned char *buffer,long);
-Scheme_Object *readSBigIntBuffer(_int64 *buffer,long);
+void writeBitBuffer(char *buffer,Scheme_Object *);
+Scheme_Object *readBigIntBuffer(_int64 *buffer,long);
+void writeBigIntBuffer(_int64 *buffer,Scheme_Object *);
 Scheme_Object *readUBigIntBuffer(unsigned _int64 *buffer,long);
-Scheme_Object *readTinyIntBuffer(char *buffer,long);
-Scheme_Object *readUTinyIntBuffer(unsigned char *buffer,long);
-Scheme_Object *readBookmarkBuffer(unsigned long *buffer,long);
-Scheme_Object *readVarBookmarkBuffer(unsigned char **buffer,long);
+void writeUBigIntBuffer(unsigned _int64 *buffer,Scheme_Object *);
+Scheme_Object *readTinyBuffer(char *buffer,long);
+void writeTinyBuffer(char *buffer,Scheme_Object *);
+Scheme_Object *readUTinyBuffer(unsigned char *buffer,long);
+void writeUTinyBuffer(unsigned char *buffer,Scheme_Object *);
 
 // utilities
 

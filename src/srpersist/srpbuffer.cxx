@@ -789,6 +789,47 @@ Scheme_Object *readBinaryBuffer(char *buffer,long numElts) {
   return retval;
 }
 
+int hexCharToValue(int c) {
+  if (c >= '0' && c <= '9') {
+    return (c - '0');
+  }
+
+  if (c >= 'A' && c <= 'F') {
+    return (c - 'A' + 10);
+  }
+
+  if (c >= 'a' && c <= 'f') {
+    return (c - 'a' + 10);
+  }
+
+  return 0;
+}
+
+void writeBinaryBuffer(char *buffer,Scheme_Object *obj) {
+  char *s;
+  int len;
+  int i;
+
+  s = SCHEME_STR_VAL(obj);
+  len = SCHEME_STRLEN_VAL(obj);
+  
+  if (len % 2 != 0) {
+    scheme_signal_error("Binary buffer not of even length");
+  }
+
+  for (i = 0; i < len; i++) {
+    if (isxdigit(*s) == FALSE) {
+      scheme_signal_error("Non-hex value in binary buffer");
+    }
+
+    buffer[i] = hexCharToValue(*s);
+    buffer[i] *= 16;
+    s++;
+    buffer[i] += hexCharToValue(*s);
+    s++;
+  }
+}
+
 Scheme_Object *readBitBuffer(unsigned char *buffer,long numElts) {
   Scheme_Object *retval;
   char *s;
@@ -804,7 +845,28 @@ Scheme_Object *readBitBuffer(unsigned char *buffer,long numElts) {
   return retval;
 }
 
-Scheme_Object *readSBigIntBuffer(_int64 *buffer,long numElts) {
+void writeBitBuffer(char *buffer,Scheme_Object *obj) {
+  char *s;
+  int len;
+  int i;
+
+  s = SCHEME_STR_VAL(obj);
+  len = SCHEME_STRLEN_VAL(obj);
+  
+  for (i = 0; i < len; i++) {
+    if (s[i] == '0') {
+      buffer[i] = 0;
+    }
+    else if (s[i] == '1') {
+      buffer[i] = 1;
+    }
+    else {
+      scheme_signal_error("sql-write-buffer: invalid character in bit string");
+    }
+  }
+}
+
+Scheme_Object *readBigIntBuffer(_int64 *buffer,long numElts) {
   Scheme_Object *retval,*bigLo,*bigHi;
   char bigBuff[25];
   long i;
@@ -824,6 +886,57 @@ Scheme_Object *readSBigIntBuffer(_int64 *buffer,long numElts) {
   }
 
   return retval;
+}
+
+void writeBigIntBuffer(_int64 *buffer,Scheme_Object *obj) {
+  Scheme_Object *currList,*currVal;
+  long i;
+  static Scheme_Object *argv[2];
+  static Scheme_Object *reallyBigNum;
+  static Scheme_Object *reallySmallNum;
+  static Scheme_Object *greaterThan;
+  static Scheme_Object *lessThan;
+  static BOOL init;
+
+  if (init == FALSE) {
+    greaterThan = scheme_lookup_global(scheme_intern_symbol("#%>"),
+				       scheme_get_env(scheme_config));
+    lessThan = scheme_lookup_global(scheme_intern_symbol("#%<"),
+				    scheme_get_env(scheme_config));
+    reallyBigNum = scheme_read_bignum("9223372036854775807",10);
+    reallySmallNum = scheme_read_bignum("-9223372036854775808",10);
+    init = TRUE;
+  }
+
+  currList = obj;
+
+  for (i = 0;currList != scheme_null; i++) {
+
+    currVal = SCHEME_CAR(currList);
+
+    if (SCHEME_INTP(currVal)) {
+      buffer[i] = SCHEME_INT_VAL(currVal);
+    }
+    else {
+
+      argv[0] = currVal;
+      argv[1] = reallyBigNum;
+
+      if (scheme_apply(greaterThan,2,argv) == scheme_true) {
+	scheme_signal_error("sql-write-buffer: number too big");
+      }
+
+      argv[1] = reallySmallNum;
+
+      if (scheme_apply(lessThan,2,argv) == scheme_true) {
+	scheme_signal_error("sql-write-buffer: number too small");
+      }
+
+      buffer[i] = _atoi64(scheme_bignum_to_string(currVal,10));
+    }
+
+    currList = SCHEME_CDR(currList);
+  }
 }
 
 Scheme_Object *readUBigIntBuffer(unsigned _int64 *buffer,long numElts) {
@@ -848,7 +961,73 @@ Scheme_Object *readUBigIntBuffer(unsigned _int64 *buffer,long numElts) {
   return retval;
 }
 
-Scheme_Object *readTinyIntBuffer(char *buffer,long numElts) {
+unsigned _int64 _atoui64(char *s) {
+  unsigned _int64 retval;
+
+  retval = 0ui64;
+
+  while(*s && isdigit(*s)) {
+    retval *= 10;
+    retval += *s - '0';
+    s++;
+  }
+
+  return retval;
+}
+
+void writeUBigIntBuffer(unsigned _int64 *buffer,Scheme_Object *obj) {
+  Scheme_Object *currList,*currVal;
+  long i;
+  static Scheme_Object *argv[2];
+  static Scheme_Object *reallyBigNum;
+  static Scheme_Object *greaterThan;
+  static Scheme_Object *lessThan;
+  static Scheme_Object *zero;
+  static BOOL init;
+
+  if (init == FALSE) {
+    reallyBigNum = scheme_read_bignum("FFFFFFFFFFFFFFFF",16);
+    greaterThan = scheme_lookup_global(scheme_intern_symbol("#%>"),
+				       scheme_get_env(scheme_config));
+    lessThan = scheme_lookup_global(scheme_intern_symbol("#%<"),
+				    scheme_get_env(scheme_config));
+    zero = scheme_make_integer(0);
+
+    init = TRUE;
+  }
+
+  currList = obj;
+
+  for (i = 0;currList != scheme_null; i++) {
+
+    currVal = SCHEME_CAR(currList);
+
+    if (SCHEME_INTP(currVal)) {
+      buffer[i] = SCHEME_INT_VAL(currVal);
+    }
+    else {
+
+      argv[0] = currVal;
+      argv[1] = reallyBigNum;
+
+      if (scheme_apply(greaterThan,2,argv) == scheme_true) {
+	scheme_signal_error("sql-write-buffer: number too big");
+      }
+      
+      argv[1] = zero;
+
+      if (scheme_apply(lessThan,2,argv) == scheme_true) {
+	scheme_signal_error("sql-write-buffer: number too small");
+      }
+
+      buffer[i] = _atoui64(scheme_bignum_to_string(currVal,10));
+    }
+
+    currList = SCHEME_CDR(currList);
+  }
+}
+
+Scheme_Object *readTinyBuffer(char *buffer,long numElts) {
   Scheme_Object *retval;
   long i;
 
@@ -861,7 +1040,27 @@ Scheme_Object *readTinyIntBuffer(char *buffer,long numElts) {
   return retval;
 }
 
-Scheme_Object *readUTinyIntBuffer(unsigned char *buffer,long numElts) {
+void writeTinyBuffer(char *buffer,Scheme_Object *obj) {
+  Scheme_Object *currList,*currVal;
+  long i;
+
+  currList = obj;
+
+  for (i = 0; currList != scheme_null; i++) {
+
+    currVal = SCHEME_CAR(currList);
+
+    if (isCharInt(currVal) == FALSE) {
+      scheme_signal_error("sql-write-buffer: number too big");
+    } 
+
+    buffer[i] = (char)SCHEME_INT_VAL(currVal);
+
+    currList = SCHEME_CDR(currList);
+  }
+}
+
+Scheme_Object *readUTinyBuffer(unsigned char *buffer,long numElts) {
   Scheme_Object *retval;
   long i;
 
@@ -872,5 +1071,25 @@ Scheme_Object *readUTinyIntBuffer(unsigned char *buffer,long numElts) {
   }
 
   return retval;
+}
+
+void writeUTinyBuffer(unsigned char *buffer,Scheme_Object *obj) {
+  Scheme_Object *currList,*currVal;
+  long i;
+
+  currList = obj;
+
+  for (i = 0; currList != scheme_null; i++) {
+
+    currVal = SCHEME_CAR(currList);
+
+    if (isUnsignedCharInt(currVal) == FALSE) {
+      scheme_signal_error("sql-write-buffer: number too big");
+    } 
+
+    buffer[i] = (unsigned char)SCHEME_INT_VAL(currVal);
+
+    currList = SCHEME_CDR(currList);
+  }
 }
 

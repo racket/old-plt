@@ -31,7 +31,7 @@
     ; that can hold items and reposition them as necessary.  Note that a
     ; panel can contain other panels.
     (define panel%
-      (class (make-item% mred:connections:connections-panel% #t #t list) args
+      (class (make-item% mred:connections:connections-panel% 0 0 #t #t list) args
 	(sequence (mred:debug:printf 'creation "creating a panel"))
 	(inherit
 	  object-ID
@@ -41,6 +41,8 @@
 	  get-height
 	  user-min-width
 	  user-min-height
+	  x-margin-width
+	  y-margin-height
 	  get-client-size
 	  get-parent)
 	
@@ -60,7 +62,6 @@
 	  [children-info null])
 	
 	(public
-	  
 
 	 [set-focus
 	  (lambda ()
@@ -260,8 +261,10 @@
 	   (lambda ()
 	     (let ([graphical-min-size (get-graphical-min-size)])
 	       (list
-		(max (car graphical-min-size) (user-min-width))
-		(max (cadr graphical-min-size) (user-min-height)))))]
+		(+ (* 2 (x-margin-width))
+		   (max (car graphical-min-size) (user-min-width)))
+		(+ (* 2 (y-margin-height))
+		   (max (cadr graphical-min-size) (user-min-height))))))]
 	  
 	  ; set-size:
 	  [set-size
@@ -340,8 +343,8 @@
 	  ;        width/height: size of panel's client area.
 	  ; returns: list of placement info for children; each item in list
 	  ;   is a list of 4 elements, consisting of child's x-posn,
-	  ;   y-posn, x-size, y-size.  Items are in same order as
-	  ;   children-info list.
+	  ;   y-posn, x-size, y-size (including margins).  Items are in same 
+	  ;   order as children-info list.
 	  [place-children
 	   (lambda (children-info width height)
 	     (if (null? children-info)
@@ -360,23 +363,22 @@
 	  ; returns: nothing
 	  ; effects: places children at default positions in panel.
 	  [redraw
-	   (letrec ([redraw-helper
-		     (lambda (children placement-info)
-		       (unless (null? children)
-			 (let ([curr-child (car children)])
-			   (apply
-			    (ivar curr-child set-size)
-			    (car placement-info))
-			   (redraw-helper
-			    (cdr children)
-			    (cdr placement-info)))))])
-	     (lambda (width height)
-	       (mred:debug:printf
-		'container-panel-redraw
-		"container-panel-redraw: Redrawing panel's children")
-	       (redraw-helper
+	   (lambda (width height)
+	     (mred:debug:printf
+	      'container-panel-redraw
+	      "container-panel-redraw: Redrawing panel's children")
+	     (let ([children-info (get-children-info)])
+	       (for-each
+		(lambda (child info placement)
+		  (let-values ([(x y w h) (apply values placement)])
+		    (let ([xm (child-info-x-margin info)]
+			  [ym (child-info-y-margin info)])
+		      (send child set-size
+			    (+ x xm) (+ y ym)
+			    (- w (* 2 xm)) (- h (* 2 ym))))))
 		children
-		(place-children (get-children-info) width height))))])
+		children-info
+		(place-children children-info width height))))])
 	(sequence
 	  (apply super-init
 		 (apply 

@@ -202,11 +202,30 @@ static void SetSIOUX(void)
 
 #endif /* DONT_PARSE_COMMAND_LINE */
 
+#ifndef DONT_LOAD_INIT_FILE
+static char *get_init_filename(Scheme_Env *env)
+{
+  Scheme_Object *f = scheme_lookup_global(scheme_intern_symbol("find-system-path"), 
+					  env);
+  Scheme_Object *type = scheme_intern_symbol("init-file");
+  Scheme_Object *path;
+  
+  path = _scheme_apply(f, 1, &type);
+
+  return SCHEME_STR_VAL(path);
+}
+#endif
+
 #ifdef EXPAND_FILENAME_TILDE
 # define INIT_FILENAME "~/.mzschemerc"
 #else
-# define INIT_FILENAME "mzscheme.rc"
+# ifdef DOS_FILE_SYSTEM
+#  define INIT_FILENAME "%%HOMEDIRVE%%\\%%HOMEPATH%%\\mzschemerc.ss"
+# else
+#  define INIT_FILENAME "PREFERENCES:mzschemerc.ss"
+# endif
 #endif
+#define GET_INIT_FILENAME get_init_filename
 #define PRINTF printf
 #define PROGRAM "MzScheme"
 #define PROGRAM_LC "mzscheme"
@@ -239,7 +258,7 @@ static void do_scheme_rep(void)
   printf("\n");
 }
 
-int cont_run(FinishArgs *f)
+static int cont_run(FinishArgs *f)
 {
   return finish_cmd_line_run(f, do_scheme_rep);
 }

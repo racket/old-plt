@@ -33,7 +33,7 @@
  eventspace-parameterization
  eventspace?
  file-selector
- find-mred-path
+ find-graphical-system-path
  flush-display
  font%
  font-list%

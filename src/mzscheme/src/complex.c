@@ -87,20 +87,32 @@ Scheme_Object *scheme_complex_normalize(const Scheme_Object *o)
 
   if (SCHEME_DBLP(c->i)) {
     double d = SCHEME_DBL_VAL(c->i);
+#ifndef NAN_EQUALS_ANYTHING
     if (d == 0.0)
       return c->r;
+#endif
     if (MZ_IS_NAN(d))
       return c->i;
+#ifdef NAN_EQUALS_ANYTHING
+    if (d == 0.0)
+      return c->r;
+#endif
     d = SCHEME_FLOAT_VAL(c->r);
     if (MZ_IS_NAN(d))
       return c->r;
 #ifdef MZ_USE_SINGLE_FLOATS
   } else if (SCHEME_FLTP(c->i)) {
     float f = SCHEME_FLT_VAL(c->i);
+#ifndef NAN_EQUALS_ANYTHING
     if (f == 0.0f)
       return c->r;
+#endif
     if (MZ_IS_NAN(d))
       return c->i;
+#ifdef NAN_EQUALS_ANYTHING
+    if (f == 0.0f)
+      return c->r;
+#endif
     f = SCHEME_FLT_VAL(c->r);
     if (MZ_IS_NAN(f))
       return c->r;

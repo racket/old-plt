@@ -1721,11 +1721,28 @@ static void MrEdIgnoreWarnings(char *, GC_word)
 # include "../mzscheme/src/schvers.h"
 #endif
 
+static char *get_init_filename(Scheme_Env *env)
+{
+  Scheme_Object *f = scheme_lookup_global(scheme_intern_symbol("find-graphical-system-path"), 
+					  env);
+  Scheme_Object *type = scheme_intern_symbol("init-file");
+  Scheme_Object *path;
+  
+  path = _scheme_apply(f, 1, &type);
+
+  return SCHEME_STR_VAL(path);
+}
+
 #ifdef wx_x
 # define INIT_FILENAME "~/.mredrc"
 #else
-# define INIT_FILENAME "mred.rc"
+# ifdef wx_msw
+#  define INIT_FILENAME "%%HOMEDIRVE%%\\%%HOMEPATH%%\\mredrc.ss"
+# else
+#  define INIT_FILENAME "PREFERENCES:mredrc.ss"
+# endif
 #endif
+#define GET_INIT_FILENAME get_init_filename
 #if REDIRECT_STDIO || WINDOW_STDIO || WCONSOLE_STDIO
 # define PRINTF scheme_console_printf
 #else

@@ -807,11 +807,21 @@ zero_p (int argc, Scheme_Object *argv[])
 #endif
   t = _SCHEME_TYPE(o);
 #ifdef MZ_USE_SINGLE_FLOATS
-  if (t == scheme_float_type)
+  if (t == scheme_float_type) {
+# ifdef NAN_EQUALS_ANYTHING
+    if (MZ_IS_NAN(SCHEME_FLT_VAL(o)))
+      return scheme_false;
+# endif
     return SCHEME_FLT_VAL(o) ? scheme_false : scheme_true;
+  }
 #endif
-  if (t == scheme_double_type)
+  if (t == scheme_double_type) {
+#ifdef NAN_EQUALS_ANYTHING
+    if (MZ_IS_NAN(SCHEME_DBL_VAL(o)))
+      return scheme_false;
+#endif
     return SCHEME_DBL_VAL(o) ? scheme_false : scheme_true;
+  }
   if ((t >= scheme_bignum_type) && (t <= scheme_complex_type))
     return scheme_false;
  
@@ -2237,11 +2247,7 @@ static Scheme_Object *make_rectangular (int argc, Scheme_Object *argv[])
 
 static Scheme_Object *make_polar (int argc, Scheme_Object *argv[])
 {
-  Scheme_Object *a, *b;
-  double va, vb;
-#ifdef MZ_USE_SINGLE_FLOATS
-  int single = 0;
-#endif
+  Scheme_Object *a, *b, *r, *i;
 
   a = argv[0];
   b = argv[1];
@@ -2250,51 +2256,10 @@ static Scheme_Object *make_polar (int argc, Scheme_Object *argv[])
   if (!SCHEME_REALP(b))
     scheme_wrong_type("make-polar", REAL_NUMBER_STR, 1, argc, argv);
 
-#ifdef MZ_USE_SINGLE_FLOATS
-  if (SCHEME_FLTP(b)) {
-    vb = SCHEME_FLT_VAL(b);
-    single++;
-  } else
-#endif
-    { 
-      if (!SCHEME_DBLP(b))
-	vb = TO_DOUBLE_VAL(b);
-      else
-	vb = SCHEME_DBL_VAL(b);
-    }
+  r = scheme_bin_mult(a, cos_prim(1, argv + 1));
+  i = scheme_bin_mult(a, sin_prim(1, argv + 1));
 
-
-#ifdef MZ_USE_SINGLE_FLOATS
-  if (SCHEME_FLTP(a)) {
-    va = SCHEME_FLT_VAL(a);
-    single++;
-  } else
-#endif
-    {
-      if (!SCHEME_DBLP(a))
-	va = TO_DOUBLE_VAL(a);
-      else
-	va = SCHEME_DBL_VAL(a);
-    }
-
-  if (MZ_IS_NAN(va) || MZ_IS_NAN(vb)
-      || MZ_IS_POS_INFINITY(vb) || MZ_IS_NEG_INFINITY(vb)) {
-#ifdef MZ_USE_SINGLE_FLOATS
-    if (single == 2)
-      return single_nan_object;
-#endif
-    return nan_object;
-  }
-
-#ifdef MZ_USE_SINGLE_FLOATS
-  if (single == 2) {
-    return scheme_make_complex(scheme_make_float(va * cos(vb)),
-			       scheme_make_float(va * sin(vb)));
-  }
-#endif
-
-  return scheme_make_complex(scheme_make_double(va * cos(vb)),
-			     scheme_make_double(va * sin(vb)));
+  return scheme_make_complex(r, i);
 }
 
 static Scheme_Object *real_part (int argc, Scheme_Object *argv[])

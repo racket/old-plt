@@ -310,20 +310,24 @@ static BOOL do_choose_color(void *data, HWND parent)
 }
 #endif
 
-static Scheme_Object *wxSchemeGetColourFromUser(int, Scheme_Object **argv)
+static Scheme_Object *wxSchemeGetColourFromUser(int argc, Scheme_Object **argv)
 {
   char *s;
 
-  if (SCHEME_NULLP(argv[0]))
+  if (!argc || SCHEME_FALSEP(argv[0]))
     s = "Choose a color";
   else
     s = objscheme_unbundle_string(argv[0], "get-color-from-user");
 
 #ifndef wx_x
 # ifdef wx_msw
-  wxWindow *parent = objscheme_unbundle_wxWindow(argv[1], "get-color-from-user", 1);
+  wxWindow *parent = ((argc > 1)
+		      ? objscheme_unbundle_wxWindow(argv[1], "get-color-from-user", 1)
+		      : NULL);
 # endif
-  wxColour *c = objscheme_unbundle_wxColour(argv[2], "get-color-from-user", 1);
+  wxColour *c = ((argc > 2)
+		 ? objscheme_unbundle_wxColour(argv[2], "get-color-from-user", 1)
+		 : NULL);
 #endif
 
 #ifdef wx_x
@@ -386,18 +390,22 @@ static BOOL do_choose_font(void *data, HWND parent)
 }
 #endif
 
-static Scheme_Object *wxSchemeGetFontFromUser(int, Scheme_Object **argv)
+static Scheme_Object *wxSchemeGetFontFromUser(int argc, Scheme_Object **argv)
 {
   char *prompt;
 
-  if (SCHEME_NULLP(argv[0]))
+  if (!argc || SCHEME_FALSEP(argv[0]))
     prompt = "Choose a font";
   else
     prompt = objscheme_unbundle_string(argv[0], "get-font-from-user");
 
 #ifdef wx_msw
-  wxWindow *parent = objscheme_unbundle_wxWindow(argv[1], "get-color-from-user", 1);
-  wxFont *f = objscheme_unbundle_wxFont(argv[2], "get-font-from-user", 1);
+  wxWindow *parent = ((argc > 1)
+		      ? objscheme_unbundle_wxWindow(argv[1], "get-font-from-user", 1)
+		      : NULL);
+  wxFont *f = ((argc > 2)
+	       ? objscheme_unbundle_wxFont(argv[2], "get-font-from-user", 1)
+	       : NULL);
 #endif
 
 #ifdef wx_x
@@ -1037,7 +1045,7 @@ static Scheme_Object *wxSchemeFindDirectory(int argc, Scheme_Object **argv)
   else if (argv[0] == setup_file_symbol)
     which = id_setup_file;
   else {
-    scheme_wrong_type("find-mred-path", "find-mred-path-symbol",
+    scheme_wrong_type("find-graphical-system-path", "graphical path symbol",
 		      0, argc, argv);
     return NULL;
   }
@@ -1329,9 +1337,9 @@ static void wxScheme_Install(Scheme_Env *WXUNUSED(env), void *global_env)
 			   global_env);
 
 
-  scheme_install_xc_global("find-mred-path",
+  scheme_install_xc_global("find-graphical-system-path",
 			   scheme_make_prim_w_arity(wxSchemeFindDirectory,
-						    "find-mred-path",
+						    "find-graphical-system-path",
 						    1, 1),
 			   global_env);
 

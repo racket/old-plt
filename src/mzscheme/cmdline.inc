@@ -75,7 +75,8 @@ static int finish_cmd_line_run(FinishArgs *fa, void (*repl)(void))
 
 #ifndef DONT_LOAD_INIT_FILE
   if (!fa->no_init_file) {
-    char *filename = scheme_expand_filename(INIT_FILENAME, -1, "startup", NULL);
+    char *filename = scheme_expand_filename(GET_INIT_FILENAME(fa->global_env), 
+					    -1, "startup", NULL);
     if (scheme_file_exists(filename))
       scheme_load(filename);
   }
@@ -465,15 +466,15 @@ static int run_from_cmd_line(int argc, char *argv[],
 	 "  -y, --hash-percent-syntax : " YDESC
 	 " Miscellaneous switches:\n"
 	 "  -- : No argument following this switch is used as a switch.\n"
-#if defined(_IBMR2)
+# if defined(_IBMR2)
 	 "  -p, --persistent : Catches SIGDANGER (low page space) signal.\n"
-#endif
+# endif
 	 "  -m, --mute-banner : Suppresses the "
-#ifdef MZSCHEME_CMD_LINE  
+# ifdef MZSCHEME_CMD_LINE  
 	 "startup banner"
-#else
+# else
 	 "-v/--version"
-#endif
+# endif
 	 " text.\n"
 	 "  -v, --version : Suppresses the read-eval-print loop.\n"
 	 "  -h, --help : Shows this information and exits; ignores other switches.\n"
@@ -494,19 +495,6 @@ static int run_from_cmd_line(int argc, char *argv[],
 	 "The file " INIT_FILENAME
 	 " is loaded before any provided expressions/files\n"
 	 " are evaluated/loaded, unless the -q or --no-init-file switch is used.\n"
-#ifdef MZSCHEME_CMD_LINE
-# ifdef UNIX_FILE_SYSTEM
-	 " (Under Windows and MacOS, \"mzscheme.rc\" is loaded from the start-up\n"
-         " working directory.)\n"
-# else
-         " The file \"mzscheme.rc\" is read from the start-up working directory.\n"
-# endif
-# ifdef WINDOWS_FILE_SYSTEM
-	 " (MacOS is like Windows. Under Unix, \"~/.mzschemerc\" is loaded.)\n"
-# endif
-# ifdef WINDOWS_FILE_SYSTEM
-	 " (Windows is like MacOS. Under Unix, \"~/.mzschemerc\" is loaded.)\n"
-# endif
 # ifdef MACINTOSH_EVENTS
 	 "\n"
 	 "Macintosh Startup files are alphabetized and put after the -F switch\n"
@@ -516,7 +504,6 @@ static int run_from_cmd_line(int argc, char *argv[],
 	 " of the line is used as command line arguments. Unless #!! is used,\n"
 	 " the startup file name is added to the end of this command line.\n"
 # endif
-#endif
 	 "For general information about " PROGRAM ", see:\n"
 	 "  http://www.cs.rice.edu/CS/PLT/packages/" PROGRAM_LC "/\n"
          , BANNER);

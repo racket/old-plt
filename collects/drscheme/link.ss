@@ -53,7 +53,6 @@
 			 plt:parameters^)))))
 	  
 (define drscheme:basis@
-  (let ([install-unit-with-signature install-unit-with-signature])
     (unit/sig drscheme:basis^
       (import [params : plt:parameters^]
 	      [mred : mred^]
@@ -116,9 +115,8 @@
 			  [userspace : plt:userspace^ (plt:userspace@ params)]
 			  [library : () (l@ userspace)])
 		    (export (open userspace)))])
-	    (install-unit-with-signature n)
 	    (parameterize ([current-namespace n])
-			  (invoke-open-unit/sig c@ #f))))))))
+			  (invoke-open-unit/sig c@ #f)))))))
 
 (define mred:make-invokable-unit
   (lambda ()

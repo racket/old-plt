@@ -9,10 +9,11 @@
   
   (provide (struct nt (name rhs))
            (struct rhs (pattern))
-           (struct compiled-lang (lang ht))
+           (struct compiled-lang (lang ht across-ht))
            
            lookup-binding
            compile-pattern
+           compile-pattern/cross
            compile-language
            match-pattern
            
@@ -25,8 +26,8 @@
   ;; nt = (make-nt sym (listof rhs))
   ;; rhs = (make-rhs single-pattern)
   ;; single-pattern = sexp
-  (define-struct nt (name rhs))
-  (define-struct rhs (pattern))
+  (define-struct nt (name rhs) (make-inspector))
+  (define-struct rhs (pattern) (make-inspector))
   
   ;; var = (make-var sym sexp)
   ;; patterns are sexps with `var's embedded
@@ -54,13 +55,15 @@
   (define-struct repeat (pat empty-bindings) (make-inspector)) ;; inspector for tests below
   
   ;; compiled-pattern : exp hole-path -> (union #f (listof bindings))
-  ;; compiled-lang : (make-compiled-lang (listof nt) hash-table[sym -o> compiled-pattern])
+  ;; compiled-lang : (make-compiled-lang (listof nt) 
+  ;;                                     hash-table[sym -o> compiled-pattern]
+  ;;                                     hash-table[sym -o> compiled-pattern])
   ;; hole-path = (listof (union 'car 'cdr))
   
   (define hole-path? (listof (symbols 'car 'cdr)))
   (define compiled-pattern (any? hole-path? . -> . (union false? (listof bindings?))))
   
-  (define-struct compiled-lang (lang ht))
+  (define-struct compiled-lang (lang ht across-ht))
   
   ;; lookup-binding : bindings sym [(-> any)] -> any
   (define lookup-binding 
@@ -78,22 +81,111 @@
   
   ;; compile-language : lang -> compiled-lang
   (define (compile-language lang)
-    (let* ([ht (make-hash-table)]
-           [clang (make-compiled-lang lang ht)])
-      (for-each (lambda (nt) (hash-table-put! ht (nt-name nt) null))
-		lang)
-      (for-each
-       (lambda (nt)
-	 (for-each
-	  (lambda (rhs)
-	    (hash-table-put!
-	     ht
-	     (nt-name nt)
-	     (cons (compile-pattern clang (rhs-pattern rhs))
-		   (hash-table-get ht (nt-name nt)))))
-	  (nt-rhs nt)))
-       lang)
+    (let* ([clang-ht (make-hash-table)]
+           [across-ht (make-hash-table)]
+           [clang (make-compiled-lang lang clang-ht across-ht)]
+           [do-compilation
+            (lambda (ht rewrite-nt allow-cross?)
+              (for-each
+               (lambda (in-nt)
+                 (let ([nt (rewrite-nt in-nt)])
+                   (for-each
+                    (lambda (rhs)
+                      (hash-table-put!
+                       ht
+                       (nt-name nt)
+                       (cons (compile-pattern/cross clang (rhs-pattern rhs) allow-cross?)
+                             (hash-table-get ht (nt-name nt)))))
+                    (nt-rhs nt))))
+               lang))])
+      (for-each (lambda (nt)
+                  (hash-table-put! clang-ht (nt-name nt) null)
+                  (hash-table-put! across-ht (nt-name nt) null))
+                lang)
+
+      ;; compiling without cross here signals an error for any crosses in the source
+      ;; so that the only crosses in further compilations are inserted by
+      ;; build-compatible-contexts
+      (do-compilation clang-ht (lambda (nt) nt) #f)
+      
+      (do-compilation across-ht
+                      (lambda (nt) (build-compatible-contexts across-ht nt))
+                      #t)
       clang))
+  
+  ;; build-compatible-contexts : across-ht nt -> nt
+  ;; constructs the compatible closure evaluation context from nt.
+  (define (build-compatible-contexts across-ht nt)
+    (make-nt
+     (nt-name nt)
+     (cons
+      (make-rhs 'hole)
+      (apply append
+             (map
+              (lambda (rhs)
+                (let-values ([(maker count) (build-compatible-context-maker (nt-name nt) across-ht (rhs-pattern rhs))])
+                  (let loop ([i count])
+                    (cond
+                      [(zero? i) null]
+                      [else (let ([nts (build-across-nts (nt-name nt) count (- i 1))])
+                              (cons (make-rhs (maker (box nts)))
+                                    (loop (- i 1))))]))))
+              (nt-rhs nt))))))
+  
+  ;; build-across-nts : symbol number number -> (listof pattern)
+  (define (build-across-nts nt count i)
+    (let loop ([j count])
+      (cond
+        [(zero? j) null]
+        [else
+         (cons (= i (- j 1)) 
+               (loop (- j 1)))])))
+    
+  ;; build-compatible-context-maker : symbol pattern -> (values ((box (listof pattern)) -> pattern) number)
+  ;; when the result function is applied, it takes each element
+  ;; of the of the boxed list and plugs them into the places where
+  ;; this-nt appeared in the original pattern. The number result
+  ;; is the number of times that this-nt appeared in the pattern
+  (define (build-compatible-context-maker this-nt across-ht pattern)
+    (let ([count 0])
+      (values
+       (let loop ([pattern pattern])
+         (match pattern
+           [`any (lambda (l) 'any)]
+           [`number (lambda (l) 'number)]
+           [`string (lambda (l) 'string)]
+           [`variable (lambda (l) 'variable)] 
+           [`hole  (lambda (l) 'hole)]
+           [(? string?) (lambda (l) pattern)]
+           [(? symbol?) 
+            (cond
+              [(hash-table-get across-ht pattern (lambda () #f))
+               (set! count (+ count 1))
+               (lambda (l)
+                 (let ([fst (car (unbox l))])
+                   (set-box! l (cdr (unbox l)))
+                   (if fst
+                       `(cross ,pattern)
+                       pattern)))]
+              [else
+               (lambda (l) pattern)])]
+           [`(name ,name ,pat)
+            (let ([patf (loop pat)])
+              (lambda (l)
+                `(name ,name ,(patf l))))]
+           [`(in-hole ,context ,contractum)
+            (let ([match-context (loop context)]
+                  [match-contractum (loop contractum)])
+              (lambda (l)
+                `(in-hole ,(match-context l)
+                          ,(match-contractum l))))]
+           [(? list?)
+            (let ([fs (map loop pattern)])
+              (lambda (l)
+                (map (lambda (f) (f l)) fs)))]
+           [else 
+            (lambda (l) pattern)]))
+       count)))
   
   ;; match-pattern : compiled-pattern exp -> (union #f (listof bindings))
   (define (match-pattern compiled-pattern exp)
@@ -138,13 +230,18 @@
          ribs)
         (make-bindings (hash-table-map ht make-rib)))))
   
-  ;; compile-pattern : compiled-lang pattern -> compiled-pattern
+  (define (compile-pattern clang pattern) (compile-pattern/cross clang pattern #f))
+  
+  ;; compile-pattern/cross : compiled-lang pattern boolean -> compiled-pattern
   ;; matches pattern agains exp in lang. may return multiple bindings
   ;; for a single identifier. Don't extract any values from the compiled-lang
   ;; (except to test if the ht maps things) on the first application --
   ;; it may not be completely filled in yet.
-  (define (compile-pattern clang pattern)
-    (let ([clang-ht (compiled-lang-ht clang)])
+  ;; the allow-cross? boolean determines if cross-reference patterns
+  ;; are treated specially or not.
+  (define (compile-pattern/cross clang pattern allow-cross?)
+    (let ([clang-ht (compiled-lang-ht clang)]
+          [across-ht (compiled-lang-across-ht clang)])
       (let loop ([pattern pattern])
         (memoize2
          (match pattern
@@ -184,6 +281,15 @@
                (lambda (exp hole-path)
                  (and (eq? exp pattern)
                       (list (make-bindings null))))])]
+           [`(cross ,(and id (? symbol?)))
+            (cond
+              [(not allow-cross?)
+               (error 'compile-pattern/cross "`cross' patterns not allowed in ~s" pattern)]
+              [(hash-table-get across-ht id (lambda () #f))
+               (lambda (exp hole-path)
+                 (match-nt across-ht id exp hole-path))]
+              [else
+               (error 'compile-pattern/cross "unknown cross reference ~a" id)])]
            [`(name ,name ,pat)
             (let ([match-pat (loop pat)])
               (lambda (exp hole-path)

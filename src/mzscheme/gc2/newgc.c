@@ -2358,8 +2358,6 @@ static void garbage_collect(int force_full)
   static int re_gc_after_final_threshold = 20;
   int ran_final;
 
-  printf("pre-gc %ld\n", GC_get_memory_use(NULL));
-
   /* determine if this should be a full collection or not */
   gc_full = force_full || !generations_available || 
             (since_last_full == FULL_COLLECT_EVERY);
@@ -2454,18 +2452,6 @@ static void garbage_collect(int force_full)
     run_account_hooks();
     running_finalizers = 0;
   }
-
-  printf("gc %d %ld\n", ran_final, GC_get_memory_use(NULL));
-#if 0
-  if (ran_final > re_gc_after_final_threshold) {
-    if (ran_final / 2 > re_gc_after_final_threshold)
-      re_gc_after_final_threshold = ran_final / 2;
-    else if (ran_final / 4 < re_gc_after_final_threshold)
-      re_gc_after_final_threshold = ran_final / 4;
-    printf("re-gc %d\n", re_gc_after_final_threshold);
-    garbage_collect(1);
-  }
-#endif
 
   DUMP_HEAP(); CLOSE_DEBUG_FILE();
 }

@@ -25,11 +25,7 @@
 		    mred^
 		    framework^
 		    (frame-mixin))))
-    (new-help-frame startup-url
-		    (lambda (file-menu)
-		      (make-object menu-item% "New DrScheme" file-menu
-				   (lambda (m i)
-				     (new-drscheme)))))))
+    (new-help-frame startup-url)))
 
 
       

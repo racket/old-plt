@@ -4,7 +4,10 @@
 
 (require-library "urlu.ss" "net")
 
-(invoke-open-unit/sig
+(begin-elaboration-time
+ (require-library "invoke.ss"))
+
+(define-values/invoke-unit/sig mzlib:url^
   (compound-unit/sig
     (import
       (FILE : mzlib:file^))

@@ -157,12 +157,6 @@
 
    class-init-defaults-map!
 
-   zodiac:invoke-form?
-   zodiac:invoke-form-unit
-   zodiac:set-invoke-form-unit!
-   zodiac:invoke-form-variables
-   zodiac:set-invoke-form-variables!
-   
    (struct zodiac:void ())
    (struct zodiac:undefined ())
 
@@ -336,7 +330,7 @@
    (struct vm:macro-apply (name primitive args tail? bool?))
    (struct vm:struct (type super fields multi?)) ; multi? = #f => always run-time error
    (struct vm:compound (assembly))
-   (struct vm:invoke (num-variables open? multi? tail? name-specifier))
+   (struct vm:invoke (num-variables multi? tail?))
    (struct vm:interface (assembly))
    (struct vm:call (label closure))
    (struct vm:begin0-extract (var))

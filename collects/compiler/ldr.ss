@@ -1,6 +1,5 @@
 
-(unit/sig
- compiler:linker^
+(unit/sig compiler:linker^
  (import dynext:compile^
 	 dynext:link^
 	 dynext:file^

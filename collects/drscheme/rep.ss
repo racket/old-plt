@@ -1112,7 +1112,7 @@
 	 (lambda ()
 	   (let ([setting (fw:preferences:get 'drscheme:settings)]
 		 [library-unit
-		  (compound-unit/sig
+		  '(compound-unit/sig
 		      (import)
 		    (link [userspace : plt:userspace^ 
 				     ((compound-unit/sig 
@@ -1240,12 +1240,12 @@
 	     
 	     (exit-handler (lambda (arg) (shutdown-user-custodian)))
 	     
-	     (with-handlers ([(lambda (x) #t)
-			      (lambda (y) 
-				(display (exn-message y))
-				(newline))])
-	       (invoke-unit/sig
-		library-unit))
+	     '(with-handlers ([(lambda (x) #t)
+			       (lambda (y) 
+				 (display (exn-message y))
+				 (newline))])
+		(invoke-unit/sig
+		 library-unit))
 	     
 	     ;; set all parameters before constructing eventspace
 	     ;; so that the parameters are set in the eventspace's

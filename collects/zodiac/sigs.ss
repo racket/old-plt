@@ -1,4 +1,4 @@
-; $Id: sigs.ss,v 1.64 1999/04/22 21:09:29 mflatt Exp $
+; $Id: sigs.ss,v 1.65 1999/05/06 14:01:22 mflatt Exp $
 
 (begin-elaboration-time (require-library "macro.ss"))
 (begin-elaboration-time (require-library "mzlibs.ss"))
@@ -152,11 +152,9 @@
   (create-unit-form
     create-compound-unit-form
     create-invoke-unit-form
-    create-invoke-open-unit-form
     (struct unit-form (imports exports clauses))
     (struct compound-unit-form (imports links exports))
     (struct invoke-unit-form (unit variables))
-    (struct invoke-open-unit-form (unit name-specifier variables))
     unit-clauses-vocab-delta update-unresolved-attribute
     inside-unit? check-export
     process-unit-top-level-resolution

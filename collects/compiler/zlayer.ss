@@ -102,35 +102,6 @@
 	  (loop (cdr l))))))
   
   ;;----------------------------------------------------------------------------
-  ;; INVOKE and INVOKE-OPEN
-  
-  (define (zodiac:invoke-form? x)
-    (or (zodiac:invoke-unit-form? x)
-	(zodiac:invoke-open-unit-form? x)))
-  
-  (define (zodiac:invoke-form-unit ast)
-    ((if (zodiac:invoke-unit-form? ast)
-	 zodiac:invoke-unit-form-unit
-	 zodiac:invoke-open-unit-form-unit)
-     ast))
-  (define (zodiac:set-invoke-form-unit! ast u)
-    ((if (zodiac:invoke-unit-form? ast)
-	 zodiac:set-invoke-unit-form-unit!
-	 zodiac:set-invoke-open-unit-form-unit!)
-     ast u))
-  
-  (define (zodiac:invoke-form-variables ast)
-    ((if (zodiac:invoke-unit-form? ast)
-	 zodiac:invoke-unit-form-variables
-	 zodiac:invoke-open-unit-form-variables)
-     ast))
-  (define (zodiac:set-invoke-form-variables! ast v)
-    ((if (zodiac:invoke-unit-form? ast)
-	 zodiac:set-invoke-unit-form-variables!
-	 zodiac:set-invoke-open-unit-form-variables!)
-     ast v))
-
-  ;;----------------------------------------------------------------------------
   ;; SPECIAL CONSTANTS
   ;;
   ;; some constants we don't know how to write, like #<void>

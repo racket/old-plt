@@ -5,7 +5,6 @@ Using _Zodiac_
 The top-level way:
 
    (require-library "invoke.ss" "zodiac")
-   (zodiac:invoke-system)
    ; binds global names prefixed with `zodiac:';
    ; zodiac:internal-error and zodiac:static-error
    ;  can be redefined afterwards.
@@ -99,7 +98,6 @@ Example
 -------
 
   (require-library "invoke.ss" "zodiac")
-  (zodiac:invoke-system)
   (let ([r ((zodiac:read (open-input-string "(cons 1 null)")
                          (zodiac:make-location 1 1 0 "string")))])
     (eval (zodiac:parsed->raw (zodiac:scheme-expand r))))

@@ -1,4 +1,4 @@
-; $Id: scm-hanc.ss,v 1.60 1999/04/07 22:38:03 mflatt Exp $
+; $Id: scm-hanc.ss,v 1.61 1999/04/07 23:36:17 mflatt Exp $
 
 (define-struct signature-element (source))
 (define-struct (name-element struct:signature-element) (name))
@@ -1934,7 +1934,7 @@
 
 
 (define do-invoke-unit/sig-micro
-  (lambda (in:expr in:linkage in:name-spec expr env attributes vocab)
+  (lambda (in:expr in:linkage expr env attributes vocab)
     (let ((proc:linkage (map (lambda (l)
 			       (expand-expr l env attributes
 					    iu/s-linkage-vocab))
@@ -1948,14 +1948,13 @@
        (structurize-syntax
 	`(let ((unit ,in:expr))
 	   (#%verify-linkage-signature-match
-	    ',(if in:name-spec 'invoke-open-unit/sig 'invoke-unit/sig)
+	    'invoke-unit/sig
 	    '(invoke)
 	    (#%list unit)
 	    '(#())
 	    '(,(map named-sig-list->named-sig-vector proc:linkage)))
-	   (,(if in:name-spec '#%invoke-open-unit '#%invoke-unit)
+	   (#%invoke-unit
 	    (#%unit-with-signature-unit unit)
-	    ,@(if in:name-spec (list in:name-spec) null)
 	    ;; Structurize proc:imports without marks to allow capture
 	    ,@(map (lambda (x) (structurize-syntax x expr '()))
 		   proc:imports)))
@@ -1974,45 +1973,13 @@
 	  (let ((in:expr (pat:pexpand 'expr p-env kwd))
 		(in:linkage (pat:pexpand '(linkage ...) p-env kwd)))
 	    (do-invoke-unit/sig-micro
-	     in:expr in:linkage #f
+	     in:expr in:linkage
 	     expr env attributes vocab))))
 	  (else
 	    (static-error expr "Malformed invoke-unit/sig"))))))
 
 (add-primitivized-micro-form 'invoke-unit/sig full-vocabulary invoke-unit/sig-micro)
 (add-primitivized-micro-form 'invoke-unit/sig scheme-vocabulary invoke-unit/sig-micro)
-
-(define invoke-open-unit/sig-micro
-  (let* ((kwd '())
-	 (in-pattern-1 '(_ expr))
-	 (out-pattern-1 '(invoke-open-unit/sig expr #f))
-	 (in-pattern-2 '(_ expr name-spec linkage ...))
-	 (m&e-1 (pat:make-match&env in-pattern-1 kwd))
-	 (m&e-2 (pat:make-match&env in-pattern-2 kwd)))
-    (lambda (expr env attributes vocab)
-      (cond
-       ((pat:match-against m&e-1 expr env)
-	=>
-	(lambda (p-env)
-	  (expand-expr
-	   (structurize-syntax
-	    (pat:pexpand out-pattern-1 p-env kwd)
-	    expr)
-	   env attributes vocab)))
-       ((pat:match-against m&e-2 expr env)
-	=>
-	(lambda (p-env)
-	  (let ((in:expr (pat:pexpand 'expr p-env kwd))
-		(in:name-spec (pat:pexpand 'name-spec p-env kwd))
-		(in:linkage (pat:pexpand '(linkage ...) p-env kwd)))
-	    (do-invoke-unit/sig-micro
-	     in:expr in:linkage in:name-spec
-	     expr env attributes vocab))))
-       (else
-	(static-error expr "Malformed invoke-open-unit/sig"))))))
-
-(add-primitivized-micro-form 'invoke-open-unit/sig full-vocabulary invoke-open-unit/sig-micro)
-(add-primitivized-micro-form 'invoke-open-unit/sig scheme-vocabulary invoke-open-unit/sig-micro)
 
 (define unit->unit/sig-micro
     (let* ((kwd '())
@@ -2051,3 +2018,82 @@
 (add-primitivized-micro-form 'unit->unit/sig full-vocabulary unit->unit/sig-micro)
 (add-primitivized-micro-form 'unit->unit/sig scheme-vocabulary unit->unit/sig-micro)
 
+(define do-define-invoke-micro
+  (lambda (global? in:expr in:export in:imports prefix expr env attributes vocab)
+    (let ((proc:linkage (map (lambda (l)
+			       (expand-expr l env attributes
+					    iu/s-linkage-vocab))
+			     in:imports))
+	  (proc:ex-linkage (expand-expr in:export env attributes
+					iu/s-linkage-vocab))
+	  (proc:imports (apply append
+			       (map (lambda (l)
+				      (expand-expr l env attributes
+						   iu/s-imports-vocab))
+				    in:imports)))
+	  (proc:exports (expand-expr in:export env attributes
+				     iu/s-imports-vocab)))
+      (expand-expr
+       (structurize-syntax
+	`(,(if global?
+	       'global-define-values/invoke-unit
+	       'define-values/invoke-unit)
+	   ,proc:exports
+	   (let ((unit ,in:expr))
+	     (#%verify-linkage-signature-match
+	      'invoke-unit/sig
+	      '(invoke)
+	      (#%list unit)
+	      '(#())
+	      '(,(map named-sig-list->named-sig-vector proc:linkage)))
+	     (#%unit/sig->unit unit))
+	   ,prefix
+	   ;; Structurize proc:imports without marks to allow capture
+	   ,@(map (lambda (x) (structurize-syntax x expr '()))
+		  proc:imports))
+	expr '(-1))
+       env attributes vocab))))
+
+(define (make-define-values/invoke-unit/sig-micro global?)
+  (let* ((kwd '())
+	 (in-pattern '(_ export expr))
+	 (in-pattern2 '(_ export expr prefix linkage ...))
+	 (m&e (pat:make-match&env in-pattern kwd))
+	 (m&e2 (pat:make-match&env in-pattern2 kwd))
+	 (badsyntax (lambda (expr why)
+		      (static-error expr 
+				    (format "Malformed ~adefine-values/invoke-unit/sig~a"
+					    (if global? "global-" "")
+					    why)))))
+    (lambda (expr env attributes vocab)
+      (let ([doit (lambda (p-env prefix?)
+		    (let ((in:export (pat:pexpand 'export p-env kwd))
+			  (in:expr (pat:pexpand 'expr p-env kwd))
+			  (in:prefix (and prefix? (pat:pexpand 'prefix p-env kwd)))
+			  (in:linkage (if prefix?
+					  (pat:pexpand '(linkage ...) p-env kwd)
+					  null)))
+		      (unless (or (z:symbol? in:prefix)
+				  (and (z:boolean? in:prefix)
+				       (not (z:read-object in:prefix)))
+				  (not in:prefix))
+			(badsyntax expr " (bad prefix)"))
+		      (do-define-invoke-micro
+		       global?
+		       in:expr in:export in:linkage in:prefix
+		       expr env attributes vocab)))])
+	
+	(cond
+	 [(pat:match-against m&e expr env)
+	  => (lambda (p-env)
+	       (doit p-env #f))]
+	 [(pat:match-against m&e2 expr env)
+	  => (lambda (p-env)
+	       (doit p-env #t))]
+	 [else
+	  (badsyntax expr "")])))))
+
+(add-on-demand-form 'micro 'define-values/invoke-unit/sig common-vocabulary
+		    (make-define-values/invoke-unit/sig-micro #f))
+(add-on-demand-form 'micro 'global-define-values/invoke-unit/sig common-vocabulary
+		    (make-define-values/invoke-unit/sig-micro #t))

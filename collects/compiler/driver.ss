@@ -404,8 +404,8 @@
       (for-each (lambda (link)
 		  (analyze-units! (cadr link)))
 		(zodiac:compound-unit-form-links expr))]
-     [(zodiac:invoke-form? expr)
-      (analyze-units! (zodiac:invoke-form-unit expr))]
+     [(zodiac:invoke-unit-form? expr)
+      (analyze-units! (zodiac:invoke-unit-form-unit expr))]
      [(zodiac:struct-form? expr)
       (analyze-units! (zodiac:struct-form-super expr))]
      [(zodiac:class*/names-form? expr)

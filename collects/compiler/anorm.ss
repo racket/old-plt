@@ -419,26 +419,17 @@
 		  ;;-----------------------------------------------------------
 		  ;; INVOKE
 		  ;;
-		  [(zodiac:invoke-form? ast)
+		  [(zodiac:invoke-unit-form? ast)
 		   (normalize-name
-		    (zodiac:invoke-form-unit ast)
+		    (zodiac:invoke-unit-form-unit ast)
 		    (lambda (unit)
-		      (k (if (zodiac:invoke-unit-form? ast)
-			     (zodiac:make-invoke-unit-form
-			      (zodiac:zodiac-origin ast)
-			      (zodiac:zodiac-start ast)
-			      (zodiac:zodiac-finish ast)
-			      (zodiac:parsed-back ast)
-			      unit
-			      (zodiac:invoke-unit-form-variables ast))
-			     (zodiac:make-invoke-open-unit-form
-			      (zodiac:zodiac-origin ast)
-			      (zodiac:zodiac-start ast)
-			      (zodiac:zodiac-finish ast)
-			      (zodiac:parsed-back ast)
-			      unit
-			      (zodiac:invoke-open-unit-form-name-specifier ast)
-			      (zodiac:invoke-open-unit-form-variables ast))))))]
+		      (k (zodiac:make-invoke-unit-form
+			  (zodiac:zodiac-origin ast)
+			  (zodiac:zodiac-start ast)
+			  (zodiac:zodiac-finish ast)
+			  (zodiac:parsed-back ast)
+			  unit
+			  (zodiac:invoke-unit-form-variables ast)))))]
 
 		  ;;-----------------------------------------------------------
 		  ;; CLASS

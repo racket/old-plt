@@ -192,10 +192,6 @@
 	     [('#%verify-signed-compound-sub-units . _) '(void)]
 	     [('#%verify-linkage-signature-match . _) '(void)]
 	     [('#%unit-with-signature-unit x) x]
-	     [('#%invoke-open-unit expr name-specifier . imports)
-	      `(#%invoke-unit ,(loop expr) ,@imports)]
-	     [('#%invoke-open-unit expr)
-	      `(#%invoke-unit ,(loop expr))]
 	     [(('#%global-defined-value ('#%quote match:error)) . args)
 	      '(error 'match "Match error")]
 	     [(a . d) (cons (loop a) (loop d))]

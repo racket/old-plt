@@ -5,9 +5,14 @@
 (require-library "file.ss")
 
 (require-relative-library "collections.ss")
-(invoke-open-unit/sig (require-relative-library "collectionr.ss")
-		      #f
-		      make:make^
-		      mzlib:function^
-		      mzlib:file^
-		      dynext:file^)
+
+(begin-elaboration-time
+  (require-library "invoke.ss"))
+
+(define-values/invoke-unit/sig make:collection^
+  (require-relative-library "collectionr.ss")
+  #f
+  make:make^
+  mzlib:function^
+  mzlib:file^
+  dynext:file^)

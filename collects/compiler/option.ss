@@ -1,5 +1,9 @@
 
 (require-relative-library "sig.ss")
 
-(invoke-open-unit/sig (require-relative-library "optionr.ss")
-		      compiler:option)
+(begin-elaboration-time
+ (require-library "invoke.ss"))
+
+(define-values/invoke-unit/sig compiler:option^
+  (require-relative-library "optionr.ss")
+  compiler:option)

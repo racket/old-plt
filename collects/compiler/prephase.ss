@@ -927,8 +927,8 @@
 		;; If we're in a unit, then replace links to #% globals with
 		;; let-bound locals
 		;;
-		[(zodiac:invoke-form? ast)
-		 (let ([link-vars (zodiac:invoke-form-variables ast)])
+		[(zodiac:invoke-unit-form? ast)
+		 (let ([link-vars (zodiac:invoke-unit-form-variables ast)])
 		   (if (and in-unit? (ormap zodiac:top-level-varref? link-vars))
 		       
 		       ; Generate locals for linking and prephase again
@@ -936,7 +936,7 @@
 			(let loop ([l link-vars][l-acc null])
 			  (cond
 			   [(null? l)
-			    (zodiac:set-invoke-form-variables! 
+			    (zodiac:set-invoke-unit-form-variables! 
 			     ast
 			     (reverse! l-acc))
 			    ast]
@@ -963,16 +963,16 @@
 		       
 		       ; Normal handling
 		       (begin
-			 (zodiac:set-invoke-form-unit! 
+			 (zodiac:set-invoke-unit-form-unit! 
 			  ast 
-			  (prephase! (zodiac:invoke-form-unit ast) in-unit? #t #f))
-			 (zodiac:set-invoke-form-variables! 
+			  (prephase! (zodiac:invoke-unit-form-unit ast) in-unit? #t #f))
+			 (zodiac:set-invoke-unit-form-variables! 
 			  ast
 			  (map (lambda (v) 
 				 (when (zodiac:bound-varref? v)
 				   (prephase:set-unit-i/e?! (zodiac:bound-varref-binding v) #t))
 				 (prephase! v in-unit? #t #f))
-			       (zodiac:invoke-form-variables ast)))
+			       (zodiac:invoke-unit-form-variables ast)))
 			 
 			 ast)))]
 		

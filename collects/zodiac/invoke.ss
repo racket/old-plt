@@ -1,4 +1,4 @@
-; $Id: invoke.ss,v 1.37 1998/11/04 19:52:53 mflatt Exp $
+; $Id: invoke.ss,v 1.38 1999/03/12 17:22:29 mflatt Exp $
 
 (require-library "coreu.ss")
 
@@ -20,22 +20,24 @@
 (define zodiac:system@
   (require-library-unit/sig "link.ss" "zodiac"))
 
-(define zodiac:invoke-system
-  (lambda ()
-    (invoke-open-unit/sig
-      (compound-unit/sig
-	(import)
-	(link
-	  (INTERFACE : zodiac:interface^
-	    (zodiac:default-interface@))
-	  (SYSTEM : zodiac:system^
+(begin-elaboration-time
+ (require-library "invoke.ss"))
+
+(define-values/invoke-unit/sig ((open zodiac:system^)
+				  (open zodiac:interface^))
+  (compound-unit/sig
+   (import)
+   (link
+    (INTERFACE : zodiac:interface^
+	       (zodiac:default-interface@))
+    (SYSTEM : zodiac:system^
 	    (zodiac:system@ INTERFACE
-	      (MZLIB-CORE pretty-print)
-	      (MZLIB-CORE file)))
-	  (MZLIB-CORE : mzlib:core^
-	    (mzlib:core@)))
-	(export (open SYSTEM) (open INTERFACE)))
-      zodiac)))
+			    (MZLIB-CORE pretty-print)
+			    (MZLIB-CORE file)))
+    (MZLIB-CORE : mzlib:core^
+		(mzlib:core@)))
+   (export (open SYSTEM) (open INTERFACE)))
+  zodiac)
 
 (define (zodiac:make-see expander)
   (opt-lambda ((show-raw? #t))

@@ -153,8 +153,8 @@
 		 ;;-----------------------------------------------------------
 		 ;; INVOKE
 		 ;;
-		 [(zodiac:invoke-form? ast)
-		  (find! (zodiac:invoke-form-unit ast))]
+		 [(zodiac:invoke-unit-form? ast)
+		  (find! (zodiac:invoke-unit-form-unit ast))]
 		 
 		 ;;-----------------------------------------------------------
 		 ;; CLASS
@@ -575,13 +575,13 @@
 		 ;;-----------------------------------------------------------
 		 ;; INVOKE
 		 ;;
-		 [(zodiac:invoke-form? ast)
-		  (zodiac:set-invoke-form-unit!
+		 [(zodiac:invoke-unit-form? ast)
+		  (zodiac:set-invoke-unit-form-unit!
 		   ast 
-		   (lift! (zodiac:invoke-form-unit ast) code))
+		   (lift! (zodiac:invoke-unit-form-unit ast) code))
 		  
 		  ;; Might include top-level-varrefs; put them in the global-var set
-		  (for-each (lambda (v) (lift! v code)) (zodiac:invoke-form-variables ast))
+		  (for-each (lambda (v) (lift! v code)) (zodiac:invoke-unit-form-variables ast))
 
 		  ast]
 		 

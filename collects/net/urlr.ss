@@ -12,11 +12,11 @@
 (unit/sig mzlib:url^
   (import [file : mzlib:file^])
 
+  (define-struct (url-exception struct:exn) ())
+
   ;; This is commented out; it's here for debugging.
   ;; It used to be outside the unit.
     
-  (define-struct (url-exception struct:exn) ())
-
   (quote
     (begin
       (invoke-open-unit/sig mzlib:url@ #f)

@@ -8,6 +8,7 @@
     (require-relative-library "drsig.ss")
     (let ([unit (require-relative-library "link.ss")])
       (shutdown-splash)
-      (invoke-open-unit/sig unit #f (program argv))
+      ; Was invoke-open; needs define-values/invoke-unit for debugging:
+      (invoke-unit/sig unit (program argv))
       (close-splash))))
 

@@ -1,6 +1,4 @@
 
-(require-library "refer.ss")
-
 (require-relative-library "sig.ss")
 (require-relative-library "option.ss")
 
@@ -17,16 +15,18 @@
 (require-library "makes.ss" "make")
 (require-library "collections.ss" "make")
 
-(invoke-open-unit/sig (require-relative-library "compiler.ss")
-		      #f
-		      (compiler:option : compiler:option^)
-		      mzlib:function^
-		      mzlib:pretty-print^
-		      mzlib:file^
-		      mzlib:string^
-		      mzlib:compile^
-		      dynext:compile^
-		      dynext:link^
-		      dynext:file^)
+(begin-elaboration-time
+ (require-library "invoke.ss"))
 
-
+(define-values/invoke-unit/sig compiler^
+  (require-relative-library "compiler.ss")
+  #f
+  (compiler:option : compiler:option^)
+  mzlib:function^
+  mzlib:pretty-print^
+  mzlib:file^
+  mzlib:string^
+  mzlib:compile^
+  dynext:compile^
+  dynext:link^
+  dynext:file^)

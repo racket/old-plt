@@ -240,10 +240,10 @@
 	    ;;-----------------------------------------------------------
 	    ;; INVOKE
 	    ;;
-	    [(zodiac:invoke-form? ast)
-	     (zodiac:set-invoke-form-unit!
+	    [(zodiac:invoke-unit-form? ast)
+	     (zodiac:set-invoke-unit-form-unit!
 	      ast 
-	      (transform! (zodiac:invoke-form-unit ast)))
+	      (transform! (zodiac:invoke-unit-form-unit ast)))
 	     
 	     ast]
 	    

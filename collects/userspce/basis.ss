@@ -55,7 +55,7 @@
   (define settings
     (list (make-setting/parse
 	   `((name "Beginner")
-	     (extra-definitions-unit-name "beginnero.ss")
+	     (extra-definitions-unit-name "beginner.ss")
 	     (macro-libraries ())
 	     (vocabulary-symbol beginner)
 	     (case-sensitive? #t)
@@ -76,7 +76,7 @@
 	     (define-argv? #f)))
 	  (make-setting/parse
 	   `((name "Intermediate")
-	     (extra-definitions-unit-name "intermediateo.ss")
+	     (extra-definitions-unit-name "intermediate.ss")
 	     (macro-libraries ())
 	     (vocabulary-symbol intermediate)
 	     (case-sensitive? #t)
@@ -97,7 +97,9 @@
 	     (define-argv? #f)))
 	  (make-setting/parse
 	   `((name "Advanced")
-	     (extra-definitions-unit-name "advancedo.ss")
+	     (extra-definitions-unit-name ((mred@ "advanced.ss")
+					   .
+					   "advancedjr.ss"))
 	     (macro-libraries ())
 	     (vocabulary-symbol advanced)
 	     (case-sensitive? #t)
@@ -529,8 +531,13 @@
     (define (initialize-parameters custodian namespace-flags setting)
       (let-values ([(extra-definitions)
 		    (let ([name (setting-extra-definitions-unit-name setting)])
-		      (and name
-			   (require-library/proc name "userspce")))]
+		      (let loop ([l name])
+			(cond
+			 [(string? l) (require-library/proc l "userspce")]
+			 [(pair? l) (if (defined? (caar l))
+					(loop (cadar l))
+					(loop (cdr l)))]
+			 [else #f])))]
 		   [(n) (apply make-namespace
 			       (if (zodiac-vocabulary? setting)
 				   (append (list 'hash-percent-syntax) namespace-flags)

@@ -1,6 +1,11 @@
 
 (require-relative-library "makes.ss")
-(invoke-open-unit/sig (require-relative-library "maker.ss"))
+
+(begin-elaboration-time
+  (require-library "invoke.ss"))
+
+(define-values/invoke-unit/sig make:make^
+  (require-relative-library "maker.ss"))
 
 (define-macro make
   (let ([make (lambda (spec argv)

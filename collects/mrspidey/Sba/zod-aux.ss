@@ -601,7 +601,6 @@
       (zerostruct unit-form imports exports clauses)
       (zerostruct compound-unit-form imports links exports)
       (zerostruct invoke-unit-form unit variables)
-      (zerostruct invoke-open-unit-form unit name-specifier variables)
       (zerostruct class*-form this super-names super-exprs init-vars inst-clauses)
       (zerostruct public-clause exports internals exprs)
       (zerostruct private-clause internals exprs)

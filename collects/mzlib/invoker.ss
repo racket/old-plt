@@ -64,12 +64,12 @@
 			       'global-define-values/invoke-unit
 			       'define-values/invoke-unit)
 			   (format "bad syntax (~a)" why)
-			   s
 			   `(,(if global? 
 				  'global-define-values/invoke-unit
 				  'define-values/invoke-unit)
 			     ,exports
-			     ,unit ,prefix ,@imports)))]
+			     ,unit ,prefix ,@imports)
+			   s))]
 	     [symcheck (lambda (s)
 			 (or (symbol? s)
 			     (badsyntax s "not an identifier")))])
@@ -130,9 +130,9 @@
 			  (raise-syntax-error
 			   formname
 			   (format "bad syntax (~a)" why)
-			   s
 			   `(,formname
-			     ,signame ,unit ,prefix ,@imports)))]
+			     ,signame ,unit ,prefix ,@imports)
+			   s))]
 	     [unit-var (gensym)])
 	(let-values ([(ex-exploded ex-flattened) (extract-signature signame badsyntax)]
 		     [(im-explodeds im-flatteneds)

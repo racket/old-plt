@@ -1,4 +1,4 @@
-; $Id: scm-unit.ss,v 1.83 1999/04/22 22:13:17 mflatt Exp $
+; $Id: scm-unit.ss,v 1.84 1999/05/13 02:20:10 mflatt Exp $
 
 (unit/sig zodiac:scheme-units^
   (import zodiac:misc^ (z : zodiac:structures^)
@@ -17,9 +17,6 @@
 
   (define-struct (invoke-unit-form struct:parsed)
     (unit variables))
-
-  (define-struct (invoke-open-unit-form struct:parsed)
-    (unit name-specifier variables))
 
   (define create-unit-form
     (lambda (imports exports clauses source)
@@ -41,13 +38,6 @@
 	(z:zodiac-start source) (z:zodiac-finish source)
 	(make-empty-back-box)
 	unit variables)))
-
-  (define create-invoke-open-unit-form
-    (lambda (unit name-specifier variables source)
-      (make-invoke-open-unit-form (z:zodiac-origin source)
-	(z:zodiac-start source) (z:zodiac-finish source)
-	(make-empty-back-box)
-	unit name-specifier variables)))
 
   ; --------------------------------------------------------------------
 
@@ -523,9 +513,6 @@
 	     [(invoke-unit-form? expr)
 	      (set-invoke-unit-form-unit! expr (fix (invoke-unit-form-unit expr)))
 	      (set-invoke-unit-form-variables! expr (map fix (invoke-unit-form-variables expr)))]
-	     [(invoke-open-unit-form? expr)
-	      (set-invoke-open-unit-form-unit! expr (fix (invoke-open-unit-form-unit expr)))
-	      (set-invoke-open-unit-form-variables! expr (map fix (invoke-open-unit-form-variables expr)))]
 	     [else
 	      (internal-error expr "Cannot fix unknown form: ~s" expr)])
 	    expr))))
@@ -866,57 +853,6 @@
   (add-primitivized-micro-form 'invoke-unit full-vocabulary invoke-unit-micro)
   (add-primitivized-micro-form 'invoke-unit scheme-vocabulary invoke-unit-micro)
 
-  (define invoke-open-unit-micro
-      (let* ((kwd '())
-	      (in-pattern-1 `(_ unit))
-	      (in-pattern-2 `(_ unit name-spec vars ...))
-	      (m&e-1 (pat:make-match&env in-pattern-1 kwd))
-	      (m&e-2 (pat:make-match&env in-pattern-2 kwd)))
-	(lambda (expr env attributes vocab)
-	  (cond
-	    ((pat:match-against m&e-1 expr env)
-	      =>
-	      (lambda (p-env)
-		(let ((unit (pat:pexpand 'unit p-env kwd))
-		       (name-spec (pat:pexpand 'name-spec p-env kwd)))
-		  (create-invoke-open-unit-form
-		    (expand-expr unit env attributes vocab)
-		    #f '() expr))))
-	    ((pat:match-against m&e-2 expr env)
-	      =>
-	      (lambda (p-env)
-		(let ((unit (pat:pexpand 'unit p-env kwd))
-		       (name-spec (pat:pexpand 'name-spec p-env kwd))
-		       (vars (pat:pexpand '(vars ...) p-env kwd)))
-		  (valid-syntactic-id/s? vars)
-		  (let* ((expr-expr
-			  (as-nested
-			   attributes
-			   (lambda()
-			     (expand-expr unit env attributes vocab))))
-			 (expanded-spec
-			  (if (or (z:symbol? name-spec)
-				  (and (z:boolean? name-spec)
-				       (not (z:read-object name-spec))))
-			      (z:read-object name-spec)
-			      (static-error name-spec
-					    "Invalid name specifier")))
-			 (vars-expr
-			  (map (lambda (v)
-				 (expand-expr v env
-					      attributes vocab))
-			       vars)))
-		    (create-invoke-open-unit-form
-		      expr-expr
-		      expanded-spec
-		      vars-expr
-		      expr)))))
-	    (else
-	      (static-error expr "Malformed invoke-open-unit"))))))
-
-  (add-primitivized-micro-form 'invoke-open-unit full-vocabulary invoke-open-unit-micro)
-  (add-primitivized-micro-form 'invoke-open-unit scheme-vocabulary invoke-open-unit-micro)
-
   ; --------------------------------------------------------------------
 
   (extend-parsed->raw unit-form?
@@ -956,14 +892,6 @@
     (lambda (expr p->r)
       `(invoke-unit ,(p->r (invoke-unit-form-unit expr))
 	 ,@(map p->r (invoke-unit-form-variables expr)))))
-
-  (extend-parsed->raw invoke-open-unit-form?
-    (lambda (expr p->r)
-      (if (null? (invoke-open-unit-form-name-specifier expr))
-	`(invoke-open-unit ,(p->r (invoke-open-unit-form-unit expr)))
-	`(invoke-open-unit ,(p->r (invoke-open-unit-form-unit expr))
-	   ,(invoke-open-unit-form-name-specifier expr)
-	   ,@(map p->r (invoke-open-unit-form-variables expr))))))
 
   ; ----------------------------------------------------------------------
 

@@ -29,9 +29,7 @@
      val-box)
     (unbox val-box)))
 
-(define delta-eval-namespace (make-namespace))
-(parameterize ([current-namespace delta-eval-namespace])
-    (invoke-open-unit/sig mred@ mred))
+(define delta-eval-namespace (make-namespace 'mred))
 
 (define delta-add-string! 
   (lambda (delta string)

@@ -766,17 +766,14 @@
 	   ;;
 	   ;; Simple vm instruction, but build unit, vars, and anchors as args
 	   ;; 
-	   [(zodiac:invoke-form? ast)
+	   [(zodiac:invoke-unit-form? ast)
 	    (let ([exp (make-vm:invoke
 			(zodiac:zodiac-origin ast)
 			(zodiac:zodiac-start ast)
 			(zodiac:zodiac-finish ast)
-			(length (zodiac:invoke-form-variables ast))
-			(zodiac:invoke-open-unit-form? ast)
+			(length (zodiac:invoke-unit-form-variables ast))
 			multi?
-			tail?
-			(and (zodiac:invoke-open-unit-form? ast)
-			     (zodiac:invoke-open-unit-form-name-specifier ast)))]
+			tail?)]
 		  [cast-so
 		   (lambda (e) 
 		     (make-vm:cast #f #f #f e (make-rep:atomic 'scheme-object)))])
@@ -785,7 +782,7 @@
 					  (zodiac:zodiac-finish ast)
 					  #f #f #f
 					  (cons
-					   (convert (zodiac:invoke-form-unit ast) #f identity #f #f)
+					   (convert (zodiac:invoke-unit-form-unit ast) #f identity #f #f)
 					   (append
 					    (map (lambda (v) 
 						   (cond
@@ -810,7 +807,7 @@
 						      #f
 						      "convert invoke supplies: don't know how to link with ~a"
 						      v)]))
-						 (zodiac:invoke-form-variables ast))
+						 (zodiac:invoke-unit-form-variables ast))
 					    (map (lambda (v anchor) 
 						   (cond
 						    [(zodiac:top-level-varref? v)
@@ -821,7 +818,7 @@
 							      (zodiac:binding-var anchor)
 							      anchor))]
 						    [else (make-vm:immediate #f #f #f 0)]))
-						 (zodiac:invoke-form-variables ast)
+						 (zodiac:invoke-unit-form-variables ast)
 						 (invoke-info-anchors (get-annotation ast))))))
 		    (if tail-pos
 			(leaf (tail-pos exp))

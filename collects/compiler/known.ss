@@ -588,10 +588,10 @@
 		 ;;-----------------------------------------------------------
 		 ;; INVOKE
 		 ;;
-		 [(zodiac:invoke-form? ast)
-		  (zodiac:set-invoke-form-unit!
+		 [(zodiac:invoke-unit-form? ast)
+		  (zodiac:set-invoke-unit-form-unit!
 		   ast 
-		   (analyze! (zodiac:invoke-form-unit ast)))
+		   (analyze! (zodiac:invoke-unit-form-unit ast)))
 		  
 		  ast]
 		 

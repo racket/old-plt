@@ -808,10 +808,6 @@
                 (wrap-value (made-unit (create-atlunit-reference E)))
                 env)]
 	      
-	      [($ zodiac:invoke-open-unit-form)
-	       (mrspidey:error 
-                "MrSpidey does not support invoke-open-unit" E)]
-
 	      [($ zodiac:define-values-form)
 	       (mrspidey:error 
                 "MrSpidey does not support internal defines" E)]

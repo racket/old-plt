@@ -423,24 +423,6 @@
 	     ,@(map z:varref-var	
 		    (z:invoke-unit-form-variables expr)))]
 	  
-	  [(z:invoke-open-unit-form? expr)
-	   (let ((name-spec (z:invoke-open-unit-form-name-specifier
-			     expr))
-		 (unit (annotate/inner
-			(z:invoke-open-unit-form-unit expr)))
-		 (vars (map z:varref-var
-			    (z:invoke-open-unit-form-variables expr))))
-	     (cond
-	       ((null? name-spec)
-		`(#%invoke-open-unit ,unit))
-	       ((not name-spec)
-		`(#%invoke-open-unit ,unit #f ,@vars))
-	       ((symbol? name-spec)
-		`(#%invoke-open-unit ,unit ,name-spec ,@vars))
-	       (else
-		(z:interface:internal-error name-spec
-					    "given as name-spec for invoke-open-unit"))))]
-	  
 	  [(z:interface-form? expr)
 	   (let ((vars (z:interface-form-variables expr)))
 	     (for-each check-for-keyword vars)

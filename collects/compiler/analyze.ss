@@ -1406,10 +1406,10 @@
 		 ;;
 		 ;; mark bindings as unit/i-e and remember anchors
 		 ;; 
-		 [(zodiac:invoke-form? ast)
-		  (zodiac:set-invoke-form-unit!
+		 [(zodiac:invoke-unit-form? ast)
+		  (zodiac:set-invoke-unit-form-unit!
 		   ast 
-		   (analyze!-sv (zodiac:invoke-form-unit ast) env inlined))
+		   (analyze!-sv (zodiac:invoke-unit-form-unit ast) env inlined))
 
 		  (set-annotation!
 		   ast
@@ -1430,10 +1430,10 @@
 				   (set! captured-vars (set-union-singleton captured-vars zbinding)))
 				 anchor))
 			     v)))
-		     (zodiac:invoke-form-variables ast))))
+		     (zodiac:invoke-unit-form-variables ast))))
 		  
 		  ; unit + vars + anchors as args:
-		  (register-arity! (+ 1 (* 2 (length (zodiac:invoke-form-variables ast)))))
+		  (register-arity! (+ 1 (* 2 (length (zodiac:invoke-unit-form-variables ast)))))
 		  
 		  (values ast 'possible)]
 

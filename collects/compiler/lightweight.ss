@@ -193,8 +193,7 @@
 
 	   [unit-form-action default-action]
 	   [compound-unit-form-action default-action]
-	   [invoke-unit-form-action default-action] 
-	   [invoke-open-unit-form-action default-action])
+	   [invoke-unit-form-action default-action])
 	  (sequence (super-init))))
 
  (define generic-default-action (make-generic zactor% default-action))
@@ -223,7 +222,6 @@
  (define generic-unit-form-action (make-generic zactor% unit-form-action))
  (define generic-compound-unit-form-action (make-generic zactor% compound-unit-form-action))
  (define generic-invoke-unit-form-action (make-generic zactor% invoke-unit-form-action))
- (define generic-invoke-open-unit-form-action (make-generic zactor% invoke-open-unit-form-action))
 
  ; Zodiac structure walker
  ; an action is procedure that takes ast
@@ -499,16 +497,6 @@
 	     [variables (zodiac:invoke-unit-form-variables ast)])
 
 	 ((generic-invoke-unit-form-action zactor) ast)
-
-	 (do-traverse unit)
-	 (for-each do-traverse variables))]
-
-      [(zodiac:invoke-open-unit-form? ast)
-
-       (let ([unit (zodiac:invoke-open-unit-form-unit ast)]
-	     [variables (zodiac:invoke-open-unit-form-variables ast)])
-
-	 ((generic-invoke-open-unit-form-action zactor) ast)
 
 	 (do-traverse unit)
 	 (for-each do-traverse variables))])))
@@ -832,16 +820,6 @@
 	     ((generic-invoke-unit-form-action zactor) ast binders)
 
 	     (rec-traverse unit)
-	     (for-each rec-traverse variables))]
-
-	  [(zodiac:invoke-open-unit-form? ast)
-
-	   (let ([unit (zodiac:invoke-open-unit-form-unit ast)]
-		 [variables (zodiac:invoke-open-unit-form-variables ast)])
-
-	     ((generic-invoke-open-unit-form-action zactor) ast binders)
-
-	     (rec-traverse unit)
 	     (for-each rec-traverse variables))])))))
 
  ; zolder% is the class of objects that knows how to combine information
@@ -889,8 +867,7 @@
 
 	   [unit-form-folder default-folder]
 	   [compound-unit-form-folder default-folder]
-	   [invoke-unit-form-folder default-folder]
-	   [invoke-open-unit-form-folder default-folder])
+	   [invoke-unit-form-folder default-folder])
 	  (sequence (super-init))))
 
  (define generic-default-folder (make-generic zolder% default-folder))
@@ -919,7 +896,6 @@
  (define generic-unit-form-folder (make-generic zolder% unit-form-folder))
  (define generic-compound-unit-form-folder (make-generic zolder% compound-unit-form-folder))
  (define generic-invoke-unit-form-folder (make-generic zolder% invoke-unit-form-folder))
- (define generic-invoke-open-unit-form-folder (make-generic zolder% invoke-open-unit-form-folder))
 
  (define (traverse-ast-with-zolder ast zolder)
 
@@ -1147,16 +1123,6 @@
 	 ((generic-invoke-unit-form-folder zolder)
 	  ast
 	  (do-zolder-traverse unit)
-	  (map do-zolder-traverse variables)))]
-
-      [(zodiac:invoke-open-unit-form? ast)
-
-       (let ([unit (zodiac:invoke-open-unit-form-unit ast)]
-	     [variables (zodiac:invoke-open-unit-form-variables ast)])
-
-	 ((generic-invoke-open-unit-form-folder zolder)
-	  ast
-	  (do-zolder-traverse unit)
 	  (map do-zolder-traverse variables)))])))
 
  (define var-zolder% ; abstract class for collecting variable information
@@ -1329,10 +1295,6 @@
 	      (fold-sets linked-units-fvs))]
 
 	   [invoke-unit-form-folder
-	    (lambda (_ unit-fv variables-fvs)
-	      (fold-sets (cons unit-fv variables-fvs)))]
-
-	   [invoke-open-unit-form-folder
 	    (lambda (_ unit-fv variables-fvs)
 	      (fold-sets (cons unit-fv variables-fvs)))])
 
@@ -1777,17 +1739,6 @@
 					  (set-escape-and-set-flag! binder)
 					  (set-escape-and-set-flag! v)))))
 			    vars)))]
-		      [invoke-open-unit-form-folder
-		       (lambda (a . args)
-			 (let ([vars (zodiac:invoke-open-unit-form-variables a)])
-			   (for-each
-			    (lambda (v)
-			      (when (zodiac:bound-varref? v)
-				    (let ([binder (zodiac:bound-varref-binding v)])
-				      (if binder
-					  (set-escape-and-set-flag! binder)
-					  (set-escape-and-set-flag! v)))))
-			    vars)))]
 		      )		    (sequence (super-init))))])
      (let escape-loop ()
        (set! done #t)
@@ -1931,10 +1882,6 @@
 
 		       ; for simplicity, disregard functions returned by units
 
-		       (set-theta! a empty-set))]
-
-		    [invoke-open-unit-form-action
-		     (lambda (a)
 		       (set-theta! a empty-set))])
 
 		   (sequence (super-init))))]
@@ -3003,11 +2950,7 @@
 		    [invoke-unit-form-folder
 		     (lambda (a _ __)
 		       (let ([vars (zodiac:invoke-unit-form-variables a)])
-			 (add1 (* 2 (length vars)))))]
-
-		    [invoke-open-unit-form-folder
-		     (lambda (_ unit-max variables-maxs)
-		       (max unit-max (max-over-list variables-maxs)))])
+			 (add1 (* 2 (length vars)))))])
 
 		   (sequence (super-init))))])
 

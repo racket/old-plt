@@ -64,17 +64,11 @@ static void closure_alloc_inc()
    scheme_create_class(assembly, rec, super, interfaces)
 
 #define _scheme_invoke_unit(u, ni, ins, anchs) \
-      scheme_invoke_unit(u, ni, ins, anchs, 0, NULL, 0, 0)
+      scheme_invoke_unit(u, ni, ins, anchs, 0, 0)
 #define _scheme_tail_invoke_unit(u, ni, ins, anchs) \
-      scheme_invoke_unit(u, ni, ins, anchs, 0, NULL, 1, 0)
+      scheme_invoke_unit(u, ni, ins, anchs, 1, 0)
 #define _scheme_invoke_unit_multi(u, ni, ins, anchs) \
-      scheme_invoke_unit(u, ni, ins, anchs, 0, NULL, 0, 1)
-#define _scheme_invoke_open_unit(u, ni, ins, anchs, pref) \
-      scheme_invoke_unit(u, ni, ins, anchs, 1, pref, 0, 0)
-#define _scheme_tail_invoke_open_unit(u, ni, ins, anchs, pref) \
-      scheme_invoke_unit(u, ni, ins, anchs, 1, pref, 1, 0)
-#define _scheme_invoke_open_unit_multi(u, ni, ins, anchs, pref) \
-      scheme_invoke_unit(u, ni, ins, anchs, 1, pref, 0, 1)
+      scheme_invoke_unit(u, ni, ins, anchs, 0, 1)
 
 #define NO_MULTIPLE_VALUES(res) \
 	if (res == SCHEME_MULTIPLE_VALUES) \

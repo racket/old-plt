@@ -5,8 +5,11 @@
 (parameterize ([use-compiled-file-kinds 'none])
   (require-library "cmdline.ss")
   (require-relative-library "setupsig.ss")
+  (require-library "invoke.ss"))
 
-  (invoke-open-unit/sig (require-relative-library "setup-optionr.ss")))
+(define-values/invoke-unit/sig compiler:setup-option^
+  (parameterize ([use-compiled-file-kinds 'none])
+    (require-relative-library "setup-optionr.ss")))
 
 (define-values (x-specific-collections x-archives)
   (command-line

@@ -24,9 +24,8 @@
 	     (require-library "drspidey.ss" "mrspidey")
 	     (send f show #f)
 	     (set! invoke-spidey
-		   (invoke-open-unit/sig
+		   (invoke-unit/sig
 		    (global-defined-value 'tool@) 
-		    mrspidey
 		    (fw : framework^)
 		    (mred : mred^)
 		    mzlib:core^

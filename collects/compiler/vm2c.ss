@@ -1476,20 +1476,14 @@
 			     (vm:compound-assembly ast)))]
 
 	 [(vm:invoke? ast)
-	  (emit-expr (format "_scheme~a_invoke~a_unit~a(arg[0], ~a, arg + 1, arg + 1 + ~a~a)"
+	  (emit-expr (format "_scheme~a_invoke~a_unit~a(arg[0], ~a, arg + 1, arg + 1 + ~a)"
 			     (if (vm:invoke-tail? ast) "_tail" "")
-			     (if (vm:invoke-open? ast) "_open" "")
 			     (if (and (vm:invoke-multi? ast)
 				      (not (vm:invoke-tail? ast)))
 				 "_multi" 
 				 "")
 			     (vm:invoke-num-variables ast)
-			     (vm:invoke-num-variables ast)
-			     (if (vm:invoke-open? ast) 
-				 (format ", ~s" (if (vm:invoke-name-specifier ast)
-						    (symbol->string (vm:invoke-name-specifier ast))
-						    (string->symbol "NULL")))
-				 "")))]
+			     (vm:invoke-num-variables ast)))]
 
 	 ;; Interfaces are similar to compound units: args are ready
 	 [(vm:interface? ast)

@@ -177,7 +177,11 @@
     (export
      (open MRED-SPIDEY))))
 
-(invoke-open-unit/sig mred:mrspidey@)
+(begin-elaboration-time
+ (require-library "invoke.ss"))
+
+(define-values/invoke-unit/sig mrspidey:mred^
+  mred:mrspidey@)
 
 (define (go) (mred-analyze-file "info.ss"))
 

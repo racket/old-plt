@@ -54,9 +54,9 @@
 			    2)))
 	   (set! height 1)
 	   (when w-box
-	     (set-box! w-box width))
+	     (set-box! w-box (max 0 width)))
 	   (when h-box
-	     (set-box! h-box (+ (* 2 white-around) height))))]
+	     (set-box! h-box (max 0 (+ (* 2 white-around) height)))))]
 	[draw
 	 (let* ([body-pen (send the-pen-list find-or-create-pen "BLUE" 0 'solid)]
 		[body-brush (send the-brush-list find-or-create-brush "BLUE" 'solid)])

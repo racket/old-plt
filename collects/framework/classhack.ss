@@ -1,3 +1,4 @@
+(require-library "compile.ss" "compiler")
 (define framework-dir (collection-path "framework"))
 (define classhack "classhack")
 (define classhack.so (build-path framework-dir (string-append classhack ".so")))

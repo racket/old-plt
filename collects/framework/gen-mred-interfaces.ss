@@ -1,6 +1,6 @@
 #!/bin/sh
 
-string=? ; exec mred -qvf $0
+string=? ; exec mred -qvL errortrace.ss errortrace -f $0
 
 (require-library "function.ss")
 (require-library "pretty.ss")

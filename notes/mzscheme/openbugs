@@ -1,4 +1,8 @@
 
+fix docs for parse-command-line's final proc
+
+fix docs for function: delete-directory/files
+
 (let loop ([x 0]) (call/cc loop)) accumulates memory
 
 "synrule.ss" is missing `let-syntax' and `letrec-syntax'

@@ -1521,9 +1521,9 @@
 	    [to-tag (lambda () (mxprims:event-to-tag event))]
 	    [to-id (lambda () (mxprims:event-to-id event))]
 	    [keycode (lambda () (mxprims:event-keycode event))]
-	    [shiftkey (lambda () (mxprims:event-shiftkey event))]
-	    [ctrlkey (lambda () (mxprims:event-ctrlkey event))]
-	    [altkey (lambda () (mxprims:event-altkey event))]
+	    [shift-key (lambda () (mxprims:event-shiftkey event))]
+	    [ctrl-key (lambda () (mxprims:event-ctrlkey event))]
+	    [alt-key (lambda () (mxprims:event-altkey event))]
 	    [x (lambda () (mxprims:event-x event))]
 	    [y (lambda () (mxprims:event-y event))])
 

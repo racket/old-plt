@@ -21,10 +21,51 @@
 
 (define-struct signature (name elements exploded))
 
+; This procedure shamelessly snarfed from Matthew (and modified).
+
+(define sort-signature-elements
+  (lambda (elems)
+    (letrec ([split
+	       (lambda (l f s)
+		 (cond
+		   [(null? l) (values f s)]
+		   [(null? (cdr l)) (values (cons (car l) f) s)]
+		   [else (split (cddr l) (cons (car l) f)
+			   (cons (cadr l) s))]))]
+	      [merge
+		(lambda (f s)
+		  (cond
+		    [(null? f) s]
+		    [(null? s) f]
+		    [(less-than? (car s) (car f))
+		      (cons (car s) (merge f (cdr s)))]
+		    [else
+		      (cons (car f) (merge (cdr f) s))]))]
+	      [less-than?
+		(lambda (a b)
+		  (if (symbol? a)
+		    (if (symbol? b)
+		      (symbol-less-than? a b)
+		      #t)
+		    (if (symbol? b)
+		      #f
+		      (symbol-less-than? (car a)
+			(car b)))))]
+	      [symbol-less-than?
+		(lambda (a b)
+		  (string<? (symbol->string a) (symbol->string b)))])
+      (let loop ([elems elems])
+	(cond
+	  [(null? elems) null]
+	  [(null? (cdr elems)) elems]
+	  [else (let-values ([(f s) (split elems null null)])
+		  (merge (loop f) (loop s)))])))))
+
 (define create-signature
   (opt-lambda (elements (name immediate-signature-name))
     (make-signature name elements
-      (explode-signature-elements elements))))
+      (sort-signature-elements
+	(explode-signature-elements elements)))))
 
 (define add-signature
   (lambda (name attributes elements)
@@ -650,7 +691,6 @@
 	    (let ((tag (pat:pexpand 'tag p-env kwd))
 		   (path-elts (pat:pexpand '(path ...) p-env kwd)))
 	      (map (lambda (p)
-		     ; NOTE: use this to check for self-imports.
 		     (put-attribute attributes cu/s-this-link-attr
 		       (z:read-object tag))
 		     (expand-expr p env attributes

@@ -51,7 +51,8 @@
 	     [(entity? x) (entity-text x)]
 	     [(or (comment? x) (pi? x)) x]
 	     [(document? x) (error 'xml->xexpr "Expected content, given ~e~nUse document-element to extract the content." x)]
-	     [else (error 'xml->xexpr "Expected content, given ~e" x)]))))
+	     [else ;(error 'xml->xexpr "Expected content, given ~e" x)
+              x]))))
       
       ;; attribute->srep : Attribute -> Attribute-srep
       (define (attribute->srep a)
@@ -80,7 +81,8 @@
 	 [(string? x) (make-pcdata 'scheme 'scheme x)]
 	 [(or (symbol? x) (and (integer? x) (>= x 0))) (make-entity 'scheme 'scheme x)]
 	 [(or (comment? x) (pi? x)) x]
-	 [else (error 'xexpr->xml "malformed xexpr ~s" x)]))
+	 [else ;(error 'xexpr->xml "malformed xexpr ~s" x)
+          x]))
       
       ;; xexpr->string : Xexpression -> String
       (define (xexpr->string xexpr)

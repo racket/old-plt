@@ -2284,9 +2284,9 @@ static Scheme_Object *seconds_to_date(int argc, Scheme_Object **argv)
 	MachineLocation loc;
 	ReadLocation(&loc);
 
-	dst = (loc.gmtFlags.dlsDelta > 0);
+	dst = (loc.u.dlsDelta != 0);
 
-	tzoffset = loc.gmtFlags.gmtDelta; /* 3-byte value in a long!! */
+	tzoffset = loc.u.gmtDelta; /* 3-byte value in a long!! */
 	/* Copied from Inside mac: */
 	tzoffset = tzoffset & 0xFFFFFF;
 	if (tzoffset & (0x1 << 23))

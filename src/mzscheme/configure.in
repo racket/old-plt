@@ -30,7 +30,7 @@ AC_ARG_ENABLE(xft, [  --enable-xft            use Xft when available (enabled by
 AC_ARG_ENABLE(libpng, [  --enable-libpng         use libpng instead of building (enabled by default)])
 AC_ARG_ENABLE(libjpeg, [  --enable-libjpeg        use libjpeg instead of building (enabled by default)])
 
-AC_ARG_ENABLE(shared, [  --enable-shared         create shared libraries])
+AC_ARG_ENABLE(shared, [  --enable-shared         create shared libraries (enabled by default)], , enable_shared=yes)
 AC_ARG_ENABLE(dynlib, [  --enable-dynlib         same as --enable-shared])
 
 AC_ARG_ENABLE(foreign, [  --enable-foreign        compile foreign support (enabled by default)], , enable_foreign=yes)
@@ -82,8 +82,8 @@ if test "${enable_oskit}" = "yes" ; then
   enable_mred=no
 fi
 
-if test "${enable_dynlib}" = "yes" ; then
-  enable_shared=yes
+if test "${enable_dynlib}" = "no" ; then
+  enable_shared=no
 fi
 
 if test "${enable_mred}" = "no" ; then
@@ -884,6 +884,9 @@ if test "${enable_shared}" = "yes" ; then
   MRLIBINSTALL="install-lib"
   LIBFINISH="${LTDIR}/libtool --mode=finish"
   LTO="lo"
+  LTA="la"
+  FOREIGN_CONVENIENCE="_convenience"
+  FOREIGN_OBJSLIB="\$(FOREIGN_LIB)"
 else
   LIBSFX=a
   MREDLINKER="$CXX"
@@ -892,9 +895,12 @@ else
   MRLIBINSTALL="install-no-lib"
   LIBFINISH=echo
   LTO="o"
+  LTA="a"
   MZLINKER="$CC"
   STATIC_AR="$AR"
   PLAIN_CC="$CC"
+  FOREIGN_CONVENIENCE=""
+  FOREIGN_OBJSLIB="\$(FOREIGN_OBJS)"
 fi
 
 ############## final output ################
@@ -973,9 +979,12 @@ AC_SUBST(OSKHOME)
 AC_SUBST(EXTRA_OSK_LIBS)
 
 AC_SUBST(FOREIGN_OBJS_IF_USED)
+AC_SUBST(FOREIGN_OBJSLIB)
+AC_SUBST(FOREIGN_CONVENIENCE)
 AC_SUBST(FOREIGNTARGET)
 
 AC_SUBST(LTO)
+AC_SUBST(LTA)
 
 mk_needed_dir()
 {
@@ -998,7 +1007,7 @@ if test -d "${srcdir}/foreign" && test "${enable_foreign}" = "yes" ; then
   AC_CONFIG_SUBDIRS( foreign/gcc/libffi )
   makefiles="$makefiles foreign/Makefile"
   FOREIGNTARGET="foreign-stuff"
-  FOREIGN_OBJS_IF_USED="\$(FOREIGN_OBJS)"
+  FOREIGN_OBJS_IF_USED="\$(FOREIGN_OBJSLIB)"
   # --disable-multilib is needed to avoid problems when running libffi's
   # configure script.  This thing affects all usages of AC_CONFIG_SUBDIRS, but
   # other scripts do not use it anyway.

@@ -311,7 +311,7 @@ ac_includes_default="\
 ac_subdirs_all="$ac_subdirs_all foreign/gcc/libffi"
 ac_subdirs_all="$ac_subdirs_all wxcommon/jpeg"
 ac_subdirs_all="$ac_subdirs_all wxxt/src/x/wbuild"
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CPP CXX CXXFLAGS ac_ct_CXX CXXCPP RANLIB ac_ct_RANLIB PERL X_CFLAGS X_PRE_LIBS X_LIBS X_EXTRA_LIBS EGREP PREFLAGS COMPFLAGS PROFFLAGS AS AR STATIC_AR ARFLAGS WBUILD CC_FOR_BUILD REZ MZLINKER PLAIN_CC x_includes x_libraries OPTIONS MZOPTIONS CGCOPTIONS GC2OPTIONS MROPTIONS GCDIR MZBINTARGET MZINSTALLTARGET EXTRA_GMP_OBJ OSX NOT_OSX FRAMEWORK_INSTALL_DIR MREDLINKER LIBSFX WXLIBS WXVARIANT ICP MRLIBINSTALL LIBFINISH MAKE_MRED MAKE_MRED3M MAKE_MREDINSTALL MAKE_MREDINSTALL3M MAKE_WBUILD MAKE_COPYTREE MAKE_FINISH WXPRECOMP USE_WXPRECOMP INCLUDEDEP WX_MMD_FLAG JPEG_A JPEG_INC ZLIB_A ZLIB_INC PNG_A OSKHOME EXTRA_OSK_LIBS FOREIGN_OBJS_IF_USED FOREIGNTARGET LTO subdirs LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CPP CXX CXXFLAGS ac_ct_CXX CXXCPP RANLIB ac_ct_RANLIB PERL X_CFLAGS X_PRE_LIBS X_LIBS X_EXTRA_LIBS EGREP PREFLAGS COMPFLAGS PROFFLAGS AS AR STATIC_AR ARFLAGS WBUILD CC_FOR_BUILD REZ MZLINKER PLAIN_CC x_includes x_libraries OPTIONS MZOPTIONS CGCOPTIONS GC2OPTIONS MROPTIONS GCDIR MZBINTARGET MZINSTALLTARGET EXTRA_GMP_OBJ OSX NOT_OSX FRAMEWORK_INSTALL_DIR MREDLINKER LIBSFX WXLIBS WXVARIANT ICP MRLIBINSTALL LIBFINISH MAKE_MRED MAKE_MRED3M MAKE_MREDINSTALL MAKE_MREDINSTALL3M MAKE_WBUILD MAKE_COPYTREE MAKE_FINISH WXPRECOMP USE_WXPRECOMP INCLUDEDEP WX_MMD_FLAG JPEG_A JPEG_INC ZLIB_A ZLIB_INC PNG_A OSKHOME EXTRA_OSK_LIBS FOREIGN_OBJS_IF_USED FOREIGN_OBJSLIB FOREIGN_CONVENIENCE FOREIGNTARGET LTO LTA subdirs LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -865,7 +865,7 @@ Optional Features:
   --enable-xft            use Xft when available (enabled by default)
   --enable-libpng         use libpng instead of building (enabled by default)
   --enable-libjpeg        use libjpeg instead of building (enabled by default)
-  --enable-shared         create shared libraries
+  --enable-shared         create shared libraries (enabled by default)
   --enable-dynlib         same as --enable-shared
   --enable-foreign        compile foreign support (enabled by default)
   --enable-sgc            use Senora GC instead of the Boehm GC
@@ -1346,6 +1346,8 @@ fi;
 if test "${enable_shared+set}" = set; then
   enableval="$enable_shared"
 
+else
+  enable_shared=yes
 fi;
 # Check whether --enable-dynlib or --disable-dynlib was given.
 if test "${enable_dynlib+set}" = set; then
@@ -1470,8 +1472,8 @@ if test "${enable_oskit}" = "yes" ; then
   enable_mred=no
 fi
 
-if test "${enable_dynlib}" = "yes" ; then
-  enable_shared=yes
+if test "${enable_dynlib}" = "no" ; then
+  enable_shared=no
 fi
 
 if test "${enable_mred}" = "no" ; then
@@ -7145,6 +7147,9 @@ if test "${enable_shared}" = "yes" ; then
   MRLIBINSTALL="install-lib"
   LIBFINISH="${LTDIR}/libtool --mode=finish"
   LTO="lo"
+  LTA="la"
+  FOREIGN_CONVENIENCE="_convenience"
+  FOREIGN_OBJSLIB="\$(FOREIGN_LIB)"
 else
   LIBSFX=a
   MREDLINKER="$CXX"
@@ -7153,14 +7158,20 @@ else
   MRLIBINSTALL="install-no-lib"
   LIBFINISH=echo
   LTO="o"
+  LTA="a"
   MZLINKER="$CC"
   STATIC_AR="$AR"
   PLAIN_CC="$CC"
+  FOREIGN_CONVENIENCE=""
+  FOREIGN_OBJSLIB="\$(FOREIGN_OBJS)"
 fi
 
 ############## final output ################
 
 LIBS="$LIBS $EXTRALIBS"
+
+
+
 
 
 
@@ -7286,7 +7297,7 @@ subdirs="$subdirs foreign/gcc/libffi "
 
   makefiles="$makefiles foreign/Makefile"
   FOREIGNTARGET="foreign-stuff"
-  FOREIGN_OBJS_IF_USED="\$(FOREIGN_OBJS)"
+  FOREIGN_OBJS_IF_USED="\$(FOREIGN_OBJSLIB)"
   # --disable-multilib is needed to avoid problems when running libffi's
   # configure script.  This thing affects all usages of AC_CONFIG_SUBDIRS, but
   # other scripts do not use it anyway.
@@ -8095,8 +8106,11 @@ s,@PNG_A@,$PNG_A,;t t
 s,@OSKHOME@,$OSKHOME,;t t
 s,@EXTRA_OSK_LIBS@,$EXTRA_OSK_LIBS,;t t
 s,@FOREIGN_OBJS_IF_USED@,$FOREIGN_OBJS_IF_USED,;t t
+s,@FOREIGN_OBJSLIB@,$FOREIGN_OBJSLIB,;t t
+s,@FOREIGN_CONVENIENCE@,$FOREIGN_CONVENIENCE,;t t
 s,@FOREIGNTARGET@,$FOREIGNTARGET,;t t
 s,@LTO@,$LTO,;t t
+s,@LTA@,$LTA,;t t
 s,@subdirs@,$subdirs,;t t
 s,@LIBOBJS@,$LIBOBJS,;t t
 s,@LTLIBOBJS@,$LTLIBOBJS,;t t

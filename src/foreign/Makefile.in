@@ -5,28 +5,19 @@ CC = @CC@
 CFLAGS = @CFLAGS@ @COMPFLAGS@ @PREFLAGS@ @PROFFLAGS@ @OPTIONS@ @MZOPTIONS@ \
          -I$(srcdir)/../mzscheme/include -I$(srcdir)/../mzscheme/src \
          -Igcc/libffi/include
-AR = @AR@
 ARFLAGS = @ARFLAGS@
 
-LIBFFI_A = gcc/libffi/.libs/libffi.a
-
-# compile sub-libraries & foreign.c, then extract all .a files into unpack
+# compile sub-libraries & foreign.c
 all:
-	$(MAKE) foreign.o
-	$(MAKE) $(LIBFFI_A)
-	$(MAKE) unpacked
+	$(MAKE) foreign.@LTO@
+	$(MAKE) gcc/libffi/libffi@FOREIGN_CONVENIENCE@.la
 
-unpacked: $(LIBFFI_A) unpack
-	cd unpack; $(AR) x ../$(LIBFFI_A)
-	touch unpacked
+# Causes objects to be generated in gcc/libffi/src/
+#  in inconvenience mode:
+gcc/libffi/libffi@FOREIGN_CONVENIENCE@.la:
+	cd gcc/libffi; $(MAKE) libffi@FOREIGN_CONVENIENCE@.la
 
-$(LIBFFI_A):
-	cd gcc/libffi; $(MAKE) libffi.la
-
-unpack:
-	mkdir unpack
-
-foreign.o: $(srcdir)/foreign.c $(srcdir)/../mzscheme/include/scheme.h \
+foreign.@LTO@: $(srcdir)/foreign.c $(srcdir)/../mzscheme/include/scheme.h \
            $(srcdir)/../mzscheme/src/schemef.h \
            $(srcdir)/../mzscheme/src/schvers.h
-	$(CC) $(CFLAGS) -c $(srcdir)/foreign.c -o foreign.o
+	$(CC) $(CFLAGS) -c $(srcdir)/foreign.c -o foreign.@LTO@

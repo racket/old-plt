@@ -93,7 +93,8 @@ $(OBJDIR)/checkm.o: misc/checkm.c
 wx:
 	cd $(WXDIR)/src/x; $(MAKE) WXDIR='$(WXDIR)' -f makefile.unx
 
-$(OBJDIR)/mred.o : mred.cxx wxme/wx_media.h wxme/wx_medad.h wxs/wxscheme.h ../mzscheme/include/scheme.h ../mzscheme/cmdline.inc mred.h
+$(OBJDIR)/mred.o : mred.cxx wxme/wx_media.h wxme/wx_medad.h wxs/wxscheme.h ../mzscheme/cmdline.inc mred.h \
+                   ../mzscheme/include/scheme.h ../mzscheme/src/schvers.h
 	$(CXX) $(CPPFLAGS) $(LOCALFLAGS) -c mred.cxx -o $(OBJDIR)/mred.o
 
 $(OBJDIR)/mredx.o : mredx.cxx ../mzscheme/include/scheme.h mred.h

@@ -2,10 +2,10 @@
 @SETMARK w = d
 @INCLUDE wxs_win.xci
 
-@SETMARK c = d
-@INCLUDE wxs_cnvs.xci
+// @SETMARK c = d
+// @INCLUDE wxs_cnvs.xci
 
-@ p "on-default-action" : void OnDefaultAction(wxItem!);
+// @ p "on-default-action" : void OnDefaultAction(wxItem!);
 
 // @ p "on-item-event" : void OnItemEvent(wxItem!,wxMouseEvent%); ## INTERACT_METHODS
 // @ p "on-item-left-click" : void OnItemLeftClick(wxItem!,int,int,int); ## INTERACT_METHODS

@@ -788,8 +788,8 @@ static Scheme_Object *os_wxCanvasScroll(Scheme_Object *obj, int n,  Scheme_Objec
   int x1;
 
   
-  x0 = objscheme_unbundle_integer_in(p[0], 0, 10000, "scroll in canvas%");
-  x1 = objscheme_unbundle_integer_in(p[1], 0, 10000, "scroll in canvas%");
+  x0 = objscheme_unbundle_integer(p[0], "scroll in canvas%");
+  x1 = objscheme_unbundle_integer(p[1], "scroll in canvas%");
 
   
   ((wxCanvas *)((Scheme_Class_Object *)obj)->primdata)->Scroll(x0, x1);

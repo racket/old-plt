@@ -51,7 +51,7 @@ static void FillZero(int *a, int *b) {
 @ "view-start" : void ViewStart(int*,int*); : : / PANELREDIRECT[FillZero(x0,x1); return scheme_void]
 @ "warp-pointer" : void WarpPointer(rint[0|10000],rint[0|10000]);  : : / PANELREDIRECT[return scheme_void]
 
-@ "scroll" : void Scroll(rint[0|10000],rint[0|10000]);
+@ "scroll" : void Scroll(int,int);
 @ "get-scroll-pos" : int GetScrollPos(SYM[orientation]);
 @ "get-scroll-range" : int GetScrollRange(SYM[orientation]);
 @ "get-scroll-page" : int GetScrollPage(SYM[orientation]);

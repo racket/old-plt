@@ -6024,7 +6024,7 @@ static Scheme_Object *os_wxMediaEditOnPaint(Scheme_Object *obj, int n,  Scheme_O
   x7 = objscheme_unbundle_float(p[7], "on-paint in text%");
   x8 = unbundle_symset_caret(p[8], "on-paint in text%");
 
-  if (x1 && !x1->Ok()) scheme_arg_mismatch(METHODNAME("editor<%>","on-paint"), "bad bitmap: ", p[1]);
+  if (x1 && !x1->Ok()) scheme_arg_mismatch(METHODNAME("editor<%>","on-paint"), "bad device context: ", p[1]);
   if (((Scheme_Class_Object *)obj)->primflag)
     ((os_wxMediaEdit *)((Scheme_Class_Object *)obj)->primdata)->wxMediaEdit::OnPaint(x0, x1, x2, x3, x4, x5, x6, x7, x8);
   else

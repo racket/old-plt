@@ -2865,7 +2865,7 @@ static Scheme_Object *os_wxMediaBufferPrintToDC(Scheme_Object *obj, int n,  Sche
   
   x0 = objscheme_unbundle_wxDC(p[0], "print-to-dc in editor<%>", 0);
 
-  if (x0 && !x0->Ok()) scheme_arg_mismatch(METHODNAME("editor<%>","print-to-dc"), "bad bitmap: ", p[0]);
+  if (x0 && !x0->Ok()) scheme_arg_mismatch(METHODNAME("editor<%>","print-to-dc"), "bad device context: ", p[0]);
   ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->PrintToDC(x0);
 
   
@@ -3742,7 +3742,7 @@ static Scheme_Object *os_wxMediaBufferOnPaint(Scheme_Object *obj, int n,  Scheme
   x7 = objscheme_unbundle_float(p[7], "on-paint in editor<%>");
   x8 = unbundle_symset_caret(p[8], "on-paint in editor<%>");
 
-  if (x1 && !x1->Ok()) scheme_arg_mismatch(METHODNAME("editor<%>","on-paint"), "bad bitmap: ", p[1]);
+  if (x1 && !x1->Ok()) scheme_arg_mismatch(METHODNAME("editor<%>","on-paint"), "bad device context: ", p[1]);
   if (((Scheme_Class_Object *)obj)->primflag)
     ((os_wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->wxMediaBuffer::OnPaint(x0, x1, x2, x3, x4, x5, x6, x7, x8);
   else

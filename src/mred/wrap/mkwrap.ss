@@ -55,40 +55,49 @@
 
 (define sig (cons 'mred@ (append propagate mred-exports)))
 
+(define debug? #f)
+
 (with-output-to-file "wrap.ss"
   (lambda ()
+    (when debug?
+      (pretty-print '(load "/home/scheme/plt/collects/errortrace/errortrace.ss"))
+      (display "> kstop errortrace <")
+      (newline))
     (pretty-print
      `(define-signature mred^ ,sig))
     (display "> kstop sig <")
     (newline)
-    (pretty-print
-     `(lambda (wx@)
-	(letrec ([ex (invoke-unit
-		      (compound-unit 
-		       (import)
-		       (link [wx (wx@)]
-			     [mred ((unit (import ,@(map prefix-wx: imports))
-					  (export)
-					  ,@code
-					  (vector ,@mred-exports))
-				    (wx ,@imports))])
-		       (export)))])
-	  (letrec ([mred@
-		    (unit->unit/sig
-		     (compound-unit
-		      (import)
-		      (link [wx (wx@)]
-			    [mred ((unit (import)
-					 (export ,@mred-exports [-mred@ mred@])
-					 ,@(let loop ([l mred-exports][n 0])
-					     (if (null? l)
-						 null
-						 (cons `(define ,(car l) (vector-ref ex ,n))
-						       (loop (cdr l) (add1 n)))))
-					 (define -mred@ mred@)))])
-		      (export (wx ,@propagate) (mred mred@ ,@mred-exports)))
-		     () ,sig)])
-	    (unit/sig->unit mred@)))))
+    (let ([c
+	   `(lambda (wx@)
+	      (letrec ([ex (invoke-unit
+			    (compound-unit 
+			     (import)
+			     (link [wx (wx@)]
+				   [mred ((unit (import ,@(map prefix-wx: imports))
+						(export)
+						,@code
+						(vector ,@mred-exports))
+					  (wx ,@imports))])
+			     (export)))])
+		(letrec ([mred@
+			  (unit->unit/sig
+			   (compound-unit
+			    (import)
+			    (link [wx (wx@)]
+				  [mred ((unit (import)
+					       (export ,@mred-exports [-mred@ mred@])
+					       ,@(let loop ([l mred-exports][n 0])
+						   (if (null? l)
+						       null
+						       (cons `(define ,(car l) (vector-ref ex ,n))
+							     (loop (cdr l) (add1 n)))))
+					       (define -mred@ mred@)))])
+			    (export (wx ,@propagate) (mred mred@ ,@mred-exports)))
+			   () ,sig)])
+		  (unit/sig->unit mred@))))])
+      (if debug?
+	  (pretty-print `(eval ',c))
+	  (pretty-print c)))
     (display "> fstop unit <")
     (newline))
   'replace)

@@ -23,11 +23,12 @@
 @INCLUDE wxs_ornt.xci
 
 /* The derivation panel -> canvas is a lie for Xt */
-@CLASSBASE wxPanel "panel":"canvas"
+@CLASSBASE wxPanel "panel":"window"
 
 @CLASSID wxTYPE_PANEL
 
 @CREATOR (wxFrame!,int=-1,int=-1,int=-1,int=-1,SYM[panelStyle]=0,string="panel") : : /NOZERO[3]|NOZERO[4] <> frame
+@CREATOR (wxDialogBox!,int=-1,int=-1,int=-1,int=-1,SYM[panelStyle]=0,string="panel") : : /NOZERO[3]|NOZERO[4] <> dialog
 @CREATOR (wxPanel!,int=-1,int=-1,int=-1,int=-1,SYM[panelStyle]=0,string="panel") : : /NOZERO[3]|NOZERO[4] <> panel parent
 
 @ "get-item-cursor" : void GetCursor(int*,int*);
@@ -51,7 +52,7 @@
 @SYM "no-caption" : wxNO_CAPTION
 @ENDSYMBOLS
 
-@CLASSBASE wxDialogBox "dialog" : "panel"
+@CLASSBASE wxDialogBox "dialog" : "window"
 
 @CLASSID wxTYPE_DIALOG_BOX
 

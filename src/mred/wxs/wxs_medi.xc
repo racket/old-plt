@@ -106,7 +106,7 @@ static void *wxbDCToBuffer(wxMediaBuffer *b, double x, double y)
 @ X "num-scroll-lines" : long NumScrollLines(); : : : : XrZERO
 @ X "find-scroll-line" : long FindScrollLine(float); : : : : XrZERO
 
-@ X "print-to-dc" : void PrintToDC(wxDC!); : : /CHECKOK[0.METHODNAME("editor<%>","print-to-dc")]
+@ X "print-to-dc" : void PrintToDC(wxDC!); : : /CHECKDCOK[0.METHODNAME("editor<%>","print-to-dc")]
 
 @ X "get-admin" : wxMediaAdmin^ GetAdmin(); : : : rNULL
 @ X "set-admin" : void SetAdmin(wxMediaAdmin^);

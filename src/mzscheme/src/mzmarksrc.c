@@ -364,8 +364,9 @@ bignum_obj {
  mark:
   if (!SCHEME_BIGINLINE(b)) {
     gcMARK(b->digits);
-  } else
-    b->digits = ((Small_Bignum *)b)->v;
+  } else {
+    FIXUP_ONLY(b->digits = ((Small_Bignum *)GC_fixup_self(b))->v;)
+  }
 
  size:
   ((!SCHEME_BIGINLINE(b))

@@ -2628,7 +2628,8 @@ read_character(Scheme_Object *port,
 	|| (n == 0xFFFF)
 	|| (n > 0x10FFFF)) {
       scheme_read_err(port, stxsrc, line, col, pos, count + 2, 0, indentation,
-		      "read: bad character constant #\\%u",
+		      "read: bad character constant #\\%c%u",
+		      (maxc == 6) ? 'U' : 'u',
 		      nbuf, count);
       return NULL;
     } else {

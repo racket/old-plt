@@ -39,7 +39,7 @@ typedef enum {
   SCHEME_GEN_SETTER
 } Scheme_ProcT;
 
-typedef struct {
+typedef struct Struct_Proc_Info {
   MZTAG_IF_REQUIRED
   Scheme_Struct_Type *struct_type;
   char *func_name;

@@ -47,7 +47,13 @@
       (printf "int ~a_MARK(void *p) {~n" name)
       (print-lines prefix)
       (print-lines (map (lambda (s)
-			  (regexp-replace* "FIXUP_TYPED_NOW[(][^,]*," s "MARK("))
+			  (regexp-replace* 
+			   "FIXUP_ONLY[(]([^;]*;)[)]" 
+			   (regexp-replace* 
+			    "FIXUP_TYPED_NOW[(][^,]*," 
+			    s 
+			    "MARK(")
+			   ""))
 			mark))
       (printf "  return~n")
       (print-lines size)
@@ -56,7 +62,13 @@
       (printf "int ~a_FIXUP(void *p) {~n" name)
       (print-lines prefix)
       (print-lines (map (lambda (s)
-			  (regexp-replace* "MARK" s "FIXUP"))
+			  (regexp-replace* 
+			   "FIXUP_ONLY[(]([^;]*;)[)]" 
+			   (regexp-replace* 
+			    "MARK" 
+			    s 
+			    "FIXUP")
+			   "\\1"))
 			mark))
       (printf "  return~n")
       (print-lines size)

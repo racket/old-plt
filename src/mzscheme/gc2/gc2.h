@@ -253,7 +253,14 @@ GC2_EXTERN void *GC_resolve(void *p);
    example, if the size or structure of an object depends on the
    content of an object it references. For example, the size of a
    class instance usually depends on a field count that is stored in
-   the class. */
+   the class. In fixup mode, call this before fixing up. */
+
+GC2_EXTERN void *GC_fixup_self(void *p);
+/*
+   Can be called by a fixup proc to get the final address of the
+   pointer passed to the fixup proc. This is the identity function
+   only when objects are moved before fixup, but objects might
+   be moved after fixup. */
 
 /* INTERNAL for the current implemenation (used by macros): */
 GC2_EXTERN void GC_mark(const void *p);

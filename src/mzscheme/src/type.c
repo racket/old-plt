@@ -373,15 +373,18 @@ static void MARK_jmpup(Scheme_Jumpup_Buf *buf)
 
 static void FIXUP_jmpup(Scheme_Jumpup_Buf *buf)
 {
+  void *new_stack;
+
+  new_stack = GC_resolve(buf->stack_copy);
   gcFIXUP_TYPED_NOW(void *, buf->stack_copy);
   gcFIXUP(buf->cont);
   gcFIXUP(buf->external_stack);
 
   if (buf->stack_copy)
     GC_fixup_variable_stack(buf->gc_var_stack,
-			    (long)buf->stack_copy - (long)buf->stack_from,
+			    (long)new_stack - (long)buf->stack_from,
 			    /* FIXME: stack direction */
-			    (char *)buf->stack_copy + buf->stack_size);
+			    (char *)new_stack + buf->stack_size);
 }
 
 #define MARKS_FOR_TYPE_C

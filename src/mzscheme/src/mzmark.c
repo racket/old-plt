@@ -977,8 +977,9 @@ int bignum_obj_MARK(void *p) {
 
   if (!SCHEME_BIGINLINE(b)) {
     gcMARK(b->digits);
-  } else
-    b->digits = ((Small_Bignum *)b)->v;
+  } else {
+    
+  }
 
   return
   ((!SCHEME_BIGINLINE(b))
@@ -991,8 +992,9 @@ int bignum_obj_FIXUP(void *p) {
 
   if (!SCHEME_BIGINLINE(b)) {
     gcFIXUP(b->digits);
-  } else
-    b->digits = ((Small_Bignum *)b)->v;
+  } else {
+    b->digits = ((Small_Bignum *)GC_fixup_self(b))->v;
+  }
 
   return
   ((!SCHEME_BIGINLINE(b))

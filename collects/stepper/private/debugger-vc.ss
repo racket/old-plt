@@ -18,10 +18,7 @@
       
       (define (receive-result result)
         (set! event-list (append event-list (list result)))
-        (parameterize ([current-eventspace debugger-eventspace])
-          (queue-callback
-           (lambda ()
-             (printf "new event arrived: ~a\n" result)))))
+        (send-output-to-debugger-window (format "new event arrived: ~a\n" result) debugger-output))
       
       (define event-list null)
       

@@ -1,5 +1,3 @@
-;; fix pen to size 1 in double and single brackets.
-
 (unit/sig ()
   (import mred^
 	  framework^
@@ -463,18 +461,26 @@
 		 (let*-values ([(w h d s _1 _2) (get-w/h/d/s/l/r dc)]
 			       [(yp) (+ y s (floor (+ 1/2 (/ (- h s d) 2))))]
 			       [(l) (+ x margin 1)]
+			       [(ellipse-size) 1]
+			       [(draw-dot)
+				(lambda (x y)
+				  (send dc draw-ellipse
+					(- x (/ ellipse-size 2)) (- y (/ ellipse-size 2))
+					ellipse-size ellipse-size))]
 			       [(old-pen) (send dc get-pen)]
+			       [(old-brush) (send dc get-brush)]
 			       [(r) (+ x w -1 (- margin) (- margin))])
 					;(send dc draw-rectangle x y w h)
 					;(send dc draw-rectangle x (+ y s) w (- h d s))
 
-		   (when (is-a? dc post-script-dc%)
-		     (send dc set-pen (send the-pen-list find-or-create-pen "BLACK" 1 'solid)))
+		   (send dc set-pen (send the-pen-list find-or-create-pen "BLACK" 1 'solid))
+		   (send dc set-brush (send the-brush-list find-or-create-brush "BLACK" 'solid))
 
-		   (send dc draw-point l yp)
-		   (send dc draw-point (+ (floor (/ (+ l r) 2))) yp)
-		   (send dc draw-point r yp)
+		   (draw-dot l yp)
+		   (draw-dot (+ (floor (/ (+ l r) 2))) yp)
+		   (draw-dot r yp)
 
+		   (send dc set-brush old-brush)
 		   (send dc set-pen old-pen))))))
 
   (define-values (arrow b-arrow g-arrow bg-arrow checked-arrow blank-arrow)

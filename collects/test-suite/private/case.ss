@@ -26,23 +26,18 @@
       (import)
       (define case%
         (class* aligned-editor-snip% (test-suite:item<%>)
-          (inherit get-editor next set-snipclass)
+          (inherit next)
+          
           (init-field
-           [call (instantiate test:text% ()
-                   (parent this))]
-           [expected (instantiate test:text% ())]
-           [test (let ([tmp-text (instantiate test:text% ())])
-                   (send tmp-text insert "equal?")
-                   tmp-text)]
+           [call (instantiate call-text% ())]
+           [expected (instantiate expected-text% ())]
+           [test (instantiate test-text% ())]
            [test-showing? false])
           
           (field
-           [actual (instantiate (text:hide-caret/selection-mixin test:text%) ())]
+           [actual (instantiate actual-text% ())]
            [pass (make-object image-snip% *unknown*)])
           
-          (send* actual
-            (lock true)
-            (hide-caret true))
           (send pass load-file *unknown*)
           
           ;; reset (-> void?)
@@ -134,9 +129,9 @@
           ;; read ((is-a?/c editor-stream-in%) . -> . void?)
           ;; read a snip from the stream
           (define/override (read f)
-            (let ([call-text (instantiate test:text% ())]
-                  [expected-text (instantiate test:text% ())]
-                  [test-text (instantiate test:text% ())])
+            (let ([call-text (instantiate call-text% ())]
+                  [expected-text (instantiate expected-text% ())]
+                  [test-text (instantiate test-text% ())])
               (send call-text read-from-file f)
               (send expected-text read-from-file f)
               (send test-text read-from-file f)

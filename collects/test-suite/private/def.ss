@@ -38,7 +38,7 @@
                     (send expander eval-syntax def-syntax next))))
           
           (super-instantiate ()
-            (editor (instantiate test:text% ())))
+            (editor (instantiate def-text% ())))
           ))
       
       (define def-snip-class%
@@ -46,7 +46,7 @@
           ;; read ((is-a?/c editor-stream-in%) . -> . void?)
           ;; read a snip from the stream
           (define/override (read f)
-            (let ([t (instantiate test:text% ())])
+            (let ([t (instantiate def-text% ())])
               (send t read-from-file t)
               (instantiate def% ()
                 (editor t))))

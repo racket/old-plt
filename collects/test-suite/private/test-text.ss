@@ -8,10 +8,14 @@
    (lib "aligned-pasteboard.ss" "mrlib"))
   
   (provide
-   test:text%
+   def-text%
+   call-text%
+   expected-text%
+   actual-text%
+   test-text%
    test:editor-snip%)
   
-  (define test:text%
+  (define base-text%
     (class scheme:text%
       (inherit set-modified get-keymap set-keymap)
       
@@ -28,20 +32,30 @@
         (super-after-insert start len))
       
       (super-instantiate ())
-      
-      (let ([keymap (get-keymap)])
-        (send keymap add-function "skip-ahead"
-              (lambda (ignored event)
-                ;(message-box "Event" "Tab pressed")
-              ))
-        (send keymap add-function "skip-back"
-              (lambda (ignored event)
-                ;(message-box "Event" "Shift tab pressed")
-              ))
-        (send keymap map-function "tab" "skip-ahead")
-        (send keymap map-function "s:tab" "skip-back")
-        (set-keymap keymap))
       ))
+  
+  (define def-text% base-text%)
+  
+  (define call-text%
+    (class base-text%
+      (super-instantiate ())))
+  
+  (define expected-text%
+    (class base-text%
+      (super-instantiate ())))
+  
+  (define actual-text%
+    (class (text:hide-caret/selection-mixin base-text%)
+      (inherit hide-caret lock)
+      (super-instantiate ())
+      (hide-caret true)
+      (lock true)))
+  
+  (define test-text%
+    (class base-text%
+      (inherit insert)
+      (super-instantiate ())
+      (insert "equal?")))
   
   (define test:editor-snip%
     (class* editor-snip% (aligned-snip<%>)

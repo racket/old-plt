@@ -14,6 +14,7 @@
    "private/model.ss"
    "private/case.ss"
    "private/case-layout.ss"
+   "private/case-tab.ss"
    "private/def.ss"
    "private/expand-program.ss")
   
@@ -88,7 +89,8 @@
             
             (CASE            : case^ (case@))
             (CASE-LAYOUT     : case^ (case-layout@ CASE))
-            (CASE-SNIPCLASS  : case^ (case-snipclass@ CASE-LAYOUT))
+            (CASE-TAB        : case^ (case-tab@ CASE-LAYOUT))
+            (CASE-SNIPCLASS  : case^ (case-snipclass@ CASE-TAB))
             
             (DEF             : def^ (def@))
             (EXPAND-PROGRAM  : expand-program^ (expand-program@ TOOL))

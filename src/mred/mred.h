@@ -129,8 +129,10 @@ typedef int (*HiEventTrampProc)(void *);
 
 class HiEventTramp {
 public:
-  HiEventTrampProc f;
-  void *data;
+  HiEventTrampProc wrap_het_around_f;
+  void *wha_data;
+  HiEventTrampProc do_f;
+  void *do_data;
   int val;
   int in_progress;
   int progress_is_resumed;
@@ -145,11 +147,11 @@ public:
 #endif
 };
 
-int mred_het_run_some(void);
+int mred_het_run_some(HiEventTrampProc do_f, void *do_data);
 
 extern int mred_het_param;
 
-int wxHiEventTrampoline(int (*f)(void *), void *data);
+int wxHiEventTrampoline(HiEventTrampProc wha_f, void *wha_data);
 
 #endif // NEED_HET_PARAM
 

@@ -42,6 +42,10 @@ static int last_was_front;
 
 static int dispatched = 1;
 
+static RgnHandle quickUpdateRgn;
+static UInt32 quickUpdateTimeout;
+static UInt32 quickUpdateWait;
+
 extern "C" {
   typedef void (*HANDLE_AE)(EventRecord *e);
 }
@@ -822,7 +826,7 @@ static int CheckForUpdate(EventRecord *evt, MrQueueRef q, int check_only,
 	/* don't dequeue... done in the dispatcher */
 	return TRUE;
       }
-    } else {
+    } else if (q) {
       DisposeRgn(q->rgn);
       MrDequeue(q);
     }
@@ -846,6 +850,7 @@ int MrEdGetNextEvent(int check_only, int current_only,
   EventRecord ebuf;
   MrEdContext *c, *keyOk, *foundc;
   int found = 0;
+  int skip_transfer = 0;
 #ifdef SELF_SUSPEND_RESUME 
   int we_are_front;
 #endif
@@ -870,8 +875,54 @@ int MrEdGetNextEvent(int check_only, int current_only,
     if (!StillDown())
       kill_context = 1;
 
-  if (!TransferQueue(0))
-    kill_context = 0;
+  /* Update events are supposed to happen after mouse events, etc.
+     However, OS X refreshes window displays when WNE is called.  In
+     particular, it looks nicer to update the frontmost window before
+     calling WNE. We must do this infrequenty, though, to avoid
+     dispatching only update events when other sorts of events should
+     get handled. */
+  if (!quickUpdateWait || (quickUpdateWait <= TickCount())) {
+    WindowPtr front;
+
+    quickUpdateWait = 0;
+
+    front = FrontWindow();
+    if (front) {
+      if (!quickUpdateRgn)
+	quickUpdateRgn = NewRgn();
+	  
+      GetWindowRegion(front, kWindowUpdateRgn, quickUpdateRgn);	
+      if (!EmptyRgn(quickUpdateRgn)) {
+	EventRecord ue;
+	ue.what = updateEvt;
+	ue.message = (long)front;
+	if (CheckForUpdate(&ue, NULL, check_only, c, NULL, event, which)) {
+	  if (!check_only) {
+	    quickUpdateWait = TickCount() + 15;
+	    quickUpdateTimeout = 0;
+	  }
+	  return TRUE;
+	} else {
+	  UInt32 now;
+	  now = TickCount();
+	  if (quickUpdateTimeout && (quickUpdateTimeout <= now)) {
+	    quickUpdateWait = TickCount() + 15;
+	    quickUpdateTimeout = 0;
+	    /* TransferEvent will turn off front's update region,
+	       so we won't keep trying this window. */
+	  } else {
+	    skip_transfer = 1;
+	    if (!quickUpdateTimeout)
+	      quickUpdateTimeout = now + 15;
+	  }
+	}
+      }
+    }
+  }
+
+  if (!skip_transfer)
+    if (!TransferQueue(0))
+      kill_context = 0;
     
   if (cont_event_context)
     if (!WindowStillHere(cont_event_context_window))
@@ -1055,7 +1106,7 @@ void MrEdDispatchEvent(EventRecord *e)
 
   if (e->what == updateEvt) {
     /* Find the update event for this window: */
-    RgnHandle rgn;
+    RgnHandle rgn = NULL;
     MrQueueElem *q;
     WindowPtr w;
 
@@ -1070,9 +1121,11 @@ void MrEdDispatchEvent(EventRecord *e)
       }
     }
     
-    /* rgn is in window co-ords */
-    InvalWindowRgn(w, rgn);
-    DisposeRgn(rgn);
+    if (rgn) {
+      /* rgn is in window co-ords */
+      InvalWindowRgn(w, rgn);
+      DisposeRgn(rgn);
+    }
   }
 
   wxTheApp->doMacPreEvent();
@@ -2061,9 +2114,8 @@ done:
 
 /**********************************************************************/
 /*          Generic control tracking with callbacks                   */
+/*                 or frame painting on show                          */
 /**********************************************************************/
-
-#if 1
 
 static RgnHandle clipRgn;
 
@@ -2098,7 +2150,42 @@ ControlPartCode wxHETTrackControl(ControlRef theControl, Point startPoint, Contr
   return v;
 }
 
-int wxHETYield(wxWindow *win)
+class wxSW_Closure {
+public:
+  WindowPtr w, pw;
+};
+
+static int call_sw(void *_c)
+{
+  wxSW_Closure *c;
+
+  c = (wxSW_Closure *)_c;
+
+  if (c->pw)
+    ShowSheetWindow(c->w, c->pw);
+  else
+    ShowWindow(c->w);
+
+  return 0;
+}
+
+extern void wxHETShowWindow(WindowPtr w)
+{
+  wxHETShowSheetWindow(w, NULL);
+}
+
+extern void wxHETShowSheetWindow(WindowPtr w, WindowPtr pw)
+{
+  wxSW_Closure *c;
+  c = new wxSW_Closure;
+  c->w = w;
+  c->pw = pw;
+
+  wxHiEventTrampoline(call_sw, (void *)c);
+}
+
+
+int wxHETYield(wxWindow *win, HiEventTrampProc do_f, void *do_data)
 {
   CGrafPtr savep;
   GDHandle savegd;
@@ -2115,11 +2202,11 @@ int wxHETYield(wxWindow *win)
 
   /* We assume that win was the old MacDC user, and savep is win's
      MacDC. But control tracking has changed properties of the
-     grafport, so indicate the need for a rest: */
+     grafport, so indicate the need for a reset: */
   mdc = win->MacDC();
   mdc->setCurrentUser(NULL);
 
-  more = mred_het_run_some();
+  more = mred_het_run_some(do_f, do_data);
 
   SetGWorld(savep, savegd);
   SetThemeDrawingState(s, TRUE);
@@ -2128,26 +2215,6 @@ int wxHETYield(wxWindow *win)
   /* Again. win may not be the current user, but whoever
      is the current user for savep needs a reset. */
   mdc->setCurrentUser(NULL);
-  
+
   return more;
 }
-
-#else
-
-ControlPartCode wxHETTrackControl(ControlRef theControl, Point startPoint, ControlActionUPP actionProc)
-{
-  int v;
-
-  v = TrackControl(theControl, startPoint, actionProc);
-
-  return v;
-}
-
-void wxHETYield(void)
-{
-  printf("start\n");
-  wxYield();
-  printf("end\n");
-}
-
-#endif

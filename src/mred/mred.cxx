@@ -701,10 +701,10 @@ static MrEdContext *MakeContext(MrEdContext *c, Scheme_Config *config)
   if (!config) {
     config = (Scheme_Config *)scheme_branch_config();
     scheme_set_param(config, mred_eventspace_param, (Scheme_Object *)c);
-#ifdef NEED_HET_PARAM
-    scheme_set_param(config, mred_het_param, NULL);
-#endif
   }
+#ifdef NEED_HET_PARAM
+  scheme_set_param(config, mred_het_param, NULL);
+#endif
 
   c->main_config = config;
 
@@ -922,6 +922,21 @@ void mred_wait_eventspace(void)
   if (c && (c->handler_running == scheme_current_thread)) {
     wxDispatchEventsUntilWaitable(check_eventspace_inactive, c, NULL);
   }
+}
+
+int mred_current_thread_is_handler(void *ctx)
+{
+  return (((MrEdContext *)ctx)->handler_running == scheme_current_thread);
+}
+
+int mred_in_restricted_context()
+{
+#ifdef NEED_HET_PARAM
+  /* see wxHiEventTrampoline for info on mred_het_param: */
+  if (scheme_get_param(scheme_config, mred_het_param))
+    return 1;
+#endif
+  return 0;
 }
 
 /****************************************************************************/
@@ -3242,8 +3257,9 @@ static void pre_het(void *d)
 static Scheme_Object *act_het(void *d)
 {
   HiEventTramp * het = (HiEventTramp *)d;
+  HiEventTrampProc wha_f = het->wrap_het_around_f;
 
-  het->val = het->f(het->data);
+  het->val = wha_f(het->wha_data);
 
   return scheme_void;
 }
@@ -3255,13 +3271,13 @@ static void post_het(void *d)
   scheme_set_param(scheme_config, mred_het_param, het->old_param);
 }
 
-int wxHiEventTrampoline(int (*f)(void *), void *data)
+int wxHiEventTrampoline(int (*wha_f)(void *), void *wha_data)
 {
   HiEventTramp *het;
 
   het = new HiEventTramp;
-  het->f = f;
-  het->data = data;
+  het->wrap_het_around_f = wha_f;
+  het->wha_data = wha_data;
   het->val = 0;
 
   het->progress_cont = scheme_new_jmpupbuf_holder();
@@ -3294,6 +3310,11 @@ int wxHiEventTrampoline(int (*f)(void *), void *data)
       scheme_longjmpup(&het->progress_cont->buf);    
     }
   }
+
+  het->old_param = NULL;
+  het->progress_cont = NULL;
+  het->wha_data = NULL;
+  het->do_data = NULL;
 
   return het->val;
 }
@@ -3331,7 +3352,12 @@ static void het_run_new(HiEventTramp * volatile het)
   if (!scheme_setjmp(het->progress_base)) {
     scheme_start_atomic();
     scheme_on_atomic_timeout = CAST_SUSPEND suspend_het_progress;
-    wxYield(); /* due to het param, work will be restricted */
+    /* Due to het param, yield work will be restricted: */
+    if (het->do_f) {
+      HiEventTrampProc do_f = het->do_f;
+      do_f(het->do_data);
+    } else
+      wxYield();
   }
 
   if (het->progress_is_resumed) {
@@ -3362,7 +3388,7 @@ static void het_do_run_new(HiEventTramp * volatile het, int *iteration)
   }
 }
 
-int mred_het_run_some()
+int mred_het_run_some(HiEventTrampProc do_f, void *do_data)
 {
   HiEventTramp * volatile het;
   int more = 0;
@@ -3390,6 +3416,8 @@ int mred_het_run_some()
     } else {
       int iter[1];
       iter[0] = 0;
+      het->do_f = do_f;
+      het->do_data = do_data;
       het_do_run_new(het, iter);
     }
     

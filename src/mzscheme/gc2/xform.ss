@@ -127,7 +127,8 @@
 (define non-allocating-functions
   ;; The following don't trigger GC, but we need to check for
   ;;  nested function calls:
-  '(strcmp memcpy strcat printf sprintf vsprintf vprintf))
+  '(strcmp memcpy strcat printf sprintf vsprintf vprintf
+	   strncmp scheme_strncmp))
 
 (define (get-constructor v)
   (cond

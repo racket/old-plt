@@ -1244,4 +1244,6 @@ void scheme_reset_prepared_error_buffer(void);
 # define END_XFORM_SKIP /**/
 #endif
 
+int scheme_strncmp(const char *a, const char *b, int len);
+
 #endif /* __mzscheme_private__ */

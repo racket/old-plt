@@ -1277,3 +1277,19 @@ const char *scheme_system_library_subpath()
 {
   return SCHEME_PLATFORM_LIBRARY_SUBPATH;
 }
+
+/* Our own strncpy - which would be really stupid, except the one for
+   the implementation in Solaris 2.6 is broken (it doesn't always stop
+   at the null terminator). */
+int scheme_strncmp(const char *a, const char *b, int len)
+{
+  while (len-- && (*a == *b) && *a) {
+    a++;
+    b++;
+  }
+
+  if (len < 0)
+    return 0;
+  else
+    return *a - *b;
+}

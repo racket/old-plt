@@ -257,9 +257,9 @@ static void wrong_struct_type(Scheme_Object *name,
 			      Scheme_Object **argv)
 {
   if ((SCHEME_SYM_LEN(expected) == SCHEME_SYM_LEN(received))
-      && !strncmp(SCHEME_SYM_VAL(expected), 
-		  SCHEME_SYM_VAL(received),
-		  SCHEME_SYM_LEN(expected)))
+      && !scheme_strncmp(SCHEME_SYM_VAL(expected), 
+			 SCHEME_SYM_VAL(received),
+			 SCHEME_SYM_LEN(expected)))
     scheme_raise_exn(MZEXN_APPLICATION_TYPE, argv[which], expected,
 			"%s: expects args of type <%s>; "
 			"given instance of a different <%s>",

@@ -693,7 +693,7 @@ int scheme_image_main(int argc, char **argv)
 #endif
 
   if ((argc > 1) && (!strcmp(argv[1], "--restore")
-		     || !strncmp(argv[1], "-R", 2))) {
+		     || !scheme_strncmp(argv[1], "-R", 2))) {
     char *file, *exfile;
     int startargs;
     

@@ -753,7 +753,7 @@ regexec(regexp *prog, char *string, char **startp, char **endp)
   if (prog->regmust) {
     s = string;
     while ((s = strchr(s, ((char *)prog + prog->regmust)[0])) != NULL) {
-      if (strncmp(s, ((char *)prog + prog->regmust), prog->regmlen) == 0)
+      if (scheme_strncmp(s, ((char *)prog + prog->regmust), prog->regmlen) == 0)
 	break;			/* Found it. */
       s++;
     }
@@ -867,7 +867,7 @@ regmatch(char *prog)
       if (*opnd != *reginput)
 	return(0);
       len = strlen(opnd);
-      if (len > 1 && strncmp(opnd, reginput, len) != 0)
+      if (len > 1 && scheme_strncmp(opnd, reginput, len) != 0)
 	return(0);
       reginput += len;
     }

@@ -946,7 +946,7 @@ Scheme_Object *scheme_dump_gc_stats(int c, Scheme_Object *p[])
 		|| (home == tagged_eternal))) {
 	  long len;
 	  type = scheme_write_to_string_w_max((Scheme_Object *)v, &len, max_w);
-	  if (!strncmp(type, "#<thread", 8)) {
+	  if (!scheme_strncmp(type, "#<thread", 8)) {
 	    char buffer[256];
 	    char *run, *sus, *kill, *clean, *all, *t2;
 	    int state = ((Scheme_Process *)v)->running, len2;

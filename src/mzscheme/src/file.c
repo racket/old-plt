@@ -4173,30 +4173,41 @@ static long check_four(char *name, int which, int argc, Scheme_Object **argv)
 static int appl_name_to_spec(char *name, int find_path, Scheme_Object *o, FSSpec *spec)
 {
   if (find_path) {
+    HVolumeParam volPB;
+    HIOParam paramPB;
     DTPBRec rec;
     Str255 nm;
     short vrefnum;
     long junk;
     long creator = check_four(name, 0, 1, &o);
 
-    if (HGetVol(nm, &vrefnum, &junk))
-      return 0;
-    rec.ioNamePtr = NULL;
-    rec.ioVRefNum = vrefnum;
+    /* Loop over all volumes: */
+    for (volPB.ioVolIndex = 1; PBHGetVInfoSync ((HParmBlkPtr)&volPB) == noErr; volPB.ioVolIndex++) {
+      /* Call PBHGetVolParms call to ensure the volume is a local volume. */
+      paramPB.ioVRefNum = volPB.ioVRefNum;
 
-    if (PBDTGetPath(&rec))
-      return 0;
+      if (PBHGetVolParmsSync ((HParmBlkPtr)&paramPB) == noErr && volinfo.vMServerAdr == 0) {
+	rec.ioNamePtr = NULL;
+	rec.ioVRefNum = volPB.ioVRefNum;
+	
+	if (PBDTGetPath(&rec))
+	  break;
 
-    rec.ioIndex = 0;
-    rec.ioNamePtr = nm;
-    rec.ioFileCreator = creator;
+	rec.ioIndex = 0;
+	rec.ioNamePtr = nm;
+	rec.ioFileCreator = creator;
 
-    if (PBDTGetAPPL(&rec, 0))
-      return 0;
+	if (PBDTGetAPPL(&rec, 0))
+	  break;
       
-    memcpy(spec->name, nm, 32);
-    spec->vRefNum = vrefnum;
-    spec->parID = rec.ioAPPLParID;
+	memcpy(spec->name, nm, 32);
+	spec->vRefNum = vrefnum;
+	spec->parID = rec.ioAPPLParID;
+
+	return 1;
+      }
+    }
+    return 0;
   } else {
     char *s;
     

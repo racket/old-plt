@@ -128,6 +128,7 @@ static Scheme_Comp_Env *top_next_env;
 static Scheme_Object *top_next_mark;
 static Scheme_Object *top_next_name;
 static Scheme_Object *top_next_certs;
+static Scheme_Object *top_next_modidx;
 static int top_next_use_thread_cc_ok;
 
 static Scheme_Object *is_method_symbol;
@@ -845,7 +846,8 @@ scheme_make_closure_compilation(Scheme_Comp_Env *env, Scheme_Object *code,
 /*========================================================================*/
 
 void scheme_on_next_top(Scheme_Comp_Env *env, Scheme_Object *mark, 
-			Scheme_Object *name, Scheme_Object *certs)
+			Scheme_Object *name, 
+			Scheme_Object *certs, Scheme_Object *modidx)
      /* Set back-door arguments for scheme_top_level_do */
 {
   if (!top_next_registered) {
@@ -854,12 +856,14 @@ void scheme_on_next_top(Scheme_Comp_Env *env, Scheme_Object *mark,
     REGISTER_SO(top_next_mark);
     REGISTER_SO(top_next_name);
     REGISTER_SO(top_next_certs);
+    REGISTER_SO(top_next_modidx);
   }
 
   top_next_env = env;
   top_next_mark = mark;
   top_next_name = name;
   top_next_certs = certs;
+  top_next_modidx = modidx;
 }
 
 typedef Scheme_Object *(*Overflow_K_Proc)(void);
@@ -876,7 +880,7 @@ void *top_level_do(void *(*k)(void), int eb, void *sj_start)
   mz_jmp_buf *save, * volatile oversave = NULL, newbuf, overbuf;
   Scheme_Stack_State envss;
   Scheme_Comp_Env * volatile save_current_local_env;
-  Scheme_Object * volatile save_mark, *  volatile save_name, * volatile save_certs;
+  Scheme_Object * volatile save_mark, *  volatile save_name, * volatile save_certs, * volatile save_modidx;
   Scheme_Simple_Object * volatile save_list_stack;
   Scheme_Thread * volatile p = scheme_current_thread;
   volatile int save_suspend_break;
@@ -928,6 +932,7 @@ void *top_level_do(void *(*k)(void), int eb, void *sj_start)
   save_mark = p->current_local_mark;
   save_name = p->current_local_name;
   save_certs = p->current_local_certs;
+  save_modidx = p->current_local_modidx;
   save_list_stack = p->list_stack;
   save_list_stack_pos = p->list_stack_pos;
   save_suspend_break = p->suspend_break;
@@ -937,10 +942,12 @@ void *top_level_do(void *(*k)(void), int eb, void *sj_start)
     p->current_local_mark = top_next_mark;
     p->current_local_name = top_next_name;
     p->current_local_certs = top_next_certs;
+    p->current_local_modidx = top_next_modidx;
     top_next_env = NULL;
     top_next_mark = NULL;
     top_next_name = NULL;
     top_next_certs = NULL;
+    top_next_modidx = NULL;
   }
 
   /* We set up an overflow handler at the lowest point possible
@@ -1044,6 +1051,7 @@ void *top_level_do(void *(*k)(void), int eb, void *sj_start)
     p->current_local_mark = save_mark;
     p->current_local_name = save_name;
     p->current_local_certs = save_certs;
+    p->current_local_modidx = save_modidx;
     p->list_stack = save_list_stack;
     p->list_stack_pos = save_list_stack_pos;
     p->suspend_break = save_suspend_break;
@@ -1058,6 +1066,7 @@ void *top_level_do(void *(*k)(void), int eb, void *sj_start)
   p->current_local_mark = save_mark;
   p->current_local_name = save_name;
   p->current_local_certs = save_certs;
+  p->current_local_modidx = save_modidx;
 
   p->error_buf = save;
 
@@ -1418,7 +1427,7 @@ scheme_apply_macro(Scheme_Object *name, Scheme_Env *menv,
    mark = scheme_new_mark();
    code = scheme_add_remove_mark(code, mark);
 
-   scheme_on_next_top(env, mark, boundname, certs);
+   scheme_on_next_top(env, mark, boundname, certs, menv ? menv->link_midx : env->genv->link_midx);
 
    rands_vec[0] = code;
    code = scheme_apply(rator, 1, rands_vec);

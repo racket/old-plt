@@ -55,7 +55,9 @@ static Scheme_Object *syntax_src_module(int argc, Scheme_Object **argv);
 
 static Scheme_Object *syntax_recertify_constrained(int argc, Scheme_Object **argv);
 static Scheme_Object *syntax_recertify(int argc, Scheme_Object **argv);
-static Scheme_Object *syntax_extend_certificate_context(int argc, Scheme_Object **argv);
+static Scheme_Object *syntax_extend_certificate_env(int argc, Scheme_Object **argv);
+static Scheme_Object *syntax_certificate_env_p(int argc, Scheme_Object **argv);
+static Scheme_Object *syntax_make_certificate_env(int argc, Scheme_Object **argv);
 
 static Scheme_Object *barrier_symbol;
 
@@ -83,6 +85,7 @@ static void register_traversers(void);
 
 static int includes_mark(Scheme_Object *wraps, Scheme_Object *mark);
 static void add_all_marks(Scheme_Object *wraps, Scheme_Hash_Table *marks);
+static struct Scheme_Cert *cons_cert(Scheme_Object *mark, Scheme_Object *modidx, Scheme_Object *insp, struct Scheme_Cert *next_cert);
 
 #define CONS scheme_make_pair
 #define ICONS scheme_make_immutable_pair
@@ -109,6 +112,7 @@ typedef struct Module_Renames {
 typedef struct Scheme_Cert {
   Scheme_Object so;
   Scheme_Object *mark;
+  Scheme_Object *modidx;
   Scheme_Object *insp;
   struct Scheme_Cert *next;
 } Scheme_Cert;
@@ -404,10 +408,20 @@ void scheme_init_stx(Scheme_Env *env)
 						      "syntax-recertify",
 						      3, 3),
 			     env);
-  scheme_add_global_constant("syntax-extend-certificate-context", 
-			     scheme_make_prim_w_arity(syntax_extend_certificate_context,
-						      "syntax-extend-certificate-context",
+  scheme_add_global_constant("syntax-extend-certificate-env", 
+			     scheme_make_prim_w_arity(syntax_extend_certificate_env,
+						      "syntax-extend-certificate-evn",
 						      2, 2),
+			     env);
+  scheme_add_global_constant("syntax-make-certificate-env", 
+			     scheme_make_prim_w_arity(syntax_make_certificate_env,
+						      "syntax-make-certificate-env",
+						      0, 0),
+			     env);
+  scheme_add_global_constant("syntax-certificate-env?", 
+			     scheme_make_folding_prim(syntax_certificate_env_p,
+						      "syntax-certificate-env?",
+						      1, 1, 1),
 			     env);
 
   REGISTER_SO(barrier_symbol);
@@ -760,7 +774,7 @@ Scheme_Object *scheme_add_remove_mark(Scheme_Object *o, Scheme_Object *m)
   certs = stx->certs;
   stx = (Scheme_Stx *)scheme_make_stx(stx->val, stx->srcloc, stx->props);
   stx->wraps = wraps;
-  stx->certs = certs;
+  stx->certs = (HAS_MARKS(certs) ? CERT_ONLY(certs) : certs);
 
   if (STX_KEY(stx) & STX_SUBSTX_FLAG)
     stx->u.lazy_prefix = lp;
@@ -1085,15 +1099,79 @@ Scheme_Object *scheme_stx_phase_shift(Scheme_Object *stx, long shift,
   Scheme_Object *ps;
 
   ps = scheme_stx_phase_shift_as_rename(shift, old_midx, new_midx);
-  if (ps) 
+  if (ps) {
     return scheme_add_rename(stx, ps);
-  else
+  } else
     return stx;
 }
 
 void scheme_clear_shift_cache(void)
 {
   last_phase_shift = NULL;
+}
+
+static void phase_shift_certs(Scheme_Object *o, Scheme_Object *owner_wraps, int len)
+     /* Mutates o to changes its certs, in the case that the first len
+	elements of owner_wraps includes any phase-shifting (i.e.,
+	modidx-shifting) elements. */
+{
+  Scheme_Object *l, *a, *modidx_shift_to = NULL, *modidx_shift_from = NULL, *vec, *src, *dest;
+  int i, j;
+
+  for (i = 0, l = owner_wraps; i < len; i++, l = SCHEME_CDR(l)) {
+    a = SCHEME_CAR(l);
+    if (SAME_TYPE(SCHEME_TYPE(a), scheme_wrap_chunk_type)) {
+      for (j = ((Wrap_Chunk *)a)->len; j--; ) {
+	if (SCHEME_BOXP(((Wrap_Chunk *)a)->a[j])) {
+	  vec = SCHEME_BOX_VAL(((Wrap_Chunk *)a)->a[j]);
+	  src = SCHEME_VEC_ELS(vec)[1];
+	  dest = SCHEME_VEC_ELS(vec)[2];
+	  if (!modidx_shift_to) {
+	    modidx_shift_to = dest;
+	  } else if (!SAME_OBJ(modidx_shift_from, dest)) {
+	    modidx_shift_to = scheme_modidx_shift(dest,
+						  modidx_shift_from,
+						  modidx_shift_to);
+	  }
+	  modidx_shift_from = src;
+	}
+      }
+    } else if (SCHEME_BOXP(a)) {
+      vec = SCHEME_BOX_VAL(a);
+      src = SCHEME_VEC_ELS(vec)[1];
+      dest = SCHEME_VEC_ELS(vec)[2];
+      if (!modidx_shift_to) {
+	modidx_shift_to = dest;
+      } else if (!SAME_OBJ(modidx_shift_from, dest)) {
+	modidx_shift_to = scheme_modidx_shift(dest,
+					      modidx_shift_from,
+					      modidx_shift_to);
+      }
+      modidx_shift_from = src;
+    }
+  }
+
+  if (modidx_shift_from) {
+    Scheme_Cert *certs, *first = NULL, *last = NULL, *c;
+
+    certs = ((Scheme_Stx *)o)->certs;
+    if (HAS_MARKS(certs))
+      certs = CERT_ONLY(certs);
+    
+    /* Clone certs list, phase-shifting each cert */
+    while (certs) {
+      a = scheme_modidx_shift(certs->modidx, modidx_shift_from, modidx_shift_to);
+      c = cons_cert(certs->mark, a, certs->insp, NULL);
+      if (first)
+	last->next = c;
+      else
+	first = c;
+      last = c;
+      certs = certs->next;
+    }
+
+    ((Scheme_Stx *)o)->certs = first;
+  }
 }
 
 static Scheme_Object *propagate_wraps(Scheme_Object *o, 
@@ -1116,6 +1194,8 @@ static Scheme_Object *propagate_wraps(Scheme_Object *o,
     /* p1 is the list after wl... */
     
     if (SAME_OBJ(stx->wraps, p1)) {
+      /* So, we can use owner_wraps directly instead of building
+	 new wraps */
       long lp;
       int graph;
 
@@ -1130,10 +1210,14 @@ static Scheme_Object *propagate_wraps(Scheme_Object *o,
       stx = (Scheme_Stx *)scheme_make_stx(stx->val, stx->srcloc, stx->props);
       stx->wraps = owner_wraps;
       stx->u.lazy_prefix = lp; /* same as zeroing cache if no SUBSTX */
+      certs = (HAS_MARKS(certs) ? CERT_ONLY(certs) : certs);
       stx->certs = certs;
 
       if (graph)
 	STX_KEY(stx) |= STX_GRAPH_FLAG;
+
+      if (stx->certs)
+	phase_shift_certs((Scheme_Object *)stx, owner_wraps, len);
 
       return (Scheme_Object *)stx;
     }
@@ -1201,11 +1285,16 @@ static Scheme_Object *propagate_wraps(Scheme_Object *o,
   }
 
   if (SCHEME_NUMBERP(ml))
-    return scheme_add_remove_mark(o, ml);
-  else if (SCHEME_NULLP(ml))
-    return o;
-  else
-    return scheme_add_rename(o, ml);
+    o = scheme_add_remove_mark(o, ml);
+  else if (SCHEME_NULLP(ml)) {
+    /* ok */
+  } else
+    o = scheme_add_rename(o, ml);
+
+  if (((Scheme_Stx *)o)->certs)
+    phase_shift_certs(o, owner_wraps, len);
+
+  return o;
 }
 
 static int cert_transparent(Scheme_Cert *cert, Scheme_Object *inspkey)
@@ -1213,9 +1302,11 @@ static int cert_transparent(Scheme_Cert *cert, Scheme_Object *inspkey)
   return 1;
 }
 
-int scheme_stx_certified(Scheme_Object *stx, Scheme_Object *extra_certs, Scheme_Object *home_insp)
+int scheme_stx_certified(Scheme_Object *stx, Scheme_Object *extra_certs, 
+			 Scheme_Object *home_modidx, Scheme_Object *home_insp)
 {
   Scheme_Cert *certs = ((Scheme_Stx *)stx)->certs;
+  Scheme_Object *cert_modidx, *a, *b;
 
   if (HAS_MARKS(certs)) {
     /* Skip used-mark cache: */
@@ -1225,10 +1316,23 @@ int scheme_stx_certified(Scheme_Object *stx, Scheme_Object *extra_certs, Scheme_
   do {
     while (certs) {
       if (!scheme_module_protected_wrt(home_insp, certs->insp)) {
-	/* Found a certification. Does this identifier have the
-	   associated mark? */
-	if (includes_mark(((Scheme_Stx *)stx)->wraps, certs->mark))
-	  return 1;
+	if (home_modidx) {
+	  if (SCHEME_FALSEP(certs->modidx))
+	    cert_modidx = home_modidx;
+	  else
+	    cert_modidx = certs->modidx;
+	  
+	  a = scheme_module_resolve(home_modidx);
+	  b = scheme_module_resolve(cert_modidx);
+	} else
+	  a = b = NULL;
+	
+	if (SAME_OBJ(a, b)) {
+	  /* Found a certification. Does this identifier have the
+	     associated mark? */
+	  if (includes_mark(((Scheme_Stx *)stx)->wraps, certs->mark))
+	    return 1;
+	}
       }
       certs = certs->next;
     }
@@ -1241,13 +1345,14 @@ int scheme_stx_certified(Scheme_Object *stx, Scheme_Object *extra_certs, Scheme_
   return 0;
 }
 
-static Scheme_Cert *cons_cert(Scheme_Object *mark, Scheme_Object *insp, Scheme_Cert *next_cert)
+static Scheme_Cert *cons_cert(Scheme_Object *mark, Scheme_Object *modidx, Scheme_Object *insp, Scheme_Cert *next_cert)
 {
   Scheme_Cert *cert;
 
   cert = MALLOC_ONE_RT(Scheme_Cert);
   cert->so.type = scheme_certifications_type;
   cert->mark = mark;
+  cert->modidx = modidx;
   cert->insp = insp;
   cert->next = next_cert;
 
@@ -1295,7 +1400,7 @@ static Scheme_Object *add_certs(Scheme_Object *o, Scheme_Cert *certs, Scheme_Obj
 	  stx = res;
 	  copy_on_write = 0;
 	}
-	cl = cons_cert(certs->mark, certs->insp, stx->certs);
+	cl = cons_cert(certs->mark, certs->modidx, certs->insp, stx->certs);
 	stx->certs = cl;
       }
     }
@@ -1318,7 +1423,7 @@ Scheme_Object *scheme_stx_extract_certs(Scheme_Object *o, Scheme_Object *base_ce
     certs = CERT_ONLY(certs);
 
   for (; certs; certs = certs->next) {
-    result = cons_cert(certs->mark, certs->insp, result);
+    result = cons_cert(certs->mark, certs->modidx, certs->insp, result);
   }
 
   return (Scheme_Object *)result;
@@ -1358,7 +1463,8 @@ Scheme_Object *scheme_stx_cert(Scheme_Object *o, Scheme_Object *mark, Scheme_Env
       res = (Scheme_Stx *)scheme_add_remove_mark((Scheme_Object *)res, mark);
     }
 
-    cert = cons_cert(mark, menv->module->insp, cert);
+    cert = cons_cert(mark, menv->link_midx ? menv->link_midx : menv->module->src_modidx, 
+		     menv->module->insp, cert);
     res->certs = cert;
     
     o = (Scheme_Object *)res;
@@ -1906,9 +2012,9 @@ static Scheme_Object *resolve_env(Scheme_Object *a, long phase,
 }
 
 static Scheme_Object *get_module_src_name(Scheme_Object *a, long phase)
-/* Gets a module source name under the assumption that the identifier
-   is not lexically renamed. This is used as a quick pre-test for
-   module-identifier=?. */
+     /* Gets a module source name under the assumption that the identifier
+	is not lexically renamed. This is used as a quick pre-test for
+	module-identifier=?. */
 {
   WRAP_POS wraps;
   Scheme_Object *result;
@@ -2048,9 +2154,9 @@ Scheme_Object *scheme_stx_module_name(Scheme_Object **a, long phase,
 				      Scheme_Object **nominal_modidx,
 				      Scheme_Object **nominal_name,
 				      int *mod_phase)
-/* If module bound, result is module idx, and a is set to source name.
-   If lexically bound, result is scheme_undefined and a is unchanged. 
-   If neither, result is NULL and a is unchanged. */
+     /* If module bound, result is module idx, and a is set to source name.
+	If lexically bound, result is scheme_undefined and a is unchanged. 
+	If neither, result is NULL and a is unchanged. */
 {
   if (SCHEME_STXP(*a)) {
     Scheme_Object *modname, *names[4];
@@ -2917,6 +3023,7 @@ static Scheme_Object *syntax_to_datum_inner(Scheme_Object *o,
       if (HAS_MARKS(certs))
 	certs = CERT_ONLY(certs);
       while (certs) {
+	cert_marks = scheme_make_pair(certs->modidx, cert_marks);
 	cert_marks = scheme_make_pair(certs->mark, cert_marks);
 	certs = certs->next;
       }
@@ -3479,7 +3586,7 @@ static Scheme_Object *datum_to_syntax_inner(Scheme_Object *o,
   if (cert_marks) {
     /* Need to convert a list of marks to certs */
     Scheme_Cert *certs = NULL;
-    Scheme_Object *a, *insp;
+    Scheme_Object *a, *b, *insp;
     insp = scheme_get_param(scheme_current_config(), MZCONFIG_CODE_INSPECTOR);
     while (SCHEME_PAIRP(cert_marks)) {
       a = SCHEME_CAR(cert_marks);
@@ -3487,7 +3594,17 @@ static Scheme_Object *datum_to_syntax_inner(Scheme_Object *o,
 	return NULL;
       a = unmarshal_mark(a, (Scheme_Hash_Table *)stx_wraps);
       if (!a) return NULL;
-      certs = cons_cert(a, insp, certs);
+
+      cert_marks = SCHEME_CDR(cert_marks);
+      if (!SCHEME_PAIRP(cert_marks))
+	return NULL;
+      b = SCHEME_CAR(cert_marks);
+      if (!SCHEME_SYMBOLP(b)
+	  && !SAME_TYPE(SCHEME_TYPE(b), scheme_module_index_type))
+	return NULL;
+
+      certs = cons_cert(a, b, insp, certs);
+
       cert_marks = SCHEME_CDR(cert_marks);
     }
     if (!SCHEME_NULLP(cert_marks))
@@ -3677,7 +3794,7 @@ static void simplify_syntax_inner(Scheme_Object *o,
 	if (scheme_hash_get(marks, cl->mark)) {
 	  v = scheme_hash_get(marks, cl->mark);
 	  if (!SCHEME_VOIDP(v))
-	    result = cons_cert(cl->mark, cl->insp, result);
+	    result = cons_cert(cl->mark, cl->modidx, cl->insp, result);
 	}
       }
       stx->certs = result;
@@ -4246,7 +4363,7 @@ static void accum_all_marks(Scheme_Object *naya,
 	} else {
 	  is_protected = 0;
 	  nht = NULL;
-	  accum_all_marks(((Scheme_Stx *)naya)->val, &nht, &cow);
+	  accum_all_marks(scheme_stx_content(naya), &nht, &cow);
 	  if (!nht) {
 	    nht = empty_hash_table;
 	    cow = 1;
@@ -4268,7 +4385,7 @@ static void accum_all_marks(Scheme_Object *naya,
 	  l = SCHEME_CDR(l);
 	}
 	
-	certs = cons_cert(NULL, (Scheme_Object *)nht, ((Scheme_Stx *)naya)->certs);
+	certs = cons_cert(NULL, NULL, (Scheme_Object *)nht, ((Scheme_Stx *)naya)->certs);
 	((Scheme_Stx *)naya)->certs = certs;
       }
       nht = (Scheme_Hash_Table *)MARK_ONLY(((Scheme_Stx *)naya)->certs);
@@ -4323,8 +4440,8 @@ static Scheme_Object *syntax_recertify_constrained(int argc, Scheme_Object **arg
 
   if (!SCHEME_STXP(argv[0]))
     scheme_wrong_type("syntax-recertify-constrained?", "syntax", 0, argc, argv);
-  if (!SCHEME_FALSEP(argv[1]) && !SAME_TYPE(scheme_cert_context_type, SCHEME_TYPE(argv[1])))
-    scheme_wrong_type("syntax-recertify-constrained?", "certificate context or #f", 1, argc, argv);
+  if (!SAME_TYPE(scheme_cert_context_type, SCHEME_TYPE(argv[1])))
+    scheme_wrong_type("syntax-recertify-constrained?", "certificate environment", 1, argc, argv);
   if (!SAME_TYPE(SCHEME_TYPE(argv[2]), scheme_inspector_type))
     scheme_wrong_type("syntax-recertify-constrained?", "inspector", 2, argc, argv);
 
@@ -4512,12 +4629,12 @@ static Scheme_Object *syntax_recertify(int argc, Scheme_Object **argv)
 			     s, argv[0]);
 	    return NULL;
 	  }
-	  new_certs = cons_cert(certs->mark, certs->insp, new_certs);
+	  new_certs = cons_cert(certs->mark, certs->modidx, certs->insp, new_certs);
 	} else {
 	  /* the certificate wasn't needed before, so drop it*/
 	}
       } else
-	new_certs = cons_cert(certs->mark, certs->insp, new_certs);
+	new_certs = cons_cert(certs->mark, certs->modidx, certs->insp, new_certs);
       certs = certs->next;
     }
 
@@ -4535,16 +4652,16 @@ static Scheme_Object *syntax_recertify(int argc, Scheme_Object **argv)
     return argv[0];
 }
 
-static Scheme_Object *syntax_extend_certificate_context(int argc, Scheme_Object **argv)
+static Scheme_Object *syntax_extend_certificate_env(int argc, Scheme_Object **argv)
 {
   Scheme_Object *o;
   Scheme_Cert *certs, *result;
   Scheme_Hash_Table *ht;
 
   if (!SCHEME_STXP(argv[0]))
-    scheme_wrong_type("syntax-extend-certificate-context", "syntax", 0, argc, argv);
-  if (!SCHEME_FALSEP(argv[1]) && !SAME_TYPE(scheme_cert_context_type, SCHEME_TYPE(argv[1])))
-    scheme_wrong_type("syntax-extend-certificate-context", "certificate context or #f", 1, argc, argv);
+    scheme_wrong_type("syntax-extend-certificate-env", "syntax", 0, argc, argv);
+  if (!SAME_TYPE(scheme_cert_context_type, SCHEME_TYPE(argv[1])))
+    scheme_wrong_type("syntax-extend-certificate-context", "certificate environment", 1, argc, argv);
 
   if (SCHEME_FALSEP(argv[1]))
     result = NULL;
@@ -4565,7 +4682,7 @@ static Scheme_Object *syntax_extend_certificate_context(int argc, Scheme_Object 
     o = scheme_hash_get(ht, certs->mark);
     if (o && SCHEME_TRUEP(o)) {
       /* Mark for opaque cert is used for a protected id, so keep it. */
-      result = cons_cert(certs->mark, certs->insp, result);
+      result = cons_cert(certs->mark, certs->modidx, certs->insp, result);
     }
   }
 
@@ -4574,6 +4691,24 @@ static Scheme_Object *syntax_extend_certificate_context(int argc, Scheme_Object 
   SCHEME_PTR_VAL(o) = (Scheme_Object *)result;
 
   return o;
+}
+
+static Scheme_Object *syntax_make_certificate_env(int argc, Scheme_Object **argv)
+{
+  Scheme_Object *o;
+
+  o = scheme_alloc_small_object();
+  o->type = scheme_cert_context_type;
+  SCHEME_PTR_VAL(o) = NULL;
+
+  return o;
+}
+
+static Scheme_Object *syntax_certificate_env_p(int argc, Scheme_Object **argv)
+{
+  return (SAME_TYPE(scheme_cert_context_type, SCHEME_TYPE(argv[0]))
+	  ? scheme_true
+	  : scheme_false);
 }
 
 /**********************************************************************/

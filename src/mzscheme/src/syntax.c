@@ -86,8 +86,10 @@ static Scheme_Object *define_for_syntaxes_syntax(Scheme_Object *form, Scheme_Com
 static Scheme_Object *define_for_syntaxes_expand(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Expand_Info *erec, int drec);
 static Scheme_Object *letrec_syntaxes_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec);
 static Scheme_Object *letrec_syntaxes_expand(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Expand_Info *erec, int drec);
+#if 0
 static Scheme_Object *fluid_let_syntax_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec);
 static Scheme_Object *fluid_let_syntax_expand(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Expand_Info *erec, int drec);
+#endif
 
 static Scheme_Object *define_values_execute(Scheme_Object *data);
 static Scheme_Object *set_execute(Scheme_Object *data);
@@ -341,10 +343,12 @@ scheme_init_syntax (Scheme_Env *env)
 			    scheme_make_compiled_syntax(letrec_syntaxes_syntax, 
 							letrec_syntaxes_expand), 
 			    env);
+#if 0
   scheme_add_global_keyword("fluid-let-syntax", 
 			    scheme_make_compiled_syntax(fluid_let_syntax_syntax, 
 							fluid_let_syntax_expand), 
 			    env);
+#endif
 }
 
 Scheme_Object *
@@ -1212,7 +1216,8 @@ set_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec,
 				+ (rec[drec].resolve_module_ids
 				   ? SCHEME_RESOLVE_MODIDS
 				   : 0),
-				rec[drec].certs, &menv, NULL);
+				rec[drec].certs, env->in_modidx, 
+				&menv, NULL);
     
     if (SAME_TYPE(SCHEME_TYPE(var), scheme_macro_type)) {
       /* Redirect to a macro? */
@@ -1221,7 +1226,7 @@ set_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec,
 	
 	return scheme_compile_expr(form, env, rec, drec);
       } else if (SAME_TYPE(SCHEME_TYPE(SCHEME_PTR_VAL(var)), scheme_id_macro_type)) {
-	find_name = SCHEME_PTR1_VAL(SCHEME_PTR_VAL(var));
+	find_name = SCHEME_PTR_VAL(SCHEME_PTR_VAL(var));
 	find_name = scheme_stx_cert(find_name, scheme_false, menv, find_name);
 	SCHEME_USE_FUEL(1);
 	menv = NULL;
@@ -1292,7 +1297,9 @@ set_expand(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Expand_Info *erec, 
 
   while (1) {
     /* Make sure it's mutable, and check for redirects: */
-    var = scheme_lookup_binding(find_name, env, SCHEME_SETTING, erec[drec].certs, &menv, NULL);
+    var = scheme_lookup_binding(find_name, env, SCHEME_SETTING, 
+				erec[drec].certs, env->in_modidx, 
+				&menv, NULL);
     
     if ((erec[drec].depth != 0) && SAME_TYPE(SCHEME_TYPE(var), scheme_macro_type)) {
       /* Redirect to a macro? */
@@ -1307,7 +1314,7 @@ set_expand(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Expand_Info *erec, 
 	return scheme_expand_expr(form, env, erec, drec);
       } else if (SAME_TYPE(SCHEME_TYPE(SCHEME_PTR_VAL(var)), scheme_id_macro_type)) {
 	Scheme_Object *new_name;
-	new_name = SCHEME_PTR1_VAL(SCHEME_PTR_VAL(var));
+	new_name = SCHEME_PTR_VAL(SCHEME_PTR_VAL(var));
 	new_name = scheme_stx_track(new_name, find_name, find_name);
 	new_name = scheme_stx_cert(new_name, scheme_false, menv, find_name);
 	find_name = new_name;
@@ -2310,7 +2317,8 @@ do_let_expand(Scheme_Object *form, Scheme_Comp_Env *origenv, Scheme_Expand_Info 
 			      SCHEME_NULL_FOR_UNBOUND
 			      + SCHEME_APP_POS + SCHEME_ENV_CONSTANTS_OK
 			      + SCHEME_DONT_MARK_USE,
-			      erec[drec].certs, NULL, NULL);
+			      erec[drec].certs, origenv->in_modidx, 
+			      NULL, NULL);
     first = scheme_get_stop_expander();
     partial = SAME_OBJ(first, v);
   } else
@@ -2993,7 +3001,7 @@ quote_syntax_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_In
   stx = SCHEME_STX_CDR(form);
   stx = SCHEME_STX_CAR(stx);
 
-  /* Push all certificates down to the syntax object. */
+  /* Push all certificates in the environment down to the syntax object. */
   stx = scheme_stx_add_certs(stx, rec[drec].certs);
   
   if (rec[drec].comp) {
@@ -3067,7 +3075,7 @@ do_define_syntaxes_execute(Scheme_Object *form, Scheme_Env *dm_env, int for_stx)
 
   dm_env = scheme_environment_from_dummy(dummy);
 
-  scheme_on_next_top(rhs_env, NULL, scheme_false, NULL);
+  scheme_on_next_top(rhs_env, NULL, scheme_false, NULL, dm_env->link_midx);
   return define_execute(SCHEME_CAR(form), SCHEME_CDR(form), for_stx ? 2 : 1, rp, dm_env);
 }
 
@@ -3337,7 +3345,7 @@ static Scheme_Object *eval_letmacro_rhs(Scheme_Object *a, Scheme_Comp_Env *rhs_e
     /* short cut */
     a = _scheme_eval_linked_expr_multi(a);
   } else {
-    scheme_on_next_top(rhs_env, NULL, scheme_false, certs);
+    scheme_on_next_top(rhs_env, NULL, scheme_false, certs, rhs_env->genv->link_midx);
     a = scheme_eval_linked_expr_multi(a);
   }
 
@@ -3693,6 +3701,7 @@ letrec_syntaxes_expand(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Expand_
   return do_letrec_syntaxes("letrec-syntaxes+values", 1, form, env, erec, drec);
 }
 
+#if 0
 static Scheme_Object *
 fluid_let_syntax_syntax(Scheme_Object *form, Scheme_Comp_Env *env, 
 			Scheme_Compile_Info *rec, int drec)
@@ -3705,6 +3714,7 @@ fluid_let_syntax_expand(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Expand
 {
   return do_letrec_syntaxes("fluid-let-syntax", 0, form, env, erec, drec);
 }
+#endif
 
 /**********************************************************************/
 /*                        marshal/unmarshal                           */

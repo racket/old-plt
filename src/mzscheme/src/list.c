@@ -94,6 +94,7 @@ static Scheme_Object *set_box (int argc, Scheme_Object *argv[]);
 static Scheme_Object *make_hash_table(int argc, Scheme_Object *argv[]);
 static Scheme_Object *make_immutable_hash_table(int argc, Scheme_Object *argv[]);
 static Scheme_Object *hash_table_count(int argc, Scheme_Object *argv[]);
+static Scheme_Object *hash_table_copy(int argc, Scheme_Object *argv[]);
 static Scheme_Object *hash_table_p(int argc, Scheme_Object *argv[]);
 static Scheme_Object *hash_table_put(int argc, Scheme_Object *argv[]);
 static Scheme_Object *hash_table_get(int argc, Scheme_Object *argv[]);
@@ -442,6 +443,11 @@ scheme_init_list (Scheme_Env *env)
   scheme_add_global_constant("hash-table-count",
 			     scheme_make_prim_w_arity(hash_table_count,
 						      "hash-table-count",
+						      1, 1),
+			     env);
+  scheme_add_global_constant("hash-table-copy",
+			     scheme_make_prim_w_arity(hash_table_copy,
+						      "hash-table-copy",
 						      1, 1),
 			     env);
   scheme_add_global_constant("hash-table-put!",
@@ -1400,6 +1406,18 @@ static Scheme_Object *hash_table_count(int argc, Scheme_Object *argv[])
     return scheme_make_integer(count);
   } else {
     scheme_wrong_type("hash-table-count", "hash-table", 0, argc, argv);
+    return NULL;
+  }
+}
+
+static Scheme_Object *hash_table_copy(int argc, Scheme_Object *argv[])
+{
+  if (SCHEME_HASHTP(argv[0])) {
+    return (Scheme_Object *)scheme_clone_hash_table((Scheme_Hash_Table *)argv[0]);
+  } else if (SCHEME_BUCKTP(argv[0])) {
+    return (Scheme_Object *)scheme_clone_bucket_table((Scheme_Bucket_Table *)argv[0]);
+  } else {
+    scheme_wrong_type("hash-table-copy", "hash-table", 0, argc, argv);
     return NULL;
   }
 }

@@ -1417,6 +1417,7 @@ int thread_val_MARK(void *p) {
   gcMARK(pr->current_local_mark);
   gcMARK(pr->current_local_name);
   gcMARK(pr->current_local_certs);
+  gcMARK(pr->current_local_modidx);
   
   gcMARK(pr->overflow_reply);
 
@@ -1500,6 +1501,7 @@ int thread_val_FIXUP(void *p) {
   gcFIXUP(pr->current_local_mark);
   gcFIXUP(pr->current_local_name);
   gcFIXUP(pr->current_local_certs);
+  gcFIXUP(pr->current_local_modidx);
   
   gcFIXUP(pr->overflow_reply);
 
@@ -2235,6 +2237,7 @@ int mark_comp_env_MARK(void *p) {
   gcMARK(e->base.uids);
   gcMARK(e->base.dup_check);
   gcMARK(e->base.intdef_name);
+  gcMARK(e->base.in_modidx);
   
   gcMARK(e->data.stat_dists);
   gcMARK(e->data.sd_depths);
@@ -2260,6 +2263,7 @@ int mark_comp_env_FIXUP(void *p) {
   gcFIXUP(e->base.uids);
   gcFIXUP(e->base.dup_check);
   gcFIXUP(e->base.intdef_name);
+  gcFIXUP(e->base.in_modidx);
   
   gcFIXUP(e->data.stat_dists);
   gcFIXUP(e->data.sd_depths);
@@ -4150,6 +4154,7 @@ int mark_cert_SIZE(void *p) {
 int mark_cert_MARK(void *p) {
   Scheme_Cert *c = (Scheme_Cert *)p;
   gcMARK(c->mark);
+  gcMARK(c->modidx);
   gcMARK(c->insp);
   gcMARK(c->next);
   return
@@ -4159,6 +4164,7 @@ int mark_cert_MARK(void *p) {
 int mark_cert_FIXUP(void *p) {
   Scheme_Cert *c = (Scheme_Cert *)p;
   gcFIXUP(c->mark);
+  gcFIXUP(c->modidx);
   gcFIXUP(c->insp);
   gcFIXUP(c->next);
   return

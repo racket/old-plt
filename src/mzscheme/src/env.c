@@ -78,6 +78,7 @@ static Scheme_Object *make_set_transformer(int argc, Scheme_Object *argv[]);
 static Scheme_Object *set_transformer_p(int argc, Scheme_Object *argv[]);
 static Scheme_Object *set_transformer_proc(int argc, Scheme_Object *argv[]);
 static Scheme_Object *make_rename_transformer(int argc, Scheme_Object *argv[]);
+static Scheme_Object *rename_transformer_target(int argc, Scheme_Object *argv[]);
 static Scheme_Object *rename_transformer_p(int argc, Scheme_Object *argv[]);
 
 static Scheme_Object *write_toplevel(Scheme_Object *obj);
@@ -499,6 +500,12 @@ static void make_init_env(void)
   scheme_add_global_constant("rename-transformer?", 
 			     scheme_make_prim_w_arity(rename_transformer_p,
 						      "rename-transformer?",
+						      1, 1),
+			     env);
+
+  scheme_add_global_constant("rename-transformer-target", 
+			     scheme_make_prim_w_arity(rename_transformer_target,
+						      "rename-transformer-target",
 						      1, 1),
 			     env);
 
@@ -1041,6 +1048,7 @@ Scheme_Comp_Env *scheme_new_compilation_frame(int num_bindings, int flags,
   frame->genv = base->genv;
   frame->insp = base->insp;
   frame->prefix = base->prefix;
+  frame->in_modidx = base->in_modidx;
 
   init_compile_data(frame);
 
@@ -1916,7 +1924,8 @@ Scheme_Object *scheme_add_env_renames(Scheme_Object *stx, Scheme_Comp_Env *env,
 
 Scheme_Object *
 scheme_lookup_binding(Scheme_Object *find_id, Scheme_Comp_Env *env, int flags,
-		      Scheme_Object *certs, Scheme_Env **_menv, int *_protected)
+		      Scheme_Object *certs, Scheme_Object *in_modidx,
+		      Scheme_Env **_menv, int *_protected)
 {
   Scheme_Comp_Env *frame;
   int j = 0, p = 0, modpos, skip_stops = 0, mod_defn_phase;
@@ -2061,7 +2070,8 @@ scheme_lookup_binding(Scheme_Object *find_id, Scheme_Comp_Env *env, int flags,
   if (modname) {
     val = scheme_module_syntax(modname, env->genv, find_id);
     if (val)
-      scheme_check_accessible_in_module(genv, env->insp, find_id, src_find_id, certs, NULL, -2, 0, 
+      scheme_check_accessible_in_module(genv, env->insp, in_modidx, 
+					find_id, src_find_id, certs, NULL, -2, 0, 
 					NULL);
   } else {
     /* Only try syntax table if there's not an explicit (later)
@@ -2081,7 +2091,8 @@ scheme_lookup_binding(Scheme_Object *find_id, Scheme_Comp_Env *env, int flags,
 
   if (modname) {
     Scheme_Object *pos;
-    pos = scheme_check_accessible_in_module(genv, env->insp, find_id, src_find_id, certs, NULL, -1, 1,
+    pos = scheme_check_accessible_in_module(genv, env->insp, in_modidx, 
+					    find_id, src_find_id, certs, NULL, -1, 1,
 					    _protected);
     modpos = SCHEME_INT_VAL(pos);
   } else
@@ -2602,7 +2613,7 @@ namespace_variable_value(int argc, Scheme_Object *argv[])
     init_compile_data((Scheme_Comp_Env *)&inlined_e);
     inlined_e.base.prefix = NULL;
 
-    v = scheme_lookup_binding(id, (Scheme_Comp_Env *)&inlined_e, SCHEME_RESOLVE_MODIDS, NULL, NULL, NULL);
+    v = scheme_lookup_binding(id, (Scheme_Comp_Env *)&inlined_e, SCHEME_RESOLVE_MODIDS, NULL, NULL, NULL, NULL);
     if (v) {
       if (!SAME_TYPE(SCHEME_TYPE(v), scheme_variable_type)) {
 	use_map = -1;
@@ -2776,7 +2787,9 @@ local_exp_time_value(int argc, Scheme_Object *argv[])
 			       + SCHEME_RESOLVE_MODIDS
 			       + SCHEME_APP_POS + SCHEME_ENV_CONSTANTS_OK
 			       + SCHEME_OUT_OF_CONTEXT_OK + SCHEME_ELIM_CONST),
-			      scheme_current_thread->current_local_certs, NULL, NULL);
+			      scheme_current_thread->current_local_certs, 
+			      scheme_current_thread->current_local_modidx, 
+			      NULL, NULL);
     
     /* Deref globals */
     if (v && SAME_TYPE(SCHEME_TYPE(v), scheme_variable_type))
@@ -3063,6 +3076,15 @@ make_rename_transformer(int argc, Scheme_Object *argv[])
   SCHEME_PTR_VAL(v) = argv[0];
 
   return v;
+}
+
+static Scheme_Object *
+rename_transformer_target(int argc, Scheme_Object *argv[])
+{
+  if (!SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_id_macro_type))
+    scheme_wrong_type("rename-transformer-target", "rename transformer", 0, argc, argv);
+
+  return SCHEME_PTR_VAL(argv[0]);
 }
 
 static Scheme_Object *

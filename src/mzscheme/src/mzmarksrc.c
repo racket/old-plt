@@ -554,6 +554,7 @@ thread_val {
   gcMARK(pr->current_local_mark);
   gcMARK(pr->current_local_name);
   gcMARK(pr->current_local_certs);
+  gcMARK(pr->current_local_modidx);
   
   gcMARK(pr->overflow_reply);
 
@@ -877,6 +878,7 @@ mark_comp_env {
   gcMARK(e->base.uids);
   gcMARK(e->base.dup_check);
   gcMARK(e->base.intdef_name);
+  gcMARK(e->base.in_modidx);
   
   gcMARK(e->data.stat_dists);
   gcMARK(e->data.sd_depths);
@@ -1675,6 +1677,7 @@ mark_cert {
  mark:
   Scheme_Cert *c = (Scheme_Cert *)p;
   gcMARK(c->mark);
+  gcMARK(c->modidx);
   gcMARK(c->insp);
   gcMARK(c->next);
  size:

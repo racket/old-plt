@@ -1751,17 +1751,31 @@ Scheme_Env *scheme_module_access(Scheme_Object *name, Scheme_Env *env, int rev_m
   }
 }
 
-static void check_certified(Scheme_Object *stx, Scheme_Object *certs, Scheme_Object *insp,
+static void check_certified(Scheme_Object *stx, Scheme_Object *certs, 
+			    Scheme_Object *insp, Scheme_Object *in_modidx,
 			    Scheme_Env *env, Scheme_Object *symbol,
 			    int var, int prot)
 {
   int need_cert = 1;
+  Scheme_Object *midx;
 
+  midx = (env->link_midx ? env->link_midx : env->module->src_modidx);
+    
   if (stx)
-    need_cert = !scheme_stx_certified(stx, certs, env->insp);
+    need_cert = !scheme_stx_certified(stx, certs, prot ? NULL : midx, env->insp);
 
   if (need_cert && insp)
     need_cert = scheme_module_protected_wrt(env->insp, insp);
+
+  if (need_cert && in_modidx) {
+    /* If we're currently executing a macro expander in this module,
+       then allow the access under any cirsumstances. This is mostly
+       useful for syntax-local-value and local-expand. */
+    in_modidx = scheme_module_resolve(in_modidx);
+    midx = scheme_module_resolve(midx);
+    if (SAME_OBJ(in_modidx, midx))
+      need_cert = 0;
+  }
 
   if (need_cert) {
     /* For error, if stx is no more specific than symbol, drop symbol. */
@@ -1777,7 +1791,7 @@ static void check_certified(Scheme_Object *stx, Scheme_Object *certs, Scheme_Obj
   }
 }
 
-Scheme_Object *scheme_check_accessible_in_module(Scheme_Env *env, Scheme_Object *prot_insp,
+Scheme_Object *scheme_check_accessible_in_module(Scheme_Env *env, Scheme_Object *prot_insp, Scheme_Object *in_modidx,
 						 Scheme_Object *symbol, Scheme_Object *stx,
 						 Scheme_Object *certs, Scheme_Object *unexp_insp,
 						 int position, int want_pos, int *_protected)
@@ -1786,10 +1800,11 @@ Scheme_Object *scheme_check_accessible_in_module(Scheme_Env *env, Scheme_Object 
 	If position < -1, then merely checks for protected syntax.
 
 	Access for protected and unexported names depends on
-	certifictions in stx+certs or access implied by
-	{prot_,unexp_}insp. For unexported access, either stx+certs or
-	unexp_insp must be supplied (not both). For unprotected
-	access, both prot_insp and stx+certs should be supplied. */
+	certifictions in stx+certs, access implied by
+	{prot_,unexp_}insp, or access implied by in_modidx. For
+	unexported access, either stx+certs or unexp_insp must be
+	supplied (not both). For unprotected access, both prot_insp
+	and stx+certs should be supplied. */
 {
   symbol = scheme_tl_id_sym(env, symbol, 0);
 
@@ -1837,11 +1852,11 @@ Scheme_Object *scheme_check_accessible_in_module(Scheme_Env *env, Scheme_Object 
 	    && env->module->provide_protects[position]) {
 	  if (_protected)
 	    *_protected = 1;
-	  check_certified(stx, certs, prot_insp, env, symbol, 1, 1);
+	  check_certified(stx, certs, prot_insp, in_modidx, env, symbol, 1, 1);
 	}
 
 	if (need_cert)
-	  check_certified(stx, certs, unexp_insp, env, symbol, 1, 0);
+	  check_certified(stx, certs, unexp_insp, in_modidx, env, symbol, 1, 0);
 	
 	if (want_pos)
 	  return scheme_make_integer(position);
@@ -1873,7 +1888,7 @@ Scheme_Object *scheme_check_accessible_in_module(Scheme_Env *env, Scheme_Object 
 	  && env->module->provide_protects[SCHEME_INT_VAL(pos)]) {
 	if (_protected)
 	  *_protected = 1;
-	check_certified(stx, certs, prot_insp, env, symbol, 1, 1);
+	check_certified(stx, certs, prot_insp, in_modidx, env, symbol, 1, 1);
       }
 
       if ((position >= -1) 
@@ -1881,7 +1896,7 @@ Scheme_Object *scheme_check_accessible_in_module(Scheme_Env *env, Scheme_Object 
 	/* unexported var -- need cert */
 	if (_protected)
 	  *_protected = 1;
-	check_certified(stx, certs, unexp_insp, env, symbol, 1, 0);
+	check_certified(stx, certs, unexp_insp, in_modidx, env, symbol, 1, 0);
       }
 
       if (want_pos)
@@ -1892,7 +1907,7 @@ Scheme_Object *scheme_check_accessible_in_module(Scheme_Env *env, Scheme_Object 
 
     if (position < -1) {
       /* unexported syntax -- need cert */
-      check_certified(stx, certs, unexp_insp, env, symbol, 0, 0);
+      check_certified(stx, certs, unexp_insp, in_modidx, env, symbol, 0, 0);
       return NULL;
     }
   }
@@ -2609,7 +2624,8 @@ static void eval_defmacro(Scheme_Object *names, int count,
 				     (shift ? genv->link_midx : NULL), 
 				     1, genv->phase);
 	
-  scheme_on_next_top(comp_env, NULL, scheme_false, certs);
+  scheme_on_next_top(comp_env, NULL, scheme_false, certs, 
+		     (genv->link_midx ? genv->link_midx : genv->module->src_modidx));
   vals = scheme_eval_linked_expr_multi(expr);
 
   scheme_pop_prefix(save_runstack);

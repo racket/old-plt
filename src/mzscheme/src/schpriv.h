@@ -610,7 +610,7 @@ Scheme_Object *scheme_source_to_name(Scheme_Object *code);
 #define STX_SRCTAG scheme_false
 
 Scheme_Object *scheme_stx_cert(Scheme_Object *o, Scheme_Object *mark, Scheme_Env *menv, Scheme_Object *plus_stx);
-int scheme_stx_certified(Scheme_Object *stx, Scheme_Object *extra_certs, Scheme_Object *home_insp);
+int scheme_stx_certified(Scheme_Object *stx, Scheme_Object *extra_certs, Scheme_Object *modidx, Scheme_Object *home_insp);
 int scheme_module_protected_wrt(Scheme_Object *home_insp, Scheme_Object *insp);
 
 Scheme_Object *scheme_stx_extract_certs(Scheme_Object *o, Scheme_Object *base_certs);
@@ -778,7 +778,7 @@ void *scheme_top_level_do(void *(*k)(void), int eb);
 #define scheme_top_level_do_w_thread(k, eb, p) scheme_top_level_do(k, eb)
 
 void scheme_on_next_top(struct Scheme_Comp_Env *env, Scheme_Object *mark, 
-			Scheme_Object *name, Scheme_Object *certs);
+			Scheme_Object *name, Scheme_Object *certs, Scheme_Object *in_modidx);
 
 Scheme_Object *scheme_call_ec(int argc, Scheme_Object *argv[]);
 
@@ -1362,6 +1362,8 @@ typedef struct Scheme_Comp_Env
 
   Scheme_Object *intdef_name;    /* syntax-local-context name for INTDEF frames */
 
+  Scheme_Object *in_modidx;     /* an implicit certificate for syntax-local lookup/expand in macro */
+
   struct Scheme_Comp_Env *next;
 } Scheme_Comp_Env;
 
@@ -1494,7 +1496,8 @@ Scheme_Comp_Env *scheme_add_compilation_frame(Scheme_Object *vals,
 Scheme_Comp_Env *scheme_require_renames(Scheme_Comp_Env *env);
 
 Scheme_Object *scheme_lookup_binding(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags, 
-				     Scheme_Object *certs, Scheme_Env **_menv, int *_protected);
+				     Scheme_Object *certs, Scheme_Object *in_modidx, 
+				     Scheme_Env **_menv, int *_protected);
 
 Scheme_Object *scheme_add_env_renames(Scheme_Object *stx, Scheme_Comp_Env *env,
 				      Scheme_Comp_Env *upto);
@@ -1870,7 +1873,7 @@ void scheme_module_force_lazy(Scheme_Env *env, int previous);
 
 int scheme_module_export_position(Scheme_Object *modname, Scheme_Env *env, Scheme_Object *varname);
 
-Scheme_Object *scheme_check_accessible_in_module(Scheme_Env *env, Scheme_Object *prot_insp,
+Scheme_Object *scheme_check_accessible_in_module(Scheme_Env *env, Scheme_Object *prot_insp, Scheme_Object *in_modidx,
 						 Scheme_Object *symbol, Scheme_Object *stx, 
 						 Scheme_Object *certs, Scheme_Object *unexp_insp,
 						 int position, int want_pos,

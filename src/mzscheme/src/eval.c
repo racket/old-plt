@@ -1270,7 +1270,7 @@ static Scheme_Object *link_module_variable(Scheme_Object *modidx,
     }
 
     if (!SAME_OBJ(menv, env)) {
-      varname = scheme_check_accessible_in_module(menv, insp, varname, NULL, NULL, insp, pos, 0, NULL);
+      varname = scheme_check_accessible_in_module(menv, insp, NULL, varname, NULL, NULL, insp, pos, 0, NULL);
     }
   }
 
@@ -1770,7 +1770,8 @@ Scheme_Object *scheme_check_immediate_macro(Scheme_Object *first,
 				+ ((rec[drec].comp && rec[drec].resolve_module_ids)
 				   ? SCHEME_RESOLVE_MODIDS
 				   : 0),
-				certs, &menv, NULL);
+				certs, env->in_modidx,
+				&menv, NULL);
     
     if (SCHEME_STX_PAIRP(first))
       *current_val = val;
@@ -1780,7 +1781,7 @@ Scheme_Object *scheme_check_immediate_macro(Scheme_Object *first,
     } else if (SAME_TYPE(SCHEME_TYPE(val), scheme_macro_type)) {
       if (SAME_TYPE(SCHEME_TYPE(SCHEME_PTR_VAL(val)), scheme_id_macro_type)) {
 	/* It's a rename. Look up the target name and try again. */
-	name = SCHEME_PTR1_VAL(SCHEME_PTR_VAL(val));
+	name = SCHEME_PTR_VAL(SCHEME_PTR_VAL(val));
 	name = scheme_stx_cert(name, scheme_false, menv, name);
 	menv = NULL;
 	SCHEME_USE_FUEL(1);
@@ -1931,7 +1932,8 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
 				    + ((rec[drec].comp && rec[drec].resolve_module_ids)
 				       ? SCHEME_RESOLVE_MODIDS
 				       : 0),
-				    rec[drec].certs, &menv, &protected);
+				    rec[drec].certs, env->in_modidx, 
+				    &menv, &protected);
 	
 	if (var && SAME_TYPE(SCHEME_TYPE(var), scheme_macro_type)
 	    && SAME_TYPE(SCHEME_TYPE(SCHEME_PTR_VAL(var)), scheme_id_macro_type)) {
@@ -2014,7 +2016,8 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
 				    + ((rec[drec].comp && rec[drec].resolve_module_ids)
 				       ? SCHEME_RESOLVE_MODIDS
 				       : 0),
-				    erec1.certs, &menv, NULL);
+				    erec1.certs, env->in_modidx, 
+				    &menv, NULL);
 
 	if (var && SAME_TYPE(SCHEME_TYPE(var), scheme_macro_type)
 	    && SAME_TYPE(SCHEME_TYPE(SCHEME_PTR_VAL(var)), scheme_id_macro_type)) {
@@ -2086,7 +2089,8 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
 				  SCHEME_NULL_FOR_UNBOUND
 				  + SCHEME_APP_POS + SCHEME_ENV_CONSTANTS_OK
 				  + SCHEME_DONT_MARK_USE,
-				  rec[drec].certs, &menv, NULL);
+				  rec[drec].certs, env->in_modidx, 
+				  &menv, NULL);
 
       if (var && SAME_TYPE(SCHEME_TYPE(var), scheme_macro_type)
 	  && SAME_TYPE(SCHEME_TYPE(SCHEME_PTR_VAL(var)), scheme_id_macro_type)) {
@@ -4499,6 +4503,7 @@ do_local_expand(const char *name, int for_stx, int argc, Scheme_Object **argv)
 				     env);
   if (kind == SCHEME_INTDEF_FRAME)
     env->intdef_name = argv[1];
+  env->in_modidx = scheme_current_thread->current_local_modidx;
 
   local_mark = scheme_current_thread->current_local_mark;
   

@@ -17,14 +17,81 @@
 	 ([current-eventspace (make-eventspace)])
 	 (queue-callback th)))
 
-      (define (show-ok title caption details)
-	(message-box title 
-		     (if details			
-			 (format (string-constant vc-details-format)
-				 caption details)
-			 caption)
-		     #f
-		     '(ok)))
+ (define (show-ok title caption details)
+        (letrec ([frame 
+                  (instantiate frame% ()
+                    (label title)
+		    (alignment '(center center))
+                    (stretchable-height #f)
+                    (stretchable-width #f)
+                    (style '(no-resize-border)))]
+                 [main-panel (instantiate vertical-panel% () 
+                               (parent frame) 
+                               (stretchable-height #f)
+                               (alignment '(center center)))]
+                 [panel-sep 4]
+                 [msg-width 100]	       
+                 [make-hpanel
+                  (lambda ()
+                    (instantiate horizontal-panel% () 
+                      (parent main-panel)
+                      (vert-margin panel-sep)
+                      (alignment '(center center))))]
+                 [row-panel (make-hpanel)]
+                 [make-msg
+                  (lambda (msg panel)
+                    (instantiate message% () 
+                      (min-width msg-width)
+                      (label msg) (parent panel)))]
+                 [status-msg (make-msg caption row-panel)]               
+                 [details-panel #f]
+                 [showing-details #f]
+                 [details-text "Details "]
+                 [show-details-button-text (string-append details-text ">>")]
+                 [hide-details-button-text (string-append details-text "<<")]
+                 [hide-details
+                  (lambda () 
+                    (set! showing-details #f)
+                    (send main-panel delete-child details-panel)
+                    (send details-button set-label show-details-button-text)
+                    (set! details-panel #f))]
+                 [show-details
+                  (lambda ()
+                    (set! showing-details #t)
+                    (send details-button set-label hide-details-button-text)
+                    (set! details-button-callback hide-details)
+                    (unless details-panel
+                      (set! details-panel                         
+                            (instantiate horizontal-panel% () 
+                              (parent main-panel)
+                              (style '(border))
+                              (border 2)
+                              (vert-margin panel-sep)
+                              (alignment '(center center))))                  
+                      (make-msg details details-panel)))]
+                 [details-button-callback
+                  (lambda (e bv)
+                    (if showing-details
+                        (hide-details)
+                        (show-details)))]
+                 [buttons-panel (make-hpanel)]
+                 [ok-button (instantiate button% ()
+                              (label "OK")
+                              (min-width 50)
+                              (parent buttons-panel)
+                              (callback (lambda (b ev) 
+                                          (send frame show #f))))]
+                 [spacer 
+                  (instantiate message% () 
+                    (min-width 20)
+                    (label "") (parent buttons-panel))]
+                 [details-button (instantiate button% ()
+                                   (label show-details-button-text)
+                                   (min-width 50)
+                                   (parent buttons-panel)
+                                   (callback details-button-callback))])
+	  (send frame center)
+          (send frame show #t)))
    
      (define (show-error-ok title caption)
        (show-ok title (format (string-constant vc-error-format)

@@ -1,7 +1,7 @@
 
 (module sigmatch mzscheme
 
-  (import "unit.ss")
+  (import "../unit.ss")
 
   (define (hash-sig src-sig table)
     (and (vector? src-sig)

@@ -3,7 +3,7 @@
   ;; Used by signedunit.ss 
 
   (import "sigmatch.ss")
-  (import "exstruct.ss")
+  (import "../exstruct.ss")
 
   (define-struct signature (name    ; sym
 			    src     ; sym

@@ -2,10 +2,10 @@
 (module unitsig mzscheme
   (import "exstruct.ss")
   (import "unit.ss")
-  (import "sigmatch.ss")
+  (import "private/sigmatch.ss")
 
-  (import-for-syntax "sigutil.ss")
-  (import-for-syntax "sigmatch.ss")
+  (import-for-syntax "private/sigutil.ss")
+  (import-for-syntax "private/sigmatch.ss")
   (import-for-syntax (lib "kerncase.ss" "syntax"))
 
   (define-struct/export unit/sig (unit imports exports))

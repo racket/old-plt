@@ -1,9 +1,10 @@
 
 (module invoke mzscheme
 
-  (import "sigutil.ss")
+  (import-for-syntax "private/sigutil.ss")
+  (import "private/sigmatch.ss")
 
-  (define do-define-values/invoke-unit
+  (define-syntax do-define-values/invoke-unit
     (lambda (stx)
       (syntax-case stx ()
 	[(global? exports unite prefix imports orig)
@@ -78,7 +79,7 @@
 	    [(_ exports unit) 
 	     (syntax (do-define-values/invoke-unit #t exports unit #f () orig))]))))
     
-    (define do-define-values/invoke-unit/sig
+    (define-syntax do-define-values/invoke-unit/sig
       (lambda (stx)
 	(syntax-case stx ()
 	  [(_ global? signame unite prefix imports orig)

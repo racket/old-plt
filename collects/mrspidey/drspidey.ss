@@ -139,7 +139,7 @@
 		    (MZLIB function)
 		    (MZLIB string)
 		    (MZLIB file)
-		    URL MRED)]
+		    URL MRED FRAMEWORK)]
 	  [INTERACTION : mrspidey:interaction^
 		      (mrspidey:interaction@ 
 		       ZODIAC

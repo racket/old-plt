@@ -4,7 +4,7 @@
 	    [fw : framework^]
             mzlib:print-convert^
             (drscheme : drscheme:export^)
-	    zodiac:system^)
+	    [zodiac : zodiac:system^])
     
     (define invoke-spidey
       (lambda (frame)
@@ -31,7 +31,7 @@
 		    mzlib:core^
 		    mzlib:print-convert^
 		    (drscheme : drscheme:export^)
-		    zodiac:system^))
+		    [zodiac : zodiac:system^]))
 	     (parameterize ([mred:current-eventspace e])
 	       (mred:end-busy-cursor))
 	     (invoke-spidey frame))))))

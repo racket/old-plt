@@ -3,7 +3,6 @@
   (import [mred : mred^]
 	  [fw : framework^]
 	  [drscheme:unit : drscheme:unit^]
-	  [aries : plt:aries^]
 	  [zodiac : zodiac:system^]
 	  [basis : userspace:basis^]
 	  mzlib:function^

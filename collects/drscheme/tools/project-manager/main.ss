@@ -1,12 +1,12 @@
 ;;
 ;; TODO
-;; 
-;; - thread synchronization1 for save state
+;; - track files in project.
+;;   - when project is opened check already open files.
+;;   - when executing the project, offer to save files.
 ;; - remember shown-state of loaded window
-;; - make sure that project menus are the same on unit frames and
-;;   project frames (collection-project menu)
-
-(require-library "errortrace.ss" "errortrace")
+;; - add a show menu for showing loaded files and ??? files
+;; - make the two files windows in the project manager same min-size
+;; - leak in project execute?
 
 (unit/sig ()
   (import mred^
@@ -20,27 +20,20 @@
     (let ([colls (make-hash-table)])
       (for-each
        (lambda (collection-path-dir)
-	 (for-each
-	  (lambda (collection)
-	    (when (and (directory-exists? (build-path collection-path-dir collection))
-		       (not (string=? collection "CVS")))
-	      (hash-table-put! colls (string->symbol collection) #t)))
-	  (directory-list collection-path-dir)))
+	 (when (directory-exists? collection-path-dir)
+	   (for-each
+	    (lambda (collection)
+	      (when (and (directory-exists? (build-path collection-path-dir collection))
+			 (not (string=? collection "CVS")))
+		(hash-table-put! colls (string->symbol collection) #t)))
+	    (directory-list collection-path-dir))))
        (current-library-collection-paths))
       (function:quicksort (hash-table-map colls (lambda (x v) (symbol->string x))) string<=?)))
 
-  (define (make-project-aware-unit-frame super%)
-    (class/d super% args
-
-      ((inherit get-menu-bar))
-
-      (apply super-init args)
-
-      (define mb (get-menu-bar))
-      (define project-menu (make-object menu% "Project" mb))
-      (make-object menu-item% "New Project" project-menu (lambda x (new-project)))
-      (make-object menu-item% "Open Project" project-menu (lambda x (open-project)))
-      (define collection-projects (make-object menu% "Collection Projects" project-menu))
+  (define (add-common-project-menu-items project-menu)
+    (local [(define new-project-item (make-object menu-item% "New Project" project-menu (lambda x (new-project))))
+	    (define open-project-item (make-object menu-item% "Open Project" project-menu (lambda x (open-project))))
+	    (define collection-projects (make-object menu% "Collection Projects" project-menu))]
       (for-each
        (lambda (collection)
 	 (let ([info (and (file-exists? (build-path (collection-path collection) "info.ss"))
@@ -57,29 +50,132 @@
 		   collection-projects
 		   (lambda xxx
 		     (open-project project-file))))))))
-       (all-collections))
+       (all-collections))))
+  
+  (define project-aware-frame<%>
+    (interface ()
+      project:set-project-window
+      project:get-project-window))
+  
+  (define (make-project-aware-unit-frame super%)
+    (class/d* super% (project-aware-frame<%>) args
+
+      ((inherit get-menu-bar definitions-text set-label-prefix)
+       (override change-to-file)
+       (rename [super-change-to-file change-to-file])
+       (public 
+         project:set-project-window ;; : ((union #f (instance project-frame%)) -> void)
+	 project:get-project-window ;; : (-> (union #f (instance project-frame%)))
+         ))
+
+      (define (change-to-file filename)
+	(super-change-to-file filename)
+	(set-project-window filename))
+
+      (define (set-project-window fn)
+	(let ([f (ormap (lambda (f) 
+			  (if (send f has-file? (send definitions-text get-filename))
+			      f
+			      #f))
+			project-frames)])
+	  (project:set-project-window f)))
+
+      (define project-window #f)
+      (define (project:get-project-window) project-window)
+      (define (project:set-project-window p)
+        (send project-menu-item set-label 
+              (if p
+                  (format "Bring project ~a to the front" (ivar p project-name))
+                  "Bring project to the front"))
+        (send project-menu-item enable p)
+	(if p
+	    (set-label-prefix (ivar p project-name))
+	    (set-label-prefix "DrScheme"))
+        (set! project-window p))
+      
+
+      (apply super-init args)
+
+      (define mb (get-menu-bar))
+      (define project-menu (make-object menu% "Project" mb))
+      (add-common-project-menu-items project-menu)
+      (make-object separator-menu-item% project-menu)
+      
+      (define project-menu-item (make-object menu-item% 
+                                  "Bring project to the front"
+                                  project-menu
+                                  (lambda xxx
+                                    (when project-window
+                                      (send project-window show #t)))))
+      (send project-menu-item enable #f)
+      
+      (and (send definitions-text get-filename)
+	   (set-project-window (send definitions-text get-filename)))
 
       (frame:reorder-menus this)))
 
+  (define project-frames null)
+  
   (define project-frame%
-    (class/d frame:standard-menus% (filename)
+    (class/d (drscheme:frame:basics-mixin frame:standard-menus%) (filename)
       ((inherit get-area-container get-menu-bar)
        (override file-menu:save file-menu:save-as
-		 can-close?))
+		 can-close?
+                 on-close)
+       (public project-name ;; : string
+               has-file? ;; : (string -> boolean)
+               ))
 
-      (define changed? #f)
+      (define (on-close)
+        (set! project-frames (function:remove this project-frames))
+	(send (group:get-the-frame-group)
+	      for-each-frame
+	      (lambda (frame)
+		(when (and (is-a? frame project-aware-frame<%>)
+			   (eq? this (send frame project:get-project-window)))
+		  (send frame project:set-project-window #f))))
+        (shutdown-project))
+      
+      (define (has-file? file)
+        (let ([n (file:normalize-path file)])
+          (ormap (lambda (name) (string=? file (file:normalize-path name)))
+                 (append (map (lambda (file)
+                                (if (string? file)
+                                    file
+                                    (build-path (apply collection-path (cdr file)) (car file))))
+                              files)
+                         loaded-files))))
+      
+      (define-values (is-changed? is-changed is-not-changed)
+	(let ([changed? #f]
+	      [sema (make-semaphore 1)])
+	  (values
+	   (lambda ()
+	     changed?)
+	   (lambda ()
+	     (semaphore-wait sema)
+	     (set! changed? #t)
+	     (semaphore-post sema))
+	   (lambda (f)
+	     (dynamic-wind
+	      (lambda ()
+		(semaphore-wait sema))
+	      (lambda ()
+		(f)
+		(set! changed? #f))
+	      (lambda ()
+		(semaphore-post sema)))))))
 
       (define (can-close?)
-	(if changed?
+	(if (is-changed?)
 	    (case (gui-utils:unsaved-warning
 		   filename
-		   "close"
+		   "Close"
 		   #t)
 	      [(continue) #t]
 	      [(save) (save-file filename) #t]
 	      [(cancel) #f])
 	    #t))
-
 
       (define (file-menu:save . xxx)
 	(if filename
@@ -99,7 +195,18 @@
 	    "Untitled"))
 
       (define files null)
-      (define language-settings (preferences:get 'drscheme:settings))
+      (define language-settings 
+        (let ([re:mred (regexp "MrEd")])
+          (let loop ([settings drscheme:basis:settings])
+            (cond
+              [(null? settings) (preferences:get 'drscheme:settings)]
+              [else (let ([setting (car settings)])
+                      (cond
+                        [(regexp-match re:mred (drscheme:basis:setting-name setting))
+                         setting]
+                        [else
+                         (loop (cdr settings))]))]))))
+      (define collection-paths #f)
 
       (define project-custodian (make-custodian))
       (define drs-eventspace (current-eventspace))
@@ -134,52 +241,229 @@
 	  (send text auto-wrap #t)
 	  (send dialog show #t)))
 
-      (define (execute-project)
-	(let ([orig-eventspace (current-eventspace)]
-	      [orig-exn-handler (current-exception-handler)])
-	  (reset-hierlist)
-	  (custodian-shutdown-all project-custodian)
-	  (set! project-custodian (make-custodian))
-	  (parameterize ([current-custodian project-custodian])
-	    (parameterize ([current-eventspace (make-eventspace)])
-	      (queue-callback
+      ;; get-collection-paths : (-> (union (listof string) #f))
+      (define (get-collection-paths)
+	(define-struct error (msg))
+
+	(if collection-paths
+	    (let ([cust (make-custodian)]
+		  [done-sema (make-semaphore 0)]
+		  [protect-sema (make-semaphore 1)]
+		  [running-thread #f]
+		  [dialog #f]
+
+		  [got-value? #f]
+		  [value #f])
+
+	      ;; run the program
+	      (parameterize ([current-custodian cust])
+		(parameterize ([current-eventspace (make-eventspace)])
+		  (queue-callback
+		   (lambda ()
+		     (semaphore-wait protect-sema)
+		     (set! running-thread (current-thread))
+		     (semaphore-post protect-sema)
+
+		     (let* ([str (apply string-append (map (lambda (x) (string-append x (string #\newline)))
+							   collection-paths))]
+			    [ptr 0]
+			    [port (make-input-port
+				   (lambda ()
+				     (if (= ptr (string-length str))
+					 eof
+					 (begin0 (string-ref str ptr)
+						 (set! ptr (+ ptr 1)))))
+				   (lambda () #t)
+				   (lambda () (void)))])
+		       (let ([ans #f])
+			 (let/ec k
+			   (parameterize ([current-exception-handler
+					   (lambda (e)
+					     (set! value
+						   (make-error
+						    (if (exn? e)
+							(exn-message e)
+							(format "~s" e))))
+					     (k (void)))])
+			     (break-enabled #t)
+			     (set! value (eval (read port)))))
+			 (break-enabled #f)
+			 (set! got-value? #t)))
+
+		     (semaphore-post done-sema)))))
+
+	      ;; wake up main thread after five seconds
+	      ;; even if no value is yet obtained.
+	      (thread
 	       (lambda ()
-		 (drscheme:basis:initialize-parameters project-custodian language-settings)
+		 (sleep 5)
+		 (semaphore-wait protect-sema)
+		 (if got-value?
+		     (semaphore-post protect-sema)
+		     (begin (semaphore-post done-sema)
+			    (semaphore-post protect-sema)))))
+	      
+	      ;; wait for wakeup here.
+	      (semaphore-wait done-sema)
 
-		 (exit-handler
-		  (lambda x
-		    (custodian-shutdown-all project-custodian)))
+	      ;; if no value is yet ready, sleep again,
+	      ;; but this time with a dialog that offers killing the evaluation.
+	      (semaphore-wait protect-sema)
+	      (if got-value?
+		  (begin
+		    (semaphore-post protect-sema))
+		  (begin
+		    (set! dialog (make-object dialog% "Evaluating collection path expression" this))
+		    (let ([p (make-object horizontal-panel% dialog)])
+		      (make-object button% "Break evaluation" p
+				   (lambda xxx
+				     (when running-thread
+				       (break-thread running-thread))))
+		      (make-object button% "Kill evaluation" p
+				   (lambda xxx
+				     (custodian-shutdown-all cust)
+				     (set! value (make-error "Killed evaluation"))
+				     (set! got-value? #t)
+				     (semaphore-post done-sema))))
+		    (thread
+		     (lambda ()
+		       (semaphore-wait done-sema)
+		       (send dialog show #f)))
+		    (semaphore-post protect-sema)
+		    (send dialog show #t)))
 
-		 (drscheme:basis:error-display/debug-handler
-		  (let ([project-manager-error-display/debug-handler
-			 (lambda (msg zodiac exn)
-			   (parameterize ([current-eventspace drs-eventspace])
-			     (if (and zodiac
-				      (zodiac:zodiac? zodiac))
-				 (show-error/open-file msg zodiac)
-				 (message-box (format "Error running project ~a" project-name) msg))))])
-		    project-manager-error-display/debug-handler))
+	      (if (error? value)
+		  (begin
+		    (message-box "Collection Path Evaluation Unsuccessful"
+				 (error-msg value))
+		    #f)
+		  (if (and (list? value)
+			   (andmap string? value))
+		      value
+		      (begin
+			(message-box 
+			 "Collection Path Evaluation Unsuccessful"
+			 (format "expected result to be a list of strings, got: ~e"
+				 value))
+			#f))))
+	    #f))
 
-		 (let ([ol (current-load)])
-		   (current-load
-		    (lambda (l)
-		      (dynamic-wind
-		       (lambda () (push-file l))
-		       (lambda () (ol l))
-		       (lambda () (pop-file))))))
-		 
-		 (for-each
-		  (lambda (file)
+      (define (shutdown-project)
+        (reset-hierlist)
+        (custodian-shutdown-all project-custodian))
+      
+      ;; offer-to-save-files : (-> boolean)
+      ;; returns true when the user has either saved or okay'd not saving
+      ;; each file that is unsaved.
+      (define (offer-to-save-files)
+	(let ([frames null])
+	  (send (group:get-the-frame-group)
+		for-each-frame
+		(lambda (frame)
+		  (when (and (is-a? frame project-aware-frame<%>)
+			     (eq? this (send frame project:get-project-window))
+			     (send (ivar frame definitions-text) is-modified?))
+		    (set! frames (cons frame frames)))))
+	  (let loop ([frames frames])
+	    (cond
+	     [(null? frames) #t]
+	     [else
+	      (let* ([frame (car frames)]
+		     [fn (or (send (ivar frame definitions-text) get-filename)
+			     (send frame get-title))])
+		(case (gui-utils:unsaved-warning
+		       fn
+		       "Execute"
+		       #t)
+		  [(continue) (loop (cdr frames))]
+		  [(save)
+		   (send (ivar frame definitions-text) save-file)
+		   (loop (cdr frames))]
+		  [(cancel) #f]))]))))
+
+      (define (execute-project)
+	(when (offer-to-save-files)
+	  (let ([orig-eventspace (current-eventspace)]
+		[orig-exn-handler (current-exception-handler)])
+	    (shutdown-project)
+	    (set! project-custodian (make-custodian))
+
+	    (let ([collection-paths (get-collection-paths)])
+	      (parameterize ([current-custodian project-custodian])
+		(parameterize ([current-eventspace (make-eventspace)])
+		  (queue-callback
+		   (lambda ()
+		     (when collection-paths
+		       (current-library-collection-paths collection-paths))
+		     (drscheme:basis:initialize-parameters project-custodian language-settings)
+
+		     (exit-handler
+		      (lambda x
+			(custodian-shutdown-all project-custodian)))
+
+		     (drscheme:basis:error-display/debug-handler
+		      (let ([project-manager-error-display/debug-handler
+			     (lambda (msg zodiac exn)
+			       (if (and zodiac
+					(zodiac:zodiac? zodiac))
+				   (show-error/open-file msg zodiac)
+				   (message-box (format "Error running project ~a" project-name) msg)))])
+			project-manager-error-display/debug-handler))
+
+		     (let ([ol (current-load)])
+		       (current-load
+			(lambda (l)
+			  (dynamic-wind
+			   (lambda () (push-file l))
+			   (lambda () (ol l))
+			   (lambda () (pop-file))))))
+		     
+		     (for-each
+		      (lambda (file)
+			(cond
+			 [(string? file) (load file)]
+			 [else (apply require-library/proc file)]))
+		      files)))))))))
+
+      (define (configure-collection-paths)
+	(let* ([dialog (make-object dialog% "Configure Collection Paths" this 200 400)]
+	       [text (make-object (scheme:text-mixin text:basic%))]
+	       [message (make-object message% "Specify an expression for the collection paths" dialog)]
+	       [canvas (make-object editor-canvas% dialog text)]
+	       [button-panel (make-object horizontal-panel% dialog)]
+	       [cancel? #f]
+	       [ok (make-object button% "OK" button-panel (lambda xxx (send dialog show #f)))]
+	       [cancel (make-object button% "Cancel" button-panel
+                         (lambda xxx
+                           (set! cancel? #t) 
+                           (send dialog show #f)))])
+	  (send canvas focus)
+	  (send ok min-width (send cancel get-width))
+	  (send button-panel stretchable-height #f)
+	  (send button-panel set-alignment 'right 'center)
+	  (when collection-paths
+	    (for-each (lambda (s) (send text insert s) (send text insert #\newline))
+		      collection-paths))
+	  (send dialog show #t)
+	  (unless cancel?
+	    (set! collection-paths
+		  (let loop ([n (+ (send text last-paragraph) 1)]
+			     [acc null])
 		    (cond
-		     [(string? file) (load file)]
-		     [else (apply require-library/proc file)]))
-		  files)))))))
+		     [(zero? n) acc]
+		     [else
+		      (loop (- n 1)
+			    (cons (send text get-text
+					(send text paragraph-start-position (- n 1))
+					(send text paragraph-end-position (- n 1)))
+				  acc))])))
+	    (is-changed))))
 
       (define (configure-language)
 	(let ([new-settings (drscheme:language:language-dialog language-settings)])
 	  (when new-settings
 	    (set! language-settings new-settings)
-	    (set! changed? #t))))
+	    (is-changed))))
 
       (define (refresh-files-list-box)
 	(send files-list-box clear)
@@ -193,7 +477,7 @@
 	 files))
 
       (define (swap index)
-	(set! changed? #t)
+	(is-changed)
 	(let loop ([n index]
 		   [files files]
 		   [previous-pair #f])
@@ -227,8 +511,11 @@
 	       [filename (cond
 			  [(string? file) file]
 			  [else (build-path (apply collection-path (cdr file))
-					    (car file))])])
-	  (handler:edit-file filename)))
+					    (car file))])]
+               [frame (handler:edit-file filename)])
+          (when (is-a? frame project-aware-frame<%>)
+            (send frame project:set-project-window this))))
+        
 			  
       (define (remove-file)
 	(let* ([index (car (send files-list-box get-selections))])
@@ -248,7 +535,7 @@
 	     [else
 	      (send files-list-box select (- max 1))]))
 	  (update-buttons)
-	  (set! changed? #t)))
+	  (is-changed)))
 
       (define (update-buttons)
 	(let ([selection-list (send files-list-box get-selections)])
@@ -289,6 +576,8 @@
 
       (define (add-files)
 
+	(define new-files (finder:common-get-file-list))
+
 	(define (prompt-user-collection? filename collection collection-dir)
 	  (define answer #t)
 	  (define dialog (make-object dialog% "Use a collection-based-path?" #f 400 400))
@@ -296,25 +585,41 @@
 	  (define ec (make-object editor-canvas% dialog text))
 
 	  (define bp (make-object horizontal-panel% dialog))
+
+	  (define just-one? (or (not new-files)
+				(null? new-files)
+				(null? (cdr new-files))))
+
 	  (define no-all-button (make-object button% "No to all" bp
-					      (lambda xx
-						(set! answer #f)
-						(set! prompt-user-collection?
-						      (lambda xxx #f))
-						(send dialog show #f))))
+					     (lambda xx
+					       (set! answer #f)
+					       (set! prompt-user-collection?
+						     (lambda xxx #f))
+					       (send dialog show #f))))
 	  (define no-button (make-object button% "No" bp
-					  (lambda xx (set! answer #f) (send dialog show #f))))
+					 (lambda xx (set! answer #f) (send dialog show #f))))
 	  (define yes-button (make-object button% "Yes" bp
-					  (lambda xx (set! answer #t) (send dialog show #f))))
+					  (lambda xx (set! answer #t) (send dialog show #f))
+					  (if just-one?
+					      '(border)
+					      '())))
 	  (define yes-all-button (make-object button% "Yes to all" bp
 					      (lambda xx
 						(set! answer #t)
 						(set! prompt-user-collection?
 						      (lambda xxx #t))
 						(send dialog show #f))
-					      '(border)))
+					      (if just-one?
+						  '()
+						  '(border))))
 
-	  (send yes-all-button focus)
+	  (if just-one?
+	      (send yes-button focus)
+	      (send yes-all-button focus))
+
+	  (when just-one?
+	    (send bp change-children (lambda (l) (list no-button yes-button))))
+
 	  (send bp stretchable-height #f)
 	  (send bp set-alignment 'center 'center)
 	  (send text insert
@@ -352,49 +657,53 @@
 	   [(equal? (car shorter) (car longer)) (sublist-equal? (cdr shorter) (cdr longer))]
 	   [else #f]))
 
+	(when new-files
+	  (let ([collections (let ([drs-collections (all-collections)]
+				   [proj-collections (get-collection-paths)])
+			       (if proj-collections
+				   (append proj-collections
+					   drs-collections)
+				   drs-collections))]
+		[exploded-collection-paths (map file:explode-path (current-library-collection-paths))])
+	    (for-each
+	     (lambda (new-file)
+	       (let ([exploded (file:explode-path new-file)])
+		 (let loop ([exploded-collection-paths exploded-collection-paths ])
+		   (cond
+		    [(null? exploded-collection-paths)
+		     (set! files (append files (list new-file)))]
+		    [else
+		     (if (sublist-equal? (car exploded-collection-paths) exploded)
+			 (let* ([filename #f]
+				[collections
+				 (let loop ([pieces
+					     (nth-cdr (length (car exploded-collection-paths))
+						      exploded)])
+				   (cond
+				    [(null? pieces) null]
+				    [(null? (cdr pieces))
+				     (set! filename (car pieces))
+				     null]
+				    [else (cons (car pieces)
+						(loop (cdr pieces)))]))])
+			   (if (and (string=?
+				     (file:normalize-path
+				      (build-path (apply collection-path collections)
+						  filename))
+				     (file:normalize-path
+				      new-file))
+				    (prompt-user-collection?
+				     filename
+				     collections
+				     (apply build-path
+					    (car exploded-collection-paths))))
+			       (set! files (append files (list (cons filename collections))))
+			       (set! files (append files (list new-file)))))
+			 (loop (cdr exploded-collection-paths)))]))))
+	     new-files))
+	  (is-changed)
+	  (refresh-files-list-box)))
 
-	(let ([new-files (finder:common-get-file-list)])
-	  (when new-files
-	    (let ([collections (all-collections)]
-		  [exploded-collection-paths (map file:explode-path (current-library-collection-paths))])
-	      (for-each
-	       (lambda (new-file)
-		 (let ([exploded (file:explode-path new-file)])
-		   (let loop ([exploded-collection-paths exploded-collection-paths ])
-		     (cond
-		      [(null? exploded-collection-paths)
-		       (set! files (append files (list new-file)))]
-		      [else
-		       (if (sublist-equal? (car exploded-collection-paths) exploded)
-			   (let* ([filename #f]
-				  [collections
-				   (let loop ([pieces
-					       (nth-cdr (length (car exploded-collection-paths))
-							exploded)])
-				     (cond
-				      [(null? pieces) null]
-				      [(null? (cdr pieces))
-				       (set! filename (car pieces))
-				       null]
-				      [else (cons (car pieces)
-						  (loop (cdr pieces)))]))])
-			     (if (and (string=?
-				       (file:normalize-path
-					(build-path (apply collection-path collections)
-						    filename))
-				       (file:normalize-path
-					new-file))
-				      (prompt-user-collection?
-				       filename
-				       collections
-				       (apply build-path
-					      (car exploded-collection-paths))))
-				 (set! files (append files (list (cons filename collections))))
-				 (set! files (append files (list new-file)))))
-			   (loop (cdr exploded-collection-paths)))]))))
-	       new-files))
-	    (refresh-files-list-box))))
-      
       (define (load-file filename)
 	(with-handlers ([(lambda (x) #t)
 			 (lambda (x)
@@ -405,18 +714,27 @@
 	  (let* ([all (call-with-input-file filename read 'text)]
 		 [loaded-files (assoc 'files all)]
 		 [loaded-language-settings (assoc 'settings all)]
-		 [loaded-open-table (assoc 'open-table all)])
+		 [loaded-open-table (assoc 'open-table all)]
+		 [loaded-collection-paths (assoc 'collection-paths all)]
+                 [loaded-to-load-files-shown? (assoc 'to-load-files-shown? all)]
+                 [loaded-loaded-files-shown? (assoc 'loaded-files-shown? all)])
 
 	    (if (and loaded-language-settings
 		     (= (arity drscheme:basis:make-setting)
 			(length (function:second loaded-language-settings))))
 		(set! language-settings
 		      (apply drscheme:basis:make-setting (function:second loaded-language-settings)))
-		(message-box "Loading Project"
-			     (format "Ignoring out of date language settings (from previous version)~n~s"
-				     loaded-language-settings)))
+		(message-box 
+                 "Loading Project"
+                 (format "Resetting language settings to default; saved language settings are from old version")))
 
-	    (when loaded-files
+            (when loaded-loaded-files-shown?
+              (set! loaded-files-shown? (function:second loaded-loaded-files-shown?)))
+            
+            (when loaded-to-load-files-shown?
+              (set! to-load-files-shown? (function:second loaded-to-load-files-shown?)))
+	    
+            (when loaded-files
 	      (set! files (function:second loaded-files)))
 
 	    (when loaded-open-table
@@ -424,33 +742,61 @@
 	      (for-each (lambda (t) (hash-table-put! open-table (car t) (make-open-info #t (cadr t))))
 			(function:second loaded-open-table)))
 
+	    (when loaded-collection-paths
+	      (set! collection-paths (function:second loaded-collection-paths)))
+
 	    (refresh-files-list-box))))
 
       (define (save-file filename)
-	(call-with-output-file filename
-	  (lambda (port)
-	    (write (list
-		    `(open-table ,(hash-table-map open-table (lambda (x v) (list x (open-info-open? v)))))
-		    `(files ,files)
-		    `(settings ,(cdr (vector->list (struct->vector language-settings)))))
-		   port))
-	  'truncate 'text)
-	(set! changed? #f))
+	(is-not-changed
+	 (lambda ()
+	   (call-with-output-file filename
+	     (lambda (port)
+	       (write (list
+                       `(loaded-files-shown? ,loaded-files-shown?)
+                       `(to-load-files-shown? ,to-load-files-shown?)
+		       `(collection-paths ,collection-paths)
+		       `(open-table ,(hash-table-map open-table (lambda (x v) (list x (open-info-open? v)))))
+		       `(files ,files)
+		       `(settings ,(cdr (vector->list (struct->vector language-settings)))))
+		      port))
+	     'truncate 'text))))
 
-      (define show/hide-loaded-files
-	(let ([shown? #f])
-	  (lambda (button event)
-	    (send button set-label
-		  (if shown?
-		      "Show Loaded Files"
-		      "Hide Loaded Files"))
-	    (send loaded-files-outer-panel change-children
-		  (lambda (l)
-		    (if shown?
-			null
-			(list loaded-files-panel))))
-	    (set! shown? (not shown?))
-	    (send loaded-files-outer-panel stretchable-height shown?))))
+      (define loaded-files-shown? #f)
+      (define (show/hide-loaded-files)
+	(send loaded-files-menu-item set-label
+	      (if loaded-files-shown?
+		  "Show Loaded Files"
+		  "Hide Loaded Files"))
+	(send loaded-files-outer-panel change-children
+	      (lambda (l)
+		(if loaded-files-shown?
+		    null
+		    (list loaded-files-panel))))
+	(set! loaded-files-shown? (not loaded-files-shown?))
+        (is-changed)
+        (unless (or to-load-files-shown?
+                    loaded-files-shown?)
+          (show/hide-to-load-files))
+	(send loaded-files-outer-panel stretchable-height loaded-files-shown?))
+
+      (define to-load-files-shown? #f)
+      (define (show/hide-to-load-files)
+	(send to-load-files-menu-item set-label
+	      (if to-load-files-shown?
+		  "Show Project Files"
+		  "Hide Project Files"))
+	(send to-load-files-outer-panel change-children
+	      (lambda (l)
+		(if to-load-files-shown?
+		    null
+		    (list to-load-files-panel))))
+	(set! to-load-files-shown? (not to-load-files-shown?))
+        (is-changed)
+        (unless (or to-load-files-shown?
+                    loaded-files-shown?)
+          (show/hide-loaded-files))
+	(send to-load-files-outer-panel stretchable-height to-load-files-shown?))
 
       (define (hierlist-item-mixin class%)
 	(class/d class% args
@@ -479,13 +825,13 @@
 	    (unless ignore-open/closes?
 	      (let ([info (hash-table-get open-table (string->symbol (send i get-file)))])
 		(set-open-info-open?! info #t)
-		(set! changed? #t))))
+		(is-changed))))
 
 	  (define (on-item-closed i)
 	    (unless ignore-open/closes? 
 	      (let ([info (hash-table-get open-table (string->symbol (send i get-file)))])
 		(set-open-info-open?! info #f)
-		(set! changed? #t))))
+		(is-changed))))
 
 	  (define (on-select i)
 	    (send open-loaded-file-button enable i))
@@ -538,8 +884,11 @@
       (define-struct open-info (touched? open?))
       (define open-table (make-hash-table))
 
+      (define loaded-files null)
+      
       (define (push-file file)
 	(set! ignore-open/closes? #t)
+        (set! loaded-files (cons file loaded-files))
 	(let* ([previous (car hl-stack)])
 	  (when (string? previous)
 	    (set! previous (create-list-item
@@ -554,7 +903,7 @@
 		     sym
 		     (lambda ()
 		       (let ([info (make-open-info #t #t)])
-			 (set! changed? #t)
+			 (is-changed)
 			 (hash-table-put! open-table sym info)
 			 info)))])
 	      (set-open-info-touched?! open-info #t)
@@ -577,17 +926,28 @@
 
       (super-init project-name #f 400 450)
 
+      (set! project-frames (cons this project-frames))
+      
       (define mb (get-menu-bar))
+
+      (define show-menu (make-object menu% "Show" mb))
+      (define to-load-files-menu-item
+        (make-object menu-item% "Show Project Files" show-menu (lambda xxx (show/hide-to-load-files))))
+      (define loaded-files-menu-item
+        (make-object menu-item% "Show Loaded Files" show-menu (lambda xxx (show/hide-loaded-files))))
+
       (define project-menu (make-object menu% "Project" mb))
-      (make-object menu-item% "New Project" project-menu (lambda x (new-project)))
-      (make-object menu-item% "Open Project" project-menu (lambda x (open-project)))
+      (add-common-project-menu-items project-menu)
+      (make-object separator-menu-item% project-menu)
       (make-object menu-item% "Add Files..." project-menu (lambda x (add-files)))
       (make-object menu-item% "Configure Language..." project-menu (lambda x (configure-language)))
+      (make-object menu-item% "Configure Collection Paths..." project-menu (lambda x (configure-collection-paths)))
 
       (make-object button% "Execute" (get-area-container) (lambda x (execute-project)))
       (define top-panel (make-object horizontal-panel% (get-area-container)))
       (define left-panel (make-object vertical-panel% top-panel))
-      (define to-load-files-panel (make-object horizontal-panel% left-panel '(border)))
+      (define to-load-files-outer-panel (make-object vertical-panel% left-panel))
+      (define to-load-files-panel (make-object horizontal-panel% to-load-files-outer-panel '(border)))
       (define files-list-box (make-object list-box% #f null to-load-files-panel
 					  (lambda (lb evt)
 					    (files-list-box-callback
@@ -609,6 +969,8 @@
       (send loaded-files-button-panel set-alignment 'center 'center)
       (send loaded-files-button-panel stretchable-width #f)
 
+      (send loaded-files-button-panel min-height (send to-load-button-panel get-height))
+
       (send loaded-files-outer-panel change-children (lambda (l) null))
       (send loaded-files-outer-panel stretchable-height #f)
 
@@ -621,7 +983,7 @@
 
       (update-buttons)
 
-      (make-object button% "Show Loaded Files" (get-area-container) (lambda (b e) (show/hide-loaded-files b e)))
+      (frame:reorder-menus this)
 
       (when (and filename
 		 (file-exists? filename))

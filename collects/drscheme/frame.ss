@@ -53,27 +53,12 @@
       (inherit get-editor)
       (rename [super-file-menu:print file-menu:print])
       (override
-	[file-menu:print (lambda (item control)
-			   (let* ([text (get-editor)]
-				  [str (string-append
-					(mzlib:date:date->string (seconds->date (current-seconds)))
-					" "
-					(if (string? (send text get-filename))
-					    (send text get-filename)
-					    "Untitled"))]
-				  [modified? (send text is-modified?)])
-			     (send text begin-edit-sequence)
-			     (send text insert (string #\newline) 0 0 #f)
-			     (send text insert str 0 0 #f)
-			     (send text change-style
-				   (make-object mred:style-delta% 'change-bold)
-				   0
-				   (string-length str))
-			     (super-file-menu:print item control)
-			     (send text delete 0 (+ (string-length str) 1) #f)
-			     (send text set-modified modified?)
-			     (send text end-edit-sequence))
-			   #t)])
+       [file-menu:print
+	(lambda (item control)
+	  (let ([ps-setup (make-object mred:ps-setup%)])
+	    (send ps-setup copy-from (mred:current-ps-setup))
+	    (parameterize ([mred:current-ps-setup ps-setup])
+	      (send (get-editor) print))))])
 
       (rename [super-make-root-area-container make-root-area-container])
       (inherit get-info-panel)

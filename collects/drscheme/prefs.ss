@@ -84,6 +84,7 @@
 	   [scheme-delta (make-object style-delta%)])
       (send scheme-standard get-delta scheme-delta)
       (send scheme-delta set-delta-face name)
+      (send scheme-delta set-family 'modern)
       (send scheme-standard set-delta scheme-delta)))
 
   (set-font-size (framework:preferences:get 'drscheme:font-size))

@@ -344,6 +344,11 @@
 	      (super-after-insert start len)
 	      (syncheck:clear-arrows))]
 
+	   [on-change
+	    (lambda ()
+	      (when arrow-vector
+		(invalidate-bitmap-cache)))]
+
 	   [on-paint
 	    (lambda (before dc left top right bottom dx dy draw-caret)
 	      (super-on-paint before dc left top right bottom dx dy draw-caret)

@@ -18,3 +18,7 @@
 
 (define-signature loa:computer-player^
   (computer-move))
+
+(define-signature loa:move-import^
+  (get-color ; : (board num num -> (union 'black 'white #f))
+   ))

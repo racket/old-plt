@@ -178,9 +178,7 @@
 	     (set! canvas (make-object GUI:paint-by-numbers-canvas% canvas-panel rows cols))
 	     (send canvas-panel change-children (lambda (l) (list canvas))))
 	   (stretchable-width #f)
-	   (stretchable-height #f)
-	   (stretchable-width #t)
-	   (stretchable-height #t))]
+	   (stretchable-height #f))]
 
 	[show-wrong
 	 (lambda ()

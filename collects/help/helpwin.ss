@@ -210,18 +210,26 @@
 			    (override 
 			      [on-subwindow-char 
 			       (lambda (w e)
-				 (case (send e get-key-code)
-				   [(prior) (send (send results get-editor)
-						  move-position 'up #f 'page) #t]
-				   [(next) (send (send results get-editor)
-						 move-position 'down #f 'page) #t]
-				   [(left) (if (send e get-meta-down)
-					       (send html-panel rewind)
-					       (super-on-subwindow-char w e))]
-				   [(right) (if (send e get-meta-down)
-						(send html-panel forward)
-						(super-on-subwindow-char w e))]
-				   [else (super-on-subwindow-char w e)]))])
+				 (let ([pgup (lambda () (send (send results get-editor) move-position 'up #f 'page))]
+				       [pgdn (lambda () (send (send results get-editor) move-position 'down #f 'page))])
+				   (case (send e get-key-code)
+				     [(prior) (pgup) #t]
+				     [(#\rubout #\backspace)
+				      (if (send results has-focus?)
+					  (begin (pgup) #t)
+					  (super-on-subwindow-char w e))]
+				     [(next) (pgdn) #t]
+				     [(#\space)
+				      (if (send results has-focus?)
+					  (begin (pgdn) #t)
+					  (super-on-subwindow-char w e))]
+				     [(left) (if (send e get-meta-down)
+						 (send html-panel rewind)
+						 (super-on-subwindow-char w e))]
+				     [(right) (if (send e get-meta-down)
+						  (send html-panel forward)
+						  (super-on-subwindow-char w e))]
+				     [else (super-on-subwindow-char w e)])))])
 			    (sequence (apply super-init args))))
 	      (get-unique-title) #f 600 (max 440 (min 800 (- screen-h 40)))))
 
@@ -346,6 +354,14 @@
 						    (send where get-selection)
 						    (send exact get-selection)))
 				      '(border)))
+;	  (define feeling-lucky-button
+;	    (make-object button% "Feeling Lucky" search-pane
+;			 (lambda (b e)
+;			   (run-search (send search-text get-value)
+;				       (send where get-selection)
+;				       (send exact get-selection)))
+;			 '(border)))
+						      
 	  (define where (make-object choice% #f '("for Keyword"
 						  "for Keyword or Index Entry"
 						  "for Keyword, Index Entry, or Text")

@@ -47,6 +47,8 @@
 				whole/fractional-exact-numbers
                                 print-booleans-as-true/false
 				printing
+				print-exact-as-decimal?
+				read-decimal-as-exact?
 				define-argv?))
   
   ;; settings : (list-of setting)
@@ -72,6 +74,8 @@
 	     (whole/fractional-exact-numbers #f)
              (print-booleans-as-true/false #t)
 	     (printing constructor-style)
+	     (print-exact-as-decimal? #t)
+	     (read-decimal-as-exact? #t)
 	     (define-argv? #f)))
 	  (make-setting/parse
 	   `((name "Intermediate Student")
@@ -94,6 +98,8 @@
 	     (whole/fractional-exact-numbers #f)
 	     (print-booleans-as-true/false #t)
              (printing constructor-style)
+	     (print-exact-as-decimal? #t)
+	     (read-decimal-as-exact? #t)
 	     (define-argv? #f)))
 	  (make-setting/parse
 	   `((name "Advanced Student")
@@ -118,6 +124,8 @@
 	     (whole/fractional-exact-numbers #f)
 	     (print-booleans-as-true/false #t)
              (printing constructor-style)
+	     (print-exact-as-decimal? #t)
+	     (read-decimal-as-exact? #t)
 	     (define-argv? #f)))
 	  (make-setting/parse
 	   `((name "Textual Full Scheme (MzScheme)")
@@ -140,6 +148,8 @@
 	     (whole/fractional-exact-numbers #f)
 	     (print-booleans-as-true/false #f)
              (printing r4rs-style)
+	     (print-exact-as-decimal? #f)
+	     (read-decimal-as-exact? #f)
 	     (define-argv? #t)))
 	  (make-setting/parse
 	   `((name "Textual Full Scheme without Debugging (MzScheme)")
@@ -162,6 +172,8 @@
 	     (whole/fractional-exact-numbers #f)
 	     (print-booleans-as-true/false #f)
              (printing r4rs-style)
+	     (print-exact-as-decimal? #f)
+	     (read-decimal-as-exact? #f)
 	     (define-argv? #t)))))
   
   (define (snoc x y) (append y (list x)))
@@ -605,6 +617,7 @@
       (read-curly-brace-as-paren #t)
       (read-square-bracket-as-paren #t)
       (print-struct (not (eq? 'r4rs-style (setting-printing setting))))
+      (read-decimal-as-inexact (not (setting-read-decimal-as-exact? setting)))
       
       (error-print-width 250)
       (current-print drscheme-print)
@@ -677,6 +690,8 @@
         [else (error 'install-language "found bad setting-printing: ~a~n" 
                      (setting-printing setting))])
       
+      (mzlib:pretty-print:pretty-print-exact-as-decimal
+       (setting-print-exact-as-decimal? setting))
       (mzlib:pretty-print:pretty-print-show-inexactness
        (setting-print-tagged-inexact-numbers setting))
       (mzlib:print-convert:show-sharing (setting-sharing-printing? setting))

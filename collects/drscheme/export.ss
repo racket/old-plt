@@ -47,7 +47,7 @@
 		help-desk zodiac)]
 	[unit : drscheme:unit^
 	  ((require-relative-library "unit.ss")
-	   mred mzlib framework app frame text rep
+	   mred mzlib mzlib:date framework app frame text rep
 	   language get/extend graph)]
 	[program : drscheme:program^ ((require-relative-library "prog.ss"))]
 	[get/extend : drscheme:get/extend^
@@ -57,7 +57,7 @@
 		  ((require-relative-library "language.ss")
 		   mred framework
 		   unit
-		   aries zodiac
+		   zodiac
 		   basis
 		   (mzlib function) 
 		   (mzlib file)

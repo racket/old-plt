@@ -135,14 +135,14 @@
       (basis:process/zodiac
        (parameterize ([read-case-sensitive (basis:setting-case-sensitive?
 					    setting)])
-	 (zodiac:read (fw:gui-utils:read-snips/chars-from-buffer text start end)
+	 (zodiac:read (fw:gui-utils:read-snips/chars-from-text text start end)
 		      (zodiac:make-location 0 0 start text)
 		      #t 1))
        f
        annotate?)))
 
   (define (process-text/no-zodiac text f start end)
-    (let* ([buffer-thunk (fw:gui-utils:read-snips/chars-from-buffer text start end)]
+    (let* ([buffer-thunk (fw:gui-utils:read-snips/chars-from-text text start end)]
 	   [snip-string (string->list " 'non-string-snip ")]
 	   [port-thunk (let ([from-snip null])
 			 (rec port-thunk

@@ -59,11 +59,14 @@
 	      (send snip next))])))
 
   (define loa-pasteboard%
-    (class/d grid-pasteboard% args
+    (class/d grid-pasteboard% (size)
       ((inherit get-snip-at get-all-snips-at
 		animate-to find-first-snip
 		remove)
+       (public get-size get-color-at
        (override get-moves moved))
+
+      (define (get-size) size)
 
       (define (make-move snip x y)
 	(send snip set-x x)
@@ -88,76 +91,25 @@
 	     (semaphore-post semaphore)))
 	  (yield semaphore)))
 
-      (define (on-board? x y)
-	(and (<= 0 x 7)
-	     (<= 0 y 7)))
+      (define (get-color-at i j)
+	(let loop ([snip (find-first-snip)])
+	  (cond
+	   [(not snip) #f]
+	   [else (if (and (= i (send snip get-x))
+			  (= j (send snip get-y)))
+		     (send snip get-color)
+		     (loop (send snip next)))])))
 
-      (define (iterate-in-dir x y step init combine)
-	(if (on-board? x y)
-	    (let-values ([(nx ny) (step x y)])
-	      (iterate-in-dir nx ny step (combine init x y) combine))
-	    init))
-      
-      (define (find-line snip forward backward)
-	(let*-values ([(x y) (values (send snip get-x) (send snip get-y))]
-		      [(color) (send snip get-color)]
-		      [(fx fy) (forward x y)]
-		      [(bx by) (backward x y)])
-	  (letrec ([find-spaces
-		    (lambda (x y move)
-		      (let loop ([x x]
-				 [y y])
-			(cond
-			 [(on-board? x y)
-			  (cons (cons x y)
-				(let-values ([(nx ny) (move x y)])
-				  (loop nx ny)))]
-			 [else null])))]
-		   [spaces
-		    (append
-		     (list (cons x y))
-		     (find-spaces fx fy forward)
-		     (find-spaces bx by backward))]
-		   [count (foldl (lambda (p c)
-				   (if (get-snip-at (car p) (cdr p))
-				       (+ c 1)
-				       c))
-				 0
-				 spaces)]
-		   [step-n
-		    (lambda (dir x y n)
-		      (cond
-		       [(not (on-board? x y)) #f]
-		       [(zero? n)
-			(let ([nsnip (get-snip-at x y)])
-			  (if (or (not nsnip)
-				  (not (eq? color (send nsnip get-color))))
-			      (cons x y)
-			      #f))]
-		       [else (let-values ([(nx ny) (dir x y)])
-			       (let ([n-snip (get-snip-at x y)])
-				 (if (or (not n-snip)
-					 (eq? color (send n-snip get-color)))
-				     (step-n dir nx ny (- n 1))
-				     #f)))]))]
+      (define get-moves
+	(let* ([get-color (lambda (board i j) (get-color-at i j))]
+	       [f 
+	       (invoke-unit/sig (require-library "moves.ss" "games" "loa")
+				loa:move-import^
+				mzlib:function^)])
+	  (lambda (snip)
+	    (f (void) (send snip get-x) (send snip get-y)))))
 
-		   [step-forward (step-n forward x y count)]
-		   [step-forward-l (if step-forward (list step-forward) null)]
-		   [step-backward (step-n backward x y count)]
-		   [step-backward-l (if step-backward (cons step-backward step-forward-l) step-forward-l)])
-
-	    step-backward-l)))
-
-      (define (get-moves snip)
-	(let ([x (send snip get-x)]
-	      [y (send snip get-y)])
-
-	  (append (find-line snip (lambda (x y) (values x (+ y 1))) (lambda (x y) (values x (- y 1))))
-		  (find-line snip (lambda (x y) (values (+ x 1) (+ y 1))) (lambda (x y) (values (- x 1) (- y 1))))
-		  (find-line snip (lambda (x y) (values (- x 1) (+ y 1))) (lambda (x y) (values (+ x 1) (- y 1))))
-		  (find-line snip (lambda (x y) (values (+ x 1) y)) (lambda (x y) (values (- x 1) y))))))
-
-      (apply super-init args)))
+      (super-init size size)))
 
   (define loa-checker%
     (class grid-snip% (color x y)
@@ -183,7 +135,7 @@
 
 
   (define frame (make-object frame% "Lines of Action" #f))
-  (define loa-pasteboard (make-object loa-pasteboard% 8 8))
+  (define loa-pasteboard (make-object loa-pasteboard% 8))
   (define loa-canvas (make-object loa-canvas% frame loa-pasteboard))
 
   (send loa-canvas min-width 300)

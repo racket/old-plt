@@ -96,11 +96,13 @@
 		      [spos (string->number (list-ref m 2))]
 		      [eline (string->number (list-ref m 3))]
 		      [epos (string->number (list-ref m 4))])
-		  (unless (and (<= start-line sline (sub1 line))
-			       (<= start-line eline (sub1 line)))
+		  ;; we want to allow for a buggy definition followed
+		  ;; by its use, so we allow one line of slack
+		  (unless (and (<= (sub1 start-line) sline (sub1 line))
+			       (<= (sub1 start-line) eline (sub1 line)))
 		    (perror "out-of-range lines in error: ~a-~a not in ~a-~a" 
 			    sline eline
-			    start-line (sub1 line))))
+			    (sub1 start-line) (sub1 line))))
 		(perror "expected `stdin' error, got: ~a" result))))))
     (expect-prompt))
 
@@ -154,6 +156,10 @@
   (define beg/inter? (member language
 		       (list language-level/beginner
 			 language-level/intermediate)))
+  (define beg/inter/adv? (member language
+		       (list language-level/beginner
+			 language-level/intermediate
+			 language-level/advanced)))
   (define adv/mz? (member language
 		    (list language-level/advanced
 		      language-level/mzscheme/debug)))
@@ -163,6 +169,7 @@
   (define cond-bool? beg/inter?)
   (define empty-lambda? adv/mz?)
   (define one-arm-if? adv/mz?)
+  (define begin? (not (or beg/inter?)))
   (define gen-quote? (not beg?))
   (define fall-through? mz?)
   (define quasiquote? (not beg?))
@@ -171,10 +178,12 @@
   (define local? (and let? (not mz?)))
   (define imperative? adv/mz?)
   (define symbol-apps? beg/inter?)
+  (define student-level? beg/inter/adv?)
   (define apply-no-lambda-bound? beg/inter?)
   (define proper-list? (not mz?))
   (define define-struct? #t)
-  (define define-struct-set? (not beg/inter?))
+  (define let-struct? (not beg?))
+  (define struct-set? (not beg/inter?))
   (define explicit-inexact? (not mz?))
   (define abbrev-list? (not beg?))
   (define mzscheme? mz?)
@@ -187,6 +196,8 @@
     (lambda (x other)
       (if flag? x other)))
 	  
+  (define begin-diff (mk-diff begin?))
+  (define student-diff (mk-diff student-level?))
   (define pc-diff (mk-diff print-convert?))
   (define el-diff (mk-diff empty-lambda?))
   (define gq-diff (mk-diff gen-quote?))
@@ -199,7 +210,8 @@
   (define anlb-diff (mk-diff apply-no-lambda-bound?))
   (define pl-diff (mk-diff proper-list?))
   (define ds-diff (mk-diff define-struct?))
-  (define ds!-diff (mk-diff define-struct-set?))
+  (define ls-diff (mk-diff let-struct?))
+  (define struct!-diff (mk-diff struct-set?))
   (define qq-diff (mk-diff quasiquote?))
   (define nl-diff (mk-diff named-let?))
   (define ei-diff (mk-diff explicit-inexact?))
@@ -333,12 +345,15 @@
   (try "(case-lambda [(x) 10])" (ldo-diff '(error "only in a definition")
 					  (pc-diff "(lambda (a1) ...)" "#<procedure>")))
 
-  (try "lambda" '(error "Invalid use of keyword"))
-  (try "case-lambda" '(error "Invalid use of keyword"))
+  (try "lambda" '(error "invalid use of keyword"))
+  (try "case-lambda" '(error "invalid use of keyword"))
 
   (try-void "(define test-define-f (lambda (x) (+ x 5)))")
   (try "(test-define-f 3)" "8")
   (try "(test-define-f 4)" "9")
+  (try "(define (f x) (define (g 3) 4))"
+    (student-diff '(error "must be at the top level")
+      '(error "internal definition")))
 
   ;; ;;;;;;;;;;;;;;;;;; cond ;;;;;;;;;;;;;;;;;;;;;;;;;;;
   
@@ -360,7 +375,7 @@
        (oai-diff 'void
 		 '(error "must have an else")))
 
-  ;; ;;;;;;;;;;;;;;;;;; define-struct ;;;;;;;;;;;;;;;;;;;;;
+  ;; ;;;;;;;;;;;;;;;;;; define-struct, let-struct ;;;;;;;;;;;;;;;;;;;;;
 
   (try "(define-struct a (b c))"
        (ds-diff 'void '(error "undefined")))
@@ -369,7 +384,19 @@
   (try "(length (list struct:a make-a a? a-b a-c))"
        (ds-diff "5" '(error "undefined")))
   (try "(length (list struct:a make-a a? a-b a-c set-a-b! set-a-c!))"
-       (ds!-diff "7" '(error "undefined")))
+       (struct!-diff "7" '(error "undefined")))
+
+  (try "(let-struct a (x) 3)"
+    (ls-diff "3" '(error "undefined")))
+  (try "(let-struct a (x) (set-a-x! (make-a 3) 4))"
+    (ls-diff (struct!-diff 'void '(error "undefined"))
+      '(error "undefined")))
+  (try "(let-struct (a struct:exn) (x) 3)"
+    (ls-diff (nss-diff '(error "not an identifier") "3")
+      '(error "undefined")))
+  (try "(let-struct a (x) 1 2)"
+    (ls-diff (student-diff '(error "malformed") "2")
+      '(error "undefined")))
   
   (try "(local ((define-struct aa (bb cc))) (procedure? aa-bb))"
        (if local? 
@@ -377,7 +404,7 @@
 	   '(error "definition")))
   (try "(local ((define-struct aa (bb cc))) (procedure? set-aa-bb!))"
        (if local? 
-	   (ds!-diff true-string '(error "undefined"))
+	   (struct!-diff true-string '(error "undefined"))
 	   '(error "definition")))
 
   (try "(define-struct empty-testing-structure ())"
@@ -395,7 +422,7 @@
     (try '(let ([anA (make-a 3 4)])
 	    (let ([z (set-a-b! anA 55)])
 	      (a-b anA)))
-	 (ds!-diff "55" '(error "undefined")))
+	 (struct!-diff "55" '(error "undefined")))
     (try '(a? (make-a 3 4)) true-string))
 
   (try "(define-struct (a 0) (b c))"
@@ -650,7 +677,11 @@
 	(try "begin0" '(error "undefined"))
 	(try "do" '(error "undefined"))
 	(try "delay" '(error "undefined"))))
-  
+ 
+  (try-void "(define (intl-beg x) (begin (+ x 1) (+ x 2)))")
+  (try "(intl-beg 3)"
+    (begin-diff "5" '(error "undefined")))
+ 
   ;; ;;;;;;;;;;;;;;;;;; call/cc, let/cc  ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
   (when imperative?
@@ -717,38 +748,65 @@
 	       #%class #%class* #%class*/names)])
     (for-each
      (lambda (kw)
-       (try kw `(error ,(format "Invalid use of keyword ~a" 
+       (try kw `(error ,(format "invalid use of keyword ~a" 
 				(non-regexp (symbol->string kw))))))
      kws))
 
+   (try '(define #%define 10)
+        '(error "invalid use of keyword"))
+   (try '(set! #%define 10)
+        '(error "invalid use of keyword"))
+ 
+   (try '(define (x define) define)
+        (if mz?
+ 	   'void
+ 	   '(error "invalid use of keyword")))
+ 
+   (try '(define define 10)
+        (if mz?
+ 	   'void
+ 	   '(error "invalid use of keyword")))
+   (try 'define
+        (if mz?
+ 	   "10"
+ 	   '(error "invalid use of keyword")))
+ 
+   (try '(set! lambda 12)
+        (if mz?
+ 	   'void
+ 	   '(error "invalid use of keyword")))
+   (try 'lambda
+        (if mz?
+ 	   "12"
+ 	   '(error "invalid use of keyword")))
 
   (try '(define #%define 10)
-       '(error "Invalid use of keyword"))
+       '(error "invalid use of keyword"))
   (try '(set! #%define 10)
-       '(error "Invalid use of keyword"))
+       '(error "invalid use of keyword"))
 
   (try '(define (x define) define)
        (if mz?
 	   'void
-	   '(error "Invalid use of keyword")))
+	   '(error "invalid use of keyword")))
 
   (try '(define define 10)
        (if mz?
 	   'void
-	   '(error "Invalid use of keyword")))
+	   '(error "invalid use of keyword")))
   (try 'define
        (if mz?
 	   "10"
-	   '(error "Invalid use of keyword")))
+	   '(error "invalid use of keyword")))
 
   (try '(set! lambda 12)
        (if mz?
 	   'void
-	   '(error "Invalid use of keyword")))
+	   '(error "invalid use of keyword")))
   (try 'lambda
        (if mz?
 	   "12"
-	   '(error "Invalid use of keyword")))
+	   '(error "invalid use of keyword")))
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -771,3 +829,5 @@
   (set! errs? (or (go) errs?))
   (when errs?
     (printf "THERE WERE ERRORS~n")))
+
+(exit)

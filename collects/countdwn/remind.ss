@@ -238,5 +238,5 @@
 	  (rec f
 	       (lambda ()
 		 (update-counters)
-		 (sleep 1/2)
+		 (sleep 2)
 		 (f))))]))))

@@ -1216,7 +1216,7 @@ const char *scheme_get_proc_name(Scheme_Object *p, int *len, int for_error)
     r = (char *)scheme_malloc_atomic(*len + 11);
     memcpy(r, "procedure ", 10);
     memcpy(r + 10, s, *len + 1);
-    *len += 11;
+    *len += 10;
 
     return r;
   }

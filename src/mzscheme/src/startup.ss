@@ -1426,7 +1426,7 @@
       (syntax-case stx ()
 	[(_ ([id expr] ...) body1 body ...)
 	 (syntax/loc stx
-	     (letrec-syntax ([(id) expr] ...)
+	     (letrec-syntaxes ([(id) expr] ...)
 	       body1 body ...))])))
 
   (define-syntax let-syntaxes

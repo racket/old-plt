@@ -3018,9 +3018,11 @@ do_letrec_syntaxes(Scheme_Object *forms, Scheme_Comp_Env *origenv,
     v = scheme_make_sequence_compilation(v, 1);
   } else {
     v = scheme_expand_block(body, env, depth, boundname);
-    if ((depth >= 0) || (depth == -2))
-      v = icons(SCHEME_STX_CAR(forms), icons(bindings, v));
-    else if (SCHEME_STX_NULLP(SCHEME_STX_CDR(v)))
+    if ((depth >= 0) || (depth == -2)) {
+      Scheme_Object *formname;
+      formname = SCHEME_STX_CAR(forms);
+      v = icons(formname, icons(bindings, v));
+    } else if (SCHEME_STX_NULLP(SCHEME_STX_CDR(v)))
       v = SCHEME_STX_CAR(v);
     else
       v = icons(begin_symbol, v);

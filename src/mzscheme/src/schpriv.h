@@ -1290,10 +1290,9 @@ Scheme_Object *scheme_compiled_void();
 #define QUOTE_SYNTAX_EXPD  5
 #define BOXENV_EXPD        6
 #define BOXVAL_EXPD        7
-#define STRUCT_EXPD        8
-#define MODULE_EXPD        9
-#define REQUIRE_EXPD        10
-#define _COUNT_EXPD_       11
+#define MODULE_EXPD        8
+#define REQUIRE_EXPD       9
+#define _COUNT_EXPD_       10
 
 #define scheme_register_syntax(i, fr, fl, fe, pa) \
      (scheme_syntax_resolvers[i] = fr, scheme_syntax_linkers[i] = fl, \

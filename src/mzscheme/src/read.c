@@ -2236,8 +2236,8 @@ static Scheme_Object *read_compiled(Scheme_Object *port,
     if (strcmp(buf, VERSION))
       scheme_raise_exn(MZEXN_READ,
 		       port,
-		       "read (compiled): code compiled for version %s, not %s",
-		       (buf[0] ? buf : "???"), VERSION);
+		       "read (compiled): code compiled for version %s, not %s in: %q",
+		       (buf[0] ? buf : "???"), VERSION, SCHEME_IPORT_NAME(port));
   }
 
   symtabsize = read_compact_number_from_port(port);

@@ -4,8 +4,6 @@
 	   (lib "compile.ss" "dynext"))
 
   (define (pre-installer plthome)
-    (define mach-id (string->symbol (system-library-subpath)))
-
     (pre-install plthome
 		 (collection-path "openssl")
 		 "mzssl.c" 
@@ -21,6 +19,8 @@
 		 null
 		 ;; Windows extra libs (assume always there)
 		 (list "wsock32.lib")
+		 ;; Extra depends:
+		 (list "mzssl.ss")
 		 ;; Last-chance k:
 		 (lambda (k) (k))))
 

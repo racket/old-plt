@@ -22,11 +22,13 @@ class wxFont: public wxbFont
   HFONT general_cfont;
 
   wxFont(void);
-  wxFont(int PointSize, int Family, int Style, int Weight, Bool underlined = FALSE);
+  wxFont(int PointSize, int Family, int Style, int Weight, Bool underlined = FALSE, 
+	 int smoothing = wxSMOOTHING_DEFAULT);
   wxFont(int PointSize, const char *Face, int Family, int Style, int Weight, 
-	 Bool underlined = FALSE);
+	 Bool underlined = FALSE, int smoothing = wxSMOOTHING_DEFAULT);
   ~wxFont(void);
-  Bool Create(int PointSize, int Family, int Style, int Weight, Bool underlined = FALSE);
+  Bool Create(int PointSize, int Family, int Style, int Weight, Bool underlined,
+	      int smoothing);
   HFONT BuildInternalFont(HDC dc, Bool screen_font = TRUE);
   inline HFONT GetInternalFont(HDC dc) { return BuildInternalFont(dc, TRUE); }
 };

@@ -25,7 +25,7 @@ wxbFont::wxbFont (void)
 /* Constructor for a font. Note that the real construction is done
  * in wxDC::SetFont, when information is available about scaling etc.
  */
-wxbFont::wxbFont (int WXUNUSED(PointSize), int WXUNUSED(Family), int WXUNUSED(Style), int WXUNUSED(Weight), Bool WXUNUSED(Underline))
+wxbFont::wxbFont (int WXUNUSED(PointSize), int WXUNUSED(Family), int WXUNUSED(Style), int WXUNUSED(Weight), Bool WXUNUSED(Underline), int WXUNUSED(smoothing))
 {
   __type = wxTYPE_FONT;
 }
@@ -601,9 +601,9 @@ void wxFontList::AddFont (wxFont * font)
 }
 
 wxFont *wxFontList::
-FindOrCreateFont (int PointSize, int FamilyOrFontId, int Style, int Weight, Bool underline)
+FindOrCreateFont (int PointSize, int FamilyOrFontId, int Style, int Weight, Bool underline, int smoothing)
 {
-  wxFont *fnt; /* MATTTHEW: [8] */
+  wxFont *fnt;
   int i = 0;
   wxChildNode *node;
 
@@ -613,12 +613,13 @@ FindOrCreateFont (int PointSize, int FamilyOrFontId, int Style, int Weight, Bool
 	each_font->GetPointSize () == PointSize &&
 	each_font->GetStyle () == Style &&
 	each_font->GetWeight () == Weight &&
-	each_font->GetFontId () == FamilyOrFontId && /* MATTHEW: [4] New font system */
-	each_font->GetUnderlined () == underline)
+	each_font->GetFontId () == FamilyOrFontId &&
+	each_font->GetUnderlined () == underline &&
+	each_font->GetSmoothing () == smoothing)
       return each_font;
   }
 
-  fnt = new wxFont (PointSize, FamilyOrFontId, Style, Weight, underline);
+  fnt = new wxFont (PointSize, FamilyOrFontId, Style, Weight, underline, smoothing);
 
   AddFont(fnt);
 
@@ -626,13 +627,15 @@ FindOrCreateFont (int PointSize, int FamilyOrFontId, int Style, int Weight, Bool
 }
 
 wxFont *wxFontList::
-FindOrCreateFont (int PointSize, const char *Face, int Family, int Style, int Weight, Bool underline)
+FindOrCreateFont (int PointSize, const char *Face, int Family, int Style, int Weight, Bool underline,
+		  int smoothing)
 {
   return FindOrCreateFont(PointSize,
 			  wxTheFontNameDirectory->FindOrCreateFontId(Face, Family),
 			  Style,
 			  Weight,
-			  underline);
+			  underline,
+			  smoothing);
 }
 
 wxPoint::wxPoint (void) : wxObject(WXGC_NO_CLEANUP)

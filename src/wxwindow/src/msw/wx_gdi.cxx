@@ -38,22 +38,22 @@ wxFont::wxFont(void)
 {
   COUNT_P(font_count);
 
-  Create(12, wxDEFAULT, wxNORMAL, wxNORMAL, FALSE);
+  Create(12, wxDEFAULT, wxNORMAL, wxNORMAL, FALSE, wxSMOOTHING_DEFAULT);
 }
 
 /* Constructor for a font. Note that the real construction is done
  * in wxDC::SetFont, when information is available about scaling etc.
  */
-wxFont::wxFont(int PointSize, int Family, int Style, int Weight, Bool Underlined):
-  wxbFont(PointSize, Family, Style, Weight, Underlined)
+wxFont::wxFont(int PointSize, int Family, int Style, int Weight, Bool Underlined, int Smoothing):
+  wxbFont(PointSize, Family, Style, Weight, Underlined, Smoothing)
 {
   COUNT_P(font_count);
 
-  Create(PointSize, Family, Style, Weight, Underlined);
+  Create(PointSize, Family, Style, Weight, Underlined, Smoothing);
 }
 
-wxFont::wxFont(int PointSize, const char *Face, int Family, int Style, int Weight, Bool Underlined):
-  wxbFont(PointSize, Family, Style, Weight, Underlined)
+wxFont::wxFont(int PointSize, const char *Face, int Family, int Style, int Weight, Bool Underlined, int Smoothing):
+  wxbFont(PointSize, Family, Style, Weight, Underlined, Smoothing)
 {
   int id;
 
@@ -61,10 +61,10 @@ wxFont::wxFont(int PointSize, const char *Face, int Family, int Style, int Weigh
 
   id = wxTheFontNameDirectory->FindOrCreateFontId(Face, Family);
 
-  Create(PointSize, id, Style, Weight, Underlined);
+  Create(PointSize, id, Style, Weight, Underlined, Smoothing);
 }
 
-Bool wxFont::Create(int PointSize, int FontId, int Style, int Weight, Bool Underlined)
+Bool wxFont::Create(int PointSize, int FontId, int Style, int Weight, Bool Underlined, int Smoothing)
 {
   fontid = FontId;
   family = wxTheFontNameDirectory->GetFamily(fontid);
@@ -72,6 +72,7 @@ Bool wxFont::Create(int PointSize, int FontId, int Style, int Weight, Bool Under
   weight = Weight;
   point_size = PointSize;
   underlined = Underlined;
+  smoothing = Smoothing;
 
   temporary = FALSE;
 
@@ -108,6 +109,7 @@ HFONT wxFont::BuildInternalFont(HDC dc, Bool screenFont)
   char *ff_face = NULL;
   int charset = ANSI_CHARSET;
   Bool ff_underline = underlined;
+  int ff_qual;
     
   if (screenFont && screen_cfont)
     return screen_cfont;
@@ -116,10 +118,7 @@ HFONT wxFont::BuildInternalFont(HDC dc, Bool screenFont)
 
   if (screenFont) {
     int dpi;
-    HDC dc2;
-    dc2 = ::GetDC(NULL);
     dpi = ::GetDeviceCaps(dc, LOGPIXELSY);
-    ::ReleaseDC(NULL, dc2);
     nHeight = point_size*dpi/72;
   } else
     nHeight = point_size;
@@ -176,23 +175,38 @@ HFONT wxFont::BuildInternalFont(HDC dc, Bool screenFont)
     ff_weight = FW_LIGHT;
   else if (weight == wxBOLD)
     ff_weight = FW_BOLD;
+
+  if (smoothing == wxSMOOTHING_DEFAULT) {
+    if ((family == wxMODERN) && (nHeight > 8) && (nHeight < 14))
+      ff_qual = ANTIALIASED_QUALITY;
+    else
+      ff_qual = PROOF_QUALITY;
+  } else if (smoothing == wxSMOOTHING_PARTIAL)
+    ff_qual = ANTIALIASED_QUALITY;
+  else if (smoothing == wxSMOOTHING_ON) {
+#ifndef CLEARTYPE_QUALITY
+# define CLEARTYPE_QUALITY 5
+#endif
+    ff_qual = CLEARTYPE_QUALITY;
+  } else
+    ff_qual = NONANTIALIASED_QUALITY;
   
   cfont = CreateFont(-nHeight, 0, 0, 0,ff_weight,ff_italic,(BYTE)ff_underline,
 		     0, charset, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
-		     PROOF_QUALITY, DEFAULT_PITCH | ff_family, ff_face);
+		     ff_qual, DEFAULT_PITCH | ff_family, ff_face);
   
   if (!cfont) {
     /* Try defaulting to family: */
     ff_face = wxTheFontNameDirectory->GetScreenName(family, weight, style);
     cfont = CreateFont(-nHeight, 0, 0, 0,ff_weight,ff_italic,(BYTE)ff_underline,
 		       0, charset, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
-		       PROOF_QUALITY, DEFAULT_PITCH | ff_family, ff_face);
+		       ff_qual, DEFAULT_PITCH | ff_family, ff_face);
   }
 
   if (!cfont)
     cfont = CreateFont(12, 0, 0, 0,FW_NORMAL,0,(BYTE)0,
 		       0, charset, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
-		       PROOF_QUALITY, DEFAULT_PITCH | FF_SWISS, NULL);
+		       ff_qual, DEFAULT_PITCH | FF_SWISS, NULL);
 
   RegisterGDIObject((HANDLE)cfont);
 

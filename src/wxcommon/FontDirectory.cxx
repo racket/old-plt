@@ -109,7 +109,7 @@ char *font_defaults[] = {
 
 #ifdef wx_msw
   "ScreenSystem__", "MS Sans Serif",
-  "ScreenDefault__", "MS Sans Serif",
+  "ScreenDefault__", "MS/Microsoft Sans Serif",
   "ScreenRoman__", "Times New Roman",
   "ScreenDecorative__", "Arial",
   "ScreenModern__", "Courier New",
@@ -264,6 +264,31 @@ int wxGetPreference(const char *name, char *res, long len);
 
 static char pref_buf[1024];
 
+#ifdef wx_msw
+static int CALLBACK check_font_here(ENUMLOGFONTEX *lpelfe, NEWTEXTMETRICEX *lpntme,
+				       DWORD FontType, LPARAM lParam)
+{
+  *(int *)lParam = 1;
+  return 0;
+}
+
+int check_avail(char *name)
+{
+  int present;
+  LOGFONT lf;
+  HDC dc;
+  
+  lf.lfCharSet = DEFAULT_CHARSET;
+  strcpy(lf.lfFaceName, name);
+  lf.lfPitchAndFamily = 0;
+  dc = GetDC(NULL);
+  EnumFontFamiliesEx(dc, &lf, (FONTENUMPROC)check_font_here, (LPARAM)&present, 0);
+  ReleaseDC(NULL, dc);
+
+  return present;
+}
+#endif
+
 static void SearchResource(const char *prefix, const char **names, int count, char **v)
 {
   int k, i, j;
@@ -298,6 +323,20 @@ static void SearchResource(const char *prefix, const char **names, int count, ch
 	}
 	defaults += 2;
       }
+#ifdef wx_msw
+      if (internal && !strcmp(internal, "MS/Microsoft Sans Serif")) {
+	/* We'd prefer to use "Microsoft Sans Serif", instead,
+	   in XP, because that's an outline font. */
+	static int known = 0, present = 0;
+	if (!known) {
+	  present = check_avail("Microsoft Sans Serif");
+	}
+	if (present)
+	  internal = "Microsoft Sans Serif";
+	else
+	  internal = "MS Sans Serif";
+      }
+#endif
     }
   }
 

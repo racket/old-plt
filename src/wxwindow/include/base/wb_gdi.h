@@ -57,14 +57,15 @@ class wxbFont: public wxObject
                     // destructor
   int point_size;
   int family;
-  int fontid; /* MATTHEW: [4] New font system */
+  int fontid;
   int style;
   int weight;
+  int smoothing;
   Bool underlined;
  public:
   wxbFont(void);
   wxbFont(int PointSize, int FamilyOrFontId, int Style, int Weight, 
-	  Bool underline = FALSE);
+	  Bool underline = FALSE, int smoothing = wxSMOOTHING_DEFAULT);
   ~wxbFont();
 
   inline int GetPointSize(void) { return point_size; }
@@ -74,6 +75,7 @@ class wxbFont: public wxObject
   inline int GetStyle(void) { return style; }
   inline int GetWeight(void) { return weight; }
   inline Bool GetUnderlined(void) { return underlined; }
+  inline int GetSmoothing(void) { return smoothing; }
 };
 
 #include "../../../wxcommon/FontDirectory.h"
@@ -274,11 +276,10 @@ class wxFontList: public wxObject
   wxFontList(void);
   ~wxFontList(void);
   void AddFont(wxFont *font);
-  /* MATTHEW: [4] New font system */
   wxFont *FindOrCreateFont(int PointSize, int FamilyOrFontId, int Style, int Weight, 
-			   Bool underline = FALSE);
+			   Bool underline = FALSE, int smoothing = wxSMOOTHING_DEFAULT);
   wxFont *FindOrCreateFont(int PointSize, const char *Face, int Family, int Style, 
-			   int Weight, Bool underline = FALSE); 
+			   int Weight, Bool underline = FALSE, int smoothing = wxSMOOTHING_DEFAULT); 
 };
 
 class wxColourDatabase: public wxList

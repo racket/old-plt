@@ -20,7 +20,18 @@
 			   c))
 	   str))))
 
-(define (link-extension*
+ (define (link-extension*
+	  files
+	  dest-dir)
+   (do-link-extension #t files dest-dir))
+
+ (define (glue-extension
+	  files
+	  dest-dir)
+   (do-link-extension #f files dest-dir))
+
+(define (do-link-extension
+	 link?
 	 files
 	 dest-dir)
 
@@ -170,6 +181,16 @@
       (printf "  Scheme_Env * env = ((Scheme_Env *)scheme_get_param(scheme_current_process->config, MZCONFIG_ENV));~n")
       (printf "  return ((Scheme_Object *(*)(Scheme_Env *))v)(env);~n}~n~n")
       
+      (printf "static Scheme_Object * loader_dispatch_all(int argc, Scheme_Object * * argv) {~n")
+      (printf "  Scheme_Env * env = ((Scheme_Env *)scheme_get_param(scheme_current_process->config, MZCONFIG_ENV));~n")
+      (printf "  Scheme_Object * v = scheme_void;~n")
+      (for-each
+       (lambda (suffix)
+	 (printf "  v = LOCAL_PROC(scheme_reload~a)(env);~n"
+		 suffix))
+       suffixes)
+      (printf "  return v;~n}~n~n")
+      
       (printf "static Scheme_Object * loader(int argc, Scheme_Object * * argv) {~n")
       (printf "  Scheme_Object * name = argv[0];~n")
       (for-each
@@ -177,6 +198,7 @@
 	 (printf "  if (name == syms.~a_symbol) return scheme_make_closed_prim_w_arity(loader_dispatch, LOCAL_PROC(scheme_reload~a), \"_loader-dispatch\", 0, 0);~n"
 		 suffix suffix))
        suffixes)
+      (printf "  if (name == scheme_true) return scheme_make_prim_w_arity(loader_dispatch_all, \"_loader-dispatch-all\", 0, 0);~n")
       (printf "  return scheme_false;~n}~n~n")
       
       (printf "Scheme_Object * scheme_reload(Scheme_Env * env) {~n")
@@ -206,21 +228,27 @@
 		       (build-path dest-dir _loader.o)
 		       (list (collection-path "compiler")))
     
-    (delete-file (build-path dest-dir _loader.c))
-    
-    (link-extension (not (compiler:option:verbose))
-		    (cons (build-path dest-dir _loader.o) o-files) 
-		    (build-path (if tmp-dir
-				    tmp-dir
-				    dest-dir)
-				_loader.so))    
-    (when tmp-dir
-	  (copy-file (build-path tmp-dir _loader.so)
-		     (build-path dest-dir _loader.so))
-	  (delete-file (build-path tmp-dir _loader.so)))
+    (when (compiler:option:clean-intermediate-files)
+      (delete-file (build-path dest-dir _loader.c)))
 
-    (delete-file (build-path dest-dir _loader.o))
-
-    (printf " [output to \"~a\"]~n" (build-path dest-dir _loader.so))))
+    (if link?
+	(begin
+	  (link-extension (not (compiler:option:verbose))
+			  (cons (build-path dest-dir _loader.o) o-files) 
+			  (build-path (if tmp-dir
+					  tmp-dir
+					  dest-dir)
+				      _loader.so))    
+	  (when tmp-dir
+		(copy-file (build-path tmp-dir _loader.so)
+			   (build-path dest-dir _loader.so))
+		(delete-file (build-path tmp-dir _loader.so)))
+	  
+	  (when (compiler:option:clean-intermediate-files)
+	    (delete-file (build-path dest-dir _loader.o)))
+	  
+	  (printf " [output to \"~a\"]~n" (build-path dest-dir _loader.so)))
+	(printf " [output to \"~a\"]~n" (build-path dest-dir _loader.o)))))
 
 )
+

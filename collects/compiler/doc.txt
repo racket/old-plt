@@ -59,6 +59,12 @@ are documented in the next section.
      .kp files in `obj-and-kp-file' can be in any order.  The resulting
      extension "_loader" is placed in the directory specified by `dest-dir'.
 
+   (glue-extension-parts obj-and-kp-file-list dest-dir)
+
+     Like `link-extension-parts', but only a "_loader" object file
+     is generated; this object file is linked with all the other
+     object files to produce the "_loader" extension.
+
  zo compilation
  --------------
 

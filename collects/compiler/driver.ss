@@ -109,6 +109,7 @@
 	(begin
 	  (printf " Prefix: loading \"~a\"~n" prefix)
 	  (let-values ([(base file dir?) (split-path prefix)]
+		       ; [(start) (current-process-milliseconds)]
 		       [(p) (open-input-file prefix 'text)])
 	    (let ([results
 		   (s:expand-top-level-expressions! 
@@ -127,6 +128,7 @@
 			       (eval r))
 			     list)))))])
 	      (close-input-port p)
+		 ; (printf "~a~n" (- (current-process-milliseconds) start))
 		 (apply values (car (last-pair results)))))))))
 
 (define s:expand-top-level-expressions!

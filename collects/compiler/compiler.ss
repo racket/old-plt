@@ -84,7 +84,7 @@
  (define compile-c-extension-parts
    (make-unprefixed-compiler 'compile-c-extension-part))
 
- (define (link-extension-parts source-files destination-directory)
+ (define (link/glue-extension-parts link? source-files destination-directory)
    (let ([u (parameterize ([current-namespace load-namespace])
 	       (require-library "refer.ss")
 	       (require-library "sigload.ss" "compiler")
@@ -92,7 +92,9 @@
 	 [init (unit/sig
 		()
 		(import compiler:linker^)
-		link-extension)])
+		(if link?
+		    link-extension
+		    glue-extension))])
      (let ([f (invoke-unit/sig
 	       (compound-unit/sig
 		(import (COMPILE : dynext:compile^)
@@ -114,6 +116,12 @@
 	       compiler:option^)])
        (f source-files destination-directory))))
 
+ (define (link-extension-parts source-files destination-directory)
+   (link/glue-extension-parts #t source-files destination-directory))
+
+ (define (glue-extension-parts source-files destination-directory)
+   (link/glue-extension-parts #f source-files destination-directory))
+
  (define (compile-to-zo src dest namespace)
    (let ([cwd (current-directory)])
      (parameterize ([current-namespace namespace]) 
@@ -122,13 +130,15 @@
 			      (raise exn))])
         (compile-file src dest
 		      '(use-current-namespace
-			ignore-macro-definitions
+			strip-macro-definitions
 			ignore-require-library))
 	(printf " [output to \"~a\"]~n" dest)))))
 
  (define (compile-zos prefix)
    (let ([n (make-namespace)])
      (parameterize ([current-namespace n]) 
+		   (eval '(require-library "refer.ss"))
+		   (eval '(require-library "macrox.ss"))
 		   (eval prefix))
      (lambda (source-files destination-directory)
        (let ([file-bases (map
@@ -230,7 +240,7 @@
 			       (compile-file
 				ss
 				zo
-				'(preserve-elaborations use-current-namespace)))
+				'(also-preserve-elaborations use-current-namespace)))
 			     (set! need-load (cons ss need-load)))))
 		     (info 'compile-elaboration-zos
 			   (lambda () null))))))))

@@ -217,21 +217,22 @@
 						      (and (pair? (cddr s))
 							   (string? (caddr s))
 							   (null? (cdddr s)))))
-					     (if expand-rl?
-						 (let* ([name (cadr s)]
-							[collection (if (null? (cddr s))
-									"standard"
-									(caddr s))]
-							[key (string->symbol (string-append collection (string #\null) name))])
-						   (if (hash-table-get required key (lambda () #f))
-						       #t
-						       (let ([fullname (find-library collection name)])
-							 (hash-table-put! required key #t)
-							 (do-load s #f #t)
-							 #t)))
-						 (parameterize ([current-namespace namespace])
-							       (eval `(require-library ,(cadr s)))
-							       #f))
+					     (let ([name (cadr s)]
+						   [collection (if (null? (cddr s))
+								   "standard"
+								   (caddr s))])
+					       (if expand-rl?
+						   (let* ([key (string->symbol (string-append collection (string #\null) name))])
+						     (if (hash-table-get required key (lambda () #f))
+							 #t
+							 (let ([fullname (find-library collection name)])
+							   (hash-table-put! required key #t)
+							   (do-load s #f #t)
+							   #t)))
+						   (parameterize ([current-namespace namespace])
+								 (eval `(require-library ,name
+											 ,collection))
+								 #f)))
 					     (begin
 					       (warning 
 						(format

@@ -234,8 +234,8 @@ static void* MyGetOrigin(wxDC *dc)
 
 @INCLUDE wxs_dorf.xci
 
-@CREATOR (bool=TRUE,wxWindow^=NULL) : : /DLGORFRAME[1.METHODNAME("post-script-dc%","initialization")]
-@ARGNAMES [interactive? #t] [parent #f]
+@CREATOR (bool=TRUE,wxWindow^=NULL,bool=FALSE) : : /DLGORFRAME[1.METHODNAME("post-script-dc%","initialization")]
+@ARGNAMES [interactive? #t] [parent #f] [use-paper-bbox? #f]
 
 @END
 

@@ -56,8 +56,8 @@
 		  (lambda (keyword-type keyword-symbol list-box)
 		    (lambda (button command)
 		      (let ([new-one (wx:get-text-from-user 
-				      (string-append keyword-type " Keyword")
-				      (string-append "Enter new " keyword-type "-like keyword:"))])
+				      (string-append "Enter new " keyword-type "-like keyword:")
+				      (string-append keyword-type " Keyword"))])
 			(unless (null? new-one)
 			  (let ([parsed (with-handlers ((exn:read? (lambda (x) #f)))
 					  (read (open-input-string new-one)))])
@@ -66,7 +66,8 @@
 				    (hash-table-get (mred:preferences:get-preference 'mred:tabify)
 							      parsed
 							      (lambda () #f)))
-			       (wx:message-box (format "\"~a\" is already a specially indented keyword" parsed))]
+			       (wx:message-box (format "\"~a\" is already a specially indented keyword" parsed)
+					       "Error")]
 			      [(symbol? parsed)
 			       (hash-table-put! (mred:preferences:get-preference 'mred:tabify)
 						parsed keyword-symbol)

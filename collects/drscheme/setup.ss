@@ -1,3 +1,29 @@
+(define drscheme:parameters@
+  (unit/sig plt:parameters^
+    (import [mred : mred^])
+
+    (mred:set-preference-default 'drscheme:scheme-level 'core)
+    (define pref (mred:get-preference 'drscheme:scheme-level))
+
+    (define allow-one-armed-if? (case pref
+				  [(core) #f]
+				  [else #t]))
+    (define case-sensitive? #t)
+    (define allow-set!-on-undefined? (case pref
+				       [(advanced) #t]
+				       [else #f]))
+    (define allow-internal-defines? (case pref
+				       [(advanced) #t]
+				       [else #f]))
+    (define allow-improper-lists? (case pref
+				       [(advanced) #t]
+				       [else #f]))
+    (define allow-improper-lists-in-lambda? (case pref
+					      [(core) #f]
+					      [else #f]))
+    (define unmatched-cond/case-is-error? #t)
+    (define check-syntax-level pref)))
+
 (define drscheme:setup@
   (unit/sig drscheme:setup^
     (import [mred : mred^]
@@ -18,6 +44,38 @@
 
     ; Startup files:
     (mred:set-preference-default 'drscheme:startup-files '())
+
+    (mred:add-preference-panel
+     "DrScheme"
+     (lambda (parent)
+       (let* ([main (make-object mred:vertical-panel% parent)]
+	      [choice-callback
+	       (let ([state #t])
+		 (lambda (_ evt)
+		   (when state
+		     (set! state #f)
+		     (wx:message-box "Any changes to this setting will not take effect until DrScheme is restarted"
+				     "Warning"))
+		   (mred:set-preference 'drscheme:scheme-level
+					(case (send evt get-command-int)
+					  [(0) 'core]
+					  [(1) 'structured]
+					  [(2) 'side-effects]
+					  [(3) 'advanced]))))]
+	     [choice (make-object mred:choice% main choice-callback
+				  "Language"
+				  -1 -1 -1 -1
+				  (list "Functional Core Scheme"
+					"Structured Scheme"
+					"Side-Effecting Scheme"
+					"Advanced Scheme"))])
+	 (send choice set-selection 
+	       (case (mred:get-preference 'drscheme:scheme-level)
+		 [(core) 0]
+		 [(structured) 1]
+		 [(side-effects) 2]
+		 [(advanced) 3]))
+	 main)))
 
     (define setup-base-dir
       (lambda ()

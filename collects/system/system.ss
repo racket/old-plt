@@ -10,7 +10,7 @@
     (unit (import)
       (export (dprintf printf) exit? on? turn-on turn-off)
 
-      (define on? (and debug-env (string=? debug-env "on")))
+      (define on? (and debug-env (string->symbol debug-env)))
 
       (when on? 
 	(print-struct #t))
@@ -97,7 +97,7 @@
 					 (cond
 					  [(eq? wx:platform 'unix)
 					   "/usr/local/lib/plt"]
-					  [(eq? mwx:platform 'windows)
+					  [(eq? wx:platform 'windows)
 					   "c:\\plt"]
 					  [else ; macintosh
 					   (current-directory)]))])

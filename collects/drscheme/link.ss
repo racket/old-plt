@@ -54,17 +54,17 @@
 (define drscheme:userspace@
   (unit/sig->unit
    (compound-unit/sig
-    (import)
-    (link [function : mzlib:function^ (mzlib:function@)]
-	  [compat : mzlib:compat^ (mzlib:compat@ function)]
-	  [string : mzlib:string^ (mzlib:string@)]
-	  [rice : ricedefs^ (ricedefs@)]
-	  [graphics : graphics^ (graphics@)])
-    (export (open function)
-	    (open compat)
-	    (open string)
-	    (open rice)
-	    (open graphics)))))
+       (import [params : plt:parameters^])
+     (link [function : mzlib:function^ (mzlib:function@)]
+	   [compat : mzlib:compat^ (mzlib:compat@ function)]
+	   [string : mzlib:string^ (mzlib:string@)]
+	   [rice : ricedefs^ (ricedefs@ params)]
+	   [graphics : graphics^ (graphics@)])
+     (export (open function)
+	     (open compat)
+	     (open string)
+	     (open rice)
+	     (open graphics)))))
 
 (define mred:make-invokable-unit
   (lambda ()
@@ -78,7 +78,7 @@
 	     [mred : mred^ 
 	       (mred@ mzlib trigger (drscheme : mred:application^))]
 	     [interface : zodiac:interface^ (drscheme:zodiac-interface@ zodiac)]
-	     [params : plt:parameters^ (plt:mzscheme-parameters@)]
+	     [params : plt:parameters^ (drscheme:parameters@ mred)]
 	     [zodiac : zodiac:system^ (zodiac:system@ interface params)]
 	     [drscheme : drscheme^
 	       (drscheme@ mred mzlib zodiac interface print-convert params)])

@@ -13,7 +13,9 @@
 				 ("[" . "]")
 				 ("{" . "}")))
     
-    (define scheme-quote-pairs '(("\"" . "\"")))
+    (define scheme-quote-pairs '(("\"" . "\"")
+				 ("|" . "|")
+				 ("#|" . "#|")))
     
     (define scheme-comments '(";"))
     

@@ -259,14 +259,7 @@
     (define eval-string (ivar (ivar console console-edit) do-eval))
 
     (mred:add-preference-callback 'drscheme:project-visible?
-				  (lambda (p v)
-				    (if v
-					(send console show #t)
-					(when (< 0 (send (ivar console project) 
-							 get-frames))
-					  (send console show #f)))))
-					  
-     
+				  (lambda (p v) (send console show v)))
 
     (mred:insert-format-handler "Scheme Project" "spj"
 				(lambda (filename group-ignored)

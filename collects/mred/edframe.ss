@@ -204,7 +204,13 @@
 			     (if (is-a? frameset mred:group:frame-group%)
 				 (send frames new-frame #f)
 				 (mred:handler:edit-file #f)))]
-	    [file-menu:revert (lambda () (send (active-edit) load-file))]
+	    [file-menu:revert 
+	     (lambda () 
+	       (let ([e (active-edit)]
+		     [b (box #f)])
+		 (if (or (null? (send e get-filename b)) (unbox b))
+		     (wx:bell)
+		     (send e load-file))))]
 	    [file-menu:save (lambda () (send (active-edit) save-file))]
 	    [file-menu:save-as (lambda () (save-as))]
 	    [file-menu:close (lambda () (if (on-close) (show #f)))]

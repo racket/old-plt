@@ -54,47 +54,48 @@
 	(let* ([result (void)]
 	       [dialog%
 		(class wx:dialog-box% ()
-		       (inherit show new-line fit tab center)
-		       (private
-			[on-true
-			 (lambda args
-			   (set! result #t)
-			   (show #f))]
-			[on-false
-			 (lambda rags
-			   (set! result #f)
-			   (show #f))])
-		       (sequence
-			 (super-init () title #t x y)
-			 (let* ([messages
-				 (let loop ([m message])
-				   (let ([match (regexp-match (format "([^~n]*)~n(.*)")
-							      m)])
-				     (if match
-					 (cons (cadr match)
-					       (loop (caddr match)))
-					 (list m))))]
-				[msgs (map
-				       (lambda (message)
-					 (begin0
-					  (make-object wx:message% this message)
-					  (new-line)))
-				       messages)])
-			   
-			   (make-object wx:button% this
-					on-true true-choice)
-			   (tab 50)
-			   (make-object wx:button% this on-false false-choice)
-			   (fit)
-			   
-			   (if (and (< x 0) (< y 0))
-			       (map (lambda (msg)
-				      (send msg center wx:const-horizontal))
-				    msgs)))
-			 
-			 (center wx:const-both)
-			 
-			 (show #t)))])
+		  (inherit show new-line fit tab center)
+		  (private
+		    [on-true
+		     (lambda args
+		       (set! result #t)
+		       (show #f))]
+		    [on-false
+		     (lambda rags
+		       (set! result #f)
+		       (show #f))])
+		  (sequence
+		    (super-init () title #t x y)
+		    (let* ([messages
+			    (let loop ([m message])
+			      (let ([match (regexp-match (format "([^~n]*)~n(.*)")
+							 m)])
+				(if match
+				    (cons (cadr match)
+					  (loop (caddr match)))
+				    (list m))))]
+			   [msgs (map
+				  (lambda (message)
+				    (begin0
+				      (make-object wx:message% this message)
+				      (new-line)))
+				  messages)])
+		      
+		      (send (make-object wx:button% this
+					 on-true true-choice)
+			    set-focus)
+		      (tab 50)
+		      (make-object wx:button% this on-false false-choice)
+		      (fit)
+		      
+		      (if (and (< x 0) (< y 0))
+			  (map (lambda (msg)
+				 (send msg center wx:const-horizontal))
+			       msgs)))
+		    
+		    (center wx:const-both)
+		    
+		    (show #t)))])
 	  (make-object dialog%)
 	  result)))
     

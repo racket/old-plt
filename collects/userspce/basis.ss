@@ -11,6 +11,8 @@
   (define basis@
 (unit/sig plt:basis^
   (import [aries : plt:aries^])
+
+;  (rename [_make-setting/parse make-setting/parse] [_setting/unparse setting/unparse])
   
   (define initial-line 1)
   (define initial-column 1)
@@ -29,7 +31,7 @@
   (define r4rs-style-printing (make-parameter #f))
   
   (define this-program (with-handlers ([void (lambda (x) "mzscheme")])
-			 (global-defined-value 'program)))
+			 (namespace-variable-binding 'program)))
   
   (define-struct/parse setting (key
 				name
@@ -52,6 +54,9 @@
 				print-.-symbols-without-bars
 				
 				define-argv?))
+
+  ;(define _make-setting/parse make-setting/parse)
+  ;(define _setting/unparse setting/unparse)
   
   ;; settings : (list-of setting)
   (define settings
@@ -146,6 +151,9 @@
 	     (define-argv? #t)
 	     (use-pretty-printer? #t)))))
   
+  ;; -> (listof settings)
+  (define (get-settings) settings)
+
   (define (snoc x y) (append y (list x)))
   
   ;; add-setting : (symbol setting -> void)
@@ -229,17 +237,6 @@
 	   x
 	   (error 'current-setting
 		  "must be a setting or #f")))))
-  
-  ;; syntax-checking-primitive-eval : sexp -> value
-  ;; effect: raises user-exn if expression ill-formed
-  (define (syntax-checking-primitive-eval expr)
-    (primitive-eval
-     (with-handlers ([(lambda (x) #t)
-		      (lambda (x)
-			(error 'internal-syntax-error
-			       (format "~a" (exn-message x))))])
-       (expand-defmacro expr))))
-  
 
   ;; raw-reader: (parameter (port -> sexp))
   ;; see help desk for details
@@ -308,10 +305,10 @@
   ;; (parameter (string (union #f syntax) exn -> void))
   (define error-display/debug-handler
     (make-parameter
-     (lambda (msg debugs exn)
+     (lambda (msg debug exn)
        ((error-display-handler) msg)
        (if (syntax? debug)
-	   (string-append (format-source-loc syntax syntax)
+	   (string-append (format-source-loc debug debug)
 			  msg)
 	   msg))))
   
@@ -324,11 +321,8 @@
   (define (drscheme-exception-handler exn)
     (let ([dh (error-display/debug-handler)])
       (if (exn? exn)
-	  (let* ([marks (exn-continuation-marks exn)]
-                 [debugs (if (continuation-mark-set? marks)
-			     (aries:extract-locations marks)
-			     null)])
-	    (dh (format "~a" (exn-message exn)) (and (pair? debugs) (car debugs)) exn))
+	  (let* ([marks (exn-continuation-marks exn)])
+	    (dh (format "~a" (exn-message exn)) #f exn))
 	  (dh (format "uncaught exception: ~e" exn) #f #f)))
     ((error-escape-handler))
     ((error-display-handler) "Exception handler did not escape")
@@ -338,7 +332,7 @@
   (define (drscheme-error-value->string-handler x n)
     (let ([port (open-output-string)])
       (parameterize ([current-output-port port]
-		     [mzlib:pretty-print:pretty-print-columns 'infinity])
+		     [pretty-print-columns 'infinity])
 	(drscheme-print/void x))
       (let* ([long-string (get-output-string port)])
 	(close-output-port port)
@@ -401,15 +395,15 @@
     (let* ([setting (current-setting)]
 	   [value (if (r4rs-style-printing? setting)
 		      v
-		      (mzlib:print-convert:print-convert v))])
+		      (print-convert v))])
       (if (setting-use-pretty-printer? setting)
-	  (mzlib:pretty-print:pretty-print value)
+	  (pretty-print value)
 	  (write value))))
   
   ;; drscheme-port-print-handler : TST port -> void
   ;; effect: prints the value on the port
   (define (drscheme-port-print-handler value port)
-    (parameterize ([mzlib:pretty-print:pretty-print-columns 'infinity]
+    (parameterize ([pretty-print-columns 'infinity]
 		   [current-output-port port])
       (drscheme-print/void value)))
   
@@ -429,8 +423,6 @@
     (let ([namespace (make-namespace 'empty)])
       
       (current-setting setting)
-      (compile-allow-set!-undefined #f)
-      (compile-allow-cond-fallthrough #f)
       (current-custodian custodian)
       (error-value->string-handler drscheme-error-value->string-handler)
       (current-exception-handler drscheme-exception-handler)
@@ -446,8 +438,7 @@
       (current-print drscheme-print)
       
       (current-load-relative-directory #f)
-      (current-require-relative-collection #f)
-      
+
       (current-namespace namespace)
       (namespace-require (setting-language-defining-module setting))
 
@@ -456,40 +447,40 @@
       (current-load drscheme-load-handler)
       
       (when (setting-define-argv? setting)
-        (global-defined-value 'argv #())
-        (global-defined-value 'program this-program))
+        (namespace-variable-binding 'argv #())
+        (namespace-variable-binding 'program this-program))
       
       (global-port-print-handler drscheme-port-print-handler)
       
       (case (setting-printing setting)
         [(constructor-style)
          (r4rs-style-printing #f)
-         (mzlib:print-convert:constructor-style-printing #t)]
+         (constructor-style-printing #t)]
         [(quasi-style)
          (r4rs-style-printing #f)
-         (mzlib:print-convert:constructor-style-printing #f)
-         (mzlib:print-convert:quasi-read-style-printing #f)]
+         (constructor-style-printing #f)
+         (quasi-read-style-printing #f)]
         [(quasi-read-style)
          (r4rs-style-printing #f)
-         (mzlib:print-convert:constructor-style-printing #f)
-         (mzlib:print-convert:quasi-read-style-printing #t)]
+         (constructor-style-printing #f)
+         (quasi-read-style-printing #t)]
         [(r4rs-style) (r4rs-style-printing #t)]
         [else (error 'install-language "found bad setting-printing: ~a~n" 
                      (setting-printing setting))])
       
-      (mzlib:pretty-print:pretty-print-exact-as-decimal
+      (pretty-print-exact-as-decimal
        (setting-print-exact-as-decimal? setting))
-      (mzlib:pretty-print:pretty-print-show-inexactness
+      (pretty-print-show-inexactness
        (setting-print-tagged-inexact-numbers setting))
-      (mzlib:print-convert:show-sharing (setting-sharing-printing? setting))
-      (mzlib:pretty-print:pretty-print-.-symbol-without-bars
+      (show-sharing (setting-sharing-printing? setting))
+      (pretty-print-.-symbol-without-bars
        (setting-print-.-symbols-without-bars setting))
 
       ;; use the fractional snips instead.
-      (mzlib:print-convert:whole/fractional-exact-numbers #f)
+      (whole/fractional-exact-numbers #f)
 
-      (mzlib:print-convert:booleans-as-true/false
+      (booleans-as-true/false
        (setting-print-booleans-as-true/false setting))
       (print-graph (and (r4rs-style-printing) (setting-sharing-printing? setting)))
-      (mzlib:print-convert:abbreviate-cons-as-list (setting-abbreviate-cons-as-list? setting))
+      (abbreviate-cons-as-list (setting-abbreviate-cons-as-list? setting))
 )))))

@@ -47,7 +47,7 @@
         (ormap (lambda (x)
                  (equal? (basis:setting-name setting)
                          (basis:setting-name x)))
-               basis:settings))
+               (basis:get-settings)))
       
       (preferences:set-default 'drscheme:unit-window-size-percentage 1/2 
                                (lambda (x) (and (number? x) (<= 0 x 1))))

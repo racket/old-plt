@@ -1,6 +1,8 @@
 
 (module load-handlers mzscheme
   (require (lib "mred.ss" "mred")
+	   (lib "unitsig.ss")
+	   "drsig.ss"
            (lib "framework.ss" "framework")
            (lib "zodiac.ss" "syntax")
            (lib "basis.ss" "userspce"))
@@ -35,10 +37,6 @@
                   "string"
                   filename)))
         (let* ([p (open-input-file filename)]
-               [loc (zodiac:make-location basis:initial-line
-                                          basis:initial-column
-                                          basis:initial-offset
-                                          filename)]
                [chars (begin0
                         (list (read-char p)
                               (read-char p)

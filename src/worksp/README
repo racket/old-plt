@@ -39,6 +39,9 @@ and mzscheme.exe) by running
 (This makes the .zo files, too. To skip compiling .zos, 
 add -n to the end of the above command.)
 
+NOTE: the makesfiles don't have dependencies files. You must
+re-generate them.
+
 As always, submit bug reports using
   http://www.cs.rice.edu/CS/PLT/Bugs/
 or (as a last resort) send mail to

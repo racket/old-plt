@@ -2,25 +2,6 @@
 //
 #include "resource.h"
 
-#define APSTUDIO_READONLY_SYMBOLS
-/////////////////////////////////////////////////////////////////////////////
-//
-// Generated from the TEXTINCLUDE 2 resource.
-//
-#include "afxres.h"
-
-/////////////////////////////////////////////////////////////////////////////
-#undef APSTUDIO_READONLY_SYMBOLS
-
-/////////////////////////////////////////////////////////////////////////////
-// English (U.S.) resources
-
-#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
-#ifdef _WIN32
-LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
-#pragma code_page(1252)
-#endif //_WIN32
-
 /////////////////////////////////////////////////////////////////////////////
 //
 // Icon
@@ -29,44 +10,12 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
 #ifdef MRSTART
-Application             ICON    DISCARDABLE     "mrstart.ico"
+APPLICATION             ICON    DISCARDABLE     "mrstart.ico"
 #endif
 #ifdef MZSTART
-Application             ICON    DISCARDABLE     "mzstart.ico"
+APPLICATION             ICON    DISCARDABLE     "mzstart.ico"
 #endif
 
-STRINGTABLE DISCARDABLE 
- BEGIN
-  79 " "
- END
-
-#ifdef APSTUDIO_INVOKED
-/////////////////////////////////////////////////////////////////////////////
-//
-// TEXTINCLUDE
-//
-
-1 TEXTINCLUDE DISCARDABLE 
-BEGIN
-    "resource.h\0"
-END
-
-2 TEXTINCLUDE DISCARDABLE 
-BEGIN
-    "#include ""afxres.h""\r\n"
-    "\0"
-END
-
-3 TEXTINCLUDE DISCARDABLE 
-BEGIN
-    "\r\n"
-    "\0"
-END
-
-#endif    // APSTUDIO_INVOKED
-
-
-#ifndef _MAC
 /////////////////////////////////////////////////////////////////////////////
 //
 // Version
@@ -103,7 +52,7 @@ BEGIN
 #ifdef MZSTART
             VALUE "InternalName", "mzstart\0"
 #endif
-            VALUE "LegalCopyright", "Copyright © 1996-97\0"
+            VALUE "LegalCopyright", "Copyright © 1996-99\0"
 #ifdef MRSTART
             VALUE "OriginalFilename", "MrStart.exe\0"
             VALUE "ProductName", "Rice University MrEd Launcher\0"
@@ -120,21 +69,3 @@ BEGIN
         VALUE "Translation", 0x409, 1200
     END
 END
-
-#endif    // !_MAC
-
-#endif    // English (U.S.) resources
-/////////////////////////////////////////////////////////////////////////////
-
-
-
-#ifndef APSTUDIO_INVOKED
-/////////////////////////////////////////////////////////////////////////////
-//
-// Generated from the TEXTINCLUDE 3 resource.
-//
-
-
-/////////////////////////////////////////////////////////////////////////////
-#endif    // not APSTUDIO_INVOKED
-

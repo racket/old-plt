@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.128 1997/09/16 16:37:20 shriram Exp $
+; $Id: scm-main.ss,v 1.130 1997/09/16 17:05:38 shriram Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -1488,26 +1488,10 @@
 				     attributes))
 			(_ (set-top-level-status attributes))
 			(real-name (sexp->raw macro-name))
-			(raw-handler (sexp->raw macro-handler))
-			(user-exn-handler
-			  (in-parameterization zodiac-user-parameterization
-			    current-exception-handler))
-			(user-exn-value
-			  (user-exn-handler))
-			(real-handler (begin
-					(user-exn-handler
-					  (lambda args
-					    (printf
-					      "Entering exn handler in userspc"
-					      (apply
-						(current-exception-handler)
-						args))))
-					(begin0
-					  (with-parameterization
-					    zodiac-user-parameterization
-					    (lambda ()
-					      (eval raw-handler)))
-					  (user-exn-handler user-exn-value))))
+			(real-handler (m3-elaboration-evaluator
+					macro-handler
+					sexp->raw
+					'define-macro))
 			(cache-table (make-hash-table)))
 		  (set-top-level-status attributes top-level?)
 		  (unless (procedure? real-handler)
@@ -1541,11 +1525,10 @@
 				     attributes))
 			(_ (set-top-level-status attributes))
 			(real-name (sexp->raw macro-name))
-			(raw-handler (sexp->raw macro-handler))
-			(real-handler (with-parameterization
-					zodiac-user-parameterization
-					(lambda ()
-					  (eval raw-handler))))
+			(real-handler (m3-elaboration-evaluator
+					macro-handler
+					sexp->raw
+					'let-macro))
 			(cache-table (make-hash-table)))
 		  (set-top-level-status attributes top-level?)
 		  (unless (procedure? real-handler)
@@ -1570,17 +1553,15 @@
 	  (lambda (kwd-symbol kwd-string phase-string)
 	    (add-micro-form kwd-symbol scheme-vocabulary
 	      (let* ((kwd '())
-		      (in-pattern '(_ expr ...))
+		      (in-pattern '(_ e0 e1 ...))
 		      (m&e (pat:make-match&env in-pattern kwd)))
 		(lambda (expr env attributes vocab)
 		  (cond
 		    ((pat:match-against m&e expr env)
 		      =>
 		      (lambda (p-env)
-			(let ((exprs (pat:pexpand '(expr ...) p-env kwd)))
-			  (when (null? exprs)
-			    (static-error expr
-			      (string-append "Malformed " kwd-string)))
+			(let ((exprs (pat:pexpand '(begin e0 e1 ...)
+				       p-env kwd)))
 			  (expand-expr
 			    (structurize-syntax
 			      (with-handlers
@@ -1589,10 +1570,10 @@
 					   "Exception at ~a time: ~a"
 					   phase-string
 					   (exn-message exn)))))
-				(with-parameterization
-				  zodiac-user-parameterization
-				  (lambda ()
-				    (eval `(begin ,@(map sexp->raw exprs))))))
+				(m3-elaboration-evaluator
+				  (structurize-syntax exprs expr)
+				  sexp->raw
+				  kwd-symbol))
 			      expr)
 			    env attributes vocab))))
 		    (else

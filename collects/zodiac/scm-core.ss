@@ -1,4 +1,4 @@
-; $Id: scm-core.ss,v 1.36 1997/08/14 14:09:11 shriram Exp $
+; $Id: scm-core.ss,v 1.37 1997/08/21 22:31:26 shriram Exp $
 
 (unit/sig zodiac:scheme-core^
   (import zodiac:structures^ zodiac:misc^ zodiac:sexp^
@@ -225,7 +225,7 @@
 	  (expression: expr)
 	  (attributes: attr)
 	  (vocabulary: (or vocab scheme-vocabulary))
-	  (parameterization: params)))))
+	  (elaboration-evaluator: elaboration-eval)))))
   
   (define scheme-expand-program
     (lambda/nal zodiac:scheme-expand-program/nal
@@ -238,7 +238,7 @@
 	  (expressions: exprs)
 	  (attributes: attr)
 	  (vocabulary: (or vocab scheme-vocabulary))
-	  (parameterization: params)))))
+	  (elaboration-evaluator: elaboration-eval)))))
 
   ; ----------------------------------------------------------------------
 

@@ -1,16 +1,20 @@
-; $Id: sigs.ss,v 1.40 1997/07/21 15:51:43 shriram Exp $
+; $Id: sigs.ss,v 1.41 1997/08/11 20:28:21 shriram Exp $
 
 (reference "namedarg.ss")
 
   (define-argument-list zodiac:scheme-expand/nal
     (kwd expression: expr)
-    (opt (kwd parameterization: params) (current-parameterization))
+    (opt (kwd elaboration-evaluator: elaboration-eval)
+      (lambda (expr sexp->raw phase)
+	(eval (sexp->raw expr))))
     (opt (kwd attributes: attr) 'previous)
     (opt (kwd vocabulary: vocab) #f))
 
   (define-argument-list zodiac:scheme-expand-program/nal
     (kwd expressions: exprs)
-    (opt (kwd parameterization: params) (current-parameterization))
+    (opt (kwd elaboration-evaluator: elaboration-eval)
+      (lambda (expr sexp->raw phase)
+	(eval (sexp->raw expr))))
     (opt (kwd attributes: attr) 'previous)
     (opt (kwd vocabulary: vocab) #f))
 
@@ -18,13 +22,15 @@
     (kwd expression: expr)
     (kwd attributes: attr)
     (kwd vocabulary: vocab)
-    (opt (kwd parameterization: params) (current-parameterization)))
+    (opt (kwd elaboration-evaluator: elaboration-eval)
+      (lambda (expr sexp->raw phase) (eval (sexp->raw expr)))))
 
   (define-argument-list zodiac:expand-program/nal
     (kwd expressions: exprs)
     (kwd attributes: attr)
     (kwd vocabulary: vocab)
-    (opt (kwd parameterization: params) (current-parameterization)))
+    (opt (kwd elaboration-evaluator: elaboration-eval)
+      (lambda (expr sexp->raw phase) (eval (sexp->raw expr)))))
 
 (define-signature zodiac:misc^
   (pretty-print debug-level symbol-append flush-printf print-and-return))
@@ -47,7 +53,7 @@
 
 (define-signature zodiac:expander^
   (expand expand-program expand-expr
-    zodiac-user-parameterization
+    m3-elaboration-evaluator
     add-system-macro-form add-user-macro-form
     add-micro-form add-macro-form
     add-list-micro add-ilist-micro add-lit-micro add-sym-micro

@@ -6,7 +6,7 @@
 
   (define-struct obj (class slots))
   (define-struct class (name
-			object-make width 
+			object-make width method-prim-vec
 			pos supers
 			interface
 			public-ht public-ids 
@@ -14,7 +14,8 @@
 			init-define-indices ;; override, public
 			replace-indices     ;; override
 			init-new-indices    ;; inherit, override, public
-			go go-arity))
+			go go-arity
+			primitive))
   ;; simplistic implementation for now:
   (define-struct interface (name supers public-ids class))
 
@@ -22,7 +23,7 @@
 
   (define object<%> (make-interface 'object% null null #f))
   (define object% (make-class 'object%
-			      make-obj 0
+			      make-obj 0 (vector)
 			      0 (vector #f) 
 			      object<%>
 			      (make-hash-table) 
@@ -30,9 +31,75 @@
 			      (lambda ()
 				(let ([object%-init (lambda () (void))])
 				  object%-init))
-			      0))
+			      0
+			      #f))
   (set-interface-class! object<%> object%)
   (vector-set! (class-supers object%) 0 object%)
+
+  ;; For C++ glue:
+  (define (prim-obj? x) #f)
+  (define (prim-obj/slots? x) #f)
+  (define (prim-obj-class x) #f)
+  (define (prim-obj-slots x) #f)
+  (define (make-prim-obj primitive c s lookup) #f)
+  (define (init-prim-obj o . args) #f)
+  (define (prim-obj->prim-class x) #f)
+  (define (prim-find-method c n) #f)
+
+  ;; prim-class -> class mapping
+  (define prim-classes (make-hash-table-weak))
+
+  (define (+obj? x) (or (obj? x) (prim-obj? x)))
+  (define (+obj-class x)
+    (if (obj? x) (obj-class x) (prim-obj-class x)))
+  (define (+obj-slots x)
+    (if (obj? x) (obj-slots x) (prim-obj-slots x)))
+
+  (define (pobj? x) (and (prim-obj? x) (not (prim-obj/slots? x))))
+  (define (p+obj-class x)
+    (cond
+     [(obj? x) (obj-class x)]
+     [(prim-obj/slots? x) (prim-obj-class x)]
+     [else (hash-table-get prim-classes (prim-obj->prim-class x)
+			   (lambda ()
+			     (error "unknown primitive class")))]))
+
+  (define (install-prim-functions ? /slots? -class -slots make- init- ->prim-class find)
+    (set! prim-obj? ?)
+    (set! prim-obj/slots? /slots?)
+    (set! prim-obj-class -class)
+    (set! prim-obj-slots -slots)
+    (set! make-prim-obj make-)
+    (set! init-prim-obj init-)
+    (set! prim-obj->prim-class ->prim-class)
+    (set! prim-find-method find))
+
+  (define skip (gensym))
+
+  (define (make-prim-class prim-class name super old-mnames new-mnames methods)
+    (let ([cls (compose-class name (or super object%) null
+			      null          ;; rename
+			      null          ;; inherit
+			      old-mnames    ;; override
+			      new-mnames    ;; public
+			      (lambda (this super-init . pub-defines+pub-mutables)
+				(lambda args
+				  (if super (super-init skip) (super-init))
+				  (unless (and (pair? args)
+					       (eq? (car args) skip))
+				    (apply init-prim-obj this args))
+				  ;; define all methods:
+				  (let loop ([ms methods]
+					     [l pub-defines+pub-mutables])
+				    (unless (null? ms)
+				      (let ([m (car ms)])
+					(set-box! (car l) (lambda r
+							    (apply m this r))))
+				      (loop (cdr ms) (cdr l))))))
+			      (box 0)
+			      prim-class)])
+      (hash-table-put! prim-classes prim-class cls)
+      cls))
 
   (define-struct (exn:object struct:exn) ())
 
@@ -73,7 +140,8 @@
 			 use-final-ids ;; inherit
 			 replace-ids   ;; override
 			 new-ids       ;; public
-			 go go-arity)
+			 go go-arity
+			 primitive)
     (unless (class? super)
       (obj-error 'class*/names "superclass expression returned a non-class: ~a~a" 
 		 super
@@ -120,13 +188,28 @@
 				  "superclass does not provide an expected ivar: ~a~a" 
 				  id
 				  (for-class name)))))
-		  ids))])
+		  ids))]
+		[width (+ (class-width super) (length new-ids))])
 	  (let ([define-indices (get-indices (append replace-ids new-ids))]
 		[use-pre-indices (get-indices use-pre-ids)]
 		[use-final-indices (get-indices use-final-ids)]
 		[replace-indices (get-indices replace-ids)]
 		[new-indices (get-indices new-ids)]
-		[width (+ (class-width super) (length new-ids))])
+		[method-prim-vec (make-vector width (and primitive #f))])
+
+	    ;; Copy super's method prim flags:
+	    (let ([svec (class-method-prim-vec super)])
+	      (let loop ([i (class-width super)])
+		(unless (zero? i)
+		  (let ([i (sub1 i)])
+		    (vector-set! method-prim-vec i (vector-ref svec i))
+		    (loop i)))))
+	    ;; If not prim, set prim-method flag for overridings
+	    (unless primitive
+	      (for-each (lambda (i)
+			  (vector-set! method-prim-vec i #f))
+			replace-indices))
+
 	    ;; Check here that all interface ivars are satisfied
 	    (for-each
 	     (lambda (intf)
@@ -155,11 +238,25 @@
 				    struct:class 
 				    (string->symbol (format "class:~a" name)))
 				   make-class)]
-		   [object-make (if name
-				    (make-naming-constructor 
-				     struct:obj 
-				     (string->symbol (format "object:~a" name)))
-				    make-obj)]
+		   [object-make (if (or primitive (class-primitive super))
+				    (lambda (c s)
+				      (make-prim-obj 
+				       (or primitive (class-primitive super))
+				       c s
+				       ;; Dispatcher function; returns #f for non-overridden
+				       ;;  primitive methods
+				       (lambda (this name)
+					 (let ([pos (hash-table-get ht name (lambda () #f))])
+					   (and pos
+						(not (vector-ref method-prim-vec pos))
+						(let ([m (unbox (vector-ref (+obj-slots this) pos))])
+						  (lambda (self . args)
+						    (apply m args))))))))
+				    (if name
+					(make-naming-constructor 
+					 struct:obj 
+					 (string->symbol (format "object:~a" name)))
+					make-obj))]
 		   [interface-make (if name
 				       (make-naming-constructor 
 					struct:interface
@@ -169,7 +266,7 @@
 		   [super-interfaces (cons (class-interface super) interfaces)]
 		   [i (interface-make name super-interfaces public-ids #f)]
 		   [c (class-make name
-				  object-make width 
+				  object-make width method-prim-vec
 				  (add1 (class-pos super))
 				  (list->vector (append (vector->list (class-supers super)) (list #f)))
 				  i
@@ -180,7 +277,8 @@
 				  (append use-final-indices replace-indices new-indices) ;; inherit, override, public
 				  go (if (box? go-arity)
 					 (make-arity-at-least (unbox go-arity))
-					 go-arity))])
+					 go-arity)
+				  (or primitive (class-primitive super)))])
 	      (vector-set! (class-supers c) (class-pos c) c)
 	      (set-interface-class! i c)
 	      c))))))
@@ -286,16 +384,16 @@
 	  (apply (setup) args)
 	  this))))
 
-  (define object? obj?)
+  (define object? +obj?)
 
   (define (is-a? v c)
     (cond
      [(class? c)
-      (and (obj? v)
-	   (subclass? (obj-class v) c))]
+      (and (+obj? v)
+	   (subclass? (p+obj-class v) c))]
      [(interface? c)
-      (and (obj? v)
-	   (implementation? (obj-class v) c))]
+      (and (+obj? v)
+	   (implementation? (p+obj-class v) c))]
      [else (raise-type-error 'is-a? "class or interface" 1 v c)]))
 
   (define (subclass? v c)
@@ -307,7 +405,7 @@
 		(eq? c (vector-ref (class-supers v) p))))))
 
   (define class->interface class-interface)
-  (define (object-interface o) (class-interface (obj-class o)))
+  (define (object-interface o) (class-interface (p+obj-class o)))
 
   (define (implementation? v i)
     (unless (interface? i)
@@ -342,23 +440,35 @@
     (class-go-arity c))
 
   (define (ivar/proc o n)
-    (unless (obj? o)
+    (unless (+obj? o)
       (raise-type-error 'ivar/proc "object" 0 o n))
-    (let ([p (hash-table-get
-	      (class-public-ht (obj-class o))
-	      n
-	      (lambda () #f))])
-      (if p
-	  (unbox (vector-ref (obj-slots o) p))
-	  (begin
-	    (unless (symbol? n)
-	      (raise-type-error 'ivar/proc "symbol" 1 o n))
-	    (obj-error 'ivar 
-		       "instance variable not found: ~e~a in: ~e" 
-		       n 
-		       (for-class (class-name (obj-class o)))
-		       o)))))
-
+    (let ([fail
+	   (lambda (c)
+	     (begin
+	       (unless (symbol? n)
+		 (raise-type-error 'ivar/proc "symbol" 1 o n))
+	       (obj-error 'ivar 
+			  "instance variable not found: ~e~a in: ~e" 
+			  n 
+			  (for-class (class-name c))
+			  o)))])
+      (if (pobj? o)
+	  ;; Primitive object without slot table
+	  (let ([pc (prim-obj->prim-class o)])
+	    (let ([m (and (symbol? n)
+			  (prim-find-method pc n))])
+	      (if m
+		  (lambda args (apply m o args))
+		  (fail (p+obj-class o)))))
+	  ;; Normal object
+	  (let ([p (hash-table-get
+		    (class-public-ht (+obj-class o))
+		    n
+		    (lambda () #f))])
+	    (if p
+		(unbox (vector-ref (+obj-slots o) p))
+		(fail (+obj-class o)))))))
+  
   (define-syntax ivar
     (lambda (stx)
       (syntax-case stx ()
@@ -387,7 +497,7 @@
 	      (lambda (o)
 		(unless (is-a? o c)
 		  (let ([name (string->symbol (format "generic~a" (for-class (class-name c))))])
-		    (if (obj? o)
+		    (if (+obj? o)
 			(obj-error name
 				   "object not an instance of the generic's class: ~e"
 				   o)
@@ -395,7 +505,7 @@
 			 name
 			 "object"
 			 o))))
-		(unbox (vector-ref (obj-slots o) p)))
+		(unbox (vector-ref (+obj-slots o) p)))
 	      (obj-error 'make-generic 
 			 "instance variable not found: ~e~a" 
 			 n 
@@ -409,7 +519,7 @@
 	  (lambda (o)
 	    (unless (is-a? o c)
 	      (let ([name (string->symbol (format "generic~a" (for-intf (interface-name c))))])
-		(if (obj? o)
+		(if (+obj? o)
 		    (obj-error name
 			       "object not an instance of the generic's interface: ~e"
 			       o)
@@ -710,7 +820,8 @@
 			     (let ([private-id undefined] ...)
 			       (letrec ([init (case-lambda . go)])
 				 init))))
-			 'go-arity)))))))))]
+			 'go-arity
+			 #f)))))))))]
 	;; Error cases
 	;; --
 	[(_ bad-this-super
@@ -825,4 +936,8 @@
 	  ivar send make-generic
 	  ivar/proc make-generic/proc
 	  object% ;; object<%>
-	  exn:object? struct:exn:object make-exn:object))
+	  exn:object? struct:exn:object make-exn:object
+
+	  ;; Insecure!!
+	  install-prim-functions
+	  make-prim-class))

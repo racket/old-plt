@@ -117,11 +117,10 @@ void wxsScheme_setup(Scheme_Env *env)
 
   scheme_finish_primitive_module(env);
   
-  /* FIXME! */
-  get_file = scheme_lookup_global(scheme_intern_symbol("get-file"), env);
-  put_file = scheme_lookup_global(scheme_intern_symbol("put-file"), env);
-  get_ps_setup_from_user = scheme_lookup_global(scheme_intern_symbol("get-ps-setup-from-user"), env);
-  message_box = scheme_lookup_global(scheme_intern_symbol("message-box"), env);
+  get_file = scheme_false;
+  put_file = scheme_false;
+  get_ps_setup_from_user = scheme_false;
+  message_box = scheme_false;
 
   orig_collect_start_callback = GC_collect_start_callback;
   GC_collect_start_callback = collect_start_callback;
@@ -1125,6 +1124,15 @@ static Scheme_Object *SetIsMenu(int, Scheme_Object *a[])
   return scheme_void;
 }
 
+static Scheme_Object *SetDialogs(int, Scheme_Object *a[])
+{
+  get_file = a[0];
+  put_file = a[1];
+  get_ps_setup_from_user = a[2];
+  message_box = a[3];
+  return scheme_void;
+}
+
 #ifdef wx_mac
 extern short wxMacDisableMods;
 #define SCK_ARG p
@@ -1363,7 +1371,7 @@ enum {
   id_setup_file
 };
 
-static Scheme_Object *wxSchemeFindDirectory(int argc, Scheme_Object **argv)
+Scheme_Object *wxSchemeFindDirectory(int argc, Scheme_Object **argv)
 {
   int which;
 
@@ -1809,6 +1817,12 @@ static void wxScheme_Install(Scheme_Env *global_env)
 			   scheme_make_prim_w_arity(wxsLocationToWindow,
 						    "location->window",
 						    2, 2),
+			   global_env);
+
+  scheme_install_xc_global("set-dialogs",
+			   scheme_make_prim_w_arity(SetDialogs,
+						    "set-dialogs",
+						    4, 4),
 			   global_env);
 
   /* Order is important! Base class must be initialized before derived. */

@@ -2522,21 +2522,14 @@ static void MrEdIgnoreWarnings(char *, GC_word)
 #ifndef DONT_LOAD_INIT_FILE
 static char *get_init_filename(Scheme_Env *env)
 {
-  Scheme_Object *fgp;
-  Scheme_Object *f;
   Scheme_Object *type;
   Scheme_Object *path;
 
-  fgp = scheme_intern_symbol("find-graphical-system-path");
-  f = scheme_lookup_global(fgp, env);
   type = scheme_intern_symbol("init-file");
   
-  if (f) {
-    path = _scheme_apply(f, 1, &type);
-    
-    return SCHEME_STR_VAL(path);
-  } else
-    return "~/.mredrc";
+  path = wxSchemeFindDirectory(1, &type);
+
+  return SCHEME_STR_VAL(path);
 }
 #endif
 
@@ -2794,7 +2787,9 @@ wxFrame *MrEdApp::OnInit(void)
 
 static void do_graph_repl(Scheme_Env *env)
 {
-  scheme_eval_string("(graphical-read-eval-print-loop)", env);
+  if (!scheme_setjmp(scheme_error_buf)) {
+    scheme_eval_string("(graphical-read-eval-print-loop)", env);
+  }
 }
 
 #if WINDOW_STDIO

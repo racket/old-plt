@@ -46,6 +46,8 @@
 # endif
 #endif
 
+#define wxXftCharExists XftGlyphExists
+
 #define  UseXtRegions
 #include "wx_rgn.h"
 
@@ -1822,7 +1824,7 @@ void wxWindowDC::DrawText(char *text, float x, float y, Bool use16bit, int dt,
 	      cval = ((XftChar16 *)text)[dt];
 	    else
 	      cval = text[dt];
-	    if (!XftCharExists(DPY, this_time, cval)) {
+	    if (!wxXftCharExists(DPY, this_time, cval)) {
 	      this_time = (wxFontStruct*)current_font->GetNextAASubstitution(index++, scale_x, angle);
 	      if (!this_time) {
 		this_time = xfontinfo;
@@ -2012,7 +2014,7 @@ void wxWindowDC::GetTextExtent(const char *s, float *_w, float *_h, float *_desc
 	    cval = ((XftChar16 *)s)[dt];
 	  else
 	    cval = s[dt];
-	  if (!XftCharExists(DPY, this_time, cval)) {
+	  if (!wxXftCharExists(DPY, this_time, cval)) {
 	    this_time = (wxFontStruct*)font_to_use->GetNextAASubstitution(index++, scale_x, 0.0);
 	    if (!this_time) {
 	      this_time = xfontinfo;

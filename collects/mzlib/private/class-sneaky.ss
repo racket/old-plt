@@ -1202,15 +1202,22 @@ substitutability is checked properly.
 
 			struct:object  ; structure type for instances
 			object?        ; predicate
-			make-object    ; constructor
+			make-object    ; : (-> object), constructor that creates an uninitialized object
 			field-ref      ; accessor
 			field-set!     ; mutator
 
 			init-args      ; list of symbols in order; #f => only by position
 			init-mode      ; 'normal, 'stop (don't accept by-pos for super), or 'list
 
-			init           ; initializer
-
+                        init           ; initializer
+                                       ; :   object
+                                       ;     (object class (box boolean) by-pos-args named-args boolean -> void) // always continue-make-super?
+                                       ;     class
+                                       ;     (box boolean)
+                                       ;     leftovers??
+                                       ;     named-args/named-args
+                                       ;  -> void
+                        
 			no-super-init?); #t => no super-init needed
                     insp)
   
@@ -2373,6 +2380,101 @@ substitutability is checked properly.
 		  [else
 		   (cons (cadr name) (loop (cdr names) args))])))])))
 
+  ;;--------------------------------------------------------------------
+  ;;  wrapper for contracts
+  ;;--------------------------------------------------------------------
+
+  (define-struct wrapper-field (name ctc-stx))
+  (define-struct wrapper-method (name mth-stx))
+
+  (define-values (wrapper-object-wrapped struct:wrapper-object)
+    (let-values ([(struct:wrapper-object wrapper-object? make-wrapper-object ref set!)
+                  (make-struct-type 'raw-wrapper-object
+                                    #f;'struct:object
+                                    1
+                                    0)])
+      (values (lambda (v) (ref v 0))
+              struct:wrapper-object)))
+  
+  ;; the wrapper class should have all method bodies just look up the 
+  ;; values of fields and invoke procedures saved there. This means
+  ;; I can construct the class when I just have the contract and
+  ;; "fill in" its actual methods later, based on the object
+  ;; that gets the contract.
+  
+  ;; make-wrapper-class :   symbol
+  ;;                        (listof symbol)
+  ;;                        (listof contract)
+  ;;                        (listof procedure)
+  ;;                        (listof symbol)
+  ;;                        (listof contract)
+  ;;                     -> contract first args ...
+  ;;                     -> any
+  ;;                     -> any
+  (define (make-wrapper-class class-name method-ids method-ctcs methods field-ids field-ctcs)
+    (let* ([supers (vector object% #f)]
+           [method-ht (make-hash-table)]
+           [field-ht (make-hash-table)]
+           [self-interface '???]
+           [methods-vec (list->vector methods)]
+           [cls
+            (make-class class-name
+                        1
+                        supers
+                        self-interface
+                        void ;nothing can be inspected
+                        
+                        (vector-length methods-vec)
+                        method-ht
+                        (reverse method-ids)
+                        
+                        methods-vec
+                        (list->vector (map (lambda (x) 'final) method-ids))
+                        
+                        (length field-ctcs)
+                        field-ht
+                        field-ids
+                        
+                        #f; struct:object
+                        #f; object?
+                        #f; make-object ;; -> void
+                        #f; field-ref
+                        #f; field-set!
+                        
+                        #f ;; only by position arguments
+                        'normal ; init-mode - ??
+                        
+                        (lambda x (printf "init args: ~s\n" x))
+                        #t)])
+      (let-values ([(struct:object make-object object? field-ref field-set!)
+                    (make-struct-type 'wrapper-object
+                                      #f
+                                      (length field-ids)
+                                      0
+                                      undefined
+                                      (list (cons prop:object cls))
+                                      insp)])
+        (set-class-struct:object! cls struct:object)
+        (set-class-object?! cls object?)
+        (set-class-make-object! cls make-object)
+        (set-class-field-ref! cls field-ref)
+        (set-class-field-set!! cls field-set!)
+        (let loop ([i 0]
+                   [method-ids method-ids])
+          (when (< i (vector-length methods-vec))
+            (hash-table-put! method-ht (car method-ids) i)
+            (loop (+ i 1)
+                  (cdr method-ids))))
+        (let ([n (length field-ids)])
+          (let loop ([i 0]
+                     [field-ids field-ids])
+            (when (< i n)
+              (hash-table-put! method-ht (car field-ids) (cons cls i))
+              (loop (+ i 1)
+                    (cdr field-ids)))))
+        (vector-set! supers 1 cls)
+        cls)))
+  
   ;;--------------------------------------------------------------------
   ;;  misc utils
   ;;--------------------------------------------------------------------

@@ -607,7 +607,8 @@
 ;                                                                                   
 
   
-  (define-syntax-set (-> ->* ->d ->d* case-> object-contract class-contract class-contract/prim)
+  (define-syntax-set (-> ->* ->d ->d* case-> ;object-contract
+                         class-contract class-contract/prim)
     
     ;; ->/proc : syntax -> syntax
     ;; the transformer for the -> macro
@@ -881,6 +882,136 @@
                    (syntax->list (syntax (clz ...))))]))
     
     (define (object-contract/proc stx)
+      
+      ;; name : syntax
+      ;; ctc-stx : syntax[evals to a contract]
+      ;; mtd-arg-stx : syntax[list of arg-specs] (ie, for use in a case-lambda)
+      (define-struct mtd (name ctc-stx mtd-arg-stx))
+      
+      ;; expand-field/mtd-spec : stx -> (union mtd fld)
+      (define (expand-field/mtd-spec f/m-stx)
+        (syntax-case f/m-stx (field)
+          #|
+          [(field field-name ctc)
+           (identifier? (syntax field-name))
+           (make-field (syntax field-name) (syntax ctc))]
+          [(field field-name ctc)
+           (raise-syntax-error 'object-contract "expected name of field" stx (syntax field-name))]
+          |#
+          [(mtd-name ctc)
+           (identifier? (syntax mtd-name))
+           (let-values ([(ctc-stx proc-stx) (expand-mtd-contract (syntax ctc))])
+             (make-mtd (syntax mtd-name)
+                       ctc-stx
+                       proc-stx))]
+          [(mtd-name ctc)
+           (raise-syntax-error 'object-contract "expected name of method" stx (syntax mtd-name))]))
+      
+      ;; expand-mtd-contract : syntax -> (values ctc-stx mtd-arg-stx)
+      (define (expand-mtd-contract mtd-stx)
+        (syntax-case stx (case-> opt->)
+          #|
+          [(case-> cases ...) 
+           (with-syntax ([(cases ...) (map expand-mtd-arrow (syntax->list (syntax (cases ...))))])
+             (syntax (case-> cases ...)))]
+          [(opt-> opts ...) ...]
+          |#
+          [else (expand-mtd-arrow mtd-stx)]))
+      
+      ;; expand-mtd-arrow : stx -> (values ctc-stx mtd-arg-stx)
+      (define (expand-mtd-arrow mtd-stx)
+        (syntax-case mtd-stx (-> ->* ->d ->d*)
+          [(->) (raise-syntax-error 'object-contract "-> must have arguments" stx mtd-stx)]
+          [(-> args ...)
+           (with-syntax ([(arg-vars ...) (generate-temporaries (syntax (args ...)))])
+             (values (->/proc (syntax (-> this-ctc args ...)))
+                     (syntax ((arg-vars ...)))))]
+          #|
+          [(->* (doms ...) (rngs ...))
+           (syntax (->* (this-ctc doms ...) (rngs ...)))]
+          [(->* (doms ...) rst (rngs ...))
+           (syntax (->* (this-ctc doms ...) rst (rngs ...)))]
+          [(->* x ...)
+           (raise-syntax-error 'object-object "malformed ->*" stx mtd-stx)]
+          [(->d) (raise-syntax-error 'object-contract "->d must have arguments" stx mtd-stx)]
+          [(->d args ...)
+           (let* ([args-list (syntax->list (syntax (args ...)))]
+                  [doms-val (all-but-last args-list)])
+             (with-syntax ([(doms ...) doms-val]
+                           [(arg-vars ...) (generate-temporaries doms-val)]
+                           [rng-proc (car (last-pair args-list))]
+                           [arity-count (- (length args-list) 1)])
+               (syntax (->d this-ctc
+                            doms ... 
+                            (let ([f rng-proc])
+                              (unless (procedure? f)
+                                (error 'object-contract "expected last argument of ->d to be a procedure, got ~e" f))
+                              (unless (procedure-arity-includes f arity-count)
+                                (error 'object-contract 
+                                       "expected last argument of ->d to be a procedure that accepts ~a arguments, got ~e"
+                                       arity-count
+                                       f))
+                              (lambda (_this-var arg-vars ...)
+                                (f arg-vars ...)))))))]
+          [(->d* (doms ...) rng-proc)
+           (let ([doms-val (syntax->list (syntax (doms ...)))])
+             (with-syntax ([(arg-vars ...) (generate-temporaries doms-val)]
+                           [arity-count (- (length doms-val) 1)])
+               (syntax (->d* (this-ctc doms ...)
+                             (let ([f rng-proc])
+                               (unless (procedure? f)
+                                 (error 'object-contract "expected last argument of ->d* to be a procedure, got ~e" f))
+                               (unless (procedure-arity-includes f arity-count)
+                                 (error 'object-contract 
+                                        "expected last argument of ->d* to be a procedure that accepts ~a arguments, got ~e"
+                                        arity-count
+                                        f))
+                               (lambda (_this-var arg-vars ...)
+                                 (f arg-vars ...)))))))]
+          [(->d* (doms ...) rst-ctc rng-proc)
+           (let ([doms-val (syntax->list (syntax (doms ...)))])
+             (with-syntax ([(arg-vars ...) (generate-temporaries doms-val)]
+                           [arity-count (- (length doms-val) 1)])
+               (syntax (->d* (this-ctc doms ...)
+                             rst-ctc
+                             (let ([f rng-proc])
+                               (unless (procedure? f)
+                                 (error 'object-contract "expected last argument of ->d* to be a procedure, got ~e" f))
+                               (unless (procedure-arity-includes f arity-count)
+                                 (error 'object-contract 
+                                        "expected last argument of ->d* to be a procedure that accepts ~a arguments, got ~e"
+                                        arity-count
+                                        f))
+                               (lambda (_this-var arg-vars ...)
+                                 (f arg-vars ...)))))))]
+          |#
+          ))
+      
+      
+      (syntax-case stx ()
+        [(_ (name mtd) ...)
+         (andmap identifier? (syntax->list (syntax (name ...))))
+         (let* ([mtd/flds (map expand-field/mtd-spec (syntax->list (syntax (mtd ...))))]
+		[mtds (filter mtd? mtd/flds)]
+		;[flds (filter fld? mtd/flds)]
+		)
+           (syntax 1))]
+        [(_ (name mtd) ...)
+         (for-each (lambda (name)
+                     (unless (identifier? name)
+                       (raise-syntax-error 'object-contract "expected method name" stx name)))
+                   (syntax->list (syntax (name ...))))]
+        [(_ x ...)
+         (for-each (lambda (pr)
+                     (syntax-case pr ()
+                       [(a b) (void)]
+                       [else (raise-syntax-error 'object-contract 
+                                                 "expected method name and method contract" 
+                                                 stx
+                                                 pr)]))
+                   (syntax->list (syntax (x ...))))]))
+    
+    (define (object-contract/proc2 stx)
       (syntax-case stx ()
         [(form (meth-name meth-contract) ...)
          (andmap identifier? (syntax->list (syntax (meth-name ...))))

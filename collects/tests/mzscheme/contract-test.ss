@@ -812,6 +812,8 @@
           (apply super-make-object x))
       1 2 3))
   
+  |#
+  
   (test/spec-passed/result
    'object-contract1
    '(send
@@ -852,6 +854,8 @@
      m
      1)
    "pos")
+
+  |#
   
   (test/spec-passed/result
    'object-contract=>1

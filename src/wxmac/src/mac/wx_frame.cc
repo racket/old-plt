@@ -110,6 +110,7 @@ wxFrame::wxFrame // Constructor (for frame window)
 		// because theMacWindow is used w/o being defined. -- JBC
 		
         wxFatalError("wxFrame constructor: 68k code should not reach this point.");
+        return;
         theMacWindow = NULL;
 #endif
 									

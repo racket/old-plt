@@ -113,9 +113,6 @@ Boolean MyClickInCell(ALCellPtr const theCell, Point mouseLoc, EventModifiers mo
 
 static ALClickCellUPP MyClickInCellUPP = NewALClickCellProc(MyClickInCell);
 
-#define CallALClickCellProc(cell, mouseLoc, modifiers, numberClicks, hAL, userRoutine) \
-	CallUniversalProc((userRoutine), uppALClickCellProcInfo, (cell), (mouseLoc), (modifiers), (numberClicks), (hAL))
-
 Bool wxListBox::Create(wxPanel *panel, wxFunction func,
                        char *Title, Bool Multiple,
                        int x, int y, int width, int height,

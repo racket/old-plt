@@ -12,8 +12,8 @@
 
 /**************** Configuration ****************/
 
-#define GROW_FACTOR 1.5
-#define GROW_ADDITION 500000
+#define GROW_FACTOR 1.05 /* was 1.5 */
+#define GROW_ADDITION 0 /* was 500000 */
 
 #define GENERATIONS 1
 
@@ -63,7 +63,7 @@ typedef short Type_Tag;
 /* Debugging and performance tools: */
 #define TIME 0
 #define SEARCH 0
-#define CHECKS 0
+#define CHECKS 1
 #define NOISY 0
 #define MARK_STATS 0
 #define ALLOC_GC_PHASE 0
@@ -1030,6 +1030,9 @@ static int is_marked(void *p)
 	return 1;
       else if (page->flags & COLOR_MASK) {
 	long offset = ((long)p & MPAGE_MASK) >> LOG_WORD_SIZE;
+
+ 	if (page->type > MTYPE_TAGGED)
+ 	  offset -= 1;
 
 	return OFFSET_COLOR(page->u.offsets, offset);
       } else
@@ -2084,10 +2087,7 @@ static void compact_untagged_mpage(void **p, MPage *page)
       }
 
       if (!to_near || (dest_offset != offset)) {
-	if (to_near)
-	  memmove(dest + dest_offset, p, size << LOG_WORD_SIZE);
-	else
-	  memcpy(dest + dest_offset, p, size << LOG_WORD_SIZE);
+	memmove(dest + dest_offset, p, size << LOG_WORD_SIZE);
       }
       
       OFFSET_SET_SIZE_UNMASKED(offsets, offset, dest_offset+1);

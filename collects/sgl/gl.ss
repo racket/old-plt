@@ -14,8 +14,12 @@
                             gl-enum-size gl-bitfield-size))
   
   (unsafe!)
-  (define gl-lib (ffi-lib "libGL"))
-  (define glu-lib (ffi-lib "libGLU"))
+  (define gl-lib (case (system-type)
+		   [(windows) (ffi-lib "opengl32")]
+		   [else (ffi-lib "libGL")]))
+  (define glu-lib (case (system-type)
+		   [(windows) (ffi-lib "glu32")]
+		   [else (ffi-lib "libGLU")]))
   
   (define-syntax define-foreign-lib
     (syntax-rules (->)

@@ -1,8 +1,9 @@
 
-(require-library "macro.ss")
+(require (lib "etc.ss")
+	 (lib "class100.ss"))
 
 (let ([c%
-       (class-asi canvas%
+       (class100-asi canvas%
 	 (override
 	   [on-event
 	    (lambda (ev)
@@ -17,8 +18,12 @@
 		      (send ev get-right-down)))]
 	   [on-char
 	    (lambda (ev)
-	      (printf "KEY code: ~a  meta: ~a  control: ~a  alt: ~a  shift: ~a~n" 
+	      (printf "KEY code: ~a  rel-code: ~a  meta: ~a  control: ~a  alt: ~a  shift: ~a~n" 
 		      (let ([v (send ev get-key-code)])
+			(if (symbol? v)
+			    v
+			    (format "~a = ASCII ~a" v (char->integer v))))
+		      (let ([v (send ev get-key-release-code)])
 			(if (symbol? v)
 			    v
 			    (format "~a = ASCII ~a" v (char->integer v))))
@@ -26,7 +31,7 @@
 		      (send ev get-control-down)
 		      (send ev get-alt-down)
 		      (send ev get-shift-down)))]))])
-  (define f (make-object (class frame% ()
+  (define f (make-object (class100 frame% ()
                            (inherit accept-drop-files)
                            (override
                              [on-drop-file (lambda (file)

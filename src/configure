@@ -2421,7 +2421,7 @@ else
 #line 2421 "configure"
 #include "confdefs.h"
 #ifdef __cplusplus
-extern "C" void exit(int);
+extern "C" void exit(int) throw();
 #endif
   #include <stddef.h> 
    inline void *operator new(size_t size) { return (void *)0x1; }
@@ -2476,6 +2476,42 @@ rm -f conftest*
     fi
     echo "$ac_t""$addperm" 1>&6 
   fi
+
+  # Can we make auto-repeat detectable?
+ msg="whether X11/XKBlib.h is available"   
+  echo $ac_n "checking $msg""... $ac_c" 1>&6
+echo "configure:2483: checking $msg" >&5
+  if test "$cross_compiling" = yes; then
+  xkbavail=no
+else
+  cat > conftest.$ac_ext <<EOF
+#line 2488 "configure"
+#include "confdefs.h"
+#ifdef __cplusplus
+extern "C" void exit(int) throw();
+#endif
+  #include <X11/Intrinsic.h>
+  #include <X11/XKBlib.h>
+   int main() {
+      return 0;
+   }
+EOF
+if { (eval echo configure:2499: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext} && (./conftest; exit) 2>/dev/null
+then
+  xkbavail=yes
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -fr conftest*
+  xkbavail=no
+fi
+rm -fr conftest*
+fi
+
+  if test "$xkbavail" = "no" ; then
+    MROPTIONS="$MROPTIONS -DNO_XKB_LIB_PRESENT"
+  fi
+  echo "$ac_t""$xkbavail" 1>&6
 fi
 
 ############## drop optimization flags ################

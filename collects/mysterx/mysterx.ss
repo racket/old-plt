@@ -141,7 +141,7 @@
   (define (get-item-property obj item)
     (cond
      [(and (list? item)
-	   (string? (car item)))]
+	   (string? (car item)))
       (apply mxprims:com-get-property obj item)]
      [(string? item)
       (mxprims:com-get-property obj item)]

@@ -163,7 +163,7 @@ case $OS in
       5.*)
        if test "${enable_osthreads}" = "yes" ; then
 	 OPTIONS="${OPTIONS} -DSOLARIS_THREADS"
-	 LIBS="-lthread"
+	 LIBS="$LIBS -lthread"
        fi
        STATICLINK="-Wl,-Bstatic" # after -ldl
        LIBS="$LIBS -lsocket -lnsl -lintl"

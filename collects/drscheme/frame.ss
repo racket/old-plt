@@ -555,7 +555,6 @@
 	  ;; show both windows initially
 	  (set-show-mode 'both)
 
-	  (send console-canvas set-focus)
-
+	  (send program-canvas set-focus)
 	  (when show?
 	    (show #t)))))))

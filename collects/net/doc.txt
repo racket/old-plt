@@ -134,15 +134,25 @@ PROCEDURES -----------------------------------------------------------
 > (get-pure-port url [list-of-strings]) -> input-port
 
   Takes a URL and returns a pure port corresponding to it.  Writes the
-  optional strings to the server.  For the "file" scheme, uses
-  open-input-file, does not handle exceptions, and ignores the
-  optional strings.
+  optional RFC 822 header-line strings to the server.  For the "file"
+  scheme, uses open-input-file, does not handle exceptions, and
+  ignores the optional strings.
+
+> (post-pure-port url post-string [list-of-strings]) -> input-port
+
+  Like `get-pure-port', but issues a POST request (instead of a GET
+  request) to a web server using the given post data string.
 
 > (get-impure-port url [list-of-strings]) -> input-port
 
   Takes a URL and returns an impure port corresponding to it.  Writes
-  the optional strings to the server.  There are no impure ports with
-  scheme "file".
+  the optional RFC 822 header-line strings to the server.  There are
+  no impure ports with scheme "file".
+
+> (post-impure-port url post-string [list-of-strings]) -> input-port
+
+  Like `get-impure-port', but issues a POST request (instead of a GET
+  request) to a web server using the given post data string.
 
 > (display-pure-port input-port) -> void
 

@@ -89,8 +89,9 @@ The html-eval-ok parameter controls the evaluation of
    initializtion arguments are extended with a four new first
    arguments: a url or a port to be loaded into the text% object, a
    top-level-window or #f to use as a parent for status dialogs, a
-   progress procedure used as for `get-url', and a list of post
-   strings to be sent to a web server.
+   progress procedure used as for `get-url', and either #f or a post
+   string to be sent to a web server (technically changing the GET to
+   a POST).
 
    Sets the autowrap-bitmap to #f.
    
@@ -136,6 +137,9 @@ The html-eval-ok parameter controls the evaluation of
 >   add-scheme-callback :: (send o add-scheme-callback start end scheme-string)
      Installs a Scheme evaluation hyperlink.
 
+>   add-scheme-callback :: (send o add-thunk-callback start end thunk)
+     Installs a thunk-based hyperlink.
+
 >   eval-scheme-string :: (send o eval-scheme-string string)
      Called to handle the <A MZSCHEME="expr">...</A> tag and <!
      MZSCHEME="expr"> comments (see above). Evaluates the string; if
@@ -179,11 +183,11 @@ The html-eval-ok parameter controls the evaluation of
      includes a particular editor and a visible range within the
      editor.
  
->   goto-url :: (send o goto-url url relative-to-url [progress-proc])
+>   goto-url :: (send o goto-url url relative-to-url [progress-proc] [post-data #f])
      Changes to the given url, loading it by calling the `make-editor'
      method. If `relative-to-url' is not #f, it must be a URL for
-     resolving `url' as a relative URL.
-     `url' may also be a port. If it is, relative-to-url must be #f.
+     resolving `url' as a relative URL. `url' may also be a port, in
+     which case, `relative-to-url' must be #f.
 
      The `progress-proc' procedure is called with a boolean at the
      point where the URL has been resolved and enough progress has
@@ -191,6 +195,9 @@ The html-eval-ok parameter controls the evaluation of
      resolved. The procedure is called with #t if the URL will be
      loaded into a browser window, #f otherwise (e.g., the user will
      save the URL content to a file).
+
+     If `post-data' is a string instead of false, the URL GET is
+     changed to a POST with the given data.
 
 >   set-page :: (send o set-page page notify?)
      Changes to the given page. If `notify?' is not #f, the canvas's
@@ -323,6 +330,12 @@ An interface that extends text% with the following methods:
 
 > add-scheme-callback :: (send t add-scheme-callback pos endpos code-string)
   --- registers a code-evaluating hyperlink for the given region
+
+> add-thunk-callback :: (send t add-scheme-callback pos endpos thunk)
+  --- registers a thunk-invoking hyperlink for the given region
+
+> post-url :: (send t post-url url post-data)
+  --- performs a post to the given `url' with the given `post-data'
 
 ----------------------------------------
 

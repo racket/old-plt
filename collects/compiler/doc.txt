@@ -509,13 +509,13 @@ An unpackable is one of the following:
 The compiler collection's pack.ss library provides functions to help
 make .plt archives, especially under Unix:
 
-> (pack dest name dirs collections [filter encode? file-mode]) -
+> (pack dest name paths collections [filter encode? file-mode]) -
   Creates the .plt file specified by the pathname `dest', using the
   string `name' as the name reported to Setup PLT as the archive's
   description, and `collections' as the list of colection paths
-  returned by the unpacking unit. The `dirs' argument must be a list
-  of relative paths for directories; the contents of these directories
-  will be packed into the archive.
+  returned by the unpacking unit. The `paths argument must be a list
+  of relative paths for directories and files; the contents of these
+  files and directories will be packed into the archive.
 
   The `filter' procedure is called with the relative path of each
   candidate for packing. If it returns #f for some path, then that
@@ -536,8 +536,8 @@ make .plt archives, especially under Unix:
 > (std-filter p) - returns #t unless `p' matches one of the following
   regular expressions: "CVS$", "compiled$", "~$", or "^#.*#$".
 
-> (mztar dir output filter file-mode) - called by `pack' to write one
-   directory `dir' to the output port `output; using the filter
+> (mztar path output filter file-mode) - called by `pack' to write one
+   directory/file `path' to the output port `output' using the filter
    procedure `filter' (see `pack' for a description of `filter').  The
    `file-mode' argument specifies the default mode for packing a file,
    either 'file or 'file-replace.

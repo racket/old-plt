@@ -57,8 +57,15 @@
 	(if (string? base)
 	    (append (path->list base) (list name))
 	    (list name))))
-  (let loop ([dir path][dpath (path->list path)])
-    (printf "MzTarring ~a...~n" dir)
+  (define-values (init-dir init-files)
+    (if (file-exists? path)
+	(let-values ([(base name dir?) (split-path path)])
+	  (values base (list name)))
+	(values path #f)))
+
+  (let loop ([dir init-dir][dpath (path->list init-dir)][files init-files])
+    (printf "MzTarring ~a~a...~n" dir
+	    (if files (car files) ""))
     (fprintf output "~s~n~s~n" 'dir dpath)
     (for-each
      (lambda (f)
@@ -66,7 +73,7 @@
 	      [filter-val (filter p)])
 	 (when filter-val
 	   (if (directory-exists? p)
-	       (loop p (append dpath (list f)))
+	       (loop p (append dpath (list f)) #f)
 	       (let ([len (file-size p)])
 		 ; (printf "MzTarring ~a~n" p)
 		 (fprintf output "~s~n~s~n~s~n*"
@@ -83,7 +90,7 @@
 			 (unless (eof-object? c)
 			   (write-char c output)
 			   (loop)))))))))))
-     (directory-list dir))))
+     (or files (directory-list dir)))))
 
 (define (std-filter path)
   (not (or (regexp-match "CVS$" path)

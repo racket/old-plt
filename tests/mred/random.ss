@@ -580,24 +580,66 @@
   (create-all-random)
   (create-all-random))
 
+(with-handlers ([void void])
+  (load-relative-extension "classhack.so"))
+
 (printf "Random loaded~n")
 
 (printf " Checking all methods~n")
+(define in-top-level null)
 (hash-table-for-each classinfo 
 		     (lambda (key v)
-		       (if (string? key)
-			   (for-each
-			    (lambda (func)
-			      (unless (procedure? (with-handlers ([void void])
-						    (global-defined-value (car func))))
-				(error 'random-test "No such procedure: ~a" (car func))))
-			    (cdddr v))
-			   (for-each
-			    (lambda (func)
-			      (unless (or (and (interface? key)
-					       (ivar-in-interface? (car func) key))
-					  (and (class? key)
-					       (ivar-in-class? (car func) key)))
-				(error 'random-test "No such method: ~a in ~a" (car func) key)))
-			    (cdddr v)))))
+		       (let* ([methods (cdddr v)]
+			      [names (map car methods)])
+			 (if (string? key)
+			     ;; Check global procs
+			     (for-each
+			      (lambda (name)
+				(unless (procedure? (with-handlers ([void void])
+						      (global-defined-value name)))
+				  (printf "No such procedure: ~a~n" name))
+				(set! in-top-level (cons name in-top-level)))
+			      names)
+			     ;; Check intf/class methods
+			     (begin
+			       (set! in-top-level (cons (cadr v) in-top-level))
+			       ; Check printed form:
+			       (let ([p (open-output-string)])
+				 (display key p)
+				 (let ([sp (get-output-string p)]
+				       [ss (let ([s (symbol->string (cadr v))])
+					     (format "#<~a:~a>"
+						     (if (interface? key) "interface" "class")
+						     s))])
+				   (unless (string=? sp ss)
+				     (printf "bad printed form: ~a != ~a~n" sp ss))))
+			       ; Check documented are right
+			       (for-each
+				(lambda (name)
+				  (unless (or (and (interface? key)
+						   (ivar-in-interface? name key))
+					      (and (class? key)
+						   (ivar-in-class? name key)))
+				    (printf "No such method: ~a in ~a~n" name key)))
+				names)
+			       ; Check everything is documented
+			       (when (procedure? (with-handlers ([void void]) (global-defined-value 'class->names)))
+				 (for-each
+				  (lambda (n)
+				    (unless (memq n names)
+				      (printf "Undocumented method: ~a in ~a~n" n key)))
+				  ((if (interface? key) interface->names class->names) key))))))))
 (printf " Method-checking done~n")
+
+(let* ([get-all (lambda (n)
+		  (parameterize ([current-namespace n])
+		    (map car (make-global-value-list))))]
+       [expect-n (list* 'mred@ 'mred^ (append (get-all (make-namespace)) in-top-level))]
+       [actual-n (get-all (make-namespace 'mred))])
+  (for-each
+   (lambda (i)
+     (unless (memq i expect-n)
+       (printf "Undocumented global: ~a~n" i)))
+   actual-n))
+
+  

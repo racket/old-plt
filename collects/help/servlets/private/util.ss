@@ -123,12 +123,12 @@
      `(A ((HREF ,(finddoc-page man ndx)))
 	 ,txt)))
 
-  (define hexifiable '(#\: #\; #\? #\& #\% #\#))
+  (define hexifiable '(#\: #\; #\? #\& #\% #\# #\< #\>))
   ; string -> string
   (define (hexify-string s)
     (apply string-append 
 	   (map (lambda (c) 
-		  (if (or (char-whitespace? c) (member c hexifiable))
+		  (if (or (char-whitespace? c) (memq c hexifiable))
 		      (format "%~X" (char->integer c))
 		      (format "~a" c)))
 		(string->list s))))

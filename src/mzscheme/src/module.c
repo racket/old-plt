@@ -4384,7 +4384,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
     qsort_provides(exis, NULL, NULL, NULL, 0, exicount, 1);
   }
 
-  if (!rec) {
+  if (!rec[drec].comp) {
     /* Produce annotations (in the form of properties)
        for module information:
          'module-variable-provides = '(item ...)

@@ -70,6 +70,14 @@ exit 1
   (define fw-template-tree
     '("Resources"))
 
+  (define (write-info contents-path info-plist)
+    (let* ([info-plist-path (build-path contents-path "Info.plist")])
+      (printf "writing file ~s~n" info-plist-path)
+      (call-with-output-file info-plist-path
+	(lambda (port)
+	  (write-plist info-plist port))
+	'truncate)))
+
   (define (create-app dest-path app-name pkg-info-string info-plist)
     (let* ([app-path (build-path dest-path (string-append app-name ".app"))])
       (unless (directory-exists? app-path)
@@ -82,23 +90,19 @@ exit 1
 	    (fprintf port pkg-info-string))
 	  'truncate))
       (let* ([contents-path (build-path app-path "Contents")])
-	(let* ([info-plist-path (build-path contents-path "Info.plist")])
-	  (printf "writing file ~s~n" info-plist-path)
-	  (call-with-output-file info-plist-path
-	    (lambda (port)
-	      (write-plist info-plist port))
-	    'truncate))
+	(write-info contents-path info-plist)
 	(let* ([icns-name (string-append app-name ".icns")]
 	       [icns-src (build-path plthome "src" "mac" "icon" icns-name)]
 	       [icns-dest (build-path contents-path "Resources" icns-name)])
 	  (unless (file-exists? icns-dest)
 		  (copy-file icns-src icns-dest))))))
   
-  (define (create-fw dest-path fw-name)
+  (define (create-fw dest-path fw-name info-plist)
     (let* ([fw-path (build-path dest-path (string-append fw-name ".framework"))])
       (unless (directory-exists? fw-path)
 	(make-directory fw-path))
       (realize-template fw-path fw-template-tree)
+      (write-info (build-path fw-path "Resources") info-plist)
       ;; maybe someday we'll have Contents/Resources/English.lproj ?
       (let* ([rsrc-src (build-path "MrEd.rsrc.OSX")]
 	     [rsrc-dest (build-path fw-path "Resources" (format "~a.rsrc" fw-name))])
@@ -107,19 +111,21 @@ exit 1
 	(printf "Installing ~a~n" rsrc-dest)
 	(copy-file rsrc-src rsrc-dest))))
 
-  (define (make-info-plist app-name signature)
+  (define (make-info-plist app-name signature app?)
     `(dict (assoc-pair "CFBundleDevelopmentRegion"
 		       "English")
 	   (assoc-pair "CFBundleExecutable"
 		       ,app-name)
 	   (assoc-pair "CFBundleIdentifier"
-		       "org.plt-scheme.MrEd")
-	   (assoc-pair "CFBundleIconFile"
-		       ,app-name)
+		       ,(format "org.plt-scheme.~a" app-name))
+	   ,@(if app?
+		 `((assoc-pair "CFBundleIconFile"
+			       ,app-name))
+		 null)
 	   (assoc-pair "CFBundleInfoDictionaryVersion"
 		       "6.0")
 	   (assoc-pair "CFBundlePackageType"
-		       "APPL")
+		       ,(if app? "APPL" "FMWK"))
 	   (assoc-pair "CFBundleSignature"
 		       ,signature)
 	   (assoc-pair "CFBundleVersion"
@@ -128,15 +134,16 @@ exit 1
     (create-app (current-directory)
 		"MrEd"
 		"APPLMrEd"
-		(make-info-plist "MrEd" "MrEd"))
+		(make-info-plist "MrEd" "MrEd" #t))
 
     (create-fw (current-directory)
-	       "PLT_MrEd")
+	       "PLT_MrEd"
+		(make-info-plist "PLT_MrEd" "MrEd" #f))
 
     (create-app (current-directory)
 		"Starter"
 		"APPLMrSt"
-		(make-info-plist "Starter" "MrSt")))
+		(make-info-plist "Starter" "MrSt" #t)))
 
 (require osx_appl)
 

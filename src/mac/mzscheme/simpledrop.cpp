@@ -326,10 +326,25 @@ void Drop_GetArgs(int *argc, char ***argv, int *in_terminal)
 
     from_finder = (((*argc) > 1) && (strncmp((*argv)[1],"-psn_",5) == 0));
     if (from_finder) {
-      /* Finder started app; fix scheme_mac_argv[0] */
+      /* Finder started app, or someone wants us to think so; set
+	 *in_terminal to 0 and combine AE-based command-line with given
+	 command line */
+      int i, new_argc;
+      char **new_argv;
       *in_terminal = 0;
-      scheme_mac_argv[0] = (*argv)[0];
+      new_argc = (scheme_mac_argc - 1) + (*argc - 2) + 1;
+      new_argv = (char **)malloc(scheme_mac_argc * sizeof(char *));
+      new_argv[0] = (*argv)[0];
+      for (i = 2; i < (*argc); i++) {
+	new_argv[i - 1] = (*argv)[i];
+      }
+      for (; i < new_argc; i++) {
+	new_argv[i] = scheme_mac_argv[i - (*argc) + 1];
+      }
+      scheme_mac_argc = new_argc;
+      scheme_mac_argv = new_argv;
     } else {
+      /* command-line start; no AE arguments */
       scheme_mac_argc = *argc;
       scheme_mac_argv = *argv;
     }

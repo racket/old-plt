@@ -25,7 +25,8 @@
 (hash-table-for-each old (lambda (k v)
 			   (let ([b (path->bytes k)])
 			     (when (or (regexp-match #rx#"CVS" b)
-				       (regexp-match #rx#"upgrade[.]ss" b))
+				       (regexp-match #rx#"upgrade[.]ss$" b)
+				       (regexp-match #rx#"gc[.]h$" b))
 			       (hash-table-remove! old k)))))
 
 (define (content f n)
@@ -67,12 +68,11 @@
   (when really-cvs?
     (system cmd)))
 
-(let ([s (open-output-string)])
-  (fprintf s "cp ")
-  (hash-table-for-each new (lambda (k v)
-			     (fprintf s "~a/~a " new-dir (path->string k))))
-  (fprintf s (path->string old-dir))
-  (go (get-output-string s)))
+(hash-table-for-each new 
+		     (lambda (k v)
+		       (go (format "cp ~a ~a" 
+				   (path->string (build-path new-dir k))
+				   (path->string (build-path old-dir k))))))
 
 (let ([s (open-output-string)])
   (fprintf s "rm ")
@@ -92,9 +92,8 @@
 			     (fprintf s "~a " (path->string k))))
   (go (get-output-string s)))
 
-(let ([s (open-output-string)])
-  (fprintf s "cp ")
-  (hash-table-for-each mod (lambda (k v)
-			     (fprintf s "~a/~a " new-dir (path->string k))))
-  (fprintf s (path->string old-dir))
-  (go (get-output-string s)))
+(hash-table-for-each mod 
+		     (lambda (k v)
+		       (go (format "cp ~a ~a" 
+				   (path->string (build-path new-dir k))
+				   (path->string (build-path old-dir k))))))

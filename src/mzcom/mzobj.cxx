@@ -121,8 +121,8 @@ void setupSchemeEnv(void) {
     "(cons #t (thunk))))";
   
   exn_catching_apply = scheme_eval_string(wrapper,env);
-  exn_p = scheme_lookup_global(scheme_intern_symbol("exn?"),env);
-  exn_message = scheme_lookup_global(scheme_intern_symbol("exn-message"),env);
+  exn_p = scheme_builtin_value("exn?");
+  exn_message = scheme_builtin_value("exn-message");
 
   // set up collection paths, based on MzScheme startup
 
@@ -153,6 +153,7 @@ DWORD WINAPI evalLoop(LPVOID args) {
   DWORD waitVal;
   char *narrowInput;
   Scheme_Object *outputObj;
+  Scheme_Object *sleepFun;
   OLECHAR *outputBuffer;
   THREAD_GLOBALS *pTg;
   HANDLE readSem;
@@ -170,6 +171,7 @@ DWORD WINAPI evalLoop(LPVOID args) {
   setupSchemeEnv();
 
   scheme_exit = exitHandler;
+  sleepFun = scheme_builtin_value("sleep");
 
   pTg = (THREAD_GLOBALS *)args;
 
@@ -194,7 +196,7 @@ DWORD WINAPI evalLoop(LPVOID args) {
 
       case WAIT_TIMEOUT :
 
-	scheme_eval_string("(sleep)",env);
+	scheme_apply(sleepFun,0,NULL);
 	break;
 
       case WAIT_OBJECT_0 + 1:
@@ -215,7 +217,7 @@ DWORD WINAPI evalLoop(LPVOID args) {
 	  DispatchMessage(&msg);
 	}
 
-	scheme_eval_string("(sleep)",env);
+	scheme_apply(sleepFun,0,NULL);
 
 	break;
 

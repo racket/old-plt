@@ -68,17 +68,21 @@
 		(lambda ()
 		  (if (and (super-on-close) 
 			   (can-close?))
-		      (begin (do-close) 
 
-			     ; exit if this is the only frame
+		      (begin 
 
-			     (let ([frames 
-				    (send mred:group:the-frame-group 
-					  get-frames)])
-			       (when (eq? (length frames) 1)
-				     (mred:exit:exit)))
+			; exit if this is the only frame
 
-			     #t)
+			(let ([frames 
+			       (send mred:group:the-frame-group 
+				     get-frames)])
+			  (when (eq? (length frames) 1)
+				(mred:exit:exit)))
+
+			(do-close) 
+			
+			#t)
+
 		      #f))])
 
 	     (sequence 

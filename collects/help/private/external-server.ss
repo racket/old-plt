@@ -38,18 +38,19 @@
 	(close-input-port iport)))))
 
   (define external-start-help-server
-    (opt-lambda ([use-port #f][external-connections? #f]) 
+    (lambda (addl-browser-frame-mixin use-port external-connections?) 
       (let ([configuration
-	      (build-developer-configuration
-	       (build-config-exp))]
+             (build-developer-configuration
+              (build-config-exp))]
 	    [help-desk-port (get-free-port use-port)])
-	    	(set-box! external-box external-connections?)
-		(make-hd-cookie 
-		 help-desk-port  	
-		 (if external-connections?
-		     (serve configuration help-desk-port)
-		     (serve configuration help-desk-port "127.0.0.1"))
-		 #f)))))
+        (set-box! external-box external-connections?)
+        (make-hd-cookie 
+         help-desk-port  	
+         (if external-connections?
+             (serve configuration help-desk-port)
+             (serve configuration help-desk-port "127.0.0.1"))
+         #f
+         addl-browser-frame-mixin)))))
 
 
 

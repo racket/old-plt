@@ -96,17 +96,9 @@
 		 (stretchable-width #f)
 		 (stretchable-height #f)))
 
-
   (define (start-help-desk-browser url hd-cookie)
-    (let* ([mk-browser (hd-cookie->browser hd-cookie)]
-	   [browser-frame-maybe (send-help-desk-url mk-browser url)])
-      (when (is-a? browser-frame-maybe frame%)
-	    (let* ([browser-panel (send browser-frame-maybe get-hyper-panel)]
-		   [browser-frame (send browser-panel get-parent)])
-	      (send browser-frame set-label "PLT Help Desk")
-	      (send browser-panel set-init-page 
-		    (format home-page-format
-			    (hd-cookie->port hd-cookie)))))))
+    (let ([mk-browser (hd-cookie->browser hd-cookie)])
+      (send-help-desk-url mk-browser url)))
 
   (define (help-desk-navigate hd-cookie url)
     (when (semaphore-try-wait? nav-mutex)
@@ -142,14 +134,17 @@
 				(loop (add1 n))))
 			(debug-msg "Timer expired")
 			(when (prompt-for-browser-switch hd-cookie start-exn)
-			      (set-plt-browser!)
-			      (debug-msg "Shutting down external server")
-			      ((hd-cookie->exit-proc hd-cookie))
-			      (debug-msg "Starting internal server")
-			      (internal-start-help-server hd-cookie)
-			      (debug-msg "Starting internal browser")
-			      ; should never fail, so no handler
-			      (start-help-desk-browser url hd-cookie))
+                          (set-plt-browser!)
+                          (debug-msg "Shutting down external server")
+                          ((hd-cookie->exit-proc hd-cookie))
+                          (debug-msg "Starting internal server")
+                          (update-existing-cookie 
+                           hd-cookie 
+                           (internal-start-help-server
+                            (hd-cookie->browser-mixin hd-cookie)))
+                          (debug-msg "Starting internal browser")
+                          ; should never fail, so no handler
+                          (start-help-desk-browser url hd-cookie))
 			(kill-thread monitor-thread)
 			(semaphore-post nav-sem)))])
 		 (debug-msg "Starting Help Desk browser")
@@ -165,14 +160,15 @@
 		 (set! navigate? #f)
 		 (semaphore-post nav-mutex)))))
   
+  ;; update-existing-cookie : hd-cookie hd-cookie -> void
+  ;; sets orig-cookie to contain the same info as new-cookie;
+  ;; used when the orig-cookie failed -- new-cookie is always
+  ;; an internal server cookie.
+  (define (update-existing-cookie orig-cookie new-cookie)
+    (set-hd-cookie-exit-proc! orig-cookie (hd-cookie->exit-proc new-cookie))
+    (set-hd-cookie-browser! orig-cookie (hd-cookie->browser new-cookie)))
+  
   (define (help-desk-browser hd-cookie)
     (help-desk-navigate hd-cookie 
 			(format home-page-format 
 				(hd-cookie->port hd-cookie)))))
-
-
-
-
-
-
-

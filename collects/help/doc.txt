@@ -62,18 +62,25 @@ predicate returns #t.
 _Server functions_
 ------------------
 
-> start-help-server : [port #f] [external? #f] -> hd-cookie
+> start-help-server : [port #f]
+                      [external? #f]
+                      [browser-frame-mixin (lambda (x) x)] 
+                   -> hd-cookie
 
-Starts the Web server for Help Desk.  The optional argument 
-`external' indicates whether external connections should 
-be allowed; the default is #f.  The optional argument `port'
-is an exact integer or #f, the default.  If a port number is
-given, the server attempts to use that port; otherwise, the 
-server attempts to find an available port.  The return value is 
-a structure that contains instance information about the
-server.  The cookie needs to be passed to some other Help Desk 
-functions described here.  If the specified port is unavailable, or 
-the server cannot find an unused port, an error occurs.
+Starts the Web server for Help Desk.  The optional argument
+`external' indicates whether external connections should be
+allowed; the default is #f.  The optional argument `port' is
+an exact integer or #f, the default.  If a port number is
+given, the server attempts to use that port; otherwise, the
+server attempts to find an available port.  The optional
+argument browser-frame-mixin is mixed into the internal
+browser's frame class, if one is created.
+
+The return value is a structure that contains instance
+information about the server.  The cookie needs to be passed
+to some other Help Desk functions described here.  If the
+specified port is unavailable, or the server cannot find an
+unused port, an error occurs.
 
 > hd-cookie->port : hd-cookie -> number
 

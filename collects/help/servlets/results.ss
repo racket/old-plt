@@ -15,6 +15,7 @@
 (require "private/search-util.ss")
 (require "private/search-pane.ss")
 (require "private/headelts.ss")
+(require (lib "plt-browser.ss" "help" "private"))
 
 (unit/sig ()
   (import servlet^)
@@ -243,7 +244,8 @@
             ,@hd-links
 	    (TITLE "PLT Help Desk search results"))
       (BODY
-       ,@(if (use-frames?)
+       ,@(if (or (use-frames?)
+                 (use-plt-browser?))
 	    '()
 	    `(,(search-pane search-string) (HR)))
        (FONT ((SIZE "+1"))
@@ -287,10 +289,7 @@
 	 "window.history.back()")
        (TITLE "Empty search string in PLT Help Desk"))
       (BODY
-       (H2 "Empty search string")
-       (P)
-       "Click on the Back button on your browser "
-       "to return to the previous page.")))
+       (H2 "Empty search string"))))
   
   (define (lucky-search? bindings)
     (with-handlers

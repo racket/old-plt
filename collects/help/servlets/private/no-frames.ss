@@ -2,7 +2,8 @@
 
   (require "search-pane.ss"
            "main-pane.ss"
-           "util.ss")
+           "util.ss"
+           (lib "plt-browser.ss" "help" "private"))
 
   (provide home-no-frames)
 
@@ -11,7 +12,9 @@
 	
   (define (home-no-frames)
     `(BODY
-      ,(search-pane)
+      ,@(if (use-plt-browser?)
+            (list)
+            (list (search-pane)))
       (HR)
       ,(main-pane))))
 

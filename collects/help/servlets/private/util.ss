@@ -1,12 +1,9 @@
 (module util mzscheme
   (require (lib "file.ss")
 	   (lib "list.ss")
-	   (lib "etc.ss")
 	   (lib "xml.ss" "xml")
-	   (lib "url.ss" "net")
- 	   (lib "finddoc.ss" "help" "private")
+	   (lib "finddoc.ss" "help" "private")
 	   (lib "string-constant.ss" "string-constants")
- 	   (lib "path.ss" "help" "private")
  	   (lib "plt-browser.ss" "help" "private")
 	   (lib "docpos.ss" "help" "private"))
 

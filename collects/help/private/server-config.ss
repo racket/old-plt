@@ -9,6 +9,7 @@
 	   hd-cookie->port
 	   hd-cookie->exit-proc
 	   hd-cookie->browser
+           hd-cookie->browser-mixin
            set-hd-cookie-port!
            set-hd-cookie-exit-proc!
            set-hd-cookie-browser!
@@ -16,10 +17,11 @@
            min-port
            max-port)
 
-  (define-struct hd-cookie (port exit-proc browser) (make-inspector))
+  (define-struct hd-cookie (port exit-proc browser browser-mixin) (make-inspector))
   (define hd-cookie->port hd-cookie-port)
   (define hd-cookie->exit-proc hd-cookie-exit-proc)
   (define hd-cookie->browser hd-cookie-browser)
+  (define hd-cookie->browser-mixin hd-cookie-browser-mixin)
 
   (define min-port 8000)
   (define max-port 8900)

@@ -7,9 +7,14 @@
 	   "private/manuals.ss"
 	   "private/installed-components.ss")
 
+  (define (start-help-server use-port external-connections?)
+    (external-start-help-server use-port
+                                external-connections?
+                                (lambda (x) x)))
+  
   (provide 
     ;; server functions
-    (rename external-start-help-server start-help-server)
+    start-help-server
     hd-cookie->port
     hd-cookie->exit-proc
     hd-cookie?

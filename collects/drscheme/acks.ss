@@ -51,7 +51,7 @@
      "Biep Durieux, "
      "Tim Hanson, "
      "Philippe Meunier, "
-     "Jens Axel S?gaard, "
+     "Jens Axel Søgaard, "
      "Francisco Solsona, "
      "Reini Urban, "
      "and "

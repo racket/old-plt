@@ -1,6 +1,0 @@
-(module info (lib "infotab.ss" "setup")
-  (define name "HtDP Languages Tool")
-  (define tools (list "htdp-langs.ss"))
-  (define tool-icons (list '("htdp-icon.gif" "icons")))
-  (define tool-names (list "How to Design Programs"))
-  (define tool-urls (list "http://www.htdp.org/")))

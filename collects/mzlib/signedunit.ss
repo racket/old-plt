@@ -1072,6 +1072,192 @@
 	    (quote-syntax here)
 	    expr))])))
 
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+  (define verify-linkage-signature-match
+    (let ([make-exn make-exn:unit]
+	  [p-suffix (lambda (pos) (case pos [(1) 'st][(2) 'nd][(3) 'rd][else 'th]))])
+      (lambda (who tags units esigs isigs)
+	(for-each
+	 (lambda (u tag)
+	   (unless (unit-with-signature? u)
+	     (raise
+	      (make-exn
+	       (string->immutable-string
+		(format
+		 "~s: expression for \"~s\" is not a signed unit: ~e"
+		 who tag u))
+	       (current-continuation-marks)))))
+	 units tags)
+	(for-each
+	 (lambda (u tag esig)
+	   (verify-signature-match
+	    who #f
+	    (format "specified export signature for ~a" tag)
+	    esig
+	    (format "export signature for actual ~a sub-unit" tag)
+	    (unit-with-signature-exports u)))
+	 units tags esigs)
+	(for-each
+	 (lambda (u tag isig)
+	   (let ([n (length (unit-with-signature-imports u))]
+		 [c (length isig)])
+	     (unless (= c n)
+	       (raise
+		(make-exn
+		 (string->immutable-string
+		  (format
+		   "~s: ~a unit imports ~a units, but ~a units were provided"
+		   who tag n c))
+		 (current-continuation-marks))))))
+	 units tags isigs)
+	(for-each
+	 (lambda (u tag isig)
+	   (let loop ([isig isig][expecteds (unit-with-signature-imports u)][pos 1])
+	     (unless (null? isig)
+	       (let ([expected (car expecteds)]
+		     [provided (car isig)])
+		 (verify-signature-match
+		  who #t
+		  (format "~a unit's ~s~s import (which is ~a)" tag
+			  pos (p-suffix pos)
+			  (car expected))
+		  (cdr expected)
+		  (format "~a's ~s~s linkage (which is ~a)"
+			  tag
+			  pos (p-suffix pos)
+			  (car provided))
+		  (cdr provided))
+		 (loop (cdr isig) (cdr expecteds) (add1 pos))))))
+	 units tags isigs))))
+
+  (define (hash-sig src-sig table)
+    (and (vector? src-sig)
+	 (andmap
+	  (lambda (s)
+	    (cond
+	     [(symbol? s)
+	      (if (hash-table-get table s (lambda () #f))
+		  #f
+		  (begin
+		    (hash-table-put! table s s)
+		    #t))]
+	     [(and (pair? s) (symbol? (car s)))
+	      (let ([name (car s)])
+		(if (hash-table-get table name (lambda () #f))
+		  #f
+		  (let ([t (make-hash-table)])
+		    (hash-table-put! table name t)
+		    (hash-sig (cdr s) t))))]
+	     [else #f]))
+	  (vector->list src-sig))))
+
+  (define (sig-path-name name path)
+    (let loop ([s (symbol->string name)]
+	       [path path])
+      (if (null? path)
+	  s
+	  (loop (format "~a:~a" s (car path))
+		(cdr path)))))
+
+  (define (check-sig-match table sig path exact? who src-context dest-context)
+    (and (vector? sig)
+	 (andmap
+	  (lambda (s)
+	    (cond
+	     [(symbol? s)
+	      (let ([v (hash-table-get table s
+				       (lambda ()
+					 (raise
+					  (make-exn:unit
+					   (format
+					    "~a: ~a is missing a value name `~a', required by ~a",
+					    who
+					    src-context
+					    (sig-name-path s path)
+					    dest-context)
+					   (current-continuation-marks)))))])
+		(and v
+		     (begin
+		       (unless (symbol? v)
+			 (let ([p (sig-name-path s path)])
+			   (raise
+			    (make-exn:unit
+			     (format
+			      "~a: ~a contains `~a' as a sub-unit name, but ~a contains `~a' as a value name"
+			      who
+			      src-context
+			      p
+			      dest-context
+			      p)
+			     (current-continuation-marks)))))
+		       (hash-table-put! table s #f)
+		       #t)))]
+	     [(and (pair? s) (symbol? (car s)))
+	      (let ([v (hash-table-get table (car s)
+				       (lambda ()
+					 (raise
+					  (make-exn:unit
+					   (format
+					    "~a: ~a is missing a sub-unit name `~a', required by ~a",
+					    who
+					    src-context
+					    (sig-name-path s path)
+					    dest-context)
+					   (current-continuation-marks)))))])
+		(and v
+		     (begin
+		       (unless (hash-table? v)
+			 (let ([p (sig-name-path (car s) path)])
+			   (raise
+			    (make-exn:unit
+			     (format
+			      "~a: ~a contains `~a' as a value name, but ~a contains `~a' as a sub-unit name"
+			      who
+			      src-context
+			      p
+			      dest-context
+			      p)
+			     (current-continuation-marks)))))
+		       (hash-table-put! table (car s) #f)
+		       (chec-sig-match v (cdr s) (cons (car s) path)
+				       exact? who src-context dest-context))))]
+	     [else #f]))
+	  (vector->list sig))
+	 (or (not exact?)
+	     (hash-table-for-each
+	      table
+	      (lambda (k v)
+		(when v
+		  (let ([p (sig-name-path k path)])
+		    (raise
+		     (make-exn:unit
+		      (format
+		       "~a: ~a contains an extra ~a name `~a' that is not required by ~a"
+		       who
+		       src-context
+		       (if (symbol? v) 'value 'sub-unit)
+		       p
+		       dest-context)
+		      (current-continuation-marks)))))))
+	     #t)))
+
+  (define (verify-signature-match who exact? dest-context dest-sig src-context src-sig)
+    (unless (symbol? who)
+      (raise-type-error 'verify-signature-match "symbol" who))
+    (unless (string? dest-context)
+      (raise-type-error 'verify-signature-match "string" dest-context))
+    (unless (string? src-context)
+      (raise-type-error 'verify-signature-match "string" src-context))
+
+    (let ([src-table (make-hash-table)])
+      (unless (hash_sig src-sig, src-table)
+	(raise-type-error 'verify-signature-match "signature" src-sig))
+
+      (unless (check-sig-match src-table dest-sig null
+			       exact? who src-context dest-context)
+	(raise-type-error 'verify-signature-match "signature" dest-sig))))
+
   (export define-signature
 	  let-signature
           unit/sig

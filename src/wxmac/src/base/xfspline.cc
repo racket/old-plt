@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: xfspline.cxx,v 1.3 1999/10/05 16:31:15 mflatt Exp $
+ * RCS_ID:      $Id: xfspline.cc,v 1.4 1999/10/05 16:43:16 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -29,8 +29,6 @@ void wxbDC::DrawSpline(int n, wxPoint pts[])
 // defines and static declarations for DrawSpline
 
 #define half(z1,z2)	float((z1+z2)/2.0)
-#undef wx_round
-#define wx_round(a)	float(int(a+0.5))
 
 static void wx_quadratic_spline(float a1, float b1, float a2, float b2,
 				float a3, float b3, float a4, float b4);
@@ -75,7 +73,7 @@ void wxbDC::DrawSpline(wxList *pts)
 	cx1 = cx4;	      cy1 = cy4;
         cx2 = half(cx1, x2);  cy2 = half(cy1, y2);
     }
-    wx_spline_add_point(wx_round(cx1), wx_round(cy1));
+    wx_spline_add_point(cx1, cy1);
     wx_spline_add_point(x2, y2);
     wx_spline_draw_point_array(this);
 }
@@ -118,8 +116,8 @@ static void wx_quadratic_spline(float a1, float b1, float a2, float b2,
         ymid = half(y2, y3);
 	if (fabs(x1 - xmid) < THRESHOLD && fabs(y1 - ymid) < THRESHOLD &&
 	    fabs(xmid - x4) < THRESHOLD && fabs(ymid - y4) < THRESHOLD) {
-            wx_spline_add_point(wx_round(x1), wx_round(y1));
-            wx_spline_add_point(wx_round(xmid), wx_round(ymid));
+            wx_spline_add_point(x1, y1);
+            wx_spline_add_point(xmid, ymid);
 	} else {
             wx_spline_push(xmid, ymid, half(xmid, x3), half(ymid, y3),
 			   half(x3, x4), half(y3, y4), x4, y4);

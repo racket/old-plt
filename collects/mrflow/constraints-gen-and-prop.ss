@@ -4418,7 +4418,7 @@
   (define (get-handle-or-type-var label)
     (let* ([type-var (label-type-var label)]
            [handle (type-var-handle type-var)])
-      (if handle
+      (if #f;XXXhandle
           ;(begin (printf ".")
           handle
           ;)
@@ -4466,7 +4466,7 @@
   (define (get-type-from-label sba-state label)
     (add-type-var-to-label label sba-state)
     (let ([handle (type-var-handle (label-type-var label))])
-      (if handle
+      (if #f;XXXhandle
           handle
           (let* (;[_ (begin (print-struct #t)(printf "T: ~a ~a ~a " (type-var-name (label-type-var label))
                  ;                                   (syntax-position (label-term label))
@@ -4474,10 +4474,11 @@
                  ;[start (current-milliseconds)]
                  [reachable-labels (set-map (reachable-labels-from-label label)
                                             (lambda (l) (add-type-var-to-label l sba-state) l))]
+                 ;[_ (begin (print-struct #t)(printf "R: ~a~n" (map (lambda (l) (type-var-name (label-type-var l))) reachable-labels)))]
                  ;[_ (printf "~a " (- (current-milliseconds) start))]
                  ;[start (current-milliseconds)]
                  [reconstructed-type (typeL label reachable-labels)]
-                 ;[_ (begin (print-struct #t)(printf "~a~n" reconstructed-type))]
+                 ;[_ (begin (print-struct #t)(printf "T: ~a~n" (ppp-type reconstructed-type 'blah)))]
                  ;[_ (printf " ~a~n" (- (current-milliseconds) start))]
                  ;[start (current-milliseconds)]
                  [handle (hc:hashcons-type (sba-state-hashcons-tbl sba-state) reconstructed-type)]
@@ -4491,9 +4492,179 @@
   ; delta-flow is the flow variable environment, or a symbol if no flow environment
   ; was available at the time of the call.
   (define (pp-type sba-state type delta-flow)
-    (hc:handle->string (sba-state-hashcons-tbl sba-state) type
+    (let ([foo (hc:handle->string (sba-state-hashcons-tbl sba-state) type
                        (lambda (h1 h2)
-                         (subtype sba-state h1 h2 #f #f #f))))
+                         (subtype sba-state h1 h2 #f #f #f)))
+               ])
+      ;(printf "H: ~a~nP: ~a~n~n" type foo)
+      foo))
+  
+  (require (prefix string: (lib "string.ss")))
+  (define (ppp-type type delta-flow)
+      (cond
+        [(type-empty? type) "_"]
+        [(type-cst? type)
+         ; can be a complex sexp if (quote sexp) is in the input
+         (string:expr->string (type-cst-type type))]
+        ;      (let ([val (type-cst-type type)])
+        ;        (cond
+        ;          [(number? val) (number->string val)]
+        ;          [(symbol? val) (symbol->string val)]
+        ;          [(string? val) (string-append "\"" val "\"")]
+        ;          [(void? val) "void"]
+        ;          [else (error 'ppp-type "unknown datum: ~a" val)]))]
+        [(type-cons? type)
+         (string-append "(cons "
+                        (ppp-type (type-cons-car type) delta-flow) " "
+                        (ppp-type (type-cons-cdr type) delta-flow) ")")]
+        [(type-vector? type)
+         (string-append "(vector " (ppp-type (type-vector-element type) delta-flow) ")")]
+        [(type-promise? type)
+         (string-append "(promise "
+                        ; skipping the thunk inside the promise (we know it's always a
+                        ; thunk because delay is a macro...) Note that the promise might
+                        ; be empty, for now, so we have to test that...
+                        (let ([promise-value-type (type-promise-value type)])
+                          (if (type-case-lambda? promise-value-type)
+                              (ppp-type (car (type-case-lambda-exps promise-value-type)) delta-flow)
+                              (ppp-type promise-value-type delta-flow)))
+                        ")")]
+        [(type-case-lambda? type)
+         (string-append
+          "(case-lambda "
+          (list:foldr
+           (lambda (rest-arg? formal-args-types body-exp-type str)
+             (string-append
+              "["
+              (list:foldr
+               (lambda (formal-arg-type str)
+                 (string-append
+                  (ppp-type formal-arg-type delta-flow)
+                  " "
+                  str))
+               ""
+               formal-args-types)
+              (if rest-arg?
+                  "*-> "
+                  "-> ")
+              (ppp-type body-exp-type delta-flow)
+              "]"
+              ;(if (string=? str "")
+              ;  ""
+              ;  " ")
+              str))
+           ""
+           (type-case-lambda-rest-arg?s type)
+           (type-case-lambda-argss type)
+           (type-case-lambda-exps type))
+          ")")]
+        [(type-var? type)
+         (symbol->string (type-var-name type))]
+        [(type-flow-var? type)
+         (error 'ppp-type "flow var: ~a~n" (type-flow-var-name type))
+         (ppp-type (cdr (lookup-flow-var-in-env delta-flow type)) delta-flow)]
+        [(type-union? type)
+         (string-append
+          "(union "
+          (list:foldr
+           (lambda (union-element str)
+             (string-append
+              (ppp-type union-element delta-flow)
+              (if (string=? str ")")
+                  ""
+                  " ")
+              str))
+           ")"
+           (type-union-elements type)))]
+        [(type-values? type)
+         (let ([values-type (type-values-type type)])
+           (cond
+             [(type-empty? values-type)
+              (ppp-type values-type delta-flow)]
+             [(and (type-cst? values-type) (eq? (type-cst-type values-type) 'top))
+              (ppp-type values-type delta-flow)]
+             [else
+              (let* ([values-types-list (type-list-map cst:id (type-values-type type))]
+                     [values-types-list-length (length values-types-list)])
+                (cond
+                  [(zero? values-types-list-length)
+                   (ppp-type (make-type-empty) delta-flow)]
+                  [(= values-types-list-length 1)
+                   (ppp-type (car values-types-list) delta-flow)]
+                  [else (string-append
+                         "(values "
+                         (list:foldr
+                          (lambda (type str)
+                            (string-append (ppp-type type delta-flow)
+                                           (if (string=? str ")")
+                                               ""
+                                               " ")
+                                           str))
+                          ")"
+                          values-types-list))]))]))]
+        [(type-rec? type)
+         (string-append
+          "(rec-type ("
+          (list:foldr
+           (lambda (var type str)
+             (string-append
+              "["
+              (symbol->string (type-var-name var))
+              " "
+              ; poor man's type beautifier
+              (if (and (type-union? type)
+                       (= (length (type-union-elements type)) 2)
+                       (or (and (type-cst? (car (type-union-elements type)))
+                                (null? (type-cst-type (car (type-union-elements type))))
+                                (type-cons? (cadr (type-union-elements type)))
+                                (type-var? (type-cons-cdr (cadr (type-union-elements type))))
+                                (eq? (type-var-name (type-cons-cdr (cadr (type-union-elements type))))
+                                     (type-var-name var)))
+                           (and (type-cst? (cadr (type-union-elements type)))
+                                (null? (type-cst-type (cadr (type-union-elements type))))
+                                (type-cons? (car (type-union-elements type)))
+                                (type-var? (type-cons-cdr (car (type-union-elements type))))
+                                (eq? (type-var-name (type-cons-cdr (car (type-union-elements type))))
+                                     (type-var-name var)))))
+                  (string-append
+                   "(listof "
+                   (ppp-type (if (type-cst? (car (type-union-elements type)))
+                                (type-cons-car (cadr (type-union-elements type)))
+                                (type-cons-car (car (type-union-elements type))))
+                            delta-flow)
+                   ")")
+                  (ppp-type type delta-flow))
+              (if (string=? str ") ")
+                  "]"
+                  "] ")
+              str))
+           ") "
+           (type-rec-vars type)
+           (type-rec-types type))
+          (ppp-type (type-rec-body type) delta-flow)
+          ")")]
+        [(type-struct-value? type)
+         (string-append
+          "#(struct:"
+          (symbol->string (label-struct-type-name (type-struct-value-type-label type)))
+          " "
+          (list:foldr
+           (lambda (elt-type str)
+             (string-append
+              (ppp-type elt-type delta-flow)
+              (if (string=? str ")")
+                  ""
+                  " ")
+              str))
+           ")"
+           (type-struct-value-types type)))]
+        [(type-struct-type? type)
+         (string-append
+          "#<struct-type:"
+          (symbol->string (label-struct-type-name (type-struct-type-type-label type)))
+          ">")]
+        [else (error 'ppp-type "unknown type: ~a" type)]))
+
   
   ; label (listof label) -> (listof label)
   ; returns list of labels from which labels in label's set went in

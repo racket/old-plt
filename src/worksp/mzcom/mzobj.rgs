@@ -1,0 +1,26 @@
+HKCR
+{
+	MzCOM.MzObj.102 = s 'MzObj Class'
+	{
+		CLSID = s '{990CF3CF-1AF3-11D4-B6C1-0060089002FE}'
+	}
+	MzCOM.MzObj = s 'MzObj Class'
+	{
+		CLSID = s '{990CF3CF-1AF3-11D4-B6C1-0060089002FE}'
+		CurVer = s 'MzCOM.MzObj.102'
+	}
+	NoRemove CLSID
+	{
+		ForceRemove {990CF3CF-1AF3-11D4-B6C1-0060089002FE} = s 'MzObj Class'
+		{
+			ProgID = s 'MzCOM.MzObj.102'
+			VersionIndependentProgID = s 'MzCOM.MzObj'
+			ForceRemove 'Programmable'
+			InprocServer32 = s '%MODULE%'
+			{
+				val ThreadingModel = s 'Apartment'
+			}
+			'TypeLib' = s '{990CF3C0-1AF3-11D4-B6C1-0060089002FE}'
+		}
+	}
+}

@@ -209,7 +209,7 @@
 				 (make-type-spec 'void 0 (build-src 2 2))
 				 $3
 				 null)]
-       [(Type MethodDeclarator) (construct-method-header (list (make-modifier 'public #f)) null $2 $3 null)]
+       [(Type MethodDeclarator) (construct-method-header (list (make-modifier 'public #f)) null $1 $2 null)]
        [(void MethodDeclarator)
 	(construct-method-header (list (make-modifier 'public #f))
 				 null 

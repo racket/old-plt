@@ -1318,7 +1318,7 @@ void wxPostScriptDC::TryColour(wxColour *src, wxColour *dest)
     else
       dest->Set(0, 0, 0);
   } else
-    *dest = *src;
+    dest->CopyFrom(src);
 }
 
 static const char *wxPostScriptHeaderEllipse = "\

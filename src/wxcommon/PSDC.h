@@ -216,9 +216,9 @@ public:
 	{ print_colour = col; }
     void  SetLevel2(Bool l2)
 	{ print_level_2 = l2; }
-    void SetEditorMargin(float x, float y)
+    void SetEditorMargin(long x, long y)
         { emargin_h = x; emargin_v = y; }
-    void SetMargin(long x, long y)
+    void SetMargin(float x, float y)
         { ps_margin_h = x; ps_margin_v = y; }
 
     inline char *GetPrinterCommand(void)

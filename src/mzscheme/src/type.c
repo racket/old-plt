@@ -141,7 +141,6 @@ scheme_init_type (Scheme_Env *env)
   set_name(scheme_complex_type, "<complex-number>");
   set_name(scheme_complex_izi_type, "<inexactly-real-number>");
   set_name(scheme_struct_type_type, "<struct-type>");
-  set_name(scheme_exp_time_type, "<expansion-time-value>");
   set_name(scheme_listener_type, "<tcp-listener>");
   set_name(scheme_namespace_type, "<namespace>");
   set_name(scheme_config_type, "<parameterization>");
@@ -170,6 +169,7 @@ scheme_init_type (Scheme_Env *env)
   set_name(scheme_reserved_1_type, "<reserved1>");
   set_name(scheme_reserved_2_type, "<reserved2>");
   set_name(scheme_reserved_3_type, "<reserved3>");
+  set_name(scheme_reserved_4_type, "<reserved4>");
   set_name(scheme_reserved_5_type, "<reserved5>");
 
   set_name(_scheme_values_types_, "<resurrected>");

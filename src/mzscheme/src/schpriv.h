@@ -191,7 +191,6 @@ extern Scheme_Object *scheme_void_func;
 
 extern Scheme_Object *scheme_not_prim;
 extern Scheme_Object *scheme_define_values_syntax, *scheme_defmacro_syntax;
-extern Scheme_Object *scheme_def_exp_time_syntax;
 extern Scheme_Object *scheme_lambda_syntax;
 extern Scheme_Object *scheme_begin_syntax;
 

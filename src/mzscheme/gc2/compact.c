@@ -326,9 +326,9 @@ static void CRASH()
 
 #if USE_MMAP
 
+#ifndef USE_MAP_ANON
 int fd, fd_created;
-
-int my_call;
+#endif
 
 void *malloc_pages(size_t len, size_t alignment)
 {
@@ -338,10 +338,12 @@ void *malloc_pages(size_t len, size_t alignment)
   if (!page_size)
     page_size = getpagesize();
 
+#ifndef USE_MAP_ANON
   if (!fd_created) {
     fd_created = 1;
     fd = open("/dev/zero", O_RDWR);
   }
+#endif
 
   /* Round up to nearest page: */
   if (len & (page_size - 1))
@@ -350,13 +352,11 @@ void *malloc_pages(size_t len, size_t alignment)
   /* May need to try twice to get a desired alignment: */
  try_again:
 
-  my_call = 1;
 #ifdef USE_MAP_ANON
   r = mmap(NULL, len + extra, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON, -1, 0);
 #else
   r = mmap(NULL, len + extra, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0);
 #endif
-  my_call = 0;
 
   if (r  == (void *)-1)
     return NULL;

@@ -141,7 +141,6 @@ static Scheme_Object *read_syntax(Scheme_Object *obj);
 static Scheme_Object *define_values_symbol, *letrec_values_symbol, *lambda_symbol;
 static Scheme_Object *unknown_symbol, *void_link_symbol, *quote_symbol;
 static Scheme_Object *letmacro_symbol, *begin_symbol;
-static Scheme_Object *let_exp_time_symbol;
 static Scheme_Object *let_symbol;
 
 static Scheme_Object *zero_rands_ptr; /* &zero_rands_ptr is dummy rands pointer */
@@ -216,7 +215,6 @@ scheme_init_eval (Scheme_Env *env)
   REGISTER_SO(quote_symbol);
   REGISTER_SO(letmacro_symbol);
   REGISTER_SO(begin_symbol);
-  REGISTER_SO(let_exp_time_symbol);
   REGISTER_SO(let_symbol);
   
   define_values_symbol = scheme_intern_symbol("#%define-values");
@@ -227,7 +225,6 @@ scheme_init_eval (Scheme_Env *env)
   void_link_symbol = scheme_intern_symbol("-v");
   quote_symbol = scheme_intern_symbol("#%quote");
   letmacro_symbol = scheme_intern_symbol("#%let-one-syntax");
-  let_exp_time_symbol = scheme_intern_symbol("#%let-expansion-time");
   begin_symbol = scheme_intern_symbol("#%begin");
   
   scheme_install_type_writer(REGISTYPE(scheme_application), write_application);
@@ -1396,11 +1393,8 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
       if (SAME_TYPE(SCHEME_TYPE(var), scheme_syntax_compiler_type))
 	scheme_wrong_syntax("compile", NULL, form, 
 			    "illegal use of a syntactic form name");
-      else if (SAME_TYPE(SCHEME_TYPE(var), scheme_macro_type)) {
+      else if (SAME_TYPE(SCHEME_TYPE(var), scheme_macro_type))
 	return scheme_compile_expand_macro_app(var, form, env, rec, drec, depth);
-      } else if (SAME_TYPE(SCHEME_TYPE(var), scheme_exp_time_type))
-	scheme_wrong_syntax("compile", NULL, form, 
-			    "illegal use of an expansion-time value name");
 
 
       /* Check for global use within unit: */
@@ -1449,9 +1443,7 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
 	  f = (Scheme_Syntax_Expander *)SCHEME_SYNTAX_EXP(var);
 	  return f(form, env, depth);
 	}
-      } else if (SAME_TYPE(SCHEME_TYPE(var), scheme_exp_time_type))
-	scheme_wrong_syntax("compile", NULL, name, 
-			    "illegal use of an expansion-time value name");
+      }
 	
       /* Else: unknown global - must be a function: compile normally */
 
@@ -1676,19 +1668,13 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
 	scheme_wrong_syntax("begin (possibly implicit)", NULL, forms, 
 			    "no expression after a sequence of internal definitions");
       }
-    } else if (SAME_OBJ(gval, scheme_defmacro_syntax)
-	       || SAME_OBJ(gval, scheme_def_exp_time_syntax)) {
+    } else if (SAME_OBJ(gval, scheme_defmacro_syntax)) {
       /* Convert to let-... */
       Scheme_Object *var, *body, *rest, *let;
       char *where;
       
-      if (SAME_OBJ(gval, scheme_defmacro_syntax)) {
-	where = "define-syntax (internal)";
-	let = letmacro_symbol;
-      } else {
-	where = "define-non-value (internal)";
-	let = let_exp_time_symbol;
-      }
+      where = "define-syntax (internal)";
+      let = letmacro_symbol;
       
       rest = SCHEME_STX_CDR(result);
       

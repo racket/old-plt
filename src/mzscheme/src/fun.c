@@ -90,7 +90,6 @@ static Scheme_Object *primitive_name(int argc, Scheme_Object *argv[]);
 static Scheme_Object *primitive_result_arity (int argc, Scheme_Object *argv[]);
 static Scheme_Object *syntax_p(int argc, Scheme_Object *argv[]);
 static Scheme_Object *macro_p(int argc, Scheme_Object *argv[]);
-static Scheme_Object *exp_time_p(int argc, Scheme_Object *argv[]);
 static Scheme_Object *call_with_values(int argc, Scheme_Object *argv[]);
 Scheme_Object *scheme_values(int argc, Scheme_Object *argv[]);
 static Scheme_Object *current_print(int argc, Scheme_Object **argv);
@@ -309,11 +308,6 @@ scheme_init_fun (Scheme_Env *env)
   scheme_add_global_constant("macro?", 
 			     scheme_make_folding_prim(macro_p, 
 						      "macro?", 
-						      1, 1, 1), 
-			     env);
-  scheme_add_global_constant("expansion-time-value?", 
-			     scheme_make_folding_prim(exp_time_p, 
-						      "expansion-time-value?", 
 						      1, 1, 1), 
 			     env);
   
@@ -1218,12 +1212,6 @@ static Scheme_Object *syntax_p(int argc, Scheme_Object *argv[])
 static Scheme_Object *macro_p(int argc, Scheme_Object *argv[])
 {
   return (SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_macro_type) 
-	  ? scheme_true : scheme_false);
-}
-
-static Scheme_Object *exp_time_p(int argc, Scheme_Object *argv[])
-{
-  return (SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_exp_time_type) 
 	  ? scheme_true : scheme_false);
 }
 

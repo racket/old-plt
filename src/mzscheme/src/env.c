@@ -1217,8 +1217,7 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
     Scheme_Type type = SCHEME_TYPE((Scheme_Object *)b->val);
 
     if ((type ==  scheme_syntax_compiler_type)
-	|| (type == scheme_macro_type)
-	|| (type == scheme_exp_time_type))
+	|| (type == scheme_macro_type))
       return (Scheme_Object *)b->val;
   }
 
@@ -1577,7 +1576,7 @@ local_exp_time_value(int argc, Scheme_Object *argv[])
   if (SAME_TYPE(SCHEME_TYPE(v), scheme_variable_type))
     v = (Scheme_Object *)(SCHEME_VAR_BUCKET(v))->val;
 
-  if (!v || NOT_SAME_TYPE(SCHEME_TYPE(v), scheme_exp_time_type))
+  if (!v || NOT_SAME_TYPE(SCHEME_TYPE(v), scheme_macro_type))
     scheme_raise_exn(MZEXN_MISC,
 		     "local-expansion-time-value: %S is not defined "
 		     "as an expansion-time value",
@@ -1607,7 +1606,7 @@ global_exp_time_value(int argc, Scheme_Object *argv[])
   if (v && (SAME_TYPE(SCHEME_TYPE(v), scheme_variable_type)))
     v = (Scheme_Object *)(SCHEME_VAR_BUCKET(v))->val;
 
-  if (!v || NOT_SAME_TYPE(SCHEME_TYPE(v), scheme_exp_time_type))
+  if (!v || NOT_SAME_TYPE(SCHEME_TYPE(v), scheme_macro_type))
     scheme_raise_exn(MZEXN_MISC,
 		     "global-expansion-time-value: %S is not defined "
 		     "as an expansion-time value",

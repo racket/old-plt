@@ -21,7 +21,6 @@
 
 /* globals */
 Scheme_Object *scheme_define_values_syntax, *scheme_defmacro_syntax;
-Scheme_Object *scheme_def_exp_time_syntax;
 Scheme_Object *scheme_begin_syntax;
 Scheme_Object *scheme_lambda_syntax;
 Scheme_Object *scheme_compiled_void_code;
@@ -61,20 +60,16 @@ static Scheme_Object *unquote_expand(Scheme_Object *form, Scheme_Comp_Env *env, 
 static Scheme_Object *with_cont_mark_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec);
 static Scheme_Object *with_cont_mark_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth);
 
-/* non-standard */
+static Scheme_Object *lexical_syntax_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec);
+static Scheme_Object *lexical_syntax_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth);
 static Scheme_Object *defmacro_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec);
 static Scheme_Object *defmacro_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth);
-static Scheme_Object *def_exp_time_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec);
-static Scheme_Object *def_exp_time_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth);
 static Scheme_Object *letmacro_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec);
 static Scheme_Object *letmacro_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth);
-static Scheme_Object *let_exp_time_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec);
-static Scheme_Object *let_exp_time_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth);
 
 static Scheme_Object *define_values_execute(Scheme_Object *data);
 static Scheme_Object *set_execute(Scheme_Object *data);
 static Scheme_Object *defmacro_execute(Scheme_Object *expr);
-static Scheme_Object *def_exp_time_execute(Scheme_Object *expr);
 static Scheme_Object *case_lambda_execute(Scheme_Object *expr);
 static Scheme_Object *void_execute(Scheme_Object *expr);
 static Scheme_Object *empty_cond_execute(Scheme_Object *data);
@@ -121,10 +116,10 @@ static Scheme_Object *if_symbol;
 static Scheme_Object *case_lambda_symbol;
 static Scheme_Object *with_continuation_mark_symbol;
 
+static Scheme_Object *lexical_syntax_symbol;
 static Scheme_Object *define_macro_symbol;
-static Scheme_Object *define_expansion_time_symbol;
 static Scheme_Object *let_macro_symbol;
-static Scheme_Object *let_expansion_time_symbol;
+static Scheme_Object *define_expansion_time_symbol;
 
 typedef struct {
   MZTAG_IF_REQUIRED
@@ -155,7 +150,6 @@ scheme_init_syntax (Scheme_Env *env)
 
   REGISTER_SO(scheme_define_values_syntax);
   REGISTER_SO(scheme_defmacro_syntax);
-  REGISTER_SO(scheme_def_exp_time_syntax);
   REGISTER_SO(scheme_lambda_syntax);
   REGISTER_SO(scheme_begin_syntax);
   REGISTER_SO(linker_names);
@@ -182,10 +176,9 @@ scheme_init_syntax (Scheme_Env *env)
   REGISTER_SO(case_lambda_symbol);
   REGISTER_SO(with_continuation_mark_symbol);
     
+  REGISTER_SO(lexical_syntax_symbol);
   REGISTER_SO(define_macro_symbol);
-  REGISTER_SO(define_expansion_time_symbol);
   REGISTER_SO(let_macro_symbol);
-  REGISTER_SO(let_expansion_time_symbol);
 
   scheme_undefined->type = scheme_undefined_type;
   
@@ -213,15 +206,13 @@ scheme_init_syntax (Scheme_Env *env)
   case_lambda_symbol = scheme_intern_symbol("#%case-lambda");
   with_continuation_mark_symbol = scheme_intern_symbol("#%with-continuation-mark");
   
+  lexical_syntax_symbol = scheme_intern_symbol("#%lexical-syntax");
   define_macro_symbol = scheme_intern_symbol("#%define-syntax");
-  define_expansion_time_symbol = scheme_intern_symbol("#%define-expansion-time");
   let_macro_symbol = scheme_intern_symbol("#%letrec-syntax");
-  let_expansion_time_symbol = scheme_intern_symbol("#%let-expansion-time");
 
   scheme_register_syntax("d", define_values_execute, 1);
   scheme_register_syntax("!", set_execute, 2);
   scheme_register_syntax("dm", defmacro_execute, 1);
-  scheme_register_syntax("dn", def_exp_time_execute, 1);
   scheme_register_syntax("cl", case_lambda_execute, 1);
   scheme_register_syntax("v", void_execute, 1);
   scheme_register_syntax("e", empty_cond_execute, 1);
@@ -248,8 +239,6 @@ scheme_init_syntax (Scheme_Env *env)
 							    define_values_expand);
   scheme_defmacro_syntax = scheme_make_compiled_syntax(defmacro_syntax, 
 						       defmacro_expand);
-  scheme_def_exp_time_syntax = scheme_make_compiled_syntax(def_exp_time_syntax, 
-							   def_exp_time_expand);
   scheme_lambda_syntax = scheme_make_compiled_syntax(lambda_syntax,
 						     lambda_expand);
   scheme_begin_syntax = scheme_make_compiled_syntax(begin_syntax, 
@@ -328,15 +317,14 @@ scheme_init_syntax (Scheme_Env *env)
 							with_cont_mark_expand), 
 			    env);
 
+  scheme_add_global_keyword("lexical-syntax", 
+			    scheme_make_compiled_syntax(lexical_syntax_syntax, 
+							lexical_syntax_expand), 
+			    env);
   scheme_add_global_keyword("define-syntax", scheme_defmacro_syntax, env);
-  scheme_add_global_keyword("define-expansion-time", scheme_def_exp_time_syntax, env);
   scheme_add_global_keyword("letrec-syntax", 
 			    scheme_make_compiled_syntax(letmacro_syntax, 
 							letmacro_expand), 
-			    env);
-  scheme_add_global_keyword("let-expansion-time", 
-			    scheme_make_compiled_syntax(let_exp_time_syntax, 
-							let_exp_time_expand), 
 			    env);
 }
 
@@ -2206,6 +2194,42 @@ unquote_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth)
 
 
 static Scheme_Object *
+lexical_syntax_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec)
+{
+  int len;
+  char *who;
+  Scheme_Object *id;
+
+  if (rec)
+    scheme_compile_rec_done_local(rec, drec);
+
+  who = scheme_symbol_val(SCHEME_STX_SYM(SCHEME_STX_CAR(form)));
+
+  len = check_form(who, form);
+  if (len != 2)
+    bad_form(form, who, len);
+
+
+  id = SCHEME_STX_CADR(form);
+  if (!SCHEME_STX_SYMBOLP(id))
+    scheme_wrong_syntax("lexical-syntax", id, form, "expected an identifier");
+  
+  if (rec)
+    return id;
+  else
+    return scheme_datum_to_syntax(cons(lexical_syntax_symbol,
+				       cons(id, scheme_null)),
+				  form);
+}
+
+static Scheme_Object *
+lexical_syntax_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth)
+{
+  return lexical_syntax_syntax(form, env, NULL, 0);
+}
+
+
+static Scheme_Object *
 do_def_execute(char *who, Scheme_Object *form, Scheme_Type type, int require_proc)
 {
   Scheme_Object *name;
@@ -2338,34 +2362,6 @@ defmacro_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth)
 }
 
 static Scheme_Object *
-def_exp_time_execute (Scheme_Object *form)
-{
-  return do_def_execute("define-expansion-time", form, scheme_exp_time_type, 0);
-}
-
-static Scheme_Object *
-def_exp_time_link(Scheme_Object *form, Link_Info *info)
-{
-  return do_def_link(def_exp_time_execute, form, info);
-}
-
-static Scheme_Object *
-def_exp_time_syntax (Scheme_Object *form, Scheme_Comp_Env *env, 
-		      Scheme_Compile_Info *rec, int drec)
-{
-  return do_def_syntax("define-expansion-time", form, env, rec, drec,
-		       def_exp_time_link);
-}
-
-static Scheme_Object *
-def_exp_time_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth)
-{
-  return do_def_expand("define-expansion-time", 
-		       define_expansion_time_symbol, 
-		       form, env, depth);
-}
-
-static Scheme_Object *
 do_letmacro(char *where, Scheme_Object *formname,
 	    Scheme_Object *forms, Scheme_Comp_Env *env, 
 	    Scheme_Compile_Info *rec, int drec, int depth,
@@ -2463,21 +2459,6 @@ letmacro_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth)
 {
   return do_letmacro("let-one-syntax", let_macro_symbol, 
 		     form, env, NULL, 0, depth, scheme_macro_type, 0);
-}
-
-static Scheme_Object *
-let_exp_time_syntax(Scheme_Object *form, Scheme_Comp_Env *env, 
-		     Scheme_Compile_Info *rec, int drec)
-{
-  return do_letmacro("let-expansion-time", NULL,
-		     form, env, rec, drec, 0, scheme_exp_time_type, 1);
-}
-
-static Scheme_Object *
-let_exp_time_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth)
-{
-  return do_letmacro("let-expansion-time", let_expansion_time_symbol, 
-		     form, env, NULL, 0, depth, scheme_exp_time_type, 1);
 }
 
 static Scheme_Object *void_execute(Scheme_Object *expr)

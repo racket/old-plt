@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: PSDC.cc,v 1.26 1999/10/05 15:30:18 mflatt Exp $
+ * RCS_ID:      $Id: wb_ps.cxx,v 1.16 1999/10/05 15:32:37 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -175,30 +175,6 @@ static char *wx_afm_path = NULL;
 */
 
 #define _MAXPATHLEN 500
-
-/* See "wxspline.cc" and "xfspline.cc" */
-#if USE_XFIG_SPLINE_CODE
-static const char *wxPostScriptHeaderSpline = " \
-/DrawSplineSection {\n\
-	/y3 exch def\n\
-	/x3 exch def\n\
-	/y2 exch def\n\
-	/x2 exch def\n\
-	/y1 exch def\n\
-	/x1 exch def\n\
-	/xa x1 x2 x1 sub 0.666667 mul add def\n\
-	/ya y1 y2 y1 sub 0.666667 mul add def\n\
-	/xb x3 x2 x3 sub 0.666667 mul add def\n\
-	/yb y3 y2 y3 sub 0.666667 mul add def\n\
-	x1 y1 lineto\n\
-	xa ya xb yb x3 y3 curveto\n\
-	} def\n\
-";
-#else
-// No extra PS header for this spline implementation.
-static const char *wxPostScriptHeaderSpline = NULL;
-
-#endif /* USE_XFIG_SPLINE_CODE */
 
 // steve, 05.09.94
 // VMS has a bug in the ofstream class.
@@ -1335,9 +1311,6 @@ Bool wxPostScriptDC::StartDoc (char *message)
   *pstream << "%%EndComments\n\n";
 
   *pstream << wxPostScriptHeaderEllipse;
-
-  if (wxPostScriptHeaderSpline)
-    *pstream << wxPostScriptHeaderSpline;
 
   SetBrush(wxWHITE_BRUSH);
   SetPen(wxBLACK_PEN);

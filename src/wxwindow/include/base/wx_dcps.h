@@ -120,12 +120,6 @@ class wxPostScriptDC: public wxDC
   void DrawRectangle(float x, float y, float width, float height);
   void DrawRoundedRectangle(float x, float y, float width, float height, float radius = 20);
   void DrawEllipse(float x, float y, float width, float height);
-  // Splines
-  // 3-point spline
-  void DrawSpline(float x1, float y1, float x2, float y2, float x3, float y3);
-  // Any number of control points - a list of pointers to wxPoints
-  void DrawSpline(wxList *points);
-  void DrawSpline(int n, wxPoint points[]);
   /* MATTHEW: [2] 16-bit fonts */
   void DrawText(DRAW_TEXT_CONST char *text, float x, float y, Bool use16 = FALSE);
 

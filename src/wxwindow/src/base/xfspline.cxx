@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: xfspline.cxx,v 1.1.1.1 1997/12/22 16:11:58 mflatt Exp $
+ * RCS_ID:      $Id: xfspline.cxx,v 1.2 1999/10/05 15:42:43 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -18,7 +18,7 @@
 
 #if USE_SPLINES
 
-void wxDC::DrawSpline(int n, wxPoint pts[])
+void wxbDC::DrawSpline(int n, wxPoint pts[])
 {
     wxList list;
     for (int i=0; i<n; ++i)
@@ -26,38 +26,10 @@ void wxDC::DrawSpline(int n, wxPoint pts[])
     DrawSpline(&list);
 }
 
-void wxDC::DrawSpline(wxList *pts)
-{
-    DrawOpenSpline(pts);
-}
-
-void wxDC::DrawSpline(float x1, float y1, float x2, float y2,
-			    float x3,float y3)
-{
-    wxList list;
-
-    wxPoint *point1 = new wxPoint;
-    point1->x = x1; point1->y = y1;
-    list.Append((wxObject*)point1);
-
-    wxPoint *point2 = new wxPoint;
-    point2->x = x2; point2->y = y2;
-    list.Append((wxObject*)point2);
-
-    wxPoint *point3 = new wxPoint;
-    point3->x = x3; point3->y = y3;
-    list.Append((wxObject*)point3);
-
-    DrawSpline(&list);
-}
-
-//-----------------------------------------------------------------------------
-// wxDC::DrawOpenSpline(wxList *pts), may be virtually overridden by any child
-//-----------------------------------------------------------------------------
-
-// defines and static declarations for DrawOpenSpline
+// defines and static declarations for DrawSpline
 
 #define half(z1,z2)	float((z1+z2)/2.0)
+#undef wx_round
 #define wx_round(a)	float(int(a+0.5))
 
 static void wx_quadratic_spline(float a1, float b1, float a2, float b2,
@@ -68,11 +40,11 @@ static int  wx_spline_pop(float *x1, float *y1, float *x2, float *y2,
 static void wx_spline_push(float x1, float y1, float x2, float y2,
 			   float x3, float y3, float x4, float y4);
 static Bool wx_spline_add_point(float x, float y);
-static void wx_spline_draw_point_array(wxDC *dc);
+static void wx_spline_draw_point_array(wxbDC *dc);
 
 static wxList wx_spline_point_list;
 
-void wxDC::DrawOpenSpline(wxList *pts)
+void wxbDC::DrawSpline(wxList *pts)
 {
     wxPoint *p;
     float  cx1, cy1, cx2, cy2, cx3, cy3, cx4, cy4;
@@ -213,7 +185,7 @@ static Bool wx_spline_add_point(float x, float y)
     return TRUE;
 }
 
-static void wx_spline_draw_point_array(wxDC *dc)
+static void wx_spline_draw_point_array(wxbDC *dc)
 {
     dc->DrawLines(&wx_spline_point_list, 0.0, 0.0);
     wxNode *node = wx_spline_point_list.First();

@@ -2043,7 +2043,7 @@
 
   (-define (with-syntax-fail stx)
     (raise-syntax-error
-     '(with-syntax with-syntax mzscheme)
+     (quote-syntax with-syntax)
      "binding match failed"
      stx))
 
@@ -2237,13 +2237,13 @@
 		#f))])
       (values f f)))
 
-  (-define (check-splicing-list l)
+  (-define (check-splicing-list l ctx)
     (unless (stx-list? l)
       (raise-type-error
        'unsyntax-splicing
        "proper syntax list"
        l))
-    l)
+    (datum->syntax-object ctx l ctx))
 
   (define-syntaxes (quasisyntax quasisyntax/loc)
     (let ([qq
@@ -2287,14 +2287,15 @@
 		    (if (zero? depth)
 			(let ([rest-done-k
 			       (lambda (rest-v bindings)
-				 (with-syntax ([temp (car (generate-temporaries '(uqs)))])
+				 (with-syntax ([temp (car (generate-temporaries '(uqs)))]
+					       [ctx (datum->syntax-object #'x 'ctx #'x)])
 				   (convert-k (datum->syntax-object
 					       stx
 					       (list* (syntax temp)
 						      (quote-syntax ...)
 						      rest-v)
 					       stx)
-					      (cons (syntax ((temp (... ...)) (check-splicing-list x)))
+					      (cons #'[(temp (... ...)) (check-splicing-list x (quote-syntax ctx))]
 						    bindings))))])
 			  (loop (syntax rest) depth
 				(lambda ()

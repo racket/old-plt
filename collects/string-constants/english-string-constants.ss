@@ -1160,5 +1160,25 @@ please adhere to these guidelines:
   (profj-java-mode-color-error "error")
   (profj-java-mode-color-identifier "identifier")
   (profj-java-mode-color-default "default")
-
+  
+  ;; The Test Suite Tool
+  ;; Errors
+  (test-case-empty-error "Empty test case")
+  (test-case-too-many-expressions-error "Too many expressions in a test case.")
+  (test-case-not-at-top-level "Test case box not at top level")
+  ;; Dr. Scheme window menu items
+  (test-case-insert "Insert Test Case")
+  (test-case-disable-all "Disable all Test Cases")
+  (test-case-enable-all "Enable all Test Cases")
+  ;; NOTE: The following three string constants are labels of the test-case fields. The width
+  ;;       of the field is determined by the length of the longest of the following three words.
+  ;;       if the words are too long the test case will take up too much horizontal room and
+  ;;       not look very good.
+  ;; This string is the label of the expression that is being tested in a test case.
+  (test-case-to-test "To test")
+  ;; This string is the label of the expression that is the expected value of the to-test expression.
+  (test-case-expected "Expected")
+  ;; This string is the label of the actual result of the to test expression.
+  (test-case-actual "Actual")
+  
   )

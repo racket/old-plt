@@ -563,7 +563,7 @@ static Scheme_Object *os_wxFont_ConstructScheme(Scheme_Object *obj, int n,  Sche
   }
 
   ((Scheme_Class_Object *)obj)->primdata = realobj;
-  objscheme_register_primpointer(&((Scheme_Class_Object *)obj)->primdata);
+  WITH_REMEMBERED_STACK(objscheme_register_primpointer(&((Scheme_Class_Object *)obj)->primdata));
   ((Scheme_Class_Object *)obj)->primflag = 1;
   return obj;
 }
@@ -785,7 +785,7 @@ static Scheme_Object *os_wxFontList_ConstructScheme(Scheme_Object *obj, int n,  
   
   
   ((Scheme_Class_Object *)obj)->primdata = realobj;
-  objscheme_register_primpointer(&((Scheme_Class_Object *)obj)->primdata);
+  WITH_REMEMBERED_STACK(objscheme_register_primpointer(&((Scheme_Class_Object *)obj)->primdata));
   ((Scheme_Class_Object *)obj)->primflag = 1;
   return obj;
 }
@@ -1145,7 +1145,7 @@ static Scheme_Object *os_wxColour_ConstructScheme(Scheme_Object *obj, int n,  Sc
   }
 
   ((Scheme_Class_Object *)obj)->primdata = realobj;
-  objscheme_register_primpointer(&((Scheme_Class_Object *)obj)->primdata);
+  WITH_REMEMBERED_STACK(objscheme_register_primpointer(&((Scheme_Class_Object *)obj)->primdata));
   ((Scheme_Class_Object *)obj)->primflag = 1;
   return obj;
 }
@@ -1544,7 +1544,7 @@ static Scheme_Object *os_wxPoint_ConstructScheme(Scheme_Object *obj, int n,  Sch
   }
 
   ((Scheme_Class_Object *)obj)->primdata = realobj;
-  objscheme_register_primpointer(&((Scheme_Class_Object *)obj)->primdata);
+  WITH_REMEMBERED_STACK(objscheme_register_primpointer(&((Scheme_Class_Object *)obj)->primdata));
   ((Scheme_Class_Object *)obj)->primflag = 1;
   return obj;
 }
@@ -2017,7 +2017,7 @@ static Scheme_Object *os_wxBrush_ConstructScheme(Scheme_Object *obj, int n,  Sch
   }
 
   ((Scheme_Class_Object *)obj)->primdata = realobj;
-  objscheme_register_primpointer(&((Scheme_Class_Object *)obj)->primdata);
+  WITH_REMEMBERED_STACK(objscheme_register_primpointer(&((Scheme_Class_Object *)obj)->primdata));
   ((Scheme_Class_Object *)obj)->primflag = 1;
   return obj;
 }
@@ -2215,7 +2215,7 @@ static Scheme_Object *os_wxBrushList_ConstructScheme(Scheme_Object *obj, int n, 
   
   
   ((Scheme_Class_Object *)obj)->primdata = realobj;
-  objscheme_register_primpointer(&((Scheme_Class_Object *)obj)->primdata);
+  WITH_REMEMBERED_STACK(objscheme_register_primpointer(&((Scheme_Class_Object *)obj)->primdata));
   ((Scheme_Class_Object *)obj)->primflag = 1;
   return obj;
 }
@@ -2906,7 +2906,7 @@ static Scheme_Object *os_wxPen_ConstructScheme(Scheme_Object *obj, int n,  Schem
   }
 
   ((Scheme_Class_Object *)obj)->primdata = realobj;
-  objscheme_register_primpointer(&((Scheme_Class_Object *)obj)->primdata);
+  WITH_REMEMBERED_STACK(objscheme_register_primpointer(&((Scheme_Class_Object *)obj)->primdata));
   ((Scheme_Class_Object *)obj)->primflag = 1;
   return obj;
 }
@@ -3115,7 +3115,7 @@ static Scheme_Object *os_wxPenList_ConstructScheme(Scheme_Object *obj, int n,  S
   
   
   ((Scheme_Class_Object *)obj)->primdata = realobj;
-  objscheme_register_primpointer(&((Scheme_Class_Object *)obj)->primdata);
+  WITH_REMEMBERED_STACK(objscheme_register_primpointer(&((Scheme_Class_Object *)obj)->primdata));
   ((Scheme_Class_Object *)obj)->primflag = 1;
   return obj;
 }
@@ -3403,7 +3403,7 @@ static Scheme_Object *os_wxCursor_ConstructScheme(Scheme_Object *obj, int n,  Sc
   }
 
   ((Scheme_Class_Object *)obj)->primdata = realobj;
-  objscheme_register_primpointer(&((Scheme_Class_Object *)obj)->primdata);
+  WITH_REMEMBERED_STACK(objscheme_register_primpointer(&((Scheme_Class_Object *)obj)->primdata));
   ((Scheme_Class_Object *)obj)->primflag = 1;
   return obj;
 }
@@ -3982,7 +3982,7 @@ static Scheme_Object *os_wxRegion_ConstructScheme(Scheme_Object *obj, int n,  Sc
   
   
   ((Scheme_Class_Object *)obj)->primdata = realobj;
-  objscheme_register_primpointer(&((Scheme_Class_Object *)obj)->primdata);
+  WITH_REMEMBERED_STACK(objscheme_register_primpointer(&((Scheme_Class_Object *)obj)->primdata));
   ((Scheme_Class_Object *)obj)->primflag = 1;
   return obj;
 }

@@ -221,16 +221,23 @@ void GC_register_eager_finalizer(void *p, int level,
    otherwise be collected. `p' isn't actually collected when a
    finalizer is queued, since the finalizer will receive `p' as an
    argument. (Hence, weak references aren't zeroed, either.) `p' must
-   point to the beginning of an allocated object.
+   point to the beginning of a tagged, allocated object.
 
-   `level' refers to an ordering of finalizers. It can be 1 or
-   2. During a collection, level 2 finalizers are queued first, then
+   `level' refers to an ordering of finalizers. It can be 1, 2, or
+   3. During a collection, level 1 finalizers are queued first, then
    all objects queued for finalization are marked as live and
-   traversed. Then, level 1 finalizers are queued in the same
-   way. Thus, if a level 2 object refers to a level 1 object, the
-   level 2 object will be queued for finalization, and only sometime
+   traversed. Then, level 2 finalizers are queued in the same
+   way. Thus, if a level 1 object refers to a level 2 object, the
+   level 1 object will be queued for finalization, and only sometime
    after the finalizer is run and the object is again no longer
-   refermced can the level 1 object be finalized.
+   refermced can the level 2 object be finalized.
+
+   Level 3 finalizers are even later. Not only are they after level 1
+   and 2, but a level 3 finalizer is only enqueued if no other level-3
+   finalizer refers to the object. Note that cycles among level-3
+   finalizers can prevent finalization and collection. (But it's also
+   possible that other finalizers will break a finalization cycle
+   among a set of level 3 finalizers.)
 
    The `f' and `data' arguments are the finalizer clsoure to be
    called. If a finalizer is already installed for `p', it is
@@ -242,11 +249,20 @@ void GC_register_finalizer(void *p,
 			   GC_finalization_proc f, void *data, 
 			   GC_finalization_proc *oldf, void **olddata);
 /* 
-   Eventally to be used for non-eager finalizers (which will be
-   defined at that point). Currently, it's only used to clear
-   finalizers (i.e., `f' is NULL). */
+   Installs a level-3 finalizer. */
 
-void GC_finalization_weak_ptr(void **);
+void GC_finalization_weak_ptr(void **p);
+/*
+   Registers a "weak" pointer for level-3 finalization. `p' must be a
+   portion of a finalized object. When checking for references among
+   level-3 finalized objects, *p is set to NULL. The mark procedure
+   for the object containing `p' will see the NULL value, preventing
+   it from markign whatever `p' normally references. After level-3
+   finalizers are enqueued, `p' is reset to its original value (and
+   marked if the object containing `p' is already marked).
+
+   When the object containing `p' is collected, the weak pointer
+   registration is removed automatically. */
 
 /***************************************************************************/
 /* Cooperative GC                                                          */

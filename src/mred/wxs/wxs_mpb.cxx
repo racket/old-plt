@@ -5649,7 +5649,7 @@ static Scheme_Object *os_wxMediaPasteboard_ConstructScheme(Scheme_Object *obj, i
   
   
   ((Scheme_Class_Object *)obj)->primdata = realobj;
-  objscheme_register_primpointer(&((Scheme_Class_Object *)obj)->primdata);
+  WITH_REMEMBERED_STACK(objscheme_register_primpointer(&((Scheme_Class_Object *)obj)->primdata));
   ((Scheme_Class_Object *)obj)->primflag = 1;
   return obj;
 }

@@ -52,7 +52,8 @@ static char *wxStripMenuCodes_Scheme(char *in)
 
   len = strlen(in);
   if (buflen <= len) {
-    wxREGGLOB(buffer);
+    if (!buffer)
+      wxREGGLOB(buffer);
     buflen = 2 * len + 1;
     buffer = (char *)WITH_VAR_STACK(GC_malloc_atomic(buflen));
   }

@@ -340,6 +340,7 @@ Bool wxmbWriteSnipsToFile(wxMediaStreamOut *, wxStyleList *,
 class wxCanvasMediaAdmin;
 class SimpleScroll;
 class wxTimer;
+class wxAutoDragTimer;
 
 class wxMediaCanvas : public wxCanvas
 {
@@ -357,7 +358,7 @@ class wxMediaCanvas : public wxCanvas
   Bool focuson, focusforcedon;
   Bool lazy_refresh, need_refresh;
 
-  class wxAutoDragTimer *autoDragger;
+  wxAutoDragTimer *autoDragger;
 
   wxCursor *customCursor;
   Bool customCursorOn;

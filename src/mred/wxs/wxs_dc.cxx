@@ -1775,7 +1775,7 @@ static Scheme_Object *os_wxMemoryDC_ConstructScheme(Scheme_Object *obj, int n,  
   
   
   ((Scheme_Class_Object *)obj)->primdata = realobj;
-  objscheme_register_primpointer(&((Scheme_Class_Object *)obj)->primdata);
+  WITH_REMEMBERED_STACK(objscheme_register_primpointer(&((Scheme_Class_Object *)obj)->primdata));
   ((Scheme_Class_Object *)obj)->primflag = 1;
   return obj;
 }
@@ -1923,7 +1923,7 @@ static Scheme_Object *os_wxPostScriptDC_ConstructScheme(Scheme_Object *obj, int 
   
   
   ((Scheme_Class_Object *)obj)->primdata = realobj;
-  objscheme_register_primpointer(&((Scheme_Class_Object *)obj)->primdata);
+  WITH_REMEMBERED_STACK(objscheme_register_primpointer(&((Scheme_Class_Object *)obj)->primdata));
   ((Scheme_Class_Object *)obj)->primflag = 1;
   return obj;
 }
@@ -2098,7 +2098,7 @@ static Scheme_Object *os_basePrinterDC_ConstructScheme(Scheme_Object *obj, int n
   
   
   ((Scheme_Class_Object *)obj)->primdata = realobj;
-  objscheme_register_primpointer(&((Scheme_Class_Object *)obj)->primdata);
+  WITH_REMEMBERED_STACK(objscheme_register_primpointer(&((Scheme_Class_Object *)obj)->primdata));
   ((Scheme_Class_Object *)obj)->primflag = 1;
   return obj;
 }

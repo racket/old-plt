@@ -51,9 +51,10 @@ void **GC_variable_stack;
 Type_Tag weak_box_tag;
 
 #define gc_finalization_tag 256
-#define gc_weak_array_tag 257
+#define gc_finalization_weak_link_tag 257
+#define gc_weak_array_tag 258
 
-#define _num_tags_ 258
+#define _num_tags_ 259
 
 Traverse_Proc tag_table[_num_tags_];
 
@@ -366,7 +367,7 @@ typedef struct Fnl {
   struct Fnl *next;
 } Fnl;
 
-Fnl *fnls, *run_queue, *last_in_queue;
+static Fnl *fnls, *run_queue, *last_in_queue;
 
 static int mark_finalizer(void *p, Mark_Proc mark)
 {
@@ -389,11 +390,6 @@ void GC_register_finalizer(void *p, void (*f)(void *p, void *data),
 			   void **olddata)
 {
   GC_register_eager_finalizer(p, 3, f, data, oldf, olddata);
-}
-
-void GC_finalization_weak_ptr(void **p)
-{
-  /* need to do something here... */
 }
 
 void GC_register_eager_finalizer(void *p, int level, void (*f)(void *p, void *data), 
@@ -460,6 +456,54 @@ void GC_register_eager_finalizer(void *p, int level, void (*f)(void *p, void *da
   fnls = fnl;
 }
 
+typedef struct Fnl_Weak_Link {
+  Type_Tag type;
+  short need_offset;
+  void *p;
+  long offset; /* offset from beginning of block */
+  void *saved;
+  struct Fnl_Weak_Link *next;
+} Fnl_Weak_Link;
+
+static Fnl_Weak_Link *fnl_weaks;
+
+static int mark_finalizer_weak_link(void *p, Mark_Proc mark)
+{
+  if (mark) {
+    Fnl_Weak_Link *wl = (Fnl_Weak_Link *)p;
+    
+    gcMARK(wl->next);
+  }
+
+  return gcBYTES_TO_WORDS(sizeof(Fnl_Weak_Link));
+}
+
+void GC_finalization_weak_ptr(void **p)
+{
+  Fnl_Weak_Link *wl;
+
+#ifdef SAFETY
+  if (((void *)p < GC_alloc_space) || (p >= tagged_high)) {
+    *(int *)0x0 = 1;
+  }
+#endif
+
+  /* Allcation might trigger GC, so we use park: */
+  park[0] = p;
+
+  wl = (Fnl_Weak_Link *)GC_malloc_one_tagged(sizeof(Fnl_Weak_Link));
+
+  p = park[0];
+  park[0] = NULL;
+
+  wl->type = gc_finalization_weak_link_tag;
+  wl->need_offset = 1;
+  wl->p = p;
+  wl->next = fnl_weaks;
+
+  fnl_weaks = wl;
+}
+
 /******************************************************************************/
 
 static unsigned long stack_base;
@@ -504,9 +548,8 @@ void stop()
   printf("stopped\n");
 }
 
-/* for debugging: */
-
-void *GC_find_start(void *p)
+/* Only works during GC: */
+void *find_start(void *p)
 {
   long diff = ((char *)p - (char *)GC_alloc_space) >> 2;
 
@@ -626,7 +669,7 @@ static void *mark(void *p)
 
 #ifdef SEARCH
       if (atomic_detail_cycle == cycle_count) {
-	printf("%ld at %lx\n", size, new_untagged_low);
+	printf("%ld at %lx\n", size, (long)new_untagged_low);
       }
 #endif
 	
@@ -635,7 +678,7 @@ static void *mark(void *p)
   }
 }
 
-void **o_var_stack;
+static void **o_var_stack, **oo_var_stack;
 
 void GC_mark_variable_stack(void **var_stack,
 			    long delta,
@@ -654,6 +697,7 @@ void GC_mark_variable_stack(void **var_stack,
 
     size = *(long *)(var_stack + 1);
 
+    oo_var_stack = o_var_stack;
     o_var_stack = var_stack;
 
     p = (void ***)(var_stack + 2);
@@ -689,6 +733,29 @@ void GC_mark_variable_stack(void **var_stack,
     stack_depth++;
   }
 }
+
+#if SAFETY
+void check_variable_stack()
+{
+  void **limit, **var_stack;
+
+  limit = (void **)(GC_get_thread_stack_base
+		    ? GC_get_thread_stack_base()
+		    : stack_base);
+
+  var_stack = GC_variable_stack;
+
+  while (var_stack) {
+    if (var_stack == limit)
+      return;
+
+    if (*var_stack && ((unsigned long)*var_stack < (unsigned long)var_stack))
+      *(int *)0x0 = 1;
+
+    var_stack = *var_stack;
+  }
+}
+#endif
 
 #if 0
 # define GETTIME() ((long)scheme_get_milliseconds())
@@ -736,7 +803,9 @@ void gcollect(int needsize)
     tag_table[weak_box_tag] = mark_weak_box;
     tag_table[gc_weak_array_tag] = mark_weak_array;
     tag_table[gc_finalization_tag] = mark_finalizer;
+    tag_table[gc_finalization_weak_link_tag] = mark_finalizer_weak_link;
     GC_add_roots(&fnls, (char *)&fnls + sizeof(fnls) + 1);
+    GC_add_roots(&fnl_weaks, (char *)&fnl_weaks + sizeof(fnl_weaks) + 1);
     GC_add_roots(&run_queue, (char *)&run_queue + sizeof(run_queue) + 1);
     GC_add_roots(&last_in_queue, (char *)&last_in_queue + sizeof(last_in_queue) + 1);
     GC_add_roots(&park, (char *)&park + sizeof(park) + 1);
@@ -840,6 +909,27 @@ void gcollect(int needsize)
 
   PRINTTIME((STDERR, "gc: bitmap: %ld\n", GETTIMEREL()));
 
+  /******************** Update Weak Offsets ****************************/
+
+  {
+    Fnl_Weak_Link *wl;
+
+    for (wl = fnl_weaks; wl; wl = wl->next) {
+      if (wl->need_offset) {
+	void *wp;
+#ifdef SAFETY
+	if ((wl->p < GC_alloc_space) || (wl->p > GC_alloc_top)) {
+	  *(int *)0x0 = 1;
+	}
+#endif
+	wp = find_start(wl->p);
+	wl->offset = wl->p - wp;
+	wl->p = wp;
+	wl->need_offset = 0;
+      }
+    }
+  }
+
   /******************** Mark/Copy ****************************/
 
   tagged_mark = new_tagged_high = (void **)new_space;
@@ -905,7 +995,7 @@ void gcollect(int needsize)
 	  tagged_mark += size;
 	  
 #if SAFETY
-	  if (tagged_mark < new_space) {
+	  if ((void *)tagged_mark < new_space) {
 	    *(int *)0x0 = 1;
 	  }
 #endif
@@ -948,65 +1038,153 @@ void gcollect(int needsize)
       }
     }
       
-    if ((did_fnls == 3) || !fnls) {
-      break;
-    } else {
-      int eager_level = did_fnls + 1;
-      Fnl *f, *prev, *queue;
-      
-      f = fnls;
-      prev = NULL;
-      queue = NULL;
-	
-      while (f) {
-	if (f->eager_level == eager_level) {
-	  void *v;
+    if ((did_fnls >= 3) || !fnls) {
+      if (did_fnls == 3) {
+	/* Finish up ordered finalization */
+	Fnl *f, *next, *prev;
+	Fnl_Weak_Link *wl;
 
-	  /* FIXME: non-eager finalization = live forever, for now */
-	  if (eager_level == 3) {
-	    v = f->p;
-	    gcMARK(v);
-	  } else
+	/* Enqueue and mark level 3 finalizers that still haven't been marked. */
+	/* (Recursive marking is already done, though.) */
+	prev = NULL;
+	for (f = fnls; f; f = next) {
+	  next = f->next;
+	  if (f->eager_level == 3) {
+	    void *v;
+
 	    v = GC_resolve(f->p);
 
-	  if (v == f->p) {
-	    /* Not yet marked. Move finalization to run queue. */
-	    Fnl *next = f->next;
+	    if (v == f->p) {
+	      /* Not yet marked. Mark it and enqueue it. */
+	      gcMARK(f->p);
 
-	    if (prev)
-	      prev->next = next;
-	    else
-	      fnls = next;
+	      if (prev)
+		prev->next = next;
+	      else
+		fnls = next;
 	      
-	    f->eager_level = 0; /* indicated queued */
+	      f->eager_level = 0; /* indicates queued */
 	      
-	    f->next = NULL;
-	    if (last_in_queue) {
-	      last_in_queue->next = f;
-	      last_in_queue = f;
+	      f->next = NULL;
+	      if (last_in_queue) {
+		last_in_queue->next = f;
+		last_in_queue = f;
+	      } else {
+		run_queue = last_in_queue = f;
+	      }
 	    } else {
-	      run_queue = last_in_queue = f;
+	      f->p = v;
+	      prev = f;
 	    }
-	    if (!queue)
-	      queue = f;
+	  }
+	}
 
-	    f = next;
+	/* Restore zeroed out weak links, marking as we go: */	
+	for (wl = fnl_weaks; wl; wl = wl->next) {
+	  void *wp = (void *)GC_resolve(wl->p);
+	  int markit;
+	  markit = (wp != wl->p);
+	  wp = (wp + wl->offset);
+	  *(void **)wp = wl->saved;
+	  if (markit)
+	    gcMARK(wp);
+	}
+	
+	/* We have to mark one more time, because restoring a weak
+           link may have made something reachable. */
+
+	did_fnls++;
+      } else
+	break;
+    } else {
+      int eager_level = did_fnls + 1;
+      
+      if (eager_level == 3) {
+	/* Ordered finalization */
+	Fnl *f;
+	Fnl_Weak_Link *wl;
+
+	/* Zero out weak links for ordered finalization */
+	for (wl = fnl_weaks; wl; wl = wl->next) {
+	  void *wp = (void *)GC_resolve(wl->p);
+	  wl->saved = *(void **)(wp + wl->offset);
+	  *(void **)(wp + wl->offset) = NULL;
+	}
+
+	/* Mark content of not-yet-marked finalized objects,
+	   but don't mark the finalized objects themselves. */	
+	for (f = fnls; f; f = f->next) {
+	  if (f->eager_level == 3) {
+	    void *v;
+
+	    v = GC_resolve(f->p);
+
+	    if (v == f->p) {
+	      /* Not yet marked. Do content. */
+	      Type_Tag tag = *(Type_Tag *)v;
+
+#if SAFETY
+	      if ((tag < 0) || (tag >= _num_tags_) || !tag_table[tag]) {
+		*(int *)0x0 = 1;
+	      }
+#endif
+	      tag_table[tag](v, mark);
+	    }
+	  }
+	}
+      } else {
+	/* Unordered finalization */
+	Fnl *f, *prev, *queue;
+
+	f = fnls;
+	prev = NULL;
+	queue = NULL;
+	
+	while (f) {
+	  if (f->eager_level == eager_level) {
+	    void *v;
+
+	    v = GC_resolve(f->p);
+
+	    if (v == f->p) {
+	      /* Not yet marked. Move finalization to run queue. */
+	      Fnl *next = f->next;
+
+	      if (prev)
+		prev->next = next;
+	      else
+		fnls = next;
+	      
+	      f->eager_level = 0; /* indicates queued */
+	      
+	      f->next = NULL;
+	      if (last_in_queue) {
+		last_in_queue->next = f;
+		last_in_queue = f;
+	      } else {
+		run_queue = last_in_queue = f;
+	      }
+	      if (!queue)
+		queue = f;
+
+	      f = next;
+	    } else {
+	      f->p = v;
+	      prev = f;
+	      f = f->next;
+	    }
 	  } else {
-	    f->p = v;
 	    prev = f;
 	    f = f->next;
 	  }
-	} else {
-	  prev = f;
+	}
+	
+	/* Mark items added to run queue: */
+	f = queue;
+	while (f) {
+	  gcMARK(f->p);
 	  f = f->next;
 	}
-      }
-	
-      /* Mark items added to run queue: */
-      f = queue;
-      while (f) {
-	gcMARK(f->p);
-	f = f->next;
       }
 	
       did_fnls++;
@@ -1018,6 +1196,7 @@ void gcollect(int needsize)
 
   /******************************************************/
 
+  /* Do weak boxes: */
   wb = weak_boxes;
   while (wb) {
     if (!((long)wb->val & 0x1) && ((void *)wb->val >= GC_alloc_space) && ((void *)wb->val <= GC_alloc_top)) {
@@ -1036,6 +1215,7 @@ void gcollect(int needsize)
     wb = wb->next;
   }
 
+  /* Do weak arrays: */
   wa = weak_arrays;
   while (wa) {
     int i;
@@ -1053,6 +1233,28 @@ void gcollect(int needsize)
     }
 
     wa = wa->next;
+  }
+
+  /* Cleanup weak finalization links: */
+  {
+    Fnl_Weak_Link *wl, *prev, *next;
+
+    prev = NULL;
+    for (wl = fnl_weaks; wl; wl = next) {
+      void *wp;
+      next = wl->next;
+      wp = (void *)GC_resolve(wl->p);
+      if (wp == wl->p) {
+	/* Collectable. Removed this link. */
+	if (prev)
+	  prev->next = next;
+	else
+	  fnl_weaks = next;
+      } else {
+	wl->p = wp;
+	prev = wl;
+      }
+    }
   }
 
   /******************************************************/
@@ -1144,6 +1346,10 @@ static void *malloc_tagged(size_t size_in_bytes)
 {
   void **m, **naya;
 
+#if SAFETY
+  check_variable_stack();
+#endif
+
 #if GC_EVERY_ALLOC
   if (++alloc_cycle >= GC_EVERY_ALLOC) {
     alloc_cycle = 0;
@@ -1191,6 +1397,10 @@ static void *malloc_tagged(size_t size_in_bytes)
 static void *malloc_untagged(size_t size_in_bytes, unsigned long nonatomic)
 {
   void **naya;
+
+#if SAFETY
+  check_variable_stack();
+#endif
 
 #if GC_EVERY_ALLOC
   if (++alloc_cycle >= GC_EVERY_ALLOC) {

@@ -59,7 +59,7 @@ class wxCanvasMediaAdmin : public wxMediaAdmin
   wxCanvasMediaAdmin *nextadmin, *prevadmin;
   Bool resetFlag;
   Bool updateBlock, resizedBlock;
-  class wxUpdateCursorTimer *updateCursorTimer;
+  wxUpdateCursorTimer *updateCursorTimer;
 
   inline void AdjustStdFlag(void);
 

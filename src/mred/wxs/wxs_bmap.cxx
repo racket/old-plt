@@ -203,7 +203,7 @@ static Scheme_Object *os_wxBitmapSaveFile(Scheme_Object *obj, int n,  Scheme_Obj
   
   r = WITH_VAR_STACK(((wxBitmap *)((Scheme_Class_Object *)obj)->primdata)->SaveFile(x0, x1));
 
-  if (1) scheme_process_block(0.0);
+  if (1) WITH_VAR_STACK(scheme_process_block(0.0));
   
   return (r ? scheme_true : scheme_false);
 }
@@ -233,7 +233,7 @@ static Scheme_Object *os_wxBitmapLoadFile(Scheme_Object *obj, int n,  Scheme_Obj
   
   r = WITH_VAR_STACK(((wxBitmap *)((Scheme_Class_Object *)obj)->primdata)->LoadFile(x0, x1));
 
-  if (r) scheme_process_block(0.0);
+  if (r) WITH_VAR_STACK(scheme_process_block(0.0));
   
   return (r ? scheme_true : scheme_false);
 }
@@ -438,12 +438,12 @@ static Scheme_Object *os_wxBitmap_ConstructScheme(Scheme_Object *obj, int n,  Sc
 #endif
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
-    if (realobj->Ok()) scheme_process_block(0.0);
+    if (realobj->Ok()) WITH_VAR_STACK(scheme_process_block(0.0));
     
   }
 
   ((Scheme_Class_Object *)obj)->primdata = realobj;
-  objscheme_register_primpointer(&((Scheme_Class_Object *)obj)->primdata);
+  WITH_REMEMBERED_STACK(objscheme_register_primpointer(&((Scheme_Class_Object *)obj)->primdata));
   ((Scheme_Class_Object *)obj)->primflag = 1;
   return obj;
 }

@@ -539,6 +539,7 @@ static MrEdContext *MakeContext(MrEdContext *c, Scheme_Config *config)
     MrEdFinalizedContext *fc;
     
     c = (MrEdContext *)scheme_malloc_tagged(sizeof(MrEdContext));
+    c->type = mred_eventspace_type;
 
     tlwl = new wxChildList();
     c->topLevelWindowList = tlwl;
@@ -579,8 +580,6 @@ static MrEdContext *MakeContext(MrEdContext *c, Scheme_Config *config)
 			    CollectingContext, NULL,
 			    NULL, NULL);
   WXGC_IGNORE(c->finalized);
-
-  c->type = mred_eventspace_type;
 
 #ifdef MZ_PRECISE_GC
   mr_hop = (Context_Manager_Hop *)GC_malloc_one_tagged(sizeof(Context_Manager_Hop));

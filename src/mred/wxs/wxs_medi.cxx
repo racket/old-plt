@@ -5102,7 +5102,7 @@ static Scheme_Object *wxMediaGlobalwxGetTheBufferDataClassList(int n,  Scheme_Ob
   
 
   
-  r = wxGetTheBufferDataClassList();
+  r = WITH_VAR_STACK(wxGetTheBufferDataClassList());
 
   
   
@@ -5122,7 +5122,7 @@ static Scheme_Object *wxMediaGlobalwxGetTheSnipClassList(int n,  Scheme_Object *
   
 
   
-  r = wxGetTheSnipClassList();
+  r = WITH_VAR_STACK(wxGetTheSnipClassList());
 
   
   
@@ -5143,7 +5143,7 @@ static Scheme_Object *wxMediaGlobalwxMediaSetXSelectionMode(int n,  Scheme_Objec
   x0 = WITH_VAR_STACK(objscheme_unbundle_bool(p[0], "editor-set-x-selection-mode in editor%"));
 
   
-  wxMediaSetXSelectionMode(x0);
+  WITH_VAR_STACK(wxMediaSetXSelectionMode(x0));
 
   
   
@@ -5165,7 +5165,7 @@ static Scheme_Object *wxMediaGlobalwxAddMediaPasteboardFunctions(int n,  Scheme_
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxKeymap(p[0], "add-pasteboard-keymap-functions in editor%", 0));
 
   
-  wxAddMediaPasteboardFunctions(x0);
+  WITH_VAR_STACK(wxAddMediaPasteboardFunctions(x0));
 
   
   
@@ -5187,7 +5187,7 @@ static Scheme_Object *wxMediaGlobalwxAddMediaEditorFunctions(int n,  Scheme_Obje
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxKeymap(p[0], "add-text-keymap-functions in editor%", 0));
 
   
-  wxAddMediaEditorFunctions(x0);
+  WITH_VAR_STACK(wxAddMediaEditorFunctions(x0));
 
   
   
@@ -5209,7 +5209,7 @@ static Scheme_Object *wxMediaGlobalwxAddMediaBufferFunctions(int n,  Scheme_Obje
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxKeymap(p[0], "add-editor-keymap-functions in editor%", 0));
 
   
-  wxAddMediaBufferFunctions(x0);
+  WITH_VAR_STACK(wxAddMediaBufferFunctions(x0));
 
   
   
@@ -5232,7 +5232,7 @@ static Scheme_Object *wxMediaGlobalwxWriteMediaGlobalFooter(int n,  Scheme_Objec
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxMediaStreamOut(p[0], "write-editor-global-footer in editor%", 0));
 
   
-  r = wxWriteMediaGlobalFooter(x0);
+  r = WITH_VAR_STACK(wxWriteMediaGlobalFooter(x0));
 
   
   
@@ -5255,7 +5255,7 @@ static Scheme_Object *wxMediaGlobalwxWriteMediaGlobalHeader(int n,  Scheme_Objec
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxMediaStreamOut(p[0], "write-editor-global-header in editor%", 0));
 
   
-  r = wxWriteMediaGlobalHeader(x0);
+  r = WITH_VAR_STACK(wxWriteMediaGlobalHeader(x0));
 
   
   
@@ -5278,7 +5278,7 @@ static Scheme_Object *wxMediaGlobalwxReadMediaGlobalFooter(int n,  Scheme_Object
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxMediaStreamIn(p[0], "read-editor-global-footer in editor%", 0));
 
   
-  r = wxReadMediaGlobalFooter(x0);
+  r = WITH_VAR_STACK(wxReadMediaGlobalFooter(x0));
 
   
   
@@ -5301,7 +5301,7 @@ static Scheme_Object *wxMediaGlobalwxReadMediaGlobalHeader(int n,  Scheme_Object
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxMediaStreamIn(p[0], "read-editor-global-header in editor%", 0));
 
   
-  r = wxReadMediaGlobalHeader(x0);
+  r = WITH_VAR_STACK(wxReadMediaGlobalHeader(x0));
 
   
   
@@ -5324,7 +5324,7 @@ static Scheme_Object *wxMediaGlobalwxSetMediaPrintMargin(int n,  Scheme_Object *
   x1 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[1], "set-editor-print-margin in editor%"));
 
   
-  wxSetMediaPrintMargin(x0, x1);
+  WITH_VAR_STACK(wxSetMediaPrintMargin(x0, x1));
 
   
   
@@ -5355,7 +5355,7 @@ static Scheme_Object *wxMediaGlobalwxGetMediaPrintMargin(int n,  Scheme_Object *
     *x1 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(WITH_VAR_STACK(objscheme_nullable_unbox(p[1], "get-editor-print-margin in editor%")), "get-editor-print-margin in editor%"", extracting boxed argument"));
 
   
-  wxGetMediaPrintMargin(x0, x1);
+  WITH_VAR_STACK(wxGetMediaPrintMargin(x0, x1));
 
   
   if (n > 0 && !XC_SCHEME_NULLP(p[0]))

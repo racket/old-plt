@@ -98,7 +98,8 @@ static char *wxStripMenuCodes_Scheme(char *in)
 
   len = strlen(in);
   if (buflen <= len) {
-    wxREGGLOB(buffer);
+    if (!buffer)
+      wxREGGLOB(buffer);
     buflen = 2 * len + 1;
     buffer = (char *)WITH_VAR_STACK(GC_malloc_atomic(buflen));
   }
@@ -149,7 +150,7 @@ static Scheme_Object *wxsGlobalwxsFillPrivateColor(int n,  Scheme_Object *p[])
   x1 = WITH_VAR_STACK(objscheme_unbundle_wxColour(p[1], "fill-private-color", 0));
 
   
-  wxsFillPrivateColor(x0, x1);
+  WITH_VAR_STACK(wxsFillPrivateColor(x0, x1));
 
   
   
@@ -168,7 +169,7 @@ static Scheme_Object *wxsGlobalwxFlushDisplay(int n,  Scheme_Object *p[])
   
 
   
-  wxFlushDisplay();
+  WITH_VAR_STACK(wxFlushDisplay());
 
   
   
@@ -193,7 +194,7 @@ static Scheme_Object *wxsGlobalwxSchemeYield(int n,  Scheme_Object *p[])
     x0 = NULL;
 
   
-  wxSchemeYield(x0);
+  WITH_VAR_STACK(wxSchemeYield(x0));
 
   
   
@@ -233,7 +234,7 @@ static Scheme_Object *wxsGlobalwxWriteResource(int n,  Scheme_Object *p[])
       x3 = NULL;
 
     
-    r = wxWriteResource(x0, x1, x2, x3);
+    r = WITH_VAR_STACK(wxWriteResource(x0, x1, x2, x3));
 
     
     
@@ -261,7 +262,7 @@ static Scheme_Object *wxsGlobalwxWriteResource(int n,  Scheme_Object *p[])
       x3 = NULL;
 
     
-    r = wxWriteResource(x0, x1, x2, x3);
+    r = WITH_VAR_STACK(wxWriteResource(x0, x1, x2, x3));
 
     
     
@@ -303,7 +304,7 @@ static Scheme_Object *wxsGlobalwxGetResource(int n,  Scheme_Object *p[])
       x3 = NULL;
 
     
-    r = wxGetResource(x0, x1, x2, x3);
+    r = WITH_VAR_STACK(wxGetResource(x0, x1, x2, x3));
 
     
     if (n > 2)
@@ -334,7 +335,7 @@ static Scheme_Object *wxsGlobalwxGetResource(int n,  Scheme_Object *p[])
       x3 = NULL;
 
     
-    r = wxGetResource(x0, x1, x2, x3);
+    r = WITH_VAR_STACK(wxGetResource(x0, x1, x2, x3));
 
     
     if (n > 2)
@@ -361,7 +362,7 @@ static Scheme_Object *wxsGlobalwxStripMenuCodes_Scheme(int n,  Scheme_Object *p[
   x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[0], "label->plain-label"));
 
   
-  r = wxStripMenuCodes_Scheme(x0);
+  r = WITH_VAR_STACK(wxStripMenuCodes_Scheme(x0));
 
   
   
@@ -386,7 +387,7 @@ static Scheme_Object *wxsGlobalwxDisplaySize(int n,  Scheme_Object *p[])
       *x1 = WITH_VAR_STACK(objscheme_unbundle_integer(WITH_VAR_STACK(objscheme_unbox(p[1], "display-size")), "display-size"", extracting boxed argument"));
 
   
-  wxDisplaySize(x0, x1);
+  WITH_VAR_STACK(wxDisplaySize(x0, x1));
 
   
   if (n > 0)
@@ -409,7 +410,7 @@ static Scheme_Object *wxsGlobalwxBell(int n,  Scheme_Object *p[])
   
 
   
-  wxBell();
+  WITH_VAR_STACK(wxBell());
 
   
   
@@ -428,7 +429,7 @@ static Scheme_Object *wxsGlobalwxEndBusyCursor(int n,  Scheme_Object *p[])
   
 
   
-  wxEndBusyCursor();
+  WITH_VAR_STACK(wxEndBusyCursor());
 
   
   
@@ -448,7 +449,7 @@ static Scheme_Object *wxsGlobalwxIsBusy(int n,  Scheme_Object *p[])
   
 
   
-  r = wxIsBusy();
+  r = WITH_VAR_STACK(wxIsBusy());
 
   
   
@@ -467,7 +468,7 @@ static Scheme_Object *wxsGlobalwxBeginBusyCursor(int n,  Scheme_Object *p[])
   
 
   
-  wxBeginBusyCursor();
+  WITH_VAR_STACK(wxBeginBusyCursor());
 
   
   
@@ -500,7 +501,7 @@ static Scheme_Object *wxsGlobalwxMakeMetaFilePlaceable(int n,  Scheme_Object *p[
   x5 = WITH_VAR_STACK(objscheme_unbundle_float(p[5], "make-meta-file-placeable"));
 
   
-  r = wxMakeMetaFilePlaceable(x0, x1, x2, x3, x4, x5);
+  r = WITH_VAR_STACK(wxMakeMetaFilePlaceable(x0, x1, x2, x3, x4, x5));
 
   
   
@@ -520,7 +521,7 @@ static Scheme_Object *wxsGlobalwxDisplayDepth(int n,  Scheme_Object *p[])
   
 
   
-  r = wxDisplayDepth();
+  r = WITH_VAR_STACK(wxDisplayDepth());
 
   
   
@@ -540,7 +541,7 @@ static Scheme_Object *wxsGlobalwxColourDisplay(int n,  Scheme_Object *p[])
   
 
   
-  r = wxColourDisplay();
+  r = WITH_VAR_STACK(wxColourDisplay());
 
   
   
@@ -605,7 +606,7 @@ static Scheme_Object *wxsGlobalwxFileSelector(int n,  Scheme_Object *p[])
     x8 = -1;
 
   
-  r = wxFileSelector(x0, x1, x2, x3, x4, x5, x6, x7, x8);
+  r = WITH_VAR_STACK(wxFileSelector(x0, x1, x2, x3, x4, x5, x6, x7, x8));
 
   
   

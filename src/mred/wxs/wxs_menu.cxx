@@ -475,7 +475,7 @@ static Scheme_Object *os_wxMenu_ConstructScheme(Scheme_Object *obj, int n,  Sche
   } else
     x0 = NULL;
   if (n > 1) {
-    x1 = (SCHEME_NULLP(p[1]) ? NULL : (WXGC_IGNORE(tmp_callback), WITH_REMEMBERED_STACK(objscheme_istype_proc2(p[1], CB_USER)), tmp_callback = p[1], (CB_FUNCTYPE)CB_TOSCHEME));
+    x1 = (SCHEME_NULLP(p[1]) ? NULL : (WITH_REMEMBERED_STACK(objscheme_istype_proc2(p[1], CB_USER)), tmp_callback = p[1], (CB_FUNCTYPE)CB_TOSCHEME));
   } else
     x1 = NULL;
 
@@ -489,7 +489,7 @@ static Scheme_Object *os_wxMenu_ConstructScheme(Scheme_Object *obj, int n,  Sche
   
   realobj->callback_closure = tmp_callback;
   ((Scheme_Class_Object *)obj)->primdata = realobj;
-  objscheme_register_primpointer(&((Scheme_Class_Object *)obj)->primdata);
+  WITH_REMEMBERED_STACK(objscheme_register_primpointer(&((Scheme_Class_Object *)obj)->primdata));
   ((Scheme_Class_Object *)obj)->primflag = 1;
   return obj;
 }
@@ -1033,7 +1033,7 @@ static Scheme_Object *os_wxMenuBar_ConstructScheme(Scheme_Object *obj, int n,  S
   }
 
   ((Scheme_Class_Object *)obj)->primdata = realobj;
-  objscheme_register_primpointer(&((Scheme_Class_Object *)obj)->primdata);
+  WITH_REMEMBERED_STACK(objscheme_register_primpointer(&((Scheme_Class_Object *)obj)->primdata));
   ((Scheme_Class_Object *)obj)->primflag = 1;
   return obj;
 }
@@ -1245,7 +1245,7 @@ static Scheme_Object *os_wxsMenuItem_ConstructScheme(Scheme_Object *obj, int n, 
   
   
   ((Scheme_Class_Object *)obj)->primdata = realobj;
-  objscheme_register_primpointer(&((Scheme_Class_Object *)obj)->primdata);
+  WITH_REMEMBERED_STACK(objscheme_register_primpointer(&((Scheme_Class_Object *)obj)->primdata));
   ((Scheme_Class_Object *)obj)->primflag = 1;
   return obj;
 }
@@ -1342,7 +1342,7 @@ static Scheme_Object *wxsMenuItemGlobalwxsIdToMenuItem(int n,  Scheme_Object *p[
   x0 = WITH_VAR_STACK(objscheme_unbundle_ExactLong(p[0], "id-to-menu-item in menu-item%"));
 
   
-  r = wxsIdToMenuItem(x0);
+  r = WITH_VAR_STACK(wxsIdToMenuItem(x0));
 
   
   

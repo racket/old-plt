@@ -790,7 +790,7 @@ static Scheme_Object *os_wxChoice_ConstructScheme(Scheme_Object *obj, int n,  Sc
   if ((n < 3) ||(n > 10)) 
     WITH_VAR_STACK(scheme_wrong_count("initialization in choice%", 3, 10, n, p));
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxPanel(p[0], "initialization in choice%", 0));
-  x1 = (SCHEME_NULLP(p[1]) ? NULL : (WXGC_IGNORE(tmp_callback), WITH_REMEMBERED_STACK(objscheme_istype_proc2(p[1], CB_USER)), tmp_callback = p[1], (CB_FUNCTYPE)CB_TOSCHEME));
+  x1 = (SCHEME_NULLP(p[1]) ? NULL : (WITH_REMEMBERED_STACK(objscheme_istype_proc2(p[1], CB_USER)), tmp_callback = p[1], (CB_FUNCTYPE)CB_TOSCHEME));
   x2 = (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(p[2], "initialization in choice%"));
   if (n > 3) {
     x3 = WITH_VAR_STACK(objscheme_unbundle_integer(p[3], "initialization in choice%"));
@@ -831,7 +831,7 @@ static Scheme_Object *os_wxChoice_ConstructScheme(Scheme_Object *obj, int n,  Sc
   delete[] x8;
   realobj->callback_closure = tmp_callback;
   ((Scheme_Class_Object *)obj)->primdata = realobj;
-  objscheme_register_primpointer(&((Scheme_Class_Object *)obj)->primdata);
+  WITH_REMEMBERED_STACK(objscheme_register_primpointer(&((Scheme_Class_Object *)obj)->primdata));
   ((Scheme_Class_Object *)obj)->primflag = 1;
   return obj;
 }

@@ -952,7 +952,7 @@ static Scheme_Object *os_wxRadioBox_ConstructScheme(Scheme_Object *obj, int n,  
     if ((n < 8) ||(n > 11)) 
       WITH_VAR_STACK(scheme_wrong_count("initialization in radio-box% (bitmap list case)", 8, 11, n, p));
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxPanel(p[0], "initialization in radio-box% (bitmap list case)", 0));
-    x1 = (SCHEME_NULLP(p[1]) ? NULL : (WXGC_IGNORE(tmp_callback), WITH_REMEMBERED_STACK(objscheme_istype_proc2(p[1], CB_USER)), tmp_callback = p[1], (CB_FUNCTYPE)CB_TOSCHEME));
+    x1 = (SCHEME_NULLP(p[1]) ? NULL : (WITH_REMEMBERED_STACK(objscheme_istype_proc2(p[1], CB_USER)), tmp_callback = p[1], (CB_FUNCTYPE)CB_TOSCHEME));
     x2 = (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(p[2], "initialization in radio-box% (bitmap list case)"));
     x3 = WITH_VAR_STACK(objscheme_unbundle_integer(p[3], "initialization in radio-box% (bitmap list case)"));
     x4 = WITH_VAR_STACK(objscheme_unbundle_integer(p[4], "initialization in radio-box% (bitmap list case)"));
@@ -1008,7 +1008,7 @@ static Scheme_Object *os_wxRadioBox_ConstructScheme(Scheme_Object *obj, int n,  
     if ((n < 3) ||(n > 11)) 
       WITH_VAR_STACK(scheme_wrong_count("initialization in radio-box% (string list case)", 3, 11, n, p));
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxPanel(p[0], "initialization in radio-box% (string list case)", 0));
-    x1 = (SCHEME_NULLP(p[1]) ? NULL : (WXGC_IGNORE(tmp_callback), WITH_REMEMBERED_STACK(objscheme_istype_proc2(p[1], CB_USER)), tmp_callback = p[1], (CB_FUNCTYPE)CB_TOSCHEME));
+    x1 = (SCHEME_NULLP(p[1]) ? NULL : (WITH_REMEMBERED_STACK(objscheme_istype_proc2(p[1], CB_USER)), tmp_callback = p[1], (CB_FUNCTYPE)CB_TOSCHEME));
     x2 = (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(p[2], "initialization in radio-box% (string list case)"));
     if (n > 3) {
       x3 = WITH_VAR_STACK(objscheme_unbundle_integer(p[3], "initialization in radio-box% (string list case)"));
@@ -1055,7 +1055,7 @@ static Scheme_Object *os_wxRadioBox_ConstructScheme(Scheme_Object *obj, int n,  
   }
 
   ((Scheme_Class_Object *)obj)->primdata = realobj;
-  objscheme_register_primpointer(&((Scheme_Class_Object *)obj)->primdata);
+  WITH_REMEMBERED_STACK(objscheme_register_primpointer(&((Scheme_Class_Object *)obj)->primdata));
   ((Scheme_Class_Object *)obj)->primflag = 1;
   return obj;
 }

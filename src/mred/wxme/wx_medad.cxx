@@ -522,8 +522,9 @@ void wxMediaCanvas::OnEvent(wxMouseEvent *event)
 	while (w && w->IsShown()) {
 	  w = w->GetParent();
 	}
-	if (!w)
+	if (!w) {
 	  autoDragger = new wxAutoDragTimer(this, event);
+	}
       }
     }
   }

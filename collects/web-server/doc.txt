@@ -36,9 +36,6 @@ response, the monitor will notify <alert-email> of the problem.
 Another Start
 =============
 
-FIX - web-server.ss is not used
-      I have not decided how to update it yet. - ptg
-
 Requiring the library _web-server.ss_, via 
   (require (lib "web-server.ss" "web-server"))
 provides the serve function, which starts the server with more configuration
@@ -59,14 +56,13 @@ options.
   A later section describes the remaining semi-internal functions in the
   web-sever.ss library.
 
-The library _internal-server.ss_ also provides a single
-function named serve that behaves almost the same as the
-above function with the same name.  Instead of accepting
-HTTP requests from network connections, this version of the
-serve function constructs a virtual network via channels
-(see tcp-redirect.ss in the net collection) and uses a
-browser from the browser collection to show the urls. No
-network connections from the underlying OS are used.
+The library _internal-server.ss_ also provides a single function named
+internal-serve that behaves almost the same as the above function with
+the same name.  Instead of accepting HTTP requests from network
+connections, internal-serve constructs a virtual network via pipes and
+channels (see tcp-redirect.ss in the net collection) and uses a
+browser from the browser collection to show the urls. No network
+connections from the underlying OS are used.
 
 It returns four functions. The first one shutsdown the web
 server, as above.

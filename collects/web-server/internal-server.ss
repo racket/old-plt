@@ -46,7 +46,12 @@
           [tcp : net:tcp^ ((tcp-redirect (list port)))]
           [url : net:url^ (url@ tcp)]
           [browser : browser^ (browser@ plt-installer mred tcp url)]
-	  [config : web-config^ ((update-configuration configuration@ `((port . ,port) (ip-address . ,listen-ip))))]
+	  [config : web-config^ ((update-configuration
+				  configuration@
+				  `((port . ,port)
+				    (ip-address . ,listen-ip)
+				    (namespace . , (lambda ()
+						     (current-namespace))))))]
           [web-server : web-server^ (web-server@ tcp config)]
           [main : () ((unit/sig ()
                         (import net:tcp^

@@ -126,7 +126,7 @@
 	     (compound-unit/sig
 	      (import (T : net:tcp^))
 	      (link
-	       [c : web-config^ ((update-configuration the-configuration@ `(instances . ,instances)))]
+	       [c : web-config^ ((update-configuration the-configuration@ `((instances . ,instances))))]
 	       [s : web-server^ (web-server@ T C)]
 	       [m : () ((unit/sig ()
 			  (import web-server^)

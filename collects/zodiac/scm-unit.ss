@@ -1,4 +1,4 @@
-; $Id: scm-unit.ss,v 1.65 1998/07/14 20:25:03 shriram Exp $
+; $Id: scm-unit.ss,v 1.66 1998/07/15 02:21:55 shriram Exp $
 
 (unit/sig zodiac:scheme-units^
   (import zodiac:misc^ (z : zodiac:structures^)
@@ -1072,16 +1072,13 @@
 					     '#%unit?)
 					   result)
 				   (#%raise
-				     (,(if sig?
-					 '#%make-exn:unit:signature:non-signed-unit
-					 '#%make-exn:unit:non-unit)
+				     (#%make-exn:unit
 				       ,(format
 					  "~s: result from ~s is not ~aunit"
 					  form-name
 					  (sexp->raw (quote-form-expr f))
 					  (if sig? "signed " ""))
-				       ((debug-info-handler))
-				       result)))
+				       ((debug-info-handler)))))
 				 result)
 			      expr '(-1))
 			    env attributes vocab)
@@ -1141,9 +1138,7 @@
 				 (unless (,(if sig? '#%unit/sig? '#%unit?)
 					   result)
 				   (#%raise
-				     (,(if sig?
-					 '#%make-exn:unit:signature:non-signed-unit
-					 '#%make-exn:unit:non-unit)
+				     (#%make-exn:unit
 				       ,(format
 					  "~s: result from ~s in collection ~a not a ~aunit"
 					  form-name
@@ -1152,8 +1147,7 @@
 					    '"mzlib"
 					    raw-cs)
 					  (if sig? "signed " ""))
-				       ((#%debug-info-handler))
-				       result)))
+				       ((#%debug-info-handler)))))
 				 result)
 			      expr '(-1))
 			    env attributes vocab))))))

@@ -490,6 +490,11 @@ void wxMenuBar::SelectAMenu()
   XEvent xevent;
   Position x, y, new_root_x, new_root_y;
 
+  if (xwMenuIsPoppedUp(X->handle)) {
+    Stop();
+    return;
+  }
+
   Stop();
 
   /* Get the menu started: */

@@ -1827,7 +1827,7 @@ static Scheme_Object *gen_compare(char *name, int pos,
     offset = scheme_extract_index(name, 2, argc, argv, len + 1, 0);
 
     if (!iport && (offset > len)) {
-      scheme_out_of_string_range(name, "offset ", argv[2], argv[1], 0, len);
+      scheme_out_of_string_range(name, "offset ", argv[2], argv[1], 0, len, 0);
       return NULL;
     } else if (offset < 0) {
       /* argument was a bignum */
@@ -1854,7 +1854,7 @@ static Scheme_Object *gen_compare(char *name, int pos,
 	    return NULL;
 	  }
 	} else if (endset < offset || endset > len) {
-	  scheme_out_of_string_range(name, "ending ", argv[3], argv[1], offset, len);
+	  scheme_out_of_string_range(name, "ending ", argv[3], argv[1], offset, len, 0);
 	  return NULL;
 	}
 	endv = argv[3];

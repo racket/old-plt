@@ -181,6 +181,7 @@
   scheme_extension_table->scheme_make_immutable_pair = scheme_make_immutable_pair;
   scheme_extension_table->scheme_make_string = scheme_make_string;
   scheme_extension_table->scheme_make_sized_string = scheme_make_sized_string;
+  scheme_extension_table->scheme_make_sized_ustring = scheme_make_sized_ustring;
   scheme_extension_table->scheme_make_sized_offset_string = scheme_make_sized_offset_string;
   scheme_extension_table->scheme_make_immutable_sized_string = scheme_make_immutable_sized_string;
   scheme_extension_table->scheme_make_string_without_copying = scheme_make_string_without_copying;
@@ -196,6 +197,7 @@
   scheme_extension_table->scheme_make_float = scheme_make_float;
 #endif
   scheme_extension_table->scheme_make_char = scheme_make_char;
+  scheme_extension_table->scheme_make_uchar = scheme_make_uchar;
   scheme_extension_table->scheme_make_sema = scheme_make_sema;
   scheme_extension_table->scheme_post_sema = scheme_post_sema;
   scheme_extension_table->scheme_post_sema_all = scheme_post_sema_all;

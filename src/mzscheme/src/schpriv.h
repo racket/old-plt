@@ -1839,7 +1839,7 @@ void scheme_get_substring_indices(const char *name, Scheme_Object *str,
 
 void scheme_out_of_string_range(const char *name, const char *which, 
 				Scheme_Object *i, Scheme_Object *s, 
-				long start, long len);
+				long start, long len, int us);
 
 const char *scheme_number_suffix(int);
 

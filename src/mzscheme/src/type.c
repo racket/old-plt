@@ -200,6 +200,19 @@ scheme_init_type (Scheme_Env *env)
   set_name(scheme_thread_suspend_type, "<thread-suspend-waitable>");
   set_name(scheme_thread_dead_type, "<thread-dead-waitable>");
 
+  set_name(scheme_unicode_string_type, "<unicode-string>");
+  set_name(scheme_unicode_char_type, "<unicode-char>");
+
+  set_name(scheme_reserved1_type, "<reserved1>");
+  set_name(scheme_reserved2_type, "<reserved2>");
+  set_name(scheme_reserved3_type, "<reserved3>");
+  set_name(scheme_reserved4_type, "<reserved4>");
+  set_name(scheme_reserved5_type, "<reserved5>");
+  set_name(scheme_reserved6_type, "<reserved6>");
+  set_name(scheme_reserved7_type, "<reserved7>");
+  set_name(scheme_reserved8_type, "<reserved8>");
+  set_name(scheme_reserved9_type, "<reserved9>");
+
   set_name(_scheme_values_types_, "<resurrected>");
   set_name(_scheme_compiled_values_types_, "<internal>");
 }
@@ -412,6 +425,7 @@ void scheme_register_traversers(void)
   GC_REG_TRAV(scheme_escaping_cont_type, escaping_cont_proc);
 
   GC_REG_TRAV(scheme_char_type, char_obj);
+  GC_REG_TRAV(scheme_unicode_char_type, char_obj);
   GC_REG_TRAV(scheme_integer_type, bad_trav);
   GC_REG_TRAV(scheme_bignum_type, bignum_obj);
   GC_REG_TRAV(scheme_rational_type, rational_obj);
@@ -420,6 +434,7 @@ void scheme_register_traversers(void)
   GC_REG_TRAV(scheme_complex_izi_type, complex_obj);
   GC_REG_TRAV(scheme_complex_type, complex_obj);
   GC_REG_TRAV(scheme_string_type, string_obj);
+  GC_REG_TRAV(scheme_unicode_string_type, ustring_obj);
   GC_REG_TRAV(scheme_symbol_type, symbol_obj);
   GC_REG_TRAV(scheme_null_type, char_obj); /* small */
   GC_REG_TRAV(scheme_pair_type, cons_cell);

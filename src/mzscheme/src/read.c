@@ -94,7 +94,7 @@ static Scheme_Object *read_list(Scheme_Object *port, Scheme_Object *stxsrc,
 				Scheme_Object *indentation);
 static Scheme_Object *read_string(Scheme_Object *port, Scheme_Object *stxsrc,
 				  long line, long col, long pos,
-				  Scheme_Object *indentation);
+				  Scheme_Object *indentation, int unicode);
 static Scheme_Object *read_quote(char *who, Scheme_Object *quote_symbol, int len,
 				 Scheme_Object *port, Scheme_Object *stxsrc,
 				  long line, long col, long pos,
@@ -586,7 +586,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht, S
 	return read_symbol(port, stxsrc, line, col, pos, indentation);
       } else
 	return read_list(port, stxsrc, line, col, pos, '}', mz_shape_cons, 0, ht, indentation);
-    case '"': return read_string(port, stxsrc, line, col, pos,indentation);
+    case '"': return read_string(port, stxsrc, line, col, pos,indentation, 0);
     case '\'': return read_quote("quoting '", quote_symbol, 1, port, stxsrc, line, col, pos, ht, indentation);
     case '`': 
       if (!local_can_read_quasi) {
@@ -721,6 +721,56 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht, S
 	case 'e': return read_number(port, stxsrc, line, col, pos, 0, 1, 10, 0, indentation);
 	case 'I':
 	case 'i': return read_number(port, stxsrc, line, col, pos, 1, 0, 10, 0, indentation);
+	case 'u':
+	case 'U':
+	  {
+	    ch = scheme_getc_special_ok(port);
+	    if (ch == '"') {
+	      /* Unicode string */
+	      return read_string(port, stxsrc, line, col, pos,indentation, 1);
+	    } else {
+	      /* Unicode character or illegal use of #u ... */
+	      char udigits[4], one_more[2];
+	      int upos = 0;
+	      mzwchar w = 0;
+
+	      for (upos = 0; upos < 4; upos++) {
+		w = (w << 4);
+		if (upos)
+		  ch = scheme_getc_special_ok(port);
+		udigits[upos] = ch;
+		if (ch >= '0' && ch <= '9') {
+		  w |= (ch - '0');
+		} else if (ch >= 'a' && ch <= 'f') {
+		  w |= ((ch - 'a') + 10);
+		} else if (ch >= 'A' && ch <= 'F') {
+		  w |= ((ch - 'A') + 10);
+		} else
+		  break;
+	      } while (upos < 4);
+	      
+	      if (upos == 4) {
+		Scheme_Object *uc;
+		uc = scheme_make_uchar(w);
+		if (stxsrc) 
+		  uc = scheme_make_stx_w_offset(uc, line, col, pos, SPAN(port, pos), stxsrc, STX_SRCTAG);
+		return uc;
+	      } else {
+		udigits[upos] = 0;
+		if (NOT_EOF_OR_SPECIAL(ch)) {
+		  one_more[0] = ch;
+		  one_more[1] = 0;
+		} else
+		  one_more[0] = 0;
+		
+		scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), 
+				ch, indentation, 
+				"read: bad syntax `#u%s%s'",
+				udigits, one_more,
+				NOT_EOF_OR_SPECIAL(ch) ? 1 : 0);
+	      }
+	    }
+	  }
 	case '\'': 
 	  return read_quote("quoting #'", syntax_symbol, 2, port, stxsrc, line, col, pos, ht, indentation);
 	case '`': 
@@ -791,7 +841,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht, S
 		col = scheme_tell_column(port);
 		pos = scheme_tell(port);
 
-		str = read_string(port, stxsrc, line, col, pos, indentation);
+		str = read_string(port, stxsrc, line, col, pos, indentation, 0);
 
 		if (stxsrc)
 		  str = SCHEME_STX_VAL(str);
@@ -1483,15 +1533,20 @@ read_list(Scheme_Object *port,
 static Scheme_Object *
 read_string(Scheme_Object *port,
 	    Scheme_Object *stxsrc, long line, long col, long pos,
-	    Scheme_Object *indentation)
+	    Scheme_Object *indentation,
+	    int unicode)
 {
   char *buf, *oldbuf, onstack[32];
   int i, j, n, n1, ch;
-  long size = 31, oldsize;
+  long size, oldsize;
   Scheme_Object *result;
 
   i = 0;
   buf = onstack;
+  if (unicode)
+    size = 15;
+  else
+    size = 31;
   while ((ch = scheme_getc_special_ok(port)) != '"') {
     if (ch == EOF) {
       scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), EOF, indentation, 
@@ -1560,6 +1615,47 @@ read_string(Scheme_Object *port,
 	  return NULL;
 	}
 	break;
+      case 'u':
+	while (1) {
+	  ch = scheme_getc_special_ok(port);
+	  if (isxdigit(ch)) {
+	    n = ch<='9' ? ch-'0' : (mz_portable_toupper(ch)-'A'+10);
+	    ch = scheme_peekc_special_ok(port);
+	    if (NOT_EOF_OR_SPECIAL(ch) && isxdigit(ch)) {
+	      n = n*16 + (ch<='9' ? ch-'0' : (mz_portable_toupper(ch)-'A'+10));
+	      scheme_getc(port); /* must be ch */
+	      ch = scheme_peekc_special_ok(port);
+	      if (NOT_EOF_OR_SPECIAL(ch) && isxdigit(ch)) {
+		n = n*16 + (ch<='9' ? ch-'0' : (mz_portable_toupper(ch)-'A'+10));
+		scheme_getc(port); /* must be ch */
+		ch = scheme_peekc_special_ok(port);
+		if (NOT_EOF_OR_SPECIAL(ch) && isxdigit(ch)) {
+		  n = n*16 + (ch<='9' ? ch-'0' : (mz_portable_toupper(ch)-'A'+10));
+		  scheme_getc(port); /* must be ch */
+		}
+	      }
+	    }
+	    ch = n;
+	    if (!unicode && (ch > 255)) {
+	      scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), 0, indentation, 
+			      "read: escape sequence \\u%x out of range for non-unicode string", 
+			      ch);
+	    }
+	    break;
+	  } else if (ch == 'u') {
+	    /* Go to the next u... */
+	  } else {
+	    if (ch == SCHEME_SPECIAL)
+	      scheme_get_special(port, stxsrc,
+				 scheme_tell_line(port), 
+				 scheme_tell_column(port), 
+				 scheme_tell(port), NULL);
+	    scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), ch, indentation, 
+			    "read: no hex digit following \\x in string");
+	    return NULL;
+	  }
+	}
+	break;
       default:
 	if ((ch >= '0') && (ch <= '7')) {
 	  for (n = j = 0; j < 3; j++) {
@@ -1581,6 +1677,8 @@ read_string(Scheme_Object *port,
 	  }
 	  ch = n;
 	} else {
+	  /* In unicode mode, we should translate ch, but it's going to be some
+	     error anyway... */
 	  scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), 0, indentation, 
 			  "read: unknown escape sequence \\%c in string", ch);
 	  return NULL;
@@ -1598,6 +1696,47 @@ read_string(Scheme_Object *port,
 	    indt->suspicious_quote = line;
 	}
       }
+    } else if (unicode && (ch & 0x8)) {
+      /* UTF-8 transformation kicks in */
+      int ch1, ch2;
+      if (((ch & 0xE0) == 0xC0)
+	  || ((ch & 0xF0) == 0xE0)) {
+	ch1 = scheme_getc_special_ok(port);
+	if (NOT_EOF_OR_SPECIAL(ch1)) {
+	  if ((ch1 & 0xC0) == 0x80) {
+	    if ((ch & 0xE0) == 0xC0) {
+	      ch = ((ch & 0x1F) << 5) | (ch1 & 0x3F);
+	    } else if ((ch & 0xF0) == 0xE0) {
+	      ch2 = scheme_getc_special_ok(port);
+	      if (NOT_EOF_OR_SPECIAL(ch2)) {
+		if ((ch2 & 0xC0) == 0x80)
+		  ch = ((ch & 0xF) << 12) | ((ch1 & 0x3F) << 6) | (ch2 & 0x3F);
+		else
+		  ch = 0;
+	      } else {
+		ch = 0;
+		ch1 = ch2;
+	      }
+	    } else
+	      ch = 0;
+	  } else
+	    ch = 0;
+	} else
+	  ch = 0;
+      } else {
+	ch1 = 0;
+	ch = 0;
+      }
+      
+      if (!ch) {
+	if (ch1 == SCHEME_SPECIAL)
+	  scheme_get_special(port, stxsrc,
+			     scheme_tell_line(port), 
+			     scheme_tell_column(port), 
+			     scheme_tell(port), NULL);
+	scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), SCHEME_SPECIAL, indentation, 
+			"read: ill-formed UTF-8 input");
+      }
     }
 
     if (i >= size) { 
@@ -1605,14 +1744,22 @@ read_string(Scheme_Object *port,
       oldbuf = buf;
       
       size *= 2;
-      buf = (char *)scheme_malloc_atomic(size + 1);
+      buf = (char *)scheme_malloc_atomic((unicode ? 2 : 1) * (size + 1));
       memcpy(buf, oldbuf, oldsize);
     }
-    buf[i++] = ch;
+    if (unicode)
+      ((mzwchar *)buf)[i++] = ch;
+    else
+      buf[i++] = ch;
   }
-  buf[i] = '\0';
-
-  result = scheme_make_immutable_sized_string(buf, i, i <= 31);
+  
+  if (unicode) {
+    ((mzwchar *)buf)[i] = 0;
+    result = scheme_make_sized_ustring((mzwchar *)buf, i, i <= 15);
+  } else {
+    buf[i] = '\0';
+    result = scheme_make_immutable_sized_string(buf, i, i <= 31);
+  }
   if (stxsrc)
     result =  scheme_make_stx_w_offset(result, line, col, pos, SPAN(port, pos), stxsrc, STX_SRCTAG);
   return result;

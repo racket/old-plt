@@ -77,6 +77,19 @@ static Scheme_Object *system_library_subpath(int argc, Scheme_Object *argv[]);
 static Scheme_Object *cmdline_args(int argc, Scheme_Object *argv[]);
 static Scheme_Object *current_locale(int argc, Scheme_Object *argv[]);
 
+static Scheme_Object *ustring (int argc, Scheme_Object *argv[]);
+static Scheme_Object *ustring_p (int argc, Scheme_Object *argv[]);
+static Scheme_Object *ustring_length (int argc, Scheme_Object *argv[]);
+static Scheme_Object *ustring_ref (int argc, Scheme_Object *argv[]);
+static Scheme_Object *string_to_ustring_utf8 (int argc, Scheme_Object *argv[]);
+static Scheme_Object *string_to_ustring_locale (int argc, Scheme_Object *argv[]);
+static Scheme_Object *string_to_ustring_ucs2_le (int argc, Scheme_Object *argv[]);
+static Scheme_Object *string_to_ustring_ucs2_be (int argc, Scheme_Object *argv[]);
+static Scheme_Object *ustring_to_string_utf8 (int argc, Scheme_Object *argv[]);
+static Scheme_Object *ustring_to_string_locale (int argc, Scheme_Object *argv[]);
+static Scheme_Object *ustring_to_string_ucs2_le (int argc, Scheme_Object *argv[]);
+static Scheme_Object *ustring_to_string_ucs2_be (int argc, Scheme_Object *argv[]);
+
 static int mz_strcmp(unsigned char *str1, int l1, unsigned char *str2, int l2, int eq);
 static int mz_strcmp_ci(unsigned char *str1, int l1, unsigned char *str2, int l2, int eq);
 
@@ -332,6 +345,69 @@ scheme_init_string (Scheme_Env *env)
 						       MZCONFIG_LOCALE), 
 			     env);
 
+  /* Unicode */
+
+  scheme_add_global_constant("unicode-string", 
+			     scheme_make_prim_w_arity(ustring,
+						      "unicode-string", 
+						      0, -1),
+			     env);
+  scheme_add_global_constant("unicode-string?", 
+			     scheme_make_folding_prim(ustring_p,
+						      "unicode-string?",
+						      1, 1, 1),
+			     env);
+  scheme_add_global_constant("unicode-string-length", 
+			     scheme_make_folding_prim(ustring_length,
+						      "unicode-string-length",
+						      1, 1, 1),
+			     env);
+  scheme_add_global_constant("unicode-string-ref", 
+			     scheme_make_folding_prim(ustring_ref,
+						      "unicode-string-ref", 
+						      1, 1, 1),
+			     env);
+  scheme_add_global_constant("string->unicode-string/utf-8", 
+			     scheme_make_folding_prim(string_to_ustring_utf8,
+						      "string->unicode-string/utf-8",
+						      1, 4, 1),
+			     env);
+  scheme_add_global_constant("unicode-string->string/utf-8", 
+			     scheme_make_folding_prim(ustring_to_string_utf8,
+						      "unicode-string->string/utf-8",
+						      1, 4, 1),
+			     env);
+  scheme_add_global_constant("string->unicode-string/locale", 
+			     scheme_make_folding_prim(string_to_ustring_locale,
+						      "string->unicode-string/locale",
+						      1, 4, 1),
+			     env);
+  scheme_add_global_constant("unicode-string->string/locale", 
+			     scheme_make_folding_prim(ustring_to_string_locale,
+						      "unicode-string->string/locale",
+						      1, 4, 1),
+			     env);
+  scheme_add_global_constant("string->unicode-string/ucs-2-le", 
+			     scheme_make_folding_prim(string_to_ustring_ucs2_le,
+						      "string->unicode-string/ucs-2-le",
+						      1, 5, 1),
+			     env);
+  scheme_add_global_constant("unicode-string->string/ucs-2-le", 
+			     scheme_make_folding_prim(ustring_to_string_ucs2_le,
+						      "unicode-string->string/ucs-2-le",
+						      1, 4, 1),
+			     env);
+  scheme_add_global_constant("string->unicode-string/ucs-2-be", 
+			     scheme_make_folding_prim(string_to_ustring_ucs2_be,
+						      "string->unicode-string/ucs-2-be",
+						      1, 5, 1),
+			     env);
+  scheme_add_global_constant("unicode-string->string/ucs-2-be", 
+			     scheme_make_folding_prim(ustring_to_string_ucs2_be,
+						      "unicode-string->string/ucs-2-be",
+						      1, 4, 1),
+			     env);
+
   scheme_reset_locale();
 }
 
@@ -456,7 +532,7 @@ scheme_alloc_string(int size, char fill)
 
 void scheme_out_of_string_range(const char *name, const char *which, 
 				Scheme_Object *i, Scheme_Object *s, 
-				long start, long len)
+				long start, long len, int us)
 {
   if (SCHEME_STRTAG_VAL(s)) {
     char *sstr;
@@ -465,17 +541,19 @@ void scheme_out_of_string_range(const char *name, const char *which,
     sstr = scheme_make_provided_string(s, 2, &slen);
     scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
 		     scheme_make_integer(i),
-		     "%s: %sindex %s out of range [%d, %d] for string: %t",
+		     "%s: %sindex %s out of range [%d, %d] for %sstring: %t",
 		     name, which,
 		     scheme_make_provided_string(i, 2, NULL), 
 		     start, len,
+		     us ? "unicode " : "",
 		     sstr, slen);
   } else {
     scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
 		     scheme_make_integer(i),
-		     "%s: %sindex %s out of range for empty string",
+		     "%s: %sindex %s out of range for empty %sstring",
 		     name, which,
-		     scheme_make_provided_string(i, 0, NULL));
+		     scheme_make_provided_string(i, 0, NULL),
+		     us ? "unicode " : "");
   }
 }
 
@@ -577,7 +655,7 @@ string_ref (int argc, Scheme_Object *argv[])
   i = scheme_extract_index("string-ref", 1, argc, argv, len, 0);
 
   if (i >= len) {
-    scheme_out_of_string_range("string-ref", "", argv[1], argv[0], 0, len - 1);
+    scheme_out_of_string_range("string-ref", "", argv[1], argv[0], 0, len - 1, 0);
     return NULL;
   }
 
@@ -602,7 +680,7 @@ string_set (int argc, Scheme_Object *argv[])
     scheme_wrong_type("string-set!", "character", 2, argc, argv);
 
   if (i >= len) {
-    scheme_out_of_string_range("string-set!", "", argv[1], argv[0], 0, len - 1);
+    scheme_out_of_string_range("string-set!", "", argv[1], argv[0], 0, len - 1, 0);
     return NULL;
   }
 
@@ -666,10 +744,10 @@ void scheme_get_substring_indices(const char *name, Scheme_Object *str,
     finish = len;
 
   if (!(start <= len)) {
-    scheme_out_of_string_range(name, "starting ", argv[spos], str, 0, len);
+    scheme_out_of_string_range(name, "starting ", argv[spos], str, 0, len, 0);
   }
   if (!(finish >= start && finish <= len)) {
-    scheme_out_of_string_range(name, "ending ", argv[fpos], str, start, len);
+    scheme_out_of_string_range(name, "ending ", argv[fpos], str, start, len, 0);
   }
 
   *_start = start;
@@ -1757,3 +1835,477 @@ void machine_details(char *buff)
 }
 #endif
 
+/************************************************************************/
+/*                             Unicode                                  */
+/************************************************************************/
+
+Scheme_Object *scheme_make_sized_ustring(mzwchar *chars, long len, int copy)
+{
+  Scheme_Object *str;
+  mzwchar *naya;
+
+  str = scheme_alloc_object();
+  str->type = scheme_unicode_string_type;
+  str->u.ustr_val.ulen_val = len;
+  if (chars && !copy)
+    str->u.ustr_val.ustring_val = chars;
+  else {
+    naya = (mzwchar *)scheme_malloc_fail_ok(scheme_malloc_atomic, sizeof(mzwchar) * (len + 1));
+    if (chars) {
+      memcpy(naya, chars, sizeof(mzwchar) * len);
+      naya[len] = 0;
+    }
+    str->u.ustr_val.ustring_val = naya;
+  }
+
+  return str;
+}
+
+Scheme_Object *
+ustring(int argc, Scheme_Object **argv)
+{
+  int i;
+  Scheme_Object *str;
+  mzwchar *s;
+
+  for (i = 0; i < argc; i++) {
+    if (!SCHEME_UCHARP(argv[i])) {
+      scheme_wrong_type("unicode-string", "unicode-string", i, argc, argv);
+      return NULL;
+    }
+  }
+
+  str = scheme_make_sized_ustring(NULL, argc, 0);
+  s = SCHEME_USTR_VAL(str);
+
+  for (i = 0; i < argc; i++) {
+    s[i] = SCHEME_CHAR_VAL(argv[i]);
+  }
+  s[i] = 0;
+
+  return str;
+}
+
+Scheme_Object *
+ustring_p(int argc, Scheme_Object **argv)
+{
+  return (SCHEME_USTRINGP(argv[0]) ? scheme_true : scheme_false);
+}
+
+Scheme_Object *
+ustring_length(int argc, Scheme_Object **argv)
+{
+  long len;
+  if (!SCHEME_USTRINGP(argv[0]))
+    scheme_wrong_type("unicode-string-length", "unicode-string", 0, argc, argv);
+  len = SCHEME_USTRLEN_VAL(argv[0]);
+  return scheme_make_integer(len);
+}
+
+Scheme_Object *
+ustring_ref(int argc, Scheme_Object **argv)
+{
+  long len, i;
+
+  if (!SCHEME_USTRINGP(argv[0]))
+    scheme_wrong_type("unicode-string-ref", "unicode-string", 0, argc, argv);
+
+  len = SCHEME_USTRLEN_VAL(argv[0]);
+
+  i = scheme_extract_index("unicode-string-ref", 1, argc, argv, len, 0);
+
+  if (i >= len) {
+    scheme_out_of_string_range("unicode-string-ref", "", argv[1], argv[0], 0, len - 1, 1);
+    return NULL;
+  }
+
+  return scheme_make_uchar(SCHEME_USTR_VAL(argv[0])[i]);
+
+}
+
+
+# define s_to_s_UTF8 0
+# define s_to_s_UCS2 1
+# define s_to_s_UCS1 2
+
+static Scheme_Object *get_s_to_s(const char *name, int s_to_us, int mode, 
+				 int argc, Scheme_Object **argv, 
+				 long *_start, long *_end, int *_ret_num)
+{
+  long len, start, end;
+  Scheme_Object *str = NULL;
+
+  if (s_to_us) {
+    if (!SCHEME_STRINGP(argv[0]))
+      scheme_wrong_type(name, "string", 0, argc, argv);
+    len = SCHEME_STRLEN_VAL(argv[0]);
+  } else {
+    if (!SCHEME_USTRINGP(argv[0]))
+      scheme_wrong_type(name, "unicode string", 0, argc, argv);
+    len = SCHEME_USTRLEN_VAL(argv[0]);
+  }
+
+  if (argc > 1) {
+    int i;
+    i = scheme_extract_index(name, 1, argc, argv, len, 0);
+    if (i >= len)
+      scheme_out_of_string_range(name, "starting ", argv[1], argv[0], 0, len - 1, !s_to_us);
+    start = i;
+    if (argc > 2) {
+      i = scheme_extract_index(name, 2, argc, argv, len, 0);
+      if ((i < start) || (i > len))
+	scheme_out_of_string_range(name, "ending ", argv[2], argv[0], start, len, !s_to_us);
+      end = i;
+      if (argc > 3) {
+	long enough;
+	if (s_to_us) {
+	  if (!SCHEME_USTRINGP(argv[3]))
+	    scheme_wrong_type(name, "unicode-string", 3, argc, argv);
+	  enough = (SCHEME_USTRLEN_VAL(argv[3]) >= ((mode == s_to_s_UCS2) ? (len >> 1) : len));
+	} else {
+	  if (!SCHEME_USTRINGP(argv[3]))
+	    scheme_wrong_type(name, "string", 3, argc, argv);
+	  enough = (SCHEME_STRLEN_VAL(argv[3]) >= ((mode == s_to_s_UCS2) 
+						? 2  * len
+						: ((mode == s_to_s_UCS1) 
+						   ? len
+						   : 3 * len)));
+	}
+	if  (!enough && !((mode == s_to_s_UCS2) && !((end - start ) & 0x1))) {
+	  char *sstr;
+	  int slen;
+	  
+	  sstr = scheme_make_provided_string(str, 2, &slen);
+	  scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
+			   argv[3],
+			   "%s: converted string %slarger than supplied unicode string: %t",
+			   name,
+			   ((mode == s_to_s_UTF8) ? "potentially " : ""),
+			   sstr, slen);
+	}
+	str = argv[3];
+      }
+    } else
+      end = len;
+  } else {
+    start = 0;
+    end = len;
+  }
+
+  if (s_to_us && (mode == s_to_s_UCS2) && ((end - start) & 1)) {
+    char *sstr;
+    int slen;
+    
+    sstr = scheme_make_provided_string(argv[0], 2, &slen);
+    scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
+		     argv[0],
+		     "%s: range [%d, %d] is not even for UCS-2 conversion from string: %t",
+		     name,
+		     start, end,
+		     sstr, slen);
+  }
+
+  if (str)
+    *_ret_num = 1;
+  else {
+    *_ret_num = 0;
+    if (s_to_us) {
+      long size;
+      if ((mode == s_to_s_UCS2))
+	size = (end - start) >> 1;
+      else
+	size = end - start;
+      str = scheme_make_sized_ustring(NULL, size, 0);
+    } else
+      str = scheme_alloc_string(((mode == s_to_s_UCS2)
+				 ? 2
+				 : ((mode == s_to_s_UCS1)
+				    ? 1
+				    : 3))
+				* (end - start),
+				0);
+  }
+    
+  *_start = start;
+  *_end = end;
+
+  return str;
+}
+
+static void raise_conversion_error(const char *name, Scheme_Object *str, long start, long end)
+{
+  char *sstr;
+  int slen;
+  
+  sstr = scheme_make_provided_string(str, 2, &slen);
+  scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
+		   str,
+		   "%s: encoding error in decoding range [%d, %d] of UTF-8 string: %t",
+		   name,
+		   start, end,
+		   sstr, slen);
+}
+
+Scheme_Object *
+string_to_ustring_utf8(int argc, Scheme_Object **argv)
+{
+  Scheme_Object *ustr;
+  long start, end;
+  int ret_num;
+  int i, j;
+  unsigned char *s, sc;
+  mzwchar *us;
+
+  ustr = get_s_to_s("string->unicode-string/utf-8",
+		    1, s_to_s_UTF8,
+		    argc, argv,
+		    &start, &end, &ret_num);
+
+  s = (unsigned char *)SCHEME_STR_VAL(argv[0]);
+  us = SCHEME_USTR_VAL(ustr);
+  for (i = start, j = 0; i < end; i++, j++) {
+    sc = s[i];
+    if (sc < 0x80) {
+      us[j] = sc;
+    } else {
+      if ((sc & 0xE0) == 0xC0) {
+	if ((i + 1 < end) && ((s[i + 1] & 0xC0) == 0x80)) {
+	  us[j++] = ((sc & 0x1F) << 5) | (s[i+1] & 0x3F);
+	  i++;
+	  continue;
+	}
+      } else if ((sc & 0xF0) == 0xE0) {
+	if ((i + 2 < end) 
+	    && ((s[i + 1] & 0xC0) == 0x80)
+	    && ((s[i + 2] & 0xC0) == 0x80)) {
+	  us[j] = ((sc & 0xF) << 12) | ((s[i+1] & 0x3F) << 6) | (s[i+2] & 0x3F);
+	  i += 2;
+	  continue;
+	} else
+	  break;
+      }
+      raise_conversion_error("string->unicode-string/utf-8", argv[0], start, end);
+      return NULL;
+    }
+  }
+
+  if (ret_num)
+    return scheme_make_integer(j);
+  else {
+    us[j] = 0;
+    SCHEME_USTRLEN_VAL(ustr) = j;
+    return ustr;
+  }
+}
+
+Scheme_Object *
+ustring_to_string_utf8(int argc, Scheme_Object **argv)
+{
+  Scheme_Object *str;
+  long start, end;
+  int ret_num;
+  int i, j;
+  unsigned char *s;
+  mzwchar *us, wc;
+
+  str = get_s_to_s("string->unicode-string/utf-8",
+		   0, s_to_s_UTF8,
+		   argc, argv,
+		   &start, &end, &ret_num);
+
+  us = SCHEME_USTR_VAL(argv[0]);
+  s = (unsigned char *)SCHEME_STR_VAL(str);
+
+  for (i = start, j = 0; i < end; i++, j++) {
+    if (us[i] < 0x80) {
+      s[j] = us[i];
+    } else {
+      if (us[i] < 0x800) {
+	wc = us[i];
+	s[j++] = 0xC0 | ((wc & 0x7C0) >> 5);
+	s[j] = 0xC0 | (wc & 0x3F);
+      } else {
+	wc = us[i];
+	s[j++] = 0xE0 | ((wc & 0xF000) >> 12);
+	s[j++] = 0xC0 | ((wc & 0x0FC0) >> 6);
+	s[j] = 0xC0 | (wc & 0x3F);
+      }
+    }
+  }
+
+  if (ret_num)
+    return scheme_make_integer(j);
+  else {
+    s[j] = 0;
+    SCHEME_STRLEN_VAL(str) = j;
+    return str;
+  }
+}
+
+Scheme_Object *
+ustring_to_string_locale(int argc, Scheme_Object **argv)
+{
+  Scheme_Object *ustr;
+  long start, end, r;
+  int ret_num;
+
+  ustr = get_s_to_s("string->unicode-string/locale",
+		    0, s_to_s_UTF8,
+		    argc, argv,
+		    &start, &end, &ret_num);
+  
+  r = mbstowcs(SCHEME_USTR_VAL(ustr), SCHEME_STR_VAL(argv[0]) + start, end - start);
+  if (r == -1) {
+    raise_conversion_error("string->unicode-string/locale", argv[0], start, end);
+    return NULL;
+  }
+
+  if (ret_num)
+    return scheme_make_integer(r);
+  else {
+    SCHEME_USTR_VAL(ustr)[r] = 0;
+    SCHEME_USTRLEN_VAL(ustr) = r;
+    return ustr;
+  }
+}
+
+Scheme_Object *
+string_to_ustring_ucs2_le(int argc, Scheme_Object **argv)
+{
+  Scheme_Object *ustr;
+  long start, end;
+  int ret_num;
+  int i, j;
+  unsigned char *s;
+  mzwchar *us;
+
+  ustr = get_s_to_s("string->unicode-string/ucs-2-le",
+		    1, s_to_s_UCS2,
+		    argc, argv,
+		    &start, &end, &ret_num);
+
+  s = (unsigned char *)SCHEME_STR_VAL(argv[0]);
+  us = SCHEME_USTR_VAL(ustr);
+  for (i = start, j = 0; i < end; i += 2, j++) {
+    us[j] = (s[i+1] << 8) | s[i];
+  }
+
+  if (ret_num)
+    return scheme_make_integer(j);
+  else
+    return ustr;
+}
+
+Scheme_Object *
+string_to_ustring_locale(int argc, Scheme_Object **argv)
+{
+  Scheme_Object *str;
+  long start, end, r;
+  int ret_num;
+
+  str = get_s_to_s("unicode-string->string/locale",
+		   0, s_to_s_UTF8,
+		   argc, argv,
+		   &start, &end, &ret_num);
+
+  r = wcstombs(SCHEME_STR_VAL(str), SCHEME_USTR_VAL(argv[0]) + start, end - start);
+  if (r == -1) {
+    scheme_arg_mismatch("unicode-string->string/locale",
+			"encoding error",
+			argv[0]);
+    return NULL;
+  }
+
+  if (ret_num)
+    return scheme_make_integer(r);
+  else {
+    SCHEME_STR_VAL(str)[r] = 0;
+    SCHEME_STRLEN_VAL(str) = r;
+    return str;
+  }
+}
+
+Scheme_Object *
+string_to_ustring_ucs2_be(int argc, Scheme_Object **argv)
+{
+  Scheme_Object *ustr;
+  long start, end;
+  int ret_num;
+  int i, j;
+  unsigned char *s;
+  mzwchar *us;
+
+  ustr = get_s_to_s("string->unicode-string/ucs-2-be",
+		    1, s_to_s_UCS2,
+		    argc, argv,
+		    &start, &end, &ret_num);
+
+  s = (unsigned char *)SCHEME_STR_VAL(argv[0]);
+  us = SCHEME_USTR_VAL(ustr);
+  for (i = start, j = 0; i < end; i += 2, j++) {
+    us[j] = (s[i] << 8) | s[i + 1];
+  }
+
+  if (ret_num)
+    return scheme_make_integer(j);
+  else
+    return ustr;
+}
+
+Scheme_Object *
+ustring_to_string_ucs2_le(int argc, Scheme_Object **argv)
+{
+  Scheme_Object *str;
+  long start, end;
+  int ret_num;
+  int i, j;
+  unsigned char *s;
+  mzwchar *us;
+
+  str = get_s_to_s("unicode-string->string/ucs-2-le",
+		   0, s_to_s_UCS2,
+		   argc, argv,
+		   &start, &end, &ret_num);
+
+  us = SCHEME_USTR_VAL(argv[0]);
+  s = (unsigned char *)SCHEME_STR_VAL(str);
+
+  for (i = start, j = 0; i < end; i++, j += 2) {
+    s[j] = (us[i] & 0xFF);
+    s[j+1] = (us[i] & 0xFF00) >> 8;
+  }
+
+  if (ret_num)
+    return scheme_make_integer(j);
+  else
+    return str;
+}
+
+Scheme_Object *
+ustring_to_string_ucs2_be(int argc, Scheme_Object **argv)
+{
+  Scheme_Object *str;
+  long start, end;
+  int ret_num;
+  int i, j;
+  unsigned char *s;
+  mzwchar *us;
+
+  str = get_s_to_s("unicode-string->string/ucs-2-be",
+		   0, s_to_s_UCS2,
+		   argc, argv,
+		   &start, &end, &ret_num);
+
+  us = SCHEME_USTR_VAL(argv[0]);
+  s = (unsigned char *)SCHEME_STR_VAL(str);
+
+  for (i = start, j = 0; i < end; i++, j += 2) {
+    s[j] = (us[i] & 0xFF00) >> 8;
+    s[j+1] = (us[i] & 0xFF);
+  }
+
+  if (ret_num)
+    return scheme_make_integer(j);
+  else
+    return str;
+}

@@ -71,6 +71,10 @@ static Scheme_Object *char_locale_upcase (int argc, Scheme_Object *argv[]);
 static Scheme_Object *char_downcase (int argc, Scheme_Object *argv[]);
 static Scheme_Object *char_locale_downcase (int argc, Scheme_Object *argv[]);
 
+static Scheme_Object *uchar_p (int argc, Scheme_Object *argv[]);
+static Scheme_Object *uchar_to_integer (int argc, Scheme_Object *argv[]);
+static Scheme_Object *integer_to_uchar (int argc, Scheme_Object *argv[]);
+
 void scheme_init_portable_case(void)
 {
   int i;
@@ -274,11 +278,41 @@ void scheme_init_char (Scheme_Env *env)
 								"char-locale-downcase", 
 								1, 1, 1),
 			     env);
+
+  scheme_add_global_constant("unicode-char?", 
+			     scheme_make_folding_prim(uchar_p, 
+						      "unicode-char?", 
+						      1, 1, 1), 
+			     env);
+  scheme_add_global_constant("unicode-char->integer", 
+			     scheme_make_folding_prim(uchar_to_integer, 
+						      "unicode-char->integer", 
+						      1, 1, 1),
+			     env);
+  scheme_add_global_constant("integer->unicode-char",
+			     scheme_make_folding_prim(integer_to_uchar, 
+						      "integer->unicode-char",
+						      1, 1, 1), 
+			     env);
 }
 
 Scheme_Object *scheme_make_char(char ch)
 {
   return _scheme_make_char(ch);
+}
+
+Scheme_Object *scheme_make_uchar(mzwchar ch)
+{
+  Scheme_Object *o;
+
+  if (ch < 256)
+    return _scheme_make_char(ch);
+  
+  o = scheme_alloc_small_object();
+  o->type = scheme_unicode_char_type;
+  SCHEME_UCHAR_VAL(o) = ch;
+  
+  return o;
 }
 
 /* locals */
@@ -516,11 +550,11 @@ integer_to_char (int argc, Scheme_Object *argv[])
   long v;
 
   if (!SCHEME_INTP(argv[0]))
-    scheme_wrong_type("integer->char", "exact in [0, 255]", 0, argc, argv);
+    scheme_wrong_type("integer->char", "exact integer in [0, 255]", 0, argc, argv);
 
   v = SCHEME_INT_VAL(argv[0]);
   if ((v < 0) || (v > 255))
-    scheme_wrong_type("integer->char", "exact in [0, 255]", 0, argc, argv);
+    scheme_wrong_type("integer->char", "exact integer in [0, 255]", 0, argc, argv);
 
   return _scheme_make_char(v);
 }
@@ -580,11 +614,11 @@ latin1_integer_to_char (int argc, Scheme_Object *argv[])
   long v;
 
   if (!SCHEME_INTP(argv[0]))
-    scheme_wrong_type("latin1-integer->char", "exact in [0, 255]", 0, argc, argv);
+    scheme_wrong_type("latin1-integer->char", "exact integer in [0, 255]", 0, argc, argv);
 
   v = SCHEME_INT_VAL(argv[0]);
   if ((v < 0) || (v > 255))
-    scheme_wrong_type("latin1-integer->char", "exact in [0, 255]", 0, argc, argv);
+    scheme_wrong_type("latin1-integer->char", "exact integer in [0, 255]", 0, argc, argv);
 
 #if defined(MACROMAN_CHAR_SET) || defined(WINLATIN_CHAR_SET)
   if ((0x80 <= v) && (v <= 0x9F))
@@ -673,3 +707,43 @@ char_locale_downcase (int argc, Scheme_Object *argv[])
   return _scheme_make_char(tolower(c));
 }
 
+/************************************************************************/
+/*                             Unicode                                  */
+/************************************************************************/
+
+static Scheme_Object *
+uchar_p (int argc, Scheme_Object *argv[])
+{
+  return (SCHEME_UCHARP(argv[0]) ? scheme_true : scheme_false);
+}
+
+static Scheme_Object *
+uchar_to_integer (int argc, Scheme_Object *argv[])
+{
+  mzwchar c;
+
+  if (!SCHEME_UCHARP(argv[0]))
+    scheme_wrong_type("unicode-char->integer", "unicode-character", 0, argc, argv);
+
+  c = SCHEME_UCHAR_VAL(argv[0]);
+
+  return scheme_make_integer(c);
+}
+
+static Scheme_Object *
+integer_to_uchar (int argc, Scheme_Object *argv[])
+{
+  long v;
+
+  if (!SCHEME_INTP(argv[0]))
+    scheme_wrong_type("integer->unicode-char", "exact integer in [0, 65535]", 0, argc, argv);
+
+  v = SCHEME_INT_VAL(argv[0]);
+  if ((v < 0) || (v > 65535))
+    scheme_wrong_type("integer->char", "exact integer in [0, 65535]", 0, argc, argv);
+
+  if (v < 256)
+    return _scheme_make_char(v);
+  else
+    return scheme_make_uchar(v);
+}

@@ -125,10 +125,21 @@ enum {
   scheme_poll_waitable_type,
   scheme_nack_waitable_type,
 
+  scheme_unicode_string_type,
+  scheme_unicode_char_type,      /* 110 */
+
   scheme_reserved1_type,
+  scheme_reserved2_type,
+  scheme_reserved3_type,
+  scheme_reserved4_type,
+  scheme_reserved5_type,
+  scheme_reserved6_type,
+  scheme_reserved7_type,
+  scheme_reserved8_type,
+  scheme_reserved9_type,
 
 #ifdef MZTAG_REQUIRED
-  _scheme_last_normal_type_,  /* 110 */
+  _scheme_last_normal_type_,  /* 120 */
 
   scheme_rt_comp_env,       
   scheme_rt_constant_binding,
@@ -139,7 +150,7 @@ enum {
   scheme_rt_eval_in_env,
   scheme_rt_reply_item,
   scheme_rt_closure_info,
-  scheme_rt_overflow,  /* 120 */
+  scheme_rt_overflow,         /* 130 */
   scheme_rt_dyn_wind_cell,
   scheme_rt_cont_mark_chain,
   scheme_rt_dyn_wind_info,
@@ -149,7 +160,7 @@ enum {
   scheme_rt_input_file,
   scheme_rt_input_fd,
   scheme_rt_oskit_console_input,
-  scheme_rt_tested_input_file,  /* 130 */
+  scheme_rt_tested_input_file,  /* 140 */
   scheme_rt_tested_output_file,
   scheme_rt_indexed_string,
   scheme_rt_output_file,
@@ -159,7 +170,7 @@ enum {
   scheme_rt_beos_process,
   scheme_rt_system_child,
   scheme_rt_tcp,
-  scheme_rt_write_data,        /* 140 */
+  scheme_rt_write_data,        /* 150 */
   scheme_rt_tcp_select_info,
   scheme_rt_namespace_option,
   scheme_rt_param_data, 
@@ -169,7 +180,7 @@ enum {
   scheme_rt_sema_waiter,
   scheme_rt_struct_proc_info,
   scheme_rt_linker_name,
-  scheme_rt_param_map,      /* 150 */
+  scheme_rt_param_map,      /* 160 */
   scheme_rt_finalization,
   scheme_rt_finalizations,
   scheme_rt_cpp_object,
@@ -179,7 +190,7 @@ enum {
   scheme_thread_hop_type,
   scheme_rt_breakable,
   scheme_rt_srcloc,
-  scheme_rt_waitable,  /* 160 */
+  scheme_rt_waitable,       /* 170 */
   scheme_rt_waiting,
   scheme_rt_comp_prefix,
   scheme_rt_user_input,

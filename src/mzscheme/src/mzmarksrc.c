@@ -432,6 +432,15 @@ string_obj {
   gcBYTES_TO_WORDS(sizeof(Scheme_Object));
 }
 
+ustring_obj {
+ mark:
+  Scheme_Object *o = (Scheme_Object *)p;
+  gcMARK(SCHEME_USTR_VAL(o));
+
+ size:
+  gcBYTES_TO_WORDS(sizeof(Scheme_Object));
+}
+
 symbol_obj {
   Scheme_Symbol *s = (Scheme_Symbol *)p;
 

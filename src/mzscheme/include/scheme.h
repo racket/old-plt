@@ -180,6 +180,9 @@ typedef short Scheme_Type;
    also define MZSHORT_IS_SHORT. */
 typedef int mzshort;
 
+/* Unicode (ucs16) chars. We assume that sizeof(wchar_t) >= 2 */
+typedef wchar_t mzwchar;
+
 /* MzScheme values have the type `Scheme_Object *'.
    The actual Scheme_Object structure only defines a few variants.
    The important thing is that all `Scheme_Object *'s start with
@@ -204,6 +207,7 @@ typedef struct Scheme_Object
   union
     {
       struct { char *string_val; int tag_val; } str_val;
+      struct { mzwchar *ustring_val; int ulen_val; } ustr_val;
       struct { void *ptr1, *ptr2; } two_ptr_val;
       struct { int int1; int int2; } two_int_val;
       struct { void *ptr; int pint; } ptr_int_val;
@@ -220,7 +224,7 @@ typedef struct {
   Scheme_Type type;
   MZ_HASH_KEY_EX
   union {
-    char char_val;
+    mzwchar char_val;
     Scheme_Object *ptr_value;
     long int_val;
     Scheme_Object *ptr_val;
@@ -323,6 +327,11 @@ typedef struct Scheme_Vector {
 #define SCHEME_MUTABLE_STRINGP(obj)  (SCHEME_STRINGP(obj) && SCHEME_MUTABLEP(obj))
 #define SCHEME_IMMUTABLE_STRINGP(obj)  (SCHEME_STRINGP(obj) && SCHEME_IMMUTABLEP(obj))
 
+#define SCHEME_USTRINGP(obj)  SAME_TYPE(SCHEME_TYPE(obj), scheme_unicode_string_type)
+#define SCHEME_UCHARP(obj)    (SAME_TYPE(SCHEME_TYPE(obj), scheme_char_type) || SAME_TYPE(SCHEME_TYPE(obj), scheme_unicode_char_type))
+
+#define SCHEME_ANY_STRINGP(obj)  (SCHEME_STRINGP(obj) || SCHEME_USTRINGP(obj))
+
 #define SCHEME_SYMBOLP(obj)  SAME_TYPE(SCHEME_TYPE(obj), scheme_symbol_type)
 
 #define SCHEME_BOOLP(obj)    (SAME_OBJ(obj, scheme_true) || SAME_OBJ(obj, scheme_false))
@@ -381,6 +390,7 @@ typedef struct Scheme_Vector {
 /*========================================================================*/
 
 #define SCHEME_CHAR_VAL(obj) (((Scheme_Small_Object *)(obj))->u.char_val)
+#define SCHEME_UCHAR_VAL(obj) SCHEME_CHAR_VAL(obj)
 #define SCHEME_INT_VAL(obj)  (OBJ_TO_LONG(obj)>>1)
 #define SCHEME_DBL_VAL(obj)  (((Scheme_Double *)(obj))->double_val)
 #ifdef MZ_USE_SINGLE_FLOATS
@@ -397,6 +407,9 @@ typedef struct Scheme_Vector {
 #define SCHEME_STRLEN_VAL(obj)  ((obj)->u.str_val.tag_val)
 #define SCHEME_SYM_VAL(obj)  (((Scheme_Symbol *)(obj))->s)
 #define SCHEME_SYM_LEN(obj)  (((Scheme_Symbol *)(obj))->len)
+
+#define SCHEME_USTR_VAL(obj)  ((obj)->u.ustr_val.ustring_val)
+#define SCHEME_USTRLEN_VAL(obj)  ((obj)->u.ustr_val.ulen_val)
 
 #define SCHEME_SYMSTR_OFFSET(obj) ((unsigned long)SCHEME_SYM_VAL(obj)-(unsigned long)(obj))
 

@@ -1191,13 +1191,15 @@ case_lambda_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth)
 Scheme_Object *scheme_bangboxenv_execute(Scheme_Object *data)
 {
   int pos = SCHEME_INT_VAL(SCHEME_CAR(data));
+  Scheme_Object *bb;
 #ifndef RUNSTACK_IS_GLOBAL
   Scheme_Process *p = scheme_current_process;
 #endif
 
   data = SCHEME_CDR(data);
   
-  MZ_RUNSTACK[pos] = scheme_make_envunbox(MZ_RUNSTACK[pos]);
+  bb = scheme_make_envunbox(MZ_RUNSTACK[pos]);
+  MZ_RUNSTACK[pos] = bb;
 
   return _scheme_tail_eval(data);
 }

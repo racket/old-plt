@@ -152,15 +152,18 @@ typedef float nnfloat;
 #endif
 
 #ifdef MZ_PRECISE_GC
-# define _SETUP_VAR_STACK(n, vs)         void *__gc_var_stack__[n + 2]; \
-                                         __gc_var_stack__[0] = vs; \
-                                         __gc_var_stack__[1] = (void *)n
-# define SETUP_VAR_STACK(n)              _SETUP_VAR_STACK(n, GC_variable_stack)
-# define SETUP_VAR_STACK_REMEMBERED(n)   _SETUP_VAR_STACK(n, __remembered_vs__)
+# define _SETUP_VAR_STACK(var, n, vs)    void *var[n + 2]; \
+                                         var[0] = vs; \
+                                         var[1] = (void *)n
+# define SETUP_VAR_STACK(n)              _SETUP_VAR_STACK(__gc_var_stack__, n, GC_variable_stack)
+# define SETUP_VAR_STACK_REMEMBERED(n)   _SETUP_VAR_STACK(__gc_var_stack__, n, __remembered_vs__)
+# define SETUP_PRE_VAR_STACK(n)          _SETUP_VAR_STACK(__gc_pre_var_stack__, n, GC_variable_stack); \
+                                         GC_variable_stack = __gc_pre_var_stack__
 # define VAR_STACK_PUSH(p, var)          __gc_var_stack__[p+2] = &(var)
 # define VAR_STACK_PUSH_ARRAY(p, var, n) __gc_var_stack__[p+2] = 0; \
                                          __gc_var_stack__[p+3] = &(var); \
                                          __gc_var_stack__[p+4] = (void *)n
+# define PRE_VAR_STACK_PUSH(p, var)      __gc_pre_var_stack__[p+2] = &(var)
 # define SET_VAR_STACK()                 GC_variable_stack = __gc_var_stack__
 # define WITH_VAR_STACK(x)               (SET_VAR_STACK(), x)
 # define REMEMBER_VAR_STACK()            void **__remembered_vs__ = GC_variable_stack
@@ -168,16 +171,18 @@ typedef float nnfloat;
 # define CONSTRUCTOR_ARGS(x)             ()
 # define CONSTRUCTOR_INIT(x)             /* empty */
 #else
-# define SETUP_VAR_STACK(n) /* empty */
-# define SETUP_VAR_STACK_REMEMBERED(n) /* empty */
-# define VAR_STACK_PUSH(p, var) /* empty */
+# define SETUP_VAR_STACK(n)              /* empty */
+# define SETUP_VAR_STACK_REMEMBERED(n)   /* empty */
+# define SETUP_PRE_VAR_STACK(n)          /* empty */
+# define VAR_STACK_PUSH(p, var)          /* empty */
 # define VAR_STACK_PUSH_ARRAY(p, var, n) /* empty */
-# define SET_VAR_STACK() /* empty */
-# define WITH_VAR_STACK(x) x
-# define REMEMBER_VAR_STACK() /* empty */
-# define WITH_REMEMBERED_STACK(x) x
-# define CONSTRUCTOR_ARGS(x) x
-# define CONSTRUCTOR_INIT(x) x
+# define PRE_VAR_STACK_PUSH(p, var)      /* empty */
+# define SET_VAR_STACK()                 /* empty */
+# define WITH_VAR_STACK(x)               x
+# define REMEMBER_VAR_STACK()            /* empty */
+# define WITH_REMEMBERED_STACK(x)        x
+# define CONSTRUCTOR_ARGS(x)             x
+# define CONSTRUCTOR_INIT(x)             x
 #endif
 
 #ifdef __cplusplus

@@ -12,7 +12,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#define USE_MMAP 0
+#define USE_MMAP 1
 #define GROW_FACTOR 1.5
 
 #if defined(sparc) || defined(__sparc) || defined(__sparc__)
@@ -38,7 +38,7 @@ typedef short Type_Tag;
 #define SAFETY 1
 #define RECYCLE_HEAP 0
 
-#define GC_EVERY_ALLOC 100
+#define GC_EVERY_ALLOC 1000
 #define ALLOC_GC_PHASE 5
 
 void (*GC_collect_start_callback)(void);

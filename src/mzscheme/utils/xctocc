@@ -1053,6 +1053,11 @@ sub PrintFunction
 	print "static Scheme_Object *${newclass}_ConstructScheme(${scheme_args})";
 	print "\n{\n";
 
+	if ($numfuncs > 1) {
+	    print "  SETUP_PRE_VAR_STACK(2);\n";
+	    print "  PRE_VAR_STACK_PUSH(0, obj);\n";
+	    print "  PRE_VAR_STACK_PUSH(1, p);\n";
+	}
 	print "  ${newclass} *realobj;\n";
 	print "  REMEMBER_VAR_STACK();\n";
     } else {
@@ -1091,6 +1096,16 @@ sub PrintFunction
 	    print "  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)\n";
 	}
 
+	if ($numfuncs > 1) {
+	    if ($global) {
+		print "  SETUP_PRE_VAR_STACK(1);\n";
+		print "  PRE_VAR_STACK_PUSH(0, p);\n";
+	    } else {
+		print "  SETUP_PRE_VAR_STACK(2);\n";
+		print "  PRE_VAR_STACK_PUSH(0, p);\n";
+		print "  PRE_VAR_STACK_PUSH(1, obj);\n";
+	    }
+	}
 	print "  REMEMBER_VAR_STACK();\n";
 
 	if ($returntype ne 'void') {

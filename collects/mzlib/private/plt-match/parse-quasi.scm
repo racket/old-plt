@@ -22,8 +22,7 @@
             (syntax-case phrase (quasiquote unquote unquote-splicing)
               (p
                (let ((pat (syntax-object->datum (syntax p))))
-                 (or (null? pat)
-                     (string? pat)
+                 (or (string? pat)
                      (boolean? pat)
                      (char? pat)
                      (number? pat)
@@ -44,11 +43,12 @@
             (,p (syntax p))
             (,@pat
              (q-error (syntax ,@pat) "unquote-splicing not nested in list"))
-            ((x . y) 
+            (p
+             (or (pair? (syntax-e (syntax p))) (null? (syntax-e (syntax p)))) 
              (let* ((list-type 'list)
                     (result
                      (let loop 
-                         ((l (syntax-e (syntax (x . y)))))
+                         ((l (syntax-e (syntax p))))
                                         ;(write l)(newline)
                        (cond ((null? l) '())
                              ((and (stx-pair? (car l))

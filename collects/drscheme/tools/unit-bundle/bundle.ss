@@ -2,45 +2,47 @@
   (interface ()
     create-view))
 
-(define-struct rect (x y width height))
-
 (define bundle%
   (class* object% (bundle<%>) (contents)
     (private
       [views null]
       [interior-height-addition 40]
       [calculate-tree-size
-       (lambda ()
-	 (let o-loop ([contents contents])
-	   (cond
-	    [(is-a? contents leaf-bundle%)
-	     (let (;[admin (send (send contents get-editor) get-admin)]
-		   [w (box 0)]
-		   [h (box 0)])
-	       ;(send admin get-view #f #f w h)
-	       (set-box! w 30)
-	       (set-box! h 30)
-	       (send contents set-tree-width (unbox w))
-	       (send contents set-tree-height (unbox h))
-	       (values (unbox w) (unbox h)))]
-	    [(is-a? contents node-bundle%)
-	     (let i-loop ([bundle-contents (send contents get-bundle-contents)]
-			  [width 0]
-			  [height 0])
-	       (cond
-		[(null? bundle-contents)
-		 (send contents set-tree-width width)
-		 (send contents set-tree-height (+ height interior-height-addition))
-		 (values width
-			 (+ height interior-height-addition))]
-		[else (let*-values ([(c-width c-height) (o-loop (car bundle-contents))]
-				    [(i-width i-height)
-				     (i-loop (cdr bundle-contents)
-					     (+ c-width width)
-					     (max c-height height))])
-			(values (+ c-width i-width)
-				(max c-height i-height)))]))]
-	    [else (error 'position-view-contents "fell off cond: ~e~n" contents)])))]
+       (lambda (view)
+	 (let o-loop ([contents-snip (send view get-contents-snip)])
+	   (let ([contents (send contents-snip get-bundle-contents)])
+	     (cond
+	      [(is-a? contents-snip leaf-bundle-snip%)
+	       (let ([xl (box 0)]
+		     [xr (box 0)]
+		     [yt (box 0)]
+		     [yb (box 0)])
+		 (send view get-snip-location contents-snip xl yt #f)
+		 (send view get-snip-location contents-snip xr yb #t)
+		 (let ([w (- (unbox xr) (unbox xl))]
+		       [h (- (unbox yb) (unbox yt))])
+		   (printf "w: ~s h: ~s~n" w h)
+		   (send contents set-tree-width w)
+		   (send contents set-tree-height h)
+		   (values w h)))]
+	      [(is-a? contents-snip node-bundle-snip%)
+	       (let i-loop ([bundle-contents
+			     (send contents-snip get-bundle-contents-snips)]
+			    [width 0]
+			    [height 0])
+		 (cond
+		  [(null? bundle-contents)
+		   (send contents set-tree-width width)
+		   (send contents set-tree-height (+ height interior-height-addition))
+		   (values width
+			   (+ height interior-height-addition))]
+		  [else (let*-values ([(c-width c-height) (o-loop (car bundle-contents))])
+			  (i-loop (cdr bundle-contents)
+				  (+ c-width width)
+				  (max c-height height)))]))]
+	      [else (error 'position-view-contents
+			   "fell off cond: ~e~n"
+			   contents-snip)]))))]
       [position-snips
        (lambda (view)
 	 (let o-loop ([contents-snip (send view get-contents-snip)]
@@ -91,24 +93,34 @@
        (lambda ()
 	 (let ([view (make-object bundle-pasteboard%)])
 	   (send view set-contents-snip (build-view-contents view))
-	   (calculate-tree-size)
+	   (calculate-tree-size view)
 	   (position-snips view)
 	   (set! views (cons view views))
 	   view))]
       [contents-changed
        (lambda ()
-	 (calculate-tree-size)
-	 (for-each (lambda (view)
-		     (let ([snips 
-			    (let loop ([snips (send view get-first-snip)])
-			      (if snip
-				  (cons snip (loop (send snip next)))
-				  null))])
-		       (for-each (lambda (snip) (send view delete snip))
-				 snips)
-		       (build-view-contents view)
-		       (position-snips view)))
-		   views))])
+	 (unless (null? views)
+	   (let ([f
+		  (lambda (calc-size)
+		    (lambda (view)
+
+		      (let ([old-snips
+			     (let loop ([snip (send view find-first-snip)])
+			       (if snip
+				   (cons snip (loop (send snip next)))
+				   null))])
+
+			;; build new ones
+			(build-view-contents view)
+			(calc-size view)
+			(position-snips view)
+
+			;; delete the old snips (why does this break things?)
+			'(for-each
+			 (lambda (snip) (send view delete snip))
+			 old-snips))))])
+
+	     (for-each (f calculate-tree-size) views))))])
     (sequence
       (super-init)
       (send contents traverse
@@ -296,7 +308,6 @@
       (super-init text))))
 	
 (define (set-box/f! b/f contents)
-  (printf "set-box/f!: ~s ~s~n" b/f contents)
   (when (box? b/f)
     (set-box! b/f contents)))
 (define (set-dc-pen dc color width style)
@@ -306,7 +317,6 @@
 
 (define node-bundle-snip%
   (class snip% (node-bundle bundle-contents-snips)
-
     (public
       [get-bundle-contents
        (lambda ()
@@ -314,7 +324,6 @@
       [get-bundle-contents-snips
        (lambda ()
 	 bundle-contents-snips)])
-
     (private
       [width 10]
       [height 10])
@@ -323,11 +332,10 @@
       [get-height (lambda () height)])
     (override
      [get-extent
-      (lambda (dc x y w h descent ascent space lspace rspace)
+      (lambda (dc x y w h descent space lspace rspace)
 	(set-box/f! w width)
 	(set-box/f! h height)
 	(set-box/f! descent 0)
-	(set-box/f! ascent 0)
 	(set-box/f! space 0)
 	(set-box/f! lspace 0)
 	(set-box/f! rspace 0))]
@@ -344,8 +352,8 @@
       (super-init))))
 
 ;; test
-(define leaf1 (make-object leaf-bundle% '(a)))
-(define leaf2 (make-object leaf-bundle% '(d)))
+(define leaf1 (make-object leaf-bundle% '(aaa b)))
+(define leaf2 (make-object leaf-bundle% '(c dd)))
 (define int1 (make-object node-bundle% 'z (list leaf1 leaf2)))
 (define int2 (make-object node-bundle% 'y (list int1 leaf2)))
 (define int3 (make-object node-bundle% 'x (list int2 leaf2)))
@@ -366,6 +374,9 @@
 		 frame
 		 (send bundle create-view)))
 (send frame show #t)
+(yield)
+(send bundle contents-changed)
+#|
 
 (define arrow-snip-class (make-object snip-class%))
 (send arrow-snip-class set-classname "hier-arrow")
@@ -474,18 +485,4 @@
     (override [draw void])
     (sequence (super-init void))))
 
-(define leaf-bundle%
-  (class snip% (names)
-    (private
-      [width #f])
-    (public
-      [get-min-width
-       (lambda ()
-	 10)]
-      [set-width
-       (lambda (w)
-	 (set! width w))])
-    (override
-     [draw
-      (lambda (dc x y left top right bottom dx dy draw-caret)
-	(void))])))
+|#

@@ -2334,6 +2334,7 @@
 
 	   (public 
 	    show 
+	    navigate
 	    navigate/status 
 	    go-forward
 	    refresh
@@ -2349,7 +2350,6 @@
 
 	    (define show 
 	     (lambda (b) 
-	       navigate
 	       (mxprims:browser-show browser b)))
 	    (define navigate/status
 	     (lambda (url)

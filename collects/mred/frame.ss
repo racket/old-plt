@@ -251,7 +251,7 @@
 					   "&File" "F&ile"))
 				 (send ,mb append edit-menu "&Edit")
 				 (when windows-menu
-				   (send ,mb append windows-menu "Windows"))
+				   (send ,mb append windows-menu "&Windows"))
 				 (send ,mb append help-menu "&Help")
 
 				 ,@(map (lambda (x)
@@ -885,7 +885,7 @@
 					 -1 -1 -1 -1
 					 (list "Forward" "Backward"))]
 		 [close-button (make-object mred:container:button% middle-right-panel
-					    (lambda args (hide-search)) "Close")]
+					    (lambda args (hide-search)) "Hide")]
 		 [hidden? #f])
 	       (sequence
 		 (let ([align

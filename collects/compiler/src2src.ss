@@ -193,11 +193,12 @@
   (define-struct tables (global-ht et-global-ht))
 
   (define global%
-    (class100 exp% (-stx -trans? -tables)
+    (class100 exp% (-stx -trans? -tables -needs-top?)
       (private-field
        [stx -stx]
        [trans? -trans?]
        [tables -tables]
+       [needs-top? -needs-top?]
        [mbind #f]
        [bucket (global-bucket ((if trans? tables-et-global-ht tables-global-ht) tables) stx)])
       (private
@@ -238,14 +239,21 @@
 
 	[can-dup/move? (lambda () (valueable?))]
 
-	[clone (lambda (env) (make-object global% stx trans? tables))]
+	[clone (lambda (env) (make-object global% stx trans? tables needs-top?))]
 
 	[global->local (lambda (env)
 			 (or (ormap (lambda (e)
 				      (and (module-identifier=? (car e) stx)
 					   (make-object ref% stx (cdr e))))
 				    env)
-			     this))])
+			     this))]
+
+	[sexpr
+	 (lambda ()
+	   (if needs-top?
+	       (with-syntax ([stx stx])
+		 (syntax (#%top . stx)))
+	       stx))])
       (public
 	[set-mutated (lambda () (set-bucket-mutated?! bucket #t))]
 	[set-inited (lambda () (set-bucket-inited-before-use?! bucket #t))])
@@ -469,7 +477,7 @@
 		       (unless globals
 			 (set! globals
 			       (map (lambda (v)
-				      (make-object global% v #f tables))
+				      (make-object global% v #f tables #f))
 				    varnames)))
 		       globals)])
       (sequence
@@ -654,7 +662,7 @@
 			   (eq? 1 (send (cadr rands) get-const-val)))))
 	     (make-object app% 
 			  stx
-			  (make-object global% (quote-syntax add1) (send rator is-trans?) tables)
+			  (make-object global% (quote-syntax add1) (send rator is-trans?) tables #f)
 			  (list
 			   (if (and (is-a? (car rands) constant%)
 				    (eq? 1 (send (car rands) get-const-val)))
@@ -670,7 +678,7 @@
 		       (eq? 1 (send (cadr rands) get-const-val))))
 	     (make-object app% 
 			  stx
-			  (make-object global% (quote-syntax sub1)  (send rator is-trans?) tables)
+			  (make-object global% (quote-syntax sub1)  (send rator is-trans?) tables #f)
 			  (list (car rands))
 			  tables)]
 
@@ -733,7 +741,8 @@
 								   (quote-syntax eq?)
 								   (quote-syntax eqv?)))
 							     (send rator is-trans?)
-							     tables)
+							     tables
+							     #f)
 						(list
 						 (car rands)
 						 (make-object constant% 
@@ -1389,7 +1398,8 @@
 								     (make-object global%
 										  (quote-syntax values)
 										  #f
-										  tables)
+										  tables
+										  #f)
 								     (map (lambda (var lex-var)
 									    (make-object ref% var lex-var))
 									  vars
@@ -1432,7 +1442,7 @@
 		     [bindings (apply append bindingss)])
 		 (let ([env (map cons bindings 
 				 (map (lambda (var) 
-					(make-object global% var #f tables)) 
+					(make-object global% var #f tables #f)) 
 				      vars))])
 		   (set! body
 			 (append
@@ -1551,10 +1561,10 @@
 	 (let ([a (stx-bound-assq stx env)])
 	   (if a
 	       (make-object ref% stx (cdr a))
-	       (make-object global% stx trans? tables)))]
+	       (make-object global% stx trans? tables #f)))]
 
 	[(#%top . id)
-	 (make-object global% (syntax id) trans? tables)]
+	 (make-object global% (syntax id) trans? tables #t)]
 	
 	[(#%datum . val)
 	 (make-object constant% stx (syntax-object->datum (syntax val)))]

@@ -341,7 +341,7 @@
 	   [(number? (zodiac:zread-object ast))
 	    (let ([n (zodiac:zread-object ast)])
 	      (if (and (inexact? n) (eqv? 0 (imag-part n))
-		       (not (member n '(+inf.0 -inf.0 +nan.0))))
+		       (not (member n '(+inf.0 -inf.0 +nan.0 -0.0))))
 		  (compiler:get-inexact-real-const! n ast)
 		  (let ([sym (string->symbol (number->string n))])
 		    (hash-table-get const:number-table

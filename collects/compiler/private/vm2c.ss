@@ -1615,20 +1615,20 @@
 		   [(number? (zodiac:zread-object ast))
 		    (let process ([num (zodiac:zread-object ast)])
 		      (cond
-					; NaN, inf
-		       [(member num  (list +NaN.0 +inf.0 -inf.0)) 
+		       ;; NaN, inf
+		       [(member num  (list +NaN.0 +inf.0 -inf.0 -0.0)) 
 			(emit-expr "scheme_eval_string(\"~a\", env)" num)]
-					; complex numbers
+		       ;; complex numbers
 		       [(not (eqv? 0 (imag-part num)))
 			(emit-expr "scheme_make_complex(")
 			(process (real-part num))
 			(emit ", ")
 			(process (imag-part num))
 			(emit ")")]
-					; floating point numbers
+		       ;; floating point numbers
 		       [(inexact? num)
 			(emit-expr "scheme_make_double(~a)" num)]
-					; integers (fixnums & bignums)
+		       ;; integers (fixnums & bignums)
 		       [(integer? num)
 			(if (vm:fixnum? num) 
 			    (emit-expr "scheme_make_integer(~a)" num)

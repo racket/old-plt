@@ -228,6 +228,7 @@
 		      [else v]))
 		  v))]
 	   [(top-level-varref/bind-from-lift? v) (top-level-varref/bind-from-lift-lambda v)]
+	   [(zodiac:bound-varref? v) (extract-ast-known-value (extract-varref-known-val v))]
 	   [else v])))
 
       ;; extract-varref-known-val works for bindings, too.

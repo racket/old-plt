@@ -365,7 +365,7 @@
 		      (let* ([val (lift! (car (zodiac:let-values-form-vals ast)) code)])
 			(set-car! (zodiac:let-values-form-vals ast) val)
 			
-					; lift in body expressions
+			;; lift in body expressions
 			(let ([body (lift! (zodiac:let-values-form-body ast) code)])
 
 			  (if (and (= 1 (length (car (zodiac:let-values-form-vars ast))))
@@ -463,8 +463,6 @@
 		     ;;--------------------------------------------------------
 		     ;; SET! EXPRESSIONS
 		     ;;
-		     ;; we analyze the target, which will register it as being
-		     ;; mutable or used, as necessary.  Then we analyze the value.
 		     ;;
 		     [(zodiac:set!-form? ast)
 

@@ -36,10 +36,10 @@
    (purify-port (input-port? . -> . string?))
    (netscape/string->url (string? . -> . url?))
    (call/input-url (opt->* (url?
-                            (url? . -> . input-port?)
-                            (input-port? . -> . any))
-                           ((listof string?))
-                           any))
+			    (opt-> (url?) ((listof string?)) input-port?)
+			    (input-port? . -> . any))
+			   ((listof string?))
+			   any))
    (combine-url/relative (url? string? . -> . url?))
    (url-exception? (any? . -> . boolean?))
    (current-proxy-servers

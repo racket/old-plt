@@ -246,12 +246,16 @@ Scheme_Object *scheme_rational_multiply(const Scheme_Object *a, const Scheme_Obj
 
 Scheme_Object *scheme_rational_max(const Scheme_Object *a, const Scheme_Object *b)
 {
-  return scheme_rational_normalize(scheme_rational_lt(a, b) ? b : a);
+  int lt;
+  lt = scheme_rational_lt(a, b);
+  return scheme_rational_normalize(lt ? b : a);
 }
 
 Scheme_Object *scheme_rational_min(const Scheme_Object *a, const Scheme_Object *b)
 {
-  return scheme_rational_normalize(scheme_rational_lt(a, b) ? a : b);
+  int lt;
+  lt = scheme_rational_lt(a, b);
+  return scheme_rational_normalize(lt ? a : b);
 }
 
 Scheme_Object *scheme_rational_divide(const Scheme_Object *n, const Scheme_Object *d)
@@ -332,7 +336,8 @@ Scheme_Object *scheme_rational_floor(const Scheme_Object *o)
   if (scheme_is_rational_positive(o))
     return scheme_rational_truncate(o);
   else {
-    Scheme_Object *r = scheme_rational_truncate(o);
+    Scheme_Object *r;
+    r = scheme_rational_truncate(o);
     return scheme_sub1(1, &r);
   }
 }
@@ -342,7 +347,8 @@ Scheme_Object *scheme_rational_ceiling(const Scheme_Object *o)
   if (!scheme_is_rational_positive(o))
     return scheme_rational_truncate(o);
   else {
-    Scheme_Object *r = scheme_rational_truncate(o);
+    Scheme_Object *r;
+    r = scheme_rational_truncate(o);
     return scheme_add1(1, &r);
   }  
 }

@@ -683,8 +683,10 @@ void
 scheme_add_global_keyword(const char *name, Scheme_Object *obj, 
 			  Scheme_Env *env)
 {
-  Scheme_Object *hp = scheme_hash_percent_name(name, -1);
+  Scheme_Object *hp;
   Scheme_Object *sym;
+
+  hp = scheme_hash_percent_name(name, -1);
 
   do_add_global_symbol(env, hp, obj, 0, 0);
   scheme_set_keyword(hp, env);
@@ -723,7 +725,9 @@ Scheme_Object *scheme_hash_percent_name(const char *name, int len)
 static void hash_percent(const char *name, Scheme_Object *obj,
 			 Scheme_Env *env, int add)
 {
-  Scheme_Object *sym = scheme_hash_percent_name(name, -1);
+  Scheme_Object *sym;
+
+  sym = scheme_hash_percent_name(name, -1);
 
   if (!add) {
     Scheme_Bucket *b;

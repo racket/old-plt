@@ -598,7 +598,8 @@ static int check_unit(Scheme_Object *form, Scheme_Comp_Env *env,
      set position info, and build list of exported names: */
   l = params;
   while (SCHEME_PAIRP(l)) {
-    Scheme_Object *v = cons(SCHEME_CAR(l), scheme_null);
+    Scheme_Object *v;
+    v = cons(SCHEME_CAR(l), scheme_null);
     if (indirect_last)
       SCHEME_CDR(indirect_last) = v;
     else
@@ -618,7 +619,8 @@ static int check_unit(Scheme_Object *form, Scheme_Comp_Env *env,
 	for (i = 0 ; i < c; i++) {
 	  name = vs[i].id;
 	  if (SAME_OBJ(id->int_id, name)) {
-	    Scheme_Object *v = cons(name, scheme_null);
+	    Scheme_Object *v;
+	    v = cons(name, scheme_null);
 	    if (indirect_last)
 	      SCHEME_CDR(indirect_last) = v;
 	    else
@@ -1051,7 +1053,8 @@ static Scheme_Object *make_unit_expand(Scheme_Object *form,
 	Scheme_Object *ids = scheme_null, *last = NULL;
 	
 	for (i = 0; i < count; i++) {
-	  Scheme_Object *pr = cons(vs[i].id, scheme_null);
+	  Scheme_Object *pr;
+	  pr = cons(vs[i].id, scheme_null);
 	  if (last)
 	    SCHEME_CDR(last) = pr;
 	  else
@@ -1391,11 +1394,13 @@ static Scheme_Object *make_compound_unit_expand(Scheme_Object *form,
 
   l = SCHEME_CDR(SCHEME_CAR(SCHEME_CDR(SCHEME_CDR(form))));
   for (id = withs.first; id; id = id->next) {
-    Scheme_Object *c = cons(cons(id->tag,
-				 cons(cons(id->int_id, 
-					   SCHEME_CDR(SCHEME_CAR(SCHEME_CDR(SCHEME_CAR(l))))),
-				      scheme_null)),
-			    scheme_null);
+    Scheme_Object *c;
+    c = cons(cons(id->tag,
+		  cons(cons(id->int_id, 
+			    SCHEME_CDR(SCHEME_CAR(SCHEME_CDR(SCHEME_CAR(l))))),
+		       scheme_null)),
+	     scheme_null);
+
     if (last)
       SCHEME_CDR(last) = c;
     else
@@ -1439,8 +1444,9 @@ static Scheme_Object *link_invoke_unit(Scheme_Object *o, Link_Info *info)
 
   for (i = 0, j = 0; i < data->num_exports; i++) {
     if (SAME_TYPE(SCHEME_TYPE(data->exports[i]), scheme_local_type)) {
-      int flags = scheme_link_info_flags(info, SCHEME_LOCAL_POS(data->exports[i]));
+      int flags;
       int p;
+      flags = scheme_link_info_flags(info, SCHEME_LOCAL_POS(data->exports[i]));
 
       if (flags & SCHEME_INFO_ANCHORED)
 	p = scheme_link_info_lookup_anchor(info, SCHEME_LOCAL_POS(data->exports[i]));
@@ -2085,6 +2091,8 @@ static Scheme_Object *do_unit(Scheme_Object **boxes, Scheme_Object **anchors,
 
 	if (e->u.def.count != c) {
 	  int i = e->u.def.count;
+	  const char *symname;
+	  symname = (i ? scheme_symbol_name(vs[0].id) : "");
 	  scheme_raise_exn(MZEXN_APPLICATION_ARITY, 
 			   scheme_make_integer(c),
 			   scheme_make_integer(i),
@@ -2092,7 +2100,7 @@ static Scheme_Object *do_unit(Scheme_Object **boxes, Scheme_Object **anchors,
 			   "to a definition context%s%s%s expecting %d value%s",
 			   c, (c == 1) ? "" : "s",
 			   i ? " (" : "",
-			   i ? scheme_symbol_name(vs[0].id) : "",
+			   symname,
 			   i ? ((i == 1) ? ")" : ", ...)") : "",
 			   i, (i == 1) ? "" : "s"); 
 
@@ -2654,7 +2662,8 @@ static Scheme_Object *read_invoke_data(Scheme_Object *o)
 
 static void init_unitsig()
 {
-  Scheme_Env *env = scheme_get_env(scheme_config);
+  Scheme_Env *env;
+  env = scheme_get_env(scheme_config);
 
 #define EVAL_ONE_STR(str) unitsig_macros = scheme_eval_string(str, env)
 #define EVAL_ONE_SIZED_STR(str, len) unitsig_macros = scheme_eval_compiled_sized_string(str, len, env)
@@ -2706,7 +2715,8 @@ static int hash_sig(Scheme_Object *src_sig, Scheme_Hash_Table *table)
     Scheme_Object *s = sv[i];
 
     if (SCHEME_SYMBOLP(s)) {
-      Scheme_Bucket *b = scheme_bucket_from_table(table, (const char *)s);
+      Scheme_Bucket *b;
+      b = scheme_bucket_from_table(table, (const char *)s);
       if (b->val)
 	return 0;
       b->val = s;
@@ -2737,12 +2747,15 @@ static int hash_sig(Scheme_Object *src_sig, Scheme_Hash_Table *table)
 
 static char *sig_path_name(Scheme_Object *name, Scheme_Object *path)
 {
-  char *s = (char *)scheme_symbol_name(name);
-  int l = strlen(s);
+  char *s;
+  int l;
+  s = (char *)scheme_symbol_name(name);
+  l = strlen(s);
 
   while (!SCHEME_NULLP(path)) {
-    char *n = (char *)scheme_symbol_name(SCHEME_CAR(path)), *v;
+    char *n, *v;
     int nl;
+    n = (char *)scheme_symbol_name(SCHEME_CAR(path));
     nl = strlen(n);
     v = scheme_malloc_atomic(nl + l + 2);
     memcpy(v + nl + 1, s, l);
@@ -2773,10 +2786,12 @@ static int check_sig_match(Scheme_Hash_Table *table, Scheme_Object *sig, Scheme_
     Scheme_Object *s = sv[i];
     
     if (SCHEME_SYMBOLP(s)) {
-      Scheme_Bucket *b = scheme_bucket_from_table(table, (const char *)s);
+      Scheme_Bucket *b;
+      b = scheme_bucket_from_table(table, (const char *)s);
       if (!b->val) {
 	/* Missing value */
-	char *p = sig_path_name(s, path);
+	char *p;
+	p = sig_path_name(s, path);
 	scheme_raise_exn(MZEXN_UNIT,
 			 "%s: %.255s is missing a value name \"%.255s\", required by %.255s",
 			 scheme_symbol_name(who),
@@ -2788,7 +2803,8 @@ static int check_sig_match(Scheme_Hash_Table *table, Scheme_Object *sig, Scheme_
 	return 0;
       else if (!SCHEME_SYMBOLP((Scheme_Object *)b->val)) {
 	/* Kind mismatch */
-	char *p = sig_path_name(s, path);
+	char *p;
+	p = sig_path_name(s, path);
 	scheme_raise_exn(MZEXN_UNIT,
 			 "%s: %.255s contains \"%.255s\" as a sub-unit name, but %.255s contains \"%.255s\" as a value name",
 			 scheme_symbol_name(who),
@@ -2813,7 +2829,8 @@ static int check_sig_match(Scheme_Hash_Table *table, Scheme_Object *sig, Scheme_
       b = scheme_bucket_from_table(table, (const char *)name);
       if (!b->val) {
 	/* Missing sub-unit */
-	char *p = sig_path_name(name, path);
+	char *p;
+	p = sig_path_name(name, path);
 	scheme_raise_exn(MZEXN_UNIT,
 			 "%s: %.255s is missing a sub-unit name \"%.255s\", required by %.255s",
 			 scheme_symbol_name(who),
@@ -2824,7 +2841,8 @@ static int check_sig_match(Scheme_Hash_Table *table, Scheme_Object *sig, Scheme_
 	return 0;
       else if (!SCHEME_HASHTP((Scheme_Object *)b->val)) {
 	/* Kind mismatch */
-	char *p = sig_path_name(name, path);
+	char *p;
+	p = sig_path_name(name, path);
 	scheme_raise_exn(MZEXN_UNIT,
 			 "%s: %.255s contains \"%.255s\" as a value name, but %.255s contains \"%.255s\" as a sub-unit name",
 			 scheme_symbol_name(who),
@@ -2853,7 +2871,8 @@ static int check_sig_match(Scheme_Hash_Table *table, Scheme_Object *sig, Scheme_
 	if (SCHEME_TRUEP((Scheme_Object *)b->val)) {
 	  /* Extra mismatch */
 	  Scheme_Object *name = (Scheme_Object *)b->key;
-	  char *p = sig_path_name(name, path);
+	  char *p;
+	  p = sig_path_name(name, path);
 	  scheme_raise_exn(MZEXN_UNIT,
 			   "%s: %.255s contains an extra %s name \"%.255s\" that is not required by %.255s",
 			   scheme_symbol_name(who),

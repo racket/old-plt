@@ -936,7 +936,9 @@ void scheme_do_format(const char *procname, Scheme_Object *port,
     return;
   }
   if (used != argc) {
-    char *args = scheme_make_args_string("", -1, argc, argv);
+    char *args;
+
+    args = scheme_make_args_string("", -1, argc, argv);
 
     if (used > argc) {
       scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
@@ -953,9 +955,11 @@ void scheme_do_format(const char *procname, Scheme_Object *port,
   }
   if (num_err || char_err) {
     int pos = (num_err ? num_err : char_err) - 1;
-    char *args = scheme_make_args_string("other ", pos, argc, argv);
+    char *args;
     char *type = (num_err ? "exact-number" : "character");
     Scheme_Object *bad = argv[pos];
+
+    args = scheme_make_args_string("other ", pos, argc, argv);
 
     scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
 		     bad,
@@ -1020,7 +1024,8 @@ void scheme_do_format(const char *procname, Scheme_Object *port,
       case 'E':
 	{
 	  int len;
-	  char *s = scheme_make_provided_string(argv[used++], 0, &len);
+	  char *s;
+	  s = scheme_make_provided_string(argv[used++], 0, &len);
 	  scheme_write_string(s, len, port);
 	}
 	break;
@@ -1068,7 +1073,8 @@ void scheme_do_format(const char *procname, Scheme_Object *port,
 
 char *scheme_format(char *format, int flen, int argc, Scheme_Object **argv, int *rlen)
 {
-  Scheme_Object *port = scheme_make_string_output_port();
+  Scheme_Object *port;
+  port = scheme_make_string_output_port();
   scheme_do_format("format", port, (unsigned char *)format, flen, 0, 0, argc, argv);
   return scheme_get_sized_string_output(port, rlen);
 }
@@ -1082,9 +1088,11 @@ void scheme_printf(char *format, int flen, int argc, Scheme_Object **argv)
 static Scheme_Object *
 format(int argc, Scheme_Object *argv[])
 {
-  Scheme_Object *port = scheme_make_string_output_port();
+  Scheme_Object *port;
   char *s;
   int len;
+
+  port = scheme_make_string_output_port();
 
   scheme_do_format("format", port, NULL, 0, 0, 1, argc, argv);
 

@@ -6,7 +6,7 @@
 (define file-out (caddr cmd-line))
 
 (require-library "function.ss")
-(require-library "errortrace.ss" "errortrace")
+; (require-library "errortrace.ss" "errortrace")
 
 (unless (system (format "~a -DMZ_PRECISE_GC ~a ~a | ctok > xtmp"
 			cpp
@@ -221,7 +221,8 @@
 	(when label? (printf "/* STRUCT DECL */~n")))
     e]
    [(function? e)
-    (when label? (printf "/* FUNCTION */~n"))
+    (let ([name (register-proto-information e)])
+      (when label? (printf "/* FUNCTION ~a */~n" name)))
     (convert-function e)]
    [(var-decl? e)
     (when label? (printf "/* VAR */~n"))
@@ -264,9 +265,13 @@
   (let loop ([e e][type null])
     (if (parens? (cadr e))
 	(let ([name (tok-n (car e))]
-	      [type (reverse! type)])
-	  (set! prototyped (cons (cons name (make-prototype type #f #f))
-				 prototyped))
+	      [type (let loop ([t (reverse! type)])
+		      (if (memq (tok-n (car t)) '(extern static))
+			  (loop (cdr t))
+			  t))])
+	  (unless (assq name prototyped)
+	    (set! prototyped (cons (cons name (make-prototype type #f #f))
+				   prototyped)))
 	  name)
 	(loop (cdr e) (cons (car e) type)))))
 
@@ -474,7 +479,7 @@
 	(let* ([local-vars 
 		(apply
 		 append
-		 (map (lambda (x) (get-pointer-vars x "PTRLOCAL" #f)) decls))]
+		 (map (lambda (e) (get-pointer-vars e "PTRLOCAL" #f)) decls))]
 	       [vars (begin
 		       (ormap (lambda (var)
 				(when (assq var extra-vars)
@@ -485,6 +490,18 @@
 			      
 			      local-vars)
 		       (append extra-vars local-vars))])
+	  ;; Look for function calls in decl section:
+	  (for-each
+	   (lambda (e)
+	     (let ([el (body->lines e #t)])
+	       (for-each
+		(lambda (e)
+		  ;; We're not really interested in the conversion.
+		  ;; We just want to complain about function calls:
+		  (convert-function-calls e null (make-live-var-info 0 null null) #t))
+		el)))
+	   decls)
+
 	  ;; Convert calls and body (recusively)
 	  (let-values ([(orig-maxlive) (live-var-info-maxlive live-vars)]
 		       [(body-x live-vars)
@@ -535,7 +552,10 @@
 					 __asm __asm__ __volatile __volatile__ __extension__
 					 ;; These are functions, but they don't trigger GC:
 					 strcpy strlen memcpy cos sin exp pow log sqrt atan2
-					 floor ceil round)))
+					 floor ceil round
+					 fread fwrite socket fcntl setsockopt connect send recv close
+					 scheme_rational_to_double scheme_bignum_to_double
+					 scheme_rational_to_float scheme_bignum_to_float)))
        (not (string? (tok-n (cadr e-))))
        ;; Look back one more for if, etc. if preceeding is paren
        (not (and (parens? (cadr e-))
@@ -597,8 +617,7 @@
 			  [p-m (and must-convert?
 				    call-func
 				    (assq (tok-n call-func) prototyped))])
-		     (if (and p-m
-			      (prototype-for-pointer? p-m))
+		     (if p-m
 			 (let ([new-var (gensym '__funcarg)])
 			   (loop (cdr el)
 				 (cons (append
@@ -613,7 +632,8 @@
 					     (append e (list (make-tok '|,| #f #f #f)))
 					     e))
 				       setups)
-				 (cons new-var new-vars)
+				 (cons (cons new-var (prototype-for-pointer? p-m))
+				       new-vars)
 				 ok-calls
 				 #t
 				 (make-live-var-info
@@ -680,8 +700,16 @@
 	     (when (and complain-not-in
 			(or (not (pair? complain-not-in))
 			    (not (memq args complain-not-in))))
-	       (error 'xform "Mondo complexo. Bad place for function call, line ~a."
-		      (tok-line (car func))))
+	       (let ([err-stuff
+		      (list "Mondo complexo. Bad place for function call, line ~a, starting tok is ~s."
+			    (tok-line (car func))
+			    (tok-n (car func)))])
+		 (if #t ; <= should e #f
+		     (begin
+		       (display "WARNING: " (current-error-port))
+		       (apply fprintf (current-error-port) err-stuff)
+		       (newline (current-error-port)))
+		     (apply error 'xform err-stuff))))
 	     ;; Lift out function calls as arguments. (Can re-order code.
 	     ;; MzScheme source code must live with this change to C's semantics.)
 	     ;; Calls are replaced by varaibles, and setup code generated that
@@ -697,8 +725,10 @@
 						    (make-live-var-info 
 						     (live-var-info-maxlive live-vars)
 						     (append (map (lambda (x)
-								    (cons x (make-vtype)))
-								  new-vars)
+								    (cons (car x) (make-vtype)))
+								  (filter (lambda (x)
+									    (cdr x))
+									  new-vars))
 							     (live-var-info-vars live-vars))
 						     (live-var-info-new-vars live-vars))
 						    ok-calls)]
@@ -714,7 +744,7 @@
 									;; Remove var for this one:
 									(make-live-var-info 
 									 (live-var-info-maxlive live-vars)
-									 (remove (car new-vars)
+									 (remove (caar new-vars)
 										 (live-var-info-vars live-vars)
 										 (lambda (a b)
 										   (eq? a (car b))))
@@ -722,7 +752,7 @@
 									#f)])
 				    (loop (cdr setups)
 					  (cdr new-vars)
-					  (cons (list* (make-tok (car new-vars) #f #f #f)
+					  (cons (list* (make-tok (caar new-vars) #f #f #f)
 						       (make-tok '= #f #f #f)
 						       setup)
 						result)
@@ -836,9 +866,9 @@
 		;; Doesn't start with a star
 		(not (eq? '* (tok-n (car e))))
 		;; Not an assignemnt
-		(not (eq? '= (tok-n (cadr e))))
-		;; Not a return
-		(not (eq? 'return (tok-n (car e))))
+		(not (memq (tok-n (cadr e)) '(= += -=)))
+		;; Not a return, case
+		(not (memq (tok-n (car e)) '(return case)))
 		;; Not a label, field lookup, pointer deref
 		(not (memq (tok-n (cadr e)) '(: |.| ->)))
 		;; No parens/braces in first two parts

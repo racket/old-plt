@@ -760,7 +760,8 @@ static Scheme_Object *GetNames(ClassVariable *ivar,
       if (env) {
 	scheme_unsettable_variable(env, offset);
       } else {
-	Scheme_Object *p = cons(IVAR_INT_NAME(ivar), scheme_null);
+	Scheme_Object *p;
+	p = cons(IVAR_INT_NAME(ivar), scheme_null);
 	
 	if (last)
 	  SCHEME_CDR(last) = p;
@@ -937,12 +938,14 @@ static Scheme_Object *Interface_Execute(Scheme_Object *form)
     if (SCHEME_INTERFACEP(in)) {
       il = cons(in, il);
     } else {
+      const char *symname;
+      symname = (data->defname ? scheme_symbol_name(data->defname) : "");
       scheme_raise_exn(MZEXN_OBJECT,
 		       "interface: interface expression returned "
 		       "a non-interface: %s%s%s",
 		       scheme_make_provided_string(in, 1, NULL),
 		       data->defname ? " for interface: " : "",
-		       data->defname ? scheme_symbol_name(data->defname) : "");
+		       symname);
       return NULL;
     }
   }
@@ -1249,12 +1252,14 @@ static Scheme_Object *_DefineClass_Execute(Scheme_Object *form, int already_eval
     superobj = data->super_expr;
 
   if (!SCHEME_CLASSP(superobj)) {
+    const char *symname;
+    symname = data->defname ? scheme_symbol_name(data->defname) : "";
     scheme_raise_exn(MZEXN_OBJECT,
 		     CLASS_STAR ": superclass expression returned "
 		     "a non-class: %s%s%s",
 		     scheme_make_provided_string(superobj, 1, NULL),
 		     data->defname ? " for class: " : "",
-		     data->defname ? scheme_symbol_name(data->defname) : "");
+		     symname);
     return NULL;
   }
 	
@@ -1268,12 +1273,14 @@ static Scheme_Object *_DefineClass_Execute(Scheme_Object *form, int already_eval
     Scheme_Object *in;
     in = _scheme_eval_compiled_expr(data->interface_exprs[i]);
     if (!SCHEME_INTERFACEP(in)) {
+      const char *symname;
+      symname = data->defname ? scheme_symbol_name(data->defname) : "";
       scheme_raise_exn(MZEXN_OBJECT,
 		       CLASS_STAR ": interface expression returned "
 		       "a non-interface: %s%s%s",
 		       scheme_make_provided_string(in, 1, NULL),
 		       data->defname ? " for class: " : "",
-		       data->defname ? scheme_symbol_name(data->defname) : "");
+		       symname);
       return NULL;
     }
     il = cons(in, il);
@@ -1291,7 +1298,8 @@ static Scheme_Object *_DefineClass_Execute(Scheme_Object *form, int already_eval
 
   if ((superclass->priminit == pi_CPP) 
       && !superclass->piu.initf) {
-    const char *cl = get_class_name((Scheme_Object *)sclass, " to create class: ");
+    const char *cl;
+    cl = get_class_name((Scheme_Object *)sclass, " to create class: ");
     scheme_raise_exn(MZEXN_OBJECT,
 		     CLASS_STAR ": can't derive from the class: %s%s", 
 		     scheme_symbol_name(superclass->defname),
@@ -1310,7 +1318,8 @@ static Scheme_Object *_DefineClass_Execute(Scheme_Object *form, int already_eval
       Scheme_Interface *in = (Scheme_Interface *)SCHEME_CAR(il);
       interfaces[i] = in;
       if (!scheme_is_subclass((Scheme_Object *)superclass, (Scheme_Object *)in->supclass)) {
-	const char *inn = get_interface_name((Scheme_Object *)in, " for interface: ");
+	const char *inn;
+	inn = get_interface_name((Scheme_Object *)in, " for interface: ");
 	scheme_raise_exn(MZEXN_OBJECT,
 			 CLASS_STAR ": superclass doesn't satisfy implementation requirement of interface: %s%s", 
 			 scheme_symbol_name(superclass->defname),
@@ -2775,7 +2784,8 @@ static Scheme_Object *GetIvar(Internal_Object *obj, Init_Object_Rec *irec, Schem
 	else
 	  return SCHEME_ENVBOX_VAL(frame->cmethods[lpos]);
       } else {
-	Scheme_Object *m = CloseMethod(mclass->cmethods[mclass->vslot_map[vp]], obj);
+	Scheme_Object *m;
+	m = CloseMethod(mclass->cmethods[mclass->vslot_map[vp]], obj);
 	if (boxed)
 	  return scheme_make_envunbox(m);
 	else
@@ -3086,7 +3096,8 @@ static void InitObjectFrame(Internal_Object *o, Init_Object_Rec *irec, int level
       irec->init_level = 0;
   } else if (((sclass->priminit == pi_NOT) || (sclass->priminit == pi_NOT_OVER_CPP)) && (irec->init_level >= level)) {
     if (sclass->superclass->pos > -1) {
-      const char *cl = get_class_name((Scheme_Object *)sclass, " in class: ");
+      const char *cl;
+      cl = get_class_name((Scheme_Object *)sclass, " in class: ");
 
       scheme_raise_exn(MZEXN_OBJECT,
 		       CREATE_OBJECT ": initialization did not invoke %s%s",
@@ -3239,7 +3250,8 @@ static void CallInitFrame(Internal_Object *o, Init_Object_Rec *irec, int level,
 
   if (!((sclass->priminit == pi_NOT) || (sclass->priminit == pi_NOT_OVER_CPP))) {
     if (irec->init_level && (irec->init_level >= level)) {
-      const char *cl = get_class_name((Scheme_Object *)sclass, " for class: ");
+      const char *cl;
+      cl = get_class_name((Scheme_Object *)sclass, " for class: ");
       
       scheme_raise_exn(MZEXN_OBJECT,
 		       CREATE_OBJECT ": superclass never initialized%s",
@@ -3302,8 +3314,9 @@ static Scheme_Object *DoSuperInitPrim(SuperInitData *data,
 {
   if (data->irec->init_level <= data->level) {
     Scheme_Class **heritage = ((Scheme_Class *)data->o->o.sclass)->heritage;
-    const char *cl = get_class_name((Scheme_Object *)heritage[data->level + 1], 
-				    " in class: ");
+    const char *cl;
+    cl = get_class_name((Scheme_Object *)heritage[data->level + 1], 
+			" in class: ");
     scheme_raise_exn(MZEXN_OBJECT,
 		     "multiple intializations of superclass%s",
 		     cl);
@@ -3397,7 +3410,8 @@ Scheme_Object *scheme_apply_generic_data(Scheme_Object *gdata,
   if (data->kind == generic_KIND_CLASS) {
     if (NOT_SAME_OBJ((Scheme_Object *)sclass, data->clori)) {
       if (!scheme_is_subclass((Scheme_Object *)sclass, data->clori)) {
-	const char *cl = get_class_name(data->clori, ": ");
+	const char *cl;
+	cl = get_class_name(data->clori, ": ");
 	scheme_raise_exn(MZEXN_OBJECT,
 			 "generic for %s: object not an instance of the generic's class%s",
 			 scheme_symbol_name(data->ivar_name),
@@ -3412,7 +3426,8 @@ Scheme_Object *scheme_apply_generic_data(Scheme_Object *gdata,
 
     map = find_implementation((Scheme_Object *)sclass, data->clori, &offset);
     if (!map) {
-      const char *inn = get_interface_name(data->clori, ": ");
+      const char *inn;
+      inn = get_interface_name(data->clori, ": ");
       scheme_raise_exn(MZEXN_OBJECT,
 		       "generic for %s: object not an instance of the generic's interface%s",
 		       scheme_symbol_name(data->ivar_name),
@@ -3433,7 +3448,8 @@ static Scheme_Object *DoGeneric(Generic_Data *data,
 				int argc, Scheme_Object *argv[])
 {
   if (!SCHEME_OBJP(argv[0])) {
-    char *s = (char *)scheme_symbol_name(data->ivar_name), *n;
+    char *s, *n;
+    s = (char *)scheme_symbol_name(data->ivar_name);
     n = scheme_malloc_atomic(strlen(s) + 20);
     strcpy(n, "generic for ");
     strcat(n, s);

@@ -208,7 +208,8 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
        otherwise. */
     if (filename[0] != '/') {
       int l = strlen(filename);
-      char *s = (char *)scheme_malloc_atomic(l + 3);
+      char *s;
+      s = (char *)scheme_malloc_atomic(l + 3);
       s[0] = '.';
       s[1] = '/';
       memcpy(s + 2, filename, l + 1);
@@ -233,7 +234,8 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
     f = (Setup_Procedure)dlsym(dl, SO_SYMBOL_PREFIX "scheme_initialize_internal");
     
     if (!f) {
-      char *err = dlerror();
+      char *err;
+      err = dlerror();
       dlclose(dl);
       scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		       scheme_make_string(filename),
@@ -256,7 +258,8 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
     reload_f = (Reload_Procedure)dlsym(dl, SO_SYMBOL_PREFIX "scheme_reload");
     
     if (!init_f || !reload_f) {
-      char *err = dlerror();
+      char *err;
+      err = dlerror();
       dlclose(dl);
       scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		       scheme_make_string(filename),

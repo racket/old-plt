@@ -1471,7 +1471,8 @@ int scheme_peekc(Scheme_Object *port)
   ip = (Scheme_Input_Port *)port;
 
   if (!ip->peekc_fun) {
-    int ch = scheme_getc(port);
+    int ch;
+    ch = scheme_getc(port);
     scheme_ungetc(ch, port);
     return ch;
   } else {
@@ -3690,7 +3691,8 @@ read_line (int argc, Scheme_Object *argv[])
     }
     if (ch == '\r') {
       if (crlf) {
-	int ch2 = scheme_getc(port);
+	int ch2;
+	ch2 = scheme_getc(port);
 	if (ch2 == '\n')
 	  break;
 	else {
@@ -7182,7 +7184,7 @@ tcp_accept(int argc, Scheme_Object *argv[])
   s = accept(s, (struct sockaddr *)&addr, &l);
   if (s != INVALID_SOCKET) {
     Scheme_Object *v[2];
-    Scheme_Tcp *tcp = make_tcp_port_data(s, 2);
+    Scheme_Tcp *tcp;
     
 #  ifdef USE_UNIX_SOCKETS_TCP
     int size = TCP_SOCKSENDBUF_SIZE;
@@ -7190,6 +7192,8 @@ tcp_accept(int argc, Scheme_Object *argv[])
     setsockopt(s, SOL_SOCKET, SO_SNDBUF, (char *)&size, sizeof(int));
 #   endif
 #  endif
+
+    tcp = make_tcp_port_data(s, 2);
 
     v[0] = make_named_tcp_input_port(tcp, "TCP");
     v[1] = make_tcp_output_port(tcp);

@@ -256,7 +256,9 @@ void
 scheme_signal_error (char *msg, ...)
 {
   va_list args;
-  char *buffer = init_buf(NULL);
+  char *buffer;
+
+  buffer = init_buf(NULL);
 
   va_start(args, msg);
   vsprintf(buffer, msg, args);
@@ -280,7 +282,9 @@ scheme_signal_error (char *msg, ...)
 void scheme_warning(char *msg, ...)
 {
   va_list args;
-  char *buffer = init_buf(NULL);
+  char *buffer;
+
+  buffer = init_buf(NULL);
 
   va_start(args, msg);
   vsprintf(buffer, msg, args);
@@ -316,7 +320,8 @@ static char *error_write_to_string_w_max(Scheme_Object *v, int len, int *lenout)
   if (SAME_OBJ(o, def_err_val_proc)
       || (scheme_current_process->err_val_str_invoked)) {
     long l;
-    char *s = scheme_write_to_string_w_max(v, &l, len);
+    char *s;
+    s = scheme_write_to_string_w_max(v, &l, len);
     if (lenout)
       *lenout = l;
     return s;
@@ -350,7 +355,9 @@ static char *make_arity_expect_string(const char *name, int minc, int maxc,
 				      int argc, Scheme_Object **argv)
 {
   long len;
-  char *s = init_buf(&len);
+  char *s;
+
+  s = init_buf(&len);
 
   if (!name)
     name = "#<procedure>";
@@ -387,7 +394,8 @@ static char *make_arity_expect_string(const char *name, int minc, int maxc,
       
       for (i = 0; i < argc; i++) {
 	int l;
-	char *o = error_write_to_string_w_max(argv[i], len, &l);
+	char *o;
+	o = error_write_to_string_w_max(argv[i], len, &l);
 	memcpy(s + pos, " ", 1);
 	memcpy(s + pos + 1, o, l);
 	pos += l + 1;
@@ -496,7 +504,8 @@ char *scheme_make_args_string(char *s, int which, int argc, Scheme_Object **argv
     for (i = 0; i < argc; i++) {
       if (i != which) {
 	int l;
-	char *o = error_write_to_string_w_max(argv[i], len, &l);
+	char *o;
+	o = error_write_to_string_w_max(argv[i], len, &l);
 	memcpy(other + pos, " ", 1);
 	memcpy(other + pos + 1, o, l);
 	pos += l + 1;
@@ -577,11 +586,11 @@ void scheme_wrong_syntax(const char *where,
 			 const char *detail, ...)
 {
   long len;
-  char *s, *buffer = init_buf(&len);
+  char *s, *buffer;
   char *v, *dv;
 
+  buffer = init_buf(&len);
   s = init_buf(&len);
-
 
   if (form) 
     /* don't use error_write_to_string_w_max since this is code */
@@ -635,7 +644,8 @@ void scheme_wrong_rator(Scheme_Object *rator, int argc, Scheme_Object **argv)
 
     strcpy(s, "; arguments were:");
     for (i = 0; i < argc; i++) {
-      char *o = error_write_to_string_w_max(argv[i], len, NULL);
+      char *o;
+      o = error_write_to_string_w_max(argv[i], len, NULL);
       strcat(s, " ");
       strcat(s, o);
     }
@@ -654,8 +664,10 @@ void scheme_wrong_return_arity(const char *where,
 			       Scheme_Object **argv,
 			       const char *detail, ...)
 {
-  char *s, *buffer = init_buf(NULL);
+  char *s, *buffer;
   char *v;
+
+  buffer = init_buf(NULL);
 
   if (!detail) {
     s = NULL;
@@ -692,7 +704,8 @@ void scheme_wrong_return_arity(const char *where,
     }
 
     for (i = 0; i < maxpos; i++) {
-      char *o = error_write_to_string_w_max(array[i], len, NULL);
+      char *o;
+      o = error_write_to_string_w_max(array[i], len, NULL);
       strcat(v, " ");
       strcat(v, o);
     }
@@ -814,7 +827,8 @@ static Scheme_Object *error(int argc, Scheme_Object *argv[])
     } else {
       char *s, *r;
       int l, l2;
-      Scheme_Object *port = scheme_make_string_output_port();
+      Scheme_Object *port;
+      port = scheme_make_string_output_port();
 
       /* Chez-style: symbol, format string, format items... */
       if (!SCHEME_STRINGP(argv[1]))
@@ -1062,7 +1076,9 @@ scheme_raise_exn(int id, ...)
   char *msg;
   int i, c;
   Scheme_Object *eargs[MZEXN_MAXARGS];
-  char *buffer = init_buf(NULL);
+  char *buffer;
+
+  buffer = init_buf(NULL);
 
   va_start(args, id);
 
@@ -1185,7 +1201,9 @@ do_raise(Scheme_Object *arg, int return_ok, int need_debug)
 
  if (scheme_current_process->exn_raised) {
    long len;
-   char *buffer = init_buf(&len), *msg, *raisetype;
+   char *buffer, *msg, *raisetype;
+
+   buffer = init_buf(&len);
 
    if (SAME_TYPE(SCHEME_TYPE(arg), scheme_structure_type)
        && scheme_is_struct_instance(exn_table[MZEXN].type, arg)) {
@@ -1313,9 +1331,11 @@ void scheme_init_exn(Scheme_Env *env)
 
   if (scheme_starting_up) {
     Scheme_Config *config = scheme_config;
-    Scheme_Object *h = scheme_make_prim_w_arity(def_exn_handler,
-						"default-exception-handler",
-						1, 1);
+    Scheme_Object *h;
+
+    h = scheme_make_prim_w_arity(def_exn_handler,
+				 "default-exception-handler",
+				 1, 1);
 
     scheme_set_param(config, MZCONFIG_EXN_HANDLER, h);
     scheme_set_param(config, MZCONFIG_INIT_EXN_HANDLER, h);

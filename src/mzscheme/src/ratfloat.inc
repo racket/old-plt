@@ -1,4 +1,5 @@
 
+/* Must not trigger GC! (Required by xform in number.c) */
 FP_TYPE SCHEME_RATIONAL_TO_FLOAT(const Scheme_Object *o)
 {
   Scheme_Rational *r = (Scheme_Rational *)o;

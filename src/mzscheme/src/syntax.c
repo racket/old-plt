@@ -563,13 +563,17 @@ define_values_execute(Scheme_Object *data)
   else
     name = NULL;
   
-  scheme_wrong_return_arity("define-values",
-			    i, g,
-			    (g == 1) ? (Scheme_Object **)vals : scheme_current_process->ku.multiple.array,
-			    "%s%s%s",
-			    show_any ? "defining \"" : "0 names",
-			    show_any ? scheme_symbol_name(name) : "",
-			    show_any ? ((i == 1) ? "\"" : "\", ...") : "");
+  {
+    const char *symname;
+    symname = (show_any ? scheme_symbol_name(name) : "");
+    scheme_wrong_return_arity("define-values",
+			      i, g,
+			      (g == 1) ? (Scheme_Object **)vals : scheme_current_process->ku.multiple.array,
+			      "%s%s%s",
+			      show_any ? "defining \"" : "0 names",
+			      symname,
+			      show_any ? ((i == 1) ? "\"" : "\", ...") : "");
+  }
 
   return NULL;
 }
@@ -622,8 +626,10 @@ static Scheme_Object *
 define_values_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec)
 {
   Scheme_Object *var, *val, *first = scheme_null, *last = NULL, *variables;
-  Scheme_Env *globals = scheme_min_env(env);
+  Scheme_Env *globals;
 
+  globals = scheme_min_env(env);
+  
   define_values_parse(form, &var, &val, env);
   variables = var;
   
@@ -767,7 +773,8 @@ static Scheme_Object *
 if_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth)
 {
   Scheme_Object *test, *rest;
-  int len = check_form("if", form);
+  int len;
+  len = check_form("if", form);
 
   if (!(((len == 3) || (len == 4))))
     bad_form(form, "if", len);
@@ -789,7 +796,8 @@ with_cont_mark_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_
   Scheme_Object *key, *val, *expr, *name;
   Scheme_Compile_Info recs[3];
   Scheme_With_Continuation_Mark *wcm;
-  int len = check_form("with-continuation-mark", form);
+  int len;
+  len = check_form("with-continuation-mark", form);
 
   if (len != 4)
     bad_form(form, "with-continuation-mark", len);
@@ -827,7 +835,8 @@ static Scheme_Object *
 with_cont_mark_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth)
 {
   Scheme_Object *key, *val, *expr;
-  int len = check_form("with-continuation-mark", form);
+  int len;
+  len = check_form("with-continuation-mark", form);
 
   if (len != 4)
     bad_form(form, "with-continuation-mark", len);
@@ -965,7 +974,8 @@ static Scheme_Object *
 set_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth)
 {
   Scheme_Object *name, *var;
-  int l = check_form("set!", form);
+  int l;
+  l = check_form("set!", form);
   if (l != 3)
     bad_form(form, "set!", l);
 
@@ -1227,7 +1237,8 @@ scheme_link_lets(Scheme_Object *form, Link_Info *info)
     /* Do we need to box vars in a letrec? */
     clv = (Scheme_Compiled_Let_Value *)head->body;
     for (i = head->num_clauses; i--; clv = (Scheme_Compiled_Let_Value *)clv->body) {
-      int is_proc = scheme_is_compiled_procedure(clv->value, 1);
+      int is_proc;
+      is_proc = scheme_is_compiled_procedure(clv->value, 1);
       
       if (!(is_proc || (SCHEME_TYPE(clv->value) > _scheme_compiled_values_types_))) {
 	recbox = 1;
@@ -1360,8 +1371,10 @@ scheme_link_lets(Scheme_Object *form, Link_Info *info)
   clv = (Scheme_Compiled_Let_Value *)head->body;
   rpos = 0; opos = 0;
   for (i = head->num_clauses; i--; clv = (Scheme_Compiled_Let_Value *)clv->body) {
-    int isproc = scheme_is_compiled_procedure(clv->value, 0);
-    Scheme_Object *expr = scheme_link_expr(clv->value, val_linfo);
+    int isproc;
+    Scheme_Object *expr;
+    isproc = scheme_is_compiled_procedure(clv->value, 0);
+    expr = scheme_link_expr(clv->value, val_linfo);
     if (num_rec_procs && isproc) {
       letrec->procs[rpos++] = expr;
     } else {
@@ -1900,7 +1913,8 @@ Scheme_Object *scheme_compile_sequence(Scheme_Object *forms,
 			  "bad syntax (" IMPROPER_LIST_FORM ")");
       return NULL;
     } else {
-      Scheme_Object *body = scheme_compile_block(forms, env, rec);
+      Scheme_Object *body;
+      body = scheme_compile_block(forms, env, rec);
       return scheme_make_sequence_compilation(body, rec->can_optimize_constants, 1);
     }
   }

@@ -2188,9 +2188,12 @@ Scheme_Object *scheme_branch_config(void)
 
 static Scheme_Object *sch_thread(int argc, Scheme_Object *args[])
 {
+  Scheme_Config *c;
+
   scheme_check_proc_arity("thread", 0, 0, argc, args);
 
-  return scheme_thread(args[0], (Scheme_Config *)scheme_branch_config());
+  c = (Scheme_Config *)scheme_branch_config();
+  return scheme_thread(args[0], c);
 }
 
 static Scheme_Object *

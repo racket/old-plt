@@ -237,10 +237,13 @@ static void SetSIOUX(void)
 #ifndef DONT_LOAD_INIT_FILE
 static char *get_init_filename(Scheme_Env *env)
 {
-  Scheme_Object *f = scheme_lookup_global(scheme_intern_symbol("find-system-path"), 
-					  env);
-  Scheme_Object *type = scheme_intern_symbol("init-file");
+  Scheme_Object *f;
+  Scheme_Object *type;
   Scheme_Object *path;
+
+  f = scheme_lookup_global(scheme_intern_symbol("find-system-path"), 
+			   env);
+  type = scheme_intern_symbol("init-file");
   
   if (f) {
     path = _scheme_apply(f, 1, &type);

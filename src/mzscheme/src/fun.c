@@ -1296,7 +1296,9 @@ static Scheme_Object *get_or_check_arity(Scheme_Object *p, long a)
       int count = -maxa, i;
 
       if (a == -1) {
-	Scheme_Object *arity = scheme_alloc_list(count), *a;
+	Scheme_Object *arity, *a;
+
+	arity = scheme_alloc_list(count);
 	
 	for (i = 0, a = arity; i < count; i++, a = SCHEME_CDR(a))
 	  SCHEME_CAR(a) = scheme_make_arity(cases[2 * i], cases[(2 * i) + 1]);
@@ -1498,7 +1500,8 @@ do_map(int argc, Scheme_Object *argv[], char *name, int make_result,
     if (i == 1)
       size = l;
     else if (size != l) {
-      char *argstr = scheme_make_args_string("", -1, argc, argv);
+      char *argstr;
+      argstr = scheme_make_args_string("", -1, argc, argv);
 
       scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, argv[i],
 		       "%s: all lists must have same size%s", 
@@ -1508,7 +1511,9 @@ do_map(int argc, Scheme_Object *argv[], char *name, int make_result,
   }
 
   if (SCHEME_FALSEP(get_or_check_arity(argv[0], argc - 1))) {
-    char *s = scheme_make_arity_expect_string(argv[0], argc - 1, NULL);
+    char *s;
+
+    s = scheme_make_arity_expect_string(argv[0], argc - 1, NULL);
 
     scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, argv[0],
 		     "%s: arity mismatch for %s", name, s);
@@ -1976,7 +1981,8 @@ extract_cc_marks(int argc, Scheme_Object *argv[])
 
   while (chain) {
     if (chain->key == key) {
-      Scheme_Object *pr = scheme_make_pair(chain->val, scheme_null);
+      Scheme_Object *pr;
+      pr = scheme_make_pair(chain->val, scheme_null);
       
       if (last)
 	SCHEME_CDR(last) = pr;

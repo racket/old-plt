@@ -319,6 +319,9 @@ typedef struct {
 
 typedef Scheme_Complex Small_Complex;
 
+#define _scheme_complex_real_part(n) (((Scheme_Complex *)(n))->r)
+#define _scheme_complex_imaginary_part(n) (((Scheme_Complex *)(n))->i)
+
 Scheme_Object *scheme_make_small_bignum(long v, Small_Bignum *s);
 char *scheme_number_to_string(int radix, Scheme_Object *obj);
 

@@ -744,7 +744,9 @@ scheme_inner_compile_list(Scheme_Object *form, Scheme_Comp_Env *env,
 static Scheme_Object *compile_application(Scheme_Object *form, Scheme_Comp_Env *env,
 					  Scheme_Compile_Info *rec)
 {
-  int len = scheme_proper_list_length(form);
+  int len;
+
+  len = scheme_proper_list_length(form);
 
   if (len < 0)
     scheme_wrong_syntax("application", NULL, form, NULL);
@@ -973,7 +975,9 @@ static Scheme_Object *
 built_in_name(int argc, Scheme_Object **argv)
 {
   Scheme_Object *o;
-  Scheme_Env *env = scheme_get_env(scheme_config);
+  Scheme_Env *env;
+
+  env = scheme_get_env(scheme_config);
 
   if (!SCHEME_SYMBOLP(argv[0]))
     scheme_wrong_type("built-in-name", "symbol", 0, argc, argv);
@@ -1169,10 +1173,12 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
 	  Scheme_Object *body = SCHEME_CDR(argsnbody);
 	  
 	  if (SCHEME_PAIRP(body)) {
-	    int pl = scheme_proper_list_length(args);
+	    int pl;
+	    pl = scheme_proper_list_length(args);
 	    if (pl >= 0) {
 	      Scheme_Object *bindings = scheme_null, *last = NULL;
-	      int al = scheme_proper_list_length(rest);
+	      int al;
+	      al = scheme_proper_list_length(rest);
 	      
 	      if (al == pl) {	      
 		while (!SCHEME_NULLP(args)) {
@@ -1723,7 +1729,8 @@ void scheme_init_stack_check()
   getrlimit(RLIMIT_STACK, &rl);
 
   {
-    unsigned long bnd = (unsigned long)GC_get_stack_base();
+    unsigned long bnd;
+    bnd = (unsigned long)GC_get_stack_base();
 
     if (scheme_stack_grows_up)
       bnd += ((unsigned long)rl.rlim_cur - STACK_SAFETY_MARGIN);
@@ -2995,7 +3002,9 @@ eval(int argc, Scheme_Object *argv[])
 static Scheme_Object *
 default_eval_handler(int argc, Scheme_Object **argv)
 {
-  Scheme_Env *env = scheme_get_env(scheme_config);
+  Scheme_Env *env;
+
+  env = scheme_get_env(scheme_config);
 
   return do_default_eval_handler(env, argc, argv);
 }
@@ -3033,7 +3042,11 @@ compile_x(int argc, Scheme_Object *argv[])
 
 static Scheme_Object *expand(int argc, Scheme_Object **argv)
 {
-  return _expand(argv[0], scheme_get_env(scheme_config)->init, -1, 0);
+  Scheme_Env *env;
+
+  env = scheme_get_env(scheme_config);
+
+  return _expand(argv[0], env->init, -1, 0);
 }
 
 static Scheme_Comp_Env *local_expand_extend_env(Scheme_Object *locals, 
@@ -3107,7 +3120,11 @@ local_expand_body_expression(int argc, Scheme_Object **argv)
 static Scheme_Object *
 expand_once(int argc, Scheme_Object **argv)
 {
-  return _expand(argv[0], scheme_get_env(scheme_config)->init, 1, 0);
+  Scheme_Env *env;
+
+  env = scheme_get_env(scheme_config);
+
+  return _expand(argv[0], env->init, 1, 0);
 }
 
 Scheme_Object *scheme_eval_string_all(const char *str, Scheme_Env *env, int cont)

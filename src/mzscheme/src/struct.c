@@ -630,9 +630,12 @@ Scheme_Object **scheme_make_struct_names(Scheme_Object *base,
 					 Scheme_Object *field_symbols,
 					 int flags, int *count_out)
 {
+  int len;
+  len = field_symbols ? scheme_list_length(field_symbols) : 0;
+
   return _make_struct_names(SCHEME_SYM_VAL(base),
 			    SCHEME_SYM_LEN(base),
-			    field_symbols ? scheme_list_length(field_symbols) : 0,
+			    len,
 			    field_symbols, NULL,
 			    flags, count_out);
 }
@@ -815,13 +818,16 @@ do_struct_syntax (Scheme_Object *forms, Scheme_Comp_Env *env,
       info->memo_names = NULL;
 
     return scheme_make_syntax_compile(struct_link, (Scheme_Object *)info);
-  } else
+  } else {
+    Scheme_Object *base;
+    base = (parent_expr 
+	    ? cons(base_symbol,
+		   cons(parent_expr, scheme_null))
+	    : base_symbol);
     return cons(struct_symbol,
-		cons(parent_expr 
-		     ? cons(base_symbol,
-			    cons(parent_expr, scheme_null))
-		     : base_symbol,
+		cons(base,
 		     cons(field_symbols, scheme_null)));
+  }
 }
 
 static Scheme_Object *
@@ -977,7 +983,8 @@ static Scheme_Object *read_struct_info(Scheme_Object *obj)
 
   /* must copy obj */
   while (SCHEME_PAIRP(obj)) {
-    Scheme_Object *pair = scheme_make_pair(SCHEME_CAR(obj), scheme_null);
+    Scheme_Object *pair;
+    pair = scheme_make_pair(SCHEME_CAR(obj), scheme_null);
 
     if (last)
       SCHEME_CDR(last) = pair;

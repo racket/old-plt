@@ -9,6 +9,7 @@ static int IS_FLOAT_INF(FP_TYPE d)
   return MZ_IS_POS_INFINITY(d);
 }
 
+/* Must not trigger GC! (Required by xform in number.c) */
 FP_TYPE SCHEME_BIGNUM_TO_FLOAT_INFO(const Scheme_Object *n, int skip, int *_skipped)
 {
   int nl, skipped;

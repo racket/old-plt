@@ -1397,8 +1397,11 @@ scheme_bin_quotient (const Scheme_Object *n1, const Scheme_Object *n2)
     return (scheme_make_integer (SCHEME_INT_VAL(n1) / SCHEME_INT_VAL(n2)));
   }
   if (SCHEME_DBLP(n1) || SCHEME_DBLP(n2)) {
-    Scheme_Object *r = scheme_bin_div(n1, n2);
-    double d = SCHEME_DBL_VAL(r), d2;
+    Scheme_Object *r;
+    double d, d2;
+
+    r = scheme_bin_div(n1, n2);
+    d = SCHEME_DBL_VAL(r);
 
     if (d > 0)
       d2 = floor(d);
@@ -1469,11 +1472,14 @@ rem_mod (int argc, Scheme_Object *argv[], char *name, int first_sign)
 #ifdef MZ_USE_SINGLE_FLOATS
       (SCHEME_FLTP(n2) && (SCHEME_FLT_VAL(n2) == 0.0f)) ||
 #endif
-      (SCHEME_DBLP(n2) && (SCHEME_DBL_VAL(n2) == 0.0)))
+      (SCHEME_DBLP(n2) && (SCHEME_DBL_VAL(n2) == 0.0))) {
+    int neg;
+    neg = minus_zero_p(SCHEME_FLOAT_VAL(n2));
     scheme_raise_exn(MZEXN_APPLICATION_DIVIDE_BY_ZERO, n2,
 		     "%s: undefined for %s0.0",
 		     name,
-		     minus_zero_p(SCHEME_FLOAT_VAL(n2)) ? "-" : "");
+		     neg ? "-" : "");
+  }
 
   if (SCHEME_INTP(n1) && SCHEME_INTP(n2)) {
     long a, b, na, nb, v;
@@ -2075,8 +2081,8 @@ static Scheme_Object *denominator(int argc, Scheme_Object *argv[])
 
 static Scheme_Object *complex_exp(Scheme_Object *c)
 {
-  Scheme_Object *r = scheme_complex_real_part(c);
-  Scheme_Object *i = scheme_complex_imaginary_part(c);
+  Scheme_Object *r = _scheme_complex_real_part(c);
+  Scheme_Object *i = _scheme_complex_imaginary_part(c);
   Scheme_Object *cos_a, *sin_a;
 
   r = exp_prim(1, &r);
@@ -2471,7 +2477,7 @@ static Scheme_Object *real_part (int argc, Scheme_Object *argv[])
     scheme_wrong_type("real-part", "number", 0, argc, argv);
 
   if (SCHEME_COMPLEXP(o))
-    return scheme_complex_real_part(o);
+    return _scheme_complex_real_part(o);
   else
     return argv[0];
 }
@@ -2497,8 +2503,8 @@ static Scheme_Object *magnitude(int argc, Scheme_Object *argv[])
     scheme_wrong_type("magnitude", "number", 0, argc, argv);
 
   if (SCHEME_COMPLEXP(o)) {
-    Scheme_Object *r = scheme_complex_real_part(o);
-    Scheme_Object *i = scheme_complex_imaginary_part(o);
+    Scheme_Object *r = _scheme_complex_real_part(o);
+    Scheme_Object *i = _scheme_complex_imaginary_part(o);
     Scheme_Object *m2 = scheme_bin_plus(scheme_bin_mult(r, r),
 					scheme_bin_mult(i, i));
     
@@ -2515,8 +2521,8 @@ static Scheme_Object *angle (int argc, Scheme_Object *argv[])
     scheme_wrong_type("angle", "number", 0, argc, argv);
 
   if (SCHEME_COMPLEXP(o)) {
-    Scheme_Object *r = scheme_complex_real_part(o);
-    Scheme_Object *i = scheme_complex_imaginary_part(o);
+    Scheme_Object *r = _scheme_complex_real_part(o);
+    Scheme_Object *i = _scheme_complex_imaginary_part(o);
 
     return scheme_make_double(atan2(TO_DOUBLE_VAL(i), TO_DOUBLE_VAL(r)));
   } else {
@@ -2535,10 +2541,13 @@ static Scheme_Object *angle (int argc, Scheme_Object *argv[])
 #endif
     if (SCHEME_DBLP(o)) {
       double v = SCHEME_DBL_VAL(o);
-      if (v == 0.0)
+      if (v == 0.0) {
+	int neg;
+	neg = minus_zero_p(v);
 	scheme_raise_exn(MZEXN_APPLICATION_DIVIDE_BY_ZERO, o,
 			 "angle: undefined for %s0.0",
-			 minus_zero_p(v) ? "-" : "");
+			 neg ? "-" : "");
+      }
       if (v > 0)
 	return zeroi;
       else
@@ -2586,8 +2595,8 @@ exact_to_inexact (int argc, Scheme_Object *argv[])
   if ((t == scheme_complex_type) || (t == scheme_complex_izi_type)) {
     Scheme_Object *realpart, *imaginarypart;
 
-    realpart = scheme_complex_real_part(o);
-    imaginarypart = scheme_complex_imaginary_part(o);
+    realpart = _scheme_complex_real_part(o);
+    imaginarypart = _scheme_complex_imaginary_part(o);
 
     realpart = exact_to_inexact(1, &realpart);
     imaginarypart = exact_to_inexact(1, &imaginarypart);
@@ -2634,8 +2643,8 @@ inexact_to_exact (int argc, Scheme_Object *argv[])
   if ((t == scheme_complex_type) || (t == scheme_complex_izi_type)) {
     Scheme_Object *realpart, *imaginarypart;
 
-    realpart = scheme_complex_real_part(o);
-    imaginarypart = scheme_complex_imaginary_part(o);
+    realpart = _scheme_complex_real_part(o);
+    imaginarypart = _scheme_complex_imaginary_part(o);
 
     realpart = inexact_to_exact(1, &realpart);
     imaginarypart = inexact_to_exact(1, &imaginarypart);
@@ -2762,8 +2771,8 @@ char *scheme_number_to_string(int radix, Scheme_Object *obj)
     char *rs, *is;
     int rlen, ilen, offset = 0;
 
-    r = scheme_complex_real_part(obj);
-    i = scheme_complex_imaginary_part(obj);
+    r = _scheme_complex_real_part(obj);
+    i = _scheme_complex_imaginary_part(obj);
 
     rs = scheme_number_to_string(radix, r);
     is = scheme_number_to_string(radix, i);
@@ -3465,7 +3474,8 @@ Scheme_Object *scheme_read_number(const char *str, long len,
     double d;
     const char *strcpy;
     if (has_expt && (str[has_expt] != 'e' && str[has_expt] != 'E')) {
-      char *str2 = (char *)scheme_malloc_atomic(len + 1);
+      char *str2;
+      str2 = (char *)scheme_malloc_atomic(len + 1);
       memcpy(str2, str, len + 1);
       str2[has_expt] = 'e';
       strcpy = str2;

@@ -932,8 +932,10 @@ read_number_or_symbol(Scheme_Object *port, int is_float, int is_not_float,
   int brackets = local_square_brackets_are_parens;
   int braces = local_curly_braces_are_parens;
   Scheme_Object *o;
-  int ungetc_ok = scheme_peekc_is_ungetc(port);
+  int ungetc_ok;
   Getc_Fun getc_fun;
+
+  ungetc_ok = scheme_peekc_is_ungetc(port);
 
   if (ungetc_ok)
     getc_fun = scheme_getc;
@@ -1156,8 +1158,10 @@ read_character(Scheme_Object *port CURRENTPROCPRM)
   }
 
   if (ch == EOF) {
-    long pos = scheme_tell(port);
-    long l = scheme_tell_line(port);
+    long pos, l;
+
+    pos = scheme_tell(port);
+    l = scheme_tell_line(port);
 
     scheme_raise_exn(MZEXN_READ_EOF,
 		     port,
@@ -1225,12 +1229,12 @@ skip_whitespace_comments(Scheme_Object *port)
 
  start_over:
 
-  while (isspace(ch = scheme_getc (port)));
+  while ((ch = scheme_getc(port), isspace(ch)));
 
   if (ch == ';') {
-    do
-      ch = scheme_getc (port);
-    while (ch != '\n' && ch != '\r' && ch != EOF);
+    do {
+      ch = scheme_getc(port);
+    } while (ch != '\n' && ch != '\r' && ch != EOF);
     goto start_over;
   }
   if (ch == '#' && (scheme_peekc(port) == '|')) {
@@ -1388,9 +1392,11 @@ static Scheme_Object *read_compact(CPort *port,
     switch(cpt_branch[ch]) {
     case CPT_ESCAPE:
       {
-	int len = read_compact_number(port);
+	int len;
 	Scheme_Object *ep;
 	char *s;
+
+	len = read_compact_number(port);
 
 #if USE_BUFFERING_CPORT
 	s = (char *)port->s;
@@ -1572,11 +1578,12 @@ static Scheme_Object *read_compact(CPort *port,
 	l = ch - (ppr ? CPT_SMALL_PROPER_LIST_START : CPT_SMALL_LIST_START);
       	if (need_car) {
 	  if (l == 1) {
-	    Scheme_Object *car = read_compact(port, ht, 0 CURRENTPROCARG);
-	    v = scheme_make_pair(car,
-				 ppr 
-				 ? scheme_null
-				 : read_compact(port, ht, 0 CURRENTPROCARG));
+	    Scheme_Object *car, *cdr;
+	    car = read_compact(port, ht, 0 CURRENTPROCARG);
+	    cdr = (ppr 
+		   ? scheme_null
+		   : read_compact(port, ht, 0 CURRENTPROCARG));
+	    v = scheme_make_pair(car, cdr);
 	  } else
 	    v = read_compact_list(l, ppr, /* use_stack */ 0, port, ht CURRENTPROCARG);
 	} else {
@@ -1613,7 +1620,8 @@ static Scheme_Object *read_compact(CPort *port,
     case CPT_SYM_VECTOR_REUSE:
       {
 	Scheme_Object *oldv, **oels, **els;
-	int i = read_compact_number(port);
+	int i;
+	i = read_compact_number(port);
 	if (i >= local_vector_memory_count)
 	  scheme_raise_exn(MZEXN_READ,
 			   port,

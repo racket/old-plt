@@ -75,8 +75,9 @@ static int finish_cmd_line_run(FinishArgs *fa, void (*repl)(void))
 
 #ifndef DONT_LOAD_INIT_FILE
   if (!fa->no_init_file) {
-    char *filename = scheme_expand_filename(GET_INIT_FILENAME(fa->global_env), 
-					    -1, "startup", NULL);
+    char *filename;
+    filename = scheme_expand_filename(GET_INIT_FILENAME(fa->global_env), 
+				      -1, "startup", NULL);
     if (scheme_file_exists(filename))
       scheme_load(filename);
   }

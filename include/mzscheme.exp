@@ -224,8 +224,10 @@ scheme_format
 scheme_printf
 scheme_getc
 scheme_peekc
+scheme_peekc_skip
 scheme_getc_special_ok
 scheme_peekc_special_ok
+scheme_peekc_special_ok_skip
 scheme_ungetc
 scheme_char_ready
 scheme_peekc_is_ungetc

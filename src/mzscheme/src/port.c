@@ -1506,7 +1506,7 @@ long scheme_get_chars(Scheme_Object *port, long size, char *buffer, int offset)
   return n;
 }
 
-int scheme_peekc(Scheme_Object *port)
+int scheme_peekc_skip(Scheme_Object *port, Scheme_Object *skip)
 {
   char s[1];
   int v;
@@ -1514,7 +1514,7 @@ int scheme_peekc(Scheme_Object *port)
   v = scheme_get_string("peek-char", port,
 			s, 0, 1,
 			0,
-			1, 0);
+			1, skip);
 
   if ((v == EOF) || (v == SCHEME_SPECIAL))
     return v;
@@ -1522,11 +1522,22 @@ int scheme_peekc(Scheme_Object *port)
     return ((unsigned char *)s)[0];
 }
 
+int scheme_peekc(Scheme_Object *port)
+{
+  return scheme_peekc_skip(port, NULL);
+}
+
+int
+scheme_peekc_special_ok_skip(Scheme_Object *port, Scheme_Object *skip)
+{
+  special_is_ok = 1;
+  return scheme_peekc_skip(port, skip);
+}
+
 int
 scheme_peekc_special_ok(Scheme_Object *port)
 {
-  special_is_ok = 1;
-  return scheme_peekc(port);
+  return scheme_peekc_skip(port, NULL);
 }
 
 int scheme_peekc_is_ungetc(Scheme_Object *port)

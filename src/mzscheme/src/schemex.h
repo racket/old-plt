@@ -401,8 +401,10 @@ char *(*scheme_format)(char *format, int flen, int argc, Scheme_Object **argv, l
 void (*scheme_printf)(char *format, int flen, int argc, Scheme_Object **argv);
 int (*scheme_getc)(Scheme_Object *port);
 int (*scheme_peekc)(Scheme_Object *port);
+int (*scheme_peekc_skip)(Scheme_Object *port, Scheme_Object *skip);
 int (*scheme_getc_special_ok)(Scheme_Object *port);
 int (*scheme_peekc_special_ok)(Scheme_Object *port);
+int (*scheme_peekc_special_ok_skip)(Scheme_Object *port, Scheme_Object *skip);
 void (*scheme_ungetc)(int ch, Scheme_Object *port);
 int (*scheme_char_ready)(Scheme_Object *port);
 int (*scheme_peekc_is_ungetc)(Scheme_Object *port);

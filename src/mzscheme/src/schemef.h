@@ -488,8 +488,10 @@ MZ_EXTERN void scheme_printf(char *format, int flen, int argc, Scheme_Object **a
 
 MZ_EXTERN int scheme_getc(Scheme_Object *port);
 MZ_EXTERN int scheme_peekc(Scheme_Object *port);
+MZ_EXTERN int scheme_peekc_skip(Scheme_Object *port, Scheme_Object *skip);
 MZ_EXTERN int scheme_getc_special_ok(Scheme_Object *port);
 MZ_EXTERN int scheme_peekc_special_ok(Scheme_Object *port);
+MZ_EXTERN int scheme_peekc_special_ok_skip(Scheme_Object *port, Scheme_Object *skip);
 MZ_EXTERN void scheme_ungetc(int ch, Scheme_Object *port);
 MZ_EXTERN int scheme_char_ready(Scheme_Object *port);
 MZ_EXTERN int scheme_peekc_is_ungetc(Scheme_Object *port);

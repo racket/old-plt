@@ -392,12 +392,12 @@ scheme_init_port_fun(Scheme_Env *env)
   scheme_add_global_constant("peek-char", 
 			     scheme_make_prim_w_arity(peek_char, 
 						      "peek-char", 
-						      0, 1), 
+						      0, 2), 
 			     env);
   scheme_add_global_constant("peek-char-or-special", 
 			     scheme_make_prim_w_arity(peek_char_spec, 
 						      "peek-char-or-special", 
-						      0, 1), 
+						      0, 2), 
 			     env);
   scheme_add_global_constant("eof-object?", 
 			     scheme_make_folding_prim(eof_object_p, 
@@ -2093,10 +2093,22 @@ do_read_char(char *name, int argc, Scheme_Object *argv[], int peek, int spec)
     port = CURRENT_INPUT_PORT(scheme_config);
 
   if (peek) {
+    Scheme_Object *skip;
+
+    if (argc > 1) {
+      skip = argv[1];
+      if (!(SCHEME_INTP(skip) && (SCHEME_INT_VAL(skip) >= 0))
+	  && !(SCHEME_BIGNUMP(skip) && SCHEME_BIGPOS(skip))) {
+	scheme_wrong_type(name, "non-negative exact integer", 1, argc, argv);
+	return NULL;
+      }
+    } else
+      skip = NULL;
+    
     if (spec)
-      ch = scheme_peekc_special_ok(port);
+      ch = scheme_peekc_special_ok_skip(port, skip);
     else
-      ch = scheme_peekc(port);
+      ch = scheme_peekc_skip(port, skip);
   } else {
     if (spec)
       ch = scheme_getc_special_ok(port);

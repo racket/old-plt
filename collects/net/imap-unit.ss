@@ -552,7 +552,6 @@
                                  [bytes-name (if (symbol? name)
                                                  (string->bytes/utf-8 (symbol->string name))
                                                  name)])
-                            (printf "~s\n" (list 'bytes=? bytes-name except))
                             (unless (and except
 					 (bytes=? bytes-name except))
 			      (set! sub-folders 

@@ -188,6 +188,17 @@ in several significant ways:
 
    The `execute' and `execute*' procedures were eliminated entirely.
 
+ * The new `object-wait-multiple' procedure allows blocking on
+   multiple different types of objects, including semaphores, input
+   ports, output ports, and subprocesses. The set of port reading and
+   writing functions includes new peek functions and new non-blocking
+   read and write functions.
+
+   The `make-input-port' and `make-output-port' procedures have been
+   replaced `make-custom-input-port' and `make-custom-output-port',
+   which implement a port in terms of non-blocking, string-based
+   operations instead of blocking, character-based operations.
+
  * The mzc compiler supports a subset of the Gambit-C foreign-function
    interface.
 
@@ -209,7 +220,7 @@ in several significant ways:
    existing `unit/sig' names.
 
  * Removed constant and keyword attributes of global variables, since
-   they are not needed with the module system
+   they are not needed with the module system.
 
 MzLib changes:
 

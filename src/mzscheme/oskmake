@@ -1,9 +1,15 @@
 #!/bin/sh
-# This script builds the OSKit-based MzScheme kernel.
-# It assumes Linux and (probably) gcc.
+# This script builds the OSKit-based MzScheme kernel, assuming
+#   that OSKit is installed in /usr/local, but that can be changed
+#   via a shell variable below. The OSKit build goes
+#   to a separate set of object directories, such as
+#   src/objects/sys_oskit_x86/. The output is mzscheme.multiboot.
 # If a `-t' command-line flag is provided, a
 #   Linux binary is built for testing using as much
 #   of the OSKit configuration for MzScheme as possible.
+
+OSKHOME=/usr/local
+STDINC=/usr/include
 
 if [ "$1" = '-t' ] ; then
  echo "Build test app similar to OSKit app"
@@ -12,7 +18,7 @@ if [ "$1" = '-t' ] ; then
  BUILDDIR=_oskit_x86_t
 elif [ "$*" = '' ] ; then
  echo "Build MzScheme kernel"
- INCLUDES="-nostdinc -I/usr/local/include/oskit -I/usr/local/include/oskit/freebsd -I/usr/local/include/oskit/c -I/usr/local/include -I/usr/include"
+ INCLUDES="-nostdinc -I${OSKHOME}/include/oskit -I${OSKHOME}/include/oskit/freebsd -I${OSKHOME}/include/oskit/c -I${OSKHOME}/include -I${STDINC}"
  TARGET=oskit
  BUILDDIR=_oskit_x86
 else

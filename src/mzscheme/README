@@ -135,6 +135,18 @@ Unpack the Compactor archive "plt:src:cw.cpt" to "plt:src:cw" and then
 see "plt:src:cw:ABOUT MZSCHEME".
 
 ========================================================================
+ Compiling the OSKit-based kernel
+========================================================================
+
+Run `./oskmake' to build the OSKit-based MzScheme kernel. The
+"oskmake" script assumes that OSKit is installed in /usr/local; change
+the OSKHOME variable in "oskmake" if this is not true.
+
+For simplicity, the MzScheme kernel uses SGC rather than Boehm's
+conservative garbage collector. The "oskmake" script sets the
+necessary compilation flags.
+
+========================================================================
  General Compilation Notes
 ========================================================================
 

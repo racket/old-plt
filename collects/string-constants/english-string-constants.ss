@@ -376,7 +376,6 @@
 
  (open-recent-info "A list of the recently opened files")
  (open-recent-menu-item "Open Recent")
- (show-recent-items-window-menu-item "Show Recently Opened Files in Separate Window")
  
  (revert-info "Revert this file to the copy on disk")
  (revert-menu-item "&Revert")
@@ -495,9 +494,10 @@
  (tool-error-phase2 "Error in phase 2 for tool ~s; ~s")
 
 
- ;;; define popup menu
+ ;;; define popup menu (and other sorting things)
  (end-of-buffer-define "<< end of buffer >>")
  (sort-by-name "Sort by name")
+ (sort-by-age "Sort by age")
  (sort-by-position "Sort by position in file")
  (no-definitions-found "<< no definitions found >>")
  
@@ -768,4 +768,7 @@
  (xml-tool-xml-box "Insert XML Box")
  (xml-tool-scheme-box "Insert Scheme Box")
  
+ (show-recent-items-window-menu-item "Show Recently Opened Files in Separate Window")
+ (show-recent-items-window-label "Recently Opened Files")
+ (switch-anyway "Switch File Anyway")
  )

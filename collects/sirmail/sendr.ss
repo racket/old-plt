@@ -321,7 +321,12 @@
 		      (delete-file t)))))))
 
 	(define c (make-object editor-canvas% (send mailer-frame get-area-container)))
-	(define message-editor (make-object (editor:backup-autosave-mixin text:basic%)))
+	(define message-editor (make-object (class (editor:backup-autosave-mixin text:basic%)
+					      (rename [super-set-modified set-modified])
+					      (define/override (set-modified mod?)
+						(send mailer-frame modified mod?)
+						(super-set-modified mod?))
+					      (super-new))))
 	(define enclosure-list (make-object hierarchical-list% (send mailer-frame get-area-container)))
 
 	(define (enable on? refocus cancel-proc)

@@ -677,6 +677,10 @@ Bool wxFrame::Show(Bool show)
   return TRUE;
 }
 
+void wxFrame::SetFrameModified(Bool mod)
+{
+}
+
 //-----------------------------------------------------------------------------
 // virtual event functions
 //-----------------------------------------------------------------------------
@@ -687,5 +691,9 @@ void wxFrame::OnMenuSelect(long id)
 }
 
 void wxFrame::OnMenuClick()
+{
+}
+
+void wxFrame::OnToolbarButton()
 {
 }

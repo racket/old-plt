@@ -75,6 +75,9 @@ public:
     virtual void  OnMenuSelect(long id);
     virtual void  OnMenuClick();
 
+    virtual void OnToolbarButton();
+    void SetFrameModified(Bool mod);
+
     void *context;
 
 protected:

@@ -5,7 +5,7 @@
 			 (require-library "sig.ss" "mred")
 			 (require-library "drsig.ss" "drscheme")
 			 (require-library "sig.ss" "help")
-			 (require-library "sig.ss" "xml")
+			 (require-library "xmls.ss" "xml")
 			 (require-library "heads.ss" "net")
                          (require-library "smtps.ss" "net")
 			 (require-library "help-raw-sig.ss" "help"))]

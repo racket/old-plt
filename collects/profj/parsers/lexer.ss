@@ -78,10 +78,8 @@
     (NotStarNotSlash (: (^ "*" "/")))
                      
     (SyntaxComment (: TraditionalCommentEOF
-                      EndOfLineComment
-                      DocumentationCommentEOF))
-    (TraditionalCommentEOF (@ "/*" NotStar CommentTailEOF))
-    (DocumentationCommentEOF (@ "/**" CommentTailStarEOF))
+                      EndOfLineComment))
+    (TraditionalCommentEOF (@ "/*" CommentTailEOF))
     (CommentTailEOF (: (@ (* (@ (* NotStar) (+ "*") NotStarNotSlash))
                         (* NotStar)
                         (+ "*")
@@ -90,12 +88,6 @@
                         (* NotStar)
                         (* "*")
                         (eof))))
-    (CommentTailStarEOF (: (@ (* (@ (* "*") NotStarNotSlash (* NotStar) "*"))
-                          (* "*")
-                          "/")
-                         (@ (* (@ (* "*") NotStarNotSlash (* NotStar) "*"))
-                          (* "*")
-                          (eof))))
 
     ;; 3.8 (No need to worry about excluding keywords and such.  They will
     ;;      appear first in the lexer spec)

@@ -527,6 +527,7 @@ static void wxmbSetOK(wxObject& obj, wxEvent& evt)
 
 int wxMediaBuffer::AppendEditItems(wxMenu *edit, int idOffset)
 {
+#if 0
   edit->Append(idOffset + wxEDIT_UNDO, "Undo" wxmbUNDO_SUFFIX );
   edit->Append(idOffset + wxEDIT_REDO, "Redo" wxmbREDO_SUFFIX );
   edit->AppendSeparator();
@@ -540,6 +541,7 @@ int wxMediaBuffer::AppendEditItems(wxMenu *edit, int idOffset)
   edit->Append(idOffset + wxEDIT_INSERT_IMAGE, "Insert Image...");
 
   return idOffset + _wx_EDIT_counter + 1;
+#endif
 }
 
 void wxMediaBuffer::DoEdit(int op, Bool recursive, long time)
@@ -615,6 +617,7 @@ const char *m_colours[NUM_COLOURS] = {"BLACK", "WHITE",
 
 int wxMediaBuffer::AppendFontItems(wxMenu *font, int idOffset)
 {
+#if 0
   wxMenu *family, *size, *style, *weight, *underline;
   wxMenu *colour, *background, *alignment;
   wxMenu *bigger, *smaller;
@@ -709,10 +712,12 @@ int wxMediaBuffer::AppendFontItems(wxMenu *font, int idOffset)
     background->Append(idOffset++, (char *)m_colour_names[i]);
 
   return idOffset;
+#endif
 }
 
 void wxMediaBuffer::DoFont(int op, Bool recursive)
 {
+#if 0
   if (recursive && caretSnip) {
     caretSnip->DoFont(op, TRUE);
     return;
@@ -807,6 +812,7 @@ void wxMediaBuffer::DoFont(int op, Bool recursive)
     return;
   }
   op -= NUM_COLOURS;
+#endif
 }
 
 void wxMediaBuffer::InsertBox(int type)

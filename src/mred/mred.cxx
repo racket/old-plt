@@ -6,8 +6,6 @@
  * Copyright:   (c) 1995-98, Matthew Flatt
  */
 
-#define WINDOW_STDIO 0
-
 /* wx_xt: */
 #define Uses_XtIntrinsic
 #define Uses_XtIntrinsicP
@@ -93,6 +91,33 @@
 # include "wxs/wxsmred.h"
 # include "wxs/wxs_fram.h"
 # include "wxs/wxs_obj.h"
+#endif
+
+#ifndef WINDOW_STDIO
+/* Removing "|| defined(wx_msw)" below uses the Windows console.
+   The danger is that closing that console kills MrEd without
+   any chance of cancelling the kill. */
+# if defined(wx_mac) || defined(wx_msw)
+#  define WINDOW_STDIO 1
+# else
+#  define WINDOW_STDIO 0
+# endif
+#endif
+
+#ifndef WCONSOLE_STDIO
+# if defined(wx_msw) && !WINDOW_STDIO
+#  define WCONSOLE_STDIO 1
+# else
+#  define WCONSOLE_STDIO 0
+# endif
+#endif
+
+#ifndef REDIRECT_STDIO
+# if (defined(wx_msw) || defined(wx_mac)) && !WINDOW_STDIO && !WCONSOLE_STDIO
+#  define REDIRECT_STDIO 1
+# else
+#  define REDIRECT_STDIO 0
+# endif
 #endif
 
 wxFrame *mred_real_main_frame;
@@ -1100,33 +1125,6 @@ void wxTimer::Stop(void)
 /*                        Redirected Standard I/O                           */
 /****************************************************************************/
 
-#ifndef WINDOW_STDIO
-/* Removing "|| defined(wx_msw)" below uses the Windows console.
-   The danger is that closing that console kills MrEd without
-   any chance of cancelling the kill. */
-# if defined(wx_mac) || defined(wx_msw)
-#  define WINDOW_STDIO 1
-# else
-#  define WINDOW_STDIO 0
-# endif
-#endif
-
-#ifndef WCONSOLE_STDIO
-# if defined(wx_msw) && !WINDOW_STDIO
-#  define WCONSOLE_STDIO 1
-# else
-#  define WCONSOLE_STDIO 0
-# endif
-#endif
-
-#ifndef REDIRECT_STDIO
-# if (defined(wx_msw) || defined(wx_mac)) && !WINDOW_STDIO && !WCONSOLE_STDIO
-#  define REDIRECT_STDIO 1
-# else
-#  define REDIRECT_STDIO 0
-# endif
-#endif
-
 #if REDIRECT_STDIO || WINDOW_STDIO || WCONSOLE_STDIO
 static void MrEdSchemeMessages(char *, ...);
 #endif
@@ -1329,7 +1327,7 @@ static void MrEdSchemeMessages(char *msg, ...)
 
 static int stdin_getc(Scheme_Input_Port*)
 {
-#ifdef WINDOW_STDIO
+#if WINDOW_STDIO
   static int printed_input_warning = 0;
   if (!printed_input_warning) {
     printed_input_warning = 1;
@@ -1721,7 +1719,11 @@ static void MrEdIgnoreWarnings(char *, GC_word)
 }
 #endif
 
-#include "../mzscheme/src/schvers.h"
+#ifdef INCLUDE_WITHOUT_PATHS
+# include "schvers.h"
+#else
+# include "../mzscheme/src/schvers.h"
+#endif
 
 #ifdef wx_x
 # define INIT_FILENAME "~/.mredrc"
@@ -1737,7 +1739,11 @@ static void MrEdIgnoreWarnings(char *, GC_word)
 #define PROGRAM_LC "mred"
 #define BANNER "MrEd version " VERSION ", Copyright (c) 1995-98 PLT (Matthew Flatt and Robby Findler)\n"
 
-#include "../mzscheme/cmdline.inc"
+#ifdef INCLUDE_WITHOUT_PATHS
+# include "cmdline.inc"
+#else
+# include "../mzscheme/cmdline.inc"
+#endif
 
 static FinishArgs *xfa;
 

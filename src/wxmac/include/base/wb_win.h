@@ -93,7 +93,7 @@ class wxbWindow: public wxObject
   inline virtual void OnActivate(Bool active) {};       // Called on window activation (MSW)
   inline virtual void OnSetFocus(void) {};              // Called on setting focus
   inline virtual void OnKillFocus(void) {};             // Called on killing focus
-  inline virtual void OnDropFiles(int n, char *files[], int x, int y) {};
+  inline virtual void OnDropFile(char *files) {};
                                                  // Called when files dropped
   inline virtual void OnCommand(wxWindow& win, wxCommandEvent& event) {};
                                                  // Called if child control has no

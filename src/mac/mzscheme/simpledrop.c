@@ -2,9 +2,6 @@
 #include <Files.h>
 #include <EPPC.h>
 
-#define _scheme_malloc_atomic NewPtr
-# define _scheme_malloc NewPtr
-
 #ifndef FOR_STARTER
 # include "scheme.h"
 # include <ctype.h>
@@ -50,7 +47,7 @@ static char *ThisAppName(void)
   dir = scheme_os_getcwd(NULL, 0, NULL, 1);
   dlen = strlen(dir);
   
-  result = (char *)_scheme_malloc_atomic(buffer[0] + dlen + 1);
+  result = (char *)scheme_malloc_atomic(buffer[0] + dlen + 1);
   memcpy(result, dir, dlen);
   memcpy(result + dlen, buffer + 1, buffer[0]);
   result[buffer[0] + dlen] = 0;
@@ -105,7 +102,7 @@ static void parse_commandline(char *s, char *src, int addon)
       char *s, *r;
       int i;
       i = strlen(command[count]) + strlen(src);
-      r = (char *)_scheme_malloc_atomic(i + 1);
+      r = (char *)scheme_malloc_atomic(i + 1);
       s = scheme_strdup(src);
       i = strlen(s) - 1;
       while (i && s[i] != ':')
@@ -121,10 +118,10 @@ static void parse_commandline(char *s, char *src, int addon)
   }	  	
   
   scheme_mac_argc = 1 + count + (addon ? 1 : 0);
-  scheme_mac_argv = (char **)_scheme_malloc(scheme_mac_argc * sizeof(char *));
+  scheme_mac_argv = (char **)scheme_malloc(scheme_mac_argc * sizeof(char *));
   scheme_mac_argv[0] = ThisAppName();
   for (i = 0; i < count; i++) {
-    scheme_mac_argv[i + 1] = (char *)_scheme_malloc_atomic(strlen(command[i]) + 1);
+    scheme_mac_argv[i + 1] = (char *)scheme_malloc_atomic(strlen(command[i]) + 1);
     strcpy(scheme_mac_argv[i + 1], command[i]);
   }
   if (addon)
@@ -139,7 +136,7 @@ static void Startup(char **argv, int argc)
   
   if (!argc) {
     scheme_mac_argc = 1;
-    scheme_mac_argv = (char **)_scheme_malloc(sizeof(char *));
+    scheme_mac_argv = (char **)scheme_malloc(sizeof(char *));
     scheme_mac_argv[0] = ThisAppName();
     return;
   }
@@ -181,7 +178,7 @@ static void Startup(char **argv, int argc)
   
   if (!scheme_mac_argv) {
     scheme_mac_argc = (argc ? argc + 2 : 1);
-    scheme_mac_argv = (char **)_scheme_malloc(scheme_mac_argc * sizeof(char *));
+    scheme_mac_argv = (char **)scheme_malloc(scheme_mac_argc * sizeof(char *));
     for (i = 0; i < argc; i++)
       scheme_mac_argv[i + 2] = argv[i];
     if (argc)
@@ -191,7 +188,7 @@ static void Startup(char **argv, int argc)
   }
 #else
   scheme_mac_argc = argc + 1;
-  scheme_mac_argv = (char **)_scheme_malloc(scheme_mac_argc * sizeof(char *));
+  scheme_mac_argv = (char **)scheme_malloc(scheme_mac_argc * sizeof(char *));
   for (i = 0; i < argc; i++)
     scheme_mac_argv[i + 1] = argv[i];
   scheme_mac_argv[0] = ThisAppName();
@@ -285,7 +282,7 @@ void Drop_GetArgs(int *argc, char ***argv)
         TargetID src;
         unsigned long ref, len;
         char *data;
-        data = (char *)_scheme_malloc(5000);
+        data = (char *)scheme_malloc(5000);
         len = 4999;
         AcceptHighLevelEvent(&src, &ref, data, &len);
         data[len] = 0;

@@ -279,21 +279,25 @@ int actual_main(int argc, char *argv[])
 #endif
 
 #ifdef MACINTOSH_SIOUX
-  {
-    int argc2;
-    char **argv2;
-    argc2 = ccommand(&argv2);
-    if (argc2 > 1) {
-      int i, j;
-      char **both = (char **)malloc(sizeof(char *) * (argc + argc2 - 1));
-      for (i = 0; i < argc; i++)
-        both[i] = argv[i];
-      for (j = 1; j < argc2; j++, i++)
-        both[i] = argv2[j];
-        
-      argv = both;
-      argc += argc2 - 1;
-    }
+  { 
+    KeyMap keys;
+    GetKeys(keys);
+    if (keys[1] & 32768L) { /* Cmd key down */
+	    int argc2;
+	    char **argv2;
+	    argc2 = ccommand(&argv2);
+	    if (argc2 > 1) {
+	      int i, j;
+	      char **both = (char **)malloc(sizeof(char *) * (argc + argc2 - 1));
+	      for (i = 0; i < argc; i++)
+	        both[i] = argv[i];
+	      for (j = 1; j < argc2; j++, i++)
+	        both[i] = argv2[j];
+	        
+	      argv = both;
+	      argc += argc2 - 1;
+	    }
+	}
   }
   
 # pragma far_data on

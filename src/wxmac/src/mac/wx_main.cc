@@ -80,36 +80,11 @@ int wxEntry(int argc, char* argv[])
 	wxCommonInit();
 	wxInitializePrintSetupData(1);
 
-	wxTheApp->wx_frame = wxTheApp->OnInit();
+	wxTheApp->OnInit();
 	
-	// Simulate a OnSize event for the frames - CJC
-	for (wxChildNode * node = wxTopLevelWindows(NULL)->First (); node; node = node->Next ()) {
-		wxWindow *win = (wxWindow *) node->Data ();
-		if (win && node->IsShown()) {
-			int wid, hgt;
-			win->GetSize(&wid, &hgt);
-			win->OnSize(wid, hgt);
-		}
-	}
-		
-	while (!wxTheApp->death_processed /* && wxTopLevelWindows.Number() > 0 */)
-	{
-		wxTheApp->MainLoop();
-	}
-
-	int retValue = wxTheApp->OnExit();
-	wxCleanUp();
-	return retValue;
+	return 0;
 }
 
-#if 0
-// In theory, this entry pt won't be used unless the real main does not
-// declare one.
-int main(int argc, char* argv[])
-{
-	return wxEntry(argc, argv);
-}
-#endif
 
 //-----------------------------------------------------------------------------
 void wxCleanUp(void)

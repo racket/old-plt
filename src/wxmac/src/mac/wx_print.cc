@@ -79,13 +79,13 @@ static int popen_p;
 void wxPrOpen(void)
 {
   if (!popen_p++)
-    PrOpen();
+    PMBegin();
 }
 
 void wxPrClose(void)
 {
   if (!--popen_p)
-    PrClose();
+    PMEnd();
 }
 
 
@@ -130,8 +130,8 @@ void wxPrintDialog::Show(Bool flag)
 
   PrValidate( printData.macPrData);
 
-  if (PrError() != fnfErr) {
-    prtJob = PrJobDialog(printData.macPrData);
+  if (PMError() != fnfErr) {
+    prtJob = PMPrintDialog(printData.macPrData);
     if (!prtJob)
     {
        (**printData.macPrData).prJob.iLstPage = 0;
@@ -141,7 +141,7 @@ void wxPrintDialog::Show(Bool flag)
     }
   }
 
-  if (PrError())
+  if (PMError())
     DisposeHandle((Handle)printData.macPrData);
 
   wxPrClose();
@@ -341,7 +341,7 @@ Bool wxPrinter::Print(wxWindow *parent, wxPrintout *printout, Bool prompt)
     return FALSE;
 
   wxPrOpen();
-  if (PrError() != fnfErr) {
+  if (PMError() != fnfErr) {
     PrintDefault(printData.macPrData);
   }
 

@@ -248,6 +248,7 @@ static void StripMacMenuString(StringPtr theMacItemString1, char *s)
 MenuHandle wxMenu::CreateCopy(char *title, Bool doabouthack, MenuHandle toHandle)
 {
 	char t[256], tmp[256];
+        Str255 tempString;
 	int i, offset;
 	MenuHandle nmh;
 	int helpflg;
@@ -267,8 +268,8 @@ MenuHandle wxMenu::CreateCopy(char *title, Bool doabouthack, MenuHandle toHandle
 		*s = 0;
 		s = t;
 		helpflg = strncmp("Help", s, 4) ? 0 : 1;
-		C2PStr(s);
-		nmh = ::NewMenu(cMacMenuId ,(ConstStr255Param)s);
+                CopyCStringToPascal(s,tempString);
+		nmh = ::NewMenu(cMacMenuId ,tempString);
 		CheckMemOK(nmh);
 		offset = 1;
 		if (helpflg && menu_bar && menu_bar->n) {
@@ -280,7 +281,7 @@ MenuHandle wxMenu::CreateCopy(char *title, Bool doabouthack, MenuHandle toHandle
 		}
 	} else {
 		nmh = toHandle;
-		offset = CountMItems(nmh) + 1;
+		offset = CountMenuItems(nmh) + 1;
 		helpflg = 0;
 	}
 	int cnt = menuItems.Number();
@@ -316,9 +317,9 @@ MenuHandle wxMenu::CreateCopy(char *title, Bool doabouthack, MenuHandle toHandle
 		::AppendMenu(nmh, (ConstStr255Param)tmp);
 		::SetMenuItemText(nmh, i + offset, (ConstStr255Param)t);
 		if (menuItem->IsChecked())
-		  ::CheckItem(nmh, i + offset, TRUE);
+		  ::CheckMenuItem(nmh, i + offset, TRUE);
 		if (!menuItem->IsEnabled() || (toHandle && !cEnable))
-		  ::DisableItem(nmh, i + offset);
+		  ::DisableMenuItem(nmh, i + offset);
 		node = node->Next();						// watch for null?	
 	}
 	
@@ -615,33 +616,35 @@ void wxSetUpAppleMenu(wxMenuBar *mbar)
 		  wxMenuItem *i = (wxMenuItem *)n->Data();
 		  if (i) {
 		    char *s = i->GetLabel();
-		    strcpy((char *)t, s);
-		    CtoPstr((char *)t);
+                    CopyCStringToPascal(s,t);
 		  }
 		}
 		
 		::InsertMenuItem(appleMenuHandle, t, 0);
 	} else {
-		char buffer[256];
-		strcpy(buffer, wxTheApp->GetDefaultAboutItemName());
-		::InsertMenuItem(appleMenuHandle, C2PStr(buffer), 0);
+		Str255 buffer;
+                CopyCStringToPascal(wxTheApp->GetDefaultAboutItemName(),buffer);
+		::InsertMenuItem(appleMenuHandle, buffer, 0);
     }
 	::InsertMenu(appleMenuHandle, 0);
-	
+
+#ifndef OS_X
+// this is just a futile attempt to get rid of the help menu anyway.	
 	HMGetHelpMenuHandle(&wxHelpMenu);
 	if (!wxNumHelpItems) {
 	  /* Each ClearMenuBar() seems to create a new HelpMenu.
 	     But just in case Apple changes its mind... */
-	  wxNumHelpItems = CountMItems(wxHelpMenu);
+	  wxNumHelpItems = CountMenuItems(wxHelpMenu);
 	}
 	if (wxHelpMenu) {
-	  int i = CountMItems(wxHelpMenu);
+	  int i = CountMenuItems(wxHelpMenu);
 	  while (i > wxNumHelpItems)
 	    DeleteMenuItem(wxHelpMenu, i--);
 	    
 	  if (mbar && mbar->wxHelpHackMenu)
 	    mbar->wxHelpHackMenu->CreateCopy(NULL, FALSE, wxHelpMenu);
 	}
+#endif        
 }
 
 void wxMenuBar::Install(void)
@@ -655,9 +658,9 @@ void wxMenuBar::Install(void)
 		    ::InsertMenu(menu->MacMenu(), 0);
 		    menu->wxMacInsertSubmenu();
 		    if (!menu->IsEnable() || (menu_bar_frame && !menu_bar_frame->CanAcceptEvent()))
-		    	::DisableItem(menu->MacMenu(), 0);
+		    	::DisableMenuItem(menu->MacMenu(), 0);
 		    else
-				::EnableItem(menu->MacMenu(), 0);
+				::EnableMenuItem(menu->MacMenu(), 0);
 		}
 	}
 	::InvalMenuBar();
@@ -909,9 +912,9 @@ void wxMenu::Enable(Bool Flag)
 				if (frame->IsFrontWindow())
 				{
 					if (cEnable)
-						EnableItem(cMacMenu, 0);
+						EnableMenuItem(cMacMenu, 0);
 					else
-						DisableItem(cMacMenu, 0);
+						DisableMenuItem(cMacMenu, 0);
 					::InvalMenuBar();
 					CheckHelpHack();
 				}

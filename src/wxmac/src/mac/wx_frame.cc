@@ -68,12 +68,13 @@ wxFrame::wxFrame // Constructor (for frame window)
 
 	CWindowPtr theMacWindow;
 
-	/* Make surre we have the right device: */
-    GrafPtr wPort;
-    ::GetWMgrPort(&wPort);
-	::SetGWorld((CGrafPtr)wPort, wxGetGDHandle());
+	/* Make sure we have the right device: */
+    CGrafPtr wPort;
+    GDHandle gdh;
+    GetGWorld(&wPort,&gdh);
+    SetGWorld(wPort, wxGetGDHandle());
 	
-	OSErr result;
+    OSErr result;
 
 #if (__powerc)
 
@@ -285,7 +286,7 @@ void wxFrame::DoSetSize(int x, int y, int width, int height)
 	 		int oldMacHeight = cWindowHeight - PlatformArea()->Margin().Offset(Direction::wxVertical);
 	 		Rect oldGrowRect = {oldMacHeight - 15, oldMacWidth - 15, oldMacHeight, oldMacWidth};
 	 		SetCurrentMacDC();
-	 		::InvalRect(&oldGrowRect);
+	 		InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort),&oldGrowRect);
 	 		::EraseRect(&oldGrowRect); // MATTHEW: [5] 
 	 	}
 	 }
@@ -330,14 +331,14 @@ void wxFrame::DoSetSize(int x, int y, int width, int height)
 	 			r.bottom = h;
 	 			r.left = max(0, w - dw);
 	 			r.right = w;
-		 		::InvalRect(&r);
+		 		::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort),&r);
 	 		}
 	 		if (dh) {
 	 			r.top = max(0, h - dh);
 	 			r.bottom = h;
 	 			r.left = 0;
 	 			r.right = w;
-		 		::InvalRect(&r);
+		 		::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort),&r);
 	 		}
 	 	}
  		
@@ -375,7 +376,7 @@ void wxFrame::Maximize(Bool maximize)
 		WindowPtr theMacWindow = (WindowPtr)cMacDC->macGrafPort();
 		::EraseRect(&theMacWindow->portRect);
 		::ZoomWindow(theMacWindow, maximize ? inZoomOut : inZoomIn, TRUE);
-		::InvalRect(&theMacWindow->portRect);
+		InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort),&theMacWindow->portRect);
 		cMaximized = maximize;
 
 		wxMacRecalcNewSize();
@@ -584,7 +585,7 @@ void wxFrame::ShowAsActive(Bool flag)
 	 	// Erase it now if we're becoming inactive
 	 	if (!flag)
 	 		::EraseRect(&growRect);
-	 	::InvalRect(&growRect); 
+	 	::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort),&growRect); 
 	 }
  	
  	if (!cFocusWindow && children) {

@@ -690,7 +690,7 @@ wxString wxString::SubString(size_t from, size_t to)
     if (from < len) {
       if (to >= len) to = len - 1;
       char *buf = new char[to - from + 2];
-      int i;
+      unsigned int i;
       for (i = from; i <= to; i++)
         buf[i] = stringData_[i];
       buf[i] = '\0';

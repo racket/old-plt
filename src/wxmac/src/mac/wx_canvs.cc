@@ -390,7 +390,7 @@ void wxCanvas::SetScrollData
 			CheckMemOK(theUpdateRgn);
 			theDC->BeginDrawing();
 			::ScrollRect(&scrollRect, -dH, -dV, theUpdateRgn);
-			::InvalRgn(theUpdateRgn);
+			::InvalWindowRgn(GetWindowFromPort(cMacDC->macGrafPort()),theUpdateRgn);
 			theDC->device_origin_x += -dH;
 			theDC->device_origin_y += -dV;
 			// ((wxCanvasDC *)theDC)->SetCanvasClipping();

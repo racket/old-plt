@@ -43,11 +43,11 @@ wxPrinterDC::wxPrinterDC(wxWindow *parent) : wxCanvasDC()
 
   PrintDefault(pr);
   PrValidate(pr);
-  if (PrError() != fnfErr) {
-    if (!PrJobDialog(pr)) {
+  if (PMError() != fnfErr) {
+    if (!PMPrintDialog(pr)) {
       ok = FALSE;
     }
-    if (PrError())
+    if (PMError())
       ok = FALSE;
   } else
     ok = FALSE;
@@ -75,18 +75,18 @@ void wxPrinterDC::Create(THPrint pData)
   __type = wxTYPE_DC_PRINTER;
 
     prRecHandle = pData;
-    PrOpen();
-	if (PrError()) {
-      PrClose();
+    PMBegin();
+	if (PMError()) {
+      PMEnd();
       ok = FALSE;
       return;
     }
 
-	prPort = PrOpenDoc(prRecHandle, 0, 0);
+	prPort = PMBeginDocument(prRecHandle, 0, 0);
 
-    if (PrError()) {
-      PrCloseDoc(prPort);
-      PrClose();
+    if (PMError()) {
+      PMEndDocument(prPort);
+      PMEnd();
       ok = FALSE;
       return;
     }
@@ -157,7 +157,7 @@ void wxPrinterDC::Create(THPrint pData)
 wxPrinterDC::~wxPrinterDC(void)
 {
   if (ok) {
-    PrCloseDoc(prPort);
+    PMEndDocument(prPort);
     if (close_handle)
       DisposeHandle((Handle)prRecHandle);
   }
@@ -175,12 +175,12 @@ void wxPrinterDC::EndDoc(void) { }
 void wxPrinterDC::StartPage(void)
 {
   if (prPort)
-    PrOpenPage(prPort, 0); 
+    PMBeginPage(prPort, 0); 
 }
 
 //-----------------------------------------------------------------------------
 void wxPrinterDC::EndPage(void)
 {
   if (prPort)
-    PrClosePage(prPort);
+    PMEndPage(prPort);
 }

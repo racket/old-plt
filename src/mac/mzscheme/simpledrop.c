@@ -284,6 +284,10 @@ void Drop_GetArgs(int *argc, char ***argv)
     
     WaitNextEvent(highLevelEventMask, &event, -1, 0L);
     if (event.what == kHighLevelEvent) {
+#ifdef OS_X
+        AEProcessAppleEvent(&event);
+#else
+// high level events do not occur under OS X
       if ((event.message == 'PLT ') && ((*(long *)&event.where) == 'cmdl')) {
         /* Replaces OpenApp or OpenDocs: */
         TargetID src;
@@ -298,6 +302,7 @@ void Drop_GetArgs(int *argc, char ***argv)
       } else
         AEProcessAppleEvent(&event);
     }
+#endif
   }
   *argc = scheme_mac_argc;
   *argv = scheme_mac_argv;

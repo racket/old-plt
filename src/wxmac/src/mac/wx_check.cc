@@ -138,7 +138,7 @@ wxCheckBox::wxCheckBox // Constructor (given parentPanel, label)
 	if (cWindowHeight < IC_MIN_HEIGHT)
 	  cWindowHeight = IC_MIN_HEIGHT;
 	
-	::InvalRect(&bounds);
+	::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort),&bounds);
 }
 
 //=============================================================================
@@ -259,7 +259,7 @@ void wxCheckBox::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac platfo
 		int clientWidth, clientHeight;
 		GetClientSize(&clientWidth, &clientHeight);
 		Rect clientRect = {0, 0, clientHeight, clientWidth};
-		::InvalRect(&clientRect);
+		::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort),&clientRect);
 	}
 }
 

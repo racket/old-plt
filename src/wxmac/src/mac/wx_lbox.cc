@@ -313,7 +313,7 @@ void wxListBox::OnClientAreaDSize(int dW, int dH, int dX, int dY)
 	
 	if (!cHidden && (dW || dH || dX || dY))
 	{
-		::InvalRect(&viewRect);
+		::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort),&viewRect);
 	}
 	
 	wxWindow::OnClientAreaDSize(dW, dH, dX, dY);
@@ -583,8 +583,7 @@ void wxListBox::Append(char *Item, char *Client_data)
   //LSetDrawingMode(FALSE, cListHandle);
   LongPt cell = {no_items, 0};		// Point = {v, h} so Cell = {row, col}
   ALAddRow(1,no_items, cListReference);
-  strcpy(*stringHandle,Item);
-  c2pstr(*stringHandle);
+  CopyCStringToPascal(Item,*stringHandle);
   ALSetCell((void *)stringHandle, &cell, cListReference);
   // LDraw(cell, cListHandle); // mflatt: can't get this to work; co-ordinate problems?
   // LSetDrawingMode(TRUE, cListHandle);
@@ -611,8 +610,7 @@ void wxListBox::Set(int n, char *choices[])
   LongPt cell = {0, 0};		// Point = {v, h} so Cell = {row, col}
   for (cell.v = 0; cell.v < n; cell.v++) {
   	  Handle stringHandle = NewHandle(strlen(choices[cell.v])+1);
-  	  strcpy(*stringHandle,choices[cell.v]);
-	  c2pstr(*stringHandle);  	  
+          CopyCStringToPascal(choices[cell.v],*stringHandle);
 	  cDataList->Append(cell.v, (wxObject *)NULL);
 	  ALSetCell(stringHandle ,&cell, cListReference);
   }
@@ -635,8 +633,7 @@ int wxListBox::FindString(char *s)
 	StringPtr pstr = (StringPtr)NewPtr(strlen(s) + 1);
 	int result;
 	
-	strcpy((char *)pstr,s);
-	c2pstr((char *)pstr);
+        CopyCStringToPascal(s,pstr);
 	
 	result = (ALSearch(pstr, strcmpUPP, &cell, cListReference) ? cell.v : -1);
 
@@ -670,8 +667,7 @@ char *wxListBox::GetString(int N)
 	if (result != noErr)
 		return NULL;
 
-	strcpy(wxBuffer,*stringHandle);
-	p2cstr((StringPtr)wxBuffer);	
+        CopyPascalStringToC(*stringHandle,wxBuffer);
 	return wxBuffer;
 }
 
@@ -682,8 +678,7 @@ void wxListBox::SetString(int N, char *s)
     Handle oldHandle; 
     ALGetCell((void **)&oldHandle,&cell,cListReference);
     Handle newHandle = NewHandle(strlen(s)+1);
-    strcpy(*newHandle,s);
-    c2pstr(*newHandle);
+    CopyCStringToPascal(s,*newHandle);
     ALSetCell(newHandle, &cell, cListReference);
     DisposeHandle(oldHandle);
 }
@@ -715,8 +710,7 @@ void wxListBox::InsertItems(int nItems, char **Items, int pos)
   for (n = 0;  n < nItems; cell.v++, n++) {
 	  cDataList->Append(cell.v, (wxObject *)NULL);
 	  stringHandle = NewHandle(strlen(Items[n]) + 1);
-	  strcpy(*stringHandle,Items[n]);
-	  c2pstr(*stringHandle);
+          CopyCStringToPascal(Items[n],*stringHandle);
 	  ALSetCell(stringHandle, &cell, cListReference);
   }
   no_items = no_items + nItems;

@@ -171,8 +171,7 @@ void wxFont::Create(int PointSize, int Font, int Family, int Style, int Weight,
 	    macFontId = GetAppFont();
 	    break;
 	  } else {
-	    strcpy((char *)buffer, name);
-	    C2PStr((char *)buffer);
+            CopyCStringToPascal(name,buffer);
 	    ::GetFNum((ConstStr255Param)buffer, &macFontId);
 
 	    if (macFontId || tried_once)
@@ -669,8 +668,7 @@ wxBitmap::wxBitmap(char *bitmap_file, long flags)
 		Str255 resname;
 		PicHandle	h;
 		ResType	thetype;
-		strcpy((char *)resname, bitmap_file);
-		C2PStr((char *)resname);
+                CopyCStringToPascal(bitmap_file,resname);
 		h = (PicHandle)::GetNamedResource('PICT', resname);
 		if (h) {
 			depth =  wxDisplayDepth();

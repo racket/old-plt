@@ -15,6 +15,7 @@
 #include "wx_main.h"
 #include <stdarg.h>
 #include <ctype.h>
+#include <sys/types.h>
 #include <unistd.h>
 #if 1
 #include <Files.h>
@@ -538,10 +539,29 @@ Bool wxGetHostName(char *buf, int maxSize)
 
 // Get user ID e.g. jacs
 Bool wxGetUserId(char *buf, int maxSize)
+#ifdef OS_X
+{
+    CFStringRef username;
+    Boolean result;
+    
+    username = CSCopyUserName(true);
+    result = CFStringGetCString(username, buf,maxSize,kCFStringEncodingISOLatin1);
+}
+#else
 {	return wxGetUserName(buf,maxSize); }
+#endif
 
 // Get user name e.g. Julian Smart
 Bool wxGetUserName(char *buf, int maxSize)
+#ifdef OS_X
+{
+    CFStringRef username;
+    Boolean result;
+    
+    username = CSCopyUserName(false);
+    result = CFStringGetCString(username, buf,maxSize,kCFStringEncodingISOLatin1);
+}
+#else    
 {	Bool good = FALSE;
 	unsigned long userRef;
 	Str32 name;
@@ -550,13 +570,9 @@ Bool wxGetUserName(char *buf, int maxSize)
 	{	good = GetDefaultUser( &userRef, name) == noErr;
 	  /* MATTHEW: [5] */
 	  if (good) {
-#if defined(PPCC) || defined(MrCpp) || defined(GUSI) || defined(PYLIB)
-		p2cstr(name);
-#else
-		PtoCstr(name);
-#endif
-		strcpy(buf,(char *)name);
+            CopyPascalStringToC(name,buf);
 	  }
 	}
 	return good;
 }
+#endif

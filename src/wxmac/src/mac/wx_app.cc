@@ -12,7 +12,9 @@ static const char sccsid[] = "%W% %G%";
 // #include <stdlib.h>
 #include <Events.h>
 #include <AppleEvents.h>
-#include <DiskInit.h>
+#ifndef OS_X
+ #include <DiskInit.h>
+#endif
 #include <Devices.h>
 #include <Resources.h>
 #include <Balloons.h>
@@ -58,6 +60,7 @@ wxApp::wxApp(wxlanguage_t language):wxbApp(language)
 	OSErr myErr;
 	long quickdrawVersion;
 	long windowMgrAttributes;
+        long dontcare;
 	
 	if (::Gestalt(gestaltQuickdrawVersion, &quickdrawVersion) != noErr) {
 		wxFatalError("Unable to invoke the Gestalt Manager.", "");
@@ -90,8 +93,12 @@ wxApp::wxApp(wxlanguage_t language):wxbApp(language)
 	
 	::FlushEvents(everyEvent, 0);
 
+#ifdef OS_X
+        gMacFontGrafPort = CreateNewPort();
+#else        
 	gMacFontGrafPort = new CGrafPort;
 	::OpenPort((GrafPtr)gMacFontGrafPort);
+#endif
 
 	cMacCursorRgn = ::NewRgn(); // forces cursor-move event right away
 	CheckMemOK(cMacCursorRgn);
@@ -613,6 +620,8 @@ void wxApp::doMacUpdateEvt(void)
 //-----------------------------------------------------------------------------
 void wxApp::doMacDiskEvt(void)
 { // based on "Programming for System 7" by Gary Little and Tim Swihart
+#ifndef OS_X
+// OS X doesn't support the diskEvt event. Yay!
 	if ((cCurrentEvent.message >> 16) != noErr)
 	{
 		const int kDILeft = 0x0050; // top coord for disk init dialog
@@ -622,6 +631,7 @@ void wxApp::doMacDiskEvt(void)
 		mountPoint.v = kDITop;
 		int myError = DIBadMount(mountPoint, cCurrentEvent.message);
 	}
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -670,7 +680,11 @@ void wxApp::doMacSuspendEvent(void)
 	wxFrame* theMacWxFrame = findMacWxFrame(::FrontWindow());
 	if (theMacWxFrame)
 	{
+#ifdef OS_X
+                ClearCurrentScrap();
+#else                
 		::ZeroScrap();
+#endif                
 		::TEToScrap();
 		Bool becomingActive = TRUE;
 		theMacWxFrame->Activate(!becomingActive);
@@ -696,10 +710,13 @@ Bool wxApp::doMacInMenuBar(long menuResult, Bool externOnly)
 		 return FALSE;
 	if (macMenuId == 128) {
 		if (macMenuItemNum != 1) {			// if not the "About" entry (or the separator)
+#ifndef OS_X
+// these (apparently) don't happen under OS X                
 			Str255		daName;
 			GetMenuItemText(GetMenuHandle(128), macMenuItemNum, daName);
 			(void) OpenDeskAcc(daName);
 			HiliteMenu(0); // unhilite the hilited menu
+#endif                        
 			return TRUE;
 		}
 	}

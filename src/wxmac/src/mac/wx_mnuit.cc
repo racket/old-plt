@@ -86,7 +86,7 @@ void wxMenuItem::Check(Bool flag)
 			short macMenuItem = GetMacItemNumber();
 			if (macMenuItem > 0)
 			{
-				CheckItem(parentMenu->MacMenu(), macMenuItem, cIsChecked);
+				CheckMenuItem(parentMenu->MacMenu(), macMenuItem, cIsChecked);
 			}
 		}
 	}
@@ -108,8 +108,8 @@ void wxMenuItem::Enable(Bool flag)
 		if (macMenuItem > 0)
 		{
 			if (cIsEnabled)
-				 EnableItem(parentMenu->MacMenu(), macMenuItem);
-			else DisableItem(parentMenu->MacMenu(), macMenuItem);
+				 EnableMenuItem(parentMenu->MacMenu(), macMenuItem);
+			else DisableMenuItem(parentMenu->MacMenu(), macMenuItem);
 		}
 	}
 }

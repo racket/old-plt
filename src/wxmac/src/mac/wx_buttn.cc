@@ -164,7 +164,7 @@ wxButton::wxButton // Constructor (given parentPanel, bitmap)
 	cWindowHeight = bounds.bottom;
 	cWindowWidth = bounds.right;
 
-	::InvalRect(&bounds);
+	::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort),&bounds);
 	
 	if (GetParent()->IsHidden())
 		DoShow(FALSE);
@@ -186,6 +186,11 @@ wxButton::~wxButton(void)
 //-----------------------------------------------------------------------------
 void wxButton::ChangeColour(void)
 {
+#ifndef OS_X
+// all the other controls have null defns for ChangeColour, I don't see why
+// buttons can't, as well.  Particularly because Custom Color tables aren't 
+// supported for Carbon.
+
 	if (buttonBitmap)
 		return;
 	if (cColorTable == NULL)
@@ -222,6 +227,7 @@ void wxButton::ChangeColour(void)
 
      if (cMacControl)
 	  ::SetControlColor(cMacControl, cColorTable);
+#endif          
 }
 
 //-----------------------------------------------------------------------------
@@ -549,6 +555,6 @@ void wxButton::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac platform
 		int clientWidth, clientHeight;
 		GetClientSize(&clientWidth, &clientHeight);
 		Rect clientRect = {0, 0, clientHeight, clientWidth};
-		::InvalRect(&clientRect);
+		::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort),&clientRect);
 	}
 }

@@ -498,7 +498,7 @@ void wxWindow::DoSetSize(int x, int y, int width, int height) // mac platform on
 		Rect oldWindowRect = { -1, -1, cWindowHeight, cWindowWidth };
 		SetCurrentMacDCNoMargin();
 		MacSetBackground();
-		::InvalRect(&oldWindowRect);
+		::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort),&oldWindowRect);
 		::ClipRect(&oldWindowRect);
 		::EraseRect(&oldWindowRect);
 	}
@@ -514,7 +514,7 @@ void wxWindow::DoSetSize(int x, int y, int width, int height) // mac platform on
 		cMacDC->setCurrentUser(NULL); // macDC no longer valid
 		SetCurrentMacDCNoMargin(); // put newClientRect at (0, 0)
 		MacSetBackground();
-		::InvalRect(&newWindowRect); // force redraw of window
+		::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort),&newWindowRect); // force redraw of window
 		::ClipRect(&newWindowRect);
 		::EraseRect(&newWindowRect); /* MATTHEW: [5] */
 	}
@@ -528,7 +528,7 @@ void wxWindow::Refresh(void)
 
 	GetClipRect(cClientArea, &theClipRect);
 	SetCurrentMacDC(); // put newClientRect at (0, 0)
-	::InvalRect(&theClipRect); // force redraw of window
+	::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort),&theClipRect); // force redraw of window
 }
 
 //-----------------------------------------------------------------------------
@@ -1556,7 +1556,7 @@ void wxWindow::DoShow(Bool v)
 		::EraseRect(&r);
 	}
 	
-	::InvalRect(&r);
+	::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort),&r);
 
 	cHidden = v;
 
@@ -1629,7 +1629,7 @@ Bool wxWindow::PopupMenu(wxMenu *menu, float x, float y)
     memcpy(s + 2, menu->title, l + 1);
     wxMacString1 theMacString1 = wxItemStripLabel(s);
     InsertMenuItem(m, theMacString1(), 0);
-    DisableItem(m, 1);
+    DisableMenuItem(m, 1);
     InsertMenuItem(m, "\p-", 1);
     di = -2;
   } else

@@ -405,6 +405,6 @@ void wxScrollBar::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac platf
 		int clientWidth, clientHeight;
 		GetClientSize(&clientWidth, &clientHeight);
 		Rect clientRect = {0, 0, clientHeight, clientWidth};
-		::InvalRect(&clientRect);
+		::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort),&clientRect);
 	}
 }

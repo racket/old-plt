@@ -133,7 +133,7 @@ wxRadioButton::wxRadioButton // Constructor (given parentPanel, bitmap)
 	if (cWindowHeight < IR_MIN_HEIGHT)
 	  cWindowHeight = IR_MIN_HEIGHT;
 
-	::InvalRect(&bounds);
+	::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort),&bounds);
 }
 
 //=============================================================================
@@ -373,6 +373,6 @@ void wxRadioButton::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac pla
 		int clientWidth, clientHeight;
 		GetClientSize(&clientWidth, &clientHeight);
 		Rect clientRect = {0, 0, clientHeight, clientWidth};
-		::InvalRect(&clientRect);
+		::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort),&clientRect);
 	}
 }

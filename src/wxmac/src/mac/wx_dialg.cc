@@ -352,7 +352,7 @@ char *wxFileSelector(char *message, char *default_path,
       }
     }
     
-    NavEventUPP   eventProc = NewNavEventProc(EventFilter);
+    NavEventUPP   eventProc = NewNavEventUPP(EventFilter);
     
     if ((flags == 0) || (flags & wxOPEN) || (flags & wxMULTIOPEN))
       err = NavChooseFile(startp, reply, dialogOptions,
@@ -368,7 +368,7 @@ char *wxFileSelector(char *message, char *default_path,
         NavCompleteSave(reply, kNavTranslateInPlace);
     }
     
-    DisposeRoutineDescriptor(eventProc);
+    DisposeNavEventUPP(eventProc);
     
     if (!reply->validRecord) {
       err = 1;
@@ -457,19 +457,18 @@ char *wxFileSelector(char *message, char *default_path,
 	{	// put file
 		if (message)
 		{	
-			strcpy((char *)p_prompt,message);
+			CopyCStringToPascal(message,p_prompt);
 		} else 
 		{
-			strcpy((char *)p_prompt, "Save File Name");
+			CopyCStringToPascal("Save File Name",p_prompt);
 		}
-		C2PStr((char *)p_prompt);
 		if (default_filename)
-		{	strcpy((char *)p_defname, default_filename);
+		{	
+                        CopyCStringToPascal(default_filename,p_defname);
 		} else 
 		{
-			strcpy((char *)p_defname, "");
+			CopyCStringToPascal("",p_defname);
 		}
-		C2PStr((char *)p_defname);
 		::StandardPutFile( p_prompt, p_defname, &rep);
 	}
 	

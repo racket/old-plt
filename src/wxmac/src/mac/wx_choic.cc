@@ -159,7 +159,7 @@ Create (wxPanel * panel, wxFunction func, char *Title,
 #endif
 	CheckMemOK(hDynMenu);
 	int n,w,h;
-	char temp[255];
+	Str255 temp;
 	for (n = 0; n < N; n++) {
 		// attempt to size control by width of largest string
 		GetTextExtent(Choices[n], &fWidth, &fHeight, &fDescent, &fLeading, valueFont);
@@ -167,10 +167,9 @@ Create (wxPanel * panel, wxFunction func, char *Title,
 		h = fHeight;
 		maxdfltw = max(w, maxdfltw);
 		maxdflth = max(h, maxdflth);
-		strcpy(temp, Choices[n]);
-		C2PStr(temp);
+                CopyCStringToPascal(Choices[n],temp);
 		::AppendMenu(hDynMenu, "\ptemp");
-		::SetMenuItemText(hDynMenu, n + 1, (ConstStr255Param)temp);
+		::SetMenuItemText(hDynMenu, n + 1,temp);
 	}
 	no_strings = N;
 	maxdflth += MSPACEY*2;			// extra pixels on top & bottom
@@ -455,8 +454,8 @@ void wxChoice::OnEvent(wxMouseEvent *event) // mac platform only
 			if (1 || (newsel != selection)) {
 #ifdef Checkem
 				// selected a different item
-				::CheckItem(hDynMenu, selection+1, FALSE);
-				::CheckItem(hDynMenu, newsel+1, TRUE);
+				::CheckMenuItem(hDynMenu, selection+1, FALSE);
+				::CheckMenuItem(hDynMenu, newsel+1, TRUE);
 #endif
 				selection = newsel;
 				wxCommandEvent *commandEvent = new wxCommandEvent(wxEVENT_TYPE_CHOICE_COMMAND);
@@ -505,8 +504,8 @@ void wxChoice::SetSelection (int n)
 	  return;
 	
 #ifdef Checkem
-	::CheckItem(hDynMenu, selection+1, FALSE);
-	::CheckItem(hDynMenu, n+1, TRUE);
+	::CheckMenuItem(hDynMenu, selection+1, FALSE);
+	::CheckMenuItem(hDynMenu, n+1, TRUE);
 #endif
 	selection = n;
 	DrawChoice(TRUE);

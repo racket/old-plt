@@ -58,7 +58,12 @@ Bool wxCloseClipboard(void)
 
 Bool wxEmptyClipboard(void)
 {
+#ifdef OS_X
+  ClearCurrentScrap();
+  return true;
+#else
   return ZeroScrap();
+#endif
 }
 
 Bool wxIsClipboardFormatAvailable(int dataFormat)
@@ -72,7 +77,16 @@ Bool wxIsClipboardFormatAvailable(int dataFormat)
   if (!wxGetClipboardFormatName(dataFormat, (char *)&format, 4))
      return FALSE;
 
+#ifdef OS_X
+  ScrapRef scrap;
+  OSErr err;
+  ScrapFlavorFlags dontcare;
+  
+  err = GetCurrentScrap(&scrap);
+  return (err != noErr)||(GetScrapFlavorFlags(scrap,format,&dontcare) != noErr))
+#else  
   return (GetScrap(NULL, format, &offset) > 0);
+#endif
 }
 
 Bool wxSetClipboardData(int dataFormat, wxObject *obj, int width, int height)
@@ -90,7 +104,15 @@ Bool wxSetClipboardData(int dataFormat, wxObject *obj, int width, int height)
   else
     length = (long)width * height;
 
+#ifdef OS_X
+  ScrapRef scrap;
+  OSErr err;
+  
+  err = PutScrapFlavor(scrap,format,kScrapFlavorMaskTranslated,length,(const void *)obj);
+  return (err != noErr);
+#else
   return !PutScrap(length, format, (Ptr)obj);
+#endif
 }
 
 wxObject *wxGetClipboardData(int dataFormat, long *size)
@@ -105,6 +127,23 @@ wxObject *wxGetClipboardData(int dataFormat, long *size)
   if (!wxGetClipboardFormatName(dataFormat, (char *)&format, 4))
      return NULL;
 
+#ifdef OS_X
+  ScrapRef scrap;
+  OSErr err;
+  
+  err = GetCurrentScrap(&scrap);
+  if (err != noErr) 
+    return NULL;
+  err = GetScrapFlavorSize(scrap,format,&length);
+  if (err != noErr)
+    return NULL;
+  result = new char[scrapSize + 1];
+  err = GetScrapFlavorData(scrap,format,&length,result);
+  if (err != noErr) {
+    delete result;
+    return NULL;
+  }
+#else  
   h = NewHandle(10);
   CheckMemOK(h);
   length = GetScrap(h, format, &offset);
@@ -117,7 +156,7 @@ wxObject *wxGetClipboardData(int dataFormat, long *size)
   memcpy(result, *h, length);
   HUnlock(h);
   DisposeHandle(h);
-
+#endif
   if (format == 'TEXT')
     result[length++] = 0;
 
@@ -151,8 +190,18 @@ int  wxEnumClipboardFormats(int dataFormat)
   for (; node; node = node->Next()) {
 	cf = (ClipboardFormat *)node->Data();
     memcpy(&format, cf->name, 4);
+#ifdef OS_X
+    ScrapRef scrap;
+    OSErr err;
+    ScrapFlavorFlags dontcare;
+  
+    err = GetCurrentScrap(&scrap);
+    if (err != noErr)||(GetScrapFlavorFlags(scrap,format,&dontcare) != noErr))
+      return cf->format;
+#else      
     if (GetScrap(NULL, format, &offset) > 0)
        return cf->format;
+#endif
   }
 
   return 0;

@@ -11,6 +11,7 @@
 	    [mred:group : mred:group^]
 	    [mred:finder : mred:finder^]
 	    [mred:find-string : mred:find-string^]
+	    [mred:hyper-frame : mred:hyper-frame^]
 	    [mred:handler : mred:handler^]
 	    [mred:exit : mred:exit^]
 	    [mred:autosave : mred:autosave^]
@@ -126,6 +127,12 @@
 
     (define tab (string #\tab))
 
+    (mred:preferences:set-preference-default
+     'mred:menu-bindings #t 
+     (lambda (x) 
+       (or (eq? x #t)
+	   (eq? x #f))))
+
     (define make-standard-menus-frame%
       (lambda (super%)
 	(let ([join (opt-lambda (base special [suffix ""])
@@ -170,7 +177,10 @@
 						    ,(build-id name "-string")
 						    ,menu-after-string)
 					      ,name ,(build-id name "-help-string")
-					      #f ,key)))))]
+					      #f 
+					      (and (mred:preferences:get-preference
+						    'mred:menu-bindings)
+						   ,key))))))]
 			  [build-between-ivar
 			   (lambda (between)
 			     (string->symbol 
@@ -283,6 +293,7 @@
 	  (inherit panel get-client-size set-icon get-menu-bar
 		   make-menu show active-edit active-canvas)
 	  (rename [super-on-close on-close]
+		  [super-make-menu-bar make-menu-bar]
 		  [super-set-title set-title])
 	  (public
 	    [WIDTH frame-width]
@@ -414,6 +425,56 @@
 			   (send edit set-auto-set-wrap (not (ivar edit auto-set-wrap?)))
 			   (send (active-canvas) force-redraw)))))
 	       (send edit-menu append-separator))])
+
+	  (public
+	    [make-menu-bar
+	     (let ([reg (regexp "<TITLE>(.*)</TITLE>")])
+	       (lambda ()
+		 (let* ([mb (super-make-menu-bar)]
+			[help-menu (make-menu)]
+			[dir (build-path (global-defined-value 
+					  'mred:plt-home-directory)
+					 "doc")])
+		   (if (directory-exists? dir)
+		       (let* ([dirs (directory-list dir)]
+			      [find-title
+			       (lambda (name)
+				 (lambda (port)
+				   (let loop ([l (read-line port)])
+				     (if (eof-object? l)
+					 name
+					 (let ([match (regexp-match reg l)])
+					   (if match
+					       (cadr match)
+					       (loop (read-line port))))))))]
+			      [build-item
+			       (lambda (local-dir output)
+				 (let* ([f (build-path dir local-dir "index.htm")])
+				   (if (file-exists? f)
+				       (let ([title (call-with-input-file f (find-title local-dir))])
+					 (cons 
+					  (list title
+						(lambda ()
+						  (let* ([f (make-object mred:hyper-frame:hyper-view-frame%
+									 (string-append "file:" f))])
+						    (send f set-title-prefix title)
+						    f)))
+					  output))
+				       (begin (mred:debug:printf 'help-menu "couldn't find ~a" f)
+					      output))))]
+			      [item-pairs 
+			       (mzlib:function:quicksort
+				(mzlib:function:foldl build-item null dirs)
+				(lambda (x y) (string-ci<? (car x) (car y))))])
+			 (unless (null? item-pairs)
+			   (send mb append help-menu 
+				 (if (= (length item-pairs) 1)
+				     "Manual"
+				     "Manuals")))
+			 (for-each (lambda (x) (apply (ivar help-menu append-item) x))
+				   item-pairs))
+		       (mred:debug:printf 'help-menu "couldn't find PLTHOME/doc directory"))
+		   mb)))])
 	  
 	  (sequence
 	    (mred:debug:printf 'super-init "before simple-frame%")
@@ -534,8 +595,8 @@
 		'mred:show-status-line
 		(lambda (p v)
 		  (if v 
-		      (wx:unregister-collecting-blit gc-canvas)
-		      (register-gc-blit))
+		      (register-gc-blit)
+		      (wx:unregister-collecting-blit gc-canvas))
 		  (send super-root change-children
 			(lambda (l)
 			  (if v
@@ -596,7 +657,7 @@
 			       (if (send bitmap ok?)
 				   bitmap
 				   (if locked-now? "Locked" "Unlocked"))))))))]
-		       
+	      
 	      [edit-position-changed-offset
 	       (lambda (offset?)
 		 (let ([edit (get-info-edit)])
@@ -614,16 +675,17 @@
 				      (if offset?
 					  (add1 char)
 					  char))))])
-		     (send* position-edit
-		       (lock #f)
-		       (erase)
-		       (insert 
-			(if (= start end)
-			    (make-one start)
-			    (string-append (make-one start)
-					   "-"
-					   (make-one end))))
-		       (lock #t)))))]
+		     (when (object? position-edit)
+		       (send* position-edit
+			      (lock #f)
+			      (erase)
+			      (insert 
+			       (if (= start end)
+				   (make-one start)
+				   (string-append (make-one start)
+						  "-"
+						  (make-one end))))
+ 			      (lock #t))))))]
 	      [edit-position-changed
 	       (lambda ()
 		 (edit-position-changed-offset
@@ -634,7 +696,6 @@
 	      [get-info-edit
 	       (lambda ()
 		 (get-edit))])
-
 	    (public
 	      [update-info
 	       (lambda ()
@@ -642,7 +703,6 @@
 		 (anchor-status-changed)
 		 (edit-position-changed)
 		 (lock-status-changed))])
-
 	    (sequence 
 	      (apply super-init args))
 	    

@@ -103,9 +103,10 @@
 		      [test-frame
 		       (lambda (frame)
 			 (and (ivar-in-class? 'get-edit (object-class frame))
-			      (let ([filename (send (send frame get-edit)
-						    get-filename)])
-				(and (string? filename)
+			      (let* ([edit (send frame get-edit)]
+				     [filename (send edit get-filename)])
+				(and (ivar edit editing-this-file?)
+				     (string? filename)
 				     (string=? normalized
 					       (with-handlers ([(lambda (x) #t)
 								(lambda (x) filename)])

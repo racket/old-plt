@@ -925,8 +925,7 @@
 		       [insert-welcome? #t]
 		       [show? #t])
 	  (inherit active-edit get-edit get-canvas show make-menu)
-	  (rename [super-on-close on-close]
-		  [super-make-menu-bar make-menu-bar])
+	  (rename [super-on-close on-close])
 	  (private 
 	    edit-offset 
 	    other-offset)
@@ -934,51 +933,6 @@
 	    [get-canvas% (lambda () mred:canvas:wide-snip-canvas%)]
 	    [get-edit% (lambda () console-edit%)])
 	  (public 
-	    [make-menu-bar
-	     (let ([reg (regexp "<TITLE>(.*)</TITLE>")])
-	       (lambda ()
-		 (let* ([mb (super-make-menu-bar)]
-			[help-menu (make-menu)]
-			[dir (build-path (global-defined-value 
-					  'mred:plt-home-directory)
-					 "doc")])
-		   (if (directory-exists? dir)
-		       (let* ([dirs (directory-list dir)]
-			      [find-title
-			       (lambda (name)
-				 (lambda (port)
-				   (let loop ([l (read-line port)])
-				     (if (eof-object? l)
-					 name
-					 (let ([match (regexp-match reg l)])
-					   (if match
-					       (cadr match)
-					       (loop (read-line port))))))))]
-			      [build-item
-			       (lambda (local-dir output)
-				 (let* ([f (build-path dir local-dir "index.htm")])
-				   (if (file-exists? f)
-				       (let ([title (call-with-input-file f (find-title local-dir))])
-					 (cons 
-					  (list title
-						(lambda ()
-						  (let* ([f (make-object mred:hyper-frame:hyper-view-frame%
-									 (string-append "file:" f))])
-						    (send f set-title-prefix title)
-						    f)))
-					  output))
-				       (begin (mred:debug:printf 'help-menu "couldn't find ~a" f)
-					      output))))]
-			      [item-pairs 
-			       (mzlib:function:quicksort
-				(mzlib:function:foldl build-item null dirs)
-				(lambda (x y) (string-ci<? (car x) (car y))))])
-			 (unless (null? item-pairs)
-			   (send mb append help-menu "Help"))
-			 (for-each (lambda (x) (apply (ivar help-menu append-item) x))
-				   item-pairs))
-		       (mred:debug:printf 'help-menu "couldn't find PLTHOME/doc directory"))
-		   mb)))]
 	    [on-close 
 	     (lambda ()
 	       (and (super-on-close)

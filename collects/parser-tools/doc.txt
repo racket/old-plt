@@ -226,7 +226,6 @@ If the error token can be shifted, but parsing is unable to resume, throw an
 error instead of infinite looping.
 
 both:
-raise-read-error arguments
 
 Potential future additions:
 lexer:

@@ -3,6 +3,8 @@
  make:make^
  (import)
 
+  (define-struct (exn:make struct:exn) (target orig-exn))
+  
  (define make/proc
   (let ([form-error
 	 (lambda (s p) (error 'make/proc "~a: ~s" s p))]
@@ -52,8 +54,20 @@
 							deps))
 					     (let ([l (cddr line)])
 					       (unless (null? l)
-						  (printf "~amaking ~a~n" indent s)
-						  ((car l))))))
+						 (printf "~amaking ~a~n" indent s)
+						 (with-handlers ([(lambda (x) #t)
+								  (lambda (exn)
+								    (raise (make-exn:make (format "Failed to make ~a; ~a"
+												  (car line)
+												  (if (exn? exn)
+												      (exn-message exn)
+												      exn))
+											  (if (exn? exn)
+											      (exn-debug-info exn)
+											      ((debug-info-handler)))
+											  (car line)
+											  exn)))])
+						   ((car l)))))))
 				     (unless date
 					     (error 'make "don't know how to make ~a" s)))))])
 		     (cond

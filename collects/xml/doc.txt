@@ -94,12 +94,17 @@ Parameters
 
 > empty-tag-shorthand : 'always | 'never | (listof Symbol)
        Default: 'always
-       This determines if the output functions should use the <empty/> tag
-       notation instead of writing <empty></empty>.  The first form is the
-       preferred XML notation.  However, most browsers designed for HTML
-       will only properly render XHTML if the document uses a mixture of the
-       two formats.  _html-empty-tags_ contains the W3 consortium's
-       recommended list of XHTML tags that should use the shorthand.
+       This determines if the output functions should use the <empty/>
+       tag notation instead of writing <empty></empty>.  If the
+       argument is 'always, the abbreviated notation is always used,
+       and if the argument is 'never, the open/close pair is always
+       generated.  If a list of symbols is provided, tags with names
+       in this list will be abbreviated.  The first form is the
+       preferred XML notation.  However, most browsers designed for
+       HTML will only properly render XHTML if the document uses a
+       mixture of the two formats.  _html-empty-tags_ contains the W3
+       consortium's recommended list of XHTML tags that should use the
+       shorthand.
 
 > collapse-whitespace : Bool
        Default: #f

@@ -19,7 +19,7 @@
 	(if (eq? wx:platform 'windows)
 	    '("&File" "&Edit" "&Windows" "&View" "S&cheme" "&Language" "&Help")
 	    '("File" "Edit" "Windows" "View" "Scheme" "Language" "Help"))]
-       [buttons-expected '(check-syntax analyze execute break help)]
+       [buttons-expected '(check-syntax analyze execute break)]
        [check-menus
 	(lambda ()
 	  (letrec ([loop
@@ -59,7 +59,6 @@
   (check-for-button analyze-button "analyze") 
   (check-for-button execute-button "execute")
   (check-for-button stop-execute-button "break")
-  (check-for-button help-button "help")
 
   (printf "done~n")
 

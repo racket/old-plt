@@ -66,6 +66,8 @@
 	    ; hidden?
 	    [pending-redraws? #f]
 
+	    [perform-updates? #t]
+
 	    [ignore-redraw-request? #f]
 
 	    ; pointer to panel in the frame for use in on-size
@@ -122,7 +124,14 @@
 	    [get-panel
 	     (lambda ()
 	       panel)]
-	    
+
+	    [delay-updates
+	     (case-lambda
+	      [() (not perform-updates?)]
+	      [(f) (set! perform-updates? (not f))
+		   (when pending-redraws?
+			 (force-redraw))])]
+
 	    ; force-redraw: receives a message from to redraw the
 	    ; entire frame.
 	    ; input: none
@@ -137,7 +146,7 @@
 		  (self-redraw-request)))]
 	    [self-redraw-request
 	     (lambda ()
-	       (if (is-shown?)
+	       (if (and (is-shown?) perform-updates?)
 		   (force-redraw)
 		   (set! pending-redraws? #t)))]
 	    [force-redraw

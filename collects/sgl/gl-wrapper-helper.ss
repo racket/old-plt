@@ -14,11 +14,12 @@
   (define-for-syntax (make-rxf version num x y)
     (lambda (stx)
       (syntax-case stx ()
-        #`(define name (if (>= #,version #,num)
-                           (dynamic-require path 'name)
-                           (lambda x
-                             (error 'name 
-                                    (format "requires ~a version ~a or higher" #,x #,y))))))))
+        ((_ path name)
+         #`(define name (if (>= #,version #,num)
+                            (dynamic-require path 'name)
+                            (lambda x
+                              (error 'name 
+                                     (format "requires ~a version ~a or higher" #,x #,y)))))))))
   
   
   (define-syntax r12f (make-rxf #'gl-version 12 "GL" "1.2"))

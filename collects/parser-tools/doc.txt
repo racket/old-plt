@@ -205,8 +205,7 @@ a subset of the R5RS scheme syntax: (and must read an entire file)
    [initial (: (- a z) (- #\A #\Z) ! $ % & * / : < = > ? ^ _ ~)]
    [subsequent (: (initial) (digit) + - #\. @)]
    [digit (- #\0 #\9)]
-   [comment (@ #\; (^ #\newline) #\newline)])
-  
+   [comment (@ #\; (* (^ #\newline)) #\newline)]) 
   
   (define read-parser
     (parser 

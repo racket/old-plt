@@ -63,11 +63,13 @@ void scheme_bignum_use_fuel(long n);
 # define SECOND_BIT_MASK 0x4000000000000000
 # define MAX_TWO_BIT_MASK 0xC000000000000000
 # define SMALL_NUM_STR_LEN 19 /* conservatively low is OK */
+# define SQRT_BIT_MAX 31
 #else
 # define FIRST_BIT_MASK 0x80000000
 # define SECOND_BIT_MASK 0x40000000
 # define MAX_TWO_BIT_MASK 0xC0000000
 # define SMALL_NUM_STR_LEN 10 /* conservatively low is OK */
+# define SQRT_BIT_MAX 15
 #endif
 
 #if defined(USE_LONG_LONG_FOR_BIGDIG)
@@ -1280,7 +1282,7 @@ static unsigned long fixnum_sqrt(unsigned long n, unsigned long *rem)
   unsigned long try_root, try_square;
   int i;
 
-  for (i = 15; i >= 0; i--)
+  for (i = SQRT_BIT_MAX; i >= 0; i--)
   {
     try_root = root | (0x1 << i);
     try_square = try_root * try_root;
@@ -1374,7 +1376,8 @@ Scheme_Object *scheme_integer_sqrt_rem(const Scheme_Object *n, Scheme_Object **r
       SCHEME_BIGDIG(o) = res_digs;
       SCHEME_BIGPOS(o) = 1;
       return scheme_bignum_normalize(o);
-    }
+    } else
+      o = NULL;
   }
 
   if (remainder || rem_size == 0)

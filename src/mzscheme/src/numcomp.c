@@ -89,6 +89,13 @@ void scheme_init_numcomp(Scheme_Env *env)
 			     env);
 }
 
+/* Prototype needed for 3m conversion: */
+static
+#ifndef NO_INLINE_KEYWORD
+MSC_IZE(inline)
+#endif
+Scheme_Object *force_rat(Scheme_Object *n, Small_Rational *sr);
+
 #ifdef MZ_PRECISE_GC
 START_XFORM_SKIP;
 #endif

@@ -153,8 +153,12 @@ wxBitmap::wxBitmap(char **data, wxItem *WXUNUSED(anItem)) // anItem used for MOT
 #else
     Xbitmap->xpm = new WXGC_ATOMIC XpmAttributes;
 #endif
-    Xbitmap->xpm->valuemask = XpmReturnInfos | XpmReturnPixels | XpmCloseness;
+    Xbitmap->xpm->valuemask = (XpmReturnInfos | XpmReturnPixels | XpmCloseness
+			       | XpmVisual | XpmDepth | XpmColormap);
     Xbitmap->xpm->closeness = 40000;
+    Xbitmap->xpm->visual = wxAPP_VISUAL;
+    Xbitmap->xpm->depth = wx_visual_depth;
+    Xbitmap->xpm->colormap = wx_default_colormap;
     // create pixmap
     ErrorStatus = XpmCreatePixmapFromData(wxAPP_DISPLAY, wxAPP_ROOT,
 					  data, &(Xbitmap->x_pixmap),

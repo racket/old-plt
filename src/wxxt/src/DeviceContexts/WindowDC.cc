@@ -233,7 +233,7 @@ static wxBitmap *ScaleBitmap(wxBitmap *src,
     simg = XGetImage(dpy, spm, xs, ys, sw, sh, AllPlanes, ZPixmap);
     tpm = GETPIXMAP(tmp);
     timg = XGetImage(dpy, tpm, 0, 0, tw, th, AllPlanes, ZPixmap);
-    
+
     if (tw > sw) {
       for (ti = 0; ti < tw; ti++) {
 	i = (int)(ti / scale_x);
@@ -390,7 +390,7 @@ static wxBitmap *IntersectBitmapRegion(GC agc, Region user_reg, Region expose_re
 	  bmrgn = XCreateRegion();
 
 	  if (bmask->GetDepth() == 1)
-	    whiteVal = WhitePixel(dpy, DefaultScreen(dpy));
+	    whiteVal = 0;
 	  
 	  for (mj = 0; mj < scaled_height; mj++) {
 	    encl.y = mj + ty;
@@ -630,7 +630,7 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
 	return retval;
       if (mask) {
 	mask = ScaleBitmap(mask, scale_x, scale_y, xsrc, ysrc, w, h, DPY, &tmp_mask, &retval, 
-			   !should_xrender, WhitePixelOfScreen(SCN));
+			   !should_xrender, wx_white_pixel);
 	if (!mask) {
 	  DELETE_OBJ tmp;
 	  return retval;
@@ -829,7 +829,7 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
 					     &tx, &ty,
 					     &scaled_width, &scaled_height,
 					     &xsrc, &ysrc,
-					     DPY, WhitePixelOfScreen(SCN));
+					     DPY, wx_white_pixel);
 
 	  // Check if we're copying from a mono bitmap
 	  retval = TRUE;
@@ -925,7 +925,7 @@ Bool wxWindowDC::GCBlit(float xdest, float ydest, float w, float h, wxBitmap *sr
 
       if ((DEPTH == 1) && (src->GetDepth() > 1)) {
 	/* May need to flip 1 & 0... */
-	if (BlackPixelOfScreen(SCN) == 1) {
+	if (wx_black_pixel == 1) {
 	  mask = GCFunction;
 	  values.function = GXcopyInverted;
 	}
@@ -937,7 +937,7 @@ Bool wxWindowDC::GCBlit(float xdest, float ydest, float w, float h, wxBitmap *sr
 				       &tx, &ty,
 				       &scaled_width, &scaled_height,
 				       &xsrc, &ysrc,
-				       DPY, WhitePixelOfScreen(SCN));
+				       DPY, wx_white_pixel);
 	  
       retval = TRUE;
       if ((src->GetDepth() == 1) || (DEPTH == 1)) {
@@ -1446,7 +1446,7 @@ void wxWindowDC::SetBrush(wxBrush *brush)
     if (tile) {
       values.tile = tile;
       mask |= GCTile;
-      values.foreground = BlackPixel(DPY, DefaultScreen(DPY));
+      values.foreground = wx_black_pixel;
       values.function = GXcopy;
     }
   } else {
@@ -1574,7 +1574,7 @@ void wxWindowDC::SetPen(wxPen *pen)
       if (tile) {
 	values.tile = tile;
 	mask |= GCTile;
-	values.foreground = BlackPixel(DPY, DefaultScreen(DPY));
+	values.foreground = wx_black_pixel;
 	values.function = GXcopy;
       }
     } else {
@@ -1618,7 +1618,7 @@ void wxWindowDC::TryColour(wxColour *src, wxColour *dest)
     wxQueryColor(wxAPP_DISPLAY, cm, &xcol);
     
     dest->Set(xcol.red >> SHIFT, xcol.green >> SHIFT, xcol.blue >> SHIFT);
-  } else if (xcol.pixel == BlackPixel(DPY, DefaultScreen(DPY))) {
+  } else if (xcol.pixel == wx_black_pixel) {
     dest->Set(0, 0, 0);
   } else {
     dest->Set(255, 255, 255);
@@ -1650,7 +1650,7 @@ void wxWindowDC::FillPrivateColor(wxColour *c)
     c->Set(xcol.red >> SHIFT, xcol.green >> SHIFT, xcol.blue >> SHIFT);
     free = 1;
   } else {
-    xcol.pixel = BlackPixel(DPY, DefaultScreen(DPY));
+    xcol.pixel = wx_black_pixel;
     c->Set(0, 0, 0);
   }
 
@@ -2027,15 +2027,15 @@ void wxWindowDC::Initialize(wxWindowDC_Xinit* init)
     X->picture = 0;
 #endif
 
-    values.foreground = BlackPixelOfScreen(SCN);
-    values.background = WhitePixelOfScreen(SCN);
+    values.foreground = wx_black_pixel;
+    values.background = wx_white_pixel;
     values.graphics_exposures = FALSE;
     values.line_width = 1;
     mask = GCForeground | GCBackground | GCGraphicsExposures | GCLineWidth;
     PEN_GC   = XCreateGC(DPY, GC_drawable, mask, &values);
     TEXT_GC  = XCreateGC(DPY, GC_drawable, mask, &values);
-    values.foreground = WhitePixelOfScreen(SCN);
-    values.background = BlackPixelOfScreen(SCN);
+    values.foreground = wx_white_pixel;
+    values.background = wx_black_pixel;
     BG_GC    = XCreateGC(DPY, GC_drawable, mask, &values);
     BRUSH_GC = XCreateGC(DPY, GC_drawable, mask, &values);
 

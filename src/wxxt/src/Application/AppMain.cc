@@ -35,6 +35,7 @@
 #define  Uses_wxWindowDC
 #include "wx.h"
 #include "widgets.h" // for X11/StringDefs.h
+#include "wxAllocColor.h"
 
 #ifdef WX_USE_XFT
 # include <X11/Xft/Xft.h>
@@ -49,6 +50,7 @@ extern void wxsRememberDisplay(char *str);
 Visual *wxAPP_VISUAL;
 int wx_visual_depth;
 Colormap wx_default_colormap;
+unsigned long wx_white_pixel, wx_black_pixel;
 
 //-----------------------------------------------------------------------------
 // wxApp implementation
@@ -200,7 +202,9 @@ int wxEntry(int argc, char *argv[])
   wxAPP_SCREEN = DefaultScreenOfDisplay(wxAPP_DISPLAY);
   wxAPP_VISUAL = DefaultVisualOfScreen(wxAPP_SCREEN);
   wx_default_colormap = DefaultColormapOfScreen(wxAPP_SCREEN);
- 
+  wx_black_pixel = BlackPixel(wxAPP_DISPLAY, DefaultScreen(wxAPP_DISPLAY));
+  wx_white_pixel = WhitePixel(wxAPP_DISPLAY, DefaultScreen(wxAPP_DISPLAY));
+
   /* Use 24-bit TrueColor visual, if possible */
   {
     XVisualInfo *vi, vi_tmpl, vi2;
@@ -219,6 +223,16 @@ int wxEntry(int argc, char *argv[])
 					      RootWindow(wxAPP_DISPLAY, DefaultScreen(wxAPP_DISPLAY)),
 					      wxAPP_VISUAL, 
 					      AllocNone);
+
+	{
+	  XColor xcol;
+	  xcol.red = xcol.blue = xcol.green = 0;
+	  wxAllocColor(wxAPP_DISPLAY, wx_default_colormap, &xcol);
+	  wx_black_pixel = xcol.pixel;
+	  xcol.red = xcol.blue = xcol.green = 0xFFFF;
+	  wxAllocColor(wxAPP_DISPLAY, wx_default_colormap, &xcol);
+	  wx_white_pixel = xcol.pixel;
+	}
       }
     }
 

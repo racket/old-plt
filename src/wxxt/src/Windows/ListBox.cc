@@ -130,6 +130,8 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func, char *title,
 	("list", xfwfMultiListWidgetClass, X->scroll,
 	 XtNbackground,     wxGREY_PIXEL,
 	 XtNforeground,     wxBLACK_PIXEL,
+	 XtNhighlightBackground,  wxBLACK_PIXEL,
+	 XtNhighlightForeground,  wxGREY_PIXEL,
 	 XtNfont,           font->GetInternalFont(),
 #ifdef WX_USE_XFT
 	 XtNmlXftFont,          font->GetInternalAAFont(),

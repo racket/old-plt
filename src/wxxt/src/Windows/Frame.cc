@@ -340,8 +340,12 @@ Bool wxFrame::Create(wxFrame *frame_parent, char *title,
 #else
       xpm = new WXGC_ATOMIC XpmAttributes;
 #endif
-      xpm->valuemask = XpmReturnInfos | XpmReturnPixels | XpmCloseness;
+      xpm->valuemask = (XpmReturnInfos | XpmReturnPixels | XpmCloseness
+			| XpmVisual | XpmDepth | XpmColormap);
       xpm->closeness = 40000;
+      xpm->visual = wxAPP_VISUAL;
+      xpm->depth = wx_visual_depth;
+      xpm->colormap = wx_default_colormap;
       if (XpmCreatePixmapFromData(wxAPP_DISPLAY, wxAPP_ROOT,
 				  plt_xpm, &plt_icon,
 				  (Pixmap*)NULL, xpm)

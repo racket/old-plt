@@ -99,13 +99,17 @@ Scheme_Object *scheme_complex_normalize(const Scheme_Object *o)
   }
 
   if (SCHEME_DBLP(c->i)) {
-    if (SCHEME_DBLP(c->r) == 0.0) {
+    if (!SCHEME_DBLP(c->r)) {
       Scheme_Object *r;
       r = scheme_make_double(scheme_get_val_as_double(c->r));
       c->r = r;
     }
     if (SCHEME_DBL_VAL(c->i) == 0.0)
       c->type = scheme_complex_izi_type;
+  } else if (SCHEME_DBLP(c->r)) {
+    Scheme_Object *i;
+    i = scheme_make_double(scheme_get_val_as_double(c->i));
+    c->i = i;
   }
 
 #ifdef MZ_USE_SINGLE_FLOATS
@@ -212,6 +216,17 @@ Scheme_Object *scheme_complex_divide(const Scheme_Object *n, const Scheme_Object
   
   if ((cn->r == zero) && (cn->i == zero))
     return zero;
+
+  /* Check for exact-zero simplifications in d: */
+  if (cd->r == zero) {
+    i = scheme_bin_minus(zero, scheme_bin_div(cn->r, cd->i));
+    r = scheme_bin_div(cn->i, cd->i);
+    return scheme_make_complex(r, i);
+  } else if (cd->i == zero) {
+    r = scheme_bin_div(cn->r, cd->r);
+    i = scheme_bin_div(cn->i, cd->r);
+    return scheme_make_complex(r, i);
+  }
 
   a_sq_p_b_sq = scheme_bin_plus(scheme_bin_mult(cd->r, cd->r), 
 				scheme_bin_mult(cd->i, cd->i));

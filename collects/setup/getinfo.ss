@@ -8,9 +8,10 @@
            (lib "contract.ss"))
 
   (define info? (opt-> (symbol?) ((-> any/c)) any/c))
+  (define path-or-string? (lambda (x) (or (path? x) (string? x))))
   
   (provide/contract
-   (get-info ((listof symbol?) . -> . (union info? boolean?)))
+   (get-info ((listof path-or-string?) . -> . (union info? boolean?)))
    (get-info/full (path? . -> . (union info? boolean?)))
    (find-relevant-directories (opt-> ((listof symbol?))
                                      ((lambda (x) (or (eq? x 'preferred)

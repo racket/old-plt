@@ -51,7 +51,11 @@
                       (@ p a g e)
                       (@ r e t u r n)
                       (@ r u b o u t))]
-   [bad-char (: "#\\" (^ identifier-delims) (+ (^ identifier-delims)))]
+   [bad-char (: (@ "#\\" any letter (* letter))
+                (@ "#\\" (- "0" "3") (? letter) (? letter))
+                (@ "#\\" (- "0" "3") (- "0" "7") any))]
+                 
+                 
    [str (@ (: "" "#rx") "\"" (* string-element) "\"")]
    
    [string-element (: (^ "\"" "\\")
@@ -71,7 +75,7 @@
                       (@ "\\x" digit16)
                       (@ "\\x" digit16 digit16)
                       (@ "\\" #\newline))]
-   
+
    [bad-str (@ (: "" "#rx") "\"" 
              (* (: (^ "\"" "\\")
                    (@ "\\" (: (eof) any))))
@@ -184,10 +188,7 @@
    [digit16 (: digit10 (- "a" "f") (- "A" "F"))]
    
    [script (@ "#!" (* (: (^ #\newline) (@ #\\ #\newline))))]
-   
-   [bad-num (@ (: "#o" "#b" "#x" "#O" "#B" "#X") (* (^ identifier-delims)))]
-   
-   
+
    [identifier-delims (: "\"" "," "'" "`" "(" ")" "[" "]" "{" "}" ";" whitespace)]
    [identifier-chars (^ (: identifier-delims "\\" "|"))]
    [identifier-escapes (: (@ "\\" any)
@@ -198,16 +199,7 @@
    [identifier (@ identifier-start
                 (* (: identifier-escapes identifier-chars)))]
    
-   [bad-id-start (: bad-id-escapes
-                    (^ (: identifier-delims "\\" "|" "#"))
-                    "#%")]
-   [bad-id-escapes (: identifier-escapes
-                      (@ "\\" (eof))
-                      (@ "|" (* (^ "|")) (eof)))]
-   [bad-id (@ bad-id-start
-            (* (: bad-id-escapes identifier-chars)))]
-   
-   [reader-command (: (@ "#" c s) (@ "#" c i) "#hash(" "#hasheq(")]
+   [reader-command (: (@ "#" c s) (@ "#" c i))]
    [sharing (: (@ "#" uinteger10 "=")
                (@ "#" uinteger10 "#"))])
   
@@ -219,6 +211,12 @@
      ["#|" (values 1 end-pos)]
      ["|#" (values -1 end-pos)]
      [(eof) (values 'eof end-pos)]
+     [(special)
+      (get-next-comment input-port)]
+     [(special-comment)
+      (get-next-comment input-port)]
+     [(special-error)
+      (get-next-comment input-port)]
      [(: "|" "#" (+ (^ "|" "#"))) (get-next-comment input-port)]))
   
   (define (read-nested-comment num-opens start-pos input)
@@ -237,15 +235,16 @@
      [(: "#t" "#f" "#T" "#F" num2 num8 num10 num16 character)
       (ret 'literal start-pos end-pos)]
      [str (ret 'string start-pos end-pos)]
-     [(: "#;" line-comment) (ret 'comment start-pos end-pos)]
+     [(: "#;" line-comment) 
+      (ret 'comment start-pos end-pos)]
      ["#|" (read-nested-comment 1 start-pos input-port)]
-     [(@ "#" (* digit10) "(")
+     [(@ (: "" "#hash" "#hasheq" (@ "#" (* digit10))) "(")
       (values 'other '|(| (position-offset start-pos) (position-offset end-pos))]
-     [(@ "#" (* digit10) "[")
+     [(@ (: "" "#hash" "#hasheq" (@ "#" (* digit10))) "[")
       (values 'other '|[| (position-offset start-pos) (position-offset end-pos))]
-     [(@ "#" (* digit10) "{")
+     [(@ (: "" "#hash" "#hasheq" (@ "#" (* digit10))) "{")
       (values 'other '|{| (position-offset start-pos) (position-offset end-pos))]
-     [(: "(" ")" "[" "]" "{" "}"
+     [(: ")" "]" "}"
          "'" "`" "," ",@"
          "#'" "#`" "#," "#,@"
          "."  "#&"
@@ -254,21 +253,19 @@
          sharing)
       (values 'other (string->symbol lexeme) (position-offset start-pos) (position-offset end-pos))]
      [identifier (values 'identifier lexeme (position-offset start-pos) (position-offset end-pos))]
-     [(: bad-str bad-id bad-num bad-char)
-      (ret 'error start-pos end-pos)]
-     ["#" (extend-error start-pos end-pos input-port)]
-     [any (ret 'error start-pos end-pos)]
      [(special)
       (ret 'white-space start-pos end-pos)]
      [(special-comment)
       (ret 'white-space start-pos end-pos)]
      [(special-error)
       (ret 'white-space start-pos end-pos)]
-     [(eof) (values 'eof #f #f #f)]))
+     [(eof) (values 'eof #f #f #f)]
+     [(: bad-char bad-str) (ret 'error start-pos end-pos)]
+     [any (extend-error start-pos end-pos input-port)]))
   
   (define (extend-error start end in)
-    (if (memq (peek-char in)
-              `(#\newline #\return #\tab #\space #\vtab
+    (if (memq (peek-char-or-special in)
+              `(special #\newline #\return #\tab #\space #\vtab
                  #\" #\, #\' #\` #\( #\) #\[ #\] #\{ #\} #\;
                  ,eof))
         (ret 'error start end)

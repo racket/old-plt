@@ -9,8 +9,9 @@ It is only loaded when Help Desk is run by itself (outside DrScheme).
   (require (lib "cmdline.ss")
            (lib "class.ss")
            (lib "framework.ss" "framework")
-           "browser-extensions.ss"
-           "server.ss"
+	   "../bug-report.ss" ;; load now to init the preferences early
+	   "browser-extensions.ss"
+	   "server.ss"
            "cookie.ss"
            "standard-urls.ss"
            (lib "string-constant.ss" "string-constants")

@@ -7,6 +7,7 @@
            "private/server.ss"
            "private/buginfo.ss"
            "private/cookie.ss"
+	   "bug-report.ss" ;; this is require'd here to get the prefs defaults setup done early.
            (lib "contract.ss")
            (lib "mred.ss" "mred"))
 

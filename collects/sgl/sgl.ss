@@ -686,7 +686,24 @@
                          (blend-func-table src-alpha 'blend-func)
                          (blend-func-table dst-alpha 'blend-func)))
 
-  ;; 4.1.10, 4.2.1 not implemented
+  ;; 4.1.10
+  (provide logic-op)
+  (make-enum-table logic-op-table
+                   GL_CLEAR GL_AND GL_AND_REVERSE GL_COPY GL_AND_INVERTED 
+                   GL_NOOP GL_XOR GL_OR GL_NOR GL_EQUIV GL_INVERT GL_OR_REVERSE
+                   GL_COPY_INVERTED GL_OR_INVERTED GL_NAND GL_SET)
+  (define (logic-op op)
+    (glLogicOp logic-op-table op 'logic-op))
+
+  ;; 4.2.1
+  (provide draw-buffer)
+  (make-enum-table draw-buffer-table
+                   GL_NONE GL_FRONT_LEFT GL_FRONT_RIGHT GL_BACK_LEFT
+                   GL_BACK_RIGHT GL_FRONT GL_BACK GL_LEFT GL_RIGHT
+                   GL_FRONT_AND_BACK
+                   GL_AUX0 GL_AUX1 GL_AUX2 GL_AUX3)
+  (define (draw-buffer buf)
+    (glDrawBuffer (draw-buffer-table buf 'draw-buffer)))
 
   ;; 4.2.2
   (_provide (rename glIndexMask index-mask)
@@ -816,9 +833,32 @@
             )
   
   ;; 6.1.14
-  (_provide ;push-attrib push-client-attrib
-   (rename glPopAttrib pop-attrib)
-   (rename glPopClientAttrib pop-client-attrib))
+  (_provide push-attrib push-client-attrib
+            (rename glPopAttrib pop-attrib)
+            (rename glPopClientAttrib pop-client-attrib))
+  (make-enum-table push-attrib-table
+                   GL_ACCUM_BUFFER_BIT GL_COLOR_BUFFER_BIT GL_CURRENT_BIT
+                   GL_DEPTH_BUFFER_BIT GL_ENABLE_BIT GL_EVAL_BIT GL_FOG_BIT GL_HINT_BIT
+                   GL_LIGHTING_BIT GL_LINE_BIT GL_LIST_BIT GL_MULTISAMPLE_BIT
+                   GL_PIXEL_MODE_BIT GL_POINT_BIT GL_POLYGON_BIT GL_POLYGON_STIPPLE_BIT
+                   GL_SCISSOR_BIT GL_STENCIL_BUFFER_BIT GL_TEXTURE_BIT
+                   GL_TRANSFORM_BIT GL_VIEWPORT_BIT GL_ALL_ATTRIB_BITS)
+  (define push-attrib 
+    (lambda x
+      (glPushAttrib (apply bitwise-ior (map (lambda (x)
+                                              (push-attrib-table x 'clear))
+                                            x)))))
+  (make-enum-table push-client-attrib-table
+                   GL_CLIENT_VERTEX_ARRAY_BIT
+                   GL_CLIENT_PIXEL_STORE_BIT
+                   GL_CLIENT_ALL_ATTRIB_BITS)
+  (define push-client-attrib 
+    (lambda x
+      (glPushClientAttrib (apply bitwise-ior
+                                 (map (lambda (x)
+                                        (push-client-attrib-table x 'clear))
+                                      x)))))
+  
   
   
   ;; 2

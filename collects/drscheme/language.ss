@@ -59,6 +59,7 @@
 	(set-printer-style/get-number (setting-printing pref))
 	(set! case-sensitive? (setting-case-sensitive? pref))
 	(set! allow-set!-on-undefined? (setting-allow-set!-on-undefined? pref))
+	(compile-auto-cond-else (setting-unmatched-cond/case-is-error? pref))
 	(set! unmatched-cond/case-is-error? (setting-unmatched-cond/case-is-error? pref))
 	(set! allow-improper-lists? (setting-allow-improper-lists? pref))
 	(set! check-syntax-level (setting-vocabulary-symbol pref))))
@@ -176,11 +177,11 @@
 				    (set-setting-printing!
 				     settings (printer-number->symbol which))
 				    (mred:set-preference 'drscheme:settings settings)))
-				null -1 -1 -1 -1
-				(list "Constructor Style Printing"
-				      "Quasiquote lists only"
-				      "Quasiquote with read syntax"
-				      "R4RS Printing")))
+				"Output Style" -1 -1 -1 -1
+				(list "Constructor"
+				      "Quasiquote (lists only)"
+				      "Quasiquote (read syntax)"
+				      "R4RS")))
 		 output-syntax-panel
 		 "next interaction")]
 	       [ok-panel (make-object mred:horizontal-panel% main)]

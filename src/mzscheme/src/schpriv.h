@@ -197,7 +197,7 @@ typedef struct {
   Scheme_Object *body;
 } Scheme_With_Continuation_Mark;
 
-#define MZ_CONT_MARK_SPACE 3
+#define MZ_CONT_MARK_SPACE 4
 
 /* ininitializarion */
 void scheme_init_stack_check(void);

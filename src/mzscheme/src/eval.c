@@ -2647,9 +2647,10 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	  PUSH_RUNSTACK(p, RUNSTACK, MZ_CONT_MARK_SPACE);
 	  RUNSTACK_CHANGED();
 
-	  RUNSTACK[0] = (Scheme_Object *)old_cont_mark_chain;
+	  RUNSTACK[0] = (Scheme_Object *)CONT_MARK_CHAIN;
 	  RUNSTACK[1] = key;
 	  RUNSTACK[2] = val;
+	  RUNSTACK[3] = old_runstack;
 	  /* old_runstack is effectively a key for this `frame' */
 	  CONT_MARK_CHAIN = RUNSTACK;
 

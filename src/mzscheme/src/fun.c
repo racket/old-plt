@@ -1832,7 +1832,7 @@ cc_marks(int argc, Scheme_Object *argv[])
 #ifndef RUNSTACK_IS_GLOBAL
   Scheme_Process *p = scheme_current_process;
 #endif
-  Scheme_Object *first = scheme_null, *last = NULL, *key;
+  Scheme_Object *first = scheme_null, *last = NULL, *key, *frame_key = NULL;
   Scheme_Object **s;
 
   key = argv[0];
@@ -1840,12 +1840,15 @@ cc_marks(int argc, Scheme_Object *argv[])
 
   while(s) {
     if (SAME_OBJ(key, s[1])) {
-      Scheme_Object *pr = scheme_make_pair(s[2], scheme_null);
-      if (last)
-	SCHEME_CDR(last) = pr;
-      else
-	first = pr;
-      last = pr;
+      if (NOT_SAME_OBJ(frame_key, s[3])) {
+	Scheme_Object *pr = scheme_make_pair(s[2], scheme_null);
+	if (last)
+	  SCHEME_CDR(last) = pr;
+	else
+	  first = pr;
+	last = pr;
+	frame_key = s[3];
+      }
     }
     
     s = (Scheme_Object **)s[0];

@@ -249,7 +249,7 @@
             (find-dead alive-robots (robot-indexes)))
            (package-table (make-hash-table)))
       ;(printf "~a~n" responses)
-	
+      
       (for-each
        (lambda (p)
 	 (hash-table-put! package-table
@@ -261,10 +261,9 @@
          (let* ((r (hash-table-get (robot-table) id))
                 (x (robot-x r))
                 (y (robot-y r)))
-           (set-spot (board) x y (set-robot-empty (get-spot (board) x y)))
-           (hash-table-remove! (robot-table) id)))
+           (set-spot (board) x y (set-robot-empty (get-spot (board) x y)))))
        dead-robots)
-
+      
       (map
        (lambda (r)
 	 (let* ((old-robot (hash-table-get (robot-table) (response-id r) (lambda () #f)))
@@ -280,30 +279,30 @@
 	     ((nothing) (void))
 	     ((P)
 	      (cond
-	       ((= (response-id r) (player-id))
-                (let ((p (hash-table-get package-table (response-arg r))))
-                  (cond
-                    ((gui) (send (gui) log (format "Picked up package: ~a" (package->string p)))))
-                  (packages-held
-                   (cons p (packages-held)))))))
+                ((= (response-id r) (player-id))
+                 (let ((p (hash-table-get package-table (response-arg r))))
+                   (cond
+                     ((gui) (send (gui) log (format "Picked up package: ~a" (package->string p)))))
+                   (packages-held
+                    (cons p (packages-held)))))))
 	     ((D)
 	      (cond
-	       ((= (response-id r) (player-id))
-		(let ((drop (response-arg r)))
-		  (for-each (lambda (p)
-			      (cond
-			       ((and (= (package-id p) drop)
-				     (= (get-player-x) (package-x p))
-				     (= (get-player-y) (package-y p)))
-				(cond
-                                  ((gui) (send (gui) log
-                                               (format "Dropped package: ~a" (package->string p)))))
-                                (add-score (package-weight p)))))
-			    (packages-held))
-		  (packages-held
-		   (filter (lambda (p)
-			     (not (= drop (package-id p))))
-			   (packages-held)))))))
+                ((= (response-id r) (player-id))
+                 (let ((drop (response-arg r)))
+                   (for-each (lambda (p)
+                               (cond
+                                 ((and (= (package-id p) drop)
+                                       (= (get-player-x) (package-x p))
+                                       (= (get-player-y) (package-y p)))
+                                  (cond
+                                    ((gui) (send (gui) log
+                                                 (format "Dropped package: ~a" (package->string p)))))
+                                  (add-score (package-weight p)))))
+                             (packages-held))
+                   (packages-held
+                    (filter (lambda (p)
+                              (not (= drop (package-id p))))
+                            (packages-held)))))))
 	     ((N) (set-robot-y! new-robot (add1 (robot-y new-robot))))
 	     ((S) (set-robot-y! new-robot (sub1 (robot-y new-robot))))
 	     ((E) (set-robot-x! new-robot (add1 (robot-x new-robot))))
@@ -323,6 +322,7 @@
 		     (set-robot (get-spot (board)
 					  (robot-x new-robot)
 					  (robot-y new-robot))))
+           (robot-table (make-hash-table))
 	   (hash-table-put! (robot-table) (robot-id new-robot) new-robot)))
        flat-responses)
       (robot-indexes alive-robots)
@@ -342,13 +342,13 @@
                  (packages-held))))
 	(for-each (lambda (robot)
 		    (cond
-		     ((not (= 1 (get-robot (get-spot (board) 
-                                                     (robot-x robot) (robot-y robot)))))
-		      (printf "Robot at (~a,~a) not on board~n" 
-                              (robot-x robot) (robot-y robot))
-                      (printf "~a~n"
-                              (get-spot (board) 
-                                        (robot-x robot) (robot-y robot))))))
+                      ((not (= 1 (get-robot (get-spot (board) 
+                                                      (robot-x robot) (robot-y robot)))))
+                       (printf "Robot at (~a,~a) not on board~n" 
+                               (robot-x robot) (robot-y robot))
+                       (printf "~a~n"
+                               (get-spot (board) 
+                                         (robot-x robot) (robot-y robot))))))
 		  robots)
         robots)))
   

@@ -1600,6 +1600,12 @@ void wxPostScriptDC::EndDoc (void)
     ury = paper_h * paper_y_scale - (miny * paper_y_scale) + paper_y + paper_margin_y;
   }
 
+  /* Don't allow a negative-sized bounding box! */
+  if (urx <= llx)
+    urx = llx + 1;
+  if (ury <= lly)
+    ury = lly + 1;
+
   // The Adobe specifications call for integers; we round as to make
   // the bounding larger.
   pstream->seekp(boundingboxpos);

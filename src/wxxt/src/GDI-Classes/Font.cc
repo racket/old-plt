@@ -1,5 +1,5 @@
  /*								-*- C++ -*-
- * $Id: Font.cc,v 1.2 1998/01/29 15:52:59 mflatt Exp $
+ * $Id: Font.cc,v 1.3 1998/02/07 13:43:59 mflatt Exp $
  *
  * Purpose: wxWindows font handling
  *
@@ -182,9 +182,10 @@ wxFont *wxFontList::FindOrCreateFont(int PointSize, int FontIdOrFamily,
 				     int Style, int Weight, Bool underline)
 {
   wxFont *font;
+  wxChildNode *node;
   int i = 0;
   
-  while (wxChildNode *node = list->NextNode(i)) {
+  while ((node = list->NextNode(i))) {
     wxFont *each_font = (wxFont*)node->Data();
     if (each_font &&
 	each_font->GetPointSize() == PointSize &&

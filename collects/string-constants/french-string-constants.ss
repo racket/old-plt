@@ -182,15 +182,14 @@
   (cs-error-message "Message d'erreur")
   (cs-open-file "Ouvrir ~a")
   (cs-rename-var "Renommer ~a")
-  (cs-rename-id "Renommer l'identifieur")
+  (cs-rename-id "Renommer l'identificateur")
   (cs-rename-var-to "Renommer ~a en :")
   (cs-name-duplication-error "Le nouveau nom que vous avez choisi, ~s, est en conflit avec un autre nom préexistant dans le même contexte.")
   (cs-status-init "Vérificateur de syntaxe : initialisation de l'environnement pour le code de l'utilisateur")
   (cs-status-coloring-program "Vérificateur de syntaxe : coloriage d'une expression")
   (cs-status-eval-compile-time "Vérificateur de syntaxe : évaluation pour l'expansion") ; peut mieux faire?
   (cs-status-expanding-expression "Vérificateur de syntaxe : expansion d'une expression")
-  (cs-mouse-over-variable-import "la variable ~s est importée de ~s")
-  (cs-mouse-over-syntax-import "la macro ~s est importée de ~s")
+  (cs-mouse-over-import "l'identificateur ~s est importé de ~s")
   
   (cs-lexical-variable "variable lexicale")
   (cs-lexical-syntax "syntaxe lexicale")

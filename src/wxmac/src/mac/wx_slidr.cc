@@ -36,10 +36,10 @@ static const char sccsid[] = "%W% %G%";
 
 #define KDEFAULTW  60	// number pixels wide for a default scroll control
 #ifdef OS_X
-# define KSCROLLH   15
-# define PAD_X 10 // these are all assuming a horizontal configuration.
-# define PAD_TOP 10
-# define PAD_BOTTOM 10
+# define KSCROLLH   27 // _includes_ PAD_TOP & PAD_BOTTOM
+# define PAD_X 2 // these are all assuming a horizontal configuration.
+# define PAD_TOP 3
+# define PAD_BOTTOM 9
 #else
 # define KSCROLLH   16	// height of a mac scrollbar control
 # define PAD_X 0
@@ -138,9 +138,9 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
 			cWindowHeight = KDEFAULTW + (2 * PAD_X) + ((labelPosition == wxVERTICAL) ? lblh + VSP : 0);
 		else
 			cWindowHeight = width;
-		cWindowWidth = vwid + PAD_TOP + PAD_BOTTOM + KSCROLLH + hsp + ((labelPosition == wxVERTICAL) ? 0 : lblw + HSP);
+		cWindowWidth = vwid + KSCROLLH + hsp + ((labelPosition == wxVERTICAL) ? 0 : lblw + HSP);
 		
-		controlRect.right = KSCROLLH + PAD_TOP + PAD_BOTTOM;
+		controlRect.right = KSCROLLH;
 		controlRect.bottom = cWindowHeight - ((labelPosition == wxVERTICAL) ? lblh + VSP : 0);
 		
 		valueRect.left = cWindowWidth - vwid + 1;
@@ -151,7 +151,7 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
 			cWindowWidth = KDEFAULTW + (2 * PAD_X) + ((labelPosition == wxHORIZONTAL) ? lblw + HSP : 0);
 		else
 			cWindowWidth = width;
-		cWindowHeight = vhgt + PAD_TOP + KSCROLLH + PAD_BOTTOM + vsp + ((labelPosition == wxVERTICAL) ? lblh + VSP : 0);
+		cWindowHeight = vhgt + KSCROLLH + vsp + ((labelPosition == wxVERTICAL) ? lblh + VSP : 0);
 		
 		controlRect.right = cWindowWidth - ((labelPosition == wxVERTICAL) ? 0 : lblw + HSP);
 		controlRect.bottom = KSCROLLH;
@@ -223,6 +223,8 @@ void wxSlider::Paint(void)
 	if (cHidden) return;
 
 	SetCurrentDC();
+	Rect r = controlRect;
+	::PaintRect(&controlRect);
 	::Draw1Control(cMacControl);
 
     if (!(windowStyle & (wxHORIZONTAL << 2))) {

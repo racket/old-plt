@@ -91,7 +91,7 @@ wxGauge::wxGauge(wxPanel *panel, char *label, int _range, int x, int y,
 		
 		valueRect.right = cWindowWidth - ((labelPosition == wxHORIZONTAL) ? lblw + HSP : 0);
 		valueRect.bottom = KGAUGEH;
-#ifdef OS_X // for horizontal scroll bars, use the native control
+#ifdef OS_X // for horizontal gauges, use the native control
                 OSErr err;
                 Rect bounds = valueRect;
                 
@@ -268,9 +268,9 @@ void wxGauge::SetValue(int v)
 		value = range;
 	else if (value < 0)
 		value = 0;
-        if (cMacControl) {
-            SetControlValue(cMacControl,value);
-        }
+    if (cMacControl) {
+        SetControlValue(cMacControl,value);
+    }
 	Paint();
 }
 

@@ -221,7 +221,7 @@ WriteColors(char **dataptr, unsigned int *data_size, unsigned int *used_size,
 	s += cpp;
 
 	for (key = 1; key <= NKEYS; key++, defaults++) {
-	    if (s2 = *defaults) {
+	    if ((s2 = *defaults)) {
 		sprintf(s, "\t%s %s", xpmColorKeys[key - 1], s2);
 		s += strlen(s);
 	    }

@@ -568,13 +568,11 @@ char *wxFileSelector(char *message, char *default_path,
 	char * name;
 	short numTypes = -1; // all types
 	Str255	p_prompt,p_defname;
-	OSErr err;
 
 
 	if (default_path) {
 	   FSSpec sp;
 	   CInfoPBRec pb;
-  	   OSErr myErr;
 	   if (scheme_mac_path_to_spec(default_path, &sp)) {
   	     pb.dirInfo.ioNamePtr = sp.name;
 	     pb.dirInfo.ioVRefNum = sp.parID; // sounds crazy, I know

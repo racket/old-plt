@@ -1484,8 +1484,6 @@ MACSetImagePixels(Display *dc, XImage *image, unsigned int width, unsigned int h
     unsigned int x, y;
 	GDHandle savegd;
 	CGrafPtr saveport;
-	QDErr err;
-	GWorldPtr	newGWorld;
 	Rect	bounds;
 	Pixel 	apix;
 	RGBColor thePixel;

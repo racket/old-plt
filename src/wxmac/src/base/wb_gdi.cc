@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:     August 1994
- * RCS_ID:      $Id: wb_gdi.cc,v 1.27 2001/10/26 21:12:25 clements Exp $
+ * RCS_ID:      $Id: wb_gdi.cc,v 1.28 2001/10/29 16:27:06 clements Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -736,7 +736,7 @@ wxPen *wxPenList::FindOrCreatePen (wxColour * colour, float width, int style)
   if (!colour)
     return NULL;
 
-  while (node = list->NextNode(i))
+  while ((node = list->NextNode(i)))
     {
       wxPen *each_pen = (wxPen *) ( node->Data ());
       if (each_pen &&
@@ -789,7 +789,7 @@ wxBrush *wxBrushList::FindOrCreateBrush (wxColour * colour, int style)
   if (!colour)
     return NULL;
 
-  while (node = list->NextNode(i))
+  while ((node = list->NextNode(i)))
     {
       wxBrush *each_brush = (wxBrush *) (node->Data ());
       if (each_brush &&
@@ -839,7 +839,7 @@ FindOrCreateFont (int PointSize, int FamilyOrFontId, int Style, int Weight, Bool
   wxChildNode *node;
   int i = 0;
 
-  while (node = list->NextNode(i))
+  while ((node = list->NextNode(i)))
     {
       wxFont *each_font = (wxFont *) ( node->Data ());
       if (each_font &&

@@ -141,7 +141,7 @@ void wxCanvas::AddWhiteRgn(RgnHandle rgn)
 	  RgnHandle wrgn;
 	  cClientArea->FrameContentAreaOffset(&theRootX, &theRootY);
 	  GetClientSize(&w, &h);
-	  if (wrgn = NewRgn()) {
+	  if ((wrgn = NewRgn())) {
 	  	 SetRectRgn(wrgn, theRootX, theRootY, theRootX + w, theRootY + h);
 	  	 UnionRgn(rgn, wrgn, rgn);
 	  	 DisposeRgn(wrgn);

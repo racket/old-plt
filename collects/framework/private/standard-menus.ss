@@ -980,8 +980,8 @@
             ()
             (label
              (let ((special (edit-menu:find-again-string))
-                   (base (string-constant find-menu-item-before))
-                   (suffix (string-constant find-menu-item-after)))
+                   (base (string-constant find-again-menu-item-before))
+                   (suffix (string-constant find-again-menu-item-after)))
                (if (string=? special "")
                  (string-append base suffix)
                  (string-append base " " special suffix))))

@@ -26,14 +26,17 @@
     (define get-reset-console-bitmap (load-icon wx:bitmap% "reset.xbm" wx:const-bitmap-type-xbm))
 
     (define-values (get-gc-on-dc get-gc-width get-gc-height)
-      (let* ([get-bitmap (load-icon wx:bitmap% "recycle.gif" wx:const-bitmap-type-gif)]
+      (let* ([get-bitmap (load-icon wx:bitmap% 
+				    "recycle.gif"
+				    wx:const-bitmap-type-gif)]
 	     [bitmap #f]
 	     [mdc #f]
 	     [fetch
 	      (lambda ()
 		(unless mdc
 		  (set! mdc (make-object wx:memory-dc%))
-		  (set! bitmap (get-bitmap))))])
+		  (set! bitmap (get-bitmap))
+		  (send mdc select-object bitmap)))])
 	(values (lambda () (fetch) mdc)
 		(lambda () (fetch) (send bitmap get-width))
 		(lambda () (fetch) (send bitmap get-height)))))

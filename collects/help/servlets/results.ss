@@ -90,21 +90,17 @@
 	`(FONT 
 	  ((FACE "monospace"))
           ; boldface keyword occurrences
-          ; loop allows > 1 occurrence of the keyword, though
-          ;  probably not needed
-	  ,@(let loop ([curr-string label])
-	      (let ([mpos (regexp-match-positions ekey curr-string)])
-		(if mpos
-		    (let* ([item (car mpos)]
-			   [start (car item)]
-			   [stop (cdr item)])
-		      (cons
-		       (substring curr-string 0 start)
-		       (cons 
-			`(B ,(substring curr-string start stop))
-			(loop (substring curr-string stop
-					 (string-length curr-string))))))
-		    (list curr-string)))))
+	  ,@(let ([mpos (regexp-match-positions ekey label)])
+	      (if mpos
+		  (let* ([item (car mpos)]
+			 [start (car item)]
+			 [stop (cdr item)])
+		    (list
+		     (substring label 0 start)
+		     `(B ,(substring label start stop))
+		     (substring label stop
+				(string-length label))))
+		  (list curr-string))))
 	label))
 
   (define (maybe-extract-coll s)

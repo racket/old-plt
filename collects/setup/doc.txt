@@ -103,6 +103,27 @@ Additional info.ss fields trigger additional setup actions:
    the platform-specific subdirectory of the compiled directory
    for the current platform.
 
+ Running Setup PLT from Scheme on a Single .plt file
+ ---------------------------------------------------
+
+The _plt-single-installer.ss_ module provides a function for
+installing a single .plt file:
+
+> (run-single-installer file get-dir-proc)
+     file : string
+     get-dir-proc: (-> (union string #f))
+
+   Creates a separate thread, runs the installer in that thread, and
+   returns when the thread completes or dies. It also creates a
+   custodian to manage the created thread, sets the exit handler for
+   the thread to shut down the custodian, and explicitly shuts down
+   the custodian when the created thread terminates or dies.
+
+   The `get-dir-proc' procedure is called if the installer needs a
+   target directory for installation, and a #f result means that the
+   user cancelled the installation. Typically, `get-dir-proc' is
+   `current-directory'.
+
  Setup PLT as a Unit
  -------------------
 
@@ -391,9 +412,11 @@ general functions to help make .plt archives:
  The _plt-installer.ss_ library in the setup collection defines these
  procedures:
 
-> (run-installer filename) - run the .plt installer on the .plt file in
-  `filename' and show the output in a window. This is a simple
-  composition of with-installer-window and run-single-installer.
+> (run-installer filename) - run the .plt installer on the .plt file
+  in `filename' and show the output in a window. This is a composition
+  of `with-installer-window' and `run-single-installer' with a
+  `get-dir-proc' that prompts the user for a directory (turning off
+  the busy cursor while the dialog is active).
 
 > (on-installer-run thunk) - sets the on-installer-run thunk to
   `thunk'. The on-installer-run thunk is run after a .plt file is
@@ -405,22 +428,14 @@ general functions to help make .plt archives:
 > (with-installer-window do-install)
     do-install : 
       ((union (instanceof dialog%) (instanceof frame%)) -> void)
-      ((union (instanceof dialog%) (instanceof frame%)) (-> void) -> void)
+    creates a frame, sets up the current error and output ports, and
+    turns on the busy cursor before calling `do-install' in a separate
+    thread. Returns before the installation process is complete; it is
+    called on a queued callback to the eventspace active when
+    `with-installer-window' is invoked.
 
-      creates a frame and sets up the current error and
-      output ports before calling `do-install' in a separate
-      thread. Returns before the installation process is
-      complete; it is called on a queue'd callback to the
-      eventspace active when `with-installer-window' is
-      invoked.
-
-> (run-single-installer file parent)
-     file : string
-     parent: (union (instanceof frame%) (instanceof dialog%))
-      creates a separate thread, runs the installer in that
-      thread, returns when the thread completes or dies. It
-      also creates a custodian to manage that thread.
-    
+  (run-single-installer file get-dir-proc) - the same as the sole
+   export of _plt-single-installer.ss_; see above for documentation.
 
       
  The _plt-installer-unit.ss_ library in the setup collection returns a unit/sig

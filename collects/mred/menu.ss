@@ -135,6 +135,10 @@
 		 (when menu-bar
 		   (send menu set-menu-bar menu-bar))
 		 id))]
+            [set-callback
+	     (lambda (id cb)
+                (let [(pair (assoc id callbacks))]
+                  (and pair (set-cdr! pair cb))))]
 	    [append-check-set
 	     (opt-lambda (name-tag-list callback [initial 0] [help ()])
 	       (let* ([id-list

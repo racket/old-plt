@@ -205,27 +205,24 @@ exec mzscheme -r "$0" "$0" "$@"
 :}
 
 #include <scheme.h>
-#ifdef WINDOWS_DYNAMIC_LOAD
-#include <windows.h>
+#ifndef WINDOWS_DYNAMIC_LOAD
+# include <dlfcn.h>
+# include <inttypes.h>
 #else
-#include <dlfcn.h>
+# include <windows.h>
+# include <wtypes.h>
+# define alloca(x) _alloca(x)
+  typedef INT8    int8_t;
+  typedef UINT8  uint8_t;
+  typedef INT16   int16_t;
+  typedef UINT16 uint16_t;
+  typedef INT32   int32_t;
+  typedef UINT32 uint32_t;
+  typedef INT64   int64_t;
+  typedef UINT64 uint64_t;
 #endif
 #include <ffi.h>
-/* needed for standard integer type names */
-#ifdef WINDOWS_DYNAMIC_LOAD
-#include <wtypes.h>
-#define alloca(x) _alloca(x)
-typedef INT8    int8_t;
-typedef UINT8  uint8_t;
-typedef INT16   int16_t;
-typedef UINT16 uint16_t;
-typedef INT32   int32_t;
-typedef UINT32 uint32_t;
-typedef INT64   int64_t;
-typedef UINT64 uint64_t;
-#else
-#include <inttypes.h>
-#endif
+
 #ifndef MZ_PRECISE_GC
 # define XFORM_OK_PLUS +
 # define GC_CAN_IGNORE /* empty */

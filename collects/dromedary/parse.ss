@@ -231,7 +231,8 @@
 	
 	;; No capitalized keywords
 	[(@ uppercase (* identchar)) (token UIDENT lexeme)]
-	[(: decimal_literal hex_literal oct_literal bin_literal) (token INT (string->number lexeme))]
+	[(: decimal_literal hex_literal oct_literal bin_literal) 
+								   (token INT (string->number lexeme))]
 	[float_literal (token FLOAT (string->number lexeme))]
 	[#\" (token STRING (list->string (get-string input-port)))]
 	[(@ #\' (: #\^ #\\ #\') #\') 
@@ -358,7 +359,7 @@
 ;	    (set! parse-error #t)
 ;	    (pretty-print (list "Parse error near " tok-ok name (syntax-e val) (syntax-source val) (syntax-line val) (syntax-column val) (syntax-position val) (syntax-span val)))))
    (error (lambda (a b stx spos epos)
-	    (raise-read-error (format "parse error near ~a" (syntax-e stx))
+	    (raise-read-error (format "parse error near ~a ~a ~a " a b (syntax-e stx))
 			      (syntax-source stx)
 			      (syntax-line stx)
 			      (syntax-column stx)

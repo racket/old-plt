@@ -32,7 +32,7 @@ strings are types/comments.
      
      (read [source "value" "source name"
 		 line "positive exact integer or {\\scmfalse}" "source line"
-		 column "positive exact integer or {\\scmfalse}" "source column"
+		 column "non-negative exact integer or {\\scmfalse}" "source column"
 		 position "positive exact integer or {\\scmfalse}" "source position"
 		 span "non-negative exact integer or {\\scmfalse}" "source span"]
 	   "\\rawscm{read} parsing error"

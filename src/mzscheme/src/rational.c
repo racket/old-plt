@@ -99,7 +99,7 @@ Scheme_Object *scheme_rational_normalize(const Scheme_Object *o)
 
   if (SCHEME_INTP(r->denom)) {
     if (SCHEME_INT_VAL(r->denom) < 0) {
-      r->denom = scheme_make_integer(-SCHEME_INT_VAL(r->denom));
+      r->denom = scheme_make_integer_value(-SCHEME_INT_VAL(r->denom));
       negate = 1;
     }
   } else if (!SCHEME_BIGPOS(r->denom)) {
@@ -110,7 +110,7 @@ Scheme_Object *scheme_rational_normalize(const Scheme_Object *o)
 
   if (negate) {
     if (SCHEME_INTP(r->num))
-      r->num = scheme_make_integer(-SCHEME_INT_VAL(r->num));
+      r->num = scheme_make_integer_value(-SCHEME_INT_VAL(r->num));
     else {
       tmpn = scheme_bignum_negate(r->num);
       r->num = tmpn;
@@ -148,8 +148,20 @@ Scheme_Object *scheme_rational_denominator(const Scheme_Object *n)
 
 Scheme_Object *scheme_make_fixnum_rational(long n, long d)
 {
-  return scheme_make_rational(scheme_make_integer(n),
-			      scheme_make_integer(d));
+  /* This function is called to implement division on small integers,
+     so don't allocate unless necessary. */
+  Small_Rational s;
+  Scheme_Object *o;
+  
+  s.type = scheme_rational_type;
+  s.num = scheme_make_integer(n);
+  s.denom = scheme_make_integer(d);
+
+  o = scheme_rational_normalize((Scheme_Object *)&s);
+  if (o == (Scheme_Object *)&s)
+    return make_rational(s.num, s.denom, 0);
+  else
+    return o;
 }
 
 int scheme_rational_eq(const Scheme_Object *a, const Scheme_Object *b)

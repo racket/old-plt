@@ -678,6 +678,11 @@
 (test 0.25+0.0i / 1+0.0i 4+0.0i)
 (test 0 / 0 4+3i)
 
+(test (- (expt 2 30)) / (- (expt 2 30)) 1)
+(test (expt 2 30) / (- (expt 2 30)) -1)
+(test (expt 2 29) / (- (expt 2 30)) -2)
+(test -1/1073741824 / (- (expt 2 30)))
+
 (test +inf.0 / 1.0 0.0)
 (test -inf.0 / -1.0 0.0)
 (test +inf.0 / -1.0 -0.0)

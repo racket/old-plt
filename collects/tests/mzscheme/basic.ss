@@ -1724,6 +1724,11 @@
 (test (list 0 1) procedure-arity current-output-port)
 (test (list 1 3 (make-arity-at-least 5))
       procedure-arity (case-lambda [(x) 0] [(x y z) 1] [(x y z w u . rest) 2]))
+(test (make-arity-at-least 0) procedure-arity (lambda x 1))
+(test (list 0 (make-arity-at-least 0)) procedure-arity (case-lambda 
+					       [() 10]
+					       [x 1]))
+(test (make-arity-at-least 0) procedure-arity (lambda x x))
 (arity-test procedure-arity 1 1)
 
 (test #t procedure-arity-includes? cons 2)

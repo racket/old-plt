@@ -581,10 +581,10 @@
      (#o355 #o257 #o277 #o355 #o260 #o200))
     (#(#f #f #f #f #f #f) error
      (#o355 #o257 #o277 #o355 #o277 #o277))
-    ;; Other illegal code positions
-    (#(#f #f #f) error
+    ;; 0xFFFE and 0xFFFF
+    (#(#xFFFE) complete
      (#o357 #o277 #o276))
-    (#(#f #f #f) error
+    (#(#xFFFF) complete
      (#o357 #o277 #o277))))
 
 (define (string->print s) (map char->integer (string->list s)))
@@ -654,7 +654,8 @@
 						  (vector->list (bytes->unicode-vector s last-1))))))
 			  (test #f bytes-utf-8-index s 1))
 		      (test-values (list s (bytes-length s) 'complete)
-				   (lambda () (bytes-convert utf-8-iconv s))))
+				   (lambda () (bytes-convert utf-8-iconv s)))
+		      (test (list s) regexp-match #rx"^.*$" s))
 		    (begin
 		      (test code-points bytes-any->unicode-vector s #f)
 		      (test (list->vector (append '(97) (vector->list code-points) '(98)))
@@ -730,7 +731,8 @@
 		      (let-values ([(s2 n status) (bytes-convert utf-8-iconv-p (bytes-append s #"xxxxx"))])
 			(test 'complete 'status status)
 			(test '(#"xxxxx") regexp-match #rx#"xxxxx$" s2)
-			(test (+ 5 (bytes-length s)) 'n n))))
+			(test (+ 5 (bytes-length s)) 'n n))
+		      (test #f regexp-match #rx"^.*$" s)))
 		;; Test byte reading and port positions
 		(let ([v (bytes-any->unicode-vector s #f)])
 		  (define (check-full-read read-all-bytes)

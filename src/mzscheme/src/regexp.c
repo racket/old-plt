@@ -2344,8 +2344,14 @@ static int translate(unsigned char *s, int len, char **result)
 	      last_end = range_array[rp + 1] + 1;
 	  }
 	  if (last_end <= 0x10FFFF) {
-	    r = add_range(r, &j, &rs, last_end, 0x10FFFF, did_alt);
-	    did_alt = 0;
+	    if (last_end < 0xD800) {
+	      r = add_range(r, &j, &rs, last_end, 0xD7FF, did_alt);
+	      did_alt = 0;
+	      r = add_range(r, &j, &rs, 0xE000, 0x10FFFF, did_alt);
+	    } else {
+	      r = add_range(r, &j, &rs, last_end, 0x10FFFF, did_alt);
+	      did_alt = 0;
+	    }
 	  }
 	  r = make_room(r, j, 1, &rs);
 	  r[j++] = ')';
@@ -2411,7 +2417,8 @@ static int translate(unsigned char *s, int len, char **result)
       r[j++] = '-';
       r[j++] = '\177';
       r[j++] = ']';
-      r = add_range(r, &j, &rs, 128, 0x10FFFF, 0);
+      r = add_range(r, &j, &rs, 128, 0xD7FF, 0);
+      r = add_range(r, &j, &rs, 0xE000, 0x10FFFF, 0);
       r = make_room(r, j, 1, &rs);
       r[j++] = ')';
       rs.i++;

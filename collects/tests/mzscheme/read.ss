@@ -104,11 +104,11 @@
 (test (integer->char #x10FFFF) readstr "#\\U10FFFF")
 (test 0 readstr "#\\U100000000")
 
-(err/rt-test (readstr "#\\uFFFF") exn:fail:read?)
-(err/rt-test (readstr "#\\UFFFF") exn:fail:read?)
+(err/rt-test (readstr "#\\uD800") exn:fail:read?)
+(err/rt-test (readstr "#\\uD900") exn:fail:read?)
+(err/rt-test (readstr "#\\UDFFF") exn:fail:read?)
 (err/rt-test (readstr "#\\UFFFFFF") exn:fail:read?)
 (err/rt-test (readstr "#\\U110000") exn:fail:read?)
-(err/rt-test (readstr "#\\uD900") exn:fail:read?)
 
 (define (astring n) (string (integer->char n)))
 
@@ -142,7 +142,7 @@
 
 (err/rt-test (readstr "\"\\c\"") exn:fail:read?)
 (err/rt-test (readstr "\"\\777\"") exn:fail:read?)
-(err/rt-test (readstr "\"\\uFFFF\"") exn:fail:read?)
+(err/rt-test (readstr "\"\\uD800\"") exn:fail:read?)
 (err/rt-test (readstr "\"\\UB0000000\"") exn:fail:read?)
 (err/rt-test (readstr "\"\\UFFFFFFFF\"") exn:fail:read?)
 

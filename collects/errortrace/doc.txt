@@ -96,7 +96,7 @@ profiling):
 
 > (profiling-record-enabled) - returns #t if profiling info is
   recorded for instrumented code, #f otherwise; the default is #t
-> (profiling-enabled on?) - enables/disables the recording of
+> (profiling-record-enabled on?) - enables/disables the recording of
   profiling info (independent of whether newly evaluated code is
   instrumented)
 

@@ -309,9 +309,12 @@ _path-spec.ss_: resolves `include'-like static path specification
 > (resolve-path-spec path-spec-stx source-stx expr-stx build-path-stx)
 
 Resolves the syntactic path specification `path-spec-stx' as for
-MzLib's `include'. The `source-stx' specifies a syntax object whose
-source-location information determines relative-path resolution.  The
-`expr-stx' is used for reporting syntax errors. The `build-path-stx'
-is usualyl #'build-path; it provides an identifier to compare to parts
-of `path-spec-stx' to recognize the `build-path' keyword.
+MzLib's `include'. The result is a string that represents a complete
+path.
+
+The `source-stx' specifies a syntax object whose source-location
+information determines relative-path resolution.  The `expr-stx' is
+used for reporting syntax errors. The `build-path-stx' is usually
+#'build-path; it provides an identifier to compare to parts of
+`path-spec-stx' to recognize the `build-path' keyword.
 

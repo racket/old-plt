@@ -112,7 +112,7 @@ Linking parameters:
      (list "-e" "_dll_entry@12" "-o" "file") for ld.exe, something
      complex for ilink32.exe; Unix: "file" -> (list "-o" "file")
 
->  current-make-standard-link-libraries - a list of strings and thunks
+>  current-standard-link-libraries - a list of strings and thunks
      (see `expand-for-link-variant' below) for file paths to be linked
      with all supplied files.  For most platforms, the default is
         (list (build-path (collection-path "mzscheme" "lib") 

@@ -4,8 +4,6 @@ Windows and Mac OS: "primitive" dialogs don't get closed by
 
 Mac OS: std file dialog and print dialogs block MzScheme threads
 
-Unix: Clipboard client is invoked in the wrong thread/eventspace
-
 Windows: System menu navigation in a menuless MDI window leads to a
  crash
 

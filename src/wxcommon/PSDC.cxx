@@ -500,7 +500,7 @@ void wxPostScriptDC::DrawArc (float x, float y, float w, float h, float start, f
     CalcBoundingBox(XSCALEBND(x + w), YSCALEBND(y + h));
 
     x = XSCALE(x);
-    y = XSCALE(y);
+    y = YSCALE(y);
     w = XSCALEREL(w);
     h = YSCALEREL(h);
 
@@ -511,7 +511,8 @@ void wxPostScriptDC::DrawArc (float x, float y, float w, float h, float start, f
     a2 = end * (180 / pie);
 
     pstream->Out("gsave\n");
-    pstream->Out((x + w/2)); pstream->Out(" "); pstream->Out((paper_h - (y + h/2))); pstream->Out(" translate\n");
+    pstream->Out((x + w/2)); pstream->Out(" "); 
+    pstream->Out((y - h/2)); pstream->Out(" translate\n");
     pstream->Out(xscale); pstream->Out(" "); pstream->Out(1); pstream->Out(" scale\n");
 
     if (current_brush && current_brush->GetStyle () != wxTRANSPARENT) {

@@ -99,7 +99,6 @@ wxWindowDC::wxWindowDC(void) : wxDC()
     DRAW_WINDOW = 0;
     WIDTH = HEIGHT = DEPTH = 0;
 
-    /* MATTHEW: [5] Implement GetPixel */
     X->get_pixel_image_cache = NULL;
 
     if (!hatch_bitmaps) {
@@ -412,7 +411,6 @@ void wxWindowDC::Clear(void)
     if (!DRAWABLE) // ensure that a drawable has been associated
 	return;
 
-    /* MATTHEW: [5] Implement GetPixel */
     FreeGetPixelCache();
     
     // clear means to clear the entire canvas without expose region clipping
@@ -438,7 +436,6 @@ void wxWindowDC::CrossHair(float x, float y)
   if (!DRAWABLE) // ensure that a drawable has been associated
     return;
 
-  /* MATTHEW: [5] Implement GetPixel */
   FreeGetPixelCache();
     
   if (!current_pen || current_pen->GetStyle() == wxTRANSPARENT)
@@ -462,13 +459,12 @@ void wxWindowDC::DrawArc(float x, float y, float w, float h, float start, float 
   if (!DRAWABLE) // ensure that a drawable has been associated
     return;
   
-  /* MATTHEW: [5] Implement GetPixel */
   FreeGetPixelCache();
   
   xw = x + w, yh = y + h;
   
-  xx = XLOG2DEV(x); yy = XLOG2DEV(y);
-  ww = XLOG2DEV(xw) - xx; hh = XLOG2DEVREL(yh) - yy;
+  xx = XLOG2DEV(x); yy = YLOG2DEV(y);
+  ww = XLOG2DEV(xw) - xx; hh = YLOG2DEV(yh) - yy;
     
   degrees1 = start * RAD2DEG;
   degrees2 = end * RAD2DEG;
@@ -494,7 +490,6 @@ void wxWindowDC::DrawEllipse(float x, float y, float w, float h)
   if (!DRAWABLE) // ensure that a drawable has been associated
     return;
   
-  /* MATTHEW: [5] Implement GetPixel */
   FreeGetPixelCache();
   
   if (current_brush && current_brush->GetStyle() != wxTRANSPARENT)
@@ -512,7 +507,6 @@ void wxWindowDC::DrawLine(float x1, float y1, float x2, float y2)
     if (!DRAWABLE) // ensure that a drawable has been associated
 	return;
 
-    /* MATTHEW: [5] Implement GetPixel */
     FreeGetPixelCache();
     
     if (current_pen && current_pen->GetStyle() != wxTRANSPARENT)
@@ -529,7 +523,6 @@ void wxWindowDC::DrawLines(int n, wxPoint pts[], float xoff, float yoff)
   if (!DRAWABLE) // ensure that a drawable has been associated
     return;
 
-    /* MATTHEW: [5] Implement GetPixel */
   FreeGetPixelCache();
     
   xpts = new XPoint[n];
@@ -552,7 +545,6 @@ void wxWindowDC::DrawLines(int n, wxIntPoint pts[], int xoff, int yoff)
   if (!DRAWABLE) // ensure that a drawable has been associated
     return;
   
-  /* MATTHEW: [5] Implement GetPixel */
   FreeGetPixelCache();
   
   xpts = new XPoint[n];
@@ -578,7 +570,6 @@ void wxWindowDC::DrawLines(wxList *pts, float xoff, float yoff)
   if (!DRAWABLE) // ensure that a drawable has been associated
     return;
   
-  /* MATTHEW: [5] Implement GetPixel */
   FreeGetPixelCache();
   
   n = pts->Number();
@@ -604,7 +595,6 @@ void wxWindowDC::DrawPoint(float x, float y)
     if (!DRAWABLE) // ensure that a drawable has been associated
 	return;
 
-    /* MATTHEW: [5] Implement GetPixel */
     FreeGetPixelCache();
     
     if (current_pen && current_pen->GetStyle() != wxTRANSPARENT)
@@ -620,7 +610,6 @@ void wxWindowDC::DrawPolygon(int n, wxPoint pts[], float xoff, float yoff,
     if (!DRAWABLE) // ensure that a drawable has been associated
 	return;
 
-    /* MATTHEW: [5] Implement GetPixel */
     FreeGetPixelCache();
     
     xpts = new XPoint[n+1];
@@ -686,7 +675,6 @@ void wxWindowDC::DrawRectangle(float x, float y, float w, float h)
     if (!DRAWABLE) // ensure that a drawable has been associated
 	return;
 
-    /* MATTHEW: [5] Implement GetPixel */
     FreeGetPixelCache();
     
     xw = x + w, yh = y + h;
@@ -713,7 +701,6 @@ void wxWindowDC::DrawRoundedRectangle(float x, float y, float w, float h,
     if (!DRAWABLE) // ensure that a drawable has been associated
 	return;
 
-    /* MATTHEW: [5] Implement GetPixel */
     FreeGetPixelCache();
     
     if (radius < 0.0)
@@ -758,7 +745,6 @@ void wxWindowDC::FloodFill(float WXUNUSED(x), float WXUNUSED(y),
     if (!DRAWABLE) // ensure that a drawable has been associated
 	return;
 
-    /* MATTHEW: [5] Implement GetPixel */
     FreeGetPixelCache();
     
     // don't know how to do it for X11
@@ -769,7 +755,6 @@ void wxWindowDC::IntDrawLine(int x1, int y1, int x2, int y2)
     if (!DRAWABLE) // ensure that a drawable has been associated
 	return;
 
-    /* MATTHEW: [5] Implement GetPixel */
     FreeGetPixelCache();
     
     if (current_pen && current_pen->GetStyle() != wxTRANSPARENT)
@@ -784,7 +769,6 @@ void wxWindowDC::IntDrawLines(int n, wxIntPoint pts[], int xoff, int yoff)
     if (!DRAWABLE) // ensure that a drawable has been associated
 	return;
 
-    /* MATTHEW: [5] Implement GetPixel */
     FreeGetPixelCache();
     
     xpts = new XPoint[n];

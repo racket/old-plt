@@ -412,27 +412,41 @@
               ((null? extras) null)
               ((test-case? (car extras))
                (cons 
-                (let-values (((syn t t2) (send (test-case-test (car extras)) read-one-special 0 #f #f #f #f)))
-                  (syntax-case syn ()
-                    ((test-case equal? exp1 exp2 exp3 exp4) 
-                     (syntax-case (syntax exp1) (begin require)
-                       ((begin (require req ...) exp)
-                        (syntax-case (syntax exp2) (begin require)
-                          ((begin (require req2 ...) new-exp2) 
-                           (syntax (begin
-                                     (require req ... req2 ...)
-                                     (test-case (dynamic-require '(lib "profj-testing.ss" "profj") 'java-values-equal?) exp new-exp2 exp3 exp4))))
+                (let ((new-test-case
+                       (lambda (to-test-stx exp-stx record set-actuals)
+                         (let ([to-test-values (call-with-values (lambda () to-test-stx) list)]
+                               [exp-values (call-with-values (lambda () exp-stx) list)])
+                           (record (and (= (length to-test-values) (length exp-values))
+                                        (andmap (dynamic-require '(lib "profj-testing.ss" "profj") 'java-values-equal?)
+                                                to-test-values exp-values)))
+                           (set-actuals to-test-values)))))
+                  (let-values (((syn t t2) (send (test-case-test (car extras)) read-one-special 0 #f #f #f #f)))
+                    (syntax-case syn ()
+                      ((test-case equal? exp1 exp2 exp3 exp4) 
+                       (syntax-case (syntax exp1) (begin require)
+                         ((begin (require req ...) exp)
+                          (syntax-case (syntax exp2) (begin require)
+                            ((begin (require req2 ...) new-exp2) 
+                             (datum->syntax-object #f 
+                                                   `(begin ,(syntax (require req ... req2 ...))
+                                                           (,new-test-case ,(syntax exp) ,(syntax new-exp2)
+                                                             ,(syntax exp3) ,(syntax exp4)))
+                                                   #f))
+                            (else 
+                             (datum->syntax-object #f
+                                                   `(begin ,(syntax (require req ...))
+                                                           (,new-test-case ,(syntax exp) ,(syntax exp2)  ,(syntax exp3) ,(syntax exp4)))
+                                                   #f))))                         
+                         (else 
+                          (syntax-case (syntax exp2) (begin require)
+                            ((begin (require req2 ...) new-exp2)
+                             (datum->syntax-object #f
+                                                   `(begin ,(syntax (require req2 ...))
+                                                           (,new-test-case ,(syntax exp1) ,(syntax new-exp2) ,(syntax exp3) ,(syntax exp4)))
+                                                   #f))
                           (else 
-                           (syntax (begin (require req ...)
-                                          (test-case (dynamic-require '(lib "profj-testing.ss" "profj") 'java-values-equal?) exp exp2 exp3 exp4))))))
-                       (else 
-                        (syntax-case (syntax exp2) (begin require)
-                          ((begin (require req2 ...) new-exp2)
-                           (syntax (begin (require req2 ...)
-                                          (test-case (dynamic-require '(lib "profj-testing.ss" "profj") 'java-values-equal?) exp1 new-exp2 exp3 exp4))))
-                          (else 
-                           (syntax (test-case (dynamic-require '(lib "profj-testing.ss" "profj") 'java-values-equal?) exp1 exp2 exp3 exp4)))))))
-                    (else syn)))
+                           (datum->syntax-object #f `(,new-test-case ,(syntax exp1) ,(syntax exp2) ,(syntax exp3) ,(syntax exp4)) #f))))))
+                      (else syn))))
                 (process-extras (cdr extras))))
               ((interact-case? (car extras))
                (send (interact-case-box (car extras)) set-level level)

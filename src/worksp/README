@@ -88,7 +88,19 @@ The libraries
     plt\src\worksp\libmzsch\Release\libmzsch.lib
     plt\src\worksp\libmzgc\Release\libmzgc.lib
 which are created by the mzsrc and gc projects, provide linking
-inforomation for using the libmzsch.dll and libmzgc.dll DLLs.
+information for using the libmzsch.dll and libmzgc.dll DLLs.
 
 See the "Inside PLT MzScheme" manual for more information about using
 these libraries to embed MzScheme in an application.
+
+
+If you need MzScheme to link to a DLL-based C library (instead of
+statically linking to the C library within the MzScheme DLL), then:
+ 
+ 1. Compile MzScheme with the /MD flag.
+
+ 2. Define the pre-processor symbol USE_MSVC_MD_LIBRARY while
+    compiling the GC with /MD.
+
+ 3. In your embedding application, call GC_pre_init() before calling
+    any MzScheme and GC function.

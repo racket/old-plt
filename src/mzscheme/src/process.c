@@ -130,9 +130,10 @@ int *scheme_fuel_counter_ptr;
 #endif
 
 #ifdef RUNSTACK_IS_GLOBAL
-Scheme_Object **scheme_current_runstack;
 Scheme_Object **scheme_current_runstack_start;
+Scheme_Object **scheme_current_runstack;
 Scheme_Object **scheme_current_cont_mark_chain;
+MZ_MARK_POS_TYPE scheme_current_cont_mark_pos;
 #endif
 
 static Scheme_Manager *main_manager;
@@ -653,16 +654,16 @@ static Scheme_Process *make_process(Scheme_Process *after, Scheme_Config *config
   process->runstack_start = MALLOC_N(Scheme_Object*, INIT_SCHEME_STACK_SIZE);
   process->runstack = process->runstack_start + INIT_SCHEME_STACK_SIZE;
   process->runstack_saved = NULL;
-  process->cont_mark_chain = NULL;
+  process->cont_mark_pos = (MZ_MARK_POS_TYPE)0;
 #ifdef RUNSTACK_IS_GLOBAL
   if (!prefix) {
     REGISTER_SO(MZ_RUNSTACK);
     REGISTER_SO(MZ_RUNSTACK_START);
-    REGISTER_SO(MZ_CONT_MARK_CHAIN);
 
     MZ_RUNSTACK = process->runstack;
     MZ_RUNSTACK_START = process->runstack_start;
     MZ_CONT_MARK_CHAIN = process->cont_mark_chain;
+    MZ_CONT_MARK_POS = process->cont_mark_pos;
   }
 #endif
 
@@ -1068,6 +1069,7 @@ void scheme_swap_process(Scheme_Process *new_process)
     MZ_RUNSTACK = scheme_current_process->runstack;
     MZ_RUNSTACK_START = scheme_current_process->runstack_start;
     MZ_CONT_MARK_CHAIN = scheme_current_process->cont_mark_chain;
+    MZ_CONT_MARK_POS = scheme_current_process->cont_mark_pos;
 #endif
     RESETJMP(scheme_current_process);
   } else {
@@ -1076,6 +1078,7 @@ void scheme_swap_process(Scheme_Process *new_process)
     scheme_current_process->runstack = MZ_RUNSTACK;
     scheme_current_process->runstack_start = MZ_RUNSTACK_START;
     scheme_current_process->cont_mark_chain = MZ_CONT_MARK_CHAIN;
+    scheme_current_process->cont_mark_pos = MZ_CONT_MARK_POS;
 #endif
     scheme_current_process = new_process;
     LONGJMP(scheme_current_process);
@@ -1108,6 +1111,7 @@ static void remove_process(Scheme_Process *r)
     r->runstack = MZ_RUNSTACK;
     r->runstack_start = MZ_RUNSTACK_START;
     r->cont_mark_chain = MZ_CONT_MARK_CHAIN;
+    r->cont_mark_pos = MZ_CONT_MARK_POS;
   }
 #endif
 
@@ -1142,6 +1146,7 @@ static void start_child(Scheme_Process *child,
     MZ_RUNSTACK = scheme_current_process->runstack;
     MZ_RUNSTACK_START = scheme_current_process->runstack_start;
     MZ_CONT_MARK_CHAIN = scheme_current_process->cont_mark_chain;
+    MZ_CONT_MARK_POS = scheme_current_process->cont_mark_pos;
 #endif
 
     RESETJMP(child);
@@ -1549,6 +1554,7 @@ static void get_ready_for_GC()
   scheme_current_process->runstack = MZ_RUNSTACK;
   scheme_current_process->runstack_start = MZ_RUNSTACK_START;
   scheme_current_process->cont_mark_chain = MZ_CONT_MARK_CHAIN;
+  scheme_current_process->cont_mark_pos = MZ_CONT_MARK_POS;
 #endif
 
 #ifndef MZ_REAL_THREADS

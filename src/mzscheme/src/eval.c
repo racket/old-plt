@@ -1860,13 +1860,13 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 #endif
 
 #ifdef DO_STACK_CHECK
-#define SCHEME_CURRENT_PROCESS p
-#ifdef MZ_REAL_THREADS
-#define SCHEME_STACK_BOUNDARY ((unsigned long)p->stack_end)
-#endif
-#include "mzstkchk.h"
+# define SCHEME_CURRENT_PROCESS p
+# ifdef MZ_REAL_THREADS
+#  define SCHEME_STACK_BOUNDARY ((unsigned long)p->stack_end)
+# endif
+# include "mzstkchk.h"
   {
-#ifndef ERROR_ON_OVERFLOW
+# ifndef ERROR_ON_OVERFLOW
     Scheme_Process *p = scheme_current_process;
     p->ku.k.p1 = (void *)obj;
     p->ku.k.i1 = num_rands;
@@ -1881,13 +1881,12 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
     } else
       p->ku.k.p2 = (void *)rands;
     p->ku.k.i2 = get_value;
-#endif
+# endif
     return scheme_handle_stack_overflow(do_eval_k);
   }
 #endif
 
-# define CONT_MARK_CHAIN MZ_CONT_MARK_CHAIN
-# define RESET_CONT_MARK_CHAIN() (CONT_MARK_CHAIN = old_cont_mark_chain)
+# define RESET_CONT_MARK_CHAIN() (MZ_CONT_MARK_CHAIN = old_cont_mark_chain)
 
 #if USE_LOCAL_RUNSTACK
 # define RUNSTACK runstack
@@ -1911,7 +1910,8 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 #define UPDATE_THREAD_RSPTR_FOR_ERROR() UPDATE_THREAD_RSPTR()
 
   old_runstack = RUNSTACK;
-  old_cont_mark_chain = CONT_MARK_CHAIN;
+  old_cont_mark_chain = MZ_CONT_MARK_CHAIN;
+  MZ_CONT_MARK_POS++;
 
   if (num_rands >= 0) {
 
@@ -2647,12 +2647,12 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	  PUSH_RUNSTACK(p, RUNSTACK, MZ_CONT_MARK_SPACE);
 	  RUNSTACK_CHANGED();
 
-	  RUNSTACK[0] = (Scheme_Object *)CONT_MARK_CHAIN;
+	  RUNSTACK[0] = (Scheme_Object *)MZ_CONT_MARK_CHAIN;
 	  RUNSTACK[1] = key;
 	  RUNSTACK[2] = val;
 	  RUNSTACK[3] = (Scheme_Object *)old_runstack;
 	  /* old_runstack is effectively a key for this `frame' */
-	  CONT_MARK_CHAIN = RUNSTACK;
+	  MZ_CONT_MARK_CHAIN = RUNSTACK;
 
 	  obj = wcm->body;
 
@@ -2749,6 +2749,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 
   MZ_RUNSTACK = old_runstack;
   MZ_CONT_MARK_CHAIN = old_cont_mark_chain;
+  --MZ_CONT_MARK_POS;
 
   DEBUG_CHECK_TYPE(v);
 

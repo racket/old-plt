@@ -28,13 +28,16 @@
 extern Scheme_Object **scheme_current_runstack;
 extern Scheme_Object **scheme_current_runstack_start;
 extern Scheme_Object **scheme_current_cont_mark_chain;
+extern MZ_MARK_POS_TYPE scheme_current_cont_mark_pos;
 # define MZ_RUNSTACK scheme_current_runstack
 # define MZ_RUNSTACK_START scheme_current_runstack_start
 # define MZ_CONT_MARK_CHAIN scheme_current_cont_mark_chain
+# define MZ_CONT_MARK_POS scheme_current_cont_mark_pos
 #else
 # define MZ_RUNSTACK (p->runstack)
 # define MZ_RUNSTACK_START (p->runstack_start)
 # define MZ_CONT_MARK_CHAIN (p->cont_mark_chain)
+# define MZ_CONT_MARK_POS (p->cont_mark_pos)
 #endif
 
 #define GLOB_IS_CONST 1
@@ -321,6 +324,7 @@ typedef struct Scheme_Stack_State {
   long runstack_size;
   Scheme_Saved_Stack *runstack_saved;
   Scheme_Object **cont_mark_chain;
+  MZ_MARK_POS_TYPE cont_mark_pos;
 } Scheme_Stack_State;
 
 typedef struct Scheme_Dynamic_Wind {
@@ -594,11 +598,11 @@ int scheme_find_type(Scheme_Object *ts);
 
 #define scheme_save_env_stack_w_process(ss, p) \
     (ss.runstack = MZ_RUNSTACK, ss.runstack_start = MZ_RUNSTACK_START, \
-     ss.cont_mark_chain = MZ_CONT_MARK_CHAIN, \
+     ss.cont_mark_chain = MZ_CONT_MARK_CHAIN, ss.cont_mark_pos = MZ_CONT_MARK_POS, \
      ss.runstack_size = p->runstack_size, ss.runstack_saved = p->runstack_saved)
 #define scheme_restore_env_stack_w_process(ss, p) \
     (MZ_RUNSTACK = ss.runstack, MZ_RUNSTACK_START = ss.runstack_start, \
-     MZ_CONT_MARK_CHAIN = ss.cont_mark_chain, \
+     MZ_CONT_MARK_CHAIN = ss.cont_mark_chain, MZ_CONT_MARK_POS = ss.cont_mark_pos, \
      p->runstack_size = ss.runstack_size, p->runstack_saved = ss.runstack_saved)
 #define scheme_save_env_stack(ss) \
     scheme_save_env_stack_w_process(ss, scheme_current_process)

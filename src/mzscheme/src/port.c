@@ -6241,7 +6241,7 @@ tcp_listen(int argc, Scheme_Object *argv[])
 
 #ifdef USE_TCP
   scheme_raise_exn(MZEXN_I_O_TCP,
-		   "tcp-connect: listen on %d failed (%d)",
+		   "tcp-listen: listen on %d failed (%d)",
 		   origid, errid);
 #else
   scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,

@@ -438,6 +438,10 @@ typedef struct Scheme_Continuation_Jump_State {
 #define scheme_set_param(c, pos, o) (*((c)->configs[pos]) = o)
 #define scheme_get_param(c, pos) (*((c)->configs[pos]))
 
+/* Although it's really an integer, it seems beneficial to declare the
+   mark position counter as a poiner, perhaps due to locality effects. */
+#define MZ_MARK_POS_TYPE char*
+
 typedef struct Scheme_Saved_Stack {
   Scheme_Object **runstack_start;
   Scheme_Object **runstack;
@@ -463,6 +467,7 @@ typedef struct Scheme_Process {
   Scheme_Saved_Stack *runstack_saved;
   Scheme_Object **runstack_tmp_keep;
 
+  MZ_MARK_POS_TYPE cont_mark_pos;
   Scheme_Object **cont_mark_chain;
 
   long engine_weight;

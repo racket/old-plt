@@ -4,14 +4,14 @@
  * Author:		Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:	$Id: wb_list.cxx,v 1.1 1999/11/12 17:21:42 mflatt Exp $
+ * RCS_ID:	$Id: wb_list.cxx,v 1.2 1999/11/12 22:33:04 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
 #if defined(_MSC_VER)
 # include "wx.h"
 #else
-# ifdef wx_x
+# ifdef wx_xt
 #  define  Uses_wxList
 #  define  Uses_wxStringList
 #  include "wx.h"
@@ -24,7 +24,7 @@
 #include <string.h>
 
 wxNode::wxNode (wxList *, wxNode * last_one, wxNode * next_one,
-	wxObject * object)
+		wxObject * object)
 {
   data = object;
   previous = last_one;
@@ -41,7 +41,7 @@ wxNode::wxNode (wxList *, wxNode * last_one, wxNode * next_one,
 
 // Keyed constructor
 wxNode::wxNode (wxList *, wxNode * last_one, wxNode * next_one,
-	wxObject * object, long the_key)
+		wxObject * object, long the_key)
 {
   data = object;
   previous = last_one;

@@ -56,7 +56,7 @@ class wxNode
   inline wxNode *Previous(void) { return previous; }
   inline wxObject *Data(void) { return data; }
   inline void SetData(wxObject *the_data) { data = the_data; }
-  /* MATTHEW: [5] */
+
   inline void     DataGCIgnored(void)         { WXGC_IGNORE(data); }
 };
 
@@ -66,7 +66,7 @@ class wxList: public wxObject
  public:
 #ifdef wx_mac
   	enum DestroyDataCode {kNoDestroyData = 0, kDestroyData = 1};
-#endif // wx_mac
+#endif
   int n;
   int destroy_data;
   wxNode *first_node;
@@ -75,9 +75,9 @@ class wxList: public wxObject
 
 #ifdef wx_mac
   wxList(DestroyDataCode destroyData = kNoDestroyData, Bool clean_up = TRUE);
-#else // wx_mac
+#else
   wxList(void);
-#endif // wx_mac
+#endif
   wxList(KeyType the_key_type, Bool clean_up = TRUE);
   wxList(int N, wxObject *Objects[]);
   ~wxList(void);
@@ -114,7 +114,7 @@ class wxList: public wxObject
 #ifdef wx_mac
   Bool OnDeleteObject(wxObject *object); // mac platform only
   long MemberIndex(wxObject *object); // WCH wx_mac added 8/12/94
-#endif // wx_mac
+#endif
 
   inline wxNode *First(void) { return first_node; }
   inline wxNode *Last(void) { return last_node; }

@@ -109,6 +109,8 @@ wxDC::wxDC(void)
   user_scale_y = 1.0;
   logical_scale_x = 1.0;
   logical_scale_y = 1.0;
+  canvas_scroll_dx = 0.0;
+  canvas_scroll_dy = 0.0;
   mapping_mode = wxPIXELS_MAP;
   scaling_mode = wxWX_SCALE;
   title = NULL;
@@ -244,16 +246,11 @@ wxGL *wxDC::GetGL()
 void wxDC::ShiftXY(double x, double y, int *ix, int *iy)
 {
   if (scaling_mode == wxWINDOWS_SCALE) {
-    *ix = (int)floor(x);
-    *iy = (int)floor(y);
+    *ix = (int)floor(x) + canvas_scroll_dx;
+    *iy = (int)floor(y) + canvas_scroll_dy;
   } else {
     *ix = MS_XLOG2DEV(x);
     *iy = MS_YLOG2DEV(y);
-  }
-
-  if (canvas) {
-    wxWnd *wnd = (wxWnd *)canvas->handle;
-    wnd->CalcScrolledPosition(*ix, *iy, ix, iy);
   }
 }
 
@@ -277,7 +274,7 @@ double wxDC::GetPenSmoothingOffset()
 double wxDC::SmoothingXFormX(double x)
 {
   if (AlignSmoothing())
-    return floor((x * user_scale_x) + device_origin_x) + GetPenSmoothingOffset();
+    return floor((x * user_scale_x) + device_origin_x + canvas_scroll_dx) + GetPenSmoothingOffset();
   else
     return x;
 }
@@ -285,7 +282,7 @@ double wxDC::SmoothingXFormX(double x)
 double wxDC::SmoothingXFormY(double y)
 {
   if (AlignSmoothing())
-    return floor((y * user_scale_y) + device_origin_y) + GetPenSmoothingOffset();
+    return floor((y * user_scale_y) + device_origin_y + canvas_scroll_dy) + GetPenSmoothingOffset();
   else
     return y;
 }
@@ -309,7 +306,7 @@ double wxDC::SmoothingXFormH(double h, double y)
 double wxDC::SmoothingXFormXB(double x)
 {
   if (AlignSmoothing())
-    return floor((x * user_scale_x) + device_origin_x);
+    return floor((x * user_scale_x) + device_origin_x + canvas_scroll_dx);
   else
     return x;
 }
@@ -317,7 +314,7 @@ double wxDC::SmoothingXFormXB(double x)
 double wxDC::SmoothingXFormYB(double y)
 {
   if (AlignSmoothing())
-    return floor((y * user_scale_y) + device_origin_y);
+    return floor((y * user_scale_y) + device_origin_y + canvas_scroll_dy);
   else
     return y;
 }
@@ -476,15 +473,21 @@ void wxDC::InitGraphics(HDC dc)
 
     g = wxGMake(dc);
 
-    /* Clip before scale, because the region has its
-       own internal scale (remembered at the time that
-       the region was created). */
+    /* Scroll translate before clip: */
+    wxGTranslate(g, canvas_scroll_dx, canvas_scroll_dy);
+
+    /* Clip before scale and user offset, because the region has its
+       own internal scale (remembered at the time that the region was
+       created). */
     if (clipping)
       clipping->Install((long)g, AlignSmoothing());
 
     if (!AlignSmoothing()) {
       wxGTranslate(g, device_origin_x, device_origin_y);
       wxGScale(g, user_scale_x, user_scale_y);
+    } else {
+      /* Undo scroll translate: */
+      wxGTranslate(g, -canvas_scroll_dx, -canvas_scroll_dy);
     }
   }
 }
@@ -506,6 +509,25 @@ void wxDC::ReleaseGraphics(HDC given_dc)
       if (!given_dc)
 	DoneDC(dc);
     }
+  }
+}
+
+void wxDC::OnCalcScroll(void)
+{
+  if (canvas) {
+    int dx, dy;
+    wxWnd *wnd = (wxWnd *)canvas->handle;
+    wnd->CalcScrolledPosition(0, 0, &dx, &dy);
+    canvas_scroll_dx = dx;
+    canvas_scroll_dy = dy;
+  }
+
+  ReleaseGraphics();
+  if (clipping) {
+    HDC dc;
+    dc = ThisDC();
+    DoClipping(dc);
+    DoneDC(dc);
   }
 }
 
@@ -1052,7 +1074,9 @@ void wxDC::DrawPath(wxPath *p, double xoffset, double yoffset,int fillStyle)
       double pw;
       pw = GetPenSmoothingOffset();
       p->Install((long)gp, xoffset, yoffset,
-		 device_origin_x, device_origin_y, user_scale_x, user_scale_y,
+		 device_origin_x + canvas_scroll_dx, 
+		 device_origin_y + canvas_scroll_dy, 
+		 user_scale_x, user_scale_y,
 		 TRUE, pw, pw);
     } else {
       p->Install((long)gp, xoffset, yoffset,
@@ -1700,7 +1724,8 @@ void wxDC::DrawText(const char *text, double x, double y, Bool combine, Bool ucs
     
     alen = substitute_font(ustring, d, alen, font, dc, screen_font, angle, &reset);
     
-    SetDeviceOrigin(MS_XLOG2DEVREL(x + w) + oox, MS_YLOG2DEVREL(y + h) + ooy);
+    SetDeviceOrigin(MS_XLOG2DEVREL(x + w) + oox + canvas_scroll_dx, 
+		    MS_YLOG2DEVREL(y + h) + ooy + canvas_scroll_dy);
 
     (void)TextOutW(dc, 0, 0, ustring XFORM_OK_PLUS d, alen);
     
@@ -2611,7 +2636,7 @@ void wxCanvasDC::GetSize(double *width, double *height)
 {
   int ww, hh;
 
-  canvas->GetClientSize(&ww, &hh);
+  canvas->GetVirtualSize(&ww, &hh);
   *width = ww;
   *height = hh;
 }

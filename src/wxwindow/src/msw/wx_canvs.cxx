@@ -328,8 +328,11 @@ SetScrollbars (int horizontal, int vertical,
       ::SetScrollInfo(wnd->handle, SB_HORZ, &hinfo, TRUE);
     }
     
-    InvalidateRect (wnd->handle, NULL, TRUE);
-    UpdateWindow (wnd->handle);
+    if (setVirtualSize)
+      OnCalcScroll();
+
+    InvalidateRect(wnd->handle, NULL, TRUE);
+    UpdateWindow(wnd->handle);
   }
 }
 
@@ -451,6 +454,13 @@ void wxCanvas::ViewStart(int *x, int *y, Bool)
     *x = wnd->xscroll_position;
     *y = wnd->yscroll_position;
   }
+}
+
+void wxCanvas::OnCalcScroll()
+{
+  wxDC *dc;
+  dc = GetDC();
+  dc->OnCalcScroll();
 }
 
 void wxWnd::DeviceToLogical (double *x, double *y)

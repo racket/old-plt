@@ -93,6 +93,8 @@ class wxWindow: public wxbWindow
   int GetScrollRange(int orient);
   int GetScrollPage(int orient);
 
+  virtual void OnCalcScroll();
+
   wxWindow *GetTopLevel();
   void DoEnableWindow(int on);
 

@@ -35,6 +35,8 @@ class wxDC: public wxbDC
   int window_ext_x;
   int window_ext_y;
 
+  int canvas_scroll_dx, canvas_scroll_dy;
+
   wxCanvas *canvas;
   wxBitmap *selected_bitmap;
   char *filename;
@@ -168,6 +170,8 @@ class wxDC: public wxbDC
 
   virtual wxGL *GetGL();
 
+  void OnCalcScroll(void);
+
   void InitGraphics(HDC dc);
   void ReleaseGraphics(HDC given_dc = 0);
 
@@ -207,8 +211,8 @@ HDC wxGetPrinterDC(void);
 
 // Logical to device
 // Absolute
-#define MS_XLOG2DEV(x) ((int)floor((x)*logical_scale_x*user_scale_x + device_origin_x))
-#define MS_YLOG2DEV(y) ((int)floor((y)*logical_scale_y*user_scale_y + device_origin_y))
+#define MS_XLOG2DEV(x) ((int)floor((x)*logical_scale_x*user_scale_x + device_origin_x + canvas_scroll_dx))
+#define MS_YLOG2DEV(y) ((int)floor((y)*logical_scale_y*user_scale_y + device_origin_y + canvas_scroll_dy))
 
 // Logical to device
 #define XLOG2DEV(x) MS_XLOG2DEV(x)
@@ -220,8 +224,8 @@ HDC wxGetPrinterDC(void);
 
 // Device to logical
 // Absolute
-#define MS_XDEV2LOG(x) (((x) - device_origin_x)/(logical_scale_x*user_scale_x))
-#define MS_YDEV2LOG(y) (((y) - device_origin_y)/(logical_scale_y*user_scale_y))
+#define MS_XDEV2LOG(x) (((x) - device_origin_x - canvas_scroll_dx)/(logical_scale_x*user_scale_x))
+#define MS_YDEV2LOG(y) (((y) - device_origin_y - canvas_scroll_dy)/(logical_scale_y*user_scale_y))
 
 // Relative
 #define MS_XDEV2LOGREL(x) ((x)/(logical_scale_x*user_scale_x))

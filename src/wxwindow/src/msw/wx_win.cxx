@@ -2471,12 +2471,15 @@ void wxWindow::DoScroll(wxScrollEvent *event)
       ::ScrollWindow(hWnd, 0, nScrollInc, NULL, NULL);      
     }
   
+    OnCalcScroll();
+
     InvalidateRect(hWnd, NULL, FALSE);
   }
-
-  // wxYield();
 }
 
+void wxWindow::OnCalcScroll()
+{
+}
 
 int wxWindow::CalcScrollInc(wxScrollEvent *event)
 {
@@ -2641,6 +2644,8 @@ void wxWindow::SetScrollPos(int orient, int pos)
       y = ::GetScrollPos(hWnd, SB_VERT);
       wnd->yscroll_position = y;
     }
+
+    OnCalcScroll();
   }
 }
 

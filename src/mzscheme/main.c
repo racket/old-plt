@@ -202,10 +202,11 @@ static void do_scheme_rep(Scheme_Env *);
 static int cont_run(FinishArgs *f);
 int actual_main(int argc, char *argv[]);
 
-#ifdef WINDOWS_UNICODE_SUPPORT
+#if defined(WINDOWS_UNICODE_SUPPORT) && !defined(__CYGWIN32__)
 # define MAIN wmain
 # define MAIN_char wchar_t
 # define MAIN_argv wargv
+# define WINDOWS_UNICODE_MAIN
 #else
 # define MAIN main
 # define MAIN_char char
@@ -219,7 +220,7 @@ int MAIN(int argc, MAIN_char **MAIN_argv)
 {
   void *stack_start;
   int rval;
-#ifdef WINDOWS_UNICODE_SUPPORT
+#ifdef WINDOWS_UNICODE_MAIN
   char **argv;
 #endif
 
@@ -238,7 +239,7 @@ int MAIN(int argc, MAIN_char **MAIN_argv)
 
   scheme_actual_main = actual_main;
 
-#ifdef WINDOWS_UNICODE_SUPPORT
+#ifdef WINDOWS_UNICODE_MAIN
  {
    char *a;
    int i, j, l;

@@ -14,7 +14,9 @@
     [(windows unix macosx)
      (when (eq? (vector) argv)
        (error 'slatex "expected a file on the command line~n"))
-     (parameterize ([error-escape-handler exit])
-       (slatex (vector-ref argv 0)))
-     (exit)]))
-
+     (let ([result
+            (parameterize ([error-escape-handler exit])
+              (slatex (vector-ref argv 0)))])
+       (if result
+           (exit)
+           (exit 1)))]))

@@ -16,6 +16,8 @@
         [else
          (error 'filename->latex-filename "~e does not exist" input-file)])))
 
+  ;; latex, pdf-latex : string -> boolean
+  ;; boolean result indicates success
   (define-values (latex pdf-latex)
     (letrec ([meta-latex 
               (lambda (pdf?)
@@ -53,7 +55,8 @@
                          (when oztex-location
                            (with-handlers ([void void]) ;; mzscheme cannot handle result
                              (send-event "MACS" "aevt" "odoc" (vector 'file oztex-location)))))
-                       (send-event "OTEX" "aevt" "odoc" (vector 'file file))]
+                       (send-event "OTEX" "aevt" "odoc" (vector 'file file))
+                       #t]
                       [(windows unix macosx) ;; is this also okay for beos?
 		       (let ([latex-path (find-executable-path command-name #f)])
 			 (unless latex-path

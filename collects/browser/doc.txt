@@ -99,6 +99,10 @@ return values are ignored.
      string; if the result is a string, it is opened as an HTML
      page.
 
+>  reload :: (send o reload)
+
+    Reloads the current page.
+     
 ----------------------------------------
 
 > hyper-text% = (hyper-text-mixin text:keymap%)
@@ -191,6 +195,10 @@ return values are ignored.
      each string is a note), returns a single string to print
      above the page.
 
+>   reload :: (send o reload)
+
+   Reloads the currently visible page by calling the reload method of
+   the currently displayed hyper-text.
 ----------------------------------------
 
 > hyper-panel% = (hyper-panel-mixin vertical-panel%)

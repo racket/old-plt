@@ -23,8 +23,6 @@
 				     (max 440 (min 800 (- screen-h 60)))
 				     number?)
 
-  (define last-url-string #f)
-
   (define (set-font-size size)
     (let* ([standard (send hyper-style-list new-named-style "Standard"
 			   (send hyper-style-list find-named-style "Basic"))]
@@ -52,6 +50,10 @@
   (define-values (icon16 mask16) (get-icon "16x16"))
   (define-values (icon32 mask32) (get-icon "32x32"))
 
+  (framework:preferences:set-default 'drscheme:help-desk:last-url-string 
+                                     #f
+                                     (lambda (x) (or (not x) (string? x))))
+
   (define (open-url-from-user parent goto-url)
     (letrec ([d (make-object dialog% "Open URL" parent 500)]
 	     [t
@@ -73,7 +75,7 @@
 		   (lambda (b e)
 		     (let* ([s (send t get-value)]
 			    [done (lambda ()
-				    (set! last-url-string s)
+                                    (framework:preferences:set 'drscheme:help-desk:last-url-string s)
 				    (send d show #f))])
 		       (with-handlers ([(lambda (x) #t)
 					(lambda (x)
@@ -101,10 +103,11 @@
 				       last-position))))]
 	     [cancel (make-object button% "Cancel" p 
 				  (lambda (b e) (send d show #f)))])
-      (when last-url-string 
-	(send t set-value last-url-string)
-        (let ([text (send t get-editor)])
-          (send text set-position 0 (send text last-position))))
+      (let ([last-url-string (framework:preferences:get 'drscheme:help-desk:last-url-string)])
+        (when last-url-string 
+          (send t set-value last-url-string)
+          (let ([text (send t get-editor)])
+            (send text set-position 0 (send text last-position)))))
       (send p set-alignment 'right 'center)
       (update-ok)
       (send d center)
@@ -258,6 +261,12 @@
                    (open-url-from-user this goto-url))]
                 
                 [file-menu:print (lambda (i e) (send (send results get-editor) print))]
+                
+                [file-menu:between-open-and-revert
+                 (lambda (file-menu)
+                   (make-object menu-item% "Reload" file-menu 
+                     (lambda xxx (send html-panel reload))
+                     #\r))]
                 
                 [edit-menu:undo (edit-menu:do 'undo)]
                 [edit-menu:redo (edit-menu:do 'redo)]

@@ -176,7 +176,7 @@ typedef struct Scheme_Symbol {
   Scheme_Type type;
   MZ_HASH_KEY_EX
   int len;
-  char s[1];
+  char s[4]; /* Really, a number of chars to match `len' */
 } Scheme_Symbol;
 
 typedef struct Scheme_Vector {

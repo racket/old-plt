@@ -267,7 +267,7 @@ make_a_symbol(const char *name, int len)
 {
   Scheme_Symbol *sym;
   
-  sym = (Scheme_Symbol *)scheme_malloc_atomic_tagged(sizeof(Scheme_Symbol) + len);
+  sym = (Scheme_Symbol *)scheme_malloc_atomic_tagged(sizeof(Scheme_Symbol) + len - 3);
   
   sym->type = scheme_symbol_type;
   sym->len = len;

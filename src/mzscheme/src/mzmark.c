@@ -876,21 +876,21 @@ int symbol_obj_SIZE(void *p) {
   Scheme_Symbol *s = (Scheme_Symbol *)p;
 
   return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Symbol) + s->len);
+  gcBYTES_TO_WORDS(sizeof(Scheme_Symbol) + s->len - 3);
 }
 
 int symbol_obj_MARK(void *p) {
   Scheme_Symbol *s = (Scheme_Symbol *)p;
 
   return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Symbol) + s->len);
+  gcBYTES_TO_WORDS(sizeof(Scheme_Symbol) + s->len - 3);
 }
 
 int symbol_obj_FIXUP(void *p) {
   Scheme_Symbol *s = (Scheme_Symbol *)p;
 
   return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Symbol) + s->len);
+  gcBYTES_TO_WORDS(sizeof(Scheme_Symbol) + s->len - 3);
 }
 
 

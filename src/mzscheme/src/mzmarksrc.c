@@ -364,7 +364,7 @@ symbol_obj {
 
  mark:
  size:
-  gcBYTES_TO_WORDS(sizeof(Scheme_Symbol) + s->len);
+  gcBYTES_TO_WORDS(sizeof(Scheme_Symbol) + s->len - 3);
 }
 
 cons_cell {

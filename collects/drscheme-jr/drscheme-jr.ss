@@ -613,7 +613,7 @@
 	(lambda ()
 	  (current-namespace namespace)
 	  (global-defined-value 'read/zodiac read/zodiac)
-	  ; (global-defined-value 'restart restart)
+	  (global-defined-value 'restart restart)
 	  (invoke-open-unit u@)
 	  
 	  ; In case the user uses pretty-print:

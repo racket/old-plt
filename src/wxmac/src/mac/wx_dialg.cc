@@ -383,15 +383,11 @@ char *wxFileSelector(char *message, char *default_path,
     // get the user's reply:
     NavReplyRecord *reply = new NavReplyRecord;
     if (NavDialogGetReply(outDialog,reply) != noErr) {
-      //TEMPORARY
-      fprintf(stderr,"NavDialogGetReply failed.\n");
       NavDialogDispose(outDialog);
       return NULL;
     }
     NavDialogDispose(outDialog);
     if (! reply->validRecord) {
-      //TEMPORARY
-      fprintf(stderr,"reply->validRecord is FALSE.\n");
       NavDisposeReply(reply);
       return NULL;
     }
@@ -400,23 +396,34 @@ char *wxFileSelector(char *message, char *default_path,
     AEKeyword   theKeyword;
     DescType    actualType;
     Size        actualSize;
-    char	*temp;
+    char		*temp;
+    FSRef		fsref;
 
     if (flags & wxMULTIOPEN) {
       long count, index;
-      FSSpec fsspec;
-      char *newpath, *aggregate;
+      char *newpath, *aggregate = "";
+      OSErr err;
       
-      AECountItems(&(reply->selection),&count);
+      err = AECountItems(&(reply->selection),&count);
+      if (err != noErr) {
+        NavDisposeReply(reply);
+        return NULL;
+      }
     	    
       for (index=1; index<=count; index++) {
-        AEGetNthPtr(&(reply->selection),index,typeFSS, &theKeyword, &actualType, &fsspec,sizeof(fsspec),&actualSize);
-        temp = scheme_mac_spec_to_path(&fsspec);
-        newpath = new WXGC_ATOMIC char[strlen(aggregate) + 
-                                       strlen(temp) +
-                                       log_base_10(strlen(temp)) + 3];
-        sprintf(newpath,"%s %ld %s",aggregate,strlen(temp),temp);
-        aggregate = newpath;
+        err = AEGetNthPtr(&(reply->selection),index,typeFSRef, &theKeyword, &actualType, &fsref,sizeof(fsref),&actualSize);
+        if (err != noErr) {
+          NavDisposeReply(reply);
+          return NULL;
+        }
+        temp = wxFSRefToPath(fsref);
+        if (temp != NULL) {
+          newpath = new WXGC_ATOMIC char[strlen(aggregate) + 
+                                         strlen(temp) +
+                                         log_base_10(strlen(temp)) + 3];
+          sprintf(newpath,"%s %ld %s",aggregate,strlen(temp),temp);
+          aggregate = newpath;
+        }
       }
 	
       NavDisposeReply(reply);
@@ -424,28 +431,40 @@ char *wxFileSelector(char *message, char *default_path,
       return aggregate;
       
     } else if (flags & wxOPEN) {
-      FSSpec fsspec;
       
-      AEGetNthPtr(&(reply->selection), 1, typeFSS, &theKeyword, &actualType, &fsspec, sizeof(fsspec), &actualSize);
+      AEGetNthPtr(&(reply->selection), 1, typeFSRef, &theKeyword, &actualType, &fsref, sizeof(fsref), &actualSize);
       
       NavDisposeReply(reply);
-      
-      return scheme_mac_spec_to_path(&fsspec);
-      
+
+	  return wxFSRefToPath(fsref);
+	        
     } else { // saving file
     	int strLen = CFStringGetLength(reply->saveFileName) + 1;
-        char *str = new char[strLen];
+        char *filename = new char[strLen];
+        char *path, *wholepath;
 
-		if (CFStringGetCString(reply->saveFileName,str,strLen,CFStringGetSystemEncoding()) == FALSE) {
+		if (CFStringGetCString(reply->saveFileName,filename,strLen,CFStringGetSystemEncoding()) == FALSE) {
 			// Unable to convert string
 			NavDisposeReply(reply);
-			delete str;
 			return NULL;
 		}
+		
+        AEGetNthPtr(&(reply->selection), 1, typeFSRef, &theKeyword, &actualType, &fsref, sizeof(fsref), &actualSize);
+		
+		path = wxFSRefToPath(fsref);
+		
+		if (path == NULL) {
+		  NavDisposeReply(reply);
+		  return NULL;
+		}
+		
+		wholepath = new WXGC_ATOMIC char[strlen(path) + strlen(filename) + 2];
+		
+		sprintf(wholepath,"%s/%s",path,filename);
         
         NavDisposeReply(reply);
         
-        return str;
+        return wholepath;
     }
     
 #else    

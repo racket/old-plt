@@ -541,8 +541,6 @@ wxDebugMsg (const char *fmt...)
 }
 
 
-//------ the following should be in wx_utils.cc ----------------
-
 // Get hostname.
 Bool wxGetHostName(char *buf, int maxSize)
 {	Bool good = FALSE;
@@ -590,4 +588,40 @@ Bool wxGetUserName(char *buf, int maxSize)
 	}
 	return good;
 }
+
+
+#endif
+
+#ifdef OS_X
+
+/* wxFSRefToPath converts an FSRef to a path.  This code is copied from 
+ * scheme_mac_spec_to_path in MzScheme, but I don't want to widen the 
+ * MzScheme interface any more than I already have.
+ * 
+ * May return NULL.
+ */
+char *wxFSRefToPath(FSRef fsref)
+{
+    int longEnough = FALSE;
+    OSErr err;
+    int strLen = 256;
+    char *str;
+    
+    str = new WXGC_ATOMIC char[strLen];
+    
+    while (! longEnough) {
+      err = FSRefMakePath(&fsref,(unsigned char *)str,strLen);
+      if (err == pathTooLongErr) {
+        strLen *= 2;
+        str = new WXGC_ATOMIC char[strLen];
+      } else if (err == noErr) {
+        longEnough = TRUE;
+      } else {
+        return NULL;
+      }
+    }
+    
+    return str;
+}
+
 #endif

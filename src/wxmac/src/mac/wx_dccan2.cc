@@ -600,13 +600,6 @@ Bool wxCanvasDC::Blit(float xdest, float ydest, float width, float height,
         const BitMap *dstbm;
         const BitMap *srcbm;
 
-		// TEMPORARY
-		if (!IsValidPort(source->x_pixmap)) {
-			fprintf(stderr,"Invalid GrafPort for CopyBits source.\n");
-		} else {
-			fprintf(stderr,"Valid GrafPort for CopyBits source.\n");
-		}
-		
 		dstbm = GetPortBitMapForCopyBits(theMacGrafPort);
 		srcbm = GetPortBitMapForCopyBits(source->x_pixmap);
 

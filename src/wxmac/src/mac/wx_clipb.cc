@@ -108,17 +108,21 @@ Bool wxSetClipboardData(int dataFormat, wxObject *obj, int width, int height)
   if (!wxGetClipboardFormatName(dataFormat, (char *)&format, 4))
      return FALSE;
 
-  if (format == 'TEXT')
+  if (format == 'TEXT') {
     length = strlen((char *)obj);
-  else
+  } else {
     length = (long)width * height;
-
+  }
+  
 #ifdef OS_X
   ScrapRef scrap;
   OSErr err;
   
   err = GetCurrentScrap(&scrap);
-  err = PutScrapFlavor(scrap,format,kScrapFlavorMaskTranslated,length,(const void *)obj);
+  if (err != noErr) {
+  	return FALSE;
+  }
+  err = PutScrapFlavor(scrap,format,kScrapFlavorMaskNone,length,(const void *)obj);
   return (err != noErr);
 #else
   return !PutScrap(length, format, (Ptr)obj);
@@ -141,12 +145,14 @@ wxObject *wxGetClipboardData(int dataFormat, long *size)
   OSErr err;
   
   err = GetCurrentScrap(&scrap);
-  if (err != noErr) 
+  if (err != noErr) {
     return NULL;
+  }    
   err = GetScrapFlavorSize(scrap,format,&length);
-  if (err != noErr)
+  if (err != noErr) {
     return NULL;
-  result = new char[length + 1];
+  }
+  result = new WXGC_ATOMIC char[length + 1];
   err = GetScrapFlavorData(scrap,format,&length,result);
   if (err != noErr) {
     delete result;

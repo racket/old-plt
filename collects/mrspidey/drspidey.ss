@@ -20,17 +20,19 @@
 
 ;;(printf "loading drspidey.ss (cd ~s)~n" (current-directory))
 
-(reference "pltrc-co.ss")
-(reference "macros.ss")
+(reference-relative-library "pltrc-co.ss")
+(reference-relative-library "macros.ss")
 
+#|
 (begin-elaboration-time
   (unless (getenv "MREDCOMPILE") 
     (match:set-error-control 'match)))
+|#
 
 (require-library "load.ss" "zodiac")
 
-(load/use-compiled (build-path "Sba" "loadu.ss"))
-(load/use-compiled (build-path "Gui" "loadu.ss"))
+(require-library "loadu.ss" "mrspidey" "Sba")
+(require-library "loadu.ss" "mrspidey" "Gui")
 
 (define mrspidey:interaction@
   (unit/sig mrspidey:interaction^

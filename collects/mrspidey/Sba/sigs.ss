@@ -17,6 +17,8 @@
 ; ----------------------------------------------------------------------
 ;; ----------------------------------------------------------------------
 
+(require-library "drsig.ss" "drscheme")
+
 (define-signature mzlib:unprefixed-core^
   ; Not really much of mzlib:function^, just the part we need to avoid conflicts:
   (foldl

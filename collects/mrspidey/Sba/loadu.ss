@@ -4,7 +4,7 @@
 ;; elaboration-time context:
 ;; sparams.ss Spidey/Code/macros.ss 
 
-(load-relative "sigs.ss")
+(require-relative-library "sigs.ss")
 
 ;; ----------------------------------------------------------------------
 ;; Library
@@ -472,12 +472,12 @@
       mzlib:unprefixed-core^)
     (include "hyper.ss")))
 
-(load-relative "zod-extra.ss")
+(require-relative-library "zod-extra.ss")
 
 ;; ----------------------------------------------------------------------
 ;; Put it all together
 
-(load-relative "link.ss")
+(require-relative-library "link.ss")
 
 ;; ----------------------------------------------------------------------
 

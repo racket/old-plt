@@ -72,7 +72,6 @@ class wxWindow: public wxbWindow
   Bool		cActive;	/* active window is "highlighted" (mac platform only) */
   Bool		cEnable;	/* enabled window accepts mouse/keyboard events */
   int           internal_gray; /* how many enclosing windows are disabled? */
-  Bool		OS_Active(void); /* should this window be shown as active right now? */
   Bool		cHidden;	/* Hidden? */
   Bool		cUserHidden;	/* Hidden because user asked (not just inherited)? */
   Bool        cGrandcursor;	/* Skip parent for retriving the effective cursor */
@@ -264,6 +263,9 @@ class wxWindow: public wxbWindow
   /*+++++ End Macintosh Platform only +++++ */
 
   virtual void AddWhiteRgn(RgnHandle rgn);
+
+  Bool		OS_Active(void); /* should this window be shown as enabled right now? */
+  void InitInternalGray(void);
 
   /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
   /* Sizing methods */

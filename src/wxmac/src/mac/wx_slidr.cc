@@ -253,9 +253,13 @@ void wxSlider::DoShow(Bool show)
   else
     ::HideControl(cMacControl);
 		
-  cTitle->DoShow(show);
+  if (!show)
+    cTitle->DoShow(show);
 		
   wxWindow::DoShow(show);
+
+  if (show)
+    cTitle->DoShow(show);
 }
 
 void wxSlider::OnClientAreaDSize(int dW, int dH, int dX, int dY)

@@ -1463,6 +1463,18 @@ void wxWindow::ChildrenInternalGray(Bool gray)
   }
 }
 
+void wxWindow::InitInternalGray()
+{
+  wxWindow *p;
+
+  p = GetParent();
+
+  if (!p->cEnable || p->internal_gray) {
+    internal_gray = p->internal_gray + (p->cEnable ? 0 : 1);
+    ChangeToGray(TRUE);
+  }
+}
+
 void wxWindow::Highlight(Bool on)
 {
 }

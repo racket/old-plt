@@ -95,6 +95,7 @@ void wxCheckBox::Create // Constructor (given parentPanel, label)
   
   if (GetParent()->IsHidden())
     DoShow(FALSE);
+  InitInternalGray();
 }
 
 //-----------------------------------------------------------------------------
@@ -132,6 +133,10 @@ wxCheckBox::wxCheckBox // Constructor (given parentPanel, bitmap)
   OffsetRect(&bounds,SetOriginX,SetOriginY);
   
   ::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&bounds);
+
+  if (GetParent()->IsHidden())
+    DoShow(FALSE);
+  InitInternalGray();
 }
 
 //=============================================================================

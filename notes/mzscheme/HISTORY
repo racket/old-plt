@@ -3,7 +3,10 @@ Version 200.1
 
 Fixed bug in port reading (especially variantes of `read-string')
  and `file-position' that follow peeks on the port
-
+Windows: added special handling of "special files" (COM1, etc.);
+ internally MzScheme opens the file only once to satisfy multiple
+ `open-input-file' and `open-output-file' calls that have the
+ port open at the same time
 
 Version 200, June 2002
 >> See MzScheme_200.txt for information on major changes in

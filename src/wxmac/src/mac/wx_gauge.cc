@@ -200,7 +200,8 @@ void wxGauge::DoShow(Bool show)
 {
   if (!CanShow(show)) return;
 
-  cTitle->DoShow(show);
+  if (!show)
+    cTitle->DoShow(show);
 
   if (cMacControl) {
     if (show) {
@@ -210,6 +211,9 @@ void wxGauge::DoShow(Bool show)
     }
   }
   wxWindow::DoShow(show);
+
+  if (show)
+    cTitle->DoShow(show);
 }
 
 void wxGauge::OnClientAreaDSize(int dW, int dH, int dX, int dY)

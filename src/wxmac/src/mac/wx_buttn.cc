@@ -104,6 +104,7 @@ void wxButton::Create // Real constructor (given parentPanel, label)
 
   if (GetParent()->IsHidden())
     DoShow(FALSE);
+  InitInternalGray();
 }
 
 //-----------------------------------------------------------------------------
@@ -161,6 +162,8 @@ wxButton::wxButton // Constructor (given parentPanel, bitmap)
     DoShow(FALSE);
   else
     ::InvalWindowRect(GetWindowFromPort(theMacGrafPort),&bounds);
+
+  InitInternalGray();
 }
 
 //=============================================================================

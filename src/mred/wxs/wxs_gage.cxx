@@ -26,6 +26,9 @@
 #include "wxscheme.h"
 #include "wxs_gage.h"
 
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
 
 class wxsGauge : public wxGauge
 {
@@ -114,7 +117,19 @@ class os_wxsGauge : public wxsGauge {
   void OnSize(int x0, int x1);
   void OnSetFocus();
   void OnKillFocus();
+#ifdef MZ_PRECISE_GC
+  int gcMark(Mark_Proc mark);
+#endif
 };
+
+#ifdef MZ_PRECISE_GC
+int os_wxsGauge::gcMark(Mark_Proc mark) {
+  wxsGauge::gcMark(mark);
+  if (mark) {
+  }
+  return gcBYTES_TO_WORDS(sizeof(*this));
+}
+#endif
 
 static Scheme_Object *os_wxsGauge_class;
 
@@ -698,3 +713,6 @@ class wxsGauge *objscheme_unbundle_wxsGauge(Scheme_Object *obj, const char *wher
     return (wxsGauge *)o->primdata;
 }
 
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif

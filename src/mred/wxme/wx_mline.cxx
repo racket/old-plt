@@ -71,9 +71,9 @@ wxMediaLine::wxMediaLine()
 wxMediaLine::~wxMediaLine()
 {
   if (PTRNE(left, NIL))
-    delete left;
+    DELETE_OBJ left;
   if (PTRNE(right, NIL))
-    delete right;
+    DELETE_OBJ right;
 }
 
 /*****************************************************************/
@@ -443,7 +443,7 @@ void wxMediaLine::Delete(wxMediaLine **root)
   }
 
   right = left = NIL;
-  delete this;
+  DELETE_OBJ this;
 }
 
 /***************************************************************/

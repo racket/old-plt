@@ -1,5 +1,4 @@
 /*								-*- C++ -*-
- * $Id: ListBox.cc,v 1.18 1999/11/22 20:29:35 mflatt Exp $
  *
  * Purpose: list box panel item
  *
@@ -36,7 +35,7 @@
 #define  Uses_ScrollWinWidget
 #include "widgets.h"
 
-// don't allocate or free for every append or delete
+// don't allocate or free for every append or del
 #define LIST_CHUNK_SIZE	20
 #define MULTILIST	((XfwfMultiListWidget)(X->handle))
 
@@ -215,9 +214,8 @@ void wxListBox::Append(char *item)
       new_choices[i] = choices[i];
       new_client_data[i] = client_data[i];
     }
-    // delete old arrays
-    delete choices;      choices = new_choices;
-    delete client_data;  client_data = new_client_data;
+    choices = new_choices;
+    client_data = new_client_data;
   }
   // set new item
   {
@@ -245,10 +243,8 @@ void wxListBox::Clear(void)
 {
     if (choices)
       choices = NULL;
-    if (client_data) {
-      delete client_data;
+    if (client_data)
       client_data = NULL;
-    }
     num_choices = num_free = 0;
     SetInternalData();
 }
@@ -300,7 +296,6 @@ void wxListBox::InsertItems(int n_items, char **items, int pos)
 	new_client_data[i] = client_data[j];
     }
     num_choices+=n_items;
-    // delete old arrays
     choices = new_choices;
     client_data = new_client_data;
 

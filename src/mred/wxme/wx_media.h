@@ -110,9 +110,6 @@ class wxMediaWordbreakMap : public wxObject
 
   void SetMap(int ch, int mask);
   int GetMap(int ch);
-
-  void AdjustUsage(Bool newUser);
-  Bool IsUsed(void);
 };
 
 extern wxMediaWordbreakMap *wxTheMediaWordbreakMap;

@@ -302,6 +302,11 @@ void wxSetSensitive(Widget w, Bool enabled)
   }
 }
 
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
+/* No GC here because it's used to draw GC bitmaps */
+
 Display *MrEdGetXDisplay(void)
 {
   if (!orig_top_level)
@@ -309,6 +314,10 @@ Display *MrEdGetXDisplay(void)
   else
     return XtDisplay(orig_top_level);
 }
+
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif
 
 void MrEdDispatchEvent(XEvent *event)
 {

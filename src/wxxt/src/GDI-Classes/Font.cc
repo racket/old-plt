@@ -1,5 +1,5 @@
  /*								-*- C++ -*-
- * $Id: Font.cc,v 1.11 1999/11/24 21:20:20 mflatt Exp $
+ * $Id: Font.cc,v 1.12 1999/11/27 17:58:46 mflatt Exp $
  *
  * Purpose: wxWindows font handling
  *
@@ -120,7 +120,7 @@ wxFont::~wxFont(void)
 	XFreeFont(wxAPP_DISPLAY, xfont);
 	node = next;
     }
-    delete scaled_xfonts;
+    DELETE_OBJ scaled_xfonts;
 }
 
 char *wxFont::GetFaceString(void)

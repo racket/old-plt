@@ -339,6 +339,60 @@ gc2/mred.cc: mred.cxx
 gc2/mredx.cc: mredx.cxx
 	$(XFORM) $< $@
 
+gc2/wxs_bmap.cc: wxs/wxs_bmap.cxx
+	$(XFORM) $< $@
+gc2/wxs_butn.cc: wxs/wxs_butn.cxx
+	$(XFORM) $< $@
+gc2/wxs_chce.cc: wxs/wxs_chce.cxx
+	$(XFORM) $< $@
+gc2/wxs_ckbx.cc: wxs/wxs_ckbx.cxx
+	$(XFORM) $< $@
+gc2/wxs_cnvs.cc: wxs/wxs_cnvs.cxx
+	$(XFORM) $< $@
+gc2/wxs_dc.cc: wxs/wxs_dc.cxx
+	$(XFORM) $< $@
+gc2/wxs_evnt.cc: wxs/wxs_evnt.cxx
+	$(XFORM) $< $@
+gc2/wxs_fram.cc: wxs/wxs_fram.cxx
+	$(XFORM) $< $@
+gc2/wxs_gage.cc: wxs/wxs_gage.cxx
+	$(XFORM) $< $@
+gc2/wxs_gdi.cc: wxs/wxs_gdi.cxx
+	$(XFORM) $< $@
+gc2/wxs_glob.cc: wxs/wxs_glob.cxx
+	$(XFORM) $< $@
+gc2/wxs_item.cc: wxs/wxs_item.cxx
+	$(XFORM) $< $@
+gc2/wxs_lbox.cc: wxs/wxs_lbox.cxx
+	$(XFORM) $< $@
+gc2/wxs_madm.cc: wxs/wxs_madm.cxx
+	$(XFORM) $< $@
+gc2/wxs_mede.cc: wxs/wxs_mede.cxx
+	$(XFORM) $< $@
+gc2/wxs_medi.cc: wxs/wxs_medi.cxx
+	$(XFORM) $< $@
+gc2/wxs_menu.cc: wxs/wxs_menu.cxx
+	$(XFORM) $< $@
+gc2/wxs_mio.cc: wxs/wxs_mio.cxx
+	$(XFORM) $< $@
+gc2/wxs_misc.cc: wxs/wxs_misc.cxx
+	$(XFORM) $< $@
+gc2/wxs_mpb.cc: wxs/wxs_mpb.cxx
+	$(XFORM) $< $@
+gc2/wxs_obj.cc: wxs/wxs_obj.cxx
+	$(XFORM) $< $@
+gc2/wxs_panl.cc: wxs/wxs_panl.cxx
+	$(XFORM) $< $@
+gc2/wxs_rado.cc: wxs/wxs_rado.cxx
+	$(XFORM) $< $@
+gc2/wxs_slid.cc: wxs/wxs_slid.cxx
+	$(XFORM) $< $@
+gc2/wxs_snip.cc: wxs/wxs_snip.cxx
+	$(XFORM) $< $@
+gc2/wxs_styl.cc: wxs/wxs_styl.cxx
+	$(XFORM) $< $@
+gc2/wxs_win.cc: wxs/wxs_win.cxx
+	$(XFORM) $< $@
 
 gc2/$(OBJDIR)/%.o: gc2/%.cc
 	$(CXX) -DGC2_JUST_MACROS -include ../mzscheme/gc2/gc2.h -c $(CXXFLAGS) -o $@ $<
@@ -441,41 +495,42 @@ XSRCS = gc2/Window.cc \
 \
   gc2/wxscheme.cc \
 \
+  gc2/wxs_bmap.cc \
+  gc2/wxs_butn.cc \
+  gc2/wxs_chce.cc \
+  gc2/wxs_ckbx.cc \
+  gc2/wxs_cnvs.cc \
+  gc2/wxs_dc.cc \
+  gc2/wxs_evnt.cc \
+  gc2/wxs_fram.cc \
+  gc2/wxs_gage.cc \
+  gc2/wxs_gdi.cc \
+  gc2/wxs_glob.cc \
+  gc2/wxs_item.cc \
+  gc2/wxs_lbox.cc \
+  gc2/wxs_madm.cc \
+  gc2/wxs_mede.cc \
+  gc2/wxs_medi.cc \
+  gc2/wxs_menu.cc \
+  gc2/wxs_mio.cc \
+  gc2/wxs_misc.cc \
+  gc2/wxs_mpb.cc \
+  gc2/wxs_obj.cc \
+  gc2/wxs_panl.cc \
+  gc2/wxs_rado.cc \
+  gc2/wxs_slid.cc \
+  gc2/wxs_snip.cc \
+  gc2/wxs_styl.cc \
+  gc2/wxs_win.cc \
+\
   gc2/mred.cc \
   gc2/mredx.cc
 
-XOBJS = \
+XOBJS = ${XSRCS:gc2/%.cc=gc2/$(OBJDIR)/%.o} \
   gc2/$(OBJDIR)/xcglue.o \
   gc2/$(OBJDIR)/wxGC.o \
-  gc2/$(OBJDIR)/gc2.o \
-  gc2/$(OBJDIR)/wxs_bmap.o \
-  gc2/$(OBJDIR)/wxs_butn.o \
-  gc2/$(OBJDIR)/wxs_chce.o \
-  gc2/$(OBJDIR)/wxs_ckbx.o \
-  gc2/$(OBJDIR)/wxs_cnvs.o \
-  gc2/$(OBJDIR)/wxs_dc.o \
-  gc2/$(OBJDIR)/wxs_evnt.o \
-  gc2/$(OBJDIR)/wxs_fram.o \
-  gc2/$(OBJDIR)/wxs_gage.o \
-  gc2/$(OBJDIR)/wxs_gdi.o \
-  gc2/$(OBJDIR)/wxs_glob.o \
-  gc2/$(OBJDIR)/wxs_item.o \
-  gc2/$(OBJDIR)/wxs_lbox.o \
-  gc2/$(OBJDIR)/wxs_madm.o \
-  gc2/$(OBJDIR)/wxs_mede.o \
-  gc2/$(OBJDIR)/wxs_medi.o \
-  gc2/$(OBJDIR)/wxs_menu.o \
-  gc2/$(OBJDIR)/wxs_mio.o \
-  gc2/$(OBJDIR)/wxs_misc.o \
-  gc2/$(OBJDIR)/wxs_mpb.o \
-  gc2/$(OBJDIR)/wxs_obj.o \
-  gc2/$(OBJDIR)/wxs_panl.o \
-  gc2/$(OBJDIR)/wxs_rado.o \
-  gc2/$(OBJDIR)/wxs_slid.o \
-  gc2/$(OBJDIR)/wxs_snip.o \
-  gc2/$(OBJDIR)/wxs_styl.o \
-  gc2/$(OBJDIR)/wxs_win.o \
-  ${XSRCS:gc2/%.cc=gc2/$(OBJDIR)/%.o}
+  gc2/$(OBJDIR)/gc2.o
+
 
 MZOBJS = ../mzscheme/gc2/$(MZOBJDIR)/salloc.o \
 	../mzscheme/gc2/$(MZOBJDIR)/bignum.o \

@@ -173,6 +173,7 @@
 (define gcMARK_TYPED (string->symbol "gcMARK_TYPED"))
 (define Mark_Proc (string->symbol "Mark_Proc"))
 (define gcBYTES_TO_WORDS (string->symbol "gcBYTES_TO_WORDS"))
+(define GC_cpp_delete (string->symbol "GC_cpp_delete"))
 (define PRE_ALLOCATE (string->symbol "PRE_ALLOCATE"))
 (define NEW_OBJ (string->symbol "NEW_OBJ"))
 (define NEW_OBJECT (string->symbol "NEW_OBJECT"))
@@ -1248,6 +1249,19 @@
 		     ((if arr? cdddr cddr) e))
 		    #t
 		    paren-arrows?))]
+	   [(eq? (tok-n v) 'delete_wxobject)
+	    ;; replace with call to GC_cpp_delete()
+	    (when (brackets? (cadr e))
+	      (log-error "[DELOBJ] ~a in ~a: bad use of delete_wxobject"
+			 (tok-line v) (tok-file v)))
+	    (loop (list*
+		   (make-tok GC_cpp_delete (tok-line v) (tok-file v))
+		   (make-parens
+		    "(" (tok-line v) (tok-file v) ")"
+		    (seq (cadr e)))
+		   (cddr e))
+		  #t
+		  paren-arrows?)]
 	   [(eq? (tok-n v) 'new)
 	    ;; Make `new' expression look like a function call
 	    (let* ([t (cadr e)]
@@ -1293,7 +1307,9 @@
 					  (null? (seq-in (caddr e))))]
 		       [alloc (list
 			       (make-tok (if (brackets? (caddr e)) 
-					     (if atom? NEW_ATOM_ARRAY NEW_ARRAY)
+					     (if atom? 
+						 NEW_ATOM_ARRAY 
+						 NEW_ARRAY)
 					     (if atom? NEW_ATOM (if normal-alloc?
 								    NEW_OBJECT
 								    NEW_PREALLOCED_OBJECT)))
@@ -2128,7 +2144,7 @@
 		;; Not an assignemnt
 		(not (memq (tok-n (cadr e)) '(= += -=)))
 		;; Not a return, case, new, or delete
-		(not (memq (tok-n (car e)) '(return case new delete)))
+		(not (memq (tok-n (car e)) '(return case new delete delete_wxobject)))
 		;; Not a label, field lookup, pointer deref, class-specific
 		(not (memq (tok-n (cadr e)) '(: |.| -> ::)))
 		;; No parens/braces in first two parts, except __typeof

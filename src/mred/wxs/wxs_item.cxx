@@ -27,6 +27,9 @@
 #include "wxscheme.h"
 #include "wxs_item.h"
 
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
 
 
 
@@ -42,7 +45,19 @@ class os_wxItem : public wxItem {
  public:
 
   ~os_wxItem();
+#ifdef MZ_PRECISE_GC
+  int gcMark(Mark_Proc mark);
+#endif
 };
+
+#ifdef MZ_PRECISE_GC
+int os_wxItem::gcMark(Mark_Proc mark) {
+  wxItem::gcMark(mark);
+  if (mark) {
+  }
+  return gcBYTES_TO_WORDS(sizeof(*this));
+}
+#endif
 
 static Scheme_Object *os_wxItem_class;
 
@@ -230,7 +245,19 @@ class os_wxMessage : public wxMessage {
   void OnSize(int x0, int x1);
   void OnSetFocus();
   void OnKillFocus();
+#ifdef MZ_PRECISE_GC
+  int gcMark(Mark_Proc mark);
+#endif
 };
+
+#ifdef MZ_PRECISE_GC
+int os_wxMessage::gcMark(Mark_Proc mark) {
+  wxMessage::gcMark(mark);
+  if (mark) {
+  }
+  return gcBYTES_TO_WORDS(sizeof(*this));
+}
+#endif
 
 static Scheme_Object *os_wxMessage_class;
 
@@ -807,3 +834,6 @@ class wxMessage *objscheme_unbundle_wxMessage(Scheme_Object *obj, const char *wh
     return (wxMessage *)o->primdata;
 }
 
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif

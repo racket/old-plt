@@ -43,7 +43,7 @@ static wxColour* dcGetTextBackground(wxDC *dc)
   VAR_STACK_PUSH(0, dc);
   VAR_STACK_PUSH(1, c);
 
-  c = WITH_VAR_STACK(NEW_OBJECT(wxColour,()));
+  c = NEW_OBJECT(wxColour,());
   bg = WITH_VAR_STACK(dc->GetTextBackground());
   WITH_VAR_STACK(c->CopyFrom(bg));
   return c;
@@ -56,7 +56,7 @@ static wxColour* dcGetTextForeground(wxDC *dc)
   VAR_STACK_PUSH(0, dc);
   VAR_STACK_PUSH(1, c);
 
-  c = WITH_VAR_STACK(NEW_OBJECT(wxColour,()));
+  c = NEW_OBJECT(wxColour,());
   fg = WITH_VAR_STACK(dc->GetTextForeground());
   WITH_VAR_STACK(c->CopyFrom(fg));
   return c;

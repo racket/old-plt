@@ -33,6 +33,9 @@
 #include "wxscheme.h"
 #include "wxs_misc.h"
 
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
 
 #if !defined(wx_mac)
 #define NEWEST_TYPES 1
@@ -53,7 +56,19 @@ class os_wxTimer : public wxTimer {
   os_wxTimer(Scheme_Object * obj);
   ~os_wxTimer();
   void Notify();
+#ifdef MZ_PRECISE_GC
+  int gcMark(Mark_Proc mark);
+#endif
 };
+
+#ifdef MZ_PRECISE_GC
+int os_wxTimer::gcMark(Mark_Proc mark) {
+  wxTimer::gcMark(mark);
+  if (mark) {
+  }
+  return gcBYTES_TO_WORDS(sizeof(*this));
+}
+#endif
 
 static Scheme_Object *os_wxTimer_class;
 
@@ -328,7 +343,19 @@ class os_wxClipboard : public wxClipboard {
  public:
 
   ~os_wxClipboard();
+#ifdef MZ_PRECISE_GC
+  int gcMark(Mark_Proc mark);
+#endif
 };
+
+#ifdef MZ_PRECISE_GC
+int os_wxClipboard::gcMark(Mark_Proc mark) {
+  wxClipboard::gcMark(mark);
+  if (mark) {
+  }
+  return gcBYTES_TO_WORDS(sizeof(*this));
+}
+#endif
 
 static Scheme_Object *os_wxClipboard_class;
 static Scheme_Object *os_wxClipboard_interface;
@@ -564,7 +591,19 @@ class os_wxClipboardClient : public wxClipboardClient {
   ~os_wxClipboardClient();
   nstring GetData(string x0, long* x1);
   void BeingReplaced();
+#ifdef MZ_PRECISE_GC
+  int gcMark(Mark_Proc mark);
+#endif
 };
+
+#ifdef MZ_PRECISE_GC
+int os_wxClipboardClient::gcMark(Mark_Proc mark) {
+  wxClipboardClient::gcMark(mark);
+  if (mark) {
+  }
+  return gcBYTES_TO_WORDS(sizeof(*this));
+}
+#endif
 
 static Scheme_Object *os_wxClipboardClient_class;
 
@@ -914,7 +953,19 @@ class os_wxPrintSetupData : public wxPrintSetupData {
 
   os_wxPrintSetupData(Scheme_Object * obj);
   ~os_wxPrintSetupData();
+#ifdef MZ_PRECISE_GC
+  int gcMark(Mark_Proc mark);
+#endif
 };
+
+#ifdef MZ_PRECISE_GC
+int os_wxPrintSetupData::gcMark(Mark_Proc mark) {
+  wxPrintSetupData::gcMark(mark);
+  if (mark) {
+  }
+  return gcBYTES_TO_WORDS(sizeof(*this));
+}
+#endif
 
 static Scheme_Object *os_wxPrintSetupData_class;
 
@@ -1657,3 +1708,6 @@ class wxPrintSetupData *objscheme_unbundle_wxPrintSetupData(Scheme_Object *obj, 
 
 
 
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif

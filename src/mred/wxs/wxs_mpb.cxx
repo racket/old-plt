@@ -26,6 +26,9 @@
 #include "wxscheme.h"
 #include "wxs_mpb.h"
 
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
 
 
 static Scheme_Object *bufferType_wxEDIT_BUFFER_sym = NULL;
@@ -413,7 +416,19 @@ class os_wxMediaPasteboard : public wxMediaPasteboard {
   void OnEvent(class wxMouseEvent* x0);
   void CopySelfTo(class wxMediaBuffer* x0);
   class wxMediaBuffer* CopySelf();
+#ifdef MZ_PRECISE_GC
+  int gcMark(Mark_Proc mark);
+#endif
 };
+
+#ifdef MZ_PRECISE_GC
+int os_wxMediaPasteboard::gcMark(Mark_Proc mark) {
+  wxMediaPasteboard::gcMark(mark);
+  if (mark) {
+  }
+  return gcBYTES_TO_WORDS(sizeof(*this));
+}
+#endif
 
 static Scheme_Object *os_wxMediaPasteboard_class;
 
@@ -5798,3 +5813,6 @@ class wxMediaPasteboard *objscheme_unbundle_wxMediaPasteboard(Scheme_Object *obj
     return (wxMediaPasteboard *)o->primdata;
 }
 
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif

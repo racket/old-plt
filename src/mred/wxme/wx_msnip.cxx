@@ -84,14 +84,10 @@ wxMediaSnip::wxMediaSnip(wxMediaBuffer *useme,
 wxMediaSnip::~wxMediaSnip()
 {
   if (me) {
-#if !WXGARBAGE_COLLECTION_ON
-    delete me;
-#else
     if (me->GetAdmin() == myAdmin)
       me->SetAdmin(NULL);
-#endif
   }
-  delete myAdmin;
+  DELETE_OBJ myAdmin;
 }
 
 void wxMediaSnip::SetAdmin(wxSnipAdmin *a)
@@ -1011,17 +1007,4 @@ int wxMediaWordbreakMap::GetMap(int ch)
     return map[ch];
   else
     return 0;
-}
-
-void wxMediaWordbreakMap::AdjustUsage(Bool newUser)
-{
-  if (newUser)
-    usage++;
-  else
-    --usage;
-}
-
-Bool wxMediaWordbreakMap::IsUsed(void)
-{
-  return !!usage;
 }

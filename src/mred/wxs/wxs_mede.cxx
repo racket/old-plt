@@ -26,6 +26,9 @@
 #include "wxscheme.h"
 #include "wxs_mede.h"
 
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
 
 #undef l_ADDRESS
 #undef l_DEREF
@@ -938,7 +941,20 @@ class os_wxMediaEdit : public wxMediaEdit {
   void OnEvent(class wxMouseEvent* x0);
   void CopySelfTo(class wxMediaBuffer* x0);
   class wxMediaBuffer* CopySelf();
+#ifdef MZ_PRECISE_GC
+  int gcMark(Mark_Proc mark);
+#endif
 };
+
+#ifdef MZ_PRECISE_GC
+int os_wxMediaEdit::gcMark(Mark_Proc mark) {
+  wxMediaEdit::gcMark(mark);
+  if (mark) {
+    gcMARK_TYPED(Scheme_Object *, scroll_closure);
+  }
+  return gcBYTES_TO_WORDS(sizeof(*this));
+}
+#endif
 
 static Scheme_Object *os_wxMediaEdit_class;
 
@@ -7459,3 +7475,6 @@ class wxMediaEdit *objscheme_unbundle_wxMediaEdit(Scheme_Object *obj, const char
     return (wxMediaEdit *)o->primdata;
 }
 
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif

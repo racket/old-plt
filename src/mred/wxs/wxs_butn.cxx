@@ -26,6 +26,9 @@
 #include "wxscheme.h"
 #include "wxs_butn.h"
 
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
 
 static Scheme_Object *buttonStyle_1_sym = NULL;
 
@@ -108,7 +111,20 @@ class os_wxButton : public wxButton {
   void OnSize(int x0, int x1);
   void OnSetFocus();
   void OnKillFocus();
+#ifdef MZ_PRECISE_GC
+  int gcMark(Mark_Proc mark);
+#endif
 };
+
+#ifdef MZ_PRECISE_GC
+int os_wxButton::gcMark(Mark_Proc mark) {
+  wxButton::gcMark(mark);
+  if (mark) {
+    gcMARK_TYPED(Scheme_Object *, callback_closure);
+  }
+  return gcBYTES_TO_WORDS(sizeof(*this));
+}
+#endif
 
 static Scheme_Object *os_wxButton_class;
 
@@ -740,3 +756,6 @@ static void CB_TOSCHEME(CB_REALCLASS *realobj, wxCommandEvent *event)
 
   COPY_JMPBUF(scheme_error_buf, savebuf);
 }
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif

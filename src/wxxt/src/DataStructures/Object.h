@@ -1,5 +1,4 @@
 /*								-*- C++ -*-
- * $Id: Object.h,v 1.6 1999/11/25 22:57:29 mflatt Exp $
  *
  * Purpose: Top level object and memory debugging for wxWindows
  *
@@ -26,8 +25,10 @@
 #ifndef Object_h
 #define Object_h
 
-#ifdef __GNUG__
-#pragma interface
+#ifndef MZ_PRECISE_GC
+# ifdef __GNUG__
+# pragma interface
+# endif
 #endif
 
 //-----------------------------------------------------------------------------
@@ -37,9 +38,13 @@
 #ifdef MZ_PRECISE_GC
 # define WXGC_IGNORE(ptr) GC_finalization_weak_ptr((void **)&(ptr))
 # define WXGC_ATOMIC /* empty */
+# define DELETE_OBJ delete_wxobject
+# define DELETE_VAL delete
 #else
 # define WXGC_IGNORE(ptr) GC_general_register_disappearing_link((void **)&(ptr), NULL)
 # define WXGC_ATOMIC (AtomicGC)
+# define DELETE_OBJ delete
+# define DELETE_VAL delete
 #endif
 #define WXGC_NO_CLEANUP FALSE
 

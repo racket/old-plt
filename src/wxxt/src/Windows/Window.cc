@@ -1,5 +1,4 @@
 /*								-*- C++ -*-
- * $Id: Window.cc,v 1.39 1999/11/25 20:47:00 mflatt Exp $
  *
  * Purpose: base class for all windows
  *
@@ -119,9 +118,9 @@ wxWindow::wxWindow(void)
 wxWindow::~wxWindow(void)
 {
     // destroy children
-    DestroyChildren(); delete children; children = NULL;
+    DestroyChildren(); DELETE_OBJ children; children = NULL;
     // destroy device context
-    if (dc) delete dc; dc = NULL;
+    if (dc) DELETE_OBJ dc; dc = NULL;
     // remove from parents list
     if (parent)	parent->RemoveChild(this); parent = NULL;
     // destroy widgets
@@ -130,10 +129,8 @@ wxWindow::~wxWindow(void)
     *saferef = NULL; /* MATTHEW */
 
     if (X->frame) XtDestroyWidget(X->frame); X->frame = X->handle = X->scroll = NULL;
-    // delete contraints
-    delete constraints; constraints = NULL;
-    // delete X internal data
-    delete X; X = NULL;
+    DELETE_OBJ constraints; constraints = NULL;
+    DELETE_OBJ X; X = NULL;
 }
 
 //-----------------------------------------------------------------------------
@@ -160,7 +157,7 @@ void wxWindow::DestroyChildren(void)
     wxWindow *child;
     child = (wxWindow*)(node->Data());
     if (child) {
-      delete child;
+      DELETE_OBJ child;
     }
   }
 }
@@ -1290,7 +1287,7 @@ void wxWindow::FrameEventHandler(Widget w,
       if (current_modal && (current_modal != win))
 	return;
 	
-      // delete frame, if allowed
+      // close frame, if allowed
       if (win->OnClose())
 	win->Show(FALSE);
     }
@@ -1739,7 +1736,7 @@ void wxWindow::DestroyDC(void)
 {
     if (!dc) return; // no DC to destroy
     // destroy device context
-    delete dc;
+    DELETE_OBJ dc;
     dc = NULL;
 }
 

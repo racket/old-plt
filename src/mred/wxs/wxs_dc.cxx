@@ -39,6 +39,9 @@
 #include "wxscheme.h"
 #include "wxs_dc.h"
 
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
 
 static Scheme_Object *textMode_wxTRANSPARENT_sym = NULL;
 static Scheme_Object *textMode_wxSOLID_sym = NULL;
@@ -129,7 +132,7 @@ static wxColour* dcGetTextBackground(wxDC *dc)
   VAR_STACK_PUSH(0, dc);
   VAR_STACK_PUSH(1, c);
 
-  c = WITH_VAR_STACK(NEW_OBJECT(wxColour,()));
+  c = NEW_OBJECT(wxColour,());
   bg = WITH_VAR_STACK(dc->GetTextBackground());
   WITH_VAR_STACK(c->CopyFrom(bg));
   return c;
@@ -142,7 +145,7 @@ static wxColour* dcGetTextForeground(wxDC *dc)
   VAR_STACK_PUSH(0, dc);
   VAR_STACK_PUSH(1, c);
 
-  c = WITH_VAR_STACK(NEW_OBJECT(wxColour,()));
+  c = NEW_OBJECT(wxColour,());
   fg = WITH_VAR_STACK(dc->GetTextForeground());
   WITH_VAR_STACK(c->CopyFrom(fg));
   return c;
@@ -348,7 +351,19 @@ class os_wxDC : public wxDC {
  public:
 
   ~os_wxDC();
+#ifdef MZ_PRECISE_GC
+  int gcMark(Mark_Proc mark);
+#endif
 };
+
+#ifdef MZ_PRECISE_GC
+int os_wxDC::gcMark(Mark_Proc mark) {
+  wxDC::gcMark(mark);
+  if (mark) {
+  }
+  return gcBYTES_TO_WORDS(sizeof(*this));
+}
+#endif
 
 static Scheme_Object *os_wxDC_class;
 static Scheme_Object *os_wxDC_interface;
@@ -1602,7 +1617,19 @@ class os_wxMemoryDC : public wxMemoryDC {
 
   os_wxMemoryDC(Scheme_Object * obj);
   ~os_wxMemoryDC();
+#ifdef MZ_PRECISE_GC
+  int gcMark(Mark_Proc mark);
+#endif
 };
+
+#ifdef MZ_PRECISE_GC
+int os_wxMemoryDC::gcMark(Mark_Proc mark) {
+  wxMemoryDC::gcMark(mark);
+  if (mark) {
+  }
+  return gcBYTES_TO_WORDS(sizeof(*this));
+}
+#endif
 
 static Scheme_Object *os_wxMemoryDC_class;
 
@@ -1833,7 +1860,19 @@ class os_wxPostScriptDC : public wxPostScriptDC {
 
   os_wxPostScriptDC(Scheme_Object * obj, Bool x0 = TRUE);
   ~os_wxPostScriptDC();
+#ifdef MZ_PRECISE_GC
+  int gcMark(Mark_Proc mark);
+#endif
 };
+
+#ifdef MZ_PRECISE_GC
+int os_wxPostScriptDC::gcMark(Mark_Proc mark) {
+  wxPostScriptDC::gcMark(mark);
+  if (mark) {
+  }
+  return gcBYTES_TO_WORDS(sizeof(*this));
+}
+#endif
 
 static Scheme_Object *os_wxPostScriptDC_class;
 
@@ -1986,7 +2025,19 @@ class os_basePrinterDC : public basePrinterDC {
 
   os_basePrinterDC(Scheme_Object * obj);
   ~os_basePrinterDC();
+#ifdef MZ_PRECISE_GC
+  int gcMark(Mark_Proc mark);
+#endif
 };
+
+#ifdef MZ_PRECISE_GC
+int os_basePrinterDC::gcMark(Mark_Proc mark) {
+  basePrinterDC::gcMark(mark);
+  if (mark) {
+  }
+  return gcBYTES_TO_WORDS(sizeof(*this));
+}
+#endif
 
 static Scheme_Object *os_basePrinterDC_class;
 
@@ -2103,3 +2154,6 @@ class basePrinterDC *objscheme_unbundle_basePrinterDC(Scheme_Object *obj, const 
 
 
 
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif

@@ -37,27 +37,33 @@ public:
   int Count() { return count; }
   wxObject *Get(int i) { return array[i]; }
 
-  void Append(wxObject *o)
-  {
-    if (count >= size) {
-      wxObject **naya;
-      if (size)
-	size *= 2;
-      else
-	size = 2;
-      naya = new wxObject*[size];
-      memcpy(naya, array, count * sizeof(wxObject*));
-      array = naya;
-    }
-    array[count++] = o;
-  }
-
-  void DeleteAll(void)
-  {
-    while (count--)
-      delete array[count];
-  }
+  void Append(wxObject *o);
+  void DeleteAll(void);
 };
+
+void wxcgList::Append(wxObject *o)
+{
+  if (count >= size) {
+    wxObject **naya;
+    if (size)
+      size *= 2;
+    else
+      size = 2;
+    naya = new wxObject*[size];
+    memcpy(naya, array, count * sizeof(wxObject*));
+    array = naya;
+  }
+  array[count++] = o;
+}
+
+void wxcgList::DeleteAll(void)
+{
+  wxObject *o;
+  while (count--) {
+    o = array[count];
+    DELETE_OBJ o;
+  }
+}
 
 wxChangeRecord::wxChangeRecord(void)
 {
@@ -155,13 +161,9 @@ class DeleteSnipItem /* : public wxObject --- uncomment to GC */
 DeleteSnipItem::~DeleteSnipItem()
 {
   if (!parent->undid) {
-#if !WXGARBAGE_COLLECTION_ON
-    delete snip;
-#else
     if (snip->flags & wxSNIP_OWNED)
       snip->flags -= wxSNIP_OWNED;
     snip->SetAdmin(NULL);
-#endif
   }
 }
 
@@ -178,10 +180,10 @@ wxDeleteSnipRecord::~wxDeleteSnipRecord()
   for (i = deletions->Count(); i--; ) {
     DeleteSnipItem *ds;
     ds = (DeleteSnipItem *)deletions->Get(i);
-    delete ds;
+    DELETE_OBJ ds;
   }
 
-  delete deletions;
+  DELETE_OBJ deletions;
 }
 
 void wxDeleteSnipRecord::InsertSnip(wxSnip *snip, wxSnip *before, 
@@ -257,9 +259,9 @@ wxDeleteRecord::~wxDeleteRecord()
       clickbacks->DeleteAll();
   }
 
-  delete deletions;
+  DELETE_OBJ deletions;
   if (clickbacks)
-    delete clickbacks;
+    DELETE_OBJ clickbacks;
 }
 
 void wxDeleteRecord::InsertSnip(wxSnip *snip)
@@ -333,10 +335,10 @@ wxStyleChangeRecord::~wxStyleChangeRecord()
   for (i = changes->Count(); i--; ) {
     StyleChange *sc;
     sc = (StyleChange *)changes->Get(i);
-    delete sc;
+    DELETE_OBJ sc;
   }
 
-  delete changes;
+  DELETE_OBJ changes;
 }
 
 void wxStyleChangeRecord::AddStyleChange(long start, long end, wxStyle *style)
@@ -396,10 +398,10 @@ wxStyleChangeSnipRecord::~wxStyleChangeSnipRecord()
   for (i = changes->Count(); i--; ) {
     StyleChange *sc;
     sc = (StyleChange *)changes->Get(i);
-    delete sc;
+    DELETE_OBJ sc;
   }
   
-  delete changes;
+  DELETE_OBJ changes;
 }
 
 void wxStyleChangeSnipRecord::AddStyleChange(wxSnip *snip, wxStyle *style)

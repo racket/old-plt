@@ -544,6 +544,7 @@ static void mark_jmpup(Scheme_Jumpup_Buf *buf, Mark_Proc mark)
 {
   gcMARK(buf->stack_copy);
   gcMARK(buf->cont);
+  gcMARK(buf->external_stack);
 
   if (buf->stack_copy)
     GC_mark_variable_stack(buf->gc_var_stack,

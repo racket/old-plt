@@ -28,6 +28,9 @@
 #include "wxscheme.h"
 #include "wxs_panl.h"
 
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
 
 #if !defined(wx_mac)
 #define INTERACT_METHODS 1
@@ -138,7 +141,19 @@ class os_wxPanel : public wxPanel {
   void OnSize(int x0, int x1);
   void OnSetFocus();
   void OnKillFocus();
+#ifdef MZ_PRECISE_GC
+  int gcMark(Mark_Proc mark);
+#endif
 };
+
+#ifdef MZ_PRECISE_GC
+int os_wxPanel::gcMark(Mark_Proc mark) {
+  wxPanel::gcMark(mark);
+  if (mark) {
+  }
+  return gcBYTES_TO_WORDS(sizeof(*this));
+}
+#endif
 
 static Scheme_Object *os_wxPanel_class;
 
@@ -1098,7 +1113,19 @@ class os_wxDialogBox : public wxDialogBox {
   void OnKillFocus();
   Bool OnClose();
   void OnActivate(Bool x0);
+#ifdef MZ_PRECISE_GC
+  int gcMark(Mark_Proc mark);
+#endif
 };
+
+#ifdef MZ_PRECISE_GC
+int os_wxDialogBox::gcMark(Mark_Proc mark) {
+  wxDialogBox::gcMark(mark);
+  if (mark) {
+  }
+  return gcBYTES_TO_WORDS(sizeof(*this));
+}
+#endif
 
 static Scheme_Object *os_wxDialogBox_class;
 
@@ -1745,3 +1772,6 @@ class wxDialogBox *objscheme_unbundle_wxDialogBox(Scheme_Object *obj, const char
     return (wxDialogBox *)o->primdata;
 }
 
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif

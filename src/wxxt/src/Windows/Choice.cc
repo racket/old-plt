@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Choice.cc,v 1.20 1999/11/25 16:32:23 mflatt Exp $
+ * $Id: Choice.cc,v 1.21 1999/11/27 17:58:46 mflatt Exp $
  *
  * Purpose: choice panel item
  *
@@ -165,7 +165,7 @@ Bool wxChoice::Create(wxPanel *panel, wxFunction function, char *label,
 wxChoice::~wxChoice (void)
 {
     if (choice_menu)
-	delete choice_menu;
+	DELETE_OBJ choice_menu;
     choice_menu = NULL;
     num_choices = 0;
 }
@@ -247,7 +247,7 @@ void wxChoice::Clear(void)
 {
   wxMenu *naya;
   
-  delete choice_menu;
+  DELETE_OBJ choice_menu;
   naya = DEBUG_NEW wxMenu(NULL, (wxFunction)&(wxChoice::MenuEventCallback));
   choice_menu = naya;
   num_choices = 0;

@@ -184,10 +184,6 @@ MrEdApp _TheMrEdApp;
 # include <Regex.h>
 #endif
 
-#ifdef wx_x
-extern Display *MrEdGetXDisplay(void);
-#endif
-
 /****************************************************************************/
 /*                               Contexts                                   */
 /****************************************************************************/
@@ -503,7 +499,7 @@ static void CollectingContext(void *cfx, void *)
 {
   wxChildNode *cnode, *next;
   MrEdFinalizedContext *cf;
-  cf = (MrEdFinalizedContext *)cfx;
+  cf = (MrEdFinalizedContext *)gcPTR_TO_OBJ(cfx);
 
   if (cf->frames->next)
     cf->frames->next->prev = cf->frames->prev;
@@ -520,13 +516,14 @@ static void CollectingContext(void *cfx, void *)
     wxFrame *fr;
     next = cnode->Next();
     fr = (wxFrame *)cnode->Data();
-    if (fr)
-      delete fr;
+    if (fr) {
+      DELETE_OBJ fr;
+    }
   }
 
   MrEdDestroyContext(cf);
 
-  delete cf->frames->list;
+  DELETE_OBJ cf->frames->list;
   cf->frames = NULL;
 }
 
@@ -578,7 +575,7 @@ static MrEdContext *MakeContext(MrEdContext *c, Scheme_Config *config)
 
   c->main_config = config;
 
-  scheme_register_finalizer((void *)c->finalized,
+  scheme_register_finalizer(gcOBJ_TO_PTR(c->finalized),
 			    CollectingContext, NULL,
 			    NULL, NULL);
   WXGC_IGNORE(c->finalized);

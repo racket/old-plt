@@ -235,9 +235,21 @@ Scheme_Object * scheme_lookup_xc_global(char *name, void *env)
 extern Display *MrEdGetXDisplay(void);
 #endif
 
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
+
 static void draw_gc_bm(int on)
 {
   GCBitmap *gcbm = gc_bitmaps;
+
+#ifdef MZ_PRECISE_GC
+  /* Too hard to make GCBlit et al. unconverted.
+     We just save and restore the variable stack instead. */
+  void **save_var_stack;
+  save_var_stack = GC_variable_stack;
+#endif
+
   while (gcbm) {
     wxCanvas *cnvs = GET_CANVAS(gcbm);
     if (cnvs) {
@@ -250,15 +262,28 @@ static void draw_gc_bm(int on)
     }
     gcbm = gcbm->next;
   }
+
+#ifdef MZ_PRECISE_GC
+  GC_variable_stack = save_var_stack;
+#endif
+
 #ifdef wx_x
   XFlush(MrEdGetXDisplay());
 #endif
 }
 
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif
+
 void wxsKeymapError(char *s)
 {
   scheme_signal_error("%s", s);
 }
+
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
 
 static void collect_start_callback(void)
 {
@@ -271,6 +296,10 @@ static void collect_end_callback(void)
   orig_collect_end_callback();
   draw_gc_bm(0);
 }
+
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif
 
 static Scheme_Object *wxSchemeUnregisterCollectingBitmap(int, Scheme_Object **a)
 {

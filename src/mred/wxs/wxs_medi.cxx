@@ -26,6 +26,9 @@
 #include "wxscheme.h"
 #include "wxs_medi.h"
 
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
 
 static void *wxbBufferToDC(wxMediaBuffer *b, float x, float y)
 {
@@ -527,7 +530,19 @@ class os_wxMediaBuffer : public wxMediaBuffer {
   void OnEvent(class wxMouseEvent* x0);
   void CopySelfTo(class wxMediaBuffer* x0);
   class wxMediaBuffer* CopySelf();
+#ifdef MZ_PRECISE_GC
+  int gcMark(Mark_Proc mark);
+#endif
 };
+
+#ifdef MZ_PRECISE_GC
+int os_wxMediaBuffer::gcMark(Mark_Proc mark) {
+  wxMediaBuffer::gcMark(mark);
+  if (mark) {
+  }
+  return gcBYTES_TO_WORDS(sizeof(*this));
+}
+#endif
 
 static Scheme_Object *os_wxMediaBuffer_class;
 static Scheme_Object *os_wxMediaBuffer_interface;
@@ -5390,3 +5405,6 @@ int wxsSchemeUndo(void *f)
   Scheme_Object *v = scheme_apply((Scheme_Object *)f, 0, NULL);
   return SCHEME_TRUEP(v);
 }
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif

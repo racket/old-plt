@@ -28,6 +28,9 @@
 #include "wxscheme.h"
 #include "wxs_cnvs.h"
 
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
 
 #ifdef wx_xt
 # include "wx_types.h"
@@ -146,7 +149,19 @@ class os_wxCanvas : public wxCanvas {
   void OnChar(class wxKeyEvent* x0);
   void OnEvent(class wxMouseEvent* x0);
   void OnPaint();
+#ifdef MZ_PRECISE_GC
+  int gcMark(Mark_Proc mark);
+#endif
 };
+
+#ifdef MZ_PRECISE_GC
+int os_wxCanvas::gcMark(Mark_Proc mark) {
+  wxCanvas::gcMark(mark);
+  if (mark) {
+  }
+  return gcBYTES_TO_WORDS(sizeof(*this));
+}
+#endif
 
 static Scheme_Object *os_wxCanvas_class;
 
@@ -1243,3 +1258,6 @@ class wxCanvas *objscheme_unbundle_wxCanvas(Scheme_Object *obj, const char *wher
     return (wxCanvas *)o->primdata;
 }
 
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif

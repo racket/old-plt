@@ -27,6 +27,9 @@
 #include "wxscheme.h"
 #include "wxs_mio.h"
 
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
 
 
 #undef l_ADDRESS
@@ -187,7 +190,19 @@ class os_wxMediaStreamInBase : public wxMediaStreamInBase {
   void Skip(nnlong x0);
   void Seek(nnlong x0);
   long Tell();
+#ifdef MZ_PRECISE_GC
+  int gcMark(Mark_Proc mark);
+#endif
 };
+
+#ifdef MZ_PRECISE_GC
+int os_wxMediaStreamInBase::gcMark(Mark_Proc mark) {
+  wxMediaStreamInBase::gcMark(mark);
+  if (mark) {
+  }
+  return gcBYTES_TO_WORDS(sizeof(*this));
+}
+#endif
 
 static Scheme_Object *os_wxMediaStreamInBase_class;
 
@@ -583,7 +598,19 @@ class os_wxMediaStreamOutBase : public wxMediaStreamOutBase {
   Bool Bad();
   void Seek(nnlong x0);
   long Tell();
+#ifdef MZ_PRECISE_GC
+  int gcMark(Mark_Proc mark);
+#endif
 };
+
+#ifdef MZ_PRECISE_GC
+int os_wxMediaStreamOutBase::gcMark(Mark_Proc mark) {
+  wxMediaStreamOutBase::gcMark(mark);
+  if (mark) {
+  }
+  return gcBYTES_TO_WORDS(sizeof(*this));
+}
+#endif
 
 static Scheme_Object *os_wxMediaStreamOutBase_class;
 
@@ -920,7 +947,19 @@ class os_wxMediaStreamInStringBase : public wxMediaStreamInStringBase {
 
   os_wxMediaStreamInStringBase(Scheme_Object * obj, string x0, long x1);
   ~os_wxMediaStreamInStringBase();
+#ifdef MZ_PRECISE_GC
+  int gcMark(Mark_Proc mark);
+#endif
 };
+
+#ifdef MZ_PRECISE_GC
+int os_wxMediaStreamInStringBase::gcMark(Mark_Proc mark) {
+  wxMediaStreamInStringBase::gcMark(mark);
+  if (mark) {
+  }
+  return gcBYTES_TO_WORDS(sizeof(*this));
+}
+#endif
 
 static Scheme_Object *os_wxMediaStreamInStringBase_class;
 
@@ -1046,7 +1085,19 @@ class os_wxMediaStreamOutStringBase : public wxMediaStreamOutStringBase {
 
   os_wxMediaStreamOutStringBase(Scheme_Object * obj);
   ~os_wxMediaStreamOutStringBase();
+#ifdef MZ_PRECISE_GC
+  int gcMark(Mark_Proc mark);
+#endif
 };
+
+#ifdef MZ_PRECISE_GC
+int os_wxMediaStreamOutStringBase::gcMark(Mark_Proc mark) {
+  wxMediaStreamOutStringBase::gcMark(mark);
+  if (mark) {
+  }
+  return gcBYTES_TO_WORDS(sizeof(*this));
+}
+#endif
 
 static Scheme_Object *os_wxMediaStreamOutStringBase_class;
 
@@ -1212,7 +1263,19 @@ class os_wxMediaStreamIn : public wxMediaStreamIn {
 
   os_wxMediaStreamIn(Scheme_Object * obj, class wxMediaStreamInBase* x0);
   ~os_wxMediaStreamIn();
+#ifdef MZ_PRECISE_GC
+  int gcMark(Mark_Proc mark);
+#endif
 };
+
+#ifdef MZ_PRECISE_GC
+int os_wxMediaStreamIn::gcMark(Mark_Proc mark) {
+  wxMediaStreamIn::gcMark(mark);
+  if (mark) {
+  }
+  return gcBYTES_TO_WORDS(sizeof(*this));
+}
+#endif
 
 static Scheme_Object *os_wxMediaStreamIn_class;
 
@@ -1642,7 +1705,19 @@ class os_wxMediaStreamOut : public wxMediaStreamOut {
 
   os_wxMediaStreamOut(Scheme_Object * obj, class wxMediaStreamOutBase* x0);
   ~os_wxMediaStreamOut();
+#ifdef MZ_PRECISE_GC
+  int gcMark(Mark_Proc mark);
+#endif
 };
+
+#ifdef MZ_PRECISE_GC
+int os_wxMediaStreamOut::gcMark(Mark_Proc mark) {
+  wxMediaStreamOut::gcMark(mark);
+  if (mark) {
+  }
+  return gcBYTES_TO_WORDS(sizeof(*this));
+}
+#endif
 
 static Scheme_Object *os_wxMediaStreamOut_class;
 
@@ -1938,3 +2013,6 @@ class wxMediaStreamOut *objscheme_unbundle_wxMediaStreamOut(Scheme_Object *obj, 
 }
 
 
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif

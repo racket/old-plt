@@ -26,6 +26,9 @@
 #include "wxscheme.h"
 #include "wxs_bmap.h"
 
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
 
 
 #ifndef wx_mac
@@ -135,7 +138,19 @@ class os_wxBitmap : public wxBitmap {
   os_wxBitmap(Scheme_Object * obj, int x0, int x1, Bool x2 = 0);
   os_wxBitmap(Scheme_Object * obj, pathname x0, int x1 = 0);
   ~os_wxBitmap();
+#ifdef MZ_PRECISE_GC
+  int gcMark(Mark_Proc mark);
+#endif
 };
+
+#ifdef MZ_PRECISE_GC
+int os_wxBitmap::gcMark(Mark_Proc mark) {
+  wxBitmap::gcMark(mark);
+  if (mark) {
+  }
+  return gcBYTES_TO_WORDS(sizeof(*this));
+}
+#endif
 
 static Scheme_Object *os_wxBitmap_class;
 
@@ -490,3 +505,6 @@ class wxBitmap *objscheme_unbundle_wxBitmap(Scheme_Object *obj, const char *wher
     return (wxBitmap *)o->primdata;
 }
 
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif

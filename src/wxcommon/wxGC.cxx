@@ -79,7 +79,12 @@ void gc_cleanup::install_cleanup(void)
 void GC_cleanup(void *obj, void *)
 {
   gc *clean = (gc *)gcPTR_TO_OBJ(obj);
+
+#ifdef MZ_PRECISE_GC
+  GC_cpp_delete(clean);
+#else
   clean->~gc();
+#endif
 }
 
 /**********************************************************************/  
@@ -230,6 +235,23 @@ static int mark_cpp_object(void *p, Mark_Proc mark)
   return obj->gcMark(mark) + 1;
 }
 
+static int mark_cpp_array_object(void *p, Mark_Proc mark)
+{
+  short size = ((short *)p)[1];
+  void **pp = (void **)gcPTR_TO_OBJ(p);
+  while (size > 0) {
+    gc *obj = (gc *)p;
+    size_t s;
+
+    s = obj->gcMark(mark);
+
+    p += s;
+    size -= s;
+  }
+
+  return size + 1;
+}
+
 static int mark_stack_object(void *p, Mark_Proc mark)
 {
   AllocStackLink *link = (AllocStackLink *)p;
@@ -244,14 +266,15 @@ static int mark_stack_object(void *p, Mark_Proc mark)
 
 static int mark_preallocated_object(void *p, Mark_Proc /* mark */)
 {
-  size_t size = ((size_t *)p)[1];
-
+  short size = ((short *)p)[1];
+  
   return gcBYTES_TO_WORDS(size) + 1;
 }
 
 static void *park;
 static void *preallocated;
 static int use_pre;
+static int is_initialized;
 
 void GC_pre_allocate(size_t size)
 {
@@ -261,8 +284,8 @@ void GC_pre_allocate(size_t size)
   }
 
   preallocated = GC_malloc_one_tagged(size + sizeof(long));
-  *(Scheme_Type *)preallocated = scheme_rt_preallocated_object;
-  ((size_t *)preallocated)[1] = size;
+  ((short *)preallocated)[0] = scheme_rt_preallocated_object;
+  ((short *)preallocated)[1] = (short)size;
 }
 
 void GC_use_preallocated()
@@ -270,26 +293,34 @@ void GC_use_preallocated()
   use_pre = 1;
 }
 
+static void initize(void)
+{
+  /* Initialize: */
+  wxREGGLOB(park);
+  wxREGGLOB(new_stack);
+  wxREGGLOB(preallocated);
+  
+  scheme_get_external_stack_val = get_new_stack;
+  scheme_set_external_stack_val = set_new_stack;
+  
+  GC_register_traverser(scheme_rt_cpp_object, mark_cpp_object);
+  GC_register_traverser(scheme_rt_cpp_array_object, mark_cpp_array_object);
+  GC_register_traverser(scheme_rt_stack_object, mark_stack_object);
+  GC_register_traverser(scheme_rt_preallocated_object, mark_preallocated_object);
+  
+  is_initialized = 1;
+}
+
 void *GC_cpp_malloc(size_t size)
 {
   void *p;
 
-  if (!new_stack) {
-    /* Initialize: */
-    wxREGGLOB(park);
-    wxREGGLOB(new_stack);
-    wxREGGLOB(preallocated);
-
-    scheme_get_external_stack_val = get_new_stack;
-    scheme_set_external_stack_val = set_new_stack;
-
-    GC_register_traverser(scheme_rt_cpp_object, mark_cpp_object);
-    GC_register_traverser(scheme_rt_stack_object, mark_stack_object);
-    GC_register_traverser(scheme_rt_preallocated_object, mark_preallocated_object);
+  if (!is_initialized) {
+    initize();
   }
 
   if (use_pre) {
-    if (((size_t *)preallocated)[1] != size) {
+    if (((short *)preallocated)[1] != (short)size) {
       printf("ERROR: preallocated wrong size\n");
       abort();
     }
@@ -301,17 +332,45 @@ void *GC_cpp_malloc(size_t size)
   }
 
   /* push_new might trigger a gc: */
-  *(Scheme_Type *)p = scheme_rt_preallocated_object;
-  ((size_t *)p)[1] = size;
+  ((short *)p)[0] = scheme_rt_preallocated_object;
+  ((short *)p)[1] = (short)size;
   park = p;
 
   GC_push_current_new(gcPTR_TO_OBJ(p));
 
   p = park;
-  *(Scheme_Type *)p = scheme_rt_cpp_object;
-  ((size_t *)p)[1] = 0;
+  ((short *)p)[0] = scheme_rt_cpp_object;
 
-  return p = gcPTR_TO_OBJ(p);
+  return gcPTR_TO_OBJ(p);
+}
+
+void GC_cpp_delete(gc *v)
+{
+  size_t size;
+  void *p;
+
+  size = v->gcMark(NULL);
+  v->~gc();
+  
+  p = gcOBJ_TO_PTR(v);
+  ((short *)p)[0] = scheme_rt_preallocated_object;
+  ((short *)p)[1] = (short)gcWORDS_TO_BYTES(size);
+}
+
+void *GC_cpp_malloc_array(size_t size)
+{
+  void *p;
+
+  if (!is_initialized) {
+    initize();
+  }
+
+  p = GC_malloc_one_tagged(size + sizeof(long));
+
+  ((short *)p)[0] = scheme_rt_cpp_array_object;
+  ((short *)p)[1] = (short)gcBYTES_TO_WORDS(size);
+
+  return gcPTR_TO_OBJ(p);
 }
 
 #endif

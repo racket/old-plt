@@ -26,6 +26,9 @@
 #include "wxscheme.h"
 #include "wxs_obj.h"
 
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
 
 
 
@@ -34,7 +37,19 @@ class os_wxObject : public wxObject {
 
   os_wxObject(Scheme_Object * obj);
   ~os_wxObject();
+#ifdef MZ_PRECISE_GC
+  int gcMark(Mark_Proc mark);
+#endif
 };
+
+#ifdef MZ_PRECISE_GC
+int os_wxObject::gcMark(Mark_Proc mark) {
+  wxObject::gcMark(mark);
+  if (mark) {
+  }
+  return gcBYTES_TO_WORDS(sizeof(*this));
+}
+#endif
 
 static Scheme_Object *os_wxObject_class;
 
@@ -147,3 +162,6 @@ class wxObject *objscheme_unbundle_wxObject(Scheme_Object *obj, const char *wher
 }
 
 
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif

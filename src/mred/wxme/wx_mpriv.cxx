@@ -105,7 +105,7 @@ void wxMediaEdit::_SetPosition(Bool setflash, int bias, long start, long end,
     flash = FALSE;
     if (flashTimer) {
       flashTimer->Stop();
-      delete flashTimer;
+      DELETE_OBJ flashTimer;
       flashTimer = NULL;
     }
   }
@@ -352,7 +352,7 @@ void wxMediaEdit::_ChangeStyle(long start, long end,
     RefreshByLineDemand();
   } else {
     if (rec)
-      delete rec;
+      DELETE_OBJ rec;
     writeLocked = FALSE;
     flowLocked = FALSE;
 
@@ -807,7 +807,7 @@ void wxMediaEdit::AppendSnip(wxSnip *snip)
 {
   if (PTREQ(snips, lastSnip) && !snips->count) {
     /* Get rid of empty snip */
-    delete snips;
+    DELETE_OBJ snips;
     snips = lastSnip = snip;
   } else {
     SpliceSnip(snip, lastSnip, NULL);
@@ -1364,7 +1364,7 @@ void wxMediaEdit::AdjustClickbacks(long start, long end,
       if (rec)
 	rec->AddClickback(click);
       else
-	delete click;
+	DELETE_OBJ click;
     }
   }
 }
@@ -1430,10 +1430,10 @@ void wxMediaEdit::SetClickbackHilited(wxClickback *click, Bool on)
       for (node = click->unhilite->First(); node; node = node->Next()) {
 	wxChangeRecord *cr;
 	cr = (wxChangeRecord *)node->Data();
-	delete cr;
+	DELETE_OBJ cr;
       }
   
-      delete click->unhilite;
+      DELETE_OBJ click->unhilite;
       FlashOff();
     }
     click->hilited = on;
@@ -2721,7 +2721,7 @@ void wxMediaEdit::EndPrint(wxDC *, void *data)
     SetMaxWidth(savedInfo->maxw);
     SetAutowrapBitmap(savedInfo->bm);
 
-    delete data;
+    DELETE_OBJ savedInfo;
   }
 }
 

@@ -26,6 +26,9 @@
 #include "wxscheme.h"
 #include "wxs_evnt.h"
 
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
 
 
 
@@ -35,7 +38,19 @@ class os_wxEvent : public wxEvent {
 
   os_wxEvent(Scheme_Object * obj);
   ~os_wxEvent();
+#ifdef MZ_PRECISE_GC
+  int gcMark(Mark_Proc mark);
+#endif
 };
+
+#ifdef MZ_PRECISE_GC
+int os_wxEvent::gcMark(Mark_Proc mark) {
+  wxEvent::gcMark(mark);
+  if (mark) {
+  }
+  return gcBYTES_TO_WORDS(sizeof(*this));
+}
+#endif
 
 static Scheme_Object *os_wxEvent_class;
 
@@ -262,7 +277,19 @@ class os_wxCommandEvent : public wxCommandEvent {
 
   os_wxCommandEvent(Scheme_Object * obj, int x0);
   ~os_wxCommandEvent();
+#ifdef MZ_PRECISE_GC
+  int gcMark(Mark_Proc mark);
+#endif
 };
+
+#ifdef MZ_PRECISE_GC
+int os_wxCommandEvent::gcMark(Mark_Proc mark) {
+  wxCommandEvent::gcMark(mark);
+  if (mark) {
+  }
+  return gcBYTES_TO_WORDS(sizeof(*this));
+}
+#endif
 
 static Scheme_Object *os_wxCommandEvent_class;
 
@@ -422,7 +449,19 @@ class os_wxPopupEvent : public wxPopupEvent {
 
   os_wxPopupEvent(Scheme_Object * obj);
   ~os_wxPopupEvent();
+#ifdef MZ_PRECISE_GC
+  int gcMark(Mark_Proc mark);
+#endif
 };
+
+#ifdef MZ_PRECISE_GC
+int os_wxPopupEvent::gcMark(Mark_Proc mark) {
+  wxPopupEvent::gcMark(mark);
+  if (mark) {
+  }
+  return gcBYTES_TO_WORDS(sizeof(*this));
+}
+#endif
 
 static Scheme_Object *os_wxPopupEvent_class;
 
@@ -667,7 +706,19 @@ class os_wxScrollEvent : public wxScrollEvent {
 
   os_wxScrollEvent(Scheme_Object * obj);
   ~os_wxScrollEvent();
+#ifdef MZ_PRECISE_GC
+  int gcMark(Mark_Proc mark);
+#endif
 };
+
+#ifdef MZ_PRECISE_GC
+int os_wxScrollEvent::gcMark(Mark_Proc mark) {
+  wxScrollEvent::gcMark(mark);
+  if (mark) {
+  }
+  return gcBYTES_TO_WORDS(sizeof(*this));
+}
+#endif
 
 static Scheme_Object *os_wxScrollEvent_class;
 
@@ -1247,7 +1298,19 @@ class os_wxKeyEvent : public wxKeyEvent {
 
   os_wxKeyEvent(Scheme_Object * obj, int x0 = wxEVENT_TYPE_CHAR);
   ~os_wxKeyEvent();
+#ifdef MZ_PRECISE_GC
+  int gcMark(Mark_Proc mark);
+#endif
 };
+
+#ifdef MZ_PRECISE_GC
+int os_wxKeyEvent::gcMark(Mark_Proc mark) {
+  wxKeyEvent::gcMark(mark);
+  if (mark) {
+  }
+  return gcBYTES_TO_WORDS(sizeof(*this));
+}
+#endif
 
 static Scheme_Object *os_wxKeyEvent_class;
 
@@ -1712,7 +1775,19 @@ class os_wxMouseEvent : public wxMouseEvent {
 
   os_wxMouseEvent(Scheme_Object * obj, int x0);
   ~os_wxMouseEvent();
+#ifdef MZ_PRECISE_GC
+  int gcMark(Mark_Proc mark);
+#endif
 };
+
+#ifdef MZ_PRECISE_GC
+int os_wxMouseEvent::gcMark(Mark_Proc mark) {
+  wxMouseEvent::gcMark(mark);
+  if (mark) {
+  }
+  return gcBYTES_TO_WORDS(sizeof(*this));
+}
+#endif
 
 static Scheme_Object *os_wxMouseEvent_class;
 
@@ -2352,3 +2427,6 @@ class wxMouseEvent *objscheme_unbundle_wxMouseEvent(Scheme_Object *obj, const ch
     return (wxMouseEvent *)o->primdata;
 }
 
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif

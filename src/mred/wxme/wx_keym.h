@@ -118,9 +118,6 @@ class wxKeymap : public wxObject
   void ChainToKeymap(wxKeymap *, Bool prefix);
   void RemoveChainedKeymap(wxKeymap *);
 
-  void AdjustUsage(Bool newUser);
-  Bool IsUsed(void);
-
   long GetDoubleClickInterval();
   void SetDoubleClickInterval(long);
 };

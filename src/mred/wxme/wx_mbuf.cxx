@@ -109,11 +109,9 @@ wxMediaBuffer::wxMediaBuffer()
   wxChangeRecordPtr *crpa;
 
   map = new wxKeymap();
-  map->AdjustUsage(TRUE);
   // AddBufferFunctions(map);
 
   styleList = new wxStyleList;
-  styleList->AdjustUsage(TRUE);
   styleList->NewNamedStyle(STD_STYLE, NULL);
   notifyId = styleList->NotifyOnChange((wxStyleNotifyFunc)MediaStyleNotify, 
 				       this, 1);
@@ -175,33 +173,22 @@ wxMediaBuffer::~wxMediaBuffer()
   if (map)
     SetKeymap(NULL);
 
-  styleList->AdjustUsage(FALSE);
   styleList->ForgetNotification(notifyId);
-#if !WXGARBAGE_COLLECTION_ON
-  if (!styleList->IsUsed())
-    delete styleList;
-#endif
 
 #ifndef EACH_BUFFER_OWN_OFFSCREEN
   --bcounter;
   if (!bcounter) {
 #endif
     offscreen->SelectObject(NULL);
-    delete offscreen;
+    DELETE_OBJ offscreen;
     offscreen = NULL;
     if (bitmap)
-      delete bitmap;
+      DELETE_OBJ bitmap;
 #ifndef EACH_BUFFER_OWN_OFFSCREEN
   }
 #endif
 
-  if (filename)
-    delete[] filename;
-
   ClearUndos();
-
-  delete[] changes;
-  delete[] redochanges;
 }
 
 /******************************************************************/
@@ -470,7 +457,7 @@ Bool wxMediaBuffer::ReadyOffscreen(float width, float height)
 
     offscreen->SelectObject(NULL);
     if (oldbm)
-      delete oldbm;
+      DELETE_OBJ oldbm;
   
     if (bitmap->Ok())
       offscreen->SelectObject(bitmap);
@@ -485,16 +472,7 @@ Bool wxMediaBuffer::ReadyOffscreen(float width, float height)
 
 void wxMediaBuffer::SetKeymap(wxKeymap *keymap)
 {
-  if (map) {
-    map->AdjustUsage(FALSE);
-#if !WXGARBAGE_COLLECTION_ON
-    if (!map->IsUsed())
-      delete map;
-#endif
-  }
   map = keymap;
-  if (keymap)
-    keymap->AdjustUsage(TRUE);
 }
 
 wxKeymap *wxMediaBuffer::GetKeymap(void)
@@ -509,13 +487,7 @@ wxStyleList *wxMediaBuffer::GetStyleList(void)
 
 void wxMediaBuffer::SetStyleList(wxStyleList *newList)
 {
-  styleList->AdjustUsage(FALSE);
   styleList->ForgetNotification(notifyId);
-#if !WXGARBAGE_COLLECTION_ON
-  if (!styleList->IsUsed())
-    delete styleList;
-#endif
-  newList->AdjustUsage(TRUE);
   notifyId = newList->NotifyOnChange((wxStyleNotifyFunc)MediaStyleNotify, 
 				     this, 1);
   styleList = newList;
@@ -1350,7 +1322,7 @@ void wxMediaBuffer::Print(Bool interactive, Bool fitToPage, int WXUNUSED_X(outpu
       InvalidateBitmapCache(0, 0, -1, -1);
     }
 
-    delete dc;
+    DELETE_OBJ dc;
     
     return;
   } 
@@ -1361,8 +1333,8 @@ void wxMediaBuffer::Print(Bool interactive, Bool fitToPage, int WXUNUSED_X(outpu
   
   p->Print(NULL, o, interactive);
 
-  delete o;
-  delete p;
+  DELETE_OBJ o;
+  DELETE_OBJ p;
 #endif
 }
 
@@ -1610,19 +1582,12 @@ void wxMediaBuffer::FreeOldCopies(void)
   if (copyDepth > 1) {
     /* Delete current ring occupant: */
     wxmb_commonCopyBuffer->DeleteContents(TRUE);
-    delete wxmb_commonCopyBuffer;
+    DELETE_OBJ wxmb_commonCopyBuffer;
     wxmb_commonCopyBuffer2->DeleteContents(TRUE);
-    delete wxmb_commonCopyBuffer2;
+    DELETE_OBJ wxmb_commonCopyBuffer2;
 
     if (wxmb_commonCopyRegionData)
-      delete wxmb_commonCopyRegionData;
-    if (wxmb_copyStyleList) {
-      wxmb_copyStyleList->AdjustUsage(FALSE);
-#ifndef WXGARBAGE_COLLECTION_ON
-      if (!wxmb_copyStyleList->IsUsed())
-	delete wxmb_copyStyleList;
-#endif
-    }
+      DELETE_OBJ wxmb_commonCopyRegionData;
 
     wxmb_commonCopyBuffer = new wxList();
     wxmb_commonCopyBuffer2 = new wxList();
@@ -1639,13 +1604,16 @@ void wxMediaBuffer::FreeOldCopies(void)
     wxList *dl;
     dl = copyRing[copyRingPos].buffer1;
     dl->DeleteContents(TRUE);
-    delete dl;
+    DELETE_OBJ dl;
     dl = copyRing[copyRingPos].buffer2;
     dl->DeleteContents(TRUE);
-    delete dl;
+    DELETE_OBJ dl;
 
-    if (copyRing[copyRingPos].data)
-      delete (copyRing[copyRingPos].data);
+    if (copyRing[copyRingPos].data) {
+      wxBufferData *data;
+      data = copyRing[copyRingPos].data;
+      DELETE_OBJ data;
+    }
   }
 
   copyRing[copyRingPos].buffer1 = wxmb_commonCopyBuffer;
@@ -1670,7 +1638,6 @@ void wxMediaBuffer::FreeOldCopies(void)
 void wxMediaBuffer::InstallCopyBuffer(long time, wxStyleList *sl)
 {
   wxmb_copyStyleList = sl;
-  wxmb_copyStyleList->AdjustUsage(TRUE);
 
   if (copyingSelf != copyDepth) {
 #if ALLOW_X_STYLE_SELECTION
@@ -1726,11 +1693,9 @@ void wxMediaBuffer::DoBufferPaste(long time, Bool local)
 	      ((wxMediaEdit *)this)->PasteRegionData(data);
 	  }
       wxReadMediaGlobalFooter(mf);
-      delete[] str;
     } else {
       str = wxTheClipboard->GetClipboardString(time);
       InsertPasteString(str);
-      delete[] str;
     }
   }
 }
@@ -1822,8 +1787,8 @@ void wxMediaBuffer::CopySelfTo(wxMediaBuffer *m)
   }
 
   /* Don't delete the snips themselves, though */
-  delete copySnips;
-  delete copySnips2;
+  DELETE_OBJ copySnips;
+  DELETE_OBJ copySnips2;
 
   m->SizeCacheInvalid();
 
@@ -1872,7 +1837,6 @@ char *wxMediaClipboardClient::GetData(char *format, long *size)
 	  old = total;
 	  total = new char[sz];
 	  memcpy(total, old, length);
-	  delete[] old;
 	}
 	memcpy(total + length, str, l);
       } else

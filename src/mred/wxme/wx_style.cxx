@@ -107,8 +107,6 @@ wxStyleDelta::wxStyleDelta(int changeCommand, int param)
 
 wxStyleDelta::~wxStyleDelta()
 {
-  if (face)
-    delete[] face;
 }
 
 wxStyleDelta *wxStyleDelta::SetDelta(int changeCommand, int param)
@@ -116,10 +114,7 @@ wxStyleDelta *wxStyleDelta::SetDelta(int changeCommand, int param)
   switch (changeCommand) {
   case wxCHANGE_NOTHING:
     family = wxBASE;
-    if (face) {
-      delete[] face;
-      face = NULL;
-    }
+    face = NULL;
     sizeMult = 1;
     sizeAdd = 0;
     weightOn = wxBASE;
@@ -157,10 +152,7 @@ wxStyleDelta *wxStyleDelta::SetDelta(int changeCommand, int param)
     break;
   case wxCHANGE_FAMILY:
     family = param;
-    if (face) {
-      delete[] face;
-      face = NULL;
-    }
+    face = NULL;
     break;
   case wxCHANGE_ALIGNMENT:
     alignmentOn = param;
@@ -196,10 +188,7 @@ wxStyleDelta *wxStyleDelta::SetDelta(int changeCommand, int param)
     break;
   case wxCHANGE_NORMAL:
     family = wxDEFAULT;
-    if (face) {
-      delete[] face;
-      face = NULL;
-    }
+    face = NULL;
     sizeMult = 0;
     sizeAdd = defaultSize;
     weightOn = wxNORMAL;
@@ -226,8 +215,6 @@ wxStyleDelta *wxStyleDelta::SetDeltaFace(char *name)
 {
   int id;
 
-  if (face)
-    delete[] face;
   face = copystring(name);
   id = FONT_DIRECTORY->FindOrCreateFontId(name, wxDEFAULT);
   family = FONT_DIRECTORY->GetFamily(id);
@@ -888,7 +875,7 @@ void wxStyleList::Clear(void)
 
   while ((node = First())) {
     style = (wxStyle *)node->Data();
-    delete style;
+    DELETE_OBJ style;
     DeleteNode(node);
   }
 
@@ -1208,7 +1195,7 @@ void wxStyleList::ForgetNotification(void *id)
     rec = (NotificationRec *)node->Data();
     if (rec->id == id) {
       notifications->DeleteNode(node);
-      delete rec;
+      DELETE_OBJ rec;
       return;
     }
   }
@@ -1283,19 +1270,6 @@ int wxStyleList::StyleToIndex(wxStyle *s)
     return -1;
 }
 
-void wxStyleList::AdjustUsage(Bool newUser)
-{
-  if (newUser)
-    usage++;
-  else
-    --usage;
-}
-
-Bool wxStyleList::IsUsed(void)
-{
-  return !!usage;
-}
-
 Bool wxStyleList::WriteToFile(class wxMediaStreamOut *f)
 {
   return wxmbWriteStylesToFile(this, f);
@@ -1332,13 +1306,12 @@ void wxmbDoneStyleReadsWrites(void)
   for (node = readStyles->First(); node; node = node->Next()) { 
     l = (wxStyleList *)node->Data();
     if (l->styleMap) {
-      delete[] l->styleMap;
       l->styleMap = NULL;
     }
     l->listId = 0;
   }
 
-  delete readStyles;
+  DELETE_OBJ readStyles;
   readStyles = NULL;
 }
 

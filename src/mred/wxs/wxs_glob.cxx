@@ -35,6 +35,9 @@
 #include "wxscheme.h"
 #include "wxs_glob.h"
 
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
 
 static void wxsFillPrivateColor(wxDC *dc, wxColour *c)
 {
@@ -642,3 +645,6 @@ void objscheme_setup_wxsGlobal(void *env)
   WITH_VAR_STACK(scheme_install_xc_global("file-selector", functmp, env));
 }
 
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif

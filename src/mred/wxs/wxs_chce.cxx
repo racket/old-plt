@@ -26,6 +26,9 @@
 #include "wxscheme.h"
 #include "wxs_chce.h"
 
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
 
 static int istype_symset_choiceStyle(Scheme_Object *v, const char *where) {
   if SCHEME_NULLP(v) return 1;
@@ -190,7 +193,20 @@ class os_wxChoice : public wxChoice {
   void OnSize(int x0, int x1);
   void OnSetFocus();
   void OnKillFocus();
+#ifdef MZ_PRECISE_GC
+  int gcMark(Mark_Proc mark);
+#endif
 };
+
+#ifdef MZ_PRECISE_GC
+int os_wxChoice::gcMark(Mark_Proc mark) {
+  wxChoice::gcMark(mark);
+  if (mark) {
+    gcMARK_TYPED(Scheme_Object *, callback_closure);
+  }
+  return gcBYTES_TO_WORDS(sizeof(*this));
+}
+#endif
 
 static Scheme_Object *os_wxChoice_class;
 
@@ -934,3 +950,6 @@ static void CB_TOSCHEME(CB_REALCLASS *realobj, wxCommandEvent *event)
 
   COPY_JMPBUF(scheme_error_buf, savebuf);
 }
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif

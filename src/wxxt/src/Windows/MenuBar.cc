@@ -1,5 +1,4 @@
 /*								-*- C++ -*-
- * $Id: MenuBar.cc,v 1.13 1999/11/22 20:29:35 mflatt Exp $
  *
  * Purpose: menu bar class
  *
@@ -73,10 +72,12 @@ wxMenuBar::~wxMenuBar(void)
 	menu_item *temp = item;
 	item = item->next;
 	if (temp->contents) { // has submenu?
-	  delete temp->label;                  // delete label
-	  delete ((wxMenu*)(temp->user_data)); // delete wxMenu
+	  wxMenu *mnu;
+	  DELETE_VAL temp->label;
+	  mnu = ((wxMenu*)(temp->user_data));
+	  DELETE_OBJ mnu; 
 	}
-	delete temp;		// delete menu_item
+	DELETE_VAL temp;
     }
 }
 
@@ -162,7 +163,7 @@ void wxMenuBar::Append(wxMenu *menu, char *title)
     // create new menu item or use topdummy
     if (topdummy) {
 	item = (menu_item*)topdummy;
-	delete item->label;
+	DELETE_VAL item->label;
 	topdummy = 0;
     } else {
 #ifdef MZ_PRECISE_GC
@@ -234,12 +235,12 @@ Bool wxMenuBar::Delete(wxMenu *menu, int pos)
     }
 
     if (i->contents) {
-      delete i->label;
+      DELETE_VAL i->label;
       /* Release menu: */
       ((wxMenu *)(i->user_data))->owner = NULL;
     }
 
-    delete i;
+    DELETE_VAL i;
 
     if (X->handle) { // redisplay
       XtVaSetValues(X->handle, XtNmenu, top, XtNrefresh, True, NULL);
@@ -354,7 +355,7 @@ void wxMenuBar::SetLabel(long id, char *label)
   menu_item *found;
   found = (menu_item*)FindItemForId(id);
   if (found) {
-    delete found->label;
+    DELETE_VAL found->label;
     wxGetLabelAndKey(label, &found->label, &found->key_binding);
   }
 }
@@ -369,7 +370,7 @@ void wxMenuBar::SetLabelTop(int pos, char *label)
     }
     if (item) {
         Stop();
-	delete item->label;
+	DELETE_VAL item->label;
 	wxGetLabelAndKey(label, &item->label, &item->key_binding);
 	if (X->handle) { // redisplay if menu added
 	  XtVaSetValues(X->handle, XtNmenu, top, XtNrefresh, True, NULL);
@@ -395,7 +396,7 @@ int wxMenuBar::FindMenuItem(char *menu, char *itemstring)
 	break;
       }
     }
-    delete label;
+    DELETE_VAL label;
     return answer;
 }
 

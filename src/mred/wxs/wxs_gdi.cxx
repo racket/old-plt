@@ -32,6 +32,9 @@
 #include "wxscheme.h"
 #include "wxs_gdi.h"
 
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
 
 
 #ifndef wx_mac
@@ -263,7 +266,19 @@ class os_wxFont : public wxFont {
   os_wxFont(Scheme_Object * obj, int x0, int x1, int x2, int x3, Bool x4 = 0);
   os_wxFont(Scheme_Object * obj, int x0, cstring x1, int x2, int x3, int x4, Bool x5 = 0);
   ~os_wxFont();
+#ifdef MZ_PRECISE_GC
+  int gcMark(Mark_Proc mark);
+#endif
 };
+
+#ifdef MZ_PRECISE_GC
+int os_wxFont::gcMark(Mark_Proc mark) {
+  wxFont::gcMark(mark);
+  if (mark) {
+  }
+  return gcBYTES_TO_WORDS(sizeof(*this));
+}
+#endif
 
 static Scheme_Object *os_wxFont_class;
 
@@ -620,7 +635,19 @@ class os_wxFontList : public wxFontList {
 
   os_wxFontList(Scheme_Object * obj);
   ~os_wxFontList();
+#ifdef MZ_PRECISE_GC
+  int gcMark(Mark_Proc mark);
+#endif
 };
+
+#ifdef MZ_PRECISE_GC
+int os_wxFontList::gcMark(Mark_Proc mark) {
+  wxFontList::gcMark(mark);
+  if (mark) {
+  }
+  return gcBYTES_TO_WORDS(sizeof(*this));
+}
+#endif
 
 static Scheme_Object *os_wxFontList_class;
 
@@ -827,7 +854,19 @@ class os_wxColour : public wxColour {
   os_wxColour(Scheme_Object * obj, ubyte x0, ubyte x1, ubyte x2);
   os_wxColour(Scheme_Object * obj, string x0);
   ~os_wxColour();
+#ifdef MZ_PRECISE_GC
+  int gcMark(Mark_Proc mark);
+#endif
 };
+
+#ifdef MZ_PRECISE_GC
+int os_wxColour::gcMark(Mark_Proc mark) {
+  wxColour::gcMark(mark);
+  if (mark) {
+  }
+  return gcBYTES_TO_WORDS(sizeof(*this));
+}
+#endif
 
 static Scheme_Object *os_wxColour_class;
 
@@ -1163,7 +1202,19 @@ class os_wxColourDatabase : public wxColourDatabase {
   CDB_FIX
 
   ~os_wxColourDatabase();
+#ifdef MZ_PRECISE_GC
+  int gcMark(Mark_Proc mark);
+#endif
 };
+
+#ifdef MZ_PRECISE_GC
+int os_wxColourDatabase::gcMark(Mark_Proc mark) {
+  wxColourDatabase::gcMark(mark);
+  if (mark) {
+  }
+  return gcBYTES_TO_WORDS(sizeof(*this));
+}
+#endif
 
 static Scheme_Object *os_wxColourDatabase_class;
 static Scheme_Object *os_wxColourDatabase_interface;
@@ -1289,7 +1340,19 @@ class os_wxPoint : public wxPoint {
   os_wxPoint(Scheme_Object * obj);
   os_wxPoint(Scheme_Object * obj, float x0, float x1);
   ~os_wxPoint();
+#ifdef MZ_PRECISE_GC
+  int gcMark(Mark_Proc mark);
+#endif
 };
+
+#ifdef MZ_PRECISE_GC
+int os_wxPoint::gcMark(Mark_Proc mark) {
+  wxPoint::gcMark(mark);
+  if (mark) {
+  }
+  return gcBYTES_TO_WORDS(sizeof(*this));
+}
+#endif
 
 static Scheme_Object *os_wxPoint_class;
 
@@ -1583,7 +1646,19 @@ class os_wxBrush : public wxBrush {
   os_wxBrush(Scheme_Object * obj, class wxColour* x0, int x1);
   os_wxBrush(Scheme_Object * obj, string x0, int x1);
   ~os_wxBrush();
+#ifdef MZ_PRECISE_GC
+  int gcMark(Mark_Proc mark);
+#endif
 };
+
+#ifdef MZ_PRECISE_GC
+int os_wxBrush::gcMark(Mark_Proc mark) {
+  wxBrush::gcMark(mark);
+  if (mark) {
+  }
+  return gcBYTES_TO_WORDS(sizeof(*this));
+}
+#endif
 
 static Scheme_Object *os_wxBrush_class;
 
@@ -1947,7 +2022,19 @@ class os_wxBrushList : public wxBrushList {
 
   os_wxBrushList(Scheme_Object * obj);
   ~os_wxBrushList();
+#ifdef MZ_PRECISE_GC
+  int gcMark(Mark_Proc mark);
+#endif
 };
+
+#ifdef MZ_PRECISE_GC
+int os_wxBrushList::gcMark(Mark_Proc mark) {
+  wxBrushList::gcMark(mark);
+  if (mark) {
+  }
+  return gcBYTES_TO_WORDS(sizeof(*this));
+}
+#endif
 
 static Scheme_Object *os_wxBrushList_class;
 
@@ -2278,7 +2365,19 @@ class os_wxPen : public wxPen {
   os_wxPen(Scheme_Object * obj, class wxColour* x0, int x1, int x2);
   os_wxPen(Scheme_Object * obj, string x0, int x1, int x2);
   ~os_wxPen();
+#ifdef MZ_PRECISE_GC
+  int gcMark(Mark_Proc mark);
+#endif
 };
+
+#ifdef MZ_PRECISE_GC
+int os_wxPen::gcMark(Mark_Proc mark) {
+  wxPen::gcMark(mark);
+  if (mark) {
+  }
+  return gcBYTES_TO_WORDS(sizeof(*this));
+}
+#endif
 
 static Scheme_Object *os_wxPen_class;
 
@@ -2788,7 +2887,19 @@ class os_wxPenList : public wxPenList {
 
   os_wxPenList(Scheme_Object * obj);
   ~os_wxPenList();
+#ifdef MZ_PRECISE_GC
+  int gcMark(Mark_Proc mark);
+#endif
 };
+
+#ifdef MZ_PRECISE_GC
+int os_wxPenList::gcMark(Mark_Proc mark) {
+  wxPenList::gcMark(mark);
+  if (mark) {
+  }
+  return gcBYTES_TO_WORDS(sizeof(*this));
+}
+#endif
 
 static Scheme_Object *os_wxPenList_class;
 
@@ -3040,7 +3151,19 @@ class os_wxCursor : public wxCursor {
   os_wxCursor(Scheme_Object * obj, string x0, int x1 = 0, int x2 = 0, int x3 = 0);
   os_wxCursor(Scheme_Object * obj, int x0);
   ~os_wxCursor();
+#ifdef MZ_PRECISE_GC
+  int gcMark(Mark_Proc mark);
+#endif
 };
+
+#ifdef MZ_PRECISE_GC
+int os_wxCursor::gcMark(Mark_Proc mark) {
+  wxCursor::gcMark(mark);
+  if (mark) {
+  }
+  return gcBYTES_TO_WORDS(sizeof(*this));
+}
+#endif
 
 static Scheme_Object *os_wxCursor_class;
 
@@ -3364,7 +3487,19 @@ class os_wxRegion : public wxRegion {
 
   os_wxRegion(Scheme_Object * obj, class wxDC* x0);
   ~os_wxRegion();
+#ifdef MZ_PRECISE_GC
+  int gcMark(Mark_Proc mark);
+#endif
 };
+
+#ifdef MZ_PRECISE_GC
+int os_wxRegion::gcMark(Mark_Proc mark) {
+  wxRegion::gcMark(mark);
+  if (mark) {
+  }
+  return gcBYTES_TO_WORDS(sizeof(*this));
+}
+#endif
 
 static Scheme_Object *os_wxRegion_class;
 
@@ -3813,7 +3948,19 @@ class os_wxFontNameDirectory : public wxFontNameDirectory {
  public:
 
   ~os_wxFontNameDirectory();
+#ifdef MZ_PRECISE_GC
+  int gcMark(Mark_Proc mark);
+#endif
 };
+
+#ifdef MZ_PRECISE_GC
+int os_wxFontNameDirectory::gcMark(Mark_Proc mark) {
+  wxFontNameDirectory::gcMark(mark);
+  if (mark) {
+  }
+  return gcBYTES_TO_WORDS(sizeof(*this));
+}
+#endif
 
 static Scheme_Object *os_wxFontNameDirectory_class;
 static Scheme_Object *os_wxFontNameDirectory_interface;
@@ -4264,4 +4411,7 @@ class wxFontNameDirectory *objscheme_unbundle_wxFontNameDirectory(Scheme_Object 
 }
 
 
+#endif
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
 #endif

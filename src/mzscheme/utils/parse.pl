@@ -245,6 +245,8 @@ sub ReadFile {
 
     # Finish up the file
     while(<IN>) { &IgnoreLine($_); }
+
+    &PrintFooter();
 }
 
 sub StartsWithKey

@@ -27,6 +27,9 @@
 #include "wxscheme.h"
 #include "wxs_fram.h"
 
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
 
 #ifdef wx_xt
 #define HAS_GET_MENU_BAR 1
@@ -157,7 +160,19 @@ class os_wxFrame : public wxFrame {
   void OnMenuCommand(ExactLong x0);
   Bool OnClose();
   void OnActivate(Bool x0);
+#ifdef MZ_PRECISE_GC
+  int gcMark(Mark_Proc mark);
+#endif
 };
+
+#ifdef MZ_PRECISE_GC
+int os_wxFrame::gcMark(Mark_Proc mark) {
+  wxFrame::gcMark(mark);
+  if (mark) {
+  }
+  return gcBYTES_TO_WORDS(sizeof(*this));
+}
+#endif
 
 static Scheme_Object *os_wxFrame_class;
 
@@ -1119,3 +1134,6 @@ class wxFrame *objscheme_unbundle_wxFrame(Scheme_Object *obj, const char *where,
     return (wxFrame *)o->primdata;
 }
 
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif

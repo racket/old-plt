@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Colour.cc,v 1.10 1999/11/21 00:08:47 mflatt Exp $
+ * $Id: Colour.cc,v 1.11 1999/11/24 21:20:20 mflatt Exp $
  *
  * Purpose: classes to cover colours and colourmaps
  *
@@ -314,7 +314,7 @@ void wxColour::FreePixel(Bool del)
 	    X->have_pixel = FALSE;
 	}
 	if (del) {
-	    delete X; // destroy X representation;
+	    DELETE_OBJ X; // destroy X representation;
 	    X = NULL; // not Ok
 	}
     }
@@ -333,7 +333,7 @@ wxColourDatabase::~wxColourDatabase (void)
     wxNode *next;
     col  = (wxColour*)node->Data();
     next = node->Next();
-    delete col;
+    DELETE_OBJ col;
     node = next;
   }
 }
@@ -504,7 +504,7 @@ wxColourMap::~wxColourMap(void)
 	if (X->priv) {
 	    // free colourmap
 	}
-	delete X;
+	DELETE_OBJ X;
     }
 }
 

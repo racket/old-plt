@@ -100,6 +100,17 @@ sub PrintHeader
     print "#include \"wxscheme.h\"\n";
     print "#include \"${file}.h\"\n";
     print "\n";
+
+    print "#ifdef MZ_PRECISE_GC\n";
+    print "START_XFORM_SKIP;\n";
+    print "#endif\n";
+}
+
+sub PrintFooter
+{
+    print "#ifdef MZ_PRECISE_GC\n";
+    print "END_XFORM_SKIP;\n";
+    print "#endif\n";
 }
 
 sub PrintDefine
@@ -122,7 +133,6 @@ sub DoPrintClass
 
 	print "class ${newclass} : public ${oldclass} {\n";
 	print " public:\n";
-	# print "  Scheme_Object *obj;\n";
 	foreach $var (@vars) {
 	    print "  $var\n";
 	}
@@ -168,7 +178,28 @@ sub DoPrintClass
     }
 
     if (!$global && !$common) {
+	print "#ifdef MZ_PRECISE_GC\n";
+	print "  int gcMark(Mark_Proc mark);\n";
+	print "#endif\n";
+
 	print "};\n\n";
+
+	print "#ifdef MZ_PRECISE_GC\n";
+	print "int ${newclass}::gcMark(Mark_Proc mark) {\n";
+	print "  ${oldclass}::gcMark(mark);\n";
+	print "  if (mark) {\n";
+
+	foreach $var (@vars) {
+	    if ($var =~ /(.*[*])(.*);/) {
+		print "    gcMARK_TYPED($1, $2);\n";
+	    }
+	}
+
+	print "  }\n";
+	print "  return gcBYTES_TO_WORDS(sizeof(*this));\n";
+	print "}\n";
+	print "#endif\n\n";
+
 	# End of class definition
     } else {
 	select(OUT);

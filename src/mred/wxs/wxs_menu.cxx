@@ -11,6 +11,9 @@
 #include "wxscheme.h"
 #include "wxs_menu.h"
 
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
 
 
 
@@ -88,7 +91,20 @@ class os_wxMenu : public wxMenu {
 
   os_wxMenu(Scheme_Object * obj, nstring x0 = NULL, wxFunction x1 = NULL);
   ~os_wxMenu();
+#ifdef MZ_PRECISE_GC
+  int gcMark(Mark_Proc mark);
+#endif
 };
+
+#ifdef MZ_PRECISE_GC
+int os_wxMenu::gcMark(Mark_Proc mark) {
+  wxMenu::gcMark(mark);
+  if (mark) {
+    gcMARK_TYPED(Scheme_Object *, callback_closure);
+  }
+  return gcBYTES_TO_WORDS(sizeof(*this));
+}
+#endif
 
 static Scheme_Object *os_wxMenu_class;
 
@@ -789,7 +805,19 @@ class os_wxMenuBar : public wxMenuBar {
   os_wxMenuBar(Scheme_Object * obj);
   os_wxMenuBar(Scheme_Object * obj, int x0, wxMenu** x1, string* x2);
   ~os_wxMenuBar();
+#ifdef MZ_PRECISE_GC
+  int gcMark(Mark_Proc mark);
+#endif
 };
+
+#ifdef MZ_PRECISE_GC
+int os_wxMenuBar::gcMark(Mark_Proc mark) {
+  wxMenuBar::gcMark(mark);
+  if (mark) {
+  }
+  return gcBYTES_TO_WORDS(sizeof(*this));
+}
+#endif
 
 static Scheme_Object *os_wxMenuBar_class;
 
@@ -1093,7 +1121,19 @@ class os_wxsMenuItem : public wxsMenuItem {
 
   os_wxsMenuItem(Scheme_Object * obj);
   ~os_wxsMenuItem();
+#ifdef MZ_PRECISE_GC
+  int gcMark(Mark_Proc mark);
+#endif
 };
+
+#ifdef MZ_PRECISE_GC
+int os_wxsMenuItem::gcMark(Mark_Proc mark) {
+  wxsMenuItem::gcMark(mark);
+  if (mark) {
+  }
+  return gcBYTES_TO_WORDS(sizeof(*this));
+}
+#endif
 
 static Scheme_Object *os_wxsMenuItem_class;
 
@@ -1263,3 +1303,6 @@ void objscheme_setup_wxsMenuItemGlobal(void *env)
   WITH_VAR_STACK(scheme_install_xc_global("id-to-menu-item", functmp, env));
 }
 
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif

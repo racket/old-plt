@@ -762,10 +762,6 @@ wxSnip *wxTextSnip::MergeWith(wxSnip *pred)
 
   Insert(((wxTextSnip *)pred)->text, pred->count, 0);
 
-#if !WXGARBAGE_COLLECTION_ON
-  delete pred;
-#endif
-
 #if CHECK_CS_FLAG
   if (!(flags & wxSNIP_CAN_SPLIT) && (*admin_ptr))
     (*admin_ptr)->Resized(this, TRUE);
@@ -1411,7 +1407,7 @@ void wxImageSnip::LoadFile(char *name, long type, Bool relative, Bool inlineImg)
       wxEndBusyCursor();
       
       if (!bm->Ok()) {
-	delete bm;
+	DELETE_OBJ bm;
 	bm = NULL;
       }
     }
@@ -1740,7 +1736,7 @@ Bool wxStandardSnipClassList::Read(wxMediaStreamIn *f)
 
   for (node = unknowns->First(); node; node = next) {
     next = node->Next();
-    delete node;
+    DELETE_OBJ node;
   }
 
   for (i = 0; i < count; i++) {
@@ -1786,7 +1782,7 @@ wxSnipClass *wxStandardSnipClassList::FindByMapPosition(short n)
     sprintf(buffer2, "Unknown snip class or version: \"%.100s\".", s);
     wxmeError(buffer2);
 
-    delete node;
+    DELETE_OBJ node;
   }
 
   return NULL;
@@ -1821,7 +1817,7 @@ wxBufferData::wxBufferData()
 wxBufferData::~wxBufferData()
 {
   if (next)
-    delete next;
+    DELETE_OBJ next;
 }
 
 class LocationBufferDataClass : public wxBufferDataClass

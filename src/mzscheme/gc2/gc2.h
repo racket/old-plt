@@ -77,9 +77,10 @@ unsigned long GC_get_stack_base(void);
    MzScheme started, before it has multiple threads. */
 
 void GC_add_roots(void *start, void *end);
+void GC_delete_roots(void *start, void *end);
 /*
-   Called by MzScheme to install roots. The memory between `start'
-   (includive) and `end' (exclusive) contains pointers. */
+   Called by MzScheme to install/delete roots. The memory between
+   `start' (inclusive) and `end' (exclusive) contains pointers. */
 
 void GC_init_type_tags(int count, int weakbox);
 /*
@@ -333,5 +334,6 @@ extern void *GC_alloc_space, *GC_alloc_top;
 #define gcMARK_TYPED(t, x) gcMARK_HERE(mark, t, x)
 #define gcMARK(x) gcMARK_TYPED(void*, x)
 #define gcBYTES_TO_WORDS(x) ((x + 3) >> 2)
+#define gcWORDS_TO_BYTES(x) (x << 2)
 
 #endif /* __mzscheme_gc_2__ */

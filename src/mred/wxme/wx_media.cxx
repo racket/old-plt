@@ -224,7 +224,7 @@ wxMediaEdit::~wxMediaEdit()
 
   for (snip = snips; snip; snip = next) {
     next = snip->next;
-    delete snip;
+    DELETE_OBJ snip;
   }
 
   clickbacks->DeleteContents(TRUE);
@@ -1459,7 +1459,7 @@ void wxMediaEdit::_Insert(wxSnip *isnip, long strlen, char *str,
 	    tabsnip->line->snip = tabsnip;
 	  if (PTREQ(snip->line->lastSnip, snip))
 	    tabsnip->line->lastSnip = tabsnip;
-	  delete snip;
+	  DELETE_OBJ snip;
 	}
 
 	snip = (wxTextSnip *)FindSnip(i + start + 1, +1);
@@ -2313,7 +2313,7 @@ void wxMediaEdit::RemoveClickback(long start, long end)
     next = node->Next();
     click = (wxClickback *)node->Data();
     if (click->start == start && click->end == end) {
-      delete click;
+      DELETE_OBJ click;
       clickbacks->DeleteNode(node);
     }
   }
@@ -2329,7 +2329,7 @@ void wxMediaEdit::FlashOn(long start, long end, Bool ateol, Bool scroll,
     flashautoreset = TRUE;
     if (flashTimer) {
       flashTimer->Stop();
-      delete flashTimer;
+      DELETE_OBJ flashTimer;
     }
     flashTimer = new wxMediaFlashTimer();
     flashTimer->media = this;
@@ -3132,8 +3132,6 @@ void wxMediaEdit::SetTabs(float *newtabs, int count,
   if (flowLocked)
     return;
 
-  delete tabs;
-  
   tabs = newtabs;
   tabcount = count;
 

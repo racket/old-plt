@@ -28,6 +28,9 @@
 #include "wxscheme.h"
 #include "wxs_madm.h"
 
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
 
 #include "wxs_obj.h"
 
@@ -188,7 +191,19 @@ class os_wxMediaCanvas : public wxMediaCanvas {
   void OnSize(int x0, int x1);
   void OnSetFocus();
   void OnKillFocus();
+#ifdef MZ_PRECISE_GC
+  int gcMark(Mark_Proc mark);
+#endif
 };
+
+#ifdef MZ_PRECISE_GC
+int os_wxMediaCanvas::gcMark(Mark_Proc mark) {
+  wxMediaCanvas::gcMark(mark);
+  if (mark) {
+  }
+  return gcBYTES_TO_WORDS(sizeof(*this));
+}
+#endif
 
 static Scheme_Object *os_wxMediaCanvas_class;
 
@@ -1091,7 +1106,19 @@ class os_wxMediaAdmin : public wxMediaAdmin {
   void GetMaxView(float* x0, float* x1, nnfloat* x2, nnfloat* x3, Bool x4 = FALSE);
   void GetView(float* x0, float* x1, nnfloat* x2, nnfloat* x3, Bool x4 = FALSE);
   class wxDC* GetDC(float* x0 = NULL, float* x1 = NULL);
+#ifdef MZ_PRECISE_GC
+  int gcMark(Mark_Proc mark);
+#endif
 };
+
+#ifdef MZ_PRECISE_GC
+int os_wxMediaAdmin::gcMark(Mark_Proc mark) {
+  wxMediaAdmin::gcMark(mark);
+  if (mark) {
+  }
+  return gcBYTES_TO_WORDS(sizeof(*this));
+}
+#endif
 
 static Scheme_Object *os_wxMediaAdmin_class;
 
@@ -1859,7 +1886,19 @@ class os_wxMediaSnipMediaAdmin : public wxMediaSnipMediaAdmin {
   FIXMSMA
 
   ~os_wxMediaSnipMediaAdmin();
+#ifdef MZ_PRECISE_GC
+  int gcMark(Mark_Proc mark);
+#endif
 };
+
+#ifdef MZ_PRECISE_GC
+int os_wxMediaSnipMediaAdmin::gcMark(Mark_Proc mark) {
+  wxMediaSnipMediaAdmin::gcMark(mark);
+  if (mark) {
+  }
+  return gcBYTES_TO_WORDS(sizeof(*this));
+}
+#endif
 
 static Scheme_Object *os_wxMediaSnipMediaAdmin_class;
 static Scheme_Object *os_wxMediaSnipMediaAdmin_interface;
@@ -1990,7 +2029,19 @@ class os_wxSnipAdmin : public wxSnipAdmin {
   void GetViewSize(nnfloat* x0, nnfloat* x1);
   class wxDC* GetDC();
   class wxMediaBuffer* GetMedia();
+#ifdef MZ_PRECISE_GC
+  int gcMark(Mark_Proc mark);
+#endif
 };
+
+#ifdef MZ_PRECISE_GC
+int os_wxSnipAdmin::gcMark(Mark_Proc mark) {
+  wxSnipAdmin::gcMark(mark);
+  if (mark) {
+  }
+  return gcBYTES_TO_WORDS(sizeof(*this));
+}
+#endif
 
 static Scheme_Object *os_wxSnipAdmin_class;
 
@@ -2835,7 +2886,19 @@ class os_wxSnipClass : public wxSnipClass {
   void ReadDone();
   Bool ReadHeader(class wxMediaStreamIn* x0);
   class wxSnip* Read(class wxMediaStreamIn* x0);
+#ifdef MZ_PRECISE_GC
+  int gcMark(Mark_Proc mark);
+#endif
 };
+
+#ifdef MZ_PRECISE_GC
+int os_wxSnipClass::gcMark(Mark_Proc mark) {
+  wxSnipClass::gcMark(mark);
+  if (mark) {
+  }
+  return gcBYTES_TO_WORDS(sizeof(*this));
+}
+#endif
 
 static Scheme_Object *os_wxSnipClass_class;
 
@@ -3301,7 +3364,19 @@ class os_wxSnipClassList : public wxSnipClassList {
  public:
 
   ~os_wxSnipClassList();
+#ifdef MZ_PRECISE_GC
+  int gcMark(Mark_Proc mark);
+#endif
 };
+
+#ifdef MZ_PRECISE_GC
+int os_wxSnipClassList::gcMark(Mark_Proc mark) {
+  wxSnipClassList::gcMark(mark);
+  if (mark) {
+  }
+  return gcBYTES_TO_WORDS(sizeof(*this));
+}
+#endif
 
 static Scheme_Object *os_wxSnipClassList_class;
 static Scheme_Object *os_wxSnipClassList_interface;
@@ -3567,7 +3642,19 @@ class os_wxKeymap : public wxKeymap {
   ~os_wxKeymap();
   Bool HandleMouseEvent(UNKNOWN_OBJ x0, class wxMouseEvent* x1);
   Bool HandleKeyEvent(UNKNOWN_OBJ x0, class wxKeyEvent* x1);
+#ifdef MZ_PRECISE_GC
+  int gcMark(Mark_Proc mark);
+#endif
 };
+
+#ifdef MZ_PRECISE_GC
+int os_wxKeymap::gcMark(Mark_Proc mark) {
+  wxKeymap::gcMark(mark);
+  if (mark) {
+  }
+  return gcBYTES_TO_WORDS(sizeof(*this));
+}
+#endif
 
 static Scheme_Object *os_wxKeymap_class;
 
@@ -4278,7 +4365,19 @@ class os_wxMediaWordbreakMap : public wxMediaWordbreakMap {
 
   os_wxMediaWordbreakMap(Scheme_Object * obj);
   ~os_wxMediaWordbreakMap();
+#ifdef MZ_PRECISE_GC
+  int gcMark(Mark_Proc mark);
+#endif
 };
+
+#ifdef MZ_PRECISE_GC
+int os_wxMediaWordbreakMap::gcMark(Mark_Proc mark) {
+  wxMediaWordbreakMap::gcMark(mark);
+  if (mark) {
+  }
+  return gcBYTES_TO_WORDS(sizeof(*this));
+}
+#endif
 
 static Scheme_Object *os_wxMediaWordbreakMap_class;
 
@@ -4446,3 +4545,6 @@ class wxMediaWordbreakMap *objscheme_unbundle_wxMediaWordbreakMap(Scheme_Object 
 }
 
 
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif

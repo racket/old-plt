@@ -27,6 +27,9 @@
 #include "wxscheme.h"
 #include "wxs_styl.h"
 
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
 
 
 
@@ -35,7 +38,19 @@ class os_wxMultColour : public wxMultColour {
  public:
 
   ~os_wxMultColour();
+#ifdef MZ_PRECISE_GC
+  int gcMark(Mark_Proc mark);
+#endif
 };
+
+#ifdef MZ_PRECISE_GC
+int os_wxMultColour::gcMark(Mark_Proc mark) {
+  wxMultColour::gcMark(mark);
+  if (mark) {
+  }
+  return gcBYTES_TO_WORDS(sizeof(*this));
+}
+#endif
 
 static Scheme_Object *os_wxMultColour_class;
 static Scheme_Object *os_wxMultColour_interface;
@@ -300,7 +315,19 @@ class os_wxAddColour : public wxAddColour {
  public:
 
   ~os_wxAddColour();
+#ifdef MZ_PRECISE_GC
+  int gcMark(Mark_Proc mark);
+#endif
 };
+
+#ifdef MZ_PRECISE_GC
+int os_wxAddColour::gcMark(Mark_Proc mark) {
+  wxAddColour::gcMark(mark);
+  if (mark) {
+  }
+  return gcBYTES_TO_WORDS(sizeof(*this));
+}
+#endif
 
 static Scheme_Object *os_wxAddColour_class;
 static Scheme_Object *os_wxAddColour_interface;
@@ -973,7 +1000,19 @@ class os_wxStyleDelta : public wxStyleDelta {
 
   os_wxStyleDelta(Scheme_Object * obj, int x0 = wxCHANGE_NOTHING, int x1 = 0);
   ~os_wxStyleDelta();
+#ifdef MZ_PRECISE_GC
+  int gcMark(Mark_Proc mark);
+#endif
 };
+
+#ifdef MZ_PRECISE_GC
+int os_wxStyleDelta::gcMark(Mark_Proc mark) {
+  wxStyleDelta::gcMark(mark);
+  if (mark) {
+  }
+  return gcBYTES_TO_WORDS(sizeof(*this));
+}
+#endif
 
 static Scheme_Object *os_wxStyleDelta_class;
 
@@ -2141,7 +2180,19 @@ class os_wxStyle : public wxStyle {
  public:
 
   ~os_wxStyle();
+#ifdef MZ_PRECISE_GC
+  int gcMark(Mark_Proc mark);
+#endif
 };
+
+#ifdef MZ_PRECISE_GC
+int os_wxStyle::gcMark(Mark_Proc mark) {
+  wxStyle::gcMark(mark);
+  if (mark) {
+  }
+  return gcBYTES_TO_WORDS(sizeof(*this));
+}
+#endif
 
 static Scheme_Object *os_wxStyle_class;
 static Scheme_Object *os_wxStyle_interface;
@@ -2830,7 +2881,19 @@ class os_wxStyleList : public wxStyleList {
 
   os_wxStyleList(Scheme_Object * obj);
   ~os_wxStyleList();
+#ifdef MZ_PRECISE_GC
+  int gcMark(Mark_Proc mark);
+#endif
 };
+
+#ifdef MZ_PRECISE_GC
+int os_wxStyleList::gcMark(Mark_Proc mark) {
+  wxStyleList::gcMark(mark);
+  if (mark) {
+  }
+  return gcBYTES_TO_WORDS(sizeof(*this));
+}
+#endif
 
 static Scheme_Object *os_wxStyleList_class;
 
@@ -3277,3 +3340,6 @@ static void NotifyCallbackToScheme(wxStyle *s, Scheme_Object *f)
   WITH_VAR_STACK(scheme_apply_multi(f, 1, p));
 }
 
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif

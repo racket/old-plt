@@ -1,5 +1,4 @@
 /*								-*- C++ -*-
- * $Id: Menu.cc,v 1.15 1999/11/19 22:02:38 mflatt Exp $
  *
  * Purpose: simple menu class
  *
@@ -73,10 +72,13 @@ wxMenu::~wxMenu(void)
     while (item) {
 	menu_item *temp = item;
 	item = item->next;
-	delete temp->label;	// delete label
-	if (temp->contents) 	// has submenu?
-	  delete ((wxMenu*)(temp->user_data)); // delete wxMenu
-	delete temp;		// delete menu_item
+	DELETE_VAL temp->label;
+	if (temp->contents) { 	// has submenu?
+	  wxMenu *mnu;
+	  mnu = ((wxMenu*)(temp->user_data));
+	  DELETE_OBJ mnu;
+	}
+	DELETE_VAL temp;
     }
 }
 
@@ -148,7 +150,7 @@ void wxMenu::Append(long id, char *label, char *help, Bool checkable)
     // create new menu item or use topdummy
     if (topdummy) {
 	item = (menu_item*)topdummy;
-	delete item->label;
+	DELETE_VAL item->label;
 	topdummy = 0;
     } else {
 #ifdef MZ_PRECISE_GC
@@ -259,11 +261,11 @@ Bool wxMenu::DeleteItem(long id, int pos)
 	last = (wxMenuItem*)prev;
     }
 
-    delete found->label;
+    DELETE_VAL found->label;
     /* If there's a submenu, let it go. */
     if (found->contents)
       ((wxMenu *)found->user_data)->owner = NULL;
-    delete found;
+    DELETE_VAL found;
     return TRUE;
   } else
     return FALSE;
@@ -442,7 +444,8 @@ void wxMenu::EventCallback(Widget WXUNUSED(w), XtPointer dclient, XtPointer dcal
     // destroy widgets
     XtDestroyWidget(menu->X->shell);
     menu->X->shell = menu->X->menu = 0;
-    delete menu->X; menu->X=NULL;
+    DELETE_OBJ menu->X;
+    menu->X=NULL;
 
     if (item && (item->ID != -1)) {
       wxPopupEvent *event;

@@ -27,6 +27,9 @@
 #include "wxscheme.h"
 #include "wxs_win.h"
 
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
 
 #ifdef wx_mac
 #define Move(x, y) SetSize(x, y, -1, -1)
@@ -149,7 +152,19 @@ class os_wxWindow : public wxWindow {
   void OnSize(int x0, int x1);
   void OnSetFocus();
   void OnKillFocus();
+#ifdef MZ_PRECISE_GC
+  int gcMark(Mark_Proc mark);
+#endif
 };
+
+#ifdef MZ_PRECISE_GC
+int os_wxWindow::gcMark(Mark_Proc mark) {
+  wxWindow::gcMark(mark);
+  if (mark) {
+  }
+  return gcBYTES_TO_WORDS(sizeof(*this));
+}
+#endif
 
 static Scheme_Object *os_wxWindow_class;
 
@@ -1237,3 +1252,6 @@ class wxWindow *objscheme_unbundle_wxWindow(Scheme_Object *obj, const char *wher
     return (wxWindow *)o->primdata;
 }
 
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif

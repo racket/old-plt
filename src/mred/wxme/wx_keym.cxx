@@ -360,7 +360,6 @@ wxKeycode *wxKeymap::MapFunction(long code, int shift, int ctrl,
       return NULL;
     }  else {
       if (strcmp(key->fname, fname)) {
-	delete[] key->fname;
 	key->fname = copystring(fname);
       }
       return key;
@@ -957,19 +956,6 @@ Bool wxKeymap::CallFunction(char *name, UNKNOWN_OBJ media, wxEvent *event,
   return 0;
 }
 
-void wxKeymap::AdjustUsage(Bool newUser)
-{
-  if (newUser)
-    usage++;
-  else
-    --usage;
-}
-
-Bool wxKeymap::IsUsed(void)
-{
-  return (usage != 0);
-}
-
 long wxKeymap::GetDoubleClickInterval()
 {
   return doubleInterval;
@@ -1015,12 +1001,7 @@ void wxKeymap::ChainToKeymap(wxKeymap *km, Bool prefix)
   memcpy(chainTo + (prefix ? 1 : 0), old, chainCount * sizeof(wxKeymap *));
   chainTo[prefix ? 0 : chainCount] = km;
 
-  if (old)
-    delete[] old;
-
   chainCount++;
-
-  km->AdjustUsage(TRUE);
 }
 
 void wxKeymap::RemoveChainedKeymap(wxKeymap *km)
@@ -1039,12 +1020,6 @@ void wxKeymap::RemoveChainedKeymap(wxKeymap *km)
 	 sizeof(wxKeymap *) * (chainCount - i - 1));
 
   chainCount--;
-
-  km->AdjustUsage(FALSE);
-#if !WXGARBAGE_COLLECTION_ON
-  if (!km->IsUsed())
-    delete km;
-#endif
 }
 
 /***************************************************************/

@@ -145,12 +145,12 @@ wxMediaPasteboard::~wxMediaPasteboard()
   wxSnip *snip, *next;
   for (snip = snips; snip; snip = next) {
     next = snip->next;
-    delete snip;
+    DELETE_OBJ snip;
   }
 
-  delete snipLocationList;
+  DELETE_OBJ snipLocationList;
 
-  delete snipAdmin;
+  DELETE_OBJ snipAdmin;
 }
 
 void wxMediaPasteboard::RubberBand(float x, float y, float w, float h)

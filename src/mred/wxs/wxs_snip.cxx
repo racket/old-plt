@@ -26,6 +26,9 @@
 #include "wxscheme.h"
 #include "wxs_snip.h"
 
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
 
 
 static Scheme_Object *caret_wxSNIP_DRAW_NO_CARET_sym = NULL;
@@ -274,7 +277,19 @@ class os_wxSnip : public wxSnip {
   void Draw(class wxDC* x0, float x1, float x2, float x3, float x4, float x5, float x6, float x7, float x8, int x9);
   float PartialOffset(class wxDC* x0, float x1, float x2, nnlong x3);
   void GetExtent(class wxDC* x0, float x1, float x2, nnfloat* x3 = NULL, nnfloat* x4 = NULL, nnfloat* x5 = NULL, nnfloat* x6 = NULL, nnfloat* x7 = NULL, nnfloat* x8 = NULL);
+#ifdef MZ_PRECISE_GC
+  int gcMark(Mark_Proc mark);
+#endif
 };
+
+#ifdef MZ_PRECISE_GC
+int os_wxSnip::gcMark(Mark_Proc mark) {
+  wxSnip::gcMark(mark);
+  if (mark) {
+  }
+  return gcBYTES_TO_WORDS(sizeof(*this));
+}
+#endif
 
 static Scheme_Object *os_wxSnip_class;
 
@@ -2094,7 +2109,19 @@ class os_wxTextSnip : public wxTextSnip {
   void Draw(class wxDC* x0, float x1, float x2, float x3, float x4, float x5, float x6, float x7, float x8, int x9);
   float PartialOffset(class wxDC* x0, float x1, float x2, nnlong x3);
   void GetExtent(class wxDC* x0, float x1, float x2, nnfloat* x3 = NULL, nnfloat* x4 = NULL, nnfloat* x5 = NULL, nnfloat* x6 = NULL, nnfloat* x7 = NULL, nnfloat* x8 = NULL);
+#ifdef MZ_PRECISE_GC
+  int gcMark(Mark_Proc mark);
+#endif
 };
+
+#ifdef MZ_PRECISE_GC
+int os_wxTextSnip::gcMark(Mark_Proc mark) {
+  wxTextSnip::gcMark(mark);
+  if (mark) {
+  }
+  return gcBYTES_TO_WORDS(sizeof(*this));
+}
+#endif
 
 static Scheme_Object *os_wxTextSnip_class;
 
@@ -3700,7 +3727,19 @@ class os_wxTabSnip : public wxTabSnip {
   void Draw(class wxDC* x0, float x1, float x2, float x3, float x4, float x5, float x6, float x7, float x8, int x9);
   float PartialOffset(class wxDC* x0, float x1, float x2, nnlong x3);
   void GetExtent(class wxDC* x0, float x1, float x2, nnfloat* x3 = NULL, nnfloat* x4 = NULL, nnfloat* x5 = NULL, nnfloat* x6 = NULL, nnfloat* x7 = NULL, nnfloat* x8 = NULL);
+#ifdef MZ_PRECISE_GC
+  int gcMark(Mark_Proc mark);
+#endif
 };
+
+#ifdef MZ_PRECISE_GC
+int os_wxTabSnip::gcMark(Mark_Proc mark) {
+  wxTabSnip::gcMark(mark);
+  if (mark) {
+  }
+  return gcBYTES_TO_WORDS(sizeof(*this));
+}
+#endif
 
 static Scheme_Object *os_wxTabSnip_class;
 
@@ -5308,7 +5347,19 @@ class os_wxImageSnip : public wxImageSnip {
   void Draw(class wxDC* x0, float x1, float x2, float x3, float x4, float x5, float x6, float x7, float x8, int x9);
   float PartialOffset(class wxDC* x0, float x1, float x2, nnlong x3);
   void GetExtent(class wxDC* x0, float x1, float x2, nnfloat* x3 = NULL, nnfloat* x4 = NULL, nnfloat* x5 = NULL, nnfloat* x6 = NULL, nnfloat* x7 = NULL, nnfloat* x8 = NULL);
+#ifdef MZ_PRECISE_GC
+  int gcMark(Mark_Proc mark);
+#endif
 };
+
+#ifdef MZ_PRECISE_GC
+int os_wxImageSnip::gcMark(Mark_Proc mark) {
+  wxImageSnip::gcMark(mark);
+  if (mark) {
+  }
+  return gcBYTES_TO_WORDS(sizeof(*this));
+}
+#endif
 
 static Scheme_Object *os_wxImageSnip_class;
 
@@ -7050,7 +7101,19 @@ class os_wxMediaSnip : public wxMediaSnip {
   void Draw(class wxDC* x0, float x1, float x2, float x3, float x4, float x5, float x6, float x7, float x8, int x9);
   float PartialOffset(class wxDC* x0, float x1, float x2, nnlong x3);
   void GetExtent(class wxDC* x0, float x1, float x2, nnfloat* x3 = NULL, nnfloat* x4 = NULL, nnfloat* x5 = NULL, nnfloat* x6 = NULL, nnfloat* x7 = NULL, nnfloat* x8 = NULL);
+#ifdef MZ_PRECISE_GC
+  int gcMark(Mark_Proc mark);
+#endif
 };
+
+#ifdef MZ_PRECISE_GC
+int os_wxMediaSnip::gcMark(Mark_Proc mark) {
+  wxMediaSnip::gcMark(mark);
+  if (mark) {
+  }
+  return gcBYTES_TO_WORDS(sizeof(*this));
+}
+#endif
 
 static Scheme_Object *os_wxMediaSnip_class;
 
@@ -9110,7 +9173,19 @@ class os_wxBufferDataClass : public wxBufferDataClass {
   os_wxBufferDataClass(Scheme_Object * obj);
   ~os_wxBufferDataClass();
   class wxBufferData* Read(class wxMediaStreamIn* x0);
+#ifdef MZ_PRECISE_GC
+  int gcMark(Mark_Proc mark);
+#endif
 };
+
+#ifdef MZ_PRECISE_GC
+int os_wxBufferDataClass::gcMark(Mark_Proc mark) {
+  wxBufferDataClass::gcMark(mark);
+  if (mark) {
+  }
+  return gcBYTES_TO_WORDS(sizeof(*this));
+}
+#endif
 
 static Scheme_Object *os_wxBufferDataClass_class;
 
@@ -9324,7 +9399,19 @@ class os_wxBufferDataClassList : public wxBufferDataClassList {
  public:
 
   ~os_wxBufferDataClassList();
+#ifdef MZ_PRECISE_GC
+  int gcMark(Mark_Proc mark);
+#endif
 };
+
+#ifdef MZ_PRECISE_GC
+int os_wxBufferDataClassList::gcMark(Mark_Proc mark) {
+  wxBufferDataClassList::gcMark(mark);
+  if (mark) {
+  }
+  return gcBYTES_TO_WORDS(sizeof(*this));
+}
+#endif
 
 static Scheme_Object *os_wxBufferDataClassList_class;
 static Scheme_Object *os_wxBufferDataClassList_interface;
@@ -9561,7 +9648,19 @@ class os_wxBufferData : public wxBufferData {
   os_wxBufferData(Scheme_Object * obj);
   ~os_wxBufferData();
   Bool Write(class wxMediaStreamOut* x0);
+#ifdef MZ_PRECISE_GC
+  int gcMark(Mark_Proc mark);
+#endif
 };
+
+#ifdef MZ_PRECISE_GC
+int os_wxBufferData::gcMark(Mark_Proc mark) {
+  wxBufferData::gcMark(mark);
+  if (mark) {
+  }
+  return gcBYTES_TO_WORDS(sizeof(*this));
+}
+#endif
 
 static Scheme_Object *os_wxBufferData_class;
 
@@ -9811,3 +9910,6 @@ class wxBufferData *objscheme_unbundle_wxBufferData(Scheme_Object *obj, const ch
 }
 
 
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif

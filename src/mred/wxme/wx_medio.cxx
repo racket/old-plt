@@ -220,7 +220,6 @@ void wxMediaStreamOutStringBase::Write(char *data, long l)
     alloc = (alloc * 2) + l;
     string = new char[alloc];
     memcpy(string, old, len);
-    delete[] old;
   }
 
   memcpy(string + pos, data, l);
@@ -242,7 +241,6 @@ wxMediaStreamIn::wxMediaStreamIn(wxMediaStreamInBase *s)
 
 wxMediaStreamIn::~wxMediaStreamIn()
 {
-  delete[] boundaries;
 }
 
 void wxMediaStreamIn::Typecheck(char v)
@@ -473,7 +471,6 @@ void wxMediaStreamIn::SetBoundary(long n)
     boundalloc *= 2;
     boundaries = new long[boundalloc];
     memcpy(boundaries, old, boundcount * sizeof(long));
-    delete[] old;
   }
 
   {

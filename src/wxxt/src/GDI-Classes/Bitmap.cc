@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Bitmap.cc,v 1.11 1999/11/24 21:20:19 mflatt Exp $
+ * $Id: Bitmap.cc,v 1.12 1999/11/26 19:36:34 mflatt Exp $
  *
  * Purpose: bitmap classes to implement pixmaps, icons, and cursors
  *
@@ -98,7 +98,7 @@ wxBitmap::wxBitmap(char bits[], int w, int h)
     Xbitmap->x_pixmap = XCreateBitmapFromData(wxAPP_DISPLAY, wxAPP_ROOT, bits, w, h);
     if (Xbitmap->x_pixmap == None) {
       // create failed
-      delete Xbitmap;
+      DELETE_OBJ Xbitmap;
       Xbitmap = NULL;
     }
 
@@ -160,8 +160,8 @@ wxBitmap::wxBitmap(char **data, wxItem *WXUNUSED(anItem)) // anItem used for MOT
     } else {
 	// create failed: free all memory
 	XpmFreeAttributes(Xbitmap->xpm);
-	delete Xbitmap->xpm;
-	delete Xbitmap;
+	DELETE_VAL Xbitmap->xpm;
+	DELETE_OBJ Xbitmap;
 	Xbitmap = NULL;
     }
 
@@ -258,7 +258,7 @@ Bool wxBitmap::Create(int w, int h, int d)
 
     if (Xbitmap->x_pixmap == None) {
       // create failed!
-      delete Xbitmap;
+      DELETE_OBJ Xbitmap;
       Xbitmap = NULL;
     }
 
@@ -278,13 +278,13 @@ void wxBitmap::Destroy(void)
 	    cm = *((Colormap*)(cmap->GetHandle()));
 	    XFreeColors(wxAPP_DISPLAY, cm, Xbitmap->xpm->pixels, Xbitmap->xpm->npixels, 0);
 	    XpmFreeAttributes(Xbitmap->xpm);
-	    delete Xbitmap->xpm;
+	    DELETE_VAL Xbitmap->xpm;
 	  }
 	  break;
 	default:
 	  break; // no other formats so far
 	}
-	delete Xbitmap;
+	DELETE_OBJ Xbitmap;
     }
     // contains no pixmap
     Xbitmap = NULL;
@@ -318,7 +318,7 @@ Bool wxBitmap::LoadFile(char *fname, long flags)
 	    Xbitmap->type  = __BITMAP_NORMAL;
 	    Xbitmap->depth = 1;
 	} else {
-	    delete Xbitmap;
+	    DELETE_OBJ Xbitmap;
 	    Xbitmap = NULL;
 	}
     }
@@ -356,8 +356,8 @@ Bool wxBitmap::LoadFile(char *fname, long flags)
 	} else {
 	  // read failed: free all memory
 	  XpmFreeAttributes(Xbitmap->xpm);
-	  delete Xbitmap->xpm;
-	  delete Xbitmap;
+	  DELETE_VAL Xbitmap->xpm;
+	  DELETE_OBJ Xbitmap;
 	  Xbitmap = NULL;
 	}
     }
@@ -376,7 +376,7 @@ Bool wxBitmap::LoadFile(char *fname, long flags)
       success = wxLoadIntoBitmap(fname, this, &cmap);
 
     if (!success && map) {
-      delete map;
+      DELETE_OBJ map;
       map = NULL;
     }
 
@@ -595,14 +595,17 @@ wxCursor::wxCursor(int cursor_type) : wxBitmap()
       break;
     }
     if (!Xcursor->x_cursor) {
-      delete Xcursor;
+      DELETE_OBJ Xcursor;
       Xcursor = NULL;
     }
 }
 
 wxCursor::~wxCursor(void)
 {
-    if (Xcursor) delete Xcursor;
+    if (Xcursor) {
+      DELETE_OBJ Xcursor;
+      Xcursor = NULL;
+    }
 }
 
 void* wxCursor::GetHandle(void) { return (Xcursor ? &(Xcursor->x_cursor) : NULL); }

@@ -152,7 +152,9 @@ typedef float nnfloat;
 #endif
 
 #ifdef MZ_PRECISE_GC
-# define NEW_OBJECT(t, args)             (new t args, (t *)GC_pop_current_new())
+# define NEW_OBJECT(t, args)             (WITH_VAR_STACK(GC_pre_allocate(sizeof(t))), \
+                                          GC_use_preallocated(), WITH_VAR_STACK(new t args), \
+                                          (t *)GC_pop_current_new())
 # define _SETUP_VAR_STACK(n, vs)         void *__gc_var_stack__[n + 2]; \
                                          __gc_var_stack__[0] = vs; \
                                          __gc_var_stack__[1] = (void *)n

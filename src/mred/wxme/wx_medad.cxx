@@ -276,10 +276,10 @@ wxMediaCanvas::~wxMediaCanvas()
     if (admin->nextadmin || admin->prevadmin)
       SetMedia(NULL);
     else
-      delete media;
+      DELETE_OBJ media;
   }
 
-  delete admin;
+  DELETE_OBJ admin;
 }
 
 void wxMediaCanvas::OnSize(int w, int h)

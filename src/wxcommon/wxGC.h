@@ -56,6 +56,8 @@ extern "C" {
 
 #ifdef MZ_PRECISE_GC
 extern void *GC_cpp_malloc(size_t);
+extern void *GC_cpp_malloc_array(size_t);
+extern void GC_cpp_delete(class gc *);
 extern void GC_pre_allocate(size_t);
 extern void GC_use_preallocated();
 extern void *GC_get_current_new();
@@ -166,7 +168,11 @@ inline void gc::operator delete(void * /*obj*/)
 
 #ifdef OPERATOR_NEW_ARRAY
 inline void *gc::operator new[](size_t size) {
+#if defined(USE_SENORA_GC) || defined(MZ_PRECISE_GC)
+  return GC_cpp_malloc_array(size);
+#else
   return gc::operator new(size);
+#endif
 }
     
 inline void *gc::operator new[](size_t size, GCPlacement gcp) {

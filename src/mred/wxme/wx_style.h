@@ -221,9 +221,6 @@ class wxStyleList : public wxList /* should be private */
   wxStyle *IndexToStyle(int i);
   int StyleToIndex(wxStyle *);
 
-  void AdjustUsage(Bool newUser);
-  Bool IsUsed(void);
-
   Bool WriteToFile(class wxMediaStreamOut *f);
   wxStyle *MapIndexToStyle(int i);
 };

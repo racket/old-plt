@@ -26,6 +26,9 @@
 #include "wxscheme.h"
 #include "wxs_rado.h"
 
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
 
 static Scheme_Object *radioboxStyle_wxVERTICAL_sym = NULL;
 static Scheme_Object *radioboxStyle_wxHORIZONTAL_sym = NULL;
@@ -310,7 +313,20 @@ class os_wxRadioBox : public wxRadioBox {
   void OnSize(int x0, int x1);
   void OnSetFocus();
   void OnKillFocus();
+#ifdef MZ_PRECISE_GC
+  int gcMark(Mark_Proc mark);
+#endif
 };
+
+#ifdef MZ_PRECISE_GC
+int os_wxRadioBox::gcMark(Mark_Proc mark) {
+  wxRadioBox::gcMark(mark);
+  if (mark) {
+    gcMARK_TYPED(Scheme_Object *, callback_closure);
+  }
+  return gcBYTES_TO_WORDS(sizeof(*this));
+}
+#endif
 
 static Scheme_Object *os_wxRadioBox_class;
 
@@ -1144,3 +1160,6 @@ static void CB_TOSCHEME(CB_REALCLASS *realobj, wxCommandEvent *event)
 
   COPY_JMPBUF(scheme_error_buf, savebuf);
 }
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif

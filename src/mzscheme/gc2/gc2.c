@@ -136,6 +136,7 @@ void free_pages(void *p, size_t len)
 
 #define PTR_ALIGNMENT 4
 #define PTR_TO_INT(x) ((unsigned long)x)
+#define INT_TO_PTR(x) ((void *)x)
 
 static long roots_count;
 static long roots_size;
@@ -173,6 +174,10 @@ static void sort_and_merge_roots()
 	roots[i - 1 - offset] = roots[i + 1];
       offset += 2;
       roots_count -= 2;
+    } else if (roots[i] == roots[i + 1]) {
+      /* Remove empty range: */
+      offset += 2;
+      roots_count -= 2;
     } else if (offset) {
       /* compact: */
       roots[i - offset] = roots[i];
@@ -200,6 +205,35 @@ void GC_add_roots(void *start, void *end)
 
   roots[roots_count++] = PTR_TO_INT(start);
   roots[roots_count++] = PTR_TO_INT(end) - PTR_ALIGNMENT;
+}
+
+void GC_remove_roots(void *start, void *end)
+{
+  int i;
+  unsigned long s, e;
+
+  s = PTR_TO_INT(start);
+  e = PTR_TO_INT(end) - PTR_ALIGNMENT;
+
+  for (i = 0; i < roots_count; i += 2) {
+    if ((roots[i] <= s) && (roots[i + 1] >= e)) {
+      if (roots[i] == s) {
+	if (roots[i + 1] == e)
+	  roots[i] = e;
+	else
+	  roots[i] = e + (PTR_ALIGNMENT - 1);
+      } else if (roots[i + 1] == e) {
+	roots[i + 1] = s - (PTR_ALIGNMENT - 1);
+      } else {
+	unsigned long old_e;
+	old_e = roots[i + 1] + PTR_ALIGNMENT;
+	roots[i + 1] = s - (PTR_ALIGNMENT - 1);
+	e += (PTR_ALIGNMENT - 1);
+	GC_add_roots(INT_TO_PTR(e), INT_TO_PTR(old_e));
+      }
+      break;
+    }
+  }
 }
 
 /******************************************************************************/
@@ -343,7 +377,7 @@ void GC_register_finalizer(void *p, void (*f)(void *p, void *data),
 			   void *data, void (**oldf)(void *p, void *data), 
 			   void **olddata)
 {
-  GC_register_eager_finalizer(p, 0, f, data, oldf, olddata);
+  GC_register_eager_finalizer(p, 3, f, data, oldf, olddata);
 }
 
 void GC_finalization_weak_ptr(void **p)
@@ -449,6 +483,7 @@ void GC_init_type_tags(int count, int weakbox)
 
 #if SEARCH
 void *search_for;
+int detail_cycle;
 #endif
 
 void stop()
@@ -638,6 +673,7 @@ static long started, rightnow, old;
 static int initialized;
 #if SAFETY
 static long *prev_ptr;
+static void **prev_var_stack;
 #endif
 
 void gcollect(int needsize)
@@ -727,26 +763,40 @@ void gcollect(int needsize)
   diff = ((char *)p - (char *)GC_alloc_space) >> 2;
   while (p < (long *)tagged_high) {
     Type_Tag tag = *(Type_Tag *)p;
+#if ALIGN_DOUBLES
     if (tag == SKIP) {
       p++;
       diff++;
     } else {
+#endif
       long size;
 
       bitmap[diff >> 3] |= (1 << (diff & 0x7));
 
-      /* printf("tag %d\n", tag); */
+#if SEARCH
+      if (cycle_count == detail_cycle)
+	printf("tag: %lx =  %d\n", (long)p, tag);
+#endif
 
 #if SAFETY
       if ((tag < 0) || (tag >= _num_tags_) || !tag_table[tag]) {
 	*(int *)0x0 = 1;
       }
       prev_ptr = p;
+      prev_var_stack = GC_variable_stack;
 #endif
       size = tag_table[tag](p, NULL);
+#if SAFETY
+      if (prev_var_stack != GC_variable_stack) {
+	*(int *)0x0 = 1;
+      }
+#endif
+      
       p += size;
       diff += size;
+#if ALIGN_DOUBLES
     }
+#endif
   }
 
   PRINTTIME((STDERR, "gc: bitmap: %ld\n", GETTIMEREL()));
@@ -788,9 +838,11 @@ void gcollect(int needsize)
       while (tagged_mark < new_tagged_high) {
 	Type_Tag tag = *(Type_Tag *)tagged_mark;
 	
+#if ALIGN_DOUBLES
 	if (tag == SKIP)
 	  tagged_mark++;
 	else {
+#endif
 	  long size;
 	  
 #if SAFETY
@@ -814,7 +866,9 @@ void gcollect(int needsize)
 	    *(int *)0x0 = 1;
 	  }
 #endif
+#if ALIGN_DOUBLES
 	}
+#endif
       }
 
       while (untagged_mark > new_untagged_low) {
@@ -851,7 +905,7 @@ void gcollect(int needsize)
       }
     }
       
-    if ((did_fnls == 2) || !fnls) {
+    if ((did_fnls == 3) || !fnls) {
       break;
     } else {
       int eager_level = did_fnls + 1;
@@ -864,8 +918,14 @@ void gcollect(int needsize)
       while (f) {
 	if (f->eager_level == eager_level) {
 	  void *v;
-	    
-	  v = GC_resolve(f->p);
+
+	  /* FIXME: non-eager finalization = live forever, for now */
+	  if (eager_level == 3) {
+	    v = f->p;
+	    gcMARK(v);
+	  } else
+	    v = GC_resolve(f->p);
+
 	  if (v == f->p) {
 	    /* Not yet marked. Move finalization to run queue. */
 	    Fnl *next = f->next;
@@ -999,13 +1059,16 @@ void gcollect(int needsize)
 
   while (run_queue) {
     Fnl *f;
+    void **gcs;
 
     f = run_queue;
     run_queue = run_queue->next;
     if (!run_queue)
       last_in_queue = NULL;
 
+    gcs = GC_variable_stack;
     f->f(f->p, f->data);
+    GC_variable_stack = gcs;
   }
 }
 

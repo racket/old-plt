@@ -506,13 +506,12 @@ void wxWindow::DoSetSize(int x, int y, int width, int height) // mac platform on
 	Bool widthIsChanged = (width != cWindowWidth);
 	Bool heightIsChanged = (height != cWindowHeight);
 
-//	if (!cHidden && (xIsChanged || yIsChanged || widthIsChanged || heightIsChanged))
-	if (!cHidden)
+	if (!cHidden && (xIsChanged || yIsChanged || widthIsChanged || heightIsChanged))
 	{
 		Rect oldWindowRect = { -1, -1, cWindowHeight, cWindowWidth };
 		SetCurrentMacDCNoMargin();
 		MacSetBackground();
-                OffsetRect(&oldWindowRect,SetOriginX,SetOriginY);
+        OffsetRect(&oldWindowRect,SetOriginX,SetOriginY);
 		::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&oldWindowRect);
 		::ClipRect(&oldWindowRect);
 		::EraseRect(&oldWindowRect);
@@ -529,8 +528,10 @@ void wxWindow::DoSetSize(int x, int y, int width, int height) // mac platform on
 		cMacDC->setCurrentUser(NULL); // macDC no longer valid
 		SetCurrentMacDCNoMargin(); // put newClientRect at (SetOriginX,SetOriginY)
 		MacSetBackground();
-                OffsetRect(&newWindowRect,SetOriginX,SetOriginY);
-                ::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&newWindowRect); // force redraw of window
+        OffsetRect(&newWindowRect,SetOriginX,SetOriginY);
+        fprintf(stderr,"Invalidating region, top = %d, left = %d, right = %d, bottom = %d\n",newWindowRect.top,
+        	newWindowRect.left,newWindowRect.right,newWindowRect.bottom);
+        ::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&newWindowRect); // force redraw of window
 		::ClipRect(&newWindowRect);
 		::EraseRect(&newWindowRect); /* MATTHEW: [5] */
 	}

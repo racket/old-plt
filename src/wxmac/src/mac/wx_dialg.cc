@@ -626,9 +626,3 @@ char *wxFileSelector(char *message, char *default_path,
 #endif
 }
 
-void wxDialogBox::Paint()
-{
-	// debugging hook
-	wxPanel::Paint();
-}
-

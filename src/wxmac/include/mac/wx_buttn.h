@@ -94,8 +94,6 @@ public:
 //=============================================================================
 // Window coordinate system transformation methods
 //=============================================================================
-// for debugging:
-	void SetSize(int x, int y, int width, int height, int flags = wxSIZE_AUTO);
 
 	virtual void OnClientAreaDSize(int dW, int dH, int dX, int dY); // mac platform only
 	void SetDefault(Bool flag = TRUE); // WCH wx_mac: original had void as argument

@@ -293,7 +293,7 @@ void wxPanel::DoSetSize(int x, int y, int width, int height)
 	Bool widthIsChanged = (width != cWindowWidth);
 	Bool heightIsChanged = (height != cWindowHeight);
 
-        wxWindow::DoSetSize(x,y,width,height);
+    wxWindow::DoSetSize(x,y,width,height);
 
 	if (!cHidden && (xIsChanged || yIsChanged || widthIsChanged || heightIsChanged))
 	{
@@ -525,10 +525,12 @@ void wxPanel::SetSize(int x, int y, int width, int height, int flags)
 {
 	wxWindow::SetSize(x,y,width,height,flags);
 
+#if 0
 	// I'm very unhappy about adding redundant calls to all these children. Ugh.
 	wxChildNode *childNode = children->First();
 	while (childNode) {
 		((wxWindow *)childNode->Data())->SetSize(-1,-1,-1,-1);
 		childNode = childNode->Next();
 	}
+#endif	
 }

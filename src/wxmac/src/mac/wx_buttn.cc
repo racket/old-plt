@@ -444,6 +444,7 @@ static void PaintBitmapButton(Rect *r, wxBitmap *buttonBitmap, Bool pressed, Boo
 
 void wxButton::Paint(void)
 {
+	fprintf(stderr,"wxButton::Paint called\n");
 	if (cHidden) return;
 	SetCurrentDC();
 	Rect r = { 0, 0, cWindowHeight, cWindowWidth };
@@ -451,17 +452,11 @@ void wxButton::Paint(void)
 	if (buttonBitmap) {
 	    PaintBitmapButton(&r, buttonBitmap, 0, IsGray(), cColour);
 	} else if (cMacControl) {
-#ifdef OS_X
             if (!IsControlVisible(cMacControl)) {
                 ::EraseRect(&r);
             } else {
                 ::Draw1Control(cMacControl);
             }
-#else            
-	    ::EraseRect(&r);
-            if (!IsControlVisible(cMacControl)) return;
-            ::Draw1Control(cMacControl);
-#endif            
 	}
 	wxWindow::Paint();
 }
@@ -539,16 +534,9 @@ void wxButton::OnEvent(wxMouseEvent *event) // mac platform only
 // Sizing methods
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-void wxButton::SetSize(int x, int y, int width, int height, int flags)
-{
-	fprintf(stderr,"SetSize called for button, this = %X\n",(long)this);
-	wxItem::SetSize(x,y,width,height,flags);
-}
-
 //-----------------------------------------------------------------------------
 void wxButton::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac platform only
 {
-	fprintf(stderr,"OnClientAreaDSize called for this = %X\n",(long)this);
 	SetCurrentDC();
 	if (buttonBitmap || !cMacControl)
 		return;
@@ -564,17 +552,16 @@ void wxButton::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac platform
 		::SizeControl(cMacControl, clientWidth - 2 * PAD_X, clientHeight - 2 * PAD_Y);
 	}
 
-	//if (dX || dY)
-	//{
+	if (dX || dY)
+	{
 		cMacDC->setCurrentUser(NULL); // macDC no longer valid
 		SetCurrentDC(); // put new origin at (0, 0)
         ::MoveControl(cMacControl, SetOriginX + PAD_X, SetOriginY + PAD_Y);
-	//}
+	}
 
 	if (hideToPreventFlicker) ::ShowControl(cMacControl);
 
-	if (!cHidden) 
-//	if (!cHidden && (dW || dH || dX || dY))
+	if (!cHidden && (dW || dH || dX || dY))
 	{
 		int clientWidth, clientHeight;
 		GetClientSize(&clientWidth, &clientHeight);

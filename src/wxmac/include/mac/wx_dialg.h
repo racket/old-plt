@@ -80,8 +80,6 @@ public:
 	virtual void SetSize(int x, int y, int width, int height, int flags = wxSIZE_AUTO);
 	virtual void OnSize(int w, int h);
 	
-	// added for debugging:
-	virtual void Paint();
 };
 
 void wxDialogOkButton(wxButton& but, wxEvent& event);

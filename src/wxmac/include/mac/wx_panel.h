@@ -149,7 +149,6 @@ public:
  	void DestroyChildren() ; // tom
  	void OnDeleteChild(wxWindow* win); //tom
 
-// for debugging only:
 	virtual void SetSize(int x, int y, int width, int height, int flags = wxSIZE_AUTO);
 
 //=============================================================================

@@ -742,6 +742,7 @@ void wxFrame::MacUpdateWindow(void)
 	{
 		SetCurrentDC();
 		::BeginUpdate(theMacWindow);
+		fprintf(stderr,"Beginning Update\n");
                 RgnHandle visibleRgn = NewRgn();
 		if (!::EmptyRgn(GetPortVisibleRegion(GetWindowPort(theMacWindow),visibleRgn)))
 		{
@@ -754,10 +755,13 @@ void wxFrame::MacUpdateWindow(void)
 			Paint();
 
  			// Draw the grow box
+#ifndef OS_X 			
  			if (!(cStyle & wxNO_RESIZE_BORDER))
  				MacDrawGrowIcon();
+#endif 				
 		}
 		::EndUpdate(theMacWindow);
+		fprintf(stderr,"Ending update.\n");
 	}
 }
 
@@ -911,12 +915,17 @@ void wxFrame::Paint(void)
 	if ((rgn = NewRgn())) {
 		if ((subrgn = NewRgn())) {
 		  if ((cStyle & wxNO_RESIZE_BORDER) || (borderRgn = NewRgn())) {
+#ifdef OS_X		  
+			DisposeRgn(borderRgn);
+			borderRgn = NULL;
+#else
 		    if (borderRgn) {
                       int theMacWidth = cWindowWidth - PlatformArea()->Margin().Offset(Direction::wxHorizontal);
 	              int theMacHeight = cWindowHeight - PlatformArea()->Margin().Offset(Direction::wxVertical);
                       Rect growRect = {theMacHeight - 15, theMacWidth - 15, theMacHeight, theMacWidth};
                       RectRgn(borderRgn, &growRect);
 		    }
+#endif		    
 		    SetRectRgn(rgn, 0, 0, cWindowWidth, cWindowHeight + 1);
                     AddWhiteRgn(subrgn);
                     DiffRgn(rgn, subrgn, rgn);

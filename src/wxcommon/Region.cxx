@@ -1424,14 +1424,14 @@ Bool wxPolygonPathRgn::InstallPS(wxPostScriptDC *dc, wxPSStream *s)
   double xx, yy;
   int i;
 
-  xx = dc->FsLogicalToDeviceX(points[0].x, ox, sx);
-  yy = dc->FsLogicalToDeviceY(points[0].y, oy, sy);
+  xx = dc->FsLogicalToDeviceX(points[0].x + xoffset, ox, sx);
+  yy = dc->FsLogicalToDeviceY(points[0].y + yoffset, oy, sy);
   s->Out(xx); s->Out(" "); 
   s->Out(yy); s->Out(" moveto\n");
 
   for (i = 1; i < n; i++) {
-    xx = dc->FsLogicalToDeviceX(points[i].x, ox, sx);
-    yy = dc->FsLogicalToDeviceY(points[i].y, oy, sy);
+    xx = dc->FsLogicalToDeviceX(points[i].x + xoffset, ox, sx);
+    yy = dc->FsLogicalToDeviceY(points[i].y + yoffset, oy, sy);
     s->Out(xx); s->Out(" "); 
     s->Out(yy); s->Out(" lineto\n");
   }

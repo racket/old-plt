@@ -13,7 +13,8 @@
 
 (define mred:url@
   (unit/sig mred:url^
-    (import (f : mzlib:function^))
+    (import [f : mzlib:function^]
+	    [file : mzlib:file^])
 
     ;; if the path is absolute, it just arbitrarily picks the first
     ;; filesystem root.
@@ -212,15 +213,15 @@
 			  ; The variable `rel-path' contains the
 			  ; path portion of the relative URL.
 
-			  (begin
-			    (set-url-path! relative
-			      (begin
-				(printf "Calling build-path on~n~s~n~s~n~n"
-				  (url-path base)
-				  (unixpath->path rel-path))
-				(build-path
-				  (url-path base)
-				  (unixpath->path rel-path))))
+			    (let+ ([val base-path (url-path base)]
+				   [val (values base name must-be-dir?)
+					(split-path base-path)]
+				   [val base-dir (if must-be-dir? base-path base)]
+				   [val ind-rel-path (unixpath->path rel-path)]
+				   [val merged (build-path base-dir
+							   ind-rel-path)]
+				   [val norm (file:normalize-path merged)])
+			    (set-url-path! relative norm)
 			    relative)
 			  (merge-and-normalize
 			    (url-path base) relative))))))))))))

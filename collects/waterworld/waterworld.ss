@@ -1727,12 +1727,14 @@
 				     (> (send board get-num-concealed) 0))
 				(ww-messages *checking-message* "")
 				(yield)
+				(begin-busy-cursor)
 				(send frame expose-row-col
 				      row col
 				      (not (send e get-shift-down))
 				      (send e get-control-down))
-				(end-checking-ww-messages)
 				(send frame update-status!)
+				(end-checking-ww-messages)
+				(end-busy-cursor)
 				(when (zero? (send board get-num-concealed))
 				      (send frame set-game-over-label!))))
 			 (semaphore-post *click-sem*))))]

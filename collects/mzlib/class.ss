@@ -6,7 +6,7 @@
            class?
 	   interface interface?
 	   object% object?
-	   make-object instantiate
+	   new make-object instantiate
 	   send send/apply send* class-field-accessor class-field-mutator with-method
 	   private* public*  public-final* override* override-final*
 	   define/private define/public define/public-final define/override define/override-final

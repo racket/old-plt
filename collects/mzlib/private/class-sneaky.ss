@@ -1662,6 +1662,24 @@ substitutability is checked properly.
   ;;  instantiation
   ;;--------------------------------------------------------------------
   
+  (define-syntax (new stx)
+    (syntax-case stx ()
+      [(_ cls (id arg) ...)
+       (andmap identifier? (syntax->list (syntax (id ...))))
+       (syntax (instantiate cls () (id arg) ...))]
+      [(_ cls (id arg) ...)
+       (for-each (lambda (id)
+                   (unless (identifier? id)
+                     (raise-syntax-error 'new "expected identifier" stx id)))
+                 (syntax->list (syntax (id ...))))]
+      [(_ cls pr ...)
+       (for-each
+        (lambda (pr)
+          (syntax-case pr ()
+            [(x y) (void)]
+            [else (raise-syntax-error 'new "expected name and value binding" stx pr)]))
+        (syntax->list (syntax (pr ...))))]))
+  
   (define make-object 
     (lambda (class . args)
       (do-make-object class args null)))
@@ -2349,7 +2367,7 @@ substitutability is checked properly.
            class?
 	   (rename :interface interface) interface?
 	   object% object?
-	   make-object instantiate
+	   new make-object instantiate
 	   send send/apply send* class-field-accessor class-field-mutator with-method
 	   private* public*  public-final* override* override-final*
 	   define/private define/public define/public-final define/override define/override-final

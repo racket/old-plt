@@ -767,4 +767,16 @@
             n #t))
 
 
+;; ------------------------------------------------------------
+;; new tests
+
+(syntax-test #'(new))
+(syntax-test #'(new x x))
+(syntax-test #'(new x ()))
+(syntax-test #'(new x (x)))
+(syntax-test #'(new x ("a" x)))
+
+(test #t object? (new object%))
+(test #t object? (new (class object% () (init-field x) (super-instantiate ())) (x 1)))
+
 (report-errs)

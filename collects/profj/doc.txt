@@ -14,13 +14,16 @@ Below is a list of known bugs. If you encounter a bug that is not listed here,
 please send e-mail directly to me at kathyg@cs.utah.edu 
 After known bugs the different language levels are outlined
 
-_Known Bugs as of June 17, 2003
+_Known Bugs as of June 19, 2003
 
 switch statement: Does not work. Programs that contain this statement won't
  even compile
  - Full language level only
 
 synchronized statements: Does not work as expected, will compile.
+ - Full language level only
+
+labeled statements: Don't work as expected, will compile and run incorrectly
  - Full language level only
 
 breaking or continuing to a label: Does not work as expected, will compile.

@@ -655,7 +655,7 @@ scheme_resolve_closure_compilation(Scheme_Object *_data, Resolve_Info *info)
 }
 
 Scheme_Object *scheme_source_to_name(Scheme_Object *code)
-     /* Makes up a procedure namewhen there's not a good one in the source: */
+     /* Makes up a procedure name when there's not a good one in the source: */
 {
   Scheme_Stx *cstx = (Scheme_Stx *)code;
   if ((cstx->srcloc->col >= 0) || (cstx->srcloc->pos >= 0)) {

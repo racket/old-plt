@@ -1051,48 +1051,52 @@ void scheme_arg_mismatch(const char *name, const char *msg, Scheme_Object *o)
 static char *make_srcloc_string(Scheme_Stx_Srcloc *srcloc, long *len)
 {
   long line, col;
+  Scheme_Object *src;
+  char *srcstr, *result;
+  long srclen, rlen;
+
+  if (!srcloc->src) {
+    if (len) *len = 0;
+    return NULL;
+  }
 
   line = srcloc->line;
   col = srcloc->col;
   if (col < 0)
     col = srcloc->pos;
 
-  if (col >= 0) {
-    Scheme_Object *src;
-    char *srcstr, *result;
-    long srclen, rlen;
-    
-    src = srcloc->src;
-    if (src && SCHEME_STRINGP(src)) {
-      /* Strip off prefix matching the current directory: */
-      src = scheme_remove_current_directory_prefix(src);
+  src = srcloc->src;
+  if (src && SCHEME_STRINGP(src)) {
+    /* Strip off prefix matching the current directory: */
+    src = scheme_remove_current_directory_prefix(src);
 
-      /* Truncate from the front, to get the interesting part of paths: */
-      srclen = SCHEME_STRLEN_VAL(src);
-      if (srclen > MZERR_MAX_SRC_LEN) {
-	srcstr = scheme_malloc_atomic(MZERR_MAX_SRC_LEN);
-	memcpy(srcstr, SCHEME_STR_VAL(src) + (srclen - MZERR_MAX_SRC_LEN),
-	       MZERR_MAX_SRC_LEN);
-	srcstr[0] = '.';
-	srcstr[1] = '.';
-	srcstr[2] = '.';
-	srclen = MZERR_MAX_SRC_LEN;
-      } else
-	srcstr = SCHEME_STR_VAL(src);
+    /* Truncate from the front, to get the interesting part of paths: */
+    srclen = SCHEME_STRLEN_VAL(src);
+    if (srclen > MZERR_MAX_SRC_LEN) {
+      srcstr = scheme_malloc_atomic(MZERR_MAX_SRC_LEN);
+      memcpy(srcstr, SCHEME_STR_VAL(src) + (srclen - MZERR_MAX_SRC_LEN),
+	     MZERR_MAX_SRC_LEN);
+      srcstr[0] = '.';
+      srcstr[1] = '.';
+      srcstr[2] = '.';
+      srclen = MZERR_MAX_SRC_LEN;
     } else
-      srcstr = scheme_display_to_string_w_max(src, &srclen, MZERR_MAX_SRC_LEN);
+      srcstr = SCHEME_STR_VAL(src);
+  } else
+    srcstr = scheme_display_to_string_w_max(src, &srclen, MZERR_MAX_SRC_LEN);
     
-    result = (char *)scheme_malloc_atomic(srclen + 15);
-
+  result = (char *)scheme_malloc_atomic(srclen + 15);
+    
+  if (col >= 0) {
     rlen = scheme_sprintf(result, srclen + 15, "%t:%L%ld: ", 
 			  srcstr, srclen, line, col);
-    
-    if (len) *len = rlen;
-    return result;
   } else {
-    if (len) *len = 0;
-    return NULL;
+    rlen = scheme_sprintf(result, srclen + 15, "%t::: ", 
+			  srcstr, srclen);
   }
+    
+  if (len) *len = rlen;
+  return result;
 }
 
 void scheme_read_err(Scheme_Object *port, 

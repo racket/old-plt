@@ -2777,9 +2777,9 @@ static Scheme_Object *port_next_location(int argc, Scheme_Object *argv[])
   col = scheme_tell_column(argv[0]);
   pos = scheme_tell(argv[0]);
 
-  a[0] = ((line < 0) ? scheme_false : scheme_make_integer(line));
-  a[1] = ((col < 0) ? scheme_false : scheme_make_integer(col));
-  a[2] = ((pos < 0) ? scheme_false : scheme_make_integer(pos));
+  a[0] = ((line < 0) ? scheme_false : scheme_make_integer_value(line));
+  a[1] = ((col < 0) ? scheme_false : scheme_make_integer_value(col+1));
+  a[2] = ((pos < 0) ? scheme_false : scheme_make_integer_value(pos+1));
 
   return scheme_values(3, a);
 }

@@ -40,6 +40,7 @@ static Scheme_Object *list_prim (int argc, Scheme_Object *argv[]);
 static Scheme_Object *list_immutable_prim (int argc, Scheme_Object *argv[]);
 static Scheme_Object *list_star_prim (int argc, Scheme_Object *argv[]);
 static Scheme_Object *list_star_immutable_prim (int argc, Scheme_Object *argv[]);
+static Scheme_Object *immutablep (int argc, Scheme_Object *argv[]);
 static Scheme_Object *length_prim (int argc, Scheme_Object *argv[]);
 static Scheme_Object *append_prim (int argc, Scheme_Object *argv[]);
 static Scheme_Object *append_bang_prim (int argc, Scheme_Object *argv[]);
@@ -181,6 +182,11 @@ scheme_init_list (Scheme_Env *env)
 						       "list*-immutable", 
 						       1, -1), 
 			      env);
+  scheme_add_global_constant("immutable?",
+			     scheme_make_folding_prim(immutablep,
+						      "immutable?",
+						      1, 1, 1),
+			     env);
   scheme_add_global_constant ("length", 
 			      scheme_make_prim_w_arity(length_prim, 
 						       "length", 
@@ -787,6 +793,20 @@ list_star_immutable_prim (int argc, Scheme_Object *argv[])
   l = list_exec(argc, argv, 1);
   scheme_make_list_immutable(l);
   return l;
+}
+
+static Scheme_Object *
+immutablep (int argc, Scheme_Object *argv[])
+{
+  Scheme_Object *v = argv[0];
+
+  return ((SCHEME_IMMUTABLEP(v)
+	   && (SCHEME_PAIRP(v)
+	       || SCHEME_VECTORP(v)
+	       || SCHEME_STRINGP(v)
+	       || SCHEME_BOXP(v)))
+	  ? scheme_true
+	  : scheme_false);
 }
 
 static Scheme_Object *

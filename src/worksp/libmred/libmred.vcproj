@@ -40,7 +40,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="../libmzsch/Release/libmzschxxxxxxx.lib ../libmzgc/Release/libmzgcxxxxxxx.lib ../wxs/Release/wxs.lib ../wxme/Release/wxme.lib ../wxutils/Release/wxutils.lib ../jpeg/release/jpeg.lib ../png/release/png.lib ../zlib/release/zlib.lib comctl32.lib User32.lib Shell32.lib Gdi32.lib ComDlg32.lib AdvAPI32.lib Ole32.lib wsock32.lib glu32.lib opengl32.lib winmm.lib $(NOINHERIT)"
+				AdditionalDependencies="unicows.lib ../libmzsch/Release/libmzschxxxxxxx.lib ../libmzgc/Release/libmzgcxxxxxxx.lib ../wxs/Release/wxs.lib ../wxme/Release/wxme.lib ../wxutils/Release/wxutils.lib ../jpeg/release/jpeg.lib ../png/release/png.lib ../zlib/release/zlib.lib comctl32.lib User32.lib Shell32.lib Gdi32.lib ComDlg32.lib AdvAPI32.lib Ole32.lib wsock32.lib glu32.lib opengl32.lib winmm.lib $(NOINHERIT)"
 				OutputFile="../../../$(ProjectName)xxxxxxx.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -97,7 +97,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="../libmzsch/Debug/libmzschxxxxxxx.lib ../libmzgc/Debug/libmzgcxxxxxxx.lib ../wxs/Debug/wxs.lib ../wxme/Debug/wxme.lib ../wxutils/Debug/wxutils.lib ../jpeg/debug/jpeg.lib ../png/debug/png.lib ../zlib/debug/zlib.lib comctl32.lib User32.lib Shell32.lib Gdi32.lib ComDlg32.lib AdvAPI32.lib Ole32.lib wsock32.lib glu32.lib opengl32.lib winmm.lib $(NOINHERIT)"
+				AdditionalDependencies="unicows.lib ../libmzsch/Debug/libmzschxxxxxxx.lib ../libmzgc/Debug/libmzgcxxxxxxx.lib ../wxs/Debug/wxs.lib ../wxme/Debug/wxme.lib ../wxutils/Debug/wxutils.lib ../jpeg/debug/jpeg.lib ../png/debug/png.lib ../zlib/debug/zlib.lib comctl32.lib User32.lib Shell32.lib Gdi32.lib ComDlg32.lib AdvAPI32.lib Ole32.lib wsock32.lib glu32.lib opengl32.lib winmm.lib $(NOINHERIT)"
 				OutputFile="../../../$(ProjectName)xxxxxxx.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -136,6 +136,9 @@
 			</File>
 			<File
 				RelativePath="..\..\mred\MREDMSW.cxx">
+			</File>
+			<File
+				RelativePath="..\mzscheme\uniplt.c">
 			</File>
 		</Filter>
 		<Filter

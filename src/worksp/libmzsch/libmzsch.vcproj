@@ -37,7 +37,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="../libmzgc/Debug/libmzgcxxxxxxx.lib User32.lib Shell32.lib wsock32.lib $(NOINHERIT)"
+				AdditionalDependencies="Unicows.lib kernel32.lib gdi32.lib user32.lib wsock32.lib shell32.lib advapi32.lib $(NOINHERIT)"
 				OutputFile="../../../$(ProjectName)xxxxxxx.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -95,7 +95,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="../libmzgc/Release/libmzgcxxxxxxx.lib wsock32.lib User32.lib Shell32.lib $(NOINHERIT)"
+				AdditionalDependencies="Unicows.lib kernel32.lib gdi32.lib user32.lib wsock32.lib shell32.lib advapi32.lib $(NOINHERIT)"
 				OutputFile="../../../$(ProjectName)xxxxxxx.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -254,6 +254,9 @@
 			</File>
 			<File
 				RelativePath="..\..\foreign\libffi_msvc\types.c">
+			</File>
+			<File
+				RelativePath="..\mzscheme\uniplt.c">
 			</File>
 			<File
 				RelativePath="..\..\mzscheme\src\vector.c">

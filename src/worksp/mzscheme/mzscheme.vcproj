@@ -37,7 +37,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="..\libmzgc\Debug\libmzgcxxxxxxx.lib ..\libmzsch\Debug\libmzschxxxxxxx.lib odbc32.lib odbccp32.lib wsock32.lib $(NOINHERIT)"
+				AdditionalDependencies="Unicows.lib kernel32.lib user32.lib gdi32.lib advapi32.lib $(NOINHERIT)"
 				OutputFile="..\..\..\MzScheme.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -95,7 +95,7 @@ cd ..\..\worksp\mzscheme
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="..\libmzgc\Release\libmzgcxxxxxxx.lib ..\libmzsch\Release\libmzschxxxxxxx.lib User32.lib Shell32.lib wsock32.lib $(NOINHERIT)"
+				AdditionalDependencies="Unicows.lib kernel32.lib user32.lib gdi32.lib advapi32.lib $(NOINHERIT)"
 				OutputFile="..\..\..\MzScheme.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -134,6 +134,9 @@ cd ..\..\worksp\mzscheme
 			</File>
 			<File
 				RelativePath=".\mzscheme.rc">
+			</File>
+			<File
+				RelativePath="uniplt.c">
 			</File>
 		</Filter>
 		<Filter

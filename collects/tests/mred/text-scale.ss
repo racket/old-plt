@@ -5,11 +5,13 @@
 (define rotate? #f)
 (define symbol? #f)
 (define latin-1? #f)
+(define less-aa? #f)
 (define lucida? #f)
 (define change-font? #f)
 (define big-font? #f)
 (define squash? #f)
 (define one-by-one? #f)
+(define shift+10+20? #f)
 
 (define last-scale 1.5)
 
@@ -27,7 +29,8 @@
 	'())
     (list
      (if symbol? 'symbol 'default)
-     'normal 'normal))))
+     'normal 'normal
+     #f (if less-aa? 'partly-smoothed 'default)))))
 
 (define (draw-one dc str sx sy y w h d)
   (define csx 1)
@@ -68,6 +71,8 @@
   (send dc set-font normal-font)
   (send dc set-brush no-brush)
   (send dc set-pen xor-pen)
+  (when shift+10+20?
+    (send dc set-origin 10 20))
   (let-values ([(w h d a) (send dc get-text-extent str)])
     (draw-one dc str 1 1 10 w h d)
     (draw-one dc str 2 2 (+ 15 h) w h d)
@@ -80,8 +85,9 @@
     (draw-one dc str 1.95 (squash 1.95) (+ 50 (* 12.2 h)) w h d)
     (draw-one dc str 1.93 (squash 1.93) (+ 55 (* 14.2 h)) w h d)
     (draw-one dc str 1.90 (squash 1.90) (+ 60 (* 16.2 h)) w h d)
-    (draw-one dc str last-scale (squash last-scale) (+ 65 (* 18.2 h)) w h d)
-    ))
+    (draw-one dc str last-scale (squash last-scale) (+ 65 (* 18.2 h)) w h d))
+  (when shift+10+20?
+    (send dc set-origin 0 0)))
 
 (define f (new frame%
 	       [label "Scale Test"]
@@ -111,9 +117,11 @@
 (make-checkbox one-by-one? pane1)
 (make-checkbox symbol? pane2)
 (make-checkbox latin-1? pane2)
+(make-checkbox less-aa? pane2)
 (make-checkbox lucida? pane2)
 (make-checkbox big-font? pane2)
 (make-checkbox squash? pane2)
+(make-checkbox shift+10+20? pane2)
 
 (new slider%
      [label #f]

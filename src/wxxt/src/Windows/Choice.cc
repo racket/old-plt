@@ -117,7 +117,7 @@ Bool wxChoice::Create(wxPanel *panel, wxFunction function, char *label,
     // arrow widget which pops up a menu
     button = XtVaCreateManagedWidget
 	("choice_button", xfwfArrowWidgetClass, X->handle,
-	 XtNbackground,  wxGREY_PIXEL,
+	 XtNbackground,  wxBUTTON_PIXEL,
 	 XtNforeground,  wxBLACK_PIXEL,
 	 XtNdirection,   XfwfBottom,
 	 XtNrepeat,      FALSE,

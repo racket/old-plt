@@ -3499,11 +3499,14 @@ double wxWindowDC::SetCairoPen()
     double pw;
     int cs, js;
     double *dashes;
-    int ndash;
+    int ndash, r, g, b;
     double offset;
     
     c = current_pen->GetColour();
-    cairo_set_rgb_color(CAIRO_DEV, c->Red() / 255.0, c->Green() / 255.0, c->Blue() / 255.0);
+    r = c->Red();
+    g = c->Green();
+    b = c->Blue();
+    cairo_set_rgb_color(CAIRO_DEV, r / 255.0, g / 255.0, b / 255.0);
 
     pw = current_pen->GetWidthF();
     if (!pw) {
@@ -3559,8 +3562,12 @@ Bool wxWindowDC::SetCairoBrush()
 {
   if (current_brush && current_brush->GetStyle() != wxTRANSPARENT) {
     wxColour *c;
+    int r, g, b;
     c = current_brush->GetColour();
-    cairo_set_rgb_color(CAIRO_DEV, c->Red() / 255.0, c->Green() / 255.0, c->Blue() / 255.0);
+    r = c->Red();
+    g = c->Green();
+    b = c->Blue();
+    cairo_set_rgb_color(CAIRO_DEV, r / 255.0, g / 255.0, b / 255.0);
     return TRUE;
   } else
     return FALSE;

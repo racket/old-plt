@@ -83,8 +83,9 @@ void wxRegion::SetRectangle(double x, double y, double width, double height)
   Cleanup();
 
 #ifdef WX_USE_PATH_RGN
-  if (!no_prgn)
+  if (!no_prgn) {
     prgn = new wxRectanglePathRgn(x, y, width, height);
+  }
 #endif
 
   xw = x + width;
@@ -162,8 +163,9 @@ void wxRegion::SetRoundedRectangle(double x, double y, double width, double heig
     radius = dc->FLogicalToDeviceXRel(radius);
 
 #ifdef WX_USE_PATH_RGN
-  if (!no_prgn)
+  if (!no_prgn) {
     prgn = new wxRoundedRectanglePathRgn(x, y, width, height, radius);
+  }
 #endif
 
 #ifndef wx_x
@@ -249,8 +251,9 @@ void wxRegion::SetEllipse(double x, double y, double width, double height)
   Cleanup();
 
 #ifdef WX_USE_PATH_RGN
-  if (!no_prgn)
+  if (!no_prgn) {
     prgn = new wxArcPathRgn(x, y, width, height, 0, 2 * wxPI);
+  }
 #endif
 
   xw = x + width;
@@ -330,8 +333,9 @@ void wxRegion::SetPolygon(int n, wxPoint points[], double xoffset, double yoffse
     return;
 
 #ifdef WX_USE_PATH_RGN
-  if (!no_prgn)
+  if (!no_prgn) {
     prgn = new wxPolygonPathRgn(n, points, xoffset, yoffset, fillStyle);
+  }
 #endif
 
   cpoints = new POINT[n];

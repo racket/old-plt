@@ -29,6 +29,7 @@ AC_ARG_ENABLE(mred, [  --enable-mred           compile MrEd as well as MzScheme 
 AC_ARG_ENABLE(gl, [  --enable-gl             include OpenGL in MrEd (often enabled by default)])
 AC_ARG_ENABLE(xrender, [  --enable-xrender        use Xrender when available (enabled by default)])
 AC_ARG_ENABLE(xft, [  --enable-xft            use Xft when available (enabled by default)])
+AC_ARG_ENABLE(cairo, [  --enable-cairo          use Cairo when available (enabled by default)])
 AC_ARG_ENABLE(libpng, [  --enable-libpng         use libpng instead of building (enabled by default)])
 AC_ARG_ENABLE(libjpeg, [  --enable-libjpeg        use libjpeg instead of building (enabled by default)])
 
@@ -100,6 +101,7 @@ fi
 if test "${enable_mred}" = "no" ; then
   enable_wbuild=no
   enable_xrender=no
+  enable_cairo=no
   enable_libpng=no
   enable_libjpeg=no
 fi
@@ -478,6 +480,7 @@ case $OS in
       NOT_OSX=".other"
       MZINSTALLTARGET=osx-install
       enable_xrender=no
+      enable_cairo=no
       enable_shared=no
       enable_gl=no
       if test "${enable_libfw}" = "yes" ; then
@@ -801,6 +804,27 @@ if test "${enable_xft}" = "yes" ; then
     MROPTIONS="$MROPTIONS -DWX_USE_XFT"
     X_CFLAGS="$X_CFLAGS $xft_cflags"
     X_EXTRA_LIBS="$X_EXTRA_LIBS $xft_libs"
+  fi
+fi
+
+################ Cairo ##################
+
+if test "${enable_cairo}" = "" ; then  
+  enable_cairo=yes
+fi
+
+if test "${enable_cairo}" = "yes" ; then  
+  AC_CHECK_HEADER(cairo.h, enable_cairo=yes, enable_cairo=no)
+  if test "${enable_xrender}" = "yes" ; then  
+    AC_CHECK_LIB(cairo, cairo_create, enable_cairo="yes", enable_xrender="no", $X_LIBS -lX11 -lXext)
+    if test "${enable_cairo}" = "yes" ; then  
+      MROPTIONS="$MROPTIONS -DWX_USE_CAIRO"
+      X_EXTRA_LIBS="$X_EXTRA_LIBS -lcairo"
+    else
+      echo "no Cairo libs; Cairo support disabled"
+    fi
+  else
+    echo "no Cairo headers; Cairo support disabled"
   fi
 fi
 

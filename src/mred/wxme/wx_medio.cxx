@@ -433,7 +433,7 @@ wxMediaStreamIn *wxMediaStreamIn::GetFixed(long *v)
 
 extern void *wxMallocAtomicIfPossible(size_t s);
 
-char *wxMediaStreamIn::GetString(long *n)
+char *wxMediaStreamIn::GetString(long *n, int extra)
 {
   long m;
   char *r;
@@ -448,7 +448,7 @@ char *wxMediaStreamIn::GetString(long *n)
 
   Typecheck(st_STRING);
 
-  r = (char *)wxMallocAtomicIfPossible(m);
+  r = (char *)wxMallocAtomicIfPossible(m + extra);
   if (!r) {
     wxmeError("editor-stream-in%: string too large (out of memory) while reading stream");
     bad = 1;
@@ -456,6 +456,8 @@ char *wxMediaStreamIn::GetString(long *n)
       *n = 0;
     return NULL;
   }
+  if (extra)
+    r[m] = 0;
 
   if (f->Read(r, m) != m) {
     bad = 1;
@@ -465,6 +467,11 @@ char *wxMediaStreamIn::GetString(long *n)
     *n = m;
 
   return r;
+}
+
+char *wxMediaStreamIn::GetStringPlusOne(long *n)
+{
+  GetString(n, 1);
 }
 
 wxMediaStreamIn *wxMediaStreamIn::Get(long *n, char *str)

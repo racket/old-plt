@@ -199,7 +199,8 @@ class wxMediaStreamIn : public wxMediaStream
 
   wxMediaStreamIn* GetFixed(long*);
 
-  char *GetString(long *n);
+  char *GetString(long *len, int extra = 0);
+  char *GetStringPlusOne(long *len);
 
   void SetBoundary(long n);
   void RemoveBoundary();

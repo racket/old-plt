@@ -434,8 +434,6 @@ void wxCanvas::ChangeToGray(Bool gray)
 void wxCanvas::Layout(void)
 {
 #ifdef WX_USE_CAIRO
-  wxWindowDC *dc;
-  dc = GetDC();
   dc->ReleaseCairoDev(); /* in case resize makes a larger area */
 #endif
   wxWindow::Layout();

@@ -183,7 +183,7 @@ $(srcdir)/wxs_lbox.cxx : $(srcdir)/wxs_lbox.xc  $(srcdir)/range.xci $(XCDEPEND) 
 	if [ "$(PERL)" = '' ] ; then touch $(srcdir)/wxs_lbox.cxx ; else $(XCTOCXX) $(srcdir)/wxs_lbox.xc ; fi
 $(srcdir)/wxs_madm.cxx : $(srcdir)/wxs_madm.xc $(srcdir)/wxs_madm.xci $(srcdir)/wxs_fcs.xci $(srcdir)/wxs_bkt.xci $(srcdir)/wxs_win.xci $(XCDEPEND)
 	if [ "$(PERL)" = '' ] ; then touch $(srcdir)/wxs_madm.cxx ; else $(XCTOCXX) $(srcdir)/wxs_madm.xc ; fi
-$(srcdir)/wxs_medi.cxx : $(srcdir)/wxs_medi.xc $(srcdir)/wxs_mbuf.xci $(srcdir)/wxs_fcs.xci $(srcdir)/wxs_eds.xci $(srcdir)/wxs_cret.xci $(srcdir)/wxs_eop.xci $(XCDEPEND) $(LIST_DEPEND)
+$(srcdir)/wxs_medi.cxx : $(srcdir)/wxs_medi.xc $(srcdir)/wxs_mbuf.xci $(srcdir)/wxs_fcs.xci $(srcdir)/wxs_eds.xci $(srcdir)/wxs_cret.xci $(srcdir)/wxs_eop.xci $(XCDEPEND) $(LIST_DEPEND) $(srcdir)/wxs_bmt.xci
 	if [ "$(PERL)" = '' ] ; then touch $(srcdir)/wxs_medi.cxx ; else $(XCTOCXX) $(srcdir)/wxs_medi.xc ; fi
 $(srcdir)/wxs_mede.cxx : $(srcdir)/wxs_mede.xc $(srcdir)/wxs_mbuf.xci $(srcdir)/wxs_fcs.xci $(srcdir)/wxs_eds.xci $(srcdir)/wxs_cret.xci $(srcdir)/wxs_bkt.xci $(XCDEPEND) $(LIST_DEPEND)
 	if [ "$(PERL)" = '' ] ; then touch $(srcdir)/wxs_mede.cxx ; else $(XCTOCXX) $(srcdir)/wxs_mede.xc ; fi

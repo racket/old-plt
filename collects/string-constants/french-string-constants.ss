@@ -261,7 +261,7 @@
  (file-menu "Fichier")
  (edit-menu "Editer")
  (help-menu "Aide")
- ;(windows-menu "Fenêtres")
+ (windows-menu "Fenêtres")
  
  ;;; menus
  ;;; - in menu labels, the & indicates a alt-key based shortcut.
@@ -356,8 +356,7 @@
  
  (help-menu-label "&Aide")
  (about-info "Auteurs et détails concernant ce logiciel.")
- (about-menu-item "A propos de ")
- (about-menu-item-after "...")
+ (about-menu-item "A propos de ...")
  
  ;;; help-desk-specific menus
  (new-help-desk "&Nouvelle Aide")

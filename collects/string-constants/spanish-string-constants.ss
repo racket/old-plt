@@ -348,6 +348,9 @@
  (wrap-text-item "Wrap Text")
 
  (windows-menu-label "&Ventana")
+ (bring-frame-to-front "Bring frame to front")       ;;; title of dialog
+ (bring-frame-to-front... "Bring frame to front...") ;;; corresponding title of menu item
+
  (show-menu-label "&Muestra")
 
  (help-menu-label "&Ayuda")
@@ -496,6 +499,7 @@
  (intermediate-student "Estudiante Intermedio")
  (advanced-student "Estudiante Avanzado")
  (how-to-design-programs "How to Design Programs") ;; should agree with MIT Press on this one...
+ (r5rs-like-languages "R5RS-like")
  (mred-lang-name "Gráfico sin depuración (MrEd)")
  (mzscheme-lang-name "Texto sin depuración (MzScheme)")
  (r5rs-lang-name "R5RS sin depuración (MzScheme)")

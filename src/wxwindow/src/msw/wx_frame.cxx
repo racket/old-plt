@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_frame.cxx,v 1.18 1999/07/09 17:34:25 mflatt Exp $
+ * RCS_ID:      $Id: wx_frame.cxx,v 1.19 1999/07/22 12:11:57 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -1010,6 +1010,12 @@ BOOL wxFrameWnd::OnCommand(WORD menuId, WORD cmd, HWND WXUNUSED(control))
   }
 
   return FALSE;
+}
+
+void wxFrameWnd::OnMenuClick()
+{
+  wxFrame *frame = (wxFrame *)wx_window;
+  frame->OnMenuClick();
 }
 
 void wxFrameWnd::OnMenuSelect(WORD nItem, WORD nFlags, HMENU hSysMenu)

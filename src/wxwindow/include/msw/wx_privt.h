@@ -112,6 +112,7 @@ public:
     virtual BOOL OnColorChange(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
     virtual BOOL OnEraseBkgnd(HDC pDC);
     virtual void OnMenuSelect(WORD item, WORD flags, HMENU sysmenu);
+    virtual void OnMenuClick();
     virtual BOOL OnClose(void);
     virtual BOOL OnDestroy(void);
     virtual BOOL OnSetFocus(HWND wnd);
@@ -208,6 +209,7 @@ public:
     BOOL OnCommand(WORD id, WORD cmd, HWND control);
     BOOL OnClose(void);
     void OnMenuSelect(WORD item, WORD flags, HMENU sysmenu);
+    void OnMenuClick();
     BOOL ProcessMessage(MSG *msg);
 };
 

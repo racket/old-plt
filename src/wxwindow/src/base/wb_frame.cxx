@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wb_frame.cxx,v 1.5 1999/01/09 19:18:39 mflatt Exp $
+ * RCS_ID:      $Id: wb_frame.cxx,v 1.6 1999/02/23 18:27:45 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -164,6 +164,10 @@ void wxbFrame::OnMenuSelect(long id)
 
     SetStatusText("");
   }
+}
+
+void wxbFrame::OnMenuClick(void)
+{
 }
 
 wxMenuBar *wxbFrame::GetMenuBar(void)

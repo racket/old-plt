@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994     
- * RCS_ID:      $Id: wx_win.cxx,v 1.33 1999/11/29 19:01:49 mflatt Exp $
+ * RCS_ID:      $Id: wx_win.cxx,v 1.34 2000/01/18 03:50:32 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -966,6 +966,11 @@ LRESULT APIENTRY _EXPORT wxWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARA
               retval = wnd->DefWindowProc(message, wParam, lParam );
             break;
 	 }
+        case WM_INITMENU:
+	  {
+	    wnd->OnMenuClick();
+	    break;
+	  }
         case WM_MENUSELECT:
         {
 #ifdef WIN32
@@ -1829,6 +1834,10 @@ BOOL wxWnd::OnCommand(WORD WXUNUSED(id), WORD WXUNUSED(cmd), HWND WXUNUSED(contr
 }
 
 void wxWnd::OnMenuSelect(WORD WXUNUSED(item), WORD WXUNUSED(flags), HMENU WXUNUSED(sysmenu))
+{
+}
+
+void wxWnd::OnMenuClick()
 {
 }
 

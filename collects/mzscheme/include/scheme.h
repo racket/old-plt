@@ -71,7 +71,7 @@
 #include <stddef.h>
 
 #ifndef SCHEME_DIRECT_EMBEDDED
-#define SCHEME_DIRECT_EMBEDDED 1
+# define SCHEME_DIRECT_EMBEDDED 1
 #endif
 
 #ifndef MSC_IZE
@@ -142,7 +142,14 @@ typedef struct Scheme_Object
 {
   Scheme_Type type; /* Anything that starts with a type field
 		       can be a Scheme_Object */
-  MZ_HASH_KEY_EX
+
+  /* For precise GC, the keyex field is used for all object types to
+     store a hash key extension. The low bit is not used for this
+     purpose, though. For string and pair values in all variants of
+     MzScheme, the low bit is set to 1 to indicate that the string is
+     immutable. */
+  short keyex;
+
   union
     {
       struct { char *string_val; int tag_val; } str_val;
@@ -830,19 +837,21 @@ typedef Scheme_Object *(*Scheme_Type_Writer)(Scheme_Object *obj);
 # define scheme_process_block(t) scheme_process_block_w_process(t,scheme_current_process)
 #endif
 
-#if !SCHEME_DIRECT_EMBEDDED
-# ifndef MZ_REAL_THREADS
+#ifndef MZ_REAL_THREADS
+# if !SCHEME_DIRECT_EMBEDDED
 #  ifdef LINK_EXTENSIONS_BY_TABLE
 #   define scheme_fuel_counter (*scheme_fuel_counter_ptr)
 #  endif
+# else
+extern int scheme_fuel_counter;
 # endif
 #endif
 
 #ifdef MZ_REAL_THREADS
-#define _scheme_check_for_break_wp(penalty, p) \
+# define _scheme_check_for_break_wp(penalty, p) \
    { if (((p)->fuel_counter -= penalty) <= 0) scheme_process_block_w_process(0, p); }
 #else
-#define _scheme_check_for_break_wp(penalty, p) \
+# define _scheme_check_for_break_wp(penalty, p) \
    { if ((scheme_fuel_counter -= penalty) <= 0) scheme_process_block_w_process(0, p); }
 #endif
 #define _scheme_check_for_break(penalty) _scheme_check_for_break_wp(penalty, scheme_current_process)
@@ -997,6 +1006,7 @@ extern Scheme_Object *(*scheme_make_stdout)(void);
 extern Scheme_Object *(*scheme_make_stderr)(void);
 
 void scheme_set_banner(char *s);
+Scheme_Object *scheme_set_exec_cmd(char *s);
 
 /* Initialization */
 Scheme_Env *scheme_basic_env(void);
@@ -1116,6 +1126,7 @@ extern Scheme_Extension_Table *scheme_extension_table;
 #define SCHEME_REALP(obj)  (SCHEME_INTP(obj) || ((_SCHEME_TYPE(obj) >= scheme_bignum_type) && (_SCHEME_TYPE(obj) <= scheme_complex_izi_type)))
 #define SCHEME_NUMBERP(obj)  (SCHEME_INTP(obj) || ((_SCHEME_TYPE(obj) >= scheme_bignum_type) && (_SCHEME_TYPE(obj) <= scheme_complex_type)))
 #define SCHEME_STRINGP(obj)  SAME_TYPE(SCHEME_TYPE(obj), scheme_string_type)
+#define SCHEME_MUTABLE_STRINGP(obj)  (SCHEME_STRINGP(obj) && !((obj)->keyex & 0x1))
 #define SCHEME_SYMBOLP(obj)  SAME_TYPE(SCHEME_TYPE(obj), scheme_symbol_type)
 #define SCHEME_BOOLP(obj)    (SAME_OBJ(obj, scheme_true) || SAME_OBJ(obj, scheme_false))
 #define SCHEME_FALSEP(obj)     SAME_OBJ((obj), scheme_false)
@@ -1127,6 +1138,7 @@ extern Scheme_Extension_Table *scheme_extension_table;
 #define SCHEME_ECONTP(obj)    SAME_TYPE(SCHEME_TYPE(obj), scheme_escaping_cont_type)
 #define SCHEME_NULLP(obj)    SAME_OBJ(obj, scheme_null)
 #define SCHEME_PAIRP(obj)    SAME_TYPE(SCHEME_TYPE(obj), scheme_pair_type)
+#define SCHEME_MUTABLE_PAIRP(obj)    (SCHEME_PAIRP(obj) && !((obj)->keyex & 0x1))
 #define SCHEME_LISTP(obj)    (SCHEME_NULLP(obj) || SCHEME_PAIRP(obj))
 #define SCHEME_BOXP(obj)     SAME_TYPE(SCHEME_TYPE(obj), scheme_box_type)
 #define SCHEME_HASHTP(obj) SAME_TYPE(SCHEME_TYPE(obj),scheme_hash_table_type)
@@ -1161,6 +1173,9 @@ extern Scheme_Extension_Table *scheme_extension_table;
 #define SCHEME_CAAR(obj)     (SCHEME_CAR (SCHEME_CAR (obj)))
 #define SCHEME_CDDR(obj)     (SCHEME_CDR (SCHEME_CDR (obj)))
 #define SCHEME_IPORT_NAME(obj) (((Scheme_Input_Port *)obj)->name)
+
+#define SCHEME_SET_STRING_IMMUTABLE(obj)  (((obj)->keyex |= 0x1))
+#define SCHEME_SET_PAIR_IMMUTABLE(obj)  (((obj)->keyex |= 0x1))
 
 #ifdef __cplusplus
 };

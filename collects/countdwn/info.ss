@@ -11,11 +11,7 @@
 
     [(blurb)
      (list
-      "Countdown keeps track of the minute and second of approaching or past events. "
-      "See the "
-      `(a ((href ,(format "file:~a" (build-path (collection-path "countdwn") "doc.txt"))))
-	  "doc.txt")
-      " file for more information.")]
+      "Countdown keeps track of the minute and second of approaching or past events. ")]
 
     [(install-collection)
      (lambda (x)

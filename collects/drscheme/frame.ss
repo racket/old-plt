@@ -5,7 +5,7 @@
 	  [drscheme:unit : drscheme:unit^]
 	  [drscheme:app : drscheme:app^]
 	  [help : help:drscheme-interface^]
-	  [zodiac : drscheme:zodiac^])
+	  [zodiac : zodiac:system^])
   
   (rename [-mixin mixin])
 

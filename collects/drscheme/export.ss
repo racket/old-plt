@@ -10,7 +10,7 @@
 			   [interface : drscheme:interface^]
 			   [graph : drscheme:graph^]
 			   [aries : plt:aries^]
-			   [zodiac : drscheme:zodiac^])
+			   [zodiac : zodiac:system^])
   (link [url : mzlib:url^ ((require-library "urlr.ss" "net") (mzlib file))]
         [help-desk : help:drscheme-interface^ ((require-library "start-help-desk.ss" "help")
 					       (mzlib function)

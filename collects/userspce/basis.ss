@@ -4,7 +4,7 @@
 (unit/sig userspace:basis^
   (import [import : userspace:basis-import^]
 	  [params : plt:userspace:params^]
-	  [zodiac : drscheme:zodiac^]
+	  [zodiac : zodiac:system^]
 	  [zodiac:interface : drscheme:interface^]
 	  [aries : plt:aries^]
 	  [mzlib:print-convert : mzlib:print-convert^]

@@ -501,7 +501,7 @@
 	   [cmd-line : mzlib:command-line^ ((require-library "cmdliner.ss"))]
 	   [interface : drscheme:interface^
 		      ((require-library-unit/sig "interface.ss" "userspce") drzodiac)]
-	   [drzodiac : drscheme:zodiac^
+	   [drzodiac : zodiac:system^
 		     ((require-library-unit/sig "link.ss" "zodiac")
 		      (interface : zodiac:interface^)
 		      (mzlib pretty-print)

@@ -4,7 +4,7 @@
 	    [fw : framework^]
             mzlib:print-convert^
             (drscheme : drscheme:export^)
-	    drscheme:zodiac^)
+	    zodiac:system^)
     
     (define invoke-spidey
       (lambda (frame)

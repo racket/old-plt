@@ -1,5 +1,5 @@
 (unit/sig drscheme:interface^
-  (import [zodiac : drscheme:zodiac^])
+  (import [zodiac : zodiac:system^])
   
   (define-struct zodiac-exn (message start-location end-location type))
   

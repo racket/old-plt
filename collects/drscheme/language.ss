@@ -4,7 +4,7 @@
 	  [fw : framework^]
 	  [drscheme:unit : drscheme:unit^]
 	  [aries : plt:aries^]
-	  [zodiac : drscheme:zodiac^]
+	  [zodiac : zodiac:system^]
 	  [basis : userspace:basis^]
 	  mzlib:function^
 	  mzlib:file^

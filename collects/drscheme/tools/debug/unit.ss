@@ -4,7 +4,7 @@
 	  [fw : framework^]
 	  [pc : mzlib:print-convert^]
 	  (drscheme : drscheme:export^)
-	  [zodiac : drscheme:zodiac^])
+	  [zodiac : zodiac:system^])
   
   (define test-thread
     (let ([kill-old void])

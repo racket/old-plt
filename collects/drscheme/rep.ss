@@ -4,7 +4,7 @@
 	  [mzlib : mzlib:core^]
 	  [fw : framework^]
 	  [print-convert : mzlib:print-convert^]
-	  [zodiac : drscheme:zodiac^]
+	  [zodiac : zodiac:system^]
 	  [zodiac:interface : drscheme:interface^]
 	  [drscheme:init : drscheme:init^]
 	  [drscheme:snip : drscheme:snip^]

@@ -108,9 +108,5 @@
    (struct zodiac-exn (message start-location end-location type))
    mark-key))
 
-(define-signature drscheme:exported-zodiac^ zodiac:system^)
-
-(define-signature drscheme:zodiac^ drscheme:exported-zodiac^)
-
 (define-signature userspace:basis-import^
   (in-mzscheme?))

@@ -130,7 +130,7 @@ Scheme_Object *GetTypes(wxClipboardClient *c)
 @ "get-editor-margin" : void GetEditorMargin(nnlong*,nnlong*);
 
 @ "set-command" : void SetPrinterCommand(string);
-@ "set-file" : void SetPrinterFile(pathname);
+@ "set-file" : void SetPrinterFile(npathname);
 @ "set-preview-command" : void SetPrintPreviewCommand(string); 
 @ "set-mode" : void SetPrinterMode(SYM[psMode]);
 @ "set-orientation" : void SetPrinterOrientation(SYM[psOrientation]);

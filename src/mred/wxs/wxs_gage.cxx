@@ -40,8 +40,8 @@ class wxsGauge : public wxGauge
    int range, pos;
 
    wxsGauge(wxPanel *panel, char *label, int rng,
-	    int x = -1, int y = -1, int width = -1, int height = -1,
-	    long style = wxHORIZONTAL, char *name = "gauge");
+	    int x, int y, int width, int height,
+	    long style, char *name);
 
    void SetRange(int r);
 

@@ -6,6 +6,8 @@
 
 (load-relative "md5.ss")
 
+(load-relative "structlib.ss")
+
 (load-relative "async-channel.ss")
 
 (load-relative "restart.ss")

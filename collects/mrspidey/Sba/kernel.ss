@@ -32,7 +32,7 @@
       (! arrowto (listof FlowType))
       (! arrowfrom (listof FlowType))
       (! type-annotation any) ;; type-annotation% or file.ss (if from .za file)
-      (! proplist (listof (cons sym any)))
+      (! symbol sym)
       (! values-ftype (union false FlowType))
       ))
 
@@ -58,24 +58,10 @@
     ftype)
 
   ;;------------------------------------------------------------
-  ;; Property list stuff
-  
-  (define (add-FlowType-prop! ftype prop val)
-    (set-FlowType-proplist! ftype 
-			    (cons (cons prop val) (FlowType-proplist ftype))))
-
-  (define (get-FlowType-prop ftype prop default)
-    (recur loop ([l (FlowType-proplist ftype)])
-	   (match l
-	     [() default]
-	     [((a . d) . rest)
-	      (if (eq? a prop)
-		  d
-		  (loop rest))]
-	     [_ default])))
+  ;; Property list stuff, truncated to just a symbol
 
   (define (FlowType-name ftype)
-    (symbol-append (get-FlowType-prop ftype 'symbol 'anon)
+    (symbol-append (FlowType-symbol ftype)
 		   ':
 		   (FlowType-num ftype)))
 
@@ -103,7 +89,6 @@
      (: fields- (vec Tvar))
      (! U NT)
      (! PU any)
-     wb
      ))
 
   (define-const-typed-structure template
@@ -194,7 +179,7 @@
              (vector-andmap Tvar? fields+)
              (vector-andmap Tvar? fields-))
 	    `(create-AV ,template ,misc ,fields+ ,fields-))
-    (let ([AV (make-AV num-AV template misc fields+ fields- #f #f (make-weak-box 1))])
+    (let ([AV (make-AV num-AV template misc fields+ fields- #f #f)])
       (set! num-AV (add1 num-AV))
       AV))
 
@@ -202,7 +187,7 @@
     (lambda (sym)
       (let ([tvar (make-Tvar
                    ;; FlowType fields
-                   num-ftype #f '() '() #f `((symbol . ,sym)) #f 
+                   num-ftype #f '() '() #f sym #f 
                    ;; Tvar fields
                    '() '() '() #f '() '()
                    #f #f #f #f
@@ -678,7 +663,7 @@
 	 (set-FlowType-arrowto! ftype 'zerod2!)
 	 (set-FlowType-arrowfrom! ftype 'zerod3!)
 	 (set-FlowType-type-annotation! ftype 'zerod4!)
-	 (set-FlowType-proplist! ftype 'zerod5!)
+	 (set-FlowType-symbol! ftype 'zerod5!)
 	 (set-FlowType-values-ftype! ftype 'zerod6!)
 	 (when (Tvar? ftype) 
 	   (set-Tvar-objs! ftype 'zerod7!)

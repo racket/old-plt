@@ -1099,13 +1099,13 @@ static Scheme_Object *scheme_complex_not_real(const Scheme_Object *a, const Sche
   return scheme_void;
 }
 
-GEN_BIN_OP(scheme_bin_plus, "+", ADD, F_ADD, FS_ADD, scheme_bignum_add, scheme_rational_add, scheme_complex_add, NO_NAN_CHECK, NO_NAN_CHECK)
-GEN_BIN_OP(scheme_bin_minus, "-", SUBTRACT, F_SUBTRACT, FS_SUBTRACT, scheme_bignum_subtract, scheme_rational_subtract, scheme_complex_subtract, NO_NAN_CHECK, NO_NAN_CHECK)
-GEN_BIN_OP(scheme_bin_mult, "*", MULTIPLY, F_MULTIPLY, FS_MULTIPLY, scheme_bignum_multiply, scheme_rational_multiply, scheme_complex_multiply, NO_NAN_CHECK, NO_NAN_CHECK)
+GEN_BIN_OP(scheme_bin_plus, "+", ADD, F_ADD, FS_ADD, scheme_bignum_add, scheme_rational_add, scheme_complex_add, GEN_OMIT, GEN_OMIT, NO_NAN_CHECK, NO_NAN_CHECK)
+GEN_BIN_OP(scheme_bin_minus, "-", SUBTRACT, F_SUBTRACT, FS_SUBTRACT, scheme_bignum_subtract, scheme_rational_subtract, scheme_complex_subtract, GEN_OMIT, GEN_RETURN_N1, NO_NAN_CHECK, NO_NAN_CHECK)
+GEN_BIN_OP(scheme_bin_mult, "*", MULTIPLY, F_MULTIPLY, FS_MULTIPLY, scheme_bignum_multiply, scheme_rational_multiply, scheme_complex_multiply, GEN_RETURN_0, GEN_RETURN_0, NO_NAN_CHECK, NO_NAN_CHECK)
 GEN_BIN_DIV_OP(scheme_bin_div, "/", DIVIDE, F_DIVIDE, FS_DIVIDE, scheme_make_rational, scheme_rational_divide, scheme_complex_divide)
 
-static GEN_BIN_OP(bin_max, "max", MAX, F_MAX, FS_MAX, scheme_bignum_max, scheme_rational_max, scheme_complex_not_real, NAN_RETURNS_NAN, NAN_RETURNS_SNAN)
-static GEN_BIN_OP(bin_min, "min", MIN, F_MIN, FS_MIN, scheme_bignum_min, scheme_rational_min, scheme_complex_not_real, NAN_RETURNS_NAN, NAN_RETURNS_SNAN)
+static GEN_BIN_OP(bin_max, "max", MAX, F_MAX, FS_MAX, scheme_bignum_max, scheme_rational_max, scheme_complex_not_real, GEN_OMIT, GEN_OMIT, NAN_RETURNS_NAN, NAN_RETURNS_SNAN)
+static GEN_BIN_OP(bin_min, "min", MIN, F_MIN, FS_MIN, scheme_bignum_min, scheme_rational_min, scheme_complex_not_real, GEN_OMIT, GEN_OMIT, NAN_RETURNS_NAN, NAN_RETURNS_SNAN)
 
 GEN_BIN_PROT(bin_bitwise_and);
 GEN_BIN_PROT(bin_bitwise_or);
@@ -1989,17 +1989,21 @@ static Scheme_Object *complex_atan(Scheme_Object *c)
 										    scheme_bin_minus(zeroi, c))))));
 }
 
+#define GEN_ZERO_IS_ZERO() if (o == zeroi) return zeroi;
+#define GEN_ZERO_IS_ONE() if (o == zeroi) return scheme_make_integer(1);
+#define GEN_ONE_IS_ZERO() if (o == scheme_make_integer(1)) return zeroi;
+
 #define NEVER_RESORT_TO_COMPLEX(d) 0
 #define NEGATIVE_USES_COMPLEX(d) d < 0.0
 #define OVER_ONE_MAG_USES_COMPLEX(d) (d > 1.0) || (d < -1.0)
 
-GEN_UNARY_OP(exp_prim, exp, exp, inf_object, zerod, nan_object, complex_exp, NEVER_RESORT_TO_COMPLEX)
-GEN_UNARY_OP(log_prim, log, log, inf_object, nan_object, nan_object, complex_log, NEGATIVE_USES_COMPLEX)
-GEN_UNARY_OP(sin_prim, sin, sin, nan_object, nan_object, nan_object, complex_sin, NEVER_RESORT_TO_COMPLEX)
-GEN_UNARY_OP(cos_prim, cos, cos, nan_object, nan_object, nan_object, complex_cos, NEVER_RESORT_TO_COMPLEX)
-GEN_UNARY_OP(tan_prim, tan, tan, nan_object, nan_object, nan_object, complex_tan, NEVER_RESORT_TO_COMPLEX)
-GEN_UNARY_OP(asin_prim, asin, asin, nan_object, nan_object, nan_object, complex_asin, OVER_ONE_MAG_USES_COMPLEX)
-GEN_UNARY_OP(acos_prim, acos, acos, nan_object, nan_object, nan_object, complex_acos, OVER_ONE_MAG_USES_COMPLEX)
+GEN_UNARY_OP(exp_prim, exp, exp, inf_object, zerod, nan_object, complex_exp, GEN_ZERO_IS_ONE, NEVER_RESORT_TO_COMPLEX)
+GEN_UNARY_OP(log_prim, log, log, inf_object, nan_object, nan_object, complex_log, GEN_ONE_IS_ZERO, NEGATIVE_USES_COMPLEX)
+GEN_UNARY_OP(sin_prim, sin, sin, nan_object, nan_object, nan_object, complex_sin, GEN_ZERO_IS_ZERO, NEVER_RESORT_TO_COMPLEX)
+GEN_UNARY_OP(cos_prim, cos, cos, nan_object, nan_object, nan_object, complex_cos, GEN_ZERO_IS_ONE, NEVER_RESORT_TO_COMPLEX)
+GEN_UNARY_OP(tan_prim, tan, tan, nan_object, nan_object, nan_object, complex_tan, GEN_ZERO_IS_ZERO, NEVER_RESORT_TO_COMPLEX)
+GEN_UNARY_OP(asin_prim, asin, asin, nan_object, nan_object, nan_object, complex_asin, GEN_ZERO_IS_ZERO, OVER_ONE_MAG_USES_COMPLEX)
+GEN_UNARY_OP(acos_prim, acos, acos, nan_object, nan_object, nan_object, complex_acos, GEN_ZERO_IS_ZERO, OVER_ONE_MAG_USES_COMPLEX)
 
 static Scheme_Object *
 atan_prim (int argc, Scheme_Object *argv[])
@@ -2175,7 +2179,7 @@ static double sch_pow(double x, double y)
 # define FS_EXPT(x, y) scheme_make_float(sch_pow((double)x, (double)y))
 #endif
 
-static GEN_BIN_OP(bin_expt, "expt", fixnum_expt, F_EXPT, FS_EXPT, scheme_bignum_power, scheme_rational_power, scheme_complex_power, NAN_RETURNS_NAN, NAN_RETURNS_SNAN)
+static GEN_BIN_OP(bin_expt, "expt", fixnum_expt, F_EXPT, FS_EXPT, scheme_bignum_power, scheme_rational_power, scheme_complex_power, GEN_RETURN_0, GEN_RETURN_1, NAN_RETURNS_NAN, NAN_RETURNS_SNAN)
 
 Scheme_Object *
 scheme_expt(int argc, Scheme_Object *argv[])
@@ -2187,6 +2191,9 @@ scheme_expt(int argc, Scheme_Object *argv[])
 
   if (!SCHEME_NUMBERP(n))
     scheme_wrong_type("expt", "number", 0, argc, argv);
+
+  if (argv[1] == scheme_make_integer(1))
+    return n;
 
   if (!SCHEME_FLOATP(n)) {
     if (SCHEME_INTP(e) || SCHEME_BIGNUMP(e)) {
@@ -2220,28 +2227,15 @@ static Scheme_Object *make_rectangular (int argc, Scheme_Object *argv[])
   af = SCHEME_FLOATP(a);
   bf = SCHEME_FLOATP(b);
 
-  if (af && !bf)
-    b = exact_to_inexact(1, &b);
-  if (bf && !af)
-    a = exact_to_inexact(1, &a);
+  if (af && !bf) {
+    if (b != zeroi)
+      b = exact_to_inexact(1, &b);
+  }
+  if (bf && !af) {
+    if (a != zeroi)
+      a = exact_to_inexact(1, &a);
+  }
   
-  if (af)
-    if (MZ_IS_NAN(SCHEME_FLOAT_VAL(a))) {
-#ifdef MZ_USE_SINGLE_FLOATS
-      if (SCHEME_FLTP(a) && (!bf || SCHEME_FLTP(b)))
-	return single_nan_object;
-#endif
-      return nan_object;
-    }
-  if (bf)
-    if (MZ_IS_NAN(SCHEME_FLOAT_VAL(b))) {
-#ifdef MZ_USE_SINGLE_FLOATS
-      if (SCHEME_FLTP(b) && (!af || SCHEME_FLTP(a)))
-	return single_nan_object;
-#endif
-      return nan_object;
-    }
-
   return scheme_make_complex(a, b);
 }
 
@@ -2255,6 +2249,9 @@ static Scheme_Object *make_polar (int argc, Scheme_Object *argv[])
     scheme_wrong_type("make-polar", REAL_NUMBER_STR, 0, argc, argv);
   if (!SCHEME_REALP(b))
     scheme_wrong_type("make-polar", REAL_NUMBER_STR, 1, argc, argv);
+
+  if (b == zeroi)
+    return a;
 
   r = scheme_bin_mult(a, cos_prim(1, argv + 1));
   i = scheme_bin_mult(a, sin_prim(1, argv + 1));
@@ -2558,23 +2555,9 @@ char *scheme_number_to_string(int radix, Scheme_Object *obj)
     ilen = strlen(is);
     s = (char *)scheme_malloc_atomic(rlen + ilen + 3);
     memcpy(s, rs, rlen);
-    if (SCHEME_TRUEP(positive_p(1, &i))) {
-      int inf;
-      if (SCHEME_DBLP(i)) {
-	double d = SCHEME_DBL_VAL(i);
-	inf = MZ_IS_POS_INFINITY(d) || MZ_IS_NEG_INFINITY(d);
-#ifdef MZ_USE_SINGLE_FLOATS
-      } else if if (SCHEME_FLTP(i)) {
-	float f = SCHEME_DBL_VAL(i);
-	inf = MZ_IS_POS_INFINITY(f) || MZ_IS_NEG_INFINITY(f);
-#endif
-      } else
-	inf = 0;
-
-      if (!inf) {
-	offset = 1;
-	s[rlen] = '+';
-      }
+    if ((is[0] != '-') && (is[0] != '+')) {
+      offset = 1;
+      s[rlen] = '+';
     }
     memcpy(s + rlen + offset, is, ilen);
     s[rlen + offset + ilen] = 'i';
@@ -2796,7 +2779,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
   int i, has_decimal, must_parse, has_slash;
   int report;
   Scheme_Object *next_complain;
-  int has_hash, has_expt, has_i, has_sign, has_at, saw_digit;
+  int has_hash, has_expt, has_i, has_sign, has_at, saw_digit, saw_nonzero_digit;
   Scheme_Object *o;
   char *ptr;
   const char *orig;
@@ -2928,6 +2911,9 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 			   || (ch == 'd') || (ch == 'D') \
 			   || (ch == 'l') || (ch == 'L'))
 
+#define isbase16digit(ch) (((ch >= 'a') && (ch <= 'f')) \
+                           || ((ch >= 'A') && (ch <= 'F')))
+
   has_i = 0;
   has_at = 0;
   has_sign = -1;
@@ -2943,7 +2929,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
       if (str[i+1] == '+' || str[i+1] == '-')
 	i++;
     } else if ((ch == '+') || (ch == '-')) {
-      if (has_sign > 0) {
+      if ((has_sign > 0) || ((has_sign == 0) && (i == 1))) {
 	if (report)
 	  scheme_raise_exn(MZEXN_READ, complain, 
 			   "read-number: too many signs: %s", str);
@@ -3045,12 +3031,12 @@ Scheme_Object *scheme_read_number(const char *str, long len,
       return scheme_false;
     }
 
-    if (!is_not_float && (SCHEME_FLOATP(n1) || is_float))
+    if (!is_not_float && ((SCHEME_FLOATP(n1) && (n2 != zeroi)) || is_float))
       n2 = exact_to_inexact(1, &n2);  /* uses default conversion */
     else if (is_not_float)
       n2 = inexact_to_exact(1, &n2);
 
-    if (!is_not_float && (SCHEME_FLOATP(n2) || is_float))
+    if (!is_not_float && ((SCHEME_FLOATP(n2) && (n1 != zeroi)) || is_float))
       n1 = exact_to_inexact(1, &n1); /* uses default conversion */
     else if (is_not_float)
       n1 = inexact_to_exact(1, &n1);
@@ -3131,7 +3117,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 			       scheme_make_double(r2));
   }
 
-  has_decimal = has_slash = has_hash = has_expt = saw_digit = 0;
+  has_decimal = has_slash = has_hash = has_expt = saw_digit = saw_nonzero_digit = 0;
   for (i= 0; i < len; i++) {
     int ch = str[i];
     if (ch == '.') {
@@ -3204,14 +3190,14 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 	return scheme_false;
       }
     } else if (ch == '#') {
-      if (has_slash || /* has_decimal || */ (radix > 10) || !saw_digit) {
+      if (has_slash || /* has_decimal || (radix > 10) || */ !saw_digit) {
 	if (report)
 	  scheme_raise_exn(MZEXN_READ, complain, 
 			   "read-number: misplaced hash: %s", str);
 	return scheme_false;
       }
       has_hash = 1;
-    } else if (!isdigit(ch)) {
+    } else if (!isdigit(ch) && !((radix == 16) && isbase16digit(ch))) {
       if (has_decimal) {
 	if (report)
 	  scheme_raise_exn(MZEXN_READ, complain, 
@@ -3227,6 +3213,8 @@ Scheme_Object *scheme_read_number(const char *str, long len,
       break;
     } else {
       saw_digit = 1;
+      if (ch != '0')
+	saw_nonzero_digit = 1;
       if (has_hash) {
 	if (report)
 	  scheme_raise_exn(MZEXN_READ, complain, 
@@ -3281,6 +3269,13 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 			 "read-number: bad decimal number %s", str);
       return scheme_false;
     } 
+
+    if (!saw_nonzero_digit) {
+      /* Assert: d = 0.0 */
+      if (str[0] == '-') {
+	d = -d;
+      }
+    }
 
 #ifdef MZ_USE_SINGLE_FLOATS
     if (single)
@@ -3341,7 +3336,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
       if (str[i] == '+' || str[i] == '-')
 	digits[dcp++] = str[i++];
 
-      for (; isdigit((unsigned char)str[i]); i++)
+      for (; isdigit((unsigned char)str[i]) || ((radix == 16) && isbase16digit(str[i])); i++)
 	digits[dcp++] = str[i];
 
       if (str[i] == '#') {
@@ -3354,7 +3349,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
       if (str[i] == '.') {
 	i++;
 	if (num_ok)
-	  for (; isdigit((unsigned char)str[i]); i++) {
+	  for (; isdigit((unsigned char)str[i]) || ((radix == 16) && isbase16digit(str[i])); i++) {
 	    digits[dcp++] = str[i];
 	    extra_power++;
 	  }
@@ -3366,7 +3361,8 @@ Scheme_Object *scheme_read_number(const char *str, long len,
       }
 
       if ((str[i] && (!has_expt || i != has_expt))
-	  || !dcp || (dcp == 1 && !isdigit((unsigned char)digits[0]))) {
+	  || !dcp || (dcp == 1 && !(isdigit((unsigned char)digits[0])
+				    || ((radix == 16) && isbase16digit(digits[0]))))) {
 	if (report)
 	  scheme_raise_exn(MZEXN_READ, complain, 
 			   "read-number: bad decimal number %s", str);
@@ -3386,7 +3382,6 @@ Scheme_Object *scheme_read_number(const char *str, long len,
       if (extra_power)
 	exponent = scheme_bin_minus(exponent, scheme_make_integer(extra_power));
     }
-
     
     args[0] = scheme_make_integer(radix);
     args[1] = exponent;
@@ -3395,9 +3390,23 @@ Scheme_Object *scheme_read_number(const char *str, long len,
     n = scheme_bin_mult(mantissa, power);
 
     if (!is_not_float)
-      return CHECK_SINGLE(TO_DOUBLE(n), single);
+      n = CHECK_SINGLE(TO_DOUBLE(n), single);
     else
-      return CHECK_SINGLE(n, single);
+      n = CHECK_SINGLE(n, single);
+
+    if (SCHEME_FLOATP(n) && str[0] == '-') {
+      if (!SCHEME_FLOAT_VAL(n)) {
+	/* 0.0 => -0.0 */
+#ifdef MZ_USE_SINGLE_FLOATS
+	if (SCHEME_FLTP(n)) {
+	  n = scheme_make_float(-SCHEME_FLT_VAL(n));
+	} else
+#endif
+	  n = scheme_make_double(-SCHEME_DBL_VAL(n));
+      }
+    }
+
+    return n;
   }
   
   if (has_slash) {
@@ -3446,8 +3455,14 @@ Scheme_Object *scheme_read_number(const char *str, long len,
     if (report)
       scheme_raise_exn(MZEXN_READ, complain, 
 		       "read-number: bad number %s", str);
-  } else if (is_float)
+  } else if (is_float) {
+    /* Special case: "#i-0" => -0. */
+    if ((o == zeroi) && str[0] == '-') {
+      return scheme_make_double(-0.0);
+    }
+
     return CHECK_SINGLE(TO_DOUBLE(o), single);
+  }
 
   return o;
 }

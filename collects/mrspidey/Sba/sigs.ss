@@ -267,10 +267,10 @@
   mrspidey:kernel^
   (;; --- Structures
     (struct FlowType
-      (num expr arrowto arrowfrom type-annotation proplist values-ftype))
+      (num expr arrowto arrowfrom type-annotation symbol values-ftype))
     num-ftype list-ftype num-edge 
     add-FlowType-arrow! add-FlowType! 
-    add-FlowType-prop! get-FlowType-prop FlowType-name
+    FlowType-name
 
     (struct Tvar (objs orig-objs constraints edgeto edgefrom L U))
 

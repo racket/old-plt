@@ -49,27 +49,14 @@ Scheme_Object *scheme_make_complex(const Scheme_Object *r, const Scheme_Object *
 
 Scheme_Object *scheme_real_to_complex(const Scheme_Object *n)
 {
-  return make_complex(n, (SCHEME_DBLP(n) 
-			  ? scheme_make_double(0.0) 
-#ifdef MZ_USE_SINGLE_FLOATS
-			  : SCHEME_FLTP(n)
-			  ? scheme_make_float(0.0f)
-#endif
-			  : zero), 
-		      0);
+  return make_complex(n, zero, 0);
 }
 
 Scheme_Object *scheme_make_small_complex(const Scheme_Object *n, Small_Complex *s)
 {
   s->type = scheme_complex_type;
   s->r = (Scheme_Object *)n;
-  s->i = (SCHEME_DBLP(n) 
-	  ? scheme_make_double(0.0) 
-#ifdef MZ_USE_SINGLE_FLOATS
-	  : SCHEME_FLTP(n)
-	  ? scheme_make_float(0.0f)
-#endif
-	  : zero);
+  s->i = zero;
 
   return (Scheme_Object *)s;
 }
@@ -78,47 +65,40 @@ int scheme_is_complex_exact(const Scheme_Object *o)
 {
   Scheme_Complex *c = (Scheme_Complex *)o;
 
-  return !SCHEME_FLOATP(c->r);
+  return !SCHEME_FLOATP(c->r) && !SCHEME_FLOATP(c->r);
 }
 
 Scheme_Object *scheme_complex_normalize(const Scheme_Object *o)
 {
   Scheme_Complex *c = (Scheme_Complex *)o;
 
+#if 0
+  /* We used to disallow nan in parts of a complex number */
   if (SCHEME_DBLP(c->i)) {
     double d = SCHEME_DBL_VAL(c->i);
-#ifndef NAN_EQUALS_ANYTHING
-    if (d == 0.0)
-      return c->r;
-#endif
     if (MZ_IS_NAN(d))
       return c->i;
-#ifdef NAN_EQUALS_ANYTHING
-    if (d == 0.0)
-      return c->r;
-#endif
-    d = SCHEME_FLOAT_VAL(c->r);
-    if (MZ_IS_NAN(d))
-      return c->r;
+    if (c->r != zero) {
+      d = SCHEME_FLOAT_VAL(c->r);
+      if (MZ_IS_NAN(d))
+	return c->r;
+    }
 #ifdef MZ_USE_SINGLE_FLOATS
   } else if (SCHEME_FLTP(c->i)) {
     float f = SCHEME_FLT_VAL(c->i);
-#ifndef NAN_EQUALS_ANYTHING
-    if (f == 0.0f)
-      return c->r;
-#endif
     if (MZ_IS_NAN(d))
       return c->i;
-#ifdef NAN_EQUALS_ANYTHING
-    if (f == 0.0f)
-      return c->r;
+    if (c->r != zero) {
+      f = SCHEME_FLT_VAL(c->r);
+      if (MZ_IS_NAN(f))
+	return c->r;
+    }
 #endif
-    f = SCHEME_FLT_VAL(c->r);
-    if (MZ_IS_NAN(f))
-      return c->r;
+  } else
 #endif
-  } else if (c->i == zero)
-    return c->r;
+
+    if (c->i == zero)
+      return c->r;
 
   return (Scheme_Object *)o;
 }
@@ -212,7 +192,7 @@ Scheme_Object *scheme_complex_divide(const Scheme_Object *n, const Scheme_Object
   Scheme_Complex *cd = (Scheme_Complex *)d;
   Scheme_Object *a_sq_p_b_sq, *r, *i;
   
-  if (zero_p(cn->r) && zero_p(cn->i))
+  if ((cn->r == zero) && (cn->i == zero))
     return zero;
 
   a_sq_p_b_sq = scheme_bin_plus(scheme_bin_mult(cd->r, cd->r), 
@@ -234,7 +214,7 @@ Scheme_Object *scheme_complex_power(const Scheme_Object *base, const Scheme_Obje
   Scheme_Complex *ce = (Scheme_Complex *)exponent;
   double a, b, c, d, bm, ba, nm, na, r1, r2;
 
-  if (ce->i == zero)
+  if ((ce->i == zero) && !SCHEME_FLOATP(ce->r))
     return scheme_generic_power(base, ce->r);
 
   a = scheme_get_val_as_double(cb->r);

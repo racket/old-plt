@@ -11,7 +11,7 @@
        (#%quote ,key) (#%quote (,current-file . ,mark))
        ,expr))
    
-   (define (make-annotate top?)
+   (define (make-annotate top? name)
      (lambda (expr)
        (cond
 	[(symbol? expr)
@@ -27,7 +27,10 @@
 	 (if (eq? (car expr) '#%begin)
 	     `(#%begin ,@(map annotate-top (cdr expr)))
 	     `(,(car expr) ,(cadr expr) 
-			   ,(with-mark expr (annotate (caddr expr)))))]
+			   ,(with-mark expr (annotate-named 
+					     (let ([name (cadr expr)])
+					       (and (symbol? name) name))
+					     (caddr expr)))))]
 	[(pair? expr)
 	 (with-mark
 	  expr
@@ -47,7 +50,7 @@
 		     (cadr expr))
 	       ,@(map annotate (cddr expr)))]
 	    [(#%set!)
-	     `(#%set! ,(cadr expr) ,(annotate (caddr expr)))]
+	     `(#%set! ,(cadr expr) ,(annotate-named (cadr expr) (caddr expr)))]
 	    [(#%begin #%begin0 #%if #%with-continuation-mark)
 	     `(,(car expr) ,@(map annotate (cdr expr)))]
 	    [(#%cond) expr]
@@ -86,7 +89,13 @@
 								   (if (or (symbol? binding)
 									   (null? (cdr binding)))
 								       binding
-								       `(,(car binding) ,(annotate (cadr binding)))))
+								       `(,(car binding) 
+									 ,(annotate-named 
+									   (let ([name (car binding)])
+									     (if (symbol? name)
+										 name
+										 (car name)))
+									   (cadr binding)))))
 								 (cdr clause)))]))
 				     (list-tail expr 5)))]
 	    [(#%interface)
@@ -95,8 +104,9 @@
 	     (map annotate expr)]))]
 	[else expr])))
 
-   (define annotate (make-annotate #f))
-   (define annotate-top (make-annotate #t))
+   (define annotate (make-annotate #f #f))
+   (define annotate-top (make-annotate #t #f))
+   (define annotate-named (lambda (name expr) ((make-annotate #t name) expr)))
 
    (current-eval
     (let ([orig (current-eval)])

@@ -159,8 +159,6 @@
 
   ;; ----------------------------------------------------------------------
 
-  (define values-trap-pt (void))
-
   (define (traverse-exp E env)
     (: env (listof (cons Name (or mutable-binding FlowType))))
 
@@ -226,7 +224,6 @@
        (lambda (E env flush?)
          (match E
            [($ zodiac:app _ _ _ _ fn args)
-	    (set! values-trap-pt "|")
 	    (let*-vals 
 	     ( [(ftype-fn env1 pi) 
 		;; Traverse fn specially if fo prim ref 
@@ -236,14 +233,10 @@
 		   (=> fail)
 		   (if (st:special-fo-prims)
 		       (match (atenv:lookup env (zodiac:varref-binding fn))
-			 [#f 
-			  (set! values-trap-pt "A")
-			  (fail)]
+			 [#f (fail)]
 			 [ftype
-			  (set! values-trap-pt "B")
 			  (match (FlowType->Atype ftype)
 			    [(and pi ($ atprim sym tschema))
-			     (set! values-trap-pt "C")
 			     ;; (pretty-print-debug `(ftype-in-traverse
 			     ;;  			   ,ftype ,(FlowType->Atype ftype)))
 			     (zodiac:set-parsed-atprim! fn pi)
@@ -251,18 +244,12 @@
 			       (tschema->con-for-nargs tschema 
 						       tvar-fn sym '() (length args))
 			       (link-parsed-ftype! fn (wrap-value tvar-fn))
-			       (set! values-trap-pt "D")
 			       (values tvar-fn env pi))]
-			    [_ 
-			     (set! values-trap-pt "E")
-			     (fail)])])
-		       (begin (set! values-trap-pt "F") (fail)))]
+			    [_ (fail)])])
+		       (fail))]
 		  [_ 
-		   (set! values-trap-pt "G")
 		   (let-values ([(ftype env) (traverse1 fn env)])
-		     (set! values-trap-pt "H")
 		     (values ftype env #f))])]
-	       [_ (set! values-trap-pt "K")]
 	       [(ftype-arg* env2) (traverse* args env1)]
 	       [ftype-arg* (map extract-1st-value ftype-arg*)]
 	       [env3 (if (and flush? (not pi))

@@ -333,7 +333,7 @@
 	  [($ atthunk thunk) `(thunk ,(Tvar->SDL (thunk)))]
 	  [($ atprim name _ _ _ _ type) `(prim ,type)]
 	  [($ schema tvar tvar* edges) `(schema ,(Tvar->SDL tvar))]
-	  [(and def ($ atunit imports exports result))
+	  [($ atunit imports exports result)
 	   `(unit ,(Tvar->SDL (FlowType->Tvar ftype)))]
 	  [(and ($ atlunit thunk) lui)
 	   `(lazy ,(FlowType->SDL (create-fo-FlowType (atlunit->atunit lui))))]

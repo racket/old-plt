@@ -76,15 +76,17 @@ static Scheme_Object *name (const Scheme_Object *n1, const Scheme_Object *n2)
                       waybigs, swaybigs, waysmalls, swaysmalls, \
                       combinezero, firstzero, sfirstzero, secondzero, ssecondzero, \
                       nanchk, snanchk, \
-                      complexwrap, numbertype) \
+                      complexwrap, exactzerowrapl, exactzerowrapr, numbertype) \
 rettype \
 name (const Scheme_Object *n1, const Scheme_Object *n2) \
 { \
   Small_Bignum sb; \
   Small_Rational sr; \
   Scheme_Type t1, t2; \
+  exactzerowrapr( if (n2 == zeroi) return ) \
   if (SCHEME_INTP(n1)) \
     { \
+      exactzerowrapl( if (n1 == zeroi) return ) \
       if (SCHEME_INTP(n2)) \
 	return iop(SCHEME_INT_VAL(n1), SCHEME_INT_VAL(n2)); \
       t2 = _SCHEME_TYPE(n2); \
@@ -330,6 +332,10 @@ name (const Scheme_Object *n1, const Scheme_Object *n2) \
 #define GEN_APPLY(x, y) x(y)
 #define GEN_SCHEME_BOOL_APPLY(x, y) SCHEME_TRUEP(x(1, (Scheme_Object **)&y))
 
+#define GEN_RETURN_0(x) x zeroi;
+#define GEN_RETURN_1(x) x scheme_make_integer(1);
+#define GEN_RETURN_N1(x) x (Scheme_Object *)n1;
+
 #define GEN_SAME_INF(x) ((SCHEME_TRUEP(positive_p(1, (Scheme_Object **)&x))) ? inf_object : minus_inf_object)
 #define GEN_OPP_INF(x) ((SCHEME_FALSEP(positive_p(1, (Scheme_Object **)&x))) ? inf_object : minus_inf_object)
 #define GEN_MAKE_ZERO(x) zerod
@@ -352,7 +358,7 @@ name (const Scheme_Object *n1, const Scheme_Object *n2) \
 # define SNAN_CHECK_NAN_IF_WEIRD(x) /* empty */
 #endif
 
-#define GEN_BIN_OP(name, scheme_name, iop, fop, fsop, bn_op, rop, cxop, nanckop, snanckop) \
+#define GEN_BIN_OP(name, scheme_name, iop, fop, fsop, bn_op, rop, cxop, exzeopl, exzeopr, nanckop, snanckop) \
   GEN_BIN_THING(Scheme_Object *, name, scheme_name, \
                 iop, fop, fsop, bn_op, rop, cxop, \
                 GEN_OMIT, GEN_FIRST_ONLY, \
@@ -360,7 +366,7 @@ name (const Scheme_Object *n1, const Scheme_Object *n2) \
                 0, 0, 0, 0, \
                 GEN_SCHEME_BOOL_APPLY, badfunc, badfunc, badfunc, badfunc, \
                 nanckop, snanckop, \
-                GEN_IDENT, "number")
+                GEN_IDENT, exzeopl, exzeopr, "number")
 
 #define GEN_BIN_DIV_OP(name, scheme_name, iop, fop, fsop, bn_op, rop, cxop) \
   GEN_BIN_THING(Scheme_Object *, name, scheme_name, \
@@ -370,7 +376,7 @@ name (const Scheme_Object *n1, const Scheme_Object *n2) \
                 GEN_MAKE_ZERO, GEN_MAKE_SZERO, GEN_MAKE_ZERO, GEN_MAKE_SZERO, \
                 GEN_APPLY, GEN_MAKE_ZERO, GEN_MAKE_SZERO, GEN_SAME_INF, GEN_SAME_SINF, \
                 NAN_CHECK_NAN_IF_WEIRD, SNAN_CHECK_NAN_IF_WEIRD, \
-                GEN_IDENT, "number")
+                GEN_IDENT, GEN_RETURN_0, GEN_OMIT, "number")
 
 #define GEN_BIN_COMP(name, scheme_name, iop, fop, bn_op, rop, cxop, waybig, waysmall, firstzero, secondzero, complexwrap, numbertype) \
  GEN_BIN_THING(int, name, scheme_name, \
@@ -380,7 +386,7 @@ name (const Scheme_Object *n1, const Scheme_Object *n2) \
                waybig, waybig, waysmall, waysmall, \
                GEN_SCHEME_BOOL_APPLY, firstzero, firstzero, secondzero, secondzero, \
                NAN_CHECK_0_IF_WEIRD, NAN_CHECK_0_IF_WEIRD, \
-               complexwrap, numbertype)
+               complexwrap, GEN_OMIT, GEN_OMIT, numbertype)
 
 #define GEN_BIN_INT_OP(name, scheme_name, op, bigop) \
 static Scheme_Object * \
@@ -456,7 +462,7 @@ name (int argc, Scheme_Object *argv[]) \
   return ret; \
 }
 
-#define GEN_UNARY_OP(name, scheme_name, c_name, inf_val, neginf_val, nan_val, complex_fun, USE_COMPLEX) \
+#define GEN_UNARY_OP(name, scheme_name, c_name, inf_val, neginf_val, nan_val, complex_fun, PRECHECK, USE_COMPLEX) \
 static Scheme_Object * \
 name (int argc, Scheme_Object *argv[]) \
 { \
@@ -467,6 +473,7 @@ name (int argc, Scheme_Object *argv[]) \
   S_FLOATWRAP( int is_double = 0; ) \
   ) \
   Scheme_Object *o = argv[0]; \
+  PRECHECK() \
   if (SCHEME_INTP(o)) \
     d = SCHEME_INT_VAL(o); \
   else { \

@@ -321,9 +321,6 @@
        (member         (forall (a tail)
 			       (a (MU l (union nil (cons a l) tail)) 
 				  -> (union false (cons a tail)))))
-       (assf           (forall (a)
-			       ((a -> bool) (listof a) -> 
-					    (union false a))))
        (assq           (forall (a c)
 			       (a (listof (cons a c)) -> 
 				  (union false (cons a c)))))
@@ -1190,6 +1187,9 @@
 		       (forall
 			(x z)
 			(((arglistof x) *-> z) z (listof (arglistof x)) *-> z))))
+       (assf           (forall (a)
+			       ((a -> bool) (listof a) -> 
+					    (union false a))))
        (ignore-errors (forall (x) ((-> x) -> (union x void))))
        (last-pair     (forall (p l)
 			      ( (MU l (union p (cons _ l))) -> p)))

@@ -321,6 +321,7 @@
   
   (define cached-doc-names (make-hash-table 'equal))
   (define (get-doc-name doc-dir)
+    (printf "get-doc-name: ~s\n" doc-dir)
     (hash-table-get
      cached-doc-names
      doc-dir

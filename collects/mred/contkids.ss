@@ -103,6 +103,10 @@
 	  (rename
 	    [super-set-size set-size])
 	  
+	  (private
+	    [in-force #f]) ; flag reflecting whether or not we're in the
+	                   ; middle of processing a force-redraw request.
+	  
 	  (public
 	    
 	    ; make-item-param: makes a getter/setter function which
@@ -229,6 +233,8 @@
 	    ;   invalid.
 	    [force-redraw
 	     (lambda ()
+	       (set! in-force #t)
+	       ; the matching (set! in-force #f) is in set-size.
 	       (mred:debug:printf
 		'container-child-force-redraw
 		(string-append
@@ -256,12 +262,14 @@
 	       (unless (and (same-dimension? x (get-x))
 			    (same-dimension? y (get-y))
 			    (same-dimension? width (get-width))
-			    (same-dimension? height (get-height)))
+			    (same-dimension? height (get-height))
+			    (not in-force))
 		 (mred:debug:printf 'container-child-set-size
 				    (string-append
 				     "container-child-set-size: "
 				     "Calling super-set-size ~s ~s ~s ~s")
 				    x y width height)
+		 (set! in-force #f)
 		 (super-set-size x y width height)))]
 	    
 	    ; get-min-size: computes the minimum size the item can

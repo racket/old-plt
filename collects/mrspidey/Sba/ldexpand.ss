@@ -43,7 +43,7 @@
 	 (let ([txt (make-object mred:text%)])
 	   (send txt load-file filename)
 	   (lambda ()
-	     (gui-utils:read-snips/chars-from-buffer txt)))))))
+	     (gui-utils:read-snips/chars-from-text txt)))))))
 	    
 
   (define (zodiac:read* thunk-thunk filename)

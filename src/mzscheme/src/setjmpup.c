@@ -328,20 +328,6 @@ static void uncopy_stack(int ok, Scheme_Jumpup_Buf *b, long *prev)
     scheme_set_external_stack_val(b->external_stack);
 #endif
 
-#ifdef WIN32_SETJMP_HACK
-  /* Mystical hack for Win32 with Borland C++ 4.5 */
-  /* My best guess is that the j_excep field is used by the
-     Win32 kernel to gurantee that longjmp isn't used nastily
-     by jumping across the handling of different events. Or something.
-     Of course, I'm using longjmp nastily, so I have to trick the kernel. */
-  /* That's just a guess. In any case, it seems to work. */
-  {
-    jmp_buf hack;
-    setjmp(hack);
-    b->buf->j_excep = hack->j_excep;
-  }
-#endif
-
   scheme_longjmp(b->buf, 1);
 }
 

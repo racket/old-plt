@@ -826,7 +826,7 @@ void scheme_on_next_top(Scheme_Comp_Env *env, Scheme_Object *mark, Scheme_Object
 
 typedef Scheme_Object *(*Overflow_K_Proc)(void);
 
-void *scheme_top_level_do(void *(*k)(void), int eb)
+void *top_level_do(void *(*k)(void), int eb, void *sj_start)
      /* Wraps a function `k' with a handler for stack overflows and
 	barriers to full-continuation jumps.  */
 {
@@ -900,11 +900,7 @@ void *scheme_top_level_do(void *(*k)(void), int eb)
   set_overflow = !p->overflow_set;
   if (set_overflow) {
     p->overflow_set = 1;
-#ifdef MZ_PRECISE_GC
-    p->cc_start = (void *)&__gc_var_stack__;
-#else
-    p->cc_start = &v;
-#endif
+    p->cc_start = sj_start;
     memcpy(&oversave, &p->overflow_buf, sizeof(mz_jmp_buf));
     if (scheme_setjmp(p->overflow_buf)) {
       while (1) {
@@ -1017,6 +1013,28 @@ void *scheme_top_level_do(void *(*k)(void), int eb)
     scheme_wake_up();
 
   return v;
+}
+
+void *scheme_top_level_do(void *(*k)(void), int eb)
+{
+  void *sj_start;
+
+#ifdef MZ_PRECISE_GC
+  sj_start = (void *)&__gc_var_stack__;
+#else
+  sj_start = &sj_start;
+#endif
+  
+  sj_start = top_level_do(k, eb, sj_start);
+
+#ifdef MZ_PRECISE_GC
+  if (0) {
+    /* ensure __gc_var_stack__ is here: */
+    sj_start = scheme_malloc_atomic(0);
+  }
+#endif
+
+  return sj_start;
 }
 
 /*========================================================================*/

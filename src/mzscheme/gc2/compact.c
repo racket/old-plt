@@ -336,9 +336,9 @@ static int resolve_for_fixup = 0;
 static MPage *find_page(void *p);
 
 #if CHECKS
-static void CRASH()
+static void CRASH(int where)
 {
-  fprintf(stderr, "crash\n");
+  fprintf(stderr, "crash @%d\n", where);
   abort();
 }
 
@@ -870,7 +870,7 @@ static int mark_weak_array(void *p)
       if (data[i] 
 	  && (*(short *)(data[i]) != 43)
 	  && (*(short *)(data[i]) != 52))
-	CRASH();
+	CRASH(1);
     }
   }
 #endif
@@ -1013,7 +1013,7 @@ static void mark_finalizer(Fnl *fnl)
 #if CHECKS
   if (!fnl->tagged && fnl->size < BIGBLOCK_MIN_SIZE) {
     if (((long *)fnl->p)[-1] != fnl->size)
-      CRASH();
+      CRASH(2);
   }
 #endif
 }
@@ -1035,7 +1035,7 @@ static void fixup_finalizer(Fnl *fnl)
 #if CHECKS
   if (!fnl->tagged && fnl->size < BIGBLOCK_MIN_SIZE) {
     if (!(((long)fnl->p) & MPAGE_MASK))
-      CRASH();
+      CRASH(3);
   }
 #endif
 }
@@ -1115,13 +1115,13 @@ void GC_set_finalizer(void *p, int tagged, int level, void (*f)(void *p, void *d
       if (m->type != MTYPE_TAGGED) {
 	fprintf(stderr, "Not tagged: %lx (%d)\n", 
 		(long)p, m->type);
-	CRASH();
+	CRASH(4);
       }
     } else {
       if (m->type != MTYPE_XTAGGED) {
 	fprintf(stderr, "Not xtagged: %lx (%d)\n", 
 		(long)p, m->type);
-	CRASH();
+	CRASH(5);
       }
       if (m->flags & MFLAG_BIGBLOCK)
 	fnl->size = m->u.size;
@@ -1160,7 +1160,7 @@ void GC_finalization_weak_ptr(void **p, int offset)
 
 #if CHECKS
   if (offset < 0)
-    CRASH();
+    CRASH(6);
 #endif
 
   /* Allcation might trigger GC, so we use park: */
@@ -1294,7 +1294,7 @@ static void init_tagged_mpage(void **p, MPage *page)
       if ((tag < 0) || (tag >= _num_tags_) || !size_table[tag]) {
 	printf("bad tag: %d at %lx\n", tag, (long)p);
 	fflush(NULL);
-	CRASH();
+	CRASH(7);
       }
       prev_prev_prev_ptr = prev_prev_ptr;
       prev_prev_ptr = prev_ptr;
@@ -1317,7 +1317,7 @@ static void init_tagged_mpage(void **p, MPage *page)
 
 #if CHECKS
       if (prev_var_stack != GC_variable_stack) {
-	CRASH();
+	CRASH(8);
       }
 #endif
       
@@ -1548,7 +1548,7 @@ void GC_mark(const void *p)
 #if CHECKS
 	  if (!((long)p & MPAGE_MASK)) {
 	    /* Can't point to beginning of non-tagged block! */
-	    CRASH();
+	    CRASH(9);
 	  }
 #endif
 	  p = BYTEPTR(p) - WORD_SIZE;
@@ -1559,7 +1559,7 @@ void GC_mark(const void *p)
 #if CHECKS
 	if (offset >= page->alloc_boundary) {
 	  /* Past allocation region. */
-	  CRASH();
+	  CRASH(10);
 	  return;
 	}
 #endif
@@ -1583,7 +1583,7 @@ void GC_mark(const void *p)
 	      Type_Tag tag = *(Type_Tag *)p;
 	      if ((tag < 0) || (tag >= _num_tags_) || !size_table[tag]) {
 		printf("bad tag: %d at %lx\n", tag, (long)p);
-		CRASH();
+		CRASH(11);
 	      }
 	    }
 #endif
@@ -1594,7 +1594,7 @@ void GC_mark(const void *p)
 	      OFFSET_SET_COLOR_UNMASKED(page->u.offsets, offset, v | MFLAG_BLACK); /* black can mean on stack */
 # if RECORD_MARK_SRC
 #  if CHECKS
-	      if ((long)mark_src & 0x1) CRASH();
+	      if ((long)mark_src & 0x1) CRASH(12);
 #  endif
 	      mark_src_stack[mark_stack_pos] = mark_src;
 	      mark_src_type[mark_stack_pos] = mark_type;
@@ -1626,7 +1626,7 @@ void GC_mark(const void *p)
 	} else {
 #if CHECKS
 	  if (!(flags & COLOR_MASK)) {
-	    CRASH();
+	    CRASH(13);
 	  }
 #endif
 	}
@@ -1755,7 +1755,7 @@ static void propagate_array_mpage(void **bottom, MPage *page)
 	
 #if CHECKS
     if ((size < 2) || (size > MPAGE_WORDS)) {
-      CRASH();
+      CRASH(14);
     }
     prev_ptr = p;
 #endif
@@ -1783,7 +1783,7 @@ static void propagate_array_mpage(void **bottom, MPage *page)
 
 #if CHECKS
     if ((p > bottom + MPAGE_WORDS + 1) || (p < bottom)) {
-      CRASH();
+      CRASH(15);
     }
 #endif
   }
@@ -1995,7 +1995,7 @@ static void do_bigblock(void **p, MPage *page, int fixup)
 
 #if CHECKS
       if ((tag < 0) || (tag >= _num_tags_) || !size_table[tag]) {
-	CRASH();
+	CRASH(16);
       }
       prev_var_stack = GC_variable_stack;
 #endif
@@ -2011,7 +2011,7 @@ static void do_bigblock(void **p, MPage *page, int fixup)
 
 #if CHECKS
       if (prev_var_stack != GC_variable_stack) {
-	CRASH();
+	CRASH(17);
       }
 #endif
     
@@ -2115,7 +2115,7 @@ static void propagate_all_mpages()
 	  
 #if CHECKS
 	    if ((tag < 0) || (tag >= _num_tags_) || !size_table[tag]) {
-	      CRASH();
+	      CRASH(18);
 	    }
 #endif
 #if RECORD_MARK_SRC
@@ -2246,7 +2246,7 @@ static void compact_tagged_mpage(void **p, MPage *page)
 
 #if CHECKS
     if (!size) {
-      CRASH();
+      CRASH(19);
     }
     prev_prev_prev_ptr = prev_prev_ptr;
     prev_prev_ptr = prev_ptr;
@@ -2365,7 +2365,7 @@ static void compact_untagged_mpage(void **p, MPage *page)
   if (dest == startp) {
     if (dest_offset < MPAGE_WORDS) {
       /* Can't compact to self! */
-      CRASH();
+      CRASH(20);
     }
   }
 #endif
@@ -2379,7 +2379,7 @@ static void compact_untagged_mpage(void **p, MPage *page)
 #if CHECKS
       if (p < startp + page->alloc_boundary) {
 	/* Premature end */
-	CRASH();
+	CRASH(21);
       }
 #endif
       break;
@@ -2387,7 +2387,7 @@ static void compact_untagged_mpage(void **p, MPage *page)
 
 #if CHECKS
     if (size >= BIGBLOCK_MIN_SIZE) {
-      CRASH();
+      CRASH(22);
     }
 #endif
 
@@ -2443,7 +2443,7 @@ static void compact_untagged_mpage(void **p, MPage *page)
       OFFSET_SET_SIZE_UNMASKED(offsets, offset, dest_offset+1);
 #if CHECKS
       if (!offsets[offset] && !offsets[offset+1])
-	CRASH();
+	CRASH(23);
 #endif
       offset += size;
       dest_offset += size;
@@ -2608,7 +2608,7 @@ static void freelist_untagged_mpage(void **p, MPage *page)
 
 #if CHECKS
     if (size >= BIGBLOCK_MIN_SIZE) {
-      CRASH();
+      CRASH(24);
     }
 #endif
 
@@ -2701,7 +2701,7 @@ void GC_fixup(void *pp)
 #if CHECKS
 	  if (!offset) {
 	    /* Can't point to beginning of non-tagged block! */
-	    CRASH();
+	    CRASH(25);
 	  }
 #endif
 	  offset--;
@@ -2712,7 +2712,7 @@ void GC_fixup(void *pp)
 	if (page->type > MTYPE_TAGGED) {
 	  if (!v) {
 	    /* Can't point to beginning of non-tagged block! */
-	    CRASH();
+	    CRASH(26);
 	  }
 	}
 #endif
@@ -2729,7 +2729,7 @@ void GC_fixup(void *pp)
 #if CHECKS
 	if (!(find_page(r)->flags & COLOR_MASK)) {
 	  bad_dest_addr = r;
-	  CRASH();
+	  CRASH(27);
 	}
 #endif
 
@@ -2792,7 +2792,7 @@ static void fixup_tagged_mpage(void **p, MPage *page)
 #if CHECKS
       if ((tag < 0) || (tag >= _num_tags_) || !size_table[tag]) {
 	fflush(NULL);
-	CRASH();
+	CRASH(28);
       }
       prev_var_stack = prev_ptr;
       prev_ptr = p;
@@ -2824,7 +2824,7 @@ static void fixup_array_mpage(void **p, MPage *page)
 
 #if CHECKS
     if (size >= BIGBLOCK_MIN_SIZE) {
-      CRASH();
+      CRASH(29);
     }
 #endif
 
@@ -2888,7 +2888,7 @@ static void fixup_xtagged_mpage(void **p, MPage *page)
 
 #if CHECKS
     if (size >= BIGBLOCK_MIN_SIZE) {
-      CRASH();
+      CRASH(30);
     }
 #endif
 
@@ -3069,7 +3069,7 @@ static void designate_modified(void *p)
 
 #if CHECKS
   if (during_gc)
-    CRASH();
+    CRASH(31);
 #endif
 
   map = mpage_maps[g];
@@ -3240,7 +3240,7 @@ void GC_mark_variable_stack(void **var_stack,
 #if 0
     if (*var_stack && ((unsigned long)*var_stack < (unsigned long)var_stack)) {
       printf("bad %d\n", stack_depth);
-      CRASH();
+      CRASH(32);
     }
 #endif
 
@@ -3315,7 +3315,7 @@ void check_variable_stack()
       return;
 
     if (*var_stack && ((unsigned long)*var_stack <= (unsigned long)var_stack))
-      CRASH();
+      CRASH(33);
 
     var_stack = *var_stack;
   }
@@ -3711,7 +3711,7 @@ static void gcollect(int full)
 		Type_Tag tag = *(Type_Tag *)f->p;
 #if CHECKS
 		if ((tag < 0) || (tag >= _num_tags_) || !size_table[tag]) {
-		  CRASH();
+		  CRASH(34);
 		}
 #endif
 		mark_table[tag](f->p);
@@ -3786,11 +3786,11 @@ static void gcollect(int full)
     /* All finalized objects must be marked at this point. */
     for (f = fnls; f; f = f->next) {
       if (!is_marked(f->p))
-	CRASH();
+	CRASH(35);
     }
     for (f = run_queue; f; f = f->next) {
       if (!is_marked(f->p))
-	CRASH();
+	CRASH(36);
     }
   }
 #endif
@@ -4226,7 +4226,7 @@ void *GC_malloc_one_tagged(size_t size_in_bytes)
 
 #if CHECKS
   if (size_in_words < 2)
-    CRASH();
+    CRASH(37);
 #endif
 
   if (size_in_words >= (BIGBLOCK_MIN_SIZE >> LOG_WORD_SIZE)) {

@@ -134,27 +134,6 @@ static long sch_rand(Scheme_Random_State *rs)
   return i;
 }
 
-
-static inline long good_rand(long x)
-{
-  /*
-   * Compute x = (7^5 * x) mod (2^31 - 1)
-   * wihout overflowing 31 bits:
-   *      (2^31 - 1) = 127773 * (7^5) + 2836
-   * From "Random number generators: good ones are hard to find",
-   * Park and Miller, Communications of the ACM, vol. 31, no. 10,
-   * October 1988, p. 1195.
-   */
-  register long hi, lo;
-  
-  hi = x / 127773;
-  lo = x % 127773;
-  x = 16807 * lo - 2836 * hi;
-  if (x <= 0)
-    x += 0x7fffffff;
-  return x;
-}
-
 /*
  * sch_srand:
  *
@@ -173,8 +152,25 @@ static void sch_srand(long x, Scheme_Random_State *rs)
   long *state = rs->state;
 
   state[0] = x & 0x7fffffff;
-  for (i = 1; i < DEG; i++)
-    state[i] = good_rand(state[i - 1]);
+  for (i = 1; i < DEG; i++) {
+    /*
+     * Compute v = (7^5 * v) mod (2^31 - 1)
+     * wihout overflowing 31 bits:
+     *      (2^31 - 1) = 127773 * (7^5) + 2836
+     * From "Random number generators: good ones are hard to find",
+     * Park and Miller, Communications of the ACM, vol. 31, no. 10,
+     * October 1988, p. 1195.
+     */
+    register long hi, lo, v;
+  
+    v = state[i - 1];
+    hi = v / 127773;
+    lo = v % 127773;
+    v = 16807 * lo - 2836 * hi;
+    if (v <= 0)
+      v += 0x7fffffff;
+    state[i] = v;
+  }
   rs->fpos = SEP;
   rs->rpos = 0;
   for (i = 0; i < 10 * DEG; i++)

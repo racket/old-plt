@@ -376,6 +376,10 @@ static MX_PRIM mxPrims[] = {
   { mx_event_error_pred,"event-error?",1,1},
   { mx_block_until_event,"block-until-event",1,1},
   { mx_process_win_events,"process-win-events",0,0},
+
+  // dotnet hack
+  { initialize_dotnet_runtime,"%%initialize-dotnet-runtime",0,0},
+
 };
 
 BOOL isEmptyClsId(CLSID clsId) {
@@ -5407,6 +5411,6 @@ BOOL APIENTRY DllMain(HANDLE hModule,DWORD reason,LPVOID lpReserved) {
 Scheme_Object *
 initialize_dotnet_runtime (int argc, Scheme_Object **argv)
 {
-  scheme_signal_error ("%%initialize-dotnet-runtime:  Support for .NET is not available in this image.");
+  scheme_signal_error ("%%%%initialize-dotnet-runtime:  Support for .NET is not available in this image.");
   return scheme_false;
 }

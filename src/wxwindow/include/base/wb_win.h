@@ -5,6 +5,8 @@
  * Created:	1993
  * Updated:	
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
+ *
+ * Renovated by Matthew for MrEd, 1995-2000
  */
 
 /*
@@ -57,24 +59,14 @@ class wxEvtHandler: public wxObject
   inline virtual void OnMove(int WXUNUSED(x), int WXUNUSED(y)) {};          // Called on move
   inline virtual void OnEvent(wxMouseEvent *WXUNUSED(event)) {};  // Called on mouse event
   inline virtual void OnChar(wxKeyEvent *WXUNUSED(event)) {};     // Called on character event
-  // Under Windows, we can intercept character input per dialog or frame
-  virtual inline Bool OnCharHook(wxKeyEvent *WXUNUSED(event)) { return FALSE; }
   inline virtual Bool OnClose(void) { return TRUE; };  // Delete window if returns TRUE
   inline virtual void OnActivate(Bool WXUNUSED(active)) {};       // Called on window activation (MSW)
   inline virtual void OnSetFocus(void) {};              // Called on setting focus
   inline virtual void OnKillFocus(void) {};             // Called on killing focus
   inline virtual void OnDropFile(char *WXUNUSED(file)) {};
 
-  // If clicked on panel
-  inline virtual void OnLeftClick(int WXUNUSED(x), int WXUNUSED(y), int WXUNUSED(keys)) {};
-  inline virtual void OnRightClick(int WXUNUSED(x), int WXUNUSED(y), int WXUNUSED(keys)) {};
-
   virtual void OnItemEvent(wxItem *WXUNUSED(item), wxMouseEvent *WXUNUSED(event)) {};
   virtual void OnSelect(Bool WXUNUSED(select)) {};
-
-  virtual void OnDefaultAction(wxItem *WXUNUSED(initiatingItem)) {};
-  virtual void OnChangeFocus(wxItem *WXUNUSED(from), wxItem *WXUNUSED(to)) {};
-  virtual Bool OnFunctionKey(wxKeyEvent *WXUNUSED(event)) { return FALSE; };
 };
 
 /*
@@ -176,14 +168,6 @@ class wxbWindow: public wxEvtHandler
   virtual void OnSize(int width, int height);
   virtual void OnMenuSelect(long WXUNUSED(cmd)) {};
   virtual void OnCommand(wxWindow *win, wxCommandEvent *event);
-
-  // Caret
-  virtual void CreateCaret(int WXUNUSED(w), int WXUNUSED(h)) {};
-  virtual void CreateCaret(wxBitmap *WXUNUSED(bitmap)) {};
-  virtual void DestroyCaret(void) {};
-  virtual void ShowCaret(Bool WXUNUSED(show)) {};
-  virtual void SetCaretPos(int WXUNUSED(x), int WXUNUSED(y)) {};
-  virtual void GetCaretPos(int *WXUNUSED(x), int *WXUNUSED(y)) {};
 
   // INTERNAL FUNCTIONS
   virtual void AddChild(wxObject *child);         // Adds reference to the child object

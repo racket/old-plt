@@ -5,6 +5,8 @@
  * Created:	1993
  * Updated:	
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
+ *
+ * Renovated by Matthew for MrEd, 1995-2000
  */
 
 #ifndef wx_itemh
@@ -20,11 +22,11 @@ class wxPanel;
 class wxItem: public wxbItem
 {
  protected:
-   Bool isFafa ;      // because we can mix Fafa/non-Fafa controls
+   Bool isFafa;      // because we can mix Fafa/non-Fafa controls
  public:
    wxList *subControls; // For controls like radiobuttons which are really composite
    FARPROC oldWndProc; // For subclassed controls
-   wxBrush *backBrush ;
+   wxBrush *backBrush;
    int mswLastXPos, mswLastYPos;
    int mswLastEvent;
    Bool isBeingDeleted; // Fudge because can't access parent

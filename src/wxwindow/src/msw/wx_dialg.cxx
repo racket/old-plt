@@ -5,6 +5,8 @@
  * Created:	1993
  * Updated:	August 1994
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
+ *
+ * Renovated by Matthew for MrEd, 1995-2000
  */
 
 #include "wx.h"
@@ -163,24 +165,6 @@ wxDialogBox::~wxDialogBox()
   }
 
   wxDestroyedWindow(context, this);
-}
-
-// By default, pressing escape quits the dialog
-Bool wxDialogBox::OnCharHook(wxKeyEvent& event)
-{
-  if (handle)
-  {
-    if (event.keyCode == WXK_ESCAPE)
-    {
-      if (OnClose())
-      {
-        Show(FALSE);
-        // delete this;
-      }
-      return TRUE;
-    }
-  }
-  return FALSE;
 }
 
 void wxDialogBox::Fit(void)

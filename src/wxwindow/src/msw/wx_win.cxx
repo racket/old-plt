@@ -5,34 +5,21 @@
  * Created:	1993
  * Updated:	August 1994     
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
+ *
+ * Renovated by Matthew for MrEd, 1995-2000
  */
 
 #include "wx.h"
 
 #include <math.h>
 #include <shellapi.h>
-
-#define CATCH_ALT_KEY
-
-#define SIGNED_WORD short
-
 #include <windowsx.h>
 
 #include "fafa.h"
-extern HBRUSH SetupBackground(HWND wnd) ; // in wx_main.cc
 
-#define _EXPORT /**/
- 
-#if !defined(WIN32)	// 3.x uses FARPROC for dialogs
-#define DLGPROC FARPROC
-#endif
-
-#define WINDOW_MARGIN 3	// This defines sensitivity of Leave events
+extern HBRUSH SetupBackground(HWND wnd); // in wx_main.cc
 
 // Global variables
-Bool wxShiftDown = FALSE;
-Bool wxControlDown = FALSE;
-
 wxMenu **wxCurrentPopupMenu = NULL;
 static wxWindow *current_mouse_wnd = NULL;
 static void *current_mouse_context = NULL;
@@ -43,7 +30,7 @@ wxWnd *wxWndHook = NULL;
 
 extern void wxQueueLeaveEvent(void *ctx, wxWindow *wnd, int x, int y, int flags);
 
-extern long last_msg_time; /* MATTHEW: timeStamp implementation */
+extern long last_msg_time; /* timeStamp implementation */
 
 static void wxDoOnMouseLeave(wxWindow *wx_window, int x, int y, UINT flags);
 static void wxDoOnMouseEnter(wxWindow *wx_window, int x, int y, UINT flags);
@@ -64,13 +51,13 @@ wxWindow *wxWindow::FindItem(int id)
   wxChildNode *current = children->First();
   while (current)
   {
-    wxObject *obj = (wxObject *)current->Data() ;
+    wxObject *obj = (wxObject *)current->Data();
     if (wxSubType(obj->__type, wxTYPE_PANEL)) {
       // Do a recursive search.
-      wxPanel *panel = (wxPanel*)obj ;
-      wxWindow *wnd = panel->FindItem(id) ;
+      wxPanel *panel = (wxPanel*)obj;
+      wxWindow *wnd = panel->FindItem(id);
       if (wnd)
-        return wnd ;
+        return wnd;
     } else if (wxSubType(obj->__type, wxTYPE_CANVAS)
 	     || wxSubType(obj->__type, wxTYPE_TEXT_WINDOW)) {
       // Do nothing
@@ -96,27 +83,21 @@ wxWindow *wxWindow::FindItemByHWND(HWND hWnd)
   if (!children)
     return NULL;
   wxChildNode *current = children->First();
-  while (current)
-  {
-    wxObject *obj = (wxObject *)current->Data() ;
-    if (wxSubType(obj->__type,wxTYPE_PANEL))
-    {
+  while (current) {
+    wxObject *obj = (wxObject *)current->Data();
+    if (wxSubType(obj->__type,wxTYPE_PANEL)) {
       // Do a recursive search.
-      wxPanel *panel = (wxPanel*)obj ;
-      wxWindow *wnd = panel->FindItemByHWND(hWnd) ;
+      wxPanel *panel = (wxPanel*)obj;
+      wxWindow *wnd = panel->FindItemByHWND(hWnd);
       if (wnd)
-        return wnd ;
-    }
-    else
-    {
+        return wnd;
+    } else {
       wxItem *item = (wxItem *)current->Data();
       if ((HWND)(item->ms_handle) == hWnd)
         return item;
-      else
-      {
+      else {
         // In case it's a 'virtual' control (e.g. radiobox)
-        if (item->__type == wxTYPE_RADIO_BOX)
-        {
+        if (item->__type == wxTYPE_RADIO_BOX) {
           wxRadioBox *rbox = (wxRadioBox *)item;
           int i;
           for (i = 0; i < rbox->no_items; i++)
@@ -138,7 +119,7 @@ BOOL wxWindow::MSWCommand(UINT WXUNUSED(param), WORD WXUNUSED(id))
 
 void wxWindow::PreDelete(HDC WXUNUSED(dc))
 {
-  mouseInWindow = FALSE ;
+  mouseInWindow = FALSE;
 }
 
 HWND wxWindow::GetHWND(void)
@@ -170,7 +151,7 @@ wxWindow::wxWindow(void)
 {
   ms_handle = 0;
   handle = NULL;
-  mouseInWindow = FALSE ;
+  mouseInWindow = FALSE;
   winEnabled = TRUE;
   cxChar = 0; cyChar = 0;
   windows_id = 0;
@@ -405,9 +386,7 @@ void wxWindow::GetPosition(int *x, int *y)
   point.x = rect.left;
   point.y = rect.top;
   if (hParentWnd)
-  {
     ::ScreenToClient(hParentWnd, &point);
-  }
   *x = point.x;
   *y = point.y;
 
@@ -648,31 +627,6 @@ Bool wxWindow::Show(Bool show)
   return TRUE;
 }
 
-float wxWindow::GetCharHeight(void)
-{
-  TEXTMETRIC lpTextMetric;
-  HWND hWnd = GetHWND();
-  HDC dc = wxwmGetDC(hWnd);
-
-  GetTextMetrics(dc, &lpTextMetric);
-  wxwmReleaseDC(hWnd, dc);
-
-  return (float)lpTextMetric.tmHeight;
-}
-
-float wxWindow::GetCharWidth(void)
-{
-  TEXTMETRIC lpTextMetric;
-  HWND hWnd = GetHWND();
-  HDC dc = wxwmGetDC(hWnd);
-
-  GetTextMetrics(dc, &lpTextMetric);
-  wxwmReleaseDC(hWnd, dc);
-
-  return (float)lpTextMetric.tmAveCharWidth;
-}
-
-/* MATTHEW: [2] 16-bit flag */
 void wxWindow::GetTextExtent(const char *string, float *x, float *y,
 			     float *descent, float *externalLeading, 
 			     wxFont *theFont, Bool use16bit)
@@ -735,706 +689,371 @@ wxWindow *wxWindow::FindFocusWindow()
   return NULL;
 }
 
-// Main Windows 3 window proc
-LRESULT APIENTRY _EXPORT wxWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+// Main window proc
+LRESULT APIENTRY wxWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
   wxWnd *wnd = (wxWnd *)GetWindowLong(hWnd, 0);
   if (!wnd) {
     if (wxWndHook) {
       wnd = wxWndHook;
       wnd->handle = hWnd;
-	 } else
-	   wnd = wxFindWinFromHandle(hWnd);
-
-	 /* MATTHEW: [11] */
-	 if (!wnd)
-		return 0;
+    } else
+      wnd = wxFindWinFromHandle(hWnd);
+    
+    if (!wnd)
+      return DefWindowProc(hWnd, message, wParam, lParam);
   }
 
   // Stop right here if we don't have a valid handle
   // in our wxWnd object.
-  if (wnd && !wnd->handle) {
+  if (!wnd->handle) {
     wnd->handle = hWnd;
-    LONG res = wnd->DefWindowProc(message, wParam, lParam );
+    LONG res = wnd->DefWindowProc(message, wParam, lParam);
     wnd->handle = NULL;
     return res;
   }
 
-  if (wnd) {
-    wnd->last_msg = message;
-    wnd->last_wparam = wParam;
-    wnd->last_lparam = lParam;
-
-    if (message == WM_SETFONT)
-
-		return 0;
-  else if (message == WM_INITDIALOG)
-      return TRUE;
-  }
-
-  wxwmNotify("inthread", ::GetCurrentThreadId());
-  wxwmNotify("begin", message);
-
-  int retval = 0;
-
-  switch (message)
-  {
-        case WM_ACTIVATE:
-        {
-            WORD state = LOWORD(wParam);
-            WORD minimized = HIWORD(wParam);
-            HWND hwnd = (HWND)lParam;
-            wnd->OnActivate(state, minimized, hwnd);
-	    retval = 0;
-            break;
-        }
-        case WM_SETFOCUS:
-        {
-            HWND hwnd = (HWND)wParam;
-
-            if (wnd->OnSetFocus(hwnd))
-              retval = 0;
-            else 
-	      retval = wnd->DefWindowProc(message, wParam, lParam );
-            break;
-        }
-        case WM_KILLFOCUS:
-        {
-            HWND hwnd = (HWND)lParam;
-            if (wnd->OnKillFocus(hwnd))
-              retval = 0;
-            else
-              retval = wnd->DefWindowProc(message, wParam, lParam );
-            break;
-        }
-	case WM_CREATE:
-	{
-          if (wnd)
-            wnd->OnCreate((LPCREATESTRUCT)lParam);
-          retval = 0;
-          break;
-	}
-	case WM_PAINT:
-	{
-          if (wnd->OnPaint())
-            retval = 0;
-          else retval = wnd->DefWindowProc(message, wParam, lParam );
-          break;
-        }
-	case WM_QUERYDRAGICON:
-	{
-	  HICON hIcon = 0;
-          if (hIcon = wnd->OnQueryDragIcon())
-            retval = (LONG)hIcon;
-          else retval = wnd->DefWindowProc(message, wParam, lParam );
-          break;
-        }
-
-        case WM_SIZE:
-        case WM_MOVE:
-        {
-	  if (wnd) {
-	    /* w & h ignored... */
-	    wnd->OnSize(0, 0, wParam);
-	  } else
-	    retval = DefWindowProc(hWnd, message, wParam, lParam);
-	  break;
-        }
-
-        case WM_RBUTTONDOWN:
-        {
-            int x = (SIGNED_WORD)LOWORD(lParam);
-            int y = (SIGNED_WORD)HIWORD(lParam);
-            wnd->OnRButtonDown(x, y, wParam, wxEVENT_TYPE_RIGHT_DOWN);
-            break;
-        }
-        case WM_RBUTTONUP:
-        {
-            int x = (SIGNED_WORD)LOWORD(lParam);
-            int y = (SIGNED_WORD)HIWORD(lParam);
-            wnd->OnRButtonUp(x, y, wParam, wxEVENT_TYPE_RIGHT_UP);
-            break;
-        }
-        case WM_RBUTTONDBLCLK:
-        {
-            int x = (SIGNED_WORD)LOWORD(lParam);
-            int y = (SIGNED_WORD)HIWORD(lParam);
-            wnd->OnRButtonDClick(x, y, wParam, wxEVENT_TYPE_RIGHT_DOWN);
-            break;
-        }
-        case WM_MBUTTONDOWN:
-        {
-            int x = (SIGNED_WORD)LOWORD(lParam);
-            int y = (SIGNED_WORD)HIWORD(lParam);
-            wnd->OnMButtonDown(x, y, wParam, wxEVENT_TYPE_MIDDLE_DOWN);
-            break;
-        }
-        case WM_MBUTTONUP:
-        {
-            int x = (SIGNED_WORD)LOWORD(lParam);
-            int y = (SIGNED_WORD)HIWORD(lParam);
-            wnd->OnMButtonUp(x, y, wParam, wxEVENT_TYPE_MIDDLE_UP);
-            break;
-        }
-        case WM_MBUTTONDBLCLK:
-        {
-            int x = (SIGNED_WORD)LOWORD(lParam);
-            int y = (SIGNED_WORD)HIWORD(lParam);
-            wnd->OnMButtonDClick(x, y, wParam, wxEVENT_TYPE_MIDDLE_DOWN);
-            break;
-        }
-        case WM_LBUTTONDOWN:
-        {
-            int x = (SIGNED_WORD)LOWORD(lParam);
-            int y = (SIGNED_WORD)HIWORD(lParam);
-            wnd->OnButton(x, y, wParam, wxEVENT_TYPE_LEFT_DOWN);
-            break;
-        }
-        case WM_LBUTTONUP:
-        {
-            int x = (SIGNED_WORD)LOWORD(lParam);
-            int y = (SIGNED_WORD)HIWORD(lParam);
-            wnd->OnLButtonUp(x, y, wParam, wxEVENT_TYPE_LEFT_UP);
-            break;
-        }
-        case WM_LBUTTONDBLCLK:
-        {
-            int x = (SIGNED_WORD)LOWORD(lParam);
-            int y = (SIGNED_WORD)HIWORD(lParam);
-            wnd->OnLButtonDClick(x, y, wParam, wxEVENT_TYPE_LEFT_DOWN);
-            break;
-        }
-        case WM_MOUSEMOVE:
-        {
-            int x = (SIGNED_WORD)LOWORD(lParam);
-            int y = (SIGNED_WORD)HIWORD(lParam);
-            wnd->OnMouseMove(x, y, wParam);
-            break;
-        }
-        case WM_DESTROY:
-        {
-            if (wnd)
-            {
-              if (wnd->OnDestroy())
-                retval = 0;
-              else retval = wnd->DefWindowProc(message, wParam, lParam );
-            }
-            else retval = ::DefWindowProc( hWnd, message, wParam, lParam );
-            break;
-        }
-/*
-        case WM_SYSCOMMAND:
-            break;
-*/
-        case WM_COMMAND:
-	{
-            WORD id = LOWORD(wParam);
-            HWND hwnd = (HWND)lParam;
-            WORD cmd = HIWORD(wParam);
-            if (!wnd->OnCommand(id, cmd, hwnd))
-              retval = wnd->DefWindowProc(message, wParam, lParam );
-            break;
-	 }
-        case WM_INITMENU:
-	  {
-	    wnd->OnMenuClick();
-	    break;
-	  }
-        case WM_MENUSELECT:
-        {
-//            WORD id = LOWORD(wParam);
-            WORD flags = HIWORD(wParam);
-            HMENU sysmenu = (HMENU)lParam;
-            wnd->OnMenuSelect((WORD)wParam, flags, sysmenu);
-            break;
-        }
-        case WM_SYSKEYDOWN:
-	  if ((wParam == VK_MENU) || (wParam == VK_F4)) { /* F4 is close */
-	    goto default_action;
-	  }
-        case WM_KEYDOWN:
-        {
-            if (wParam == VK_SHIFT)
-              wxShiftDown = TRUE;
-            else if (wParam == VK_CONTROL)
-              wxControlDown = TRUE;
-            // Avoid duplicate messages to OnChar
-            else if ((wParam != VK_ESCAPE) 
-		     && (wParam != VK_SPACE) 
-		     && (wParam != VK_RETURN) 
-		     && (wParam != VK_TAB) 
-		     && (wParam != VK_BACK))
-	    {
-              wnd->OnChar((WORD)wParam, lParam);
-	    }
-            break;
-        }
-        case WM_KEYUP:
-        {
-            if (wParam == VK_SHIFT)
-              wxShiftDown = FALSE;
-            else if (wParam == VK_CONTROL)
-              wxControlDown = FALSE;
-            break;
-        }
-        case WM_SYSCHAR:
-	  if (wParam == VK_MENU) {
-	    goto default_action;
-	  }
-        case WM_CHAR:
-        {
-          wnd->OnChar((WORD)wParam, lParam, TRUE);
-          break;
-        }
-        case WM_HSCROLL:
-        {
-            WORD code = LOWORD(wParam);
-            WORD pos = HIWORD(wParam);
-            HWND control = (HWND)lParam;
-            wnd->OnHScroll(code, pos, control);
-            break;
-        }
-        case WM_VSCROLL:
-        {
-            WORD code = LOWORD(wParam);
-            WORD pos = HIWORD(wParam);
-            HWND control = (HWND)lParam;
-            wnd->OnVScroll(code, pos, control);
-            break;
-        }
-        case WM_CTLCOLORBTN:
-	{
-          int nCtlColor = CTLCOLOR_BTN;
-          HWND control = (HWND)lParam;
-          HDC pDC = (HDC)wParam;
-          retval = (DWORD)wnd->OnCtlColor(pDC, control, nCtlColor,
-                                        message, wParam, lParam);
-          break;
-	}
-        case WM_CTLCOLORDLG:
-	{
-          int nCtlColor = CTLCOLOR_DLG;
-          HWND control = (HWND)lParam;
-          HDC pDC = (HDC)wParam;
-          retval = (DWORD)wnd->OnCtlColor(pDC, control, nCtlColor,
-                                        message, wParam, lParam);\
-          break;
-	}
-        case WM_CTLCOLORLISTBOX:
-	{
-          int nCtlColor = CTLCOLOR_LISTBOX;
-          HWND control = (HWND)lParam;
-          HDC pDC = (HDC)wParam;
-          retval = (DWORD)wnd->OnCtlColor(pDC, control, nCtlColor,
-                                        message, wParam, lParam);
-          break;
-	}
-        case WM_CTLCOLORMSGBOX:
-	{
-          int nCtlColor = CTLCOLOR_MSGBOX;
-          HWND control = (HWND)lParam;
-          HDC pDC = (HDC)wParam;
-          retval = (DWORD)wnd->OnCtlColor(pDC, control, nCtlColor,
-                                        message, wParam, lParam);
-          break;
-	}
-        case WM_CTLCOLORSCROLLBAR:
-	{
-          int nCtlColor = CTLCOLOR_SCROLLBAR;
-          HWND control = (HWND)lParam;
-          HDC pDC = (HDC)wParam;
-          retval = (DWORD)wnd->OnCtlColor(pDC, control, nCtlColor,
-                                        message, wParam, lParam);
-          break;
-	}
-        case WM_CTLCOLORSTATIC:
-	{
-          int nCtlColor = CTLCOLOR_STATIC;
-          HWND control = (HWND)lParam;
-          HDC pDC = (HDC)wParam;
-          retval = (DWORD)wnd->OnCtlColor(pDC, control, nCtlColor,
-                                        message, wParam, lParam);
-          break;
-	}
-        case WM_CTLCOLOREDIT:
-	{
-          int nCtlColor = CTLCOLOR_EDIT;
-          HWND control = (HWND)lParam;
-          HDC pDC = (HDC)wParam;
-          retval = (DWORD)wnd->OnCtlColor(pDC, control, nCtlColor,
-                                        message, wParam, lParam);
-          break;
-	}
-        case WM_SYSCOLORCHANGE:
-        {
-          retval = (DWORD)wnd->OnColorChange(hWnd, message, wParam, lParam);
-          break;
-        }
-        case WM_ERASEBKGND:
-        {
-          // Prevents flicker when dragging
-          if (IsIconic(hWnd))
-	    retval = 1;
-	  else if (!wnd->OnEraseBkgnd((HDC)wParam))
-            retval = wnd->DefWindowProc(message, wParam, lParam );
-          else
-	    retval = 1;
-          break;
-        }
-        case WM_MDIACTIVATE:
-        {
-	  HWND hWndActivate = GET_WM_MDIACTIVATE_HWNDACTIVATE(wParam,lParam);
-	  HWND hWndDeactivate = GET_WM_MDIACTIVATE_HWNDDEACT(wParam,lParam);
-	  BOOL activate = GET_WM_MDIACTIVATE_FACTIVATE(hWnd,wParam,lParam);
-	  retval = wnd->OnMDIActivate(activate, hWndActivate, hWndDeactivate);
-	  break;
-        }
-      case WM_DROPFILES:
-	{
-	  wnd->OnDropFiles(wParam);
-	  break;
-	}
-      case WM_QUERYENDSESSION:
-	{
-	  // Same as WM_CLOSE, but inverted results. Thx Microsoft :-)
-	  if (wnd->OnClose()) {
-	    if (wnd->wx_window)
-	      wnd->wx_window->Show(FALSE);
-	  }
-	  retval = 0L;
-	  break;
-	}
-      case WM_CLOSE:
-	{
-	  if (wnd->OnClose()) {
-	    if (wnd->wx_window) 
-	      wnd->wx_window->Show(FALSE);
-	  }
-	  retval = 1L;
-	  break;
-        }
-	
-      default:
-      default_action:
-	if (wnd)
-	  retval = wnd->DefWindowProc(message, wParam, lParam );
-	else retval = DefWindowProc( hWnd, message, wParam, lParam );
-      }
+  wnd->last_msg = message;
+  wnd->last_wparam = wParam;
+  wnd->last_lparam = lParam;
   
-  wxwmNotify("end", message);
-  
-  return retval; // Success: we processed this command.
-}
-
-// Dialog window proc
-LONG APIENTRY _EXPORT
-  wxDlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
-{
-  wxWnd *wnd = wxFindWinFromHandle(hWnd);
-
-  if (!wnd && wxWndHook)
-  {
-    wnd = wxWndHook;
-    wnd->handle = hWnd;
-  }
-
-  if (wnd)
-  {
-    wnd->last_msg = message;
-    wnd->last_wparam = wParam;
-    wnd->last_lparam = lParam;
-  }
-
   if (message == WM_SETFONT)
     return 0;
   else if (message == WM_INITDIALOG)
-    return 0;
+    return TRUE;
+
+  int retval = 0;
 
   switch (message) {
-        case WM_ACTIVATE:
-        {
-            WORD state = LOWORD(wParam);
-            WORD minimized = HIWORD(wParam);
-            HWND hwnd = (HWND)lParam;
-            wnd->OnActivate(state, minimized, hwnd);
-            return 0;
-            break;
-	 }
+  case WM_ACTIVATE:
+    {
+      WORD state = LOWORD(wParam);
+      WORD minimized = HIWORD(wParam);
+      HWND hwnd = (HWND)lParam;
+      wnd->OnActivate(state, minimized, hwnd);
+      retval = 0;
+      break;
+    }
+  case WM_SETFOCUS:
+    {
+      HWND hwnd = (HWND)wParam;
 
-        case WM_SETFOCUS:
-        {
-            HWND hwnd = (HWND)wParam;
-            return wnd->OnSetFocus(hwnd);
-            break;
-        }
-        case WM_KILLFOCUS:
-        {
-            HWND hwnd = (HWND)lParam;
-            return wnd->OnKillFocus(hwnd);
-            break;
-        }
-        case WM_CREATE:
-            if (wnd)
-              wnd->OnCreate((LPCREATESTRUCT)lParam);
-            return 0;
-	    break;
+      if (wnd->OnSetFocus(hwnd))
+	retval = 0;
+      else 
+	retval = wnd->DefWindowProc(message, wParam, lParam );
+      break;
+    }
+  case WM_KILLFOCUS:
+    {
+      HWND hwnd = (HWND)lParam;
+      if (wnd->OnKillFocus(hwnd))
+	retval = 0;
+      else
+	retval = wnd->DefWindowProc(message, wParam, lParam );
+      break;
+    }
+  case WM_CREATE:
+    {
+      wnd->OnCreate((LPCREATESTRUCT)lParam);
+      retval = 0;
+      break;
+    }
+  case WM_PAINT:
+    {
+      if (wnd->OnPaint())
+	retval = 0;
+      else retval = wnd->DefWindowProc(message, wParam, lParam );
+      break;
+    }
+  case WM_QUERYDRAGICON:
+    {
+      HICON hIcon = 0;
+      if (hIcon = wnd->OnQueryDragIcon())
+	retval = (LONG)hIcon;
+      else 
+	retval = wnd->DefWindowProc(message, wParam, lParam );
+      break;
+    }
 
-        case WM_SIZE:
-        case WM_MOVE:
-        {
-	  if (wnd) {
-	    /* w & h ignored ... */
-	    wnd->OnSize(0, 0, wParam);
-	  } else
-	    return FALSE;
-	  break;
-        }
-        case WM_COMMAND:
-	{
-            WORD id = LOWORD(wParam);
-            HWND hwnd = (HWND)lParam;
-            WORD cmd = HIWORD(wParam);
-            if (!wnd->OnCommand(id, cmd, hwnd))
-              return wnd->DefWindowProc(message, wParam, lParam );
-            break;
-	}
-	case WM_PAINT:
-	{
-          if (wnd->OnPaint())
-            return 0;
-          else return wnd->DefWindowProc(message, wParam, lParam );
-          break;
-        }
-        case WM_RBUTTONDOWN:
-        {
-            int x = (int)LOWORD(lParam);
-            int y = (int)HIWORD(lParam);
-            wnd->OnRButtonDown(x, y, wParam);
-            break;
-        }
-        case WM_RBUTTONUP:
-        {
-            int x = (int)LOWORD(lParam);
-            int y = (int)HIWORD(lParam);
-            wnd->OnRButtonUp(x, y, wParam);
-            break;
-        }
-        case WM_RBUTTONDBLCLK:
-        {
-            int x = (int)LOWORD(lParam);
-            int y = (int)HIWORD(lParam);
-            wnd->OnRButtonDClick(x, y, wParam);
-            break;
-        }
-        case WM_MBUTTONDOWN:
-        {
-            int x = (int)LOWORD(lParam);
-            int y = (int)HIWORD(lParam);
-            wnd->OnMButtonDown(x, y, wParam);
-            break;
-        }
-        case WM_MBUTTONUP:
-        {
-            int x = (int)LOWORD(lParam);
-            int y = (int)HIWORD(lParam);
-            wnd->OnMButtonUp(x, y, wParam);
-            break;
-        }
-        case WM_MBUTTONDBLCLK:
-        {
-            int x = (int)LOWORD(lParam);
-            int y = (int)HIWORD(lParam);
-            wnd->OnMButtonDClick(x, y, wParam);
-            break;
-        }
-        case WM_LBUTTONDOWN:
-        {
-            int x = (int)LOWORD(lParam);
-            int y = (int)HIWORD(lParam);
-            wnd->OnLButtonDown(x, y, wParam);
-            break;
-        }
-        case WM_LBUTTONUP:
-        {
-            int x = (int)LOWORD(lParam);
-            int y = (int)HIWORD(lParam);
-            wnd->OnLButtonUp(x, y, wParam);
-            break;
-        }
-        case WM_LBUTTONDBLCLK:
-        {
-            int x = (int)LOWORD(lParam);
-            int y = (int)HIWORD(lParam);
-            wnd->OnLButtonDClick(x, y, wParam);
-            break;
-        }
-        case WM_MOUSEMOVE:
-        {
-            int x = (int)LOWORD(lParam);
-            int y = (int)HIWORD(lParam);
-            wnd->OnMouseMove(x, y, wParam);
-            break;
-        }
-        case WM_SYSKEYDOWN:
-	  if (wParam == VK_MENU) {
-	    break;
-	  }
-        case WM_KEYDOWN:
-        {
-            if (wParam == VK_SHIFT)
-              wxShiftDown = TRUE;
-            else if (wParam == VK_CONTROL)
-              wxControlDown = TRUE;
-            else if ((wParam != VK_ESCAPE) 
-		     && (wParam != VK_SPACE) 
-		     && (wParam != VK_RETURN)
-		     && (wParam != VK_TAB)
-		     && (wParam != VK_DELETE))
-              wnd->OnChar(wParam, lParam);
-            break;
-        }
-        case WM_KEYUP:
-        {
-            if (wParam == VK_SHIFT)
-              wxShiftDown = FALSE;
-            else if (wParam == VK_CONTROL)
-              wxControlDown = FALSE;
-            break;
-        }
-        case WM_SYSCHAR:
-	  if (wParam == VK_MENU) {
-	    break;
-	  }
-        case WM_CHAR:
-        {
-          wnd->OnChar((WORD)wParam, lParam, TRUE);
-          break;
-        }
+  case WM_SIZE:
+  case WM_MOVE:
+    {
+      /* w & h ignored... */
+      wnd->OnSize(0, 0, wParam);
+      break;
+    }
 
-        case WM_HSCROLL:
-        {
-            WORD code = LOWORD(wParam);
-            WORD pos = HIWORD(wParam);
-            HWND control = (HWND)lParam;
-            wnd->OnHScroll(code, pos, control);
-            break;
-        }
-        case WM_VSCROLL:
-        {
-            WORD code = LOWORD(wParam);
-            WORD pos = HIWORD(wParam);
-            HWND control = (HWND)lParam;
-            wnd->OnVScroll(code, pos, control);
-            break;
-        }
-        case WM_CTLCOLORBTN:
-	{
-          int nCtlColor = CTLCOLOR_BTN;
-          HWND control = (HWND)lParam;
-          HDC pDC = (HDC)wParam;
-          return (DWORD)wnd->OnCtlColor(pDC, control, nCtlColor,
-                                        message, wParam, lParam);
-          break;
-	}
-        case WM_CTLCOLORDLG:
-	{
-          int nCtlColor = CTLCOLOR_DLG;
-          HWND control = (HWND)lParam;
-          HDC pDC = (HDC)wParam;
-          return (DWORD)wnd->OnCtlColor(pDC, control, nCtlColor,
-                                        message, wParam, lParam);
-          break;
-	}
-        case WM_CTLCOLORLISTBOX:
-	{
-          int nCtlColor = CTLCOLOR_LISTBOX;
-          HWND control = (HWND)lParam;
-          HDC pDC = (HDC)wParam;
-          return (DWORD)wnd->OnCtlColor(pDC, control, nCtlColor,
-                                        message, wParam, lParam);
-          break;
-	}
-        case WM_CTLCOLORMSGBOX:
-	{
-          int nCtlColor = CTLCOLOR_MSGBOX;
-          HWND control = (HWND)lParam;
-          HDC pDC = (HDC)wParam;
-          return (DWORD)wnd->OnCtlColor(pDC, control, nCtlColor,
-                                        message, wParam, lParam);
-          break;
-	}
-        case WM_CTLCOLORSCROLLBAR:
-	{
-          int nCtlColor = CTLCOLOR_SCROLLBAR;
-          HWND control = (HWND)lParam;
-          HDC pDC = (HDC)wParam;
-          return (DWORD)wnd->OnCtlColor(pDC, control, nCtlColor,
-                                        message, wParam, lParam);
-          break;
-	}
-        case WM_CTLCOLORSTATIC:
-	{
-          int nCtlColor = CTLCOLOR_STATIC;
-          HWND control = (HWND)lParam;
-          HDC pDC = (HDC)wParam;
-          return (DWORD)wnd->OnCtlColor(pDC, control, nCtlColor,
-                                        message, wParam, lParam);
-          break;
-	}
-        case WM_CTLCOLOREDIT:
-	{
-          int nCtlColor = CTLCOLOR_EDIT;
-          HWND control = (HWND)lParam;
-          HDC pDC = (HDC)wParam;
-          return (DWORD)wnd->OnCtlColor(pDC, control, nCtlColor,
-                                        message, wParam, lParam);
-          break;
-	}
-        case WM_SYSCOLORCHANGE:
-        {
-          if (wnd->userColours)
-            return ::DefWindowProc( hWnd, message, wParam, lParam );
-          HBRUSH br = SetupBackground(hWnd) ;
-          if (br)
-              wnd->SetBackgroundBrush(br, FALSE) ;
-          return 0 ;
-          break;
-        }
-        case WM_ERASEBKGND:
-        {
-            return wnd->OnEraseBkgnd((HDC)wParam);
-            break;
-        }
-        case WM_DROPFILES:
-        {
-            wnd->OnDropFiles(wParam);
-            break;
-	}
-      case WM_QUERYENDSESSION:
-	{
-	  // Same as WM_CLOSE, but inverted results. Thx Microsoft :-)
-	  if (wnd->OnClose()) {
-	    if (wnd->wx_window)
-	      wnd->wx_window->Show(FALSE);
-	  }
-	  return 0;
-	  break;
-	}
-      case WM_CLOSE:
-	{
-	  if (wnd->OnClose()) {
-	    if (wnd->wx_window)
-	      wnd->wx_window->Show(FALSE);
-	  }
-	  return 1;
-	  break;
-        }
-
-        default:
-          return 0;
+  case WM_RBUTTONDOWN:
+    {
+      int x = (short)LOWORD(lParam);
+      int y = (short)HIWORD(lParam);
+      wnd->OnButton(x, y, wParam, wxEVENT_TYPE_RIGHT_DOWN);
+      break;
+    }
+  case WM_RBUTTONUP:
+    {
+      int x = (short)LOWORD(lParam);
+      int y = (short)HIWORD(lParam);
+      wnd->OnButton(x, y, wParam, wxEVENT_TYPE_RIGHT_UP);
+      break;
+    }
+  case WM_RBUTTONDBLCLK:
+    {
+      int x = (short)LOWORD(lParam);
+      int y = (short)HIWORD(lParam);
+      wnd->OnButton(x, y, wParam, wxEVENT_TYPE_RIGHT_DOWN);
+      break;
+    }
+  case WM_MBUTTONDOWN:
+    {
+      int x = (short)LOWORD(lParam);
+      int y = (short)HIWORD(lParam);
+      wnd->OnButton(x, y, wParam, wxEVENT_TYPE_MIDDLE_DOWN);
+      break;
+    }
+  case WM_MBUTTONUP:
+    {
+      int x = (short)LOWORD(lParam);
+      int y = (short)HIWORD(lParam);
+      wnd->OnButton(x, y, wParam, wxEVENT_TYPE_MIDDLE_UP);
+      break;
+    }
+  case WM_MBUTTONDBLCLK:
+    {
+      int x = (short)LOWORD(lParam);
+      int y = (short)HIWORD(lParam);
+      wnd->OnButton(x, y, wParam, wxEVENT_TYPE_MIDDLE_DOWN);
+      break;
+    }
+  case WM_LBUTTONDOWN:
+    {
+      int x = (short)LOWORD(lParam);
+      int y = (short)HIWORD(lParam);
+      wnd->OnButton(x, y, wParam, wxEVENT_TYPE_LEFT_DOWN);
+      break;
+    }
+  case WM_LBUTTONUP:
+    {
+      int x = (short)LOWORD(lParam);
+      int y = (short)HIWORD(lParam);
+      wnd->OnButton(x, y, wParam, wxEVENT_TYPE_LEFT_UP);
+      break;
+    }
+  case WM_LBUTTONDBLCLK:
+    {
+      int x = (short)LOWORD(lParam);
+      int y = (short)HIWORD(lParam);
+      wnd->OnButton(x, y, wParam, wxEVENT_TYPE_LEFT_DOWN);
+      break;
+    }
+  case WM_MOUSEMOVE:
+    {
+      int x = (short)LOWORD(lParam);
+      int y = (short)HIWORD(lParam);
+      wnd->OnMouseMove(x, y, wParam);
+      break;
+    }
+  case WM_DESTROY:
+    {
+      if (wnd->OnDestroy())
+	retval = 0;
+      else 
+	retval = wnd->DefWindowProc(message, wParam, lParam );
+      break;
+    }
+  case WM_COMMAND:
+    {
+      WORD id = LOWORD(wParam);
+      HWND hwnd = (HWND)lParam;
+      WORD cmd = HIWORD(wParam);
+      if (!wnd->OnCommand(id, cmd, hwnd))
+	retval = wnd->DefWindowProc(message, wParam, lParam );
+      break;
+    }
+  case WM_INITMENU:
+    {
+      wnd->OnMenuClick();
+      break;
+    }
+  case WM_MENUSELECT:
+    {
+      // WORD id = LOWORD(wParam);
+      WORD flags = HIWORD(wParam);
+      HMENU sysmenu = (HMENU)lParam;
+      wnd->OnMenuSelect((WORD)wParam, flags, sysmenu);
+      break;
+    }
+  case WM_SYSKEYDOWN:
+    if ((wParam == VK_MENU) || (wParam == VK_F4)) { /* F4 is close */
+      goto default_action;
+    }
+  case WM_KEYDOWN:
+    {
+      // Avoid duplicate messages to OnChar
+      if ((wParam != VK_ESCAPE) 
+	  && (wParam != VK_SHIFT) 
+	  && (wParam != VK_CONTROL) 
+	  && (wParam != VK_SPACE) 
+	  && (wParam != VK_RETURN) 
+	  && (wParam != VK_TAB) 
+	  && (wParam != VK_BACK))
+	wnd->OnChar((WORD)wParam, lParam);
+      break;
+    }
+  case WM_KEYUP:
+    {
+      break;
+    }
+  case WM_SYSCHAR:
+    if (wParam == VK_MENU) {
+      goto default_action;
+    }
+  case WM_CHAR:
+    {
+      wnd->OnChar((WORD)wParam, lParam, TRUE);
+      break;
+    }
+  case WM_HSCROLL:
+    {
+      WORD code = LOWORD(wParam);
+      WORD pos = HIWORD(wParam);
+      HWND control = (HWND)lParam;
+      wnd->OnHScroll(code, pos, control);
+      break;
+    }
+  case WM_VSCROLL:
+    {
+      WORD code = LOWORD(wParam);
+      WORD pos = HIWORD(wParam);
+      HWND control = (HWND)lParam;
+      wnd->OnVScroll(code, pos, control);
+      break;
+    }
+  case WM_CTLCOLORBTN:
+    {
+      int nCtlColor = CTLCOLOR_BTN;
+      HWND control = (HWND)lParam;
+      HDC pDC = (HDC)wParam;
+      retval = (DWORD)wnd->OnCtlColor(pDC, control, nCtlColor,
+				      message, wParam, lParam);
+      break;
+    }
+  case WM_CTLCOLORDLG:
+    {
+      int nCtlColor = CTLCOLOR_DLG;
+      HWND control = (HWND)lParam;
+      HDC pDC = (HDC)wParam;
+      retval = (DWORD)wnd->OnCtlColor(pDC, control, nCtlColor,
+				      message, wParam, lParam);\
+								 break;
+    }
+  case WM_CTLCOLORLISTBOX:
+    {
+      int nCtlColor = CTLCOLOR_LISTBOX;
+      HWND control = (HWND)lParam;
+      HDC pDC = (HDC)wParam;
+      retval = (DWORD)wnd->OnCtlColor(pDC, control, nCtlColor,
+				      message, wParam, lParam);
+      break;
+    }
+  case WM_CTLCOLORMSGBOX:
+    {
+      int nCtlColor = CTLCOLOR_MSGBOX;
+      HWND control = (HWND)lParam;
+      HDC pDC = (HDC)wParam;
+      retval = (DWORD)wnd->OnCtlColor(pDC, control, nCtlColor,
+				      message, wParam, lParam);
+      break;
+    }
+  case WM_CTLCOLORSCROLLBAR:
+    {
+      int nCtlColor = CTLCOLOR_SCROLLBAR;
+      HWND control = (HWND)lParam;
+      HDC pDC = (HDC)wParam;
+      retval = (DWORD)wnd->OnCtlColor(pDC, control, nCtlColor,
+				      message, wParam, lParam);
+      break;
+    }
+  case WM_CTLCOLORSTATIC:
+    {
+      int nCtlColor = CTLCOLOR_STATIC;
+      HWND control = (HWND)lParam;
+      HDC pDC = (HDC)wParam;
+      retval = (DWORD)wnd->OnCtlColor(pDC, control, nCtlColor,
+				      message, wParam, lParam);
+      break;
+    }
+  case WM_CTLCOLOREDIT:
+    {
+      int nCtlColor = CTLCOLOR_EDIT;
+      HWND control = (HWND)lParam;
+      HDC pDC = (HDC)wParam;
+      retval = (DWORD)wnd->OnCtlColor(pDC, control, nCtlColor,
+				      message, wParam, lParam);
+      break;
+    }
+  case WM_SYSCOLORCHANGE:
+    {
+      retval = (DWORD)wnd->OnColorChange(hWnd, message, wParam, lParam);
+      break;
+    }
+  case WM_ERASEBKGND:
+    {
+      // Prevents flicker when dragging
+      if (IsIconic(hWnd))
+	retval = 1;
+      else if (!wnd->OnEraseBkgnd((HDC)wParam))
+	retval = wnd->DefWindowProc(message, wParam, lParam );
+      else
+	retval = 1;
+      break;
+    }
+  case WM_MDIACTIVATE:
+    {
+      HWND hWndActivate = GET_WM_MDIACTIVATE_HWNDACTIVATE(wParam,lParam);
+      HWND hWndDeactivate = GET_WM_MDIACTIVATE_HWNDDEACT(wParam,lParam);
+      BOOL activate = GET_WM_MDIACTIVATE_FACTIVATE(hWnd,wParam,lParam);
+      retval = wnd->OnMDIActivate(activate, hWndActivate, hWndDeactivate);
+      break;
+    }
+  case WM_DROPFILES:
+    {
+      wnd->OnDropFiles(wParam);
+      break;
+    }
+  case WM_QUERYENDSESSION:
+    {
+      // Same as WM_CLOSE, but inverted results. Thx Microsoft :-)
+      if (wnd->OnClose()) {
+	if (wnd->wx_window)
+	  wnd->wx_window->Show(FALSE);
+      }
+      retval = 0L;
+      break;
+    }
+  case WM_CLOSE:
+    {
+      if (wnd->OnClose()) {
+	if (wnd->wx_window) 
+	  wnd->wx_window->Show(FALSE);
+      }
+      retval = 1L;
+      break;
+    }
+	
+  default_action:
+  default:
+    retval = wnd->DefWindowProc(message, wParam, lParam);
   }
+  
+  return retval;
+}
 
-  return 0;
+// Dialog window proc
+LONG APIENTRY wxDlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+  return wxWndProc(hWnd, message, wParam, lParam);
 }
 
 wxNonlockingHashTable *wxWinHandleList = NULL;
@@ -1448,7 +1067,6 @@ wxWnd *wxFindWinFromHandle(HWND hWnd)
 /* wxWnd class used to implement all Windows 3 windows
  */
 wxWnd::wxWnd(void)
-
 {
   x_scrolling_enabled = TRUE;
   y_scrolling_enabled = TRUE;
@@ -1476,14 +1094,14 @@ wxWnd::wxWnd(void)
   // No no no... After investigations, I found that Ctl3d use BTNFACE color
   // (which is ALWAYS grey :-))
   // So, respect the behavior!
-  SetBackgroundBrush(CreateSolidBrush(GetSysColor(COLOR_BTNFACE)), TRUE) ;
+  SetBackgroundBrush(CreateSolidBrush(GetSysColor(COLOR_BTNFACE)), TRUE);
 
   last_x_pos = -1.0;
   last_y_pos = -1.0;
   last_event = -1;
   is_canvas = FALSE;
   cdc = NULL;
-  ldc = NULL ;
+  ldc = NULL;
   dc_count = 0;
 }
 
@@ -1492,7 +1110,7 @@ wxWnd::~wxWnd(void)
   wxWinHandleList->DeleteObject(this);
 
   if (background_brush && canDeleteBackgroundBrush)
-    ::DeleteObject(background_brush) ;
+    ::DeleteObject(background_brush);
 
   if (wx_window) {
     wxWindow *p = wx_window->GetTopLevel();
@@ -1585,24 +1203,20 @@ void wxWnd::Create(wxWnd *parent, char *wclass, wxWindow *wx_win, char *title,
 
   if (is_dialog)
   {
-    // MakeProcInstance doesn't seem to be needed in C7. Is it needed for
-    // other compilers???
-//    DLGPROC dlgproc = (DLGPROC)MakeProcInstance(wxWndProc, wxhInstance);
-
-	 handle = ::CreateDialog(wxhInstance, dialog_template, hParent,
-				 (DLGPROC)wxDlgProc);
-
-	 if (handle == 0)
-	   MessageBox(NULL, "Can't find dummy dialog template!\nCheck resource include path for finding wx.rc.",
-		      "wxWindows Error", MB_ICONEXCLAMATION | MB_OK);
-	 else
-	   MoveWindow(handle, x1, y1, w2, h2, FALSE);
-
-	 if (!parent) {
-	   /* Install PLT icon: */
-	   if (wxTheApp->wx_frame)
-	     SendMessage(handle, WM_SETICON, (WORD)TRUE, (DWORD)wxSTD_FRAME_ICON);
-	 }
+    handle = ::CreateDialog(wxhInstance, dialog_template, hParent,
+			    (DLGPROC)wxDlgProc);
+    
+    if (handle == 0)
+      MessageBox(NULL, "Can't find dummy dialog template!\nCheck resource include path for finding wx.rc.",
+		 "wxWindows Error", MB_ICONEXCLAMATION | MB_OK);
+    else
+      MoveWindow(handle, x1, y1, w2, h2, FALSE);
+    
+    if (!parent) {
+      /* Install PLT icon: */
+      if (wxTheApp->wx_frame)
+	SendMessage(handle, WM_SETICON, (WORD)TRUE, (DWORD)wxSTD_FRAME_ICON);
+    }
   } else {
     handle = wxwmCreateWindowEx(extendedStyle, wclass,
 				title,
@@ -1623,7 +1237,8 @@ void wxWnd::Create(wxWnd *parent, char *wclass, wxWindow *wx_win, char *title,
   wxWinHandleList->Append((long)handle, this);
 
   // Can't do this for dialogs!!!!
-  if (!is_dialog) SetWindowLong(handle, 0, (long)this);
+  if (!is_dialog)
+    SetWindowLong(handle, 0, (long)this);
 }
 
 void wxWnd::OnCreate(LPCREATESTRUCT WXUNUSED(cs))
@@ -1809,7 +1424,7 @@ HBRUSH wxWnd::OnCtlColor(HDC pDC, HWND pWnd, UINT nCtlColor,
     // After investigations, I found that Ctl3d use BTNFACE color
     // (which is ALWAYS grey :-))
     // So, respect the behavior!
-    SetBkColor(pDC, GetSysColor(COLOR_BTNFACE)) ;
+    SetBkColor(pDC, GetSysColor(COLOR_BTNFACE));
     return background_brush;
   }
   else return NULL;
@@ -1829,9 +1444,9 @@ void wxWnd::SetBackgroundBrush(HBRUSH br, Bool canDelete, wxBrush *anchor)
 BOOL wxWnd::OnColorChange(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
   if (userColours)
-    return (BOOL)::DefWindowProc( hWnd, message, wParam, lParam );
+    return (BOOL)::DefWindowProc(hWnd, message, wParam, lParam);
 
-  HBRUSH br = SetupBackground(hWnd) ;
+  HBRUSH br = SetupBackground(hWnd);
   // We processed this message.
   return 0;
 }
@@ -1908,11 +1523,7 @@ BOOL wxSubWnd::OnPaint(void)
     {
       wx_window->updateRect = ps.rcPaint;
       
-      if (isPanel)
-        ((wxPanel *)wx_window)->tempPS = &ps;
       wx_window->OnPaint();
-      if (isPanel)
-        ((wxPanel *)wx_window)->tempPS = 0;
     }
     cdc = NULL;
     EndPaint(handle, &ps);
@@ -2272,17 +1883,17 @@ void wxWnd::OnChar(WORD wParam, LPARAM lParam, Bool isASCII)
     event->keyCode = id;
     event->SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */
 
-    POINT pt ;
-    GetCursorPos(&pt) ;
-    RECT rect ;
-    GetWindowRect(handle,&rect) ;
-    pt.x -= rect.left ;
-    pt.y -= rect.top ;
-    float fx,fy ;
-    fx = (float)pt.x ;
-    fy = (float)pt.y ;
-    DeviceToLogical(&fx,&fy) ;
-    CalcUnscrolledPosition((int)fx,(int)fy,&event->x,&event->y) ;
+    POINT pt;
+    GetCursorPos(&pt);
+    RECT rect;
+    GetWindowRect(handle,&rect);
+    pt.x -= rect.left;
+    pt.y -= rect.top;
+    float fx,fy;
+    fx = (float)pt.x;
+    fy = (float)pt.y;
+    DeviceToLogical(&fx,&fy);
+    CalcUnscrolledPosition((int)fx,(int)fy,&event->x,&event->y);
 
     if (!wx_window->CallPreOnChar(wx_window, event))
       if (!wx_window->IsGray())
@@ -2398,12 +2009,12 @@ void wxGetCharSize(HWND wnd, int *x, int *y,wxFont *the_font)
   HFONT was = 0;
   if (the_font&&(fnt=the_font->GetInternalFont(dc)))
   {
-    was = (HFONT)SelectObject(dc,fnt) ;
+    was = (HFONT)SelectObject(dc,fnt);
   }
   GetTextMetrics(dc, &tm);
   if (the_font && fnt && was)
   {
-    SelectObject(dc,was) ;
+    SelectObject(dc,was);
   }
   wxwmReleaseDC(wnd, dc);
   *x = tm.tmAveCharWidth;
@@ -2953,24 +2564,3 @@ wxWindow *wxGetActiveWindow(void)
   }
   return NULL;
 }
-
-// Windows keyboard hook. Allows interception of e.g. F1, ESCAPE
-// in active frames and dialogs, regardless of where the focus is.
-static HHOOK wxTheKeyboardHook = 0;
-static FARPROC wxTheKeyboardHookProc = 0;
-int APIENTRY _EXPORT
-  wxKeyboardHook(int nCode, WORD wParam, DWORD lParam);
-
-void wxSetKeyboardHook(Bool doIt)
-{
-}
-
-int APIENTRY _EXPORT
-  wxKeyboardHook(int nCode, WORD wParam, DWORD lParam)
-{
-  if (nCode >= 0)
-    return 0;
-
-  return (int)CallNextHookEx(wxTheKeyboardHook, nCode, wParam, lParam);
-}
-

@@ -5,6 +5,8 @@
  * Created:	1993
  * Updated:	August 1994
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
+ *
+ * Renovated by Matthew for MrEd, 1995-2000
  */
 
 #include "wx.h"
@@ -28,9 +30,9 @@ public:
 
 wxPanelWnd::wxPanelWnd(wxWnd *parent, char *winClass, wxWindow *wx_win,
 		       int x, int y, int width, int height, DWORD flags,
-		       DWORD extendedStyle):
-  wxSubWnd(parent, winClass, wx_win, x, y, width, height, flags, 
-	   NULL, extendedStyle)
+		       DWORD extendedStyle)
+  : wxSubWnd(parent, winClass, wx_win, x, y, width, height, flags, 
+	     NULL, extendedStyle)
 {
 }
 
@@ -60,7 +62,6 @@ BOOL wxPanelWnd::OnEraseBkgnd(HDC pDC)
 
 wxPanel::wxPanel(void)
 {
-  tempPS = 0;
   window_parent = NULL;
   cursor_x = PANEL_LEFT_MARGIN;
   cursor_y = PANEL_TOP_MARGIN;
@@ -69,22 +70,22 @@ wxPanel::wxPanel(void)
   max_width = 0;
   hSpacing = PANEL_HSPACING;
   vSpacing = PANEL_VSPACING;
-  initial_hspacing = hSpacing ;
-  initial_vspacing = vSpacing ;
-  current_hspacing = hSpacing ;
-  current_vspacing = vSpacing ;
+  initial_hspacing = hSpacing;
+  initial_vspacing = vSpacing;
+  current_hspacing = hSpacing;
+  current_vspacing = vSpacing;
 
   new_line = FALSE;
   label_position = wxHORIZONTAL;
   wxWinType = wxTYPE_XWND;
   handle = NULL;
-  has_child = FALSE ;
-  last_created = 0 ;
-  labelFont = NULL ;
-  buttonFont = NULL ;
-  backColour = NULL ;
-  labelColour = NULL ;
-  buttonColour = NULL ;
+  has_child = FALSE;
+  last_created = 0;
+  labelFont = NULL;
+  buttonFont = NULL;
+  backColour = NULL;
+  labelColour = NULL;
+  buttonColour = NULL;
 }
 
 // Constructor
@@ -141,7 +142,6 @@ Bool wxPanel::Create(wxWindow *parent, int x, int y, int width, int height, long
   windowStyle = style;
   has_child = FALSE;
   last_created = 0;
-  tempPS = 0;
 
   window_parent = parent;
 
@@ -214,54 +214,25 @@ void wxPanel::RealNewLine(void)
   else
     cursor_y += current_vspacing + max_line_height;
   max_line_height = 0;
-  new_line = FALSE ;
+  new_line = FALSE;
 }
   
 void wxPanel::NewLine(int pixels)
 {
   if (new_line)
-    current_vspacing += pixels ;
+    current_vspacing += pixels;
   else
-    current_vspacing = pixels ;
-  new_line = TRUE ;
+    current_vspacing = pixels;
+  new_line = TRUE;
 }
 
 void wxPanel::NewLine(void)
 {
   if (new_line)
-    current_vspacing += vSpacing ;
+    current_vspacing += vSpacing;
   else
-    current_vspacing = vSpacing ;
-  new_line = TRUE ;
-}
-
-/*
-// Start a new line, OLD VERSION
-void wxPanel::NewLine(void)
-{
-  cursor_x = PANEL_LEFT_MARGIN;
-  if (max_line_height == 0)
-  {
-    cursor_y += vspacing;
-  }
-  else
-    cursor_y += vspacing + max_line_height;
-  max_line_height = 0;
-}
-*/
-
-void wxPanel::Tab(void)
-{
-  cursor_x += hSpacing;
-  if (cursor_x > max_width)
-    max_width = cursor_x;
-}
-
-void wxPanel::Tab(int pixels)
-{
-  cursor_x += pixels;
-  if (cursor_x > max_width)
-    max_width = cursor_x;
+    current_vspacing = vSpacing;
+  new_line = TRUE;
 }
 
 void wxPanel::GetCursor(int *x, int *y)
@@ -279,46 +250,18 @@ void wxPanel::SetItemCursor(int x, int y)
   cursor_y = y;
 }
 
-// Set/get horizontal spacing
-void wxPanel::SetHorizontalSpacing(int sp)
-{
-  hSpacing = sp;
-  current_hspacing = sp ;
-}
-
-int wxPanel::GetHorizontalSpacing(void)
-{
-  return hSpacing;
-}
-
-// Set/get vertical spacing
-void wxPanel::SetVerticalSpacing(int sp)
-{
-  vSpacing = sp;
-  current_vspacing = sp ;
-}
-
-int wxPanel::GetVerticalSpacing(void)
-{
-  return vSpacing;
-}
-
 // Fits the panel around the items
 void wxPanel::Fit(void)
 {
-  RealAdvanceCursor() ;
+  RealAdvanceCursor();
   SetClientSize(max_width + initial_hspacing,
                 max_height + initial_vspacing);
-/*
-  SetClientSize(max_width + PANEL_HSPACING,
-                max_height + PANEL_VSPACING);
-*/
 }
 
 // Update next cursor position
 void wxPanel::RealAdvanceCursor(void)
 {
-  wxWindow *item = last_created ;
+  wxWindow *item = last_created;
   if (item)
   {
     int width, height;
@@ -335,17 +278,17 @@ void wxPanel::RealAdvanceCursor(void)
 
     cursor_x = x + width + current_hspacing;
     cursor_y = y;
-    last_created = NULL ;
+    last_created = NULL;
   }
   if (new_line)
-    RealNewLine() ;
+    RealNewLine();
 }
 
 
 // Update next cursor position
 void wxPanel::AdvanceCursor(wxWindow *item)
 {
-   last_created = item ;
+   last_created = item;
 }
 
 // If x or y are not specified (i.e. < 0), supply
@@ -406,10 +349,9 @@ void wxPanel::AddChild(wxObject *child)
   current_hspacing = hSpacing;
   current_vspacing = vSpacing;
 
-  children->Append(child) ;
+  children->Append(child);
 }
 
 void wxPanel::OnPaint(void)
 {
-  PaintSelectionHandles();
 }

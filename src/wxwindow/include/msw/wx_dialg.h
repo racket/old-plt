@@ -5,6 +5,8 @@
  * Created:	1993
  * Updated:	
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
+ *
+ * Renovated by Matthew for MrEd, 1995-2000
  */
 
 #ifndef wx_dialgh
@@ -45,8 +47,6 @@ class wxDialogBox: public wxbDialogBox
   char *GetTitle(void);
 
   virtual void ChangeToGray(Bool gray);
-
-  Bool OnCharHook(wxKeyEvent& event);
 
   void SystemMenu(void);
 };

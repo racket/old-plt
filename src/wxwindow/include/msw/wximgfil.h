@@ -4,6 +4,8 @@
  * Author:	Alejandro Aguilar Sierra
  * Created:	1995
  * Copyright:	(c) 1995, Alejandro Aguilar Sierra <asierra@servidor.unam.mx>
+ *
+ * Renovated by Matthew for MrEd, 1995-2000
  */
 #if !defined(__wximgfil_h)
 #define __wximgfil_h

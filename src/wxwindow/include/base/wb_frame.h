@@ -5,6 +5,8 @@
  * Created:	1993
  * Updated:	
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
+ *
+ * Renovated by Matthew for MrEd, 1995-2000
  */
 
 #ifndef wxb_frameh
@@ -38,8 +40,8 @@ class wxbFrame: public wxWindow
   ~wxbFrame(void);
 
   Bool Create(wxFrame *parent, char *title,
-          int x=-1, int y=-1, int width=-1, int height=-1,
-          long type = 0, char *name = "frame");
+	      int x=-1, int y=-1, int width=-1, int height=-1,
+	      long type = 0, char *name = "frame");
 
   // Override, e.g. to resize subwindows
   void OnSize(int x, int y);
@@ -72,7 +74,6 @@ class wxbFrame: public wxWindow
   // Iconize
   virtual void Iconize(Bool iconize) = 0;
   virtual Bool Iconized(void) = 0;
-  // Windos 3.x maximize/restore
   virtual void Maximize(Bool maximize) = 0;
 
   virtual void LoadAccelerators(char *table) = 0;

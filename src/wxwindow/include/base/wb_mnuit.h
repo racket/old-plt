@@ -5,6 +5,8 @@
  * Created:	1993
  * Updated:	
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
+ *
+ * Renovated by Matthew for MrEd, 1995-2000
  */
 
 /* sccsid[] = "@(#)wb_mnuit.h	1.2 5/9/94" */

@@ -5,6 +5,8 @@
  * Created:	1993
  * Updated:	
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
+ *
+ * Renovated by Matthew for MrEd, 1995-2000
  */
 
 #ifndef wx_panelh
@@ -30,10 +32,9 @@ class wxPanel: public wxbPanel
   int max_width;
   int max_height;
   int max_line_height;
-  wxWindow *last_created ;
+  wxWindow *last_created;
 
-  wxBrush *backBrush ;
-  PAINTSTRUCT *tempPS;
+  wxBrush *backBrush;
 
   wxPanel(void);
   wxPanel(wxWindow *parent,
@@ -47,35 +48,21 @@ class wxPanel: public wxbPanel
           char *name = "panel");
 
   void SetSize(int x, int y, int width, int height, int sizeFlags = wxSIZE_AUTO);
-  void Centre(int direction) ;
-  void AddChild(wxObject *child) ;
+  void Centre(int direction);
+  void AddChild(wxObject *child);
 
   // Set current label position, i.e. will label be on top or to the left
-  // Doesn't do anything right now.
   void SetLabelPosition(int pos);  // wxHORIZONTAL or wxVERTICAL
 
   // Start a new line
   void NewLine(void);
   void NewLine(int pixels);
-  void RealNewLine(void) ;
-
-  // Tab specified number of pixels
-  void Tab(void);
-
-  void Tab(int pixels);
+  void RealNewLine(void);
 
   virtual void ChangeToGray(Bool gray);
 
   void GetCursor(int *x, int *y);
   void SetItemCursor(int x, int y);
-
-  // Set/get horizontal spacing
-  void SetHorizontalSpacing(int sp);
-  int GetHorizontalSpacing(void);
-
-  // Set/get vertical spacing
-  void SetVerticalSpacing(int sp);
-  int GetVerticalSpacing(void);
 
   // Fits the panel around the items
   void Fit(void);

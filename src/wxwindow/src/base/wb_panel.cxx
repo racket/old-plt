@@ -5,6 +5,8 @@
  * Created:	1993
  * Updated:	August 1994
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
+ *
+ * Renovated by Matthew for MrEd, 1995-2000
  */
 
 #include "wx.h"
@@ -40,15 +42,6 @@ wxbPanel::~wxbPanel(void)
 {
 }
 
-void wxbPanel::OnChangeFocus(wxItem *, wxItem *)
-{
-}
-
-Bool wxbPanel::OnFunctionKey(wxKeyEvent &)
-{
-  return FALSE;
-}
-
 wxObject* wxbPanel::GetChild(int number)
 {
   // Return a pointer to the Nth object in the Panel
@@ -72,15 +65,6 @@ void wxbPanel::SetLabelPosition(int pos)  // wxHORIZONTAL or wxVERTICAL
 int wxbPanel::GetLabelPosition(void)
 {
   return label_position;
-}
-
-void wxbPanel::OnDefaultAction(wxItem *WXUNUSED(initiatingItem))
-{
-  wxButton *but = GetDefaultItem();
-  if (but) {
-    wxCommandEvent *event = new wxCommandEvent(wxEVENT_TYPE_BUTTON_COMMAND);
-    but->Command(event);
-  }
 }
 
 void wxbPanel::SetLabelFont(wxFont *fnt)
@@ -114,27 +98,5 @@ void wxbPanel::SetButtonColour(wxColour *col)
 
 // An event outside any items: may be a drag event.
 void wxbPanel::OnEvent(wxMouseEvent * /* event */)
-{
-}
-
-void wxbPanel::OnItemEvent(wxItem *item, wxMouseEvent& event)
-{
-  // Not a selection handle event: just a normal item event.
-  // Transform to panel coordinates.
-  int x, y;
-  item->GetPosition(&x, &y);
-
-  event.x = (float)(event.x + x);
-  event.y = (float)(event.y + y);
-  ProcessItemEvent(item, event, 0);
-}
-
-void wxbPanel::ProcessItemEvent(wxItem * /* item */, wxMouseEvent& /* event */, int /* selectionHandle */)
-{
-}
-
-// Calls DrawSelectionHandles for all items if
-// edit mode is on.
-void wxbPanel::PaintSelectionHandles(void)
 {
 }

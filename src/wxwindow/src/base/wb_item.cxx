@@ -5,25 +5,14 @@
  * Created:     1993
  * Updated:	March 1995
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
+ *
+ * Renovated by Matthew for MrEd, 1995-2000
  */
 
 #include "wx.h"
 
 #include <math.h>
 #include <stdlib.h>
-
-/* When implementing a new item, be sure to:
-
- * - add the item to the parent panel
- * - set window_parent to the parent
- * - NULL any extra child window pointers not created for this item
- *   (e.g. label control that wasn't needed)
- * - delete any extra child windows in the destructor (e.g. label control)
- * - implement GetSize and SetSize
- * - to find panel position if coordinates are (-1, -1), use GetPosition
- * - call AdvanceCursor after creation, for panel layout mechanism.
- *
- */
 
 // Item members
 wxbItem::wxbItem (wxPanel *panel)
@@ -112,6 +101,7 @@ wxbButton::wxbButton (wxPanel * panel, wxFunction WXUNUSED(Function),
 {
   __type = wxTYPE_BUTTON;
   windowStyle = style;
+  labelPosition = wxHORIZONTAL;
 }
 
 wxbButton::wxbButton (wxPanel * panel, wxFunction WXUNUSED(Function), 

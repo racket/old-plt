@@ -5,6 +5,8 @@
  * Created:	1993
  * Updated:	August 1994
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
+ *
+ * Renovated by Matthew for MrEd, 1995-2000
  */
 
 #include "wx.h"
@@ -61,9 +63,9 @@ void wxInitialize(HINSTANCE hInstance)
   wxSTD_FRAME_ICON = LoadIcon(hInstance, "wxSTD_FRAME");
 
   wxSTATUS_LINE_FONT = CreateFont(16, 0, 0, 0, FW_NORMAL, 0, 0, 0,
-                    ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
-                    PROOF_QUALITY, DEFAULT_PITCH | FF_SWISS,
-                    "Arial");
+				  ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+				  PROOF_QUALITY, DEFAULT_PITCH | FF_SWISS,
+				  "Arial");
 
   ///////////////////////////////////////////////////////////////////////
   // Register the frame window class.
@@ -101,8 +103,8 @@ void wxInitialize(HINSTANCE hInstance)
   if (!RegisterClass( &wndclass1 ))
     wxFatalError("Can't register MDI Frame window class");
 
-///////////////////////////////////////////////////////////////////////
-// Register the MDI child frame window class.
+  ///////////////////////////////////////////////////////////////////////
+  // Register the MDI child frame window class.
   WNDCLASS wndclass4;   // Structure used to register Windows class.
 
   wndclass4.style         = CS_HREDRAW | CS_VREDRAW;
@@ -119,8 +121,8 @@ void wxInitialize(HINSTANCE hInstance)
   if (!RegisterClass( &wndclass4 ))
    wxFatalError("Can't register MDI child frame window class");
 
-///////////////////////////////////////////////////////////////////////
-// Register the panel window class.
+  ///////////////////////////////////////////////////////////////////////
+  // Register the panel window class.
   WNDCLASS wndclass2;   // Structure used to register Windows class.
   memset(&wndclass2, 0, sizeof(WNDCLASS));   // start with NULL defaults
   // Use CS_OWNDC to avoid messing about restoring the context
@@ -138,8 +140,8 @@ void wxInitialize(HINSTANCE hInstance)
   if (!RegisterClass( &wndclass2 ))
    wxFatalError("Can't register Panel Window class");
 
-///////////////////////////////////////////////////////////////////////
-// Register the canvas and textsubwindow class name
+  ///////////////////////////////////////////////////////////////////////
+  // Register the canvas and textsubwindow class name
   WNDCLASS wndclass3;   // Structure used to register Windows class.
   memset(&wndclass3, 0, sizeof(WNDCLASS));   // start with NULL defaults
   // Use CS_OWNDC to avoid messing about restoring the context
@@ -454,17 +456,6 @@ wxWindow *wxHWNDtoWindow(HWND hwnd)
 BOOL wxApp::OnIdle(void)
 {
   return FALSE;
-}
-
-// Windows specific. Intercept keyboard input: by default,
-// route it to the active frame or dialog box.
-Bool wxApp::OnCharHook(wxKeyEvent *event)
-{
-  wxWindow *win = wxGetActiveWindow();
-  if (win)
-    return win->OnCharHook(event);
-  else
-    return FALSE;
 }
 
 void wxExit(void)

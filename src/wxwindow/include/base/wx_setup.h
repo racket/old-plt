@@ -6,6 +6,8 @@
  * Created:	1993
  * Updated:	June 1995
  * Copyright:	(c) 1995, AIAI, University of Edinburgh
+ *
+ * Renovated by Matthew for MrEd, 1995-2000
  */
 
 /* sccsid[] = "%W% %G%" */

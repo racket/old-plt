@@ -381,16 +381,16 @@
 	    
 	    (public
 	      [eval-str mzlib:string:eval-string]
+	      [this-result-write 
+	       (lambda (s)
+		 (generic-write s 
+				(lambda (start end)
+				  (change-style result-delta
+						start end))))]
+	      [this-result (make-output-port this-result-write generic-close)]
 	      [pretty-print-out
-	       (let* ([this-result-write
-		       (lambda (s)
-			 (generic-write s 
-					(lambda (start end)
-					  (change-style result-delta
-							start end))))]
-		      [this-result (make-output-port this-result-write generic-close)])
-		 (lambda (v)
-		   (mzlib:pretty-print:pretty-print v this-result)))]
+	       (lambda (v)
+		 (mzlib:pretty-print:pretty-print v this-result))]
 	      [display-result
 	       (lambda (v)
 		 (cond
@@ -606,7 +606,10 @@
 		 (make-output-port this-out-write generic-close))]
 	      [make-this-err
 	       (lambda ()
-		 (make-output-port this-err-write generic-close))])
+		 (make-output-port this-err-write generic-close))]
+	      [this-err (make-this-err)]
+	      [this-out (make-this-out)]
+	      [this-in (make-this-in)])
 	  (sequence
 	    (mred:debug:printf 'super-init "before console-edit%")
 	    (apply super-init args)
@@ -614,19 +617,16 @@
 	    (set-mode (make-object mred:scheme-mode:scheme-interaction-mode%)))
 	  (public [user-parameterization (make-parameterization)])
 	  (sequence
-	    (let ([out (make-this-out)]
-		  [in (make-this-in)]
-		  [err (make-this-err)])
-	      '(unless (eq? mred:debug:on? 'no-takeover)
-		(current-output-port out)
-		(current-input-port in)
-		(current-error-port err))
-	      (with-parameterization user-parameterization
-		(lambda ()
-		  (current-output-port out)
-		  (current-input-port in)
-		  (current-base-parameterization user-parameterization)
-		  (current-error-port err))))))))
+	    '(unless (eq? mred:debug:on? 'no-takeover)
+	       (current-output-port this-out)
+	       (current-input-port this-in)
+	       (current-error-port this-err))
+	    (with-parameterization user-parameterization
+	      (lambda ()
+		(current-output-port this-out)
+		(current-input-port this-in)
+		(current-base-parameterization user-parameterization)
+		(current-error-port this-err)))))))
       
     (define console-edit% (make-console-edit% mred:edit:edit%))
 

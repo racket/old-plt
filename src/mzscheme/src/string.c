@@ -1508,10 +1508,14 @@ void scheme_reset_locale(void)
 
   if ((on != scheme_locale_on)
       || !((current_locale_name == name)
-	   && !strcmp(current_locale_name, name))) {
+	   || !strcmp(current_locale_name, name))) {
 #ifndef DONT_USE_LOCALE
-    if (!setlocale(LC_CTYPE | LC_COLLATE, name))
-      setlocale(LC_CTYPE | LC_COLLATE, "C");
+    /* We only need CTYPE and COLLATE; two calls seem to be much
+       faster than one call with ALL */
+    if (!setlocale(LC_CTYPE, name))
+      setlocale(LC_CTYPE, "C");
+    if (!setlocale(LC_COLLATE, name))
+      setlocale(LC_COLLATE, "C");
 #endif
     scheme_locale_on = on;
   }

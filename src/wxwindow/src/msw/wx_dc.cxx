@@ -857,6 +857,16 @@ void wxDC::SetBrush(wxBrush *brush)
     brush->ChangeBrush();
 }
 
+static int wstrlen(const char *c)
+{
+  int i;
+  
+  for (i = 0; c[i] || c[i+1]; i++) {
+  }
+
+  return i / 2;
+}
+
 void wxDC::DrawText(const char *text, float x, float y, Bool use16bit, int d)
 {
   HDC dc = ThisDC();
@@ -890,8 +900,13 @@ void wxDC::DrawText(const char *text, float x, float y, Bool use16bit, int d)
   
   SetRop(dc, wxSOLID);
 
-  (void)TextOut(dc, (int)XLOG2DEV(xx1), (int)YLOG2DEV(yy1), 
-		text + d, strlen(text + d));
+  if (use16bit) {
+    (void)TextOutW(dc, (int)XLOG2DEV(xx1), (int)YLOG2DEV(yy1), 
+		   (wchar_t *)(text + d), wstrlen(text + d));
+  } else {
+    (void)TextOut(dc, (int)XLOG2DEV(xx1), (int)YLOG2DEV(yy1), 
+		  text + d, strlen(text + d));
+  }
 
   if (current_text_background->Ok())
     (void)SetBkColor(dc, old_background);
@@ -1079,7 +1094,7 @@ float wxDC::GetCharWidth(void)
 
 void wxDC::GetTextExtent(const char *string, float *x, float *y,
                          float *descent, float *topSpace, 
-			 wxFont *theFont, Bool use16bt, int d)
+			 wxFont *theFont, Bool use16bit, int d)
 {
   wxFont *oldFont = NULL;
   if (theFont) {
@@ -1099,9 +1114,18 @@ void wxDC::GetTextExtent(const char *string, float *x, float *y,
   
   SIZE sizeRect;
   TEXTMETRIC tm;
-  int len = strlen(string + d);
+  int len;
 
-  GetTextExtentPoint(dc, len ? string + d : " ", len ? len : 1, &sizeRect);
+  if (use16bit)
+    len = wstrlen(string + d);
+  else
+    len = strlen(string + d);
+
+  if (use16bit && len) {
+    GetTextExtentPointW(dc, (wchar_t *)(string + d), len, &sizeRect);
+  } else {
+    GetTextExtentPoint(dc, len ? string + d : " ", len ? len : 1, &sizeRect);
+  }
   if (descent || topSpace)
     GetTextMetrics(dc, &tm);
 

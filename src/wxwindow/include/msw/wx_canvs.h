@@ -62,10 +62,6 @@ class wxCanvas: public wxbCanvas
 
   void CanvasSwapBuffers(void);
   void ThisContextCurrent(void);
-  void PreviousContextCurrent(void);
-
- private:
-   struct _previous_context_ *m_PreviousContext;
 };
 
 #endif // wx_canvsh

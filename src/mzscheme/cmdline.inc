@@ -934,11 +934,17 @@ static int run_from_cmd_line(int argc, char *_argv[],
 	 "  http://www.plt-scheme.org/software/" PROGRAM_LC "/\n"
 	 );
   PRINTF(prog, BANNER);
+#if defined(DETECT_WIN32_CONSOLE_STDIN)
+  fflush(stdout);
+#endif
   return 0;
  bad_switch:
   PRINTF("%s: bad switch %s\n", prog, real_switch);
  show_need_help:
   PRINTF("Use the --help or -h flag for help.\n");
+#if defined(DETECT_WIN32_CONSOLE_STDIN)
+  fflush(stdout);
+#endif
   return 1;
 #endif
 }

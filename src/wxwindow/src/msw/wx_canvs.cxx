@@ -17,10 +17,7 @@
 #include <gl/glu.h>
 #include <gl/glaux.h>
 
-struct _previous_context_ {
-  HGLRC hglrc;
-  struct _previous_context_ *next;
-};
+static wxCanvas *current_gl_context;
 
 class wxGLContext : public wxObject
 {
@@ -109,6 +106,14 @@ Create (wxWindow * parent, int x, int y, int width, int height, long style,
 
 wxCanvas::~wxCanvas (void)
 {
+  if (current_gl_context == this) {
+    wglMakeCurrent(NULL, NULL);
+    current_gl_context = NULL;
+  }
+
+  if (m_wxglc)
+    delete m_wxglc;
+
   if (wx_dc) {
     wxWnd *wnd = (wxWnd *)handle;
     HDC dc = wxwmGetDC(wnd->handle);
@@ -486,40 +491,18 @@ BOOL wxCanvasWnd::OnPaint(void)
 
 void wxCanvas::CanvasSwapBuffers(void)
 {
-	SwapBuffers(this->m_wxglc->m_hDC);
+  if (m_wxglc)
+    SwapBuffers(this->m_wxglc->m_hDC);
 }
 
 void wxCanvas::ThisContextCurrent(void)
 {
-	
-	HGLRC hglrcCurrent = wglGetCurrentContext();
-	
-	if (hglrcCurrent)
-	{
-		_previous_context_ *pc = new _previous_context_;
-		pc->hglrc = hglrcCurrent;
-		pc->next = m_PreviousContext;
-		m_PreviousContext = pc;
-	}
-
-	wglMakeCurrent(m_wxglc->m_hDC, m_wxglc->m_hGLRC);
+  if (m_wxglc) {
+    wglMakeCurrent(m_wxglc->m_hDC, m_wxglc->m_hGLRC);
+    current_gl_context = this;
+  }
 }
 
-void wxCanvas::PreviousContextCurrent(void)
-{
-	_previous_context_ *pc = m_PreviousContext;
-
-	if (pc)
-	{
-		m_PreviousContext = m_PreviousContext->next;
-		wglMakeCurrent(m_wxglc->m_hDC, pc->hglrc);
-		delete pc;
-		
-	} else {
-
-		wglMakeCurrent(NULL, NULL);
-	}
-}
 /**************************************************/
 
 /*
@@ -543,14 +526,14 @@ wxGLContext::wxGLContext(wxWindow *win)
   SetupPalette();
 
   m_hGLRC = wglCreateContext(m_hDC);	
+
+  WXGC_IGNORE(this, m_window);
 }
 
 wxGLContext::~wxGLContext(void)
 {
-  if (m_hGLRC)
-  {
-    wglMakeCurrent(NULL, NULL);
-	wglDeleteContext(m_hGLRC);
+  if (m_hGLRC) {
+    wglDeleteContext(m_hGLRC);
   }
   if ( m_palette && m_deletePalette)
     delete m_palette;

@@ -2,7 +2,9 @@ Version 200
 
 Ported to PLT Scheme 200
 COM cleanup at shutdown now gets all objects
-
+In the demo (plt/collects/mxdemo.ss), the 
+ mx-browser% object is instantiated using by-name
+ arguments
 
 Version 103-p3
 

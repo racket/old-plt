@@ -41,6 +41,9 @@
 		[(string? style)
 		 (send the-font-list find-or-create-font
 		       size style 'default 'normal 'normal)]
+		[(string? style)
+		 (send the-font-list find-or-create-font
+		       size style 'default 'normal 'normal)]
 		[(and (pair? style)
 		      (memq (car style)
 			    '(superscript 
@@ -179,7 +182,7 @@
 		[(circle circle*)
 		 (let ([size (cadr x)])
 		   (send dc draw-ellipse 
-			 dx (- h+top dy size)
+			 (- dx (/ size 2)) (- h+top dy (/ size 2))
 			 size size))]
 		[(oval)
 		 (let ([b (get-brush)]
@@ -214,7 +217,7 @@
 		     (send dc draw-rounded-rectangle
 			   rx ry
 			   (cadr x) (caddr x)
-			   -0.2)
+			   (if (string=? part "") -0.2 -0.5))
 		     (send dc set-clipping-region cr)
 		     (set-brush b)))]
 		[(bezier)

@@ -5,8 +5,8 @@
   
   (define-parameters (PLANET-SERVER-NAME       "planet.plt-scheme.org")
                      (PLANET-SERVER-PORT       270)
-                     (PLANET-DIR               (this-expression-source-directory))
-                     (CACHE-DIR                (build-path (PLANET-DIR) "planet-cache"))
+                     (PLANET-DIR               (build-path (find-system-path 'addon-dir) "planet"))
+                     (CACHE-DIR                (build-path (PLANET-DIR) "cache"))
                      (LINKAGE-FILE             (build-path (PLANET-DIR) "LINKAGE"))                  
                      (LOGGING-ENABLED?         #t)
                      (LOG-FILE                 (build-path (PLANET-DIR) "INSTALL-LOG"))

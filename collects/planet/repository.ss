@@ -39,14 +39,21 @@
              (relative-path (lambda (base) (apply build-path base directories-to-create))))
         (begin
           (make-directory* (relative-path (build-path (PLANET-SERVER-REPOSITORY) (version))))
-          (copy-file plt-file (build-path (relative-path (build-path (PLANET-SERVER-REPOSITORY) (version))) package-name))
+          (copy-file plt-file (build-path (relative-path (build-path 
+                                                          (PLANET-SERVER-REPOSITORY)
+                                                          (version)))
+                                          package-name))
           (make-directory* (relative-path (build-path (WEBROOT) (DOCS-DIR))))
-          (extract-files-from-archive plt-file 
+          #;(extract-files-from-archive plt-file 
                                       (build-path (PLANET-SERVER-REPOSITORY) (version) owner package-name)
                                       #rx"planet\\.txt")
           (extract-files-from-archive plt-file 
+                                      (build-path (PLANET-SERVER-REPOSITORY) (version) owner package-name)
+                                      #rx"info\\.ss")
+          (extract-files-from-archive plt-file 
                                       (relative-path (build-path (WEBROOT) (DOCS-DIR)))
                                       #rx"doc\\.txt")
+          
           (build-web-page-file (WEBROOT))))))
   
   (provide add-archive-to-repository))

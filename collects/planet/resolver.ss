@@ -152,6 +152,9 @@ an appropriate subdirectory.
 
   (define install? (make-parameter #t)) ;; if #f, will not install packages and instead give an error
   
+  ;; ensure these directories exist
+  (make-directory* (PLANET-DIR))
+  (make-directory* (CACHE-DIR))
   
   (define (resolver spec module-path stx)
     (establish-diamond-property-monitor)

@@ -222,6 +222,9 @@ static BOOL DoGetOpenFileName(OPENFILENAME *of, HWND parent)
   return GetOpenFileName(of);
 }
 
+static int set_init_dir;
+extern void MrEdSyncCurrentDir(void);
+
 char *wxFileSelector(char *message,
                      char *default_path, char *default_filename, 
                      char *default_extension, char *wildcard, int flags,
@@ -311,6 +314,12 @@ If you put a single wild card, it works as before my modification.
     filter_buffer[len1 + 2 + len2] = 0;
   }
 */
+
+  if (!set_init_dir) {
+    set_init_dir = 1;
+    MrEdSyncCurrentDir();
+  }
+
   OPENFILENAME *of;
   of = new OPENFILENAME;
 

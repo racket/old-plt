@@ -166,7 +166,7 @@
       (apply make-setting (cdr (vector->list (struct->vector x))))))
   
   ;; get-default-setting : _ -> setting
-  (define (get-default-setting) (copy-setting (vector-ref (mzlib:function:second (reverse settings)) 1)))
+  (define (get-default-setting) (copy-setting (vector-ref (mzlib:function:first (reverse settings)) 1)))
 
   ;; r4rs-style-printing? : setting -> boolean
   (define (r4rs-style-printing? setting)
@@ -185,6 +185,10 @@
 				 
   ;; current-vocabulary : (parameter (+ #f zodiac:vocabulary))
   (define current-vocabulary (make-parameter #f))
+
+  ;; current-zodiac-namespace : (parameter (+ #f namespace))
+  ;; If another namespace is installed, drscheme-eval uses primitive-eval
+  (define current-zodiac-namespace (make-parameter #f))
 
   ;; syntax-checking-primitive-eval : sexp -> value
   ;; effect: raises user-exn if expression ill-formed
@@ -210,13 +214,12 @@
        void
        (lambda ()
 	 (process/zodiac
-	  (parameterize ([read-case-sensitive (setting-case-sensitive? setting)])
-	    (zodiac:read port
-			 (zodiac:make-location INITIAL-LINE
-					       INITIAL-COLUMN
-					       INITIAL-OFFSET
-					       (path->complete-path filename))
-			 #t 1))
+	  (zodiac:read port
+		       (zodiac:make-location INITIAL-LINE
+					     INITIAL-COLUMN
+					     INITIAL-OFFSET
+					     (path->complete-path filename))
+		       #t 1)
 	  f
 	  annotate?))
        (lambda () (close-input-port port)))))
@@ -280,11 +283,10 @@
 			   (lambda () (aries:annotate term))
 			   (lambda () (zodiac:interface:set-zodiac-phase #f))))]
 		       [zodiac-read
-			(parameterize ([read-case-sensitive (setting-case-sensitive? setting)])
-			  (dynamic-wind
-			   (lambda () (zodiac:interface:set-zodiac-phase 'reader))
-			   (lambda () (reader))
-			   (lambda () (zodiac:interface:set-zodiac-phase #f))))])
+			(dynamic-wind
+			 (lambda () (zodiac:interface:set-zodiac-phase 'reader))
+			 (lambda () (reader))
+			 (lambda () (zodiac:interface:set-zodiac-phase #f)))])
 		   (if (zodiac:eof? zodiac-read)
 		       (lambda () (cleanup #f))
 		       (let* ([evaluator
@@ -418,7 +420,8 @@
 
     ;; drscheme-eval : sexp ->* TST
     (define (drscheme-eval-handler sexp)
-      (if (setting-use-zodiac? (current-setting))
+      (if (and (setting-use-zodiac? (current-setting))
+	       (eq? (current-namespace) (current-zodiac-namespace)))
 	  (let* ([z (or (unbox aries:error-box)
 			(let ([loc (zodiac:make-location INITIAL-LINE INITIAL-COLUMN INITIAL-OFFSET 'eval)])
 			  (zodiac:make-zodiac 'mzrice-eval loc loc)))]
@@ -486,6 +489,7 @@
 				  drscheme-debug-info-handler))
 	    (current-exception-handler drscheme-exception-handler)
 	    (current-namespace n)
+	    (current-zodiac-namespace n)
 	    (break-enabled #t)
 	    (current-will-executor (make-will-executor))
 	    (read-curly-brace-as-paren #t)

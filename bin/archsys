@@ -16,7 +16,7 @@ elif [ -x "/usr/bin/uname" ] ; then
   OS=`$UNAME -s`
 else
  echo archsys: cannot find uname
- exit -1
+ exit 1
 fi
 
 case $OS in
@@ -44,6 +44,12 @@ case $OS in
     case `$UNAME -m` in
      ppc)
       SYS=ppc${SEP}linux
+      ;;
+     alpha)
+      SYS=alpha{SEP}linux
+      ;;
+     m68k)
+      SYS=m68k{SEP}linux
       ;;
      *)
       if [ -r /lib/libdl.so.1 ]; then
@@ -86,7 +92,7 @@ case $OS in
     ;;
   *)
     echo Unsupported platform $OS
-    exit -1
+    exit 1
     ;;
 esac
 

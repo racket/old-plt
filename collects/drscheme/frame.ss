@@ -14,6 +14,24 @@
 
   (define basics-mixin
     (mixin (fw:frame:standard-menus<%>) (basics<%>) args
+      
+      (inherit get-edit-target-object)
+      (private
+        [show-keybindings
+         (lambda ()
+           (let ([edit-object (get-edit-target-object)])
+             (if (and edit-object
+                      (is-a? edit-object mred:editor<%>))
+                 (let ([keymap (send edit-object get-keymap)])
+                   (when (is-a? keymap fw:keymap:aug-keymap<%>)
+                     (let ([table (send keymap get-map-function-table)])
+                       (mred:get-choices-from-user
+                        "Key Bindings" "Choose binding"
+                        (hash-table-map 
+                         (lambda (x v) (format "~s" (list x v)))
+                         table)))))
+                 (mred:bell))))])
+      
       (override
        [help-menu:before-about
 	(lambda (help-menu)
@@ -44,7 +62,13 @@
                        "Open URL..."
                        file-menu
                        (lambda (item evt)
-                         (help:open-users-url this))))])
+                         (help:open-users-url this))))]
+       
+       [edit-menu:between-find-and-preferences
+        (lambda (menu)
+          (make-object mred:separator-menu-item% menu)
+          (make-object mred:menu-item% "Keybindings" menu (lambda x (show-keybindings)))
+          (make-object mred:separator-menu-item% menu))])
       
       (sequence 
 	(apply super-init args))))

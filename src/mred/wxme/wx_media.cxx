@@ -615,10 +615,13 @@ void wxMediaEdit::OnDefaultChar(wxKeyEvent *event)
   case WXK_DECIMAL:
     ins = '.';
     break;
+  case 3: /* NUMPAD_ENTER */
+    ins = '\r';
+    break;
   case WXK_RETURN:
   case WXK_TAB:
     ok = 1;
-  default:
+  default: /* ^^^ fallthrough ^^^ */
     if (ok || (code >= 32 && code <= 255)) {
       ins = code;
     }

@@ -31,7 +31,7 @@
 
   ;; Create the headers for an authorization string.
   (define/contract auth-headers
-    (string? . -> . (listof string?))
+    (bytes? . -> . (listof string?))
     (lambda (auth-string)
       (list (format "authorization: Basic ~a"
                     (base64-encode auth-string)))))
@@ -43,13 +43,13 @@
         (assert-no-serve "/secret/"))
       (make-test-case
         "Authorization-only file with provided authorization, implicit file"
-        (assert-auth "/secret/" "bubba:bbq"))
+        (assert-auth "/secret/" #"bubba:bbq"))
       (make-test-case
         "Authorization-only file without providing authorization, explicit file"
         (assert-no-serve "/secret/index.html"))
       (make-test-case
         "Authorization-only file with provided authorization, explicit file"
-        (assert-auth "/secret/index.html" "bubba:bbq"))))
+        (assert-auth "/secret/index.html" #"bubba:bbq"))))
 
   ;;; TODO
   ;;; browser requests file,
@@ -57,10 +57,10 @@
   ;;; browser provides creditentials,
   ;;; server provides file
 
-  ;; browser requests file,
-  ;; browser gives 403,
-  ;; browser provides creditentials,
-  ;; creditentials are bogus,
-  ;; server does not provide file
+  ;;; browser requests file,
+  ;;; browser gives 403,
+  ;;; browser provides creditentials,
+  ;;; creditentials are bogus,
+  ;;; server does not provide file
   
   )

@@ -90,6 +90,7 @@ static MX_PRIM mxPrims[] = {
   // COM objects
   
   { mx_cocreate_instance,"cocreate-instance",1,1 },
+  { mx_com_object_pred,"com-object?",1,1 },
   { mx_com_object_eq,"com-object-eq?",2,2 },
   { mx_com_register_object,"com-register-object",1,1 },  
 
@@ -2697,6 +2698,10 @@ Scheme_Object *mx_com_object_eq(int argc,Scheme_Object **argv) {
   return retval;
 }
 
+Scheme_Object *mx_com_object_pred(int argc,Scheme_Object **argv) {
+  return MX_COM_OBJP(argv[0]) ? scheme_true : scheme_false;
+}
+  
 Scheme_Object *mx_document_objects(int argc,Scheme_Object **argv) {
   IHTMLDocument2 *pDocument;
   IHTMLElement *pBody;

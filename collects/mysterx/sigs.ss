@@ -20,6 +20,7 @@
    coclass->html
    cocreate-instance
    com-object-eq?
+   com-object?	
    com-omit))
 
 (define-signature mysterx:prims^
@@ -41,6 +42,7 @@
    coclass->html
    cocreate-instance
    com-object-eq?
+   com-object?	
    com-register-object
    make-document
    document?
@@ -261,6 +263,3 @@
    block-until-event
    process-win-events
    com-omit))
-
-
-

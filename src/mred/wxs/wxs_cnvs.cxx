@@ -63,13 +63,16 @@ static void wxThisContextCurrent(wxCanvas* c)
   c->ThisContextCurrent();
 #endif
 #ifdef USE_GL
-  c->CanvasSwapBuffers();
+  c->ThisContextCurrent();
 #endif
 }
 
 static void wxPreviousContextCurrent(wxCanvas* c)
 {
 #ifdef wx_msw
+  c->PreviousContextCurrent();
+#endif
+#ifdef USE_GL
   c->PreviousContextCurrent();
 #endif
 }
@@ -978,9 +981,9 @@ static Scheme_Object *os_wxCanvasViewStart(int n,  Scheme_Object *p[])
 
   
   if (n > (POFFSET+0))
-    { Scheme_Object *sbv_ = scheme_make_integer(_x0); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+0], sbv_)); } 
+    WITH_VAR_STACK(objscheme_set_box(p[POFFSET+0], scheme_make_integer(_x0)));
   if (n > (POFFSET+1))
-    { Scheme_Object *sbv_ = scheme_make_integer(_x1); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+1], sbv_)); } 
+    WITH_VAR_STACK(objscheme_set_box(p[POFFSET+1], scheme_make_integer(_x1)));
   
   return scheme_void;
 }
@@ -1054,9 +1057,9 @@ static Scheme_Object *os_wxCanvasGetVirtualSize(int n,  Scheme_Object *p[])
 
   
   if (n > (POFFSET+0))
-    { Scheme_Object *sbv_ = scheme_make_integer(_x0); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+0], sbv_)); } 
+    WITH_VAR_STACK(objscheme_set_box(p[POFFSET+0], scheme_make_integer(_x0)));
   if (n > (POFFSET+1))
-    { Scheme_Object *sbv_ = scheme_make_integer(_x1); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+1], sbv_)); } 
+    WITH_VAR_STACK(objscheme_set_box(p[POFFSET+1], scheme_make_integer(_x1)));
   
   return scheme_void;
 }

@@ -17,9 +17,13 @@
 	  put-preferences
 
 	  call-with-input-file*
-	  call-with-output-file*)
+	  call-with-output-file*
 
-  (require "list.ss")
+	  fold-files
+	  find-files)
+
+  (require "list.ss"
+	   "etc.ss")
 
   (define build-relative-path
     (lambda (p . args)
@@ -449,4 +453,44 @@
 	(dynamic-wind
 	    void
 	    (lambda () (thunk p))
-	    (lambda () (close-output-port p)))))))
+	    (lambda () (close-output-port p))))))
+
+  ;; fold-files : (pathname sym alpha -> alpha) alpha pathname/#f -> alpha
+  (define fold-files
+    (opt-lambda (f init [path #f] [follow-links? #t])
+
+      ;; traverse-dir : string[directory] (listof string[file/directory]) -> (listof string[file/directory])
+      (define (traverse-dir dir base acc)
+	(let loop ([subs (directory-list dir)]
+		   [acc acc])
+	  (cond
+	   [(null? subs) acc]
+	   [else (loop (cdr subs)
+		       (let ([path (if base
+				       (build-path base (car subs))
+				       (car subs))])
+			 (traverse-file/dir path path acc)))])))
+
+      ;; traverse-file/dir : string[file/directory] (listof string[file/directory]) -> (listof string[file/directory])
+      (define (traverse-file/dir file/dir base acc)
+	(cond
+	 [(and (not follow-links?) (link-exists? file/dir))
+	  (f file/dir 'link acc)]
+	 [(directory-exists? file/dir)
+	  (traverse-dir file/dir base (if base
+					  (f file/dir 'dir acc)
+					  acc))]
+	 [else (f file/dir 'file acc)]))
+      
+      (traverse-file/dir (or path (current-directory)) 
+			 path
+			 init)))
+
+  (define find-files 
+    (opt-lambda (f [path #f])
+      (fold-files (lambda (path kind acc)
+		    (if (f path)
+			(cons path acc)
+			acc))
+		  null
+		  path))))

@@ -1,6 +1,7 @@
 (module server mzscheme 
 
-  (require (lib "etc.ss"))
+  (require (lib "etc.ss")
+	   (lib "browser.ss" "net"))
 
   (require "plt-browser.ss"
 	   "server-config.ss"
@@ -15,9 +16,23 @@
 
   (define start-help-server
     (opt-lambda ([use-port #f][external-connections? #f]) 
-      (if (use-plt-browser?)
-	  (internal-start-help-server)
-	  (external-start-help-server use-port external-connections?)))))
+      (let-values
+       ([(starter param-getter)
+	 (if (use-plt-browser?)
+	     (values internal-start-help-server
+		     external-browser)
+	     (values (lambda () 
+		       (external-start-help-server
+			use-port external-connections?))
+		     external-browser-preference))])
+       (let ([exit-proc (starter)])
+	 (set-browser-param! (param-getter))
+	 exit-proc)))))
+
+
+
+
+	    
 
 
 

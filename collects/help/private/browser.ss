@@ -82,19 +82,14 @@
       (yield dialog-sem)
       prompt-value))
   
-  (define browser-param (external-browser))
-
   (define nav-mutex (make-semaphore 1))
   
   (define (help-desk-navigate hd-cookie url)
     (semaphore-wait nav-mutex)
     (let ([nav-sem (make-semaphore 0)])
       (if (tried-external-browser?)
-	; starting internal server changes value of parameter
-	;  in timer-thread; its value is copied out to main thread as 
-	;  browser-param
-	  (parameterize
-	   ([external-browser browser-param])
+	(parameterize
+	   ([external-browser (get-browser-param)])
 	   (send-url url #t)
            (semaphore-post nav-mutex))
 	  (begin
@@ -123,7 +118,6 @@
 			   ; shutdown old server
 			   ((hd-cookie->exit-proc hd-cookie))
 			   (internal-start-help-server hd-cookie)
-			   (set! browser-param (external-browser))
 			   (send-url url))
 		     (kill-thread monitor-thread)
 		     (semaphore-post nav-sem)))])
@@ -132,12 +126,10 @@
 					 (string-append
 					  "Help Desk browser failed.~n")))])
 	       (send-url (build-dispatch-url hd-cookie url))
-	       (set! browser-param (external-browser))
 	       (yield nav-sem)
 	       (semaphore-post nav-mutex)))))))
   
   (define (help-desk-browser hd-cookie)
-    (printf "starting help desk browser~n") 
     (help-desk-navigate hd-cookie 
 			(format home-page-format 
 				(hd-cookie->port hd-cookie)))))

@@ -16,7 +16,7 @@
 ;(c) Dorai Sitaram, 
 ;http://www.ccs.neu.edu/~dorai/scmxlate/scmxlate.html
 
-(define *tex2page-version* "4r3")
+(define *tex2page-version* "4r4")
 
 (define *tex2page-website*
   "http://www.ccs.neu.edu/~dorai/tex2page/tex2page-doc.html")
@@ -2547,18 +2547,20 @@
         (emit "</div>")
         (emit-newline)))))
 
+(define rgb.dec->hex
+  (let ((f
+         (lambda (x)
+           (let* ((n (inexact->exact (round (* 1.0 x))))
+                  (s (number->string n 16)))
+             (if (< n 16) (string-append "0" s) s)))))
+    (lambda (r g b) (string-append (f r) (f g) (f b)))))
+
 (define rgb.frac->hex
-  (lambda (r)
-    (let* ((n (inexact->exact (round (* 255.0 r)))) (s (number->string n 16)))
-      (if (< n 16) (string-append "0" s) s))))
+  (lambda (r g b) (rgb.dec->hex (* r 255) (* g 255) (* b 255))))
 
 (define cmyk->rgb
-  (let ((f (lambda (x k) (rgb.frac->hex (- 1 (min (max (+ x k) 0) 1))))))
-    (lambda (c m y k) (string-append "#" (f c k) (f m k) (f y k)))))
-
-(define hex-rgb
-  (lambda (r g b)
-    (string-append "#" (rgb.frac->hex r) (rgb.frac->hex g) (rgb.frac->hex b))))
+  (let ((f (lambda (x k) (- 1 (min (max (+ x k) 0) 1)))))
+    (lambda (c m y k) (rgb.frac->hex (f c k) (f m k) (f y k)))))
 
 (define do-color
   (lambda ()
@@ -2567,6 +2569,7 @@
         (cond
          ((not model) "\\TIIPcolornamed")
          ((string=? model "rgb") "\\TIIPrgb")
+         ((string=? model "RGB") "\\TIIPRGB")
          ((string=? model "cmyk") "\\TIIPcmyk")
          ((string=? model "gray") "\\TIIPgray")
          (else "\\TIIPcolornamed"))))))
@@ -2582,19 +2585,22 @@
          (cons
           name
           (if (string=? model "named")
-            (let ((c (lassoc name *color-names* string=?))) (or c name))
+            (let ((c (lassoc name *color-names* string=?)))
+              (if c
+                (cdr c)
+                (terror 'do-define-color "Color name " name " not defined")))
             (let ((rgb #f)
                   (i
                    (open-input-string
                      (tex-string->html-string
-                       (string-append "\\defcsactive\\,{}" spec)))))
+                       (string-append "\\defcsactive\\,{ }" spec)))))
               (cond
                ((string=? model "cmyk")
                 (let* ((c (read i)) (m (read i)) (y (read i)) (k (read i)))
                   (set! rgb (cmyk->rgb c m y k))))
                ((string=? model "rgb")
                 (let* ((r (read i)) (g (read i)) (b (read i)))
-                  (set! rgb (hex-rgb r g b))))
+                  (set! rgb (rgb.frac->hex r g b))))
                ((string=? model "gray") (set! rgb (cmyk->rgb 0 0 0 (read i))))
                (else (terror 'do-define-color "Unknown color model")))
               (close-input-port i)
@@ -2652,23 +2658,8 @@
                  (k (read i)))
             (close-input-port i)
             (egroup)
-            (emit "<font color=\"")
+            (emit "<font color=\"#")
             (emit (cmyk->rgb c m y k))
-            (emit "\">")
-            (lambda () (emit "</font>"))))
-         ((string=? sw "\\TIIPgray")
-          (let* ((i (open-input-string (tex-string->html-string (get-token))))
-                 (g (read i)))
-            (close-input-port i)
-            (emit "<font color=\"")
-            (emit (cmyk->rgb 0 0 0 g))
-            (emit "\">")
-            (lambda () (emit "</font>"))))
-         ((string=? sw "\\TIIPcolornamed")
-          (let* ((name (get-peeled-group))
-                 (c (lassoc name *color-names* string=?)))
-            (emit "<font color=\"")
-            (emit (if c (cdr c) name))
             (emit "\">")
             (lambda () (emit "</font>"))))
          ((string=? sw "\\TIIPrgb")
@@ -2682,8 +2673,38 @@
                  (b (read i)))
             (close-input-port i)
             (egroup)
+            (emit "<font color=\"#")
+            (emit (rgb.frac->hex r g b))
+            (emit "\">")
+            (lambda () (emit "</font>"))))
+         ((string=? sw "\\TIIPRGB")
+          (bgroup)
+          (let* ((i
+                  (open-input-string
+                    (tex-string->html-string
+                      (string-append "\\defcsactive\\,{}" (get-token)))))
+                 (r (read i))
+                 (g (read i))
+                 (b (read i)))
+            (close-input-port i)
+            (egroup)
+            (emit "<font color=\"#")
+            (emit (rgb.dec->hex r g b))
+            (emit "\">")
+            (lambda () (emit "</font>"))))
+         ((string=? sw "\\TIIPgray")
+          (let* ((i (open-input-string (tex-string->html-string (get-token))))
+                 (g (read i)))
+            (close-input-port i)
+            (emit "<font color=\"#")
+            (emit (cmyk->rgb 0 0 0 (- 1 g)))
+            (emit "\">")
+            (lambda () (emit "</font>"))))
+         ((string=? sw "\\TIIPcolornamed")
+          (let* ((name (get-peeled-group))
+                 (c (lassoc name *color-names* string=?)))
             (emit "<font color=\"")
-            (emit (hex-rgb r g b))
+            (emit (if c (begin (emit #\#) (cdr c)) name))
             (emit "\">")
             (lambda () (emit "</font>"))))
          ((string=? sw "\\bgcolor")
@@ -8351,6 +8372,8 @@
 (tex-def-prim "\\TIIPreuseimage" reuse-img)
 
 (tex-def-prim "\\TIIPrgb" (lambda () (do-switch "\\TIIPrgb")))
+
+(tex-def-prim "\\TIIPRGB" (lambda () (do-switch "\\TIIPRGB")))
 
 (tex-def-prim "\\TIIPtheorem" do-theorem)
 

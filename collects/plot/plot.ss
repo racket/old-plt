@@ -74,9 +74,6 @@
    make-vec
    
    ; curve-fitter
-   fit
-   fit-lambda
-   fit-result-function
-   fit-result-final-params))
+   (all-from (lib "fit.ss" "plot"))))
 
 

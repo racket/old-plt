@@ -131,6 +131,29 @@ static double lambda_up_factor = LAMBDA_UP_FACTOR;
 
 static Scheme_Object * current_fun;
 
+
+/*****************************************************************
+			 internal vars to store results of fit
+*****************************************************************/
+
+double rms = 0;
+double varience = 0;
+double *asym_error;
+double *asym_error_percent;
+
+double get_rms()
+{return rms;}
+
+double get_varience()
+{return varience;}
+
+double * get_asym_error()
+{return asym_error;}
+
+double * get_asym_error_percent()
+{return asym_error_percent;}
+
+
 /*****************************************************************
 			 internal Prototypes
 *****************************************************************/
@@ -460,8 +483,53 @@ static TBOOLEAN regress(a)
 	   );
 
     /* fit done */
+  
+  // save all the info that was otherwise printed out
+  
+  rms = sqrt(chisq / (num_data - num_params));
+  varience = chisq / (num_data - num_params);
+  asym_error = malloc (num_params * sizeof (double));  
+  asym_error_percent = malloc (num_params * sizeof (double)) ;
 
-    return 1;
+  /* don't know what the following code does... */
+
+  /* compute covar[][] directly from C */ 
+  Givens(C, 0, 0, 0, num_data, num_params, 0); 
+  covar = C + num_data; 
+  Invert_RtR(C, covar, num_params);
+  
+  dpar = vec(num_params); 
+  for (i = 0; i < num_params; i++) {
+    /* FIXME: can this still happen ? */
+      if (covar[i][i] <= 0.0)	/* HBB: prevent floating point exception later on */
+	return 0;  // Eex("Calculation error: non-positive diagonal element in covar. matrix");
+    dpar[i] = sqrt(covar[i][i]);
+  }  
+
+  /* transform covariances into correlations */
+  for (i = 0; i < num_params; i++) {
+    /* only lower triangle needs to be handled */
+      for (j = 0; j <= i; j++)
+      covar[i][j] /= dpar[i] * dpar[j];
+  }
+
+  /* scale parameter errors based on chisq */
+  chisq = sqrt(chisq / (num_data - num_params));
+  for (i = 0; i < num_params; i++)
+    dpar[i] *= chisq;
+
+  for(i = 0; i< num_params; i++)
+    {
+      double temp = 
+	(fabs(a[i]) < NEARLY_ZERO) ? 0.0 : fabs(100.0 * dpar[i] / a[i]);
+      asym_error[i] = dpar[i];
+      asym_error_percent[i] = temp;
+    }
+
+  return 1;
+
+
+    //******** CRAP LEFT OVER FROM GNUPLOT ***********//
 
     //    /* HBB 970304: the maxiter patch: */
     /*

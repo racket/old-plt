@@ -24,6 +24,17 @@
   
   return ar;
   }
+
+ Scheme_Object * array_to_list(double * dbls, int length)
+  {	
+    int i;
+    Scheme_Object * result = scheme_null;
+    for(i = length - 1; i >= 0 ;i--)    {
+	printf(\"adding %f \n\",dbls[i]);
+       result = scheme_make_pair(scheme_make_double(dbls[i]),result);
+       }	
+    return result;
+  }
  ")
   
  (define fit-internal 
@@ -41,18 +52,31 @@
                                  list_to_array(___arg6));
  // now make the result_params into a list
  
- int i;
- Scheme_Object * pair = scheme_null;
- 
- if(result_params == NULL)
- return scheme_null;
- 
- for(i = scheme_list_length(___arg6) - 1; i >= 0 ;i--)    {
-       pair = scheme_make_pair(scheme_make_double(result_params[i]),pair);
-       }
 
-___result = pair;
-"))
+ if(result_params == NULL)
+ 	return scheme_null;
+
+ int len = scheme_list_length(___arg6);
+
+ Scheme_Object * fit_final_params = 
+	array_to_list(result_params, len);
+
+ Scheme_Object * fit_asym_error = 
+	array_to_list (get_asym_error(), len);
+
+ Scheme_Object * fit_asym_error_percent =  
+	array_to_list (get_asym_error_percent(), len);
+
+ Scheme_Object * fit_rms = scheme_make_double(get_rms());
+ Scheme_Object * fit_varience = scheme_make_double(get_varience());
+
+ ___result = 
+	scheme_make_pair(fit_final_params,
+         scheme_make_pair(fit_asym_error,	
+          scheme_make_pair(fit_asym_error_percent,
+	   scheme_make_pair(fit_rms,
+	    scheme_make_pair(fit_varience, scheme_null)))));
+"))	
    
   (provide fit-internal))
  

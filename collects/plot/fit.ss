@@ -1,75 +1,66 @@
 (module fit mzscheme
-  (require (lib "list.ss"))
+  (require (lib "math.ss" "plot"))
   (require (lib "fit-low-level.ss" "plot"))
-  (require (lib "etc.ss"))
-  
-        
-  ; a structure containing a function to be fitted
-  ; and information about it's parameters
-  (define-struct fit-fun  (function
-                             vars 
-                             params))
  
-  ; allows creation of fit-function structures
-  (define-syntax fit-lambda 
-    (syntax-rules ()
-      [(_ (a ...) (b ...) body)
-       (make-fit-fun
-        (lambda (a ... b ...) body)
-        (list (quote a) ...)
-        (list (quote b) ...))]))
-         
+   
   ; a structure contain a the results of a curve-fit
   (define-struct fit-result (
+                             rms
+                             variance
+                             names
+                             final-params                             
+                             std-error
+                             std-error-percent
                              function
-                             final-params
-                             ;rms
-                             ;variance                             
-                             ;limit                             
-                             ;correlation
-                             ;std-err
                              ))
   
   
   
-  ; expects : fit-fun (asslist) (listof num) [(listof num)] (listof num) [(listof-num) u 1]
-  (define (fit function guesses x-data . rest)    
-    (let* ((num-vars (length (fit-fun-vars function)))           
-           (y-data (if (= num-vars 2)
-                       (car rest)
-                       x-data))
-           (z-data (if (= num-vars 2)
-                       (cadr rest)
-                       (car rest)))
-           (error-given (if (= num-vars 2)
-                            (list-ref rest 2)
-                            (list-ref rest 1)))
-           (err-data (if (null? error-given)
-                         (build-list (length x-data) (lambda (x) 1))
-                         error-given))
-           (final-function (if (= num-vars 2)
-                               (fit-fun-function  function)
-                               (lambda (x y . rest)
-                                 (apply (fit-fun-function function) x rest))))
-           (ordered-guesses (setup-guesses guesses (fit-fun-params function)))
-           (result-params (fit-internal final-function x-data y-data z-data err-data ordered-guesses)))
-      (if (null? result-params)
+  ; fit : (number* -> number) (list-of num) (list-of num) [(listof num)] (listof num) (listof-num) -> fit-result
+  ; fit : (number* -> number) (list-of (symbol number)) (list-of (vector number [number] number number)) -> fit-result
+  (define (fit function guesses data) 
+    (let* ((independant-vars (- (procedure-arity function) (length guesses)))            
+           (f-of-x-y (cond 
+                       [(= 1 independant-vars)
+                        (lambda (x y . rest)
+                          (apply function x rest))]
+                       [(= 2 independant-vars)
+                        function]
+                       [else
+                        (error "Function provided is eitehr not of one or two independant variables or the number of
+                        guesses given is incorrect")]))
+           (x-vals (map vector-x data))
+           (y-vals (if (= 1 independant-vars)
+                       x-vals
+                        (map vector-y data)))
+           (z-vals (if (= 1 independant-vars)
+                       (map vector-y data)
+                       (map vector-z data)))
+           (err-vals (if (= 1 independant-vars)
+                         (map vector-z data)
+                         (map (lambda (vec) (vector-ref vec 4)) data)))                                                            
+           (result (fit-internal f-of-x-y x-vals y-vals z-vals err-vals (map cadr guesses))))
+      (if (null? result)
           null         
-          (make-fit-result
-           (lambda args (apply (fit-fun-function function) (append args result-params)))
-           (map list (fit-fun-params function) result-params)))))
-  
-  ; setup-guesses : asslist (listof symbol) -> (listof num)
-  ; generates a list of initial guesses given the given guesses and symbols
-  (define (setup-guesses given-values all-values)
-    (cond 
-      [(empty? all-values) empty]
-      [else
-       (cons 
-        (cond [(assq (car all-values) given-values) => cadr]
-              [else 1])
-        (setup-guesses given-values (cdr all-values)))]))
-  
-   (provide fit fit-lambda (struct fit-result (
-                             function
-                             final-params) )))
+          (begin
+            ;(display result)
+            (make-fit-result
+             (list-ref result 3)
+             (list-ref result 4)
+             (map car guesses)
+             (car result)
+             (cadr result)
+             (caddr result)
+             (lambda args (apply function(append args (car result)))))))))
+             
+    
+   (provide fit (struct fit-result (rms
+                             variance
+                             names
+                             final-params                             
+                             std-error
+                             std-error-percent
+                             function))))
+                                    
+                                    
+                                    

@@ -51,7 +51,7 @@
 (define errors
   (map caddr raw-data))
 
-(define experemental-data (map vector times vals errors))
+(define experemental-data (map list->vector raw-data))
 
 (require (lib "plot.ss" "plot"))
 
@@ -71,11 +71,9 @@
 
 (define result
   (fit 
-   (fit-lambda (s) (a tau phi T theta0) (theta s a tau phi T theta0))
-   '((a 40)(theta0 10) (T 15) (phi -0.5) (tau 15))
-   times
-   vals
-   errors))
+   theta
+   '((a 40) (tau 15) (phi -0.5) (T 15) (theta0 10))
+   experemental-data))
               
   
 (plot (mix* 
@@ -86,3 +84,4 @@
       (y-min -40) (y-max 50))
        
 (fit-result-final-params result)
+(pretty-print result)

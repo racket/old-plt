@@ -84,7 +84,7 @@ typedef struct MPage {
   } o;
   void *block_start;
   struct MPage *next, *prev;
-  short age, refs_age;
+  short age, refs_age, compact_to_age;
 
   offset_t gray_start, gray_end;
   struct MPage *gray_next;
@@ -160,6 +160,8 @@ static int alloc_cycle = ALLOC_GC_PHASE;
 static int skipped_first = !SKIP_FORCED_GC;
 #endif
 static int skipped_pages, scanned_pages, young_pages, inited_pages;
+
+static int do_weak_too;
 
 #if KEEP_FROM_PTR
 static void *mark_source;
@@ -398,9 +400,17 @@ static int mark_weak_array(void *p, Mark_Proc mark)
 
   if (mark) {
     gcMARK(a->replace_val);
-    
-    a->next = weak_arrays;
-    weak_arrays = a;
+    if (do_weak_too) {
+      int i;
+      void **data;
+      data = a->data;
+      for (i = a->count; i--; ) {
+	gcMARK(data[i]);
+      }
+    } else {
+      a->next = weak_arrays;
+      weak_arrays = a;
+    }
   }
 
   return gcBYTES_TO_WORDS(sizeof(GC_Weak_Array) 
@@ -446,9 +456,13 @@ static int mark_weak_box(void *p, Mark_Proc mark)
     GC_Weak_Box *wb = (GC_Weak_Box *)p;
     
     gcMARK(wb->secondary_erase);
-    if (wb->val) {
-      wb->next = weak_boxes;
-      weak_boxes = wb;
+    if (do_weak_too) {
+      gcMARK(wb->val);
+    } else {
+      if (wb->val) {
+	wb->next = weak_boxes;
+	weak_boxes = wb;
+      }
     }
   }
 
@@ -507,8 +521,8 @@ static int mark_finalizer(void *p, Mark_Proc mark)
     
     gcMARK(fnl->next);
     gcMARK(fnl->data);
-    if (!fnl->eager_level) {
-      /* Queued for run: */
+    /* !eager_level => queued for run: */
+    if (do_weak_too || !fnl->eager_level) {
       gcMARK(fnl->p);
     }
   }
@@ -602,6 +616,9 @@ static int mark_finalizer_weak_link(void *p, Mark_Proc mark)
     Fnl_Weak_Link *wl = (Fnl_Weak_Link *)p;
     
     gcMARK(wl->next);
+    if (do_weak_too) {
+      gcMARK(wl->p);
+    }
   }
 
   return gcBYTES_TO_WORDS(sizeof(Fnl_Weak_Link));
@@ -761,13 +778,15 @@ int is_marked(void *p)
     MPage *page;
 
     page = map + addr;
-    if (page) {
-      if (page->type & MTYPE_BIGBLOCK) {
-	if (page->type & MTYPE_CONTINUED)
-	  return is_marked(page->o.bigblock_start);
-	else
-	  return (page->type & COLOR_MASK);
-      } else {
+    if (page->type & MTYPE_BIGBLOCK) {
+      if (page->type & MTYPE_CONTINUED)
+	return is_marked(page->o.bigblock_start);
+      else
+	return (page->type & (COLOR_MASK | MTYPE_OLD));
+    } else {
+      if (page->type & MTYPE_OLD)
+	return 1;
+      else {
 	long offset = ((long)p & MPAGE_MASK) >> 2;
 	offset_t v;
 	
@@ -959,11 +978,9 @@ static void init_all_mpages(int young)
       }
 
       inited_pages++;
-    } else if (is_old) {
-      skipped_pages++;
-      /* Clear color flags: */
-      page->type = (page->type & TYPE_MASK);
     } else {
+       if (is_old) 
+	 skipped_pages++;
       /* Clear color flags: */
       page->type = (page->type & TYPE_MASK);
     }
@@ -980,17 +997,13 @@ static void init_all_mpages(int young)
       
       page->gray_start = 0;
       page->gray_end = MPAGE_WORDS - page->skip_end - 2;
-      
-      if (!(page->type & MTYPE_BIGBLOCK)) {
-	if (!(page->type & MTYPE_MODIFIED)) {
-	  mprotect((void *)p, MPAGE_SIZE, 1);
-	  page->type |= MTYPE_MODIFIED;
-	}
-      } else {
-	if (!(page->type & MTYPE_MODIFIED)) {
+
+      if (!(page->type & MTYPE_MODIFIED)) {
+	if (page->type & MTYPE_BIGBLOCK)
 	  protect_pages((void *)p, page->u.size, 1);
-	  page->type |= MTYPE_MODIFIED;
-	}
+	else
+	  mprotect((void *)p, MPAGE_SIZE, 1);
+	page->type |= MTYPE_MODIFIED;
       }
 
       scanned_pages++;
@@ -1475,12 +1488,14 @@ static void compact_tagged_mpage(void **p, MPage *page)
 
 	dest_offset = 0;
 	dest = startp;
-	page->compact_boundary = offset;
 	to_near = 1;
 	if (set_age) {
+	  page->compact_boundary = offset;
 	  tagged_compact_page->age = page->age;
 	  tagged_compact_page->refs_age = page->age;
-	}
+	} else
+	  /* Haven't moved anything; set boundary to 0 to indicate this */
+	  page->compact_boundary = 0;
       } else
 	set_age = 1;
       
@@ -1570,10 +1585,10 @@ static void compact_untagged_mpage(void **p, MPage *page)
 
 	dest_offset = 0;
 	dest = startp;
-	page->compact_boundary = offset;
 	to_near = 1;
 
 	if (set_age) {
+	  page->compact_boundary = offset;
 	  if (page->type & MTYPE_TAGGED_ARRAY) { 
 	    tagged_array_compact_page->age = page->age;
 	    tagged_array_compact_page->refs_age = page->age;
@@ -1584,7 +1599,9 @@ static void compact_untagged_mpage(void **p, MPage *page)
 	    array_compact_page->age = page->age;
 	    array_compact_page->refs_age = page->age;
 	  }
-	}
+	} else
+	  /* Haven't moved anything; set boundary to 0 to indicate this */
+	  page->compact_boundary = 0;
       } else
 	set_age = 1;
 
@@ -1641,23 +1658,23 @@ static void compact_all_mpages()
   tagged_array_compact_to_offset = MPAGE_SIZE;
 
   for (page = first; page; page = page->next) {
-    if (!(page->type & MTYPE_OLD)) {
-      if (!(page->type & MTYPE_BIGBLOCK)) {
-	if (page->type & COLOR_MASK) {
-	  void *p;
-	  
-	  page->type -= (page->type & MTYPE_INITED);
-	  p = page->block_start;
-	  
-	  if (page->type & MTYPE_TAGGED)
-	    compact_tagged_mpage((void **)p, page);
-	  else
-	    compact_untagged_mpage((void **)p, page);
-	} else {
+    if (!(page->type & (MTYPE_BIGBLOCK | MTYPE_OLD))) {
+      if (page->type & COLOR_MASK) {
+	void *p;
+	
+	page->type -= (page->type & MTYPE_INITED);
+	p = page->block_start;
+	
+	if (page->type & MTYPE_TAGGED)
+	  compact_tagged_mpage((void **)p, page);
+	else
+	  compact_untagged_mpage((void **)p, page);
+      } else {
+	/* Set compact_boundar to 0 to indicate no moves: */
+	page->compact_boundary = 0;
 #if NOISY
-	  printf("x: %lx\n", (long)page->block_start);
+	printf("x: %lx\n", (long)page->block_start);
 #endif
-	}
       }
     }
   }
@@ -1691,8 +1708,8 @@ static void *move(void *p)
 
     page = map + addr;
     if (page->type) {
-      if (page->age < min_referenced_page_age)
-	min_referenced_page_age = page->age;
+      if (page->compact_to_age < min_referenced_page_age)
+	min_referenced_page_age = page->compact_to_age;
 
       if (!(page->type & (MTYPE_OLD | MTYPE_BIGBLOCK))) {
 	long offset = ((long)p & MPAGE_MASK) >> 2;
@@ -1722,6 +1739,30 @@ static void *move(void *p)
   }
   
   return p;
+}
+
+/**********************************************************************/
+
+/* set compact_to_age field of a page: */
+
+void reverse_propagate_new_age(void)
+{
+  MPage *page;
+
+  for (page = first; page; page = page->next) {
+    if (!(page->type & (MTYPE_BIGBLOCK | MTYPE_OLD))) {
+      if (page->compact_boundary > 0) {
+	MPage *page_to;
+	page_to = find_page(page->o.compact_to);
+	if (page_to->age < page->age)
+	  page->compact_to_age = page_to->age;
+	else
+	  page->compact_to_age = page->age;
+      } else
+	page->compact_to_age = page->age;
+    } else
+      page->compact_to_age = page->age;
+  }
 }
 
 /**********************************************************************/
@@ -2417,11 +2458,13 @@ static void gcollect(int full)
   wa = weak_arrays;
   while (wa) {
     int i;
-
+    void **data;
+    
+    data = wa->data;
     for (i = wa->count; i--; ) {
-      void *p = wa->data[i];
+      void *p = data[i];
       if (!is_marked(p))
-	wa->data[i] = wa->replace_val;
+	data[i] = wa->replace_val;
     }
     
     wa = wa->next;
@@ -2485,49 +2528,18 @@ static void gcollect(int full)
     tagged_array_compact_page->type |= MTYPE_MODIFIED;
   }
 
+  reverse_propagate_new_age();
+
   /******************************************************/
 
-  weak_boxes = NULL;
-  weak_arrays = NULL;
   scanned_pages = 0;
+
+  do_weak_too = 1;
 
   mark_roots(move);
   fixup_all_mpages();
 
-  /* Fixup weak boxes: */
-  wb = weak_boxes;
-  while (wb) {
-    gcMARK_HERE(move, void*, wb->val);
-    wb = wb->next;
-  }
-
-  /* Fixup weak arrays: */
-  wa = weak_arrays;
-  while (wa) {
-    int i;
-    for (i = wa->count; i--; ) {
-      gcMARK_HERE(move, void*, wa->data[i]);
-    }
-    wa = wa->next;
-  }
-
-  /* Fixup weak finalization links: */
-  {
-    Fnl_Weak_Link *wl;
-
-    for (wl = fnl_weaks; wl; wl = wl->next) {
-      gcMARK_HERE(move, void*, wl->p);
-    }
-  }
-
-  /* Fixup finalizers: */
-  {
-    Fnl *f;
-
-    for (f = fnls; f; f = f->next) {
-      gcMARK_HERE(move, void*, f->p);
-    }
-  }
+  do_weak_too = 0;
 
   PRINTTIME((STDERR, "gc: fixup (%d): %ld\n", scanned_pages, GETTIMEREL()));
 

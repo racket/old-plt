@@ -736,7 +736,7 @@ typedef struct Scheme_Thread {
 
   struct Scheme_Thread *nester, *nestee;
 
-  double sleep_time; /* blocker has starting sleep time */
+  double sleep_end; /* blocker has starting sleep time */
   int block_descriptor;
   Scheme_Object *blocker; /* semaphore or port */
   Scheme_Ready_Fun block_check;
@@ -815,8 +815,6 @@ typedef struct Scheme_Thread {
   int list_stack_pos;
 
   Scheme_Hash_Table *rn_memory;
-
-  double block_start_sleep;
 
   /* MzScheme client can use: */
   void (*on_kill)(struct Scheme_Thread *p);

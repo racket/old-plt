@@ -34,8 +34,11 @@ static Scheme_Object *make_channel(int n, Scheme_Object **p);
 static Scheme_Object *make_channel_put(int n, Scheme_Object **p);
 static Scheme_Object *channel_p(int n, Scheme_Object **p);
 
+static Scheme_Object *make_alarm(int n, Scheme_Object **p);
+
 static int channel_get_ready(Scheme_Object *ch, Scheme_Schedule_Info *sinfo);
 static int channel_put_ready(Scheme_Object *ch);
+static int alarm_ready(Scheme_Object *ch, Scheme_Schedule_Info *sinfo);
 
 static int pending_break(Scheme_Thread *p);
 
@@ -44,6 +47,12 @@ int scheme_main_was_once_suspended;
 #ifdef MZ_PRECISE_GC
 static void register_traversers(void);
 #endif
+
+typedef struct {
+  Scheme_Type type;
+  MZ_HASH_KEY_EX
+  double sleep_end;
+} Scheme_Alarm;
 
 /* For object-wait: */
 static int sema_ready(Scheme_Object *s)
@@ -116,10 +125,17 @@ void scheme_init_sema(Scheme_Env *env)
 						      1, 1, 1), 
 			     env);  
 
+  scheme_add_global_constant("make-alarm", 
+			     scheme_make_prim_w_arity(make_alarm,
+						      "make-alarm",
+						      1, 1), 
+			     env);
+
   scheme_add_waitable(scheme_sema_type, sema_ready, NULL, NULL, 0);
   scheme_add_waitable_through_sema(scheme_semaphore_repost_type, sema_for_repost, NULL);
   scheme_add_waitable(scheme_channel_type, (Scheme_Ready_Fun)channel_get_ready, NULL, NULL, 1);
   scheme_add_waitable(scheme_channel_put_type, channel_put_ready, NULL, NULL, 0);
+  scheme_add_waitable(scheme_alarm_type, (Scheme_Ready_Fun)alarm_ready, NULL, NULL, 0);
 }
 
 Scheme_Object *scheme_make_sema(long v)
@@ -873,6 +889,42 @@ static int channel_put_ready(Scheme_Object *ch)
 }
 
 /**********************************************************************/
+/*                             alarms                                 */
+/**********************************************************************/
+
+static Scheme_Object *make_alarm(int argc, Scheme_Object **argv)
+{
+  Scheme_Alarm *a;
+  double sleep_end;
+
+  if (!SCHEME_REALP(argv[0])) {
+    scheme_wrong_type("make-alarm", "real number", 0, argc, argv);
+  }
+
+  sleep_end = scheme_get_val_as_double(argv[0]);
+
+  a = MALLOC_ONE_TAGGED(Scheme_Alarm);
+  a->type = scheme_alarm_type;
+  a->sleep_end = sleep_end;
+
+  return (Scheme_Object *)a;
+}
+
+static int alarm_ready(Scheme_Object *_a, Scheme_Schedule_Info *sinfo)
+{
+  Scheme_Alarm *a = (Scheme_Alarm *)_a;
+
+  if (!sinfo->sleep_end
+      || (sinfo->sleep_end > a->sleep_end))
+    sinfo->sleep_end = a->sleep_end;
+
+  if (a->sleep_end <= scheme_get_inexact_milliseconds())
+    return 1;
+
+  return 0;
+}
+
+/**********************************************************************/
 /*                           Precise GC                               */
 /**********************************************************************/
 
@@ -885,6 +937,7 @@ START_XFORM_SKIP;
 
 static void register_traversers(void)
 {
+  GC_REG_TRAV(scheme_alarm_type, mark_alarm);
   GC_REG_TRAV(scheme_rt_breakable_wait, mark_breakable_wait);
   GC_REG_TRAV(scheme_rt_sema_waiter, mark_sema_waiter);
 }

@@ -1783,7 +1783,7 @@ static Scheme_Thread *make_thread(Scheme_Config *config, Scheme_Custodian *mgr)
   process->block_descriptor = NOT_BLOCKED;
   process->block_check = NULL;
   process->block_needs_wakeup = NULL;
-  process->sleep_time = 0;
+  process->sleep_end = 0;
 
   process->current_local_env = NULL;
 
@@ -2802,18 +2802,18 @@ static int check_sleep(int need_activity, int sleep_now)
 	  Scheme_Needs_Wakeup_Fun f = p->block_needs_wakeup;
 	  f(p->blocker, fds);
 	}
-	merge_time = (p->sleep_time > 0.0);
+	merge_time = (p->sleep_end > 0.0);
       } else if (p->block_descriptor == SLEEP_BLOCKED) {
 	merge_time = 1;
       }
 
       if (merge_time) {
-	double d = p->block_start_sleep;
+	double d = p->sleep_end;
 	double t;
 
-	d = (scheme_get_inexact_milliseconds() - d);
+	d = (d - scheme_get_inexact_milliseconds());
 
-	t = p->sleep_time - (d / 1000);
+	t = (d / 1000);
 	if (t <= 0) {
 	  t = (float)0.00001;
 	  needs_sleep_cancelled = 1;
@@ -2896,13 +2896,15 @@ END_XFORM_SKIP;
 
 #define FALSE_POS_OK_INIT 1
 
-static void init_schedule_info(Scheme_Schedule_Info *sinfo, int false_pos_ok)
+static void init_schedule_info(Scheme_Schedule_Info *sinfo, int false_pos_ok, 
+			       double sleep_end)
 {
   sinfo->false_positive_ok = false_pos_ok;
   sinfo->potentially_false_positive = 0;
   sinfo->current_waiting = NULL;
   sinfo->spin = 0;
   sinfo->is_poll = 0;
+  sinfo->sleep_end = sleep_end;
 }
 
 int scheme_can_break(Scheme_Thread *p, Scheme_Config *config)
@@ -3046,11 +3048,12 @@ void scheme_thread_block(float sleep_time)
 	not a min sleep time. Otherwise, it's a min & max sleep time.
 	This proc auto-resets p's blocking info if an escape occurs. */
 {
-  double start, d;
+  double sleep_end;
   Scheme_Thread *next, *p = scheme_current_thread;
   Scheme_Object *next_in_set;
   Scheme_Thread_Set *t_set;
   Scheme_Config *config = p->config;
+  int dummy;
 
   if (p->running & MZTHREAD_KILLED) {
     /* This thread is dead! Give up now. */
@@ -3074,10 +3077,11 @@ void scheme_thread_block(float sleep_time)
   if (scheme_active_but_sleeping)
     scheme_wake_up();
 
-  if (sleep_time > 0)
-    start = scheme_get_inexact_milliseconds();
-  else
-    start = 0; /* compiler-friendly */
+  if (sleep_time > 0) {
+    sleep_end = scheme_get_inexact_milliseconds();
+    sleep_end += (sleep_time * 1000.0);
+  } else
+    sleep_end = 0;
 
  start_sleep_check:
 
@@ -3098,7 +3102,7 @@ void scheme_thread_block(float sleep_time)
   /* Check scheduled_kills early and often. */
   check_scheduled_kills();
 
-  if (!do_atomic && (sleep_time >= 0.0)) {
+  if (!do_atomic && (sleep_end >= 0.0)) {
     /* Find the next process. Skip processes that are definitely
        blocked. */
     
@@ -3163,13 +3167,13 @@ void scheme_thread_block(float sleep_time)
 	  if (next->block_check) {
 	    Scheme_Ready_Fun_FPC f = (Scheme_Ready_Fun_FPC)next->block_check;
 	    Scheme_Schedule_Info sinfo;
-	    init_schedule_info(&sinfo, FALSE_POS_OK_INIT);
+	    init_schedule_info(&sinfo, FALSE_POS_OK_INIT, next->sleep_end);
 	    if (f(next->blocker, &sinfo))
 	      break;
+	    next->sleep_end = sinfo.sleep_end;
 	  }
 	} else if (next->block_descriptor == SLEEP_BLOCKED) {
-	  d = (scheme_get_inexact_milliseconds() - next->block_start_sleep);
-	  if (d >= (next->sleep_time * 1000.0))
+	  if (next->sleep_end <= scheme_get_inexact_milliseconds())
 	    break;
 	} else
 	  break;
@@ -3232,13 +3236,11 @@ void scheme_thread_block(float sleep_time)
     }
   }
 
-  if ((sleep_time > 0.0) && (p->block_descriptor == NOT_BLOCKED)) {
+  if ((sleep_end > 0.0) && (p->block_descriptor == NOT_BLOCKED)) {
     p->block_descriptor = SLEEP_BLOCKED;
-    p->block_start_sleep = start;
-    p->sleep_time = sleep_time;
-  } else if ((sleep_time > 0.0) && (p->block_descriptor == GENERIC_BLOCKED)) {
-    p->block_start_sleep = start;
-    p->sleep_time = sleep_time;
+    p->sleep_end = sleep_end;
+  } else if ((sleep_end > 0.0) && (p->block_descriptor == GENERIC_BLOCKED)) {
+    p->sleep_end = sleep_end;
   }
 
   if (next && (!next->running || (next->running & MZTHREAD_SUSPENDED))) {
@@ -3265,7 +3267,7 @@ void scheme_thread_block(float sleep_time)
   if (next) {
     if (!p->next) {
       /* This is the main process */
-      scheme_ensure_stack_start(p, (void *)&start);
+      scheme_ensure_stack_start(p, (void *)&dummy);
     }
     
     scheme_swap_thread(next);
@@ -3279,9 +3281,9 @@ void scheme_thread_block(float sleep_time)
 
   if (p->block_descriptor == SLEEP_BLOCKED) {
     p->block_descriptor = NOT_BLOCKED;
-    p->sleep_time = 0.0;
+    p->sleep_end = 0.0;
   } else if (p->block_descriptor == GENERIC_BLOCKED) {
-    p->sleep_time = 0.0;
+    p->sleep_end = 0.0;
   }
 
   /* Killed while I was asleep? */
@@ -3310,23 +3312,24 @@ void scheme_thread_block(float sleep_time)
     raise_break(p);
   }
   
-  if (sleep_time > 0) {
-    d = (scheme_get_inexact_milliseconds() - start);
-    if (d < (sleep_time * 1000.0)) {
+  if (sleep_end > 0) {
+    if (sleep_end > scheme_get_inexact_milliseconds()) {
       /* Still have time to sleep if necessary, but make sure we're
 	 not ready (because maybe that's why we were swapped back in!) */
       if (p->block_descriptor == GENERIC_BLOCKED) {
 	if (p->block_check) {
 	  Scheme_Ready_Fun_FPC f = (Scheme_Ready_Fun_FPC)p->block_check;
 	  Scheme_Schedule_Info sinfo;
-	  init_schedule_info(&sinfo, FALSE_POS_OK_INIT);
+	  init_schedule_info(&sinfo, FALSE_POS_OK_INIT, sleep_end);
 	  if (f(p->blocker, &sinfo)) {
-	    sleep_time = 0;
+	    sleep_end = 0;
+	  } else {
+	    sleep_end = sinfo.sleep_end;
 	  }
 	}
       }
 
-      if (sleep_time > 0)
+      if (sleep_end > 0)
 	goto swap_or_sleep;
     }
   }
@@ -3376,11 +3379,11 @@ int scheme_block_until(Scheme_Ready_Fun _f, Scheme_Needs_Wakeup_Fun fdf,
 
   /* We make an sinfo to be polite, but we also assume
      that f will not generate any redirections! */
-  init_schedule_info(&sinfo, 0);
+  init_schedule_info(&sinfo, 0, 0.0);
 
   while (!(result = f((Scheme_Object *)data, &sinfo))) {
     if (sinfo.spin) {
-      init_schedule_info(&sinfo, 0);
+      init_schedule_info(&sinfo, 0, 0.0);
       scheme_thread_block(0.0);
       scheme_current_thread->ran_some = 1;
     } else {
@@ -4236,7 +4239,7 @@ static Waiting *make_waiting(Waitable_Set *waitable_set, float timeout, double s
 #endif
   waiting->set = waitable_set;
   waiting->timeout = timeout;
-  waiting->start_time = start_time;
+  waiting->sleep_end = start_time + (timeout * 1000);
 
   if (waitable_set->argc > 1) {
     pos = scheme_rand((Scheme_Random_State *)scheme_get_param(scheme_config, MZCONFIG_SCHEDULER_RANDOM_STATE));
@@ -4397,6 +4400,7 @@ static int waiting_ready(Scheme_Object *s, Scheme_Schedule_Info *sinfo)
   Waiting *waiting = (Waiting *)s;
   Waitable_Set *waitable_set;
   int is_poll;
+  double sleep_end;
 
   if (waiting->result)
     return 1;
@@ -4409,6 +4413,7 @@ static int waiting_ready(Scheme_Object *s, Scheme_Schedule_Info *sinfo)
   waitable_set = waiting->set;
 
   is_poll = (waiting->timeout == 0.0);
+  sleep_end = waiting->sleep_end;
 
   /* Anything ready? */
   for (j = 0; j < waitable_set->argc; j++) {
@@ -4426,13 +4431,15 @@ static int waiting_ready(Scheme_Object *s, Scheme_Schedule_Info *sinfo)
     if (ready) {
       int yep;
 
-      init_schedule_info(&r_sinfo, sinfo->false_positive_ok);
+      init_schedule_info(&r_sinfo, sinfo->false_positive_ok, sleep_end);
 
       r_sinfo.current_waiting = (Scheme_Object *)waiting;
       r_sinfo.w_i = i;
       r_sinfo.is_poll = is_poll;
 
       yep = ready(o, &r_sinfo);
+
+      sleep_end = r_sinfo.sleep_end;
 
       if ((i > r_sinfo.w_i) && sinfo->false_positive_ok) {
 	/* There was a redirection. Assert: !yep. 
@@ -4476,10 +4483,11 @@ static int waiting_ready(Scheme_Object *s, Scheme_Schedule_Info *sinfo)
   }
 
   if (waiting->timeout >= 0.0) {
-    double d;
-    d = (scheme_get_inexact_milliseconds() - waiting->start_time);
-    if (d >= (waiting->timeout * 1000.0))
+    if (waiting->sleep_end <= scheme_get_inexact_milliseconds())
       return 1;
+    if (!sinfo->sleep_end
+	|| (sinfo->sleep_end > waiting->sleep_end))
+      sinfo->sleep_end = waiting->sleep_end;
   } else if (all_semas) {
     /* Try to block in a GCable way: */
     if (sinfo->false_positive_ok) {

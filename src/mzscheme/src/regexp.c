@@ -2445,7 +2445,7 @@ static Scheme_Object *make_regexp(int argc, Scheme_Object *argv[])
 
 static Scheme_Object *make_utf8_regexp(int argc, Scheme_Object *argv[])
 {
-  return do_make_regexp("regexp-utf8", 0, argc, argv);
+  return do_make_regexp("regexp-unicode", 0, argc, argv);
 }
 
 Scheme_Object *scheme_make_regexp(Scheme_Object *str, int is_byte, int * volatile result_is_err_string)
@@ -2778,9 +2778,9 @@ void scheme_regexp_initialize(Scheme_Env *env)
 						      "regexp", 
 						      1, 1), 
 			     env);
-  scheme_add_global_constant("regexp-utf8", 
+  scheme_add_global_constant("regexp-unicode", 
 			     scheme_make_prim_w_arity(make_utf8_regexp, 
-						      "regexp-utf8", 
+						      "regexp-unicode", 
 						      1, 1), 
 			     env);
   scheme_add_global_constant("regexp-match",

@@ -324,6 +324,7 @@ typedef struct {
   int false_positive_ok;  /* non-zero => return 1 to swap in thread rather than running Scheme code */
   int potentially_false_positive; /* => returning 1 to swap thread in, but truth may be 0 */
   Scheme_Object *current_waiting;
+  double sleep_end;
   int w_i;
   short spin;
   short is_poll;
@@ -917,7 +918,7 @@ typedef struct Waiting {
   MZTAG_IF_REQUIRED
   Waitable_Set *set;
   int result, start_pos;
-  double start_time;
+  double sleep_end;
   float timeout;
 
   Scheme_Object **wrapss;

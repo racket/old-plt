@@ -57,11 +57,16 @@ static void (*iconv_close)(iconv_t cd);
 # define CODESET 0
 #endif
 
+#define mzICONV_KIND 0
+#define mzUTF8_KIND 1
+
 typedef struct Scheme_Converter {
   Scheme_Type type;
   MZ_HASH_KEY_EX
   short closed;
+  short kind;
   iconv_t cd;
+  int permissive;
   Scheme_Custodian_Reference *mref;
 } Scheme_Converter;
 
@@ -122,6 +127,7 @@ static Scheme_Object *system_library_subpath(int argc, Scheme_Object *argv[]);
 static Scheme_Object *cmdline_args(int argc, Scheme_Object *argv[]);
 static Scheme_Object *current_locale(int argc, Scheme_Object *argv[]);
 static Scheme_Object *string_open_converter(int argc, Scheme_Object *argv[]);
+static Scheme_Object *string_open_utf8_identity_converter(int argc, Scheme_Object *argv[]);
 static Scheme_Object *string_close_converter(int argc, Scheme_Object *argv[]);
 static Scheme_Object *string_convert(int argc, Scheme_Object *argv[]);
 static Scheme_Object *string_convert_end(int argc, Scheme_Object *argv[]);
@@ -132,6 +138,10 @@ static void register_traversers(void);
 
 static int mz_strcmp(const char *who, unsigned char *str1, int l1, unsigned char *str2, int l2, int eq);
 static int mz_strcmp_ci(const char *who, unsigned char *str1, int l1, unsigned char *str2, int l2, int eq);
+
+static int utf8_decode_x(const unsigned char *s, int start, int end, 
+			 unsigned int *us, int dstart, int dend,
+			 long *ipos, long *jpos, char compact, char utf16, int permissive);
 
 #define portable_isspace(x) (((x) < 128) && isspace(x))
 
@@ -147,6 +157,8 @@ static Scheme_Hash_Table *putenv_str_table;
 static char *embedding_banner;
 static Scheme_Object *vers_str, *banner_str;
 
+static Scheme_Object *complete_symbol, *continues_symbol, *aborts_symbol, *error_symbol;
+
 void
 scheme_init_string (Scheme_Env *env)
 {
@@ -155,6 +167,15 @@ scheme_init_string (Scheme_Env *env)
 
   REGISTER_SO(zero_length_string);
   zero_length_string = scheme_alloc_string(0, 0); 
+
+  REGISTER_SO(complete_symbol);
+  REGISTER_SO(continues_symbol);
+  REGISTER_SO(aborts_symbol);
+  REGISTER_SO(error_symbol);
+  complete_symbol = scheme_intern_symbol("complete");
+  continues_symbol = scheme_intern_symbol("continues");
+  aborts_symbol = scheme_intern_symbol("aborts");
+  error_symbol = scheme_intern_symbol("error");
 
   REGISTER_SO(platform_path);
 #ifdef MZ_PRECISE_GC
@@ -394,6 +415,11 @@ scheme_init_string (Scheme_Env *env)
 			     scheme_make_prim_w_arity(string_open_converter,
 						      "string-open-converter",
 						      2, 2),
+			     env);
+  scheme_add_global_constant("string-open-utf8-identity-converter",
+			     scheme_make_prim_w_arity(string_open_utf8_identity_converter,
+						      "string-open-utf8-identity-converter",
+						      0, 1),
 			     env);
   scheme_add_global_constant("string-close-converter", 
 			     scheme_make_prim_w_arity(string_close_converter,
@@ -1381,7 +1407,9 @@ static char *do_convert(iconv_t cd,
 	  return out;
 	}
       } else {
-	/* Assume EINVAL */
+	/* Either EINVAL (premature end) or EILSEQ (bad sequence) */
+	if (errno == EILSEQ)
+	  *status = -2;
 	if (close_it)
 	  iconv_close(cd);
 	while (extra--) {
@@ -2551,9 +2579,14 @@ static void close_converter(Scheme_Object *o, void *data)
 
   if (!c->closed) {
     c->closed = 1;
-    iconv_close(c->cd);
-    c->cd = (iconv_t)-1;
-    scheme_remove_managed(c->mref, (Scheme_Object *)c);
+    if (c->kind == mzICONV_KIND) {
+      iconv_close(c->cd);
+      c->cd = (iconv_t)-1;
+    }
+    if (c->mref) {
+      scheme_remove_managed(c->mref, (Scheme_Object *)c);
+      c->mref = NULL;
+    }
   }
 }
 
@@ -2589,6 +2622,7 @@ static Scheme_Object *string_open_converter(int argc, Scheme_Object **argv)
   c = MALLOC_ONE_TAGGED(Scheme_Converter);
   c->type = scheme_string_converter_type;
   c->closed = 0;
+  c->kind = mzICONV_KIND;
   c->cd = cd;
   mref = scheme_add_managed(NULL,
 			    (Scheme_Object *)c,
@@ -2599,13 +2633,45 @@ static Scheme_Object *string_open_converter(int argc, Scheme_Object **argv)
   return (Scheme_Object *)c;
 }
 
+static Scheme_Object *string_open_utf8_identity_converter(int argc, Scheme_Object **argv)
+{
+  int permissive;
+  Scheme_Custodian_Reference *mref;
+  Scheme_Converter *c;
+
+  if (argc) {
+    if (SCHEME_FALSEP(argv[0]))
+      permissive = 0;
+    else if (SCHEME_CHARP(argv[0]) && (SCHEME_CHAR_VAL(argv[0]) >= 0))
+      permissive = SCHEME_CHAR_VAL(argv[0]);
+    else {
+      scheme_wrong_type("string-open-utf8-identity-converter", "ASCII char or #f", 0, argc, argv);
+      return NULL;
+    }
+  } else
+    permissive = 0;
+
+  c = MALLOC_ONE_TAGGED(Scheme_Converter);
+  c->type = scheme_string_converter_type;
+  c->closed = 0;
+  c->kind = mzUTF8_KIND;
+  c->permissive = permissive;
+  mref = scheme_add_managed(NULL,
+			    (Scheme_Object *)c,
+			    close_converter,
+			    NULL, 0);
+  c->mref = mref;
+  
+  return (Scheme_Object *)c;
+}
+
 static Scheme_Object *convert_one(const char *who, int opos, int argc, Scheme_Object *argv[])
 {
-  char *r;
+  char *r, *instr;
   int status;
   long amt_read, amt_wrote;
   long istart, ifinish, ostart, ofinish;
-  Scheme_Object *a[3];
+  Scheme_Object *a[3], *status_sym;
   Scheme_Converter *c;
 
   if (!SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_string_converter_type))
@@ -2617,7 +2683,7 @@ static Scheme_Object *convert_one(const char *who, int opos, int argc, Scheme_Ob
     scheme_get_substring_indices("substring", argv[1], argc, argv, 2, 3, &istart, &ifinish);
   } else {
     istart = 0;
-    ifinish = 4; /* This is really a guess about how much space we need */
+    ifinish = 4; /* This is really a guess about how much space we need for a shift terminator */
   }
   
   if (argc > opos) {
@@ -2628,21 +2694,65 @@ static Scheme_Object *convert_one(const char *who, int opos, int argc, Scheme_Ob
   } else {
     r = NULL;
     ostart = 0;
-    ofinish = 0;
+    ofinish = -1;
   }
 
   c = (Scheme_Converter *)argv[0];
   if (c->closed)
     scheme_arg_mismatch(who, "converter is closed: ", argv[0]);
 
-  r = do_convert(c->cd, NULL, NULL,
-		 ((opos > 1) ? SCHEME_STR_VAL(argv[1]) : NULL), istart, ifinish-istart,
-		 r, ostart, ofinish-ostart,
-		 !r, /* grow? */
-		 (r ? 0 : 1), /* terminator */
-		 &amt_read, &amt_wrote,
-		 &status);
+  instr = ((opos > 1) ? SCHEME_STR_VAL(argv[1]) : NULL);
+
+  if (c->kind == mzUTF8_KIND) {
+    /* UTF-8 -> UTF-8 "identity" converter, but maybe permissive */
+    if (instr) {
+      status = utf8_decode_x((unsigned char *)instr, istart, ifinish, 
+			     (unsigned int *)r, ostart, ofinish,
+			     &amt_read, &amt_wrote, 
+			     1, 0, c->permissive);
+      amt_read -= istart;
+      amt_wrote -= ostart;
+      if (status == -3) {
+	/* r is not NULL; ran out of room */
+	status = 1;
+      } else if (status > 0) {
+	status = 0;
+	if (!r) {
+	  /* Need to allocate, then do it again: */
+	  r = (char *)scheme_malloc_atomic(amt_wrote + 1);
+	  status = utf8_decode_x((unsigned char *)instr, istart, ifinish, 
+				 (unsigned int *)r, ostart, ofinish,
+				 &amt_read, &amt_wrote, 
+				 1, 0, c->permissive);
+	}
+      }
+    } else {
+      r = "";
+      status = 0;
+      amt_read = 0;
+      amt_wrote = 0;
+    }
+  } else {
+    r = do_convert(c->cd, NULL, NULL,
+		   instr, istart, ifinish-istart,
+		   r, ostart, ofinish-ostart,
+		   !r, /* grow? */
+		   (r ? 0 : 1), /* terminator */
+		   &amt_read, &amt_wrote,
+		   &status);
+  }
   
+  if (status == 0) {
+    status_sym = complete_symbol;
+  } else if (status == 1) {
+    status_sym = continues_symbol;
+  } else if (status == -1) {
+    status_sym = aborts_symbol;
+  } else {
+    /* Assert: status == -2 */
+    status_sym = error_symbol;
+  }
+
   if (argc <= opos) {
     a[0] = scheme_make_sized_string(r, amt_wrote, 0);
   } else {
@@ -2650,10 +2760,10 @@ static Scheme_Object *convert_one(const char *who, int opos, int argc, Scheme_Ob
   }
   if (opos > 1) {
     a[1] = scheme_make_integer(amt_read);
-    a[2] = ((status < 0) ? scheme_false : scheme_true);
+    a[2] = status_sym;
     return scheme_values(3, a);
   } else {
-    a[1] = ((status < 0) ? scheme_false : scheme_true);
+    a[1] = status_sym;
     return scheme_values(2, a);
   }
 }
@@ -2735,11 +2845,11 @@ void scheme_reset_locale(void)
 /*                               unicode                              */
 /**********************************************************************/
 
-int scheme_utf8_decode(const unsigned char *s, int start, int end, 
-		       unsigned int *us, int dstart, int dend,
-		       long *ipos, char utf16, int permissive)
+static int utf8_decode_x(const unsigned char *s, int start, int end, 
+			 unsigned int *us, int dstart, int dend,
+			 long *ipos, long *jpos, char compact, char utf16, int permissive)
 {
-  int i, j;
+  int i, j, oki, failmode = -3;
   unsigned int sc;
 
   /* In non-permissive mode, a negative result means ill-formed input.
@@ -2762,16 +2872,22 @@ int scheme_utf8_decode(const unsigned char *s, int start, int end,
       if (!((s[i] & 0xC0) == 0x80))
 	j++;
     }
+    if (ipos)
+      *ipos = i;
     return j - dstart;
   }
 
+  oki = start;
   for (i = start, j = dstart; (i < end) && (j < dend); i++, j++) {
     sc = s[i];
     if (sc < 0x80) {
       if (us) {
-	if (utf16)
-	  ((unsigned short *)us)[j] = sc;
-	else
+	if (compact) {
+	  if (utf16)
+	    ((unsigned short *)us)[j] = sc;
+	  else
+	    ((unsigned char *)us)[j] = sc;
+	} else
 	  us[j] = sc;
       }
     } else {
@@ -2786,8 +2902,13 @@ int scheme_utf8_decode(const unsigned char *s, int start, int end,
 	} else if (permissive) {
 	  v = permissive;
 	  checkmin = 0;
-	} else
+	} else {
+	  if ((i + 1) >= end)
+	    failmode = -1;
+	  else
+	    failmode = -2;
 	  break;
+	}
       } else if ((sc & 0xF0) == 0xE0) {
 	if ((i + 2 < end) 
 	    && ((s[i + 1] & 0xC0) == 0x80)
@@ -2810,8 +2931,13 @@ int scheme_utf8_decode(const unsigned char *s, int start, int end,
 	} else if (permissive) {
 	  v = permissive;
 	  checkmin = 0;
-	} else
+	} else {
+	  if ((i + 2) >= end)
+	    failmode = -1;
+	  else
+	    failmode = -2;
 	  break;
+	}
       } else if ((sc & 0xF8) == 0xF0) {
 	if ((i + 3 < end) 
 	    && ((s[i + 1] & 0xC0) == 0x80)
@@ -2826,8 +2952,13 @@ int scheme_utf8_decode(const unsigned char *s, int start, int end,
 	} else if (permissive) {
 	  v = permissive;
 	  checkmin = 0;
-	} else
+	} else {
+	  if ((i + 3) >= end)
+	    failmode = -1;
+	  else
+	    failmode = -2;
 	  break;
+	}
       } else if ((sc & 0xFC) == 0xF8) {
 	if ((i + 4 < end) 
 	    && ((s[i + 1] & 0xC0) == 0x80)
@@ -2844,8 +2975,13 @@ int scheme_utf8_decode(const unsigned char *s, int start, int end,
 	} else if (permissive) {
 	  v = permissive;
 	  checkmin = 0;
-	} else
+	} else {
+	  if ((i + 4) >= end)
+	    failmode = -1;
+	  else
+	    failmode = -2;
 	  break;
+	}
       } else if ((sc & 0xFE) == 0xFC) {
 	if ((i + 5 < end) 
 	    && ((s[i + 1] & 0xC0) == 0x80)
@@ -2864,8 +3000,13 @@ int scheme_utf8_decode(const unsigned char *s, int start, int end,
 	} else if (permissive) {
 	  v = permissive;
 	  checkmin = 0;
-	} else
+	} else {
+	  if ((i + 5) >= end)
+	    failmode = -1;
+	  else
+	    failmode = -2;
 	  break;
+	}
       } else {
 	if (permissive) {
 	  if (sc >= 254) {
@@ -2888,19 +3029,32 @@ int scheme_utf8_decode(const unsigned char *s, int start, int end,
 	  break;
       }
 
-      if (utf16) {
-	if (v > 0xFFFF) {
-	  if (us) {
-	    v -= 0x10000;
+      if (compact) {
+	if (utf16) {
+	  if (v > 0xFFFF) {
+	    if (us) {
+	      v -= 0x10000;
 #ifdef SCHEME_BIG_ENDIAN
-	    ((unsigned short *)us)[j] = 0xD8000000 | ((v >> 10) & 0x3FF);
-	    ((unsigned short *)us)[j+1] = 0xDC000000 | (v & 0x3FF);
+	      ((unsigned short *)us)[j] = 0xD8000000 | ((v >> 10) & 0x3FF);
+	      ((unsigned short *)us)[j+1] = 0xDC000000 | (v & 0x3FF);
 #else
-	    ((unsigned short *)us)[j+1] = 0xD8000000 | ((v >> 10) & 0x3FF);
-	    ((unsigned short *)us)[j] = 0xDC000000 | (v & 0x3FF);
+	      ((unsigned short *)us)[j+1] = 0xD8000000 | ((v >> 10) & 0x3FF);
+	      ((unsigned short *)us)[j] = 0xDC000000 | (v & 0x3FF);
 #endif
+	    }
+	    j++;
+	  } else {
+	    int delta;
+	    delta = (i - oki);
+	    if (delta) {
+	      if (j + delta + 1 < dend) {
+		memcpy(((char *)us) + j, s + oki, delta + 1);
+		j += delta;
+	      } else
+		break;
+	    } else
+	      ((unsigned char *)us)[j] = v;
 	  }
-	  j++;
 	} else if (us) {
 	  ((unsigned short *)us)[j] = v;
 	}	  
@@ -2908,20 +3062,31 @@ int scheme_utf8_decode(const unsigned char *s, int start, int end,
 	us[j] = v;
       }
     }
+    oki = i;
   }
 
   if ((i < end) && (j < dend))
-    return -1;
+    return failmode;
 
   if (ipos)
-    *ipos = i;
+    *ipos = oki;
+  if (jpos)
+    *jpos = j;
 
   return j;
 }
 
+int scheme_utf8_decode(const unsigned char *s, int start, int end, 
+		       unsigned int *us, int dstart, int dend,
+		       long *ipos, char utf16, int permissive)
+{
+  return utf8_decode_x(s, start, end, us, dstart, dend, 
+		       ipos, NULL, 1, utf16, permissive);
+}
+
 int scheme_utf8_decode_all(const unsigned char *s, int len, unsigned int *us, int permissive)
 {
-  return scheme_utf8_decode(s, 0, len, us, 0, -1, NULL, 0 /* utf16 */, permissive);
+  return utf8_decode_x(s, 0, len, us, 0, -1, NULL, NULL, 0, 0, permissive);
 }
 
 int scheme_utf8_encode(const unsigned int *us, int start, int end, 

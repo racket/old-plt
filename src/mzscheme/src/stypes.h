@@ -127,8 +127,8 @@ enum {
   scheme_module_registry_type,
   scheme_thread_set_type,   /* 110 */
   scheme_string_converter_type,
+  scheme_alarm_type,
 
-  scheme_reserved2_type,
   scheme_reserved3_type,
 
 #ifdef MZTAG_REQUIRED

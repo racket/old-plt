@@ -197,6 +197,7 @@ scheme_init_type (Scheme_Env *env)
   set_name(scheme_nack_guard_waitable_type, "<waitable>");
   set_name(scheme_poll_waitable_type, "<waitable>");
   set_name(scheme_semaphore_repost_type, "<semaphore-peek>");
+  set_name(scheme_alarm_type, "<alarm>");
 
   set_name(scheme_thread_resume_type, "<thread-resume-waitable>");
   set_name(scheme_thread_suspend_type, "<thread-suspend-waitable>");
@@ -206,7 +207,6 @@ scheme_init_type (Scheme_Env *env)
 
   set_name(scheme_string_converter_type, "<string-converter>");
 
-  set_name(scheme_reserved2_type, "<reserved2>");
   set_name(scheme_reserved3_type, "<reserved3>");
 
   set_name(_scheme_values_types_, "<resurrected>");

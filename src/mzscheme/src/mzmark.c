@@ -3714,6 +3714,25 @@ int mark_sema_waiter_FIXUP(void *p) {
 #define mark_sema_waiter_IS_CONST_SIZE 1
 
 
+int mark_alarm_SIZE(void *p) {
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Alarm));
+}
+
+int mark_alarm_MARK(void *p) {
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Alarm));
+}
+
+int mark_alarm_FIXUP(void *p) {
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Alarm));
+}
+
+#define mark_alarm_IS_ATOMIC 1
+#define mark_alarm_IS_CONST_SIZE 1
+
+
 #endif  /* SEMA */
 
 /**********************************************************************/

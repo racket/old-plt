@@ -1485,6 +1485,12 @@ mark_sema_waiter {
   gcBYTES_TO_WORDS(sizeof(Scheme_Sema_Waiter));
 }
 
+mark_alarm {
+ mark:
+ size:
+  gcBYTES_TO_WORDS(sizeof(Scheme_Alarm));
+}
+
 END sema;
 
 /**********************************************************************/

@@ -765,6 +765,8 @@ void scheme_init_hash_key_procs(void)
   PROC(scheme_nack_guard_waitable_type, hash_general);
   PROC(scheme_poll_waitable_type, hash_general);
   PROC(scheme_semaphore_repost_type, hash_general);
+  PROC(scheme_string_converter_type, hash_general);
+  PROC(scheme_alarm_type, hash_general);
 #undef PROC
 }
 

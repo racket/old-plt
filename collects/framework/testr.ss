@@ -1,5 +1,5 @@
 ;;
-;; $Id: testr.ss,v 1.5 1998/11/30 03:14:10 robby Exp $
+;; $Id: testr.ss,v 1.6 1998/11/30 16:08:01 robby Exp $
 ;;
 ;; (mred:test:run-interval [msec]) is parameterization for the
 ;; interval (in milliseconds) between starting actions.
@@ -182,6 +182,9 @@
 
   (define (get-focused-window)
     (let ([f (get-active-frame)])
+      (printf "get-focused-window: ~a ~a ~n" f 
+	      (and f
+		   (send f get-focus-window)))
       (and f
 	   (send f get-focus-window))))
 
@@ -196,7 +199,7 @@
   (define ancestor-list
     (lambda (window)
       (let loop ([w window] [l null])
-	(if (null? w)
+	(if w
 	    l
 	    (loop (send w get-parent) (cons w l))))))
   
@@ -380,10 +383,9 @@
 		   (void))]))))])]))
   
   ;; delay test for on-char until all ancestors decline pre-on-char.
-
   (define (send-key-event window event)
     (let loop ([l (ancestor-list window)])
-      (cond [(null? l) 
+      (cond [(null? l)
 	     (if (ivar-in-class? 'on-char (object-class window))
 		 (send window on-char event)
 		 (run-error key-tag "focused window does not have on-char"))]
@@ -400,7 +402,6 @@
     (lambda (key window modifier-list)
       (let ([event (make-object mred:key-event%)])
 	(send event set-key-code key)
-	(send event set-event-object window)
 	(send event set-time-stamp (time-stamp))
 	(set-key-modifiers event key modifier-list)
 	event)))

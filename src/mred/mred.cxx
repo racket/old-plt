@@ -1772,6 +1772,11 @@ static Q_Callback_Set q_callbacks[3];
 
 static void insert_q_callback(Q_Callback_Set *cs, Q_Callback *cb)
 {
+  /* This can happen under Windows, for example,
+     due to an on-paint queue attempt: */
+  if (cb->context->killed)
+    return;
+
   cb->next = NULL;
   cb->prev = cs->last;
   cs->last = cb;

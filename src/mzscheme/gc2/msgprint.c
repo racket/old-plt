@@ -1,6 +1,6 @@
 
 #ifdef _WIN32
-void gc_fprintf(int ignored, const char *c, ...);
+__declspec(dllexport) void gc_fprintf(int ignored, const char *c, ...);
 # define GCPRINT gc_fprintf
 # define GCOUTF 0
 # define GCFLUSHOUT() /* empty */

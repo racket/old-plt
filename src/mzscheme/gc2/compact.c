@@ -97,7 +97,7 @@ typedef short Type_Tag;
 #define ALLOC_GC_PHASE 0
 #define SKIP_FORCED_GC 0
 #define RECORD_MARK_SRC 0
-#define KEEP_BACKPOINTERS 1
+#define KEEP_BACKPOINTERS 0
 
 #if TIME
 # include <sys/time.h>

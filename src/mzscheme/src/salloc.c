@@ -874,6 +874,12 @@ static void count_managed(Scheme_Custodian *m, int *c, int *a, int *u, int *t,
 #ifdef MZ_PRECISE_GC
 START_XFORM_SKIP;
 #endif
+#ifdef MZ_PRECISE_GC
+extern void gc_fprintf(int ignored, const char *c, ...);
+# define object_console_printf gc_fprintf
+#else
+# define object_console_printf scheme_console_printf
+#endif
 void scheme_print_tagged_value(const char *prefix, 
 			       void *v, int xtagged, unsigned long diff, int max_w,
 			       const char *suffix)
@@ -974,7 +980,11 @@ void scheme_print_tagged_value(const char *prefix,
   if (diff)
     sprintf(diffstr, "%lx", diff);
   
-  scheme_console_printf("%s%lx%s%s%s%s%s", 
+  object_console_printf(
+#ifdef MZ_PRECISE_GC
+			0,
+#endif
+			"%s%lx%s%s%s%s%s", 
 			prefix,
 			v, 
 			sep,

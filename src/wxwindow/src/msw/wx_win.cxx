@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994     
- * RCS_ID:      $Id: wx_win.cxx,v 1.29 1999/05/15 18:17:06 mflatt Exp $
+ * RCS_ID:      $Id: wx_win.cxx,v 1.30 1999/05/20 19:58:14 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -1707,8 +1707,8 @@ void wxWnd::Create(wxWnd *parent, char *wclass, wxWindow *wx_win, char *title,
   is_dialog = (dialog_template != NULL);
   int x1 = 0;
   int y1 = 0;
-  int w2 = 100;
-  int h2 = 100;
+  int w2 = 5;
+  int h2 = 5;
   if (wx_window && wx_window->GetWindowStyleFlag() & wxUSER_COLOURS)
     userColours = TRUE;
   else

@@ -1,4 +1,8 @@
 
+Version 204.9
+Added set!-transformer-procedure
+Extended regexp language with "(?:...)"
+
 Version 204.8
 Added 'addon-dir for find-system-path
 Changed default library collections path list to include

@@ -274,7 +274,10 @@ active-texture
 alpha-func
 begin
 begin-query
+blend-color
+blend-equation
 blend-func
+blend-func-separate
 call-list
 check-extension
 clear

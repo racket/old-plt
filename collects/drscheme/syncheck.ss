@@ -168,8 +168,7 @@
                 (send style set-delta delta)
                 (send style-list new-named-style name
                       (send style-list find-or-create-style
-                            (send style-list
-                                  find-named-style "Standard")
+                            (send style-list find-named-style "Standard")
                             delta))))))
       
       (for-each set-slatex-style delta-symbols (map fw:preferences:get delta-symbols))

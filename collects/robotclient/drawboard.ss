@@ -208,12 +208,21 @@
         (set! packages
               (if (null? orig-pkgs)
                   null
-                  ;; Sort by size (smaller first):
+                  ;; Sort by size (smaller first, unknown at end):
                   (let ([pkgs (quicksort orig-pkgs
                                          (lambda (a b)
-                                           (<= (cadddr (cddr a)) (cadddr (cddr b)))))])
-                    (let ([min (cadddr (cddar pkgs))]
-                          [max (cadddr (cddar (last-pair pkgs)))])
+                                           (let ([aw (cadddr (cddr a))]
+                                                 [bw (cadddr (cddr b))])
+                                             (cond
+                                               [(not aw) #f]
+                                               [(not bw) #t]
+                                               [else (<= aw bw)]))))])
+                    (let* ([min (cadddr (cddar pkgs))]
+                           [max (let loop ([l pkgs][mx min])
+                                  (if (null? l)
+                                      mx
+                                      (let ([wt (cadddr (cddar l))])
+                                        (loop (cdr l) (if wt (max mx wt) mx)))))])
                       (map (lambda (pkg)
                              (let ([rel-weight (let ([weight (cadddr (cddr pkg))])
                                                  (cond

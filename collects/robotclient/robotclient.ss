@@ -20,6 +20,8 @@
   
   (define bottom (make-object horizontal-panel% f))
   
+  (make-object message% (format "Robot ~a" me) bottom)
+  
   (let ([v (instantiate vertical-panel% (bottom) [stretchable-height #f] [stretchable-width #f])])
     (make-object button% "North" v (lambda (b e) (make-move 'n)))
     (let ([h (make-object horizontal-panel% v)])
@@ -71,7 +73,6 @@
   
   (define (do-list-action list what)
     (make-move `(,what ,@(map (lambda (pos)
-                                (printf "~s~n" (send list get-string pos))
                                 (string->number (send list get-string pos)))
                               (send list get-selections)))))
   

@@ -90,7 +90,7 @@ Widget
 #endif
 );
 #line 403 "XWidgets/xwEnforcer.w"
-static char  propagateTranslation[] = "<KeyPress>: propagateKey()";;
+static char  propagateTranslation[] = "<KeyPress> : propagateKey() \n <KeyRelease> : propagateKey()";;
 #line 404 "XWidgets/xwEnforcer.w"
 static XtTranslations  propagate_trans = NULL ;;
 #line 408 "XWidgets/xwEnforcer.w"
@@ -290,7 +290,7 @@ static void propagateKey(self,event,params,num_params)Widget self;XEvent*event;S
 	event->xkey.send_event	= True;
 	event->xkey.window	= XtWindow(((XfwfEnforcerWidget)self)->xfwfEnforcer.propagateTarget);
 	XSendEvent(XtDisplay(((XfwfEnforcerWidget)self)->xfwfEnforcer.propagateTarget), XtWindow(((XfwfEnforcerWidget)self)->xfwfEnforcer.propagateTarget),
-		   FALSE, KeyPressMask, event);
+		   FALSE, KeyPressMask | KeyReleaseMask, event);
     }
 }
 

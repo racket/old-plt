@@ -1,4 +1,4 @@
-/* $Id: xwMenu.c,v 1.10 1998/12/06 05:06:18 mflatt Exp $ */
+/* $Id: xwMenu.c,v 1.11 1999/03/28 20:38:17 mflatt Exp $ */
 
 /***********************************************************
 Copyright 1995 by Markus Holzem
@@ -52,7 +52,7 @@ static XtResource MenuResources[] =
 { 
     /* cursor */
     {XtNcursor, XtCCursor, XtRCursor, sizeof(Cursor),
-        offset(menu.cursor), XtRString, (XtPointer)"right_ptr"},
+        offset(menu.cursor), XtRString, (XtPointer)"left_ptr"},
     /* font */
     {XtNfont,  XtCFont, XtRFontStruct, sizeof(XFontStruct *),
         offset(menu.font),XtRString, "XtDefaultFont"},
@@ -380,6 +380,8 @@ static void MenuResize(w)
 
 static int HandleMotionEvent(MenuWidget mw, XMotionEvent *ev);
 static void UnhighlightItem(MenuWidget mw, menu_state *ms, menu_item *item);
+static void HighlightItem(MenuWidget mw, menu_state *ms, menu_item *item);
+static void MoveSelection(MenuWidget mw, int direction);
 
 static void DoSelect(Widget w, Time time, int force);
 
@@ -512,7 +514,7 @@ static void Key(w, event, params, num_params)
     String    *params;
     Cardinal  *num_params;
 {
-  /* MenuWidget  mw = (MenuWidget)w; */
+  MenuWidget  mw = (MenuWidget)w;
   XKeyEvent  *ev   = &event->xkey;
   KeySym	   keysym;
 
@@ -520,7 +522,57 @@ static void Key(w, event, params, num_params)
 
   switch (keysym) {
   case XK_Right:
-    printf("here\n");
+  case XK_Left:
+    if (mw->menu.state && mw->menu.state->prev && mw->menu.state->prev->prev) {
+      /* In a submenu */
+      if (keysym == XK_Right) {
+	if (!mw->menu.state->selected) {
+	  /* select first in submenu */
+	  if (mw->menu.state->menu)
+	    HighlightItem(mw, mw->menu.state, mw->menu.state->menu);
+	}
+      } else {
+	if (mw->menu.state->selected) {
+	  UnhighlightItem(mw, mw->menu.state, mw->menu.state->selected);
+	}
+      }
+    } else {
+      /* Change top-level menu: */
+      if (mw->menu.state && mw->menu.state->prev && mw->menu.state->prev->selected) {
+	menu_item *item = mw->menu.state->prev->selected;
+	if (keysym == XK_Right) {
+	  if (item->next)
+	    item = item->next;
+	  else
+	    item = mw->menu.state->prev->menu;
+	} else {
+	  if (item->prev)
+	    item = item->prev;
+	  else {
+	    while (item->next)
+	      item = item->next;
+	  }
+	}
+	if (item) {
+	  UnhighlightItem(mw, mw->menu.state->prev, mw->menu.state->prev->selected);
+	  HighlightItem(mw, mw->menu.state, item);
+	}
+      }
+    }
+    break;
+  case XK_Down:
+    MoveSelection(mw, 1);
+    break;
+  case XK_Up:
+    MoveSelection(mw, -1);
+    break;
+  case XK_Escape:
+    if (mw->menu.state->selected)
+      UnhighlightItem(mw, mw->menu.state, mw->menu.state->selected);
+    DoSelect(w, event ? event->xkey.time : 0L, 1);
+    break;
+  case XK_Return:
+    DoSelect(w, event ? event->xkey.time : 0L, 1);
     break;
   }
 }
@@ -1147,8 +1199,8 @@ static int HandleMotionEvent(MenuWidget mw, XMotionEvent *ev)
       mw->menu.moused_out = 1;
 
     if (!item) { /* if pointer not on menu_item unhighlight last selected */
-	UnhighlightItem(mw, mw->menu.state, mw->menu.state->selected);
-	return 0;
+      UnhighlightItem(mw, mw->menu.state, mw->menu.state->selected);
+      return 0;
     }
     if (item == ms->selected) /* pointer on the same item */
 	return 1;
@@ -1164,6 +1216,72 @@ static int HandleMotionEvent(MenuWidget mw, XMotionEvent *ev)
 	   (XtPointer)ResourcedText(mw, item, SUBRESOURCE_HELP)); */
 
     return 1;
+}
+
+static void MoveSelection(MenuWidget mw, int direction)
+{
+  menu_state *ms = mw->menu.state;
+
+  if (!ms)
+    return;
+
+  if (!ms->selected && ms->prev && ms->prev->prev) {
+    /* Submenu popped up, nothing selected. */
+    ms = ms->prev;
+  }
+
+  if (ms->selected) {
+    menu_item  *item = ms->selected;
+
+    do {
+      if (direction > 0)
+	item = item->next;
+      else
+	item = item->prev;
+    } while (item && (item->type == MENU_SEPARATOR));
+
+    if (!item) {
+      /* Wraparound: highlight first/last: */
+      if (direction > 0)
+	item = ms->menu;
+      else {
+	item = ms->menu;
+	while (item->next)
+	  item = item->next;
+      }
+
+      while (item && (item->type == MENU_SEPARATOR)) {
+	if (direction > 0)
+	  item = item->next;
+	else
+	  item = item->prev;
+      }
+    }
+
+    if (item) {
+      UnhighlightItem(mw, ms, ms->selected);
+      HighlightItem(mw, ms, item);
+    }
+  } else if (direction > 0) {
+    menu_item  *item = ms->menu;
+
+    while (item && (item->type == MENU_SEPARATOR))
+      item = item->next;
+
+    if (ms->menu)
+      HighlightItem(mw, ms, ms->menu);
+  } else {
+    menu_item  *item = ms->menu;
+    if (item) {
+      while (item->next)
+	item = item->next;
+      while (item && (item->type == MENU_SEPARATOR))
+	item = item->prev;
+      
+      if (item)
+	HighlightItem(mw, ms, item);
+    }
+  }
 }
 
 

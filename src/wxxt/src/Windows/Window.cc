@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Window.cc,v 1.24 1999/03/09 14:17:52 mflatt Exp $
+ * $Id: Window.cc,v 1.25 1999/04/08 16:12:10 mflatt Exp $
  *
  * Purpose: base class for all windows
  *
@@ -31,6 +31,7 @@
 #define  Uses_wxGDI
 #define  Uses_wxLayout
 #define  Uses_wxMenu
+#define  Uses_wxMenuBar
 #define  Uses_wxTypeTree
 #define  Uses_wxWindow
 #define  Uses_wxDialogBox
@@ -60,6 +61,7 @@ extern void wxSetSensitive(Widget, Bool enabled);
 #define FOCUS_FLAG 0x10
 #define REPORT_ZERO_WIDTH_FLAG 0x20
 #define REPORT_ZERO_HEIGHT_FLAG 0x40
+#define LAST_WAS_ALT_DOWN_FLAG 0x80
 
 IMPLEMENT_DYNAMIC_CLASS(wxWindow, wxEvtHandler)
 
@@ -1109,6 +1111,7 @@ void wxWindow::AddEventHandlers(void)
     XtInsertEventHandler
       (win->X->handle,	// handle events for client area widget
        KeyPressMask |	// for OnChar
+       KeyReleaseMask |
        ButtonPressMask |	// for OnEvent
        ButtonReleaseMask |
        ButtonMotionMask |
@@ -1147,7 +1150,7 @@ void wxWindow::AddEventHandlers(void)
        ((wxSubType(win->__type, wxTYPE_MESSAGE) 
 	 || wxSubType(win->__type, wxTYPE_SLIDER) 
 	 || wxSubType(win->__type, wxTYPE_GAUGE))
-	? KeyPressMask : NoEventMask),
+	? (KeyPressMask | KeyReleaseMask) : NoEventMask),
        FALSE,
        (XtEventHandler)wxWindow::WindowEventHandler,
        (XtPointer)saferef, /* MATTHEW */
@@ -1364,6 +1367,8 @@ void wxWindow::ScrollEventHandler(Widget    WXUNUSED(w),
   }
 }
 
+extern Bool wxIsAlt(KeySym key_sym);
+
 void wxWindow::WindowEventHandler(Widget w,
 				  wxWindow **winp,
 				  XEvent *xev,
@@ -1386,6 +1391,12 @@ void wxWindow::WindowEventHandler(Widget w,
 
 	KeySym	   keysym;
 	(void)XLookupString(&(xev->xkey), NULL, 0, &keysym, NULL);
+
+	if (wxIsAlt(keysym))
+	  win->misc_flags |= LAST_WAS_ALT_DOWN_FLAG;
+	else if (win->misc_flags & LAST_WAS_ALT_DOWN_FLAG)
+	  win->misc_flags -= LAST_WAS_ALT_DOWN_FLAG;
+
 	// set wxWindows event structure
 	wxevent.eventHandle	= (char*)xev;
 	wxevent.keyCode		= CharCodeXToWX(keysym);
@@ -1414,9 +1425,36 @@ void wxWindow::WindowEventHandler(Widget w,
 	wxevent.eventHandle = NULL; /* MATTHEW: [5] */
         /* Event was handled by OnFunctionKey and/or OnChar */ }
 	break;
+    case KeyRelease:
+        {
+	  *continue_to_dispatch_return = FALSE;
+	  if (win->misc_flags & LAST_WAS_ALT_DOWN_FLAG) {
+	    win->misc_flags -= LAST_WAS_ALT_DOWN_FLAG;
+
+	    KeySym	   keysym;
+	    (void)XLookupString(&(xev->xkey), NULL, 0, &keysym, NULL);
+	    if (wxIsAlt(keysym)) {
+	      /* Find frame. */
+	      wxWindow *p = win;
+	      while (p) {
+		if (wxSubType(p->__type, wxTYPE_FRAME)) {
+		  wxMenuBar *mb = ((wxFrame *)p)->GetMenuBar();
+		  if (mb)
+		    mb->SelectAMenu();
+		  break;
+		}
+		p = p->GetParent();
+	      }
+	    }
+	  }
+	}
+        break;
     case ButtonPress:
 	Press = TRUE;
-    case ButtonRelease: {
+    case ButtonRelease: 
+      if (win->misc_flags & LAST_WAS_ALT_DOWN_FLAG)
+	win->misc_flags -= LAST_WAS_ALT_DOWN_FLAG;
+      {
         wxMouseEvent *_wxevent = new wxMouseEvent;
 	wxMouseEvent &wxevent = *_wxevent;
 
@@ -1473,6 +1511,8 @@ void wxWindow::WindowEventHandler(Widget w,
     case EnterNotify:
       Enter = TRUE;
     case LeaveNotify: 
+      if (win->misc_flags & LAST_WAS_ALT_DOWN_FLAG)
+	win->misc_flags -= LAST_WAS_ALT_DOWN_FLAG;
       if (w == win->X->frame) {
 	/* If Focus == PointerRoot, manage activation */
 	if (xev->xcrossing.detail != NotifyInferior) {
@@ -1544,6 +1584,8 @@ void wxWindow::WindowEventHandler(Widget w,
     case FocusIn:
         Enter = TRUE;
     case FocusOut:
+      if (win->misc_flags & LAST_WAS_ALT_DOWN_FLAG)
+	win->misc_flags -= LAST_WAS_ALT_DOWN_FLAG;
       if (xev->xfocus.detail != NotifyInferior) {
 	Window current;
 	if (xev->xfocus.detail == NotifyPointer) {

@@ -1,7 +1,7 @@
 #
 # 1.0 (Feb 1995)
 #
-# $Id: xwEnforcer.w,v 1.3 1998/02/27 22:24:01 mflatt Exp $
+# $Id: xwEnforcer.w,v 1.4 1998/12/05 01:08:21 mflatt Exp $
 
 @class XfwfEnforcer (XfwfBoard) @file=xwEnforcer
 
@@ -74,7 +74,7 @@ traversal.
 	event->xkey.send_event	= True;
 	event->xkey.window	= XtWindow($propagateTarget);
 	XSendEvent(XtDisplay($propagateTarget), XtWindow($propagateTarget),
-		   FALSE, KeyPressMask, event);
+		   FALSE, KeyPressMask | KeyReleaseMask, event);
     }
 }
 
@@ -400,7 +400,7 @@ label.
 
 @UTILITIES
 
-@var char propagateTranslation[] = "<KeyPress>: propagateKey()";
+@var char propagateTranslation[] = "<KeyPress> : propagateKey() \n <KeyRelease> : propagateKey()";
 @var XtTranslations propagate_trans = NULL;
 
 @ The |compute_label_size| routine computes width and height of label.

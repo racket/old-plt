@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Menu.cc,v 1.10 1999/03/15 14:32:26 mflatt Exp $
+ * $Id: Menu.cc,v 1.11 1999/03/28 20:38:15 mflatt Exp $
  *
  * Purpose: simple menu class
  *
@@ -110,7 +110,6 @@ Bool wxMenu::PopupMenu(Widget in_w, int root_x, int root_y)
 	 XtNfont,       font->GetInternalFont(),
 	 XtNforeground, fg->GetPixel(wxAPP_COLOURMAP),
 	 XtNbackground, bg->GetPixel(wxAPP_COLOURMAP),
-	 XtNcursor,     None,
 	 NULL);
     XtRealizeWidget(X->shell);
     XtAddCallback(X->menu, XtNonSelect, wxMenu::EventCallback, this);
@@ -159,9 +158,11 @@ void wxMenu::Append(long id, char *label, char *help, Bool checkable)
 	if (last) {
 	    menu_item *prev = (menu_item*)last;
 	    prev->next = item;
+	    item->prev = prev;
 	    last = (wxMenuItem*)item;
 	} else {
 	    top = last = (wxMenuItem*)item;
+	    item->prev = NULL;
 	}
     }
     // initialize menu_item
@@ -220,18 +221,20 @@ Bool wxMenu::DeleteItem(long id, int pos)
   if (id == -1)
     return FALSE;
 
-  prev = NULL;
   for (found = (menu_item*)top; found && pos--; found = found->next) {
     if ((pos < 0) && (found->ID == id))
       break;
-    prev = found;
   }
+
+  prev = found->prev;
 
   if (found) {
     Stop();
 
     if (!prev) {
       top = (wxMenuItem*)found->next;
+      if (found->next)
+	found->next->prev = NULL;
       if (!top) {
 	last = 0;
 	Append(-1, NULL); /* Reinstate topdummy */
@@ -241,6 +244,8 @@ Bool wxMenu::DeleteItem(long id, int pos)
 	*owner = top;
     } else {
       prev->next = found->next;
+      if (prev->next)
+	prev->next->prev = prev;
       if (!found->next)
 	last = (wxMenuItem*)prev;
     }

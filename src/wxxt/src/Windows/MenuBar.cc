@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: MenuBar.cc,v 1.9 1999/01/14 14:07:04 mflatt Exp $
+ * $Id: MenuBar.cc,v 1.10 1999/03/28 20:38:16 mflatt Exp $
  *
  * Purpose: menu bar class
  *
@@ -175,9 +175,11 @@ void wxMenuBar::Append(wxMenu *menu, char *title)
     if (last) {
       menu_item *prev = (menu_item*)last;
       prev->next = item;
+      item->prev = prev;
       last = (wxMenuItem*)item;
     } else {
       top = last = (wxMenuItem*)item;
+      item->prev = NULL;
     }
     if (X->handle) { // redisplay if menu added
       XtVaSetValues(X->handle, XtNmenu, top, XtNrefresh, True, NULL);
@@ -187,18 +189,16 @@ void wxMenuBar::Append(wxMenu *menu, char *title)
 /* MATTHEW: */
 Bool wxMenuBar::Delete(wxMenu *menu, int pos)
 {
-  menu_item *i, *prev;
+  menu_item *i;
   int counter;
 
   if (!menu && (pos < 0))
     return FALSE;
 
-  prev = NULL;
   for (i = (menu_item *)top, counter = 0; 
        i && ((menu && (i->user_data != (void *)menu))
 	     || (!menu && (counter < pos)));
        counter++) {
-    prev = i;
     i = i->next;
   }
 
@@ -206,10 +206,12 @@ Bool wxMenuBar::Delete(wxMenu *menu, int pos)
     if (i == (menu_item *)top)
       top = (wxMenuItem *)i->next;
     if (i == (menu_item *)last)
-      last = (wxMenuItem *)prev;
-    if (prev)
-      prev->next = i->next;
-
+      last = (wxMenuItem *)i->prev;
+    if (i->prev)
+      i->prev->next = i->next;
+    if (i->next)
+      i->next->prev = i->prev;
+    
     if (!top) {
       Append(NULL, NULL); // to have something if associated to frame
       topdummy = top;
@@ -414,4 +416,23 @@ void wxMenuBar::SelectEventCallback(Widget WXUNUSED(w),
 void wxMenuBar::Stop(void)
 {
   XtCallActionProc(X->handle, "select", NULL, NULL, 0);
+}
+
+void wxMenuBar::SelectAMenu()
+{
+  Stop();
+
+  /* Get the menu started: */
+  XEvent xevent;
+  
+  Position x, y, new_root_x, new_root_y;
+  XtVaGetValues(X->handle, XtNx, &x, XtNy, &y, NULL);
+  XtTranslateCoords(X->handle, x, y, &new_root_x, &new_root_y);
+  
+  xevent.xmotion.x_root = new_root_x + 5;
+  xevent.xmotion.x = 5;
+  xevent.xmotion.y_root = new_root_y + 5;
+  xevent.xmotion.y = 5;
+  
+  XtCallActionProc(X->handle, "start", &xevent, NULL, 0);
 }

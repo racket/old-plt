@@ -712,7 +712,7 @@ static Scheme_Process *make_process(Scheme_Process *after, Scheme_Config *config
      (and anything it points to) can be collected one GC cycle earlier. */
   {
     Scheme_Process_Manager_Hop *hop;
-    Scheme_Manager *mref;
+    Scheme_Manager_Reference *mref;
     hop = MALLOC_ONE_WEAK_RT(Scheme_Process_Manager_Hop);
     process->mr_hop = hop;
     hop->type = scheme_process_hop_type;
@@ -2562,12 +2562,12 @@ static Scheme_Object *call_as_nested_process(int argc, Scheme_Object *argv[])
 
   {
     Scheme_Process_Manager_Hop *hop;
-    Scheme_Manager_Ref *mref;
+    Scheme_Manager_Reference *mref;
     hop = MALLOC_ONE_WEAK_RT(Scheme_Process_Manager_Hop);
     np->mr_hop = hop;
     hop->type = scheme_process_hop_type;
     hop->p = np;
-    mref = scheme_add_managed(mgr, (Scheme_Object *)np->mr_hop, NULL, NULL, 0);
+    mref = scheme_add_managed(mgr, (Scheme_Object *)hop, NULL, NULL, 0);
     np->mref = mref;
     scheme_weak_reference((void **)&hop->p);
   }
@@ -2854,7 +2854,7 @@ Scheme_Object *scheme_make_config(Scheme_Config *base)
   if (base->extensions) {
     Scheme_Bucket **bs = base->extensions->buckets;
     int i = base->extensions->size;
-    Scheme-Hash_table *ht;
+    Scheme_Hash_Table *ht;
     
     ht = scheme_hash_table(2, SCHEME_hash_weak_ptr, 0, 0);
 
@@ -2960,7 +2960,7 @@ Scheme_Object *scheme_param_config(char *name, long pos,
       Scheme_Bucket *b;
 
       if (!config->extensions) {
-	Scheme_hash_table *ht;
+	Scheme_Hash_Table *ht;
 	ht = scheme_hash_table(2, SCHEME_hash_weak_ptr, 0, 0);
 	config->extensions = ht;
       }

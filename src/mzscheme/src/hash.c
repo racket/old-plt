@@ -248,7 +248,7 @@ get_bucket (Scheme_Hash_Table *table, const char *key, int add, Scheme_Bucket *b
 
     if (table->weak) {
       char *kb;
-      kb = (char *)MALLOC_ONE_WEAK(void *)
+      kb = (char *)MALLOC_ONE_WEAK(void *);
       bucket->key = kb;
       *(void **)bucket->key = (void *)key;
       /* FXIME: Precise GC */

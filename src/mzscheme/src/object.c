@@ -654,7 +654,7 @@ static void CompileItemList(Scheme_Object *form,
     if (!alias) {
       recs[count].value_name = IVAR_EXT_NAME(classvar);
       {
-	Scheme_Obejct *ce;
+	Scheme_Object *ce;
 	ce = scheme_compile_expr(classvar->u.value, env, recs + count);
 	classvar->u.value = ce;
       }
@@ -1594,7 +1594,7 @@ static Scheme_Object *_DefineClass_Execute(Scheme_Object *form, int already_eval
     int j, k = 0;
     Scheme_Interface *in = (Scheme_Interface *)interfaces[i];
     {
-      short **sa;
+      short *sa;
       sa = MALLOC_N_ATOMIC(short, in->num_names);
       imaps[i] = sa;
     }
@@ -2959,7 +2959,7 @@ static Scheme_Object *GetIvar(Internal_Object *obj, Init_Object_Rec *irec, Schem
 	int lpos = sclass->cmethod_source_map[cindex];
 
 	if (!frame->cmethods) {
-	  Scheme_Object *ca;
+	  Scheme_Object **ca;
 	  ca = MALLOC_N(Scheme_Object*, sclass->contributes_cmethods);
 	  frame->cmethods = ca;
 	}
@@ -3276,8 +3276,8 @@ static void InitObjectFrame(Internal_Object *o, Init_Object_Rec *irec, int level
 	  obj_stack[j] = bx;
 	} else {
 	  Scheme_Object *bx;
-	  bx = scheme_make_envunbox(l);
-	  obj_stack[j] = scheme_make_envunbox(argv[i]);
+	  bx = scheme_make_envunbox(argv[i]);
+	  obj_stack[j] = bx;
 	}
       } else {
 	Scheme_Object *bx;

@@ -1254,7 +1254,7 @@ _scheme_make_input_port(Scheme_Object *subtype,
 #endif
 
   if (must_close) {
-    Scheme_Manager_Ref *mref;    
+    Scheme_Manager_Reference *mref;    
     mref = scheme_add_managed(NULL,
 			      (Scheme_Object *)ip, 
 			      (Scheme_Close_Manager_Client *)scheme_close_input_port, 
@@ -1308,7 +1308,7 @@ scheme_make_output_port(Scheme_Object *subtype,
 #endif
 
   if (must_close) {
-    Scheme_Manager_Ref *mref;
+    Scheme_Manager_Reference *mref;
     mref = scheme_add_managed(NULL,
 			      (Scheme_Object *)op, 
 			      (Scheme_Close_Manager_Client *)scheme_close_output_port, 
@@ -5239,15 +5239,15 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
   } else  {
     argv = MALLOC_N(char *, c + 1);
     {
-      Scheme_Object *ef;
-      ef =  scheme_expand_filename(SCHEME_STR_VAL(args[0]),
-				   SCHEME_STRTAG_VAL(args[0]),
-				   name, NULL);
-      argv[0] =ef;
+      char *ef;
+      ef = scheme_expand_filename(SCHEME_STR_VAL(args[0]),
+				  SCHEME_STRTAG_VAL(args[0]),
+				  name, NULL);
+      argv[0] = ef;
     }
     {
       /* This is for Windows: */
-      Scheme_Object *np;
+      char *np;
       np = scheme_normal_path_case(argv[0], strlen(argv[0]));
       argv[0] = np;
     }

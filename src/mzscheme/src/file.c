@@ -2501,6 +2501,18 @@ static Scheme_Object *rename_file(int argc, Scheme_Object **argv)
     return scheme_void;
 
   errno = GetLastError();
+
+  if (errno == ERROR_CALL_NOT_IMPLEMENTED) {
+    /* Then we have the great misfortune of running in Windows 9x. If
+       exists_ok, then do something no less stupid than the OS
+       itself: */
+    if (exists_ok)
+      MSC_IZE(unlink)(dest);
+    if (MoveFile(src, dest))
+      return scheme_void;
+    errno = GetLastError();
+  }
+
 # define MOVE_ERRNO_FORMAT "%E"
 # else
   if (!exists_ok && (scheme_file_exists(dest) || scheme_directory_exists(dest))) {

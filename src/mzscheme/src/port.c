@@ -4752,11 +4752,12 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
       
       setitimer(ITIMER_PROF, &t, &old);
       
+      START_XFORM_SKIP;
       while (!sigpending(&sigs)) {
 	/* Clear already-queued signal: */
 	if (sigismember(&sigs, SIGPROF)) {
 	  sigemptyset(&sigs);
-	  sigaddset(&sigs, SIGPROF);
+	  sigaddset(&sigs, SIGPROF);	  
 	  MZ_SIGSET(SIGPIPE, SIG_IGN);
 	  sigprocmask(SIG_UNBLOCK, &sigs, NULL);
 	  /* Hopefully, signal ignored here. */
@@ -4765,6 +4766,7 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
 	} else
 	  break;
       }
+      END_XFORM_SKIP;
 #endif
     }
 

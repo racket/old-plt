@@ -705,7 +705,8 @@
 		       (s:append-block-sources! s:file-block 
 						(append
 						 (compiler:get-define-list)
-						 (compiler:get-per-load-define-list))))])
+						 (compiler:get-per-load-define-list)
+						 (compiler:get-per-invoke-define-list))))])
 		(verbose-time bnorm-thunk))
 	      (compiler:report-messages! #t)
 	      

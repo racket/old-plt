@@ -267,7 +267,7 @@
 		       (syntax->list (syntax names)))
 		  (loop (syntax rhs) null #t))]
 		
-		[(module name init-require (#%plain-module-begin (var-provides syntax-provides kernel-reprovide-hint) . body))
+		[(module name init-require (#%plain-module-begin . body))
 		 (let* ([body (map (lambda (x)
 				     (loop x env trans?))
 				   (syntax->list (syntax body)))]
@@ -312,13 +312,19 @@
 		    (mk-back)
 		    (syntax name)
 		    rt-required
-		    rt-body
 		    et-required
-		    et-body
-		    (syntax-object->datum (syntax var-provides))
-		    (syntax-object->datum (syntax syntax-provides))
-		    (syntax-object->datum (syntax kernel-reprovide-hint))))]
-		[(require i)
+		    (make-begin-form
+		     stx
+		     (mk-back)
+		     rt-body)
+		    (make-begin-form
+		     stx
+		     (mk-back)
+		     et-body)
+		    (syntax-property stx 'module-variable-provides)
+		    (syntax-property stx 'module-syntax-provides)
+		    (syntax-property stx 'module-kernel-reprovide-hint)))]
+		[(require i ...)
 		 (make-require/provide-form
 		  stx
 		  (mk-back))]
@@ -655,9 +661,9 @@
       (define (create-define-syntaxes-form z names expr)
 	(make-define-syntaxes-form (zodiac-stx z) (mk-back) names expr))
 
-      (define-struct (module-form struct:parsed) (name rt-requires et-requires 
-						       rt-body et-body 
-						       var-provides syntax-provides 
+      (define-struct (module-form struct:parsed) (name requires for-syntax-requires 
+						       body syntax-body 
+						       provides syntax-provides 
 						       kernel-reprovide-hint))
       (define (create-module-form z name rt-requires et-requires 
 				  rt-body et-body 

@@ -121,7 +121,16 @@
 	     [(varref:module-invoke? attr)
 	      (set! compiler:per-invoke-static-list
 		    (cons (cons var attr) compiler:per-invoke-static-list)) 
-	      (compiler:add-local-per-invoke-define-list! def)]
+	      (let ([def (zodiac:make-module-form
+			  (zodiac:zodiac-stx def)
+			  (make-empty-box)
+			  #f #f #f
+			  def #f
+			  #f #f #f)])
+		(set-annotation! 
+		 def 
+		 (make-module-info attr 'body)) ; FIXME!!!
+		(compiler:add-local-per-invoke-define-list! def))]
 	     [else
 	      (set! compiler:static-list (cons var compiler:static-list))
 	      (compiler:add-local-define-list! def)])

@@ -91,18 +91,21 @@
 					   (make-empty-box)
 					   #f #f #f
 					   def #f
-					   #f #f)])
+					   #f #f #f)])
 				 (set-annotation! 
 				  def 
 				  (make-module-info (varref:current-invoke-module) 'body)) ; FIXME!!!
 				 def)
 			       def)])
 		  
-		      (varref:add-attribute! sv (or (varref:current-invoke-module)
-						    varref:per-load-static))
-		      (compiler:add-per-load-static-list! var)
-		      (set! compiler:once-closures-list (cons def compiler:once-closures-list))
-		      (set! compiler:once-closures-globals-list (cons (code-global-vars code) compiler:once-closures-globals-list)))
+		  (let ([mi (varref:current-invoke-module)])
+		    (varref:add-attribute! sv (or mi varref:per-load-static))
+		    ((if mi
+			 compiler:add-per-invoke-static-list!
+			 compiler:add-per-load-static-list!)
+		     var)
+		    (set! compiler:once-closures-list (cons def compiler:once-closures-list))
+		    (set! compiler:once-closures-globals-list (cons (code-global-vars code) compiler:once-closures-globals-list))))
 		(begin
 		  (set! compiler:lifted-lambda-vars (cons sv compiler:lifted-lambda-vars))
 		  (set! compiler:lifted-lambdas (cons def compiler:lifted-lambdas)))))))

@@ -536,25 +536,33 @@
 	   (lambda (var)
 	     (unless (or (const:per-load-statics-table? var)
 			 (varref:module-invoke? var))
-	       (let ([name (vm->c:convert-symbol (mod-glob-cname var))]
-		     [mod (mod-glob-modname var)]
-		     [var (mod-glob-varname var)]
-		     [et? (mod-glob-exp-time? var)])
-		 (fprintf port "~aG~a = scheme_~a~a_bucket(~a~a~a, SCHEME_CURRENT_ENV(pr));~n"
+	       (let* ([name (vm->c:convert-symbol (mod-glob-cname var))]
+		      [et? (mod-glob-exp-time? var)]
+		      [mod (mod-glob-modname var)]
+		      [var (mod-glob-varname var)]
+		      [modidx (and (not (symbol? mod))
+				   (compiler:get-module-path-constant mod))]
+		      [mod-local (and mod (not (symbol? mod)) (not modidx))]
+		      [mod-far (and mod (or (symbol? mod) modidx))])
+		 (fprintf port "~aG~a = scheme_~a~a_bucket(~a~a~a, ~a);~n"
 			  indent 
 			  name 
 			  (if et? "exptime_" "")
-			  (if mod "module" "global")
-			  (if mod
+			  (if mod-far "module" "global")
+			  (if mod-far
 			      (if (symbol? mod)
 				  (vm->c:make-symbol-const-string (compiler:get-symbol-const! #f mod))
-				  (let ([v (compiler:get-module-path-constant mod)])
-				    (format
-				     "S.~a"
-				     (vm->c:convert-symbol (zodiac:varref-var v)))))
+				  (format
+				   "~a~a"
+				   (cond
+				    [(varref:has-attribute? modidx varref:per-load-static) "PLS->"]
+				    [(varref:has-attribute? modidx varref:per-invoke-static) "PMIS->"]
+				    [else "S."])
+				   (vm->c:convert-symbol (zodiac:varref-var modidx))))
 			      "")
-			  (if mod ", " "")
-			  (vm->c:make-symbol-const-string (compiler:get-symbol-const! #f var))))))
+			  (if mod-far ", " "")
+			  (vm->c:make-symbol-const-string (compiler:get-symbol-const! #f var))
+			  (if mod-local "env" "SCHEME_CURRENT_ENV(pr)")))))
 	   (set->list globals))))
 
       (define binding-boxed? binding-mutable?)

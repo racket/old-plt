@@ -1,3 +1,5 @@
+; -*- Scheme -*-
+
 (reference-library "match.ss")
 (reference-library "macro.ss")
 
@@ -6,7 +8,7 @@
 (invoke-open-unit
 
 (unit (import)
-  (export define-argument-list lambda/nal call/nal)
+  (export -:define-argument-list lambda/nal call/nal)
 
   (define-struct argument-list-entry ())
   (define-struct (flat-argument-list-entry struct:argument-list-entry) ())
@@ -52,7 +54,7 @@
 	  (argument-list-table-entry-var-opts al-entry)
 	  (argument-list-table-entry-kwd-opts al-entry)))))
 
-  (define define-argument-list
+  (define -:define-argument-list
     (letrec
       ((parse-argument
 	 (match-lambda
@@ -215,7 +217,9 @@
 )					; begin-construction-time
 
 (define-macro define-argument-list
-  (begin-construction-time define-argument-list))
+  (lambda args
+    `(begin-construction-time
+       (-:define-argument-list ,@(map (lambda (x) `',x) args)))))
 
 (define-macro lambda/nal
   (begin-construction-time lambda/nal))

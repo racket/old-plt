@@ -507,7 +507,8 @@
 		      (mzlib file))]
 	   [aries : plt:aries^ ((require-library-unit/sig "link-jr.ss" "stepper")
                                 mzlib
-				(drzodiac : zodiac:system^))]
+				(drzodiac : zodiac:system^)
+                                (interface : zodiac:interface^))]
 	   [basis-import : userspace:basis-import^ ((unit/sig userspace:basis-import^
 						      (import)
 						      (define in-mzscheme? #t)))]

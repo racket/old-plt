@@ -46,13 +46,27 @@
               ;; a syntax object representing the text with the color of the given object
               (define (text->syntax-object text)
                 (let ([port (open-input-text-editor text)])
-                  (letrec ([read-all-syntax
-                            (lambda ()
-                              (let ([stx (read-syntax text port)])
-                                (if (eof-object? stx)
-                                    (begin (close-input-port port)
-                                           empty)
-                                    (cons stx (read-all-syntax)))))])
+                  (define (read-all-syntax)
+                    (let* ([language-settings
+                            (preferences:get
+                             (drscheme:language-configuration:get-settings-preferences-symbol))]
+                           [language
+                            (drscheme:language-configuration:language-settings-language
+                             language-settings)]
+                           [settings
+                            (drscheme:language-configuration:language-settings-settings
+                             language-settings)])
+                      (if (drscheme:language-configuration:language-settings? language-settings)
+                          (let ([thunk (send language front-end/interaction
+                                             (drscheme:language:make-text/pos
+                                              text 0 (send text last-position))
+                                             settings
+                                             (drscheme:teachpack:new-teachpack-cache '()))])
+                            (let loop ([stxs empty])
+                              (let ([expr (thunk)])
+                                (cond [(eof-object? expr) stxs]
+                                      [else (loop (cons expr stxs))]))))
+                          (error 'text->syntax-object "Invalid language settings"))))
                     (match (read-all-syntax)
                       [() (raise-read-error (string-constant test-case-empty-error)
                                             source line #f position 1)]
@@ -63,7 +77,8 @@
                                          (syntax-line next)
                                          (syntax-column next)
                                          (syntax-position next)
-                                         (syntax-span next))]))))
+                                         (syntax-span next))])))
+                
               (values
                (if enabled?
                    (with-syntax ([to-test-stx (text->syntax-object to-test)]
@@ -266,7 +281,7 @@
       ;;        is being reset.
       (define (clear-results-program-editor-mixin %)
         (class %
-          (inherit get-admin)
+          (inherit get-admin begin-edit-sequence end-edit-sequence)
           (rename [super-after-insert after-insert]
                   [super-after-delete after-delete])
           (define (get-frame)
@@ -302,9 +317,19 @@
                 (send* (send frame get-definitions-text)
                   (set-modified true)
                   (reset-test-case-boxes)))))
+
+          ;(rename [super-on-insert on-insert])
+          ;(define/override (on-insert start len)
+          ;  (begin-edit-sequence)
+          ;  (super-on-insert start len)
+          ;  (end-edit-sequence))
+
           (define/override (after-insert start len)
             (alert-of-modify)
-            (super-after-insert start len))
+            ;(begin-edit-sequence)
+            (super-after-insert start len)
+            ;(end-edit-sequence)
+            )
           (define/override (after-delete start len)
             (alert-of-modify)
             (super-after-delete start len))

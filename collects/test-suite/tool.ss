@@ -9,6 +9,7 @@
    (lib "unitsig.ss")
    (lib "tool.ss" "drscheme")
    (lib "framework.ss" "framework")
+   (lib "string-constant.ss" "string-constants")
    (lib "snip-lib.ss" "mrlib" "private" "aligned-pasteboard")
    "private/test-case-box.ss"
    "private/find-scheme-menu.ss")
@@ -31,9 +32,12 @@
           
           (rename [super-execute-callback execute-callback])
           (define/override (execute-callback)
+            (send (get-definitions-text) for-each-test-case
+                  (lambda (case) (send case reset)))
             (super-execute-callback)
             (set! needs-reset? true))
           
+          ;; enable all of the test-cases
           (define (enable enable?)
             (send (get-definitions-text) for-each-test-case
                   (lambda (case) (send case enable enable?))))
@@ -46,11 +50,10 @@
           (super-new)
           
           (field
-           ;[test-suite-menu (new menu% (label "Test Suite") (parent (get-menu-bar)))]
            [test-cases-enabled? true]
            [insert-menu-item
             (new menu-item%
-                 (label "Insert Test Case")
+                 (label (string-constant test-case-insert))
                  (parent (get-special-menu))
                  (callback
                   (lambda (menu event)
@@ -99,7 +102,7 @@
           (rename [super-set-modified set-modified])
           (define/override (set-modified b)
             (super-set-modified b)
-            (when needs-reset? (reset-test-case-boxes)))
+            (reset-test-case-boxes))
           
           ;; set all of the test-case-boxes in the definitions text to an unevaluated state
           (define/public (reset-test-case-boxes)

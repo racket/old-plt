@@ -46,11 +46,7 @@ all: $(IMAGELIBDIR) $(IMAGEOBJMAINDIR) $(IMAGEOBJDIR) \
      ../XWidgets/$(WXOBJS)
 	cd ..; $(MAKE) WXDIR='$(WXDIR)'
 	cd ../../utils/image/src/; $(MAKE) WXDIR='$(WXDIR)' -f makefile.unx
-	cd ../../contrib/xpm/lib/; if [ -d unshared ]; then echo; else set -x; mkdir unshared; fi
-	cd ../../contrib/xpm/lib/unshared; if [ -d objects ]; then echo; else ln -s ../objects objects; fi
-	cd $(XPMLIBDIR); if [ -f libXpm.a ]; then mv libXpm.a $(XPMBASEDIR); fi
-	cd ../../contrib/xpm/lib/; xmkmf; $(MAKE)  WXDIR='$(WXDIR)' libXpm.a CC='$(XPMCC)'
-	mv $(XPMBASEDIR)/libXpm.a $(XPMLIBDIR)
+	cd ../../contrib/xpm/lib/; $(MAKE) WXDIR='$(WXDIR)'
 
 clean:
 	cd ..; $(MAKE) WXDIR='$(WXDIR)' clean

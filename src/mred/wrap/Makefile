@@ -1,5 +1,5 @@
 
-MZSCHEME="../../mzscheme/${MZBUILDDIR}mzscheme -e '(use-compiled-file-kinds 'none)'"
+MZSCHEME=../../mzscheme/${MZBUILDDIR}mzscheme -e '(use-compiled-file-kinds 'none)'
 
 all: ../wxs/wrap.inc ../wxs/cwrap.inc
 

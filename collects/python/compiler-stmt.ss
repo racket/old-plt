@@ -1,9 +1,12 @@
 (module compiler-stmt mzscheme
   (require (lib "class.ss")
+           (lib "list.ss")
+           (lib "etc.ss")
 	   "compiler.ss"
 	   "compiler-expr.ss"
            "primitives.ss"
-           "runtime-context.ss")
+           "runtime-context.ss"
+           "empty-context.ss")
 
   (provide (all-defined-except bindings-mixin))
 
@@ -77,10 +80,9 @@
       ;;daniel
       (inherit ->orig-so)
       (define/override (to-scheme)
-        (->orig-so `(define-values ,(map (lambda (t)
-                                           (send t to-scheme))
-                                         targets)
-                      ,(send expression to-scheme))))
+        (->orig-so (if (= 1 (length targets)) ; simple assignment
+                       `(define ,(send (car targets) to-scheme)
+                          ,(send expression to-scheme)))))
       
       (super-instantiate ())))
   
@@ -276,16 +278,30 @@
       (define/override (collect-globals)
         (apply append (sub-stmt-map (lambda (s) (send s collect-globals)))))
       
+      
+      ;;daniel
+      ; defs-and-exprs:  -> (listof (union sexp (list name value)))
+      (define/public (defs-and-exprs)
+            (sub-stmt-map (lambda (s)
+                            (let* ([so (send s to-scheme)]
+                                   [so-l (syntax->list so)])
+                              (if (and so-l
+                                       (free-identifier=? (first so-l)
+                                                          (datum->syntax-object compiler-context
+                                                                                'define)))
+                                  (list (second so-l) (third so-l))
+                                  so)))))
+      
       ;;daniel
       (inherit ->orig-so)
       (define/override (to-scheme)
-        (->orig-so (let ([py-return (gensym 'return)])
-                     `(call-with-current-continuation
-                       (lambda (,py-return)
-                         ,@(sub-stmt-map (lambda (s)
-                                           (if (is-a? s return%)
-                                               (send s to-scheme py-return)
-                                               (send s to-scheme)))))))))
+            (->orig-so (let ([py-return (gensym 'return)])
+                         `(call-with-current-continuation
+                           (lambda (,py-return)
+                             ,@(sub-stmt-map (lambda (s)
+                                               (if (is-a? s return%)
+                                                   (send s to-scheme py-return)
+                                                   (send s to-scheme)))))))))
          
       (super-instantiate ())))
   
@@ -503,13 +519,10 @@
        ;;daniel
        (inherit ->orig-so)
        (define/override (to-scheme)
-         (->orig-so (let ([proc (gensym 'procedure)]
-                          [proc-name (send name to-scheme)])
+         (->orig-so (let ([proc-name (send name to-scheme)])
                       `(define ,proc-name
-                         (let ([,proc (,(py-so 'py-lambda) ,(send parms to-scheme)
-                                            ,(send body to-scheme))])
-                           (,(py-so 'python-set-name!) ,proc ',proc-name)
-                           ,proc)))))
+                         (,(py-so 'py-lambda) ',proc-name ,(send parms to-scheme)
+                                            ,(send body to-scheme))))))
        
        (super-instantiate ()))))
     
@@ -529,6 +542,44 @@
        
        (define/override (check-break/cont enclosing-loop)
          (send body check-break/cont #f))
+       
+       ;;daniel
+       (inherit ->orig-so ->lex-so)
+       (define/override (to-scheme)
+         (let ([class-name (send name to-scheme)]
+               [inherit-list (map (lambda (i) (send i to-scheme)) inherit-expr)])
+         (->orig-so `(define ,class-name
+                       (,(py-so 'python-method-call) ,(py-so 'py-type%) '__call__
+                        (,(py-so 'symbol->py-string%) #cs',class-name)
+                        (,(py-so 'list->py-tuple%) (list ,@(if (empty? inherit-list)
+                                                               `(,(->lex-so 'object empty-context))
+                                                               inherit-list)))
+                        ,(let* ([exprs null]
+                                [keys null]
+                                [values null]
+                                [defs (map (lambda (def)
+                                             (begin0
+                                               `(lambda (this-class)
+                                                  (list #cs',(first def)
+                                                      ,(if (null? keys)
+                                                           (second def)
+                                                           `(let-values ([,keys (values ,@(map (lambda (key)
+                                                                                        `(,(py-so 'python-get-member)
+                                                                                          this-class
+                                                                                          #cs',key
+                                                                                          #f))
+                                                                                      keys))])
+                                                              ,(second def)))))
+                                               (set! keys (cons (first def) keys))
+                                               (set! values (cons (second def) values))))
+                                           (filter (lambda (def-or-expr)
+                                                     (or (list? def-or-expr)
+                                                         (begin (set! exprs (cons def-or-expr exprs))
+                                                                #f)))
+                                                   (send body defs-and-exprs)))])
+                           `(begin ,@(reverse exprs)
+                                   (list ,@defs))))))))
+                           
        
        (super-instantiate ()))))
 )

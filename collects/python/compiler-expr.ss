@@ -79,7 +79,7 @@
       (define/override (to-scheme)
         (->orig-so (map (lambda (p)
                           (send p to-scheme))
-                        pos)))
+                        (reverse pos))))
       
       (super-instantiate ())))
   
@@ -215,12 +215,13 @@
                     ,scheme-vals)]
              [(is-a? targ ttuple%)
               (let ([tuple-name (gensym)])
-                `(map (lambda (,tuple-name) 
-                        ;; the cdr eats the "list" part of "`(list x y)"
-                        (apply (lambda ,(cdr (syntax-e scheme-targ))
-                                        ,scheme-expr)
-                               (tuple-list ,tuple-name)))
-                      ,scheme-vals))]
+                `(,(py-so 'list->py-list%)
+                  (map (lambda (,tuple-name) 
+                         ;; the cdr eats the "list" part of "`(list x y)"
+                         (apply (lambda ,(cdr (syntax-e scheme-targ))
+                                  ,scheme-expr)
+                                (,(py-so 'py-tuple%->list) ,tuple-name)))
+                       (,(py-so 'py-list%->list) ,scheme-vals))))]
              [else (raise "not implemented yet")]))))
       
       (super-instantiate ())))
@@ -309,7 +310,7 @@
       ;;daniel
       (inherit ->orig-so)
       (define/override (to-scheme)
-        (->orig-so `(repr ,(send expression to-scheme))))
+        (->orig-so `(,(py-so 'py-call) ,(py-so 'py-repr) (list ,(send expression to-scheme)))))
       
       (super-instantiate ())))
   
@@ -454,8 +455,8 @@
                                                      (case op
                                                        [(+) ''__add__]
                                                        [(-) ''__sub__]
-                                                       [else '(raise (format "binary% parser error: op ~a" 
-                                                                             op))])
+                                                       [else `(raise (format "binary% op unsupported: ~a" 
+                                                                             ',op))])
                                                      (send rhs to-scheme))))
       
       (super-instantiate ())))
@@ -477,6 +478,7 @@
       
       (super-instantiate ())))
   
+  
   ;; 5.9
   (define comparison%
     (class expression%
@@ -490,6 +492,13 @@
         (for-each (lambda (x)
                     (unless (symbol? x) (send x set-bindings! enclosing-scope)))
                   comps))
+
+  ;; scheme-op->python-op:  symbol -> symbol
+  (define (scheme-op->python-op oper)
+    (case oper
+      [(>) 'py>]
+      [(<) 'py<]
+      [else oper]))
       
       ;;daniel
       (inherit ->orig-so)
@@ -498,7 +507,7 @@
          (letrec ([f (lambda (cmps)
                        (let* ([first-lhs (send (first cmps) to-scheme)]
                               [first-rhs (send (third cmps) to-scheme)]
-                              [first-comp `(,(second cmps) ,first-lhs ,first-rhs)]
+                              [first-comp `(,(py-so (scheme-op->python-op (second cmps))) ,first-lhs ,first-rhs)]
                               [what-else (rest (rest cmps))])
                          (if (> (length what-else) 2)
                              `(and ,first-comp ,(f what-else))

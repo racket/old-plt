@@ -4183,7 +4183,7 @@ fd_write_string(Scheme_Output_Port *port,
 
   if (!fop->bufcount && flush) {
     /* Nothing buffered. Write directly. */
-    return flush_fd(port, str, d, d + len, rarely_block);
+    return flush_fd(port, str, d + len, d, rarely_block);
   }
 
   if (fop->flushing) {
@@ -4211,7 +4211,7 @@ fd_write_string(Scheme_Output_Port *port,
       memcpy(fop->buffer, str + d, len);
       fop->bufcount = len;
     } else
-      return flush_fd(port, str, len, d, rarely_block);
+      return flush_fd(port, str, len, len + d, rarely_block);
   }
 
   /* If we got this far, !rarely_block. */

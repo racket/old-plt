@@ -62,7 +62,9 @@
 	 (lambda (file-menu)
 	   (send* file-menu 
 	     (append-item "Save as Text..." (lambda () (save-as wx:const-media-ff-text)))
-	     (append-separator)))]
+	     (append-separator)
+             (append-item "Show Console History..." mred:show-interactions-history)
+             (append-separator)))]
 	[file-menu:new
 	 (lambda ()
 	   (send (drscheme:unit:make-unit #f) create-frame))]

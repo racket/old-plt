@@ -26,7 +26,7 @@ typedef struct MrEdContext {
   Scheme_Type type;
   MZ_HASH_KEY_EX
 
-  Scheme_Process *handler_running;
+  Scheme_Thread *handler_running;
   int suspended;
 
   MrEdFinalizedContext *finalized;
@@ -60,8 +60,8 @@ typedef struct MrEdContext {
   struct LeaveEvent *queued_leaves;
 #endif
 
-  struct Context_Manager_Hop *mr_hop;
-  Scheme_Manager_Reference *mref;
+  struct Context_Custodian_Hop *mr_hop;
+  Scheme_Custodian_Reference *mref;
 } MrEdContext;
 
 class MrEdFinalizedContext {

@@ -6822,7 +6822,7 @@ static Scheme_Object *os_wxImageSnipLoadFile(int n,  Scheme_Object *p[])
   
   WITH_VAR_STACK(((wxImageSnip *)((Scheme_Class_Object *)p[0])->primdata)->LoadFile(x0, x1, x2, x3));
 
-  if (x0) WITH_VAR_STACK(scheme_process_block(0.0));
+  if (x0) WITH_VAR_STACK(scheme_thread_block(0.0));
   
   return scheme_void;
 }
@@ -7628,7 +7628,7 @@ static Scheme_Object *os_wxImageSnip_ConstructScheme(int n,  Scheme_Object *p[])
     WITH_VAR_STACK(realobj->gcInit_wxImageSnip(x0, x1, x2, x3));
 #endif
     realobj->__gc_external = (void *)p[0];
-    if (x0) WITH_VAR_STACK(scheme_process_block(0.0));
+    if (x0) WITH_VAR_STACK(scheme_thread_block(0.0));
     
   }
 

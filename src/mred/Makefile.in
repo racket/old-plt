@@ -35,7 +35,7 @@ LDFLAGS = $(XLIB)
 # system name for installation
 INSTALLSYS = `$(srcdir)/../../bin/archsys`
 
-MREDLDFLAGS = -L../wxxt/utils/image/src  -L../wxxt/contrib/xpm/lib $(LDFLAGS) -L../mzscheme -Lwxs -Lwxme -L../wxxt/src -L../wxcommon/jpeg
+MREDLDFLAGS = -L../wxxt/utils/image/src  -L../wxxt/contrib/xpm/lib -L../mzscheme -Lwxs -Lwxme -L../wxxt/src -L../wxcommon/jpeg $(LDFLAGS)
 MREDLDLIBS = -lmzscheme -lgc -lwxscheme -lwxme -lwx_xt -lXpm -limage_xt -ljpeg $(LDLIBS) $(LDNONSTATICLIBS)
 
 MREDOBJECTS = mred.o mredx.o wxGC.o wxJPEG.o

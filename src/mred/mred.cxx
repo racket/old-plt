@@ -197,10 +197,10 @@ static Scheme_Type mred_eventspace_hop_type;
 static Scheme_Object *def_dispatch;
 int mred_ps_setup_param;
 
-typedef struct Context_Manager_Hop {
+typedef struct Context_Custodian_Hop {
   Scheme_Type type;
   MrEdContext *context;
-} Context_Manager_Hop;
+} Context_Custodian_Hop;
 
 #ifdef MZ_PRECISE_GC
 # define WEAKIFY(x) ((MrEdContext *)GC_malloc_weak_box(x, NULL, 0))
@@ -227,7 +227,7 @@ static int mark_eventspace_val(void *p)
 {
   MrEdContext *c = (MrEdContext *)p;
 
-  gcMARK_TYPED(Scheme_Process *, c->handler_running);
+  gcMARK_TYPED(Scheme_Thread *, c->handler_running);
   gcMARK_TYPED(MrEdFinalizedContext *, c->finalized);
 
   gcMARK_TYPED(wxChildList *, c->topLevelWindowList);
@@ -248,8 +248,8 @@ static int mark_eventspace_val(void *p)
   gcMARK_TYPED(struct LeaveEvent *, c->queued_leaves);
 #endif
 
-  gcMARK_TYPED(Context_Manager_Hop *, c->mr_hop);
-  gcMARK_TYPED(Scheme_Manager_Reference *, c->mref);
+  gcMARK_TYPED(Context_Custodian_Hop *, c->mr_hop);
+  gcMARK_TYPED(Scheme_Custodian_Reference *, c->mref);
 
   return gcBYTES_TO_WORDS(sizeof(MrEdContext));
 }
@@ -258,7 +258,7 @@ static int fixup_eventspace_val(void *p)
 {
   MrEdContext *c = (MrEdContext *)p;
 
-  gcFIXUP_TYPED(Scheme_Process *, c->handler_running);
+  gcFIXUP_TYPED(Scheme_Thread *, c->handler_running);
   gcFIXUP_TYPED(MrEdFinalizedContext *, c->finalized);
 
   gcFIXUP_TYPED(wxChildList *, c->topLevelWindowList);
@@ -279,33 +279,33 @@ static int fixup_eventspace_val(void *p)
   gcFIXUP_TYPED(struct LeaveEvent *, c->queued_leaves);
 #endif
 
-  gcFIXUP_TYPED(Context_Manager_Hop *, c->mr_hop);
-  gcFIXUP_TYPED(Scheme_Manager_Reference *, c->mref);
+  gcFIXUP_TYPED(Context_Custodian_Hop *, c->mr_hop);
+  gcFIXUP_TYPED(Scheme_Custodian_Reference *, c->mref);
 
   return gcBYTES_TO_WORDS(sizeof(MrEdContext));
 }
 
 static int size_eventspace_hop_val(void *)
 {
-  return gcBYTES_TO_WORDS(sizeof(Context_Manager_Hop));
+  return gcBYTES_TO_WORDS(sizeof(Context_Custodian_Hop));
 }
 
 static int mark_eventspace_hop_val(void *p)
 {
-  Context_Manager_Hop *c = (Context_Manager_Hop *)p;
+  Context_Custodian_Hop *c = (Context_Custodian_Hop *)p;
 
   gcMARK_TYPED(MrEdContext *, c->context);
 
-  return gcBYTES_TO_WORDS(sizeof(Context_Manager_Hop));
+  return gcBYTES_TO_WORDS(sizeof(Context_Custodian_Hop));
 }
 
 static int fixup_eventspace_hop_val(void *p)
 {
-  Context_Manager_Hop *c = (Context_Manager_Hop *)p;
+  Context_Custodian_Hop *c = (Context_Custodian_Hop *)p;
 
   gcFIXUP_TYPED(MrEdContext *, c->context);
 
-  return gcBYTES_TO_WORDS(sizeof(Context_Manager_Hop));
+  return gcBYTES_TO_WORDS(sizeof(Context_Custodian_Hop));
 }
 
 END_XFORM_SKIP;
@@ -505,7 +505,7 @@ static void destroy_wxObject(wxWindow *w, void *)
 static void kill_eventspace(Scheme_Object *ec, void *)
 {
   MrEdContext *c;
-  c = WEAKIFIED(((Context_Manager_Hop *)ec)->context);
+  c = WEAKIFIED(((Context_Custodian_Hop *)ec)->context);
 
   if (!c)
     return; /* must not have had any frames or timers */
@@ -573,7 +573,7 @@ static void CollectingContext(void *cfx, void *)
 static MrEdContext *MakeContext(MrEdContext *c, Scheme_Config *config)
 {
   MrEdContextFrames *frames;
-  Context_Manager_Hop *mr_hop;
+  Context_Custodian_Hop *mr_hop;
 
   if (!c) {
     wxChildList *tlwl;
@@ -632,9 +632,9 @@ static MrEdContext *MakeContext(MrEdContext *c, Scheme_Config *config)
   WXGC_IGNORE(c, c->finalized);
 
 #ifdef MZ_PRECISE_GC
-  mr_hop = (Context_Manager_Hop *)GC_malloc_one_tagged(sizeof(Context_Manager_Hop));
+  mr_hop = (Context_Custodian_Hop *)GC_malloc_one_tagged(sizeof(Context_Custodian_Hop));
 #else
-  mr_hop = (Context_Manager_Hop *)scheme_malloc_atomic(sizeof(Context_Manager_Hop));
+  mr_hop = (Context_Custodian_Hop *)scheme_malloc_atomic(sizeof(Context_Custodian_Hop));
 #endif
   mr_hop->type = mred_eventspace_hop_type;
   {
@@ -648,7 +648,7 @@ static MrEdContext *MakeContext(MrEdContext *c, Scheme_Config *config)
 #endif
   
   {
-    Scheme_Manager_Reference *mr;
+    Scheme_Custodian_Reference *mr;
     mr = scheme_add_managed(NULL, (Scheme_Object *)mr_hop, kill_eventspace, NULL, 0);
     c->mref = mr;
   }
@@ -815,7 +815,7 @@ void mred_wait_eventspace(void)
 {
   MrEdContext *c;
   c = MrEdGetContext();
-  if (c && (c->handler_running == scheme_current_process)) {
+  if (c && (c->handler_running == scheme_current_thread)) {
     wxDispatchEventsUntil(check_eventspace_inactive, c);
   }
 }
@@ -993,15 +993,15 @@ void MrEdDoNextEvent(MrEdContext *c, int (*alt)(void *), void *altdata)
     /* Temp restore config: */
     scheme_config = save_config;
 
-    scheme_current_process->block_descriptor = -1;
-    scheme_current_process->blocker = (Scheme_Object *)c;
-    scheme_current_process->block_check = check_for_nested_event;
-    scheme_current_process->block_needs_wakeup = NULL;
+    scheme_current_thread->block_descriptor = -1;
+    scheme_current_thread->blocker = (Scheme_Object *)c;
+    scheme_current_thread->block_check = check_for_nested_event;
+    scheme_current_thread->block_needs_wakeup = NULL;
     do {
-      scheme_process_block(0);
+      scheme_thread_block(0);
     } while (!check_for_nested_event((Scheme_Object *)c));
-    scheme_current_process->block_descriptor = 0;
-    scheme_current_process->ran_some = 1;
+    scheme_current_thread->block_descriptor = 0;
+    scheme_current_thread->ran_some = 1;
 
     /* un-'Temp restore config': */
     scheme_config = c->main_config;
@@ -1026,7 +1026,7 @@ void wxDoNextEvent()
   c = MrEdGetContext();
 
   if (!c->ready_to_go)
-    if (c->handler_running == scheme_current_process)
+    if (c->handler_running == scheme_current_thread)
       MrEdDoNextEvent(c, NULL, NULL);
 }
 
@@ -1044,7 +1044,7 @@ int wxEventReady()
   c = MrEdGetContext();
 
   return (!c->ready_to_go
-	  && (c->handler_running == scheme_current_process)
+	  && (c->handler_running == scheme_current_thread)
 	  && MrEdEventReady(c));
 }
 
@@ -1066,7 +1066,7 @@ static void WaitForAnEvent_OrDie(MrEdContext *c)
       c->ready = 0;
       c->waiting_for_nested = 0;
       
-      scheme_process_block(0);
+      scheme_thread_block(0);
       
       /* Go back to sleep: */
       c->ready = 1;
@@ -1082,7 +1082,7 @@ static void WaitForAnEvent_OrDie(MrEdContext *c)
   /* Return to loop and look for more events... */
 }
 
-static void on_handler_killed(Scheme_Process *p)
+static void on_handler_killed(Scheme_Thread *p)
 {
   MrEdContext *c = (MrEdContext *)p->kill_data;
 
@@ -1103,7 +1103,7 @@ static void on_handler_killed(Scheme_Process *p)
 static Scheme_Object *handle_events(void *cx, int, Scheme_Object **)
 {
   MrEdContext *c = (MrEdContext *)cx;
-  Scheme_Process *this_thread;
+  Scheme_Thread *this_thread;
 
 #if SGC_STD_DEBUGGING
   fprintf(stderr, "new thread\n");
@@ -1111,7 +1111,7 @@ static Scheme_Object *handle_events(void *cx, int, Scheme_Object **)
 
   scheme_config = c->main_config;
 
-  this_thread = scheme_current_process;
+  this_thread = scheme_current_thread;
   c->handler_running = this_thread;
   this_thread->on_kill = on_handler_killed;
   this_thread->kill_data = c;
@@ -1169,9 +1169,9 @@ static void event_found(MrEdContext *c)
   } else {
     Scheme_Object *cp;
     cp = scheme_make_closed_prim(handle_events, c);
-    scheme_thread_w_manager(cp, c->main_config,
-			    (Scheme_Manager *)scheme_get_param(c->main_config, 
-							       MZCONFIG_MANAGER));
+    scheme_thread_w_custodian(cp, c->main_config,
+			    (Scheme_Custodian *)scheme_get_param(c->main_config, 
+							       MZCONFIG_CUSTODIAN));
   }
 }
 
@@ -1184,7 +1184,7 @@ static int try_q_callback(Scheme_Object *do_it, int hi)
       return 1;
 
     if (SCHEME_FALSEP(do_it))
-      scheme_current_process->ran_some = 1;
+      scheme_current_thread->ran_some = 1;
 
     if (c == mred_main_context)
       check_q_callbacks(hi, MrEdSameContext, c, 0);
@@ -1216,7 +1216,7 @@ static int try_dispatch(Scheme_Object *do_it)
     if (!do_it)
       return 1;
     if (SCHEME_FALSEP(do_it))
-      scheme_current_process->ran_some = 1;
+      scheme_current_thread->ran_some = 1;
 
     c = (MrEdContext *)timer->context;
 
@@ -1246,7 +1246,7 @@ static int try_dispatch(Scheme_Object *do_it)
       return 1;
 
     if (SCHEME_FALSEP(do_it))
-      scheme_current_process->ran_some = 1;
+      scheme_current_thread->ran_some = 1;
     
     if (c) {
       memcpy(&c->event, &e, sizeof(MrEdEvent));
@@ -1284,7 +1284,7 @@ static int check_initialized(Scheme_Object *)
 # define KEEP_GOING wxTheApp->keep_going
 
 #if WINDOW_STDIO
-static Scheme_Manager *main_manager;
+static Scheme_Custodian *main_custodian;
 #endif
 
 void wxDoEvents()
@@ -1293,13 +1293,13 @@ void wxDoEvents()
   if (!TheMrEdApp->initialized) {
     MrEdContext *c;
 #if WINDOW_STDIO
-    Scheme_Manager *m, *oldm;
+    Scheme_Custodian *m, *oldm;
 
-    oldm = (Scheme_Manager *)scheme_get_param(scheme_config, MZCONFIG_MANAGER);
-    m = scheme_make_manager(oldm);    
-    scheme_set_param(scheme_config, MZCONFIG_MANAGER, (Scheme_Object *)m);
-    wxREGGLOB(main_manager);
-    main_manager = m;
+    oldm = (Scheme_Custodian *)scheme_get_param(scheme_config, MZCONFIG_CUSTODIAN);
+    m = scheme_make_custodian(oldm);    
+    scheme_set_param(scheme_config, MZCONFIG_CUSTODIAN, (Scheme_Object *)m);
+    wxREGGLOB(main_custodian);
+    main_custodian = m;
 #endif
 
     c = (MrEdContext *)MrEdMakeEventspace(NULL);
@@ -1311,30 +1311,30 @@ void wxDoEvents()
     }
 
 #if WINDOW_STDIO
-    scheme_set_param(scheme_config, MZCONFIG_MANAGER, (Scheme_Object *)oldm);
+    scheme_set_param(scheme_config, MZCONFIG_CUSTODIAN, (Scheme_Object *)oldm);
 #endif
 
     /* Block until initialized: */
-    scheme_current_process->block_descriptor = -1;
-    scheme_current_process->blocker = NULL;
-    scheme_current_process->block_check = check_initialized;
-    scheme_current_process->block_needs_wakeup = NULL;
+    scheme_current_thread->block_descriptor = -1;
+    scheme_current_thread->blocker = NULL;
+    scheme_current_thread->block_check = check_initialized;
+    scheme_current_thread->block_needs_wakeup = NULL;
     do {
-      scheme_process_block(0);
+      scheme_thread_block(0);
     } while (!TheMrEdApp->initialized);
-    scheme_current_process->block_descriptor = 0;
+    scheme_current_thread->block_descriptor = 0;
   }
 
   if (!try_dispatch(scheme_true)) {
     do {
-      scheme_current_process->block_descriptor = -1;
-      scheme_current_process->blocker = NULL;
-      scheme_current_process->block_check = try_dispatch;
-      scheme_current_process->block_needs_wakeup = wakeup_on_dispatch;
+      scheme_current_thread->block_descriptor = -1;
+      scheme_current_thread->blocker = NULL;
+      scheme_current_thread->block_check = try_dispatch;
+      scheme_current_thread->block_needs_wakeup = wakeup_on_dispatch;
 
-      scheme_process_block(0);
+      scheme_thread_block(0);
 
-      scheme_current_process->block_descriptor = 0;
+      scheme_current_thread->block_descriptor = 0;
       /* Sets ran_some if it succeeds: */
       if (try_dispatch(scheme_false))
 	break;
@@ -1350,22 +1350,22 @@ void wxDispatchEventsUntil(int (*f)(void *), void *data)
   c = MrEdGetContext();
 
   if (c->ready_to_go
-      || (c->handler_running != scheme_current_process)) {
+      || (c->handler_running != scheme_current_thread)) {
     /* This is not the handler thread or an event still hasn't been
        dispatched. Wait. */
     do {
-      scheme_current_process->block_descriptor = -1;
-      scheme_current_process->blocker = (Scheme_Object *)data;
-      scheme_current_process->block_check = (a_Block_Check_Function)f;
-      scheme_current_process->block_needs_wakeup = NULL;
+      scheme_current_thread->block_descriptor = -1;
+      scheme_current_thread->blocker = (Scheme_Object *)data;
+      scheme_current_thread->block_check = (a_Block_Check_Function)f;
+      scheme_current_thread->block_needs_wakeup = NULL;
       do {
-	scheme_process_block(0);
+	scheme_thread_block(0);
       } while (!f(data));
-      scheme_current_process->block_descriptor = 0;
-      scheme_current_process->ran_some = 1;
+      scheme_current_thread->block_descriptor = 0;
+      scheme_current_thread->ran_some = 1;
     } while (!f(data));
   } else {
-    /* This is the main process. Handle events */
+    /* This is the main thread. Handle events */
     do {
       MrEdDoNextEvent(c, f, data);
     } while (!f(data));
@@ -1976,7 +1976,7 @@ static void add_console_reading()
     console_reading = scheme_null;
   }
 
-  console_reading = scheme_make_pair((Scheme_Object *)scheme_current_process,
+  console_reading = scheme_make_pair((Scheme_Object *)scheme_current_thread,
 				     console_reading);
 }
 
@@ -1989,7 +1989,7 @@ static void remove_console_reading()
 
   p = console_reading;
   while (SCHEME_PAIRP(p)) {
-    if (SAME_OBJ(SCHEME_CAR(p), (Scheme_Object *)scheme_current_process)) {
+    if (SAME_OBJ(SCHEME_CAR(p), (Scheme_Object *)scheme_current_thread)) {
       if (prev)
 	SCHEME_CDR(prev) = SCHEME_CDR(p);
       else
@@ -2009,7 +2009,7 @@ static void break_console_reading_threads()
     return;
 
   for (p = console_reading; SCHEME_PAIRP(p); p = SCHEME_CDR(p)) {
-    scheme_break_thread((Scheme_Process *)SCHEME_CAR(p));
+    scheme_break_thread((Scheme_Thread *)SCHEME_CAR(p));
   }
 }
 
@@ -2196,8 +2196,8 @@ Scheme_Object *OBJDump(int, Scheme_Object *[])
     c++;
   PRINT_IT("Timers: %d\n", c);
 
-  Scheme_Process *p;
-  for (c = 0, p = scheme_first_process; p; p = p->next)
+  Scheme_Thread *p;
+  for (c = 0, p = scheme_first_thread; p; p = p->next)
     c++;
 
   PRINT_IT("Threads: %d\n", c);
@@ -2649,7 +2649,7 @@ static Scheme_Env *setup_basic_env()
 
   mred_only_context = NULL;
 
-  mred_main_context->handler_running = scheme_current_process;
+  mred_main_context->handler_running = scheme_current_thread;
 
   mzsleep = scheme_sleep;
   scheme_sleep = MrEdSleep;
@@ -2799,7 +2799,7 @@ static void MrEdExit(int v)
     stdio_kills_prog = 1;
     if (ioFrame)
       ioFrame->CloseIsQuit();
-    scheme_close_managed(main_manager);
+    scheme_close_managed(main_custodian);
     return;
   }
 
@@ -2810,7 +2810,7 @@ static void MrEdExit(int v)
 }
 #endif
 
-static void on_main_killed(Scheme_Process *p)
+static void on_main_killed(Scheme_Thread *p)
 {
   on_handler_killed(p);
   
@@ -2830,14 +2830,14 @@ void MrEdApp::RealInit(void)
 
   wxMediaIOCheckLSB(/* scheme_console_printf */);
 
-  scheme_current_process->on_kill = on_main_killed;
+  scheme_current_thread->on_kill = on_main_killed;
 #if WINDOW_STDIO
   scheme_exit = MrEdExit;
 #endif
 
   exit_val = finish_cmd_line_run(xfa, do_graph_repl);
 
-  scheme_kill_thread(scheme_current_process);
+  scheme_kill_thread(scheme_current_thread);
 }
 
 #ifdef wx_mac

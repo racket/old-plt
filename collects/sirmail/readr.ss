@@ -1609,7 +1609,7 @@
       
       (define vsz #f)
       (define rss #f)
-      (thread
+      '(thread
        (lambda ()
          (define (get-numbers)
            (with-handlers ([not-break-exn? (lambda (x) #f)])

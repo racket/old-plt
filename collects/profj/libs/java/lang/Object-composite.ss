@@ -357,31 +357,34 @@
       ;Object -> boolean
       (define/public (equalsIgnoreCase-java.lang.String str)
         (string-ci=? text (send str get-mzscheme-string)))
+
+      ;find-diff-chars: int int string-> (values int int)
+      (define/private (find-diff-chars i stop-length compare-string)
+        (if (>= i stop-length)
+            (values #f #f)
+            (if (not (equal? (string-ref text i) (string-ref compare-string i)))
+                (values (char->integer (string-ref text i)) (char->integer (string-ref compare-string i)))
+                (find-diff-chars (add1 i) stop-length compare-string))))
+      
+      ;min: int int -> int
+      (define/private (min x y)
+        (cond
+          ((= x y) x)
+          ((< x y) x)
+          (else y)))
       
       ;String -> int
       (define/public (compareTo-java.lang.String str)
-        (letrec ((string (send str get-mzscheme-string))
-                 (find-diff-chars
-                  (lambda (i)
-                    (if (>= i (length))
-                        (error 'comparetostring "Opps, internal error")
-                        (if (not (equal? (string-ref text i) (string-ref string i)))
-                            (values (char->integer (string-ref text i)) (char->integer (string-ref string i)))
-                            (find-diff-chars (add1 i))))))
-                 (text-l (string-length text))
-                 (str-l (string-length string)))
+        (let* ((string (send str get-mzscheme-string))
+               (text-l (string-length text))
+               (str-l (string-length string)))
           (cond
             ((equals-java.lang.Object str) 0)
-            ((string<? text string) 
-             (if (= text-l str-l)
-                 (let-values (((int-text int-str) (find-diff-chars 0)))
-                   (- int-text int-str))
-                 (- text-l str-l)))                               
-            ((string>? text string) 
-             (if (= text-l str-l)
-                 (let-values (((int-text int-str) (find-diff-chars 0)))
-                   (- int-text int-str))
-                 (- text-l str-l))))))
+            (else
+             (let-values (((int-text int-str) (find-diff-chars 0 (min text-l str-l) string)))
+               (if int-text
+                   (- int-text int-str)
+                   (- text-l str-l)))))))
   
       ;Object -> int: Throws ClassCastException
       (define/public (compareTo-java.lang.Object obj)

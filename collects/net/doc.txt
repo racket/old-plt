@@ -225,9 +225,10 @@ EXAMPLE --------------------------------------------------------------
 
 UNITS ----------------------------------------------------------------
 
-The _url-sig.ss_ module exports the _net:url^_ signature which contains
-the names documented above. the _url-unit.ss_ module exports _url@_,
-a unit that imports nothing and exports the names in net:url^.
+The _url-sig.ss_ module exports the _net:url^_ signature which
+contains the names documented above. the _url-unit.ss_ module exports
+_url@_, a unit that imports net:tcp^ (see "tcp-sig.ss", below) and
+exports the names in net:url^.
  
 ==========================================================================
 _URL viewing_
@@ -1670,3 +1671,41 @@ PROCEDURES -----------------------------------------------------------
   already exists in the local directory, it is replaced, but only
   after the transfer suceeds (i.e., the file is first downloaded to a
   temporary file, then moved into place on success).
+
+==========================================================================
+_TCP redirect_
+==========================================================================
+
+The "tcp-redirect.ss" library provides an function to generate a unit
+with the signature net:tcp^ that redirects certain port numbers to
+intra-process listeners that do not actually use TCP. The net:tcp^
+signature is imported, for example, by the url@ unit of "url-unit.ss".
+
+Module file: _tcp-redirect.ss_ - provides the `tcp-redirect-function
+             _tcp-sig.ss_ - defines _net:tcp^_, which contains the
+                            following:
+                                 tcp-abandon-port
+                                 tcp-accept
+                                 tcp-accept-ready?
+                                 tcp-addresses
+                                 tcp-close
+                                 tcp-connect
+                                 tcp-connect/enable-break
+                                 tcp-listen
+                                 tcp-listener?
+             _tcp-unit.ss_ - defines _tcp@_ which implements
+                             net:tcp^ using the MzScheme functions of
+                             the same name
+
+PROCEDURES -----------------------------------------------------------
+
+> (tcp-redirect port-number-list)
+
+  Returns a unit that implements net:tcp^ (from "tcp-sig.ss"). For
+  port numbers not listed in `port-number-list', the unit's
+  implementations are the MzScheme implementations.
+
+  For the port numbers listed in `port-number-list', and for
+  connections to "127.0.0.1", the unit's implementation does not use
+  TCP connections, but instead uses internal buffered channels. Such
+  channels behave exactly as TCP listeners and ports.

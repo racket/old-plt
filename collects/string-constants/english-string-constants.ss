@@ -663,10 +663,17 @@ please adhere to these guidelines:
 
  (keybindings-info "Show the currently active keybindings")
  (keybindings-menu-item "Keybindings")
+ (keybindings-show-active "Show Active Keybindings")
  (keybindings-frame-title "Keybindings")
  (keybindings-sort-by-name "Sort by Name")
  (keybindings-sort-by-key "Sort by Key")
+ (keybindings-add-user-defined-keybindings "Add User-defined Keybindings...")
+ (keybindings-menu-remove "Remove ~a")
+ (keybindings-choose-user-defined-file "Please choose a file containing keybindings.")
 
+ (user-defined-keybinding-error "Error running keybinding ~a\n\n~a")
+ (user-defined-keybinding-malformed-file "The file ~a does not contain a module written in the (lib \"keybinding-lang.ss\" \"framework\") language.")  
+  
  ;; menu items in the "special" menu
  (insert-text-box-item "Insert Text Box")
  (insert-pb-box-item "Insert Pasteboard Box")

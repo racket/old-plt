@@ -37,5 +37,18 @@ public class Canvas implements ICanvas {
      // wait for s seconds (roughly)
      public native boolean sleepForAWhile(int s);
 
-    public native ICanvas onTick();
-}
+     // start the clock and set the world to this canvas 
+     public native boolean bigBang(double s); 
+
+     // call on every tick
+     public native Canvas onTick();
+
+     // call on keystroke event 
+     public native Canvas onKeyEvent(String ke); 
+
+     // call on every tick
+     public native boolean endOfTime();
+
+     // call on every tick
+     public native Canvas lastWorld();
+}    

@@ -37,6 +37,4 @@ public interface ICanvas {
 
      // wait for s seconds (roughly)
      public boolean sleepForAWhile(int s);
-
-     public ICanvas onTick();
 }

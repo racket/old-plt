@@ -2,7 +2,8 @@
 (module Canvas-native-methods mzscheme
   (require (lib "draw.ss" "htdp")
            (lib "posn.ss" "lang")
-           (lib "class.ss"))
+           (lib "class.ss")
+	   (lib "String.ss" "profj" "libs" "java" "lang"))
   ;(require "Posn.ss")
   
   (define-syntax (define/provide stx)
@@ -67,9 +68,40 @@
      (clear-solid-line (build-posn p0) (build-posn p1) (color->symbol c)))
 
   (define/provide (sleepForAWhile-int-native this s)
-     (sleep-for-a-while s))
-
-  (define/provide (onTick-native this)
-    (printf "done~n")
+    (sleep-for-a-while s))
+  
+  (define/provide (bigBang-double-native this i)
+    (big-bang this)
+    (on-tick-event i
+      (lambda (world)
+	(set! last-world world)
+;	(printf ".~n")
+	(send world onTick)))
+    (on-key-event
+      (lambda (ke world)
+	(set! last-world world)
+;	(printf "key: ~s~n" ke)
+	(send world onKeyEvent-java.lang.String
+	  (make-java-string (keyevent->string ke)))))
     #t)
+
+  ;; (union Char Symbol) -> String
+  (define (keyevent->string ke)
+    (if (char? ke) (string ke) (symbol->string ke)))
+  
+  (define/provide (onTick-native this)
+     this)
+
+  (define/provide (onKeyEvent-java.lang.String-native this ke)
+     this)
+
+  (define last-world #f)
+  
+  (define/provide (endOfTime-native this)
+    (set! last-world (end-of-time))
+    #t)
+
+  (define/provide (lastWorld-native this)
+    (if last-world last-world this))
 )
+

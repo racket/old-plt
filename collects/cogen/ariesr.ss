@@ -314,8 +314,8 @@
 			 ((z:inherit-clause? clause)
 			   `(inherit
 			      ,@(map (lambda (internal inherited)
-				       `(,(z:binding-bar internal)
-					  ,(z:binding-var inherited)))
+				       `(,(z:binding-var internal)
+					  ,(read->raw inherited)))
 				  (z:inherit-clause-internals clause)
 				  (z:inherit-clause-inheriteds clause))))
 			 ((z:rename-from-clause? clause)

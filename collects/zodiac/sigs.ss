@@ -112,7 +112,7 @@
 			  init-vars inst-clauses))
     (struct public-clause (exports internals exprs))
     (struct private-clause (internals exprs))
-    (struct inherit-clause (inheriteds))
+    (struct inherit-clause (internals inheriteds))
     (struct inherit-from-clause (super))
     (struct rename-clause (internals imports))
     (struct rename-from-clause (super))

@@ -1,5 +1,4 @@
 /*								-*- C++ -*-
- * $Id: Choice.cc,v 1.22 1999/11/28 05:21:34 mflatt Exp $
  *
  * Purpose: choice panel item
  *

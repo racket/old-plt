@@ -15,7 +15,8 @@
 	   (lib "smtp-sig.ss" "net")
 	   (lib "head-sig.ss" "net")
 	   (lib "base64-sig.ss" "net")
-	   (lib "mime-sig.ss" "net"))
+	   (lib "mime-sig.ss" "net")
+           (lib "htmltext.ss" "browser"))
 
   (require (lib "hierlist-sig.ss" "hierlist"))
 
@@ -453,6 +454,8 @@
       (define show-full-headers? #f)
       (define quote-in-reply? #t)
       (define mime-mode? #t)
+      (define html-mode? #t)
+      (define img-mode? #f)
       
       (define unselected-delta (make-object style-delta% 'change-normal-color))
       (define selected-delta (make-object style-delta%))
@@ -679,9 +682,7 @@
 				     (let ([end (send e last-position)])
 				       (send e change-style (send (send e get-style-list) find-named-style "Standard") start end)
 				       (delta e start end))))])
-		     (parse-and-insert-body h body insert 79)))
-                 (when SHOW-URLS (hilite-urls e))
-                 ;;(handle-formatting e) ; too slow
+		     (parse-and-insert-body h body e insert 79 img-mode?)))
                  (send e set-position 0)
                  (set-current-selected i))
                (lambda ()
@@ -970,13 +971,29 @@
 	    (send refocus focus))
 	  w))
       
+      (define display-text%
+        (class* text% (html-text<%>)
+          (inherit change-style
+                   set-clickback)
+          
+          (define/public (get-url) #f)
+          (define/public (set-title s) (void))
+          (define/public (add-link pos end-pos url-string)
+            (set-clickback pos end-pos (lambda (e start-pos eou-pos)
+                                         (send-url url-string))))
+          (define/public (add-tag label pos) (void))
+          (define/public (make-link-style pos endpos) 
+            (change-style url-delta pos endpos))
+          (define/public (add-scheme-callback pos endpos scheme) (void))
+          (super-instantiate ())))
+      
       (define f (make-object sm-frame% mailbox-name #f FRAME-WIDTH FRAME-HEIGHT))
       (set! main-frame f)
       (define button-panel (make-object horizontal-panel% f))
       (define header-list (make-object header-list% f))
       (send (send header-list get-editor) set-line-spacing 0)
       (define message (make-object editor-canvas% f))
-      (let ([e (make-object text%)])
+      (let ([e (make-object display-text%)])
 	((current-text-keymap-initializer) (send e get-keymap))
 	(send e set-max-undo-history 0)
 	(send message set-editor e)
@@ -1136,11 +1153,36 @@
 
       (make-object separator-menu-item% msg-menu)
       (define sort-menu (make-object menu% "&Sort" msg-menu))
-      (send (make-object checkable-menu-item% "Parse &MIME" msg-menu
-			 (lambda (item e)
-			   (set! mime-mode? (send item is-checked?))
-			   (redisplay-current)))
-	    check mime-mode?)
+      (let ([m (make-object menu% "Decode" msg-menu)])
+        (letrec ([switch (lambda (item e)
+                           (if (send item is-checked?)
+                               (begin
+                                 ;; Disable others:
+                                 (send raw check (eq? raw item))
+                                 (send mime check (eq? mime item))
+                                 (send html check (eq? html item))
+                                 (send img check (eq? img item))
+                                 ;; Update flags
+                                 (set! mime-mode? (or (send mime is-checked?)
+                                                      (send html is-checked?)
+                                                      (send img is-checked?)))
+                                 (set! html-mode? (or (send html is-checked?)
+                                                      (send img is-checked?)))
+                                 (set! img-mode? (send img is-checked?))
+                                 ;; Re-decode
+                                 (redisplay-current))
+                               ;; Turn it back on
+                               (send item check #t)))]
+                 [raw (make-object checkable-menu-item% "&Raw" m switch)]
+                 [mime (make-object checkable-menu-item% "&MIME" m switch)]
+                 [html (make-object checkable-menu-item% "MIME and &HTML" m switch)]
+                 [img (make-object checkable-menu-item% "MIME, HTML, and &Images" m switch)])
+          (send (if (and mime-mode? html-mode?)
+                    html
+                    (if mime-mode?
+                        mime
+                        raw))
+                check #t)))
       (make-object checkable-menu-item% "&Wrap Lines" msg-menu
         (lambda (item e)
           (send (send message get-editor) auto-wrap
@@ -1566,7 +1608,7 @@
 					 small-h))
 			  (loop (cdr l) small-h))))))))
 
-      (define (parse-and-insert-body header body insert sep-width)
+      (define (parse-and-insert-body header body text-obj insert sep-width img-mode?)
 	(if mime-mode?
 	    (let mime-loop ([msg (with-handlers ([not-break-exn? (lambda (x)
 								   (mime:make-message
@@ -1638,13 +1680,38 @@
 					    (send t change-style url-delta s e)))))])
 		(case (mime:entity-type ent)
 		  [(text) (let ([disp (mime:disposition-type (mime:entity-disposition ent))])
-			    (if (memq disp '(inline error))
-				(begin
-				  (insert (slurp ent)
-					  (lambda (t s e)
-					    (if (eq? disp 'error)
-						(send t change-style red-delta s e)))))
-				(generic ent)))]
+			    (cond
+                              [(memq disp '(inline error))
+                               (cond
+                                 [(and html-mode?
+                                       (eq? 'html (mime:entity-subtype ent)))
+                                  ;; If no text-obj supplied, make a temporary one for rendering:
+                                  (let ([target (or text-obj (make-object display-text%))])
+                                    (as-background 
+                                     enable-main-frame
+                                     (lambda (break-bad break-ok) 
+                                       (break-ok)
+                                       (with-handlers ([void no-status-handler])
+                                         (status "Rendering HTML...")
+                                         (render-html-to-text (mime:entity-body ent) target img-mode? #f)
+                                         (status "")))
+                                     void)
+
+
+                                    ((mime:entity-close ent))
+                                    (unless text-obj
+                                      ;; Copy text in target to `insert':
+                                      (insert (lf->crlf (send target get-text))
+                                              void)))]
+                                 [else
+                                  (insert (slurp ent)
+                                          (lambda (t s e)
+                                            (when SHOW-URLS (hilite-urls t s e))
+                                            ;;(handle-formatting e) ; too slow
+                                            (if (eq? disp 'error)
+                                                (send t change-style red-delta s e))))])]
+                              [else
+                               (generic ent)]))]
 		  [(multipart message)
 		   (map (lambda (msg)
 			  (unless (eq? (mime:entity-type ent) 'message)
@@ -1745,7 +1812,7 @@
 	  (let* ([uid (send selected user-data)]
 		 [h (get-header uid)]
 		 [body (let ([p (open-output-string)])
-			 (parse-and-insert-body h (get-body uid) (lambda (s delta) (display s p)) 78)
+			 (parse-and-insert-body h (get-body uid) #f (lambda (s delta) (display s p)) 78 #f)
 			 (get-output-string p))])
 	    (start-new-mailer
 	     #f
@@ -1957,10 +2024,10 @@
       ;; hilite-urls : text -> void
       ;; highligts all of the urls (strings beginning with `http:', `https:' or `ftp:')
       ;; in the buffer to be able to click on them.
-      (define (hilite-urls e)
+      (define (hilite-urls e start end)
         (define (hilite-urls/prefix prefix)
-          (let loop ([pos 0])
-            (when (< pos (send e last-position))
+          (let loop ([pos start])
+            (when (< pos end)
               (let ([start-pos (send e find-string prefix 'forward pos 'eof #t #f)])
                 (when start-pos
                   (let ([eou-pos (let loop ([eou-pos start-pos])

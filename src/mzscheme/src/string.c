@@ -3336,7 +3336,7 @@ static int utf8_decode_x(const unsigned char *s, int start, int end,
 			 char compact, char utf16, char might_continue,
 			 int permissive)
      /* Results:
-	non-negative => translation complete
+	non-negative => translation complete, = number of produced chars
 	-1 => input ended in middle of encoding
 	-2 => encoding error
 	-3 => not enough output room */
@@ -3586,7 +3586,7 @@ static int utf8_decode_x(const unsigned char *s, int start, int end,
   if (i < end)
     return failmode;
 
-  return j;
+  return j - dstart;
 }
 
 int scheme_utf8_decode(const unsigned char *s, int start, int end, 

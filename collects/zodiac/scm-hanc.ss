@@ -1781,7 +1781,7 @@
 		      (z:string? (quote-form-expr f)))
 		  (expand-expr
 		    (structurize-syntax
-		      `(let ((v (#%load-recent
+		      `(let ((v (load-recent
 				  ,(sexp->raw (quote-form-expr f)))))
 			 (unless (#%unit-with-signature? v)
 			   (raise (make-exn:unit:non-signed-unit

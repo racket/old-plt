@@ -1559,7 +1559,7 @@
 			(z:string? (quote-form-expr f)))
 		    (expand-expr
 		      (structurize-syntax
-			`(#%load-recent ,(sexp->raw (quote-form-expr f)))
+			`(load-recent ,(sexp->raw (quote-form-expr f)))
 			expr)
 		      env attributes vocab)
 		    (static-error filename "Does not yield a filename"))))))

@@ -69,13 +69,13 @@
             (and parent
                  (new menu-item%
                       (parent parent)
-                      (label "Disable All Test Cases")
+                      (label (string-constant test-case-disable-all))
                       (callback
                        (lambda (menu event)
                          (set! test-cases-enabled? (not test-cases-enabled?))
                          (if test-cases-enabled?
-                             (send menu set-label "Disable all Test Cases")
-                             (send menu set-label "Enable all Test Cases"))
+                             (send menu set-label (string-constant test-case-disable-all))
+                             (send menu set-label (string-constant test-case-enable-all)))
                          (send (get-definitions-text) for-each-test-case
                                (lambda (tc) (send tc enable test-cases-enabled?))))))))))
 

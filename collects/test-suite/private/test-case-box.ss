@@ -35,12 +35,20 @@
         (class* (decorated-editor-snip-mixin editor-snip%) (readable-snip<%>)
           (inherit get-admin)
           
+          (define error-alert-text%
+            (class test-case:program-editor%
+              (rename [super-highlight-range highlight-range])
+              (define/override (highlight-range start end color bitmap caret-space priority)
+                (super-highlight-range  start end color bitmap caret-space priority)
+                (when collapsed? (collapse false)))
+              (super-new)))
+          
           (init-field
            [enabled? true]
            [actual-show? false]
            [collapsed? false]
-           [to-test (new test-case:program-editor%)]
-           [expected (new test-case:program-editor%)])
+           [to-test (new error-alert-text%)]
+           [expected (new error-alert-text%)])
           
           (field
            [actual (new actual-text%)]
@@ -227,8 +235,10 @@
             (set! collapsed? bool)
             (send collapse-button set-state
                   (boolean->collapse-btn-state bool))
+            (send pb lock-alignment true)
             (send left show (not bool))
-            (send right show (not bool)))
+            (send right show (not bool))
+            (send pb lock-alignment false))
             
           (define (boolean->collapse-btn-state bool)
             (if bool 'on 'off))
@@ -251,18 +261,20 @@
            [actual-pane (new vertical-alignment%
                              (parent right)
                              (show? actual-show?))]
-           [collapse-button (new turn-button-snip%
-                                 (state (boolean->collapse-btn-state collapsed?))
-                                 (turn-off
-                                  (lambda (b e) (collapse true)))
-                                 (turn-on
-                                  (lambda (b e) (collapse false))))]
-           [show-actual-button (new turn-button-snip%
-                                    (state (boolean->show-actual-btn-state actual-show?))
-                                    (turn-off
-                                     (lambda (b e) (show-actual false)))
-                                    (turn-on
-                                     (lambda (b e) (show-actual true))))])
+           [collapse-button
+            (new turn-button-snip%
+                 (state (boolean->collapse-btn-state collapsed?))
+                 (turn-off
+                  (lambda (b e) (collapse true)))
+                 (turn-on
+                  (lambda (b e) (collapse false))))]
+           [show-actual-button
+            (new turn-button-snip%
+                 (state (boolean->show-actual-btn-state actual-show?))
+                 (turn-off
+                  (lambda (b e) (show-actual false)))
+                 (turn-on
+                  (lambda (b e) (show-actual true))))])
           
           (super-new (editor pb))
           

@@ -8,6 +8,79 @@
 (define SYNC-BUSY-DELAY 0.1) ; go a little slower to check busy waits
 
 ;; ----------------------------------------
+;; Channels
+
+(let ([c (make-channel)]
+      [v 'nope])
+  (test #f object-wait-multiple 0 c)
+  (thread (lambda () (sleep SYNC-SLEEP-DELAY) (set! v (channel-get c))))
+  (test (void) channel-put c 10)
+  (sleep)
+  (test 10 'thread-v v)
+  (thread (lambda () (sleep SYNC-SLEEP-DELAY) (channel-put c 11)))
+  (test #f object-wait-multiple 0 c)
+  (test 11 object-wait-multiple #f c)
+  (let ([p (make-channel-put-waitable c 45)])
+    (thread (lambda () (sleep SYNC-SLEEP-DELAY) (set! v (object-wait-multiple #f c))))
+    (test #f object-wait-multiple 0 p)
+    (test p object-wait-multiple #f p)
+    (test #f object-wait-multiple 0 p)
+    (sleep)
+    (test 45 'thread-v v))
+  ;;;;; Make sure break/kill before action => break/kill only
+  ;; get:
+  (let ([try (lambda (break-thread)
+	       (let ([t (thread (lambda ()
+				  (set! v (channel-get c))))])
+		 (test #t thread-running? t)
+		 (sleep)
+		 (test #t thread-running? t)
+		 (test (void) break-thread t)
+		 (test #f object-wait-multiple 0 (make-channel-put-waitable c 32))
+		 (sleep)
+		 (test #f thread-running? t)
+		 (test 45 'old-v v)))])
+    (try break-thread)
+    (try kill-thread))
+  ;; put:
+  (let ([try (lambda (break-thread)
+	       (let ([t (thread (lambda () (channel-put c 17)))])
+		 (test #t thread-running? t)
+		 (sleep)
+		 (test #t thread-running? t)
+		 (test (void) break-thread t)
+		 (test #f object-wait-multiple 0 c)
+		 (sleep)
+		 (test #f thread-running? t)))])
+    (try break-thread)
+    (try kill-thread))
+  ;; put in main thread:
+  (let ([t (current-thread)])
+    (thread (lambda () 
+	      (sleep SYNC-SLEEP-DELAY) 
+	      (break-thread t) 
+	      (set! v (channel-get c)))))
+  (test 77
+	'broken
+	(with-handlers ([exn:break? (lambda (x) 77)])
+	  (object-wait-multiple #f (make-channel-put-waitable c 32))))
+  (test 45 'old-v v)
+  (channel-put c 89)
+  (sleep)
+  (test 89 'new-v v)
+  ;; get in main thread:
+  (let ([t (current-thread)])
+    (thread (lambda () 
+	      (sleep SYNC-SLEEP-DELAY) 
+	      (break-thread t) 
+	      (channel-put c 66))))
+  (test 99
+	'broken
+	(with-handlers ([exn:break? (lambda (x) 99)])
+	  (object-wait-multiple #f c)))
+  (test 66 object-wait-multiple 0 c))
+
+;; ----------------------------------------
 ;; Waitable sets
 
 (err/rt-test (waitables->waitable-set 7))
@@ -56,7 +129,21 @@
     (test #f object-wait-multiple SYNC-SLEEP-DELAY set)
     (semaphore-post s3)
     (test s3 object-wait-multiple SYNC-SLEEP-DELAY set)
-    (test #f object-wait-multiple SYNC-SLEEP-DELAY set)))
+    (test #f object-wait-multiple SYNC-SLEEP-DELAY set))
+  
+  (let* ([c (make-channel)]
+	 [set (waitables->waitable-set s1 s2 c)])
+    (test #f object-wait-multiple SYNC-SLEEP-DELAY set)
+    (thread (lambda () (channel-put c 12)))
+    (test 12 object-wait-multiple SYNC-SLEEP-DELAY set)
+    (test #f object-wait-multiple SYNC-SLEEP-DELAY set)
+    (let* ([p (make-channel-put-waitable c 85)]
+	   [set (waitables->waitable-set s1 s2 p)])
+      (test #f object-wait-multiple SYNC-SLEEP-DELAY set)
+      (thread (lambda () (channel-get c)))
+      (test p object-wait-multiple SYNC-SLEEP-DELAY set)
+      (test #f object-wait-multiple SYNC-SLEEP-DELAY set))))
+    
 
 ;; ----------------------------------------
 ;; Wrapped waitables
@@ -84,6 +171,9 @@
 			       s 
 			       (lambda (sema) (set! n (add1 n)) n)))))
 
+(let ([c (make-channel)])
+  (thread (lambda () (channel-put c 76)))
+  (test 77 object-wait-multiple #f (make-wrapped-waitable c add1)))
 
 ;; ----------------------------------------
 ;; Nack waitables

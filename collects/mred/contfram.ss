@@ -148,8 +148,10 @@
 		       "container-frame-force-redraw: "
 		       "calling on-size with ~s ~s and quitting")
 		      (get-width) (get-height))
-		     (on-size (get-width) (get-height))
-		     (set! in-force #f))
+		     ; intuitively, we'd do a (set! in-force #f) after the
+		     ; call to on-size, but this would prevent
+		     ; tail-recursion, so we move it to on-size.
+		     (on-size (get-width) (get-height)))
 		   (begin
 		     (mred:debug:printf
 		      'container-frame-force-redraw
@@ -290,17 +292,15 @@
 		   (unless (and (= new-width correct-w)
 				(= new-height correct-h)
 				(not in-force))
+		     (set! in-force #f)
+		     ; moved this here from force-redraw to preserve
+		     ; tail recursion.
 		     (mred:debug:printf 
 		      'container-frame-on-size
 		      (string-append
 		       "container-frame-on-size: "
-		       "resizing frame to correct size"))
-		     (set-size -1 -1 correct-w correct-h))
-		   (mred:debug:printf 
-		    'container-frame-on-size
-		    (string-append
-		     "container-frame-on-size: "
-		     "Leaving onsize at the end.")))))])
+		       "resizing frame to correct size and quitting"))
+		     (set-size -1 -1 correct-w correct-h)))))])
 	  (sequence
 	    (apply super-init args)
 	    (set! object-ID counter)

@@ -22,7 +22,8 @@
   (define LT #f) 
   
   ; get-linkage-table : -> hash-table[LINKAGE-KEY -> PKG-LOCATION]
-  (define (get-linkage-table) 
+  (define (get-linkage-table)
+    (unless (file-exists? (LINKAGE-FILE)) (with-output-to-file (LINKAGE-FILE) newline))
     (unless LT (set! LT (build-hash-table (with-input-from-file (LINKAGE-FILE) read-all))))
     LT)
   

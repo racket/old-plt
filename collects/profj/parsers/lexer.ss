@@ -284,7 +284,7 @@
       (cond
         ((interact-case? special) (token-INTERACTIONS_BOX special))
         ((test-case? special) (token-TEST_SUITE special))
-        (else (token-OTHER_SPECIAL special))))
+        (else (token-OTHER_SPECIAL (list special start-pos end-pos)))))
           
      ;; 3.6
      ((+ WhiteSpace) (return-without-pos (get-token input-port)))

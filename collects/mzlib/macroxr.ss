@@ -43,7 +43,7 @@
 				(and (= 3 (length def))
 				     (list? (cadr def))
 				     (andmap symbol? (cadr def))
-				     (let-values ([(d kind) (local-expand-body-expression `(,(car def) (,(gensym)) 1))])
+				     (let-values ([(d kind) (local-expand-body-expression `(,(cadr def) (,(gensym)) 1))])
                                        (eq? kind '#%define-values)))]
 			       [(#%define define)
 				(and (or (and (= 3 (length def))
@@ -82,10 +82,22 @@
 			  (cadr (expand-defmacro s)))]))
 	      defines)]
 	   [defined-names (apply append defs)])
+      ; We wrap everything in an extra `let' to permit the shadowing
+      ;  of syntax by local definitions:
       `(let ,(map (lambda (n) `(,n (#%void))) defined-names)
-        ,@defines
-	(let () ,expr1 ,@body)))))
-
+	 ; We have to use #% forms for define, now:
+	 ,@(map (lambda (def)
+		  (case (car def)
+		    [(#%define-values define-values)
+		     (cons '#%define-values (cdr def))]
+		    [(#%define define)
+		     (cons '#%define (cdr def))]
+		    [(#%define-struct define-struct)
+		     (cons '#%define-struct (cdr def))]))
+		defines)
+	 ; Another let, in case there were more embedded defines:
+	 (let () ,expr1 ,@body)))))
+ 
  ;; recur is another name for 'let' in a named let
  (define recur 
   (lambda (name args . body) `(let ,name ,args ,@body)))

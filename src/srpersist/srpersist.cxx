@@ -123,7 +123,7 @@ char *findBitByValueInDict(SQLUINTEGER value,SRP_NAMED_CONSTANT *entry,size_t nu
   size_t i;
 
   for (i = 0; i < numBits; i++,entry++) {
-    if (entry->val == value) {
+    if ((SQLUINTEGER)(entry->val) == value) {
       return entry->scheme_name;
     }
   } 

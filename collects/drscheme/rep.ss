@@ -311,7 +311,7 @@
 	       ready-non-prompt autoprompting?
 	       set-prompt-mode
 	       delete lock locked?
-	       line-start-position
+	       paragraph-start-position
 	       last-position
 	       set-resetting
 	       position-line
@@ -754,7 +754,7 @@
 
 	     (begin-edit-sequence)
 	     (set-resetting #t)
-	     (delete (line-start-position 1) (last-position))
+	     (delete (paragraph-start-position 1) (last-position))
 	     (set-prompt-mode #f)
 	     (set-resetting #f)
 	     (set-position (last-position) (last-position))

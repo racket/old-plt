@@ -69,7 +69,7 @@
 			    (append language-levels (list "Custom"))
 			    language-panel
 			    (lambda (choice evt)
-			      (let ([which (send evt get-command-int)]
+			      (let ([which (send choice get-selection)]
 				    [len (length basis:settings)])
 				(when (= which len)
 				  (show-specifics #t))
@@ -175,7 +175,7 @@
 		     "R4RS")
 	       main
 	       (lambda (box evt)
-		 (let* ([which (send evt get-command-int)]
+		 (let* ([which (send box get-selection)]
 			[setting (fw:preferences:get 'drscheme:settings)]
 			[symbol-which (printer-number->symbol which)])
 		   (basis:set-setting-printing! setting symbol-which)
@@ -306,9 +306,9 @@
 		       whole/fractional-exact-numbers
 		       abbreviate-cons-as-list?))
 	    (reset-choice))])
-      (send language-choice stretchable-in-x #f)
-      (send printing stretchable-in-x #f)
-      (send vocab stretchable-in-x #f)
+      (send language-choice stretchable-width #f)
+      (send printing stretchable-width #f)
+      (send vocab stretchable-width #f)
       (update-to (fw:preferences:get 'drscheme:settings))
       (show-specifics (not (ormap (lambda (x) (compare-setting-to-gui (vector-ref x 1))) basis:settings)))
       (fw:preferences:add-callback 'drscheme:settings 
@@ -320,9 +320,9 @@
 						(send (ivar x definitions-edit)
 						      language-changed))))
 				      (update-to v)))
-      (for-each (lambda (x) (send x stretchable-in-y #f))
+      (for-each (lambda (x) (send x stretchable-height #f))
 		(list language-panel ok-panel main))
-      (send ok-button user-min-width (send cancel-button get-width))
+      (send ok-button min-width (send cancel-button get-width))
       (fw:preferences:save)
       (send f center 'both)
       (send f show #t)

@@ -428,15 +428,4 @@
                     (card (integer-set? . -> . natural-number?))
                     (subset? (integer-set? integer-set? . -> . any)))
 
-  #;(provide (struct integer-set (contents))
-           make-range
-           (rename merge union)
-           split
-           complement 
-           member?
-           get-integer
-           (rename is-foldr foldr)
-           partition 
-           card
-           subset?)
   ) 

@@ -207,6 +207,18 @@
 (define (tex-no-descent . args)
   (clip-descent (apply tex args)))
 
+(define tex-paragraph
+  (case-lambda
+   [(w str) (tex-paragraph w str 'top)]
+   [(w str align)
+    (tex (format "\\parbox[~a]{~apt}{~a}"
+		 (case align
+		   [(top) 't]
+		   [(bottom) 'b]
+		   [else (error 'tex-paragraph "bad alignment: ~a" align)])
+		 w
+		 str))]))
+
 (define (clip-descent b)
   (let* ([w (pict-width b)]
 	 [h (pict-height b)]

@@ -146,11 +146,6 @@
 			  basis:setting-eq?-only-compares-symbols?
 			  "Eq? only compares symbols"
 			  dynamic-panel)]
-	 [<=-at-least-two-args
-	  (make-check-box basis:set-setting-<=-at-least-two-args!
-			  basis:setting-<=-at-least-two-args
-			  "comparison operators require at least two arguments"
-			  dynamic-panel)]
 #|
 	 [disallow-untagged-inexact-numbers
 	  (make-check-box basis:set-setting-disallow-untagged-inexact-numbers!
@@ -229,7 +224,6 @@
 		   (compare-check-box signal-undefined basis:setting-signal-undefined)
 		   (compare-check-box signal-not-boolean basis:setting-signal-not-boolean)
 		   (compare-check-box eq?-only-compares-symbols? basis:setting-eq?-only-compares-symbols?)
-		   (compare-check-box <=-at-least-two-args basis:setting-<=-at-least-two-args)
 		   ; (compare-check-box disallow-untagged-inexact-numbers basis:setting-disallow-untagged-inexact-numbers)
 		   (compare-check-box allow-improper-lists? basis:setting-allow-improper-lists?)
 		   (compare-check-box sharing-printing? basis:setting-sharing-printing?)
@@ -280,7 +274,6 @@
 		       basis:setting-signal-not-boolean
 		       ; basis:setting-disallow-untagged-inexact-numbers
 		       basis:setting-eq?-only-compares-symbols?
-		       basis:setting-<=-at-least-two-args
 		       basis:setting-allow-improper-lists?
 		       basis:setting-sharing-printing?
 		       basis:setting-print-tagged-inexact-numbers
@@ -293,7 +286,6 @@
 		       signal-not-boolean
 		       ; disallow-untagged-inexact-numbers
 		       eq?-only-compares-symbols?
-		       <=-at-least-two-args
 		       allow-improper-lists?
 		       sharing-printing?
 		       print-tagged-inexact-numbers
@@ -324,26 +316,26 @@
   
   ; object to remember last library directory
   
-  (define *library-directory*
+  (define *library-directory* 
     (make-object 
      (class null ()
-	   (private [the-dir #f])
-	   (public
-	    [get (lambda () the-dir)]
-	    [set-from-file!
-	     (lambda (file) 
-	       (set! the-dir (path-only file)))]
-	    [set-to-default 
-	     (lambda ()
-	       (if (eq? wx:platform 'macintosh)
-		   (set! the-dir ())
-		   (let ([home-dir (getenv "PLTHOME")])
-		     (if home-dir
-			 (set! the-dir
-			       (build-path home-dir "lib"))
-			 (set! the-dir ())))))])
-	   (sequence
-	     (set-to-default)))))
+	    (private [the-dir #f])
+	    (public
+	     [get (lambda () the-dir)]
+	     [set-from-file!
+	      (lambda (file) 
+		(set! the-dir (path-only file)))]
+	     [set-to-default 
+	      (lambda ()
+		(let ([lib-dir (build-path 
+				(collection-path "mzlib") 
+				".." ".." 
+				"lib")])
+		  (if (directory-exists? lib-dir)
+		      (set! the-dir lib-dir)
+		      (set! the-dir ()))))])
+	    (sequence
+	      (set-to-default)))))
 
   (define (fill-language-menu language-menu)
     (send* language-menu 
@@ -363,16 +355,3 @@
 	   (append-item "Clear Library"
 			(lambda ()
 			  (mred:set-preference 'drscheme:library-file #f))))))
-
-
-
-
-
-
-
-
-
-
-
-
-

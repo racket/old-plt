@@ -76,6 +76,9 @@
       ("tools" . "PLT Tools: DrScheme Extension Manual")
       ("tour" . "A Brief Tour of DrScheme version 205")
       ("t-y-scheme" . "Teach Yourself Scheme in Fixnum Days")
-      ("tex2page" . "TeX2page")))
+      ("tex2page" . "TeX2page")
+      ("profj-beginner" . "ProfessorJ Beginner Language")
+      ("profj-intermediate" . "ProfessorJ Intermediate Language")
+      ("profj-advanced" . "ProfessorJ Advanced Language")))
 
   )

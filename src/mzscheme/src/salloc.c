@@ -1082,7 +1082,7 @@ Scheme_Object *scheme_dump_gc_stats(int c, Scheme_Object *p[])
 		    state, run, sus, kill, clean, all);
 
 	    len2 = strlen(buffer);
-	    t2 = scheme_malloc_atomic(len + len2 + 1);
+	    t2 = (char *)scheme_malloc_atomic(len + len2 + 1);
 	    memcpy(t2, type, len);
 	    memcpy(t2 + len, buffer, len2 + 1);
 	    len += len2;
@@ -1099,7 +1099,7 @@ Scheme_Object *scheme_dump_gc_stats(int c, Scheme_Object *p[])
 		     : "(toplevel)"));
 	    
 	    len2 = strlen(buffer);
-	    t2 = scheme_malloc_atomic(len + len2 + 1);
+	    t2 = (char *)scheme_malloc_atomic(len + len2 + 1);
 	    memcpy(t2, type, len);
 	    memcpy(t2 + len, buffer, len2 + 1);
 	    len += len2;
@@ -1117,6 +1117,30 @@ Scheme_Object *scheme_dump_gc_stats(int c, Scheme_Object *p[])
 	    t2[len] = '[';
 	    t2[len + 1 + len2] = ']';
 	    t2[len + 1 + len2 + 1] = 0;
+	    len += len2;
+	    type = t2;
+	  } else if (!scheme_strncmp(type, "#<hash-table:", 13)) {
+	    char buffer[256];
+	    char *t2;
+	    int len2;
+	    int htype, size, count;
+
+	    if (SCHEME_HASHTP((Scheme_Object *)v)) {
+	      htype = 'n';
+	      size = ((Scheme_Hash_Table *)v)->size;
+	      count = ((Scheme_Hash_Table *)v)->count;
+	    } else {
+	      htype = 'b';
+	      size = ((Scheme_Bucket_Table *)v)->size;
+	      count = ((Scheme_Bucket_Table *)v)->count;
+	    }
+
+	    sprintf(buffer, "[%c:%d:%d]", htype, count, size);
+
+	    len2 = strlen(buffer);
+	    t2 = scheme_malloc_atomic(len + len2 + 1);
+	    memcpy(t2, type, len);
+	    memcpy(t2 + len, buffer, len2 + 1);
 	    len += len2;
 	    type = t2;
 	  }

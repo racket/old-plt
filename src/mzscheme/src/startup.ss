@@ -210,7 +210,7 @@
 	      (lambda (x old)
 		(if (eq? x old)
 		    (if (stx-null? x) 
-			(quote-syntax (quote ()))
+			(quote-syntax ())
 			(list (quote-syntax quote) x))
 		    x)))
 	     ((apply-cons)

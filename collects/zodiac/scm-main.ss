@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.212 2000/06/08 22:35:32 mflatt Exp $
+; $Id: scm-main.ss,v 1.213 2000/06/09 00:38:15 mflatt Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -797,6 +797,7 @@
       "invalid expression for local clause"
       "invalid expression for local clause"))
 
+  (define nobegin-noset-local-extract-vocab (make-local-extract-vocab))
   (define nobegin-local-extract-vocab (make-local-extract-vocab))
   (define full-local-extract-vocab (make-local-extract-vocab))
 
@@ -846,22 +847,11 @@
   (add-primitivized-micro-form
    'local
    intermediate-vocabulary
-   (make-local-micro #f nobegin-local-extract-vocab))
-  (add-on-demand-form
-   'micro
+   (make-local-micro #f nobegin-noset-local-extract-vocab))
+  (add-primitivized-micro-form
    'local
-   intermediate-vocabulary
+   advanced-vocabulary
    (make-local-micro #f nobegin-local-extract-vocab))
-
-;  (add-primitivized-micro-form
-;   'local
-;   advanced-vocabulary
-;   (make-local-micro #t full-local-extract-vocab))
-;  (add-on-demand-form
-;   'micro
-;   'local
-;   advanced-vocabulary
-;   (make-local-micro #t full-local-extract-vocab))
 
   (add-on-demand-form
    'micro
@@ -942,6 +932,7 @@
 			    (lambda (expr env attributes vocab vars val)
 			      (cons vars val)))])
 	(add-primitivized-micro-form 'define-values nobegin-local-extract-vocab int-dv-micro)
+	(add-primitivized-micro-form 'define-values nobegin-noset-local-extract-vocab int-dv-micro)
 	(add-primitivized-micro-form 'define-values full-local-extract-vocab int-dv-micro))))
 
   (define-values
@@ -955,6 +946,9 @@
   (add-primitivized-micro-form 'define
 			       full-local-extract-vocab
 			       full-local-define-form)
+  (add-primitivized-micro-form 'define
+			       nobegin-noset-local-extract-vocab
+			       nobegin-local-define-form)
   (add-primitivized-micro-form 'define
 			       nobegin-local-extract-vocab
 			       nobegin-local-define-form)
@@ -1019,35 +1013,39 @@
 
   (define generate-struct-names
     (opt-lambda (type fields source
-		  (omit-selectors? #f) (omit-setters? #f))
-      (let ((name (lambda parts
+		  (omit-selectors? #f) (omit-setters? #f)
+		  (hide-setters? #f))
+      (let ((name (lambda (hide? . parts)
 		    (structurize-syntax
-		      (apply symbol-append parts)
+		      ((if hide?
+			   (lambda (s) (string->uninterned-symbol (symbol->string s)))
+			   (lambda (s) s))
+		       (apply symbol-append parts))
 		      source))))
 	(let ((type (z:read-object type))
 	       (fields (map z:read-object fields)))
 	  (cons
-	    (name "struct:" type)
+	    (name #f "struct:" type)
 	    (cons
-	      (name "make-" type)
+	      (name #f "make-" type)
 	      (cons
-		(name type "?")
+		(name #f type "?")
 		(apply append
 		  (map (lambda (field)
 			 (append
 			   (if omit-selectors?
 			     '()
-			     (list (name type "-" field)))
+			     (list (name #f type "-" field)))
 			   (if omit-setters?
 			     '()
-			     (list (name "set-" type "-" field "!")))))
+			     (list (name hide-setters? "set-" type "-" field "!")))))
 		    fields)))))))))
 
     (let* ((kwd '())
 	   (in-pattern '(_ type-spec (fields ...)))
 	   (m&e-in (pat:make-match&env in-pattern kwd)))
       (let ((make-ds-micro
-	     (lambda (handler allow-supertype?)
+	     (lambda (handler allow-supertype? hide-setters?)
 	       (lambda (expr env attributes vocab)
 		 (cond
 		  ((pat:match-against m&e-in expr env)
@@ -1058,7 +1056,8 @@
 		       (distinct-valid-syntactic-id/s? fields)
 		       (let*-values
 			   (((type super) (extract-type&super type-spec env allow-supertype?))
-			    ((names) (generate-struct-names type fields expr))
+			    ((names) (generate-struct-names type fields expr
+							    #f #f hide-setters?))
 			    ((struct-expr)
 			     `(#%struct ,type-spec ,fields)))
 			 (handler expr env attributes vocab
@@ -1081,16 +1080,18 @@
 		 (cons names struct-expr))])
 
 	  (add-primitivized-micro-form 'define-struct beginner-vocabulary 
-				       (make-ds-micro top-level-handler #f))
+				       (make-ds-micro top-level-handler #f #t))
 	  (add-primitivized-micro-form 'define-struct advanced-vocabulary
-				       (make-ds-micro top-level-handler #t))
+				       (make-ds-micro top-level-handler #t #f))
 	  (add-primitivized-micro-form 'define-struct scheme-vocabulary
-				       (make-ds-micro top-level-handler #t))
+				       (make-ds-micro top-level-handler #t #f))
 
+	  (add-primitivized-micro-form 'define-struct nobegin-noset-local-extract-vocab
+				       (make-ds-micro internal-handler #f #t))
 	  (add-primitivized-micro-form 'define-struct nobegin-local-extract-vocab
-				       (make-ds-micro internal-handler #f))
+				       (make-ds-micro internal-handler #f #f))
 	  (add-primitivized-micro-form 'define-struct full-local-extract-vocab
-				       (make-ds-micro internal-handler #t)))))
+				       (make-ds-micro internal-handler #t #f)))))
 
     (define (make-let-struct-micro begin? allow-supertype?)
       (let* ((kwd '())

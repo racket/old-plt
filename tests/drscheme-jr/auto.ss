@@ -174,6 +174,7 @@
   (define apply-no-lambda-bound? beg/inter?)
   (define proper-list? (not mz?))
   (define define-struct? #t)
+  (define define-struct-set? (not beg/inter?))
   (define explicit-inexact? (not mz?))
   (define abbrev-list? (not beg?))
   (define mzscheme? mz?)
@@ -198,6 +199,7 @@
   (define anlb-diff (mk-diff apply-no-lambda-bound?))
   (define pl-diff (mk-diff proper-list?))
   (define ds-diff (mk-diff define-struct?))
+  (define ds!-diff (mk-diff define-struct-set?))
   (define qq-diff (mk-diff quasiquote?))
   (define nl-diff (mk-diff named-let?))
   (define ei-diff (mk-diff explicit-inexact?))
@@ -364,9 +366,20 @@
        (ds-diff 'void '(error "undefined")))
   (try "(a-b (make-a 2 1))"
        (ds-diff "2" '(error "undefined")))
+  (try "(length (list struct:a make-a a? a-b a-c))"
+       (ds-diff "5" '(error "undefined")))
   (try "(length (list struct:a make-a a? a-b a-c set-a-b! set-a-c!))"
-       (ds-diff "7" '(error "undefined")))
+       (ds!-diff "7" '(error "undefined")))
   
+  (try "(local ((define-struct aa (bb cc))) (procedure? aa-bb))"
+       (if local? 
+	   (ds-diff true-string '(error "undefined"))
+	   '(error "definition")))
+  (try "(local ((define-struct aa (bb cc))) (procedure? set-aa-bb!))"
+       (if local? 
+	   (ds!-diff true-string '(error "undefined"))
+	   '(error "definition")))
+
   (try "(define-struct empty-testing-structure ())"
        (ds-diff 'void '(error "Empty combination")))
   (try '(length (list struct:empty-testing-structure
@@ -382,7 +395,7 @@
     (try '(let ([anA (make-a 3 4)])
 	    (let ([z (set-a-b! anA 55)])
 	      (a-b anA)))
-	 "55")
+	 (ds!-diff "55" '(error "undefined")))
     (try '(a? (make-a 3 4)) true-string))
 
   (try "(define-struct (a 0) (b c))"
@@ -682,7 +695,7 @@
       (try '(time 1)
 	'(error "reference to undefined identifier"))
     (try '(let ([x (time 1)]) (void))
-      (regexp "^cpu time: [0-9]* real time: [0-9]* gc time: [0-9]*$")))
+	 (regexp "^cpu time: [0-9]* real time: [0-9]* gc time: [0-9]*$")))
 
   ;; ;;;;;;;;;;;;;;;;;; keywords  ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

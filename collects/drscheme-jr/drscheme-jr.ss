@@ -93,7 +93,7 @@
        (list "--auto-else"
 	     (make-get/set basis:setting-unmatched-cond/case-is-error?
 			   basis:set-setting-unmatched-cond/case-is-error?!)
-	     "non-matching cond/case produces (void)"
+	     "non-matching cond/case produces an error"
 	     basis:setting-unmatched-cond/case-is-error?)
        (list "--improper-lists"
 	     (make-get/set basis:setting-allow-improper-lists?

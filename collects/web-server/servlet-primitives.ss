@@ -26,6 +26,7 @@
     (set! *page-channel* x))
   
   (define *last-page-sent* #f)
+  (define *open-new-window* #t)
   
   ; output-page : page -> void
   (define (output-page page)
@@ -38,7 +39,9 @@
   ; init-channel : -> void
   (define (init-channel)
     ((gen-send/suspend uri invoke-id instances void void update-channel!)
-     (lambda (url) (send-url url))))
+     (lambda (url)
+       (send-url url *open-new-window*)
+       (set! *open-new-window* #f))))
   
   (define-values (listener port)
     (let loop ([port 8000])

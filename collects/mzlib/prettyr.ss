@@ -126,9 +126,10 @@
 
    (define pretty-print-print-line
      (make-parameter (lambda (line port offset width)
-		       (if (and (number? width)
-				(not (eq? 0 line)))
-			   (newline port)))
+		       (when (and (number? width)
+				  (not (eq? 0 line)))
+			     (newline port))
+		       0)
 		     (lambda (x)
 		       (unless (can-accept-n? 4 x)
 			       (raise-type-error 
@@ -251,14 +252,13 @@
 			 (sub1 d)
 			 #f)))
 
-     (print-line 0 0)
-
      (print-line
       #f
       (let generic-write ([obj obj] [display? display?] 
 				    [width width] 
 				    [output output] [output-hooked output-hooked]
-				    [depth depth] [def-box (box #t)])
+				    [depth depth] [def-box (box #t)]
+				    [startpos (print-line 0 0)])
 	
 	(define (read-macro? l)
 	  (define (length1? l) (and (pair? l) (null? (cdr l))))
@@ -447,8 +447,8 @@
 		    (and col
 			 (begin 
 			   (set! line-number (add1 line-number))
-			   (print-line line-number col)
-			   (spaces to 0)))
+			   (let ([col (print-line line-number col)])
+			     (spaces (- to col) col))))
 		    (spaces (- to col) col))))
 
 	 (define (pr obj col extra pp-pair depth)
@@ -478,7 +478,8 @@
 				  (lambda (s l)
 				    (snoc (cons s l) l))
 				  depth
-				  new-def-box)
+				  new-def-box
+				  0)
 		   (if (> left 0) ; all can be printed on one line
 		       (let loop ([result result][col col])
 			 (if (null? result) 
@@ -663,8 +664,8 @@
 	 (pr obj col 0 pp-expr depth))
 
        (if (and width (not (eq? width 'infinity)))
-	   (pp obj 0 depth)
-	   (wr obj 0 depth)))))
+	   (pp obj startpos depth)
+	   (wr obj startpos depth)))))
 
    (define pretty-print-handler
      (lambda (v)

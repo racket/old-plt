@@ -1294,7 +1294,9 @@ Scheme_Thread *scheme_do_close_managed(Scheme_Custodian *m, Scheme_Exit_Closer_F
 	   for_each_managed will be called. */
 	m->count = i;
 
-	if (cf) {
+	if (is_thread && !the_thread) {
+	  /* Thread is already collected, so skip */
+	} else if (cf) {
 	  cf(o, f, data);
 	} else {
 	  if (is_thread) {
@@ -1388,7 +1390,10 @@ static void for_each_managed(Scheme_Type type, Scheme_For_Each_Func cf)
 	    /* We've added an indirection and made it weak. See mr_hop note above. */
 	    Scheme_Thread *t;
 	    t = (Scheme_Thread *)WEAKIFIED(((Scheme_Thread_Custodian_Hop *)o)->p);
-	    if (SAME_OBJ(t->mref, m->mrefs[i]))
+	    if (!t) {
+	      /* The thread is already collected */
+	      continue;
+	    } else if (SAME_OBJ(t->mref, m->mrefs[i]))
 	      o = (Scheme_Object *)t;
 	    else {
 	      /* The main custodian for this thread is someone else */
@@ -1976,7 +1981,11 @@ static Scheme_Thread *make_thread(Scheme_Config *config,
   /* A thread points to a lot of stuff, so it's bad to put a finalization
      on it, which is what registering with a custodian does. Instead, we
      register a weak indirection with the custodian. That way, the thread
-     (and anything it points to) can be collected one GC cycle earlier. */
+     (and anything it points to) can be collected one GC cycle earlier. 
+
+     It's possible that the thread will be collected before the indirection
+     record, so when we use the indirection (e.g., in custodian traversals),
+     we'll need to check for NULL. */
   {
     Scheme_Thread_Custodian_Hop *hop;
     Scheme_Custodian_Reference *mref;

@@ -495,6 +495,7 @@ int eager_level; /* PLTSCHEME */
     new_fo -> fo_client_data = (ptr_t)cd;
     new_fo -> fo_object_size = hhdr -> hb_sz;
     new_fo -> fo_mark_proc = mp;
+    new_fo -> eager_level = eager_level; /* PLTSCHEME */
     fo_set_next(new_fo, fo_head[index]);
     GC_fo_entries++;
     fo_head[index] = new_fo;
@@ -600,7 +601,7 @@ static void finalize_eagers(int eager_level)
 	     with eager finalizations. Otherwise, this mark bit
 	     could break the chain from one (non-eager) finalizeable
 	     to another. */
-	  GC_set_mark_bit(real_ptr);
+	  (*(curr_fo -> fo_mark_proc))(real_ptr);
 	  
 	  /* Delete from hash table */
 	  next_fo = fo_next(curr_fo);

@@ -2150,7 +2150,7 @@ Scheme_Object *scheme_dynamic_wind(void (*pre)(void *),
 {
   Scheme_Object * volatile v, ** volatile save_values;
   volatile int err;
-  Scheme_Dynamic_Wind *dw;
+  Scheme_Dynamic_Wind * volatile dw;
   volatile int save_count;
   Scheme_Process *p = scheme_current_process;
 

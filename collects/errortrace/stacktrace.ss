@@ -186,13 +186,11 @@
                                       "unrecognized (non-top-level) expression form: ~e"
                                       (syntax-object->datum sexpr))])))
       
-      (define (profile-annotate-lambda name expr clause bodys-stx ctx flexible? trans?)
+      (define (profile-annotate-lambda name expr clause bodys-stx trans?)
 	(let* ([bodys (stx->list bodys-stx)]
 	       [bodyl/maybe-stx
-		((if flexible?
-		     profile-point 
-		     (lambda (l n e t?) l))
-		 (map (lambda (e) (annotate e ctx flexible? trans?))
+		(profile-point 
+		 (map (lambda (e) (annotate e trans?))
 		      bodys)
 		 name
 		 expr
@@ -212,7 +210,7 @@
 		(syntax-property new 'inferred-name p2)
 		new))))
       
-      (define (annotate-let expr ctx flexible? trans? varss-stx rhss-stx bodys-stx)
+      (define (annotate-let expr trans? varss-stx rhss-stx bodys-stx)
         (let ([varss (syntax->list varss-stx)]
               [rhss (syntax->list rhss-stx)]
               [bodys (syntax->list bodys-stx)])
@@ -224,32 +222,27 @@
 				(syntax id)]
 			       [_else #f])
 			     rhs
-			     ctx flexible? trans?))
+			     trans?))
 			  varss 
 			  rhss)]
 		[bodyl (map
 			(lambda (body)
-			  (annotate body ctx flexible? trans?))
+			  (annotate body trans?))
 			bodys)])
 	    (rebuild expr (append (map cons bodys bodyl)
 				  (map cons rhss rhsl))))))
       
-      (define (annotate-seq expr bodys-stx annotate ctx flexible? trans?)
+      (define (annotate-seq expr bodys-stx annotate trans?)
         (let* ([bodys (syntax->list bodys-stx)]
 	       [bodyl (map (lambda (b)
-			     (annotate b ctx flexible? trans?))
+			     (annotate b trans?))
 			   bodys)])
 	  (rebuild expr (map cons bodys bodyl))))
 
       (define orig-inspector (current-inspector))
 
       (define (certify orig new)
-	(syntax-recertify new orig orig-inspector))
-
-      (define (maybe-with-mark wrap? old-expr new-expr)
-	(if wrap?
-	    (with-mark old-expr new-expr)
-	    new-expr))
+	(syntax-recertify new orig orig-inspector #f))
 
       (define (rebuild expr replacements)
 	(let ([a (assq expr replacements)])
@@ -272,217 +265,205 @@
 	       [else expr]))))
 
       (define (make-annotate top? name)
-        (lambda (expr ctx wrap? trans?)
-	  (let* ([ctx (syntax-extend-certificate-env expr ctx)]
-		 [flexible? (not (syntax-recertify-constrained? expr ctx orig-inspector))]
-		 [wrap? (or wrap? flexible?)])
-	    ((if wrap?
-		 test-coverage-point 
-		 (lambda (new-expr old-expr) new-expr))
-	     (kernel-syntax-case expr trans?
-	       [_
-		(identifier? expr)
-		(let ([b ((if trans? identifier-binding identifier-transformer-binding) #'id)])
-		  (cond
-		   [(eq? 'lexical b)
-		    ;; lexical variable - no error possile
-		    expr]
-		   [(and (pair? b) (eq? '#%kernel (car b)))
-		    ;; built-in - no error possible
-		    expr]
-		   [else
-		    ;; might be undefined/uninitialized
-		    (maybe-with-mark wrap? expr expr)]))]
-	       
-	       [(#%top . id)
-		;; might be undefined/uninitialized
-		(maybe-with-mark wrap? expr expr)]
-	       [(#%datum . _)
-		;; no error possible
-		expr]
-	       
-	       ;; Can't put annotation on the outside
-	       [(define-values names rhs)
-		top?
-		(let ([marked (maybe-with-mark wrap?
-					       expr
-					       (annotate-named
-						(syntax-case (syntax names) ()
-						  [(id)
-						   (syntax id)]
-						  [_else #f])
-						(syntax rhs)
-						ctx flexible?
-						trans?))])
-		  (certify
-		   expr
-		   (rebuild expr (list (cons #'rhs marked)))))]
-	       [(begin . exprs)
-		top?
+        (lambda (expr trans?)
+	  (test-coverage-point 
+	   (kernel-syntax-case expr trans?
+	     [_
+	      (identifier? expr)
+	      (let ([b ((if trans? identifier-binding identifier-transformer-binding) expr)])
+		(cond
+		 [(eq? 'lexical b)
+		  ;; lexical variable - no error possile
+		  expr]
+		 [(and (pair? b) (eq? '#%kernel (car b)))
+		  ;; built-in - no error possible
+		  expr]
+		 [else
+		  ;; might be undefined/uninitialized
+		  (with-mark expr expr)]))]
+	     
+	     [(#%top . id)
+	      ;; might be undefined/uninitialized
+	      (with-mark expr expr)]
+	     [(#%datum . _)
+	      ;; no error possible
+	      expr]
+	     
+	     ;; Can't put annotation on the outside
+	     [(define-values names rhs)
+	      top?
+	      (let ([marked (with-mark expr
+				       (annotate-named
+					(syntax-case (syntax names) ()
+					  [(id)
+					   (syntax id)]
+					  [_else #f])
+					(syntax rhs)
+					trans?))])
 		(certify
 		 expr
-		 (annotate-seq expr
-			       (syntax exprs)
-			       annotate-top+ ctx flexible? trans?))]
-	       [(define-syntaxes (name ...) rhs)
-		top?
-		(let ([marked (maybe-with-mark wrap?
-					       expr
-					       (annotate-named
-						(let ([l (syntax->list (syntax (name ...)))])
-						  (and (pair? l)
-						       (null? (cdr l))
-						       (car l)))
-						(syntax rhs)
-						ctx flexible?
-						#t))])
-		  (certify
-		   expr
-		   (rebuild expr (list (cons #'rhs marked)))))]
-	       
-	       ;; Just wrap body expressions
-	       [(module name init-import (#%plain-module-begin body ...))
-		top?
-		(let ([bodys (syntax->list (syntax (body ...)))])
-		  (let ([bodyl (map (lambda (b)
-				      (annotate-top+ b ctx flexible? trans?))
-				    bodys)])
-		    (certify
-		     expr
-		     (rebuild expr (map cons bodys bodyl)))))]
-	       
-	       ;; No way to wrap
-	       [(require i ...) expr]
-	       [(require-for-syntax i ...) expr]
-	       [(require-for-template i ...) expr]
-	       ;; No error possible (and no way to wrap)
-	       [(provide i ...) expr]
-	       
-	       ;; No error possible
-	       [(quote _)
-		expr]
-	       [(quote-syntax _)
-		expr]
-	       
-	       ;; Wrap body, also a profile point
-	       [(lambda args . body)
+		 (rebuild expr (list (cons #'rhs marked)))))]
+	     [(begin . exprs)
+	      top?
+	      (certify
+	       expr
+	       (annotate-seq expr
+			     (syntax exprs)
+			     annotate-top trans?))]
+	     [(define-syntaxes (name ...) rhs)
+	      top?
+	      (let ([marked (with-mark expr
+				       (annotate-named
+					(let ([l (syntax->list (syntax (name ...)))])
+					  (and (pair? l)
+					       (null? (cdr l))
+					       (car l)))
+					(syntax rhs)
+					#t))])
 		(certify
 		 expr
-		 (keep-lambda-properties
-		  expr
-		  (profile-annotate-lambda name expr expr (syntax body) 
-					   ctx flexible? trans?)))]
-	       [(case-lambda clause ...)
-		(with-syntax ([([args . body] ...)
-			       (syntax (clause ...))])
-		  (let* ([clauses (syntax->list (syntax (clause ...)))]
-			 [clausel
-			  (map
-			   (lambda (body clause) (profile-annotate-lambda name expr clause body ctx flexible? trans?))
-			   (syntax->list (syntax (body ...)))
-			   clauses)])
-		    (certify
-		     expr
-		     (keep-lambda-properties
-		      expr
-		      (rebuild expr (map cons clauses clausel))))))]
-	       
-	       ;; Wrap RHSs and body
-	       [(let-values ([vars rhs] ...) . body)
-		(maybe-with-mark wrap?
-				 expr 
-				 (certify
-				  expr
-				  (annotate-let expr ctx flexible? trans?
-						(syntax (vars ...))
-						(syntax (rhs ...))
-						(syntax body))))]
-	       [(letrec-values ([vars rhs] ...) . body)
-		(maybe-with-mark wrap?
-				 expr 
-				 (certify
-				  expr
-				  (annotate-let expr ctx flexible? trans?
-						(syntax (vars ...))
-						(syntax (rhs ...))
-						(syntax body))))]
-	       
-	       ;; Wrap RHS
-	       [(set! var rhs)
-		(let ([new-rhs (annotate-named 
-				(syntax var)
-				(syntax rhs)
-				ctx flexible? trans?)])
-		  ;; set! might fail on undefined variable, or too many values:
-		  (maybe-with-mark wrap?
-				   expr 
-				   (certify
-				    expr
-				    (rebuild expr (list (cons #'rhs new-rhs))))))]
-	       
-	       ;; Wrap subexpressions only
-	       [(begin . body)
-		(maybe-with-mark wrap?
-				 expr
-				 (certify
-				  expr
-				  (annotate-seq expr (syntax body) 
-						annotate ctx flexible? trans?)))]
-	       [(begin0 . body)
-		(maybe-with-mark wrap?
-				 expr
-				 (certify
-				  expr
-				  (annotate-seq expr (syntax body) 
-						annotate ctx flexible? trans?)))]
-	       [(if tst thn els)
-		(let ([w-tst (annotate (syntax tst) ctx flexible? trans?)]
-		      [w-thn (annotate (syntax thn) ctx flexible? trans?)]
-		      [w-els (annotate (syntax els) ctx flexible? trans?)])
-		  (maybe-with-mark wrap?
-				   expr
-				   (certify
-				    expr
-				    (rebuild expr (list (cons #'tst w-tst)
-							(cons #'thn w-thn)
-							(cons #'els w-els))))))]
-	       [(if tst thn)
-		(let ([w-tst (annotate (syntax tst) ctx flexible? trans?)]
-		      [w-thn (annotate (syntax thn) ctx flexible? trans?)])
-		  (maybe-with-mark wrap?
-				   expr
-				   (certify
-				    expr
-				    (rebuild expr (list (cons #'tst w-tst)
-							(cons #'thn w-thn))))))]
-	       [(with-continuation-mark . body)
-		 (maybe-with-mark wrap?
-				  expr
-				  (certify
-				   expr
-				   (annotate-seq expr (syntax body) 
-						 annotate ctx flexible? trans?)))]
-	       
-	       ;; Wrap whole application, plus subexpressions
-	       [(#%app . body)
-		(if (stx-null? (syntax body))
-		    ;; It's a null:
+		 (rebuild expr (list (cons #'rhs marked)))))]
+	     
+	     ;; Just wrap body expressions
+	     [(module name init-import (#%plain-module-begin body ...))
+	      top?
+	      (let ([bodys (syntax->list (syntax (body ...)))])
+		(let ([bodyl (map (lambda (b)
+				    (annotate-top b trans?))
+				  bodys)])
+		  (certify
+		   expr
+		   (rebuild expr (map cons bodys bodyl)))))]
+	     
+	     ;; No way to wrap
+	     [(require i ...) expr]
+	     [(require-for-syntax i ...) expr]
+	     [(require-for-template i ...) expr]
+	     ;; No error possible (and no way to wrap)
+	     [(provide i ...) expr]
+	     
+	     ;; No error possible
+	     [(quote _)
+	      expr]
+	     [(quote-syntax _)
+	      expr]
+	     
+	     ;; Wrap body, also a profile point
+	     [(lambda args . body)
+	      (certify
+	       expr
+	       (keep-lambda-properties
+		expr
+		(profile-annotate-lambda name expr expr (syntax body) 
+					 trans?)))]
+	     [(case-lambda clause ...)
+	      (with-syntax ([([args . body] ...)
+			     (syntax (clause ...))])
+		(let* ([clauses (syntax->list (syntax (clause ...)))]
+		       [clausel
+			(map
+			 (lambda (body clause) (profile-annotate-lambda name expr clause body trans?))
+			 (syntax->list (syntax (body ...)))
+			 clauses)])
+		  (certify
+		   expr
+		   (keep-lambda-properties
 		    expr
-		    (maybe-with-mark wrap?
-				     expr
-				     (certify
-				      expr
-				      (annotate-seq expr (syntax body) 
-						    annotate ctx flexible? trans?))))]
-	       
-	       [_else
-		(error 'errortrace
-		       "unrecognized expression form~a: ~e"
-		       (if top? " at top-level" "")
-		       (syntax-object->datum expr))])
-	     expr))))
+		    (rebuild expr (map cons clauses clausel))))))]
+	     
+	     ;; Wrap RHSs and body
+	     [(let-values ([vars rhs] ...) . body)
+	      (with-mark expr 
+			 (certify
+			  expr
+			  (annotate-let expr trans?
+					(syntax (vars ...))
+					(syntax (rhs ...))
+					(syntax body))))]
+	     [(letrec-values ([vars rhs] ...) . body)
+	      (with-mark expr 
+			 (certify
+			  expr
+			  (annotate-let expr trans?
+					(syntax (vars ...))
+					(syntax (rhs ...))
+					(syntax body))))]
+	     
+	     ;; Wrap RHS
+	     [(set! var rhs)
+	      (let ([new-rhs (annotate-named 
+			      (syntax var)
+			      (syntax rhs)
+			      trans?)])
+		;; set! might fail on undefined variable, or too many values:
+		(with-mark expr 
+			   (certify
+			    expr
+			    (rebuild expr (list (cons #'rhs new-rhs))))))]
+	     
+	     ;; Wrap subexpressions only
+	     [(begin . body)
+	      (with-mark expr
+			 (certify
+			  expr
+			  (annotate-seq expr (syntax body) 
+					annotate trans?)))]
+	     [(begin0 . body)
+	      (with-mark expr
+			 (certify
+			  expr
+			  (annotate-seq expr (syntax body) 
+					annotate trans?)))]
+	     [(if tst thn els)
+	      (let ([w-tst (annotate (syntax tst) trans?)]
+		    [w-thn (annotate (syntax thn) trans?)]
+		    [w-els (annotate (syntax els) trans?)])
+		(with-mark expr
+			   (certify
+			    expr
+			    (rebuild expr (list (cons #'tst w-tst)
+						(cons #'thn w-thn)
+						(cons #'els w-els))))))]
+	     [(if tst thn)
+	      (let ([w-tst (annotate (syntax tst) trans?)]
+		    [w-thn (annotate (syntax thn) trans?)])
+		(with-mark expr
+			   (certify
+			    expr
+			    (rebuild expr (list (cons #'tst w-tst)
+						(cons #'thn w-thn))))))]
+	     [(with-continuation-mark . body)
+	      (with-mark expr
+			 (certify
+			  expr
+			  (annotate-seq expr (syntax body) 
+					annotate trans?)))]
+	     
+	     ;; Wrap whole application, plus subexpressions
+	     [(#%app . body)
+	      (cond
+	       [(stx-null? (syntax body))
+		;; It's a null:
+		expr]
+	       [(syntax-case* expr (#%app void) (if trans? module-transformer-identifier=? module-identifier=?)
+		  [(#%app void) #t]
+		  [_else #f])
+		;; It's (void):
+		expr]
+	       [else
+		(with-mark expr
+			   (certify
+			    expr
+			    (annotate-seq expr (syntax body) 
+					  annotate trans?)))])]
+
+	     [_else
+	      (error 'errortrace
+		     "unrecognized expression form~a: ~e"
+		     (if top? " at top-level" "")
+		     (syntax-object->datum expr))])
+	   expr)))
       
       (define annotate (make-annotate #f #f))
-      (define annotate-top+ (make-annotate #t #f))
-      (define (annotate-top expr trans?) (annotate-top+ expr (syntax-make-certificate-env) #t trans?))
-      (define annotate-named (lambda (name expr ctx wrap? trans?) ((make-annotate #t name) expr ctx wrap? trans?))))))
+      (define annotate-top (make-annotate #t #f))
+      (define annotate-named (lambda (name expr trans?) ((make-annotate #t name) expr trans?))))))

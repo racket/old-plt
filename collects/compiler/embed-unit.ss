@@ -47,9 +47,7 @@
       (define (find-cmdline)
 	(let ([m (regexp-match-positions "\\[Replace me for EXE hack" (current-input-port))])
 	  (if m
-	      (begin
-		(fprintf (current-error-port) "~a~n" (caar m))
-		(caar m))
+	      (caar m)
 	      (error 
 	       'make-embedding-executable
 	       (format

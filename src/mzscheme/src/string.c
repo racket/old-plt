@@ -3202,7 +3202,7 @@ static int utf8_decode_x(const unsigned char *s, int start, int end,
   if (dend < 0)
     dend = 0x7FFFFFFF;
 
-  if (!us && permissive && !might_continue) {
+  if (!us && permissive && !might_continue && !ipos) {
     /* Fast path */
     for (i = start, j = dstart; ((i < end) && (j < dend)); i++) {
       if (!((s[i] & 0xC0) == 0x80))

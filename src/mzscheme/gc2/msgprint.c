@@ -22,8 +22,6 @@ static void GC_prim_stringout(char *s, int len)
   static HANDLE console;
   DWORD wrote;
 
-  return;
-
   if (!console) {
     COORD size;
     int is_new;

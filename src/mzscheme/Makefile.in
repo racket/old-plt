@@ -63,37 +63,32 @@ gmzwin.exp: $(srcdir)/include/gmzwin.def
 	dlltool --def $(srcdir)/include/gmzwin.def --output-exp gmzwin.exp --output-lib gmzwin.a --dllname mzscheme.exe
 
 g-c:
-	cd @GCDIR@; $(MAKE) gc.a 
-	$(MAKE) libgc.a
+	cd @GCDIR@; $(MAKE) ../libmzgc.@LIBSFX@ 
 
 sproc-extra-lib:
 	cd @GCDIR@; $(MAKE) sproc.o
 	$(MAKE) sproc.o
 
-gc.a: @GCDIR@/*.o
-	$(AR) $(ARFLAGS) @GCDIR@/gc.a @GCDIR@/*.o  
+gc.@LIBSFX@: 
+	$(AR) $(ARFLAGS) @GCDIR@/gc.@LIBSFX@ @GCDIR@/*.o
 
 mzlibrary:
 	cd src; $(MAKE) all 
-	$(MAKE) libmzscheme.a
+	$(MAKE) libmzscheme.@LIBSFX@
 
-libmzscheme.a: src/*.o
-	$(AR) $(ARFLAGS) libmzscheme.a src/*.o
-	$(RANLIB) libmzscheme.a
-
-libgc.a: @GCDIR@/gc.a
-	cp @GCDIR@/gc.a libgc.a
-	$(RANLIB) libgc.a
+libmzscheme.@LIBSFX@: src/*.o
+	$(AR) $(ARFLAGS) libmzscheme.@LIBSFX@ src/*.o
+	$(RANLIB) libmzscheme.@LIBSFX@
 
 # Irix sproc, only
 sproc.o: @GCDIR@/sproc.o
 	cp @GCDIR@/sproc.o sproc.o
 
-mzscheme: libmzscheme.a libgc.a main.o $(SPECIALIZINGOBJECTS)
-	$(CC) -o mzscheme main.o $(SPECIALIZINGOBJECTS) -L. -lmzscheme -lgc @LIBS@
+mzscheme: libmzscheme.@LIBSFX@ libmzgc.@LIBSFX@ main.o $(SPECIALIZINGOBJECTS)
+	$(CC) -o mzscheme main.o $(SPECIALIZINGOBJECTS) libmzscheme.@LIBSFX@ libmzgc.@LIBSFX@ @LIBS@
 
 # OSKit-based MzScheme
-mzscheme.multiboot : libmzscheme.a libgc.a main.o
+mzscheme.multiboot : libmzscheme.@LIBSFX@ libmzgc.@LIBSFX@ main.o
 	$(LD) -Ttext 100000 $(LDFLAGS) @OSKHOME@/lib/oskit/multiboot.o \
 		-o mzscheme.multiboot main.o -L. -lmzscheme -lgc \
                 -L@OSKHOME@/lib -loskit_kern -loskit_clientos @EXTRA_OSK_LIBS@ \
@@ -187,7 +182,7 @@ clean:
 	/bin/rm -rf tmp[123456789] tests/tmp[123456789] tests/sub[123]
 	/bin/rm -f tests/*~
 	/bin/rm -f *.o core
-	/bin/rm -f mzdyn.o libgc.a libmzscheme.a libdl.a mzscheme mzscheme.multiboot
+	/bin/rm -f mzdyn.o libmzgc.@LIBSFX@ libmzscheme.@LIBSFX@ libdl.a mzscheme mzscheme.multiboot
 	cd gc; $(MAKE) clean
 	cd gc2; $(MAKE) clean
 	cd sgc; $(MAKE) clean
@@ -208,8 +203,8 @@ normal-install:
 	cp mzscheme $(srcdir)/../../.bin/$(INSTALLSYS)/mzscheme
 	if [ ! -d $(LIBIDIR) ] ; then mkdir $(LIBIDIR) ; fi
 	cp mzdyn.o $(LIBIDIR)/mzdyn.o
-	cp libgc.a $(LIBIDIR)/libgc.a
-	cp libmzscheme.a $(LIBIDIR)/libmzscheme.a
+	cp libmzgc.@LIBSFX@ $(LIBIDIR)/libmzgc.@LIBSFX@
+	cp libmzscheme.@LIBSFX@ $(LIBIDIR)/libmzscheme.@LIBSFX@
 	echo 'CC=@CC@' > $(BUILDINFO)
 	echo 'CFLAGS=@CFLAGS@ @OPTIONS@' >> $(BUILDINFO)
 	echo 'LIBS=@LIBS@' >> $(BUILDINFO)
@@ -222,8 +217,8 @@ cygwin-install:
 	cp mzscheme.exe $(srcdir)/../../mzscheme.exe
 	cd dynsrc; $(MAKE) cygwin-install
 	cp mzstart.exe $(srcdir)/../../collects/launcher/mzstart.exe
-	cp libgc.a $(WLIBIDIR)/libgc.a
-	cp libmzscheme.a $(WLIBIDIR)/libmzscheme.a
+	cp libmzgc.@LIBSFX@ $(WLIBIDIR)/libmzgc.@LIBSFX@
+	cp libmzscheme.@LIBSFX@ $(WLIBIDIR)/libmzscheme.@LIBSFX@
 	echo 'CC=gcc' > $(WBUILDINFO)
 	echo 'CFLAGS=@CFLAGS@ @OPTIONS@' >> $(WBUILDINFO)
 	echo 'LIBS=-lm  -lm  gmzwin.exp' >> $(WBUILDINFO)

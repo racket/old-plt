@@ -8,6 +8,8 @@ AC_INIT(mzscheme/src/bignum.c)
 
 AC_ARG_ENABLE(mred, ""  feature: mred           compile MrEd as well as MzScheme (enabled by default), , enable_mred=yes )
 
+AC_ARG_ENABLE(dynlib, ""  feature: dynlib         create shared libraries)
+
 AC_ARG_ENABLE(sgc, ""  feature: sgc            use Senora GC instead of the Boehm GC)
 AC_ARG_ENABLE(sgcdebug, ""  feature: sgcdebug       use Senora GC for debugging)
 
@@ -352,6 +354,26 @@ if test "${enable_noopt}" = "yes" ; then
   CFLAGS=`echo "$CFLAGS" | awk "$AWKPRG"`
 fi
 
+############## libtool ################
+
+if test "${enable_dynlib}" = "yes" ; then
+  echo "generating libtool"
+  ${srcdir}/ltconfig ${srcdir}/ltmain.sh
+  LTDIR=`pwd`
+  AR="${LTDIR}/libtool $CC -rpath ${srcdir}/../lib -o"
+  ARFLAGS=""
+  RANLIB=":"
+  CC="${LTDIR}/libtool $CC"
+  LIBSFX=la
+  MREDLINKER="${LTDIR}/libtool $CXX"
+  WXLIBS=WXLIBSDYN
+  WXDEPS=WXDEPSDYN
+else
+  MREDLINKER="$CXX"
+  WXLIBS=WXLIBSNORM
+  WXDEPS=WXDEPSNORM
+fi
+
 ############## final output ################
 
 LIBS="$LIBS $EXTRALIBS"
@@ -380,6 +402,11 @@ AC_SUBST(MROPTIONS)
 AC_SUBST(GCDIR)
 AC_SUBST(MZBINTARGET)
 AC_SUBST(MZINSTALLTARGET)
+
+AC_SUBST(MREDLINKER)
+AC_SUBST(LIBSFX)
+AC_SUBST(WXLIBS)
+AC_SUBST(WXDEPS)
 
 AC_SUBST(MAKE_MRED)
 AC_SUBST(MAKE_MRED3M)

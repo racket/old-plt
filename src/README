@@ -82,6 +82,8 @@ the Unix instructions below, but note the following:
     are not distributed with PLT Scheme. The configure process checks
     automatically whether these libraries are available.
 
+    For OpenGL and pthread support for mred, see the note below.
+
     Finally, make sure that you are using GNU `make'. Specifically,
     the content of the "foreign" subdirectory requires GNU `make'.
 
@@ -321,3 +323,20 @@ If you modify MzScheme and change any primitive syntax or the
 collection of built-in identifers, be sure to turn off
 USE_COMPILED_MACROS in schminc.h. Otherwise, MzScheme won't start.
 See schminc.h for details.
+
+
+OpenGL and pthreads on Unix
+---------------------------
+
+Some Unix platforms require OpenGL programs to be linked against pthreads.  To
+use mred's OpenGL support on these platforms, mred must be configured with the
+--enable-pthread option.  Unfortunately, mzscheme's singal handling does not
+work properly when linked with pthreads.  When pthreads are enabled, mzscheme
+and mred cannot use interupt timers, and are limited to 1MB stack sizes.  If
+the configuration script detects that the platform needs pthreads, and they are
+not enabled, it prints a warning and disables GL support.  On some platforms,
+including at least FreeBSD with the MESA GL implementation (but not the Nvidia
+GL implementation which does not need pthreads), configure cannot detect the
+need for pthreads.  On these platforms, GL will be enabled, but will not work
+properly if the --enable-pthread option is not given. 
+

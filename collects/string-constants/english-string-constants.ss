@@ -218,7 +218,9 @@
  (error-saving-preferences "Error saving preferences: ~a")
  (error-reading-preferences "Error reading preferences")
  (expected-list-of-length2 "expected a list of length 2")
- (general-prefs-panel-label "General")
+ (scheme-prefs-panel-label "Scheme")
+ (misc-prefs-panel-label "Miscellaneous")
+ (editor-prefs-panel-label "Editing")
  (highlight-parens "Highlight between matching parens")
  (fixup-parens "Correct parens")
  (flash-paren-match "Flash paren match")
@@ -256,7 +258,6 @@
  (set-font "Set Font...")
  (select-font-name "Select Font Name")
  (example-text "Example Text:")
- (general-ii "General II")
  (only-warn-once "Only warn once when executions and interactions are not synchronized")
  
  ; warning message when lockfile is around

@@ -22,6 +22,9 @@
                                    (define dynamic-error
                                      (default-error-handler 'runtime-syntax-error))))]
         [pretty : mzlib:pretty-print^ ((require-library-unit/sig "prettyr.ss"))]
+        [utils : cogen-utils^ ((require-library-unit/sig "cogen-utilsr.ss" "cogen")
+                               zodiac
+                               (error : (internal-error static-error)))]
         [shared : stepper:shared^ ((require-library-unit/sig "sharedr.ss" "stepper")
                                    zodiac
                                    error
@@ -31,6 +34,7 @@
                    zodiac
                    (core function)
                    error
+                   utils
                    stepper
                    shared
                    zcp)]
@@ -39,7 +43,8 @@
                       zodiac
                       (core function)
                       error
-                       (drscheme basis)
+                      utils
+                      (drscheme basis)
                       stepper
                       shared)]
         [stepper : stepper:settings^

@@ -2,6 +2,7 @@
   (import [z : zodiac:system^]
 	  mzlib:function^
 	  [e : stepper:error^]
+          [utils : cogen-utils^]
           [s : stepper:settings^]
 	  stepper:shared^
           stepper:zodiac-client-procs^)
@@ -44,67 +45,6 @@
   (define (var-set-intersect a-set b-set)
     (varref-remove* (varref-remove* a-set b-set) b-set))
       
-  #| .
-     somehow, we need to translate zodiac structures back into scheme structures so that 
-     we can hand them off to mzscheme.  By rights, that's an aries-like job.  So, there
-     are two ways we could do this.
-     
-     First, we could subsume the needed forms into zodiac, so that this
-     module could simply deliver the annotated code to aries, BUT we really don't want aries
-     to further annotate it with additional source-position information. At least, that 
-     seems a bit silly to me.
-     
-     The other alternative, which I'm tentatively pursuing, is to do an aries-like translation
-     right here, but it means I have to COPY CODE from aries.  In particular, I need this
-     arglist->ilist function. Ick.
-     |#
-    
-  ; check-for-keyword/both : (bool -> (z:varref -> void))
-  
-  (define check-for-keyword/both
-    (lambda (disallow-procedures?)
-      (lambda (id)
-	(let ([real-id
-	       (cond
-		 [(z:binding? id) (z:binding-orig-name id)]
-		 [(z:top-level-varref? id) (z:varref-var id)]
-		 [(z:bound-varref? id)
-		  (z:binding-orig-name (z:bound-varref-binding id))]
-		 [(z:symbol? id)
-		  (z:read-object id)]
-		 [else
-		  (e:internal-error "Bad input to check-for-keyword: ~s" id)])])
-	  (when (and (keyword-name? real-id)
-		     (or disallow-procedures?
-			 (let ([gdv (global-defined-value real-id)])
-			   (or (syntax? gdv)
-			       (macro? gdv)))))
-	    (e:static-error id "Invalid use of keyword ~s"
-			    real-id))))))
-  
-  (define check-for-keyword (check-for-keyword/both #t))
-  (define check-for-keyword/proc (check-for-keyword/both #f))
-
-  ; Here's more code copied directly from aries.  This is getting worse and worse.
-  
-  (define the-undefined-value (letrec ((x x)) x))
-  
-  (define-struct (undefined struct:exn) (id))
-  (define signal-undefined (make-parameter #t))
-  (define undefined-error-format
-    "Variable ~s referenced before definition or initialization")
-  
-  (define-struct (not-boolean struct:exn) (val))
-  (define signal-not-boolean (make-parameter #f))
-  (define not-boolean-error-format "Condition value is neither #t nor #f: ~e")
-
-  ; and yet more copied code.  Ugh.
-  
-  (define (is-unit-bound? varref)
-    (and (z:top-level-varref/bind/unit? varref)
-	 (z:top-level-varref/bind/unit-unit? varref)))
-  
-  
   (define-values (never-undefined? mark-never-undefined)
     (values
      (lambda (parsed) (never-undefined-getter (z:parsed-back parsed)))
@@ -308,10 +248,10 @@
                                          (z:bound-varref-binding expr)))]
                             [free-vars (list expr)]
                             [debug-info (make-debug-info-normal free-vars)]
-                            [annotated (if (and maybe-undef? (signal-undefined))
-                                           `(#%if (#%eq? ,v ,the-undefined-value)
-                                             (#%raise (,make-undefined
-                                                       ,(format undefined-error-format real-v)
+                            [annotated (if (and maybe-undef? (utils:signal-undefined))
+                                           `(#%if (#%eq? ,v ,utils:the-undefined-value)
+                                             (#%raise (,utils:make-undefined
+                                                       ,(format utils:undefined-error-format real-v)
                                                        (#%current-continuation-marks)
                                                        (#%quote ,v)))
                                              ,v)
@@ -332,10 +272,10 @@
 		 #f)]
 	       
                [(z:top-level-varref? expr)
-		(if (is-unit-bound? expr)
+		(if (utils:is-unit-bound? expr)
 		    (translate-varref #t #f)
 		    (begin
-		      (check-for-keyword/proc expr)
+		      (utils:check-for-keyword/proc expr)
 		      (translate-varref #f #t)))]
 	       
 	       [(z:app? expr)
@@ -372,8 +312,8 @@
 	       
 	       [(z:struct-form? expr)
 		(let ([super-expr (z:struct-form-super expr)]
-		      [raw-type (read->raw (z:struct-form-type expr))]
-		      [raw-fields (map read->raw (z:struct-form-fields expr))])
+		      [raw-type (utils:read->raw (z:struct-form-type expr))]
+		      [raw-fields (map utils:read->raw (z:struct-form-fields expr))])
 		  (if super-expr
 		      (let+ ([val (values annotated-super-expr free-vars-super-expr) 
 				  (non-tail-recur super-expr)]
@@ -402,8 +342,8 @@
                                        (#%if ,if-temp
                                         ,annotated-then
                                         ,annotated-else)
-                                       (#%raise (,make-not-boolean
-                                                 (#%format ,not-boolean-error-format
+                                       (#%raise (,utils:make-not-boolean
+                                                 (#%format ,utils:not-boolean-error-format
                                                   ,if-temp)
                                                  (#%current-continuation-marks)
                                                  ,if-temp)))))]
@@ -421,7 +361,7 @@
 	       
 	       [(z:quote-form? expr)
                 (values (wcm-wrap (make-debug-info-normal null)
-                                  `(#%quote ,(read->raw (z:quote-form-expr expr)))) 
+                                  `(#%quote ,(utils:read->raw (z:quote-form-expr expr)))) 
                         null)]
 	       
 	       ; there is no begin, begin0, or let in beginner. but can they be generated? 
@@ -429,7 +369,7 @@
 	       
 	       [(z:define-values-form? expr)
 		(let+ ([val vars (z:define-values-form-vars expr)]
-		       [val _ (map check-for-keyword vars)]
+		       [val _ (map utils:check-for-keyword vars)]
 		       [val var-names (map z:varref-var vars)]
                        
                        ; NB: this next recurrence is NOT really tail, but we cannot
@@ -467,10 +407,10 @@
 			    (let-values ([(annotated free-vars)
 					  (lambda-body-recur body)])
 			      (let* ([new-free-vars (varref-remove* var-list free-vars)]
-                                     [args (arglist->ilist arglist)]
-                                     [new-annotated (list (improper-map z:binding-var args) annotated)])
-                                (improper-foreach check-for-keyword args)
-                                (improper-foreach mark-never-undefined args)
+                                     [args (utils:arglist->ilist arglist)]
+                                     [new-annotated (list (utils:improper-map z:binding-var args) annotated)])
+                                (utils:improper-foreach utils:check-for-keyword args)
+                                (utils:improper-foreach mark-never-undefined args)
 				(list new-annotated new-free-vars)))))]
 		       [pile-of-results (map annotate-case 
 					     (z:case-lambda-form-args expr)

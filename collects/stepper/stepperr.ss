@@ -10,7 +10,7 @@
           [f : framework^]
           stepper:shared^)
   
-  (define beginner-level-name "Beginner Student")
+  (define beginner-level-name "Beginning Student")
   
   (define (send-to-other-eventspace eventspace thunk)
     (parameterize ([current-eventspace eventspace])
@@ -553,8 +553,9 @@
       (if (not (string=? (d:basis:setting-name settings) beginner-level-name))
           (message-box "Stepper" 
                        (format (string-append "Language level is set to \"~a\".~n"
-                                              "The Foot only works for the \"Beginner\" language level.~n")
-                               (d:basis:setting-name settings))
+                                              "The Foot only works for the \"~a\" language level.~n")
+                               (d:basis:setting-name settings)
+                               beginner-level-name)
                        #f 
                        '(ok))
           (stepper-go frame settings)))))

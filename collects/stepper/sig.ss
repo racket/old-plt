@@ -20,8 +20,6 @@
 
 (define-signature stepper:shared^
   (list-take
-   read->raw 
-   arglist->ilist 
    (struct closure-record (name mark constructor?))
    create-bogus-bound-varref
    create-bogus-top-level-varref
@@ -34,8 +32,6 @@
    expr-read
    set-expr-read!
    flatten-take
-   improper-map
-   improper-foreach
    closure-table-put!
    closure-table-lookup))
 

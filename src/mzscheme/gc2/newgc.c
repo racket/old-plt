@@ -1769,6 +1769,7 @@ static unsigned long tag_counts[NUMBER_OF_TAGS];
 static int running_undocumented_reach_printer = 0;
 static int kill_reach_prop = 0;
 extern char *scheme_get_type_name(short t);
+static unsigned long total_reach_use = 0;
 
 static void undoc_reach_abort() {
   kill_reach_prop = 1;
@@ -1788,6 +1789,7 @@ static inline void reach_printer_mark(struct mpage *page, void *p)
   if(page->big_page && !(page->generation == 0)) {
     info = (struct objhead *)(NUM(page) + HEADER_SIZEB); 
     if(!info->debug_mark) {
+      total_reach_use += page->size;
       info->debug_mark = 1;
       if(info->type == PAGE_TAGGED) 
 	tag_counts[*(unsigned short*)p]++;
@@ -1809,6 +1811,7 @@ static inline void reach_printer_mark(struct mpage *page, void *p)
       struct objhead *info = (struct objhead *)start;
       
       if(!info->debug_mark) {
+	total_reach_use += gcWORDS_TO_BYTES(info->size);
 	info->debug_mark = 1;
 	if(info->type == PAGE_TAGGED)
 	  tag_counts[*(unsigned short*)p]++;
@@ -1869,6 +1872,7 @@ int print_object_reaches(Scheme_Object *obj)
     in_unsafe_allocation_mode = 1;
     running_undocumented_reach_printer = 1;
     unsafe_allocation_abort = undoc_reach_abort;
+    total_reach_use = 0;
     
     gcMARK(obj);
     while(pop_2ptr((void**)&page, &ptr) && !kill_reach_prop) {
@@ -1925,6 +1929,7 @@ int print_object_reaches(Scheme_Object *obj)
       if(tag_counts[i] > 0) 
 	GCWARN((GCOUTF, "   %li %s objects\n", tag_counts[i],
 		scheme_get_type_name(i)));
+    GCWARN((GCOUTF, "... for a total of %li bytes\n", total_reach_use));
 
     return 1;
   }

@@ -505,7 +505,11 @@ void* wxBitmap::GetHandle(void) { return (Xbitmap ? &(Xbitmap->x_pixmap) : NULL)
 // wxCursor
 //-----------------------------------------------------------------------------
 
+/* wxCursor is a subclass of wxBitmap for historical reasons. It
+   doesn't make any sense. */
+
 static XColor black = { 0, 0, 0, 0, 0, 0 };
+static XColor white = { 0, 65535, 65535, 65535, DoRed | DoGreen | DoBlue, 0 };
 
 wxCursor::wxCursor(void) : wxBitmap()
 {
@@ -514,41 +518,23 @@ wxCursor::wxCursor(void) : wxBitmap()
     Xcursor = NULL;
 }
 
-wxCursor::wxCursor(char *name, long flags, int x, int y) : wxBitmap(name, flags)
+wxCursor::wxCursor(wxBitmap *bm, wxBitmap *mask, int x, int y) : wxBitmap()
 {
     __type = wxTYPE_CURSOR;
 
     Xcursor = NULL;
 
-    /* MATTHEW: [5] check Ok() */
-    if (Xbitmap && Xbitmap->depth == 1 && Ok()) { // only possible for bitmaps
-        Xbitmap->x_hot = x; Xbitmap->y_hot = y;
-
-	Xcursor = new wxCursor_Xintern;
-	Xcursor->x_cursor
-	    = XCreatePixmapCursor(wxAPP_DISPLAY,
-				  Xbitmap->x_pixmap, Xbitmap->x_pixmap,
-				  &black, &black,
-				  Xbitmap->x_hot, Xbitmap->y_hot);
-	Destroy(); // destroy bitmap
-    }
-}
-
-wxCursor::wxCursor(char bits[], int width, int height /* , int x, int y */)
-    : wxBitmap(bits, width, height)
-{
-    __type = wxTYPE_CURSOR;
-
-    /* MATTHEW: [5] check Ok() */
-    if (Xbitmap && Xbitmap->depth == 1 && Ok()) { // only possible for bitmaps
-      /* Xbitmap->x_hot = x; Xbitmap->y_hot = y; */
-	Xcursor = new wxCursor_Xintern;
-	Xcursor->x_cursor
-	    = XCreatePixmapCursor(wxAPP_DISPLAY,
-				  Xbitmap->x_pixmap, Xbitmap->x_pixmap,
-				  &black, &black,
-				  Xbitmap->x_hot, Xbitmap->y_hot);
-	Destroy(); // destroy bitmap
+    if (bm->Ok() && mask->Ok()
+	&& (bm->GetDepth() == 1)
+	&& (mask->GetDepth() == 1)
+	&& (bm->GetWidth() == mask->GetWidth())
+	&& (bm->GetHeight() == mask->GetHeight())) {
+      Xcursor = new wxCursor_Xintern;
+      Xcursor->x_cursor
+	= XCreatePixmapCursor(wxAPP_DISPLAY,
+			      bm->Xbitmap->x_pixmap, mask->Xbitmap->x_pixmap,
+			      &black, &white,
+			      x, y);
     }
 }
 

@@ -651,52 +651,96 @@ wxCursor::wxCursor(char WXUNUSED(bits)[], int WXUNUSED(width), int WXUNUSED(heig
 //  wxTheCursorList->Append(this);
 }
 
-wxCursor::wxCursor(const char *cursor_file, long flags, int hotSpotX, int hotSpotY)
+static wxMemoryDC *temp_mdc, *temp_mask_mdc;
+
+wxCursor::wxCursor(wxBitmap *bm, wxBitmap *mask, int hotSpotX, int hotSpotY)
 {
+  int w, h, bw, bh, i, j, delta, bit, s;
+  unsigned char r, g, b;
+  unsigned char *ands, *xors;
+  wxColour *c;
+
   __type = wxTYPE_CURSOR;
   destroyCursor = FALSE;
   ms_cursor = 0;
   ok = FALSE;
-  if (flags & wxBITMAP_TYPE_CUR_RESOURCE)
-  {
-    ms_cursor = LoadCursor(wxhInstance, cursor_file);
-    if (ms_cursor)
-      ok = TRUE;
-    else
-      ok = FALSE;
+  
+  w = GetSystemMetrics(SM_CXCURSOR);
+  h = GetSystemMetrics(SM_CYCURSOR);
+
+  bw = bm->GetWidth();
+  bh = bm->GetHeight();
+
+  if ((bw > w) || (bh > h))
+    return;
+
+  if (!temp_mdc) {
+    wxREGGLOB(temp_mdc);
+    wxREGGLOB(temp_mask_mdc);
+    temp_mdc = new wxMemoryDC(1);
+    temp_mask_mdc = new wxMemoryDC(1);
   }
-  else if (flags & wxBITMAP_TYPE_CUR)
-  {
-#if USE_RESOURCE_LOADING_IN_MSW
-    ms_cursor = ReadCursorFile((char *)cursor_file, wxhInstance, &width, &height);
-#endif
+
+  temp_mdc->SelectObject(bm);
+  /* Might fail, so we double-check: */
+  if (!temp_mdc->GetObject())
+    return;
+  temp_mask_mdc->SelectObject(mask);
+  if (!temp_mask_mdc->GetObject()) {
+    temp_mdc->SelectObject(NULL);
+    return;
   }
-  else if (flags & wxBITMAP_TYPE_ICO)
-  {
-#if USE_RESOURCE_LOADING_IN_MSW
-    ms_cursor = IconToCursor((char *)cursor_file, wxhInstance, hotSpotX, hotSpotY, &width, &height);
-#endif
+
+  c = new wxColour();
+
+  s = (w * h) >> 3;
+  ands = new char[s];
+  xors = new char[s];
+
+  /* Init arrays to a value that means "the screen" */
+  for (i = 0; i < s; i++) {
+    ands[i] = 255;
+    xors[i] = 0;
   }
-  else if (flags & wxBITMAP_TYPE_BMP)
-  {
-#if USE_RESOURCE_LOADING_IN_MSW
-    HBITMAP hBitmap = 0;
-    HPALETTE hPalette = 0;
-    Bool success = ReadDIB((char *)cursor_file, &hBitmap, &hPalette);
-    if (!success)
-      return;
-    if (hPalette)
-      DeleteObject(hPalette);
-    POINT pnt;
-    pnt.x = hotSpotX;
-    pnt.y = hotSpotY;
-    ms_cursor = MakeCursorFromBitmap(wxhInstance, hBitmap, &pnt);
-    DeleteObject(hBitmap);
-    if (ms_cursor)
-      ok = TRUE;
-#endif
+
+  bit = 1;
+  delta = 0;
+  for (j = 0; j < bh; j++) {
+    for (i = 0; i < w; i++) {
+      if (i < bw) {
+	temp_mask_mdc->GetPixel(i, j, &c);
+	c->Get(&r, &g, &b);
+	
+	/* black bit in mask? */
+	if (!r && !g && !b) {
+	  temp_mdc->GetPixel(i, j, &c);
+	  c->Get(&r, &g, &b);
+	  
+	  if (!r && !g && !b) {
+	    /* white bit for cursor */
+	    ands[delta] -= bit;	    
+	    xors[delta] |= bit;	    
+	  } else {
+	    /* black bit for cursor */
+	    ands[delta] -= bit;
+	  }
+	} /* otherwise, leave as screen */
+      }
+
+      bit = bit << 1;
+      if (bit > 128) {
+	delta++;
+	bit = 1;
+      }
+    }
   }
-//  wxTheCursorList->Append(this);
+
+  ms_cursor = CreateCursor(wxhInstance, hotSpotX, hotSpotY, w, h, ands, xors);
+
+  temp_mdc->SelectObject(NULL);
+  temp_mask_mdc->SelectObject(NULL);
+
+  ok = !!ms_cursor;
 }
 
 // Cursors by stock number

@@ -149,8 +149,7 @@ class wxCursor: public wxBitmap
   Bool destroyCursor;
   wxCursor(void);
   wxCursor(char bits[], int width, int height);
-  wxCursor(const char *name, long flags = wxBITMAP_DISCARD_COLOURMAP | wxBITMAP_TYPE_CUR_RESOURCE,
-	   int hotSpotX = 0, int hotSpotY = 0);
+  wxCursor(wxBitmap *bm, wxBitmap *mask, int hotSpotX = 0, int hotSpotY = 0);
   wxCursor(int cursor_type);
   ~wxCursor(void);
 };

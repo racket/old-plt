@@ -77,6 +77,9 @@ void objscheme_setup_wxPenList(Scheme_Env *env);
 int objscheme_istype_wxPenList(Scheme_Object *obj, const char *stop, int nullOK);
 Scheme_Object *objscheme_bundle_wxPenList(class wxPenList *realobj);
 class wxPenList *objscheme_unbundle_wxPenList(Scheme_Object *obj, const char *where, int nullOK);
+extern int objscheme_istype_wxBitmap(Scheme_Object *, const char *, int);
+extern class wxBitmap *objscheme_unbundle_wxBitmap(Scheme_Object *, const char *, int);
+extern class wxBitmap *objscheme_unbundle_wxBitmap(Scheme_Object *, const char *, int);
 #endif
 void objscheme_setup_wxCursor(Scheme_Env *env);
 #ifndef WXS_SETUP_ONLY

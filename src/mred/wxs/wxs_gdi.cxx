@@ -36,72 +36,6 @@
 START_XFORM_SKIP;
 #endif
 
-
-#ifndef wx_mac
-# define wxBITMAP_TYPE_PICT 101
-#endif
-
-#define wxBITMAP_TYPE_UNKNOWN 0
-
-static Scheme_Object *bitmapType_wxBITMAP_TYPE_BMP_sym = NULL;
-static Scheme_Object *bitmapType_wxBITMAP_TYPE_GIF_sym = NULL;
-static Scheme_Object *bitmapType_wxBITMAP_TYPE_XBM_sym = NULL;
-static Scheme_Object *bitmapType_wxBITMAP_TYPE_XPM_sym = NULL;
-static Scheme_Object *bitmapType_wxBITMAP_TYPE_PICT_sym = NULL;
-static Scheme_Object *bitmapType_wxBITMAP_TYPE_JPEG_sym = NULL;
-static Scheme_Object *bitmapType_wxBITMAP_TYPE_UNKNOWN_sym = NULL;
-
-static void init_symset_bitmapType(void) {
-  REMEMBER_VAR_STACK();
-  wxREGGLOB(bitmapType_wxBITMAP_TYPE_BMP_sym);
-  bitmapType_wxBITMAP_TYPE_BMP_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("bmp"));
-  wxREGGLOB(bitmapType_wxBITMAP_TYPE_GIF_sym);
-  bitmapType_wxBITMAP_TYPE_GIF_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("gif"));
-  wxREGGLOB(bitmapType_wxBITMAP_TYPE_XBM_sym);
-  bitmapType_wxBITMAP_TYPE_XBM_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("xbm"));
-  wxREGGLOB(bitmapType_wxBITMAP_TYPE_XPM_sym);
-  bitmapType_wxBITMAP_TYPE_XPM_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("xpm"));
-  wxREGGLOB(bitmapType_wxBITMAP_TYPE_PICT_sym);
-  bitmapType_wxBITMAP_TYPE_PICT_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("pict"));
-  wxREGGLOB(bitmapType_wxBITMAP_TYPE_JPEG_sym);
-  bitmapType_wxBITMAP_TYPE_JPEG_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("jpeg"));
-  wxREGGLOB(bitmapType_wxBITMAP_TYPE_UNKNOWN_sym);
-  bitmapType_wxBITMAP_TYPE_UNKNOWN_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("unknown"));
-}
-
-static int unbundle_symset_bitmapType(Scheme_Object *v, const char *where) {
-  SETUP_VAR_STACK(1);
-  VAR_STACK_PUSH(0, v);
-  if (!bitmapType_wxBITMAP_TYPE_UNKNOWN_sym) WITH_VAR_STACK(init_symset_bitmapType());
-  if (0) { }
-  else if (v == bitmapType_wxBITMAP_TYPE_BMP_sym) { return wxBITMAP_TYPE_BMP; }
-  else if (v == bitmapType_wxBITMAP_TYPE_GIF_sym) { return wxBITMAP_TYPE_GIF; }
-  else if (v == bitmapType_wxBITMAP_TYPE_XBM_sym) { return wxBITMAP_TYPE_XBM; }
-  else if (v == bitmapType_wxBITMAP_TYPE_XPM_sym) { return wxBITMAP_TYPE_XPM; }
-  else if (v == bitmapType_wxBITMAP_TYPE_PICT_sym) { return wxBITMAP_TYPE_PICT; }
-  else if (v == bitmapType_wxBITMAP_TYPE_JPEG_sym) { return wxBITMAP_TYPE_JPEG; }
-  else if (v == bitmapType_wxBITMAP_TYPE_UNKNOWN_sym) { return wxBITMAP_TYPE_UNKNOWN; }
-  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "bitmapType symbol", -1, 0, &v));
-  return 0;
-}
-
-static Scheme_Object *bundle_symset_bitmapType(int v) {
-  if (!bitmapType_wxBITMAP_TYPE_UNKNOWN_sym) init_symset_bitmapType();
-  switch (v) {
-  case wxBITMAP_TYPE_BMP: return bitmapType_wxBITMAP_TYPE_BMP_sym;
-  case wxBITMAP_TYPE_GIF: return bitmapType_wxBITMAP_TYPE_GIF_sym;
-  case wxBITMAP_TYPE_XBM: return bitmapType_wxBITMAP_TYPE_XBM_sym;
-  case wxBITMAP_TYPE_XPM: return bitmapType_wxBITMAP_TYPE_XPM_sym;
-  case wxBITMAP_TYPE_PICT: return bitmapType_wxBITMAP_TYPE_PICT_sym;
-  case wxBITMAP_TYPE_JPEG: return bitmapType_wxBITMAP_TYPE_JPEG_sym;
-  case wxBITMAP_TYPE_UNKNOWN: return bitmapType_wxBITMAP_TYPE_UNKNOWN_sym;
-  default: return NULL;
-  }
-}
-
-
-
-
 static Scheme_Object *family_wxDEFAULT_sym = NULL;
 static Scheme_Object *family_wxDECORATIVE_sym = NULL;
 static Scheme_Object *family_wxROMAN_sym = NULL;
@@ -3168,12 +3102,13 @@ static int istype_symset_cursor(Scheme_Object *v, const char *where) {
 
 
 
+
 class os_wxCursor : public wxCursor {
  public:
 
-  os_wxCursor CONSTRUCTOR_ARGS((string x0, int x1 = 0, int x2 = 0, int x3 = 0));
-#ifndef MZ_PRECISE_GC
   os_wxCursor CONSTRUCTOR_ARGS((int x0));
+#ifndef MZ_PRECISE_GC
+  os_wxCursor CONSTRUCTOR_ARGS((class wxBitmap* x0, class wxBitmap* x1, int x2 = 0, int x3 = 0));
 #endif
   ~os_wxCursor();
 #ifdef MZ_PRECISE_GC
@@ -3193,14 +3128,14 @@ void os_wxCursor::gcFixup() {
 
 static Scheme_Object *os_wxCursor_class;
 
-os_wxCursor::os_wxCursor CONSTRUCTOR_ARGS((string x0, int x1, int x2, int x3))
-CONSTRUCTOR_INIT(: wxCursor(x0, x1, x2, x3))
+os_wxCursor::os_wxCursor CONSTRUCTOR_ARGS((int x0))
+CONSTRUCTOR_INIT(: wxCursor(x0))
 {
 }
 
 #ifndef MZ_PRECISE_GC
-os_wxCursor::os_wxCursor CONSTRUCTOR_ARGS((int x0))
-CONSTRUCTOR_INIT(: wxCursor(x0))
+os_wxCursor::os_wxCursor CONSTRUCTOR_ARGS((class wxBitmap* x0, class wxBitmap* x1, int x2, int x3))
+CONSTRUCTOR_INIT(: wxCursor(x0, x1, x2, x3))
 {
 }
 #endif
@@ -3236,7 +3171,41 @@ static Scheme_Object *os_wxCursor_ConstructScheme(int n,  Scheme_Object *p[])
   PRE_VAR_STACK_PUSH(0, p);
   os_wxCursor *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
-  if ((n >= (POFFSET+1)) && WITH_REMEMBERED_STACK(istype_symset_cursor(p[POFFSET+0], NULL))) {
+  if ((n >= (POFFSET+1)) && WITH_REMEMBERED_STACK(objscheme_istype_wxBitmap(p[POFFSET+0], NULL, 0))) {
+    class wxBitmap* x0 INIT_NULLED_OUT;
+    class wxBitmap* x1 INIT_NULLED_OUT;
+    int x2;
+    int x3;
+
+    SETUP_VAR_STACK_PRE_REMEMBERED(4);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, realobj);
+    VAR_STACK_PUSH(2, x0);
+    VAR_STACK_PUSH(3, x1);
+
+    
+    if ((n < (POFFSET+2)) || (n > (POFFSET+4))) 
+      WITH_VAR_STACK(scheme_wrong_count_m("initialization in cursor% (pathname case)", POFFSET+2, POFFSET+4, n, p, 0));
+    x0 = WITH_VAR_STACK(objscheme_unbundle_wxBitmap(p[POFFSET+0], "initialization in cursor% (pathname case)", 0));
+    x1 = WITH_VAR_STACK(objscheme_unbundle_wxBitmap(p[POFFSET+1], "initialization in cursor% (pathname case)", 0));
+    if (n > (POFFSET+2)) {
+      x2 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET+2], 0, 15, "initialization in cursor% (pathname case)"));
+    } else
+      x2 = 0;
+    if (n > (POFFSET+3)) {
+      x3 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET+3], 0, 15, "initialization in cursor% (pathname case)"));
+    } else
+      x3 = 0;
+
+    { if (x0 && !x0->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("cursor","initialization"), "bad bitmap: ", p[POFFSET+0])); if (x0 && BM_SELECTED(x0)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("cursor","initialization"), "bitmap is currently installed into a bitmap-dc%: ", p[POFFSET+0])); }{ if (x0->GetDepth() != 1) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("cursor","initialization"), "bitmap is not monochrome: ", p[POFFSET+0]));if ((x0->GetWidth() != 16) || (x0->GetHeight() != 16)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("cursor","initialization"), "bitmap is not 16 pixels by 16 pixels: ", p[POFFSET+0])); }{ if (x1 && !x1->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("cursor","initialization"), "bad bitmap: ", p[POFFSET+1])); if (x1 && BM_SELECTED(x1)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("cursor","initialization"), "bitmap is currently installed into a bitmap-dc%: ", p[POFFSET+1])); }{ if (x1->GetDepth() != 1) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("cursor","initialization"), "bitmap is not monochrome: ", p[POFFSET+1]));if ((x1->GetWidth() != 16) || (x1->GetHeight() != 16)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("cursor","initialization"), "bitmap is not 16 pixels by 16 pixels: ", p[POFFSET+1])); }
+    realobj = WITH_VAR_STACK(new os_wxCursor CONSTRUCTOR_ARGS((x0, x1, x2, x3)));
+#ifdef MZ_PRECISE_GC
+    WITH_VAR_STACK(realobj->gcInit_wxCursor(x0, x1, x2, x3));
+#endif
+    realobj->__gc_external = (void *)p[0];
+    
+    
+  } else  {
     int x0;
 
     SETUP_VAR_STACK_PRE_REMEMBERED(2);
@@ -3252,42 +3221,6 @@ static Scheme_Object *os_wxCursor_ConstructScheme(int n,  Scheme_Object *p[])
     realobj = WITH_VAR_STACK(new os_wxCursor CONSTRUCTOR_ARGS((x0)));
 #ifdef MZ_PRECISE_GC
     WITH_VAR_STACK(realobj->gcInit_wxCursor(x0));
-#endif
-    realobj->__gc_external = (void *)p[0];
-    
-    
-  } else  {
-    string x0 INIT_NULLED_OUT;
-    int x1;
-    int x2;
-    int x3;
-
-    SETUP_VAR_STACK_PRE_REMEMBERED(3);
-    VAR_STACK_PUSH(0, p);
-    VAR_STACK_PUSH(1, realobj);
-    VAR_STACK_PUSH(2, x0);
-
-    
-    if ((n < (POFFSET+1)) || (n > (POFFSET+4))) 
-      WITH_VAR_STACK(scheme_wrong_count_m("initialization in cursor% (pathname case)", POFFSET+1, POFFSET+4, n, p, 0));
-    x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+0], "initialization in cursor% (pathname case)"));
-    if (n > (POFFSET+1)) {
-      x1 = WITH_VAR_STACK(unbundle_symset_bitmapType(p[POFFSET+1], "initialization in cursor% (pathname case)"));
-    } else
-      x1 = 0;
-    if (n > (POFFSET+2)) {
-      x2 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET+2], 0, 10000, "initialization in cursor% (pathname case)"));
-    } else
-      x2 = 0;
-    if (n > (POFFSET+3)) {
-      x3 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET+3], 0, 10000, "initialization in cursor% (pathname case)"));
-    } else
-      x3 = 0;
-
-    
-    realobj = WITH_VAR_STACK(new os_wxCursor CONSTRUCTOR_ARGS((x0, x1, x2, x3)));
-#ifdef MZ_PRECISE_GC
-    WITH_VAR_STACK(realobj->gcInit_wxCursor(x0, x1, x2, x3));
 #endif
     realobj->__gc_external = (void *)p[0];
     

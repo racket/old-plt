@@ -748,7 +748,7 @@ static char *error_write_to_string_w_max(Scheme_Object *v, int len, int *lenout)
 		   scheme_default_global_print_handler))) {
     long l;
     char *s;
-    s = scheme_write_to_string_w_max(v, &l, len);
+    s = scheme_print_to_string_w_max(v, &l, len);
     if (lenout)
       *lenout = l;
     return s;
@@ -1900,7 +1900,7 @@ def_error_value_string_proc(int argc, Scheme_Object *argv[])
     if (len < 3)
       len = 3;
 
-    s = scheme_write_to_string_w_max(argv[0], &l, len);
+    s = scheme_print_to_string_w_max(argv[0], &l, len);
 
     if ((origl < 3) && (l > origl))
       l = origl;

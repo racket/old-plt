@@ -3561,7 +3561,7 @@ static Scheme_Object *sch_default_global_port_print_handler(int argc, Scheme_Obj
   if (!SCHEME_OUTPORTP(argv[1]))
     scheme_wrong_type("default-global-port-print-handler", "output-port", 1, argc, argv);
 
-  scheme_internal_write(argv[0], argv[1]);
+  scheme_internal_print(argv[0], argv[1]);
 
   return scheme_void;
 }
@@ -3580,6 +3580,7 @@ display_write(char *name,
     port = CURRENT_OUTPUT_PORT(scheme_current_config());
 
   if (escape > 0) {
+    /* display */
     if (!((Scheme_Output_Port *)port)->display_handler) {
       Scheme_Object *v = argv[0];
       if (SCHEME_BYTE_STRINGP(v)) {
@@ -3595,6 +3596,7 @@ display_write(char *name,
       _scheme_apply_multi(((Scheme_Output_Port *)port)->display_handler, 2, a);
     }
   } else if (!escape) {
+    /* write */
     Scheme_Object *h;
 
     h = ((Scheme_Output_Port *)port)->write_handler;
@@ -3608,6 +3610,7 @@ display_write(char *name,
       _scheme_apply_multi(h, 2, a);
     }
   } else {
+    /* print */
     Scheme_Object *h;
     Scheme_Object *a[2];
 

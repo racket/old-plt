@@ -482,8 +482,10 @@ Scheme_Object *(*scheme_read)(Scheme_Object *port);
 Scheme_Object *(*scheme_read_syntax)(Scheme_Object *port, Scheme_Object *stxsrc);
 void (*scheme_write)(Scheme_Object *obj, Scheme_Object *port);
 void (*scheme_display)(Scheme_Object *obj, Scheme_Object *port);
+void (*scheme_print)(Scheme_Object *obj, Scheme_Object *port);
 void (*scheme_write_w_max)(Scheme_Object *obj, Scheme_Object *port, long maxl);
 void (*scheme_display_w_max)(Scheme_Object *obj, Scheme_Object *port, long maxl);
+void (*scheme_print_w_max)(Scheme_Object *obj, Scheme_Object *port, long maxl);
 void (*scheme_write_byte_string)(const char *str, long len, Scheme_Object *port);
 void (*scheme_write_char_string)(const mzchar *str, long len, Scheme_Object *port);
 long (*scheme_put_byte_string)(const char *who, Scheme_Object *port,
@@ -493,8 +495,11 @@ long (*scheme_put_char_string)(const char *who, Scheme_Object *port,
 				      const mzchar *str, long d, long len);
 char *(*scheme_write_to_string)(Scheme_Object *obj, long *len);
 char *(*scheme_display_to_string)(Scheme_Object *obj, long *len);
+char *(*scheme_print_to_string)(Scheme_Object *obj, long *len);
 char *(*scheme_write_to_string_w_max)(Scheme_Object *obj, long *len, long maxl);
 char *(*scheme_display_to_string_w_max)(Scheme_Object *obj, long *len, long maxl);
+char *(*scheme_print_to_string_w_max)(Scheme_Object *obj, long *len, long maxl);
+char *(*scheme_print_to_string_w_max)(Scheme_Object *obj, long *len, long maxl);
 void (*scheme_debug_print)(Scheme_Object *obj);
 void (*scheme_flush_output)(Scheme_Object *port);
 char *(*scheme_format)(mzchar *format, int flen, int argc, Scheme_Object **argv, long *rlen);

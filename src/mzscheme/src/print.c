@@ -68,7 +68,7 @@ static void register_traversers(void);
 #endif
 
 static void print_to_port(char *name, Scheme_Object *obj, Scheme_Object *port, 
-			  int notdisplay, long maxl);
+			  int notdisplay, long maxl, int check_honu);
 static int print(Scheme_Object *obj, int notdisplay, int compact, 
 		 Scheme_Hash_Table *ht,
 		 Scheme_Hash_Table *symtab, Scheme_Hash_Table *rnht,
@@ -86,7 +86,7 @@ static void print_vector(Scheme_Object *vec, int notdisplay, int compact,
 			 PrintParams *pp);
 static void print_char(Scheme_Object *chobj, int notdisplay, PrintParams *pp);
 static char *print_to_string(Scheme_Object *obj, long * volatile len, int write,
-			     Scheme_Object *port, long maxl);
+			     Scheme_Object *port, long maxl, int check_honu);
 
 static Scheme_Object *quote_link_symbol = NULL;
 static char *quick_buffer = NULL;
@@ -188,7 +188,7 @@ static void *print_to_port_k(void)
 
   print_to_port(p->ku.k.i2 ? "write" : "display", 
 		obj, port,
-		p->ku.k.i2, p->ku.k.i1);
+		p->ku.k.i2, p->ku.k.i1, p->ku.k.i3);
 
   return NULL;
 }
@@ -230,6 +230,7 @@ void scheme_write_w_max(Scheme_Object *obj, Scheme_Object *port, long maxl)
     p->ku.k.p2 = obj;
     p->ku.k.i1 = maxl;
     p->ku.k.i2 = 1;
+    p->ku.k.i3 = 0;
     
     (void)scheme_top_level_do(print_to_port_k, 0);
   }
@@ -251,6 +252,7 @@ void scheme_display_w_max(Scheme_Object *obj, Scheme_Object *port, long maxl)
     p->ku.k.p2 = obj;
     p->ku.k.i1 = maxl;
     p->ku.k.i2 = 0;
+    p->ku.k.i3 = 0;
     
     (void)scheme_top_level_do(print_to_port_k, 0);
   }
@@ -261,22 +263,45 @@ void scheme_display(Scheme_Object *obj, Scheme_Object *port)
   scheme_display_w_max(obj, port, -1);
 }
 
+void scheme_print_w_max(Scheme_Object *obj, Scheme_Object *port, long maxl)
+{
+  if (((Scheme_Output_Port *)port)->print_handler)
+    do_handled_print(obj, port, scheme_print_proc, maxl);
+  else {
+    Scheme_Thread *p = scheme_current_thread;
+    
+    p->ku.k.p1 = port;
+    p->ku.k.p2 = obj;
+    p->ku.k.i1 = maxl;
+    p->ku.k.i2 = 1;
+    p->ku.k.i3 = 1;
+    
+    (void)scheme_top_level_do(print_to_port_k, 0);
+  }
+}
+
+void scheme_print(Scheme_Object *obj, Scheme_Object *port)
+{
+  scheme_print_w_max(obj, port, -1);
+}
+
 static void *print_to_string_k(void)
 {
   Scheme_Thread *p = scheme_current_thread;
   Scheme_Object *obj;
   long *len, maxl;
-  int iswrite;
+  int iswrite, check_honu;
 
   obj = (Scheme_Object *)p->ku.k.p1;
   len = (long *) mzALIAS p->ku.k.p2;
   maxl = p->ku.k.i1;
   iswrite = p->ku.k.i2;
+  check_honu = p->ku.k.i3;
 
   p->ku.k.p1 = NULL;
   p->ku.k.p2 = NULL;
 
-  return (void *)print_to_string(obj, len, iswrite, NULL, maxl);
+  return (void *)print_to_string(obj, len, iswrite, NULL, maxl, check_honu);
 }
 
 char *scheme_write_to_string_w_max(Scheme_Object *obj, long *len, long maxl)
@@ -287,6 +312,7 @@ char *scheme_write_to_string_w_max(Scheme_Object *obj, long *len, long maxl)
   p->ku.k.p2 = len;
   p->ku.k.i1 = maxl;
   p->ku.k.i2 = 1;
+  p->ku.k.i3 = 0;
 
   return (char *)scheme_top_level_do(print_to_string_k, 0);
 }
@@ -304,6 +330,7 @@ char *scheme_display_to_string_w_max(Scheme_Object *obj, long *len, long maxl)
   p->ku.k.p2 = len;
   p->ku.k.i1 = maxl;
   p->ku.k.i2 = 0;
+  p->ku.k.i3 = 0;
 
   return (char *)scheme_top_level_do(print_to_string_k, 0);
 }
@@ -313,16 +340,40 @@ char *scheme_display_to_string(Scheme_Object *obj, long *len)
   return scheme_display_to_string_w_max(obj, len, -1);
 }
 
+char *scheme_print_to_string_w_max(Scheme_Object *obj, long *len, long maxl)
+{
+  Scheme_Thread *p = scheme_current_thread;
+
+  p->ku.k.p1 = obj;
+  p->ku.k.p2 = len;
+  p->ku.k.i1 = maxl;
+  p->ku.k.i2 = 1;
+  p->ku.k.i3 = 1;
+
+  return (char *)scheme_top_level_do(print_to_string_k, 0);
+}
+
+char *scheme_print_to_string(Scheme_Object *obj, long *len)
+{
+  return scheme_print_to_string_w_max(obj, len, -1);
+}
+
 void
 scheme_internal_write(Scheme_Object *obj, Scheme_Object *port)
 {
-  print_to_port("write", obj, port, 1, -1);
+  print_to_port("write", obj, port, 1, -1, 0);
 }
 
 void
 scheme_internal_display(Scheme_Object *obj, Scheme_Object *port)
 {
-  print_to_port("display", obj, port, 0, -1);
+  print_to_port("display", obj, port, 0, -1, 0);
+}
+
+void
+scheme_internal_print(Scheme_Object *obj, Scheme_Object *port)
+{
+  print_to_port("print", obj, port, 1, -1, 1);
 }
 
 #ifdef DO_STACK_CHECK
@@ -633,7 +684,8 @@ Scheme_Hash_Table *scheme_setup_datum_graph(Scheme_Object *o, void *for_print)
 static char *
 print_to_string(Scheme_Object *obj, 
 		long * volatile len, int write,
-		Scheme_Object *port, long maxl)
+		Scheme_Object *port, long maxl,
+		int check_honu)
 {
   Scheme_Hash_Table * volatile ht;
   Scheme_Object *v;
@@ -675,8 +727,11 @@ print_to_string(Scheme_Object *obj,
   params.can_read_pipe_quote = SCHEME_TRUEP(v);
   v = scheme_get_param(config, MZCONFIG_CASE_SENS);
   params.case_sens = SCHEME_TRUEP(v);
-  v = scheme_get_param(config, MZCONFIG_HONU_MODE);
-  params.honu_mode = SCHEME_TRUEP(v);
+  if (check_honu) {
+    v = scheme_get_param(config, MZCONFIG_HONU_MODE);
+    params.honu_mode = SCHEME_TRUEP(v);
+  } else
+    params.honu_mode = 0;
   v = scheme_get_param(config, MZCONFIG_INSPECTOR);
   params.inspector = v;
 
@@ -713,7 +768,7 @@ print_to_string(Scheme_Object *obj,
 }
 
 static void 
-print_to_port(char *name, Scheme_Object *obj, Scheme_Object *port, int notdisplay, long maxl)
+print_to_port(char *name, Scheme_Object *obj, Scheme_Object *port, int notdisplay, long maxl, int check_honu)
 {
   Scheme_Output_Port *op;
   char *str;
@@ -723,7 +778,7 @@ print_to_port(char *name, Scheme_Object *obj, Scheme_Object *port, int notdispla
   if (op->closed)
     scheme_raise_exn(MZEXN_FAIL, "%s: output port is closed", name);
 
-  str = print_to_string(obj, &len, notdisplay, port, maxl);
+  str = print_to_string(obj, &len, notdisplay, port, maxl, check_honu);
 
   scheme_write_byte_string(str, len, port);
 }

@@ -280,7 +280,6 @@ please adhere to these guidelines:
     "The selections you make will be shown here if you have Javascript enabled and a recent, standards-compliant browser.")
  ;; refreshing manuals
  (plt:hd:refresh-downloading "Downloading ~a")
- (plt:hd:refresh-deleting "Deleting ~a")
  (plt:hd:refresh-installing "Installing ~a")
  (plt:hd:refresh-progress "PLT manual download progress")
  (plt:hd:refresh-done "Done refreshing CVS manuals")
@@ -291,6 +290,12 @@ please adhere to these guidelines:
  (plt:hd:refresh-deleting... "Deleting old version of ~a...")
  (plt:hd:refresh-installing... "Installing new version of ~a...")
  (plt:hd:refreshing-manuals-finished "Finished.")
+ (plt:hd:about-help-desk "About Help Desk")
+ (plt:hd:help-desk-about-string
+  "Help Desk is a complete source of information about PLT software, including DrScheme, MzScheme, and MrEd.\n\nVersion ~a\nCopyright (c) 1995-2003 PLT")
+ (plt:hd:help-on-help "Help on Help")
+ (plt:hd:help-on-help-details "For help on using Help Desk, follow the `How to use Help Desk' link on Help Desk's home page. (To get to the home page if you're not already there, click the `Home' button at the top of the Help Desk window.)")
+  (reload "Reload")
 
  ;; help desk htty proxy
  (http-proxy "HTTP Proxy")

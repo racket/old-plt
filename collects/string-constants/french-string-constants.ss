@@ -290,6 +290,12 @@
  (plt:hd:refresh-downloading... "T<E9>l<E9>chargement de ~a...")
  (plt:hd:refresh-deleting... "Effacement de l'ancienne version de ~a...")
  (plt:hd:refresh-installing... "Installation de la nouvelle version de ~a...")
+ (plt:hd:about-help-desk "A propos de l'Aide")
+ (plt:hd:help-desk-about-string
+  "L'Aide est une source complète d'information à propos des logiciels du PLT, y compris DrScheme, MzScheme et MrEd.\n\nVersion ~a\nCopyright (c) 1995-2003 PLT.")
+ (plt:hd:help-on-help "Aide de l'Aide")
+ (plt:hd:help-on-help-details "Pour obtenir de l'aide sur comment utiliser l'Aide, suivez le lien `How to use Help Desk' à partir de la page principale de l'Aide (pour trouver la page principale, si vous n'y êtes pas déjà, cliquez sur le boutton `Home' qui apparaît en haut de la fenêtre de l'Aide).")
+ (reload "Rafraîchir")
 
  ; help desk htty proxy
  (http-proxy "Proxy HTTP")

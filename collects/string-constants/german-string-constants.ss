@@ -121,11 +121,11 @@
  (search-results "Suchergebnisse")
  (help-desk "Help Desk")	; pbliE. perhaps "Hilfe" ?
  (help-desk-n "Help Desk ~a")
- (about-help-desk "Über Help Desk")
- (help-desk-about-string
+ (plt:hd:about-help-desk "Über Help Desk")
+ (plt:hd:help-desk-about-string
   "Der Help Desk enthält ausführliche Informationen über PLT Software, einschliesslich DrScheme, MzScheme, und MrEd.\n\nVersion ~a\nCopyright (c) 1995-2001 PLT")
- (help-on-help "Hilfe zum Help Desk")
- (help-on-help-details "Um Hilfe darüber zu bekommen, wie man mit Help Desk umgeht, folgen Sie dem Link `How to use Help Desk' auf der Help Desk Startseite. (Um dahin zu kommen, drücken Sie den `Home' Knopf oben im Help Desk Fenster.)")
+ (plt:hd:help-on-help "Hilfe zum Help Desk")
+ (plt:hd:help-on-help-details "Um Hilfe darüber zu bekommen, wie man mit Help Desk umgeht, folgen Sie dem Link `How to use Help Desk' auf der Help Desk Startseite. (Um dahin zu kommen, drücken Sie den `Home' Knopf oben im Help Desk Fenster.)")
  (plt:hd:find-docs-for "Finde Dokumente:")	; GmpOa~
  (search "Suche")
  ; next 3 are popup menu choices at bottom of help desk window

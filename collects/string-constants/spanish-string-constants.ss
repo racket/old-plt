@@ -190,6 +190,12 @@
  (plt:hd:refresh-downloading... "Bajando ~a...")
  (plt:hd:refresh-installing... "Instalando nueva versi<F3>n de ~a...")
  (plt:hd:refreshing-manuals "Bajando (nuevamente) los Manuales")
+ (plt:hd:about-help-desk "Acerca del Módulo de Ayuda")
+ (plt:hd:help-desk-about-string
+  "El Módulo de Ayuda es una fuente complete de información acerca del software del grupo PLT, incluyendo DrScheme, MzScheme y MrEd.\n\nVersión ~a\nCopyright (c) 1995-2003 PLT")
+ (plt:hd:help-on-help "Ayuda para la ayuda")
+ (plt:hd:help-on-help-details "Para ayuda sobre el uso del Módulo de Ayuda, sigue la liga `Cómo usar el Módulo de Ayuda' desde el página principal del Módulo de Ayuda.  (Para llegar a la página principal si no estás ahí ya, presiona el botón marcado `Hogar' en la parte superior de la ventana del Módulo de Ayuda.")
+ (reload "Volver a cargar") ;; Reload
 
  ;; help desk http proxy
  (http-proxy "Proxy de HTTP")

@@ -163,7 +163,13 @@
  (plt:hd:refresh-downloading... "Downloader ~a...")
  (plt:hd:refresh-deleting... "Sletter gammel version af ~a...")
  (plt:hd:refresh-installing... "Installerer ny version af ~a...")
+ (reload "Opdater")
 
+ (plt:hd:about-help-desk "Om hjælpebord")
+ (plt:hd:help-desk-about-string
+  "Hjælpebordet indeholder al dokumention om PLT software, inklusive DrScheme, MzScheme og MrEd.\n\nVersion ~a\nCopyright (c) 1995-2001 PLT")
+ (plt:hd:help-on-help "Hjælp til hjælp")
+ (plt:hd:help-on-help-details "Brug hjælpebordet til at få hjælp. Følg linket `How to use Help Desk' på hjælpebordets startside. (For at komme til hjemmesiden, hvis du ikke allerede er der, skal du klikke på `Hjem'-knappen i toppen af hjælpebordets vindue.)")
 
  ; help desk htty proxy
  (http-proxy "HTTP Proxy")

@@ -84,7 +84,8 @@
    text-window%))
 
 (define-signature mred:container-panels^
-  (panel%
+  (debug-border?
+   panel%
    horizontal-panel%
    vertical-panel%
    single-panel%))

@@ -1,63 +1,64 @@
 
-(let* ([quicksort
-	(invoke-unit/sig
-	 (compound-unit/sig
-	  (import)
-	  (link [F : (quicksort) ((require-library "functior.ss"))]
-		[I : () ((unit/sig () (import (quicksort)) quicksort) F)])
-	  (export)))]
-       [docpos (require-library "docpos.ss" "help")]
-       [d (with-handlers ([void (lambda (x) #f)])
-	    (collection-path "doc"))]
-       [docs (let loop ([l (if d
-			       (directory-list d)
-			       null)])
-	       (cond
-		[(null? l) null]
-		[(file-exists? (build-path d (car l) "index.htm"))
-		 (cons (car l) (loop (cdr l)))]
-		[else (loop (cdr l))]))]
-       [docs (quicksort docs (lambda (a b)
-			       (let ([ap (docpos a)]
-				     [bp (docpos b)])
-				 (cond
-				  [(= ap bp) (string<? a b)]
-				  [else (< ap bp)]))))]
-       [doc-paths (map (lambda (doc) (build-path d doc)) docs)]
-       [names
-	(map
-	 (lambda (d)
-	   (with-input-from-file (build-path d "index.htm")
-	     (lambda ()
-	       (let loop ()
-		 (let ([r (read-line)])
-		   (cond
-		    [(eof-object? r) "(Unknown title)"]
-		    [(regexp-match "<TITLE>(.*)</TITLE>" r) => cadr]
-		    [else (loop)]))))))
-	 doc-paths)])
-  (let-values ([(collections collection-names)
-		((require-library "colldocs.ss" "help") quicksort)])
+(lambda ()
+  (let* ([quicksort
+	  (invoke-unit/sig
+	   (compound-unit/sig
+	    (import)
+	    (link [F : (quicksort) ((require-library "functior.ss"))]
+		  [I : () ((unit/sig () (import (quicksort)) quicksort) F)])
+	    (export)))]
+	 [docpos (require-library "docpos.ss" "help")]
+	 [d (with-handlers ([void (lambda (x) #f)])
+	      (collection-path "doc"))]
+	 [docs (let loop ([l (if d
+				 (directory-list d)
+				 null)])
+		 (cond
+		  [(null? l) null]
+		  [(file-exists? (build-path d (car l) "index.htm"))
+		   (cons (car l) (loop (cdr l)))]
+		  [else (loop (cdr l))]))]
+	 [docs (quicksort docs (lambda (a b)
+				 (let ([ap (docpos a)]
+				       [bp (docpos b)])
+				   (cond
+				    [(= ap bp) (string<? a b)]
+				    [else (< ap bp)]))))]
+	 [doc-paths (map (lambda (doc) (build-path d doc)) docs)]
+	 [names
+	  (map
+	   (lambda (d)
+	     (with-input-from-file (build-path d "index.htm")
+	       (lambda ()
+		 (let loop ()
+		   (let ([r (read-line)])
+		     (cond
+		      [(eof-object? r) "(Unknown title)"]
+		      [(regexp-match "<TITLE>(.*)</TITLE>" r) => cadr]
+		      [else (loop)]))))))
+	   doc-paths)])
+    (let-values ([(collections collection-names)
+		  ((require-library "colldocs.ss" "help") quicksort)])
 
-    (apply
-     string-append
-     "<TITLE>Installed Manuals</TITLE>"
-     "<H1>Installed Manuals</H1>"
-     "<UL>"
-     (append
-      (map
-       (lambda (doc name)
-	 (format "<LI> <A HREF=\"file:~a\">~a</A>"
-		 (build-path doc "index.htm")
-		 name))
-       doc-paths
-       names)
-      (list "</UL><P><UL>")
-      (map
-       (lambda (collection name)
-	 (format "<LI> <A HREF=\"file:~a\">~a collection</A>"
-		 (build-path collection "doc.txt")
-		 name))
-       collections
-       collection-names)
-      (list "</UL>")))))
+      (apply
+       string-append
+       "<TITLE>Installed Manuals</TITLE>"
+       "<H1>Installed Manuals</H1>"
+       "<UL>"
+       (append
+	(map
+	 (lambda (doc name)
+	   (format "<LI> <A HREF=\"file:~a\">~a</A>"
+		   (build-path doc "index.htm")
+		   name))
+	 doc-paths
+	 names)
+	(list "</UL><P><UL>")
+	(map
+	 (lambda (collection name)
+	   (format "<LI> <A HREF=\"file:~a\">~a collection</A>"
+		   (build-path collection "doc.txt")
+		   name))
+	 collections
+	 collection-names)
+	(list "</UL>"))))))

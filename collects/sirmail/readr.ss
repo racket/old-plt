@@ -49,13 +49,25 @@
 
       (define main-frame #f)
       
+      (define got-started? #f)
+
       (define (show-error x)
 	(message-box "Error" 
 		     (if (exn? x)
 			 (exn-message x)
 			 (format "Strange exception: ~s" x))
-		     main-frame))
-      
+		     main-frame)
+	(when (not got-started?)
+	  (when (eq? 'yes (message-box "Startup Error"
+				       (string-append
+					"Looks like you didn't even get started. "
+					"Set preferences (so you're ready to try again)?")
+				       #f
+				       '(yes-no)))
+	    (create-preferences (make-object popup-menu%))
+	    (preferences:show-dialog)
+	    (yield 'wait))))
+        
       (initial-exception-handler
        (lambda (x)
 	 (show-error x)
@@ -1642,7 +1654,8 @@
       (send f create-status-line)
       
       (send f show #t)
-      
+      (set! got-started? #t)
+
       (when SORT
 	(case SORT
 	  [(date) (sort-by-date)]
@@ -1801,7 +1814,8 @@
 			 'truncate)
 		       (let ([bitmap (make-object bitmap% tmp-file)])
 			 (when (send bitmap ok?)
-			   (insert (make-object image-snip% bitmap) void))
+			   (insert (make-object image-snip% bitmap) void)
+			   (insert "\r\n" void))
 			 (delete-file tmp-file))))]
 		  [(multipart message)
 		   (map (lambda (msg)

@@ -36,10 +36,15 @@
 		     (let ([f (get-directory
 			       (string-append "Select " button-label)
 			       #f
-			       (unbox val-box))])
+			       (let ([v (unbox val-box)])
+				 (and v 
+				      (string? v)
+				      (or (relative-path? v) (absolute-path? v))
+				      (directory-exists? v)
+				      v)))])
 		       (when f
-			     (set-box! val-box f)
-			     (updater)))))))
+			 (set-box! val-box f)
+			 (updater)))))))
 
   (define (make-check-box label parent updater on?)
     (let ([c (make-object check-box% label parent updater)])
@@ -147,7 +152,7 @@
   (define (create-preferences edit-menu)
     (make-object menu-item% "Preferences" edit-menu
 		 (lambda (x y) (preferences:show-dialog)))
-    (preferences:add-editor-checkbox-panel)
-    (preferences:add-panel "Mailbox" make-mbox-preferences-panel))
+    (preferences:add-panel "Mailbox" make-mbox-preferences-panel)
+    (preferences:add-editor-checkbox-panel))
 
 )

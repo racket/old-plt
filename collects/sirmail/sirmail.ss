@@ -102,7 +102,7 @@
   (define folders-window #f)
 
   (require "optionr.ss"
-	  "folderr.ss")
+	   "folderr.ss")
 
   (define (open-folders-window)
     (if folders-window
@@ -145,10 +145,8 @@
   (define (get-active-folder)
     (and folders-window
 	 (send folders-window get-mailbox-name)))
-  
+
   (open-mailbox inbox-name)
 
-  ;; afaik, this only stops the startup repl from appearing.
-  ;; There doesn't seem to be any other way to do that, short
-  ;; of command-line flags.
+  ;; Wait for an explicit exit
   (yield (make-semaphore)))

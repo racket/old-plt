@@ -176,7 +176,16 @@
 				    children)])
 		 (send panel change-children
 		       (lambda (l)
-			 (reverse children)))
+			 (append (reverse children)
+				 (let loop ([l l]
+					    [r (list scheme-only-panel
+						     top-panel
+						     program-canvas
+						     console-canvas)])
+				   (if (null? r)
+				       l
+				       (loop (mzlib:function@:remove (car r) l eq?)
+					     (cdr r)))))))
 		 (send (get-console-edit) scroll-to-position 
 		       (send (get-console-edit) get-end-position)
 		       #f

@@ -14,6 +14,7 @@
 	       [console-edit (send frame get-console-edit)]
 	       [console-end-position (send console-edit get-end-position)]
 	       [escape (send console-edit get-escape)])
+	  (send (send edit get-frame) set-show-mode 'both)
 	  (send console-edit this-err-write string)
 	  (send (send edit get-canvas) set-focus)
 	  (send edit set-position start finish)

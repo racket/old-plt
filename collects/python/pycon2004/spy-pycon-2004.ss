@@ -18,7 +18,7 @@
    "From Python to PLT Scheme"
    (t "Daniel Silva, Philippe Meunier")
    (it "dsilva, meunier@ccs.neu.edu")
-   (bitmap "/home/daniel/plt/collects/icons/PLT-206.png")
+   (size-in-pixels (bitmap "/home/daniel/plt/collects/icons/PLT-206.png"))
    (t "Northeastern University"))
   
   (slide/title
@@ -38,7 +38,7 @@
   
   (slide/title "DrScheme tools: CheckSyntax"
                (page-item "Binding information and syntax correctness")
-               (scale (bitmap-here "check-syntax-sshot.png") 0.8))
+               (bitmap-here "check-syntax-sshot.png"))
 
   (slide/title "DrScheme tools: Test Coverage"
                (scale (bitmap-here "test-coverage-sshot.png") 0.8))

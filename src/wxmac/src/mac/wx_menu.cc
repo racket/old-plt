@@ -162,10 +162,13 @@ wxMenu::wxMenu // Constructor (given objectType)
   Callback(function);
 
   cMacMenuId = gMenuIdCounter++; // get next unique menuID
-  if (title && title[0])
-    cMacMenu = ::NewMenu(cMacMenuId, wxC2P(title));
-  else
-    cMacMenu = ::NewMenu(cMacMenuId, "\p ");
+  if (title && title[0]) {
+    unsigned char *s;
+    s = wxC2P(title);
+    cMacMenu = NewMenu(cMacMenuId, s);
+  } else {
+    cMacMenu = NewMenu(cMacMenuId, "\p ");
+  }
   CheckMemOK(cMacMenu);
   WXGC_IGNORE(this, menu_bar);
 }

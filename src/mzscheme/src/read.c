@@ -2214,7 +2214,9 @@ static void unexpected_closer(int ch,
       }
     }
 
-    if (indt->multiline) {
+    if (ch == indt->closer) {
+      sprintf(found, "unexpected");
+    } else if (indt->multiline) {
       sprintf(found,
 	      "%s '%c' to close '%c' on line %ld, found instead",
 	      missing,

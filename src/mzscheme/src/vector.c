@@ -33,6 +33,7 @@ static Scheme_Object *vector_set (int argc, Scheme_Object *argv[]);
 static Scheme_Object *vector_to_list (int argc, Scheme_Object *argv[]);
 static Scheme_Object *list_to_vector (int argc, Scheme_Object *argv[]);
 static Scheme_Object *vector_fill (int argc, Scheme_Object *argv[]);
+static Scheme_Object *vector_to_immutable (int argc, Scheme_Object *argv[]);
 
 static Scheme_Object *zero_length_vector;
 
@@ -89,6 +90,11 @@ scheme_init_vector (Scheme_Env *env)
 			     scheme_make_prim_w_arity(vector_fill, 
 						      "vector-fill!", 
 						      2, 2), 
+			     env);
+  scheme_add_global_constant("vector->immutable-vector", 
+			     scheme_make_prim_w_arity(vector_to_immutable, 
+						      "vector->immutabe-vector", 
+						      1, 1), 
 			     env);
 }
 
@@ -315,4 +321,27 @@ vector_fill (int argc, Scheme_Object *argv[])
   }
 
   return argv[0];
+}
+
+static Scheme_Object *vector_to_immutable (int argc, Scheme_Object *argv[])
+{
+  Scheme_Object *vec, *ovec;
+  long len, i;
+
+  if (!SCHEME_VECTORP(argv[0]))
+    scheme_wrong_type("vector->immutable-vector", "vector", 0, argc, argv);
+
+  if (SCHEME_IMMUTABLEP(argv[0]))
+    return argv[0];
+
+  ovec = argv[0];
+  len = SCHEME_VEC_SIZE(ovec);
+
+  vec = scheme_make_vector(len, NULL);
+  for (i = 0; i < len; i++) {
+    SCHEME_VEC_ELS(vec)[i] = SCHEME_VEC_ELS(ovec)[i];
+  }
+  SCHEME_SET_IMMUTABLE(vec);
+
+  return vec;  
 }

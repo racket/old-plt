@@ -1739,7 +1739,7 @@ Scheme_Object *scheme_get_special(Scheme_Object *port,
 
   a[0] = (src ? src : scheme_false);
   a[1] = (line > 0) ? scheme_make_integer(line) : scheme_false;
-  a[2] = (col > 0) ? scheme_make_integer(col) : scheme_false;
+  a[2] = (col > 0) ? scheme_make_integer(col-1) : scheme_false;
   a[3] = (pos > 0) ? scheme_make_integer(pos) : scheme_false;
 
   rs->a = a;

@@ -85,6 +85,7 @@ static Scheme_Object *caaadr_prim (int argc, Scheme_Object *argv[]);
 static Scheme_Object *caaaar_prim (int argc, Scheme_Object *argv[]);
 
 static Scheme_Object *box (int argc, Scheme_Object *argv[]);
+static Scheme_Object *immutable_box (int argc, Scheme_Object *argv[]);
 static Scheme_Object *box_p (int argc, Scheme_Object *argv[]);
 static Scheme_Object *unbox (int argc, Scheme_Object *argv[]);
 static Scheme_Object *set_box (int argc, Scheme_Object *argv[]);
@@ -398,6 +399,11 @@ scheme_init_list (Scheme_Env *env)
   scheme_add_global_constant(BOX, 
 			     scheme_make_prim_w_arity(box, 
 						      BOX, 
+						      1, 1), 
+			     env);
+  scheme_add_global_constant("box-immutable", 
+			     scheme_make_prim_w_arity(immutable_box, 
+						      "box-immutable", 
 						      1, 1), 
 			     env);
   scheme_add_global_constant(BOXP, 
@@ -1230,6 +1236,16 @@ void scheme_set_box(Scheme_Object *b, Scheme_Object *v)
 static Scheme_Object *box(int c, Scheme_Object *p[])
 {
   return scheme_box(p[0]);
+}
+
+static Scheme_Object *immutable_box(int c, Scheme_Object *p[])
+{
+  Scheme_Object *obj;
+
+  obj = scheme_box(p[0]);
+  SCHEME_SET_IMMUTABLE(obj);
+
+  return obj;
 }
 
 static Scheme_Object *box_p(int c, Scheme_Object *p[])

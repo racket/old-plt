@@ -1126,7 +1126,7 @@ static char *make_srcloc_string(Scheme_Stx_Srcloc *srcloc, long *len)
     
   if (col >= 0) {
     rlen = scheme_sprintf(result, srclen + 15, "%t:%L%ld: ", 
-			  srcstr, srclen, line, col);
+			  srcstr, srclen, line, col-1);
   } else {
     rlen = scheme_sprintf(result, srclen + 15, "%t::: ", 
 			  srcstr, srclen);
@@ -1198,7 +1198,7 @@ void scheme_read_err(Scheme_Object *port,
     fnlen = strlen(fn);
 
     if (column >= 0) {
-      scheme_sprintf(lbuf, 30, ":%L%ld: ", line, column);
+      scheme_sprintf(lbuf, 30, ":%L%ld: ", line, column-1);
       ls = lbuf;
     } else
       ls = ": ";
@@ -1215,7 +1215,7 @@ void scheme_read_err(Scheme_Object *port,
   scheme_raise_exn((gotc == EOF) ? MZEXN_READ_EOF : ((gotc == SCHEME_SPECIAL) ? MZEXN_READ_NON_CHAR : MZEXN_READ), 
 		   stxsrc ? stxsrc : scheme_false,
 		   (line < 0) ? scheme_false : scheme_make_integer(line),
-		   (col < 0) ? scheme_false : scheme_make_integer(col),
+		   (col < 0) ? scheme_false : scheme_make_integer(col-1),
 		   (pos < 0) ? scheme_false : scheme_make_integer(pos),
 		   (span < 0) ? scheme_false : scheme_make_integer(span),
 		   "%t%s%t%s", 

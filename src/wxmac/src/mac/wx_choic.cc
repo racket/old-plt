@@ -351,7 +351,8 @@ void wxChoice::OnEvent(wxMouseEvent *event) // mac platform only
 	trackResult = TrackControl(cMacControl,startPt,(ControlActionUPP)-1);
 	if (trackResult) {
 	  wxCommandEvent *commandEvent;
-	  selection = ::GetControlValue(cMacControl) - 1;
+	  selection = GetControlValue(cMacControl);
+	  selection -= 1;
 	  commandEvent = new wxCommandEvent(wxEVENT_TYPE_CHOICE_COMMAND);
 	  ProcessCommand(commandEvent);
 	}

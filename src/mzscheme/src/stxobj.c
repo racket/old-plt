@@ -3130,7 +3130,7 @@ static Scheme_Object *datum_to_syntax(int argc, Scheme_Object **argv)
 	&& !SCHEME_STXP(src)
 	&& !((ll == 5)
 	     && pos_exact_or_false_p(SCHEME_CADR(src))
-	     && pos_exact_or_false_p(SCHEME_CADR(SCHEME_CDR(src)))
+	     && nonneg_exact_or_false_p(SCHEME_CADR(SCHEME_CDR(src)))
 	     && pos_exact_or_false_p(SCHEME_CADR(SCHEME_CDR(SCHEME_CDR(src))))
 	     && nonneg_exact_or_false_p(SCHEME_CADR(SCHEME_CDR(SCHEME_CDR(SCHEME_CDR(src)))))))
       scheme_wrong_type("datum->syntax-object", "syntax, source location list, or #f", 2, argc, argv);
@@ -3169,7 +3169,7 @@ static Scheme_Object *datum_to_syntax(int argc, Scheme_Object **argv)
 
       src = scheme_make_stx_w_offset(scheme_false,
 				     SCHEME_FALSEP(line) ? -1 : SCHEME_INT_VAL(line),
-				     SCHEME_FALSEP(col) ? -1 : SCHEME_INT_VAL(col),
+				     SCHEME_FALSEP(col) ? -1 : (SCHEME_INT_VAL(col)+1),
 				     SCHEME_FALSEP(pos) ? -1 : SCHEME_INT_VAL(pos),
 				     SCHEME_FALSEP(span) ? -1 : SCHEME_INT_VAL(span),
 				     src,
@@ -3219,7 +3219,7 @@ static Scheme_Object *syntax_col(int argc, Scheme_Object **argv)
   if (stx->srcloc->col < 0)
     return scheme_false;
   else
-    return scheme_make_integer(stx->srcloc->col);
+    return scheme_make_integer(stx->srcloc->col-1);
 }
 
 static Scheme_Object *syntax_pos(int argc, Scheme_Object **argv)

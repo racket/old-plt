@@ -2563,9 +2563,11 @@
              (union (-> (>=/c 5) (>=/c 5)) boolean?))
   
   (test-name 'any/c (and/c))
-  (test-name 'and/c-contract? (and/c number? integer?))
-  (test-name 'and/c-contract? (and/c (flat-contract number?)
-                                      (flat-contract integer?)))
+  (test-name '(and/c any/c) (and/c any/c))
+  (test-name '(and/c any/c any/c) (and/c any/c any/c))
+  (test-name '(and/c number? integer?) (and/c number? integer?))
+  (test-name '(and/c number? integer?) (and/c (flat-contract number?)
+                                              (flat-contract integer?)))
   (test-name '(and/c number? (-> integer? integer?)) (and/c number? (-> integer? integer?)))
 
   (test-name '(not/c integer?) (not/c integer?))

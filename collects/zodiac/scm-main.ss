@@ -1197,14 +1197,10 @@
 	  (or (pat:match-and-rewrite expr m&e out-pattern kwd env)
 	    (static-error expr "Malformed define-schema")))))
 
-    ; (do ((v i s) ...) (t seq) cmd ...)                       [macro]
-
     (when (language>=? 'structured)
-      (add-macro-form
-	'do
-	scheme-vocabulary
-	(let* ((kwd '(do))
-		(in-pattern `(do ((var init step) ...)
+      (add-macro-form 'do scheme-vocabulary
+	(let* ((in-kwd '(do))
+		(in-pattern `(do (var-init-step ...)
 			       (test seq ...)
 			       ,@expr-pattern))
 		(out-pattern `(letrec ((loop
@@ -1214,10 +1210,58 @@
 					     (begin ,@expr-pattern
 					       (loop step ...))))))
 				(loop init ...)))
-		(m&e (pat:make-match&env in-pattern kwd)))
+		(in-m&e (pat:make-match&env in-pattern in-kwd))
+		(vis-kwd '())
+		(vis-pattern-1 '(var init step))
+		(vis-m&e-1 (pat:make-match&env vis-pattern-1 vis-kwd))
+		(vis-pattern-2 '(var init))
+		(vis-m&e-2 (pat:make-match&env vis-pattern-2 vis-kwd)))
 	  (lambda (expr env)
-	    (or (pat:match-and-rewrite expr m&e out-pattern kwd env)
-	      (static-error expr "Malformed do"))))))
+	    (cond
+	      ((pat:match-against in-m&e expr env)
+		=>
+		(lambda (p-env)
+		  (let ((var-init-steps (pat:pexpand '(var-init-step ...)
+					  p-env in-kwd))
+			 (test (pat:pexpand 'test p-env in-kwd))
+			 (seqs (pat:pexpand '(seq ...) p-env in-kwd))
+			 (body (pat:pexpand `(,@expr-pattern)
+				   p-env in-kwd)))
+		    (let
+		      ((normalized-var-init-steps
+			 (map
+			   (lambda (vis)
+			     (cond
+			       ((pat:match-against vis-m&e-1 vis vis-kwd)
+				 =>
+				 (lambda (p-env)
+				   `(,(pat:pexpand 'var p-env vis-kwd)
+				      ,(pat:pexpand 'init p-env vis-kwd)
+				      ,(pat:pexpand 'step p-env vis-kwd))))
+			       ((pat:match-against vis-m&e-2 vis vis-kwd)
+				 =>
+				 (lambda (p-env)
+				   `(,(pat:pexpand 'var p-env vis-kwd)
+				      ,(pat:pexpand 'init p-env vis-kwd)
+				      ,(pat:pexpand 'var p-env vis-kwd))))
+			       (else
+				 (static-error vis
+				   "Malformed var-init-step"))))
+			   var-init-steps)))
+		      (let ((vars (map car normalized-var-init-steps))
+			     (inits (map cadr normalized-var-init-steps))
+			     (steps (map caddr normalized-var-init-steps)))
+			(structurize-syntax
+			  `(letrec ((loop
+				      (lambda (,@vars)
+					(if ,test
+					  (begin (#%void) ,@seqs)
+					  (begin ,@body
+					    (loop ,@steps))))))
+			     (loop ,@inits))
+			  expr))))))
+	      (else
+		(static-error expr "Malformed do")))))))
 
     (when (language>=? 'side-effecting)
       (add-micro-form 'fluid-let scheme-vocabulary

@@ -18,9 +18,10 @@ environment variables PLTHOME or PLTCOLLECTS for
 MzCOM to find collections.  
 
 The mzcom.exe executable also requires the dynamic 
-libraries libmzsch.dll and libmzgc.dll.  Those files must 
-be in the same directory as the executable, or in your 
-PATH.
+libraries libmzsch<version>.dll and libmzgc<version>.dll.
+Those files must be in your PATH.  If you have DrScheme 
+installed, those files are in the System32 subdirectory of the 
+main Windows directory, which is in the default Windows PATH.
 
 Loading MzCOM
 -------------
@@ -30,8 +31,10 @@ name or a ProgID.  MzCOM has the class name
 "MzObj Class" and the ProgID "MzCOM.MzObj.<version>",
 where <version> is the version number, such as 200.
 
-In the Visual BASIC environment, from the menu 
-Project|References, check "MzCOM Type Library".  
+In the Visual BASIC 6 environment, from the menu 
+Project|References (VB6), check "MzCOM 1.0 Type Library".  
+In Visual BASIC .NET, choose Project|Add Reference,
+and from the COM tab, select "MzCOM 1.0 Type Library".
 In your code, declare a variable, then assign to it:
 
   DIM schemeObject AS MzObj

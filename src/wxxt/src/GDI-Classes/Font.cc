@@ -779,6 +779,11 @@ static wxFontStruct *wxLoadQueryNearestAAFont(const char *name,
       pat = XftFontMatch(wxAPP_DISPLAY, DefaultScreen(wxAPP_DISPLAY), pat, &res);
       
       if (use_rot) {
+	/* We add a transform after match, because Xft/fontconfig
+	   seems to sometimes free a non-malloced pointer if we
+	   include the transformation in the pattern to match. The
+	   transformation presumably doesn't affect matching,
+	   anyway, so adding it now should be fine. */
 	pat = XftPatternBuild(pat,
 			      XFT_MATRIX, XftTypeMatrix, &rot,
 			      NULL);

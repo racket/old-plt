@@ -479,6 +479,68 @@
 	(else
 	  (static-error expr "Malformed define-signature"))))))
 
+(define u/s-expand-includes-vocab (make-vocabulary 'u/s-expand-includes-vocab))
+
+(add-list-micro u/s-expand-includes-vocab
+  (lambda (expr env attributes vocab)
+    (list expr)))
+
+(add-ilist-micro u/s-expand-includes-vocab
+  (lambda (expr env attributes vocab)
+    (list expr)))
+
+(add-sym-micro u/s-expand-includes-vocab
+  (lambda (expr env attributes vocab)
+    (list expr)))
+
+(add-lit-micro u/s-expand-includes-vocab
+  (lambda (expr env attributes vocab)
+    (list expr)))
+
+(add-micro-form 'include u/s-expand-includes-vocab
+  (let* ((kwd '(include))
+	  (in-pattern '(include filename))
+	  (m&e (pat:make-match&env in-pattern kwd)))
+    (lambda (expr env attributes vocab)
+      (cond
+	((pat:match-against m&e expr env)
+	  =>
+	  (lambda (p-env)
+	    (let ((filename (pat:pexpand 'filename p-env kwd)))
+	      (unless (z:string? filename)
+		(static-error filename "File name must be a string"))
+	      (let ((raw-filename (z:read-object filename)))
+		(let-values (((base name dir?) (split-path raw-filename)))
+		  (when dir?
+		    (static-error filename "Cannot include a directory"))
+		  (let ((original-directory (current-directory))
+			 (p (open-input-file raw-filename)))
+		    (dynamic-wind
+		      (lambda ()
+			(when (string? base)
+			  (current-directory base)))
+		      (lambda ()
+			(apply append
+			  (map (lambda (e)
+				 (expand-expr e env attributes
+				   vocab))
+			    (let ((reader (z:read p
+					    (z:make-location
+					      1 1 0
+					      (build-path (current-directory)
+						name)))))
+			      (let loop ()
+				(let ((input (reader)))
+				  (if (z:eof? input)
+				    '()
+				    (cons input
+				      (loop)))))))))
+		      (lambda ()
+			(current-directory original-directory)
+			(close-input-port p)))))))))
+	(else
+	  (static-error expr "Malformed include"))))))
+
 (add-micro-form 'unit/sig scheme-vocabulary
   (let* ((kwd-1 '(unit/sig import rename))
 	  (in-pattern-1 '(unit/sig signature
@@ -512,7 +574,12 @@
 					    in:imports)))
 		      (prim-unit:exports (create-prim-exports in:signature
 					   in:renames expr env attributes))
-		      (prim-unit:clauses in:clauses)
+		      (prim-unit:clauses
+			(apply append
+			  (map (lambda (clause)
+				 (expand-expr clause env attributes
+				   u/s-expand-includes-vocab))
+			    in:clauses)))
 		      (sign-unit:imports (map (lambda (import)
 						(expand-expr import env
 						  attributes

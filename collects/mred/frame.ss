@@ -6,6 +6,7 @@
 (define mred:frame@
   (unit/sig mred:frame^
     (import [mred:debug : mred:debug^]
+	    [mred:preferences : mred:preferences^]
 	    [mred:edit : mred:edit^]
 	    [mred:canvas : mred:canvas^]
 	    [mred:icon : mred:icon^]
@@ -262,6 +263,8 @@
 
     (define simple-menu-frame% (make-menu-frame% simple-frame%))
 
+    (define tab (string #\tab))
+
     (define make-standard-menus-frame%
       (lambda (super%)
 	(class-asi super%
@@ -277,58 +280,105 @@
 	    [edit-menu:after-std-items (lambda (edit-menu) (void))]
 
 	    [file-menu:open (lambda () (void))]
-	    [file-menu:open-string "&Open..."]
+	    [file-menu:open-string (case wx:platform
+				     [(windows) "&Open..."]
+				     [(macintosh) (string-append "Open..." tab "Cmd+O")]
+				     [else "Open"])]
 
 	    [file-menu:new (lambda () (void))]
-	    [file-menu:new-string "&New..."]
+	    [file-menu:new-string (case wx:platform 
+				    [(windows) "&New..."]
+				    [(macintosh) (string-append "New..." tab "Cmd+N")]
+				    [else "New..."])]
 
 	    [file-menu:revert (lambda () (void))]
-	    [file-menu:revert-string "&Revert"]
+	    [file-menu:revert-string (case wx:platform
+				       [(windows) "&Revert"]
+				       [(macintosh) "Revert"]
+				       [else "Revert"])]
 
 	    [file-menu:save (lambda () (void))]
-	    [file-menu:save-string "&Save"]
+	    [file-menu:save-string (case wx:platform
+				     [(windows) "&Save"]
+				     [(macintosh) (string-append "Save" tab "Cmd+S")]
+				     [else (string-append "Save" tab "Ctl+x Ctl+s")])]
 
 	    [file-menu:save-as (lambda () (void))]
-	    [file-menu:save-as-string "Save &As..."]
+	    [file-menu:save-as-string (case wx:platform
+					[(windows) "Save &As..."]
+					[else "Save As..."])]
 
 	    [file-menu:close (lambda () (void))]
-	    [file-menu:close-string "&Close"]
+	    [file-menu:close-string (case wx:platform
+				     [(windows) "&Close"]
+				     [(macintosh) (string-append "Close" tab "Cmd+W")]
+				     [else "Close"])]
 
 	    [edit-menu:undo (lambda () (void))]
-	    [edit-menu:undo-string "&Undo"]
+	    [edit-menu:undo-string (case wx:platform
+				     [(windows) "&Undo"]
+				     [(macintosh) (string-append "Undo" tab "Cmd+Z")]
+				     [else (string-append "Undo" tab "Ctl+x u")])]
 
 	    [edit-menu:redo (lambda () (void))]
-	    [edit-menu:redo-string "&Redo"]
+	    [edit-menu:redo-string (case wx:platform
+				     [(windows) "&Redo"]
+				     [(macintosh) "Redo"]
+				     [else "Redo"])]
 
 	    [edit-menu:clear (lambda () (void))]
-	    [edit-menu:clear-string (if (eq? wx:platform 'windows)
-					"&Delete"
-					"Clear")]
+	    [edit-menu:clear-string (case wx:platform
+				     [(windows) "&Delete"]
+				     [(macintosh) "Clear"]
+				     [else (string-append "Clear" tab "Del")])]
 
 	    [edit-menu:copy (lambda () (void))]
-	    [edit-menu:copy-string "&Copy"]
+	    [edit-menu:copy-string (case wx:platform
+				     [(windows) "&Copy"]
+				     [(macintosh) (string-append "Copy" tab "Cmd+C")]
+				     [else (string-append "Copy" tab "Alt+w")])]
 
 	    [edit-menu:cut (lambda () (void))]
-	    [edit-menu:cut-string "Cu&t"]
+	    [edit-menu:cut-string (case wx:platform
+				     [(windows) "Cu&t"]
+				     [(macintosh) (string-append "Cut" tab "Cmd+X")]
+				     [else (string-append "Cut" tab "Ctl+w")])]
 
 	    [edit-menu:paste (lambda () (void))]
-	    [edit-menu:paste-string "&Paste"]
+	    [edit-menu:paste-string (case wx:platform
+				     [(windows) "&Paste"]
+				     [(macintosh) (string-append "Paste" tab "Cmd+V")]
+				     [else (string-append "Paste" tab "Ctl+y")])]
 
 	    [edit-menu:select-all (lambda () (void))]
-	    [edit-menu:select-all-string "Select A&ll"]
+	    [edit-menu:select-all-string (case wx:platform
+					   [(windows) "Select A&ll"]
+					   [(macintosh) (string-append "Select All" tab "Cmd+A")]
+					   [else "Select All"])]
+
+	    [edit-menu:before-preferences
+	     (lambda (edit-menu)
+	       (send edit-menu append-separator))]
+	    [edit-menu:preferences mred:preferences:show-preferences-dialog]
+	    [edit-menu:preferences-string "&Preferences..."]
 
 	    [make-menu-bar
 	     (lambda ()
 	       (let ([file-menu (make-menu)]
 		     [edit-menu (make-menu)])
-		 (send file-menu append-item file-menu:open-string file-menu:open)
-		 (send file-menu append-item file-menu:new-string file-menu:new)
-		 (send file-menu append-item file-menu:revert-string file-menu:revert)
+		 (when file-menu:open
+		   (send file-menu append-item file-menu:open-string file-menu:open))
+		 (when file-menu:new
+		   (send file-menu append-item file-menu:new-string file-menu:new))
+		 (when file-menu:revert
+		   (send file-menu append-item file-menu:revert-string file-menu:revert))
 		 (file-menu:between-open-and-save file-menu)
-		 (send file-menu append-item file-menu:save-string file-menu:save)
+		 (when file-menu:save
+		   (send file-menu append-item file-menu:save-string file-menu:save))
 		 (send file-menu append-item file-menu:save-as-string file-menu:save-as)
 		 (file-menu:between-save-and-close file-menu)
-		 (send file-menu append-item file-menu:close-string file-menu:close)
+		 (when file-menu:close
+		   (send file-menu append-item file-menu:close-string file-menu:close))
 		 (file-menu:after-close file-menu)
 		 
 		 (send edit-menu append-item edit-menu:undo-string edit-menu:undo)
@@ -339,6 +389,9 @@
 		 (send edit-menu append-item edit-menu:paste-string edit-menu:paste)
 		 (send edit-menu append-item edit-menu:clear-string edit-menu:clear)
 		 (send edit-menu append-item edit-menu:select-all-string edit-menu:select-all)
+		 (edit-menu:before-preferences edit-menu)
+		 (when edit-menu:preferences
+		   (send edit-menu append-item edit-menu:preferences-string edit-menu:preferences))
 		 (edit-menu:after-std-items edit-menu)
 		 
 		 (let ([mb (super-make-menu-bar)])

@@ -23,7 +23,8 @@
    read-user-preferences
    restore-defaults
 
-   preferences-dialog))
+   show-preferences-dialog
+   hide-preferences-dialog))
 
 (define-signature mred:container^
   (const-default-size
@@ -52,13 +53,10 @@
 
 
 (define-signature mred:autoload^
-  (autoload-paths
-   make-autoload))
+  (make-autoload))
 
 (define-signature mred:autosave^
-  (autosave-delay
-   autosaving-on?
-   register-autosave))
+  (register-autosave))
 
 (define-signature mred:exit^
   (insert-exit-callback
@@ -128,6 +126,7 @@
    frame-height
    make-simple-frame%
    make-menu-frame%
+   make-standard-menus-frame%
    make-pasteboard-frame%
    make-editor-frame%
    make-status-frame%
@@ -135,6 +134,7 @@
    simple-frame%
    menu-frame%
    simple-menu-frame%
+   standard-menus-frame%
    editor-frame%
    pasteboard-frame%))
 

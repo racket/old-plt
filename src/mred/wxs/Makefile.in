@@ -92,7 +92,7 @@ OBJECTS = xcglue.o wxs_bmap.o wxs_butn.o wxs_chce.o wxs_ckbx.o wxs_cnvs.o \
           wxs_dc.o wxs_evnt.o wxs_fram.o wxs_gage.o wxs_gdi.o wxs_glob.o \
           wxs_item.o wxs_lbox.o wxs_madm.o wxs_mede.o wxs_medi.o wxs_menu.o \
           wxs_mio.o wxs_misc.o wxs_mpb.o wxs_obj.o wxs_panl.o wxs_rado.o wxs_slid.o \
-          wxs_snip.o wxs_styl.o wxs_win.o wxscheme.o
+          wxs_snip.o wxs_styl.o wxs_tabc.o wxs_win.o wxscheme.o
 
 SOURCES = $(srcdir)/wxs_bmap.cxx $(srcdir)/wxs_butn.cxx $(srcdir)/wxs_chce.cxx $(srcdir)/wxs_ckbx.cxx \
           $(srcdir)/wxs_cnvs.cxx $(srcdir)/wxs_dc.cxx $(srcdir)/wxs_evnt.cxx $(srcdir)/wxs_fram.cxx \
@@ -100,7 +100,7 @@ SOURCES = $(srcdir)/wxs_bmap.cxx $(srcdir)/wxs_butn.cxx $(srcdir)/wxs_chce.cxx $
           $(srcdir)/wxs_lbox.cxx $(srcdir)/wxs_madm.cxx $(srcdir)/wxs_mede.cxx $(srcdir)/wxs_medi.cxx \
           $(srcdir)/wxs_menu.cxx $(srcdir)/wxs_mio.cxx $(srcdir)/wxs_misc.cxx $(srcdir)/wxs_mpb.cxx \
           $(srcdir)/wxs_obj.cxx $(srcdir)/wxs_panl.cxx $(srcdir)/wxs_rado.cxx $(srcdir)/wxs_slid.cxx \
-          $(srcdir)/wxs_snip.cxx $(srcdir)/wxs_styl.cxx $(srcdir)/wxs_win.cxx $(srcdir)/wxscheme.cxx
+          $(srcdir)/wxs_snip.cxx $(srcdir)/wxs_styl.cxx $(srcdir)/wxs_tabc.cxx $(srcdir)/wxs_win.cxx $(srcdir)/wxscheme.cxx
 
 SCRIPTS = $(srcdir)/wxs_bmap.xc $(srcdir)/wxs_butn.xc $(srcdir)/wxs_chce.xc $(srcdir)/wxs_ckbx.xc \
           $(srcdir)/wxs_cnvs.xc $(srcdir)/wxs_dc.xc $(srcdir)/wxs_evnt.xc $(srcdir)/wxs_fram.xc \
@@ -108,7 +108,7 @@ SCRIPTS = $(srcdir)/wxs_bmap.xc $(srcdir)/wxs_butn.xc $(srcdir)/wxs_chce.xc $(sr
           $(srcdir)/wxs_lbox.xc $(srcdir)/wxs_madm.xc $(srcdir)/wxs_mede.xc $(srcdir)/wxs_medi.xc \
           $(srcdir)/wxs_menu.xc $(srcdir)/wxs_mio.xc $(srcdir)/wxs_misc.xc $(srcdir)/wxs_mpb.xc \
           $(srcdir)/wxs_obj.xc $(srcdir)/wxs_panl.xc $(srcdir)/wxs_rado.xc $(srcdir)/wxs_slid.xc \
-          $(srcdir)/wxs_snip.xc $(srcdir)/wxs_styl.xc $(srcdir)/wxs_win.xc
+          $(srcdir)/wxs_snip.xc $(srcdir)/wxs_styl.xc $(srcdir)/wxs_tabc.xc $(srcdir)/wxs_win.xc
 
 # Order matters: superclasses first
 SSDESCS = $(srcdir)/wxs_obj.ss $(srcdir)/wxs_win.ss $(srcdir)/wxs_item.ss $(srcdir)/wxs_medi.ss \
@@ -118,7 +118,7 @@ SSDESCS = $(srcdir)/wxs_obj.ss $(srcdir)/wxs_win.ss $(srcdir)/wxs_item.ss $(srcd
           $(srcdir)/wxs_lbox.ss $(srcdir)/wxs_madm.ss $(srcdir)/wxs_mede.ss \
           $(srcdir)/wxs_menu.ss $(srcdir)/wxs_mio.ss $(srcdir)/wxs_misc.ss $(srcdir)/wxs_mpb.ss \
           $(srcdir)/wxs_panl.ss $(srcdir)/wxs_rado.ss $(srcdir)/wxs_slid.ss \
-          $(srcdir)/wxs_snip.ss $(srcdir)/wxs_styl.ss
+          $(srcdir)/wxs_snip.ss $(srcdir)/wxs_styl.ss $(srcdir)/wxs_tabc.ss
 
 all: libwxscheme.a
 
@@ -207,6 +207,8 @@ $(srcdir)/wxs_snip.cxx : $(srcdir)/wxs_snip.xc  $(srcdir)/wxs_snip.xci $(srcdir)
 	if [ "$(PERL)" = '' ] ; then touch $(srcdir)/wxs_snip.cxx ; else $(XCTOCXX) $(srcdir)/wxs_snip.xc ; fi
 $(srcdir)/wxs_styl.cxx : $(srcdir)/wxs_styl.xc  $(XCDEPEND)
 	if [ "$(PERL)" = '' ] ; then touch $(srcdir)/wxs_styl.cxx ; else $(XCTOCXX) $(srcdir)/wxs_styl.xc ; fi
+$(srcdir)/wxs_tabc.cxx : $(srcdir)/wxs_tabc.xc $(srcdir)/wxs_item.xci $(XCDEPEND)
+	if [ "$(PERL)" = '' ] ; then touch $(srcdir)/wxs_tabc.cxx ; else $(XCTOCXX) $(srcdir)/wxs_tabc.xc ; fi
 $(srcdir)/wxs_win.cxx : $(srcdir)/wxs_win.xc $(srcdir)/wxs_win.xci $(XCDEPEND)
 	if [ "$(PERL)" = '' ] ; then touch $(srcdir)/wxs_win.cxx ; else $(XCTOCXX) $(srcdir)/wxs_win.xc ; fi
 
@@ -270,6 +272,8 @@ wxs_snip.o : $(srcdir)/wxs_snip.cxx $(WXSCHEMEHEADERS) $(MEDIAHEADERS) $(WINDOWH
 	$(WXSCC) $(srcdir)/wxs_snip.cxx -o wxs_snip.o
 wxs_styl.o : $(srcdir)/wxs_styl.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS) $(srcdir)/../wxme/wx_style.h $(MAINDCHEADERS)
 	$(WXSCC) $(srcdir)/wxs_styl.cxx -o wxs_styl.o
+wxs_tabc.o : $(srcdir)/wxs_tabc.cxx $(WXSCHEMEHEADERS) $(TABCDOWHEADERS)
+	$(WXSCC) $(srcdir)/wxs_tabc.cxx -o wxs_tabc.o
 wxs_win.o : $(srcdir)/wxs_win.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS)
 	$(WXSCC) $(srcdir)/wxs_win.cxx -o wxs_win.o
 
@@ -299,6 +303,7 @@ $(srcdir)/wxs_rado.ss : $(srcdir)/wxs_rado.cxx
 $(srcdir)/wxs_slid.ss : $(srcdir)/wxs_slid.cxx
 $(srcdir)/wxs_snip.ss : $(srcdir)/wxs_snip.cxx
 $(srcdir)/wxs_styl.ss : $(srcdir)/wxs_styl.cxx
+$(srcdir)/wxs_tabc.ss : $(srcdir)/wxs_tabc.cxx
 $(srcdir)/wxs_win.ss : $(srcdir)/wxs_win.cxx
 
 @INCLUDEDEP@ xcglue.d
@@ -328,5 +333,6 @@ $(srcdir)/wxs_win.ss : $(srcdir)/wxs_win.cxx
 @INCLUDEDEP@ wxs_slid.d
 @INCLUDEDEP@ wxs_snip.d
 @INCLUDEDEP@ wxs_styl.d
+@INCLUDEDEP@ wxs_tabc.d
 @INCLUDEDEP@ wxs_win.d
 @INCLUDEDEP@ wxscheme.d

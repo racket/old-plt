@@ -1851,7 +1851,7 @@
 		    (lambda (obj)
 		      (unless (is-a? obj intf)
 			(raise-type-error 
-			 (symbol->string (format "generic:~a~a" name (for-intf (interface-name intf))))
+			 (string->symbol (format "generic:~a~a" name (for-intf (interface-name intf))))
 			 (format "instance~a" (for-intf (interface-name intf)))
 			 obj))
 		      (find-method obj name)))

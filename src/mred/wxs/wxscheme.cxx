@@ -33,6 +33,7 @@
 #include "wxs_slid.h"
 #include "wxs_gage.h"
 #include "wxs_lbox.h"
+#include "wxs_tabc.h"
 
 #include "wxs_glob.h"
 
@@ -2536,6 +2537,7 @@ static void wxScheme_Install(Scheme_Env *global_env)
   objscheme_setup_wxChoice(global_env);
   objscheme_setup_wxSlider(global_env);
   objscheme_setup_wxsGauge(global_env);
+  objscheme_setup_wxTabChoice(global_env);
   objscheme_setup_wxMenu(global_env);
   objscheme_setup_wxMenuBar(global_env);
   objscheme_setup_wxsMenuItem(global_env);

@@ -315,6 +315,7 @@ enum {
     wxEVENT_TYPE_MENU_POPDOWN           = 0x000f,
     wxEVENT_TYPE_LISTBOX_DCLICK_COMMAND = 0x0010,
     wxEVENT_TYPE_MENU_SELECT            = 0x0011,
+    wxEVENT_TYPE_TAB_CHOICE_COMMAND     = 0x0012,
     // Scrollbar event identifiers
     wxEVENT_TYPE_SCROLL_TOP           = 0x1000,
     wxEVENT_TYPE_SCROLL_BOTTOM        = 0x1001,

@@ -95,6 +95,7 @@ wxMouseEvent_ext::wxMouseEvent_ext(int et, int ld, int mdd, int rd, int xv, int 
 @SYM "slider" : wxEVENT_TYPE_SLIDER_COMMAND
 @SYM "radio-box" : wxEVENT_TYPE_RADIOBOX_COMMAND
 @SYM "text-field-enter" : wxEVENT_TYPE_TEXT_ENTER_COMMAND
+@SYM "tab-group" : wxEVENT_TYPE_TAB_CHOICE_COMMAND
 @SYM "menu" : wxEVENT_TYPE_MENU_SELECT
 @SYM "menu-popdown" : wxEVENT_TYPE_MENU_POPDOWN
 @SYM "menu-popdown-none" : wxEVENT_TYPE_MENU_POPDOWN_NONE

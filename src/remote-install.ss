@@ -45,6 +45,8 @@ string=? ; exec $PLTHOME/bin/mzscheme -qr $0 "$@"
                              (build-path 'same))
                     (make-pr (build-path "src" "mred" "Starter.app")
                              (build-path "collects" "launcher"))
+                    (make-pr (build-path "src" "mred" "Starter3m.app")
+                             (build-path "collects" "launcher"))
                     (make-pr (build-path "src" "mzscheme" "mzscheme")
                              (build-path "bin"))
                     (make-pr (build-path "src" "mzscheme" "mzscheme3m")
@@ -71,10 +73,28 @@ string=? ; exec $PLTHOME/bin/mzscheme -qr $0 "$@"
                                          "PLT_MrEd.framework"
                                          "Versions"))
                     (make-pr (build-path "src"
+					 "mred"
+                                         "PLT_MrEd.framework"
+                                         "Versions"
+                                         (string-append (version) "_3m"))
+                             (build-path "Library"
+                                         "Frameworks"
+                                         "PLT_MrEd.framework"
+                                         "Versions"))
+                    (make-pr (build-path "src"
 					 "mzscheme"
                                          "PLT_MzScheme.framework"
                                          "Versions"
                                          (version))
+                             (build-path "Library"
+                                         "Frameworks"
+                                         "PLT_MzScheme.framework"
+                                         "Versions"))
+                    (make-pr (build-path "src"
+					 "mzscheme"
+                                         "PLT_MzScheme.framework"
+                                         "Versions"
+                                         (string-append (version) "_3m"))
                              (build-path "Library"
                                          "Frameworks"
                                          "PLT_MzScheme.framework"

@@ -22,7 +22,7 @@
              (type subtype charset encoding
                    disposition params id
                    description other fields
-                   parts body close))
+                   parts body))
      (struct disposition
              (type filename creation
                    modification read

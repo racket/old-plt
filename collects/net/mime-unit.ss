@@ -34,7 +34,8 @@
            "mime-util.ss"
            (lib "unitsig.ss")
            (lib "etc.ss")
-           (lib "string.ss"))
+           (lib "string.ss")
+           (lib "thread.ss"))
 
   (provide net:mime@)
   (define net:mime@
@@ -120,7 +121,7 @@
       ;; Basic structures
       (define-struct message (version entity fields))
       (define-struct entity
-                     (type subtype charset encoding disposition params id description other fields parts body close))
+                     (type subtype charset encoding disposition params id description other fields parts body))
       (define-struct disposition
                      (type filename creation modification read size params))
 
@@ -188,7 +189,6 @@
            null ;; fields
            null ;; parts
            null ;; body
-           void ;; thunk to kill body buffer
            )))
       
       (define make-default-message
@@ -197,38 +197,19 @@
       
       (define mime-decode
         (lambda (entity input)
-          (case (entity-encoding entity)
-            ((quoted-printable)
-             (let-values ([(body close-body)
-                           (qp-decode-stream input)])
-               (set-entity-body! entity body)
-               (set-entity-close! entity close-body)))
-            ((base64)
-             (let-values
-                 ([(body no-base64-in) (make-pipe 4096)])
-               (let ((body-thread
-                      (thread (lambda ()
-                                (base64-decode-stream input no-base64-in)
-                                (close-output-port no-base64-in)))))
-                 (set-entity-body! entity body)
-                 (set-entity-close! entity (lambda ()
-                                             (kill-thread body-thread))))))
-            (else ;; 7bit, 8bit, binary
-             (let-values
-                 ([(body body-in) (make-pipe 4096)])
-               (let ((body-thread
-                      (thread (lambda ()
-                                (let loop ((c (read-char input)))
-                                  (cond ((eof-object? c)
-                                         (close-input-port input)
-                                         (close-output-port body-in))
-                                        (else
-                                         (display c body-in)
-                                         (loop (read-char input)))))))))
-                 (set-entity-body! entity body)
-                 (set-entity-close! entity (lambda ()
-                                             (kill-thread body-thread)))))))))
-      
+          (set-entity-body!
+           entity
+           (case (entity-encoding entity)
+             ((quoted-printable)
+              (lambda (output)
+                (qp-decode-stream input output)))
+             ((base64)
+              (lambda (output)
+                (base64-decode-stream input output)))
+             (else ;; 7bit, 8bit, binary
+              (lambda (output)
+                (copy-port input output)))))))
+
       (define mime-analyze
         (opt-lambda (input (part #f))
           (let* ((iport (if (string? input)

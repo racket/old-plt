@@ -1442,9 +1442,10 @@ struct entity
 
    A procedure that consumes an output port and writes the message
    body into the port, properly decoded (e.g. if body was
-   quoted-printable encoded, then this input port contains the body
-   already quoted-printable decoded.).  If type is multipart, or
-   message, clearly no characters are written to port.
+   quoted-printable encoded, then the body is written already
+   quoted-printable decoded.).  If type is multipart, or message,
+   clearly no characters are written to port. The procedure only works
+   once (since the decoded input is pulled from a stream).
 
 ==========================================================================
 _Base 64 Encoding_, _base64_

@@ -45,39 +45,19 @@
       ;; returns the quoted printable representation of STR.
       (define qp-encode
         (lambda (str)
-          (let-values ([(in close) (quoted-printable-encode str)])
-            (let ((out (open-output-string)))
-              (let loop ((c (read-char in)))
-                (cond ((eof-object? c) (close) (get-output-string out))
-                      (else
-                       (display c out)
-                       (loop (read-char in)))))))))
+          (let ((out (open-output-string)))
+            (qp-encode-stream (open-input-string str) out)
+            (get-output-string out))))
       
       ;; qp-decode : string -> string
       ;; returns STR unqp.
       (define qp-decode
         (lambda (str)
-          (let-values ([(in close) (quoted-printable-decode str)])
-            (let ((out (open-output-string)))
-              (let loop ((c (read-char in)))
-                (cond ((eof-object? c) (close) (get-output-string out))
-                      (else
-                       (display c out)
-                       (loop (read-char in)))))))))
+          (let ((out (open-output-string)))
+            (qp-decode-stream (open-input-string str) out)
+            (get-output-string out))))
       
-      (define quoted-printable-decode
-        (lambda (input)
-          (let-values
-              ([(no-qp-out no-qp-in) (make-pipe 4096)])
-            (let ((no-qp-thread
-                   (thread (lambda ()
-                             (quoted-printable-do-decode input no-qp-in)
-                             (close-output-port no-qp-in)))))
-              (values no-qp-out
-                      (lambda ()
-                        (kill-thread no-qp-thread)))))))
-      
-      (define quoted-printable-do-decode
+      (define qp-decode-stream
         (lambda (in out)
           (let ((iport (cond ((input-port? in) in)
                              ((string? in) (open-input-string in))
@@ -85,9 +65,9 @@
                               (raise (make-qp-wrong-input))))))
             (let loop ((ln (read-line iport 'return-linefeed)))
               (cond ((eof-object? ln) (void)) ;; done reading
-                    ((> (string-length ln) 76)
-                     (raise (make-qp-wrong-line-size (string-length ln))))
                     (else
+                     (when (> (string-length ln) 76)
+                       (warning "quoted-printable line is too long: ~a" (string-length ln)))
                      (quoted-printable-decode-line ln out)
                      (loop (read-line iport 'return-linefeed))))))))
       
@@ -132,7 +112,7 @@
       (define warning
         (lambda (msg . args)
           (fprintf (current-error-port)
-                   (apply format (cons msg args)))
+                   (apply format msg args))
           (newline (current-error-port))))
       
       (define hex-digit?
@@ -143,23 +123,6 @@
       (define hex-octet->char
         (lambda (str)
           (integer->char (string->number str 16))))
-      
-      ;; quoted-printable-encode :
-      ;; (string | input-port) -> (values qp-input-port thunk)
-      ;; the quoted-printable representation of input is given in the first
-      ;; value returned value, a thunk to kill this port is given as second
-      ;; returning value.
-      (define quoted-printable-encode
-        (lambda (input)
-          (let-values
-              ([(qp-out qp-in) (make-pipe 4096)])
-            (let ((qp-thread
-                   (thread (lambda ()
-                             (quoted-printable-do-encode input qp-in)
-                             (close-output-port qp-in)))))
-              (values qp-out
-                      (lambda ()
-                        (kill-thread qp-thread)))))))
       
       (define qp-blank?
         (lambda (char)
@@ -212,7 +175,7 @@
                       ;; return the remainder blanks
                       str))))))
       
-      (define quoted-printable-do-encode
+      (define qp-encode-stream
         (lambda (in out)
           (let ((iport (cond ((input-port? in) in)
                              ((string? in) (open-input-string in))
@@ -259,10 +222,6 @@
         (lambda (octet)
           (let ((dec (char->integer octet)))
             (or (and (<= 33 dec) (<= dec 60))
-                (and (<= 62 dec) (<= dec 126))))))
+                (and (<= 62 dec) (<= dec 126)))))))))
 
-
-      (define qp-encode-stream quoted-printable-encode)
-      (define qp-decode-stream quoted-printable-decode))))
-
-;;; qpr.ss ends here
+;;; qp-unit.ss ends here

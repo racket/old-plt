@@ -1625,24 +1625,26 @@
 								     'params 'id
 								     'description 'other 'fields
 								     null 
-								     (open-input-string
-								      (format "MIME error: ~a"
-									      (if (exn? x)
-										  (exn-message x)
-										  x)))
-								     void)
+								     (lambda (o)
+								      (fprintf o "MIME error: ~a"
+                                                                               (if (exn? x)
+                                                                                   (exn-message x)
+                                                                                   x))))
 								    #f))])
 				   (mime:mime-analyze (string-append header body)))])
 	      (let* ([ent (mime:message-entity msg)]
+                     [slurp-stream (lambda (ent o)
+                                     (with-handlers ([not-break-exn? (lambda (x)
+                                                                       (fprintf o 
+                                                                                "~n[decode error: ~a]~n"
+                                                                                (if (exn? x)
+                                                                                    (exn-message x)
+                                                                                    x)))])
+                                       ((mime:entity-body ent) o)))]
 		     [slurp (lambda (ent)
-			      (let ([p (mime:entity-body ent)])
-				(let loop ([l null])
-				  (let ([s (read-string 4096 p)])
-				    (if (eof-object? s)
-					(begin
-					  ((mime:entity-close ent))
-					  (apply string-append (reverse! l)))
-					(loop (cons s l)))))))]
+                              (let ([o (open-output-string)])
+                                (slurp-stream ent o)
+                                (get-output-string o)))]
 		     [generic (lambda (ent)
 				(let ([fn (or (let ([disp (mime:entity-disposition ent)])
 						(and (not (equal? "" (mime:disposition-filename disp)))
@@ -1692,12 +1694,12 @@
                                        (break-ok)
                                        (with-handlers ([void no-status-handler])
                                          (status "Rendering HTML...")
-                                         (render-html-to-text (mime:entity-body ent) target img-mode? #f)
+                                         (let-values ([(in out) (make-pipe)])
+                                           (slurp-stream ent out)
+                                           (close-output-port out)
+                                           (render-html-to-text in target img-mode? #f))
                                          (status "")))
                                      void)
-
-
-                                    ((mime:entity-close ent))
                                     (unless text-obj
                                       ;; Copy text in target to `insert':
                                       (insert (lf->crlf (send target get-text))

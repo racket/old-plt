@@ -83,6 +83,10 @@
     edit-menu:get-find-item
     edit-menu:find-string
     edit-menu:find-help-string
+    edit-menu:find-again
+    edit-menu:get-find-again-item
+    edit-menu:find-again-string
+    edit-menu:find-again-help-string
     edit-menu:between-find-and-preferences
     edit-menu:preferences
     edit-menu:get-preferences-item
@@ -106,8 +110,8 @@
      (on-subwindow-char
        (lambda (receiver event)
          (if (preferences:get 'framework:menu-bindings)
-           (on-traverse-char event)
-           (or (on-menu-char event) (on-traverse-char event))))))
+           (or (on-menu-char event) (on-traverse-char event))
+           (on-traverse-char event)))))
    (inherit get-menu-bar can-close? on-close show get-edit-target-object)
    (sequence (apply super-init args))
    (public (get-menu% (lambda () menu%)))
@@ -270,6 +274,12 @@
     (edit-menu:find-string (lambda () ""))
     (edit-menu:find-help-string
      (lambda () "Search for a string in the window")))
+   (public
+    (edit-menu:find-again #f)
+    (edit-menu:get-find-again-item (lambda () edit-menu:find-again-item))
+    (edit-menu:find-again-string (lambda () ""))
+    (edit-menu:find-again-help-string
+     (lambda () "Search the same string as before")))
    (public
     (edit-menu:between-find-and-preferences
      (lambda (menu) (make-object separator-menu-item% menu))))
@@ -547,6 +557,21 @@
             edit-menu:find
             (if (preferences:get 'framework:menu-bindings) #\f #f)
             (edit-menu:find-help-string)))))
+   (private
+    (edit-menu:find-again-item
+     (and edit-menu:find-again
+          (make-object (get-menu-item%)
+            ((lambda (base special suffix)
+               (if (string=? special "")
+                 (string-append base suffix)
+                 (string-append base " " special suffix)))
+             "Find Again"
+             (edit-menu:find-again-string)
+             "")
+            (get-edit-menu)
+            edit-menu:find-again
+            (if (preferences:get 'framework:menu-bindings) #\g #f)
+            (edit-menu:find-again-help-string)))))
    (sequence (edit-menu:between-find-and-preferences (get-edit-menu)))
    (private
     (edit-menu:preferences-item

@@ -1237,13 +1237,17 @@ case_lambda_syntax (Scheme_Object *form, Scheme_Comp_Env *env,
   
   form = SCHEME_STX_CDR(form);
 
+  name = rec[drec].value_name;
+  if (!name)
+    name = scheme_source_to_name(orig_form);
+  
   if (SCHEME_STX_NULLP(form)) {
     form = (Scheme_Object *)scheme_malloc_tagged(sizeof(Scheme_Case_Lambda)
 						 - sizeof(Scheme_Object*));
 
     form->type = scheme_case_lambda_sequence_type;
     ((Scheme_Case_Lambda *)form)->count = 0;
-    ((Scheme_Case_Lambda *)form)->name = rec[drec].value_name;
+    ((Scheme_Case_Lambda *)form)->name = name;
 
     scheme_compile_rec_done_local(rec, drec);
     scheme_default_compile_rec(rec, drec);
@@ -1265,7 +1269,6 @@ case_lambda_syntax (Scheme_Object *form, Scheme_Comp_Env *env,
     return lambda_syntax(c, env, rec, drec);
   }
 
-  name = rec[drec].value_name;
   scheme_compile_rec_done_local(rec, drec);
 
   list = last = NULL;
@@ -1299,8 +1302,6 @@ case_lambda_syntax (Scheme_Object *form, Scheme_Comp_Env *env,
 			 + (count - 1) * sizeof(Scheme_Object *));
   cl->type = scheme_case_lambda_sequence_type;
   cl->count = count;
-  if (!name)
-    name = scheme_source_to_name(orig_form);
   cl->name = name;
 
   scheme_compile_rec_done_local(rec, drec);

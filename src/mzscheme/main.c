@@ -99,10 +99,17 @@ static char *get_init_filename(Scheme_Env *env)
   Scheme_Object *f;
 
   if (!scheme_setjmp(scheme_error_buf)) {
-    f = scheme_eval_string("(find-system-path 'init-file)", env);
-    
-    if (SCHEME_STRINGP(f))
-      return SCHEME_STR_VAL(f);
+    f = scheme_builtin_value("find-system-path");
+    if (f) {
+      Scheme_Object *a[1];
+
+      a[0] = scheme_intern_symbol("init-file");
+
+      f = _scheme_apply(f, 1, a);
+
+      if (SCHEME_STRINGP(f))
+	return SCHEME_STR_VAL(f);
+    }
   }
 
   return NULL;
@@ -339,8 +346,14 @@ static void do_scheme_rep(Scheme_Env *env)
 #endif
 
   /* enter read-eval-print loop */
-  scheme_eval_string("(read-eval-print-loop)", env);
-  printf("\n");
+  {
+    Scheme_Object *rep;
+    rep = scheme_builtin_value("read-eval-print-loop");
+    if (rep) {
+      scheme_apply(rep, 0, NULL);
+      printf("\n");
+    }
+  }
 }
 
 /*========================================================================*/

@@ -182,7 +182,29 @@ static int finish_cmd_line_run(FinishArgs *fa, Repl_Proc repl)
 static void init_collection_paths(Scheme_Env *global_env)
 {		
   if (!scheme_setjmp(scheme_error_buf)) {
-    scheme_eval_string("(current-library-collection-paths (find-library-collection-paths))",
+    Scheme_Object *clcp, *flcp, *a[1];
+
+    clcp = scheme_builtin_value("current-library-collection-paths");
+    flcp = scheme_builtin_value("find-library-collection-paths");
+
+    if (clcp && flcp) {
+      a[0] = _scheme_apply(flcp, 0, NULL);
+      _scheme_apply(clcp, 1, a);
+    }
+  }
+}
+#endif
+
+#ifndef MZSCHEME_CMD_LINE  
+static void init_mred(Scheme_Env *global_env)
+{
+  if (!scheme_setjmp(scheme_error_buf)) {
+    scheme_eval_string("(require (lib \"class.ss\"))", 
+		       global_env);
+    scheme_eval_string("(require (lib \"mred.ss\" \"mred\"))", 
+		       global_env);
+    scheme_eval_string("(with-handlers ([void void])"
+		       "  (send (current-ps-setup) set-afm-path (collection-path \"afm\")))",
 		       global_env);
   }
 }
@@ -609,11 +631,7 @@ static int run_from_cmd_line(int argc, char *_argv[],
 #endif /* NO_FILE_SYSTEM_UTILS */
 
 #ifndef MZSCHEME_CMD_LINE  
-  scheme_eval_string("(require (lib \"mred.ss\" \"mred\"))", 
-		     global_env);
-  scheme_eval_string("(with-handlers ([void void])"
-		     "  (send (current-ps-setup) set-afm-path (collection-path \"afm\")))",
-		     global_env);
+  init_mred(global_env);
 #endif
 
   fa = (FinishArgs *)scheme_malloc(sizeof(FinishArgs));

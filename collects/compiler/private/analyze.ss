@@ -1323,10 +1323,13 @@
 						  compiler:error)
 					      ast 
 					      "application of a non-procedure")
-					     (set-binding-known-but-used?! 
-					      (get-annotation (zodiac:bound-varref-binding var)) 
-					      #t)
-					     (analyze-varref! var env #f #t))))]
+					     (if (zodiac:varref? var)
+						 (begin
+						   (set-binding-known-but-used?! 
+						    (get-annotation (zodiac:bound-varref-binding var)) 
+						    #t)
+						   (analyze-varref! var env #f #t))
+						 (analyze!-sv var env inlined)))))]
 				[primfun (app-prim-name (get-annotation ast))]
 				[multi (if primfun
 					   (let ([a (primitive-result-arity 

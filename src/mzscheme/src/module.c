@@ -521,7 +521,8 @@ current_module_name_prefix(int argc, Scheme_Object *argv[])
 
 static Scheme_Object *_dynamic_require(int argc, Scheme_Object *argv[], 
 				       int get_syntax, int get_bucket, 
-				       int exp_time, int indirect_ok)
+				       int exp_time, int indirect_ok,
+				       int fail_with_error)
 {
   Scheme_Object *modname, *modidx;
   Scheme_Object *name, *srcname, *srcmname;
@@ -571,11 +572,12 @@ static Scheme_Object *_dynamic_require(int argc, Scheme_Object *argv[],
 	  srcname = srcm->provide_src_names[i];
 	  break;
 	} else {
-	  scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, name,
-			   "%s: name is provided as %s: %V by module: %V",
-			   (get_syntax ? "dynamic-require-syntax" : "dynamic-require"),
-			   (get_syntax ? "syntax" : "a variable"),
-			   name, srcm->modname);
+	  if (fail_with_error)
+	    scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, name,
+			     "%s: name is provided as %s: %V by module: %V",
+			     (get_syntax ? "dynamic-require-syntax" : "dynamic-require"),
+			     (get_syntax ? "syntax" : "a variable"),
+			     name, srcm->modname);
 	  return NULL;
 	}
       }
@@ -602,10 +604,11 @@ static Scheme_Object *_dynamic_require(int argc, Scheme_Object *argv[],
       }
 
       if (i == count) {
-	scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, name,
-			 "%s: name is not provided: %V by module: %V",
-			 (get_syntax? "dynamic-require-syntax" : "dynamic-require"),
-			 name, srcm->modname);
+	if (fail_with_error)
+	  scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, name,
+			   "%s: name is not provided: %V by module: %V",
+			   (get_syntax? "dynamic-require-syntax" : "dynamic-require"),
+			   name, srcm->modname);
 	return NULL;
       }
     }
@@ -625,9 +628,11 @@ static Scheme_Object *_dynamic_require(int argc, Scheme_Object *argv[],
       v = scheme_module_syntax(srcmname, env, srcname);
 
       if (NOT_SAME_TYPE(SCHEME_TYPE(v), scheme_macro_type)) {
-	scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, name,
-			 "dynamic-require-syntax: name is primitive syntax: %V from module: %V",
-			 name, srcm->modname);
+	if (fail_with_error)
+	  scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, name,
+			   "dynamic-require-syntax: name is primitive syntax: %V from module: %V",
+			   name, srcm->modname);
+	return NULL;
       }
 
       return SCHEME_PTR_VAL(v);
@@ -643,12 +648,12 @@ static Scheme_Object *_dynamic_require(int argc, Scheme_Object *argv[],
 
 static Scheme_Object *dynamic_require(int argc, Scheme_Object *argv[])
 {
-  return _dynamic_require(argc, argv, 0, 0, 0, 0);
+  return _dynamic_require(argc, argv, 0, 0, 0, 0, 1);
 }
 
 static Scheme_Object *dynamic_require_syntax(int argc, Scheme_Object *argv[])
 {
-  return _dynamic_require(argc, argv, 1, 0, 0, 0);
+  return _dynamic_require(argc, argv, 1, 0, 0, 0, 1);
 }
 
 static Scheme_Object *do_namespace_require(int argc, Scheme_Object *argv[], int for_exp)
@@ -1393,7 +1398,7 @@ Scheme_Bucket *scheme_module_bucket(Scheme_Object *modname, Scheme_Object *var, 
   a[0] = modname;
   a[1] = var;
 
-  return (Scheme_Bucket *)_dynamic_require(2, a, 0, 1, 0, 1);
+  return (Scheme_Bucket *)_dynamic_require(2, a, 0, 1, 0, 1, 1);
 }
 
 Scheme_Bucket *scheme_exptime_module_bucket(Scheme_Object *modname, Scheme_Object *var, Scheme_Env *env)
@@ -1403,7 +1408,25 @@ Scheme_Bucket *scheme_exptime_module_bucket(Scheme_Object *modname, Scheme_Objec
   a[0] = modname;
   a[1] = var;
 
-  return (Scheme_Bucket *)_dynamic_require(2, a, 0, 1, 1, 1);
+  return (Scheme_Bucket *)_dynamic_require(2, a, 0, 1, 1, 1, 1);
+}
+
+Scheme_Object *scheme_builtin_value(const char *name)
+{
+  Scheme_Object *a[2], *v;
+
+  a[1] = scheme_intern_symbol(name);
+
+  /* Try kernel first: */
+  a[0] = kernel_symbol;
+  v = _dynamic_require(2, a, 0, 0, 0, 0, 0);
+
+  if (v)
+    return v;
+
+  /* Maybe in MzScheme? */
+  a[0] = scheme_intern_symbol("mzscheme");
+  return _dynamic_require(2, a, 0, 0, 0, 0, 0);
 }
 
 /**********************************************************************/

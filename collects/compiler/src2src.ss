@@ -719,7 +719,8 @@
 				   (multarity-ize (cdr l)))))])
 
       (public
-	[multi (lambda () (pair? (cdr bodys)))]
+	[multi? (lambda () (or (null? bodys)
+			       (pair? (cdr bodys))))]
 
 	[arg-body-exists?
 	 (lambda (n)
@@ -795,7 +796,7 @@
 			  (map (lambda (body)
 				 (get-body-sexpr body))
 			       bodys)])
-	     (if (multi)
+	     (if (multi?)
 		 (syntax/loc stx
 		   (case-lambda
 		    [vars . body] ...))
@@ -976,6 +977,7 @@
 	
 	[set-known-values (lambda ()
 			    (send var set-mutated)
+			    (send var set-known-values) ; increments use
 			    (send val set-known-values))]
 	
 	[clone (lambda (env)

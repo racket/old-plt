@@ -1263,27 +1263,34 @@
   ;;  object%
   ;;--------------------------------------------------------------------
   
-  (define object<%> (make-interface 'object% null null #f))
-  (define object% (make-class 'object%
-			      0 (vector #f) 
-			      object<%>
+  (define (make-naming-constructor type name)
+    (let-values ([(struct: make- ? -accessor -mutator)
+		  (make-struct-type name type 0 0 #f null insp)])
+      make-))
+  
+  (define object<%> ((make-naming-constructor struct:interface 'interface:object%)
+		     'object% null null #f))
+  (define object% ((make-naming-constructor struct:class 'class:object%)
+		   'object%
+		   0 (vector #f) 
+		   object<%>
 
-			      0 (make-hash-table) null
-			      (vector) (vector)
-			      
-			      0 (make-hash-table) null
-			      
-			      'struct:object object? 'make-object
-			      'field-ref-not-needed 'field-set!-not-needed
+		   0 (make-hash-table) null
+		   (vector) (vector)
+		   
+		   0 (make-hash-table) null
+		   
+		   'struct:object object? 'make-object
+		   'field-ref-not-needed 'field-set!-not-needed
 
-			      null
+		   null
 
-			      (lambda (this super-init args) 
-				(unless (null? args)
-				  (obj-error "make-object" "unused initialization arguments: ~e" args))
-				(void))
+		   (lambda (this super-init args) 
+		     (unless (null? args)
+		       (obj-error "make-object" "unused initialization arguments: ~e" args))
+		     (void))
 
-			      #t)) ; no super-init
+		   #t)) ; no super-init
 
   (vector-set! (class-supers object%) 0 object%)
   (let*-values ([(struct:obj make-obj obj? -get -set!)
@@ -1644,11 +1651,6 @@
   
   (define undefined (letrec ([x x]) x))
   
-  (define (make-naming-constructor type name)
-    (let-values ([(struct: make- ? -accessor -mutator)
-		  (make-struct-type name type 0 0 #f null insp)])
-      make-))
-
   (define-struct (exn:object struct:exn) () insp)
 
   (define (obj-error where . msg)

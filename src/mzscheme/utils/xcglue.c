@@ -664,15 +664,6 @@ int objscheme_istype_char(Scheme_Object *obj, const char *stopifbad)
   return 0;
 }
 
-int objscheme_istype_generic(Scheme_Object *obj, const char *stopifbad)
-{
-  if (SAME_TYPE(SCHEME_TYPE(obj), scheme_generic_type))
-    return 1;
-  else if (stopifbad)
-    scheme_signal_error("expected an unknown type in %s", stopifbad);
-  return 0;
-}
-
 int objscheme_istype_closed_prim(Scheme_Object *obj, const char *stopifbad)
 {
   if (SAME_TYPE(SCHEME_TYPE(obj), scheme_closed_prim_type))
@@ -763,17 +754,6 @@ Scheme_Object *objscheme_box(Scheme_Object *v)
   return scheme_box(v);
 }
 
-Scheme_Object *objscheme_bundle_generic(void *p)
-{
-  Scheme_Object *obj;
-
-  obj = scheme_alloc_small_object();
-  obj->type = scheme_generic_type;
-  SCHEME_PTR_VAL(obj) = (Scheme_Object *)p;
-
-  return obj;
-}
-
 Scheme_Object *objscheme_bundle_string(char *s)
 {
   if (!s)
@@ -796,12 +776,6 @@ Scheme_Object *objscheme_bundle_nonnegative_symbol_float(double d, const char *s
 }
 
 /************************************************************************/
-
-void *objscheme_unbundle_generic(Scheme_Object *obj, const char *where)
-{
-  (void)objscheme_istype_generic(obj, where);
-  return (void *)SCHEME_PTR_VAL(obj);
-}
 
 long objscheme_unbundle_integer(Scheme_Object *obj, const char *where)
 {

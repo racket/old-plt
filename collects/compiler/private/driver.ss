@@ -213,7 +213,19 @@
 	    (when verbose? (printf " expanding...~n"))
 	    (parameterize ([current-load-relative-directory input-directory])
 	      (map (lambda (expr)
-		     (zodiac:syntax->zodiac (expand (src2src:optimize (expand expr) #t))))
+		     (let ([expanded (expand expr)])
+		       (begin0
+			(zodiac:syntax->zodiac (expand (src2src:optimize expanded #t)))
+			;; Check for top-level requires:
+			(let loop ([e expanded])
+			  (syntax-case e (begin require define-syntaxes)
+			    [(require . _)
+			     (eval-compile-prefix expr)]
+			    [(define-syntaxes . _)
+			     (eval-compile-prefix expr)]
+			    [(begin l ...)
+			     (map loop (syntax->list (syntax (l ...))))]
+			    [_else (void)])))))
 		   exprs)))))
 
       (define elaborate-namespace (make-namespace))

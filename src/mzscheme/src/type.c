@@ -130,7 +130,6 @@ scheme_init_type (Scheme_Env *env)
   set_name(scheme_hash_table_type, "<hash-table>");
   set_name(scheme_bucket_table_type, "<hash-table>");
   set_name(scheme_case_closure_type, "<procedure>");
-  set_name(scheme_generic_data_type, "<generic-data>");
   set_name(scheme_multiple_values_type, "<multiple-values>");
   set_name(scheme_placeholder_type, "<placeholder>");
   set_name(scheme_weak_box_type, "<weak-box>");
@@ -389,7 +388,6 @@ void scheme_register_traversers(void)
   GC_REG_TRAV(scheme_macro_type, small_object);
   GC_REG_TRAV(scheme_box_type, small_object);
   GC_REG_TRAV(scheme_thread_type, thread_val);
-  GC_REG_TRAV(scheme_generic_type, bad_trav); /* generic = proc */
   GC_REG_TRAV(scheme_cont_mark_set_type, cont_mark_set_val);
   GC_REG_TRAV(scheme_sema_type, sema_val);
   GC_REG_TRAV(scheme_hash_table_type, hash_table_val);

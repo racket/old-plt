@@ -1018,7 +1018,7 @@
 			      (lambda (exn)
 				(esc
 				 (lambda ()
-				   (if (exn:misc:user-break? exn)
+				   (if (exn:break? exn)
 				       (raise exn)
 				       (raise-syntax-error
 					'syntax
@@ -2265,16 +2265,16 @@
 
   (define (simple-return-primitive? v)
     (unless (primitive? v) (raise-type-error 'simple-return-primitive? "primitive-procedure" v))
-    (not (memq (inferred-name v) '(call-with-values 
-				      apply 
-				    error
-				    call-with-current-continuation
-				    hash-table-get
-				    write-image-to-file))))
+    (not (memq (object-name v) '(call-with-values apply 
+				  error
+				  call-with-current-continuation
+				  hash-table-get
+				  write-image-to-file
+				  syntax-local-value))))
 
   (define (port? x) (or (input-port? x) (output-port? x)))
 
-  (define (not-break-exn? x) (not (exn:misc:user-break? x)))
+  (define (not-break-exn? x) (not (exn:break? x)))
 
   ;; -------------------------------------------------------------------------
 

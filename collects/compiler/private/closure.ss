@@ -71,7 +71,7 @@
 		      #f
 		      (box '())
 		      lam
-		      (and pls? (varref:current-invoke-module)))]
+		      (and pls? (or pls? (varref:current-invoke-module))))]
 		 [def (zodiac:make-define-values-form 
 		       (zodiac:zodiac-stx lam)
 		       (make-empty-box)

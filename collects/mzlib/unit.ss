@@ -8,8 +8,23 @@
 
   (define undefined (letrec ([x x]) x))
 
+  (define insp (current-inspector)) ; for named structures
+
   (define-struct unit (num-imports exports go))
   (define-struct (exn:unit struct:exn) ())
+
+  (define (make-naming-constructor type name)
+    (let-values ([(struct: make- ? -accessor -mutator)
+		  (make-struct-type name type 0 0 #f null insp)])
+      make-))
+
+  (define (make-a-unit name num-imports exports go)
+    ((if name 
+	 (make-naming-constructor 
+	  struct:unit
+	  (string->symbol (format "unit:~a" name)))
+	 make-unit)
+     num-imports exports go))
 
   (define-syntax unit
     (lambda (stx)
@@ -241,20 +256,21 @@
 					 [num-imports (datum->syntax-object
 						       (quote-syntax here)
 						       (length (syntax->list (syntax (iloc ...))))
-						       #f)])
-			     (syntax/loc
-			      stx
-			      (make-unit
-			       num-imports
-			       (list (quote extname) ...)
-			       (lambda ()
-				 (let ([eloc (box undefined)] ...)
-				   (list (vector eloc ...)
-					 (lambda (iloc ...)
-					   (let ([intname undefined] ...)
-					     (letrec-syntax redirections
-						 (void) ; in case the body would be empty
-					       defn&expr ...))))))))))))))))))])))
+						       #f)]
+					 [name (syntax-local-name)])
+			     (syntax/loc stx
+			       (make-a-unit
+				'name
+				num-imports
+				(list (quote extname) ...)
+				(lambda ()
+				  (let ([eloc (box undefined)] ...)
+				    (list (vector eloc ...)
+					  (lambda (iloc ...)
+					    (let ([intname undefined] ...)
+					      (letrec-syntax redirections
+						(void) ; in case the body would be empty
+						defn&expr ...))))))))))))))))))])))
   
   (define (check-expected-interface tag unit num-imports exports)
     (unless (unit? unit)
@@ -560,7 +576,8 @@
 						   (length imports)
 						   #f)]
 				     [export-names export-names]
-				     [export-mapping export-mapping])
+				     [export-mapping export-mapping]
+				     [name (syntax-local-name)])
 			 (syntax/loc
 			  stx
 			  (let ([constituent unit-expr]
@@ -572,7 +589,8 @@
 				    unit-import-count
 				    'unit-export-list)]
 				  ...)
-			      (make-unit
+			      (make-a-unit
+			       'name
 			       num-imports
 			       (quote export-names)
 			       (lambda ()

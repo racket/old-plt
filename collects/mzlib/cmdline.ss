@@ -177,7 +177,7 @@
   
   (define print-args
     (lambda (port l f)
-      (let loop ([l l][a (letrec ([a (arity f)]
+      (let loop ([l l][a (letrec ([a (procedure-arity f)]
 				  [a-c (lambda (a)
 					 (cond
 					  [(number? a) (cons (sub1 a) (sub1 a))]
@@ -204,7 +204,7 @@
 		 [(number? a) (>= a n)]
 		 [(arity-at-least? a) #t]
 		 [else (ormap a-c a)]))])
-      (a-c (arity p))))
+      (a-c (procedure-arity p))))
 
   (define parse-command-line
     (case-lambda
@@ -267,7 +267,7 @@
 					 (or (procedure? (cadr line))
 					     (bad-table (format "second item in a spec-line must be a procedure: ~e" (cadr line))))
 
-					 (let ([a (arity (cadr line))])
+					 (let ([a (procedure-arity (cadr line))])
 					   (or (and (number? a)
 						    (or (>= a 1)
 							(bad-table (format "flag handler procedure must take at least 1 argument: ~e" 
@@ -280,7 +280,7 @@
 					     (bad-table (format "spec-line help section must be a list of strings")))
 					 
 					 (or (let ([l (length (caddr line))]
-						   [a (arity (cadr line))])
+						   [a (procedure-arity (cadr line))])
 					       (if (number? a)
 						   (= a l)
 						   (and (>= l 1)
@@ -297,11 +297,11 @@
       (unless (and (procedure? help) (procedure-arity-includes? help 1))
 	(raise-type-error 'parse-command-line "help procedure of arity 1" help))
       (unless (and (procedure? unknown-flag) (procedure-arity-includes? unknown-flag 1)
-		   (let ([a (arity unknown-flag)])
+		   (let ([a (procedure-arity unknown-flag)])
 		     (or (number? a) (arity-at-least? a))))
 	(raise-type-error 'parse-command-line "unknown-flag procedure of simple arity, accepting 1 argument (an perhaps more)" unknown-flag))
       
-      (letrec ([a (arity finish)]
+      (letrec ([a (procedure-arity finish)]
 	       [l (length finish-help)]
 	       [a-c (lambda (a)
 		      (or (and (number? a) (sub1 a))
@@ -404,7 +404,7 @@
 					   (parameterize ([current-output-port s])
 					     (print-args s finish-help finish))
 					   (let ([s (get-output-string s)])
-					     (if (equal? 2 (arity finish))
+					     (if (equal? 2 (procedure-arity finish))
 						 (format " 1~a" s)
 						 s))))
 				     c
@@ -418,7 +418,7 @@
 					   (string-append (car args) " " (loop (cdr args))))))))))]
 	     [call-handler
 	      (lambda (handler flag args r-acc k)
-		(let* ([a (arity handler)]
+		(let* ([a (procedure-arity handler)]
 		       [remaining (length args)]
 		       [needed (if (number? a)
 				   (sub1 a)

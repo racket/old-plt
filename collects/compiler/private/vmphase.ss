@@ -802,7 +802,8 @@
 		     "vmscheme: annotated tail? (= ~a) does not match calculated tail? (= ~a)"
 		     (app-tail? (get-annotation ast)) tail?))
 		  (let* ([prim (let* ([fun (zodiac:app-fun ast)]
-				      [name (zodiac:varref-var fun)])
+				      [name (and (zodiac:varref? fun)
+						 (zodiac:varref-var fun))])
 				 (and (zodiac:top-level-varref? fun)
 				      (varref:has-attribute? fun varref:primitive)
 				      (let ([v (dynamic-require 'mzscheme name)])

@@ -408,7 +408,7 @@
 						       this
 						       (lambda args
 							 (when super-called?
-							   (obj-error (or (inferred-name init)
+							   (obj-error (or (object-name init)
 									  'object-init)
 								      "multiple intializations of superclass"))
 							 (set! super-called? #t)
@@ -426,7 +426,7 @@
 					   (apply init args)
 					   (unless super-called?
 					     (obj-error 
-					      (or (inferred-name init)
+					      (or (object-name init)
 						  'object-init)
 					      "initialization did not invoke superclass initializer"))))))))))))])
 	  (apply (setup) args)

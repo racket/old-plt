@@ -1522,7 +1522,7 @@ scheme_compile_expand_macro_app(Scheme_Object *name, Scheme_Object *macro,
     if (depth > 0)
       --depth;
     if (depth)
-      return scheme_expand_expr(form, env, depth, scheme_false);
+      return scheme_expand_expr(form, env, depth, boundname);
     else
       return form;
   }

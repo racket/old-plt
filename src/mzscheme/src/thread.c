@@ -2101,7 +2101,7 @@ int scheme_can_break(Scheme_Thread *p, Scheme_Config *config)
 
 static Scheme_Object *raise_user_break(int argc, Scheme_Object **argv)
 {
-  scheme_raise_exn(MZEXN_MISC_USER_BREAK, argv[0], "user break");
+  scheme_raise_exn(MZEXN_BREAK, argv[0], "user break");
 
   return scheme_void;
 }

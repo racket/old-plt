@@ -45,8 +45,9 @@ strings are types/comments.
 	  (*tcp [] "TCP errors"))
      
      (thread [] "raised by \\scmfirst{call-with-custodian}")
+
+     (break [continuation "continuation" "a continuation that resumes from the break"] "asynchronous thread break")
      
      (misc [] "low-level or MzScheme-specific error"
 	   (unsupported [] "unsupported feature")
-	   (user-break [continuation "continuation" "a continuation that resumes from the break"] "asynchronous thread break")
 	   (out-of-memory [] "out of memory")))

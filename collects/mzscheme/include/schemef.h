@@ -536,6 +536,8 @@ Scheme_Bucket *scheme_module_bucket(Scheme_Object *mod, Scheme_Object *var, Sche
 Scheme_Bucket *scheme_exptime_global_bucket(Scheme_Object *symbol, Scheme_Env *env);
 Scheme_Bucket *scheme_exptime_module_bucket(Scheme_Object *mod, Scheme_Object *var, Scheme_Env *env);
 
+Scheme_Object *scheme_builtin_value(const char *name); /* convenience */
+
 void scheme_set_global_bucket(char *proc, Scheme_Bucket *var, Scheme_Object *val,
 			      int set_undef);
 void scheme_install_macro(Scheme_Bucket *b, Scheme_Object *v);

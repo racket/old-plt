@@ -120,7 +120,7 @@
 		       ; (procedure? expr)
 		       )
 		   'atomic]
-		  [(inferred-name expr) 'atomic]
+		  [(object-name expr) 'atomic]
 		  [(box? expr) (unless (build-sub expr)
 				 (build (unbox expr)))]
 		  [(hash-table? expr) (unless (build-sub expr)
@@ -271,7 +271,7 @@
 		     [constructor-style
 		      (let* ([build-named
 			      (lambda (expr build-unnamed)
-				(let ([answer (inferred-name expr)])
+				(let ([answer (object-name expr)])
 				  (if answer
 				      (if (eq? (with-handlers ([not-break-exn?
 								(lambda (x) #f)])
@@ -303,12 +303,12 @@
 			      [(vector? expr) `(vector ,@(map recur (vector->list expr)))]
 			      [(symbol? expr) `',expr]
 			      [(string? expr) expr]
-			      [(primitive? expr) (string->symbol (primitive-name expr))]
+			      [(primitive? expr) (object-name expr)]
 			      [(procedure? expr)
 			       (build-named 
 				expr
 				(lambda ()
-				  (let ([arity (arity expr)])
+				  (let ([arity (procedure-arity expr)])
 				    (if (list? arity)
 					`(case-lambda . ,(make-lambda-helper arity))
 					`(lambda ,(make-lambda-helper arity) ...)))))]

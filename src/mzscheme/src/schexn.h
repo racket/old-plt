@@ -23,9 +23,9 @@ enum {
   MZEXN_I_O_FILESYSTEM,
   MZEXN_I_O_TCP,
   MZEXN_THREAD,
+  MZEXN_BREAK,
   MZEXN_MISC,
   MZEXN_MISC_UNSUPPORTED,
-  MZEXN_MISC_USER_BREAK,
   MZEXN_MISC_OUT_OF_MEMORY,
   MZEXN_OTHER
 };
@@ -58,9 +58,9 @@ static exn_rec exn_table[] = {
   { 4, NULL, NULL, 0 },
   { 2, NULL, NULL, 0 },
   { 2, NULL, NULL, 0 },
-  { 2, NULL, NULL, 0 },
-  { 2, NULL, NULL, 0 },
   { 3, NULL, NULL, 0 },
+  { 2, NULL, NULL, 0 },
+  { 2, NULL, NULL, 0 },
   { 2, NULL, NULL, 0 }
 };
 #else
@@ -93,9 +93,9 @@ static exn_rec *exn_table;
   exn_table[MZEXN_I_O_FILESYSTEM].args = 4;
   exn_table[MZEXN_I_O_TCP].args = 2;
   exn_table[MZEXN_THREAD].args = 2;
+  exn_table[MZEXN_BREAK].args = 3;
   exn_table[MZEXN_MISC].args = 2;
   exn_table[MZEXN_MISC_UNSUPPORTED].args = 2;
-  exn_table[MZEXN_MISC_USER_BREAK].args = 3;
   exn_table[MZEXN_MISC_OUT_OF_MEMORY].args = 2;
 #endif
 
@@ -112,7 +112,7 @@ static const char *MZEXN_SYNTAX_FIELDS[1] = { "expr" };
 static const char *MZEXN_READ_FIELDS[3] = { "port", "line", "column" };
 static const char *MZEXN_I_O_PORT_FIELDS[1] = { "port" };
 static const char *MZEXN_I_O_FILESYSTEM_FIELDS[2] = { "pathname", "detail" };
-static const char *MZEXN_MISC_USER_BREAK_FIELDS[1] = { "continuation" };
+static const char *MZEXN_BREAK_FIELDS[1] = { "continuation" };
 
 #endif
 
@@ -138,9 +138,9 @@ static const char *MZEXN_MISC_USER_BREAK_FIELDS[1] = { "continuation" };
   SETUP_STRUCT(MZEXN_I_O_FILESYSTEM, EXN_PARENT(MZEXN_I_O), "exn:i/o:filesystem", 2, MZEXN_I_O_FILESYSTEM_FIELDS)
   SETUP_STRUCT(MZEXN_I_O_TCP, EXN_PARENT(MZEXN_I_O), "exn:i/o:tcp", 0, NULL)
   SETUP_STRUCT(MZEXN_THREAD, EXN_PARENT(MZEXN), "exn:thread", 0, NULL)
+  SETUP_STRUCT(MZEXN_BREAK, EXN_PARENT(MZEXN), "exn:break", 1, MZEXN_BREAK_FIELDS)
   SETUP_STRUCT(MZEXN_MISC, EXN_PARENT(MZEXN), "exn:misc", 0, NULL)
   SETUP_STRUCT(MZEXN_MISC_UNSUPPORTED, EXN_PARENT(MZEXN_MISC), "exn:misc:unsupported", 0, NULL)
-  SETUP_STRUCT(MZEXN_MISC_USER_BREAK, EXN_PARENT(MZEXN_MISC), "exn:misc:user-break", 1, MZEXN_MISC_USER_BREAK_FIELDS)
   SETUP_STRUCT(MZEXN_MISC_OUT_OF_MEMORY, EXN_PARENT(MZEXN_MISC), "exn:misc:out-of-memory", 0, NULL)
 
 #endif

@@ -82,15 +82,12 @@ static Scheme_Object *current_gc_milliseconds(int argc, Scheme_Object **argv);
 static Scheme_Object *current_seconds(int argc, Scheme_Object **argv);
 static Scheme_Object *seconds_to_date(int argc, Scheme_Object **argv);
 #endif
-static Scheme_Object *inferred_name(int argc, Scheme_Object *argv[]);
-static Scheme_Object *arity(int argc, Scheme_Object *argv[]);
+static Scheme_Object *object_name(int argc, Scheme_Object *argv[]);
+static Scheme_Object *procedure_arity(int argc, Scheme_Object *argv[]);
 static Scheme_Object *procedure_arity_includes(int argc, Scheme_Object *argv[]);
 static Scheme_Object *primitive_p(int argc, Scheme_Object *argv[]);
 static Scheme_Object *primitive_closure_p(int argc, Scheme_Object *argv[]);
-static Scheme_Object *primitive_name(int argc, Scheme_Object *argv[]);
 static Scheme_Object *primitive_result_arity (int argc, Scheme_Object *argv[]);
-static Scheme_Object *syntax_p(int argc, Scheme_Object *argv[]);
-static Scheme_Object *macro_p(int argc, Scheme_Object *argv[]);
 static Scheme_Object *call_with_values(int argc, Scheme_Object *argv[]);
 Scheme_Object *scheme_values(int argc, Scheme_Object *argv[]);
 static Scheme_Object *current_print(int argc, Scheme_Object **argv);
@@ -270,14 +267,14 @@ scheme_init_fun (Scheme_Env *env)
 						      3, 3), 
 			     env);
 
-  scheme_add_global_constant("inferred-name", 
-			     scheme_make_folding_prim(inferred_name,  
-						      "inferred-name", 
+  scheme_add_global_constant("object-name", 
+			     scheme_make_folding_prim(object_name,  
+						      "object-name",
 						      1, 1, 1), 
 			     env);
 
   scheme_add_global_constant("procedure-arity", 
-			     scheme_make_folding_prim(arity,  
+			     scheme_make_folding_prim(procedure_arity,  
 						      "procedure-arity", 
 						      1, 1, 1), 
 			     env);
@@ -304,17 +301,6 @@ scheme_init_fun (Scheme_Env *env)
 						      1, 1, 1), 
 			     env);
 
-  scheme_add_global_constant("syntax-compiler?", 
-			     scheme_make_folding_prim(syntax_p, 
-						      "syntax-compiler?", 
-						      1, 1, 1), 
-			     env);
-  scheme_add_global_constant("macro?", 
-			     scheme_make_folding_prim(macro_p, 
-						      "macro?", 
-						      1, 1, 1), 
-			     env);
-  
   scheme_add_global_constant("current-print",
 			     scheme_register_parameter(current_print, 
 						       "current-print",
@@ -1297,18 +1283,7 @@ static Scheme_Object *primitive_result_arity(int argc, Scheme_Object *argv[])
   return scheme_make_integer(1);
 }
 
-static Scheme_Object *syntax_p(int argc, Scheme_Object *argv[])
-{
-  return (SCHEME_SYNTAXP(argv[0]) ? scheme_true : scheme_false);
-}
-
-static Scheme_Object *macro_p(int argc, Scheme_Object *argv[])
-{
-  return (SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_macro_type) 
-	  ? scheme_true : scheme_false);
-}
-
-static Scheme_Object *inferred_name(int argc, Scheme_Object **argv)
+static Scheme_Object *object_name(int argc, Scheme_Object **argv)
 {
   if (SCHEME_PROCP(argv[0])) {
     const char *s;
@@ -1492,7 +1467,7 @@ Scheme_Object *scheme_arity(Scheme_Object *p)
   return get_or_check_arity(p, -1);
 }
 
-static Scheme_Object *arity(int argc, Scheme_Object *argv[])
+static Scheme_Object *procedure_arity(int argc, Scheme_Object *argv[])
 {
   if (!SCHEME_PROCP(argv[0]))
     scheme_wrong_type("procedure-arity", "procedure", 0, argc, argv);

@@ -408,7 +408,7 @@
 
 
       (define (do-install-part part)
-        (when (call-install)
+        (when (or (call-install) (eq? part 'post))
           (for-each
            (lambda (cc)
              (let/ec k

@@ -1,47 +1,45 @@
 
 This is the PLT software package directory. 
 
-The standard location for this directory is:
-  /usr/local/lib/plt
-
-After unpacking this distribution, run the `install' script
-in the plt directory (while the plt directory is the current
-directory).
+After unpacking this distribution, set the current directory to plt
+(the one containing this README file) and run ./install.
 
 Executables
 -----------
 
-The main executables are:
+The following are the executables:
 
   plt/bin/drscheme -- PLT's main Scheme development environment
   plt/bin/mred -- a Scheme GUI engine
   plt/bin/mzscheme -- a text-based Scheme interpreter
   plt/bin/mzc -- the MzScheme compiler
 
-DrScheme relies on MrEd, and mzc (the MzScheme compiler) relies on
-MzScheme. You may not have some of these packages depending on which
-distribution you downloaded.
+DrScheme relies on MrEd, and mzc relies on MzScheme. You may not have
+some of these executables, depending on which distribution you
+downloaded.
 
 The files in plt/bin are shell scripts. The actual executable binaries
-for mred and mzscheme are in .bin/ in a platform-dependent
+for mred and mzscheme are in plt/.bin in a platform-dependent
 subdirectory. (If you have downloaded the source code distribution,
 the binaries will be absent and must be compiled.) The sh scripts pick
 an appropiate binary based on `uname`, so a single plt directory can
 be used in a multi-platform environment. (This causes problems for
-writing MzScheme scripts. See notes/mzscheme/SCRIPTS for a clever
-trick.)
+writing MzScheme scripts. See plt/notes/mzscheme/SCRIPTS for a way around
+the problem.)
 
 Compiling
 ---------
 
-If you downloaded the source code distribution, you must compile
-MzScheme and MrEd before using the PLT software, including
-DrScheme. To compile both MzScheme and MrEd (both are needed for
-DrScheme), see `README' in plt/src/mred. To compile MzScheme only, see
-plt/src/mzscheme.
+If you downloaded the source code distribution instead of the standard
+distribution, you must compile MzScheme and MrEd before using the PLT
+software (including DrScheme). 
 
-If there is no plt/src/mzscheme or plt/src/mred directory, you did not
-download the source code distribution and you are ready to run.
+For compilation instructions, see plt/src/mred/README and
+plt/src/mzscheme/README.
+
+If there is no plt/src/mzscheme directory, you did not download
+the source code distribution. In this case, you should be ready to
+run.
 
 Documentation
 -------------
@@ -52,11 +50,10 @@ executables.
 
 HTML documentation for PLT software should be installed into
 plt/collects/doc. For example, the DrScheme documenation should be in
-plt/collects/doc/drscheme, with button icons in
-plt/collects/doc/icons.
+plt/collects/doc/drscheme, with button icons in plt/collects/doc/icons.
 
 DrScheme and MrEd will automatically add documentation installed in
-plt/collects/doc to the "Help" menu.
+plt/collects/doc to the Help menu.
 
 More Information
 ----------------

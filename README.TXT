@@ -1,26 +1,33 @@
 
 This is the PLT software package directory. 
 
-The main executables are:
+Executables
+-----------
 
-  plt\drscheme.exe - PLT's Scheme development environment
-  plt\mred.exe - a Scheme GUI engine
-  plt\mzscheme.exe - a text-based Scheme interpreter
+The following are the executables:
+
+  plt\drscheme.exe -- PLT's main Scheme development environment
+  plt\mred.exe -- a Scheme GUI engine
+  plt\mzscheme.exe -- a text-based Scheme interpreter
   plt\mzc.exe -- the MzScheme compiler
 
-Depending on which distribution you downloaded, you may have fewer
-executables.
+DrScheme relies on MrEd, and mzc relies on MzScheme. You may not have
+some of these executables, depending on which distribution you
+downloaded.
+
 
 Compiling
 ---------
 
 If you downloaded the source code distribution instead of the standard
 distribution, you must compile MzScheme and MrEd before using the PLT
-software (including DrScheme). For compilation instructions, see
-plt/src/worksp/README. 
+software (including DrScheme). 
 
-If there is no plt/src/worksp directory, you did not download the
-source code distribution and you are ready to run.
+For compilation instructions, see plt/src/worksp/README. 
+
+If there is no plt\src\mzscheme directory, you did not download
+the source code distribution. In this case, you should be ready to
+run.
 
 Documentation
 -------------
@@ -31,11 +38,10 @@ executables.
 
 HTML documentation for PLT software should be installed into
 plt\collects\doc. For example, the DrScheme documenation should be in
-plt\collects\doc/drscheme, with button icons in
-plt\collects\doc\icons.
+plt\collects\doc\drscheme, with button icons in plt\collects\doc\icons.
 
 DrScheme and MrEd will automatically add documentation installed in
-plt\collects\doc to the "Help" menu.
+plt\collects\doc to the Help menu.
 
 More Information
 ----------------

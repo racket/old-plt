@@ -266,13 +266,13 @@
   (try "`(a ,(car '(b a)) a)" (qq-diff
 			       (gq-diff (pc-diff "(list 'a 'b 'a)"
 						 "(a b a)")
-					'(error "Misuse of quote"))
+					'(error "is not a symbol"))
 			       '(error "illegal use of \"`\"")))
   (unless quasiquote? 
     (flush-err)(flush-err)(flush-err)(flush-err))
 
   (try "'(1 . 2)" (pl-diff '(error "improper lists are not allowed")
-			   (pc-diff "(cons 1 2)"
+		           (pc-diff "(cons 1 2)"
 				    "(1 . 2)")))
   (when proper-list?
     (flush-out)

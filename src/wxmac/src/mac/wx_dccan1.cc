@@ -63,7 +63,7 @@ void wxCanvasDC::Init(wxCanvas* the_canvas)
 
   canvas = the_canvas;
   if (canvas) {
-    WXGC_IGNORE(canvas);
+    WXGC_IGNORE(this, canvas);
    cMacDC = canvas->MacDC();
    CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
    pixmap = theMacGrafPort->portPixMap;

@@ -28,7 +28,7 @@ wxMenuItem::wxMenuItem
 	cIsChecked (FALSE),
 	cIsEnabled (TRUE)
 {
-	WXGC_IGNORE(parentMenu);
+	WXGC_IGNORE(this, parentMenu);
 }
 
 wxMenuItem::wxMenuItem
@@ -42,7 +42,7 @@ wxMenuItem::wxMenuItem
 	cIsEnabled (TRUE)
 {
 	if (!theParentMenu) wxFatalError("No parent menu for constructing menu item.");
-	WXGC_IGNORE(parentMenu);
+	WXGC_IGNORE(this, parentMenu);
 }
 
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

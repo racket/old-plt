@@ -211,7 +211,7 @@ wxDialogBox::wxDialogBox // Constructor (for dialog window)
 			 0, 0, width, height),
 		cButtonPressed (0)
 {
-  WXGC_IGNORE(cFrame);
+  WXGC_IGNORE(this, cFrame);
   
   cFrame = (wxFrame *)GetParent();
   cFrame->cDialogPanel = this;

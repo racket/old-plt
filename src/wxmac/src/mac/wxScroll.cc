@@ -26,7 +26,7 @@ wxScroll::wxScroll // root scroll
 	cParentScroll (NULL),
 	cScrolls (wxList(wxList::kNoDestroyData))
 {
-	WXGC_IGNORE(scrollWindow);
+	WXGC_IGNORE(this, scrollWindow);
 	if (!scrollWindow) wxFatalError("No scroll window for constructing scroll.");
 	if (!scrollData) wxFatalError("No scroll data for constructing root scroll.");
 }
@@ -41,7 +41,7 @@ wxScroll::wxScroll // child scroll
 	cScrollData (NULL),
 	cScrolls (wxList(wxList::kNoDestroyData))
 {
-	WXGC_IGNORE(scrollWindow);
+	WXGC_IGNORE(this, scrollWindow);
 	if (!scrollWindow)
 		wxFatalError("No scroll window for constructing scroll.");
 	if (!parentScrollWindow)

@@ -60,7 +60,7 @@ wxMenuBar::wxMenuBar // Constructor (given objectType)
 		wxHelpHackMenu(NULL),
 		iHelpMenuHackNum(0)
 {
-	WXGC_IGNORE(menu_bar_frame);
+	WXGC_IGNORE(this, menu_bar_frame);
 }
 
 wxMenuBar::wxMenuBar // Constructor (given parentPanel, label)
@@ -75,7 +75,7 @@ wxMenuBar::wxMenuBar // Constructor (given parentPanel, label)
 		wxHelpHackMenu(NULL),
 		iHelpMenuHackNum(0)
 {
-	WXGC_IGNORE(menu_bar_frame);
+	WXGC_IGNORE(this, menu_bar_frame);
 }
 
 //=============================================================================
@@ -131,7 +131,7 @@ wxMenu::wxMenu // Constructor (given objectType)
 	wxMacString1 theMacString1 = title;
 	cMacMenu = ::NewMenu(cMacMenuId, theMacString1());
 	CheckMemOK(cMacMenu);
-	WXGC_IGNORE(menu_bar);
+	WXGC_IGNORE(this, menu_bar);
 }
 
 //=============================================================================

@@ -617,7 +617,7 @@ wxBitmap::wxBitmap(void)
   depth = 0;
   x_pixmap = NULL;
   selectedInto = NULL;
-  WXGC_IGNORE(selectedInto);
+  WXGC_IGNORE(this, selectedInto);
 }
 
 //-----------------------------------------------------------------------------
@@ -663,7 +663,7 @@ wxBitmap::wxBitmap(char *bitmap_file, long flags)
 {
 	__type = wxTYPE_BITMAP;
     selectedInto = NULL;
-    WXGC_IGNORE(selectedInto);
+    WXGC_IGNORE(this, selectedInto);
 	if (flags & wxBITMAP_TYPE_PICT_RESOURCE)	{ 
 		// look for a 'PICT' resource with the given name
 		Str255 resname;
@@ -734,7 +734,7 @@ Bool wxBitmap::Create(int wid, int hgt, int deep)
   height = hgt;
   depth = deep;
   selectedInto = NULL;
-  WXGC_IGNORE(selectedInto);
+  WXGC_IGNORE(this, selectedInto);
   Rect bounds = {0, 0, height, width};
   // Build a offscreen GWorld to draw the Picture in
   GDHandle savegw;

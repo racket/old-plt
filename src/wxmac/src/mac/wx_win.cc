@@ -319,9 +319,9 @@ void wxWindow::InitDefaults(void)
 
 	cHidden = cUserHidden = FALSE;
 
-	WXGC_IGNORE(window_parent);
-	WXGC_IGNORE(cParentArea);
-	WXGC_IGNORE(cMacDC);
+	WXGC_IGNORE(this, window_parent);
+	WXGC_IGNORE(this, cParentArea);
+	WXGC_IGNORE(this, cMacDC);
 }
 
 //-----------------------------------------------------------------------------

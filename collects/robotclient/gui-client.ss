@@ -1,5 +1,6 @@
 (module gui-client mzscheme
   (require "board.ss"
+	   "client-parameters.ss"
            (lib "class.ss")
            (lib "mred.ss" "mred")
            "drawboard.ss")

@@ -12,6 +12,29 @@
 	  [zodiac : zodiac:system^]
 	  [hierlist : hierlist^])
 
+  (define my-explode-path
+    (lambda (orig-path)
+      (let ([absolute? (absolute-path? orig-path)]
+            [answer
+             (let loop ([path orig-path]
+                        [rest '()])
+               (let-values ([(base name dir?) (split-path path)])
+                 (cond
+                   [(eq? base 'relative)
+                    (cons name rest)]
+                   [(not base)
+                    (cons name rest)]
+                   [(string? base)
+                    (loop base (cons name rest))]
+                   [else
+                    (error 'explode-path "input was not in normal form: ~s" orig-path)])))])
+        (if (and (eq? (system-type) 'macos)
+                 absolute?
+                 (not (null? answer)))
+            (cons (string-append (car answer) ":")
+                  (cdr answer))
+            answer))))
+
   (define init-directory (current-directory))
 
   (define (all-collections)
@@ -192,7 +215,7 @@
 
       (define (set-filename _filename)
 	(set! filename _filename)
-	(let-values ([(base name dir?) (file:normalize-path (split-path filename))])
+	(let-values ([(base name dir?) (split-path (file:normalize-path filename))])
 	  (set-label name)
 	  (set! project-dir base))
 	(update-name-message))
@@ -588,11 +611,29 @@
 	      (send files-list-box select (- max 1))]))
 	  (update-buttons)
 	  (is-changed)))
+      
+      (define (swap-abs/rel-file)
+        (let* ([file (list-ref files (send files-list-box get-selection))]
+               [fp (cadr file)]
+               [path (apply build-path (cdr file))]
+               [new-path
+                (cond
+                  [(relative-path? path)
+                   (build-path project-dir path)]
+                  [(absolute-path? path)
+                   (if project-dir
+                       (file:find-relative-path path project-dir)
+                       (begin (bell)
+                              path))])])
+          (set-cdr! file (my-explode-path new-path))
+          (update-buttons)))
 
       (define (update-buttons)
 	(let ([selection-list (send files-list-box get-selections)])
 	  (if (null? selection-list)
 	      (begin
+                (send pathize-button set-label "Make ...")
+                (send pathize-button enable #f)
 		(send down-button enable #f)
 		(send up-button enable #f)
 		(send remove-button enable #f)
@@ -600,6 +641,17 @@
 	      (let ([selection (car selection-list)])
 		(send open-button enable #t)
 		(send remove-button enable #t)
+
+                (let ([file (list-ref files (car selection-list))])
+                  (case (car file)
+                    [(build-path)
+                     (send pathize-button enable #t)
+                     (if (member (cadr file) (map normal-case-path (filesystem-root-list)))
+                         (send pathize-button set-label "Make Rel")
+                         (send pathize-button set-label "Make Abs"))]
+                    [(require-library)
+                     (send pathize-button enable #f)]))
+
 		(cond
 		 [(= 1 (send files-list-box get-number))
 		  (send down-button enable #f)
@@ -719,24 +771,15 @@
 	   [else #f]))
 
 	(define (add-as-raw-file new-file)
-	  (define (path->list path)
-	    (let loop ([path path]
-		       [file null])
-	      (let-values ([(base name dir?) (split-path path)])
-		(cond
-		 [(or (not base) (eq? base 'relative)) (cons name file)]
-		 [else (loop base
-			     (cons name file))]))))
-	  
 	  (cond
 	   [(and project-dir
 		 (preferences:get 'drscheme:project-manager:add-files-as-relative?))
 	    (let ([rel-file (file:find-relative-path
 			     project-dir
 			     new-file)])
-	      (set! files (append files (list (cons 'build-path (path->list rel-file))))))]
+	      (set! files (append files (list (cons 'build-path (my-explode-path rel-file))))))]
 	   [else
-	    (set! files (append files (list (cons 'build-path (path->list new-file)))))]))
+	    (set! files (append files (list (cons 'build-path (my-explode-path new-file)))))]))
 
 	(when new-files
 	  (let ([collections (let ([drs-collections (all-collections)]
@@ -746,12 +789,12 @@
 					   drs-collections)
 				   drs-collections))]
 		[exploded-collection-paths
-		 (map (function:compose file:explode-path normal-case-path file:normalize-path)
+		 (map (function:compose my-explode-path normal-case-path file:normalize-path)
 		      (function:filter directory-exists?
 				       (current-library-collection-paths)))])
 	    (for-each
 	     (lambda (new-file)
-	       (let ([exploded (file:explode-path new-file)])
+	       (let ([exploded (my-explode-path new-file)])
 		 (let loop ([exploded-collection-paths exploded-collection-paths])
 		   (cond
 		    [(null? exploded-collection-paths)
@@ -846,7 +889,7 @@
 		(when loaded-files
 		  (set! files (map (lambda (x)
 				     (cond
-				      [(string? x) `(build-path ,@(file:explode-path
+				      [(string? x) `(build-path ,@(my-explode-path
 								   (file:normalize-path
 								    x)))]
 				      [(and (pair? x)
@@ -1224,9 +1267,15 @@
 					  '(single)))
       (define to-load-button-panel (make-object vertical-panel% to-load-files-panel))
       (define up-button (make-object button% "Up" to-load-button-panel (lambda x (move-file-up))))
+      (define down-button (make-object button% "Down" to-load-button-panel (lambda x (move-file-down))))
+      (let ([spacer (make-object horizontal-panel% to-load-button-panel)])
+        (send spacer stretchable-height #f)
+        (send spacer min-height 16))
+
       (define open-button (make-object button% "Open" to-load-button-panel (lambda x (open-file))))
       (define remove-button (make-object button% "Remove" to-load-button-panel (lambda x (remove-file))))
-      (define down-button (make-object button% "Down" to-load-button-panel (lambda x (move-file-down))))
+      (define pathize-button (make-object button% "Make Abs" to-load-button-panel (lambda x (swap-abs/rel-file))))
+      
       (send to-load-button-panel stretchable-width #f)
       (send to-load-button-panel set-alignment 'center 'center)
 
@@ -1241,7 +1290,8 @@
       (send loaded-files-outer-panel change-children (lambda (l) null))
       (send loaded-files-outer-panel stretchable-height #f)
 
-      (let* ([buttons (list up-button open-button down-button remove-button open-loaded-file-button)]
+      (let* ([buttons (list up-button open-button down-button remove-button 
+                            open-loaded-file-button pathize-button)]
 	     [max-width (apply max (map (lambda (x) (send x get-width)) buttons))])
 	(for-each (lambda (button) (send button min-width max-width))
 		  buttons))

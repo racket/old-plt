@@ -362,7 +362,7 @@ case $OS in
         MZOPTIONS="$MZOPTIONS -include \$(MZSRC)/macosxpre"
       ;;
       cc)
-        MZOPTIONS="$MZOPTIONS -include \$(MZSRC)/macosxpre.h"
+#        MZOPTIONS="$MZOPTIONS -include \$(MZSRC)/macosxpre.h"
       ;;
       *)
         echo "unrecognized compiler: $CC"

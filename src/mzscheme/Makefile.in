@@ -32,11 +32,11 @@ cygwin-bin:
 	$(MAKE) normal-bin
 
 macosx-mw-bin:
-	$(MAKE) src/macosxpre
+	$(MAKE) include/macosxpre
 	$(MAKE) normal-bin
 
 macosx-cc-bin:
-	$(MAKE) src/macosxpre.p
+	$(MAKE) include/macosxpre.p
 	$(MAKE) normal-bin
 
 oskit: 
@@ -126,11 +126,11 @@ mzstart.exe: $(srcdir)/dynsrc/start.c
 
 starter: mzstart.exe
 
-src/macosxpre: src/macosxpre.h
-	mwccppc -gccinc -D__CF_USE_FRAMEWORK_INCLUDES__ -precompile src/macosxpre src/macosxpre.h
+include/macosxpre: include/macosxpre.h
+	mwccppc -gccinc -D__CF_USE_FRAMEWORK_INCLUDES__ -precompile include/macosxpre include/macosxpre.h
 
-src/macosxpre.p : src/macosxpre.h
-	cc -precomp src/macosxpre.h -o src/macosxpre.p
+include/macosxpre.p : include/macosxpre.h
+	cc -precomp include/macosxpre.h -o include/macosxpre.p
 
 exn:
 	$(MAKE) $(srcdir)/src/schexn.h
@@ -197,8 +197,8 @@ clean:
 	/bin/rm -f tests/*~
 	/bin/rm -f *.o core
 	/bin/rm -f mzdyn.o libmzgc.@LIBSFX@ libmzscheme.@LIBSFX@ libdl.a mzscheme mzscheme.multiboot
-	/bin/rm -f src/macosxpre
-	/bin/rm -f src/macosxpre.p
+	/bin/rm -f include/macosxpre
+	/bin/rm -f include/macosxpre.p
 	cd gc; $(MAKE) clean
 	cd gc2; $(MAKE) clean
 	cd sgc; $(MAKE) clean

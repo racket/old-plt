@@ -2046,37 +2046,10 @@ Bool XPrinterDialog(wxWindow *parent)
 
 #define PS_DEFAULT_PAPER  "Letter 8 1/2 x 11 in"
 
-#if defined(sun) && defined(wx_xview)
-#	define PS_PREVIEW_COMMAND	"pageview"
-#	define PS_PRINTER_COMMAND	"lpr"
-#	define PS_PRINTER_OPTIONS	""
-#	define PS_AFM_PATH		NULL
-#elif defined(VMS)
-#	define PS_PREVIEW_COMMAND	"view/format=ps/select=x_display"
-#	define PS_PRINTER_COMMAND	"print"
-#	define PS_PRINTER_OPTIONS	"/nonotify/queue=psqueue"
-#	define PS_AFM_PATH		"sys$ps_font_metrics:"
-#elif defined(__sgi)
-#	define PS_PREVIEW_COMMAND	"dps"
-#	define PS_PRINTER_COMMAND	"lpr"
-#	define PS_PRINTER_OPTIONS	""
-#	define PS_AFM_PATH		NULL
-#elif defined(wx_x)
-#	define PS_PREVIEW_COMMAND	"ghostview"
-#	define PS_PRINTER_COMMAND	"lpr"
-#	define PS_PRINTER_OPTIONS	""
-#	define PS_AFM_PATH		NULL
-#elif defined(wx_msw) || defined(wx_mac)
-#	define PS_PREVIEW_COMMAND	"ghostview"
-#	define PS_PRINTER_COMMAND	"print"
-#	define PS_PRINTER_OPTIONS	""
-#	define PS_AFM_PATH		NULL
-#else
-#	define PS_PREVIEW_COMMAND	NULL
-#	define PS_PRINTER_COMMAND	NULL
-#	define PS_PRINTER_OPTIONS	NULL
-#	define PS_AFM_PATH		NULL
-#endif
+#define PS_PREVIEW_COMMAND "gv"
+#define PS_PRINTER_COMMAND "lpr"
+#define PS_PRINTER_OPTIONS ""
+#define PS_AFM_PATH		NULL
 
 wxPrintSetupData::wxPrintSetupData(void)
 {

@@ -1139,10 +1139,12 @@ static Scheme_Object *handle_events(void *cx, int, Scheme_Object **)
   }
    
   /* We should never get here. */
+#if 0
   c->ready = 1;
   c->handler_running = NULL;
   this_thread->on_kill = NULL;
   this_thread->kill_data = NULL;
+#endif
 
   return scheme_void;
 }
@@ -2918,9 +2920,9 @@ int main(int argc, char *argv[])
   signal(SIGDANGER, dangerdanger_gui);
 #endif
 #ifdef wx_x
-#if INTERRUPT_CHECK_ON
+# if INTERRUPT_CHECK_ON
   signal(SIGINT, interrupt);
-#endif
+# endif
 #endif
 
 #if defined(MZ_PRECISE_GC)
@@ -2943,7 +2945,7 @@ int main(int argc, char *argv[])
   scheme_creator_id = 'MrEd';
   wxMediaCreatorId = 'MrEd';
 
-#if !defined(__powerc)
+# if !defined(__powerc)
   long calcLimit, size;
   THz zone;
 	
@@ -2953,7 +2955,7 @@ int main(int argc, char *argv[])
   if (calcLimit % 2)
     calcLimit++;
   SetApplLimit((Ptr)((*(long *)zone)+sizeof(Zone)+calcLimit));
-#endif
+# endif
 #endif
 
 #ifdef wx_mac
@@ -3010,7 +3012,7 @@ int main(int argc, char *argv[])
     }
   }
 #endif
-  
+
   scheme_actual_main = actual_main;
 
   return scheme_image_main(argc, argv);

@@ -1024,7 +1024,9 @@ void check_ps_mode(int v, Scheme_Object *p)
 
 
 
+// @ "get-options" : string GetPrinterOptions();
 
+// @ "set-options" : void SetPrinterOptions(string);
 
 
 class os_wxPrintSetupData : public wxPrintSetupData {
@@ -1240,29 +1242,6 @@ static Scheme_Object *os_wxPrintSetupDataSetPrinterScaling(Scheme_Object *obj, i
 
   
   WITH_VAR_STACK(((wxPrintSetupData *)((Scheme_Class_Object *)obj)->primdata)->SetPrinterScaling(x0, x1));
-
-  
-  
-  return scheme_void;
-}
-
-static Scheme_Object *os_wxPrintSetupDataSetPrinterOptions(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
-  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  REMEMBER_VAR_STACK();
-  objscheme_check_valid(obj);
-  string x0 INIT_NULLED_OUT;
-
-  SETUP_VAR_STACK_REMEMBERED(3);
-  VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
-  VAR_STACK_PUSH(2, x0);
-
-  
-  x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[0], "set-options in ps-setup%"));
-
-  
-  WITH_VAR_STACK(((wxPrintSetupData *)((Scheme_Class_Object *)obj)->primdata)->SetPrinterOptions(x0));
 
   
   
@@ -1569,27 +1548,6 @@ static Scheme_Object *os_wxPrintSetupDataGetPrinterScaling(Scheme_Object *obj, i
   return scheme_void;
 }
 
-static Scheme_Object *os_wxPrintSetupDataGetPrinterOptions(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
-  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  REMEMBER_VAR_STACK();
-  string r;
-  objscheme_check_valid(obj);
-
-  SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
-
-  
-
-  
-  r = WITH_VAR_STACK(((wxPrintSetupData *)((Scheme_Class_Object *)obj)->primdata)->GetPrinterOptions());
-
-  
-  
-  return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
-}
-
 static Scheme_Object *os_wxPrintSetupDataGetPrinterOrientation(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1733,7 +1691,7 @@ void objscheme_setup_wxPrintSetupData(void *env)
 
   wxREGGLOB(os_wxPrintSetupData_class);
 
-  os_wxPrintSetupData_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "ps-setup%", "object%", os_wxPrintSetupData_ConstructScheme, 27));
+  os_wxPrintSetupData_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "ps-setup%", "object%", os_wxPrintSetupData_ConstructScheme, 25));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "copy-from", os_wxPrintSetupDatacopy, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "set-margin", os_wxPrintSetupDataSetMargin, 2, 2));
@@ -1743,7 +1701,6 @@ void objscheme_setup_wxPrintSetupData(void *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "set-paper-name", os_wxPrintSetupDataSetPaperName, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "set-translation", os_wxPrintSetupDataSetPrinterTranslation, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "set-scaling", os_wxPrintSetupDataSetPrinterScaling, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "set-options", os_wxPrintSetupDataSetPrinterOptions, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "set-orientation", os_wxPrintSetupDataSetPrinterOrientation, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "set-mode", os_wxPrintSetupDataSetPrinterMode, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "set-preview-command", os_wxPrintSetupDataSetPrintPreviewCommand, 1, 1));
@@ -1756,7 +1713,6 @@ void objscheme_setup_wxPrintSetupData(void *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "get-paper-name", os_wxPrintSetupDataGetPaperName, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "get-translation", os_wxPrintSetupDataGetPrinterTranslation, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "get-scaling", os_wxPrintSetupDataGetPrinterScaling, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "get-options", os_wxPrintSetupDataGetPrinterOptions, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "get-orientation", os_wxPrintSetupDataGetPrinterOrientation, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "get-mode", os_wxPrintSetupDataGetPrinterMode, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "get-preview-command", os_wxPrintSetupDataGetPrintPreviewCommand, 0, 0));

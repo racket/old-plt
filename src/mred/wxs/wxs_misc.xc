@@ -139,7 +139,7 @@ void check_ps_mode(int v, Scheme_Object *p)
 @ "get-preview-command" : string GetPrintPreviewCommand();
 @ "get-mode" : SYM[psMode] GetPrinterMode();
 @ "get-orientation" : SYM[psOrientation] GetPrinterOrientation();
-@ "get-options" : string GetPrinterOptions();
+// @ "get-options" : string GetPrinterOptions();
 @ "get-scaling" : void GetPrinterScaling(nnfloat*,nnfloat*);
 @ "get-translation" : void GetPrinterTranslation(float*,float*);
 @ "get-paper-name" : nstring GetPaperName();
@@ -153,7 +153,7 @@ void check_ps_mode(int v, Scheme_Object *p)
 @ "set-preview-command" : void SetPrintPreviewCommand(string); 
 @ "set-mode" : void SetPrinterMode(SYM[psMode]); : : /checkPSMode[0]
 @ "set-orientation" : void SetPrinterOrientation(SYM[psOrientation]);
-@ "set-options" : void SetPrinterOptions(string);
+// @ "set-options" : void SetPrinterOptions(string);
 @ "set-scaling" : void SetPrinterScaling(nnfloat,nnfloat);
 @ "set-translation" : void SetPrinterTranslation(float,float);
 @ "set-paper-name" : void SetPaperName(nstring);

@@ -28,8 +28,34 @@
            Princeton University, Dept. of Computer Science
 */
 
-/* Precise GC warning: SCHEME_BIGDIG() can return an interior pointer,
-   if the bignum is a Small_Bignum */
+/* DANGER! DANGER! DANGER! DANGER! DANGER! DANGER! DANGER! DANGER!
+
+   This code is fragile, due to the Small_Bignum optimization, and
+   memory subtleties of bignums.
+
+   When allocating a bignum for a small integer, a Small_Bignum is
+   allocated. The Small_Bignum structure has room for one bigdig, and
+   sometimes it is allocated with room for two.
+
+   The digit array pointer of a Small_Bignum points into the (middle
+   of the) Small_Bignum record itself. This means:
+
+     1) For all collectors, the digit array point must not be copied
+        to another Scheme_Bignum record (because it points into the
+        middle of the Small_Bignum record, and interior pointers are
+        not allowed).
+
+     2) Since SCHEME_BIGDIG() can return an interior pointer, for
+        precise GC the code must be careful about putting
+        SCHEME_BIGDIG() results into local variables. In some cases, a
+        variable has to be zeroed out before calling a sub-procedure;
+        in other cases, the zeroing is skipped because we can provide
+        that it's never a digit array for a Small_Bignum.
+
+   In addition, the precise GC needs to distinguish Scheme_Bignum from
+   Small_Bignum for computing sizes; the allocated_inline flag does
+   that. 
+*/
 
 #include "schpriv.h"
 #include <ctype.h>
@@ -333,14 +359,29 @@ int scheme_bignum_ge(const Scheme_Object *a, const Scheme_Object *b)
 Scheme_Object *scheme_bignum_negate(const Scheme_Object *n)
 {
   Scheme_Object *o;
+  int len;
 
-  o = (Scheme_Object *)MALLOC_ONE_TAGGED(Scheme_Bignum);
+  len = SCHEME_BIGLEN(n);
+
+  if (SCHEME_BIGDIG(n) == ((Small_Bignum *)n)->v) {
+    /* Can't share bigdig array */
+    o = (Scheme_Object *)scheme_malloc_tagged(sizeof(Small_Bignum) + ((len - 1) * sizeof(bigdig)));
+#if MZ_PRECISE_GC
+    ((Scheme_Bignum *)o)->allocated_inline = len;
+#endif  
+    ((Small_Bignum *)o)->v[0] = SCHEME_BIGDIG(n)[0];
+    if (len > 1)
+      ((Small_Bignum *)o)->v[1] = SCHEME_BIGDIG(n)[1];
+    SCHEME_BIGDIG(o) = ((Small_Bignum *)o)->v;
+  } else {
+    o = (Scheme_Object *)MALLOC_ONE_TAGGED(Scheme_Bignum);
+    SCHEME_BIGDIG(o) = SCHEME_BIGDIG(n);
+  }
 
   o->type = scheme_bignum_type;
   SCHEME_BIGPOS(o) = !SCHEME_BIGPOS(n);
-  SCHEME_BIGLEN(o) = SCHEME_BIGLEN(n);
-  SCHEME_BIGDIG(o) = SCHEME_BIGDIG(n);
- 
+  SCHEME_BIGLEN(o) = len;
+
   return o;
 }
 
@@ -367,8 +408,9 @@ static Scheme_Object *bignum_copy(const Scheme_Object *n, int copy_array)
 				       * (c + (copy_array - 1)));
     SCHEME_BIGDIG(o) = a;
     memcpy(a, SCHEME_BIGDIG(n), sizeof(bigdig) * c);
-  } else
+  } else {
     SCHEME_BIGDIG(o) = SCHEME_BIGDIG(n);
+  }
 
   return o;
 }

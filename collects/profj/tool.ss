@@ -133,7 +133,7 @@
           (define/public (order-manuals x)
             (values (case level
                       ((beginner) `(#"profj-beginner" #"tour" #"drscheme" #"help"))
-                      ((intermediate) '(#"profj-intermediate" #"profj-beginner" #"tour" #"drscheme" #"help"))
+                      ((intermediate) `(#"profj-intermediate" #"tour" #"drscheme" #"help"))
                       ((advanced full) '(#"profj-advanced" #"profj-intermediate" #"profj-beginner" #"tour" #"drscheme" #"help")))
                     #f))
           
@@ -727,8 +727,8 @@
                                   (reverse inputs-list))))
 ;                (printf "~a~n~a~n" syntax-list (map remove-requires syntax-list))
                 (if ret-list?
-                    (values syntax-list 1 #t)
-                    (values (datum->syntax-object #f `(begin ,@(map remove-requires syntax-list)) #f) 1 #t)))))
+                    (values syntax-list #t)
+                    (values (datum->syntax-object #f `(begin ,@(map remove-requires syntax-list)) #f) #t)))))
           (define (remove-requires syn)
             (syntax-case* syn (begin require) (lambda (r1 r2) (eq? (syntax-e r1) (syntax-e r2)))
               ((begin (require x ...) exp1 exp ...) (syntax (begin exp1 exp ...)))

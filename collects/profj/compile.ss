@@ -4,7 +4,7 @@
            (lib "file.ss")
            (lib "class.ss"))
 
-  (provide compile-java compile-interactions compile-files
+  (provide compile-java compile-interactions compile-files compile-ast
            compilation-unit-code compilation-unit-contains set-compilation-unit-code!
            read-record write-record
            set-syntax-location create-type-record
@@ -112,6 +112,17 @@
                             (send type-recs get-class-record (cons class package-name) #f (lambda () (error 'internal-error))))
                           class-names))))
            files)))
+  
+  (define (compile-ast ast level type-recs)
+    (packages null)
+    (check-list null)
+    (to-file #f)
+    (load-lang type-recs)
+    (build-info ast level type-recs #f)
+    (unless (null? (check-list))
+      (check-defs (car (check-list)) level type-recs))
+    (remove-from-packages ast type-recs)
+    (order-cus (translate-program ast type-recs) type-recs))
   
   ;compile-java-internal: port location type-records bool level-> (list compilation-unit)
   (define (compile-java-internal port location type-recs file? level)

@@ -328,8 +328,6 @@ static MrQueueRef Find(EventFinderClosure *closure)
   return NULL;
 }
 
-#endif
-
 /***************************************************************************/
 /*                               state finder                              */
 /***************************************************************************/
@@ -423,7 +421,7 @@ static int CheckForLeave(EventRecord *evt, MrQueueRef q, int check_only, MrEdCon
   switch (evt->what) {
   case leaveEvt:
     {
-      wxWindow *win = (wxWindow *)event->message;
+      wxWindow *win = (wxWindow *)evt->message;
       wxFrame *fr;
       MrEdContext *fc;
 
@@ -950,56 +948,99 @@ int MrEdCheckForBreak(void)
 /***************************************************************************/
 
 #ifdef OS_X
-static volatile int thread_running;
+#include <pthread.h>
+static volatile int thread_running, need_post;
 static void (*mzsleep)(float secs, void *fds);
 static pthread_t watcher;
-static float sleep_secs;
+static volatile float sleep_secs;
+static int watch_read_fd, watch_write_fd;
+static int watch_done_read_fd, watch_done_write_fd;
 
 static void *do_watch(void *fds)
 {
-  mzsleep(sleep_secs, fds);
-  if (thread_running) {
-    thread_running = 0;
-    /* PostEvent(); */
+  while (1) {
+    char buf[1];
+
+    read(watch_read_fd, buf, 1);
+
+    mzsleep(sleep_secs, fds);
+    if (need_post) {
+      need_post = 0;
+      PostEvent(mouseUp, 0);
+    }
+
+    write(watch_done_write_fd, "y", 1);
   }
 
   return NULL;
 }
 
-static int StartFDWatcher(void (*mzs)(float secs, void *fds), float secs, fds)
+static int StartFDWatcher(void (*mzs)(float secs, void *fds), float secs, void *fds)
 {
+  if (!watch_write_fd) {
+    int fds[2];
+    if (!pipe(fds)) {
+       watch_read_fd = fds[0];
+       watch_write_fd = fds[1];
+     } else {
+       return 0;
+     }
+  }
+
+  if (!watch_done_write_fd) {
+    int fds[2];
+    if (!pipe(fds)) {
+       watch_done_read_fd = fds[0];
+       watch_done_write_fd = fds[1];
+     } else {
+       return 0;
+     }
+  }
+
+  if (!watcher) {
+    if (pthread_create(&watcher, NULL,  do_watch, fds)) {
+      return 0;
+    }
+  }
+
   mzsleep = mzs;
   sleep_secs = secs;
-  thread_running = 1;
-
-  if (pthread_create(&watcher, NULL,  do_watch, fds)) {
-    thread_running = 0;
-    return 0;
-  } else
-    return 1;
+  thread_running = 1; 
+  need_post = 1;
+  write(watch_write_fd, "x", 1);
 }
 
 static void EndFDWatcher(void)
 {
-  if (thread_running) {
-    int val;
+  char buf[1];
 
+  if (thread_running) {
+    void *val;
+
+    if (need_post) {
+      need_post = 0;
+      scheme_signal_received();
+    }
+
+    read(watch_done_read_fd, buf, 1);
     thread_running = 0;
-    scheme_signal_received();
-    pthread_join(watcher, &val);
   }
 }
 #endif
 
+static RgnHandle msergn;
+
 void MrEdMacSleep(float secs, void *fds, void (*mzsleep)(float secs, void *fds))
 {
-  RgnHandle rgn;
-  rgn = ::NewRgn();
-  if (rgn) {
+  EventRecord e;
+
+  if (!msergn)
+    msergn = ::NewRgn();
+  if (msergn) {
     Point pt;
     GetMouse(&pt);
     LocalToGlobal(&pt);
-    ::SetRectRgn(rgn, pt.h - 1, pt.v - 1, pt.h + 1, pt.v + 1); 
+    ::SetRectRgn(msergn, pt.h - 1, pt.v - 1, pt.h + 1, pt.v + 1); 
   }
 
 #ifdef OS_X
@@ -1011,7 +1052,8 @@ void MrEdMacSleep(float secs, void *fds, void (*mzsleep)(float secs, void *fds))
   secs = 0;
 #endif
 
-  if (WaitNextEvent(everyEvent, &e, secs ? secs * 60 : BG_SLEEP_TIME, rgn))
+  printf("%f\n", secs);
+  if (WaitNextEvent(everyEvent, &e, secs ? (long)(secs * 60) : 0x7FFFFFFF, msergn))
     QueueTransferredEvent(&e);
 
 #ifdef OS_X

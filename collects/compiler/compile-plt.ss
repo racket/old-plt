@@ -5,25 +5,32 @@
 (define verbose (make-parameter #f))
 (define make-verbose (make-parameter #f))
 (define compiler-verbose (make-parameter #f))
-
-(define clean? #f)
-(define zo? #t)
-(define so? #f)
+(define clean (make-parameter #f))
+(define make-zo (make-parameter #t))
+(define make-so (make-parameter #f))
+(define make-launchers (make-parameter #t))
+(define call-install (make-parameter #t))
 
 (define specific-collections
   (parse-command-line
-   program
+   "compile-plt"
    argv
    `((once-each
       [("--clean")
-       ,(lambda (flag) (set! clean? #t))
+       ,(lambda (flag) (clean #t))
        ("Delete existing compiled files")]
       [("-n" "--no-zo")
-       ,(lambda (flag) (set! zo? #f))
+       ,(lambda (flag) (make-zo #f))
        ("Do not produce .zo files.")]
-      [("-s" "--so")
-       ,(lambda (flag) (set! so? #t))
-       ("Produce .so files.")]
+      [("-x" "--no-launcher")
+       ,(lambda (flag) (make-launchers #f))
+       ("Do not produce launcher programs.")]
+      [("-i" "--no-install")
+       ,(lambda (flag) (call-install #f))
+       ("Do not call collection-specific installers.")]
+      [("-e" "--extension")
+       ,(lambda (flag) (make-so #t))
+       ("Produce native code extensions.")]
       [("-v" "--verbose")
        ,(lambda (flag)
 	  (verbose #t))
@@ -36,33 +43,56 @@
        ,(lambda (flag)
 	  (make-verbose #t)
 	  (compiler-verbose #t))
-       ("See make and compiler verbose messages")])
-     (multi
-      [("-l" "--collection")
-       ,(lambda (flag collection)
-	  (list collection))
-       ("Compile <collection> and ignore unspecified collections"
-	"collection")]))
-   (lambda (specifics) specifics)
-   '()))
-
+       ("See make and compiler verbose messages")]))
+   (lambda (accum . specifics) (map list specifics))
+   '("collection")
+   (lambda (s)
+     (display s)
+     (printf "If no <collection> is specified, all collections are compiled~n")
+     (exit 0))))
 
 (define-struct cc (collection path name info))
 
+(define (call-info info flag default test)
+  (with-handlers ([void (lambda (x) 
+			  (printf "Warning: error getting ~a info: ~a~n"
+				  flag
+				  (if (exn? x)
+				      (exn-message x)
+				      x))
+			  default)])
+     (let ([v (info flag (lambda () default))])
+       (test v)
+       v)))
+
 (define collection->cc
   (lambda (collection-p)
-    (let/ec k
-      (with-handlers ([(lambda (x) #t)
-		       (lambda (x) #f)])
-	 (let ([info (parameterize ([require-library-use-compiled #f])
-			(apply require-library "info.ss" collection-p))])
-	   (make-cc
-	    collection-p
-	    (apply collection-path collection-p)
-	    (andmap 
-	     (lambda (sym) (or (info sym (lambda () (k #f))) #t))
-	     '(compile-prefix name))
-	    info))))))
+    (let ([dir (apply collection-path collection-p)])
+      (with-handlers ([(lambda (x)
+			 (and (exn:i/o:filesystem:file? x)
+			      (string=? (exn:i/o:filesystem-pathname x)
+					(build-path dir "info.ss"))))
+		       (lambda (x) #f)]
+		      [void
+		       (lambda (x)
+			 (printf "Warning: error loading info.ss: ~a~n"
+				 (if (exn? x)
+				     (exn-message x)
+				     x)))])
+	 (let* ([info (parameterize ([require-library-use-compiled #f])
+			(apply require-library "info.ss" collection-p))]
+		[name (call-info info 'name #f
+				 (lambda (x)
+				   (unless (string? x)
+					   (error "result is not a string:" x))))])
+	   (and
+	    name
+	    (call-info info 'compile-prefix #f void)
+	    (make-cc
+	     collection-p
+	     (apply collection-path collection-p)
+	     name
+	     info)))))))
 
 (define (cannot-compile c)
   (error 'compile-plt "don't know how to compile collection: ~a" 
@@ -156,7 +186,19 @@
 		(or
 		 (collection->cc subcol)
 		 (cannot-compile subcol))))
-	    (info 'compile-subcollections (lambda () null)))
+	    (call-info info 'compile-subcollections null
+		       (lambda (x)
+			 (unless (and (list? x)
+				      (andmap
+				       (lambda (x)
+					 (list? x)
+					 (andmap
+					  (lambda (x)
+					    (and (string? x)
+						 (relative-path? x)))
+					  x))
+				       x))
+			     (error "result is not a list of relative path string lists:" x)))))
 	   (loop (cdr l)))))))
 
 (define (delete-files-in-directory path printout)
@@ -185,29 +227,73 @@
 	   (lambda ()
 	     (printf "Deleting files for ~a in ~a~n" (cc-name cc) path))))))
 
-(when clean?
-  (for-each clean-collection
-	    collections-to-compile))
+(when (clean)
+  (for-each clean-collection collections-to-compile))
 
-(when (or zo? so?)
+(when (or (make-zo) (make-so))
   (require-library "compile.ss" "compiler")
   (compiler:option:verbose (compiler-verbose))
   (compiler:option:compile-subcollections #f))
 
-(when zo?
+(define (make-it desc compile-collection)
   (for-each (lambda (cc)
 	      (unless
 	       (control-io-apply 
-		(lambda (p) (fprintf p "Making .zos for ~a at ~a~n" (cc-name cc) (cc-path cc)))
-		compile-collection-zos 
+		(lambda (p) (fprintf p "Making ~a for ~a at ~a~n" desc (cc-name cc) (cc-path cc)))
+		compile-collection 
 		(cc-collection cc))
-	       (printf "No need to make .zos for ~a at ~a~n"  (cc-name cc) (cc-path cc))))
+	       (printf "No need to make ~a for ~a at ~a~n" desc (cc-name cc) (cc-path cc))))
 	    collections-to-compile))
 
-(when so?
+(when (make-zo)
+ (make-it ".zos" compile-collection-zos))
+
+(when (make-so)
+ (make-it "extension" compile-collection-extension))
+
+(when (make-launchers)
+  (define (name-list l)
+    (unless (and (list? l)
+		 (andmap (lambda (x)
+			   (and (string? x)
+				(relative-path? x)))
+			 l))
+       (error "result is not a list of relative path strings:" l)))
+  (require-library "launcher.ss" "launcher")
   (for-each (lambda (cc)
-	      (control-io-apply 
-	       (lambda (p) (fprintf p "Checking extensions for ~a at ~a~n" (cc-name cc) (cc-path cc)))
-	       compile-collection-extension 
-	       (cc-collection cc)))
+	      (when (= 1 (length (cc-collection cc)))
+		  (let ([info (cc-info cc)])
+		    (let ([mzlls (call-info info 'mzscheme-launcher-libraries null
+					    name-list)]
+			  [mzlns (call-info info 'mzscheme-launcher-names null
+					    name-list)]
+			  [mrln  (call-info info 'mred-launcher-name #f
+					    (lambda (s)
+					      (unless (or (not s) (and (string? s) (relative-path? s)))
+						      (error "result is not a relative path string:" s))))])
+		      (if (= (length mzlls) (length mzlns))
+			  (map
+			   (lambda (mzll mzln)
+			     (let ([p (mzscheme-program-launcher-path mzln)])
+			       (unless (file-exists? p)
+				 (printf "Installing MzScheme launcher ~a~n" p)
+				 (install-mzscheme-program-launcher 
+				  mzll
+				  (car (cc-collection cc))
+				  mzln))))
+			   mzlls mzlns)
+			  (printf "Warning: MzScheme launcher library list ~s doesn't match name list ~s~n"
+				  mzlls mzlns))
+		      (when mrln
+			 (let ([p (mred-program-launcher-path mrln)])
+			   (unless (file-exists? p)
+			     (printf "Installing MrEd launcher ~a~n" p)
+			     (install-mred-program-launcher 
+			      (car (cc-collection cc))
+			      mrln))))))))
+	    collections-to-compile))
+
+(when (call-install)
+  (for-each (lambda (cc)
+	      (call-info (cc-info cc) 'install-collection void void))
 	    collections-to-compile))

@@ -4803,6 +4803,7 @@ case $OS in
        STATICLINK="-Wl,-Bstatic" # after -ldl
        LIBS="$LIBS -lsocket -lnsl -lintl"
        need_gcc_static_libgcc="yes"
+       check_gcc_dash_e="yes"
        ;;
       *)
        ;;
@@ -5014,6 +5015,62 @@ fi
 
 if test "${enable_memtrace}" = "yes" ; then
   GC2OPTIONS="$GC2OPTIONS -DNEWGC_MANUAL_ACCOUNT"
+fi
+
+############## Solaris grunge ################
+
+if test "$check_gcc_dash_e" = "yes" ; then
+
+  orig_ldflags="$LDFLAGS"
+  LDFLAGS="$LDFLAGS -Wl,-E"
+
+  # Can use -Wl,-E for linking because we're using GNU linker?
+ msg="whether linker accepts -Wl,-E"
+  echo "$as_me:$LINENO: checking $msg" >&5
+echo $ECHO_N "checking $msg... $ECHO_C" >&6
+  if test "$cross_compiling" = yes; then
+  linker_dash_e=no
+else
+  cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+int main() {
+      return 0;
+   }
+_ACEOF
+rm -f conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && { ac_try='./conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  linker_dash_e=yes
+else
+  echo "$as_me: program exited with status $ac_status" >&5
+echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+( exit $ac_status )
+linker_dash_e=no
+fi
+rm -f core core.* *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
+fi
+  if test "$linker_dash_e" = "no" ; then
+    LDFLAGS="${orig_ldflags}"
+  else
+  fi
+  echo "$as_me:$LINENO: result: $linker_dash_e" >&5
+echo "${ECHO_T}$linker_dash_e" >&6
+
 fi
 
 ############## C++ grunge ################

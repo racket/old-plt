@@ -311,9 +311,3 @@ char *wxFileSelector(char *message,
   else
     return NULL;
 }
-
-
-
-
-
-

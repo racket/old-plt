@@ -39,19 +39,12 @@
       
       (public
 	;[file-menu:new-string "Unit"]
-	[file-menu:between-save-and-print
-	 (lambda (file-menu)
-	   (send* file-menu 
-	     (append-item "Save as Text..." (lambda () (save-as wx:const-media-ff-text)))
-	     (append-separator)
-             (append-item "Show Console History..." mred:show-interactions-history)
-             (append-separator)))]
 	[file-menu:new
 	 (lambda ()
 	   (send (drscheme:unit:make-unit #f) create-frame))]
 	[file-menu:between-new-and-open
 	 (lambda (file-menu)
-	   '(send file-menu append-item "New Compound Unit"
+	   (send file-menu append-item "New Compound Unit"
 		 (lambda ()
 		   (send (drscheme:compound-unit:make-compound-unit #f)
 			 create-frame))))]

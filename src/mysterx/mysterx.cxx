@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <malloc.h>
 #include <float.h>
+#include <limits.h>
 
 #include <objbase.h>
 #include <mshtml.h>
@@ -1526,16 +1527,16 @@ BOOL schemeValueFitsVarType(Scheme_Object *val,VARTYPE vt) {
     return SCHEME_CHARP(val);
   
   case VT_I2 :
-    
+
     return SCHEME_INTP(val) && 
       scheme_get_int_val(val,&longInt) && 
-      (longInt & 0xFFFF0000) == 0L;
+      longInt <= SHRT_MAX && longInt >= SHRT_MIN;
   
   case VT_I4 :
 
     return SCHEME_EXACT_INTEGERP(val) && 
       scheme_get_int_val(val,&longInt);
-             
+
   case VT_R4 :
 
     return SCHEME_FLTP(val) || 

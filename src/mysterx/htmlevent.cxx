@@ -24,13 +24,7 @@ Scheme_Object *hash_table_remove;
 Scheme_Object *make_hash_table;
 
 static BOOL html_event_available(MX_Document_Object *doc) {
-  MSG msg;
   VARIANT_BOOL val;
-
-  while (PeekMessage(&msg,NULL,0,0,PM_REMOVE)) {
-    TranslateMessage(&msg);
-    DispatchMessage(&msg);
-  } 
 
   doc->pIEventQueue->get_EventAvailable(&val);
 

@@ -2759,14 +2759,14 @@ static void designate_modified(void *p)
 
       fprintf(stderr, "Seg fault (internal error) at %lx [%ld]\n", 
 	      (long)p, num_seg_faults);
-      _exit(-1);
+      abort();
     }
   }
 
   
   fprintf(stderr, "Access on unmapped page at %lx [%ld]\n", 
 	  (long)p, num_seg_faults);
-  _exit(-1);
+  abort();
 }
 
 /**********************************************************************/

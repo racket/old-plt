@@ -496,7 +496,15 @@ int MrEdGetNextEvent(int check_only, int current_only,
     MrQueueElem *qq;
     for (qq = first; qq && (qq != osq); qq = next) {
       next = qq->next;
-      MrDequeue(qq);
+      switch (qq->event.what) {
+        case mouseDown:
+        case mouseUp:
+        case keyDown:
+        case keyUp:
+        case autoKey:
+          MrDequeue(qq);
+          break;
+      }
     }
     e = &osq->event;
 #endif

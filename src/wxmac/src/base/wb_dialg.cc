@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wb_dialg.cc,v 1.3 1994/08/14 21:34:01 edz Exp $
+ * RCS_ID:      $Id: wb_dialg.cc,v 1.1.1.1 1998/01/13 17:54:58 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -293,7 +293,7 @@ void wxDialogOkButton(wxButton& but, wxEvent& event)
 
   dialog->buttonPressed = wxOK;
   dialog->Show(FALSE);
-  delete dialog;
+  // delete dialog;
 }
 
 void wxDialogCancelButton(wxButton& but, wxEvent& event)
@@ -305,7 +305,7 @@ void wxDialogCancelButton(wxButton& but, wxEvent& event)
     dialog = (wxDialogBox*) ((wxPanel*)dialog)->GetParent() ;
 
   dialog->Show(FALSE);
-  delete dialog;
+  // delete dialog;
 }
 
 void wxDialogYesButton(wxButton& but, wxEvent& event)
@@ -319,7 +319,7 @@ void wxDialogYesButton(wxButton& but, wxEvent& event)
   wxMessageBoxDialog *dialog = (wxMessageBoxDialog *)panel;
   dialog->buttonPressed = wxYES;
   dialog->Show(FALSE);
-  delete dialog;
+  // delete dialog;
 }
 
 void wxDialogNoButton(wxButton& but, wxEvent& event)
@@ -333,7 +333,7 @@ void wxDialogNoButton(wxButton& but, wxEvent& event)
   wxMessageBoxDialog *dialog = (wxMessageBoxDialog *)panel;
   dialog->buttonPressed = wxNO;
   dialog->Show(FALSE);
-  delete dialog;
+  // delete dialog;
 }
 
 

@@ -515,11 +515,11 @@ int actual_main(int argc, char *argv[])
     if (scheme_hash_percent_syntax_only)
       printf(YDESC);
 #ifdef MACINTOSH_EVENTS
-    printf("Warning: reading stdin may block threads.\n");
+    printf("Warning: read-eval-print-loop or read on stdin may block threads.\n");
 #endif
 #ifdef DOS_FILE_SYSTEM
 #if !defined(DETECT_WIN32_CONSOLE_STDIN)
-    printf("Warning: reading stdin may block threads.\n");
+    printf("Warning: read-eval-print-loop or read on stdin may block threads.\n");
 #endif
 #endif
   }

@@ -11,6 +11,7 @@
 
 int strlen(char *s);
 int isspace(int c);
+char *scheme_build_mac_filename(FSSpec *spec, int given_dir);
 
 static char *protect_arg(char *s)
 {
@@ -131,10 +132,8 @@ int main(void)
           a[i] = b[i];
         for (j = 1; j < argc; j++) {
           a[i++] = ' ';
-          a[i++] = '"';
           while (*(argv[j]))
             a[i++] = *(argv[j]++);
-          a[i++] = '"';
         }
         
         rec.launchBlockID = extendedBlock;

@@ -913,8 +913,8 @@ Scheme_Object *scheme_check_immediate_macro(Scheme_Object *first,
 	    sdval = scheme_static_distance(binding, env, 
 					   SCHEME_DONT_MARK_USE 
 					   + SCHEME_ENV_CONSTANTS_OK);
-	    if (SAME_TYPE(SCHEME_TYPE(val), scheme_macro_type)
-		|| SAME_TYPE(SCHEME_TYPE(val), scheme_syntax_compiler_type)) {
+	    if (SAME_TYPE(SCHEME_TYPE(sdval), scheme_macro_type)
+		|| SAME_TYPE(SCHEME_TYPE(sdval), scheme_syntax_compiler_type)) {
 	      scheme_wrong_syntax("define-values (in unit or internal)",
 				  binding, orig,
 				  "unit/internal binding cannot shadow syntax or macro names");

@@ -230,7 +230,7 @@ static void *mark(void *p)
 static void *cautious_mark(void *p)
 {
   if ((p >= alloc_space)
-      && (p < (alloc_space + alloc_size))) {
+      && (p <= (alloc_space + alloc_size))) {
     
     if ((p < (void *)tagged_high) || (p >= (void *)untagged_low)) {
       long diff = ((char *)p - (char *)alloc_space);
@@ -271,7 +271,7 @@ void gcollect(int needsize)
       new_size = heap_size * 2;
   }
 
-  new_space = malloc(new_size);
+  new_space = malloc(new_size + 4);
 
   /******************** Make bitmap image: ****************************/
 

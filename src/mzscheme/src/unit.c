@@ -522,16 +522,16 @@ static int check_unit(Scheme_Object *form, Scheme_Comp_Env *env,
 	e->btype = mm_body_seq;
 	e->u.seq.expr = NULL;
       } else if (SAME_OBJ(gval, scheme_define_values_syntax)) {
-	Scheme_Object *l = SCHEME_CDR(expr);
+	Scheme_Object *ll = SCHEME_CDR(expr);
 	int ok;
 	
-	if (!SCHEME_PAIRP(l)
-	    || !SCHEME_PAIRP(SCHEME_CDR(l))
-	    || !SCHEME_NULLP(SCHEME_CDR(SCHEME_CDR(l))))
+	if (!SCHEME_PAIRP(ll)
+	    || !SCHEME_PAIRP(SCHEME_CDR(ll))
+	    || !SCHEME_NULLP(SCHEME_CDR(SCHEME_CDR(ll))))
 	  ok = 0;
 	else {
-	  Scheme_Object *names = SCHEME_CAR(l), *ns;
-	  Scheme_Object *value = SCHEME_CADR(l);
+	  Scheme_Object *names = SCHEME_CAR(ll), *ns;
+	  Scheme_Object *value = SCHEME_CADR(ll);
 	  int count = 0, i;
 
 	  ns = names;
@@ -724,10 +724,10 @@ static int check_unit(Scheme_Object *form, Scheme_Comp_Env *env,
 
 	/* Look for export renaming */
 	if (e->u.def.vars[0].exported) {
-	  UnitId *id;
-	  for (id = exports->first; id; id = id->next) {
-	    if (SAME_OBJ(id->int_id, s)) {
-	      s = id->ext_id;
+	  UnitId *uid;
+	  for (uid = exports->first; uid; uid = uid->next) {
+	    if (SAME_OBJ(uid->int_id, s)) {
+	      s = uid->ext_id;
 	      break;
 	    }
 	  }
@@ -829,17 +829,17 @@ static int check_compound_unit(Scheme_Object *form, Scheme_Comp_Env *env,
 
     for (; sub; sub = sub->next) {
       if (!sub->tag) {
-	Scheme_Object *l = params;
+	Scheme_Object *ll = params;
 	int c;
 	
-	for (c = 0; SCHEME_PAIRP(l); l = SCHEME_CDR(l), c++) {
-	  if (SAME_OBJ(SCHEME_CAR(l), sub->int_id)) {
+	for (c = 0; SCHEME_PAIRP(ll); ll = SCHEME_CDR(ll), c++) {
+	  if (SAME_OBJ(SCHEME_CAR(ll), sub->int_id)) {
 	    sub->int_id = (Scheme_Object *)(long)c;
 	    break;
 	  }
 	}
 
-	if (SCHEME_NULLP(l))
+	if (SCHEME_NULLP(ll))
 	  scheme_wrong_syntax(MAKE_COMPOUND_UNIT, 
 			      sub->int_id, form,
 			      "bad syntax (not an imported identifier)");
@@ -1284,14 +1284,14 @@ make_compound_unit_record(int count, /* subunits */
   /* Check that no sub-unit variable is exported twice: */
   if (!promise_ok) {
     for (i = data->num_exports; i--; ) {
-      Scheme_Object *id = export_srcs[i].ext_id;
+      Scheme_Object *eid = export_srcs[i].ext_id;
       int which = export_srcs[i].submod_index, j;
       for (j = i; j--; ) {
 	if ((export_srcs[j].submod_index == which)
-	    && SAME_OBJ(export_srcs[j].ext_id, id)) {
+	    && SAME_OBJ(export_srcs[j].ext_id, eid)) {
 	  scheme_wrong_syntax(MAKE_COMPOUND_UNIT, NULL, form,
 			      "\"%s\" of sub-unit tagged \"%s\" is exported twice",
-			      scheme_symbol_name(id),
+			      scheme_symbol_name(eid),
 			      scheme_symbol_name(tags[which]));
 	}
       }
@@ -1372,27 +1372,27 @@ Scheme_Object *scheme_assemble_compound_unit(Scheme_Object *imports,
     first = NULL;
     ilast = NULL;
     for (l = SCHEME_CDR(l); SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {
-      UnitId *id;
+      UnitId *uid;
       Scheme_Object *i = SCHEME_CAR(l);
 
-      id = MALLOC_ONE_RT(UnitId);
+      uid = MALLOC_ONE_RT(UnitId);
 
 #ifdef MZTAG_REQUIRED
-      id->type = scheme_rt_unit_id;
+      uid->type = scheme_rt_unit_id;
 #endif
 
       if (ilast)
-	ilast->next = id;
+	ilast->next = uid;
       else
-	first = id;
-      ilast = id;
+	first = uid;
+      ilast = uid;
 
       if (!SCHEME_PAIRP(i)) {
-	id->tag = NULL;
-	id->int_id = i;
+	uid->tag = NULL;
+	uid->int_id = i;
       } else {
-	id->tag = SCHEME_CAR(i);
-	id->int_id = SCHEME_CDR(i);
+	uid->tag = SCHEME_CAR(i);
+	uid->int_id = SCHEME_CDR(i);
       }
     }
     id->ext_id = (Scheme_Object *)first;

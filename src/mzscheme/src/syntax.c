@@ -1385,12 +1385,12 @@ scheme_link_lets(Scheme_Object *form, Link_Info *info)
   val_linfo = linfo;
   if (!num_rec_procs) {
     if (SAME_TYPE(SCHEME_TYPE(body), scheme_let_void_type)) {
-      Scheme_Let_Void *lv = (Scheme_Let_Void *)body;
+      Scheme_Let_Void *lvd = (Scheme_Let_Void *)body;
       
-      if (!!lv->autobox == !!recbox) {
+      if (!!lvd->autobox == !!recbox) {
 	/* Do collapse: */
-	extra_alloc = lv->count;
-	body = lv->body;
+	extra_alloc = lvd->count;
+	body = lvd->body;
 	val_linfo = scheme_link_info_extend(linfo, extra_alloc, 0, 0);
       }
     }
@@ -1461,15 +1461,15 @@ scheme_link_lets(Scheme_Object *form, Link_Info *info)
     last->body = body;
 
   {
-    Scheme_Let_Void *lv;
+    Scheme_Let_Void *lvd;
 
-    lv = MALLOC_ONE_TAGGED(Scheme_Let_Void);
-    lv->type = scheme_let_void_type;
-    lv->body = first;
-    lv->count = head->count + extra_alloc;
-    lv->autobox = recbox;
+    lvd = MALLOC_ONE_TAGGED(Scheme_Let_Void);
+    lvd->type = scheme_let_void_type;
+    lvd->body = first;
+    lvd->count = head->count + extra_alloc;
+    lvd->autobox = recbox;
 
-    first = (Scheme_Object *)lv;
+    first = (Scheme_Object *)lvd;
   }
 
   return first;

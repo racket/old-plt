@@ -223,12 +223,12 @@ int scheme_find_type(Scheme_Object *ts)
 
   for (i = maxtype; i--; ) {
     if (type_names[i]) {
-      char *ts = type_names[i] + 1, *s = str;
-      while (*s && *ts && (*s == *ts)) {
+      char *tss = type_names[i] + 1, *s = str;
+      while (*s && *tss && (*s == *tss)) {
 	s++;
-	ts++;
+	tss++;
       }
-      if (!*s && *ts == '>')
+      if (!*s && *tss == '>')
 	return i;
     }
   }

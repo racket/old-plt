@@ -636,6 +636,7 @@ node-bundle-snip%
       (sequence
         (send button-panel stretchable-height #f)
         (enable-children #f))))
-  
-  (define (new-bundle-frame)
-    (send (make-object bundle-frame%) show #t)))
+
+  (define (new-bundle-table-frame)
+    (make-object bundle-table-frame% (make-object bundle-table%)))
+  )

@@ -12,7 +12,7 @@
   ())
 
 (define-signature drscheme:bundle:bundle^
-  (new-bundle-frame
+  (new-bundle-manager-frame
    
    bundle-manager% bundle-manager<%>
    

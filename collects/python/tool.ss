@@ -72,10 +72,10 @@
             (front-end/complete-program input settings))
           
           (define/public (get-style-delta) #f)
-          (define/public (get-language-position) (list "Python"))
+          (define/public (get-language-position) (list (string-constant experimental-languages) "Python"))
           (define/public (get-language-name) "Python")
           (define/public (get-language-url) #f)
-          (define/public (get-language-numbers) (list 10))
+          (define/public (get-language-numbers) (list 1000 10))
           (define/public (get-teachpack-names) null)
           (define/public (marshall-settings x) x)
           (define/public (on-execute settings run-in-user-thread)

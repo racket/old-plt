@@ -103,10 +103,6 @@ class wxPrintData: public wxObject
   void EnableSelection(Bool);
   void EnablePageNumbers(Bool);
   void EnableHelp(Bool);
-
-#ifndef WX_CARBON
-  void operator=(const wxPrintData& data);
-#endif
 };
 
 /*

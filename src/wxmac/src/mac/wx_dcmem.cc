@@ -16,7 +16,6 @@
 #include "wx_dcmem.h"
 #include "wx_utils.h"
 #include "wx_canvs.h"
-#include "wx_privt.h"
 
 /* 
    A wxMemoryDC is a pointer to a bitmap, which is an offscreen GWorld. 

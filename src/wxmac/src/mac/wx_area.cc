@@ -124,14 +124,14 @@ wxMargin wxArea::Margin(wxWindow* outerWindow)
 int wxArea::Width(void)
 {
   wxMargin margin = Margin(ParentWindow());
-  return ParentWindow()->Width() - margin.Offset(Direction::wxHorizontal);
+  return ParentWindow()->Width() - margin.Offset(wxHorizontal);
 }
 
 //-----------------------------------------------------------------------------
 int wxArea::Height(void)
 {
   wxMargin margin = Margin(ParentWindow());
-  return ParentWindow()->Height() - margin.Offset(Direction::wxVertical);
+  return ParentWindow()->Height() - margin.Offset(wxVertical);
 }
 
 //-----------------------------------------------------------------------------
@@ -140,8 +140,8 @@ int wxArea::Height(void)
 void wxArea::AreaToScreen(int* h, int* v)
 {
   wxMargin screenMargin = Margin(wxScreen::gScreenWindow);
-  *h += screenMargin.Offset(Direction::wxLeft);
-  *v += screenMargin.Offset(Direction::wxTop);
+  *h += screenMargin.Offset(wxLeft);
+  *v += screenMargin.Offset(wxTop);
 }
 
 //-----------------------------------------------------------------------------
@@ -150,16 +150,16 @@ void wxArea::AreaToScreen(int* h, int* v)
 void wxArea::ScreenToArea(int* h, int* v)
 {
   wxMargin screenMargin = Margin(wxScreen::gScreenWindow);
-  *h -= screenMargin.Offset(Direction::wxLeft);
-  *v -= screenMargin.Offset(Direction::wxTop);
+  *h -= screenMargin.Offset(wxLeft);
+  *v -= screenMargin.Offset(wxTop);
 }
 
 //-----------------------------------------------------------------------------
 Bool wxArea::WindowPointInArea(int windowH, int windowV)
 {
   wxMargin margin = Margin(ParentWindow());
-  int areaH = windowH - margin.Offset(Direction::wxLeft); // area c.s.
-  int areaV = windowV - margin.Offset(Direction::wxTop); // area c.s.
+  int areaH = windowH - margin.Offset(wxLeft); // area c.s.
+  int areaV = windowV - margin.Offset(wxTop); // area c.s.
   return (0 <= areaH && areaH <= Width() && 0 <= areaV && areaV <= Height());
 }
 
@@ -169,8 +169,8 @@ void wxArea::FrameContentAreaOffset(int* x, int* y)
   wxFrame* frame = ParentWindow()->GetRootFrame();
   wxArea* frameContentArea = frame->ContentArea();
   wxMargin frameContentAreaMargin = Margin(frameContentArea);
-  *x = frameContentAreaMargin.Offset(Direction::wxLeft);
-  *y = frameContentAreaMargin.Offset(Direction::wxTop);
+  *x = frameContentAreaMargin.Offset(wxLeft);
+  *y = frameContentAreaMargin.Offset(wxTop);
 }
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -181,8 +181,8 @@ void wxArea::FrameContentAreaOffset(int* x, int* y)
 void wxArea::SetSize(int width, int height)
 {
   wxMargin margin = Margin(ParentWindow());
-  int	newWindowWidth = width + margin.Offset(Direction::wxHorizontal);
-  int newWindowHeight = height + margin.Offset(Direction::wxVertical);
+  int	newWindowWidth = width + margin.Offset(wxHorizontal);
+  int newWindowHeight = height + margin.Offset(wxVertical);
   ParentWindow()->SetWidthHeight(newWindowWidth, newWindowHeight);
 }
 
@@ -196,17 +196,17 @@ void wxArea::SetMargin(int margin, Direction direction)
 //-----------------------------------------------------------------------------
 void wxArea::SetMargin(wxMargin margin, Direction direction)
 {
-  int oldLeft = cMargin.Offset(Direction::wxLeft);
-  int oldTop = cMargin.Offset(Direction::wxTop);
-  int oldRight = cMargin.Offset(Direction::wxRight);
-  int oldBottom = cMargin.Offset(Direction::wxBottom);
+  int oldLeft = cMargin.Offset(wxLeft);
+  int oldTop = cMargin.Offset(wxTop);
+  int oldRight = cMargin.Offset(wxRight);
+  int oldBottom = cMargin.Offset(wxBottom);
 
   cMargin.SetMargin(margin, direction);
 
-  int dL = cMargin.Offset(Direction::wxLeft) - oldLeft;
-  int dT = cMargin.Offset(Direction::wxTop) - oldTop;
-  int dR = cMargin.Offset(Direction::wxRight) - oldRight;
-  int dB = cMargin.Offset(Direction::wxBottom) - oldBottom;
+  int dL = cMargin.Offset(wxLeft) - oldLeft;
+  int dT = cMargin.Offset(wxTop) - oldTop;
+  int dR = cMargin.Offset(wxRight) - oldRight;
+  int dB = cMargin.Offset(wxBottom) - oldBottom;
 
   int dW = -(dR + dL);
   int dH = -(dB + dT);
@@ -253,18 +253,18 @@ void wxArea::SetMargin(wxMargin margin, Direction direction,
   OnSiblingDSize(dW, dH, dX, dY);
 
   // SetMargin of this area
-  int oldLeft = cMargin.Offset(Direction::wxLeft);
-  int oldTop = cMargin.Offset(Direction::wxTop);
-  int oldRight = cMargin.Offset(Direction::wxRight);
-  int oldBottom = cMargin.Offset(Direction::wxBottom);
+  int oldLeft = cMargin.Offset(wxLeft);
+  int oldTop = cMargin.Offset(wxTop);
+  int oldRight = cMargin.Offset(wxRight);
+  int oldBottom = cMargin.Offset(wxBottom);
 
   cMargin.SetMargin(margin, direction);
 
   // Notify younger siblings of parentWindow resizing and margin changes for this area
-  int dL = cMargin.Offset(Direction::wxLeft) - oldLeft;
-  int dT = cMargin.Offset(Direction::wxTop) - oldTop;
-  int dR = cMargin.Offset(Direction::wxRight) - oldRight;
-  int dB = cMargin.Offset(Direction::wxBottom) - oldBottom;
+  int dL = cMargin.Offset(wxLeft) - oldLeft;
+  int dT = cMargin.Offset(wxTop) - oldTop;
+  int dR = cMargin.Offset(wxRight) - oldRight;
+  int dB = cMargin.Offset(wxBottom) - oldBottom;
 
   dW += -(dR + dL); // accumulate changes for parentWindow and this area
   dH += -(dB + dT); // accumulate changes for parentWindow and this area

@@ -15,7 +15,6 @@
 #endif
 #include "wx_dccan.h"
 #include "wx_canvs.h"
-#include "wx_privt.h"
 #include "wx_utils.h"
 #include "wx_mac_utils.h"
 #include "wx_area.h"

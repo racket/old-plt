@@ -18,7 +18,6 @@
 #include "wx_canvs.h"
 #include "wx_area.h"
 #include "wx_rgn.h"
-#include "wx_privt.h"
 
 extern CGrafPtr wxMainColormap;
 

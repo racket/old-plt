@@ -371,12 +371,12 @@ wxMargin wxWindow::Margin(wxArea* outerArea) // mac platform only
   wxArea* parentArea = ParentArea();
   if (parentArea)
     {
-      result.SetMargin(cWindowX, Direction::wxLeft);
-      result.SetMargin(cWindowY, Direction::wxTop);
+      result.SetMargin(cWindowX, wxLeft);
+      result.SetMargin(cWindowY, wxTop);
       result.SetMargin(parentArea->Width() - cWindowX - cWindowWidth,
-		       Direction::wxRight);
+		       wxRight);
       result.SetMargin(parentArea->Height() - cWindowY - cWindowHeight,
-		       Direction::wxBottom);
+		       wxBottom);
 
       if (parentArea != outerArea)
 	{
@@ -561,32 +561,32 @@ void wxWindow::GravitateJustify(Direction gravitate, Direction justify,
   int windowHeight = cWindowHeight;
 
   // do gravitate
-  if ((int)gravitate & Direction::wxLeft && (int)gravitate & Direction::wxRight)
+  if (gravitate & wxLeft && gravitate & wxRight)
     windowX = (left + right - cWindowWidth) / 2;
-  else if ((int)gravitate & Direction::wxLeft) windowX = left;
-  else if ((int)gravitate & Direction::wxRight) windowX = right - cWindowWidth;
+  else if (gravitate & wxLeft) windowX = left;
+  else if (gravitate & wxRight) windowX = right - cWindowWidth;
 
-  if ((int)gravitate & Direction::wxTop && (int)gravitate & Direction::wxBottom)
+  if (gravitate & wxTop && gravitate & wxBottom)
     windowY = (top + bottom - cWindowHeight) / 2;
-  else if ((int)gravitate & Direction:: wxTop) windowY = top;
-  else if ((int)gravitate & Direction::wxBottom) windowY = bottom - cWindowHeight;
+  else if (gravitate &  wxTop) windowY = top;
+  else if (gravitate & wxBottom) windowY = bottom - cWindowHeight;
 
   // do justify
-  if ((int)justify & Direction::wxLeft)
+  if (justify & wxLeft)
     {
       windowWidth += windowX - left;
       windowX = left;
     }
 
-  if ((int)justify & Direction::wxTop)
+  if (justify & wxTop)
     {
       windowHeight += windowY - top;
       windowY = top;
     }
 
-  if ((int)justify & Direction::wxBottom) windowHeight = bottom - windowY;
+  if (justify & wxBottom) windowHeight = bottom - windowY;
 
-  if ((int)justify & Direction::wxRight) windowWidth = right - windowX;
+  if (justify & wxRight) windowWidth = right - windowX;
 
   // do size
   SetSize(windowX, windowY, windowWidth, windowHeight, wxPOS_USE_MINUS_ONE);
@@ -895,8 +895,8 @@ void wxWindow::GetClipRect(wxArea* area, Rect* clipRect)
     Rect parentClipRect;
     windowParent->GetClipRect(cParentArea, &parentClipRect);
     wxMargin parentAreaMargin = area->Margin(cParentArea);
-    int parentAreaX = parentAreaMargin.Offset(Direction::wxLeft);
-    int parentAreaY = parentAreaMargin.Offset(Direction::wxTop);
+    int parentAreaX = parentAreaMargin.Offset(wxLeft);
+    int parentAreaY = parentAreaMargin.Offset(wxTop);
     ::OffsetRect(&parentClipRect, -parentAreaX, -parentAreaY); // area c.s.
     ::SectRect(&parentClipRect, clipRect, clipRect);
     if (clipRect->top < 0) clipRect->top = 0;
@@ -1176,8 +1176,8 @@ Bool wxWindow::SeekMouseEventArea(wxMouseEvent *mouseEvent)
       int hitAreaX, hitAreaY;
       if (hitArea) {
 	wxMargin hitAreaMargin = hitArea->Margin(this /* hitArea->ParentWindow() */);
-	hitAreaX = hitAreaMargin.Offset(Direction::wxLeft);
-	hitAreaY = hitAreaMargin.Offset(Direction::wxTop);
+	hitAreaX = hitAreaMargin.Offset(wxLeft);
+	hitAreaY = hitAreaMargin.Offset(wxTop);
       } else
 	hitAreaX = hitAreaY = 0;
       areaMouseEvent->x = hitX - hitAreaX; // hit area c.s.
@@ -1743,8 +1743,8 @@ Bool wxWindow::AdjustCursor(int mouseX, int mouseY)
 
   if (hitArea) {
     wxMargin hitAreaMargin = hitArea->Margin(hitArea->ParentWindow());
-    int hitAreaX = hitAreaMargin.Offset(Direction::wxLeft);
-    int hitAreaY = hitAreaMargin.Offset(Direction::wxTop);
+    int hitAreaX = hitAreaMargin.Offset(wxLeft);
+    int hitAreaY = hitAreaMargin.Offset(wxTop);
     int areaX = hitX - hitAreaX; // hit area c.s.
     int areaY = hitY - hitAreaY; // hit area c.s.
     wxChildNode* childWindowNode = hitArea->Windows()->First();

@@ -66,28 +66,28 @@ void wxRectBorder::Paint(void)
     OffsetRect(&clientRect,SetOriginX,SetOriginY);
     int margin;
 
-    margin = ParentArea()->Margin().Offset(Direction::wxTop) - cWhitespace;
+    margin = ParentArea()->Margin().Offset(wxTop) - cWhitespace;
     if (margin > 0) {
       ::PenSize(margin, margin);
       ::MoveTo(clientRect.left, clientRect.top);
       ::LineTo(clientRect.right - margin, clientRect.top);
     }
 
-    margin = ParentArea()->Margin().Offset(Direction::wxBottom) - cWhitespace;
+    margin = ParentArea()->Margin().Offset(wxBottom) - cWhitespace;
     if (margin > 0) {
       ::PenSize(margin, margin);
       ::MoveTo(clientRect.left, clientRect.bottom - margin);
       ::LineTo(clientRect.right - margin, clientRect.bottom - margin);
     }
 
-    margin = ParentArea()->Margin().Offset(Direction::wxLeft) - cWhitespace;
+    margin = ParentArea()->Margin().Offset(wxLeft) - cWhitespace;
     if (margin > 0) {
       ::PenSize(margin, margin);
       ::MoveTo(clientRect.left, clientRect.top);
       ::LineTo(clientRect.left, clientRect.bottom - margin);
     }
 
-    margin = ParentArea()->Margin().Offset(Direction::wxRight) - cWhitespace;
+    margin = ParentArea()->Margin().Offset(wxRight) - cWhitespace;
     if (margin > 0) {
       ::PenSize(margin, margin);
       ::MoveTo(clientRect.right - margin, clientRect.top);
@@ -110,7 +110,7 @@ void wxRectBorder::ChangeToGray(Bool gray)
     OffsetRect(&clientRect,SetOriginX,SetOriginY);
 
     /* We should really get all 4 margins... */
-    margin = ParentArea()->Margin().Offset(Direction::wxTop);
+    margin = ParentArea()->Margin().Offset(wxTop);
     
     rgn = NewRgn();
     if (rgn) {

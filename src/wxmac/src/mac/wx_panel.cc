@@ -90,7 +90,7 @@ void wxPanel::CreateWxPanel(int x, int y, int w, int h) // common constructor in
   SetEraser(wxCONTROL_BACKGROUND_BRUSH);
 
   if (cStyle & wxBORDER) 
-    cPanelBorder = new wxBorderArea(this, 1, Direction::wxAll, 1);
+    cPanelBorder = new wxBorderArea(this, 1, wxAll, 1);
 
   wxWindow *parent = GetParent();
   if (wxSubType(parent->__type, wxTYPE_PANEL)) {

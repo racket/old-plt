@@ -15,7 +15,7 @@
    atomic. It has no pointers, after all. */
 #ifdef MZ_PRECISE_GC
 START_XFORM_SKIP;
-#endf
+#endif
 
 class wxWhatScrollData // 95-02-19
 {
@@ -62,7 +62,7 @@ class wxWhatScrollData // 95-02-19
 
 #ifdef MZ_PRECISE_GC
 END_XFORM_SKIP;
-#endf
+#endif
 
 class wxScrollData
 {

@@ -51,7 +51,7 @@ void wxButtonBorder::Paint(void)
 {
   if (cHidden) return;
 
-  int margin = ParentArea()->Margin().Offset(Direction::wxTop);
+  int margin = ParentArea()->Margin().Offset(wxTop);
   if (margin)
     {	
       int clientWidth = ClientArea()->Width();

@@ -26,10 +26,10 @@ wxMargin::wxMargin(int margin)
 //-----------------------------------------------------------------------------
 wxMargin::wxMargin(int margin, Direction direction)
 {
-  left = ((int)direction & Direction::wxLeft ? margin : 0);
-  top = ((int)direction & Direction::wxTop ? margin : 0);
-  right = ((int)direction & Direction::wxRight ? margin : 0);
-  bottom = ((int)direction & Direction::wxBottom ? margin : 0);
+  left = (direction & wxLeft ? margin : 0);
+  top = (direction & wxTop ? margin : 0);
+  right = (direction & wxRight ? margin : 0);
+  bottom = (direction & wxBottom ? margin : 0);
 }
 
 //-----------------------------------------------------------------------------
@@ -66,29 +66,29 @@ wxMargin& wxMargin::operator +=(wxMargin margin)
 //-----------------------------------------------------------------------------
 void wxMargin::SetMargin(wxMargin margin, Direction direction)
 {
-  if ((int)direction & Direction::wxLeft) left = margin.left;
-  if ((int)direction & Direction::wxTop) top = margin.top;
-  if ((int)direction & Direction::wxRight) right = margin.right;
-  if ((int)direction & Direction::wxBottom) bottom = margin.bottom;
+  if (direction & wxLeft) left = margin.left;
+  if (direction & wxTop) top = margin.top;
+  if (direction & wxRight) right = margin.right;
+  if (direction & wxBottom) bottom = margin.bottom;
 }
 
 //-----------------------------------------------------------------------------
 void wxMargin::SetMargin(int margin, Direction direction)
 {
-  if ((int)direction & Direction::wxLeft) left = margin;
-  if ((int)direction & Direction::wxTop) top = margin;
-  if ((int)direction & Direction::wxRight) right = margin;
-  if ((int)direction & Direction::wxBottom) bottom = margin;
+  if (direction & wxLeft) left = margin;
+  if (direction & wxTop) top = margin;
+  if (direction & wxRight) right = margin;
+  if (direction & wxBottom) bottom = margin;
 }
 
 //-----------------------------------------------------------------------------
 int wxMargin::Offset(Direction direction)
 {
   int result = 0;
-  if ((int)direction & Direction::wxLeft) result += left;
-  if ((int)direction & Direction::wxTop) result += top;
-  if ((int)direction & Direction::wxRight) result += right;
-  if ((int)direction & Direction::wxBottom) result += bottom;
+  if (direction & wxLeft) result += left;
+  if (direction & wxTop) result += top;
+  if (direction & wxRight) result += right;
+  if (direction & wxBottom) result += bottom;
 
   return result;
 }

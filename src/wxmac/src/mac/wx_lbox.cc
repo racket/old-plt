@@ -209,7 +209,7 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func,
 
   if (Title) {
     cListTitle = new wxLabelArea(this, Title, labelFont,
-				 labelPosition == wxVERTICAL ? Direction::wxTop : Direction::wxLeft);
+				 labelPosition == wxVERTICAL ? wxTop : wxLeft);
   } else
     cListTitle = NULL;
   

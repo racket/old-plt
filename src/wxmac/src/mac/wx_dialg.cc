@@ -19,20 +19,6 @@
 #include "wx_buttn.h"
 #include "wx_mac_utils.h"
 #include "wx_macevents.h"
-#ifndef WX_CARBON
-# include <StandardFile.h>
-# include <TextUtils.h>
-# include <Strings.h>
-# include <LowMem.h>
-#endif
-
-# define USE_NAVIGATION
-
-#ifdef USE_NAVIGATION
-# ifndef WX_CARBON
-#  include <Navigation.h>
-# endif
-#endif
 
 #define wxDIALOG_DEFAULT_X 300
 #define wxDIALOG_DEFAULT_Y 300

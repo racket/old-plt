@@ -58,25 +58,23 @@ wxMouseEvent::wxMouseEvent(WXTYPE commandType)
   eventType = commandType;
 }
 
-wxMouseEvent& wxMouseEvent::operator =(wxMouseEvent& src)
+void wxMouseEvent::CopyFrom(wxMouseEvent* src)
 {
-  eventClass = src.eventClass;
-  eventType = src.eventType;
-  x = src.x;
-  y = src.y;
-  leftDown = src.leftDown;
-  middleDown = src.middleDown;
-  rightDown = src.rightDown;
+  eventClass = src->eventClass;
+  eventType = src->eventType;
+  x = src->x;
+  y = src->y;
+  leftDown = src->leftDown;
+  middleDown = src->middleDown;
+  rightDown = src->rightDown;
 
-  controlDown = src.controlDown;
-  shiftDown = src.shiftDown;
-  altDown = src.altDown;
-  metaDown = src.metaDown;
+  controlDown = src->controlDown;
+  shiftDown = src->shiftDown;
+  altDown = src->altDown;
+  metaDown = src->metaDown;
   
-  timeStamp = src.timeStamp;
-  eventHandle = src.eventHandle;
-  
-  return *this;
+  timeStamp = src->timeStamp;
+  eventHandle = src->eventHandle;
 }
 
 

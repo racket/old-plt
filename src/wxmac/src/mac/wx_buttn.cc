@@ -257,12 +257,12 @@ void wxButton::OnSetDefault(Bool flag) // WCH : addition to original
       return;
     if (flag) {
       wxMargin margin(4);
-      cBorderArea->SetMargin(margin, Direction::wxAll,
+      cBorderArea->SetMargin(margin, wxAll,
 			     cWindowWidth + 8, cWindowHeight + 8,
 			     cWindowX - 4, cWindowY - 4);
     } else {
       wxMargin margin(0);
-      cBorderArea->SetMargin(margin, Direction::wxAll,
+      cBorderArea->SetMargin(margin, wxAll,
 			     cWindowWidth - 8, cWindowHeight - 8,
 			     cWindowX + 4, cWindowY + 4);
     }

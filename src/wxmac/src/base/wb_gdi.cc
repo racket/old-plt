@@ -221,38 +221,6 @@ wxColour *wxColour::CopyFrom(const char *col)
   return this;
 }
 
-wxColour &wxColour::operator = (wxColour &src)
-{
-  CopyFrom(&src);
-
-  return (*this);
-}
-
-wxColour& wxColour::operator = (const char *col)
-{
-  wxColour *the_colour = wxTheColourDatabase->FindColour (col);
-  if (the_colour)
-    {
-      red = the_colour->Red ();
-      green = the_colour->Green ();
-      blue = the_colour->Blue ();
-      isInit = TRUE;
-    }
-  else
-    {
-      red = 0;
-      green = 0;
-      blue = 0;
-      isInit = FALSE;
-    }
-
-  pixel.red = red << 8;
-  pixel.green = green << 8;
-  pixel.blue = blue << 8;
-
-  return (*this);
-}
-
 void wxColour::Set (unsigned char r, unsigned char g, unsigned char b)
 {
   red = r;

@@ -37,8 +37,8 @@ wxBorder::wxBorder // Constructor (given parentArea)
   __type = wxTYPE_BORDER;
   if (width < 0) cWindowWidth = parentArea->Width();
   if (height < 0) cWindowHeight = parentArea->Height();
-  SetJustify(Direction::wxAll);
-  SetGravitate(Direction::wxTop | Direction::wxLeft);
+  SetJustify(wxAll);
+  SetGravitate(wxTop | wxLeft);
   
   SetEraser(wxCONTROL_BACKGROUND_BRUSH);
 
@@ -76,7 +76,7 @@ void wxBorder::ShowAsActive(Bool flag) // mac platform only
     Paint();
     int clientWidth, clientHeight;
     GetClientSize(&clientWidth, &clientHeight);
-    int margin = ParentArea()->Margin().Offset(Direction::wxTop);
+    int margin = ParentArea()->Margin().Offset(wxTop);
     Rect clientRect = {0, 0, clientHeight, clientWidth};
     RgnHandle outerRgn = ::NewRgn(); CheckMemOK(outerRgn);
     ::RectRgn(outerRgn, &clientRect);

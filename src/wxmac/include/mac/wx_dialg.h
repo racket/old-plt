@@ -82,16 +82,8 @@ public:
 	
 };
 
-void wxDialogOkButton(wxButton& but, wxEvent& event);
-void wxDialogCancelButton(wxButton& but, wxEvent& event);
-void wxDialogYesButton(wxButton& but, wxEvent& event);
-void wxDialogNoButton(wxButton& but, wxEvent& event);
-
-void wxSplitMessage(char *message, wxList *messageList, wxPanel *panel);
-void wxCentreMessage(wxList *messageList);
-
 int wxMessageBox(char *message, char *caption = "Message", long style = wxOK|wxCENTRE,
-  wxWindow* parent = NULL, int x = -1, int y = -1);
+		 wxWindow* parent = NULL, int x = -1, int y = -1);
 
 #endif // IN_CPROTO
 #endif // wx_dialg.h

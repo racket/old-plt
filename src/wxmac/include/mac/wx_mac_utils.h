@@ -16,11 +16,6 @@ void wxP2C(const unsigned char *p, char *c);
 unsigned char *wxC2P(const char *c);
 void wxC2P(const char *c, unsigned char *p);
 
-#ifndef WX_CARBON
-# include <Strings.h>
-# include <QuickDraw.h>
-#endif
-
 char* macCopyString(char* s);
 char* macCopyString0(char* s);
 char* macCopyString1(char* s);

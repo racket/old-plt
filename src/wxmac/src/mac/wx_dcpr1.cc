@@ -14,7 +14,6 @@
 # include <QuickDraw.h>
 #endif
 #include "wx_dcpr.h"
-#include "wx_privt.h"
 #include "wx_utils.h"
 #include "wx_mac_utils.h"
 #include "wx_area.h"

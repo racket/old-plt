@@ -22,7 +22,6 @@
 #include <stdlib.h>
 #include "common.h"
 #include "wx_utils.h"
-#include "wx_privt.h"
 #include "wx_choic.h"
 #include "wx_menu.h"
 #include "wx_mac_utils.h"

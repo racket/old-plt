@@ -194,7 +194,7 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
   if (label)
     {
       cTitle = new wxLabelArea(this, label, labelFont,
-			       labelPosition == wxVERTICAL ? Direction::wxTop : Direction::wxLeft);
+			       labelPosition == wxVERTICAL ? wxTop : wxLeft);
     }
   else
     cTitle = NULL;

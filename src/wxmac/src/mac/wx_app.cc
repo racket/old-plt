@@ -105,7 +105,7 @@ wxApp::wxApp():wxbApp()
   wxScreen::gScreenWindow = new wxScreen;
   wxArea* menuArea = (wxScreen::gScreenWindow)->MenuArea();
   int menuBarHeight = GetMBarHeight();
-  menuArea->SetMargin(menuBarHeight, Direction::wxTop);
+  menuArea->SetMargin(menuBarHeight, wxTop);
 
   wx_frame = NULL;
   death_processed = FALSE;

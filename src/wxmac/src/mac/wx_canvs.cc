@@ -110,11 +110,11 @@ void wxCanvas::InitDefaults(void)
   wx_dc = new wxCanvasDC(this);
 
   if (cStyle & wxBORDER) {
-    int direction = Direction::wxAll;
+    int direction = wxAll;
     if (cStyle & wxVSCROLL)
-      direction -= Direction::wxRight;
+      direction -= wxRight;
     if (cStyle & wxHSCROLL)
-      direction -= Direction::wxBottom;
+      direction -= wxBottom;
 
     new wxBorderArea(this, 1, direction);
   }

@@ -2,11 +2,11 @@
   (require (planet "test.ss" ("schematics" "schemeunit.plt" 1 1))
            "language-tester.ss")
   (provide persistent-interaction-suite)
- 
+  
   (define persistent-interaction-suite
     (make-test-suite
      "Test the persistent interaction language"
-             
+     
      ;; ****************************************
      ;; ****************************************
      ;; BASIC TESTS  
@@ -24,17 +24,17 @@
                    (+ f (start-interaction id)))))])
          
          (assert = 8 (test-m00.4 '(dispatch-start 1)))))
-            
+      
       (make-test-case
-         "start-interaction in argument position of a function call"
-         (let ([test-m00.3
-                (make-module-eval
-                 (module m00.3 "../persistent-interaction.ss"
-                   (define (id x) x)
-                   (define (foo x) 'foo)
-                   (foo (start-interaction id))))])
-                      
-           (assert eqv? 'foo (test-m00.3 '(dispatch-start 7)))))
+       "start-interaction in argument position of a function call"
+       (let ([test-m00.3
+              (make-module-eval
+               (module m00.3 "../persistent-interaction.ss"
+                 (define (id x) x)
+                 (define (foo x) 'foo)
+                 (foo (start-interaction id))))])
+         
+         (assert eqv? 'foo (test-m00.3 '(dispatch-start 7)))))
       
       (make-test-case
        "identity interaction, dispatch-start called multiple times"
@@ -55,7 +55,7 @@
                (module m00.1 "../persistent-interaction.ss"
                  (define (id x) x)
                  (+ 1 (start-interaction id))))])
-                  
+         
          (assert = 2 (test-m00.1 '(dispatch-start 1)))))
       
       (make-test-case
@@ -103,29 +103,29 @@
                  (define (id x) x)
                  (+ (start-interaction id)
                     (start-interaction id))))])
-                  
+         
          (assert-true (void? (test-m02 '(dispatch-start 1))))
          (assert = 3 (test-m02 '(dispatch-start 2)))
          (assert = 0 (test-m02 '(dispatch-start -1))))))
-       
-       
-       
-       ;; ****************************************
-       ;; ****************************************
-       ;; TESTS INVOLVING CALL/CC
-       (make-test-suite
-        "Tests Involving call/cc"
-        
-        (make-test-case
-         "continuation invoked in non-trivial context from within proc"
-         (let ([test-m03
+     
+     
+     
+     ;; ****************************************
+     ;; ****************************************
+     ;; TESTS INVOLVING CALL/CC
+     (make-test-suite
+      "Tests Involving call/cc"
+      
+      (make-test-case
+       "continuation invoked in non-trivial context from within proc"
+       (let ([test-m03
               (make-module-eval
                (module m03 "../persistent-interaction.ss"
                  (define (f x)
                    (let/cc k
                      (+ 2 4 (k 3) 6 8)))
                  (f (start-interaction (lambda (x) x)))))])
-                  
+         
          (assert = 3 (test-m03 '(dispatch-start 'foo)))
          (assert = 3 (test-m03 '(dispatch-start 7)))))
       
@@ -147,7 +147,7 @@
                            (mult (cdr ln)))])))
                  
                  (mult (start-interaction (lambda (x) x)))))])
-                  
+         
          (assert = 0 (test-m04 '(dispatch-start (list 1 2 3 4 5 6 7 0 8 9))))
          (assert = 120 (test-m04 '(dispatch-start (list 1 2 3 4 5))))))
       
@@ -186,51 +186,51 @@
       "Tests Involving send/suspend"
       
       (make-test-case
-           "curried add with send/suspend"
-           (let ([table-01-eval
-                  (make-module-eval
-                   (module table01 mzscheme
-                     (provide store-k
-                              lookup-k)
-                     
-                     (define the-table (make-hash-table))
-                     
-                     (define (store-k k)
-                       (let ([key (string->symbol (symbol->string (gensym 'key)))])
-                         (hash-table-put! the-table key k)
-                         key))
-                     (define (lookup-k key-pair)
-                       (hash-table-get the-table (car key-pair) (lambda () #f)))))])
-             
-             (table-01-eval
-              '(module m06 "../persistent-interaction.ss"
-                 (require table01)
+       "curried add with send/suspend"
+       (let ([table-01-eval
+              (make-module-eval
+               (module table01 mzscheme
+                 (provide store-k
+                          lookup-k)
                  
-                 (define (gn which)
-                   (cadr
-                    (send/suspend
-                     (lambda (k)
-                       (let ([ignore (printf "Please send the ~a number.~n" which)])
-                         (store-k k))))))
+                 (define the-table (make-hash-table))
                  
-                 (let ([ignore (start-interaction lookup-k)])
-                   (let ([result (+ (gn "first") (gn "second"))])
-                     (let ([ignore (printf "The answer is: ~s~n" result)])
-                       result)))))
+                 (define (store-k k)
+                   (let ([key (string->symbol (symbol->string (gensym 'key)))])
+                     (hash-table-put! the-table key k)
+                     key))
+                 (define (lookup-k key-pair)
+                   (hash-table-get the-table (car key-pair) (lambda () #f)))))])
+         
+         (table-01-eval
+          '(module m06 "../persistent-interaction.ss"
+             (require table01)
              
-             (table-01-eval '(require m06))
+             (define (gn which)
+               (cadr
+                (send/suspend
+                 (lambda (k)
+                   (let ([ignore (printf "Please send the ~a number.~n" which)])
+                     (store-k k))))))
              
-             (let* ([first-key (table-01-eval '(dispatch-start 'foo))]
-                    [second-key (table-01-eval `(dispatch '(,first-key 1)))]
-                    [third-key (table-01-eval `(dispatch '(,first-key -7)))])
-               
-               
-               (assert = 3 (table-01-eval `(dispatch '(,second-key 2))))
-               (assert = 4 (table-01-eval `(dispatch '(,second-key 3))))
-               (assert-true (zero? (table-01-eval `(dispatch '(,second-key -1)))))
-               (assert = -7 (table-01-eval `(dispatch '(,third-key 0))))
-               (assert-true (zero? (table-01-eval `(dispatch '(,third-key 7))))))))
-              
+             (let ([ignore (start-interaction lookup-k)])
+               (let ([result (+ (gn "first") (gn "second"))])
+                 (let ([ignore (printf "The answer is: ~s~n" result)])
+                   result)))))
+         
+         (table-01-eval '(require m06))
+         
+         (let* ([first-key (table-01-eval '(dispatch-start 'foo))]
+                [second-key (table-01-eval `(dispatch '(,first-key 1)))]
+                [third-key (table-01-eval `(dispatch '(,first-key -7)))])
+           
+           
+           (assert = 3 (table-01-eval `(dispatch '(,second-key 2))))
+           (assert = 4 (table-01-eval `(dispatch '(,second-key 3))))
+           (assert-true (zero? (table-01-eval `(dispatch '(,second-key -1)))))
+           (assert = -7 (table-01-eval `(dispatch '(,third-key 0))))
+           (assert-true (zero? (table-01-eval `(dispatch '(,third-key 7))))))))
+      
       (make-test-case
        "curried with send/suspend and serializaztion"
        
@@ -288,25 +288,35 @@
          (assert-false (test-m07 '(dispatch-start 1)))
          (assert-false (test-m07 '(dispatch-start 7)))))
       
-;      (make-test-case
-;       "send/suspend called from rhs of letrec binding form"
-;       (let ([test-m08
-;              (make-module-eval
-;               (module m08 "../persistent-interaction.ss"
-;                 (define (id x) x)
-;                 
-;                 (define (gn which)
-;                   (cadr
-;                    (send/suspend
-;                     (lambda (k)
-;                       (let ([ignore (printf "Please send the ~a number.~n" which)])
-;                         k)))))
-;                 
-;                 (let ([ignore (start-interaction car)])
-;                   (letrec ([f (let ([n (gn "first")])
-;                                 (lambda (m) (+ n m)))]
-;                            [g (let ([n (gn "second")])
-;                                 (lambda (m) (+ n (f m))))])
-;                     (printf "The answer is: ~s~n"
-;                             (g (gn "third")))))))])
+      (make-test-case
+       "send/suspend on rhs of letrec binding forms"
+       (let ([test-m08
+              (make-module-eval
+               (module m08 "../persistent-interaction.ss"
+                 (define (id x) x)
+                 
+                 (define (gn which)
+                   (cadr
+                    (send/suspend
+                     (lambda (k)
+                       (let ([ignore (printf "Please send the ~a number.~n" which)])
+                         k)))))
+                 
+                 (let ([ignore (start-interaction car)])
+                   (letrec ([f (let ([n (gn "first")])
+                                 (lambda (m) (+ n m)))]
+                            [g (let ([n (gn "second")])
+                                 (lambda (m) (+ n (f m))))])
+                     (let ([result (g (gn "third"))])
+                       (let ([ignore (printf "The answer is: ~s~n" result)])
+                         result))))))])
+         (let* ([k0 (test-m08 '(serialize (dispatch-start 'foo)))]
+                [k1 (test-m08 `(serialize (dispatch (list (deserialize ',k0) 1))))]
+                [k2 (test-m08 `(serialize (dispatch (list (deserialize ',k1) 2))))])
+           (assert = 6 (test-m08 `(dispatch (list (deserialize ',k2) 3))))
+           (assert = 9 (test-m08 `(dispatch (list (deserialize ',k2) 6))))
+           (let* ([k1.1 (test-m08 `(serialize (dispatch (list (deserialize ',k0) -1))))]
+                  [k2.1 (test-m08 `(serialize (dispatch (list (deserialize ',k1.1) -2))))])
+             (assert-true (zero? (test-m08 `(dispatch (list (deserialize ',k2.1) 3)))))
+             (assert = 6 (test-m08 `(dispatch (list (deserialize ',k2) 3))))))))      
       ))))

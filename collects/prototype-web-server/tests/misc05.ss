@@ -25,7 +25,9 @@
 ;; trace *without* serialization
 (define k0 (dispatch-start 'foo))
 (define k1 (dispatch (list k0 1)))
+(serialize k1)
 (define k2 (dispatch (list k1 2)))
+(serialize k1)
 (= 6 (dispatch (list k2 3)))
 (= 9 (dispatch (list k2 6)))
 (serialize k2)
@@ -34,6 +36,7 @@
 (zero? (dispatch (list k2.1 3)))
 (= 6 (dispatch (list k2 3)))
 (serialize k2)
+(serialize k1)
 
 ;; trace *with* serialization
 (define k0 (serialize (dispatch-start 'foo)))

@@ -4,7 +4,15 @@ identically to the standard TCP subsystems in PLT Scheme, with a few
 additional flags.
 
 To use this library, you will need OpenSSL installed on your
-machine. To build from source, you will need a C compiler and linker;
+machine, but
+
+ * the PLT-distributed archive for Windows installs the necessary
+   DLLs, and
+
+ * Mac OS X 10.2 provides the necessary OpenSSL libraries
+   (as do some other operating systems).
+
+To build from source, you will need a C compiler and linker;
 see the end of this documentation for build notes.
 
 ==================================================

@@ -1,3 +1,19 @@
+
+;; This module creates openssl.<platform>.plt.
+;;
+;; For Windows and Mac OS X, it creates an archive
+;; with a "precompiled" subdirectory containing
+;; the compiled extension.
+;; 
+;; For Windows, it also arranges for
+;;  {lib,sll}eay32<version>.dll
+;; to be in the archive, and it mangles the extension
+;; to replace references to 
+;;  {lib,sll}eay32xxxxxxx.dll
+;; to the versioned names. The xxxxxxx DLLs must
+;; be in the PLT directory (two levels up from here)
+;; to be compied and version-mangled.
+
 (module make-archive mzscheme
   (require (lib "pack.ss" "setup")
 	   (lib "file.ss"))
@@ -114,6 +130,6 @@
     (delete-file dest))
   (copy-file (build-path work-dir "openssl.plt") dest)
 
-  ;(delete-directory/files work-dir)
+  (delete-directory/files work-dir)
 
   (printf "Output to ~a~n" dest))

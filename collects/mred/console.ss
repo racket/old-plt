@@ -290,7 +290,8 @@
 		 (super start len)]
 		[else 
 		 (let-values ([(left right) (find-which-previous-sexp)])
-		   (and left
+		   (and #f
+			left
 			(super start len)
 			'(begin
 			  (when needs-to-move

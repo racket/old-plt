@@ -97,7 +97,7 @@
   (lambda (message title default)
     (let* ([input (wx:get-text-from-user message title default)]
 	   [read-in
-	    (read-string
+	    (read-from-string
 	     input
 	     (lambda (debug string . rest)
 	       (wx:message-box 

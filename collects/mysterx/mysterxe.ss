@@ -22,8 +22,6 @@
   (define com-help mxprims:com-help)
   (define com-register-event-handler mxprims:com-register-event-handler)
   (define com-unregister-event-handler mxprims:com-unregister-event-handler)
-  (define com-all-coclasses mxprims:com-all-coclasses)
-  (define com-all-controls mxprims:com-all-controls)
   (define coclass->html mxprims:coclass->html)
   (define progid->html mxprims:progid->html)
   (define cocreate-instance-from-coclass mxprims:cocreate-instance-from-coclass)
@@ -40,15 +38,26 @@
 
   ;; sort results of "reflection" results
 
+  (define (alphabetize lst)
+    (mzlib:quicksort lst string-ci<?))
+
   (define (make-sorted-fun f)
     (lambda (obj)
-      (let ([ps (f obj)])
-	(mzlib:quicksort ps string<?))))
+      (alphabetize (f obj))))
 
   (define com-methods (make-sorted-fun mxprims:com-methods))
   (define com-get-properties (make-sorted-fun mxprims:com-get-properties))
   (define com-set-properties (make-sorted-fun mxprims:com-set-properties))
   (define com-events (make-sorted-fun mxprims:com-events))
+
+  (define (make-sorted-thunk f)
+    (lambda ()
+      (alphabetize (f))))
+
+  (define com-all-coclasses 
+    (make-sorted-thunk mxprims:com-all-coclasses)) 
+  (define com-all-controls 
+    (make-sorted-thunk mxprims:com-all-controls))
 
   ;; style-related procedures 
 

@@ -382,8 +382,10 @@ static Scheme_Object *wxsCurrentGLContext(int argc, Scheme_Object **argv)
 			  argc, argv,
 			  -1, canvas_p, "canvas", 1);
 
+#ifdef USE_GL
   on_thread_swap(NULL);
-  
+#endif
+
   return v;
 }
 

@@ -115,6 +115,7 @@
  (close "Fermer") ;; as in, close an open window
  (stop "Stop")   
  (&stop "&Stop") ;; for use in button and menu item labels, with short cut.
+ (are-you-sure-delete? "Etes-vous certain de vouloir effacer ~a?") ;; ~a is a filename
  
  ;;; important urls
  (web-materials "Sites web apparentés") ;; menu item title
@@ -648,7 +649,6 @@
  (autosave-deleted "Effacé")       ;; status of an autosave file
 
  (autosave-error-deleting "Erreur durant l'effacement de ~a\n\n~a") ;; first is a filename, second is an error message from mz.
- (autosave-are-you-sure-delete? "Etes-vous certain de vouloir effacer ~a?") ;; ~a is a filename
  (autosave-delete-button "Effacer")
  (autosave-delete-title "Effacer")  ;; title of a dialog asking for deletion confirmation
  (autosave-done "Fait")

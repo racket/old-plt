@@ -115,6 +115,7 @@ please adhere to these guidelines:
  (close "Close") ;; as in, close an open window
  (stop "Stop")   
  (&stop "&Stop") ;; for use in button and menu item labels, with short cut.
+ (are-you-sure-delete? "Are you sure you want to delete ~a?") ;; ~a is a filename or directory name
 
  ;;; important urls
  (web-materials "Related Web Sites") ;; menu item title
@@ -651,7 +652,6 @@ please adhere to these guidelines:
   (autosave-deleted "Deleted")       ;; status of an autosave file
 
   (autosave-error-deleting "Error deleting ~a\n\n~a") ;; first is a filename, second is an error message from mz.
-  (autosave-are-you-sure-delete? "Are you sure you want to delete ~a?") ;; ~a is a filename
   (autosave-delete-button "Delete")
   (autosave-delete-title "Delete")  ;; title of a dialog asking for deletion confirmation
   (autosave-done "Done")

@@ -869,8 +869,8 @@
 	      (purge-marked/update-headers)))
       (send global-keymap add-function "gc"
 	    (lambda (w e) (dump-memory-stats) (collect-garbage)))
-      (send global-keymap add-function "show-memory-histogram"
-	    (lambda (w e) (show-memory-histogram)))
+      (send global-keymap add-function "show-memory-graph"
+	    (lambda (w e) (show-memory-graph)))
       
       (send global-keymap map-function ":m" "new-mailer")
       (send global-keymap map-function ":g" "get-new-mail")
@@ -884,7 +884,7 @@
       (send global-keymap map-function ":b" "scroll-up")
       (send global-keymap map-function "#" "purge")
       (send global-keymap map-function "!" "gc")
-      (send global-keymap map-function ":z" "show-memory-histogram")
+      (send global-keymap map-function ":z" "show-memory-graph")
       
       (define icon (make-object bitmap% (build-path (collection-path "sirmail")
 						    "postmark.bmp")))
@@ -2529,82 +2529,88 @@
 
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       ;;
-      ;; Mailbox memory histogram (from messages in this mailbox)
+      ;; Mailbox memory graph (from messages in this mailbox)
       ;;
 
-      (define (show-memory-histogram)
-        ;; grab the current value of the mailbox, just in case
-        (let ([mailbox mailbox])
+      (define (show-memory-graph)
+        ;; grab the current value of the mailbox
+        (let ([mailbox mailbox]
+              [mbox-eventspace (current-eventspace)])
           
-          (status "Collecting histogram information...")
+          (status "Collecting memory graph record...")
           ;; ht : [symbol -o> (listof (cons seconds bytes))]
-          (thread
-           (lambda ()
-             (define (parse-uptime str)
-               (let* ([sep-bytes (regexp-match #rx"([0-9,]*) bytes" str)]
-                      [bytes (and sep-bytes
-                                  (string->number
-                                   (regexp-replace* #rx"," (cadr sep-bytes) "")))]
-                      [seconds
-                       (cond
-                         [(regexp-match day-hour-regexp str)
-                          =>
-                          (combine (* 24 60 60) (* 60 60))]
-                         [(regexp-match hour-minute-regexp str)
-                          =>
-                          (combine (* 60 60) 60)]
-                         [(regexp-match minute-second-regexp str)
-                          =>
-                          (combine 60 1)]
-                         [else #f])])
-                 (if (and bytes seconds)
-                     (cons seconds bytes)
-                     #f)))
-             
-             (define (combine m1 m2)
-               (lambda (match)
-                 (let ([first (cadr match)]
-                       [second (caddr match)])
-                   (+ (* (string->number first) m1)
-                      (* (string->number second) m2)))))
-             
-             (let ([ht (make-hash-table)])
-               (let loop ([mailbox mailbox])
-                 (cond
-                   [(empty? mailbox) (void)]
-                   [else 
-                    (let* ([message (car mailbox)]
-                           [uid (message-uid message)]
-                           [header (get-header uid)]
-                           [key 
-                            (string->symbol
-                             (format "~a ~a" 
-                                     (extract-field "X-Mailer" header)
-                                     (extract-field "From" header)))]
-                           [uptime-str (extract-field "X-Uptime" header)])
-                      (when uptime-str
-                        (let ([uptime (parse-uptime uptime-str)])
-                          (when uptime
-                            (hash-table-put! 
-                             ht
-                             key
-                             (cons
-                              uptime
-                              (hash-table-get ht key (lambda () '()))))))))
-                    (loop (cdr mailbox))]))
-               
-               (let ([info 
-                      (quicksort 
-                       (hash-table-map ht (lambda (x y) (list (symbol->string x) y)))
-                       (lambda (x y)
-                         (string<=? (car x) (car y))))])
-                 (queue-callback
-                  (lambda ()
-                    (status "Showing histogram")
-                    (make-memory-histogram-window info)))))))))
+          (parameterize ([current-eventspace (make-eventspace)])
+            (queue-callback
+             (lambda ()
+               (let ([ht (make-hash-table)])
+                 (let loop ([mailbox mailbox])
+                   (cond
+                     [(empty? mailbox) (void)]
+                     [else 
+                      (let* ([message (car mailbox)]
+                             [uid (message-uid message)]
+                             [header (get-header uid)]
+                             [key 
+                              (string->symbol
+                               (format "~a ~a" 
+                                       (extract-field "X-Mailer" header)
+                                       (extract-field "From" header)))]
+                             [uptime-str (extract-field "X-Uptime" header)])
+                        (when uptime-str
+                          (let ([uptime (parse-uptime uptime-str)])
+                            (when uptime
+                              (hash-table-put! 
+                               ht
+                               key
+                               (cons
+                                uptime
+                                (hash-table-get ht key (lambda () '()))))))))
+                      (loop (cdr mailbox))]))
+                 
+                 (let ([info 
+                        (quicksort 
+                         (hash-table-map ht (lambda (x y) (list (symbol->string x) y)))
+                         (lambda (x y)
+                           (string<=? (car x) (car y))))])
+                   (parameterize ([current-eventspace mbox-eventspace])
+                     (queue-callback
+                      (lambda ()
+                        (status "Showing graph"))))
+                   (make-memory-graph-window info))))))))
+
+      ;; eventspace: graph eventspace
+      (define (parse-uptime str)
+        (let* ([sep-bytes (regexp-match #rx"([0-9,]*) bytes" str)]
+               [bytes (and sep-bytes
+                           (string->number
+                            (regexp-replace* #rx"," (cadr sep-bytes) "")))]
+               [seconds
+                (cond
+                  [(regexp-match day-hour-regexp str)
+                   =>
+                   (combine (* 24 60 60) (* 60 60))]
+                  [(regexp-match hour-minute-regexp str)
+                   =>
+                   (combine (* 60 60) 60)]
+                  [(regexp-match minute-second-regexp str)
+                   =>
+                   (combine 60 1)]
+                  [else #f])])
+          (if (and bytes seconds)
+              (cons seconds bytes)
+              #f)))
+
+      ;; eventspace: graph eventspace
+      (define (combine m1 m2)
+        (lambda (match)
+          (let ([first (cadr match)]
+                [second (caddr match)])
+            (+ (* (string->number first) m1)
+               (* (string->number second) m2)))))
       
       ;; info : (listof (list string (listof (cons number number)))) -> void
-      (define (make-memory-histogram-window info)
+      ;; eventspace: new graph eventspace
+      (define (make-memory-graph-window info)
         (define frame (new frame:basic% 
                            (label "Memory Histogram")
                            (width 500)
@@ -2613,7 +2619,7 @@
                             (paint-callback
                              (lambda (c dc)
                                (let-values ([(w h) (send c get-client-size)])
-                                 (draw-histogram dc w h text))))
+                                 (draw-graph dc w h text))))
                             (parent (send frame get-area-container))))
         (define text (new text%))
         (define editor-canvas (new editor-canvas% 
@@ -2640,7 +2646,7 @@
         
         (define original-colors colors)
 
-        (define (draw-histogram dc w h text)
+        (define (draw-graph dc w h text)
           (let ([max-x 0]
                 [max-y 0])
             (for-each

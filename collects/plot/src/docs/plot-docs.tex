@@ -138,10 +138,10 @@ it as 1 since all the items weigh the same.
 \begin{schemedisplay}
 
 (define data '(#(0 3 1)
-	       #(1 5 1)
-	       #(2 7 1)
-	       #(3 9 1)
-	       #(4 11 1)))
+               #(1 5 1)
+               #(2 7 1)
+               #(3 9 1)
+               #(4 11 1)))
 
 \end{schemedisplay}
 
@@ -211,16 +211,16 @@ For example, if we wanted to create a constructor that creates Plot-items that
 (define-plot-type dashed-line
   fun 2dview (x-min x-max) ((samples 100) (segments 20) (color 'red) (width 1))
   (let* ((dash-size (/ (- x-max x-min) segments))
-	 (x-lists (build-list 
-		   (/ segments 2) 
-		   (lambda (index)                                    
-		     (x-values 
-		      (/ samples segments) 
-		      (+ x-min (* 2 index dash-size))
-		      (+ x-min (* (add1 ( * 2 index)) dash-size)))))))
+         (x-lists (build-list 
+                   (/ segments 2) 
+                   (lambda (index)                                    
+                     (x-values 
+                      (/ samples segments) 
+                      (+ x-min (* 2 index dash-size))
+                      (+ x-min (* (add1 ( * 2 index)) dash-size)))))))
     (send* 2dview 
-	   (set-line-color color)
-	   (set-line-width width))
+           (set-line-color color)
+           (set-line-width width))
     (for-each 
      (lambda (dash)
        (send 2dview plot-line 
@@ -541,32 +541,43 @@ Returns the azumuthal angle
 
 \end{itemize}
 
-\label{r-lambda}
-\index{r-lambda}
-\subsection{\scheme{r-lambda}}
+\label{define-plot-type}
+\index{define-plot-type}
+\subsection{\scheme{define-plot-type}}
 
 
-Macro used to create new constructors. It is easiest to explain with  an example, so here is an implementation of a simple line constructor :
+Macro used to create new constructors. It is easiest to explain with  an example, 
+so here is an implementation of a simple line constructor :
 \begin{schemedisplay}
 
-(define line 
-  (r-lambda func 2dplotview (x-min x-max) ((samples 150) (color 'red) (width 1))
-            (send* 2dplotview 
-              (set-line-color color) (set-line-width width)
-              (plot-line (map (lambda (x) (vector x (func x))) 
-                              (x-values samples x-min x-max))))))
+(define-plot-type line 
+   func 2dplotview (x-min x-max) ((samples 150) (color 'red) (width 1))
+   (send* 2dplotview 
+    (set-line-color color) (set-line-width width)
+    (plot-line (map 
+                  (lambda (x) (vector x (func x))) 
+                  (x-values samples x-min x-max)))))
 \end{schemedisplay}
 \begin{itemize}
-\item The first keyword, \scheme{func} in this case, is used to refer to 
-         the data that will be rendered. For example, in the execution of \scheme{(plot (line (lambda (x) x))) func} would refer to the indentify function
+\item The first keyword after then name of the new plot type, is used to refer to 
+         the data that will be rendered. In this case, we will are calling our data \scheme{func}.
+         For example, in the execution of \scheme{(plot (line (lambda (x) x))) func} would refer 
+         to the indentify function
 \item \scheme{2dplotview} refers to the name of the view object that the 
          Plot-item will be applied to by \scheme{plot}
-\item The \scheme{x-min} and \scheme{x-max} are fields in the \scheme{2dplotview} object. They will be bound to the values of those fields before the execution of the body
-         , assuming the object has the methods \scheme{get-x-min} and \scheme{get-x-max}. This entire expression can be omitted if none of the fields are necessary 
-         (such as for plotting discrete data points)
-\item The last set of parenthesized expressions sets keywords based arguments and their default
-         values for the constructor. To over-ride values the user needs to 
-         provide an associative list with the desired values. Ex: \scheme{(line (lambda (x) x) '((color blue)))}
+\item The \scheme{x-min} and \scheme{x-max} are fields in the 
+  \scheme{2d-view%} 
+    object. They will be bound to the values of 
+  those fields before the execution of the body
+  , assuming the object has the methods \scheme{get-x-min} 
+  and \scheme{get-x-max}. This entire expression can be 
+  omitted if none of the fields are necessary 
+  (such as for plotting discrete data points)
+\item The last set of parenthesized expressions sets 
+  keywords based arguments and their default
+  values for the constructor. To over-ride values the user needs to 
+  provide an associative list with the desired values. 
+  Ex: \scheme{(line (lambda (x) x) '((color blue)))}
 \end{itemize}
 
 \pagebreak

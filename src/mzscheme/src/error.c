@@ -479,6 +479,7 @@ void scheme_init_error(Scheme_Env *env)
 					      2, 2);
   
   REGISTER_SO(prepared_buf);
+  prepared_buf = "";
   prepared_buf = init_buf(NULL, &prepared_buf_len);
   
   REGISTER_SO(kernel_symbol);
@@ -595,7 +596,8 @@ static char *init_buf(long *len, long *_size)
 
 void scheme_reset_prepared_error_buffer(void)
 {
-  prepared_buf = init_buf(NULL, &prepared_buf_len);
+  if (prepared_buf)
+    prepared_buf = init_buf(NULL, &prepared_buf_len);
 }
 
 void

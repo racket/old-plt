@@ -57,6 +57,9 @@
 #    define getrusage(a, b)  syscall(SYS_GETRUSAGE, a, b)
 #    define USE_GETRUSAGE
 #   endif /* USE_SYSCALL_GETRUSAGE */
+#   ifdef WINDOWS_GET_PROCESS_TIMES
+#    include <Windows.h>
+#   endif
 #  endif /* USE_PALMTIME */
 # endif /* USE_MACTIME */
 #endif /* TIME_SYNTAX */
@@ -2656,7 +2659,18 @@ long scheme_get_process_milliseconds(void)
     return ((unsigned long)time.lo) / 1000;
   }
 #  else
+#   ifdef WINDOWS_GET_PROCESS_TIMES
+  {
+    FILETIME cr, ex, kr, us;
+    if (GetProcessTimes(GetCurrentProcess(), &cr, &ex, &kr, &us)) {
+      unsigned long n;
+      n = (kr.dwLowDateTime + us.dwLowDateTime) / 10000;
+      return n;
+    }
+  }
+#   endif
   return clock()  * 1000 / CLOCKS_PER_SEC;
+
 #  endif
 # endif
 #endif

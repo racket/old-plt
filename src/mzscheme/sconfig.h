@@ -514,6 +514,7 @@
 # else
 #  define USE_FTIME
 #  define USE_TIMEZONE_VAR_W_DLS
+#  define WINDOWS_GET_PROCESS_TIMES
 # endif
 # define GETENV_FUNCTION
 # define DIR_FUNCTION

@@ -110,6 +110,7 @@ wxDC::wxDC(void)
   user_scale_x = 1.0;
   user_scale_y = 1.0;
   mapping_mode = wxPIXELS_MAP;
+  scaling_mode = wxWX_SCALE;
   title = NULL;
   dont_delete = FALSE;
   cdc = NULL;
@@ -501,7 +502,6 @@ void wxDC::ReleaseGraphics(HDC given_dc)
     else
       dc = ThisDC();
     if (dc) {
-      ResetMapMode(dc);
       DoClipping(dc);
       if (!given_dc)
 	DoneDC(dc);
@@ -1935,7 +1935,7 @@ void wxDC::ResetMapMode(HDC given_dc)
   }
 
   switch (mapping_mode) {
-  case 1:
+  case wxPOINTS_MAP:
     {
       double mm2pixelsX;
       double mm2pixelsY;
@@ -1955,6 +1955,7 @@ void wxDC::ResetMapMode(HDC given_dc)
       logical_scale_y = (double)(pt2mm * mm2pixelsY);
     }
     break;
+  case wxPIXELS_MAP:
   default:
     {
       logical_scale_x = 1.0;
@@ -2027,7 +2028,8 @@ void wxDC::SetUserScale(double x, double y)
   user_scale_y = y;
 
   ReleaseGraphics();
-  ResetMapMode();
+  if (scaling_mode != wxWX_SCALE)
+    ResetMapMode();
 }
 
 void wxDC::SetDeviceOrigin(double x, double y)
@@ -2036,7 +2038,8 @@ void wxDC::SetDeviceOrigin(double x, double y)
   device_origin_y = y;
 
   ReleaseGraphics();
-  ResetMapMode();
+  if (scaling_mode != wxWX_SCALE)
+    ResetMapMode();
 }
 
 double wxDC::DeviceToLogicalX(int x)

@@ -146,12 +146,6 @@ void wxbDC::SetDeviceOrigin(double x, double y)
   device_origin_y = y;
 }
 
-void wxbDC::SetLogicalScale(double x, double y)
-{
-  logical_scale_x = x;
-  logical_scale_y = y;
-}
-
 void wxbDC::TryColour(wxColour *src, wxColour *dest)
 {
   dest = src;

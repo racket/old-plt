@@ -129,6 +129,7 @@ class wxDC: public wxbDC
   void SetScaleMode(int mode, HDC dc = 0);
   void ResetMapMode(HDC dc = 0);
   void SetUserScale(double x, double y);
+  void SetDeviceOrigin(double x, double y);
   double DeviceToLogicalX(int x);
   double DeviceToLogicalY(int y);
   double DeviceToLogicalXRel(int x);

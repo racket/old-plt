@@ -684,7 +684,7 @@
 			   (ks sf)
 			   (next
 			    (list-ref fields n)
-			    `(struct-ref ,e ,(sub1 n))
+			    `(vector-ref (struct->vector ,e) ,n)
 			    sf
 			    kf
 			    (rloop (+ 1 n)))))))))

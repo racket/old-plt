@@ -113,6 +113,11 @@ abstract out the `hole and `(hole name) patterns.
       (for-each (lambda (nt)
                   (hash-table-put! clang-ht (nt-name nt) null))
                 lang)
+      (hash-table-for-each
+       clang-ht
+       (lambda (nt rhs)
+         (when (has-underscore? nt)
+           (error 'compile-language "cannot use underscore in nonterminal name, ~s" nt))))
       
       (let ([compatible-context-language
              (build-compatible-context-language clang-ht lang)])
@@ -748,8 +753,12 @@ abstract out the `hole and `(hole name) patterns.
         [`(variable-except ,@(vars ...)) ribs]
 
         [`hole (error 'match-pattern "cannot have a hole inside an ellipses")]
-
-        [(? symbol?) ribs]
+        [(? symbol?) 
+         (cond
+           [(has-underscore? pattern)
+            (let ([before (split-underscore pattern)])
+              (loop `(name ,pattern ,before) ribs))]
+           [else ribs])]
         [`(name ,name ,pat) (loop pat (cons (make-rib name '()) ribs))]
         [`(in-hole ,context ,contractum) (loop context (loop contractum ribs))]
         [`(in-hole* ,hole-name ,context ,contractum) (loop context (loop contractum ribs))]
@@ -940,11 +949,6 @@ abstract out the `hole and `(hole name) patterns.
                                            (make-rib 'y '(a))))
                       (make-bindings (list (make-rib 'x '(a))
                                            (make-rib 'y '())))))
-    (test-empty '((name y a) ... (name x a) ...) '(a) 
-                (list (make-bindings (list (make-rib 'x '())
-                                           (make-rib 'y '(a))))
-                      (make-bindings (list (make-rib 'x '(a))
-                                           (make-rib 'y '())))))
     (test-empty '((name y a) ... (name x a) ...) '(a a) 
                 (list (make-bindings (list (make-rib 'x '())
                                            (make-rib 'y '(a a))))
@@ -952,7 +956,32 @@ abstract out the `hole and `(hole name) patterns.
                                            (make-rib 'y '(a))))
                       (make-bindings (list (make-rib 'x '(a a))
                                            (make-rib 'y '())))))
-    
+
+    (test-ab '(bb_y ... aa_x ...) '() 
+             (list (make-bindings (list (make-rib 'aa_x '())
+                                        (make-rib 'bb_y '())))))
+    (test-ab '(bb_y ... aa_x ...) '(a)
+             (list (make-bindings (list (make-rib 'aa_x '(a))
+                                        (make-rib 'bb_y '())))))
+    (test-ab '(bb_y ... aa_x ...) '(b) 
+             (list (make-bindings (list (make-rib 'aa_x '())
+                                        (make-rib 'bb_y '(b))))))
+    (test-ab '(bb_y ... aa_x ...) '(b b a a) 
+             (list (make-bindings (list (make-rib 'aa_x '(a a))
+                                        (make-rib 'bb_y '(b b))))))
+    (test-ab '(aa_y ... aa_x ...) '(a) 
+             (list (make-bindings (list (make-rib 'aa_x '())
+                                        (make-rib 'aa_y '(a))))
+                   (make-bindings (list (make-rib 'aa_x '(a))
+                                        (make-rib 'aa_y '())))))
+    (test-ab '(aa_y ... aa_x ...) '(a a) 
+             (list (make-bindings (list (make-rib 'aa_x '())
+                                        (make-rib 'aa_y '(a a))))
+                   (make-bindings (list (make-rib 'aa_x '(a))
+                                        (make-rib 'aa_y '(a))))
+                   (make-bindings (list (make-rib 'aa_x '(a a))
+                                        (make-rib 'aa_y '())))))
+
     (test-empty '((name x number) ...) '(1 2) (list (make-bindings (list (make-rib 'x '(1 2))))))
     
     (test-empty '(a ...) '(b) #f)
@@ -1172,7 +1201,6 @@ abstract out the `hole and `(hole name) patterns.
      ans))
   
   (define xab-lang #f)
-  
   ;; test-xab : sexp[pattern] sexp[term] answer -> void
   ;; returns #t if pat matching exp with a simple language produces ans.
   (define (test-xab pat exp ans)
@@ -1199,6 +1227,22 @@ abstract out the `hole and `(hole name) patterns.
     (run-test
      `(match-pattern (compile-pattern xab-lang ',pat) ',exp)
      (match-pattern (compile-pattern xab-lang pat) exp)
+     ans))
+  
+  
+  (define ab-lang #f)
+  ;; test-xab : sexp[pattern] sexp[term] answer -> void
+  ;; returns #t if pat matching exp with a simple language produces ans.
+  (define (test-ab pat exp ans)
+    (unless ab-lang
+      (set! ab-lang
+            (compile-language (list (make-nt 'aa
+                                             (list (make-rhs 'a)))
+                                    (make-nt 'bb
+                                             (list (make-rhs 'b)))))))
+    (run-test
+     `(match-pattern (compile-pattern ab-lang ',pat) ',exp)
+     (match-pattern (compile-pattern ab-lang pat) exp)
      ans))
   
   ;; test-ellipses : sexp sexp -> void

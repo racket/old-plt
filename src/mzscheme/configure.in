@@ -8,7 +8,7 @@ AC_INIT(mzscheme/src/bignum.c)
 
 AC_ARG_ENABLE(mred, [  --enable-mred           compile MrEd as well as MzScheme (enabled by default)], , enable_mred=yes )
 
-AC_ARG_ENABLE(gl, [  --enable-gl             include OpenGL support in MrEd (enabled by default)], , enable_gl=yes )
+AC_ARG_ENABLE(gl, [  --enable-gl             include OpenGL in MrEd (enabled by default for Linux)])
 
 AC_ARG_ENABLE(dynlib, [  --enable-dynlib         create shared libraries])
 
@@ -84,6 +84,12 @@ else
   echo "----> Installation will go to ${prefix} <-----"
   MAKE_COPYTREE=copytree
   MAKE_FINISH=copy-finish
+fi
+
+if test "${enable_gl}" = "" ; then
+  if test "$OS" = "Linux" ; then
+    enable_gl=yes
+  fi
 fi
 
 ###### Make sure MrEd is really there ######

@@ -51,7 +51,7 @@
       (let ([x 0.25])
 	(case-lambda
 	 [() x]
-	 [(v) (set! x v)])))
+	 [(v) (set! x v) x])))
 
     (define show-busy-cursor
       (lambda (thunk)

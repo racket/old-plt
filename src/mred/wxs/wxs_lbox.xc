@@ -65,8 +65,8 @@ static Scheme_Object* GetSelectionList(wxListBox *l)
 @ "set-selection" : void SetSelection(int,bool=TRUE); : : /RANGE[0]
 @ "selected?" : bool Selected(int); : : /RANGE[0]
 @ "get-string-selection" : nstring GetStringSelection();
-@ "get-client-data" : nstring/bAnythingFromString GetClientData(int); : : /RANGERET[0.XC_SCHEME_NULL]
-@ "set-client-data" : void SetClientData(int, string//ubAnythingToString/cAnything); : : /RANGE[0]
+@ "get-data" : nstring/bAnythingFromString GetClientData(int); : : /RANGERET[0.XC_SCHEME_NULL]
+@ "set-data" : void SetClientData(int, string//ubAnythingToString/cAnything); : : /RANGE[0]
 @ "find-string" : int FindString(string);
 @ "get-selection" : int GetSelection();
 @ "number" : int Number();
@@ -79,7 +79,6 @@ static Scheme_Object* GetSelectionList(wxListBox *l)
 
 @ "set" : void Set(-int,string[]/bList/ubList/cList); : : /glueListSet[string.0.1.0.METHODNAME("list%","set")]//
 @ "set-first-item" : void SetFirstItem(int); : : /RANGE[0] <> index
-@ "set-first-item" : void SetFirstItem(string); <> string
 @ "set-string-selection" : void SetStringSelection(string);
 @ "get-string" : nstring GetString(int); : : /RANGERET[0.XC_SCHEME_NULL]
 @ "set-string" : void SetString(int,string); : : /RANGE[0]

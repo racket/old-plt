@@ -86,6 +86,43 @@ static Scheme_Object *bundle_symset_canvasStyle(int v) {
 }
 
 
+
+static Scheme_Object *orientation_wxVERTICAL_sym = NULL;
+static Scheme_Object *orientation_wxHORIZONTAL_sym = NULL;
+
+static void init_symset_orientation(void) {
+  orientation_wxVERTICAL_sym = scheme_intern_symbol("vertical");
+  orientation_wxHORIZONTAL_sym = scheme_intern_symbol("horizontal");
+}
+
+static int unbundle_symset_orientation(Scheme_Object *v, const char *where) {
+  if (!orientation_wxHORIZONTAL_sym) init_symset_orientation();
+  if (0) { }
+  else if (v == orientation_wxVERTICAL_sym) { return wxVERTICAL; }
+  else if (v == orientation_wxHORIZONTAL_sym) { return wxHORIZONTAL; }
+  if (where) scheme_wrong_type(where, "orientation symbol", -1, 0, &v);
+  return 0;
+}
+
+static int istype_symset_orientation(Scheme_Object *v, const char *where) {
+  if (!orientation_wxHORIZONTAL_sym) init_symset_orientation();
+  if (0) { }
+  else if (v == orientation_wxVERTICAL_sym) { return 1; }
+  else if (v == orientation_wxHORIZONTAL_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "orientation symbol", -1, 0, &v);
+  return 0;
+}
+
+static Scheme_Object *bundle_symset_orientation(int v) {
+  if (!orientation_wxHORIZONTAL_sym) init_symset_orientation();
+  switch (v) {
+  case wxVERTICAL: return orientation_wxVERTICAL_sym;
+  case wxHORIZONTAL: return orientation_wxHORIZONTAL_sym;
+  default: return NULL;
+  }
+}
+
+
 /* Handle cases in Xt that are a problem because a wxPanel isn't really a wxCanvas */
 
 
@@ -101,6 +138,7 @@ static Scheme_Object *bundle_symset_canvasStyle(int v) {
 
 
 // @ "get-scroll-units" : void GetScrollUnitsPerPage(int*,int*); : : / PANELREDIRECT[ FillZero(x0,x1); return scheme_void]
+
 
 
 
@@ -628,6 +666,66 @@ static Scheme_Object *os_wxCanvasOnScroll(Scheme_Object *obj, int n,  Scheme_Obj
 }
 
 #pragma argsused
+static Scheme_Object *os_wxCanvasSetScrollPage(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  objscheme_check_valid(obj);
+  int x0;
+  int x1;
+
+  
+  x0 = unbundle_symset_orientation(p[0], "set-scroll-page in canvas%");
+  x1 = objscheme_unbundle_integer(p[1], "set-scroll-page in canvas%");
+
+  
+  ((wxCanvas *)((Scheme_Class_Object *)obj)->primdata)->SetScrollPage(x0, x1);
+
+  
+  
+  return scheme_void;
+}
+
+#pragma argsused
+static Scheme_Object *os_wxCanvasSetScrollRange(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  objscheme_check_valid(obj);
+  int x0;
+  int x1;
+
+  
+  x0 = unbundle_symset_orientation(p[0], "set-scroll-range in canvas%");
+  x1 = objscheme_unbundle_integer(p[1], "set-scroll-range in canvas%");
+
+  
+  ((wxCanvas *)((Scheme_Class_Object *)obj)->primdata)->SetScrollRange(x0, x1);
+
+  
+  
+  return scheme_void;
+}
+
+#pragma argsused
+static Scheme_Object *os_wxCanvasSetScrollPos(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  objscheme_check_valid(obj);
+  int x0;
+  int x1;
+
+  
+  x0 = unbundle_symset_orientation(p[0], "set-scroll-pos in canvas%");
+  x1 = objscheme_unbundle_integer(p[1], "set-scroll-pos in canvas%");
+
+  
+  ((wxCanvas *)((Scheme_Class_Object *)obj)->primdata)->SetScrollPos(x0, x1);
+
+  
+  
+  return scheme_void;
+}
+
+#pragma argsused
 static Scheme_Object *os_wxCanvasGetScrollPage(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -636,7 +734,7 @@ static Scheme_Object *os_wxCanvasGetScrollPage(Scheme_Object *obj, int n,  Schem
   int x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "get-scroll-page in canvas%");
+  x0 = unbundle_symset_orientation(p[0], "get-scroll-page in canvas%");
 
   
   r = ((wxCanvas *)((Scheme_Class_Object *)obj)->primdata)->GetScrollPage(x0);
@@ -655,7 +753,7 @@ static Scheme_Object *os_wxCanvasGetScrollRange(Scheme_Object *obj, int n,  Sche
   int x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "get-scroll-range in canvas%");
+  x0 = unbundle_symset_orientation(p[0], "get-scroll-range in canvas%");
 
   
   r = ((wxCanvas *)((Scheme_Class_Object *)obj)->primdata)->GetScrollRange(x0);
@@ -674,7 +772,7 @@ static Scheme_Object *os_wxCanvasGetScrollPos(Scheme_Object *obj, int n,  Scheme
   int x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "get-scroll-pos in canvas%");
+  x0 = unbundle_symset_orientation(p[0], "get-scroll-pos in canvas%");
 
   
   r = ((wxCanvas *)((Scheme_Class_Object *)obj)->primdata)->GetScrollPos(x0);
@@ -1002,7 +1100,7 @@ void objscheme_setup_wxCanvas(void *env)
 if (os_wxCanvas_class) {
     objscheme_add_global_class(os_wxCanvas_class, "canvas%", env);
 } else {
-  os_wxCanvas_class = objscheme_def_prim_class(env, "canvas%", "window%", os_wxCanvas_ConstructScheme, 21);
+  os_wxCanvas_class = objscheme_def_prim_class(env, "canvas%", "window%", os_wxCanvas_ConstructScheme, 24);
 
  scheme_add_method_w_arity(os_wxCanvas_class, "on-drop-file", os_wxCanvasOnDropFile, 1, 1);
  scheme_add_method_w_arity(os_wxCanvas_class, "pre-on-event", os_wxCanvasPreOnEvent, 2, 2);
@@ -1011,6 +1109,9 @@ if (os_wxCanvas_class) {
  scheme_add_method_w_arity(os_wxCanvas_class, "on-set-focus", os_wxCanvasOnSetFocus, 0, 0);
  scheme_add_method_w_arity(os_wxCanvas_class, "on-kill-focus", os_wxCanvasOnKillFocus, 0, 0);
  scheme_add_method_w_arity(os_wxCanvas_class, "on-scroll", os_wxCanvasOnScroll, 1, 1);
+ scheme_add_method_w_arity(os_wxCanvas_class, "set-scroll-page", os_wxCanvasSetScrollPage, 2, 2);
+ scheme_add_method_w_arity(os_wxCanvas_class, "set-scroll-range", os_wxCanvasSetScrollRange, 2, 2);
+ scheme_add_method_w_arity(os_wxCanvas_class, "set-scroll-pos", os_wxCanvasSetScrollPos, 2, 2);
  scheme_add_method_w_arity(os_wxCanvas_class, "get-scroll-page", os_wxCanvasGetScrollPage, 1, 1);
  scheme_add_method_w_arity(os_wxCanvas_class, "get-scroll-range", os_wxCanvasGetScrollRange, 1, 1);
  scheme_add_method_w_arity(os_wxCanvas_class, "get-scroll-pos", os_wxCanvasGetScrollPos, 1, 1);

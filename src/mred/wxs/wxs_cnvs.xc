@@ -26,6 +26,8 @@ static void FillZero(int *a, int *b) {
 @SYM "hscroll" : wxHSCROLL
 @ENDSYMBOLS
 
+@INCLUDE wxs_ornt.xci
+
 /* Handle cases in Xt that are a problem because a wxPanel isn't really a wxCanvas */
 @MACRO PANELREDIRECT[x] = if (CHECK_FOR_PANEL((wxObject *)((Scheme_Class_Object *)obj)->primdata)) { <x>; }
 
@@ -52,9 +54,13 @@ static void FillZero(int *a, int *b) {
 @ "warp-pointer" : void WarpPointer(int,int);  : : / PANELREDIRECT[return scheme_void]
 
 @ "scroll" : void Scroll(int,int);
-@ "get-scroll-pos" : int GetScrollPos(int);
-@ "get-scroll-range" : int GetScrollRange(int);
-@ "get-scroll-page" : int GetScrollPage(int);
+@ "get-scroll-pos" : int GetScrollPos(SYM[orientation]);
+@ "get-scroll-range" : int GetScrollRange(SYM[orientation]);
+@ "get-scroll-page" : int GetScrollPage(SYM[orientation]);
+
+@ "set-scroll-pos" : void SetScrollPos(SYM[orientation], int);
+@ "set-scroll-range" : void SetScrollRange(SYM[orientation], int);
+@ "set-scroll-page" : void SetScrollPage(SYM[orientation], int);
 
 @ v "on-scroll" : void OnScroll(wxScrollEvent%); : : / PANELREDIRECT[return scheme_void]
 

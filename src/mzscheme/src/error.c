@@ -783,7 +783,8 @@ static Scheme_Object *error(int argc, Scheme_Object *argv[])
       const char *s;
       int l;
 
-      s = scheme_symbol_name_and_size(argv[0], &l, 0);
+      s = SCHEME_SYM_VAL(argv[0]);
+      l = SCHEME_SYM_LEN(argv[0]);
 
       /* Just a symbol */
       newargs[0] = 
@@ -854,7 +855,7 @@ static Scheme_Object *raise_syntax_error(int argc, Scheme_Object *argv[])
   if (!SCHEME_STRINGP(argv[1]))
     scheme_wrong_type("raise-syntax-error", "string", 1, argc, argv);
 
-  scheme_wrong_syntax(scheme_symbol_name(argv[0]), 
+  scheme_wrong_syntax(SCHEME_SYM_VAL(argv[0]), 
 		      (argc > 3) ? argv[3] : NULL,
 		      (argc > 2) ? argv[2] : NULL,
 		      "%s", SCHEME_STR_VAL(argv[1]));
@@ -865,11 +866,11 @@ static Scheme_Object *raise_syntax_error(int argc, Scheme_Object *argv[])
 static Scheme_Object *raise_type_error(int argc, Scheme_Object *argv[])
 {
   if (!SCHEME_SYMBOLP(argv[0]))
-    scheme_wrong_type("raise-syntax-error", "symbol", 0, argc, argv);
+    scheme_wrong_type("raise-type-error", "symbol", 0, argc, argv);
   if (!SCHEME_STRINGP(argv[1]))
-    scheme_wrong_type("raise-syntax-error", "string", 1, argc, argv);
+    scheme_wrong_type("raise-type-error", "string", 1, argc, argv);
 
-  scheme_wrong_type(scheme_symbol_name(argv[0]),
+  scheme_wrong_type(SCHEME_SYM_VAL(argv[0]),
 		    SCHEME_STR_VAL(argv[1]),
 		    -1, 0, &argv[2]);
 

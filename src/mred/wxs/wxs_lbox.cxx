@@ -550,34 +550,16 @@ static Scheme_Object *os_wxListBoxSetFirstItem(Scheme_Object *obj, int n,  Schem
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   objscheme_check_valid(obj);
-  if ((n >= 1) && objscheme_istype_number(p[0], NULL)) {
-    int x0;
+  int x0;
 
-    
-    if (n != 1) 
-      scheme_wrong_count("set-first-item in list-box% (index case)", 1, 1, n, p);
-    x0 = objscheme_unbundle_integer(p[0], "set-first-item in list-box% (index case)");
+  
+  x0 = objscheme_unbundle_integer(p[0], "set-first-item in list-box%");
 
-    if ((x0 < 0) || (x0 >= THISOBJECT->Number())) return scheme_void;
-    ((wxListBox *)((Scheme_Class_Object *)obj)->primdata)->SetFirstItem(x0);
+  if ((x0 < 0) || (x0 >= THISOBJECT->Number())) return scheme_void;
+  ((wxListBox *)((Scheme_Class_Object *)obj)->primdata)->SetFirstItem(x0);
 
-    
-    
-  } else  {
-    string x0;
-
-    
-    if (n != 1) 
-      scheme_wrong_count("set-first-item in list-box% (string case)", 1, 1, n, p);
-    x0 = (string)objscheme_unbundle_string(p[0], "set-first-item in list-box% (string case)");
-
-    
-    ((wxListBox *)((Scheme_Class_Object *)obj)->primdata)->SetFirstItem(x0);
-
-    
-    
-  }
-
+  
+  
   return scheme_void;
 }
 
@@ -713,7 +695,7 @@ static Scheme_Object *os_wxListBoxSetClientData(Scheme_Object *obj, int n,  Sche
   string x1;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "set-client-data in list-box%");
+  x0 = objscheme_unbundle_integer(p[0], "set-data in list-box%");
   x1 = ((char *)p[1]);
 
   if ((x0 < 0) || (x0 >= THISOBJECT->Number())) return scheme_void;
@@ -733,7 +715,7 @@ static Scheme_Object *os_wxListBoxGetClientData(Scheme_Object *obj, int n,  Sche
   int x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "get-client-data in list-box%");
+  x0 = objscheme_unbundle_integer(p[0], "get-data in list-box%");
 
   if ((x0 < 0) || (x0 >= THISOBJECT->Number())) return XC_SCHEME_NULL;
   r = ((wxListBox *)((Scheme_Class_Object *)obj)->primdata)->GetClientData(x0);
@@ -1098,7 +1080,7 @@ if (os_wxListBox_class) {
  scheme_add_method_w_arity(os_wxListBox_class, "set-string", os_wxListBoxSetString, 2, 2);
  scheme_add_method_w_arity(os_wxListBox_class, "get-string", os_wxListBoxGetString, 1, 1);
  scheme_add_method_w_arity(os_wxListBox_class, "set-string-selection", os_wxListBoxSetStringSelection, 1, 1);
- scheme_add_method(os_wxListBox_class, "set-first-item", os_wxListBoxSetFirstItem);
+ scheme_add_method_w_arity(os_wxListBox_class, "set-first-item", os_wxListBoxSetFirstItem, 1, 1);
  scheme_add_method_w_arity(os_wxListBox_class, "set", os_wxListBoxSet, 1, 1);
  scheme_add_method_w_arity(os_wxListBox_class, "get-selections", os_wxListBoxGetSelectionList, 0, 0);
  scheme_add_method_w_arity(os_wxListBox_class, "get-first-item", os_wxListBoxGetFirstItem, 0, 0);
@@ -1106,8 +1088,8 @@ if (os_wxListBox_class) {
  scheme_add_method_w_arity(os_wxListBox_class, "number", os_wxListBoxNumber, 0, 0);
  scheme_add_method_w_arity(os_wxListBox_class, "get-selection", os_wxListBoxGetSelection, 0, 0);
  scheme_add_method_w_arity(os_wxListBox_class, "find-string", os_wxListBoxFindString, 1, 1);
- scheme_add_method_w_arity(os_wxListBox_class, "set-client-data", os_wxListBoxSetClientData, 2, 2);
- scheme_add_method_w_arity(os_wxListBox_class, "get-client-data", os_wxListBoxGetClientData, 1, 1);
+ scheme_add_method_w_arity(os_wxListBox_class, "set-data", os_wxListBoxSetClientData, 2, 2);
+ scheme_add_method_w_arity(os_wxListBox_class, "get-data", os_wxListBoxGetClientData, 1, 1);
  scheme_add_method_w_arity(os_wxListBox_class, "get-string-selection", os_wxListBoxGetStringSelection, 0, 0);
  scheme_add_method_w_arity(os_wxListBox_class, "selected?", os_wxListBoxSelected, 1, 1);
  scheme_add_method_w_arity(os_wxListBox_class, "set-selection", os_wxListBoxSetSelection, 1, 2);

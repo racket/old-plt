@@ -1,6 +1,7 @@
 (unit/sig drscheme:frame^
   (import [mred : mred^]
 	  [mzlib : mzlib:core^]
+	  [fw : framework^]
 	  [drscheme:unit : drscheme:unit^]
 	  [drscheme:compound-unit : drscheme:compound-unit^]
 	  [drscheme:app : drscheme:app^]
@@ -15,46 +16,24 @@
 	   (override
 
 	     [help-menu:after-about
-	      (let ([help-menu:insert-items
-		     (lambda (items)
-		       (for-each (lambda (x) (apply (ivar (ivar this help-menu) append-item) x))
-				 items))]
-		    [reg (regexp "<TITLE>(.*)</TITLE>")])
-		(lambda (help-menu)
-		  (let* ([dir (with-handlers ([void (lambda (x) #f)]) (collection-path "doc"))])
-		    (if (and dir (directory-exists? dir))
-			(let* ([dirs (directory-list dir)]
-			       [find-title
-				(lambda (name)
-				  (lambda (port)
-				    (let loop ([l (read-line port)])
-				      (if (eof-object? l)
-					  name
-					  (let ([match (regexp-match reg l)])
-					    (if match
-						(cadr match)
-						(loop (read-line port))))))))]
-			       [build-item
-				(lambda (local-dir output)
-				  (let* ([f (build-path dir local-dir "index.htm")])
-				    (if (file-exists? f)
-					(let ([title (call-with-input-file f (find-title local-dir))])
-					  (cons 
-					   (list title
-						 (lambda ()
-						   (let* ([f (make-object mred:hyper-frame:hyper-view-frame%
-							       (string-append "file:" f))])
-						     (send f set-title-prefix title)
-						     f)))
-					   output))
-					output)))]
-			       [item-pairs 
-				(mzlib:function:quicksort
-				 (mzlib:function:foldl build-item null dirs)
-				 (lambda (x y) (string-ci<? (car x) (car y))))])
-			  (unless (null? item-pairs)
-			    (send help-menu append-separator))
-			  (help-menu:insert-items item-pairs))))))]
+	      (lambda (help-menu)
+		(make-object mred:menu-item%
+		  "Help Desk"
+		  help-menu
+		  (lambda (item evt)
+		    (parameterize ([current-namespace (make-namespace)]
+				   [mred:current-eventspace (mred:make-eventspace)]
+				   [current-custodian (make-custodian)])
+		      (let/ec k
+			(for-each
+			 (lambda (filename) (require-library/proc filename "help"))
+			 ((require-library "info.ss" "help")
+			  'mred-libraries
+			  (lambda ()
+			    (mred:message-box "Help Desk"
+					      "Cannot load help desk. info.ss format changed")))))))))]
+			    
+			
 
 	     [root-panel #f]
 	     [make-root-panel
@@ -81,7 +60,7 @@
 	      (lambda (icon string)
 		(let ([p (build-path (collection-path "icons") icon)])
 		  (if (file-exists? p)
-		      (make-object wx:bitmap% p wx:const-bitmap-type-gif)
+		      (make-object mred:bitmap% p 'gif)
 		      string)))]
 	     [currently-running? #f]
 	     [sleepy-bitmap (get-bitmap/string "snoopy-sleepy.gif" "not running")]
@@ -109,7 +88,7 @@
 		       (lambda ()
 			 (send (drscheme:compound-unit:make-compound-unit #f)
 			       create-frame))))]
-	     [file-menu:open (lambda () (mred:open-file) #t)]
+	     [file-menu:open (lambda () (fw:handler:open-file) #t)]
 	     [help-menu:about (lambda () (drscheme:app:about-drscheme))])
 	   
 	   (sequence 

@@ -22,10 +22,10 @@
 	[edit : drscheme:edit^ ((require-relative-library "edit.ss") framework aries zodiac)]
 	[snip : drscheme:snip^ ((require-relative-library "snip.ss") mred)]
 	[export* : drscheme:export^ ((require-relative-library "export.ss")
-				    mred mzlib print-convert app
-				    edit language snip
-				    init interface face
-				    aries zodiac)]
+				     mred mzlib framework print-convert app
+				     edit language snip
+				     init interface face
+				     aries zodiac)]
 	[language : drscheme:language^
 		  ((require-relative-library "language.ss") mred 
 		   (export* unit)

@@ -1,5 +1,6 @@
 (compound-unit/sig (import [mred : mred^]
 			   [mzlib : mzlib:core^]
+			   [framework : framework^]
 			   [print-convert : mzlib:print-convert^]
 			   [app : drscheme:app^]
 			   [edit : drscheme:edit^]
@@ -24,15 +25,15 @@
 		(mzlib function))]
 	[rep : drscheme:rep^
 	     ((require-relative-library "rep.ss")
-	      mred mzlib print-convert zodiac
+	      framework mred mzlib print-convert zodiac
 	      interface init snip language app basis edit)]
 	[frame : drscheme:frame^
 	       ((require-relative-library "frame.ss")
-		mred mzlib unit
-		compound-unit* app zodiac)]
+		mred mzlib framework
+		unit compound-unit* app zodiac)]
 	[unit : drscheme:unit^
 	  ((require-relative-library "unit.ss")
-	   mred mzlib app compound-unit* frame edit rep
+	   mred mzlib framework app compound-unit* frame edit rep
 	   language get/extend face)]
 	[compound-unit* : drscheme:compound-unit^
 	  ((require-relative-library "cunit.ss")

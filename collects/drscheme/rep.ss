@@ -1,7 +1,11 @@
+;; enqueue a low-priority event to put characters in the buffer for
+;; drscheme rather than putting them in directly.
+
 
 (unit/sig drscheme:rep^
   (import [mred : mred^]
 	  [mzlib : mzlib:core^]
+	  [fw : framework^]
 	  [print-convert : mzlib:print-convert^]
 	  [zodiac : drscheme:zodiac^]
 	  [zodiac:interface : drscheme:interface^]
@@ -15,40 +19,37 @@
   (define (printf . args) (apply fprintf drscheme:init:original-output-port args))
 
   ;; keymap stuff that now must be here
-    (define setup-global-scheme-interaction-mode-keymap
-      (lambda (keymap)
-	(keymap:set-keymap-error-handler keymap)
-	(keymap:set-keymap-implied-shifts keymap)
+;    (define setup-global-scheme-interaction-mode-keymap
+;      (lambda (keymap)
+;	(fw:keymap:set-keymap-error-handler keymap)
+;	(fw:keymap:set-keymap-implied-shifts keymap)
 	
-	(send keymap chain-to-keymap global-scheme-mode-keymap #f)
+;	(send keymap chain-to-keymap (fw:keymap:get-global) #f)
 	
-	(send keymap add-key-function "put-previous-sexp"
-	      (lambda (edit event) 
-		(send edit copy-prev-previous-expr)))
-	(send keymap add-key-function "put-next-sexp"
-	      (lambda (edit event) 
-		(send edit copy-next-previous-expr)))
+;	(send keymap add-key-function "put-previous-sexp"
+;	      (lambda (edit event) 
+;		(send edit copy-prev-previous-expr)))
+;	(send keymap add-key-function "put-next-sexp"
+;	      (lambda (edit event) 
+;		(send edit copy-next-previous-expr)))
 	
-	(keymap:send-map-function-meta keymap "p" "put-previous-sexp")
-	(keymap:send-map-function-meta keymap "n" "put-next-sexp")))
+;	(fw:keymap:send-map-function-meta keymap "p" "put-previous-sexp")
+;	(fw:keymap:send-map-function-meta keymap "n" "put-next-sexp")))
 
-    (define global-scheme-interaction-mode-keymap (make-object keymap%))
-    (setup-global-scheme-interaction-mode-keymap global-scheme-interaction-mode-keymap)
+;    (define global-scheme-interaction-mode-keymap (make-object mred:keymap%))
+;    (setup-global-scheme-interaction-mode-keymap global-scheme-interaction-mode-keymap)
 
-
-  (define WELCOME-DELTA (make-object wx:style-delta%
-				     wx:const-change-family
-				     wx:const-decorative))
-  (define CLICK-DELTA (make-object wx:style-delta%))
-  (define RED-DELTA (make-object wx:style-delta%))
+  (define WELCOME-DELTA (make-object mred:style-delta% 'change-family 'decorative))
+  (define CLICK-DELTA (make-object mred:style-delta%))
+  (define RED-DELTA (make-object mred:style-delta%))
   (send* CLICK-DELTA
     (copy WELCOME-DELTA)
     (set-delta-foreground "BLUE")
-    (set-delta wx:const-change-underline #t))
+    (set-delta 'change-underline #t))
   (send* RED-DELTA
     (copy WELCOME-DELTA)
     (set-delta-foreground "RED"))
-  (define WARNING-STYLE-DELTA (make-object wx:style-delta% wx:const-change-bold))
+  (define WARNING-STYLE-DELTA (make-object mred:style-delta% 'change-bold))
   (send* WARNING-STYLE-DELTA
     (set-delta-foreground "BLACK")
     (set-delta-background "YELLOW"))
@@ -109,6 +110,8 @@
 
   (fw:preferences:set-default 'drscheme:repl-always-active #f boolean?)
 
+  (define (show-interactions-history) (mred:message-box "Interactions History" "Not yet implemented"))
+
   (define (make-edit% super%)
     (class super% args
       (inherit insert change-style
@@ -154,7 +157,7 @@
 	   (begin-edit-sequence)
 	   (super-init-transparent-io grab-focus?)
 	   (when  (eq? (current-thread) evaluation-thread)
-	     (set-caret-owner transparent-snip wx:const-focus-display))
+	     (set-caret-owner transparent-snip 'display))
 	   (end-edit-sequence))]
 	[init-transparent-io-do-work
 	 (lambda (grab-focus?)
@@ -198,12 +201,12 @@
 		  [finish (add1 (zodiac:location-offset end-location))]
 		  [file (zodiac:location-file start-location)]
 		  [message
-		   (if (is-a? file wx:media-edit%)
+		   (if (is-a? file mred:text%)
 		       input-string
 		       (string-append (basis:format-source-loc start-location end-location)
 				      input-string))])
 	     (report-unlocated-error message)
-	     (when (is-a? file wx:media-edit%)
+	     (when (is-a? file mred:text%)
 	       (send file begin-edit-sequence)
 	       (send file set-position start finish)
 	       (if (is-a? file edit%)
@@ -271,11 +274,11 @@
 	     (do-many-buffer-evals this start end)))]
 	[cleanup-evaluation
 	 (lambda (thread-to-watch)
-	   (wx:end-busy-cursor)
+	   (mred:end-busy-cursor)
 	   (cleanup-transparent-io)
 	   (send (get-frame) enable-evaluation)
 	   (begin-edit-sequence)	     
-	   (set-caret-owner null wx:const-focus-display)
+	   (set-caret-owner #f 'display)
 
 	   (if (thread-running? thread-to-watch)
 	       (let ([c-locked? locked?])
@@ -298,11 +301,11 @@
 	     (let ([v (if (basis:r4rs-style-printing? user-setting)
 			  v
 			  (print-convert:print-convert v))])
-	       (parameterize ([mzlib:pretty-print@:pretty-print-size-hook
-			       (lambda (x _ port) (and (is-a? x wx:snip%) 1))]
-			      [mzlib:pretty-print@:pretty-print-print-hook
+	       (parameterize ([mzlib:pretty-print:pretty-print-size-hook
+			       (lambda (x _ port) (and (is-a? x mred:snip%) 1))]
+			      [mzlib:pretty-print:pretty-print-print-hook
 			       (lambda (x _ port) (this-result-write x))])
-		 (mzlib:pretty-print@:pretty-print v this-result)))))]
+		 (mzlib:pretty-print:pretty-print v this-result)))))]
 	[display-results
 	 (lambda (anss)
 	   (let ([c-locked? locked?])
@@ -324,7 +327,7 @@
 	     (cleanup-transparent-io)
 	     (reset-pretty-print-width)
 	     (ready-non-prompt)
-	     (wx:begin-busy-cursor)
+	     (mred:begin-busy-cursor)
 	     (when should-collect-garbage?
 	       (set! should-collect-garbage? #f)
 	       (collect-garbage))
@@ -343,7 +346,7 @@
 					[else
 					 (let ([answers (call-with-values
 							 (lambda ()
-							   (dynamic-enable-break
+							   (mzlib:thread:dynamic-enable-break
 							    (lambda ()
 							      (if (basis:setting-use-zodiac? (basis:current-setting))
 								  (basis:syntax-checking-primitive-eval expr)
@@ -381,9 +384,9 @@
 		 (cond
 		  [(or ;(not in-evaluation?)
 		       (not breakable-thread))
-		   (wx:bell)]
+		   (mred:bell)]
 		  [ask-about-kill? 
-		   (if (mred:get-choice
+		   (if (fw:gui-utils:get-choice
 			"Do you want to kill the evaluation?"
 			"Just Break"
 			"Kill"
@@ -477,53 +480,48 @@
 
 	   ;; this semaphore is only used to get time on the user eventspace's
 	   ;; event handling thread
-	   (let ([dummy-s (make-semaphore 0)])
+	   (parameterize ([mred:current-eventspace
+			   ((in-parameterization user-param
+						 mred:current-eventspace))])
+	     (mred:queue-callback
+	      (lambda ()
+		(mzlib:thread:dynamic-disable-break
+		 (lambda ()
+		   (set-box! first-box #f)
+		   (let ([escape-handler
+			  (rec drscheme-error-escape-handler
+			       (lambda ()
+				 (error-escape-k)))])
+		     (error-escape-handler escape-handler)
+		     (basis:bottom-escape-handler escape-handler))
 
-
-	     (parameterize ([wx:current-eventspace
-			     ((in-parameterization user-param
-						   wx:current-eventspace))])
-	       (semaphore-callback
-		dummy-s
-		(lambda ()
-		  (mzlib:function@:dynamic-disable-break
-		   (lambda ()
-		     (set-box! first-box #f)
-		     (let ([escape-handler
-			    (rec drscheme-error-escape-handler
-				 (lambda ()
-				   (error-escape-k)))])
-		       (error-escape-handler escape-handler)
-		       (basis:bottom-escape-handler escape-handler))
-
-		     (set! yield-count 0)
-		     (send (get-frame) not-running)
-		     (set! evaluation-thread (current-thread))
-		     (let loop ()
-		       (unless (semaphore-try-wait? eval-thread-queue-sema)
-			 (fluid-let ([yield-count (+ yield-count 1)])
-			   (wx:yield eval-thread-queue-sema)))
-		       (semaphore-wait eval-thread-state-sema)
-		       (let ([thunk (car eval-thread-thunks)])
-			 (set! eval-thread-thunks (cdr eval-thread-thunks))
-			 (semaphore-post eval-thread-state-sema)
-			 (dynamic-wind
-			  (lambda ()
-			    (semaphore-wait running-semaphore)
-			    (set! evaluation-running #t)
-			    (semaphore-post running-semaphore)
-			    (update-running))
-			  (lambda ()
-			    (with-parameterization drscheme:init:system-parameterization
-			      (lambda ()
-				(thunk))))
-			  (lambda ()
-			    (semaphore-wait running-semaphore)
-			    (set! evaluation-running #f)
-			    (semaphore-post running-semaphore)
-			    (update-running))))
-		       (loop))))))
-	       (semaphore-post dummy-s))))])
+		   (set! yield-count 0)
+		   (send (get-frame) not-running)
+		   (set! evaluation-thread (current-thread))
+		   (let loop ()
+		     (unless (semaphore-try-wait? eval-thread-queue-sema)
+		       (fluid-let ([yield-count (+ yield-count 1)])
+			 (mred:yield eval-thread-queue-sema)))
+		     (semaphore-wait eval-thread-state-sema)
+		     (let ([thunk (car eval-thread-thunks)])
+		       (set! eval-thread-thunks (cdr eval-thread-thunks))
+		       (semaphore-post eval-thread-state-sema)
+		       (dynamic-wind
+			(lambda ()
+			  (semaphore-wait running-semaphore)
+			  (set! evaluation-running #t)
+			  (semaphore-post running-semaphore)
+			  (update-running))
+			(lambda ()
+			  (with-parameterization drscheme:init:system-parameterization
+			    (lambda ()
+			      (thunk))))
+			(lambda ()
+			  (semaphore-wait running-semaphore)
+			  (set! evaluation-running #f)
+			  (semaphore-post running-semaphore)
+			  (update-running))))
+		     (loop))))))))])
 
 	(private
 	  [running-semaphore (make-semaphore 1)]
@@ -649,9 +647,9 @@
 			(if (or (eq? port this-result)
 				(eq? port this-out)
 				(eq? port this-err))
-			    (parameterize ([mzlib:pretty-print@:pretty-print-size-hook
-					    (lambda (x _ port) (and (is-a? x wx:snip%) 1))]
-					   [mzlib:pretty-print@:pretty-print-print-hook
+			    (parameterize ([mzlib:pretty-print:pretty-print-size-hook
+					    (lambda (x _ port) (and (is-a? x mred:snip%) 1))]
+					   [mzlib:pretty-print:pretty-print-print-hook
 					    (lambda (x _ port)
 					      (evcase port
 						[this-result (this-result-write x)]
@@ -662,7 +660,7 @@
 
 		   (print-convert:current-print-convert-hook
 		    (lambda (expr basic-convert sub-convert)
-		      (let ([ans (if (is-a? expr wx:snip%)
+		      (let ([ans (if (is-a? expr mred:snip%)
 				     expr
 				     (basic-convert expr))])
 			ans)))
@@ -731,7 +729,7 @@
 			    (let*-values ([(filename) (send (ivar (get-frame) definitions-edit)
 							    get-filename)]
 					  [(normalized) (if (string? filename)
-							    (mzlib:file@:normalize-path filename)
+							    (mzlib:file:normalize-path filename)
 							    (k first-dir))]
 					  [(base _1 _2) (split-path normalized)])
 			      (or base 
@@ -747,12 +745,12 @@
 		   ;; so that the parameters are set in the eventspace's
 		   ;; parameterization
 		   (let* ([user-eventspace #f]
-			  [primitive-dispatch-handler (wx:event-dispatch-handler)]
+			  [primitive-dispatch-handler (mred:event-dispatch-handler)]
 			  [frame (get-frame)]
 			  [running-flag-on? #f]
 			  [event-semaphore (make-semaphore 0)]
 
-			  [ht (make-hash-table-weak)] ;; maps eventspaces to depth of nested wx:yields (ints)
+			  [ht (make-hash-table-weak)] ;; maps eventspaces to depth of nested mred:yields (ints)
 
 			  [first-box (box #t)]
 
@@ -765,10 +763,10 @@
 				    (update-running)
 				    (f))))
 
-		     (wx:event-dispatch-handler
+		     (mred:event-dispatch-handler
 		      (rec drscheme-event-dispatch-handler
 			   (lambda (eventspace)
-			     (mzlib:function@:dynamic-disable-break
+			     (mzlib:thread:dynamic-disable-break
 			      (lambda ()
 				(when (and (eq? eventspace user-eventspace)
 					   (not (unbox first-box)))
@@ -785,7 +783,7 @@
 				  (protect-user-evaluation
 				   void
 				   (lambda ()
-				     (dynamic-enable-break
+				     (mzlib:thread:dynamic-enable-break
 				      (lambda ()
 					(primitive-dispatch-handler eventspace)))))
 
@@ -796,8 +794,8 @@
 				  (semaphore-post running-semaphore)
 				  (update-running)))))))
 
-		     (set! user-eventspace (wx:make-eventspace))
-		     (wx:current-eventspace user-eventspace)
+		     (set! user-eventspace (mred:make-eventspace))
+		     (mred:current-eventspace user-eventspace)
 		     (init-evaluation-thread p first-box)
 
 		     ;; this subterfuge with the extra variable indirection is necessary
@@ -843,7 +841,7 @@
   
   (define separator-snipclass
     (make-object
-     (class-asi wx:snip-class%
+     (class-asi mred:snip-class%
        (public
 	 [read (lambda (s) 
 		 (let ([size-box (box 0)])
@@ -852,13 +850,13 @@
   (send* separator-snipclass
     (set-version 1)
     (set-classname "mred:sepatator-snip%"))
-  (send (wx:get-the-snip-class-list) add separator-snipclass)
+  (send (mred:get-the-snip-class-list) add separator-snipclass)
   
   ;; the two numbers 1 and 2 which appear here are to line up this snip
   ;; with the embedded snips around it in the drscheme rep.
   ;; I have no idea where the extra pixels are going.
   (define separator-snip%
-    (class wx:snip% ()
+    (class mred:snip% ()
       (inherit get-style set-snipclass set-flags get-flags get-admin)
       (private [width 500]
 	       [height 1]
@@ -875,7 +873,7 @@
 	   (for-each (lambda (box) (unless (null? box) (set-box! box 0)))
 		     (list descent-box space-box lspace-box rspace-box))
 	   (let* ([admin (get-admin)]
-		  [reporting-media (send admin get-media)]
+		  [reporting-media (send admin get-text)]
 		  [reporting-admin (send reporting-media get-admin)]
 		  [widthb (box 0)]
 		  [space 2])
@@ -889,10 +887,10 @@
 	   (unless (null? h-box)
 	     (set-box! h-box (+ (* 2 white-around) height))))]
 	[draw
-	 (let* ([body-pen (send wx:the-pen-list find-or-create-pen
-				"BLUE" 0 wx:const-solid)]
-		[body-brush (send wx:the-brush-list find-or-create-brush
-				  "BLUE" wx:const-solid)])
+	 (let* ([body-pen (send mred:the-pen-list find-or-create-pen
+				"BLUE" 0 'solid)]
+		[body-brush (send mred:the-brush-list find-or-create-brush
+				  "BLUE" 'solid)])
 	   (lambda (dc x y left top right bottom dx dy drawCaret)
 	     (let ([orig-pen (send dc get-pen)]
 		   [orig-brush (send dc get-brush)])
@@ -906,27 +904,11 @@
 	       (send dc set-brush orig-brush))))]
 	[get-text
 	 (opt-lambda (offset num [flattened? #f])
-	   "1")])
+	   "separator-snip")])
       (sequence
 	(super-init)
-	(set-flags (bitwise-ior (get-flags) wx:const-snip-hard-newline))
+	(set-flags (cons 'hard-newline (get-flags)))
 	(set-snipclass separator-snipclass))))
-  
-  (define make-scheme-mode-edit%
-    (lambda (super%)
-      (class super% args
-	(inherit set-mode)
-	(public
-	  [get-insert-edit
-	   (lambda () (make-object wx:media-snip%
-				   (make-object scheme-mode-edit%)))])
-	(sequence
-	  (mred:debug:printf 'super-init "before scheme-mode-edit%")
-	  (apply super-init args)
-	  (mred:debug:printf 'super-init "before scheme-mode-edit%")
-	  (set-mode (make-object mred:scheme-mode:scheme-mode%))))))
-  
-  (define scheme-mode-edit% (make-scheme-mode-edit% mred:edit:backup-autosave-edit%))
   
   (define make-single-threader
     (lambda ()
@@ -942,10 +924,10 @@
 		     (lambda (l)
 		       (and (list? l)
 			    (andmap p? l))))]
-	 [snip/string? (lambda (s) (or (is-a? s wx:snip%) (string? s)))]
+	 [snip/string? (lambda (s) (or (is-a? s mred:snip%) (string? s)))]
 	 [list-of-snip/strings? (list-of? snip/string?)]
 	 [list-of-lists-of-snip/strings? (list-of? list-of-snip/strings?)])
-    (mred:preferences:set-preference-default
+    (fw:preferences:set-default
      'mred:console-previous-exprs
      null
      list-of-lists-of-snip/strings?))
@@ -953,21 +935,21 @@
 	 (lambda (ls)
 	   (and (list? ls)
 		(andmap (lambda (s)
-			  (is-a? s wx:text-snip%))
+			  (is-a? s mred:string-snip%))
 			ls)))]
 	[marshall 
 	 (lambda (lls)
 	   (map (lambda (ls)
 		  (map (lambda (s)
 			 (cond
-			   [(is-a? s wx:text-snip%)
+			   [(is-a? s mred:string-snip%)
 			    (send s get-text 0 (send s get-count))]
 			   [(string? s) s]
 			   [else "'non-text-snip"]))
 		       ls))
 		lls))]
 	[unmarshall (lambda (x) x)])
-    (mred:preferences:set-preference-un/marshall
+    (fw:preferences:set-un/marshall
      'mred:console-previous-exprs
      marshall unmarshall))
   
@@ -987,7 +969,7 @@
 				   current-exception-handler
 				   parameterization-branch-handler)))
       (lambda ()
-	(mzlib:function:dynamic-disable-break f))))
+	(mzlib:thread:dynamic-disable-break f))))
   
   (define (dynamic-not-killable c needs-break? f)
     ; Assume breaking is currently disabled
@@ -1032,8 +1014,8 @@
 			     (break-thread t)
 			     (kill-t2)
 			     (raise x))])
-	     (wx:yield t-done))
-	  (wx:yield t-done))
+	     (mred:yield t-done))
+	  (mred:yield t-done))
       (kill-t2)
       result))
 
@@ -1069,17 +1051,17 @@
 	  [orig-stderr (current-error-port)])
 	(public
 	  
-	  [normal-font wx:const-modern]
-	  [normal-delta null]
-	  [output-delta (make-object wx:style-delta%
-				     wx:const-change-weight
-				     wx:const-bold)]
-	  [result-delta (make-object wx:style-delta%
-				     wx:const-change-weight
-				     wx:const-bold)]
-	  [error-delta (make-object wx:style-delta%
-				    wx:const-change-style
-				    wx:const-slant)])
+	  [normal-font 'modern]
+	  [normal-delta #f]
+	  [output-delta (make-object mred:style-delta%
+				     'change-weight
+				     'bold)]
+	  [result-delta (make-object mred:style-delta%
+				     'change-weight
+				     'bold)]
+	  [error-delta (make-object mred:style-delta%
+				    'change-style
+				    'slant)])
 	
 	(sequence
 	  (let ([mult (send error-delta get-foreground-mult)]
@@ -1147,7 +1129,7 @@
 		       (super start len)
 		       '(begin
 			  (when needs-to-move
-			    (wx:message-box "needs to move already #t!!" "Internal Error"))
+			    (mred:message-box "Internal Error" "needs to move already #t!!"))
 			  (newline)
 			  (newline)
 			  (set! needs-to-move #t)
@@ -1158,7 +1140,7 @@
 			  '(fprintf mred:constants:original-output-port 
 				    "left ~a right ~a~n" left right)
 			  (set! needs-to-move-original
-				(let loop ([snip (find-snip left wx:const-snip-after)])
+				(let loop ([snip (find-snip left mred:const-snip-after)])
 				  (cond
 				    [(null? snip) null]
 				    [(< (get-snip-position snip) right)
@@ -1176,7 +1158,6 @@
 			    (and prompt-mode? (< start prompt-position))))
 	       (set! prompt-position (combine prompt-position len)))
 	     (when needs-to-move
-	       '(wx:message-box (format "1 prompt-position ~a" prompt-position))
 	       (set! needs-to-move #f)
 	       (set! needs-to-move-right (combine needs-to-move-right len))
 	       (split-snip needs-to-move-left)
@@ -1185,24 +1166,19 @@
 		     [end-selection (get-end-position)]
 		     [delta (- prompt-position needs-to-move-left)])
 		 (set! moving-down? #t)
-		 (let loop ([snip (find-snip needs-to-move-left wx:const-snip-after)])
-		   '(wx:message-box (format "2 prompt-position ~a" prompt-position))
+		 (let loop ([snip (find-snip needs-to-move-left 'after)])
 		   (cond
 		     [(null? snip) (void)]
 		     [(< (get-snip-position snip) needs-to-move-right)
 		      (insert (send snip copy) (last-position) (last-position) #t)
 		      (loop (send snip next))]
 		     [else (void)]))
-		 '(wx:message-box (format "3 prompt-position ~a" prompt-position))
 		 (delete needs-to-move-left needs-to-move-right #f)
-		 (wx:message-box (format "4 prompt-position ~a" prompt-position))
 		 (for-each (lambda (s) 
 			     '(fprintf mred:constants:original-output-port 
 				       "copy: ~s~n" (send s get-text 0 10000))
-			     (insert (send s copy) needs-to-move-left needs-to-move-left #f)
-			     '(wx:message-box "inserted one"))
+			     (insert (send s copy) needs-to-move-left needs-to-move-left #f))
 			   needs-to-move-original)
-		 (wx:message-box (format "5 prompt-position ~a" prompt-position))
 		 (set-position (+ start-selection delta)
 			       (+ end-selection delta)))
 	       (set! moving-down? #f)
@@ -1315,7 +1291,7 @@
 				 [c-locked? (ivar edit locked?)])
 			     (send edit lock #f)
 			     (send edit insert
-				   (if (is-a? s wx:snip%)
+				   (if (is-a? s mred:snip%)
 					 (send s copy)
 					 s))
 			     (let ([end (send edit last-position)])
@@ -1487,9 +1463,8 @@
 		(lambda ()
 
 		  ;; ensure that there is a newline before the snip is inserted
-		  (when (zero? (bitwise-and wx:const-snip-hard-newline
-					      (send (find-snip (last-position) wx:const-snip-before)
-						    get-flags)))
+		  (unless (zero? (member 'hard-newline
+					 (send (find-snip (last-position) 'before) get-flags)))
 		    (insert #\newline (last-position) (last-position)))
 		      
 		  (when starting-at-prompt-mode?
@@ -1498,7 +1473,7 @@
 		  (unless transparent-edit
 		    (printf "transparent-edit is ~a!" transparent-edit))
 		  (send transparent-edit set-auto-set-wrap #t)
-		  (let ([snip (make-object wx:media-snip% transparent-edit)])
+		  (let ([snip (make-object mred:string-snip% transparent-edit)])
 		    (set! transparent-snip snip)
 		    (insert snip (last-position) (last-position))
 		    (insert (string #\newline) (last-position) (last-position))
@@ -1552,7 +1527,7 @@
 	     (set! previous-expr-positions null))]
 	  [copy-previous-expr
 	   (lambda (which)
-	     (let ([snip/strings (list-ref (mred:preferences:get-preference
+	     (let ([snip/strings (list-ref (fw:preferences:get
 					    'mred:console-previous-exprs) 
 					   which)])
 	       (begin-edit-sequence)
@@ -1560,7 +1535,7 @@
 		 (insert-prompt))
 	       (delete prompt-position (last-position) #f)
 	       (for-each (lambda (snip/string)
-			   (insert (if (is-a? snip/string wx:snip%)
+			   (insert (if (is-a? snip/string mred:snip%)
 				       (send snip/string copy)
 				       snip/string)
 				   prompt-position))
@@ -1569,7 +1544,7 @@
 	       (end-edit-sequence)))]
 	  [copy-next-previous-expr
 	   (lambda ()
-	     (let ([previous-exprs (mred:preferences:get-preference 'mred:console-previous-exprs)])
+	     (let ([previous-exprs (fw:preferences:get 'mred:console-previous-exprs)])
 	       (unless (null? previous-exprs)
 		 (set! previous-expr-pos
 		       (if (< (add1 previous-expr-pos) (length previous-exprs))
@@ -1578,7 +1553,7 @@
 		 (copy-previous-expr previous-expr-pos))))]
 	  [copy-prev-previous-expr
 	   (lambda ()
-	     (let ([previous-exprs (mred:preferences:get-preference 'mred:console-previous-exprs)])
+	     (let ([previous-exprs (fw:preferences:get 'mred:console-previous-exprs)])
 	       (unless (null? previous-exprs)
 		 (set! previous-expr-pos
 		       (if (<= previous-expr-pos 0)
@@ -1591,9 +1566,7 @@
 	     (split-snip start)
 	     (split-snip end)
 	     (let ([snips
-		    (let loop ([snip 
-				(find-snip start
-					   wx:const-snip-after-or-null)]
+		    (let loop ([snip (find-snip start 'after-or-none)]
 			       [snips null])
 		      (cond
 			[(null? snip) snips]
@@ -1603,7 +1576,7 @@
 			[else snips]))])
 	       (set! previous-expr-positions (cons (cons start end) previous-expr-positions))
 	       (set! previous-expr-pos -1)
-	       (let* ([previous-exprs (mred:preferences:get-preference 'mred:console-previous-exprs)]
+	       (let* ([previous-exprs (fw:preferences:get 'mred:console-previous-exprs)]
 		      [new-previous-exprs 
 		       (let* ([trimmed-previous-exprs
 			       (if (>= (length previous-exprs) console-max-save-previous-exprs)
@@ -1613,7 +1586,7 @@
 			   (if (null? l)
 			       (list snips)
 			       (cons (car l) (loop (cdr l))))))])
-		 (mred:preferences:set-preference 'mred:console-previous-exprs new-previous-exprs))
+		 (fw:preferences:set 'mred:console-previous-exprs new-previous-exprs))
 	       (do-eval start end)))]
 	  
 	  [reset-pretty-print-width
@@ -1640,7 +1613,7 @@
 	   (lambda (start end)
 	     (reset-pretty-print-width)
 	     (do-pre-eval)
-	     (mred:gui-utils:local-busy-cursor
+	     (fw:gui-utils:local-busy-cursor
 	      (get-canvas)
 	      (lambda ()
 		(eval-and-display (get-text start end #t))))
@@ -1671,33 +1644,31 @@
 	       '(begin-edit-sequence)
 	       (parameterize 
 		   ([mzlib:pretty-print:pretty-print-size-hook
-		     (lambda (x _ port) (and (is-a? x wx:snip%) 1))]
+		     (lambda (x _ port) (and (is-a? x mred:snip%) 1))]
 		    [mzlib:pretty-print:pretty-print-print-hook
 		     (lambda (x _ port) (this-result-write x))])
 		 (mzlib:pretty-print:pretty-print v this-result))
 	       '(end-edit-sequence)))]
 	  [eval-and-display
 	   (lambda (str)
-	     (catch-errors
-	      #f
-	      (lambda () #f)
-	      (call-with-values 
-	       (lambda ()
-		 (dynamic-enable-break
-		  (lambda ()
-		    (eval-str str))))
-	       (lambda v
-		 (let ([v
-			(let loop ([v v])
-			  (cond
+	     (with-handlers ([(lambda (x) #t) (lambda (x) #f)])
+	       (call-with-values 
+		(lambda ()
+		  (mzlib:thread:dynamic-enable-break
+		   (lambda ()
+		     (eval-str str))))
+		(lambda v
+		  (let ([v
+			 (let loop ([v v])
+			   (cond
 			    [(null? v) null]
 			    [(void? (car v)) (loop (cdr v))]
 			    [else (cons (car v) (loop (cdr v)))]))])
-		   (if (null? v)
-		       (void)
-		       (for-each (lambda (x)
-				   (display-result x))
-				 v)))))))])
+		    (if (null? v)
+			(void)
+			(for-each (lambda (x)
+				    (display-result x))
+				  v)))))))])
 	
 	(private
 	  [only-spaces-after
@@ -1725,7 +1696,7 @@
 		    (lambda (start end)
 		      (split-snip start)
 		      (split-snip end)
-		      (let loop ([snip (find-snip start wx:const-snip-after)])
+		      (let loop ([snip (find-snip start 'after)])
 			(cond
 			  [(null? snip) (void)]
 			  [(< (get-snip-position snip) end)
@@ -1749,7 +1720,7 @@
 		 [(and (< prompt-position start)
 		       (only-spaces-after start)
 		       (not (eval-busy?)))
-		  (let ([balanced? (mred:scheme-paren:scheme-balanced?
+		  (let ([balanced? (fw:scheme-paren:balanced?
 				    this
 				    prompt-position
 				    last)])
@@ -1761,7 +1732,7 @@
 			(super-on-local-char key)))]
 		 [(< start prompt-position)
 		  (let ([match
-			    (mred:scheme-paren:scheme-backward-match
+			    (fw:scheme-paren:backward-match
 			     this start 0)])
 		    (if match
 			(begin
@@ -1821,7 +1792,7 @@
 		(reset-console-locations))
 	      'reset-console-locations))]
 	  [reset-console
-	   (let* ([delta (make-object wx:style-delta%)]
+	   (let* ([delta (make-object mred:style-delta%)]
 		  [color-add (send delta get-foreground-add)]
 		  [color-mult (send delta get-foreground-mult)])
 	     (send color-mult set 0 0 0)
@@ -1831,7 +1802,7 @@
 	       (when (number? prompt-position)
 		 (set! reset-console-end-position prompt-position))
 	       (set-resetting #t)
-	       (if (< (wx:display-depth) 8)
+	       (if (< (mred:get-display-depth) 8)
 		   (begin (reset-console-locations)
 			  (send (get-canvas) force-redraw))
 		   (when (and reset-console-end-position
@@ -1853,21 +1824,18 @@
 		   (let* ([old-pen (send dc get-pen)]
 			  [old-brush (send dc get-brush)]
 			  [old-logical (send dc get-logical-function)]
-			  [pen (send wx:the-pen-list
+			  [pen (send mred:the-pen-list
 				     find-or-create-pen
 				     "BLACK" 0
-				     wx:const-transparent)]
-			  [brush (make-object wx:brush% "BLACK" 
-					      wx:const-stipple)]
+				     'transparent)]
+			  [brush (make-object mred:brush% "BLACK" 'solid)]
 			  [x dx]
 			  [y (+ dy reset-console-start-location)]
 			  [width (let ([b (box 0)])
 				   (get-extent b null)
 				   (max 0 (unbox b)))])
-		     (send brush set-stipple (mred:icon:get-reset-console-bitmap))
 		     (send dc set-pen pen)
 		     (send dc set-brush brush)
-		     (send dc set-logical-function wx:const-xor)
 		     (send dc draw-rectangle x y width height)
 		     (send dc set-pen old-pen)
 		     (send dc set-brush old-brush)
@@ -1902,10 +1870,6 @@
 	  [this-in (make-this-in)]
 	  [set-display/write-handlers
 	   (lambda ()
-	     (let/ec k
-	   
-	       (mred:debug:when 'no-takeover (k (void))) ;; debugging mode, jump out
-
 	       (for-each (lambda (port port-out-write)
 			   (let ([original-write-handler (port-write-handler port)]
 				 [original-display-handler (port-display-handler port)]
@@ -1921,7 +1885,7 @@
 						    (symbol? v))
 						(original v p)
 						(parameterize ([mzlib:pretty-print:pretty-print-size-hook
-								(lambda (x _ port) (and (is-a? x wx:snip%) 1))]
+								(lambda (x _ port) (and (is-a? x mred:snip%) 1))]
 							       [mzlib:pretty-print:pretty-print-print-hook
 								(lambda (x _ port) (port-out-write x))])
 						  (pretty v p 'infinity)))))))])
@@ -1932,13 +1896,9 @@
 					    mzlib:pretty-print:pretty-print
 					    original-write-handler)))
 			 (list this-out this-err this-result)
-			 (list this-out-write this-err-write this-result-write))))]
+			 (list this-out-write this-err-write this-result-write)))]
 	  [takeover
 	   (lambda ()
-	     (let/ec k
-
-	       ;; jump out, only in debugging mode
-	       (mred:debug:when 'no-takeover (k (void)))
 	       
 	       (error-display-handler
 		(let ([old (error-display-handler)])
@@ -1953,17 +1913,14 @@
 	       (mzlib:pretty-print:pretty-print-display-string-handler 
 		(lambda (string port)
 		  (for-each (lambda (x) (write-char x port))
-			    (string->list string))))))])
+			    (string->list string)))))])
 	(sequence
-	  (mred:debug:printf 'super-init "before console-edit%")
-	  (apply super-init args)
-	  (mred:debug:printf 'super-init "after console-edit%"))
+	  (apply super-init args))
 	(sequence
-	  (set-mode (make-object mred:scheme-mode:scheme-interaction-mode%))
 	  (takeover)
 	  (set-display/write-handlers)))))
   
-  (define console-edit% (make-console-edit% mred:edit:backup-autosave-edit%))
+  (define console-edit% (make-console-edit% fw:text:backup-autosave%))
 
   (define make-transparent-io-edit%
     (lambda (super%)
@@ -1976,7 +1933,7 @@
 	(rename [super-on-insert on-insert]
 		[super-on-local-char on-local-char])
 	(private
-	  [input-delta (make-object wx:style-delta%)]
+	  [input-delta (make-object mred:style-delta%)]
 	  [data null])
 	(sequence
 	  (let ([mult (send input-delta get-foreground-mult)]
@@ -2004,7 +1961,7 @@
 	     (set! shutdown? #t)
 	     '(lock #t))]
 	  [consumed-delta 
-	   (make-object wx:style-delta% wx:const-change-bold)]
+	   (make-object mred:style-delta% 'change-bold)]
 	  [mark-consumed
 	   (lambda (start end)
 	     (flush-console-output)
@@ -2015,7 +1972,7 @@
 	     (set-prompt-position end))]
 	  [fetch-sexp
 	   (lambda ()
-	     (set-cursor ibeam-cursor)
+	     (set-cursor (make-object mred:cursor% 'ibeam))
 	     (flush-console-output)
 	     (let loop ()
 	       (let ([yield/loop? #f]
@@ -2046,7 +2003,7 @@
 		     [yield/loop?
 		      ((with-handlers ([exn:misc:user-break?
 				       (lambda (x) void)])
-		         (dynamic-enable-break (lambda () (wx:yield wait-for-sexp)))
+		         (mzlib:thread:dynamic-enable-break (lambda () (mred:yield wait-for-sexp)))
 			 loop))]
 		     [answer answer]
 		     [else (void)])
@@ -2087,7 +2044,7 @@
 		     [third-case?
 		      ((with-handlers ([exn:misc:user-break?
 					(lambda (x) void)])
-		        (dynamic-enable-break (lambda () (wx:yield wait-for-sexp)))
+		        (mzlib:thread:dynamic-enable-break (lambda () (mred:yield wait-for-sexp)))
 			loop))])))))]
 	  [takeover void]
 	  [get-prompt (lambda () "")]
@@ -2107,7 +2064,7 @@
 		      (cond
 			[(< pos end) 
 			 (let ([next-sexp
-				(mred:scheme-paren:scheme-forward-match
+				(fw:scheme-paren:forward-match
 				 this pos end)])
 			   (cons (cons pos next-sexp)
 				 (loop next-sexp)))]
@@ -2123,6 +2080,6 @@
   (define transparent-io-edit% 
     (make-transparent-io-edit%
      (make-console-edit%
-      mred:edit:searching-edit%)))
+      fw:text:searching%)))
   
-  (define edit% (make-edit% scheme:text-edit%)))
+  (define edit% (make-edit% fw:scheme:text%)))

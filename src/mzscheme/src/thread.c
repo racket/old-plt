@@ -4290,7 +4290,7 @@ static void *splice_ptr_array(void **a, int al, void **b, int bl, int i)
 
 static void set_wait_target(Waiting *waiting, int i, Scheme_Object *target, 
 			    Scheme_Object *wrap, Scheme_Object *nack, 
-			    int repost)
+			    int repost, int retry)
 /* Not ready, deferred to target. */
 {
   Waitable_Set *waitable_set = waiting->set;
@@ -4329,7 +4329,7 @@ static void set_wait_target(Waiting *waiting, int i, Scheme_Object *target,
     waiting->reposts[i] = 1;
   }
 
-  if (SCHEME_WAITSETP(target)) {
+  if (SCHEME_WAITSETP(target) && retry) {
     /* Flatten the set into this one */
     Waitable_Set *wts = (Waitable_Set *)target;
     if (wts->argc == 1) {
@@ -4400,7 +4400,7 @@ void scheme_set_wait_target(Scheme_Schedule_Info *sinfo, Scheme_Object *target,
 			    int repost, int retry)
 {
   set_wait_target((Waiting *)sinfo->current_waiting, sinfo->w_i,
-		  target, wrap, nack, repost);
+		  target, wrap, nack, repost, retry);
   if (retry) {
     /* Rewind one step to try new ones (or continue
        if the set was empty). */
@@ -4500,7 +4500,7 @@ static int waiting_ready(Scheme_Object *s, Scheme_Schedule_Info *sinfo)
       Scheme_Object *sema;
       
       sema = get_sema(o, &repost);
-      set_wait_target(waiting, i, sema, o, NULL, repost);
+      set_wait_target(waiting, i, sema, o, NULL, repost, 1);
       j--; /* try again with this sema */
     }
   }

@@ -24,6 +24,7 @@ static const char sccsid[] = "%W% %G%";
 #include "wx_main.h"
 #include "wx_menu.h"
 #include "wxTimeScale.h"
+#include "wx_macevents.h"
 #ifndef OS_X
   #include <QuickDraw.h>
 #endif
@@ -1084,10 +1085,22 @@ static void SendEnterLeaveEvent(wxWindow *target, int eventtype, wxWindow *evtsr
    }
 }
 
-extern int QueueMrEdEvent(EventRecord *e);
-
 static void QueueLeaveEvent(wxWindow *target, wxWindow *evtsrc, wxMouseEvent *evt)
 {
+#ifdef OS_X
+	EventRef e;
+
+	// result ignored:
+	CreateEvent(NULL, // default allocator
+   				kEventClassMrEd,
+   				kEventMrEdLeave,
+   				TicksToEventTime(UNSCALE_TIMESTAMP(evt->timeStamp)),
+   				kEventAttributeUserEvent,
+   				&e);
+   	// result ignored:
+	QueueMrEdCarbonEvent(e);
+	ReleaseEvent(e);
+#else
    EventRecord e;
    
    int clientHitX = (int)(evt->x);
@@ -1106,6 +1119,7 @@ static void QueueLeaveEvent(wxWindow *target, wxWindow *evtsrc, wxMouseEvent *ev
                   + (evt->rightDown ? cmdKey : 0));
                   
    QueueMrEdEvent(&e);
+#endif   
 }
 
 Bool doCallPreMouseEvent(wxWindow *in_win, wxWindow *win, wxMouseEvent *evt)

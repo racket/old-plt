@@ -223,8 +223,6 @@ wxDialogBox::wxDialogBox // Constructor (for dialog window)
   cFrame->GetClientSize(&w, &h);
   SetSize(-1, -1, w, h, 0x70);
   
-  fprintf(stderr,"That frame was a dialog box.\n");
-  
   __type = wxTYPE_DIALOG_BOX;
   
   wx_cursor = wxSTANDARD_CURSOR;
@@ -266,12 +264,15 @@ extern "C" {
 
 static int navinited = 0;
 
+#ifndef OS_X
 extern void QueueMrEdEvent(EventRecord *e);
+#endif
 
 static pascal void EventFilter(NavEventCallbackMessage callBackSelector,
                                NavCBRecPtr callBackParms, 
                                void *callBackUD)
 {
+#ifndef OS_X
   /* Essentially copied from Inside Macintosh: */
     switch (callBackSelector)
     {
@@ -284,6 +285,7 @@ static pascal void EventFilter(NavEventCallbackMessage callBackSelector,
 		    }
             break;
     }
+#endif            
 }
 
 #endif

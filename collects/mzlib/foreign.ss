@@ -74,6 +74,11 @@
 ;; ----------------------------------------------------------------------------
 ;; C integer types
 
+(define* _sint8 _sint8)
+(define* _sint16 _sint16)
+(define* _sint32 _sint32)
+(define* _sint64 _sint64)
+
 ;; _byte etc is a convenient name for _uint8 & _sint8
 ;; (_byte is unsigned)
 (define* _byte  _uint8)

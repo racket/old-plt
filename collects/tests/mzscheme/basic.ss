@@ -935,6 +935,19 @@
 (test "My Casa" regexp-replace r2 "Mi Casa" insert)
 (test "my cerveza Mi Mi Mi" regexp-replace r2 "mi cerveza Mi Mi Mi" insert)
 (test "my cerveza My Mi Mi" regexp-replace* r2 "mi cerveza Mi Mi Mi" insert)
+(test "bbb" regexp-replace* "a" "aaa" "b")
+
+;; Test regexp with null chars:
+(let* ([s (string #\a #\b #\nul #\c)]
+       [3s (string-append s s s)])
+  (test #f regexp-match (string #\nul) "no nulls")
+  (test (list s) regexp-match s s)
+  (test (list 3s s) regexp-match (format "(~a)*" s) 3s)
+  (test (list (string #\b #\nul #\c)) regexp-match (string #\[ #\nul #\b #\] #\* #\c) s)
+  (test (list (string #\a #\b #\nul)) regexp-match (string #\a #\[ #\b #\nul #\] #\+) s)
+  (test "hihihi" regexp-replace* (string #\nul) (string #\nul #\nul #\nul) "hi"))
+(test (string #\- #\nul #\+ #\- #\nul #\+ #\- #\nul #\+)
+      regexp-replace* "a" "aaa" (string #\- #\nul #\+))
 
 (define (test-bad-re-args who)
   (error-test `(,who 'e "hello"))

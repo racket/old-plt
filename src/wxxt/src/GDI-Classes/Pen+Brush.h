@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Pen+Brush.h,v 1.4 1999/11/18 16:35:07 mflatt Exp $
+ * $Id: Pen+Brush.h,v 1.5 1999/11/28 17:12:50 mflatt Exp $
  *
  * Purpose: pen and brush classes needed for drawing
  *
@@ -64,8 +64,8 @@ private:
 class wxPen : public wxObject { // pen representation
 public:
     wxPen(void);
-    wxPen(wxColour* col, int width, int style);
-    wxPen(const char *col, int width, int style);
+    wxPen(wxColour* col, float width, int style);
+    wxPen(const char *col, float width, int style);
     ~wxPen(void);
 
     int       GetCap(void)          { return cap; }
@@ -74,7 +74,8 @@ public:
     int       GetJoin(void)         { return join; }
     wxBitmap  *GetStipple(void)     { return stipple; }
     int       GetStyle(void)        { return style; }
-    int       GetWidth(void)        { return width; }
+    int       GetWidth(void)        { return (int)width; }
+    float     GetWidthF(void)       { return width; }
 
     void SetCap(int c)                     { cap = c; }
     void SetColour(wxColour* col)          { colour->CopyFrom(col); }
@@ -84,7 +85,7 @@ public:
     void SetJoin(int j)                    { join = j; }
     void SetStipple(wxBitmap *s);
     void SetStyle(int s)                   { style = s; }
-    void SetWidth(int w)                   { width = w; }
+    void SetWidth(float w)                 { width = w; }
 
     inline Bool  IsMutable(void)          { return !locked; }
     inline void  Lock(int d)              { locked += d; colour->Lock(d); }
@@ -93,7 +94,7 @@ private:
     int       nb_dash;
     wxDash    *dash;
     wxColour  *colour;
-    int       width;
+    float     width;
     int       locked;
     short      style;
     int       join;
@@ -119,8 +120,8 @@ public:
     ~wxPenList(void);
 
     void  AddPen(wxPen *pen);
-    wxPen *FindOrCreatePen(wxColour *colour, int width, int style);
-    wxPen *FindOrCreatePen(char *colour, int width, int style);
+    wxPen *FindOrCreatePen(wxColour *colour, float width, int style);
+    wxPen *FindOrCreatePen(char *colour, float width, int style);
 };
 
 #endif // PenBrush_h

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Pen+Brush.cc,v 1.11 1999/11/25 22:57:29 mflatt Exp $
+ * $Id: Pen+Brush.cc,v 1.12 1999/11/28 17:12:50 mflatt Exp $
  *
  * Purpose: pen and brush classes needed for drawing
  *
@@ -55,7 +55,7 @@ wxPen::wxPen(void)
     locked = 0;
 }
 
-wxPen::wxPen(wxColour *col, int Width, int Style)
+wxPen::wxPen(wxColour *col, float Width, int Style)
 {
     wxColour *c;
 
@@ -73,7 +73,7 @@ wxPen::wxPen(wxColour *col, int Width, int Style)
     locked = 0;
 }
 
-wxPen::wxPen(const char *col, int Width, int Style)
+wxPen::wxPen(const char *col, float Width, int Style)
 {
     wxColour *c;
 
@@ -192,7 +192,7 @@ void wxPenList::AddPen(wxPen *Pen)
   list->Show(Pen, -1); /* so it can be collected */
 } 
 
-wxPen *wxPenList::FindOrCreatePen(wxColour *colour, int w, int style)
+wxPen *wxPenList::FindOrCreatePen(wxColour *colour, float w, int style)
 {
   wxPen *pen;
   wxChildNode *node;
@@ -207,7 +207,7 @@ wxPen *wxPenList::FindOrCreatePen(wxColour *colour, int w, int style)
     each_pen = (wxPen*)node->Data();
     pc = each_pen->GetColour();
     if (each_pen &&
-	each_pen->GetWidth() == w &&
+	each_pen->GetWidthF() == w &&
 	each_pen->GetStyle() == style &&
 	pc->Red() == colour->Red() &&
 	pc->Green() == colour->Green() &&
@@ -222,7 +222,7 @@ wxPen *wxPenList::FindOrCreatePen(wxColour *colour, int w, int style)
   return pen;
 }
 
-wxPen *wxPenList::FindOrCreatePen(char *colour, int width, int style)
+wxPen *wxPenList::FindOrCreatePen(char *colour, float width, int style)
 {
   wxColour *the_colour;
   the_colour = wxTheColourDatabase->FindColour(colour);

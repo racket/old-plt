@@ -8,7 +8,7 @@
        (unless (symbol? (syntax-object->datum (syntax str)))
          (error 'define-struct/parse "no super structs allowed"))
        (let ([defn (local-expand (syntax (define-struct str (fields ...)))
-				 'internal-define
+				 (syntax-local-context)
 				 (list (quote-syntax define-values)))]
 	     [evens
 	      (lambda (l)

@@ -126,7 +126,7 @@
     (list (make-setting/parse
 	   `((key beginner)
 	     (name "Beginning Student")
-	     (language-defining-module (lib "beginner.ss" "languages"))
+	     (language-defining-module (lib "beginner.ss" "lang"))
 	     (case-sensitive? #t)
 	     (allow-reader-quasiquote? #f)
 	     (sharing-printing? #f)
@@ -145,7 +145,7 @@
 	  (make-setting/parse
 	   `((key intermediate)
 	     (name "Intermediate Student")
-	     (language-defining-module (lib "beginner.ss" "languages"))
+	     (language-defining-module (lib "beginner.ss" "lang"))
 	     (case-sensitive? #t)
 	     (allow-reader-quasiquote? #t)
 	     (sharing-printing? #f)
@@ -164,7 +164,7 @@
 	  (make-setting/parse
 	   `((key advanced)
 	     (name "Advanced Student")
-	     (language-defining-module (lib "intermediate.ss" "languages"))
+	     (language-defining-module (lib "intermediate.ss" "lang"))
 	     (case-sensitive? #t)
 	     (allow-reader-quasiquote? #t)
 	     (sharing-printing? #t)
@@ -183,7 +183,7 @@
 	  (make-setting/parse
 	   `((key full)
 	     (name "Textual Full Scheme (MzScheme)")
-	     (language-defining-module (lib "advanced.ss" "languages"))
+	     (language-defining-module (lib "advanced.ss" "lang"))
 	     (case-sensitive? #f)
 	     (allow-reader-quasiquote? #t)
 	     (sharing-printing? #f)

@@ -4,11 +4,12 @@
            "drsig.ss"
 	   (lib "mred.ss" "mred")
            (lib "framework.ss" "framework")
-           "unitsig.ss"
-           "class.ss"
+           (lib "unitsig.ss")
+           (lib "class.ss")
            (prefix basis: (lib "basis.ss" "userspce"))
            (prefix pretty-print: (lib "pretty.ss"))
            (prefix print-convert: (lib "pconvert.ss"))
+	   (lib "include.ss")
            (lib "list.ss")
            (lib "file.ss")
            (lib "plt-installer" "setup"))
@@ -16,30 +17,13 @@
   (provide main-before@)
   
   (define main-before@
-    (unit/sig drscheme:main-before^
+    (unit/sig ()
       (import (drscheme:app : drscheme:app^)
               (drscheme:unit : drscheme:unit^)
               (drscheme:get/extend : drscheme:get/extend^)
               (drscheme:language : drscheme:language^))
       
       (finder:default-extension "scm")
-      
-  ;; add the graphical settings
-      (basis:add-setting 
-       (let ([s (basis:copy-setting (basis:find-setting-named
-                                     "Textual Full Scheme without Debugging (MzScheme)"))])
-         (basis:set-setting-name! s "Graphical Full Scheme without Debugging (MrEd)")
-         (basis:set-setting-vocabulary-symbol! s 'mred)
-         s)
-       3)
-      (basis:add-setting 
-       (let ([s (basis:copy-setting (basis:find-setting-named
-                                     "Textual Full Scheme (MzScheme)"))])
-         (basis:set-setting-name! s "Graphical Full Scheme (MrEd)")
-         (basis:set-setting-vocabulary-symbol! s 'mred-debug)
-         s)
-       3)
-      
       (application:current-app-name "DrScheme")
       (version:add-spec 'd 105)
       
@@ -83,7 +67,7 @@
        (lambda (x) (cdr (vector->list (struct->vector x))))
        (lambda (x) 
          (if (and (list? x)
-                  (equal? (arity basis:make-setting)
+                  (equal? (procedure-arity basis:make-setting)
                           (length x)))
              (let ([setting (apply basis:make-setting x)])
                (if (valid-setting? setting)

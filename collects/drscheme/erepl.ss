@@ -181,7 +181,18 @@
     (define waiting (make-semaphore 0))
     
     (define execute-menu-item 'execute-menu-item-not-yet-set)
-    (define execute-filename #f)
+    (define execute-filename (let ([b (box "")])
+			       (if (and (get-resource "mred" "erepl-execute-filename" b)
+					(unbox b)
+					(not (string=? "" (unbox b)))
+					(file-exists? (unbox b)))
+				   (unbox b)
+				   #f)))
+				
+    (define (set-execute-filename fn)
+      (set! execute-filename fn)
+      (write-resource "mred" "erepl-execute-filename" (or fn "")))
+
     (define (update-execute-label)
       (when execute-button
         (let ([label (if execute-filename
@@ -191,7 +202,7 @@
           (send execute-menu-item set-label label))))
     (define (do-execute)
       (unless execute-filename
-        (set! execute-filename (get-file #f frame))
+        (set-execute-filename (get-file #f frame))
         (when execute-filename
           (update-execute-label)))
       (when execute-filename
@@ -242,7 +253,7 @@
           #\k)
         (make-object menu-item% "Reset Execute Button" m
           (lambda (i e) 
-            (set! execute-filename #f)
+            (set-execute-filename #f)
             (update-execute-label)))))
     
     (update-execute-label)

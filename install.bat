@@ -1,11 +1,27 @@
 @echo off
 
-rem From ant.bat in apache-ant:
-rem  %~dp0 is expanded pathname of the current script under NT
-set PLTDIR=%~dp0
-cd %~dp0
+set PLTDIR=
 
-rem  look for MrEd.exe
+if not "%OS%"=="Windows_NT" goto NoDPHack
+rem  On Windows NT %~dp0 is expanded dir+path of %0
+set PLTDIR=%~dp0
+if not "%PLTDIR%"=="" FoundPLTDIR
+:NoDPHack
+
+rem  %~dp0 didn't work -- see if we're in the same directory
+if exist "install.bat"
+set PLTDIR=.
+goto FoundPLTDIR
+
+echo Cannot guess where this batch file is running from,
+echo Try to run it again from its own directory.
+pause
+goto done
+
+:FoundPLTDir
+cd %PLTDIR%
+
+rem  Look for MrEd.exe
 if exist "%PLTDIR%\MrEd.exe" goto MrFound
 if exist "%PLTDIR%\MzScheme.exe" goto MzFound
 echo Could not find %PLTDIR%\MzScheme.exe or %PLTDIR%\MrEd.exe, abort.
@@ -13,20 +29,20 @@ pause
 goto done
 :MrFound
 set MZMR=MrEd.exe
-goto binaryFound
+goto exeFound
 :MzFound
 set MZMR=MzScheme.exe
-goto binaryFound
-:binaryFound
+goto exeFound
 
+:exeFound
 rem  look for install
 if exist "%PLTDIR%\install" goto installFound
 echo %PLTDIR%\install not found, abort.
 pause
 goto done
-:installFound
 
-echo Running %PLTDIR%\%MZMR% %PLT_INSTALL_ARGS%
+:installFound
+echo Running %PLTDIR%\%MZMR%
 "%PLTDIR%\%MZMR%" -qC "%PLTDIR%\install" -i
 
 :done

@@ -1484,22 +1484,25 @@ Bool wxMediaEdit::CheckFlow(float maxw, wxDC *dc, float Y,
   Bool checkingUnderflowAtNext;
   Bool noChangeIfEndOfSnip, noChangeIfStartOfSnip;
   Bool theFirstSnip, firstUnderflow, hadNewline;
+  Bool deletedANewline;
 
   _totalWidth = 0;
   p = startp;
-  checkingUnderflow = FALSE; // start by insuring no overflow
+  checkingUnderflow = FALSE; // start by ensuring no overflow
   checkingUnderflowAtNext = FALSE;
   noChangeIfEndOfSnip = TRUE; // Because an immediate overflow can't be helped
   noChangeIfStartOfSnip = FALSE;
   theFirstSnip = TRUE;
   firstUnderflow = FALSE;
+  deletedANewline = TRUE;
 
   for (snip = start; 
        snip && !(snip->flags & wxSNIP_HARD_NEWLINE); 
        snip = snip->next) {
 
     if (!checkingUnderflow) {
-      if ((checkingUnderflow = checkingUnderflowAtNext))
+      checkingUnderflow = checkingUnderflowAtNext;
+      if (checkingUnderflow)
 	firstUnderflow = TRUE;
     }
     noChangeIfStartOfSnip = noChangeIfEndOfSnip;
@@ -1509,6 +1512,9 @@ Bool wxMediaEdit::CheckFlow(float maxw, wxDC *dc, float Y,
       snip->flags -= wxSNIP_NEWLINE;
       checkingUnderflowAtNext = TRUE;
       hadNewline = TRUE;
+      deletedANewline = TRUE;
+      /* Note: if the newline is restored, then the
+	 return jumps directly out of the `for' loop. */
     } else {
       noChangeIfEndOfSnip = FALSE;
       checkingUnderflowAtNext = FALSE;
@@ -1589,7 +1595,7 @@ Bool wxMediaEdit::CheckFlow(float maxw, wxDC *dc, float Y,
   }
 
   if (!checkingUnderflow || noChangeIfEndOfSnip)
-    return FALSE;
+    return deletedANewline;
   else {
     refreshAll = TRUE;
     return TRUE;

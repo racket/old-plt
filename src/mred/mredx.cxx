@@ -477,19 +477,31 @@ extern "C" {
 
       t->Stop();
       t->Stopped();
+
+#ifdef MZ_PRECISE_GC
+      XFORM_RESET_VAR_STACK;
+#endif
     }
   
   long wxAppAddTimeOut(XtAppContext, unsigned long interval, 
 		       XtTimerCallbackProc callback, XtPointer data)
     {
       wxTimer *t;
+      long result;
+
       t = new wxXtTimer(callback, data);
       t->Start(interval, TRUE);
 #ifdef MZ_PRECISE_GC
-      return (long)GC_malloc_immobile_box(t);
+      result = (long)GC_malloc_immobile_box(t);
 #else
-      return (long)t;
+      result = (long)t;
 #endif
+
+#ifdef MZ_PRECISE_GC
+      XFORM_RESET_VAR_STACK;
+#endif
+
+      return result;
     }
 }
 

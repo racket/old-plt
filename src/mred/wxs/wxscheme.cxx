@@ -652,7 +652,7 @@ static Scheme_Object *wxSchemeGetFontList(int, Scheme_Object **)
     return scheme_null;
   AppendResMenu(fmenu, 'FONT');
   
-  count = CountMItems(fmenu);
+  count = CountMenuItems(fmenu);
 #endif
 #ifdef wx_msw
   gfData data;

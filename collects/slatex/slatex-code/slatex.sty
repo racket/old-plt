@@ -3,7 +3,7 @@
 % style file to be used in (La)TeX when using SLaTeX
 % (c) Dorai Sitaram, Rice U., 1991, 1999
 
-\def\slatexversion{2.4y1}
+\def\slatexversion{2.4y3}
 
 % This file (or a soft link to it) should be in some
 % directory in your TEXINPUTS path (i.e., the one
@@ -71,13 +71,13 @@
 %
 \def\cleartabs{\global\setbox\tabsyet\null \setbox\tabs\null}
 \def\settabs{\setbox\tabs\null \futurelet\next\sett@b}
-\let\+=\relax % in case this file is being read in twice
-\def\sett@b{\ifx\next\+\let\next\relax
+\let\tabalignaux=\relax % in case this file is being read in twice
+\def\sett@b{\ifx\next\tabalignaux\let\next\relax
     \def\next{\afterassignment\s@tt@b\let\next}%
 \else\let\next\s@tcols\fi\next}
 \def\s@tt@b{\let\next\relax\us@false\m@ketabbox}
-\def\tabalign{\us@true\m@ketabbox} % non-\outer version of \+
-\outer\def\+{\tabalign}
+\def\tabalign{\us@true\m@ketabbox} % non-\outer version of \tabalignaux
+\outer\def\tabalignaux{\tabalign}
 \def\s@tcols#1\columns{\count@#1 \dimen@\hsize
   \loop\ifnum\count@>\z@ \@nother \repeat}
 \def\@nother{\dimen@ii\dimen@ \divide\dimen@ii\count@
@@ -87,7 +87,7 @@
 \def\m@ketabbox{\begingroup
   \global\setbox\tabsyet\copy\tabs
   \global\setbox\tabsdone\null
-  \def\cr{\@crtrue\crcr\egroup\egroup
+  \def\CR{\@crtrue\crcr\egroup\egroup
     \ifus@\unvbox\z@\lastbox\fi\endgroup
     \setbox\tabs\hbox{\unhbox\tabsyet\unhbox\tabsdone}}%
   \setbox\z@\vbox\bgroup\@crfalse
@@ -115,9 +115,9 @@
 
 \def\lat@xtabbing{\begingroup
 \def\={\cleartabs&} \def\>{&}%
-\def\\{\cr\tabalign\lat@xtabbingleftmost}%
+\def\\{\CR\tabalign\lat@xtabbingleftmost}%
 \tabalign\lat@xtabbingleftmost}
-\def\endlat@xtabbing{\cr\endgroup}
+\def\endlat@xtabbing{\CR\endgroup}
 \let\lat@xtabbingleftmost\relax
 
 % stuff for formating Scheme code

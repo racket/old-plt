@@ -1,3 +1,51 @@
+Oct 28, 2002
+
+Added missing \enableslatex in slatxdoc.tex
+
+2.4z
+
+Mar 17, 2002
+
+Modernize configuration to be more in line 
+with my other programs (tex2page, etc).
+
+Port to scsh, sxm.  petite == chez.
+
+2.4y3
+
+Mar 2, 2002
+
+Use \CR instead of \cr in \m@ketabbox defn because it
+appears to somehow (how?) clash with LaTeX's
+{tabular}.  Based on bug report by Greg Sullivan
+showing that {schemebox} inside a {tabular} was
+erroring.
+
+2.4y2
+
+Dec 24, 2001
+
+Make full SLaTeX doc online-browsable.
+
+Dec 23, 2001
+
+Accept MzScheme v200 (in addition to previous
+versions).
+
+Nov 10, 2001
+
+\+ in slatex.sty clashing with url.sty.  Reported by 
+Francois-Rene Rideau.  Corrected by changing \+ to
+\tabalignaux.
+
+2.4y1
+
+Feb 19, 2001
+
+\ZZZZinput definition fixed so that 
+reasonable redefinitions of \input won't
+cause it to fail.  
+
 2.4y
 
 Dec 23, 2000
@@ -89,7 +137,7 @@ Feb 1997
 v. 2.4n
 
 Fixed bug that caused \begin{schemebox} to produce space at
-paragraph begin (Matthias).
+paragraph begin (Matthias Felleisen).
 
 Ported to Bigloo, thanks to Christian Queinnec.
 

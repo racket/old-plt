@@ -35,40 +35,22 @@ finishing the installation process.
 2. Obtaining SLaTeX
 
 SLaTeX is available at the URL
-http://www.cs.rice.edu/CS/PLT/packages/slatex/slatex.tar.gz.
+http://www.ccs.neu.edu/~dorai/slatex/slatex.tar.gz.
 Ungzipping and untarring produces a directory slatex,
 containing the SLaTeX files.  (The file "manifest" lists the
 files in the distribution -- make sure nothing is missing.)
 
                             ...
 
-3. Requisites for installing SLaTeX
 
-SLaTeX is implemented in R5RS-compliant Scheme -- macros are
-not needed.  The code uses the non-standard procedures
-delete-file, file-exists? and flush-output, but a Scheme
-without these procedures can also run SLaTeX.  The
-configuration defines the corresponding variables to be
-dummy procedures, since they are not crucial.  The
-distribution comes with code to allow SLaTeX to run also on
-Common Lisp.  The dialects that SLaTeX has run successfully
-on are: Bigloo, Chez Scheme, CLISP, Elk, Gnu Common Lisp,
-Gambit, Guile, Ibuki Common Lisp, MIT C Scheme, MzScheme,
-Scheme-to-C, SCM, UMB Scheme, and VSCM on Unix; MzScheme on
-Windows 95; CLISP and SCM on OS/2; Austin Kyoto Common Lisp,
-CLISP, MIT C Scheme, and SCM on MSDOS; and Macintosh Common
-Lisp on Mac OS.
+3. Installing SLaTeX
 
-                            ...
-
-4. Installing SLaTeX
-
-Refer to the file "install" for configuring SLaTeX to your
+Refer to the file "INSTALL" for configuring SLaTeX to your
 dialect and ways of invoking it on your (La)TeX files.
 
                             ...
 
-5. Using SLaTeX
+4. Using SLaTeX
 
 The file slatxdoc.tex is a manual describing "How to Use
 SLaTeX".  A version of the corresponding .dvi file,
@@ -95,7 +77,7 @@ distribution) to get slatxdoc.dvi:
 
 2) Type (load "slatex.scm").
 
-3) Type (SLaTeX.process-main-tex-file "slatxdoc").
+3) Type (slatex::process-main-tex-file "slatxdoc").
 
 4) Exit Scheme (or CL).
 
@@ -105,10 +87,6 @@ the citations right and to generate an index if available.)
 
                             ...
 
-6. Bugs, etc.
+6. Bugs, etc
 
-Bug reports, flames, criticisms and suggestions are
-most welcome -- send to
-
-Dorai Sitaram
-dorai@cs.rice.edu
+Email to ds26 at gte dot com

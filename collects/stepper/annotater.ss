@@ -475,7 +475,6 @@
                        [val inner-transference
                             `([,(map utils:get-binding-name var-set-list) 
                                (values ,@(map z:varref-var dummy-var-list))])]
-                       [_ (printf "body: ~a~n" (z:let-values-form-body expr))]
                        [val (values annotated-body free-vars-body)
                             (let-body-recur (z:let-values-form-body expr) 
                                             (bindings->varrefs var-set-list))]

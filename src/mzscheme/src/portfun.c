@@ -2174,15 +2174,7 @@ static Scheme_Object *do_load_handler(void *data)
 
       m = scheme_extract_compiled_module(SCHEME_STX_VAL(d));
       if (m) {
-	/* In the case of a compiled `module' expression, the prefix
-	   is applied during the read... */
-	a = scheme_get_param(scheme_config, MZCONFIG_CURRENT_MODULE_PREFIX);
-	if (SCHEME_SYMBOLP(a))
-	  a = scheme_symbol_append(a, lhd->expected_module);
-	else
-	  a = lhd->expected_module;
-
-	if (!SAME_OBJ(m->modname, a)) {
+	if (!SAME_OBJ(m->modname, lhd->expected_module)) {
 	  other = m->modname;
 	  d = NULL;
 	}

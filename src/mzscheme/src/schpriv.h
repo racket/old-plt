@@ -1557,6 +1557,7 @@ typedef struct Scheme_Module
   Scheme_Object **indirect_provides; /* symbols (internal names) */
   int num_indirect_provides;
 
+  Scheme_Object *src_modidx;  /* the one used in marshalled syntax */
   Scheme_Object *self_modidx;
 
   Scheme_Hash_Table *accessible;

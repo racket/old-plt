@@ -706,6 +706,7 @@ module_val {
   gcMARK(m->kernel_exclusion);
 
   gcMARK(m->indirect_provides);
+  gcMARK(m->src_modidx);
   gcMARK(m->self_modidx);
 
   gcMARK(m->accessible);

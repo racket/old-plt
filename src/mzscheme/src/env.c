@@ -456,7 +456,6 @@ static Scheme_Env *make_env(Scheme_Env *base, int semi, int toplevel_size)
     module_registry = NULL;
   } else {
     syntax = scheme_make_bucket_table(7, SCHEME_hash_ptr);
-    syntax->with_home = 1;
     if (base) {
       modchain = base->modchain;
       module_registry = base->module_registry;

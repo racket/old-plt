@@ -1387,7 +1387,7 @@ static void expstart_module(Scheme_Module *m, Scheme_Env *env, int restart,
 			    Scheme_Object *syntax_idx, int delay_exptime)
 {
   Scheme_Env *menv;
-  Scheme_Object *l;
+  Scheme_Object *l, *midx;
 
   if (!delay_exptime)
     delay_exptime = m->et_functional;
@@ -1447,9 +1447,13 @@ static void expstart_module(Scheme_Module *m, Scheme_Env *env, int restart,
   }
   
   for (l = m->requires; !SCHEME_NULLP(l); l = SCHEME_CDR(l)) {
-    expstart_module(module_load(scheme_module_resolve(SCHEME_CAR(l)), env, NULL), 
+    if (syntax_idx)
+      midx = scheme_modidx_shift(SCHEME_CAR(l), m->src_modidx, syntax_idx);
+    else
+      midx = scheme_modidx_shift(SCHEME_CAR(l), m->src_modidx, m->self_modidx);
+    expstart_module(module_load(scheme_module_resolve(midx), env, NULL), 
 		    env, 0, 
-		    scheme_modidx_shift(SCHEME_CAR(l), m->self_modidx, syntax_idx),
+		    midx,
 		    delay_exptime);
   }
 
@@ -1464,7 +1468,7 @@ static void expstart_module(Scheme_Module *m, Scheme_Env *env, int restart,
 
 static void finish_expstart_module(Scheme_Env *menv, Scheme_Env *env)
 {
-  Scheme_Object *l, *body, *e, *names;
+  Scheme_Object *l, *body, *e, *names, *midx;
   Scheme_Env *exp_env;
   Scheme_Bucket_Table *syntax;
   int let_depth;
@@ -1481,9 +1485,10 @@ static void finish_expstart_module(Scheme_Env *menv, Scheme_Env *env)
   exp_env->link_midx = menv->link_midx;
 
   for (l = menv->module->et_requires; !SCHEME_NULLP(l); l = SCHEME_CDR(l)) {
-    start_module(module_load(scheme_module_resolve(SCHEME_CAR(l)), env, NULL), 
+    midx = scheme_modidx_shift(SCHEME_CAR(l), menv->module->src_modidx, exp_env->link_midx);
+    start_module(module_load(scheme_module_resolve(midx), env, NULL), 
 		 exp_env, 0,
-		 scheme_modidx_shift(SCHEME_CAR(l), menv->module->self_modidx, exp_env->link_midx),
+		 midx,
 		 0);
   }
   
@@ -1521,7 +1526,7 @@ static void start_module(Scheme_Module *m, Scheme_Env *env, int restart,
 			 Scheme_Object *syntax_idx, int delay_expstart)
 {
   Scheme_Env *menv;
-  Scheme_Object *l;
+  Scheme_Object *l, *midx;
 
   if (SAME_OBJ(m, kernel))
     return;
@@ -1540,9 +1545,13 @@ static void start_module(Scheme_Module *m, Scheme_Env *env, int restart,
     return;
   
   for (l = m->requires; !SCHEME_NULLP(l); l = SCHEME_CDR(l)) {
-    start_module(module_load(scheme_module_resolve(SCHEME_CAR(l)), env, NULL), 
+    if (syntax_idx)
+      midx = scheme_modidx_shift(SCHEME_CAR(l), m->src_modidx, syntax_idx);
+    else
+      midx = scheme_modidx_shift(SCHEME_CAR(l), m->src_modidx, m->self_modidx);
+    start_module(module_load(scheme_module_resolve(midx), env, NULL), 
 		 env, 0, 
-		 scheme_modidx_shift(SCHEME_CAR(l), m->self_modidx, syntax_idx),
+		 midx,
 		 delay_expstart);
   }
 
@@ -1584,7 +1593,7 @@ static void eval_module_body(Scheme_Env *menv)
   }
 
   save_runstack = scheme_push_prefix(menv, m->prefix,
-				     m->self_modidx, menv->link_midx,
+				     m->src_modidx, menv->link_midx,
 				     0, menv->phase);
 
   body = m->body;
@@ -1792,7 +1801,7 @@ static void eval_defmacro(Scheme_Object *names, int count,
   }
 
   save_runstack = scheme_push_prefix(genv, rp,
-				     (shift ? genv->module->self_modidx : NULL), 
+				     (shift ? genv->module->src_modidx : NULL), 
 				     (shift ? genv->link_midx : NULL), 
 				     1, genv->phase);
 	
@@ -1861,11 +1870,28 @@ static void eval_defmacro(Scheme_Object *names, int count,
 static Scheme_Object *
 module_execute(Scheme_Object *data)
 {
-  Scheme_Module *m = (Scheme_Module *)data;
+  Scheme_Module *m;
   Scheme_Env *env;
   Scheme_Env *menv;
-  Scheme_Object *mzscheme_symbol;
+  Scheme_Object *mzscheme_symbol, *prefix;
   
+  m = MALLOC_ONE_TAGGED(Scheme_Module);
+  memcpy(m, data, sizeof(Scheme_Module));
+
+  prefix = scheme_get_param(scheme_config, MZCONFIG_CURRENT_MODULE_PREFIX);
+  if (SCHEME_SYMBOLP(prefix)) {
+    prefix = scheme_symbol_append(prefix, m->modname);
+    m->modname = prefix;
+    
+    if (m->self_modidx) {
+      if (!SCHEME_SYMBOLP(m->self_modidx)) {
+	Scheme_Modidx *midx = (Scheme_Modidx *)m->self_modidx;
+	
+	m->self_modidx = scheme_make_modidx(midx->path, midx->base, m->modname);
+      }
+    }
+  }
+
   env = scheme_environment_from_dummy(m->dummy);
 
   mzscheme_symbol = scheme_intern_symbol("mzscheme");
@@ -1959,22 +1985,13 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
   m = MALLOC_ONE_TAGGED(Scheme_Module);
   m->type = scheme_module_type;
   
-  {
-    Scheme_Object *prefix, *modname;
-
-    modname = SCHEME_STX_VAL(nm);
-    prefix = scheme_get_param(scheme_config, MZCONFIG_CURRENT_MODULE_PREFIX);
-    
-    if (SCHEME_SYMBOLP(prefix))
-      modname = scheme_symbol_append(prefix, modname);
-      
-    m->modname = modname; /* must set before calling new_module_env */
-  }
+  m->modname = SCHEME_STX_VAL(nm); /* must set before calling new_module_env */
 
   menv = scheme_new_module_env(env->genv, m, 1);
 
   self_modidx = scheme_make_modidx(scheme_false, scheme_false, m->modname);
   m->self_modidx = self_modidx;
+  m->src_modidx = self_modidx;
 
   iidx = scheme_make_modidx(scheme_syntax_to_datum(ii, 0, NULL), 
 			    self_modidx,
@@ -2299,6 +2316,7 @@ Scheme_Object *scheme_declare_module(Scheme_Object *shape, Scheme_Invoke_Proc iv
   qsort_provides(exs, NULL, NULL, 0, nvar, 1);
 
   m->self_modidx = self_modidx;
+  m->src_modidx = self_modidx;
 
   scheme_hash_set(env->module_registry, m->modname, (Scheme_Object *)m);
 
@@ -3623,7 +3641,7 @@ Scheme_Object *parse_requires(Scheme_Object *form,
 	}
 	
 	modidx = ((exss && !SCHEME_FALSEP(exss[j])) 
-		  ? scheme_modidx_shift(exss[j], m->self_modidx, idx)
+		  ? scheme_modidx_shift(exss[j], m->src_modidx, idx)
 		  : idx);
       
 	if (!iname)
@@ -3902,7 +3920,7 @@ static Scheme_Object *write_module(Scheme_Object *obj)
 
   l = cons(scheme_make_integer(m->max_let_depth), l);
 
-  l = cons(m->self_modidx, l);
+  l = cons(m->src_modidx, l);
   l = cons(m->modname, l);
 
   return l;
@@ -3911,7 +3929,7 @@ static Scheme_Object *write_module(Scheme_Object *obj)
 static Scheme_Object *read_module(Scheme_Object *obj)
 {
   Scheme_Module *m;
-  Scheme_Object *ie, *nie, *prefix;
+  Scheme_Object *ie, *nie;
   Scheme_Object *esn, *es, *e, *nve, *ne, **v;
   int i, count;
 
@@ -3920,15 +3938,10 @@ static Scheme_Object *read_module(Scheme_Object *obj)
   m->modname = SCHEME_CAR(obj);
   obj = SCHEME_CDR(obj);
 
-  prefix = scheme_get_param(scheme_config, MZCONFIG_CURRENT_MODULE_PREFIX);
-  if (SCHEME_SYMBOLP(prefix)) {
-    prefix = scheme_symbol_append(prefix, m->modname);
-    m->modname = prefix;
-  }
-
-  m->self_modidx = SCHEME_CAR(obj);
+  m->src_modidx = SCHEME_CAR(obj);
   obj = SCHEME_CDR(obj);
-  ((Scheme_Modidx *)m->self_modidx)->resolved = m->modname;
+  ((Scheme_Modidx *)m->src_modidx)->resolved = m->modname;
+  m->self_modidx = m->src_modidx;
 
   m->max_let_depth = SCHEME_INT_VAL(SCHEME_CAR(obj));
   obj = SCHEME_CDR(obj);

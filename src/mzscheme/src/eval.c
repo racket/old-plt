@@ -1056,7 +1056,9 @@ static Scheme_Object *link_module_variable(Scheme_Object *modidx,
   return (Scheme_Object *)scheme_global_bucket(varname, menv);
 }
 
-Scheme_Object *scheme_link_toplevel(Scheme_Object *expr, Scheme_Env *env)
+Scheme_Object *scheme_link_toplevel(Scheme_Object *expr, Scheme_Env *env,
+				    Scheme_Object *src_modidx, 
+				    Scheme_Object *dest_modidx)
 {
   if (SAME_TYPE(SCHEME_TYPE(expr), scheme_variable_type)) {
     Scheme_Bucket_With_Home *b = (Scheme_Bucket_With_Home *)expr;
@@ -1071,7 +1073,9 @@ Scheme_Object *scheme_link_toplevel(Scheme_Object *expr, Scheme_Env *env)
   } else {
     Module_Variable *mv = (Module_Variable *)expr;
     
-    return link_module_variable(mv->modidx,
+    return link_module_variable(scheme_modidx_shift(mv->modidx,
+						    src_modidx,
+						    dest_modidx),
 				mv->sym,
 				mv->pos,
 				env);
@@ -3826,7 +3830,7 @@ Scheme_Object **scheme_push_prefix(Scheme_Env *genv, Resolve_Prefix *rp,
     for (i = 0; i < rp->num_toplevels; i++) {
       v = rp->toplevels[i];
       if (genv)
-	v = scheme_link_toplevel(rp->toplevels[i], genv);
+	v = scheme_link_toplevel(rp->toplevels[i], genv, src_modidx, now_modidx);
       a[i] = v;
     }
   }

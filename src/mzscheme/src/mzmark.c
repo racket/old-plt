@@ -1659,6 +1659,7 @@ int module_val_MARK(void *p) {
   gcMARK(m->kernel_exclusion);
 
   gcMARK(m->indirect_provides);
+  gcMARK(m->src_modidx);
   gcMARK(m->self_modidx);
 
   gcMARK(m->accessible);
@@ -1691,6 +1692,7 @@ int module_val_FIXUP(void *p) {
   gcFIXUP(m->kernel_exclusion);
 
   gcFIXUP(m->indirect_provides);
+  gcFIXUP(m->src_modidx);
   gcFIXUP(m->self_modidx);
 
   gcFIXUP(m->accessible);

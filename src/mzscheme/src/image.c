@@ -181,7 +181,7 @@ static Scheme_Object *load_heap(int argc, Scheme_Object **argv)
 # define SOLARIS_SKIP_PLT
 #endif
 
-#if defined(__FreeBSD__)
+#if 0 && defined(__FreeBSD__)
 # define FREEBSD_SKIP_PLT
 #endif
 
@@ -204,11 +204,11 @@ extern char **environ;
 #include <unistd.h>
 #include <sys/param.h>
 
-#include "../gc/config.h"
+#include "../gc/include/private/gcconfig.h"
 
 static void die_now(char *phase, char *file)
 {
-  printf("Restore from \"%q\" failed at %s (%e)\n", file, phase, errno);
+  printf("Restore from \"%s\" failed at %s (%d)\n", file, phase, errno);
   exit(-1);
 }
 
@@ -714,7 +714,7 @@ int scheme_image_main(int argc, char **argv)
       startargs = 3;
     }
 
-    exfile = scheme_expand_filename(file, strlen(file), NULL, NULL);
+    exfile = file; /* scheme_expand_filename(file, strlen(file), NULL, NULL); */
     if (!exfile)
       die_now("bad filename", file);
 

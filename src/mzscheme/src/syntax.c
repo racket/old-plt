@@ -529,7 +529,7 @@ define_execute(Scheme_Object *vars, Scheme_Object *vals, int defmacro,
       SCHEME_PTR_VAL(macro) = vals;
       
       scheme_set_global_bucket("define-syntaxes", b, macro, 1);
-      scheme_shadow(((Scheme_Bucket_With_Home *)b)->home, (Scheme_Object *)b->key, 0);
+      scheme_shadow(dm_env, (Scheme_Object *)b->key, 0);
     } else {
       Scheme_Object **toplevels;
       toplevels = (Scheme_Object **)MZ_RUNSTACK[SCHEME_TOPLEVEL_DEPTH(SCHEME_CAR(vars))];

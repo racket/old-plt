@@ -53,7 +53,7 @@ typedef short Type_Tag;
 /* Debugging and performance tools: */
 #define TIME 0
 #define SEARCH 0
-#define CHECKS 0
+#define CHECKS 1
 #define NOISY 0
 #define MARK_STATS 0
 #define ALLOC_GC_PHASE 0
@@ -949,6 +949,28 @@ void GC_set_finalizer(void *p, int tagged, int level, void (*f)(void *p, void *d
   fnl->eager_level = level;
   fnl->tagged = tagged;
 
+#if CHECKS
+  {
+    MPage *m;
+
+    m = find_page(p);
+
+    if (tagged) {
+      if (m->type != MTYPE_TAGGED) {
+	fprintf(stderr, "Not tagged: %x (%d)\n", 
+		(long)p, m->type);
+	CRASH();
+      }
+    } else {
+      if (m->type != MTYPE_XTAGGED) {
+	fprintf(stderr, "Not xtagged: %x (%d)\n", 
+		(long)p, m->type);
+	CRASH();
+      }
+    }
+  }
+#endif
+
   fnls = fnl;
 }
 
@@ -1013,7 +1035,7 @@ void GC_finalization_weak_ptr(void **p, int offset)
 /******************************************************************************/
 
 /* Works anytime: */
-static MPage *find_page(void *p)
+static MPage *find_page(void *p) 
 {
   unsigned long g = ((unsigned long)p >> MAPS_SHIFT);
   MPage *map;

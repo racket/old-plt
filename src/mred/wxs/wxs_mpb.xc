@@ -61,16 +61,21 @@
 @ "is-selected?" : bool IsSelected(wxSnip^);
 @ "find-next-selected-snip" : wxSnip^ FindNextSelectedSnip(wxSnip^);
 
-@ v "on-insert" : bool OnInsert(wxSnip!,wxSnip^,float, float);
+@ v "can-insert?" : bool CanInsert(wxSnip!,wxSnip^,float, float);
+@ v "on-insert" : void OnInsert(wxSnip!,wxSnip^,float, float);
 @ v "after-insert" : void AfterInsert(wxSnip!,wxSnip^,float,float);
-@ v "on-delete" : bool OnDelete(wxSnip!);
+@ v "can-delete?" : bool CanDelete(wxSnip!);
+@ v "on-delete" : void OnDelete(wxSnip!);
 @ v "after-delete" :  void AfterDelete(wxSnip!);
-@ v "on-move-to" :  bool OnMoveTo(wxSnip!,float,float,bool);
+@ v "can-move-to?" :  bool CanMoveTo(wxSnip!,float,float,bool);
+@ v "on-move-to" :  void OnMoveTo(wxSnip!,float,float,bool);
 @ v "after-move-to" :  void AfterMoveTo(wxSnip!,float,float,bool);
-@ v "on-resize" :  bool OnResize(wxSnip!,float,float);
+@ v "can-resize?" :  bool CanResize(wxSnip!,float,float);
+@ v "on-resize" :  void OnResize(wxSnip!,float,float);
 @ v "after-resize" :  void AfterResize(wxSnip!,float,float,bool);
 
-@ v "on-select" : bool OnSelect(wxSnip!, bool);
+@ v "can-select?" : bool CanSelect(wxSnip!, bool);
+@ v "on-select" : void OnSelect(wxSnip!, bool);
 @ v "after-select" :  void AfterSelect(wxSnip!, bool);
 
 @ v "on-double-click" : void OnDoubleClick(wxSnip!, wxMouseEvent%);
@@ -79,9 +84,11 @@
 @ v "interactive-adjust-move" : void InteractiveAdjustMove(wxSnip!,float*,float*);
 @ v "interactive-adjust-resize" : void InteractiveAdjustResize(wxSnip!,float*,float*);
 
-@ v "on-interactive-move" : bool OnInteractiveMove(wxMouseEvent!);
+@ v "can-interactive-move?" : bool CanInteractiveMove(wxMouseEvent!);
+@ v "on-interactive-move" : void OnInteractiveMove(wxMouseEvent!);
 @ v "after-interactive-move" : void AfterInteractiveMove(wxMouseEvent!);
-@ v "on-interactive-resize" : bool OnInteractiveResize(wxSnip!);
+@ v "can-interactive-resize?" : bool CanInteractiveResize(wxSnip!);
+@ v "on-interactive-resize" : void OnInteractiveResize(wxSnip!);
 @ v "after-interactive-resize" : void AfterInteractiveResize(wxSnip!);
 
 @ "get-dragable" : bool GetDragable();

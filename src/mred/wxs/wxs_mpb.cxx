@@ -192,6 +192,50 @@ static Scheme_Object *bundle_symset_caret(int v) {
 }
 
 
+# define Sym_END 1
+# define Sym_START -1
+# define Sym_NONE 0
+static Scheme_Object *bias_Sym_START_sym = NULL;
+static Scheme_Object *bias_Sym_NONE_sym = NULL;
+static Scheme_Object *bias_Sym_END_sym = NULL;
+
+static void init_symset_bias(void) {
+  bias_Sym_START_sym = scheme_intern_symbol("start");
+  bias_Sym_NONE_sym = scheme_intern_symbol("none");
+  bias_Sym_END_sym = scheme_intern_symbol("end");
+}
+
+static int unbundle_symset_bias(Scheme_Object *v, const char *where) {
+  if (!bias_Sym_END_sym) init_symset_bias();
+  if (0) { }
+  else if (v == bias_Sym_START_sym) { return Sym_START; }
+  else if (v == bias_Sym_NONE_sym) { return Sym_NONE; }
+  else if (v == bias_Sym_END_sym) { return Sym_END; }
+  if (where) scheme_wrong_type(where, "bias symbol", -1, 0, &v);
+  return 0;
+}
+
+static int istype_symset_bias(Scheme_Object *v, const char *where) {
+  if (!bias_Sym_END_sym) init_symset_bias();
+  if (0) { }
+  else if (v == bias_Sym_START_sym) { return 1; }
+  else if (v == bias_Sym_NONE_sym) { return 1; }
+  else if (v == bias_Sym_END_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "bias symbol", -1, 0, &v);
+  return 0;
+}
+
+static Scheme_Object *bundle_symset_bias(int v) {
+  if (!bias_Sym_END_sym) init_symset_bias();
+  switch (v) {
+  case Sym_START: return bias_Sym_START_sym;
+  case Sym_NONE: return bias_Sym_NONE_sym;
+  case Sym_END: return bias_Sym_END_sym;
+  default: return NULL;
+  }
+}
+
+
 
 
 
@@ -251,23 +295,30 @@ class os_wxMediaPasteboard : public wxMediaPasteboard {
   os_wxMediaPasteboard(Scheme_Object * obj);
   ~os_wxMediaPasteboard();
   void AfterInteractiveResize(class wxSnip* x0);
-  Bool OnInteractiveResize(class wxSnip* x0);
+  void OnInteractiveResize(class wxSnip* x0);
+  Bool CanInteractiveResize(class wxSnip* x0);
   void AfterInteractiveMove(class wxMouseEvent* x0);
-  Bool OnInteractiveMove(class wxMouseEvent* x0);
+  void OnInteractiveMove(class wxMouseEvent* x0);
+  Bool CanInteractiveMove(class wxMouseEvent* x0);
   void InteractiveAdjustResize(class wxSnip* x0, float* x1, float* x2);
   void InteractiveAdjustMove(class wxSnip* x0, float* x1, float* x2);
   void InteractiveAdjustMouse(float* x0, float* x1);
   void OnDoubleClick(class wxSnip* x0, class wxMouseEvent& x1);
   void AfterSelect(class wxSnip* x0, Bool x1);
-  Bool OnSelect(class wxSnip* x0, Bool x1);
+  void OnSelect(class wxSnip* x0, Bool x1);
+  Bool CanSelect(class wxSnip* x0, Bool x1);
   void AfterResize(class wxSnip* x0, float x1, float x2, Bool x3);
-  Bool OnResize(class wxSnip* x0, float x1, float x2);
+  void OnResize(class wxSnip* x0, float x1, float x2);
+  Bool CanResize(class wxSnip* x0, float x1, float x2);
   void AfterMoveTo(class wxSnip* x0, float x1, float x2, Bool x3);
-  Bool OnMoveTo(class wxSnip* x0, float x1, float x2, Bool x3);
+  void OnMoveTo(class wxSnip* x0, float x1, float x2, Bool x3);
+  Bool CanMoveTo(class wxSnip* x0, float x1, float x2, Bool x3);
   void AfterDelete(class wxSnip* x0);
-  Bool OnDelete(class wxSnip* x0);
+  void OnDelete(class wxSnip* x0);
+  Bool CanDelete(class wxSnip* x0);
   void AfterInsert(class wxSnip* x0, class wxSnip* x1, float x2, float x3);
-  Bool OnInsert(class wxSnip* x0, class wxSnip* x1, float x2, float x3);
+  void OnInsert(class wxSnip* x0, class wxSnip* x1, float x2, float x3);
+  Bool CanInsert(class wxSnip* x0, class wxSnip* x1, float x2, float x3);
   void DoPaste(long x0);
   void DoCopy(long x0, Bool x1);
   nstring PutFile(nstring x0, nstring x1);
@@ -275,9 +326,11 @@ class os_wxMediaPasteboard : public wxMediaPasteboard {
   void AfterEditSequence();
   void OnEditSequence();
   void AfterLoadFile(Bool x0);
-  Bool OnLoadFile(string x0, int x1);
+  void OnLoadFile(string x0, int x1);
+  Bool CanLoadFile(string x0, int x1);
   void AfterSaveFile(Bool x0);
-  Bool OnSaveFile(string x0, int x1);
+  void OnSaveFile(string x0, int x1);
+  Bool CanSaveFile(string x0, int x1);
   class wxSnip* OnNewBox(int x0);
   class wxImageSnip* OnNewImageSnip(nstring x0, long x1, Bool x2, Bool x3);
   void InvalidateBitmapCache(float x0 = 0.0, float x1 = 0.0, float x2 = -1.0, float x3 = -1.0);
@@ -294,7 +347,7 @@ class os_wxMediaPasteboard : public wxMediaPasteboard {
   void NeedsUpdate(class wxSnip* x0, float x1, float x2, float x3, float x4);
   void Resized(class wxSnip* x0, Bool x1);
   void SetCaretOwner(class wxSnip* x0, int x1 = wxFOCUS_IMMEDIATE);
-  Bool ScrollTo(class wxSnip* x0, float x1, float x2, float x3, float x4, Bool x5);
+  Bool ScrollTo(class wxSnip* x0, float x1, float x2, float x3, float x4, Bool x5, int x6 = 0);
   void OnDisplaySize();
   void OnChange();
   void OnFocus(Bool x0);
@@ -361,7 +414,7 @@ wxMediaPasteboard::AfterInteractiveResize(x0);
   }
 }
 
-Bool os_wxMediaPasteboard::OnInteractiveResize(class wxSnip* x0)
+void os_wxMediaPasteboard::OnInteractiveResize(class wxSnip* x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
@@ -380,7 +433,7 @@ Bool os_wxMediaPasteboard::OnInteractiveResize(class wxSnip* x0)
     }
   } else sj = 1;
   if (sj) {
-return wxMediaPasteboard::OnInteractiveResize(x0);
+wxMediaPasteboard::OnInteractiveResize(x0);
   } else {
   
   p[0] = objscheme_bundle_wxSnip(x0);
@@ -391,7 +444,40 @@ return wxMediaPasteboard::OnInteractiveResize(x0);
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_bool(v, "on-interactive-resize in pasteboard%"", extracting return value");
+  }
+}
+
+Bool os_wxMediaPasteboard::CanInteractiveResize(class wxSnip* x0)
+{
+  Scheme_Object *p[1];
+  Scheme_Object *v;
+  mz_jmp_buf savebuf;
+  Scheme_Object *method;
+  int sj;
+  static void *mcache = 0;
+
+  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "can-interactive-resize?", &mcache);
+  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
+    COPY_JMPBUF(savebuf, scheme_error_buf);
+    sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
+  } else sj = 1;
+  if (sj) {
+return wxMediaPasteboard::CanInteractiveResize(x0);
+  } else {
+  
+  p[0] = objscheme_bundle_wxSnip(x0);
+  
+
+  v = scheme_apply(method, 1, p);
+  
+  
+  COPY_JMPBUF(scheme_error_buf, savebuf);
+
+  return objscheme_unbundle_bool(v, "can-interactive-resize? in pasteboard%"", extracting return value");
   }
 }
 
@@ -428,7 +514,7 @@ wxMediaPasteboard::AfterInteractiveMove(x0);
   }
 }
 
-Bool os_wxMediaPasteboard::OnInteractiveMove(class wxMouseEvent* x0)
+void os_wxMediaPasteboard::OnInteractiveMove(class wxMouseEvent* x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
@@ -447,7 +533,7 @@ Bool os_wxMediaPasteboard::OnInteractiveMove(class wxMouseEvent* x0)
     }
   } else sj = 1;
   if (sj) {
-return wxMediaPasteboard::OnInteractiveMove(x0);
+wxMediaPasteboard::OnInteractiveMove(x0);
   } else {
   
   p[0] = objscheme_bundle_wxMouseEvent(x0);
@@ -458,7 +544,40 @@ return wxMediaPasteboard::OnInteractiveMove(x0);
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_bool(v, "on-interactive-move in pasteboard%"", extracting return value");
+  }
+}
+
+Bool os_wxMediaPasteboard::CanInteractiveMove(class wxMouseEvent* x0)
+{
+  Scheme_Object *p[1];
+  Scheme_Object *v;
+  mz_jmp_buf savebuf;
+  Scheme_Object *method;
+  int sj;
+  static void *mcache = 0;
+
+  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "can-interactive-move?", &mcache);
+  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
+    COPY_JMPBUF(savebuf, scheme_error_buf);
+    sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
+  } else sj = 1;
+  if (sj) {
+return wxMediaPasteboard::CanInteractiveMove(x0);
+  } else {
+  
+  p[0] = objscheme_bundle_wxMouseEvent(x0);
+  
+
+  v = scheme_apply(method, 1, p);
+  
+  
+  COPY_JMPBUF(scheme_error_buf, savebuf);
+
+  return objscheme_unbundle_bool(v, "can-interactive-move? in pasteboard%"", extracting return value");
   }
 }
 
@@ -640,7 +759,7 @@ wxMediaPasteboard::AfterSelect(x0, x1);
   }
 }
 
-Bool os_wxMediaPasteboard::OnSelect(class wxSnip* x0, Bool x1)
+void os_wxMediaPasteboard::OnSelect(class wxSnip* x0, Bool x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
@@ -659,7 +778,7 @@ Bool os_wxMediaPasteboard::OnSelect(class wxSnip* x0, Bool x1)
     }
   } else sj = 1;
   if (sj) {
-return wxMediaPasteboard::OnSelect(x0, x1);
+wxMediaPasteboard::OnSelect(x0, x1);
   } else {
   
   p[0] = objscheme_bundle_wxSnip(x0);
@@ -671,7 +790,41 @@ return wxMediaPasteboard::OnSelect(x0, x1);
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_bool(v, "on-select in pasteboard%"", extracting return value");
+  }
+}
+
+Bool os_wxMediaPasteboard::CanSelect(class wxSnip* x0, Bool x1)
+{
+  Scheme_Object *p[2];
+  Scheme_Object *v;
+  mz_jmp_buf savebuf;
+  Scheme_Object *method;
+  int sj;
+  static void *mcache = 0;
+
+  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "can-select?", &mcache);
+  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
+    COPY_JMPBUF(savebuf, scheme_error_buf);
+    sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
+  } else sj = 1;
+  if (sj) {
+return wxMediaPasteboard::CanSelect(x0, x1);
+  } else {
+  
+  p[0] = objscheme_bundle_wxSnip(x0);
+  p[1] = (x1 ? scheme_true : scheme_false);
+  
+
+  v = scheme_apply(method, 2, p);
+  
+  
+  COPY_JMPBUF(scheme_error_buf, savebuf);
+
+  return objscheme_unbundle_bool(v, "can-select? in pasteboard%"", extracting return value");
   }
 }
 
@@ -711,7 +864,7 @@ wxMediaPasteboard::AfterResize(x0, x1, x2, x3);
   }
 }
 
-Bool os_wxMediaPasteboard::OnResize(class wxSnip* x0, float x1, float x2)
+void os_wxMediaPasteboard::OnResize(class wxSnip* x0, float x1, float x2)
 {
   Scheme_Object *p[3];
   Scheme_Object *v;
@@ -730,7 +883,7 @@ Bool os_wxMediaPasteboard::OnResize(class wxSnip* x0, float x1, float x2)
     }
   } else sj = 1;
   if (sj) {
-return wxMediaPasteboard::OnResize(x0, x1, x2);
+wxMediaPasteboard::OnResize(x0, x1, x2);
   } else {
   
   p[0] = objscheme_bundle_wxSnip(x0);
@@ -743,7 +896,42 @@ return wxMediaPasteboard::OnResize(x0, x1, x2);
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_bool(v, "on-resize in pasteboard%"", extracting return value");
+  }
+}
+
+Bool os_wxMediaPasteboard::CanResize(class wxSnip* x0, float x1, float x2)
+{
+  Scheme_Object *p[3];
+  Scheme_Object *v;
+  mz_jmp_buf savebuf;
+  Scheme_Object *method;
+  int sj;
+  static void *mcache = 0;
+
+  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "can-resize?", &mcache);
+  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
+    COPY_JMPBUF(savebuf, scheme_error_buf);
+    sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
+  } else sj = 1;
+  if (sj) {
+return wxMediaPasteboard::CanResize(x0, x1, x2);
+  } else {
+  
+  p[0] = objscheme_bundle_wxSnip(x0);
+  p[1] = scheme_make_double(x1);
+  p[2] = scheme_make_double(x2);
+  
+
+  v = scheme_apply(method, 3, p);
+  
+  
+  COPY_JMPBUF(scheme_error_buf, savebuf);
+
+  return objscheme_unbundle_bool(v, "can-resize? in pasteboard%"", extracting return value");
   }
 }
 
@@ -783,7 +971,7 @@ wxMediaPasteboard::AfterMoveTo(x0, x1, x2, x3);
   }
 }
 
-Bool os_wxMediaPasteboard::OnMoveTo(class wxSnip* x0, float x1, float x2, Bool x3)
+void os_wxMediaPasteboard::OnMoveTo(class wxSnip* x0, float x1, float x2, Bool x3)
 {
   Scheme_Object *p[4];
   Scheme_Object *v;
@@ -802,7 +990,7 @@ Bool os_wxMediaPasteboard::OnMoveTo(class wxSnip* x0, float x1, float x2, Bool x
     }
   } else sj = 1;
   if (sj) {
-return wxMediaPasteboard::OnMoveTo(x0, x1, x2, x3);
+wxMediaPasteboard::OnMoveTo(x0, x1, x2, x3);
   } else {
   
   p[0] = objscheme_bundle_wxSnip(x0);
@@ -816,7 +1004,43 @@ return wxMediaPasteboard::OnMoveTo(x0, x1, x2, x3);
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_bool(v, "on-move-to in pasteboard%"", extracting return value");
+  }
+}
+
+Bool os_wxMediaPasteboard::CanMoveTo(class wxSnip* x0, float x1, float x2, Bool x3)
+{
+  Scheme_Object *p[4];
+  Scheme_Object *v;
+  mz_jmp_buf savebuf;
+  Scheme_Object *method;
+  int sj;
+  static void *mcache = 0;
+
+  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "can-move-to?", &mcache);
+  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
+    COPY_JMPBUF(savebuf, scheme_error_buf);
+    sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
+  } else sj = 1;
+  if (sj) {
+return wxMediaPasteboard::CanMoveTo(x0, x1, x2, x3);
+  } else {
+  
+  p[0] = objscheme_bundle_wxSnip(x0);
+  p[1] = scheme_make_double(x1);
+  p[2] = scheme_make_double(x2);
+  p[3] = (x3 ? scheme_true : scheme_false);
+  
+
+  v = scheme_apply(method, 4, p);
+  
+  
+  COPY_JMPBUF(scheme_error_buf, savebuf);
+
+  return objscheme_unbundle_bool(v, "can-move-to? in pasteboard%"", extracting return value");
   }
 }
 
@@ -853,7 +1077,7 @@ wxMediaPasteboard::AfterDelete(x0);
   }
 }
 
-Bool os_wxMediaPasteboard::OnDelete(class wxSnip* x0)
+void os_wxMediaPasteboard::OnDelete(class wxSnip* x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
@@ -872,7 +1096,7 @@ Bool os_wxMediaPasteboard::OnDelete(class wxSnip* x0)
     }
   } else sj = 1;
   if (sj) {
-return wxMediaPasteboard::OnDelete(x0);
+wxMediaPasteboard::OnDelete(x0);
   } else {
   
   p[0] = objscheme_bundle_wxSnip(x0);
@@ -883,7 +1107,40 @@ return wxMediaPasteboard::OnDelete(x0);
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_bool(v, "on-delete in pasteboard%"", extracting return value");
+  }
+}
+
+Bool os_wxMediaPasteboard::CanDelete(class wxSnip* x0)
+{
+  Scheme_Object *p[1];
+  Scheme_Object *v;
+  mz_jmp_buf savebuf;
+  Scheme_Object *method;
+  int sj;
+  static void *mcache = 0;
+
+  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "can-delete?", &mcache);
+  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
+    COPY_JMPBUF(savebuf, scheme_error_buf);
+    sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
+  } else sj = 1;
+  if (sj) {
+return wxMediaPasteboard::CanDelete(x0);
+  } else {
+  
+  p[0] = objscheme_bundle_wxSnip(x0);
+  
+
+  v = scheme_apply(method, 1, p);
+  
+  
+  COPY_JMPBUF(scheme_error_buf, savebuf);
+
+  return objscheme_unbundle_bool(v, "can-delete? in pasteboard%"", extracting return value");
   }
 }
 
@@ -923,7 +1180,7 @@ wxMediaPasteboard::AfterInsert(x0, x1, x2, x3);
   }
 }
 
-Bool os_wxMediaPasteboard::OnInsert(class wxSnip* x0, class wxSnip* x1, float x2, float x3)
+void os_wxMediaPasteboard::OnInsert(class wxSnip* x0, class wxSnip* x1, float x2, float x3)
 {
   Scheme_Object *p[4];
   Scheme_Object *v;
@@ -942,7 +1199,7 @@ Bool os_wxMediaPasteboard::OnInsert(class wxSnip* x0, class wxSnip* x1, float x2
     }
   } else sj = 1;
   if (sj) {
-return wxMediaPasteboard::OnInsert(x0, x1, x2, x3);
+wxMediaPasteboard::OnInsert(x0, x1, x2, x3);
   } else {
   
   p[0] = objscheme_bundle_wxSnip(x0);
@@ -956,7 +1213,43 @@ return wxMediaPasteboard::OnInsert(x0, x1, x2, x3);
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_bool(v, "on-insert in pasteboard%"", extracting return value");
+  }
+}
+
+Bool os_wxMediaPasteboard::CanInsert(class wxSnip* x0, class wxSnip* x1, float x2, float x3)
+{
+  Scheme_Object *p[4];
+  Scheme_Object *v;
+  mz_jmp_buf savebuf;
+  Scheme_Object *method;
+  int sj;
+  static void *mcache = 0;
+
+  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "can-insert?", &mcache);
+  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
+    COPY_JMPBUF(savebuf, scheme_error_buf);
+    sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
+  } else sj = 1;
+  if (sj) {
+return wxMediaPasteboard::CanInsert(x0, x1, x2, x3);
+  } else {
+  
+  p[0] = objscheme_bundle_wxSnip(x0);
+  p[1] = objscheme_bundle_wxSnip(x1);
+  p[2] = scheme_make_double(x2);
+  p[3] = scheme_make_double(x3);
+  
+
+  v = scheme_apply(method, 4, p);
+  
+  
+  COPY_JMPBUF(scheme_error_buf, savebuf);
+
+  return objscheme_unbundle_bool(v, "can-insert? in pasteboard%"", extracting return value");
   }
 }
 
@@ -1193,7 +1486,7 @@ wxMediaPasteboard::AfterLoadFile(x0);
   }
 }
 
-Bool os_wxMediaPasteboard::OnLoadFile(string x0, int x1)
+void os_wxMediaPasteboard::OnLoadFile(string x0, int x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
@@ -1212,7 +1505,7 @@ Bool os_wxMediaPasteboard::OnLoadFile(string x0, int x1)
     }
   } else sj = 1;
   if (sj) {
-return wxMediaPasteboard::OnLoadFile(x0, x1);
+wxMediaPasteboard::OnLoadFile(x0, x1);
   } else {
   
   p[0] = objscheme_bundle_string((char *)x0);
@@ -1224,7 +1517,41 @@ return wxMediaPasteboard::OnLoadFile(x0, x1);
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_bool(v, "on-load-file in pasteboard%"", extracting return value");
+  }
+}
+
+Bool os_wxMediaPasteboard::CanLoadFile(string x0, int x1)
+{
+  Scheme_Object *p[2];
+  Scheme_Object *v;
+  mz_jmp_buf savebuf;
+  Scheme_Object *method;
+  int sj;
+  static void *mcache = 0;
+
+  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "can-load-file?", &mcache);
+  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
+    COPY_JMPBUF(savebuf, scheme_error_buf);
+    sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
+  } else sj = 1;
+  if (sj) {
+return wxMediaPasteboard::CanLoadFile(x0, x1);
+  } else {
+  
+  p[0] = objscheme_bundle_string((char *)x0);
+  p[1] = bundle_symset_fileType(x1);
+  
+
+  v = scheme_apply(method, 2, p);
+  
+  
+  COPY_JMPBUF(scheme_error_buf, savebuf);
+
+  return objscheme_unbundle_bool(v, "can-load-file? in pasteboard%"", extracting return value");
   }
 }
 
@@ -1261,7 +1588,7 @@ wxMediaPasteboard::AfterSaveFile(x0);
   }
 }
 
-Bool os_wxMediaPasteboard::OnSaveFile(string x0, int x1)
+void os_wxMediaPasteboard::OnSaveFile(string x0, int x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
@@ -1280,7 +1607,7 @@ Bool os_wxMediaPasteboard::OnSaveFile(string x0, int x1)
     }
   } else sj = 1;
   if (sj) {
-return wxMediaPasteboard::OnSaveFile(x0, x1);
+wxMediaPasteboard::OnSaveFile(x0, x1);
   } else {
   
   p[0] = objscheme_bundle_string((char *)x0);
@@ -1292,7 +1619,41 @@ return wxMediaPasteboard::OnSaveFile(x0, x1);
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_bool(v, "on-save-file in pasteboard%"", extracting return value");
+  }
+}
+
+Bool os_wxMediaPasteboard::CanSaveFile(string x0, int x1)
+{
+  Scheme_Object *p[2];
+  Scheme_Object *v;
+  mz_jmp_buf savebuf;
+  Scheme_Object *method;
+  int sj;
+  static void *mcache = 0;
+
+  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "can-save-file?", &mcache);
+  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
+    COPY_JMPBUF(savebuf, scheme_error_buf);
+    sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
+  } else sj = 1;
+  if (sj) {
+return wxMediaPasteboard::CanSaveFile(x0, x1);
+  } else {
+  
+  p[0] = objscheme_bundle_string((char *)x0);
+  p[1] = bundle_symset_fileType(x1);
+  
+
+  v = scheme_apply(method, 2, p);
+  
+  
+  COPY_JMPBUF(scheme_error_buf, savebuf);
+
+  return objscheme_unbundle_bool(v, "can-save-file? in pasteboard%"", extracting return value");
   }
 }
 
@@ -1856,9 +2217,9 @@ wxMediaPasteboard::SetCaretOwner(x0, x1);
   }
 }
 
-Bool os_wxMediaPasteboard::ScrollTo(class wxSnip* x0, float x1, float x2, float x3, float x4, Bool x5)
+Bool os_wxMediaPasteboard::ScrollTo(class wxSnip* x0, float x1, float x2, float x3, float x4, Bool x5, int x6)
 {
-  Scheme_Object *p[6];
+  Scheme_Object *p[7];
   Scheme_Object *v;
   mz_jmp_buf savebuf;
   Scheme_Object *method;
@@ -1875,7 +2236,7 @@ Bool os_wxMediaPasteboard::ScrollTo(class wxSnip* x0, float x1, float x2, float 
     }
   } else sj = 1;
   if (sj) {
-return wxMediaPasteboard::ScrollTo(x0, x1, x2, x3, x4, x5);
+return wxMediaPasteboard::ScrollTo(x0, x1, x2, x3, x4, x5, x6);
   } else {
   
   p[0] = objscheme_bundle_wxSnip(x0);
@@ -1884,9 +2245,10 @@ return wxMediaPasteboard::ScrollTo(x0, x1, x2, x3, x4, x5);
   p[3] = scheme_make_double(x3);
   p[4] = scheme_make_double(x4);
   p[5] = (x5 ? scheme_true : scheme_false);
+  p[6] = bundle_symset_bias(x6);
   
 
-  v = scheme_apply(method, 6, p);
+  v = scheme_apply(method, 7, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -2554,7 +2916,6 @@ static Scheme_Object *os_wxMediaPasteboardAfterInteractiveResize(Scheme_Object *
 static Scheme_Object *os_wxMediaPasteboardOnInteractiveResize(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  Bool r;
   objscheme_check_valid(obj);
   class wxSnip* x0;
 
@@ -2563,9 +2924,31 @@ static Scheme_Object *os_wxMediaPasteboardOnInteractiveResize(Scheme_Object *obj
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
-    r = ((os_wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->wxMediaPasteboard::OnInteractiveResize(x0);
+    ((os_wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->wxMediaPasteboard::OnInteractiveResize(x0);
   else
-    r = ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->OnInteractiveResize(x0);
+    ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->OnInteractiveResize(x0);
+
+  
+  
+  return scheme_void;
+}
+
+#pragma argsused
+static Scheme_Object *os_wxMediaPasteboardCanInteractiveResize(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  Bool r;
+  objscheme_check_valid(obj);
+  class wxSnip* x0;
+
+  
+  x0 = objscheme_unbundle_wxSnip(p[0], "can-interactive-resize? in pasteboard%", 0);
+
+  
+  if (((Scheme_Class_Object *)obj)->primflag)
+    r = ((os_wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->wxMediaPasteboard::CanInteractiveResize(x0);
+  else
+    r = ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->CanInteractiveResize(x0);
 
   
   
@@ -2597,7 +2980,6 @@ static Scheme_Object *os_wxMediaPasteboardAfterInteractiveMove(Scheme_Object *ob
 static Scheme_Object *os_wxMediaPasteboardOnInteractiveMove(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  Bool r;
   objscheme_check_valid(obj);
   class wxMouseEvent* x0;
 
@@ -2606,9 +2988,31 @@ static Scheme_Object *os_wxMediaPasteboardOnInteractiveMove(Scheme_Object *obj, 
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
-    r = ((os_wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->wxMediaPasteboard::OnInteractiveMove(x0);
+    ((os_wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->wxMediaPasteboard::OnInteractiveMove(x0);
   else
-    r = ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->OnInteractiveMove(x0);
+    ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->OnInteractiveMove(x0);
+
+  
+  
+  return scheme_void;
+}
+
+#pragma argsused
+static Scheme_Object *os_wxMediaPasteboardCanInteractiveMove(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  Bool r;
+  objscheme_check_valid(obj);
+  class wxMouseEvent* x0;
+
+  
+  x0 = objscheme_unbundle_wxMouseEvent(p[0], "can-interactive-move? in pasteboard%", 0);
+
+  
+  if (((Scheme_Class_Object *)obj)->primflag)
+    r = ((os_wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->wxMediaPasteboard::CanInteractiveMove(x0);
+  else
+    r = ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->CanInteractiveMove(x0);
 
   
   
@@ -2756,7 +3160,6 @@ static Scheme_Object *os_wxMediaPasteboardAfterSelect(Scheme_Object *obj, int n,
 static Scheme_Object *os_wxMediaPasteboardOnSelect(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  Bool r;
   objscheme_check_valid(obj);
   class wxSnip* x0;
   Bool x1;
@@ -2767,9 +3170,33 @@ static Scheme_Object *os_wxMediaPasteboardOnSelect(Scheme_Object *obj, int n,  S
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
-    r = ((os_wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->wxMediaPasteboard::OnSelect(x0, x1);
+    ((os_wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->wxMediaPasteboard::OnSelect(x0, x1);
   else
-    r = ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->OnSelect(x0, x1);
+    ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->OnSelect(x0, x1);
+
+  
+  
+  return scheme_void;
+}
+
+#pragma argsused
+static Scheme_Object *os_wxMediaPasteboardCanSelect(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  Bool r;
+  objscheme_check_valid(obj);
+  class wxSnip* x0;
+  Bool x1;
+
+  
+  x0 = objscheme_unbundle_wxSnip(p[0], "can-select? in pasteboard%", 0);
+  x1 = objscheme_unbundle_bool(p[1], "can-select? in pasteboard%");
+
+  
+  if (((Scheme_Class_Object *)obj)->primflag)
+    r = ((os_wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->wxMediaPasteboard::CanSelect(x0, x1);
+  else
+    r = ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->CanSelect(x0, x1);
 
   
   
@@ -2807,7 +3234,6 @@ static Scheme_Object *os_wxMediaPasteboardAfterResize(Scheme_Object *obj, int n,
 static Scheme_Object *os_wxMediaPasteboardOnResize(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  Bool r;
   objscheme_check_valid(obj);
   class wxSnip* x0;
   float x1;
@@ -2820,9 +3246,35 @@ static Scheme_Object *os_wxMediaPasteboardOnResize(Scheme_Object *obj, int n,  S
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
-    r = ((os_wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->wxMediaPasteboard::OnResize(x0, x1, x2);
+    ((os_wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->wxMediaPasteboard::OnResize(x0, x1, x2);
   else
-    r = ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->OnResize(x0, x1, x2);
+    ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->OnResize(x0, x1, x2);
+
+  
+  
+  return scheme_void;
+}
+
+#pragma argsused
+static Scheme_Object *os_wxMediaPasteboardCanResize(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  Bool r;
+  objscheme_check_valid(obj);
+  class wxSnip* x0;
+  float x1;
+  float x2;
+
+  
+  x0 = objscheme_unbundle_wxSnip(p[0], "can-resize? in pasteboard%", 0);
+  x1 = objscheme_unbundle_float(p[1], "can-resize? in pasteboard%");
+  x2 = objscheme_unbundle_float(p[2], "can-resize? in pasteboard%");
+
+  
+  if (((Scheme_Class_Object *)obj)->primflag)
+    r = ((os_wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->wxMediaPasteboard::CanResize(x0, x1, x2);
+  else
+    r = ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->CanResize(x0, x1, x2);
 
   
   
@@ -2860,7 +3312,6 @@ static Scheme_Object *os_wxMediaPasteboardAfterMoveTo(Scheme_Object *obj, int n,
 static Scheme_Object *os_wxMediaPasteboardOnMoveTo(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  Bool r;
   objscheme_check_valid(obj);
   class wxSnip* x0;
   float x1;
@@ -2875,9 +3326,37 @@ static Scheme_Object *os_wxMediaPasteboardOnMoveTo(Scheme_Object *obj, int n,  S
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
-    r = ((os_wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->wxMediaPasteboard::OnMoveTo(x0, x1, x2, x3);
+    ((os_wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->wxMediaPasteboard::OnMoveTo(x0, x1, x2, x3);
   else
-    r = ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->OnMoveTo(x0, x1, x2, x3);
+    ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->OnMoveTo(x0, x1, x2, x3);
+
+  
+  
+  return scheme_void;
+}
+
+#pragma argsused
+static Scheme_Object *os_wxMediaPasteboardCanMoveTo(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  Bool r;
+  objscheme_check_valid(obj);
+  class wxSnip* x0;
+  float x1;
+  float x2;
+  Bool x3;
+
+  
+  x0 = objscheme_unbundle_wxSnip(p[0], "can-move-to? in pasteboard%", 0);
+  x1 = objscheme_unbundle_float(p[1], "can-move-to? in pasteboard%");
+  x2 = objscheme_unbundle_float(p[2], "can-move-to? in pasteboard%");
+  x3 = objscheme_unbundle_bool(p[3], "can-move-to? in pasteboard%");
+
+  
+  if (((Scheme_Class_Object *)obj)->primflag)
+    r = ((os_wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->wxMediaPasteboard::CanMoveTo(x0, x1, x2, x3);
+  else
+    r = ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->CanMoveTo(x0, x1, x2, x3);
 
   
   
@@ -2909,7 +3388,6 @@ static Scheme_Object *os_wxMediaPasteboardAfterDelete(Scheme_Object *obj, int n,
 static Scheme_Object *os_wxMediaPasteboardOnDelete(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  Bool r;
   objscheme_check_valid(obj);
   class wxSnip* x0;
 
@@ -2918,9 +3396,31 @@ static Scheme_Object *os_wxMediaPasteboardOnDelete(Scheme_Object *obj, int n,  S
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
-    r = ((os_wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->wxMediaPasteboard::OnDelete(x0);
+    ((os_wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->wxMediaPasteboard::OnDelete(x0);
   else
-    r = ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->OnDelete(x0);
+    ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->OnDelete(x0);
+
+  
+  
+  return scheme_void;
+}
+
+#pragma argsused
+static Scheme_Object *os_wxMediaPasteboardCanDelete(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  Bool r;
+  objscheme_check_valid(obj);
+  class wxSnip* x0;
+
+  
+  x0 = objscheme_unbundle_wxSnip(p[0], "can-delete? in pasteboard%", 0);
+
+  
+  if (((Scheme_Class_Object *)obj)->primflag)
+    r = ((os_wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->wxMediaPasteboard::CanDelete(x0);
+  else
+    r = ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->CanDelete(x0);
 
   
   
@@ -2958,7 +3458,6 @@ static Scheme_Object *os_wxMediaPasteboardAfterInsert(Scheme_Object *obj, int n,
 static Scheme_Object *os_wxMediaPasteboardOnInsert(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  Bool r;
   objscheme_check_valid(obj);
   class wxSnip* x0;
   class wxSnip* x1;
@@ -2973,9 +3472,37 @@ static Scheme_Object *os_wxMediaPasteboardOnInsert(Scheme_Object *obj, int n,  S
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
-    r = ((os_wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->wxMediaPasteboard::OnInsert(x0, x1, x2, x3);
+    ((os_wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->wxMediaPasteboard::OnInsert(x0, x1, x2, x3);
   else
-    r = ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->OnInsert(x0, x1, x2, x3);
+    ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->OnInsert(x0, x1, x2, x3);
+
+  
+  
+  return scheme_void;
+}
+
+#pragma argsused
+static Scheme_Object *os_wxMediaPasteboardCanInsert(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  Bool r;
+  objscheme_check_valid(obj);
+  class wxSnip* x0;
+  class wxSnip* x1;
+  float x2;
+  float x3;
+
+  
+  x0 = objscheme_unbundle_wxSnip(p[0], "can-insert? in pasteboard%", 0);
+  x1 = objscheme_unbundle_wxSnip(p[1], "can-insert? in pasteboard%", 1);
+  x2 = objscheme_unbundle_float(p[2], "can-insert? in pasteboard%");
+  x3 = objscheme_unbundle_float(p[3], "can-insert? in pasteboard%");
+
+  
+  if (((Scheme_Class_Object *)obj)->primflag)
+    r = ((os_wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->wxMediaPasteboard::CanInsert(x0, x1, x2, x3);
+  else
+    r = ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->CanInsert(x0, x1, x2, x3);
 
   
   
@@ -3711,7 +4238,6 @@ static Scheme_Object *os_wxMediaPasteboardAfterLoadFile(Scheme_Object *obj, int 
 static Scheme_Object *os_wxMediaPasteboardOnLoadFile(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  Bool r;
   objscheme_check_valid(obj);
   string x0;
   int x1;
@@ -3722,9 +4248,33 @@ static Scheme_Object *os_wxMediaPasteboardOnLoadFile(Scheme_Object *obj, int n, 
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
-    r = ((os_wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->wxMediaPasteboard::OnLoadFile(x0, x1);
+    ((os_wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->wxMediaPasteboard::OnLoadFile(x0, x1);
   else
-    r = ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->OnLoadFile(x0, x1);
+    ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->OnLoadFile(x0, x1);
+
+  
+  
+  return scheme_void;
+}
+
+#pragma argsused
+static Scheme_Object *os_wxMediaPasteboardCanLoadFile(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  Bool r;
+  objscheme_check_valid(obj);
+  string x0;
+  int x1;
+
+  
+  x0 = (string)objscheme_unbundle_string(p[0], "can-load-file? in pasteboard%");
+  x1 = unbundle_symset_fileType(p[1], "can-load-file? in pasteboard%");
+
+  
+  if (((Scheme_Class_Object *)obj)->primflag)
+    r = ((os_wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->wxMediaPasteboard::CanLoadFile(x0, x1);
+  else
+    r = ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->CanLoadFile(x0, x1);
 
   
   
@@ -3756,7 +4306,6 @@ static Scheme_Object *os_wxMediaPasteboardAfterSaveFile(Scheme_Object *obj, int 
 static Scheme_Object *os_wxMediaPasteboardOnSaveFile(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  Bool r;
   objscheme_check_valid(obj);
   string x0;
   int x1;
@@ -3767,9 +4316,33 @@ static Scheme_Object *os_wxMediaPasteboardOnSaveFile(Scheme_Object *obj, int n, 
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
-    r = ((os_wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->wxMediaPasteboard::OnSaveFile(x0, x1);
+    ((os_wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->wxMediaPasteboard::OnSaveFile(x0, x1);
   else
-    r = ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->OnSaveFile(x0, x1);
+    ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->OnSaveFile(x0, x1);
+
+  
+  
+  return scheme_void;
+}
+
+#pragma argsused
+static Scheme_Object *os_wxMediaPasteboardCanSaveFile(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  Bool r;
+  objscheme_check_valid(obj);
+  string x0;
+  int x1;
+
+  
+  x0 = (string)objscheme_unbundle_string(p[0], "can-save-file? in pasteboard%");
+  x1 = unbundle_symset_fileType(p[1], "can-save-file? in pasteboard%");
+
+  
+  if (((Scheme_Class_Object *)obj)->primflag)
+    r = ((os_wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->wxMediaPasteboard::CanSaveFile(x0, x1);
+  else
+    r = ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->CanSaveFile(x0, x1);
 
   
   
@@ -4241,6 +4814,7 @@ static Scheme_Object *os_wxMediaPasteboardScrollTo(Scheme_Object *obj, int n,  S
   float x3;
   float x4;
   Bool x5;
+  int x6;
 
   
   x0 = objscheme_unbundle_wxSnip(p[0], "scroll-to in pasteboard%", 0);
@@ -4249,12 +4823,16 @@ static Scheme_Object *os_wxMediaPasteboardScrollTo(Scheme_Object *obj, int n,  S
   x3 = objscheme_unbundle_float(p[3], "scroll-to in pasteboard%");
   x4 = objscheme_unbundle_float(p[4], "scroll-to in pasteboard%");
   x5 = objscheme_unbundle_bool(p[5], "scroll-to in pasteboard%");
+  if (n > 6) {
+    x6 = unbundle_symset_bias(p[6], "scroll-to in pasteboard%");
+  } else
+    x6 = 0;
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
-    r = ((os_wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->wxMediaPasteboard::ScrollTo(x0, x1, x2, x3, x4, x5);
+    r = ((os_wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->wxMediaPasteboard::ScrollTo(x0, x1, x2, x3, x4, x5, x6);
   else
-    r = ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->ScrollTo(x0, x1, x2, x3, x4, x5);
+    r = ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->ScrollTo(x0, x1, x2, x3, x4, x5, x6);
 
   
   
@@ -4715,7 +5293,7 @@ void objscheme_setup_wxMediaPasteboard(void *env)
 if (os_wxMediaPasteboard_class) {
     objscheme_add_global_class(os_wxMediaPasteboard_class, "pasteboard%", env);
 } else {
-  os_wxMediaPasteboard_class = objscheme_def_prim_class(env, "pasteboard%", "editor%", os_wxMediaPasteboard_ConstructScheme, 95);
+  os_wxMediaPasteboard_class = objscheme_def_prim_class(env, "pasteboard%", "editor%", os_wxMediaPasteboard_ConstructScheme, 104);
 
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "set-scroll-step", os_wxMediaPasteboardSetScrollStep, 1, 1);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "get-scroll-step", os_wxMediaPasteboardGetScrollStep, 0, 0);
@@ -4725,22 +5303,29 @@ if (os_wxMediaPasteboard_class) {
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "get-dragable", os_wxMediaPasteboardGetDragable, 0, 0);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "after-interactive-resize", os_wxMediaPasteboardAfterInteractiveResize, 1, 1);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "on-interactive-resize", os_wxMediaPasteboardOnInteractiveResize, 1, 1);
+ scheme_add_method_w_arity(os_wxMediaPasteboard_class, "can-interactive-resize?", os_wxMediaPasteboardCanInteractiveResize, 1, 1);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "after-interactive-move", os_wxMediaPasteboardAfterInteractiveMove, 1, 1);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "on-interactive-move", os_wxMediaPasteboardOnInteractiveMove, 1, 1);
+ scheme_add_method_w_arity(os_wxMediaPasteboard_class, "can-interactive-move?", os_wxMediaPasteboardCanInteractiveMove, 1, 1);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "interactive-adjust-resize", os_wxMediaPasteboardInteractiveAdjustResize, 3, 3);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "interactive-adjust-move", os_wxMediaPasteboardInteractiveAdjustMove, 3, 3);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "interactive-adjust-mouse", os_wxMediaPasteboardInteractiveAdjustMouse, 2, 2);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "on-double-click", os_wxMediaPasteboardOnDoubleClick, 2, 2);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "after-select", os_wxMediaPasteboardAfterSelect, 2, 2);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "on-select", os_wxMediaPasteboardOnSelect, 2, 2);
+ scheme_add_method_w_arity(os_wxMediaPasteboard_class, "can-select?", os_wxMediaPasteboardCanSelect, 2, 2);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "after-resize", os_wxMediaPasteboardAfterResize, 4, 4);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "on-resize", os_wxMediaPasteboardOnResize, 3, 3);
+ scheme_add_method_w_arity(os_wxMediaPasteboard_class, "can-resize?", os_wxMediaPasteboardCanResize, 3, 3);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "after-move-to", os_wxMediaPasteboardAfterMoveTo, 4, 4);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "on-move-to", os_wxMediaPasteboardOnMoveTo, 4, 4);
+ scheme_add_method_w_arity(os_wxMediaPasteboard_class, "can-move-to?", os_wxMediaPasteboardCanMoveTo, 4, 4);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "after-delete", os_wxMediaPasteboardAfterDelete, 1, 1);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "on-delete", os_wxMediaPasteboardOnDelete, 1, 1);
+ scheme_add_method_w_arity(os_wxMediaPasteboard_class, "can-delete?", os_wxMediaPasteboardCanDelete, 1, 1);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "after-insert", os_wxMediaPasteboardAfterInsert, 4, 4);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "on-insert", os_wxMediaPasteboardOnInsert, 4, 4);
+ scheme_add_method_w_arity(os_wxMediaPasteboard_class, "can-insert?", os_wxMediaPasteboardCanInsert, 4, 4);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "find-next-selected-snip", os_wxMediaPasteboardFindNextSelectedSnip, 1, 1);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "is-selected?", os_wxMediaPasteboardIsSelected, 1, 1);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "find-first-snip", os_wxMediaPasteboardFindFirstSnip, 0, 0);
@@ -4771,8 +5356,10 @@ if (os_wxMediaPasteboard_class) {
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "on-edit-sequence", os_wxMediaPasteboardOnEditSequence, 0, 0);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "after-load-file", os_wxMediaPasteboardAfterLoadFile, 1, 1);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "on-load-file", os_wxMediaPasteboardOnLoadFile, 2, 2);
+ scheme_add_method_w_arity(os_wxMediaPasteboard_class, "can-load-file?", os_wxMediaPasteboardCanLoadFile, 2, 2);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "after-save-file", os_wxMediaPasteboardAfterSaveFile, 1, 1);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "on-save-file", os_wxMediaPasteboardOnSaveFile, 2, 2);
+ scheme_add_method_w_arity(os_wxMediaPasteboard_class, "can-save-file?", os_wxMediaPasteboardCanSaveFile, 2, 2);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "on-new-box", os_wxMediaPasteboardOnNewBox, 1, 1);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "on-new-image-snip", os_wxMediaPasteboardOnNewImageSnip, 4, 4);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "invalidate-bitmap-cache", os_wxMediaPasteboardInvalidateBitmapCache, 0, 4);
@@ -4791,7 +5378,7 @@ if (os_wxMediaPasteboard_class) {
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "needs-update", os_wxMediaPasteboardNeedsUpdate, 5, 5);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "resized", os_wxMediaPasteboardResized, 2, 2);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "set-caret-owner", os_wxMediaPasteboardSetCaretOwner, 1, 2);
- scheme_add_method_w_arity(os_wxMediaPasteboard_class, "scroll-to", os_wxMediaPasteboardScrollTo, 6, 6);
+ scheme_add_method_w_arity(os_wxMediaPasteboard_class, "scroll-to", os_wxMediaPasteboardScrollTo, 6, 7);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "on-display-size", os_wxMediaPasteboardOnDisplaySize, 0, 0);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "on-change", os_wxMediaPasteboardOnChange, 0, 0);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "on-focus", os_wxMediaPasteboardOnFocus, 1, 1);

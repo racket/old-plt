@@ -39,7 +39,7 @@
 
 @ Z "on-display-size" : void OnDisplaySize();
 
-@ Y "scroll-to" : bool ScrollTo(wxSnip!,float,float,float,float,bool); : : : : XrZERO
+@ Y "scroll-to" : bool ScrollTo(wxSnip!,float,float,float,float,bool,SYM[bias]=0); : : : : XrZERO
 @ Y "set-caret-owner" : void SetCaretOwner(wxSnip^,SYM[focus]=wxFOCUS_IMMEDIATE);
 @ Y "resized" : void Resized(wxSnip!,bool);
 @ Y "needs-update" : void NeedsUpdate(wxSnip!,float,float,float,float);
@@ -67,9 +67,11 @@
 @ Z "on-new-image-snip" : wxImageSnip! OnNewImageSnip(nstring,long,bool,bool);
 @ Z "on-new-box" : wxSnip! OnNewBox(SYM[bufferType]);
 
-@ Z "on-save-file" : bool OnSaveFile(string,SYM[fileType]);
+@ Z "can-save-file?" : bool CanSaveFile(string,SYM[fileType]);
+@ Z "on-save-file" : void OnSaveFile(string,SYM[fileType]);
 @ Z "after-save-file" : void AfterSaveFile(bool);
-@ Z "on-load-file" : bool OnLoadFile(string,SYM[fileType]);
+@ Z "can-load-file?" : bool CanLoadFile(string,SYM[fileType]);
+@ Z "on-load-file" : void OnLoadFile(string,SYM[fileType]);
 @ Z "after-load-file" : void AfterLoadFile(bool);
 
 @ Z "on-edit-sequence" : void OnEditSequence();

@@ -258,6 +258,50 @@ static Scheme_Object *bundle_symset_caret(int v) {
 }
 
 
+# define Sym_END 1
+# define Sym_START -1
+# define Sym_NONE 0
+static Scheme_Object *bias_Sym_START_sym = NULL;
+static Scheme_Object *bias_Sym_NONE_sym = NULL;
+static Scheme_Object *bias_Sym_END_sym = NULL;
+
+static void init_symset_bias(void) {
+  bias_Sym_START_sym = scheme_intern_symbol("start");
+  bias_Sym_NONE_sym = scheme_intern_symbol("none");
+  bias_Sym_END_sym = scheme_intern_symbol("end");
+}
+
+static int unbundle_symset_bias(Scheme_Object *v, const char *where) {
+  if (!bias_Sym_END_sym) init_symset_bias();
+  if (0) { }
+  else if (v == bias_Sym_START_sym) { return Sym_START; }
+  else if (v == bias_Sym_NONE_sym) { return Sym_NONE; }
+  else if (v == bias_Sym_END_sym) { return Sym_END; }
+  if (where) scheme_wrong_type(where, "bias symbol", -1, 0, &v);
+  return 0;
+}
+
+static int istype_symset_bias(Scheme_Object *v, const char *where) {
+  if (!bias_Sym_END_sym) init_symset_bias();
+  if (0) { }
+  else if (v == bias_Sym_START_sym) { return 1; }
+  else if (v == bias_Sym_NONE_sym) { return 1; }
+  else if (v == bias_Sym_END_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "bias symbol", -1, 0, &v);
+  return 0;
+}
+
+static Scheme_Object *bundle_symset_bias(int v) {
+  if (!bias_Sym_END_sym) init_symset_bias();
+  switch (v) {
+  case Sym_START: return bias_Sym_START_sym;
+  case Sym_NONE: return bias_Sym_NONE_sym;
+  case Sym_END: return bias_Sym_END_sym;
+  default: return NULL;
+  }
+}
+
+
 static void *DoCAPOCallback(void *data)
 {
   jmp_buf savebuf;
@@ -1362,7 +1406,7 @@ return FALSE;
   p[2] = scheme_make_double(x2);
   p[3] = scheme_make_double(x3);
   p[4] = (x4 ? scheme_true : scheme_false);
-  p[5] = scheme_make_integer(x5);
+  p[5] = bundle_symset_bias(x5);
   
 
   v = scheme_apply(method, 6, p);
@@ -1627,7 +1671,7 @@ static Scheme_Object *os_wxMediaAdminScrollTo(Scheme_Object *obj, int n,  Scheme
   } else
     x4 = TRUE;
   if (n > 5) {
-    x5 = objscheme_unbundle_integer(p[5], "scroll-to in editor-admin%");
+    x5 = unbundle_symset_bias(p[5], "scroll-to in editor-admin%");
   } else
     x5 = 0;
 
@@ -2005,7 +2049,6 @@ class wxMediaSnipMediaAdmin *objscheme_unbundle_wxMediaSnipMediaAdmin(Scheme_Obj
 
 
 
-
 class os_wxSnipAdmin : public wxSnipAdmin {
  public:
 
@@ -2273,7 +2316,7 @@ return FALSE;
   p[3] = scheme_make_double(x3);
   p[4] = scheme_make_double(x4);
   p[5] = (x5 ? scheme_true : scheme_false);
-  p[6] = scheme_make_integer(x6);
+  p[6] = bundle_symset_bias(x6);
   
 
   v = scheme_apply(method, 7, p);
@@ -2590,7 +2633,7 @@ static Scheme_Object *os_wxSnipAdminScrollTo(Scheme_Object *obj, int n,  Scheme_
   x4 = objscheme_unbundle_float(p[4], "scroll-to in snip-admin%");
   x5 = objscheme_unbundle_bool(p[5], "scroll-to in snip-admin%");
   if (n > 6) {
-    x6 = objscheme_unbundle_integer(p[6], "scroll-to in snip-admin%");
+    x6 = unbundle_symset_bias(p[6], "scroll-to in snip-admin%");
   } else
     x6 = 0;
 

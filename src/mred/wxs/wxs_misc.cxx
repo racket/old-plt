@@ -457,6 +457,8 @@ class os_wxClipboard : public wxClipboard {
 
 Scheme_Object *os_wxClipboard_class;
 
+Scheme_Object *os_wxClipboard_interface;
+
 os_wxClipboard::~os_wxClipboard()
 {
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
@@ -474,8 +476,8 @@ static Scheme_Object *os_wxClipboardGetClipboardData(Scheme_Object *obj, int n, 
   long x2;
 
   
-  x0 = (string)objscheme_unbundle_string(p[0], "get-clipboard-data in clipboard%");
-  x2 = objscheme_unbundle_integer(p[1], "get-clipboard-data in clipboard%");
+  x0 = (string)objscheme_unbundle_string(p[0], "get-clipboard-data in clipboard<%>");
+  x2 = objscheme_unbundle_integer(p[1], "get-clipboard-data in clipboard<%>");
 
   
   r = ((wxClipboard *)((Scheme_Class_Object *)obj)->primdata)->GetClipboardData(x0, x1, x2);
@@ -494,7 +496,7 @@ static Scheme_Object *os_wxClipboardGetClipboardString(Scheme_Object *obj, int n
   long x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "get-clipboard-string in clipboard%");
+  x0 = objscheme_unbundle_integer(p[0], "get-clipboard-string in clipboard<%>");
 
   
   r = ((wxClipboard *)((Scheme_Class_Object *)obj)->primdata)->GetClipboardString(x0);
@@ -530,8 +532,8 @@ static Scheme_Object *os_wxClipboardSetClipboardString(Scheme_Object *obj, int n
   long x1;
 
   
-  x0 = (string)objscheme_unbundle_string(p[0], "set-clipboard-string in clipboard%");
-  x1 = objscheme_unbundle_integer(p[1], "set-clipboard-string in clipboard%");
+  x0 = (string)objscheme_unbundle_string(p[0], "set-clipboard-string in clipboard<%>");
+  x1 = objscheme_unbundle_integer(p[1], "set-clipboard-string in clipboard<%>");
 
   
   ((wxClipboard *)((Scheme_Class_Object *)obj)->primdata)->SetClipboardString(x0, x1);
@@ -550,8 +552,8 @@ static Scheme_Object *os_wxClipboardSetClipboardClient(Scheme_Object *obj, int n
   long x1;
 
   
-  x0 = objscheme_unbundle_wxClipboardClient(p[0], "set-clipboard-client in clipboard%", 0);
-  x1 = objscheme_unbundle_integer(p[1], "set-clipboard-client in clipboard%");
+  x0 = objscheme_unbundle_wxClipboardClient(p[0], "set-clipboard-client in clipboard<%>", 0);
+  x1 = objscheme_unbundle_integer(p[1], "set-clipboard-client in clipboard<%>");
 
   
   ((wxClipboard *)((Scheme_Class_Object *)obj)->primdata)->SetClipboardClient(x0, x1);
@@ -565,6 +567,7 @@ void objscheme_setup_wxClipboard(void *env)
 {
 if (os_wxClipboard_class) {
     objscheme_add_global_class(os_wxClipboard_class, "clipboard%", env);
+    objscheme_add_global_interface(os_wxClipboard_interface, "clipboard" "<%>", env);
 } else {
   os_wxClipboard_class = objscheme_def_prim_class(env, "clipboard%", "object%", NULL, 5);
 
@@ -577,6 +580,9 @@ if (os_wxClipboard_class) {
 
   scheme_made_class(os_wxClipboard_class);
 
+  os_wxClipboard_interface = scheme_class_to_interface(os_wxClipboard_class, "clipboard" "<%>");
+
+  objscheme_add_global_interface(os_wxClipboard_interface, "clipboard" "<%>", env);
 
 }
   scheme_install_xc_global("the-clipboard", objscheme_bundle_wxClipboard(wxTheClipboard), env);

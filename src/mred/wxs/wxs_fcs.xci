@@ -24,3 +24,12 @@
 @SYM "show-caret" : wxSNIP_DRAW_SHOW_CARET
 @SYM "show-inactive-caret" : wxSNIP_DRAW_SHOW_INACTIVE_CARET
 @ENDSYMBOLS
+
+# define Sym_END 1
+# define Sym_START -1
+# define Sym_NONE 0
+@BEGINSYMBOLS bias > ONE
+@SYM "start" : Sym_START
+@SYM "none" : Sym_NONE
+@SYM "end" : Sym_END
+@ENDSYMBOLS

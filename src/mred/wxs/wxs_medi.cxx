@@ -231,6 +231,50 @@ static Scheme_Object *bundle_symset_caret(int v) {
 }
 
 
+# define Sym_END 1
+# define Sym_START -1
+# define Sym_NONE 0
+static Scheme_Object *bias_Sym_START_sym = NULL;
+static Scheme_Object *bias_Sym_NONE_sym = NULL;
+static Scheme_Object *bias_Sym_END_sym = NULL;
+
+static void init_symset_bias(void) {
+  bias_Sym_START_sym = scheme_intern_symbol("start");
+  bias_Sym_NONE_sym = scheme_intern_symbol("none");
+  bias_Sym_END_sym = scheme_intern_symbol("end");
+}
+
+static int unbundle_symset_bias(Scheme_Object *v, const char *where) {
+  if (!bias_Sym_END_sym) init_symset_bias();
+  if (0) { }
+  else if (v == bias_Sym_START_sym) { return Sym_START; }
+  else if (v == bias_Sym_NONE_sym) { return Sym_NONE; }
+  else if (v == bias_Sym_END_sym) { return Sym_END; }
+  if (where) scheme_wrong_type(where, "bias symbol", -1, 0, &v);
+  return 0;
+}
+
+static int istype_symset_bias(Scheme_Object *v, const char *where) {
+  if (!bias_Sym_END_sym) init_symset_bias();
+  if (0) { }
+  else if (v == bias_Sym_START_sym) { return 1; }
+  else if (v == bias_Sym_NONE_sym) { return 1; }
+  else if (v == bias_Sym_END_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "bias symbol", -1, 0, &v);
+  return 0;
+}
+
+static Scheme_Object *bundle_symset_bias(int v) {
+  if (!bias_Sym_END_sym) init_symset_bias();
+  switch (v) {
+  case Sym_START: return bias_Sym_START_sym;
+  case Sym_NONE: return bias_Sym_NONE_sym;
+  case Sym_END: return bias_Sym_END_sym;
+  default: return NULL;
+  }
+}
+
+
 static Scheme_Object *editOp_wxEDIT_UNDO_sym = NULL;
 static Scheme_Object *editOp_wxEDIT_REDO_sym = NULL;
 static Scheme_Object *editOp_wxEDIT_CLEAR_sym = NULL;
@@ -489,9 +533,11 @@ class os_wxMediaBuffer : public wxMediaBuffer {
   void AfterEditSequence();
   void OnEditSequence();
   void AfterLoadFile(Bool x0);
-  Bool OnLoadFile(string x0, int x1);
+  void OnLoadFile(string x0, int x1);
+  Bool CanLoadFile(string x0, int x1);
   void AfterSaveFile(Bool x0);
-  Bool OnSaveFile(string x0, int x1);
+  void OnSaveFile(string x0, int x1);
+  Bool CanSaveFile(string x0, int x1);
   class wxSnip* OnNewBox(int x0);
   class wxImageSnip* OnNewImageSnip(nstring x0, long x1, Bool x2, Bool x3);
   void InvalidateBitmapCache(float x0 = 0.0, float x1 = 0.0, float x2 = -1.0, float x3 = -1.0);
@@ -508,7 +554,7 @@ class os_wxMediaBuffer : public wxMediaBuffer {
   void NeedsUpdate(class wxSnip* x0, float x1, float x2, float x3, float x4);
   void Resized(class wxSnip* x0, Bool x1);
   void SetCaretOwner(class wxSnip* x0, int x1 = wxFOCUS_IMMEDIATE);
-  Bool ScrollTo(class wxSnip* x0, float x1, float x2, float x3, float x4, Bool x5);
+  Bool ScrollTo(class wxSnip* x0, float x1, float x2, float x3, float x4, Bool x5, int x6 = 0);
   void OnDisplaySize();
   void OnChange();
   void OnFocus(Bool x0);
@@ -771,7 +817,7 @@ wxMediaBuffer::AfterLoadFile(x0);
   }
 }
 
-Bool os_wxMediaBuffer::OnLoadFile(string x0, int x1)
+void os_wxMediaBuffer::OnLoadFile(string x0, int x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
@@ -790,7 +836,7 @@ Bool os_wxMediaBuffer::OnLoadFile(string x0, int x1)
     }
   } else sj = 1;
   if (sj) {
-return wxMediaBuffer::OnLoadFile(x0, x1);
+wxMediaBuffer::OnLoadFile(x0, x1);
   } else {
   
   p[0] = objscheme_bundle_string((char *)x0);
@@ -802,7 +848,41 @@ return wxMediaBuffer::OnLoadFile(x0, x1);
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_bool(v, "on-load-file in editor<%>"", extracting return value");
+  }
+}
+
+Bool os_wxMediaBuffer::CanLoadFile(string x0, int x1)
+{
+  Scheme_Object *p[2];
+  Scheme_Object *v;
+  mz_jmp_buf savebuf;
+  Scheme_Object *method;
+  int sj;
+  static void *mcache = 0;
+
+  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "can-load-file?", &mcache);
+  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
+    COPY_JMPBUF(savebuf, scheme_error_buf);
+    sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
+  } else sj = 1;
+  if (sj) {
+return wxMediaBuffer::CanLoadFile(x0, x1);
+  } else {
+  
+  p[0] = objscheme_bundle_string((char *)x0);
+  p[1] = bundle_symset_fileType(x1);
+  
+
+  v = scheme_apply(method, 2, p);
+  
+  
+  COPY_JMPBUF(scheme_error_buf, savebuf);
+
+  return objscheme_unbundle_bool(v, "can-load-file? in editor<%>"", extracting return value");
   }
 }
 
@@ -839,7 +919,7 @@ wxMediaBuffer::AfterSaveFile(x0);
   }
 }
 
-Bool os_wxMediaBuffer::OnSaveFile(string x0, int x1)
+void os_wxMediaBuffer::OnSaveFile(string x0, int x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
@@ -858,7 +938,7 @@ Bool os_wxMediaBuffer::OnSaveFile(string x0, int x1)
     }
   } else sj = 1;
   if (sj) {
-return wxMediaBuffer::OnSaveFile(x0, x1);
+wxMediaBuffer::OnSaveFile(x0, x1);
   } else {
   
   p[0] = objscheme_bundle_string((char *)x0);
@@ -870,7 +950,41 @@ return wxMediaBuffer::OnSaveFile(x0, x1);
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_bool(v, "on-save-file in editor<%>"", extracting return value");
+  }
+}
+
+Bool os_wxMediaBuffer::CanSaveFile(string x0, int x1)
+{
+  Scheme_Object *p[2];
+  Scheme_Object *v;
+  mz_jmp_buf savebuf;
+  Scheme_Object *method;
+  int sj;
+  static void *mcache = 0;
+
+  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "can-save-file?", &mcache);
+  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
+    COPY_JMPBUF(savebuf, scheme_error_buf);
+    sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
+  } else sj = 1;
+  if (sj) {
+return wxMediaBuffer::CanSaveFile(x0, x1);
+  } else {
+  
+  p[0] = objscheme_bundle_string((char *)x0);
+  p[1] = bundle_symset_fileType(x1);
+  
+
+  v = scheme_apply(method, 2, p);
+  
+  
+  COPY_JMPBUF(scheme_error_buf, savebuf);
+
+  return objscheme_unbundle_bool(v, "can-save-file? in editor<%>"", extracting return value");
   }
 }
 
@@ -1434,9 +1548,9 @@ return;
   }
 }
 
-Bool os_wxMediaBuffer::ScrollTo(class wxSnip* x0, float x1, float x2, float x3, float x4, Bool x5)
+Bool os_wxMediaBuffer::ScrollTo(class wxSnip* x0, float x1, float x2, float x3, float x4, Bool x5, int x6)
 {
-  Scheme_Object *p[6];
+  Scheme_Object *p[7];
   Scheme_Object *v;
   mz_jmp_buf savebuf;
   Scheme_Object *method;
@@ -1462,9 +1576,10 @@ return 0;
   p[3] = scheme_make_double(x3);
   p[4] = scheme_make_double(x4);
   p[5] = (x5 ? scheme_true : scheme_false);
+  p[6] = bundle_symset_bias(x6);
   
 
-  v = scheme_apply(method, 6, p);
+  v = scheme_apply(method, 7, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -3376,7 +3491,6 @@ static Scheme_Object *os_wxMediaBufferAfterLoadFile(Scheme_Object *obj, int n,  
 static Scheme_Object *os_wxMediaBufferOnLoadFile(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  Bool r;
   objscheme_check_valid(obj);
   string x0;
   int x1;
@@ -3387,9 +3501,33 @@ static Scheme_Object *os_wxMediaBufferOnLoadFile(Scheme_Object *obj, int n,  Sch
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
-    r = ((os_wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->wxMediaBuffer::OnLoadFile(x0, x1);
+    ((os_wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->wxMediaBuffer::OnLoadFile(x0, x1);
   else
-    r = ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->OnLoadFile(x0, x1);
+    ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->OnLoadFile(x0, x1);
+
+  
+  
+  return scheme_void;
+}
+
+#pragma argsused
+static Scheme_Object *os_wxMediaBufferCanLoadFile(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  Bool r;
+  objscheme_check_valid(obj);
+  string x0;
+  int x1;
+
+  
+  x0 = (string)objscheme_unbundle_string(p[0], "can-load-file? in editor<%>");
+  x1 = unbundle_symset_fileType(p[1], "can-load-file? in editor<%>");
+
+  
+  if (((Scheme_Class_Object *)obj)->primflag)
+    r = ((os_wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->wxMediaBuffer::CanLoadFile(x0, x1);
+  else
+    r = ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->CanLoadFile(x0, x1);
 
   
   
@@ -3421,7 +3559,6 @@ static Scheme_Object *os_wxMediaBufferAfterSaveFile(Scheme_Object *obj, int n,  
 static Scheme_Object *os_wxMediaBufferOnSaveFile(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  Bool r;
   objscheme_check_valid(obj);
   string x0;
   int x1;
@@ -3432,9 +3569,33 @@ static Scheme_Object *os_wxMediaBufferOnSaveFile(Scheme_Object *obj, int n,  Sch
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
-    r = ((os_wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->wxMediaBuffer::OnSaveFile(x0, x1);
+    ((os_wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->wxMediaBuffer::OnSaveFile(x0, x1);
   else
-    r = ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->OnSaveFile(x0, x1);
+    ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->OnSaveFile(x0, x1);
+
+  
+  
+  return scheme_void;
+}
+
+#pragma argsused
+static Scheme_Object *os_wxMediaBufferCanSaveFile(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  Bool r;
+  objscheme_check_valid(obj);
+  string x0;
+  int x1;
+
+  
+  x0 = (string)objscheme_unbundle_string(p[0], "can-save-file? in editor<%>");
+  x1 = unbundle_symset_fileType(p[1], "can-save-file? in editor<%>");
+
+  
+  if (((Scheme_Class_Object *)obj)->primflag)
+    r = ((os_wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->wxMediaBuffer::CanSaveFile(x0, x1);
+  else
+    r = ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->CanSaveFile(x0, x1);
 
   
   
@@ -3863,6 +4024,7 @@ static Scheme_Object *os_wxMediaBufferScrollTo(Scheme_Object *obj, int n,  Schem
   float x3;
   float x4;
   Bool x5;
+  int x6;
 
   
   x0 = objscheme_unbundle_wxSnip(p[0], "scroll-to in editor<%>", 0);
@@ -3871,12 +4033,16 @@ static Scheme_Object *os_wxMediaBufferScrollTo(Scheme_Object *obj, int n,  Schem
   x3 = objscheme_unbundle_float(p[3], "scroll-to in editor<%>");
   x4 = objscheme_unbundle_float(p[4], "scroll-to in editor<%>");
   x5 = objscheme_unbundle_bool(p[5], "scroll-to in editor<%>");
+  if (n > 6) {
+    x6 = unbundle_symset_bias(p[6], "scroll-to in editor<%>");
+  } else
+    x6 = 0;
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
-    r = ((os_wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->ScrollTo(x0, x1, x2, x3, x4, x5);
+    r = ((os_wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->ScrollTo(x0, x1, x2, x3, x4, x5, x6);
   else
-    r = ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->ScrollTo(x0, x1, x2, x3, x4, x5);
+    r = ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->ScrollTo(x0, x1, x2, x3, x4, x5, x6);
 
   
   
@@ -4355,7 +4521,7 @@ if (os_wxMediaBuffer_class) {
     objscheme_add_global_class(os_wxMediaBuffer_class, "editor%", env);
     objscheme_add_global_interface(os_wxMediaBuffer_interface, "editor" "<%>", env);
 } else {
-  os_wxMediaBuffer_class = objscheme_def_prim_class(env, "editor%", "object%", NULL, 107);
+  os_wxMediaBuffer_class = objscheme_def_prim_class(env, "editor%", "object%", NULL, 109);
 
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "dc-location-to-editor-location", os_wxMediaBufferwxbDCToBuffer, 2, 2);
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "editor-location-to-dc-location", os_wxMediaBufferwxbBufferToDC, 2, 2);
@@ -4423,8 +4589,10 @@ if (os_wxMediaBuffer_class) {
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "on-edit-sequence", os_wxMediaBufferOnEditSequence, 0, 0);
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "after-load-file", os_wxMediaBufferAfterLoadFile, 1, 1);
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "on-load-file", os_wxMediaBufferOnLoadFile, 2, 2);
+ scheme_add_method_w_arity(os_wxMediaBuffer_class, "can-load-file?", os_wxMediaBufferCanLoadFile, 2, 2);
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "after-save-file", os_wxMediaBufferAfterSaveFile, 1, 1);
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "on-save-file", os_wxMediaBufferOnSaveFile, 2, 2);
+ scheme_add_method_w_arity(os_wxMediaBuffer_class, "can-save-file?", os_wxMediaBufferCanSaveFile, 2, 2);
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "on-new-box", os_wxMediaBufferOnNewBox, 1, 1);
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "on-new-image-snip", os_wxMediaBufferOnNewImageSnip, 4, 4);
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "invalidate-bitmap-cache", os_wxMediaBufferInvalidateBitmapCache, 0, 4);
@@ -4441,7 +4609,7 @@ if (os_wxMediaBuffer_class) {
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "needs-update", os_wxMediaBufferNeedsUpdate, 5, 5);
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "resized", os_wxMediaBufferResized, 2, 2);
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "set-caret-owner", os_wxMediaBufferSetCaretOwner, 1, 2);
- scheme_add_method_w_arity(os_wxMediaBuffer_class, "scroll-to", os_wxMediaBufferScrollTo, 6, 6);
+ scheme_add_method_w_arity(os_wxMediaBuffer_class, "scroll-to", os_wxMediaBufferScrollTo, 6, 7);
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "on-display-size", os_wxMediaBufferOnDisplaySize, 0, 0);
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "on-change", os_wxMediaBufferOnChange, 0, 0);
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "on-focus", os_wxMediaBufferOnFocus, 1, 1);

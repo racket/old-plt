@@ -471,13 +471,16 @@ void wxMediaPasteboard::InitDragging(wxMouseEvent *e)
   wxSnip *s = NULL;
 
   if (resizing) {
-    if (!OnInteractiveResize(resizing)) {
+    if (!CanInteractiveResize(resizing)) {
       resizing = NULL;
       return;
     }
-  } else
-    if (!OnInteractiveMove(e))
+    OnInteractiveResize(resizing);
+  } else {
+    if (!CanInteractiveMove(e))
       return;
+    OnInteractiveMove(e);
+  }
 
   dragging = TRUE;
   keepSize = TRUE;
@@ -623,7 +626,8 @@ void wxMediaPasteboard::DoSelect(wxSnip *snip, Bool on)
 
   if ((loc = XSnipLoc(snip))) {
     if (loc->selected != on) {
-      if (OnSelect(snip, on)) {
+      if (CanSelect(snip, on)) {
+	OnSelect(snip, on);
 	loc->selected = on;
 	AfterSelect(snip, on);
 	UpdateLocation(loc);
@@ -717,10 +721,11 @@ void wxMediaPasteboard::Insert(wxSnip *snip, wxSnip *before, float x, float y)
 		 "Warning");
 
   BeginEditSequence();
-  if (!OnInsert(snip, before, x, y)) {
+  if (!CanInsert(snip, before, x, y)) {
     EndEditSequence();
     return;
   }
+  OnInsert(snip, before, x, y);
 
   for (search = snips; search && (search != before); search = search->next);
   
@@ -854,10 +859,11 @@ void wxMediaPasteboard::_Delete(wxSnip *del_snip,
     if (PTREQ(snip, del_snip)) {
       BeginEditSequence();
 
-      if (!OnDelete(del_snip)) {
+      if (!CanDelete(del_snip)) {
 	EndEditSequence();
 	return;
       }
+      OnDelete(del_snip);
 
       if (del_snip == caretSnip) {
 	caretSnip->OwnCaret(FALSE);
@@ -943,10 +949,11 @@ void wxMediaPasteboard::MoveTo(wxSnip *snip, float x, float y)
       return;
 
     BeginEditSequence();
-    if (!OnMoveTo(snip, x, y, dragging)) {
+    if (!CanMoveTo(snip, x, y, dragging)) {
       EndEditSequence();
       return;
     }
+    OnMoveTo(snip, x, y, dragging);
 
     UpdateLocation(loc);
 
@@ -1029,10 +1036,11 @@ Bool wxMediaPasteboard::Resize(wxSnip *snip, float w, float h)
   oldh = loc->h;
 
   BeginEditSequence();
-  if (!OnResize(snip, w, h)) {
+  if (!CanResize(snip, w, h)) {
     EndEditSequence();
     return FALSE;
   }
+  OnResize(snip, w, h);
 
   if (!snip->Resize(w, h))
     rv = FALSE;
@@ -2361,8 +2369,9 @@ Bool wxMediaPasteboard::LoadFile(char *file, int WXUNUSED(format), Bool showErro
   if (!file)
     return FALSE;
 
-  if (!OnLoadFile(file, wxMEDIA_FF_STD))
+  if (!CanLoadFile(file, wxMEDIA_FF_STD))
     return FALSE;
+  OnLoadFile(file, wxMEDIA_FF_STD);
 
   if (::scheme_directory_exists(file)) {
     if (showErrors)
@@ -2493,8 +2502,9 @@ Bool wxMediaPasteboard::SaveFile(char *file, int format, Bool showErrors)
 
   Bool no_set_filename = (format == wxMEDIA_FF_COPY);
 
-  if (!OnSaveFile(file, wxMEDIA_FF_STD))
+  if (!CanSaveFile(file, wxMEDIA_FF_STD))
     return FALSE;
+  OnSaveFile(file, wxMEDIA_FF_STD);
   
   FILE *f = fopen(wxmeExpandFilename(file), "wb");
   Bool fileerr;
@@ -2682,45 +2692,65 @@ void wxMediaPasteboard::OnChange(void)
 {
 }
 
-Bool wxMediaPasteboard::OnInsert(wxSnip *, wxSnip *, float, float)
+Bool wxMediaPasteboard::CanInsert(wxSnip *, wxSnip *, float, float)
 {
   return TRUE;
+}
+
+void wxMediaPasteboard::OnInsert(wxSnip *, wxSnip *, float, float)
+{
 }
 
 void wxMediaPasteboard::AfterInsert(wxSnip *, wxSnip *, float, float)
 {
 }
 
-Bool wxMediaPasteboard::OnDelete(wxSnip *)
+Bool wxMediaPasteboard::CanDelete(wxSnip *)
 {
   return TRUE;
+}
+
+void wxMediaPasteboard::OnDelete(wxSnip *)
+{
 }
 
 void wxMediaPasteboard::AfterDelete(wxSnip *)
 {
 }
 
-Bool wxMediaPasteboard::OnMoveTo(wxSnip *, float, float, Bool WXUNUSED(dragging))
+Bool wxMediaPasteboard::CanMoveTo(wxSnip *, float, float, Bool WXUNUSED(dragging))
 {
   return TRUE;
+}
+
+void wxMediaPasteboard::OnMoveTo(wxSnip *, float, float, Bool WXUNUSED(dragging))
+{
 }
 
 void wxMediaPasteboard::AfterMoveTo(wxSnip *, float, float, Bool WXUNUSED(dragging))
 {
 }
 
-Bool wxMediaPasteboard::OnResize(wxSnip *, float, float)
+Bool wxMediaPasteboard::CanResize(wxSnip *, float, float)
 {
   return TRUE;
+}
+
+void wxMediaPasteboard::OnResize(wxSnip *, float, float)
+{
 }
 
 void wxMediaPasteboard::AfterResize(wxSnip *, float, float, Bool WXUNUSED(did))
 {
 }
 
-Bool wxMediaPasteboard::OnSelect(wxSnip *, Bool)
+Bool wxMediaPasteboard::CanSelect(wxSnip *, Bool)
 {
   return TRUE;
+}
+
+void wxMediaPasteboard::OnSelect(wxSnip *, Bool)
+{
 }
 
 void wxMediaPasteboard::AfterSelect(wxSnip *, Bool)
@@ -2734,18 +2764,26 @@ Bool wxMediaPasteboard::OwnXSelection(Bool on, Bool WXUNUSED(update), Bool force
 }
 #endif
 
-Bool wxMediaPasteboard::OnInteractiveMove(wxMouseEvent *)
+Bool wxMediaPasteboard::CanInteractiveMove(wxMouseEvent *)
 {
   return TRUE;
+}
+
+void wxMediaPasteboard::OnInteractiveMove(wxMouseEvent *)
+{
 }
 
 void wxMediaPasteboard::AfterInteractiveMove(wxMouseEvent *)
 {
 }
 
-Bool wxMediaPasteboard::OnInteractiveResize(wxSnip *)
+Bool wxMediaPasteboard::CanInteractiveResize(wxSnip *)
 {
   return TRUE;
+}
+
+void wxMediaPasteboard::OnInteractiveResize(wxSnip *)
+{
 }
 
 void wxMediaPasteboard::AfterInteractiveResize(wxSnip *)

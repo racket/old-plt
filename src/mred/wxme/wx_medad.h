@@ -278,9 +278,11 @@ class wxMediaBuffer : public wxObject
 
   virtual void OnFocus(Bool on);
 
-  virtual Bool OnSaveFile(char *filename, int format);
+  virtual Bool CanSaveFile(char *filename, int format);
+  virtual void OnSaveFile(char *filename, int format);
   virtual void AfterSaveFile(Bool success);
-  virtual Bool OnLoadFile(char *filename, int format);
+  virtual Bool CanLoadFile(char *filename, int format);
+  virtual void OnLoadFile(char *filename, int format);
   virtual void AfterLoadFile(Bool success);
 
   virtual void OnEditSequence(void);

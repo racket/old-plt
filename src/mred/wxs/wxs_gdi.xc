@@ -279,6 +279,7 @@ static inline int Identity(wxFontNameDirectory *, int v)
 }
 
 @CLASSBASE wxFontNameDirectory "font-name-directory":"object"
+@INTERFACE "font-name-directory"
 
 @ "get-screen-name" : nstring GetScreenName(int,SYM[style],SYM[weight]);
 @ "get-post-script-name" : nstring GetPostScriptName(int,SYM[style],SYM[weight]);

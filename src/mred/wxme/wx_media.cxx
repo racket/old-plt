@@ -596,10 +596,15 @@ void wxMediaEdit::OnChange(void)
   /* Do nothing */
 }
 
-Bool wxMediaEdit::OnInsert(long WXUNUSED(start), long WXUNUSED(len))
+Bool wxMediaEdit::CanInsert(long WXUNUSED(start), long WXUNUSED(len))
 {
   /* Do nothing */
   return TRUE;
+}
+
+void wxMediaEdit::OnInsert(long WXUNUSED(start), long WXUNUSED(len))
+{
+  /* Do nothing */
 }
 
 void wxMediaEdit::AfterInsert(long WXUNUSED(start), long WXUNUSED(len))
@@ -607,10 +612,15 @@ void wxMediaEdit::AfterInsert(long WXUNUSED(start), long WXUNUSED(len))
   /* Do nothing */
 }
 
-Bool wxMediaEdit::OnDelete(long WXUNUSED(start), long WXUNUSED(len))
+Bool wxMediaEdit::CanDelete(long WXUNUSED(start), long WXUNUSED(len))
 {
   /* Do nothing */
   return TRUE;
+}
+
+void wxMediaEdit::OnDelete(long WXUNUSED(start), long WXUNUSED(len))
+{
+  /* Do nothing */
 }
 
 void wxMediaEdit::AfterDelete(long WXUNUSED(start), long WXUNUSED(len))
@@ -618,7 +628,13 @@ void wxMediaEdit::AfterDelete(long WXUNUSED(start), long WXUNUSED(len))
   /* Do nothing */
 }
 
-Bool wxMediaEdit::OnChangeStyle(long WXUNUSED(start), long WXUNUSED(len))
+Bool wxMediaEdit::CanChangeStyle(long WXUNUSED(start), long WXUNUSED(len))
+{
+  /* Do nothing */
+  return TRUE;
+}
+
+void wxMediaEdit::OnChangeStyle(long WXUNUSED(start), long WXUNUSED(len))
 {
   /* Do nothing */
   return TRUE;
@@ -635,9 +651,14 @@ void wxMediaEdit::AfterSetPosition(void)
   /* Do nothing */
 }
 
-Bool wxMediaEdit::OnSetSizeConstraint(void)
+Bool wxMediaEdit::CanSetSizeConstraint(void)
 {
   return TRUE;
+}
+
+void wxMediaEdit::OnSetSizeConstraint(void)
+{
+  /* Do nothing */
 }
 
 void wxMediaEdit::AfterSetSizeConstraint(void)
@@ -1013,8 +1034,9 @@ void wxMediaEdit::_Insert(wxSnip *isnip, long strlen, char *str,
     if (isnip->IsOwned())
       goto give_up;
 
-    if (!OnInsert(start, addlen))
+    if (!CanInsert(start, addlen))
       goto give_up;
+    OnInsert(start, addlen);
 
     flowLocked = TRUE;
 
@@ -1106,8 +1128,9 @@ void wxMediaEdit::_Insert(wxSnip *isnip, long strlen, char *str,
   } else {
     addlen = strlen;
     
-    if (!OnInsert(start, addlen))
+    if (!CanInsert(start, addlen))
       goto give_up;
+    OnInsert(start, addlen);
 
     flowLocked = TRUE;
 
@@ -1399,7 +1422,7 @@ void wxMediaEdit::_Delete(long start, long end, Bool withUndo, Bool scrollOk)
   if (writeLocked || userLocked)
     return;
 
-  if (end == -1) {
+  if (end <= -1) {
     if (!start)
       return;
     end = start;
@@ -1426,8 +1449,9 @@ void wxMediaEdit::_Delete(long start, long end, Bool withUndo, Bool scrollOk)
 
   writeLocked = TRUE;
 
-  if (!OnDelete(start, end - start))
+  if (!CanDelete(start, end - start))
     goto give_up;
+  OnDelete(start, end - start);
 
   flowLocked = TRUE;
 
@@ -1628,12 +1652,10 @@ void wxMediaEdit::Clear()
 
 void wxMediaEdit::Cut(Bool extend, long time, long start, long end)
 {
-  if (start == -1)
-    start = startpos;
-  if (end == -1)
-    end = endpos;
   if (start < 0)
-    start = 0;
+    start = startpos;
+  if (end < 0)
+    end = endpos;
   if (end > len)
     end = len;
   if (start >= end)
@@ -1689,12 +1711,10 @@ void wxMediaEdit::DoCopy(long startp, long endp, long time, Bool extend)
 
 void wxMediaEdit::Copy(Bool extend, long time, long startp, long endp)
 {
-  if (startp == -1)
-    startp = startpos;
-  if (endp == -1)
-    endp = endpos;
   if (startp < 0)
-    startp = 0;
+    startp = startpos;
+  if (endp < 0)
+    endp = endpos;
   if (endp > len)
     endp = len;
   if (startp >= endp)
@@ -1733,12 +1753,10 @@ void wxMediaEdit::DoPaste(long start, long time)
 
 void wxMediaEdit::Paste(long time, long start, long end)
 {
-  if (end == -1)
-    end = (start == -1) ? endpos : start;
-  if (start == -1)
-    start = endpos;
+  if (end < 0)
+    end = (start < 0) ? endpos : start;
   if (start < 0)
-    start = 0;
+    start = endpos;
   if (end > len)
     end = len;
   if (start > end)
@@ -2313,8 +2331,9 @@ void wxMediaEdit::SetMaxWidth(float w)
   if ((w == maxWidth) || ((w <= 0) && (maxWidth <= 0)))
     return;
 
-  if (!OnSetSizeConstraint())
+  if (!CanSetSizeConstraint())
     return;
+  OnSetSizeConstraint();
 
   if (w > 0 && w < (CURSOR_WIDTH + 1))
     w = CURSOR_WIDTH + 1;
@@ -2335,8 +2354,9 @@ void wxMediaEdit::SetMinWidth(float w)
   if (w == minWidth || ((w <= 0) && (minWidth <= 0)))
     return;
 
-  if (!OnSetSizeConstraint())
+  if (!CanSetSizeConstraint())
     return;
+  OnSetSizeConstraint();
 
   graphicMaybeInvalid = TRUE;
   graphicMaybeInvalidForce = TRUE;
@@ -2354,8 +2374,9 @@ void wxMediaEdit::SetMinHeight(float h)
   if (h == minHeight || ((h <= 0) && (minHeight <= 0)))
     return;
 
-  if (!OnSetSizeConstraint())
+  if (!CanSetSizeConstraint())
     return;
+  OnSetSizeConstraint();
 
   graphicMaybeInvalid = TRUE;
   graphicMaybeInvalidForce = TRUE;
@@ -2373,8 +2394,9 @@ void wxMediaEdit::SetMaxHeight(float h)
   if (h == maxHeight || ((h <= 0) && (maxHeight <= 0)))
     return;
 
-  if (!OnSetSizeConstraint())
+  if (!CanSetSizeConstraint())
     return;
+  OnSetSizeConstraint();
 
   graphicMaybeInvalid = TRUE;
   graphicMaybeInvalidForce = TRUE;
@@ -2423,8 +2445,9 @@ Bool wxMediaEdit::LoadFile(char *file, int format, Bool showErrors)
   if (!file)
     return FALSE;
 
-  if (!OnLoadFile(file, format))
+  if (!CanLoadFile(file, format))
     return FALSE;
+  OnLoadFile(file, format);
 
   if (scheme_directory_exists(file)) {
     if (showErrors)
@@ -2629,8 +2652,9 @@ Bool wxMediaEdit::SaveFile(char *file, int format, Bool showErrors)
   if (!file)
     return FALSE;
 
-  if (!OnSaveFile(file, format))
+  if (!CanSaveFile(file, format))
     return FALSE;
+  OnSaveFile(file, format);
 
   no_set_filename = (format == wxMEDIA_FF_COPY);
 

@@ -146,21 +146,28 @@ class wxMediaPasteboard : public wxMediaBuffer
 
   /* Override these for your own use: */
   virtual void OnChange(void);
-  virtual Bool OnInsert(wxSnip *, wxSnip *, float x, float y);
+  virtual Bool CanInsert(wxSnip *, wxSnip *, float x, float y);
+  virtual void OnInsert(wxSnip *, wxSnip *, float x, float y);
   virtual void AfterInsert(wxSnip *, wxSnip *, float x, float y);
-  virtual Bool OnDelete(wxSnip *);
+  virtual Bool CanDelete(wxSnip *);
+  virtual void OnDelete(wxSnip *);
   virtual void AfterDelete(wxSnip *);
-  virtual Bool OnMoveTo(wxSnip *, float x, float y, Bool dragging);
+  virtual Bool CanMoveTo(wxSnip *, float x, float y, Bool dragging);
+  virtual void OnMoveTo(wxSnip *, float x, float y, Bool dragging);
   virtual void AfterMoveTo(wxSnip *, float x, float y, Bool dragging);
-  virtual Bool OnResize(wxSnip *, float w, float h);
+  virtual Bool CanResize(wxSnip *, float w, float h);
+  virtual void OnResize(wxSnip *, float w, float h);
   virtual void AfterResize(wxSnip *, float w, float h, Bool did);
 
-  virtual Bool OnSelect(wxSnip *, Bool on);
+  virtual Bool CanSelect(wxSnip *, Bool on);
+  virtual void OnSelect(wxSnip *, Bool on);
   virtual void AfterSelect(wxSnip *, Bool on);
 
-  virtual Bool OnInteractiveMove(wxMouseEvent *);
+  virtual Bool CanInteractiveMove(wxMouseEvent *);
+  virtual void OnInteractiveMove(wxMouseEvent *);
   virtual void AfterInteractiveMove(wxMouseEvent *);
-  virtual Bool OnInteractiveResize(wxSnip *snip);
+  virtual Bool CanInteractiveResize(wxSnip *snip);
+  virtual void OnInteractiveResize(wxSnip *snip);
   virtual void AfterInteractiveResize(wxSnip *snip);
 
   virtual void InteractiveAdjustMouse(float *x, float *y);

@@ -13,7 +13,7 @@
  editor-data-class-list%
  canvas-dc%
  check-for-break
- clipboard%
+ clipboard<%>
  clipboard-client%
  color%
  color-database%
@@ -32,7 +32,7 @@
  flush-display
  font%
  font-list%
- font-name-directory%
+ font-name-directory<%>
  get-face-list
  get-editor-print-margin
  get-resource

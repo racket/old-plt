@@ -1145,11 +1145,11 @@ void wxImageSnip::GetExtent(wxDC *,
 {
   if (contentsChanged) {
     if (bm && bm->Ok()) {
-      if (viewh <= 0)
+      if (viewh < 0)
 	h = bm->GetHeight();
       else
 	h = viewh;
-      if (vieww <= 0)
+      if (vieww < 0)
 	w = bm->GetWidth();
       else
 	w = vieww;
@@ -1199,45 +1199,6 @@ void wxImageSnip::Draw(wxDC *dc, float x, float y,
 
   dc->Blit(x, y, w, h, offscreen, 0, 0, wxCOPY);
   return;
-
-#if 0
-  float lx, ly, lt, ll, lw, lh;
-
-  /* Doesn't work. I don't know why. Doesn't matter. */
-  if (vieww > 0 && r > x + vieww)
-    r = x + vieww;
-  if (x + w < r)
-    r = w + x;
-  if (viewh > 0 && b > y + viewh)
-    b = y + viewh;
-  if (y + h < b)
-    b = y + h;
-
-  x += viewdx;
-  y += viewdy;
-
-  if ((l > x + w) || (t > y + h))
-    return;
-  
-  lx = l - x;
-  if (lx < 0) {
-    lx = 0;
-    ll = x;
-  } else
-    ll = l;
-    
-  ly = t - y;
-  if (ly < 0) {
-    ly = 0;
-    lt = y;
-  } else
-    lt = t;
-
-  lw = r - ll;
-  lh = b - lt;
-
-  dc->Blit(ll, lt, lw, lh, offscreen, lx, ly, wxCOPY);
-#endif
 }
 
 wxSnip *wxImageSnip::Copy(void)
@@ -1524,11 +1485,6 @@ void wxImageSnip::SetOffset(float x, float y)
 
 Bool wxImageSnip::Resize(float w, float h)
 {
-  if (w <= 0 && !bm)
-    w = IMAGE_VOID_SIZE;
-  if (h <= 0 && !bm)
-    h = IMAGE_VOID_SIZE;
-
   vieww = w;
   viewh = h;
 

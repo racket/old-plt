@@ -2881,6 +2881,8 @@ class os_wxFontNameDirectory : public wxFontNameDirectory {
 
 Scheme_Object *os_wxFontNameDirectory_class;
 
+Scheme_Object *os_wxFontNameDirectory_interface;
+
 os_wxFontNameDirectory::~os_wxFontNameDirectory()
 {
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
@@ -2895,7 +2897,7 @@ static Scheme_Object *os_wxFontNameDirectoryIdentity(Scheme_Object *obj, int n, 
   int x0;
 
   
-  x0 = unbundle_symset_family(p[0], "find-family-default-font-id in font-name-directory%");
+  x0 = unbundle_symset_family(p[0], "find-family-default-font-id in font-name-directory<%>");
 
   
   r = Identity(((wxFontNameDirectory *)((Scheme_Class_Object *)obj)->primdata), x0);
@@ -2915,8 +2917,8 @@ static Scheme_Object *os_wxFontNameDirectoryFindOrCreateFontId(Scheme_Object *ob
   int x1;
 
   
-  x0 = (cstring)objscheme_unbundle_string(p[0], "find-or-create-font-id in font-name-directory%");
-  x1 = unbundle_symset_family(p[1], "find-or-create-font-id in font-name-directory%");
+  x0 = (cstring)objscheme_unbundle_string(p[0], "find-or-create-font-id in font-name-directory<%>");
+  x1 = unbundle_symset_family(p[1], "find-or-create-font-id in font-name-directory<%>");
 
   
   r = ((wxFontNameDirectory *)((Scheme_Class_Object *)obj)->primdata)->FindOrCreateFontId(x0, x1);
@@ -2935,7 +2937,7 @@ static Scheme_Object *os_wxFontNameDirectoryGetFamily(Scheme_Object *obj, int n,
   int x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "get-family in font-name-directory%");
+  x0 = objscheme_unbundle_integer(p[0], "get-family in font-name-directory<%>");
 
   
   r = ((wxFontNameDirectory *)((Scheme_Class_Object *)obj)->primdata)->GetFamily(x0);
@@ -2954,7 +2956,7 @@ static Scheme_Object *os_wxFontNameDirectoryGetFontName(Scheme_Object *obj, int 
   int x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "get-face-name in font-name-directory%");
+  x0 = objscheme_unbundle_integer(p[0], "get-face-name in font-name-directory<%>");
 
   
   r = ((wxFontNameDirectory *)((Scheme_Class_Object *)obj)->primdata)->GetFontName(x0);
@@ -2973,7 +2975,7 @@ static Scheme_Object *os_wxFontNameDirectoryGetFontId(Scheme_Object *obj, int n,
   string x0;
 
   
-  x0 = (string)objscheme_unbundle_string(p[0], "get-font-id in font-name-directory%");
+  x0 = (string)objscheme_unbundle_string(p[0], "get-font-id in font-name-directory<%>");
 
   
   r = ((wxFontNameDirectory *)((Scheme_Class_Object *)obj)->primdata)->GetFontId(x0);
@@ -2993,9 +2995,9 @@ static Scheme_Object *os_wxFontNameDirectoryInitialize(Scheme_Object *obj, int n
   string x2;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "initialize in font-name-directory%");
-  x1 = objscheme_unbundle_integer(p[1], "initialize in font-name-directory%");
-  x2 = (string)objscheme_unbundle_string(p[2], "initialize in font-name-directory%");
+  x0 = objscheme_unbundle_integer(p[0], "initialize in font-name-directory<%>");
+  x1 = objscheme_unbundle_integer(p[1], "initialize in font-name-directory<%>");
+  x2 = (string)objscheme_unbundle_string(p[2], "initialize in font-name-directory<%>");
 
   
   ((wxFontNameDirectory *)((Scheme_Class_Object *)obj)->primdata)->Initialize(x0, x1, x2);
@@ -3033,9 +3035,9 @@ static Scheme_Object *os_wxFontNameDirectoryGetAFMName(Scheme_Object *obj, int n
   int x2;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "get-afm-name in font-name-directory%");
-  x1 = unbundle_symset_style(p[1], "get-afm-name in font-name-directory%");
-  x2 = unbundle_symset_weight(p[2], "get-afm-name in font-name-directory%");
+  x0 = objscheme_unbundle_integer(p[0], "get-afm-name in font-name-directory<%>");
+  x1 = unbundle_symset_style(p[1], "get-afm-name in font-name-directory<%>");
+  x2 = unbundle_symset_weight(p[2], "get-afm-name in font-name-directory<%>");
 
   
   r = ((wxFontNameDirectory *)((Scheme_Class_Object *)obj)->primdata)->GetAFMName(x0, x1, x2);
@@ -3056,9 +3058,9 @@ static Scheme_Object *os_wxFontNameDirectoryGetPostScriptName(Scheme_Object *obj
   int x2;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "get-post-script-name in font-name-directory%");
-  x1 = unbundle_symset_style(p[1], "get-post-script-name in font-name-directory%");
-  x2 = unbundle_symset_weight(p[2], "get-post-script-name in font-name-directory%");
+  x0 = objscheme_unbundle_integer(p[0], "get-post-script-name in font-name-directory<%>");
+  x1 = unbundle_symset_style(p[1], "get-post-script-name in font-name-directory<%>");
+  x2 = unbundle_symset_weight(p[2], "get-post-script-name in font-name-directory<%>");
 
   
   r = ((wxFontNameDirectory *)((Scheme_Class_Object *)obj)->primdata)->GetPostScriptName(x0, x1, x2);
@@ -3079,9 +3081,9 @@ static Scheme_Object *os_wxFontNameDirectoryGetScreenName(Scheme_Object *obj, in
   int x2;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "get-screen-name in font-name-directory%");
-  x1 = unbundle_symset_style(p[1], "get-screen-name in font-name-directory%");
-  x2 = unbundle_symset_weight(p[2], "get-screen-name in font-name-directory%");
+  x0 = objscheme_unbundle_integer(p[0], "get-screen-name in font-name-directory<%>");
+  x1 = unbundle_symset_style(p[1], "get-screen-name in font-name-directory<%>");
+  x2 = unbundle_symset_weight(p[2], "get-screen-name in font-name-directory<%>");
 
   
   r = ((wxFontNameDirectory *)((Scheme_Class_Object *)obj)->primdata)->GetScreenName(x0, x1, x2);
@@ -3095,6 +3097,7 @@ void objscheme_setup_wxFontNameDirectory(void *env)
 {
 if (os_wxFontNameDirectory_class) {
     objscheme_add_global_class(os_wxFontNameDirectory_class, "font-name-directory%", env);
+    objscheme_add_global_interface(os_wxFontNameDirectory_interface, "font-name-directory" "<%>", env);
 } else {
   os_wxFontNameDirectory_class = objscheme_def_prim_class(env, "font-name-directory%", "object%", NULL, 10);
 
@@ -3112,6 +3115,9 @@ if (os_wxFontNameDirectory_class) {
 
   scheme_made_class(os_wxFontNameDirectory_class);
 
+  os_wxFontNameDirectory_interface = scheme_class_to_interface(os_wxFontNameDirectory_class, "font-name-directory" "<%>");
+
+  objscheme_add_global_interface(os_wxFontNameDirectory_interface, "font-name-directory" "<%>", env);
 
 }
   scheme_install_xc_global("the-font-name-directory", objscheme_bundle_wxFontNameDirectory(&wxTheFontNameDirectory), env);

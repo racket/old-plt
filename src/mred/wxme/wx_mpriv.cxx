@@ -264,8 +264,9 @@ void wxMediaEdit::_ChangeStyle(long start, long end,
 
   writeLocked = TRUE;
 
-  if (!OnChangeStyle(start, end - start))
+  if (!CanChangeStyle(start, end - start))
     goto give_up;
+  OnChangeStyle(start, end - start);
   
   flowLocked = TRUE;
 

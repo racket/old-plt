@@ -113,7 +113,6 @@ typedef void *(*CAPOFunc)(void*);
 
 @END
 
-
 @CLASSBASE wxSnipAdmin "snip-admin":"object"
 
 @CREATOR ();
@@ -124,7 +123,7 @@ typedef void *(*CAPOFunc)(void*);
 @ V "get-dc" : wxDC^ GetDC(); : : : rNULL
 @ V "get-view-size" : void GetViewSize(float?, float?);
 @ V "get-view" : void GetView(float?, float?, float?, float?, wxSnip^=NULL);
-@ V "scroll-to" : bool ScrollTo(wxSnip!, float,float,float,float, bool,int=0); : : : rFALSE
+@ V "scroll-to" : bool ScrollTo(wxSnip!, float,float,float,float, bool,SYM[bias]=0); : : : rFALSE
 @ V "set-caret-owner" : void SetCaretOwner(wxSnip!,SYM[focus]);
 @ V "resized" : void Resized(wxSnip!, bool);
 @ V "recounted" : bool Recounted(wxSnip!, bool); : : : rFALSE

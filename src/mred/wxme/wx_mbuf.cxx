@@ -1903,9 +1903,14 @@ void wxMediaBuffer::OnPaint(Bool WXUNUSED(pre),
   /* Do nothing */
 }
 
-Bool wxMediaBuffer::OnSaveFile(char *WXUNUSED(filename), int WXUNUSED(format))
+Bool wxMediaBuffer::CanSaveFile(char *WXUNUSED(filename), int WXUNUSED(format))
 {
   return TRUE;
+}
+
+void wxMediaBuffer::OnSaveFile(char *WXUNUSED(filename), int WXUNUSED(format))
+{
+  /* do nothing */
 }
 
 void wxMediaBuffer::AfterSaveFile(Bool WXUNUSED(success))
@@ -1913,9 +1918,14 @@ void wxMediaBuffer::AfterSaveFile(Bool WXUNUSED(success))
   /* do nothing */
 }
 
-Bool wxMediaBuffer::OnLoadFile(char *WXUNUSED(filename), int WXUNUSED(format))
+Bool wxMediaBuffer::CanLoadFile(char *WXUNUSED(filename), int WXUNUSED(format))
 {
   return TRUE;
+}
+
+void wxMediaBuffer::OnLoadFile(char *WXUNUSED(filename), int WXUNUSED(format))
+{
+  /* do nothing */
 }
 
 void wxMediaBuffer::AfterLoadFile(Bool WXUNUSED(success))

@@ -91,6 +91,7 @@ Scheme_Object *GetTypes(wxClipboardClient *c)
 @MACRO makeSizedString[i] = (r ? scheme_make_sized_string(r, _x<i>, 1) : XC_SCHEME_NULL)
 
 @CLASSBASE wxClipboard "clipboard" : "object"
+@INTERFACE "clipboard"
 
 @ "set-clipboard-client" : void SetClipboardClient(wxClipboardClient!,long);
 @ "set-clipboard-string" : void SetClipboardString(string,long);

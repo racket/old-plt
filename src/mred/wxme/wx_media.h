@@ -155,14 +155,18 @@ class wxMediaEdit : public wxMediaBuffer
 
   /* Methods for you to override: */
   virtual void OnChange(void);
-  virtual Bool OnInsert(long start, long len);
+  virtual Bool CanInsert(long start, long len);
+  virtual void OnInsert(long start, long len);
   virtual void AfterInsert(long start, long len);
-  virtual Bool OnDelete(long start, long len);
+  virtual Bool CanDelete(long start, long len);
+  virtual void OnDelete(long start, long len);
   virtual void AfterDelete(long start, long len);
-  virtual Bool OnChangeStyle(long start, long len);
+  virtual Bool CanChangeStyle(long start, long len);
+  virtual void OnChangeStyle(long start, long len);
   virtual void AfterChangeStyle(long start, long len);
   virtual void AfterSetPosition(void);
-  virtual Bool OnSetSizeConstraint(void);
+  virtual Bool CanSetSizeConstraint(void);
+  virtual void OnSetSizeConstraint(void);
   virtual void AfterSetSizeConstraint(void);
 
   /* Set the caret position: */

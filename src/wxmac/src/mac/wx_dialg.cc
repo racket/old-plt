@@ -603,10 +603,10 @@ char *wxFileSelector(char *message, char *default_path,
       char *filename;
       char *path, *wholepath;
 
-      strLen = CFStringGetLength(reply->saveFileName) + 1;
+      strLen = (6 * CFStringGetLength(reply->saveFileName)) + 1;
       filename = new char[strLen];
 
-      if (CFStringGetCString(reply->saveFileName,filename,strLen,CFStringGetSystemEncoding()) == FALSE) {
+      if (CFStringGetCString(reply->saveFileName,filename,strLen,kCFStringEncodingUTF8) == FALSE) {
 	// Unable to convert string
 	NavDisposeReply(reply);
 	return NULL;

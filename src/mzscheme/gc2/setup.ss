@@ -14,9 +14,6 @@
   
 (use-compiled-file-paths null)
 
-(require (lib "moddep.ss" "syntax")
-	 (lib "cm.ss"))
-
 (unless (with-handlers ([exn:fail:filesystem? (lambda (x) #f)])
 	  (collection-path "mzlib"))
   (let ([p (build-path (current-load-relative-directory)
@@ -27,6 +24,9 @@
     (printf "Setting collection path: ~s~n" p)
     (current-library-collection-paths 
      (list p))))
+
+(require (lib "moddep.ss" "syntax")
+	 (lib "cm.ss"))
 
 (define (go mod-path rel-to target)
   (let ([path (if target

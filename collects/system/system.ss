@@ -1,9 +1,5 @@
 ; Always load the standard system with load/cd
 
-(printf "gc... ~a~n" (current-process-milliseconds))
-(collect-garbage)(collect-garbage)(collect-garbage)
-(printf "done ~a~n" (current-process-milliseconds))
-
 (error-print-width 250)
 
 (load (if (file-exists? "splash.zo")
@@ -105,9 +101,6 @@
     (lambda args
       (cond
        [(null? args)
-	(printf "gc... ~a~n" (current-process-milliseconds))
-	(collect-garbage)(collect-garbage)(collect-garbage)
-	(printf "done ~a~n" (current-process-milliseconds))
 	(unless (or mred:splash-frame no-show-splash?)
 	  (mred:open-splash mred:default-splash mred:default-splash-title #f))
 	(when (eq? wx:platform 'unix)
@@ -145,7 +138,6 @@
 	  (printf "WARNING: splash max (~a) != splash counter (~a)~n"
 		  mred:splash-max mred:splash-counter))
 	(mred:close-splash)
-	'(mred:debug-borders #t)
 	mred:console]
        [else 
 	(let* ([arg (car args)]
@@ -193,21 +185,4 @@
 	   [else (set! files-to-open (cons arg files-to-open))
 		 (apply mred:initialize rest)]))]))))
 
-(define mred:user-setup
-  (lambda ()
-    (let* ([init-file (build-path (wx:find-directory 'init)
-				  (if (eq? wx:platform 'unix)
-				      ".mredrc"
-				      "mredrc.ss"))])
-      (when (file-exists? init-file)
-	(let ([orig-escape (error-escape-handler)])
-	  (catch-errors (lambda (s) (wx:message-box s "Error"))
-			(lambda () (orig-escape))
-			(mred:eval-string 
-			 (string-append
-			  (expr->string `(load/cd ,init-file))))))))))
-
-(printf "gc... ~a~n" (current-process-milliseconds))
-(collect-garbage)(collect-garbage)(collect-garbage)
-(printf "done ~a~n" (current-process-milliseconds))
 

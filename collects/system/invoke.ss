@@ -50,3 +50,17 @@
   (lambda ()
     (make-object mred:console-frame%)))
 	     
+
+(define mred:user-setup
+  (lambda ()
+    (let* ([init-file (build-path (wx:find-directory 'init)
+				  (if (eq? wx:platform 'unix)
+				      ".mredrc"
+				      "mredrc.ss"))])
+      (when (file-exists? init-file)
+	(let ([orig-escape (error-escape-handler)])
+	  (catch-errors (lambda (s) (wx:message-box s "Error"))
+			(lambda () (orig-escape))
+			(mred:eval-string 
+			 (string-append
+			  (expr->string `(load/cd ,init-file))))))))))

@@ -187,8 +187,9 @@
 (define mzrice-load
   (let ([zo-file?
 	 (lambda (f)
-	   (string=? ".zo" (let ([l (string-length f)])
-			     (substring f (- l 3) l))))]
+	   (let ([l (string-length f)])
+	     (and (<= 3 l)
+		  (string=? ".zo" (substring f (- l 3) l)))))]
 	[old-handler (current-load)])
     (lambda (f)
       (if (zo-file? f)

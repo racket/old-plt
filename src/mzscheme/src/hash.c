@@ -944,7 +944,7 @@ long scheme_equal_hash_key(Scheme_Object *o)
   case scheme_vector_type:
   case scheme_wrap_chunk_type:
     {
-      int len = SCHEME_VEC_SIZE(o), i;
+      int len = SCHEME_VEC_SIZE(o), i, val;
 #     include "mzhashchk.inc"
 
       if (!len)
@@ -953,8 +953,8 @@ long scheme_equal_hash_key(Scheme_Object *o)
       --len;
       for (i = 0; i < len; i++) {
 	SCHEME_USE_FUEL(1);
-	k += scheme_equal_hash_key(SCHEME_VEC_ELS(o)[i]);
-	k = (k << 1) + k;
+	val = scheme_equal_hash_key(SCHEME_VEC_ELS(o)[i]);
+	k = (k << 5) + k + val;
       }
       
       o = SCHEME_VEC_ELS(o)[len];
@@ -996,7 +996,7 @@ long scheme_equal_hash_key(Scheme_Object *o)
 	
 	for (i = SCHEME_STRUCT_NUM_SLOTS(s1); i--; ) {
 	  k += scheme_equal_hash_key(s1->slots[i]);
-	k = (k << 1) + k;
+	  k = (k << 5) + k;
 	}
 	
 	return k;

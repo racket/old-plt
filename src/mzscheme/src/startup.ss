@@ -3293,9 +3293,11 @@
   (define -re:auto (byte-regexp #"^,"))
   (define -re:ok-relpath (byte-regexp #"^[-a-zA-Z0-9_. ]+(/+[-a-zA-Z0-9_. ]+)*$"))
   (define -module-hash-table-table (make-hash-table 'weak)) ; weak map from namespace to module ht
-  (define -lib-path-cache (make-hash-table 'weak 'equal)) ; weak map from `lib' path + corrent-library-paths to symbols
+  (define -path-cache (make-hash-table 'weak 'equal)) ; weak map from `lib' path + corrent-library-paths to symbols
   
   (define -loading-filename (gensym))
+  (define -prev-relto #f)
+  (define -prev-relto-dir #f)
 
   (define (make-standard-module-name-resolver orig-namespace)
     (define planet-resolver #f)
@@ -3312,37 +3314,43 @@
 	 [s
 	  (let ([get-dir (lambda ()
 			   (or (and relto
-				    (let ([rts (string->bytes/latin-1 (symbol->string relto))])
-				      (and (regexp-match -re:auto rts)
-					   (let-values ([(base n d?)
-							 (split-path 
-							  (bytes->path
-							   (subbytes rts 1 (bytes-length rts))))])
-					     base))))
+				    (if (eq? relto -prev-relto)
+					-prev-relto-dir
+					(let ([rts (string->bytes/latin-1 (symbol->string relto))])
+					  (and (regexp-match-positions -re:auto rts)
+					       (let-values ([(base n d?)
+							     (split-path 
+							      (bytes->path
+							       (subbytes rts 1 (bytes-length rts))))])
+						 (set! -prev-relto relto)
+						 (set! -prev-relto-dir base)
+						 base)))))
 			       (current-load-relative-directory)
 			       (current-directory)))])
 	    (let ([s-parsed
 		   ;; Non-string result represents an error
 		   (cond
 		    [(string? s)
-		     (let ([s (string->bytes/utf-8 s)])
-		       (if (regexp-match -re:ok-relpath s)
-			   ;; Parse Unix-style relative path string
-			   (let loop ([path (get-dir)][s s])
-			     (let ([prefix (regexp-match -re:dir s)])
-			       (if prefix
-				   (loop (build-path path 
-						     (let ([p (cadr prefix)])
-						       (cond
-							[(bytes=? p #".") 'same]
-							[(bytes=? p #"..") 'up]
-							[else (bytes->path p)])))
-					 (caddr prefix))
-				   (build-path path (bytes->path s)))))
-			   (list
-			    (string-append
-			     " (relative string form must contain only a-z, A-Z, 0-9, -, _, ., /, and "
-			     "space, with no leading or trailing /)"))))]
+		     (let* ([dir (get-dir)])
+		       (or (hash-table-get -path-cache (cons s dir) (lambda () #f))
+			   (let ([s (string->bytes/utf-8 s)])
+			     (if (regexp-match-positions -re:ok-relpath s)
+				 ;; Parse Unix-style relative path string
+				 (let loop ([path dir][s s])
+				   (let ([prefix (regexp-match -re:dir s)])
+				     (if prefix
+					 (loop (build-path path 
+							   (let ([p (cadr prefix)])
+							     (cond
+							      [(bytes=? p #".") 'same]
+							      [(bytes=? p #"..") 'up]
+							      [else (bytes->path p)])))
+					       (caddr prefix))
+					 (build-path path (bytes->path s)))))
+				 (list
+				  (string-append
+				   " (relative string form must contain only a-z, A-Z, 0-9, -, _, ., /, and "
+				   "space, with no leading or trailing /)"))))))]
 		    [(path? s) 
 		     (if (absolute-path? s)
 			 s
@@ -3352,7 +3360,7 @@
 		     #f]
 		    [(eq? (car s) 'lib)
 		     (hash-table-get
-		      -lib-path-cache
+		      -path-cache
 		      (cons s (current-library-collection-paths))
 		      (lambda ()
 			(let ([cols (let ([len (length s)])
@@ -3461,10 +3469,13 @@
 			  (hash-table-put! ht modname suffix)))
 		      ;; If a `lib' path, cache pathname manipulations
 		      (when (and (not (vector? s-parsed))
-				 (pair? s)
-				 (eq? (car s) 'lib))
-			(hash-table-put! -lib-path-cache
-					 (cons s (current-library-collection-paths))
+				 (or (string? s)
+				     (and (pair? s)
+					  (eq? (car s) 'lib))))
+			(hash-table-put! -path-cache
+					 (if (string? s)
+					     (cons s (get-dir))
+					     (cons s (current-library-collection-paths)))
 					 (vector filename
 						 normal-filename
 						 name

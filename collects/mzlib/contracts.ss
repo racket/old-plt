@@ -28,8 +28,18 @@
       [(_ name contract-expr expr)
        (identifier? (syntax name))
        (with-syntax ([pos-blame-stx (datum->syntax-object define-stx 'here)]
-                     [contract-id (datum->syntax-object define-stx 'ACK-define/contract-contract-id)]
-                     [id (datum->syntax-object define-stx 'ACK-define/contract-id)])
+                     [contract-id (datum->syntax-object 
+                                   define-stx 
+                                   (string->symbol
+                                    (format
+                                     "ACK-define/contract-contract-id-~a"
+                                     (syntax-object->datum (syntax name)))))]
+                     [id (datum->syntax-object 
+                          define-stx
+                          (string->symbol
+                           (format
+                            "ACK-define/contract-id-~a"
+                            (syntax-object->datum (syntax name)))))])
          (syntax 
           (begin
             (define contract-id contract-expr)

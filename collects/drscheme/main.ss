@@ -30,7 +30,28 @@
   (define (make-basic)
     (let* ([unit (drscheme:unit:make-unit #f)]
 	   [_ (send unit create-frame #f)]
-	   [frame (send unit get-frame)])
+	   [frame (send unit get-frame)]
+	   [menu-bar (send frame get-menu-bar)]
+	   [num-menu-bar (send menu-bar number)]
+	   [file-string  (if (eq? wx:platform 'windows)
+			     "&File"
+			     "File")]
+	   [close-string (if (eq? wx:platform 'windows)
+			     "&Close"
+			     "Close")]
+	   [file-menu 
+	    (let loop ([n 0])
+	      (if (< n num-menu-bar)
+		  (if (string=? (send menu-bar get-label-top n)
+				file-string)
+		      (send menu-bar get-nth-menu n)
+		      (loop (add1 n)))
+		  #f))]
+	   [close-menu-item 
+	    (if file-menu 
+		(send file-menu find-item close-string)
+		#f)])
+
       (unless (mred:get-preference 'drscheme:repl-always-active)
 	(let* ([interactions-edit (ivar frame interactions-edit)]
 	       [definitions-edit (ivar frame interactions-edit)]
@@ -44,6 +65,12 @@
 		  (ivar frame interactions-id))
 	    (send frame update-shown)
 	    (send (ivar frame interactions-canvas) set-focus))))
+
+      ; disable File|Close for root window
+
+      (when close-menu-item
+	    (send file-menu enable close-menu-item #f))
+
       (send frame show #t)))
 
   (let ([files-to-open (reverse (vector->list I:argv))])

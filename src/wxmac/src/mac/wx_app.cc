@@ -1231,6 +1231,9 @@ void wxApp::doMacInGrow(WindowPtr window)
 //-----------------------------------------------------------------------------
 void wxApp::doMacInGoAway(WindowPtr window)
 {
+  /* This one is used when a frame's application is in the foreground.
+     The frame receives a close event through it's event handler
+     when the application is in the background. */
   wxFrame* theMacWxFrame;
   theMacWxFrame = findMacWxFrame(window);
   if (theMacWxFrame && theMacWxFrame->CanAcceptEvent()) {

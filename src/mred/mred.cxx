@@ -2003,6 +2003,35 @@ void MrEdQueuePaint(wxWindow *wx_window)
   MrEdQueueWindowCallback(wx_window, CAST_SCP call_on_paint);
 }
 
+static Scheme_Object *call_close(void *d, int, Scheme_Object **argv)
+{
+  wxFrame *w = (wxFrame *)d;
+
+  if (w->OnClose())
+    w->Show(FALSE);
+
+  return scheme_void;
+}
+
+void MrEdQueueClose(wxWindow *wx_window)
+{
+  MrEdQueueWindowCallback(wx_window, CAST_SCP call_close);
+}
+
+static Scheme_Object *call_zoom(void *d, int, Scheme_Object **argv)
+{
+  wxFrame *w = (wxFrame *)d;
+
+  w->Maximize(2);
+
+  return scheme_void;
+}
+
+void MrEdQueueZoom(wxWindow *wx_window)
+{
+  MrEdQueueWindowCallback(wx_window, CAST_SCP call_zoom);
+}
+
 static Scheme_Object *call_on_size(void *d, int, Scheme_Object **argv)
 {
   wxWindow *w = (wxWindow *)d;

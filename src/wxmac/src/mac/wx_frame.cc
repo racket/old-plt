@@ -32,6 +32,12 @@ extern int wxMenuBarHeight;
 extern int wx_activate_anyway;
 
 extern void MrEdQueuePaint(wxWindow *wx_window);
+extern void MrEdQueueClose(wxWindow *wx_window);
+extern void MrEdQueueZoom(wxWindow *wx_window);
+
+static OSStatus window_evt_handler(EventHandlerCallRef inHandlerCallRef, 
+				   EventRef inEvent, 
+				   void *inUserData);
 
 //=============================================================================
 // Public constructors
@@ -211,6 +217,16 @@ wxFrame::wxFrame // Constructor (for frame window)
   }
 
   EnforceSize(-1, -1, -1, -1, 1, 1);
+
+  {
+    /* Handle some events. */
+    EventTypeSpec spec[2];
+    spec[0].eventClass = kEventClassWindow;
+    spec[0].eventKind = kEventWindowClose;
+    spec[1].eventClass = kEventClassWindow;
+    spec[1].eventKind = kEventWindowZoom;
+    InstallEventHandler(GetWindowEventTarget(theMacWindow), window_evt_handler, 2, spec, refcon, NULL);
+  }
 }
 
 static void userPaneDrawFunction(ControlRef controlRef, SInt16 thePart)
@@ -228,6 +244,25 @@ static void userPaneDrawFunction(ControlRef controlRef, SInt16 thePart)
 
   SetThemeDrawingState(s, TRUE);
 } 
+
+static OSStatus window_evt_handler(EventHandlerCallRef inHandlerCallRef, 
+				   EventRef inEvent, 
+				   void *inUserData)
+{
+  wxFrame *f;
+  
+  f = (wxFrame*)GET_SAFEREF(inUserData);
+  switch (GetEventKind(inEvent)) {
+  case kEventWindowClose:
+    MrEdQueueClose(f);
+    break;
+  case kEventWindowZoom:
+    MrEdQueueZoom(f);
+    break;
+  }
+
+  return noErr;
+}
 
 //=============================================================================
 // Public destructor

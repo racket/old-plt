@@ -213,8 +213,8 @@
 					       "w" "&Close" "")
 				 (make-between 'file-menu 'between-close-and-quit #f)
 				 (make-an-item 'file-menu:quit "" '(lambda () (mred:exit:exit))
-					       (if (eq? wx:platform 'macintosh) "q" "x")
-					       (if (eq? wx:platform 'macintosh) "Quit" "E&xit") "")
+					       (if (eq? wx:platform 'windows) "x" "q")
+					       (if (eq? wx:platform 'windows) "E&xit" "Quit") "")
 				 (make-between 'file-menu 'after-quit #f)
 				 
 				 (make-an-item 'edit-menu:undo "" #f "z" "&Undo" "")
@@ -314,13 +314,20 @@
 	    [file-menu:revert 
 	     (lambda () 
 	       (let* ([b (box #f)]
-		      [filename (send (get-edit) get-filename b)])
+		      [edit (get-edit)]
+		      [filename (send edit get-filename b)]
+		      [start (send edit get-start-position)]
+		      [end (send edit get-end-position)])
 		 (if (or (null? filename) (unbox b))
 		     (wx:bell)
-		     (send (get-edit) load-file filename))
+		     (begin (send edit begin-edit-sequence)
+			    (send edit load-file filename)
+			    (send edit set-position start end)
+			    (send edit end-edit-sequence)))
 		 #t))]
-	    [file-menu:save (lambda () (send (get-edit) save-file)
-				    #t)]
+	    [file-menu:save (lambda ()
+			      (send (get-edit) save-file)
+			      #t)]
 	    [file-menu:save-as (lambda () (save-as) #t)]
 	    [file-menu:between-print-and-close
 	     (lambda (file-menu)

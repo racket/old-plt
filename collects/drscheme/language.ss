@@ -60,7 +60,7 @@
 	(set! case-sensitive? (setting-case-sensitive? pref))
 	(compile-allow-set!-undefined (setting-allow-set!-on-undefined? pref))
 	(set! allow-set!-on-undefined? (setting-allow-set!-on-undefined? pref))
-	(compile-auto-cond-else (not (setting-unmatched-cond/case-is-error? pref)))
+	(compile-allow-cond-fallthrough (not (setting-unmatched-cond/case-is-error? pref)))
 	(set! unmatched-cond/case-is-error? (setting-unmatched-cond/case-is-error? pref))
 	(set! allow-improper-lists? (setting-allow-improper-lists? pref))
 	(set! check-syntax-level (setting-vocabulary-symbol pref))))

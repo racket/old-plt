@@ -6,6 +6,9 @@
     (unless (make-directory dir)
       (error 'make-directory* "couldn't make directory: ~s" dir))))
 
+(define (append-zo-suffix s)
+  (string-append s ".zo"))
+
 (define (append-c-suffix s)
   (string-append s ".c"))
 

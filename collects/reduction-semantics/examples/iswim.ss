@@ -10,10 +10,13 @@
     (language (M (M M)
 		 (o1 M)
 		 (o2 M M)
-		 V)
+		 V
+		 ("letcc" X M)
+		 ("cc" M M))
 	      (V X
 		 ("lam" variable M)
-		 b)
+		 b
+		 ("[" M "]"))
 	      (X variable)
 	      (b number)
 	      (o1 "add1" "sub1" "iszero")
@@ -26,7 +29,9 @@
 		 (V E)
 		 (o1 E)
 		 (o2 E M)
-		 (o2 V E))
+		 (o2 V E)
+		 ("cc" E M)
+		 ("cc" V E))
 
 	      ;; Continuations (CK machine):
 	      (k "mt"
@@ -89,7 +94,20 @@
       (all-vars '())
       (build (lambda (empty-list M1 M2) `(,M1 ,M2)))
       (subterm '() M1)
-      (subterm '() M2)]))
+      (subterm '() M2)]
+     [`("letcc" ,X ,M)
+      (all-vars (list X))
+      (build (lambda (X-list M) `("letcc" ,(car X-list) ,M)))
+      (subterm (list X) M)]
+     [`("cc" ,M1 ,M2)
+      (all-vars '())
+      (build (lambda (vars M1 M2) `("cc" ,M1 ,M2)))
+      (subterm '() M1)
+      (subterm '() M2)]
+     [`("[" ,E "]")
+      (all-vars '())
+      (build (lambda (vars) `("[" ,E "]")))]))
+     
 
   ;; the argument order for the subst-generated function
   ;; doesn't match the order in the notes:
@@ -139,6 +157,24 @@
   (define :->v (map (lambda (red)
                       (context-closure red iswim-grammar 'E))
                     (cons beta_v delta)))
+
+  ;; :->v+letcc
+  (define :->v+letcc (append
+		      :->v
+		      (list
+
+		       ;; letcc rule:
+		       (reduction
+			iswim-grammar
+			(in-hole (name E E) ("letcc" (name X X) (name M M)))
+			(replace E hole (iswim-subst M X `("[" ,(replace E hole '||) "]"))))
+
+		       ;; cc rule:
+		       (reduction
+			iswim-grammar
+			(in-hole E ("cc" ("[" (in-hole* inner-hole (name E2 E) ||) "]") (name V V)))
+			(replace E2 inner-hole V)))))
+			
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;; Helpers:
@@ -181,6 +217,7 @@
   
   (define true '("lam" x ("lam" y x)))
   (define false '("lam" x ("lam" y y)))
+  (define boolean-not `("lam" x ((x ,false) ,true)))
   
   (define mkpair '("lam" x ("lam" y ("lam" s ((s x) y)))))
   (define fst '("lam" p (p ("lam" x ("lam" y x)))))
@@ -220,11 +257,13 @@
 		    (delta*n (on? (listof V?) . -> .  (union false? V?)))
 		    (->v (listof red?))
 		    (:->v (listof red?))
+		    (:->v+letcc (listof red?))
 		    (function-reduce* ((listof red?) any? (any? . -> . boolean?) 
 				       . -> . (listof any?)))
 		    (if0 (M? M? M? . -> . M?))
 		    (true M?)
 		    (false M?)
+		    (boolean-not M?)
 		    (mkpair M?)
 		    (fst M?)
 		    (snd M?)

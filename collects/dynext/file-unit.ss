@@ -31,7 +31,8 @@
 	(path-replace-suffix
 	 s
 	 (case (system-type)
-	   [(unix beos macos macosx) #".so"]
+	   [(unix beos) #".so"]
+	   [(macos macosx) #".dylib"]
 	   [(windows) #".dll"])))
 
       (define (extract-suffix appender)
@@ -77,7 +78,8 @@
 	       (extract-suffix append-object-suffix))
 	   (mk 'extract-base-filename/ext
 	       (case (system-type)
-		 [(unix beos macos macosx) #"[sS][oO]"]
+		 [(unix beos) #"[sS][oO]"]
+		 [(macos macosx) #"[dD][yY][lL][iI][bB]"]
 		 [(windows) #"[dD][lL][lL]"])
 	       "MzScheme extension"
 	       (extract-suffix append-extension-suffix))))))))

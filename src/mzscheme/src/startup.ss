@@ -3180,12 +3180,16 @@
 			(cloop (cdr paths))))
 		  (cloop (cdr paths))))))))
 
+  (define dll-suffix
+    (case (system-type)
+      [(windows) #".dll"]
+      [(macosx macos) #".dylib"]
+      [else #".so"]))
+
   (define _loader.so
     (path-replace-suffix
      (bytes->path #"_loader.ss")
-     (case (system-type)
-       [(windows) #".dll"]
-       [else #".so"])))
+     dll-suffix))
 
   (define current-load/use-compiled
     (make-parameter
@@ -3224,9 +3228,7 @@
 						  (if rep-sfx?
 						      (path-replace-suffix
 						       file
-						       (case (system-type)
-							 [(windows) #".dll"]
-							 [else #".so"]))
+						       dll-suffix)
 						      file))))]
 			  [zo (lambda (compiled-dir)
 				(build-path base

@@ -110,7 +110,7 @@
 			    (format "-bE:~a/ext.exp" include-dir)
 			    "-bnoentry")]
 	  [(parisc-hpux) (list "-b")]
-	  [(ppc-macosx ppc-darwin) (list "-bundle" "-flat_namespace" "-undefined" "suppress")]
+	  [(ppc-macosx ppc-darwin) (list "-dynamiclib" "-undefined" "error")]
 	  [else (list "-shared")]))
 
       (define msvc-linker-flags (list "/LD"))

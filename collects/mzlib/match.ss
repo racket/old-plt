@@ -190,7 +190,7 @@
 	  `(,(parse-pattern (syntax p)) ,(syntax-e (syntax ..k)))]
 	 [(p . rest)
 	  (identifier? (syntax i))
-	  `(,(parse-pattern (syntax p)) ,@(parse-pattern (syntax rest)))]
+	  (cons (parse-pattern (syntax p)) (parse-pattern (syntax rest)))]
 	 [i (identifier? (syntax i)) (syntax i)]
 	 [_else
 	  (let ([s (syntax-e p)])

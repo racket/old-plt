@@ -150,6 +150,7 @@ scheme_init_type (Scheme_Env *env)
   set_name(scheme_defaulting_config_type, "<parameterization-defaulting-marker>");
   set_name(scheme_will_executor_type, "<will-executor>");
   set_name(scheme_interface_type, "<interface>");
+  set_name(scheme_random_state_type, "<pseudo-random-generator>");
 
   set_name(scheme_unit_type, "<unit>");
   set_name(scheme_compiled_unit_type, "<unit-code>");
@@ -164,7 +165,6 @@ scheme_init_type (Scheme_Env *env)
 
   set_name(scheme_manager_type, "<custodian>");
 
-  set_name(scheme_reserved_1_type, "<reserved1>");
   set_name(scheme_reserved_2_type, "<reserved2>");
   set_name(scheme_reserved_3_type, "<reserved3>");
 

@@ -2565,6 +2565,8 @@ static Scheme_Config *make_initial_config(void)
 
   scheme_set_param(config, MZCONFIG_CURRENT_DIRECTORY, scheme_make_string(scheme_os_getcwd(NULL, 0, NULL, 0)));
 
+  scheme_set_param(config, MZCONFIG_RANDOM_STATE, scheme_make_random_state(scheme_get_milliseconds()));
+  
   config->extensions = NULL;
 
   return config;

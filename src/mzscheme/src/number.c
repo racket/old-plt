@@ -116,6 +116,9 @@ static Scheme_Object *string_to_number (int argc, Scheme_Object *argv[]);
 
 static Scheme_Object *random_seed(int argc, Scheme_Object *argv[]);
 static Scheme_Object *sch_random(int argc, Scheme_Object *argv[]);
+static Scheme_Object *make_pseudo_random_generator(int argc, Scheme_Object **argv);
+static Scheme_Object *current_pseudo_random_generator(int argc, Scheme_Object **argv);
+static Scheme_Object *pseudo_random_generator_p(int argc, Scheme_Object **argv);
 
 static int double_to_int(const char *where, double d, long *v);
 
@@ -515,16 +518,6 @@ scheme_init_number (Scheme_Env *env)
 						      "magnitude",
 						      1, 1, 1),
 			     env);
-  scheme_add_global_constant("random", 
-			     scheme_make_prim_w_arity(sch_random,
-						      "random",
-						      1, 1),
-			     env);
-  scheme_add_global_constant("random-seed", 
-			     scheme_make_prim_w_arity(random_seed,
-						      "random-seed",
-						      1, 1),
-			     env);
   scheme_add_global_constant("exact->inexact", 
 			     scheme_make_folding_prim(exact_to_inexact,
 						      "exact->inexact",
@@ -544,6 +537,32 @@ scheme_init_number (Scheme_Env *env)
 			     scheme_make_folding_prim(string_to_number,
 						      "string->number", 
 						      1, 2, 1),
+			     env);
+
+  scheme_add_global_constant("random", 
+			     scheme_make_prim_w_arity(sch_random,
+						      "random",
+						      1, 1),
+			     env);
+  scheme_add_global_constant("random-seed", 
+			     scheme_make_prim_w_arity(random_seed,
+						      "random-seed",
+						      1, 1),
+			     env);
+  scheme_add_global_constant("make-pseudo-random-generator", 
+			     scheme_make_prim_w_arity(make_pseudo_random_generator,
+						      "make-pseudo-random-generator", 
+						      0, 0), 
+			     env);
+  scheme_add_global_constant("pseudo-random-generator?", 
+			     scheme_make_prim_w_arity(pseudo_random_generator_p,
+						      "pseudo-random-generator?", 
+						      1, 1), 
+			     env);
+  scheme_add_global_constant("current-pseudo-random-generator", 
+			     scheme_register_parameter(current_pseudo_random_generator,
+						       "current-pseudo-random-generator",
+						       MZCONFIG_RANDOM_STATE),
 			     env);
 }
 
@@ -3587,20 +3606,24 @@ bitwise_shift(int argc, Scheme_Object *argv[])
   return scheme_bignum_shift(v, shift);
 }
 
+#include "random.inc"
+
 static Scheme_Object *
 random_seed(int argc, Scheme_Object *argv[])
 {
+  long i = -1;
   Scheme_Object *o = argv[0];
 
-  if (!SCHEME_INTP(o))
-    scheme_wrong_type("random-seed", "fixnum", 0, argc, argv);
+  if (SCHEME_INTP(o)) {
+    i = SCHEME_INT_VAL(o);
+    if (i > 2147483647)
+      i = -1;
+  }
 
-#ifdef RAND_NOT_RANDOM
-  srand(SCHEME_INT_VAL(o));
-#else
-  srandom(SCHEME_INT_VAL(o));
-#endif
+  if (i < 0)
+    scheme_wrong_type("random-seed", "integer in [0, 2147483647]", 0, argc, argv);
 
+  sch_srand(i, (Scheme_Random_State *)scheme_get_param(scheme_config, MZCONFIG_RANDOM_STATE));
 
   return scheme_void;
 }
@@ -3608,25 +3631,39 @@ random_seed(int argc, Scheme_Object *argv[])
 static Scheme_Object *
 sch_random(int argc, Scheme_Object *argv[])
 {
+  long i = -1, v;
   Scheme_Object *o = argv[0];
-  long v, i;
 
-  if (!SCHEME_INTP(o))
-    scheme_wrong_type("random", "positive fixnum", 0, argc, argv);
+  if (SCHEME_INTP(o)) {
+    i = SCHEME_INT_VAL(o);
+    if (i > 2147483647)
+      i = -1;
+  }
 
-  i = SCHEME_INT_VAL(o);
   if (i <= 0)
-    scheme_wrong_type("random", "positive fixnum", 0, argc, argv);
+    scheme_wrong_type("random", "integer in [1, 2147483647]", 0, argc, argv);
   
-#ifdef RAND_NOT_RANDOM
-  v = rand() % i;
-#else
-  v = random();
-  if (v < 0)
-    v = -v;
-  v = v % i;
-#endif
+  v = sch_rand((Scheme_Random_State *)scheme_get_param(scheme_config, MZCONFIG_RANDOM_STATE)) % i;
 
   return scheme_make_integer(v);
+}
+
+static Scheme_Object *current_pseudo_random_generator(int argc, Scheme_Object *argv[])
+{
+  return scheme_param_config("current-pseudo-random-generator", MZCONFIG_RANDOM_STATE,
+			     argc, argv,
+			     -1, pseudo_random_generator_p, "pseudo-random-generator", 0);
+}
+
+static Scheme_Object *make_pseudo_random_generator(int argc, Scheme_Object **argv)
+{
+  return scheme_make_random_state(scheme_get_milliseconds());
+}
+
+static Scheme_Object *pseudo_random_generator_p(int argc, Scheme_Object **argv)
+{
+  return ((SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_random_state_type)) 
+	  ? scheme_true 
+	  : scheme_false);
 }
 

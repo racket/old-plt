@@ -1039,4 +1039,6 @@ void scheme_get_substring_indices(const char *name, Scheme_Object *str,
 				  int argc, Scheme_Object **argv, 
 				  int spos, int fpos, long *_start, long *_finish);
 
+Scheme_Object *scheme_make_random_state(long seed);
+
 #endif /* __mzscheme_private__ */

@@ -23,7 +23,8 @@ The 3x3 game is a generalization of tic-tac-toe:
    medium, and two small.
 
  * On each turn, a player can either place a new piece on the board,
-   or move a piece already on the board --- from anywhere to anywhere.
+   or move a piece already on the board --- from anywhere to anywhere,
+   as long as the "from" and "to" are different.
 
  * A piece can be placed (or moved to) an empty space, or it can be
    placed/moved on top of a smaller piece already on the board,

@@ -39,6 +39,8 @@
 # include <X11/XKBlib.h>
 #endif
 
+extern void wxsRememberDisplay(char *str);
+
 //-----------------------------------------------------------------------------
 // wxApp implementation
 //-----------------------------------------------------------------------------
@@ -118,7 +120,7 @@ X_flag_entry X_flags[] = {
   { NULL, 0 }
 };
 
-int filter_x_readable(char **argv, int argc)
+static int filter_x_readable(char **argv, int argc, char **x_display_str)
 {
   int pos = 1, i;
 
@@ -137,6 +139,9 @@ int filter_x_readable(char **argv, int argc)
 	       argv[0], argv[pos], X_flags[i].arg_count, argc - pos - 1);
 	exit(-1);
       }
+      if (!strcmp(argv[pos], "-display")) {
+	*x_display_str = argv[pos + 1];
+      }
       pos = newpos;
     }
   }
@@ -147,6 +152,7 @@ int filter_x_readable(char **argv, int argc)
 int wxEntry(int argc, char *argv[])
 {
   int xargc, ate;
+  char *x_display_str = NULL;
 
   if (!wxTheApp) {
     wxFatalError("You have to define an instance of wxApp!");
@@ -159,9 +165,12 @@ int wxEntry(int argc, char *argv[])
   if (!wxAPP_NAME)
     wxAPP_NAME  = wxFileNameFromPath(argv[0]);
 
-  xargc = filter_x_readable(argv, argc);
+  xargc = filter_x_readable(argv, argc, &x_display_str);
   ate = xargc - 1;
   
+  /* Remember -display or DISPLAY, in case someone needs it: */
+  wxsRememberDisplay(x_display_str);
+
   wxPutAppToplevel(XtAppInitialize(&wxAPP_CONTEXT, wxAPP_CLASS,
 				   NULL, 0,
 				   &xargc, argv, // command line arguments

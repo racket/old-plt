@@ -105,7 +105,7 @@ static void collect_end_callback(void);
 
 static void wxScheme_Install(Scheme_Env *global_env);
 
-static Scheme_Object *setup_file_symbol, *init_file_symbol;
+static Scheme_Object *setup_file_symbol, *init_file_symbol, *x_display_symbol;
 
 static Scheme_Object *get_file, *put_file, *get_ps_setup_from_user, *message_box;
 
@@ -134,8 +134,10 @@ void wxsScheme_setup(Scheme_Env *env)
 
   wxREGGLOB(setup_file_symbol);
   wxREGGLOB(init_file_symbol);
+  wxREGGLOB(x_display_symbol);
   setup_file_symbol = scheme_intern_symbol("setup-file");
   init_file_symbol = scheme_intern_symbol("init-file");
+  x_display_symbol = scheme_intern_symbol("x-display");
 
   wxScheme_Install(env);
 
@@ -1799,7 +1801,8 @@ extern char *scheme_mac_spec_to_path(FSSpec *spec);
 
 enum {
   id_init_file,
-  id_setup_file
+  id_setup_file,
+  id_x_display
 };
 
 #ifdef wx_msw
@@ -1838,6 +1841,17 @@ static char *win_find_home()
 } 
 #endif
 
+#ifdef wx_x
+static char *x_display_str;
+extern void wxsRememberDisplay(char *str)
+{
+  if (str)
+    x_display_str = str;
+  else
+    x_display_str = getenv("DISPLAY");
+}
+#endif
+
 Scheme_Object *wxSchemeFindDirectory(int argc, Scheme_Object **argv)
 {
   int which;
@@ -1846,6 +1860,8 @@ Scheme_Object *wxSchemeFindDirectory(int argc, Scheme_Object **argv)
     which = id_init_file;
   else if (argv[0] == setup_file_symbol)
     which = id_setup_file;
+  else if (argv[0] == x_display_symbol)
+    which = id_x_display;
   else {
     scheme_wrong_type("find-graphical-system-path", "graphical path symbol",
 		      0, argc, argv);
@@ -1871,6 +1887,14 @@ Scheme_Object *wxSchemeFindDirectory(int argc, Scheme_Object **argv)
     if (which == id_setup_file)
       return scheme_append_string(home,
 				  scheme_make_string("/.mred.resources" + ends_in_slash));
+
+    if (which == id_x_display) {
+# if defined(wx_x)
+      if (x_display_str)
+	return scheme_make_string(x_display_str);
+# endif
+      return scheme_false;
+    }
   }
 #endif
 
@@ -1890,12 +1914,18 @@ Scheme_Object *wxSchemeFindDirectory(int argc, Scheme_Object **argv)
   if (which == id_setup_file)
     return scheme_append_string(home,
 				scheme_make_string("\\mred.ini" + ends_in_slash));  
+
+  if (which == id_x_display)
+    return scheme_false;
 #endif
 
 #if defined(wx_mac) && !defined(OS_X)
   OSType t;
   FSSpec spec;
   Scheme_Object *home;
+
+  if (which == id_x_display)
+    return scheme_false;
 
   switch (which) {
   case id_init_file:

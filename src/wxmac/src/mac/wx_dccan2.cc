@@ -95,25 +95,28 @@ Bool wxCanvasDC::GetPixel(float x, float y, wxColour *col)
      //=============================================================================
 {
   RGBColor rgb;
+  int i, j;
 
   if (!Ok() || !cMacDC) return FALSE;
   
   SetCurrentDC();
 
-  GetCPixel(XLOG2DEV(x) + SetOriginX, YLOG2DEV(y) + SetOriginY, &rgb);
+  i = XLOG2DEV(x) + SetOriginX;
+  j = YLOG2DEV(y) + SetOriginY;
+  GetCPixel(i, j, &rgb);
   col->Set(rgb.red >> 8, rgb.green >> 8, rgb.blue >> 8);
 
   ReleaseCurrentDC();
 
-  return TRUE;
+  return ((i >= 0) && (j >= 0)
+	  && (i < pixmapWidth)
+	  && (j < pixmapHeight));
 }
 
 //-----------------------------------------------------------------------------
 void wxCanvasDC::SetPixel(float x, float y, wxColour *col)
      //=============================================================================
 {
-  RGBColor rgb;
-
   if (!Ok() || !cMacDC) return;
   
   SetCurrentDC();
@@ -124,7 +127,7 @@ void wxCanvasDC::SetPixel(float x, float y, wxColour *col)
   ReleaseCurrentDC();
 }
 
-Bool wxCanvasDC::BeginSetPixelFast(int x, int, y, int w, int h)
+Bool wxCanvasDC::BeginSetPixelFast(int x, int y, int w, int h)
 {
   if ((x >= 0) && (y >= 0)
       && ((x + w) <= pixmapWidth)
@@ -142,6 +145,8 @@ void wxCanvasDC::EndSetPixelFast()
 
 void wxCanvasDC::SetPixelFast(int i, int j, int r, int g, int b)
 {
+  RGBColor rgb;
+
   if (Colour) {
     rgb.red = r;
     rgb.red = (rgb.red << 8) | rgb.red;
@@ -173,7 +178,7 @@ void wxCanvasDC::SetPixelFast(int i, int j, int r, int g, int b)
   }
 }
 
-Bool wxCanvasDC::BeginGetPixelFast(int x, int, y, int w, int h)
+Bool wxCanvasDC::BeginGetPixelFast(int x, int y, int w, int h)
 {
   return BeginSetPixelFast(x, y, w, h);
 }

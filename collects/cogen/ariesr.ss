@@ -1,10 +1,11 @@
-;; Shriram, then Moy, then Robby, then Shriram
+;; Shriram, then Moy, then Robby, then Shriram, then John
 
 ; Aries adds begin, begin0 and let's to the transformed source.
 
 ; Dependencies:
 ;   ariesus.ss
 ;   pretty.ss  [for debugging]
+
 
     (unit/sig plt:aries^
       (import [z : zodiac:system^]
@@ -47,6 +48,12 @@
       ; are passed to z:sexp->raw, they will error.  Thus, we first check
       ; before sending things there.
 
+      ; jbc additional comments, including elucidation from shriram:
+      ; there are three `levels' of parsed stuff:
+      ; raw: simple, unannotated scheme values
+      ; sexp: simple scheme values with attached zodiac information
+      ; parsed: fully parsed into zodiac structures
+  
       (define read->raw
 	(lambda (read)
 	  (if (z:zodiac? read)
@@ -55,29 +62,22 @@
 
       (define unparse-read read->raw)
 
-      ; We have two kinds of wrapping.  The first, `wrap', checks for
-      ; errors in arbitrary code.  In non-tail positions, we have to
-      ; also be sure that multiple values were not returned where only
-      ; one value was expected.  For this, we use `mv-wrap'.
-
+      ; The new wrap simply puts a w-c-m around an expression. This
+      ; allows debugging to occur.
+      
       (define wrap
-	(lambda (zodiac x)
+	(lambda (zodiac body)
 	  (let ([start (z:zodiac-start zodiac)]
-		 [finish (z:zodiac-finish zodiac)])
-	    `(#%begin (,set-box! ,error-box
-			,(z:make-zodiac #f start finish))
-	       ,x))))
+		[finish (z:zodiac-finish zodiac)])
+	    `(#%with-continuation-mark (#%quote ,'JBC-debug)
+	      ,(z:make-zodiac #f start finish)
+	      ,body))))
 
-      (define mv-wrap
-	(case-lambda
-	  ((body) (mv-wrap body (annotate body)))
-	  ((zodiac body)
-	    (let ((start (z:zodiac-start zodiac))
-		   (finish (z:zodiac-finish zodiac)))
-	      `(#%begin0 ,body
-		 (,set-box! ,error-box
-		   ,(z:make-zodiac #f start finish)))))))
-
+      ; check whether the supplied id is a keyword. if the id is a syntax or
+      ; macro keyword, issue an error.  If disallow-procedures? is true, then
+      ; we issue an error for _any_ use of a keyword. These procedures are used
+      ; to prevent the program from redefining keywords.
+      
       (define check-for-keyword/both
 	(lambda (disallow-procedures?)
 	  (lambda (id)
@@ -103,6 +103,10 @@
       (define check-for-keyword (check-for-keyword/both #t))
       (define check-for-keyword/proc (check-for-keyword/both #f))
 
+      ; paroptarglist-> ilist and arglist->ilist are used to recreate
+      ; mzscheme sexp syntax from the parsed zodiac form, so that the
+      ; resulting expression can be fed to mzscheme.
+      
       (define paroptarglist->ilist
 	(lambda (paroptarglist)
 	  (let ((process-args
@@ -128,6 +132,14 @@
 		(z:interface:internal-error paroptarglist
 		  "Given to paroptarglist->ilist"))))))
 
+      ; divined notes about the structure of an arglist.  Evidently, an arglist can
+      ; take one of three forms:
+      ; list-arglist : this arglist represents a simple list of arguments
+      ; ilist-arglist : this arglist represents a list of arguments which uses 
+      ;   `dot-notation' to separate the last element of the list
+      ; sym-arglist : this arglist represents the `single argument with no 
+      ;   parens' style of argument list.
+      
       (define arglist->ilist
 	(lambda (arglist)
 	  (cond
@@ -144,6 +156,7 @@
 	      (z:interface:internal-error arglist
 		"Given to arglist->ilist")))))
 
+      
       (define the-undefined-value (letrec ((x x)) x))
 
       (define-struct (undefined struct:exn) (id))
@@ -155,47 +168,63 @@
       (define signal-not-boolean (make-parameter #f))
       (define not-boolean-error-format "if: value ~e is neither #t nor #f")
 
+      ; there is a problem with Zodiac.  The problem is that Zodiac has not been
+      ; distinguishing between top-level variables and those bound by unit clauses.
+      ; this is an important distinction to make, because the variables bound by 
+      ; unit clauses may take on the `undefined' value, whereas those bound as
+      ; top-level variables will never require this check.  (If used before defined,
+      ; these values are simply considered unbound.  To this end, Matthew has modified
+      ; Zodiac to add a bit of information which aries can use to distinguish these 
+      ; fields.  Currently, this information is stored in the `unit?' field of a 
+      ; `top-level-varref/bind/unit' structure.  There are cleaner solutions, but
+      ; this one fits well into the current state of the world.  This may change at
+      ; some point in the future.  For the moment, here is the function which 
+      ; distinguishes between these two types of binding:
+      
+      (define (is-unit-bound? varref)
+	(and (top-level-varref/bind/unit? varref)
+	     (top-level-varref/bind/unit-unit? varref)))
+
+      ; translate-bound-varref is a short piece of code which would otherwise appear
+      ; twice: it translates a bound variable, inserting the undefined-value-check if
+      ; this parameter is enabled.  This duplication stems from the problems involving
+      ; the miscategorization of unit-vars described above.
+      
+      (define (translate-bound-varref expr)
+	(let ([v (z:varref-var expr)]
+	      [real-v (z:binding-orig-name
+		       (z:bound-varref-binding expr))])
+	  (wrap expr
+		(if (signal-undefined)
+		    `(#%if (#%eq? ,v ,the-undefined-value)
+		      (#%raise (,make-undefined
+				,(format undefined-error-format real-v)
+				((#%debug-info-handler))
+				(#%quote ,v)))
+		      ,v)
+		    v))))
+      
+      ; the annotate function is the primary one in aries: it takes a parsed zodiac 
+      ; AST, and constructs an SEXP which includes debugging information, and inserts
+      ; assorted runtime checks, depending on the state of various parameters.
+      
       (define annotate
 	(lambda (expr)
 	  (cond
 	    [(z:bound-varref? expr)
-	     (let ([v (z:varref-var expr)]
-		   [real-v (z:binding-orig-name
-			    (z:bound-varref-binding expr))])
-	       (if (signal-undefined)
-		   (wrap expr
-			 `(#%if (#%eq? ,v ,the-undefined-value)
-				(#%raise (,make-undefined
-					  ,(format undefined-error-format real-v)
-					  ((#%debug-info-handler))
-					  (#%quote ,v)))
-				,v))
-		   v))]
-
+	     (translate-bound-varref expr)]
+	    
 	    [(z:top-level-varref? expr)
-	     (check-for-keyword/proc expr)
-	     (let ((v (z:varref-var expr)))
-	       (if (signal-undefined)
-		   (wrap expr
-			 `(#%if (#%eq? ,v ,the-undefined-value)
-			   (#%raise (,make-undefined
-				     ,(format undefined-error-format v)
-				     ((#%debug-info-handler))
-				     (#%quote ,v)))
-			   ,v))
+	     (if (is-unit-bound? expr)
+		 (transate-bound-varref expr)
+		 (begin
+		   (check-for-keyword/proc expr)		   
 		   (wrap expr (z:varref-var expr))))]
 
 	    [(z:app? expr)
-	      (let* ([aries:app-arg (gensym 'aries:app-arg)]
-		      [aries:app-break (gensym 'aries:app-break)]
-		      [last-arg (gensym 'last-arg)]
-		      [fun-sym (gensym "fun")]
-		      [args (map (lambda (x) `(,(gensym "arg")
-						,(annotate x)))
-			      (z:app-args expr))])
-		`(#%let ([,fun-sym ,(annotate (z:app-fun expr))]
-			  ,@args)
-		   ,(wrap expr `(,fun-sym ,@(map car args)))))]
+	     (wrap expr 
+		   (map annotate (cons (z:app-fun expr)
+				       (z:app-args expr))))]
 
 	    [(z:struct-form? expr)
 	      `(#%struct
@@ -209,90 +238,107 @@
 	    [(z:if-form? expr)
 	     (if (signal-not-boolean)
 		 (let ([if-test-v (gensym "if-test-v")])
-		   `(#%let ((,if-test-v ,(wrap (z:if-form-test expr)
-					       (annotate (z:if-form-test expr)))))
+		   (wrap expr
+			 `(#%let ((,if-test-v ,(annotate (z:if-form-test expr))))
 			   (#%if (#%boolean? ,if-test-v)
-				 (#%if ,if-test-v
-				       ,(annotate (z:if-form-then expr))
-				       ,(annotate (z:if-form-else expr)))
-				 (#%raise (,make-not-boolean
-					   (#%format ,not-boolean-error-format
-						     ,if-test-v)
-					   ((#%debug-info-handler))
-					   ,if-test-v)))))
-		 `(#%if ,(annotate (z:if-form-test expr))
-			,(annotate (z:if-form-then expr))
-			,(annotate (z:if-form-else expr))))]
+			    (#%if ,if-test-v
+			     ,(annotate (z:if-form-then expr))
+			     ,(annotate (z:if-form-else expr)))
+			    (#%raise (,make-not-boolean
+				      (#%format ,not-boolean-error-format
+				       ,if-test-v)
+				      ((#%debug-info-handler))
+				      ,if-test-v))))))
+		 (wrap expr 
+		       `(#%if ,(annotate (z:if-form-test expr))
+			 ,(annotate (z:if-form-then expr))
+			 ,(annotate (z:if-form-else expr)))))]
 
 	    [(z:quote-form? expr)
-	      `(#%quote ,(unparse-read (z:quote-form-expr expr)))]
+	      `(#%quote ,(read->raw (z:quote-form-expr expr)))]
 
 	    [(z:begin-form? expr)
-	      `(#%begin
-		 ,@(map annotate (z:begin-form-bodies expr)))]
+	      (wrap expr
+		    `(#%begin
+		      ,@(map annotate (z:begin-form-bodies expr))))]
 
 	    [(z:begin0-form? expr)
-	      `(#%begin0
-		 ,@(map annotate (z:begin0-form-bodies expr)))]
-
+	     (wrap expr
+		   `(#%begin0
+		     ,@(map annotate (z:begin0-form-bodies expr))))]
+	
+	    
 	    [(z:let-values-form? expr)
 	     (let ([bindings
 		    (map (lambda (vars val)
 			   (for-each check-for-keyword vars)
-			   (let ([name (and (= 1 (length vars))
-					    (z:binding-orig-name (car vars)))])
-			     `(,(map z:binding-var vars)
-			       ,(if name
-				    `(#%let ([,name ,(mv-wrap val)])
-				      ,name)
-				    (mv-wrap val)))))
+			   `(,(map z:binding-var vars)
+			     ,(annotate val)))
 			 (z:let-values-form-vars expr)
 			 (z:let-values-form-vals expr))])
-	       `(#%let-values ,bindings
-		 ,(annotate (z:let-values-form-body expr))))]
+	       (wrap expr
+		     `(#%let-values ,bindings
+		       ,(annotate (z:let-values-form-body expr)))))]
+	    
+	    ; in MzScheme 100, there is no more letrec*-values.  letrec-values
+	    ; has taken its place.  binding initializers are always evaluated
+	    ; sequentially
+	    
+	    [(z:letrec-values-form? expr)
+	     (let ([bindings
+		    (map (lambda (vars val)
+			   (for-each check-for-keyword vars)
+			   `(,(map z:binding-var vars)
+			     ,(annotate val)))
+			 (z:letrec-values-form-vars expr)
+			 (z:letrec-values-form-vals expr))])
+	       (wrap expr
+		     `(#%letrec*-values ,bindings
+		       ,(annotate (z:letrec*-values-form-body expr)))))]
 
-	    [(z:letrec*-values-form? expr)
-	      (let ((bindings
-		      (map (lambda (vars val)
-			     (for-each check-for-keyword vars)
-			     (let ([name (and (= 1 (length vars))
-					      (z:binding-orig-name (car vars)))])
-			       `(,(map z:binding-var vars)
-				 ,(if name
-				      `(#%let ([,name ,(mv-wrap val)])
-					,name)
-				      (mv-wrap val)))))
-			(z:letrec*-values-form-vars expr)
-			(z:letrec*-values-form-vals expr))))
-		`(#%letrec-values ,bindings
-		   ,(annotate (z:letrec*-values-form-body expr))))]
-
+	    ; since define-values may only occur at the top level, we must
+	    ; induce an inner continuation frame to attach our mark to. 
+	    ; we do this using let-values.
+	    
+	    ; hmmm, I wrote that about three months ago, and now I'm not sure
+	    ; it's necessary. JBC, 12/98
+	    
 	    [(z:define-values-form? expr)
-	      `(#%define-values
+	     (let* ([args (z:define-values-form-vars expr)]
+		    [arg-temps (map (lambda (v) (gensym (z:varref-var v))) args)])				   
+	       `(#%define-values
 		 ,(map (lambda (v)
 			 (check-for-keyword v)
 			 (z:varref-var v))
-		    (z:define-values-form-vars expr))
-		 ,(mv-wrap (z:define-values-form-val expr)))]
+		       (z:define-values-form-vars expr))
+		 ,(wrap expr
+			`(#%let-values ((,arg-temps
+					 ,(annotate (z:define-values-form-val expr))))
+			  (values ,@arg-temps)))))]
 
 	    [(z:set!-form? expr)
-	      (check-for-keyword (z:set!-form-var expr))
-	      (let ([g (gensym "set!")])
-		`(#%let ([,g ,(mv-wrap (z:set!-form-val expr))])
-		   ,(wrap expr 
-		      `(#%set! ,(z:varref-var (z:set!-form-var expr))
-			 ,g))))]
-
+	     (check-for-keyword (z:set!-form-var expr))	
+	      (wrap expr
+		    `(#%set! ,(z:varref-var (z:set!-form-var expr))
+		      ,(annotate (z:set!-form-val expr))))]
+	    
 	    [(z:case-lambda-form? expr)
-	      `(#%case-lambda
-		 ,@(map (lambda (args body)
-			  (let ((args (arglist->ilist args)))
-			    (improper-foreach check-for-keyword args)
-			    `(,(improper-map z:binding-var args)
-			       ,(annotate body))))
-		     (z:case-lambda-form-args expr)
-		     (z:case-lambda-form-bodies expr)))]
+	     `(#%case-lambda
+	       ,@(map (lambda (args body)
+			(let ((args (arglist->ilist args)))
+			  (improper-foreach check-for-keyword args)
+			  `(,(improper-map z:binding-var args)
+			    ,(annotate body))))
+		      (z:case-lambda-form-args expr)
+		      (z:case-lambda-form-bodies expr)))]
 
+	    [(z:with-continuation-mark-form? expr)
+	     (wrap expr
+		   `(#%with-continuation-mark 
+		     ,(read->raw (z:with-continuation-mark-key expr))
+		     ,(read->raw (z:quote-form-expr (z:with-continuation-mark-val expr)))
+		     ,(annotate expr)))]
+	    
 	    [(z:unit-form? expr)
 	      (let ((imports (z:unit-form-imports expr))
 		     (exports (map (lambda (export)
@@ -316,13 +362,13 @@
 		     (map
 		       (lambda (link-clause)
 			 (let ((tag (read->raw (car link-clause)))
-				(sub-unit (mv-wrap (cadr link-clause)))
+				(sub-unit (annotate (cadr link-clause)))
 				(imports
 				  (map (lambda (import)
 					 (if (z:lexical-varref? import)
 					   (z:varref-var import)
 					   `(,(read->raw (car import))
-					      ,(read->raw (cdr import)))))
+					     ,(read->raw (cdr import)))))
 				    (cddr link-clause))))
 			   `(,tag (,sub-unit ,@imports))))
 		       links))
@@ -340,14 +386,14 @@
 		    e)))]
 
 	    [(z:invoke-unit-form? expr)
-	      `(#%invoke-unit ,(mv-wrap (z:invoke-unit-form-unit expr))
-		 ,@(map z:varref-var
+	      `(#%invoke-unit ,(annotate (z:invoke-unit-form-unit expr))
+		 ,@(map z:varref-var	
 		     (z:invoke-unit-form-variables expr)))]
 
 	    [(z:invoke-open-unit-form? expr)
 	      (let ((name-spec (z:invoke-open-unit-form-name-specifier
 				 expr))
-		     (unit (mv-wrap
+		     (unit (annotate
 			     (z:invoke-open-unit-form-unit expr)))
 		     (vars (map z:varref-var
 			     (z:invoke-open-unit-form-variables expr))))
@@ -365,7 +411,7 @@
 	    [(z:interface-form? expr)
 	      (let ((vars (z:interface-form-variables expr)))
 		(for-each check-for-keyword vars)
-		`(#%interface ,(map mv-wrap
+		`(#%interface ,(map annotate
 				 (z:interface-form-super-exprs expr))
 		   ,@(map read->raw vars)))]
 
@@ -373,8 +419,8 @@
 	      `(#%class*/names
 		 (,(z:binding-var (z:class*/names-form-this expr))
 		   ,(z:binding-var (z:class*/names-form-super-init expr)))
-		 ,(mv-wrap (z:class*/names-form-super-expr expr))
-		 ,(map mv-wrap (z:class*/names-form-interfaces expr))
+		 ,(annotate (z:class*/names-form-super-expr expr))
+		 ,(map annotate (z:class*/names-form-interfaces expr))
 		 ,(paroptarglist->ilist (z:class*/names-form-init-vars expr))
 		 ,@(map
 		     (lambda (clause)
@@ -383,8 +429,8 @@
 			   `(public
 			      ,@(map (lambda (internal export expr)
 				       `((,(z:binding-var internal)
-					   ,(read->raw export))
-					  ,(mv-wrap expr)))
+					  ,(read->raw export))
+					 ,(annotate expr)))
 				  (z:public-clause-internals clause)
 				  (z:public-clause-exports clause)
 				  (z:public-clause-exprs clause))))
@@ -392,8 +438,8 @@
 			   `(override
 			      ,@(map (lambda (internal export expr)
 				       `((,(z:binding-var internal)
-					   ,(read->raw export))
-					  ,(mv-wrap expr)))
+					  ,(read->raw export))
+					 ,(annotate expr)))
 				  (z:override-clause-internals clause)
 				  (z:override-clause-exports clause)
 				  (z:override-clause-exprs clause))))
@@ -401,7 +447,7 @@
 			   `(private
 			      ,@(map (lambda (internal expr)
 				       `(,(z:binding-var internal)
-					  ,(mv-wrap expr)))
+					  ,(annotate expr)))
 				  (z:private-clause-internals clause)
 				  (z:private-clause-exprs clause))))
 			 ((z:inherit-clause? clause)
@@ -424,12 +470,6 @@
 				  (z:sequence-clause-exprs clause))))))
 		     (z:class*/names-form-inst-clauses expr)))]
 
-	    [(z:with-continuation-mark-form? expr)
-	     `(#%with-continuation-mark
-	       ,(annotate (z:with-continuation-mark-form-key expr))
-	       ,(annotate (z:with-continuation-mark-form-val expr))
-	       ,(annotate (z:with-continuation-mark-form-body expr)))]
-	    
 	    [else
 	      (print-struct #t)
 	      (z:interface:internal-error
@@ -442,12 +482,12 @@
 			  (z:make-location 1 1 offset file))])
 	    (let read-loop ([exprs null])
 	      (let ([expr (reader)])
-		'(printf "expr: ~s~n" expr)
+		(printf "expr: ~s~n" expr)
 		(if (z:eof? expr)
 		  (apply values (reverse exprs))
 		  (let* ([expanded (z:scheme-expand expr)]
-			  [_ '(printf "expanded: ~s~n" expanded)]
+			  [_ (printf "expanded: ~s~n" expanded)]
 			  [annotated (annotate expanded)])
-		    '(begin ((global-defined-value 'pretty-print) annotated)
-		       (newline))
+		    (begin ((global-defined-value 'pretty-print) annotated)
+			   (newline))
 		    (read-loop (cons annotated exprs))))))))))

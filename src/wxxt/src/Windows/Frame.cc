@@ -380,6 +380,50 @@ Bool wxFrame::Create(wxFrame *frame_parent, char *title,
 // leave place for menubar and statusline
 //-----------------------------------------------------------------------------
 
+void wxFrame::GetSize(int *width, int *height)
+{
+  if (X->frame && XtIsRealized(X->frame)) {
+    /* Get the actual window size, insteda of waiting for events
+       to update the widget */
+    int x_pos, y_pos;
+    unsigned int border, depth;
+    Window root;
+    Display *disp;
+    Window win;
+
+    disp = XtDisplay(X->frame);
+    win = XtWindow(X->frame);
+    
+    XGetGeometry(disp, win,
+		 &root, &x_pos, &y_pos,
+		 (unsigned int *)width, (unsigned int *)height,
+		 &border, &depth);
+  } else
+    wxWindow::GetSize(width, height);
+
+}
+
+void wxFrame::GetPosition(int *x, int *y)
+{
+  if (X->frame && XtIsRealized(X->frame)) {
+    /* Get the actual window position, instead of waiting for events
+       to update the widget */
+    Display *disp;
+    Window win;
+    Window child;
+
+    disp = XtDisplay(X->frame);
+    win = XtWindow(X->frame);
+
+    XTranslateCoordinates(disp, 
+			  win, 
+			  DefaultRootWindow(disp),
+			  0, 0, 
+			  x, y, &child);
+  } else
+    wxWindow::GetPosition(x, y);
+}
+
 void wxFrame::Fit(void)
 {
     int hsize=0, vsize=0;
@@ -423,7 +467,7 @@ void wxFrame::GetClientSize(int *width, int *height)
 {
     int dummy, h1=0, h2=0, i;
 
-    wxWindow::GetClientSize(width, height);
+    GetSize(width, height);
     if (menubar)  menubar->GetSize(&dummy, &h1);   // get menubar's height
     for (i = 0; i < num_status; i++) {
       status[i]->GetSize(&dummy, &h2); // get status lines's height

@@ -389,14 +389,14 @@ void wxWindow::GetSize(int *width, int *height)
 
     XtVaGetValues(X->frame, XtNwidth, &ww, XtNheight, &hh, NULL);
     *width = ww; *height = hh;
-
+    
     if (misc_flags & REPORT_ZERO_WIDTH_FLAG)
       *width = 0;
     if (misc_flags & REPORT_ZERO_HEIGHT_FLAG)
       *height = 0;
 }
 
-/* MATTHEW: Client size is different from size */
+/* Client size is different from size */
 void wxWindow::GetClientSize(int *width, int *height)
 {
     Dimension dww, dhh, fw, fh;

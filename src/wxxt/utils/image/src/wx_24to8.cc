@@ -37,28 +37,6 @@
 #include <stdlib.h>
 #include "wx_image.h"
 
-#ifdef __sgi
-#include <bstring.h>
-#endif
-
-#ifdef _HPUX_SOURCE_
-#ifndef sun
-#include <X11/Xfuncs.h> // bcopy
-#endif
-#endif
-
-#if defined(_HPUX_SOURCE) || defined(_AIX41)
-#include <strings.h>
-#endif
-
-// #ifndef sun
-#ifdef SVR4
-extern "C" {
-#include <X11/Xfuncs.h> /* bcopy */
-}
-#endif
-// #endif
-
 #ifdef MZ_PRECISE_GC
 END_XFORM_ARITH;
 #endif
@@ -931,10 +909,8 @@ int wxImage::QuickCheck(byte *pic24, int w, int h, int maxcol)
     }
 
     if (high < low) { /* didn't find color in list, add it. */
-      /* WARNING: this is an overlapped memory copy.  memcpy doesn't do
-	 it correctly, hence 'bcopy', which claims to */
       if (nc>=maxcol) return 0;
-      bcopy((char *)&colors[low], (char *)&colors[low+1], (nc - low) * sizeof(unsigned long));
+      memmove((char *)&colors[low], (char *)&colors[low+1], (nc - low) * sizeof(unsigned long));
       colors[low] = col;
       nc++;
     }

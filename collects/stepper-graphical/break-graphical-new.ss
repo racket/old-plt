@@ -152,34 +152,40 @@
                         (add-to-popup pm (global-defined-value (z:varref-var binding)) 
                                       (z:varref-var binding)
                                       'highlighted) ; hack to fix namespace?
-                        (let*-values ([(mark) (send context-lbox get-data (context-lbox-selection))]
-                                      [(rev-before after)
-                                       (let loop ([remaining stored-mark-list] [building null])
-                                         (cond [(null? remaining)
-                                                (error 'show-var-values "mark does not occur in stored list")]
-                                               [(eq? (car remaining) mark)
-                                                (values (cons (car remaining) building) (cdr remaining))]
-                                               [else
-                                                (loop (cdr remaining) (cons (car remaining) building))]))])
-                          (let* ([extract-vals
-                                  (lambda (mark-list)
-                                    (map marks:mark-binding-value (marks:lookup-binding-list mark-list binding)))]
-                                 [rev-before-vals
-                                  (extract-vals rev-before)]
-                                 [after-vals
-                                  (extract-vals after)]
-                                 [var-name
-                                  (ccond [(z:binding? binding)
-                                          (z:binding-orig-name binding)]
-                                         [(pair? binding)
-                                          (z:varref-var (car binding))])])
-                            (for-each (lambda (val)
-                                        (add-to-popup pm val var-name))
-                                      (reverse after-vals))
-                            (add-to-popup pm (car rev-before-vals) var-name 'highlighted)
-                            (for-each (lambda (val)
-                                        (add-to-popup pm val var-name))
-                                      rev-before-vals))))
+                        (let ([selection (send context-lbox get-data (context-lbox-selection))]
+                              [var-name
+                               (cond [(z:binding? binding)
+                                      (z:binding-orig-name binding)]
+                                     [(pair? binding)
+                                      (z:varref-var (car binding))]
+                                     [else (error 'show-var-values "binding: ~a" binding)])])
+                          (if (lbox-info-closure? selection)
+                              (add-to-popup pm (marks:mark-binding-value 
+                                                (marks:lookup-binding (list (lbox-info-mark selection)) binding))
+                                            var-name)
+                              (let*-values ([(mark) (lbox-info-mark selection)]
+                                            [(rev-before after)
+                                             (let loop ([remaining stored-mark-list] [building null])
+                                               (cond [(null? remaining)
+                                                      (error 'show-var-values "mark does not occur in stored list")]
+                                                     [(eq? (car remaining) mark)
+                                                      (values (cons (car remaining) building) (cdr remaining))]
+                                                     [else
+                                                      (loop (cdr remaining) (cons (car remaining) building))]))])
+                                (let* ([extract-vals
+                                        (lambda (mark-list)
+                                          (map marks:mark-binding-value (marks:lookup-binding-list mark-list binding)))]
+                                       [rev-before-vals
+                                        (extract-vals rev-before)]
+                                       [after-vals
+                                        (extract-vals after)])
+                                  (for-each (lambda (val)
+                                              (add-to-popup pm val var-name))
+                                            (reverse after-vals))
+                                  (add-to-popup pm (car rev-before-vals) var-name 'highlighted)
+                                  (for-each (lambda (val)
+                                              (add-to-popup pm val var-name))
+                                            rev-before-vals))))))
                     (send frame popup-menu pm (inexact->exact x) (inexact->exact y))))]
                
                  [add-to-popup
@@ -205,12 +211,11 @@
                  [make-display-closure
                   (lambda (closure var-name)
                     (lambda (menu event)
-                      (let ([mark (sh:closure-table-lookup closure)]
+                      (let ([mark (sh:closure-record-mark (sh:closure-table-lookup closure))]
                             [selection (context-lbox-selection)])
                         (send context-lbox append 
-                              (string-append "  " var-name " : " (zodiac-abbr (marks:mark-source mark)))
+                              (string-append "  " (symbol->string var-name) " : " (zodiac-abbr (marks:mark-source mark)))
                               (make-lbox-info mark #t)))))]
-                 
                
                  [clear-var-highlights
                   (lambda ()
@@ -223,7 +228,7 @@
                  
                  [zodiac-abbr
                   (lambda (src)
-                    (ccond ; we need a z:parsed iterator...
+                    (cond ; we need a z:parsed iterator...
                      [(z:varref? src)
                       "<varref>"]
                      [(z:app? src)
@@ -259,7 +264,9 @@
                      [(z:interface-form? src)
                       "(interface ...)"]
                      [(z:class*/names-form? src)
-                      "(class*/names ...)"]))]
+                      "(class*/names ...)"]
+                     [else 
+                      (error 'zodiac-abbr "no abbreviation for form: ~a" src)]))]
                   
                ; highlight-vars 
                   
@@ -284,7 +291,7 @@
                             (when (memq binding mark-bindings)
                               (highlight-var ref binding)))])
                     (let recur ([src src])
-                      (ccond ; we need a z:parsed iterator...
+                      (cond ; we need a z:parsed iterator...
                         [(z:varref? src)
                          (if (z:top-level-varref? src)
                              (if (utils:is-unit-bound? src)
@@ -371,7 +378,9 @@
                                              (void)]
                                             [(z:sequence-clause? src)
                                              (for-each recur (z:sequence-clause-exprs src))]))
-                                   (z:class*/names-form-inst-clauses src))]))))])
+                                   (z:class*/names-form-inst-clauses src))]
+                        [else
+                         (error 'highlight-vars "no matching zodiac clause: ~a" src)]))))])
 
       (public [handle-breakpoint
                (lambda (mark-list semaphore)

@@ -98,7 +98,7 @@
 	      [($ ast:ptyp_any dummy)
 	       any?]
 	      [($ ast:ptyp_constr name ctl)
-	       (hash-table-get constructors (unlongident name))]
+	       (hash-table-get <constructors> (unlongident name))]
 	      [else
 	       (pretty-print (list "Bad core type" ct))]))
 
@@ -137,6 +137,8 @@
        (match desc
 	      [($ ast:pexp_constant const)
 	       const]
+	      [($ ast:pexp_array expr-list)
+	       #`(vector #,@(map compile-ml expr-list (repeat context (length expr-list))))]
 	      [($ ast:pexp_apply proc lelist)
 	       (let ([fun (compile-ml proc context)]
 		     [args (compile-lelist lelist context)])
@@ -172,7 +174,7 @@
 		     [elseexpc (if (null? elseexp) null (compile-ml elseexp context))])
 		 #`(if #,testc #,ifexpc #,(if (not (null? elseexpc)) elseexpc) (make-<unit> #f)))]
 	      [($ ast:pexp_construct name expr bool)
-	       (let ([constr (hash-table-get constructors (unlongident name) (lambda () #f))])
+	       (let ([constr (hash-table-get <constructors> (unlongident name) (lambda () #f))])
 		 (if constr
 		     (if (null? expr)
 			 (cdr constr)
@@ -188,10 +190,10 @@
 			   #`#,rconstr))))]
 ;	       (cond
 ;		[(and (null? expr) (not bool) 
-;		      (if (hash-table-get constructors name (lambda () #f)) #t #f))
-;		 (cdr (hash-table-get constructors name))]
-;		[(and (not bool) (if (hash-table-get constructors name (lambda () #f)) #t #f))
-;		 (let ([constr (cdr (hash-table-get constructors name))]
+;		      (if (hash-table-get <constructors> name (lambda () #f)) #t #f))
+;		 (cdr (hash-table-get <constructors> name))]
+;		[(and (not bool) (if (hash-table-get <constructors> name (lambda () #f)) #t #f))
+;		 (let ([constr (cdr (hash-table-get <constructors> name))]
 ;		       [args (compile-exps (ast:pexp_tuple-expression-list (ast:expression-pexp_desc expr)) context)])
 ;		   #`(#,constr #,@args))]
 ;		[else
@@ -213,6 +215,28 @@
 		     [tryres (compile-ml tryexp)])
 		 #`(with-handlers ([(not-break-exn? (match-lambda #,@matches))]) #,tryres))]
 				  
+	      [($ ast:pexp_while testexpr bodyexpr)
+	       (let ([testc (compile-ml testexpr context)]
+		     [bodyc (compile-ml bodyexpr context)])
+		 #`(let loop
+		       (if #,testc
+			   (begin
+			     #,bodyc
+			     (loop))
+			   (make-<unit> #f))))]
+
+	      [($ ast:pexp_for var init test up body)
+	       (let ([initc (compile-ml init context)]
+		     [testc (compile-ml test context)]
+		     [bodyc (compile-ml body context)])
+		 #`(let loop ([#,var #,initc]) 
+		     (if #,testc 
+			 (begin 
+			   #,bodyc 
+			   (loop #,(if up 
+				       #`(+ #,var 1)
+				       #`(- #,var 1))))
+			 (make-<unit> #f))))]
 	      [else
 	       (pretty-print (list "Expression unknown: " desc))]))
 
@@ -248,13 +272,13 @@
 	      [($ ast:ppat_any dummy)
 	       #'_]
 	      [($ ast:ppat_construct name pat bool)
-	       (cond [(and (null? pat) (not bool) (if (hash-table-get constructors (unlongident name) (lambda () #f)) #t #f))
-		      (hash-table-get constructors (unlongident name))]
+	       (cond [(and (null? pat) (not bool) (if (hash-table-get <constructors> (unlongident name) (lambda () #f)) #t #f))
+		      (hash-table-get <constructors> (unlongident name))]
 		     [(not bool)
-		      (let ([constructor (hash-table-get constructors (unlongident name) (lambda () #f))])
+		      (let ([constructor (hash-table-get <constructors> (unlongident name) (lambda () #f))])
 			(if constructor
 			    ;; Best way I can think of to do this is specail case
-			    (if (equal? (hash-table-get constructors (unlongident name)) cons)
+			    (if (equal? (hash-table-get <constructors> (unlongident name)) cons)
 				;; The pattern should be a <tuple> of two
 				(if (ast:ppat_tuple? (ast:pattern-ppat_desc pat))
 				    (let ([head (get-varpat (car (ast:ppat_tuple-pattern-list (ast:pattern-ppat_desc pat))))]
@@ -280,11 +304,11 @@
 	       (let ([tests (map compile-test tlist (repeat (length tlist)) (repeat context (length tlist)))])
 	       #`($ <tuple> #,tests))]
 	      [($ ast:ppat_construct name pat bool)
-	       (cond [(and (null? pat) (not bool) (if (hash-table-get constructors name (lambda () #f)) #t #f))
-		      (hash-table-get constructors name)]
+	       (cond [(and (null? pat) (not bool) (if (hash-table-get <constructors> name (lambda () #f)) #t #f))
+		      (hash-table-get <constructors> name)]
 		     [(not bool)
 		      ;; Best way I can think of to do this is specail case
-		      (if (equal? (hash-table-get constructors name) cons)
+		      (if (equal? (hash-table-get <constructors> name) cons)
 			  ;; The pattern should be a <tuple> of two
 			  (if (ast:ppat_tuple? (ast:pattern-ppat_desc pat))
 			      (let ([head (compile-test (car (ast:ppat_tuple-pattern-list (ast:pattern-ppat_desc pat))) context)]
@@ -398,7 +422,7 @@
 	      [($ ast:ldot longident name)
 	       (match longident
 		      [($ ast:lident library)
-		       (let ([lib-map (hash-table-get library-names (eval library) (lambda () #f))])
+		       (let ([lib-map (hash-table-get <library-names> (eval library) (lambda () #f))])
 			 (if lib-map
 			     (let ([function (hash-table-get lib-map (syntax-object->datum name) (lambda () #f))])
 			       (if function
@@ -423,7 +447,7 @@
 	   #f
 	   (or (equal? fun (car primlist)) (ml-primitive? fun (cdr primlist)))))
 
-     (define ml-prims (list + - * / equal? = <gt> <ge> <lt> <le> <or> <and> != not append string-append set-box! unbox)) 
+     (define ml-prims (list + - * / equal? = <> <gt> <ge> <lt> <le> <or> <and> != not append string-append set-box! unbox)) 
 
      (define (empty-context) 
        '(("+" operator +)

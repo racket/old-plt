@@ -70,7 +70,7 @@
 		    [($ ast:pstr_exception name decl)
 		     (let ([nconst (make-tconstructor (make-<tuple> (map typecheck-ml decl)) "exception")])
 		       (begin
-			 (hash-table-put! constructors (eval name) (make-tconstructor (make-<tuple> (map typecheck-ml decl))) "exception")
+			 (hash-table-put! <constructors> (eval name) (make-tconstructor (make-<tuple> (map typecheck-ml decl))) "exception")
 			 (make-mlexn (eval name) nconst)))]
 		       
 		    [else
@@ -84,6 +84,11 @@
 
 		    [($ ast:pexp_tuple xlist)
 		     (make-<tuple> (map typecheck-ml xlist (repeat context (length xlist))))]
+
+		    [($ ast:pexp_array xlist)
+		     (let ([xtypes (map typecheck-ml xlist (repeat context (length xlist)))])
+		       (if (same-types? xtypes (map at (map ast:expression-pexp_desc xlist) (map ast:expression-pexp_src xlist)))
+			   (make-tarray (car xtypes))))]
 
 		    [($ ast:pexp_ident name)
 		     (let ([type (get-type (unlongident name) context)])
@@ -126,7 +131,7 @@
 		     (typecheck-function label expr pelist context)]
 
 		    [($ ast:pexp_construct name expr bool)
-		     (let ([fconstructor (hash-table-get constructors (unlongident name) (lambda () #f))])
+		     (let ([fconstructor (hash-table-get <constructors> (unlongident name) (lambda () #f))])
 		       (if fconstructor
 			   (let ([constructor (car (convert-tvars (car fconstructor) null))])
 			     (if (tconstructor? constructor)
@@ -155,10 +160,23 @@
 			   (raise-syntax-error #f (format "Constructor not found: ~a" (unlongident name) ) name)))]
 			   
 		    [($ ast:pexp_try tryexp pelist)
-		     (let ([tryt (typecheck-ml tryexp)]
+		     (let ([tryt (typecheck-ml tryexp context)]
 			   [exnt (typecheck-match pelist "exception" context)])
 		       (if (unify tryt exnt)
 			   tryt))]
+
+		    [($ ast:pexp_while testexpr bodyexpr)
+		     (let ([testt (typecheck-ml testexpr context)]
+			   [bodyt (typecheck-ml bodyexpr context)])
+		       (if (and (unify "bool" testt) (unify "unit" bodyt))
+			   "unit"))]
+
+		    [($ ast:pexp_for var init test up body)
+		     (let ([initt (typecheck-ml init context)]
+			   [testt (typecheck-ml test context)])
+		       (if (and (unify "int" initt) (unify "int" testt))
+			   (if (unify "unit" (typecheck-ml body (update (syntax-object->datum var) (cons "int" null) context)))
+			       "unit")))]
 
 		    [else
 		     (raise-syntax-error #f (format "Cannot typecheck expression: ~a" desc) (at desc src))]) )
@@ -171,13 +189,13 @@
 		      [($ ast:ptype_abstract dummy)
 		       (let ([rtype (typecheck-type (ast:type_declaration-manifest typedecl))])
 			 (begin
-			   (hash-table-put! constructors name (cons rtype "some error"))
+			   (hash-table-put! <constructors> name (cons rtype "some error"))
 			   (format "type ~a = ~a" name rtype)))]
 		      [($ ast:ptype_variant scll)
 		       (let* ([tscll (typecheck-scll name scll)]
 			      [ntv (make-tvariant name (map eval (map car scll)) tscll)])
 			 (begin
-			   (hash-table-put! constructors name (cons ntv "some error"))
+			   (hash-table-put! <constructors> name (cons ntv "some error"))
 			   ntv))])))
 
 	   (define (typecheck-scll sname scll)
@@ -187,7 +205,7 @@
 			[name (eval (car current))]
 			[ttypes (map typecheck-type (cdr current))])
 		   (begin
-		     (hash-table-put! constructors name (cons (make-tconstructor (if (> (length ttypes) 1)
+		     (hash-table-put! <constructors> name (cons (make-tconstructor (if (> (length ttypes) 1)
 										 (make-<tuple> ttypes)
 										 (car ttypes)) (make-usertype sname)) #`#,(string->symbol (format "make-~a" name))))
 		     (cons (make-tconstructor (if (> (length ttypes) 1)
@@ -293,7 +311,7 @@
 		    [($ ast:ptyp_tuple ctlist)
 		     (make-<tuple> (map typecheck-type ctlist))]
 		    [($ ast:ptyp_constr name ctlist)
-		     (let ([constructor (hash-table-get constructors (unlongident name) (lambda () #f))])
+		     (let ([constructor (hash-table-get <constructors> (unlongident name) (lambda () #f))])
 		       (if constructor
 			   (let ([fconstructor (car (convert-tvars (car constructor) null))])
 			     
@@ -354,24 +372,28 @@
 		   (cons (car varenv) (union-envs (cdr varenv) context)))))
 
 	   (define (patcheck context type pat) 
+	     (pretty-print (format "patcheck: ~a" pat))
 	     (if (unique-var pat null)
 		 (union-envs (patenv pat type context) context)
 		 'fuzzle))
 
 	   (define (unique-var pat curvars)
+	     (pretty-print (format "unique-var: ~a" pat))
 	     (match (ast:pattern-ppat_desc pat)
 		    [($ ast:ppat_any dummy)
-		     null]
+		     curvars]
 		    [($ ast:ppat_var name)
 		     (if (present? name curvars)
 			 (raise-syntax-error #f (format "This variable is bound several times in this matching: ~a" name) (at pat (ast:pattern-ppat_src pat)))
 			 (cons name curvars))]
 		    [($ ast:ppat_constant const)
-		     null]
+		     curvars]
 		    [($ ast:ppat_tuple plist)
 		     (unique-var-list plist curvars)]
 		    [($ ast:ppat_construct longident dpat bool)
-		     (unique-var dpat curvars)]
+		     (if (null? dpat)
+			 curvars
+			 (unique-var dpat curvars))]
 		    [($ ast:ppat_constraint pat ct)
 		     (unique-var pat curvars)]))
 
@@ -394,7 +416,7 @@
 		     (let ([varenvs (map funenv plist)])
 		       (cons (make-<tuple> (map car varenvs)) (map cdr varenvs)))]
 		    [($ ast:ppat_construct longident cpat bool)
-		       (let* ([pat-type (hash-table-get constructors (unlongident longident) (lambda () #f))])
+		       (let* ([pat-type (hash-table-get <constructors> (unlongident longident) (lambda () #f))])
 			 (if pat-type
 			     (let ([cpat-type (car (convert-tvars (car pat-type) null))])
 			       (if (tconstructor? cpat-type)
@@ -438,7 +460,7 @@
 			       (raise-syntax-error #f (format "Expected tuple of length ~a but found tuple of length " (length tlist) (length plist)) patsyn)) )
 			 (raise-syntax-error #f (format "Expected ~a but found tuple" type) patsyn) )]
 		    [($ ast:ppat_construct longident cpat bool)
-		     (let* ([pat-type (hash-table-get constructors (unlongident longident) (lambda () #f))])
+		     (let* ([pat-type (hash-table-get <constructors> (unlongident longident) (lambda () #f))])
 		       (if pat-type
 			   (let ([cpat-type (car (convert-tvars (car pat-type) null))])
 ;			     (if (unify type (tconstructor-result cpat-type))
@@ -488,6 +510,7 @@
 	      [(<tuple>? type) (foldl (lambda (ut sl)
 				      (union (unsolved ut) sl)) (unsolved (car (<tuple>-list type))) (cdr (<tuple>-list type)))]
 	      [(tlist? type) (unsolved (tlist-type type))]
+	      [(tarray? type) (unsolved (tarray-type type))]
 	      [(tvar? type) (let ([r (tvar-tbox type)])
 				  (if (null? (unbox r))
 				      (list r)
@@ -519,6 +542,7 @@
 				 [(arrow? t) (make-arrow (list (inst (car (arrow-arglist t)))) (inst (arrow-result t)))]
 				 [(<tuple>? t) (make-<tuple> (map inst (<tuple>-list t)))]
 				 [(tlist? t) (make-tlist (inst (tlist-type t)))]
+				 [(tarray? t) (make-tarray (inst (tarray-type t)))]
 				 [(tvar? t) (if (null? (unbox (tvar-tbox t)))
 						(instVar (tvar-tbox t) tm)
 						(inst (unbox (tvar-tbox t))))]
@@ -557,6 +581,11 @@
 		[(tlist? t2) (unify (tlist-type t1) (tlist-type t2) syn)]
 		[(tvar? t2) (unify-var t1 (tvar-tbox t2) syn)]
 		[else (begin (raise-syntax-error #f "Expected a list type" syn) #f)])]
+	      [(tarray? t1)
+	       (cond
+		[(tarray? t2) (unify (tarray-type t1) (tarray-type t2) syn)]
+		[(tvar? t2) (unify-var t1 (tvar-tbox t2) syn)]
+		[else (raise-syntax-error #f "Expected an array type" syn)])]
 	      [(option? t1)
 	       (cond
 		[(option? t2) (unify (option-type t1) (option-type t2) syn)]
@@ -593,7 +622,7 @@
 		    [($ ast:ldot longident name)
 
 		     (if (ast:lident? longident)
-			 (let ([lib-map (hash-table-get library-names (eval (ast:lident-name longident)) (lambda () #f))])
+			 (let ([lib-map (hash-table-get <library-names> (eval (ast:lident-name longident)) (lambda () #f))])
 			   (if lib-map
 			       (let ([function (hash-table-get lib-map (syntax-object->datum name) (lambda () #f))])
 				 (if function
@@ -620,6 +649,8 @@
 					   
 	      [(tlist? type) (let ([ltype (convert-tvars (tlist-type type) mappings)])
 			       (cons (make-tlist (car ltype)) (cdr ltype)))]
+	      [(tarray? type) (let ([atype (convert-tvars (tarray-type type) mappings)])
+				(cons (make-tarray (car atype)) (cdr atype)))]
 	      [(tvar? type) (let ([mapped-type (get-type (tvar-tbox type) mappings)])
 			      (if mapped-type
 				  (cons (make-tvar (box mapped-type)) mappings)
@@ -643,6 +674,8 @@
 			      (cons (make-arrow (reverse (car tlist)) (car restype)) (cdr restype)))]
 	      [(tlist? type) (let ([ltype (unconvert-tvars (tlist-type type) mappings)])
 			       (cons (make-tlist (car ltype)) (cdr ltype)))]
+	      [(tarray? type) (let ([atype (unconvert-tvars (tarray-type type) mappings)])
+				(cons (make-tarray (car atype)) (cdr atype)))]
 	      [(option? type) (let ([otype (unconvert-tvars (option-type type) mappings)])
 				(cons (make-option (car otype)) (cdr otype)))]
 	      [(ref? type) (let ([rtype (unconvert-tvars (ref-type type) mappings)])
@@ -712,7 +745,7 @@
 	       (eval #`(cond
 			[(#,pred #,rtype) #t]
 			[(tvar? #,rtype) (if (null? (unbox (tvar-tbox #,rtype)))
-					     (begin (pretty-print "istype?: ununified type-var") #f)
+					  (begin (pretty-print "istype?: ununified type-var") #f)
 					  (istype? #,typename-as-symbol (unbox (tvar-tbox #,rtype))))]
 			[else #f]))))
 	     

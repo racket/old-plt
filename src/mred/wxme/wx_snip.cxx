@@ -930,9 +930,19 @@ wxSnip *wxTextSnip::Copy()
 void wxTextSnip::Copy(wxTextSnip *snip) 
 {
   wxSnip::Copy(snip);
+
+  if (snip->allocated < count) {
+    int a;
+    wxchar *s;
+    a = count + 10;
+    s = STRALLOC(a + 1);
+    snip->allocated = a;
+    snip->buffer = s;
+  }
   
   memcpy(snip->buffer + snip->dtext, buffer + dtext, count * sizeof(wxchar));
   snip->count = count;
+  snip->dtext = 0;
 
   snip->w = -1.0;
 }

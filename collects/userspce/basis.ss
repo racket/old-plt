@@ -543,5 +543,4 @@
       (booleans-as-true/false
        (setting-print-booleans-as-true/false setting))
       (print-graph (and (r4rs-style-printing) (setting-sharing-printing? setting)))
-      (abbreviate-cons-as-list (setting-abbreviate-cons-as-list? setting))
-)))))
+      (abbreviate-cons-as-list (setting-abbreviate-cons-as-list? setting)))))

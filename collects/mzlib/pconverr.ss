@@ -73,21 +73,35 @@
 		 expr
 		 (lambda (expr)
 		   (cond
-		    [(or (number? expr) (symbol? expr) (type-symbol? expr) (boolean? expr)
-			 (char? expr) (void? expr) (regexp? expr) (null? expr)
-			 (eq? expr (letrec ([x x]) x))) ; #<undefined> test - yuck
-		     'atomic]
-		    [(inferred-name expr) 'atomic]
-		    [(box? expr) (unless (build-sub expr)
-					 (build (unbox expr)))]
-		    [(pair? expr) (unless (build-sub expr)
-					  (build (car expr))
-					  (build (cdr expr)))]
-		    [(vector? expr) (unless (build-sub expr)
-					    (for-each build (vector->list expr)))]
-		    [(struct? expr) (unless (build-sub expr)
-					    (for-each build (vector->list (struct->vector expr))))]
-		    [else (build-sub expr)]))
+		     [(or (number? expr)
+			  (symbol? expr) (type-symbol? expr) 
+			  (boolean? expr)
+			  (char? expr) (void? expr) (regexp? expr) 
+			  (null? expr)
+			  (eq? expr (letrec ([x x]) x)) ; #<undefined> test - yuck
+			  (port? expr)
+			  (promise? expr)
+			  (object? expr)
+			  (class? expr)
+			  (unit? expr)
+			  (procedure? expr))
+		      'atomic]
+		     [(inferred-name expr) 'atomic]
+		     [(box? expr) (unless (build-sub expr)
+				    (build (unbox expr)))]
+		     [(hash-table? expr) (unless (build-sub expr)
+					   (hash-table-for-each 
+					    expr
+					    (lambda (key value)
+					      (build value))))]
+		     [(pair? expr) (unless (build-sub expr)
+				     (build (car expr))
+				     (build (cdr expr)))]
+		     [(vector? expr) (unless (build-sub expr)
+				       (for-each build (vector->list expr)))]
+		     [(struct? expr) (unless (build-sub expr)
+				       (for-each build (vector->list (struct->vector expr))))]
+		     [else (build-sub expr)]))
 		 build-sub))])
 	  (build expr)
 	  csi)))
@@ -234,6 +248,7 @@
 				    `(cons ,(recur (car expr)) ,(recur (cdr expr)))))]
 				[(weak-box? expr) `(make-weak-box ,(recur (weak-box-value expr)))]
 				[(box? expr) `(box ,(recur (unbox expr)))]
+				[(hash-table? expr) `(make-hash-table)]
 				[(vector? expr) `(vector ,@(map recur (vector->list expr)))]
 				[(symbol? expr) `',expr]
 				[(string? expr) expr]

@@ -107,7 +107,7 @@
                        (k (void))))])
       (parameterize ([current-namespace namespace])
         (map eval (annotate-exprs stx action))
-        (test null (lambda () expected-queue))))))
+        (test #t null? expected-queue)))))
 
 (define (namespace-rewrite-expr stx namespace)
   (parameterize ([current-namespace namespace])
@@ -190,9 +190,9 @@
 ;                    ((,highlight-placeholder) ((+ 9 29)))
 ;                    ((,highlight-placeholder) (38))))
 
-(test-mz-sequence "((call/cc call/cc) (call/cc call/cc))"
-                  `((((,highlight-placeholder (call/cc call/cc))) ((call-with-current-continuation call-with-current-continuation)))
-                    (((,highlight-placeholder (call/cc call/cc))) ((lambda args ...)))
+(test-mz-sequence "((call-with-current-continuation call-with-current-continuation) (call-with-current-continuation call-with-current-continuation))"
+                  `((((,highlight-placeholder (call-with-current-continuation call-with-current-continuation))) ((call-with-current-continuation call-with-current-continuation)))
+                    (((,highlight-placeholder (call-with-current-continuation call-with-current-continuation))) ((lambda args ...)))
                     ((((lambda args ...) ,highlight-placeholder)) ((call-with-current-continuation call-with-current-continuation)))
                     ((((lambda args ...) ,highlight-placeholder)) ((lambda args ...)))))
 
@@ -233,11 +233,11 @@
 (test-beginner-sequence "(define a +) a"
                         `(((,highlight-placeholder) (a))
                           ((,highlight-placeholder) (+))))
+
+(test-beginner-sequence "(define (b x) (+ x 13)) b (b 9)"
+                        `(((,highlight-placeholder) ((b 9)))
+                          ((,highlight-placeholder) ((+ 9 13)))
+                          ((,highlight-placeholder) ((+ 9 13)))
+                          ((,highlight-placeholder) (22))))
+
 (report-errs)
-
-(define stx
-(parameterize ([current-namespace beginner-namespace])
-  (expand `(define a +))))
-
-  (syntax-object->datum (car (cdr (syntax-e (cdr (syntax-e stx))))))
-

@@ -394,6 +394,18 @@
                             
                             
 
+(drscheme:unit:get-program-editor-mixin
+ (-> ((subclass?/c text%) . -> . (subclass?/c text%)))
+ ()
+ "Returns a mixin that must be mixed in to any"
+ "\\iscmclass{text} object that might contain"
+ "program text (and thus can be in the source"
+ "field of some syntax object)."
+ ""
+ "See also"
+ "@flink drscheme:unit:add-to-program-editor-mixin %"
+ ".")
+
 (drscheme:unit:add-to-program-editor-mixin
  (((subclass?/c text%) . -> . (subclass?/c text%)) . -> . void?)
  (mixin)
@@ -861,7 +873,7 @@
    "is initialized to."
    "If unsure of a default, the currently set language"
    "in the user's preferences can be obtained via:"
-   "\\begin(schemedisplay)"
+   "\\begin{schemedisplay}"
    "(preferences:get (drscheme:language-configuration:get-settings-preferences-symbol))"
    "\\end{schemedisplay}"
    ""
@@ -882,7 +894,7 @@
    ""
    "The \\var{panel} argument is the main panel where the"
    "language controls will be placed."
-   "The function adds buttons to the \\var{buton-panel}"
+   "The function adds buttons to the \\var{button-panel}"
    "to revert a language to its default settings and to"
    "show the details of a language."
    ""

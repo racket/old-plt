@@ -95,8 +95,12 @@ static Scheme_Object *symbol_bucket(Scheme_Hash_Table *table,
 
   while ((bucket = table->buckets[h])) {
     if (SAME_OBJ((Scheme_Object *)bucket, scheme_false)) {
-      if (naya)
+      if (naya) {
+	/* We're re-suing, so decrement count and it will be
+	   re-incremented. */
+	--table->count;
 	break;
+      }
     } else if ((length == SCHEME_SYM_LEN(bucket))
 	&& !memcmp(key, SCHEME_SYM_VAL(bucket), length))
       return (Scheme_Object *)bucket;

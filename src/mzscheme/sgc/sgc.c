@@ -75,6 +75,10 @@
 #define NO_FREE_BLOCKS 0
 /* Keep small-chunk assignment of a block forever */
 
+#define USE_BEST_FIT_ON_FREE_SECTORS 0
+/* Select best-fit versus gravity-fit (which tries to
+   keep all the blocks close together to avoid) */
+
 #define NO_STACK_OFFBYONE 0
 /* Don't notice a stack-based pointer just past the end of an object */
 
@@ -110,8 +114,8 @@
    ALLOW_SET_FINALIZER, and CHECK_WATCH_FOR_PTR_ALLOC */
 
 #define STD_MEMORY_TRACING SGC_STD_DEBUGGING
-/* Automatically implies TERSE_MEMORY_TRACING and 
-   DUMP_BLOCK_COUNTS */
+/* Automatically implies TERSE_MEMORY_TRACING, DUMP_BLOCK_COUNTS,
+   and DUMP_SECTOR_MAP */
 
 #define DETAIL_MEMORY_TRACING 1
 /* Automatically implies STD_MEMORY_TRACING, DUMP_BLOCK_MAPS, 
@@ -159,6 +163,10 @@
 /* GC_dump prints detail information about block and
    set size contents. */
 
+#define DUMP_SECTOR_MAP SGC_STD_DEBUGGING
+/* GC_dump prints detail information about existing
+   sectors. */
+
 #define DUMP_BLOCK_MAPS 0
 /* GC_dump prints detail information about block and
    set address contents. Automatically implies
@@ -185,6 +193,9 @@
 #define AUTO_STATIC_ROOTS_IF_POSSIBLE 1
 /* Automatically registers static C variables as roots if
    platform-specific code is porvided */
+
+#define GC_SECTOR_MAPS 1
+/* Write a sector map before and after each GC. */
 
 /****************************************************************************/
 /* Parameters and platform-specific settings                                */
@@ -380,6 +391,7 @@ void (*GC_out_of_memory)(void);
 /* Sector types: */
 enum {
   sector_kind_free,
+  sector_kind_freed,
   sector_kind_block,
   sector_kind_chunk,
   sector_kind_managed,
@@ -844,7 +856,8 @@ static void *malloc_sector(long size, long kind)
 
   need = (size + SECTOR_SEGMENT_SIZE - 1) / SECTOR_SEGMENT_SIZE;
 
-  /* This is best fit because the free-list is sorted: */
+  /* This is best-fit when the free-list is sorted by size,
+     gravity-fit when the free list is sorted by position. */
   fp = sector_freepage_start;
   while (fp) {
     if (fp->size >= need) {
@@ -909,7 +922,7 @@ static void free_sector(void *p)
     long pageindex = SECTOR_LOOKUP_PAGEPOS(t);
     if (sector_pagetables[pagetableindex]
 	&& (sector_pagetables[pagetableindex][pageindex].start == s)) {
-      sector_pagetables[pagetableindex][pageindex].kind = sector_kind_free;
+      sector_pagetables[pagetableindex][pageindex].kind = sector_kind_freed;
       sector_pagetables[pagetableindex][pageindex].start = 0;
       c++;
       t += SECTOR_SEGMENT_SIZE;
@@ -970,10 +983,16 @@ static void free_sector(void *p)
     ifp = ifp->next;
   }
   
-  /* Insert after smaller: */
   ifp = sector_freepage_start;
+#if USE_BEST_FIT_ON_FREE_SECTORS
+  /* Insert after all smaller secots: */
   while (ifp && (ifp->size < c))
     ifp = ifp->next;
+#else
+  /* Insert after lower sectors: */
+  while (ifp && (ifp->start < s))
+    ifp = ifp->next;
+#endif
 
   fp = (SectorFreepage *)p;
   fp->start = s;
@@ -1805,6 +1824,76 @@ struct GC_Set *GC_set(void *d)
 static unsigned long trace_stack_start, trace_stack_end, trace_reg_start, trace_reg_end;
 #endif
 
+#if DUMP_SECTOR_MAP
+static void dump_sector_map(char *prefix)
+{
+  FPRINTF(STDERR, "%sBegin Sectors\n"
+	  "%sO0:free; ,.:block; =-:chunk; mn:other; \"':other; %d each\n%s",
+	  prefix, prefix, SECTOR_SEGMENT_SIZE, prefix);
+  {
+    int i, j;
+    int c = 0;
+    unsigned long was_sec = 0;
+    int was_kind = 0;
+
+    for (i = 0; i < (1 << SECTOR_LOOKUP_PAGESETBITS); i++) {
+      SectorPage *pagetable;
+      pagetable = sector_pagetables[i];
+      if (pagetable) {
+	for (j = 0; j < SECTOR_LOOKUP_PAGESIZE; j++) {
+	  long kind;
+	  kind = pagetable[j].kind;
+	  if (kind) {
+	    char *same_sec, *diff_sec;
+
+	    if (c++ > 40) {
+	      FPRINTF(STDERR, "\n%s", prefix);
+	      c = 1;
+	    }
+
+	    switch(kind) {
+	    case sector_kind_freed:
+	      same_sec = "0";
+	      diff_sec = "O";
+	      break;
+	    case sector_kind_block:
+	      same_sec = ".";
+	      diff_sec = ",";
+	      break;
+	    case sector_kind_chunk:
+	      same_sec = "-";
+	      diff_sec = "=";
+	      break;
+	    case sector_kind_managed:
+	      same_sec = "n";
+	      diff_sec = "m";
+	      break;
+	    case sector_kind_other:
+	      same_sec = "'";
+	      diff_sec = "\"";
+	      break;
+	    default:
+	      same_sec = "?";
+	      diff_sec = "?";
+	      break;
+	    }
+
+	    if ((was_kind != kind) || (was_sec != pagetable[j].start))
+	      same_sec = diff_sec;
+
+	    FPRINTF(STDERR, same_sec);
+	    
+	    was_kind = kind;
+	    was_sec = pagetable[j].start;
+	  }
+	}
+      }
+    }
+  }
+  FPRINTF(STDERR, "\n%sEnd Sectors\n", prefix);
+}
+#endif
+
 void GC_dump(void)
 {
   FPRINTF(STDERR, "Begin Map\n");
@@ -1830,6 +1919,11 @@ void GC_dump(void)
 	  , stamp_clock
 #endif
 	  );
+
+#if DUMP_SECTOR_MAP
+  dump_sector_map("");
+#endif
+
 #if DUMP_BLOCK_COUNTS
   {
     int i, j;
@@ -4184,6 +4278,9 @@ void do_GC_gcollect(void *stack_now)
 #  endif
 # endif
 	  );
+# if GC_SECTOR_MAPS
+  dump_sector_map("");
+# endif
 #endif
 
   if (!GC_stackbottom) {
@@ -4418,6 +4515,9 @@ void do_GC_gcollect(void *stack_now)
 #if SGC_STD_DEBUGGING
   FPRINTF(STDERR, "done  %ld (%ld); recovered %ld\n",
 	  mem_use, sector_mem_use, orig_mem_use - mem_use);
+# if GC_SECTOR_MAPS
+  dump_sector_map("                            ");
+# endif
 #endif
 
 #if STAMP_AND_REMEMBER_SOURCE

@@ -32,6 +32,9 @@
 /* Flag for debugging compiled code in printed form: */
 #define NO_COMPACT 0
 
+#define USE_BUFFERING_CPORT 0
+/* Companion to USE_BUFFERING_CPORT in read.c */
+
 #define PRINT_MAXLEN_MIN 3
 
 /* locals */
@@ -1159,8 +1162,10 @@ print(Scheme_Object *obj, int escaped, int compact, Scheme_Hash_Table *ht,
     {
       Scheme_Type t = SCHEME_TYPE(obj);
       Scheme_Object *v;
+#if USE_BUFFERING_CPORT
       char *s;
       long slen;
+#endif
       
       if (t >= _scheme_last_type_) {
 	/* Doesn't happen: */
@@ -1197,13 +1202,12 @@ print(Scheme_Object *obj, int escaped, int compact, Scheme_Hash_Table *ht,
       if (compact)
 	closed = print(v, escaped, 1, NULL, vht, p);
       else {
-	closed = print_substring(v, escaped, 1, NULL, vht, p, &s, &slen);
-	
-#if NO_COMPACT
-#else
+#if USE_BUFFERING_CPORT
 	print_compact_number(p, slen);
-#endif
 	print_this_string(p, s, slen);
+#else
+	closed = print(v, escaped, 1, NULL, vht, p);
+#endif
       }
     } 
   else 

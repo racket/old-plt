@@ -1321,7 +1321,10 @@ peek_char (Scheme_Object *port)
 
 /************************************************************************/
 
-#define USE_BUFFERING_CPORT 1
+#define USE_BUFFERING_CPORT 0
+/* Also, set USE_BUFFERING_CPORT in print.c */
+/* The disadvantage of USE_BUFFERING_CPORT is that when .zo files are
+   written, large compiled dumps may be im memeory at once. */
 
 #if USE_BUFFERING_CPORT
 typedef struct CPort {
@@ -1380,7 +1383,10 @@ static char *read_compact_chars(CPort *port,
 				char *buffer, 
 				int bsize, int l)
 {
-  char *s, *src;
+  char *s;
+#if USE_BUFFERING_CPORT
+  char *src;
+#endif
   int i;
 
   if (l < bsize)
@@ -1863,9 +1869,9 @@ static Scheme_Object *read_compiled(Scheme_Object *port,
   Scheme_Object *result;
 #if USE_BUFFERING_CPORT
   CPort cp;
+  long size, got;
 #endif
   CPort *rp;
-  long size, got;
 
   if (!cpt_branch[1]) {
     int i;
@@ -1890,8 +1896,8 @@ static Scheme_Object *read_compiled(Scheme_Object *port,
   if (!variable_references)
     variable_references = scheme_make_builtin_references_table();
 
-  size = read_compact_number_from_port(port);
 #if USE_BUFFERING_CPORT
+  size = read_compact_number_from_port(port);
   cp.s = cp.start = (unsigned char *)scheme_malloc_atomic(size);
   cp.base = scheme_tell(port);
   if ((got = scheme_get_chars(port, size, (char *)cp.s)) != size)

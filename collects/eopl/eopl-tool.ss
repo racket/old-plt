@@ -34,7 +34,11 @@ wraps the load of the module.)
           (define/public (get-language-url)
 	    "http://www.cs.indiana.edu/eopl/")
 	  (define/public (get-reader)
-	    read-syntax)
+	    (lambda (name port offsets)
+	      (let ([v (read-syntax name port offsets)])
+		(if (eof-object? v)
+		    v
+		    (namespace-syntax-introduce v)))))
 	  (super-instantiate ())))
 
       (define language%

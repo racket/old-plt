@@ -161,12 +161,12 @@
 (test #t rename-file-or-directory/tf "tmp7x" (build-path deepdir "tmp7x"))
 (test #f rename-file-or-directory/tf "tmp7x" (build-path deepdir "tmp7x"))
 
-(test #f not (member #"tmp5x" (directory-list)))
+(test #f not (member (bytes->path #"tmp5x") (directory-list)))
 (test #t 'directory-list 
       (let ([l (directory-list "down")])
-	(or (equal? l '(#"deep" #"tmp8x"))
-	    (equal? l '(#"tmp8x" #"deep")))))
-(test '(#"tmp7x") directory-list deepdir)
+	(or (equal? l (map bytes->path '(#"deep" #"tmp8x")))
+	    (equal? l (map bytes->path '(#"tmp8x" #"deep"))))))
+(test (list (bytes->path #"tmp7x")) directory-list deepdir)
 
 (test #f delete-directory/tf deepdir)
 (test #f delete-directory/tf "down")
@@ -255,10 +255,10 @@
  (lambda (abs)
    (for-each
     (lambda (rel)
-      (test #t bytes? (build-path abs rel))
+      (test #t path? (build-path abs rel))
       (for-each
        (lambda (rel2)
-	 (test #t bytes? (build-path abs rel rel2)))
+	 (test #t path? (build-path abs rel rel2)))
        rels))
     rels))
  absols)
@@ -267,10 +267,10 @@
  (lambda (drive)
    (for-each
     (lambda (root)
-      (test #t bytes? (build-path drive root))
+      (test #t path? (build-path drive root))
       (for-each
        (lambda (rel)
-	 (test #t bytes? (build-path drive root rel)))
+	 (test #t path? (build-path drive root rel)))
        rels))
     nondrive-absols))
  drives)
@@ -342,9 +342,9 @@
 	  (lambda (path)
 	    (let*-values ([(base name dir?) (split-path path)]
 			  [(base2 name2 dir?2) (split-path base)])
-	       (test #"b" subbytes name 0 1)
+	       (test #"b" subbytes (path->bytes name) 0 1)
 	       (test end/? 'split-path dir?)
-	       (test #"a" subbytes name2 0 1)
+	       (test #"a" subbytes (path->bytes name2) 0 1)
 	       (test 'relative 'split-path base2)
 	       (test #t 'split-path dir?2)
 	       (for-each 
@@ -369,7 +369,7 @@
 (test-path (build-path "a" "b") simplify-path (build-path "a" "b"))
 (let ([full-path
        (lambda args (apply build-path (current-directory) args))])
-  (unless (bytes=? (build-path "a" "b") (build-path "a" 'same "b"))
+  (unless (equal? (build-path "a" "b") (build-path "a" 'same "b"))
     (test-path (full-path "a" "b") simplify-path (build-path "a" 'same "b")))
   (test-path (full-path "a" "b") simplify-path (build-path "a" 'same "noexistsdir" 'up "b"))
   (test-path (full-path "a" "b") simplify-path (build-path "a" 'same "noexistsdir" 'same 'up "b" 'same 'same))
@@ -393,7 +393,7 @@
    (err/rt-test (f "a" (string #\a #\nul #\b)) exn:i/o:filesystem?))
  (list rename-file-or-directory path->complete-path))
 
-; normal-case-path doesn't check for pathness:
-(test #t bytes? (normal-case-path (string #\a #\nul #\b)))
+; normal-case-path now checks for pathness:
+(err/rt-test (normal-case-path (string #\a #\nul #\b)))
 
 (report-errs)

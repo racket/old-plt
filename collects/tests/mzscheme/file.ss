@@ -1067,8 +1067,8 @@
 (collect-garbage)
 (test #t 'success-1 success-1?)
 (test #t 'success-2 success-2?)
-(test #"AnApple" getenv "APPLE")
-(test #"AnotherApple" getenv "BANANA")
+(test "AnApple" getenv "APPLE")
+(test "AnotherApple" getenv "BANANA")
 (test #f getenv "AnUndefinedEnvironmentVariable")
 
 (arity-test getenv 1 1)
@@ -1220,7 +1220,7 @@
 		   (eq? (cdr x) who))))
   
 (parameterize ([current-security-guard (make-file-sg '(exists read))])
-  (test #t bytes? (expand-path "tmp1"))
+  (test #t path? (expand-path "tmp1"))
   (test #t file-exists? "tmp1")
   (test #f directory-exists? "tmp1")
   (test #f link-exists? "tmp1")
@@ -1235,7 +1235,7 @@
   (test #t list? (directory-list)))
 
 (parameterize ([current-security-guard (make-file-sg '(exists write))])
-  (test #t bytes? (expand-path "tmp1"))
+  (test #t path? (expand-path "tmp1"))
   (err/rt-test (open-input-file "tmp1") (fs-reject? 'open-input-file))
   (err/rt-test (open-output-file "tmp1" 'append) (fs-reject? 'open-output-file))
   (err/rt-test (open-output-file "tmp1" 'update) (fs-reject? 'open-output-file))

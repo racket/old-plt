@@ -32,7 +32,7 @@
 				   (begin
 				     (set! erroring-set? #f)
 				     (error 'output))
-				   (display (substring s start end) orig))
+				   (display (subbytes s start end) orig))
 			       (- end start)))
 			   void
 			   void))
@@ -163,7 +163,7 @@
 		      #f)
 
 		(list current-input-port
-		      (list (make-custom-input-port (lambda (s) (string-set! s 0 #\x) 1) #f void)
+		      (list (make-custom-input-port (lambda (s) (bytes-set! s 0 (char->integer #\x)) 1) #f void)
 			    (make-custom-input-port (lambda (s) (error 'bad)) #f void))
 		      '(read-char)
 		      exn:user?

@@ -1422,6 +1422,9 @@ static int tcp_byte_ready (Scheme_Input_Port *port)
   INIT_DECL_FDSET(exfds, 1);
 #endif
 
+  if (port->closed)
+    return 1;
+
   data = (Scheme_Tcp *)port->port_data;
 
   if (data->b.hiteof)
@@ -1501,7 +1504,7 @@ static long tcp_get_string(Scheme_Input_Port *port,
       return 0;
 
 #ifdef USE_SOCKETS_TCP
-    scheme_block_until((Scheme_Ready_Fun)scheme_byte_ready_or_user_port_ready,
+    scheme_block_until((Scheme_Ready_Fun)tcp_byte_ready,
 		       scheme_need_wakeup,
 		       (Scheme_Object *)port,
 		       0.0);
@@ -1511,6 +1514,12 @@ static long tcp_get_string(Scheme_Input_Port *port,
     } while (!tcp_byte_ready(port));
     scheme_current_thread->ran_some = 1;
 #endif
+
+    if (port->closed) {
+      /* Another thread closed the input port while we were waiting. */
+      /* Call scheme_get_byte to signal the error */
+      scheme_get_byte((Scheme_Object *)port);
+    }
   }
 
   /* We assume that no other process has access to our sockets, so

@@ -473,7 +473,7 @@
 	  [boundary (/ SYNC-SLEEP-DELAY 6)])
       ;; Hack.
       ;; The following test isn't reliable, so only Matthew should see it.
-      (when (regexp-match #rx"(mflatt)|(matthewf)" (find-system-path 'home-dir))
+      (when (regexp-match #rx"(mflatt)|(matthewf)" (path->string (find-system-path 'home-dir)))
 	(test busy? (lambda (a b c d) (> b c)) 'busy-wait? took boundary real-took)))))
 
 (define (test-good-waitable wrap-sema)
@@ -539,7 +539,7 @@
 			  (lambda (str)
 			    (if go?
 				(begin
-				  (string-set! str 0 #\x)
+				  (bytes-set! str 0 (char->integer #\x))
 				  1)
 				(if (zero? (random 2))
 				    0
@@ -549,15 +549,15 @@
     (make-waitable-unready ready-waitable)
     (test #f char-ready? bad-stuck-port)
     (test #f object-wait-multiple SYNC-SLEEP-DELAY bad-stuck-port)
-    (test 0 read-string-avail!* (make-string 10) bad-stuck-port)
+    (test 0 read-bytes-avail!* (make-bytes 10) bad-stuck-port)
     (set! go? #t)
     (test #t char-ready? bad-stuck-port)
     (test bad-stuck-port object-wait-multiple SYNC-SLEEP-DELAY bad-stuck-port)
-    (test #t positive? (read-string-avail!* (make-string 10) bad-stuck-port))
+    (test #t positive? (read-bytes-avail!* (make-bytes 10) bad-stuck-port))
     (set! go? #f)
     (test #f char-ready? bad-stuck-port)
     (test #f object-wait-multiple SYNC-SLEEP-DELAY bad-stuck-port)
-    (test 0 read-string-avail!* (make-string 10) bad-stuck-port)
+    (test 0 read-bytes-avail!* (make-bytes 10) bad-stuck-port)
     (set! ready-waitable 0)
     (test #f object-wait-multiple 0 bad-stuck-port)
     (test #f object-wait-multiple 0 bad-stuck-port)

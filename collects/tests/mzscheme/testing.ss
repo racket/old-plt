@@ -126,7 +126,7 @@ transcript.
 	(cons exn:i/o:port? (cons exn:i/o:port-port (lambda (x) (or (input-port? x) (output-port? x)))))
 	(cons exn:i/o:port:read? (cons exn:i/o:port-port input-port?))
 	(cons exn:i/o:port:write? (cons exn:i/o:port-port output-port?))
-	(cons exn:i/o:filesystem? (cons exn:i/o:filesystem-pathname bytes?))
+	(cons exn:i/o:filesystem? (cons exn:i/o:filesystem-pathname path?))
 	(cons exn:i/o:filesystem? (cons exn:i/o:filesystem-detail (lambda (x)
 								    (memq x '(#f
 									      ill-formed-path

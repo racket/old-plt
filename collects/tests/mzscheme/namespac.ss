@@ -10,10 +10,10 @@
 (test #f compiled-expression? 1)
 (test #t values (compiled-expression? (compile 1)))
 (test #t values (compiled-expression? (let ([c (compile 1)]
-					    [p (open-output-string)])
+					    [p (open-output-bytes)])
 					(display c p)
 					(parameterize ([read-accept-compiled #t])
-					  (read (open-input-string (get-output-string p)))))))
+					  (read (open-input-bytes (get-output-bytes p)))))))
 
 (test `,void eval `',void)
 

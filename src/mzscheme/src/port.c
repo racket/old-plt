@@ -1097,7 +1097,7 @@ int scheme_byte_ready_or_user_port_ready(Scheme_Object *p, Scheme_Schedule_Info 
 {
   Scheme_Input_Port *ip = (Scheme_Input_Port *)p;
 
-  if (ip->closed && sinfo->false_positive_ok)
+  if (ip->closed)
     return 1;
 
   if (SAME_OBJ(scheme_user_input_port_type, ip->sub_type)) {
@@ -1516,53 +1516,110 @@ long scheme_get_char_string(const char *who,
     s = (char *)scheme_malloc_atomic(READ_STRING_BYTE_BUFFER_SIZE);
 
   while (1) {
-    /* Since we want "size" more chars, we need at least "size" more
-       bytes. "leftover" is the number of bytes (<
-       MAX_UTF8_CHAR_BYTES) that we already have toward the first
-       character. If size is big enough, though, we only read as many
+    /* Since we want "size" more chars and we don't have leftovers, we
+       need at least "size" more bytes.
+
+       "leftover" is the number of bytes (< MAX_UTF8_CHAR_BYTES) that
+       we already have toward the first character. If the next
+       character doesn't continue a leftover sequence, the next
+       character actually belongs to a second character. Thus, if
+       leftover is positive and we're not merely peeking, ask for no
+       more than size - 1 bytes. If size is 1, then we are forced to
+       peek in all cases.
+
+       Overall, if the size is big enough, we only read as many
        characters as our buffer holds. */
 
-    if (size + leftover > READ_STRING_BYTE_BUFFER_SIZE)
-      bsize = READ_STRING_BYTE_BUFFER_SIZE - leftover;
-    else
-      bsize = size;
+    bsize = size;
+    if (leftover) {
+      bsize--;
+      if (!bsize) {
+	/* This is the complex case. Need to peek a byte to see
+	   whether it continues the leftover sequence or ends it an in
+	   an error. */
+	special_is_ok = 1;
+	got = scheme_get_byte_string(who, port,
+				     s, leftover, 1,
+				     0, 1, peek_skip);
+	if (got > 0) {
+	  long ulen, glen;
+	  glen = scheme_utf8_decode_as_prefix(s, 0, got + leftover,
+					      buffer, offset, offset + size,
+					      &ulen, 0, '?');
+	  if (glen) {
+	    /* This means that we don't want to read the character
+	       after all (if we weren't peeking in general). */
+	    total_got++;
+	    return total_got;
+	  } else {
+	    /* Either we got one character, or we're still continuing. */
+	    if (!peek) {
+	      /* In either case, read the character (and discard it) */
+	      scheme_get_byte_string(who, port,
+				     s, MAX_UTF8_CHAR_BYTES, 1,
+				     0, 0, scheme_make_integer(0));
+	    } else {
+	      /* Or, in either case, increment the peek skip */
+	      peek_skip = scheme_bin_plus(peek_skip, scheme_make_integer(got));
+	    }
+	    leftover++;
+	    /* Continue with the normal decoing process (but get 0
+	       more characters this time around */
+	  }
+	} else {
+	  /* Either EOF or SPECIAL -- either one ends the leftover
+	     sequence in an error. */
+	  buffer[offset] = '?';
+	  total_got++;
+	  return total_got;
+	}
+      }
+    }
 
-    got = scheme_get_byte_string(who, port,
-				 s, leftover, bsize,
-				 0, peek, peek_skip);
+    if (bsize) {
+      /* Read bsize bytes */
+      if (bsize + leftover > READ_STRING_BYTE_BUFFER_SIZE)
+	bsize = READ_STRING_BYTE_BUFFER_SIZE - leftover;
+      
+      got = scheme_get_byte_string(who, port,
+				   s, leftover, bsize,
+				   0, peek, peek_skip);
+    } else
+      got = 0;
 
-    if (got > 0) {
+    if (got >= 0) {
       long ulen, glen;
+
       glen = scheme_utf8_decode_as_prefix(s, 0, got + leftover,
 					  buffer, offset, offset + size,
 					  &ulen, 0, '?');
+      
       total_got += glen;
       if (glen == size) {
 	/* Got enough */
 	read_string_byte_buffer = s;
 	return total_got;
       }
-      offset += ulen;
-      size -= ulen;
+      offset += glen;
+      size -= glen;
       leftover = (got + leftover) - ulen;
-      if (leftover)
-	memmove(s, s + ulen, leftover);
+      memmove(s, s + ulen, leftover);
       if (peek) {
 	peek_skip = scheme_bin_plus(peek_skip, scheme_make_integer(got));
       }
     } else {
       read_string_byte_buffer = s;
 
-      if (!total_got)
-	return got; /* must be EOF */
-      
       if (leftover) {
 	/* First byte in s must have high bit set */
 	buffer[offset] = '?';
 	total_got++;
       }
 
-      return total_got;
+      if (!total_got)
+	return got; /* must be EOF */
+      else
+	return total_got;
     }
   }
 }
@@ -1578,31 +1635,56 @@ scheme_getc(Scheme_Object *port)
     v = scheme_get_byte_string("read-char", port,
 			       s, delta, 1,
 			       0,
-			       0, 0);
+			       delta > 0, 0);
     if ((v == EOF) || (v == SCHEME_SPECIAL)) {
       if (!delta)
 	return v;
       else {
 	/* This counts as a decoding error. The high bit
-	   on the first character must be set, so ungetc
-	   v and return '?'. */
-	scheme_ungetc(v, port);
+	   on the first character must be set. */
 	return '?';
       }
     } else {
       v = scheme_utf8_decode_prefix(s, delta + 1, r, 0);
-      if (v > 0)
+      if (v > 0) {
+	if (delta) {
+	  /* Need to read the peeked byte (will ignore) */
+	  v = scheme_get_byte_string("read-char", port,
+				     s, 0, 1,
+				     0,
+				     0, 0);
+	}
 	return r[0];
+      }
       else if (v == -2) {
 	/* -2 => decoding error */
 	/* If the sequence starts with a high bit set, then return '?',
 	   otherwise the bytes get dropped. */
-	if (s[0] & 0x80)
+	if (s[0] & 0x80) {
+	  /* If we peeked, it's right to leave the peeked byte */
 	  return '?';
-	else
+	} else {
+	  if (delta) {
+	    /* Need to read the peeked byte (will ignore) */
+	    v = scheme_get_byte_string("read-char", port,
+				       s, 0, 1,
+				       0,
+				       0, 0);
+	  }
 	  delta = 0;
+	}
       } else if (v == -1) {
-	/* In middle of sequence - keep getting bytes. */
+	/* In middle of sequence. */
+	if (delta) {
+	  /* Need to read the peeked byte. Just in case
+	     it's different, we peek into the next
+	     bnuffer position, then ignore it. */
+	  v = scheme_get_byte_string("read-char", port,
+				     s, delta + 1, 1,
+				     0,
+				     0, 0);
+	}
+	/* start/continue peeking bytes */
 	delta++;
       }
     }
@@ -3681,7 +3763,7 @@ static long fd_get_string(Scheme_Input_Port *port,
       if (port->closed) {
 	/* Another thread closed the input port while we were waiting. */
 	/* Call scheme_getc to signal the error */
-	scheme_getc((Scheme_Object *)port);
+	scheme_get_byte((Scheme_Object *)port);
       }
 
       /* Another thread might have filled the buffer, or

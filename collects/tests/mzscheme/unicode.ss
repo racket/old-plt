@@ -1,9 +1,12 @@
 
 (load-relative "loadtest.ss")
 
-(SECTION 'utf8)
+(SECTION 'unicode)
 
-(define basic-utf8-tests
+;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;  UTF-8 boundary tests based on Markus Kuhn's test suite
+
+(define basic-utf-8-tests
   '((#(#x3ba #x1f79 #x3c3 #x3bc #x3b5) complete
      (#o316 #o272 #o341 #o275 #o271 #o317 #o203 #o316 #o274 #o316 #o265))
     (#(0) complete
@@ -548,7 +551,7 @@
 (define bytes->unicode-vector
   (case-lambda
    [(s)
-    (list->vector (map char->integer (string->list (bytes->string/utf8 s))))]
+    (list->vector (map char->integer (string->list (bytes->string/utf-8 s))))]
    [(s start)
     (bytes->unicode-vector (subbytes s start))]
    [(s start end)
@@ -556,13 +559,12 @@
 (define (bytes-any->unicode-vector s non-v)
   (list->vector 
    (map (lambda (x) (if (= x (char->integer #\?)) non-v x))
-	(map char->integer (string->list (bytes->string/utf8-permissive s #\?))))))
+	(map char->integer (string->list (bytes->string/utf-8 s #\?))))))
 (define (unicode-vector->bytes v)
-  (string->bytes/utf8 (list->string (map integer->char (vector->list v)))))
+  (string->bytes/utf-8 (list->string (map integer->char (vector->list v)))))
 
-#;
-(let ([utf8-iconv (bytes-open-converter "UTF-8" "UTF-8")]
-      [utf8-iconv-p (bytes-open-converter "UTF-8-permissive" "UTF-8")])
+(let ([utf-8-iconv (bytes-open-converter "UTF-8" "UTF-8")]
+      [utf-8-iconv-p (bytes-open-converter "UTF-8-permissive" "UTF-8")])
   (for-each (lambda (p)
 	      (let ([code-points (car p)]
 		    [parse-status (cadr p)]
@@ -570,38 +572,38 @@
 		(if (and (positive? (vector-length code-points))
 			 (vector-ref code-points 0))
 		    (begin
-		      (test (vector-length code-points) bytes-utf8-length s)
+		      (test (vector-length code-points) bytes-utf-8-length s)
 		      (test code-points bytes->unicode-vector s)
 		      (test code-points bytes-any->unicode-vector s #f)
 		      (test s unicode-vector->bytes code-points)
-		      (test 0 bytes-utf8-index s 0)
-		      (test (bytes-length s) bytes-utf8-index 
+		      (test 0 bytes-utf-8-index s 0)
+		      (test (bytes-length s) bytes-utf-8-index 
 			    (bytes-append s #"x")
 			    (vector-length code-points))
 		      (if ((vector-length code-points) . > . 1)
 			  (begin
-			    (let ([post-1 (bytes-utf8-index s 1)])
+			    (let ([post-1 (bytes-utf-8-index s 1)])
 			      (test #t positive? post-1)
 			      (test (list->vector (cdr (vector->list code-points)))
 				    bytes->unicode-vector s post-1))
-			    (let ([last-1 (bytes-utf8-index s (sub1 (vector-length code-points)))])
+			    (let ([last-1 (bytes-utf-8-index s (sub1 (vector-length code-points)))])
 			      (test #t positive? last-1)
 			      (test code-points
 				    list->vector (append
 						  (vector->list (bytes->unicode-vector s 0 last-1))
 						  (vector->list (bytes->unicode-vector s last-1))))))
-			  (test #f bytes-utf8-index s 1))
+			  (test #f bytes-utf-8-index s 1))
 		      (test-values (list s (bytes-length s) 'complete)
-				   (lambda () (bytes-convert utf8-iconv s))))
+				   (lambda () (bytes-convert utf-8-iconv s))))
 		    (begin
 		      (test code-points bytes-any->unicode-vector s #f)
 		      (test (list->vector (append '(97) (vector->list code-points) '(98)))
 			    bytes-any->unicode-vector (bytes-append #"a" s #"b") #f)
 		      (test (list->vector (append (vector->list code-points) (vector->list code-points)))
 			    bytes-any->unicode-vector (bytes-append s s) #f)
-		      (test #f bytes-utf8-length s)
-		      (test 0 bytes-utf8-index s 0)
-		      (let-values ([(s2 n status) (bytes-convert utf8-iconv s)])
+		      (test #f bytes-utf-8-length s)
+		      (test 0 bytes-utf-8-index s 0)
+		      (let-values ([(s2 n status) (bytes-convert utf-8-iconv s)])
 			(test (case parse-status 
 				[(error/aborts) 'error]
 				[else parse-status ])
@@ -609,7 +611,7 @@
 		      (let ([convert
 			     (lambda (prefix)
 			       (let-values ([(s2 n status) 
-					     (bytes-convert utf8-iconv-p (bytes-append prefix s))]
+					     (bytes-convert utf-8-iconv-p (bytes-append prefix s))]
 					    [(pl) (bytes-length prefix)])
 				 (case parse-status
 				   [(error)
@@ -638,10 +640,11 @@
 				    (test parse-status 'status status)])))])
 			(convert #"")
 			(convert #"so"))
-		      (let-values ([(s2 n status) (bytes-convert utf8-iconv-p (bytes-append s #"xxxxx"))])
+		      (let-values ([(s2 n status) (bytes-convert utf-8-iconv-p (bytes-append s #"xxxxx"))])
 			(test 'complete 'status status)
 			(test '(#"xxxxx") regexp-match #rx#"xxxxx$" s2)
 			(test (+ 5 (bytes-length s)) 'n n))))
+		;; Test byte reading and port positions
 		(let ([v (bytes-any->unicode-vector s #f)])
 		  (let ([p (open-input-bytes s)])
 		    (port-count-lines! p)
@@ -665,8 +668,64 @@
 		      (test c 'tab (+ 8
 				      (- (vector-length v)
 					 (bitwise-and (vector-length v) 7))
-				      (vector-length v))))))))
-	    basic-utf8-tests))
+				      (vector-length v))))))
+		;; Test read-string decoding
+		(let ([us (apply string (map (lambda (i)
+					       (if i (integer->char i) #\?))
+					     (vector->list code-points)))])
+		  (test us bytes->string/utf-8 s #\?)
+		  (test us read-string (vector-length code-points) (open-input-bytes s))
+		  (test us read-string (* 100 (vector-length code-points)) (open-input-bytes s))
+		  (unless (string=? "" us)
+		    (test (substring us 0 1) read-string 1 (open-input-bytes s)))
+		  (let ([go (lambda (read-string)
+			      (let-values ([(in out) (make-pipe)])
+				(let loop ([i 0])
+				  (unless (= i 10)
+				    (write-bytes s out)
+				    (loop (add1 i))))
+				(close-output-port out)
+				(test #t 'read-10
+				      (let loop ([i 0])
+					(if (= i 10)
+					    #t
+					    (let ([rs (read-string (string-length us) in)])
+					      (and (or (string=? us rs)
+						       (test us `(,i of 10 for ,(caddr p) with ,read-string) rs))
+						   (loop (add1 i)))))))))])
+		    (go read-string)
+		    ;; Peek-string at front, consistent with read-string:
+		    (go (lambda (n p)
+			  (let ([a (peek-string n 0 p)]
+				[b (read-string n p)])
+			    (if (equal? a b)
+				a
+				(list a b)))))
+		    ;; Peek-string, using offset calculated from s
+		    (go (let ([pos 0])
+			  (lambda (n p)
+			    (begin0
+			     (peek-string n pos p)
+			     (set! pos (+ (bytes-length s) pos))))))
+		    ;; Read-char
+		    (go (lambda (n p)
+			  (list->string
+			   (let loop ([i 0])
+			     (if (= i n)
+				 null
+				 (cons (read-char p) (loop (add1 i))))))))
+		    ;; Peek-char, consistent with read-char
+		    (go (lambda (n p)
+			    (list->string
+			     (let loop ([i 0])
+			       (if (= i n)
+				   null
+				   (let ([a (peek-char p 0)]
+					 [b (read-char p)])
+				     (if (equal? a b)
+					 (cons a (loop (add1 i)))
+					 (list* #\* a b #\* (loop (add1 i))))))))))))))
+	    basic-utf-8-tests))
 
 (test '(#o302 #o251) bytes->list (unicode-vector->bytes (vector 169)))
 (test '(#o304 #o250) bytes->list (unicode-vector->bytes (vector 296)))
@@ -690,9 +749,9 @@
 (test '("\uE9\uA9") regexp-match #rx"[\uA9-\u128]+" "xx\uE9\uA9mm")
 
 (test #f regexp-match #rx"[^a-z][^a-z]" "\uA9")
-(test #f regexp-match #rx"[^a-z][^a-z]" (string->bytes/utf8 "\uA9"))
-(test (list (string->bytes/utf8 "\uA9")) regexp-match #rx#"[^a-z][^a-z]" "\uA9")
-(test (list (string->bytes/utf8 "\uA9")) regexp-match #rx#"[^a-z][^a-z]" (string->bytes/utf8 "\uA9"))
+(test #f regexp-match #rx"[^a-z][^a-z]" (string->bytes/utf-8 "\uA9"))
+(test (list (string->bytes/utf-8 "\uA9")) regexp-match #rx#"[^a-z][^a-z]" "\uA9")
+(test (list (string->bytes/utf-8 "\uA9")) regexp-match #rx#"[^a-z][^a-z]" (string->bytes/utf-8 "\uA9"))
 
 ;; Nots of patterns and ranges:
 (test #f regexp-match #rx"[^a-z\uA9]" "\uA9mm")
@@ -730,8 +789,8 @@
 
 ;; Let Matthew perform some basic sanity checks for locale-sensitive
 ;; comparisons:
-(define known-locale? (and (regexp-match "mflatt" (find-system-path 'home-dir))
-			   (or (regexp-match "linux" (system-library-subpath))
+(define known-locale? (and (regexp-match "mflatt|matthewf" (path->string (find-system-path 'home-dir)))
+			   (or (regexp-match "linux" (path->string (system-library-subpath)))
 			       (eq? 'macosx (system-type)))))
 
 ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -793,52 +852,414 @@
 	  (lambda ()
 	    (bytes-close-converter c))))))
 
-(define bytes-encode-locale->utf8 (bytes-encode-... "" "UTF-8"))
-(define bytes-encode-utf8->locale (bytes-encode-... "UTF-8" ""))
+(define bytes-encode-locale->utf-8 (bytes-encode-... "" "UTF-8"))
+(define bytes-encode-utf-8->locale (bytes-encode-... "UTF-8" ""))
 
 ;; Relies on a default locale that extends Latin-1:
 (when known-locale?
-  (let-values ([(s l ok?) (bytes-encode-utf8->locale #"abc")])
+  (let-values ([(s l ok?) (bytes-encode-utf-8->locale #"abc")])
     (test 3 'count l)
     (test 'complete 'ok ok?))
-  (let-values ([(s l ok?) (bytes-encode-utf8->locale #"a\300\300")])
+  (let-values ([(s l ok?) (bytes-encode-utf-8->locale #"a\300\300")])
     (test 1 'count l)
     (test 'error 'ok ok?))
-  (let-values ([(s l ok?) (bytes-encode-utf8->locale #"a\302\200")])
+  (let-values ([(s l ok?) (bytes-encode-utf-8->locale #"a\302\200")])
     (test 3 'count l)
     (test 'complete 'ok ok?))
-  (test-values '(#"abcd" 4 complete) (lambda () (bytes-encode-locale->utf8 #"abcd")))
-  (test-values '(#"bcd" 3 complete) (lambda () (bytes-encode-locale->utf8 #"abcd" 1)))
-  (test-values '(#"bc" 2 complete) (lambda () (bytes-encode-locale->utf8 #"abcd" 1 3)))
-  (test-values '(#"a" 1 aborts) (lambda () (bytes-encode-locale->utf8 #"a\302\200" 0 2)))
-  (test-values '(2 2 complete) (lambda () (bytes-encode-locale->utf8 #"abcd" 1 3 (make-bytes 2))))
+  (test-values '(#"abcd" 4 complete) (lambda () (bytes-encode-locale->utf-8 #"abcd")))
+  (test-values '(#"bcd" 3 complete) (lambda () (bytes-encode-locale->utf-8 #"abcd" 1)))
+  (test-values '(#"bc" 2 complete) (lambda () (bytes-encode-locale->utf-8 #"abcd" 1 3)))
+  (test-values '(#"a" 1 aborts) (lambda () (bytes-encode-locale->utf-8 #"a\302\200" 0 2)))
+  (test-values '(2 2 complete) (lambda () (bytes-encode-locale->utf-8 #"abcd" 1 3 (make-bytes 2))))
   (let ([s (make-bytes 10)])
-    (test-values '(2 2 complete) (lambda () (bytes-encode-locale->utf8 #"abcd" 1 3 s 4 7)))
+    (test-values '(2 2 complete) (lambda () (bytes-encode-locale->utf-8 #"abcd" 1 3 s 4 7)))
     (test 98 bytes-ref s 4)
     (test 99 bytes-ref s 5))
   (let ([s (make-bytes 10)])
-    (test-values '(1 1 continues) (lambda () (bytes-encode-locale->utf8 #"abcd" 1 3 s 4 5)))
+    (test-values '(1 1 continues) (lambda () (bytes-encode-locale->utf-8 #"abcd" 1 3 s 4 5)))
     (test 98 bytes-ref s 4))
   ;; The rest relies on the "C" locale:
   (parameterize ([current-locale "C"])
-    (test-values '(#"abc" 3 complete) (lambda () (bytes-encode-utf8->locale #"abc")))
-    (test-values '(#"a" 1 error) (lambda () (bytes-encode-utf8->locale #"a\300\300")))
-    (test-values '(#"ab" 2 aborts) (lambda () (bytes-encode-utf8->locale #"ab\303")))
+    (test-values '(#"abc" 3 complete) (lambda () (bytes-encode-utf-8->locale #"abc")))
+    (test-values '(#"a" 1 error) (lambda () (bytes-encode-utf-8->locale #"a\300\300")))
+    (test-values '(#"ab" 2 aborts) (lambda () (bytes-encode-utf-8->locale #"ab\303")))
     ;; Well-formed, but can't be converted to "C":
-    (test-values '(#"a" 1 error) (lambda () (bytes-encode-utf8->locale #"a\303\342")))))
+    (test-values '(#"a" 1 error) (lambda () (bytes-encode-utf-8->locale #"a\303\342")))))
 
-(err/rt-test (bytes-encode-utf8->locale 'ok))
-(err/rt-test (bytes-encode-utf8->locale "ok"))
-(err/rt-test (bytes-encode-utf8->locale #"ok" -1))
-(err/rt-test (bytes-encode-utf8->locale #"ok" 3) exn:application:mismatch?)
-(err/rt-test (bytes-encode-utf8->locale #"ok" 1 0) exn:application:mismatch?)
-(err/rt-test (bytes-encode-utf8->locale #"ok" 1 3) exn:application:mismatch?)
-(err/rt-test (bytes-encode-utf8->locale #"ok" 1 2 'nope))
-(err/rt-test (bytes-encode-utf8->locale #"ok" 1 2 #"nope"))
+(err/rt-test (bytes-encode-utf-8->locale 'ok))
+(err/rt-test (bytes-encode-utf-8->locale "ok"))
+(err/rt-test (bytes-encode-utf-8->locale #"ok" -1))
+(err/rt-test (bytes-encode-utf-8->locale #"ok" 3) exn:application:mismatch?)
+(err/rt-test (bytes-encode-utf-8->locale #"ok" 1 0) exn:application:mismatch?)
+(err/rt-test (bytes-encode-utf-8->locale #"ok" 1 3) exn:application:mismatch?)
+(err/rt-test (bytes-encode-utf-8->locale #"ok" 1 2 'nope))
+(err/rt-test (bytes-encode-utf-8->locale #"ok" 1 2 #"nope"))
 (let ([s (make-string 4)])
-  (err/rt-test (bytes-encode-utf8->locale #"ok" 1 3 s -1) exn:application:mismatch?)
-  (err/rt-test (bytes-encode-utf8->locale #"ok" 1 3 s 5) exn:application:mismatch?)
-  (err/rt-test (bytes-encode-utf8->locale #"ok" 1 3 s 2 1) exn:application:mismatch?)
-  (err/rt-test (bytes-encode-utf8->locale #"ok" 1 3 s 2 7) exn:application:mismatch?))
+  (err/rt-test (bytes-encode-utf-8->locale #"ok" 1 3 s -1) exn:application:mismatch?)
+  (err/rt-test (bytes-encode-utf-8->locale #"ok" 1 3 s 5) exn:application:mismatch?)
+  (err/rt-test (bytes-encode-utf-8->locale #"ok" 1 3 s 2 1) exn:application:mismatch?)
+  (err/rt-test (bytes-encode-utf-8->locale #"ok" 1 3 s 2 7) exn:application:mismatch?))
+
+;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; The following tests are derived from SRFI-14
+
+(define (check-all-latin-1 ? l)
+  (for-each (lambda (c)
+	      (test #t ? c))
+	    l)
+  (let loop ([i 0])
+    (unless (= i 256)
+      (unless (memq (integer->char i) l)
+	(test #f ? (integer->char i)))
+      (loop (add1 i)))))
+
+(define (check-all-unicode ? l)
+  (define (unless-in-l ? c)
+    (and (? c)
+	 (not (member c l))))
+  (define (qtest expect f . args)
+    (unless (equal? expect (apply f args))
+      (apply test expect f args)))
+  (for-each (lambda (c)
+	      (test #t ? c))
+	    l)
+  (for-each (lambda (r)
+	      (if (caddr r)
+		  (qtest #f unless-in-l ? (integer->char (car r)))
+		  (let loop ([i (car r)])
+		    (qtest #f unless-in-l  ? (integer->char i))
+		    (unless (= i (cadr r))
+		      (loop (add1 i))))))
+	    (make-known-char-range-list)))
+
+(check-all-latin-1
+ char-lower-case?
+ '(#\a
+   #\b
+   #\c
+   #\d
+   #\e
+   #\f
+   #\g
+   #\h
+   #\i
+   #\j
+   #\k
+   #\l
+   #\m
+   #\n
+   #\o
+   #\p
+   #\q
+   #\r
+   #\s
+   #\t
+   #\u
+   #\v
+   #\w
+   #\x
+   #\y
+   #\z
+   #\u00B5
+   #\u00DF
+   #\u00E0
+   #\u00E1
+   #\u00E2
+   #\u00E3
+   #\u00E4
+   #\u00E5
+   #\u00E6
+   #\u00E7
+   #\u00E8
+   #\u00E9
+   #\u00EA
+   #\u00EB
+   #\u00EC
+   #\u00ED
+   #\u00EE
+   #\u00EF
+   #\u00F0
+   #\u00F1
+   #\u00F2
+   #\u00F3
+   #\u00F4
+   #\u00F5
+   #\u00F6
+   #\u00F8
+   #\u00F9
+   #\u00FA
+   #\u00FB
+   #\u00FC
+   #\u00FD
+   #\u00FE
+   #\u00FF))
+
+;; No upper case in latin-1
+(check-all-latin-1
+ (lambda (x) (and (char-lower-case? x)
+		  (or (eq? x (char-upcase x))
+		      (> (char->integer (char-upcase x)) 255))))
+ '(#\u00B5
+   #\u00DF
+   #\u00FF))
+
+;; Latin-1 uppercase:
+(check-all-latin-1
+ char-upper-case?
+ '(#\A
+   #\B
+   #\C
+   #\D
+   #\E
+   #\F
+   #\G
+   #\H
+   #\I
+   #\J
+   #\K
+   #\L
+   #\M
+   #\N
+   #\O
+   #\P
+   #\Q
+   #\R
+   #\S
+   #\T
+   #\U
+   #\V
+   #\W
+   #\X
+   #\Y
+   #\Z
+   #\u00C0
+   #\u00C1
+   #\u00C2
+   #\u00C3
+   #\u00C4
+   #\u00C5
+   #\u00C6
+   #\u00C7
+   #\u00C8
+   #\u00C9
+   #\u00CA
+   #\u00CB
+   #\u00CC
+   #\u00CD
+   #\u00CE
+   #\u00CF
+   #\u00D0
+   #\u00D1
+   #\u00D2
+   #\u00D3
+   #\u00D4
+   #\u00D5
+   #\u00D6
+   #\u00D8
+   #\u00D9
+   #\u00DA
+   #\u00DB
+   #\u00DC
+   #\u00DD
+   #\u00DE))
+
+;; Extra letters (not lower or upper) in Latin-1:
+(check-all-latin-1
+ (lambda (c)
+   (and (char-alphabetic? c)
+	(not (char-upper-case? c))
+	(not (char-lower-case? c))))
+ '(#\u00AA
+   #\u00BA))
+
+;; Complete titlecase list:
+(check-all-unicode
+ char-title-case?
+ '(#\u01C5
+   #\u01C8
+   #\u01CB
+   #\u01F2
+   #\u1F88
+   #\u1F89
+   #\u1F8A
+   #\u1F8B
+   #\u1F8C
+   #\u1F8D
+   #\u1F8E
+   #\u1F8F
+   #\u1F98
+   #\u1F99
+   #\u1F9A
+   #\u1F9B
+   #\u1F9C
+   #\u1F9D
+   #\u1F9E
+   #\u1F9F
+   #\u1FA8
+   #\u1FA9
+   #\u1FAA
+   #\u1FAB
+   #\u1FAC
+   #\u1FAD
+   #\u1FAE
+   #\u1FAF
+   #\u1FBC
+   #\u1FCC
+   #\u1FFC))
+
+;; Complete whitspace list:
+(check-all-unicode
+ char-whitespace?
+ '(#\u0009
+   #\u000A
+   #\u000B
+   #\u000C
+   #\u000D
+   #\u0020
+   #\u00A0
+   #\u1680
+   #\u2000
+   #\u2001
+   #\u2002
+   #\u2003
+   #\u2004
+   #\u2005
+   #\u2006
+   #\u2007
+   #\u2008
+   #\u2009
+   #\u200A
+   #\u200B
+   #\u2028
+   #\u2029
+   #\u202F
+   #\u3000
+   ;; Post SRFI-14?
+   #\u205F
+   #\u180E))
+
+;; Punctuation in Latin-1:
+(check-all-latin-1
+ char-punctuation?
+ '(#\!
+   #\"
+   #\#
+   #\%
+   #\&
+   #\'
+   #\(
+   #\)
+   #\*
+   #\,
+   #\-
+   #\.
+   #\/
+   #\:
+   #\;
+   #\?
+   #\@
+   #\[
+   #\\
+   #\]
+   #\_
+   #\{
+   #\}
+   #\u00A1
+   #\u00AB
+   ;; #\u00AD ;; Treated as a control character now?
+   #\u00B7
+   #\u00BB
+   #\u00BF))
+
+;; Symbols in Latin-1
+(check-all-latin-1
+ char-symbolic?
+ '(#\$
+   #\+
+   #\<
+   #\=
+   #\>
+   #\^
+   #\`
+   #\|
+   #\~
+   #\u00A2
+   #\u00A3
+   #\u00A4
+   #\u00A5
+   #\u00A6
+   #\u00A7
+   #\u00A8
+   #\u00A9
+   #\u00AC
+   #\u00AE
+   #\u00AF
+   #\u00B0
+   #\u00B1
+   #\u00B4
+   #\u00B6
+   #\u00B8
+   #\u00D7
+   #\u00F7))
+
+;; Complete blank list:
+(check-all-unicode
+ char-blank?
+ '(#\u0009
+   #\u0020
+   #\u00A0
+   #\u1680
+   #\u2000
+   #\u2001
+   #\u2002
+   #\u2003
+   #\u2004
+   #\u2005
+   #\u2006
+   #\u2007
+   #\u2008
+   #\u2009
+   #\u200A
+   #\u200B
+   #\u202F
+   #\u3000
+   ;; Post SRFI-14?
+   #\u205F
+   #\u180E
+   ))
+
+
+;; Every letter, digit, punct, and symbol is graphic
+(check-all-unicode
+ (lambda (c)
+   (and (not (char-graphic? c))
+	(or (char-alphabetic? c)
+	    (char-numeric? c)
+	    (char-punctuation? c)
+	    (char-symbolic? c))))
+ null)
+
+;; Letter, digit, punct, and symbol are distinct
+(check-all-unicode
+ (lambda (c)
+   (> (+ (if (char-alphabetic? c) 1 0)
+	 (if (char-numeric? c) 1 0)
+	 (if (char-punctuation? c) 1 0)
+	 (if (char-symbolic? c) 1 0))
+      1))
+ null)
+
+(check-all-unicode
+ char-iso-control?
+ (append
+  (let loop ([i 0])
+    (if (= i #x20)
+	null
+	(cons (integer->char i) (loop (add1 i)))))
+  (let loop ([i #x7F])
+    (if (= i #xA0)
+	null
+	(cons (integer->char i) (loop (add1 i)))))))
+
 
 (report-errs)

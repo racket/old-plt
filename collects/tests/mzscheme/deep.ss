@@ -48,7 +48,7 @@
 	   [count depth])
       (make-custom-input-port
        (lambda (s)
-	 (string-set!
+	 (bytes-set!
 	  s
 	  0
 	  (cond
@@ -57,12 +57,12 @@
 		eof
 		(begin
 		  (set! count (add1 count))
-		  #\) ))]
+		  (char->integer #\)) ))]
 	   [else
 	    (set! count (sub1 count))
 	    (when (zero? count)
 	      (set! closing? #t))
-	    #\(]))
+	    (char->integer #\()]))
 	 1)
        #f
        void)))

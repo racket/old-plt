@@ -3381,8 +3381,10 @@ int scheme_utf8_decode_as_prefix(const unsigned char *s, int start, int end,
 				 unsigned int *us, int dstart, int dend,
 				 long *ipos, char utf16, int permissive)
 {
-  return utf8_decode_x(s, start, end, us, dstart, dend, 
-		       ipos, NULL, utf16, utf16, 1, permissive);
+  long opos;
+  utf8_decode_x(s, start, end, us, dstart, dend, 
+		ipos, &opos, utf16, utf16, 1, permissive);
+  return opos - dstart;
 }
 
 int scheme_utf8_decode_all(const unsigned char *s, int len, unsigned int *us, int permissive)

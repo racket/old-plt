@@ -67,14 +67,18 @@ wxApp::wxApp(wxlanguage_t language):wxbApp(language)
 		}
 	}
 	
-	if (::Gestalt(gestaltWindowMgrAttr, &windowMgrAttributes) != noErr) {
-		wxFatalError("Unable to invoke the Gestalt Manager.", "");
-	} else {
+	
+	myErr = ::Gestalt(gestaltWindowMgrAttr, &windowMgrAttributes);
+	if (myErr == gestaltUndefSelectorErr) {
+		MacOS85WindowManagerPresent = FALSE;
+	} else if (myErr == noErr) {
 		if (windowMgrAttributes & gestaltWindowMgrPresent) {
 			MacOS85WindowManagerPresent = TRUE;
 		} else {
 			MacOS85WindowManagerPresent = FALSE;
-		}
+		} 
+	} else {
+		wxFatalError("Unable to invoke the Gestalt Manager.", "");
 	}
 	
 	::MaxApplZone();

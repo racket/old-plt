@@ -345,18 +345,10 @@ char *wxFileSelector(char *message, char *default_path,
       s[len] = 0;
       
       if (scheme_mac_path_to_spec(s, &fsspec, &type)) {
-        /* Get name of dir: */
-        CInfoPBRec pbrec;
-        pbrec.hFileInfo.ioNamePtr = (unsigned char *)&(fsspec.name);
-	pbrec.hFileInfo.ioVRefNum = fsspec.vRefNum;
-	pbrec.hFileInfo.ioDirID = fsspec.parID;
-	pbrec.hFileInfo.ioFDirIndex = -1;
-	if (!PBGetCatInfo(&pbrec, 0)) {	
-	  fsspec.parID = pbrec.dirInfo.ioDrParID;
-          startp = new AEDesc;
-          if (AECreateDesc(typeFSS, &fsspec, sizeof(fsspec),  startp))
-            startp = NULL;
-         }
+        startp = new AEDesc;
+        if (AECreateDesc(typeFSS, &fsspec, sizeof(fsspec),  startp)) {
+          startp = NULL;
+        }
       }
     }
     
@@ -441,8 +433,15 @@ char *wxFileSelector(char *message, char *default_path,
 
 	if (default_path) {
 	   FSSpec sp;
+	   CInfoPBRec pb;
+  	   OSErr myErr;
 	   if (scheme_mac_path_to_spec(default_path, &sp, NULL)) {
-	     LMSetCurDirStore(sp.parID);
+  	     pb.dirInfo.ioNamePtr = sp.name;
+	     pb.dirInfo.ioVRefNum = sp.parID; // sounds crazy, I know
+	     pb.dirInfo.ioFDirIndex = 0;
+	     if (PBGetCatInfo(&pb, 0) == noErr) {
+	       LMSetCurDirStore(pb.dirInfo.ioDrDirID);
+	     }
 	     LMSetSFSaveDisk(-sp.vRefNum);
 	   }
 	}

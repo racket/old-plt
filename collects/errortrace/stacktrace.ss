@@ -21,6 +21,9 @@
 				 st-mark-source
 				 st-mark-bindings))
   
+  (define o (current-output-port))
+  (define (oprintf . args) (apply fprintf o args))
+  
   (define stacktrace@
     (unit/sig stacktrace^
       (import stacktrace-imports^)
@@ -31,17 +34,16 @@
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       ;; Test case coverage instrumenter
 
-      ;; test-coverage-point : (syntax[list of exprs] symbol-or-#f syntax boolean -> syntax[list of exprs])
-
-      ;; This procedure is called by `annotate' and `annotate-top' to wrap
+      ;; The next three procedures are called by `annotate' and `annotate-top' to wrap
       ;; expressions with test suite coverage information.  Returning the
-      ;; first argument means no profiling information is collected.
+      ;; first argument means no tests coverage information is collected.
 
-      ;; the second argument is the source expression, 
-
-      (define (test-coverage-point bodies expr)
+      ;; test-coverage-point/seq : syntax[list of expressions] syntax[original expression] -> 
+      ;;                           syntax[list of expressions]
+      ;; sets a test coverage point when there is an implicit begin somewhere
+      (define (test-coverage-point/seq bodies expr)
         (if (test-coverage-enabled)
-            (let ([key (gensym 'test-coverage-point)])
+            (let ([key (gensym 'test-coverage-point/seq)])
               (initialize-test-coverage-point key expr)
               (with-syntax ([key (datum->syntax-object #f key (quote-syntax here))]
                             [bodies bodies]
@@ -51,6 +53,27 @@
                   .
                   bodies))))
             bodies))
+      
+      ;; test-coverage-point : syntax syntax[original expression] -> syntax
+      ;; sets a test coverage point for a single expression
+      (define (test-coverage-point body expr)
+        (if (test-coverage-enabled)
+            (let ([key (gensym 'test-coverage-point)])
+              (initialize-test-coverage-point key expr)
+              (with-syntax ([key (datum->syntax-object #f key (quote-syntax here))]
+                            [body body]
+                            [test-covered test-covered])
+                (syntax
+                 (begin
+                   (test-covered 'key)
+                   body))))
+            body))
+      
+      (define (test-coverage-annotate-lambda entire-expr expr)
+        (syntax-case expr ()
+          [(args bodies ...)
+           (with-syntax ([(new-bodies ...) (test-coverage-point/seq (syntax (bodies ...)) entire-expr)])
+             (syntax (args new-bodies ...)))]))
       
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       ;; Profiling instrumenter
@@ -146,16 +169,14 @@
       
       ;; Result doesn't have a `lambda', so it works
       ;; for case-lambda
-      (define (annotate-lambda name expr args body trans?)
+      (define (profile-annotate-lambda name expr args body trans?)
 	(with-syntax ([body
-		       (test-coverage-point
-                        (profile-point 
+		       (profile-point 
                          (map (lambda (e) (annotate e trans?))
                               (stx->list body))
                          name
                          expr
-                         trans?)
-                        expr)]
+                         trans?)]
 		      [args args])
           (syntax (args . body))))
       
@@ -283,18 +304,30 @@
                               
                               ;; Wrap body, also a profile point
                               [(lambda args . body)
-                               (with-syntax ([cl (annotate-lambda name expr 
-                                                                  (syntax args) (syntax body) 
-                                                                  trans?)])
+                               (with-syntax ([cl 
+                                              (test-coverage-annotate-lambda
+                                               expr
+                                               (profile-annotate-lambda 
+                                                name expr 
+                                                (syntax args) (syntax body) 
+                                                trans?))])
                                  (keep-lambda-properties expr (syntax/loc expr (lambda . cl))))]
-                              [(case-lambda [args . body] ...)
-                               (with-syntax ([clauses
-                                              (map
-                                               (lambda (args body)
-                                                 (annotate-lambda name expr args body trans?))
-                                               (syntax->list (syntax (args ...))) 
-                                               (syntax->list (syntax (body ...))))])
-                                 (keep-lambda-properties expr (syntax/loc expr (case-lambda . clauses))))]
+                              [(case-lambda clauses ...)
+                               (with-syntax ([([args . body] ...)
+                                              (syntax (clauses ...))])
+                                 (with-syntax ([new-clauses
+                                                (map
+                                                 (lambda (args body clause)
+                                                   (test-coverage-annotate-lambda
+                                                    clause
+                                                    (profile-annotate-lambda name expr args body trans?)))
+                                                 (syntax->list (syntax (args ...))) 
+                                                 (syntax->list (syntax (body ...)))
+                                                 (syntax->list (syntax (clauses ...))))])
+                                   (keep-lambda-properties 
+                                    expr 
+                                    (syntax/loc expr 
+                                      (case-lambda . new-clauses)))))]
                               
                               ;; Wrap RHSs and body
                               [(let-values ([vars rhs] ...) . body)
@@ -330,10 +363,30 @@
                                (with-mark expr
 					  make-st-mark
                                           (annotate-seq trans? expr (syntax begin0) (syntax body) annotate))]
-                              [(if . body)
-                               (with-mark expr 
-					  make-st-mark 
-					  (annotate-seq trans? expr (syntax if) (syntax body) annotate))]
+                              [(if tst thn els)
+                               (with-syntax ([w-tst (annotate (syntax tst) trans?)]
+                                             [w-thn
+                                              (test-coverage-point (annotate (syntax thn) trans?)
+                                                                   (syntax thn))]
+                                             [w-els
+                                              (test-coverage-point (annotate (syntax els) trans?)
+                                                                   (syntax els))])
+                                 
+                                 (with-mark
+                                  expr
+                                  make-st-mark
+                                  (syntax/loc expr
+                                    (if w-tst w-thn w-els))))]
+                              [(if tst thn)
+                               (with-syntax ([w-tst (annotate (syntax tst) trans?)]
+                                             [w-thn 
+                                              (test-coverage-point (annotate (syntax thn) trans?)
+                                                                   (syntax thn))])
+                                 (with-mark 
+                                  expr 
+                                  make-st-mark 
+                                  (syntax/loc expr
+                                    (if w-tst w-thn))))]
                               [(with-continuation-mark . body)
                                (with-mark expr
 					  make-st-mark

@@ -52,7 +52,8 @@
      "Philippe Meunier, "
      "Jens Axel Søgaard, "
      "Francisco Solsona, "
+     "Reini Urban, "
      "and "
-     "Reini Urban "
+     "Paolo Zoppetti "
      "for their help translating DrScheme's GUI to other languages.")))
   

@@ -786,7 +786,7 @@ static LONG WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, in
     case WM_SYSKEYUP: /* ^^^ fallthrough ^^^ */
       /* Guess that this could trigger a menu pop-up. */
       /* Pre-emptively simulate WM_INITMENU message. */
-      wnd->OnMenuClick();
+      wnd->OnMenuClick(NULL);
       break;
     }
   }
@@ -1029,8 +1029,12 @@ static LONG WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, in
     {
       if (dialog)
 	retval = 0;
-      else
-	wnd->OnMenuClick();
+      else {
+	/* We skip the call to OnMenuClick() because it's handled
+	   by WM_SYSKEYUP. WM_INITMENU seems to happen too late,
+	   at a point where we can't execute Scheme code. */
+	// wnd->OnMenuClick(wParam);
+      }
       break;
     }
   case WM_MENUSELECT:
@@ -1402,7 +1406,7 @@ void wxWnd::OnMenuSelect(WORD WXUNUSED(item), WORD WXUNUSED(flags), HMENU WXUNUS
 {
 }
 
-void wxWnd::OnMenuClick()
+void wxWnd::OnMenuClick(WPARAM mnu)
 {
 }
 

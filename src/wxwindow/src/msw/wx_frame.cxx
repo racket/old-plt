@@ -866,7 +866,7 @@ BOOL wxFrameWnd::OnCommand(WORD menuId, WORD cmd, HWND WXUNUSED(control))
   return FALSE;
 }
 
-void wxFrameWnd::OnMenuClick()
+void wxFrameWnd::OnMenuClick(WPARAM mnu)
 {
   wxFrame *frame = (wxFrame *)wx_window;
   frame->OnMenuClick();

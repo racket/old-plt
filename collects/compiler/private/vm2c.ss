@@ -328,7 +328,7 @@
 		   (if return? "Scheme_Object *" "void")
 		   kind i
 		   (if module
-		       (format ", Scheme_Per_Invoke_Statics_~a *PMIS" module)
+		       (format ", Scheme_Object *self_modidx, Scheme_Per_Invoke_Statics_~a *PMIS" module)
 		       (if per-load? ", Scheme_Per_Load_Statics *PLS" "")))
 	  (when (> max-arity 0)
 	    (fprintf c-port
@@ -539,6 +539,7 @@
 	       (let* ([name (vm->c:convert-symbol (mod-glob-cname var))]
 		      [et? (mod-glob-exp-time? var)]
 		      [mod (mod-glob-modname var)]
+		      [in-mod? (mod-glob-in-module? var)]
 		      [var (mod-glob-varname var)]
 		      [modidx (and (not (symbol? mod))
 				   (compiler:get-module-path-constant mod))]
@@ -562,7 +563,7 @@
 			      "")
 			  (if mod-far ", " "")
 			  (vm->c:make-symbol-const-string (compiler:get-symbol-const! #f var))
-			  (if mod-local "env" "SCHEME_CURRENT_ENV(pr)")))))
+			  (if (or mod-local in-mod?) "env" "SCHEME_CURRENT_ENV(pr)")))))
 	   (set->list globals))))
 
       (define binding-boxed? binding-mutable?)
@@ -1473,6 +1474,9 @@
 		   [(null? (zodiac:read-object tast))
 		    (emit-expr "scheme_null")]
 		   
+		   [(eq? (zodiac:read-object tast) self_modidx)
+		    (emit-expr "self_modidx")]
+		   
 		   [(or (void? (zodiac:read-object tast))
 			(undefined? (zodiac:read-object tast)))
 		    (emit-expr (vm->c:convert-special-constant tast))]
@@ -1524,6 +1528,9 @@
 		   [(void? (zodiac:read-object ast))
 		    (emit "scheme_void")]
 
+		   [(eq? (zodiac:read-object ast) self_modidx)
+		    (emit-expr "self_modidx")]
+		   
 		   ;; HACK! - abused constants to communicate
 		   ;;  a direct call to scheme_read_compiled_stx_string():
 		   [(zodiac:varref? (zodiac:read-object ast))

@@ -111,13 +111,18 @@
 
       (define (undefined? x) (eq? x undefined))
 
+      (define self_modidx (let ()
+			    (define-struct self_modidx ())
+			    (make-self_modidx)))
+
       (define zodiac:make-special-constant
 	;; make-quote, make-constant
 	(lambda (text)
 	  (let ([stx (case text
 		       [(void) (datum->syntax-object #f (void) #f)]
-		       [(null) (datum->syntax-object null #f)]
-		       [(undefined) (datum->syntax-object undefined #f)]
+		       [(null) (datum->syntax-object #f null)]
+		       [(undefined) (datum->syntax-object #f undefined)]
+		       [(self_modidx) (datum->syntax-object #f self_modidx)]
 		       [else (compiler:internal-error 'make-special-constant "bad type")])])
 	    (zodiac:make-quote-form 
 	     stx (make-empty-box)

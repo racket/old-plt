@@ -26,7 +26,8 @@
 ;;        (this is temporary; the next phase will change the
 ;;         annotation)
 ;;    varref - empty set of varref attrributes, except that
-;;        the varref:primitive attribute can be added
+;;        the varref:primitive attribute can be added, and
+;;        the varref:in-module attribute can be added
 ;;    quote - 'immutable for known immutable quoted vars
 ;;    lambda - an inferred name (temporary)
 ;;    module - a module-info record
@@ -166,7 +167,7 @@
       ;;
       (define prephase!
 	(letrec ([prephase!
-		  (lambda (ast need-val? name)
+		  (lambda (ast in-mod? need-val? name)
 		    (when (compiler:option:debug)
 		      (zodiac:print-start! (debug:get-port) ast)
 		      (newline (debug:get-port)))
@@ -187,9 +188,11 @@
 
 		      (set-annotation! ast (varref:empty-attributes))
 			    
-		      (when (and (zodiac:top-level-varref? ast)
-				 (prephase:primitive-name? ast))
-			(varref:add-attribute! ast varref:primitive))
+		      (when (zodiac:top-level-varref? ast)
+			(when (prephase:primitive-name? ast)
+			  (varref:add-attribute! ast varref:primitive))
+			(when in-mod?
+			  (varref:add-attribute! ast varref:in-module)))
 		      
 		      ast]
 		     
@@ -208,8 +211,8 @@
 				    (zodiac:zodiac-stx ast)
 				    (zodiac:parsed-back ast)
 				    args
-				    (begin-map (lambda (e) (prephase! e #f #f))
-					       (lambda (e) (prephase! e #t #f))
+				    (begin-map (lambda (e) (prephase! e in-mod? #f #f))
+					       (lambda (e) (prephase! e in-mod? #t #f))
 					       bodies))])
 			  (set-annotation! ast name)
 			  ast))]
@@ -225,12 +228,12 @@
 		       (zodiac:let-values-form-vars ast))
 		      (zodiac:set-let-values-form-vals!
 		       ast
-		       (map (lambda (e name) (prephase! e #t name))
+		       (map (lambda (e name) (prephase! e in-mod? #t name))
 			    (zodiac:let-values-form-vals ast)
 			    (zodiac:let-values-form-vars ast)))
 		      (zodiac:set-let-values-form-body!
 		       ast
-		       (prephase! (zodiac:let-values-form-body ast) need-val? name))
+		       (prephase! (zodiac:let-values-form-body ast) in-mod? need-val? name))
 		      ast]
 		     
 		     ;;-----------------------------------------------------------
@@ -244,13 +247,14 @@
 				(zodiac:letrec-values-form-vars ast))
 		      (zodiac:set-letrec-values-form-vals!
 		       ast
-		       (map (lambda (e name) (prephase! e #t name))
+		       (map (lambda (e name) (prephase! e in-mod? #t name))
 			    (zodiac:letrec-values-form-vals ast)
 			    (zodiac:letrec-values-form-vars ast)))
 		      (zodiac:set-letrec-values-form-body!
 		       ast
 		       (prephase! 
 			(zodiac:letrec-values-form-body ast)
+			in-mod?
 			need-val?
 			name))
 
@@ -267,13 +271,13 @@
 		     [(zodiac:if-form? ast)
 		      (zodiac:set-if-form-test! 
 		       ast
-		       (prephase! (zodiac:if-form-test ast) #t #f))
+		       (prephase! (zodiac:if-form-test ast) in-mod? #t #f))
 		      (zodiac:set-if-form-then!
 		       ast
-		       (prephase! (zodiac:if-form-then ast) need-val? name))
+		       (prephase! (zodiac:if-form-then ast) in-mod? need-val? name))
 		      (zodiac:set-if-form-else!
 		       ast
-		       (prephase! (zodiac:if-form-else ast) need-val? name))
+		       (prephase! (zodiac:if-form-else ast) in-mod? need-val? name))
 
 		      ;; Ad hoc optimization: (if (not x) y z) => (if x z y)
 		      (let ([test (zodiac:if-form-test ast)])
@@ -303,8 +307,8 @@
 
 					; Normal begin
 			    (begin
-			      (begin-map! (lambda (e) (prephase! e #f #f))
-					  (lambda (e) (prephase! e need-val? name))
+			      (begin-map! (lambda (e) (prephase! e in-mod? #f #f))
+					  (lambda (e) (prephase! e in-mod? need-val? name))
 					  bodies)
 			      (let ([final-bodies
 				     (let loop ([bodies bodies])
@@ -352,6 +356,7 @@
 			   (zodiac:make-begin-form (zodiac:zodiac-stx ast)
 						   (zodiac:parsed-back ast)
 						   (zodiac:begin0-form-bodies ast))
+			   in-mod? 
 			   #f
 			   #f)
 
@@ -364,7 +369,7 @@
 				       [bodies (zodiac:begin0-form-bodies ast)])
 				   
 					; simplify the first position
-				   (set-car! bodies (prephase! (car bodies) need-val? name))
+				   (set-car! bodies (prephase! (car bodies) in-mod? need-val? name))
 				   
 					; then simplify the begin0
 				   (cond
@@ -376,6 +381,7 @@
 				    [(prephase:begin0-pushable? (car bodies))
 				     (prephase! 
 				      (make-begin (append (cdr bodies) (list (car bodies))))
+				      in-mod? 
 				      need-val?
 				      name)]
 				    
@@ -383,7 +389,7 @@
 				    [else
 				     (set-cdr!
 				      (zodiac:begin0-form-bodies ast)
-				      (list (prephase! (make-begin (cdr bodies)) #f #f)))
+				      (list (prephase! (make-begin (cdr bodies)) in-mod? #f #f)))
 				     ast]
 				    
 				    ))])
@@ -403,6 +409,7 @@
 		      (zodiac:set-set!-form-var! ast
 						 (prephase!
 						  (zodiac:set!-form-var ast)
+						  in-mod? 
 						  #t
 						  #f))
 		      (let ([target (zodiac:set!-form-var ast)])
@@ -413,6 +420,7 @@
 			(zodiac:set-set!-form-val! ast 
 						   (prephase! 
 						    (zodiac:set!-form-val ast)
+						    in-mod? 
 						    #t
 						    (zodiac:set!-form-var ast)))
 			ast)]		  
@@ -430,18 +438,18 @@
 			   (zodiac:zodiac-stx ast)
 			   (zodiac:parsed-back ast)
 			   (list null)
-			   (list (prephase! (zodiac:define-values-form-val ast) #t #f))
+			   (list (prephase! (zodiac:define-values-form-val ast) in-mod? #t #f))
 			   (zodiac:make-special-constant 'void))
 			  
 			  ;; Normal prephase
 			  (begin
 			    (zodiac:set-define-values-form-vars!
 			     ast
-			     (map (lambda (e) (prephase! e #t #f))
+			     (map (lambda (e) (prephase! e in-mod? #t #f))
 				  (zodiac:define-values-form-vars ast)))
 			    (zodiac:set-define-values-form-val!
 			     ast
-			     (prephase! (zodiac:define-values-form-val ast) #t (zodiac:define-values-form-vars ast)))
+			     (prephase! (zodiac:define-values-form-val ast) in-mod? #t (zodiac:define-values-form-vars ast)))
 			    ast))]
 		     
 		     ;;----------------------------------------------------------
@@ -452,7 +460,9 @@
 		       (zodiac:zodiac-stx ast)
 		       (zodiac:parsed-back ast)
 		       (zodiac:define-syntaxes-form-names ast)
-		       (prephase! (zodiac:define-syntaxes-form-expr ast) #t (zodiac:define-syntaxes-form-names ast)))]
+		       (prephase! (zodiac:define-syntaxes-form-expr ast)
+				  in-mod?
+				  #t (zodiac:define-syntaxes-form-names ast)))]
 		     
 		     ;;-----------------------------------------------------------
 		     ;; APPLICATIONS
@@ -469,17 +479,17 @@
 			     (lambda ()
 			       (zodiac:set-app-fun!
 				ast
-				(prephase! (zodiac:app-fun ast) #t #f))
+				(prephase! (zodiac:app-fun ast) in-mod? #t #f))
 			       (let ([adhoc (preprocess:adhoc-app-optimization 
 					     ast
 					     (lambda (x)
-					       (prephase! x #t #f)))])
+					       (prephase! x in-mod? #t #f)))])
 				 (if adhoc
-				     (prephase! adhoc need-val? name)
+				     (prephase! adhoc in-mod? need-val? name)
 				     (begin
 				       (zodiac:set-app-args!
 					ast
-					(map (lambda (e) (prephase! e #t #f))
+					(map (lambda (e) (prephase! e in-mod? #t #f))
 					     (zodiac:app-args ast)))
 				       ast))))])
 			
@@ -510,6 +520,7 @@
 				    (map list ids)
 				    args
 				    body)
+				   in-mod? 
 				   need-val?
 				   name)))
 			    
@@ -523,15 +534,15 @@
 		      
 		      (zodiac:set-with-continuation-mark-form-key!
 		       ast
-		       (prephase! (zodiac:with-continuation-mark-form-key ast) #t #f))
+		       (prephase! (zodiac:with-continuation-mark-form-key ast) in-mod? #t #f))
 		      
 		      (zodiac:set-with-continuation-mark-form-val!
 		       ast
-		       (prephase! (zodiac:with-continuation-mark-form-val ast) #t #f))
+		       (prephase! (zodiac:with-continuation-mark-form-val ast) in-mod? #t #f))
 		      
 		      (zodiac:set-with-continuation-mark-form-body!
 		       ast
-		       (prephase! (zodiac:with-continuation-mark-form-body ast) need-val? name))
+		       (prephase! (zodiac:with-continuation-mark-form-body ast) in-mod? need-val? name))
 		      
 		      ast]
 
@@ -573,7 +584,7 @@
 					   (zodiac:make-read
 					    elem)))))
 				 elems))
-			   need-val? name)))]
+			   in-mod? need-val? name)))]
 
 		     ;;-----------------------------------------------------------
 		     ;; QUOTE-SYNTAX
@@ -591,11 +602,11 @@
 		      (zodiac:set-module-form-body!
 		       ast
 		       (prephase! (zodiac:module-form-body ast)
-				  #f #f))
+				  #t #f #f))
 		      (zodiac:set-module-form-syntax-body!
 		       ast
 		       (prephase! (zodiac:module-form-syntax-body ast)
-				  #f #f))
+				  #t #f #f))
 		      ast]
 		     
 

@@ -211,7 +211,8 @@
 	    (compiler:report-messages! #t)
 	    (when verbose? (printf " expanding...~n"))
 	    (parameterize ([current-load-relative-directory input-directory])
-	      (map (lambda (expr) (zodiac:syntax->zodiac (expand expr)))
+	      (map (lambda (expr)
+		     (zodiac:syntax->zodiac (expand expr)))
 		   exprs)))))
 
       (define elaborate-namespace (make-namespace))
@@ -231,7 +232,7 @@
 	  (let ([mk
 		 (lambda (expr mode)
 		   (let ([ast (zodiac:make-module-form
-			       (zodiac:zodiac-stx m)
+			       (zodiac:zodiac-stx expr)
 			       (make-empty-box)
 			       (zodiac:module-form-name m)
 			       (zodiac:module-form-requires m)
@@ -613,7 +614,7 @@
 				       [errors compiler:messages])
 			      (if (null? source)
 				  source
-				  (let ([ast (prephase! (car source) (null? (cdr source)) #f)])
+				  (let ([ast (prephase! (car source) #f (null? (cdr source)) #f)])
 				    (if (eq? errors compiler:messages)
 					
 					;; no errors here

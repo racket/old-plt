@@ -50,6 +50,7 @@
       (define varref:symbol 16)
       (define varref:inexact 32)
       (define varref:env 64)
+      (define varref:in-module 128)
 
       (define mi-counter -1)
       (define-struct varref:module-invoke (id))

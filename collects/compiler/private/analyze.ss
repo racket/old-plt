@@ -68,7 +68,8 @@
       (define-struct mod-glob (cname   ;; a made-up name that encodes module + var
 			       modname
 			       varname 
-			       exp-time?))
+			       exp-time?
+			       in-module?))
 
       (define-struct modref-info (globals
 				  et-globals
@@ -113,7 +114,10 @@
 			    (lambda ()
 			      ;; vm->c function also generates a symbol constant:
 			      (let ([n (make-mod-glob (vm->c:generate-modglob-name modname varname)
-						      modname varname et?)])
+						      modname varname et?
+						      (and ast (varref:has-attribute? 
+								ast
+								varref:in-module)))])
 				(unless ast
 				  (compiler:internal-error
 				   #f

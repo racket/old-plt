@@ -63,6 +63,7 @@
      varref:symbol
      varref:inexact
      varref:env
+     varref:in-module
 
      (struct varref:module-invoke (id))
      make-module-invoke
@@ -136,6 +137,7 @@
      undefined?
 
      zodiac:make-special-constant
+     self_modidx
      
      zodiac:binding->lexical-varref
 
@@ -236,7 +238,7 @@
      
      (struct case-info (body case-code global-vars used-vars captured-vars max-arity))
 
-     (struct mod-glob (cname modname varname exp-time?))
+     (struct mod-glob (cname modname varname exp-time? in-module?))
      compiler:get-module-path-constant
 
      compiler:finish-syntax-constants!

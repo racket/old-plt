@@ -319,26 +319,28 @@
 
 	   ;; comes from module paths in analyze:
 	   [(module-path-index? (zodiac:read-object ast))
-	    (let-values ([(path base) (module-path-index-split (zodiac:read-object ast))]
-			 [(wrap) (lambda (v)
-				   (zodiac:make-read 
-				    (datum->syntax-object
-				     #f
-				     v
-				     (zodiac:zodiac-stx ast))))])
-	      (compiler:add-const! (compiler:make-const-constructor
-				    ast
-				    'module-path-index-join
-				    (list (compiler:construct-const-code!
-					   (wrap path)
-					   known-immutable?)
-					  (compiler:construct-const-code!
-					   (wrap base)
-					   known-immutable?)))
-				   (or (varref:current-invoke-module)
-				       (if known-immutable?
-					   varref:static
-					   varref:per-load-static))))]
+	    (let-values ([(path base) (module-path-index-split (zodiac:read-object ast))])
+	      (if (or path base)
+		  (let ([wrap (lambda (v)
+				(zodiac:make-read 
+				 (datum->syntax-object
+				  #f
+				  v
+				  (zodiac:zodiac-stx ast))))])
+		    (compiler:add-const! (compiler:make-const-constructor
+					  ast
+					  'module-path-index-join
+					  (list (compiler:construct-const-code!
+						 (wrap path)
+						 known-immutable?)
+						(compiler:construct-const-code!
+						 (wrap base)
+						 known-immutable?)))
+					 (or (varref:current-invoke-module)
+					     (if known-immutable?
+						 varref:static
+						 varref:per-load-static))))
+		  (zodiac:make-special-constant 'self_modidx)))]
 
 	   ;; other atomic constants that must be built
 	   [else

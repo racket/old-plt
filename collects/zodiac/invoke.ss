@@ -23,7 +23,7 @@
       (default-error-handler 'run-time-error))))
 
 (define plt:mzscheme-parameters@
-  (reference-library-unit/sig "sparamu.ss" "backward"))
+  (reference-library-unit/sig "sparamr.ss" "backward"))
 
 (define zodiac:mzscheme-parameters@
   (unit/sig plt:parameters^

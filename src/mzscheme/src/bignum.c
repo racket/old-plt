@@ -82,7 +82,7 @@ Scheme_Object *scheme_make_small_bignum(long v, Small_Bignum *o)
     o = (Small_Bignum *)scheme_malloc(sizeof(Small_Bignum));
 
   o->o.type = scheme_bignum_type;
-  SCHEME_BIGPOS(&o->o) = (v >= 0);
+  SCHEME_BIGPOS(&o->o) = ((v >= 0) ? 1 : 0);
   if (v < 0)
     v = -v;
 
@@ -114,7 +114,7 @@ Scheme_Object *scheme_make_bignum(long v)
 
     SCHEME_BIGDIG(&o->o) = o->v;
 
-    SCHEME_BIGPOS(&o->o) = (v >= 0);
+    SCHEME_BIGPOS(&o->o) = ((v >= 0) ? 1 : 0);
     if (v < 0)
       v = -v;
     

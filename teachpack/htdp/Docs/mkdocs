@@ -2,7 +2,6 @@
 string=? ; exec ${HOMESCHEME-/home/scheme}/Executables/mzscheme -r $0 "$@"
 
 ; This list determines the order of libraries in the index file:
-
 (define libraries
   '("Mastermind"
     "Guess"
@@ -96,7 +95,7 @@ string=? ; exec ${HOMESCHEME-/home/scheme}/Executables/mzscheme -r $0 "$@"
 
 (with-output-to-file "index.thtml"
   (lambda ()
-    (printf "#define LIBNAME Teachpack for How to Design Programs~n")
+    (printf "#define LIBNAME Teachpacks for How to Design Programs~n")
     (printf "#include head.tinc~n")
     (printf "<UL>~n")
     (for-each
@@ -133,6 +132,11 @@ string=? ; exec ${HOMESCHEME-/home/scheme}/Executables/mzscheme -r $0 "$@"
   (with-output-to-file ifile
     (lambda ()
       (printf "(~n")
+      (printf "~s~n"
+	'("Teachpacks for \"How to Design Programs\""
+	   "index.html"
+	   "HtDP"
+	   "Arrows GUI teachpack"))
       (for-each
        (lambda (lib-name)
 	 (let ([src (cdr lib-name)]

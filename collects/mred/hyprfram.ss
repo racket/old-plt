@@ -210,7 +210,6 @@
 	  (sequence
 	    (mred:debug:printf 'super-init "hyper-basic-frame; file-name: ~a" file-name)
 	    (super-init file-name)
-	    (printf "load-file.1 ~a~n" (get-edit))
 	    (send (get-edit) load-file file-name))
 	  
 	  (private

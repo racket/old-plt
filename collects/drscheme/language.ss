@@ -32,7 +32,7 @@
 					    #t #f #t #f #f #t #t #t #t #t #f
 					    'constructor-style))
 	  (list 'Advanced (make-setting #t 'side-effecting
-					#t #f #t #f #t #t #t #f #t #f #f
+					#t #f #t #f #t #t #t #f #f #f #f
 					'constructor-style))
 	  (list 'Quasi-R4RS (make-setting #t 'advanced
 					  #t #f #t #t #f #t #t #f #f #f #f

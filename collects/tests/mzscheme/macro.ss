@@ -241,4 +241,20 @@
 (arity-test make-rename-transformer 1 1)
 (arity-test rename-transformer? 1 1)
 
+;; Test inheritance of context when . is used in a pattern
+
+(define-syntax keep-context
+  (syntax-rules () [(a . b) b]))
+(define-syntax (discard-context stx) 
+  (syntax-case stx () 
+    [(v . a) (datum->syntax-object #f (syntax-e #'a))]))
+
+(test 6 'plus (keep-context + 1 2 3))
+(test 6 'plus (keep-context . (+ 1 2 3)))
+(test 6 'plus (discard-context keep-context . (+ 1 2 3)))
+
+(syntax-test #'(discard-context + 1 2 3))
+(syntax-test #'(discard-context . (+ 1 2 3)))
+(syntax-test #'(discard-context keep-context + 1 2 3))
+
 (report-errs)

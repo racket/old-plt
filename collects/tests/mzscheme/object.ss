@@ -95,7 +95,7 @@
     (define (x) 1)
     (define (y) 2)))
 
-(define (test-method public object%)
+(define (test-method public object% super-ok? inner-ok?)
   (teval #`(test #t class? (class #,object% (#,public))))
   (syntax-test #`(class #,object% (#,public . x)))
   (syntax-test #`(class #,object% (#,public 10)))
@@ -115,13 +115,46 @@
     (teval #`(test #t class? (class #,object% (#,public (x x)) (define (x) 1))))
     (teval #`(test #t class? (class #,object% (#,public (x y) (y x)) (define (x) 1) (define (y) 2)))))
 
+  ;; Use of external name for super/inner is always wrong (but
+  ;; maybe because super/inner isn't allowed):
+  (syntax-test #`(class #,object% (#,public [x ex]) (define (x y) (super ex 12))))
+  (syntax-test #`(class #,object% (#,public [x ex]) (define (x y) (inner 5 ex 12))))
+
+  (if super-ok?
+      (begin
+	(teval #`(test #t class? (class #,object% 
+				   (#,public x)
+				   (define (x y) (super x 10)))))
+	(teval #`(test #t class? (class #,object% 
+				   (#,public [ex x])
+				   (define (ex y) (super ex 10))))))
+      (syntax-test #`(class #,object% 
+		       (#,public x)
+		       (define (x y) (super x 10)))))
+  (if inner-ok?
+      (begin
+	(teval #`(test #t class? (class #,object% 
+				   (#,public x)
+				   (define (x y) (inner 5 x 10)))))
+	(teval #`(test #t class? (class #,object% 
+				   (#,public [ex x])
+				   (define (ex y) (inner 5 ex 10))))))
+      (syntax-test #`(class #,object% 
+		       (#,public x)
+		       (define (x y) (inner 5 x 10)))))
+
   'ok)
 
-(test-method #'public #'object%)
-(test-method #'public-final #'object%)
-(test-method #'override #'to-override-class%)
-(test-method #'override-final #'to-override-class%)
-(test-method #'private #'object%)
+(test-method #'public #'object% #f #f)
+(test-method #'public-final #'object% #f #f)
+(test-method #'pubment #'object% #f #t)
+(test-method #'override #'to-override-class% #t #f)
+(test-method #'override-final #'to-override-class% #t #f)
+(test-method #'overment #'to-override-class% #t #t)
+(test-method #'augment #'to-override-class% #f #t)
+(test-method #'augment-final #'to-override-class% #f #f)
+(test-method #'augride #'to-override-class% #f #f)
+(test-method #'private #'object% #f #f)
 
 (syntax-test #'(class*/names foo object% ()))
 (syntax-test #'(class*/names (1) object% ()))
@@ -131,8 +164,59 @@
 (syntax-test #'(class*/names (ths sup-i sup-mo sup-n 10) object% ()))
 (syntax-test #'(class*/names (ths sup-i sup-mo sup-n . arg) object% ()))
 
+(define (test-rename rename object%)
+  (teval #`(test #t class? (class #,object% (#,rename))))
+  (teval #`(err/rt-test (class #,object% (#,rename [x x])) #,exn:fail:object?))
+  (teval #`(err/rt-test (class #,object% (#,rename [y x])) #,exn:fail:object?))
+  (teval #`(err/rt-test (class #,object% (#,rename [y x][z x])) #,exn:fail:object?))
+  (syntax-test #`(class #,object% (#,rename . x)))
+  (syntax-test #`(class #,object% (#,rename x)))
+  (syntax-test #`(class #,object% (#,rename [x 1])))
+  (syntax-test #`(class #,object% (#,rename [1 x])))
+  (syntax-test #`(class #,object% (#,rename [x 1 2])))
+  (syntax-test #`(class #,object% (#,rename [x y][x y])))
+  
+  10)
+
+(test-rename #'rename-super object%)
+(test-rename #'rename-inner object%)
+
+(define (class-keyword-test kw)
+  (syntax-test kw)
+  (syntax-test #`(#,kw (x) 10)))
+  
+(class-keyword-test #'public)
+(class-keyword-test #'public-final)
+(class-keyword-test #'private)
+(class-keyword-test #'pubment)
+(class-keyword-test #'override)
+(class-keyword-test #'override-final)
+(class-keyword-test #'overment)
+(class-keyword-test #'augment)
+(class-keyword-test #'augment-final)
+(class-keyword-test #'augride)
+(class-keyword-test #'rename-super)
+(class-keyword-test #'rename-inner)
+(class-keyword-test #'inherit)
+(class-keyword-test #'super)
+(class-keyword-test #'inner)
+(class-keyword-test #'public*)
+(class-keyword-test #'private*)
+(class-keyword-test #'pubment*)
+(class-keyword-test #'override*)
+(class-keyword-test #'overment*)
+(class-keyword-test #'augment*)
+(class-keyword-test #'augride*)
+(class-keyword-test #'define/public)
+(class-keyword-test #'define/private)
+(class-keyword-test #'define/pubment)
+(class-keyword-test #'define/override)
+(class-keyword-test #'define/overment)
+(class-keyword-test #'define/augment)
+(class-keyword-test #'define/augride)
+
 ;; ------------------------------------------------------------
-;; Test badic functionality
+;; Test basic functionality
 
 (define eater<%> (interface () eat))
 
@@ -190,7 +274,8 @@
 
 (define color-fish%
   (class fish%
-    (public-final die)
+    (pubment die)
+    (public-final die2)
     (inherit get-size)
     (inherit-field size)
 
@@ -200,6 +285,7 @@
       (unless (= size (get-size))
 	(error 'bad))
       (set! color 'black))
+    (define (die2) (die))
 
     (super-new)))
 
@@ -232,7 +318,7 @@
   (class fish%
     (override grow)
     (public set-limit)
-    (rename [super-grow grow])
+    (rename-super [super-grow grow])
 
     (define pickiness 1)
     (define upper-limit 50)
@@ -299,82 +385,89 @@
 
 ;; color-fish%'s die doesn't call inner:
 (test (void) 
-      'no-override-final
-      (send (new (class color-fish% (override die) (define die (lambda () 'x)) (super-new))) die))
+      'no-overment
+      (send (new (class color-fish% (augment die) (define die (lambda () 'x)) (super-new))) die))
+;; Can't override (only augment):
+(err/rt-test (class color-fish% (override die) (define die (lambda () 'x))) exn:fail:object?)
+
+;; color-fish%'s die2 is final:
+(err/rt-test (class color-fish% (override die2) (define die2 (lambda () 'x))) exn:fail:object?)
+(err/rt-test (class color-fish% (augment die2) (define die2 (lambda () 'x))) exn:fail:object?)
 
 ;; Can't use inner without a `final' here or in superclass
-(syntax-test #'(class object% (define/public (f x) x) (inner [inner-f f])))
-(err/rt-test (class object% (inner [inner-f f])) exn:fail:object?)
-(err/rt-test (class (class object% (define/public (f x) x)) (inner [inner-f f])) exn:fail:object?)
+(syntax-test #'(class object% (define/public (f x) x) (rename-inner [inner-f f])))
+(syntax-test #'(class object% (define/public (f x) (inner (void) f x))))
+(err/rt-test (class object% (rename-inner [inner-f f])) exn:fail:object?)
+(err/rt-test (class (class object% (define/public (f x) x)) (rename-inner [inner-f f])) exn:fail:object?)
+
+;; Can't use `rename-super' for a final method:
+(err/rt-test (class (class object% (define/pubment (f x) x)) 
+	       (rename-super [super-f f])) exn:fail:object?)
 
 (define bfoo-jgoo%
   (class object%
-    (define/public-final (foo x)
-      (inner-foo (lambda () (list 1 x)) (list 2 x)))
-    (inner [inner-foo foo])
+    (define/pubment (foo x)
+      (inner (list 1 x) foo (list 2 x)))
     (define/public (goo x)
       (list 3 x))
+    (define/public (zoo x)
+      (inner (list 10 x) foo (list 20 x)))
     (super-new)))
 
 (define bjfoo-jbgoo% 
   (class bfoo-jgoo%
-    (define/override (foo x) (list 4 x))
-    (rename [super-goo goo])
-    (inner [inner-goo goo])
-    (define/override-final (goo x) 
-      (let ([y (super-goo x)])
-	(inner-goo (lambda () (list 5 y)) (list 6 y))))
-    (rename [super-foo foo])
-    (define/public (hoo y) (super-foo (list 7 y)))
+    (define/augride (foo x) (list 4 x))
+    (define/overment (goo x) 
+      (let ([y (super goo x)])
+	(inner (list 5 y) goo (list 6 y))))
+    (rename-super [super-zoo zoo])
+    (define/public (hoo y) (super-zoo (list 7 y)))
     (super-new)))
 
 (define bjjfoo-jbjgoo% 
   (class bjfoo-jbgoo% 
     (define/override (foo x)
       (list 8 x))
-    (define/override (goo x) 
+    (define/augride (goo x) 
       (list 9 x))
     (super-new)))
 
 (define bjjbfoo-jbjjgoo% 
   (class bjjfoo-jbjgoo% 
-    (rename [super-foo foo])
-    (define/override-final (foo x) 
-      (let ([z (super-foo (list 10 x))])
-	(inner-foo (lambda () (list 11 z)) (list 12 z))))
-    (inner [inner-foo foo])
-    (rename [super-goo goo])
+    (define/overment (foo x) 
+      (let ([z (super foo (list 10 x))])
+	(inner (list 11 z) foo (list 12 z))))
     (define/override (goo x) 
-      (super-goo (list 13 x)))
+      (super goo (list 13 x)))
     (super-new)))
 
 (define bjjbjfoo-jbjjbgoo% 
   (class bjjbfoo-jbjjgoo% 
-    (define/override (foo x) 
+    (define/augride (foo x) 
       (list 14 x))
-    (rename [super-goo goo])
-    (define/override-final (goo x) 
-      (super-goo (list 15 x)))
+    (define/overment (goo x) 
+      (super goo (list 15 x)))
     (super-new)))
 
 (test '(1 12) 'bjt (send (new bfoo-jgoo%) foo 12))
 (test '(3 13) 'bjt (send (new bfoo-jgoo%) goo 13))
+(test '(10 13.5) 'bjt (send (new bfoo-jgoo%) zoo 13.5))
 
 (test '(4 (2 14)) 'bjt (send (new bjfoo-jbgoo%) foo 14))
 (test '(5 (3 15)) 'bjt (send (new bjfoo-jbgoo%) goo 15))
-(test '(4 (2 (7 16))) 'bjt (send (new bjfoo-jbgoo%) hoo 16))
+(test '(4 (20 (7 16))) 'bjt (send (new bjfoo-jbgoo%) hoo 16))
 
 (test '(8 (2 17)) 'bjt (send (new bjjfoo-jbjgoo%) foo 17))
 (test '(9 (6 (3 18))) 'bjt (send (new bjjfoo-jbjgoo%) goo 18))
-(test '(8 (2 (7 19))) 'bjt (send (new bjjfoo-jbjgoo%) hoo 19))
+(test '(8 (20 (7 19))) 'bjt (send (new bjjfoo-jbjgoo%) hoo 19))
 
 (test '(11 (8 (10 (2 20)))) 'bjt (send (new bjjbfoo-jbjjgoo%) foo 20))
 (test '(9 (13 (6 (3 21)))) 'bjt (send (new bjjbfoo-jbjjgoo%) goo 21))
-(test '(11 (8 (10 (2 (7 22))))) 'bjt (send (new bjjbfoo-jbjjgoo%) hoo 22))
+(test '(11 (8 (10 (20 (7 22))))) 'bjt (send (new bjjbfoo-jbjjgoo%) hoo 22))
 
 (test '(14 (12 (8 (10 (2 23))))) 'bjt (send (new bjjbjfoo-jbjjbgoo%) foo 23))
 (test '(9 (13 (15 (6 (3 24))))) 'bjt (send (new bjjbjfoo-jbjjbgoo%) goo 24))
-(test '(14 (12 (8 (10 (2 (7 25)))))) 'bjt (send (new bjjbjfoo-jbjjbgoo%) hoo 25))
+(test '(14 (12 (8 (10 (20 (7 25)))))) 'bjt (send (new bjjbjfoo-jbjjbgoo%) hoo 25))
 
 ;; ----------------------------------------
 
@@ -746,7 +839,7 @@
   (mk-syntax-test (lambda (id) `((field [,id 10]))))
   (mk-syntax-test (lambda (id) `((inherit-field ,id))))
   (mk-syntax-test (lambda (id) `((inherit ,id))))
-  (mk-syntax-test (lambda (id) `((rename [,id old-id]))))
+  (mk-syntax-test (lambda (id) `((rename-super [,id old-id]))))
   (mk-syntax-test (lambda (id) `((public ,id) (define (id) 10))))
   (mk-syntax-test (lambda (id) `((private ,id) (define (id) 10))))
   (mk-syntax-test (lambda (id) `((override ,id) (define (id) 10)))))

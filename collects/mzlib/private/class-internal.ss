@@ -116,7 +116,7 @@
 		(quote-syntax augride)
 		(quote-syntax public-final)
 		(quote-syntax override-final)
-		(quote-syntax augride-final)
+		(quote-syntax augment-final)
 		(quote-syntax pubment)
 		(quote-syntax overment)
 		(quote-syntax augment)
@@ -605,9 +605,10 @@
 		    [inherit-names (map car inherits)]
 		    [rename-super-names (map car rename-supers)]
 		    [rename-inner-names (map car rename-inners)]
-		    [local-public-dynamic-names (map car (append publics overrides augrides))]
-		    [local-public-names (append (map car (append pubments overments augments 
-								 public-finals override-finals augment-finals))
+		    [local-public-dynamic-names (map car (append publics overrides augrides
+								 overments augments
+								  override-finals augment-finals))]
+		    [local-public-names (append (map car (append pubments public-finals))
 						local-public-dynamic-names)]
 		    [local-method-names (append (map car privates) local-public-names)]
 		    [expand-stop-names (append
@@ -832,7 +833,7 @@
 			  (lambda (id-stx)
 			    (datum->syntax-object (quote-syntax here)
 						  (gensym (syntax-e id-stx))))]
-			 [rename-super-extras (append overments overrides)]
+			 [rename-super-extras (append overments overrides override-finals)]
 			 [rename-inner-extras (append pubments overments augments)]
 			 [all-rename-inners (append (map car rename-inners)
 						    (generate-temporaries (map car pubments))
@@ -851,24 +852,20 @@
 				   [(private-name ...) (map car privates)]
 				   [(private-temp ...) (map mk-method-temp (map car privates))]
 				   [(pubment-name ...) (map car pubments)]
-				   [(overment-name ...) (map car overments)]
-				   [(augment-name ...) (map car augments)]
 				   [(pubment-temp ...) (map
 							mk-method-temp
 							(map car pubments))]
-				   [(overment-temp ...) (map
-							 mk-method-temp
-							 (map car overments))]
-				   [(augment-temp ...) (map
-							mk-method-temp
-							(map car augments))]
+				   [(public-final-name ...) (map car public-finals)]
+				   [(public-final-temp ...) (map
+							     mk-method-temp
+							     (map car public-finals))]
 				   [(method-name ...) (append local-public-dynamic-names
 							      (map car inherits))]
 				   [(method-accessor ...) (generate-temporaries
 							   (map car
-								(append publics
-									overrides
-									augrides
+								(append publics overrides augrides
+									overments augments
+									override-finals augment-finals
 									inherits)))]
 				   [(inherit-field-accessor ...) (generate-temporaries
 								  (map (lambda (id)
@@ -902,9 +899,8 @@
 				    rename-inner-orig ...
 				    method-name ...
 				    private-name ...
-				    pubment-name ...
-				    overment-name ...
-				    augment-name ...)
+				    public-final-name ...
+				    pubment-name ...)
 				   (values
 				    (make-this-map (quote-syntax this-id)
 						   (quote-syntax the-finder)
@@ -945,18 +941,13 @@
 				    ...
 				    (make-direct-method-map (quote-syntax the-finder)
 							    (quote the-obj)
+							    (quote-syntax public-final-name)
+							    (quote public-final-temp))
+				    ...
+				    (make-direct-method-map (quote-syntax the-finder)
+							    (quote the-obj)
 							    (quote-syntax pubment-name)
 							    (quote pubment-temp))
-				    ...
-				    (make-direct-method-map (quote-syntax the-finder)
-							    (quote the-obj)
-							    (quote-syntax overment-name)
-							    (quote overment-temp))
-				    ...
-				    (make-direct-method-map (quote-syntax the-finder)
-							    (quote the-obj)
-							    (quote-syntax augment-name)
-							    (quote augment-temp))
 				    ...)])))]
 			     [extra-init-mappings
 			      (with-syntax ([super-instantiate-id super-instantiate-id]
@@ -1026,15 +1017,15 @@
 							  normal-inits)]
 					 [init-mode init-mode]
 					 [(private-method ...) (map (find-method private-methods) (map car privates))]
-					 [public-methods (map (find-method methods) (map car (append public-finals
-												     publics)))]
-					 [override-methods (map (find-method methods) (map car (append override-finals
+					 [public-methods (map (find-method methods) (map car publics))]
+					 [override-methods (map (find-method methods) (map car (append overments
+												       override-finals
 												       overrides)))]
-					 [augride-methods (map (find-method methods) (map car (append augment-finals
+					 [augride-methods (map (find-method methods) (map car (append augments
+												      augment-finals
 												      augrides)))]
 					 [(pubment-method ...) (map (find-method methods) (map car pubments))]
-					 [(overment-method ...) (map (find-method methods) (map car overments))]
-					 [(augment-method ...) (map (find-method methods) (map car augments))]
+					 [(public-final-method ...) (map (find-method methods) (map car public-finals))]
 					 [mappings mappings]
 					 
 					 [extra-init-mappings extra-init-mappings]
@@ -1082,7 +1073,7 @@
 					     inherit-field-mutator ...
 					     rename-super-temp ... rename-super-extra-temp ...
 					     rename-inner-temp ... rename-inner-extra-temp ...
-					     method-accessor ...) ; public, override, augride, inherit
+					     method-accessor ...) ; for a local call that needs a dynamic lookup
 				      (let-syntaxes 
 				       mappings
 				       (fluid-let-syntax 
@@ -1101,8 +1092,8 @@
 							(raise-syntax-error
 							 #f
 							 (string-append
-							  "identifier for super call does not have an override or "
-							  "overment declaration")
+							  "identifier for super call does not have an override, "
+							  "override-final, or overment declaration")
 							 stx
 							 #'id)]
 						       [_else
@@ -1126,8 +1117,8 @@
 							(raise-syntax-error
 							 #f
 							 (string-append
-							  "identifier for inner call does not have an pubment, overment, "
-							  " augment, or rename-inner declaration")
+							  "identifier for inner call does not have a pubment, augment, "
+							  "or overment declaration")
 							 stx
 							 #'id)]
 						       [(_)
@@ -1146,14 +1137,12 @@
 						  ...
 						  [pubment-temp pubment-method]
 						  ...
-						  [overment-temp overment-method]
-						  ...
-						  [augment-temp augment-method]
+						  [public-final-temp public-final-method]
 						  ...)
 					   (values
-					    (list pubment-temp ... . public-methods)
-					    (list overment-temp ... . override-methods)
-					    (list augment-temp ... . augride-methods)
+					    (list pubment-temp ... public-final-temp ... . public-methods)
+					    (list . override-methods)
+					    (list . augride-methods)
 					    ;; Initialization
 					    #, ;; Attach srcloc (useful for profiling)
 					    (quasisyntax/loc stx
@@ -1707,9 +1696,9 @@
 		    (let ([method-accessors (map (lambda (index)
 						   (lambda (obj)
 						     (vector-ref (class-methods (object-ref obj)) index)))
-						 (append new-normal-indices
-							 replace-normal-indices
-							 refine-normal-indices
+						 (append new-normal-indices replace-normal-indices refine-normal-indices
+							 replace-augonly-indices refine-augonly-indices
+							 replace-final-indices refine-final-indices
 							 inherit-indices))])
 		      
 		      ;; -- Get new methods and initializers --

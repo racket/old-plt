@@ -345,7 +345,7 @@
 		     (pair? (car x)) (= (length (car x)) 1))
 		(make-dromedary-settings (caar x))
 		#f))
-	  (define/public (create-executable settings parent program-file)
+	  (define/public (create-executable settings parent program-file teachpacks)
 	    '(let ([code (compile-simplified (simplify (parse-a60-file src-file)
 						       base-importing-stx)
 					     base-importing-stx)])

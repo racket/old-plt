@@ -1,31 +1,33 @@
 
-<TITLE>Welcome to the PLT Help Desk</TITLE>
+<TITLE>PLT Help Desk</TITLE>
 
-<B>Welcome to the PLT Help Desk.</B>
+<b><font color="red">SOMETHING IS WRONG</font></b>
+
+ 
+<P>
+
+You got this page because the "help" subcollection of the "doc"
+collection wasn't found, or the file "index.html" wasn't in the
+subcollection.
 
 <P>
 
-How may we help you?
-
-<UL>
-
-<LI> <A MZSCHEME="(require-library |manuals.ss| |help|)">View installed manuals</A>
-
-<LI> <!-- MZSCHEME="(format |<A HREF=\|file:~a\|>Read MzScheme release notes</A>| (build-path (collection-path |mzlib|) 'up 'up |notes| |mzscheme| |HISTORY|))" -->
-<LI> <!-- MZSCHEME="(format |<A HREF=\|file:~a\|>Read MrEd release notes</A>| (build-path (collection-path |mzlib|) 'up 'up |notes| |mred| |MrEd_100.txt|))" -->
-
-<LI> <A MZSCHEME="(parameterize ([current-custodian (make-custodian)][current-eventspace (make-eventspace)]) (queue-callback (lambda () (exit-handler void) (require-library |games.ss| |games|))))">Play a game</A>
-
-</UL>
-
-<P>
-
-(Eventually, Yahoo-like categories will appear here.)
+Normally, Help Desk would start with
+<br>
+&nbsp;&nbsp;<TT><!-- MZSCHEME="(build-path
+                                (with-handlers ([void
+                                                 (lambda (x)
+                                                  (let-values ([(b n ?)
+                                                                (split-path (collection-path |mzlib|))])
+                                                    (build-path b |doc|)))])
+                                  (collection-path |doc|))
+                                |help| |index.html|))" --></TT>
+<br>
+on this machine.
 
 <P>
 
-<I>To search for specific information in the installed manuals, use the
-search box below.</I>
+<A MZSCHEME="(require-library |manuals.ss| |help|)">View installed manuals</A>
 
 <P>
 

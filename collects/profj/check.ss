@@ -680,6 +680,7 @@
                        return
                        check-e-no-change
                        (return-src statement)
+                       interactions?
                        level
                        type-recs))
         ((while? statement) 
@@ -768,9 +769,10 @@
       (else
        (send type-recs add-req (make-req "Throwable" (list "java" "lang"))))))
 
-  ;check-return: expression type (expression -> type) src symbol type-records -> void
-  (define (check-return ret-expr return check src level type-recs)
+  ;check-return: expression type (expression -> type) src bool symbol type-records -> void
+  (define (check-return ret-expr return check src interact? level type-recs)
     (cond
+      (interact? (void))
       ((and ret-expr (not (eq? 'void return)))
        (let ((ret-type (check ret-expr)))
          (unless (assignment-conversion return ret-type type-recs)
@@ -1372,7 +1374,8 @@
            (exp-type #f)
            (handle-call-error 
             (lambda (exn)
-              (unless (or (access? expr) (not (eq? level 'full)) (not (eq? level 'advanced))) (raise exn))
+              (when (or (not (access? expr)) (memq level '(beginner intermediate))) (raise exn))
+;              (unless (or (access? expr) (not (eq? level 'full)) (not (eq? level 'advanced))) (raise exn))
               (if (eq? level 'full)
                   (let ((record (car (find-static-class 
                                       (append (access-name expr) (list name))

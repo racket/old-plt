@@ -25,6 +25,7 @@
   ;Parameters for information about each class
   (define class-name (make-parameter #f))
   (define loc (make-parameter #f))
+  (define interactions? (make-parameter #f))
   (define class-override-table (make-parameter null))
   (define parent-name (make-parameter "Object"))
   (define module-name (make-parameter ""))
@@ -184,8 +185,10 @@
   ;-------------------------------------------------------------------------------------------------------------------------
   ;Translation
   
+  ;translate-interactions: ast location type-records -> syntax
   (define (translate-interactions prog location type-recs)
     (loc location)
+    (interactions? #t)
     (let ((reqs (send type-recs get-class-reqs))
           (syn (cond 
                  ((pair? prog)
@@ -217,6 +220,7 @@
   
   ;translate-program: package type-records -> (list compilation-unit) 
   (define (translate-program program type-recs)
+    (interactions? #f)
     (let* ((package-path (if (package-name program)
                              (append (map id-string (name-path (package-name program)))
                                      (list (id-string (name-id (package-name program)))))
@@ -1001,14 +1005,13 @@
                            (,(create-syntax #f 'raise (build-src key)) exn)) 
                      (build-src src))))
   
-  ;translate-return
-  ;Transforms a java return to a call to a continuation which will discard the remaining context for a method.
-  
-  ;Converted
+  ;return -> call to a continuation 
+  ;Presently a no-op in the interactions window, although this is incorrect for advanced and full
   ;translate-return: syntax src -> syntax
-  (define translate-return
-    (lambda (expr src)
-      (make-syntax #f `(return-k ,expr) (build-src src))))
+  (define (translate-return expr src)
+    (if (interactions?)
+        (make-syntax #f expr #f)
+        (make-syntax #f `(return-k ,expr) (build-src src))))
   
   ;Converted
   ;translate-while: syntax syntax src -> syntax
@@ -1460,7 +1463,9 @@
                     (create-syntax #f `(,name ,@args) (build-src src))
                     (create-syntax #f `(send this ,name ,@args) (build-src src)))))
              ((not expr)
-              (create-syntax #f `(,(translate-id m-name (id-src method-name)) ,@args) (build-src src)))
+              (if (or static? (memq 'private (method-record-modifiers method-record)))
+                  (create-syntax #f `(,(translate-id m-name (id-src method-name)) ,@args) (build-src src))
+                  (create-syntax #f `(send this ,(translate-id m-name (id-src method-name)) ,@args) (build-src src))))
              (else
               (let ((name (translate-id m-name (id-src method-name))))
                 (cond

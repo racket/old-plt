@@ -23,6 +23,15 @@
     (unit/sig drscheme:tool-exports^
       (import drscheme:tool^)
 
+      (drscheme:modes:add-mode "Java mode"
+                               #f
+                               (lambda (text prompt-position) #t)
+                               (lambda (x) (and x
+                                                (or (regexp-match #rx"\\.java$" x)
+                                                    (regexp-match #rx"\\.bjava$" x)
+                                                    (regexp-match #rx"\\.ijava$" x)
+                                                    (regexp-match #rx"\\.ajava$" x)))))
+      
       (define (phase1) (void))
       (define (phase2) 
         (drscheme:language-configuration:add-language
@@ -36,15 +45,7 @@
                        intermediate-lang%)))
         (drscheme:language-configuration:add-language
          (make-object ((drscheme:language:get-default-mixin) 
-                       beginner-lang%))))           
-      
-      (define (profj-editor super)
-        (class* super (drscheme:unit:definitions-text<%>)
-          
-          (define/override (tabify-on-return?) #f)
-          
-          (super-instantiate ())))
-      
+                       beginner-lang%))))                 
       
       ;(make-profj-settings symbol boolean (list string))
       (define-struct profj-settings (print-style print-full? classpath))

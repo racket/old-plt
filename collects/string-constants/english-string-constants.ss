@@ -1,3 +1,92 @@
+#|
+
+When modifying the string constants files,
+please adhear to these guidelines:
+
+- All the entries in english-string-constants.ss have the same format
+  (name string).  If the purpose of an entry you are adding to the
+  file is not clear from just the name and string, put a comment next
+  to the entry explaining what the string is going to be used for and
+  in what context.
+  That's especially true for strings that contain things like "~a".
+  Systematically describe what the "~a" is going to be replaced with.
+  When we have to translate strings like "deleting ~a", we translators
+  need to know what "~a" is going to be (in particular, in some
+  languages like French, we need to know whether the "~a" is going to
+  be a masculine or feminine word, or whether it's going to be
+  singular or plural, etc).
+
+- When adding a bunch of new entries, put together in a section the
+  entries that logically belong together.  Give a title to your
+  section, so we have an idea of what the strings are for.  Don't mix
+  in the same section strings that have nothing to do with each other,
+  that's only going to confuse us.  Do not start a new section if
+  there's already one that deals with the same thing.  Dumping all the
+  new entries in random order at the end of the file is not a good way
+  to have your new entries translated in a timely manner...
+
+- Before adding strings for your new pet tool, check whether you can't
+  re-use strings that already exist.  There's no need for yet another
+  "Ok" string...
+
+- If you modify an existing string in english-string-constants.ss, go
+  through all the *-string-constants.ss files for the other languages,
+  comment out the old version of the modified string in each of these
+  files, and put a short comment there telling us the English string
+  has changed and needs to be re-translated.  Do not erase the old
+  version, it might help us translate the new one.  Do not move it
+  either.  Just comment it out and add the short comment.  After the
+  next cvs update DrScheme will automatically tell us translators that
+  a new string needs to be translated, we will find your comment in
+  the file, and know what to do.
+	Some evil evil people might think that, since DrScheme automatically
+  informs us of new strings to be translated, an easier thing to do
+  when modifying an existing string would be to simply rename it at
+  the same time.  This works, except that if you do that, we
+  translators will get two warnings from DrScheme:
+		language english had but french does not:
+		(new-name "New String")
+		language french had but english does not:
+		(old-name "Old String")
+  then we translators will be left to wonder whether the two things
+  are related or not, and whether we can safely base our translation
+  of "New String" on the translation of "Old String" (since the two
+  strings are likely to be close in meaning).  Worse, we might not
+  even realize the two strings are related and translate "New String"
+  from scratch, just to realize later that it's only a variation of
+  "Old String".  I can tell you that nothing pisses off a translator
+  more than having to translate pretty much the same string twice
+  just because *you* were too lazy to inform us that it was just a
+  slight modification to an existing string rather than an entirely
+  new one.  Conclusion: do not change the name of a string unless you
+  have some really good reason to do so.
+
+- Please think hard before choosing a string and make sure it means
+  what you want it to mean.  That way you won't have to change it
+  later, and we won't have to retranslate it.
+
+- Please think hard before choosing the name for a string.  Use
+  meaningful names.  "error" or "ok" are not meaningful names.  Prefix
+  all related names with a common prefix (the name of your tool or
+  module).  String names are not the right place to save on typing.
+
+- If, for some reason, you really have to change the name of a string
+  (like, because the original name you gave it really sucked...),
+  change the name of the string in *ALL* the *-string-constants.ss
+  files.  That's a modification you can do without the help of a
+  translator, so do it yourself.  It's not the job of the translators
+  to clean up your naming mess for you.  Besides, you are the one who
+  knows what you changed, so leaving the translators having to guess
+  what you did is Not Nice(tm).
+
+- If, for some reason, you need to remove a string (i.e. you changed
+  your code and don't need the string anymore), remove the string in
+  *ALL* the *-string-constants.ss files.  Again, you don't need the
+  help of a translator to do that.  If you're not sure whether you
+  might need the string in the future or not, just comment it out in
+  *ALL* the files.
+
+|#
 
 (module english-string-constants "string-constant-lang.ss"
  ;;; when translating this constant, substitute name of actual langauge for `English'

@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_utils.cxx,v 1.4 1998/07/15 02:38:02 mflatt Exp $
+ * RCS_ID:      $Id: wx_utils.cxx,v 1.5 1998/08/16 19:23:13 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -651,29 +651,28 @@ Bool wxGetResource(const char *section, const char *entry, char **value, const c
   if (!file)
     file = wxUserResourceFile;
 
-
-
-
-
   wxBuffer[0] = 0;
 
-  if (file)
-  {
+  if (file) {
     int n = GetPrivateProfileString((LPCSTR)section, (LPCSTR)entry, (LPCSTR)defunkt,
                                     (LPSTR)wxBuffer, 1000, (LPCSTR)file);
     if (n == 0 || strcmp(wxBuffer, defunkt) == 0)
-     return FALSE;
+      return FALSE;
   }
-  
+
+  /* No longer using WIN.INI: */
+#if 0  
   if (!no_file) {
     int n = GetProfileString((LPCSTR)section, (LPCSTR)entry, (LPCSTR)defunkt,
-                                    (LPSTR)wxBuffer, 1000);
+			     (LPSTR)wxBuffer, 1000);
     if (n == 0 || strcmp(wxBuffer, defunkt) == 0)
       return FALSE;
   }
+#endif
+
   if (*value) delete[] (*value);
-      *value = copystring(wxBuffer);
-      return TRUE;
+  *value = copystring(wxBuffer);
+  return TRUE;
 }
 
 Bool wxGetResource(const char *section, const char *entry, float *value, const char *file)

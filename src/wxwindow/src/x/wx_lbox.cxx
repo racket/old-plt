@@ -529,13 +529,8 @@ void wxListBox::Append (char *Item, char *Client_data)
   no_items++;
 }
 
-void wxListBox::Set (int n, char *choices[])
+void wxListBox::Set(int n, char *choices[])
 {
-  //for (int i = 0; i < n; i++)
-  //  Append(choices[i]);
-  //
-  // To avoid flickering, we do only one Manage/Unmanage.
-
   int width1, height1;
   int width2, height2;
 
@@ -543,23 +538,17 @@ void wxListBox::Set (int n, char *choices[])
   GetSize (&width1, &height1);
 
   XtUnmanageChild (formWidget);
-/***
-  for (int i=0; i<n; i++)
-  {
-    XmString text = XmStringCreateSimple(choices[i]);
-    XmListAddItemUnselected(listBox, text, 0);
-    XmStringFree(text);
-  }
-***/
-//wxDebugMsg("Start add\n") ;
+
+  XmListDeleteAllItems(listBox);
+  clientDataList.Clear();
+
   XmString *text = new XmString[n];
   int i;
   for (i = 0; i < n; i++)
-    text[i] = XmStringCreateSimple (choices[i]);
+    text[i] = XmStringCreateSimple(choices[i]);
   XmListAddItems (listBox, text, n, 0);
   for (i = 0; i < n; i++)
     XmStringFree (text[i]);
-//wxDebugMsg("End Add\n") ;
 
   // It seems that if the list is cleared, we must re-ask for
   // selection policy!!

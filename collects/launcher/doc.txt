@@ -1,5 +1,10 @@
 
-(make-mred-launcher args dest) - Creates the launcher `dest'. The
+>INDEX: "launchers"
+
+The launcherr.ss library in the "launcher" collection imports nothing
+and exports the following procedures.
+
+> (make-mred-launcher args dest) - Creates the launcher `dest'. The
    `dest' executeable (for the current OS platform) will start MrEd
    with the command-line arguments specified as strings in the list
    `args'. Extra arguments passed to the launcher at run-time will be
@@ -20,35 +25,35 @@
    Windows flag or argument) are then appended after the spliced
    `args'.
 
-(make-mzscheme-launcher args dest) - Same as `make-mred-launcher', but
+> (make-mzscheme-launcher args dest) - Same as `make-mred-launcher', but
    for starting MzScheme. (No special X windows handling.)
 
 
-(make-mred-program-launcher file collection dest) - Calls
+> (make-mred-program-launcher file collection dest) - Calls
    `make-mred-launcher' with arguments that start the MrEd program
    implemednted by `collection': (list "-mvL-" file collection)
 
-(make-mzscheme-program-launcher file collection dest) - Calls
+> (make-mzscheme-program-launcher file collection dest) - Calls
    `make-mzscheme-launcher' with arguments that start the MzScheme
    program implemented by `file' in `collection': (list "-mvL-" file
    collection)
 
 
-(mred-program-launcher-path name) returns a pathname for an executable
+> (mred-program-launcher-path name) returns a pathname for an executable
    in the current PLT home directory called `name'.  For Windows, the
    ".exe" suffix is automatically appended to `name'. For Unix and
    BeOS, `name' is changed to lowercase, whitespace is changed to `-',
    and the path includes the bin subdirectory of the PLT home
    directory.
 
-(mzscheme-program-launcher-path name) returns the same pathname as
+> (mzscheme-program-launcher-path name) returns the same pathname as
    (mred-program-launcher-path name).
 
 
-(install-mred-program-launcher file collection name) - Calls
+> (install-mred-program-launcher file collection name) - Calls
    `make-mred-launcher' with the destintation returned by
    (mred-program-launcher-path name).
 
-(install-mzscheme-program-launcher file collection name) - Calls
+> (install-mzscheme-program-launcher file collection name) - Calls
    `make-mzscheme-launcher' with the destintation returned by
    (mzscheme-program-launcher-path name).

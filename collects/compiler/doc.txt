@@ -9,7 +9,7 @@ are documented in the next section.
  Single-file extension compilation
  ---------------------------------
 
-   ((compile-extensions expr) scheme-file-list dest-dir)
+>  ((compile-extensions expr) scheme-file-list dest-dir)
 
       `(compile-extension expr)' returns a compiler that is initialized with
       the elaboration-time expression `expr'.  The compiler takes a list
@@ -18,12 +18,12 @@ are documented in the next section.
       If `dest-dir' is #f, each extension is placed in the same directory
       as its source file.
 
-   ((compile-extensions-to-c expr) scheme-file-list dest-dir)
+>  ((compile-extensions-to-c expr) scheme-file-list dest-dir)
 
      Like `compile-extensions', but only .c files are produced, not
      extensions.
 
-   (compile-c-extensions c-file-list dest-dir)
+>  (compile-c-extensions c-file-list dest-dir)
 
      Compiles each .c file (usually produced with `compile-extensions-to-c') 
      in c-file-list to an extension.  `dest-dir' is handled as in
@@ -32,7 +32,7 @@ are documented in the next section.
  Multi-file extension compilation
  ---------------------------------
 
-   ((compile-extension-parts expr) scheme-file-list dest-dir)
+>  ((compile-extension-parts expr) scheme-file-list dest-dir)
 
       `(compile-extension expr)' returns a compiler that is initialized with
       the elaboration-time expression `expr'.  The compiler takes a list
@@ -41,25 +41,25 @@ are documented in the next section.
       in the directory specified by `dest-dir'.  If `dest-dir' is #f, each object 
       and .kp file is placed in the same directory as its source file.
  
-   ((compile-extension-parts-to-c expr)  scheme-file-list dest-dir)
+>  ((compile-extension-parts-to-c expr)  scheme-file-list dest-dir)
 
      Like `compile-extension-parts', but only .c and .kp files are produced, 
      not compiled objects.
 
-   (compile-c-extension-parts c-file-list dest-dir)
+>  (compile-c-extension-parts c-file-list dest-dir)
 
      Compiles each .c file (produced with `compile-extension-parts-to-c')
      in c-file-list to an extension.  `dest-dir' is handled as in
      `compile-extension-parts'.
 
-   (link-extension-parts obj-and-kp-file-list dest-dir)
+>  (link-extension-parts obj-and-kp-file-list dest-dir)
 
      Links objects for a multi-object extension together, using .kp
      files to generate and link pooled constants.  The objects and
      .kp files in `obj-and-kp-file' can be in any order.  The resulting
      extension "_loader" is placed in the directory specified by `dest-dir'.
 
-   (glue-extension-parts obj-and-kp-file-list dest-dir)
+>  (glue-extension-parts obj-and-kp-file-list dest-dir)
 
      Like `link-extension-parts', but only a "_loader" object file
      is generated; this object file is linked with all the other
@@ -68,7 +68,7 @@ are documented in the next section.
  zo compilation
  --------------
 
-   ((compile-zos expr) scheme-file-list dest-dir)
+>  ((compile-zos expr) scheme-file-list dest-dir)
 
       `(compile-zos expr)' returns a compiler that is initialized with
       the elaboration-time expression `expr'.  The compiler takes a list
@@ -80,7 +80,7 @@ are documented in the next section.
  Collection compilation
  ----------------------
 
-   (compile-collection-extension collection sub-collection ...)
+>  (compile-collection-extension collection sub-collection ...)
 
       Compiles the specified (sub-)collection to an extension
       "_loader", putting intermediate .c and .kp files in the
@@ -122,7 +122,7 @@ are documented in the next section.
       function in the "collection.ss" library of the "make"
       collection.
 
-   (compile-collection-zos collection sub-collection ...)
+>  (compile-collection-zos collection sub-collection ...)
 
       Compiles the specified (sub-)collection files to .zo files.
       The .zo files are placed into the collection's "compiled"
@@ -163,62 +163,62 @@ libray "option.ss".  (This library is automatically loaded by
 "compile.ss", but it can also be loaded earlier.) Options are set by
 the following parameters:
 
-  compiler:option:verbose - #t causes the compiler to print
+> compiler:option:verbose - #t causes the compiler to print
      verbose messages about its operations.  Default = #f.
 
-  compiler:option:setup-prefix - a string to embed in public names.
+> compiler:option:setup-prefix - a string to embed in public names.
      This is used mainly for compiling extensions with the collection
      name so that cross-extension conflicts are less likely in
      architectures that expose the public names of loaded extensions.
      Note that `compile-collection' handles prefixing automatically
      (by setting this option).  Default = "".
 
-  compiler:option:clean-intermediate-files - #t keeps intermediate
+> compiler:option:clean-intermediate-files - #t keeps intermediate
      .c/.o files.  Default = #f.
 
-  compiler:option:compile-subcollections - #t uses info.ss's
+> compiler:option:compile-subcollections - #t uses info.ss's
      'compile-subcollections for compiling collections. Default = #t.
 
-  compiler:option:compile-for-embedded - #t creates .c files and
+> compiler:option:compile-for-embedded - #t creates .c files and
      object files to be linked directly with an embedded MzScheme
      run-time system, instead of .c files and object files to
      be dynamically loaded into MzScheme as an extension.
      Default = #f.
 
-  compiler:option:propagate-constants - #t improves the code by
+> compiler:option:propagate-constants - #t improves the code by
      propogating constants.  Default = #t.
 
-  compiler:option:assume-primitives - #t equates X with #%X when
+> compiler:option:assume-primitives - #t equates X with #%X when
      #%X exists.  This is useful only with non-unitized code.
      Default = #f.
 
-  compiler:option:stupid - Allow obvious non-syntactic errors; e.g.:
+> compiler:option:stupid - Allow obvious non-syntactic errors; e.g.:
     ((lambda () 0) 1 2 3).  Default = #f.
 
-  compiler:option:vehicles - Controls how closures are compiled.  The
+> compiler:option:vehicles - Controls how closures are compiled.  The
     possible values are: 'vehicles:automatic - auto-groups
                          'vehicles:functions - groups by procedue
                          'vechicles:units - groups by unit
                          'vehicles:monolithic - groups randomly
     Default = 'vehicles:automatic.
 
-  compiler:option:vehicles:monoliths - Sets the number of random
+> compiler:option:vehicles:monoliths - Sets the number of random
     groups for 'vehicles:monolithic.
 
-  compiler:option:seed - Sets the randomizer seed for
+> compiler:option:seed - Sets the randomizer seed for
     'vehicles:monolithic.
 
-  compiler:option:max-exprs-per-top-level-set - Sets the number of
+> compiler:option:max-exprs-per-top-level-set - Sets the number of
     top-level Scheme expressions crammed into one C function.  Default
     = 25.
 
-  compiler:option:unpack-environments - #f might help for
+> compiler:option:unpack-environments - #f might help for
     register-poor architectures.  Default = #t.
 
-  compiler:option:debug - #t creates debug.txt debugging file.  Default
+> compiler:option:debug - #t creates debug.txt debugging file.  Default
     = #f.
 
-  compiler:option:test - #t ignores top-level expressions with syntax
+> compiler:option:test - #t ignores top-level expressions with syntax
    errors.  Default = #f.
 
 More options are defined by "mzscheme" "dynext"'s "compile.ss" and
@@ -269,31 +269,31 @@ library opens these units into the current namespace with the prefix
 
 The low-level functions are:
 
-  (mzc:eval-compile-prefix expr) - Evaluates an elaboration-time
+> (mzc:eval-compile-prefix expr) - Evaluates an elaboration-time
     S-expression `expr'.  Future calls to mzc:compile-XXX will see the
     effects of the elaboration expression.
 
-  (mzc:compile-extension scheme-source dest-dir) - Compiles a
+> (mzc:compile-extension scheme-source dest-dir) - Compiles a
     single Scheme file to an extension.
 
-  (mzc:compile-extension-to-c scheme-source dest-dir) - Compiles
+> (mzc:compile-extension-to-c scheme-source dest-dir) - Compiles
     a single Scheme file to a .c file.
 
-  (mzc:compile-c-extension c-source dest-dir) - Compiles a single .c
+> (mzc:compile-c-extension c-source dest-dir) - Compiles a single .c
     file to an extension.
 
-  (mzc:compile-extension-part scheme-source dest-dir) - Compiles a
+> (mzc:compile-extension-part scheme-source dest-dir) - Compiles a
     single Scheme file to a compiled object and .kp file toward a
     multi-file extension.
 
-  (mzc:compile-extension-part-to-c scheme-source dest-dir) - Compiles
+> (mzc:compile-extension-part-to-c scheme-source dest-dir) - Compiles
     a single Scheme file to .c and .kp files towards a multi-file
     extension.
 
-  (mzc:compile-c-extension-part c-source dest-dir) - Compiles a single
+> (mzc:compile-c-extension-part c-source dest-dir) - Compiles a single
     .c file to a compiled object towards a multi-file extension.
 
-  (mzc:link-extension object-and-kp-file-list dest-dir) - Links
+> (mzc:link-extension object-and-kp-file-list dest-dir) - Links
     compiled object and .kp files into a multi-file extension.
 
 All but the last function are from the "loadr.ss" unit, and the
@@ -319,6 +319,7 @@ and the "ldr.ss" unit/sig requires the following imports:
 
 Setup PLT: Collection Setup and Unpacking
 =========================================
+>INDEX: ".plt" "setup-plt" "Setup PLT"
 
 The Setup PLT executable (bin/setup-plt for Unix) performs two
 services:
@@ -498,7 +499,7 @@ An unpackable is one of the following:
 The compiler collection's pack.ss library provides functions to help
 make .plt archives, especially under Unix:
 
- (pack dest name dirs collections filter encode?) - Creates the .plt
+> (pack dest name dirs collections filter encode?) - Creates the .plt
   file specified by the pathname `dest', using the string `name' as
   the name reported to Setup PLT as the archive's description, and 
   `collections' as the list of colection paths returned by the
@@ -515,8 +516,8 @@ make .plt archives, especially under Unix:
   The `filter' and `encode?' arguments are optional, defaulting
   to std-filter and #t, respectively.
 
- (std-filter p) - returns #t unless `p' matches "CVS$" or "compiled$".
+> (std-filter p) - returns #t unless `p' matches "CVS$" or "compiled$".
 
- (mztar dir output filter) - called by `pack' to write one directory
+> (mztar dir output filter) - called by `pack' to write one directory
   `dir' to the output port `output; using the filter procedure
   `filter'.

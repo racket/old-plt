@@ -14,8 +14,7 @@ carry over the computation of the original
 	   (lib "mred.ss" "mred")
 	   (lib "class.ss")
 	   (lib "class100.ss")
-           (lib "framework.ss" "framework")
-           (lib "zodiac.ss" "syntax"))
+           (lib "framework.ss" "framework"))
   
   (provide snip@)
   
@@ -63,7 +62,7 @@ carry over the computation of the original
           (define/override (read f)
             (instantiate repeating-decimal-number% ()
               [number (string->number (send f get-string))]
-              [prefix (send f get-string)]))
+              [decimal-prefix (send f get-string)]))
           (super-instantiate ())))
       
       (define repeating-decimal-snipclass (make-object repeating-decimal-snip-class%))
@@ -79,7 +78,7 @@ carry over the computation of the original
       (define repeating-decimal-number%
         (class snip%
           (init-field number
-                      [prefix ""])
+                      [decimal-prefix ""])
           
           ;; these fields are for the drawing code
           (field 
@@ -99,7 +98,8 @@ carry over the computation of the original
           ;; this maps from divisors of the denominator to
           ;; digit and new divisor pairs. Use this
           ;; to read off the decimal expansion.
-          (field [ht (make-hash-table 'equal)])
+          (field [ht (make-hash-table 'equal)]
+                 [expansions 0])
           
           ;; this field holds the state of the current computation
           ;; of the numbers digits. If it is a number, it corresponds
@@ -115,11 +115,14 @@ carry over the computation of the original
           ;; a number indiates a repeat starting at `number' in `ht'.
           (field [repeat 'unk])
           
-          ;; iterate : -> void
-          ;; computes the next sequence of digits
-          ;; and update the GUI aspects of the snip
-          (define (iterate)
-            (expand-number)
+          ;; iterate : number -> void
+          ;; computes the next sequence of digits (`n' times)
+          ;; and update the strings for GUI drawing
+          (define/public (iterate n)
+            (let loop ([n n])
+              (unless (zero? n)
+                (expand-number)
+                (loop (- n 1))))
             (update-drawing-fields))
           
           (inherit get-admin)
@@ -127,18 +130,10 @@ carry over the computation of the original
           ;; iterate/reflow : -> void
           ;; iterates the fraction and tells the administrator to redraw the numbers
           (define (iterate/reflow)
-            (iterate)
+            (iterate 1)
             (let ([admin (get-admin)])
               (when admin
-                (let ([dc (send admin get-dc)]
-                      [font (send (get-style) get-font)])
-                  (let-values ([(w1 h1 d1 a1) (get-text-extent/f dc unbarred-portion font)]
-                               [(w2 h2 d2 a2) (get-text-extent/f dc barred-portion font)]
-                               [(w3 h3 d3 a3) (get-text-extent/f dc clickable-portion font)])
-                    (let ([sw (+ w1 w2 w3)]
-                          [sh (if barred-portion (+ h1 2) h1)])
-                      (send admin resized this #t)
-                      '(send admin needs-update this 0 0 sw sh)))))))
+                (send admin resized this #t))))
           
           ;; one-step-division : number -> number number
           ;; given a numerator and denominator,
@@ -155,6 +150,7 @@ carry over the computation of the original
           ;; or the number's decimal expansion terminates.
           (define/public (expand-number)
             (when state
+              (set! expansions (+ expansions 1))
               (let loop ([num state]
                          [counter cut-off])
                 (cond
@@ -180,7 +176,7 @@ carry over the computation of the original
               [(number? state) 
                (set! unbarred-portion
                      (string-append
-                      prefix
+                      decimal-prefix
                       (if (zero? whole-part) "" (number->string whole-part))
                       "."
                       (apply string-append (map number->string (extract-non-cycle)))))
@@ -189,7 +185,7 @@ carry over the computation of the original
               [(number? repeat)
                (set! unbarred-portion
                      (string-append
-                      prefix
+                      decimal-prefix
                       (if (zero? whole-part) "" (number->string whole-part))
                       "."
                       (apply string-append 
@@ -199,7 +195,7 @@ carry over the computation of the original
               [else
                (set! unbarred-portion
                      (string-append
-                      prefix
+                      decimal-prefix
                       (if (zero? whole-part) "" (number->string whole-part))
                       "."
                       (apply string-append
@@ -251,15 +247,21 @@ carry over the computation of the original
           
           (define/override (write f)
             (send f put (number->string number))
-            (send f put prefix))
+            (send f put decimal-prefix))
           
           (define/override (copy)
-            (instantiate repeating-decimal-number% ()
-              [number number]
-              [prefix prefix]))
+            (let ([snip (instantiate repeating-decimal-number% ()
+                          [number number]
+                          [decimal-prefix decimal-prefix])])
+              (send snip iterate expansions)
+              snip))
           
           (inherit get-style)
+          
           (define/override (get-extent dc x y wb hb descent space lspace rspace)
+            (get-decimal-extent dc x y wb hb descent space lspace rspace))
+          
+          (define (get-decimal-extent dc x y wb hb descent space lspace rspace)
             (let ([font (send (get-style) get-font)])
               (let-values ([(w1 h1 d1 a1) (get-text-extent/f dc unbarred-portion font)]
                            [(w2 h2 d2 a2) (get-text-extent/f dc barred-portion font)]
@@ -282,6 +284,9 @@ carry over the computation of the original
                 (values 0 0 0 0)))
           
           (define/override (draw dc x y left top right bottom dx dy draw-caret?)
+            (draw-fraction dc x y))
+          
+          (define (draw-fraction dc x y)
             (define (draw-digits digits x)
               (if digits
                   (let-values ([(w h a d) (send dc get-text-extent digits)])
@@ -296,37 +301,34 @@ carry over the computation of the original
           
           (define/override (adjust-cursor dc x y editorx editory evt)
             (let ([sx (- (send evt get-x) x)]
-                  [sy (- (send evt get-y) y)]
-                  [font (send (get-style) get-font)])
-              (let-values ([(w1 h1 d1 a1) (get-text-extent/f dc unbarred-portion font)]
-                           [(w2 h2 d2 a2) (get-text-extent/f dc barred-portion font)]
-                           [(w3 h3 d3 a3) (get-text-extent/f dc clickable-portion font)])
-                (let ([in-region? (<= (+ w1 w2) sx (+ w1 w2 w3))])
-                  (if in-region?
-                      arrow-cursor
-                      #f)))))
+                  [sy (- (send evt get-y) y)])
+              (if (in-clickable-portion? dc sx sy)
+                  arrow-cursor
+                  #f)))
           
           (define/override (on-event dc x y editor-x editor-y evt)
             (let ([sx (- (send evt get-x) x)]
-                  [sy (- (send evt get-y) y)]
-                  [font (send (get-style) get-font)])
-              (let-values ([(w1 h1 d1 a1) (get-text-extent/f dc unbarred-portion font)]
-                           [(w2 h2 d2 a2) (get-text-extent/f dc barred-portion font)]
-                           [(w3 h3 d3 a3) (get-text-extent/f dc clickable-portion font)])
-                (let ([in-region? (<= (+ w1 w2) sx (+ w1 w2 w3))])
-                  (cond
-                    [(send evt button-up?) (iterate/reflow)]
-                    [(or (send evt moving?)
-                         (send evt leaving?)
-                         (send evt entering?))
-                     '...]
-                    [else (void)])))))            
-          
+                  [sy (- (send evt get-y) y)])
+              (cond
+                [(send evt button-up?)
+                 (when (in-clickable-portion? dc sx sy)
+                   (iterate/reflow))]
+                [else (void)])))
+
+          (define (in-clickable-portion? dc sx sy)
+            (and clickable-portion
+                 (let ([font (send (get-style) get-font)])
+                   (let-values ([(w1 h1 d1 a1) (get-text-extent/f dc unbarred-portion font)]
+                                [(w2 h2 d2 a2) (get-text-extent/f dc barred-portion font)]
+                                [(w3 h3 d3 a3) (get-text-extent/f dc clickable-portion font)])
+                     (and (<= (+ w1 w2) sx (+ w1 w2 w3))
+                          (<= 0 sy h3))))))
+
           (super-instantiate ())
           (inherit set-snipclass set-flags get-flags)
           (set-flags (cons 'handles-events (get-flags)))
           (set-snipclass repeating-decimal-snipclass)
-          (iterate))) ;; calc first digits
+          (iterate 1))) ;; calc first digits
       
       ;; hash-table-bound? : hash-table TST -> boolean
       (define (hash-table-bound? ht key)
@@ -338,7 +340,7 @@ carry over the computation of the original
       (define (make-repeating-fraction-snip number e-prefix?)
         (instantiate repeating-decimal-number% ()
           [number number]
-          [prefix (if e-prefix? "#e" "")]))
+          [decimal-prefix (if e-prefix? "#e" "")]))
 
 
                                                         

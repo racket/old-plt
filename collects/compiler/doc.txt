@@ -322,3 +322,22 @@ and the ldr.ss unit/sig requires the following imports:
    mzlib:function^
    compiler:option^ - from optionr.ss or option.ss (the latter
                       uses a `compiler:option:' prefix)
+
+---------------------------------------------------------------------------
+
+Embedding Scheme Code to Create a Stand-alone Executable
+========================================================
+
+The _embed.ss_ library provides a function to embed Scheme code into a
+copy of MzScheme or MrEd, thus creating a (large) _stand-alone_ Scheme
+executable.
+
+> (make-embedding-executable dest-file mred? src-file-list cmdline-list)
+  - Copies the MzScheme (if `mred?' is #f) or MrEd (otherwise) binary
+  to `dest-file', appends the content of the files in `src-file-list',
+  and sets the internal command line to read the appended code when
+  the binary is executed. The `cmdline-list' contains additional
+  command-line strings; '("-mvq-") should be a popular choice.
+
+The _embedr.ss_ library provides a unit that imports nothing and
+exports `make-embedding-executable'.

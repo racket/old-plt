@@ -1,3 +1,10 @@
+#|
+
+WARNING: printf is rebound in the mosdule to always print
+ to the original stdout of DrScheme.
+
+|#
+
 (module htdp-langs mzscheme
   (require (lib "string-constant.ss" "string-constants")
            (lib "framework.ss" "framework")
@@ -11,10 +18,16 @@
            (lib "mred.ss" "mred"))
   
   (provide tool@)
+
+  (define o (current-output-port))
   
   (define tool@
     (unit/sig () 
       (import drscheme:tool^)
+      
+      (define (printf . args)
+        (apply fprintf o args))
+      
       
       (define htdp-language<%>
         (interface ()
@@ -51,13 +64,15 @@
                 (no-sharing-config-panel parent)))
           
           (define (on-execute settings run-in-user-thread)
-            (run-in-user-thread
-             (lambda ()
-               (error-display-handler (add-error-display (error-display-handler)))
-	       (current-eval (add-debugging (current-eval)))
-               (error-print-source-location #f)
-               (read-decimal-as-inexact #f)
-               (read-dot-as-symbol #t)))
+            (let ([drs-namespace (current-namespace)])
+              (run-in-user-thread
+               (lambda ()
+                 (namespace-attach-module drs-namespace 'drscheme-secrets)
+                 (error-display-handler (add-error-display (error-display-handler)))
+                 (current-eval (add-debugging (current-eval)))
+                 ;(error-print-source-location #f)
+                 (read-decimal-as-inexact #f)
+                 (read-dot-as-symbol #t))))
             (super-on-execute settings run-in-user-thread))
 
           (define (set-printing-parameters thunk)
@@ -157,7 +172,21 @@
             (send insert-newlines set-value 
                   (drscheme:language:simple-settings-insert-newlines settings))])))
       
+      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      ;;                                                                  ;;
+      ;;                  hack for the hangman teachpack                  ;;
+      ;;                                                                  ;;
+      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       
+      ;; this inspector should be powerful enough to see
+      ;; structure defined in the user's namespace
+      (define drscheme-inspector (current-inspector))
+      
+      (eval `(module drscheme-secrets mzscheme
+               (provide drscheme-inspector)
+               (define drscheme-inspector ,drscheme-inspector)))
+      (namespace-require 'drscheme-secrets)
+
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       ;;                                                                  ;;
       ;;                 source location for runtime errors               ;;

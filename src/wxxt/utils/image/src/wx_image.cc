@@ -351,8 +351,13 @@ int wxImage::openPic(char *fullname)
   /* set up fullname and basename */
 
   tmp = strchr(fullname,'/');
-  if (!tmp) tmp = fullname; else tmp++;
+  if (!tmp)  {
+    tmp = fullname; 
+  } else {
+    tmp++;
+  }
   strcpy(basename,tmp);
+  tmp = NULL;
 
   /* if fullname doesn't start with a '/' (ie, it's a relative path), 
      (and it's not the special case '<stdin>') prepend 'initpath' to it */
@@ -678,7 +683,9 @@ Bool wxLoadIntoBitmap(char *filename, wxBitmap *bitmap, wxColourMap **cmap, int 
       wxMemoryDC *mdc = (wxMemoryDC *)tempImage->theMask;
 
       if (mdc->Ok()) {
-	bitmap->SetMask(mdc->GetObject());
+	wxBitmap *mbm;
+	mbm = mdc->GetObject();
+	bitmap->SetMask(mbm);
 	mdc->SelectObject(NULL);
       }
       tempImage->theMask = NULL;
@@ -723,17 +730,22 @@ void *wxiAllocMask(int w, int h)
     return NULL;
 }
 
+static wxColour *sm_c;
+
 void wxiSetMask(void *mask, int w, int h, int on)
 {
   wxMemoryDC *mdc = (wxMemoryDC *)mask;
 
   if (mask) {
-    wxColour c;
+    if (!sm_c) {
+      wxREGGLOB(sm_c);
+      sm_c = new wxColour;
+    }
     if (on)
-      c.Set(0, 0, 0);
+      sm_c->Set(0, 0, 0);
     else
-      c.Set(255, 255, 255);
-    mdc->SetPixel(w, h, &c);
+      sm_c->Set(255, 255, 255);
+    mdc->SetPixel(w, h, sm_c);
   }
 }
  

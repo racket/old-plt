@@ -3,30 +3,25 @@ ____Plot quickstart guide
 
 1) Making basic Plots
 
-After loading the correct module '(require (lib "plot.scm" "plplot"))' type in the following command
-(plot (line (lambda (x) x)) 
-Any other function with the contract number -> number can be plotted in a similar fasion.
-To plot multiple items, just give more arguments to the "plot" command:
-(plot (line (lambda (x) (sin x))) (line (lambda (x) (cos x))))
+After loading the correct module '(require (lib "plot.ss" "plot"))' type in the following command
 
-The appearence of the plot can be changed by passing an assosiative list of parameters to 
-the plot command as the first argument.
-(plot '((x-min -1) (x-max 1) (title "Sin(x)")) (line (lambda (x) (sin x))))
+(plot (line (lambda (x) x)) 
+
+Any other function with the contract number -> number can be plotted in a similar fasion.
+To plot multiple items, use mix or mix* :
+(plot (mix (line (lambda (x) (sin x))) (line (lambda (x) (cos x)))))
+
+The appearence of the plot can be changed by adding parenthesized argument/value pairs after the first argument
+(plot (line (lambda (x) (sin x))) (x-min -1) (x-max 1) (title "Sin(x)"))
 
 For a full list of arguments see below.
 
 The appearence of each individual plot item can be altered by passing an assosiative list 
 of parameters to the plot item.
-(plot (line (lambda (x) x) '((color green) (width 3))))
-
-The plot command generates snips that contain information about the plot. The snips can be superimposed 
-on each other :
-
-(define a (plot (line (lambda (x) x))))
-(define b (plot (line (lambda (x) (sin x)))))
-a
-b
-(superimpose a b)
+(plot 
+      (line 
+      (lambda (x) x) 
+      '((color green) (width 3))))
 
 Besides plotting lines from functions in 2d, the ploter can also render a veriety of other datums
 in several ways:
@@ -45,18 +40,22 @@ To plot a 3d function z = f(x,y) on a 2 dimentional surface:
 (plot (field (gradient 3dfun)))
 
 ; all together
-(plot '((x-min -1.5) (x-max 1.5) (y-min -1.5) (y-max 1.5) (title "gradient field +shdade + contours of F(x,y) = sin(x) * sin(y)"))     
-      (shade 3dfun)
-      (contour 3dfun)
-      (field (gradient 3dfun) '((samples 25))))
+(plot (mix*   
+            (shade 3dfun)
+	    (contour 3dfun)
+	    (field (gradient 3dfun) '((samples 25))))
+
+      (x-min -1.5) (x-max 1.5) (y-min -1.5) (y-max 1.5) (title "gradient field +shdade + contours of F(x,y) = sin(x) * sin(y)"))
 
 ; To plot discreet data points
 
-(plot (points (list (make-posn 1 1) (make-posn 2 2)))
+(plot (points (list (vector 1 1) (vector 2 2))))
 
 ; To plot a 3d surface
 
-(plot3d '((alt 30)) (surface 3dfun '((color green))))
+(plot3d (surface 3dfun '((color green))))
+
+2) Curve Fitting
 
 
 2) Making custom plots.

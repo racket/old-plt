@@ -1,33 +1,53 @@
 MODULE: PLOT
 
 A note on syntax : [(item value) ... ] represents a list of default options, over-ridable 
-over-ridable by passing an assosiative list.
+over-ridable by passing an associate list.
 
 
 -----
 DATA:
 -----
 
+
 2d-renderer is one of :
-	(points (listof posn) [character])
-|	(line (number->number) [samples color width])
-|	(field (posn -> posn) [samples color width style])
-|	(contour (number number ->number) [samples color width levels])
-|	(shade (number number -> number) [samples levels])
-|	(mix 2d-renderer 2drenderer)
-|	(make-your-own (number number number number 2d-view-snip% -> void))
+	    (points (list-of vector) [character])
+|	    (line (number->number) [samples color width])
+|	    (field (vector -> vector) [samples color width style])
+|	    (contour (number number ->number) [samples color width levels])
+|	    (shade (number number -> number) [samples levels])
+|	    (error-bars (list-of (vector number number number)) [color symbol])
+|	    (mix 2drenderer 2drenderer)
+|	    (make-your-own (2d-view-snip% -> void))
+
+purpose: a 2d-renderer takes a graph and transforms it to display the data that it contains
+
+plot: 2d-renderer (option value)+ -> VIEW
+
+3d-renderer is one of:
+	    (surface (number number -> number) [samples color width])
+|	    (mix 3d-renderer 3d-renderer)
+|	    (make-your-own (3d-view-snip% -> void))
+
+plot3d: 3d-renderer (option value)+ -> VIEW
+
+fit-lambda is 
+	   (fit-lambda (x) (param+ ) body)
+|	   (fit-lambda (x y) (param+ ) body)
+
+guess-list is:
+	(list-of (symbol number))
+
+x-data y-data result-data is : (list-of number)
+
+error-data is one of:
+	   (list-of number)
+	   null
+
+fit-result is
+	   (fit fit-lambda guess-list x-data [y-data] result-data error-data)
 
 
 
-plot: mumbo-jumbo 2d-renderer -> VIEW
-
-
-3d-view-snip% is a : 
-	(plot3d [x-min x-max y-min y-max z-min z-max altitude azimuth x-label y-label z-label] 3d-renderer+)
-
-3d-renderer is one of: 
-	// number number number number number number 3d-view-snip% -> void
-|	(surface (number number -> number))
 ---------
 FUNCTIONS
 ---------
@@ -36,7 +56,7 @@ FUNCTIONS
 plotting 
 
 
-plot  	; [x-min x-max y-min y-max x-label y-label title] 2d-renderer -> 2d-view-snip%
+plot  	; 2d-renderer (option value)* -> VIEW
 	; Returns a view% specified by the options with the renderers applied to it
 	x-min: number [-5]
 	x-max: number [5]
@@ -47,7 +67,7 @@ plot  	; [x-min x-max y-min y-max x-label y-label title] 2d-renderer -> 2d-view-
 	title: string ["a graph"]
 		
 
-plot3d	: [x-min x-max y-min y-max z-min z-max altitude azimuth x-label y-label z-label] 3d-renderer+ -> 3d-view-snip%
+plot3d	: 3d-renderer (option value)* -> 3d-view-snip%
 	; Returns a 3d-view-snip% bounded by the options with the renderers applied to it
 	x-min: number [-5]
 	x-max: number [5]
@@ -55,13 +75,27 @@ plot3d	: [x-min x-max y-min y-max z-min z-max altitude azimuth x-label y-label z
 	y-max: number [5]
 	z-min: number [-5]
 	z-max: number [5]
-	altitude: number - specifies altitude from whitch the box is viewed, in degrees [30]
-	azimuth: number - specifies the rotation from whitch the box is viewed, in degrees [45]
+	altitude: number - specifies altitude from which the box is viewed, in degrees [30]
+	azimuth: number - specifies the rotation from which the box is viewed, in degrees [45]
 	x-label: string ["X axis"]
 	y-label: string ["Y axis"]
 	z-label: string ["Z axis"]
 
 
+--------
+curve-fitting
+
+
+fit			; fit-lambda guess-list x-data [y-data] result-data error-data -> [fit-result u void]
+			; tries to fit the given fit-lambda to the given data. 
+			; result is null if the curve did not succeed
+
+fit-result-final-params	; fit-result -> guess-list
+			; returns the result parameters for the curve fit
+
+fit-result-function	; fit-result -> [(number -> number) u (number number -> number)]
+			; returns the function that was used to make the fit with the 
+			; parameters replaced by their values. useful to see the fit
 
 
 renderer creators:
@@ -72,7 +106,7 @@ common options:
 
 samples: number - number of times a function is sampled on a graph
 color: symbol - color for lines - one of:
-	'(white black yellow green aqua pink wheat grey brown blue violet cyan turquoise mgenta salmon red)
+	'(white black yellow green aqua pink wheat grey brown blue violet cyan turquoise magenta salmon red)
 width: number - width (in pixels) for lines to be drawn
 
 
@@ -80,7 +114,7 @@ width: number - width (in pixels) for lines to be drawn
 ---------------------
 
 
-points 	: (listof posn) [character] -> 2d-renderer
+points 	: (list-of vector) [character] -> 2d-renderer
 	; given a list of points, creates a renderer for them
 	character : integer - specifies the char number w/ which to plot points [9] (a Circled dot)	
 
@@ -88,16 +122,16 @@ line	: (number->number) [(samples 150) (color red) (width 1)] -> 2d-renderer
 	; given a function of one variable, creates a renderer for it		
 		
 
-field 	: (posn -> posn) [(samples 15) (color black) (width  1) (style normalized)] -> 2d-renderer
+field 	: (vector -> vector) [(samples 15) (color black) (width  1) (style normalized)] -> 2d-renderer
 	; given a vector valued function (R2->R2), creates a renderer for it
 	style :
-		scaled -> vector field with scaled vectors
-		normalized -> all vectors same size, indicates direction 
-  		real -> all vectors drawn to scale	
+	scaled -> vector field with scaled vectors
+	normalized -> all vectors same size, indicates direction 
+  	real -> all vectors drawn to scale	
 
 contour : (number number ->number) [(samples 50) (color black) (width 1) (levels 10)] -> 2d-renderer
         ; given a 3D function, creates a renderer that plots it on a 2d surface using contours
-	levels : (number u (listof number)) - specifies either the number of levels or 
+	levels : (number u (list-of number)) - specifies either the number of levels or 
 		the particular levels to plot
 
 shade 	: (number number -> number) [(samples 50) (levels 10)] -> 2d-renderer
@@ -108,7 +142,7 @@ shade 	: (number number -> number) [(samples 50) (levels 10)] -> 2d-renderer
 -----------------------
 
 surface : (number number -> number) [(samples 50) (color black) (width 1)] -> 3d-renderer
-	; given a 3d function, creates a rendere that plots it(showing the top only) on a 3d view
+	; given a 3d function, creates a renderer that plots it(showing the top only) on a 3d view
 
 
 Math-tools
@@ -118,9 +152,9 @@ derivative 	: (number -> number) [h .000001] -> (number -> number)
 		; creates a function that is the derivative of the function given
 		h : number - represents the divisor to use in the definition of derivative
 
-gradient	: (number number -> number) [h .000001] -> (posn -> posn)
-		; creats a vector valued function that is the gradient of the given function
+gradient	: (number number -> number) [h .000001] -> (vector -> vector)
+		; creates a vector valued function that is the gradient of the given function
 		h : as above
 
-make-vec	: (number number -> number) (number number -> number) -> (posn -> posn)
+make-vec	: (number number -> number) (number number -> number) -> (vector -> vector)
 		; creates a vector valued function from two scalar-valued functions

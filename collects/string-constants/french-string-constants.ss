@@ -443,6 +443,7 @@
   (font-smoothing-none "Aucune")
   (font-smoothing-some "Certaines")
   (font-smoothing-all "Toutes")
+  (font-smoothing-default "Utiliser la configuration par défaut du système")
   (select-font-name "Sélectionnez une police")
   (example-text "Example de texte :")
   (only-warn-once "Prévenir une fois seulement quand exécutions et interactions n'ont pas été synchronisées.")

@@ -1,6 +1,13 @@
 (lambda (request failure)
   (case request
     [(name) "MrSpidey"]
+    [(blurb)
+     (list
+      "MrSpidey is a static debugger available from DrScheme. "
+      "See the "
+      `(a ((href ,(format "file:~a" (build-path (collection-path "doc/mrspidey/") "index.html"))))
+          "MrSpidey manual")
+      " for more information.")]
     [(compile-prefix) '(begin
 			 (require-library "refer.ss")
 			 (require-library "sig.ss" "mred")

@@ -24,4 +24,15 @@
 		   '(myspage.dll myssink.dll))
 		  (fprintf (current-error-port) 
 			   "Warning: Can't run REGSVR32 on libraries~n")))))]
+    [(blurb)
+     (list
+      "MysterX is an extension that lets you use Scheme to script "
+      "ActiveX controls and other COM components under Windows. "
+      "MysterX also has a programmable Web browser with support for 
+       Dynamic HTML. "	
+      "See the "
+      `(a ((href ,(format "file:~a" (build-path (collection-path "mysterx") 
+	"doc.txt"))))
+          "doc.txt")
+      " file for more information.")]
     [else (failure-thunk)]))

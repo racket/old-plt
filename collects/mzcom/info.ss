@@ -10,4 +10,11 @@
 		    "Error: can't install MzCOM on non-Windows machine~n")
 	   (failure-thunk))
 	 `(system ".\\mzcom.exe /RegServer"))]
+    [(blurb)
+     (list
+      "MzCOM is a COM class that makes Scheme available to any COM client. "
+      "See the "
+      `(a ((href ,(format "file:~a" (build-path (collection-path "mzcom") "doc.txt"))))
+          "doc.txt")
+      " file for more information.")]
     [else (failure-thunk)]))

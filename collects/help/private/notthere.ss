@@ -47,8 +47,10 @@
               (a ((HREF ,missing-html-url)) "continue")
               " to the newly-installed documentation. ")
             `(p
-              "If you use a proxy server, this download will not "
-              "work. Instead, use some other proxy-based mechanism "
+              "If you use a proxy server, "
+              "be sure to set the proxy preferences before "
+              "downloading the file. If that doesn't work for you,"
+              "you can use some other mechanism "
               "to download the .plt file from the following url:")
             `(p (center ,url))
             `(p

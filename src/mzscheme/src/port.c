@@ -1172,6 +1172,17 @@ static void post_progress(Scheme_Input_Port *ip)
   ip->progress_evt = NULL;
 }
 
+static void inc_pos(Scheme_Input_Port *ip, int a)
+{
+  if (ip->count_lines) {
+    int inc = (ip->utf8state >> 4) + a;
+    ip->column += inc;
+    ip->readpos += inc;
+    ip->charsSinceNewline += inc;
+    ip->utf8state = 0;
+  }
+}
+
 long scheme_get_byte_string_unless(const char *who,
 				   Scheme_Object *port,
 				   char *buffer, long offset, long size,
@@ -1296,9 +1307,7 @@ long scheme_get_byte_string_unless(const char *who,
       if (!peek) {
 	if (ip->position >= 0)
 	  ip->position++;
-	ip->column++;
-	ip->readpos++;
-	ip->charsSinceNewline++;
+	inc_pos(ip, 1);
       }
 
       if (!peek && ip->progress_evt)
@@ -1350,6 +1359,7 @@ long scheme_get_byte_string_unless(const char *who,
       }
 
       if (v == EOF) {
+	inc_pos(ip, 0);
 	return EOF;
       } else if (v == SCHEME_SPECIAL) {
 	ip->special = NULL;
@@ -1450,9 +1460,7 @@ long scheme_get_byte_string_unless(const char *who,
 	  if (!peek) {
 	    if (ip->position >= 0)
 	      ip->position++;
-	    ip->column++;
-	    ip->readpos++;
-	    ip->charsSinceNewline++;
+	    inc_pos(ip, 1);
 	  }
 	  
 	  return SCHEME_SPECIAL;
@@ -1471,6 +1479,7 @@ long scheme_get_byte_string_unless(const char *who,
 	if (!got && !total_got) {
 	  if (peek && ip->pending_eof)
 	    ip->pending_eof = 2;
+	  inc_pos(ip, 0);
 	  return EOF;
 	}
 	/* remember the EOF for next time */
@@ -1507,8 +1516,7 @@ long scheme_get_byte_string_unless(const char *who,
 	ip->position += got;
       if (ip->count_lines) {
 	int c, degot = 0;
-#       define IS_UTF8_CHAR(buffer, p) (((unsigned char *)buffer)[p] & 0x80)
-#       define IS_UTF8_START(buffer, p) (((unsigned char *)buffer)[p] & 0x40)
+	char init_state = ip->utf8state;
 
 	mzAssert(ip->lineNumber >= 0);
 	mzAssert(ip->column >= 0);
@@ -1516,24 +1524,29 @@ long scheme_get_byte_string_unless(const char *who,
 
 	ip->readpos += got; /* add for CR LF below */
 
+	/* Find start of last line: */
 	for (i = got, c = 0; i--; c++) {
 	  if (buffer[offset + i] == '\n' || buffer[offset + i] == '\r') {
 	    break;
-	  } else if (IS_UTF8_CHAR(buffer, offset + i)) {
-	    /* UTF-8: Don't count this toward the position/column if
-	       it's not the leading byte in the encoding: */
-	    if (!IS_UTF8_START(buffer, offset + i))
-	      degot++;
 	  }
 	}
 
+	/* Count UTF-8-decoded chars: */
+	{
+	  char state = init_state;
+	  int n;
+	  n = scheme_utf8_decode_count(buffer, offset, offset + got, &state, 1, '?');
+	  ip->utf8state = state;
+	  degot += (got - n);
+	  ip->utf8state = state;	  
+	}
+	
 	if (i >= 0) {
 	  int n = 0;
 	  ip->charsSinceNewline = (c - degot) + 1;
 	  i++;
 	  /* Continue walking, back over the previous lines, to find
-	     out how many there were, and to adjust the position for
-	     UTF-8 encodings: */
+	     out how many there were: */
 	  while (i--) {
 	    if (buffer[offset + i] == '\n') {
 	      if (!(i &&( buffer[offset + i - 1] == '\r'))
@@ -1543,13 +1556,9 @@ long scheme_get_byte_string_unless(const char *who,
 		degot += 1; /* adjust initial readpos increment */
 	    } else if (buffer[offset + i] == '\r') {
 	      n++;
-	    } else if (IS_UTF8_CHAR(buffer, offset + i)) {
-	      /* UTF-8: Don't count this toward the position/column if
-		 it's not the leading byte in the encoding: */
-	      if (!IS_UTF8_START(buffer, offset + i))
-		degot++;
 	    }
 	  }
+	 	  
 	  mzAssert(n > 0);
 	  ip->lineNumber += n;
 	  ip->was_cr = (buffer[offset + got - 1] == '\r');
@@ -1577,13 +1586,19 @@ long scheme_get_byte_string_unless(const char *who,
 
 	    /* Found the previous line; adjust the column: */
 	    {
-	      int col = ip->column;
+	      int col = (i ? 0 : ip->column);
+	      int prev_i = i;
+	      char state = (i ? 0 : init_state);
 	      for (; i < cc; i++) {
-		if (buffer[offset + i] == '\t')
+		if (buffer[offset + i] == '\t') {
+		  col += scheme_utf8_decode_count(buffer, offset + prev_i, offset + i, &state, 0, '?');
 		  col = col - (col & 0x7) + 8;
-		else
-		  col++;
+		  prev_i = i + 1;
+		  state = 0;
+		}
 	      }
+	      if (prev_i < i)
+		col += scheme_utf8_decode_count(buffer, offset + prev_i, offset + i, &state, 0, '?');
 	      ip->column = col;
 	    }
 	    /* Done. Now we can remember this column value as oldColumn. */
@@ -1600,18 +1615,24 @@ long scheme_get_byte_string_unless(const char *who,
 	/* Do the line again to get the column count right: */
 	{
 	  int col = ip->column;
-	  for (i = got - c; i < got; i++) {
-	    if (buffer[offset + i] == '\t')
+	  int prev_i = got - c;
+	  for (i = prev_i; i < got; i++) {
+	    if (buffer[offset + i] == '\t') {
+	      col += scheme_utf8_decode_count(buffer, offset + prev_i, offset + i, NULL, 0, '?');
 	      col = col - (col & 0x7) + 8;
-	    else if (IS_UTF8_CHAR(buffer, offset + i)) {
-	      /* UTF-8: Count only the leading byte in an encoding: */
-	      if (IS_UTF8_START(buffer, offset + i))
-		col++;
-	    } else
-	      col++;
+	      prev_i = i + 1;
+	    }
+	  }
+	  if (prev_i < i) {
+	    char state = 0;
+	    col += scheme_utf8_decode_count(buffer, offset + prev_i, offset + i, &state, 1, '?');
 	  }
 	  ip->column = col;
 	}
+
+	if (!size)
+	  /* Like an EOF: count incomplete encoding as complete */
+	  inc_pos(ip, 0);
 	
 	mzAssert(ip->lineNumber >= 0);
 	mzAssert(ip->column >= 0);
@@ -1851,6 +1872,7 @@ long scheme_get_char_string(const char *who,
 			    mzchar *buffer, long offset, long size,
 			    int peek, Scheme_Object *peek_skip)
 {
+  int ahead_skip = 0;
   char *s;
   int total_got = 0, bsize, leftover = 0, got;
 
@@ -1868,25 +1890,28 @@ long scheme_get_char_string(const char *who,
        "leftover" is the number of bytes (< MAX_UTF8_CHAR_BYTES) that
        we already have toward the first character. If the next
        character doesn't continue a leftover sequence, the next
-       character actually belongs to a second character. Thus, if
-       leftover is positive and we're not merely peeking, ask for no
-       more than size - 1 bytes. If size is 1, then we are forced to
-       peek in all cases.
+       character actually belongs to a (leftover+1)th character. Thus,
+       if leftover is positive and we're not merely peeking, ask for
+       at leat one byte, but otherwise no more than size - leftover
+       bytes. If size is 1, then we are forced to peek in all cases.
 
        Overall, if the size is big enough, we only read as many
        characters as our buffer holds. */
 
     bsize = size;
     if (leftover) {
-      bsize--;
-      if (!bsize) {
+      bsize -= leftover;
+      if (bsize < 1) {
 	/* This is the complex case. Need to peek a byte to see
 	   whether it continues the leftover sequence or ends it an in
 	   an error. */
 	special_is_ok = 1;
 	got = scheme_get_byte_string_unless(who, port,
 					    s, leftover, 1,
-					    0, 1, peek_skip,
+					    0, 1, 
+					    (peek_skip 
+					     ? scheme_bin_plus(peek_skip, scheme_make_integer(ahead_skip))
+					     : scheme_make_integer(ahead_skip)),
 					    NULL);
 	if (got > 0) {
 	  long ulen, glen;
@@ -1894,41 +1919,50 @@ long scheme_get_char_string(const char *who,
 					      buffer, offset, offset + size,
 					      &ulen, 0, '?');
 	  if (glen && (ulen < got + leftover)) {
-	    /* So we don't want to read that extra byte after all 
-	       (if we weren't peeking in general). */
+	    /* Got one, with a decoding error. If we weren't peeking,
+	       don't read the lookahead bytes after all, yet. */
 	    total_got++;
-	    return total_got;
+	    bsize = 0;
+	    ahead_skip++;
+	    size--;
+	    offset++;
+	    /* leftover stays the same */
+	    memmove(s, s + 1, leftover);
 	  } else {
 	    /* Either we got one character, or we're still continuing. */
+	    ahead_skip++;
 	    if (!glen) {
 	      /* Continuing */
 	      leftover++;
 	    } else {
-	      /* Got one */
+	      /* Got one (no encoding error) */
 	      leftover = 0;
 	      offset++;
 	      --size;
 	      total_got++;
-	    }
-	    
-	    if (!peek) {
-	      /* In either case, read the character (and discard it) */
-	      scheme_get_byte_string_unless(who, port,
-					    s, MAX_UTF8_CHAR_BYTES, 1,
-					    0, 0, scheme_make_integer(0),
-					    NULL);
-	    } else {
-	      /* Or, in either case, increment the peek skip */
-	      peek_skip = scheme_bin_plus(peek_skip, scheme_make_integer(got));
+	      if (!peek) {
+		/* Read the lookahead bytes and discard them */
+		scheme_get_byte_string_unless(who, port,
+					      s, MAX_UTF8_CHAR_BYTES, ahead_skip,
+					      0, 0, scheme_make_integer(0),
+					      NULL);
+	      } else {
+		peek_skip = scheme_bin_plus(peek_skip, scheme_make_integer(ahead_skip));
+	      }
+	      ahead_skip = 0;
 	    }
 	    /* Continue with the normal decoing process (but get 0
 	       more characters this time around) */
+	    bsize = 0;
 	  }
 	} else {
 	  /* Either EOF or SPECIAL -- either one ends the leftover
 	     sequence in an error. */
-	  buffer[offset] = '?';
-	  total_got++;
+	  while (leftover) {
+	    buffer[offset++] = '?';
+	    total_got++;
+	    --leftover;
+	  }
 	  return total_got;
 	}
       }
@@ -1969,10 +2003,11 @@ long scheme_get_char_string(const char *who,
     } else {
       read_string_byte_buffer = s;
 
-      if (leftover) {
-	/* First byte in s must have high bit set */
-	buffer[offset] = '?';
+      /* Leftover bytes must be decoding-error bytes: */
+      while (leftover) {
+	buffer[offset++] = '?';
 	total_got++;
+	--leftover;
       }
 
       if (!total_got)
@@ -1994,7 +2029,7 @@ scheme_getc(Scheme_Object *port)
     v = scheme_get_byte_string_unless("read-char", port,
 				      s, delta, 1,
 				      0,
-				      delta > 0, 0,
+				      delta > 0, scheme_make_integer(delta-1),
 				      NULL);
     if ((v == EOF) || (v == SCHEME_SPECIAL)) {
       if (!delta)
@@ -2008,46 +2043,19 @@ scheme_getc(Scheme_Object *port)
       v = scheme_utf8_decode_prefix(s, delta + 1, r, 0);
       if (v > 0) {
 	if (delta) {
-	  /* Need to read the peeked byte (will ignore) */
+	  /* Need to read the peeked bytes (will ignore) */
 	  v = scheme_get_byte_string_unless("read-char", port,
-					    s, 0, 1,
+					    s, 0, delta,
 					    0,
 					    0, 0,
 					    NULL);
 	}
 	return r[0];
-      }
-      else if (v == -2) {
+      } else if (v == -2) {
 	/* -2 => decoding error */
-	/* If the sequence starts with high bits set, then return '?',
-	   otherwise the bytes get dropped. */
-	if ((s[0] & 0xC0) == 0xC0) {
-	  /* If we peeked, it's right to leave the peeked byte */
-	  return '?';
-	} else {
-	  if (delta) {
-	    /* Need to read the peeked byte (will ignore) */
-	    v = scheme_get_byte_string_unless("read-char", port,
-					      s, 0, 1,
-					      0,
-					      0, 0,
-					      NULL);
-	  }
-	  delta = 0;
-	}
+	return '?';
       } else if (v == -1) {
-	/* In middle of sequence. */
-	if (delta) {
-	  /* Need to read the peeked byte. Just in case
-	     it's different, we peek into the next
-	     bnuffer position, then ignore it. */
-	  v = scheme_get_byte_string_unless("read-char", port,
-					    s, delta + 1, 1,
-					    0,
-					    0, 0,
-					    NULL);
-	}
-	/* start/continue peeking bytes */
+	/* In middle of sequence; start/continue peeking bytes */
 	delta++;
       }
     }
@@ -2144,17 +2152,17 @@ static int do_peekc_skip(Scheme_Object *port, Scheme_Object *skip,
 {
   char s[MAX_UTF8_CHAR_BYTES];
   unsigned int r[1];
-  int v, delta = 0, in_delta = 0;
+  int v, delta = 0;
   Scheme_Object *skip2;
 
   if (unavail)
     *unavail = 0;
 
   while(1) {
-    if (in_delta) {
+    if (delta) {
       if (!skip)
 	skip = scheme_make_integer(0);
-      skip2 = scheme_bin_plus(skip, scheme_make_integer(in_delta));
+      skip2 = scheme_bin_plus(skip, scheme_make_integer(delta));
     } else
       skip2 = skip;
 
@@ -2184,19 +2192,10 @@ static int do_peekc_skip(Scheme_Object *port, Scheme_Object *skip,
 	return r[0];
       else if (v == -2) {
 	/* -2 => decoding error */
-	/* If the sequence starts with high bits set, then return '?',
-	   otherwise the bytes will get dropped, so just increment 
-	   in_delta and reset delta to 0 */
-	if ((s[0] & 0xC0) == 0xC0)
-	  return '?';
-	else {
-	  in_delta++;
-	  delta = 0;
-	}
+	return '?';
       } else if (v == -1) {
 	/* In middle of sequence - keep getting bytes. */
 	delta++;
-	in_delta++;
       }
     }
   }

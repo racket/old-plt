@@ -1071,9 +1071,9 @@ struct Scheme_Input_Port
   unsigned char ungotten[24];
   int ungotten_count;
   Scheme_Object *special, *ungotten_special;
-  long position, readpos, lineNumber, charsSinceNewline, utf8cont;
+  long position, readpos, lineNumber, charsSinceNewline;
   long column, oldColumn; /* column tracking with one tab/newline ungetc */
-  int count_lines, was_cr;
+  char count_lines, was_cr, utf8state;
   Scheme_Object *unless, *unless_cache;
   struct Scheme_Output_Port *output_half;
 };

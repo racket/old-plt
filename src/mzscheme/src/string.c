@@ -243,8 +243,8 @@ static int mz_strcmp(const char *who, unsigned char *str1, int l1, unsigned char
 static int utf8_decode_x(const unsigned char *s, int start, int end, 
 			 unsigned int *us, int dstart, int dend,
 			 long *ipos, long *jpos, 
-			 char compact, char utf16, char might_continue,
-			 int permissive);
+			 char compact, char utf16, 
+			 char *state, int might_continue, int permissive);
 
 static char *string_to_from_locale(int to_bytes,
 				   char *in, int delta, int len, 
@@ -1391,7 +1391,7 @@ byte_string_utf8_index(int argc, Scheme_Object *argv[])
   result = utf8_decode_x((unsigned char *)chars, istart, ifinish,
 			 NULL, 0, pos,
 			 &ipos, &opos,
-			 0, 0, 0, perm ? 1 : 0);
+			 0, 0, NULL, 0, perm ? 1 : 0);
   
   if (((result < 0) && (result != -3))
       || ((ipos == ifinish) && (opos <= pos)))
@@ -1439,7 +1439,7 @@ byte_string_utf8_ref(int argc, Scheme_Object *argv[])
     utf8_decode_x((unsigned char *)chars, istart, ifinish,
 		  NULL, 0, pos,
 		  &ipos, &opos,
-		  0, 0, 0, perm ? 1 : 0);
+		  0, 0, NULL, 0, perm ? 1 : 0);
     if (opos < pos)
       return scheme_false;
     istart = ipos;
@@ -1448,7 +1448,7 @@ byte_string_utf8_ref(int argc, Scheme_Object *argv[])
   utf8_decode_x((unsigned char *)chars, istart, ifinish,
 		us, 0, 1,
 		&ipos, &opos,
-		0, 0, 0, perm ? 0xFFFF : 0);
+		0, 0, NULL, 0, perm ? 0xFFFF : 0);
 
   if (opos < 1)
     return scheme_false;
@@ -2192,7 +2192,7 @@ static char *do_convert(iconv_t cd,
 	r = utf8_decode_x(in, id + dip, iilen - dip,
 			  (unsigned int *)out, (od + dop) >> 2, iolen >> 2,
 			  &ipos, &opos, 
-			  0, 0, 0, 0);
+			  0, 0, NULL, 0, 0);
 	opos <<= 2;
 	dop += opos;
 	dip = (ipos - id);
@@ -3289,7 +3289,7 @@ static Scheme_Object *convert_one(const char *who, int opos, int argc, Scheme_Ob
       status = utf8_decode_x((unsigned char *)instr, istart, ifinish, 
 			     (unsigned int *)r, ostart, ofinish,
 			     &amt_read, &amt_wrote, 
-			     1, 0, 1, c->permissive);
+			     1, 0, NULL, 1, c->permissive);
       amt_read -= istart;
       amt_wrote -= ostart;
       if (status == -3) {
@@ -3303,7 +3303,7 @@ static Scheme_Object *convert_one(const char *who, int opos, int argc, Scheme_Ob
 	    utf8_decode_x((unsigned char *)instr, istart, ifinish, 
 			  (unsigned int *)r, ostart, ofinish,
 			  &amt_read, &amt_wrote, 
-			  1, 0, 1, c->permissive);
+			  1, 0, NULL, 1, c->permissive);
 	    r[amt_wrote] = 0;
 	  }
 	} else if (!r)
@@ -3394,209 +3394,168 @@ byte_converter_p(int argc, Scheme_Object *argv[])
 static int utf8_decode_x(const unsigned char *s, int start, int end, 
 			 unsigned int *us, int dstart, int dend,
 			 long *ipos, long *jpos, 
-			 char compact, char utf16, char might_continue,
-			 int permissive)
+			 char compact, char utf16, char *_state,
+			 int might_continue, int permissive)
      /* Results:
 	non-negative => translation complete, = number of produced chars
-	-1 => input ended in middle of encoding
-	-2 => encoding error
-	-3 => not enough output room */
+	-1 => input ended in middle of encoding (only if might_continue)
+	-2 => encoding error (only if permissive is 0)
+	-3 => not enough output room
+
+	ipos & jpos are filled with ending positions (between [d]start
+	and [d]end) before return, unless they are NULL.
+
+	compact => UTF-8 to UTF-8 or UTF-16 --- the latter if utf16
+
+	_state provides initial state and is filled with ending state;
+	when it's not NULL, the us must be NULL
+
+	might_continue => allows -1 result without consuming characters
+
+	permissive is non-zero => use permissive as value for bad byte
+	sequences*/
+
 {
-  int i, j, oki, failmode = -3;
+  int i, j, oki, failmode = -3, state = (_state ? ((*_state) & 0xF) : 0);
+  int init_doki = (_state ? ((*_state) >> 4) : 0);
+  int inc, checkmin = 0, v = 0;
   unsigned int sc;
 
   /* In non-permissive mode, a negative result means ill-formed input.
      Permissive mode accepts anything and tries to convert it.  In
      that case, the strategy for illegal sequences is to convert
-     anything bad with two bits set to the given "permissive"
-     value. That way, computing the length by ignoring
-     middle-of-sequence characters produces the same length as this
-     permissive conversion (so position counting in ports matches a
-     permissive conversion). */
+     anything bad to the given "permissive" value. */
 
   if (end < 0)
     end = strlen(s);
   if (dend < 0)
     dend = 0x7FFFFFFF;
 
-  if (!us && permissive && !might_continue && !ipos && !utf16) {
-    /* Fast path */
-    for (i = start, j = dstart; ((i < end) && (j < dend)); i++) {
-      if (!((s[i] & 0xC0) == 0x80))
-	j++;
-    }
-    if (ipos)
-      *ipos = i;
-    return j - dstart;
-  }
-
   oki = start;
-  for (i = start, j = dstart; (i < end) && (j < dend); i++, j++) {
-    sc = s[i];
-    if (sc < 0x80) {
-      if (us) {
-	if (compact) {
-	  if (utf16)
-	    ((unsigned short *)us)[j] = sc;
-	  else
-	    ((unsigned char *)us)[j] = sc;
-	} else
-	  us[j] = sc;
-      }
-    } else {
-      unsigned int v, checkmin;
-      if ((sc & 0xE0) == 0xC0) {
-	/* 2-byte sequence */
-	if (i + 1 < end) {
-	  if ((s[i + 1] & 0xC0) == 0x80) {
-	    v = (((sc & 0x1F) << 6) 
-		 | (s[i+1] & 0x3F));
-	    checkmin = 0x80;
+  j = dstart;
+  i = start;
+  if (j < dend) {
+    while (i < end) {
+      sc = s[i];
+      if (sc < 0x80) {
+	checkmin = 0;
+	if (state) {
+	  /* In a sequence, but didn't continue */
+	  state = 0;
+	  if (permissive) {
+	    v = permissive;
+	    checkmin = 0;
+	    i = oki;
+	    j += init_doki;
+	    init_doki = 0;
+	    inc = 1;
+	  } else {
+	    v = 0; 
+	    checkmin = 1;
+	    inc = 0;
+	  }
+	} else {
+	  v = sc;
+	  inc = 1;
+	}
+      } else if ((sc & 0xC0) == 0x80) {
+	/* Continues a sequence ... */
+	if (state) {
+	  /* ... and we're in one */
+	  v = (v << 6) + (sc & 0x3F);
+	  --state;
+	  if (state) {
 	    i++;
-	  } else if (permissive) {
+	    continue;
+	  } else
+	    inc = 1;
+	} else {
+	  /* ... but we're not in one */
+	  if (permissive) {
 	    v = permissive;
 	    checkmin = 0;
 	  } else {
-	    failmode = -2;
-	    break;
+	    v = 0; 
+	    checkmin = 1;
 	  }
-	} else {
-	  if (permissive && !might_continue) {
-	    v = permissive;
-	    checkmin = 0;
-	  } else {
-	    failmode = -1;
-	    break;
-	  }
+	  inc = 1;
 	}
-      } else {
-	/* 3- to 6-byte sequences */
-	int cnt;
-	if ((sc & 0xF0) == 0xE0) {
-	  cnt = 2;
-	} else if ((sc & 0xF8) == 0xF0) {
-	  cnt = 3;
-	} else if ((sc & 0xFC) == 0xF8) {
-	  cnt = 4;
-	} else if ((sc & 0xFE) == 0xFC) {
-	  cnt = 5;
-	} else {
-	  cnt = 0;
-	}
-
-	if (i + cnt >= end) {
-	  if (permissive && !might_continue) {
-	    v = permissive;
-	    checkmin = 0;
-	  } else {
-	    /* Could it continue? */
-	    int ccnt;
-	    cnt = end - i - 1;
-	    for (ccnt = 1; ccnt <= cnt; ccnt++) {
-	      if ((s[i + ccnt] & 0xC0) != 0x80)
-		break;
-	    }
-	    if (ccnt > cnt) {
-	      /* Could continue... */
-	      failmode = -1;
-	      break;
-	    } else {
-	      /* Can't continue */
-	      if (permissive) {
-		v = permissive;
-		checkmin = 0;
-	      } else {
-		failmode = -2;
-		break;
-	      }
-	    }
-	  }
-	} else {
-	  int ccnt;
-	  for (ccnt = 1; ccnt <= cnt; ccnt++) {
-	    if ((s[i + ccnt] & 0xC0) != 0x80)
-	      break;
-	  }
-
-	  if (ccnt > cnt) {
-	    switch (cnt) {
-	    case 0:
-	      if (sc >= 254) {
-		v = sc;
-		checkmin = 256;
-	      } else {
-		/* Corresponds to the middle of a char. We simply drop
-		   it, in all permissive modes. */
-		if (permissive) {
-		  j--;
-		  oki = i + 1;
-		  continue;
-		} else {
-		  /* Cause an error */
-		  v = 10;
-		  checkmin = 11;
-		}
-	      }
-	      break;
-	    case 2:
-	      v = (((sc & 0xF) << 12) 
-		   | ((s[i+1] & 0x3F) << 6) 
-		   | (s[i+2] & 0x3F));
-	      checkmin = 0x800;
-	      if (((v >= 0xD800) && (v <= 0xDFFF))
-		  || (v == 0xFFFE)
-		  || (v == 0xFFFF)) {
-		/* UTF-16 surrogates or other illegal code units;
-		   set checkmind too high so that it will report
-		   an error */
-		checkmin = 0x10000;
-	      }
-	      break;
-	    case 3:
-	      v = (((sc & 0x7) << 18) 
-		   | ((s[i+1] & 0x3F) << 12) 
-		   | ((s[i+2] & 0x3F) << 6) 
-		   | (s[i+3] & 0x3F));
-	      checkmin = 0x10000;
-	      break;
-	    case 4:
-	      v = (((sc & 0x7) << 24) 
-		   | ((s[i+1] & 0x3F) << 18) 
-		   | ((s[i+2] & 0x3F) << 12) 
-		   | ((s[i+3] & 0x3F) << 6) 
-		   | (s[i+4] & 0x3F));
-	      checkmin = 0x200000;
-	      break;
-	    default:
-	    case 5:
-	      v = (((sc & 0x1) << 30) 
-		   | ((s[i+1] & 0x3F) << 24) 
-		   | ((s[i+2] & 0x3F) << 18) 
-		   | ((s[i+3] & 0x3F) << 12) 
-		   | ((s[i+4] & 0x3F) << 6) 
-		   | (s[i+5] & 0x3F));
-	      checkmin = 0x4000000;
-	      break;
-	    }
-	    i += cnt;
-	  } else {
-	    /* Bad sequence */
-	    if (permissive) {
-	      v = permissive;
-	      checkmin = 0;
-	    } else {
-	      failmode = -2;
-	      break;
-	    }
-	  }
-	}
-      }
-    
-      if (v < checkmin) {
+      } else if (state) {
+	/* bad: already in a sequence */
 	if (permissive) {
 	  v = permissive;
 	  i = oki;
+	  j += init_doki;
+	  init_doki = 0;
+	  checkmin = 0;
 	} else {
+	  v = 0;
+	  checkmin = 1;
+	}
+	inc = 1;
+	state = 0;
+      } else {
+	if ((sc & 0xE0) == 0xC0) {
+	  state = 1;
+	  v = (sc & 0x1F);
+	  checkmin = 0x80;
+	  i++;
+	  continue;
+	} else if ((sc & 0xF0) == 0xE0) {
+	  state = 2;
+	  v = (sc & 0xF);	
+	  checkmin = 0x800;
+	  i++;
+	  continue;
+	} else if ((sc & 0xF8) == 0xF0) {
+	  state = 3;
+	  v = (sc & 0x7);
+	  checkmin = 0x10000;
+	  i++;
+	  continue;
+	} else if ((sc & 0xFC) == 0xF8) {
+	  state = 4;
+	  v = (sc & 0x3);
+	  checkmin = 0x200000;
+	  i++;
+	  continue;
+	} else if ((sc & 0xFE) == 0xFC) {
+	  state = 5;
+	  v = (sc & 0x1);
+	  checkmin = 0x4000000;
+	  i++;
+	  continue;
+	} else {
+	  if (permissive) {
+	    v = permissive;
+	    checkmin = 0;
+	  } else {
+	    v = 0; 
+	    checkmin = 1;
+	  }
+	  inc = 1;
+	}
+      }
+
+      /* If we get here, we're supposed to output v */
+
+      if (((v >= 0xD800) && (v <= 0xDFFF))
+	  || (v == 0xFFFE)
+	  || (v == 0xFFFF)) {
+	/* UTF-16 surrogates or other illegal code units;
+	   set checkmind too high so that it will report
+	   an error */
+	checkmin = 0x10000;
+      }
+
+      if (v < checkmin) {
+	i = oki;
+	j += init_doki;
+	init_doki = 0;
+	inc = 1;
+	if (permissive)
+	  v = permissive;
+	else {
 	  failmode = -2;
 	  break;
 	}
@@ -3607,6 +3566,8 @@ static int utf8_decode_x(const unsigned char *s, int start, int end,
 	  if (v > 0xFFFF) {
 	    if (us) {
 	      v -= 0x10000;
+	      if (j + 1 >= dstart)
+		break;
 	      ((unsigned short *)us)[j] = 0xD800 | ((v >> 10) & 0x3FF);
 	      ((unsigned short *)us)[j+1] = 0xDC00 | (v & 0x3FF);
 	    }
@@ -3624,14 +3585,45 @@ static int utf8_decode_x(const unsigned char *s, int start, int end,
 	      j += delta;
 	    } else
 	      break;
-	  } else if (us)
+	  } else if (us) {
 	    ((unsigned char *)us)[j] = v;
+	  }
 	}
       } else if (us) {
 	us[j] = v;
       }
+      j++;
+      i += inc;
+      oki = i;
+      if (j >= dend)
+	break;
     }
-    oki = i + 1;
+  }
+
+  if (_state) {
+    *_state = state | (((end - oki) + init_doki) << 4);
+  } else if (state) {
+    if (might_continue || !permissive) {
+      failmode = -1;
+      i = end - 1; /* to ensure that failmode is returned */
+    } else if (permissive) {
+      for (i = oki; i < end; i++) {
+	if (j < dend) {
+	  if (us) {
+	    if (compact) {
+	      if (utf16)
+		((unsigned short *)us)[j] = permissive;
+	      else
+		((unsigned char *)us)[j] = permissive;
+	    } else
+	      us[j] = permissive;
+	  }
+	  j++;
+	} else
+	  break;
+      }
+      oki = i;
+    }
   }
 
   if (ipos)
@@ -3650,7 +3642,7 @@ int scheme_utf8_decode(const unsigned char *s, int start, int end,
 		       long *ipos, char utf16, int permissive)
 {
   return utf8_decode_x(s, start, end, us, dstart, dend, 
-		       ipos, NULL, utf16, utf16, 0, permissive);
+		       ipos, NULL, utf16, utf16, NULL, 0, permissive);
 }
 
 int scheme_utf8_decode_as_prefix(const unsigned char *s, int start, int end, 
@@ -3660,18 +3652,18 @@ int scheme_utf8_decode_as_prefix(const unsigned char *s, int start, int end,
 {
   long opos;
   utf8_decode_x(s, start, end, us, dstart, dend, 
-		ipos, &opos, utf16, utf16, 1, permissive);
+		ipos, &opos, utf16, utf16, NULL, 1, permissive);
   return opos - dstart;
 }
 
 int scheme_utf8_decode_all(const unsigned char *s, int len, unsigned int *us, int permissive)
 {
-  return utf8_decode_x(s, 0, len, us, 0, -1, NULL, NULL, 0, 0, 0, permissive);
+  return utf8_decode_x(s, 0, len, us, 0, -1, NULL, NULL, 0, 0, NULL, 0, permissive);
 }
 
 int scheme_utf8_decode_prefix(const unsigned char *s, int len, unsigned int *us, int permissive)
 {
-  return utf8_decode_x(s, 0, len, us, 0, -1, NULL, NULL, 0, 0, 1, permissive);
+  return utf8_decode_x(s, 0, len, us, 0, -1, NULL, NULL, 0, 0, NULL, 1, permissive);
 }
 
 mzchar *scheme_utf8_decode_to_buffer_len(const unsigned char *s, int len, 
@@ -3680,7 +3672,7 @@ mzchar *scheme_utf8_decode_to_buffer_len(const unsigned char *s, int len,
   int ulen;
   ulen = utf8_decode_x(s, 0, len, NULL, 0, -1,
 		       NULL, NULL, 0, 0,
-		       0, 0);
+		       NULL, 0, 0);
   if (ulen < 0)
     return NULL;
   if (ulen + 1 > blen) {
@@ -3688,7 +3680,7 @@ mzchar *scheme_utf8_decode_to_buffer_len(const unsigned char *s, int len,
   }
   utf8_decode_x(s, 0, len, buf, 0, -1,
 		NULL, NULL, 0, 0,
-		0, 0);
+		NULL, 0, 0);
   buf[ulen] = 0;
   *_ulen = ulen;
   return buf;
@@ -3700,6 +3692,17 @@ mzchar *scheme_utf8_decode_to_buffer(const unsigned char *s, int len,
   long ulen;
   return scheme_utf8_decode_to_buffer_len(s, len, buf, blen, &ulen);
 }
+
+int scheme_utf8_decode_count(const unsigned char *s, int start, int end, 
+			     char *_state, int might_continue, int permissive)
+{
+  return utf8_decode_x(s, start, end,
+		       NULL, 0, -1,
+		       NULL, NULL,
+		       0, 0, _state,
+		       might_continue, permissive);
+}
+
 
 int scheme_utf8_encode(const unsigned int *us, int start, int end, 
 		       unsigned char *s, int dstart,

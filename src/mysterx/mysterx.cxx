@@ -143,6 +143,7 @@ static MX_PRIM mxPrims[] = {
   { mx_navigate,"navigate",2,2 },
   { mx_go_back,"go-back",1,1 },
   { mx_go_forward,"go-forward",1,1 },
+  { mx_refresh,"refresh",1,1 },
   { mx_current_url,"current-url",1,1 },
   { mx_register_navigate_handler,"register-navigate-handler",2,2 },
   { mx_current_document,"current-document",1,1 },

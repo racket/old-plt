@@ -322,6 +322,21 @@ Scheme_Object *mx_go_forward(int argc,Scheme_Object **argv) {
   return (pIWebBrowser2->GoForward() == S_OK) ? scheme_true : scheme_false; 
 }
 
+Scheme_Object *mx_refresh(int argc,Scheme_Object **argv) {
+  HRESULT hr;
+  IWebBrowser2 *pIWebBrowser2;
+
+  if (MX_BROWSERP(argv[0]) == FALSE) {
+    scheme_wrong_type("refresh","mx-browser",0,argc,argv);
+  }
+
+  pIWebBrowser2 = MX_BROWSER_VAL(argv[0]);
+
+  hr = pIWebBrowser2->Refresh();
+
+  return (hr == S_OK) ? scheme_true : scheme_false;
+}
+
 Scheme_Object *mx_register_navigate_handler(int argc,Scheme_Object **argv) {
   ISink *pISink;
 

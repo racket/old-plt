@@ -13,10 +13,10 @@
    (struct entity (text))
    content?))
 
-(define-signature writer^ (write-xml display-xml write-xml/content display-xml/content empty-tag-shorthand))
+(define-signature writer^ (write-xml display-xml write-xml/content display-xml/content empty-tag-shorthand html-empty-tags))
 (define-signature reader^ (read-xml read-comments trim-whitespace))
 
-(define-signature xexpr^ (xml->xexpr xexpr->xml xexpr->string))
+(define-signature xexpr^ (xml->xexpr xexpr->xml xexpr->string xexpr-drop-empty-attributes))
 (define-signature extra-xexpr^ ((open xexpr^) assoc-sort bcompose attribute->srep))
 (define-signature xml^ ((open xml-structs^) (open reader^) (open writer^) (open xexpr^)))
 

@@ -25,10 +25,10 @@
                      (cond
                        [(start-tag? start) (read-element start in)]
                        [(element? start) start]
-                       [else (error 'xml-read "expected root element - received ~a" start)])
+                       [else (error 'read-xml "expected root element - received ~a" start)])
                      (let-values ([(misc1 end-of-file) (read-misc in)])
                        (unless (eof-object? end-of-file)
-                         (error 'xml-read "extra stuff at end of document ~a" end-of-file))
+                         (error 'read-xml "extra stuff at end of document ~a" end-of-file))
                        misc1))))
   
   ;; read-misc : Input-port -> (listof Misc) Token
@@ -54,11 +54,11 @@
          (let ([x (lex in)])
            (cond
              [(eof-object? x)
-              (error 'xml-read "unclosed ~a tag at [~a ~a]" name a b)]
+              (error 'read-xml "unclosed ~a tag at [~a ~a]" name a b)]
              [(start-tag? x) (cons (read-element x in) (read-content))]
              [(end-tag? x)
               (unless (eq? name (end-tag-name x))
-                (error 'xml-read "start tag ~a at [~a ~a] doesn't match end tag ~a at [~a ~a]"
+                (error 'read-xml "start tag ~a at [~a ~a] doesn't match end tag ~a at [~a ~a]"
                        name a b (end-tag-name x) (source-start x) (source-stop x)))
               null]
              [(entity? x) (cons (expand-entity x) (read-content))]

@@ -15,20 +15,29 @@
   (define (assoc-sort to-sort)
     (quicksort to-sort (bcompose string<? (compose symbol->string car))))
   
+  (define xexpr-drop-empty-attributes (make-parameter #f))
+  
   ;; xml->xexpr : Content -> Xexpr
   (define (xml->xexpr x)
-    (cond
-      [(element? x)
-       (let ([body (map xml->xexpr (element-content x))]
-             [atts (element-attributes x)])
-         (cons (element-name x) 
-               (if (null? atts)
-                   body
-                   (cons (assoc-sort (map attribute->srep atts))
-                         body))))]
-      [(pcdata? x) (pcdata-string x)]
-      [(entity? x) (entity-text x)]
-      [else x]))
+    (let* ([non-dropping-combine
+            (lambda (atts body)
+              (cons (assoc-sort (map attribute->srep atts))
+                    body))]
+           [combine (if (xexpr-drop-empty-attributes)
+                        (lambda (atts body)
+                          (if (null? atts)
+                              body
+                              (non-dropping-combine atts body)))
+                        non-dropping-combine)])
+      (let loop ([x x])
+        (cond
+          [(element? x)
+           (let ([body (map loop (element-content x))]
+                 [atts (element-attributes x)])
+             (cons (element-name x) (combine atts body)))]
+          [(pcdata? x) (pcdata-string x)]
+          [(entity? x) (entity-text x)]
+          [else x]))))
   
   ;; attribute->srep : Attribute -> Attribute-srep
   (define (attribute->srep a)

@@ -1,7 +1,13 @@
 (unit/sig writer^
   (import xml-structs^ mzlib:function^)
   
-  (define empty-tag-shorthand (make-parameter #t))
+  ;;(define empty-tag-shorthand (make-parameter #t))
+  ;;(define empty-tag-shorthand (make-parameter void))
+  
+  ;; (empty-tag-shorthand) : (U 'always 'never (listof Symbol))
+  (define empty-tag-shorthand (make-parameter 'always))
+  
+  (define html-empty-tags '(param meta link isindex input img hr frame col br basefont base area))
   
   ;; var-argify : (a Output-port -> b) -> (a [Output-port] -> b)
   (define (var-argify f)
@@ -31,7 +37,7 @@
   (define (gen-write/display-xml output-content)
     (var-argify (lambda (doc out)
                   (display-outside-misc (prolog-misc (document-prolog doc)) out)
-                  (output-content (document-element doc))
+                  (output-content (document-element doc) out)
                   (display-outside-misc (document-misc doc) out))))
   
   ;; write-xml : Document [Output-port] -> Void
@@ -62,15 +68,21 @@
   
   ;; write-xml-element : Element Nat (Nat Output-Stream -> Void) Output-Stream -> Void
   (define (write-xml-element el over dent out)
-    (let ([start (lambda (f) (write-xml-base (format f (element-name el)) over dent out))]
-          [content (element-content el)])
+    (let* ([name (element-name el)]
+           [start (lambda (f) (write-xml-base (format f name) over dent out))]
+           [content (element-content el)])
       (start "<~a")
       (for-each (lambda (att)
                   (fprintf out " ~s=~s" (attribute-name att)
                            (escape (attribute-value att) escape-attribute-table)))
                 (element-attributes el))
-      (if (and (null? content) (empty-tag-shorthand))
-          (fprintf out "/>")
+      (if (and (null? content)
+               (let ([short (empty-tag-shorthand)])
+                 (case short
+                   [(always) #t]
+                   [(never) #f]
+                   [else (memq name short)])))
+          (fprintf out " />")
           (begin
             (fprintf out ">")
             (for-each (lambda (c) (write-xml-content c (incr over) dent out)) content)

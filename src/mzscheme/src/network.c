@@ -1588,37 +1588,40 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
 	
 	if (inprogress) {
           BEGIN_ESCAPEABLE(closesocket_w_decrement, s);
-	  status = scheme_block_until(tcp_check_connect, tcp_connect_needs_wakeup, (void *)s, (float)0.0);
+	  scheme_block_until(tcp_check_connect, tcp_connect_needs_wakeup, (void *)s, (float)0.0);
 	  END_ESCAPEABLE();
-	  if (status == 1) {
-	    /* Check whether connect succeeded: */
-#ifdef USE_UNIX_SOCKETS_TCP
-	    {
-	      int so_len = sizeof(status);
-	      if (getsockopt(s, SOL_SOCKET, SO_ERROR, (void *)&status, &so_len) != 0)
-		status = errno;
-	      errno = status; /* for error reporting, below */
-	    }
 
-	    /* Old way to test for success.
-	     * This seems to cause a problem on later Linux kernels.
-	     * Thanks to John R. Hall for tracking down the problem.
-	     *
-	     *  do {
-	     *   status = recv(s, NULL, 0, 0); // test input
-	     * } while ((status == -1) && (errno == EINTR));
-	     * if (!status) {
-	     *	 do {
-	     *	   status = send(s, NULL, 0, 0); // test output
-	     *   } while ((status == -1) && (errno == EINTR));
-	     * }
-	     */
+	  /* Check whether connect succeeded, or get error: */
+	  {
+	    int so_len = sizeof(status);
+	    if (getsockopt(s, SOL_SOCKET, SO_ERROR, (void *)&status, &so_len) != 0) {
+#ifdef USE_WINSOCK_TCP
+	      status = WSAGetLastError();
 #else
-	    status = send(s, "", 0, 0); /* test output */
-	    if (status)
-	      errno = WSAGetLastError();
+	      status = errno;
 #endif
+	    }
+	    errno = status; /* for error reporting, below */
 	  }
+
+	  /* Old way to test for success.
+	   * This seems to cause a problem on later Linux kernels.
+	   * Thanks to John R. Hall for tracking down the problem.
+	   *
+	   *  do {
+	   *   status = recv(s, NULL, 0, 0); // test input
+	   * } while ((status == -1) && (errno == EINTR));
+	   * if (!status) {
+	   *	 do {
+	   *	   status = send(s, NULL, 0, 0); // test output
+	   *   } while ((status == -1) && (errno == EINTR));
+	   * }
+	   */
+	  /* Old way for Windows
+	   * status = send(s, "", 0, 0); // test output
+	   * if (status)
+	   *  errno = WSAGetLastError();
+	   */
 	}
 	
 	if (!status) {
@@ -1784,15 +1787,29 @@ tcp_listen(int argc, Scheme_Object *argv[])
 	  return (Scheme_Object *)l;
 	}
 
+# ifdef USE_WINSOCK_TCP
+      errid = WSAGetLastError();
+# else
+      errid = errno;
+# endif
+
       closesocket(s);
     }
   }
-  errid = errno;
+# ifndef PROTOENT_IS_INT
+  else {
+#  ifdef USE_WINSOCK_TCP
+    errid = WSAGetLastError();
+#  else
+    errid = errno;
+#  endif
+  }
+# endif
 #endif
 
 #ifdef USE_TCP
   scheme_raise_exn(MZEXN_I_O_TCP,
-		   "tcp-listen: listen on %d failed (%e)",
+		   "tcp-listen: listen on %d failed (%E)",
 		   origid, errid);
 #else
   scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
@@ -1874,7 +1891,7 @@ tcp_accept_ready(int argc, Scheme_Object *argv[])
   int ready;
 
   if (!SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_listener_type))
-    scheme_wrong_type("tcp-accept-rady?", "tcp-listener", 0, argc, argv);
+    scheme_wrong_type("tcp-accept-ready?", "tcp-listener", 0, argc, argv);
 
   TCP_INIT("tcp-accept-ready?");
 
@@ -1888,7 +1905,7 @@ tcp_accept_ready(int argc, Scheme_Object *argv[])
 
   return (ready ? scheme_true : scheme_false);
 #else
-  scheme_wrong_type("tcp-accept-rady?", "tcp-listener", 0, argc, argv);
+  scheme_wrong_type("tcp-accept-ready?", "tcp-listener", 0, argc, argv);
   return NULL;
 #endif
 }
@@ -1971,7 +1988,11 @@ tcp_accept(int argc, Scheme_Object *argv[])
     
     return scheme_values(2, v);
   }
+#  ifdef USE_WINSOCK_TCP
+  errid = WSAGetLastError();
+#  else
   errid = errno;
+#  endif
 # endif
 
 # ifdef USE_MAC_TCP
@@ -2004,7 +2025,7 @@ tcp_accept(int argc, Scheme_Object *argv[])
 # endif
 
   scheme_raise_exn(MZEXN_I_O_TCP,
-		   "tcp-accept: accept from listener failed (%e)", errid);
+		   "tcp-accept: accept from listener failed (%E)", errid);
 #else
   scheme_wrong_type("tcp-accept", "tcp-listener", 0, argc, argv);
 #endif

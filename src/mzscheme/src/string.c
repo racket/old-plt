@@ -1051,8 +1051,9 @@ vector_to_string(int argc, Scheme_Object *argv[])
       int slen;
 
       slen = scheme_utf8_encode_all(v, len, NULL);
-      s = (char *)scheme_malloc_atomic(sizeof(char));
+      s = (char *)scheme_malloc_atomic(slen + 1);
       scheme_utf8_encode_all(v, len, (unsigned char *)s);
+      s[slen] = 0;
 
       return scheme_make_sized_string(s, slen, 0);
     }

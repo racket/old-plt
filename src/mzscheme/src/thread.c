@@ -5700,10 +5700,10 @@ static Scheme_Object *current_stats(int argc, Scheme_Object *argv[])
 	    stk_start = t->stack_start;
 	    stk_end = (void *)&stk_end;
 #         ifdef STACK_GROWS_UP
-	    sz = (long)stk_end - (long)stk_start;
+	    sz = (long)stk_end XFORM_OK_MINUS (long)stk_start;
 #         endif
 #         ifdef STACK_GROWS_DOWN
-	    sz = (long)stk_start - (long)stk_end;
+	    sz = (long)stk_start XFORM_OK_MINUS (long)stk_end;
 #         endif
 	  } else {
 	    if (t->jmpup_buf.stack_copy)

@@ -833,6 +833,20 @@ void wxDC::GetPixelFast(int x1, int y1, int *r, int *g, int *b)
   *b = GetBValue(pixelcolor);
 }
 
+#ifdef MZ_PRECISE_GC
+static PointF *newPointFs(int n);
+START_XFORM_SKIP;
+#endif
+
+static PointF *newPointFs(int n)
+{
+  return new WXGC_ATOMIC PointF[n];
+}
+
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif
+
 void wxDC::DrawPolygon(int n, wxPoint points[], double xoffset, double yoffset,int fillStyle)
 {
   HDC dc;
@@ -857,8 +871,8 @@ void wxDC::DrawPolygon(int n, wxPoint points[], double xoffset, double yoffset,i
       xoffset += 0.5;
       yoffset += 0.5;
     }
-      
-    pts = new PointF[n];
+    
+    pts = newPointFs(n);
     for (i = 0; i < n; i++) {
       pts[i].X = points[i].x + xoffset;
       pts[i].Y = points[i].y + yoffset;
@@ -993,7 +1007,7 @@ void wxDC::DrawPath(wxPath *p, double xoffset, double yoffset,int fillStyle)
 
       for (i = 0, k = 0; i < cnt; i++) {
 	j = (lens[i] / 2);
-	rgn1 = CreatePolygonRgn(pts + k, j, (fillStyle == wxODDEVEN_RULE) ? ALTERNATE : WINDING);
+	rgn1 = CreatePolygonRgn(pts XFORM_OK_PLUS k, j, (fillStyle == wxODDEVEN_RULE) ? ALTERNATE : WINDING);
 	if (rgn) {
 	  /* Xoring implements the even-odd rule */
 	  CombineRgn(rgn, rgn1, rgn, RGN_XOR);
@@ -1021,9 +1035,9 @@ void wxDC::DrawPath(wxPath *p, double xoffset, double yoffset,int fillStyle)
     for (i = 0, k = 0; i < cnt; i++) {
       j = (lens[i] / 2);
       if ((i + 1 == cnt) && p->IsOpen()) {
-	(void)Polyline(dc, pts + k, j);
+	(void)Polyline(dc, pts XFORM_OK_PLUS k, j);
       } else {
-	(void)Polygon(dc, pts + k, j);
+	(void)Polygon(dc, pts XFORM_OK_PLUS k, j);
       }
       k += j;
     }
@@ -1060,7 +1074,7 @@ void wxDC::DrawLines(int n, wxPoint points[], double xoffset, double yoffset)
 	yoffset += 0.5;
       }
             
-      pts = new PointF[n];
+      pts = newPointFs(n);
       for (i = 0; i < n; i++) {
 	pts[i].X = points[i].x + xoffset;
 	pts[i].Y = points[i].y + yoffset;
@@ -2350,7 +2364,7 @@ void wxCanvasDC::TryColour(wxColour *src, wxColour *dest)
 {
   COLORREF result, col;
   HDC dc;
-  int r, g, b;
+  int r, gr, b;
 
   dc = ThisDC();
   if (!dc) {
@@ -2359,9 +2373,9 @@ void wxCanvasDC::TryColour(wxColour *src, wxColour *dest)
   }
 
   r = src->Red();
-  g = src->Green();
+  gr = src->Green();
   b = src->Blue();
-  col = RGB(r, g, b);
+  col = RGB(r, gr, b);
   result = GetNearestColor(dc, col);
   dest->Set(GetRValue(result), GetGValue(result), GetBValue(result));
   DoneDC(dc);

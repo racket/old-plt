@@ -24,11 +24,11 @@
 
   (define (check-arity prim len lst)
     (let ([lst-len (length lst)])
-      (unless (>= lst-len len)
+      (unless (#%>= lst-len len)
 	(error prim
 	       "expects at least ~a arguments, given ~a"
 	       len
-	       (if (= 0 lst-len)
+	       (if (#%= 0 lst-len)
 		   0
 		   (format
 		    "~a: ~a"
@@ -53,6 +53,7 @@
     (if (params:<=-at-least-two-args)
 	(lambda args
 	  (check-arity '+ 2 args)
+	  (printf "2~n")
 	  (apply #%+ args))
 	#%+))
 

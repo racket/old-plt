@@ -38,9 +38,6 @@ case, you can run
 	nmake /f srpersist.mak
 	nmake install /f srpersist.mak
 
-In the file srpersist.mak, change the variable for MZC to point 
-to your installed copy of mzc, if necessary.
-
 If you want to link to another driver manager, you may need to change
 the variable ODBCVER to indicate the ODBC version supported by that
 manager, and you will need to change ODBC_LIBS to indicate the 

@@ -8,8 +8,7 @@ ODBCVER=0x0351
 # will have to change if non-MS driver manager
 ODBC_LIBS=odbc32.lib odbccp32.lib 
 
-# change for your installation
-MZC="D:\PLT\mzc"
+MZC=..\..\mzc
 
 all : srpmain.dll
 

@@ -1238,6 +1238,7 @@ static void WaitForAnEvent_OrDie(MrEdContext *c)
   }
 
   /* An event has been found. Do it. */
+  c->nested_avail = 0;
   DoTheEvent(c);
 
   /* Return to loop and look for more events... */

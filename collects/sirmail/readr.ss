@@ -2294,7 +2294,9 @@
 						  (values bytes->string/utf-8 void)]
 						 [(and mime-mode?
 						       (string? (mime:entity-charset ent))
-						       (bytes-open-converter (mime:entity-charset ent) "UTF-8"))
+						       (bytes-open-converter (latin-1->windows-1252
+									      (mime:entity-charset ent))
+									     "UTF-8"))
 						  => (lambda (c)
 						       (values
 							(lambda (s alt)

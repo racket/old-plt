@@ -35,6 +35,7 @@
 
      confirm-box
 
+     latin-1->windows-1252
      parse-encoded))
 
   (provide sirmail:send^)

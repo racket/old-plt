@@ -232,6 +232,17 @@
 
       (define re:encoded #rx#"^(.*)=[?]([^?]+)[?]([qQbB])[?](.*?)[?]=(.*)$")
 
+      (define (latin-1->windows-1252 encoding)
+	(if (regexp-match re:iso encoding)
+	    ;; Treat Latin-1 as Windows-1252, because
+	    ;; some mailers are broken. The only difference
+	    ;; is control chaarcters (which are technically
+	    ;; not mapped in Latin-1, anyway).
+	    (if (bytes? encoding)
+		#"WINDOWS-1252"
+		"WINDOWS-1252")
+	    encoding))
+
       (define (parse-encoded s)
 	(and s
 	     (let ([m (regexp-match re:encoded (string->bytes/latin-1 s (char->integer #\?)))])
@@ -245,17 +256,17 @@
 			 [encoding (caddr m)])
 		     (string-append
 		      (parse-encoded (bytes->string/latin-1 (cadr m)))
-		      (cond
-		       [(regexp-match re:iso encoding) (bytes->string/latin-1 s)]
-		       [(regexp-match re:utf-8 encoding) (bytes->string/utf-8 s #\?)]
-		       [else (let ([c (bytes-open-converter (bytes->string/latin-1 encoding) "UTF-8")])
-			       (if c
-				   (let-values ([(r got status) (bytes-convert c s)])
-				     (bytes-close-converter c)
-				     (if (eq? status 'complete)
-					 (bytes->string/utf-8 r #\?)
-					 (bytes->string/latin-1 s)))
-				   (bytes->string/latin-1 s)))])
+		      (let ([encoding (latin-1->windows-1252 encoding)])
+			(cond
+			 [(regexp-match re:utf-8 encoding) (bytes->string/utf-8 s #\?)]
+			 [else (let ([c (bytes-open-converter (bytes->string/latin-1 encoding) "UTF-8")])
+				 (if c
+				     (let-values ([(r got status) (bytes-convert c s)])
+				       (bytes-close-converter c)
+				       (if (eq? status 'complete)
+					   (bytes->string/utf-8 r #\?)
+					   (bytes->string/latin-1 s)))
+				     (bytes->string/latin-1 s)))]))
 		      (parse-encoded (bytes->string/latin-1 (cadddr (cddr m))))))
 		   s)))))))
 

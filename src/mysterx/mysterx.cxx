@@ -1477,10 +1477,8 @@ Scheme_Object *mx_com_unregister_event_handler(int argc,Scheme_Object **argv) {
   return scheme_void;
 }
 
-MX_TYPEDESC *typeDescFromTypeInfo (char *name,
-                                   INVOKEKIND invKind,
-                                   ITypeInfo *pITypeInfo)
-{
+MX_TYPEDESC *doTypeDescFromTypeInfo(BSTR name,INVOKEKIND invKind,
+				    ITypeInfo *pITypeInfo) {
   HRESULT hr;
   TYPEATTR *pTypeAttr;
   FUNCDESC *pFuncDesc;
@@ -1488,18 +1486,15 @@ MX_TYPEDESC *typeDescFromTypeInfo (char *name,
   MEMBERID memID;
   MX_DESCKIND descKind;
   MX_TYPEDESC *pTypeDesc;
-  BSTR unicodeName;
   BSTR bstr;
   UINT nameCount;
   BOOL foundDesc;
   int i;
 
-  unicodeName = stringToBSTR(name,strlen(name));
-
   hr = pITypeInfo->GetTypeAttr(&pTypeAttr);
 
   if (FAILED (hr)) {
-    codedComError("Error getting type attributes for function",hr);
+    codedComError("Error getting attributes for type library",hr);
   }
 
   foundDesc = FALSE;
@@ -1516,7 +1511,7 @@ MX_TYPEDESC *typeDescFromTypeInfo (char *name,
 
     // see if this FUNCDESC is the one we want
 
-    if (wcscmp(bstr,unicodeName) == 0 &&
+    if (wcscmp(bstr,name) == 0 &&
 	(invKind == INVOKE_EVENT || pFuncDesc->invkind == invKind)) {
 
       foundDesc = TRUE;
@@ -1548,7 +1543,7 @@ MX_TYPEDESC *typeDescFromTypeInfo (char *name,
 
       pITypeInfo->GetNames(pVarDesc->memid,&bstr,1,&nameCount);
 
-      if (wcscmp(bstr,unicodeName)) {
+      if (wcscmp(bstr,name)) {
 	foundDesc = TRUE;
 	descKind = varDesc;
 	memID = pVarDesc->memid;
@@ -1563,11 +1558,47 @@ MX_TYPEDESC *typeDescFromTypeInfo (char *name,
     }
   }
 
-  SysFreeString(unicodeName);
-
   pITypeInfo->ReleaseTypeAttr(pTypeAttr);
 
-  if (foundDesc == FALSE) return NULL;
+  if (foundDesc == FALSE) {
+    ITypeInfo *pITypeInfoImpl;
+    TYPEATTR *pTypeAttrImpl;
+    HREFTYPE refType;
+
+    // search in inherited interfaces
+    for (i = 0; i < pTypeAttr->cImplTypes; i++) {
+      hr = pITypeInfo->GetRefTypeOfImplType(i,&refType);
+
+      if (FAILED(hr)) {
+	scheme_signal_error("Can't get implementation type library handle");
+      }
+
+      hr = pITypeInfo->GetRefTypeInfo(refType,&pITypeInfoImpl);
+
+      if (FAILED(hr)) {
+	scheme_signal_error("Can't get implementation type library");
+      }
+
+      hr = pITypeInfoImpl->GetTypeAttr(&pTypeAttrImpl);
+
+      if (FAILED(hr)) {
+	scheme_signal_error("Can't get implementation type library attributes");
+      }
+
+      // recursion, to ascend the inheritance graph
+      pTypeDesc = doTypeDescFromTypeInfo(name,invKind,pITypeInfoImpl);
+
+      // release interfaces
+      pITypeInfoImpl->ReleaseTypeAttr(pTypeAttrImpl);
+      pITypeInfoImpl->Release();
+      
+      if (pTypeDesc) {
+	return pTypeDesc;
+      }
+    }
+
+    return NULL;
+  }
 
   pTypeDesc = (MX_TYPEDESC *)scheme_malloc(sizeof(MX_TYPEDESC));
 
@@ -1595,6 +1626,21 @@ MX_TYPEDESC *typeDescFromTypeInfo (char *name,
   scheme_register_finalizer(pTypeDesc,scheme_release_typedesc,NULL,NULL,NULL);
 
   return pTypeDesc;
+
+}
+
+MX_TYPEDESC *typeDescFromTypeInfo (char *name,
+                                   INVOKEKIND invKind,
+                                   ITypeInfo *pITypeInfo) {
+  BSTR unicodeName;
+  MX_TYPEDESC *retval;
+
+  unicodeName = stringToBSTR(name,strlen(name));
+  retval = doTypeDescFromTypeInfo(unicodeName,invKind,pITypeInfo);
+
+  SysFreeString(unicodeName);
+
+  return retval;
 }
 
 MX_TYPEDESC *getMethodType(MX_COM_Object *obj,char *name,INVOKEKIND invKind) {
@@ -1626,7 +1672,7 @@ MX_TYPEDESC *getMethodType(MX_COM_Object *obj,char *name,INVOKEKIND invKind) {
     pITypeInfo = typeInfoFromComObject(obj);
   }
 
-  pTypeDesc = typeDescFromTypeInfo (name, invKind, pITypeInfo);
+  pTypeDesc = typeDescFromTypeInfo(name,invKind,pITypeInfo);
   // pTypeDesc may be NULL
   if (pTypeDesc != NULL)
       addTypeToTable(pIDispatch,name,invKind,pTypeDesc);
@@ -1656,40 +1702,47 @@ BOOL isDispatchName(char *s) {
   return p ? TRUE : FALSE;
 }
 
-Scheme_Object *mx_do_get_methods(int argc,Scheme_Object **argv,INVOKEKIND invKind) {
-  ITypeInfo *pITypeInfo;
+Scheme_Object *getTypeNames(ITypeInfo *pITypeInfo,
+			    TYPEATTR *pTypeAttr,Scheme_Object *retval,
+			    INVOKEKIND invKind) {
+  ITypeInfo *pITypeInfoImpl;
+  TYPEATTR *pTypeAttrImpl;
   BSTR bstr;
-  HRESULT hr;
-  TYPEATTR *pTypeAttr;
   FUNCDESC *pFuncDesc;
   VARDESC *pVarDesc;
-  Scheme_Object *retval;
+  HREFTYPE refType;
   char buff[256];
   unsigned int len;
   unsigned int count;
   int i;
+  HRESULT hr;
 
-  if (MX_COM_OBJP(argv[0]) == FALSE && MX_COM_TYPEP(argv[0]) == FALSE) {
-    scheme_wrong_type("com-{methods,{get,set}-properties}","com-object or com-type",0,argc,argv);
-  }
+  for (i = 0; i < pTypeAttr->cImplTypes; i++) {
+    hr = pITypeInfo->GetRefTypeOfImplType(i,&refType);
 
-  if (MX_COM_OBJP(argv[0])) {
-    if (MX_COM_OBJ_VAL(argv[0]) == NULL) {
-      scheme_signal_error("com-{methods,{get,set}-properties}: NULL COM object");
+    if (FAILED(hr)) {
+      scheme_signal_error("Can't get implementation type library handle");
     }
-    pITypeInfo = typeInfoFromComObject((MX_COM_Object *)argv[0]);
-  }
-  else {
-    pITypeInfo = MX_COM_TYPE_VAL(argv[0]);
-  }
 
-  hr = pITypeInfo->GetTypeAttr(&pTypeAttr);
+    hr = pITypeInfo->GetRefTypeInfo(refType,&pITypeInfoImpl);
 
-  if (FAILED (hr) || pTypeAttr == NULL) {
-    codedComError("Error getting type attributes",hr);
+    if (FAILED(hr)) {
+      scheme_signal_error("Can't get implementation type library");
+    }
+
+    hr = pITypeInfoImpl->GetTypeAttr(&pTypeAttrImpl);
+
+    if (FAILED(hr)) {
+      scheme_signal_error("Can't get implementation type library attributes");
+    }
+
+    // recursion, to ascend the inheritance graph
+    retval = getTypeNames(pITypeInfoImpl,pTypeAttrImpl,retval,invKind);
+
+    // release interfaces
+    pITypeInfoImpl->ReleaseTypeAttr(pTypeAttrImpl);
+    pITypeInfoImpl->Release();
   }
-
-  retval = scheme_null;
 
   // properties can appear in list of functions
   // or in list of variables
@@ -1730,6 +1783,41 @@ Scheme_Object *mx_do_get_methods(int argc,Scheme_Object **argv,INVOKEKIND invKin
   }
 
   return retval;
+}
+
+
+Scheme_Object *mx_do_get_methods(int argc,Scheme_Object **argv,INVOKEKIND invKind) {
+  ITypeInfo *pITypeInfo;
+  HRESULT hr;
+  TYPEATTR *pTypeAttr;
+  Scheme_Object *retval;
+
+  if (MX_COM_OBJP(argv[0]) == FALSE && MX_COM_TYPEP(argv[0]) == FALSE) {
+    scheme_wrong_type("com-{methods,{get,set}-properties}","com-object or com-type",0,argc,argv);
+  }
+
+  if (MX_COM_OBJP(argv[0])) {
+    if (MX_COM_OBJ_VAL(argv[0]) == NULL) {
+      scheme_signal_error("com-{methods,{get,set}-properties}: NULL COM object");
+    }
+    pITypeInfo = typeInfoFromComObject((MX_COM_Object *)argv[0]);
+  }
+  else {
+    pITypeInfo = MX_COM_TYPE_VAL(argv[0]);
+  }
+
+  hr = pITypeInfo->GetTypeAttr(&pTypeAttr);
+
+  if (FAILED (hr) || pTypeAttr == NULL) {
+    codedComError("Error getting type attributes",hr);
+  }
+
+  retval = getTypeNames(pITypeInfo,pTypeAttr,scheme_null,invKind);
+
+  pITypeInfo->ReleaseTypeAttr(pTypeAttr);
+
+  return retval;
+
 }
 
 Scheme_Object *mx_com_methods(int argc,Scheme_Object **argv) {
@@ -2463,6 +2551,7 @@ Scheme_Object *mx_do_get_method_type(int argc,Scheme_Object **argv,
     }
     pTypeDesc = typeDescFromTypeInfo(name,invKind,pITypeInfo);
   }
+
   // pTypeDesc may be null if there is no type info.
   if (pTypeDesc == NULL) return scheme_false;
 

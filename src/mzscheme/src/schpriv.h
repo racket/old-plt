@@ -1428,6 +1428,8 @@ extern Scheme_Object *scheme_tcp_input_port_type;
 extern Scheme_Object *scheme_tcp_output_port_type;
 #endif
 
+extern int scheme_force_port_closed;
+
 void scheme_flush_orig_outputs(void);
 Scheme_Object *scheme_file_stream_port_p(int, Scheme_Object *[]);
 Scheme_Object *scheme_do_open_input_file(char *name, int offset, int argc, Scheme_Object *argv[]);

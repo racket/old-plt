@@ -183,7 +183,7 @@ void scheme_init_network(Scheme_Env *env)
   scheme_add_global_constant("tcp-listen", 
 			     scheme_make_prim_w_arity(tcp_listen,
 						      "tcp-listen", 
-						      1, 2), 
+						      1, 2),
 			     env);
   scheme_add_global_constant("tcp-close", 
 			     scheme_make_prim_w_arity(tcp_stop,
@@ -1731,12 +1731,6 @@ tcp_listen(int argc, Scheme_Object *argv[])
 #else
       fcntl(s, F_SETFL, MZ_NONBLOCKING);
 #endif
-      /* Allow address to be reused, even if an old listener somewhere is in TIME_WAIT */
-      {
-	int on = 1;
-	setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (char *)&on, sizeof(int));
-      }
-
       if (!bind(s, (struct sockaddr *)&tcp_listen_addr, sizeof(tcp_listen_addr)))
 	if (!listen(s, backlog)) {
 	  listener_t *l;

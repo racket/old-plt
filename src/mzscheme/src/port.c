@@ -191,7 +191,7 @@ static Scheme_Object *tested_file_input_port_type;
 static Scheme_Object *tested_file_output_port_type;
 #endif
 
-static int force_port_closed;
+int scheme_force_port_closed;
 
 #if defined(UNIX_PROCESSES)
 System_Child *scheme_system_children;
@@ -247,6 +247,7 @@ static Scheme_Object *make_oskit_console_input_port();
 #endif
 
 static void force_close_output_port(Scheme_Object *port);
+static void force_close_input_port(Scheme_Object *port);
 
 static Scheme_Object *text_symbol, *binary_symbol;
 static Scheme_Object *append_symbol, *error_symbol, *update_symbol;
@@ -850,7 +851,7 @@ _scheme_make_input_port(Scheme_Object *subtype,
     Scheme_Manager_Reference *mref;    
     mref = scheme_add_managed(NULL,
 			      (Scheme_Object *)ip, 
-			      (Scheme_Close_Manager_Client *)scheme_close_input_port, 
+			      (Scheme_Close_Manager_Client *)force_close_input_port, 
 			      NULL, must_close);
     ip->mref = mref;
   } else
@@ -1485,6 +1486,14 @@ scheme_close_input_port (Scheme_Object *port)
   END_LOCK_PORT(ip->sema);
 }
 
+static void
+force_close_input_port(Scheme_Object *port)
+{
+  scheme_force_port_closed = 1;
+  scheme_close_input_port(port);
+  scheme_force_port_closed = 0;
+}
+
 void 
 scheme_write_offset_string(const char *str, long d, long len, Scheme_Object *port)
 {
@@ -1558,9 +1567,9 @@ scheme_close_output_port(Scheme_Object *port)
 static void
 force_close_output_port(Scheme_Object *port)
 {
-  force_port_closed = 1;
+  scheme_force_port_closed = 1;
   scheme_close_output_port(port);
-  force_port_closed = 0;
+  scheme_force_port_closed = 0;
 }
 
 int
@@ -3414,7 +3423,7 @@ static void tested_file_close_output(Scheme_Output_Port *p)
 
   top = (Tested_Output_File *)p->port_data;
 
-  if (!force_port_closed)
+  if (!scheme_force_port_closed)
     wait_until_file_unused(p);
   /* Might get closed while we were waiting: */
   if (p->closed)
@@ -3849,7 +3858,7 @@ static int flush_fd(Scheme_Output_Port *op,
   Scheme_FD * volatile fop = (Scheme_FD *)op->port_data;
 
   if (fop->flushing) {
-    if (force_port_closed) {
+    if (scheme_force_port_closed) {
       /* Give up */
       return 0;
     }
@@ -3883,7 +3892,7 @@ static int flush_fd(Scheme_Output_Port *op,
       fcntl(fop->fd, F_SETFL, flags);
 
       if (len < 0) {
-	if (force_port_closed) {
+	if (scheme_force_port_closed) {
 	  /* Don't signal exn or wait. Just give up. */
 	  return 0;
 	} else if (errsaved == EAGAIN) {
@@ -3973,7 +3982,7 @@ fd_close_output(Scheme_Output_Port *port)
   if (fop->bufcount)
     flush_fd(port, NULL, 0, 0, 0);
 
-  if (fop->flushing && !force_port_closed)
+  if (fop->flushing && !scheme_force_port_closed)
     wait_until_fd_flushed(port);
   
   do {

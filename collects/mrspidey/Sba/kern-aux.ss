@@ -212,16 +212,15 @@
 	       (new-AV! tvar-e (traverse-const-exact b))
 	       (make-constructed-AV 'box tvar-e))]
 	    [($ zodiac:external _ _ _ ext)
-	     (unless (object? ext)
-		     (error 
-		      "traverse-const-exact: external contains non-object" 
-		      ext))
-	     (case (inferred-name (object-interface ext))
-	       [(image-snip%)
-		(make-constructed-AV 'image)]
-	       [(editor-snip%)
-		(make-constructed-AV 'text-box)]
-	       [else (error "traverse-const-exact: unknown external" ext)])]
+	     (if (object? ext)
+		 (case (inferred-name (object-interface ext))
+		   [(image-snip%)
+		    (make-constructed-AV 'image)]
+		   [(editor-snip%)
+		    (make-constructed-AV 'text-box)]
+		   [else (error "traverse-const-exact: unknown object" ext)])
+		 ; "funny" externals, added by PAS 
+		 (make-constructed-AV 'void))]
 	    [(? box? b)
 	     (let ([tvar-e (mk-Tvar 'box-field)])
 	       (new-AV! tvar-e (traverse-const-exact (unbox b)))

@@ -59,6 +59,8 @@ language:
 </code>
  Both update and produce are new keywords. 
 
+The teachpack provides all the functions that image.ss provides. 
+
 </pre>
 
 {(include "foot.tinc")}

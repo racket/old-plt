@@ -155,12 +155,12 @@ static Scheme_Object *do_hash(Scheme_Hash_Table *table, Scheme_Object *key, int 
   }
 
   if (h < 0) h = -h;
-  if (h2 < 0) h2 = -h2;
-  
-  if (!h2)
+  if (h2 < 0) {
+    h2 = -h2;
+    if (h2 & 0x1)
+      h2++; /* note: table size is never even, so no % needed */
+  } else if (!h2)
     h2 = 2;
-  else if (h2 & 0x1)
-    h2++; /* note: table size is never even, so no % needed */
 
   keys = table->keys;
   
@@ -918,7 +918,7 @@ long scheme_equal_hash_key(Scheme_Object *o)
       
       k2 = k;
       while (i--) {
-	k2 = (k2 << 3) + d[i];
+	k2 = (k2 << 3) + k2 + d[i];
       }
     
       return (long)k2;
@@ -971,7 +971,7 @@ long scheme_equal_hash_key(Scheme_Object *o)
       char *s = SCHEME_BYTE_STR_VAL(o);
       
       while (i--) {
-	k = (k << 5) + s[i];
+	k = (k << 5) + k + s[i];
       }
       
       return k;
@@ -982,7 +982,7 @@ long scheme_equal_hash_key(Scheme_Object *o)
       mzchar *s = SCHEME_CHAR_STR_VAL(o);
       
       while (i--) {
-	k = (k << 5) + s[i];
+	k = (k << 5) + k + s[i];
       }
       
       return k;

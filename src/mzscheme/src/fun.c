@@ -249,13 +249,13 @@ scheme_init_fun (Scheme_Env *env)
   scheme_add_global_constant("call-with-semaphore",
 			     scheme_make_prim_w_arity2(call_with_sema,
 						       "call-with-semaphore",
-						       2, 3,
+						       2, -1,
 						       0, -1), 
 			     env);
   scheme_add_global_constant("call-with-semaphore/enable-break",
 			     scheme_make_prim_w_arity2(call_with_sema_enable_break,
 						       "call-with-semaphore/enable-break",
-						       2, 2,
+						       2, -1,
 						       0, -1),
 			     env);
 
@@ -2308,20 +2308,42 @@ do_call_with_sema(const char *who, int enable_break, int argc, Scheme_Object *ar
   long * volatile cc_ok;
   long * volatile old_cc_ok;
   long volatile old_cc_ok_val;
+  int extra, i, just_try;
   Scheme_Object * volatile sema;
-  Scheme_Object *v;
+  Scheme_Object *v, *quick_args[4], **extra_args;
 
   if (!SCHEME_SEMAP(argv[0])) {
     scheme_wrong_type(who, "semaphore", 0, argc, argv);
     return NULL;
   }
-  scheme_check_proc_arity(who, 0, 1, argc, argv);
   if (argc > 2)
-    scheme_check_proc_arity(who, 0, 2, argc, argv);
+    extra = argc - 3;
+  else
+    extra = 0;
+  if (!scheme_check_proc_arity(NULL, extra, 1, argc, argv)) {
+    scheme_wrong_type(who, "procedure (arity matching extra args)", 1, argc, argv);
+    return NULL;
+  }
+  if ((argc > 2) && SCHEME_TRUEP(argv[2])) {
+    if (!scheme_check_proc_arity(NULL, 0, 2, argc, argv)) {
+      scheme_wrong_type(who, "procedure (arity 0) or #f", 1, argc, argv);
+      return NULL;
+    }
+    just_try = 1;
+  } else
+    just_try = 0;
 
   sema = argv[0];
 
-  if (!scheme_wait_sema(sema, (argc > 2) ? enable_break : -1)) {
+  if (just_try && enable_break && scheme_current_thread->external_break) {
+    /* Check for a break before polling the semaphore */
+    Scheme_Cont_Frame_Data cframe;
+    scheme_push_break_enable(&cframe, 1, 1);
+    scheme_check_break_now();
+    scheme_pop_break_enable(&cframe, 0);
+  }
+
+  if (!scheme_wait_sema(sema, just_try ? 1 : (enable_break ? -1 : 0))) {
     return _scheme_tail_apply(argv[2], 0, NULL);
   }
 
@@ -2345,7 +2367,15 @@ do_call_with_sema(const char *who, int enable_break, int argc, Scheme_Object *ar
   if (scheme_setjmp(newbuf)) {
     v = NULL;
   } else {
-    v = _scheme_apply_multi(argv[1], 0, NULL);
+    if (extra > 4)
+      extra_args = MALLOC_N(Scheme_Object *, extra);
+    else
+      extra_args = quick_args;
+    for (i = 3; i < argc; i++) {
+      extra_args[i - 3] = argv[i];
+    }
+
+    v = _scheme_apply_multi(argv[1], extra, extra_args);
   }
 
   scheme_post_sema(sema);

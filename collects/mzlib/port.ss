@@ -154,15 +154,17 @@
     (define (make-progress)
       (write-byte 0 peeked-w)
       (read-byte peeked-r))
+    (define (read-it-with-lock s)
+      (suspend-commit)
+      (begin0
+       (do-read-it s)
+       (resume-commit)))
     (define (read-it s)
       (call-with-semaphore
        lock-semaphore
-       (lambda ()
-	 (suspend-commit)
-	 (begin0
-	  (do-read-it s)
-	  (resume-commit)))
-       try-again))
+       read-it-with-lock
+       try-again
+       s))
     (define (do-read-it s)
       (if (char-ready? peeked-r)
 	  (read-bytes-avail!* s peeked-r)

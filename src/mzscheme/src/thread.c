@@ -3341,15 +3341,15 @@ void scheme_security_check_file(const char *who, char *filename, int guards)
     }
 
     if (guards & SCHEME_GUARD_FILE_EXISTS)
-      l = scheme_make_pair(exists_symbol, l);
+      l = scheme_make_immutable_pair(exists_symbol, l);
     if (guards & SCHEME_GUARD_FILE_DELETE)
-      l = scheme_make_pair(delete_symbol, l);
+      l = scheme_make_immutable_pair(delete_symbol, l);
     if (guards & SCHEME_GUARD_FILE_EXECUTE)
-      l = scheme_make_pair(execute_symbol, l);
+      l = scheme_make_immutable_pair(execute_symbol, l);
     if (guards & SCHEME_GUARD_FILE_WRITE)
-      l = scheme_make_pair(write_symbol, l);
+      l = scheme_make_immutable_pair(write_symbol, l);
     if (guards & SCHEME_GUARD_FILE_READ)
-      l = scheme_make_pair(read_symbol, l);
+      l = scheme_make_immutable_pair(read_symbol, l);
 
     a[0] = scheme_intern_symbol(who);
     a[1] = (filename ? scheme_make_immutable_sized_string(filename, -1, 1) : scheme_false);

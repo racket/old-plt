@@ -1644,7 +1644,7 @@ inline static void run_account_hooks()
 # define REPAIR_ACCOUNT_HOOKS() /* */
 # define RUN_ACCOUNT_HOOKS() /* */
 # define GET_CUSTODIAN_USAGE(cust) 0
-#endif */
+#endif
 
 int GC_set_account_hook(int type, void *c1, unsigned long b, void *c2)
 {

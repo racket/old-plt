@@ -1,4 +1,10 @@
 
+Version 205.7
+Macro templates can include consective ... for splicing
+ sequences
+Macro patterns can include sub-patterns after ...
+Improved reporting for with-syntax
+
 Version 205.6
 Added integer-sqrt, quotient/remainder, integer-sqrt/remainder
 

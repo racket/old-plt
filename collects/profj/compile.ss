@@ -33,13 +33,23 @@
                          (car type-recs))))
       (cond
         ((and (eq? src 'file) (eq? dest 'file))
-         (call-with-input-file name (lambda (port) (compile-to-file port name level))))
+         (let-values  (((path-base file dir?) (split-path (path->complete-path (build-path name)))))
+           (let ((compiled-path (build-path path-base "compiled" (path-replace-suffix file ".zo"))))
+             (unless (and (file-exists? compiled-path)
+                          (> (file-or-directory-modify-seconds compiled-path)
+                             (file-or-directory-modify-seconds (build-path name))))
+               (call-with-input-file name (lambda (port) (compile-to-file port name level)))))))
         ((eq? dest 'file)
          (compile-to-file port loc level))
         ((eq? src 'file)
-         (call-with-input-file 
-             name
-             (lambda (port) (compile-java-internal port name type-recs #f level))))
+         (let-values  (((path-base file dir?) (split-path (path->complete-path (build-path name)))))
+           (let ((compiled-path (build-path path-base "compiled" (path-replace-suffix file ".zo"))))
+             (unless (and (file-exists? compiled-path)
+                          (> (file-or-directory-modify-seconds compiled-path)
+                             (file-or-directory-modify-seconds (build-path name))))
+               (call-with-input-file 
+                   name
+                 (lambda (port) (compile-java-internal port name type-recs #f level)))))))
         (else
          (compile-java-internal port loc type-recs #f level)))))
     
@@ -60,7 +70,7 @@
                         (locations (compilation-unit-locations dependents)))
                     (unless (= (length names) (length syntaxes))
                       (call-with-output-file* (send type-recs get-composite-location (car names))
-                                              (lambda (port) (write (compile (car syntaxes)) port)))
+                                              (lambda (port) (write (compile (car syntaxes)) port)) 'truncate/replace)
                       (set! syntaxes (cdr syntaxes)))
                     (unless (= (length names) (length syntaxes) (length locations))
                       (error 'compile-to-file "Internal error: compilation unit not represented as expected"))

@@ -97,10 +97,12 @@
   
   (require-for-syntax (lib "list.ss"))
 
-  (define frtime-version "0.2b -- Tue Jul 13 13:39:45 2004")
+  (define frtime-version "0.3b -- Tue Nov 9 13:39:45 2004")
   (define frtime-inspector (make-inspector))
   (print-struct #t)
 
+  (define snap? (make-parameter #f))
+  
   ; also models events, where 'value' is all the events that
   ; haven't yet occurred (more specifically, an event-cons cell whose
   ; tail is *undefined*)
@@ -205,6 +207,11 @@
       (set-signal-value! sig (safe-eval (thunk)))
       sig))
   
+  (define errortrace-key 'drscheme-debug-continuation-mark-key)
+  
+  (define (install-errortrace-key key)
+    (set! key key))
+  
   ; messages for signal manager; we now ensure that
   ; only the manager manipulates the dependency graph
   (define-struct reg (inf sup ret))
@@ -218,18 +225,17 @@
   (define-struct alarm (time signal))
   
   (define (frp:if-helper test then-thunk else-thunk undef-thunk)
-    (let* ([cached-then-thunk (weakly-cache then-thunk)]
-           [cached-else-thunk (weakly-cache else-thunk)]
-           [cached-undef-thunk (weakly-cache undef-thunk)]
-           [if-fun (let ([true-guards (cons (make-guard test identity) (current-guards))]
-                         [false-guards (cons (make-guard test not) (current-guards))])
+    (let* ([if-fun (let ([true-guards (cons (make-guard test identity) (current-guards))]
+                         [false-guards (cons (make-guard test not) (current-guards))]
+                         [undef-guards (cons (make-guard test undefined?) (current-guards))])
                      (lambda (b)
                        (cond
-                         [(undefined? b) (cached-undef-thunk)]
+                         [(undefined? b) (parameterize ([current-guards undef-guards])
+                                           (undef-thunk))]
                          [b (parameterize ([current-guards true-guards])
-                              (cached-then-thunk))]
+                              (then-thunk))]
                          [else (parameterize ([current-guards false-guards])
-                                 (cached-else-thunk))])))])
+                                 (else-thunk))])))])
       (switch
        ((changes test) . ==> .
                        if-fun)
@@ -252,22 +258,21 @@
        (frp:if test-exp then-exp else-exp undefined)]
       [(_ test-exp then-exp else-exp undef-exp)
        (let ([v test-exp])
-         (if (behavior? v)
-             (frp:if-helper v (lambda () then-exp) (lambda () else-exp) (lambda () undef-exp))
-             (cond
-               [(undefined? v) undef]
-               [v then-exp]
-               [else else-exp])))]))
+         (cond
+           [(behavior? v) (frp:if-helper v (lambda () then-exp) (lambda () else-exp) (lambda () undef-exp))]
+           [(undefined? v) undef-exp]
+           [v then-exp]
+           [else else-exp]))]))
   
   ; value-now : signal[a] -> a
   (define (value-now val)
-    (if (behavior? val)
+    (if (signal? val)
         (signal-value val)
         val))
   
   ; no multiple value support
   (define (value-now/copy val)
-    (if (behavior? val)
+    (if (signal? val)
         (let ([v1 (signal-value val)])
           (if (vector? v1)
               (build-vector (vector-length v1) (lambda (i) (vector-ref v1 i)))
@@ -414,16 +419,18 @@
       [(fn . args) (lambda () (apply fn (map value-now args)))]))
 
   (define (lift strict? fn . args)
-    (with-continuation-mark
-     'frtime 'lift-active
-     (if (ormap behavior? args)
-         (apply
-          proc->signal
-          (apply (if strict? create-strict-thunk create-thunk) fn args)
-          args)
-         (if (and strict? (ormap undefined? args))
-             undefined
-             (apply fn args)))))
+    (if (snap?) ;; maybe fix later to handle undefined-strictness
+        (apply fn (map value-now args))
+        (with-continuation-mark
+            'frtime 'lift-active
+          (if (ormap behavior? args)
+              (apply
+               proc->signal
+               (apply (if strict? create-strict-thunk create-thunk) fn args)
+               args)
+              (if (and strict? (ormap undefined? args))
+                  undefined
+                  (apply fn args))))))
   
   (define (last)
     (let ([prev #f])
@@ -457,7 +464,8 @@
         (cons
          (if (undefined? (first streams))
              (let ([stream (signal-value (first args))])
-               (if (undefined? stream)
+               stream
+               #;(if (undefined? stream)
                    stream
                    (if (equal? stream (econs undefined undefined))
                        stream
@@ -465,7 +473,66 @@
              (first streams))
          (fix-streams (rest streams) (rest args)))))
   
-  (define-syntax (event-processor stx)
+  (define (general-event-processor proc . args)
+    ; proc : (lambda (emit suspend first-evt) ...)
+    (let* ([out (econs undefined undefined)]
+           [esc #f]
+           [emit (lambda (val)
+                   (set-erest! out (econs val undefined))
+                   (set! out (erest out))
+                   val)]
+           [streams (map signal-value args)])
+      (letrec ([suspend (lambda ()
+                          (call/cc
+                           (lambda (k)
+                             (set! proc-k k)
+                             (esc (void)))))]
+               [proc-k (lambda (evt) (proc emit suspend evt) (set! proc-k #f))])
+        (let ([thunk (lambda ()
+                        (when (ormap undefined? streams)
+                          ;(fprintf (current-error-port) "had an undefined stream~n")
+                          (set! streams (fix-streams streams args)))
+                        (let loop ()
+                          (extract (lambda (the-event)
+                                     (when proc-k
+                                       (call/cc
+                                        (lambda (k)
+                                          (set! esc k)
+                                          (proc-k the-event)))) (loop))
+                                   streams))
+                        (set! streams (map signal-value args))
+                        out)])
+          (apply proc->signal thunk args)))))
+  
+  (define (event-processor proc . args)
+    (let* ([out (econs undefined undefined)]
+           [proc/emit (proc
+                       (lambda (val)
+                         (set-erest! out (econs val undefined))
+                         (set! out (erest out))
+                         val))]
+           [streams (map signal-value args)]
+           [thunk (lambda ()
+                    (when (ormap undefined? streams)
+                      ;(fprintf (current-error-port) "had an undefined stream~n")
+                      (set! streams (fix-streams streams args)))
+                    (let loop ()
+                      (extract (lambda (the-event) (proc/emit the-event) (loop))
+                               streams))
+                    (set! streams (map signal-value args))
+                    out)])
+      (apply proc->signal thunk args)))
+
+  (define (event-producer2 proc . deps)
+    (let* ([out (econs undefined undefined)]
+           [proc/emit (proc
+                       (lambda (val)
+                         (set-erest! out (econs val undefined))
+                         (set! out (erest out))
+                         val))])
+      (apply proc->signal (lambda the-args (apply proc/emit the-args) out) deps)))
+    
+  #;(define-syntax (event-processor stx)
     (syntax-case stx ()
       [(src-event-processor proc args)
        (with-syntax ([emit (datum->syntax-object (syntax src-event-processor) 'emit)]
@@ -521,61 +588,77 @@
   
   ; event ... -> event
   (define (merge-e . args)
-    (event-processor
-     (emit the-event)
-     args))
+    (apply event-processor
+           (lambda (emit)
+             (lambda (the-event)
+               (emit the-event)))
+           args))
   
   (define (once-e e)
     (let ([b true])
       (rec ret (event-processor
-                (when b
-                  (set! b false)
-                  (unregister ret e)
-                  (emit the-event))
-                (list e)))))
+                (lambda (emit)
+                  (lambda (the-event)
+                    (when b
+                      (set! b false)
+                      (unregister ret e)
+                      (emit the-event))))
+                e))))
   
   ; behavior[a] -> event[a]
   (define (changes b)
-    (event-producer
-     (emit (value-now/copy b))
+    (event-producer2
+     (lambda (emit)
+       (lambda the-args
+         (emit (value-now/copy b))))
      b))
   
   (define (event-forwarder sym evt f+l)
     (event-processor
-     (for-each (lambda (tid) (! tid (list 'remote-evt sym the-event))) (rest f+l))
-     (list evt)))
+     (lambda (emit)
+       (lambda (the-event)
+         (for-each (lambda (tid) (! tid (list 'remote-evt sym the-event))) (rest f+l))))
+     evt))
   
   ; event-receiver : () -> event
   (define (event-receiver)
-    (event-producer
-     (when (cons? the-args)
-       (emit (first the-args)))))
+    (event-producer2
+     (lambda (emit)
+       (lambda the-args
+         (when (cons? the-args)
+           (emit (first the-args)))))))
   
   ; when-e : behavior[bool] -> event
   (define (when-e b)
     (let* ([last (value-now b)])
-      (event-producer
-       (let ([current (value-now b)])
-         (when (and (not last) current)
-           (emit current))
-         (set! last current))
+      (event-producer2
+       (lambda (emit)
+         (lambda the-args
+           (let ([current (value-now b)])
+             (when (and (not last) current)
+               (emit current))
+             (set! last current))))
        b)))
   
   ; while-e : behavior[bool] behavior[number] -> event
   (define (while-e b interval)
-    (rec ret (event-producer
-              (cond
-                [(value-now b) =>
-                               (lambda (v)
-                                 (emit v)
-                                 (schedule-alarm (+ (value-now interval) (current-milliseconds)) ret))])
+    (rec ret (event-producer2
+              (lambda (emit)
+                (lambda the-args
+                  (cond
+                    [(value-now b) =>
+                                   (lambda (v)
+                                     (emit v)
+                                     (schedule-alarm (+ (value-now interval) (current-milliseconds)) ret))])))
               b)))
   
   ; ==> : event[a] (a -> b) -> event[b]
   (define (e . ==> . f)
     (event-processor
-     (emit ((value-now f) the-event))
-     (list e)))
+     (lambda (emit)
+       (lambda (the-event)
+         (emit ((value-now f) the-event))))
+     e))
   
   #|
   (define (e . =>! . f)
@@ -592,9 +675,11 @@
   ; =#> : event[a] (a -> bool) -> event[a]
   (define (e . =#> . p)
     (event-processor
-     (when (value-now (p the-event))
-       (emit the-event))
-     (list e)))
+     (lambda (emit)
+       (lambda (the-event)
+         (when (value-now (p the-event))
+           (emit the-event))))
+     e))
   
   (define nothing (void));(string->uninterned-symbol "nothing"))
   
@@ -603,10 +688,12 @@
   ; =#=> : event[a] (a -> b U nothing) -> event[b]
   (define (e . =#=> . f)
     (event-processor
-     (let ([x (f the-event)])
-       (unless (or (nothing? x) (undefined? x))
-         (emit x)))
-     (list e)))
+     (lambda (emit)
+       (lambda (the-event)
+         (let ([x (f the-event)])
+           (unless (or (nothing? x) (undefined? x))
+             (emit x)))))
+     e))
   
   (define (map-e f e)
     (==> e f))
@@ -618,18 +705,22 @@
   ; event[a] b (a b -> b) -> event[b]
   (define (collect-e e init trans)
     (event-processor
-     (let ([ret (trans the-event init)])
-       (set! init ret)
-       (emit ret))
-     (list e)))
+     (lambda (emit)
+       (lambda (the-event)
+         (let ([ret (trans the-event init)])
+           (set! init ret)
+           (emit ret))))
+     e))
   
   ; event[(a -> a)] a -> event[a]
   (define (accum-e e init)
     (event-processor
-     (let ([ret (the-event init)])
-       (set! init ret)
-       (emit ret))
-     (list e)))
+     (lambda (emit)
+       (lambda (the-event)
+         (let ([ret (the-event init)])
+           (set! init ret)
+           (emit ret))))
+     e))
   
   ; event[a] b (a b -> b) -> behavior[b]
   (define (collect-b ev init trans)
@@ -653,8 +744,10 @@
   ; event[a] signal[b]* -> event[(list a b*)]
   (define (snapshot-e e . bs)
     (event-processor
-     (emit (cons the-event (map value-now bs)))
-     (list e)))
+     (lambda (emit)
+       (lambda (the-event)
+         (emit (cons the-event (map value-now bs)))))
+     e))
 
   (define (snapshot/apply fn . args)
     (apply fn (map value-now args)))
@@ -662,8 +755,10 @@
   ; (a b* -> c) event[a] signal[b]* -> event[c]
   (define (snapshot-map-e fn ev . bs)
     (event-processor
-     (emit (apply fn the-event (map value-now bs)))
-     (list ev)))
+     (lambda (emit)
+       (lambda (the-event)
+         (emit (apply fn the-event (map value-now bs)))))
+     ev))
 
   (define-syntax (event-loop-help stx)
     (syntax-case stx ()
@@ -746,13 +841,12 @@
             (= signal-thunk thunk)
             (= signal-guards guards))
        (set-signal-stale?! b #f)
-       (when (andmap (lambda (g) ((guard-trans g) (value-now (guard-signal g)))) guards)
-         (let ([new-value (parameterize ([current-guards guards])
-                            (thunk))])
-           ; consider modifying this test in order to support, e.g., mutable structs
-           (when (or (vector? new-value) (not (equal? value new-value)))
-             (set-signal-value! b new-value)
-             (propagate b))))]
+       (let ([new-value (parameterize ([current-guards guards])
+                          (thunk))])
+         ; consider modifying this test in order to support, e.g., mutable structs
+         (when (or (vector? new-value) (not (equal? value new-value)))
+           (set-signal-value! b new-value)
+           (propagate b)))]
       [_ (void)]))
   
   (define (update1 b a)
@@ -803,9 +897,12 @@
     (event-receiver))
   
   (define notifier
-    (event-producer
-     (when (cons? the-args)
-       (! (first the-args) man))))
+    (event-producer2
+     (lambda (emit)
+       (lambda the-args
+         (when (cons? the-args)
+           (let ([arg (first the-args)])
+             (! (first arg) ((second arg)))))))))
   (set-signal-depth! notifier +inf.0)
 
   ;; the manager of all signals and event streams
@@ -817,10 +914,11 @@
        (let outer ()
          (with-handlers ([exn:fail?
                           (lambda (exn)
-                            ;(fprintf (current-error-port) "*~n~a~n" (exn-message exn))
-                            (when cur-beh
+                            (when (and cur-beh
+                                       (andmap (lambda (g) ((guard-trans g) (value-now (guard-signal g))))
+                                               (signal-guards cur-beh)))
                               #;(when (empty? (continuation-mark-set->list (exn-continuation-marks exn) 'frtime))
-                                (set-exn-continuation-marks! exn (signal-continuation-marks cur-beh)))
+                                  (set-exn-continuation-marks! exn (signal-continuation-marks cur-beh)))
                               (iq-enqueue (list exceptions (list exn cur-beh)))
                               (when (behavior? cur-beh)
                                 (undef cur-beh)))
@@ -934,7 +1032,7 @@
   (define (send-synchronous-event rcvr val)
     (when (man?)
       (error 'send-synchronous-event "already in frtime engine (would deadlock)"))
-    (! man (make-external-event (list (list rcvr val) (list notifier (self)))))
+    (! man (make-external-event (list (list rcvr val) (list notifier (list (self) (lambda () man))))))
     (receive [(? man?) (void)]))
 
   (define (send-synchronous-events rcvr-val-pairs)
@@ -942,9 +1040,16 @@
       (error 'send-synchronous-events "already in frtime engine (would deadlock)"))
     (unless (ormap list? rcvr-val-pairs) (error "not list"))
     (unless (ormap signal? (map first rcvr-val-pairs)) (error "not signals"))
-    (! man (make-external-event (cons (list notifier (self)) rcvr-val-pairs)))
+    (! man (make-external-event (cons (list notifier (list (self) (lambda () man))) rcvr-val-pairs)))
     (receive [(? man?) (void)]))
 
+  (define (sync/read . signals)
+    (if (man?)
+        (apply values (map value-now signals))
+        (begin
+          (! man (make-external-event (list (list notifier (list (self) (lambda () (map value-now signals)))))))
+          (receive [x (apply values x)]))))
+  
   (define (schedule-alarm ms beh)
     (when (> ms 1073741824)
       (set! ms (- ms 2147483647)))
@@ -952,11 +1057,30 @@
         (alarms-enqueue ms beh)
         (! man (make-alarm ms beh))))
   
+  (define-syntax snapshot/sync
+    (syntax-rules ()
+      [(_ (id ...) expr ...)
+       (let-values ([(id ...) (sync/read id ...)])
+         expr ...)]))
+  
   (define-syntax snapshot
     (syntax-rules ()
       [(_ (id ...) expr ...)
        (let ([id (value-now id)] ...)
          expr ...)]))
+  
+  (define-syntax snapshot-all
+    (syntax-rules ()
+      [(_ expr ...)
+       (parameterize ([snap? #t])
+         expr ...)]))
+  
+  (define-syntax frp:send
+    (syntax-rules ()
+      [(_ obj meth arg ...)
+       (if (snap?)
+           (send obj meth (value-now arg) ...)
+           (send obj meth arg ...))]))
   
   (define (magic dtime thunk)
     (let* ([last-time (current-milliseconds)]
@@ -1107,12 +1231,11 @@
   ; set-cell! : cell[a] a -> void
   (define (set-cell! ref beh)
     (! man (make-external-event (list (list ((signal-thunk ref) #t) beh)))))
-  
 
   (define (synchronize)
     (when (man?)
       (error 'synchronize "already in frtime engine (would deadlock)"))
-    (! man (make-external-event (list (list notifier (self)))))
+    (! man (make-external-event (list (list notifier (list (self) (lambda () man))))))
     (receive [(? man?) (void)]))
   
   (define (curried-apply fn)
@@ -1126,7 +1249,11 @@
     (syntax-rules ()
       [(_ ([id val] ...) expr ...)
        (let ([id (new-cell)] ...)
-         (set-cell! id val) ...
+         (let ([tmp val])
+           (if (signal? tmp)
+               (set-cell! id tmp)
+               (set! id tmp)))
+         ...
          expr ...)]))
   
   (define-syntax frp:match

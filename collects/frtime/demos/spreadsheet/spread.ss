@@ -42,7 +42,7 @@
            proc ...
            (loop (delta var))))]))
   
-  (set-cell! raise-exceptions #f)
+  (set-cell! raise-exceptions #t)
   
   (define-struct ss-loc (row col))
   
@@ -445,15 +445,15 @@
             -1))
       
       (define/private (row->y-top row)
-        (snapshot (v-scroll-cells~)
-          (+ (* cell-height (- row v-scroll-cells~))
-             top-margin)))
+        (snapshot/sync (v-scroll-cells~)
+                       (+ (* cell-height (- row v-scroll-cells~))
+                          top-margin)))
       
       (define/private (col->x-left col)
-        (snapshot (h-scroll-cells~ h-scroll-offset~)
-          (+ (* (- col h-scroll-cells~) cell-width)
-             (- h-scroll-offset~)
-             left-margin)))
+        (snapshot/sync (h-scroll-cells~ h-scroll-offset~)
+                       (+ (* (- col h-scroll-cells~) cell-width)
+                          (- h-scroll-offset~)
+                          left-margin)))
       
       #;(define foo (lift #t printf "~a ~a ~a ~a~n" cur-sel-row~ cur-sel-col~ start-sel-row~ start-sel-col~))
       
@@ -465,13 +465,13 @@
           (for (i = r0) (i . <= . rf) add1
                (for (j = c0) (j . <= . cf) add1
                     (draw-cell-offscreen i j)))
-        (let ([x0 (col->x-left c0)]
-              [y0 (row->y-top r0)]
-              [xf (col->x-left (add1 cf))]
-              [yf (row->y-top (add1 rf))])
-          (send (get-dc)
-                draw-bitmap-section (send offscreen-dc get-bitmap)
-                x0 y0 x0 y0 (- xf x0) (- yf y0)))))
+          (let ([x0 (col->x-left c0)]
+                [y0 (row->y-top r0)]
+                [xf (col->x-left (add1 cf))]
+                [yf (row->y-top (add1 rf))])
+            (send (get-dc)
+                  draw-bitmap-section (send offscreen-dc get-bitmap)
+                  x0 y0 x0 y0 (- xf x0) (- yf y0)))))
       
       (define/public (draw-cell-block-offscreen r0 rf c0 cf)
         (let ([r0 (min r0 rf)]
@@ -483,51 +483,51 @@
                     (draw-cell-offscreen i j)))))
       
       (define/public (new-expression text)
-        (snapshot (cur-sel-row~ cur-sel-col~ start-sel-row~ start-sel-col~)
-          (let ([r0 (min cur-sel-row~ start-sel-row~)]
-                [r1 (max cur-sel-row~ start-sel-row~)]
-                [c0 (min cur-sel-col~ start-sel-col~)]
-                [c1 (max cur-sel-col~ start-sel-col~)]
-                [processed-expr (text->processed-expr text start-sel-row~ start-sel-col~)])
-            (for (row = r0) (row . <= . r1) add1
-                 (for (col = c0) (col . <= . c1) add1
-                      (ss-set-cell-processed-expr! row col processed-expr))))
-          (send canvas focus)))
+        (snapshot/sync (cur-sel-row~ cur-sel-col~ start-sel-row~ start-sel-col~)
+                       (let ([r0 (min cur-sel-row~ start-sel-row~)]
+                             [r1 (max cur-sel-row~ start-sel-row~)]
+                             [c0 (min cur-sel-col~ start-sel-col~)]
+                             [c1 (max cur-sel-col~ start-sel-col~)]
+                             [processed-expr (text->processed-expr text start-sel-row~ start-sel-col~)])
+                         (for (row = r0) (row . <= . r1) add1
+                              (for (col = c0) (col . <= . c1) add1
+                                   (ss-set-cell-processed-expr! row col processed-expr))))
+                       (send canvas focus)))
       
       (define (draw-cell-offscreen row col)
-        (snapshot (first-vis-row~
-                   last-vis-row~
-                   first-vis-col~ last-vis-col~
-                   mouse-row~ mouse-col~
-                   start-sel-row~ start-sel-col~
-                   cur-sel-row~ cur-sel-col~)
-          (let ([x (col->x-left col)]
-                [y (row->y-top row)])
-            (when (and (< -1 row rows)
-                       (< -1 col cols))
-              (let ([text (ss-format (ss-get-cell-value row col))])
-                (when (and (= row start-sel-row~)
-                           (= col start-sel-col~))
-                  (send value-field set-value text))
-                (when (and (<= first-vis-row~ row last-vis-row~)
-                           (<= first-vis-col~ col last-vis-col~))
-                  (send offscreen-dc set-clipping-rect
-                        (max x (+ left-margin 1)) y cell-width cell-height)
-                  (send offscreen-dc set-brush
-                        (cond
-                          [(and (between start-sel-row~ row cur-sel-row~)
-                                (between start-sel-col~ col cur-sel-col~)) selected-brush]
-                          [(and (= row mouse-row~)
-                                (= col mouse-col~)) highlight-brush]
-                          [else clear-brush]))
-                  (send offscreen-dc draw-rectangle x y (+ cell-width 1) (+ cell-height 1))
-                  (send offscreen-dc draw-text text
-                        (- (+ x cell-width) 2
-                           (let-values ([(width height descent space)
-                                         (send offscreen-dc get-text-extent text #f #f 0)])
-                             width))
-                        (+ y 1) #f 0 0)
-                  (send offscreen-dc set-clipping-region #f)))))))
+        (snapshot/sync (first-vis-row~
+                        last-vis-row~
+                        first-vis-col~ last-vis-col~
+                        mouse-row~ mouse-col~
+                        start-sel-row~ start-sel-col~
+                        cur-sel-row~ cur-sel-col~)
+                       (let ([x (col->x-left col)]
+                             [y (row->y-top row)])
+                         (when (and (< -1 row rows)
+                                    (< -1 col cols))
+                           (let ([text (ss-format (ss-get-cell-value row col))])
+                             (when (and (= row start-sel-row~)
+                                        (= col start-sel-col~))
+                               (send value-field set-value text))
+                             (when (and (<= first-vis-row~ row last-vis-row~)
+                                        (<= first-vis-col~ col last-vis-col~))
+                               (send offscreen-dc set-clipping-rect
+                                     (max x (+ left-margin 1)) y cell-width cell-height)
+                               (send offscreen-dc set-brush
+                                     (cond
+                                       [(and (between start-sel-row~ row cur-sel-row~)
+                                             (between start-sel-col~ col cur-sel-col~)) selected-brush]
+                                       [(and (= row mouse-row~)
+                                             (= col mouse-col~)) highlight-brush]
+                                       [else clear-brush]))
+                               (send offscreen-dc draw-rectangle x y (+ cell-width 1) (+ cell-height 1))
+                               (send offscreen-dc draw-text text
+                                     (- (+ x cell-width) 2
+                                        (let-values ([(width height descent space)
+                                                      (send offscreen-dc get-text-extent text #f #f 0)])
+                                          width))
+                                     (+ y 1) #f 0 0)
+                               (send offscreen-dc set-clipping-region #f)))))))
       
       (define/public (draw-cell row col)
         (draw-cell-offscreen row col)
@@ -581,42 +581,42 @@
           (synchronize)))
       
       (define (on-paint)
-        (snapshot (canvas-width~
-                   canvas-height~
-                   first-vis-row~ last-vis-row~
-                   first-vis-col~ last-vis-col~
-                   h-scroll-cells~ h-scroll-offset~ v-scroll-cells~)
-          (let ([dc offscreen-dc])
-            (send dc set-clipping-region #f)
-            (send dc clear)
-            ;(send dc set-pen line-pen)
-            ;(send dc set-brush highlight-brush)
-            (send dc set-pen trans-pen)
-            (send dc set-brush gray-brush)
-            (send dc draw-rectangle 0 0 left-margin canvas-height~)
-            (send dc draw-rectangle 0 0 canvas-width~ top-margin)
-            (send dc set-pen line-pen)
-            (send dc draw-line 0 0 0 canvas-height~)
-            (send dc draw-line 0 0 canvas-width~ 0)
-            (send dc set-brush clear-brush)
-            (send dc set-font label-font)
-            ;; draw horizontal rules and row labels
-            (for (row = first-vis-row~) (row . <= . (min last-vis-row~ (sub1 rows))) add1
-                 (let ([y (row->y-top row)]
-                       [text (number->string row)])
-                   (send dc draw-line 0 y canvas-width~ y)
-                   (send dc draw-text text (- left-margin (get-text-width dc text) 2) (add1 y) #f 0 0)))
-            ;; draw vertical rules and column labels
-            (send dc draw-line left-margin 0 left-margin canvas-height~)
-            (send dc set-clipping-rect (+ left-margin 1) 0 (- canvas-width~ left-margin 1) canvas-height~)
-            (for (col = first-vis-col~) (col . <= . (min last-vis-col~ (sub1 cols))) add1
-                 (let ([x (col->x-left col)]
-                       [text (column->string col)])
-                   (send dc draw-text text (+ x (quotient (- cell-width (get-text-width dc text)) 2)) 0 #f 0 0)
-                   (send dc draw-line x 0 x canvas-height~)))
-            (send dc set-font default-font)
-            (draw-cell-block-offscreen first-vis-row~ last-vis-row~ first-vis-col~ last-vis-col~)
-            (send (get-dc) draw-bitmap-section (send dc get-bitmap) 0 0 0 0 canvas-width~ canvas-height~))))
+        (snapshot/sync (canvas-width~
+                        canvas-height~
+                        first-vis-row~ last-vis-row~
+                        first-vis-col~ last-vis-col~
+                        h-scroll-cells~ h-scroll-offset~ v-scroll-cells~)
+                       (let ([dc offscreen-dc])
+                         (send dc set-clipping-region #f)
+                         (send dc clear)
+                         ;(send dc set-pen line-pen)
+                         ;(send dc set-brush highlight-brush)
+                         (send dc set-pen trans-pen)
+                         (send dc set-brush gray-brush)
+                         (send dc draw-rectangle 0 0 left-margin canvas-height~)
+                         (send dc draw-rectangle 0 0 canvas-width~ top-margin)
+                         (send dc set-pen line-pen)
+                         (send dc draw-line 0 0 0 canvas-height~)
+                         (send dc draw-line 0 0 canvas-width~ 0)
+                         (send dc set-brush clear-brush)
+                         (send dc set-font label-font)
+                         ;; draw horizontal rules and row labels
+                         (for (row = first-vis-row~) (row . <= . (min last-vis-row~ (sub1 rows))) add1
+                              (let ([y (row->y-top row)]
+                                    [text (number->string row)])
+                                (send dc draw-line 0 y canvas-width~ y)
+                                (send dc draw-text text (- left-margin (get-text-width dc text) 2) (add1 y) #f 0 0)))
+                         ;; draw vertical rules and column labels
+                         (send dc draw-line left-margin 0 left-margin canvas-height~)
+                         (send dc set-clipping-rect (+ left-margin 1) 0 (- canvas-width~ left-margin 1) canvas-height~)
+                         (for (col = first-vis-col~) (col . <= . (min last-vis-col~ (sub1 cols))) add1
+                              (let ([x (col->x-left col)]
+                                    [text (column->string col)])
+                                (send dc draw-text text (+ x (quotient (- cell-width (get-text-width dc text)) 2)) 0 #f 0 0)
+                                (send dc draw-line x 0 x canvas-height~)))
+                         (send dc set-font default-font)
+                         (draw-cell-block-offscreen first-vis-row~ last-vis-row~ first-vis-col~ last-vis-col~)
+                         (send (get-dc) draw-bitmap-section (send dc get-bitmap) 0 0 0 0 canvas-width~ canvas-height~))))
       
       (let-values ([(width height) (get-client-size)])
         (send-event canvas-width-rcvr width)

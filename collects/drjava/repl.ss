@@ -2,7 +2,7 @@
 
 (unit/sig repl^
   (import jvm^ scanner^ queue^ gjc^ split^ mzlib:function^)
-
+  
   ;; squiglies-match? : Queue(Scanned) -> Boolean
   (define (squiglies-match? q)
     (let* ([q (quick-dupq q)]
@@ -200,7 +200,7 @@
 	  (enq! (deq! from) to)
 	  (loop)))))
   
-  ;;  eval-statement : Repl Queue(Scanned) -> Void
+  ;;  eval-statement : Repl Queue(Scanned) -> Boolean
   ;;  abstract w. eval-expression
   (define (eval-statement repl q)
     (eval-common repl q wrap-statement))
@@ -211,20 +211,23 @@
 	      q
 	      (general-trailer defs)))
   
-  ;;  eval-expression : Repl Queue(Scanned) -> jobject
+  ;;  eval-expression : Repl Queue(Scanned) -> Value
   (define (eval-expression repl q)
-    (eval-common repl q wrap-expression)
-    (let ([env (repl-env repl)])
-      (jget-field env (vector-ref selectors (jget-field env Env-tag)))))
+    (if (eval-common repl q wrap-expression)
+        (let ([env (repl-env repl)])
+          (jget-field env (vector-ref selectors (jget-field env Env-tag))))
+        (void)))
   
-  ;;   eval-common : Repl Queue(Scanned) -> Void
+  ;;   eval-common : Repl Queue(Scanned) -> Boolean
   (define (eval-common repl q wrap)
     (let ([name (next-class-name)])
-      (compile-repl-class name (wrap (repl-defs repl) name q) (repl-env repl))
-      (let* ([class-object (jcall (repl-env repl) load-class name)])
-	(jcall class-object new-instance)
-	(void))))
-
+      (and (zero? (compile-repl-class name
+                                      (wrap (repl-defs repl) name q)
+                                      (repl-env repl)))
+           (let* ([class-object (jcall (repl-env repl) load-class name)])
+             (jcall class-object new-instance)
+             (void)))))
+  
   (define nl (list->string (list #\newline)))
   (define new-list-iterator (tokenize (string-append "    " list-name " = " env-name ".defs.listIterator(0);" nl)))
   
@@ -234,14 +237,14 @@
      (apply q-append 
 	    (tokenize
 	     (string-append
-		     "public class " name " {" nl
-		     "  public " name "() throws java.lang.Throwable {" nl
-		     "    " env-dot-class-name " " env-name " = ("env-dot-class-name")getClass().getClassLoader();"
-		     "    java.util.ListIterator "))
+              "public class " name " {" nl
+              "  public " name "() throws java.lang.Throwable {" nl
+              "    " env-dot-class-name " " env-name " = ("env-dot-class-name")getClass().getClassLoader();"
+              "    java.util.ListIterator "))
 	    new-list-iterator
 	    (map lhs->code defs))
      start-pos))
-
+  
   ;; general-trailer : (listof Lhs) -> Queue(Scanned)
   (define general-trailer
     (let ([trailer (tokenize (string-append "  }" nl
@@ -259,7 +262,7 @@
 				      acc)))
 			    (list trailer)
 			    defs))))))
-
+  
   ;;   wrap-expression : (listof Lhs) String Queue(Scanned) -> Queue(Scanned)
   ;;   This needs a lot more here.
   (define (wrap-expression defs name q)
@@ -277,7 +280,7 @@
 	(set! class-number (add1 class-number))
 	(format "Repl_cla~a_~a" funny-chars class-number))))
   
-  ;;   compile-repl-class : String Queue(Scanned) jobject(Env) -> Void
+  ;;   compile-repl-class : String Queue(Scanned) jobject(Env) -> Nat
   ;;   mutation: the tokenized class is added to the list of tokenized class queues
   (define (compile-repl-class name q env)
     (let ([tokens (make-tokens (string-append name ".java") q)])

@@ -18,7 +18,7 @@
   ;; Tokens = (make-tokens jobject(String) Queue)
   (define-struct tokens (name q))
   
-  ;; compile : String -> Void
+  ;; compile : String -> Nat
   (define (compile . in-files)
     (let ([tokens-list (map split-java in-files)])
       (compile-classes (apply append tokens-list))))
@@ -136,7 +136,7 @@
     (let ([pos (jget-field scan field)])
       (format "~a:~a" (arithmetic-shift pos -10) (bitwise-and 1023 pos))))
   
-  ; compile-classes : (listof Tokens) [jobject(Env)] -> Void
+  ; compile-classes : (listof Tokens) [jobject(Env)] -> Nat
   (define (compile-classes tokens . env)
     (set-token-lst! tokens)
     (apply compile-gjlist
@@ -146,7 +146,7 @@
 		  tokens)
 	   env))
   
-  ;; compile-class : Tokens [jobject(Env)] -> Void
+  ;; compile-class : Tokens [jobject(Env)] -> Nat
   (define (compile-class tokens . env)
     (add-tokens! tokens)
     (apply compile-gjlist (jnew glist-class glist-1 (tokens-name tokens)) env))

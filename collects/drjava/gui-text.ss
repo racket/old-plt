@@ -122,29 +122,34 @@
   
   ;; repl-format : Value -> String
   (define (repl-format val)
-    (cond
-      [(void? val) ""]
-      [(or (number? val) (boolean? val)) (format "~n~a" val)]
-      [else (toString val)]))
+    (if (void? val)
+        ""
+        (format "~n~a"
+                (cond
+                  [(number? val) val]
+                  [(eq? val #t) "true"]
+                  [(eq? val #f) "false"]
+                  [else (toString val)]))))
   
   ;; toString : jobject -> Void
+  ;; Actually this uses String.valueOf(Object) since it works for null.
   (define toString
-    (let* ([oc (jfind-class "java/lang/Object")]
-           [toString-method (jfind-method oc "toString" "()Ljava/lang/String;")])
+    (let* ([sc (jfind-class "java/lang/String")]
+           [toString-method (jfind-static-method sc "valueOf" "(Ljava/lang/Object;)Ljava/lang/String;")])
       (lambda (obj)
-        (format "~n~a"(jstring->string (jcall obj toString-method))))))
+        (jstring->string (jcall sc toString-method obj)))))
   
   (define (repl-text-mixin super-class)
     (class super-class ()
       (inherit insert get-text last-position erase find-snip set-position insert-box set-caret-owner get-end-position)
       (private
-        (make-print-char
+        (make-printer
          (lambda (style)
-           (lambda (char)
+           (lambda (to-print)
              (set-position (last-position))
              (let* ([editor (send (get-output-snip) get-editor)]
                     [start (send editor last-position)])
-               (send editor insert char start)
+               (send editor insert to-print start)
                (send editor change-style style start (send editor last-position))))))
         (make-color-style
          (lambda (color-name)
@@ -163,7 +168,7 @@
                             (lambda ()
                               (with-handlers ([(lambda (x) (eq? x 'bad-squiglies))
                                                (lambda _ (insert #\newline))]
-                                              [void (lambda _ (for-each print-red-char (string->list  (format "Oh, no!~n"))) (new-prompt))])
+                                              [void (lambda _ (print-red-char (format "Oh, no!~n")) (new-prompt))])
                                 (insert (repl-format (eval-str repl text)))
                                 (new-prompt))))
                            (semaphore-post eval-semaphore)))
@@ -177,9 +182,9 @@
            (init)
            (repl-env repl)))
         (print-char
-         (make-print-char (make-color-style "black")))
+         (make-printer (make-color-style "black")))
         (print-red-char
-         (make-print-char (make-color-style "red")))
+         (make-printer (make-color-style "red")))
         (set-goobers! (lambda (goobs) (set! goobers goobs))))
       (private
         (prompt-pos 0)

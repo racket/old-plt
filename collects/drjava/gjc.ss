@@ -6,9 +6,10 @@
   
   ;; gjclass : String -> jclass
   (define (gjc-class x) (jfind-class (string-append gjc-version x)))
-
+  
   (define log-class (jfind-class "gjc/vhack/util/Log"))
   (define log-init (jfind-method log-class "<init>" "(Ledu/rice/cs/drj/SchemeFunction;Ledu/rice/cs/drj/SchemeFunction;)V"))
+  (define log-nerrors (jfind-field (jfind-class "gjc/vptg/util/Log") "nerrors" "I"))
   
   (define gj-class (gjc-class "JavaCompiler"))
   (define gj-compile
@@ -18,10 +19,10 @@
   (define (gen-make-gj arg)
     (jfind-static-method gj-class "make"
 			 (string-append "(L"gjc-version"util/Log;Ljava/lang/String;"arg")L"gjc-version"JavaCompiler;")))
-
+  
   (define make-gj (gen-make-gj ""))
   (define make-gj2 (gen-make-gj "Ledu/rice/cs/drj/Env$$$;"))
-
+  
   ; get-token : String -> Int
   (define get-token
     (let ([token-class (gjc-class "parser/Tokens")])
@@ -62,13 +63,14 @@
       (lambda (name)
 	(jcall name toString))))
   
-  ;; compile-gjlist : jobject [jobject(Env$$$)] -> Void
+  ;; compile-gjlist : jobject [jobject(Env$$$)] -> Nat
   (define (compile-gjlist gjlist . env)
-    (jcall (let ([log (jnew log-class log-init report-error report-warning)])
-	     (if (null? env)
+    (let ([log (jnew log-class log-init report-error report-warning)])
+      (jcall (if (null? env)
 		 (jcall gj-class make-gj log gjc-path)
-		 (jcall gj-class make-gj2 log gjc-path (car env))))
-	   gj-compile gjlist))
+		 (jcall gj-class make-gj2 log gjc-path (car env)))
+             gj-compile gjlist)
+      (jget-field log log-nerrors)))
   
   ;; build-gjc-path : String -> String
   (define (build-gjc-path dir)
@@ -76,7 +78,7 @@
   
   (define gjc-output-dir ".")
   (define gjc-path (build-gjc-path gjc-output-dir))
-
+  
   ;; set-gjc-output-dir! : String -> Void
   (define (set-gjc-output-dir! dir)
     (set! gjc-output-dir dir)

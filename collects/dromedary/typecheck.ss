@@ -75,12 +75,12 @@
 	   (define (typecheck-structure desc src context)
 ;	     ;(pretty-print (format "typecheck-structure ~a" desc))
 	     (match desc
-		    [($ ast:pstr_value rec_flag pelist)
+		    [($ ast:pstr_value rec_flag pelist lsrc)
 		     (typecheck-defines rec_flag pelist context)]
 		    [($ ast:pstr_type stdlist)
 		     (begin ;(pretty-print (format "Length of stdlist is ~a" (length stdlist)))
 		     (map typecheck-typedecl stdlist (repeat (newboundtypes stdlist) (length stdlist))))]
-		    [($ ast:pstr_eval expr)
+		    [($ ast:pstr_eval expr lsrc)
 ;		     (begin (pretty-print "Typecheck-ml called for pstr_eval from typecheck-structure")
 		     (typecheck-ml expr context)]
 		    [($ ast:pstr_exception name decl)
@@ -132,7 +132,7 @@
 
 
 			   
-		    [($ ast:pexp_ifthenelse test ifexp elseexp)
+		    [($ ast:pexp_ifthenelse test ifexp elseexp isrc tsrc esrc)
 		     (let ([testt (typecheck-ml test context)]
 			   [ifexpt (typecheck-ml ifexp context)]
 			   [elseexpt (typecheck-ml elseexp context)])
@@ -155,7 +155,7 @@
 
 		     
 
-		    [($ ast:pexp_let rec bindings expr)
+		    [($ ast:pexp_let rec bindings expr key-src in-src)
 		     (typecheck-let rec bindings expr context)]
 ;		     (let ([all-bindings (typecheck-bindings rec bindings context src)])
 ;		       (typecheck-ml expr (append all-bindings context src)))]
@@ -680,7 +680,9 @@
 			   [t2c (hash-table-get <constructors> t2 (lambda () #f))])
 		       (let ([t1a (if t1c (car t1c) t1)]
 			     [t2a (if t2c (car t2c) t2)])
-			 (equal? t1a t2a))))]
+			 (if (equal? t1a t2a)
+			     #t
+			     (raise-syntax-error #f (format "Expected ~a but found ~a" t1a t2a) syn)))))]
 		[(tvar? t2) (unify-var t1 (tvar-tbox t2) syn)]
 		[else (begin (raise-syntax-error #f (format "Expected ~a but found ~a" t1 t2) syn ) #f)])]
 
@@ -857,7 +859,7 @@
 ;	     (pretty-print (format "constant-check ~a" const))
 	     (cond
 	      [(syntax? const) (constant-check (syntax-object->datum const))]
-	      [(exact? const) "int"]
+	      [(and (number? const) (exact? const)) "int"]
 	      [(float? const) "float"]
 	      [(char? const) "char"]
 	      [(boolean? const) "bool"]
@@ -970,15 +972,15 @@
 		 (match (ast:expression-pexp_desc expr)
 			[($ ast:pexp_constant dcon) dcon]
 			[($ ast:pexp_ident name) (longident-location name)]
-			[($ ast:pexp_let rec pelist expr) (pat-location (caar pelist))]
+			[($ ast:pexp_let rec pelist expr ksrc isrc) (pat-location (caar pelist))]
 			[($ ast:pexp_function label expr pelist) (pat-location (caar pelist))]
 			[($ ast:pexp_apply expr lelist) (expr-location expr)]
 			[($ ast:pexp_match expr pelsit) (expr-location expr)]
 			[($ ast:pexp_try expr pelist) (expr-location expr)]
 			[($ ast:pexp_tuple elist) (expr-location (car elist))]
 			[($ ast:pexp_construct name expr bool) (longident-location name)]
-			[($ ast:pexp_ifthenelse test tesp fexp) (expr-location test)]
-			[_ 'waggle])))
+			[($ ast:pexp_ifthenelse test tesp fexp isrc tsrc esrc) (expr-location test)]
+			[_ (raise-syntax-error #f (format "Couldn't find expression: ~a" expr) #f)])))
 	   
 	   (define (longident-location longident)
 	     (if (syntax? longident)

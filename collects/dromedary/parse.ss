@@ -388,13 +388,13 @@
 ;;     [(<seq_expr> <structure_tail>)
     (<structure>
      [(<structure_tail>) $1]
-     [(<seq_expr> <structure_tail>) (ast:make-structure_item (ast:make-pstr_eval (cons $1 $2)) (build-src 2))])
+     [(<seq_expr> <structure_tail>) (ast:make-structure_item (ast:make-pstr_eval (cons $1 $2) #f) (build-src 2))])
 
     (<structure_tail>
      [() null]
      [(SEMISEMI) null]
      [(SEMISEMI <seq_expr> <structure_tail>)
-      (list (ast:make-structure_item (ast:make-pstr_eval (cons $2 $3)) (build-src 2 3)))]
+      (list (ast:make-structure_item (ast:make-pstr_eval (cons $2 $3) #f) (build-src 2 3)))]
      [(SEMISEMI <structure_item> <structure_tail>) (cons $2 $3)]
      [(<structure_item> <structure_tail>) (cons $1 $2)])
 
@@ -402,8 +402,8 @@
      [(LET <rec_flag> <let_bindings>)
       (let ([bindings $3])
 	(if (and (ast:pattern? (car bindings)) (ast:ppat_any? (ast:pattern-ppat_desc (car bindings))))
-	    (ast:make-structure_item (ast:make-pstr_eval (cdr bindings)) (build-src 3))
-	    (ast:make-structure_item (ast:make-pstr_value $2 (reverse $3)) (build-src 3))))]
+	    (ast:make-structure_item (ast:make-pstr_eval (cdr bindings) (if $2 (build-src 1 2) (build-src 1))) (build-src 3))
+	    (ast:make-structure_item (ast:make-pstr_value $2 (reverse $3) (if $2 (build-src 1 2) (build-src 1))) (build-src 3))))]
      [(EXTERNAL <val_ident_colon> <core_type> EQUAL <primitive_declaration>)
       (ast:make-structure_item (ast:make-pstr_primitive $2 (ast:make-value_description $3 $5)) (build-src 5))]
      [(TYPE <type_declarations>)
@@ -473,7 +473,7 @@
      [(<simple_expr> <simple_labeled_expr_list>) (prec <prec_appl>)
       (ast:make-expression (ast:make-pexp_apply $1 (reverse $2)) (build-src 1 2))]
      [(LET <rec_flag> <let_bindings> IN <seq_expr>) (prec <prec_let>)
-      (ast:make-expression (ast:make-pexp_let $2 (reverse $3) $5) (build-src 5))]
+      (ast:make-expression (ast:make-pexp_let $2 (reverse $3) $5 (if $2 (build-src 1 2) (build-src 1)) (build-src 4 4)) (build-src 5))]
      ;[(LET MODULE UIDENT <module_binding> IN <seq_expr>) (prec <prec_let>)
      ; (ast:make-expression (ast:make-pexp_letmodule($3, $4, $6)))]
      [(FUNCTION <opt_bar> <match_cases>) (prec <prec_fun>)
@@ -494,9 +494,9 @@
      [(<name_tag> <simple_expr>) (prec <prec_constr_appl>)
       (ast:make-expression (ast:make-pexp_variant $1 $2) (build-src 2))]
      [(IF <seq_expr> THEN <expr> ELSE <expr>) (prec <prec_if>)
-      (ast:make-expression (ast:make-pexp_ifthenelse $2 $4 $6) (build-src 6))]
+      (ast:make-expression (ast:make-pexp_ifthenelse $2 $4 $6 (build-src 1) (build-src 3 3) (build-src 5 5)) (build-src 6))]
      [(IF <seq_expr> THEN <expr>) (prec <prec_if>)
-      (ast:make-expression (ast:make-pexp_ifthenelse $2 $4 null) (build-src 4))]
+      (ast:make-expression (ast:make-pexp_ifthenelse $2 $4 null (build-src 1) (build-src 3 3) #f) (build-src 4))]
      [(WHILE <seq_expr> DO <seq_expr> DONE)
 ; woodoo
       (ast:make-expression (ast:make-pexp_while $2 $4) (build-src 5))]
@@ -545,8 +545,8 @@
      [(<subtractive> <expr>) (prec <prec_unary_minus>)
       (let ([type (ast:expression-pexp_desc $2)])
 	(if (and (ast:pexp_constant? type) (number? (syntax-object->datum (ast:pexp_constant-const type))))
-	    (ast:make-expression (ast:make-pexp_constant (datum->syntax-object $1 (- (syntax-object->datum (ast:pexp_constant-const type))) (build-syn-list $1 (ast:pexp_constant-const type)))) (build-src 1 2))
-	    (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident (datum->syntax-object $1 (string-append "~" (syntax-object->datum $1)) (build-syn-list $1 $2)))) (build-src 1)) (list (cons "" $2))) (build-src 1 2))))]
+	    (ast:make-expression (ast:make-pexp_constant (datum->syntax-object $1 (- (syntax-object->datum (ast:pexp_constant-const type))) (build-syn-list $1 (position-offset $2-end-pos)))) (build-src 1 2))
+	    (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident (datum->syntax-object $1 (string-append "~" (syntax-object->datum $1)) (build-syn-list $1 (position-offset $2-end-pos))))) (build-src 1)) (list (cons "" $2))) (build-src 1 2))))]
      [(<simple_expr> DOT <label_longident> LESSMINUS <expr>)
       (ast:make-expression (ast:make-pexp_setfield($1 $3 $5)) (build-src 5))]
      [(<simple_expr> DOT LPAREN <seq_expr> RPAREN LESSMINUS <expr>)
@@ -583,7 +583,7 @@
      [(BEGIN <seq_expr> END)
       $2]
      [(BEGIN END)
-      (ast:make-expression (ast:make-pexp_construct (ast:make-lident (datum->syntax-object $1 "()" (build-syn-list $1 $2)) ) null #f) (build-src 2))]
+      (ast:make-expression (ast:make-pexp_construct (ast:make-lident (datum->syntax-object $1 "()" (build-syn-list $1 (position-offset $2-end-pos))) ) null #f) (build-src 2))]
 ;;     [(BEGIN <seq_expr> error)
 ;; Unclosed error
      [(LPAREN <seq_expr> <type_constraint> RPAREN)
@@ -1034,7 +1034,7 @@
     (<constr_ident>
      [(UIDENT) $1]
 ;;     [(LBRACKET RBRACKET) "[]"] Commented out
-     [(LPAREN RPAREN) (datum->syntax-object $1 "()" (build-syn-list $1 $2))]
+     [(LPAREN RPAREN) (datum->syntax-object $1 "()" (build-syn-list $1 (position-offset $2-end-pos)))]
      [(COLONCOLON) (datum->syntax-object $1 "::" (build-syn-list $1))]
      [(FALSE) (datum->syntax-object $1 "false" (build-syn-list $1))]
      [(TRUE) (datum->syntax-object $1 "true" (build-syn-list $1))])
@@ -1045,8 +1045,8 @@
 
     (<constr_longident>
      [(<mod_longident>) $1]
-     [(LBRACKET RBRACKET) (ast:make-lident (datum->syntax-object $1 "[]" (build-syn-list $1 $2)))]
-     [(LPAREN RPAREN) (ast:make-lident (datum->syntax-object $1 "()" (build-syn-list $1 $2)))]
+     [(LBRACKET RBRACKET) (ast:make-lident (datum->syntax-object $1 "[]" (build-syn-list $1 (position-offset $2-end-pos))))]
+     [(LPAREN RPAREN) (ast:make-lident (datum->syntax-object $1 "()" (build-syn-list $1 (position-offset $2-end-pos))))]
      [(FALSE) (ast:make-lident (datum->syntax-object $1 "false" (build-syn-list $1)))]
      [(TRUE) (ast:make-lident (datum->syntax-object $1 "true" (build-syn-list $1)))])
 
@@ -1184,7 +1184,7 @@
 	     (syntax-line syn)
 	     (syntax-column syn)
 	     (syntax-position syn)
-	     (- (+ (syntax-column (car others)) (syntax-span (car others)))
+	     (- (car others)
 		(syntax-column syn)))))
 
  (define-syntax build-src-list

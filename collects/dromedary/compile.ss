@@ -99,13 +99,16 @@
 
      (define (compile-structure desc src context)
        (match desc
-	      [($ ast:pstr_value rec_flag pelist)
-	       (let ([all-bindings (map compile-define (repeat rec_flag (length pelist)) pelist (repeat context (length pelist)))])
+	      [($ ast:pstr_value rec_flag pelist lsrc)
+	       (let ([all-bindings (map compile-define (repeat rec_flag (length pelist)) pelist (repeat context (length pelist)) (repeat lsrc (length pelist)))])
 		 all-bindings)]
 	      [($ ast:pstr_type stdlist)
 	       (map compile-typedecl stdlist)]
-	      [($ ast:pstr_eval expr)
-	       (compile-ml expr context)]
+	      [($ ast:pstr_eval expr lsrc)
+	       (if lsrc
+		   #`((#,(create-syntax #f `lambda (build-src lsrc)) () #, (compile-ml expr context)))
+		   (compile-ml expr context))]              
+;	       #`((#,(create-syntax #f `lambda (if lsrc (build-src lsrc) #f)) () #,(compile-ml expr context)))]
 	      [($ ast:pstr_exception name decl)
 	       #`(begin (define-struct (#,(string->symbol (format "exn:~a" (syntax-object->datum name))) exn) ())
 			(make-<voidstruct> #f))]
@@ -204,8 +207,8 @@
 		     #`(#,fun #,@args)
 		     (compile-apply fun (reverse args))))]
 
-	      [($ ast:pexp_let rec bindings expr)
-	       (compile-let rec bindings expr context)]
+	      [($ ast:pexp_let rec bindings expr ksrc isrc)
+	       (compile-let rec bindings expr context ksrc isrc)]
 ;	       (let* ([all-bindings (compile-bindings bindings context)]
 ;		      [lhss (map car all-bindings)]
 ;		      [rhss (map cdr all-bindings)])
@@ -235,11 +238,11 @@
 	       (compile-function pelist context)]
 ;	       (let ([varsandbody (compile-function pelist context)])
 ;		 #`(lambda #,(car varsandbody) #,(cdr varsandbody)))]
-	      [($ ast:pexp_ifthenelse test ifexp elseexp)
+	      [($ ast:pexp_ifthenelse test ifexp elseexp ifsrc thensrc elsesrc)
 	       (let ([testc (compile-ml test context)]
 		     [ifexpc (compile-ml ifexp context)]
 		     [elseexpc (if (null? elseexp) null (compile-ml elseexp context))])
-		 #`(if #,testc #,ifexpc #,(if (not (null? elseexpc)) elseexpc (make-<unit> #f))))]
+		 #`(#,(create-syntax #f `if (build-src ifsrc)) #,testc ((#,(create-syntax #f `lambda (build-src thensrc)) () #,ifexpc)) #,(if (not (null? elseexpc)) #`((#,(create-syntax #f `lambda (build-src elsesrc)) () #,elseexpc)) (make-<unit> #f))))]
 	      [($ ast:pexp_construct name expr bool)
 	       (let ([constr (hash-table-get <constructors> (unlongident name) (lambda () #f))])
 		 (if constr
@@ -248,7 +251,7 @@
 			   ;(pretty-print (format "constr found: ~a" constr))
 			 (if (symbol? (cdr constr))
 			     #`(#,(cdr constr) #f)
-			     (cdr constr))
+			     (create-syntax #f (cdr constr) (build-src (longident-src name))))
 			 )
 			 (let ([args (compile-expr (ast:expression-pexp_desc expr) (ast:expression-pexp_src expr) context)])
 			   #`(#,(cdr constr) #,@(cond
@@ -439,7 +442,7 @@
 ;	      
 ;	      [else (pretty-print (list "Unknown function pattern: " (caar pelist)))]))
 
-     (define (compile-define rec binding context)
+     (define (compile-define rec binding context lsrc)
 ;       (if (and (ast:pexp_function? (ast:expression-pexp_desc (cdr binding)))
 ;		(or (ast:ppat_var? (ast:pattern-ppat_desc (car binding)))
 ;		    (and (ast:ppat_constraint? (ast:pattern-ppat_desc (car binding)))
@@ -454,27 +457,30 @@
 	   (let ([varpat (get-varpat (car binding))]
 		 [val (compile-ml (cdr binding) context)])
 	     #`(begin
+;		 (#,(create-syntax #f `match-define (build-src lsrc)) #,varpat #,val)
 		 (match-define #,varpat #,val)
 		 #,val))))
 
 
-     (define (compile-let rec bindings finalexpr context)
+     (define (compile-let rec bindings finalexpr context ksrc isrc)
        (if (null? bindings)
 	   (compile-ml finalexpr context)
 	   (let* ([cur-bind (car bindings)])
 	     (if (and (ast:pexp_function? (ast:expression-pexp_desc (cdr cur-bind))) (or (ast:ppat_var? (ast:pattern-ppat_desc (car cur-bind)))
 											 (and (ast:ppat_constraint? (ast:pattern-ppat_desc (car cur-bind))) (ast:ppat_var? (ast:pattern-ppat_desc (ast:ppat_constraint-pat (ast:pattern-ppat_desc (car cur-bind))))))))
 		 (let ([name (ast:ppat_var-name (ast:pattern-ppat_desc (car cur-bind)))])
-		   #`(#,(if rec #'letrec #'let) ([#,(translate-id (syntax-object->datum name) name)
+		   #`(#,(create-syntax #f (if rec `letrec `let) (build-src ksrc)) ([#,(translate-id (syntax-object->datum name) name)
 ;(string->symbol (eval (ast:ppat_var-name (ast:pattern-ppat_desc (car cur-bind)))))
-						  #,(compile-ml (cdr cur-bind) context)]) #,(compile-let rec (cdr bindings) finalexpr context)))
+						  #,(compile-ml (cdr cur-bind) context)]) ((#,(create-syntax #f `lambda (build-src isrc)) () #,(compile-let rec (cdr bindings) finalexpr context ksrc isrc)))
+						  ))
 		 (if rec
 		     (pretty-print "This kind of expression is not allowed as right-hand side of `let rec'")
 		     (let ([varpat (get-varpat (car cur-bind))]
 			   [val (compile-ml (cdr cur-bind) context)])
-		       #`(match #,val
+		       #`(#,(create-syntax #f `match (build-src ksrc)) 
+			  ((#,(create-syntax #f `lambda (build-src isrc)) () #,val))
 				[#,varpat
-				 #,(compile-let rec (cdr bindings) finalexpr context)])))))))
+				 #,(compile-let rec (cdr bindings) finalexpr context ksrc isrc)])))))))
 
 
      (define (flatten-list flist)

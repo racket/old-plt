@@ -134,7 +134,7 @@
 	      "true"
 	      "false")]
 	 [(string? value)
-	  value]
+	  (format "~e" value)]
 	 [else value]))
 
       (define lang%

@@ -1,0 +1,20 @@
+#!/bin/csh -f
+
+# This script just calls the drscheme, but system resources are
+#  unlimited first. This is done for our local installation because
+#  the default limits are too low.
+
+unlimit
+limit  core  0k
+
+if ($?PLTHOME == 0) then
+  set PLTHOME=/usr/local/lib/plt
+endif
+
+set platform = `${PLTHOME}/bin/archsys -`
+
+if ($platform == "sparc-solaris") then
+ limit desc 256
+endif
+
+exec ${PLTHOME}/bin/drscheme

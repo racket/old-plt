@@ -1,0 +1,68 @@
+#!/bin/sh
+
+# Idea borrowed from SML's .arch-n-opsys - thanks!
+
+if [ "$1" = "_" ] ; then
+ SEP="_"
+else
+ SEP="-"
+fi
+
+if [ -x "/bin/uname" ] ; then
+  OS=`/bin/uname -s`
+elif [ -x "/usr/bin/uname" ] ; then
+  OS=`/usr/bin/uname -s`
+else
+ echo archsys: cannot find uname
+ exit -1
+fi
+
+case $OS in
+  SunOS)
+    case `uname -r` in
+      5.*)
+       SYS=sparc${SEP}solaris
+       ;;
+      *)
+       SYS=sparc${SEP}sunos4
+       ;;
+    esac
+    ;;
+  AIX)
+    SYS=rs6k${SEP}aix
+    ;;
+  Linux)
+    if [ `file /bin/ls | grep ELF | wc -l` = 1 ]; then
+     SYS=i386${SEP}linux
+    else
+     SYS=i386${SEP}linux${SEP}aout
+    fi
+    ;;
+  FreeBSD)
+    SYS=i386${SEP}freebsd
+    ;;
+  IRIX*)
+    SYS=mips${SEP}irix
+    ;;
+  ULTRIX)
+    SYS=mips${SEP}ultrix
+    ;;
+  OSF1)
+    SYS=alpha${SEP}osf1
+    ;;
+  HP-UX)
+    SYS=parisc${SEP}hpux
+    ;;
+  *)
+    echo Unsupported platform $OS
+    exit -1
+    ;;
+esac
+
+if [ "$1" = "-" ] ; then
+ echo ${SYS}
+elif [ "$1" = "z" ] ; then
+ echo ${SYS}${PLTMZEXTENSION}
+else
+ echo ${SYS}${PLTEXTENSION}
+fi

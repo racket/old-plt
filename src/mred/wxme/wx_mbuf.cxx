@@ -762,7 +762,8 @@ int wxmeCheckFormatAndVersion(wxMediaStreamIn *s, wxMediaStreamInBase *b, Bool s
       && strcmp(s->read_version, "02")
       && strcmp(s->read_version, "03")
       && strcmp(s->read_version, "04")
-      && strcmp(s->read_version, "05")) {
+      && strcmp(s->read_version, "05")
+      && strcmp(s->read_version, "06")) {
     if (showErrors)
       wxmeError("load-file: unknown version number in editor<%> file format");
     return 0;

@@ -35,11 +35,18 @@
                          (cond
                            [(start-tag? start) (read-element start in pos)]
                            [(element? start) start]
-                           [else (error 'read-xml "expected root element - received ~a" start)])
-                         (let-values ([(misc1 end-of-file) (read-misc in pos)])
-                           (unless (eof-object? end-of-file)
-                             (error 'read-xml "extra stuff at end of document ~a" end-of-file))
-                           misc1))))
+                           [else (parse-error (list (list 1 (location-offset (pos))))
+                                              "expected root element - received ~a"
+                                              start)])
+                         (let ([loc-before (pos)])
+                           (let-values ([(misc1 end-of-file) (read-misc in pos)])
+                             (unless (eof-object? end-of-file)
+                               (let ([loc-after (pos)])
+                                 (parse-error (list (list (location-offset loc-before)
+                                                          (location-offset loc-after)))
+                                              "extra stuff at end of document ~a"
+                                              end-of-file)))
+                             misc1)))))
       
       ;; read-misc : Input-port (-> Location) -> (listof Misc) Token
       (define (read-misc in pos)
@@ -65,10 +72,12 @@
             (let ([x (lex in pos)])
               (cond
                 [(eof-object? x)
-                 (error 'read-xml "unclosed `~a' tag at [~a ~a]"
-                        name
-                        (format-source a)
-                        (format-source b))]
+                 (parse-error (list (list (location-offset (source-start start))
+                                          (location-offset (source-stop start))))
+                              "unclosed `~a' tag at [~a ~a]"
+                              name
+                              (format-source a)
+                              (format-source b))]
                 [(start-tag? x)
                  (let ([next-el (read-element x in pos)])
                    (read-content (lambda (body end-loc)
@@ -77,13 +86,18 @@
                 [(end-tag? x)
                  (let ([end-loc (source-stop x)])
                    (unless (eq? name (end-tag-name x))
-                     (error 'read-xml "start tag `~a' at [~a ~a] doesn't match end tag `~a' at [~a ~a]"
-                            name
-                            (format-source a)
-                            (format-source b)
-                            (end-tag-name x)
-                            (format-source (source-start x))
-                            (format-source end-loc)))
+                     (parse-error
+                      (list (list (location-offset a)
+                                  (location-offset b))
+                            (list (location-offset (source-start x))
+                                  (location-offset end-loc)))
+                      "start tag `~a' at [~a ~a] doesn't match end tag `~a' at [~a ~a]"
+                      name
+                      (format-source a)
+                      (format-source b)
+                      (end-tag-name x)
+                      (format-source (source-start x))
+                      (format-source end-loc)))
                    (k null end-loc))]
                 [(entity? x) (read-content (lambda (body end-loc)
                                              (k (cons (expand-entity x) body)
@@ -369,12 +383,30 @@
          (lambda ()
            (let-values ([(line column offset) (port-next-location in)])
              (make-location line column offset)))))
+
+      ;; locs : (listof (list number number))
+      (define-struct (exn:xml exn) (locs))
       
       ;; lex-error : Input-port String (-> Location) TST* -> alpha
+      ;; raises a lexer error, using exn:xml
       (define (lex-error in pos str . rest)
-        (error 'lex-error "at position ~a: ~a" (format-source (pos))
-               (apply format str rest)))
+        (let* ([the-pos (pos)]
+               [offset (location-offset the-pos)])
+          (raise
+           (make-exn:xml
+            (format "read-xml: lex-error: at position ~a: ~a" 
+                    (format-source the-pos)
+                    (apply format str rest))
+            (current-continuation-marks)
+            (list (list offset (+ offset 1)))))))
       
+      ;; parse-error : (listof (cons number number string)) (listof TST) *-> alpha
+      ;; raises a parsing error, using exn:xml
+      (define (parse-error src fmt . args)
+        (raise (make-exn:xml
+                (apply format (string-append "read-xml: parse-error: " fmt) args)
+                (current-continuation-marks)
+                src)))
       
       ;; format-source : Location -> string
       ;; to format the source location for an error message

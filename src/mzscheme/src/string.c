@@ -752,7 +752,7 @@ void scheme_do_format(const char *procname, Scheme_Object *port,
 {
   int i, start, end;
   int used = offset;
-  int num_err = 0, char_err = 0;
+  int num_err = 0, char_err = 0, end_ok = 0;
   Scheme_Object *a[2];
 
   if (!format) {
@@ -774,6 +774,9 @@ void scheme_do_format(const char *procname, Scheme_Object *port,
 	/* skip spaces... */
       } else switch (format[i]) {
       case '~':
+	if (i == end)
+	  end_ok = 1;
+	break;
       case '%':
       case 'n':
       case 'N':
@@ -821,7 +824,7 @@ void scheme_do_format(const char *procname, Scheme_Object *port,
       }
     }
   }
-  if (format[end] == '~') {
+  if ((format[end] == '~') && !end_ok) {
     scheme_wrong_type(procname, "pattern-string (cannot end in ~)", fpos, argc, argv);
     return;
   }

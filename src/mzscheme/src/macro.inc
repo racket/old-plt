@@ -630,17 +630,18 @@
 "(#%parameterize((#%current-exception-handler"
 "(#%lambda(e)"
 "(,k"
+"(#%lambda()"
 "(#%let ,loop((,list ,list))"
 "(#%cond"
 "((#%null? ,list)"
-"(#%lambda()(#%raise e)))"
+"(#%raise e))"
 "(((#%caar ,list) e)"
-"(#%lambda()((#%cdar ,list) e)))"
+"((#%cdar ,list) e))"
 "(else"
-"(,loop(#%cdr ,list)))))))))"
+"(,loop(#%cdr ,list))))))))))"
 "(#%call-with-values"
 "(#%lambda() ,@body)"
-"(#%lambda args(,k(#%lambda()(#%apply #%values args))))))))))))))"
+"(#%lambda args(#%lambda()(#%apply #%values args)))))))))))))"
 );
   JUST_DEFINED_KEY(with-handlers);
 #ifdef USE_STRUCT_CASE

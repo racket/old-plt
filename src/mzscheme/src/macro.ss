@@ -631,17 +631,18 @@
 	         (#%parameterize ([#%current-exception-handler
 				   (#%lambda (e)
 				    (,k
-				     (#%let ,loop ([,list ,list])
-				       (#%cond
-				        [(#%null? ,list)
-					 (#%lambda () (#%raise e))]
-					[((#%caar ,list) e)
-					 (#%lambda () ((#%cdar ,list) e))]
-					[else
-					 (,loop (#%cdr ,list))]))))])
+				     (#%lambda ()
+				      (#%let ,loop ([,list ,list])
+				        (#%cond
+				         [(#%null? ,list)
+					  (#%raise e)]
+					 [((#%caar ,list) e)
+					  ((#%cdar ,list) e)]
+					 [else
+					  (,loop (#%cdr ,list))])))))])
 		   (#%call-with-values
 		    (#%lambda () ,@body)
-		    (#%lambda args (,k (#%lambda () (#%apply #%values args))))))))))))))
+		    (#%lambda args (#%lambda () (#%apply #%values args)))))))))))))
 
 > kstop with-handlers <
 

@@ -1360,6 +1360,21 @@ void GC_add_roots(void *start, void *end)
 # define USE_DATASTARTEND 1
 #endif
 
+#if defined(linux) && defined(i386) && defined(__ELF__)
+# include <linux/version.h>
+# include <features.h>
+# if LINUX_VERSION_CODE >= 0x20000 && defined(__GLIBC__) && __GLIBC__ >= 2
+  extern int __data_start;
+#  define DATASTART ((void *)(&__data_start))
+# else
+   extern int _etext;
+#  define DATASTART ((void *)((((word) (&_etext)) + 0xfff) & ~0xfff))
+# endif
+  extern int _end;
+# define DATAEND (&_end)
+# define USE_DATASTARTEND 1
+#endif
+
 #if defined(sun)
 # include <errno.h>
 # ifdef ECHRNG

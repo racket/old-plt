@@ -489,8 +489,11 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht, S
     case SCHEME_SPECIAL:
       {
 	Scheme_Object *v;
-	v = scheme_get_special(port, stxsrc, line, col, pos);
-	if (SCHEME_STXP(v)) {
+	v = scheme_get_special(port, stxsrc, line, col, pos, NULL);
+	if (!v) {
+	  /* NULL result means a "comment" */
+	  goto start_over;
+	} else if (SCHEME_STXP(v)) {
 	  if (!stxsrc)
 	    v = scheme_syntax_to_datum(v, 0, NULL);
 	} else if (stxsrc) {
@@ -560,7 +563,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht, S
 	  scheme_get_special(port, stxsrc,
 			     scheme_tell_line(port), 
 			     scheme_tell_column(port), 
-			     scheme_tell(port));
+			     scheme_tell(port), NULL);
       }
       goto start_over;
     case '+':
@@ -704,7 +707,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht, S
 	      scheme_get_special(port, stxsrc,
 				 scheme_tell_line(port), 
 				 scheme_tell_column(port), 
-				 scheme_tell(port));
+				 scheme_tell(port), NULL);
 
 	    if ((ch2 == '|') && (ch == '#')) {
 	      if (!(depth--))
@@ -1252,7 +1255,7 @@ read_string(Scheme_Object *port,
       scheme_get_special(port, stxsrc,
 			 scheme_tell_line(port), 
 			 scheme_tell_column(port), 
-			 scheme_tell(port));
+			 scheme_tell(port), NULL);
       scheme_read_err(port, stxsrc, startline, startcol, start, SPAN(port, start), SCHEME_SPECIAL,
 		      "read: found non-character while reading a string");
     }
@@ -1267,7 +1270,7 @@ read_string(Scheme_Object *port,
 	scheme_get_special(port, stxsrc,
 			   scheme_tell_line(port), 
 			   scheme_tell_column(port), 
-			   scheme_tell(port));
+			   scheme_tell(port), NULL);
 	scheme_read_err(port, stxsrc, startline, startcol, start, SPAN(port, start), SCHEME_SPECIAL,
 			"read: found non-character while reading a string");
       }
@@ -1303,7 +1306,7 @@ read_string(Scheme_Object *port,
 	    scheme_get_special(port, stxsrc,
 			       scheme_tell_line(port), 
 			       scheme_tell_column(port), 
-			       scheme_tell(port));
+			       scheme_tell(port), NULL);
 	  scheme_read_err(port, stxsrc, startline, startcol, start, SPAN(port, start), ch,
 			  "read: no hex digit following \\x in string");
 	}
@@ -1502,7 +1505,7 @@ read_number_or_symbol(Scheme_Object *port,
 	scheme_get_special(port, stxsrc,
 			   scheme_tell_line(port), 
 			   scheme_tell_column(port), 
-			   scheme_tell(port));
+			   scheme_tell(port), NULL);
 	scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), SCHEME_SPECIAL,
 			"read: non-character following \\ in symbol");
 	return NULL;
@@ -1544,7 +1547,7 @@ read_number_or_symbol(Scheme_Object *port,
     scheme_get_special(port, stxsrc,
 		       scheme_tell_line(port), 
 		       scheme_tell_column(port), 
-		       scheme_tell(port));
+		       scheme_tell(port), NULL);
     scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), SCHEME_SPECIAL,
 		    "read: non-character following \\ in symbol");      
   }
@@ -1623,7 +1626,7 @@ read_character(Scheme_Object *port,
     scheme_get_special(port, stxsrc,
 		       scheme_tell_line(port), 
 		       scheme_tell_column(port), 
-		       scheme_tell(port));
+		       scheme_tell(port), NULL);
     scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), SCHEME_SPECIAL,
 		    "read: found non-character after #\\");
     return NULL;
@@ -1797,7 +1800,7 @@ skip_whitespace_comments(Scheme_Object *port, Scheme_Object *stxsrc)
 	scheme_get_special(port, stxsrc, 
 			   scheme_tell_line(port), 
 			   scheme_tell_column(port), 
-			   scheme_tell(port));
+			   scheme_tell(port), NULL);
     } while (ch != '\n' && ch != '\r' && ch != EOF);
     goto start_over;
   }
@@ -1821,7 +1824,7 @@ skip_whitespace_comments(Scheme_Object *port, Scheme_Object *stxsrc)
 	scheme_get_special(port, stxsrc, 
 			   scheme_tell_line(port), 
 			   scheme_tell_column(port), 
-			   scheme_tell(port));
+			   scheme_tell(port), NULL);
 
       if ((ch2 == '|') && (ch == '#')) {
 	if (!(depth--))

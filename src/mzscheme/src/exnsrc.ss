@@ -54,6 +54,9 @@ strings are types/comments.
      (module [] "raised by \\scmkfirst{module}, \\scmkfirst{require}, etc.")
 
      (break [continuation "continuation" "a continuation that resumes from the break"] "asynchronous thread break")
+
+     (special-comment [width "non-negative exact integer" "width of the special comment in port positions"]
+	"raised by a custom input port's special-reading procedure")
      
      (misc [] "low-level or MzScheme-specific error"
 	   (unsupported [] "unsupported feature")

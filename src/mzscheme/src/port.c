@@ -1538,12 +1538,112 @@ scheme_char_ready (Scheme_Object *port)
   return retval;
 }
 
-Scheme_Object *scheme_get_special(Scheme_Object *port, Scheme_Object *src, long line, long col, long pos)
+typedef struct {
+  MZTAG_IF_REQUIRED  
+  int crc, crpq, crb, crg, cs, sbap, cbap, rdi, crd, crq;
+  int exn;
+  Scheme_Object *f;
+  Scheme_Object **a;
+  Scheme_Object *exn_handler;
+} Read_Special_DW;
+
+static Scheme_Object *read_special_exn_handler(Scheme_Object *e, int argc, Scheme_Object **argv)
+{
+  Read_Special_DW *rs = (Read_Special_DW *)e;
+
+  /* Check whether we got an exn:special-comment exception. If so, throw
+     to rs. */
+  if (scheme_special_comment_width(argv[0])) {
+    /* Yes, we want to catch this. */
+    Scheme_Thread *p = scheme_current_thread;
+    p->cjs.u.val = e;
+    p->cjs.jumping_to_continuation = (Scheme_Escaping_Cont *)rs;
+    scheme_longjmp(p->error_buf, 1);
+    return NULL; /* doesn't get here */
+  } else {
+    /* Dispatch to old handler: */
+    return _scheme_tail_apply(rs->exn_handler, argc, argv);
+  }
+}
+
+static void pre_read_special(void *e)
+{
+  Read_Special_DW *rs = (Read_Special_DW *)e;
+  Scheme_Thread *p = scheme_current_thread;
+
+  /* In case there's a recursive call to `read', save the "quick" param vals
+     and restore them afterward */
+  rs->crc = p->quick_can_read_compiled;
+  rs->crpq = p->quick_can_read_pipe_quote;
+  rs->crb = p->quick_can_read_box;
+  rs->crg = p->quick_can_read_graph;
+  rs->cs = p->quick_case_sens;
+  rs->sbap = p->quick_square_brackets_are_parens;
+  rs->cbap = p->quick_curly_braces_are_parens;
+  rs->rdi = p->quick_read_decimal_inexact;
+  rs->crd = p->quick_can_read_dot;
+  rs->crq = p->quick_can_read_quasi;
+
+  rs->exn_handler = scheme_get_param(p->config, MZCONFIG_EXN_HANDLER);
+  
+  my_handler = scheme_make_close_prim_w_arity(read_special_exn_handler,
+					      rs,
+					      "read-special-exception-handler",
+					      1, 1);
+
+  scheme_set_param(p->config, MZCONFIG_EXN_HANDLER, my_handler);
+
+  rs->exn = 0;
+}
+
+static void post_read_special(void *e)
+{
+  Read_Special_DW *rs = (Read_Special_DW *)e;
+  Scheme_Thread *p = scheme_current_thread;
+
+  p->quick_can_read_compiled = rs->crc;
+  p->quick_can_read_pipe_quote = rs->crpq;
+  p->quick_can_read_box = rs->crb;
+  p->quick_can_read_graph = rs->crg;
+  p->quick_case_sens = rs->cs;
+  p->quick_square_brackets_are_parens = rs->sbap;
+  p->quick_curly_braces_are_parens = rs->cbap;
+  p->quick_read_decimal_inexact = rs->rdi;
+  p->quick_can_read_dot = rs->crd;
+  p->quick_can_read_quasi = rs->crq;
+
+  scheme_set_param(p->config, MZCONFIG_EXN_HANDLER, rs->exn_handler);
+}
+
+static Scheme_Object *do_read_special(void *e)
+{
+  Read_Special_DW *rs = (Read_Special_DW *)e;
+
+  return _scheme_apply_multi(rs->f, 4, rs->a);
+}
+
+static Scheme_Object *handle_call_ec(void *e)
+{
+  Read_Special_DW *rs = (Read_Special_DW *)e;
+  Scheme_Thread *p = scheme_current_thread;
+
+  if ((void *)p->cjs.jumping_to_continuation == rs) {
+    rs->exn = 1;
+    return p->cjs.u.val;
+  } else
+    return NULL;
+}
+
+Scheme_Object *scheme_get_special(Scheme_Object *port, 
+				  Scheme_Object *src, long line, long col, long pos,
+				  Scheme_Object **exn)
 {
   Scheme_Object *r, *val, *pd, *f, *a[4];
   Scheme_Input_Port *ip;
   long pos_delta;
-  int crc, crpq, crb, crg, cs, sbap, cbap, rdi, crd, crq;
+  Read_Special_DW *rs;
+  GC_CAN_IGNORE const char *who;
+  
   Scheme_Thread *p = scheme_current_thread;
 
   SCHEME_USE_FUEL(1);
@@ -1576,64 +1676,62 @@ Scheme_Object *scheme_get_special(Scheme_Object *port, Scheme_Object *src, long 
 
   CHECK_PORT_CLOSED("#<primitive:get-special>", "input", port, ip->closed);
 
-  /* In case there'sa recursive call to `read', save the "quick" param vals
-     and restore them afterward */
-  crc = p->quick_can_read_compiled;
-  crpq = p->quick_can_read_pipe_quote;
-  crb = p->quick_can_read_box;
-  crg = p->quick_can_read_graph;
-  cs = p->quick_case_sens;
-  sbap = p->quick_square_brackets_are_parens;
-  cbap = p->quick_curly_braces_are_parens;
-  rdi = p->quick_read_decimal_inexact;
-  crd = p->quick_can_read_dot;
-  crq = p->quick_can_read_quasi;
+  rs = MALLOC_ONE_RT(Read_Special_DW);
+#ifdef MZTAG_REQUIRED
+  rs->type = scheme_rt_read_special_dw;
+#endif
 
-  f = ip->special;
+  rs->f = ip->special;
   ip->special = NULL;
 
   a[0] = (src ? src : scheme_false);
   a[1] = (line > 0) ? scheme_make_integer(line) : scheme_false;
   a[2] = (col > 0) ? scheme_make_integer(col) : scheme_false;
   a[3] = (pos > 0) ? scheme_make_integer(pos) : scheme_false;
-  r = _scheme_apply_multi(f, 4, a);
 
-  p->quick_can_read_compiled = crc;
-  p->quick_can_read_pipe_quote = crpq;
-  p->quick_can_read_box = crb;
-  p->quick_can_read_graph = crg;
-  p->quick_case_sens = cs;
-  p->quick_square_brackets_are_parens = sbap;
-  p->quick_curly_braces_are_parens = cbap;
-  p->quick_read_decimal_inexact = rdi;
-  p->quick_can_read_dot = crd;
-  p->quick_can_read_quasi = crq;
+  rs->a = a;
 
-  /* Should be multiple values: */
-  if (SAME_OBJ(r, SCHEME_MULTIPLE_VALUES)) {
-    if (scheme_multiple_count != 2) {
+  r = scheme_dynamic_wind(pre_read_special,
+			  do_read_special,
+			  post_read_special,
+			  NULL,
+			  rs);
+
+  if (rs->exn) {
+    /* r is the exception value */
+    *exn = r;
+    pd = scheme_special_comment_width(r);
+    val = NULL;
+    who = "exn:read-special-width from port read-special";
+  } else {
+    /* Should be multiple values: */
+    if (SAME_OBJ(r, SCHEME_MULTIPLE_VALUES)) {
+      if (scheme_multiple_count != 2) {
+	scheme_wrong_return_arity("port read-special result", 
+				  2, scheme_multiple_count, scheme_multiple_array,
+				  NULL);
+	return NULL;
+      }
+    } else {
       scheme_wrong_return_arity("port read-special result", 
-				2, scheme_multiple_count, scheme_multiple_array,
+				2, 1, (Scheme_Object **)r,
 				NULL);
       return NULL;
     }
+
     val = scheme_multiple_array[0];
     pd = scheme_multiple_array[1];
+    who = "port read-special result";
+  }
 
-    if (SCHEME_INTP(pd) && SCHEME_INT_VAL(pd) >= 0) {
-      pos_delta = SCHEME_INT_VAL(pd) - 1;
-    } else if (SCHEME_BIGNUMP(pd) && SCHEME_BIGPOS(pd)) {
-      pos_delta = -(ip->position+1); /* drive position to -1 -> lost track */
-    } else {
-      scheme_wrong_type("port read-special result", 
-			"exact non-negative integer", 1, 
-			-scheme_multiple_count, scheme_multiple_array);
-      return NULL;
-    }
+  if (SCHEME_INTP(pd) && SCHEME_INT_VAL(pd) >= 0) {
+    pos_delta = SCHEME_INT_VAL(pd) - 1;
+  } else if (SCHEME_BIGNUMP(pd) && SCHEME_BIGPOS(pd)) {
+    pos_delta = -(ip->position+1); /* drive position to -1 -> lost track */
   } else {
-    scheme_wrong_return_arity("port read-special result", 
-			      2, 1, (Scheme_Object **)r,
-			      NULL);
+    scheme_wrong_type(who, 
+		      "exact non-negative integer", 1, 
+		      -scheme_multiple_count, scheme_multiple_array);
     return NULL;
   }
 

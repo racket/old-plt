@@ -1772,6 +1772,8 @@ void scheme_dup_symbol_check(DupCheckRecord *r, const char *where,
 
 extern int scheme_exiting_result;
 
+static Scheme_Object *scheme_special_comment_width(Scheme_Object *o);
+
 /*========================================================================*/
 /*                         filesystem utilities                           */
 /*========================================================================*/
@@ -1891,7 +1893,8 @@ int scheme_tcp_write_nb_string(char *s, long len, long offset, int rarely_block,
 
 Scheme_Object *scheme_call_enable_break(Scheme_Prim *prim, int argc, Scheme_Object *argv[]);
 
-Scheme_Object *scheme_get_special(Scheme_Object *inport, Scheme_Object *stxsrc, long line, long col, long pos);
+Scheme_Object *scheme_get_special(Scheme_Object *inport, Scheme_Object *stxsrc, long line, long col, long pos, 
+				  Scheme_Object **exn);
 void scheme_bad_time_for_special(const char *name, Scheme_Object *port);
 extern int scheme_special_ok;
 

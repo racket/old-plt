@@ -2082,8 +2082,14 @@ do_read_char(char *name, int argc, Scheme_Object *argv[], int peek, int spec)
   if (ch == SCHEME_SPECIAL) {
     if (peek)
       return scheme_intern_symbol("special");
-    else
-      return scheme_get_special(port, scheme_false, -1, -1, scheme_tell(port));
+    else {
+      Scheme_Object *r, *exn;
+      r = scheme_get_special(port, scheme_false, -1, -1, scheme_tell(port), &exn);
+      if (!r) {
+	scheme_raise(exn);
+      }
+      return r;
+    }
   } else if (ch == EOF)
     return scheme_eof;
   else

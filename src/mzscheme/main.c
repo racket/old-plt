@@ -697,7 +697,7 @@ int main(int argc, char **argv)
 
 # ifdef USE_OSKIT_CONSOLE
   /* We talk to console directly */
-  direct_cons_set_flags(DC_NONBLOCK);
+  direct_cons_set_flags(DC_NONBLOCK | DC_RAW);
 # else
   /* C library handles console; needs liboskit_freebsd_dev.a. */
   /* (Initialization here conflicts with OSK_FILESYSTEMS_AND_ETHERNET). */

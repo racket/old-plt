@@ -1753,7 +1753,7 @@ static void compact_untagged_mpage(void **p, MPage *page)
 	dest = startp;
 	to_near = 1;
 #if ALIGN_DOUBLES
-	if (alignment) {
+	if (size & 0x1) {
 	  dest[0] = 0;
 	  dest_offset++;
 	}

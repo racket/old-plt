@@ -681,9 +681,9 @@ Bool wxCanvasDC::Blit(float xdest, float ydest, float width, float height,
 
     x = XLOG2DEV(xdest);
     y = YLOG2DEV(ydest);
-    h = YLOG2DEV(height + xdest) - x;
-    w = XLOG2DEV(width + ydest) - y;
-    
+    h = YLOG2DEV(height + ydest) - y;
+    w = XLOG2DEV(width + xdest) - x;
+
     {
       Rect srcr = {iysrc, ixsrc, iysrc + (int)height, ixsrc + (int)width};
       Rect destr = {y, x, y+h, x+w };

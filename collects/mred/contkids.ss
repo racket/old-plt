@@ -1,5 +1,5 @@
 ;;
-;; $Id: contkids.ss,v 1.39 1997/08/09 18:25:38 robby Exp robby $
+;; $Id: contkids.ss,v 1.40 1997/08/12 17:31:41 robby Exp robby $
 ;;
 
 ; need to export:
@@ -187,15 +187,15 @@
                                         ; if new value is not a non-negative real number.  Forces a
                                         ; redraw upon a set.
 		[user-min-client-width
-		 (let ([offset #f]
-		       [compute-offset
-			(lambda ()
-			  (unless offset
-			    (let ([c-box (box 0)]
-				  [a-box (box 0)])
-			      (get-client-size c-box (box 0))
-			      (get-size a-box (box 0))
-			      (set! offset (- (unbox a-box) (unbox c-box))))))])
+		 (letrec ([offset #f]
+			  [compute-offset
+			   (lambda ()
+			     (let ([c-box (box 0)]
+				   [a-box (box 0)])
+			       (get-client-size c-box (box 0))
+			       (get-size a-box (box 0))
+			       (set! offset (- (unbox a-box) (unbox c-box)))
+			       (set! compute-offset void)))])
 		 (case-lambda 
 		  [() (compute-offset)
 		      (- (user-min-width) offset)]
@@ -203,15 +203,15 @@
 		   (compute-offset)
 		   (user-min-width (+ new-width offset))]))]
 		[user-min-client-height
-		 (let ([offset #f]
-		       [compute-offset
-			(lambda ()
-			  (unless offset
-			    (let ([c-box (box 0)]
-				  [a-box (box 0)])
-			      (get-client-size (box 0) c-box)
-			      (get-size (box 0) a-box)
-			      (set! offset (- (unbox a-box) (unbox c-box))))))])
+		 (letrec ([offset #f]
+			  [compute-offset
+			   (lambda ()
+			     (let ([c-box (box 0)]
+				   [a-box (box 0)])
+			       (get-client-size (box 0) c-box)
+			       (get-size (box 0) a-box)
+			       (set! offset (- (unbox a-box) (unbox c-box)))
+			       (set! compute-offset void)))])
 		 (case-lambda 
 		  [() (compute-offset)
 		      (- (user-min-height) offset)]

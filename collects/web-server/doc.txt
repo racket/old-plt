@@ -107,10 +107,10 @@ A Response is one of the following:
 
  > (make-response/incremental code message seconds mime extras body)
    all the fields are the same as for response/full, except
-   - body is a ((string -> void) -> void)
+   - body is a ((string ... -> void) -> void)
      In other words, body is a function that accepts an output function.
-     Since each string sent to the browser includes headers for reliable
-     transmission, sending fewer larger strings generates less network
+     Since each bunch of strings sent to the browser includes a header for reliable
+     transmission, sending fewer larger bunches of strings generates less network
      traffic.  Also see make-html-response/incremental in the helpers section.
 
 Evaluating (require (lib "servlet-sig.ss" "web-server")) loads
@@ -197,8 +197,8 @@ provides a few additional functions helpful for constructing servlets:
 
    (make-html-response/incremental
     (lambda (output-chunk)
-      (output-chunk "<html><head><title>")
-      (output-chunk "my-title</title></head>\n")
+      (output-chunk "<html><head><title>"
+                    "my-title</title></head>\n")
       (output-chunk "<body><p>The first paragraph</p>\n")
       (sleep 10)
       (output-chunk "<p>The second paragraph</p></body></html>\n")))

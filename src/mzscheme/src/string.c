@@ -501,34 +501,54 @@ GEN_STRING_COMP(string_ci_gt, "string-ci>?", mz_strcmp_ci, >)
 GEN_STRING_COMP(string_ci_lt_eq, "string-ci<=?", mz_strcmp_ci, <=)
 GEN_STRING_COMP(string_ci_gt_eq, "string-ci>=?", mz_strcmp_ci, >=)
 
+void scheme_get_substring_indices(const char *name, Scheme_Object *str, 
+				  int argc, Scheme_Object **argv, 
+				  int spos, int fpos, long *_start, long *_finish)
+{
+  long len = SCHEME_STRTAG_VAL(str);
+  long start, finish;
+
+  if (argc > spos)
+    start = scheme_extract_index(name, spos, argc, argv, len);
+  else
+    start = 0;
+  if (argc > fpos)
+    finish = scheme_extract_index(name, fpos, argc, argv, len + 1);
+  else
+    finish = len;
+
+  if (!(start <= len)) {
+    out_of_string_range(name, "first ", argv[spos], str, 0, len);
+  }
+  if (!(finish >= start && finish <= len)) {
+    out_of_string_range(name, "second ", argv[fpos], str, start, len);
+  }
+
+  *_start = start;
+  *_finish = finish;
+}
+
 static Scheme_Object *
 substring (int argc, Scheme_Object *argv[])
 {
-  long len, start, finish, i;
-  char *chars;
+  long start, finish, _start, _finish, i;
+  char *chars, *dchars;
   Scheme_Object *str;
 
   if (!SCHEME_STRINGP(argv[0]))
     scheme_wrong_type("substring", "string", 0, argc, argv);
 
   chars = SCHEME_STR_VAL(argv[0]);
-  len = SCHEME_STRTAG_VAL(argv[0]);
 
-  start = scheme_extract_index("substring", 1, argc, argv, len);
-  finish = scheme_extract_index("substring", 2, argc, argv, len + 1);
-
-  if (!(start <= len)) {
-    out_of_string_range("substring", "first ", argv[1], argv[0], 0, len);
-    return NULL;
-  }
-  if (!(finish >= start && finish <= len)) {
-    out_of_string_range("substring", "second ", argv[2], argv[0], start, len);
-    return NULL;
-  }
+  scheme_get_substring_indices("substring", argv[0], argc, argv, 1, 2,
+			       &_start, &_finish);
+  start = _start;
+  finish = _finish;
 
   str = scheme_alloc_string(finish-start, 0);
+  dchars = SCHEME_STR_VAL(str);
   for (i = 0; i < finish-start; i++)
-    SCHEME_STR_VAL(str)[i] = chars[i+start];
+    dchars[i] = chars[i+start];
 
   return (str);
 }

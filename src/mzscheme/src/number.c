@@ -599,10 +599,14 @@ Scheme_Object *scheme_make_double(double d)
 {
   Scheme_Double *sd;
 
-  sd = (Scheme_Double *)scheme_malloc_atomic_tagged(sizeof(Scheme_Double));
-  sd->type = scheme_double_type;
-  SCHEME_DBL_VAL(sd) = d;
-  return (Scheme_Object *)sd;
+  if (!d && zerod)
+    return zerod;
+  else {
+    sd = (Scheme_Double *)scheme_malloc_atomic_tagged(sizeof(Scheme_Double));
+    sd->type = scheme_double_type;
+    SCHEME_DBL_VAL(sd) = d;
+    return (Scheme_Object *)sd;
+  }
 }
 
 #ifdef MZ_USE_SINGLE_FLOATS
@@ -610,10 +614,14 @@ Scheme_Object *scheme_make_float(float f)
 {
   Scheme_Float *sf;
 
-  sf = (Scheme_Float *)scheme_malloc_atomic_tagged(sizeof(Scheme_Float));
-  sf->type = scheme_float_type;
-  SCHEME_FLT_VAL(sf) = f;
-  return (Scheme_Object *)sf;
+  if (!f && zerof)
+    return zerof;
+  else {
+    sf = (Scheme_Float *)scheme_malloc_atomic_tagged(sizeof(Scheme_Float));
+    sf->type = scheme_float_type;
+    SCHEME_FLT_VAL(sf) = f;
+    return (Scheme_Object *)sf;
+  }
 }
 #endif
 
@@ -2256,7 +2264,8 @@ static Scheme_Object *make_polar (int argc, Scheme_Object *argv[])
 	va = SCHEME_DBL_VAL(a);
     }
 
-  if (MZ_IS_NAN(va) || MZ_IS_NAN(vb)) {
+  if (MZ_IS_NAN(va) || MZ_IS_NAN(vb)
+      || MZ_IS_POS_INFINITY(vb) || MZ_IS_NEG_INFINITY(vb)) {
 #ifdef MZ_USE_SINGLE_FLOATS
     if (single == 2)
       return single_nan_object;
@@ -2572,8 +2581,22 @@ char *scheme_number_to_string(int radix, Scheme_Object *obj)
     s = (char *)scheme_malloc_atomic(rlen + ilen + 3);
     memcpy(s, rs, rlen);
     if (SCHEME_TRUEP(positive_p(1, &i))) {
-      offset = 1;
-      s[rlen] = '+';
+      int inf;
+      if (SCHEME_DBLP(i)) {
+	double d = SCHEME_DBL_VAL(i);
+	inf = MZ_IS_POS_INFINITY(d) || MZ_IS_NEG_INFINITY(d);
+#ifdef MZ_USE_SINGLE_FLOATS
+      } else if if (SCHEME_FLTP(i)) {
+	float f = SCHEME_DBL_VAL(i);
+	inf = MZ_IS_POS_INFINITY(f) || MZ_IS_NEG_INFINITY(f);
+#endif
+      } else
+	inf = 0;
+
+      if (!inf) {
+	offset = 1;
+	s[rlen] = '+';
+      }
     }
     memcpy(s + rlen + offset, is, ilen);
     s[rlen + offset + ilen] = 'i';

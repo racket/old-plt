@@ -265,7 +265,8 @@ static Scheme_Object *with_output_to_file (int, Scheme_Object *[]);
 static Scheme_Object *read_f (int, Scheme_Object *[]);
 static Scheme_Object *read_char (int, Scheme_Object *[]);
 static Scheme_Object *read_line (int, Scheme_Object *[]);
-static Scheme_Object *read_block (int, Scheme_Object *[]);
+static Scheme_Object *read_string (int, Scheme_Object *[]);
+static Scheme_Object *read_string_bang (int, Scheme_Object *[]);
 static Scheme_Object *peek_char (int, Scheme_Object *[]);
 static Scheme_Object *eof_object_p (int, Scheme_Object *[]);
 static Scheme_Object *char_ready_p (int, Scheme_Object *[]);
@@ -625,10 +626,15 @@ scheme_init_port (Scheme_Env *env)
 						      "read-line", 
 						      0, 1), 
 			     env);
-  scheme_add_global_constant("read-block", 
-			     scheme_make_prim_w_arity(read_block, 
-						      "read-block", 
+  scheme_add_global_constant("read-string", 
+			     scheme_make_prim_w_arity(read_string, 
+						      "read-string", 
 						      1, 2), 
+			     env);
+  scheme_add_global_constant("read-string!", 
+			     scheme_make_prim_w_arity(read_string_bang, 
+						      "read-string!", 
+						      1, 4), 
 			     env);
   scheme_add_global_constant("peek-char", 
 			     scheme_make_prim_w_arity(peek_char, 
@@ -2854,29 +2860,28 @@ read_line (int argc, Scheme_Object *argv[])
 }
 
 static Scheme_Object *
-read_block (int argc, Scheme_Object *argv[])
+read_string(int argc, Scheme_Object *argv[])
 {
   Scheme_Object *port, *str;
   long size, got;
 
   if (!SCHEME_INTP(argv[0])) {
     if (SCHEME_BIGNUMP(argv[0])) {
-      scheme_raise_out_of_memory("read-block", "making string of length %s",
+      scheme_raise_out_of_memory("read-string", "making string of length %s",
 				 scheme_make_provided_string(argv[0], 0, NULL));
+      return NULL;
     } else
       size = -1; /* cause the error message to be printed */
   } else
     size = SCHEME_INT_VAL(argv[0]);
 
   if (size < 0) {
-    scheme_wrong_type("read-block", "positive exact integer", 0, argc, argv);
+    scheme_wrong_type("read-string", "non-negative exact integer", 0, argc, argv);
     return NULL;
   }
 
-  str = scheme_alloc_string(size, 0);
-
   if ((argc > 1) && !SCHEME_INPORTP(argv[1]))
-    scheme_wrong_type("read-block", "input-port", 1, argc, argv);
+    scheme_wrong_type("read-string", "input-port", 1, argc, argv);
 
   if (argc > 1)
     port = argv[1];
@@ -2886,7 +2891,15 @@ read_block (int argc, Scheme_Object *argv[])
   if ((Scheme_Object *)port == scheme_orig_stdin_port)
     flush_orig_outputs();
 
+  if (!size)
+    return scheme_make_sized_string("", 0, 0);
+
+  str = scheme_alloc_string(size, 0);
+
   got = scheme_get_chars(port, size, SCHEME_STR_VAL(str));
+
+  if (!got)
+    return scheme_eof;
 
   if (got < size) {
     /* Reallocate in case got << size */
@@ -2894,6 +2907,45 @@ read_block (int argc, Scheme_Object *argv[])
   }
 
   return str;
+}
+
+Scheme_Object *
+read_string_bang(int argc, Scheme_Object *argv[])
+{
+  Scheme_Object *port, *str;
+  long size, start, finish, got;
+
+  if (!SCHEME_STRINGP(argv[0])) {
+    scheme_wrong_type("read-string!", "string", 0, argc, argv);
+    return NULL;
+  } else
+    str = argv[0];
+  if ((argc > 1) && !SCHEME_INPORTP(argv[1]))
+    scheme_wrong_type("read-string!", "input-port", 1, argc, argv);
+  
+  scheme_get_substring_indices("read-string!", str, 
+			       argc, argv,
+			       2, 3, &start, &finish);
+
+  size = finish - start;
+
+  if (argc > 1)
+    port = argv[1];
+  else
+    port = CURRENT_INPUT_PORT(scheme_config);
+
+  if ((Scheme_Object *)port == scheme_orig_stdin_port)
+    flush_orig_outputs();
+
+  if (!size)
+    return scheme_make_integer(0);
+
+  got = scheme_get_chars(port, size, SCHEME_STR_VAL(str) + start);
+
+  if (!got)
+    return scheme_eof;
+
+  return scheme_make_integer(got);
 }
 
 static Scheme_Object *

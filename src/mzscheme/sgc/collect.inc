@@ -38,7 +38,11 @@
 # define ALIGNED(x) !(x & (PTR_ALIGNMENT - 1))
 #endif
 
-#define ALLOW_TAIL_PUSH 0
+#ifdef STACK_TRACE
+# define ALLOW_TAIL_PUSH 0
+#else
+# define ALLOW_TAIL_PUSH 0
+#endif
 
 static void COLLECT(OFFSET_ARG)
 {
@@ -48,6 +52,7 @@ static void COLLECT(OFFSET_ARG)
   int local_collect_stack_size;
   int local_collect_stack_count;
   unsigned long *local_collect_stack;
+  long local_mem_use;
 
   /* Download globals into locals so they can be put in registers: */
   local_sector_pagetables = sector_pagetables;
@@ -56,6 +61,7 @@ static void COLLECT(OFFSET_ARG)
   local_collect_stack_size = collect_stack_size;
   local_collect_stack_count = collect_stack_count;
   local_collect_stack = collect_stack;
+  local_mem_use = mem_use;
   
   IF_OR_WHILE (local_collect_stack_count) {
     unsigned long s, end;
@@ -108,7 +114,7 @@ static void COLLECT(OFFSET_ARG)
 
     MARK_STATISTIC(num_pairs_stat++);
 
-    for (; s < end; s += PTR_ALIGNMENT) {
+    while (s < end) {
       void *d = *(void **)INT_TO_PTR(s);
       unsigned long p = ADD_LOCAL_OFFSET(PTR_TO_INT(d));
 
@@ -221,7 +227,7 @@ static void COLLECT(OFFSET_ARG)
 		  
 		  block->free[bpos] = freebyte ^ bit;
 		  
-		  mem_use += size;
+		  local_mem_use += size;
 		  
 		  if (!block->atomic) {
 		    MARK_STATISTIC(num_blockpushes_stat++);
@@ -231,8 +237,9 @@ static void COLLECT(OFFSET_ARG)
 #if ALLOW_TAIL_PUSH
 		    if (s + PTR_ALIGNMENT >= end) {
 		      MARK_STATISTIC(num_blockpushes_tail_stat++);
-		      s = p - PTR_ALIGNMENT;
+		      s = p;
 		      end = p + size;
+		      continue;
 		    } else 
 #endif
 		      LOCAL_PUSH_COLLECT(p, p + size, s);
@@ -311,7 +318,7 @@ static void COLLECT(OFFSET_ARG)
 		      p, (c->end - c->start), s);
 #endif
 	      c->marked = 1;
-	      mem_use += (c->end - c->start);
+	      local_mem_use += (c->end - c->start);
 	      if (!c->atomic) {
 		LOCAL_PUSH_COLLECT(c->start, c->end, s);
 	      }
@@ -322,6 +329,7 @@ static void COLLECT(OFFSET_ARG)
 	  }
 	}
       }
+      s += PTR_ALIGNMENT;
     }
 
 #if ALLOW_TRACE_COUNT
@@ -358,6 +366,7 @@ static void COLLECT(OFFSET_ARG)
   collect_stack_size = local_collect_stack_size;
   collect_stack_count =local_collect_stack_count;
   collect_stack = local_collect_stack;
+  mem_use = local_mem_use;
 
 #if ALLOW_TRACE_COUNT && CHECK
 # ifndef STACK_TRACE
@@ -375,4 +384,5 @@ static void COLLECT(OFFSET_ARG)
 #undef IF_OR_WHILE
 #undef STACK_TRACE
 #undef FOLLOW_INTERIOR
+#undef ALLOW_TAIL_PUSH
 #undef COLLECT

@@ -2824,11 +2824,11 @@ static char *sig_path_name(Scheme_Object *name, Scheme_Object *path)
     char *n = (char *)scheme_symbol_name(SCHEME_CAR(path)), *v;
     int nl;
     nl = strlen(n);
-    v = scheme_malloc_atomic(nl + l + 3);
+    v = scheme_malloc_atomic(nl + l + 2);
     memcpy(v + nl + 1, s, l);
     memcpy(v, n, nl);
     v[nl] = ':';
-    v[l + nl + 2] = 0;
+    v[l + nl + 1] = 0;
     l += nl + 1;
     s = v;
     path = SCHEME_CDR(path);

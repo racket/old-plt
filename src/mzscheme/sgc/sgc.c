@@ -1,7 +1,7 @@
 /*
   SenoraGC, a relatively portable conservative GC for a slightly
     cooperative environment
-  Copyright (c) 1996-97 Matthew Flatt
+  Copyright (c) 1996-98 Matthew Flatt
   All rights reserved.
 
   After Boehm et al.
@@ -88,19 +88,28 @@
 /* Defines malloc(), realloc(), calloc(), and  free() in terms of 
    the collector. Platform-specific allocation routines (e.g., sbrk())
    must then be used for low-level allocations by the collector;
-   turn on one of: GET_MEM_VIA_SBRK.
+   turn on one of: GET_MEM_VIA_SBRK or GET_MEM_VIA_MMAP.
    This will not work if fprintf uses malloc of free. Turing on
    FPRINTF_USE_PRIM_STRINGOUT can solve this problem.
    Automatically implies PROVIDE_GC_FREE, but adds extra checks to
    CHECK_FREES if PROVIDE_GC_FREE was not otherwise on */
 
-#define GET_MEM_VIA_SBRK SGC_STD_DEBUGGING_UNIX
+#define GET_MEM_VIA_SBRK 0
 /* Instead of calling malloc() to get low-level memory, use
    sbrk() directly. (Unix) */
+
+#define GET_MEM_VIA_MMAP SGC_STD_DEBUGGING_UNIX
+/* Instead of calling malloc() to get low-level memory, use
+   mmap() directly. (Unix) */
 
 #define GET_MEM_VIA_VIRTUAL_ALLOC SGC_STD_DEBUGGING_WINDOWS
 /* Instead of calling malloc() to get low-level memory, use
    VirtualAlloc() directly. (Win32) */
+
+#define RELEASE_UNUSED_SECTORS 1
+/* Instead of managing a list of unused sectors, they are
+   given back to the OS. This only works with mmap()
+   and VirtualAlloc(). */
 
 #define DISTINGUISH_FREE_FROM_UNMARKED 0
 /* Don't let conservatism resurrect a previously-collected block */
@@ -109,7 +118,7 @@
 /* Automatically implies ALLOW_TRACE_COUNT, ALLOW_TRACE_PATH,
    ALLOW_SET_FINALIZER, and CHECK_WATCH_FOR_PTR_ALLOC */
 
-#define STD_MEMORY_TRACING SGC_STD_DEBUGGING
+#define STD_MEMORY_TRACING 0
 /* Automatically implies TERSE_MEMORY_TRACING, DUMP_BLOCK_COUNTS,
    and DUMP_SECTOR_MAP */
 
@@ -143,7 +152,7 @@
 #define USE_WATCH_FOUND_FUNC SGC_STD_DEBUGGING
 /* Calls GC_found_watch when the watch-for ptr is found. */
 
-#define PAD_BOUNDARY_BYTES 1
+#define PAD_BOUNDARY_BYTES SGC_STD_DEBUGGING
 /* Put a known padding pattern around every allocated
    block to test for array overflow/underflow.
    Pad-testing is performed at the beginning of every GC.
@@ -155,11 +164,11 @@
    end of an allocated block, as is generally performed
    for stack-based pointers). */
 
-#define DUMP_BLOCK_COUNTS SGC_STD_DEBUGGING
+#define DUMP_BLOCK_COUNTS 1
 /* GC_dump prints detail information about block and
    set size contents. */
 
-#define DUMP_SECTOR_MAP SGC_STD_DEBUGGING
+#define DUMP_SECTOR_MAP 1
 /* GC_dump prints detail information about existing
    sectors. */
 
@@ -190,10 +199,15 @@
 /* Automatically registers static C variables as roots if
    platform-specific code is porvided */
 
+#define PRINT_INFO_PER_GC SGC_STD_DEBUGGING
+/* Writes to stderr before an after each GC, summarizing
+   the state of memory and current system time at each point. */
+
 #define SHOW_SECTOR_MAPS_AT_GC 0
 /* Write a sector map before and after each GC. This is helpful for
    noticing unusual memory pattens, such as allocations of large
-   blocks or unusually repetitive allocations. */
+   blocks or unusually repetitive allocations. Only works with
+   PRINT_INFO_PER_GC. */
 
 /****************************************************************************/
 /* Parameters and platform-specific settings                                */
@@ -230,8 +244,20 @@
 #if GET_MEM_VIA_SBRK
 # include <unistd.h>
 #endif
+#if GET_MEM_VIA_MMAP
+# include <unistd.h>
+# include <sys/mman.h>
+# include <sys/types.h>
+# include <sys/stat.h>
+# include <fcntl.h>
+#endif
 #ifdef WIN32
 # include <windows.h>
+#endif
+
+#if !GET_MEM_VIA_MMAP && !GET_MEM_VIA_VIRTUAL_ALLOC
+# undef RELEASE_UNUSED_SECTORS
+# define RELEASE_UNUSED_SECTORS 0
 #endif
 
 /* System-specific alignment of pointers. */
@@ -376,7 +402,7 @@
 #if PAD_BOUNDARY_BYTES
 # define PAD_START_SIZE (2 * sizeof(long))
 # define PAD_END_SIZE sizeof(long)
-# define PAD_PATTERN 0x7c7c7c7c
+# define PAD_PATTERN 0x7c8c9cAc
 # define PAD_FILL_PATTERN 0xc7
 # define SET_PAD(p, s, os) set_pad(p, s, os)
 # define PAD_FORWARD(p) ((void *)(((char *)p) + PAD_START_SIZE))
@@ -393,7 +419,11 @@ void (*GC_out_of_memory)(void);
 enum {
   sector_kind_block,
   sector_kind_free,
+#if !RELEASE_UNUSED_SECTORS
   sector_kind_freed,
+#else
+# define sector_kind_freed sector_kind_free
+#endif
   sector_kind_chunk,
   sector_kind_managed,
   sector_kind_other
@@ -497,7 +527,8 @@ typedef struct {
 
 static SectorPage **sector_pagetables;
 
-#include "splay.c"
+#if !RELEASE_UNUSED_SECTORS
+# include "splay.c"
 
 typedef struct SectorFreepage {
   long size; 
@@ -568,6 +599,7 @@ static void add_freepage(SectorFreepage *naya)
   } else
     naya->same_size = NULL;
 }
+#endif /* !RELEASE_UNUSED_SECTORS */
 
 #define TABLE_HI_SHIFT LOG_SECTOR_SEGMENT_SIZE
 #define TABLE_LO_MASK (SECTOR_SEGMENT_SIZE-1)
@@ -673,8 +705,6 @@ static long collect_mem_use;
 
 static long num_sector_allocs, num_sector_frees;
 
-static int collect_off;
-
 #if ALLOW_TRACE_COUNT
 static long mem_traced;
 #endif
@@ -756,8 +786,25 @@ static void *platform_plain_sector(int count)
 
   return result;
 }
-#else
-# if GET_MEM_VIA_VIRTUAL_ALLOC
+#endif
+#if GET_MEM_VIA_MMAP
+static void *platform_plain_sector(int count)
+{
+  static int fd;
+
+  if (!fd) {
+    fd = open("/dev/zero", O_RDONLY);
+  }
+  
+  return mmap(0, count << LOG_SECTOR_SEGMENT_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0);
+}
+
+static void free_plain_sector(void *p, int count)
+{
+  munmap(p, count << LOG_SECTOR_SEGMENT_SIZE);
+}
+#endif
+#if GET_MEM_VIA_VIRTUAL_ALLOC
 static void *platform_plain_sector(int count)
 {
   /* Since 64k blocks are used up by each call to VirtualAlloc,
@@ -785,14 +832,20 @@ static void *platform_plain_sector(int count)
 		      MEM_COMMIT | MEM_RESERVE,
 		      PAGE_READWRITE);
 }
-# else
 
-#  if PROVIDE_MALLOC_AND_FREE
+static void free_plain_sector(void *p, int count)
+{
+  VirtualFree(p, 0, MEM_RELEASE);
+}
+#endif
+
+#if !GET_MEM_VIA_SBRK && !GET_MEM_VIA_MMAP && !GET_MEM_VIA_VIRTUAL_ALLOC
+# if PROVIDE_MALLOC_AND_FREE
   >> 
   Error: you must pick a platform-specific allocation mechanism
   to support malloc() and free() 
   <<
-#  endif
+# endif
 
 static void *platform_plain_sector(int count)
 {
@@ -836,7 +889,6 @@ static void *platform_plain_sector(int count)
     return r;
   }
 }
-# endif
 #endif
 
 static void *malloc_plain_sector(int count)
@@ -894,11 +946,13 @@ static void register_sector(void *naya, int need, long kind)
   }
 }
 
-static void *malloc_sector(long size, long kind)
+static void *malloc_sector(long size, long kind, int no_new)
 {
   long need, i;
   void *naya;
+#if !RELEASE_UNUSED_SECTORS
   SectorFreepage *fp;
+#endif
 
 #if CHECK_COLLECTING
   if (collecting_now) {
@@ -920,8 +974,9 @@ static void *malloc_sector(long size, long kind)
       sector_pagetables[i] = NULL;
   }
 
-  need = (size + SECTOR_SEGMENT_SIZE - 1) / SECTOR_SEGMENT_SIZE;
+  need = (size + SECTOR_SEGMENT_SIZE - 1) >> LOG_SECTOR_SEGMENT_SIZE;
 
+#if !RELEASE_UNUSED_SECTORS
   if (sector_freepage_by_size) {
     sector_freepage_by_size = splay(need, sector_freepage_by_size);
     if (TREE_FP(sector_freepage_by_size)->size < need) {
@@ -958,6 +1013,10 @@ static void *malloc_sector(long size, long kind)
     sector_free_mem_use -= (need << LOG_SECTOR_SEGMENT_SIZE);
     return naya;
   }
+#endif
+
+  if (no_new)
+    return NULL;
 
   naya = malloc_plain_sector(need);
   sector_mem_use += (need << LOG_SECTOR_SEGMENT_SIZE);
@@ -970,7 +1029,9 @@ static void free_sector(void *p)
 {
   unsigned long s = PTR_TO_INT(p), t;
   int c = 0;
+#if !RELEASE_UNUSED_SECTORS
   SectorFreepage *fp, *ifp;
+#endif
 
   num_sector_frees++;
   
@@ -996,8 +1057,11 @@ static void free_sector(void *p)
   }
 #endif
 
+#if RELEASE_UNUSED_SECTORS
+  free_plain_sector(p, c);
+  sector_mem_use -= (c << LOG_SECTOR_SEGMENT_SIZE);
+#else
   sector_free_mem_use += (c << LOG_SECTOR_SEGMENT_SIZE);
-
   if (sector_freepage_by_end) {
     /* Try merge with a predecessor: */
     sector_freepage_by_end = splay(s, sector_freepage_by_end);
@@ -1025,6 +1089,7 @@ static void free_sector(void *p)
   fp->end = t;
   fp->size = c;
   add_freepage(fp);
+#endif
 }
 
 #ifdef WIN32
@@ -1063,8 +1128,16 @@ static void *realloc_collect_temp(void *v, long oldsize, long newsize)
   if (!v)
     c_refcount++;
   return naya;
-#else
-# if GET_MEM_VIA_VIRTUAL_ALLOC
+#elif GET_MEM_VIA_MMAP
+  void *naya;
+  
+  naya = platform_plain_sector((newsize + SECTOR_SEGMENT_SIZE - 1) >> LOG_SECTOR_SEGMENT_SIZE);
+  memcpy(naya, v, oldsize);
+  if (v)
+    munmap(v, (oldsize + SECTOR_SEGMENT_SIZE - 1) >> LOG_SECTOR_SEGMENT_SIZE);
+
+  return naya;
+#elif GET_MEM_VIA_VIRTUAL_ALLOC
   void *naya;
 
   naya = VirtualAlloc(NULL, newsize, 
@@ -1075,7 +1148,7 @@ static void *realloc_collect_temp(void *v, long oldsize, long newsize)
     VirtualFree(v, 0, MEM_RELEASE);
 
   return naya;
-# else
+#else
   void *naya;
 
   naya = MALLOC(newsize);
@@ -1083,23 +1156,22 @@ static void *realloc_collect_temp(void *v, long oldsize, long newsize)
   FREE(v);
   collect_mem_use += newsize;
   return naya;
-# endif
 #endif
 }
 
-static void free_collect_temp(void *v)
+static void free_collect_temp(void *v, long oldsize)
 {
 #if GET_MEM_VIA_SBRK
   if (!(--c_refcount)) {
     collect_mem_use = (unsigned long)(sbrk(0)) - (unsigned long)save_brk;
     brk(save_brk);
   }
-#else
-# if GET_MEM_VIA_VIRTUAL_ALLOC
+#elif GET_MEM_VIA_MMAP
+  munmap(v, (oldsize + SECTOR_SEGMENT_SIZE - 1) >> LOG_SECTOR_SEGMENT_SIZE);
+#elif GET_MEM_VIA_VIRTUAL_ALLOC
   VirtualFree(v, 0, MEM_RELEASE);
-# else
+#else
   FREE(v);
-# endif
 #endif
 }
 
@@ -1143,7 +1215,7 @@ static void *malloc_managed(long size)
     size += PTR_SIZE - (size & PTR_SIZE);
 
   if (!managed) {
-    managed = (Managed *)malloc_sector(SECTOR_SEGMENT_SIZE, sector_kind_other);
+    managed = (Managed *)malloc_sector(SECTOR_SEGMENT_SIZE, sector_kind_other, 0);
     managed->num_buckets = 0;
     manage_real_mem_use += SECTOR_SEGMENT_SIZE;
   }
@@ -1159,7 +1231,7 @@ static void *malloc_managed(long size)
     if (size < MAX_COMMON_SIZE) {
       int c;
 
-      mb = (ManagedBlock *)malloc_sector(SECTOR_SEGMENT_SIZE, sector_kind_managed);
+      mb = (ManagedBlock *)malloc_sector(SECTOR_SEGMENT_SIZE, sector_kind_managed, 0);
       manage_real_mem_use += SECTOR_SEGMENT_SIZE;
       managed->buckets[i].block = mb;
 
@@ -1170,7 +1242,7 @@ static void *malloc_managed(long size)
       managed->buckets[i].offset = c + sizeof(ManagedBlockHeader);
     } else {
       long l = size + sizeof(ManagedBlockHeader) + PTR_SIZE;
-      mb = (ManagedBlock *)malloc_sector(l, sector_kind_managed);
+      mb = (ManagedBlock *)malloc_sector(l, sector_kind_managed, 0);
       manage_real_mem_use += l;
       managed->buckets[i].block = mb;
       managed->buckets[i].perblock = 1;
@@ -1193,7 +1265,7 @@ static void *malloc_managed(long size)
     mb = mb->head.next;
   if (mb->head.count == perblock) {
     long l = offset + size * perblock;
-    mb->head.next = (ManagedBlock *)malloc_sector(l, sector_kind_managed);
+    mb->head.next = (ManagedBlock *)malloc_sector(l, sector_kind_managed, 0);
     manage_real_mem_use += l;
     mb->head.next->head.prev = mb;
     mb = mb->head.next;
@@ -1281,8 +1353,8 @@ static void init_size_map()
   int i, j, find_half;
   long k, next;
 
-  size_index_map = (long *)malloc_sector(MAX_COMMON_SIZE, sector_kind_other);
-  size_map = malloc_sector(NUM_COMMON_SIZE * sizeof(long), sector_kind_other);
+  size_index_map = (long *)malloc_sector(MAX_COMMON_SIZE, sector_kind_other, 0);
+  size_map = malloc_sector(NUM_COMMON_SIZE * sizeof(long), sector_kind_other, 0);
 
   i = 0;
   while (i < 8) {
@@ -1877,10 +1949,12 @@ static void dump_sector_map(char *prefix)
 	    }
 
 	    switch(kind) {
+#if !RELEASE_UNUSED_SECTORS
 	    case sector_kind_freed:
 	      same_sec = "0";
 	      diff_sec = "O";
 	      break;
+#endif
 	    case sector_kind_block:
 	      same_sec = ".";
 	      diff_sec = ",";
@@ -2158,7 +2232,7 @@ static void set_pad(void *p, long s, long os)
   *(long*)p = PAD_PATTERN;
   *(long*)(((char *)p) + s - PAD_END_SIZE) = PAD_PATTERN;
   
-  /* Keep giev - requested diff: */
+  /* Keep difference of given - requested: */
   diff = (s - os - PAD_START_SIZE - PAD_END_SIZE);
   ((long *)p)[1] = diff;
   
@@ -2179,7 +2253,7 @@ static void init_positions(int cpos, int size, int num_elems)
   int i, j, pos;
   int *positions;
 
-  positions = (int *)malloc_sector(num_offsets * sizeof(int), sector_kind_other);
+  positions = (int *)malloc_sector(num_offsets * sizeof(int), sector_kind_other, 0);
 
   for (i = 0, pos = 0, j = 0; i < num_offsets; ) {
     positions[i++] = pos;
@@ -2334,10 +2408,13 @@ void *do_malloc(SET_NO_BACKINFO
 
     cpos = 0;
 
-    if (!collect_off && (mem_use >= mem_limit))
-      GC_gcollect();
-
-    a = malloc_sector(size + sizeof(MemoryChunk), sector_kind_chunk);
+    a = malloc_sector(size + sizeof(MemoryChunk), sector_kind_chunk, 1);
+    if (!a) {
+      if (mem_use >= mem_limit)
+	GC_gcollect();
+      
+      a = malloc_sector(size + sizeof(MemoryChunk), sector_kind_chunk, 0);
+    }
 
     c = (MemoryChunk *)a;
     
@@ -2408,13 +2485,6 @@ void *do_malloc(SET_NO_BACKINFO
 
   ALLOC_STATISTIC(num_newblock_allocs_stat++);
 
-  if (!collect_off && (mem_use >= mem_limit)) {
-    GC_gcollect();
-    return do_malloc(KEEP_SET_INFO_ARG(set_no)
-		     size, common, common_ends, othersptr, 
-		     atomic, uncollectable);
-  }
-
   sizeElemBit = size << LOG_FREE_BIT_PER_ELEM;
 
   /* upper bound: */
@@ -2423,14 +2493,24 @@ void *do_malloc(SET_NO_BACKINFO
   elem_per_block = (SECTOR_SEGMENT_SIZE - sizeof(MemoryBlock) - (PTR_SIZE - 2) - elem_per_block) / sizeElemBit;
   if (elem_per_block) {
     /* Small enough to fit into one segment */
-    block = (MemoryBlock *)malloc_sector(SECTOR_SEGMENT_SIZE, sector_kind_block);
+    c = SECTOR_SEGMENT_SIZE;
   } else {
-    long alloc_size;
     elem_per_block = 1;
     /* Add (PTR_SIZE - 1) to ensure enough room after alignment: */
-    alloc_size = sizeof(MemoryBlock) + (PTR_SIZE - 1) + sizeElemBit;
-    block = (MemoryBlock *)malloc_sector(alloc_size, sector_kind_block);
+    c = sizeof(MemoryBlock) + (PTR_SIZE - 1) + sizeElemBit;
   }
+
+  block = (MemoryBlock *)malloc_sector(c, sector_kind_block, 1);
+  if (!block) {
+    if (mem_use >= mem_limit) {
+      GC_gcollect();
+      return do_malloc(KEEP_SET_INFO_ARG(set_no)
+		       size, common, common_ends, othersptr, 
+		       atomic, uncollectable);
+    } else
+      block = (MemoryBlock *)malloc_sector(c, sector_kind_block, 0);
+  }
+
   
   block->elem_per_block = elem_per_block;
 
@@ -2677,13 +2757,12 @@ void free(void *p)
     GC_free(p);
 }
 
-#ifdef WIN32
+# ifdef WIN32
 size_t _msize(void *p)
 {
-	return GC_size(p);
+  return GC_size(p);
 }
-#endif
-
+# endif
 #endif
 
 void GC_general_register_disappearing_link(void **p, void *a)
@@ -2961,8 +3040,8 @@ void GC_free(void *p)
 
       block->free[pos] |= (fbit | ubit);
 
-	  if (!initialized)
-		GC_initialize();
+      if (!initialized)
+	GC_initialize();
 
       set = common_sets[block->set_no];
       
@@ -2992,6 +3071,9 @@ void GC_free(void *p)
       if (set->uncollectable)
 	mem_uncollectable_use -= block->size;
     } else {
+      if (!initialized)
+	GC_initialize();
+
 #if CHECK_FREES && EXTRA_FREE_CHECKS
       if (chunk->set_no != 4) {
 	char b[256];
@@ -3414,7 +3496,7 @@ static void init_trace_stack(TraceStack *s)
 static void done_trace_stack(TraceStack *s)
 {
   if (s->stack)
-    free_collect_temp(s->stack);
+    free_collect_temp(s->stack, sizeof(unsigned long)*(s->size + 1));
 }
 
 static void push_trace_stack(unsigned long v, TraceStack *s)
@@ -3498,8 +3580,21 @@ static int num_chunkmarks_stat;
 
 static void prepare_stack_collect()
 {
+  unsigned long s, e;
+  unsigned long source;
+#if KEEP_DETAIL_PATH
+  source = collect_stack[--collect_stack_count];
+#else
+  source = 0;
+#endif
+  e = collect_stack[--collect_stack_count];
+  s = collect_stack[--collect_stack_count];
+
+  PUSH_COLLECT(s, e, source);
   semi_collect_stack(0);
+
 #if !NO_STACK_OFFBYONE
+  PUSH_COLLECT(s, e, source);
   semi_collect_stack(-PTR_ALIGNMENT);
 #endif
 }
@@ -4146,6 +4241,8 @@ void GC_push_all_stack(void *sp, void *ep)
   PUSH_COLLECT(s, e, 0);
 
   prepare_stack_collect();
+
+  collect();
 }
 
 void do_GC_gcollect(void *stack_now)
@@ -4153,18 +4250,17 @@ void do_GC_gcollect(void *stack_now)
   long root_marked;
   int j;
 
-#if SGC_STD_DEBUGGING
+#if PRINT_INFO_PER_GC
   long orig_mem_use = mem_use;
+  long start_time = scheme_get_process_milliseconds();
   FPRINTF(STDERR, "gc at %ld (%ld): %ld\n",
 	  mem_use, sector_mem_use, 
 # if GET_MEM_VIA_SBRK
 	  (long)sbrk(0)
-# else
-#  if defined(WIN32) && AUTO_STATIC_ROOTS_IF_POSSIBLE
+# elif defined(WIN32) && AUTO_STATIC_ROOTS_IF_POSSIBLE
 	  total_memory_use()
-#  else
+# else
 	  0
-#  endif
 # endif
 	  );
 # if SHOW_SECTOR_MAPS_AT_GC
@@ -4391,7 +4487,7 @@ void do_GC_gcollect(void *stack_now)
   if (mem_use)
     mem_limit = MEM_USE_FACTOR * mem_use;
 
-  free_collect_temp(collect_stack);
+  free_collect_temp(collect_stack, sizeof(unsigned long) * (collect_stack_size + 1));
 
 # if ALLOW_TRACE_COUNT
   done_trace_stack(&collect_trace_stack);
@@ -4406,9 +4502,10 @@ void do_GC_gcollect(void *stack_now)
     mem_limit = MEM_USE_FACTOR * mem_use;
 #endif
 
-#if SGC_STD_DEBUGGING
-  FPRINTF(STDERR, "done  %ld (%ld); recovered %ld\n",
-	  mem_use, sector_mem_use, orig_mem_use - mem_use);
+#if PRINT_INFO_PER_GC
+  FPRINTF(STDERR, "done  %ld (%ld); recovered %ld in %ld msecs\n",
+	  mem_use, sector_mem_use, orig_mem_use - mem_use,
+	  (long)scheme_get_process_milliseconds() - start_time);
 # if SHOW_SECTOR_MAPS_AT_GC
   dump_sector_map("                            ");
 # endif

@@ -1025,4 +1025,8 @@ Scheme_Object *scheme_do_exit(int argc, Scheme_Object *argv[]);
 
 void scheme_init_setjumpup(void);
 
+void scheme_get_substring_indices(const char *name, Scheme_Object *str, 
+				  int argc, Scheme_Object **argv, 
+				  int spos, int fpos, long *_start, long *_finish);
+
 #endif /* __mzscheme_private__ */

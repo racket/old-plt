@@ -48,7 +48,7 @@ struct tree_node {
     void *data;
 };
 
-Tree * splay (unsigned long i, Tree * t) {
+static Tree * splay (unsigned long i, Tree * t) {
 /* Simple top down splay, not requiring i to be in the tree t.  */
 /* What it does is described above.                             */
     Tree N, *l, *r, *y;
@@ -92,7 +92,7 @@ Tree * splay (unsigned long i, Tree * t) {
     return t;
 }
 
-Tree * insert(unsigned long i, Tree * new, Tree * t) {
+static Tree * insert(unsigned long i, Tree * new, Tree * t) {
 /* Insert i into the tree t, unless it's already there.    */
 /* Return a pointer to the resulting tree.                 */
     new->item = i;
@@ -117,7 +117,7 @@ Tree * insert(unsigned long i, Tree * new, Tree * t) {
     }
 }
 
-Tree * delete(unsigned long i, Tree * t) {
+static Tree * delete(unsigned long i, Tree * t) {
 /* Deletes i from the tree if it's there.               */
 /* Return a pointer to the resulting tree.              */
     Tree * x;

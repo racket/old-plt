@@ -86,11 +86,23 @@ Scheme_Object *scheme_complex_normalize(const Scheme_Object *o)
   Scheme_Complex *c = (Scheme_Complex *)o;
 
   if (SCHEME_DBLP(c->i)) {
-    if (SCHEME_DBL_VAL(c->i) == 0.0)
+    double d = SCHEME_DBL_VAL(c->i);
+    if (d == 0.0)
+      return c->r;
+    if (MZ_IS_NAN(d))
+      return c->i;
+    d = SCHEME_FLOAT_VAL(c->r);
+    if (MZ_IS_NAN(d))
       return c->r;
 #ifdef MZ_USE_SINGLE_FLOATS
   } else if (SCHEME_FLTP(c->i)) {
-    if (SCHEME_FLT_VAL(c->i) == 0.0f)
+    float f = SCHEME_FLT_VAL(c->i);
+    if (f == 0.0f)
+      return c->r;
+    if (MZ_IS_NAN(d))
+      return c->i;
+    f = SCHEME_FLT_VAL(c->r);
+    if (MZ_IS_NAN(f))
       return c->r;
 #endif
   } else if (c->i == zero)
@@ -161,6 +173,15 @@ Scheme_Object *scheme_complex_sub1(const Scheme_Object *n)
 							 &s));
 }
 
+static int zero_p(const Scheme_Object *v)
+{
+  return ((v == zero) 
+#ifdef MZ_USE_SINGLE_FLOATS
+	  || (SCHEME_FLTP(v) && SCHEME_FLT_VAL(v) == 0.0f)
+#endif
+	  || (SCHEME_DBLP(v) && SCHEME_DBL_VAL(v) == 0.0));
+}
+
 Scheme_Object *scheme_complex_multiply(const Scheme_Object *a, const Scheme_Object *b)
 {
   Scheme_Complex *ca = (Scheme_Complex *)a;
@@ -171,15 +192,6 @@ Scheme_Object *scheme_complex_multiply(const Scheme_Object *a, const Scheme_Obje
 			     scheme_bin_plus(scheme_bin_mult(ca->r, cb->i),
 					     scheme_bin_mult(ca->i, cb->r)));
   
-}
-
-static int zero_p(const Scheme_Object *v)
-{
-  return ((v == zero) 
-#ifdef MZ_USE_SINGLE_FLOATS
-	  || (SCHEME_FLTP(v) && SCHEME_FLT_VAL(v) == 0.0f)
-#endif
-	  || (SCHEME_DBLP(v) && SCHEME_DBL_VAL(v) == 0.0));
 }
 
 Scheme_Object *scheme_complex_divide(const Scheme_Object *n, const Scheme_Object *d)

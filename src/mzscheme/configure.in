@@ -276,6 +276,7 @@ case $OS in
     ;;
   Darwin)
     if test "$CC" = "mwccppc"; then
+      MZBINTARGET=macosx-bin
       CFLAGS="-gccinc $CFLAGS -ext o -g -O2"
       AR="libtool"
       ARFLAGS="-o"

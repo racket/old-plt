@@ -29,6 +29,10 @@ cygwin-bin:
 	$(MAKE) starter
 	$(MAKE) normal-bin
 
+macosx-bin:
+	$(MAKE) carbon-precomp
+	$(MAKE) normal-bin
+
 oskit: 
 	$(MAKE) mzlibrary
 	$(MAKE) mzscheme.multiboot
@@ -115,6 +119,9 @@ mzstart.exe: $(srcdir)/dynsrc/start.c
 	$(CC) @CFLAGS@ -o mzstart.exe $(srcdir)/dynsrc/start.c
 
 starter: mzstart.exe
+
+carbon-precomp: src/macosxpre.c
+	mwccppc -gccinc -D__CF_USE_FRAMEWORK_INCLUDES__ -precompile carbon-precomp src/macosxpre.c
 
 exn:
 	$(MAKE) $(srcdir)/src/schexn.h

@@ -2316,6 +2316,15 @@ case $OS in
       enable_sgc=yes
     fi
     ;;
+  Darwin)
+    if test "$CC" = "mwccppc"; then
+      MZBINTARGET=macosx-bin
+      CFLAGS="-gccinc $CFLAGS -ext o -g -O2"
+      AR="libtool"
+      ARFLAGS="-o"
+      LIBS="$LIBS -framework Carbon"
+    fi
+    ;;
   *)
     ;;
 esac
@@ -2359,19 +2368,19 @@ cross_compiling=$ac_cv_prog_cc_cross
 
  msg="for inline keyword" 
 echo $ac_n "checking $msg""... $ac_c" 1>&6
-echo "configure:2362: checking $msg" >&5
+echo "configure:2371: checking $msg" >&5
 if test "$cross_compiling" = yes; then
   inline=no
 else
   cat > conftest.$ac_ext <<EOF
-#line 2367 "configure"
+#line 2376 "configure"
 #include "confdefs.h"
 static inline int foo() { return 0; }
    int main() {
       return foo();
    }
 EOF
-if { (eval echo configure:2374: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext} && (./conftest; exit) 2>/dev/null
+if { (eval echo configure:2383: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext} && (./conftest; exit) 2>/dev/null
 then
   inline=yes
 else
@@ -2404,12 +2413,12 @@ cross_compiling=$ac_cv_prog_cxx_cross
 
  msg="whether new and new[] are different"   
   echo $ac_n "checking $msg""... $ac_c" 1>&6
-echo "configure:2407: checking $msg" >&5
+echo "configure:2416: checking $msg" >&5
   if test "$cross_compiling" = yes; then
   different=yes
 else
   cat > conftest.$ac_ext <<EOF
-#line 2412 "configure"
+#line 2421 "configure"
 #include "confdefs.h"
 #ifdef __cplusplus
 extern "C" void exit(int);
@@ -2422,7 +2431,7 @@ extern "C" void exit(int);
     return (new C) == (new C[10]);       
    }
 EOF
-if { (eval echo configure:2425: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext} && (./conftest; exit) 2>/dev/null
+if { (eval echo configure:2434: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext} && (./conftest; exit) 2>/dev/null
 then
   different=yes
 else
@@ -2443,16 +2452,16 @@ fi
   #  then try adding -fpermissive
   if test "$CC" = "gcc" ; then
     echo $ac_n "checking whether need to use -fpermissive""... $ac_c" 1>&6
-echo "configure:2446: checking whether need to use -fpermissive" >&5
+echo "configure:2455: checking whether need to use -fpermissive" >&5
     cat > conftest.$ac_ext <<EOF
-#line 2448 "configure"
+#line 2457 "configure"
 #include "confdefs.h"
 #include "X11/Intrinsic.h"
 int main() {
 
 ; return 0; }
 EOF
-if { (eval echo configure:2455: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
+if { (eval echo configure:2464: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
   rm -rf conftest*
   addperm=no
 else

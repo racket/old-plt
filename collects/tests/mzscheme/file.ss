@@ -1106,6 +1106,30 @@
   (tcp-close l))
 
 ;;----------------------------------------------------------------------
+;; TCP
+
+(let* ([pn 40001]
+       [l (tcp-listen pn 5 #t)])
+  (let-values ([(r1 w1) (tcp-connect "localhost" pn)]
+	       [(r2 w2) (tcp-accept l)])
+    (test #t tcp-port? r1)
+    (test #t tcp-port? r2)
+    (test #t tcp-port? w1)
+    (test #t tcp-port? w2)
+    (fprintf w1 "Hello~n")
+    (test "Hello" read-line r2)
+    (tcp-abandon-port r1)
+    (close-output-port w1)
+    (close-output-port w2)
+    (close-input-port r2))
+  (tcp-close l))
+
+(test #f tcp-port? (current-input-port))
+(test #f tcp-port? (current-output-port))
+
+(arity-test tcp-port? 1 1)
+
+;;----------------------------------------------------------------------
 ;; UDP
 
 (unless (eq? 'macos (system-type))

@@ -253,75 +253,88 @@
   (let ([v #f])
     (test #f object-wait-multiple 0
 	  (make-nack-guard-waitable (lambda (nack) 
-				(set! v nack)
-				(make-semaphore))))
+				      (set! v nack)
+				      (make-semaphore))))
     (test #t semaphore-try-wait? v)
     (set! v #f)
     (test #f object-wait-multiple SYNC-SLEEP-DELAY
 	  (make-nack-guard-waitable (lambda (nack) 
-				(set! v nack)
-				(make-semaphore))))
+				      (set! v nack)
+				      (make-semaphore))))
     (test #t semaphore-try-wait? v)
     (set! v #f)
     (test #f object-wait-multiple 0
 	  (make-nack-guard-waitable (lambda (nack) 
-				(set! v nack)
-				(make-semaphore)))
+				      (set! v nack)
+				      (make-semaphore)))
 	  (make-nack-guard-waitable (lambda (nack) 
-				(set! v nack)
-				(make-semaphore))))
+				      (set! v nack)
+				      (make-semaphore))))
     (test #t semaphore-try-wait? v)
     (set! v #f)
     (test #f object-wait-multiple SYNC-SLEEP-DELAY
 	  (make-nack-guard-waitable (lambda (nack) 
-				(set! v nack)
-				(make-semaphore)))
+				      (set! v nack)
+				      (make-semaphore)))
 	  (make-nack-guard-waitable (lambda (nack) 
-				(set! v nack)
-				(make-semaphore))))
+				      (set! v nack)
+				      (make-semaphore))))
     (test #t semaphore-try-wait? v)
     (set! v #f)
     (test #f object-wait-multiple SYNC-SLEEP-DELAY
 	  (waitables->waitable-set 
 	   (make-nack-guard-waitable (lambda (nack) 
-				 (set! v nack)
-				 (make-semaphore)))
+				       (set! v nack)
+				       (make-semaphore)))
 	   (make-nack-guard-waitable (lambda (nack) 
-				 (set! v nack)
-				 (make-semaphore)))))
+				       (set! v nack)
+				       (make-semaphore)))))
     (test #t semaphore-try-wait? v)
     (set! v #f)
     (test s object-wait-multiple 0
 	  (make-nack-guard-waitable (lambda (nack) 
-				(set! v nack)
-				s)))
+				      (set! v nack)
+				      s)))
     (test #f semaphore-try-wait? v) ; ... but not an exception!
     (semaphore-post s)
     (set! v #f)
-    (test s object-wait-multiple 0
-	  (make-nack-guard-waitable (lambda (nack) 
-				(set! v nack)
-				(make-semaphore)))
-	  s)
-    (test #t semaphore-try-wait? v)
+    (let loop ()
+      (test s object-wait-multiple 0
+	    (make-nack-guard-waitable (lambda (nack) 
+					(set! v nack)
+					(make-semaphore)))
+	    s)
+      (if v
+	  (test #t semaphore-try-wait? v)
+	  (begin  ; tried the 2nd first, so do test again
+	    (semaphore-post s)
+	    (loop))))
     (set! v #f)
-    (err/rt-test (object-wait-multiple 0
-				      (make-nack-guard-waitable (lambda (nack) 
-							    (set! v nack)
-							    (make-semaphore)))
-				      (make-nack-guard-waitable (lambda (nack)
-							    (/ 1 0))))
-		 exn:application:divide-by-zero?)
-    (test #t semaphore-try-wait? v)
+    (let loop ()
+      (err/rt-test (object-wait-multiple 0
+					 (make-nack-guard-waitable (lambda (nack) 
+								     (set! v nack)
+								     (make-semaphore)))
+					 (make-nack-guard-waitable (lambda (nack)
+								     (/ 1 0))))
+		   exn:application:divide-by-zero?)
+      (if v
+	  (test #t semaphore-try-wait? v)
+	  (loop)))
     (set! v #f)
-    (err/rt-test (object-wait-multiple 0
-				      (make-nack-guard-waitable (lambda (nack)
-								  (/ 1 0)))
-				      (make-nack-guard-waitable (lambda (nack) 
-								  (set! v nack)
-								  (make-semaphore))))
-		 exn:application:divide-by-zero?)
-    (test #t not v)
+    (let loop ()
+      (err/rt-test (object-wait-multiple 0
+					 (make-nack-guard-waitable (lambda (nack)
+								     (/ 10 0)))
+					 (make-nack-guard-waitable (lambda (nack) 
+								     (set! v nack)
+								     (make-semaphore))))
+		   exn:application:divide-by-zero?)
+      (if v
+	  (begin
+	    (set! v #f)
+	   (loop))
+	  (test #t not v)))
     (set! v null)
     (test #f object-wait-multiple 0
 	  (make-nack-guard-waitable (lambda (nack) 
@@ -641,6 +654,70 @@
 (check-threads-gcable 'suspend (lambda () (let ([t (thread (lambda () (semaphore-wait (make-semaphore))))])
 					    (object-wait-multiple #f (thread-suspend-waitable t)))))
 (check-threads-gcable 'suspend-self (lambda () (object-wait-multiple #f (thread-suspend-waitable (current-thread)))))
+
+;; ----------------------------------------
+;;  Fairness in wait selection
+
+(let ([try (lambda (t1 t2 r min max)
+	     (test #t 
+		   < 
+		   min
+		   (let loop ([n 100][r-n 0])
+		     (if (zero? n)
+			 r-n
+			 (loop (sub1 n) (+ r-n
+					   (if (eq? r (object-wait-multiple #f t1 t2))
+					       1
+					       0)))))
+		   max))])
+  (let ([t1 (make-semaphore-peek (make-semaphore 1))]
+	[t2 (make-semaphore-peek (make-semaphore 1))])
+    (let-values ([(r w) (make-pipe)])
+      (fprintf w "Hi!~n")
+      ;; Between 20% and 80% is fair, and surely < 20% or > 80% is unlikely
+      (try t1 t2 t1 20 80)
+      (try t1 t2 t2 20 80)
+      (try t1 w w 20 80)
+      (try w t1 w 20 80)
+      (try t1 (waitables->waitable-set t2 w) t1 10 50)
+      (try t1 (waitables->waitable-set t2 w) w 10 50)
+      (try (waitables->waitable-set t2 w) t1 w 10 50))))
+
+;; ----------------------------------------
+;;  No starvation, despite hack to increase throughput for
+;;  semaphore-protected data structures:
+
+(let ([s1 (make-semaphore)])
+  (define t1
+    (thread (lambda ()
+	      (semaphore-wait s1)
+	      (semaphore-post s1))))
+  (let loop ()
+    (sleep)
+    (semaphore-post s1)
+    (semaphore-wait s1)
+    (when (thread-running? t1)
+      (loop)))
+  (test #t string? "No starvation - good!"))
+
+(let ([s1 (make-semaphore)]
+      [s2 (make-semaphore)])
+  (define t1
+    (thread (lambda ()
+	      (semaphore-post (object-wait-multiple #f s1 s2)))))
+  (define t2
+    (thread (lambda ()
+	      (semaphore-post (object-wait-multiple #f s1 s2)))))
+  (let loop ()
+    (sleep)
+    (semaphore-post s1)
+    (semaphore-wait s1)
+    (semaphore-post s2)
+    (semaphore-wait s2)
+    (when (or (thread-running? t1)
+	      (thread-running? t2))
+      (loop)))
+  (test #t string? "No starvation - good!"))
 
 ;; ----------------------------------------
 

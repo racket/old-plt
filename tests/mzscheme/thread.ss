@@ -814,6 +814,67 @@
     (try #f)
     (try #t)))
 
+;; Transitive resume:
+(let ([go
+       (lambda (thread c-suspend?)
+	 (parameterize ([current-custodian (make-custodian)])
+	   (letrec ([setup-transitive
+		     (lambda (t depth)
+		       (if (= depth 0)
+			   null
+			   (let ([t1 (thread (lambda () (sleep 1000)))]
+				 [t2 (thread (lambda () (semaphore-wait (make-semaphore))))])
+			     (thread-resume t1 t)
+			     (thread-resume t2 t)
+			     (append
+			      (setup-transitive t1 (sub1 depth))
+			      (setup-transitive t2 (sub1 depth))
+			      (list t1 t2)))))])
+	     (let ([t (thread (lambda () (sleep 10000)))])
+	       (let ([threads (cons t (setup-transitive t 5))])
+		 (for-each (lambda (t)
+			     (test #t thread-running? t))
+			   threads)
+		 (if c-suspend?
+		     (custodian-shutdown-all (current-custodian))
+		     (for-each thread-suspend threads))
+		 (for-each (lambda (t)
+			     (test #f thread-running? t))
+			   threads)
+		 (test (void) thread-resume t)
+		 (for-each (lambda (t)
+			     (test #t thread-running? t))
+			   threads)))
+	     (custodian-shutdown-all (current-custodian)))))])
+  (go thread #f)
+  (go thread/suspend-to-kill #t)
+  (go thread/suspend-to-kill #f))
+
+(let ([t1 (thread (lambda () (semaphore-wait (make-semaphore))))]
+      [t2 (thread (lambda () (semaphore-wait (make-semaphore))))]
+      [t3 (thread (lambda () (semaphore-wait (make-semaphore))))])
+  (test (void) thread-resume t2 t1)
+  (test (void) thread-resume t3 t2)
+  (thread-suspend t1)
+  (thread-suspend t3)
+  (test #f thread-running? t1)
+  (test #t thread-running? t2)
+  (test #f thread-running? t3)
+  (thread-resume t1)
+  ;; Thread t3 should not have been resumed...
+  (test #f thread-running? t3)
+  (thread-resume t2)
+  ;; Still, thread t3 should not have been resumed...
+  (test #f thread-running? t3)
+  (thread-suspend t2)
+  (thread-resume t2)
+  ;; Now it should be resumed!
+  (test #t thread-running? t3)
+  (kill-thread t3)
+  (thread-suspend t2)
+  (thread-resume t2)
+  (test #f thread-running? t3))
+
 ;; ----------------------------------------
 
 (report-errs)

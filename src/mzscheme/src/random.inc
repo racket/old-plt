@@ -122,7 +122,7 @@ typedef struct {
  *
  * Returns a 31-bit random number.
  */
-static long sch_rand(Scheme_Random_State *rs)
+long scheme_rand(Scheme_Random_State *rs)
 {
   long i;
   
@@ -177,7 +177,7 @@ static void sch_srand(long x, Scheme_Random_State *rs)
   rs->fpos = SEP;
   rs->rpos = 0;
   for (i = 0; i < 10 * DEG; i++) {
-    (void)sch_rand(rs);
+    (void)scheme_rand(rs);
 }
 }
 

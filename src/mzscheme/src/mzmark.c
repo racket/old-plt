@@ -1431,9 +1431,12 @@ int thread_val_MARK(void *p) {
   gcMARK(pr->mr_hop);
   gcMARK(pr->mref);
 
+  gcMARK(pr->transitive_resumes);
+
   gcMARK(pr->suspended_box);
   gcMARK(pr->resumed_box);
   gcMARK(pr->dead_box);
+  gcMARK(pr->running_box);
 
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Thread));
@@ -1501,9 +1504,12 @@ int thread_val_FIXUP(void *p) {
   gcFIXUP(pr->mr_hop);
   gcFIXUP(pr->mref);
 
+  gcFIXUP(pr->transitive_resumes);
+
   gcFIXUP(pr->suspended_box);
   gcFIXUP(pr->resumed_box);
   gcFIXUP(pr->dead_box);
+  gcFIXUP(pr->running_box);
 
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Thread));

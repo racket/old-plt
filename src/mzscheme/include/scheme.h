@@ -679,6 +679,7 @@ typedef struct Scheme_Thread {
   Scheme_Object *suspended_box; /* contains pointer to thread when it's suspended */
   Scheme_Object *resumed_box;   /* contains pointer to thread when it's resumed */
   Scheme_Object *dead_box;      /* contains non-zero when the thread is dead */
+  Scheme_Object *running_box;   /* contains pointer to thread when it's running */
 
   struct Scheme_Thread *nester, *nestee;
 
@@ -781,6 +782,7 @@ typedef struct Scheme_Thread {
 
   struct Scheme_Thread_Custodian_Hop *mr_hop;
   Scheme_Custodian_Reference *mref;
+  Scheme_Object *transitive_resumes; /* A hash table of running-boxes */
 } Scheme_Thread;
 
 #if !SCHEME_DIRECT_EMBEDDED
@@ -883,6 +885,8 @@ enum {
   MZCONFIG_SECURITY_GUARD,
 
   MZCONFIG_PORT_COUNT_LINES,
+
+  MZCONFIG_SCHEDULER_RANDOM_STATE,
 
   __MZCONFIG_BUILTIN_COUNT__
 };

@@ -916,7 +916,7 @@ typedef struct Waitable_Set {
 typedef struct Waiting {
   MZTAG_IF_REQUIRED
   Waitable_Set *set;
-  int result;
+  int result, start_pos;
   long start_time;
   float timeout;
 
@@ -1220,6 +1220,7 @@ typedef struct {
 } Scheme_Random_State;
 
 Scheme_Object *scheme_make_random_state(long seed);
+long scheme_rand(Scheme_Random_State *rs);
 
 /*========================================================================*/
 /*                     read, eval, print                                  */

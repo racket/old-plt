@@ -206,8 +206,13 @@ void scheme_post_sema(Scheme_Object *o)
 	    consumed = 1;
 	  } else
 	    consumed = 0;
-	} else
+	} else {
+	  /* In this case, we will remove the waiter from line, but
+	     someone else might grab the post. This is unfair, but it
+	     can help improve throughput when multiple threads synchronize
+	     on a lock. */
 	  consumed = 1;
+	}
 	w->picked = 1;
       } else
 	consumed = 0;
@@ -475,7 +480,7 @@ static int try_channel(Scheme_Sema *sema, Waiting *waiting, int pos, Scheme_Obje
 int scheme_wait_semas_chs(int n, Scheme_Object **o, int just_try, Waiting *waiting)
 {
   Scheme_Sema **semas = (Scheme_Sema **)o;
-  int v, i;
+  int v, i, ii;
 
   if (just_try) {
     /* assert: n == 1, !waiting */
@@ -509,7 +514,18 @@ int scheme_wait_semas_chs(int n, Scheme_Object **o, int just_try, Waiting *waiti
       return 1;
     }
   } else {
-    for (i = 0; i < n; i++) {
+    int start_pos;
+
+    if (waiting)
+      start_pos = waiting->start_pos;
+    else
+      start_pos = scheme_rand((Scheme_Random_State *)scheme_get_param(scheme_config, MZCONFIG_SCHEDULER_RANDOM_STATE));
+    
+    /* Initial poll */
+    for (ii = 0; ii < n; ii++) {
+      /* Randomized start position for poll ensures fairness: */
+      i = (start_pos + ii) % n;
+
       if (semas[i]->type == scheme_sema_type) {
 	if (semas[i]->value) {
 	  if ((semas[i]->value > 0) && (!waiting || !waiting->reposts || !waiting->reposts[i]))
@@ -520,7 +536,7 @@ int scheme_wait_semas_chs(int n, Scheme_Object **o, int just_try, Waiting *waiti
 	break;
     }
 
-    if (i >= n) {
+    if (ii >= n) {
       Scheme_Sema_Waiter **ws, *w;
 
       ws = MALLOC_N(Scheme_Sema_Waiter*, n);
@@ -582,7 +598,8 @@ int scheme_wait_semas_chs(int n, Scheme_Object **o, int just_try, Waiting *waiti
 	if (!waiting) {
 	  /* Poster can't be sure that we really will get it,
 	     so we have to decrement the sema count here. */
-	  for (i = 0; i < n; i++) {
+	  for (ii = 0; ii < n; ii++) {
+	    i = (start_pos + ii) % n;
 	    if (ws[i]->picked) {
 	      out_of_a_line = 1;
 	      if (semas[i]->value) {
@@ -592,6 +609,8 @@ int scheme_wait_semas_chs(int n, Scheme_Object **o, int just_try, Waiting *waiti
 	      }
 	    }
 	  }
+	  if (ii >= n)
+	    i = n;
 	} else {
 	  if (waiting->result) {
 	    out_of_a_line = 1;
@@ -663,7 +682,9 @@ int scheme_wait_semas_chs(int n, Scheme_Object **o, int just_try, Waiting *waiti
 	/* Otherwise: !waiting and someone stole the post, or we were
 	   suspended and we have to start over. Either way, poll then
 	   loop to get back in line an try again. */
-	for (i = 0; i < n; i++) {
+	for (ii = 0; ii < n; ii++) {
+	  i = (start_pos + ii) % n;
+
 	  if (semas[i]->type == scheme_sema_type) {
 	    if (semas[i]->value) {
 	      if ((semas[i]->value > 0) && (!waiting || !waiting->reposts || !waiting->reposts[i]))
@@ -673,8 +694,38 @@ int scheme_wait_semas_chs(int n, Scheme_Object **o, int just_try, Waiting *waiti
 	  } else if (try_channel(semas[i], waiting, i, NULL))
 	    break;
 	}
-	if (i < n)
+
+	if (ii < n) {
+	  /* Get out of any line that we still might be in: */
+	  int j;
+	  for (j = 0; j < n; j++) {
+	    if (ws[j]->in_line)
+	      get_outof_line(semas[j], ws[j]);
+	  }
+
 	  break;
+	}
+
+	if (!waiting) {
+	  /* Looks like this thread is a victim of unfair semaphore access.
+	     Go into fair mode by allocating a waiting: */
+	  waiting = MALLOC_ONE_RT(Waiting);
+#ifdef MZTAG_REQUIRED
+	  waiting->type = scheme_rt_waiting;
+#endif
+	  waiting->start_pos = start_pos;
+
+	  /* Get out of all lines, and set waiting field before we get back in line: */
+	  {
+	    int j;
+	    for (j = 0; j < n; j++) {
+	      if (ws[j]->in_line)
+		get_outof_line(semas[j], ws[j]);
+	      ws[j]->waiting = waiting;
+	    }
+	  }
+	}
+	/* Back to top of loop to wait again */
       }
     }
     v = i + 1;

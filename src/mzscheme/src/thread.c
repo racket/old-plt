@@ -1603,6 +1603,10 @@ static void thread_is_dead(Scheme_Thread *r)
     o = SCHEME_PTR_VAL(r->dead_box);
     scheme_post_sema_all(o);
   }
+  if (r->running_box) {
+    SCHEME_PTR_VAL(r->running_box) = NULL;
+    r->running_box = NULL;
+  }
   r->suspended_box = NULL;
   r->resumed_box = NULL;
   
@@ -1612,6 +1616,8 @@ static void thread_is_dead(Scheme_Thread *r)
   r->config = NULL;
   r->cont_mark_stack_segments = NULL;
   r->overflow = NULL;
+
+  r->transitive_resumes = NULL;
 
   memset(&r->error_buf, 0, sizeof(mz_jmp_buf));
   memset(&r->overflow_buf, 0, sizeof(mz_jmp_buf));
@@ -3053,12 +3059,15 @@ void scheme_pop_kill_action()
 /*                      suspend/resume and waitables                      */
 /*========================================================================*/
 
+/* Forward decl: */
+static void transitive_resume(Scheme_Object *resumes);
+
 static Scheme_Object *thread_suspend(int argc, Scheme_Object *argv[])
 {
   Scheme_Thread *p;
 
   if (!SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_thread_type))
-    scheme_wrong_type("suspend-thread", "thread", 0, argc, argv);
+    scheme_wrong_type("thread-suspend", "thread", 0, argc, argv);
 
   p = (Scheme_Thread *)argv[0];
 
@@ -3108,25 +3117,117 @@ static void suspend_thread(Scheme_Thread *p)
   }
 }
 
+static void add_transitive_resume(Scheme_Thread *promote_to, Scheme_Thread *p)
+{
+  Scheme_Object *running_box;
+  Scheme_Hash_Table *ht;
+
+  if (!p->running_box) {
+    Scheme_Object *b;
+    b = scheme_alloc_small_object();
+    b->type = scheme_thread_dead_type;
+    SCHEME_PTR_VAL(b) = (Scheme_Object *)p;
+    p->running_box = b;
+  }
+  running_box = p->running_box;
+
+  if (!promote_to->transitive_resumes) {
+    /* Create table */
+    ht = scheme_make_hash_table(SCHEME_hash_ptr);
+    promote_to->transitive_resumes = (Scheme_Object *)ht;
+  } else {
+    /* Purge ht entries for threads that are now dead: */
+    Scheme_Hash_Table *gone= NULL;
+    int i;
+
+    ht = (Scheme_Hash_Table *)promote_to->transitive_resumes;
+    for (i = ht->size; i--; ) {
+      if (ht->vals[i]) {
+	if (!SCHEME_PTR_VAL(ht->keys[i])) {
+	  /* This one is dead */
+	  if (!gone)
+	    gone = scheme_make_hash_table(SCHEME_hash_ptr);
+	  scheme_hash_set(gone, ht->keys[i], scheme_true);
+	}
+      }
+    }
+
+    if (gone) {
+      /* Remove dead ones: */
+      for (i = gone->size; i--; ) {
+	if (gone->vals[i]) {
+	  scheme_hash_set(ht, gone->keys[i], NULL);
+	}
+      }
+    }
+  }
+
+  scheme_hash_set(ht, running_box, scheme_true);
+}
+
+static Scheme_Object *transitive_resume_k(void)
+{
+  Scheme_Thread *p = scheme_current_thread;
+  Scheme_Object *r = (Scheme_Object *)p->ku.k.p1;
+  
+  p->ku.k.p1 = NULL;
+
+  transitive_resume(r);
+
+  return scheme_true;
+}
+
+static void transitive_resume(Scheme_Object *resumes)
+{
+  Scheme_Hash_Table *ht;
+  Scheme_Object *a[1];
+  int i;
+
+#ifdef DO_STACK_CHECK
+#include "mzstkchk.h"
+  {
+    Scheme_Thread *p = scheme_current_thread;
+    
+    p->ku.k.p1 = resumes;
+
+    scheme_start_atomic();
+    scheme_handle_stack_overflow(transitive_resume_k);
+    scheme_end_atomic_no_swap();
+
+    return;
+  }
+#endif
+
+  ht = (Scheme_Hash_Table *)resumes;
+  
+  for (i = ht->size; i--; ) {
+    if (ht->vals[i]) {
+      a[0] = SCHEME_PTR_VAL(ht->keys[i]);
+      if (a[0])
+	thread_resume(1, a);
+    }
+  }
+}
+
 static Scheme_Object *thread_resume(int argc, Scheme_Object *argv[])
 {
   Scheme_Thread *p, *promote_to;
 
   if (!SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_thread_type))
-    scheme_wrong_type("resume-thread", "thread", 0, argc, argv);
+    scheme_wrong_type("thread-resume", "thread", 0, argc, argv);
 
   p = (Scheme_Thread *)argv[0];
 
   if (argc > 1) {
     if (!SAME_TYPE(SCHEME_TYPE(argv[1]), scheme_thread_type))
-      scheme_wrong_type("resume-thread", "thread", 1, argc, argv);
+      scheme_wrong_type("thread-resume", "thread", 1, argc, argv);
     promote_to = (Scheme_Thread *)argv[1];
   } else
     promote_to = NULL;
 
   if (!MZTHREAD_STILL_RUNNING(p->running))
     return scheme_void;
-  
+
   if (promote_to) {
     /* Promote p so that it's managed by the custodian that is
        the least upper bound of the custodians managing p
@@ -3174,18 +3275,26 @@ static Scheme_Object *thread_resume(int argc, Scheme_Object *argv[])
     } /* else c1 is already more powerful than c2 */
   }
 
-  if (!(p->running & MZTHREAD_USER_SUSPENDED))
-    return scheme_void;
+  if (p->running & MZTHREAD_USER_SUSPENDED) {
+    p->suspended_box = NULL;
+    if (p->resumed_box) {
+      SCHEME_PTR2_VAL(p->resumed_box) = (Scheme_Object *)p;
+      scheme_post_sema_all(SCHEME_PTR1_VAL(p->resumed_box));
+    }
+    
+    p->running -= MZTHREAD_USER_SUSPENDED;
+    
+    scheme_weak_resume_thread(p);
 
-  p->suspended_box = NULL;
-  if (p->resumed_box) {
-    SCHEME_PTR2_VAL(p->resumed_box) = (Scheme_Object *)p;
-    scheme_post_sema_all(SCHEME_PTR1_VAL(p->resumed_box));
+    if (p->transitive_resumes)
+      transitive_resume(p->transitive_resumes);
   }
 
-  p->running -= MZTHREAD_USER_SUSPENDED;
-
-  scheme_weak_resume_thread(p);
+  /* Set up transitive resume for future resumes of promote_to: */
+  if (promote_to 
+      && MZTHREAD_STILL_RUNNING(promote_to->running)
+      && !SAME_OBJ(promote_to, p))
+    add_transitive_resume(promote_to, p);
 
   return scheme_void;
 }
@@ -3372,6 +3481,7 @@ int scheme_is_waitable(Scheme_Object *o)
 static Waiting *make_waiting(Waitable_Set *waitable_set, float timeout, long start_time) 
 {
   Waiting *waiting;
+  int pos;
 
   waiting = MALLOC_ONE_RT(Waiting);
 #ifdef MZTAG_REQUIRED
@@ -3380,6 +3490,11 @@ static Waiting *make_waiting(Waitable_Set *waitable_set, float timeout, long sta
   waiting->set = waitable_set;
   waiting->timeout = timeout;
   waiting->start_time = start_time;
+
+  if (waitable_set->argc) {
+    pos = scheme_rand((Scheme_Random_State *)scheme_get_param(scheme_config, MZCONFIG_SCHEDULER_RANDOM_STATE));
+    waiting->start_pos = (pos % waitable_set->argc);
+  }
 
   return waiting;
 }
@@ -3522,7 +3637,7 @@ void scheme_set_wait_target(Scheme_Schedule_Info *sinfo, Scheme_Object *target,
 
 static int waiting_ready(Scheme_Object *s, Scheme_Schedule_Info *sinfo)
 {
-  int i, redirections = 0, all_semas = 1;
+  int i, redirections = 0, all_semas = 1, j;
   Waitable *w;
   Scheme_Object *o;
   Scheme_Schedule_Info r_sinfo;
@@ -3543,8 +3658,10 @@ static int waiting_ready(Scheme_Object *s, Scheme_Schedule_Info *sinfo)
   is_poll = (waiting->timeout == 0.0);
 
   /* Anything ready? */
-  for (i = 0; i < waitable_set->argc; i++) {
+  for (j = 0; j < waitable_set->argc; j++) {
     Scheme_Ready_Fun_FPC ready;
+
+    i = (j + waiting->start_pos) % waitable_set->argc;
 
     o = waitable_set->argv[i];
     w = waitable_set->ws[i];
@@ -3574,7 +3691,7 @@ static int waiting_ready(Scheme_Object *s, Scheme_Schedule_Info *sinfo)
 	}
       }
 
-      i = r_sinfo.w_i;
+      j += (r_sinfo.w_i - i);
 
       if (yep) {
 	/* If it was a potentially false positive,
@@ -3601,7 +3718,7 @@ static int waiting_ready(Scheme_Object *s, Scheme_Schedule_Info *sinfo)
       
       sema = get_sema(o, &repost);
       set_wait_target(waiting, i, sema, o, NULL, repost);
-      i--; /* try again with this sema */
+      j--; i--; /* try again with this sema */
     }
   }
 
@@ -4053,6 +4170,8 @@ static Scheme_Config *make_initial_config(void)
     Scheme_Object *rs;
     rs = scheme_make_random_state(scheme_get_milliseconds());
     scheme_set_param(config, MZCONFIG_RANDOM_STATE, rs);
+    rs = scheme_make_random_state(scheme_get_milliseconds());
+    scheme_set_param(config, MZCONFIG_SCHEDULER_RANDOM_STATE, rs);
   }
 
   {

@@ -46,6 +46,7 @@ static Scheme_Object *random_seed(int argc, Scheme_Object *argv[]);
 static Scheme_Object *sch_random(int argc, Scheme_Object *argv[]);
 static Scheme_Object *make_pseudo_random_generator(int argc, Scheme_Object **argv);
 static Scheme_Object *current_pseudo_random_generator(int argc, Scheme_Object **argv);
+static Scheme_Object *current_sched_pseudo_random_generator(int argc, Scheme_Object **argv);
 static Scheme_Object *pseudo_random_generator_p(int argc, Scheme_Object **argv);
 
 static char *number_to_allocated_string(int radix, Scheme_Object *obj, int alloc);
@@ -130,6 +131,11 @@ void scheme_init_numstr(Scheme_Env *env)
 			     scheme_register_parameter(current_pseudo_random_generator,
 						       "current-pseudo-random-generator",
 						       MZCONFIG_RANDOM_STATE),
+			     env);
+  scheme_add_global_constant("current-wait-pseudo-random-generator", 
+			     scheme_register_parameter(current_sched_pseudo_random_generator,
+						       "current-wait-pseudo-random-generator",
+						       MZCONFIG_SCHEDULER_RANDOM_STATE),
 			     env);
 
   REGISTER_SO(num_limits);
@@ -1907,7 +1913,7 @@ sch_random(int argc, Scheme_Object *argv[])
   if (i <= 0)
     scheme_wrong_type("random", "exact integer in [1, 2147483647]", 0, argc, argv);
   
-  v = sch_rand((Scheme_Random_State *)scheme_get_param(scheme_config, MZCONFIG_RANDOM_STATE)) % i;
+  v = scheme_rand((Scheme_Random_State *)scheme_get_param(scheme_config, MZCONFIG_RANDOM_STATE)) % i;
 
   return scheme_make_integer_value(v);
 }
@@ -1916,6 +1922,14 @@ static Scheme_Object *current_pseudo_random_generator(int argc, Scheme_Object *a
 {
   return scheme_param_config("current-pseudo-random-generator", 
 			     scheme_make_integer(MZCONFIG_RANDOM_STATE),
+			     argc, argv,
+			     -1, pseudo_random_generator_p, "pseudo-random-generator", 0);
+}
+
+static Scheme_Object *current_sched_pseudo_random_generator(int argc, Scheme_Object *argv[])
+{
+  return scheme_param_config("current-wait-pseudo-random-generator", 
+			     scheme_make_integer(MZCONFIG_SCHEDULER_RANDOM_STATE),
 			     argc, argv,
 			     -1, pseudo_random_generator_p, "pseudo-random-generator", 0);
 }

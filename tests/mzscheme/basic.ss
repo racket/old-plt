@@ -566,7 +566,7 @@
 (char-tests)
 (define (locale-comps char<? char=? char>?
 		      char-ci<? char-ci=? char-ci>?)
-  (parameterize ([current-locale ""])
+  (parameterize ([current-locale "en_US"])
     (char-tests)
     (let ([p #\p]
 	  [n #\n]
@@ -961,7 +961,7 @@
 
 (string-tests)
 (when known-locale?
-  (parameterize ([current-locale ""])
+  (parameterize ([current-locale "en_US"])
     (string-tests)))
 
 (when known-locale?

@@ -202,6 +202,7 @@ static Scheme_Object *tcp_accept_break(int argc, Scheme_Object *argv[]);
 static Scheme_Object *tcp_listener_p(int argc, Scheme_Object *argv[]);
 static Scheme_Object *tcp_addresses(int argc, Scheme_Object *argv[]);
 static Scheme_Object *tcp_abandon_port(int argc, Scheme_Object *argv[]);
+static Scheme_Object *tcp_port_p(int argc, Scheme_Object *argv[]);
 
 static Scheme_Object *make_udp(int argc, Scheme_Object *argv[]);
 static Scheme_Object *udp_close(int argc, Scheme_Object *argv[]);
@@ -294,6 +295,11 @@ void scheme_init_network(Scheme_Env *env)
 			     scheme_make_prim_w_arity(tcp_abandon_port,
 						      "tcp-abandon_port", 
 						      1, 1), 
+			     env);
+  scheme_add_global_constant("tcp-port?", 
+			     scheme_make_folding_prim(tcp_port_p,
+						      "tcp-port?", 
+						      1, 1, 1), 
 			     env);
 
   scheme_add_global_constant("udp-open-socket", 
@@ -2658,6 +2664,23 @@ static Scheme_Object *tcp_abandon_port(int argc, Scheme_Object *argv[])
   scheme_wrong_type("tcp-abandon-port", "tcp-port", 0, argc, argv);
 
   return NULL;
+}
+
+static Scheme_Object *tcp_port_p(int argc, Scheme_Object *argv[])
+{
+#ifdef USE_TCP
+  if (SCHEME_OUTPORTP(argv[0])) {
+    if (((Scheme_Output_Port *)argv[0])->sub_type == scheme_tcp_output_port_type) {
+      return scheme_true;
+    }
+  } else if (SCHEME_INPORTP(argv[0])) {
+    if (((Scheme_Input_Port *)argv[0])->sub_type == scheme_tcp_input_port_type) {
+      return scheme_true;
+    }
+  }
+#endif
+
+  return scheme_false;
 }
 
 /*========================================================================*/

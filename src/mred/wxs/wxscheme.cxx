@@ -1460,7 +1460,7 @@ static void wxScheme_Install(Scheme_Env *WXUNUSED(env), void *global_env)
   scheme_install_xc_global("make-eventspace",
 			     scheme_make_prim_w_arity(wxSchemeMakeEventspace,
 						      "make-eventspace",
-						      0, 1),
+						      0, 0),
 			     global_env);
   scheme_install_xc_global("current-eventspace",
 			   scheme_register_parameter(wxSchemeCurrentEventspace,

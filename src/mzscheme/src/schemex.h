@@ -1,6 +1,6 @@
 /*
   MzScheme
-  Copyright (c) 1995-2000 Matthew Flatt
+  Copyright (c) 1995-2001 Matthew Flatt
   All rights reserved.
 
   Please see the full copyright in the documentation.

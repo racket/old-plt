@@ -1,6 +1,6 @@
 /*
   MzScheme
-  Copyright (c) 1995 Matthew Flatt
+  Copyright (c) 1995-2001 Matthew Flatt
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -40,7 +40,8 @@ void
 scheme_init_vector (Scheme_Env *env)
 {
   REGISTER_SO(zero_length_vector);
-  zero_length_vector = (Scheme_Object *)scheme_malloc_tagged(sizeof(Scheme_Vector) - sizeof(Scheme_Object *));
+  zero_length_vector = (Scheme_Object *)scheme_malloc_tagged(sizeof(Scheme_Vector)
+							     - sizeof(Scheme_Object *));
   zero_length_vector->type = scheme_vector_type;
   SCHEME_VEC_SIZE(zero_length_vector) = 0;
 

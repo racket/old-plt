@@ -4,15 +4,14 @@ your loved ones vengeful? If so, this program is for you!
 Countdown keeps track of the minute and second of approaching or past
 life events. 
 
-To use, first create a .countdownrc in your homedirectory. All of the
-expressions in that file will be evaluated in the context of a unit,
-with one import: `remember'. remember is a procedure that takes as
-first argument a string naming the event. It's six remaining arguments
-qare all numbers, describing the second, minute, hour, day of the
-month, month and year of the event. Omit the year, and the event will
-repreat annually. Omit the month and the event repeats monthly,
-etc. Note that the second, minute, and hour all count from zero, not
-1.
+To use, first create a .countdownrc in your homedirectory. All of the 
+expressions in that file will be evaluated in the context of the definition 
+`remember'. It is bound to a procedure that takes as first argument a 
+string naming the event. It's six remaining arguments are all numbers, 
+describing the second, minute, hour, day of the month, month and year of 
+the event. Omit the year, and the event will repreat annually. Omit the 
+month and the event repeats monthly, etc. Note that the second, minute, and 
+hour all count from zero, not 1. The day and month, however, count from 1. 
 
 Say, you have trouble remembering Matthew's birthday. Just put this
 line in your .countdownrc and you will never miss it again:

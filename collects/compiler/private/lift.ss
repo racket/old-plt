@@ -369,7 +369,8 @@
 			(let ([body (lift! (zodiac:let-values-form-body ast) code)])
 
 			  (if (and (= 1 (length (car (zodiac:let-values-form-vars ast))))
-				   (top-level-varref/bind-from-lift? val))
+				   (top-level-varref/bind-from-lift? val)
+				   (not (binding-mutable? (get-annotation (caar (zodiac:let-values-form-vars ast))))))
 
 			      ;; Let binding value is a lifted procedure, drop the variable
 			      (let ([var (caar (zodiac:let-values-form-vars ast))])

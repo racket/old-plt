@@ -1,6 +1,13 @@
 
-(begin-elaboration-time
- (require-library "invoke.ss"))
+(module embed mzscheme
+  (require (lib "unitsig.ss"))
+  
+  (require "sig.ss")
 
-(define-values/invoke-unit/sig (make-embedding-executable)
-  (require-relative-library "embedr.ss"))
+  (require "embed-unit.ss")
+
+  (define-values/invoke-unit/sig (make-embedding-executable)
+    compiler:embed@
+    #f)
+
+  (provide-signature-elements (make-embedding-executable)))

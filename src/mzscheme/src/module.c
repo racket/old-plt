@@ -37,6 +37,7 @@ static Scheme_Object *dynamic_require_for_syntax(int argc, Scheme_Object *argv[]
 static Scheme_Object *namespace_require(int argc, Scheme_Object *argv[]);
 static Scheme_Object *namespace_trans_require(int argc, Scheme_Object *argv[]);
 static Scheme_Object *namespace_attach_module(int argc, Scheme_Object *argv[]);
+static Scheme_Object *module_compiled_imports(int argc, Scheme_Object *argv[]);
 
 static Scheme_Object *module_path_index_p(int argc, Scheme_Object *argv[]);
 static Scheme_Object *module_path_index_split(int argc, Scheme_Object *argv[]);
@@ -124,6 +125,13 @@ static void finish_expstart_module(Scheme_Env *menv, Scheme_Env *env);
 static Scheme_Object *default_module_resolver(int argc, Scheme_Object **argv);
 
 #define MODCHAIN_TABLE(p) ((Scheme_Hash_Table *)(SCHEME_VEC_ELS(p)[0]))
+
+stativ void make_list_immutable(Scheme_Object *l) {
+  for (; SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {
+    if (SCHEME_MUTABLEP(l))
+      SCHEME_SET_IMMUTABLE(l);
+  }
+}
 
 /**********************************************************************/
 /*                           initialization                           */
@@ -218,6 +226,13 @@ void scheme_init_module(Scheme_Env *env)
 			     scheme_make_prim_w_arity(namespace_attach_module,
 						      "namespace-attach-module",
 						      2, 2),
+			     env);
+
+  scheme_add_global_constant("module-compiled-imports",
+			     scheme_make_prim_w_arity2(module_compiled_imports,
+						       "module-compiled-imports",
+						       1, 1,
+						       2, 2),
 			     env);
 
   scheme_add_global_constant("module-path-index?",
@@ -861,6 +876,31 @@ static Scheme_Object *namespace_attach_module(int argc, Scheme_Object *argv[])
   }
 
   return scheme_void;
+}
+
+static Scheme_Object *module_compiled_imports(int argc, Scheme_Object *argv[])
+{
+  if (SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_compilation_top_type)) {
+    Scheme_Compilation_Top *c = (Scheme_Compilation_Top *)argv[0];
+    
+    if (SAME_TYPE(SCHEME_TYPE(c->code), scheme_syntax_type)
+	&& (SCHEME_PINT_VAL(c->code) == MODULE_EXPD)) {
+      Scheme_Module *m = (Scheme_Module *)SCHEME_IPTR_VAL(c->code);
+      Scheme_Object *a[2], *l;
+      
+      /* Ensure that the lists are immutable: */
+      make_list_immutable(m->requires);
+      make_list_immutable(m->et_requires);
+      
+      a[0] = m->requires;
+      a[1] = m->et_requires;
+
+      return scheme_values(2, a);
+    }
+  }
+
+  scheme_wrong_type("module-compiled-imports", "compiled module declaration", 0, argc, argv);
+  return NULL;
 }
 
 static Scheme_Object *module_path_index_p(int argc, Scheme_Object *argv[])
@@ -1718,6 +1758,16 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
     fm = scheme_datum_to_syntax(fm, form, form, 0, 1);
     
     if (hints) {
+      make_list_immutable(m->requires);
+      make_list_immutable(m->et_requires);
+
+      fm = scheme_stx_property(fm, 
+			       scheme_intern_symbol("module-direct-imports"),
+			       m->requires);
+      fm = scheme_stx_property(fm, 
+			       scheme_intern_symbol("module-direct-for-syntax-imports"),
+			       m->et_requires);
+      
       fm = scheme_stx_property(fm, 
 			       scheme_intern_symbol("module-variable-provides"),
 			       SCHEME_CAR(hints));
@@ -2721,8 +2771,8 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
   if (!rec) {
     /* Produce annotations (in the form of properties)
        for module information:
-         'module-variable-provides = '(export-var-item ...)
-         'module-syntax-provides = '(export-var-item ...)
+         'module-variable-provides = '(item ...)
+         'module-syntax-provides = '(item ...)
 	 'module-indirect-provides = '(id ...)
          'module-kernel-reprovide-hint = 'kernel-reexport
 
@@ -2741,18 +2791,18 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
     /* kernel re-export info: */
     if (reprovide_kernel) {
       if (exclude_hint)
-	result = scheme_make_pair(exclude_hint, result);
+	result = scheme_make_immutable_pair(exclude_hint, result);
       else
-	result = scheme_make_pair(scheme_true, result);
+	result = scheme_make_immutable_pair(scheme_true, result);
     } else
-      result = scheme_make_pair(scheme_false, result);
+      result = scheme_make_immutable_pair(scheme_false, result);
 
     /* Indirect provides */ 
     a = scheme_null;
     for (j = 0; j < exicount; j++) {
-      a = scheme_make_pair(exis[j], a);
+      a = scheme_make_immutable_pair(exis[j], a);
     }
-    result = scheme_make_pair(a, result);
+    result = scheme_make_immutable_pair(a, result);
     
     /* add syntax and value exports: */
     for (j = 0; j < 2; j++) {
@@ -2771,9 +2821,9 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 
 	for (; i < top; i++) {
 	  if (!SAME_OBJ(kernel->provides[i], exclude_hint)) {
-	    a = scheme_make_pair(kernel->provides[i], kernel->provides[i]);
-	    a = scheme_make_pair(kernel_symbol, a);
-	    e = scheme_make_pair(a, e);
+	    a = scheme_make_immutable_pair(kernel->provides[i], kernel->provides[i]);
+	    a = scheme_make_immutable_pair(kernel_symbol, a);
+	    e = scheme_make_immutable_pair(a, e);
 	  }
 	}
       }
@@ -2791,14 +2841,14 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	    && SAME_OBJ(exs[i], exsns[i]))
 	  a = exs[i];
 	else {
-	  a = scheme_make_pair(exs[i], exsns[i]);
+	  a = scheme_make_immutable_pair(exs[i], exsns[i]);
 	  if (!SCHEME_FALSEP(exss[i])) {
-	    a = scheme_make_pair(exss[i], a);
+	    a = scheme_make_immutable_pair(exss[i], a);
 	  }
 	}
-	e = scheme_make_pair(a, e);
+	e = scheme_make_immutable_pair(a, e);
       }
-      result = scheme_make_pair(e, result);
+      result = scheme_make_immutable_pair(e, result);
     }
 
     env->genv->module->hints = result;
@@ -3004,25 +3054,25 @@ Scheme_Object *parse_requires(Scheme_Object *form, Scheme_Object *ll,
 	       && !iname
 	       && !unpack_kern);
 
+    /* Add name to require list, if it's not there: */
+    {
+      Scheme_Object *l, *last = NULL, *p;
+      for (l = imods; !SCHEME_NULLP(l); l = SCHEME_CDR(l)) {
+	if (same_modidx(SCHEME_CAR(l), idx))
+	  break;
+	last = l;
+      }
+      if (SCHEME_NULLP(l)) {
+	p = scheme_make_pair(idx, scheme_null);
+	if (last)
+	  SCHEME_CDR(last) = p;
+	else
+	  imods = p;
+      }
+    }
+      
     while (1) { /* loop to handle kernel re-provides... */
 
-      /* Add name to require list, if it's not there: */
-      {
-	Scheme_Object *l, *last = NULL, *p;
-	for (l = imods; !SCHEME_NULLP(l); l = SCHEME_CDR(l)) {
-	  if (same_modidx(SCHEME_CAR(l), idx))
-	    break;
-	  last = l;
-	}
-	if (SCHEME_NULLP(l)) {
-	  p = scheme_make_pair(idx, scheme_null);
-	  if (last)
-	    SCHEME_CDR(last) = p;
-	  else
-	    imods = p;
-	}
-      }
-      
       exs = m->provides;
       exsns = m->provide_src_names;
       exss = m->provide_srcs;

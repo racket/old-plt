@@ -2105,9 +2105,10 @@
 			   (if d (path->complete-path s d) s))))]
 	  [date>=?
 	   (lambda (a bm)
-	     (let ([am (with-handlers ([not-break-exn? (lambda (x) #f)])
-			 (file-or-directory-modify-seconds a))])
-	       (or (and (not bm) am) (and am bm (>= am bm)))))])
+	     (and a
+		  (let ([am (with-handlers ([not-break-exn? (lambda (x) #f)])
+			      (file-or-directory-modify-seconds a))])
+		    (or (and (not bm) am) (and am bm (>= am bm))))))])
       (case-lambda 
        [(path) (-core-load/use-compiled path #f)]
        [(path none-there)
@@ -2130,17 +2131,6 @@
 					      [(windows) ".dll"]
 					      [else ".so"])))
 			       #f))]
-		 [ok-kind? (lambda (file)
-			     (or (eq? mode 'all)
-				 (with-handlers ([not-break-exn? void])
-				   (let-values ([(p) (open-input-file file)])
-				     (dynamic-wind
-					 void
-					 (lambda ()
-					   (not (and (char=? #\' (read-char p))
-						     (char=? #\e (read-char p))
-						     (char=? #\space (read-char p)))))
-					 (lambda () (close-input-port p)))))))]
 		 [zo (and comp?
 			  (build-path base
 				      "compiled"
@@ -2160,7 +2150,7 @@
 	      => (lambda (loader) (with-dir loader))]
 	     [(date>=? so path-d)
 	      (with-dir (lambda () ((current-load-extension) so)))]
-	     [(and (date>=? zo path-d) (ok-kind? zo))
+	     [(date>=? zo path-d)
 	      (with-dir (lambda () ((current-load) zo)))]
 	     [(and (not path-d) none-there)
 	      (none-there)]
@@ -2174,6 +2164,7 @@
 
   (define -re:dir (regexp "(.+?)/+(.*)"))
   (define -re:auto (regexp "^,"))
+  (define -re:ok-relpath (regexp "^[-a-zA-Z0-9_. ][-a-zA-Z0-9_./ ]*[-a-zA-Z0-9_. ]$"))
   (define -module-hash-table-table (make-hash-table-weak)) ; weak map from namespace to module ht
   
   (define -loading-filename (gensym))
@@ -2194,20 +2185,26 @@
 			       (current-load-relative-directory)
 			       (current-directory)))])
 	    (let ([filename
+		   ;; Non-string result represents an error
 		   (cond
 		    [(string? s)
-		     ;; Parse Unix-style relative path string
-		     (let loop ([path (get-dir)][s s])
-		       (let ([prefix (regexp-match -re:dir s)])
-			 (if prefix
-			     (loop (build-path path 
-					       (let ([p (cadr prefix)])
-						 (cond
-						  [(string=? p ".") 'same]
-						  [(string=? p "..") 'up]
-						  [else p])))
-				   (caddr prefix))
-			     (build-path path s))))]
+		     (if (regexp-match -re:ok-relpath s)
+			 ;; Parse Unix-style relative path string
+			 (let loop ([path (get-dir)][s s])
+			   (let ([prefix (regexp-match -re:dir s)])
+			     (if prefix
+				 (loop (build-path path 
+						   (let ([p (cadr prefix)])
+						     (cond
+						      [(string=? p ".") 'same]
+						      [(string=? p "..") 'up]
+						      [else p])))
+				       (caddr prefix))
+				 (build-path path s))))
+			 (list
+			  (string-append
+			   " (relative string form must contain only a-z, A-Z, 0-9, -, _, ., /, and "
+			   "space, with no leading or trailing /)")))]
 		    [(or (not (pair? s))
 			 (not (list? s)))
 		     #f]
@@ -2232,15 +2229,19 @@
 				     (absolute-path? p))
 				 (path->complete-path p (get-dir)))))]
 		    [else #f])])
-	      (unless filename
+	      (unless (string? filename)
 		(if stx
 		    (raise-syntax-error
 		     (quote-syntax standard-module-name-resolver)
-		     "bad module path"
+		     (format "bad module path~a" (if filename
+						     (car filename)
+						     ""))
 		     stx)
 		    (raise-type-error 
 		     'standard-module-name-resolver
-		     "module path"
+		     (format "module path~a" (if filename
+						 (car filename)
+						 ""))
 		     s)))
 	      ;; At this point, filename is a complete path
 	      (let ([filename (normal-case-path (simplify-path (expand-path filename)))])

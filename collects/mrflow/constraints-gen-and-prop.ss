@@ -22,15 +22,13 @@
    check-primitive-types
    get-type-from-label
    pp-type
-   get-parents-from-label
-   get-children-from-label
-   has-member?
    
    get-mzscheme-position-from-label
    is-label-atom?
    get-span-from-label
    get-errors-from-label
    get-source-from-label
+   get-arrows-from-label
    )
   ; debug XXX
   ;read-and-analyze label-case-lambda-exps label-set label-term)
@@ -4706,13 +4704,16 @@
   ; label -> (listof label)
   (define get-children-from-label (get-parents/children arrows-out))
   
-  ; XXX fix this
-  (define (has-member? type sym)
-    #t)
-  
-  ; XXX debug
-  ;  (define (show-expanded label)
-  ;    (string:expr->string (syntax-object->datum (label-term label))))
+  ; label -> (listof (list label label string))
+  ; not really fast but good enough for now.
+  ; XXX should combine this with the above get-parents/children
+  (define (get-arrows-from-label label)
+    (append (map (lambda (parent)
+                   (list parent label "blue"))
+                 (get-parents-from-label label))
+            (map (lambda (child)
+                   (list label child "blue"))
+                 (get-children-from-label label))))
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; DRIVER
   

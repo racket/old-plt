@@ -37,15 +37,14 @@
    
    register-label-with-gui ; gui-model-state label -> (union top #f)
    get-position-from-label ; gui-model-state label -> exact-non-negative-integer
-   user-resize-label ; gui-model-state label exact-integer -> (values non-negative-exact-integer non-negative-exact-integer non-negative-exact-integer)
+   user-change-terms ; gui-model-state (listof label) text% exact-integer -> (values non-negative-exact-integer non-negative-exact-integer)
    for-each-label-in-source ; gui-model-state top (label -> void) -> void
    
-   add-arrow ; gui-model-state label label boolean -> void
+   add-arrow ; gui-model-state (list label label string) boolean -> void
    remove-arrows ; gui-model-state label (union symbol boolean) boolean -> void
    remove-all-arrows ; gui-model-state -> void
    for-each-arrow  ; gui-model-state (non-negative-exact-integer non-negative-exact-integer non-negative-exact-integer non-negative-exact-integer top top boolean string -> void) -> void
-   get-parents-tacked-arrows ; gui-model-state label -> non-negative-exact-integer
-   get-children-tacked-arrows ; gui-model-state label -> non-negative-exact-integer
+   get-tacked-arrows-from-label ; gui-model-state label -> non-negative-exact-integer
    
    for-each-snip-type ; gui-model-state (symbol -> void) -> void
    label-has-snips-of-this-type? ; gui-model-state label symbol -> boolean
@@ -107,8 +106,6 @@
                                   get-span-from-label
                                   ; (listof symbol)
                                   snip-type-list
-                                  ; (label label -> string)
-                                  get-arrow-color-from-labels
                                   ))
   
   ; (label -> top)
@@ -121,8 +118,7 @@
           (lambda (get-source-from-label
                    get-mzscheme-position-from-label
                    get-span-from-label
-                   snip-type-list
-                   get-arrow-color-from-labels)
+                   snip-type-list)
             (let ([source-gui-data-by-source (assoc-set-make)])
               (real-make-gui-model-state
                source-gui-data-by-source
@@ -139,8 +135,7 @@
                    (if label-gui-data
                        (+ span (label-gui-data-span-change label-gui-data))
                        span)))
-               snip-type-list
-               get-arrow-color-from-labels)))))
+               snip-type-list)))))
   
   
   ; DRSCHEME / MZSCHEME CONVERSIONS
@@ -196,7 +191,7 @@
      ((gui-model-state-get-source-from-label gui-model-state) label)))
   
   ; gui-model-state label -> exact-non-negative-integer
-  ; returns the left position of the expression
+  ; returns the left position of the expression represented by the label
   (define (get-position-from-label gui-model-state label)
     (let* ([source ((gui-model-state-get-source-from-label gui-model-state) label)]
            [source-gui-data
@@ -255,39 +250,37 @@
             (register-label-with-gui gui-model-state label)
             source))))
   
-  ; gui-model-state label exact-integer -> (values non-negative-exact-integer non-negative-exact-integer non-negative-exact-integer)
-  ; modify the span of a label and move snips on the right, returning the interval
+  ; gui-model-state (listof label) text% exact-integer -> (values non-negative-exact-integer non-negative-exact-integer)
+  ; Modify the span of the labels and move snips on the right, returning the interval
   ; that has to be deleted and the new interval that has to be colored (for a total of
   ; three numbers, since both intervals start at the same position)
-  (define (user-resize-label gui-model-state label new-span)
-    (let* ([source ((gui-model-state-get-source-from-label gui-model-state) label)]
-           [source-gui-data
-            (assoc-set-get (gui-model-state-source-gui-data-by-source gui-model-state) source)]
+  ; We know from saav:user-change-terms that all the labels represent the same term
+  (define (user-change-terms gui-model-state labels source new-span)
+    (let* ([source-gui-data-by-source (gui-model-state-source-gui-data-by-source gui-model-state)]
+           [source-gui-data (assoc-set-get source-gui-data-by-source source)]
+           [label-gui-data-by-label (source-gui-data-label-gui-data-by-label source-gui-data)]
+           [label (car labels)]
            [old-span ((gui-model-state-get-span-from-label gui-model-state) label)]
            [change (- new-span old-span)]
-           [left-new-pos
-            (let* ([label-gui-data-by-label
-                    (source-gui-data-label-gui-data-by-label source-gui-data)]
-                   [label-gui-data
-                    (assoc-set-get label-gui-data-by-label label cst:thunk-false)])
-              (if label-gui-data
-                  (begin
-                    (set-label-gui-data-span-change!
-                     label-gui-data
-                     (+ change (label-gui-data-span-change label-gui-data)))
-                    (label-gui-data-left-new-pos label-gui-data))
-                  (let ([left-new-pos (get-new-pos-from-label gui-model-state label)])
-                    (assoc-set-set label-gui-data-by-label
-                                   label
-                                   (make-label-gui-data left-new-pos
-                                                        change
-                                                        0
-                                                        (assoc-set-make)
-                                                        (set-make)
-                                                        (set-make)))
-                    left-new-pos)))])
+           [left-new-pos (get-position-from-label gui-model-state label)])
+      (for-each
+       (lambda (label)
+         (let ([label-gui-data (assoc-set-get label-gui-data-by-label label cst:thunk-false)])
+           (if label-gui-data
+               (set-label-gui-data-span-change!
+                label-gui-data
+                (+ change (label-gui-data-span-change label-gui-data)))
+               (assoc-set-set label-gui-data-by-label
+                              label
+                              (make-label-gui-data left-new-pos
+                                                   change
+                                                   0
+                                                   (assoc-set-make)
+                                                   (set-make)
+                                                   (set-make))))))
+       labels)
       (move-poss gui-model-state source left-new-pos change + >)
-      (values left-new-pos (+ left-new-pos old-span) (+ left-new-pos new-span))))
+      (values (+ left-new-pos old-span) (+ left-new-pos new-span))))
   
   ; gui-model-state top (label -> void) -> void
   ; apply f to all registered labels
@@ -303,7 +296,7 @@
   
   ; POS AND SOURCE TO LABEL CONVERSIONS
   ; gui-model-state non-negative-exact-integer top -> (listof label)
-  ; finds the label corresponding to a given new-pos in a given source
+  ; finds the labels corresponding to a given new-pos in a given source
   (define (get-related-labels-from-drscheme-new-pos-and-source gui-model-state new-pos source)
     (get-related-labels-from-drscheme-old-pos-and-source
      gui-model-state
@@ -470,13 +463,12 @@
   
   
   ; ARROWS
-  ; gui-model-state label label boolean -> void
+  ; gui-model-state (list label label string) boolean -> void
   ; add one arrow going from start-label to end-label, duh.
-  (define (add-arrow gui-model-state start-label end-label tacked?)
-    (let ([new-arrow
-           (make-arrow
-            start-label end-label tacked?
-            ((gui-model-state-get-arrow-color-from-labels gui-model-state) start-label end-label))])
+  (define (add-arrow gui-model-state arrow-info tacked?)
+    (let* ([start-label (car arrow-info)]
+           [end-label (cadr arrow-info)]
+           [new-arrow (make-arrow start-label end-label tacked? (caddr arrow-info))])
       (add-one-arrow-end gui-model-state
                          new-arrow
                          start-label
@@ -524,22 +516,13 @@
                                       (car (set-map same-arrow-set cst:id))
                                       (error 'add-one-arrow-end "duplicate arrows"))]
                        [old-arrow-tacked? (arrow-tacked? old-arrow)])
-                  ; If the new arrow is not tacked, then two things can happen;
-                  ; - the old arrow is tacked, so it takes precedence and we do nothing
-                  ; - the old arrow is untacked too, and we do nothing either because
-                  ;   replacing one untacked arrow by another is not very useful.  This
-                  ;   case is not an error because macros might duplicate terms and make
-                  ;   us end up in such a situation.
-                  ; The conclusion is: we never consider the case when the new arrow is
-                  ; untacked because there's never anything to do in such a case.
-                  ; Note also that we don't care about the color since we know it is
-                  ; always the same.
-                  (when new-arrow-tacked?
-                    (if old-arrow-tacked?
-                        ; can't tack an already tacked arrow
-                        (error 'add-one-arrow-end "tacked arrow already exists")
-                        ; forcibly tack existing arrow
-                        (set-arrow-tacked?! old-arrow #t))))))
+                  (if new-arrow-tacked?
+                      (if old-arrow-tacked?
+                          (error 'add-one-arrow-end "tacked arrow already exists")
+                          (error 'add-one-arrow-end "can't tack arrow over untacked one"))
+                      (if old-arrow-tacked?
+                          cst:void ; happens when moving mouse over label with tacked arrows
+                          (error 'add-one-arrow-end "untacked arrow already exists"))))))
           (assoc-set-set this-end-label-gui-data-by-label
                          this-end-label
                          (make-label-gui-data (get-new-pos-from-label gui-model-state this-end-label)
@@ -557,7 +540,7 @@
             (gui-model-state-source-gui-data-by-source gui-model-state)]
            [get-source-from-label (gui-model-state-get-source-from-label gui-model-state)]
            [source (get-source-from-label start-label)]
-           [source-gui-data (assoc-set-get source-gui-data-by-source source cst:thunk-false)]
+           [source-gui-data (assoc-set-get source-gui-data-by-source source)]
            [label-gui-data-by-label
             (source-gui-data-label-gui-data-by-label source-gui-data)]
            [start-label-gui-data
@@ -684,27 +667,21 @@
                                    (arrow-tacked? arrow)
                                    (arrow-color arrow))))))))))))
   
-  ; (label-gui-data -> (setof arrow)) -> (gui-model-state label -> non-negative-exact-integer)
-  ; Given an arrow set selector (to select the arrows that start or end at the given label),
-  ; returns a function that will count how many of these arrows are tacked
-  (define (get-relative-tacked-arrows arrow-set-selector)
-    (lambda (gui-model-state label)
-      (let ([source-gui-data
-             (assoc-set-get (gui-model-state-source-gui-data-by-source gui-model-state)
-                            ((gui-model-state-get-source-from-label gui-model-state) label)
-                            cst:thunk-false)])
-        (if source-gui-data
-            (let* ([label-gui-data-by-label (source-gui-data-label-gui-data-by-label source-gui-data)]
-                   [label-gui-data (assoc-set-get label-gui-data-by-label label cst:thunk-false)])
-              (if label-gui-data
-                  (set-cardinality (set-filter (arrow-set-selector label-gui-data) arrow-tacked?))
-                  0))
-            0))))
-  
-  ; gui-model-state label -> non-negative-exact-integer
-  ; actual tacked arrows couting functions
-  (define get-parents-tacked-arrows (get-relative-tacked-arrows label-gui-data-ending-arrows))
-  (define get-children-tacked-arrows (get-relative-tacked-arrows label-gui-data-starting-arrows))
+  ; (gui-model-state label -> non-negative-exact-integer)
+  ; counts how many arrows starting or ending at a given label are tacked
+  (define (get-tacked-arrows-from-label gui-model-state label)
+    (let ([source-gui-data
+           (assoc-set-get (gui-model-state-source-gui-data-by-source gui-model-state)
+                          ((gui-model-state-get-source-from-label gui-model-state) label)
+                          cst:thunk-false)])
+      (if source-gui-data
+          (let* ([label-gui-data-by-label (source-gui-data-label-gui-data-by-label source-gui-data)]
+                 [label-gui-data (assoc-set-get label-gui-data-by-label label cst:thunk-false)])
+            (if label-gui-data
+                (+ (set-cardinality (set-filter (label-gui-data-starting-arrows label-gui-data) arrow-tacked?))
+                   (set-cardinality (set-filter (label-gui-data-ending-arrows label-gui-data) arrow-tacked?)))
+                0))
+          0)))
   
   
   ; SNIPS

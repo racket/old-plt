@@ -51,11 +51,9 @@
           (super-instantiate ())))
       
       (define (phase1) 
-        (drscheme:language:extend-language-interface
-         mrflow-language-extension-interface<%>
-         mrflow-default-implementation-mixin)
-        (drscheme:unit:add-to-program-editor-mixin
-         saa:drscheme:unit:add-to-program-editor-mixin-mixin))
+        (drscheme:language:extend-language-interface mrflow-language-extension-interface<%>
+                                                     mrflow-default-implementation-mixin)
+        (drscheme:unit:add-to-program-editor-mixin saa:extend-all-editors-mixin))
       
       (define (phase2) cst:void)
       
@@ -106,7 +104,7 @@
                        (max-style-delta-by-name (err:sba-error-gravity sba-error) current-max-style-delta))
                      green-style-delta
                      errors))))
-
+      
       ; sba-state label -> exact-non-negative-integer
       ; span conversation: for all graphical purposes, the span of a compound expression is 1,
       ; to highlight only the opening parenthesis. Otherwise we might highlight subexpressions
@@ -117,14 +115,14 @@
             (sba:get-span-from-label label)
             1))
       
-      ; (listof (cons symbol style-delta%))
+      ; (listof (cons symbol string))
       ; Lists the possible snip types and their corresponding colors.
       ; For a given term that has snips of several different types, the snips will be
       ; ordered from left to right in the editor in the same order as their types appear
       ; in this list.
-      (define snip-types-and-styles
-        `((type . ,(send (make-object style-delta%) set-delta-foreground "blue"))
-          (error . ,(send (make-object style-delta%) set-delta-foreground "red"))))
+      (define snip-types-and-colors
+        '((type . "blue")
+          (error . "red")))
       
       
       ; INTERFACE FOR MENUS
@@ -155,8 +153,7 @@
       
       
       ; DEFINITION WINDOW MIXIN
-      (drscheme:get/extend:extend-definitions-text
-       saa:drscheme:get/extend:extend-definitions-text-mixin)
+      (drscheme:get/extend:extend-definitions-text saa:extend-top-editor-mixin)
       
       
       ; UNIT FRAME MIXIN
@@ -199,32 +196,70 @@
                         [language-settings
                          (fw:preferences:get
                           (drscheme:language-configuration:get-settings-preferences-symbol))])
-                    (letrec ([register-label-with-gui
-                              (saa:make-register-label-with-gui
-                               definitions-text
-                               sba:get-source-from-label
-                               sba:get-mzscheme-position-from-label
-                               (lambda (label) (get-span-from-label sba-state label))
-                               sba:get-parents-from-label
-                               sba:get-children-from-label
-                               (lambda (label) #f)
-                               (lambda (label) (error 'get-name-from-label "MrFlow internal error; renaming forbidden"))
-                               (lambda (labels) (error 'get-labels-to-rename-from-label "MrFlow internal error; renaming forbidden"))
-                               (lambda (label) (get-style-delta-from-label sba-state label))
-                               (lambda (menu labels) cst:void)
-                               get-menu-text-from-snip-type
-                               (lambda (type label) (get-snip-text-from-snip-type sba-state type label))
-                               snip-types-and-styles
-                               (lambda (start-label end-label) "blue") ; same as default
-                               #t)]
-                             [sba-state (sba:make-sba-state register-label-with-gui)])
-                      ; disable-evaluation will lock the editor, so before that we need
-                      ; to make sure other tools have cleared their crap (note that this
+                    (letrec-values
+                        ([(user-change-terms register-label-with-gui)
+                          (saa:init-snips-and-arrows-gui
+                           definitions-text
+                           sba:get-source-from-label
+                           sba:get-mzscheme-position-from-label
+                           (lambda (label) (get-span-from-label sba-state label))
+                           sba:get-arrows-from-label
+                           (lambda (label) (get-style-delta-from-label sba-state label))
+                           (lambda (menu labels) cst:void)
+                           get-menu-text-from-snip-type
+                           (lambda (type label) (get-snip-text-from-snip-type sba-state type label))
+                           snip-types-and-colors
+                           #t)
+                          ; snips-and-arrows library testing...
+                          ;(saa:init-snips-and-arrows-gui
+                          ; definitions-text
+                          ; sba:get-source-from-label
+                          ; sba:get-mzscheme-position-from-label
+                          ; (lambda (label) (get-span-from-label sba-state label))
+                          ; sba:get-arrows-from-label
+                          ; (lambda (label) (get-style-delta-from-label sba-state label))
+                          ; (lambda (menu labels)
+                          ;   (let* ([new-name-callback
+                          ;           (lambda (item event)
+                          ;             (let ([new-name
+                          ;                    (fw:keymap:call/text-keymap-initializer
+                          ;                     (lambda ()
+                          ;                       (get-text-from-user
+                          ;                        "rename"
+                          ;                        "rename")))]
+                          ;                   [terms (apply
+                          ;                           append
+                          ;                           (map 
+                          ;                            (lambda (label)
+                          ;                              (append
+                          ;                               (map
+                          ;                                (lambda (arrow-info)
+                          ;                                  (cons (car arrow-info) "foo"))
+                          ;                                (sba:get-arrows-from-label label))
+                          ;                               (map
+                          ;                                (lambda (arrow-info)
+                          ;                                  (cons (cadr arrow-info) "foo"))
+                          ;                                (sba:get-arrows-from-label label))
+                          ;                               ))
+                          ;                            labels))])
+                          ;               (user-change-terms terms)))])
+                          ;     (make-object menu-item%
+                          ;       (strcst:string-constant cs-rename-id)
+                          ;       menu
+                          ;       new-name-callback)))
+                          ; get-menu-text-from-snip-type
+                          ; (lambda (type label) (get-snip-text-from-snip-type sba-state type label))
+                          ; snip-types-and-colors
+                          ; #f)
+                          ]
+                         [(sba-state) (sba:make-sba-state register-label-with-gui)])
+                      ; disable-evaluation will lock the editor, so hopefully all the other tools
+                      ; unlock the editor to clear their crap (note that the second call below
                       ; is a call to the superclass, so remove-all-snips-and-arrows-and-colors
                       ; is not called here, but is called internally inside
-                      ; make-register-label-with-gui
-                      (super-clear-annotations)
+                      ; init-snips-and-arrows-gui
                       (disable-evaluation)
+                      (super-clear-annotations)
                       
                       ; note: we have to do this each time, because the user might have changed
                       ; the language between analyses.
@@ -258,11 +293,9 @@
                                          (sba:check-primitive-types sba-state)
                                          ;(printf "check time: ~a ms~n" (- (current-milliseconds) sba-end-time))
                                          )
-                                       ; definition window has been locked until now, we need to
-                                       ; unlock to color (user modifications still won't be allowed
-                                       ; during coloring because of term-analysis-done?
+                                       ; color everything right before re-enabling buttons
+                                       (send definitions-text color-registered-labels)
                                        (enable-evaluation)
-                                       (send definitions-text color-all-labels)
                                        )
                                      (begin
                                        ;(printf "syntax: ~a~n" (syntax-object->datum syntax-object-or-eof))

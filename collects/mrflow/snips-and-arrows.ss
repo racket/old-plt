@@ -5,7 +5,6 @@
    (lib "etc.ss")
    (lib "class.ss")
    (lib "mred.ss" "mred")
-   (prefix fw: (lib "framework.ss" "framework"))
    (prefix strcst: (lib "string-constant.ss" "string-constants"))
    
    (prefix cst: "constants.ss")
@@ -13,25 +12,17 @@
    )
   
   (provide
-   drscheme:unit:add-to-program-editor-mixin-mixin
-   drscheme:get/extend:extend-definitions-text-mixin
-   make-register-label-with-gui
-   make-register-label-with-gui-for-syntax-objects
+   extend-all-editors-mixin
+   extend-top-editor-mixin
+   init-snips-and-arrows-gui
+   init-snips-and-arrows-gui-for-syntax-objects
    )
   
   (define-struct gui-state (; gui-view-state
                             gui-view-state
-                            ; (label -> (listof label))
-                            get-parents-from-label
-                            ; (label -> (listof label))
-                            get-children-from-label
-                            ; (label -> boolean)
-                            label-resizable?
-                            ; (label -> string)
-                            get-name-from-label
-                            ; ((listof label) -> (listof label))
-                            get-labels-to-rename-from-labels
-                            ; (symbol -> string)
+                            ; (label -> (listof (list label label string)))
+                            get-arrows-from-label
+                            ; (symbol symbol -> string)
                             get-menu-text-from-snip-type
                             ; symbol label -> (listof string)
                             get-snip-text-from-snip-type-and-label
@@ -48,10 +39,10 @@
                             ))
   
   ; MENUS
-  ; gui-state menu% (listof labels) symbol top -> menu-item%
+  ; gui-state menu% (listof labels) symbol text% -> menu-item%
   ; creates a menu entry for a given snip type
   ; all labels correspond to the same term (because of macros)
-  (define (create-snips-menu-item-by-type gui-state menu labels type source)
+  (define (create-snips-menu-item-by-type gui-state menu labels type editor)
     (let ([gui-view-state (gui-state-gui-view-state gui-state)]
           [get-menu-text-from-snip-type (gui-state-get-menu-text-from-snip-type gui-state)]
           [get-snip-text-from-snip-type-and-label
@@ -66,7 +57,7 @@
             (lambda (item event)
               (for-each (lambda (label)
                           (when (saav:label-has-snips-of-this-type? gui-view-state label type)
-                            (saav:remove-inserted-snips gui-view-state label type source)))
+                            (saav:remove-inserted-snips gui-view-state label type editor)))
                         labels)))
           ; no label has snips displayed => show menu entry if one of them has snips associated
           ; with it
@@ -80,7 +71,7 @@
                 (for-each (lambda (label)
                             (let ([snip-strings (get-snip-text-from-snip-type-and-label type label)])
                               (unless (null? snip-strings)
-                                (saav:add-snips gui-view-state label type source snip-strings))))
+                                (saav:add-snips gui-view-state label type editor snip-strings))))
                           labels)))))))
   
   ; gui-state menu% (listof label) -> menu-item%
@@ -88,20 +79,11 @@
   ; all labels correspond to the same term (because of macros)
   (define (create-arrow-menu-items gui-state menu labels)
     (let* ([gui-view-state (gui-state-gui-view-state gui-state)]
-           [get-parents-from-label (gui-state-get-parents-from-label gui-state)]
-           [get-children-from-label (gui-state-get-children-from-label gui-state)]
-           [parentss (map get-parents-from-label labels)]
-           [parents-max-arrows (apply + (map length parentss))]
-           [parents-tacked-arrows (apply + (map (lambda (label)
-                                                  (saav:get-parents-tacked-arrows gui-view-state label))
-                                                labels))]
-           [childrens (map get-children-from-label labels)]
-           [children-max-arrows (apply + (map length childrens))]
-           [children-tacked-arrows (apply + (map (lambda (label)
-                                                   (saav:get-children-tacked-arrows gui-view-state label))
-                                                 labels))]
-           [max-arrows (+ parents-max-arrows children-max-arrows)]
-           [tacked-arrows (+ parents-tacked-arrows children-tacked-arrows)])
+           [arrowss-info (map (gui-state-get-arrows-from-label gui-state) labels)]
+           [max-arrows (apply + (map length arrowss-info))]
+           [tacked-arrows (apply + (map (lambda (label)
+                                          (saav:get-tacked-arrows-from-label gui-view-state label))
+                                        labels))])
       (when (< tacked-arrows max-arrows)
         (make-object menu-item%
           (strcst:string-constant snips-and-arrows-popup-menu-tack-all-arrows)
@@ -110,15 +92,16 @@
             ; remove all (possibly untacked) arrows and add all arrows, tacked.
             ; we could just add the untacked ones, but what we do here is simple
             ; and efficient enough
-            (for-each (lambda (label parents children)
-                        (saav:remove-arrows gui-view-state label 'all #t)
-                        (for-each (lambda (parent-label)
-                                    (saav:add-arrow gui-view-state parent-label label #t))
-                                  parents)
-                        (for-each (lambda (child-label)
-                                    (saav:add-arrow gui-view-state label child-label #t))
-                                  children))
-                      labels parentss childrens)
+            (for-each (lambda (label)
+                        (saav:remove-arrows gui-view-state label 'all #t))
+                      labels)
+            (for-each ; loops over labels
+             (lambda (arrows-info)
+               (for-each ; loops over arrows for a given label
+                (lambda (arrow-info)
+                  (saav:add-arrow gui-view-state arrow-info #t))
+                arrows-info))
+             arrowss-info)
             (saav:invalidate-bitmap-cache gui-view-state))))
       (when (> tacked-arrows 0)
         (make-object menu-item%
@@ -147,7 +130,7 @@
   ; that was inserted...
   ;
   ; Note that it's not possible to delete our snips just right before the user action
-  ; is effected in the definitions window (e.g. during a call to the on-insert method),
+  ; is effected in the window (e.g. during a call to the on-insert method),
   ; because the editor is locked at that time (and with reason: if we were to remove
   ; the snips right after the user acts (which is the thing that decides we must
   ; get rid of all our snips) but just before the action actually takes place in the
@@ -173,51 +156,50 @@
   ; editor that doesn't contain snips, and then we just use that as a signal to delete
   ; all snips in all editors using the after-user-action fucntion).
   ;
-  ; So this is what this function is doing: disallow user modifications to a source
-  ; when the source contains snips (or while the analysis is still running).
-  (define (is-action-allowed? gui-view-state source)
+  ; So this is what this function is doing: disallow user modifications to an editor
+  ; when the editor contains snips (or while the analysis is still running).
+  (define (is-action-allowed? gui-view-state editor)
     (or (saav:analysis-currently-modifying? gui-view-state)
-        (if (saav:snips-currently-displayed-in-source? gui-view-state source)
+        (if (saav:snips-currently-displayed-in-editor? gui-view-state editor)
             (begin
               (message-box (strcst:string-constant snips-and-arrows-user-action-disallowed-title)
                            (strcst:string-constant snips-and-arrows-user-action-disallowed)
-                           #f '(ok))
+                           #f '(ok caution))
               #f)
             #t)))
   
   
   ; MIXINS
-  ; drscheme:unit:add-to-program-editor-mixin mixin
-  (define drscheme:unit:add-to-program-editor-mixin-mixin
+  ; to be applied to all editors and sub-editors containing registered labels
+  (define extend-all-editors-mixin
     (lambda (super%)
       (class super%
         
         ; State initialization and resetting
-        ; The state is created by the call to make-register-label-with-gui in the callback
+        ; The state is created by the call to init-snips-and-arrows-gui in the callback
         ; of the tool's button.  The state is hidden inside the register-label-with-gui function
         ; returned by the call.  That means a new instance of the state is created each time
         ; the user uses the tool.  Then, each time the user uses register-label-with-gui,
-        ; the function checks whether the source has been seen before or not, and if it hasn't
-        ; it calls the source's initialize-snips-and-arrows-gui-state method to initialize the
-        ; source's state.  That ensures that all sources where coloring has to happen share the
-        ; same state.  Note that the editor for the definition window has both
-        ; add-to-program-editor-mixin-mixin and extend-definitions-text-mixin applied to it,
-        ; so the initialize-snips-and-arrows-gui-state method is define/public in one case and
-        ; define/override in the other case.
-        ; Note also that the initialization of the definitions window's editor is always done
-        ; as a special case inside make-register-label-with-gui (see this function below)
+        ; the function checks whether the editor has been seen before or not, and if it hasn't
+        ; it calls the editor's initialize-snips-and-arrows-gui-state method to initialize the
+        ; editor's state.  That ensures that all editors where coloring has to happen share the
+        ; same state.  Note that the top editor has both extend-all-editors-mixin and
+        ; extend-top-editor-mixin applied to it, so the initialize-snips-and-arrows-gui-state
+        ; method is define/public in one case and define/override in the other case.
+        ; Note also that the initialization of the top editor is always done
+        ; as a special case inside init-snips-and-arrows-gui (see this function below)
         ; because that editor still needs to have access to the state to redraw arrows even if
         ; no label is registered for it.
         ;
         ; The state is reset in two cases:
         ; - the user inserts or deletes something in an editor (see the comment for
         ;   is-action-allowed? above for details about when this is allowed), and
-        ;   clear-colors-after-user-action? is true
+        ;   clear-colors-immediately? is true
         ; - the gui makes a direct call to remove-all-snips-and-arrows-and-colors (probably inside
         ;   the clear-annotations method for the unit frame)
-        ; The state is reseted by calling the reset-snips-and-arrows-state method of each source
+        ; The state is reseted by calling the reset-snips-and-arrows-state method of each editor
         ; for which a label has been registred.  Since the unit frame has no direct reference to
-        ; the state but only through the register-label-with-gui function, and since the sources
+        ; the state but only through the register-label-with-gui function, and since the editors
         ; don't have any reference to the state after their reset-snips-and-arrows-state method
         ; is called, the state can be garbage collected as soon as the register-label-with-gui
         ; function is not referenced by the unit frame anymore.
@@ -228,10 +210,10 @@
         ; run of the analysis to the next one.
         
         ; (union gui-state symbol)
-        (define gui-state 'uninitialized-gui-state-in-program-editor-mixin)
+        (define gui-state 'uninitialized-gui-state-in-extend-all-editors-mixin)
         
         ; (union gui-view-state 'symbol)
-        (define gui-view-state 'uninitialized-gui-view-state-in-program-editor-mixin)
+        (define gui-view-state 'uninitialized-gui-view-state-in-extend-all-editors-mixin)
         
         ; gui-state -> void
         ; see the same method below for explanation
@@ -241,8 +223,8 @@
         
         ; -> void
         (define/public (reset-snips-and-arrows-state)
-          (set! gui-state 'reinitialized-gui-state-in-program-editor-mixin)
-          (set! gui-view-state 'reinitialized-gui-view-state-in-program-editor-mixin))
+          (set! gui-state 'reinitialized-gui-state-in-extend-all-editors-mixin)
+          (set! gui-view-state 'reinitialized-gui-view-state-in-extend-all-editors-mixin))
         
         (rename [super-can-insert? can-insert?])
         ; exact-non-negative-integer exact-non-negative-integer -> boolean
@@ -278,20 +260,23 @@
         
         (super-instantiate ()))))
   
-  ; drscheme:get/extend:extend-definitions-text mixin
-  (define drscheme:get/extend:extend-definitions-text-mixin
+  ; to apply to the top editor
+  (define extend-top-editor-mixin
     (lambda (super%)
       (class super%
         
         ; (union gui-state symbol)
-        (define gui-state 'uninitialized-gui-state-in-definitions-text-mixin)
+        (define gui-state 'uninitialized-gui-state-in-extend-top-editor-mixin)
         
         ; (union gui-view-state symbol)
-        (define gui-view-state 'uninitialized-gui-view-state-in-definitions-text-mixin)
+        (define gui-view-state 'uninitialized-gui-view-state-in-extend-top-editor-mixin)
+        
+        ; (box (listof text%))
+        (define known-editors (box '()))
         
         ; gui-state -> void
-        ; make-register-label-with-gui creates register-label-with-gui, which will call
-        ; saav:register-label-with-gui, which will in turn find the source for the label
+        ; init-snips-and-arrows-gui creates register-label-with-gui, which will call
+        ; saav:register-label-with-gui, which will in turn find the editor for the label
         ; and call this method (if necessary) to initialize the editor's state, thereby
         ; allowing all the editors for a single analysis to share the same state (see
         ; the same method above too).
@@ -305,8 +290,8 @@
         (rename [super-reset-snips-and-arrows-state reset-snips-and-arrows-state])
         (define/override (reset-snips-and-arrows-state)
           (super-reset-snips-and-arrows-state)
-          (set! gui-state 'reinitialized-gui-state-in-definitions-text-mixin)
-          (set! gui-view-state 'reinitialized-gui-view-state-in-definitions-text-mixin))
+          (set! gui-state 'reinitialized-gui-state-in-extend-top-editor-mixin)
+          (set! gui-view-state 'reinitialized-gui-view-state-in-extend-top-editor-mixin))
         
         (rename [super-can-save-file? can-save-file?])
         ; string symbol -> boolean
@@ -319,7 +304,7 @@
               (if (and (gui-state-term-analysis-done? gui-state)
                        (not (saav:analysis-currently-modifying? gui-view-state)))
                   (begin
-                    (saav:after-user-action gui-view-state)
+                    (saav:remove-all-snips-in-all-editors gui-view-state)
                     (super-can-save-file? filename format))
                   #f)))
         
@@ -339,16 +324,17 @@
         ; The analysis proper is only officially done after we've colored everything, otherwise
         ; user insertions might occur before we have time to finish coloring and we will color
         ; the wrong stuff...
-        (define/public (color-all-labels)
+        (define/public (color-registered-labels)
           (unless (symbol? gui-view-state)
-            (saav:color-all-labels gui-view-state)
+            (saav:color-registered-labels gui-view-state known-editors)
             (set-gui-state-term-analysis-done?! gui-state #t)))
         
         ; -> void
         ; remove all snips and arrows, and resets text style in all editors
         (define/public (remove-all-snips-and-arrows-and-colors)
-          (unless (symbol? gui-view-state)
-            (saav:remove-all-snips-and-arrows-and-colors gui-view-state)))
+          (if (symbol? gui-view-state)
+              (saav:remove-all-colors known-editors)
+              (saav:remove-all-snips-and-arrows-and-colors gui-view-state)))
         
         (rename [super-on-paint on-paint])
         ; boolean dc% real real real real real real symbol -> void
@@ -378,7 +364,7 @@
                       (let ([snip (send editor find-snip pos 'after-or-none)])
                         (if (and snip (is-a? snip editor-snip%))
                             (let ([sub-editor (send snip get-editor)])
-                              (if (saav:is-source-registered? gui-view-state sub-editor)
+                              (if (saav:is-editor-registered? gui-view-state sub-editor)
                                   (loop pos editor sub-editor)
                                   (values pos editor)))
                             (values pos editor)))))))))
@@ -394,7 +380,7 @@
             [(and (send event button-down? 'right)
                   (let-values ([(pos editor) (get-drscheme-pos-and-editor event)])
                     (if pos
-                        (let ([labels (saav:get-related-labels-from-drscheme-pos-and-source
+                        (let ([labels (saav:get-related-labels-from-drscheme-pos-and-editor
                                        gui-view-state pos editor)])
                           (if (null? labels)
                               #f
@@ -412,42 +398,59 @@
                    (saav:for-each-snip-type gui-view-state create-snips-menu-item))
                  ; ARROWS
                  (create-arrow-menu-items gui-state menu labels)
-                 ; RESIZE
-                 ; Even though we might have many labels in the list because of macros, they purportedly
-                 ; all represent the same original term.  So getting a new name for just one of them
-                 ; should be enough in practice...
-                 (let ([label (car labels)])
-                   (when ((gui-state-label-resizable? gui-state) label)
-                     (let* ([old-name ((gui-state-get-name-from-label gui-state) label)]
-                            [new-name-callback
-                             (lambda (item event)
-                               (let ([new-name
-                                      (fw:keymap:call/text-keymap-initializer
-                                       (lambda ()
-                                         (get-text-from-user
-                                          (strcst:string-constant cs-rename-id)
-                                          (format (strcst:string-constant cs-rename-var-to) old-name)
-                                          #f
-                                          old-name)))])
-                                 (for-each (lambda (label)
-                                             ; the label might not be in the same editor, so passing
-                                             ; editor as an argument to user-resize-label is useless
-                                             (saav:user-resize-label gui-view-state label new-name))
-                                           ((gui-state-get-labels-to-rename-from-labels gui-state) labels))))])
-                       (make-object menu-item%
-                         (strcst:string-constant cs-rename-id)
-                         menu
-                         new-name-callback))))
                  ; HIDE ALL SNIPS
-                 (when (saav:snips-currently-displayed-in-source? gui-view-state editor)
+                 (when (saav:snips-currently-displayed-in-editor? gui-view-state editor)
                    (make-object menu-item%
                      (strcst:string-constant snips-and-arrows-hide-all-snips-in-editor)
                      menu
                      (lambda (item event)
-                       (saav:remove-all-snips-in-source gui-view-state editor))))
+                       (saav:remove-all-snips-in-editor gui-view-state editor))))
                  ; OTHER
                  ((gui-state-extend-menu-for-labels gui-state) menu labels)
                  
+                 (when (not (null? (send menu get-items)))
+                   (let-values ([(x y) (dc-location-to-editor-location (send event get-x) (send event get-y))])
+                     (send (get-admin) popup-menu menu x y)))
+                 ))]
+            [(and (send event button-down? 'middle)
+                  (let-values ([(pos editor) (get-drscheme-pos-and-editor event)])
+                    (if pos
+                        (let ([labels (saav:get-related-labels-from-drscheme-pos-and-editor
+                                       gui-view-state pos editor)])
+                          (if (null? labels)
+                              #f
+                              (cons labels editor))) ; no "=>-values" so use cons...
+                        #f)))
+             =>
+             (lambda (labels&editor)
+               (let ([menu (make-object popup-menu%)]
+                     [labels (car labels&editor)]
+                     [editor (cdr labels&editor)]
+                     [get-snip-text-from-snip-type-and-label
+                      (gui-state-get-snip-text-from-snip-type-and-label gui-state)])
+                 (saav:for-each-snip-type
+                  gui-view-state
+                  (lambda (snip-type)
+                    (unless (andmap (lambda (label)
+                                      (null? (get-snip-text-from-snip-type-and-label snip-type label)))
+                                    labels)
+                      ; at least one label has snips of this type
+                      (for-each (lambda (label)
+                                  (let ([snip-strings (get-snip-text-from-snip-type-and-label snip-type label)])
+                                    (unless (null? snip-strings)
+                                      (for-each
+                                       (lambda (snip-string)
+                                         (make-object menu-item%
+                                           (if (<= (string-length snip-string) 200)
+                                               snip-string
+                                               (string-append
+                                                (substring snip-string 0 197)
+                                                "..."))
+                                           menu
+                                           (lambda (item event) cst:void)))
+                                       snip-strings))))
+                                labels)
+                      (make-object separator-menu-item% menu))))
                  (when (not (null? (send menu get-items)))
                    (let-values ([(x y) (dc-location-to-editor-location (send event get-x) (send event get-y))])
                      (send (get-admin) popup-menu menu x y)))
@@ -465,7 +468,7 @@
              (let*-values ([(pos editor) (get-drscheme-pos-and-editor event)]
                            [(labels)
                             (if pos
-                                (saav:get-related-labels-from-drscheme-pos-and-source
+                                (saav:get-related-labels-from-drscheme-pos-and-editor
                                  gui-view-state pos editor)
                                 #f)]
                            [(previous-labels) (gui-state-previous-labels gui-state)]
@@ -475,15 +478,11 @@
                              (saav:remove-arrows gui-view-state previous-label #f #f))
                            previous-labels))
                (when (and labels not-same-labels)
-                 (let ([get-parents-from-label (gui-state-get-parents-from-label gui-state)]
-                       [get-children-from-label (gui-state-get-children-from-label gui-state)])
+                 (let ([get-arrows-from-label (gui-state-get-arrows-from-label gui-state)])
                    (for-each (lambda (label)
-                               (for-each (lambda (parent-label)
-                                           (saav:add-arrow gui-view-state parent-label label #f))
-                                         (get-parents-from-label label))
-                               (for-each (lambda (child-label)
-                                           (saav:add-arrow gui-view-state label child-label #f))
-                                         (get-children-from-label label)))
+                               (for-each (lambda (arrow-info)
+                                           (saav:add-arrow gui-view-state arrow-info #f))
+                                         (get-arrows-from-label label)))
                              labels)))
                (when not-same-labels
                  (when (or (not (null? previous-labels))
@@ -499,72 +498,62 @@
   
   ; ... see below ... -> (label -> void)
   ; Ouch...  The returned function can be used to register labels with this gui
-  (define (make-register-label-with-gui
+  (define (init-snips-and-arrows-gui
            ; % text%
-           definitions-text
-           ; (label -> top)
-           get-source-from-label
-           ; (label -> non-negative-exact-integer)           
+           top-editor
+           ; (label -> text%)
+           get-editor-from-label
+           ; (label -> non-negative-exact-integer)
            get-mzscheme-position-from-label
            ; (label -> non-negative-exact-integer)
            get-span-from-label
-           ; (label -> (listof label))
-           get-parents-from-label
-           ; (label -> (listof label))
-           get-children-from-label
-           ; (label -> boolean)
-           label-resizable?
-           ; (label -> string)
-           get-name-from-label
-           ; ((listof label) -> (listof label))
-           get-labels-to-rename-from-labels
+           ; (label -> (listof (list label label string)))
+           get-arrows-from-label
            ; (label -> style-delta%)
            get-style-delta-from-label
            ; popup-menu% (listof label) -> void
            extend-menu-for-labels
-           ; (symbol -> string)
+           ; (symbol symbol -> string)
            get-menu-text-from-snip-type
            ; (symbol label -> (listof string))
            get-snip-text-from-snip-type-and-label
-           ; (listof symbol)
-           snip-types-and-styles
-           ; (label label -> string)
-           get-arrow-color-from-labels
+           ; (listof (cons symbol string))
+           snip-types-and-colors
            ; boolean
-           clear-colors-after-user-action?)
+           clear-colors-immediately?)
     (let* ([gui-view-state (saav:make-gui-view-state
-                            definitions-text
-                            get-source-from-label
+                            top-editor
+                            get-editor-from-label
                             get-mzscheme-position-from-label
                             get-span-from-label
                             get-style-delta-from-label
-                            snip-types-and-styles
-                            get-arrow-color-from-labels
-                            clear-colors-after-user-action?)]
+                            snip-types-and-colors
+                            clear-colors-immediately?)]
            [gui-state (make-gui-state
                        gui-view-state
-                       get-parents-from-label
-                       get-children-from-label
-                       label-resizable?
-                       get-name-from-label
-                       get-labels-to-rename-from-labels
+                       get-arrows-from-label
                        get-menu-text-from-snip-type
                        get-snip-text-from-snip-type-and-label
                        extend-menu-for-labels
                        #f
                        #f)])
       ; just make sure everything is clear before assigning a new state
-      (send definitions-text remove-all-snips-and-arrows-and-colors)
+      (send top-editor remove-all-snips-and-arrows-and-colors)
       
-      ; we need this to force the registration of the definition window, to make sure
+      ; we need this to force the registration of the top editor, to make sure
       ; on-paint and on-event work correctly even when no label has been registered for
-      ; the definition window itself.
-      (saav:register-source-with-gui gui-view-state definitions-text gui-state)
+      ; the top editor itself.
+      (saav:register-editor-with-gui gui-view-state top-editor gui-state)
       
-      ; label -> void
-      ; to register a label with the gui
-      (lambda (label)
-        (saav:register-label-with-gui gui-view-state label gui-state))))
+      (values
+       ; (listof (cons label string)) -> void
+       (lambda (labels-and-new-terms)
+         (saav:user-change-terms gui-view-state labels-and-new-terms))
+       
+       ; label -> void
+       ; to register a label with the gui
+       (lambda (label)
+         (saav:register-label-with-gui gui-view-state label gui-state)))))
   
   ; SIMPLIFIED INTERFACE
   ; symbol -> void
@@ -572,22 +561,16 @@
   (define error-no-snips
     (case-lambda
       [(_) (error-no-snips 'dummy 'dummy)]
-      [(_1 _2) (error 'snips-and-arrows "no snip info was provided when mixins were created")]))
+      [(_1 _2) (error 'snips-and-arrows "no snip info was provided when snips-and-arrows library was initialized")]))
   
   ; ... see below ... -> (values gui-state (label -> void))
   ; simplified version of make-snips-and-arrows-state, specialized for syntax objects,
   ; and with default handling of snips
-  (define make-register-label-with-gui-for-syntax-objects
+  (define init-snips-and-arrows-gui-for-syntax-objects
     (opt-lambda (; text%
-                 definitions-text
-                 ; (syntax-object -> (listof syntax-object))
-                 get-parents-from-syntax-object
-                 ; (syntax-object -> (listof syntax-object))
-                 get-children-from-syntax-object
-                 ; (syntax-object -> boolean)
-                 syntax-object-resizable?
-                 ; ((listof syntax-object) -> (listof syntax-object))
-                 get-syntax-objects-to-rename-from-syntax-objects
+                 top-editor
+                 ; (syntax-object -> (listof (list syntax-object syntax-object string)))
+                 get-arrows-from-syntax-object
                  ; (syntax-object -> style-delta%)
                  get-style-delta-from-syntax-object
                  
@@ -596,36 +579,26 @@
                  (extand-menu-for-syntax-objects (lambda (menu stxs) cst:void))
                  
                  ; OPTIONAL snip stuff
-                 ; (symbol -> string)
+                 ; (symbol symbol -> string)
                  (get-menu-text-from-snip-type error-no-snips)
                  ; (symbol syntax-object -> (listof string))
                  (get-snip-text-from-snip-type-and-syntax-object error-no-snips)
-                 ; (listof (cons symbol style-delta%))
-                 (snip-types-and-styles '())
-                 
-                 ; OPTIONAL ARROW STUFF
-                 ; (label label -> string)
-                 (get-arrow-color-from-labels (lambda (start-label end-label) "blue"))
+                 ; (listof (cons symbol string))
+                 (snip-types-and-colors '())
                  
                  ; boolean
-                 (clear-colors-after-user-action? #f))
-      (make-register-label-with-gui
-       definitions-text
+                 (clear-colors-immediately? #f))
+      (init-snips-and-arrows-gui
+       top-editor
        syntax-source
-       (lambda (x) x)
        syntax-position
        syntax-span
-       get-parents-from-syntax-object
-       get-children-from-syntax-object
-       syntax-object-resizable?
-       syntax-object->datum
-       get-syntax-objects-to-rename-from-syntax-objects
+       get-arrows-from-syntax-object
        get-style-delta-from-syntax-object
        extand-menu-for-syntax-objects
        get-menu-text-from-snip-type
        get-snip-text-from-snip-type-and-syntax-object
-       snip-types-and-styles
-       get-arrow-color-from-labels
-       clear-colors-after-user-action?)))
+       snip-types-and-colors
+       clear-colors-immediately?)))
   
   )

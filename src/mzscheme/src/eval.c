@@ -2601,7 +2601,8 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	{
 	  Scheme_App_Rec *app;
 	  GC_CAN_IGNORE Scheme_Object *tmpv;
-	  Scheme_Object **randsp, **stack;
+	  GC_MAYBE_IGNORE_INTERIOR Scheme_Object **randsp;
+	  Scheme_Object **stack;
 	  int k;
 	  int d_evals;
 #ifdef MZ_PRECISE_GC

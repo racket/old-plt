@@ -1003,6 +1003,7 @@ mark_pipe {
   Scheme_Pipe *pp = (Scheme_Pipe *)p;
     
   gcMARK(pp->buf);
+  gcMARK(pp->wakeup_on_read);
 #ifdef MZ_REAL_THREADS
   gcMARK(pp->wait_sem);
 #endif

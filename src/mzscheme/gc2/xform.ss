@@ -1442,7 +1442,7 @@
 					       (new-vars->decls (unbox new-vars-box))
 					       e))
 					    body-e))
-				    arg-vars arg-vars
+				    arg-vars arg-vars #f
 				    c++-class 
 				    ;; Moved initializers, if constructor
 				    (if (and function-name
@@ -1713,8 +1713,9 @@
 (define (is-generated? x)
   (regexp-match re:funcarg (symbol->string (car x))))
 
-(define (convert-body body-e extra-vars pushable-vars c++-class initializers after-vars-thunk live-vars setup-stack?)
-  (let ([el (body->lines body-e #f)])
+(define (convert-body body-e extra-vars pushable-vars &-vars c++-class initializers after-vars-thunk live-vars setup-stack?)
+  (let ([&-vars (or &-vars (find-&-vars body-e))]
+	[el (body->lines body-e #f)])
     (let-values ([(decls body) (split-decls el)])
       (let* ([local-vars 
 	      (apply
@@ -1791,6 +1792,7 @@
 					       (values (car body) live-vars)
 					       (convert-function-calls (car body)
 								       vars
+								       &-vars
 								       c++-class
 								       live-vars
 								       #f #f))])
@@ -1808,7 +1810,7 @@
 					     ;; We're not really interested in the conversion.
 					     ;; We just want to get live vars and
 					     ;; complain about function calls:
-					     (convert-function-calls (car el) extra-vars c++-class live-vars #t #f)])
+					     (convert-function-calls (car el) extra-vars &-vars c++-class live-vars #t #f)])
 				 (dloop (cdr el) live-vars))))))])
 	      ;; Calculate vars to push in this block
 	      (let ([newly-pushed (filter (lambda (x)
@@ -2177,7 +2179,7 @@
 	     live-vars))]
    [else live-vars]))
 
-(define (convert-function-calls e vars c++-class live-vars complain-not-in memcpy?)
+(define (convert-function-calls e vars &-vars c++-class live-vars complain-not-in memcpy?)
   ;; e is a single statement
   ;; Reverse to calculate live vars as we go.
   ;; Also, it's easier to look for parens and then inspect preceeding
@@ -2194,7 +2196,7 @@
 	 (lambda ()
 	   ;; It's a cast:
 	   (let-values ([(v live-vars)
-			 (convert-paren-interior (car e-) vars c++-class live-vars complain-not-in #f)])
+			 (convert-paren-interior (car e-) vars &-vars c++-class live-vars complain-not-in #f)])
 	     (loop (cddr e-)
 		   (list* (cadr e-) v result)
 		   live-vars)))
@@ -2244,7 +2246,7 @@
 			    (and (pair? (cdr e-))
 				 (memq (tok-n (cadr e-)) non-gcing-functions))]
 			   [(args live-vars)
-			    (convert-paren-interior args vars 
+			    (convert-paren-interior args vars &-vars
 						    c++-class
 						    (replace-live-vars 
 						     live-vars
@@ -2257,14 +2259,14 @@
 						    ok-calls
 						    sub-memcpy?)]
 			   [(func live-vars)
-			    (convert-function-calls (reverse func) vars c++-class live-vars #t #f)]
+			    (convert-function-calls (reverse func) vars &-vars c++-class live-vars #t #f)]
 			   ;; Process lifted-out function calls:
 			   [(setups live-vars)
 			    (let loop ([setups setups][new-vars new-vars][result null][live-vars live-vars])
 			      (if (null? setups)
 				  (values result live-vars)
 				  (let-values ([(setup live-vars)
-						(convert-function-calls (car setups) vars 
+						(convert-function-calls (car setups) vars &-vars
 									c++-class
 									;; Remove var for this one:
 									(replace-live-vars
@@ -2283,10 +2285,28 @@
 					  live-vars))))])
 	       ;; Put everything back together. Lifted out calls go into a sequence
 	       ;;  before the main function call.
-	       (let* ([non-returning? (or (and (null? (cdr func))
-					       (memq (tok-n (car func)) non-returning-functions))
-					  (and (pair? rest-)
-					       (eq? 'return (tok-n (car rest-)))))]
+	       (let* ([non-returning? (and 
+				       ;; call declared to not return, or after a `return'
+				       (or (and (null? (cdr func))
+						    (memq (tok-n (car func)) non-returning-functions))
+					       (and (pair? rest-)
+						    (eq? 'return (tok-n (car rest-)))))
+				       ;; no arrays of pointers in this scope, or addresses of
+				       ;; local vars taken in the function.
+				       (not (or (ormap (lambda (var)
+							 (and (array-type? (cdr var))
+							      '(fprintf (current-error-port)
+									"Optwarn [return] ~a in ~a: tail-push blocked by ~s[].~n"
+									(tok-line (car func)) (tok-file (car func))
+									(car var))))
+						       (live-var-info-vars live-vars))
+						(ormap (lambda (&-var)
+							 (and (assq &-var vars)
+							      '(fprintf (current-error-port)
+									"Optwarn [return] ~a in ~a: tail-push blocked by &~s.~n"
+									(tok-line (car func)) (tok-file (car func))
+									&-var)))
+						       &-vars))))]
 		      [pushed-vars (cond
 				    [non-returning?
 				     ;; non-returning -> don't need to push vars
@@ -2432,7 +2452,7 @@
 		      ;; Proc to convert body once
 		      [(convert-brace-body) 
 		       (lambda (live-vars)
-			 (convert-body (seq->list (seq-in v)) vars null c++-class null (lambda () null) live-vars #f))]
+			 (convert-body (seq->list (seq-in v)) vars null &-vars c++-class null (lambda () null) live-vars #f))]
 		      ;; First conversion
 		      [(e live-vars) (convert-brace-body live-vars)]
 		      ;; Proc to filter live and pushed vars, dropping vars no longer in scope:
@@ -2473,7 +2493,7 @@
 			[(and while? (not exit-with-error?))
 			 ;; Run test part. We don't filter live-vars, but maybe we should:
 			 (let-values ([(v live-vars)
-				       (convert-seq-interior (cadr e-) #t vars 
+				       (convert-seq-interior (cadr e-) #t vars &-vars
 							     c++-class
 							     (restore-new-vars live-vars)
 							     #f #f)])
@@ -2482,7 +2502,7 @@
 					 (convert-brace-body (restore-new-vars live-vars))])
 			     ;; Finally, run test again:
 			     (let-values ([(v live-vars)
-					   (convert-seq-interior (cadr e-) #t vars 
+					   (convert-seq-interior (cadr e-) #t vars &-vars
 								 c++-class
 								 live-vars
 								 #f #f)])
@@ -2511,7 +2531,7 @@
 			     live-vars)])
 	  (let-values ([(v live-vars)
 			(convert-seq-interior (car e-) (parens? (car e-)) 
-					      vars c++-class live-vars 
+					      vars &-vars c++-class live-vars 
 					      (or complain-not-in 
 						  (brackets? (car e-)))
 					      #f)])
@@ -2555,7 +2575,7 @@
 		     (tok-n (cadr e-)))))
 	(loop (cdr e-) (cons (car e-) result) live-vars)]))))
 
-(define (convert-seq-interior v comma-sep? vars c++-class live-vars complain-not-in memcpy?)
+(define (convert-seq-interior v comma-sep? vars &-vars c++-class live-vars complain-not-in memcpy?)
   (let ([e (seq->list (seq-in v))])
     (let ([el (body->lines e comma-sep?)])
       (let-values ([(el live-vars)
@@ -2564,7 +2584,7 @@
 			  (values null live-vars)
 			  (let-values ([(rest live-vars) (loop (cdr el))])
 			    (let-values ([(e live-vars)
-					  (convert-function-calls (car el) vars c++-class live-vars complain-not-in memcpy?)])
+					  (convert-function-calls (car el) vars &-vars c++-class live-vars complain-not-in memcpy?)])
 			      (values (cons e rest) live-vars)))))])
 	(values ((get-constructor v)
 		 (tok-n v)
@@ -2574,8 +2594,33 @@
 		 (list->seq (apply append el)))
 		live-vars)))))
 
-(define (convert-paren-interior v vars c++-class live-vars complain-not-in memcpy?)
-  (convert-seq-interior v #t vars c++-class live-vars complain-not-in memcpy?))
+(define (convert-paren-interior v vars &-vars c++-class live-vars complain-not-in memcpy?)
+  (convert-seq-interior v #t vars &-vars c++-class live-vars complain-not-in memcpy?))
+
+(define (find-&-vars e)
+  (let loop ([e e])
+    (cond
+     [(null? e)
+      null]
+     [(eq? '& (tok-n (car e)))
+      (if (null? (cdr e))
+	  null
+	  (let ([next (let loop ([next (cadr e)])
+			(cond
+			 [(symbol? (tok-n next)) next]
+			 [(seq? (tok-n next))
+			  (let ([l (seq->list (seq-in next))])
+			    (if (null? l)
+				#f
+				(loop (car l))))]
+			 [else #f]))])
+	    (if next
+		(cons (tok-n next) (loop (cdr e)))
+		(loop (cdr e)))))]
+     [(seq? (car e))
+      (append (find-&-vars (seq->list (seq-in (car e))))
+	      (loop (cdr e)))]
+     [else (loop (cdr e))])))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Palm call-graph

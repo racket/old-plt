@@ -2055,6 +2055,10 @@ void scheme_out_of_fuel(void)
 #ifdef USE_ITIMER
 static int itimer_handler_installed = 0;
 
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
+
 static void timer_expired(int ignored)
 {
   scheme_fuel_counter = 0;
@@ -2062,6 +2066,11 @@ static void timer_expired(int ignored)
   MZ_SIGSET(SIGPROF, timer_expired);
 #  endif
 }
+
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif
+
 #endif
 
 int scheme_can_break(Scheme_Process *p, Scheme_Config *config)

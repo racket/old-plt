@@ -2301,6 +2301,7 @@ int mark_pipe_MARK(void *p) {
   Scheme_Pipe *pp = (Scheme_Pipe *)p;
     
   gcMARK(pp->buf);
+  gcMARK(pp->wakeup_on_read);
 #ifdef MZ_REAL_THREADS
   gcMARK(pp->wait_sem);
 #endif
@@ -2313,6 +2314,7 @@ int mark_pipe_FIXUP(void *p) {
   Scheme_Pipe *pp = (Scheme_Pipe *)p;
     
   gcFIXUP(pp->buf);
+  gcFIXUP(pp->wakeup_on_read);
 #ifdef MZ_REAL_THREADS
   gcFIXUP(pp->wait_sem);
 #endif

@@ -45,7 +45,7 @@
 
 (define *use-closing-p-tag?* #t)
 
-(define *tex2page-version* "4p11")
+(define *tex2page-version* "4p12")
 
 (define *tex2page-website*
   "http://www.ccs.neu.edu/~dorai/tex2page/tex2page-doc.html")
@@ -98,6 +98,21 @@
     "Oct"
     "Nov"
     "Dec"))
+
+(define *the-months-fulsomely*
+  (vector
+    "January"
+    "February"
+    "March"
+    "April"
+    "May"
+    "June"
+    "July"
+    "August"
+    "September"
+    "October"
+    "November"
+    "December"))
 
 (define *use-img-for-display-math?* #t)
 
@@ -237,6 +252,8 @@
 
 (define *in-small-caps?* #f)
 
+(define *included-label-table* #f)
+
 (define *includeonly-list* #f)
 
 (define *index-alist* #f)
@@ -256,6 +273,8 @@
 (define *jobname* "texput")
 
 (define *label-port* #f)
+
+(define *label-source* #f)
 
 (define *label-table* #f)
 
@@ -349,26 +368,40 @@
 (define get-time-zone
   (lambda () (let ((tz (getenv "TZ"))) (if tz (string-append " " tz) ""))))
 
-(define seconds->human-time
+(define decode-seconds-since-epoch
   (lambda (secs)
     (let ((d (seconds->date secs)))
-      (let ((h (date-hour d)) (m (date-minute d)))
-        (string-append
-          (alphabetic-week-day (date-week-day d))
-          ", "
-          (alphabetic-month (date-month d))
-          " "
-          (number->string (date-day d))
-          ", "
-          (number->string (date-year d))
-          ", "
-          (number->string (non-military-hour h))
-          ":"
-          (if (< m 10) "0" "")
-          (number->string m)
-          " "
-          (meridiem h)
-          (get-time-zone))))))
+      (vector
+        (date-second d)
+        (date-minute d)
+        (date-hour d)
+        (date-day d)
+        (date-month d)
+        (date-year d)
+        (date-week-day d)))))
+
+(define seconds->human-time
+  (lambda (secs)
+    (let ((ht (decode-seconds-since-epoch secs)))
+      (if (not ht)
+        ""
+        (let ((h (vector-ref ht 2)) (m (vector-ref ht 1)))
+          (string-append
+            (alphabetic-week-day (vector-ref ht 6))
+            ", "
+            (alphabetic-month (vector-ref ht 4))
+            " "
+            (number->string (vector-ref ht 3))
+            ", "
+            (number->string (vector-ref ht 5))
+            ", "
+            (number->string (non-military-hour h))
+            ":"
+            (if (< m 10) "0" "")
+            (number->string m)
+            " "
+            (meridiem h)
+            (get-time-zone)))))))
 
 (define number->roman
   (lambda (n upcase?)
@@ -1070,7 +1103,9 @@
               (string->number (ungroup (get-token)))
               0))
            ((find-count x) => cadr)
-           (else (string->number (resolve-defs x))))))
+           (else
+            (or (string->number (resolve-defs x))
+                (terror 'get-number "Missing number"))))))
        ((char=? c #\') (get-actual-char) (get-integer 8))
        ((char=? c #\") (get-actual-char) (get-integer 16))
        ((char=? c #\`)
@@ -1357,6 +1392,20 @@
 (define do-author (lambda () (toss-back-string "\\def\\TIIPauthor")))
 
 (define do-date (lambda () (toss-back-string "\\def\\TIIPdate")))
+
+(define do-today
+  (lambda ()
+    (let ((m (get-gcount "\\month")))
+      (cond
+       ((= m 0) (emit "[today]"))
+       (else
+        (fluid-let
+          ((*the-months* *the-months-fulsomely*))
+          (emit (alphabetic-month m)))
+        (emit " ")
+        (emit (get-gcount "\\day"))
+        (emit ", ")
+        (emit (get-gcount "\\year")))))))
 
 (define do-para
   (lambda ()
@@ -2244,8 +2293,24 @@
         (hash-table-put! *external-label-tables* f ext-label-table))
       (when (file-exists? ext-label-file)
         (fluid-let
-          ((*label-table* ext-label-table))
+          ((*label-source* fq-f) (*label-table* ext-label-table))
           (load-tex2page-data-file ext-label-file))))))
+
+(define do-include-external-labels
+  (lambda ()
+    (let ((jobname
+            (let ((c (snoop-actual-char)))
+              (if (and (char? c) (char=? c #\{))
+                (ungroup (get-group))
+                (get-filename)))))
+      (unless (fully-qualified-pathname? jobname)
+        (set! jobname (string-append *aux-dir/* jobname)))
+      (let ((ext-label-file
+              (string-append jobname *label-file-suffix* ".scm")))
+        (when (file-exists? ext-label-file)
+          (fluid-let
+            ((*label-source* jobname))
+            (load-tex2page-data-file ext-label-file)))))))
 
 (define !external-labels (lambda (f) #f))
 
@@ -2282,23 +2347,23 @@
            (label-text
              (cond
               (link-text (tex-string->html-string link-text))
-              (label-vec (tex-string->html-string (vector-ref label-vec 2)))
+              (label-vec (tex-string->html-string (vector-ref label-vec 3)))
               (else label))))
       (if label-vec
         (emit-ext-page-node-link-start
-          ext-file
-          (vector-ref label-vec 0)
-          (vector-ref label-vec 1))
+          (or ext-file (vector-ref label-vec 0))
+          (vector-ref label-vec 1)
+          (vector-ref label-vec 2))
         (emit-link-start (string-append *jobname* ".hlog")))
       (emit label-text)
       (emit-link-stop))))
 
 (define maybe-label-page
-  (lambda (label-pageno)
-    (if (= *html-page-count* label-pageno)
+  (lambda (label-src label-pageno)
+    (if (and (not label-src) (= *html-page-count* label-pageno))
       "#"
       (string-append
-        *jobname*
+        (or label-src *jobname*)
         (if (= label-pageno 0)
           ""
           (string-append *html-page-suffix* (number->string label-pageno)))
@@ -2400,8 +2465,8 @@
   (lambda ()
     (let ((label-ref (label-bound? (get-label) *label-table*)))
       (if label-ref
-        (let ((pageno (vector-ref label-ref 0)))
-          (emit-page-node-link-start pageno #f)
+        (let ((pageno (vector-ref label-ref 1)))
+          (emit-ext-page-node-link-start (vector-ref label-ref 0) pageno #f)
           (emit pageno)
           (emit-link-stop))
         (non-fatal-error "***")))))
@@ -2412,7 +2477,10 @@
       (let ((label-ref (label-bound? label *label-table*)))
         (emit "\"")
         (if label-ref
-          (emit (maybe-label-page (vector-ref label-ref 0)))
+          (emit
+           (maybe-label-page
+             (vector-ref label-ref 0)
+             (vector-ref label-ref 1)))
           (emit *log-file*))
         (emit "\"")))))
 
@@ -2425,9 +2493,11 @@
                (label-vec (label-bound? label *label-table*)))
           (if label-vec
             (string-append
-              (maybe-label-page (vector-ref label-vec 0))
+              (maybe-label-page
+                (vector-ref label-vec 0)
+                (vector-ref label-vec 1))
               "#"
-              (vector-ref label-vec 1))
+              (vector-ref label-vec 2))
             url)))
        ((fully-qualified-url? url) url)
        (else (ensure-url-reachable url) url)))))
@@ -3013,7 +3083,6 @@
     (when (and
            (not *colophon-first-page*)
            (= *html-page-count* *last-page-number*))
-      (printf "printing colophon on last page~%")
       (output-colophon))
     (output-html-postamble)
     (write-log #\space)
@@ -3523,6 +3592,52 @@
             two)
          do-iftrue
          do-iffalse)))))
+
+(define read-ifcase-clauses
+  (lambda ()
+    (fluid-let
+      ((*not-processing?* #t))
+      (let* ((else-clause #f)
+             (or-clauses
+               (let loop ((or-clauses '()) (else? #f))
+                 (let loop2 ((clause ""))
+                   (let ((c (snoop-actual-char)))
+                     (cond
+                      ((eof-object? c)
+                       (terror 'read-ifcase-clauses "Missing \\fi"))
+                      ((char=? c *esc-char*)
+                       (let ((x (get-ctl-seq)))
+                         (cond
+                          ((string=? x "\\or")
+                           (if else?
+                             (terror 'read-ifcase-clauses "\\or after \\else")
+                             (loop (cons clause or-clauses) #f)))
+                          ((string=? x "\\else")
+                           (if else?
+                             (terror
+                               'read-ifcase-clauses
+                               "\\else after \\else")
+                             (loop (cons clause or-clauses) #t)))
+                          ((string=? x "\\fi")
+                           (if else?
+                             (begin (set! else-clause clause) or-clauses)
+                             (cons clause or-clauses)))
+                          (else (loop2 (string-append clause x))))))
+                      (else
+                       (get-actual-char)
+                       (loop2 (string-append clause (string c))))))))))
+        (cons else-clause or-clauses)))))
+
+(define do-ifcase
+  (lambda ()
+    (let* ((num (get-number))
+           (clauses (read-ifcase-clauses))
+           (else-clause (car clauses))
+           (or-clauses (reverse! (cdr clauses)))
+           (num-or-clauses (length or-clauses)))
+      (cond
+       ((< num num-or-clauses) (tex2page-string (list-ref or-clauses num)))
+       (else-clause (tex2page-string else-clause))))))
 
 (define do-ifodd (lambda () ((if (odd? (get-number)) do-iftrue do-iffalse))))
 
@@ -4200,8 +4315,28 @@
           frame
           (cons (list name) (texframe.dimens frame))))))))
 
+(define set-start-time
+  (lambda ()
+    (let* ((secs (current-seconds))
+           (ht (and secs (decode-seconds-since-epoch secs))))
+      (cond
+       (ht
+        (tex-def-count
+          "\\time"
+          (+ (* 60 (vector-ref ht 2)) (vector-ref ht 1))
+          #t)
+        (tex-def-count "\\day" (vector-ref ht 3) #t)
+        (tex-def-count "\\month" (vector-ref ht 4) #t)
+        (tex-def-count "\\year" (vector-ref ht 5) #t))
+       (else
+        (tex-def-count "\\time" 0 #t)
+        (tex-def-count "\\day" 0 #t)
+        (tex-def-count "\\month" 0 #t)
+        (tex-def-count "\\year" 0 #t))))))
+
 (define initialize-global-texframe
   (lambda ()
+    (set-start-time)
     (tex-def-count "\\language" 256 #t)
     (tex-def-count "\\tocdepth" -2 #t)
     (tex-def-count "\\footnotenumber" 0 #t)
@@ -6073,7 +6208,7 @@
     (hash-table-put!
       *label-table*
       label
-      (vector html-page label-name label-value))))
+      (vector *label-source* html-page label-name label-value))))
 
 (define !last-modification-time (lambda (s) (set! *last-modification-time* s)))
 
@@ -6853,6 +6988,8 @@
 
 (tex-def-prim "\\if" do-if)
 
+(tex-def-prim "\\ifcase" do-ifcase)
+
 (tex-def-prim "\\ifeof" do-iffalse)
 
 (tex-def-prim "\\ifdim" do-iffalse)
@@ -6891,6 +7028,8 @@
   (lambda () (do-latex-env-as-image "tabular" 'display)))
 
 (tex-def-prim "\\include" do-include)
+
+(tex-def-prim "\\includeexternallabels" do-include-external-labels)
 
 (tex-def-prim "\\includeonly" do-includeonly)
 
@@ -7194,6 +7333,8 @@
 
 (tex-def-prim "\\TIIPeatstar" eat-star)
 
+(tex-def-prim "\\TIIPendgraf" do-end-para)
+
 (tex-def-prim "\\TIIPgobblegroup" get-group)
 
 (tex-def-prim "\\TIIPlatexenvasimage" do-following-latex-env-as-image)
@@ -7207,6 +7348,8 @@
 (tex-def-prim "\\TIIPtheorem" do-theorem)
 
 (tex-def-prim "\\title" do-title)
+
+(tex-def-prim "\\today" do-today)
 
 (tex-def-prim "\\tracingall" do-tracingall)
 
@@ -7513,6 +7656,8 @@
 
 (tex-let-prim "\\xdef" "\\gdef")
 
+(tex-let-prim "\\TIIPdate" "\\today")
+
 (tex-let-prim "\\nohtmlmathimg" "\\dontuseimgforhtmlmath")
 
 (tex-let-prim "\\nohtmlmathintextimg" "\\dontuseimgforhtmlmathintext")
@@ -7657,6 +7802,7 @@
        (*in-display-math?* #f)
        (*in-para?* #f)
        (*in-small-caps?* #f)
+       (*included-label-table* #f)
        (*includeonly-list* #t)
        (*index-alist* '())
        (*index-count* 0)
@@ -7667,6 +7813,7 @@
        (*inside-appendix?* #f)
        (*jobname* "texput")
        (*label-port* #f)
+       (*label-source* #f)
        (*label-table* (make-table 'equ string=?))
        (*last-modification-time* #f)
        (*last-page-number* -1)

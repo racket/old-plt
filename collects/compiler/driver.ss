@@ -593,6 +593,8 @@
 		
 		(compiler:report-messages! #t))
 	
+	      ; (print-struct #t) (map (lambda (ast) (pretty-print ast)) (block-source s:file-block))
+
 	      ; (map (lambda (ast) (pretty-print (zodiac->sexp/annotate ast))) (block-source s:file-block))
 
 	      ; (print-graph #t) (display (car (block-source s:file-block))) (newline)

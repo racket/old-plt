@@ -114,8 +114,8 @@
      (zodiac:structurize-syntax l ast)))
 
   ;; Turns a virtual set-values! into an expression using normal
-  ;; set!s. The result must be a-normalized and have the right
-  ;; binding annotations.
+  ;; set!s. The result must be a-normalized, have the right
+  ;; binding annotations, and the right known-value links.
   (define letrec-multiple-set!->single-set!
     (lambda (orig-zbindings vars val ast)
       (cond
@@ -135,27 +135,32 @@
        [else
 	; single or multiple value set! 
 	(let* ([names (map (lambda (_) (gensym)) vars)]
-	       [bindings (map (lambda (name orig-zbinding)
-				(let ([zb (zodiac:make-lexical-binding
-					   (zodiac:zodiac-origin ast)
-					   (zodiac:zodiac-start ast)
-					   (zodiac:zodiac-finish ast)
-					   (make-empty-box)
-					   name
-					   name)])
-				  (let ([old-binding (get-annotation orig-zbinding)]
-					[new-binding (make-unknown-letbound-binding #f)])
-				    (set-annotation! zb new-binding)
-				    ; Copy known info from the old binding to the new one.
-				    ; Is this really useful?
-				    (when (binding-known? old-binding)
-				      (set-binding-known?! new-binding #t)
-				      (set-binding-val! new-binding (binding-val old-binding))))
-				  zb))
-			      names orig-zbindings)])
+	       [zbindings (map (lambda (name orig-zbinding)
+				 (let ([zb (zodiac:make-lexical-binding
+					    (zodiac:zodiac-origin ast)
+					    (zodiac:zodiac-start ast)
+					    (zodiac:zodiac-finish ast)
+					    (make-empty-box)
+					    name
+					    name)])
+				   (let ([old-binding (get-annotation orig-zbinding)]
+					 [new-binding (make-unknown-letbound-binding #f)])
+				     (set-annotation! zb new-binding)
+				     ; Copy known info from the old binding to the new one.
+				     (when (binding-known? old-binding)
+				       (set-binding-known?! new-binding #t)
+				       (set-binding-val! new-binding (binding-val old-binding))))
+				   zb))
+			       names orig-zbindings)])
 	  ;; The original bindings will be set!ed, so they must now be marked as
 	  ;;  a special kind of "mutable" for boxing.
 	  (map (lambda (zb) (set-binding-letrec-set?! (get-annotation zb) #t)) orig-zbindings)
+	  ;; If it's one binding, make sure known? is set:
+	  (when (= 1 (length zbindings))
+	    (let ([binding (get-annotation (car zbindings))])
+	      (unless (binding-known? binding)
+		(set-binding-known?! binding #t)
+		(set-binding-val! binding val))))
 	  ;; Make the new expession
 	  (mrspidey:copy-annotations!
 	   (zodiac:make-let-values-form
@@ -163,10 +168,10 @@
 	    (zodiac:zodiac-start ast)
 	    (zodiac:zodiac-finish ast)
 	    (make-empty-box)
-	    (list bindings)
+	    (list zbindings)
 	    (list val)
-	    (let ([set!s (let loop ([bindings bindings] [vars vars])
-			   (if (null? bindings)
+	    (let ([set!s (let loop ([zbindings zbindings] [vars vars])
+			   (if (null? zbindings)
 			       null
 			       (cons
 				(zodiac:make-set!-form
@@ -176,8 +181,8 @@
 				 (make-empty-box)
 				 (car vars)
 				 (zodiac:binding->lexical-varref
-				  (car bindings)))
-				(loop (cdr bindings) (cdr vars)))))])
+				  (car zbindings)))
+				(loop (cdr zbindings) (cdr vars)))))])
 	      (if (= 1 (length set!s))
 		  (car set!s)
 		  (zodiac:make-begin-form

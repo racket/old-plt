@@ -312,7 +312,7 @@
 				 (begin 
 				   ((if (compiler:option:stupid) compiler:warning compiler:error )
 				    ast 
-				    "function called with wrong number of arguments")
+				    "procedure called with wrong number of arguments")
 				   (list (make-vm:args (zodiac:zodiac-origin ast)
 						       (zodiac:zodiac-start ast)
 						       (zodiac:zodiac-finish ast)
@@ -440,7 +440,7 @@
 				 (begin
 				   ((if (compiler:option:stupid) compiler:warning compiler:error)
 				    ast
-				    "function called with wrong number of arguments")
+				    "procedure called with wrong number of arguments")
 				   (list (make-vm:args (zodiac:zodiac-origin ast)
 						       (zodiac:zodiac-start ast)
 						       (zodiac:zodiac-finish ast)

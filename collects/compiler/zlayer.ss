@@ -262,7 +262,7 @@
 	   ,(zodiac->sexp/annotate (zodiac:let-values-form-body ast)))]
        
        [(zodiac:letrec*-values-form? ast)
-	`(letrec*-values
+	`(letrec-values
 	     ,(map list
 		   (map (lambda (l) (map zodiac->sexp l)) (zodiac:letrec*-values-form-vars ast))
 		   (map zodiac->sexp/annotate (zodiac:letrec*-values-form-vals ast)))

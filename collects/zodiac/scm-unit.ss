@@ -1,4 +1,4 @@
-; $Id: scm-unit.ss,v 1.72 1998/12/17 03:30:28 mflatt Exp $
+; $Id: scm-unit.ss,v 1.73 1999/01/28 17:08:28 mflatt Exp $
 
 (unit/sig zodiac:scheme-units^
   (import zodiac:misc^ (z : zodiac:structures^)
@@ -924,39 +924,26 @@
   (add-sym-micro define-values-id-parse-vocab
     (let ((top-level-resolution (make-top-level-resolution 'dummy #f)))
       (lambda (expr env attributes vocab)
-	(let loop ((r (resolve expr env vocab)))
-	  (cond
-	    ((or (macro-resolution? r) (micro-resolution? r))
-	      (if (check-export expr attributes)
-		(loop top-level-resolution)
-		(static-error expr
-		  "Invalid use of keyword ~a" (z:symbol-orig-name expr))))
-	    ((lexical-binding? r)
-	      (create-lexical-varref r expr))
-	    ((top-level-resolution? r)
-	      (let ((id (z:read-object expr)))
-		(let ((top-level-space (get-attribute attributes 'top-levels)))
-		  (if top-level-space
-		    (begin
-		      (let ((ref
-			      (create-top-level-varref/bind/unit
-				id
-				(hash-table-get top-level-space id
-				  (lambda ()
-				    (let ((b (box '())))
-				      (hash-table-put! top-level-space id b)
-				      b)))
-				expr)))
-			;; Define a unit-bound variable => mark this and pre-existing as unit
-			(set-top-level-varref/bind/unit-unit?! ref #t)
-			(let ((b (top-level-varref/bind-slot ref)))
-			  (map (lambda (r) (set-top-level-varref/bind/unit-unit?! r #t)) (unbox b))
-			  (set-box! b (cons ref (unbox b))))
-			ref))
-		    (create-top-level-varref id expr)))))
-	    (else
-	      (internal-error expr
-		"Invalid resolution in unit define-values: ~s" r)))))))
+	(let ((id (z:read-object expr)))
+	  (let ((top-level-space (get-attribute attributes 'top-levels)))
+	    (if top-level-space
+		(begin
+		  (let ((ref
+			 (create-top-level-varref/bind/unit
+			  id
+			  (hash-table-get top-level-space id
+					  (lambda ()
+					    (let ((b (box '())))
+					      (hash-table-put! top-level-space id b)
+					      b)))
+			  expr)))
+		    ;; Define a unit-bound variable => mark this and pre-existing as unit
+		    (set-top-level-varref/bind/unit-unit?! ref #t)
+		    (let ((b (top-level-varref/bind-slot ref)))
+		      (map (lambda (r) (set-top-level-varref/bind/unit-unit?! r #t)) (unbox b))
+		      (set-box! b (cons ref (unbox b))))
+		    ref))
+		(create-top-level-varref id expr)))))))
 
   (add-primitivized-micro-form 'set! unit-clauses-vocab-delta
     (let* ((kwd '())

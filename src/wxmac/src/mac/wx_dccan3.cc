@@ -22,6 +22,7 @@ extern "C" {
 
 static ATSUStyle theATSUstyle, theATSUqdstyle;
 
+static void init_ATSU_style(void);
 static OSStatus atsuSetStyleFromGrafPtr(ATSUStyle iStyle, int smoothing, float angle, float scale_y);
 static OSStatus atsuSetStyleFromGrafPtrParams( ATSUStyle iStyle, short txFont, short txSize, SInt16 txFace, int smoothing, 
 					       float angle, float scale_y);
@@ -85,15 +86,15 @@ void wxCanvasDC::DrawText(const char* text, float x, float y, Bool combine, Bool
 
   ::GetFontInfo(&fontInfo);
   
-  w = DrawUnicodeText(text, d, -1, ucs4, 
-		      !combine, font->GetEffectiveSmoothing(user_scale_y), angle,
-		      user_scale_x, user_scale_y,
-		      1,
-		      x + (fontInfo.ascent * sin(angle)) - logical_origin_x,
-		      y + (fontInfo.ascent * cos(angle)) - logical_origin_y, 
-		      device_origin_x + SetOriginX,
-		      device_origin_y + SetOriginY,
-		      font->GetFamily());
+  w = wxDrawUnicodeText(text, d, -1, ucs4, 
+			!combine, font->GetEffectiveSmoothing(user_scale_y), angle,
+			user_scale_x, user_scale_y,
+			1,
+			x + (fontInfo.ascent * sin(angle)) - logical_origin_x,
+			y + (fontInfo.ascent * cos(angle)) - logical_origin_y, 
+			device_origin_x + SetOriginX,
+			device_origin_y + SetOriginY,
+			font->GetFamily());
   
   CalcBoundingBox(x + w, y + fontInfo.ascent + fontInfo.descent);
   CalcBoundingBox(x, y);
@@ -187,9 +188,9 @@ void wxCheckATSUCapability()
 #endif
 }
 
-double DrawUnicodeText(const char *text, int d, int theStrlen, int ucs4, Bool qd_spacing, int smoothing, float angle,
-		       float scale_x, float scale_y, int use_start, float start_x, float start_y, float ddx, float ddy,
-		       int is_sym)
+double wxDrawUnicodeText(const char *text, int d, int theStrlen, int ucs4, Bool qd_spacing, int smoothing, float angle,
+			 float scale_x, float scale_y, int use_start, float start_x, float start_y, float ddx, float ddy,
+			 int is_sym)
 {
   int i;
   int again = 0;
@@ -287,13 +288,13 @@ double DrawUnicodeText(const char *text, int d, int theStrlen, int ucs4, Bool qd
   return pen_delta;
 }
 
-void GetUnicodeTextWidth(const char *text, int d, int theStrlen, 
-			 short txFont, short txSize, short txFace,
-			 int ucs4, float scale_y,
-			 float* x, float* y,
-			 float* descent, float* externalLeading,
-			 Bool qd_spacing, float scale_x,
-			 int is_sym)
+void wxGetUnicodeTextWidth(const char *text, int d, int theStrlen, 
+			   short txFont, short txSize, short txFace,
+			   int ucs4, float scale_y,
+			   float* x, float* y,
+			   float* descent, float* externalLeading,
+			   Bool qd_spacing, float scale_x,
+			   int is_sym)
 {
   FontInfo fontInfo;
   const char *meas = NULL;
@@ -401,6 +402,49 @@ void GetUnicodeTextWidth(const char *text, int d, int theStrlen,
   if (externalLeading) *externalLeading = fontInfo.leading;
 }
 
+Bool wxGetUnicodeGlyphAvailable(int c, 
+				short txFont, short txSize, short txFace,
+				int is_sym)
+{
+  ATSUTextLayout layout;
+  UniChar uc[1];
+  UniCharArrayOffset ulen = 1, changed;
+  ATSUFontID fontid;
+  UniCharCount changedLen;
+  OSStatus r;
+
+  if (!theATSUstyle)
+    init_ATSU_style();
+
+  if (c > 0xFFFF)
+    return FALSE;
+
+  atsuSetStyleFromGrafPtrParams(theATSUstyle, txFont, txSize, txFace, 1, 0.0, 1.0);
+
+  uc[0] = c;
+  ATSUCreateTextLayoutWithTextPtr((UniCharArrayPtr)uc,
+				  kATSUFromTextBeginning,
+				  kATSUToTextEnd,
+				  ulen,
+				  1,
+				  &ulen,
+				  &theATSUstyle,
+				  &layout);
+
+  
+  r = ATSUMatchFontsToText (layout,
+			    kATSUFromTextBeginning,
+			    kATSUToTextEnd,
+			    &fontid,
+			    &changed,
+			    &changedLen);
+
+  ATSUDisposeTextLayout(layout);
+  
+  return (r != kATSUFontsNotMatched);
+}
+
+
 #define QUICK_UBUF_SIZE 256
 
 static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int ucs4,
@@ -448,22 +492,8 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
 # define xOS_X_ONLY(x) 0
 #endif
 
-  if (!theATSUstyle) {
-    /* For some reason, toggling kAllTypographicFeaturesType makes
-       text drawing slower and slower. So we have separate styles,
-       one with typographic features and one without. */
-    ATSUFontFeatureType types[1];
-    ATSUFontFeatureSelector sels[1];
-
-    ATSUCreateStyle(&theATSUstyle);
-    ATSUCreateStyle(&theATSUqdstyle);
-
-    types[0] = kAllTypographicFeaturesType;
-    sels[0] = 0;
-    ATSUSetFontFeatures(theATSUstyle, 1, types, sels);
-    sels[0] = 1;
-    ATSUSetFontFeatures(theATSUqdstyle, 1, types, sels);
-  }
+  if (!theATSUstyle)
+    init_ATSU_style();
 
   style = (qd_spacing ? theATSUqdstyle : theATSUstyle);
 
@@ -615,8 +645,7 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
 			  ll_theTags, ll_theSizes, ll_theValues);
   }
 
-  if (is_sym != wxMODERN) 
-    ATSUSetTransientFontMatching(layout, TRUE);
+  ATSUSetTransientFontMatching(layout, TRUE);
 
   if (angle != 0.0) {
     GC_CAN_IGNORE ATSUAttributeTag  r_theTags[] = { kATSULineRotationTag };
@@ -786,9 +815,26 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
 /************************************************************************/
 /************************************************************************/
 
- 
+static void init_ATSU_style(void) 
+{
+  /* For some reason, toggling kAllTypographicFeaturesType makes
+     text drawing slower and slower. So we have separate styles,
+     one with typographic features and one without. */
+  ATSUFontFeatureType types[1];
+  ATSUFontFeatureSelector sels[1];
+  
+  ATSUCreateStyle(&theATSUstyle);
+  ATSUCreateStyle(&theATSUqdstyle);
+  
+  types[0] = kAllTypographicFeaturesType;
+  sels[0] = 0;
+  ATSUSetFontFeatures(theATSUstyle, 1, types, sels);
+  sels[0] = 1;
+  ATSUSetFontFeatures(theATSUqdstyle, 1, types, sels); 
+}
 
-/* This code comes from an Apple example: */
+
+/* The following code comes from an Apple example: */
 
 
 /*

@@ -12,6 +12,7 @@
 #include "wx_list.h"
 #include "wx_utils.h"
 #include "wx_gdi.h"
+#include "wx_dccan.h"
 #include "wx_dcmem.h"
 #ifndef WX_CARBON
 # include <Strings.h>
@@ -353,12 +354,12 @@ void wxFont::GetTextExtent(char* string, int delta, float* x, float* y,
 			   Bool qd_spacing, Bool ucs4,
 			   float scale_x, float scale_y)
 {
-  GetUnicodeTextWidth(string, delta, -1,
-		      GetMacFontNum(), point_size, GetMacFontStyle(),
-		      ucs4, scale_y,
-		      x, y, descent, externalLeading,
-		      qd_spacing, scale_x,
-		      family);
+  wxGetUnicodeTextWidth(string, delta, -1,
+			GetMacFontNum(), point_size, GetMacFontStyle(),
+			ucs4, scale_y,
+			x, y, descent, externalLeading,
+			qd_spacing, scale_x,
+			family);
 }
 
 //-----------------------------------------------------------------------------
@@ -380,12 +381,17 @@ Style wxFont::GetMacFontStyle(void) // mac platform only
   return result;
 }
 
-
 int wxFont::CanRotate(void)
 { 
   return 1; 
 }
 
+Bool wxFont::ScreenGlyphAvailable(int c)
+{
+  return wxGetUnicodeGlyphAvailable(c,
+				    GetMacFontNum(), point_size, GetMacFontStyle(),
+				    family);
+}
 
 /*
  * Colour map

@@ -323,7 +323,7 @@ void wxMessage::Paint(void)
       ::GetFontInfo(&fontInfo);
       MoveTo(SetOriginX, fontInfo.ascent + SetOriginY); // move pen to start drawing text
       
-      DrawUnicodeText(cMessage, 0, -1, 0);
+      wxDrawUnicodeText(cMessage, 0, -1, 0);
     } else {
       Rect r = { SetOriginY, SetOriginX, 
 		 SetOriginY + clientHeight, SetOriginX + clientWidth };

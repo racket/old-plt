@@ -57,6 +57,8 @@ class wxFont: public wxbFont
 	int CanRotate(void);
 
 	int GetEffectiveSmoothing(float yscale);
+
+	Bool ScreenGlyphAvailable(int c);
 };
 
 class wxColourMap: public wxObject

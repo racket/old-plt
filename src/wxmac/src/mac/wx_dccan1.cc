@@ -723,6 +723,14 @@ void wxCanvasDC::wxMacSetCurrentTool(wxMacToolType whichTool)
   cMacCurrentTool = whichTool;
 }
 
+Bool wxCanvasDC::GlyphAvailable(int c, wxFont *f)
+{
+  if (!f)
+    f = font;
+
+  return f->ScreenGlyphAvailable(c);
+}
+
 /************************************************************************/
 /*                                GL                                    */
 /************************************************************************/

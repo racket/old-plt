@@ -199,7 +199,9 @@ class wxbDC: public wxObject
             wxBitmap *source, float xsrc, float ysrc, int rop = wxSOLID, 
             wxColour *c = NULL, wxBitmap *mask = NULL) = 0;
             
-    virtual void TryColour(wxColour *src, wxColour *dest);
+  virtual void TryColour(wxColour *src, wxColour *dest);
+
+  virtual Bool GlyphAvailable(int c, wxFont *f = NULL) = 0;
     
   void GetUserScale(float *xs, float *ys)
       { *xs = user_scale_x; *ys = user_scale_y; }

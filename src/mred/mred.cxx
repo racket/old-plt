@@ -2225,7 +2225,7 @@ static Bool RecordInput(void *m, wxEvent *event, void *data)
   s = media->GetTextUTF8(ioFrame->endpos, start);
   ioFrame->endpos = start;
 
-  scheme_write_string(s, len, stdin_pipe);
+  scheme_write_byte_string(s, len, stdin_pipe);
 
   return TRUE;
 }
@@ -2424,7 +2424,7 @@ static long mrconsole_get_string(Scheme_Input_Port *ip,
   MrEdSchemeMessages("");
 
   add_console_reading();
-  result = scheme_get_string("console get-string", pipe, buffer, offset, size, nonblock ? 2 : 0, 0, 0);
+  result = scheme_get_byte_string("console get-string", pipe, buffer, offset, size, nonblock ? 2 : 0, 0, 0);
   remove_console_reading();
   return result;
 }
@@ -3560,7 +3560,7 @@ void Drop_Runtime(char **argv, int argc)
   } else {
     for (i = 0; i < argc; i++) {
       Scheme_Object *p[1];
-      p[0] = scheme_make_string(argv[i]);
+      p[0] = scheme_make_path(argv[i]);
       scheme_apply(wxs_app_file_proc, 1, p);
     }
   }

@@ -1091,7 +1091,7 @@ wxMediaWordbreakMap::wxMediaWordbreakMap()
 
   setlocale(LC_CTYPE, old);
 
-  map['-'] -= wxBREAK_FOR_LINE;
+  map[(int)'-'] -= wxBREAK_FOR_LINE;
 }
 
 void wxMediaWordbreakMap::SetMap(int ch, int mask)

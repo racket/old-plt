@@ -1572,14 +1572,14 @@ static int ae_marshall(AEDescList *ae, AEDescList *list_in, AEKeyword kw, Scheme
       if (SCHEME_VEC_ELS(v)[0] == file_symbol) {
 	if ((SCHEME_VEC_SIZE(v) == 2)
 	    && SCHEME_PATH_STRINGP(SCHEME_VEC_ELS(v)[1]))  {
-	  Scheme_Objetc *bs;
+	  Scheme_Object *bs;
 	  char *s;
 	  long l;
 	  bs = SCHEME_VEC_ELS(v)[1];
-	  if (!SCHEME_BYTE_STR(bs))
+	  if (!SCHEME_PATHP(bs))
 	    bs = scheme_char_string_to_byte_string(bs);
-	  s = SCHEME_STR_VAL(bs);
-	  l = SCHEME_STRTAG_VAL(bs);
+	  s = SCHEME_BYTE_STR_VAL(bs);
+	  l = SCHEME_BYTE_STRTAG_VAL(bs);
 	  if (!has_null(s, l)) {
 	    if (scheme_mac_path_to_spec(s, &x_fss)) {
 	      _err = NewAliasMinimal(&x_fss, (AliasHandle *)&alias);
@@ -1797,7 +1797,7 @@ static Scheme_Object *ae_unmarshall(AppleEvent *reply, AEDescList *list_in, int 
 	  if (AEGetNthDesc(list_in, pos, rtype, &kw, list))
 	    return NULL;
 	  if (record) {
-	    rec = scheme_make_sized_string((char *)&kw, sizeof(long), 1);
+	    rec = scheme_make_sized_utf8_string((char *)&kw, sizeof(long));
 	    *record = rec;
 	  }
 	} else {
@@ -1850,7 +1850,7 @@ static Scheme_Object *ae_unmarshall(AppleEvent *reply, AEDescList *list_in, int 
       _err = AEGetNthPtr(list_in, pos, rtype, &kw, &rtype, data, sz, &sz);
       if (record) {
 	Scheme_Object *rec;
-	rec = scheme_make_sized_string((char *)&kw, sizeof(long), 1);
+	rec = scheme_make_sized_utf8_string((char *)&kw, sizeof(long));
 	*record = rec;
       }
       if (_err) {
@@ -1878,10 +1878,10 @@ static Scheme_Object *ae_unmarshall(AppleEvent *reply, AEDescList *list_in, int 
       result = scheme_make_double(x_d);
       break;
     case typeChar:
-      result = scheme_make_sized_string(x_s, sz, 0);
+      result = scheme_make_sized_utf8_string(x_s, sz);
       break;
     case typeFSS:
-      result = scheme_make_sized_string(scheme_mac_spec_to_path(&x_f), -1, 0);
+      result = scheme_make_sized_utf8_string(scheme_mac_spec_to_path(&x_f), -1);
       break;      
     }
   }

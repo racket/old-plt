@@ -119,7 +119,7 @@ static void MyDrawCell(ALData cellData, ALCellPtr cell, const Rect *cellRect, AL
     ForeColor(blackColor);
     CopyPascalStringToC(*(StringHandle)cellData, wxBuffer);
     TextMode(srcOr);
-    DrawUnicodeText(wxBuffer, 0, -1, 0);
+    wxDrawUnicodeText(wxBuffer, 0, -1, 0);
   }
 }
 

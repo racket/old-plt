@@ -1298,7 +1298,7 @@ static Scheme_Object *wxPlaySound(int argc, Scheme_Object **argv)
   
   async = SCHEME_TRUEP(argv[1]);
   
-  f = scheme_expand_string_filename(SCHEME_PATH_STRING_STR,
+  f = scheme_expand_string_filename(argv[0],
 				    "play-sound",
 				    NULL,
 				    SCHEME_GUARD_FILE_READ);

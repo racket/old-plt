@@ -232,6 +232,7 @@ typedef struct {
 static int num_nsos = 0;
 static Scheme_NSO *namespace_options = NULL;
 
+#define INIT_SCHEME_STACK_SIZE SCHEME_STACK_SIZE
 
 #if defined(MZ_REAL_THREADS)
 # define SETJMP(p) 1
@@ -622,9 +623,9 @@ static Scheme_Process *make_process(Scheme_Config *config, Scheme_Manager *mgr)
 #endif
   SCHEME_RELEASE_LOCK();
 
-  process->runstack_size = SCHEME_STACK_SIZE;
-  process->runstack_start = MALLOC_N(Scheme_Object*, SCHEME_STACK_SIZE);
-  process->runstack = process->runstack_start + SCHEME_STACK_SIZE;
+  process->runstack_size = INIT_SCHEME_STACK_SIZE;
+  process->runstack_start = MALLOC_N(Scheme_Object*, INIT_SCHEME_STACK_SIZE);
+  process->runstack = process->runstack_start + INIT_SCHEME_STACK_SIZE;
   process->runstack_saved = NULL;
 
 #ifdef MZ_REAL_THREADS
@@ -2599,6 +2600,8 @@ static Scheme_Object *make_new_config(Scheme_Config *base, Scheme_Object *defsha
 {
   Scheme_Config *config;
   int i;
+  int share_tried = 0;
+  int share_must_try;
   
   if (!base)
     base = scheme_config;
@@ -2608,14 +2611,20 @@ static Scheme_Object *make_new_config(Scheme_Config *base, Scheme_Object *defsha
 
   config->type = scheme_config_type;
   config->extensions = NULL;
+  
+  if (share_list)
+    share_must_try = scheme_list_length(share_list);
+  else
+    share_must_try = 0;
 
   for (i = 0; i < max_configs; i++) {
     if (defshare) {
       Scheme_Object *r;
 
-      if (occurs_in_list(config_map[i], share_list))
+      if (occurs_in_list(config_map[i], share_list)) {
+	share_tried++;
 	r = _scheme_apply(sharef, 1, config_map + i);
-      else
+      } else
 	r = defshare;
 
       if (SCHEME_FALSEP(r)) {
@@ -2637,49 +2646,59 @@ static Scheme_Object *make_new_config(Scheme_Config *base, Scheme_Object *defsha
     }
   }
 
-  if (defshare) {
-    ParamExtensionRec *erec;
-
-    if (!config->extensions)
-      config->extensions = scheme_hash_table(2, SCHEME_hash_weak_ptr, 0, 0);
-
-    for (erec = param_ext_recs; erec; erec = erec->next) {
-      if (erec->data->p) {
-	Scheme_Object *r, *defval;
-	unsigned long key;
-	
-	key = erec->data->key;
-	defval = ((ParamData *)((Scheme_Closed_Primitive_Proc *)erec->data->p)->data)->defval;
-
-	if (occurs_in_list(erec->data->p, share_list)) {
-	  Scheme_Object *p = erec->data->p;
-	  r = _scheme_apply(sharef, 1, &p);
-	} else
-	  r = defshare;
-	
-	if (!SCHEME_FALSEP(r)) {
-	  if (SCHEME_CONFIGP(r)) {
-	    Scheme_Config *s = (Scheme_Config *)r;
-	    Scheme_Bucket *b;
-
-	    if (!s->extensions)
-	      s->extensions = scheme_hash_table(2, SCHEME_hash_weak_ptr, 0, 0);
-
-	    b = scheme_bucket_from_table(s->extensions, (const char *)key);
-	    if (!b->val)
-	      b->val = defval;
-
-	    scheme_add_bucket_to_table(config->extensions, b);
-	  } else {
-	    scheme_raise_exn(MZEXN_MISC_PARAMETERIZATION,
-			     r,
-			     "make-parameterization: "
-			     "sharing procedure returned a non-parameterization: %s",
-			     scheme_make_provided_string(r, 1, NULL));
-	    return NULL;
-	  }
-	} else if (!SCHEME_FALSEP(defshare))
-	  scheme_add_to_table(config->extensions, (const char *)key, defval, 0);
+  if (defshare 
+      && !((share_tried == share_must_try) && SCHEME_FALSEP(defshare))) {
+    if (share_tried == share_must_try) {
+      /* Just share the whole extension table */
+      Scheme_Config *s = (Scheme_Config *)defshare;
+      if (!s->extensions)
+	s->extensions = scheme_hash_table(2, SCHEME_hash_weak_ptr, 0, 0);
+      config->extensions = s->extensions;
+      defshare = NULL;
+    } else {
+      ParamExtensionRec *erec;
+      
+      if (!config->extensions)
+	config->extensions = scheme_hash_table(2, SCHEME_hash_weak_ptr, 0, 0);
+      
+      for (erec = param_ext_recs; erec; erec = erec->next) {
+	if (erec->data->p) {
+	  Scheme_Object *r, *defval;
+	  unsigned long key;
+	  
+	  key = erec->data->key;
+	  defval = ((ParamData *)((Scheme_Closed_Primitive_Proc *)erec->data->p)->data)->defval;
+	  
+	  if (occurs_in_list(erec->data->p, share_list)) {
+	    Scheme_Object *p = erec->data->p;
+	    r = _scheme_apply(sharef, 1, &p);
+	  } else
+	    r = defshare;
+	  
+	  if (!SCHEME_FALSEP(r)) {
+	    if (SCHEME_CONFIGP(r)) {
+	      Scheme_Config *s = (Scheme_Config *)r;
+	      Scheme_Bucket *b;
+	      
+	      if (!s->extensions)
+		s->extensions = scheme_hash_table(2, SCHEME_hash_weak_ptr, 0, 0);
+	      
+	      b = scheme_bucket_from_table(s->extensions, (const char *)key);
+	      if (!b->val)
+		b->val = defval;
+	      
+	      scheme_add_bucket_to_table(config->extensions, b);
+	    } else {
+	      scheme_raise_exn(MZEXN_MISC_PARAMETERIZATION,
+			       r,
+			       "make-parameterization: "
+			       "sharing procedure returned a non-parameterization: %s",
+			       scheme_make_provided_string(r, 1, NULL));
+	      return NULL;
+	    }
+	  } else if (!SCHEME_FALSEP(defshare))
+	    scheme_add_to_table(config->extensions, (const char *)key, defval, 0);
+	}
       }
     }
   } else if (base->extensions) {

@@ -96,88 +96,6 @@ using the interpreter pattern:
       (private
         [contents #f]
         [views null]
-        [interior-height-addition 10]
-	[interchild-space 4]
-        [calculate-tree-size
-         (lambda (view)
-           (let o-loop ([contents-snip (send view get-contents-snip)])
-             (let ([contents (send contents-snip get-bundle)])
-               (cond
-                 [(is-a? contents-snip leaf-bundle-snip%)
-                  (let ([xl (box 0)]
-                        [xr (box 0)]
-                        [yt (box 0)]
-                        [yb (box 0)])
-                    (send view get-snip-location contents-snip xl yt #f)
-                    (send view get-snip-location contents-snip xr yb #t)
-                    (let ([w (- (unbox xr) (unbox xl))]
-                          [h (- (unbox yb) (unbox yt))])
-                      (send contents set-tree-width w)
-                      (send contents set-tree-height h)
-                      (values w h)))]
-                 [(is-a? contents-snip node-bundle-snip%)
-                  (let i-loop ([bundle (send contents-snip get-bundle-snips)]
-                               [width (* (max 0 (- (length (send contents-snip get-bundle-snips)) 1))
-					 interchild-space)]
-                               [height 0])
-                    (cond
-                      [(null? bundle)
-                       (let ([xl (box 0)]
-                             [yt (box 0)]
-                             [xr (box 0)]
-                             [yb (box 0)])
-                         (send view get-snip-location contents-snip xl yt #f)
-                         (send view get-snip-location contents-snip xr yb #t)
-                         (let ([w (max width (- (unbox xr) (unbox xl)))]
-                               [h (+ height interior-height-addition
-                                     (- (unbox yb) (unbox yt)))])
-                           (send contents set-tree-width w)
-                           (send contents set-tree-height h)
-                           (values w h)))]
-                      [else (let*-values ([(c-width c-height) (o-loop (car bundle))])
-                              (i-loop (cdr bundle)
-                                      (+ c-width width)
-                                      (max c-height height)))]))]
-                 [else (error 'position-view-contents
-                              "fell off cond: ~e~n"
-                              contents-snip)]))))]
-        [position-snips
-         (lambda (view)
-           (let o-loop ([contents-snip (send view get-contents-snip)]
-                        [x 0]
-                        [y 0])
-             (cond
-               [(is-a? contents-snip leaf-bundle-snip%)
-                (send view move-to contents-snip x y)]
-               [(is-a? contents-snip node-bundle-snip%)
-                
-                ;; set this snips position
-                (let* ([bundle (send contents-snip get-bundle)]
-                       [tree-width (send bundle get-tree-width)]
-                       [width (send contents-snip get-width)])
-                  (send view move-to contents-snip (+ x (/ (- tree-width width) 2)) y))
-                
-                ;; loop over children
-                (let ([text-space (let ([yt (box 0)]
-                                        [yb (box 0)])
-                                    (send view get-snip-location contents-snip #f yt #f)
-                                    (send view get-snip-location contents-snip #f yb #t)
-                                    (- (unbox yb) (unbox yt)))])
-                  (let i-loop ([bundle-snips (send contents-snip get-bundle-snips)]
-                               [x x])
-                    (cond
-                      [(null? bundle-snips) (void)]
-                      [else (let* ([bundle-content-snip (car bundle-snips)]
-                                   [bundle-content (send bundle-content-snip get-bundle)]
-                                   
-                                   [tree-width (send bundle-content get-tree-width)]
-                                   [tree-height (send bundle-content get-tree-width)])
-                              (o-loop bundle-content-snip 
-                                      x 
-                                      (+ y interior-height-addition text-space))
-                              (i-loop (cdr bundle-snips)
-                                      (+ x tree-width interchild-space)))])))]
-               [else (error 'position-snips "fell off cond: ~e~n" contents-snip)])))]
         [build-view-contents
          (lambda (view)
            (let loop ([contents contents])
@@ -208,8 +126,7 @@ using the interpreter pattern:
              (insert-into-editor snip)
              (when contents
                (send view set-contents-snip (build-view-contents view))
-               (calculate-tree-size view)
-               (position-snips view))
+               (send view reposition-snips))
              (set! views (cons view views))
              snip))]
         [bundle-changed
@@ -230,8 +147,7 @@ using the interpreter pattern:
                       
                       ;; build new ones
                       (send view set-contents-snip (build-view-contents view))
-                      (calculate-tree-size view)
-                      (position-snips view))
+                      (send view reposition-snips))
                     '(send view end-edit-sequence))])
              
              (for-each update-view views)))])
@@ -251,15 +167,6 @@ using the interpreter pattern:
   
   (define bundle%
     (class* object% (bundle<%>) ()
-      
-      (private
-        [tree-width 0]
-        [tree-height 0])
-      (public
-        [get-tree-width (lambda () tree-width)]
-        [get-tree-height (lambda () tree-height)]
-        [set-tree-width (lambda (w) (set! tree-width w))]
-        [set-tree-height (lambda (h) (set! tree-height h))])
       
       (private
         [bundle-manager #f])

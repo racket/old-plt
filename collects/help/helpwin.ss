@@ -392,6 +392,7 @@
 	  (define (run-search text search-level exactness)
 	    (semaphore-wait break-sema) ; protects from too-early break
 	    (let ([e (send results get-editor)])
+	      (send (send results get-parent) update-url-display "Search Results")
 	      (when (is-a? e results-editor%)
 		(send e lock #f)
 		(send e erase)
@@ -554,6 +555,7 @@
 				    #f ; params
 				    #f ; query
 				    label))
+			     (send results focus)
 			     (k (void)))))
 	      (unless found-something?
 		(message-box "Help Desk" (format "Nothing found for \"~a\"." given-find)))))

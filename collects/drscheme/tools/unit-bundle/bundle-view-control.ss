@@ -29,93 +29,194 @@ node-bundle-snip%
           drscheme:bundle:misc^
           drscheme:bundle:bundle-model^)
   
-
-
-  
   (define bundle-pasteboard%
-    (class pasteboard% (frame bundle-manager)
-      (private
-        [contents-snip #f])
-      (public
-        [get-bundle-manager (lambda () bundle-manager)]
-        [get-contents-snip (lambda () contents-snip)]
-        [set-contents-snip (lambda (c) (set! contents-snip c))])
+    (class/d pasteboard% (frame bundle-manager)
+      ((public get-bundle-manager
+               get-contents-snip
+               set-contents-snip
+               reposition-snips)
+       (override on-focus after-select after-move-to on-resize)
+       (rename [super-on-focus on-focus]
+               [super-after-select after-select])
+       (inherit move-to get-snip-location find-first-snip invalidate-bitmap-cache))
       
-      (inherit get-snip-location)
-      (private
-        [get-snip-x-location
-         (lambda (snip)
-           (let ([xl (box 0)]
-                 [xr (box 0)])
-             (get-snip-location snip xl #f #f)
-             (get-snip-location snip xr #f #t)
-             (floor (+ (unbox xl) (/ (- (unbox xr) (unbox xl)) 2)))))]
-        [get-snip-top-location
-         (lambda (snip)
-           (let ([yt (box 0)])
-             (get-snip-location snip #f yt #f)
-             (unbox yt)))]
-        [get-snip-bottom-location
-         (lambda (snip)
-           (let ([yb (box 0)])
-             (get-snip-location snip #f yb #t)
-             (unbox yb)))])
+      [define interior-height-addition 10]
+      [define interchild-space 4]
+      
+      [define (calculate-tree-size)
+        (let o-loop ([contents-snip get-contents-snip])
+          (let ([contents (send contents-snip get-bundle)])
+            (cond
+              [(is-a? contents-snip leaf-bundle-snip%)
+               (let ([xl (box 0)]
+                     [xr (box 0)]
+                     [yt (box 0)]
+                     [yb (box 0)])
+                 (get-snip-location contents-snip xl yt #f)
+                 (get-snip-location contents-snip xr yb #t)
+                 (let ([w (- (unbox xr) (unbox xl))]
+                       [h (- (unbox yb) (unbox yt))])
+                   (send contents-snip set-tree-width w)
+                   (send contents-snip set-tree-height h)
+                   (values w h)))]
+              [(is-a? contents-snip node-bundle-snip%)
+               (let i-loop ([bundle (send contents-snip get-bundle-snips)]
+                            [width (* (max 0 (- (length (send contents-snip get-bundle-snips)) 1))
+                                      interchild-space)]
+                            [height 0])
+                 (cond
+                   [(null? bundle)
+                    (let ([xl (box 0)]
+                          [yt (box 0)]
+                          [xr (box 0)]
+                          [yb (box 0)])
+                      (get-snip-location contents-snip xl yt #f)
+                      (get-snip-location contents-snip xr yb #t)
+                      (let ([w (max width (- (unbox xr) (unbox xl)))]
+                            [h (+ height interior-height-addition
+                                  (- (unbox yb) (unbox yt)))])
+                        (send contents-snip set-tree-width w)
+                        (send contents-snip set-tree-height h)
+                        (values w h)))]
+                   [else (let*-values ([(c-width c-height) (o-loop (car bundle))])
+                           (i-loop (cdr bundle)
+                                   (+ c-width width)
+                                   (max c-height height)))]))]
+              [else (error 'position-view-contents
+                           "fell off cond: ~e~n"
+                           contents-snip)])))]
+      [define (position-snips)
+        (let o-loop ([contents-snip contents-snip]
+                     [x 0]
+                     [y 0])
+          (cond
+            [(is-a? contents-snip leaf-bundle-snip%)
+             (move-to contents-snip x y)]
+            [(is-a? contents-snip node-bundle-snip%)
+             
+             ;; set this snips position
+             (let* ([bundle (send contents-snip get-bundle)]
+                    [tree-width (send bundle get-tree-width)]
+                    [width (send contents-snip get-width)])
+               (move-to contents-snip (+ x (/ (- tree-width width) 2)) y))
+             
+             ;; loop over children
+             (let ([text-space (let ([yt (box 0)]
+                                     [yb (box 0)])
+                                 (get-snip-location contents-snip #f yt #f)
+                                 (get-snip-location contents-snip #f yb #t)
+                                 (- (unbox yb) (unbox yt)))])
+               (let i-loop ([bundle-snips (send contents-snip get-bundle-snips)]
+                            [x x])
+                 (cond
+                   [(null? bundle-snips) (void)]
+                   [else (let* ([bundle-content-snip (car bundle-snips)]
+                                [bundle-content (send bundle-content-snip get-bundle)]
+                                
+                                [tree-width (send bundle-content get-tree-width)]
+                                [tree-height (send bundle-content get-tree-width)])
+                           (o-loop bundle-content-snip 
+                                   x 
+                                   (+ y interior-height-addition text-space))
+                           (i-loop (cdr bundle-snips)
+                                   (+ x tree-width interchild-space)))])))]
+            [else (error 'position-snips "fell off cond: ~e~n" contents-snip)]))]
+      
 
+      (define (reposition-snips)
+        (calculate-tree-size)
+        (position-snips))
+      
+      (define contents-snip #f)
+      
+      [define get-bundle-manager (lambda () bundle-manager)]
+      [define get-contents-snip (lambda () contents-snip)]
+      [define set-contents-snip (lambda (c) (set! contents-snip c))]
+      
+      [define get-snip-x-location
+        (lambda (snip)
+          (let ([xl (box 0)]
+                [xr (box 0)])
+            (get-snip-location snip xl #f #f)
+            (get-snip-location snip xr #f #t)
+            (floor (+ (unbox xl) (/ (- (unbox xr) (unbox xl)) 2)))))]
+      [define get-snip-top-location
+        (lambda (snip)
+          (let ([yt (box 0)])
+            (get-snip-location snip #f yt #f)
+            (unbox yt)))]
+      [define get-snip-bottom-location
+        (lambda (snip)
+          (let ([yb (box 0)])
+            (get-snip-location snip #f yb #t)
+            (unbox yb)))]
+      
+      (define on-focus
+        (lambda (on?)
+          (unless (find-first-snip)
+            (send frame enable-children on?))
+          (super-on-focus on?)))
+      [define after-select
+        (lambda (snip on?)
+          (super-after-select snip on?)
+          (cond
+            [(not on?)
+             (send frame enable-children #f)]
+            [(is-a? snip node-bundle-snip%)
+             (send frame enable-children #t)]
+            [else (void)]))]
+      
+      [define after-move-to
+        (lambda (snip x y dragging)
+          (invalidate-bitmap-cache))]
+      [define on-paint
+        (lambda (before? dc left top right bottom dx dy draw-caret)
+          (when (and contents-snip
+                     (not before?))
+            (let ([pen (send dc get-pen)])
+              (set-dc-pen dc "BLUE" 1 'solid)
+              (let o-loop ([contents-snip contents-snip])
+                (cond
+                  [(is-a? contents-snip leaf-bundle-snip%) (void)]
+                  [(is-a? contents-snip node-bundle-snip%)
+                   (let ([x (get-snip-x-location contents-snip)]
+                         [y (get-snip-bottom-location contents-snip)])
+                     (let i-loop ([bundle-snips
+                                   (send contents-snip get-bundle-snips)])
+                       (cond
+                         [(null? bundle-snips) (void)]
+                         [else
+                          (let* ([bundle-content-snip (car bundle-snips)])
+                            (let ([bx (get-snip-x-location bundle-content-snip)]
+                                  [by (get-snip-top-location bundle-content-snip)])
+                              (send dc draw-line (+ x dx) (+ y dy) (+ bx dx) (+ by dy))
+                              (o-loop bundle-content-snip)
+                              (i-loop (cdr bundle-snips))))])))]
+                  [else (error 'on-paint "fell off cond: ~e~n" contents-snip)]))
+              (send dc set-pen pen))))]
 
-      (inherit find-first-snip)
-      (rename [super-on-focus on-focus])
-      (override
-	[on-focus
-	 (lambda (on?)
-           (unless (find-first-snip)
-             (send frame enable-children on?))
-	   (super-on-focus on?))]
-        [after-select
-         (lambda (snip on?)
-           (super-after-select snip on?)
-           (cond
-             [(not on?)
-              (send frame enable-children #f)]
-             [(is-a? snip node-bundle-snip%)
-              (send frame enable-children #t)]
-             [else (void)]))])
-
-      (inherit invalidate-bitmap-cache)
-      (rename [super-after-select after-select])
-      (override
-	[after-move-to
-	 (lambda (snip x y dragging)
-	   (invalidate-bitmap-cache))]
-	[on-paint
-	 (lambda (before? dc left top right bottom dx dy draw-caret)
-	   (when (and contents-snip
-		      (not before?))
-	     (let ([pen (send dc get-pen)])
-	       (set-dc-pen dc "BLUE" 1 'solid)
-	       (let o-loop ([contents-snip contents-snip])
-		 (cond
-		   [(is-a? contents-snip leaf-bundle-snip%) (void)]
-		   [(is-a? contents-snip node-bundle-snip%)
-		    (let ([x (get-snip-x-location contents-snip)]
-			  [y (get-snip-bottom-location contents-snip)])
-		      (let i-loop ([bundle-snips
-				    (send contents-snip get-bundle-snips)])
-			(cond
-			  [(null? bundle-snips) (void)]
-			  [else
-			   (let* ([bundle-content-snip (car bundle-snips)])
-			     (let ([bx (get-snip-x-location bundle-content-snip)]
-				   [by (get-snip-top-location bundle-content-snip)])
-			       (send dc draw-line (+ x dx) (+ y dy) (+ bx dx) (+ by dy))
-			       (o-loop bundle-content-snip)
-			       (i-loop (cdr bundle-snips))))])))]
-		   [else (error 'on-paint "fell off cond: ~e~n" contents-snip)]))
-	       (send dc set-pen pen))))])
-      (sequence
-        (super-init))))
+      (define (on-resize snip x y)
+        (reposition-snips))
+      
+      (super-init)))
+  
+  (define (bundle-snip-mixin snip%)
+    (class/d snip% args
+      ((public get-tree-width
+               get-tree-height
+               set-tree-width
+               set-tree-height))
+      [define tree-width 0]
+      [define tree-height 0]
+      [define get-tree-width (lambda () tree-width)]
+      [define get-tree-height (lambda () tree-height)]
+      [define set-tree-width (lambda (w) (set! tree-width w))]
+      [define set-tree-height (lambda (h) (set! tree-height h))]
+     
+      (apply super-init args)))
   
   (define leaf-bundle-snip%
-    (class editor-snip% (leaf-bundle)
+    (class (bundle-snip-mixin editor-snip%) (leaf-bundle)
       (public
         [get-bundle
          (lambda ()
@@ -140,7 +241,7 @@ node-bundle-snip%
   
   (define node-bundle-snipclass (make-object snip-class%))
   (define node-bundle-snip%
-    (class snip% (node-bundle bundle-snips)
+    (class (bundle-snip-mixin snip%) (node-bundle bundle-snips)
       (public
         [get-bundle
          (lambda ()

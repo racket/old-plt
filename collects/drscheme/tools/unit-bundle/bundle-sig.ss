@@ -1,4 +1,5 @@
 (require-library "frameworks.ss" "framework")
+(require-library "classd.ss")
 
 (define-signature drscheme:bundle:misc^
   (set-box/f!

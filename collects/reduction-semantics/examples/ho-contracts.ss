@@ -166,7 +166,7 @@
                          (term hole)
                          (foldl
                           ho-contracts-subst
-                          (term body)
+                          (term e_body)
                           (term (variable_i ...))
                           (term (v_i ...)))))
      (reduction lang  

@@ -29,7 +29,11 @@ abstract out the `hole and `(hole name) patterns.
            compiled-pattern
            
            make-bindings bindings-table bindings?
-           (struct rib (name exp)))
+           (struct rib (name exp))
+           
+           print-stats
+           
+           )
   
   ;; lang = (listof nt)
   ;; nt = (make-nt sym (listof rhs))
@@ -69,13 +73,14 @@ abstract out the `hole and `(hole name) patterns.
   ;; compiled-pattern : exp (listof hole-path) -> (union #f (listof bindings))
   ;; compiled-lang : (make-compiled-lang (listof nt) 
   ;;                                     hash-table[sym -o> compiled-pattern]
-  ;;                                     hash-table[sym -o> compiled-pattern])
+  ;;                                     hash-table[sym -o> compiled-pattern]
+  ;;                                     hash-table[sym -o> boolean])
   ;; hole-path = (make-hole-path (union #f symbol) symbol (listof (union 'car 'cdr)))
   (define-struct hole-path (name id path) (make-inspector))
   
   (define compiled-pattern (any? (listof hole-path?) . -> . (union false? (listof bindings?))))
   
-  (define-struct compiled-lang (lang ht across-ht))
+  (define-struct compiled-lang (lang ht across-ht has-hole-ht))
   
   ;; lookup-binding : bindings sym [(-> any)] -> any
   (define lookup-binding 
@@ -95,18 +100,21 @@ abstract out the `hole and `(hole name) patterns.
   (define (compile-language lang)
     (let* ([clang-ht (make-hash-table)]
            [across-ht (make-hash-table)]
-           [clang (make-compiled-lang lang clang-ht across-ht)]
+           [has-hole-ht (build-has-hole-ht lang)]
+           [clang (make-compiled-lang lang clang-ht across-ht has-hole-ht)]
            [do-compilation
             (lambda (ht lang prefix-cross?)
               (for-each
                (lambda (nt)
                  (for-each
                   (lambda (rhs)
-                    (hash-table-put!
-                     ht
-                     (nt-name nt)
-                     (cons (compile-pattern/cross? clang (rhs-pattern rhs) prefix-cross?)
-                           (hash-table-get ht (nt-name nt)))))
+                    (let-values ([(compiled-pattern has-hole?) 
+                                  (compile-pattern/cross? clang (rhs-pattern rhs) prefix-cross?)])
+                      (hash-table-put!
+                       ht
+                       (nt-name nt)
+                       (cons compiled-pattern
+                             (hash-table-get ht (nt-name nt))))))
                   (nt-rhs nt)))
                lang))])
       
@@ -127,6 +135,18 @@ abstract out the `hole and `(hole name) patterns.
         (do-compilation clang-ht lang #t)
         (do-compilation across-ht compatible-context-language #f)
         clang)))
+  
+  ; build-has-hole-ht : (listof nt) -> hash-table[symbol -o> boolean]
+  ; produces a map of nonterminal -> whether that nonterminal could produce a hole
+  ; (right now it just returns #t for everything)
+  (define (build-has-hole-ht lang)
+    (let ([has-hole-ht (make-hash-table)])
+      (for-each
+       (lambda (nt) (hash-table-put! has-hole-ht (nt-name nt) #t))
+       lang)
+      has-hole-ht))
+      
+  
   
   ;; build-compatible-context-language : lang -> lang
   (define (build-compatible-context-language clang-ht lang)
@@ -309,116 +329,181 @@ abstract out the `hole and `(hole name) patterns.
   
   (define underscore-allowed '(any number string variable))
 
-  (define (compile-pattern clang pattern) (compile-pattern/cross? clang pattern #t))
+  ;; compiled-pattern-cache : hash-table[sexp[pattern] -o> (cons compiled-pattern boolean)]
+  (define compiled-pattern-cache (make-hash-table 'equal))
   
-  ;; compile-pattern : compiled-lang pattern boolean -> compiled-pattern
-  ;; matches pattern agains exp in lang. may return multiple bindings
-  ;; for a single identifier. Don't extract any values from the compiled-lang
-  ;; (except to test if the ht maps things) on the first application --
-  ;; it may not be completely filled in yet.
+  ;; compile-pattern : compiled-lang pattern -> compiled-pattern
+  (define (compile-pattern clang pattern)
+    (let-values ([(pattern has-hole?) (compile-pattern/cross? clang pattern #t)])
+      pattern))
+  
+  ;; compile-pattern : compiled-lang pattern boolean -> (values compiled-pattern boolean)
   (define (compile-pattern/cross? clang pattern prefix-cross?)
-    (let ([clang-ht (compiled-lang-ht clang)]
-          [across-ht (compiled-lang-across-ht clang)])
-      (let loop ([pattern pattern])
-        (consult-compiled-pattern-cache
-         pattern
-         (lambda ()
-           (memoize2
-            (match pattern
-              [`any
+    (define clang-ht (compiled-lang-ht clang))
+    (define has-hole-ht (compiled-lang-has-hole-ht clang))
+    (define across-ht (compiled-lang-across-ht clang))
+    
+    (define (compile-pattern/cache pattern)
+      (let ([compiled-cache (hash-table-get
+                             compiled-pattern-cache
+                             pattern
+                             (lambda ()
+                               (let-values ([(compiled-pattern has-hole?)
+                                             (true-compile-pattern pattern)])
+                                 (let ([val (cons (memoize compiled-pattern has-hole?) has-hole?)])
+                                   (hash-table-put! compiled-pattern-cache pattern val)
+                                   val))))])
+        (values (car compiled-cache) (cdr compiled-cache))))
+  
+    ;; consult-compiled-pattern-cache : sexp[pattern] (-> compiled-pattern) -> compiled-pattern
+    (define (consult-compiled-pattern-cache pattern calc)
+      (hash-table-get 
+       compiled-pattern-cache
+       pattern
+       (lambda ()
+         (let ([res (calc)])
+           (hash-table-put! compiled-pattern-cache pattern res)
+           res))))
+    
+    (define (true-compile-pattern pattern)
+      (match pattern
+        [`any
+          (values
+           (lambda (exp hole-paths)
+             (list (make-bindings null)))
+           #f)]
+        [`number 
+          (values 
+           (lambda (exp hole-paths)
+             (and (number? exp) (list (make-bindings null))))
+           #f)]
+        [`string
+          (values 
+           (lambda (exp hole-paths)
+             (and (string? exp) (list (make-bindings null)))) 
+           #f)]
+        [`variable 
+          (values
+           (lambda (exp hole-paths)
+             (and (symbol? exp) (list (make-bindings null))))
+           #f)]
+        [`(variable-except ,@(vars ...))
+          (values
+           (lambda (exp hole-paths)
+             (and (symbol? exp)
+                  (not (memq exp vars))
+                  (list (make-bindings null))))
+           #f)]
+        [`hole (values (match-hole #f) #t)]
+        [`(hole ,hole-id) (values (match-hole hole-id) #t)]
+        [(? string?) 
+         (values
+          (lambda (exp hole-paths)
+            (and (string? exp)
+                 (string=? exp pattern)
+                 (list (make-bindings null))))
+          #f)]
+        [(? symbol?)
+         (cond
+           [(hash-table-maps? clang-ht pattern)
+            (values
+             (lambda (exp hole-paths)
+               (match-nt clang-ht pattern exp hole-paths))
+             (hash-table-get has-hole-ht pattern))]
+           [(has-underscore? pattern)
+            (let ([before (split-underscore pattern)])
+              (unless (or (hash-table-maps? clang-ht before)
+                          (memq before underscore-allowed))
+                (error 'compile-pattern "stuff before underscore is illegal in ~s" pattern))
+              (compile-pattern/cache `(name ,pattern ,before)))]
+           [else
+            (values
+             (lambda (exp hole-paths)
+               (and (eq? exp pattern)
+                    (list (make-bindings null))))
+             #f)])]
+        
+        [`(cross ,(and pre-id (? symbol?)))
+          (let ([id (if prefix-cross?
+                        (symbol-append pre-id '- pre-id)
+                        pre-id)])
+            (cond
+              [(hash-table-get across-ht id (lambda () #f))
+               (values
                 (lambda (exp hole-paths)
-                  (list (make-bindings null)))]
-              [`number 
-                (lambda (exp hole-paths)
-                  (and (number? exp) (list (make-bindings null))))]
-              [`string
-                (lambda (exp hole-paths)
-                  (and (string? exp) (list (make-bindings null))))]
-              [`variable 
-                (lambda (exp hole-paths)
-                  (and (symbol? exp) (list (make-bindings null))))]
-              [`(variable-except ,@(vars ...))
-                (lambda (exp hole-paths)
-                  (and (symbol? exp)
-                       (not (memq exp vars))
-                       (list (make-bindings null))))]
-              [`hole (match-hole #f)]
-              [`(hole ,hole-id) (match-hole hole-id)]
-              [(? string?) 
-               (lambda (exp hole-paths)
-                 (and (string? exp)
-                      (string=? exp pattern)
-                      (list (make-bindings null))))]
-              [(? symbol?) 
-               (cond
-                 [(hash-table-get clang-ht pattern (lambda () #f))
-                  (lambda (exp hole-paths)
-                    (match-nt clang-ht pattern exp hole-paths))]
-                 [(has-underscore? pattern)
-                  (let ([before (split-underscore pattern)])
-                    (unless (or (hash-table-get clang-ht before (lambda () #f))
-                                (memq before underscore-allowed))
-                      (error 'compile-pattern "stuff before underscore is illegal in ~s" pattern))
-                    (loop `(name ,pattern ,before)))]
-                 [else
-                  (lambda (exp hole-paths)
-                    (and (eq? exp pattern)
-                         (list (make-bindings null))))])]
-              [`(cross ,(and pre-id (? symbol?)))
-                (let ([id (if prefix-cross?
-                              (symbol-append pre-id '- pre-id)
-                              pre-id)])
-                  (cond
-                    [(hash-table-get across-ht id (lambda () #f))
-                     (lambda (exp hole-paths)
-                       (match-nt across-ht id exp hole-paths))]
-                    [else
-                     (error 'compile-pattern "unknown cross reference ~a" id)]))]
-              [`(name ,name ,pat)
-                (let ([match-pat (loop pat)])
-                  (lambda (exp hole-paths)
-                    (let ([matches (match-pat exp hole-paths)])
-                      (and matches 
-                           (map (lambda (bindings)
-                                  (make-bindings (cons (make-rib name exp)
-                                                       (bindings-table bindings))))
-                                matches)))))]
-              [`(in-hole ,context ,contractum) (loop `(in-hole* hole ,context ,contractum))]
-              [`(in-hole* ,this-hole-name ,context ,contractum) 
-                (let ([match-context (loop context)]
-                      [match-contractum (loop contractum)])
-                  (match-in-hole context contractum exp match-context match-contractum this-hole-name #t #f))]
-              [`(in-hole+ ,context ,contractum) 
-                (let ([match-context (loop context)]
-                      [match-contractum (loop contractum)])
-                  (match-in-hole context contractum exp match-context match-contractum 'hole+ #f #f))]
-              [`(in-named-hole ,hole-id ,this-hole-name ,context ,contractum) 
-                (let ([match-context (loop context)]
-                      [match-contractum (loop contractum)])
-                  (match-in-hole context contractum exp match-context match-contractum this-hole-name #t hole-id))]
-              [`(in-named-hole+ ,hole-id ,context ,contractum) 
-                (let ([match-context (loop context)]
-                      [match-contractum (loop contractum)])
-                  (match-in-hole context contractum exp match-context match-contractum 'hole+ #f hole-id))]
-              [`(side-condition ,pat ,condition)
-                (let ([match-pat (loop pat)])
-                  (lambda (exp hole-paths)
-                    (let ([matches (match-pat exp hole-paths)])
-                      (and matches
-                           (let ([filtered (filter condition matches)])
-                             (if (null? filtered)
-                                 #f
-                                 filtered))))))]
-              [(? list?)
-               (let ([rewritten (rewrite-ellipses pattern loop)])
-                 (lambda (exp hole-paths)
-                   (match-list rewritten exp hole-paths)))]
-              [(? procedure?)
-               pattern]
-              [else 
-               (lambda (exp hole-paths)
-                 (and (eq? pattern exp)
-                      (list (make-bindings null))))])))))))
+                  (match-nt across-ht id exp hole-paths))
+                #t)]
+              [else
+               (error 'compile-pattern "unknown cross reference ~a" id)]))]
+        
+        [`(name ,name ,pat)
+          (let-values ([(match-pat has-hole?) (compile-pattern/cache pat)])
+            (values
+             (lambda (exp hole-paths)
+               (let ([matches (match-pat exp hole-paths)])
+                 (and matches 
+                      (map (lambda (bindings)
+                             (make-bindings (cons (make-rib name exp)
+                                                  (bindings-table bindings))))
+                           matches))))
+             has-hole?))]
+        [`(in-hole ,context ,contractum) (compile-pattern/cache `(in-hole* hole ,context ,contractum))]
+        [`(in-hole* ,this-hole-name ,context ,contractum) 
+          (let-values ([(match-context ctxt-has-hole?) (compile-pattern/cache context)]
+                       [(match-contractum contractum-has-hole?) (compile-pattern/cache contractum)])
+            (values
+             (match-in-hole context contractum exp match-context match-contractum this-hole-name #t #f)
+             (or ctxt-has-hole? contractum-has-hole?)))]
+        [`(in-hole+ ,context ,contractum) 
+          (let-values ([(match-context ctxt-has-hole?) (compile-pattern/cache context)]
+                       [(match-contractum contractum-has-hole?) (compile-pattern/cache contractum)])
+            (values
+             (match-in-hole context contractum exp match-context match-contractum 'hole+ #f #f)
+             (or ctxt-has-hole? contractum-has-hole?)))]
+        [`(in-named-hole ,hole-id ,this-hole-name ,context ,contractum) 
+          (let-values ([(match-context ctxt-has-hole?) (compile-pattern/cache context)]
+                       [(match-contractum contractum-has-hole?) (compile-pattern/cache contractum)])
+            (values
+             (match-in-hole context contractum exp match-context match-contractum this-hole-name #t hole-id)
+             (or ctxt-has-hole? contractum-has-hole?)))]
+        [`(in-named-hole+ ,hole-id ,context ,contractum) 
+          (let-values ([(match-context ctxt-has-hole?) (compile-pattern/cache context)]
+                       [(match-contractum contractum-has-hole?) (compile-pattern/cache contractum)])
+            (values
+             (match-in-hole context contractum exp match-context match-contractum 'hole+ #f hole-id)
+             (or ctxt-has-hole? contractum-has-hole?)))]
+        
+        [`(side-condition ,pat ,condition)
+          (let-values ([(match-pat has-hole?) (compile-pattern/cache pat)])
+            (values
+             (lambda (exp hole-paths)
+               (let ([matches (match-pat exp hole-paths)])
+                 (and matches
+                      (let ([filtered (filter condition matches)])
+                        (if (null? filtered)
+                            #f
+                            filtered)))))
+             has-hole?))]
+        [(? list?)
+         (let-values ([(rewritten has-hole?) (rewrite-ellipses pattern compile-pattern/cache)])
+           (values
+            (lambda (exp hole-paths)
+              (match-list rewritten exp hole-paths))
+            has-hole?))]
+        
+        ; what is this? -- look in reduction macro
+        [(? procedure?)
+         pattern]
+        
+        [else 
+         (values
+          (lambda (exp hole-paths)
+            (and (eq? pattern exp)
+                 (list (make-bindings null))))
+          #f)]))  
+    
+    (compile-pattern/cache pattern))
+  
 
   ;; split-underscore : symbol -> symbol
   ;; returns the text before the underscore in a symbol (as a symbol)
@@ -442,38 +527,61 @@ abstract out the `hole and `(hole name) patterns.
   (define (has-underscore? sym)
     (memq #\_ (string->list (symbol->string sym))))
   
-  ;; memoize2 : (x y -> w) -> x y -> w
-  ;; memoizes a function of two arguments
-  ;; limits cache size to fixed size
-  (define (memoize2 f)
+  (define (memoize f needs-all-args?)
+    (if needs-all-args?
+        (memoize2 f)
+        (memoize1 f)))
+  
+  ; memoize1 : (x y -> w) -> x y -> w
+  ; memoizes a function of two arguments under the assumption
+  ; that the function is constant w.r.t the second
+  (define (memoize1 f) (memoize/key f (lambda (x y) x) nohole))
+  (define (memoize2 f) (memoize/key f cons hole))
+  
+  (define (memoize/key f key-fn statsbox)
     (let ([ht (make-hash-table 'equal)]
 	  [entries 0])
       (lambda (x y)
-        (let* ([key (cons x y)]
+        (set-cache-stats-hits! statsbox (add1 (cache-stats-hits statsbox)))
+        (let* ([key (key-fn x y)]
                [compute/cache
                 (lambda ()
-		  (set! entries (+ entries 1))
+                  (set! entries (+ entries 1))
+                  (set-cache-stats-hits! statsbox (sub1 (cache-stats-hits statsbox)))
+                  (set-cache-stats-misses! statsbox (add1 (cache-stats-misses statsbox)))
                   (let ([res (f x y)])
                     (hash-table-put! ht key res)
                     res))])
-	  (unless (< entries 10000)
+          (unless (< entries 10000)
             (set! entries 0)
-	    (set! ht (make-hash-table 'equal)))
+            (set! ht (make-hash-table 'equal)))
           (hash-table-get ht key compute/cache)))))
+  
+  (define-struct cache-stats (name misses hits))
+  (define (new-cache-stats name) (make-cache-stats name 0 0))
 
-  ;; compiled-pattern-cache : hash-table[sexp[pattern] -o> compiled-pattern]
-  (define compiled-pattern-cache (make-hash-table 'equal))
+  (define hole (new-cache-stats "hole"))
+  (define nohole (new-cache-stats "no-hole"))
   
-  ;; consult-compiled-pattern-cache : sexp[pattern] (-> compiled-pattern) -> compiled-pattern
-  (define (consult-compiled-pattern-cache pattern calc)
-    (hash-table-get 
-     compiled-pattern-cache
-     pattern
-     (lambda ()
-       (let ([res (calc)])
-         (hash-table-put! compiled-pattern-cache pattern res)
-         res))))
-  
+  (define (print-stats)
+    (let ((stats (list hole nohole)))
+      (for-each 
+       (lambda (s) 
+         (when (> (+ (cache-stats-hits s) (cache-stats-misses s)) 0)
+           (printf "~a has ~a hits, ~a misses (~a)\n" 
+                   (cache-stats-name s)
+                   (cache-stats-hits s)
+                   (cache-stats-misses s)
+                   (* 100 (/ (cache-stats-hits s)
+                             (+ (cache-stats-hits s) (cache-stats-misses s)))))))
+       stats)
+      (let ((overall-hits (apply + (map cache-stats-hits stats)))
+            (overall-miss (apply + (map cache-stats-misses stats))))
+        (printf "---\nOverall hits: ~a\n" overall-hits)
+        (printf "\nOverall misses: ~a\n" overall-miss)
+        (when (> (+ overall-hits overall-miss) 0)
+          (printf "\nOverall rate: ~a\n" (* 100 (/ overall-hits (+ overall-hits overall-miss))))))))
+
   ;; match-hole : (union #f symbol) -> compiled-pattern
   (define (match-hole hole-id)
     (lambda (exp hole-paths)
@@ -733,8 +841,8 @@ abstract out the `hole and `(hole name) patterns.
          lob))
   
   ;; rewrite-ellipses : (listof pattern) 
-  ;;                    (pattern -> compiled-pattern)
-  ;;                 -> (listof (union repeat compiled-pattern))
+  ;;                    (pattern -> (values compiled-pattern boolean))
+  ;;                 -> (values (listof (union repeat compiled-pattern)) boolean)
   ;; moves the ellipses out of the list and produces repeat structures
   (define (rewrite-ellipses pattern compile)
     (let loop ([exp-eles pattern]
@@ -742,19 +850,26 @@ abstract out the `hole and `(hole name) patterns.
       (cond
         [(null? exp-eles)
          (if fst
-             (list (compile fst))
-             empty)]
+             (let-values ([(compiled has-hole?) (compile fst)])
+               (values (list compiled) has-hole?))
+             (values empty #f))]
         [else
          (let ([exp-ele (car exp-eles)])
            (cond
              [(eq? '... exp-ele)
               (unless fst
                 (error 'match-pattern "bad ellipses placement: ~s" pattern))
-              (cons (make-repeat (compile fst) 
-                                 (extract-empty-bindings fst))
-                    (loop (cdr exp-eles) #f))]
+              (let-values ([(compiled has-hole?) (compile fst)]
+                           [(rest rest-has-hole?) (loop (cdr exp-eles) #f)])
+                (values
+                 (cons (make-repeat compiled (extract-empty-bindings fst)) rest)
+                 (or has-hole? rest-has-hole?)))]
              [fst
-              (cons (compile fst) (loop (cdr exp-eles) exp-ele))]
+              (let-values ([(compiled has-hole?) (compile fst)]
+                           [(rest rest-has-hole?) (loop (cdr exp-eles) exp-ele)])
+                (values
+                 (cons compiled rest)
+                 (or has-hole? rest-has-hole?)))]
              [(not fst)
               (loop (cdr exp-eles) exp-ele)]))])))
   
@@ -781,7 +896,7 @@ abstract out the `hole and `(hole name) patterns.
         [`(in-hole+ ,context ,contractum) (loop context (loop contractum ribs))]
         [`(side-condition ,pat ,test) (loop pat ribs)]
         [(? list?)
-         (let ([rewritten (rewrite-ellipses pattern (lambda (x) x))])
+         (let-values ([(rewritten has-hole?) (rewrite-ellipses pattern (lambda (x) (values x #f)))])
            (let i-loop ([r-exps rewritten]
                         [ribs ribs])
              (cond
@@ -824,6 +939,11 @@ abstract out the `hole and `(hole name) patterns.
           snd))
        fst)
       bindings))
+
+  (define (hash-table-maps? ht key)
+    (let/ec k
+      (hash-table-get ht key (lambda () (k #f)))
+      #t))
   
   (provide/contract (replace (any? hole-binding? any? . -> . any)))
   ;; replaces `inner' inside `outer' (using eq?) with `new'
@@ -1212,8 +1332,10 @@ abstract out the `hole and `(hole name) patterns.
   ;; returns #t if pat matching exp with the empty language produces ans.
   (define (test-empty pat exp ans)
     (run-test
-     `(match-pattern (compile-pattern (make-compiled-lang '() (make-hash-table) (make-hash-table)) ',pat) ',exp)
-     (match-pattern (compile-pattern (make-compiled-lang '() (make-hash-table) (make-hash-table)) pat) exp)
+     `(match-pattern (compile-pattern (make-compiled-lang '() (make-hash-table) (make-hash-table) (make-hash-table)) ',pat) ',exp)
+     (match-pattern 
+      (compile-pattern (make-compiled-lang '() (make-hash-table) (make-hash-table) (make-hash-table)) pat)
+      exp)
      ans))
   
   (define xab-lang #f)
@@ -1262,11 +1384,12 @@ abstract out the `hole and `(hole name) patterns.
      ans))
   
   ;; test-ellipses : sexp sexp -> void
-  (define (test-ellipses pat ans)
+  (define (test-ellipses pat expected)
     (run-test
-     `(rewrite-ellipses ',pat (lambda (x) x))
-     (rewrite-ellipses pat (lambda (x) x))
-     ans))
+     `(rewrite-ellipses ',pat (lambda (x) (values x #f)))
+     (let-values ([(compiled-pattern has-hole?) (rewrite-ellipses pat (lambda (x) (values x #f)))])
+       (cons compiled-pattern has-hole?))
+     (cons expected #f)))
   
   ;; run-test : sexp any any
   ;; compares ans with expected. If failure,

@@ -1,2 +1,2 @@
 (module info (lib "infotab.ss" "setup")
-  (define name "Reduction Semantics"))
+  (define name "PLT Redex"))

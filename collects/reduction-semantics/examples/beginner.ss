@@ -15,7 +15,7 @@ reflects the (broken) spec).
            "../subst.ss"
            (lib "match.ss"))
 
-  (provide run-tests)
+  (provide run-tests print-stats)
   
   #|
   

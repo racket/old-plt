@@ -12,7 +12,9 @@
 	   compiled-lang?
            red?
            term
-           term-let)
+           term-let
+           
+           print-stats)
   
   (provide/contract
    (language->predicate (compiled-lang? symbol? . -> . (any? . -> . boolean?)))

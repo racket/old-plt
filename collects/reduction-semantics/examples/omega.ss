@@ -8,14 +8,17 @@
   (define lang
     (language (e (e e)
                  (abort e)
-                 (variable-except lambda call/cc abort)
+                 x
                  v)
               (c (v c)
                  (c e)
                  hole)
               (v call/cc
                  number
-                 (lambda (variable) e))))
+                 (lambda (x) e))
+              
+              (x (variable-except lambda call/cc abort))
+              ))
   
   (define reductions
     (list
@@ -30,6 +33,7 @@
      (reduction lang
                 (in-hole c (abort e_1))
                 (term e_1))
+     
      (reduction/context lang
                         c
                         ((lambda (variable_x) e_body) v_arg)
@@ -37,6 +41,8 @@
   
   (define lc-subst
     (plt-subst
+     ['abort (constant)]
+     ['call/cc (constant)]
      [(? symbol?) (variable)]
      [(? number?) (constant)]
      [`(lambda (,x) ,b)
@@ -56,7 +62,7 @@
   
   ;(traces lang reductions '((lambda (x) (x x)) (lambda (x) (x x))))
   
-  ;(traces lang reductions '((call/cc call/cc) (call/cc call/cc)))
-  (traces lang reductions '((lambda (x) ((call/cc call/cc) x)) (call/cc call/cc)))
+  (traces lang reductions '((call/cc call/cc) (call/cc call/cc)))
+  ;(traces lang reductions '((lambda (x) ((call/cc call/cc) x)) (call/cc call/cc)))
   
   )

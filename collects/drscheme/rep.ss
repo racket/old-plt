@@ -34,9 +34,10 @@
 
     (define build-parameterization
       (let ([orig-eventspace (wx:current-eventspace)])
-	(lambda ()
+	(lambda (custodian)
 	  (let* ([p (make-parameterization system-parameterization)]
-		 [bottom-eventspace (wx:make-eventspace p)]
+		 [bottom-eventspace (parameterize ([current-custodian custodian])
+				      (wx:make-eventspace p))]
 		 [n (make-namespace 'no-constants 'wx 'hash-percent-syntax)])
 	    (with-parameterization p
 	      (lambda ()
@@ -78,7 +79,7 @@
 		(read-square-bracket-as-paren #t)
 		(print-struct #t)
 		(error-print-width 250)))
-	    (drscheme:basis:add-basis n)
+	    (drscheme:basis:add-basis n bottom-eventspace)
 	    p))))
 
     (define make-edit%
@@ -434,10 +435,12 @@
 	    [reset-console
 	     (let ([first-dir (current-directory)])
 	       (lambda ()
+		 (printf "shutting down custodian~n")
 		 (custodian-shutdown-all custodian)
+		 (printf "shut down custodian~n")
 		 (lock #f) ;; locked if the thread was killed
 		 (init-evaluation-thread)
-		 (let ([p (build-parameterization)])
+		 (let ([p (build-parameterization custodian)])
 		   (with-parameterization p
 		     (lambda ()
 		       (current-custodian custodian)

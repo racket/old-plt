@@ -45,7 +45,7 @@
 
 (define *use-closing-p-tag?* #t)
 
-(define *tex2page-version* "4p14")
+(define *tex2page-version* "4p14a")
 
 (define *tex2page-website*
   "http://www.ccs.neu.edu/~dorai/tex2page/tex2page-doc.html")
@@ -2302,10 +2302,13 @@
               (if (and (char? c) (char=? c #\{))
                 (ungroup (get-group))
                 (get-filename)))))
-      (unless (fully-qualified-pathname? jobname)
-        (set! jobname (string-append *aux-dir/* jobname)))
       (let ((ext-label-file
-              (string-append jobname *label-file-suffix* ".scm")))
+              (string-append
+                (if (fully-qualified-pathname? jobname)
+                  jobname
+                  (string-append *aux-dir/* jobname))
+                *label-file-suffix*
+                ".scm")))
         (when (file-exists? ext-label-file)
           (fluid-let
             ((*label-source* jobname))

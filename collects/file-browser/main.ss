@@ -68,7 +68,7 @@
       (drscheme:get/extend:extend-unit-frame
        (lambda (frame%)
          (class frame%
-           (inherit get-button-panel get-area-container)
+           (inherit get-button-panel get-area-container get-execute-button)
            
            (rename (super-enable-evaluation enable-evaluation))
            (define/override (enable-evaluation)
@@ -98,7 +98,12 @@
              (make-object button% (activate-bitmap this) (get-button-panel)
                (lambda (a b)
                  (cond
-                   (active? (void))
+                   (active?
+                    (set! active? #f)
+                    (set! user-thread #f)
+                    (set! user-namespace #f)
+                    (send browser-panel delete-child (car (send browser-panel get-children)))
+                    (send (get-execute-button) command b))
                    (else
                     (set! active? #t)
                     (let ((container browser-panel))

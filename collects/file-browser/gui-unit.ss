@@ -49,7 +49,7 @@
         (class pasteboard%
           (public selection-updated select unselect)
           (inherit find-snip find-first-snip insert set-selection-visible get-canvas
-                   dc-location-to-editor-location)
+                   dc-location-to-editor-location remove-selected)
           (super-instantiate ())
           (init files selection)
           
@@ -89,12 +89,14 @@
                  (send snip unselect)
                  (unselect (send snip next))))))
           
-          (define/override (can-select? snip on?) 
-            (cond 
+          (define/override (after-select snip on?) 
+            (cond
               ((and on? (not (script:is-directory? (send snip get-file))))
-               (script:cons-selection (send snip get-file))
-               #f)
-              (else #f)))
+               (if (send snip is-selected?)
+                   (script:remove-selection (send snip get-file))
+                   (script:cons-selection (send snip get-file)))
+               (remove-selected snip))))
+
           
           (rename (super.on-event on-event))
           (define/override (on-event event)
@@ -250,7 +252,7 @@
       (define (close-window)
         (send window-pane close-current))
       
-      (define window-pane (make-object tabbed-pane% frame))
+      (define window-pane (make-object tabbed-panel% frame))
       
       (add-window (script:get-current-dir))
       

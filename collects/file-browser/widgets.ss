@@ -2,7 +2,7 @@
   (require (lib "mred.ss" "mred")
            (lib "class.ss"))
   
-  (provide commit-text-field% tabbed-pane%); interactions-window%)
+  (provide commit-text-field% tabbed-panel%)
   
   (define commit-text-field%
     (class text-field% 
@@ -54,8 +54,8 @@
       (super-instantiate ())))
   
   
-  (define tabbed-pane%
-    (class vertical-pane%
+  (define tabbed-panel%
+    (class vertical-panel%
       (super-instantiate ())
       
       (public close-current set-button-label)

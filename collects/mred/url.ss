@@ -147,11 +147,11 @@
 		(unless (string=? r "")
 		  (loop))))
 	    (close-input-port server->client)
-	    client->server))))
+	    server->client))))
 
     (define print-text-at-url
       (lambda (url)
-	(let ((client->server (get-port-for-url url)))
+	(let ((server->client (get-port-for-url url)))
 	  (let loop ()
 	    (let ((c (read-char server->client)))
 	      (unless (eof-object? c)

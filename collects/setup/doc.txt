@@ -264,15 +264,21 @@ initialized between them, e.g.:
 _Getting info.ss fields_
 ========================
 
-The _getinfo.ss_ module defines the following function:
+The _getinfo.ss_ module defines the following functions:
 
 > (get-info collection-names) -> (union #f (symbol (-> TST) -> TST))
 
    get-info accepts a list of strings naming a collection or
-   sub-collection. It returns #f if there is no "info.ss" file in the
-   collection. If the "info.ss" file has the wrong shape (i.e., not a
-   module using (lib "infotab.ss" "setup")), or if the "info.ss" file
-   fails to load, then an exception is raised. 
+   sub-collection. It calls get-info/full with the full path
+   corresponding to the named collection.
+
+> (get-info/full path) -> (union #f (symbol (-> TST) -> TST))
+
+   get-info accepts a path to a directory. It returns #f if
+   there is no "info.ss" file in the directory. If the
+   "info.ss" file has the wrong shape (i.e., not a module
+   using (lib "infotab.ss" "setup")), or if the "info.ss"
+   file fails to load, then an exception is raised.
 
    Otherwise, `get-info' returns an info procedure of one or two
    arguments. The first argument to the info procedure is always a

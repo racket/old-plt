@@ -963,7 +963,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht, S
 	      
 	      if (!ph) {
 		scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), 0, indentation,
-				"read: no #%ld= for #%ld#",
+				"read: no #%ld= preceding #%ld#",
 				vector_length, vector_length);
 		return scheme_void;
 	      }

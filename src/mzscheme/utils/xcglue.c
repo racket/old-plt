@@ -1,6 +1,9 @@
 #include "xcglue.h"
 #include "gc.h"
 
+/* Set to 1 for experiments needing an extra field: */
+#define EXTRA_PRIM_OBJECT_FIELD 0
+
 /* 
    Glue for the C<->Scheme object interface.
 
@@ -33,6 +36,13 @@
       (primitive-class? v) - returns #t if v is a primitive class.
 
    In addition, the C code generates definitions of classes.
+
+
+   If EXTRA_PRIM_OBJECT_FIELD:
+
+      (primitive-object-extra-field-get prim-obj) - obvious
+      (primitive-object-extra-field-set! prim-obj v) - obvious
+      
 
    C side:
    -------
@@ -301,6 +311,34 @@ Scheme_Object *scheme_make_uninited_object(Scheme_Object *sclass)
   return obj;  
 }
 
+#if EXTRA_PRIM_OBJECT_FIELD
+
+static Scheme_Object *extra_get(int argc, Scheme_Object **argv)
+{
+  Scheme_Object *obj = argv[0];
+
+  if (!SCHEME_STRUCTP(argv[0])
+      || !scheme_is_struct_instance(object_struct, argv[0]))
+    scheme_wrong_type("primitive-object-extra-get", "primitive-object", 0, argc, argv);
+
+  return scheme_struct_ref(obj, 2);
+}
+
+static Scheme_Object *extra_set(int argc, Scheme_Object **argv)
+{
+  Scheme_Object *obj = argv[0];
+
+  if (!SCHEME_STRUCTP(argv[0])
+      || !scheme_is_struct_instance(object_struct, argv[0]))
+    scheme_wrong_type("primitive-object-extra-set!", "primitive-object", 0, argc, argv);
+
+  scheme_struct_set(obj, 2, argv[1]);
+
+  return scheme_void;
+}
+
+#endif
+
 /***************************************************************************/
 
 Scheme_Object *scheme_make_class(const char *name, Scheme_Object *sup, 
@@ -466,7 +504,7 @@ void objscheme_init(Scheme_Env *env)
   wxREGGLOB(object_struct);
   object_struct = scheme_make_struct_type(scheme_intern_symbol("primitive-object"), 
 					  NULL, NULL,
-					  0, 2, NULL,
+					  0, 2 + EXTRA_PRIM_OBJECT_FIELD, NULL,
 					  NULL);
   
 #ifdef MZ_PRECISE_GC
@@ -502,6 +540,20 @@ void objscheme_init(Scheme_Env *env)
 						    "primitive-class?",
 						    1, 1),
 			   env);
+
+#if EXTRA_PRIM_OBJECT_FIELD
+  scheme_install_xc_global("primitive-object-extra-get",
+			   scheme_make_prim_w_arity(extra_get,
+						    "primitive-object-extra-get",
+						    1, 1),
+			   env);
+  
+  scheme_install_xc_global("primitive-object-extra-set!",
+			   scheme_make_prim_w_arity(extra_set,
+						    "primitive-object-extra-set!",
+						    2, 2),
+			   env);  
+#endif
 }
 
 Scheme_Object *objscheme_def_prim_class(void *global_env, 

@@ -485,7 +485,7 @@
 					   ;; but the URL is missing a "/" at the end.
 					   (if (and (string=? path "")
 						    host)
-					       path ; "/"
+					       "/"
 					       path))
 					 (get-str 8  1 0) ; params
 					 (get-str 9  1 0) ; query

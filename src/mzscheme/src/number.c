@@ -1003,7 +1003,7 @@ sch_round (int argc, Scheme_Object *argv[])
       d = i;
     else if (frac > 0.5)
       d = i + 1;
-    else if (fmod(i, 2.0))
+    else if (fmod(i, 2.0) != 0.0)
 	d = i + 1;
     else
       d = i;
@@ -1030,7 +1030,7 @@ sch_round (int argc, Scheme_Object *argv[])
       d = i;
     else if (frac > 0.5)
       d = i + 1;
-    else if (fmod(i, 2.0))
+    else if (fmod(i, 2.0) != 0.0)
 	d = i + 1;
     else
       d = i;
@@ -1392,6 +1392,12 @@ atan_prim (int argc, Scheme_Object *argv[])
     
     n2 = argv[1];
 
+    if ((n1 == zeroi) && (n2 == zeroi)) {
+      scheme_raise_exn(MZEXN_APPLICATION_DIVIDE_BY_ZERO, zeroi,
+		       "atan: undefined for 0 and 0");
+      ESCAPED_BEFORE_HERE;
+    }
+
     if (SCHEME_COMPLEX_IZIP(n2)) n2 = IZI_REAL_PART(n2);
 
     if (SCHEME_INTP(n2))
@@ -1567,9 +1573,10 @@ Scheme_Object *
 scheme_expt(int argc, Scheme_Object *argv[])
 {
   int invert = 0;
-  Scheme_Object *e = argv[1], *r, *n;
+  Scheme_Object *e, *r, *n;
 
   n = argv[0];
+  e = argv[1];
 
   if (!SCHEME_NUMBERP(n))
     scheme_wrong_type("expt", "number", 0, argc, argv);
@@ -1577,11 +1584,15 @@ scheme_expt(int argc, Scheme_Object *argv[])
   if (argv[1] == scheme_make_integer(1))
     return n;
   if (n == scheme_make_integer(1)) {
+    /* Power of one: */
     if (SCHEME_NUMBERP(argv[1]))
       return n;
   }
 
   if (argv[0] == zeroi) {
+    /* Power of exact zero */
+    int neg;
+
     if (SCHEME_FLOATP(e)) {
       double d = SCHEME_FLOAT_VAL(e);
       if (MZ_IS_NAN(d)) {
@@ -1593,7 +1604,15 @@ scheme_expt(int argc, Scheme_Object *argv[])
       }
     }
 
-    if (SCHEME_TRUEP(scheme_negative_p(1, &e))) {
+    if (!SCHEME_COMPLEXP(e)) {
+      neg = SCHEME_TRUEP(scheme_negative_p(1, &e));
+    } else {
+      Scheme_Object *a[1];
+      a[0] = scheme_complex_real_part(e);
+      neg = SCHEME_FALSEP(scheme_positive_p(1, a));
+    }
+    
+    if (neg) {
       scheme_raise_exn(MZEXN_APPLICATION_DIVIDE_BY_ZERO, argv[0],
 		       "expt: undefined for 0 and %s",
 		       scheme_make_provided_string(e, 0, NULL));
@@ -1602,10 +1621,77 @@ scheme_expt(int argc, Scheme_Object *argv[])
   }
 
   if (!SCHEME_FLOATP(n)) {
+    /* negative integer power of exact: compute positive power and invert */
     if (SCHEME_INTP(e) || SCHEME_BIGNUMP(e)) {
       if (SCHEME_FALSEP(scheme_positive_p(1, &e))) {
 	e = scheme_bin_minus(zeroi, e);
 	invert = 1;
+      }
+    }
+  } else {
+    /* real power of inexact zero? */
+    /* (Shouldn't have to do this, but pow() is especially unreliable.) */
+    double d = SCHEME_FLOAT_VAL(n);
+    if (d == 0.0) {
+      if (SCHEME_REALP(e)) {
+	int norm = 0;
+
+	if (SCHEME_FLOATP(e)) {
+	  double d2;
+	  d2 = SCHEME_FLOAT_VAL(e);
+	  
+	  if ((d2 == 0.0)
+	      || MZ_IS_POS_INFINITY(d2)
+	      || MZ_IS_NEG_INFINITY(d2)
+	      || MZ_IS_NAN(d2))
+	    norm = 1;
+	}
+
+	if (!norm) {
+	  int ispos, iseven, negz;
+#ifdef MZ_USE_SINGLE_FLOATS
+	  int single = !SCHEME_DBLP(n) && !SCHEME_DBLP(e);
+#endif
+
+	  if (scheme_is_integer(e)) {
+	    iseven = SCHEME_FALSEP(scheme_odd_p(1, &e));
+	  } else {
+	    /* Treat it as even for sign purposes: */
+	    iseven = 1;
+	  }
+	  ispos = SCHEME_TRUEP(scheme_positive_p(1, &e));
+	  negz = scheme_minus_zero_p(d);
+	  
+	  if (ispos) {
+	    if (iseven || !negz) {
+#ifdef MZ_USE_SINGLE_FLOATS
+	      if (single)
+		return scheme_zerof;
+#endif
+	      return scheme_zerod;
+	    } else {
+#ifdef MZ_USE_SINGLE_FLOATS
+	      if (single)
+		return scheme_nzerof;
+#endif
+	      return scheme_nzerod;
+	    }
+	  } else {
+	    if (iseven || !negz) {
+#ifdef MZ_USE_SINGLE_FLOATS
+	      if (single)
+		return scheme_single_inf_object;
+#endif
+	      return scheme_inf_object;
+	    } else {
+#ifdef MZ_USE_SINGLE_FLOATS
+	      if (single)
+		return scheme_single_minus_inf_object;
+#endif
+	      return scheme_minus_inf_object;
+	    }
+	  }
+	}
       }
     }
   }

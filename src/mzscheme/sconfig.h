@@ -410,7 +410,7 @@ int scheme_solaris_semaphore_try_down(void *);
 # define BSTRING_INCLUDE
 
 # define DEFEAT_FP_COMP_OPTIMIZATION
-# define POW_HANDLES_INF_CORRECTLY
+# define FMOD_CAN_RETURN_NEG_ZERO
 
 # define NO_INLINE_KEYWORD
 
@@ -1215,6 +1215,9 @@ int scheme_pthread_semaphore_try_down(void *);
 
  /* TRIG_ZERO_NEEDS_SIGN_CHECK defines versions of tan, sin, atan, and
     asin that preserve the sign of a zero argument. */
+
+ /* FMOD_CAN_RETURN_NEG_ZERO is fmod() on positive numbers can produce
+    a negative zero. */
 
   /***********************/
  /* Stack Maniuplations */

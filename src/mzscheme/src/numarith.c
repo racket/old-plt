@@ -553,8 +553,14 @@ rem_mod (int argc, Scheme_Object *argv[], char *name, int first_sign)
 	return scheme_zerof;
 #endif
       return scheme_zerod;
-    } else
+    } else {
       v = fmod(na, nb);
+
+#ifdef FMOD_CAN_RETURN_NEG_ZERO
+      if (v == 0.0)
+	v = 0.0;
+#endif
+    }
 
     if (v) {
       if (first_sign) {

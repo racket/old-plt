@@ -237,12 +237,14 @@ void wxCanvasDC::ResetBackground()
 {
   CGrafPtr theMacGrafPort;
 
-  cMacDC->EndCG();
-
-  theMacGrafPort = cMacDC->macGrafPort();
-  ::SetPort(theMacGrafPort);
-  cMacCurrentTool = kNoTool;
-  canvas->MacSetBackground();
+  if (cMacDC->currentUser() == this) {
+    cMacDC->EndCG();
+    
+    theMacGrafPort = cMacDC->macGrafPort();
+    ::SetPort(theMacGrafPort);
+    cMacCurrentTool = kNoTool;
+    canvas->MacSetBackground();
+  }
 
   reset_chain = chain_next;
   chain_next = NULL;

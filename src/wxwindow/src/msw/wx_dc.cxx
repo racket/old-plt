@@ -642,7 +642,7 @@ void wxDC::DrawLine(double x1, double y1, double x2, double y2)
       xx2 = SmoothingXFormX(x2);
       yy2 = SmoothingXFormY(y2);
 
-      wxGDrawLine(g, current_pen->GraphicsPen(), xx1, yy1, xx2, yy2);
+      wxGDrawLine(g, current_pen->GraphicsPen(AlignSmoothing(), user_scale_x), xx1, yy1, xx2, yy2);
     }
     DoneDC(dc);
     return;
@@ -810,7 +810,7 @@ void wxDC::DrawArc(double x, double y, double w, double h, double start, double 
       ww = SmoothingXFormWL(w, x);
       hh = SmoothingXFormHL(h, y);
       
-      wxGDrawArc(g, current_pen->GraphicsPen(), xx, yy, ww, hh, init, span);
+      wxGDrawArc(g, current_pen->GraphicsPen(AlignSmoothing(), user_scale_x), xx, yy, ww, hh, init, span);
     }
 
     DoneDC(dc);
@@ -978,7 +978,7 @@ void wxDC::DrawPolygon(int n, wxPoint points[], double xoffset, double yoffset,i
     }
 
     if (current_pen && (current_pen->GetStyle() != wxTRANSPARENT)) {
-      wxGDrawPolygon(g, current_pen->GraphicsPen(), pts, n);
+      wxGDrawPolygon(g, current_pen->GraphicsPen(AlignSmoothing(), user_scale_x), pts, n);
     }
 
 	DoneDC(dc);
@@ -1053,7 +1053,7 @@ void wxDC::DrawPath(wxPath *p, double xoffset, double yoffset,int fillStyle)
     }
 
     if (current_pen && (current_pen->GetStyle() != wxTRANSPARENT)) {    
-      wxGDrawPath(g, current_pen->GraphicsPen(), gp);
+      wxGDrawPath(g, current_pen->GraphicsPen(AlignSmoothing(), user_scale_x), gp);
     }
 
     wxGPathRelease(gp);
@@ -1169,7 +1169,7 @@ void wxDC::DrawLines(int n, wxPoint points[], double xoffset, double yoffset)
       }
 
       
-      wxGDrawLines(g, current_pen->GraphicsPen(), pts, n);
+      wxGDrawLines(g, current_pen->GraphicsPen(AlignSmoothing(), user_scale_x), pts, n);
     }
 
     DoneDC(dc);
@@ -1229,7 +1229,7 @@ void wxDC::DrawRectangle(double x, double y, double width, double height)
       ww = SmoothingXFormWL(width, x);
       hh = SmoothingXFormHL(height, y);
 
-      wxGDrawRectangle(g, current_pen->GraphicsPen(), xx, yy, ww, hh);
+      wxGDrawRectangle(g, current_pen->GraphicsPen(AlignSmoothing(), user_scale_x), xx, yy, ww, hh);
     }
     
     DoneDC(dc);
@@ -1307,12 +1307,12 @@ void wxDC::DrawRoundedRectangle(double x, double y, double width, double height,
       
       gp = wxGPathNew(FillModeWinding);
       wxGPathAddArc(gp, xx, yy, rr * 2, rr * 2, 180, 90);
-      wxGPathAddLine(gp, xx + rr, yy, xx + width - rr, y);
-      wxGPathAddArc(gp, xx + width - 2 * rr, yy, rr * 2, rr * 2, 270, 90);
-      wxGPathAddLine(gp, xx + width, yy + rr, xx + width, yy + height - rr);
-      wxGPathAddArc(gp, xx + width - 2 * rr, yy + height - 2 * rr, 2 * rr, 2 * rr, 0, 90);
-      wxGPathAddLine(gp, xx + width - rr, yy + height, xx + rr, yy + height);
-      wxGPathAddArc(gp, xx, yy + height - 2 * rr, 2 * rr, 2 * rr, 90, 90);
+      wxGPathAddLine(gp, xx + rr, yy, xx + ww - rr, yy);
+      wxGPathAddArc(gp, xx + ww - 2 * rr, yy, rr * 2, rr * 2, 270, 90);
+      wxGPathAddLine(gp, xx + ww, yy + rr, xx + ww, yy + hh - rr);
+      wxGPathAddArc(gp, xx + ww - 2 * rr, yy + hh - 2 * rr, 2 * rr, 2 * rr, 0, 90);
+      wxGPathAddLine(gp, xx + ww - rr, yy + hh, xx + rr, yy + hh);
+      wxGPathAddArc(gp, xx, yy + hh - 2 * rr, 2 * rr, 2 * rr, 90, 90);
       wxGPathCloseFigure(gp);
       wxGFillPath(g, current_brush->GraphicsBrush(), gp);
       wxGPathRelease(gp);
@@ -1333,14 +1333,14 @@ void wxDC::DrawRoundedRectangle(double x, double y, double width, double height,
 
       gp = wxGPathNew(FillModeWinding);
       wxGPathAddArc(gp, xx, yy, rr * 2, rr * 2, 180, 90);
-      wxGPathAddLine(gp, xx + rr, yy, xx + width - rr, y);
-      wxGPathAddArc(gp, xx + width - 2 * rr, yy, rr * 2, rr * 2, 270, 90);
-      wxGPathAddLine(gp, xx + width, yy + rr, xx + width, yy + height - rr);
-      wxGPathAddArc(gp, xx + width - 2 * rr, yy + height - 2 * rr, 2 * rr, 2 * rr, 0, 90);
-      wxGPathAddLine(gp, xx + width - rr, yy + height, xx + rr, yy + height);
-      wxGPathAddArc(gp, xx, yy + height - 2 * rr, 2 * rr, 2 * rr, 90, 90);
+      wxGPathAddLine(gp, xx + rr, yy, xx + ww - rr, yy);
+      wxGPathAddArc(gp, xx + ww - 2 * rr, yy, rr * 2, rr * 2, 270, 90);
+      wxGPathAddLine(gp, xx + ww, yy + rr, xx + ww, yy + hh - rr);
+      wxGPathAddArc(gp, xx + ww - 2 * rr, yy + hh - 2 * rr, 2 * rr, 2 * rr, 0, 90);
+      wxGPathAddLine(gp, xx + ww - rr, yy + hh, xx + rr, yy + hh);
+      wxGPathAddArc(gp, xx, yy + hh - 2 * rr, 2 * rr, 2 * rr, 90, 90);
       wxGPathCloseFigure(gp);
-      wxGDrawPath(g, current_pen->GraphicsPen(), gp);
+      wxGDrawPath(g, current_pen->GraphicsPen(AlignSmoothing(), user_scale_x), gp);
       wxGPathRelease(gp);
     }
 

@@ -61,7 +61,7 @@ class wxPen: public wxbPen
   wxDash *old_dash;
   wxBitmap *old_stipple;
   COLORREF old_color;
-  Pen *g_p;
+  Pen *g_p, *a_g_p;
 
   HPEN cpen;
   HPEN my_old_cpen;
@@ -74,7 +74,7 @@ class wxPen: public wxbPen
   void ChangePen();
   HPEN SelectPen(HDC dc);
 
-  Pen *GraphicsPen();
+  Pen *GraphicsPen(Bool align, double sx);
   void ReleaseGraphics();
 };
 

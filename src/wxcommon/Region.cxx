@@ -872,7 +872,6 @@ void wxRegion::Install(long target, Bool align)
     Graphics *g = (Graphics *)target;
     GraphicsPath *gp;
     PathTarget *t;
-    int i;
 
     gp = wxGPathNew(FillModeAlternate);
 
@@ -1143,11 +1142,11 @@ Bool wxRectanglePathRgn::Install(long target, Bool reverse, Bool align)
   if (reverse) {
     wxGPathAddLine(CURRENT_GP, xx, yy, xx, yy + hh);
     wxGPathAddLine(CURRENT_GP, xx, yy + hh, xx + ww, yy + hh);
-    wxGPathAddLine(CURRENT_GP, xx + ww, yy + hh, xx + ww, yh);
+    wxGPathAddLine(CURRENT_GP, xx + ww, yy + hh, xx + ww, yy);
   } else {
-    wxGPathAddLine(CURRENT_GP, xx, yy, x + width, y);
-    wxGPathAddLine(CURRENT_GP, xx + ww, y, x + width, yy + hh);
-    wxGPathAddLine(CURRENT_GP, xx + ww, y + height, x, yy + hh);
+    wxGPathAddLine(CURRENT_GP, xx, yy, xx + ww, yy);
+    wxGPathAddLine(CURRENT_GP, xx + ww, yy, xx + ww, yy + hh);
+    wxGPathAddLine(CURRENT_GP, xx + ww, yy + ww, xx, yy + hh);
   }
   wxGPathCloseFigure(CURRENT_GP);
 #endif
@@ -1403,6 +1402,7 @@ Bool wxPolygonPathRgn::Install(long target, Bool reverse, Bool align)
     }
   } else {
     int i;
+	double xx2, yy2;
     for (i = 0; i < n - 1; i++) {
       xx = XFormX(points[i].x + xoffset, align);
       yy = XFormY(points[i].y + yoffset, align);

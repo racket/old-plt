@@ -480,6 +480,7 @@ wxPen::wxPen(wxColour *col, double Width, int Style)
   old_color  = 0;
   old_stipple = NULL;
   g_p = NULL;
+  a_g_p = NULL;
 
   ChangePen();
 }
@@ -511,6 +512,7 @@ wxPen::wxPen(const char *col, double Width, int Style)
   old_color  = 0;
   old_stipple = NULL;
   g_p = NULL;
+  a_g_p = NULL;
     
   ChangePen();
 }
@@ -523,10 +525,11 @@ static REAL gp_short_dashed[] = {4, 4, /* offset */ 2};
 static REAL gp_long_dashed[] = {4, 8, /* offset */ 2};
 static REAL gp_dotted_dashed[] = {6, 6, 2, 6, /* offset */ 4};
 
-Pen *wxPen::GraphicsPen()
+Pen *wxPen::GraphicsPen(Bool align, double xs)
 {
-  if (!g_p) {
+  if (align || !g_p) {
     Pen *p;
+    double pw;
     REAL offset, *dashes;
     int ndash;
     
@@ -559,13 +562,25 @@ Pen *wxPen::GraphicsPen()
     else
       offset = 0;
     
-    p = wxGPenNew(colour->pixel, width, 
+    if (align) {
+      pw = (int)width;
+      if (!pw)
+	pw = 1;
+      else
+	pw = (int)(pw * xs);
+    } else
+      pw = width;
+
+    p = wxGPenNew(colour->pixel, pw, 
 		  graphics_caps[cap - wxCAP_ROUND],
 		  graphics_joins[join - wxJOIN_BEVEL],
 		  ndash, dashes, offset);
-    g_p = p;
+    if (align)
+      a_g_p = p;
+    else
+      g_p = p;
   }
-  return g_p;
+  return (align ? a_g_p : g_p);
 }
 
 void wxPen::ReleaseGraphics()
@@ -573,6 +588,10 @@ void wxPen::ReleaseGraphics()
   if (g_p) {
     wxGPenRelease(g_p);
     g_p = NULL;
+  }
+  if (a_g_p) {
+    wxGPenRelease(a_g_p);
+    a_g_p = NULL;
   }
 }
 

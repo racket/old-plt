@@ -323,12 +323,16 @@ void wxTabChoice::Append(char *s, int new_sel)
   naya = MakeTabs(cMacDC->macGrafPort(), tab_count, tab_labels, &r);
 
   if (cMacControl) {
+    HIViewRef prev;
+    prev = HIViewGetPreviousView(cMacControl);
+    if (prev)
+      ::HIViewSetZOrder(naya, kHIViewZOrderBelow, prev);
     ::DisposeControl(cMacControl);
   }
   cMacControl = naya;
 
   ::EmbedControl(cMacControl, GetRootControl());
-  
+
   if (cHidden) {
     ::HideControl(cMacControl);
   }

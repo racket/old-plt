@@ -1587,6 +1587,12 @@
 	    [kws (caddr l)]
 	    [lit-comp (cadddr l)]
 	    [clauses (cddddr l)])
+	(unless (stx-list? kws)
+	  (raise-syntax-error
+	   #f
+	   "expected a parenthesized sequence of literal identifiers"
+	   x
+	   kws))
 	(for-each
 	 (lambda (lit)
 	   (unless (identifier? lit)

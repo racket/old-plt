@@ -243,6 +243,7 @@ static int run_from_cmd_line(int argc, char *_argv[],
   int *is_load, num_enl;
   int no_more_switches = 0;
   int mute_banner = 0;
+  int no_argv = 0;
 #endif
 #if !defined(DONT_RUN_REP) || !defined(DONT_PARSE_COMMAND_LINE)
   int no_rep = 0;
@@ -360,6 +361,8 @@ static int run_from_cmd_line(int argc, char *_argv[],
       argv[0] = "-v";
     else if (!strcmp("--no-init-file", argv[0]))
       argv[0] = "-q";
+    else if (!strcmp("--no-argv", argv[0]))
+      argv[0] = "-A";
     else if (!strcmp("--mute-banner", argv[0]))
       argv[0] = "-m";
     else if (!strcmp("--awk", argv[0]))
@@ -546,6 +549,9 @@ static int run_from_cmd_line(int argc, char *_argv[],
 	  --argc;
 	  is_load[num_enl++] = 0;
 	  break;
+	case 'A':
+	  no_argv = 1;
+	  break;
 	case 'q':
 	  no_init_file = 1;
 	  break;
@@ -643,11 +649,13 @@ static int run_from_cmd_line(int argc, char *_argv[],
     SCHEME_SET_VECTOR_IMMUTABLE(sch_argv);
   scheme_set_param(scheme_config, MZCONFIG_CMDLINE_ARGS, sch_argv);
 
-  scheme_add_global("argv", sch_argv, global_env);
+  if (!no_argv)
+    scheme_add_global("argv", sch_argv, global_env);
   {	
     Scheme_Object *ps;
     ps = scheme_set_exec_cmd(prog);
-    scheme_add_global("program", ps, global_env);
+    if (!no_argv)
+      scheme_add_global("program", ps, global_env);
   }
 
 #ifndef NO_FILE_SYSTEM_UTILS
@@ -719,6 +727,7 @@ static int run_from_cmd_line(int argc, char *_argv[],
 	 " Initialization switches:\n"
          "  -x, --no-lib-path : Does not try to set current-library-collection-paths.\n"
 	 "  -q, --no-init-file : Does not try to load " INIT_FILENAME ".\n"
+	 "  -A : Does not define argv and program.\n"
 	 " Language setting switches:\n"
 	 "  -g, --case-sens : " GDESC
 	 "  -s, --set-undef : " SDESC

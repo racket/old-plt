@@ -43,7 +43,7 @@
                   (make-element 'scheme 'scheme (car x)
                                 atts
                                 (map xexpr->xml (body-sel x))))])
-         (if (or (null? (cadr x)) (and (pair? (cadr x)) (pair? (caadr x))))
+         (if (and (pair? (cdr x)) (or (null? (cadr x)) (and (pair? (cadr x)) (pair? (caadr x)))))
              (f (map srep->attribute (cadr x)) cddr)
              (f null cdr)))]
       [(string? x) (make-pcdata 'scheme 'scheme x)]

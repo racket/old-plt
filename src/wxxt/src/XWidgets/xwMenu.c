@@ -926,8 +926,9 @@ static void DrawTextItem(MenuWidget mw, menu_state *ms, menu_item *item,
     }
     if ((label=ResourcedText(mw, item, SUBRESOURCE_LABEL)))
       XfwfDrawString(XtDisplay(mw), ms->win,
-		     item->enabled || item->type==MENU_TEXT ?
-		     mw->menu.normal_GC : mw->menu.inactive_GC,
+		     ((item->enabled || item->type==MENU_TEXT) 
+		      ? mw->menu.normal_GC 
+		      : mw->menu.inactive_GC),
 		     x+ms->wLeft+extra_x,
 		     y+mw->menu.shadow_width+VMARGIN+mw->menu.font->ascent,
 		     label, strlen(label), NULL, mw->menu.font, 0);
@@ -940,8 +941,8 @@ static void DrawTextItem(MenuWidget mw, menu_state *ms, menu_item *item,
 	    mw->menu.normal_GC,
 	    x,
 	    y,
-	    (in_menubar? item->end-item->start + ms->delta: ms->w-2*mw->menu.shadow_width),
-	    (in_menubar? ms->h-2*mw->menu.shadow_width: item->end-item->start),
+	    (in_menubar? item->end-item->start : ms->w-2*mw->menu.shadow_width),
+	    (in_menubar? ms->h-2*mw->menu.shadow_width : item->end-item->start),
 	    mw->menu.shadow_width,
 	    (ms->selected==item) ? XAW3D_OUT : XAW3D_BACKGROUND);
 }
@@ -1490,6 +1491,9 @@ void Xaw3dPopupMenuAtPos(MenuWidget mw, int x, int y)
     mw->menu.popped_up = TRUE;
     mw->menu.horizontal = FALSE;
     ComputeMenuSize(mw, mw->menu.state);
+    mw->menu.state->delta     = (mw->menu.state->too_tall ? TOO_TALL_SCROLL_HEIGHT : 0);
+    mw->menu.state->scrolled  = 0;
+    mw->menu.state->scroll_top = mw->menu.state->menu;
     w = mw->menu.state->w;
     h = mw->menu.state->h;
     if (x + w > WidthOfScreen(scr))

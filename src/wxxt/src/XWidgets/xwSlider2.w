@@ -2,7 +2,7 @@
 # Bert Bos <bert@let.rug.nl>
 # Version 2.1 for FWF V4.0
 #
-# $Id: Slider2.w,v 1.1 1996/01/10 14:57:50 markus Exp $
+# $Id: xwSlider2.w,v 1.1.1.1 1997/12/22 17:29:03 mflatt Exp $
 
 @class XfwfSlider2 (XfwfLabel) @file=xwSlider2
 
@@ -208,9 +208,11 @@ thumb in pixels.
 		    Dimension *width, Dimension *height)
 {
     Position fx, fy;
-    Dimension fw, fh;
+    int fw, fh;
 
     #compute_inside($, &fx, &fy, &fw, &fh);
+    fw = max(0, fw);
+    fh = max(0, fh);
     *width = $thumb_wd * fw + 0.5;
     *height = $thumb_ht * fh + 0.5;
     if (*width < $minsize) *width = min(fw, $minsize);
@@ -227,13 +229,13 @@ to establish the position of the text.
 
 @proc compute_inside
 {
-    int tmp;
+    Dimension ww, hh;
 
-    $compute_thumb($, x, y, w, h);
+    $compute_thumb($, x, y, &ww, &hh);
     *x += $thumbFrameWidth;
     *y += $thumbFrameWidth;
-    tmp = *w - 2 * $thumbFrameWidth;  *w = (tmp < 0) ? 0 : tmp;
-    tmp = *h - 2 * $thumbFrameWidth;  *h = (tmp < 0) ? 0 : tmp;
+    *w = (int)ww - 2 * $thumbFrameWidth;
+    *h = (int)hh - 2 * $thumbFrameWidth;
 }
 
 @ The |expose| method of the superclass is called to draw the outer frame
@@ -331,10 +333,12 @@ values are within the frame and it adapts the values if needed.
 @proc compute_info($, Position *x, Position *y, Dimension *w, Dimension *h,
     float *thumb_x, float *thumb_y, float *thumb_wd, float *thumb_ht)
 {
-    Dimension fw, fh;
+    int fw, fh;
     Position fx, fy;
 
     #compute_inside($, &fx, &fy, &fw, &fh);
+    fw = max(0, fw);
+    fh = max(0, fh);
     *w = min(fw, max($minsize, *w));
     *h = min(fh, max($minsize, *h));
     *x = min(fx + fw - *w, max(fx, *x));

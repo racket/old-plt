@@ -2,7 +2,7 @@
 # Bert Bos <bert@let.rug.nl>
 # Version 1.1 (see README for history)
 # 
-# $Id: ScrollWin.w,v 1.1 1996/01/10 14:57:49 markus Exp $
+# $Id: xwScrollWin.w,v 1.1.1.1 1997/12/22 17:29:05 mflatt Exp $
 
 @CLASS XfwfScrolledWindow (XfwfBoard)  @file = xwScrollWin
 
@@ -273,7 +273,8 @@ board.
 @proc insert_child
 {
     Position boardx, boardy, gx, gy;
-    Dimension boardwd, boardht, gwd, ght;
+    int boardwd, boardht;
+    Dimension gwd, ght;
     Boolean dummy;
 
     if ($initializing) {
@@ -286,6 +287,8 @@ board.
 	XtAddEventHandler(child, StructureNotifyMask, False, configure, $);
 	XtAddEventHandler($board, StructureNotifyMask, False, configure, $);
 	#compute_inside($board, &boardx, &boardy, &boardwd, &boardht);
+        boardwd = max(0, boardwd);
+        boardht = max(0, boardht);
 	XtVaGetValues(child, XtNwidth, &gwd, XtNheight, &ght, NULL);
 	gx = gwd <= boardwd ? 0 : max($initialX, boardwd - gwd);
 	gy = ght <= boardht ? 0 : max($initialY, boardht - ght);
@@ -332,9 +335,12 @@ done through a call to the |scroll_response| method.
     XfwfScrollInfo *info = (XfwfScrollInfo *) call_data;
     XfwfScrollInfo new;
     Position boardx, boardy, gx, gy, minx, miny;
-    Dimension boardwd, boardht, gwd, ght;
+    int boardwd, boardht;
+    Dimension gwd, ght;
 
     #compute_inside($board, &boardx, &boardy, &boardwd, &boardht);
+    boardwd = max(0, boardwd);
+    boardht = max(0, boardht);
     XtVaGetValues($CW, XtNx, &gx, XtNy, &gy, XtNwidth, &gwd,
 		  XtNheight, &ght, NULL);
     minx = gwd <= boardwd ? 0 : boardwd - gwd;
@@ -361,32 +367,33 @@ to configure the children.
 
 @proc compute_sizes($)
 {
-    Dimension selfw, selfh, framew, frameh, vsheight, hswidth, help;
+    int selfw, selfh, framew, frameh, vsheight, hswidth;
+    Dimension help;
     Position selfx, selfy;
 
     #compute_inside($, &selfx, &selfy, &selfw, &selfh);
     if (! $hideHScrollbar)
-	vsheight = selfh - 3 * $spacing - $scrollbarWidth;
+	vsheight = (int)selfh - 3 * $spacing - $scrollbarWidth;
     else
-	vsheight = selfh - 2 * $spacing;
+	vsheight = (int)selfh - 2 * $spacing;
     if (! $hideVScrollbar)
-	hswidth = selfw - 3 * $spacing - $scrollbarWidth;
+	hswidth = (int)selfw - 3 * $spacing - $scrollbarWidth;
     else
-	hswidth = selfw - 2 * $spacing;
+	hswidth = (int)selfw - 2 * $spacing;
     XtVaGetValues($vscroll, XtNhighlightThickness, &help, NULL);
     if (help > $spacing) help = 0;
     XtConfigureWidget($vscroll,
 		      selfx + selfw - $spacing - $scrollbarWidth,
 		      selfy + $spacing - help,
 		      $scrollbarWidth,
-		      vsheight + 2*help,
+		      max(1, vsheight + 2*help),
 		      0);
     XtVaGetValues($hscroll, XtNhighlightThickness, &help, NULL);
     if (help > $spacing) help = 0;
     XtConfigureWidget($hscroll,
 		      $spacing - help,
 		      selfy + selfh - $spacing - $scrollbarWidth,
-		      hswidth + 2*help,
+		      max(1, hswidth + 2*help),
 		      $scrollbarWidth,
 		      0);
     XtVaGetValues($frame, XtNhighlightThickness, &help, NULL);
@@ -395,12 +402,11 @@ to configure the children.
     frameh = selfh - 2 * $spacing + 2 * help;
     if (! $hideVScrollbar) framew -= $scrollbarWidth + $spacing;
     if (! $hideHScrollbar) frameh -= $scrollbarWidth + $spacing;
-    if (framew <= 0) framew = 1; if (frameh <= 0) frameh = 1; /* MATTHEW: [5] */
     XtConfigureWidget($frame,
 		      selfx + $spacing - help,
 		      selfy + $spacing - help,
-		      framew,
-		      frameh,
+		      max(1, framew),
+		      max(1, frameh),
 		      0);
     if ($CW != NULL) XtMoveWidget($CW, 0, 0);
 }
@@ -424,10 +430,13 @@ Notify message -- then calls its own callbacks.
     XfwfScrollInfo *info = (XfwfScrollInfo *) call_data;
     XfwfScrollInfo new;
     Position boardx, boardy, gx, gy, minx = 0, miny = 0;
-    Dimension boardwd, boardht, gwd, ght;
+    int boardwd, boardht;
+    Dimension gwd, ght;
 
     if ($autoAdjustScrollbars) {
       #compute_inside($board, &boardx, &boardy, &boardwd, &boardht);
+      boardwd = max(0, boardwd);
+      boardht = max(0, boardht);
       XtVaGetValues($CW, XtNx, &gx, XtNy, &gy, XtNwidth, &gwd,
 		    XtNheight, &ght, NULL);
       minx = gwd <= boardwd ? 0 : boardwd - gwd;
@@ -501,7 +510,8 @@ sliders in the scrollbars.
 @proc configure(Widget w, XtPointer client_data, XEvent *event, Boolean *cont)
 {
     Widget $ = (Widget) client_data;
-    Dimension boardwd, boardht, gwd, ght;
+    int boardwd, boardht;
+    Dimension gwd, ght;
     Position boardx, boardy, gx, gy;
     float wd, ht, x, y;
 
@@ -519,6 +529,8 @@ sliders in the scrollbars.
     /* if (event != NULL && event->type != ConfigureNotify) return; */
     if ($autoAdjustScrollbars) {
       #compute_inside($board, &boardx, &boardy, &boardwd, &boardht);
+      boardwd = max(0, boardwd);
+      boardht = max(0, boardht);
       XtVaGetValues($CW, XtNx, &gx, XtNy, &gy, XtNwidth, &gwd,
 	  	    XtNheight, &ght, NULL);
       wd = gwd <= boardwd ? 1.0 : (float) boardwd/gwd;

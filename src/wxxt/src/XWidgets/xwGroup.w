@@ -2,7 +2,7 @@
 # Author: Bert Bos <bert@let.rug.nl>
 # Version: 1.0 for FWF 3.53
 #
-# $Id: Group.w,v 1.1 1996/01/10 14:57:39 markus Exp $
+# $Id: xwGroup.w,v 1.1.1.1 1997/12/22 17:29:03 mflatt Exp $
 
 @CLASS XfwfGroup (XfwfRowCol)  @file=xwGroup
 
@@ -210,7 +210,7 @@ the label to it.
 
 @proc _expose
 {
-    Dimension w, h;
+    int w, h;
     Position x, y;
 
     if (! XtIsRealized($)) return;

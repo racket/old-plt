@@ -3,7 +3,7 @@
 # 14 Oct '92
 # Version 2.3 for FWF V4.0
 #
-# $Id: RowCol.w,v 1.1 1996/01/10 14:57:47 markus Exp $
+# $Id: xwRowCol.w,v 1.1.1.1 1997/12/22 17:29:05 mflatt Exp $
 
 
 @CLASS XfwfRowCol (XfwfBoard)  @file=xwRowCol
@@ -120,7 +120,7 @@ position it's children.
 {
     int nrows, ncols, i, nchild, n;
     Position left, top, x, y;
-    Dimension width, height, w, h;
+    int width, height, w, h;
     Widget child;
 
     nchild = 0;
@@ -135,6 +135,7 @@ position it's children.
     }
 
     $compute_inside($, &left, &top, &width, &height);
+    width = max(0, width);
 
     if ($columns != 0) {
         ncols = $columns;
@@ -184,8 +185,7 @@ position it's children.
     if (shrink) {
       w = 2*left + ncols * $max_width;
       h = 2*top + nrows * $max_height;
-      XtVaSetValues($, XtNwidth, w, XtNheight, h, NULL);
-      /* printf("RowCol width/height : %d/%d\n", w, h); */
+      XtVaSetValues($, XtNwidth, max(1, w), XtNheight, max(1, h), NULL);
     }
 }
 

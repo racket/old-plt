@@ -3,7 +3,7 @@
 # 2 Nov '92
 # Version 1.0 for FWF V4.0
 # 
-# $Id: Scrollbar.w,v 1.1 1996/01/10 14:57:50 markus Exp $
+# $Id: xwScrollbar.w,v 1.1.1.1 1997/12/22 17:29:03 mflatt Exp $
 
 @CLASS XfwfScrollbar (XfwfBoard)  @file = xwScrollbar
 
@@ -202,21 +202,23 @@ widgets and redirects the callbacks.
 @proc initialize
 {
     Position x, y, xa2, xslider, ya2, yslider;
-    Dimension w, h, wa, ha, wslider, hslider;
+    int w, h, wa, ha, wslider, hslider;
     XtPointer bg;
 
     $initializing = True;
     $compute_inside($, &x, &y, &w, &h);
+    w = max(1, w);
+    h = max(1, h);
     if ($vertical) {
 	ha = wa = wslider = w;
 	xa2 = xslider = x;
-	hslider = (h - 2*ha > 0) ? h - 2*ha : 10;
+	hslider = ((int)h - 2*ha > 0) ? h - 2*ha : 10;
 	yslider = y + ha;
 	ya2 = yslider + hslider;
     } else {
 	wa = ha = hslider = h;
 	ya2 = yslider = y;
-	wslider = (w - 2*wa > 0) ? w - 2*wa : 10;
+	wslider = ((int)w - 2*wa > 0) ? w - 2*wa : 10;
 	xslider = x + wa;
 	xa2 = xslider + wslider;
     }
@@ -225,8 +227,8 @@ widgets and redirects the callbacks.
 	("_arrow1", xfwfArrowWidgetClass, $,
 	 XtNx, x,
 	 XtNy, y,
-	 XtNwidth, wa,
-	 XtNheight, ha,
+	 XtNwidth, max(1, wa),
+	 XtNheight, max(1, ha),
 	 XtNframeWidth, 0,
 	 XtNforeground, $scrollbarForeground,
 	 XtNinitialDelay, $initialDelay,
@@ -243,8 +245,8 @@ widgets and redirects the callbacks.
 	("_arrow2", xfwfArrowWidgetClass, $,
 	 XtNx, xa2,
 	 XtNy, ya2,
-	 XtNwidth, wa,
-	 XtNheight, ha,
+	 XtNwidth, max(1, wa),
+	 XtNheight, max(1, ha),
 	 XtNframeWidth, 0,
 	 XtNforeground, $scrollbarForeground,
 	 XtNinitialDelay, $initialDelay,
@@ -261,8 +263,8 @@ widgets and redirects the callbacks.
 	("_slider", xfwfSlider2WidgetClass, $,
 	 XtNx, xslider,
 	 XtNy, yslider,
-	 XtNwidth, wslider,
-	 XtNheight, hslider,
+	 XtNwidth, max(1, wslider),
+	 XtNheight, max(1, hslider),
 	 XtNthumbColor, $scrollbarForeground,
 	 XtNframeWidth, 0,
 	 XtNinitialDelay, $initialDelay,
@@ -283,29 +285,29 @@ widgets and redirects the callbacks.
 @proc resize
 {
     Position x, y, xa2, xslider, ya2, yslider;
-    Dimension w, h, wa, ha, wslider, hslider;
+    int w, h, wa, ha, wslider, hslider;
 
     $compute_inside($, &x, &y, &w, &h);
+    w = max(1, w);
+    h = max(1, h);
     if ($vertical) {
 	wa = wslider = w;
 	xa2 = xslider = x;
 	ha = 2 * (wa + 1)/3;
-	hslider = (h - 2*ha > 0) ? h - 2*ha : 10;
+	hslider = ((int)h - 2*ha > 0) ? h - 2*ha : 10;
 	yslider = y + ha;
 	ya2 = yslider + hslider;
     } else {
 	ha = hslider = h;
 	ya2 = yslider = y;
 	wa = 2 * (ha + 1)/3;
-	wslider = (w - 2*wa > 0) ? w - 2*wa : 10;
+	wslider = ((int)w - 2*wa > 0) ? w - 2*wa : 10;
 	xslider = x + wa;
 	xa2 = xslider + wslider;
     }
-    if (wa <= 0) wa = 1; if (ha <= 0) ha = 1; /* MATTHEW: [5] */
-    if (wslider <= 0) wslider = 1; if (hslider <= 0) hslider = 1; /* MATTHEW: [5] */
-    XtConfigureWidget($arrow1, x, y, wa, ha, 0);
-    XtConfigureWidget($arrow2, xa2, ya2, wa, ha, 0);
-    XtConfigureWidget($slider, xslider, yslider, wslider, hslider, 0);
+    XtConfigureWidget($arrow1, x, y, max(1, wa), max(1, ha), 0);
+    XtConfigureWidget($arrow2, xa2, ya2, max(1, wa), max(1, ha), 0);
+    XtConfigureWidget($slider, xslider, yslider, max(1, wslider), max(1, hslider), 0);
 }
 
 @ |insert_child| is redefined here only to be able to give a warning

@@ -224,7 +224,7 @@ static void layout(self,shrink,align)Widget self;int  shrink;Boolean  align;
 {
     int nrows, ncols, i, nchild, n;
     Position left, top, x, y;
-    Dimension width, height, w, h;
+    int width, height, w, h;
     Widget child;
 
     nchild = 0;
@@ -239,6 +239,7 @@ static void layout(self,shrink,align)Widget self;int  shrink;Boolean  align;
     }
 
     ((XfwfRowColWidgetClass)self->core.widget_class)->xfwfCommon_class.compute_inside(self, &left, &top, &width, &height);
+    width = max(0, width);
 
     if (((XfwfRowColWidget)self)->xfwfRowCol.columns != 0) {
         ncols = ((XfwfRowColWidget)self)->xfwfRowCol.columns;
@@ -288,8 +289,7 @@ static void layout(self,shrink,align)Widget self;int  shrink;Boolean  align;
     if (shrink) {
       w = 2*left + ncols * ((XfwfRowColWidget)self)->xfwfRowCol.max_width;
       h = 2*top + nrows * ((XfwfRowColWidget)self)->xfwfRowCol.max_height;
-      XtVaSetValues(self, XtNwidth, w, XtNheight, h, NULL);
-      /* printf("RowCol width/height : %d/%d\n", w, h); */
+      XtVaSetValues(self, XtNwidth, max(1, w), XtNheight, max(1, h), NULL);
     }
 }
 #line 200 "XWidgets/xwRowCol.w"

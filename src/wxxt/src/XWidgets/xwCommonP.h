@@ -17,7 +17,7 @@ _XFUNCPROTOBEGIN
 
 typedef void (*compute_inside_Proc)(
 #if NeedFunctionPrototypes
-Widget,Position *,Position *,Dimension *,Dimension *
+Widget,Position *,Position *,int *,int *
 #endif
 );
 #define XtInherit_compute_inside ((compute_inside_Proc) _XtInherit)

@@ -3,7 +3,7 @@
 # Contains the source for the Frame widget
 # Version 2.2.1 for FWF V4.0
 #
-# $Id: xwFrame.w,v 1.1.1.1 1997/12/22 17:29:04 mflatt Exp $
+# $Id: xwFrame.w,v 1.2 1997/12/27 20:24:40 mflatt Exp $
 
 @class XfwfFrame (XfwfCommon) @file=xwFrame
 
@@ -344,7 +344,7 @@ destroyed or unrealized.
 @proc _expose
 {
     Position x, y;
-    Dimension w, h;
+    int w, h;
 
     if (! XtIsRealized($)) return;
     if (region != NULL) {
@@ -352,11 +352,13 @@ destroyed or unrealized.
         XSetRegion(XtDisplay($), $darkgc, region);
     }
     $compute_inside($, &x, &y, &w, &h);
+    w += 2*$innerOffset + 2*$frameWidth;
+    h += 2*$innerOffset + 2*$frameWidth;
     XfwfDrawFrame($, 
 		  x - $frameWidth - $innerOffset,
 		  y - $frameWidth - $innerOffset,
-		  w + 2*$innerOffset + 2*$frameWidth,
-		  h + 2*$innerOffset + 2*$frameWidth,
+		  max(w, 0),
+		  max(h, 0),
 		  $frameType, $frameWidth, $lightgc, $darkgc);
     if (region != NULL) {
         XSetClipMask(XtDisplay($), $lightgc, None);
@@ -450,7 +452,7 @@ Requests for anything other than width or height are always granted.
     XtWidgetGeometry request2, reply2;
     XtGeometryResult result;
     Position x, y;
-    Dimension w, h, extraw, extrah;
+    int w, h, extraw, extrah;
 
     $compute_inside($, &x, &y, &w, &h);
     if (! (request->request_mode & (CWWidth|CWHeight))) return XtGeometryYes;
@@ -475,7 +477,7 @@ area by the amount needed for the frame.
 @proc resize
 {
     Position x, y;
-    Dimension w, h;
+    int w, h;
     Widget child;
 
     if ($num_children == 0) return;
@@ -483,8 +485,7 @@ area by the amount needed for the frame.
     child = $children[0];
     w -= 2 * $child$border_width;
     h -= 2 * $child$border_width;
-    if (w <= 0) w = 1; if (h <= 0) h = 1; /* MATTHEW: [5] */
-    XtConfigureWidget(child, x, y, w, h, $child$border_width);
+    XtConfigureWidget(child, x, y, max(1, w), max(1, h), $child$border_width);
 }
 
 @ The |change_managed| method is called when a child becomes managed
@@ -500,7 +501,7 @@ resized, the child of the Frame widget will be resized instead.
     XtGeometryResult result;
     Widget child;
     Position x, y;
-    Dimension w, h;
+    int w, h;
 
     if ($num_children == 0) return;
     $compute_inside($, &x, &y, &w, &h);
@@ -512,8 +513,7 @@ resized, the child of the Frame widget will be resized instead.
     $compute_inside($, &x, &y, &w, &h);
     w -= 2 * $child$border_width;
     h -= 2 * $child$border_width;
-    if (w <= 0) w = 1; if (h <= 0) h = 1; /* MATTHEW: [5] */
-    XtConfigureWidget(child, x, y, w, h, $child$border_width);
+    XtConfigureWidget(child, x, y, max(1, w), max(1, h), $child$border_width);
 }
 
 @actions
@@ -533,7 +533,7 @@ the frame type, will have to redefine the |set_shadow| action.
 @proc set_shadow
 {
     Position x, y;
-    Dimension w, h;
+    int w, h;
     FrameType f = XfwfSunken;
 
     if (*num_params == 0) f = $old_frame_type;  /* Reset to old style */
@@ -546,8 +546,10 @@ the frame type, will have to redefine the |set_shadow| action.
     if ($frameType != f) {
         $frameType = f;
         #compute_inside($, &x, &y, &w, &h);
+	w -= 2*$outerOffset;
+	h -= 2*$outerOffset;
         XfwfDrawFrame($, x + $outerOffset, y + $outerOffset,
-                      w - 2*$outerOffset, h - 2*$outerOffset,
+                      max(w, 0), max(h, 0),
                       $frameType, $frameWidth, $lightgc, $darkgc);
     }
 }

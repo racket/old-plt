@@ -136,7 +136,7 @@ Widget ,Widget ,Widget,ArgList ,Cardinal *
 #line 364 "XWidgets/xwCommon.w"
 static void compute_inside(
 #if NeedFunctionPrototypes
-Widget,Position *,Position *,Dimension *,Dimension *
+Widget,Position *,Position *,int *,int *
 #endif
 );
 #line 376 "XWidgets/xwCommon.w"
@@ -834,10 +834,10 @@ static Boolean  set_values(old,request,self,args,num_args)Widget  old;Widget  re
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
 #line 364 "XWidgets/xwCommon.w"
-static void compute_inside(Widget self,Position * x,Position * y,Dimension * w,Dimension * h)
+static void compute_inside(Widget self,Position * x,Position * y,int * w,int * h)
 #else
 #line 364 "XWidgets/xwCommon.w"
-static void compute_inside(self,x,y,w,h)Widget self;Position * x;Position * y;Dimension * w;Dimension * h;
+static void compute_inside(self,x,y,w,h)Widget self;Position * x;Position * y;int * w;int * h;
 #endif
 #line 365 "XWidgets/xwCommon.w"
 {
@@ -1182,10 +1182,10 @@ void XfwfCallComputeInside(self,x,y,w,h)Widget self;Position * x;Position * y;in
 #line 64 "XWidgets/xwCommon.w"
 {
     if (XtIsSubclass(self, xfwfCommonWidgetClass) && ((XfwfCommonWidgetClass)self->core.widget_class)->xfwfCommon_class.compute_inside) {
-	Dimension ww, hh;
+	int ww, hh;
         ((XfwfCommonWidgetClass)self->core.widget_class)->xfwfCommon_class.compute_inside(self, x, y, &ww, &hh);
-	*w = (short)ww;
-	*h = (short)hh;
+	*w = max(0, ww);
+	*h = max(0, hh);
     } else 
         XtWarning
             ("XfwfCallComputeInside only applies to subclasses of Common");

@@ -1,7 +1,7 @@
 #
 # 1.0 (Feb 1995)
 #
-# $Id: Enforcer.w,v 1.1 1996/01/10 14:57:38 markus Exp $
+# $Id: xwEnforcer.w,v 1.1.1.1 1997/12/22 17:29:04 mflatt Exp $
 
 @class XfwfEnforcer (XfwfBoard) @file=xwEnforcer
 
@@ -157,7 +157,7 @@ the label to it.
 
 @proc _expose
 {
-    Dimension w, h;
+    int w, h;
     Position x, y;
 
     if (! XtIsRealized($)) return;
@@ -165,6 +165,9 @@ the label to it.
     if ($label) {
 	if (!$textgc) make_textgc($);
 	$compute_inside($, &x, &y, &w, &h);
+
+	w = max(0, w);
+	h = max(0, h);
 	
 	switch ($alignment) {
 	case XfwfTop:
@@ -198,7 +201,7 @@ decreasing the area by the amount needed for the frame.
 @proc resize
 {
     Position x, y;
-    Dimension w, h;
+    int w, h;
     Widget child;
 
     if ($num_children == 0) return;
@@ -206,8 +209,7 @@ decreasing the area by the amount needed for the frame.
     child = $children[0];
     w -= 2 * $child$border_width;
     h -= 2 * $child$border_width;
-    if (w <= 0) w = 1; if (h <= 0) h = 1; /* MATTHEW: [5] */
-    XtConfigureWidget(child, x, y, w, h, $child$border_width);
+    XtConfigureWidget(child, x, y, max(1, w), max(1, h), $child$border_width);
 }
 
 @ The |insert_child| method is called, when a child is inserted
@@ -219,7 +221,7 @@ widget has to be resized to fit around the frame.
     #insert_child(child);
 
     if (child == $children[0] && $shrinkToFit) {
-	Position x, y; Dimension w, h, cw;
+	Position x, y; int w, h, cw;
 
 	$compute_inside($, &x, &y, &w, &h);
 	if ($alignment == XfwfTop)
@@ -228,9 +230,7 @@ widget has to be resized to fit around the frame.
 	  cw = max(1, $child$width);
 	w = cw + 2*$child$border_width + $width - w;
 	h = $height - h + $child$height + 2*$child$border_width;
-	/* MATTHEW: [5] */
-	if (w <= 0) w = 1; if (h <= 0) h = 1;
-	XtVaSetValues($, XtNwidth, w, XtNheight, h, NULL);
+	XtVaSetValues($, XtNwidth, max(1, w), XtNheight, max(1, h), NULL);
     }
 }
 
@@ -242,14 +242,14 @@ frame, or the frame around the child.
 @proc change_managed
 {
     Widget child;
-    Position x, y; Dimension w, h;
+    Position x, y; int w, h;
 
     if ($num_children == 0) return;
     $compute_inside($, &x, &y, &w, &h);
     child = $children[0];
 
     if ($shrinkToFit) {
-	Dimension selfw, selfh, cw;
+	int selfw, selfh, cw;
 
 	if ($alignment == XfwfTop)
 	  cw = max($child$width, $labelWidth);
@@ -259,18 +259,14 @@ frame, or the frame around the child.
 	selfw = $width  - w + cw  + 2*$child$border_width;
 	selfh = $height - h + $child$height + 2*$child$border_width;
 
-	/* MATTHEW: [5] */
-	if (selfw <= 0) selfw = 1; if (selfh <= 0) selfh = 1;
-
-	XtVaSetValues($, XtNwidth, selfw, XtNheight, selfh, NULL);
+	XtVaSetValues($, XtNwidth, max(1, selfw), XtNheight, max(1, selfh), NULL);
 	$compute_inside($, &x, &y, &w, &h);
     } else  {
 	w -= 2 * $child$border_width;
 	h -= 2 * $child$border_width;
     }
     
-    if (w <= 0) w = 1; if (h <= 0) h = 1; /* MATTHEW: [5] */
-    XtConfigureWidget(child, x, y, w, h, $child$border_width);
+    XtConfigureWidget(child, x, y, max(1, w), max(1, h), $child$border_width);
 }
 
 @ If a child requests to be resized, the request is always ignored, or if 
@@ -279,7 +275,7 @@ frame, or the frame around the child.
 @proc geometry_manager
 {
     if ($shrinkToFit) {
-	Position x, y; Dimension w, h;
+	Position x, y; int w, h;
 
 	/* ask parent to resize (granted because parent is a Board Widget) */
 	$compute_inside($, &x, &y, &w, &h);
@@ -292,17 +288,14 @@ frame, or the frame around the child.
 	      cw = max(1, request->width);
 
 	    w = $width  - w + cw;
-	    if (w <= 0) w = 1; /* MATTHEW: [5] */
-	    XtVaSetValues($, XtNwidth, w, NULL);
+	    XtVaSetValues($, XtNwidth, max(1, w), NULL);
 	}
 	if (request->request_mode & CWHeight) {
 	  h = $height - h + request->height;
-	  if (h <= 0) h = 1; /* MATTHEW: [5] */
-	  XtVaSetValues($, XtNheight, h, NULL);
+	  XtVaSetValues($, XtNheight, max(1, h), NULL);
 	}
 	$compute_inside($, &x, &y, &w, &h);
-	if (w <= 0) w = 1; if (h <= 0) h = 1; /* MATTHEW: [5] */
-	XtConfigureWidget(child, x, y, w, h, $child$border_width);
+	XtConfigureWidget(child, x, y, max(1, w), max(1, h), $child$border_width);
 
 	return XtGeometryDone;
     }
@@ -338,7 +331,7 @@ label.
 {
     XRectangle  rect[4];
     Position    x, y;
-    Dimension   w, h;
+    int   w, h;
 
     if ($highlightThickness == 0) return;
 
@@ -347,6 +340,9 @@ label.
     y -= $total_frame_width($);
     w += 2 * $total_frame_width($);
     h += 2 * $total_frame_width($);
+
+    w = max(0, w);
+    h = max(0, h);
 
     rect[0].x = x;
     rect[0].y = y;
@@ -375,7 +371,7 @@ label.
 @proc unhighlight_border
 {
     Position   x, y;
-    Dimension  w, h;
+    int  w, h;
 
     if ($highlightThickness == 0) return;
 
@@ -384,6 +380,9 @@ label.
     y -= $total_frame_width($);
     w += 2 * $total_frame_width($);
     h += 2 * $total_frame_width($);
+
+    w = max(w, 0);
+    h = max(h, 0);
 
     XClearArea(XtDisplay($), XtWindow($), 
                x, y, w, $highlightThickness, False);

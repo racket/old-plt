@@ -3,17 +3,17 @@
  */
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
-#line 556 "XWidgets/xwScrollWin.w"
+#line 568 "XWidgets/xwScrollWin.w"
 #include <stdio.h>
-#line 557 "XWidgets/xwScrollWin.w"
+#line 569 "XWidgets/xwScrollWin.w"
 #include <xwEnforcer.h>
-#line 558 "XWidgets/xwScrollWin.w"
+#line 570 "XWidgets/xwScrollWin.w"
 #include <xwBoard.h>
-#line 559 "XWidgets/xwScrollWin.w"
+#line 571 "XWidgets/xwScrollWin.w"
 #include <xwVScrollb.h>
-#line 560 "XWidgets/xwScrollWin.w"
+#line 572 "XWidgets/xwScrollWin.w"
 #include <xwHScrollb.h>
-#line 561 "XWidgets/xwScrollWin.w"
+#line 573 "XWidgets/xwScrollWin.w"
 #include <xwscroll.h>
 #include <./xwScrollWinP.h>
 static void _resolve_inheritance(
@@ -45,91 +45,92 @@ static void insert_child(
 Widget 
 #endif
 );
-#line 308 "XWidgets/xwScrollWin.w"
+#line 311 "XWidgets/xwScrollWin.w"
 static void compute_inside(
 #if NeedFunctionPrototypes
-Widget,Position *,Position *,Dimension *,Dimension *
+Widget,Position *,Position *,int *,int *
 #endif
 );
-#line 316 "XWidgets/xwScrollWin.w"
+#line 319 "XWidgets/xwScrollWin.w"
 static void destroy(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 329 "XWidgets/xwScrollWin.w"
+#line 332 "XWidgets/xwScrollWin.w"
 static void scroll_response(
 #if NeedFunctionPrototypes
 Widget ,XtPointer ,XtPointer 
 #endif
 );
-#line 362 "XWidgets/xwScrollWin.w"
+#line 368 "XWidgets/xwScrollWin.w"
 static void compute_sizes(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 412 "XWidgets/xwScrollWin.w"
+#line 418 "XWidgets/xwScrollWin.w"
 static void copy_vScrollAmount(
 #if NeedFunctionPrototypes
 Widget,int ,XrmValue *
 #endif
 );
-#line 421 "XWidgets/xwScrollWin.w"
+#line 427 "XWidgets/xwScrollWin.w"
 static void scroll_callback(
 #if NeedFunctionPrototypes
 Widget ,XtPointer ,XtPointer 
 #endif
 );
-#line 481 "XWidgets/xwScrollWin.w"
+#line 490 "XWidgets/xwScrollWin.w"
 static void CW_killed(
 #if NeedFunctionPrototypes
 Widget ,XtPointer ,XtPointer 
 #endif
 );
-#line 501 "XWidgets/xwScrollWin.w"
+#line 510 "XWidgets/xwScrollWin.w"
 static void configure(
 #if NeedFunctionPrototypes
 Widget ,XtPointer ,XEvent *,Boolean *
 #endif
 );
-#line 362 "XWidgets/xwScrollWin.w"
+#line 368 "XWidgets/xwScrollWin.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 362 "XWidgets/xwScrollWin.w"
+#line 368 "XWidgets/xwScrollWin.w"
 static void compute_sizes(Widget self)
 #else
-#line 362 "XWidgets/xwScrollWin.w"
+#line 368 "XWidgets/xwScrollWin.w"
 static void compute_sizes(self)Widget self;
 #endif
-#line 363 "XWidgets/xwScrollWin.w"
+#line 369 "XWidgets/xwScrollWin.w"
 {
-    Dimension selfw, selfh, framew, frameh, vsheight, hswidth, help;
+    int selfw, selfh, framew, frameh, vsheight, hswidth;
+    Dimension help;
     Position selfx, selfy;
 
     xfwfBoardClassRec.xfwfCommon_class.compute_inside(self, &selfx, &selfy, &selfw, &selfh);
     if (! ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.hideHScrollbar)
-	vsheight = selfh - 3 * ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.spacing - ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.scrollbarWidth;
+	vsheight = (int)selfh - 3 * ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.spacing - ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.scrollbarWidth;
     else
-	vsheight = selfh - 2 * ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.spacing;
+	vsheight = (int)selfh - 2 * ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.spacing;
     if (! ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.hideVScrollbar)
-	hswidth = selfw - 3 * ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.spacing - ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.scrollbarWidth;
+	hswidth = (int)selfw - 3 * ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.spacing - ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.scrollbarWidth;
     else
-	hswidth = selfw - 2 * ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.spacing;
+	hswidth = (int)selfw - 2 * ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.spacing;
     XtVaGetValues(((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.vscroll, XtNhighlightThickness, &help, NULL);
     if (help > ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.spacing) help = 0;
     XtConfigureWidget(((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.vscroll,
 		      selfx + selfw - ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.spacing - ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.scrollbarWidth,
 		      selfy + ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.spacing - help,
 		      ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.scrollbarWidth,
-		      vsheight + 2*help,
+		      max(1, vsheight + 2*help),
 		      0);
     XtVaGetValues(((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.hscroll, XtNhighlightThickness, &help, NULL);
     if (help > ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.spacing) help = 0;
     XtConfigureWidget(((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.hscroll,
 		      ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.spacing - help,
 		      selfy + selfh - ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.spacing - ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.scrollbarWidth,
-		      hswidth + 2*help,
+		      max(1, hswidth + 2*help),
 		      ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.scrollbarWidth,
 		      0);
     XtVaGetValues(((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.frame, XtNhighlightThickness, &help, NULL);
@@ -138,47 +139,49 @@ static void compute_sizes(self)Widget self;
     frameh = selfh - 2 * ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.spacing + 2 * help;
     if (! ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.hideVScrollbar) framew -= ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.scrollbarWidth + ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.spacing;
     if (! ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.hideHScrollbar) frameh -= ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.scrollbarWidth + ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.spacing;
-    if (framew <= 0) framew = 1; if (frameh <= 0) frameh = 1; /* MATTHEW: [5] */
     XtConfigureWidget(((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.frame,
 		      selfx + ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.spacing - help,
 		      selfy + ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.spacing - help,
-		      framew,
-		      frameh,
+		      max(1, framew),
+		      max(1, frameh),
 		      0);
     if (((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.CW != NULL) XtMoveWidget(((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.CW, 0, 0);
 }
-#line 412 "XWidgets/xwScrollWin.w"
+#line 418 "XWidgets/xwScrollWin.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 412 "XWidgets/xwScrollWin.w"
+#line 418 "XWidgets/xwScrollWin.w"
 static void copy_vScrollAmount(Widget self,int  offset,XrmValue * value)
 #else
-#line 412 "XWidgets/xwScrollWin.w"
+#line 418 "XWidgets/xwScrollWin.w"
 static void copy_vScrollAmount(self,offset,value)Widget self;int  offset;XrmValue * value;
 #endif
-#line 413 "XWidgets/xwScrollWin.w"
+#line 419 "XWidgets/xwScrollWin.w"
 {
     value->addr = (XtPointer) &((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.vScrollAmount;
 }
-#line 421 "XWidgets/xwScrollWin.w"
+#line 427 "XWidgets/xwScrollWin.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 421 "XWidgets/xwScrollWin.w"
+#line 427 "XWidgets/xwScrollWin.w"
 static void scroll_callback(Widget  w,XtPointer  client_data,XtPointer  call_data)
 #else
-#line 421 "XWidgets/xwScrollWin.w"
+#line 427 "XWidgets/xwScrollWin.w"
 static void scroll_callback(w,client_data,call_data)Widget  w;XtPointer  client_data;XtPointer  call_data;
 #endif
-#line 422 "XWidgets/xwScrollWin.w"
+#line 428 "XWidgets/xwScrollWin.w"
 {
     Widget self = (Widget) client_data;
     XfwfScrollInfo *info = (XfwfScrollInfo *) call_data;
     XfwfScrollInfo new;
     Position boardx, boardy, gx, gy, minx = 0, miny = 0;
-    Dimension boardwd, boardht, gwd, ght;
+    int boardwd, boardht;
+    Dimension gwd, ght;
 
     if (((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.autoAdjustScrollbars) {
       xfwfBoardClassRec.xfwfCommon_class.compute_inside(((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.board, &boardx, &boardy, &boardwd, &boardht);
+      boardwd = max(0, boardwd);
+      boardht = max(0, boardht);
       XtVaGetValues(((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.CW, XtNx, &gx, XtNy, &gy, XtNwidth, &gwd,
 		    XtNheight, &ght, NULL);
       minx = gwd <= boardwd ? 0 : boardwd - gwd;
@@ -223,16 +226,16 @@ static void scroll_callback(w,client_data,call_data)Widget  w;XtPointer  client_
 	XtCallCallbackList(self, ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.scrollCallback, &new);
     }
 }
-#line 481 "XWidgets/xwScrollWin.w"
+#line 490 "XWidgets/xwScrollWin.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 481 "XWidgets/xwScrollWin.w"
+#line 490 "XWidgets/xwScrollWin.w"
 static void CW_killed(Widget  w,XtPointer  client_data,XtPointer  call_data)
 #else
-#line 481 "XWidgets/xwScrollWin.w"
+#line 490 "XWidgets/xwScrollWin.w"
 static void CW_killed(w,client_data,call_data)Widget  w;XtPointer  client_data;XtPointer  call_data;
 #endif
-#line 482 "XWidgets/xwScrollWin.w"
+#line 491 "XWidgets/xwScrollWin.w"
 {
     Widget self = (Widget) client_data;
 
@@ -244,19 +247,20 @@ static void CW_killed(w,client_data,call_data)Widget  w;XtPointer  client_data;X
     XfwfSetScrollbar(((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.vscroll, 0.0, 1.0);
     XfwfSetScrollbar(((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.hscroll, 0.0, 1.0);
 }
-#line 501 "XWidgets/xwScrollWin.w"
+#line 510 "XWidgets/xwScrollWin.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 501 "XWidgets/xwScrollWin.w"
+#line 510 "XWidgets/xwScrollWin.w"
 static void configure(Widget  w,XtPointer  client_data,XEvent * event,Boolean * cont)
 #else
-#line 501 "XWidgets/xwScrollWin.w"
+#line 510 "XWidgets/xwScrollWin.w"
 static void configure(w,client_data,event,cont)Widget  w;XtPointer  client_data;XEvent * event;Boolean * cont;
 #endif
-#line 502 "XWidgets/xwScrollWin.w"
+#line 511 "XWidgets/xwScrollWin.w"
 {
     Widget self = (Widget) client_data;
-    Dimension boardwd, boardht, gwd, ght;
+    int boardwd, boardht;
+    Dimension gwd, ght;
     Position boardx, boardy, gx, gy;
     float wd, ht, x, y;
 
@@ -274,6 +278,8 @@ static void configure(w,client_data,event,cont)Widget  w;XtPointer  client_data;
     /* if (event != NULL && event->type != ConfigureNotify) return; */
     if (((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.autoAdjustScrollbars) {
       xfwfBoardClassRec.xfwfCommon_class.compute_inside(((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.board, &boardx, &boardy, &boardwd, &boardht);
+      boardwd = max(0, boardwd);
+      boardht = max(0, boardht);
       XtVaGetValues(((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.CW, XtNx, &gx, XtNy, &gy, XtNwidth, &gwd,
 	  	    XtNheight, &ght, NULL);
       wd = gwd <= boardwd ? 1.0 : (float) boardwd/gwd;
@@ -525,7 +531,8 @@ static void insert_child(child)Widget  child;
 #endif
 { Widget self = XtParent(child); {
     Position boardx, boardy, gx, gy;
-    Dimension boardwd, boardht, gwd, ght;
+    int boardwd, boardht;
+    Dimension gwd, ght;
     Boolean dummy;
 
     if (((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.initializing) {
@@ -538,6 +545,8 @@ static void insert_child(child)Widget  child;
 	XtAddEventHandler(child, StructureNotifyMask, False, configure, self);
 	XtAddEventHandler(((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.board, StructureNotifyMask, False, configure, self);
 	xfwfBoardClassRec.xfwfCommon_class.compute_inside(((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.board, &boardx, &boardy, &boardwd, &boardht);
+        boardwd = max(0, boardwd);
+        boardht = max(0, boardht);
 	XtVaGetValues(child, XtNwidth, &gwd, XtNheight, &ght, NULL);
 	gx = gwd <= boardwd ? 0 : max(((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.initialX, boardwd - gwd);
 	gy = ght <= boardht ? 0 : max(((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.initialY, boardht - ght);
@@ -554,29 +563,29 @@ static void insert_child(child)Widget  child;
     }
 }
 }
-#line 308 "XWidgets/xwScrollWin.w"
+#line 311 "XWidgets/xwScrollWin.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 308 "XWidgets/xwScrollWin.w"
-static void compute_inside(Widget self,Position * x,Position * y,Dimension * w,Dimension * h)
+#line 311 "XWidgets/xwScrollWin.w"
+static void compute_inside(Widget self,Position * x,Position * y,int * w,int * h)
 #else
-#line 308 "XWidgets/xwScrollWin.w"
-static void compute_inside(self,x,y,w,h)Widget self;Position * x;Position * y;Dimension * w;Dimension * h;
+#line 311 "XWidgets/xwScrollWin.w"
+static void compute_inside(self,x,y,w,h)Widget self;Position * x;Position * y;int * w;int * h;
 #endif
-#line 309 "XWidgets/xwScrollWin.w"
+#line 312 "XWidgets/xwScrollWin.w"
 {
     xfwfBoardClassRec.xfwfCommon_class.compute_inside((((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.board ? ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.board : self), x, y, w, h);
 }
-#line 316 "XWidgets/xwScrollWin.w"
+#line 319 "XWidgets/xwScrollWin.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 316 "XWidgets/xwScrollWin.w"
+#line 319 "XWidgets/xwScrollWin.w"
 static void destroy(Widget self)
 #else
-#line 316 "XWidgets/xwScrollWin.w"
+#line 319 "XWidgets/xwScrollWin.w"
 static void destroy(self)Widget self;
 #endif
-#line 317 "XWidgets/xwScrollWin.w"
+#line 320 "XWidgets/xwScrollWin.w"
 {
     if (((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.CW != NULL) {
 	XtRemoveEventHandler(((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.CW, StructureNotifyMask, False,
@@ -585,24 +594,27 @@ static void destroy(self)Widget self;
 			     configure, self);
     }
 }
-#line 329 "XWidgets/xwScrollWin.w"
+#line 332 "XWidgets/xwScrollWin.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 329 "XWidgets/xwScrollWin.w"
+#line 332 "XWidgets/xwScrollWin.w"
 static void scroll_response(Widget  w,XtPointer  client_data,XtPointer  call_data)
 #else
-#line 329 "XWidgets/xwScrollWin.w"
+#line 332 "XWidgets/xwScrollWin.w"
 static void scroll_response(w,client_data,call_data)Widget  w;XtPointer  client_data;XtPointer  call_data;
 #endif
-#line 330 "XWidgets/xwScrollWin.w"
+#line 333 "XWidgets/xwScrollWin.w"
 {
     Widget self = (Widget) client_data;
     XfwfScrollInfo *info = (XfwfScrollInfo *) call_data;
     XfwfScrollInfo new;
     Position boardx, boardy, gx, gy, minx, miny;
-    Dimension boardwd, boardht, gwd, ght;
+    int boardwd, boardht;
+    Dimension gwd, ght;
 
     xfwfBoardClassRec.xfwfCommon_class.compute_inside(((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.board, &boardx, &boardy, &boardwd, &boardht);
+    boardwd = max(0, boardwd);
+    boardht = max(0, boardht);
     XtVaGetValues(((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.CW, XtNx, &gx, XtNy, &gy, XtNwidth, &gwd,
 		  XtNheight, &ght, NULL);
     minx = gwd <= boardwd ? 0 : boardwd - gwd;
@@ -621,44 +633,44 @@ static void scroll_response(w,client_data,call_data)Widget  w;XtPointer  client_
 	XtCallCallbackList(self, ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.scrollCallback, info);
     }
 }
-#line 537 "XWidgets/xwScrollWin.w"
+#line 549 "XWidgets/xwScrollWin.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 537 "XWidgets/xwScrollWin.w"
+#line 549 "XWidgets/xwScrollWin.w"
 void xws_set_scroll_direct(Widget self,long  hlen,long  hpage,long  hpos,long  vlen,long  vpage,long  vpos)
 #else
-#line 537 "XWidgets/xwScrollWin.w"
+#line 549 "XWidgets/xwScrollWin.w"
 void xws_set_scroll_direct(self,hlen,hpage,hpos,vlen,vpage,vpos)Widget self;long  hlen;long  hpage;long  hpos;long  vlen;long  vpage;long  vpos;
 #endif
-#line 538 "XWidgets/xwScrollWin.w"
+#line 550 "XWidgets/xwScrollWin.w"
 {
   XfwfSetScrollbar(((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.hscroll, (float)hpos / hlen, (float)hpage / (hlen + hpage));
   XfwfSetScrollbar(((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.vscroll, (float)vpos / vlen, (float)vpage / (vlen + vpage));
 }
-#line 543 "XWidgets/xwScrollWin.w"
+#line 555 "XWidgets/xwScrollWin.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 543 "XWidgets/xwScrollWin.w"
+#line 555 "XWidgets/xwScrollWin.w"
 void xws_get_scroll_pos(Widget self,double * x,double * y)
 #else
-#line 543 "XWidgets/xwScrollWin.w"
+#line 555 "XWidgets/xwScrollWin.w"
 void xws_get_scroll_pos(self,x,y)Widget self;double * x;double * y;
 #endif
-#line 544 "XWidgets/xwScrollWin.w"
+#line 556 "XWidgets/xwScrollWin.w"
 {
   XfwfGetScrollbar(((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.hscroll, x, NULL);
   XfwfGetScrollbar(((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.vscroll, NULL, y);
 }
-#line 549 "XWidgets/xwScrollWin.w"
+#line 561 "XWidgets/xwScrollWin.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 549 "XWidgets/xwScrollWin.w"
+#line 561 "XWidgets/xwScrollWin.w"
 void xws_get_scroll_area(Widget self,Dimension * x,Dimension * y)
 #else
-#line 549 "XWidgets/xwScrollWin.w"
+#line 561 "XWidgets/xwScrollWin.w"
 void xws_get_scroll_area(self,x,y)Widget self;Dimension * x;Dimension * y;
 #endif
-#line 550 "XWidgets/xwScrollWin.w"
+#line 562 "XWidgets/xwScrollWin.w"
 {
   XtVaGetValues(((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.board, XtNwidth, x, XtNheight, y, NULL);
 }

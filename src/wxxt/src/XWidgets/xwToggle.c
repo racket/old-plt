@@ -376,7 +376,7 @@ static void _expose(self,event,region)Widget self;XEvent * event;Region  region;
 #line 187 "XWidgets/xwToggle.w"
 {
     Position x, y;
-    Dimension w, h;
+    int w, h;
 
     if (! XtIsRealized(self)) return;
     xfwfButtonClassRec.xfwfCommon_class._expose(self, event, region);

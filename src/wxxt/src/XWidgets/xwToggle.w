@@ -2,7 +2,7 @@
 # Bert Bos <bert@let.rug.nl>
 # Version 2.1 for FWF V4.0
 # 
-# $Id: Toggle.w,v 1.1 1996/01/10 14:57:52 markus Exp $
+# $Id: xwToggle.w,v 1.1.1.1 1997/12/22 17:29:02 mflatt Exp $
 
 @class XfwfToggle(XfwfButton)  @file=xwToggle
 
@@ -186,7 +186,7 @@ button and then possibly adds a tick mark.
 @proc _expose
 {
     Position x, y;
-    Dimension w, h;
+    int w, h;
 
     if (! XtIsRealized($)) return;
     #_expose($, event, region);

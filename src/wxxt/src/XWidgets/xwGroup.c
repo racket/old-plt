@@ -489,7 +489,7 @@ static void _expose(self,event,region)Widget self;XEvent * event;Region  region;
 #endif
 #line 212 "XWidgets/xwGroup.w"
 {
-    Dimension w, h;
+    int w, h;
     Position x, y;
 
     if (! XtIsRealized(self)) return;

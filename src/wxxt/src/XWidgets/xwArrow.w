@@ -3,7 +3,7 @@
 # Bert Bos <bert@let.rug.nl>
 # Version 1.2
 #
-# $Id: Arrow.w,v 1.1 1996/01/10 14:57:34 markus Exp $
+# $Id: xwArrow.w,v 1.1.1.1 1997/12/22 17:29:05 mflatt Exp $
 
 @CLASS XfwfArrow (XfwfBoard)  @file = xwArrow
 
@@ -162,7 +162,8 @@ GC's need to be created.
 @proc _expose
 {
     Position x, y;
-    Dimension width, height, a, a2, a3;
+    int  width, height;
+    Dimension a, a2, a3;
 
     assert($direction == XfwfTop || $direction == XfwfLeft
 	   || $direction == XfwfRight || $direction == XfwfBottom);
@@ -174,6 +175,8 @@ GC's need to be created.
 	XSetRegion(XtDisplay($), $arrowdarkgc, region);
     }
     $compute_inside($, &x, &y, &width, &height);
+    width = max(1, width);
+    height = max(1, height);
     a = $arrowShadow;
     switch ($direction) {
     case XfwfTop:

@@ -2,7 +2,7 @@
 # Bert Bos <bert@let.rug.nl>
 # Version 2.0.1 for FWF V4.0 (See README for history)
 #
-# $Id: Board.w,v 1.1 1996/01/10 14:57:35 markus Exp $
+# $Id: xwBoard.w,v 1.1.1.1 1997/12/22 17:29:04 mflatt Exp $
 
 @class XfwfBoard (XfwfFrame) @file=xwBoard
 
@@ -219,8 +219,8 @@ resources are set, it is a bitwise combination of |CWX|, |CWY|,
     if ((flags & (CWX | CWY | CWWidth | CWHeight)) == 0) return;
     if (flags & CWX) $x = x;
     if (flags & CWY) $y = y;
-    if (flags & CWWidth) $width = w;
-    if (flags & CWHeight) $height = h;
+    if (flags & CWWidth) $width = max(1, w);
+    if (flags & CWHeight) $height = max(1, h);
     set_location($, flags);
     generate_location($);
 }
@@ -336,7 +336,7 @@ height cannot become smaller than 1 pixel.
 {
     Widget parent;
     Position px, py;
-    Dimension pw, ph, minsize;
+    int pw, ph, minsize;
     float h;
 
     parent = $parent;
@@ -348,6 +348,8 @@ height cannot become smaller than 1 pixel.
         pw = $parent$width;
         ph = $parent$height;
     }
+    pw = max(0, pw);
+    ph = max(0, ph);
 
     *x = ceil($rel_x * pw + $abs_x * $hunit) + px;
     *y = ceil($rel_y * ph + $abs_y * $vunit) + py;
@@ -366,7 +368,7 @@ geometry is done by |set_location|.
 {
     Widget parent;
     Position px, py;
-    Dimension pw, ph;
+    int pw, ph;
 
     parent = $parent;
     if (XtIsSubclass($parent, xfwfBoardWidgetClass))
@@ -377,6 +379,8 @@ geometry is done by |set_location|.
         pw = $parent$width;
         ph = $parent$height;
     }
+    pw = max(0, pw);
+    ph = max(0, ph);
     if (flags & CWX) {
         $rel_x = 0.0;
         $abs_x = ceil(($x - px)/$hunit);

@@ -3,11 +3,11 @@
  */
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
-#line 477 "XWidgets/xwBoard.w"
+#line 481 "XWidgets/xwBoard.w"
 #include <stdio.h>
-#line 478 "XWidgets/xwBoard.w"
+#line 482 "XWidgets/xwBoard.w"
 #include <X11/Shell.h>
-#line 479 "XWidgets/xwBoard.w"
+#line 483 "XWidgets/xwBoard.w"
 #include <ctype.h>
 #include <./xwBoardP.h>
 static void _resolve_inheritance(
@@ -73,17 +73,17 @@ static void get_core_geometry(
 Widget,Position *,Position *,Dimension *,Dimension *
 #endif
 );
-#line 365 "XWidgets/xwBoard.w"
+#line 367 "XWidgets/xwBoard.w"
 static void set_location(
 #if NeedFunctionPrototypes
 Widget,unsigned  int 
 #endif
 );
-#line 406 "XWidgets/xwBoard.w"
+#line 410 "XWidgets/xwBoard.w"
 #define skip_blanks(s) while (isspace (*s ))s ++
 
 
-#line 412 "XWidgets/xwBoard.w"
+#line 416 "XWidgets/xwBoard.w"
 #define strtonum(t, n) do {\
         while ((*(t)) && !isdigit(*(t)) && *(t) != '.') (t)++;\
         for ((n) = 0; isdigit(*t); (t)++)\
@@ -91,17 +91,17 @@ Widget,unsigned  int
     }while (0 )
 
 
-#line 424 "XWidgets/xwBoard.w"
+#line 428 "XWidgets/xwBoard.w"
 #define strtofrac(t, n, factor) for ((factor )=1.0 ,(n )=0 ,(t )++;isdigit (*(t ));(t )++,(factor )/=10.0 )(n )=10 *(n )+*(t )-'0'
 
 
-#line 428 "XWidgets/xwBoard.w"
+#line 432 "XWidgets/xwBoard.w"
 static String  scan(
 #if NeedFunctionPrototypes
 String ,Position *,float *
 #endif
 );
-#line 462 "XWidgets/xwBoard.w"
+#line 466 "XWidgets/xwBoard.w"
 static void interpret_location(
 #if NeedFunctionPrototypes
 Widget
@@ -139,7 +139,7 @@ static void get_core_geometry(self,x,y,width,height)Widget self;Position * x;Pos
 {
     Widget parent;
     Position px, py;
-    Dimension pw, ph, minsize;
+    int pw, ph, minsize;
     float h;
 
     parent = ((XfwfBoardWidget)self)->core.parent;
@@ -151,6 +151,8 @@ static void get_core_geometry(self,x,y,width,height)Widget self;Position * x;Pos
         pw = ((XfwfBoardWidget)parent)->core.width;
         ph = ((XfwfBoardWidget)parent)->core.height;
     }
+    pw = max(0, pw);
+    ph = max(0, ph);
 
     *x = ceil(((XfwfBoardWidget)self)->xfwfBoard.rel_x * pw + ((XfwfBoardWidget)self)->xfwfBoard.abs_x * ((XfwfBoardWidget)self)->xfwfBoard.hunit) + px;
     *y = ceil(((XfwfBoardWidget)self)->xfwfBoard.rel_y * ph + ((XfwfBoardWidget)self)->xfwfBoard.abs_y * ((XfwfBoardWidget)self)->xfwfBoard.vunit) + py;
@@ -161,20 +163,20 @@ static void get_core_geometry(self,x,y,width,height)Widget self;Position * x;Pos
     h = ceil(((XfwfBoardWidget)self)->xfwfBoard.rel_height * ph + ((XfwfBoardWidget)self)->xfwfBoard.abs_height * ((XfwfBoardWidget)self)->xfwfBoard.vunit);
     *height = h < minsize ? minsize : h;
 }
-#line 365 "XWidgets/xwBoard.w"
+#line 367 "XWidgets/xwBoard.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 365 "XWidgets/xwBoard.w"
+#line 367 "XWidgets/xwBoard.w"
 static void set_location(Widget self,unsigned  int  flags)
 #else
-#line 365 "XWidgets/xwBoard.w"
+#line 367 "XWidgets/xwBoard.w"
 static void set_location(self,flags)Widget self;unsigned  int  flags;
 #endif
-#line 366 "XWidgets/xwBoard.w"
+#line 368 "XWidgets/xwBoard.w"
 {
     Widget parent;
     Position px, py;
-    Dimension pw, ph;
+    int pw, ph;
 
     parent = ((XfwfBoardWidget)self)->core.parent;
     if (XtIsSubclass(((XfwfBoardWidget)self)->core.parent, xfwfBoardWidgetClass))
@@ -185,6 +187,8 @@ static void set_location(self,flags)Widget self;unsigned  int  flags;
         pw = ((XfwfBoardWidget)parent)->core.width;
         ph = ((XfwfBoardWidget)parent)->core.height;
     }
+    pw = max(0, pw);
+    ph = max(0, ph);
     if (flags & CWX) {
         ((XfwfBoardWidget)self)->xfwfBoard.rel_x = 0.0;
         ((XfwfBoardWidget)self)->xfwfBoard.abs_x = ceil((((XfwfBoardWidget)self)->core.x - px)/((XfwfBoardWidget)self)->xfwfBoard.hunit);
@@ -202,16 +206,16 @@ static void set_location(self,flags)Widget self;unsigned  int  flags;
         ((XfwfBoardWidget)self)->xfwfBoard.abs_height = ceil(((XfwfBoardWidget)self)->core.height/((XfwfBoardWidget)self)->xfwfBoard.vunit);
     }
 }
-#line 428 "XWidgets/xwBoard.w"
+#line 432 "XWidgets/xwBoard.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 428 "XWidgets/xwBoard.w"
+#line 432 "XWidgets/xwBoard.w"
 static String  scan(String  s,Position * absval,float * relval)
 #else
-#line 428 "XWidgets/xwBoard.w"
+#line 432 "XWidgets/xwBoard.w"
 static String  scan(s,absval,relval)String  s;Position * absval;float * relval;
 #endif
-#line 429 "XWidgets/xwBoard.w"
+#line 433 "XWidgets/xwBoard.w"
 {
     String p;
     char c;
@@ -244,16 +248,16 @@ static String  scan(s,absval,relval)String  s;Position * absval;float * relval;
         return p;
     }
 }
-#line 462 "XWidgets/xwBoard.w"
+#line 466 "XWidgets/xwBoard.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 462 "XWidgets/xwBoard.w"
+#line 466 "XWidgets/xwBoard.w"
 static void interpret_location(Widget self)
 #else
-#line 462 "XWidgets/xwBoard.w"
+#line 466 "XWidgets/xwBoard.w"
 static void interpret_location(self)Widget self;
 #endif
-#line 463 "XWidgets/xwBoard.w"
+#line 467 "XWidgets/xwBoard.w"
 {
     char *s;
 
@@ -467,8 +471,8 @@ static void set_abs_location(self,flags,x,y,w,h)Widget self;unsigned  int  flags
     if ((flags & (CWX | CWY | CWWidth | CWHeight)) == 0) return;
     if (flags & CWX) ((XfwfBoardWidget)self)->core.x = x;
     if (flags & CWY) ((XfwfBoardWidget)self)->core.y = y;
-    if (flags & CWWidth) ((XfwfBoardWidget)self)->core.width = w;
-    if (flags & CWHeight) ((XfwfBoardWidget)self)->core.height = h;
+    if (flags & CWWidth) ((XfwfBoardWidget)self)->core.width = max(1, w);
+    if (flags & CWHeight) ((XfwfBoardWidget)self)->core.height = max(1, h);
     set_location(self, flags);
     generate_location(self);
 }

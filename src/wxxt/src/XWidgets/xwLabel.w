@@ -1,6 +1,6 @@
 # Version 2.1 for FWF V4.0
 #
-# $Id: Label.w,v 1.1 1996/01/10 14:57:42 markus Exp $
+# $Id: xwLabel.w,v 1.1.1.1 1997/12/22 17:29:02 mflatt Exp $
 
 @class XfwfLabel (XfwfBoard) @file=xwLabel
 
@@ -163,14 +163,14 @@ is set.
 @proc set_label($, String newlabel)
 {
     Position x, y;
-    Dimension w, h;
+    int w, h;
 
     XtFree($label);
     $label = XtNewString(newlabel);
     count_lines($);
     if (XtIsRealized($)) {
 	$compute_inside($, &x, &y, &w, &h);
-	XClearArea(XtDisplay($), XtWindow($), x, y, w, h, True);
+	XClearArea(XtDisplay($), XtWindow($), x, y, max(w, 0), max(h, 0), True);
 	/* $_expose($, NULL, NULL); */
     }
 }
@@ -188,7 +188,6 @@ updated.
 {
     Boolean need_redisplay = False, need_count = False;
     Position x, y;
-    Dimension w, h, wd, ht;
 
     if ($background_pixel != $old$background_pixel)
 	if ($graygc) make_graygc($);
@@ -233,11 +232,12 @@ updated.
 	need_redisplay = True;
     }
     if (need_count && $shrinkToFit) {
+        int w, h, wd, ht;
 	$compute_inside($, &x, &y, &w, &h);
 	wd = $label_width + $width - w;
 	ht = $label_height + $height - h;
 	if (wd != $width || ht != $height) {
-	    $set_abs_location($, CWWidth | CWHeight, 0, 0, wd, ht);
+	    $set_abs_location($, CWWidth | CWHeight, 0, 0, max(1, wd), max(1, ht));
 	    need_redisplay = True;
 	}
     }
@@ -252,7 +252,7 @@ routines to actually create them.
 @proc initialize
 {
     Position x, y;
-    Dimension w, h, wd, ht;
+    int w, h, wd, ht;
 
     if ($label) $label = XtNewString($label);
     count_lines($);
@@ -265,7 +265,7 @@ routines to actually create them.
 	$compute_inside($, &x, &y, &w, &h);
 	wd = $label_width + $width - w;
 	ht = $label_height + $height - h;
-	$set_abs_location($, CWWidth | CWHeight, 0, 0, wd, ht);
+	$set_abs_location($, CWWidth | CWHeight, 0, 0, max(1, wd), max(1, ht));
     }
 }
 
@@ -340,9 +340,12 @@ the |rv_gc| GC.
     #_expose($, event, region);
     reg = NULL;
     if ($label != NULL || $pixmap != 0) {
-	$compute_inside($, &rect.x, &rect.y, &rect.width, &rect.height);
-	rect.x += $leftMargin;  rect.width -= $leftMargin + $rightMargin;
-	rect.y += $topMargin;  rect.height -= $topMargin + $bottomMargin;
+	int w, h;
+	$compute_inside($, &rect.x, &rect.y, &w, &h);
+	rect.x += $leftMargin;  w -= $leftMargin + $rightMargin;
+	rect.y += $topMargin;  h -= $topMargin + $bottomMargin;
+	rect.width = max(0, w);
+	rect.height = max(0, h);
 	reg = XCreateRegion();
 	XUnionRectWithRegion(&rect, reg, reg);
 	if (region != NULL) XIntersectRegion(region, reg, reg);

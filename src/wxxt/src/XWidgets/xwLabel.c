@@ -3,9 +3,9 @@
  */
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
-#line 499 "XWidgets/xwLabel.w"
+#line 502 "XWidgets/xwLabel.w"
 #include <stdio.h>
-#line 500 "XWidgets/xwLabel.w"
+#line 503 "XWidgets/xwLabel.w"
 #include <xwTabString.h>
 #include <./xwLabelP.h>
 static void _resolve_inheritance(
@@ -49,34 +49,34 @@ static void _expose(
 Widget,XEvent *,Region 
 #endif
 );
-#line 415 "XWidgets/xwLabel.w"
+#line 418 "XWidgets/xwLabel.w"
 static void make_gc(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 446 "XWidgets/xwLabel.w"
+#line 449 "XWidgets/xwLabel.w"
 static void make_graygc(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 462 "XWidgets/xwLabel.w"
+#line 465 "XWidgets/xwLabel.w"
 static void count_lines(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 415 "XWidgets/xwLabel.w"
+#line 418 "XWidgets/xwLabel.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 415 "XWidgets/xwLabel.w"
+#line 418 "XWidgets/xwLabel.w"
 static void make_gc(Widget self)
 #else
-#line 415 "XWidgets/xwLabel.w"
+#line 418 "XWidgets/xwLabel.w"
 static void make_gc(self)Widget self;
 #endif
-#line 416 "XWidgets/xwLabel.w"
+#line 419 "XWidgets/xwLabel.w"
 {
     XtGCMask mask;
     XGCValues values;
@@ -102,16 +102,16 @@ static void make_gc(self)Widget self;
     values.function = GXcopy;
     ((XfwfLabelWidget)self)->xfwfLabel.hl_gc = XtGetGC(self, mask, &values);
 }
-#line 446 "XWidgets/xwLabel.w"
+#line 449 "XWidgets/xwLabel.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 446 "XWidgets/xwLabel.w"
+#line 449 "XWidgets/xwLabel.w"
 static void make_graygc(Widget self)
 #else
-#line 446 "XWidgets/xwLabel.w"
+#line 449 "XWidgets/xwLabel.w"
 static void make_graygc(self)Widget self;
 #endif
-#line 447 "XWidgets/xwLabel.w"
+#line 450 "XWidgets/xwLabel.w"
 {
     XtGCMask mask;
     XGCValues values;
@@ -123,16 +123,16 @@ static void make_graygc(self)Widget self;
     mask = GCForeground | GCStipple | GCFillStyle;
     ((XfwfLabelWidget)self)->xfwfLabel.graygc = XtGetGC(self, mask, &values);
 }
-#line 462 "XWidgets/xwLabel.w"
+#line 465 "XWidgets/xwLabel.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 462 "XWidgets/xwLabel.w"
+#line 465 "XWidgets/xwLabel.w"
 static void count_lines(Widget self)
 #else
-#line 462 "XWidgets/xwLabel.w"
+#line 465 "XWidgets/xwLabel.w"
 static void count_lines(self)Widget self;
 #endif
-#line 463 "XWidgets/xwLabel.w"
+#line 466 "XWidgets/xwLabel.w"
 {
     String p, s;
     int w;
@@ -302,14 +302,14 @@ static void set_label(self,newlabel)Widget self;String  newlabel;
 #line 164 "XWidgets/xwLabel.w"
 {
     Position x, y;
-    Dimension w, h;
+    int w, h;
 
     XtFree(((XfwfLabelWidget)self)->xfwfLabel.label);
     ((XfwfLabelWidget)self)->xfwfLabel.label = XtNewString(newlabel);
     count_lines(self);
     if (XtIsRealized(self)) {
 	((XfwfLabelWidgetClass)self->core.widget_class)->xfwfCommon_class.compute_inside(self, &x, &y, &w, &h);
-	XClearArea(XtDisplay(self), XtWindow(self), x, y, w, h, True);
+	XClearArea(XtDisplay(self), XtWindow(self), x, y, max(w, 0), max(h, 0), True);
 	/* $_expose($, NULL, NULL); */
     }
 }
@@ -326,7 +326,6 @@ static Boolean  set_values(old,request,self,args,num_args)Widget  old;Widget  re
 {
     Boolean need_redisplay = False, need_count = False;
     Position x, y;
-    Dimension w, h, wd, ht;
 
     if (((XfwfLabelWidget)self)->core.background_pixel != ((XfwfLabelWidget)old)->core.background_pixel)
 	if (((XfwfLabelWidget)self)->xfwfLabel.graygc) make_graygc(self);
@@ -371,11 +370,12 @@ static Boolean  set_values(old,request,self,args,num_args)Widget  old;Widget  re
 	need_redisplay = True;
     }
     if (need_count && ((XfwfLabelWidget)self)->xfwfLabel.shrinkToFit) {
+        int w, h, wd, ht;
 	((XfwfLabelWidgetClass)self->core.widget_class)->xfwfCommon_class.compute_inside(self, &x, &y, &w, &h);
 	wd = ((XfwfLabelWidget)self)->xfwfLabel.label_width + ((XfwfLabelWidget)self)->core.width - w;
 	ht = ((XfwfLabelWidget)self)->xfwfLabel.label_height + ((XfwfLabelWidget)self)->core.height - h;
 	if (wd != ((XfwfLabelWidget)self)->core.width || ht != ((XfwfLabelWidget)self)->core.height) {
-	    ((XfwfLabelWidgetClass)self->core.widget_class)->xfwfBoard_class.set_abs_location(self, CWWidth | CWHeight, 0, 0, wd, ht);
+	    ((XfwfLabelWidgetClass)self->core.widget_class)->xfwfBoard_class.set_abs_location(self, CWWidth | CWHeight, 0, 0, max(1, wd), max(1, ht));
 	    need_redisplay = True;
 	}
     }
@@ -394,7 +394,7 @@ static void initialize(request,self,args,num_args)Widget  request;Widget self;Ar
 #line 253 "XWidgets/xwLabel.w"
 {
     Position x, y;
-    Dimension w, h, wd, ht;
+    int w, h, wd, ht;
 
     if (((XfwfLabelWidget)self)->xfwfLabel.label) ((XfwfLabelWidget)self)->xfwfLabel.label = XtNewString(((XfwfLabelWidget)self)->xfwfLabel.label);
     count_lines(self);
@@ -407,7 +407,7 @@ static void initialize(request,self,args,num_args)Widget  request;Widget self;Ar
 	((XfwfLabelWidgetClass)self->core.widget_class)->xfwfCommon_class.compute_inside(self, &x, &y, &w, &h);
 	wd = ((XfwfLabelWidget)self)->xfwfLabel.label_width + ((XfwfLabelWidget)self)->core.width - w;
 	ht = ((XfwfLabelWidget)self)->xfwfLabel.label_height + ((XfwfLabelWidget)self)->core.height - h;
-	((XfwfLabelWidgetClass)self->core.widget_class)->xfwfBoard_class.set_abs_location(self, CWWidth | CWHeight, 0, 0, wd, ht);
+	((XfwfLabelWidgetClass)self->core.widget_class)->xfwfBoard_class.set_abs_location(self, CWWidth | CWHeight, 0, 0, max(1, wd), max(1, ht));
     }
 }
 #line 272 "XWidgets/xwLabel.w"
@@ -497,9 +497,12 @@ static void _expose(self,event,region)Widget self;XEvent * event;Region  region;
     xfwfBoardClassRec.xfwfCommon_class._expose(self, event, region);
     reg = NULL;
     if (((XfwfLabelWidget)self)->xfwfLabel.label != NULL || ((XfwfLabelWidget)self)->xfwfLabel.pixmap != 0) {
-	((XfwfLabelWidgetClass)self->core.widget_class)->xfwfCommon_class.compute_inside(self, &rect.x, &rect.y, &rect.width, &rect.height);
-	rect.x += ((XfwfLabelWidget)self)->xfwfLabel.leftMargin;  rect.width -= ((XfwfLabelWidget)self)->xfwfLabel.leftMargin + ((XfwfLabelWidget)self)->xfwfLabel.rightMargin;
-	rect.y += ((XfwfLabelWidget)self)->xfwfLabel.topMargin;  rect.height -= ((XfwfLabelWidget)self)->xfwfLabel.topMargin + ((XfwfLabelWidget)self)->xfwfLabel.bottomMargin;
+	int w, h;
+	((XfwfLabelWidgetClass)self->core.widget_class)->xfwfCommon_class.compute_inside(self, &rect.x, &rect.y, &w, &h);
+	rect.x += ((XfwfLabelWidget)self)->xfwfLabel.leftMargin;  w -= ((XfwfLabelWidget)self)->xfwfLabel.leftMargin + ((XfwfLabelWidget)self)->xfwfLabel.rightMargin;
+	rect.y += ((XfwfLabelWidget)self)->xfwfLabel.topMargin;  h -= ((XfwfLabelWidget)self)->xfwfLabel.topMargin + ((XfwfLabelWidget)self)->xfwfLabel.bottomMargin;
+	rect.width = max(0, w);
+	rect.height = max(0, h);
 	reg = XCreateRegion();
 	XUnionRectWithRegion(&rect, reg, reg);
 	if (region != NULL) XIntersectRegion(region, reg, reg);

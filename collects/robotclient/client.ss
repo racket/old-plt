@@ -1,4 +1,4 @@
-(module client "mzscheme-test.ss"
+(module client mzscheme
   (require "board.ss"
            "baseline.ss"
 	   "client-parameters.ss"
@@ -10,7 +10,7 @@
       (parameterize ((current-custodian client-custodian))
         (with-handlers ((exn? (lambda (ex)
                                 (custodian-shutdown-all client-custodian)
-				;; (display (score))(newline)
+				(display (score))(newline)
                                 ;;(raise ex)
                                 (score))))
           (let-values (((input output) (tcp-connect host-name port)))

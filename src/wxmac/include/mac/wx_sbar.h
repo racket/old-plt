@@ -104,6 +104,8 @@ public:
         virtual wxWindow *EnterLeaveTarget();
 	virtual wxCursor *GetEffectiveCursor();
 
+	virtual void MaybeMoveControls();
+
 	virtual void SetScrollData // adjust scrollBar to match scroll data setting
 	(
 		wxScrollData*		scrollData,

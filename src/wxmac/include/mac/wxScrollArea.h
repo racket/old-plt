@@ -36,6 +36,8 @@ class wxScrollArea: public wxArea
 	void ShowScrolls(Bool h, Bool v);
 	void SetResizeCorner(Bool on, Bool h, Bool v);
 
+	void MaybeMoveScrollControls();
+
  private:
 	void ResetHPos(Bool leave_space);
 	void ResetVPos(Bool leave_space);

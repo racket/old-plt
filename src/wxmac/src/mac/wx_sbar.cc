@@ -423,24 +423,25 @@ void wxScrollBar::SetScrollData // adjust scrollBar to match scroll data setting
 //-----------------------------------------------------------------------------
 void wxScrollBar::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac platform only
 {
-  Rect bounds;
-
-  SetCurrentDC();
-
-  GetControlBounds(cMacControl, &bounds);
-
-  dX = bounds.left - SetOriginX;
-  dY = bounds.top - SetOriginY;
-
   if (dW || dH) {
     int clientWidth, clientHeight;
     GetClientSize(&clientWidth, &clientHeight);
     ::SizeControl(cMacControl, clientWidth, clientHeight);
   }
 
-  if (dX || dY) {
-    ::MoveControl(cMacControl, SetOriginX, SetOriginY);
+  if (dX || dY)
+    MaybeMoveControls();
+}
+
+void wxScrollBar::MaybeMoveControls()
+{
+  if (cMacControl) {
+    int x, y;
+    GetWinOrigin(&x, &y);
+    MoveControl(cMacControl, x, y);
   }
+
+  wxWindow::MaybeMoveControls();
 }
 
 

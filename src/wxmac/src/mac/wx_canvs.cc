@@ -248,6 +248,8 @@ void wxCanvas::MaybeMoveControls()
 
   if (canvas_border)
     canvas_border->cBorder->MaybeMoveControls();
+  if (cScrollArea)
+    cScrollArea->MaybeMoveScrollControls();
 }
 
 
@@ -586,6 +588,15 @@ void wxCanvas::EnableScrolling(Bool x_scroll, Bool y_scroll)
       hScrollingEnabled = x_scroll;
       vScrollingEnabled = y_scroll;
       cScrollArea->ShowScrolls(x_scroll, y_scroll);
+      
+      if (canvas_border && !(cStyle & wxCONTROL_BORDER)) {
+	int direction = wxAll;
+	if (vScrollingEnabled && (cStyle & wxVSCROLL))
+	  direction -= wxRight;
+	if (hScrollingEnabled && (cStyle & wxHSCROLL))
+	  direction -= wxBottom;
+	canvas_border->SetMargin(1, direction);
+      }
     }
   }
 }

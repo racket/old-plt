@@ -125,3 +125,11 @@ void wxScrollArea::SetResizeCorner(Bool on, Bool h, Bool v)
     ResetVPos((h && v) || on);
   }
 }
+
+void wxScrollArea::MaybeMoveScrollControls()
+{
+  if (cVScrollBar)
+    cVScrollBar->MaybeMoveControls();
+  if (cHScrollBar)
+    cHScrollBar->MaybeMoveControls();
+}

@@ -1096,7 +1096,8 @@
 	    (lambda () #f)
 	    env)
 	  (if (compile-auto-cond-else)
-	    (pat:match-and-rewrite expr m&e-3 out-pattern-3-no-error kwd-1 env)
+	    (pat:match-and-rewrite expr m&e-3
+	      out-pattern-3-no-error kwd-1 env)
 	    (pat:match-and-rewrite expr m&e-3
 	      out-pattern-3-signal-error kwd-1 env))
 	  (pat:match-and-rewrite expr m&e-4 out-pattern-4 kwd-1 env)
@@ -1119,12 +1120,12 @@
 	    (out-pattern-1 (if (language<=? 'structured) 'b '(begin b ...)))
 	    (kwd-2 '())
 	    (in-pattern-2 '(_ val))
-	    (out-pattern-2 (if (or (language<=? 'structured)
-				 param:unmatched-cond/case-is-error?)
-			     '(#%raise (#%make-exn:else
-					 "no matching clause"
-					 ((debug-info-handler))))
-			     '(#%void)))
+	    (out-pattern-2-signal-error
+	      '(#%raise (#%make-exn:else
+			  "no matching clause"
+			  ((debug-info-handler)))))
+	    (out-pattern-2-no-error
+	      '(#%void))
 	    (in-pattern-3 (if (language<=? 'structured)
 			    '(_ val ((keys ...) b) rest ...)
 			    '(_ val ((keys ...) b ...) rest ...)))
@@ -1142,7 +1143,11 @@
 	    (m&e-3 (pat:make-match&env in-pattern-3 kwd-2)))
       (lambda (expr env)
 	(or (pat:match-and-rewrite expr m&e-1 out-pattern-1 kwd-1 env)
-	  (pat:match-and-rewrite expr m&e-2 out-pattern-2 kwd-2 env)
+	  (if (compile-auto-cond-else)
+	    (pat:match-and-rewrite expr m&e-2
+	      out-pattern-2-no-error kwd-2 env)
+	    (pat:match-and-rewrite expr m&e-2
+	      out-pattern-2-signal-error kwd-2 env))
 	  (pat:match-and-rewrite expr m&e-3 out-pattern-3 kwd-2 env)
 	  (static-error expr "Malformed case")))))
 

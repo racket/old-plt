@@ -1418,7 +1418,7 @@
 	       ;; (continue) -> continue;
 	       [(vm:continue? ast)
 		(unless (compiler:option:disable-interrupts)
-		  (emit-expr "_scheme_check_for_break_wp(1, pr);~n"))
+		  (emit-expr "SCHEME_USE_FUEL(1);~n"))
 		(emit-expr "continue")]
 	       
 	       ;; use NULL instead of tail_buf if no args
@@ -1440,7 +1440,7 @@
 		;; be nice to threads & user breaks:
 		(unless (compiler:option:disable-interrupts)
 		  (emit-indentation)
-		  (emit "_scheme_check_for_break_wp(1, pr);~n"))
+		  (emit "SCHEME_USE_FUEL(1);~n"))
 		(emit-indentation)
 					; unless its to a variable arity function! ARGH
 		(let* ([label (vm:tail-call-label ast)]

@@ -57,6 +57,18 @@
 	  (apply #%+ x y args))
 	#%+))
 
+  (define /
+    (if (params:<=-at-least-two-args)
+	(lambda (x y . args)
+	  (apply #%/ x y args))
+	#%/))
+
+  (define *
+    (if (params:<=-at-least-two-args)
+	(lambda (x y . args)
+	  (apply #%* x y args))
+	#%*))
+
   (define >=
     (if (params:<=-at-least-two-args)
 	(lambda (x y . args)

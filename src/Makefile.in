@@ -1,0 +1,10 @@
+
+# Builds MzScheme and MrEd
+
+all: mz @MAKE_MRED@
+
+mz:
+	cd mzscheme; $(MAKE)
+
+mr:
+	cd mred; $(MAKE)

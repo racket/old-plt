@@ -31,10 +31,13 @@
   (sym<? (cadr a) (cadr b)))
 
 (define (get-one f)
-  (with-input-from-file f read))
+  (with-input-from-file 
+      (build-path (current-load-relative-directory) f) 
+    read))
 
 (define (get-all f)
-  (with-input-from-file f
+  (with-input-from-file
+      (build-path (current-load-relative-directory) f) 
     (lambda () 
       (let loop ()
 	(let ([r (read)])

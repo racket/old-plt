@@ -1,0 +1,669 @@
+
+srcdir = @srcdir@
+
+PLTSRCDIR = $(srcdir)/../..
+include ../../mred/Make.env
+
+WXDIR = ..
+
+#------------------------------------------------------------------------------
+# libraryname
+#------------------------------------------------------------------------------
+
+LIBNAME = wx_xt
+
+#------------------------------------------------------------------------------
+# objectfiles this directory
+#   CCOBJS : C++    files
+#   COBJS  : C      files
+#   WOBJS  : Wbuild files
+#------------------------------------------------------------------------------
+
+CCOBJS =\
+ Application/AppMain.o\
+ Application/GlobalData.o\
+\
+ DataStructures/Object.o\
+ DataStructures/TypeTree.o\
+ DataStructures/wb_hash.o\
+ DataStructures/wb_list.o\
+\
+ DeviceContexts/DC.o\
+ DeviceContexts/MemoryDC.o\
+ DeviceContexts/PSDC.o\
+ DeviceContexts/WindowDC.o\
+\
+ Dialogs/FileDialog.o\
+ Dialogs/MessageBox.o\
+\
+ EventHandling/wb_sysev.o\
+ EventHandling/wb_stdev.o\
+ EventHandling/EvtHandler.o\
+\
+ GDI-Classes/Bitmap.o\
+ GDI-Classes/Colour.o\
+ GDI-Classes/Font.o\
+ GDI-Classes/FontDirectory.o\
+ GDI-Classes/Pen+Brush.o\
+\
+ Misc/Clipboard.o\
+ Misc/Timer.o\
+\
+ Utilities/Application.o\
+ Utilities/Assert.o\
+ Utilities/BusyCursor.o\
+ Utilities/Date+Time.o\
+ Utilities/Directory.o\
+ Utilities/Error.o\
+ Utilities/GDI.o\
+ Utilities/Home.o\
+ Utilities/Misc.o\
+ Utilities/Net.o\
+ Utilities/Path.o\
+ Utilities/Resources.o\
+ Utilities/String.o\
+ Utilities/TempFile.o\
+\
+ Windows/Button.o\
+ Windows/Canvas.o\
+ Windows/CheckBox.o\
+ Windows/Choice.o\
+ Windows/DialogBox.o\
+ \
+ Windows/Frame.o\
+ Windows/Gauge.o\
+ Windows/Item.o\
+ Windows/Layout.o\
+ Windows/ListBox.o\
+ Windows/Menu.o\
+ Windows/MenuBar.o\
+ Windows/Message.o\
+ Windows/Panel.o\
+ Windows/RadioBox.o\
+ ${WXRESOURCES}\
+ ${SCROLLBAR}\
+ Windows/Slider.o\
+ ${STATICITEMS}\
+ ${TOOLBAR}\
+ ${VIRTLISTBOX}\
+ Windows/Window.o\
+
+COBJS =\
+ XWidgets/xwTabString.o\
+ XWidgets/xwTools3d.o\
+ XWidgets/xwscroll.o\
+\
+ XWidgets/xwMenu.o\
+\
+ XWidgets/xwMultiList.o\
+ XWidgets/xwScrollText.o\
+
+WOBJS =\
+ XWidgets/xwCommon.o\
+ XWidgets/xwFrame.o\
+ XWidgets/xwBoard.o\
+ XWidgets/xwLabel.o\
+ XWidgets/xwButton.o\
+ XWidgets/xwToggle.o\
+\
+ XWidgets/xwCanvas.o\
+ XWidgets/xwEnforcer.o\
+ XWidgets/xwGroup.o\
+ XWidgets/xwRowCol.o\
+\
+ XWidgets/xwArrow.o\
+ XWidgets/xwSlider2.o\
+ XWidgets/xwHScrollb.o\
+ XWidgets/xwVScrollb.o\
+ XWidgets/xwScrollbar.o\
+\
+ XWidgets/xwScrollWin.o\
+
+OBJS = ${COBJS} ${WOBJS} ${CCOBJS}
+
+SRCS = ${CCOBJS:.o=.cc} ${COBJS:.o=.c} ${WOBJS:.o=.c}
+
+#------------------------------------------------------------------------------
+# dependencies for wbuild widgets
+#------------------------------------------------------------------------------
+
+XWidgets/xwArrow.w.dep     = $(srcdir)/XWidgets/xwCommon.w $(srcdir)/XWidgets/xwFrame.w $(srcdir)/XWidgets/xwBoard.w \
+			 $(srcdir)/XWidgets/xwArrow.w
+XWidgets/xwBoard.w.dep     = $(srcdir)/XWidgets/xwCommon.w $(srcdir)/XWidgets/xwFrame.w $(srcdir)/XWidgets/xwBoard.w
+XWidgets/xwButton.w.dep    = $(srcdir)/XWidgets/xwCommon.w $(srcdir)/XWidgets/xwFrame.w $(srcdir)/XWidgets/xwBoard.w \
+			 $(srcdir)/XWidgets/xwLabel.w $(srcdir)/XWidgets/xwButton.w
+XWidgets/xwCanvas.w.dep    = $(srcdir)/XWidgets/xwCommon.w $(srcdir)/XWidgets/xwFrame.w $(srcdir)/XWidgets/xwBoard.w \
+			 $(srcdir)/XWidgets/xwCanvas.w
+XWidgets/xwCommon.w.dep    = $(srcdir)/XWidgets/xwCommon.w
+XWidgets/xwMenu.w.dep    = $(srcdir)/XWidgets/xwBoard.w $(srcdir)/XWidgets/xwCommon.w $(srcdir)/XWidgets/xwFrame.w \
+                         $(srcdir)/XWidgets/xwMenu.w
+XWidgets/xwEnforcer.w.dep  = $(srcdir)/XWidgets/xwCommon.w $(srcdir)/XWidgets/xwFrame.w $(srcdir)/XWidgets/xwBoard.w \
+			 $(srcdir)/XWidgets/xwEnforcer.w
+XWidgets/xwFrame.w.dep     = $(srcdir)/XWidgets/xwCommon.w $(srcdir)/XWidgets/xwFrame.w
+XWidgets/xwGroup.w.dep     = $(srcdir)/XWidgets/xwCommon.w $(srcdir)/XWidgets/xwFrame.w $(srcdir)/XWidgets/xwBoard.w \
+			 $(srcdir)/XWidgets/xwRowCol.w $(srcdir)/XWidgets/xwGroup.w
+XWidgets/xwHScrollb.w.dep  = $(srcdir)/XWidgets/xwCommon.w $(srcdir)/XWidgets/xwFrame.w $(srcdir)/XWidgets/xwBoard.w \
+			 $(srcdir)/XWidgets/xwScrollbar.w $(srcdir)/XWidgets/xwHScrollb.w
+XWidgets/xwLabel.w.dep     = $(srcdir)/XWidgets/xwCommon.w $(srcdir)/XWidgets/xwFrame.w $(srcdir)/XWidgets/xwBoard.w \
+			 $(srcdir)/XWidgets/xwLabel.w
+XWidgets/xwRowCol.w.dep    = $(srcdir)/XWidgets/xwCommon.w $(srcdir)/XWidgets/xwFrame.w $(srcdir)/XWidgets/xwBoard.w \
+			 $(srcdir)/XWidgets/xwRowCol.w
+XWidgets/xwScrollWin.w.dep = $(srcdir)/XWidgets/xwCommon.w $(srcdir)/XWidgets/xwFrame.w $(srcdir)/XWidgets/xwBoard.w \
+			 $(srcdir)/XWidgets/xwScrollWin.w
+XWidgets/xwScrollbar.w.dep = $(srcdir)/XWidgets/xwCommon.w $(srcdir)/XWidgets/xwFrame.w $(srcdir)/XWidgets/xwBoard.w \
+			 $(srcdir)/XWidgets/xwScrollbar.w
+XWidgets/xwSlider2.w.dep   = $(srcdir)/XWidgets/xwCommon.w $(srcdir)/XWidgets/xwFrame.w $(srcdir)/XWidgets/xwBoard.w \
+			 $(srcdir)/XWidgets/xwLabel.w $(srcdir)/XWidgets/xwSlider2.w
+XWidgets/xwToggle.w.dep    = $(srcdir)/XWidgets/xwCommon.w $(srcdir)/XWidgets/xwFrame.w $(srcdir)/XWidgets/xwBoard.w \
+			 $(srcdir)/XWidgets/xwLabel.w $(srcdir)/XWidgets/xwButton.w $(srcdir)/XWidgets/xwToggle.w
+XWidgets/xwVScrollb.w.dep  = $(srcdir)/XWidgets/xwCommon.w $(srcdir)/XWidgets/xwFrame.w $(srcdir)/XWidgets/xwBoard.w \
+			 $(srcdir)/XWidgets/xwScrollbar.w $(srcdir)/XWidgets/xwVScrollb.w
+
+#------------------------------------------------------------------------------
+# generated rules
+#------------------------------------------------------------------------------
+
+_WX_CXX_FLAGS = -I$(srcdir) -I$(srcdir)/XWidgets
+_WX_C_FLAGS = -I$(srcdir)/XWidgets
+
+# .SUFFIXES:
+
+# .SUFFIXES: .o .w .c .cc .h
+
+Application/%.o: $(srcdir)/Application/%.cc
+	$(CXX) -c $(CXXFLAGS) $(_WX_CXX_FLAGS) -o $@ $<
+DataStructures/%.o: $(srcdir)/DataStructures/%.cc
+	$(CXX) -c $(CXXFLAGS) $(_WX_CXX_FLAGS) -o $@ $<
+DeviceContexts/%.o: $(srcdir)/DeviceContexts/%.cc
+	$(CXX) -c $(CXXFLAGS) $(_WX_CXX_FLAGS) -o $@ $<
+Dialogs/%.o: $(srcdir)/Dialogs/%.cc
+	$(CXX) -c $(CXXFLAGS) $(_WX_CXX_FLAGS) -o $@ $<
+EventHandling/%.o: $(srcdir)/EventHandling/%.cc
+	$(CXX) -c $(CXXFLAGS) $(_WX_CXX_FLAGS) -o $@ $<
+GDI-Classes/%.o: $(srcdir)/GDI-Classes/%.cc
+	$(CXX) -c $(CXXFLAGS) $(_WX_CXX_FLAGS) -o $@ $<
+Misc/%.o: $(srcdir)/Misc/%.cc
+	$(CXX) -c $(CXXFLAGS) $(_WX_CXX_FLAGS) -o $@ $<
+Utilities/%.o: $(srcdir)/Utilities/%.cc
+	$(CXX) -c $(CXXFLAGS) $(_WX_CXX_FLAGS) -o $@ $<
+Windows/%.o: $(srcdir)/Windows/%.cc
+	$(CXX) -c $(CXXFLAGS) $(_WX_CXX_FLAGS) -o $@ $<
+
+XWidgets/%.o: $(srcdir)/XWidgets/%.c
+	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o $@ $<
+
+$(srcdir)/XWidgets/%.c: $(srcdir)/XWidgets/%.w
+	$(WBUILD) ${$<.dep}
+
+$(srcdir)/XWidgets/%.h: $(srcdir)/XWidgets/%.w
+	$(WBUILD) ${$<.dep}
+ 
+all:: lib$(LIBNAME).a
+
+lib$(LIBNAME).a: $(OBJS)
+	$(AR) $(ARFLAGS) $@ $(OBJS)
+	$(RANLIB) $@
+
+clean::
+	rm -f Application/*.o
+	rm -f DataStructures/*.o
+	rm -f DeviceContexts/*.o
+	rm -f Dialogs/*.o
+	rm -f EventHandling/*.o
+	rm -f GDI-Classes/*.o
+	rm -f Misc/*.o
+	rm -f Utilities/*.o
+	rm -f Windows/*.o
+	rm -f XWidgets/*.o
+	rm -f lib$(LIBNAME).a
+
+#------------------------------------------------------------------------------
+# dependencies
+#------------------------------------------------------------------------------
+
+Application/AppMain.o:\
+	$(srcdir)/Application/AppMain.cc \
+	$(srcdir)/DataStructures/Object.h $(srcdir)/../../wxcommon/wxGC.h $(srcdir)/../../wxcommon/wx_list.h \
+	$(srcdir)/DataStructures/PrintSetup.h $(srcdir)/Application/AppMain.h \
+	$(srcdir)/GDI-Classes/Bitmap.h $(srcdir)/GDI-Classes/Colour.h \
+	$(srcdir)/GDI-Classes/Font.h $(srcdir)/GDI-Classes/Pen+Brush.h \
+	$(srcdir)/GDI-Classes/FontDirectory.h $(srcdir)/../../wxcommon/FontDirectory.h
+
+Application/GlobalData.o:\
+	$(srcdir)/Application/GlobalData.cc \
+	$(srcdir)/DataStructures/Object.h $(srcdir)/../../wxcommon/wxGC.h $(srcdir)/../../wxcommon/wx_list.h \
+	$(srcdir)/../../wxcommon/wx_hash.h $(srcdir)/DataStructures/TypeTree.h
+
+DataStructures/Object.o:\
+	$(srcdir)/DataStructures/Object.cc \
+	$(srcdir)/DataStructures/Object.h $(srcdir)/../../wxcommon/wxGC.h $(srcdir)/../../wxcommon/wx_list.h \
+	$(srcdir)/../../wxcommon/wx_hash.h
+
+DataStructures/TypeTree.o:\
+	$(srcdir)/DataStructures/TypeTree.cc \
+	$(srcdir)/DataStructures/Object.h $(srcdir)/../../wxcommon/wxGC.h $(srcdir)/../../wxcommon/wx_list.h \
+	$(srcdir)/../../wxcommon/wx_hash.h $(srcdir)/DataStructures/TypeTree.h
+
+DataStructures/wb_hash.o:\
+	$(srcdir)/DataStructures/wb_hash.cc $(srcdir)/../../wxcommon/wb_hash.cxx \
+	$(srcdir)/DataStructures/Object.h $(srcdir)/../../wxcommon/wxGC.h $(srcdir)/../../wxcommon/wx_list.h \
+	$(srcdir)/../../wxcommon/wx_hash.h
+
+DataStructures/wb_list.o:\
+	$(srcdir)/DataStructures/wb_list.cc $(srcdir)/../../wxcommon/wb_list.cxx \
+	$(srcdir)/DataStructures/Object.h $(srcdir)/../../wxcommon/wxGC.h $(srcdir)/../../wxcommon/wx_list.h
+
+DeviceContexts/DC.o:\
+	$(srcdir)/DeviceContexts/DC.cc $(srcdir)/DataStructures/Object.h $(srcdir)/../../wxcommon/wxGC.h \
+	$(srcdir)/../../wxcommon/wx_list.h $(srcdir)/DeviceContexts/DC.h
+
+DeviceContexts/MemoryDC.o:\
+	$(srcdir)/DeviceContexts/MemoryDC.cc \
+	$(srcdir)/DataStructures/Object.h $(srcdir)/../../wxcommon/wxGC.h $(srcdir)/../../wxcommon/wx_list.h \
+	$(srcdir)/GDI-Classes/Bitmap.h $(srcdir)/GDI-Classes/Colour.h \
+	$(srcdir)/GDI-Classes/Font.h $(srcdir)/GDI-Classes/Pen+Brush.h \
+	$(srcdir)/DeviceContexts/DC.h $(srcdir)/DeviceContexts/WindowDC.h \
+	$(srcdir)/DeviceContexts/MemoryDC.h
+
+DeviceContexts/PSDC.o:\
+	$(srcdir)/DeviceContexts/PSDC.cc $(srcdir)/../../wxcommon/PSDC.cxx \
+	$(srcdir)/DataStructures/Object.h $(srcdir)/../../wxcommon/wxGC.h $(srcdir)/../../wxcommon/wx_list.h \
+	$(srcdir)/DataStructures/PrintSetup.h $(srcdir)/GDI-Classes/Bitmap.h \
+	$(srcdir)/GDI-Classes/Colour.h $(srcdir)/GDI-Classes/Font.h \
+	$(srcdir)/GDI-Classes/FontDirectory.h $(srcdir)/../../wxcommon/FontDirectory.h \
+	$(srcdir)/GDI-Classes/Pen+Brush.h $(srcdir)/DeviceContexts/DC.h \
+	$(srcdir)/DeviceContexts/PSDC.h $(srcdir)/../../wxcommon/PSDC.h
+
+DeviceContexts/WindowDC.o:\
+	$(srcdir)/DeviceContexts/WindowDC.cc \
+	$(srcdir)/DataStructures/Object.h $(srcdir)/../../wxcommon/wxGC.h $(srcdir)/../../wxcommon/wx_list.h \
+	$(srcdir)/GDI-Classes/Bitmap.h $(srcdir)/GDI-Classes/Colour.h \
+	$(srcdir)/GDI-Classes/Font.h $(srcdir)/GDI-Classes/Pen+Brush.h \
+	$(srcdir)/DeviceContexts/DC.h $(srcdir)/DeviceContexts/WindowDC.h
+
+Dialogs/FileDialog.o:\
+	$(srcdir)/Dialogs/FileDialog.cc $(srcdir)/DataStructures/Object.h $(srcdir)/../../wxcommon/wxGC.h \
+	$(srcdir)/../../wxcommon/wx_list.h \
+	$(srcdir)/EventHandling/wx_sysev.h $(srcdir)/EventHandling/wx_stdev.h $(srcdir)/EventHandling/EvtHandler.h \
+	$(srcdir)/GDI-Classes/Bitmap.h $(srcdir)/GDI-Classes/Colour.h \
+	$(srcdir)/GDI-Classes/Font.h $(srcdir)/GDI-Classes/Pen+Brush.h \
+	$(srcdir)/DeviceContexts/DC.h $(srcdir)/DeviceContexts/WindowDC.h \
+	$(srcdir)/Windows/Layout.h $(srcdir)/Windows/Window.h $(srcdir)/Windows/Panel.h \
+	$(srcdir)/Windows/Frame.h $(srcdir)/Windows/DialogBox.h $(srcdir)/Windows/Item.h \
+	$(srcdir)/Windows/Button.h $(srcdir)/Windows/ListBox.h $(srcdir)/Windows/Message.h
+
+Dialogs/MessageBox.o:\
+	$(srcdir)/Dialogs/MessageBox.cc $(srcdir)/DataStructures/Object.h $(srcdir)/../../wxcommon/wxGC.h \
+	$(srcdir)/../../wxcommon/wx_list.h $(srcdir)/EventHandling/wx_sysev.h $(srcdir)/EventHandling/wx_stdev.h \
+	$(srcdir)/EventHandling/EvtHandler.h $(srcdir)/GDI-Classes/Bitmap.h \
+	$(srcdir)/GDI-Classes/Colour.h $(srcdir)/GDI-Classes/Font.h \
+	$(srcdir)/GDI-Classes/Pen+Brush.h $(srcdir)/DeviceContexts/DC.h \
+	$(srcdir)/DeviceContexts/WindowDC.h $(srcdir)/Windows/Window.h \
+	$(srcdir)/Windows/Panel.h $(srcdir)/Windows/Frame.h $(srcdir)/Windows/DialogBox.h
+
+EventHandling/wb_stdev.o:\
+	$(srcdir)/EventHandling/wb_stdev.cc $(srcdir)/DataStructures/Object.h $(srcdir)/../../wxcommon/wxGC.h \
+	$(srcdir)/EventHandling/wx_sysev.h $(srcdir)/EventHandling/wx_stdev.h
+
+EventHandling/wb_sysev.o:\
+	$(srcdir)/EventHandling/wb_sysev.cc $(srcdir)/DataStructures/Object.h $(srcdir)/../../wxcommon/wxGC.h \
+	$(srcdir)/../../wxcommon/wx_list.h $(srcdir)/EventHandling/wx_sysev.h
+
+EventHandling/EvtHandler.o:\
+	$(srcdir)/EventHandling/EvtHandler.cc \
+	$(srcdir)/DataStructures/Object.h $(srcdir)/../../wxcommon/wxGC.h \
+	$(srcdir)/EventHandling/wx_sysev.h $(srcdir)/EventHandling/wx_stdev.h \
+	$(srcdir)/EventHandling/EvtHandler.h
+
+GDI-Classes/Bitmap.o:\
+	$(srcdir)/GDI-Classes/Bitmap.cc \
+	$(srcdir)/DataStructures/Object.h $(srcdir)/../../wxcommon/wxGC.h $(srcdir)/../../wxcommon/wx_list.h \
+	$(srcdir)/GDI-Classes/Bitmap.h $(srcdir)/GDI-Classes/Colour.h
+
+GDI-Classes/Colour.o:\
+	$(srcdir)/GDI-Classes/Colour.cc \
+	$(srcdir)/DataStructures/Object.h $(srcdir)/../../wxcommon/wxGC.h $(srcdir)/../../wxcommon/wx_list.h \
+	$(srcdir)/GDI-Classes/Colour.h
+
+GDI-Classes/Font.o:\
+	$(srcdir)/GDI-Classes/Font.cc $(srcdir)/DataStructures/Object.h $(srcdir)/../../wxcommon/wxGC.h \
+	$(srcdir)/../../wxcommon/wx_list.h $(srcdir)/GDI-Classes/Font.h \
+	$(srcdir)/GDI-Classes/FontDirectory.h $(srcdir)/../../wxcommon/FontDirectory.h
+
+GDI-Classes/FontDirectory.o:\
+	$(srcdir)/GDI-Classes/FontDirectory.cc $(srcdir)/../../wxcommon/FontDirectory.cxx \
+	$(srcdir)/DataStructures/Object.h $(srcdir)/../../wxcommon/wxGC.h $(srcdir)/../../wxcommon/wx_list.h \
+	$(srcdir)/GDI-Classes/FontDirectory.h $(srcdir)/../../wxcommon/FontDirectory.h
+
+GDI-Classes/Pen+Brush.o:\
+	$(srcdir)/GDI-Classes/Pen+Brush.cc \
+	$(srcdir)/DataStructures/Object.h $(srcdir)/../../wxcommon/wxGC.h $(srcdir)/../../wxcommon/wx_list.h \
+	$(srcdir)/GDI-Classes/Colour.h $(srcdir)/GDI-Classes/Pen+Brush.h \
+        $(srcdir)/../../wxcommon/Region.h $(srcdir)/../../wxcommon/Region.cxx
+
+Misc/Timer.o:\
+	$(srcdir)/Misc/Timer.cc $(srcdir)/DataStructures/Object.h $(srcdir)/../../wxcommon/wxGC.h \
+	$(srcdir)/Misc/Timer.h
+
+Misc/Clipboard.o:\
+	$(srcdir)/Misc/Clipboard.cc $(srcdir)/DataStructures/Object.h $(srcdir)/../../wxcommon/wxGC.h $(srcdir)/Application/GlobalData.h \
+	$(srcdir)/Misc/Clipboard.h $(srcdir)/Windows/Frame.h $(srcdir)/Windows/Window.h
+
+Utilities/Application.o:\
+	$(srcdir)/Utilities/Application.cc \
+	$(srcdir)/DataStructures/Object.h $(srcdir)/../../wxcommon/wxGC.h $(srcdir)/Application/AppMain.h
+
+Utilities/Assert.o:\
+	$(srcdir)/Utilities/Assert.cc \
+	$(srcdir)/DataStructures/Object.h $(srcdir)/../../wxcommon/wxGC.h 
+
+Utilities/BusyCursor.o:\
+	$(srcdir)/Utilities/BusyCursor.cc $(srcdir)/Application/GlobalData.h \
+	$(srcdir)/DataStructures/Object.h $(srcdir)/../../wxcommon/wxGC.h 
+
+Utilities/Date+Time.o:\
+	$(srcdir)/Utilities/Date+Time.cc \
+	$(srcdir)/DataStructures/Object.h $(srcdir)/../../wxcommon/wxGC.h 
+
+Utilities/Directory.o:\
+	$(srcdir)/Utilities/Directory.cc \
+	$(srcdir)/DataStructures/Object.h $(srcdir)/../../wxcommon/wxGC.h 
+
+Utilities/Error.o:\
+	$(srcdir)/Utilities/Error.cc \
+	$(srcdir)/DataStructures/Object.h $(srcdir)/../../wxcommon/wxGC.h 
+
+Utilities/GDI.o:\
+	$(srcdir)/Utilities/GDI.cc \
+	$(srcdir)/DataStructures/Object.h $(srcdir)/../../wxcommon/wxGC.h 
+
+Utilities/Home.o:\
+	$(srcdir)/Utilities/Home.cc \
+	$(srcdir)/DataStructures/Object.h $(srcdir)/../../wxcommon/wxGC.h 
+
+Utilities/Misc.o:\
+	$(srcdir)/Utilities/Misc.cc $(srcdir)/Application/GlobalData.h \
+	$(srcdir)/DataStructures/Object.h $(srcdir)/../../wxcommon/wxGC.h 
+
+Utilities/Net.o:\
+	$(srcdir)/Utilities/Net.cc \
+	$(srcdir)/DataStructures/Object.h $(srcdir)/../../wxcommon/wxGC.h 
+
+Utilities/Path.o:\
+	$(srcdir)/Utilities/Path.cc \
+	$(srcdir)/DataStructures/Object.h $(srcdir)/../../wxcommon/wxGC.h 
+
+Utilities/Resources.o:\
+	$(srcdir)/Utilities/Resources.cc \
+	$(srcdir)/../../wxcommon/wx_list.h \
+	$(srcdir)/DataStructures/Object.h $(srcdir)/../../wxcommon/wxGC.h 
+
+Utilities/String.o:\
+	$(srcdir)/Utilities/String.cc \
+	$(srcdir)/DataStructures/Object.h $(srcdir)/../../wxcommon/wxGC.h 
+
+Utilities/TempFile.o:\
+	$(srcdir)/Utilities/TempFile.cc \
+	$(srcdir)/DataStructures/Object.h $(srcdir)/../../wxcommon/wxGC.h 
+
+Windows/Button.o:\
+	$(srcdir)/Windows/Button.cc $(srcdir)/DataStructures/Object.h $(srcdir)/../../wxcommon/wxGC.h \
+	$(srcdir)/../../wxcommon/wx_list.h $(srcdir)/EventHandling/wx_sysev.h \
+	$(srcdir)/EventHandling/wx_stdev.h \
+	$(srcdir)/EventHandling/EvtHandler.h $(srcdir)/GDI-Classes/Bitmap.h \
+	$(srcdir)/GDI-Classes/Colour.h $(srcdir)/GDI-Classes/Font.h \
+	$(srcdir)/GDI-Classes/Pen+Brush.h $(srcdir)/DeviceContexts/DC.h \
+	$(srcdir)/DeviceContexts/WindowDC.h $(srcdir)/Windows/Window.h \
+	$(srcdir)/Windows/Panel.h $(srcdir)/Windows/Item.h $(srcdir)/Windows/Button.h
+
+Windows/Canvas.o:\
+	$(srcdir)/Windows/Canvas.cc $(srcdir)/DataStructures/Object.h $(srcdir)/../../wxcommon/wxGC.h \
+	$(srcdir)/../../wxcommon/wx_list.h $(srcdir)/EventHandling/wx_sysev.h \
+	$(srcdir)/EventHandling/wx_stdev.h \
+	$(srcdir)/EventHandling/EvtHandler.h $(srcdir)/GDI-Classes/Bitmap.h \
+	$(srcdir)/GDI-Classes/Colour.h $(srcdir)/GDI-Classes/Font.h \
+	$(srcdir)/GDI-Classes/Pen+Brush.h $(srcdir)/DeviceContexts/DC.h \
+	$(srcdir)/DeviceContexts/WindowDC.h $(srcdir)/Windows/Window.h \
+	$(srcdir)/Windows/Panel.h $(srcdir)/Windows/Item.h $(srcdir)/Windows/Canvas.h
+
+Windows/CheckBox.o:\
+	$(srcdir)/Windows/CheckBox.cc \
+	$(srcdir)/DataStructures/Object.h $(srcdir)/../../wxcommon/wxGC.h $(srcdir)/../../wxcommon/wx_list.h \
+	$(srcdir)/EventHandling/wx_sysev.h $(srcdir)/EventHandling/wx_stdev.h \
+	$(srcdir)/EventHandling/EvtHandler.h \
+	$(srcdir)/GDI-Classes/Bitmap.h $(srcdir)/GDI-Classes/Colour.h \
+	$(srcdir)/GDI-Classes/Font.h $(srcdir)/GDI-Classes/Pen+Brush.h \
+	$(srcdir)/DeviceContexts/DC.h $(srcdir)/DeviceContexts/WindowDC.h \
+	$(srcdir)/Windows/Window.h $(srcdir)/Windows/Panel.h $(srcdir)/Windows/Item.h \
+	$(srcdir)/Windows/CheckBox.h
+
+Windows/Choice.o:\
+	$(srcdir)/Windows/Choice.cc $(srcdir)/DataStructures/Object.h $(srcdir)/../../wxcommon/wxGC.h \
+	$(srcdir)/../../wxcommon/wx_list.h $(srcdir)/EventHandling/wx_sysev.h \
+	$(srcdir)/EventHandling/wx_stdev.h \
+	$(srcdir)/EventHandling/EvtHandler.h $(srcdir)/GDI-Classes/Bitmap.h \
+	$(srcdir)/GDI-Classes/Colour.h $(srcdir)/GDI-Classes/Font.h \
+	$(srcdir)/GDI-Classes/Pen+Brush.h $(srcdir)/DeviceContexts/DC.h \
+	$(srcdir)/DeviceContexts/WindowDC.h $(srcdir)/Windows/Window.h \
+	$(srcdir)/Windows/Panel.h $(srcdir)/Windows/Item.h $(srcdir)/Windows/Choice.h
+
+Windows/DialogBox.o:\
+	$(srcdir)/Windows/DialogBox.cc \
+	$(srcdir)/DataStructures/Object.h $(srcdir)/../../wxcommon/wxGC.h $(srcdir)/../../wxcommon/wx_list.h \
+	$(srcdir)/EventHandling/wx_sysev.h $(srcdir)/EventHandling/wx_stdev.h \
+	$(srcdir)/EventHandling/EvtHandler.h \
+	$(srcdir)/GDI-Classes/Bitmap.h $(srcdir)/GDI-Classes/Colour.h \
+	$(srcdir)/GDI-Classes/Font.h $(srcdir)/GDI-Classes/Pen+Brush.h \
+	$(srcdir)/DeviceContexts/DC.h $(srcdir)/DeviceContexts/WindowDC.h \
+	$(srcdir)/Windows/Window.h $(srcdir)/Windows/Panel.h $(srcdir)/Windows/Frame.h \
+	$(srcdir)/Windows/DialogBox.h
+
+Windows/Frame.o:\
+	$(srcdir)/Windows/Frame.cc $(srcdir)/DataStructures/Object.h $(srcdir)/../../wxcommon/wxGC.h \
+	$(srcdir)/../../wxcommon/wx_list.h $(srcdir)/../../wxcommon/wx_hash.h \
+	$(srcdir)/DataStructures/TypeTree.h $(srcdir)/Application/AppMain.h \
+	$(srcdir)/Application/GlobalData.h \
+	$(srcdir)/EventHandling/wx_sysev.h $(srcdir)/EventHandling/wx_stdev.h \
+	$(srcdir)/EventHandling/EvtHandler.h \
+	$(srcdir)/GDI-Classes/Bitmap.h $(srcdir)/GDI-Classes/Colour.h \
+	$(srcdir)/GDI-Classes/Font.h $(srcdir)/GDI-Classes/Pen+Brush.h \
+	$(srcdir)/DeviceContexts/DC.h $(srcdir)/DeviceContexts/WindowDC.h \
+	$(srcdir)/Windows/Layout.h $(srcdir)/Windows/Window.h $(srcdir)/Windows/Panel.h \
+	$(srcdir)/Windows/Frame.h $(srcdir)/Windows/Item.h $(srcdir)/Windows/Menu.h \
+	$(srcdir)/Windows/MenuBar.h $(srcdir)/Windows/Message.h
+
+Windows/Gauge.o:\
+	$(srcdir)/Windows/Gauge.cc $(srcdir)/DataStructures/Object.h $(srcdir)/../../wxcommon/wxGC.h \
+	$(srcdir)/../../wxcommon/wx_list.h $(srcdir)/EventHandling/wx_sysev.h \
+	$(srcdir)/EventHandling/wx_stdev.h \
+	$(srcdir)/EventHandling/EvtHandler.h $(srcdir)/GDI-Classes/Bitmap.h \
+	$(srcdir)/GDI-Classes/Colour.h $(srcdir)/GDI-Classes/Font.h \
+	$(srcdir)/GDI-Classes/Pen+Brush.h $(srcdir)/DeviceContexts/DC.h \
+	$(srcdir)/DeviceContexts/WindowDC.h $(srcdir)/Windows/Window.h \
+	$(srcdir)/Windows/Panel.h $(srcdir)/Windows/Item.h $(srcdir)/Windows/Gauge.h
+
+Windows/Item.o:\
+	$(srcdir)/Windows/Item.cc $(srcdir)/DataStructures/Object.h $(srcdir)/../../wxcommon/wxGC.h \
+	$(srcdir)/../../wxcommon/wx_list.h $(srcdir)/EventHandling/wx_sysev.h \
+	$(srcdir)/EventHandling/wx_stdev.h \
+	$(srcdir)/EventHandling/EvtHandler.h $(srcdir)/GDI-Classes/Bitmap.h \
+	$(srcdir)/GDI-Classes/Colour.h $(srcdir)/GDI-Classes/Font.h \
+	$(srcdir)/GDI-Classes/Pen+Brush.h $(srcdir)/DeviceContexts/DC.h \
+	$(srcdir)/DeviceContexts/WindowDC.h $(srcdir)/Windows/Window.h \
+	$(srcdir)/Windows/Panel.h $(srcdir)/Windows/Item.h
+
+Windows/Layout.o:\
+	$(srcdir)/Windows/Layout.cc $(srcdir)/DataStructures/Object.h $(srcdir)/../../wxcommon/wxGC.h \
+	$(srcdir)/../../wxcommon/wx_list.h $(srcdir)/../../wxcommon/wx_hash.h \
+	$(srcdir)/DataStructures/TypeTree.h $(srcdir)/EventHandling/wx_sysev.h \
+	$(srcdir)/EventHandling/wx_stdev.h \
+	$(srcdir)/EventHandling/EvtHandler.h $(srcdir)/GDI-Classes/Bitmap.h \
+	$(srcdir)/GDI-Classes/Colour.h $(srcdir)/GDI-Classes/Font.h \
+	$(srcdir)/GDI-Classes/Pen+Brush.h $(srcdir)/DeviceContexts/DC.h \
+	$(srcdir)/DeviceContexts/WindowDC.h $(srcdir)/Windows/Layout.h \
+	$(srcdir)/Windows/Window.h $(srcdir)/Windows/Panel.h $(srcdir)/Windows/Frame.h
+
+Windows/ListBox.o:\
+	$(srcdir)/Windows/ListBox.cc $(srcdir)/DataStructures/Object.h $(srcdir)/../../wxcommon/wxGC.h \
+	$(srcdir)/../../wxcommon/wx_list.h \
+	$(srcdir)/EventHandling/wx_sysev.h $(srcdir)/EventHandling/wx_stdev.h \
+	$(srcdir)/EventHandling/EvtHandler.h \
+	$(srcdir)/GDI-Classes/Bitmap.h $(srcdir)/GDI-Classes/Colour.h \
+	$(srcdir)/GDI-Classes/Font.h $(srcdir)/GDI-Classes/Pen+Brush.h \
+	$(srcdir)/DeviceContexts/DC.h $(srcdir)/DeviceContexts/WindowDC.h \
+	$(srcdir)/Windows/Window.h $(srcdir)/Windows/Panel.h $(srcdir)/Windows/Item.h \
+	$(srcdir)/Windows/ListBox.h
+
+Windows/Menu.o:\
+	$(srcdir)/Windows/Menu.cc $(srcdir)/DataStructures/Object.h $(srcdir)/../../wxcommon/wxGC.h \
+	$(srcdir)/Application/GlobalData.h \
+	$(srcdir)/../../wxcommon/wx_list.h $(srcdir)/EventHandling/wx_sysev.h \
+	$(srcdir)/EventHandling/wx_stdev.h \
+	$(srcdir)/GDI-Classes/Bitmap.h $(srcdir)/GDI-Classes/Colour.h \
+	$(srcdir)/GDI-Classes/Font.h $(srcdir)/GDI-Classes/Pen+Brush.h $(srcdir)/Windows/Menu.h
+
+Windows/MenuBar.o:\
+	$(srcdir)/Windows/MenuBar.cc $(srcdir)/DataStructures/Object.h $(srcdir)/../../wxcommon/wxGC.h \
+	$(srcdir)/../../wxcommon/wx_list.h $(srcdir)/EventHandling/wx_sysev.h \
+	$(srcdir)/EventHandling/wx_stdev.h \
+	$(srcdir)/EventHandling/EvtHandler.h $(srcdir)/GDI-Classes/Bitmap.h \
+	$(srcdir)/GDI-Classes/Colour.h $(srcdir)/GDI-Classes/Font.h \
+	$(srcdir)/GDI-Classes/Pen+Brush.h $(srcdir)/DeviceContexts/DC.h \
+	$(srcdir)/DeviceContexts/WindowDC.h $(srcdir)/Windows/Layout.h \
+	$(srcdir)/Windows/Window.h $(srcdir)/Windows/Panel.h $(srcdir)/Windows/Item.h \
+	$(srcdir)/Windows/Menu.h $(srcdir)/Windows/MenuBar.h
+
+Windows/Message.o:\
+	$(srcdir)/Windows/Message.cc $(srcdir)/DataStructures/Object.h $(srcdir)/../../wxcommon/wxGC.h \
+	$(srcdir)/../../wxcommon/wx_list.h $(srcdir)/EventHandling/wx_sysev.h \
+	$(srcdir)/EventHandling/wx_stdev.h \
+	$(srcdir)/EventHandling/EvtHandler.h $(srcdir)/GDI-Classes/Bitmap.h \
+	$(srcdir)/GDI-Classes/Colour.h $(srcdir)/GDI-Classes/Font.h \
+	$(srcdir)/GDI-Classes/Pen+Brush.h $(srcdir)/DeviceContexts/DC.h \
+	$(srcdir)/DeviceContexts/WindowDC.h $(srcdir)/Windows/Window.h \
+	$(srcdir)/Windows/Panel.h $(srcdir)/Windows/Item.h $(srcdir)/Windows/Message.h
+
+Windows/Panel.o:\
+	$(srcdir)/Windows/Panel.cc $(srcdir)/DataStructures/Object.h $(srcdir)/../../wxcommon/wxGC.h \
+	$(srcdir)/../../wxcommon/wx_list.h $(srcdir)/../../wxcommon/wx_hash.h \
+	$(srcdir)/DataStructures/TypeTree.h $(srcdir)/EventHandling/wx_sysev.h \
+	$(srcdir)/EventHandling/wx_stdev.h \
+	$(srcdir)/EventHandling/EvtHandler.h $(srcdir)/GDI-Classes/Bitmap.h \
+	$(srcdir)/GDI-Classes/Colour.h $(srcdir)/GDI-Classes/Font.h \
+	$(srcdir)/GDI-Classes/Pen+Brush.h $(srcdir)/DeviceContexts/DC.h \
+	$(srcdir)/DeviceContexts/WindowDC.h $(srcdir)/Windows/Window.h \
+	$(srcdir)/Windows/Panel.h $(srcdir)/Windows/Item.h $(srcdir)/Windows/Button.h
+
+Windows/RadioBox.o:\
+	$(srcdir)/Windows/RadioBox.cc \
+	$(srcdir)/DataStructures/Object.h $(srcdir)/../../wxcommon/wxGC.h $(srcdir)/../../wxcommon/wx_list.h \
+	$(srcdir)/EventHandling/wx_sysev.h $(srcdir)/EventHandling/wx_stdev.h \
+	$(srcdir)/EventHandling/EvtHandler.h \
+	$(srcdir)/GDI-Classes/Bitmap.h $(srcdir)/GDI-Classes/Colour.h \
+	$(srcdir)/GDI-Classes/Font.h $(srcdir)/GDI-Classes/Pen+Brush.h \
+	$(srcdir)/DeviceContexts/DC.h $(srcdir)/DeviceContexts/WindowDC.h \
+	$(srcdir)/Windows/Window.h $(srcdir)/Windows/Panel.h $(srcdir)/Windows/Item.h \
+	$(srcdir)/Windows/RadioBox.h
+
+Windows/Slider.o:\
+	$(srcdir)/Windows/Slider.cc $(srcdir)/DataStructures/Object.h $(srcdir)/../../wxcommon/wxGC.h \
+	$(srcdir)/../../wxcommon/wx_list.h $(srcdir)/EventHandling/wx_sysev.h \
+	$(srcdir)/EventHandling/wx_stdev.h \
+	$(srcdir)/EventHandling/EvtHandler.h $(srcdir)/GDI-Classes/Bitmap.h \
+	$(srcdir)/GDI-Classes/Colour.h $(srcdir)/GDI-Classes/Font.h \
+	$(srcdir)/GDI-Classes/Pen+Brush.h $(srcdir)/DeviceContexts/DC.h \
+	$(srcdir)/DeviceContexts/WindowDC.h $(srcdir)/Windows/Window.h \
+	$(srcdir)/Windows/Panel.h $(srcdir)/Windows/Item.h $(srcdir)/Windows/Slider.h
+
+Windows/Window.o:\
+	$(srcdir)/Windows/Window.cc $(srcdir)/DataStructures/Object.h $(srcdir)/../../wxcommon/wxGC.h \
+	$(srcdir)/../../wxcommon/wx_list.h $(srcdir)/../../wxcommon/wx_hash.h \
+	$(srcdir)/DataStructures/TypeTree.h $(srcdir)/EventHandling/wx_sysev.h \
+	$(srcdir)/EventHandling/wx_stdev.h \
+	$(srcdir)/EventHandling/EvtHandler.h $(srcdir)/GDI-Classes/Bitmap.h \
+	$(srcdir)/GDI-Classes/Colour.h $(srcdir)/GDI-Classes/Font.h \
+	$(srcdir)/GDI-Classes/Pen+Brush.h $(srcdir)/DeviceContexts/DC.h \
+	$(srcdir)/DeviceContexts/WindowDC.h $(srcdir)/Windows/Layout.h \
+	$(srcdir)/Windows/Window.h $(srcdir)/Windows/Menu.h
+
+XWidgets/xwTabString.o:\
+	$(srcdir)/XWidgets/xwTabString.c
+
+XWidgets/xwTools3d.o:\
+	$(srcdir)/XWidgets/xwTools3d.c
+
+XWidgets/xwscroll.o:\
+	$(srcdir)/XWidgets/xwscroll.c
+
+XWidgets/xwMenu.o:\
+	$(srcdir)/XWidgets/xwMenu.c $(srcdir)/XWidgets/xwMenu.h $(srcdir)/XWidgets/xwMenuP.h
+
+XWidgets/xwMultiList.o:\
+	$(srcdir)/XWidgets/xwMultiList.c $(srcdir)/XWidgets/xwMultiList.h $(srcdir)/XWidgets/xwMultiListP.h
+
+XWidgets/xwScrollText.o:\
+	$(srcdir)/XWidgets/xwScrollText.c $(srcdir)/XWidgets/xwScrollText.h $(srcdir)/XWidgets/xwScrollTextP.h
+
+XWidgets/xwCommon.o:	 ${XWidgets/xwCommon.w.dep} $(srcdir)/XWidgets/wxAllocColor.c
+
+XWidgets/xwFrame.o:	 ${XWidgets/xwFrame.w.dep}
+
+XWidgets/xwBoard.o:	 ${XWidgets/xwBoard.w.dep}
+
+XWidgets/xwLabel.o:	 ${XWidgets/xwLabel.w.dep}
+
+XWidgets/xwButton.o:	 ${XWidgets/xwButton.w.dep}
+
+XWidgets/xwToggle.o:	 ${XWidgets/xwToggle.w.dep}
+
+XWidgets/xwCanvas.o:	 ${XWidgets/xwCanvas.w.dep}
+
+XWidgets/xwEnforcer.o:	 ${XWidgets/xwEnforcer.w.dep}
+
+XWidgets/xwGroup.o:	 ${XWidgets/xwGroup.w.dep}
+
+XWidgets/xwRowCol.o:	 ${XWidgets/xwRowCol.w.dep}
+
+XWidgets/xwArrow.o:	 ${XWidgets/xwArrow.w.dep}
+
+XWidgets/(OBJDIR)/xwSlider2$.o:	 ${XWidgets/xwSlider2.w.dep}
+
+XWidgets/xwHScrollb.o:	 ${XWidgets/xwHScrollb.w.dep}
+
+XWidgets/xwVScrollb.o:	 ${XWidgets/xwVScrollb.w.dep}
+
+XWidgets/xwScrollbar.o:	 ${XWidgets/xwScrollbar.w.dep}
+
+XWidgets/xwScrollWin.o:	 ${XWidgets/xwScrollWin.w.dep}
+
+# -------------------------------------------------------------------------
+# common rules for all Makefiles - do not edit
+
+emptyrule::
+
+tags::
+	$(TAGS) -w *.[ch]
+	$(TAGS) -xw *.[ch] > TAGS
+
+saber:
+	# load $(ALLDEFINES) $(SRCS)
+
+osaber:
+	# load $(ALLDEFINES) $(OBJS)
+
+# -------------------------------------------------------------------------
+# empty rules for directories that do not have SUBDIRS - do not edit
+
+install::
+	@echo "install in $(CURRENT_DIR) done"
+
+install.man::
+	@echo "install.man in $(CURRENT_DIR) done"
+
+Makefiles::
+
+includes::
+
+# -------------------------------------------------------------------------
+# dependencies generated by makedepend
+

@@ -24,7 +24,7 @@ AS= @AS@ $(ABI_FLAG)
 #  if you use something other than the default ABI on your machine.
 
 # compiler options; mainly used to allow importing options
-OPTIONS=@options@
+OPTIONS=@OPTIONS@
 
 CFLAGS= -DNO_SIGNALS @CFLAGS@ $(OPTIONS) -DNO_EXECUTE_PERMISSION -DSILENT -DOLD_BLOCK_ALLOC
 # Setjmp_test may yield overly optimistic results when compiled
@@ -142,13 +142,13 @@ LIBGC_CFLAGS= -O -DNO_SIGNALS -DSILENT \
 
 CXXFLAGS= $(CFLAGS) 
 AR= ar
-RANLIB= ranlib
+RANLIB=@RANLIB@
 
 
 # Redefining srcdir allows object code for the nonPCR version of the collector
 # to be generated in different directories.  In this case, the destination directory
 # should contain a copy of the original include directory.
-srcdir = .
+srcdir = @srcdir@
 VPATH = $(srcdir)
 
 OBJS= alloc.o reclaim.o allchblk.o misc.o mach_dep.o os_dep.o mark_rts.o headers.o mark.o obj_map.o blacklst.o finalize.o new_hblk.o dbg_mlc.o malloc.o stubborn.o checksums.o solaris_threads.o irix_threads.o linux_threads.o typd_mlc.o ptr_chck.o mallocx.o solaris_pthreads.o
@@ -326,7 +326,7 @@ if_mach: $(srcdir)/if_mach.c $(srcdir)/gcconfig.h
 if_not_there: $(srcdir)/if_not_there.c
 	$(CC) $(CFLAGS) -o if_not_there $(srcdir)/if_not_there.c
 
-threadlibs: $(srcdir)/threadlibs.c $(srcdir)/gcconfig.h Makefile
+threadlibs: $(srcdir)/threadlibs.c $(srcdir)/gcconfig.h
 	$(CC) $(CFLAGS) -o threadlibs $(srcdir)/threadlibs.c
 
 clean: 

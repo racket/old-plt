@@ -2,16 +2,14 @@
 # Makefile for mzscheme basic sources
 #
 
-srcdir=@srcdir@
+srcdir = @srcdir@
 
-CC=@CC@
-PERL=@PERL@
-THREADFLAGS=@threadflags@
-OPTIONS=@options@
+CC = @CC@
+PERL = @PERL@
 
 XMAKE = $(MAKE) $(EXPORT)
 
-CFLAGS = @CFLAGS@ $(OPTIONS) $(THREADFLAGS) -I$(srcdir)/../include
+CFLAGS = @CFLAGS@ @OPTIONS@ -I$(srcdir)/../include
 
 OBJS =  salloc.o \
 	bignum.o \
@@ -91,39 +89,39 @@ mzheaders: $(srcdir)/schemex.h $(srcdir)/schemexm.h $(srcdir)/schemex.inc $(srcd
 
 mzobjects: $(OBJS)
 
-$(srcdir)/macro.inc : macro.ss sstoinc
-	if [ "$(PERL)" = '' ] ; then touch $(srcdir)/macro.inc ; else $(PERL) $(srcdir)/sstoinc < macro.ss > $(srcdir)/macro.inc ; fi
+$(srcdir)/macro.inc : $(srcdir)/macro.ss $(srcdir)/sstoinc
+	if [ "$(PERL)" = '' ] ; then touch $(srcdir)/macro.inc ; else $(PERL) $(srcdir)/sstoinc < $(srcdir)/macro.ss > $(srcdir)/macro.inc ; fi
 
-$(srcdir)/unitsig.inc : unitsig.ss sstoinc
-	if [ "$(PERL)" = '' ] ; then touch $(srcdir)/unitsig.inc ; else $(PERL) $(srcdir)/sstoinc < unitsig.ss > $(srcdir)/unitsig.inc ; fi
+$(srcdir)/unitsig.inc : $(srcdir)/unitsig.ss $(srcdir)/sstoinc
+	if [ "$(PERL)" = '' ] ; then touch $(srcdir)/unitsig.inc ; else $(PERL) $(srcdir)/sstoinc < $(srcdir)/unitsig.ss > $(srcdir)/unitsig.inc ; fi
 
-$(srcdir)/schemex.h : $(srcdir)/schemef.h makex
+$(srcdir)/schemex.h : $(srcdir)/schemef.h $(srcdir)/makex
 	if [ "$(PERL)" = '' ] ; then touch $(srcdir)/schemex.h ; else $(PERL) $(srcdir)/makex < $(srcdir)/schemef.h > $(srcdir)/schemex.h ; fi
 
-$(srcdir)/schemexm.h : $(srcdir)/schemef.h makex
+$(srcdir)/schemexm.h : $(srcdir)/schemef.h $(srcdir)/makex
 	if [ "$(PERL)" = '' ] ; then touch $(srcdir)/schemexm.h ; else $(PERL) -s -- $(srcdir)/makex -list < $(srcdir)/schemef.h > $(srcdir)/schemexm.h ; fi
 
-$(srcdir)/schemex.inc : $(srcdir)/schemef.h makex
+$(srcdir)/schemex.inc : $(srcdir)/schemef.h $(srcdir)/makex
 	if [ "$(PERL)" = '' ] ; then touch $(srcdir)/schemex.inc ; else $(PERL) -s -- $(srcdir)/makex -assign < $(srcdir)/schemef.h > $(srcdir)/schemex.inc ; fi
 
-$(srcdir)/../include/mzscheme.exp : $(srcdir)/schemef.h makex
+$(srcdir)/../include/mzscheme.exp : $(srcdir)/schemef.h $(srcdir)/makex
 	if [ "$(PERL)" = '' ] ; then touch $(srcdir)/../include/mzscheme.exp ; else $(PERL) -s -- $(srcdir)/makex -exports < $(srcdir)/schemef.h > $(srcdir)/../include/mzscheme.exp ; fi
 
-$(srcdir)/../include/mzwin.def : $(srcdir)/schemef.h makex
+$(srcdir)/../include/mzwin.def : $(srcdir)/schemef.h $(srcdir)/makex
 	if [ "$(PERL)" = '' ] ; then touch $(srcdir)/../include/mzwin.def ; else $(PERL) -s -- $(srcdir)/makex -winex < $(srcdir)/schemef.h > $(srcdir)/../include/mzwin.def ; fi
 
-$(srcdir)/../include/gmzwin.def : $(srcdir)/schemef.h makex
+$(srcdir)/../include/gmzwin.def : $(srcdir)/schemef.h $(srcdir)/makex
 	if [ "$(PERL)" = '' ] ; then touch $(srcdir)/../include/gmzwin.def ; else $(PERL) -s -- $(srcdir)/makex -gwinex < $(srcdir)/schemef.h > $(srcdir)/../include/gmzwin.def ; fi
 
-schsys.h : sysname
+schsys.h : $(srcdir)/sysname
 	echo -n "#define SCHEME_PLATFORM_LIBRARY_SUBPATH " > schsys.h
-	./sysname >> schsys.h
+	$(srcdir)/sysname >> schsys.h
 
 depend:
 	makedepend -- $(CFLAGS) -- $(SRCS)
 
 clean:
-	/bin/rm -f *.o *~ Makefile.bak schsys.h
+	/bin/rm -f *.o schsys.h
 
 salloc.o: $(srcdir)/salloc.c
 	$(CC) $(CFLAGS) -c $(srcdir)/salloc.c -o salloc.o

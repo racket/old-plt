@@ -1,0 +1,63 @@
+# Makefile for image example (UNIX).
+
+srcdir = @srcdir@
+
+# All common UNIX compiler flags and options are now in
+# this central makefile.
+PLTSRCDIR = $(srcdir)/../../../..
+include ../../../../mred/Make.env
+
+IMAGELIB = libimage$(GUISUFFIX).a
+OBJECTS = wx_image.$(OBJSUFF) wx_img.$(OBJSUFF) wx_gif.$(OBJSUFF) wx_gifwr.$(OBJSUFF) \
+          wx_gam.$(OBJSUFF) wx_pbm.$(OBJSUFF) wx_24to8.$(OBJSUFF) wx_pm.$(OBJSUFF) \
+          wx_xbm.$(OBJSUFF) wx_bmp.$(OBJSUFF) wx_pcx.$(OBJSUFF)
+
+GLOBALDEPS = $(srcdir)/../../../src/DataStructures/Object.h $(srcdir)/../../../../wxcommon/wxGC.h
+
+ICPPFLAGS = $(CPPFLAGS) -I$(srcdir)
+
+all:	$(IMAGELIB)
+
+.SUFFIXES:
+
+$(IMAGELIB): $(OBJECTS)	
+	rm -f $@
+	$(AR) $(ARFLAGS) $@ $(OBJECTS)
+	$(RANLIB) $@
+
+wx_image.$(OBJSUFF):	$(srcdir)/wx_image.$(SRCSUFF) $(srcdir)/wx_image.h $(srcdir)/wx_imgx.h $(GLOBALDEPS)
+	$(CXX) -c $(ICPPFLAGS) -o $@ $(srcdir)/wx_image.$(SRCSUFF)
+
+
+wx_img.$(OBJSUFF):	$(srcdir)/wx_img.$(SRCSUFF) $(srcdir)/wx_image.h $(srcdir)/wx_imgx.h $(GLOBALDEPS)
+	$(CXX) -c $(ICPPFLAGS) -o $@ $(srcdir)/wx_img.$(SRCSUFF)
+
+wx_gif.$(OBJSUFF):	$(srcdir)/wx_gif.$(SRCSUFF) $(srcdir)/wx_image.h $(srcdir)/wx_imgx.h $(GLOBALDEPS)
+	$(CXX) -c $(ICPPFLAGS) -o $@ $(srcdir)/wx_gif.$(SRCSUFF)
+
+wx_gifwr.$(OBJSUFF):	$(srcdir)/wx_gifwr.$(SRCSUFF) $(srcdir)/wx_image.h $(srcdir)/wx_imgx.h $(GLOBALDEPS)
+	$(CXX) -c $(ICPPFLAGS) -o $@ $(srcdir)/wx_gifwr.$(SRCSUFF)
+
+wx_gam.$(OBJSUFF):	$(srcdir)/wx_gam.$(SRCSUFF) $(srcdir)/wx_image.h $(srcdir)/wx_imgx.h $(GLOBALDEPS)
+	$(CXX) -c $(ICPPFLAGS) -o $@ $(srcdir)/wx_gam.$(SRCSUFF)
+
+wx_pbm.$(OBJSUFF):	$(srcdir)/wx_pbm.$(SRCSUFF) $(srcdir)/wx_image.h $(srcdir)/wx_imgx.h $(GLOBALDEPS)
+	$(CXX) -c $(ICPPFLAGS) -o $@ $(srcdir)/wx_pbm.$(SRCSUFF)
+
+wx_bmp.$(OBJSUFF):	$(srcdir)/wx_bmp.$(SRCSUFF) $(srcdir)/wx_image.h $(srcdir)/wx_imgx.h $(GLOBALDEPS)
+	$(CXX) -c $(ICPPFLAGS) -o $@ $(srcdir)/wx_bmp.$(SRCSUFF)
+
+wx_pcx.$(OBJSUFF):	$(srcdir)/wx_pcx.$(SRCSUFF) $(srcdir)/wx_image.h $(srcdir)/wx_imgx.h $(GLOBALDEPS)
+	$(CXX) -c $(ICPPFLAGS) -o $@ $(srcdir)/wx_pcx.$(SRCSUFF)
+
+wx_xbm.$(OBJSUFF):	$(srcdir)/wx_xbm.$(SRCSUFF) $(srcdir)/wx_image.h $(srcdir)/wx_imgx.h $(GLOBALDEPS)
+	$(CXX) -c $(ICPPFLAGS) -o $@ $(srcdir)/wx_xbm.$(SRCSUFF)
+
+wx_pm.$(OBJSUFF):	$(srcdir)/wx_pm.$(SRCSUFF) $(srcdir)/wx_image.h $(srcdir)/wx_imgx.h $(GLOBALDEPS)
+	$(CXX) -c $(ICPPFLAGS) -o $@ $(srcdir)/wx_pm.$(SRCSUFF)
+
+wx_24to8.$(OBJSUFF):	$(srcdir)/wx_24to8.$(SRCSUFF) $(srcdir)/wx_image.h $(srcdir)/wx_imgx.h $(GLOBALDEPS)
+	$(CXX) -c $(ICPPFLAGS) -o $@ $(srcdir)/wx_24to8.$(SRCSUFF)
+
+cleaneach:
+	rm -f $(OBJECTS) $(IMAGELIB) core

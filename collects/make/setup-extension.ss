@@ -6,7 +6,8 @@
 	   (lib "file.ss" "dynext")
 	   (lib "file.ss")
 	   (lib "list.ss")
-	   (lib "process.ss"))
+	   (lib "process.ss")
+	   (rename (lib "plthome.ss" "setup") plthome* plthome))
 
   (provide pre-install
 	   with-new-flags)
@@ -114,7 +115,7 @@
       (parameterize ([make-print-checking #f])
 
 	;; Used as make dependencies:
-	(define mz-inc-dir (build-path (collection-path "mzscheme") 'up 'up "include"))
+	(define mz-inc-dir (build-path plthome* "include"))
 	(define headers (map (lambda (name)
 			       (build-path mz-inc-dir name))
 			     '("scheme.h" "schvers.h" "schemef.h" "sconfig.h" "stypes.h")))

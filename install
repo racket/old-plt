@@ -148,5 +148,7 @@ fi
 
 echo
 echo "PLT installation done${didnothing}."
-echo "Run DrScheme as bin/drscheme."
-echo "For Help, select \`Help Desk' from DrScheme's \`Help' menu, or run bin/help-desk."
+if [ -f bin/drscheme ] ; then
+ echo "Run DrScheme as bin/drscheme."
+ echo "For Help, select \`Help Desk' from DrScheme's \`Help' menu, or run bin/help-desk."
+fi

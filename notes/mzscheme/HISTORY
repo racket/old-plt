@@ -1,14 +1,10 @@
 
-Version 200.3
-
+Version 201, July 2002
+Fixed bug in port reading (especially variants of read-string)
+ and file-position that follow peeks on the port
 Added exn:special-comment, expected to be used by custom input ports
  that contain non-character-based comments (e.g., the comment boxes
  soon to appear in DrScheme)
-
-Version 200.1
-
-Fixed bug in port reading (especially variants of read-string)
- and file-position that follow peeks on the port
 Windows: added special handling of "special files" (COM1, etc.);
  internally MzScheme opens the file only once to satisfy multiple
  open-input-file and open-output-file calls that have the

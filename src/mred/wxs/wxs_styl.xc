@@ -41,8 +41,8 @@
 @SYM "script" : wxSCRIPT
 @SYM "swiss" : wxSWISS
 @SYM "modern" : wxMODERN
-@SYM "teletype" : wxTELETYPE
 @SYM "system" : wxSYSTEM
+@SYM "symbol" : wxSYMBOL
 @ENDSYMBOLS
 
 @BEGINSYMBOLS weight > ONE

@@ -219,6 +219,7 @@ enum {
   wxMODERN,
   wxTELETYPE,  /* @@@@ */
   wxSYSTEM,
+  wxSYMBOL,
 
 // Proportional or Fixed width fonts (not yet used)
   wxVARIABLE   = 80,

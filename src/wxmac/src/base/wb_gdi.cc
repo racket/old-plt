@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:     August 1994
- * RCS_ID:      $Id: wb_gdi.cc,v 1.14 1999/09/17 00:42:03 mflatt Exp $
+ * RCS_ID:      $Id: wb_gdi.cc,v 1.15 1999/10/04 22:14:09 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -85,6 +85,9 @@ char *wxbFont::GetFamilyString(void)
       break;
     case wxSYSTEM:
       fam = "wxSYSTEM";
+      break;
+    case wxSYMBOL:
+      fam = "wxSYMBOL";
       break;
     default:
       fam = "wxDEFAULT";
@@ -492,11 +495,7 @@ wxInitializeStockObjects (void)
   wxFontPool = new XFontPool;
 #endif
 
-#if 1
   wxNORMAL_FONT = new wxFont (12, wxSYSTEM, wxNORMAL, wxNORMAL);
-#else
-  wxNORMAL_FONT = new wxFont (12, wxMODERN, wxNORMAL, wxNORMAL);
-#endif
   wxSMALL_FONT = new wxFont (10, wxSWISS, wxNORMAL, wxNORMAL);
   wxITALIC_FONT = new wxFont (12, wxROMAN, wxITALIC, wxNORMAL);
   wxSWISS_FONT = new wxFont (12, wxSWISS, wxNORMAL, wxNORMAL);
@@ -980,6 +979,7 @@ static WX_FAR char *font_defaults[] = {
   "FamilySwiss", "Swiss",
   "FamilyScript", "Script",
   "FamilySystem", "System",
+  "FamilySymbol", "Symbol",
 
   "AfmMedium", "",
   "AfmBold", "Bo",
@@ -1003,6 +1003,7 @@ static WX_FAR char *font_defaults[] = {
 
   "AfmSwiss__", "${AfmHelvetica}${Afm$[weight]}${Afm$[style]}",
   "AfmModern__", "${AfmCourier}${Afm$[weight]}${Afm$[style]}",
+  "AfmSymbol__", "Sym",
 
   "AfmTeletype__", "${AfmModern,$[weight],$[style]}",
 
@@ -1035,6 +1036,7 @@ static WX_FAR char *font_defaults[] = {
 
   "PostScriptSwiss__", "Helvetica${PostScript$[weight]$[style]}",
   "PostScriptModern__", "Courier${PostScript$[weight]$[style]}",
+  "PostScriptSymbol__", "Symbol",
 
   "PostScriptTeletype__", "${PostScriptModern,$[weight],$[style]}",
 
@@ -1042,52 +1044,6 @@ static WX_FAR char *font_defaults[] = {
   "PostScriptScript__", "Zapf-Chancery-MediumItalic",
 #endif
 
-#ifdef wx_x
-  "ScreenMedium", "medium",
-  "ScreenBold", "bold",
-  "ScreenLight", "light",
-  "ScreenStraight", "r",
-  "ScreenItalic", "i",
-  "ScreenSlant", "o",
-
-  /* MATTHEW: [4] "Family" -> "Base" */
-  "ScreenDefaultBase", "*-*",
-  "ScreenRomanBase", "*-times",
-  "ScreenDecorativeBase", "*-helvetica",
-  "ScreenModernBase", "*-courier",
-  "ScreenTeletypeBase", "*-lucidatypewriter", /* MATTHEW: [4] Not courier */
-  "ScreenSwissBase", "*-lucida",
-  "ScreenScriptBase", "*-zapfchancery",
-
-  /* MATTHEW: [4] Use ${ScreenStdSuffix} */
-  "ScreenStdSuffix", "-${Screen$[weight]}-${Screen$[style]}"
-    "-normal-*-*-%d-*-*-*-*-*-*",
-
-  "Screen___",
-  "-${ScreenDefaultBase}${ScreenStdSuffix}",
-  "ScreenRoman__",
-  "-${ScreenRomanBase}${ScreenStdSuffix}",
-  "ScreenDecorative__",
-  "-${ScreenDecorativeBase}${ScreenStdSuffix}",
-  "ScreenModern__",
-  "-${ScreenModernBase}${ScreenStdSuffix}",
-  "ScreenTeletype__",
-  "-${ScreenTeletypeBase}${ScreenStdSuffix}",
-  "ScreenSwiss__",
-  "-${ScreenSwissBase}${ScreenStdSuffix}",
-  "ScreenScript__",
-  "-${ScreenScriptBase}${ScreenStdSuffix}",
-#endif
-#ifdef wx_msw
-  "ScreenDefault__", "MS Sans Serif",
-  "ScreenRoman__", "Times New Roman",
-  "ScreenDecorative__", "",
-  "ScreenModern__", "Courier New",
-  "ScreenTeletype__", "${ScreenModern,$[weight],$[style]}",
-  "ScreenSwiss__", "Arial",
-  "ScreenScript__", "Script",
-#endif
-#ifdef wx_mac
   "ScreenDefault__", "applicationfont",
   "ScreenSystem__", "systemfont",
   "ScreenRoman__", "times",
@@ -1096,7 +1052,8 @@ static WX_FAR char *font_defaults[] = {
   "ScreenTeletype__", "${ScreenModern,$[weight],$[style]}",
   "ScreenSwiss__", "helvetica",
   "ScreenScript__", "geneva",
-#endif
+  "ScreenSymbol__", "symbol",
+
   NULL
 };
 
@@ -1239,9 +1196,8 @@ void wxFontNameDirectory::Initialize()
   wxTheFontNameDirectory.Initialize(wxTELETYPE, wxTELETYPE, "Teletype");
   wxTheFontNameDirectory.Initialize(wxSWISS, wxSWISS, "Swiss");
   wxTheFontNameDirectory.Initialize(wxSCRIPT, wxSCRIPT, "Script");
-#ifdef wx_mac
   wxTheFontNameDirectory.Initialize(wxSYSTEM, wxSYSTEM, "System");
-#endif
+  wxTheFontNameDirectory.Initialize(wxSYMBOL, wxSYMBOL, "Symbol");
 }
 
 typedef char *a_charptr;
@@ -1413,11 +1369,11 @@ void wxFontNameDirectory::Initialize(int fontid, int family, const char *resname
       item->family = wxSWISS;
     else if (!strcmp(fam, "Script"))
       item->family = wxSCRIPT;
-#ifdef wx_mac
     else if (!strcmp(fam, "System"))
       item->family = wxSYSTEM;
-#endif
-	delete [] fam;
+    else if (!strcmp(fam, "Symbol"))
+      item->family = wxSYMBOL;
+    delete [] fam;
   }
 
   item->name = copystring(resname);

@@ -35,6 +35,11 @@
 		 (send e save-file ""))
 	       #\S)
   (make-object separator-menu-item% file-menu)
+  (make-object menu-item% "Print..." file-menu
+	       (lambda (item event)
+		 (send e print))
+	       #\P)
+  (make-object separator-menu-item% file-menu)
   (make-object menu-item% "Close" file-menu
 	       (lambda (item event)
 		 (send f show #f))
@@ -56,8 +61,6 @@
 			     (make-object graph-snip% (list v))))))))
 
   (append-editor-font-menu-items font-menu)
-  (when (is-a? e text%)
-    (install-standard-text-bindings e))
   (send c set-editor e)
   (send f show #t))
 

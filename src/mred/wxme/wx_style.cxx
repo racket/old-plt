@@ -1359,6 +1359,10 @@ static int FamilyStandardToThis(int v)
     return wxMODERN;
   case 76:
     return wxTELETYPE;
+  case 77:
+    return wxSYSTEM;
+  case 78:
+    return wxSYMBOL;
   case 70:
   default:
     return wxDEFAULT;
@@ -1380,6 +1384,10 @@ static int FamilyThisToStandard(int v)
     return 75;
   case wxTELETYPE:
     return 76;
+  case wxSYSTEM:
+    return 77;
+  case wxSYMBOL:
+    return 78;
   case wxDEFAULT:
   default:
     return 70;

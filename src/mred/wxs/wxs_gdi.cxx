@@ -105,8 +105,8 @@ static Scheme_Object *family_wxROMAN_sym = NULL;
 static Scheme_Object *family_wxSCRIPT_sym = NULL;
 static Scheme_Object *family_wxSWISS_sym = NULL;
 static Scheme_Object *family_wxMODERN_sym = NULL;
-static Scheme_Object *family_wxTELETYPE_sym = NULL;
 static Scheme_Object *family_wxSYSTEM_sym = NULL;
+static Scheme_Object *family_wxSYMBOL_sym = NULL;
 
 static void init_symset_family(void) {
   family_wxDEFAULT_sym = scheme_intern_symbol("default");
@@ -115,12 +115,12 @@ static void init_symset_family(void) {
   family_wxSCRIPT_sym = scheme_intern_symbol("script");
   family_wxSWISS_sym = scheme_intern_symbol("swiss");
   family_wxMODERN_sym = scheme_intern_symbol("modern");
-  family_wxTELETYPE_sym = scheme_intern_symbol("teletype");
   family_wxSYSTEM_sym = scheme_intern_symbol("system");
+  family_wxSYMBOL_sym = scheme_intern_symbol("symbol");
 }
 
 static int unbundle_symset_family(Scheme_Object *v, const char *where) {
-  if (!family_wxSYSTEM_sym) init_symset_family();
+  if (!family_wxSYMBOL_sym) init_symset_family();
   if (0) { }
   else if (v == family_wxDEFAULT_sym) { return wxDEFAULT; }
   else if (v == family_wxDECORATIVE_sym) { return wxDECORATIVE; }
@@ -128,14 +128,14 @@ static int unbundle_symset_family(Scheme_Object *v, const char *where) {
   else if (v == family_wxSCRIPT_sym) { return wxSCRIPT; }
   else if (v == family_wxSWISS_sym) { return wxSWISS; }
   else if (v == family_wxMODERN_sym) { return wxMODERN; }
-  else if (v == family_wxTELETYPE_sym) { return wxTELETYPE; }
   else if (v == family_wxSYSTEM_sym) { return wxSYSTEM; }
+  else if (v == family_wxSYMBOL_sym) { return wxSYMBOL; }
   if (where) scheme_wrong_type(where, "family symbol", -1, 0, &v);
   return 0;
 }
 
 static int istype_symset_family(Scheme_Object *v, const char *where) {
-  if (!family_wxSYSTEM_sym) init_symset_family();
+  if (!family_wxSYMBOL_sym) init_symset_family();
   if (0) { }
   else if (v == family_wxDEFAULT_sym) { return 1; }
   else if (v == family_wxDECORATIVE_sym) { return 1; }
@@ -143,14 +143,14 @@ static int istype_symset_family(Scheme_Object *v, const char *where) {
   else if (v == family_wxSCRIPT_sym) { return 1; }
   else if (v == family_wxSWISS_sym) { return 1; }
   else if (v == family_wxMODERN_sym) { return 1; }
-  else if (v == family_wxTELETYPE_sym) { return 1; }
   else if (v == family_wxSYSTEM_sym) { return 1; }
+  else if (v == family_wxSYMBOL_sym) { return 1; }
   if (where) scheme_wrong_type(where, "family symbol", -1, 0, &v);
   return 0;
 }
 
 static Scheme_Object *bundle_symset_family(int v) {
-  if (!family_wxSYSTEM_sym) init_symset_family();
+  if (!family_wxSYMBOL_sym) init_symset_family();
   switch (v) {
   case wxDEFAULT: return family_wxDEFAULT_sym;
   case wxDECORATIVE: return family_wxDECORATIVE_sym;
@@ -158,8 +158,8 @@ static Scheme_Object *bundle_symset_family(int v) {
   case wxSCRIPT: return family_wxSCRIPT_sym;
   case wxSWISS: return family_wxSWISS_sym;
   case wxMODERN: return family_wxMODERN_sym;
-  case wxTELETYPE: return family_wxTELETYPE_sym;
   case wxSYSTEM: return family_wxSYSTEM_sym;
+  case wxSYMBOL: return family_wxSYMBOL_sym;
   default: return NULL;
   }
 }

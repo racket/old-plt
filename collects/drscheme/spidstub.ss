@@ -6,5 +6,5 @@
 	    [drscheme : drscheme:export^]
 	    [zodiac : zodiac:system^]
 	    [params : plt:parameters^])
-    (wx:message-box "MrSpidey is not available in DrScheme Version 43.")))
+    (wx:message-box "The analyzer is not available in DrScheme version 44.")))
 

@@ -2,7 +2,8 @@
 (module include mzscheme
   (require-for-syntax (lib "stx.ss" "syntax")
 		      (lib "path-spec.ss" "syntax")
-		      "private/increader.ss")
+		      "private/increader.ss"
+		      "cm-accomplice.ss")
   (require (lib "etc.ss"))
 
   (define-syntax-set (do-include ; private
@@ -21,6 +22,8 @@
 	       [reader (syntax reader)]
 	       [orig-stx (syntax orig-stx)])
 	   
+	   (register-external-file c-file)
+
 	   (let ([read-syntax (if (syntax-e reader)
                                   (reader-val
                                    (let loop ([e (syntax-object->datum

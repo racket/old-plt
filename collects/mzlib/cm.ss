@@ -42,11 +42,14 @@
         ((eq? 'relative base) (build-path "compiled"))
         (else (build-path base "compiled")))))
   
-  (define (write-deps code path)
+  (define (write-deps code path external-deps)
     (let ((dep-path (string-append (get-compilation-path path) ".dep"))
           (deps (get-deps code path)))
       (let ((op (open-output-file dep-path 'replace)))
-        (write (cons (version) deps) op)
+        (write (cons (version) 
+		     (append deps 
+			     (map (lambda (x) (cons 'ext x)) external-deps))) 
+	       op)
         (close-output-port op))))
   
   (define (touch path)
@@ -71,17 +74,26 @@
 	    (with-handlers ((not-break-exn? void))
               (delete-file zo-name))
             (with-handlers ((exn:get-module-code? (lambda (ex) (compilation-failure path zo-name))))
-              (let ((code (get-module-code path))
-                    (code-dir (get-code-dir path)))
-                (if (not (directory-exists? code-dir))
-                    (make-directory code-dir))
-                (let ((out (open-output-file zo-name 'replace)))
-                  (with-handlers ((exn:application:type?
-                                   (lambda (ex) (compilation-failure path zo-name))))
-                    (dynamic-wind void
-                                  (lambda () (write code out))
-                                  (lambda () (close-output-port out)))))
-                (write-deps code path))))))
+	      (let ([param 
+		     ;; Avoid using cm while loading cm-ctime:
+		     (parameterize ([use-compiled-file-kinds 'none])
+		       (dynamic-require-for-syntax '(lib "cm-ctime.ss" "mzlib" "private")
+						   'current-external-file-registrar))]
+		    [external-deps null])
+		(let ((code (parameterize ([param (lambda (ext-file)
+						    (set! external-deps (cons ext-file external-deps)))])
+			      (get-module-code path)))
+		      (code-dir (get-code-dir path)))
+		  (if (not (directory-exists? code-dir))
+		      (make-directory code-dir))
+		  (let ((out (open-output-file zo-name 'replace)))
+		    (with-handlers ((exn:application:type?
+				     (lambda (ex) (compilation-failure path zo-name))))
+		      (dynamic-wind 
+			  void
+			  (lambda () (write code out))
+			  (lambda () (close-output-port out)))))
+		  (write-deps code path external-deps)))))))
     (indent (substring (indent) 2 (string-length (indent))))
     ((trace) (format "~aend compile: ~a" (indent) path)))
   
@@ -122,7 +134,17 @@
                        ((or (not (pair? deps))
                             (not (equal? (version) (car deps))))
                         (compile-zo path))
-                       ((> (apply my-max (map (lambda (d) (compile-root d up-to-date)) (cdr deps)))
+                       ((> (apply my-max (map (lambda (d)
+						;; str => str is a module file name (check transitive dates)
+						;; (cons 'ext str) => str is an non-module file (check date)
+						(cond
+						 [(string? d) (compile-root d up-to-date)]
+						 [(and (pair? d) (eq? (car d) 'ext))
+						  (with-handlers ((exn:i/o:filesystem?
+								   (lambda (ex) +inf.0)))
+						    (file-or-directory-modify-seconds (cdr d)))]
+						 [else -inf.0]))
+					      (cdr deps)))
                            path-zo-time)
                         (compile-zo path))))))
                 (let ((stamp (get-compiled-time path)))

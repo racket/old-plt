@@ -7,8 +7,10 @@
    abort
    resume
    the-cont-key
+   safe-call?
    abort/cc
    the-undef
+   activation-record-list
    
    ;; "SERVLET" INTERFACE
    start-interaction
@@ -18,13 +20,26 @@
    dispatch-start
    dispatch
    )
+  
+  (provide current-abort-continuation)
     
   ;; **********************************************************************
   ;; **********************************************************************
   ;; AUXILLIARIES
   
-  (define-struct cont-key ())
-  (define the-cont-key (make-cont-key))
+  (define-struct mark-key ())
+  (define the-cont-key (make-mark-key))
+  (define safe-call? (make-mark-key))
+  
+  ;; current-continuation-as-list: -> (listof value)
+  ;; check the safety marks and return the list of marks representing the continuation
+  (define (activation-record-list)
+    (let* ([cm (current-continuation-marks)]
+           [sl (continuation-mark-set->list cm safe-call?)])
+      ;(printf "sl = ~s~n" sl)
+      (if (andmap (lambda (x) x) sl)
+          (reverse (continuation-mark-set->list cm the-cont-key))
+          (error "Attempt to capture a continuation from within an unsafe context"))))
   
   ;; BUGBUG this isn't thread safe
   (define current-abort-continuation
@@ -57,6 +72,8 @@
   (define-serializable-struct undef ())
   (define the-undef (make-undef))
   
+  
+  
   ;; **********************************************************************
   ;; **********************************************************************
   ;; "SERVLET" INTERFACE
@@ -84,12 +101,10 @@
   ;; send/suspend: (continuation -> response) -> request
   ;; produce the current response and wait for the next request
   (define (send/suspend response-maker)
-    ((lambda (k) (abort (lambda () (response-maker k))))
-     (let ([current-marks
-            (reverse
-             (continuation-mark-set->list (current-continuation-marks) the-cont-key))])
-       (make-kont (lambda () current-marks)))))
-;       (lambda (x) (abort (lambda () (resume current-marks x)))))))
+    (with-continuation-mark safe-call? #t
+      ((lambda (k) (abort (lambda () (response-maker k))))
+       (let ([current-marks (activation-record-list)])
+         (make-kont (lambda () current-marks))))))
   
   
   
@@ -110,5 +125,5 @@
        [(decode-continuation req)
         => (lambda (k) (k req))]
        [else
-        (error "no continuation associated with the provided request")])))    
+        (error "no continuation associated with the provided request")])))
   )

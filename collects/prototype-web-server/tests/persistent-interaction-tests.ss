@@ -3,6 +3,17 @@
            "language-tester.ss")
   (provide persistent-interaction-suite)
   
+  (define (catch-unsafe-context-exn thunk)
+    (with-handlers ([void
+                     (lambda (the-exn)
+                       (or
+                        (and
+                         (regexp-match ".*Attempt to capture a continuation from within an unsafe context$"
+                                       (exn-message the-exn))
+                         #t)
+                        (raise the-exn)))])
+      (and (thunk) #f)))
+  
   (define persistent-interaction-suite
     (make-test-suite
      "Test the persistent interaction language"
@@ -287,6 +298,8 @@
             (assert-true (zero? (test-m06.1 `(dispatch (list ,second-key -1)))))
             (assert = -7 (test-m06.1 `(dispatch (list ,third-key 0))))
             (assert-true (zero? (test-m06.1 `(dispatch (list ,third-key 7)))))))))
+      
+      
       )
      
      ;; ****************************************
@@ -345,5 +358,98 @@
            (let* ([k1.1 (test-m08 `(serialize (dispatch (list (deserialize ',k0) -1))))]
                   [k2.1 (test-m08 `(serialize (dispatch (list (deserialize ',k1.1) -2))))])
              (assert-true (zero? (test-m08 `(dispatch (list (deserialize ',k2.1) 3)))))
-             (assert = 6 (test-m08 `(dispatch (list (deserialize ',k2) 3))))))))      
+             (assert = 6 (test-m08 `(dispatch (list (deserialize ',k2) 3))))))))
+      )
+     
+     ;; ****************************************
+     ;; ****************************************
+     ;; TEST UNSAFE CONTEXT CONDITION
+     (make-test-suite
+      "Unsafe Context Condition Tests"
+      
+      (make-test-case
+       "simple attempt to capture a continuation from an unsafe context"
+       
+       (let ([nta-eval
+              (make-module-eval
+               (module nta mzscheme
+                 (provide non-tail-apply)
+                 
+                 (define (non-tail-apply f . args)
+                   (let ([result (apply f args)])
+                     (printf "result = ~s~n" result)
+                     result))))])
+         (nta-eval '(module m09 "../persistent-interaction.ss"
+                      (require nta)
+                      (define (id x) x)
+                      
+                      (let ([ignore (start-interaction id)])
+                        (non-tail-apply (lambda (x) (let/cc k (k x))) 7))))
+         
+         (nta-eval '(require m09))
+         
+         (assert-true (catch-unsafe-context-exn
+                       (lambda () (nta-eval '(dispatch-start 'foo)))))))
+            
+      (make-test-case
+       "sanity-check: capture continuation from safe version of context"
+       
+       (let ([m10-eval
+              (make-module-eval
+               (module m10 "../persistent-interaction.ss"
+                 (define (id x) x)
+  
+                 (define (nta f arg)
+                   (let ([result (f arg)])
+                     (printf "result = ~s~n" result)
+                     result))
+  
+                 (let ([ignore (start-interaction id)])
+                   (nta (lambda (x) (let/cc k (k x))) 7))))])
+         
+         (assert = 7 (m10-eval '(dispatch-start 'foo)))))
+      
+      (make-test-case
+       "attempt continuation capture from standard call to map"
+       
+       (let ([m11-eval
+              (make-module-eval
+               (module m11 "../persistent-interaction.ss"
+                 (define (id x) x)
+                 
+                 (let ([ignore (start-interaction id)])
+                   (map
+                    (lambda (x) (let/cc k k))
+                    (list 1 2 3)))))])
+
+         (assert-true (catch-unsafe-context-exn
+                       (lambda () (m11-eval '(dispatch-start 'foo)))))))
+      
+      ;; if the continuation-capture is attempted in tail position then we
+      ;; should be just fine.
+      (make-test-case
+       "continuation capture from a tail call"
+       
+       (let ([ta-eval
+              (make-module-eval
+               (module ta mzscheme
+                 (provide tail-apply)
+                 
+                 (define (tail-apply f . args)
+                   (apply f args))))])
+         
+         (ta-eval '(module m12 "../persistent-interaction.ss"
+                     (require ta)
+                     (define (id x) x)
+
+                     (+ (start-interaction id) 
+                        (tail-apply (lambda (x) (let/cc k (k x))) 1))))
+         
+         (ta-eval '(require m12))
+         
+         (assert = 2 (ta-eval '(dispatch-start 1)))))
+      
+      ;; TODO: send/suspend has an implicit call/cc hardcoded into it.
+      ;; so need to duplicate the tests above but with send/suspend.
+      
       ))))

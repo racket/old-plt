@@ -96,6 +96,12 @@
                     #`(#,make-CLOSURE (lambda () (values #,@fvars))))
                 (append body-defs
                         closure-definitions))))))]
+      [(with-continuation-mark safe-call? b-val body-expr)
+       (with-syntax ([body-expr (recertify #'body-expr expr)])
+         (let-values ([(new-body-expr body-defs) (defunctionalize #'body-expr labeling)])
+           (values
+            #`(with-continuation-mark safe-call? b-val #,new-body-expr)
+            body-defs)))]
       [(#%top . var) (values expr '())]
       [(#%datum . var) (values expr '())]
       [(quote datum) (values expr '())]
@@ -140,6 +146,8 @@
       
       [(lambda (formals ...) body-expr)
        (set-diff (free-vars #'body-expr) (syntax->list #'(formals ...)))]
+      [(with-continuation-mark safe-call? b-val body-expr)
+       (free-vars #'body-expr)]
       [(#%top . var) '()]
       [(#%datum . var) '()]
       [(quote datum) '()]

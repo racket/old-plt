@@ -14,7 +14,7 @@
   ;; expr ::= w
   ;;       |  (if w expr)
   ;;       |  (if w expr expr)
-  ;;       |  (#%app w expr)
+  ;;       |  (#%app w expr) ;where expr != w
   ;;       |  (#%app w w ...)
   ;;       |  (#%app call/cc w)
   ;;
@@ -51,9 +51,7 @@
                                      (lambda (#,x)
                                        (#%app abort
                                               (lambda () (#%app resume #,ref-to-cm #,ref-to-x)))))
-                                   (#%app reverse (#%app continuation-mark-set->list
-                                                         (#%app current-continuation-marks)
-                                                         the-cont-key)))))))]
+                                   (#%app activation-record-list))))))]
       ;; this is (w e) where e is not a w. (w w) handled in next case.
       ;; m00.4 in persistent-interaction-tests.ss tests this distinction
       [(#%app w (#%app . stuff))
@@ -80,11 +78,14 @@
       [(#%app w rest ...)
        (with-syntax ([(w rest ...) (recertify* (syntax->list #'(w rest ...)) expr)])
         (markit
-         #`(#%app #,(elim-call/cc #'w)
-                  #,@(map 
-                      (lambda (an-expr)
-                        (elim-call/cc an-expr))
-                      (syntax->list #'(rest ...))))))]
+         #`(with-continuation-mark safe-call? #f
+             (#%app #,(mark-lambda-as-safe (elim-call/cc #'w))
+                    #,@(map 
+                        (lambda (an-expr)
+                          (mark-lambda-as-safe
+                           (elim-call/cc
+                            an-expr)))
+                        (syntax->list #'(rest ...)))))))]
       [(#%top . var) expr]
       [(#%datum . d) expr]
       [(lambda (formals ...) body)
@@ -100,9 +101,19 @@
   (define (elim-call/cc-from-definition def)
     (syntax-case def ()
       [(define-values (var ...) expr)
-       #`(define-values (var ...) #,(elim-call/cc #'expr))]
+       #`(define-values (var ...) #,(mark-lambda-as-safe (elim-call/cc #'expr)))]
       [else
        (raise-syntax-error #f "elim-call/cc-from-definition dropped through" def)]))
+  
+  ;; mark-lambda-as-safe: w -> w
+  ;; If w is a lambda-expression then add #t to the safety mark, otherwise no mark
+  (define (mark-lambda-as-safe w)
+    (syntax-case w (lambda)
+      [(lambda (formals ...) body)
+       #`(lambda (formals ...)
+           (with-continuation-mark safe-call? #t
+             body))]
+      [_else w]))
   )
 
 

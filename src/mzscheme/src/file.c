@@ -54,8 +54,12 @@
 #ifdef USE_MAC_FILE_TOOLBOX
 # include <Files.h>
 #endif
-#if defined(MACINTOSH_EVENTS) && defined(OS_X)
-# include <Carbon/Carbon.h>
+#if defined(MACINTOSH_EVENTS)
+# ifdef OS_X
+#  include <Carbon/Carbon.h>
+# else
+#  include <Carbon.h>
+# endif
 #endif
 #ifdef UNIX_FILE_SYSTEM
 # include <fcntl.h>
@@ -3641,7 +3645,7 @@ static Scheme_Object *file_or_dir_permissions(int argc, Scheme_Object *argv[])
 #endif
 
 #ifdef USE_MAC_FILE_TOOLBOX
-  scheme_security_check_file("file-or-directory-permissions", file, SCHEME_GUARD_FILE_READ);
+  scheme_security_check_file("file-or-directory-permissions", filename, SCHEME_GUARD_FILE_READ);
 
   if (!find_mac_file(filename, 0, &spec, 0, 0, NULL, &isdir, &exists, NULL, &flags, &type, NULL, NULL)
       || !exists)

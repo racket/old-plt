@@ -2639,7 +2639,7 @@ write_char (int argc, Scheme_Object *argv[])
   buffer[0] = SCHEME_CHAR_VAL(argv[0]);
 
   scheme_put_string("write-char", port,
-		    buffer, 0, 1,
+		    (char *)buffer, 0, 1,
 		    0);
 
   return scheme_void;

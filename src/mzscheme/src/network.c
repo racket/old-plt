@@ -61,7 +61,13 @@ static int mzerrno = 0;
 
 #ifdef USE_MAC_TCP
 # include <MacTCP.h>
-# include <dnr.c>
+# include "macdnr.inc"
+# define NUM_ALT_ADDRS 10
+typedef struct hostInfo {
+    long            rtnCode;
+    char            cname [255];
+    unsigned long   addr [NUM_ALT_ADDRS];
+};
 #endif
 
 #ifdef USE_UNIX_SOCKETS_TCP
@@ -395,11 +401,12 @@ typedef struct {
 
 static TCPiopbX *active_pbs;
 
-static pascal void dnr_done(struct hostInfo *, int * done)
+static pascal void dnr_done(struct hostInfo *hi, int * done)
 {
   *done = true;
 }
 
+typedef long ResultUPP;
 static ResultUPP u_dnr_done;
 
 static pascal void tcp_notify(StreamPtr stream, unsigned short eventCode,
@@ -531,7 +538,7 @@ static void TCP_INIT(char *name)
   atexit(tcp_cleanup);
 }
 
-static int tcp_addr(char *address, struct hostInfo *info)
+static int tcp_addr(const char *address, struct hostInfo *info)
 {
   int tries = 3;
   long *done = MALLOC_ONE_ATOMIC(long);
@@ -572,7 +579,7 @@ static int tcp_addr(char *address, struct hostInfo *info)
  try_again:
   *done = 0;
   info->rtnCode = 0;
-  if (StrToAddr(address, info, u_dnr_done, (char *)done) == cacheFault) {
+  if (StrToAddr((char *)address, info, u_dnr_done, (char *)done) == cacheFault) {
     /* FIXME: If we get a break, it's possible that `info' and `done' will be
               GCed before the async call completes. */
     while (!*done) { scheme_thread_block(0.25); }
@@ -1911,7 +1918,7 @@ tcp_listen(int argc, Scheme_Object *argv[])
 
     if (address) {
       local_host = MALLOC_ONE_ATOMIC(struct hostInfo);
-      if ((errNo = tcp_addr(address, local_host))) {
+      if ((errid = tcp_addr(address, local_host))) {
 	scheme_raise_exn(MZEXN_I_O_TCP,
 			 "tcp-listen: host not found: %s (%E)",
 			 address, errid);

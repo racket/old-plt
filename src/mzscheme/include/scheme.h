@@ -118,13 +118,11 @@ typedef jmpbuf jmp_buf[1];
 
 #define GC_MIGHT_USE_REGISTERED_STATICS
 
-#ifdef OS_X
-# ifdef MACINTOSH_EVENTS
+#ifdef MACINTOSH_EVENTS
 /* We avoid #including the Carbon headers because we only
    need a few abstract struct types: */
 typedef struct FSSpec mzFSSpec;
 typedef struct EventRecord mzEventRecord;
-# endif
 #endif
 
 /* Set up MZ_EXTERN for DLL build */

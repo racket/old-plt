@@ -35,6 +35,7 @@ typedef struct Scheme_Class_Object {
 } Scheme_Class_Object;
   
 typedef Scheme_Prim Scheme_Method_Prim;
+
 #define POFFSET 1
 #define THEOBJ p[0]
 

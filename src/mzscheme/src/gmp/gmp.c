@@ -1996,7 +1996,10 @@ mpn_tdiv_qr (qp, rp, qxn, np, nn, dp, dn)
   switch (dn)
     {
     case 0:
+#if 0
       DIVIDE_BY_ZERO;
+#endif
+      return;
 
     case 1:
       {

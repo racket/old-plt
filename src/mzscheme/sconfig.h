@@ -626,7 +626,8 @@
 
   /************ Macintosh with CodeWarrior (not OS X) *************/
 
-#if defined(__MWERKS__) && !defined(__BEOS__) && !defined(__palmos__) && !defined(OS_X)
+#if ((defined(__MWERKS__) && !defined(__BEOS__) && !defined(__palmos__) && !defined(OS_X))  \
+     || defined(MPW_C) || defined(MPW_CPLUS))
 
 # if defined(__POWERPC__)
 #  define SCHEME_PLATFORM_LIBRARY_SUBPATH "ppc-mac"
@@ -677,7 +678,7 @@
 
 # define NO_SYS_INCLUDE_SUBDIR
 # define NO_USLEEP
-# define UNISTD_INCLUDE
+# define NO_STAT_PROC
 # define DONT_IGNORE_PIPE_SIGNAL
 
 # define POW_HANDLES_INF_CORRECTLY
@@ -688,6 +689,9 @@
 # define SIGSET_IS_SIGNAL
 
 # define MACROMAN_CHAR_SET
+# ifdef MPW_C
+#  define NO_INLINE_KEYWORD
+# endif
 
 # define FLAGS_ALREADY_SET
 

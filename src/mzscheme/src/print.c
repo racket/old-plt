@@ -60,9 +60,9 @@ static void print_vector(Scheme_Object *vec, int notdisplay, int compact,
 			 Scheme_Hash_Table *symtab, Scheme_Hash_Table *rnht, 
 			 Scheme_Thread *p);
 static void print_char(Scheme_Object *chobj, int notdisplay, Scheme_Thread *p);
-static char *print_to_string(Scheme_Object *obj, long *len, int write,
+static char *print_to_string(Scheme_Object *obj, long * volatile len, int write,
 			     Scheme_Object *port, long maxl,
-			     Scheme_Thread *p, Scheme_Config *config);
+			     Scheme_Thread * volatile p, Scheme_Config *config);
 
 static Scheme_Object *quote_link_symbol = NULL;
 static char *quick_buffer = NULL;

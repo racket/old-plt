@@ -89,9 +89,13 @@ exit
 	   (begin
 	    (printf "PLT software starts up much faster with .zo files, but creating .zo~n")
 	    (printf "files now takes a few minutes and requires about 5MB of additional~n")
-	    (printf "disk space. Create .zo files later by running plt/bin/setup-plt.~n")
+	    (printf "disk space.~n")
 	    (printf "  Create .zo files now (y/n)? [y] ")
 	    (get-y-n)))))
+
+(unless zo?
+  (printf "Skipping .zo-file creation; create .zo files later by running~n")
+  (printf "  ~a/bin/setup-plt~n" plthome))
 
 (when zo?
   (dynamic-require '(lib "setup.ss" "setup") #f))

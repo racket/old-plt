@@ -15,6 +15,8 @@ add struct contracts for immutable structs?
            ->*
            ->d*
            ->r
+           ->pp
+           ->pp-rest
            case->
 	   opt->
            opt->*
@@ -743,19 +745,23 @@ add struct contracts for immutable structs?
 ;                                                                                   
 
   
-  (define-syntax-set (-> ->* ->d ->d* ->r case-> object-contract opt-> opt->*)
+  (define-syntax-set (-> ->* ->d ->d* ->r ->pp ->pp-rest case-> object-contract opt-> opt->*)
     
     (define (->/proc stx) (make-/proc #f ->/h stx))
     (define (->*/proc stx) (make-/proc #f ->*/h stx))
     (define (->d/proc stx) (make-/proc #f ->d/h stx))
     (define (->d*/proc stx) (make-/proc #f ->d*/h stx))
     (define (->r/proc stx) (make-/proc #f ->r/h stx))
+    (define (->pp/proc stx) (make-/proc #f ->pp/h stx))
+    (define (->pp-rest/proc stx) (make-/proc #f ->pp-rest/h stx))
         
     (define (obj->/proc stx) (make-/proc #t ->/h stx))
     (define (obj->*/proc stx) (make-/proc #t ->*/h stx))
     (define (obj->d/proc stx) (make-/proc #t ->d/h stx))
     (define (obj->d*/proc stx) (make-/proc #t ->d*/h stx))
     (define (obj->r/proc stx) (make-/proc #t ->r/h stx))
+    (define (obj->pp/proc stx) (make-/proc #t ->pp/h stx))
+    (define (obj->pp-rest/proc stx) (make-/proc #t ->pp-rest/h stx))
     
     (define (case->/proc stx) (make-case->/proc #f stx))
     (define (obj-case->/proc stx) (make-case->/proc #t stx))
@@ -1078,7 +1084,7 @@ add struct contracts for immutable structs?
       
       ;; expand-mtd-arrow : stx -> (values (syntax[ctc] -> syntax[expanded ctc]) syntax[ctc] syntax[mtd-arg])
       (define (expand-mtd-arrow mtd-stx)
-        (syntax-case mtd-stx (-> ->* ->d ->d* ->r)
+        (syntax-case mtd-stx (-> ->* ->d ->d* ->r ->pp ->pp-rest)
           [(->) (raise-syntax-error 'object-contract "-> must have arguments" stx mtd-stx)]
           [(-> args ...)
            (with-syntax ([(arg-vars ...) (generate-temporaries (syntax (args ...)))])
@@ -1148,56 +1154,44 @@ add struct contracts for immutable structs?
                 (syntax ((this-var args-vars ... . rst-var))))))]
           [(->d* x ...)
            (raise-syntax-error 'object-contract "malformed ->d* method contract" stx mtd-stx)]
+          
           [(->r ([x dom] ...) rng)
-           (and (andmap identifier? (syntax->list (syntax (x ...))))
-                (not (check-duplicate-identifier (syntax->list (syntax (x ...))))))
+           (andmap identifier? (syntax->list (syntax (x ...))))
            (with-syntax ([(arg-vars ...) (generate-temporaries (syntax (x ...)))])
              (values
               obj->r/proc
               (syntax (->r ([_this any/c] [x dom] ...) rng))
               (syntax ((_this arg-vars ...)))))]
-          [(->r ([x dom] ...) rng)
-           (andmap identifier? (syntax->list (syntax (x ...))))
-           (raise-syntax-error 
-            'object-contract
-            "->r duplicate identifier"
-            stx
-            (check-duplicate-identifier (syntax->list (syntax (x ...)))))]
-          [(->r ([x dom] ...) rng)
-           (for-each (lambda (x) 
-                       (unless (identifier? x)
-                         (raise-syntax-error 'object-contract "->r expected identifier" stx x)))
-                     (syntax->list (syntax (x ...))))]
-          [(->r x dom rng)
-           (raise-syntax-error 'object-contract "->r expected list of identifiers and expression pairs" stx (syntax x))]
+          
           [(->r ([x dom] ...) rest-x rest-dom rng)
-           (and (and identifier? (syntax rest-x))
-                (andmap identifier? (syntax->list (syntax (x ...))))
-                (not (check-duplicate-identifier (cons (syntax rest-x) (syntax->list (syntax (x ...)))))))
+           (andmap identifier? (syntax->list (syntax (x ...))))
            (with-syntax ([(arg-vars ...) (generate-temporaries (syntax (x ...)))])
              (values
               obj->r/proc
               (syntax (->r ([_this any/c] [x dom] ...) rest-x rest-dom rng))
               (syntax ((_this arg-vars ... . rest-var)))))]
-          [(->r ([x dom] ...) rest-x rest-dom rng)
-           (and (identifier? (syntax rest-x))
-                (andmap identifier? (cons (syntax rest-x) (syntax->list (syntax (x ...))))))
-           (raise-syntax-error 
-            '->r
-            "duplicate identifier"
-            stx
-            (check-duplicate-identifier (syntax->list (syntax (x ...)))))]
-
-          [(->r ([x dom] ...) rest-x rest-dom rng)
-           (for-each (lambda (x) (unless (identifier? x) (raise-syntax-error '->r "expected identifier" stx x)))
-                     (cons
-                      (syntax rest-x)
-                      (syntax->list (syntax (x ...)))))]
-          [(->r x dom rest-x rest-dom rng)
-           (raise-syntax-error '->r "expected list of identifiers and expression pairs" stx (syntax x))]
-          [(->r . x)
-           (raise-syntax-error 'object-contract "malformed ->r method contract" stx mtd-stx)]
           
+          [(->r . x)
+           (raise-syntax-error 'object-contract "malformed ->r declaration")]
+          [(->pp ([x dom] ...) . other-stuff)
+           (andmap identifier? (syntax->list (syntax (x ...))))
+           (with-syntax ([(arg-vars ...) (generate-temporaries (syntax (x ...)))])
+             (values
+              obj->pp/proc
+              (syntax (->pp ([_this any/c] [x dom] ...) . other-stuff))
+              (syntax ((_this arg-vars ...)))))]
+          [(->pp . x)
+           (raise-syntax-error 'object-contract "malformed ->pp declaration")]
+          [(->pp-rest ([x dom] ...) rest-id . other-stuff)
+           (and (identifier? (syntax id))
+                (andmap identifier? (syntax->list (syntax (x ...)))))
+           (with-syntax ([(arg-vars ...) (generate-temporaries (syntax (x ...)))])
+             (values
+              obj->pp-rest/proc
+              (syntax (->pp ([_this any/c] [x dom] ...) rest-id . other-stuff))
+              (syntax ((_this arg-vars ... . rest-id)))))]
+          [(->pp-rest . x)
+           (raise-syntax-error 'object-contract "malformed ->pp-rest declaration")]
           [else (raise-syntax-error 'object-contract "unknown method contract syntax" stx mtd-stx)]))
       
       ;; build-methods-stx : syntax[list of lambda arg specs] -> syntax[method realized as proc]
@@ -1989,189 +1983,259 @@ add struct contracts for immutable structs?
     (define (->r/h method-proc? stx)
       (syntax-case stx ()
         [(_ ([x dom] ...) rng)
+         (syntax-case* (syntax rng) (any values) module-or-top-identifier=?
+           [any 
+            (->r-pp/h method-proc? '->r (syntax (->r ([x dom] ...) #t any)))]
+           [(values . args)
+            (->r-pp/h method-proc? '->r (syntax (->r ([x dom] ...) #t rng #t)))]
+           [rng
+            (->r-pp/h method-proc? '->r (syntax (->r ([x dom] ...) #t rng unused-id #t)))]
+           [_
+            (raise-syntax-error '->r "unknown result contract spec" stx (syntax rng))])]
+        
+        [(_ ([x dom] ...) rest-x rest-dom rng)
+         (syntax-case* (syntax rng) (values any) module-or-top-identifier=?
+           [any 
+            (->r-pp-rest/h method-proc? '->r (syntax (->r ([x dom] ...) rest-x rest-dom #t any)))]
+           [(values . whatever)
+            (->r-pp-rest/h method-proc? '->r (syntax (->r ([x dom] ...) rest-x rest-dom #t rng #t)))]
+           [_
+            (->r-pp-rest/h method-proc? '->r (syntax (->r ([x dom] ...) rest-x rest-dom #t rng unused-id #t)))])]))
+    
+    ;; ->pp/h : boolean stx -> (values (syntax -> syntax) (syntax -> syntax) (syntax -> syntax))
+    (define (->pp/h method-proc? stx) (->r-pp/h method-proc? '->pp stx))
+    
+    ;; ->pp/h : boolean symbol stx -> (values (syntax -> syntax) (syntax -> syntax) (syntax -> syntax))
+    (define (->r-pp/h method-proc? name stx)
+      (syntax-case stx ()
+        [(_ ([x dom] ...) pre-expr . result-stuff)
          (and (andmap identifier? (syntax->list (syntax (x ...))))
               (not (check-duplicate-identifier (syntax->list (syntax (x ...))))))
-         (with-syntax ([(dom-id ...) (generate-temporaries (syntax (dom ...)))]
-                       [arity (length (syntax->list (syntax (dom ...))))]
-                       [name-stx 
-                        (with-syntax ([(name-xs ...) (if method-proc?
-                                                         (cdr (syntax->list (syntax (x ...))))
-                                                         (syntax (x ...)))])
-                          (syntax 
-                           (build-compound-type-name '->r
-                                                     (build-compound-type-name
-                                                      (build-compound-type-name 'name-xs '(... ...))
-                                                      ...)
-                                                     '(... ...))))])
-           (values
-            (lambda (outer-args body)
-              (with-syntax ([body body]
-                            [(val pos-blame neg-blame src-info orig-str name-id) outer-args])
-                (syntax
-                 (let ([name-id name-stx])
-                   body))))
-            (lambda (outer-args inner-lambda) inner-lambda)
-            (lambda (outer-args)
-              (with-syntax ([(val pos-blame neg-blame src-info orig-str name-id) outer-args]
-                            [kind-of-thing (if method-proc? 'method 'procedure)])
-                (syntax
-                 (begin 
-		   (check-procedure/kind val arity 'kind-of-thing src-info pos-blame neg-blame orig-str)))))
-            (lambda (outer-args)
-              (with-syntax ([(val pos-blame neg-blame src-info orig-str name-id) outer-args])
-                (syntax-case* (syntax rng) (any values) module-or-top-identifier=?
-                  [any 
-                   (syntax
-                    ((x ...)
-                     (let ([dom-id ((coerce/select-contract ->r dom) neg-blame pos-blame src-info orig-str)]
-                           ...)
-                       (val (dom-id x) ...))))]
-                  [(values (rng-ids rng-ctc) ...)
-                   (and (andmap identifier? (syntax->list (syntax (rng-ids ...))))
-                        (not (check-duplicate-identifier (syntax->list (syntax (rng-ids ...))))))
-                   (with-syntax ([(rng-ids-x ...) (generate-temporaries (syntax (rng-ids ...)))])
+         (with-syntax ([stx-name name])
+           (with-syntax ([(dom-id ...) (generate-temporaries (syntax (dom ...)))]
+                         [arity (length (syntax->list (syntax (dom ...))))]
+                         [name-stx
+                          (with-syntax ([(name-xs ...) (if method-proc?
+                                                           (cdr (syntax->list (syntax (x ...))))
+                                                           (syntax (x ...)))])
+                            (syntax 
+                             (build-compound-type-name 'stx-name
+                                                       (build-compound-type-name
+                                                        (build-compound-type-name 'name-xs '(... ...))
+                                                        ...)
+                                                       '(... ...))))])
+             (values
+              (lambda (outer-args body)
+                (with-syntax ([body body]
+                              [(val pos-blame neg-blame src-info orig-str name-id) outer-args])
+                  (syntax
+                   (let ([name-id name-stx])
+                     body))))
+              (lambda (outer-args inner-lambda) inner-lambda)
+              (lambda (outer-args)
+                (with-syntax ([(val pos-blame neg-blame src-info orig-str name-id) outer-args]
+                              [kind-of-thing (if method-proc? 'method 'procedure)])
+                  (syntax
+                   (begin 
+                     (check-procedure/kind val arity 'kind-of-thing src-info pos-blame neg-blame orig-str)))))
+              (lambda (outer-args)
+                (with-syntax ([(val pos-blame neg-blame src-info orig-str name-id) outer-args])
+                  (syntax-case* (syntax result-stuff) (any values) module-or-top-identifier=?
+                    [(any)
                      (syntax
                       ((x ...)
-                       (let ([dom-id ((coerce/select-contract ->r dom) neg-blame pos-blame src-info orig-str)]
-                             ...)
-                         (let-values ([(rng-ids ...) (val (dom-id x) ...)])
-                           (let ([rng-ids-x ((coerce/select-contract ->r rng-ctc)
-                                             pos-blame neg-blame src-info orig-str)] ...)
-                             (values (rng-ids-x rng-ids) ...)))))))]
-                  [(values (rng-ids rng-ctc) ...)
-                   (andmap identifier? (syntax->list (syntax (rng-ids ...))))
-                   (let ([dup (check-duplicate-identifier (syntax->list (syntax (rng-ids ...))))])
-                     (raise-syntax-error '->r "duplicate identifier" stx dup))]
-                  [(values (rng-ids rng-ctc) ...)
-                   (for-each (lambda (rng-id) 
-                               (unless (identifier? rng-id)
-                                 (raise-syntax-error '->r "expected identifier" stx rng-id)))
-                             (syntax->list (syntax (rng-ids ...))))]
-                  [(values . x)
-                   (raise-syntax-error '->r "malformed multiple values result" stx (syntax (values . x)))]
-                  [rng
-                   (syntax
-                    ((x ...)
-                     (let ([dom-id ((coerce/select-contract ->r dom) neg-blame pos-blame src-info orig-str)]
-                           ...
-                           [rng-id ((coerce/select-contract ->r rng) pos-blame neg-blame src-info orig-str)])
-                       (rng-id (val (dom-id x) ...)))))])))))]
-        [(_ ([x dom] ...) rng)
+                       (begin
+                         (check-pre-expr->pp/h pre-expr src-info pos-blame neg-blame orig-str)
+                         (let ([dom-id ((coerce/select-contract stx-name dom) neg-blame pos-blame src-info orig-str)]
+                               ...)
+                           (val (dom-id x) ...)))))]
+                    [((values (rng-ids rng-ctc) ...) post-expr)
+                     (and (andmap identifier? (syntax->list (syntax (rng-ids ...))))
+                          (not (check-duplicate-identifier (syntax->list (syntax (rng-ids ...))))))
+                     (with-syntax ([(rng-ids-x ...) (generate-temporaries (syntax (rng-ids ...)))])
+                       (syntax
+                        ((x ...)
+                         (begin
+                           (check-pre-expr->pp/h pre-expr src-info pos-blame neg-blame orig-str)
+                           (let ([dom-id ((coerce/select-contract stx-name dom) neg-blame pos-blame src-info orig-str)]
+                                 ...)
+                             (let-values ([(rng-ids ...) (val (dom-id x) ...)])
+                               (check-post-expr->pp/h post-expr src-info pos-blame neg-blame orig-str)
+                               (let ([rng-ids-x ((coerce/select-contract stx-name rng-ctc)
+                                                 pos-blame neg-blame src-info orig-str)] ...)
+                                 (values (rng-ids-x rng-ids) ...))))))))]
+                    [((values (rng-ids rng-ctc) ...) post-expr)
+                     (andmap identifier? (syntax->list (syntax (rng-ids ...))))
+                     (let ([dup (check-duplicate-identifier (syntax->list (syntax (rng-ids ...))))])
+                       (raise-syntax-error name "duplicate identifier" stx dup))]
+                    [((values (rng-ids rng-ctc) ...) post-expr)
+                     (for-each (lambda (rng-id) 
+                                 (unless (identifier? rng-id)
+                                   (raise-syntax-error name "expected identifier" stx rng-id)))
+                               (syntax->list (syntax (rng-ids ...))))]
+                    [((values . x) . junk)
+                     (raise-syntax-error name "malformed multiple values result" stx (syntax (values . x)))]
+                    [(rng res-id post-expr)
+                     (syntax
+                      ((x ...)
+                       (begin
+                         (check-pre-expr->pp/h pre-expr src-info pos-blame neg-blame orig-str)
+                         (let ([dom-id ((coerce/select-contract stx-name dom) neg-blame pos-blame src-info orig-str)]
+                               ...
+                               [rng-id ((coerce/select-contract stx-name rng) pos-blame neg-blame src-info orig-str)])
+                           (let ([res-id (rng-id (val (dom-id x) ...))])
+                             (check-post-expr->pp/h post-expr src-info pos-blame neg-blame orig-str))))))]
+                    [_ 
+                     (raise-syntax-error name "unknown result specification" stx (syntax result-stuff))]))))))]
+        [(_ ([x dom] ...) pre-expr . result-stuff)
          (andmap identifier? (syntax->list (syntax (x ...))))
          (raise-syntax-error 
-          '->r
+          name
           "duplicate identifier"
           stx
           (check-duplicate-identifier (syntax->list (syntax (x ...)))))]
-        [(_ ([x dom] ...) rng)
-         (for-each (lambda (x) (unless (identifier? x) (raise-syntax-error '->r "expected identifier" stx x)))
+        [(_ ([x dom] ...) pre-expr . result-stuff)
+         (for-each (lambda (x) (unless (identifier? x) (raise-syntax-error name "expected identifier" stx x)))
                    (syntax->list (syntax (x ...))))]
-        [(_ (x ...) rng)
+        [(_ (x ...) pre-expr . result-stuff)
          (for-each (lambda (x)
                      (syntax-case x ()
                        [(x y) (identifier? (syntax x)) (void)]
-                       [bad (raise-syntax-error '->r "expected identifier and contract" stx (syntax bad))]))
+                       [bad (raise-syntax-error name "expected identifier and contract" stx (syntax bad))]))
                    (syntax->list (syntax (x ...))))]
-        [(_ x dom rng)
-         (raise-syntax-error '->r "expected list of identifiers and expression pairs" stx (syntax x))]
+        [(_ x dom pre-expr . result-stuff)
+         (raise-syntax-error name "expected list of identifiers and expression pairs" stx (syntax x))]))
         
-        [(_ ([x dom] ...) rest-x rest-dom rng)
-         (and (and identifier? (syntax rest-x))
+    ;; ->pp-rest/h : boolean stx -> (values (syntax -> syntax) (syntax -> syntax) (syntax -> syntax))
+    (define (->pp-rest/h method-proc? stx) (->r-pp-rest/h method-proc? '->pp-rest stx))
+    
+    ;; ->r-pp-rest/h : boolean stx -> (values (syntax -> syntax) (syntax -> syntax) (syntax -> syntax))
+    (define (->r-pp-rest/h method-proc? name stx)
+      (syntax-case stx ()
+        [(_ ([x dom] ...) rest-x rest-dom pre-expr . result-stuff)
+         (and (identifier? (syntax rest-x))
               (andmap identifier? (syntax->list (syntax (x ...))))
               (not (check-duplicate-identifier (cons (syntax rest-x) (syntax->list (syntax (x ...)))))))
-         (with-syntax ([(dom-id ...) (generate-temporaries (syntax (dom ...)))]
-                       [arity (length (syntax->list (syntax (dom ...))))]
-                       [name-stx 
-                        (with-syntax ([(name-xs ...) (if method-proc?
-                                                         (cdr (syntax->list (syntax (x ...))))
-                                                         (syntax (x ...)))])
-                          (syntax 
-                           (build-compound-type-name '->r
-                                                     `(,(build-compound-type-name 'name-xs '(... ...)) ...)
-                                                     'rest-x
-                                                     '(... ...)
-                                                     '(... ...))))])
-           (values
-            (lambda (outer-args body)
-              (with-syntax ([body body]
-                            [(val pos-blame neg-blame src-info orig-str name-id) outer-args])
-                (syntax
-                 (let ([name-id name-stx])
-                   body))))
-            (lambda (outer-args inner-lambda) inner-lambda)
-            (lambda (outer-args)
-              (with-syntax ([(val pos-blame neg-blame src-info orig-str name-id) outer-args]
-                            [kind-of-thing (if method-proc? 'method 'procedure)])
-                (syntax
-                 (begin 
-		   (check-procedure/more/kind val arity 'kind-of-thing src-info pos-blame neg-blame orig-str)))))
-            (lambda (outer-args)
-              (with-syntax ([(val pos-blame neg-blame src-info orig-str name-id) outer-args])
-                (syntax-case* (syntax rng) (values any) module-or-top-identifier=?
-                  [any 
-                   (syntax
-                    ((x ... . rest-x)
-                     (let ([dom-id ((coerce/select-contract ->r dom) neg-blame pos-blame src-info orig-str)]
-                           ...
-                           [rest-id ((coerce/select-contract ->r rest-dom) neg-blame pos-blame src-info orig-str)])
-                       (apply val (dom-id x) ... (rest-id rest-x)))))]
-                  [(values (rng-ids rng-ctc) ...)
-                   (and (andmap identifier? (syntax->list (syntax (rng-ids ...))))
-                        (not (check-duplicate-identifier (syntax->list (syntax (rng-ids ...))))))
-                   (with-syntax ([(rng-ids-x ...) (generate-temporaries (syntax (rng-ids ...)))])
+         (with-syntax ([stx-name name])
+           (with-syntax ([(dom-id ...) (generate-temporaries (syntax (dom ...)))]
+                         [arity (length (syntax->list (syntax (dom ...))))]
+                         [name-stx 
+                          (with-syntax ([(name-xs ...) (if method-proc?
+                                                           (cdr (syntax->list (syntax (x ...))))
+                                                           (syntax (x ...)))])
+                            (syntax 
+                             (build-compound-type-name 'stx-name
+                                                       `(,(build-compound-type-name 'name-xs '(... ...)) ...)
+                                                       'rest-x
+                                                       '(... ...)
+                                                       '(... ...))))])
+             (values
+              (lambda (outer-args body)
+                (with-syntax ([body body]
+                              [(val pos-blame neg-blame src-info orig-str name-id) outer-args])
+                  (syntax
+                   (let ([name-id name-stx])
+                     body))))
+              (lambda (outer-args inner-lambda) inner-lambda)
+              (lambda (outer-args)
+                (with-syntax ([(val pos-blame neg-blame src-info orig-str name-id) outer-args]
+                              [kind-of-thing (if method-proc? 'method 'procedure)])
+                  (syntax
+                   (begin 
+                     (check-procedure/more/kind val arity 'kind-of-thing src-info pos-blame neg-blame orig-str)))))
+              (lambda (outer-args)
+                (with-syntax ([(val pos-blame neg-blame src-info orig-str name-id) outer-args])
+                  (syntax-case* (syntax result-stuff) (values any) module-or-top-identifier=?
+                    [(any)
                      (syntax
                       ((x ... . rest-x)
-                       (let ([dom-id ((coerce/select-contract ->r dom) neg-blame pos-blame src-info orig-str)]
-                             ...
-                             [rest-id ((coerce/select-contract ->r rest-dom) neg-blame pos-blame src-info orig-str)])
-                         (let-values ([(rng-ids ...) (apply val (dom-id x) ... (rest-id rest-x))])
-                           (let ([rng-ids-x ((coerce/select-contract ->r rng-ctc)
-                                             pos-blame neg-blame src-info orig-str)] ...)
-                             (values (rng-ids-x rng-ids) ...)))))))]
-                  [(values (rng-ids rng-ctc) ...)
-                   (andmap identifier? (syntax->list (syntax (rng-ids ...))))
-                   (let ([dup (check-duplicate-identifier (syntax->list (syntax (rng-ids ...))))])
-                     (raise-syntax-error '->r "duplicate identifier" stx dup))]
-                  [(values (rng-ids rng-ctc) ...)
-                   (for-each (lambda (rng-id) 
-                               (unless (identifier? rng-id)
-                                 (raise-syntax-error '->r "expected identifier" stx rng-id)))
-                             (syntax->list (syntax (rng-ids ...))))]
-                  [(values . x)
-                   (raise-syntax-error '->r "malformed multiple values result" stx (syntax (values . x)))]
-                  [_
-                   (syntax
-                    ((x ... . rest-x)
-                     (let ([dom-id ((coerce/select-contract ->r dom) neg-blame pos-blame src-info orig-str)]
-                           ...
-                           [rest-id ((coerce/select-contract ->r rest-dom) neg-blame pos-blame src-info orig-str)]
-                           [rng-id ((coerce/select-contract ->r rng) pos-blame neg-blame src-info orig-str)])
-                       (rng-id (apply val (dom-id x) ... (rest-id rest-x))))))])))))]
-        [(_ ([x dom] ...) rest-x rest-dom rng)
+                       (begin
+                         (check-pre-expr->pp/h pre-expr src-info pos-blame neg-blame orig-str)
+                         (let ([dom-id ((coerce/select-contract stx-name dom) neg-blame pos-blame src-info orig-str)]
+                               ...
+                               [rest-id ((coerce/select-contract stx-name rest-dom) neg-blame pos-blame src-info orig-str)])
+                           (apply val (dom-id x) ... (rest-id rest-x))))))]
+                    [(any . x)
+                     (raise-syntax-error name "cannot have anything after any" stx (syntax result-stuff))]
+                    [((values (rng-ids rng-ctc) ...) post-expr)
+                     (and (andmap identifier? (syntax->list (syntax (rng-ids ...))))
+                          (not (check-duplicate-identifier (syntax->list (syntax (rng-ids ...))))))
+                     (with-syntax ([(rng-ids-x ...) (generate-temporaries (syntax (rng-ids ...)))])
+                       (syntax
+                        ((x ... . rest-x)
+                         (begin
+                           (check-pre-expr->pp/h pre-expr src-info pos-blame neg-blame orig-str)
+                           (let ([dom-id ((coerce/select-contract stx-name dom) neg-blame pos-blame src-info orig-str)]
+                                 ...
+                                 [rest-id ((coerce/select-contract stx-name rest-dom) neg-blame pos-blame src-info orig-str)])
+                             (let-values ([(rng-ids ...) (apply val (dom-id x) ... (rest-id rest-x))])
+                               (check-post-expr->pp/h post-expr src-info pos-blame neg-blame orig-str)
+                               (let ([rng-ids-x ((coerce/select-contract stx-name rng-ctc)
+                                                 pos-blame neg-blame src-info orig-str)] ...)
+                                 (values (rng-ids-x rng-ids) ...))))))))]
+                    [((values (rng-ids rng-ctc) ...) . whatever)
+                     (and (andmap identifier? (syntax->list (syntax (rng-ids ...))))
+                          (not (check-duplicate-identifier (syntax->list (syntax (rng-ids ...))))))
+                     (raise-syntax-error name "expected exactly on post-expression at the end" stx)]
+                    [((values (rng-ids rng-ctc) ...) . whatever)
+                     (andmap identifier? (syntax->list (syntax (rng-ids ...))))
+                     (let ([dup (check-duplicate-identifier (syntax->list (syntax (rng-ids ...))))])
+                       (raise-syntax-error name "duplicate identifier" stx dup))]
+                    [((values (rng-ids rng-ctc) ...) . whatever)
+                     (for-each (lambda (rng-id) 
+                                 (unless (identifier? rng-id)
+                                   (raise-syntax-error name "expected identifier" stx rng-id)))
+                               (syntax->list (syntax (rng-ids ...))))]
+                    [((values . x) . whatever)
+                     (raise-syntax-error name "malformed multiple values result" stx (syntax (values . x)))]
+                    [(rng res-id post-expr)
+                     (identifier? (syntax res-id))
+                     (syntax
+                      ((x ... . rest-x)
+                       (begin
+                         (check-pre-expr->pp/h pre-expr src-info pos-blame neg-blame orig-str)
+                         (let ([dom-id ((coerce/select-contract stx-name dom) neg-blame pos-blame src-info orig-str)]
+                               ...
+                               [rest-id ((coerce/select-contract stx-name rest-dom) neg-blame pos-blame src-info orig-str)]
+                               [rng-id ((coerce/select-contract stx-name rng) pos-blame neg-blame src-info orig-str)])
+                           (let ([res-id (rng-id (apply val (dom-id x) ... (rest-id rest-x)))])
+                             (check-post-expr->pp/h post-expr src-info pos-blame neg-blame orig-str)
+                             res-id)))))]
+                    [(rng res-id post-expr)
+                     (not (identifier? (syntax res-id)))
+                     (raise-syntax-error name "expected an identifier" stx (syntax res-id))]
+                    [_
+                     (raise-syntax-error name "malformed result sepecification" stx (syntax result-stuff))]))))))]
+        [(_ ([x dom] ...) rest-x rest-dom pre-expr . result-stuff)
+         (not (identifier? (syntax rest-x)))
+         (raise-syntax-error name "expected identifier" stx (syntax rest-x))]
+        [(_ ([x dom] ...) rest-x rest-dom rng . result-stuff)
          (and (identifier? (syntax rest-x))
               (andmap identifier? (cons (syntax rest-x) (syntax->list (syntax (x ...))))))
          (raise-syntax-error 
-          '->r
+          name
           "duplicate identifier"
           stx
           (check-duplicate-identifier (syntax->list (syntax (x ...)))))]
 
-        [(_ ([x dom] ...) rest-x rest-dom rng)
-         (for-each (lambda (x) (unless (identifier? x) (raise-syntax-error '->r "expected identifier" stx x)))
+        [(_ ([x dom] ...) rest-x rest-dom rng . result-stuff)
+         (for-each (lambda (x) (unless (identifier? x) (raise-syntax-error name "expected identifier" stx x)))
                    (cons
                     (syntax rest-x)
                     (syntax->list (syntax (x ...)))))]
-        [(_ x dom rest-x rest-dom rng)
-         (raise-syntax-error '->r "expected list of identifiers and expression pairs" stx (syntax x))]))
+        [(_ x dom rest-x rest-dom rng . result-stuff)
+         (raise-syntax-error name "expected list of identifiers and expression pairs" stx (syntax x))]))
     
     ;; select/h : syntax -> /h-function
     (define (select/h stx err-name ctxt-stx)
-      (syntax-case stx (-> ->* ->d ->d*)
+      (syntax-case stx (-> ->* ->d ->d* ->r ->pp ->pp-rest)
         [(-> . args) ->/h]
         [(->* . args) ->*/h]
         [(->d . args) ->d/h]
         [(->d* . args) ->d*/h]
         [(->r . args) ->r/h]
+        [(->pp . args) ->pp/h]
+        [(->pp-rest . args) ->pp-rest/h]
         [(xxx . args) (raise-syntax-error err-name "unknown arrow constructor" ctxt-stx (syntax xxx))]
         [_ (raise-syntax-error err-name "malformed arrow clause" ctxt-stx stx)]))
     
@@ -2275,6 +2339,22 @@ add struct contracts for immutable structs?
 	     f)))
 
 
+  (define (check-pre-expr->pp/h pre-expr src-info pos-blame neg-blame orig-str)
+    (unless pre-expr
+      (raise-contract-error src-info
+                            neg-blame
+                            pos-blame
+                            orig-str
+                            "pre-condition expression failure")))
+  
+  (define (check-post-expr->pp/h post-expr src-info pos-blame neg-blame orig-str)
+    (unless post-expr
+      (raise-contract-error src-info
+                            pos-blame
+                            neg-blame
+                            orig-str
+                            "post-condition expression failure")))
+  
   (define (check-procedure val dom-length src-info pos-blame neg-blame orig-str)
     (unless (and (procedure? val)
 		 (procedure-arity-includes? val dom-length))

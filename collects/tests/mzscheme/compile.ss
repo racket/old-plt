@@ -36,7 +36,7 @@
 (letrec ([orig (current-eval)]
 	 [orig-load (current-load)]
 	 [my-load
-	  (lambda (filename)
+	  (lambda (filename expected-module)
 	    (let ([f (open-input-file filename)])
 	      (dynamic-wind
 	       void

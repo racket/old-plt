@@ -4,10 +4,10 @@ See MzScheme_200.txt for information on major changes in MzScheme
 
 Version 199.25:
 
- * Fixed a serious set of GC+tail-call+thread-or-exception bugs in the
+ * Fixed a serious set of tail-call+thread-or-exception+GC bugs in the
    core interpreter. These bugs are old, and they could strike at any
-   time (leading to a seg fault); I'm puzzled that they escaped
-   undetected for so long.
+   time (leading to a seg fault from reading address 0); I'm puzzled
+   that they escaped undetected for so long.
 
  * The prefix in `current-module-name-prefix' is applied only when a
    `module' declaration is evaluated, not when it is compiled or

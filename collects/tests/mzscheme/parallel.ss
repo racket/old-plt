@@ -3,8 +3,12 @@
 ;;  thread creates a directory sub<n> to run in, so that filesystem
 ;;  tests don't collide.
 
-(unless (defined? 'parallel-load)
-  (global-defined-value 'parallel-load "quiet.ss"))
+(with-handlers ([not-break-exn?
+		 (lambda (exn)
+		   (namespace-variable-binding
+		    'parallel-load
+		    "quiet.ss"))])
+  (namespace-variable-binding 'parallel-load))
 
 ; Runs n versions of test in parallel threads and namespaces, 
 ; waiting until all are done
@@ -17,6 +21,7 @@
 		(thread
 		 (lambda ()
 		   (parameterize ([current-namespace ns])
+		     (namespace-transformer-require 'mzscheme)
 		     (let ([dirname (format "sub~s" n)])
 		       (when (directory-exists? dirname)
 			 (delete-directory* dirname))
@@ -54,4 +59,4 @@
 	    (directory-list dir))
   (delete-directory dir))
 
-(parallel 3 (path->complete-path parallel-load (current-load-relative-directory)))
+(parallel 10 (path->complete-path parallel-load (current-load-relative-directory)))

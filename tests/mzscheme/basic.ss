@@ -1255,10 +1255,10 @@
 		     (lambda () 
 		       (set! x (get-x))
 		       (when c1
-			     ((begin0
-			       c1
-			       (set! c1 #f))
-			      (get-y)))))])
+			 ((begin0
+			   c1
+			   (set! c1 #f))
+			  (get-y)))))])
 	       (cons y v))))]
 	[rv2
 	 (lambda (get-v)

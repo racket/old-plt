@@ -314,8 +314,8 @@
 
 (for-each
  (lambda (drive)
-   (test drive path->complete-path drive)
-   (test drive path->complete-path drive drive))
+   (test (string->path drive) path->complete-path drive)
+   (test (string->path drive) path->complete-path drive drive))
  drives)
 
 (unless (eq? (system-type) 'macos)

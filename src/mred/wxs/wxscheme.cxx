@@ -375,6 +375,8 @@ extern "C" {
 
 extern void wxGLNoContext(void);
 static Scheme_Object *context_sema;
+static Scheme_Thread *context_lock_thread;
+static wxGL *context_lock_holder;
 
 #ifdef PROTECT_GLS
 /* We can protect a GL context from other threads only if it's ok to
@@ -456,6 +458,8 @@ static void swap_ctx_out(void *c)
   if (*(Scheme_Object **)c) {
     swap_ctx(c);
     *(Scheme_Object **)c = NULL;
+    context_lock_holder = NULL;
+    context_lock_thread = NULL;
     scheme_post_sema(context_sema);
   }
 }
@@ -463,6 +467,8 @@ static void swap_ctx_out(void *c)
 static void release_context_lock(void *c)
 {
   wxGLNoContext();
+  context_lock_holder = NULL;
+  context_lock_thread = NULL;
   scheme_post_sema(context_sema);
 }
 
@@ -472,8 +478,16 @@ void *wxWithGLContext(wxGL *gl, void *thunk, void *alt_evt, int eb)
   int evts;
 
   if (!context_sema) {
+    wxREGGLOB(context_lock_holder);
+    wxREGGLOB(context_lock_thread);
     wxREGGLOB(context_sema);
     context_sema = scheme_make_sema(1);
+  }
+
+  if ((gl == context_lock_holder)
+      && (context_lock_thread == scheme_current_thread)) {
+    /* The lock is already held by this GL context. */
+    return _scheme_apply_multi((Scheme_Object *)thunk, 0, NULL);
   }
 
   a = (Scheme_Object **)scheme_malloc(2 * sizeof(Scheme_Object *));
@@ -502,7 +516,12 @@ void *wxWithGLContext(wxGL *gl, void *thunk, void *alt_evt, int eb)
   else
     v = scheme_sync(evts, wa);
 
+  /* Note: successful sync gets here before any kill or break */
+
   if (v == context_sema) {
+    context_lock_holder = gl;
+    context_lock_thread = scheme_current_thread;
+
     a[0] = (Scheme_Object *)thunk;
     a[1] = glo;
 

@@ -700,7 +700,7 @@ Scheme_Object *do_cocreate_instance(CLSID clsId,char *name,char *location,
       machineBuff[len] = '\0';  
 
       if (count < len) {
-	scheme_signal_error("cocreate-instance-from-*: "
+	scheme_signal_error("cocreate-instance-from-{coclass,progid}: "
 			    "Unable to translate machine name to Unicode");
       }
 
@@ -720,21 +720,21 @@ Scheme_Object *do_cocreate_instance(CLSID clsId,char *name,char *location,
     pIDispatch = (IDispatch *)(mqi.pItf);
   
     if (mqi.hr != S_OK || pIDispatch == NULL) {
-      codedComError("cocreate-instance-from-*: "
+      codedComError("cocreate-instance-from-{coclass,progid}: "
 		    "Unable to obtain IDispatch interface for remote server",
 		    hr);
     }
 
   }
   else {
-    scheme_signal_error("cocreate-instance-from-*: "
+    scheme_signal_error("cocreate-instance-from-{coclass,progid}: "
 			"Expected 'local, 'remote, or machine name for 2nd argument, "
 			"got '%s",location); 
   }
 
   if (hr != ERROR_SUCCESS) {
     char errBuff[2048];
-    sprintf(errBuff,"cocreate-instance-from-*: Unable to create instance of %s",
+    sprintf(errBuff,"cocreate-instance-from-{coclass,progid}: Unable to create instance of %s",
 	    name);
     codedComError(errBuff,hr);
   }

@@ -1,5 +1,5 @@
 ;;
-;; $Id: contkids.ss,v 1.49 1998/01/27 21:54:12 robby Exp $
+;; $Id: contkids.ss,v 1.50 1998/02/27 00:21:59 robby Exp $
 ;;
 
 ; need to export:
@@ -49,6 +49,9 @@
       
       ; default spacing around edge of panel
       (define const-default-border 0)
+
+      ; the maximum initial user-min-width of a gauge
+      (define const-max-gauge-length 150)
       
       (define counter 0)
       
@@ -468,7 +471,8 @@
 	    stretchable-in-x
 	    stretchable-in-y
 	    set-min-height
-	    set-min-width)
+	    set-min-width
+	    get-parent)
 	  (private
 	    ; # pixels per unit of value.
 	    [pixels-per-value 1]
@@ -487,6 +491,8 @@
 			     (get-two-int-values get-client-size)])
 		 (let ([delta-w (- (get-width) client-width)]
 		       [delta-h (- (get-height) client-height)]
+		       [vertical-labels? (eq? (send (get-parent) get-label-position)
+					      wx:const-vertical)]
 		       [horizontal 
 			(positive? (bitwise-and style wx:const-horizontal))])
 		   (mred:debug:printf
@@ -507,15 +513,21 @@
 		    'container-child-set-min-sizes
 		    "container-child-set-min-sizes: setting sizes & leaving")
 		   (set-min-width (if horizontal
-				      (+ (* range pixels-per-value)
-					 delta-w)
+				      (let ([cw (min const-max-gauge-length
+						     (* range pixels-per-value))])
+					(if vertical-labels?
+					    (max cw (get-width))
+					    (+ cw delta-w)))
 				      ; client-height is the default
 				      ; dimension in the minor direction.
 				      (+ client-width delta-w)))
 		   (set-min-height (if horizontal
 				       (+ client-height delta-h)
-				       (+ (* range pixels-per-value)
-					  delta-h))))))])
+				       (let ([ch (min const-max-gauge-length
+						      (* range pixels-per-value))])
+				       (if vertical-labels?
+					   (+ ch delta-h)
+					   (max ch (get-height)))))))))])
 	  (sequence
 	    (let ([new-args
 		   (apply (opt-lambda

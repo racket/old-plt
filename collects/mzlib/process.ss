@@ -43,20 +43,22 @@
 	     "input port"
 	     p))))
 
-  (define (streamify-in cin in)
+  (define (streamify-in cin in get-thread?)
     (if (and cin (not (file-stream-port? cin)))
-	(begin
-	  (thread (lambda () 
-		    (copy-port cin in)
-		    (close-output-port in)))
-	  #f)
+	(let ([t (thread (lambda () 
+			   (dynamic-wind
+			    void
+			    (lambda () 
+			      (with-handlers ([exn:break? void])
+				(copy-port cin in)))
+			    (lambda () (close-output-port in)))))])
+	  (and get-thread? t))
 	in))
 
-  (define (streamify-out cout out)
+  (define (streamify-out cout out get-thread?)
     (if (and cout (not (file-stream-port? cout)))
-	(begin
-	  (thread (lambda () (copy-port out cout)))
-	  #f)
+	(let ([t (thread (lambda () (copy-port out cout)))])
+	  (and get-thread? t))
 	out))
 
   ;; Old-style functions: ----------------------------------------
@@ -67,10 +69,10 @@
 					   (if-stream-in cin)
 					   (if-stream-out cerr)
 					   exe args)])      
-      (list (streamify-out cout out)
-	    (streamify-in cin in)
+      (list (streamify-out cout out #f)
+	    (streamify-in cin in #f)
 	    (subprocess-pid subp)
-	    (streamify-out cerr err)
+	    (streamify-out cerr err #f)
 	    (letrec ((control
 		      (lambda (m)
 			(case m
@@ -109,10 +111,16 @@
 			 (if-stream-in cin)
 			 (if-stream-out cerr)
 			 exe args)])
-	    (streamify-out cout out)
-	    (streamify-in cin in)
-	    (streamify-out cerr err)
-	    (subprocess-wait subp)
+	    (let ([ot (streamify-out cout out #t)]
+		  [it (streamify-in cin in #t)]
+		  [et (streamify-out cerr err #t)])
+	      (subprocess-wait subp)
+	      (break-thread it) ; stop piping output to subprocess
+	      ;; wait for other pipes to run dry:
+	      (when (thread? ot)
+		(thread-wait ot))
+	      (when (thread? et)
+		(thread-wait et)))
 	    (zero? (subprocess-status subp))))))
 
   (define (system str)

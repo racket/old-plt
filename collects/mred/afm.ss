@@ -235,80 +235,81 @@
 	  [char-set #f]
 	  [char-set-name #f]
 	  [is-cid? #f])
-      (call-with-input-file*
-       file
-       (lambda (i)
-	 (let loop ()
-	   (let ([n (read i)])
-	     (unless (eof-object? n)
-	       (case n
-		 [(descender) (set! descender (read i))]
-		 [(fontbbox) (let ([l (read i)]
-				   [t (read i)]
-				   [r (read i)]
-				   [b (read i)])
-			       (set! bbox-down b))]
-		 [(capheight) (set! cap-height (read i))]
-		 [(characterset) (let ([m (regexp-match #rx#"[a-zA-Z_0-9-]+" (read-bytes-line i))])
-				   (when m
-				     (set! char-set-name (car m))
-				     (set! char-set (get-cmap char-set-name))))]
-		 [(iscidfont) (set! is-cid?
-				    (regexp-match #rx#"true" (read-bytes-line i)))]
-		 [(startcharmetrics)
-		  (let ([cnt (read i)])
-		    (let loop ()
-		      (let ([n (read i)])
-			(when (or (eq? n 'c)
-				  (eq? n 'ch))
-			  (let ([v (read i)]
-				[rest (read-bytes-line i)])
-			    (let ([nm (regexp-match #rx#"; *N +([a-zA-Z0-9]+) *;" rest)]
-				  [wm (regexp-match #rx#"; *W.?X +([0-9]+) *;" rest)])
-			      (when (or (and (eq? n 'c)
-					     (integer? v))
-					(and (eq? n 'ch)
-					     (symbol? v)
-					     (regexp-match #rx#"^<[0-9a-fA-F]>$" (symbol->string v))))
-				(let ([name (or (and nm 
-						     (if is-cid?
-							 (bytes->number (cadr nm))
-							 (cadr nm)))
-						0)])
-				  (hash-table-put!
-				   achars
-				   (if (and char-set is-cid?)
-				       (hash-table-get char-set name (lambda () 0))
-				       (find-unicode name))
-				   (make-achar
-				    (let ([v (if (eq? n 'c)
-						 v
-						 (let ([s (symbol->string v)])
-						   (string->number (substring s 1 (sub1 (string-length s))) 16)))])
-				      (if (= v -1)
-					  name
-					  v))
-				    (or (and wm (bytes->number (cadr wm))) 500)
-				    (extract-ligatures rest)))))))
-			  (loop)))))]
-		 [(startkernpairs)
-		  (let ([cnt (read i)])
-		    (let loop ()
-		      (let ([kp (read i)])
-			(when (or (eq? kp 'kp)
-				  (eq? kp 'kpx))
-			  (let ([v1 (parameterize ([read-case-sensitive #t])
-				      (read i))]
-				[v2 (parameterize ([read-case-sensitive #t])
-				      (read i))]
-				[amt (read i)])
-			    (read-bytes-line i)
-			    (let ([v1 (find-unicode (string->bytes/utf-8 (symbol->string v1)))]
-				  [v2 (find-unicode (string->bytes/utf-8 (symbol->string v2)))])
-			      (set! kern-pairs (cons (list v1 v2 amt) kern-pairs))))
-			  (loop)))))]
-		 [else (read-bytes-line i)])
-	       (loop))))))
+      (parameterize ([read-case-sensitive #f])
+	(call-with-input-file*
+	 file
+	 (lambda (i)
+	   (let loop ()
+	     (let ([n (read i)])
+	       (unless (eof-object? n)
+		 (case n
+		   [(descender) (set! descender (read i))]
+		   [(fontbbox) (let ([l (read i)]
+				     [t (read i)]
+				     [r (read i)]
+				     [b (read i)])
+				 (set! bbox-down b))]
+		   [(capheight) (set! cap-height (read i))]
+		   [(characterset) (let ([m (regexp-match #rx#"[a-zA-Z_0-9-]+" (read-bytes-line i))])
+				     (when m
+				       (set! char-set-name (car m))
+				       (set! char-set (get-cmap char-set-name))))]
+		   [(iscidfont) (set! is-cid?
+				      (regexp-match #rx#"true" (read-bytes-line i)))]
+		   [(startcharmetrics)
+		    (let ([cnt (read i)])
+		      (let loop ()
+			(let ([n (read i)])
+			  (when (or (eq? n 'c)
+				    (eq? n 'ch))
+			    (let ([v (read i)]
+				  [rest (read-bytes-line i)])
+			      (let ([nm (regexp-match #rx#"; *N +([a-zA-Z0-9]+) *;" rest)]
+				    [wm (regexp-match #rx#"; *W.?X +([0-9]+) *;" rest)])
+				(when (or (and (eq? n 'c)
+					       (integer? v))
+					  (and (eq? n 'ch)
+					       (symbol? v)
+					       (regexp-match #rx#"^<[0-9a-fA-F]>$" (symbol->string v))))
+				  (let ([name (or (and nm 
+						       (if is-cid?
+							   (bytes->number (cadr nm))
+							   (cadr nm)))
+						  0)])
+				    (hash-table-put!
+				     achars
+				     (if (and char-set is-cid?)
+					 (hash-table-get char-set name (lambda () 0))
+					 (find-unicode name))
+				     (make-achar
+				      (let ([v (if (eq? n 'c)
+						   v
+						   (let ([s (symbol->string v)])
+						     (string->number (substring s 1 (sub1 (string-length s))) 16)))])
+					(if (= v -1)
+					    name
+					    v))
+				      (or (and wm (bytes->number (cadr wm))) 500)
+				      (extract-ligatures rest)))))))
+			    (loop)))))]
+		   [(startkernpairs)
+		    (let ([cnt (read i)])
+		      (let loop ()
+			(let ([kp (read i)])
+			  (when (or (eq? kp 'kp)
+				    (eq? kp 'kpx))
+			    (let ([v1 (parameterize ([read-case-sensitive #t])
+					(read i))]
+				  [v2 (parameterize ([read-case-sensitive #t])
+					(read i))]
+				  [amt (read i)])
+			      (read-bytes-line i)
+			      (let ([v1 (find-unicode (string->bytes/utf-8 (symbol->string v1)))]
+				    [v2 (find-unicode (string->bytes/utf-8 (symbol->string v2)))])
+				(set! kern-pairs (cons (list v1 v2 amt) kern-pairs))))
+			    (loop)))))]
+		   [else (read-bytes-line i)])
+		 (loop)))))))
       (for-each (lambda (kp)
 		  (let ([c1 (car kp)]
 			[c2 (cadr kp)]

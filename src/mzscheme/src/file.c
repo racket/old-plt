@@ -488,6 +488,7 @@ static int find_mac_file(const char *filename, FSSpec *spec, int finddir, int fi
   char buf[256];
   short find_vref;
   long find_dir_id;
+  int need_filedate = 0;
 
   if (dealiased)
     *dealiased = 0;
@@ -501,6 +502,8 @@ static int find_mac_file(const char *filename, FSSpec *spec, int finddir, int fi
     *type = 0;
   if (size)
     *size = 0;
+  if (filedate)
+    *filedate = 0;
 
   wdrec.ioNamePtr = (StringPtr)buf;
   if (PBHGetVol(&wdrec, 0))
@@ -511,8 +514,11 @@ static int find_mac_file(const char *filename, FSSpec *spec, int finddir, int fi
   
   /* filename is NULL => Local directory */
   if (!*filename) {
-    if (!finddir)
+    if (findfile && (findfile != -3))
       return 0;
+    if (exists)
+      *exists = 1;
+    need_filedate = 1;
   } else {
     const char *p;
     int has_colon;
@@ -546,6 +552,15 @@ static int find_mac_file(const char *filename, FSSpec *spec, int finddir, int fi
       find_vref = hrec.volumeParam.ioVRefNum;
       find_dir_id = 0;
     }
+    
+    if (!*p) {
+      if (findfile && (findfile != -3))
+        return 0;
+      if (exists)
+        *exists = 1;
+      need_filedate = 1;
+    }
+
     while (p && *p) {
       const char *next = p;
       int len = 0;
@@ -582,6 +597,7 @@ static int find_mac_file(const char *filename, FSSpec *spec, int finddir, int fi
 	    *wasdir = 1;
 	  if (exists)
 	    *exists = 1;
+	  need_filedate = 1;
 	}
       } else {
 	spec->vRefNum = find_vref;
@@ -674,6 +690,8 @@ static int find_mac_file(const char *filename, FSSpec *spec, int finddir, int fi
 	    if (!next) {
 	      if (flags)
 	        *flags = pbrec.hFileInfo.ioFlAttrib;
+	      if (filedate)
+	        *filedate = pbrec.dirInfo.ioDrMdDat;
 	      if (exists)
 	        *exists = 1;
 	     }
@@ -683,6 +701,16 @@ static int find_mac_file(const char *filename, FSSpec *spec, int finddir, int fi
       
       p = next;
     }
+  }
+  
+  if (need_filedate && filedate) {
+    Str255 buffer;
+    pbrec.hFileInfo.ioNamePtr = buffer;
+    pbrec.hFileInfo.ioVRefNum = find_vref;
+    pbrec.hFileInfo.ioDirID = find_dir_id;
+    pbrec.hFileInfo.ioFDirIndex = -1;
+    if (!PBGetCatInfo(&pbrec, 0))
+      *filedate = pbrec.dirInfo.ioDrMdDat;
   }
   
   spec->vRefNum = find_vref;
@@ -2607,6 +2635,7 @@ static Scheme_Object *file_modify_seconds(int argc, Scheme_Object **argv)
 #ifdef USE_MAC_FILE_TOOLBOX
   FSSpec spec;
   long mtime;
+  int exists;
 #else
   struct MSC_IZE(stat) buf;
 #endif
@@ -2626,7 +2655,8 @@ static Scheme_Object *file_modify_seconds(int argc, Scheme_Object **argv)
 #endif
 
 #ifdef USE_MAC_FILE_TOOLBOX	  
-  if (!find_mac_file(file, &spec, 0, 1, NULL, NULL, NULL, &mtime, NULL, NULL, NULL, NULL))
+  if (!find_mac_file(file, &spec, 0, 0, NULL, NULL, &exists, &mtime, NULL, NULL, NULL, NULL)
+      || !exists)
     return scheme_false;
 
   return scheme_make_integer_value_from_time(mtime);

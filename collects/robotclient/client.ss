@@ -69,7 +69,12 @@
                  (command-arg command))))
     (newline out))
        
-  
+  (define (compute-move-ff packages robots out)
+    (let ((command (compute-move packages robots)))
+      ;;(printf "Sending command: ~a (bid ~a)~n" (command-command command)
+      ;;	  (command-bid command))
+      (printf "fight or flight~n")
+      (send-command command out)))
   
   (define (do-turn update-score in out)
     (let loop ((packages (read-packages in))
@@ -85,7 +90,7 @@
 	 packages)))
 
       (cond
-       ((null? packages) (fix-home!)))
+        ((null? packages) (fix-home!)))
 
       (cond
        ((is-robot-within? (get-player-x) (get-player-y) 3)
@@ -93,14 +98,15 @@
 	 ((or (null? (path)) (null? (cdr (path))))
 	  (compute-baseline-move packages robots)))
 	(path-loc (cadr (path)))
-        (let ((command (compute-move packages robots)))
-	  ;;(printf "Sending command: ~a (bid ~a)~n" (command-command command)
-	  ;;	  (command-bid command))
-	  (printf "fight or flight~n")
-          (send-command command out)))
+        (compute-move-ff packages robots out))
        (else
-	(printf "baseline~n")
-	(send-command (compute-baseline-move packages robots) out)))
+        (let ((c (compute-baseline-move packages robots)))
+          (cond
+            ((symbol? c)
+             (compute-move-ff packages robots out))
+            (else
+             (printf "baseline~n")
+             (send-command c out))))))
 
       (let ((robots (read-response! update-score
 				    packages

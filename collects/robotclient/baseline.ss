@@ -70,7 +70,10 @@
          (set-queue-tail! q null)))
       (set-queue-head! q (cdr (queue-head q)))))
                   
-
+  (define (queue-empty? q)
+    (null? (queue-head q)))
+  
+  
   (define (goal-score spot)
     (cond
      ((null? (packages-held))
@@ -110,7 +113,9 @@
 	(cond
 	 ((> count MAX_BFS)
 	  (guess-path (map reverse (queue-head q)) goal?))
-	 (else
+	 ((queue-empty? q)
+          'nowhere-to-go)
+         (else
 	  (let ((path (dequeue! q)))
 	    (cond
 	     ((goal? (car path)) (reverse path))

@@ -106,11 +106,12 @@
    (standard-menus<%>)
    args
    (inherit on-menu-char on-traverse-char)
+   (rename (super-on-subwindow-char on-subwindow-char))
    (override
      (on-subwindow-char
        (lambda (receiver event)
          (if (preferences:get 'framework:menu-bindings)
-           (or (on-menu-char event) (on-traverse-char event))
+           (super-on-subwindow-char receiver event)
            (on-traverse-char event)))))
    (inherit get-menu-bar can-close? on-close show get-edit-target-object)
    (sequence (apply super-init args))

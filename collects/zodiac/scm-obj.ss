@@ -372,6 +372,7 @@
 				     (expand-expr decl env attributes
 				       inherit-ivar-decl-entry-parser-vocab))
 				(pat:pexpand '(ivar-decl ...) p-env kwd))))
+		  (valid-syntactic-id? super)
 		  (make-inherit-from-entry
 		    decls
 		    super))))
@@ -433,6 +434,7 @@
 				     (expand-expr decl env attributes
 				       rename-ivar-decl-entry-parser-vocab))
 				(pat:pexpand '(ivar-decl ...) p-env kwd))))
+		  (valid-syntactic-id? super)
 		  (make-rename-from-entry
 		    (map car decls)
 		    (map cdr decls)
@@ -510,6 +512,7 @@
 				     (expand-expr decl env attributes
 				       share-ivar-decl-entry-parser-vocab))
 				(pat:pexpand '(ivar-decl ...) p-env kwd))))
+		  (valid-syntactic-id? super)
 		  (make-share-from-entry
 		    (map car decls)
 		    (map cadr decls)

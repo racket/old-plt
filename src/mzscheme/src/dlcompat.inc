@@ -22,10 +22,10 @@ OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-extern void * dlopen(const char *path, int mode);
-extern void * dlsym(void * handle, const char *symbol);
-extern const char * dlerror(void);
-extern int dlclose(void * handle);
+static void * dlopen(const char *path, int mode);
+static void * dlsym(void * handle, const char *symbol);
+static const char * dlerror(void);
+static int dlclose(void * handle);
 
 #define RTLD_LAZY	0x1
 #define RTLD_NOW	0x2
@@ -105,10 +105,6 @@ static void * reference (struct dlstatus * dls, int mode);
 static void * dlsymIntern(struct dlstatus * dls, const char *symbol, int canSetError);
 static struct dlstatus * allocStatus(void);
 static struct dlstatus * loadModule(const char * path, const struct stat * sbuf, int mode);
-
-/* Two Global Functions */
-void * dlsym_prepend_underscore(void * handle, const char *symbol);
-void * dlsym_auto_underscore(void * handle, const char *symbol);
 
 /* Functions */
 
@@ -443,7 +439,7 @@ static struct dlstatus * loadModule(const char * path,
 	return dls;
 }
 
-void * dlopen(const char * path, int mode)
+static void * dlopen(const char * path, int mode)
 {
 	const struct stat * sbuf;
 	struct dlstatus * dls;
@@ -471,57 +467,7 @@ void * dlopen(const char * path, int mode)
 	return reference(loadModule(fullPath, sbuf, mode),mode);
 }
 
-void * dlsym_prepend_underscore(void * handle, const char *symbol)
-{
-/*
- 	A quick and easy way for poting packages which call dlsym(handle,"sym")
-	If the porter adds -Ddlsym=dlsym_prepend_underscore to the CFLAGS then
-	this function will be called, and will add the required underscore.
-	
-	Note that I haven't figured out yet, which should be "standard", prepend
-	the underscore always, or not at all. These global functions need to go away
-	for opendarwin.
-*/	
-	static char undersym[257];
-	int sym_len = strlen(symbol);
-	void* value = NULL;
-	char* malloc_sym = NULL;
-	struct dlstatus * dls = handle;
-
-	if (!isValidStatus(dls))
-		return NULL;
-			
-	if (sym_len < 256) {
-		snprintf(undersym,256,"_%s",symbol);
-		value = dlsymIntern(handle,undersym,1);
-	}
-	else {
-		malloc_sym = malloc(sym_len + 2);
-		if (malloc_sym) {
-			sprintf(malloc_sym,"_%s",symbol);
-			value = dlsymIntern(handle,malloc_sym,1);
-			free(malloc_sym);
-		}
-		else {
-			error("Unable to allocate memory");
-		}
-	}	
-	return value;
-}
-
-void * dlsym_auto_underscore(void * handle, const char *symbol)
-{
-	struct dlstatus * dls = handle;
-	void * addr = 0;
-	if (!isValidStatus(dls))
-		return NULL;
-	addr = dlsymIntern(dls, symbol,0);
-	if (!addr)
-		addr = dlsym_prepend_underscore( handle, symbol);
-	return addr;
-}
-
-void * dlsym(void * handle, const char *symbol)
+static void * dlsym(void * handle, const char *symbol)
 {
 	struct dlstatus * dls = handle;
 	void * addr = 0;
@@ -532,7 +478,7 @@ void * dlsym(void * handle, const char *symbol)
 	return addr;
 }
 
-int dlclose(void * handle)
+static int dlclose(void * handle)
 {
 	struct dlstatus * dls = handle;
 	if (!isValidStatus(dls))
@@ -574,7 +520,7 @@ int dlclose(void * handle)
 	return 0;
 }
 
-const char * dlerror(void)
+static const char * dlerror(void)
 {
 	const char * e = err_filled ? err_str : 0;
 	err_filled = 0;

@@ -137,10 +137,6 @@ mredx.o : $(srcdir)/mredx.cxx $(srcdir)/../mzscheme/include/scheme.h $(srcdir)/m
           $(srcdir)/../mzscheme/src/stypes.h
 	$(CXX) $(CPPFLAGS) $(LOCALFLAGS) -c $(srcdir)/mredx.cxx -o mredx.o
 
-wxGC.o : $(srcdir)/../wxcommon/wxGC.cxx $(srcdir)/../wxcommon/wxGC.h \
-         $(srcdir)/../mzscheme/src/stypes.h
-	$(CXX) $(CPPFLAGS) $(LOCALFLAGS) -c $(srcdir)/../wxcommon/wxGC.cxx -o wxGC.o
-
 mredmac.o : $(srcdir)/mredmac.cxx $(srcdir)/../mzscheme/include/scheme.h $(srcdir)/mred.h \
           $(srcdir)/../wxcommon/wxGC.h $(srcdir)/../wxcommon/wx_list.h \
           $(srcdir)/../mzscheme/src/stypes.h

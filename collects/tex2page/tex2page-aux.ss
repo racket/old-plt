@@ -17,7 +17,7 @@
 ;(c) Dorai Sitaram, 
 ;http://www.ccs.neu.edu/~dorai/scmxlate/scmxlate.html
 
-(define *tex2page-version* "4r8a")
+(define *tex2page-version* "4r8b")
 
 (define *tex2page-website*
   "http://www.ccs.neu.edu/~dorai/tex2page/tex2page-doc.html")
@@ -2475,7 +2475,7 @@
     (let ((n (length *footnote-list*)))
       (unless (= n 0)
         (do-end-para)
-        (emit "<div class=smallprint><hr></div>")
+        (emit "<div class=footnoterule><hr></div>")
         (do-para)
         (do-end-para)
         (emit "<div class=footnote>")
@@ -3115,6 +3115,9 @@
       (when (memv 'document-title *missing-pieces*)
         (write-log "Document title not determined")
         (write-log 'separation-newline))
+      (when (memv 'last-page *missing-pieces*)
+        (write-log "Last page not determined")
+        (write-log 'separation-newline))
       (when (memv 'last-modification-time *missing-pieces*)
         (write-log "Last modification time not determined")
         (write-log 'separation-newline))
@@ -3643,7 +3646,7 @@
   (lambda ()
     (when (or *colophon-mentions-last-mod-time?* *colophon-mentions-tex2page?*)
       (do-end-para)
-      (emit "<div class=smallprint>")
+      (emit "<div align=right class=colophon>")
       (emit-newline)
       (emit "<i>")
       (when (and
@@ -3695,7 +3698,7 @@
                  *output-extension*)))))
       (unless (and first-page? last-page?)
         (do-end-para)
-        (emit "<div class=navigation><i>[Go to ")
+        (emit "<div align=right class=navigation><i>[Go to ")
         (emit "<span")
         (when first-page? (emit " class=disable"))
         (emit ">")
@@ -3898,10 +3901,11 @@
         "\\end occurred inside a group at level "
         (length *tex-env*)))
     (perform-postludes)
-    (set! *last-page-number* *html-page-count*)
+    (unless (>= *last-page-number* 0) (flag-missing-piece 'last-page))
+    (!last-page-number *html-page-count*)
     (write-aux `(!last-page-number ,*last-page-number*))
     (do-end-page)
-    (if *last-modification-time*
+    (when *last-modification-time*
       (write-aux `(!last-modification-time ,*last-modification-time*)))
     (close-all-open-ports)
     (call-external-programs-if-necessary)

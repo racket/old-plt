@@ -87,11 +87,6 @@ void wxRegion::SetRoundedRectangle(float x, float y, float width, float height, 
 {
   Cleanup();
 
-  x = dc->LogicalToDeviceX(x);
-  y = dc->LogicalToDeviceY(y);
-  width = dc->LogicalToDeviceXRel(width);
-  height = dc->LogicalToDeviceYRel(height);
-
   // A negative radius value is interpreted to mean
   // 'the proportion of the smallest X or Y dimension'
   if (radius < 0.0) {
@@ -104,15 +99,57 @@ void wxRegion::SetRoundedRectangle(float x, float y, float width, float height, 
   } else
     radius = dc->LogicalToDeviceXRel(radius);
 
+#ifndef wx_x
+  if (ps) {
+#endif
+    wxRegion *lt = new wxRegion(dc);
+    wxRegion *rt = new wxRegion(dc);
+    wxRegion *lb = new wxRegion(dc);
+    wxRegion *rb = new wxRegion(dc);
+    wxRegion *w = new wxRegion(dc);
+    wxRegion *h = new wxRegion(dc);
+    wxRegion *r;
+
+    lt->SetEllipse(x, y, 2 * radius, 2 * radius);
+    rt->SetEllipse(x + width - 2 * radius, y, 2 * radius, 2 * radius);
+    rb->SetEllipse(x + width - 2 * radius, y + height - 2 * radius, 2 * radius, 2 * radius);
+    lb->SetEllipse(x, y + height - 2 * radius, 2 * radius, 2 * radius);
+
+    w->SetRectangle(x, y + radius, width, height - 2 * radius);
+    h->SetRectangle(x + radius, y, width - 2 * radius, height);
+
+    r = lt;
+    r->Union(rt);
+    r->Union(lb);
+    r->Union(rb);
+    r->Union(w);
+    r->Union(h);
+
+    ps = r->ps;
+#ifdef wx_x
+    /* A little hack: steal rgn from r: */
+    rgn = r->rgn;
+    r->rgn = NULL;
+#else
+  }
+#endif
+
+  x = dc->LogicalToDeviceX(x);
+  y = dc->LogicalToDeviceY(y);
+  width = dc->LogicalToDeviceXRel(width);
+  height = dc->LogicalToDeviceYRel(height);
+  int xradius = dc->LogicalToDeviceXRel(radius);
+  int yradius = dc->LogicalToDeviceYRel(radius);
+
 #ifdef wx_msw
-  rgn = CreateRoundRectRgn(x, y, x + width, y + height, radius, radius);
+  rgn = CreateRoundRectRgn(x, y, x + width, y + height, xradius, yradius);
 #endif
 #ifdef wx_mac
   rgn = NewRgn();
   OpenRgn();
   Rect r;
   SetRect(&r, x, y, x + width, y + height);
-  FrameRoundRect(&r, radius, radius);
+  FrameRoundRect(&r, xradius, yradius);
   CloseRgn(rgn);
 #endif
 }

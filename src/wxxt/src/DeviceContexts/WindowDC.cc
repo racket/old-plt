@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: WindowDC.cc,v 1.8 1998/09/23 00:11:57 mflatt Exp $
+ * $Id: WindowDC.cc,v 1.9 1998/09/23 12:53:19 mflatt Exp $
  *
  * Purpose: device context to draw drawables
  *          (windows and pixmaps, even if pixmaps are covered by wxMemoryDC)
@@ -183,7 +183,7 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
 	// Check if we're copying from a mono bitmap
         retval = TRUE;
 	if (src->GetDepth() == 1) {
-	  if (rop == wxSOLID) {
+	  if ((rop == wxSOLID) || (rop == wxXOR)) {
 	    /* Seems like the easiest way to implement transparent backgrounds is to
 	       use a stipple. */
 	    XGCValues values;

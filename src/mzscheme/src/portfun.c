@@ -1391,8 +1391,8 @@ user_write_result(const char *who, Scheme_Output_Port *port, int evt_ok,
       if (!n && len) {
 	scheme_arg_mismatch(who,
 			    (evt_ok
-			     ? "bad result for write: "
-			     : "bad result for non-flushing write event: "),
+			     ? "bad result for non-flush write: "
+			     : "bad result for non-flush write event: "),
 			    val);
       }
 

@@ -207,7 +207,7 @@
 			(when dir?
 			  (static-error file
 			    "Cannot include a directory"))
-			(let ((original-directory (current-directory))
+			(let ((original-directory (current-load-relative-directory))
 			       (p (with-handlers
 				    ((exn:i/o:filesystem:filename?
 				       (lambda (exn)
@@ -218,7 +218,7 @@
 			  (dynamic-wind
 			    (lambda ()
 			      (when (string? base)
-				(current-directory base)))
+				(current-load-relative-directory base)))
 			    (lambda ()
 			      (let ((reader
 				      (z:read p
@@ -230,7 +230,7 @@
 					  (z:location-offset
 					    z:default-initial-location)
 					  (build-path
-					    (current-directory)
+					    (current-load-relative-directory)
 					    name)))))
 				(let ((code
 					(let loop ()
@@ -247,7 +247,7 @@
 					expr)
 				      env attributes vocab)))))
 			    (lambda ()
-			      (current-directory original-directory)
+			      (current-load-relative-directory original-directory)
 			      (close-input-port p))))))
 		    (static-error file "Does not yield a filename"))))))
 	  (else
@@ -302,7 +302,7 @@
 			(when dir?
 			  (static-error file
 			    "Cannot include a directory"))
-			(let ((original-directory (current-directory))
+			(let ((original-directory (current-load-relative-directory))
 			       (p (with-handlers
 				    ((exn:i/o:filesystem:filename?
 				       (lambda (exn)
@@ -313,7 +313,7 @@
 			  (dynamic-wind
 			    (lambda ()
 			      (when (string? base)
-				(current-directory base)))
+				(current-load-relative-directory base)))
 			    (lambda ()
 			      (let ((reader
 				      (z:read p
@@ -325,7 +325,7 @@
 					  (z:location-offset
 					    z:default-initial-location)
 					  (build-path
-					    (current-directory)
+					    (current-load-relative-directory)
 					    name)))))
 				(let ((code
 					(let loop ()
@@ -342,7 +342,7 @@
 					expr)
 				      env attributes vocab)))))
 			    (lambda ()
-			      (current-directory original-directory)
+			      (current-load-relative-directory original-directory)
 			      (close-input-port p)))))))))))
 	  (else
 	    (static-error expr "Malformed reference-library"))))))

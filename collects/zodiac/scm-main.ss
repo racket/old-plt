@@ -233,29 +233,46 @@
       (lambda-handler '#%lambda))
 
     (when (language>=? 'side-effecting)
-      (let ((begin-handler
-	      (lambda (b-kwd)
-		(add-micro-form b-kwd scheme-vocabulary
-		  (let* ((kwd (list b-kwd))
-			  (in-pattern `(,b-kwd b ...))
-			  (m&e (pat:make-match&env in-pattern kwd)))
-		    (lambda (expr env attributes vocab)
-		      (cond
-			((pat:match-against m&e expr env)
-			  =>
-			  (lambda (p-env)
-			    (let ((bodies (pat:pexpand '(b ...) p-env kwd)))
-			      (if (null? bodies)
-				(static-error expr "Malformed begin")
-				(if (null? (cdr bodies))
-				  (expand-expr (car bodies) env attributes vocab)
-				  (let ((peabodies
-					  (map (lambda (e)
-						 (expand-expr e env attributes vocab))
-					    bodies)))
-				    (create-begin-form peabodies expr)))))))
-			(else
-			  (static-error expr "Malformed begin")))))))))
+      (let
+	((begin-handler
+	   (lambda (b-kwd)
+	     (add-micro-form b-kwd scheme-vocabulary
+	       (let* ((kwd (list b-kwd))
+		       (in-pattern `(,b-kwd b ...))
+		       (m&e (pat:make-match&env in-pattern kwd)))
+		 (lambda (expr env attributes vocab)
+		   (cond
+		     ((pat:match-against m&e expr env)
+		       =>
+		       (lambda (p-env)
+			 (let ((bodies (pat:pexpand '(b ...) p-env kwd)))
+			   (let ((peabodies
+				   (map (lambda (e)
+					  (expand-expr e env
+					    attributes vocab))
+				     bodies)))
+			     (let-values
+			       (((definitions terms)
+				  (let loop ((seen '()) (rest peabodies))
+				    (if (null? rest)
+				      (static-error expr
+					(if (null? seen)
+					  "Malformed begin"
+					  "Internal definitions not followed by expression"))
+				      (let ((first (car rest)))
+					(if (define-values-form? first)
+					  (loop (cons first seen)
+					    (cdr rest))
+					  (values (reverse seen) rest)))))))
+			       (if (null? definitions)
+				 (create-begin-form terms expr)
+				 (create-letrec*-values-form
+				   (map define-values-form-vars definitions)
+				   (map define-values-form-val definitions)
+				   (create-begin-form terms expr)
+				   expr)))))))
+		     (else
+		       (static-error expr "Malformed begin")))))))))
 	(begin-handler 'begin)
 	(begin-handler '#%begin)))
 
@@ -480,8 +497,6 @@
 		(let ((define-values-helper
 			(lambda (handler)
 			  (lambda (expr env attributes vocab)
-			    (unless (at-top-level? attributes)
-			      (static-error expr "Not at top-level"))
 			    (cond
 			      ((pat:match-against m&e-1 expr env)
 				=>
@@ -1349,6 +1364,8 @@
 			(in-pattern `(,d-m-kwd macro-name macro-handler))
 			(m&e (pat:make-match&env in-pattern kwd)))
 		  (lambda (expr env attributes vocab)
+		    (unless (at-top-level? attributes)
+		      (static-error expr "Not at top-level"))
 		    (cond
 		      ((pat:match-against m&e expr env)
 			=>
@@ -1356,13 +1373,17 @@
 			  (let ((macro-name (pat:pexpand 'macro-name p-env kwd))
 				 (macro-handler (pat:pexpand 'macro-handler p-env kwd)))
 			    (valid-syntactic-id? macro-name)
-			    (let* ((real-name (sexp->raw macro-name))
+			    (let* ((top-level? (get-top-level-status
+						 attributes))
+				    (_ (set-top-level-status attributes))
+				    (real-name (sexp->raw macro-name))
 				    (raw-handler (sexp->raw macro-handler))
 				    (real-handler (with-parameterization
 						    zodiac-user-parameterization
 						    (lambda ()
 						      (eval raw-handler))))
 				    (cache-table (make-hash-table)))
+			      (set-top-level-status attributes top-level?)
 			      (unless (procedure? real-handler)
 				(static-error expr "Expander is not a procedure"))
 			      (add-macro-form real-name vocab

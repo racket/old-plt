@@ -366,6 +366,9 @@ MenuHandle wxMenu::CreateCopy(char *title, Bool doabouthack, MenuHandle toHandle
     }
     node = node->Next();						// watch for null?	
   }
+
+  if (GetMenuWidth(nmh) < requestedWidth)
+    SetMenuWidth(nmh, requestedWidth);
 	
   return nmh;
 }
@@ -1150,4 +1153,10 @@ void wxMenu::wxMacInsertSubmenu(void)
       }
       node = node->Next();
     }
+}
+
+//-----------------------------------------------------------------------------
+void wxMenu::SetWidth(int w)
+{
+  requestedWidth = w;
 }

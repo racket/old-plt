@@ -34,6 +34,7 @@ protected:
 	MenuHandle		cMacMenu;		// mac platform
 	short			cMacMenuId;		// mac platform
 	static short	gMenuIdCounter; // mac platform (to give unique menuID's to mac menus)
+	int requestedWidth;
 
 //=============================================================================
 // Public methods
@@ -86,6 +87,8 @@ public:
 
     MenuHandle CreateCopy(char *title, Bool doabouthack, MenuHandle toHandle = NULL);
     void CheckHelpHack(void);
+
+    void SetWidth(int req);
 
 //=============================================================================
 // Protected methods

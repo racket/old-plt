@@ -12,7 +12,7 @@
 #include "wxMacDC.h"
 #include "wx_area.h"
 
-#define SIDE_COMBO_WIDTH 18
+#define SIDE_COMBO_WIDTH 20
 
 //=============================================================================
 // Public constructors
@@ -42,10 +42,11 @@ wxRectBorder::wxRectBorder // Constructor (given parentArea)
     cPaintFocus = -1;
     if (te_border == 2) {
       parentArea->SetMargin(margin + SIDE_COMBO_WIDTH, wxRight);
+      cGrandcursor = TRUE;
     }
   }
   cTEBorder = te_border;
-  CreatePaintControl(margin);
+  CreatePaintControl((te_border == 2) ? 0 : margin);
 }
 
 //=============================================================================
@@ -92,7 +93,7 @@ void wxRectBorder::Paint(void)
       // if (cPaintFocus < 0)
       // DrawThemeFocusRect (&clientRect, FALSE);
       DrawThemeEditTextFrame(&clientRect, disabled ? kThemeStateInactive : kThemeStateActive);
-      if (cPaintFocus > 0)
+      if ((cPaintFocus > 0) && (cTEBorder != 2))
 	DrawThemeFocusRect (&clientRect, TRUE);
       if (cTEBorder == 2) {
 	ThemeButtonDrawInfo info;

@@ -37,11 +37,10 @@
           
           (define error-alert-text%
             (class test-case:program-editor%
-              (rename [super-highlight-range highlight-range])
               (define/override highlight-range
                 (opt-lambda (start end color (bitmap false) (caret-space false) (priority 'low))
                   (when collapsed? (collapse false))
-                  (super-highlight-range start end color bitmap caret-space priority)))
+                  (super highlight-range start end color bitmap caret-space priority)))
               (super-new)))
           
           (init-field
@@ -161,7 +160,7 @@
                 (erase))
               (send (send (get-admin) get-editor) begin-edit-sequence)
               (let ([port
-                     (make-custom-output-port
+                     (make-output-port
                       false
                       (lambda (s start end block?)
                         (send actual insert s)

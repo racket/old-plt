@@ -29,11 +29,10 @@
           (inherit get-definitions-text get-edit-target-object get-menu-bar
                    get-special-menu)
           
-          (rename [super-execute-callback execute-callback])
           (define/override (execute-callback)
             (send (get-definitions-text) for-each-test-case
                   (lambda (case) (send case reset)))
-            (super-execute-callback)
+            (super execute-callback)
             (set! needs-reset? true)
             (set! delay? true))
           
@@ -108,7 +107,7 @@
           
           #;(rename [super-set-modified set-modified])
           #;(define/override (set-modified b)
-            (super-set-modified b)
+            (super set-modified b)
             (when b (reset-test-case-boxes)))
           
           ;; set all of the test-case-boxes in the definitions text to an unevaluated state
@@ -139,17 +138,15 @@
                   (find-frame parent)
                   area)))
           
-          (rename [super-reset-highlighting reset-highlighting])
           (define/override (reset-highlighting)
-            (super-reset-highlighting)
+            (super reset-highlighting)
             (let ([text (send (find-frame (get-canvas)) get-definitions-text)])
               (if (send text delay-reset)
                   (send text delay-reset false)
                   (send text reset-test-case-boxes)))) 
           
-          (rename [super-reset-console reset-console])
           (define/override (reset-console)
-            (super-reset-console)
+            (super reset-console)
             (parameterize ([current-namespace (get-user-namespace)])
               (namespace-require '(lib "test-case.ss" "test-suite" "private"))))
           (super-new)))

@@ -6,8 +6,9 @@
            ->*
            ->d*
            case->
+	   opt->
            provide/contract)
-  
+
   (require-for-syntax mzscheme
                       (lib "list.ss")
 		      (lib "name.ss" "syntax")
@@ -23,13 +24,8 @@
        (andmap identifier? (syntax->list (syntax (id ...))))
        (with-syntax ([(id-rename ...) (generate-temporaries (syntax (id ...)))]
                      [pos-blame-stx (datum->syntax-object provide-stx 'here)]
-                     [module-source-as-symbol (datum->syntax-object 
-                                               provide-stx
-                                               'module-source-as-symbol)]
-                     [pos-blame 
-                      (datum->syntax-object 
-                       provide-stx
-                       'module-source-as-symbol)])
+                     [module-source-as-symbol (datum->syntax-object provide-stx 'module-source-as-symbol)]
+                     )
          (syntax
           (begin
             (provide (rename id-rename id) ...)
@@ -86,11 +82,14 @@
   (define (raise-error src-info to-blame fmt . args)
     (error
      'contract-error
-     (string-append (format "blame: ~a; contract established at: ~s; " 
+     (string-append (format "blame: ~a; contract established at: ~s ~s; "
                             to-blame
-                            src-info)
+                            src-info
+			    (syntax-object->datum src-info))
                     (apply format fmt args))))
   
+  ;; contract = (make-contract (alpha sym sym sym -> alpha))
+  ;; generic contract container
   (define-struct contract (f))
 
   (define-syntax -contract
@@ -544,6 +543,29 @@
       
       (values ->/f ->*/f ->d/f ->d*/f case->/f)))
 
+  (define-syntax (opt-> stx)
+    (syntax-case stx ()
+      [(_ (reqs ...) (opts ...) res)
+       (let* ([res-v (generate-temporaries (list (syntax result)))]
+	      [req-vs (generate-temporaries (syntax->list (syntax (reqs ...))))]
+	      [opt-vs (generate-temporaries (syntax->list (syntax (opts ...))))]
+	      [cases
+	       (reverse
+		(let loop ([opt-vs (reverse opt-vs)])
+		  (cond
+		    [(null? opt-vs) (list (append req-vs res-v))]
+		    [else (cons (append req-vs (reverse opt-vs) res-v)
+				(loop (cdr opt-vs)))])))])
+	 (with-syntax ([(res-v) res-v]
+		       [(req-vs ...) req-vs]
+		       [(opt-vs ...) opt-vs]
+		       [((cases ...) ...) cases])
+	   (syntax
+	    (let ([res-v res]
+		  [req-vs reqs] ...
+		  [opt-vs opts] ...)
+	      (case-> (-> cases ...) ...)))))]))
+
   (define (contract-p? val)
     (or (contract? val)
         (and (procedure? val)
@@ -563,14 +585,44 @@
             contract
             val))]))
 
+  (define (union . args)
+    (for-each
+     (lambda (x) 
+       (unless (contract-p? x)
+         (error 'union "expected procedures of arity 1 or -> contracts, got: ~e" x)))
+     args)
+    (let-values ([(contracts procs)
+                  (let loop ([ctcs null]
+                             [procs null]
+                             [args args])
+                    (cond
+                      [(null? args) (values ctcs procs)]
+                      [else (let ([arg (car args)])
+                              (if (contract? arg)
+                                  (loop (cons arg ctcs) procs (cdr args))
+                                  (loop ctcs (cons arg procs) (cdr args))))]))])
+      (unless (or (null? contracts)
+                  (null? (cdr contracts)))
+        (error 'union "expected at most one contract, got: ~e" args))
+      (make-contract
+       (lambda (val pos neg src-info)
+         (cond
+           [(ormap (lambda (proc) (proc val)) procs)
+            val]
+           [(null? contracts)
+            (raise-error src-info pos "union failed")]
+           [(null? (cdr contracts))
+            ((contract-f (car contracts)) val pos neg src-info)])))))
+             
 
   (provide and/f or/f 
            >=/c <=/c </c >/c 
            false? any? 
+	   printable?
            union symbols
            subclass?/c implementation?/c is-a?/c
-           listof vectorof cons/p
-	   mixin-contract make-mixin-contract/<%> make-mixin-contract/%)
+           listof vectorof cons/p list/p
+	   mixin-contract make-mixin-contract)
   
   (define-syntax (name stx)
     (syntax-case stx ()
@@ -583,6 +635,21 @@
           (lambda (x)
             (memq x ss))))
 
+  (define (printable? x)
+    (or (symbol? x)
+	(string? x)
+	(boolean? x)
+	(char? x)
+	(null? x)
+	(number? x)
+	(and (pair? x)
+	     (printable? (car x))
+	     (printable? (cdr x)))
+	(and (vector? x)
+	     (andmap printable? (vector->list x)))
+	(and (box? x)
+	     (printable? (unbox x)))))
+
   (define (>=/c x) (name >=/c (lambda (y) (and (number? y) (>= y x)))))
   (define (<=/c x) (name <=/c (lambda (y) (and (number? y) (<= y x)))))
   (define (</c x) (name </c (lambda (y) (and (number? y) (< y x)))))
@@ -594,14 +661,6 @@
 
   (define (false? x) (not x))
   (define (any? x) #t)
-  (define (union . fs)
-    (for-each
-     (lambda (x) 
-       (unless (and (procedure? x)
-                    (procedure-arity-includes? x 1))
-         (error 'union "expected procedures of arity 1, got: ~e" x)))
-     fs)
-    (name union (lambda (x) ((apply or/f fs) x))))
 
   (define (and/f . fs)
     (for-each
@@ -613,7 +672,7 @@
     (name and/f
           (lambda (x)
             (andmap (lambda (f) (f x)) fs))))
-  
+
   (define (or/f . fs)
     (for-each
      (lambda (x) 
@@ -643,17 +702,24 @@
 	   (hdp (car x))
 	   (tlp (cdr x)))))
 
+  (define (list/p . args)
+    (let loop ([args args])
+      (cond
+	[(null? args) null?]
+	[else (cons/p (car args) (loop (cdr args)))])))
+
   (define mixin-contract
     (class?
      . ->d .
      subclass?/c))
 
-  (define (make-mixin-contract/<%> <%>)
-    ((and/f class? (implementation?/c <%>))
+  (define (make-mixin-contract . %/<%>s)
+    ((and/f class? (apply and/f (map sub/impl?/c %/<%>s)))
      . ->d .
      subclass?/c))
 
-  (define (make-mixin-contract/% %)
-    ((and/f class? (subclass?/c %))
-     . ->d .
-     subclass?/c)))
+  (define (sub/impl?/c %/<%>)
+    (cond
+      [(interface? %/<%>) (implementation?/c %/<%>)]
+      [(class? %/<%>) (subclass?/c %/<%>)]
+      [else (error 'make-mixin-contract "unknown input ~e" %/<%>)])))

@@ -15,5 +15,4 @@
 	      [-exn? exn?])
 
       (define-struct (-exn exn) ())
-      (define-struct (unknown-preference exn) ())
-      (define-struct (during-preferences exn) ()))))
+      (define-struct (unknown-preference exn) ()))))

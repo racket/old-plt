@@ -379,6 +379,37 @@
       (cf (lambda (x%) 'going-to-be-bad)))
    "neg")   
 
+  (test/spec-failed
+   'union1
+   '(contract (union false?) #t 'pos 'neg)
+   "pos")
+
+  (test/spec-passed
+   'union2
+   '(contract (union false?) #f 'pos 'neg))
+
+  (test/spec-passed
+   'union3
+   '((contract (union (-> integer? integer?)) (lambda (x) x) 'pos 'neg) 1))
+  
+  (test/spec-failed
+   'union4
+   '((contract (union (-> integer? integer?)) (lambda (x) x) 'pos 'neg) #f)
+   "neg")
+  
+  (test/spec-failed
+   'union5
+   '((contract (union (-> integer? integer?)) (lambda (x) #f) 'pos 'neg) 1)
+   "pos")
+  
+  (test/spec-passed
+   'union6
+   '(contract (union false? (-> integer? integer?)) #f 'pos 'neg))
+  
+  (test/spec-passed
+   'union7
+   '((contract (union false? (-> integer? integer?)) (lambda (x) x) 'pos 'neg) 1))
+
   )
   
   

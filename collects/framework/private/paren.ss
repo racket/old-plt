@@ -291,8 +291,7 @@
   (define forward-match
     (case-lambda
      [(edit pos end-pos paren-pairs quote-pairs eol-comment-list)
-      (forward-match
-       edit pos end-pos paren-pairs quote-pairs eol-comment-list #f)]
+      (forward-match edit pos end-pos paren-pairs quote-pairs eol-comment-list #f)]
      [(edit pos end-pos paren-pairs quote-pairs eol-comment-list paren-cache)
       (do-match #t #f edit pos end-pos paren-pairs quote-pairs eol-comment-list quote-pairs paren-cache)]))
   

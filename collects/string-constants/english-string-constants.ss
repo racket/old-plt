@@ -762,7 +762,7 @@
  (mrflow-language-primitives-error "Wrong filename for language primitives types table: ~a")
 
  (xml-tool-menu "XML")
- (xml-tool-xml-box "XML Box")
- (xml-tool-scheme-box "Scheme Box")
+ (xml-tool-xml-box "Insert XML Box")
+ (xml-tool-scheme-box "Insert Scheme Box")
  
  )

@@ -1194,8 +1194,10 @@ void wxApp::doMacInDrag(WindowPtr window)
       theMacWxFrame->DragFrame(cCurrentEvent.where);
     
       if ((oldx != theMacWxFrame->cWindowX)
-	  || (oldy != theMacWxFrame->cWindowY))
+	  || (oldy != theMacWxFrame->cWindowY)) {
 	last_drag_click = NULL;
+	theMacWxFrame->OnSize(-1, -1);
+      }
     }
   }
 }

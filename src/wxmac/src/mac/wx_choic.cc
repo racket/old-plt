@@ -41,6 +41,7 @@
 #define PAD_X 2
 #define MSPACEY 1
 
+extern char *wxBuildMacMenuString(StringPtr setupstr, char *itemName, Bool stripCmds);
 
 wxChoice::wxChoice()
 {
@@ -120,7 +121,9 @@ Create (wxPanel * panel, wxFunction func, char *Title,
     ::AppendMenu(hDynMenu, "\ptemp");
     {
       CFStringRef ct;
-      ct = CFStringCreateWithCString(NULL, Choices[n], kCFStringEncodingUTF8);
+      char *s;
+      s = wxBuildMacMenuString(NULL, Choices[n], 1);
+      ct = CFStringCreateWithCString(NULL, s, kCFStringEncodingUTF8);
       ::SetMenuItemTextWithCFString(hDynMenu, n + 1, ct);
       CFRelease(ct);
     }
@@ -287,7 +290,9 @@ void wxChoice::Append (char *Item)
   ::InsertMenuItem(hDynMenu, "\ptemp", no_strings);
   {
     CFStringRef ct;
-    ct = CFStringCreateWithCString(NULL, Item, kCFStringEncodingUTF8);
+    char *s;
+    s = wxBuildMacMenuString(NULL, Item, 1);
+    ct = CFStringCreateWithCString(NULL, s, kCFStringEncodingUTF8);
     ::SetMenuItemTextWithCFString(hDynMenu, no_strings + 1, ct);
     CFRelease(ct);
   }

@@ -1,4 +1,7 @@
 
+Version 205.8
+Added vector-immutable
+
 Version 205.7
 Macro templates can include consecutive ... for splicing
  sequences

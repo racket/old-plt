@@ -171,7 +171,7 @@
 	 [(f init l) (fold-one f init l)]
 	 [(f init l . ls) (fold-n f init (cons l ls))]))))
    
-   (define first (polymorphic car))
+   (define first (polymorphic (lambda (x) (car x))))
    (define second (polymorphic cadr))
    (define third (polymorphic caddr))
    (define fourth (polymorphic cadddr))
@@ -180,7 +180,7 @@
    (define seventh (polymorphic (compose fourth cdddr)))
    (define eighth (polymorphic (compose fourth cddddr)))
 
-   (define rest (polymorphic cdr))
+   (define rest (polymorphic (lambda (x) (cdr x))))
 
    (define  build-string
      (lambda  (n  fcn)

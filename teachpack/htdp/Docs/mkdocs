@@ -85,10 +85,10 @@ string=? ; exec mzscheme -qr $0 "$@"
   (printf "Writing hdindex...\n")
   (with-output-to-file ifile
     (lambda ()
+      (define (writeln x) (printf "~s\n" x))
       (printf "(\n")
-      (printf "~s\n"
-              '("Teachpacks for \"How to Design Programs\""
-                "index.html" "HtDP" "Arrows GUI teachpack"))
+      (writeln '("Teachpacks for \"How to Design Programs\""
+                 "index.html" "HtDP" "Arrows GUI teachpack"))
       (for-each
        (lambda (lib-name)
          (let* ([src (cdr lib-name)]
@@ -97,9 +97,8 @@ string=? ; exec mzscheme -qr $0 "$@"
                  (cadr (or (regexp-match "\\(define *FILENAME *\"(.*?)\"\\)"
                                          (open-input-file src))
                            (error 'mkdocs "Didn't find FILENAME in ~s" src)))])
-           (printf "(~s ~s ~s ~s)~n"
-                   filename (thtml-name->html src) filename
-                   (format "~a teachpack" title))))
+           (writeln `(,filename ,(thtml-name->html src) ,filename
+                                ,(format "~a teachpack" title)))))
        lib-names)
-      (printf ")~n"))
+      (printf ")\n"))
     'truncate))

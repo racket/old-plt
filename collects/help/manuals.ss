@@ -29,14 +29,18 @@
 	 [names
 	  (map
 	   (lambda (d)
-	     (with-input-from-file (build-path d "index.htm")
-	       (lambda ()
-		 (let loop ()
-		   (let ([r (read-line)])
-		     (cond
-		      [(eof-object? r) "(Unknown title)"]
-		      [(regexp-match "<[tT][iI][tT][lL][eE]>(.*)</[tT][iI][tT][lL][eE]>" r) => cadr]
-		      [else (loop)]))))))
+	     (let-values ([(_1 short-path _2) (split-path d)])
+	       (let ([ass (assoc short-path known-docs)])
+		 (if ass
+		     (cdr ass)
+		     (with-input-from-file (build-path d "index.htm")
+		       (lambda ()
+			 (let loop ()
+			   (let ([r (read-line)])
+			     (cond
+			      [(eof-object? r) "(Unknown title)"]
+			      [(regexp-match "<[tT][iI][tT][lL][eE]>(.*)</[tT][iI][tT][lL][eE]>" r) => cadr]
+			      [else (loop)])))))))))
 	   doc-paths)])
     (let-values ([(collections-doc-files collection-names)
 		  ((require-library "colldocs.ss" "help") quicksort)])

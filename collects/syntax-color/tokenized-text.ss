@@ -278,8 +278,8 @@
               (unless just-clear?
                 (let* ((here (get-start-position)))
                   (when (= here (get-end-position))
-                    (let-values (((start-f end-f error-f) (time (send parens match-forward here)))
-                                 ((start-b end-b error-b) (time (send parens match-backward here))))
+                    (let-values (((start-f end-f error-f) (send parens match-forward here))
+                                 ((start-b end-b error-b) (send parens match-backward here)))
                       (when (and start-f end-f)
                         (highlight start-f end-f here error-f))
                       (when (and start-b end-b)

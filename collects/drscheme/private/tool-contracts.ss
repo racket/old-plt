@@ -346,10 +346,9 @@
   (drscheme:debug:show-backtrace-window
    (string?
     (listof any?)
-    (union procedure? false?)
     . -> .
     void?)
-   (error-message dis k)
+   (error-message dis)
    "Shows the backtrace window you get when clicking on the bug in"
    "DrScheme's REPL."
    ""
@@ -357,9 +356,6 @@
    "\\var{dis} is the debug information, extracted from the"
    "continuation mark in the exception record, using"
    "@flink drscheme:debug:get-cm-key %"
-   ", and \\var{dis} k"
-   "is a continuation which may be used to resume execution"
-   "in the case of a breakpoint (or \\rawscm{\\#f} for non-breakpoints)"
    ".")
   
   (drscheme:debug:get-cm-key

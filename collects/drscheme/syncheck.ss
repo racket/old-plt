@@ -111,19 +111,19 @@ If the namespace does not, they are colored the unbound color.
         (fw:mixin ((class->interface text%)) ()
           
           (inherit begin-edit-sequence end-edit-sequence)
-          (define/override (on-delete start len)
+          (define/augment (on-delete start len)
             (begin-edit-sequence)
-            (super on-delete start len))
-          (define/override (after-delete start len)
-            (super after-delete start len)
+            (inner (void) on-delete start len))
+          (define/augment (after-delete start len)
+            (inner (void) after-delete start len)
             (clean-up)
             (end-edit-sequence))
           
-          (define/override (on-insert start len)
+          (define/augment (on-insert start len)
             (begin-edit-sequence)
-            (super on-insert start len))
-          (define/override (after-insert start len)
-            (super after-insert start len)
+            (inner (void) on-insert start len))
+          (define/augment (after-insert start len)
+            (inner (void) after-insert start len)
             (clean-up)
             (end-edit-sequence))
 
@@ -135,7 +135,7 @@ If the namespace does not, they are colored the unbound color.
                     (let ([fr (send can get-top-level-window)])
                       (send fr syncheck:clear-highlighting)))))))
           
-	  (super-instantiate ())))
+	  (super-new)))
       
       
       (define make-graphics-text%
@@ -384,8 +384,8 @@ If the namespace does not, they are colored the unbound color.
 
               (inherit get-top-level-window)
 
-              (define/override (on-change)
-                (super on-change)
+              (define/augment (on-change)
+                (inner (void) on-change)
                 (when arrow-vectors
                   (flush-arrow-coordinates-cache)
                   (let ([any-tacked? #f])
@@ -809,9 +809,9 @@ If the namespace does not, they are colored the unbound color.
               (send txt freeze-colorer)
               (set! cleanup-texts (cons txt cleanup-texts))))
           
-	  (define/override (on-close)
+	  (define/augment (on-close)
 	    (send report-error-text on-close)
-	    (super on-close))
+	    (inner (void) on-close))
 
           (define report-error-parent-panel 'uninitialized-report-error-parent-panel)
           (define report-error-panel 'uninitialized-report-error-panel)

@@ -47,9 +47,6 @@
       (define (module-based-language-extension super%)
         (class* super% ()
           
-          (rename [super-on-execute on-execute]
-                  [super-render-value/format render-value/format]
-                  [super-render-value render-value])
           (inherit get-sharing-printing get-abbreviate-cons-as-list)
           
           (define/override (default-settings)
@@ -61,7 +58,6 @@
              #t
              'none))
           
-          (rename [super-config-panel config-panel])
           (inherit get-allow-sharing? get-use-function-output-syntax? 
                    get-accept-quasiquote? get-read-accept-dot)
           (define/override (config-panel parent)
@@ -78,7 +74,7 @@
                  (error-print-source-location #f)
                  (read-decimal-as-inexact #f)
                  (read-accept-dot (get-read-accept-dot)))))
-            (super-on-execute settings run-in-user-thread))
+            (super on-execute settings run-in-user-thread))
 
 	  ;; set-printing-parameters : settings ( -> TST) -> TST
 	  ;; is implicitly exposed to the stepper.  watch out!  --  john
@@ -102,13 +98,13 @@
             (set-printing-parameters
              settings
              (lambda ()
-               (super-render-value/format value settings port put-snip width))))
+               (super render-value/format value settings port put-snip width))))
           
           (define/override (render-value value settings port put-snip)
             (set-printing-parameters
              settings
              (lambda ()
-               (super-render-value value settings port put-snip))))
+               (super render-value value settings port put-snip))))
           
           (super-instantiate ())))
       

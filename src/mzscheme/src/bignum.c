@@ -554,7 +554,7 @@ Scheme_Object *scheme_bignum_sub1(const Scheme_Object *n)
 static Scheme_Object *bignum_multiply(const Scheme_Object *a, const Scheme_Object *b, int norm)
 {
   Scheme_Object *o;
-  long a_size, a_pos, b_size, b_pos, res_size;
+  long a_size, a_pos, b_size, b_pos, res_size, i, j;
   bigdig* o_digs, *a_digs, *b_digs;
   SAFE_SPACE(asd) SAFE_SPACE(bsd)
 
@@ -586,10 +586,17 @@ static Scheme_Object *bignum_multiply(const Scheme_Object *a, const Scheme_Objec
 
   PROTECT(a_digs, a_size);
   PROTECT(b_digs, b_size);
-  if (a_size > b_size)
-    mpn_mul(o_digs, a_digs, a_size, b_digs, b_size);
+
+  for (i = 0; (a_digs[i] == 0) && i < a_size; i++) {
+    o_digs[i] = 0;
+  }
+  for (j = 0; (b_digs[j] == 0) && j < b_size; j++) {
+    o_digs[i + j] = 0;
+  }
+  if ((a_size - i) > (b_size - j))
+    mpn_mul(o_digs + i + j, a_digs + i, a_size - i, b_digs + j, b_size - j);
   else
-    mpn_mul(o_digs, b_digs, b_size, a_digs, a_size);
+    mpn_mul(o_digs + i + j, b_digs + j, b_size - j, a_digs + i, a_size - i);
   RELEASE(a_digs);
   RELEASE(b_digs);
 
@@ -620,7 +627,7 @@ static Scheme_Object *do_power(const Scheme_Object *a, unsigned long b)
   {
     i = i - 1;
   }
-  
+
   while (i >= 0)
   {
     result = scheme_bin_mult(result, result);
@@ -731,7 +738,7 @@ static Scheme_Object *do_bitop(const Scheme_Object *a, const Scheme_Object *b, i
   else
     res_digs = allocate_bigdig_array(res_alloc);
 
-  carry_out_a = carry_out_b = carry_out_res = 1;  
+  carry_out_a = carry_out_b = carry_out_res = 1;
   carry_in_a = carry_in_b = carry_in_res = 0;
 
   for (i = 0; i < res_alloc; ++i)
@@ -1209,7 +1216,7 @@ void scheme_bignum_divide(const Scheme_Object *n, const Scheme_Object *d,
     if (_stk_rp)
       *_stk_rp = (norm ? scheme_make_integer(0) : scheme_make_bignum(0));
     return;
-  } else {    
+  } else {
     int i;
     long n_size, d_size, q_alloc, r_alloc, d_pos;
     short n_pos;
@@ -1223,7 +1230,7 @@ void scheme_bignum_divide(const Scheme_Object *n, const Scheme_Object *d,
     q->type = scheme_bignum_type;
     r = (Scheme_Object *)scheme_malloc_tagged(sizeof(Scheme_Bignum));
     r->type = scheme_bignum_type;
-    
+
     q_alloc = n_size - d_size + 1;
     r_alloc = d_size;
 
@@ -1250,7 +1257,7 @@ void scheme_bignum_divide(const Scheme_Object *n, const Scheme_Object *d,
 
     n_pos = SCHEME_BIGPOS(n);
     d_pos = SCHEME_BIGPOS(d);
-    
+
     if (_stk_rp) {
       SCHEME_BIGDIG(r) = r_digs;
       r_alloc = bigdig_length(r_digs, r_alloc);
@@ -1317,14 +1324,14 @@ Scheme_Object *scheme_integer_sqrt_rem(const Scheme_Object *n, Scheme_Object **r
     if (n_size == 0)
       return scheme_make_integer(0);
     sqr_digs = SCHEME_BIGDIG_SAFE(n, qsd);
-    
+
     if (n_size & 0x1)
       res_alloc = (n_size + 1) >> 1;
     else
       res_alloc = n_size >> 1;
-    
+
     res_digs = PROTECT_RESULT(res_alloc);
-    
+
     if (remainder)
     {
       rem_alloc = n_size;
@@ -1335,17 +1342,17 @@ Scheme_Object *scheme_integer_sqrt_rem(const Scheme_Object *n, Scheme_Object **r
       rem_alloc = 0;
       rem_digs = NULL;
     }
-    
-    PROTECT(sqr_digs, n_size);  
-    
+
+    PROTECT(sqr_digs, n_size);
+
     rem_size = mpn_sqrtrem(res_digs, rem_digs, sqr_digs, n_size);
 
     RELEASE(sqr_digs);
-    
+
     if (remainder || rem_size == 0) {
       /* An integer result */
       FINISH_RESULT(res_digs, res_alloc);
-      
+
       if (remainder && rem_size == 0) {
 	*remainder = scheme_make_integer(0);
 	RELEASE(rem_digs);
@@ -1360,7 +1367,7 @@ Scheme_Object *scheme_integer_sqrt_rem(const Scheme_Object *n, Scheme_Object **r
 	SCHEME_BIGPOS(p) = 1;
 	*remainder = scheme_bignum_normalize(p);
       }
-      
+
       o = (Scheme_Object *)scheme_malloc_tagged(sizeof(Scheme_Bignum));
       o->type = scheme_bignum_type;
       res_alloc = bigdig_length(res_digs, res_alloc);
@@ -1372,12 +1379,12 @@ Scheme_Object *scheme_integer_sqrt_rem(const Scheme_Object *n, Scheme_Object **r
       o = NULL;
     RELEASE(res_digs);
   }
-  
+
   if (remainder || rem_size == 0)
     return o;
   else {
     double v;
-    
+
     if (SCHEME_INTP(n))
       v = (double)SCHEME_INT_VAL(n);
     else {

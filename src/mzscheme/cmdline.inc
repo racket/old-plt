@@ -10,6 +10,8 @@
 #define NDESC "Keywords are not enforced.\n"
 #define YDESC "Only #%% syntactic forms are present.\n"
 
+char *cmdline_exe_hack = "[Replace me for EXE hack                                       ]";
+
 #ifndef DONT_PARSE_COMMAND_LINE
 static int is_number_arg(const char *s)
 {
@@ -54,6 +56,23 @@ static char *make_require_lib(const char *file, const char *coll)
   strcat(s, "\" \"");
   strcat(s, coll);
   strcat(s, "\")");
+  return s;
+}
+
+static char *make_embedded_load(const char *start, const char *end)
+{
+  char *s;
+
+  s = (char *)malloc(strlen(start) + strlen(end) + 512);
+  
+  sprintf(s,
+	  "(let* ([sp (find-system-path 'exec-file)] [exe (find-executable-path sp sp)]"
+                 "[s (with-input-from-file exe (lambda () "
+	              "(file-position (current-input-port) %s) (read-string (- %s %s))))]"
+                 "[p (open-input-string s)])"
+	     "(let loop () (let ([e (read p)]) (unless (eof-object? e) (eval e) (loop)))))",
+	  start, end, start);
+
   return s;
 }
 #endif
@@ -198,6 +217,33 @@ static int run_from_cmd_line(int argc, char *argv[],
     }
   }
 #endif
+  
+  /* If cmdline_exe_hack is changed, then we extract built-in
+     arguments. */
+  if (cmdline_exe_hack[0] != '[') {
+    int n, i, d;
+    char *p, **argv2;
+
+    p = cmdline_exe_hack + 1;
+    n = 0;
+    while (*p) {
+      n++;
+      p += *p + 1;
+    }
+
+    argv2 = (char **)malloc(sizeof(char *) * (argc + n));
+    p = cmdline_exe_hack + 1;
+    for (i = 0; i < n; i++) {
+      d = *p;
+      argv2[i] = p + 1;
+      p += d + 1;
+    }
+    for (; i < n + argc; i++) {
+      argv2[i] = argv[i - n];
+    }
+    argv = argv2;
+    argc += n;
+  }
 
 #ifndef DONT_PARSE_COMMAND_LINE
   if (argc && (!strcmp(argv[0], "--restore")
@@ -378,6 +424,22 @@ static int run_from_cmd_line(int argc, char *argv[],
 	case 'w':
 	  se = make_require_lib("awk.ss", "mzlib");
 	  evals_and_loads[num_enl] = se;
+	  is_load[num_enl++] = 0;
+	  break;
+	case 'k':
+	  if (argc < 3) {
+	    PRINTF("%s: Missing %s after %s switch.\n", 
+		   prog, 
+		   (argc < 2) ? "starting and ending offsets" : "ending offset",
+		   real_switch);
+	    goto show_need_help;
+	  }
+	  argv++;
+	  --argc;
+	  se = make_embedded_load(argv[0], argv[1]);
+	  evals_and_loads[num_enl] = se;
+	  argv++;
+	  --argc;
 	  is_load[num_enl++] = 0;
 	  break;
 	case 'q':
@@ -562,6 +624,7 @@ static int run_from_cmd_line(int argc, char *argv[],
 	 "  -z, --stdio : Use stdio REPL. Same as -ve '(read-eval-print-loop)'.\n"
 # endif
 	 "  -w, --awk : Same as -l awk.ss.\n"
+	 "  -k <n> <m> : Load executable-embedded code from file offset <n> to <m>.\n"
 	 " Initialization switches:\n"
          "  -x, --no-lib-path : Does not try to set current-library-collection-paths.\n"
 	 "  -q, --no-init-file : Does not try to load " INIT_FILENAME ".\n"

@@ -55,6 +55,7 @@
 #define IMPLEMENTATION "implementation?"
 #define INTERFACE_EXTENSION "interface-extension?"
 #define IVAR_IN_INTERFACE "ivar-in-interface?"
+#define INTERFACE_IVAR_NAMES "interface->ivar-names"
 #define OBJECT_INTERFACE "object-interface"
 #define CLASS_TO_INTERFACE "class->interface"
 #define CLASS_INIT_ARITY "class-initialization-arity"
@@ -1083,6 +1084,25 @@ static Scheme_Object *Interface_Execute(Scheme_Object *form)
 		       num_names, nbanka, NULL, NULL,
 		       NULL, NULL, 2); /* 2 => must be disjoint */
     newcount = total - num_names;
+
+    /* Check for variables already in supclass */
+    {
+      int count, j, k;
+      Scheme_Object **a;
+      count = in->supclass->num_public;
+      a = in->supclass->public_names;
+      j = k = 0;
+      while ((j < count) && (k < data->num_names)) {
+	if (SEQUALS(a[j], data->names[k])) {
+	  scheme_raise_exn(MZEXN_OBJECT,
+			   "interface: superinterface already contains name: %S",
+			   a[j]);
+	} else if (SLESSTHAN(a[j], data->names[k]))
+	  j++;
+	else
+	  k++;
+      }
+    }
     
     mbankb = MALLOC_N_ATOMIC(short, data->num_names);
     /* init to -1; we'll go back and set the numbers later */
@@ -4010,6 +4030,32 @@ static Scheme_Object *ObjectInterface(int c, Scheme_Object *p[])
   return (Scheme_Object *)((Scheme_Class *)((Scheme_Class_Object *)p[0])->sclass)->equiv_intf;
 }
 
+Scheme_Object *InterfaceIvarNames(int argc, Scheme_Object **argv)
+{
+  Scheme_Interface *interface = (Scheme_Interface *)argv[0];
+  Scheme_Object *p = scheme_null, **a;
+  int i;
+
+  if (!SCHEME_INTERFACEP(argv[0]))
+    scheme_wrong_type(INTERFACE_IVAR_NAMES, "interface", 0, argc, argv);
+
+  i = interface->num_names;
+  a = interface->names;
+  while (i--) {
+    p = scheme_make_pair(a[i], p);
+  }
+
+  i = interface->supclass->num_public;
+  a = interface->supclass->public_names;
+  while (i--) {
+    p = scheme_make_pair(a[i], p);
+  }
+
+  return p;
+}
+
+
+
 static Scheme_Object *ClassInitArity(int n, Scheme_Object *p[])
 {
   Scheme_Class *c;
@@ -4199,6 +4245,11 @@ void scheme_init_object(Scheme_Env *env)
 			     scheme_make_folding_prim(ObjectInterface, 
 						      OBJECT_INTERFACE,
 						      1, 1, 1), 
+			     env);
+  scheme_add_global_constant(INTERFACE_IVAR_NAMES,
+			     scheme_make_prim_w_arity(InterfaceIvarNames, 
+						      INTERFACE_IVAR_NAMES,
+						      1, 1), 
 			     env);
   scheme_add_global_constant(CLASS_INIT_ARITY, 
 			     scheme_make_folding_prim(ClassInitArity, 

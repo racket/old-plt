@@ -226,6 +226,7 @@
 	(bytes? v)
 	(vector? v)
 	(pair? v)
+	(hash-table? v)
 	(box? v)
 	(void? v)
 	(date? v)
@@ -249,7 +250,10 @@
   (define (is-mutable? o)
     (or (and (or (pair? o)
 		 (box? o)
-		 (vector? o))
+		 (vector? o)
+		 (date? o)
+		 (hash-table? o)
+		 (arity-at-least? o))
 	     (not (immutable? o)))
 	(serializable-struct? o)))
 
@@ -262,7 +266,7 @@
     (let ([o (car cycle-stack)])
       (cond
        [(eq? o v)
-	(error 'serialize "cannot serialize cycle of immutable values" v)]
+	(error 'serialize "cannot serialize cycle of immutable values: ~e" v)]
        [(is-mutable? o)
 	o]
        [else
@@ -335,6 +339,10 @@
 	    (loop (unbox v))]
 	   [(date? v)
 	    (for-each loop (cdr (vector->list (struct->vector v))))]
+	   [(hash-table? v)
+	    (hash-table-for-each v (lambda (k v)
+				     (loop k)
+				     (loop v)))]
 	   [(arity-at-least? v)
 	    (loop (arity-at-least-value v))]
 	   [else (raise-type-error
@@ -388,6 +396,16 @@
        [(box? v)
 	(cons (if (immutable? v) 'b 'b!)
 	      ((serial #t) (unbox v)))]
+       [(hash-table? v)
+	(list* 'h
+	       (if (immutable? v) '_ '!)
+	       (append
+		(if (hash-table? v 'equal) '(equal) null)
+		(if (hash-table? v 'weak) '(weak) null))
+	       (let ([loop (serial #t)])
+		 (hash-table-map v (lambda (k v)
+				     (cons (loop k)
+					   (loop v))))))]
        [(date? v)
 	(cons 'date
 	      (map (serial #t) (cdr (vector->list (struct->vector v)))))]
@@ -410,6 +428,10 @@
       'c]
      [(box? v)
       'b]
+     [(hash-table? v)
+      (cons 'h (append
+		(if (hash-table? v 'equal) '(equal) null)
+		(if (hash-table? v 'weak) '(weak) null)))]
      [(date? v)
       'date]
      [(arity-at-least? v)
@@ -493,6 +515,17 @@
 	  [(v!) (list->vector (map loop (cdr v)))]
 	  [(b) (box-immutable (loop (cdr v)))]
 	  [(b!) (box (loop (cdr v)))]
+	  [(h) (let ([al (map (lambda (p)
+				(cons (loop (car p))
+				      (loop (cdr p))))
+			      (cdddr v))])
+		 (if (eq? '! (cadr v))
+		     (let ([ht (apply make-hash-table (caddr v))])
+		       (for-each (lambda (p)
+				   (hash-table-put! ht (car p) (cdr p)))
+				 al)
+		       ht)
+		     (apply make-immutable-hash-table al (caddr v))))]
 	  [(date) (apply make-date (map loop (cdr v)))]
 	  [(arity-at-least) (make-arity-at-least (loop (cdr v)))]
 	  [else (error 'serialize "ill-formed serialization")])])))
@@ -507,16 +540,27 @@
 	  (vector-set! fixup n fix)
 	  obj))]
      [(pair? v)
-      ;; Vector 
-      (let* ([m (cdr v)]
-	     [v0 (make-vector m #f)])
-	(vector-set! fixup n (lambda (v)
-			       (let loop ([i m])
-				 (unless (zero? i)
-				   (let ([i (sub1 i)])
-				     (vector-set! v0 i (vector-ref v i))
-				     (loop i))))))
-	v0)]
+      (case (car v)
+	[(v)
+	 ;; Vector 
+	 (let* ([m (cdr v)]
+		[v0 (make-vector m #f)])
+	   (vector-set! fixup n (lambda (v)
+				  (let loop ([i m])
+				    (unless (zero? i)
+				      (let ([i (sub1 i)])
+					(vector-set! v0 i (vector-ref v i))
+					(loop i))))))
+	   v0)]
+	[(h)
+	 ;; Hash table
+	 (let ([ht0 (make-hash-table)])
+	   (vector-set! fixup n (lambda (ht)
+				  (hash-table-for-each 
+				   ht
+				   (lambda (k v)
+				     (hash-table-put! ht0 k v)))))
+	   ht0)])]
      [else
       (case v
 	[(c) 

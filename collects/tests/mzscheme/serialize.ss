@@ -59,6 +59,29 @@
       (hash-table-put! ht v1 v2)
       (and (eq? (immutable? v1) (immutable? v2))
 	   (loop (unbox v1) (unbox v2)))]
+     [(and (hash-table? v1) (hash-table? v2))
+      (hash-table-put! ht v1 v2)
+      (and (eq? (immutable? v1) (immutable? v2))
+	   (eq? (hash-table? v1 'equal) (hash-table? v2 'equal))
+	   (eq? (hash-table? v1 'weak) (hash-table? v2 'weak))
+	   (= (hash-table-count v1) (hash-table-count v2))
+	   (let ([ok? #t])
+	     (hash-table-for-each
+	      v1
+	      (lambda (k v)
+		(set! ok?
+		      (and ok?
+			   (loop v (hash-table-get v2 k (lambda () 'not-found)))))))
+	     ok?))]
+     [(and (date? v1) (date? v2))
+      (hash-table-put! ht v1 v2)
+      (andmap loop 
+	      (vector->list (struct->vector v1))
+	      (vector->list (struct->vector v2)))]
+     [(and (arity-at-least? v1) (arity-at-least? v2))
+      (hash-table-put! ht v1 v2)
+      (loop (arity-at-least-value v1)
+	    (arity-at-least-value v2))]
      [else
       (and (equal? v1 v2)
 	   (eq? (immutable? v1) (immutable? v2)))])))
@@ -66,8 +89,15 @@
 
 (define (test-ser v)
   (parameterize ([print-graph #t])
+    (test #t serializable? v)
     (test #t same? v v)
     (test #t same? v (deserialize (serialize v)))))
+
+(define (mk-ht . args)
+  (let ([ht (apply make-hash-table args)])
+    (hash-table-put! ht 'apple 'ok)
+    (hash-table-put! ht 'banana 'better)
+    ht))
 
 ;; ----------------------------------------
 
@@ -83,6 +113,16 @@
 (test-ser #f)
 (test-ser (void))
 (test-ser 'ok)
+(test-ser null)
+(test-ser (current-directory))
+(test-ser (seconds->date (current-seconds)))
+(test-ser (procedure-arity (lambda (x . y) 10)))
+(test-ser (make-immutable-hash-table '((1 . a) (2 . b))))
+(test-ser (make-immutable-hash-table '(("x" . a) ("y" . b)) 'equal))
+(test-ser (mk-ht))
+(test-ser (mk-ht 'equal))
+(test-ser (mk-ht 'weak))
+(test-ser (mk-ht 'equal 'weak))
 
 (test-ser '(1))
 (test-ser '#(1))
@@ -118,6 +158,16 @@
   (test-ser (vector p p))
   (test-ser (make-b p p))
   (test-ser (make-d p 1 p)))
+(let ([p (make-a)])
+  (test-ser (cons p p)))
+(let ([p (make-d 1 2 3)])
+  (test-ser (vector p p p)))
+(let ([p (seconds->date (current-seconds))])
+  (test-ser (cons p p)))
+(let ([p (make-arity-at-least 10)])
+  (test-ser (cons p p)))
+(let ([p (mk-ht)])
+  (test-ser (cons p p)))
 
 ;; Cycles
 (let ([p (cons 1 2)])
@@ -163,6 +213,18 @@
   (set-b-y! p 2)
   (test-ser p)
   (test-ser (make-c p)))
+(let ([p (seconds->date (current-seconds))])
+  (set-date-second! p p)
+  (test-ser p)
+  (test-ser (cons p p)))
+(let ([p (make-arity-at-least 10)])
+  (set-arity-at-least-value! p p)
+  (test-ser p)
+  (test-ser (cons p p)))
+(let ([p (mk-ht)])
+  (hash-table-put! p 'banana p)
+  (test-ser p)
+  (test-ser (cons p p)))
 
 ;; Cycles with immutable parts
 (let* ([p1 (cons 1 2)]
@@ -191,6 +253,15 @@
   (test-ser (make-c p1))
   (test-ser (make-b p1 p2))
   (test-ser (make-b p2 p1)))
+(let* ([p1 (cons 1 2)]
+       [p2 (make-immutable-hash-table
+	    (cons (cons 'x p1) '((a . 2) (b . 4))))])
+  (set-cdr! p1 p2)
+  (test-ser p1)
+  (test-ser p2)
+  (test-ser (cons p1 p2))
+  (test-ser (cons p2 p1)))
+      
 
 ;; ----------------------------------------
 

@@ -382,29 +382,30 @@ int MrEdGetNextEvent(int check_only, int current_only,
       {
         wxWindow *win = (wxWindow *)q->event.message;
         if (check_only) {
-	        fprintf(log_file_ptr,"Handling Leave Event for window: %X (only checking)\n",win);
+	        fprintf(log_file_ptr,"O%X\n",win);
 	    } else {
-	        fprintf(log_file_ptr,"Handling Leave Event for window: %X\n",win);
+	        fprintf(log_file_ptr,"L%X\n",win);
 	    }
+	    fflush(log_file_ptr);
         if (win->IsShown()) {
           fr = (wxFrame *)win->GetRootFrame();
-	    fc = fr ? (MrEdContext *)fr->context : NULL;
-	    if ((!c && !fr) || (!c && fc->ready) || (fc == c)) {
-	      if (which)
-	        *which = fc;
+	      fc = fr ? (MrEdContext *)fr->context : NULL;
+	      if ((!c && !fr) || (!c && fc->ready) || (fc == c)) {
+	        if (which)
+	          *which = fc;
 
 #ifdef RECORD_HISTORY
-	    fprintf(history, "leave\n");
-	    fflush(history);
+	        fprintf(history, "leave\n");
+	        fflush(history);
 #endif
 
-	    if (check_only)
-	      return TRUE;
+	        if (check_only)
+	          return TRUE;
 	
-	    MrDequeue(q);
-	    memcpy(event, &q->event, sizeof(EventRecord));
-	    return TRUE;
-	  }
+	        MrDequeue(q);
+	        memcpy(event, &q->event, sizeof(EventRecord));
+	        return TRUE;
+	      }
         } else {
           MrDequeue(q);
         }

@@ -262,7 +262,7 @@ FILE *log_file_ptr = fopen("drscheme.log","w");
 wxWindow::~wxWindow(void) // Destructor
 {
 	
-	fprintf(log_file_ptr,"Deleting wxWindow: %X\n",this);
+	fprintf(log_file_ptr,"D%X\n",this);
 	wxPanel *panel = (wxPanel *) GetParent ();
 	if (panel)
 	{
@@ -1033,7 +1033,7 @@ Bool doCallPreMouseEvent(wxWindow *in_win, wxWindow *win, wxMouseEvent *evt);
 static void SendEnterLeaveEvent(wxWindow *target, int eventtype, wxWindow *evtsrc, wxMouseEvent *evt)
 {
 	if (eventtype == wxEVENT_TYPE_LEAVE_WINDOW) {
-	  fprintf(log_file_ptr,"Non-queued leave event for window: %X\n", target);
+	  fprintf(log_file_ptr,"R%X\n", target);
 	}
     if (!target->IsHidden()) {
 	    wxMouseEvent *theMouseEvent = new wxMouseEvent(eventtype);
@@ -1063,7 +1063,7 @@ extern QueueMrEdEvent(EventRecord *e);
 
 static void QueueLeaveEvent(wxWindow *target, wxWindow *evtsrc, wxMouseEvent *evt)
 {
-   fprintf(log_file_ptr,"Queueing leave event for: %X\n",target);
+   fprintf(log_file_ptr,"Q%X\n",target);
    EventRecord e;
    
    int clientHitX = evt->x;

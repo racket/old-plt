@@ -40,7 +40,8 @@
 		(unless (file-exists? exe)
 		  (fail))
 		exe)))))
-
+      
+      ;; Loads module code, using .zo if there, compiling from .scm if not
       (define (get-code filename module-path codes verbose?)
 	(when verbose?
 	  (fprintf (current-error-port) "Getting ~s~n" filename))
@@ -60,6 +61,15 @@
 					  verbose?)))
 			    (append imports fs-imports)))))))
       
+      (define (make-module-name-resolver code-l)
+	'(let ([orig (current-module-name-resolver)])
+	   (current-module-name-resolver
+	    (lambda (name rel-to stx)
+	      (if (not name)
+		  (orig name) ; just a notification
+		  ;; Is the specified module embedded?
+		  '...)))))
+
       ;; Find the magic point in the binary:
       (define (find-cmdline)
 	(define magic (string->list "[Replace me for EXE hack"))
@@ -91,9 +101,9 @@
 			      (lambda (mp)
 				(collapse-module-path mp "."))
 			      module-paths)]
+	      ;; Each element is (list filename collapsed-module-path code)
 	      ;; As we descend the module tree, we append to the front, so
 	      ;; this list will need to be reversed.
-	      ;; Each element is (list filename collapsed-module-path code)
 	      [codes (box null)])
 	  (for-each (lambda (f mp) (get-code f mp codes verbose?)) 
 		    files
@@ -112,11 +122,18 @@
 		(call-with-output-file* 
 		 dest
 		 (lambda (o)
-		   (write '(current-module-name-prefix '#%embedded:) o)
+		   ;; Install a module name resolver that redirects
+		   ;; to the embedded modules
+		   (write (make-module-name-resolver (unbox codes)) o)
 		   (let ([l (reverse (unbox codes))])
 		     (for-each
 		      (lambda (nc)
 			(fprintf (current-error-port) "Writing ~s~n" (car nc))
+			(write `(current-module-name-prefix ',(string->symbol
+							       (format
+								"#%embedded:~a"
+								(car nc))))
+			       o)
 			(write (caddr nc) o))
 		      l))
 		   `(write '(current-module-name-prefix #f) o))

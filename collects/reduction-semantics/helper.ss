@@ -2,6 +2,11 @@
   (require (lib "contract.ss")
            "reduction-semantics.ss")
   
+  (define counter 0)
+  (define (generate-string)
+    (set! counter (add1 counter))
+    (format "s~a" counter))
+  
   (define (unique-names? l)
     (let ([ht (make-hash-table)])
       (andmap (lambda (n)
@@ -105,6 +110,7 @@
    lang-match-lambda
    lang-match-lambda-memoized)
   (provide/contract
+   (generate-string (-> string?))
    (unique-names? ((listof symbol?) . -> . boolean?))
    (all-of (any? (any? . -> . any) . -> . (listof any?)))
    (transitive-closure ((listof pair?) . -> . (listof (listof any?))))))

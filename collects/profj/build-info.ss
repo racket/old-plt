@@ -313,7 +313,7 @@
   
   ;; process-class: class-def (list string) type-records bool symbol -> class-record
   (define (process-class class package-name type-recs look-in-table? level)
-    (let* ((info (class-def-info class))
+    (let* ((info (def-header class))
            (cname (cons (id-string (header-id info)) package-name)))
       (send type-recs set-location! (def-file class))
       (let ((build-record
@@ -330,7 +330,7 @@
                       (iface-records (map (lambda (i)
                                             (get-parent-record (name->list i) i #f level type-recs))
                                           (header-implements info)))
-                      (members (class-def-members class))
+                      (members (def-members class))
                       (modifiers (header-modifiers info))
                       (test-mods (map modifier-kind modifiers))
                       (reqs (map (lambda (name-list)
@@ -340,8 +340,8 @@
                                        (make-req (car name-list) (cdr name-list))))
                                  (cons super-name (map name->list (header-implements info))))))
                  
-                 (send type-recs set-location! (class-def-file class))
-                 (set-class-def-uses! class reqs)
+                 (send type-recs set-location! (def-file class))
+                 (set-def-uses! class reqs)
                  
                  (when (eq? level 'full)
                    (when (memq 'final (class-record-modifiers super-record))
@@ -450,7 +450,7 @@
                                      (list (make-call #f #f #f (make-special-name #f #f "super") null #f)) #f)
                                     #f))
                (rec (make-method-record (id-string name) `(public) 'ctor null null #f "")))
-           (set-class-def-members! class (cons method (class-def-members class)))
+           (set-def-members! class (cons method (def-members class)))
            (add-rec rec))))))
 
   ;find-default-ctor: (list method-record) -> (U boolean method-record)
@@ -463,7 +463,7 @@
   
   ;; process-interface: interface-def (list string) type-records bool symbol -> class-record
   (define (process-interface iface package-name type-recs look-in-table? level)
-    (let* ((info (interface-def-info iface))
+    (let* ((info (def-header iface))
            (iname (cons (id-string (header-id info)) package-name)))
       (send type-recs set-location! (def-file iface))
       (let ((build-record 
@@ -473,11 +473,11 @@
                       (super-records (map (lambda (n sc) (get-parent-record n sc iname level type-recs))
                                           super-names
                                           (header-extends info)))
-                      (members (interface-def-members iface))
+                      (members (def-members iface))
                       (reqs (map (lambda (name-list) (make-req (car name-list) (cdr name-list)))
                                  super-names)))
-                 (send type-recs set-location! (interface-def-file iface))
-                 (set-interface-def-uses! iface reqs)                 
+                 (send type-recs set-location! (def-file iface))
+                 (set-def-uses! iface reqs)                 
                  
                  (when (ormap class-record-class? super-records)
                    (letrec ((find-class

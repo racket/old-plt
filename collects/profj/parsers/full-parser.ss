@@ -176,7 +176,7 @@
                             (build-src 6)
                             (file-path)
                             'full
-                            null)]
+                            null 'top)]
        [(class IDENTIFIER Super Interfaces ClassBody)
 	(make-class-def (make-header (make-id $2 (build-src 2 2)) null $3 $4 null (build-src 4))
                             $5
@@ -184,7 +184,7 @@
                             (build-src 5)
                             (file-path)
                             'full
-                            null)])
+                            null 'top)])
       
       (Super
        [() null]
@@ -212,9 +212,9 @@
       (ClassBodyDeclaration
        [(ClassMemberDeclaration) $1]
        ;; 1.1
-       [(ClassDeclaration) $1]
+       [(ClassDeclaration) (begin (set-def-kind! $1 'member) $1)]
        ;; 1.1
-       [(InterfaceDeclaration) $1]
+       [(InterfaceDeclaration) (begin (set-def-kind! $1 'member) $1)]
        [(StaticInitializer) $1]
        [(ConstructorDeclaration) $1]
        [(SEMI_COLON) #f])
@@ -364,7 +364,7 @@
                                 (build-src 5)
                                 (file-path)
                                 'full
-                                null)]
+                                null 'top)]
        [(Modifiers interface IDENTIFIER InterfaceBody)
 	(make-interface-def (make-header (make-id $3 (build-src 3 3)) $1 null null null (build-src 3))
                                 $4
@@ -372,7 +372,7 @@
                                 (build-src 4)
                                 (file-path)
                                 'full
-                                null)]
+                                null 'top)]
        [(interface IDENTIFIER ExtendsInterfaces InterfaceBody)
        	(make-interface-def (make-header (make-id $2 (build-src 2 2)) null $3 null null (build-src 3))
                                 $4
@@ -380,7 +380,7 @@
                                 (build-src 4)
                                 (file-path)
                                 'full
-                                null)]
+                                null 'top)]
        [(interface IDENTIFIER InterfaceBody)
 	(make-interface-def (make-header (make-id $2 (build-src 2 2)) null null null null (build-src 2))
                                 $3
@@ -388,7 +388,7 @@
                                 (build-src 3)
                                 (file-path)
                                 'full
-                                null)])
+                                null 'top)])
        
       
       (ExtendsInterfaces
@@ -452,8 +452,8 @@
       
       (BlockStatement
        ;; 1.1
-       [(ClassDeclaration) $1]
-       [(InterfaceDeclaration) $1]
+       [(ClassDeclaration) (begin (set-def-kind! $1 'statement) $1)]
+       [(InterfaceDeclaration) (begin (set-def-kind! $1 'statement) $1)]
 
        [(LocalVariableDeclarationStatement) $1]
        [(Statement) $1])
@@ -687,10 +687,16 @@
 	(make-class-alloc #f (build-src 4) $2 null #f)]
        ;; 1.1
        [(new ClassOrInterfaceType O_PAREN ArgumentList C_PAREN ClassBody)
-	(unimplemented-1.1 (build-src 1))]
+        (make-anon-class-alloc (build-src 5)
+			       (build-src 2 6)
+			       (build-src 2 6)
+			       $2 $4 $6)]        
        ;; 1.1
        [(new ClassOrInterfaceType O_PAREN C_PAREN ClassBody)
-	(unimplemented-1.1 (build-src 1))]
+        (make-anon-class-alloc (build-src 4)
+			       (build-src 2 4)
+			       (build-src 2 5)
+			       $2 null $5)]
        ;; 1.1
        [(Primary PERIOD new IDENTIFIER O_PAREN ArgumentList C_PAREN ClassBody)
 	(unimplemented-1.1 (build-src 1))]
@@ -729,11 +735,9 @@
         (make-array-alloc #f (build-src 3) (make-type-spec $2 0 (build-src 2 2)) (reverse $3) 0)]
        ;; 1.1
        [(new PrimitiveType Dims ArrayInitializer) (make-array-alloc-init #f (build-src 4) $2 $3 $4)]
-;        (unimplemented-1.1 (build-src 1))]
        ;; 1.1
        [(new ClassOrInterfaceType Dims ArrayInitializer) 
         (make-array-alloc-init #f (build-src 4) (make-type-spec $2 (build-src 2 2)) $3 $4)])
-        ;(unimplemented-1.1 (build-src 1))])
       
       (DimExprs
        [(DimExpr) (list $1)]
@@ -956,6 +960,19 @@
  		      (src-col src)
  		      (src-pos src)
  		      (src-span src)))
+  
+  ;make-anon-class-alloc: src src src id (list field) statement -> class-alloc
+  (define (make-anon-class-alloc all-src head-src class-src super args body)
+    (let ([anon (symbol->string (gensym 'anonymous$))])
+      (make-class-alloc #f all-src
+			(make-class-def (make-header (make-id anon all-src) null (list super) null null head-src)
+					body
+					class-src
+					class-src
+					(file-path)
+					'full
+					null 'anon)
+			(reverse args) #f)))
   
   (define parse-full (car parsers))
   (define parse-full-interactions (cadr parsers))

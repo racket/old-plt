@@ -355,12 +355,9 @@
         (member (id-string (name-id extend))
                 (map id-string (map def-name ordered-defs)))))
   
-  
+  ;make-composite-name: def -> string
   (define (make-composite-name d)
-    (build-identifier (string-append (id-string (header-id (if (class-def? d)
-                                                               (class-def-info d)
-                                                               (interface-def-info d))))
-                                     "-composite")))
+    (build-identifier (string-append (id-string (header-id (def-header d))) "-composite")))
   
   ;translate-defs: (list def) type-records -> (values (list syntax) (list reqs))
   (define (translate-defs defs type-recs)
@@ -473,17 +470,17 @@
   ;translate-class: class-def type-records -> (list syntax syntax)
   (define translate-class
     (lambda (class type-recs)
-      (let*-values (((header) (class-def-info class))
+      (let*-values (((header) (def-header class))
                     ((parent parent-src) 
                      (if (null? (header-extends header))
                          (values "Object" (make-src 0 0 0 0))
                          (get-parent (header-extends header))))
-                    ((class*) (create-syntax #f 'class* (build-src (class-def-key-src class))))
-                    ((class-members) (separate-members (class-def-members class)))
+                    ((class*) (create-syntax #f 'class* (build-src (def-key-src class))))
+                    ((class-members) (separate-members (def-members class)))
                     ((methods) (separate-methods (members-method class-members) (make-accesses null null null null null)))
                     ((fields) (separate-fields (members-field class-members) (make-accesses null null null null null))))
         ;Set class-specific parameters (ok as only one class compiled at a time)
-        (loc (class-def-file class))
+        (loc (def-file class))
         (class-name (id-string (header-id header)))
         (parent-name parent)
         (class-override-table (make-hash-table))
@@ -689,28 +686,27 @@
   
   ;Converted
   ;translate-interface: interface-def type-records-> (list syntax)
-  (define translate-interface
-    (lambda (class type-recs)
-      (let* ((header (interface-def-info class))
-             (name (build-identifier (id-string (header-id header))))
-             (syntax-name (translate-id (id-string (header-id header))
-                                        (id-src (header-id header))))
-             (source (build-src (interface-def-src class)))
-             (interface (create-syntax #f 'interface (build-src (interface-def-key-src class))))
-             (members (separate-members (interface-def-members class))))
+  (define (translate-interface iface type-recs)
+    (let* ((header (def-header iface))
+           (name (build-identifier (id-string (header-id header))))
+           (syntax-name (translate-id (id-string (header-id header))
+                                      (id-src (header-id header))))
+           (source (build-src (def-src iface)))
+           (interface (create-syntax #f 'interface (build-src (def-key-src iface))))
+           (members (separate-members (def-members iface))))
+      
+      (loc (def-file iface))
+      (class-name (id-string (header-id header)))
+      (send type-recs set-location! (loc))
+      
+      (let* ((static-field-names (map build-identifier (make-static-field-names (members-field members))))
+             (provides `(provide ,name ,@static-field-names)))
         
-        (loc (interface-def-file class))
-        (class-name (id-string (header-id header)))
-        (send type-recs set-location! (loc))
-        
-        (let* ((static-field-names (map build-identifier (make-static-field-names (members-field members))))
-               (provides `(provide ,name ,@static-field-names)))
-          
-          (list `(begin ,provides
-                        (define ,syntax-name (,interface ,(translate-parents (header-extends header))
-                                              ,@(make-method-names (members-method members) null type-recs)))
-                        ,@(create-static-fields static-field-names (members-field members)))
-                (make-syntax #f `(module ,name mzscheme (requires ,(module-name)) ,provides) #f))))))
+        (list `(begin ,provides
+                      (define ,syntax-name (,interface ,(translate-parents (header-extends header))
+                                            ,@(make-method-names (members-method members) null type-recs)))
+                      ,@(create-static-fields static-field-names (members-field members)))
+              (make-syntax #f `(module ,name mzscheme (requires ,(module-name)) ,provides) #f)))))
   
   ;override?: symbol type-records -> bool
   (define (override? method-name type-recs)

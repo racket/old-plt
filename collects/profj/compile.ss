@@ -246,13 +246,13 @@
   (define (remember-main ast)
     (let ((main-class (filter (lambda (def)
                                 (memq 'public 
-                                      (map modifier-kind (header-modifiers (class-def-info def)))))
+                                      (map modifier-kind (header-modifiers (def-header def)))))
                               (filter class-def?
                                       (package-defs ast)))))
       (if (null? main-class)
           (main (list #f null))
-          (main (list (contains-main? (class-def-members (car main-class)))
-                      (id-string (header-id (class-def-info (car main-class)))))))))
+          (main (list (contains-main? (def-members (car main-class)))
+                      (id-string (header-id (def-header (car main-class)))))))))
     
   )
 

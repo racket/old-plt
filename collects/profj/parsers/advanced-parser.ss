@@ -177,7 +177,7 @@
                             (build-src 6)
                             (file-path)
                             'advanced
-                            null)]
+                            null 'top)]
        [(class IDENTIFIER Super Interfaces ClassBody)
 	(make-class-def (make-header (make-id $2 (build-src 2 2)) null $3 $4 null (build-src 4))
                             $5
@@ -185,7 +185,7 @@
                             (build-src 5)
                             (file-path)
                             'advanced
-                            null)])
+                            null 'top)])
       
       (Super
        [() null]
@@ -350,7 +350,7 @@
                                 (build-src 5)
                                 (file-path)
                                 'advanced
-                                null)]
+                                null 'top)]
        [(Modifiers interface IDENTIFIER InterfaceBody)
 	(make-interface-def (make-header (make-id $3 (build-src 3 3)) $1 null null null (build-src 3))
                                 $4
@@ -358,7 +358,7 @@
                                 (build-src 4)
                                 (file-path)
                                 'advanced
-                                null)]
+                                null 'top)]
        [(interface IDENTIFIER ExtendsInterfaces InterfaceBody)
        	(make-interface-def (make-header (make-id $2 (build-src 2 2)) null $3 null null (build-src 3))
                                 $4
@@ -366,7 +366,7 @@
                                 (build-src 4)
                                 (file-path)
                                 'advanced
-                                null)]
+                                null 'top)]
        [(interface IDENTIFIER InterfaceBody)
 	(make-interface-def (make-header (make-id $2 (build-src 2 2)) null null null null (build-src 2))
                                 $3
@@ -374,7 +374,7 @@
                                 (build-src 3)
                                 (file-path)
                                 'advanced
-                                null)])
+                                null 'top)])
        
       
       (ExtendsInterfaces

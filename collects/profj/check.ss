@@ -171,29 +171,29 @@
   
   ;check-class: class-def (list string) symbol type-records -> void
   (define (check-class class package-name level type-recs)
-    (send type-recs set-location! (class-def-file class))
-    (send type-recs set-class-reqs (class-def-uses class))
-    (let ((this-ref (make-ref-type (id-string (header-id (class-def-info class)))
+    (send type-recs set-location! (def-file class))
+    (send type-recs set-class-reqs (def-uses class))
+    (let ((this-ref (make-ref-type (id-string (header-id (def-header class)))
                                    package-name)))
-      (check-members (class-def-members class)
+      (check-members (def-members class)
                      (add-var-to-env "this" this-ref parm empty-env)
                      level
                      type-recs 
-                     (list (id-string (header-id (class-def-info class)))) 
+                     (list (id-string (header-id (def-header class)))) 
                      #f 
-                     (memq 'abstract (map modifier-kind (header-modifiers (class-def-info class))))
-                     (if (null? (header-extends (class-def-info class))) #f
-                         (name-src (car (header-extends (class-def-info class)))))
+                     (memq 'abstract (map modifier-kind (header-modifiers (def-header class))))
+                     (if (null? (header-extends (def-header class))) #f
+                         (name-src (car (header-extends (def-header class)))))
                      ))
-    (set-class-def-uses! class (send type-recs get-class-reqs)))
+    (set-def-uses! class (send type-recs get-class-reqs)))
 
   ;check-interface: interface-def (list string) symbol type-recs -> void
   (define (check-interface iface p-name level type-recs)
-    (send type-recs set-location! (interface-def-file iface))
-    (send type-recs set-class-reqs (interface-def-uses iface))
-    (check-members (interface-def-members iface) empty-env level type-recs 
-                   (list (id-string (header-id (interface-def-info iface)))) #t #f #f)
-    (set-interface-def-uses! iface (send type-recs get-class-reqs)))
+    (send type-recs set-location! (def-file iface))
+    (send type-recs set-class-reqs (def-uses iface))
+    (check-members (def-members iface) empty-env level type-recs 
+                   (list (id-string (header-id (def-header iface)))) #t #f #f)
+    (set-def-uses! iface (send type-recs get-class-reqs)))
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;Member checking methods

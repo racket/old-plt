@@ -80,7 +80,7 @@
 				   (allow-improper-lists? #f)
 				   (allow-reader-quasiquote? #f)
 				   (sharing-printing? #f)
-				   (abbreviate-cons-as-list? #t)
+				   (abbreviate-cons-as-list? #f)
 				   (signal-undefined #t)
 				   (signal-not-boolean #t)
 				   (eq?-only-compares-symbols? #t)

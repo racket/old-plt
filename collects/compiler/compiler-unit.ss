@@ -187,7 +187,7 @@
 		   (compile-to-zo f zo n prefix)))
 	       source-files file-bases)))))
 
-      (define (compile-collection cp zos?)
+      (define (compile-directory dir info zos?)
 	(let ([make (c-dynamic-require '(lib "make-unit.ss" "make") 'make@)]
 	      [coll (c-dynamic-require '(lib "collection-unit.ss" "make") 'make:collection@)]
 	      [init (unit/sig ()
@@ -196,65 +196,69 @@
 	  (let-values ([(make-collection make-notify-handler)
 			(invoke-unit/sig
 			 (compound-unit/sig
-			  (import (DFILE : dynext:file^)
-				  (OPTION : compiler:option^)
-				  (COMPILER : compiler^))
-			  (link [MAKE : make^ (make)]
-				[COLL : make:collection^ (coll MAKE
-							       DFILE
-							       OPTION
-							       COMPILER)]
-				[INIT : () (init MAKE COLL)])
-			  (export))
+                           (import (DFILE : dynext:file^)
+                                   (OPTION : compiler:option^)
+                                   (COMPILER : compiler^))
+                           (link [MAKE : make^ (make)]
+                                 [COLL : make:collection^ (coll MAKE
+                                                                DFILE
+                                                                OPTION
+                                                                COMPILER)]
+                                 [INIT : () (init MAKE COLL)])
+                           (export))
 			 dynext:file^
 			 compiler:option^
 			 compiler^)])
-	    (let ([dir (apply collection-path cp)]
-		  [orig (current-directory)]
-		  [info (c-get-info cp)])
+	    (let ([orig (current-directory)])
 	      (dynamic-wind
-		  (lambda () (current-directory dir))
-		  (lambda ()
-		    (parameterize ([current-load-relative-directory dir])
-		      ;; Compile the collection files via make-collection
-		      (let ([sses (filter
-				   extract-base-filename/ss
-				   (directory-list))])
-			(let ([filtered-sses
-			       (remove*
-				(map string->path
-				     (info 
-				      (if zos? 
-					  'compile-zo-omit-files 
-					  'compile-extension-omit-files)
-				      (lambda () null)))
-				(remove*
-				 (map string->path
-				      (info 'compile-omit-files (lambda () null)))
-				 sses))])
-			  (if zos?
-			      ;; Verbose compilation manager:
-			      (parameterize ([manager-trace-handler (lambda (s) (printf "~a~n" s))]
-					     [manager-compile-notify-handler (lambda (path)
-									       ((compile-notify-handler) path))])
-			        (map (make-caching-managed-compile-zo) filtered-sses))
-			      ;; Old collection compiler:
-			      (parameterize ([make-notify-handler (lambda (path)
-								    ((compile-notify-handler) path))])
-				(make-collection
-				 ((or info (lambda (a f) (f)))
-				  'name 
-				  (lambda () (error 'compile-collection "info did not provide a name for collection: ~e" cp)))
-				 filtered-sses
-				 (if zos? #("zo") #()))))))))
-		  (lambda () (current-directory orig)))
+               (lambda () (current-directory dir))
+               (lambda ()
+                 (parameterize ([current-load-relative-directory dir])
+                   ;; Compile the collection files via make-collection
+                   (let ([sses (filter
+                                extract-base-filename/ss
+                                (directory-list))])
+                     (let ([filtered-sses
+                            (remove*
+                             (map string->path
+                                  (info 
+                                   (if zos? 
+                                       'compile-zo-omit-files 
+                                       'compile-extension-omit-files)
+                                   (lambda () null)))
+                             (remove*
+                              (map string->path
+                                   (info 'compile-omit-files (lambda () null)))
+                              sses))])
+                       (if zos?
+                           ;; Verbose compilation manager:
+                           (parameterize ([manager-trace-handler (lambda (s) (printf "~a~n" s))]
+                                          [manager-compile-notify-handler (lambda (path)
+                                                                            ((compile-notify-handler) path))])
+                             (map (make-caching-managed-compile-zo) filtered-sses))
+                           ;; Old collection compiler:
+                           (parameterize ([make-notify-handler (lambda (path)
+                                                                 ((compile-notify-handler) path))])
+                             (make-collection
+                              ((or info (lambda (a f) (f)))
+                               'name 
+                               (lambda () (error 'compile-collection "info did not provide a name in ~e" 
+                                                 dir)))
+                              filtered-sses
+                              (if zos? #("zo") #()))))))))
+               (lambda () (current-directory orig)))
 	      (when (compile-subcollections)
 		(for-each
 		 (lambda (s)
 		   (unless (and (pair? s) (list? s) (andmap string? s))
 		     (error 'compile-collection "bad sub-collection path: ~a" s))
 		   (compile-collection s zos?))
-		 (info 'compile-subcollections (lambda () null))))))))
+		 (info 'compile-subcollections (lambda () null))))))))      
+      
+      (define (compile-collection cp zos?)
+        (let ([dir (apply collection-path cp)]
+              [info (c-get-info cp)])
+          (compile-directory dir info zos?)))
 
       (define (compile-collection-extension collection . cp)
 	(compile-collection (cons collection cp) #f))

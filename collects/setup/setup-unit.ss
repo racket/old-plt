@@ -222,6 +222,61 @@
       (for-each (lambda (x) (printf " ~s\n" x))
                 collections-to-compile)
       (newline)
+
+      ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      ;;                  Helpers                      ;;
+      ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+      (define (control-io-apply print-doing f args)
+        (if (make-verbose)
+            (begin
+              (apply f args)
+              #t)
+            (let* ([oop (current-output-port)]
+                   [printed? #f]
+                   [on? #f]
+                   [dir-table (make-hash-table 'equal)]
+                   [line-accum #""]
+                   [op (if (verbose)
+                           (current-output-port)
+                           (open-output-nowhere))] 
+                   [doing-path (lambda (path)
+                                 (unless printed?
+                                   (set! printed? #t)
+                                   (print-doing oop))
+                                 (unless (verbose)
+                                   (let ([path (normal-case-path (path-only path))])
+                                     (unless (hash-table-get dir-table path (lambda () #f))
+                                       (hash-table-put! dir-table path #t)
+                                       (print-doing oop path)))))])
+              (parameterize ([current-output-port op]
+                             [compile-notify-handler doing-path])
+                (apply f args)
+                printed?))))
+
+      (define errors null)
+      (define (record-error cc desc go)
+	(with-handlers ([exn:fail?
+			 (lambda (x)
+			   (if (exn? x)
+			       (begin
+				 (fprintf (current-error-port) "~a~n" (exn-message x)))
+			       (fprintf (current-error-port) "~s~n" x))
+			   (set! errors (cons (list cc desc x) errors)))])
+	  (go)))
+      (define (show-errors port)
+	(for-each
+	 (lambda (e)
+	   (let ([cc (car e)]
+		 [desc (cadr e)]
+		 [x (caddr e)])
+	     (setup-fprintf port
+			    "Error during ~a for ~a (~a)"
+			    desc (cc-name cc) (path->string (cc-path cc)))
+	     (if (exn? x)
+		 (setup-fprintf port "  ~a" (exn-message x))
+		 (setup-fprintf port "  ~s" x))))
+	 (reverse errors)))
       
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       ;;                  Clean                        ;;
@@ -254,40 +309,64 @@
 	 (directory-list path)))
 
       (define (clean-collection cc dependencies)
-	(let* ([info (cc-info cc)]
-	       [default (box 'default)]
-	       [paths (call-info
-		       info
-		       'clean
-		       (lambda ()
-			 (list mode-dir
-			       (build-path mode-dir "native")
-			       (build-path mode-dir "native" (system-library-subpath))))
-		       (lambda (x)
-			 (unless (or (eq? x default)
-				     (and (list? x)
-					  (andmap path-string? x)))
-			   (error 'setup-plt "expected a list of path strings for 'clean, got: ~s"
-				  x))))]
-	       [printed? #f]
-	       [print-message
-		(lambda ()
-		  (unless printed?
-		    (set! printed? #t)
-		    (setup-printf "Deleting files for ~a at ~a" (cc-name cc) (path->string (cc-path cc)))))])
-	  (for-each (lambda (path)
-		      (let ([full-path (build-path (cc-path cc) path)])
-			(cond
-			 [(directory-exists? full-path)
-			  (delete-files-in-directory
-			   full-path
-			   print-message
-			   dependencies)]
-			 [(file-exists? full-path)
-			  (delete-file/record-dependency full-path dependencies)
-			  (print-message)]
-			 [else (void)])))
-		    paths)))
+        (record-error 
+         cc
+         "Cleaning"
+         (lambda ()
+           (let* ([info (cc-info cc)]
+                  [default (box 'default)]
+                  [paths (call-info
+                          info
+                          'clean
+                          (lambda ()
+                            (list mode-dir
+                                  (build-path mode-dir "native")
+                                  (build-path mode-dir "native" (system-library-subpath))))
+                          (lambda (x)
+                            (unless (or (eq? x default)
+                                        (and (list? x)
+                                             (andmap path-string? x)))
+                              (error 'setup-plt "expected a list of path strings for 'clean, got: ~s"
+                                     x))))]
+                  [printed? #f]
+                  [print-message
+                   (lambda ()
+                     (unless printed?
+                       (set! printed? #t)
+                       (setup-printf "Deleting files for ~a at ~a" (cc-name cc) (path->string (cc-path cc)))))])
+             (for-each (lambda (path)
+                         (let ([full-path (build-path (cc-path cc) path)])
+                           
+                           (let loop ([path (find-relative-path (normalize-path (cc-path cc))
+                                                                (normalize-path full-path))])
+                             (let loop ([path path])
+                               (let-values ([(base name dir?) (split-path path)])
+                                 (cond
+                                   [(path? base)
+                                    (loop base)]
+                                   [(eq? base 'relative)
+                                    (when (eq? name 'up)
+                                      (error 'clean
+                                             "attempted to clean files in ~s which is not a subdirectory of ~s"
+                                             full-path
+                                             (cc-path cc)))]
+                                   [else
+                                    (error 'clean
+                                           "attempted to clean files in ~s which is not a subdirectory of ~s"
+                                           full-path
+                                           (cc-path cc))]))))
+                             
+                           (cond
+                             [(directory-exists? full-path)
+                              (delete-files-in-directory
+                               full-path
+                               print-message
+                               dependencies)]
+                             [(file-exists? full-path)
+                              (delete-file/record-dependency full-path dependencies)
+                              (print-message)]
+                             [else (void)])))
+                       paths)))))
 
       (when (clean)
 	(let ([dependencies (make-hash-table 'equal)])
@@ -326,66 +405,9 @@
 			      (with-output-to-file fn void 'truncate/replace)))))
 		      (current-library-collection-paths)))))
 
-      ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-      ;;                  Helpers                      ;;
-      ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-      (define control-io-apply
-	(lambda (print-doing f args)
-	  (if (make-verbose)
-	      (begin
-		(apply f args)
-		#t)
-	      (let* ([oop (current-output-port)]
-		     [printed? #f]
-		     [on? #f]
-		     [dir-table (make-hash-table 'equal)]
-		     [line-accum #""]
-		     [op (if (verbose)
-			     (current-output-port)
-			     (open-output-nowhere))] 
-		     [doing-path (lambda (path)
-				   (unless printed?
-				     (set! printed? #t)
-				     (print-doing oop))
-				   (unless (verbose)
-				     (let ([path (normal-case-path (path-only path))])
-				       (unless (hash-table-get dir-table path (lambda () #f))
-					 (hash-table-put! dir-table path #t)
-					 (print-doing oop path)))))])
-		(parameterize ([current-output-port op]
-			       [compile-notify-handler doing-path])
-		  (apply f args)
-		  printed?)))))
-
       (when (or (make-zo) (make-so))
 	(compiler:option:verbose (compiler-verbose))
 	(compiler:option:compile-subcollections #f))
-
-      (define errors null)
-      (define (record-error cc desc go)
-	(with-handlers ([exn:fail?
-			 (lambda (x)
-			   (if (exn? x)
-			       (begin
-				 (fprintf (current-error-port) "~a~n" (exn-message x)))
-			       (fprintf (current-error-port) "~s~n" x))
-			   (set! errors (cons (list cc desc x) errors)))])
-	  (go)))
-      (define (show-errors port)
-	(for-each
-	 (lambda (e)
-	   (let ([cc (car e)]
-		 [desc (cadr e)]
-		 [x (caddr e)])
-	     (setup-fprintf port
-			    "Error during ~a for ~a (~a)"
-			    desc (cc-name cc) (path->string (cc-path cc)))
-	     (if (exn? x)
-		 (setup-fprintf port "  ~a" (exn-message x))
-		 (setup-fprintf port "  ~s" x))))
-	 (reverse errors)))
-
 
       (define (do-install-part part)
         (when (or (call-install) (eq? part 'post))
@@ -488,6 +510,7 @@
 				  (thunk)))])
 		(thunk)))))
 
+      
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       ;;                  Make zo                      ;;
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -644,7 +667,6 @@
                                      (make-launcher
                                       (or mzlf
                                           (if (and (cc-collection cc)
-                                                   #f
                                                    (= 1 (length (cc-collection cc))))
                                             ;; Common case (simpler parsing for Windows to
                                             ;; avoid cygwin bug):

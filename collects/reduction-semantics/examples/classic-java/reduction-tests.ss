@@ -2,14 +2,15 @@
 ;;
 ;; reduction-tests.ss
 ;; Richard Cobbe
-;; $Id: reduction-tests.ss,v 1.6 2005/01/03 12:42:36 cobbe Exp $
+;; $Id: reduction-tests.ss,v 1.7 2005/02/02 15:06:47 cobbe Exp $
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (module reduction-tests mzscheme
 
   (require (lib "list.ss")
-           "test.ss"
+           (planet "test.ss" ("schematics" "schemeunit.plt" 1))
+           (planet "util.ss" ("schematics" "schemeunit.plt" 1))
            "utils.ss"
            "ast.ss"
            "elaboration.ss"

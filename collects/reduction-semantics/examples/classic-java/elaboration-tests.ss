@@ -3,15 +3,17 @@
 ;; elaboration-tests.ss
 ;;
 ;; Richard Cobbe
-;; $Id: elaboration-tests.ss,v 1.3 2004/12/31 22:12:15 cobbe Exp $
+;; $Id: elaboration-tests.ss,v 1.4 2005/02/02 15:06:47 cobbe Exp $
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (module elaboration-tests mzscheme
 
   (require (lib "etc.ss")
+           (planet "environment.ss" ("cobbe" "environment.plt" 1))
+           (planet "test.ss" ("schematics" "schemeunit.plt" 1))
+           (planet "util.ss" ("schematics" "schemeunit.plt" 1))
            "test.ss"
-           "environment.ss"
            "ast.ss"
            "program.ss")
   (provide elaboration-tests)

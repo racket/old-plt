@@ -1,6 +1,9 @@
 (module store-tests mzscheme
 
-  (require "test.ss")
+  (require "test.ss"
+           (planet "test.ss" ("schematics" "schemeunit.plt" 1))
+           (planet "util.ss" ("schematics" "schemeunit.plt" 1)))
+  
   (provide store-tests)
   (require/expose "store.ss" ())
 

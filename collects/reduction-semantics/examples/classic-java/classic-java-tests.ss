@@ -1,18 +1,18 @@
 (module classic-java-tests mzscheme
 
-  (require "environment-tests.ss"
-           "store-tests.ss"
+  (require "store-tests.ss"
            "parser-tests.ss"
            "program-tests.ss"
            "elaboration-tests.ss"
            "reduction-tests.ss"
-           (lib "test.ss" "schemeunit"))
+           (planet "test.ss" ("schematics" "schemeunit.plt" 1)))
 
   (provide classic-java-tests)
+  
+  (print-struct #t)
 
   (define classic-java-tests
     (make-test-suite "Classic Java Implementation"
-      environment-tests
       store-tests
       parser-tests
       program-tests

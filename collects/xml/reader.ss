@@ -231,10 +231,7 @@
                        (list c)]
                       [(and (char-whitespace? next) (trim-whitespace))
                        (skip-space in)
-                       (let ([lst (loop #\space)])
-                         (cond
-                           [(null? (cdr lst)) (list c)]
-                           [else (cons c lst)]))]
+                       (cons c (loop #\space))]
                       [else (cons c (loop (read-char in)))])))])
       (make-pcdata start
                    (file-position in)

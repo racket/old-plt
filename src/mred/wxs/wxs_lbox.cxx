@@ -1203,32 +1203,32 @@ void objscheme_setup_wxListBox(Scheme_Env *env)
 
   os_wxListBox_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "list-box%", "item%", os_wxListBox_ConstructScheme, 26));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "set-string", os_wxListBoxSetString, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "get-string", os_wxListBoxGetString, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "set-string-selection", os_wxListBoxSetStringSelection, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "set-first-visible-item", os_wxListBoxSetFirstItem, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "set", os_wxListBoxSet, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "get-selections", os_wxListBoxGetSelectionList, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "get-first-item", os_wxListBoxGetFirstItem, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "number-of-visible-items", os_wxListBoxNumberOfVisibleItems, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "number", os_wxListBoxNumber, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "get-selection", os_wxListBoxGetSelection, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "find-string", os_wxListBoxFindString, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "set-data", os_wxListBoxSetClientData, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "get-data", os_wxListBoxGetClientData, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "get-string-selection", os_wxListBoxGetStringSelection, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "selected?", os_wxListBoxSelected, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "set-selection", os_wxListBoxSetOneSelection, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "select", os_wxListBoxSetSelection, 1, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "delete", os_wxListBoxDelete, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "clear", os_wxListBoxClear, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "append", os_wxListBoxAppend, 1, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "on-drop-file", os_wxListBoxOnDropFile, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "pre-on-event", os_wxListBoxPreOnEvent, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "pre-on-char", os_wxListBoxPreOnChar, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "on-size", os_wxListBoxOnSize, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "on-set-focus", os_wxListBoxOnSetFocus, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "on-kill-focus", os_wxListBoxOnKillFocus, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "set-string" " method", os_wxListBoxSetString, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "get-string" " method", os_wxListBoxGetString, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "set-string-selection" " method", os_wxListBoxSetStringSelection, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "set-first-visible-item" " method", os_wxListBoxSetFirstItem, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "set" " method", os_wxListBoxSet, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "get-selections" " method", os_wxListBoxGetSelectionList, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "get-first-item" " method", os_wxListBoxGetFirstItem, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "number-of-visible-items" " method", os_wxListBoxNumberOfVisibleItems, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "number" " method", os_wxListBoxNumber, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "get-selection" " method", os_wxListBoxGetSelection, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "find-string" " method", os_wxListBoxFindString, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "set-data" " method", os_wxListBoxSetClientData, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "get-data" " method", os_wxListBoxGetClientData, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "get-string-selection" " method", os_wxListBoxGetStringSelection, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "selected?" " method", os_wxListBoxSelected, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "set-selection" " method", os_wxListBoxSetOneSelection, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "select" " method", os_wxListBoxSetSelection, 1, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "delete" " method", os_wxListBoxDelete, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "clear" " method", os_wxListBoxClear, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "append" " method", os_wxListBoxAppend, 1, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "on-drop-file" " method", os_wxListBoxOnDropFile, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "pre-on-event" " method", os_wxListBoxPreOnEvent, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "pre-on-char" " method", os_wxListBoxPreOnChar, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "on-size" " method", os_wxListBoxOnSize, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "on-set-focus" " method", os_wxListBoxOnSetFocus, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "on-kill-focus" " method", os_wxListBoxOnKillFocus, 0, 0));
 
 
   WITH_VAR_STACK(scheme_made_class(os_wxListBox_class));

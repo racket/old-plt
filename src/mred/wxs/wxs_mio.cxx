@@ -543,11 +543,11 @@ void objscheme_setup_wxMediaStreamInBase(Scheme_Env *env)
 
   os_wxMediaStreamInBase_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor-stream-in-base%", "object%", os_wxMediaStreamInBase_ConstructScheme, 5));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamInBase_class, "read", os_wxMediaStreamInBaseRead, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamInBase_class, "bad?", os_wxMediaStreamInBaseBad, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamInBase_class, "skip", os_wxMediaStreamInBaseSkip, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamInBase_class, "seek", os_wxMediaStreamInBaseSeek, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamInBase_class, "tell", os_wxMediaStreamInBaseTell, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamInBase_class, "read" " method", os_wxMediaStreamInBaseRead, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamInBase_class, "bad?" " method", os_wxMediaStreamInBaseBad, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamInBase_class, "skip" " method", os_wxMediaStreamInBaseSkip, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamInBase_class, "seek" " method", os_wxMediaStreamInBaseSeek, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamInBase_class, "tell" " method", os_wxMediaStreamInBaseTell, 0, 0));
 
 
   WITH_VAR_STACK(scheme_made_class(os_wxMediaStreamInBase_class));
@@ -913,10 +913,10 @@ void objscheme_setup_wxMediaStreamOutBase(Scheme_Env *env)
 
   os_wxMediaStreamOutBase_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor-stream-out-base%", "object%", os_wxMediaStreamOutBase_ConstructScheme, 4));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamOutBase_class, "write", os_wxMediaStreamOutBaseWrite, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamOutBase_class, "bad?", os_wxMediaStreamOutBaseBad, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamOutBase_class, "seek", os_wxMediaStreamOutBaseSeek, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamOutBase_class, "tell", os_wxMediaStreamOutBaseTell, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamOutBase_class, "write" " method", os_wxMediaStreamOutBaseWrite, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamOutBase_class, "bad?" " method", os_wxMediaStreamOutBaseBad, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamOutBase_class, "seek" " method", os_wxMediaStreamOutBaseSeek, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamOutBase_class, "tell" " method", os_wxMediaStreamOutBaseTell, 0, 0));
 
 
   WITH_VAR_STACK(scheme_made_class(os_wxMediaStreamOutBase_class));
@@ -1217,7 +1217,7 @@ void objscheme_setup_wxMediaStreamOutStringBase(Scheme_Env *env)
 
   os_wxMediaStreamOutStringBase_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor-stream-out-string-base%", "editor-stream-out-base%", os_wxMediaStreamOutStringBase_ConstructScheme, 1));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamOutStringBase_class, "get-string", os_wxMediaStreamOutStringBaseGetString, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamOutStringBase_class, "get-string" " method", os_wxMediaStreamOutStringBaseGetString, 0, 0));
 
 
   WITH_VAR_STACK(scheme_made_class(os_wxMediaStreamOutStringBase_class));
@@ -1711,18 +1711,18 @@ void objscheme_setup_wxMediaStreamIn(Scheme_Env *env)
 
   os_wxMediaStreamIn_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor-stream-in%", "object%", os_wxMediaStreamIn_ConstructScheme, 12));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamIn_class, "ok?", os_wxMediaStreamInOk, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamIn_class, "jump-to", os_wxMediaStreamInJumpTo, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamIn_class, "tell", os_wxMediaStreamInTell, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamIn_class, "skip", os_wxMediaStreamInSkip, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamIn_class, "remove-boundary", os_wxMediaStreamInRemoveBoundary, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamIn_class, "set-boundary", os_wxMediaStreamInSetBoundary, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamIn_class, ">>", os_wxMediaStreamInGET, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamIn_class, "get-inexact", os_wxMediaStreamInGetInexact, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamIn_class, "get-exact", os_wxMediaStreamInGetExact, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamIn_class, "get-fixed", os_wxMediaStreamInGetFixed, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamIn_class, "get-string", os_wxMediaStreamInGetString, 0, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamIn_class, "get", os_wxMediaStreamInGet, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamIn_class, "ok?" " method", os_wxMediaStreamInOk, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamIn_class, "jump-to" " method", os_wxMediaStreamInJumpTo, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamIn_class, "tell" " method", os_wxMediaStreamInTell, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamIn_class, "skip" " method", os_wxMediaStreamInSkip, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamIn_class, "remove-boundary" " method", os_wxMediaStreamInRemoveBoundary, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamIn_class, "set-boundary" " method", os_wxMediaStreamInSetBoundary, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamIn_class, ">>" " method", os_wxMediaStreamInGET, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamIn_class, "get-inexact" " method", os_wxMediaStreamInGetInexact, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamIn_class, "get-exact" " method", os_wxMediaStreamInGetExact, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamIn_class, "get-fixed" " method", os_wxMediaStreamInGetFixed, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamIn_class, "get-string" " method", os_wxMediaStreamInGetString, 0, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamIn_class, "get" " method", os_wxMediaStreamInGet, 1, 1));
 
 
   WITH_VAR_STACK(scheme_made_class(os_wxMediaStreamIn_class));
@@ -2101,12 +2101,12 @@ void objscheme_setup_wxMediaStreamOut(Scheme_Env *env)
 
   os_wxMediaStreamOut_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor-stream-out%", "object%", os_wxMediaStreamOut_ConstructScheme, 6));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamOut_class, "ok?", os_wxMediaStreamOutOk, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamOut_class, "jump-to", os_wxMediaStreamOutJumpTo, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamOut_class, "tell", os_wxMediaStreamOutTell, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamOut_class, "<<", os_wxMediaStreamOutPUT, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamOut_class, "put-fixed", os_wxMediaStreamOutPutFixed, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamOut_class, "put", os_wxMediaStreamOutPut, 1, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamOut_class, "ok?" " method", os_wxMediaStreamOutOk, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamOut_class, "jump-to" " method", os_wxMediaStreamOutJumpTo, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamOut_class, "tell" " method", os_wxMediaStreamOutTell, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamOut_class, "<<" " method", os_wxMediaStreamOutPUT, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamOut_class, "put-fixed" " method", os_wxMediaStreamOutPutFixed, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamOut_class, "put" " method", os_wxMediaStreamOutPut, 1, 2));
 
 
   WITH_VAR_STACK(scheme_made_class(os_wxMediaStreamOut_class));

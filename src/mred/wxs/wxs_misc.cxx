@@ -239,10 +239,10 @@ void objscheme_setup_wxTimer(Scheme_Env *env)
 
   os_wxTimer_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "timer%", "object%", os_wxTimer_ConstructScheme, 4));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTimer_class, "stop", os_wxTimerStop, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTimer_class, "start", os_wxTimerStart, 1, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTimer_class, "notify", os_wxTimerNotify, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTimer_class, "interval", os_wxTimerInterval, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTimer_class, "stop" " method", os_wxTimerStop, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTimer_class, "start" " method", os_wxTimerStart, 1, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTimer_class, "notify" " method", os_wxTimerNotify, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTimer_class, "interval" " method", os_wxTimerInterval, 0, 0));
 
 
   WITH_VAR_STACK(scheme_made_class(os_wxTimer_class));
@@ -543,13 +543,13 @@ void objscheme_setup_wxClipboard(Scheme_Env *env)
 
   os_wxClipboard_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "clipboard%", "object%", NULL, 7));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxClipboard_class, "get-clipboard-bitmap", os_wxClipboardGetClipboardBitmap, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxClipboard_class, "set-clipboard-bitmap", os_wxClipboardSetClipboardBitmap, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxClipboard_class, "get-clipboard-data", os_wxClipboardGetClipboardData, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxClipboard_class, "get-clipboard-string", os_wxClipboardGetClipboardString, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxClipboard_class, "get-clipboard-client", os_wxClipboardGetClipboardClient, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxClipboard_class, "set-clipboard-string", os_wxClipboardSetClipboardString, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxClipboard_class, "set-clipboard-client", os_wxClipboardSetClipboardClient, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxClipboard_class, "get-clipboard-bitmap" " method", os_wxClipboardGetClipboardBitmap, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxClipboard_class, "set-clipboard-bitmap" " method", os_wxClipboardSetClipboardBitmap, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxClipboard_class, "get-clipboard-data" " method", os_wxClipboardGetClipboardData, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxClipboard_class, "get-clipboard-string" " method", os_wxClipboardGetClipboardString, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxClipboard_class, "get-clipboard-client" " method", os_wxClipboardGetClipboardClient, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxClipboard_class, "set-clipboard-string" " method", os_wxClipboardSetClipboardString, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxClipboard_class, "set-clipboard-client" " method", os_wxClipboardSetClipboardClient, 2, 2));
 
 
   WITH_VAR_STACK(scheme_made_class(os_wxClipboard_class));
@@ -885,10 +885,10 @@ void objscheme_setup_wxClipboardClient(Scheme_Env *env)
 
   os_wxClipboardClient_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "clipboard-client%", "object%", os_wxClipboardClient_ConstructScheme, 4));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxClipboardClient_class, "get-types", os_wxClipboardClientGetTypes, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxClipboardClient_class, "add-type", os_wxClipboardClientAddType, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxClipboardClient_class, "get-data", os_wxClipboardClientGetData, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxClipboardClient_class, "on-replaced", os_wxClipboardClientBeingReplaced, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxClipboardClient_class, "get-types" " method", os_wxClipboardClientGetTypes, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxClipboardClient_class, "add-type" " method", os_wxClipboardClientAddType, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxClipboardClient_class, "get-data" " method", os_wxClipboardClientGetData, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxClipboardClient_class, "on-replaced" " method", os_wxClipboardClientBeingReplaced, 0, 0));
 
 
   WITH_VAR_STACK(scheme_made_class(os_wxClipboardClient_class));
@@ -1680,31 +1680,31 @@ void objscheme_setup_wxPrintSetupData(Scheme_Env *env)
 
   os_wxPrintSetupData_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "ps-setup%", "object%", os_wxPrintSetupData_ConstructScheme, 25));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "copy-from", os_wxPrintSetupDatacopy, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "set-margin", os_wxPrintSetupDataSetMargin, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "set-editor-margin", os_wxPrintSetupDataSetEditorMargin, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "set-level-2", os_wxPrintSetupDataSetLevel2, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "set-afm-path", os_wxPrintSetupDataSetAFMPath, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "set-paper-name", os_wxPrintSetupDataSetPaperName, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "set-translation", os_wxPrintSetupDataSetPrinterTranslation, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "set-scaling", os_wxPrintSetupDataSetPrinterScaling, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "set-orientation", os_wxPrintSetupDataSetPrinterOrientation, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "set-mode", os_wxPrintSetupDataSetPrinterMode, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "set-preview-command", os_wxPrintSetupDataSetPrintPreviewCommand, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "set-file", os_wxPrintSetupDataSetPrinterFile, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "set-command", os_wxPrintSetupDataSetPrinterCommand, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "get-margin", os_wxPrintSetupDataGetMargin, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "get-editor-margin", os_wxPrintSetupDataGetEditorMargin, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "get-level-2", os_wxPrintSetupDataGetLevel2, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "get-afm-path", os_wxPrintSetupDataGetAFMPath, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "get-paper-name", os_wxPrintSetupDataGetPaperName, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "get-translation", os_wxPrintSetupDataGetPrinterTranslation, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "get-scaling", os_wxPrintSetupDataGetPrinterScaling, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "get-orientation", os_wxPrintSetupDataGetPrinterOrientation, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "get-mode", os_wxPrintSetupDataGetPrinterMode, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "get-preview-command", os_wxPrintSetupDataGetPrintPreviewCommand, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "get-file", os_wxPrintSetupDataGetPrinterFile, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "get-command", os_wxPrintSetupDataGetPrinterCommand, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "copy-from" " method", os_wxPrintSetupDatacopy, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "set-margin" " method", os_wxPrintSetupDataSetMargin, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "set-editor-margin" " method", os_wxPrintSetupDataSetEditorMargin, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "set-level-2" " method", os_wxPrintSetupDataSetLevel2, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "set-afm-path" " method", os_wxPrintSetupDataSetAFMPath, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "set-paper-name" " method", os_wxPrintSetupDataSetPaperName, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "set-translation" " method", os_wxPrintSetupDataSetPrinterTranslation, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "set-scaling" " method", os_wxPrintSetupDataSetPrinterScaling, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "set-orientation" " method", os_wxPrintSetupDataSetPrinterOrientation, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "set-mode" " method", os_wxPrintSetupDataSetPrinterMode, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "set-preview-command" " method", os_wxPrintSetupDataSetPrintPreviewCommand, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "set-file" " method", os_wxPrintSetupDataSetPrinterFile, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "set-command" " method", os_wxPrintSetupDataSetPrinterCommand, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "get-margin" " method", os_wxPrintSetupDataGetMargin, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "get-editor-margin" " method", os_wxPrintSetupDataGetEditorMargin, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "get-level-2" " method", os_wxPrintSetupDataGetLevel2, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "get-afm-path" " method", os_wxPrintSetupDataGetAFMPath, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "get-paper-name" " method", os_wxPrintSetupDataGetPaperName, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "get-translation" " method", os_wxPrintSetupDataGetPrinterTranslation, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "get-scaling" " method", os_wxPrintSetupDataGetPrinterScaling, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "get-orientation" " method", os_wxPrintSetupDataGetPrinterOrientation, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "get-mode" " method", os_wxPrintSetupDataGetPrinterMode, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "get-preview-command" " method", os_wxPrintSetupDataGetPrintPreviewCommand, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "get-file" " method", os_wxPrintSetupDataGetPrinterFile, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "get-command" " method", os_wxPrintSetupDataGetPrinterCommand, 0, 0));
 
 
   WITH_VAR_STACK(scheme_made_class(os_wxPrintSetupData_class));

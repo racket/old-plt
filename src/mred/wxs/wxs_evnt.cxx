@@ -210,8 +210,8 @@ void objscheme_setup_wxEvent(Scheme_Env *env)
   os_wxEvent_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "event%", "object%", os_wxEvent_ConstructScheme, 2));
 
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxEvent_class,"get-time-stamp", objscheme_wxEvent_GettimeStamp, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxEvent_class,"set-time-stamp", objscheme_wxEvent_SettimeStamp, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxEvent_class,"get-time-stamp" " method", objscheme_wxEvent_GettimeStamp, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxEvent_class,"set-time-stamp" " method", objscheme_wxEvent_SettimeStamp, 1, 1));
 
   WITH_VAR_STACK(scheme_made_class(os_wxEvent_class));
 
@@ -468,8 +468,8 @@ void objscheme_setup_wxCommandEvent(Scheme_Env *env)
   os_wxCommandEvent_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "control-event%", "event%", os_wxCommandEvent_ConstructScheme, 2));
 
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCommandEvent_class,"get-event-type", objscheme_wxCommandEvent_GeteventType, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCommandEvent_class,"set-event-type", objscheme_wxCommandEvent_SeteventType, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCommandEvent_class,"get-event-type" " method", objscheme_wxCommandEvent_GeteventType, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCommandEvent_class,"set-event-type" " method", objscheme_wxCommandEvent_SeteventType, 1, 1));
 
   WITH_VAR_STACK(scheme_made_class(os_wxCommandEvent_class));
 
@@ -641,8 +641,8 @@ void objscheme_setup_wxPopupEvent(Scheme_Env *env)
   os_wxPopupEvent_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "popup-event%", "control-event%", os_wxPopupEvent_ConstructScheme, 2));
 
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPopupEvent_class,"get-menu-id", objscheme_wxPopupEvent_GetmenuId, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPopupEvent_class,"set-menu-id", objscheme_wxPopupEvent_SetmenuId, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPopupEvent_class,"get-menu-id" " method", objscheme_wxPopupEvent_GetmenuId, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPopupEvent_class,"set-menu-id" " method", objscheme_wxPopupEvent_SetmenuId, 1, 1));
 
   WITH_VAR_STACK(scheme_made_class(os_wxPopupEvent_class));
 
@@ -987,12 +987,12 @@ void objscheme_setup_wxScrollEvent(Scheme_Env *env)
   os_wxScrollEvent_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "scroll-event%", "event%", os_wxScrollEvent_ConstructScheme, 6));
 
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxScrollEvent_class,"get-event-type", objscheme_wxScrollEvent_GetmoveType, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxScrollEvent_class,"set-event-type", objscheme_wxScrollEvent_SetmoveType, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxScrollEvent_class,"get-direction", objscheme_wxScrollEvent_Getdirection, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxScrollEvent_class,"set-direction", objscheme_wxScrollEvent_Setdirection, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxScrollEvent_class,"get-position", objscheme_wxScrollEvent_Getpos, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxScrollEvent_class,"set-position", objscheme_wxScrollEvent_Setpos, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxScrollEvent_class,"get-event-type" " method", objscheme_wxScrollEvent_GetmoveType, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxScrollEvent_class,"set-event-type" " method", objscheme_wxScrollEvent_SetmoveType, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxScrollEvent_class,"get-direction" " method", objscheme_wxScrollEvent_Getdirection, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxScrollEvent_class,"set-direction" " method", objscheme_wxScrollEvent_Setdirection, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxScrollEvent_class,"get-position" " method", objscheme_wxScrollEvent_Getpos, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxScrollEvent_class,"set-position" " method", objscheme_wxScrollEvent_Setpos, 1, 1));
 
   WITH_VAR_STACK(scheme_made_class(os_wxScrollEvent_class));
 
@@ -1763,20 +1763,20 @@ void objscheme_setup_wxKeyEvent(Scheme_Env *env)
   os_wxKeyEvent_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "key-event%", "event%", os_wxKeyEvent_ConstructScheme, 14));
 
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxKeyEvent_class,"get-key-code", objscheme_wxKeyEvent_GetkeyCode, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxKeyEvent_class,"set-key-code", objscheme_wxKeyEvent_SetkeyCode, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxKeyEvent_class,"get-shift-down", objscheme_wxKeyEvent_GetshiftDown, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxKeyEvent_class,"set-shift-down", objscheme_wxKeyEvent_SetshiftDown, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxKeyEvent_class,"get-control-down", objscheme_wxKeyEvent_GetcontrolDown, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxKeyEvent_class,"set-control-down", objscheme_wxKeyEvent_SetcontrolDown, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxKeyEvent_class,"get-meta-down", objscheme_wxKeyEvent_GetmetaDown, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxKeyEvent_class,"set-meta-down", objscheme_wxKeyEvent_SetmetaDown, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxKeyEvent_class,"get-alt-down", objscheme_wxKeyEvent_GetaltDown, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxKeyEvent_class,"set-alt-down", objscheme_wxKeyEvent_SetaltDown, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxKeyEvent_class,"get-x", objscheme_wxKeyEvent_Getx, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxKeyEvent_class,"set-x", objscheme_wxKeyEvent_Setx, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxKeyEvent_class,"get-y", objscheme_wxKeyEvent_Gety, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxKeyEvent_class,"set-y", objscheme_wxKeyEvent_Sety, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxKeyEvent_class,"get-key-code" " method", objscheme_wxKeyEvent_GetkeyCode, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxKeyEvent_class,"set-key-code" " method", objscheme_wxKeyEvent_SetkeyCode, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxKeyEvent_class,"get-shift-down" " method", objscheme_wxKeyEvent_GetshiftDown, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxKeyEvent_class,"set-shift-down" " method", objscheme_wxKeyEvent_SetshiftDown, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxKeyEvent_class,"get-control-down" " method", objscheme_wxKeyEvent_GetcontrolDown, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxKeyEvent_class,"set-control-down" " method", objscheme_wxKeyEvent_SetcontrolDown, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxKeyEvent_class,"get-meta-down" " method", objscheme_wxKeyEvent_GetmetaDown, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxKeyEvent_class,"set-meta-down" " method", objscheme_wxKeyEvent_SetmetaDown, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxKeyEvent_class,"get-alt-down" " method", objscheme_wxKeyEvent_GetaltDown, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxKeyEvent_class,"set-alt-down" " method", objscheme_wxKeyEvent_SetaltDown, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxKeyEvent_class,"get-x" " method", objscheme_wxKeyEvent_Getx, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxKeyEvent_class,"set-x" " method", objscheme_wxKeyEvent_Setx, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxKeyEvent_class,"get-y" " method", objscheme_wxKeyEvent_Gety, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxKeyEvent_class,"set-y" " method", objscheme_wxKeyEvent_Sety, 1, 1));
 
   WITH_VAR_STACK(scheme_made_class(os_wxKeyEvent_class));
 
@@ -2547,34 +2547,34 @@ void objscheme_setup_wxMouseEvent(Scheme_Env *env)
 
   os_wxMouseEvent_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "mouse-event%", "event%", os_wxMouseEvent_ConstructScheme, 27));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class, "moving?", os_wxMouseEventMoving, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class, "leaving?", os_wxMouseEventLeaving, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class, "entering?", os_wxMouseEventEntering, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class, "dragging?", os_wxMouseEventDragging, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class, "button-up?", os_wxMouseEventButtonUp, 0, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class, "button-down?", os_wxMouseEventButtonDown, 0, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class, "button-changed?", os_wxMouseEventButton, 0, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class, "moving?" " method", os_wxMouseEventMoving, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class, "leaving?" " method", os_wxMouseEventLeaving, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class, "entering?" " method", os_wxMouseEventEntering, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class, "dragging?" " method", os_wxMouseEventDragging, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class, "button-up?" " method", os_wxMouseEventButtonUp, 0, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class, "button-down?" " method", os_wxMouseEventButtonDown, 0, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class, "button-changed?" " method", os_wxMouseEventButton, 0, 1));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class,"get-event-type", objscheme_wxMouseEvent_GeteventType, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class,"set-event-type", objscheme_wxMouseEvent_SeteventType, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class,"get-left-down", objscheme_wxMouseEvent_GetleftDown, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class,"set-left-down", objscheme_wxMouseEvent_SetleftDown, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class,"get-middle-down", objscheme_wxMouseEvent_GetmiddleDown, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class,"set-middle-down", objscheme_wxMouseEvent_SetmiddleDown, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class,"get-right-down", objscheme_wxMouseEvent_GetrightDown, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class,"set-right-down", objscheme_wxMouseEvent_SetrightDown, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class,"get-shift-down", objscheme_wxMouseEvent_GetshiftDown, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class,"set-shift-down", objscheme_wxMouseEvent_SetshiftDown, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class,"get-control-down", objscheme_wxMouseEvent_GetcontrolDown, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class,"set-control-down", objscheme_wxMouseEvent_SetcontrolDown, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class,"get-meta-down", objscheme_wxMouseEvent_GetmetaDown, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class,"set-meta-down", objscheme_wxMouseEvent_SetmetaDown, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class,"get-alt-down", objscheme_wxMouseEvent_GetaltDown, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class,"set-alt-down", objscheme_wxMouseEvent_SetaltDown, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class,"get-x", objscheme_wxMouseEvent_Getx, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class,"set-x", objscheme_wxMouseEvent_Setx, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class,"get-y", objscheme_wxMouseEvent_Gety, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class,"set-y", objscheme_wxMouseEvent_Sety, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class,"get-event-type" " method", objscheme_wxMouseEvent_GeteventType, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class,"set-event-type" " method", objscheme_wxMouseEvent_SeteventType, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class,"get-left-down" " method", objscheme_wxMouseEvent_GetleftDown, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class,"set-left-down" " method", objscheme_wxMouseEvent_SetleftDown, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class,"get-middle-down" " method", objscheme_wxMouseEvent_GetmiddleDown, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class,"set-middle-down" " method", objscheme_wxMouseEvent_SetmiddleDown, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class,"get-right-down" " method", objscheme_wxMouseEvent_GetrightDown, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class,"set-right-down" " method", objscheme_wxMouseEvent_SetrightDown, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class,"get-shift-down" " method", objscheme_wxMouseEvent_GetshiftDown, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class,"set-shift-down" " method", objscheme_wxMouseEvent_SetshiftDown, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class,"get-control-down" " method", objscheme_wxMouseEvent_GetcontrolDown, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class,"set-control-down" " method", objscheme_wxMouseEvent_SetcontrolDown, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class,"get-meta-down" " method", objscheme_wxMouseEvent_GetmetaDown, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class,"set-meta-down" " method", objscheme_wxMouseEvent_SetmetaDown, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class,"get-alt-down" " method", objscheme_wxMouseEvent_GetaltDown, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class,"set-alt-down" " method", objscheme_wxMouseEvent_SetaltDown, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class,"get-x" " method", objscheme_wxMouseEvent_Getx, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class,"set-x" " method", objscheme_wxMouseEvent_Setx, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class,"get-y" " method", objscheme_wxMouseEvent_Gety, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class,"set-y" " method", objscheme_wxMouseEvent_Sety, 1, 1));
 
   WITH_VAR_STACK(scheme_made_class(os_wxMouseEvent_class));
 

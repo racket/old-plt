@@ -2091,42 +2091,42 @@ void objscheme_setup_wxSnip(Scheme_Env *env)
 
   os_wxSnip_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "snip%", "object%", os_wxSnip_ConstructScheme, 35));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "previous", os_wxSnipPrevious, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "next", os_wxSnipNext, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "get-scroll-step-offset", os_wxSnipGetScrollStepOffset, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "find-scroll-step", os_wxSnipFindScrollStep, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "get-num-scroll-steps", os_wxSnipGetNumScrollSteps, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "set-admin", os_wxSnipSetAdmin, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "resize", os_wxSnipResize, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "write", os_wxSnipWrite, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "match?", os_wxSnipMatch, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "can-do-edit-operation?", os_wxSnipCanEdit, 1, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "do-edit-operation", os_wxSnipDoEdit, 1, 3));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "blink-caret", os_wxSnipBlinkCaret, 3, 3));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "own-caret", os_wxSnipOwnCaret, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "adjust-cursor", os_wxSnipAdjustCursor, 6, 6));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "on-char", os_wxSnipOnChar, 6, 6));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "on-event", os_wxSnipOnEvent, 6, 6));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "size-cache-invalid", os_wxSnipSizeCacheInvalid, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "copy", os_wxSnipCopy, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "get-text", os_wxSnipGetText, 2, 3));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "merge-with", os_wxSnipMergeWith, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "split", os_wxSnipSplit, 3, 3));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "draw", os_wxSnipDraw, 10, 10));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "partial-offset", os_wxSnipPartialOffset, 4, 4));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "get-extent", os_wxSnipGetExtent, 3, 9));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "release-from-owner", os_wxSnipReleaseFromOwner, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "is-owned?", os_wxSnipIsOwned, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "set-style", os_wxSnipSetStyle, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "set-flags", os_wxSnipSetFlags, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "set-count", os_wxSnipSetCount, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "get-admin", os_wxSnipGetAdmin, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "previous" " method", os_wxSnipPrevious, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "next" " method", os_wxSnipNext, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "get-scroll-step-offset" " method", os_wxSnipGetScrollStepOffset, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "find-scroll-step" " method", os_wxSnipFindScrollStep, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "get-num-scroll-steps" " method", os_wxSnipGetNumScrollSteps, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "set-admin" " method", os_wxSnipSetAdmin, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "resize" " method", os_wxSnipResize, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "write" " method", os_wxSnipWrite, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "match?" " method", os_wxSnipMatch, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "can-do-edit-operation?" " method", os_wxSnipCanEdit, 1, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "do-edit-operation" " method", os_wxSnipDoEdit, 1, 3));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "blink-caret" " method", os_wxSnipBlinkCaret, 3, 3));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "own-caret" " method", os_wxSnipOwnCaret, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "adjust-cursor" " method", os_wxSnipAdjustCursor, 6, 6));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "on-char" " method", os_wxSnipOnChar, 6, 6));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "on-event" " method", os_wxSnipOnEvent, 6, 6));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "size-cache-invalid" " method", os_wxSnipSizeCacheInvalid, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "copy" " method", os_wxSnipCopy, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "get-text" " method", os_wxSnipGetText, 2, 3));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "merge-with" " method", os_wxSnipMergeWith, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "split" " method", os_wxSnipSplit, 3, 3));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "draw" " method", os_wxSnipDraw, 10, 10));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "partial-offset" " method", os_wxSnipPartialOffset, 4, 4));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "get-extent" " method", os_wxSnipGetExtent, 3, 9));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "release-from-owner" " method", os_wxSnipReleaseFromOwner, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "is-owned?" " method", os_wxSnipIsOwned, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "set-style" " method", os_wxSnipSetStyle, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "set-flags" " method", os_wxSnipSetFlags, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "set-count" " method", os_wxSnipSetCount, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "get-admin" " method", os_wxSnipGetAdmin, 0, 0));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class,"get-count", objscheme_wxSnip_Getcount, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class,"get-flags", objscheme_wxSnip_Getflags, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class,"get-style", objscheme_wxSnip_Getstyle, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class,"get-snipclass", objscheme_wxSnip_Getsnipclass, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class,"set-snipclass", objscheme_wxSnip_Setsnipclass, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class,"get-count" " method", objscheme_wxSnip_Getcount, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class,"get-flags" " method", objscheme_wxSnip_Getflags, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class,"get-style" " method", objscheme_wxSnip_Getstyle, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class,"get-snipclass" " method", objscheme_wxSnip_Getsnipclass, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class,"set-snipclass" " method", objscheme_wxSnip_Setsnipclass, 1, 1));
 
   WITH_VAR_STACK(scheme_made_class(os_wxSnip_class));
 
@@ -3889,30 +3889,30 @@ void objscheme_setup_wxTextSnip(Scheme_Env *env)
 
   os_wxTextSnip_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "string-snip%", "snip%", os_wxTextSnip_ConstructScheme, 24));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "read", os_wxTextSnipRead, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "insert", os_wxTextSnipInsert, 2, 3));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "get-scroll-step-offset", os_wxTextSnipGetScrollStepOffset, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "find-scroll-step", os_wxTextSnipFindScrollStep, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "get-num-scroll-steps", os_wxTextSnipGetNumScrollSteps, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "set-admin", os_wxTextSnipSetAdmin, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "resize", os_wxTextSnipResize, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "write", os_wxTextSnipWrite, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "match?", os_wxTextSnipMatch, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "can-do-edit-operation?", os_wxTextSnipCanEdit, 1, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "do-edit-operation", os_wxTextSnipDoEdit, 1, 3));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "blink-caret", os_wxTextSnipBlinkCaret, 3, 3));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "own-caret", os_wxTextSnipOwnCaret, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "adjust-cursor", os_wxTextSnipAdjustCursor, 6, 6));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "on-char", os_wxTextSnipOnChar, 6, 6));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "on-event", os_wxTextSnipOnEvent, 6, 6));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "size-cache-invalid", os_wxTextSnipSizeCacheInvalid, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "copy", os_wxTextSnipCopy, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "get-text", os_wxTextSnipGetText, 2, 3));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "merge-with", os_wxTextSnipMergeWith, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "split", os_wxTextSnipSplit, 3, 3));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "draw", os_wxTextSnipDraw, 10, 10));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "partial-offset", os_wxTextSnipPartialOffset, 4, 4));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "get-extent", os_wxTextSnipGetExtent, 3, 9));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "read" " method", os_wxTextSnipRead, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "insert" " method", os_wxTextSnipInsert, 2, 3));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "get-scroll-step-offset" " method", os_wxTextSnipGetScrollStepOffset, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "find-scroll-step" " method", os_wxTextSnipFindScrollStep, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "get-num-scroll-steps" " method", os_wxTextSnipGetNumScrollSteps, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "set-admin" " method", os_wxTextSnipSetAdmin, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "resize" " method", os_wxTextSnipResize, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "write" " method", os_wxTextSnipWrite, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "match?" " method", os_wxTextSnipMatch, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "can-do-edit-operation?" " method", os_wxTextSnipCanEdit, 1, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "do-edit-operation" " method", os_wxTextSnipDoEdit, 1, 3));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "blink-caret" " method", os_wxTextSnipBlinkCaret, 3, 3));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "own-caret" " method", os_wxTextSnipOwnCaret, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "adjust-cursor" " method", os_wxTextSnipAdjustCursor, 6, 6));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "on-char" " method", os_wxTextSnipOnChar, 6, 6));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "on-event" " method", os_wxTextSnipOnEvent, 6, 6));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "size-cache-invalid" " method", os_wxTextSnipSizeCacheInvalid, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "copy" " method", os_wxTextSnipCopy, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "get-text" " method", os_wxTextSnipGetText, 2, 3));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "merge-with" " method", os_wxTextSnipMergeWith, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "split" " method", os_wxTextSnipSplit, 3, 3));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "draw" " method", os_wxTextSnipDraw, 10, 10));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "partial-offset" " method", os_wxTextSnipPartialOffset, 4, 4));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "get-extent" " method", os_wxTextSnipGetExtent, 3, 9));
 
 
   WITH_VAR_STACK(scheme_made_class(os_wxTextSnip_class));
@@ -5582,28 +5582,28 @@ void objscheme_setup_wxTabSnip(Scheme_Env *env)
 
   os_wxTabSnip_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "tab-snip%", "string-snip%", os_wxTabSnip_ConstructScheme, 22));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabSnip_class, "get-scroll-step-offset", os_wxTabSnipGetScrollStepOffset, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabSnip_class, "find-scroll-step", os_wxTabSnipFindScrollStep, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabSnip_class, "get-num-scroll-steps", os_wxTabSnipGetNumScrollSteps, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabSnip_class, "set-admin", os_wxTabSnipSetAdmin, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabSnip_class, "resize", os_wxTabSnipResize, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabSnip_class, "write", os_wxTabSnipWrite, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabSnip_class, "match?", os_wxTabSnipMatch, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabSnip_class, "can-do-edit-operation?", os_wxTabSnipCanEdit, 1, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabSnip_class, "do-edit-operation", os_wxTabSnipDoEdit, 1, 3));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabSnip_class, "blink-caret", os_wxTabSnipBlinkCaret, 3, 3));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabSnip_class, "own-caret", os_wxTabSnipOwnCaret, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabSnip_class, "adjust-cursor", os_wxTabSnipAdjustCursor, 6, 6));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabSnip_class, "on-char", os_wxTabSnipOnChar, 6, 6));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabSnip_class, "on-event", os_wxTabSnipOnEvent, 6, 6));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabSnip_class, "size-cache-invalid", os_wxTabSnipSizeCacheInvalid, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabSnip_class, "copy", os_wxTabSnipCopy, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabSnip_class, "get-text", os_wxTabSnipGetText, 2, 3));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabSnip_class, "merge-with", os_wxTabSnipMergeWith, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabSnip_class, "split", os_wxTabSnipSplit, 3, 3));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabSnip_class, "draw", os_wxTabSnipDraw, 10, 10));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabSnip_class, "partial-offset", os_wxTabSnipPartialOffset, 4, 4));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabSnip_class, "get-extent", os_wxTabSnipGetExtent, 3, 9));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabSnip_class, "get-scroll-step-offset" " method", os_wxTabSnipGetScrollStepOffset, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabSnip_class, "find-scroll-step" " method", os_wxTabSnipFindScrollStep, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabSnip_class, "get-num-scroll-steps" " method", os_wxTabSnipGetNumScrollSteps, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabSnip_class, "set-admin" " method", os_wxTabSnipSetAdmin, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabSnip_class, "resize" " method", os_wxTabSnipResize, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabSnip_class, "write" " method", os_wxTabSnipWrite, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabSnip_class, "match?" " method", os_wxTabSnipMatch, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabSnip_class, "can-do-edit-operation?" " method", os_wxTabSnipCanEdit, 1, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabSnip_class, "do-edit-operation" " method", os_wxTabSnipDoEdit, 1, 3));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabSnip_class, "blink-caret" " method", os_wxTabSnipBlinkCaret, 3, 3));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabSnip_class, "own-caret" " method", os_wxTabSnipOwnCaret, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabSnip_class, "adjust-cursor" " method", os_wxTabSnipAdjustCursor, 6, 6));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabSnip_class, "on-char" " method", os_wxTabSnipOnChar, 6, 6));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabSnip_class, "on-event" " method", os_wxTabSnipOnEvent, 6, 6));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabSnip_class, "size-cache-invalid" " method", os_wxTabSnipSizeCacheInvalid, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabSnip_class, "copy" " method", os_wxTabSnipCopy, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabSnip_class, "get-text" " method", os_wxTabSnipGetText, 2, 3));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabSnip_class, "merge-with" " method", os_wxTabSnipMergeWith, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabSnip_class, "split" " method", os_wxTabSnipSplit, 3, 3));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabSnip_class, "draw" " method", os_wxTabSnipDraw, 10, 10));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabSnip_class, "partial-offset" " method", os_wxTabSnipPartialOffset, 4, 4));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabSnip_class, "get-extent" " method", os_wxTabSnipGetExtent, 3, 9));
 
 
   WITH_VAR_STACK(scheme_made_class(os_wxTabSnip_class));
@@ -7534,33 +7534,33 @@ void objscheme_setup_wxImageSnip(Scheme_Env *env)
 
   os_wxImageSnip_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "image-snip%", "snip%", os_wxImageSnip_ConstructScheme, 27));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "set-offset", os_wxImageSnipSetOffset, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "set-bitmap", os_wxImageSnipSetBitmap, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "get-filetype", os_wxImageSnipGetFiletype, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "get-filename", os_wxImageSnipGetFilename, 0, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "load-file", os_wxImageSnipLoadFile, 1, 4));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "get-scroll-step-offset", os_wxImageSnipGetScrollStepOffset, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "find-scroll-step", os_wxImageSnipFindScrollStep, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "get-num-scroll-steps", os_wxImageSnipGetNumScrollSteps, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "set-admin", os_wxImageSnipSetAdmin, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "resize", os_wxImageSnipResize, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "write", os_wxImageSnipWrite, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "match?", os_wxImageSnipMatch, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "can-do-edit-operation?", os_wxImageSnipCanEdit, 1, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "do-edit-operation", os_wxImageSnipDoEdit, 1, 3));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "blink-caret", os_wxImageSnipBlinkCaret, 3, 3));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "own-caret", os_wxImageSnipOwnCaret, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "adjust-cursor", os_wxImageSnipAdjustCursor, 6, 6));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "on-char", os_wxImageSnipOnChar, 6, 6));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "on-event", os_wxImageSnipOnEvent, 6, 6));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "size-cache-invalid", os_wxImageSnipSizeCacheInvalid, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "copy", os_wxImageSnipCopy, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "get-text", os_wxImageSnipGetText, 2, 3));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "merge-with", os_wxImageSnipMergeWith, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "split", os_wxImageSnipSplit, 3, 3));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "draw", os_wxImageSnipDraw, 10, 10));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "partial-offset", os_wxImageSnipPartialOffset, 4, 4));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "get-extent", os_wxImageSnipGetExtent, 3, 9));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "set-offset" " method", os_wxImageSnipSetOffset, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "set-bitmap" " method", os_wxImageSnipSetBitmap, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "get-filetype" " method", os_wxImageSnipGetFiletype, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "get-filename" " method", os_wxImageSnipGetFilename, 0, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "load-file" " method", os_wxImageSnipLoadFile, 1, 4));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "get-scroll-step-offset" " method", os_wxImageSnipGetScrollStepOffset, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "find-scroll-step" " method", os_wxImageSnipFindScrollStep, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "get-num-scroll-steps" " method", os_wxImageSnipGetNumScrollSteps, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "set-admin" " method", os_wxImageSnipSetAdmin, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "resize" " method", os_wxImageSnipResize, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "write" " method", os_wxImageSnipWrite, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "match?" " method", os_wxImageSnipMatch, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "can-do-edit-operation?" " method", os_wxImageSnipCanEdit, 1, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "do-edit-operation" " method", os_wxImageSnipDoEdit, 1, 3));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "blink-caret" " method", os_wxImageSnipBlinkCaret, 3, 3));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "own-caret" " method", os_wxImageSnipOwnCaret, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "adjust-cursor" " method", os_wxImageSnipAdjustCursor, 6, 6));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "on-char" " method", os_wxImageSnipOnChar, 6, 6));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "on-event" " method", os_wxImageSnipOnEvent, 6, 6));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "size-cache-invalid" " method", os_wxImageSnipSizeCacheInvalid, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "copy" " method", os_wxImageSnipCopy, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "get-text" " method", os_wxImageSnipGetText, 2, 3));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "merge-with" " method", os_wxImageSnipMergeWith, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "split" " method", os_wxImageSnipSplit, 3, 3));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "draw" " method", os_wxImageSnipDraw, 10, 10));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "partial-offset" " method", os_wxImageSnipPartialOffset, 4, 4));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "get-extent" " method", os_wxImageSnipGetExtent, 3, 9));
 
 
   WITH_VAR_STACK(scheme_made_class(os_wxImageSnip_class));
@@ -9768,48 +9768,48 @@ void objscheme_setup_wxMediaSnip(Scheme_Env *env)
 
   os_wxMediaSnip_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor-snip%", "snip%", os_wxMediaSnip_ConstructScheme, 42));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "get-inset", os_wxMediaSnipGetInset, 4, 4));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "set-inset", os_wxMediaSnipSetInset, 4, 4));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "get-margin", os_wxMediaSnipGetMargin, 4, 4));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "set-margin", os_wxMediaSnipSetMargin, 4, 4));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "border-visible?", os_wxMediaSnipBorderVisible, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "show-border", os_wxMediaSnipShowBorder, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "set-align-top-line", os_wxMediaSnipSetAlignTopLine, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "get-align-top-line", os_wxMediaSnipGetAlignTopLine, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "set-tight-text-fit", os_wxMediaSnipSetTightTextFit, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "get-tight-text-fit", os_wxMediaSnipGetTightTextFit, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "get-min-height", os_wxMediaSnipGetMinHeight, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "get-min-width", os_wxMediaSnipGetMinWidth, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "set-min-height", os_wxMediaSnipSetMinHeight, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "set-min-width", os_wxMediaSnipSetMinWidth, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "get-max-height", os_wxMediaSnipGetMaxHeight, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "get-max-width", os_wxMediaSnipGetMaxWidth, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "set-max-height", os_wxMediaSnipSetMaxHeight, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "set-max-width", os_wxMediaSnipSetMaxWidth, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "get-scroll-step-offset", os_wxMediaSnipGetScrollStepOffset, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "find-scroll-step", os_wxMediaSnipFindScrollStep, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "get-num-scroll-steps", os_wxMediaSnipGetNumScrollSteps, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "set-admin", os_wxMediaSnipSetAdmin, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "resize", os_wxMediaSnipResize, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "write", os_wxMediaSnipWrite, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "match?", os_wxMediaSnipMatch, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "can-do-edit-operation?", os_wxMediaSnipCanEdit, 1, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "do-edit-operation", os_wxMediaSnipDoEdit, 1, 3));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "blink-caret", os_wxMediaSnipBlinkCaret, 3, 3));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "own-caret", os_wxMediaSnipOwnCaret, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "adjust-cursor", os_wxMediaSnipAdjustCursor, 6, 6));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "on-char", os_wxMediaSnipOnChar, 6, 6));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "on-event", os_wxMediaSnipOnEvent, 6, 6));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "size-cache-invalid", os_wxMediaSnipSizeCacheInvalid, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "copy", os_wxMediaSnipCopy, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "get-text", os_wxMediaSnipGetText, 2, 3));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "merge-with", os_wxMediaSnipMergeWith, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "split", os_wxMediaSnipSplit, 3, 3));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "draw", os_wxMediaSnipDraw, 10, 10));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "partial-offset", os_wxMediaSnipPartialOffset, 4, 4));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "get-extent", os_wxMediaSnipGetExtent, 3, 9));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "set-editor", os_wxMediaSnipSetMedia, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "get-editor", os_wxMediaSnipGetThisMedia, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "get-inset" " method", os_wxMediaSnipGetInset, 4, 4));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "set-inset" " method", os_wxMediaSnipSetInset, 4, 4));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "get-margin" " method", os_wxMediaSnipGetMargin, 4, 4));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "set-margin" " method", os_wxMediaSnipSetMargin, 4, 4));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "border-visible?" " method", os_wxMediaSnipBorderVisible, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "show-border" " method", os_wxMediaSnipShowBorder, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "set-align-top-line" " method", os_wxMediaSnipSetAlignTopLine, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "get-align-top-line" " method", os_wxMediaSnipGetAlignTopLine, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "set-tight-text-fit" " method", os_wxMediaSnipSetTightTextFit, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "get-tight-text-fit" " method", os_wxMediaSnipGetTightTextFit, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "get-min-height" " method", os_wxMediaSnipGetMinHeight, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "get-min-width" " method", os_wxMediaSnipGetMinWidth, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "set-min-height" " method", os_wxMediaSnipSetMinHeight, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "set-min-width" " method", os_wxMediaSnipSetMinWidth, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "get-max-height" " method", os_wxMediaSnipGetMaxHeight, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "get-max-width" " method", os_wxMediaSnipGetMaxWidth, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "set-max-height" " method", os_wxMediaSnipSetMaxHeight, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "set-max-width" " method", os_wxMediaSnipSetMaxWidth, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "get-scroll-step-offset" " method", os_wxMediaSnipGetScrollStepOffset, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "find-scroll-step" " method", os_wxMediaSnipFindScrollStep, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "get-num-scroll-steps" " method", os_wxMediaSnipGetNumScrollSteps, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "set-admin" " method", os_wxMediaSnipSetAdmin, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "resize" " method", os_wxMediaSnipResize, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "write" " method", os_wxMediaSnipWrite, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "match?" " method", os_wxMediaSnipMatch, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "can-do-edit-operation?" " method", os_wxMediaSnipCanEdit, 1, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "do-edit-operation" " method", os_wxMediaSnipDoEdit, 1, 3));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "blink-caret" " method", os_wxMediaSnipBlinkCaret, 3, 3));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "own-caret" " method", os_wxMediaSnipOwnCaret, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "adjust-cursor" " method", os_wxMediaSnipAdjustCursor, 6, 6));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "on-char" " method", os_wxMediaSnipOnChar, 6, 6));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "on-event" " method", os_wxMediaSnipOnEvent, 6, 6));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "size-cache-invalid" " method", os_wxMediaSnipSizeCacheInvalid, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "copy" " method", os_wxMediaSnipCopy, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "get-text" " method", os_wxMediaSnipGetText, 2, 3));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "merge-with" " method", os_wxMediaSnipMergeWith, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "split" " method", os_wxMediaSnipSplit, 3, 3));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "draw" " method", os_wxMediaSnipDraw, 10, 10));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "partial-offset" " method", os_wxMediaSnipPartialOffset, 4, 4));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "get-extent" " method", os_wxMediaSnipGetExtent, 3, 9));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "set-editor" " method", os_wxMediaSnipSetMedia, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "get-editor" " method", os_wxMediaSnipGetThisMedia, 0, 0));
 
 
   WITH_VAR_STACK(scheme_made_class(os_wxMediaSnip_class));
@@ -10043,10 +10043,10 @@ void objscheme_setup_wxBufferDataClass(Scheme_Env *env)
 
   os_wxBufferDataClass_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor-data-class%", "object%", os_wxBufferDataClass_ConstructScheme, 3));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBufferDataClass_class, "read", os_wxBufferDataClassRead, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBufferDataClass_class, "read" " method", os_wxBufferDataClassRead, 1, 1));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBufferDataClass_class,"get-classname", objscheme_wxBufferDataClass_Getclassname, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBufferDataClass_class,"set-classname", objscheme_wxBufferDataClass_Setclassname, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBufferDataClass_class,"get-classname" " method", objscheme_wxBufferDataClass_Getclassname, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBufferDataClass_class,"set-classname" " method", objscheme_wxBufferDataClass_Setclassname, 1, 1));
 
   WITH_VAR_STACK(scheme_made_class(os_wxBufferDataClass_class));
 
@@ -10260,11 +10260,11 @@ void objscheme_setup_wxBufferDataClassList(Scheme_Env *env)
 
   os_wxBufferDataClassList_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor-data-class-list%", "object%", NULL, 5));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBufferDataClassList_class, "nth", os_wxBufferDataClassListNth, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBufferDataClassList_class, "number", os_wxBufferDataClassListNumber, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBufferDataClassList_class, "add", os_wxBufferDataClassListAdd, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBufferDataClassList_class, "find-position", os_wxBufferDataClassListFindPosition, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBufferDataClassList_class, "find", os_wxBufferDataClassListFind, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBufferDataClassList_class, "nth" " method", os_wxBufferDataClassListNth, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBufferDataClassList_class, "number" " method", os_wxBufferDataClassListNumber, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBufferDataClassList_class, "add" " method", os_wxBufferDataClassListAdd, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBufferDataClassList_class, "find-position" " method", os_wxBufferDataClassListFindPosition, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBufferDataClassList_class, "find" " method", os_wxBufferDataClassListFind, 1, 1));
 
 
   WITH_VAR_STACK(scheme_made_class(os_wxBufferDataClassList_class));
@@ -10553,12 +10553,12 @@ void objscheme_setup_wxBufferData(Scheme_Env *env)
 
   os_wxBufferData_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor-data%", "object%", os_wxBufferData_ConstructScheme, 5));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBufferData_class, "set-next", os_wxBufferDataSetNextNoCycle, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBufferData_class, "write", os_wxBufferDataWrite, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBufferData_class, "set-next" " method", os_wxBufferDataSetNextNoCycle, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBufferData_class, "write" " method", os_wxBufferDataWrite, 1, 1));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBufferData_class,"get-dataclass", objscheme_wxBufferData_Getdataclass, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBufferData_class,"set-dataclass", objscheme_wxBufferData_Setdataclass, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBufferData_class,"get-next", objscheme_wxBufferData_Getnext, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBufferData_class,"get-dataclass" " method", objscheme_wxBufferData_Getdataclass, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBufferData_class,"set-dataclass" " method", objscheme_wxBufferData_Setdataclass, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBufferData_class,"get-next" " method", objscheme_wxBufferData_Getnext, 0, 0));
 
   WITH_VAR_STACK(scheme_made_class(os_wxBufferData_class));
 

@@ -1097,7 +1097,7 @@ sub DoPrintClass
 		    print "(${newclass}_class, ";
 		    $cleanfunc = $func;
 		    $cleanfunc = &OperatorClean($cleanfunc);
-		    print "${fname}, ${newclass}${cleanfunc}";
+		    print "${fname} \" method\", ${newclass}${cleanfunc}";
 		    if ($justoneok{$func}) {
 			print ", ";
 			print $justonemin{$func};
@@ -1116,14 +1116,14 @@ sub DoPrintClass
 	    &ReadIvarFields($ivar);
 	    &OIStart;
 	    print "  WITH_VAR_STACK(scheme_add_method_w_arity(${newclass}_class,";
-	    print "${getname}, objscheme_${oldclass}_Get${ivarname}, 0, 0));\n";
+	    print "${getname} \" method\", objscheme_${oldclass}_Get${ivarname}, 0, 0));\n";
 
 	    $sym = &Unquote($getname);
 	    print SOUT "\n    $sym";
 
 	    if (!$readonly) {
 		print "  WITH_VAR_STACK(scheme_add_method_w_arity(${newclass}_class,";
-		print "${setname}, objscheme_${oldclass}_Set${ivarname}, 1, 1));\n";
+		print "${setname} \" method\", objscheme_${oldclass}_Set${ivarname}, 1, 1));\n";
 
 		$sym = &Unquote($setname);
 		print SOUT "\n    $sym";

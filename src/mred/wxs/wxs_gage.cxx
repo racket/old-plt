@@ -673,16 +673,16 @@ void objscheme_setup_wxsGauge(Scheme_Env *env)
 
   os_wxsGauge_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "gauge%", "item%", os_wxsGauge_ConstructScheme, 10));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxsGauge_class, "get-value", os_wxsGaugeGetValue, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxsGauge_class, "set-value", os_wxsGaugeSetValue, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxsGauge_class, "get-range", os_wxsGaugeGetRange, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxsGauge_class, "set-range", os_wxsGaugeSetRange, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxsGauge_class, "on-drop-file", os_wxsGaugeOnDropFile, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxsGauge_class, "pre-on-event", os_wxsGaugePreOnEvent, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxsGauge_class, "pre-on-char", os_wxsGaugePreOnChar, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxsGauge_class, "on-size", os_wxsGaugeOnSize, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxsGauge_class, "on-set-focus", os_wxsGaugeOnSetFocus, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxsGauge_class, "on-kill-focus", os_wxsGaugeOnKillFocus, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxsGauge_class, "get-value" " method", os_wxsGaugeGetValue, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxsGauge_class, "set-value" " method", os_wxsGaugeSetValue, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxsGauge_class, "get-range" " method", os_wxsGaugeGetRange, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxsGauge_class, "set-range" " method", os_wxsGaugeSetRange, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxsGauge_class, "on-drop-file" " method", os_wxsGaugeOnDropFile, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxsGauge_class, "pre-on-event" " method", os_wxsGaugePreOnEvent, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxsGauge_class, "pre-on-char" " method", os_wxsGaugePreOnChar, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxsGauge_class, "on-size" " method", os_wxsGaugeOnSize, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxsGauge_class, "on-set-focus" " method", os_wxsGaugeOnSetFocus, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxsGauge_class, "on-kill-focus" " method", os_wxsGaugeOnKillFocus, 0, 0));
 
 
   WITH_VAR_STACK(scheme_made_class(os_wxsGauge_class));

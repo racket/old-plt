@@ -140,9 +140,9 @@ void objscheme_setup_wxItem(Scheme_Env *env)
 
   os_wxItem_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "item%", "window%", NULL, 3));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxItem_class, "set-label", os_wxItemSetLabel, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxItem_class, "get-label", os_wxItemGetLabel, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxItem_class, "command", os_wxItemCommand, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxItem_class, "set-label" " method", os_wxItemSetLabel, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxItem_class, "get-label" " method", os_wxItemGetLabel, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxItem_class, "command" " method", os_wxItemCommand, 1, 1));
 
 
   WITH_VAR_STACK(scheme_made_class(os_wxItem_class));
@@ -787,13 +787,13 @@ void objscheme_setup_wxMessage(Scheme_Env *env)
 
   os_wxMessage_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "message%", "item%", os_wxMessage_ConstructScheme, 7));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMessage_class, "set-label", os_wxMessageSetLabel, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMessage_class, "on-drop-file", os_wxMessageOnDropFile, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMessage_class, "pre-on-event", os_wxMessagePreOnEvent, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMessage_class, "pre-on-char", os_wxMessagePreOnChar, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMessage_class, "on-size", os_wxMessageOnSize, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMessage_class, "on-set-focus", os_wxMessageOnSetFocus, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMessage_class, "on-kill-focus", os_wxMessageOnKillFocus, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMessage_class, "set-label" " method", os_wxMessageSetLabel, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMessage_class, "on-drop-file" " method", os_wxMessageOnDropFile, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMessage_class, "pre-on-event" " method", os_wxMessagePreOnEvent, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMessage_class, "pre-on-char" " method", os_wxMessagePreOnChar, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMessage_class, "on-size" " method", os_wxMessageOnSize, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMessage_class, "on-set-focus" " method", os_wxMessageOnSetFocus, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMessage_class, "on-kill-focus" " method", os_wxMessageOnKillFocus, 0, 0));
 
 
   WITH_VAR_STACK(scheme_made_class(os_wxMessage_class));

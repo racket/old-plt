@@ -335,6 +335,7 @@ void scheme_add_method_w_arity(Scheme_Object *c, const char *name,
 {
   Scheme_Object *s;
   Scheme_Class *sclass;
+  int count;
 
   sclass = (Scheme_Class *)c;
 
@@ -343,7 +344,10 @@ void scheme_add_method_w_arity(Scheme_Object *c, const char *name,
 
   sclass->methods[sclass->num_installed] = s;
 
-  s = scheme_intern_symbol(name);
+  count = strlen(name);
+  if ((count > 7) && !strcmp(name + count - 7, " method"))
+    count -= 7;
+  s = scheme_intern_exact_symbol(name, count);
 
   sclass->names[sclass->num_installed] = s;
 

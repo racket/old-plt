@@ -1079,21 +1079,21 @@ void objscheme_setup_wxRadioBox(Scheme_Env *env)
 
   os_wxRadioBox_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "radio-box%", "item%", os_wxRadioBox_ConstructScheme, 15));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRadioBox_class, "button-focus", os_wxRadioBoxButtonFocus, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRadioBox_class, "enable", os_wxRadioBoxEnable, 1, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRadioBox_class, "get-string", os_wxRadioBoxGetString, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRadioBox_class, "set-selection", os_wxRadioBoxSetSelection, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRadioBox_class, "set-string-selection", os_wxRadioBoxSetStringSelection, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRadioBox_class, "number", os_wxRadioBoxNumber, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRadioBox_class, "get-string-selection", os_wxRadioBoxGetStringSelection, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRadioBox_class, "get-selection", os_wxRadioBoxGetSelection, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRadioBox_class, "find-string", os_wxRadioBoxFindString, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRadioBox_class, "on-drop-file", os_wxRadioBoxOnDropFile, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRadioBox_class, "pre-on-event", os_wxRadioBoxPreOnEvent, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRadioBox_class, "pre-on-char", os_wxRadioBoxPreOnChar, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRadioBox_class, "on-size", os_wxRadioBoxOnSize, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRadioBox_class, "on-set-focus", os_wxRadioBoxOnSetFocus, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRadioBox_class, "on-kill-focus", os_wxRadioBoxOnKillFocus, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRadioBox_class, "button-focus" " method", os_wxRadioBoxButtonFocus, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRadioBox_class, "enable" " method", os_wxRadioBoxEnable, 1, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRadioBox_class, "get-string" " method", os_wxRadioBoxGetString, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRadioBox_class, "set-selection" " method", os_wxRadioBoxSetSelection, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRadioBox_class, "set-string-selection" " method", os_wxRadioBoxSetStringSelection, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRadioBox_class, "number" " method", os_wxRadioBoxNumber, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRadioBox_class, "get-string-selection" " method", os_wxRadioBoxGetStringSelection, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRadioBox_class, "get-selection" " method", os_wxRadioBoxGetSelection, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRadioBox_class, "find-string" " method", os_wxRadioBoxFindString, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRadioBox_class, "on-drop-file" " method", os_wxRadioBoxOnDropFile, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRadioBox_class, "pre-on-event" " method", os_wxRadioBoxPreOnEvent, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRadioBox_class, "pre-on-char" " method", os_wxRadioBoxPreOnChar, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRadioBox_class, "on-size" " method", os_wxRadioBoxOnSize, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRadioBox_class, "on-set-focus" " method", os_wxRadioBoxOnSetFocus, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRadioBox_class, "on-kill-focus" " method", os_wxRadioBoxOnKillFocus, 0, 0));
 
 
   WITH_VAR_STACK(scheme_made_class(os_wxRadioBox_class));

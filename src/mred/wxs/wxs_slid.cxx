@@ -618,14 +618,14 @@ void objscheme_setup_wxSlider(Scheme_Env *env)
 
   os_wxSlider_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "slider%", "item%", os_wxSlider_ConstructScheme, 8));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSlider_class, "set-value", os_wxSliderSetValue, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSlider_class, "get-value", os_wxSliderGetValue, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSlider_class, "on-drop-file", os_wxSliderOnDropFile, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSlider_class, "pre-on-event", os_wxSliderPreOnEvent, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSlider_class, "pre-on-char", os_wxSliderPreOnChar, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSlider_class, "on-size", os_wxSliderOnSize, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSlider_class, "on-set-focus", os_wxSliderOnSetFocus, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSlider_class, "on-kill-focus", os_wxSliderOnKillFocus, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSlider_class, "set-value" " method", os_wxSliderSetValue, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSlider_class, "get-value" " method", os_wxSliderGetValue, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSlider_class, "on-drop-file" " method", os_wxSliderOnDropFile, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSlider_class, "pre-on-event" " method", os_wxSliderPreOnEvent, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSlider_class, "pre-on-char" " method", os_wxSliderPreOnChar, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSlider_class, "on-size" " method", os_wxSliderOnSize, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSlider_class, "on-set-focus" " method", os_wxSliderOnSetFocus, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSlider_class, "on-kill-focus" " method", os_wxSliderOnKillFocus, 0, 0));
 
 
   WITH_VAR_STACK(scheme_made_class(os_wxSlider_class));

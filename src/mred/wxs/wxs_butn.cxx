@@ -686,13 +686,13 @@ void objscheme_setup_wxButton(Scheme_Env *env)
 
   os_wxButton_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "button%", "item%", os_wxButton_ConstructScheme, 7));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxButton_class, "set-label", os_wxButtonSetLabel, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxButton_class, "on-drop-file", os_wxButtonOnDropFile, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxButton_class, "pre-on-event", os_wxButtonPreOnEvent, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxButton_class, "pre-on-char", os_wxButtonPreOnChar, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxButton_class, "on-size", os_wxButtonOnSize, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxButton_class, "on-set-focus", os_wxButtonOnSetFocus, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxButton_class, "on-kill-focus", os_wxButtonOnKillFocus, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxButton_class, "set-label" " method", os_wxButtonSetLabel, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxButton_class, "on-drop-file" " method", os_wxButtonOnDropFile, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxButton_class, "pre-on-event" " method", os_wxButtonPreOnEvent, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxButton_class, "pre-on-char" " method", os_wxButtonPreOnChar, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxButton_class, "on-size" " method", os_wxButtonOnSize, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxButton_class, "on-set-focus" " method", os_wxButtonOnSetFocus, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxButton_class, "on-kill-focus" " method", os_wxButtonOnKillFocus, 0, 0));
 
 
   WITH_VAR_STACK(scheme_made_class(os_wxButton_class));

@@ -1567,7 +1567,7 @@ int wxMediaBuffer::GetMaxUndoHistory()
 
 static int copyDepth = 0;
 
-static int copyRingSize = 8;
+static int copyRingSize = 30;
 static int copyRingPos = 0, copyRingMax = 0, copyRingDest = 0;
 
 static wxList **copyRingBuffer1, **copyRingBuffer2;

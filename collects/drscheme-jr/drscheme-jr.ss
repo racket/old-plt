@@ -109,7 +109,7 @@
 				   (set! syntax-level (cadr p))
 				   (loop (cddr l)))
 				 (bad-arguments "bad level name: ~s" level)))))]
-	  [(--help) (printf "MzRice flags:~n  --help~n  --level level, where level is in: ~s~n~a  --~n"
+	  [(--help) (printf "MzRice flags:~n  --help~n  --level level, where level is in: ~s~n~a  --choose~n  --~n"
 			    (map car language-levels)
 			    (let loop ([l simple-args])
 			      (if (null? l)

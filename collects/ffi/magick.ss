@@ -62,8 +62,7 @@
     (unless (identifier? name)
       (raise-syntax-error 'defmagic "expecting an identifier" stx name))
     #`(define #,name
-        (get-ffi-obj (string->bytes/utf-8 (symbol->string '#,name))
-                     libwand (_fun #,@xs))))
+        (get-ffi-obj '#,name libwand (_fun #,@xs))))
   (define (sdef name args wand xs expr)
     (unless (identifier? #'name)
       (raise-syntax-error 'defmagic "expecting an identifier" stx name))

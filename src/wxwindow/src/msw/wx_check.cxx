@@ -118,7 +118,7 @@ wxCheckBox::~wxCheckBox(void)
 {
  if (bm_label) {
     --bm_label->selectedIntoDC;
-    bl_label->ReleaseLabel();
+    bm_label->ReleaseLabel();
     bm_label = NULL;
   }
 }

@@ -1863,7 +1863,7 @@ HBITMAP wxBitmap::GetLabelBitmap()
     return ms_bitmap;
 
   /* Draw with mask into a background-gray area... */
-  bm = new wxBitmap(GetWidth(), GetHeight(), GetDepth());
+  bm = new wxBitmap(GetWidth(), GetHeight(), 0);
 
   if (!bm->Ok())
     return ms_bitmap;

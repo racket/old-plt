@@ -1500,8 +1500,8 @@ void wxDC::GetTextExtent(const char *string, double *x, double *y,
 
   *x = (double)XDEV2LOGREL(tx);
   *y = (double)YDEV2LOGREL(ty);
-  if (descent) *descent = (double)tm.tmDescent;
-  if (topSpace) *topSpace = (double)tm.tmInternalLeading;
+  if (descent) *descent = (double)YDEV2LOGREL(tm.tmDescent);
+  if (topSpace) *topSpace = (double)YDEV2LOGREL(tm.tmInternalLeading);
   
   if (oldFont)
     SetFont(oldFont);

@@ -123,7 +123,7 @@ wxButton::~wxButton(void)
 {
   if (bm_label) {
     --bm_label->selectedIntoDC;
-    bl_label->ReleaseLabel();
+    bm_label->ReleaseLabel();
     bm_label = NULL;
   }
 }
@@ -147,7 +147,7 @@ void wxButton::SetLabel(wxBitmap *bitmap)
     return;
 
   --bm_label->selectedIntoDC;
-  bl_label->ReleaseLabel();
+  bm_label->ReleaseLabel();
   bm_label = bitmap;
   bm_label->selectedIntoDC++;
 

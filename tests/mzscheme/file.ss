@@ -93,13 +93,26 @@
 	(let ([s (get-output-string p)])
 	  s)))
 
-;; Test escapes:
+;; Test escapes (input):
 (test (apply 
        string 
        (map 
 	integer->char 
-	'(7 8 9 10 11 12 13 27 92 34 65 32 5 65 16 80)))
-      values "\a\b\t\n\f\r\e\v\\\"\101\40\5A\x1P")
+	'(7 8 9 10 12 13 27 11 92 34 65 32 5 65 15 80 15 80 221 68 255 55 1 49)))
+      values "\a\b\t\n\f\r\e\v\\\"\101\40\5A\xFP\xfP\xdDD\3777\0011")
+(err/rt-test (read (open-input-string "\"\\z\"")) exn:read?)
+(err/rt-test (read (open-input-string "\"\\xX\"")) exn:read?)
+(err/rt-test (read (open-input-string "\"\\x\"")) exn:read?)
+(err/rt-test (read (open-input-string "\"\\x")) exn:read:eof?)
+(err/rt-test (read (open-input-string "\"\\400\"")) exn:read?)
+(err/rt-test (read (open-input-string "\"\\8\"")) exn:read?)
+
+;; Test escape printing:
+(test "\"\\a\\b\\t\\n\\f\\r\\e\\v\\\\\\\"A \\5A\\17P\\17P\\335D\\3777\\0011\""
+      'output-escapes
+      (let ([p (open-output-string)])
+	(write "\a\b\t\n\f\r\e\v\\\"\101\40\5A\xFP\xfP\xdDD\3777\0011" p)
+	(get-output-string p)))
 
 ; Test string ports with file-position:
 (let ([s (open-output-string)])

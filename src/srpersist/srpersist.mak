@@ -14,7 +14,7 @@ CPP_FLAGS=/I"../mzscheme/include" /ML /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CO
 .cxx.obj::
    $(CPP) $(CPP_FLAGS) $< 
 
-MZC="C:\Program Files\PLT\mzc"
+MZC="D:\PLT\mzc"
 	
 LINK32=$(MZC)
 LINK32_FLAGS=

@@ -57,7 +57,7 @@ SRP_NAMED_TYPED_CONSTANT sqlInfo[] = {
   { "sql-table-term", SQL_TABLE_TERM, string },
   { "sql-txn-capable", SQL_TXN_CAPABLE, namedusmallint },
   { "sql-data-source-read-only", SQL_DATA_SOURCE_READ_ONLY, boolstring },
-  { "sql-txn-isolation-option", SQL_TXN_ISOLATION_OPTION, bitmask },
+  { "sql-txn-isolation-option", SQL_TXN_ISOLATION_OPTION, nameduinteger },
   { "sql-default-txn-isolation", SQL_DEFAULT_TXN_ISOLATION, nameduinteger },
   { "sql-user-name", SQL_USER_NAME, string },
   { "sql-describe-parameter", SQL_DESCRIBE_PARAMETER, boolstring },
@@ -317,7 +317,7 @@ SRP_NAMED_CONSTANT paramArraySelectsBits[] = {
 };
 
 SRP_NAMED_CONSTANT defaultTxnIsolationBits[] = {
-  { "sql-txn-read-uncommited", SQL_TXN_READ_UNCOMMITTED },
+  { "sql-txn-read-uncommitted", SQL_TXN_READ_UNCOMMITTED },
   { "sql-txn-read-committed", SQL_TXN_READ_COMMITTED },
   { "sql-txn-repeatable-read", SQL_TXN_REPEATABLE_READ },
   { "sql-txn-serializable", SQL_TXN_SERIALIZABLE },
@@ -347,6 +347,7 @@ SRP_NAMED_BITS_DICT namedInfoIntegers[] = {
   { "sql-param-array-row-counts", paramArrayRowCountsBits, sizeray(paramArrayRowCountsBits) },
   { "sql-param-array-selects", paramArraySelectsBits, sizeray(paramArraySelectsBits) },
   { "sql-default-txn-isolation", defaultTxnIsolationBits, sizeray(defaultTxnIsolationBits) },
+  { "sql-txn-isolation-option", defaultTxnIsolationBits, sizeray(defaultTxnIsolationBits) },
   { "sql-sql-conformance", sqlConformanceBits, sizeray(sqlConformanceBits) },
   { "sql-ddl-index", ddlIndexBits, sizeray(ddlIndexBits) },
   { "sql-cursor-sensitivity", cursorSensitivityBits, sizeray(cursorSensitivityBits) },

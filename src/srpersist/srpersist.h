@@ -53,6 +53,12 @@ typedef struct _srp_prim_ {
   short maxargs;
 } SRP_PRIM;
 
+typedef struct _srp_struct_ {
+  char *name;
+  char **fields;
+  int numFields;
+} SRPSTRUCT;
+
 typedef struct _named_constant_ {
   char *scheme_name;
   SQLUINTEGER val;
@@ -79,14 +85,8 @@ typedef  enum _const_type_ {
   hdbc,
   hstmt,
   hdesc,
-  apdesc,
-  ardesc,
-  ipdesc,
-  irdesc,
-  operationarray,
-  paramsprocessed,
+  opparms,
   rowstatus,
-  rowsfetched,
   sqlboxeduint,
 } SRP_CONST_TYPE;
 
@@ -103,6 +103,12 @@ typedef struct named_bits_dict_ {
 } SRP_NAMED_BITS_DICT;
 
 // Scheme_Object *scheme_make_list(Scheme_Object *,...);
+
+// type-and-value predicates
+
+BOOL isSmallInt(Scheme_Object *);
+BOOL isUnsignedSmallInt(Scheme_Object *);
+BOOL isUnsignedInt(Scheme_Object *);
 
 // buffer procedures
 
@@ -147,8 +153,10 @@ SRP_PRIM_DECL(srp_read_indicator);
 SRP_PRIM_DECL(srp_set_indicator);
 SRP_PRIM_DECL(srp_read_row_status);
 SRP_PRIM_DECL(srp_read_boxed_uint);
+SRP_PRIM_DECL(srp_read_op_parms);
 SRP_PRIM_DECL(srp_make_buffer);
 SRP_PRIM_DECL(srp_read_buffer);
+SRP_PRIM_DECL(srp_write_buffer);
 
 // from SQL.H
 

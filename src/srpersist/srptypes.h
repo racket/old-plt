@@ -14,14 +14,11 @@ extern Scheme_Type sql_henv_type;
 extern Scheme_Type sql_hdbc_type;
 extern Scheme_Type sql_hstmt_type;
 extern Scheme_Type sql_hdesc_type;
-extern Scheme_Type sql_ap_desc_type;
-extern Scheme_Type sql_ar_desc_type;
-extern Scheme_Type sql_ip_desc_type;
-extern Scheme_Type sql_ir_desc_type;
 extern Scheme_Type sql_boxed_uint_type;
 extern Scheme_Type sql_buffer_type;
 extern Scheme_Type sql_indicator_type;
 extern Scheme_Type sql_row_status_type;
+extern Scheme_Type sql_op_parms_type;
 extern Scheme_Type sql_guid_type;
 extern Scheme_Type sql_paramlength_type;
 
@@ -42,28 +39,8 @@ typedef struct _sql_hstmt_ {
 
 typedef struct _sql_hdesc_ {
   Scheme_Type type;
-  SQLHDBC hdesc;
+  SQLHDESC hdesc;
 } SRP_SQL_HDESC;
-
-typedef struct _sql_apdesc_ {
-  Scheme_Type type;
-  SQLUINTEGER handle;
-} SRP_SQL_AP_DESC;
-
-typedef struct _sql_ardesc_ {
-  Scheme_Type type;
-  SQLUINTEGER handle;
-} SRP_SQL_AR_DESC;
-
-typedef struct _sql_ipdesc_ {
-  Scheme_Type type;
-  SQLUINTEGER handle;
-} SRP_SQL_IP_DESC;
-
-typedef struct _sql_irdesc_ {
-  Scheme_Type type;
-  SQLUINTEGER handle;
-} SRP_SQL_IR_DESC;
 
 typedef struct _sql_boxed_uint_ {
   Scheme_Type type;
@@ -89,6 +66,12 @@ typedef struct _sql_row_status_ {
   SQLUSMALLINT *values;
 } SRP_SQL_ROW_STATUS;
 
+typedef struct _sql_op_parms_ {
+  Scheme_Type type;
+  SQLUINTEGER paramSetSize;
+  SQLUSMALLINT *values;
+} SRP_SQL_OP_PARMS;
+
 typedef struct _sql_paramlength_ {
   Scheme_Type type;
   SQLINTEGER *lens;
@@ -108,7 +91,7 @@ typedef struct _sql_guid_ {
 #define SQL_HSTMTP(o) (!SCHEME_INTP(o) && o->type == sql_hstmt_type) 
 #define SQL_HSTMT_VAL(o) (((SRP_SQL_HSTMT *)o)->hstmt)
 
-#define SQL_HDESCP(o) (!SCHEME_INTP(o) && o->type == sql_hdesc_type) 
+#define SQL_HDESCP(o) (!SCHEME_INTP(o) && o->type == sql_hdesc_type)
 #define SQL_HDESC_VAL(o) (((SRP_SQL_HDESC *)o)->hdesc)
 
 #define SQL_BUFFERP(o) (!SCHEME_INTP(o) && o->type == sql_buffer_type) 
@@ -120,6 +103,10 @@ typedef struct _sql_guid_ {
 
 #define SQL_INDICATORP(o) (!SCHEME_INTP(o) && o->type == sql_indicator_type) 
 #define SQL_INDICATOR_VAL(o) (((SRP_SQL_INDICATOR *)o)->value)
+
+#define SQL_OP_PARMSP(o) (!SCHEME_INTP(o) && o->type == sql_op_parms_type) 
+#define SQL_OP_PARMS_LEN(o) (((SRP_SQL_OP_PARMS *)o)->paramSetSize)
+#define SQL_OP_PARMS_VAL(o) (((SRP_SQL_OP_PARMS *)o)->values)
 
 #define SQL_AP_DESCP(o) (!SCHEME_INTP(o) && o->type == sql_ap_desc_type) 
 #define SQL_AP_DESC_VAL(o) (((SRP_SQL_AP_DESC *)o)->handle)

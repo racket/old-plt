@@ -85,8 +85,8 @@ SRP_NAMED_BITS_DICT namedStmtAttributes[] = {
 };
 
 SRP_NAMED_TYPED_CONSTANT stmtAttributes[] = {
-{ "sql-attr-app-param-desc", SQL_ATTR_APP_PARAM_DESC, apdesc },
-{ "sql-attr-app-row-desc", SQL_ATTR_APP_ROW_DESC, ardesc },
+{ "sql-attr-app-param-desc", SQL_ATTR_APP_PARAM_DESC, hdesc },
+{ "sql-attr-app-row-desc", SQL_ATTR_APP_ROW_DESC, hdesc },
 { "sql-attr-async-enable", SQL_ATTR_ASYNC_ENABLE, nameduinteger },
 { "sql-attr-concurrency", SQL_ATTR_CONCURRENCY, nameduinteger },
 { "sql-attr-cursor-scrollable", SQL_ATTR_CURSOR_SCROLLABLE, nameduinteger },
@@ -94,8 +94,8 @@ SRP_NAMED_TYPED_CONSTANT stmtAttributes[] = {
 { "sql-attr-cursor-type", SQL_ATTR_CURSOR_TYPE, nameduinteger },
 { "sql-attr-enable-auto-ipd", SQL_ATTR_ENABLE_AUTO_IPD, sqlbool },
 { "sql-attr-fetch-bookmark-ptr", SQL_ATTR_FETCH_BOOKMARK_PTR, sqluinteger },
-{ "sql-attr-imp-param-desc", SQL_ATTR_IMP_PARAM_DESC, ipdesc },
-{ "sql-attr-imp-row-desc", SQL_ATTR_IMP_ROW_DESC, irdesc },
+{ "sql-attr-imp-param-desc", SQL_ATTR_IMP_PARAM_DESC, hdesc },
+{ "sql-attr-imp-row-desc", SQL_ATTR_IMP_ROW_DESC, hdesc },
 { "sql-attr-keyset-size", SQL_ATTR_KEYSET_SIZE, sqluinteger },
 { "sql-attr-max-length", SQL_ATTR_MAX_LENGTH, sqluinteger },
 { "sql-attr-max-rows", SQL_ATTR_MAX_ROWS, sqluinteger },
@@ -103,7 +103,7 @@ SRP_NAMED_TYPED_CONSTANT stmtAttributes[] = {
 { "sql-attr-noscan", SQL_ATTR_NOSCAN, nameduinteger },
 { "sql-attr-param-bind-offset-ptr", SQL_ATTR_PARAM_BIND_OFFSET_PTR, sqlboxeduint },
 { "sql-attr-param-bind-type", SQL_ATTR_PARAM_BIND_TYPE, possiblynameduinteger },
-{ "sql-attr-param-operation-ptr", SQL_ATTR_PARAM_OPERATION_PTR, operationarray },
+{ "sql-attr-param-operation-ptr", SQL_ATTR_PARAM_OPERATION_PTR, opparms },
 { "sql-attr-param-status-ptr", SQL_ATTR_PARAM_STATUS_PTR, rowstatus },
 { "sql-attr-params-processed-ptr", SQL_ATTR_PARAMS_PROCESSED_PTR, sqlboxeduint },
 { "sql-attr-paramset-size", SQL_ATTR_PARAMSET_SIZE, sqluinteger },
@@ -113,7 +113,7 @@ SRP_NAMED_TYPED_CONSTANT stmtAttributes[] = {
 { "sql-attr-row-bind-offset-ptr", SQL_ATTR_ROW_BIND_OFFSET_PTR, sqlboxeduint },
 { "sql-attr-row-bind-type", SQL_ATTR_ROW_BIND_TYPE, possiblynameduinteger },
 { "sql-attr-row-number", SQL_ATTR_ROW_NUMBER, sqluinteger },
-{ "sql-attr-row-operation-ptr", SQL_ATTR_ROW_OPERATION_PTR, operationarray },
+{ "sql-attr-row-operation-ptr", SQL_ATTR_ROW_OPERATION_PTR, opparms },
 { "sql-attr-row-status-ptr", SQL_ATTR_ROW_STATUS_PTR, rowstatus },
 { "sql-attr-rows-fetched-ptr", SQL_ATTR_ROWS_FETCHED_PTR, sqlboxeduint },
 { "sql-attr-simulate-cursor", SQL_ATTR_SIMULATE_CURSOR, nameduinteger },
@@ -185,11 +185,33 @@ SRP_NAMED_CONSTANT sqlFunctions[] = {
   { "sql-api-sqlmoreresults", SQL_API_SQLMORERESULTS },
 };
 
-SRP_NAMED_CONSTANT envAttributes[]= {
-  { "sql-attr-connection-pooling", SQL_ATTR_CONNECTION_POOLING },
-  { "sql-attr-cp-match", SQL_ATTR_CP_MATCH },
-  { "sql-attr-odbc-version", SQL_ATTR_ODBC_VERSION },
-  { "sql-attr-output-nts", SQL_ATTR_OUTPUT_NTS },
+SRP_NAMED_TYPED_CONSTANT envAttributes[]= {
+  { "sql-attr-connection-pooling", SQL_ATTR_CONNECTION_POOLING, nameduinteger },
+  { "sql-attr-cp-match", SQL_ATTR_CP_MATCH, nameduinteger },
+  { "sql-attr-odbc-version", SQL_ATTR_ODBC_VERSION, nameduinteger },
+  { "sql-attr-output-nts", SQL_ATTR_OUTPUT_NTS, sqlbool },
+};
+
+SRP_NAMED_CONSTANT connectionPoolingBits[] = {
+  { "sql-cp-off", SQL_CP_OFF },
+  { "sql-cp-one-per-driver", SQL_CP_ONE_PER_DRIVER },
+  { "sql-cp-one-per-henv", SQL_CP_ONE_PER_HENV },
+};
+
+SRP_NAMED_CONSTANT cpMatchBits[] = {
+  { "sql-cp-strict-match", SQL_CP_STRICT_MATCH },
+  { "sql-cp-relaxed-match", SQL_CP_RELAXED_MATCH },
+};
+
+SRP_NAMED_CONSTANT odbcVersionBits[] = {
+  { "sql-ov-odbc3", SQL_OV_ODBC3 },
+  { "sql-ov-odbc2", SQL_OV_ODBC2 },
+};
+
+SRP_NAMED_BITS_DICT namedEnvAttrIntegers[] = {
+  { "sql-attr-connection-pooling", connectionPoolingBits, sizeray(connectionPoolingBits) },
+  { "sql-attr-cp-match", cpMatchBits, sizeray(cpMatchBits) },
+  { "sql-attr-odbc-version", odbcVersionBits, sizeray(odbcVersionBits) },
 };
 
 SRP_NAMED_SMALL_CONSTANT diagFields[] = {
@@ -283,22 +305,70 @@ SRP_NAMED_SMALL_CONSTANT fieldDescriptors[] = {
   { "sql-desc-updatable", SQL_DESC_UPDATABLE },
 };
 
-SRP_NAMED_SMALL_CONSTANT settableConnectionAttributes[] = {
-  { "sql-attr-access-mode", SQL_ATTR_ACCESS_MODE },
-  { "sql-attr-async-enable", SQL_ATTR_ASYNC_ENABLE },
-  { "sql-attr-autocommit", SQL_ATTR_AUTOCOMMIT },
-  { "sql-attr-connection-timeout", SQL_ATTR_CONNECTION_TIMEOUT },
-  { "sql-attr-current-catalog", SQL_ATTR_CURRENT_CATALOG },
-  { "sql-attr-login-timeout", SQL_ATTR_LOGIN_TIMEOUT },
-  { "sql-attr-metadata-id", SQL_ATTR_METADATA_ID },
-  { "sql-attr-odbc-cursors", SQL_ATTR_ODBC_CURSORS },
-  { "sql-attr-packet-size", SQL_ATTR_PACKET_SIZE },
-  { "sql-attr-quiet-mode", SQL_ATTR_QUIET_MODE },
-  { "sql-attr-trace", SQL_ATTR_TRACE },
-  { "sql-attr-tracefile", SQL_ATTR_TRACEFILE },
-  { "sql-attr-translate-lib", SQL_ATTR_TRANSLATE_LIB },
-  { "sql-attr-translate-option", SQL_ATTR_TRANSLATE_OPTION },
-  { "sql-attr-txn-isolation", SQL_ATTR_TXN_ISOLATION },
+SRP_NAMED_TYPED_CONSTANT settableConnectionAttributes[] = {
+  { "sql-attr-access-mode", SQL_ATTR_ACCESS_MODE, nameduinteger },
+  { "sql-attr-async-enable", SQL_ATTR_ASYNC_ENABLE, nameduinteger },
+  { "sql-attr-autocommit", SQL_ATTR_AUTOCOMMIT, nameduinteger },
+  { "sql-attr-connection-timeout", SQL_ATTR_CONNECTION_TIMEOUT, sqluinteger },
+  { "sql-attr-current-catalog", SQL_ATTR_CURRENT_CATALOG, string },
+  { "sql-attr-login-timeout", SQL_ATTR_LOGIN_TIMEOUT, sqluinteger },
+  { "sql-attr-metadata-id", SQL_ATTR_METADATA_ID, sqlbool },
+  { "sql-attr-odbc-cursors", SQL_ATTR_ODBC_CURSORS, nameduinteger },
+  { "sql-attr-packet-size", SQL_ATTR_PACKET_SIZE, sqluinteger },
+  { "sql-attr-quiet-mode", SQL_ATTR_QUIET_MODE, sqluinteger },
+  { "sql-attr-trace", SQL_ATTR_TRACE, nameduinteger },
+  { "sql-attr-tracefile", SQL_ATTR_TRACEFILE, string },
+  { "sql-attr-translate-lib", SQL_ATTR_TRANSLATE_LIB, string },
+  { "sql-attr-translate-option", SQL_ATTR_TRANSLATE_OPTION, sqluinteger },
+  { "sql-attr-txn-isolation", SQL_ATTR_TXN_ISOLATION, nameduinteger },
+};
+
+SRP_NAMED_TYPED_CONSTANT readOnlyConnectionAttributes[] = {
+  { "sql-attr-auto-ipd", SQL_ATTR_AUTO_IPD, sqlbool },
+  { "sql-attr-connection-dead", SQL_ATTR_CONNECTION_DEAD, nameduinteger },
+};
+
+SRP_NAMED_CONSTANT accessModeBits[] = {
+  { "sql-mode-read-only", SQL_MODE_READ_ONLY },	
+  { "sql-mode-read-write", SQL_MODE_READ_WRITE },
+};
+
+SRP_NAMED_CONSTANT autocommitBits[] = {
+  { "sql-autocommit-off", SQL_AUTOCOMMIT_OFF },
+  { "sql-autocommit-on", SQL_AUTOCOMMIT_ON },
+};
+
+SRP_NAMED_CONSTANT odbcCursorsBits[] = {
+  { "sql-cur-use-if-needed", SQL_CUR_USE_IF_NEEDED },
+  { "sql-cur-use-odbc", SQL_CUR_USE_ODBC },
+  { "sql-cur-use-driver ", SQL_CUR_USE_DRIVER },
+};
+
+SRP_NAMED_CONSTANT traceBits[] = {
+  { "sql-opt-trace-off", SQL_OPT_TRACE_OFF },
+  { "sql-opt-trace-on", SQL_OPT_TRACE_ON },
+};
+
+SRP_NAMED_CONSTANT connectionDeadBits[] = {
+  { "sql-cd-true", SQL_CD_TRUE },
+  { "sql-cd-false", SQL_CD_FALSE },
+};
+
+SRP_NAMED_CONSTANT txnIsolationBits[] = {
+  { "sql-txn-read-uncommitted", SQL_TXN_READ_UNCOMMITTED },
+  { "sql-txn-read-committed", SQL_TXN_READ_COMMITTED },
+  { "sql-txn-repeatable-read", SQL_TXN_REPEATABLE_READ },
+  { "sql-txn-serializable", SQL_TXN_SERIALIZABLE },
+};
+
+SRP_NAMED_BITS_DICT namedConnectAttrIntegers[] = {
+  { "sql-attr-access-mode", accessModeBits, sizeray(accessModeBits) },
+  { "sql-attr-async-enable", asyncEnableBits, sizeray(asyncEnableBits) },
+  { "sql-attr-autocommit", autocommitBits, sizeray(autocommitBits) },
+  { "sql-attr-odbc-cursors", odbcCursorsBits, sizeray(odbcCursorsBits) },
+  { "sql-attr-trace", traceBits, sizeray(traceBits) },
+  { "sql-attr-connection-dead", connectionDeadBits, sizeray(connectionDeadBits) },
+  { "sql-attr-txn-isolation", txnIsolationBits, sizeray(txnIsolationBits) },
 };
 
 SRP_NAMED_SMALL_CONSTANT fetchDirections[] = {

@@ -645,6 +645,7 @@ SRP_NAMED_BITS_DICT bitMaskTable[] = {
   { "sql-bookmark-persistence",bookmarkPersistenceBits,sizeray(bookmarkPersistenceBits) },
   { "sql-scroll-options",scrollOptionsBits,sizeray(scrollOptionsBits) },
   { "sql-txn-isolation-option",txnIsolationOptionBits,sizeray(txnIsolationOptionBits) },
+  { "sql-attr-txn-isolation",txnIsolationOptionBits,sizeray(txnIsolationOptionBits) },
   { "sql-drop-table",dropTableBits,sizeray(dropTableBits) }, 
   { "sql-alter-domain",alterDomainBits,sizeray(alterDomainBits) },
   { "sql-drop-view",dropViewBits,sizeray(dropViewBits) }, 

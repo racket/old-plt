@@ -659,6 +659,8 @@
       (define offscreen-bm (make-object bitmap% display-w display-h))
       (define offscreen (make-object bitmap-dc% offscreen-bm))
 
+      (define offscreen-board-bm (make-object bitmap% display-w display-h))
+      
       (send offscreen set-pen transparent-pen)
 
       (define/override (on-event e)
@@ -688,15 +690,7 @@
       (define/private update
         (opt-lambda ([lists-too? #t])
           ;; Update diplay:
-          (send non-water-rgn set-rectangle 0 0 display-w display-h)
-          (send offscreen clear)
-          (let loop ([i 0])
-            (unless (= i width)
-              (let loop ([j 0])
-                (unless (= j height)
-                  (draw-board-pos offscreen i j non-water-rgn)
-                  (loop (add1 j))))
-              (loop (add1 i))))
+          (send offscreen draw-bitmap offscreen-board-bm 0 0)
           (send offscreen set-clipping-region non-water-rgn)
           (for-each (lambda (robot)
                       (draw-robot offscreen robot))
@@ -796,6 +790,21 @@
                   [(base) base-brush]))
           (send dc draw-rectangle x y cell-paint-size cell-paint-size)))
   
+      ;; Draw the board into a bitmap:
+      (let ([offscreen-board (make-object bitmap-dc% offscreen-board-bm)])
+        (send offscreen-board set-pen transparent-pen)
+
+        (send non-water-rgn set-rectangle 0 0 display-w display-h)
+        (send offscreen-board clear)
+        (let loop ([i 0])
+          (unless (= i width)
+            (let loop ([j 0])
+              (unless (= j height)
+                (draw-board-pos offscreen-board i j non-water-rgn)
+                (loop (add1 j))))
+            (loop (add1 i))))
+        (send offscreen-board set-bitmap #f))
+    
       (define margin 2)
       
       (define/private (draw-package dc pack)

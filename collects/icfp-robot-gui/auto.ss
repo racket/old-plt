@@ -18,14 +18,15 @@
      (let ([width (vector-length (vector-ref board 0))]
            [height (vector-length board)])
   
-       ;; thresholds are integers in [1,10]:
-       (define drop-threshold 2)
-       (define pickup-threshold 2)
-       (define bully-threshold 10)
-       (define drown-bully-threshold 8)
+       ;; thresholds are integers in [1,100]:
+       (define drop-threshold 20)
+       (define pickup-threshold 20)
+       (define bully-threshold 90)
+       (define drown-bully-threshold 80)
+       (define random-threshold 98)
        
        (define (decide threshold)
-         (>= (random 10) (sub1 threshold)))
+         (> (random 100) (sub1 threshold)))
        
        (define (trace s)
          ; (printf "~a: ~a~n" me s)
@@ -212,6 +213,10 @@
            ;; ----------------------------------------
            ;; Move decision
            (let ([m (cond
+                      [(decide random-threshold)
+                       ;; Walk aimlessly:
+                       (trace 'random)
+                       (match-up null possible-moves possible-dests)]
                       [(and (pair? drownable-robots)
                             (decide drown-bully-threshold))
                        ;; Try to push a bot into the water

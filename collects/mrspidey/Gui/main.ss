@@ -62,6 +62,15 @@
       [progress-frame 'progress-frame]
       [progress-canvas 'progress-canvas]
       [progress-edit 'progress-edit]
+      [fixed-style (make-object style-delta% 'change-family 'modern)]
+      [progress-edit-insert
+       (lambda (str)
+	 (let ([pos (send progress-edit last-position)])
+	   (send progress-edit begin-edit-sequence)
+	   (send progress-edit insert str pos)
+	   (send progress-edit change-style fixed-style pos
+		 (send progress-edit last-position))
+	   (send progress-edit end-edit-sequence)))]
 
       [init-progress-frame!
        (lambda ()
@@ -104,16 +113,15 @@
              (letrec
                  ([insert-numbers
                     (lambda (n)
-                      (send progress-edit insert
-                        (format "~a    ~ams" 
-                          (padl 
-                            (if (eq? n 'done) "" (format "~a" n))
-                             width)
-                          (padl (- (current-process-milliseconds) 
-                                  (current-gc-milliseconds)
-                                  current-start-time)
-                            width))
-                        (send progress-edit last-position)))]
+		      (progress-edit-insert
+			(format "~a    ~ams" 
+			  (padl 
+			    (if (eq? n 'done) "" (format "~a" n))
+			     width)
+			  (padl (- (current-process-milliseconds) 
+				  (current-gc-milliseconds)
+				  current-start-time)
+			    width))))]
 		  [f (match-lambda*
                       [((? string? name) line)
                        (if (equal? name current)
@@ -127,15 +135,14 @@
                            (set! current-start-time
                              (- (current-process-milliseconds) 
                                (current-gc-milliseconds)))
-                           (send progress-edit insert 
-                             (padr name 30))
+                           (progress-edit-insert (padr name 30))
                            (insert-numbers line)))]
                       [((? string? str)) 
                        (f 'fresh-line)
-                       (send progress-edit insert str)
+                       (progress-edit-insert str)
                        (f #\newline)]
                       [(#\newline)
-                       (send progress-edit  insert (format "~n"))
+                       (progress-edit-insert (format "~n"))
                        (set! current '())]
                       [('fresh-line)
                        (unless (null? current) (f #\newline))])]
@@ -153,7 +160,7 @@
                  (begin0 
                    (thunk)
                    (mrspidey:progress
-                     "=Done======================================"))))))]
+                     "=Done==========================================="))))))]
 
       ;; ------------------------------
 
@@ -251,7 +258,7 @@
              (lambda ()
                (pretty-debug-gui '(progress-frame-initialized))
                (mrspidey:progress
-                 "===========================================")
+                 "================================================")
                '(mrspidey:progress 
                   (format "Analyzing ~a" (file-name-from-path filename)))
                (let* ([annotations 
@@ -410,7 +417,7 @@
                 (send edit edit-sequence
                   (lambda ()
                     (pretty-debug-gui "loading!")
-                    (let ([s (format "Loading   ~a: "
+                    (let ([s (format "Loading    ~a: "
                                (file-name-from-path filename))])
                       (recur loop ([n 1])
                         (when (zero? (modulo n 50))

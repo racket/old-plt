@@ -175,7 +175,7 @@
 	      (let* ([doc-entry (assoc doc-dir known-docs)]
 		     [manual-label (or (and doc-entry (cdr doc-entry)) doc-dir)])
 		(format "/servlets/missing-manual.ss?manual=~a&name=~a"
-			(hexify-string manual-label) doc-dir))))])))
+			doc-dir (hexify-string manual-label)))))])))
                             
   (define (make-text-href url page-label)
     (let ([maybe-coll (maybe-extract-coll last-header)])

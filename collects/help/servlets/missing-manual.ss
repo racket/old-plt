@@ -22,7 +22,7 @@
 		    `(H1 "Documentation missing"))
        (P)
        "You tried to access documentation for "
-       ,manual ". "
+       ,label ". "
        "The documentation is not installed on this "
        "machine, probably because it is not part of the "
        "standard DrScheme distribution."
@@ -56,8 +56,6 @@
 				       bindings)
 	       (extract-binding/single 'name
 				       bindings))))
-
-
 
 
 	       

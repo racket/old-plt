@@ -1,3 +1,4 @@
+
 (unit/sig ()
   (import mred^
 	  mzlib:core^
@@ -83,14 +84,22 @@
        (private
 	 [inserted-snip-poss null]
 	 [arrows null]
-	 [edit-pos->var-pos
+         [var-pos->edit-pos
+          (lambda (pos)
+            (let loop ([poss inserted-snip-poss]
+                       [pos pos])
+	      (cond
+                [(null? poss) pos]
+                [(<= (car poss) pos) (loop (cdr poss) (+ pos 1))]
+                [else (loop (cdr poss) pos)])))]
+         [edit-pos->var-pos
 	  (lambda (pos)
 	    (let loop ([poss inserted-snip-poss]
 		       [pos pos])
 	      (cond
-	       [(null? poss) pos]
-	       [(< (car poss) pos) (loop (cdr poss) (- pos 1))]
-	       [else (loop (cdr poss) pos)])))]
+                [(null? poss) pos]
+                [(<= (car poss) pos) (loop (cdr poss) (- pos 1))]
+                [else (loop (cdr poss) pos)])))]
 	 [move-poss
 	  (lambda (start len add)
 	    (let ([update-pos
@@ -226,7 +235,7 @@
                  (let ([menu (make-object popup-menu%)]
                        [pos (get-pos event)])
                    (make-object menu-item%
-                     "Show Value Set"
+                     "Show value set"
                      menu
                      (lambda (item evt)
                        (let ([t (make-object text%)])
@@ -235,29 +244,27 @@
                          (begin-edit-sequence #f) ;; so it is not undoable...
                          (insert (make-object editor-snip% t) pos pos)
                          (change-style box-style pos (+ pos 1))
+                         (invalidate-bitmap-cache)
                          (end-edit-sequence)
                          (set! analysis-modifing? #f)
                          (add-inserted-snip pos))))
                    
-                   (make-object menu-item%
-                     "Parents"
-                     menu
-                     (lambda (item evt)
-                       (let ([pnts (map (lambda (x) (zodiac:location-offset (get-loc x))) (parents set-var))])
-                         (for-each (lambda (parent)
-                                     (set! arrows (cons (cons pos parent) arrows)))
-                                   pnts)
-                         (invalidate-bitmap-cache))))
-                   
-                   (make-object menu-item%
-                     "Children"
-                     menu
-                     (lambda (item evt)
-                       (let ([chldrn (map (lambda (x) (zodiac:location-offset (get-loc x))) (children set-var))])
-                         (for-each (lambda (child)
-                                     (set! arrows (cons (cons child pos) arrows)))
-                                   chldrn)
-                         (invalidate-bitmap-cache))))
+                   (let ([make-children/parents-item
+                          (lambda (label children/parents pair)
+                            (make-object menu-item%
+                              label
+                              menu
+                              (lambda (item evt)
+                                (for-each (lambda (var)
+                                            (let ([parent/child
+                                                   (var-pos->edit-pos
+                                                    (zodiac:location-offset
+                                                     (get-loc var)))])
+                                              (set! arrows (cons (pair pos parent/child) arrows))))
+                                          (children/parents set-var))
+                                (invalidate-bitmap-cache))))])
+                     (make-children/parents-item "Parents" parents cons)
+                     (make-children/parents-item "Children" children (lambda (x y) (cons y x))))
                    
                    (send (get-canvas) popup-menu menu
                          (+ 1 (inexact->exact (floor (send event get-x))))

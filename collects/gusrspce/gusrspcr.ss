@@ -11,7 +11,8 @@
 		       core appliction)]
 	[rice : ricedefs^ ((reference-library-unit/sig "ricedefr.ss" "userspce")
 			   params)]
-	[graphics : graphics^ ((reference-library-unit/sig "graphicr.ss" "graphics"))]
+	[graphics : graphics^ ((reference-library-unit/sig "graphicr.ss" "graphics")
+			       (core file@))]
 	[create-window : turtle:create-window^
 		       ((unit/sig turtle:create-window^
 			  (import [drscheme:init : drscheme:init^])

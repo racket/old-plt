@@ -1388,6 +1388,8 @@ Bool wxPostScriptDC::StartDoc (char *message)
 
   pstream->Out("%%BoundingBox: -00000 -00000 -00000 -00000\n");
   pstream->Out("%%Pages: -00000\n");
+  if (landscape)
+    pstream->Out("%%Orientation: Landscape\n");
   pstream->Out("%%EndComments\n\n");
 
   pstream->Out(wxPostScriptHeaderEllipse);

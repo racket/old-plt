@@ -79,7 +79,7 @@
 	     [trigger : mzlib:trigger^ (mzlib:trigger@)]
 	     [mred : mred^ 
 	       (mred@ mzlib trigger (drscheme : mred:application^))]
-	     [interface : zodiac:interface^ (drscheme:zodiac-interface@ zodiac)]
+	     [interface : zodiac:interface^ (drscheme:zodiac-interface@ zodiac mred)]
 	     [params : plt:parameters^ (drscheme:parameters@ mred)]
 	     [zodiac : zodiac:system^ (zodiac:system@ interface params)]
 	     [drscheme : drscheme^

@@ -1092,7 +1092,7 @@
 	 x))
       (let ([expr (cadr l)]
 	    [kws (caddr l)]
-	    [phase (cadddr l)]
+	    [lit-comp (cadddr l)]
 	    [clauses (cddddr l)])
 	(for-each
 	 (lambda (lit)
@@ -1130,7 +1130,10 @@
 				 (lambda (pattern)
 				   (get-match-vars pattern (stx->list kws)))
 				 (stx->list patterns))]
-		 [phase-param? (and (syntax-e phase) #t)])
+		 [lit-comp-is-mod? (and (identifier? lit-comp)
+					(module-identifier=? 
+					 lit-comp
+					 (quote-syntax module-identifier=?)))])
 	    (datum->syntax
 	     (list (quote-syntax let) (list (list arg expr))
 		   (let loop ([patterns patterns]
@@ -1179,20 +1182,13 @@
 						 (make-match&env
 						  pattern
 						  (stx->list kws)
-						  phase-param?)
+						  (not lit-comp-is-mod?))
 						 pattern 
 						 (quote-syntax here))
 						arg
-						(if phase-param?
-						    (list
-						     (list
-						      (quote-syntax if)
-						      phase
-						      (quote-syntax 
-						       module-transformer-identifier=?)
-						      (quote-syntax 
-						       module-identifier=?)))
-						    null))))
+						(if lit-comp-is-mod?
+						    null
+						    (list lit-comp)))))
 				  ;; If match succeeded...
 				  (list 
 				   (quote-syntax if)
@@ -1311,7 +1307,7 @@
   ;; Regular syntax-case
   (define-syntax syntax-case
     (lambda (stx)
-      (syntax-case* stx () #f
+      (syntax-case* stx () module-identifier=?
 	[(_ stxe kl clause ...)
 	 (syntax (syntax-case* stxe kl #f clause ...))])))
 
@@ -1320,7 +1316,7 @@
   ;; resulting syntax object.
   (define-syntax syntax/loc
     (lambda (stx)
-      (syntax-case* stx () #f
+      (syntax-case* stx () module-identifier=?
 	[(_ loc pattern)
 	 (syntax (let ([stx (syntax pattern)])
 		   (datum->syntax

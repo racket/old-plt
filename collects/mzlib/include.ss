@@ -5,7 +5,9 @@
     (lambda (stx)
       ;; Parse the file name
       (let ([file
-	     (syntax-case stx (build-path)
+	     (syntax-case* stx (build-path) (lambda (a b)
+					      (eq? (syntax-e a)
+						   (syntax-e b)))
 	       [(_ fn)
 		(string? (syntax-e (syntax fn)))
 		(syntax-e (syntax fn))]

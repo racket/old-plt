@@ -14,7 +14,7 @@
 				    if #%app
 				    define-values define-syntax
 				    module import export import-for-syntax export-indirect)
-			       trans?
+			       (if trans? module-transformer-identifier=? module-identifier=?)
 			  clause ...))])))
 
   (define (kernel-form-identifier-list stx)

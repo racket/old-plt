@@ -172,10 +172,25 @@
                       (string-constant set-font)
                       options-panel
                       (lambda xxx
-                        (let ([choice (get-choices-from-user
-                                       (string-constant select-font-name)
-                                       (string-constant select-font-name)
-                                       (get-fixed-faces))])
+                        (let* ([faces (get-fixed-faces)]
+                               [init-choices
+                                (let ([init (preferences:get 'drscheme:font-name)])
+                                  (let loop ([faces faces]
+                                             [num 0])
+                                    (cond
+                                      [(null? faces) null]
+                                      [else
+                                       (let ([face (car faces)])
+                                         (if (equal? init face)
+                                             (list num)
+                                             (loop (cdr faces)
+                                                   (+ num 1))))])))]
+                               [choice (get-choices-from-user
+                                        (string-constant select-font-name)
+                                        (string-constant select-font-name)
+                                        (get-fixed-faces)
+                                        #f
+                                        init-choices)])
                           (when choice
                             (preferences:set 
                              'drscheme:font-name 
@@ -212,6 +227,9 @@
                    (send text lock #t)
                    (send text end-edit-sequence))])
            
+           (preferences:add-callback
+            'drscheme:font-size
+            (lambda (p v) (send size set-value v)))
            (preferences:add-callback
             drscheme:language-configuration:settings-preferences-symbol
             (lambda (p v)

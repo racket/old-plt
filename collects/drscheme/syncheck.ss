@@ -378,9 +378,10 @@ If the namespace does not, they are colored the unbound color.
                       (let ([r (vector-ref arrow-vector p)])
                         (cond
                           [use-key?
-                           (unless (ormap (lambda (x) (and (pair? x) 
-                                                           (car x)
-                                                           (eq? (car x) key)))
+                           (unless (ormap (lambda (x) 
+                                            (and (pair? x) 
+                                                 (car x)
+                                                 (eq? (car x) key)))
                                           r)
                              (vector-set! arrow-vector p (cons (cons key to-add) r)))]
                           [else

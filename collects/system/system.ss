@@ -12,12 +12,13 @@
 
       (define on? (and debug-env (string->symbol debug-env)))
 
-      (when on? 
-	(print-struct #t))
-	
       (define turn-on (lambda (s) (set-box! 
 				   (global-defined-value 'mred:debug:turned-on)
 				   (cons s (unbox (global-defined-value 'mred:debug:turned-on))))))
+      (when on? 
+	(turn-on on?)
+	(print-struct #t))
+	
       (define turn-off (lambda (s) 
 			 (set-box! (global-defined-value 'mred:debug:turned-on)
 			       (let loop ([l (unbox (global-defined-value 'mred:debug:turned-on))])
@@ -52,7 +53,8 @@
 				    (build-path (current-directory) f)
 				    f)])
 		      (mred:debug:printf 'load "~aLoading ~a..." indent-string file)
-		      (dynamic-wind (lambda ()
+		      (let* ([answer
+			      (dynamic-wind (lambda ()
 				      (set! indent-string (string-append offset-string indent-string)))
 				    (lambda () (old-handler file))
 				    (lambda ()
@@ -61,8 +63,8 @@
 						       0
 						       (max (- (string-length indent-string)
 							       (string-length offset-string))
-							    0)))))
-		      (let* ([len (string-length file)]
+							    0)))))]
+			     [len (string-length file)]
 			     [basename (substring file 0 (- len 3))]
 			     [suffix (substring file (- len 3) len)]
 			     [zo (string-append basename ".zo")]
@@ -83,7 +85,8 @@
 			  (mred:debug:printf 'load "~aCompiling ~a..." indent-string file)
 			  (with-handlers ((void error-handler))
 			    (compile-file file zo)
-			    #t))))))))
+			    #t))
+			answer))))))
 
 (define mred:debug:new-eval #f)
 (define mred:debug:new-console (void))  

@@ -1,0 +1,51 @@
+// MzCOM.idl : IDL source for MzCOM.dll
+//
+
+// This file will be processed by the MIDL tool to
+// produce the type library (MzCOM.tlb) and marshalling code.
+
+import "oaidl.idl";
+import "ocidl.idl";
+	[
+		object,
+		uuid(990CF3CD-1AF3-11D4-B6C1-0060089002FE),
+		dual,
+		helpstring("IMzObj Interface"),
+		pointer_default(unique)
+	]
+	interface IMzObj : IDispatch
+	{
+		[id(1), helpstring("method Eval")] HRESULT Eval(BSTR,[out,retval]LPBSTR);
+	};
+
+[
+	uuid(990CF3C0-1AF3-11D4-B6C1-0060089002FE),
+	version(1.0),
+	helpstring("MzCOM 1.0 Type Library")
+]
+library MZCOMLib
+{
+	importlib("stdole32.tlb");
+	importlib("stdole2.tlb");
+
+	[
+		uuid(990CF3D0-1AF3-11D4-B6C1-0060089002FE),
+		helpstring("_IMzObjEvents Interface")
+	]
+	dispinterface _IMzObjEvents
+	{
+		properties:
+		methods:
+		[id(1), helpstring("method Exn")] void Exn(BSTR);
+	};
+
+	[
+		uuid(990CF3CF-1AF3-11D4-B6C1-0060089002FE),
+		helpstring("MzObj Class")
+	]
+	coclass MzObj
+	{
+		[default] interface IMzObj;
+		[default, source] dispinterface _IMzObjEvents;
+	};
+};

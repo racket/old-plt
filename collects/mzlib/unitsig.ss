@@ -1,4 +1,9 @@
 
+;; This implementation of `unit/sig' was ported from the old v100
+;; implementation, and then hacked a bit to produce more compact
+;; output, and finally mangled to handle the v200 `struct' (with
+;; compile-time information). It's in dire need of an overhaul.
+
 (module unitsig mzscheme
   (require "unit.ss")
   (require "private/sigmatch.ss")
@@ -53,17 +58,20 @@
 					     name))
 				     (signature-vars sig))
 				    expr)]
-			  [body (reverse! (parse-unit-body a-unit))]
+			  [body (append
+				 ((parse-unit-stxes a-unit) expr)
+				 (reverse! (parse-unit-body a-unit))
+				 ((parse-unit-stx-checks a-unit) expr))]
 			  [import-sigs (explode-named-sigs (parse-unit-imports a-unit) #f)]
 			  [export-sig (explode-sig sig #f)])
-	    (syntax
-	     (make-unit/sig
-	      (unit
-		(import . imports)
-		(export . exports)
-		. body)
-	      (quote import-sigs)
-	      (quote export-sig))))))])))  
+	      (syntax/loc expr
+		(make-unit/sig
+		 (unit
+		   (import . imports)
+		   (export . exports)
+		   . body)
+		 (quote import-sigs)
+		 (quote export-sig))))))])))
 
   (define-syntax compound-unit/sig
     (lambda (expr)
@@ -91,7 +99,8 @@
 			 [flat-exports (t flat-exports)]
 			 [exploded-imports (t exploded-imports)]
 			 [exploded-exports (t exploded-exports)]
-			 [interned-vectors (t (unbox boxed-interned-symbol-vectors))])
+			 [interned-vectors (t (map (lambda (x) `(,(car x) (quote ,(cadr x))))
+						   (unbox boxed-interned-symbol-vectors)))])
 	     (syntax/loc
 	      expr
 	      (let ([tagx uexpr] ... . interned-vectors)
@@ -132,7 +141,7 @@
 		 (quote invoke-unit/sig)
 		 (quote (invoke))
 		 (list unt)
-		 (quote (#()))
+		 (quote ((#() . #())))
 		 (quote (exploded-sigs)))
 		(invoke-unit (unit/sig-unit u)
 			     . flat-sigs)))))])))

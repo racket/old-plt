@@ -101,7 +101,7 @@
       (set-box! prim-side-box c)
       c))
 
-  (define-struct (exn:object struct:exn) ())
+  (define-struct (exn:object exn) ())
 
   (define (obj-error where . msg)
     (raise

@@ -4,7 +4,8 @@
   (require "../unit.ss")
 
   (define (hash-sig src-sig table)
-    (and (vector? src-sig)
+    (and (pair? src-sig)
+	 (vector? (car src-sig))
 	 (andmap
 	  (lambda (s)
 	    (cond
@@ -22,7 +23,7 @@
 		    (hash-table-put! table name t)
 		    (hash-sig (cdr s) t))))]
 	     [else #f]))
-	  (vector->list src-sig))))
+	  (vector->list (car src-sig)))))
 
   (define (sig-path-name name path)
     (let loop ([s (symbol->string name)]
@@ -33,7 +34,7 @@
 		(cdr path)))))
 
   (define (check-sig-match table sig path exact? who src-context dest-context)
-    (and (vector? sig)
+    (and (vector? (car sig))
 	 (andmap
 	  (lambda (s)
 	    (cond
@@ -95,7 +96,7 @@
 		       (check-sig-match v (cdr s) (cons (car s) path)
 					exact? who src-context dest-context))))]
 	     [else #f]))
-	  (vector->list sig))
+	  (vector->list (car sig)))
 	 (or (not exact?)
 	     (hash-table-for-each
 	      table

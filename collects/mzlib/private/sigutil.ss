@@ -1,6 +1,7 @@
 
 (module sigutil mzscheme
-  ;; Used by signedunit.ss 
+  ;; Used by unitsig.ss
+  ;; (needs an overhaul, too)
 
   (require (lib "stx.ss" "syntax"))
 
@@ -8,10 +9,13 @@
   (require "../unit.ss")
   (require "../list.ss")
 
-  (define-struct signature (name    ; sym
-			    src     ; sym
-			    elems)) ; list of syms and signatures
-  (define-struct parse-unit (imports renames vars body))
+  (define-struct signature (name      ; sym
+			    src       ; sym
+			    elems     ; list of syms and signatures
+			    structs)) ; list of struct-infos
+  (define-struct parse-unit (imports renames vars stxes body stx-checks))
+
+  (define-struct struct-info (name super-name names))
 
   (define-struct sigdef (content interned))
   (define (make-sig x) (make-sigdef x #f))
@@ -51,23 +55,28 @@
     (lambda (sig name)
       (make-signature name 
 		      (signature-src sig) 
-		      (signature-elems sig))))
+		      (signature-elems sig)
+		      (signature-structs sig))))
 
   (define intern-signature
-    (lambda (name desc error)
+    (lambda (name desc)
       (make-signature
        name
        name
-       (if (vector? desc)
-	   (map
-	    (lambda (elem)
-	      (cond
-	       [(symbol? elem) elem]
-	       [(and (pair? elem) (symbol? (car elem)))
-		(intern-signature (car elem) (cdr elem) error)]
-	       [else (error)]))
-	    (vector->list desc))
-	   (error)))))
+       (map
+	(lambda (elem)
+	  (cond
+	   [(symbol? elem) elem]
+	   [(and (pair? elem) (symbol? (car elem)))
+	    (intern-signature (car elem) (cdr elem))]
+	   [else (error)]))
+	(vector->list (car desc)))
+       (map
+	(lambda (elem)
+	  (make-struct-info (vector-ref elem 0)
+			    (vector-ref elem 1)
+			    (cddr (vector->list elem))))
+	(vector->list (cdr desc))))))
 
   (define get-sig
     (lambda (who expr name sigid)
@@ -83,9 +92,7 @@
 	    (unless (sigdef? v)
 	      (not-a-sig-error who expr sigid))
 	    (unless (sigdef-interned v)
-	      (set-sigdef-interned! v (intern-signature (syntax-e sigid) (sigdef-content v)
-							(lambda ()
-							  (not-a-sig-error who expr sigid)))))
+	      (set-sigdef-interned! v (intern-signature (syntax-e sigid) (sigdef-content v))))
 	    (let ([s (sigdef-interned v)])
 	      (if name
 		  (rename-signature s (stx->sym name))
@@ -111,9 +118,9 @@
 	       (datum->syntax-object name-stx (string->symbol s) #f))
 	     (append
 	      (list 
+	       (+ "struct:" name)
 	       (+ "make-" name)
-	       (+ name "?")
-	       (+ "struct:" name))
+	       (+ name "?"))
 	      (if omit-sel?
 		  null
 		  (map
@@ -129,107 +136,128 @@
 
   (define parse-signature
     (lambda (who expr name body)
-      (let ([elems
-	     (let loop ([body body])
-	       (syntax-case body ()
-		 [() null]
-		 [(something . rest)
-		  (append
-		   (syntax-case (syntax something) ()
-		     [:
-		      (literal? :)
-		      (syntax-error who expr
-				    "misplaced `:'"
-				    (syntax something))]
-		     [id
-		      (identifier? (syntax id))
-		      (list (syntax id))]
-		     [(struct name (field ...) omission ...)
-		      (literal? struct)
-		      (let ([name (syntax name)]
-			    [fields (syntax->list (syntax (field ...)))]
-			    [omissions (syntax->list (syntax (omission ...)))])
-			(unless (identifier? name)
-			  (syntax-error who expr
-					"struct name is not an identifier"
-					name))
-			(for-each
-			 (lambda (fld)
-			   (unless (identifier? fld)
-			     (syntax-error who expr
-					   "field name is not an identifier"
-					   fld)))
-			 fields)
-			(let-values ([(omit-names
-				       omit-setters?
-				       omit-selectors?)
-				      (let loop ([omissions omissions]
-						 [names null]
-						 [no-set? #f]
-						 [no-sel? #f])
-					(if (null? omissions)
-					    (values names no-set? no-sel?)
-					    (let ([rest (cdr omissions)])
-					      (syntax-case (car omissions) (-selectors
-									    -setters
-									    -)
-						[-selectors
-						 (loop rest names #t no-sel?)]
-						[-setters
-						 (loop rest names no-set? #t)]
-						[(- name)
-						 (identifier? (syntax name))
-						 (loop rest (cons (syntax name) names)
-						       no-set? no-sel?)]
-						[else
-						 (syntax-error who expr
-							       "bad struct omission"
-							       (car omissions))]))))])
-			  (letrec ([names (build-struct-names 
-					   name fields 
-					   omit-selectors? omit-setters?)]
-				   [filter
-				    (lambda (names)
-				      (cond
-				       [(null? names) null]
-				       [(ormap (lambda (x) (eq? (syntax-e (car names))
-								(syntax-e x)))
-					       omit-names)
-					(filter (cdr names))]
-				       [else (cons (car names) (filter (cdr names)))]))])
-			    (if (null? omit-names)
-				names 
-				(filter names)))))]
-		     [(struct . _)
-		      (literal? struct)
-		      (syntax-error who expr
-				    "bad `struct' clause form"
-				    (syntax something))]
-		     [(unit name : sig) 
-		      (and (literal? unit)
-			   (identifier? (syntax name)))
-		      (let ([s (get-sig who expr (syntax name) (syntax sig))])
-			(list s))]
-		     [(unit . _)
-		      (literal? unit)
-		      (syntax-error who expr 
-				    "bad `unit' clause form"
-				    (syntax something))]
-		     [(open sig)
-		      (literal? open)
-		      (let ([s (get-sig who expr #f (syntax sig))])
-			(signature-elems s))]
-		     [(open . _)
-		      (literal? open)
-		      (syntax-error who expr 
-				    "bad `open' clause form"
-				    (syntax something))]
-		     [else
-		      (syntax-error who expr "improper signature clause type"
-				    (syntax something))])
-		   (loop (syntax rest)))]
-		 [_else (syntax-error who expr "ill-formed signature"
-				      body)]))])
+      (let-values ([(elems struct-infos)
+		    (let loop ([body body][accum null][struct-accum null])
+		      (syntax-case body ()
+			[() (values (reverse! accum) (reverse! struct-accum))]
+			[(something . rest)
+			 (syntax-case (syntax something) ()
+			   [:
+			    (literal? :)
+			    (syntax-error who expr
+					  "misplaced `:'"
+					  (syntax something))]
+			   [id
+			    (identifier? (syntax id))
+			    (loop
+			     (syntax rest)
+			     (cons (syntax id) accum)
+			     struct-accum)]
+			   [(struct name (field ...) omission ...)
+			    (literal? struct)
+			    (let ([name (syntax name)]
+				  [fields (syntax->list (syntax (field ...)))]
+				  [omissions (syntax->list (syntax (omission ...)))])
+			      (unless (or (identifier? name)
+					  (syntax-case name ()
+					    [(name super)
+					     (and (identifier? (syntax name))
+						  (identifier? (syntax super)))]
+					    [_else #f]))
+				(syntax-error who expr
+					      "struct name is not an identifier or a parenthesized name--super sequence of identifiers"
+					      name))
+			      (for-each
+			       (lambda (fld)
+				 (unless (identifier? fld)
+				   (syntax-error who expr
+						 "field name is not an identifier"
+						 fld)))
+			       fields)
+			      (let-values ([(omit-names
+					     omit-setters?
+					     omit-selectors?)
+					    (let loop ([omissions omissions]
+						       [names null]
+						       [no-set? #f]
+						       [no-sel? #f])
+					      (if (null? omissions)
+						  (values names no-set? no-sel?)
+						  (let ([rest (cdr omissions)])
+						    (syntax-case (car omissions) (-selectors
+										  -setters
+										  -)
+						      [-selectors
+						       (loop rest names #t no-sel?)]
+						      [-setters
+						       (loop rest names no-set? #t)]
+						      [(- name)
+						       (identifier? (syntax name))
+						       (loop rest (cons (syntax name) names)
+							     no-set? no-sel?)]
+						      [else
+						       (syntax-error who expr
+								     "bad struct omission"
+								     (car omissions))]))))]
+					   [(name super-name) (if (identifier? name)
+								  (values name #f)
+								  (values (stx-car name)
+									  (stx-car (stx-cdr name))))])
+				(letrec ([names (build-struct-names 
+						 name fields 
+						 omit-selectors? omit-setters?)]
+					 [filter
+					  (lambda (names)
+					    (cond
+					     [(null? names) null]
+					     [(ormap (lambda (x) (eq? (syntax-e (car names))
+								      (syntax-e x)))
+						     omit-names)
+					      (filter (cdr names))]
+					     [else (cons (car names) (filter (cdr names)))]))])
+				  (loop (syntax rest)
+					(append
+					 (if (null? omit-names)
+					     names 
+					     (filter names))
+					 accum)
+					(cons (make-struct-info (syntax-e name) 
+								(and super-name (syntax-e super-name))
+								names)
+					      struct-accum)))))]
+			   [(struct . _)
+			    (literal? struct)
+			    (syntax-error who expr
+					  "bad `struct' clause form"
+					  (syntax something))]
+			   [(unit name : sig) 
+			    (and (literal? unit)
+				 (identifier? (syntax name)))
+			    (let ([s (get-sig who expr (syntax name) (syntax sig))])
+			      (loop (syntax rest)
+				    (cons s accum)
+				    struct-accum))]
+			   [(unit . _)
+			    (literal? unit)
+			    (syntax-error who expr 
+					  "bad `unit' clause form"
+					  (syntax something))]
+			   [(open sig)
+			    (literal? open)
+			    (let ([s (get-sig who expr #f (syntax sig))])
+			      (loop (syntax rest)
+				    (append (signature-elems s) accum)
+				    (append (signature-structs s) struct-accum)))]
+			   [(open . _)
+			    (literal? open)
+			    (syntax-error who expr 
+					  "bad `open' clause form"
+					  (syntax something))]
+			   [else
+			    (syntax-error who expr "improper signature clause type"
+					  (syntax something))])]
+			[_else (syntax-error who expr "ill-formed signature"
+					     body)]))])
 	(check-unique (map
 		       (lambda (elem)
 			 (cond
@@ -248,13 +276,15 @@
 				(if (identifier? id)
 				    (syntax-e id)
 				    id))
-			      elems))))))
+			      elems))
+			struct-infos))))
 
   (define (intern-vector intern-box v)
     (if (and intern-box
-	     (andmap symbol? (vector->list v)))
+	     (equal? #() (cdr v))
+	     (andmap symbol? (vector->list (car v))))
 	(or (ormap (lambda (i)
-		     (and (equal? v (cadr i))
+		     (and (equal? (car v) (caadr i))
 			  (list 'unquote (car i))))
 		   (unbox intern-box))
 	    (let ([name (car (generate-temporaries '(idvec)))])
@@ -268,15 +298,23 @@
     (lambda (sig intern-box)
       (intern-vector
        intern-box
-       (list->vector
-	(map
-	 (lambda (v)
-	   (if (symbol? v)
-	       v
-	       (cons
-		(signature-name v)
-		(explode-sig v intern-box))))
-	 (signature-elems sig))))))
+       (cons
+	(list->vector
+	 (map
+	  (lambda (v)
+	    (if (symbol? v)
+		v
+		(cons
+		 (signature-name v)
+		 (explode-sig v intern-box))))
+	  (signature-elems sig)))
+	(list->vector
+	 (map
+	  (lambda (v)
+	    (list->vector (list* (struct-info-name v)
+				 (struct-info-super-name v)
+				 (struct-info-names v))))
+	  (signature-structs sig)))))))
 
   (define explode-named-sig
     (lambda (s intern-box)
@@ -358,6 +396,120 @@
 	 [(eq? (cadar renames) export-name)
 	  (caar renames)]
 	 [else (loop (cdr renames))]))))
+
+  (define (make-struct-stx-decls sig prefix src-stx check?)
+    ;; If check? is #f, generates a syntax definition for <name>%# for
+    ;; each <name> struct form in `sig'. Used for imports.
+    ;; If check? is #t, generates an empty syntax "definition" that has
+    ;; the side-effect of checking <name>%# against its expected shape.
+    ;; CURRENTLY, check? is always #f.
+    (let ([signame (and (or prefix (not check?))
+			(signature-name sig))])
+      (append
+       (apply
+	append
+	(map (lambda (s)
+	       (make-struct-stx-decls (list s) 
+				      (if signame
+					  (format "~a~a:"
+						  (or prefix "")
+						  signame)
+					  prefix)
+				      src-stx
+				      check?))
+	     (filter signature? (signature-elems sig))))
+       (map (lambda (si)
+	      (let ([names (struct-info-names si)]
+		    [pfx (lambda (s)
+			   `(quote-syntax
+			     ,(let ([id (string->symbol 
+					 (format "~a~a~a" 
+						 (or prefix "")
+						 (if signame
+						     (format "~a:" signame)
+						     "")
+						 (if (syntax? s)
+						     (syntax-e s)
+						     s)))])
+				(datum->syntax-object src-stx id))))])
+		(let* ([name (pfx
+			      (format "~a%#" (struct-info-name si)))]
+		       [check (if check?
+				  (lambda (l)
+				    `(verify-struct-shape ,name ,l))
+				  values)])
+		  `(define-syntaxes (,@(if check? null (list (cadr name))))
+		     ,(check
+		       `(list-immutable ,(pfx (car names))
+					,(pfx (cadr names))
+					,(pfx (caddr names))
+					;; trailing #fs below mean that we don't know whether we have all the fields:
+					(list-immutable
+					 ,@(map pfx (every-other (cdddr names)))
+					 #f)
+					(list-immutable
+					 ,@(map pfx (every-other (if (null? (cdddr names)) null (cddddr names))))
+					 #f)))))))
+	    (signature-structs sig)))))
+
+  ;; Could be called at expansion time from the result of a `unit/sig' expansion.
+  ;; NOT CURRENTLY USED.
+  (define (verify-struct-shape name shape)
+    (let ([v (syntax-local-value name (lambda () #f))]
+	  [n (length (list-ref shape 3))])
+      (unless (and (list? v)
+		   (= (length v) 5)
+		   (identifier? (car v))
+		   (module-identifier=? (car v) (car shape))
+		   (identifier? (cadr v))
+		   (module-identifier=? (cadr v) (cadr shape))
+		   (identifier? (caddr v))
+		   (module-identifier=? (caddr v) (caddr shape))
+		   (list? (list-ref v 3))
+		   (= (length (list-ref v 3)) n)
+		   (andmap identifier? (list-ref v 3))
+		   (andmap module-identifier=? (list-ref v 3) (list-ref shape 3))
+		   (list? (list-ref v 4))
+		   (= (length (list-ref v 4)) n)
+		   (andmap identifier? (list-ref v 4))
+		   (andmap module-identifier=? (list-ref v 4) (list-ref shape 4)))
+	(raise-syntax-error
+	 'unit/sig
+	 (format "struct definition for `~a' within the unit does not match the export signature (~a)"
+		 (let ([s (symbol->string (syntax-e name))])
+		   (substring s 0 (- (string-length s) 2)))
+		 ;; Say why:
+		 (cond
+		  [(not v) "definition is missing or does not use `define-struct'"]
+		  [(not (and (list? v)
+			     (= (length v) 5)
+			     (identifier? (car v))
+			     (identifier? (cadr v))
+			     (identifier? (caddr v))
+			     (list? (list-ref v 3))
+			     (andmap identifier? (list-ref v 3))
+			     (list? (list-ref v 4))
+			     (andmap identifier? (list-ref v 4))
+			     (= (length (list-ref v 4)) (length (list-ref v 3)))))
+		   "compile-time struct information is stragely malformed"]
+		  [(not (< (length (list-ref v 3)) n))
+		   "extra fields in definition"]
+		  [(not (> (length (list-ref v 3)) n))
+		   "missing fields in definition"]
+		  [else
+		   "different field names or order"]))))
+      ;; Return 0 values to context
+      (values)))
+	 
+
+  (define (every-other l)
+    (let loop ([l l][r null])
+      (cond
+       [(null? l) r]
+       [(null? (cdr l)) (cons (car l) r)]
+       [else (loop (cddr l) (cons (car l) r))])))
+  
+  ;; ------------------------------------------------------------
       
   (define check-signature-unit-body
     (lambda (sig a-unit renames who expr)
@@ -474,7 +626,15 @@
 	      (let loop ([pre-lines null][lines body][port #f][port-name #f][body null][vars null])
 		(cond
 		 [(and (null? pre-lines) (not port) (null? lines))
-		  (make-parse-unit imports renames vars body)]
+		  (make-parse-unit imports 
+				   renames 
+				   vars 
+				   (lambda (src-stx) (apply append (map (lambda (i) (make-struct-stx-decls i #f src-stx #f)) imports)))
+				   body
+				   (lambda (src-stx) 
+				     ;; Disabled until we have a mechanism for declaring precise information in signatures:
+				     ; (make-struct-stx-decls sig #f src-stx #t)
+				     null))]
 		 [(and (null? pre-lines) (not port) (not (pair? lines)))
 		  (syntax-error 'unit/sig expr "improper body list form")]
 		 [else
@@ -948,7 +1108,8 @@
 			     'dummy
 			     (apply
 			      append
-			      (map sig-explode-pair-sigpart exports)))
+			      (map sig-explode-pair-sigpart exports))
+			     null)
 			    interned-vectors)
 			   interned-vectors))))))]
 	[_else (raise-syntax-error 
@@ -960,21 +1121,25 @@
     (lambda (who rest expr)
       (parse-imports who #t #f expr rest)))
 
-  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
   (provide parse-unit
-	  parse-compound-unit
-	  parse-invoke-vars
+	   parse-compound-unit
+	   parse-invoke-vars
 
-	  parse-unit-renames
-	  parse-unit-imports
-	  parse-unit-body
+	   parse-unit-renames
+	   parse-unit-imports
+	   parse-unit-stxes
+	   parse-unit-body
+	   parse-unit-stx-checks
 
-	  signature-vars
-	  do-rename
-	  get-sig
-	  explode-sig
-	  explode-named-sigs
-	  check-signature-unit-body
-	  flatten-signature
-	  flatten-signatures))
+	   verify-struct-shape
+
+	   signature-vars
+	   do-rename
+	   get-sig
+	   explode-sig
+	   explode-named-sigs
+	   check-signature-unit-body
+	   flatten-signature
+	   flatten-signatures))

@@ -15,7 +15,7 @@
   (define insp (current-inspector)) ; for named structures
 
   (define-struct unit (num-imports exports go)) ; unit value
-  (define-struct (exn:unit struct:exn) ()) ; run-time exception
+  (define-struct (exn:unit exn) ()) ; run-time exception
 
   ;; For units with inferred names, generate a struct that prints using the name:
   (define (make-naming-constructor type name)
@@ -125,8 +125,9 @@
 		 ;; from syntax definitions.
 		 (let* ([definition?
 			  (lambda (id)
-			    (or (module-identifier=? id (quote-syntax define-values))
-				(module-identifier=? id (quote-syntax define-syntaxes))))]
+			    (and (identifier? id)
+				 (or (module-identifier=? id (quote-syntax define-values))
+				     (module-identifier=? id (quote-syntax define-syntaxes)))))]
 			[all-defined-names/kinds
 			 (apply
 			  append

@@ -1976,7 +1976,7 @@
   
   (define undefined (letrec ([x x]) x))
   
-  (define-struct (exn:object struct:exn) () insp)
+  (define-struct (exn:object exn) () insp)
 
   (define (obj-error where . msg)
     (raise

@@ -1,6 +1,7 @@
 
 (module head-unit mzscheme
-  (require (lib "unitsig.ss"))
+  (require (lib "unitsig.ss")
+	   (lib "date.ss"))
 
   (require "head-sig.ss")
 
@@ -139,7 +140,10 @@
       (define (standard-message-header from tos ccs bccs subject)
 	(let ([h (insert-field
 		  "Subject" subject
-		  empty-header)])
+		  (insert-field 
+		   "Date" (parameterize ([date-display-format 'rfc822])
+			    (date->string (seconds->date (current-seconds)) #t))
+		   empty-header))])
 	  ;; NOTE: bccs don't go into the header; that's why
 	  ;; they're "blind"
 	  (let ([h (if (null? ccs)

@@ -1098,9 +1098,9 @@ PROCEDURES -----------------------------------------------------------
 > (standard-message-header from-string to-list-of-strings cc-list-of-strings bcc-list-of-strings subject-string) -> header
 
   Creates a standard mail header given the sender, various lists of
-  recipients, and a subject. (The BCC recipients do not acually appear
-  in the header, but they're accepted anyway to complete the
-  abstarction.)
+  recipients, a subject, and the current date. (The BCC recipients do
+  not acually appear in the header, but they're accepted anyway to
+  complete the abstraction.)
 
 > (data-lines->data list-of-strings) -> string
 

@@ -212,18 +212,6 @@
 	 [(<= month 7) (+ 30 (modulo month 2))]
 	 [else (+ 30 (- 1 (modulo month 2)))])))
 
-    (define build-date
-      (lambda (second minute hour day month year dst?)
-	(letrec ([week-day 0]
-		 [find-year-day
-		  (lambda (m)
-		    (if (= m 0) 
-			(sub1 day)
-			(+ (days-per-month year m)
-			   (find-year-day (sub1 m)))))])
-	  (make-date second minute hour day month year
-		     week-day (find-year-day (sub1 month)) dst?))))
-
     (define find-extreme-date-seconds
       (lambda (start offset)
 	(let/ec found

@@ -1,7 +1,9 @@
 
-(require-library "mzlibs.ss")
+(begin-elaboration-time
+ (require-library "mzlibs.ss"))
 
-(require-library "coreflats.ss")
+(begin-elaboration-time
+ (require-library "coreflats.ss"))
 
 (define-signature mzlib:flat^
   ((open mzlib:core^)

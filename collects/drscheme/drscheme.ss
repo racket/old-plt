@@ -1,3 +1,7 @@
+;; need to use the namespace to transmit the
+;; splash definitions so the timing of the loading
+;; is right.
+
 (when (getenv "MREDDEBUG")
   (parameterize ([current-eventspace (make-eventspace)])
     (let* ([f (make-object frame% "Quit")]
@@ -21,10 +25,11 @@
    "DrScheme"
    81))
 
-(require "link.ss")
-(shutdown-splash)
-(invoke-unit/sig drscheme@)
-(close-splash)
+(module drscheme mzscheme
+  (require "link.ss")
+  ((namespace-variable-binding 'shutdown-splash))
+  (invoke-unit/sig drscheme@)
+  ((namespace-variable-binding 'close-splash)))
 
 
 

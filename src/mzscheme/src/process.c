@@ -2165,13 +2165,10 @@ void scheme_process_block_w_process(float sleep_time, Scheme_Process *p)
 
  start_sleep_check:
 
-  scheme_suspend_all_signals();
-
   if (!p->external_break && !p->next && scheme_check_for_break && scheme_check_for_break())
     p->external_break = 1;
 
   if (p->external_break && !p->suspend_break && scheme_can_break(p, config)) {
-    scheme_resume_all_signals();
     raise_break(p);
     goto start_sleep_check;
   }
@@ -2274,8 +2271,6 @@ void scheme_process_block_w_process(float sleep_time, Scheme_Process *p)
 #endif
 
   if (next) {
-    scheme_resume_all_signals();
-
     if (!p->next) {
       /* This is the main process */
       scheme_ensure_stack_start(p, (void *)&start);
@@ -2286,7 +2281,6 @@ void scheme_process_block_w_process(float sleep_time, Scheme_Process *p)
     /* If all processes are blocked, check for total process sleeping: */
     if (p->block_descriptor != NOT_BLOCKED)
       check_sleep(1, 1);
-    scheme_resume_all_signals();
   }
 
   if (p->block_descriptor == SLEEP_BLOCKED) {
@@ -2329,7 +2323,6 @@ void scheme_process_block_w_process(float sleep_time, Scheme_Process *p)
 # endif
     if ((sleep_time > 0) && scheme_sleep)
       scheme_sleep(sleep_time, NULL);
-  scheme_resume_all_signals();
 #endif
 
 #ifndef MZ_REAL_THREADS
@@ -2359,7 +2352,6 @@ void scheme_process_block_w_process(float sleep_time, Scheme_Process *p)
     if (d < 0)
       d = -d;
     if (d < (sleep_time * 1000)) {
-      scheme_suspend_all_signals();
       goto swap_or_sleep;
     }
   }

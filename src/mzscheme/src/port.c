@@ -197,6 +197,10 @@ static int force_port_closed;
 System_Child *scheme_system_children;
 #endif
 
+#if defined(FILES_HAVE_FDS)
+static int external_event_fd, put_external_event_fd, event_fd_set;
+#endif
+
 #ifdef USE_FD_PORTS
 static int flush_fd(Scheme_Output_Port *op, 
 		    char * volatile bufstr, volatile int buflen, 
@@ -433,6 +437,19 @@ scheme_init_port (Scheme_Env *env)
 # else
     atexit(flush_all_output_fds);
 # endif
+#endif
+
+#if defined(FILES_HAVE_FDS)
+    /* Set up a pipe for signalling external events: */
+    {
+      int fds[2];
+      if (!pipe(fds)) {
+	external_event_fd = fds[0];
+	put_external_event_fd = fds[1];
+	fcntl(external_event_fd, F_SETFL, MZ_NONBLOCKING);
+	fcntl(put_external_event_fd, F_SETFL, MZ_NONBLOCKING);
+      }
+    }
 #endif
 
     scheme_init_port_config();
@@ -4095,6 +4112,8 @@ static void child_done(int ingored)
 	    prev->next = sc->next;
 	  else
 	    scheme_system_children = sc->next;
+
+	  scheme_signal_received();
 	}
       }
     }
@@ -5108,7 +5127,6 @@ static void clean_up_wait(long result, OS_SEMAPHORE_TYPE *array,
    complexity. */
 
 static void default_sleep(float v, void *fds)
-/* Signals are blocked */
 {
 #ifdef USE_OSKIT_CONSOLE
   /* Don't really sleep; keep polling the keyboard: */
@@ -5118,14 +5136,29 @@ static void default_sleep(float v, void *fds)
 
   if (!fds) {
     /* Nothing to block on - just sleep for some amount of time. */
-#ifndef NO_SLEEP
-# ifdef USE_BEOS_SNOOZE
+#if defined(FILES_HAVE_FDS)
+    /* Sleep by selecting on the external event fd */
+    DECL_FDSET(readfds, 1);
+    struct timeval time;
+
+    time.tv_sec = (long)v;
+    time.tv_usec = (long)(fmod(v, 1.0) * 1000000);
+
+    MZ_FD_ZERO(readfds);
+    if (external_event_fd)
+      MZ_FD_SET(external_event_fd, readfds);
+
+    select(external_event_fd + 1, readfds, NULL, NULL, &time);
+#else
+# ifndef NO_SLEEP
+#  ifdef USE_BEOS_SNOOZE
     snooze((bigtime_t)(v * 1000000));
-# else
+#  else
 #  ifndef NO_USLEEP
     usleep((unsigned)(v * 1000));
-#  else
+#   else
     sleep(v);
+#   endif
 #  endif
 # endif
 #endif
@@ -5288,10 +5321,53 @@ static void default_sleep(float v, void *fds)
 
     /******* End Windows/BeOS stuff *******/
 
+#if defined(FILES_HAVE_FDS)
+    /* Watch for external events, too: */
+    if (external_event_fd)
+      MZ_FD_SET(external_event_fd, rd);
+#endif
+
     select(limit, rd, wr, ex, v ? &time : NULL);
-    /* Note: we want signals to break the above select()! */
 #endif
   }
+
+#if defined(FILES_HAVE_FDS)
+  /* Clear external event flag */
+  {
+    char buf[10];
+    event_fd_set = 1;
+    read(external_event_fd, buf, 10);
+    event_fd_set = 0;
+  }
+#endif
+}
+
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
+
+void scheme_signal_received(void)
+/* Ensure that MzScheme wakes up if asleep. */
+{
+#if defined(FILES_HAVE_FDS)
+  if (put_external_event_fd && !event_fd_set) {
+    write(put_external_event_fd, "!", 1);
+    event_fd_set = 1;
+  }
+#endif
+}
+
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif
+
+int scheme_get_external_event_fd(void)
+{
+#if defined(FILES_HAVE_FDS)
+  return external_event_fd;
+#else
+  return 0;
+#endif
 }
 
 /*========================================================================*/

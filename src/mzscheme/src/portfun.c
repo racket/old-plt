@@ -838,7 +838,11 @@ int scheme_pipe_write(char *str, long d, long len, Scheme_Output_Port *p, int no
 #ifdef MZ_REAL_THREADS
 	SCHEME_LOCK_MUTEX(pipe->change_mutex);
 #endif
-	pipe->wakeup_on_read = scheme_make_pair(my_sema, pipe->wakeup_on_read);
+	{
+	  Scheme_Object *wp;
+	  wp = scheme_make_pair(my_sema, pipe->wakeup_on_read);
+	  pipe->wakeup_on_read = wp;
+	}
 #ifdef MZ_REAL_THREADS
 	SCHEME_UNLOCK_MUTEX(pipe->change_mutex);
 #endif

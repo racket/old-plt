@@ -33,7 +33,10 @@
 
 	     (if base
 		 (let-values ([(base2 name2 _2) (split-path base)])
-		   (build-path name2 name))
+		   (if base2
+		       (let-values ([(base3 name3 _2) (split-path base2)])
+			 (build-path name3 name2 name))
+		       (build-path name2 name)))
 		 name)))])
     (values 
      (lambda ()

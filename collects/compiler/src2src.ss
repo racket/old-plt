@@ -1385,8 +1385,9 @@
 										  (quote-syntax values)
 										  #f
 										  tables)
-								     (map (lambda (var)
-									    (make-object ref% var var))
+								     (map (lambda (var lex-var)
+									    (make-object ref% var lex-var))
+									  vars
 									  lex-vars)
 								     tables))
 					   tables)

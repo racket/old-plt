@@ -15,21 +15,17 @@
   (define test-suite-model%
     (class vertical-pasteboard%
       (inherit insert delete find-first-snip begin-write-header-footer-to-file
-               end-write-header-footer-to-file)
+               end-write-header-footer-to-file begin-edit-sequence
+               end-edit-sequence)
       
-      (init-field window)
-      
-      (field
-       [expand-program-class false]
-       [expand-program-instance false])
+      (init-field window tools)
       
       (field
-       [program (instantiate text% ())])
-      
-      ;; set-expander (class? . -> . void?)
-      ;; set the expander class to be used
-      (define/public (set-expander c%)
-        (set! expand-program-class c%))
+       [expander false]
+       [tests-showing? true]
+       [program (instantiate text% ())]
+       [language ((tools 'preferences:get)
+                  ((tools 'drscheme:language-configuration:get-settings-preferences-symbol)))])
       
       ;; get-program (-> string?)
       ;; the filename of the program to be tested by the test-suite
@@ -46,7 +42,9 @@
       ;; insert-case (-> void?)
       ;; adds a new test case to the test-suite
       (define/public (insert-case)
-        (insert (instantiate test-case% ()) false))
+        (insert (instantiate test-case% ()
+                  (test-showing? tests-showing?))
+                false))
       
       ;; delete-case (-> void?)
       ;; removes the case that currently has focus
@@ -57,41 +55,69 @@
       ;; execute (-> void?)
       ;; runs the test-suite by executing each test-case
       (define/public (execute)
+        (send window update-executing true)
+        (set-expander)
+        (reset-cases)
+        (let ([program-filename (send program get-text)])
+          (if (string=? program-filename "")
+              (eval-cases)
+              (send expander eval-file
+                    program-filename
+                    (lambda ()
+                      (eval-cases))))))
+      
+      ;; set-expander (-> void?)
+      ;; create a program expander and store it in the field
+      (define/private (set-expander)
+        (set! expander
+              (instantiate (tools 'expand-program%) ()
+                (language language)
+                (error-handler (send window get-error-handler))
+                (clean-up
+                 (lambda ()
+                   (send window update-executing false))))))
+      
+      ;; reset-cases (-> void?)
+      ;; reset all the test cases to unknown state
+      (define/private (reset-cases)
         (for-each-snip
          (lambda (case)
            (send case reset))
-         (find-first-snip))
-        (if expand-program-class
-            (let ([expander (instantiate expand-program-class ())]
-                  [program-filename (send program get-text)])
-              (set! expand-program-instance expander)
-              (send window update-executing true)
-              (if (string=? program-filename "")
-                  (eval-cases expander)
-                  (send expander eval-file (send program get-text)
-                        (lambda ()
-                          (eval-cases expander)))))
-            (error 'execute "expand-program% not set")))
+         (find-first-snip)))
+        
+      (define/private (eval-cases)
+        (let ([case (find-first-snip)]
+              [next (lambda ()
+                      (send window update-executing false))])
+          (if case
+              (send case execute expander next)
+              next)))
       
       ;; break (-> void?)
       ;; stops execution of the test-suite
       (define/public (break)
-        (when expand-program-instance
-          (send expand-program-instance break)))
+        (when expander (send expander break)))
       
-      ;; eval-case ((is-a?/c expand-program%) . -> . (-> void?))
-      ;; evaluate the test cases in the test-suite
-      (define/private (eval-cases expander)
-        (letrec ([eval-case
-                  (lambda (case)
-                    (if case
-                      (send expander eval-case case
-                            (lambda ()
-                              (eval-case (send case next))))
-                      (begin
-                        (send expander done)
-                        (send window update-executing false))))])
-          (eval-case (find-first-snip))))
+      ;; set-language (language? . -> . void?)
+      ;; set the language to use to execute the cases
+      (define/public (set-language l)
+        (set! language l))
+      
+      ;; get-language (-> language?)
+      ;; get the language currently set
+      (define/public (get-language)
+        language)
+      
+      ;; show-tests (boolean? . -> . void?)
+      ;; show the tests in the display
+      (define/public (show-tests show?)
+        (set! tests-showing? show?)
+        (begin-edit-sequence)
+        (for-each-snip
+         (lambda (case)
+           (send case show-test show?))
+         (find-first-snip))
+        (end-edit-sequence))
       
       ;; write-headers-to-file ((is-a?/c editor-stream-out%) . -> . boolean?)
       ;; writes the program to be tested to the file header

@@ -17,7 +17,7 @@
     (class super%
       (super-instantiate ())
       (inherit get-error-handler update-executing)
-      (inherit-field model make-expander-class language)
+      (inherit-field model)
       
       (field
        [save-callback
@@ -28,12 +28,6 @@
           (send model break))]
        [execute-callback
         (lambda (button event)
-          (send model set-expander
-                (make-expander-class
-                 language
-                 (get-error-handler)
-                 (lambda ()
-                   (update-executing false))))
           (send model execute))]
        [delete-callback
         (lambda (button event)
@@ -50,7 +44,7 @@
       
       (super-instantiate ())
       (inherit get-menu-bar)
-      (inherit-field new-callback delete-callback execute-callback break-callback save-callback)
+      (inherit-field new-callback delete-callback execute-callback break-callback save-callback model)
       
       (let ([test-menu (instantiate menu% ()
                          (label "Test")
@@ -70,7 +64,19 @@
         (instantiate menu-item% ()
           (label "Break")
           (parent test-menu)
-          (callback break-callback)))
+          (callback break-callback))
+        (instantiate menu-item% ()
+          (label "Show All Tests")
+          (parent test-menu)
+          (callback
+           (lambda (button event)
+             (send model show-tests true))))
+        (instantiate menu-item% ()
+          (label "Hide All Tests")
+          (parent test-menu)
+          (callback
+           (lambda (button event)
+             (send model show-tests false)))))
       
       (frame:reorder-menus this)
       ))
@@ -82,7 +88,7 @@
       
       (super-instantiate ())
       (inherit get-error-handler)
-      (inherit-field model main-panel make-expander-class language
+      (inherit-field model main-panel
                      new-callback delete-callback execute-callback break-callback save-callback)
       
       ;; update-executing (boolean? . -> . void?)

@@ -13,22 +13,20 @@
   (define (language-menu-mixin super%)
     (class super%
       (inherit get-menu-bar)
-      (inherit-field language tools)
+      (inherit-field model tools)
       
       (super-instantiate ())
-      
-      (set! language
-            ((tools 'preferences:get)
-             ((tools 'drscheme:language-configuration:get-settings-preferences-symbol))))
       
       ;; choose-language (-> void?)
       ;; presents the user with a language dialog and sets the language to the language picked
       (define/private (choose-language)
-        (set! language
-              ((tools 'drscheme:language-configuration:language-dialog) false language false))
-        ((tools 'preferences:set)
-         ((tools 'drscheme:language-configuration:get-settings-preferences-symbol))
-         language))
+        (let ([language
+               ((tools 'drscheme:language-configuration:language-dialog)
+                false (send model get-language) false)])
+          (send model set-language language)
+          ((tools 'preferences:set)
+           ((tools 'drscheme:language-configuration:get-settings-preferences-symbol))
+           language)))
         
       (let ([language-menu
              (instantiate menu% ()

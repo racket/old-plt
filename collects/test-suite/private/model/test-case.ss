@@ -17,14 +17,18 @@
   
   (define test-case%
     (class aligned-editor-snip%
-      (inherit next)
+      
+      (inherit get-editor next)
+      
+      (init-field
+       [test-showing? true])
       
       (field
-       (call (instantiate test:text% ()))
-       (expected (instantiate test:text% ()))
-       (actual (instantiate (text:hide-caret/selection-mixin test:text%) ()))
-       (test (instantiate test:text% ()))
-       (pass (make-object image-snip% *unknown*)))
+       [call (instantiate test:text% ())]
+       [expected (instantiate test:text% ())]
+       [actual (instantiate (text:hide-caret/selection-mixin test:text%) ())]
+       [test (instantiate test:text% ())]
+       [pass (make-object image-snip% *unknown*)])
       
       (send* actual
         (lock true)
@@ -32,33 +36,20 @@
       (send test insert "equal?")
       (send pass load-file *unknown*)
       
-      ;; get-call (-> (is-a?/c text%))
-      ;; get the call text box
-      (define/public (get-call)
-        call)
-      
-      ;; get-expected (-> (is-a?/c text%))
-      ;; get the expected text box
-      (define/public (get-expected)
-        expected)
-      
-      ;; get-test (-> (is-a?/c text%))
-      ;; get the test text box
-      (define/public (get-test)
-        test)
+      ;; show-test (boolean? . -> . void?)
+      ;; show/hide the test in the display
+      (define/public (show-test show?)
+        (send (get-editor) show-test show?))
       
       ;; reset (-> void?)
       ;; resets the result of the test case
       (define/public (reset)
-        (send* actual
-          (lock false)
-          (erase)
-          (lock true))
+        (set-actual "")
         (send pass load-file *unknown*))
       
       ;; set-actual (string? . -> . void?)
       ;; set the text in the actual field to the string given
-      (define/public (set-actual string)
+      (define/private (set-actual string)
         (send* actual
           (lock false)
           (erase)
@@ -67,50 +58,101 @@
       
       ;; set-icon (boolean? . -> . void?)
       ;; set the image of the icon to either pass or fail
-      (define/public (set-icon pass?)
+      (define/private (set-icon pass?)
         (send pass load-file
               (if pass?
                   *success*
                   *failure*)))
       
+      ;; execute ((is-a?/c expand-program%) ((union (id-s?/c snip%) false?) . -> . void?) . -> . void?)
+      ;; execute the test case
+      (define/public (execute expander continue)
+        (let ([call-with-test
+               (lambda (f)
+                 (if test-showing?
+                     (send expander expand-text test f)
+                     (f (syntax equal?))))])
+          (send expander expand-text call
+                (lambda (call-syntax)
+                  (send expander expand-text expected
+                        (lambda (expected-syntax)
+                          (call-with-test
+                           (lambda (test-syntax)
+                             (send expander eval-syntax
+                                   (with-syntax ([call call-syntax]
+                                                 [expected expected-syntax]
+                                                 [test test-syntax])
+                                     (syntax (#%app test call expected)))
+                                   (lambda (test-value) ; =drscheme-eventspace=
+                                     (set-icon test-value)
+                                     (let ([next-case (next)])
+                                       (if next-case
+                                           (send next-case execute expander continue)
+                                           (continue)))))))))))))
+        
       (super-instantiate ()
         (stretchable-width true)
         (stretchable-height false)
-        (editor
-         (test-case-editor
-          call expected actual test pass)))
+        (editor (instantiate test-case-editor% ()
+                  (call-text call)
+                  (expected-text expected)
+                  (actual-text actual)
+                  (test-text test)
+                  (pass-image pass)
+                  (test-showing? test-showing?))))
       ))
   
-  ;; test-case-editor ((is-a?/c editor<%>) (is-a?/c editor<%>) (is-a?/c editor<%>)
-  ;;                   (is-a?/c editor<%>) (is-a?/c image-snip%) . -> . (is-a?/c editor<%>))
-  ;; an editor to display the test case with the given fields
-  (define (test-case-editor call expected actual test pass)
-    (let ([main-pb (instantiate vertical-pasteboard% ())]
-          [bottom-pb (instantiate horizontal-pasteboard% ())])
+  (define test-case-editor%
+    (class vertical-pasteboard%
+      (inherit begin-edit-sequence end-edit-sequence insert)
+      (init-field call-text expected-text actual-text test-text pass-image test-showing?)
+      (field
+       [bottom-pb (instantiate horizontal-pasteboard% ())]
+       [call-snip (label-box "Call" call-text)]
+       [expected-snip (label-box "Expected" expected-text)]
+       [actual-snip (label-box "Actual" actual-text)]
+       [test-snip (label-box "Equality Test" test-text)])
+      
+      ;; show-test (boolean? . -> . void?)
+      ;; show/hide the test in the display
+      ;; status: the insert fails because the snip was once deleted so instead I need
+      ;;         to create a new one every time. It's less readable and a bit slower
+      (define/public (show-test show?)
+        (cond
+          [(and test-showing? (not show?))
+           (send bottom-pb release-snip test-snip)]
+          [(and (not test-showing?) show?)
+           (send bottom-pb insert test-snip pass-image)]
+          [else (void)])
+        (set! test-showing? show?))
+      
+      (super-instantiate ())
       (send* bottom-pb
         (begin-edit-sequence)
-        (insert (labeled-box "Expected" expected) false)
-        (insert (labeled-box "Actual" actual) false)
-        (insert (labeled-box "Equality Test" test) false)
-        (insert pass false)
+        (insert expected-snip false)
+        (insert actual-snip false))
+      (when test-showing?
+        (send bottom-pb insert test-snip false))
+      (send* bottom-pb
+        (insert pass-image false)
         (end-edit-sequence))
-      (send* main-pb
-        (begin-edit-sequence)
-        (insert (labeled-box "Call" call) false)
-        (insert (instantiate aligned-editor-snip% ()
-                  (with-border? false)
-                  (editor bottom-pb)
-                  (top-margin 0)
-                  (bottom-margin 0)
-                  (left-margin 0)
+      
+      (begin-edit-sequence)
+      (insert call-snip false)
+      (insert (instantiate aligned-editor-snip% ()
+                (with-border? false)
+                (editor bottom-pb)
+                (top-margin 0)
+                (bottom-margin 0)
+                (left-margin 0)
                   (right-margin 0))
-                false)
-        (end-edit-sequence))
-      main-pb))
+              false)
+      (end-edit-sequence)
+      ))
   
-  ;; labeled-box: (string? (is-a?/c editor<%>) . -> . (is-a?/c editor-snip%))
+  ;; label-box (string? (is-a?/c editor<%>) . -> . (is-a?/c editor-snip%))
   ;; a snip with a box to type in and a label
-  (define (labeled-box label text)
+  (define (label-box label text)
     (let ([sd (make-object style-delta% 'change-normal-color)]
           [pb (instantiate vertical-pasteboard% ())]
           [label-snip (make-object string-snip% label)])

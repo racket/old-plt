@@ -22,10 +22,13 @@
       ;; Program Evaluation ;;
       ;;;;;;;;;;;;;;;;;;;;;;;;
       
-      ;; make-expand-program (language? (string? exn? . -> . void?) (-> void?) . -> . class?)
-      ;; a class to expand programs
-      (define (make-expand-program language error-handler clean-up)
+      (define expand-program%
         (class object%
+          
+          (init-field
+           language
+           error-handler
+           clean-up)
           
           (field
            [drscheme-eventspace (current-eventspace)]
@@ -62,31 +65,6 @@
                      (continue)]
                     [else (error 'eval-file "Error")]))))))
           
-          ;; eval-case ((is-a?/c test-case%) (-> void?) . -> . void?)
-          ;; evaluate a test case and set it's actual and icon apropriately
-          (define/public (eval-case case next) ; =drscheme-eventspace=
-            (eval-text
-             (send case get-call)
-             (lambda (call-value) ; =drscheme-eventspace=
-               (user-format
-                call-value
-                (lambda (call-string) ; =drscheme-eventspace
-                  (send case set-actual call-string)
-                  (eval-text
-                   (send case get-expected)
-                   (lambda (expected-value) ; =drscheme-eventspace=
-                     (eval-text
-                      (send case get-test)
-                      (lambda (test-value) ; =drscheme-eventspace=
-                        (eval-syntax
-                         (with-syntax ([call call-value]
-                                       [expected expected-value]
-                                       [test test-value])
-                           (syntax (#%app 'test 'call 'expected)))
-                         (lambda (test-value) ; =drscheme-eventspace=
-                           (send case set-icon test-value)
-                           (next))))))))))))
-          
           ;; break (-> void?)
           ;; break the test execution. if called more than once in an execution... kill the test.
           (define/public (break) ; =drscheme-eventspace=
@@ -100,9 +78,9 @@
                         (custodian-shutdown-all user-custodian)))
                   (custodian-shutdown-all user-custodian))))
           
-          ;; eval-text ((is-a?/c text%) (any? . -> . void?) . -> . void?)
+          ;; expand-text ((is-a?/c text%) (any? . -> . void?) . -> . void?)
           ;; evaluate the text box and call the function with it's value
-          (define/private (eval-text text next) ; =drscheme-eventspace=
+          (define/public (expand-text text next) ; =drscheme-eventspace=
             (expand-program
              (drscheme:language:make-text/pos
               text 0 (send text last-position))
@@ -117,7 +95,7 @@
                    [(syntax? object)
                     (if first-expr?
                         (begin
-                          (set! value (eval object))
+                          (set! value object)
                           (set! first-expr? false)
                           (continue))
                         (error 'iter "Too many expressions in a test box"))]
@@ -125,7 +103,7 @@
           
           ;; eval-syntax (syntax? (any? . -> . void?) . -> . void?)
           ;; evaluate the syntax in the users eventspace
-          (define/private (eval-syntax syntax-object next) ; =drscheme-eventspace=
+          (define/public (eval-syntax syntax-object next) ; =drscheme-eventspace=
             (queue-to-user
              (lambda () ; = user-eventspace=
                (let ([value (eval syntax-object)])
@@ -136,7 +114,7 @@
           ;; user-format (any? (string? . -> . void?) . -> . void?)
           ;; formats a value to a string using the users language printing style
           ;; status: this is wrong. i need to queue a callback here
-          (define/private (user-format value next) ; =drscheme-eventspace=
+          (define/public (user-format value next) ; =drscheme-eventspace=
             (queue-to-user
              (lambda () ; =user-eventspace=
                (let ([s (format "~v" value)])
@@ -193,6 +171,8 @@
            drscheme:language-configuration:language-dialog]
           [(symbol=? symbol 'preferences:set)
            preferences:set]
+          [(symbol=? symbol 'expand-program%)
+           expand-program%]
           ))
       
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -204,7 +184,6 @@
       (define (open-test-suite filename)
         (let ([window
                (instantiate test-suite-window% ()
-                 (make-expander-class make-expand-program)
                  (tools tools))])
           (when filename (send window load-file filename))
           (send window show true)))

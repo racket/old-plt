@@ -27,7 +27,6 @@
         (height 500))
       
       (init-field
-       make-expander-class
        tools
        [filename false])
       
@@ -53,8 +52,8 @@
           (void)))
       
       (field [model (instantiate test-suite-model% ()
-                      (window this))]
-             [language false]
+                      (window this)
+                      (tools tools))]
              [main-panel (instantiate vertical-panel% ()
                            (parent (send this get-area-container))
                            (stretchable-height false))])

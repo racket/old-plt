@@ -1452,7 +1452,8 @@
 		       (let* ([fun (zodiac:app-fun a)]
 			      [fun-phi (get-phi fun)]
 			      [rands (zodiac:app-args a)]
-			      [rands-len (length rands)])
+			      [rands-len (length rands)]
+			      [found-case #f])
 			 
 			 (for-each
 
@@ -1465,37 +1466,44 @@
 				   [bodies (zodiac:case-lambda-form-bodies f)])
 
 
-			      (for-each
-			       
-			       (lambda (arglist body)
-				 
-				 (let* ([arglist-vars (zodiac:arglist-vars arglist)])
+			      (let loop ([arglists arglists]
+					 [bodies bodies])
+				  (unless 
+				   (or (null? arglists) (null? bodies))
+				   
+				   (let* ([arglist (car arglists)]
+					  [body (car bodies)]
+					  [arglist-vars (zodiac:arglist-vars arglist)])
 
-				   (cond
+				     (cond
 
-				    [(and (zodiac:list-arglist? arglist)
-					  (= (length arglist-vars) rands-len))
+				      [(and (zodiac:list-arglist? arglist)
+					    (= (length arglist-vars) rands-len))
 
-				     ; prop info from args to binders
+					; prop info from args to binders
 
-				     (for-each
-				      (lambda (rand arg)
-					(prop-phi! rand arg))
-				      rands
-				      arglist-vars)]
+				       (for-each
+					(lambda (rand arg)
+					  (prop-phi! rand arg))
+					rands
+					arglist-vars)
+
+					; prop info from body to app
+
+				       (prop-phi! body a)]
 				    
 				    [(or (zodiac:sym-arglist? arglist)
 					 (zodiac:ilist-arglist? arglist))
 
 				     ; unesthetic hack
 
-				     (set-unknown! f #t)]) 
+				     (set-unknown! f #t)
 
-				   ; prop info from lambda bodies to app
+                                     ; prop info from body to app
 
-				   (prop-phi! body a)))
+				     (prop-phi! body a)]
 
-			       arglists bodies)))
+				    [else (loop (cdr arglists) (cdr bodies))]))))))
 
 			  (set->list fun-phi))))]
 
@@ -2787,11 +2795,12 @@
 			      [fvs (code-free-vars unit-code)]
 			      [lvs (code-local-vars unit-code)])
 
-			 (set-code-captured-vars! unit-code
-						  (fold-sets (list fvs lvs 
-								   (list->set 
-								    (append (unit-code-import-anchors unit-code)
-									    (unit-code-export-anchors unit-code))))))))])
+			 (set-code-captured-vars! 
+			  unit-code
+			  (fold-sets (list fvs lvs 
+					   (list->set 
+					    (append (unit-code-import-anchors unit-code)
+						    (unit-code-export-anchors unit-code))))))))])
 
 		   (sequence (super-init))))])
      

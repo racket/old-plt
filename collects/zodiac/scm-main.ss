@@ -1060,6 +1060,18 @@
 	  (or (pat:match-and-rewrite expr m&e out-pattern kwd env)
 	    (static-error expr "Malformed recur"))))))
 
+  (when (language>=? 'side-effecting)
+    (add-primitivized-macro-form
+      'rec
+      scheme-vocabulary
+      (let* ((kwd '())
+	      (in-pattern '(_ looper body))
+	      (out-pattern '(letrec ((looper body)) looper))
+	      (m&e (pat:make-match&env in-pattern kwd)))
+	(lambda (expr env)
+	  (or (pat:match-and-rewrite expr m&e out-pattern kwd env)
+	    (static-error expr "Malformed rec"))))))
+
   (add-primitivized-macro-form
     'cond
     scheme-vocabulary

@@ -9,7 +9,7 @@
      (require (file "assoc-list.scm")
               (file "data-defs.scm"))
      
-     (require-for-syntax (file "aux.scm"))
+     (require-for-syntax (file "aux-syntax.scm"))
      
      (provide/contract
       [get-class-info

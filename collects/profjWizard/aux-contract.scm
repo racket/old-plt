@@ -1,6 +1,6 @@
 (module aux-contract mzscheme
   
-  (require-for-syntax (file "aux.scm"))
+  (require-for-syntax (file "aux-syntax.scm"))
   (require (lib "contract.ss"))
   
   (provide 

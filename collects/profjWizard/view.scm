@@ -467,8 +467,8 @@
                                 (filter (lambda (c) (not (eq? vp c))) cs)))))))
      
      ;; ------------------------------------------------------------------------
-     #| Run, program, run:
-     
+     #| Run, program, run: 
+
      (require (file "class.scm"))
 
      (define x (get-class-info))

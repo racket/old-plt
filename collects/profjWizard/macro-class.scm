@@ -1,5 +1,5 @@
 #cs(module macro-class mzscheme
-     (require-for-syntax (file "class.scm") (file "aux.scm"))
+     (require-for-syntax (file "class.scm") (file "aux-syntax.scm"))
      
      (provide 
       class ;; (class Name Super (Type Name) ...)

@@ -1,2 +1,2 @@
 all : 
-        nmake /f testobject.mak
+	nmake /f testobject.mak

@@ -8,7 +8,7 @@ clean :
 	-@erase testobject.dll
 
 CPP=cl.exe
-CPP_FLAGS=/MT /W3 /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "_ATL_STATIC_REGISTRY" /D "_ATL_MIN_CRT" /c 
+CPP_FLAGS=/MT /W3 /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /c
 
 MTL=midl.exe
 MTL_SWITCHES=/tlb testobject.tlb /h testobject.h /iid testobject_i.c /Oicf 
@@ -19,14 +19,12 @@ REGSVR32=regsvr32
 .cxx.obj::
    $(CPP) $(CPP_FLAGS) $< 
 
-MZC="C:\Program Files\PLT\mzc"
-        
 LINK32=link.exe
 LINK32_FLAGS= \
 	kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib \
 	advapi32.lib ole32.lib oleaut32.lib \
 	uuid.lib odbc32.lib odbccp32.lib \
-	/nologo /subsystem:windows /dll /incremental:no /machine:I386 \
+	/nologo /dll /subsystem:windows /incremental:no /machine:I386 \
 	/def:testobject.def /out:testobject.dll
 DEF_FILE=testobject.def
 LINK32_OBJS= \

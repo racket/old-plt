@@ -526,7 +526,7 @@
                               (wcm-wrap (make-debug-info-normal null) annotated))
                           null))]
                
-               [(z:begin-form? expr)
+[(z:begin-form? expr)
                 (if top-level? 
                     (let*-values
                      ([(bodies) (z:begin-form-bodies expr)]
@@ -631,11 +631,15 @@
                                  [dummy-binding-list (apply append dummy-binding-sets)]
                                  [create-index-finder (lambda (binding)
                                                         `(,binding-indexer))]
+                                 [unevaluated-list (build-list (length dummy-binding-list) 
+                                                               (lambda (_) *unevaluated*))]
+                                 [dummy-binding-vars (map z:binding-var dummy-binding-list)]
                                  [outer-dummy-initialization
-                                  `([,(append lifted-gensyms (map z:binding-var dummy-binding-list))
-                                     (#%values ,@(append (map create-index-finder binding-list)
-                                                         (build-list (length dummy-binding-list) 
-                                                                     (lambda (_) `(#%quote ,*unevaluated*)))))])]
+                                  (if ankle-wrap?
+                                      `((,dummy-binding-vars ,unevaluated-list))
+                                      `([,(append lifted-gensyms dummy-binding-vars)
+                                         (#%values ,@(append (map create-index-finder binding-list)
+                                                             unevaluated-list))]))]
                                  [set!-clauses
                                   (map (lambda (dummy-binding-set val)
                                          `(#%set!-values ,(map z:binding-var dummy-binding-set) ,val))
@@ -681,7 +685,7 @@
                       (let-body-recur (z:letrec-values-form-body expr) binding-list)]
                      [(free-bindings-inner) (apply binding-set-union free-bindings-body free-bindings-vals)]
                      [(free-bindings-outer) (remq* binding-list free-bindings-inner)])
-                  (ccond [(or cheap-wrap? ankle-wrap?)
+                  (ccond [cheap-wrap?
                           (let* ([bindings
                                   (map (lambda (bindings val)
                                          `(,(map get-binding-name bindings)
@@ -690,13 +694,15 @@
                                        annotated-vals)]
                                  [annotated `(#%letrec-values ,bindings ,annotated-body)])
                             (values (appropriate-wrap annotated free-bindings-outer) free-bindings-outer))]
-                         [foot-wrap?
+                         [(or foot-wrap? ankle-wrap?)
                           (let* ([create-index-finder (lambda (binding)
                                                         `(,binding-indexer))]
                                  [outer-initialization
-                                  `((,(append lifted-gensyms binding-names) 
-                                     (#%values ,@(append (map create-index-finder binding-list)
-                                                         binding-names))))]
+                                  (if ankle-wrap?
+                                      `((,binding-names (#%values ,binding-names)))
+                                      `((,(append lifted-gensyms binding-names) 
+                                         (#%values ,@(append (map create-index-finder binding-list)
+                                                             binding-names)))))]
                                  [set!-clauses
                                   (map (lambda (binding-set val)
                                          `(#%set!-values ,(map get-binding-name binding-set) ,val))
@@ -723,19 +729,13 @@
                     ([(vars) (z:define-values-form-vars expr)]
                      [(_1) (map utils:check-for-keyword vars)]
                      [(binding-names) (map z:varref-var vars)]
-                     
-                     ; NB: this next recurrence is NOT really tail, but we cannot
-                     ; mark define-values itself, so we mark the sub-expr as
-                     ; if it was in tail posn (i.e., we must hold on to 
-                     ; bindings).
-                     
                      [(val) (z:define-values-form-val expr)]
                      [(annotated-val free-bindings-val)
                       (define-values-recur val (if (not (null? binding-names))
                                                    (car binding-names)
                                                    #f))])
                   (values
-                   (if  (and (or foot-wrap? ankle-wrap?) (z:struct-form? val))
+                   (if  (and foot-wrap? (z:struct-form? val))
                         `(#%define-values ,binding-names
                           ,(wrap-struct-form binding-names annotated-val)) 
                          `(#%define-values ,binding-names ,annotated-val))

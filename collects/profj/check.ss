@@ -2426,7 +2426,7 @@
                                types)))))
       (substring out 0 (- (string-length out) 5))))                                                         
   
-  ;call-access-error: symbol id type src -> void
+  ;call-access-error: symbol symbol id type src -> void
   (define (call-access-error kind level name exp src)
     (let ((n (id->ext-name name))
           (t (get-call-type exp)))
@@ -2436,7 +2436,7 @@
                      (case kind
                        ((pro) (format "method ~a from ~a may only be called by ~a, a subclass, or package member of ~a" n t t t))
                        ((pri) (format "~a does not contain a method named ~a" t n))
-                       ((pac) (format "method ~a from ~a may only be called by ~a or a package member of ~a" n t t))))
+                       ((pac) (format "method ~a from ~a may only be called by ~a or a package member of ~a" n t t t))))
                  n src)))
 
   ;call-arg-error: symbol id (list type) type src -> void

@@ -20,4 +20,5 @@
 	(javac "Number.java")
         (javac "Double.java")
         (javac "Float.java")
-        (javac "Boolean.java")))))
+        (javac "Boolean.java")
+        (javac "CharSequence.java")))))

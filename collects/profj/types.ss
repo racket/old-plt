@@ -411,15 +411,17 @@
   
   ;get-record: (U class-record procedure) type-records -> class-record
   (define (get-record rec type-recs)
-    (if (procedure? rec) 
-        (let ((location (send type-recs get-location)))
-          (begin0 (rec) 
-                  (send type-recs set-location! location)))
-        rec))
+    (cond
+      ((procedure? rec) 
+       (let ((location (send type-recs get-location)))
+         (begin0 (rec) 
+                 (send type-recs set-location! location))))
+      (else rec)))
   
   ;; is-interface?: (U type (list string) 'string) type-records-> boolean
   (define (is-interface? t type-recs)
-    (not (class-record-class? (get-record (send type-recs get-class-record t) type-recs))))
+    (not (class-record-class? 
+          (get-record (send type-recs get-class-record t) type-recs))))
   
   ;;Is c1 a subclass of c2?
   ;; is-subclass?: (U type (list string) 'string) ref-type type-records -> boolean

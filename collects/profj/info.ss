@@ -2,6 +2,7 @@
   (define name "ProfessorJ")
   (define tools (list (list "tool.ss")))
   (define install-collection "installer.ss")
+  (define pre-install-collection "pre-installer.ss")
   (define compile-subcollections (list (list "profj" "parsers")
                                        (list "profj" "libs" "java" "lang")
 				       (list "profj" "libs" "java" "io")

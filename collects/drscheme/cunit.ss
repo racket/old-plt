@@ -59,7 +59,7 @@
 	(apply super-init args))))
   
   (define super-frame% 
-    (drscheme:frame:make-frame%
+    (drscheme:frame:mixin
      fw:frame:pasteboard-info%))
   
   (define frame%

@@ -4,11 +4,11 @@
   (define separator-snipclass
     (make-object
 	(class-asi mred:snip-class%
-	  (public
-	    [read (lambda (s) 
-		    (let ([size-box (box 0)])
-		      (send s get size-box)
-		      (make-object separator-snip%)))]))))
+	  (override
+	   [read (lambda (s) 
+		   (let ([size-box (box 0)])
+		     (send s get size-box)
+		     (make-object separator-snip%)))]))))
   (send* separator-snipclass
 	 (set-version 1)
 	 (set-classname "drscheme:sepatator-snip%"))
@@ -24,7 +24,7 @@
       (private [width 500]
 	       [height 1]
 	       [white-around 2])
-      (public
+      (override
 	[write (lambda (s) 
 		 (send s put (char->integer #\r)))]
 	[copy (lambda () 
@@ -74,7 +74,7 @@
     (lambda (name get-%)
       (let ([ans (make-object
 		     (class-asi mred:snip-class%
-		       (public
+		       (override
 			 [read (lambda (s) 
 				 (let ([size-box (box 0)])
 				   (send s get size-box)
@@ -98,7 +98,7 @@
       (class mred:snip% ([initial-size 12])
 	(inherit get-style set-snipclass set-style)
 	(private [allowed-size initial-size])
-	(public
+	(override
 	  [write (lambda (s) 
 		   (send s put allowed-size))]
 	  [copy (lambda () 

@@ -1,11 +1,6 @@
 #include "escheme.h"
 #include <math.h>
 
-#if !defined(WIN32) && !defined(__MAC_OS__)
-/* must be some UNIX flavor */
-#include <sys/types.h>
-#endif
-
 Scheme_Type homo_<type-name>_vector_type;
 #include "homo-<type-name>-vector-prims.h"
 

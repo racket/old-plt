@@ -121,7 +121,7 @@ Additional "info.ss" fields trigger additional setup actions:
    instead of after.  The provided procedure should be named
    `pre-installer' in this case so it can share the same file.
 
->  pre-install-collection - like `install-collection'.  It is called
+>  post-install-collection - like `install-collection'.  It is called
    right after the `install-collection' procedure is executed.  The
    only difference between these is that the `--no-install' flag can
    be used to disable the previous two installers, but not this one.

@@ -153,7 +153,7 @@
 	    
 
 	    [system-parameterization (current-parameterization)]
-	    [primitive-eval  (current-eval)]
+	    [primitive-eval (current-eval)]
 	    [param #f]
 
 	    [current-thread-desc #f]
@@ -341,22 +341,32 @@
 			(close-input-port re-p)))))))])
 	  (public
 	    [reset-console
-	     (lambda ()
-	       (when param
-		 (wx:kill-eventspace (with-parameterization param
-				       wx:current-eventspace)))
-	       (set! param (let ([p (build-parameterization user-parameterization)])
-			     (with-parameterization p
-			       (lambda ()
-				 (current-output-port this-out)
-				 (current-error-port this-err)
-				 (current-input-port this-in)
-				 (current-load userspace-load)
-				 (current-eval userspace-eval)
-				 (set! current-thread-directory
-				       (current-directory))))
-			     p))
-	       (super-reset-console))]
+	     (let ([first-dir (current-directory)])
+	       (lambda ()
+		 (when param
+		   (wx:kill-eventspace (with-parameterization param
+					 wx:current-eventspace)))
+		 (set! param (let ([p (build-parameterization user-parameterization)])
+			       (with-parameterization p
+				 (lambda ()
+				   (current-output-port this-out)
+				   (current-error-port this-err)
+				   (current-input-port this-in)
+				   (current-load userspace-load)
+				   (current-eval userspace-eval)
+				   (set! current-thread-directory
+					 (let/ec k
+					   (unless (get-frame)
+					     (k first-dir))
+					   (let*-values ([(filename) (send (ivar (get-frame) definitions-edit)
+									   get-filename)]
+							 [(normalized) (if (string? filename)
+									   (mzlib:file@:normalize-path filename)
+									   (k first-dir))]
+							 [(base _1 _2) (split-path normalized)])
+					     base)))))
+			       p))
+		 (super-reset-console)))]
 	    [initialize-console
 	     (lambda ()
 	       (super-initialize-console)

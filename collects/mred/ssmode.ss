@@ -61,7 +61,7 @@
 			   let-enumerate
 			   class class* class-asi class-asi*
 			   define-some do opt-lambda send*
-			   local catch
+			   local catch shared
 			   unit unit/sig compound-unit compound-unit/sig
 			   with-handlers with-parameterization
 			   parameterize

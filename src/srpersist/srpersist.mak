@@ -8,6 +8,9 @@ ODBCVER=0x0351
 # will have to change if non-MS driver manager
 ODBC_LIBS=odbc32.lib odbccp32.lib 
 
+# change for your installation
+MZC="C:\Program Files\PLT\mzc"
+
 all : srpmain.dll
 
 clean :
@@ -22,8 +25,6 @@ CPP_FLAGS=/I"../mzscheme/include" /ML /W3 /GX /O2 /D ODBCVER=$(ODBCVER) /D "WIN3
 .cxx.obj::
    $(CPP) $(CPP_FLAGS) $< 
 
-MZC="D:\PLT\mzc"
-	
 LINK32=$(MZC)
 LINK32_FLAGS=
 LINK32_LIBS= \

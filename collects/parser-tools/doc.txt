@@ -4,28 +4,28 @@ This documentation assumes familiarity with lex and yacc style lexer
 and parser generators.
 
 _lex.ss_
-A regular expression is one of the following:
+A _regular expression_ is one of the following:
 
- identifier                expands to the named lex abbreviation
- string                    matches the sequence of characters
- character                 matches the character
- (repetition lo hi re)     matches re repeated between lo and hi times,
+  identifier                expands to the named lex abbreviation
+  string                    matches the sequence of characters
+  character                 matches the character
+> (repetition lo hi re)     matches re repeated between lo and hi times,
                              inclusive.  hi = +inf.0 for unbounded repetitions
- (union re ...)            matches if any of the sub-expressions match
- (intersection re ...)     matches if all of the sub-expressions match
- (complement re)           matches anything that the sub-expressions does not
- (concatenation re ...)    matches each sub-expression in succession
- (char-range char char)    matches any character between the two (inclusive)
+> (union re ...)            matches if any of the sub-expressions match
+> (intersection re ...)     matches if all of the sub-expressions match
+> (complement re)           matches anything that the sub-expressions does not
+> (concatenation re ...)    matches each sub-expression in succession
+> (char-range char char)    matches any character between the two (inclusive)
                              (A single character string can be used here)
- (char-complement re)      matches any character not matched by the sub-re.
+> (char-complement re)      matches any character not matched by the sub-re.
                              The sub-expression must be a set of characters re.
- (char-set string)         matches any character in the string
- (op form ...)             expands the re macro named op
+> (char-set string)         matches any character in the string
+  (op form ...)             expands the re macro named op
 
- (Both (concatenation) and "" match the empty string.
-  (union) matches nothing.
-  (intersection) matches any string.
-  (char-complement) matches any single character.)
+  (Both (concatenation) and "" match the empty string.
+   (union) matches nothing.
+   (intersection) matches any string.
+   (char-complement) matches any single character.)
 
 This regular expression language is not designed to be used directly,
 but rather as a basis for a user-friendly notation written with
@@ -88,13 +88,31 @@ The following require imports the _lexer generator_.
 
 "lex.ss" exports the following named regular expressions:
 
-any-char: matches any character
-any-string: matches any string
-nothing: matches no string
-alphabetic lower-case upper-case title-case numeric symbolic
-punctuation graphic whitespace blank iso-control: See the mzscheme
-manual section 3.4
+> any-char:            matches any character
+> any-string:          matches any string
+> nothing:             matches no string
+> alphabetic:          see the mzscheme manual section 3.4
+> lower-case:          see the mzscheme manual section 3.4
+> upper-case:          see the mzscheme manual section 3.4
+> title-case numeric:  see the mzscheme manual section 3.4
+> symbolic:            see the mzscheme manual section 3.4
+> punctuation:         see the mzscheme manual section 3.4
+> graphic:             see the mzscheme manual section 3.4
+> whitespace:          see the mzscheme manual section 3.4
+> blank:               see the mzscheme manual section 3.4
+> iso-control:         see the mzscheme manual section 3.4
 
+
+"lex.ss" exports the following variables:
+
+> start-pos
+> end-pos
+> lexeme
+> input-port
+> return-without-pos
+   Use of these names outside of a lexer action is a syntax error.
+   See the lexer form below for their meaning when used inside a 
+   lexer action.
 
 "lex.ss" exports the following syntactic forms:
 
@@ -113,18 +131,12 @@ manual section 3.4
    ${PLTHOME}/collects/parser-tools/lex-sre.ss which contains simple,
    but useful, regular expression macro definitions.
 
-> start-pos
-> end-pos
-> lexeme
-> input-port
-> return-without-pos
-   Use of these names outside of a lexer action is a syntax error.
 
 > (lexer (re action) ...) expands into a function that takes an
    input-port, matches the re's against the buffer, and returns the
    result of executing the corresponding action.  Each action is
    scheme code that has the same scope as the enclosing lexer definition.
-   The following bindings have special meaning inside of a lexer
+   The following variables have special meaning inside of a lexer
    action:
     start-pos - a position struct for the first character matched
     end-pos - a position struct for the character after the last
@@ -181,7 +193,7 @@ manual section 3.4
    exception (other than a special-comment or break exception) while
    trying to read a special value.  This indicates that the special
    value is internally malformed (such as an embedded XML editor with
-   malformed syntax).  If no special-error rule is present, the the 
+   malformed syntax).  If no special-error rule is present, the
    lexer itself will raise the exception.
 
 
@@ -255,6 +267,34 @@ The file ${PLTHOME}/collects/syntax-color/scheme-lexer.ss contains a
 lexer for Scheme, as extended by mzscheme.  The files in
 ${PLTHOME}/collects/parser-tools/examples contain simpler example
 lexers.
+
+
+
+
+_lex-sre.ss_
+The lex-sre.ss module exports the following regular expression
+operators:
+> (* re ...)       repetition of regexps 0 or more times 
+> (+ re ...)       repetition of regexps 1 or more times 
+> (? re ...)       0 or 1 occurrence of regexps
+> (= natural-number re ...)
+                   exactly n occurences of regexps
+> (>= natural-number re ...)
+                   at least n occurences of regexps
+> (** natural-number natural-number-or-#f-or-+inf.0 re ...)
+                   between m and n of regexps, inclusive
+                     #f and +inf.0 both indicate no upper limit
+> (or re ...)      union 
+> (: re ...)       concatenation 
+> (seq re ...)     concatenation
+> (& re ...)       intersection
+> (~ re ...)       character set complement, each given regexp must match
+                     exactly one character
+> (- re re ...)    character set difference, each given regexp must match
+                     exactly one character
+> (/ char-or-string ...)
+                   character ranges, matches characters between successive 
+                     pairs of chars.
 
 
 _yacc.ss_

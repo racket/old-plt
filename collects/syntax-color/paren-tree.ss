@@ -4,7 +4,6 @@
   
   (provide paren-tree%)
   
-  
   (define paren-tree%
     (class object%
 
@@ -30,80 +29,69 @@
         (equal? (hash-table-get open-matches-table open (lambda () #f))
                 close))
 
-      (define tree #f)
-      (define invalid-tree #f)
+      (define tree (new token-tree%))
+      (define invalid-tree (new token-tree%))
       
       (define (split tree pos)
-        (cond
-          (tree
-           (let ((t (search! tree pos)))
-             (cond
-               ((= pos (node-left-subtree-length t))
-                (values (node-left t)
-                        (begin
-                          (set-node-left! t #f)
-                          (set-node-left-subtree-length! t 0)
-                          t)))
-               (else
-                (values (make-node (- pos (node-left-subtree-length t))
-                                   (node-token-data t)
-                                   (node-left-subtree-length t)
-                                   (node-left t)
-                                   #f)
-                        (make-node (- (+ (node-token-length t) (node-left-subtree-length t))
-                                      pos)
-                                   (cons #f #f)
-                                   0
-                                   #f
-                                   (node-right t)))))))
-          (else (values #f #f))))
-
+        (send tree search! pos)
+        (let ((token-start (send tree get-root-start-position)))
+          (cond
+            ((send tree is-empty?)
+             (values (new token-tree%) (new token-tree%)))
+            ((= pos token-start)
+             (send tree split-before))
+            (else
+             (let-values (((first next) (send tree split-after)))
+               (send first add-to-root-length (- pos (send first get-root-end-position)))
+               (insert-first! next (new token-tree%
+                                        (length (- (send first get-root-end-position) pos))
+                                        (data (cons #f 0))))
+               (values first next))))))
       
       (define/public (split-tree pos)
         (let-values (((l r) (split tree pos)))
           (set! tree l)
           (set! invalid-tree r)))
-        
+      
       (define/public (merge-tree num-to-keep)
-        (set! invalid-tree (search-max! invalid-tree null))
-        (let-values (((bad good) (split invalid-tree (- (+ (node-token-length invalid-tree)
-                                                           (node-left-subtree-length invalid-tree))
-                                                        num-to-keep))))
-          (when (not (or (is-open? (car (node-token-data good)))
-                         (is-close? (car (node-token-data good)))))
-            (add-token #f (node-token-length good))
-            (set! good (node-right good)))
-          (set! tree (insert-after! tree good))
-          (set! invalid-tree #f)))
+        (send invalid-tree search-max!)
+        (let*-values (((bad good) (split invalid-tree (- (send invalid-tree get-root-end-position)
+                                                         num-to-keep)))
+                      ((data) (send good get-root-data)))
+          (when (and data
+                     (not (or (is-open? (car data))
+                              (is-close? (car data)))))
+            (add-token #f (send good get-root-length))
+            (send good remove-root!))
+          (insert-last! tree good)))
       
       (define/public (add-token type length)
         (cond
-          ((or (not tree) (is-open? type) (is-close? type))
-           (set! tree (insert-after! tree (make-node length (cons type length) 0 #f #f))))
+          ((or (send tree is-empty?) (is-open? type) (is-close? type))
+           (insert-last! tree (new token-tree% (length length) (data (cons type length)))))
           (else
-           (set! tree (search-max! tree null))
-           (set-node-token-length! tree (+ (node-token-length tree) length)))))
+           (send tree search-max!)
+           (send tree add-to-root-length length))))
       
       (define/public (match-forward pos)
-        (set! tree (search! tree pos))
+        (send tree search! pos)
         (cond
-          ((and tree
-                (node-token-data tree)
-                (is-open? (car (node-token-data tree)))
-                (= (node-left-subtree-length tree) pos))
+          ((and (not (send tree is-empty?))
+                (is-open? (car (send tree get-root-data)))
+                (= (send tree get-root-start-position) pos))
            (let ((end
                   (let/ec ret
-                    (do-match-forward (node-right tree)
-                                      (+ (node-left-subtree-length tree) (node-token-length tree))
-                                      (list (car (node-token-data tree)))
+                    (do-match-forward (node-right (send tree get-root))
+                                      (send tree get-root-end-position)
+                                      (list (car (send tree get-root-data)))
                                       ret)
                     #f)))
              (cond
                (end
                 (values pos end #f))
                (else
-                (set! tree (search! tree pos))
-                (values pos (+ pos (cdr (node-token-data tree))) #t)))))
+                (send tree search! pos)
+                (values pos (+ pos (cdr (send tree get-root-data))) #t)))))
           (else
            (values #f #f #f))))
         
@@ -124,14 +112,16 @@
              (cond
                ((null? new-stack)
                 (let ((loc (+ start (cdr (node-token-data node)))))
-                  (set! tree (search! tree loc))
                   (escape loc)))
                (else
                 (do-match-forward (node-right node) (+ start (node-token-length node)) new-stack escape)))))))
       
+      (define/public (match-backward pos)
+        (values #f #f #f))
+      
       (define/public (print)
         (for-each (lambda (x) (display (cons (vector-ref x 0) (car (vector-ref x 2)))))
-                  (to-list tree))
+                  (send tree to-list))
         (newline))
       
       (super-instantiate ())

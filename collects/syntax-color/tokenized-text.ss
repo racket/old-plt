@@ -15,11 +15,11 @@
       ;; ---------------------- Lexing state ----------------------------------
       
       ;; The tree of valid tokens, starting at start-pos
-      (define tokens #f)
+      (define tokens (new token-tree%))
       
       ;; The tree of tokens that have been invalidated by an edit
       ;; but might still be valid.
-      (define invalid-tokens #f)
+      (define invalid-tokens (new token-tree%))
       
       ;; The position right before the invalid-tokens tree
       (define invalid-tokens-start +inf.0)
@@ -65,8 +65,8 @@
                get-style-list in-edit-sequence? get-start-position get-end-position
                local-edit-sequence? get-styles-fixed has-focus?)
       (define/public (reset-tokens)
-        (set! tokens #f)
-        (set! invalid-tokens #f)
+        (send tokens reset-tree)
+        (send invalid-tokens reset-tree)
         (set! invalid-tokens-start +inf.0)
         (set! up-to-date? #t)
         (set! parens (new paren-tree% (matches pairs)))
@@ -85,12 +85,13 @@
           (color)))
       
       (define (sync-invalid)
-        (when (and invalid-tokens (< invalid-tokens-start current-pos))
-          (let ((min-tree (search-min! invalid-tokens null)))
-            (set! invalid-tokens (node-right min-tree))
-            (set! invalid-tokens-start (+ invalid-tokens-start
-                                          (node-token-length min-tree)))
-            (sync-invalid))))
+        (when (and (not (send invalid-tokens is-empty?))
+                   (< invalid-tokens-start current-pos))
+          (send invalid-tokens search-min!)
+          (let ((length (send invalid-tokens get-root-length)))
+            (send invalid-tokens remove-root!)
+            (set! invalid-tokens-start (+ invalid-tokens-start length)))
+          (sync-invalid)))
       
       ;; re-tokenize should be called with breaks enabled and exit with breaks disabled
       ;; re-tokenize should be called when lock is not held.  When it exits, the lock
@@ -118,15 +119,14 @@
                                  (+ in-start-pos (sub1 new-token-end))
                                  #f))
                               colors)))
-              (set! tokens (insert-after! tokens (make-node len data 0 #f #f)))
+              (insert-last! tokens (new token-tree% (length len) (data data)))
               (send parens add-token data len)
               (cond
-                ((and invalid-tokens (= invalid-tokens-start current-pos))
-                 (set! invalid-tokens (search-max! invalid-tokens null))
-                 (send parens merge-tree (+ (node-token-length invalid-tokens)
-                                            (node-left-subtree-length invalid-tokens)))
-                 (set! tokens (insert-after! tokens (search-min! invalid-tokens null)))
-                 (set! invalid-tokens #f)
+                ((and (not (send invalid-tokens is-empty?))
+                      (= invalid-tokens-start current-pos))
+                 (send invalid-tokens search-max!)
+                 (send parens merge-tree (send invalid-tokens get-root-end-position))
+                 (insert-last! tokens invalid-tokens)
                  (set! invalid-tokens-start +inf.0))
                 (else
                  (semaphore-post lock)
@@ -140,32 +140,34 @@
           (modify)
           (cond
             (up-to-date?
+             (send tokens search! (- edit-start-pos start-pos))
              (let-values (((orig-token-start orig-token-end valid-tree invalid-tree)
-                           (split tokens (- edit-start-pos start-pos))))
+                           (send tokens split)))
                (send parens split-tree orig-token-start)
                (set! invalid-tokens invalid-tree)
                (set! tokens valid-tree)
-               (set! invalid-tokens-start 
-                     (cond
-                       (invalid-tree (+ start-pos orig-token-end change-length))
-                       (else +inf.0)))
+               (set! invalid-tokens-start (+ start-pos orig-token-end change-length))
                (set! current-pos (+ start-pos orig-token-start))
                (set! up-to-date? #f)
                (colorer-callback)))
             ((>= edit-start-pos invalid-tokens-start)
+             (printf "here1~n")
+             (send invalid-tokens search! (- edit-start-pos invalid-tokens-start))
              (let-values (((tok-start tok-end valid-tree invalid-tree)
-                           (split invalid-tokens (- edit-start-pos invalid-tokens-start))))
+                           (send invalid-tokens split)))
                (set! invalid-tokens invalid-tree)
                (set! invalid-tokens-start (+ invalid-tokens-start tok-end change-length))))
             ((>= edit-start-pos current-pos)
+             (printf "here2~n")
              (set! invalid-tokens-start (+ change-length invalid-tokens-start)))
             (else
+             (printf "here3~n") 
+             (send tokens search! (- edit-start-pos start-pos))
              (let-values (((tok-start tok-end valid-tree invalid-tree)
-                           (split tokens (- edit-start-pos start-pos))))
+                           (send tokens split)))
                (set! tokens valid-tree)
                (set! invalid-tokens-start (+ change-length invalid-tokens-start))
                (set! current-pos (+ start-pos tok-start)))))))
-
 
       (define (colorer-callback)
 	(unless (in-edit-sequence?)

@@ -6927,7 +6927,7 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
 #ifndef __MAC_OS__
   if (isatty(fileno(stdin))) {
     fputs("SisterPersist ODBC extension for PLT Scheme\n"
-	  "Copyright (c) 1999-2001 PLT (Paul Steckler)\n",stderr);
+	  "Copyright (c) 1999-2002 PLT (Paul Steckler)\n",stderr);
   }
 #endif
 

@@ -498,3 +498,9 @@
    wx:media-pasteboard%
    wx:font-name-directory%
    wx:icon%))
+
+(define-macro wxr:class*
+  (match-lambda* 
+    [(this (('super super)) arglist . clauses)
+      `(class*/names (,this super-init) ,super () ,arglist ,@clauses)]))
+

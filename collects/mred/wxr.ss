@@ -643,10 +643,10 @@
   (type: num))
 
  (define wx:object%
-  (class* this ((super null)) () (public)))
+  (wxr:class* this ((super null)) () (public)))
 
  (define wx:dc%
-  (class* this
+  (wxr:class* this
    ((super wx:object%))
    ()
    (public
@@ -757,7 +757,7 @@
     (get-font (type: (-> wxfont-object))))))
 
  (define wx:keymap%
-  (class* this
+  (wxr:class* this
    ((super wx:object%))
    ()
    (public
@@ -821,7 +821,7 @@
     (remove-grab-mouse-function (type: (-> void))))))
 
  (define wx:menu%
-  (class* this
+  (wxr:class* this
    ((super wx:object%))
    ((init1 (type: str))
     (init2 (type: (wxmenu-object wxevent-object -> void))))
@@ -846,7 +846,7 @@
     (get-title (type: (-> str))))))
 
  (define wx:brush-list%
-  (class* this
+  (wxr:class* this
    ((super wx:object%))
    ()
    (public
@@ -857,7 +857,7 @@
     (remove-brush (type: (wxbrush-object -> void))))))
 
  (define wx:clipboard-client%
-  (class* this
+  (wxr:class* this
    ((super wx:object%))
    ()
    (public
@@ -867,7 +867,7 @@
     (get-types (type: (-> str))))))
 
  (define wx:event%
-  (class* this
+  (wxr:class* this
    ((super wx:object%))
    ()
    (public
@@ -881,7 +881,7 @@
      (type: (union (num -> void) (-> num)))))))
 
  (define wx:printer-dc%
-  (class* this
+  (wxr:class* this
    ((super wx:dc%))
    (init1-arg-str
     init2-arg-str
@@ -890,7 +890,7 @@
    (public)))
 
  (define wx:window%
-  (class* this
+  (wxr:class* this
    ((super wx:object%))
    ()
    (public
@@ -944,7 +944,7 @@
 	     void))))))
 
  (define wx:canvas%
-  (class* this
+  (wxr:class* this
    ((super wx:window%))
    (init1-arg-wxframe-object-or-init1-arg-wxpanel-object
     (init2 (type: num))
@@ -1058,7 +1058,7 @@
     (get-dc (type: (-> wxcanvasdc-object))))))
 
  (define wx:snip-class-list%
-  (class* this
+  (wxr:class* this
    ((super wx:object%))
    ()
    (public
@@ -1070,7 +1070,7 @@
     (number (type: (-> num))))))
 
  (define wx:item%
-  (class* this
+  (wxr:class* this
    ((super wx:window%))
    ()
    (public
@@ -1097,7 +1097,7 @@
 	     (wxcolour-object -> void)))))))
 
  (define wx:canvas-dc%
-  (class* this
+  (wxr:class* this
    ((super wx:dc%))
    ()
    (public
@@ -1109,7 +1109,7 @@
      (type: (num num (union null wxcolour-object) -> void))))))
 
  (define wx:media-stream-out-base%
-  (class* this
+  (wxr:class* this
    ((super wx:object%))
    ()
    (public
@@ -1119,7 +1119,7 @@
     (bad? (type: (-> bool))))))
 
  (define wx:panel%
-  (class* this
+  (wxr:class* this
    ((super wx:canvas%))
    (init1-arg-wxframe-object-or-init1-arg-wxpanel-object
     (init2 (type: num))
@@ -1179,7 +1179,7 @@
      (type: (wxcolour-object -> void))))))
 
  (define wx:style-list%
-  (class* this
+  (wxr:class* this
    ((super wx:object%))
    ()
    (public
@@ -1216,7 +1216,7 @@
     (number (type: (-> num))))))
 
  (define wx:snip%
-  (class* this
+  (wxr:class* this
    ((super wx:object%))
    ()
    (public
@@ -1303,7 +1303,7 @@
     (get-flags (type: (-> num))))))
 
  (define wx:media-stream-in-base%
-  (class* this
+  (wxr:class* this
    ((super wx:object%))
    ()
    (public
@@ -1314,7 +1314,7 @@
     (bad? (type: (-> bool))))))
 
  (define wx:slider%
-  (class* this
+  (wxr:class* this
    ((super wx:item%))
    (init1-arg-wxpanel-object
  |init2-arg-(wxslider-object wxevent-object -> void)|
@@ -1332,7 +1332,7 @@
     (set-value (type: (num -> void))))))
 
  (define wx:list-box%
-  (class* this
+  (wxr:class* this
    ((super wx:item%))
    (init1-arg-wxpanel-object
  |init2-arg-(wxlistbox-object wxevent-object -> void)|
@@ -1369,13 +1369,13 @@
     (find-string (type: (str -> num))))))
 
  (define wx:media-stream-out-string-base%
-  (class* this
+  (wxr:class* this
    ((super wx:media-stream-out-base%))
    ()
    (public (get-string (type: (-> str))))))
 
  (define wx:group-box%
-  (class* this
+  (wxr:class* this
    ((super wx:item%))
    (init1-arg-wxpanel-object
     init2-arg-str
@@ -1388,7 +1388,7 @@
    (public)))
 
  (define wx:choice%
-  (class* this
+  (wxr:class* this
    ((super wx:item%))
    (init1-arg-wxpanel-object
  |init2-arg-(wxchoice-object wxevent-object -> void)|
@@ -1413,7 +1413,7 @@
     (find-string (type: (str -> num))))))
 
  (define wx:clipboard%
-  (class* this
+  (wxr:class* this
    ((super wx:object%))
    ()
    (public
@@ -1426,7 +1426,7 @@
     (get-clipboard-string (type: (num -> str))))))
 
  (define wx:memory-dc%
-  (class* this
+  (wxr:class* this
    ((super wx:canvas-dc%))
    (init1-arg-wxcanvasdc-object)
    (public
@@ -1434,7 +1434,7 @@
      (type: ((union null wxbitmap-object) -> void))))))
 
  (define wx:media-snip%
-  (class* this
+  (wxr:class* this
    ((super wx:snip%))
    ((init1 (type: (union null wxmediabuffer-object)))
     (init2 (type: bool))
@@ -1534,7 +1534,7 @@
     (own-caret (type: (bool -> void))))))
 
  (define wx:message%
-  (class* this
+  (wxr:class* this
    ((super wx:item%))
    (init1-arg-wxpanel-object
     init2-arg-str
@@ -1545,7 +1545,7 @@
    (public)))
 
  (define wx:cursor%
-  (class* this
+  (wxr:class* this
    ((super wx:object%))
    (init1-arg-str-or-init1-arg-num
     (init2 (type: num))
@@ -1554,7 +1554,7 @@
    (public (ok? (type: (-> bool))))))
 
  (define wx:button%
-  (class* this
+  (wxr:class* this
    ((super wx:item%))
    (init1-arg-wxpanel-object-or-init1-arg-wxpanel-object
  |init2-arg-(wxbutton-object wxevent-object -> void)-or-init2-arg-(wxbutton-object wxevent-object -> void)|
@@ -1572,7 +1572,7 @@
       (type: (str -> void)))))))
 
  (define wx:radio-box%
-  (class* this
+  (wxr:class* this
    ((super wx:item%))
    (init1-arg-wxpanel-object-or-init1-arg-wxpanel-object
  |init2-arg-(wxradiobox-object wxevent-object -> void)-or-init2-arg-(wxradiobox-object wxevent-object -> void)|
@@ -1595,13 +1595,13 @@
     (find-string (type: (str -> num))))))
 
  (define wx:media-stream-in-string-base%
-  (class* this
+  (wxr:class* this
    ((super wx:media-stream-in-base%))
    (init1-arg-str)
    (public)))
 
  (define wx:timer%
-  (class* this
+  (wxr:class* this
    ((super wx:object%))
    ()
    (public
@@ -1611,7 +1611,7 @@
     (stop (type: (-> void))))))
 
  (define wx:text-window%
-  (class* this
+  (wxr:class* this
    ((super wx:window%))
    (init1-arg-wxframe-object-or-init1-arg-wxpanel-object
     (init2 (type: num))
@@ -1657,7 +1657,7 @@
     (on-char (type: (wxkeyevent-object -> void))))))
 
  (define wx:dialog-box%
-  (class* this
+  (wxr:class* this
    ((super wx:panel%))
    (|init1-arg-(union null wxwindow-object)|
     init2-arg-str
@@ -1685,7 +1685,7 @@
     (on-kill-focus (type: (-> void))))))
 
  (define wx:brush%
-  (class* this
+  (wxr:class* this
    ((super wx:object%))
    (init1-arg-wxcolour-object-or-init1-arg-str
     init2-arg-num-or-init2-arg-num)
@@ -1701,7 +1701,7 @@
     (get-stipple (type: (-> wxbitmap-object))))))
 
  (define wx:snip-class%
-  (class* this
+  (wxr:class* this
    ((super wx:object%))
    ()
    (public
@@ -1720,7 +1720,7 @@
     (write-done (type: (-> void))))))
 
  (define wx:media-buffer%
-  (class* this
+  (wxr:class* this
    ((super wx:object%))
    ()
    (public
@@ -1913,7 +1913,7 @@
        (lock (type: (bool -> void))))))
 
  (define wx:text%
-  (class* this
+  (wxr:class* this
    ((super wx:item%))
    (init1-arg-wxpanel-object
  |init2-arg-(wxtext-object wxevent-object -> void)|
@@ -1935,7 +1935,7 @@
     (on-char (type: (wxkeyevent-object -> void))))))
 
  (define wx:int-point%
-  (class* this
+  (wxr:class* this
    ((super wx:object%))
    (init1-arg-num init2-arg-num)
    (public
@@ -1943,7 +1943,7 @@
     (get-x (union (type: (num -> void)) (type: (-> num)))))))
 
  (define wx:media-edit%
-  (class* this
+  (wxr:class* this
    ((super wx:media-buffer%))
    ((init1 (type: num))
     (init2 (type: (listof num))))
@@ -2345,7 +2345,7 @@
      (type: (str optional bool -> void))))))
 
  (define wx:meta-file%
-  (class* this
+  (wxr:class* this
    ((super wx:object%))
    ((init1 (type: str)))
    (public
@@ -2355,7 +2355,7 @@
     (play (type: (wxdc-object -> void))))))
 
  (define wx:pen%
-  (class* this
+  (wxr:class* this
    ((super wx:object%))
    (init1-arg-wxcolour-object-or-init1-arg-str
     init2-arg-num-or-init2-arg-num
@@ -2378,7 +2378,7 @@
     (get-stipple (type: (-> wxbitmap-object))))))
 
  (define wx:point%
-  (class* this
+  (wxr:class* this
    ((super wx:object%))
    (init1-arg-num init2-arg-num)
    (public
@@ -2386,7 +2386,7 @@
     (get-x (union (type: (num -> void)) (type: (-> num)))))))
 
  (define wx:multi-text%
-  (class* this
+  (wxr:class* this
    ((super wx:text%))
    (init1-arg-wxpanel-object
  |init2-arg-(wxmultitext-object wxevent-object -> void)|
@@ -2403,7 +2403,7 @@
     (on-char (type: (wxkeyevent-object -> void))))))
 
  (define wx:font%
-  (class* this
+  (wxr:class* this
    ((super wx:object%))
    (init1-arg-num-or-init1-arg-num
     init2-arg-num-or-init2-arg-str
@@ -2420,7 +2420,7 @@
     (get-font-id (type: (-> num))))))
 
  (define wx:pen-list%
-  (class* this
+  (wxr:class* this
    ((super wx:object%))
    ()
    (public
@@ -2430,7 +2430,7 @@
       (type: (str num num -> wxpen-object)))))))
 
  (define wx:media-stream-out%
-  (class* this
+  (wxr:class* this
    ((super wx:object%))
    (init1-arg-wxmediastreamoutbase-object)
    (public
@@ -2448,7 +2448,7 @@
 	    (type: (num -> wxmediastreamout-object)))))))))
 
  (define wx:media-wordbreak-map%
-  (class* this
+  (wxr:class* this
    ((super wx:object%))
    ()
    (public
@@ -2458,7 +2458,7 @@
     (get-map (type: (num -> num))))))
 
  (define wx:style%
-  (class* this
+  (wxr:class* this
    ((super wx:object%))
    ()
    (public
@@ -2486,7 +2486,7 @@
     (get-font (type: (-> wxfont-object))))))
 
  (define wx:tool-bar%
-  (class* this
+  (wxr:class* this
    ((super wx:canvas%))
    (init1-arg-wxframe-object
     (init2 (type: num))
@@ -2524,7 +2524,7 @@
     (toggle-tool (type: (num bool -> void))))))
 
  (define wx:gauge%
-  (class* this
+  (wxr:class* this
    ((super wx:item%))
    (init1-arg-wxpanel-object
     init2-arg-str
@@ -2540,7 +2540,7 @@
     (set-value (type: (num -> void))))))
 
  (define wx:snip-admin%
-  (class* this
+  (wxr:class* this
    ((super wx:object%))
    ()
    (public
@@ -2571,7 +2571,7 @@
     (get-dc (type: (-> wxdc-object))))))
 
  (define wx:key-event%
-  (class* this
+  (wxr:class* this
    ((super wx:event%))
    (init1-arg-num)
    (public
@@ -2591,7 +2591,7 @@
      (union (type: (bool -> void)) (type: (-> bool)))))))
 
  (define wx:colour-database%
-  (class* this
+  (wxr:class* this
    ((super wx:object%))
    ()
    (public
@@ -2601,7 +2601,7 @@
     (find-name (type: (wxcolour-object -> str))))))
 
  (define wx:media-stream-in%
-  (class* this
+  (wxr:class* this
    ((super wx:object%))
    (init1-arg-wxmediastreaminbase-object)
    (public
@@ -2621,10 +2621,10 @@
 	  (type: ((box num) -> wxmediastreamin-object)))))))
 
  (define wx:colour-map%
-  (class* this ((super wx:object%)) () (public)))
+  (wxr:class* this ((super wx:object%)) () (public)))
 
  (define wx:frame%
-  (class* this
+  (wxr:class* this
    ((super wx:window%))
    (|init1-arg-(union null wxframe-object)|
     init2-arg-str
@@ -2668,7 +2668,7 @@
     (maximize (type: (bool -> void))))))
 
  (define wx:image-snip%
-  (class* this
+  (wxr:class* this
    ((super wx:snip%))
    ((init1 (type: str))
     (init2 (type: num))
@@ -2751,7 +2751,7 @@
     (own-caret (type: (bool -> void))))))
 
  (define wx:colour%
-  (class* this
+  (wxr:class* this
    ((super wx:object%))
    (init1-arg-num-or-init1-arg-str
     init2-arg-num
@@ -2766,7 +2766,7 @@
     (set (type: (num num num -> void))))))
 
  (define wx:style-delta%
-  (class* this
+  (wxr:class* this
    ((super wx:object%))
    ((init1 (type: num)) (init2 (type: num)))
    (public
@@ -2821,7 +2821,7 @@
       (type: (wxcolour-object -> wxstyledelta-object)))))))
 
  (define wx:text-snip%
-  (class* this
+  (wxr:class* this
    ((super wx:snip%))
    ((init1 (type: num)))
    (public
@@ -2896,7 +2896,7 @@
     (own-caret (type: (bool -> void))))))
 
  (define wx:add-colour%
-  (class* this
+  (wxr:class* this
    ((super wx:object%))
    ()
    (public
@@ -2907,7 +2907,7 @@
     (get-r (union (type: (num -> void)) (type: (-> num)))))))
 
  (define wx:tab-snip%
-  (class* this
+  (wxr:class* this
    ((super wx:text-snip%))
    ()
    (public
@@ -2980,7 +2980,7 @@
     (own-caret (type: (bool -> void))))))
 
  (define wx:buffer-data-class-list%
-  (class* this
+  (wxr:class* this
    ((super wx:object%))
    ()
    (public
@@ -2992,7 +2992,7 @@
     (number (type: (-> num))))))
 
  (define wx:mult-colour%
-  (class* this
+  (wxr:class* this
    ((super wx:object%))
    ()
    (public
@@ -3003,7 +3003,7 @@
     (get-r (union (type: (num -> void)) (type: (-> num)))))))
 
  (define wx:media-canvas%
-  (class* this
+  (wxr:class* this
    ((super wx:canvas%))
    (init1-arg-wxframe-object-or-init1-arg-wxpanel-object
     (init2 (type: num))
@@ -3046,7 +3046,7 @@
     (on-char (type: (wxkeyevent-object -> void))))))
 
  (define wx:command-event%
-  (class* this
+  (wxr:class* this
    ((super wx:event%))
    (init1-arg-num)
    (public
@@ -3062,7 +3062,7 @@
     (checked? (type: (-> bool))))))
 
  (define wx:media-admin%
-  (class* this
+  (wxr:class* this
    ((super wx:object%))
    ()
    (public
@@ -3098,7 +3098,7 @@
 	     void))))))
 
  (define wx:mouse-event%
-  (class* this
+  (wxr:class* this
    ((super wx:event%))
    (init1-arg-num)
    (public
@@ -3131,19 +3131,19 @@
     (dragging? (type: (-> bool))))))
 
  (define wx:post-script-dc%
-  (class* this
+  (wxr:class* this
    ((super wx:dc%))
    (init1-arg-str (init2 (type: bool)))
    (public)))
 
  (define wx:meta-file-dc%
-  (class* this
+  (wxr:class* this
    ((super wx:dc%))
    ((init1 (type: str)))
    (public)))
 
  (define wx:bitmap%
-  (class* this
+  (wxr:class* this
    ((super wx:object%))
    (|init1-arg-(listof char)-or-init1-arg-num-or-init1-arg-str|
     (init2 (type: num))
@@ -3165,7 +3165,7 @@
     (get-depth (type: (-> num))))))
 
  (define wx:menu-bar%
-  (class* this
+  (wxr:class* this
    ((super wx:object%))
    (|init1-arg-(listof wxmenu-object)|
  |init2-arg-(listof str)|)
@@ -3188,7 +3188,7 @@
     (get-title (type: (-> str))))))
 
  (define wx:font-list%
-  (class* this
+  (wxr:class* this
    ((super wx:object%))
    ()
    (public
@@ -3205,7 +3205,7 @@
 	      wxfont-object)))))))
 
  (define wx:button-bar%
-  (class* this
+  (wxr:class* this
    ((super wx:tool-bar%))
    (init1-arg-wxframe-object
     (init2 (type: num))
@@ -3221,7 +3221,7 @@
     (get-default-button-height (type: (-> num))))))
 
  (define wx:buffer-data%
-  (class* this
+  (wxr:class* this
    ((super wx:object%))
    ()
    (public
@@ -3234,7 +3234,7 @@
       (type: (-> (union null wxbufferdata-object))))))))
 
  (define wx:check-box%
-  (class* this
+  (wxr:class* this
    ((super wx:item%))
    (init1-arg-wxpanel-object-or-init1-arg-wxpanel-object
  |init2-arg-(wxcheckbox-object wxevent-object -> void)-or-init2-arg-(wxcheckbox-object wxevent-object -> void)|
@@ -3253,10 +3253,10 @@
       (type: (str -> void)))))))
 
  (define wx:tool-bar-tool%
-  (class* this ((super wx:canvas%)) () (public)))
+  (wxr:class* this ((super wx:canvas%)) () (public)))
 
  (define wx:buffer-data-class%
-  (class* this
+  (wxr:class* this
    ((super wx:object%))
    ()
    (public
@@ -3269,7 +3269,7 @@
      (union (type: (bool -> void)) (type: (-> bool)))))))
 
  (define wx:media-pasteboard%
-  (class* this
+  (wxr:class* this
    ((super wx:media-buffer%))
    ()
    (public
@@ -3442,7 +3442,7 @@
         (type: (str optional bool -> void))))))
 
  (define wx:font-name-directory%
-  (class* this
+  (wxr:class* this
    ((super wx:object%))
    ()
    (public
@@ -3458,7 +3458,7 @@
     (get-font-id (type: (str -> num))))))
 
  (define wx:icon%
-  (class* this     
+  (wxr:class* this     
    ((super wx:object%))
    (init1-arg-str (init2 (type: num)))
    (public (ok? (type: (-> bool)))))))

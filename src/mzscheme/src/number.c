@@ -181,12 +181,12 @@ scheme_init_number (Scheme_Env *env)
   scheme_nzerod = scheme_make_double(-1.0);
   SCHEME_DBL_VAL(scheme_nzerod) = scheme_floating_point_nzero;
   
-  scheme_pi = scheme_make_double(atan2(0, -1));
-  scheme_half_pi = scheme_make_double(atan2(0, -1)/2);
+  scheme_pi = scheme_make_double(atan2(0.0, -1.0));
+  scheme_half_pi = scheme_make_double(atan2(0.0, -1.0)/2);
 #ifdef MZ_USE_SINGLE_FLOATS
   scheme_zerof = scheme_make_float(0.0f);
   scheme_nzerof = scheme_make_float(-0.0f);
-  scheme_single_pi = scheme_make_float((float)atan2(0, -1));
+  scheme_single_pi = scheme_make_float((float)atan2(0.0, -1.0));
 #endif
   scheme_plus_i = scheme_make_complex(scheme_make_integer(0), scheme_make_integer(1));
   scheme_minus_i = scheme_make_complex(scheme_make_integer(0), scheme_make_integer(-1));

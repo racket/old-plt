@@ -61,7 +61,7 @@ void scheme_bignum_use_fuel(long n);
 # define FIRST_BIT_MASK 0x8000000000000000
 # define SECOND_BIT_MASK 0x4000000000000000
 # define MAX_TWO_BIT_MASK 0xC000000000000000
-# define SMALL_NUM_STR_LEN 20 /* conservatively low is OK */
+# define SMALL_NUM_STR_LEN 19 /* conservatively low is OK */
 #else
 # define FIRST_BIT_MASK 0x80000000
 # define SECOND_BIT_MASK 0x40000000

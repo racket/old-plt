@@ -277,29 +277,45 @@
 	    [edit-menu:after-std-items (lambda (edit-menu) (void))]
 
 	    [file-menu:open (lambda () (void))]
-	    [file-menu:open-string "Open..."]
+	    [file-menu:open-string "&Open..."]
 
 	    [file-menu:new (lambda () (void))]
-	    [file-menu:new-string "New..."]
+	    [file-menu:new-string "&New..."]
 
 	    [file-menu:revert (lambda () (void))]
-	    [file-menu:revert-string "Revert"]
+	    [file-menu:revert-string "&Revert"]
 
 	    [file-menu:save (lambda () (void))]
-	    [file-menu:save-string "Save"]
+	    [file-menu:save-string "&Save"]
 
 	    [file-menu:save-as (lambda () (void))]
-	    [file-menu:save-as-string "Save As..."]
+	    [file-menu:save-as-string "Save &As..."]
 
 	    [file-menu:close (lambda () (void))]
-	    [file-menu:close-string "Close"]
+	    [file-menu:close-string "&Close"]
 
 	    [edit-menu:undo (lambda () (void))]
+	    [edit-menu:undo-string "&Undo"]
+
 	    [edit-menu:redo (lambda () (void))]
+	    [edit-menu:redo-string "&Redo"]
+
 	    [edit-menu:clear (lambda () (void))]
+	    [edit-menu:clear-string (if (eq? wx:platform 'windows)
+					"&Delete"
+					"Clear")]
+
 	    [edit-menu:copy (lambda () (void))]
+	    [edit-menu:copy-string "&Copy"]
+
 	    [edit-menu:cut (lambda () (void))]
+	    [edit-menu:cut-string "Cu&t"]
+
 	    [edit-menu:paste (lambda () (void))]
+	    [edit-menu:paste-string "&Paste"]
+
+	    [edit-menu:select-all (lambda () (void))]
+	    [edit-menu:select-all-string "Select A&ll"]
 
 	    [make-menu-bar
 	     (lambda ()
@@ -315,13 +331,14 @@
 		 (send file-menu append-item file-menu:close-string file-menu:close)
 		 (file-menu:after-close file-menu)
 		 
-		 (send edit-menu append-item "Undo" edit-menu:undo)
-		 (send edit-menu append-item "Redo" edit-menu:redo)
+		 (send edit-menu append-item edit-menu:undo-string edit-menu:undo)
+		 (send edit-menu append-item edit-menu:redo-string edit-menu:redo)
 		 (send edit-menu append-separator)
-		 (send edit-menu append-item "Clear" edit-menu:clear)
-		 (send edit-menu append-item "Copy" edit-menu:copy)
-		 (send edit-menu append-item "Cut" edit-menu:cut)
-		 (send edit-menu append-item "Paste" edit-menu:paste)
+		 (send edit-menu append-item edit-menu:cut-string edit-menu:cut)
+		 (send edit-menu append-item edit-menu:copy-string edit-menu:copy)
+		 (send edit-menu append-item edit-menu:paste-string edit-menu:paste)
+		 (send edit-menu append-item edit-menu:clear-string edit-menu:clear)
+		 (send edit-menu append-item edit-menu:select-all-string edit-menu:select-all)
 		 (edit-menu:after-std-items edit-menu)
 		 
 		 (let ([mb (super-make-menu-bar)])
@@ -578,6 +595,10 @@
 	    [edit-menu:clear (edit-menu:do wx:const-edit-clear)]
 	    [edit-menu:copy (edit-menu:do wx:const-edit-copy)]
 	    [edit-menu:paste (edit-menu:do wx:const-edit-paste)]
+	    [edit-menu:select-all
+	     (lambda ()
+	       (send (active-edit) set-position
+		     0 (send (active-edit) last-position)))]
 
 	    [edit-menu:after-std-items
 	     (lambda (edit-menu)

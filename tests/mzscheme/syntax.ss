@@ -218,6 +218,7 @@
 (syntax-test '(set! x . 1))
 (syntax-test '(set! x 1 . 2))
 
+(set!-values () (values))
 (set!-values (x) 9)
 (test 9 'set!-values x)
 (test (void) 'set!-values (set!-values () (values)))
@@ -393,6 +394,13 @@
 (test-values '(3 54) (lambda () (let-values ([(x y) (values 3 54)]) (values x y))))
 (test-values '(3 64) (lambda () (let*-values ([(x y) (values 3 64)]) (values x y))))
 (test-values '(3 74) (lambda () (letrec-values ([(x y) (values 3 74)]) (values x y))))
+
+(test 'one 'let-values (let-values ([() (values)]) 'one))
+(test 'two 'let*-values (let*-values ([() (values)]) 'two))
+(test 'three 'letrec-values (letrec-values ([() (values)]) 'three))
+(test 'onex 'let-values (let-values ([() (values)][() (values)]) 'onex))
+(test 'twox 'let*-values (let*-values ([() (values)][() (values)]) 'twox))
+(test 'threex 'letrec-values (letrec-values ([() (values)][() (values)]) 'threex))
 
 (test '(10 11) 'letrec-values (letrec-values ([(names kps)
 					       (letrec ([oloop 10])

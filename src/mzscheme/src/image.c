@@ -106,13 +106,13 @@ static Scheme_Object *dump_heap(int argc, Scheme_Object **argv)
 		       no_dumps);
       return NULL;
     } else if (scheme_file_open_count) {
-      scheme_raise_exn(MZEXN_CONTRACT,
+      scheme_raise_exn(MZEXN_FAIL_CONTRACT,
 		       "write-image-to-file: a file, process, or TCP port is open (%d)",
 		       scheme_file_open_count);
       return NULL;
 #ifdef UNIX_PROCESSES
     } else if (scheme_system_children) {
-      scheme_raise_exn(MZEXN_CONTRACT,
+      scheme_raise_exn(MZEXN_FAIL_CONTRACT,
 		       "write-image-to-file: a subprocess is still active");
       return NULL;
 #endif

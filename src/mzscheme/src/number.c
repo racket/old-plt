@@ -1410,7 +1410,7 @@ static Scheme_Object *complex_atan(Scheme_Object *c)
 #define GEN_ZERO_IS_ZERO() if (o == zeroi) return zeroi;
 #define GEN_ZERO_IS_ONE() if (o == zeroi) return scheme_make_integer(1);
 #define GEN_ONE_IS_ZERO() if (o == scheme_exact_one) return zeroi;
-#define GEN_ONE_IS_ZERO_AND_ZERO_IS_ERR() if (o == scheme_exact_one) return zeroi; else if (o == zeroi) scheme_raise_exn(MZEXN_CONTRACT_DIVIDE_BY_ZERO, "log: undefined for 0");
+#define GEN_ONE_IS_ZERO_AND_ZERO_IS_ERR() if (o == scheme_exact_one) return zeroi; else if (o == zeroi) scheme_raise_exn(MZEXN_FAIL_CONTRACT_DIVIDE_BY_ZERO, "log: undefined for 0");
 #define GEN_ZERO_IS_HALF_PI() if (o == zeroi) return scheme_half_pi;
 
 #define NEVER_RESORT_TO_COMPLEX(d) 0
@@ -1510,7 +1510,7 @@ atan_prim (int argc, Scheme_Object *argv[])
     n2 = argv[1];
 
     if ((n1 == zeroi) && (n2 == zeroi)) {
-      scheme_raise_exn(MZEXN_CONTRACT_DIVIDE_BY_ZERO,
+      scheme_raise_exn(MZEXN_FAIL_CONTRACT_DIVIDE_BY_ZERO,
 		       "atan: undefined for 0 and 0");
       ESCAPED_BEFORE_HERE;
     }
@@ -1854,7 +1854,7 @@ scheme_expt(int argc, Scheme_Object *argv[])
     }
     
     if (neg) {
-      scheme_raise_exn(MZEXN_CONTRACT_DIVIDE_BY_ZERO,
+      scheme_raise_exn(MZEXN_FAIL_CONTRACT_DIVIDE_BY_ZERO,
 		       "expt: undefined for 0 and %s",
 		       scheme_make_provided_string(e, 0, NULL));
       ESCAPED_BEFORE_HERE;
@@ -2111,7 +2111,7 @@ static Scheme_Object *angle(int argc, Scheme_Object *argv[])
       else
 	return scheme_pi;
     } else if (o == zeroi) {
-      scheme_raise_exn(MZEXN_CONTRACT_DIVIDE_BY_ZERO,
+      scheme_raise_exn(MZEXN_FAIL_CONTRACT_DIVIDE_BY_ZERO,
 		       "angle: undefined for 0");
       ESCAPED_BEFORE_HERE;
     } else if (SCHEME_TRUEP(scheme_positive_p(1, argv)))

@@ -2605,7 +2605,7 @@ scheme_do_open_input_file(char *name, int offset, int argc, Scheme_Object *argv[
       long alen;
 
       astr = scheme_make_args_string("other ", i, argc, argv, &alen);
-      scheme_raise_exn(MZEXN_CONTRACT,
+      scheme_raise_exn(MZEXN_FAIL_CONTRACT,
 		       "%s: bad mode: %s%t", name,
 		       scheme_make_provided_string(argv[i], 1, NULL),
 		       astr, alen);
@@ -2616,7 +2616,7 @@ scheme_do_open_input_file(char *name, int offset, int argc, Scheme_Object *argv[
       long alen;
 
       astr = scheme_make_args_string("", -1, argc, argv, &alen);
-      scheme_raise_exn(MZEXN_CONTRACT,
+      scheme_raise_exn(MZEXN_FAIL_CONTRACT,
 		       "%s: conflicting or redundant "
 		       "file modes given%t", name,
 		       astr, alen);
@@ -2796,7 +2796,7 @@ scheme_do_open_output_file(char *name, int offset, int argc, Scheme_Object *argv
       long alen;
 
       astr = scheme_make_args_string("other ", i, argc, argv, &alen);
-      scheme_raise_exn(MZEXN_CONTRACT,
+      scheme_raise_exn(MZEXN_FAIL_CONTRACT,
 		       "%s: bad mode: %s%s", name,
 		       scheme_make_provided_string(argv[i], 1, NULL),
 		       astr, alen);
@@ -2807,7 +2807,7 @@ scheme_do_open_output_file(char *name, int offset, int argc, Scheme_Object *argv
       long alen;
 
       astr = scheme_make_args_string("", -1, argc, argv, &alen);
-      scheme_raise_exn(MZEXN_CONTRACT,
+      scheme_raise_exn(MZEXN_FAIL_CONTRACT,
 		       "%s: conflicting or redundant "
 		       "file modes given%t", name,
 		       astr, alen);
@@ -3185,14 +3185,14 @@ scheme_file_position(int argc, Scheme_Object *argv[])
       && !had_fd
 #endif
       && !is)
-    scheme_raise_exn(MZEXN_CONTRACT,
+    scheme_raise_exn(MZEXN_FAIL_CONTRACT,
 		     "file-position: setting position allowed for file-stream and string ports only;"
 		     " given %s and position %s",
 		     scheme_make_provided_string(argv[0], 2, NULL),
 		     scheme_make_provided_string(argv[1], 2, NULL));
 
   if ((argc > 1) && SCHEME_BIGNUMP(argv[1]))
-    scheme_raise_exn(MZEXN_CONTRACT,
+    scheme_raise_exn(MZEXN_FAIL_CONTRACT,
 		     "file-position: new position is too large: %s for port: %s",
 		     scheme_make_provided_string(argv[1], 2, NULL),
 		     scheme_make_provided_string(argv[0], 2, NULL));

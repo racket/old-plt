@@ -4,12 +4,12 @@
 
 enum {
   MZEXN,
-  MZEXN_CONTRACT,
-  MZEXN_CONTRACT_ARITY,
-  MZEXN_CONTRACT_DIVIDE_BY_ZERO,
-  MZEXN_CONTRACT_CONTINUATION,
-  MZEXN_CONTRACT_VARIABLE,
   MZEXN_FAIL,
+  MZEXN_FAIL_CONTRACT,
+  MZEXN_FAIL_CONTRACT_ARITY,
+  MZEXN_FAIL_CONTRACT_DIVIDE_BY_ZERO,
+  MZEXN_FAIL_CONTRACT_CONTINUATION,
+  MZEXN_FAIL_CONTRACT_VARIABLE,
   MZEXN_FAIL_SYNTAX,
   MZEXN_FAIL_READ,
   MZEXN_FAIL_READ_EOF,
@@ -35,20 +35,20 @@ static exn_rec exn_table[] = {
   { 2, NULL, NULL, 0, NULL, -1 },
   { 2, NULL, NULL, 0, NULL, 0 },
   { 2, NULL, NULL, 0, NULL, 1 },
-  { 2, NULL, NULL, 0, NULL, 1 },
-  { 2, NULL, NULL, 0, NULL, 1 },
+  { 2, NULL, NULL, 0, NULL, 2 },
+  { 2, NULL, NULL, 0, NULL, 2 },
+  { 2, NULL, NULL, 0, NULL, 2 },
+  { 3, NULL, NULL, 0, NULL, 2 },
   { 3, NULL, NULL, 0, NULL, 1 },
-  { 2, NULL, NULL, 0, NULL, 0 },
-  { 3, NULL, NULL, 0, NULL, 6 },
-  { 3, NULL, NULL, 0, NULL, 6 },
+  { 3, NULL, NULL, 0, NULL, 1 },
   { 3, NULL, NULL, 0, NULL, 8 },
   { 3, NULL, NULL, 0, NULL, 8 },
-  { 2, NULL, NULL, 0, NULL, 6 },
+  { 2, NULL, NULL, 0, NULL, 1 },
   { 2, NULL, NULL, 0, NULL, 11 },
   { 2, NULL, NULL, 0, NULL, 11 },
-  { 2, NULL, NULL, 0, NULL, 6 },
-  { 2, NULL, NULL, 0, NULL, 6 },
-  { 2, NULL, NULL, 0, NULL, 6 },
+  { 2, NULL, NULL, 0, NULL, 1 },
+  { 2, NULL, NULL, 0, NULL, 1 },
+  { 2, NULL, NULL, 0, NULL, 1 },
   { 3, NULL, NULL, 0, NULL, 0 }
 };
 #else
@@ -62,12 +62,12 @@ static exn_rec *exn_table;
 #ifndef GLOBAL_EXN_ARRAY
   exn_table = (exn_rec *)scheme_malloc(sizeof(exn_rec) * MZEXN_OTHER);
   exn_table[MZEXN].args = 2;
-  exn_table[MZEXN_CONTRACT].args = 2;
-  exn_table[MZEXN_CONTRACT_ARITY].args = 2;
-  exn_table[MZEXN_CONTRACT_DIVIDE_BY_ZERO].args = 2;
-  exn_table[MZEXN_CONTRACT_CONTINUATION].args = 2;
-  exn_table[MZEXN_CONTRACT_VARIABLE].args = 3;
   exn_table[MZEXN_FAIL].args = 2;
+  exn_table[MZEXN_FAIL_CONTRACT].args = 2;
+  exn_table[MZEXN_FAIL_CONTRACT_ARITY].args = 2;
+  exn_table[MZEXN_FAIL_CONTRACT_DIVIDE_BY_ZERO].args = 2;
+  exn_table[MZEXN_FAIL_CONTRACT_CONTINUATION].args = 2;
+  exn_table[MZEXN_FAIL_CONTRACT_VARIABLE].args = 3;
   exn_table[MZEXN_FAIL_SYNTAX].args = 3;
   exn_table[MZEXN_FAIL_READ].args = 3;
   exn_table[MZEXN_FAIL_READ_EOF].args = 3;
@@ -86,9 +86,9 @@ static exn_rec *exn_table;
 #ifdef _MZEXN_DECL_FIELDS
 
 static const char *MZEXN_FIELDS[2] = { "message", "continuation-marks" };
-static const char *MZEXN_CONTRACT_VARIABLE_FIELDS[1] = { "id" };
+static const char *MZEXN_FAIL_CONTRACT_VARIABLE_FIELDS[1] = { "id" };
 static const char *MZEXN_FAIL_SYNTAX_FIELDS[1] = { "expr" };
-static const char *MZEXN_FAIL_READ_FIELDS[1] = { "source" };
+static const char *MZEXN_FAIL_READ_FIELDS[1] = { "srclocs" };
 static const char *MZEXN_BREAK_FIELDS[1] = { "continuation" };
 
 #endif
@@ -103,12 +103,12 @@ static const char *MZEXN_BREAK_FIELDS[1] = { "continuation" };
 #ifdef _MZEXN_SETUP
 
   SETUP_STRUCT(MZEXN, NULL, "exn", 2, MZEXN_FIELDS, scheme_null, scheme_make_prim(exn_field_check))
-  SETUP_STRUCT(MZEXN_CONTRACT, EXN_PARENT(MZEXN), "exn:contract", 0, NULL, scheme_null, NULL)
-  SETUP_STRUCT(MZEXN_CONTRACT_ARITY, EXN_PARENT(MZEXN_CONTRACT), "exn:contract:arity", 0, NULL, scheme_null, NULL)
-  SETUP_STRUCT(MZEXN_CONTRACT_DIVIDE_BY_ZERO, EXN_PARENT(MZEXN_CONTRACT), "exn:contract:divide-by-zero", 0, NULL, scheme_null, NULL)
-  SETUP_STRUCT(MZEXN_CONTRACT_CONTINUATION, EXN_PARENT(MZEXN_CONTRACT), "exn:contract:continuation", 0, NULL, scheme_null, NULL)
-  SETUP_STRUCT(MZEXN_CONTRACT_VARIABLE, EXN_PARENT(MZEXN_CONTRACT), "exn:contract:variable", 1, MZEXN_CONTRACT_VARIABLE_FIELDS, scheme_null, scheme_make_prim(variable_field_check))
   SETUP_STRUCT(MZEXN_FAIL, EXN_PARENT(MZEXN), "exn:fail", 0, NULL, scheme_null, NULL)
+  SETUP_STRUCT(MZEXN_FAIL_CONTRACT, EXN_PARENT(MZEXN_FAIL), "exn:fail:contract", 0, NULL, scheme_null, NULL)
+  SETUP_STRUCT(MZEXN_FAIL_CONTRACT_ARITY, EXN_PARENT(MZEXN_FAIL_CONTRACT), "exn:fail:contract:arity", 0, NULL, scheme_null, NULL)
+  SETUP_STRUCT(MZEXN_FAIL_CONTRACT_DIVIDE_BY_ZERO, EXN_PARENT(MZEXN_FAIL_CONTRACT), "exn:fail:contract:divide-by-zero", 0, NULL, scheme_null, NULL)
+  SETUP_STRUCT(MZEXN_FAIL_CONTRACT_CONTINUATION, EXN_PARENT(MZEXN_FAIL_CONTRACT), "exn:fail:contract:continuation", 0, NULL, scheme_null, NULL)
+  SETUP_STRUCT(MZEXN_FAIL_CONTRACT_VARIABLE, EXN_PARENT(MZEXN_FAIL_CONTRACT), "exn:fail:contract:variable", 1, MZEXN_FAIL_CONTRACT_VARIABLE_FIELDS, scheme_null, scheme_make_prim(variable_field_check))
   SETUP_STRUCT(MZEXN_FAIL_SYNTAX, EXN_PARENT(MZEXN_FAIL), "exn:fail:syntax", 1, MZEXN_FAIL_SYNTAX_FIELDS, MZEXN_FAIL_SYNTAX_PROPS, scheme_make_prim(syntax_field_check))
   SETUP_STRUCT(MZEXN_FAIL_READ, EXN_PARENT(MZEXN_FAIL), "exn:fail:read", 1, MZEXN_FAIL_READ_FIELDS, MZEXN_FAIL_READ_PROPS, scheme_make_prim(read_field_check))
   SETUP_STRUCT(MZEXN_FAIL_READ_EOF, EXN_PARENT(MZEXN_FAIL_READ), "exn:fail:read:eof", 0, NULL, scheme_null, NULL)

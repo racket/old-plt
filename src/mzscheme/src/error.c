@@ -882,7 +882,7 @@ void scheme_wrong_count_m(const char *name, int minc, int maxc,
 
   s = make_arity_expect_string(name, -1, minc, maxc, argc, argv, &len, is_method);
 
-  scheme_raise_exn(MZEXN_CONTRACT_ARITY, "%t", s, len);
+  scheme_raise_exn(MZEXN_FAIL_CONTRACT_ARITY, "%t", s, len);
 }
 
 void scheme_wrong_count(const char *name, int minc, int maxc, int argc,
@@ -906,7 +906,7 @@ void scheme_case_lambda_wrong_count(const char *name,
 
   s = make_arity_expect_string(name, -1, -2, 0, argc, argv, &len, is_method);
 
-  scheme_raise_exn(MZEXN_CONTRACT_ARITY, "%t", s, len);
+  scheme_raise_exn(MZEXN_FAIL_CONTRACT_ARITY, "%t", s, len);
 }
 
 char *scheme_make_arity_expect_string(Scheme_Object *proc,
@@ -1019,7 +1019,7 @@ void scheme_wrong_type(const char *name, const char *expected,
   s = scheme_make_provided_string(o, 1, &slen);
 
   if ((which < 0) || (argc == 1))
-    scheme_raise_exn(MZEXN_CONTRACT,
+    scheme_raise_exn(MZEXN_FAIL_CONTRACT,
 		     "%s: expects %s of type <%s>; "
 		     "given %t",
 		     name, isress, expected, s, slen);
@@ -1036,7 +1036,7 @@ void scheme_wrong_type(const char *name, const char *expected,
       olen = 0;
     }
 
-    scheme_raise_exn(MZEXN_CONTRACT,
+    scheme_raise_exn(MZEXN_FAIL_CONTRACT,
 		     "%s: expects type <%s> as %d%s %s, "
 		     "given: %t%t",
 		     name, expected, which + 1,
@@ -1070,7 +1070,7 @@ void scheme_arg_mismatch(const char *name, const char *msg, Scheme_Object *o)
 
   s = scheme_make_provided_string(o, 1, &slen);
 
-  scheme_raise_exn(MZEXN_CONTRACT,
+  scheme_raise_exn(MZEXN_FAIL_CONTRACT,
 		   "%s: %s%t",
 		   name, msg, s, slen);
 }
@@ -1436,7 +1436,7 @@ void scheme_wrong_rator(Scheme_Object *rator, int argc, Scheme_Object **argv)
       s = " (no arguments)";
   }
 
-  scheme_raise_exn(MZEXN_CONTRACT,
+  scheme_raise_exn(MZEXN_FAIL_CONTRACT,
 		   "procedure application: expected procedure, given: %t%t",
 		   r, rlen, s, slen);
 }
@@ -1530,7 +1530,7 @@ void scheme_wrong_return_arity(const char *where,
 			(got == 1) ? "" : "s",
 			v, vlen);
 
-  scheme_raise_exn(MZEXN_CONTRACT_ARITY,
+  scheme_raise_exn(MZEXN_FAIL_CONTRACT_ARITY,
 		   "%t",
 		   buffer, blen);
 }
@@ -1575,13 +1575,13 @@ void scheme_unbound_global(Scheme_Bucket *b)
     else
       errmsg = "reference to an identifier before its definition: %S";
 
-    scheme_raise_exn(MZEXN_CONTRACT_VARIABLE,
+    scheme_raise_exn(MZEXN_FAIL_CONTRACT_VARIABLE,
 		     name,
 		     errmsg,
 		     name,
 		     ((Scheme_Bucket_With_Home *)b)->home->module->modname);
   } else {
-    scheme_raise_exn(MZEXN_CONTRACT_VARIABLE,
+    scheme_raise_exn(MZEXN_FAIL_CONTRACT_VARIABLE,
 		     name,
 		     "reference to undefined identifier: %S",
 		     name);
@@ -1745,7 +1745,7 @@ static Scheme_Object *raise_type_error(int argc, Scheme_Object *argv[])
 
     if ((SCHEME_INTP(argv[2]) && (SCHEME_INT_VAL(argv[2]) >= argc - 3))
 	|| SCHEME_BIGNUMP(argv[2]))
-      scheme_raise_exn(MZEXN_CONTRACT,
+      scheme_raise_exn(MZEXN_FAIL_CONTRACT,
 		       "raise-type-error: position index is %V, "
 		       "but only %d arguments provided",
 		       argv[2],
@@ -2244,8 +2244,18 @@ static Scheme_Object *break_field_check(int argc, Scheme_Object **argv)
 
 static Scheme_Object *extract_syntax_locations(int argc, Scheme_Object **argv)
 {
-  if (scheme_is_struct_instance(exn_table[MZEXN_FAIL_SYNTAX].type, argv[0]))
-    return scheme_make_pair(scheme_struct_ref(argv[0], 2), NULL);
+  if (scheme_is_struct_instance(exn_table[MZEXN_FAIL_SYNTAX].type, argv[0])) {
+    Scheme_Object *stx;
+    Scheme_Stx_Srcloc *loc;
+    stx = scheme_struct_ref(argv[0], 2);
+    loc = ((Scheme_Stx *)stx)->srcloc;
+    return scheme_make_pair(scheme_make_location(loc->src ? loc->src : scheme_false,
+						 (loc->line >= 0) ? scheme_make_integer(loc->line) : scheme_false,
+						 (loc->col >= 0) ? scheme_make_integer(loc->col) : scheme_false,
+						 (loc->pos >= 0) ? scheme_make_integer(loc->pos) : scheme_false,
+						 (loc->span >= 0) ? scheme_make_integer(loc->span) : scheme_false),
+			    scheme_null);
+  }
   scheme_wrong_type("exn:fail:syntax-locations-accessor", "exn:fail:syntax", 0, argc, argv);
   return NULL;
 }

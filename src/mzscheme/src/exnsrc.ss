@@ -13,22 +13,21 @@ propeties (the latter in curly braces), strings are contracts/comments.
       (continuation-marks "mark set"
 			  "value returned by \\scmfirst{current-continuation-marks} immediately before the exception is raised")] 
      -
-     (contract [] "inappropriate run-time use of a function or syntactic form"
-	       (arity []
-		      "application with the wrong number of arguments")
-	       (divide-by-zero [] "divide by zero")
-	       (continuation [] "attempt to cross a continuation barrier")
-	       (variable [variable_field_check
-			  (id "symbol" "the variable's identifier")]
-			 "unbound/not-yet-defined global or module variable"))
-     
-     (fail [] "exceptions that typically can be handled; raised by \\rawscm{error}"
+     (fail [] "exceptions that represent errors"
+	   (contract [] "inappropriate run-time use of a function or syntactic form"
+		     (arity []
+			    "application with the wrong number of arguments")
+		     (divide-by-zero [] "divide by zero")
+		     (continuation [] "attempt to cross a continuation barrier")
+		     (variable [variable_field_check
+				(id "symbol" "the variable's identifier")]
+			       "unbound/not-yet-defined global or module variable"))
 	   (syntax [syntax_field_check
 		    (expr "syntax object or {\\scmfalse}" "illegal expression (or {\\scmfalse} if unknown)")
 		    {exn:source scheme_source_property |scheme_make_prim(extract_syntax_locations)|}]
 		   "syntax error, but not a \\scmfirst{read} error")
 	   (read [read_field_check
-		  (source "list of \\rawscm{location}s" "source location(s) of error")
+		  (srclocs "list of \\rawscm{srclocs}s" "source location(s) of error")
 		  {exn:source scheme_source_property  |scheme_make_prim(extract_read_locations)|}]
 		 "\\rawscm{read} parsing error"
 		 (eof [] "unexpected end-of-file")

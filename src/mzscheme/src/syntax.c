@@ -487,13 +487,13 @@ void scheme_set_global_bucket(char *who, Scheme_Bucket *b, Scheme_Object *val,
       else
 	msg = "%s: cannot set identifier before its definition: %S";
 
-      scheme_raise_exn(MZEXN_CONTRACT_VARIABLE, b->key,
+      scheme_raise_exn(MZEXN_FAIL_CONTRACT_VARIABLE, b->key,
 		       msg,
 		       who,
 		       (Scheme_Object *)b->key,
 		       ((Scheme_Bucket_With_Home *)b)->home->module->modname);
     } else {
-      scheme_raise_exn(MZEXN_CONTRACT_VARIABLE, b->key,
+      scheme_raise_exn(MZEXN_FAIL_CONTRACT_VARIABLE, b->key,
 		       "%s: cannot set undefined identifier: %S",
 		       who,
 		       (Scheme_Object *)b->key);

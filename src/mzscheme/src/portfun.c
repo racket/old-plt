@@ -3464,7 +3464,7 @@ static Scheme_Object *abs_directory_p(int argc, Scheme_Object **argv)
     len = SCHEME_BYTE_STRTAG_VAL(ed);
 
     if (!scheme_is_complete_path(s, len))
-      scheme_raise_exn(MZEXN_CONTRACT,
+      scheme_raise_exn(MZEXN_FAIL_CONTRACT,
 		       "current-load-relative-directory: not a complete path: \"%q\"",
 		       s);
 

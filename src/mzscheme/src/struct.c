@@ -208,9 +208,9 @@ scheme_init_struct (Scheme_Env *env)
 
   /* Add location structure: */
   REGISTER_SO(location_struct);
-  location_struct = scheme_make_struct_type_from_string("location", NULL, 5, NULL, scheme_make_prim(check_location_fields));
+  location_struct = scheme_make_struct_type_from_string("srcloc", NULL, 5, NULL, scheme_make_prim(check_location_fields));
   
-  loc_names = scheme_make_struct_names_from_array("location",
+  loc_names = scheme_make_struct_names_from_array("srcloc",
 						  5, location_fields,
 						  LOC_STRUCT_FLAGS, &loc_count);
   
@@ -401,18 +401,18 @@ scheme_init_struct (Scheme_Env *env)
     guard = scheme_make_prim_w_arity(check_exn_source_property_value_ok,
 				     "check-exn-source-property-value-ok",
 				     2, 2);
-    scheme_source_property = scheme_make_struct_type_property_w_guard(scheme_intern_symbol("prop:exn:locations"),
+    scheme_source_property = scheme_make_struct_type_property_w_guard(scheme_intern_symbol("prop:exn:srclocs"),
 								      guard);
   }
-  scheme_add_global_constant("prop:exn:locations", scheme_source_property, env);
-  scheme_add_global_constant("exn:locations?", 
+  scheme_add_global_constant("prop:exn:srclocs", scheme_source_property, env);
+  scheme_add_global_constant("exn:srclocs?", 
 			     scheme_make_folding_prim(exn_source_p,
-						      "exn:locations?",
+						      "exn:srclocs?",
 						      1, 1, 1),
 			     env);
-  scheme_add_global_constant("exn:locations-accessor", 
+  scheme_add_global_constant("exn:srclocs-accessor", 
 			     scheme_make_folding_prim(exn_source_get,
-						      "exn:locations-accessor",
+						      "exn:srclocs-accessor",
 						      1, 1, 1),
 			     env);
 }
@@ -769,7 +769,7 @@ static void wrong_struct_type(char *name,
 			      Scheme_Object **argv)
 {
   if (SAME_OBJ(expected, received))
-    scheme_raise_exn(MZEXN_CONTRACT,
+    scheme_raise_exn(MZEXN_FAIL_CONTRACT,
 		     "%s: expects args of type <%s>; "
 		     "given instance of a different <%s>",
 		     name,
@@ -926,13 +926,13 @@ static int parse_pos(const char *who, Struct_Proc_Info *i, Scheme_Object **args,
 	  : i->struct_type->num_slots);
 
     if (!sc) {
-      scheme_raise_exn(MZEXN_CONTRACT,
+      scheme_raise_exn(MZEXN_FAIL_CONTRACT,
 		       "%s: no slots in <struct:%S>; given index: %V",
 		       who,
 		       i->struct_type->name,
 		       args[1]);
     } else {
-      scheme_raise_exn(MZEXN_CONTRACT,
+      scheme_raise_exn(MZEXN_FAIL_CONTRACT,
 		       "%s: slot index for <struct:%S> not in [0, %d]: %V",
 		       who,
 		       i->struct_type->name,
@@ -2118,14 +2118,14 @@ static Scheme_Object *_make_struct_type(Scheme_Object *basesym, const char *base
 	p = struct_type->num_slots; /* too big */
 
       if (p >= struct_type->num_islots) {
-	scheme_raise_exn(MZEXN_CONTRACT,
+	scheme_raise_exn(MZEXN_FAIL_CONTRACT,
 			 "make-struct-type: index %V for immutable field >= initialized-field count %d in list: %V", 
 			 a, struct_type->num_islots, immutable_pos_list);
 	return NULL;
       }
 
       if (ims[p]) {
-	scheme_raise_exn(MZEXN_CONTRACT,
+	scheme_raise_exn(MZEXN_FAIL_CONTRACT,
 			 "make-struct-type: redundant immutable field index %V in list: %V", 
 			 a, immutable_pos_list);
 	return NULL;
@@ -2226,7 +2226,7 @@ static Scheme_Object *_make_struct_type(Scheme_Object *basesym, const char *base
   if (guard) {
     
     if (!scheme_check_proc_arity(NULL, struct_type->num_islots + 1, -1, 0, &guard)) {
-      scheme_raise_exn(MZEXN_CONTRACT,
+      scheme_raise_exn(MZEXN_FAIL_CONTRACT,
 		       "make-struct-type: guard procedure does not accept %d arguments "
 		       "(one more than the number constructor arguments): %V",
 		       struct_type->num_islots + 1, guard);
@@ -2551,15 +2551,15 @@ static Scheme_Object *exn_source_get(int argc, Scheme_Object **argv)
 
   v = scheme_struct_type_property_ref(scheme_source_property, argv[0]);
   if (!v)
-    scheme_wrong_type("exn:locations-accessor", "exn:locations", 0, argc, argv);
+    scheme_wrong_type("exn:srclocs-accessor", "exn:srclocs", 0, argc, argv);
   
   return v;
 }
 
 static Scheme_Object *check_exn_source_property_value_ok(int argc, Scheme_Object *argv[])
-     /* This is the guard for prop:exn:locations */
+     /* This is the guard for prop:exn:srclocs */
 {
-  scheme_check_proc_arity("prop:exn:locations-guard", 1, 0, argc, argv);
+  scheme_check_proc_arity("prop:exn:srclocs-guard", 1, 0, argc, argv);
 
   return argv[0];
 }

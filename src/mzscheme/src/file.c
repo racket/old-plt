@@ -1151,11 +1151,11 @@ static int has_null(const char *s, long l)
 static void raise_null_error(const char *name, Scheme_Object *path, const char *mod)
 {
   if (!(SCHEME_CHAR_STRINGP(path) ? SCHEME_CHAR_STRTAG_VAL(path) : SCHEME_PATH_LEN(path)))
-    scheme_raise_exn(MZEXN_CONTRACT,
+    scheme_raise_exn(MZEXN_FAIL_CONTRACT,
 		     "%s: path string%s is empty", 
 		     name, mod);
   else
-    scheme_raise_exn(MZEXN_CONTRACT,
+    scheme_raise_exn(MZEXN_FAIL_CONTRACT,
 		     "%s: path string%s contains a null character: %Q", 
 		     name, mod, 
 		     path);
@@ -2059,7 +2059,7 @@ Scheme_Object *scheme_build_path(int argc, Scheme_Object **argv)
 	  long alen;
 
 	  astr = scheme_make_args_string("other ", i, argc, argv, &alen);
-	  scheme_raise_exn(MZEXN_CONTRACT,
+	  scheme_raise_exn(MZEXN_FAIL_CONTRACT,
 			   "build-path: %d%s path element is an empty string%t", 
 			   i + 1,
 			   scheme_number_suffix(i + 1),
@@ -2090,7 +2090,7 @@ Scheme_Object *scheme_build_path(int argc, Scheme_Object **argv)
       if (next[0] == '/') {
 	rel = 0;
 	if (i) {
-	  scheme_raise_exn(MZEXN_CONTRACT,
+	  scheme_raise_exn(MZEXN_FAIL_CONTRACT,
 			   "build-path: absolute path \"%q\" cannot be"
 			   " added to a path",
 			   next);
@@ -2130,7 +2130,7 @@ Scheme_Object *scheme_build_path(int argc, Scheme_Object **argv)
 	      str[30] = 0;
 	    } else
 	      str[pos] = 0;
-	    scheme_raise_exn(MZEXN_CONTRACT,
+	    scheme_raise_exn(MZEXN_FAIL_CONTRACT,
 			     "build-path: %s \"%s\" cannot be"
 			     " added to the path \"%q\"",
 			     is_drive ? "drive" : "absolute path",
@@ -2178,7 +2178,7 @@ Scheme_Object *scheme_build_path(int argc, Scheme_Object **argv)
 #endif
 		nstr = next + next_off;
 
-	      scheme_raise_exn(MZEXN_CONTRACT,
+	      scheme_raise_exn(MZEXN_FAIL_CONTRACT,
 			       "build-path: absolute path \"%q\" cannot be"
 			       " added to a path",
 			       nstr);
@@ -2447,7 +2447,7 @@ static Scheme_Object *split_path(int argc, Scheme_Object **argv)
   len = SCHEME_PATH_LEN(inpath);
 
   if (!len) {
-    scheme_raise_exn(MZEXN_CONTRACT,
+    scheme_raise_exn(MZEXN_FAIL_CONTRACT,
 		     "split-path: path is an empty string");
   }
 
@@ -2601,7 +2601,7 @@ static Scheme_Object *path_to_complete_path(int argc, Scheme_Object **argv)
       raise_null_error("path->complete-path", p, "");
 
     if (!scheme_is_complete_path(ws, wlen))
-      scheme_raise_exn(MZEXN_CONTRACT,
+      scheme_raise_exn(MZEXN_FAIL_CONTRACT,
 		       "path->complete-path: second argument is not a complete path: \"%q\"",
 		       ws);
 
@@ -3846,7 +3846,7 @@ static Scheme_Object *file_modify_seconds(int argc, Scheme_Object **argv)
       return NULL;
     }
     if (!scheme_get_time_val(argv[1], &mtime)) {
-      scheme_raise_exn(MZEXN_CONTRACT,
+      scheme_raise_exn(MZEXN_FAIL_CONTRACT,
 		       "file-or-directory-modify-seconds: integer %s is out-of-range",
 		       scheme_make_provided_string(argv[1], 0, NULL));
       return NULL;
@@ -4542,7 +4542,7 @@ static long check_four(char *name, int which, int argc, Scheme_Object **argv)
     scheme_wrong_type(name, "MacOS type/creator 4-character byte string", which, argc, argv);
 
   if (SCHEME_BYTE_STRTAG_VAL(o) != 4) {
-    scheme_raise_exn(MZEXN_CONTRACT,
+    scheme_raise_exn(MZEXN_FAIL_CONTRACT,
 		     "%s: string is not a 4-character type or creator signature: %V",
 		     name,
 		     o);

@@ -214,14 +214,14 @@ bad_index(char *name, Scheme_Object *i, Scheme_Object *vec)
     char *vstr;
     int vlen;
     vstr = scheme_make_provided_string(vec, 2, &vlen);
-    scheme_raise_exn(MZEXN_CONTRACT,
+    scheme_raise_exn(MZEXN_FAIL_CONTRACT,
 		     "%s: index %s out of range [%d, %d] for vector: %t",
 		     name, 
 		     scheme_make_provided_string(i, 2, NULL), 
 		     0, n,
 		     vstr, vlen);
   } else
-    scheme_raise_exn(MZEXN_CONTRACT,
+    scheme_raise_exn(MZEXN_FAIL_CONTRACT,
 		     "%s: bad index %s for empty vector",
 		     name,
 		     scheme_make_provided_string(i, 0, NULL));

@@ -1017,7 +1017,7 @@ do_list_ref(char *name, int takecar, int argc, Scheme_Object *argv[])
 	int llen;
 
 	lstr = scheme_make_provided_string(argv[0], 2, &llen);
-	scheme_raise_exn(MZEXN_CONTRACT,
+	scheme_raise_exn(MZEXN_FAIL_CONTRACT,
 			 "%s: index %s too large for list%s: %t", name,
 			 scheme_make_provided_string(index, 2, NULL),
 			 SCHEME_NULLP(lst) ? "" : " (not a proper list)",
@@ -1036,7 +1036,7 @@ do_list_ref(char *name, int takecar, int argc, Scheme_Object *argv[])
       int llen;
 
       lstr = scheme_make_provided_string(argv[0], 2, &llen);
-      scheme_raise_exn(MZEXN_CONTRACT,
+      scheme_raise_exn(MZEXN_FAIL_CONTRACT,
 		       "%s: index %s too large for list%s: %t", name,
 		       scheme_make_provided_string(index, 2, NULL),
 		       SCHEME_NULLP(lst) ? "" : " (not a proper list)",
@@ -1077,7 +1077,7 @@ name (int argc, Scheme_Object *argv[]) \
       list = SCHEME_CDR (list); \
     } \
   if (!SCHEME_NULLP(list)) { \
-    scheme_raise_exn(MZEXN_CONTRACT, \
+    scheme_raise_exn(MZEXN_FAIL_CONTRACT, \
 		     "%s: not a proper list: %V", #scheme_name, \
 		     argv[1]); \
   } \
@@ -1102,7 +1102,7 @@ name (int argc, Scheme_Object *argv[]) \
         int nplen, llen; \
         npstr = scheme_make_provided_string(pair, 2, &nplen); \
         lstr = scheme_make_provided_string(argv[1], 2, &llen); \
-	scheme_raise_exn(MZEXN_CONTRACT, \
+	scheme_raise_exn(MZEXN_FAIL_CONTRACT, \
 			 "%s: non-pair found in list: %t in %t", #scheme_name, \
 			 npstr, nplen, \
 			 lstr, llen); \
@@ -1115,7 +1115,7 @@ name (int argc, Scheme_Object *argv[]) \
       list = SCHEME_CDR (list); \
     } \
   if (!SCHEME_NULLP(list)) {\
-    scheme_raise_exn(MZEXN_CONTRACT, \
+    scheme_raise_exn(MZEXN_FAIL_CONTRACT, \
 		     "%s: not a proper list: %V", #scheme_name, \
 		     argv[1]); \
   } \
@@ -1433,7 +1433,7 @@ static Scheme_Object *hash_table_get(int argc, Scheme_Object *argv[])
   else if (argc == 3)
     return _scheme_tail_apply(argv[2], 0, NULL);
   else {
-    scheme_raise_exn(MZEXN_CONTRACT,
+    scheme_raise_exn(MZEXN_FAIL_CONTRACT,
 		     "hash-table-get: no value found for key: %V",
 		     argv[1]);
     return scheme_void;

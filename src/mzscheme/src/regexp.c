@@ -2549,7 +2549,7 @@ static Scheme_Object *gen_compare(char *name, int pos,
 	  }
 	  /* compare numbers */
 	  if (scheme_bin_lt(argv[3], argv[2])) {
-	    scheme_raise_exn(MZEXN_CONTRACT,
+	    scheme_raise_exn(MZEXN_FAIL_CONTRACT,
 			     "%s: ending index %V is smaller than starting index %V for port",
 			     name, argv[3], argv[2]);
 	    return NULL;

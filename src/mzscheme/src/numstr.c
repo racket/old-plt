@@ -1470,7 +1470,7 @@ char *number_to_allocated_string(int radix, Scheme_Object *obj, int alloc)
 
   if (SCHEME_FLOATP(obj)) {
     if (radix != 10)
-      scheme_raise_exn(MZEXN_CONTRACT,
+      scheme_raise_exn(MZEXN_FAIL_CONTRACT,
 		       "number->string: "
 		       "inexact numbers can only be printed in base 10");
     s = double_to_string(SCHEME_FLOAT_VAL(obj), alloc);
@@ -1535,7 +1535,7 @@ int scheme_check_double(const char *where, double d, const char *dest)
       || MZ_IS_NEG_INFINITY(d)
       || MZ_IS_NAN(d)) {
     if (where)
-      scheme_raise_exn(MZEXN_CONTRACT,
+      scheme_raise_exn(MZEXN_FAIL_CONTRACT,
 		       "%s: no %s representation for %s",
 		       where, 
 		       dest,
@@ -1724,7 +1724,7 @@ static Scheme_Object *integer_to_bytes(int argc, Scheme_Object *argv[])
   }
 
   if (bad) {
-    scheme_raise_exn(MZEXN_CONTRACT,
+    scheme_raise_exn(MZEXN_FAIL_CONTRACT,
 		     "integer->integer-bytes: integer does not fit into %d %ssigned bytes: %V",
 		     size, (sgned ? "" : "un"), n);
     return NULL;
@@ -1733,7 +1733,7 @@ static Scheme_Object *integer_to_bytes(int argc, Scheme_Object *argv[])
   /* Check for mismatch: string wrong size */
 
   if (size != SCHEME_BYTE_STRLEN_VAL(s)) {
-    scheme_raise_exn(MZEXN_CONTRACT,
+    scheme_raise_exn(MZEXN_FAIL_CONTRACT,
 		     "integer->integer-bytes: string size %d does not match indicated %d-byte length: %V",
 		     SCHEME_BYTE_STRLEN_VAL(s), size, s);
     return NULL;
@@ -1894,7 +1894,7 @@ static Scheme_Object *real_to_bytes (int argc, Scheme_Object *argv[])
     scheme_wrong_type("real->floating-point-bytes", "mutable byte string", 3, argc, argv);
 
   if (size != SCHEME_BYTE_STRLEN_VAL(s)) {
-    scheme_raise_exn(MZEXN_CONTRACT,
+    scheme_raise_exn(MZEXN_FAIL_CONTRACT,
 		     "real->floating-point-bytes: string size %d does not match indicated %d-byte length: %V",
 		     SCHEME_BYTE_STRLEN_VAL(s), size, s);
     return NULL;

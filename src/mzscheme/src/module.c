@@ -699,7 +699,7 @@ static Scheme_Object *_dynamic_require(int argc, Scheme_Object *argv[],
 	    break;
 	  } else {
 	    if (fail_with_error)
-	      scheme_raise_exn(MZEXN_CONTRACT,
+	      scheme_raise_exn(MZEXN_FAIL_CONTRACT,
 			       "%s: name is provided as syntax: %V by module: %V",
 			       (exp_time ? "dynamic-require-for-syntax" : "dynamic-require"),
 			       name, srcm->modname);
@@ -753,7 +753,7 @@ static Scheme_Object *_dynamic_require(int argc, Scheme_Object *argv[],
 
       if (i == count) {
 	if (fail_with_error)
-	  scheme_raise_exn(MZEXN_CONTRACT,
+	  scheme_raise_exn(MZEXN_FAIL_CONTRACT,
 			   "%s: name is not provided: %V by module: %V",
 			   (exp_time? "dynamic-require-for-syntax" : "dynamic-require"),
 			   name, srcm->modname);
@@ -938,7 +938,7 @@ static Scheme_Object *namespace_attach_module(int argc, Scheme_Object *argv[])
 	      phase = buf;
 	    }
 
-	    scheme_raise_exn(MZEXN_CONTRACT,
+	    scheme_raise_exn(MZEXN_FAIL_CONTRACT,
 			     "namespace-attach-module: "
 			     "a different module with the same name is already "
 			     "in the destination namespace%s, for name: %S",
@@ -1112,7 +1112,7 @@ static Scheme_Object *module_to_namespace(int argc, Scheme_Object *argv[])
   }
 
   if (menv->attached) {
-    scheme_raise_exn(MZEXN_CONTRACT,
+    scheme_raise_exn(MZEXN_FAIL_CONTRACT,
 		     "module->namespace: cannot obtain namespace of attached module: %S",
 		     name);
   }
@@ -1497,7 +1497,7 @@ static Scheme_Module *module_load(Scheme_Object *name, Scheme_Env *env, const ch
       else
 	mred_note = "";
 
-      scheme_raise_exn(MZEXN_CONTRACT,
+      scheme_raise_exn(MZEXN_FAIL_CONTRACT,
 		       "%s: unknown module: %S%s",
 		       who ? who : "require", 
 		       name, mred_note);
@@ -1691,7 +1691,7 @@ static void expstart_module(Scheme_Module *m, Scheme_Env *env, int restart,
 
   for (l = cycle_list; !SCHEME_NULLP(l); l = SCHEME_CDR(l)) {
     if (SAME_OBJ(m->modname, SCHEME_CAR(l))) {
-      scheme_raise_exn(MZEXN_CONTRACT,
+      scheme_raise_exn(MZEXN_FAIL_CONTRACT,
 		       "module: import cycle detected at: %S",
 		       m->modname);
     }
@@ -1890,7 +1890,7 @@ static void start_module(Scheme_Module *m, Scheme_Env *env, int restart,
 
   for (l = cycle_list; !SCHEME_NULLP(l); l = SCHEME_CDR(l)) {
     if (SAME_OBJ(m->modname, SCHEME_CAR(l))) {
-      scheme_raise_exn(MZEXN_CONTRACT,
+      scheme_raise_exn(MZEXN_FAIL_CONTRACT,
 		       "module: import cycle detected at: %S",
 		       m->modname);
     }
@@ -2281,7 +2281,7 @@ module_execute(Scheme_Object *data)
     old_menv = (Scheme_Env *)scheme_hash_get(MODCHAIN_TABLE(env->modchain), m->modname);
   
   if (old_menv && old_menv->attached) {
-    scheme_raise_exn(MZEXN_CONTRACT,
+    scheme_raise_exn(MZEXN_FAIL_CONTRACT,
 		     "module: cannot re-declare attached module: %S",
 		     m->modname);
     return NULL;

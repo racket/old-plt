@@ -785,7 +785,7 @@ void scheme_out_of_string_range(const char *name, const char *which,
     int slen;
     
     sstr = scheme_make_provided_string(s, 2, &slen);
-    scheme_raise_exn(MZEXN_CONTRACT,
+    scheme_raise_exn(MZEXN_FAIL_CONTRACT,
 		     "%s: %sindex %s out of range [%d, %d] for %sstring: %t",
 		     name, which,
 		     scheme_make_provided_string(i, 2, NULL), 
@@ -793,7 +793,7 @@ void scheme_out_of_string_range(const char *name, const char *which,
 		     is_byte ? "byte-" : "",
 		     sstr, slen);
   } else {
-    scheme_raise_exn(MZEXN_CONTRACT,
+    scheme_raise_exn(MZEXN_FAIL_CONTRACT,
 		     "%s: %sindex %s out of range for empty %sstring",
 		     name, which,
 		     scheme_make_provided_string(i, 0, NULL),
@@ -1472,11 +1472,11 @@ void scheme_do_format(const char *procname, Scheme_Object *port,
     args = scheme_make_args_string("", -1, argc, argv, &alen);
 
     if (used > argc) {
-      scheme_raise_exn(MZEXN_CONTRACT,
+      scheme_raise_exn(MZEXN_FAIL_CONTRACT,
 		       "%s: format string requires %d arguments, given %d%t",
 		       procname, used - offset, argc - offset, args, alen);
     } else {
-      scheme_raise_exn(MZEXN_CONTRACT,
+      scheme_raise_exn(MZEXN_FAIL_CONTRACT,
 		       "%s: format string requires %d arguments, given %d%t",
 		       procname, used - offset, argc - offset, args, alen);
     }
@@ -1492,7 +1492,7 @@ void scheme_do_format(const char *procname, Scheme_Object *port,
 
     args = scheme_make_args_string("other ", pos, argc, argv, &alen);
     bstr = scheme_make_provided_string(bad, 1, &blen);
-    scheme_raise_exn(MZEXN_CONTRACT,
+    scheme_raise_exn(MZEXN_FAIL_CONTRACT,
 		     "%s: format string requires argument of type <%s>, given %t%t",
 		     procname, type, 
 		     bstr, blen,

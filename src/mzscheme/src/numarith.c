@@ -292,7 +292,7 @@ div_prim (int argc, Scheme_Object *argv[])
     if (ret != zeroi)
       return scheme_bin_div(scheme_make_integer(1), ret);
     else {
-      scheme_raise_exn(MZEXN_CONTRACT_DIVIDE_BY_ZERO,
+      scheme_raise_exn(MZEXN_FAIL_CONTRACT_DIVIDE_BY_ZERO,
 		       "/: division by zero");
       ESCAPED_BEFORE_HERE;
     }
@@ -308,7 +308,7 @@ div_prim (int argc, Scheme_Object *argv[])
     if (o != zeroi)
       ret = scheme_bin_div(ret, o);
     else {
-      scheme_raise_exn(MZEXN_CONTRACT_DIVIDE_BY_ZERO,
+      scheme_raise_exn(MZEXN_FAIL_CONTRACT_DIVIDE_BY_ZERO,
 		       "/: division by zero");
       ESCAPED_BEFORE_HERE;
     }
@@ -380,14 +380,14 @@ do_bin_quotient(const char *name, const Scheme_Object *n1, const Scheme_Object *
   if (SCHEME_COMPLEX_IZIP(n2)) n2 = IZI_REAL_PART(n2);
 
   if (SCHEME_INTP(n2) && !SCHEME_INT_VAL(n2))
-    scheme_raise_exn(MZEXN_CONTRACT_DIVIDE_BY_ZERO,
+    scheme_raise_exn(MZEXN_FAIL_CONTRACT_DIVIDE_BY_ZERO,
 		     "%s: undefined for 0", name);
   if (
 #ifdef MZ_USE_SINGLE_FLOATS
       (SCHEME_FLTP(n2) && (SCHEME_FLT_VAL(n2) == 0.0f)) ||
 #endif
       (SCHEME_DBLP(n2) && (SCHEME_DBL_VAL(n2) == 0.0)))
-    scheme_raise_exn(MZEXN_CONTRACT_DIVIDE_BY_ZERO,
+    scheme_raise_exn(MZEXN_FAIL_CONTRACT_DIVIDE_BY_ZERO,
 		     "%s: undefined for 0.0", name);
 
   if (SCHEME_INTP(n1) && SCHEME_INTP(n2)) {
@@ -486,7 +486,7 @@ rem_mod (int argc, Scheme_Object *argv[], char *name, int first_sign)
   if (SCHEME_COMPLEX_IZIP(n2)) n2 = IZI_REAL_PART(n2);
 
   if (SCHEME_INTP(n2) && !SCHEME_INT_VAL(n2))
-    scheme_raise_exn(MZEXN_CONTRACT_DIVIDE_BY_ZERO,
+    scheme_raise_exn(MZEXN_FAIL_CONTRACT_DIVIDE_BY_ZERO,
 		     "%s: undefined for 0", name);
   if (
 #ifdef MZ_USE_SINGLE_FLOATS
@@ -495,7 +495,7 @@ rem_mod (int argc, Scheme_Object *argv[], char *name, int first_sign)
       (SCHEME_DBLP(n2) && (SCHEME_DBL_VAL(n2) == 0.0))) {
     int neg;
     neg = scheme_minus_zero_p(SCHEME_FLOAT_VAL(n2));
-    scheme_raise_exn(MZEXN_CONTRACT_DIVIDE_BY_ZERO,
+    scheme_raise_exn(MZEXN_FAIL_CONTRACT_DIVIDE_BY_ZERO,
 		     "%s: undefined for %s0.0",
 		     name,
 		     neg ? "-" : "");

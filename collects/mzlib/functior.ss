@@ -34,9 +34,13 @@
   (define quicksort
     (polymorphic
      (lambda (l less-than)
+       (unless (list? l)
+	 (raise-type-error 'quicksort "proper list" l))
+       (unless (procedure-arity-includes? less-than 2)
+	 (raise-type-error 'quicksort "procedure of arity 2" less-than))
        (let* ([v (list->vector l)]
               [count (vector-length v)])
-         (let loop ([min 0][max count])
+	 (let loop ([min 0][max count])
            (if (< min (sub1 max))
                (let ([pval (vector-ref v min)])
                  (let pivot-loop ([pivot min]

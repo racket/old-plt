@@ -1726,6 +1726,7 @@
 				     (< row board-height)
 				     (> (send board get-num-concealed) 0))
 				(ww-messages *checking-message* "")
+				(yield)
 				(send frame expose-row-col
 				      row col
 				      (not (send e get-shift-down))

@@ -64,7 +64,7 @@
 OSKHOME=${OSKHOME:-/usr/local}
 STDINC=/usr/include
 
-if [ "$1" == '-n' ] ; then
+if [ "$1" = '-n' ] ; then
   # No filesystem or ethernet support
   FS=""
   shift
@@ -87,9 +87,18 @@ elif [ "$*" = '' ] ; then
  BUILDDIR=_oskit_x86
 else
  echo oskmake: unrecognized command-line arguments: $*
- exit -1
+ exit 255
 fi
 
 DEST="MZOSKDEST=${MZOSKDEST:-mzscheme.multiboot}"
 
-MZPLATFORMSUFFIX=$BUILDDIR make CC=i386-oskit-gcc GCDIR=sgc OPTIONS="-DOSKIT -DUSE_SENORA_GC -DSGC_AUTO_ROOTS=0 $INCLUDES $FS" OSKHOME="$OSKHOME" $DEST $TARGET
+if [ -x "${OSKHOME}/bin/i386-oskit-gcc" ] ; then
+  COMPILER="${OSKHOME}/bin/i386-oskit-gcc"
+elif [ -x "${OSKHOME}/bin/i586-oskit-gcc" ] ; then
+  COMPILER="${OSKHOME}/bin/i586-oskit-gcc"
+else
+  echo "oskmake: can't find i[35]86-oskit-gcc compiler script"
+  exit 255
+fi
+
+MZPLATFORMSUFFIX=$BUILDDIR make CC="$COMPILER" GCDIR=sgc OPTIONS="-DOSKIT -DUSE_SENORA_GC -DSGC_AUTO_ROOTS=0 $INCLUDES $FS" OSKHOME="$OSKHOME" $DEST $TARGET

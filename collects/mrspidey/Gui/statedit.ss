@@ -24,8 +24,6 @@
 
     (inherit get-text-to-search)
 
-    (rename [super-on-close on-close])
-
     (public
 
       [begin-edit-sequence-and-unlock
@@ -135,11 +133,7 @@
     
     (override
 
-      [get-editor% (lambda () (scheme:text-mixin text:searching%))]
-      [on-close (lambda () 
-		  (when editor
-			(send editor on-close))
-		  (super-on-close))])
+      [get-editor% (lambda () (scheme:text-mixin text:searching%))])
 
     (sequence
 		

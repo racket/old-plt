@@ -46,11 +46,11 @@
     (override
       [on-close
         (lambda ignored
-          (send main on-frame-close filename)
-          (remq-callback-sdl-alg-changed! flush-type-cache)
-	  (send this show #f)
+	  (send main on-frame-close filename)
+	  (remq-callback-sdl-alg-changed! flush-type-cache)
 	  (send program-edit on-close) ; fixes PR 948
-          (super-on-close))]
+	  (super-on-close)
+	  (send this show #f))]
       [file-menu:between-close-and-quit
         (lambda (file-menu)
 	  (make-object menu-item% "Close All" file-menu 

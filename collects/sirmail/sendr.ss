@@ -450,9 +450,7 @@
 				(add1 (send e find-string SEPARATOR
 					    'forward 0 'eof #f)))))
 	  (send km map-function ":m:q" "reflow-paragraph")
-	  (send km map-function 
-		(string-append ":a:" (string (integer->char 207)))
-		"reflow-paragraph")
+	  (send km map-function ":a:q" "reflow-paragraph")
 
 	  (install-text-functions km)
 	  (install-emacs-bindings km)

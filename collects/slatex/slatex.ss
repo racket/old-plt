@@ -53,7 +53,10 @@
                              (send-event "MACS" "aevt" "odoc" (vector 'file oztex-location)))))
                        (send-event "OTEX" "aevt" "odoc" (vector 'file file))]
                       [(windows unix macosx) ;; is this also okay for beos?
-                       (system* (find-executable-path command-name #f) file)]
+		       (let ([latex-path (find-executable-path command-name #f)])
+			 (unless latex-path
+			   (error 'latex "could not find latex binary"))
+			 (system* latex-path file))]
                       [else
                        (error 'latex "do not know how to run ~s on ~s" command-name (system-type))]))))])
       (values

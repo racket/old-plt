@@ -60,7 +60,7 @@
 		  (uq@-finalizer expr result
 		    (let loop ((result (reverse result)))
 		      (if (null? result)
-			'()
+			''()
 			(let ((first (car result)))
 			  (if (qq-seq-entry-changed? first)
 			    (list

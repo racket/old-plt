@@ -205,7 +205,8 @@
    return-edit%
    pasteboard%
    
-   make-media-snip%
+   make-snip%
+   snip%
    media-snip%))
 
 (define-signature mred:canvas^

@@ -217,8 +217,11 @@ clean@OSX@:
 install:
 	$(MAKE) @MZINSTALLTARGET@
 
-install-3m:
+install-3m-basic:
 	cd ..; cp mzscheme/mzscheme3m $(prefix)/bin/mzscheme3m
+
+install-3m@NOT_OSX@:
+	$(MAKE_ install-3m-basic
 
 LIBIDIR=$(prefix)/lib
 BUILDINFO=$(LIBIDIR)/buildinfo
@@ -251,6 +254,14 @@ osx-install:
 	if [ ! -d $(MZFWDIR)/Versions/$(FWVERSION) ] ; then mkdir $(MZFWDIR)/Versions/$(FWVERSION) ; fi
 	cp $(MZFW) $(MZFWDIR)/Versions/$(FWVERSION)/
 	ln -s Versions/$(FWVERSION)/PLT_MzScheme $(MZFWDIR)/
+
+MZFWMMM = PLT_MzScheme.framework/Versions/$(FWVERSION)_3m/PLT_MzScheme
+
+install-3m@OSX@:
+	$(MAKE) install-3m-basic
+	rm -f $(MZFWDIR)/Versions/$(FWVERSION)_3m/PLT_MzScheme
+	if [ ! -d $(MZFWDIR)/Versions/$(FWVERSION)_3m ] ; then mkdir $(MZFWDIR)/Versions/$(FWVERSION)_3m ; fi
+	cp $(MZFWMMM) $(MZFWDIR)/Versions/$(FWVERSION)_3m/
 
 WLIBIDIR=$(prefix)/lib
 WBUILDINFO=$(WLIBIDIR)/buildinfo

@@ -462,6 +462,7 @@ void wxApp::doMacMouseLeave(void)
   Bool isMouseDown = (cCurrentEvent.modifiers & btnState);
   wxMouseEvent *theMouseEvent;
   wxWindow* win;
+  void *rc;
 
   theMouseEvent = new wxMouseEvent(wxEVENT_TYPE_LEAVE_WINDOW);
   theMouseEvent->leftDown = isMouseDown && !isRightButton;
@@ -473,7 +474,8 @@ void wxApp::doMacMouseLeave(void)
   theMouseEvent->metaDown = cCurrentEvent.modifiers & cmdKey;
   theMouseEvent->timeStamp = SCALE_TIMESTAMP(cCurrentEvent.when); // mflatt
   
-  win = (wxWindow*)cCurrentEvent.message;
+  rc = (void *)cCurrentEvent.message;
+  win = (wxWindow*)GET_SAFEREF(rc);
   if (win->IsShown()) {
     theMouseEvent->x = cCurrentEvent.where.h;
     theMouseEvent->y = cCurrentEvent.where.v;
@@ -1092,15 +1094,19 @@ void wxApp::doMacInZoom(WindowPtr window, short windowPart)
 //-----------------------------------------------------------------------------
 wxFrame* wxApp::findMacWxFrame(WindowPtr theMacWindow)
 {
+  wxFrame *fr;
+
   if (theMacWindow) {
     void *rc;
     rc = (void *)GetWRefCon(theMacWindow);
     if (rc)
-      return (wxFrame *)GET_SAFEREF(rc);
+      fr = (wxFrame *)GET_SAFEREF(rc);
     else
-      return NULL;
+      fr = NULL;
   } else
-    return NULL;
+    fr = NULL;
+
+  return fr;
 }
 
 //-----------------------------------------------------------------------------

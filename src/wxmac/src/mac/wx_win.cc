@@ -334,6 +334,7 @@ wxWindow::~wxWindow(void) // Destructor
   DestroyChildren();
 
   if (refcon) {
+    DequeueMrEdEvents(leaveEvt, (long)refcon);
     FREE_SAFEREF(refcon);
     refcon = NULL;
   }
@@ -1143,12 +1144,18 @@ static void QueueLeaveEvent(wxWindow *target, wxWindow *evtsrc, wxMouseEvent *ev
   int clientHitX = (int)(evt->x);
   int clientHitY = (int)(evt->y);
 
+  if (!target->refcon) {
+    void *rc;
+    rc = WRAP_SAFEREF(target);
+    target->refcon = rc;
+  }
+
   evtsrc->ClientToScreen(&clientHitX, &clientHitY);
   target->ScreenToClient(&clientHitX, &clientHitY);
-  e.message = (long)target;
+  e.message = (long)target->refcon;
   e.where.h = clientHitX;
   e.where.v = clientHitY;
-  e.what = 42;
+  e.what = leaveEvt;
   e.when = UNSCALE_TIMESTAMP(evt->timeStamp);
   e.modifiers = ((evt->shiftDown ? shiftKey : 0)
 		 + (evt->metaDown ? cmdKey : 0)

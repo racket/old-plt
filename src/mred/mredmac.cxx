@@ -48,6 +48,8 @@ extern "C" {
 class MrQueueElem; /* defined below */
 
 static void QueueTransferredEvent(EventRecord *e);
+static void MrDequeue(MrQueueElem *q);
+
 typedef MrQueueElem *MrQueueRef;
 
 typedef int (*Checker_Func)(EventRecord *evt, MrQueueRef q, int check_only, 
@@ -244,6 +246,18 @@ static void QueueTransferredEvent(EventRecord *e)
 void QueueMrEdEvent(EventRecord *e)
 {
   QueueTransferredEvent(e);
+}
+
+void DequeueMrEdEvents(int type, long message)
+{
+  /* Remove matching events: */
+  MrQueueElem *qq, *next;
+  for (qq = first; qq; qq = next) {
+    next = qq->next;
+    if ((qq->event.what == type)
+	&& ((long)qq->event.message == message))
+      MrDequeue(qq);
+  }
 }
 
 static void GetSleepTime(int *sleep_time, int *delay_time)
@@ -528,8 +542,10 @@ static int CheckForLeave(EventRecord *evt, MrQueueRef q, int check_only,
       wxWindow *win;
       wxFrame *fr;
       MrEdContext *fc;
+      void *refcon;
 
-      win = (wxWindow *)evt->message;
+      refcon = (void *)evt->message;
+      win = (wxWindow *)GET_SAFEREF(refcon);
 
       if ((win->__type != -1) && win->IsShown()) {
 	fr = (wxFrame *)win->GetRootFrame();
@@ -1014,8 +1030,17 @@ void MrEdDispatchEvent(EventRecord *e)
       contentRgn = NewRgn();
 
       GetWindowBounds(w, kWindowContentRgn, &windowBounds);
-      GetWindowRegion(w, kWindowContentRgn, contentRgn);
-      SectRgn(contentRgn, rgn, rgn);
+      {
+	/* Avoid overflow from offset: */
+#       define vmax(a,b) ((a < b) ? b : a)
+	SetRectRgn(contentRgn, 
+		   -32768 + vmax(0, windowBounds.left),
+		   -32768 + vmax(0, windowBounds.top),
+		   32767 - vmax(0, -windowBounds.left),
+		   32767 - vmax(0, -windowBounds.top));
+#       undef vmax
+	SectRgn(contentRgn, rgn, rgn);
+      }
       OffsetRgn(rgn, -1 * windowBounds.left, -1 * windowBounds.top);
       InvalWindowRgn(w, rgn);
       DisposeRgn(rgn);

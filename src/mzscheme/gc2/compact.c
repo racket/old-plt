@@ -65,12 +65,12 @@ typedef short Type_Tag;
 /* Debugging and performance tools: */
 #define TIME 0
 #define SEARCH 0
-#define CHECKS 1
+#define CHECKS 0
 #define NOISY 0
 #define MARK_STATS 0
 #define ALLOC_GC_PHASE 0
 #define SKIP_FORCED_GC 0
-#define RECORD_MARK_SRC 1
+#define RECORD_MARK_SRC 0
 
 #if TIME
 # include <sys/time.h>
@@ -1154,13 +1154,14 @@ static void fixup_finalizer_weak_link(Fnl_Weak_Link *wl)
   gcFIXUP(wl->p);
 }
 
-#if CHECKS
-static int recent_size;
-#endif
-
 void GC_finalization_weak_ptr(void **p, int offset)
 {
   Fnl_Weak_Link *wl;
+
+#if CHECKS
+  if (offset < 0)
+    CRASH();
+#endif
 
   /* Allcation might trigger GC, so we use park: */
   park[0] = p;

@@ -51,7 +51,7 @@ wxArea::~wxArea(void)
     next = node->Next();
     win = (wxWindow *)(node->Data());
     if (win)
-      delete win;
+      DELETE_OBJ win;
   }
   if (cParentWindow)
     cParentWindow->OnDeleteChildArea(this);

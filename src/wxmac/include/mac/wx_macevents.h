@@ -2,3 +2,5 @@
  */
 
 extern void QueueMrEdEvent(EventRecord *e);
+extern void DequeueMrEdEvents(int type, long message);
+

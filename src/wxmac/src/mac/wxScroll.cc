@@ -26,7 +26,7 @@ wxScroll::wxScroll // root scroll
   cScrollData = scrollData;
   cParentScroll = NULL;
   cScrolls = new wxList(wxList::kNoDestroyData);
-  WXGC_IGNORE(this, scrollWindow);
+  WXGC_IGNORE(this, cScrollWindow);
 }
 
 //-----------------------------------------------------------------------------

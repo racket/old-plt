@@ -915,6 +915,9 @@ wxBitmap::wxBitmap(char *bitmap_file, long flags)
 //-----------------------------------------------------------------------------
 wxBitmap::wxBitmap(int w, int h, Bool bandw)
 {
+  __type = wxTYPE_BITMAP;
+  WXGC_IGNORE(this, selectedInto);
+
   Create(w, h, bandw ? 1 : -1);
 }
 
@@ -938,11 +941,6 @@ Bool wxBitmap::Create(int wid, int hgt, int deep)
   GWorldPtr	newGWorld = NULL;
   Rect bounds;
 
-  if (!__type) {
-    __type = wxTYPE_BITMAP;
-    selectedInto = NULL;
-    WXGC_IGNORE(this, selectedInto);
-  }
   width = wid;
   height = hgt;
   depth = deep;
@@ -971,45 +969,6 @@ Bool wxBitmap::Create(int wid, int hgt, int deep)
   }
   return ok;
 }
-
-#if USE_XPM_IN_MAC
-// Load a bitmap with xpm data (compiled in)
-wxBitmap::wxBitmap(char **data, wxItem *anItem)
-{
-  XImage	*ximage;
-  XpmAttributes xpmAttr;
-  int  ErrorStatus;
-
-  __type = wxTYPE_BITMAP;
-  width = 0;
-  height = 0;
-  depth = 0;
-  freePixmap = FALSE;
-
-  ok = FALSE;
-
-  xpmAttr.valuemask = XpmReturnInfos;	/* nothing yet, but get infos back */
-  ErrorStatus = XpmCreateImageFromData(NULL,	// don't have a Display dpy
-				       data,
-				       &ximage,
-				       NULL,				// don't want a shapemask 
-				       &xpmAttr);
-
-  if (ErrorStatus == XpmSuccess) {
-    // Set attributes
-    width=xpmAttr.width;
-    height = xpmAttr.height;
-    depth = wxDisplayDepth();
-    XpmFreeAttributes(&xpmAttr);
-    ok = TRUE;
-    x_pixmap = ximage->bitmap;	// Actually a GWorldPtr!
-    XImageFree(ximage);			// does not delete the GWorld
-  } else {
-    // XpmDebugError(ErrorStatus, NULL);
-    ok = False;
-  }
-}
-#endif
 
 extern int wxsGetImageType(char *);
 

@@ -235,6 +235,7 @@ install_wx_mac:
 	if [ ! -d $(MRFWDIR)/Versions ] ; then mkdir $(MRFWDIR)/Versions ; fi
 	if [ ! -d $(MRFWDIR)/Versions/$(FWVERSION) ] ; then mkdir $(MRFWDIR)/Versions/$(FWVERSION) ; fi
 	cd ..; rm -rf $(prefix)/collects/launcher/Starter.app
+	cd ..; rm -rf $(prefix)/MrEd.app
 	cd ..; $(ICP) -r mred/MrEd.app $(prefix)/.
 	$(ICP) PLT_MrEd.framework/Versions/$(FWVERSION)/PLT_MrEd $(MRFWDIR)/Versions/$(FWVERSION)/PLT_MrEd
 	$(ICP) -r PLT_MrEd.framework/Versions/$(FWVERSION)/Resources $(MRFWDIR)/Versions/$(FWVERSION)/Resources
@@ -251,8 +252,25 @@ install:
 	$(MAKE) all
 	cd gc2; $(MAKE) 3m
 
-install-3m:
+install-3m_wx_xt:
 	cd ..; cp mred/mred3m $(prefix)/bin/
+
+install-3m_wx_mac:
+	rm -f $(MRFWDIR)/Versions/$(FWVERSION)_3m/PLT_MrEd
+	rm -rf $(MRFWDIR)/Versions/$(FWVERSION)_3m/Resources
+	if [ ! -d $(MRFWDIR)/Versions/$(FWVERSION)_3m ] ; then mkdir $(MRFWDIR)/Versions/$(FWVERSION)_3m ; fi
+	cd ..; rm -rf $(prefix)/collects/launcher/Starter3m.app
+	cd ..; rm -rf $(prefix)/MrEd3m.app
+	cd ..; $(ICP) -r mred/MrEd3m.app $(prefix)/.
+	$(ICP) PLT_MrEd.framework/Versions/$(FWVERSION)_3m/PLT_MrEd $(MRFWDIR)/Versions/$(FWVERSION)_3m/PLT_MrEd
+	$(ICP) -r PLT_MrEd.framework/Versions/$(FWVERSION)_3m/Resources $(MRFWDIR)/Versions/$(FWVERSION)_3m/Resources
+	cd ..; $(ICP) -r mred/Starter3m.app $(prefix)/collects/launcher/.
+	cp $(srcdir)/../mac/mred3m.sh .mred3m.sh
+	cd ..; if [ ! -e $(prefix)/bin/mred3m ] ; then cp mred/.mred3m.sh $(prefix)/bin/mred3m ; chmod a+x $(prefix)/bin/mred3m ; fi
+
+install-3m:
+	$(MAKE) install-3m_@WXVARIANT@
+
 
 @INCLUDEDEP@ wxGC.d
 @INCLUDEDEP@ wxJPEG.d

@@ -1013,6 +1013,7 @@ void MrEdDoNextEvent(MrEdContext *c, int (*alt)(void *), void *altdata)
 {
   wxTimer *timer;
   Scheme_Config *save_config;
+  MrEdEvent evt;
 
   save_config = scheme_config;
   scheme_config = c->main_config;
@@ -1027,7 +1028,8 @@ void MrEdDoNextEvent(MrEdContext *c, int (*alt)(void *), void *altdata)
   } else if (check_q_callbacks(1, MrEdSameContext, c, 1)) {
     c->q_callback = 2;
     DoTheEvent(c);
-  } else if (MrEdGetNextEvent(0, 1, &c->event, NULL)) {
+  } else if (MrEdGetNextEvent(0, 1, &evt, NULL)) {
+    memcpy(&c->event, &evt, sizeof(MrEdEvent));
     DoTheEvent(c);
   } else if (check_q_callbacks(0, MrEdSameContext, c, 1)) {
     c->q_callback = 1;

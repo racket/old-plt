@@ -88,6 +88,7 @@ class wxBrush: public wxbBrush
 
 // Bitmap
 class wxItem;
+class wxMemoryDC;
 class wxBitmap: public wxObject
 {
  protected:
@@ -98,16 +99,12 @@ class wxBitmap: public wxObject
  public:
   GWorldPtr x_pixmap;
   Bool freePixmap;
-  class wxMemoryDC *selectedInto; // mflatt
+  wxMemoryDC *selectedInto;
   Bool selectedIntoDC;
   wxBitmap *mask;
 
   wxBitmap(void) ;
   wxBitmap(char bits[], int width, int height);
-#if USE_XPM_IN_MAC
-  // Initialize with XPM data
-  wxBitmap(char **bits, wxItem *anItem = NULL);
-#endif
   // Load a file or resource
   wxBitmap(char *name, long flags = wxBITMAP_DISCARD_COLOURMAP | wxBITMAP_TYPE_RESOURCE);
 

@@ -1260,6 +1260,24 @@ static Scheme_Object *sch_putenv(int argc, Scheme_Object *argv[])
 
   SCHEME_GET_LOCK();
 
+#ifdef MZ_PRECISE_GC
+  {
+    /* Can't put moveable string into array. */
+    char *ss;
+    ss = s;
+    s = malloc(varlen + vallen + 2);
+    memcpy(s, ss, varlen + vallen + 2);
+    s = ss;
+    
+    /* Free old, if in table: */
+    if (putenv_str_table) {
+      ss = (char *)scheme_lookup_in_table(putenv_str_table, var);
+      if (ss)
+	free(ss);
+    }
+  }
+#endif
+
   if (!putenv_str_table)
     putenv_str_table = scheme_hash_table(7, SCHEME_hash_string, 0, 0);
 

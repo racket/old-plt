@@ -576,6 +576,13 @@
 		     (send edit set-position start-pos end-pos)
 		     (wx:bell)) 
 		 #t))]
+	    [select-backward-sexp
+	     (lambda (edit end-pos)
+	       (let ([start-pos (get-backward-sexp edit end-pos)])
+		 (if start-pos 
+		     (send edit set-position start-pos end-pos)
+		     (wx:bell)) 
+		 #t))]
 	    [get-backward-sexp
 	     (lambda (edit start-pos)
 	       (let ([end-pos 
@@ -781,6 +788,12 @@
 			edit 
 			(send edit get-start-position))))
 
+	  (send keymap add-key-function "select-backward-sexp"
+		(lambda (edit event)
+		  (send (get-mode edit) select-backward-sexp 
+			edit 
+			(send edit get-start-position))))
+
 	  (send keymap add-key-function "transpose-sexp"
 		(lambda (edit event)
 		  (send (get-mode edit) transpose-sexp 
@@ -818,9 +831,16 @@
 	  (send keymap map-function "\"" "balance-parens")
 
 	  (send keymap map-function "c:up" "up-sexp")
+	  (send keymap map-function "s:c:up" "select-up-sexp")
+
 	  (send keymap map-function "c:down" "down-sexp")
+	  (send keymap map-function "s:c:down" "select-down-sexp")
+
 	  (send keymap map-function "c:left" "forward-sexp")
+	  (send keymap map-function "s:c:left" "select-forward-sexp")
+
 	  (send keymap map-function "c:right" "backward-sexp")
+	  (send keymap map-function "s:c:right" "select-backward-sexp")
 
 	  (let ([map-meta
 		 (lambda (key func)
@@ -837,12 +857,19 @@
 	    (map-meta "c:semicolon" "comment-out")
 	    (map-meta "c:=" "uncomment")
 	    (map-meta "c:k" "remove-sexp")
+
 	    (map-meta "c:f" "forward-sexp")
+	    (map-meta "s:c:f" "select-forward-sexp")
+
 	    (map-meta "c:b" "backward-sexp")
+	    (map-meta "s:c:b" "select-backward-sexp")
+
 	    (map-meta "c:u" "up-sexp")
 	    (map-meta "c:d" "down-sexp")
+
 	    (map-meta "c:p" "flash-backward-sexp")
-	    (map-meta "c:n" "flash-forward-sexp")
+	    (map-meta "s:c:n" "flash-forward-sexp")
+
 	    (map-meta "c:space" "select-forward-sexp")
 	    (map-meta "c:t" "transpose-sexp")
 	    (map-meta "c:l" "evaluate-buffer"))

@@ -64,79 +64,6 @@
 	     (or (and #f (send keymap handle-key-event this event))
 		 (super-pre-on-event receiver event)))])))
 
-    (mred:preferences:set-preference-default 'mred:status-line #f)
-    (define time-edit (make-object mred:edit:edit%))
-    (send* time-edit (lock #t) (hide-caret #t))
-    (define time-sema (make-semaphore 0))
-					  
-    '(letrec ([loop
-	      (lambda ()
-		(unless (mred:preferences:get-preference 'mred:status-line)
-		  (semaphore-wait time-sema))
-		(let* ([date (seconds->date (current-seconds))]
-		       [minute (date-minute date)])
-		  (send* time-edit (lock #f) (begin-edit-sequence) (erase)
-			 (insert (if (<= 10 minute)
-				     (format "~a:~a" (date-hour date) minute)
-				     (format "~a:0~a" (date-hour date) minute)))
-			 (end-edit-sequence)
-			 (lock #t))
-		  (sleep 10)
-		  (loop)))])
-      (thread loop))
-
-    (mred:preferences:add-preference-callback 'mred:status-line
-					      (lambda (p v)
-						(when v
-						  (semaphore-post time-sema))))
-
-    (define make-status-line-frame%
-      (lambda (%)
-	(class % args
-	  (inherit get-panel% show)
-	  (rename [super-panel panel]
-		  [super-on-close on-close])
-	  (sequence
-	    (apply super-init args))
-	  (public
-	    [panel (make-object (get-panel%) super-panel)])
-	  (private
-	    [horiz-panel (make-object mred:container:horizontal-panel% super-panel)])
-	  (sequence
-	    (make-object mred:container:vertical-panel% horiz-panel))
-	  (public
-	    [status-line-panel (make-object mred:container:horizontal-panel% horiz-panel)])
-	  (private
-	    [canvas (make-object mred:container:media-canvas% horiz-panel -1 -1 -1 -1
-				 "" (+ wx:const-mcanvas-no-h-scroll
-				       wx:const-mcanvas-no-v-scroll))])
-	  (public
-	    [on-close
-	     (begin
-	       (let ([t (mred:preferences:add-preference-callback
-			 'mred:status-line
-			 (lambda (p val)
-			   (send super-panel
-				 change-children
-				 (lambda (l)
-				   (if val
-				       (list panel horiz-panel)
-				       (list panel))))))])
-		 (lambda ()
-		   (t)
-		   (super-on-close))))])
-	  (sequence
-	    (send* status-line-panel (border 2) (spacing 2) (stretchable-in-y #f))
-	    (send* horiz-panel (border 0) (spacing 0) (stretchable-in-y #f))
-	    (send* super-panel (border 0) (spacing 0))
-	    (send* canvas (set-media time-edit) (user-min-height 35) (user-min-width 75)
-		          (stretchable-in-x #f))
-	    (send status-line-panel stretchable-in-x #f)
-	    (unless (mred:preferences:get-preference 'mred:status-line)
-	      (send super-panel change-children (lambda (l) (list panel))))))))
-
-    (define status-line-frame% (make-status-line-frame% empty-frame%))
-
     (define make-menu-frame%
       (lambda (super%)
 	(class super% args
@@ -166,7 +93,7 @@
 	      (set-menu-bar menu-bar)
 	      (send menu-bar set-frame this))))))
 
-    (define menu-frame% (make-menu-frame% status-line-frame%))
+    (define menu-frame% (make-menu-frame% empty-frame%))
 
     (define tab (string #\tab))
     (define make-standard-menus-frame%
@@ -398,8 +325,7 @@
     (define make-simple-frame%
       (lambda (super%)
 	(class super% ([name frame-name])
-	  (inherit panel get-client-size get-title set-title set-icon
-		   status-line-panel)
+	  (inherit panel get-client-size get-title set-title set-icon)
 	  (rename [super-on-close on-close])
 	  (public
 	    [WIDTH frame-width]
@@ -493,3 +419,4 @@
 	      (set-icon mred:icon:icon))))))
 
     (define simple-menu-frame% (make-simple-frame% standard-menus-frame%))))
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       

@@ -71,6 +71,7 @@ static int mzerrno = 0;
 # include <fcntl.h>
 # define TCP_SOCKSENDBUF_SIZE 32768
 # define NOT_WINSOCK(x) x
+# define SOCK_ERRNO() errno
 #endif
 
 #ifdef USE_WINSOCK_TCP
@@ -82,6 +83,7 @@ struct SOCKADDR_IN {
   char sin_zero[8];
 };
 # define NOT_WINSOCK(x) 0
+# define SOCK_ERRNO() WSAGetLastError()
 #endif
 
 #ifdef USE_MAC_TCP
@@ -1045,10 +1047,10 @@ static int tcp_getc(Scheme_Input_Port *port)
     int rn;
     do {
       rn = recv(data->tcp, data->b.buffer, TCP_BUFFER_SIZE, 0);
-    } while ((rn == -1) && (errno == EINTR));
+    } while ((rn == -1) && (NOT_WINSOCK(errno) == EINTR));
     data->b.bufmax = rn;
   }
-  errid = errno;
+  errid = SOCK_ERRNO();
 #endif
 #ifdef USE_MAC_TCP
   /* Allow only one read at a time: */
@@ -1203,7 +1205,7 @@ int scheme_tcp_write_nb_string(char *s, long len, long offset, int rarely_block,
 #ifdef USE_SOCKETS_TCP
   do {
     sent = send(data->tcp, s + offset, len, 0);
-  } while ((sent == -1) && (errno == EINTR));
+  } while ((sent == -1) && (NOT_WINSOCK(errno) == EINTR));
 
   if (sent != len) {
 #ifdef USE_WINSOCK_TCP
@@ -1595,11 +1597,7 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
 	  {
 	    int so_len = sizeof(status);
 	    if (getsockopt(s, SOL_SOCKET, SO_ERROR, (void *)&status, &so_len) != 0) {
-#ifdef USE_WINSOCK_TCP
-	      status = WSAGetLastError();
-#else
-	      status = errno;
-#endif
+	      status = SOCK_ERRNO();
 	    }
 	    errno = status; /* for error reporting, below */
 	  }
@@ -1640,12 +1638,12 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
 	  errid = errno;
 	  closesocket(s);
 	  --scheme_file_open_count;
-	  errno = errid;
 	  errpart = 4;
 	}
-      } else
+      } else {
 	errpart = 3;
-      errid = errno;
+	errid = SOCK_ERRNO();
+      }
     }
 #ifndef PROTOENT_IS_INT
     else
@@ -1653,11 +1651,7 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
 #endif
   } else {
     errpart = 1;
-#ifdef USE_WINSOCK_TCP
-    errid = WSAGetLastError();
-#else
     errid = 0;
-#endif
     errmsg = "; host not found";
   }
 #endif
@@ -1787,22 +1781,14 @@ tcp_listen(int argc, Scheme_Object *argv[])
 	  return (Scheme_Object *)l;
 	}
 
-# ifdef USE_WINSOCK_TCP
-      errid = WSAGetLastError();
-# else
-      errid = errno;
-# endif
+      errid = SOCK_ERRNO();
 
       closesocket(s);
     }
   }
 # ifndef PROTOENT_IS_INT
   else {
-#  ifdef USE_WINSOCK_TCP
-    errid = WSAGetLastError();
-#  else
-    errid = errno;
-#  endif
+    errid = SOCK_ERRNO();
   }
 # endif
 #endif
@@ -1988,11 +1974,7 @@ tcp_accept(int argc, Scheme_Object *argv[])
     
     return scheme_values(2, v);
   }
-#  ifdef USE_WINSOCK_TCP
-  errid = WSAGetLastError();
-#  else
-  errid = errno;
-#  endif
+  errid = SOCK_ERRNO();
 # endif
 
 # ifdef USE_MAC_TCP
@@ -2081,13 +2063,13 @@ static Scheme_Object *tcp_addresses(int argc, Scheme_Object *argv[])
     if (getsockname(tcp->tcp, (struct sockaddr *)&tcp_here_addr, &l)) {
       scheme_raise_exn(MZEXN_I_O_TCP,
 		       "tcp-addresses: could not get local address (%e)",
-		       errno);
+		       SOCK_ERRNO());
     }
     l = sizeof(tcp_there_addr);
     if (getpeername(tcp->tcp, (struct sockaddr *)&tcp_there_addr, &l)) {
       scheme_raise_exn(MZEXN_I_O_TCP,
 		       "tcp-addresses: could not get peer address (%e)",
-		       errno);
+		       SOCK_ERRNO());
     }
 
     here_a = *(unsigned long *)&tcp_here_addr.sin_addr;

@@ -106,9 +106,9 @@ static void StartSleepThreadTimer(void);
 
 void CALLBACK LetOtherThreadsRun(HWND, UINT, UINT, DWORD)
 {
-  scheme_current_process->suspend_break++;
-  scheme_process_block(0.0);
-  --scheme_current_process->suspend_break;
+  scheme_current_thread->suspend_break++;
+  scheme_thread_block(0.0);
+  --scheme_current_thread->suspend_break;
 }
 
 void StopSleepThreadTimer(void)
@@ -444,7 +444,7 @@ void mred_log_msg(const char *msg, ...)
 
   f = fopen("mredlog", "a");
 
-  fprintf(f, "0x%lx ", scheme_current_process);
+  fprintf(f, "0x%lx ", scheme_current_thread);
 
   va_start(args, msg);
   len = vfprintf(f, msg, args);

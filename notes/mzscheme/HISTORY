@@ -1,9 +1,8 @@
 
+See MzScheme_200.txt for information on major changes in MzScheme
+ 199.x. Minor changes are listed below.
+
 Version 199.1:
-
- * Macros
-
- * Modules
 
  * Fixed bug in `quotient' when first argument is 0 and the second
    argument is inexact. Also fixed `modulo' and `remainder' to return

@@ -450,6 +450,10 @@ SOURCE=..\..\Mzscheme\Src\List.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\mzscheme\src\module.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Mzscheme\Src\mzsj86.c
 
 !IF  "$(CFG)" == "mzsrc - Win32 Release"
@@ -510,32 +514,6 @@ SOURCE=..\..\mzscheme\src\numstr.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\mzscheme\src\objclass.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Mzscheme\Src\Object.c
-
-!IF  "$(CFG)" == "mzsrc - Win32 Release"
-
-# ADD CPP /O2
-
-!ELSEIF  "$(CFG)" == "mzsrc - Win32 Debug"
-
-!ELSEIF  "$(CFG)" == "mzsrc - Win32 SGC"
-
-!ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
-
-!ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
-
-# ADD BASE CPP /O2
-# ADD CPP /O2
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\Mzscheme\Src\Port.c
 
 !IF  "$(CFG)" == "mzsrc - Win32 Release"
@@ -563,50 +541,6 @@ SOURCE=..\..\mzscheme\src\portfun.c
 # Begin Source File
 
 SOURCE=..\..\Mzscheme\Src\Print.c
-
-!IF  "$(CFG)" == "mzsrc - Win32 Release"
-
-# ADD CPP /O2
-
-!ELSEIF  "$(CFG)" == "mzsrc - Win32 Debug"
-
-!ELSEIF  "$(CFG)" == "mzsrc - Win32 SGC"
-
-!ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
-
-!ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
-
-# ADD BASE CPP /O2
-# ADD CPP /O2
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Mzscheme\Src\Process.c
-
-!IF  "$(CFG)" == "mzsrc - Win32 Release"
-
-# ADD CPP /O2
-
-!ELSEIF  "$(CFG)" == "mzsrc - Win32 Debug"
-
-!ELSEIF  "$(CFG)" == "mzsrc - Win32 SGC"
-
-!ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
-
-!ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
-
-# ADD BASE CPP /O2
-# ADD CPP /O2
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Mzscheme\Src\Promise.c
 
 !IF  "$(CFG)" == "mzsrc - Win32 Release"
 
@@ -852,6 +786,10 @@ SOURCE=..\..\Mzscheme\Src\Syntax.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\mzscheme\src\thread.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Mzscheme\Src\Type.c
 
 !IF  "$(CFG)" == "mzsrc - Win32 Release"
@@ -874,51 +812,7 @@ SOURCE=..\..\Mzscheme\Src\Type.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Mzscheme\Src\Unit.c
-
-!IF  "$(CFG)" == "mzsrc - Win32 Release"
-
-# ADD CPP /O2
-
-!ELSEIF  "$(CFG)" == "mzsrc - Win32 Debug"
-
-!ELSEIF  "$(CFG)" == "mzsrc - Win32 SGC"
-
-!ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
-
-!ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
-
-# ADD BASE CPP /O2
-# ADD CPP /O2
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\mzscheme\src\unitsig.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Mzscheme\Src\Vector.c
-
-!IF  "$(CFG)" == "mzsrc - Win32 Release"
-
-# ADD CPP /O2
-
-!ELSEIF  "$(CFG)" == "mzsrc - Win32 Debug"
-
-!ELSEIF  "$(CFG)" == "mzsrc - Win32 SGC"
-
-!ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
-
-!ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
-
-# ADD BASE CPP /O2
-# ADD CPP /O2
-
-!ENDIF 
-
+SOURCE=..\..\mzscheme\src\vector.c
 # End Source File
 # End Group
 # Begin Group "Header Files"

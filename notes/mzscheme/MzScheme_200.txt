@@ -33,6 +33,17 @@ in several important ways:
  * All #% names are gone, since they are unnecessary with the new
    syntax system.
 
- * `global-define-value' is renamed `namespace-variable-binding' (for
-   consistency with other names). `defined?' is gone, but it can be
-   implemented with `namespace-variable-binding'.
+ * `global-define-value' has been renamed `namespace-variable-binding'
+   (for consistency with other names). `defined?' is gone, but it can
+   be implemented with `namespace-variable-binding'.
+
+Relatively minor changes:
+
+ - a set of internal definitions can start anywhere in a sequence of
+   expressions (like Chez and MzScheme 53)
+
+ - `(cond)' alays returns void; the cond-allow-fallthough parameter and
+   exn:cond exception have been removed.
+
+ - added struct inspectors <--- NEEDS DOCUMENTATION (waiting for
+   further struct changes)

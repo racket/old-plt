@@ -544,7 +544,7 @@ Scheme_Object *utf16_pointer_to_ucs4_string(unsigned short *utf)
   'pred  (lambda (x aux)
            (list "SCHEME_FALSEP("x")||SCHEME_PATH_STRINGP("x")"))
   's->c  (lambda (x aux)
-           (list "SCHEME_FALSEP("x")?NULL:SCHEME_PATH_VAL("x")"))
+           (list "SCHEME_FALSEP("x")?NULL:SCHEME_PATH_VAL(TO_PATH("x"))"))
   'c->s  (lambda (x)
            (list "("x"==NULL)?scheme_false:"
                  "scheme_make_path_without_copying("x")")))

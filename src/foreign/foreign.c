@@ -587,7 +587,7 @@ Scheme_Object *utf16_pointer_to_ucs4_string(unsigned short *utf)
  * LibFfi type: ffi_type_pointer
  * C type:      char*
  * Predicate:   SCHEME_FALSEP(<Scheme>)||SCHEME_PATH_STRINGP(<Scheme>)
- * Scheme->C:   SCHEME_FALSEP(<Scheme>)?NULL:SCHEME_PATH_VAL(<Scheme>)
+ * Scheme->C:   SCHEME_FALSEP(<Scheme>)?NULL:SCHEME_PATH_VAL(TO_PATH(<Scheme>))
  * C->Scheme:   (<C>==NULL)?scheme_false:scheme_make_path_without_copying(<C>)
  */
 
@@ -1197,7 +1197,7 @@ static void* scheme_to_c(Scheme_Object *type, void *dst,
     case FOREIGN_path:
       if (SCHEME_FALSEP(val)||SCHEME_PATH_STRINGP(val)) {
         char* tmp;
-        tmp = (char*)(SCHEME_FALSEP(val)?NULL:SCHEME_PATH_VAL(val));
+        tmp = (char*)(SCHEME_FALSEP(val)?NULL:SCHEME_PATH_VAL(TO_PATH(val)));
         if (basetype_p == NULL || tmp == NULL) {
           (((char**)dst)[0]) = tmp; return NULL;
         } else {

@@ -1398,8 +1398,7 @@ static void machine_details(char *s)
    if (err != noErr) {
      strcpy(sysvers, "<unknown system>");
    } else {
-     sprintf(sysvers, "%d.%d.%d",
-	     (lng >> 16) & 0xff,
+     sprintf(sysvers, "%X.%X",
 	     (lng >> 8) & 0xff,
 	     lng & 0xff);
    }

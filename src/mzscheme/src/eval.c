@@ -1802,7 +1802,7 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
 	  else
 	    return var;
 	} else
-	  return form;
+	  return find_name; /* which is usually == form */
       }
     } else {
       stx = datum_symbol;

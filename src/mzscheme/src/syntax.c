@@ -1210,7 +1210,7 @@ set_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Object *
   rhs = SCHEME_STX_CAR(rhs);
 
   return scheme_datum_to_syntax(icons(fn,
-				      icons(name,
+				      icons(find_name,
 					    icons(scheme_expand_expr(rhs, env, depth, name),
 						  scheme_null))),
 				form,

@@ -328,7 +328,8 @@ Scheme_Object *scheme_read_number(const char *str, long len,
   int i, has_decimal, must_parse, has_slash;
   int report, delta;
   Scheme_Object *next_complain;
-  int has_hash, has_expt, has_i, has_sign, has_at, saw_digit, saw_nonzero_digit;
+  int has_hash, has_expt, has_i, has_sign, has_at, has_hash_since_slash;
+  int saw_digit, saw_digit_since_slash, saw_nonzero_digit;
   Scheme_Object *o;
 #ifdef MZ_USE_SINGLE_FLOATS
   int single;
@@ -802,7 +803,8 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 			       scheme_make_double(r2));
   }
 
-  has_decimal = has_slash = has_hash = has_expt = saw_digit = saw_nonzero_digit = 0;
+  has_decimal = has_slash = has_hash = has_hash_since_slash = has_expt = 0;
+  saw_digit = saw_digit_since_slash = saw_nonzero_digit = 0;
   for (i = delta; i < len; i++) {
     int ch = str[i];
     if (ch == '.') {
@@ -822,18 +824,17 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 	return scheme_false;
       }
       has_decimal = 1;
-    } else if (isinexactmark(ch)) {
-      if ((radix <= 10) || !isbaseNdigit(radix, ch)) {
-	if (i == delta) {
-	  if (report)
-	    scheme_read_err(complain, stxsrc, line, col, pos, span, 0, indentation,
-			    "read-number: cannot begin with `%c' in %t", 
-			    ch, str, len);
-	  return scheme_false;
-	}
-	has_expt = i;
-	break;
+    } else if (isinexactmark(ch)
+	       && ((radix <= 10) || !isbaseNdigit(radix, ch))) {
+      if (i == delta) {
+	if (report)
+	  scheme_read_err(complain, stxsrc, line, col, pos, span, 0, indentation,
+			  "read-number: cannot begin with `%c' in %t", 
+			  ch, str, len);
+	return scheme_false;
       }
+      has_expt = i;
+      break;
     } else if (ch == '/') {
       if (i == delta) {
 	if (report)
@@ -857,14 +858,9 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 			  str, len);
 	return scheme_false;
       }
-      if (has_hash) {
-	if (report)
-	  scheme_read_err(complain, stxsrc, line, col, pos, span, 0, indentation,
-			  "read-number: misplaced hash: %t", 
-			  str, len);
-	return scheme_false;
-      }
       has_slash = i;
+      saw_digit_since_slash = 0;
+      has_hash_since_slash = 0;
     } else if ((ch == '-') || (ch == '+')) {
       if (has_slash || has_decimal || has_hash) {
 	if (report)
@@ -874,7 +870,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 	return scheme_false;
       }
     } else if (ch == '#') {
-      if (has_slash || /* has_decimal || (radix > 10) || */ !saw_digit) {
+      if (!saw_digit_since_slash) {
 	if (report)
 	  scheme_read_err(complain, stxsrc, line, col, pos, span, 0, indentation,
 			  "read-number: misplaced hash: %t", 
@@ -882,6 +878,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 	return scheme_false;
       }
       has_hash = 1;
+      has_hash_since_slash = 1;
     } else if (!isdigit(ch) && !((radix > 10) && isbaseNdigit(radix, ch))) {
       if (has_decimal) {
 	if (report)
@@ -900,9 +897,10 @@ Scheme_Object *scheme_read_number(const char *str, long len,
       break;
     } else {
       saw_digit = 1;
+      saw_digit_since_slash = 1;
       if (ch != '0')
 	saw_nonzero_digit = 1;
-      if (has_hash) {
+      if (has_hash_since_slash) {
 	if (report)
 	  scheme_read_err(complain, stxsrc, line, col, pos, span, 0, indentation,
 			  "read-number: misplaced hash: %t", 
@@ -989,7 +987,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
     return scheme_make_double(d);
   }
 
-  if (has_decimal || has_expt || has_hash) {
+  if (has_decimal || has_expt || (has_hash && !has_slash)) {
     Scheme_Object *mantissa, *exponent, *power, *n;
     Scheme_Object *args[2];
     int result_is_float= (is_float || (!is_not_float && decimal_means_float));
@@ -1214,7 +1212,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
     if (SAME_OBJ(n2, scheme_false))
       return scheme_false;
 
-    if (SCHEME_TRUEP(scheme_zero_p(1, &n2))) {
+    if (SCHEME_EXACT_REALP(n2) && SCHEME_TRUEP(scheme_zero_p(1, &n2))) {
       if (complain)
 	scheme_read_err(complain, stxsrc, line, col, pos, span, 0, indentation,
 			"read-number: division by zero: %t", 

@@ -23,7 +23,8 @@
 	   check-proc
 	   check-defined
 	   look-for-tests
-	   user-construct)
+	   user-construct
+	   test-history-enabled)
 
   (define (unpack-submission str)
     (let* ([base (make-object editor-stream-in-string-base% str)]

@@ -396,6 +396,12 @@ The _utils.ss_ module provides utilities helpful in implementing
   result checking. This function is often useful for calling a
   student-defined constructor.
 
+> test-history-enabled - parameter that controls how run-time errors
+  are reported to the handin client. If the parameter's value is true,
+  then the complete sequence of tested expressions is reported to the
+  handin client for any test failure. Set this parameter to true when
+  testing programs that use state.
+
 
 > (current-run-status string-or-#f) - registers information about the
   current actions of the checker, in case the session is terminated

@@ -538,7 +538,7 @@
 (#%define-macro #%fluid-let 
     (#%lambda (assignments expr1 . body)
      (#%if (#%null? assignments)
-      `(#%begin ,expr1 ,@body)
+      `(#%let-values () ,expr1 ,@body)
       (#%let ([mk-expr (lambda () (#%list* 'fluid-let 
 					      assignments 
 					      expr1
@@ -587,7 +587,7 @@
 		(#%list* 'parameterize params body)))])
       (#%if (#%null? body) (fail "bad syntax (empty body)"))
       (#%if (#%null? params)
-        `(#%begin ,@body)
+        `(#%let-values () ,@body)
 	(#%if (#%or (#%not (#%pair? params))
 		    (#%not (#%pair? (#%car params)))
 		    (#%not (#%pair? (#%cdar params)))
@@ -618,7 +618,7 @@
 	  (#%raise-syntax-error 'with-handlers "bad syntax"
 				(#%list* 'with-handlers clauses body)))
       (#%if (#%null? clauses)
-	  `(begin ,@body)
+	  `(#%let-values () ,@body)
         (#%let ([k (#%gensym)]
 	        [loop (#%gensym)]
 	        [list (#%gensym)])

@@ -1987,7 +1987,7 @@ do_begin_syntax (char *name,
       recs[0].value_name = vname;
 
       first = scheme_compile_expr(SCHEME_CAR(forms), env, recs);
-      rest = scheme_compile_block(SCHEME_CDR(forms), env, recs + 1);
+      rest = scheme_compile_list(SCHEME_CDR(forms), env, recs + 1);
       
       scheme_merge_compile_recs(rec, recs, 2);
 
@@ -2044,7 +2044,7 @@ do_begin_expand(char *name, Scheme_Object *form_name,
     /* Not at top-level: */
     if (zero) {
       form = cons(scheme_expand_expr(SCHEME_CAR(rest), env, depth),
-		  scheme_expand_block(SCHEME_CDR(rest), env, depth));
+		  scheme_expand_list(SCHEME_CDR(rest), env, depth));
     } else {
       form = scheme_expand_list(rest, env, depth);
 #if 0

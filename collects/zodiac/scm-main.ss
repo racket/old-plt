@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.164 1998/11/23 17:38:41 mflatt Exp $
+; $Id: scm-main.ss,v 1.165 1999/01/05 20:24:33 mflatt Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -434,11 +434,15 @@
 				(lambda () (expand-expr body0 env attributes vocab)))])
 		    (if (null? bodies)
 			first
-			(let ([rest (parse-expr "begin0" expr bodies env attributes vocab expr)])
+			(let ([rest (as-nested
+				     attributes
+				     (lambda ()
+				       (map
+					(lambda (expr)
+					  (expand-expr expr env attributes vocab))
+					bodies)))])
 			  (create-begin0-form
-			   (if (begin-form? rest)
-			       (cons first (begin-form-bodies rest))
-			       (list first rest))
+			   (cons first rest)
 			   expr)))))))
 	    (else
 	     (static-error expr "Malformed begin0"))))))
@@ -1611,7 +1615,7 @@
 		    (expand-expr
 		      (structurize-syntax
 			(if (null? vars)
-			  `(begin ,@body)
+			  `(let-values () ,@body)
 			  `(let ,(map list new-vars vars)
 			     (#%dynamic-wind
 			       (lambda ()
@@ -1663,7 +1667,7 @@
 			      '(_ () b ...)))
 	      (out-pattern-1 (if (not begin?)
 			       'b 
-			       '(begin b ...)))
+			       '(let-values () b ...)))
 	      (in-pattern-2 '(_ ((pred handler) ...) body ...))
 	      (out-pattern-2
 		'((#%call/ec

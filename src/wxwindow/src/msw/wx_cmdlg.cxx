@@ -60,8 +60,9 @@ char *wxFileSelector(char *message,
     hwnd = wnd->handle;
   }
   char *file_buffer;
+#define FILEBUF_SIZE 4096
 
-  file_buffer = new WXGC_ATOMIC char[400];
+  file_buffer = new WXGC_ATOMIC char[FILEBUF_SIZE];
 
   if (default_filename)
     strcpy(file_buffer, default_filename);
@@ -140,7 +141,7 @@ char *wxFileSelector(char *message,
   of->lpstrCustomFilter = NULL;
   of->nMaxCustFilter = 0L;
   of->lpstrFile = file_buffer;
-  of->nMaxFile = 400;
+  of->nMaxFile = FILEBUF_SIZE;
   of->lpstrFileTitle = title_buffer;
   of->nMaxFileTitle = 50;
   of->lpstrInitialDir = default_path;
@@ -153,6 +154,8 @@ char *wxFileSelector(char *message,
 
   if (flags & wxSAVE)
     msw_flags |= OFN_OVERWRITEPROMPT;
+  if (flags & wxMULTIOPEN)
+    msw_flags |= OFN_ALLOWMULTISELECT | OFN_EXPLORER;
   if (flags & wxHIDE_READONLY)
     msw_flags |= OFN_HIDEREADONLY;
   if (default_path)
@@ -165,6 +168,38 @@ char *wxFileSelector(char *message,
     success = wxPrimitiveDialog((wxPDF)DoGetSaveFileName, of, 1);
   else
     success = wxPrimitiveDialog((wxPDF)DoGetOpenFileName, of, 1);
+
+  if (success && !*file_buffer)
+    success = 0;
+
+  if (success && (flags & wxMULTIOPEN)) {
+    /* Calculate size... */
+    char *s, *result;
+    int len = 0, dirlen, filelen;
+
+    s = file_buffer;
+    dirlen = strlen(s);
+    s += dirlen + 1;
+    while (*s) {
+      filelen = strlen(s);
+      len += dirlen + filelen + 8;
+      s += filelen + 1;
+    }
+
+    result = new WXGC_ATOMIC char[len];
+    len = 0;
+    s = file_buffer + dirlen + 1;
+    while (*s) {
+      filelen = strlen(s);
+      sprintf(result + len, "%5d ", filelen + dirlen);
+      memcpy(result + len + 6, file_buffer, dirlen);
+      memcpy(result + len + 6 + dirlen, s, filelen);
+      s += filelen + 1;
+      len += filelen + dirlen + 6;
+    }
+    result[len] = 0;
+    return result;
+  }
 
   if (success)
     return file_buffer;

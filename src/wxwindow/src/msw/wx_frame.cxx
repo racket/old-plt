@@ -1036,7 +1036,7 @@ void wxMDIFrame::OnMenuSelect(WORD nItem, WORD nFlags, HMENU hSysMenu)
 
 long wxMDIFrame::DefWindowProc(UINT message, WPARAM wParam, LPARAM lParam)
 {
-  return DefFrameProc(handle, client_hwnd, message, wParam, lParam);
+  return ::DefFrameProc(handle, client_hwnd, message, wParam, lParam);
 }
 
 BOOL wxMDIFrame::ProcessMessage(MSG* pMsg)
@@ -1045,7 +1045,8 @@ BOOL wxMDIFrame::ProcessMessage(MSG* pMsg)
       && (current_child->handle != NULL)
       && current_child->ProcessMessage(pMsg))
     return TRUE;
-	
+
+#if 0	
   if (accelerator_table != NULL &&
       ::TranslateAccelerator(handle, (HACCEL)accelerator_table, pMsg))
     return TRUE;
@@ -1055,6 +1056,7 @@ BOOL wxMDIFrame::ProcessMessage(MSG* pMsg)
     if (::TranslateMDISysAccel(client_hwnd, pMsg))
       return TRUE;
   }
+#endif
 
   return FALSE;
 }
@@ -1190,19 +1192,21 @@ BOOL wxMDIChild::OnCommand(WORD id, WORD cmd, HWND control)
 long wxMDIChild::DefWindowProc(UINT message, UINT wParam, LONG lParam)
 {
   if (handle)
-    return DefMDIChildProc(handle, message, wParam, lParam);
+    return ::DefMDIChildProc(handle, message, wParam, lParam);
   else
     return 0;
 }
 
 BOOL wxMDIChild::ProcessMessage(MSG *msg)
 {
+#if 0
   if (accelerator_table && handle) {
     wxFrame *parent = (wxFrame *)wx_window->GetParent();
     HWND parent_hwnd = parent->GetHWND();
     return ::TranslateAccelerator(parent_hwnd, (HACCEL)accelerator_table, msg);
-  } return
-    FALSE;
+  }
+#endif
+  return FALSE;
 }
 
 BOOL wxMDIChild::OnMDIActivate(BOOL bActivate, HWND WXUNUSED(one), HWND WXUNUSED(two))

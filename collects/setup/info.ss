@@ -4,7 +4,7 @@
     [(name) "Setup PLT"]
     [(compile-prefix) `(begin
 			 (require-library "refer.ss")
-			 (require-library "setupsig.ss" "setup")
+			 (require-library "plt-installers.ss" "setup")
 			 (require-library "setupsig.ss" "setup"))]
     [(compile-omit-files) (list "setup.ss" "setupsig.ss"  "get-infos.ss")]
     [(compile-elaboration-zos) (list "setupsig.ss" "get-infos.ss")]

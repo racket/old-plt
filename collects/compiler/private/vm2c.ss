@@ -74,7 +74,7 @@
       (define (vm->c:make-symbol-const-string sc)
 	(format "~a[~a]" (vm->c:SYMBOLS-name) (zodiac:varref-var sc)))
 
-      (define (vm->c:emit-list! port comma comment? table counter -symbol->string)
+      (define (vm->c:emit-list! port comma c-comment? table counter -symbol->string)
 	(let ([v (make-vector counter)])
 	  (hash-table-for-each
 	   table
@@ -83,7 +83,9 @@
 	  (let loop ([i 0])
 	    (unless (= i (vector-length v))
 	      (fprintf port "  ~s~a ~a~n" (-symbol->string (vector-ref v i)) comma 
-		       (if comment? (format "/* ~a */" i) ""))
+		       (if c-comment? 
+			   (format "/* ~a */" i)
+			   (format "; ~a" i)))
 	      (loop (add1 i))))))
 
       (define (vm->c:emit-symbol-list! port comma comment?)
@@ -394,8 +396,8 @@
 		      
 		      (loop (sub1 c) (add1 n) (cdr vml) (cdr ll) (cdr bl))))))))
 
-      (define (vm->c:emit-module-glue! port id)
-	(define (out syntax?)
+      (define (vm->c:emit-module-glue! port id num num-syntax)
+	(define (out syntax? n)
 	  (fprintf port "static void module_invoke~a_~a(" 
 		   (if syntax? "_syntax" "") id)
 	  (fprintf port "Scheme_Env *env, long phase_shift, Scheme_Object *self_modidx, void *pls)~n")
@@ -405,12 +407,15 @@
 			   (if syntax? "Syntax_" "") id)])
 	    (fprintf port "~aPMIS = (~a *)scheme_malloc(sizeof(~a));~n" 
 		     vm->c:indent-spaces s s))
-	  (fprintf port "~amodule_~abody_~a_0(env, (Scheme_Per_Load_Statics *)pls, phase_shift, self_modidx, PMIS);~n"
-		   vm->c:indent-spaces (if syntax? "syntax_" "") id)
+	  (let loop ([j 0])
+	    (unless (j . > . n)
+	      (fprintf port "~amodule_~abody_~a_~a(env, (Scheme_Per_Load_Statics *)pls, phase_shift, self_modidx, PMIS);~n"
+		       vm->c:indent-spaces (if syntax? "syntax_" "") id j)
+	      (loop (add1 j))))
 	  (fprintf port "}~n~n"))
 
-	(out #f)
-	(out #t))
+	(out #f num)
+	(out #t num-syntax))
 
       (define vm->c:emit-vehicle-prototype
 	(lambda (port number)

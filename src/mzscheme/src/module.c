@@ -520,7 +520,8 @@ current_module_name_prefix(int argc, Scheme_Object *argv[])
 /**********************************************************************/
 
 static Scheme_Object *_dynamic_require(int argc, Scheme_Object *argv[], 
-				       int get_syntax, int get_bucket, int exp_time)
+				       int get_syntax, int get_bucket, 
+				       int exp_time, int indirect_ok)
 {
   Scheme_Object *modname, *modidx;
   Scheme_Object *name, *srcname, *srcmname;
@@ -572,8 +573,8 @@ static Scheme_Object *_dynamic_require(int argc, Scheme_Object *argv[],
 	} else {
 	  scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, name,
 			   "%s: name is provided as %s: %V by module: %V",
-			   (get_syntax? "dynamic-require" : "dynamic-require-syntax"),
-			   (get_syntax? "a variable" : "syntax"),
+			   (get_syntax ? "dynamic-require-syntax" : "dynamic-require"),
+			   (get_syntax ? "syntax" : "a variable"),
 			   name, srcm->modname);
 	  return NULL;
 	}
@@ -587,11 +588,26 @@ static Scheme_Object *_dynamic_require(int argc, Scheme_Object *argv[],
     }
 
     if (i == count) {
-      scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, name,
-		       "%s: name is not provided: %V by module: %V",
-		       (get_syntax? "dynamic-require" : "dynamic-require-syntax"),
-		       name, srcm->modname);
-      return NULL;
+      if (indirect_ok) {
+	/* Try indirect provides: */
+	srcm = m;
+	count = srcm->num_indirect_provides;
+	for (i = 0; i < count; i++) {
+	  if (SAME_OBJ(name, srcm->indirect_provides[i])) {
+	    srcname = name;
+	    srcmname = srcm->modname;
+	    break;
+	  }
+	}
+      }
+
+      if (i == count) {
+	scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, name,
+			 "%s: name is not provided: %V by module: %V",
+			 (get_syntax? "dynamic-require-syntax" : "dynamic-require"),
+			 name, srcm->modname);
+	return NULL;
+      }
     }
   }
 
@@ -627,12 +643,12 @@ static Scheme_Object *_dynamic_require(int argc, Scheme_Object *argv[],
 
 static Scheme_Object *dynamic_require(int argc, Scheme_Object *argv[])
 {
-  return _dynamic_require(argc, argv, 0, 0, 0);
+  return _dynamic_require(argc, argv, 0, 0, 0, 0);
 }
 
 static Scheme_Object *dynamic_require_syntax(int argc, Scheme_Object *argv[])
 {
-  return _dynamic_require(argc, argv, 1, 0, 0);
+  return _dynamic_require(argc, argv, 1, 0, 0, 0);
 }
 
 static Scheme_Object *do_namespace_require(int argc, Scheme_Object *argv[], int for_exp)
@@ -1377,7 +1393,7 @@ Scheme_Bucket *scheme_module_bucket(Scheme_Object *modname, Scheme_Object *var, 
   a[0] = modname;
   a[1] = var;
 
-  return (Scheme_Bucket *)_dynamic_require(2, a, 0, 1, 0);
+  return (Scheme_Bucket *)_dynamic_require(2, a, 0, 1, 0, 1);
 }
 
 Scheme_Bucket *scheme_exptime_module_bucket(Scheme_Object *modname, Scheme_Object *var, Scheme_Env *env)
@@ -1387,7 +1403,7 @@ Scheme_Bucket *scheme_exptime_module_bucket(Scheme_Object *modname, Scheme_Objec
   a[0] = modname;
   a[1] = var;
 
-  return (Scheme_Bucket *)_dynamic_require(2, a, 0, 1, 1);
+  return (Scheme_Bucket *)_dynamic_require(2, a, 0, 1, 1, 1);
 }
 
 /**********************************************************************/
@@ -1786,14 +1802,14 @@ Scheme_Object *scheme_declare_module(Scheme_Object *shape, Scheme_Invoke_Proc iv
       exns[i] = a;
       exss[i] = scheme_false; /* means "self" */
     } else if (SCHEME_SYMBOLP(SCHEME_CDR(a))) {
-      exs[i] = SCHEME_CDR(a);
-      exns[i] = SCHEME_CAR(a);
+      exs[i] = SCHEME_CAR(a);
+      exns[i] = SCHEME_CDR(a);
       exss[i] = scheme_false; /* means "self" */
     } else {
       exss[i] = SCHEME_CAR(a);
       a = SCHEME_CDR(a);
-      exs[i] = SCHEME_CDR(a);
-      exns[i] = SCHEME_CAR(a);
+      exs[i] = SCHEME_CAR(a);
+      exns[i] = SCHEME_CDR(a);
     }
   }
 
@@ -2674,8 +2690,8 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
          'module-kernel-reprovide-hint = 'kernel-reexport
 
       item = name
-           | (def-id . ext-id)
-           | (modidx def-id . ext-id)
+           | (ext-id . def-id)
+           | (modidx ext-id . def-id)
      kernel-reexport = #f
                      | #t
                      | exclusion-id

@@ -361,50 +361,59 @@
 				 (set-code-global-vars! code globals)
 				 code)])
 	    
-	    ;; Splice lifted lambda definitions between statics and per-load statics;
-	    ;; Add per-load-lifted after static lifted
+	    ;; Splice lifted lambda definitions into the program in the right
+	    ;; place: statics after true constants, and per-load statics after
+	    ;; per-load constants.
 	    (let loop ([n number-of-true-constants]
 		       [l l][c (block-codes s:file-block)]
 		       [l-acc null][c-acc null])
 	      (if (zero? n)
-		  (begin
-		    (set-block-source! 
-		     s:file-block
-		     (append (reverse l-acc)
-			     (compiler:get-lifted-lambdas)
-			     (compiler:get-once-closures-list)
-			     (map car l)))
-		    (set-block-codes!
-		     s:file-block 
-		     (append (reverse c-acc) 
-			     (map
-			      (lambda (ll)
-				(make-code empty-set
-					   empty-set
-					   empty-set ; no globals
-					   empty-set
-					   empty-set
-					   #f #f
-					   (list 
-					    (get-annotation 
-					     (zodiac:define-values-form-val ll)))))
-			      (compiler:get-lifted-lambdas))
-			     (map (lambda (ll globs) 
-				    (make-code empty-set
-					       empty-set
-					       globs
-					       empty-set
-					       empty-set
-					       #f #f
-					       (list
-						(get-annotation 
-						 (zodiac:define-values-form-val 
-						  (if (zodiac:module-form? ll)
-						      (zodiac:module-form-body ll)
-						      ll))))))
-				  (compiler:get-once-closures-list)
-				  (compiler:get-once-closures-globals-list))
-			     (map reset-globals c (map cdr l)))))
+		  (let loop ([n number-of-per-load-constants]
+			     [l l][c c]
+			     [pll-acc null][plc-acc null])
+		    (if (zero? n)
+			(begin
+			  (set-block-source! 
+			   s:file-block
+			   (append (reverse l-acc)
+				   (compiler:get-lifted-lambdas)
+				   (reverse pll-acc)
+				   (compiler:get-once-closures-list)
+				   (map car l)))
+			  (set-block-codes!
+			   s:file-block 
+			   (append (reverse c-acc) 
+				   (map
+				    (lambda (ll)
+				      (make-code empty-set
+						 empty-set
+						 empty-set ; no globals
+						 empty-set
+						 empty-set
+						 #f #f
+						 (list 
+						  (get-annotation 
+						   (zodiac:define-values-form-val ll)))))
+				    (compiler:get-lifted-lambdas))
+				   (reverse plc-acc)
+				   (map (lambda (ll globs) 
+					  (make-code empty-set
+						     empty-set
+						     globs
+						     empty-set
+						     empty-set
+						     #f #f
+						     (list
+						      (get-annotation 
+						       (zodiac:define-values-form-val 
+							(if (zodiac:module-form? ll)
+							    (zodiac:module-form-body ll)
+							    ll))))))
+					(compiler:get-once-closures-list)
+					(compiler:get-once-closures-globals-list))
+				   (map reset-globals c (map cdr l)))))
+			(loop (sub1 n) (cdr l) (cdr c) 
+			      (cons (caar l) pll-acc) (cons (reset-globals (car c) (cdar l)) plc-acc))))
 		  (loop (sub1 n) (cdr l) (cdr c) 
 			(cons (caar l) l-acc) (cons (reset-globals (car c) (cdar l)) c-acc)))))
 	  
@@ -512,6 +521,7 @@
 	(lambda (n) (set! s:max-arity (max s:max-arity n))))
 
       (define number-of-true-constants 0)
+      (define number-of-per-load-constants 0)
       
       (define s:unit-list null) ; list of units in the code
       
@@ -747,6 +757,8 @@
 		       ; take constant construction code and place it in front of the 
 		       ; previously generated code. True constants first.
 		       (set! number-of-true-constants (length (compiler:get-define-list)))
+		       (set! number-of-per-load-constants (+ (length (compiler:get-per-load-define-list))
+							     (length (compiler:get-per-invoke-define-list))))
 		       (s:append-block-sources! s:file-block 
 						(append
 						 (compiler:get-define-list)
@@ -1072,24 +1084,31 @@
 								(block-max-arity s:file-block)
 								#f #f ; no module entries
 								c-port))]
-				   [_ (let loop ([i 0])
+				   [invoke-counts
+				    (let loop ([i 0])
+				      (if (= i (get-num-module-invokes))
+					  null
+					  (cons
+					   (let loop ([syntax? #f])
+					     (cons
+					      (vm->c:emit-top-levels! (format "module~a_body_~a" 
+									      (if syntax? "_syntax" "")
+									      i)
+								      #f #f -1
+								      (block-source s:file-block)
+								      locals
+								      globals
+								      (block-max-arity s:file-block)
+								      i syntax?
+								      c-port)
+					      (if syntax? 
+						  null
+						  (loop #t))))
+					   (loop (add1 i)))))]
+				   [_ (let loop ([i 0][counts invoke-counts])
 					(unless (= i (get-num-module-invokes))
-					  (let loop ([syntax? #f])
-					    (vm->c:emit-top-levels! (format "module~a_body_~a" 
-									    (if syntax? "_syntax" "")
-									    i)
-								    #f #f -1
-								    (block-source s:file-block)
-								    locals
-								    globals
-								    (block-max-arity s:file-block)
-								    i syntax?
-								    c-port)
-					    (unless syntax? (loop #t)))
-					  (loop (add1 i))))]
-				   [_ (let loop ([i 0])
-					(unless (= i (get-num-module-invokes))
-					  (vm->c:emit-module-glue! c-port i)))]
+					  (vm->c:emit-module-glue! c-port i (caar counts) (cadar counts))
+					  (loop (add1 i) (cdr counts))))]
 				   [top-level-count
 				    (vm->c:emit-top-levels! "top_level" #t #t -1
 							    (list-tail (block-source s:file-block) number-of-true-constants)
@@ -1237,7 +1256,7 @@
 			  ;post (dynamic wind cleanup)
 			  (lambda ()  (close-output-port c-port)))))])
 		(with-handlers ([void (lambda (exn)
-					;(delete-file c-output-path)
+					(delete-file c-output-path)
 					(raise exn))])
 		  (verbose-time vm2c-thunk)))
 	      

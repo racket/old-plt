@@ -7,6 +7,7 @@
            set-gl-init-fn
            init-textures
            image->gl-vector
+           bitmap->gl-vector
            gl-load-texture
            get-texture
            add-key-mapping
@@ -97,32 +98,33 @@
     (lambda (count)
       (set! *textures* (glGenTextures count))))
   
-  (define image->gl-vector
-    (lambda (file)
-      (let* (
-             (bmp  (make-object bitmap% file 'unknown #f))
-             (dc (instantiate bitmap-dc% (bmp)))
-             (pixels (* (send bmp get-width) (send bmp get-height)))
-             (vec (make-gl-ubyte-vector (* pixels 3)))
-             (data (make-bytes (* pixels 4)))
-             (i 0)
-             )
-        (send dc get-argb-pixels 0 0 (send bmp get-width) (send bmp get-height) data)
-        (letrec
-            ([loop
-              (lambda ()
-                (if (< i pixels)
-                    (begin
-                      (gl-vector-set! vec (* i  3) 
-                                      (bytes-ref data (+ (* i 4) 1)))
-                      (gl-vector-set! vec (+ (* i 3) 1) 
-                                      (bytes-ref data (+ (* i 4) 2)))
-                      (gl-vector-set! vec (+ (* i 3) 2) 
-                                      (bytes-ref data (+ (* i 4) 3)))
-                      (set! i (+ i 1))
-                      (loop))))])
-          (loop))
-        (list (send bmp get-width) (send bmp get-height) vec))))
+  (define (bitmap->gl-vector bmp)
+    (let* (
+           (dc (instantiate bitmap-dc% (bmp)))
+           (pixels (* (send bmp get-width) (send bmp get-height)))
+           (vec (make-gl-ubyte-vector (* pixels 3)))
+           (data (make-bytes (* pixels 4)))
+           (i 0)
+           )
+      (send dc get-argb-pixels 0 0 (send bmp get-width) (send bmp get-height) data)
+      (letrec
+          ([loop
+            (lambda ()
+              (if (< i pixels)
+                  (begin
+                    (gl-vector-set! vec (* i  3) 
+                                    (bytes-ref data (+ (* i 4) 1)))
+                    (gl-vector-set! vec (+ (* i 3) 1) 
+                                    (bytes-ref data (+ (* i 4) 2)))
+                    (gl-vector-set! vec (+ (* i 3) 2) 
+                                    (bytes-ref data (+ (* i 4) 3)))
+                    (set! i (+ i 1))
+                    (loop))))])
+        (loop))
+      (send dc set-bitmap #f)
+      (list (send bmp get-width) (send bmp get-height) vec)))
+  
+  (define (image->gl-vector file) (bitmap->gl-vector (make-object bitmap% file 'unknown #f)))
   
   (define gl-load-texture
     (lambda (image-vector width height min-filter mag-filter ix)

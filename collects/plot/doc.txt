@@ -1,4 +1,7 @@
-<EXCERP FROM HTML DOCS>
+PLoT collection: Quick Start
+
+[Note: This guide is excerpted from the official documentation available
+ from Help Desk.]
 
 2.1  Making basic plots
 

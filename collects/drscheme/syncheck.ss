@@ -883,13 +883,7 @@
                               (cleanup)
                               (custodian-shutdown-all user-custodian))))]
                         [else
-                         (printf "origin: ~s\nsexp: ~a\n" 
-                                 (and (syntax? sexp) (syntax-property sexp 'origin))
-                                 (and (syntax? sexp) (syntax-object->datum sexp)))
                          (eval-compile-time-part-of-top-level sexp)
-                         (printf "origin: ~s\nsexp: ~a\n" 
-                                 (and (syntax? sexp) (syntax-property sexp 'origin))
-                                 (and (syntax? sexp) (syntax-object->datum sexp)))
                          (parameterize ([current-eventspace drs-eventspace])
                            (queue-callback
                             (lambda () ; =drs=

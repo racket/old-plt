@@ -268,7 +268,13 @@ add struct contracts for immutable structs?
                                               #f)]
                            [(field-contracts ...) field-contracts]
                            [(field-contract-ids ...) field-contract-ids]
-                           [struct-name struct-name])
+                           [struct-name struct-name]
+                           [struct:struct-name (datum->syntax-object
+                                                struct-name
+                                                (string->symbol
+                                                 (string-append
+                                                  "struct:"
+                                                  (symbol->string (syntax-e struct-name)))))])
                (syntax/loc stx
                 (begin
                   (define field-contract-ids field-contracts) ...
@@ -276,7 +282,7 @@ add struct contracts for immutable structs?
                   mutator-codes ...
                   predicate-code
                   constructor-code
-                  (provide struct-name))))))
+                  (provide struct-name struct:struct-name))))))
          
          ;; build-constructor-contract : syntax (listof syntax) syntax -> syntax
          (define (build-constructor-contract stx field-contract-ids predicate-id)

@@ -872,7 +872,7 @@
 		  (expand-expr
 		    (structurize-syntax
 		      (pat:pexpand
-			`(,form-name file "standard")
+			`(,form-name filename "standard")
 			p-env kwd)
 		      expr)
 		    env attributes vocab)))
@@ -883,6 +883,8 @@
 			 (collection (pat:pexpand 'collection p-env kwd)))
 		    (let ((f (expand-expr filename env attributes vocab))
 			   (c (expand-expr collection env attributes vocab)))
+                      (display `(f ,f))
+                      (display `(c ,c))
 		      (unless (and (quote-form? f)
 				(z:string? (quote-form-expr f)))
 			(static-error filename
@@ -894,7 +896,8 @@
 			(expand-expr
 			  (structurize-syntax
 			    `(let ((result (#%require-library
-					     ,(quote-form-expr f))))
+					     ,(quote-form-expr f)
+                                             ,(quote-form-expr c))))
 			       (unless (,(if sig?
 					   '#%unit/sig?
 					   '#%unit?)
@@ -910,7 +913,7 @@
 					(if sig? "signed " ""))
 				     ((debug-info-handler))
 				     result)))
-			       result)
+			       result) 
 			    expr)
 			  env attributes vocab)))))
 	      (else

@@ -2,6 +2,9 @@
 >> See MzScheme_300.txt for information on major changes in
    MzScheme 299.X. Minor changes are listed below.
 
+Version 299.25
+Changed character datatype to include #\uFFFE and #\uFFFF
+
 Version 299.23
 Windows: changed find-system-path to use the registry-specified
  profile directory for a user's home, instead of HOMEDRIVE and
@@ -254,6 +257,7 @@ Renamed all of the number "byte-string" functions to "bytes"
 Regexp grammar changed to match docs with respect to "-"
 Changed pref dir (all platforms) and pref file name
  (except Windows)
+
 
 Version 208, August 2004
 Added string-copy! and hash-table-count

@@ -109,6 +109,10 @@ static Scheme_Object *string_close_converter(int argc, Scheme_Object *argv[]);
 static Scheme_Object *string_convert(int argc, Scheme_Object *argv[]);
 static Scheme_Object *string_convert_end(int argc, Scheme_Object *argv[]);
 
+#ifdef MZ_PRECISE_GC
+static void register_traversers(void);
+#endif
+
 static int mz_strcmp(const char *who, unsigned char *str1, int l1, unsigned char *str2, int l2, int eq);
 static int mz_strcmp_ci(const char *who, unsigned char *str1, int l1, unsigned char *str2, int l2, int eq);
 
@@ -437,6 +441,10 @@ scheme_init_string (Scheme_Env *env)
 			     env);
 
   scheme_reset_locale();
+
+#ifdef MZ_PRECISE_GC
+  register_traversers();
+#endif
 }
 
 void

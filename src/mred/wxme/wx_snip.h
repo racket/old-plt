@@ -237,6 +237,7 @@ class wxTextSnip : public wxInternalSnip
   virtual wxSnip *MergeWith(wxSnip *pred);
 
   virtual void Insert(wxchar *str, long len, long pos = 0);
+  virtual void InsertWithOffset(wxchar *str, long len, long delta, long pos = 0);
   virtual void InsertUTF8(char *str, long len, long pos = 0);
   virtual void Read(long len, wxMediaStreamIn *f);
   virtual void GetTextBang(wxchar *s, long offset, long num, long dt);

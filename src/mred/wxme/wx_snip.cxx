@@ -820,7 +820,7 @@ wxSnip *wxTextSnip::MergeWith(wxSnip *pred)
 
   w = -1.0;
 
-  Insert(((wxTextSnip *)pred)->buffer + ((wxTextSnip *)pred)->dtext, pred->count, 0);
+  InsertWithOffset(((wxTextSnip *)pred)->buffer, pred->count, ((wxTextSnip *)pred)->dtext, 0);
 
 #if CHECK_CS_FLAG
   if (!(flags & wxSNIP_CAN_SPLIT) && admin)
@@ -830,7 +830,7 @@ wxSnip *wxTextSnip::MergeWith(wxSnip *pred)
   return this;
 }
 
-void wxTextSnip::Insert(wxchar *str, long len, long pos)
+void wxTextSnip::InsertWithOffset(wxchar *str, long len, long delta, long pos)
 {
   if (len <= 0)
     return;
@@ -853,8 +853,10 @@ void wxTextSnip::Insert(wxchar *str, long len, long pos)
   }
    
   if (pos < count)
-    memmove(buffer + dtext + pos + len, buffer + dtext + pos, count - pos);
-  memcpy(buffer + dtext + pos, str, len * sizeof(wxchar));
+    memmove(buffer + dtext + pos + len, 
+	    buffer + dtext + pos, 
+	    (count - pos) * sizeof(wxchar));
+  memcpy(buffer + dtext + pos, str + delta, len * sizeof(wxchar));
   
   count += len;
 
@@ -865,6 +867,11 @@ void wxTextSnip::Insert(wxchar *str, long len, long pos)
     if (!admin->Recounted(this, TRUE))
       count -= len;
 #endif
+}
+
+void wxTextSnip::Insert(wxchar *str, long len, long pos)
+{
+  InsertWithOffset(str, len, 0, pos);
 }
 
 void wxTextSnip::InsertUTF8(char *str, long len, long pos)

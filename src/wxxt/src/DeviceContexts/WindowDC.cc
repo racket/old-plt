@@ -1725,7 +1725,7 @@ static unsigned int *convert_to_drawable_format(const char *s, int ds, long *_ul
 	us = buf;
       else
 	us = new WXGC_ATOMIC unsigned int[ulen];
-      memcpy(us, s + ds, ulen * sizeof(unsigned int));
+      memcpy(us, s + (ds * sizeof(int)), ulen * sizeof(unsigned int));
     }
   } else {
     int length;

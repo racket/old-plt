@@ -204,7 +204,8 @@ scheme_init_type (Scheme_Env *env)
 
   set_name(scheme_thread_set_type, "<thread-set>");
 
-  set_name(scheme_reserved1_type, "<reserved1>");
+  set_name(scheme_string_converter_type, "<string-converter>");
+
   set_name(scheme_reserved2_type, "<reserved2>");
   set_name(scheme_reserved3_type, "<reserved3>");
 

@@ -3606,14 +3606,6 @@ static Scheme_Object *current_library_collection_paths(int argc, Scheme_Object *
 			     -1, collpaths_p, "list of complete path strings", 1);
 }
 
-static Scheme_Object *collpaths_rel_p(int argc, Scheme_Object **argv)
-{
-  if (SCHEME_FALSEP(argv[0]))
-    return argv[0];
-
-  return collpaths_gen_p(argc, argv, 1);
-}
-
 #endif
 
 /********************************************************************************/

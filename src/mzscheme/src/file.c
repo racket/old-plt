@@ -3452,6 +3452,7 @@ static Scheme_Object *make_directory(int argc, Scheme_Object *argv[])
 # endif
 			))
       return scheme_void;
+    else if (errno != EINTR)
       break;
   }
 

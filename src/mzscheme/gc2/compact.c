@@ -4026,7 +4026,7 @@ static void gcollect(int full)
   ran_final = 0;
 
   if (!running_finals) {
-    running_finals = 0;
+    running_finals = 1;
 
     while (run_queue) {
       Fnl *f;

@@ -582,13 +582,42 @@
 		       [mssg welcome-message]
 		       [show? #t])
 	  (inherit active-edit edit canvas show make-menu)
-	  (rename [super-on-close on-close])
+	  (rename [super-on-close on-close]
+		  [super-make-menu-bar make-menu-bar])
 	  (private 
 	    edit-offset 
 	    other-offset)
 	  (public
 	    [edit% console-edit%])
 	  (public 
+	    [make-menu-bar
+	     (let ([reg (regexp "<TITLE>(.*)</TITLE>")])
+	       (lambda ()
+		 (let* ([mb (super-make-menu-bar)]
+			[help-menu (make-menu)]
+			[dir (build-path (global-defined-value 
+					  'mred:plt-home-directory)
+					 "doc/")])
+		   (when (directory-exists? dir)
+		     (let* ([dirs (directory-list dir)]
+			    [find-title
+			     (lambda (port)
+			       (let loop ([l (read-line port)])
+				 (let ([match (regexp-match reg l)])
+				   (if match
+				       (cadr match)
+				       (loop (read-line port))))))]				 
+			    [add-item
+			     (lambda (local-dir)
+			       (let* ([f (build-path dir local-dir "index.html")])
+				 (when (file-exists? f)
+				   (send help-menu append-item
+					 (call-with-input-file f find-title)
+					 (lambda ()
+					   (mred:handler:edit-file f))))))])
+		       (send mb append help-menu "Help")
+		       (for-each add-item dirs)))
+		   mb)))]
 	    [on-close 
 	     (lambda ()
 	       (super-on-close)

@@ -142,12 +142,15 @@
 
 (provide command-marker)
 (define command-marker
-  (make-parameter
-   #f (lambda (marker)
-        (command-marker-here-re
-         (regexp (string-append "^" (regexp-quote marker))))
-        (rebuild-dispatcher-table (dispatchers) marker)
-        marker)))
+  (let ([marker #f])
+    (case-lambda
+     [() marker]
+     [(new)
+      (set! marker new)
+      (command-marker-here-re
+       (regexp (string-append "^" (regexp-quote marker))))
+      (rebuild-dispatcher-table (dispatchers) marker)
+      (void)])))
 (define command-marker-here-re (make-parameter #f))
 
 (define (rebuild-dispatcher-table dispatchers command-marker)

@@ -525,9 +525,10 @@ Dispatching-related bindings:
 
 > command-marker
 
-  A string parameter that can be used to set a different command marker
-  string.  Defaults to "@".  It can also be set to `#f' which will
-  disable the command dispatcher altogether.
+  A string parameter-like procedure that can be used to set a different
+  command marker string.  Defaults to "@".  It can also be set to `#f'
+  which will disable the command dispatcher altogether.  Note that this
+  is a procedure -- it cannot be used with `parameterize'.
 
 > dispatchers
 

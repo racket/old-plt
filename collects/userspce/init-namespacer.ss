@@ -9,8 +9,11 @@
 	  mzlib:function^)
   
   (define (init-namespace vocab)
-    (teachpack-thunk vocab)
+    ;; setup-primitives before the teachpack in case the teachpack
+    ;; re-introduces any primitive definitions that were removed
     (setup-primitives)
+    (teachpack-thunk vocab)
+
     (add-extra-macros)
     (make-keywords))
   

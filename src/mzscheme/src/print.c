@@ -1671,7 +1671,7 @@ static void
 print_string(Scheme_Object *string, int notdisplay, Scheme_Thread *p)
 {
   char *str, minibuf[8], *esc;
-  int len, a, i;
+  int len, a, i, v;
 
   len = SCHEME_STRTAG_VAL(string);
   str = SCHEME_STR_VAL(string);
@@ -1693,8 +1693,9 @@ print_string(Scheme_Object *string, int notdisplay, Scheme_Thread *p)
       case '\t': esc = "\\t";  break;
       case '\v': esc = "\\v";  break;
       default:
-	if ((scheme_locale_on || (((unsigned char *)str)[i] <= 127))
-	    && isprint(((unsigned char *)str)[i])) {
+	v = ((unsigned char *)str)[i];
+	if ((v > 127) || ((v <= 127)
+			  && isprint(((unsigned char *)str)[i]))) {
 	  esc = NULL;
 	} else {
 	  sprintf(minibuf,
@@ -1881,7 +1882,7 @@ print_char(Scheme_Object *charobj, int notdisplay, Scheme_Thread *p)
 	str = "#\\rubout";
 	break;
       default:
-	if ((scheme_locale_on || (((unsigned char )ch) <= 127))
+	if ((((unsigned char )ch) <= 127)
 	    && isprint(((unsigned char)ch))) {
 	  minibuf[0] = '#';
 	  minibuf[1] = '\\';

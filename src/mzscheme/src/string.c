@@ -1570,6 +1570,46 @@ void scheme_reset_locale(void)
 }
 
 /**********************************************************************/
+/*                               unicode                              */
+/**********************************************************************/
+
+#if 0
+int scheme_utf8_decode(unsigned char *sc, int *us, int start, int end, int permissive)
+{
+  int i, j;
+
+  if (end < 0)
+    end = strlen(sc);
+
+  for (i = start, j = 0; i < end; i++, j++) {
+    sc = s[i];
+    if (sc < 0x80) {
+      us[j] = sc;
+    } else {
+      if ((sc & 0xE0) == 0xC0) {
+	if ((i + 1 < end) && ((s[i + 1] & 0xC0) == 0x80)) {
+	  us[j++] = ((sc & 0x1F) << 5) | (s[i+1] & 0x3F);
+	  i++;
+	  continue;
+	}
+      } else if ((sc & 0xF0) == 0xE0) {
+	if ((i + 2 < end) 
+	    && ((s[i + 1] & 0xC0) == 0x80)
+	    && ((s[i + 2] & 0xC0) == 0x80)) {
+	  us[j] = ((sc & 0xF) << 12) | ((s[i+1] & 0x3F) << 6) | (s[i+2] & 0x3F);
+	  i += 2;
+	  continue;
+	} else
+	  break;
+      }
+      raise_conversion_error("string->unicode-string/utf8", argv[0], start, end);
+      return NULL;
+    }
+  }
+}
+#endif
+
+/**********************************************************************/
 /*                     machine type details                           */
 /**********************************************************************/
 

@@ -1348,7 +1348,9 @@ long scheme_get_string(const char *who,
       if (ip->position >= 0)
 	ip->position += got;
       if (ip->count_lines) {
-	int c;
+	int c, degot = 0;
+#       define IS_UTF8_CHAR(buffer, p) (((unsigned char *)buffer)[p] & 0x80)
+#       define IS_UTF8_START(buffer, p) (((unsigned char *)buffer)[p] & 0x40)
 
 	mzAssert(ip->lineNumber >= 0);
 	mzAssert(ip->column >= 0);
@@ -1359,6 +1361,11 @@ long scheme_get_string(const char *who,
 	for (i = got, c = 0; i--; c++) {
 	  if (buffer[offset + i] == '\n' || buffer[offset + i] == '\r') {
 	    break;
+	  } else if (IS_UTF8_CHAR(buffer, offset + i)) {
+	    /* UTF-8: Don't count this toward the position/column if
+	       it's not the leading byte in the encoding: */
+	    if (!IS_UTF8_START(buffer, offset + i))
+	      degot++;
 	  }
 	}
 
@@ -1366,19 +1373,29 @@ long scheme_get_string(const char *who,
 	  int n = 0;
 	  ip->charsSinceNewline = c + 1;
 	  i++;
+	  /* Continue walking, back over the previous lines, to find
+	     out how many there were, and to adjust the position for
+	     UTF-8 encodings: */
 	  while (i--) {
 	    if (buffer[offset + i] == '\n') {
 	      if (!(i &&( buffer[offset + i - 1] == '\r'))
 		  && !(!i && ip->was_cr)) {
 		n++;
 	      } else
-		ip->readpos -= 1; /* adjust initial readpos increment */
-	    } else if (buffer[offset + i] == '\r')
+		degot += 1; /* adjust initial readpos increment */
+	    } else if (buffer[offset + i] == '\r') {
 	      n++;
+	    } else if (IS_UTF8_CHAR(buffer, offset + i)) {
+	      /* UTF-8: Don't count this toward the position/column if
+		 it's not the leading byte in the encoding: */
+	      if (!IS_UTF8_START(buffer, offset + i))
+		degot++;
+	    }
 	  }
 	  mzAssert(n > 0);
 	  ip->lineNumber += n;
 	  ip->was_cr = (buffer[offset + got - 1] == '\r');
+	  ip->readpos -= degot;
 
 	  /* Need to fix up column, counting before the found newline,
              to compute oldColumn: */
@@ -1401,11 +1418,15 @@ long scheme_get_string(const char *who,
 	    i++;
 
 	    /* Found the previous line; adjust the column: */
-	    for (; i < cc; i++) {
-	      if (buffer[offset + i] == '\t')
-		ip->column = ip->column - (ip->column & 0x7) + 8;
-	      else
-		ip->column++;
+	    {
+	      int col = ip->column;
+	      for (; i < cc; i++) {
+		if (buffer[offset + i] == '\t')
+		  col = col - (col & 0x7) + 8;
+		else
+		  col++;
+	      }
+	      ip->column = col;
 	    }
 	    /* Done. Now we can remember this column value as oldColumn. */
 	  }
@@ -1413,17 +1434,27 @@ long scheme_get_string(const char *who,
 
 	  /* Now reset column to 0: */
 	  ip->column = 0;
-	} else
-	  ip->charsSinceNewline += c;
-
-	/* Do the line again to get the column count right: */
-	for (i = got - c; i < got; i++) {
-	  if (buffer[offset + i] == '\t')
-	    ip->column = ip->column - (ip->column & 0x7) + 8;
-	  else
-	    ip->column++;
+	} else {
+	  ip->charsSinceNewline += (c - degot);
+	  ip->readpos -= degot;
 	}
 
+	/* Do the line again to get the column count right: */
+	{
+	  int col = ip->column;
+	  for (i = got - c; i < got; i++) {
+	    if (buffer[offset + i] == '\t')
+	      col = col - (col & 0x7) + 8;
+	    else if (IS_UTF8_CHAR(buffer, offset + i)) {
+	      /* UTF-8: Count only the leading byte in an encoding: */
+	      if (IS_UTF8_START(buffer, offset + i))
+		col++;
+	    } else
+	      col++;
+	  }
+	  ip->column = col;
+	}
+	
 	mzAssert(ip->lineNumber >= 0);
 	mzAssert(ip->column >= 0);
 	mzAssert(ip->position >= 0);

@@ -44,10 +44,10 @@
 				 (lambda (exn)
 				   (loop (string-append 
 					  s
-					  (string #\newline)
+					  "\n"
 					  (do-readline (get-prompt next-pos)))
 					 (add1 next-pos)))])
-		  (let ([p (open-input-string s)])
+		  (let ([p (open-input-string (string-append s "\n"))])
 		    (port-count-lines! p)
 		    (let ([rs (let loop ()
 				(let ([r (read-syntax (format "repl-~a" counter) p)])

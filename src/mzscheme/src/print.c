@@ -122,14 +122,12 @@ Scheme_Object *scheme_make_svector(short c, short *a)
   return o;
 }
 
-#if 0
 void
 scheme_debug_print (Scheme_Object *obj)
 {
   scheme_write(obj, scheme_orig_stdout_port);
   fflush (stdout);
 }
-#endif
 
 static void *print_to_port_k(void)
 {

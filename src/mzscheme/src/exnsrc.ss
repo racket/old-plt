@@ -27,7 +27,7 @@ strings are types/comments.
      
      (syntax [expr "syntax object or {\\scmfalse}" "illegal expression (or {\\scmfalse} if unknown)"
 		   form "symbol or {\\scmfalse}" "the syntactic form name that detected the error (or {\\scmfalse} if unknown)"
-		   module "symbol or {\\scmfalse}" "the form-defining module (or {\\scmfalse} if unknown)"]
+		   module "symbol, module path index, or {\\scmfalse}" "the form-defining module (or {\\scmfalse} if unknown)"]
 	     "syntax error, but not a \\scmfirst{read} error")
      
      (read [port "input-port" "port being read"

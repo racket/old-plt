@@ -25,7 +25,6 @@ int CSink::getHashValue(DISPID dispId) {
 EVENT_HANDLER_ENTRY *CSink::newEventHandlerEntry(DISPID dispId,Scheme_Object *handler) {
   EVENT_HANDLER_ENTRY *p;
   p = (EVENT_HANDLER_ENTRY *)scheme_malloc(sizeof(EVENT_HANDLER_ENTRY));
-  scheme_register_extension_global(p,sizeof(EVENT_HANDLER_ENTRY *));
   scheme_dont_gc_ptr(p);
   p->dispId = dispId;
   p->handler = handler;
@@ -57,6 +56,8 @@ EVENT_HANDLER_ENTRY *CSink::lookupHandler(DISPID dispId) {
 STDMETHODIMP CSink::set_extension_table(int p)
 {
   scheme_extension_table = (Scheme_Extension_Table *)p;
+  scheme_register_extension_global(&scheme_extension_table,
+				   sizeof(Scheme_Extension_Table *));
   return S_OK;
 }
 
@@ -69,8 +70,6 @@ STDMETHODIMP CSink::register_handler(DISPID dispId,int handler) {
   unsigned short hashVal;
   EVENT_HANDLER_ENTRY *p;
 
-  scheme_register_extension_global((Scheme_Object *)handler,
-				   sizeof(Scheme_Object *));
   scheme_dont_gc_ptr((Scheme_Object *)handler);
 
   hashVal = getHashValue(dispId);
@@ -87,6 +86,7 @@ STDMETHODIMP CSink::register_handler(DISPID dispId,int handler) {
     while (p != NULL) {
 
       if (p->dispId == dispId) { // update existing entry
+	scheme_gc_ptr_ok(p->handler);
 	p->handler = (Scheme_Object *)handler;
 	return S_OK;
       }

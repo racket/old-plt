@@ -549,7 +549,7 @@ void addTypeToTable(IDispatch *pIDispatch,char *name,
   // pointer value is used, for hashing
 
   pEntry = (MX_TYPE_TBL_ENTRY *)scheme_malloc(sizeof(MX_TYPE_TBL_ENTRY));
-  scheme_register_extension_global(pEntry,sizeof(MX_TYPE_TBL_ENTRY *));
+  scheme_dont_gc_ptr(pEntry);
   pEntry->pTypeDesc = pTypeDesc;
   pEntry->pIDispatch = pIDispatch;
   pEntry->invKind = invKind;
@@ -594,14 +594,16 @@ MX_TYPEDESC *lookupTypeDesc(IDispatch *pIDispatch,char *name,
 
 Scheme_Object *mx_release_type_table(int argc,Scheme_Object **argv) {
   int i;
-  MX_TYPE_TBL_ENTRY *p;
+  MX_TYPE_TBL_ENTRY *p,*psave;
 
   for (i = 0; i < sizeray(typeTable); i++) {
     p = typeTable[i];
   
-    while(p) {
+    while (p) {
       scheme_release_typedesc((void *)p->pTypeDesc,NULL);
+      psave = p;
       p = p->next;
+      scheme_gc_ptr_ok(psave);
     }
   }
 

@@ -598,9 +598,17 @@
 			(if (eq? (car l) i)
 			    pos
 			    (loop (cdr l) (add1 pos))))))
-		(if selected
-		    (let* ([l (send (send selected get-parent) get-items)]
-			   [pos (+ dir (find selected-item l))])
+		;; Scrolling works differently depending on whether selections
+		;;  are involved:
+		(if selectable?
+		    (let* ([l (if selected
+				  (send (send selected get-parent) get-items)
+				  (get-items))]
+			   [pos (if selected-item
+				    (+ dir (find selected-item l))
+				    (if (negative? dir)
+					(sub1 (length l))
+					0))])
 		      (when (< -1 pos (length l))
 			(let ([i (list-ref l pos)])
 			  (send i select #t)
@@ -617,7 +625,22 @@
 			      (unbox x-box) y
 			      (unbox w-box) 1)))))]
 	[page (lambda (dir)
-		(send top-buffer move-position dir #f 'page))]
+		;; Scrolling works differently depending on whether selections
+		;;  are involved:
+		(if selectable?
+		    (let ([items (get-items)])
+		      (unless (null? items)
+			(let ([sbox (box 0)]
+			      [ebox (box 0)])
+			  (send top-buffer get-visible-line-range sbox ebox)
+			  (let* ([len (max 1 (sub1 (- (unbox ebox) (unbox sbox))))]
+				 [l (if (eq? dir 'up)
+					(max 0 (- (unbox sbox) len))
+					(min (sub1 (length items)) (+ (unbox ebox) len)))]
+				 [i (list-ref items l)])
+			    (send i select #t)
+			    (send i scroll-to)))))
+		    (send top-buffer move-position dir #f 'page)))]
 	[selectable? #t]
 	[show-focus? #f]
 	[do-select (lambda (item s)

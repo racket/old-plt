@@ -432,6 +432,11 @@ wxSnip *wxMediaSnip::Copy(void)
 			minWidth, maxWidth,
 			minHeight, maxHeight);
 
+  /* Copy core snip info: */
+  wxSnip::Copy(ms);
+
+  ms->tightFit = tightFit;
+
   if (!me)
     ms->SetMedia(NULL);
 

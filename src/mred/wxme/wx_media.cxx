@@ -556,6 +556,51 @@ void wxMediaEdit::OnDefaultChar(wxKeyEvent *event)
       MovePosition(code, isshift);
     }
     break;
+  case WXK_NUMPAD0:
+    Insert('0');
+    break;
+  case WXK_NUMPAD1:
+    Insert('1');
+    break;
+  case WXK_NUMPAD2:
+    Insert('2');
+    break;
+  case WXK_NUMPAD3:
+    Insert('3');
+    break;
+  case WXK_NUMPAD4:
+    Insert('4');
+    break;
+  case WXK_NUMPAD5:
+    Insert('5');
+    break;
+  case WXK_NUMPAD6:
+    Insert('6');
+    break;
+  case WXK_NUMPAD7:
+    Insert('7');
+    break;
+  case WXK_NUMPAD8:
+    Insert('8');
+    break;
+  case WXK_NUMPAD9:
+    Insert('9');
+    break;
+  case WXK_MULTIPLY:
+    Insert('*');
+    break;
+  case WXK_DIVIDE:
+    Insert('/');
+    break;
+  case WXK_ADD:
+    Insert('+');
+    break;
+  case WXK_SUBTRACT:
+    Insert('-');
+    break;
+  case WXK_DECIMAL:
+    Insert('.');
+    break;
   case WXK_RETURN:
   case WXK_TAB:
     ok = 1;
@@ -1092,9 +1137,18 @@ void wxMediaEdit::MovePosition(long code, Bool extendSelection,
 	  y = ScrollLineLocation(newtop);
 	}
 
+	/* Compute top line, for caret */
 	i = FindLine(y);
 	if (LineLocation(i, TRUE) < y)
 	  i++;
+
+	/* Now, suppose we're scrolling down while extending the
+	   selection.  We want to be able to see that we're
+	   selecting. So try moving the line `i' down one more, if
+	   there's room: */
+	if (LineLocation(i + 1, FALSE) < y + scrollHeight)
+	  i++;
+
 	scrollTop = y - 1;
       } else
 	i = cline + 1;

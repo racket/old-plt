@@ -123,7 +123,8 @@
   (define mzscheme-libraries-provided
     '("refer.ss" "refer" "spidey.ss" "spidey"))
 
-  (define scheme-vocabulary (create-vocabulary 'scheme-vocabulary))
+  (define scheme-vocabulary
+    (create-vocabulary 'scheme-vocabulary #f "Invalid expression"))
 
   (add-sym-micro scheme-vocabulary
     (lambda (expr env attributes vocab)
@@ -350,7 +351,8 @@
   ; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
   (define optarglist-decl-entry-parser-vocab
-    (create-vocabulary 'optarglist-decl-entry-parser-vocab))
+    (create-vocabulary 'optarglist-decl-entry-parser-vocab #f
+      "Invalid argument list entry"))
 
   (add-sym-micro optarglist-decl-entry-parser-vocab
     (lambda (expr env attributes vocab)
@@ -398,7 +400,8 @@
 	    (static-error expr "Invalid init-var declaration"))))))
 
   (define optarglist-decls-vocab
-    (create-vocabulary 'optarglist-decls-vocab))
+    (create-vocabulary 'optarglist-decls-vocab #f
+      "Invalid argument list entry"))
 
   (add-sym-micro optarglist-decls-vocab
     (lambda (expr env attributes vocab)
@@ -502,7 +505,8 @@
   ; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
   (define paroptarglist-decl-entry-parser-vocab
-    (create-vocabulary 'paroptarglist-decl-entry-parser-vocab))
+    (create-vocabulary 'paroptarglist-decl-entry-parser-vocab #f
+      "Invalid argument list entry"))
 
   (add-sym-micro paroptarglist-decl-entry-parser-vocab
     (lambda (expr env attributes vocab)
@@ -550,7 +554,8 @@
 	    (static-error expr "Invalid init-var declaration"))))))
 
   (define paroptarglist-decls-vocab
-    (create-vocabulary 'paroptarglist-decls-vocab))
+    (create-vocabulary 'paroptarglist-decls-vocab #f
+      "Invalid argument list entry"))
 
   (add-sym-micro paroptarglist-decls-vocab
     (lambda (expr env attributes vocab)
@@ -653,7 +658,8 @@
   ; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
   (define arglist-decls-vocab
-    (create-vocabulary 'arglist-decls-vocab))
+    (create-vocabulary 'arglist-decls-vocab #f
+      "Invalid argument list entry"))
 
   (add-sym-micro arglist-decls-vocab
     (lambda (expr env attributes vocab)

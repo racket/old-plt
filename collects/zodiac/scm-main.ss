@@ -478,7 +478,9 @@
 	    (else
 	      (static-error expr "Malformed set!-values")))))))
 
-  (define local-extract-vocab (create-vocabulary 'local-extract-vocab))
+  (define local-extract-vocab
+    (create-vocabulary 'local-extract-vocab #f
+      "Invalid expression for local clause"))
 
   (add-primitivized-micro-form 'local scheme-vocabulary
     (let* ((kwd '())

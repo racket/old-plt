@@ -14,25 +14,26 @@
 
   ; ----------------------------------------------------------------------
 
-  (define-struct vocabulary-record (name this rest))
+  (define-struct vocabulary-record (name this rest error-message))
 
   (define get-vocabulary-name vocabulary-record-name)
 
   (define create-vocabulary
-    (opt-lambda (name (root #f))
+    (opt-lambda (name (root #f) (message "Invalid body"))
       (let ((h (make-hash-table)))
-	(make-vocabulary-record name h root))))
+	(make-vocabulary-record name h root message))))
 
   (define append-vocabulary
     (opt-lambda (new old (name #f))
-      (let loop ((new new) (first? #t))
+      (let loop ((this new) (first? #t))
 	(let ((name (if (and first? name) name
-		      (vocabulary-record-name new))))
+		      (vocabulary-record-name this))))
 	  (make-vocabulary-record name
-	    (vocabulary-record-this new)
-	    (if (vocabulary-record-rest new)
-	      (loop (vocabulary-record-rest new) #f)
-	      old))))))
+	    (vocabulary-record-this this)
+	    (if (vocabulary-record-rest this)
+	      (loop (vocabulary-record-rest this) #f)
+	      old)
+	    (vocabulary-record-error-message this))))))
 
   (define add-micro/macro-form
     (lambda (constructor)
@@ -192,7 +193,8 @@
 	      (else
 		(static-error expr "Invalid improper-list syntax")))))
 	(else
-	  (static-error expr "Invalid body")))))
+	  (static-error expr
+	    (vocabulary-record-error-message vocab))))))
 
   (define zodiac-user-parameterization (current-parameterization))
 

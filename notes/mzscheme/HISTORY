@@ -84,9 +84,12 @@ A set of internal definitions can start anywhere within a sequence
 Changed all comparison precedures to require at least two
  operands, including =, <, ..., char=?, char<?, ...,
  string=?, string<?, ...
+Renamed exn:misc:user-break to exn:break
+Renamed arity to procedure-arity
+Replaced primitive-name and inferred-name with object-name
 Added an "infix" conversion in the reader, triggered by a pair of dots
  between a pair of parens
-Fixed leaks (file descriptors, etc.) that could happend with
+Fixed leaks (file descriptors, etc.) that could happen with
  thread kills
 Fixed memory bug in the run-time support for mzc-compiled code
 Added port-count-lines!, which enables line-couting for a port

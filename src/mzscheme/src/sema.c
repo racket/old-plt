@@ -27,7 +27,6 @@ static Scheme_Object *hit_sema(int n, Scheme_Object **p);
 static Scheme_Object *block_sema_p(int n, Scheme_Object **p);
 static Scheme_Object *block_sema(int n, Scheme_Object **p);
 static Scheme_Object *block_sema_breakable(int n, Scheme_Object **p);
-static Scheme_Object *sema_callback(int n, Scheme_Object **p);
 
 void scheme_init_sema(Scheme_Env *env)
 {

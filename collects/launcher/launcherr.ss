@@ -254,7 +254,7 @@
 		      (error 'make-windows-launcher es)))]
 	     [content (begin
 			(file-position p 0)
-			(read-string (file-size dest)))])
+			(read-string (file-size dest) p))])
 	(close-input-port p)
 	(check-len len-exedir exedir "executable home directory is too long")
 	(check-len len-command str "collection/file name is too long")

@@ -114,10 +114,17 @@
       b))
 
   (define (lift p n)
-    (let ([dh (- (max 0 (- n (pict-descent p))))])
+    (let* ([dh (- (max 0 (- n (pict-descent p))))]
+	   [do-a? (= (pict-height p)
+		     (+ (pict-ascent p) (pict-descent p)))]
+	   [h2 (+ dh (pict-height p))]
+	   [d2 (max 0 (- (pict-descent p) n))])
       (make-pict (pict-draw p)
-		 (pict-width p) (+ dh (pict-height p))
-		 (pict-ascent p) (max 0 (- (pict-descent p) n))
+		 (pict-width p) h2
+		 (if do-a?
+		     (- h2 d2)
+		     (pict-ascent p))
+		 d2
 		 (map (lambda (c)
 			(make-child 
 			 (child-pict c)
@@ -126,10 +133,17 @@
 		      (pict-children p)))))
 
   (define (drop p n)
-    (let ([dh (- (max 0 (- n (pict-ascent p))))])
+    (let* ([dh (- (max 0 (- n (pict-ascent p))))]
+	   [do-d? (= (pict-height p)
+		     (+ (pict-ascent p) (pict-descent p)))]
+	   [h2 (+ dh (pict-height p))]
+	   [a2  (max 0 (- (pict-ascent p) n))])
       (make-pict (pict-draw p)
-		 (pict-width p) (+ dh (pict-height p))
-		 (max 0 (- (pict-ascent p) n)) (pict-descent p)
+		 (pict-width p) h2
+		 a2
+		 (if do-d?
+		     (- h2 a2)
+		     (pict-descent p))
 		 (pict-children p))))
 
   (define (clip-descent b)
@@ -289,7 +303,8 @@
 			  combine-ascent combine-descent)
 	     (lambda (sep . args)
 	       (unless (number? sep)
-		 (raise-type-error 'XXX-append "number" sep))
+		 (set! args (cons sep args))
+		 (set! sep 0))
 	       (let append-boxes ([args args])
 		 (cond
 		  [(null? args) (blank)]
@@ -420,7 +435,12 @@
 							  max-a-complement)
 						  ,box))
 					boxes))])
-		   (post-process p max-a max-d)))))]
+		   (post-process p max-a max-d
+				 (lambda ()
+				   (andmap (lambda (b)
+					     (= (pict-height b)
+						(+ (pict-ascent b) (pict-descent b))))
+					   boxes)))))))]
 	  [norm (lambda (h a d ac dc) h)]
 	  [tbase (lambda (h a d ac dc) (+ a ac))] 
 	  [bbase (lambda (h a d ac dc) (+ d dc))] 
@@ -429,16 +449,21 @@
 	  [tline (lambda (m v md d mac) mac)]
 	  [bline (lambda (m v md d mac) (- md d))]
 	  [c (lambda (m v . rest) (quotient* (- m v) 2))]
-	  [none (lambda (p a d) p)]
-	  [with-max-a (lambda (p a d)
+	  [none (lambda (p a d one-line?) p)]
+	  [with-max-a (lambda (p a d one-line?)
 			(make-pict (pict-draw p)
 				   (pict-width p) (pict-height p)
-				   a 0
+				   a (if (one-line?)
+					 (- (pict-height p) a)
+					 0)
 				   (pict-children p)))]
-	  [with-max-d (lambda (p a d)
+	  [with-max-d (lambda (p a d one-line?)
 			(make-pict (pict-draw p)
 				   (pict-width p) (pict-height p)
-				   0 d
+				   (if (one-line?)
+				       (- (pict-height p) d)
+				       0)
+				   d
 				   (pict-children p)))])
       (values
        (make-superimpose lb rt norm none)

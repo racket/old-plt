@@ -9,6 +9,8 @@ Version 102/1:
 
 Version 101, ??
 Added read-decimal-as-inexact parameter
+Inside MzScheme: scheme_basic_env() initializes break-enabled
+ to #f instead of #t
 
 Version 101, October 25, 1999
 Added 'sys-dir to find-system-path

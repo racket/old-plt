@@ -48,6 +48,8 @@ case $OS in
      *)
       if [ -r /lib/libdl.so.1 ]; then
         SYS=i386${SEP}linux
+      elif [ `file /bin/ls | grep ELF | wc -l` = 1 ]; then
+        SYS=i386${SEP}linux
       else
         SYS=i386${SEP}linux${SEP}aout
       fi

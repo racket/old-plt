@@ -77,8 +77,6 @@ Version 103.2:
 ------------------------------------------------------------------------
 
 Version 200, ???
-A set of internal definitions can start anywhere within a sequence
- of expressions (like Chez and MzScheme 53)
 (cond) alays returns void; the cond-allow-fallthough parameter and
    exn:cond exception have been removed
 Changed all comparison precedures to require at least two

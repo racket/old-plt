@@ -271,6 +271,16 @@ void *scheme_malloc_eternal(size_t n)
 #endif
 }
 
+#ifdef MZ_PRECISE_GC
+void *scheme_malloc_uncollectable(size_t size_in_bytes)
+{
+  void *p;
+  p = scheme_malloc(size_in_bytes);
+  scheme_dont_gc_ptr(p);
+  return p;
+}
+#endif
+
 #ifdef MZ_XFORM
 START_XFORM_SKIP;
 #endif

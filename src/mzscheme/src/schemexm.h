@@ -8,9 +8,6 @@
 #endif
 #define scheme_clear_escape (scheme_extension_table->scheme_clear_escape)
 #define scheme_new_jmpupbuf_holder (scheme_extension_table->scheme_new_jmpupbuf_holder)
-#define scheme_new_param (scheme_extension_table->scheme_new_param)
-#define scheme_param_config (scheme_extension_table->scheme_param_config)
-#define scheme_register_parameter (scheme_extension_table->scheme_register_parameter)
 #define scheme_current_config (scheme_extension_table->scheme_current_config)
 #define scheme_extend_config (scheme_extension_table->scheme_extend_config)
 #define scheme_install_config (scheme_extension_table->scheme_install_config)
@@ -152,6 +149,7 @@
 #  ifdef MZ_PRECISE_GC
 #define GC_malloc_one_tagged (scheme_extension_table->GC_malloc_one_tagged)
 #define GC_malloc_atomic_uncollectable (scheme_extension_table->GC_malloc_atomic_uncollectable)
+#define scheme_malloc_uncollectable (scheme_extension_table->scheme_malloc_uncollectable)
 #define GC_malloc_array_tagged (scheme_extension_table->GC_malloc_array_tagged)
 #  else
 #define GC_malloc_stubborn (scheme_extension_table->GC_malloc_stubborn)

@@ -40,13 +40,6 @@ Scheme_Jumpup_Buf_Holder *(*scheme_new_jmpupbuf_holder)(void);
 /*========================================================================*/
 /*                                parameters                              */
 /*========================================================================*/
-int (*scheme_new_param)(void);
-Scheme_Object *(*scheme_param_config)(char *name, Scheme_Object *pos,
-					     int argc, Scheme_Object **argv,
-					     int arity,
-					     Scheme_Prim *check, char *expected,
-					     int isbool);
-Scheme_Object *(*scheme_register_parameter)(Scheme_Prim *function, char *name, int which);
 Scheme_Config *(*scheme_current_config)(void);
 Scheme_Config *(*scheme_extend_config)(Scheme_Config *c, int pos, Scheme_Object *init_val);
 void (*scheme_install_config)(Scheme_Config *);
@@ -248,6 +241,7 @@ void *(*GC_malloc_atomic)(size_t size_in_bytes);
 #  ifdef MZ_PRECISE_GC
 void *(*GC_malloc_one_tagged)(size_t size_in_bytes);
 void *(*GC_malloc_atomic_uncollectable)(size_t size_in_bytes);
+void *(*scheme_malloc_uncollectable)(size_t size_in_bytes);
 void *(*GC_malloc_array_tagged)(size_t size_in_bytes);
 #  else
 void *(*GC_malloc_stubborn)(size_t size_in_bytes);

@@ -1267,8 +1267,8 @@ void *scheme_malloc(size_t size);
 #  define scheme_malloc_stubborn scheme_malloc
 # else
 #  define scheme_malloc_stubborn GC_malloc_stubborn
+#  define scheme_malloc_uncollectable GC_malloc_uncollectable
 # endif
-# define scheme_malloc_uncollectable GC_malloc_uncollectable
 #endif
 
 #ifdef USE_MEMORY_TRACING
@@ -1426,6 +1426,14 @@ MZ_EXTERN void scheme_end_atomic_no_swap(void);
 MZ_EXTERN void (*scheme_on_atomic_timeout)(void);
 
 MZ_EXTERN void scheme_immediate_exit(int status);
+
+MZ_EXTERN int scheme_new_param(void);
+MZ_EXTERN Scheme_Object *scheme_param_config(char *name, Scheme_Object *pos,
+					     int argc, Scheme_Object **argv,
+					     int arity,
+					     Scheme_Prim *check, char *expected,
+					     int isbool);
+MZ_EXTERN Scheme_Object *scheme_register_parameter(Scheme_Prim *function, char *name, int which);
 
 #endif /* SCHEME_DIRECT_EMBEDDED */
 

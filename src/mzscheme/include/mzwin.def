@@ -7,9 +7,6 @@ EXPORTS
  scheme_mz_longjmp
  scheme_clear_escape
  scheme_new_jmpupbuf_holder
- scheme_new_param
- scheme_param_config
- scheme_register_parameter
  scheme_current_config
  scheme_extend_config
  scheme_install_config

@@ -965,8 +965,8 @@ AC_SUBST(PNG_A)
 AC_SUBST(OSKHOME)
 AC_SUBST(EXTRA_OSK_LIBS)
 
-AC_SUBST(FOREIGN_OBJ_IF_USED)
 AC_SUBST(FOREIGN_OBJS_IF_USED)
+AC_SUBST(FOREIGNTARGET)
 
 AC_SUBST(LTO)
 
@@ -984,15 +984,16 @@ makefiles="Makefile
              mzscheme/gc2/Makefile mzscheme/guile/Makefile
              mzscheme/palm/Makefile"
 
-FOREIGN_OBJ_IF_USED=
+FOREIGNTARGET=
 FOREIGN_OBJS_IF_USED=
 if test -d "${srcdir}/foreign" && test "${enable_foreign}" = "yes" ; then
   AC_CONFIG_AUX_DIR( foreign/gcc )
   AC_CONFIG_SUBDIRS( foreign/gcc/libffi )
   makefiles="$makefiles foreign/Makefile"
-  FOREIGN_OBJ_IF_USED="\$(FOREIGN_OBJ)"
+  FOREIGNTARGET="foreign-stuff"
   FOREIGN_OBJS_IF_USED="\$(FOREIGN_OBJS)"
 else
+  FOREIGNTARGET="foreign-nothing"
   MZOPTIONS="$MZOPTIONS -DDONT_USE_FOREIGN"
 fi
 

@@ -146,12 +146,30 @@ exec mzscheme -r "$0" "$0" "$@"
   (~ "/* "name" structure definition */")
   (~ "static Scheme_Type "cname"_tag;" \\
      "typedef struct "cname"_struct {" \\
-     "  Scheme_Type type;")
+     "  Scheme_Object so;")
   (for-each (lambda (s t) (~ "  "t" "s";")) slots types)
   (~ "} "cname"_struct;" \\
      "#define SCHEME_"mname"P(x) (SCHEME_TYPE(x)=="cname"_tag)")
   (_cdefine predname 1)
   (~ "{ return SCHEME_"mname"P(argv[0]) ? scheme_true : scheme_false; }")
+  (~ "#ifdef MZ_PRECISE_GC")
+  (~ "START_XFORM_SKIP;")
+  (~ "int "cname"_SIZE(void *p) {")
+  (~ "  return gcBYTES_TO_WORDS(sizeof("cname"_struct));")
+  (~ "}")
+  (let ([mark/fix (lambda (mode)
+		    (~ "int "cname"_"mode"(void *p) {")
+		    (~ "  "cname"_struct *s = ("cname"_struct *)p;")
+		    (for-each (lambda (s t)
+				(when (regexp-match #rx#"[*]" t)
+				  (~ "  gc"mode"(s->"s");")))
+			      slots types)
+		    (~ "  return gcBYTES_TO_WORDS(sizeof("cname"_struct));")
+		    (~ "}"))])
+    (mark/fix "MARK")
+    (mark/fix "FIXUP"))
+  (~ "END_XFORM_SKIP;")
+  (~ "#endif")
   (set! cstructs (cons (list* name cname slots) cstructs)))
 (define-syntax cdefstruct
   (syntax-rules ()
@@ -163,7 +181,7 @@ exec mzscheme -r "$0" "$0" "$@"
   (define cstruct (assq type cstructs))
   (~ var" = ("(cadr cstruct)"_struct*)scheme_malloc_stubborn(sizeof("
             (cadr cstruct)"_struct));" \\
-     var"->type = "(cadr cstruct)"_tag;")
+     var"->so.type = "(cadr cstruct)"_tag;")
   (for-each (lambda (v f) (~ var"->"f" = ("v");")) values (cddr cstruct))
   (~ "scheme_end_stubborn_change("var");"))
 (define-syntax cmake-object
@@ -182,7 +200,7 @@ exec mzscheme -r "$0" "$0" "$@"
 
 :}
 
-#include <escheme.h>
+#include <scheme.h>
 #ifdef WINDOWS_DYNAMIC_LOAD
 #include <windows.h>
 #else
@@ -200,6 +218,10 @@ typedef INT32  int32_t;
 typedef UINT32 uint32_t;
 #else
 #include <inttypes.h>
+#endif
+#ifndef MZ_PRECISE_GC
+# define XFORM_OK_PLUS +
+# define GC_CAN_IGNORE /* empty */
 #endif
 
 /*****************************************************************************/
@@ -226,6 +248,7 @@ static Scheme_Hash_Table *opened_libs;
   fname = SCHEME_FALSEP(argv[0]) ? NULL : SCHEME_PATH_VAL(argv[0]);
   lib = (ffi_lib_struct*)scheme_hash_get(opened_libs, (Scheme_Object*)name);
   if (!lib) {
+    Scheme_Hash_Table *ht;
 #ifdef WINDOWS_DYNAMIC_LOAD
     handle = (fname==NULL) ? LoadLibrary(fname) : GetModuleHandle(NULL);
     if (handle == NULL) {
@@ -240,9 +263,10 @@ static Scheme_Hash_Table *opened_libs;
       scheme_raise_exn(MZEXN_FAIL_FILESYSTEM,
                        MYNAME": couldn't open %V (%s)", argv[0], dlerror());
 #endif
+    ht = scheme_make_hash_table(SCHEME_hash_string);
     {:(cmake-object "lib" ffi-lib
                     "handle" "argv[0]"
-                    "scheme_make_hash_table(SCHEME_hash_string)"):}
+                    "ht"):}
     scheme_hash_set(opened_libs, (Scheme_Object*)name, (Scheme_Object*)lib);
     /* no dlclose finalizer - since the hash table always keeps a reference */
     /* maybe add some explicit unload at some point */
@@ -748,7 +772,7 @@ typedef union FFIAny {
 static Scheme_Object *ffi_base_ctype(Scheme_Object *type)
 {
   if (!SCHEME_FFITYPEP(type)) return NULL;
-  while (FFITYPE_USERP(type)) type = FFITYPE_BASETYPE(type);
+  while (FFITYPE_USERP(type)) { type = FFITYPE_BASETYPE(type); }
   return type;
 }
 
@@ -799,7 +823,8 @@ static int ffi_sizeof(Scheme_Object *type)
   ffi_type *libffi_type, **dummy;
   ffi_type_struct *type;
   ffi_cif cif;
-  int i, nargs = scheme_proper_list_length(argv[0]);
+  int i, nargs;
+  nargs = scheme_proper_list_length(argv[0]);
   if (nargs < 0)
     scheme_wrong_type(MYNAME, "proper list", 0, argc, argv);
   /* allocate the type elements */
@@ -842,8 +867,7 @@ static int ffi_sizeof(Scheme_Object *type)
     (SCHEME_FALSEP(x) ? NULL : \
       (SCHEME_FFIOBJP(x) ? (((ffi_obj_struct*)x)->obj) : \
        SCHEME_BYTE_STRINGP(x) ? SCHEME_BYTE_STR_VAL(x) : \
-        ({scheme_wrong_type("any->pointer", "pointer-type", 0, 1, &(x)); \
-          NULL;}))))
+        NULL)))
 
 #define scheme_make_foreign_cpointer(x) \
   ((x==NULL)?scheme_false:scheme_make_cptr(x,NULL))
@@ -945,7 +969,8 @@ static void* ffi_scheme_to_c(Scheme_Object *type, void *dst,
 /* (ffi-sizeof type) -> int, returns 0 for void, error if not a C type */
 {:(cdefine ffi-sizeof 1):}
 {
-  int size = ffi_sizeof(argv[0]);
+  int size;
+  size = ffi_sizeof(argv[0]);
   if (size >= 0) return scheme_make_integer(size);
   else scheme_wrong_type(MYNAME, "C-type", 0, argc, argv);
   return NULL; /* shush the compiler */
@@ -954,7 +979,8 @@ static void* ffi_scheme_to_c(Scheme_Object *type, void *dst,
 /* (ffi-alignof type) -> int, returns 0 for void, error if not a C type */
 {:(cdefine ffi-alignof 1):}
 {
-  Scheme_Object *type = ffi_base_ctype(argv[0]);
+  Scheme_Object *type;
+  type  = ffi_base_ctype(argv[0]);
   if (type == NULL) scheme_wrong_type(MYNAME, "C-type", 0, argc, argv);
   else return scheme_make_integer(FFITYPE_PRIMTYPE(type)->alignment);
   return NULL; /* shush the compiler */
@@ -1066,11 +1092,11 @@ static void* ffi_scheme_to_c(Scheme_Object *type, void *dst,
       scheme_wrong_type(MYNAME, "abs-flag", 2, argc, argv);
     if (!SCHEME_INTP(argv[3]))
       scheme_wrong_type(MYNAME, "integer", 3, argc, argv);
-    (char*)ptr += SCHEME_INT_VAL(argv[3]);
+    ptr = (char*)ptr XFORM_OK_PLUS SCHEME_INT_VAL(argv[3]);
   } else if (argc > 2) {
     if (!SCHEME_INTP(argv[2]))
       scheme_wrong_type(MYNAME, "integer", 2, argc, argv);
-    (char*)ptr += size * SCHEME_INT_VAL(argv[2]);
+    ptr = (char*)ptr XFORM_OK_PLUS (size * SCHEME_INT_VAL(argv[2]));
   }
   return ffi_c_to_scheme(argv[1], ptr);
 }
@@ -1114,11 +1140,11 @@ static void* ffi_scheme_to_c(Scheme_Object *type, void *dst,
       scheme_wrong_type(MYNAME, "abs-flag", 2, argc, argv);
     if (!SCHEME_INTP(argv[3]))
       scheme_wrong_type(MYNAME, "integer", 3, argc, argv);
-    (char*)ptr += SCHEME_INT_VAL(argv[3]);
+    ptr = (char*)ptr XFORM_OK_PLUS SCHEME_INT_VAL(argv[3]);
   } else if (argc > 3) {
     if (!SCHEME_INTP(argv[2]))
       scheme_wrong_type(MYNAME, "integer", 2, argc, argv);
-    (char*)ptr += size * SCHEME_INT_VAL(argv[2]);
+    ptr = (char*)ptr XFORM_OK_PLUS (size * SCHEME_INT_VAL(argv[2]));
   }
   ffi_scheme_to_c(argv[1], ptr, val, 1);
   return scheme_void;
@@ -1218,7 +1244,7 @@ Scheme_Object *ffi_do_call(void *data, int argc, Scheme_Object *argv[])
   Scheme_Object *base;
   ffi_cif       *cif    = (ffi_cif*)(((Scheme_Object**)data)[4]);
   int           nargs   = cif->nargs;
-  FFIAny oval, *ival;
+  GC_CAN_IGNORE FFIAny oval, *ival;
   void **avalues, *p;
   int i;
   ival    = alloca(nargs*sizeof(FFIAny));
@@ -1240,8 +1266,8 @@ Scheme_Object *ffi_do_call(void *data, int argc, Scheme_Object *argv[])
   ffi_call(cif, c_func, p, avalues);
   if (FFITYPE_PRIMLABEL(base) == FFI_fmark) {
     /* need to allocate a pointer */
-    return ffi_c_to_scheme(otype,
-                           scheme_make_foreign_cpointer(oval.x_pointer));
+    p = scheme_make_foreign_cpointer(oval.x_pointer);
+    return ffi_c_to_scheme(otype, p);
   } else {
     return ffi_c_to_scheme(otype, p);
   }
@@ -1254,7 +1280,7 @@ Scheme_Object *ffi_do_call(void *data, int argc, Scheme_Object *argv[])
   static Scheme_Object *ffi_name_prefix = NULL;
   Scheme_Object *itypes = argv[1];
   Scheme_Object *otype  = argv[2];
-  Scheme_Object *obj, **data, *p, *base;
+  Scheme_Object *obj, **data, *p, *base, *bstr;
   ffi_type *rtype, **atypes;
   ffi_cif *cif;
   int i, nargs;
@@ -1285,11 +1311,12 @@ Scheme_Object *ffi_do_call(void *data, int argc, Scheme_Object *argv[])
     scheme_signal_error("internal error: ffi_prep_cif did not return FFI_OK");
   scheme_end_stubborn_change(cif);
   data = scheme_malloc_stubborn(5 * sizeof(void*));
-  data[0] = scheme_append_byte_string
+  bstr = scheme_append_byte_string
               (ffi_name_prefix,
                scheme_make_byte_string_without_copying
                  (SCHEME_FFIOBJP(argv[0]) ?
                    ((ffi_obj_struct*)(argv[0]))->name : "proc"));
+  data[0] = bstr;
   data[1] = obj;
   data[2] = itypes;
   data[3] = otype;
@@ -1307,10 +1334,12 @@ void ffi_do_callback(ffi_cif* cif, void* resultp, void** args, void *userdata)
 {
   ffi_callback_struct *data = (ffi_callback_struct*)userdata;
   int argc = cif->nargs, i;
-  Scheme_Object **argv, *p;
+  Scheme_Object **argv, *p, *v;
   argv = alloca(argc*sizeof(Scheme_Object*));
-  for (i=0, p=data->itypes; i<argc; i++, p=SCHEME_CDR(p))
-    argv[i] = ffi_c_to_scheme(SCHEME_CAR(p),args[i]);
+  for (i=0, p=data->itypes; i<argc; i++, p=SCHEME_CDR(p)) {
+    v = ffi_c_to_scheme(SCHEME_CAR(p),args[i]);
+    argv[i] = v;
+  }
   p = _scheme_apply(data->proc, argc, argv);
   ffi_scheme_to_c(data->otype, resultp, p, 1);
 }
@@ -1370,14 +1399,18 @@ void scheme_init_foreign(Scheme_Env *env)
   {:(for-each (lambda (x)
                 (~ (cadr x)"_tag = scheme_make_type(\"<"(car x)">\");"))
               (reverse cstructs)):}
+#ifdef MZ_PRECISE_GC  
+  {:(for-each (lambda (x)
+		(~ "GC_register_traversers("(cadr x)"_tag, "(cadr x)"_SIZE, "
+		   (cadr x)"_MARK, " (cadr x)"_FIXUP, 1, 0);"))
+              (reverse cstructs)):}
+#endif
+  MZ_REGISTER_STATIC(opened_libs);
   opened_libs = scheme_make_hash_table(SCHEME_hash_string);
-  /* scheme_register_extension_global should change to MZ_REGISTER_STATIC when
-   * the code moves into mzscheme. */
-  scheme_register_extension_global(&opened_libs, sizeof(opened_libs));
   {:(for-each
      (lambda (sym)
-       (~ sym"_sym = scheme_intern_symbol(\""sym"\");" \\
-          "scheme_register_extension_global("sym"_sym,sizeof("sym"_sym));"))
+       (~ "MZ_REGISTER_STATIC("sym"_sym);" \\
+	  sym"_sym = scheme_intern_symbol(\""sym"\");"))
      (reverse symbols)):}
   {:(for-each
       (lambda (x)

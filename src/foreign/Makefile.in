@@ -9,13 +9,23 @@ ARFLAGS = @ARFLAGS@
 
 LIBFFI_A = gcc/libffi/.libs/libffi.a
 
-# compile sub-libraries & foreign.c, then extract all .a files here so we have
-# a single directory with all object files.
-all: $(LIBFFI_A) foreign.o
-	$(AR) x $(LIBFFI_A)
+# compile sub-libraries & foreign.c, then extract all .a files into unpack
+all:
+	$(MAKE) foreign.o
+	$(MAKE) $(LIBFFI_A)
+	$(MAKE) unpacked
+
+unpacked: $(LIBFFI_A)
+	cd unpack; $(AR) x ../$(LIBFFI_A)
+	touch unpacked
 
 $(LIBFFI_A):
 	cd gcc/libffi; $(MAKE) libffi.la
 
-foreign.o: $(srcdir)/foreign.c
+unpack:
+	mkdir unpack
+
+foreign.o: $(srcdir)/foreign.c $(srcdir)/../mzscheme/include/scheme.h \
+           $(srcdir)/../mzscheme/src/schemef.h \
+           $(srcdir)/../mzscheme/src/schvers.h
 	$(CC) $(CFLAGS) -c $(srcdir)/foreign.c -o foreign.o

@@ -5,9 +5,6 @@ scheme_longjmpup
 scheme_reset_jmpup_buf
 scheme_clear_escape
 scheme_new_jmpupbuf_holder
-scheme_new_param
-scheme_param_config
-scheme_register_parameter
 scheme_current_config
 scheme_extend_config
 scheme_install_config
@@ -141,6 +138,7 @@ GC_malloc
 GC_malloc_atomic
 GC_malloc_one_tagged
 GC_malloc_atomic_uncollectable
+scheme_malloc_uncollectable
 GC_malloc_array_tagged
 scheme_malloc_eternal
 scheme_end_stubborn_change

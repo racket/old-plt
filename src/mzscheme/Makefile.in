@@ -21,12 +21,13 @@ MZSRC = $(srcdir)/src
 FOREIGN_DIR = ../foreign
 FOREIGN_SRC = $(srcdir)/$(FOREIGN_DIR)/foreign.c
 FOREIGN_OBJ = $(FOREIGN_DIR)/foreign.o
-FOREIGN_OBJS = $(FOREIGN_DIR)/*.o
+FOREIGN_OBJS = $(FOREIGN_OBJ) $(FOREIGN_DIR)/unpack/*.o
 
 ################################################################################
 
 bin: 
 	$(MAKE) g-c
+	$(MAKE) @FOREIGNTARGET@
 	$(MAKE) @MZBINTARGET@
 
 normal-bin:
@@ -45,6 +46,7 @@ oskit:
 
 mzschemelib: 
 	$(MAKE) g-c 
+	$(MAKE) @FOREIGNTARGET@
 	$(MAKE) mzlibrary 
 
 libguile:
@@ -81,14 +83,17 @@ gc.@LIBSFX@:
 	$(AR) $(ARFLAGS) @GCDIR@/gc.@LIBSFX@ @GCDIR@/*.@LTO@
 
 # Compilation of the foreign libraries (this compiles all of them)
-$(FOREIGN_OBJ): $(FOREIGN_SRC)
+foreign-stuff:
 	cd $(FOREIGN_DIR); make all
+
+foreign-nothing:
+	echo no foreign
 
 mzlibrary:
 	cd src; $(MAKE) all 
 	$(MAKE) libmzscheme.@LIBSFX@
 
-libmzscheme.@LIBSFX@: src/*.@LTO@ @FOREIGN_OBJ_IF_USED@
+libmzscheme.@LIBSFX@: src/*.@LTO@ @FOREIGN_OBJS_IF_USED@
 	$(AR) $(ARFLAGS) libmzscheme.@LIBSFX@ src/*.@LTO@ @FOREIGN_OBJS_IF_USED@
 	$(RANLIB) libmzscheme.@LIBSFX@
 

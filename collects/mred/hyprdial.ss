@@ -1,7 +1,7 @@
 ; Dialog box for picking a tag.
 
 (define-sigfunctor (mred:hyper-dialog@ mred:hyper-dialog^)
-  (import mred:hyper-edit^ mzlib:file^)
+  (import mred:debug^ mred:hyper-edit^ mzlib:file^)
 
   (define hyper-tag-dialog%
     (class wx:dialog-box% (tags-list)

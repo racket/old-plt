@@ -3,10 +3,10 @@
 ; July 17, 1995
 
 (define-sigfunctor (mred:hyper-frame@ mred:hyper-frame^)
-  (import mred:hyper-edit^ mred:hyper-dialog^
+  (import mred:debug^ mred:hyper-edit^ mred:hyper-dialog^
 	  mred:frame^ mred:canvas^ mred:group^ mred:handler^)
 
-  '(printf "mred:hyper-frame@~n")
+  (mred:debug^:dprintf "mred:hyper-frame@~n")
 
   (define hyper-frame-group (make-object mred:group^:frame-group%))
 

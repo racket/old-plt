@@ -3,9 +3,9 @@
 ; July 17, 1995
 
 (define-sigfunctor (mred:hyper-edit@ mred:hyper-edit^)
-  (import mred:edit^ mred:hyper-dialog^ mzlib:file^ mzlib:string^)
+  (import mred:debug^ mred:edit^ mred:hyper-dialog^ mzlib:file^ mzlib:string^)
 
-  '(printf "mred:hyper-edit@~n")
+  (mred:debug^:dprintf "mred:hyper-edit@~n")
 
   ; for cut and paste:
   (define hyper-buffer-data%

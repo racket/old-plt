@@ -446,6 +446,12 @@
 
     (define share-ivar-decl-entry-parser-vocab (make-vocabulary))
 
+    (add-sym-micro share-ivar-decl-entry-parser-vocab
+      (lambda (expr env attributes vocab)
+	(list
+	  (create-share-binding+marks expr)
+	  expr expr)))
+
     (add-list-micro share-ivar-decl-entry-parser-vocab
       (let* ((kwd '())
 	      (in-pattern-1 '((internal-var var) inherited-var))

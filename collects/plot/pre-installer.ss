@@ -29,7 +29,7 @@
                                   [(windows) '("/DHAVE_LIBPNG" "/DPLD_png")]
                                   [else '("-DHAVE_LIBPNG" "-DPLD_png")]))]
                        ;; we compile a simple .so, not an extension
-                       [current-standard-link-libraries '()])
+                       [current-use-mzdyn? '()])
           (define c-files (filter (lambda (f)
                                     (regexp-match "\\.[cC]$" (path->string f)))
                                   (directory-list)))

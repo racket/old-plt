@@ -928,9 +928,10 @@
 			[y (+ dy reset-console-start-location)]
 			[width (let ([b (box 0)])
 				 (get-extent b null)
-				 (unbox b))]
-			[height  (- reset-console-end-location
-				    reset-console-start-location)])
+				 (min 0 (unbox b)))]
+			[height (min 0
+				     (- reset-console-end-location
+					reset-console-start-location))])
 		   (send brush set-stipple (mred:icon:get-reset-console-bitmap))
 		   (send dc set-pen pen)
 		   (send dc set-brush brush)

@@ -26,15 +26,15 @@
    show-preferences-dialog
    hide-preferences-dialog))
 
-(define-signature mred:container^
+(define-signature mred:container-children^
   (const-default-size
    const-default-posn
    const-default-spacing
+   const-default-border
    (struct child-info (x-posn y-posn x-min y-min x-stretch y-stretch))
-   frame%
-   dialog-box%
-   canvas%
-   media-canvas%
+   get-two-int-values
+   non-negative-number?
+   make-item%
    button%
    check-box%
    choice%
@@ -43,13 +43,68 @@
    message%
    radio-box%
    slider%
-   text-window%
    text%
    multi-text%
-   panel%
+   canvas%
+   media-canvas%
+   text-window%))
+
+(define-signature mred:container-frames^
+  (frame% dialog-box%))
+
+(define-signature mred:container-panels^
+  (panel%
    horizontal-panel%
    vertical-panel%
    single-panel%))
+
+(define-signature mred:container-children-export^
+  (const-default-size
+   const-default-posn
+   const-default-spacing
+   const-default-border
+   (struct child-info (x-posn y-posn x-min y-min x-stretch y-stretch))
+   button%
+   check-box%
+   choice%
+   gauge%
+   list-box%
+   message%
+   radio-box%
+   slider%
+   text%
+   multi-text%
+   canvas%
+   media-canvas%
+   text-window%))
+
+(define-signature mred:container^
+  ((open mred:container-frames^)
+   (open mred:container-children-export^)
+   (open mred:container-panels^)))
+;  (const-default-size
+;   const-default-posn
+;   const-default-spacing
+;   (struct child-info (x-posn y-posn x-min y-min x-stretch y-stretch))
+;   frame%
+;   dialog-box%
+;   canvas%
+;   media-canvas%
+;   button%
+;   check-box%
+;   choice%
+;   gauge%
+;   list-box%
+;   message%
+;   radio-box%
+;   slider%
+;   text-window%
+;   text%
+;   multi-text%
+;   panel%
+;   horizontal-panel%
+;   vertical-panel%
+;   single-panel%))
 
 
 (define-signature mred:autoload^

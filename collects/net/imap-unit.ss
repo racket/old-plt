@@ -194,7 +194,7 @@
 						(str->arg password)) 
 				    void)])
 	      (if (and (pair? reply) (tag-eq? 'NO (car reply)))
-		  (error "username or password rejected by server")
+		  (error "username or password rejected by server: ~s" reply)
 		  (check-ok reply)))
 	    
 	    (let ([imap (make-imap-connection r w)])

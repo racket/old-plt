@@ -2,8 +2,10 @@
 
 (require-library "mysterx.ss" "mysterx")
 
-(define doc (make-object mx-document% "DHTML tests" 300 300 
-			 'default 'default '(maximize)))
+(define wb (make-object mx-browser% "DHTML tests" 300 300 
+			'default 'default '(maximize)))
+
+(define doc (send wb current-document))
 
 (send doc insert-html "<P id=text>This is some text</P>")
 

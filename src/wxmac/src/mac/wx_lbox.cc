@@ -159,13 +159,13 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func,
   OSErr result;  
   unsigned long flags;
 
-  SetEraser(wxWHITE_BRUSH);
-
   selected = -1;
   selections = 0;
   multiple = Multiple & wxMULTIPLE_MASK;
   no_items = 0;
   cKeycnt =0;
+
+  SetEraser(wxWHITE_BRUSH);
 
   if (!buttonFont)
     buttonFont = wxNORMAL_FONT;
@@ -210,6 +210,7 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func,
 #ifndef OS_X
 	   | alDoDrawOffscreen
 #endif
+	   | alDoInhibitRedraw
 	   | alDoRowsOnly);
   
   if (!(multiple & (wxMULTIPLE | wxEXTENDED))) {
@@ -243,6 +244,7 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func,
     this->Set(N, Choices);
 
   CreatePaintControl();
+  ALSetInfo(alRefCon,&cPaintControl,cListReference);
   
   {
     wxWindow *p;
@@ -271,7 +273,9 @@ void wxListBox::Paint(void)
 {
   if (cHidden) return;
 
+  ALFeatureFlag(alFInhibitRedraw, alBitClear, cListReference);
   ::ALUpdate(NULL, cListReference);
+  ALFeatureFlag(alFInhibitRedraw, alBitSet, cListReference);
   ReleaseCurrentDC();
   
   wxWindow::Paint();
@@ -440,6 +444,8 @@ void wxListBox::OnChar(wxKeyEvent *event)
 
     ReleaseCurrentDC();
 
+    Refresh();
+
     commandEvent = new wxCommandEvent(wxEVENT_TYPE_LISTBOX_COMMAND);
     ProcessCommand(commandEvent);
   }
@@ -464,11 +470,10 @@ void wxListBox::Delete(int N)
 	node->integer_key--;                     // to look at or change key value
       node = node->Next();
     }
-  SetCurrentDC();
   ALDelRow(1, N, cListReference);
-  ReleaseCurrentDC();
   no_items --;
   cKeycnt--;
+  Refresh();
 }
 
 // Append an item to the list box
@@ -481,7 +486,6 @@ void wxListBox::Append(char *Item, char *Client_data)
   CopyCStringToPascal(Item,temp);
   stringHandle = NewString(temp);
   
-  SetCurrentDC();
   //LSetDrawingMode(FALSE, cListHandle);
   cell.v = no_items;
   cell.h = 0;		// Point = {v, h} so Cell = {row, col}
@@ -493,7 +497,7 @@ void wxListBox::Append(char *Item, char *Client_data)
   no_items ++;
   if (Client_data) cKeycnt++;
   
-  ReleaseCurrentDC();
+  Refresh();
 }
 
 void wxListBox::Append(char *Item)
@@ -510,7 +514,6 @@ void wxListBox::Set(int n, char *choices[])
   if (no_items > 0) {
     this->Clear();
   }
-  SetCurrentDC();
   // LSetDrawingMode(FALSE, cListHandle);
   ALAddRow(n,0,cListReference); // add all the rows up front.
   for (cell.v = 0; cell.v < n; cell.v++) {
@@ -520,7 +523,7 @@ void wxListBox::Set(int n, char *choices[])
     ALSetCell(stringHandle ,&cell, cListReference);
   }
   no_items = cell.v;
-  ReleaseCurrentDC();
+  Refresh();
 }
 
 Boolean MyStringCompare(Handle, ConstStr255Param);
@@ -536,11 +539,10 @@ void wxListBox::Clear(void)
   if (no_items<=0)
     return ;
   cDataList->Clear ();
-  SetCurrentDC();
   ALDelRow(ALGetNumberRows(cListReference), 0, cListReference);
-  ReleaseCurrentDC();
   no_items = 0;
   cKeycnt = 0;
+  Refresh();
 }
 
 void wxListBox::SetString(int N, char *s)
@@ -550,13 +552,12 @@ void wxListBox::SetString(int N, char *s)
   Str255 temp;
   StringHandle newHandle;
 
-  SetCurrentDC();
   ALGetCell((void **)&oldHandle,&cell,cListReference);
   CopyCStringToPascal(s,temp);
   newHandle = NewString(temp);
   ALSetCell(newHandle, &cell, cListReference);
   DisposeHandle((Handle)oldHandle);
-  ReleaseCurrentDC();
+  Refresh();
 }
 
 char *wxListBox::GetClientData(int N)
@@ -618,6 +619,7 @@ void wxListBox::SetFirstItem(int N)
   ALScrollCells(0, fi - N, cListReference);
 
   ReleaseCurrentDC();
+  Refresh();
 }
 
 int wxListBox::GetFirstItem()
@@ -684,6 +686,7 @@ void wxListBox::SetSelection(int N, Bool select, Bool just_one)
   }
 
   ReleaseCurrentDC();
+  Refresh();
 }
 
 void wxListBox::SetOneSelection(int N)
@@ -700,9 +703,8 @@ Bool wxListBox::Selected(int N)
 void wxListBox::Deselect(int N)
 {
   LongPt cell = {N, 0};
-  SetCurrentDC();
   ALSetSelect(FALSE, &cell, cListReference);
-  ReleaseCurrentDC();
+  Refresh();
 }
 
 // Return number of selections and an array of selected integers
@@ -765,9 +767,7 @@ void wxListBox::SetLabel(char *label)
 //-----------------------------------------------------------------------------
 void wxListBox::OnSetFocus()
 {
-  SetCurrentDC();
   ALSetFocus(kControlListBoxPart,cListReference);
-  ReleaseCurrentDC();
   Refresh();
 
   wxWindow::OnSetFocus();
@@ -776,9 +776,7 @@ void wxListBox::OnSetFocus()
 //-----------------------------------------------------------------------------
 void wxListBox::OnKillFocus()
 {
-  SetCurrentDC();  
   ALSetFocus(kControlFocusNoPart,cListReference);
-  ReleaseCurrentDC();
   Refresh();
 
   wxWindow::OnKillFocus();
@@ -790,8 +788,6 @@ void wxListBox::DoShow(Bool on)
 {
   if (!CanShow(on))
     return;
-
-  ALFeatureFlag(alFInhibitRedraw, on ? alBitClear : alBitSet, cListReference);
 
   if (!on && cListTitle)
     cListTitle->DoShow(on);
@@ -827,9 +823,7 @@ void wxListBox::ChangeToGray(Bool gray)
 {
   if (cHidden) return;
   
-  SetCurrentDC();
   ALActivate(!gray && cActive, cListReference);
-  ReleaseCurrentDC();
 
   wxWindow::ChangeToGray(gray);
 }
@@ -838,10 +832,8 @@ void wxListBox::Activate(Bool on)
 {
   if (!cHidden) {
     int v;
-    SetCurrentDC();
     v = OS_Active();
     ALActivate(on && v, cListReference);
-    ReleaseCurrentDC();
   }
 
   wxItem::Activate(on);
